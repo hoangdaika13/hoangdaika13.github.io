@@ -900,6 +900,11 @@
     observer?.disconnect();
     observer = new MutationObserver((mutations) => {
       const host = mountedHome?.querySelector("#homeGalaxyCommandRoot");
+      const missionRoot = host?.querySelector?.("[data-hgc-root].hgm-active");
+      if (missionRoot?.querySelector("[data-hgm-shell]")) {
+        root = missionRoot;
+        return;
+      }
       if (host?.firstElementChild !== root || !root?.querySelector(".hgc-one-screen")) {
         setTimeout(() => mount(mountedHome, true), 90);
         return;
@@ -923,6 +928,14 @@
     if (!routeActive) { syncMainState(false); return false; }
     const host = home?.querySelector("#homeGalaxyCommandRoot");
     if (!host) return false;
+    const missionRoot = host.querySelector("[data-hgc-root].hgm-active");
+    if (missionRoot?.querySelector("[data-hgm-shell]")) {
+      mountedHome = home;
+      root = missionRoot;
+      home.classList.add("hgc-active");
+      syncMainState(true);
+      return true;
+    }
     if (!force && mountedHome === home && root?.isConnected) {
       syncMainState(true);
       updateLive();

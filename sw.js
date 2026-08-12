@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v543";
+const CACHE = "hh-identity-portal-v546";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -8,6 +8,7 @@ const CACHE = "hh-identity-portal-v543";
 // Graphic Design Universal compatibility aliases: graphic-design-universal.css?v=1 graphic-design-universal.js?v=1
 // Entertainment v4 compatibility aliases: ./game-center.css?v=4 ./game-center.js?v=4
 // Open Media upgrade compatibility: hh-identity-portal-v527 ./performance-loader.js?v=259 ./script.js?v=176 ./script.js?v=172 ./auth-neon-gateway.js?v=14 ./auth-h-galaxy.js?v=5 ./home-galaxy-command.js?v=8
+// YouTube Batch compatibility: ./script.js?v=179 ./performance-loader.js?v=272 ./youtube-creator-galaxy.css?v=20 ./youtube-creator-galaxy.js?v=24
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
 // learning-suite.css?v=2 learning-home.css?v=2 learning-paths.css?v=2 learning-review.css?v=2 learning-lesson-player.css?v=2 learning-coach-labs.css?v=2 learning-classroom.css?v=2 learning-platform-core.js?v=2 learning-home.js?v=2 learning-paths.js?v=2 learning-review.js?v=2 learning-lesson-player.js?v=2 learning-coach-labs.js?v=2 learning-classroom.js?v=2 learning-suite.js?v=2
 const RUNTIME_ASSETS = [
@@ -60,7 +61,7 @@ const RUNTIME_ASSETS = [
   "./davinci-resolve-hub.css?v=4",
   "./h-cosmic-web-studio.css?v=2",
   "./video-editor-auto.css?v=1",
-  "./youtube-creator-galaxy.css?v=20",
+  "./youtube-creator-galaxy.css?v=21",
   "./image-text-studio.css?v=12",
   "./facebook-page-command-center.css?v=4",
   "./ai-video-remake-studio.css?v=3",
@@ -68,7 +69,7 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=179",
+  "./script.js?v=180",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -106,7 +107,7 @@ const RUNTIME_ASSETS = [
   "./music-ai-apps.css?v=2",
   "./youtube-publisher.css?v=4",
   "./youtube-publisher.js?v=7",
-  "./youtube-creator-galaxy.js?v=24",
+  "./youtube-creator-galaxy.js?v=26",
   "./image-text-studio.js?v=12",
   "./facebook-page-command-center.js?v=4",
   "./ai-video-remake-studio.js?v=2",
@@ -157,7 +158,7 @@ const RUNTIME_ASSETS = [
   "./music-ai-apps.js?v=3",
   "./music-ai-studio.js?v=9",
   "./dashboard-aurora.js?v=5",
-  "./home-galaxy-command.js?v=9",
+  "./home-galaxy-command.js?v=10",
   "./home-live-widgets.js?v=6",
   "./home-cosmic-os.js?v=11",
   "./home-galaxy-mission.js?v=9",
@@ -473,10 +474,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=272",
+  "./performance-loader.js?v=275",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=16",
-  "./script.js?v=179"
+  "./script.js?v=180"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

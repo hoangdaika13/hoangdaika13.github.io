@@ -33,7 +33,7 @@ const downloadHosts = [
   "soundcloud.com", "twitch.tv", "pinterest.com", "tumblr.com", "bilibili.com"
 ];
 const downloadCapabilities = ["single", "collection", "channel"];
-const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text"]);
+const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text", "youtube-batch"]);
 const allowedModels = new Set(["gemini-3.5-flash", "gemini-3.1-flash-lite"]);
 const contentPackSchema = {
   type: "object",
@@ -85,6 +85,31 @@ const imageTextBatchSchema = {
           textColor: { type: "string", description: "Màu chữ HEX dễ đọc trên ảnh, ví dụ #FFFFFF." }
         },
         required: ["index", "filename", "title", "youtubeTitle", "subtitle", "outputName", "textColor"]
+      }
+    }
+  },
+  required: ["items"]
+};
+const youtubeBatchMetadataSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    items: {
+      type: "array",
+      maxItems: 10,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          index: { type: "integer", minimum: 1, maximum: 10 },
+          filename: { type: "string", maxLength: 240 },
+          title: { type: "string", maxLength: 100 },
+          description: { type: "string", maxLength: 5000 },
+          tags: { type: "array", maxItems: 15, items: { type: "string", maxLength: 80 } },
+          thumbnailTitle: { type: "string", maxLength: 80 },
+          thumbnailSubtitle: { type: "string", maxLength: 80 }
+        },
+        required: ["index", "filename", "title", "description", "tags", "thumbnailTitle", "thumbnailSubtitle"]
       }
     }
   },
@@ -158,6 +183,7 @@ function schemaForAction(actionType) {
   if (actionType === "content-pack") return contentPackSchema;
   if (actionType === "design-plan") return designPlanSchema;
   if (["image-text-batch", "image-text-youtube-batch"].includes(actionType)) return imageTextBatchSchema;
+  if (actionType === "youtube-batch-metadata") return youtubeBatchMetadataSchema;
   return null;
 }
 
@@ -902,6 +928,15 @@ async function youtubeResearchOutput(input, actionType) {
 }
 
 async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
+  if (actionType === "youtube-batch-metadata") {
+    const items = (Array.isArray(meta.items) ? meta.items : []).slice(0, 10);
+    const structured = { items: items.map((item, position) => {
+      const base = clean(item?.currentTitle || item?.filename || `Video ${position + 1}`, 100).replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+      const words = base.split(/\s+/).filter(Boolean);
+      return { index: Math.max(1, Number(item?.index) || position + 1), filename: clean(item?.filename, 240), title: base.slice(0, 100), description: `Nội dung: ${base}. Hãy kiểm tra lại thông tin và quyền sử dụng trước khi xuất bản.`, tags: words.filter((word) => word.length > 2).slice(0, 15), thumbnailTitle: words.slice(0, 6).join(" ").slice(0, 80), thumbnailSubtitle: "" };
+    }) };
+    return { output: JSON.stringify(structured), structured, provider: "local-youtube-batch", model: "hh-youtube-batch-local-v1" };
+  }
   if (["image-text-batch", "image-text-youtube-batch"].includes(actionType)) {
     return localImageTextBatchOutput(input, meta);
   }
@@ -982,6 +1017,7 @@ async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
 
 function systemInstruction(moduleId, actionType) {
   if (moduleId === "image-text") return `Bạn là art director thumbnail. Phân tích đúng từng ô ảnh đã đánh số, tạo chữ ngắn tự nhiên theo yêu cầu, không nhầm thứ tự, không bịa người hoặc địa điểm và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
+  if (moduleId === "youtube-batch") return `Bạn là biên tập viên YouTube cho upload hàng loạt. Chỉ suy luận từ filename, sidecar và ngữ cảnh; không bịa người, sự kiện, số liệu hay xu hướng, không tạo metadata spam lặp và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
   const common = "Bạn là HH Creative AI, trợ lý sản xuất nội dung cao cấp. Trả lời bằng tiếng Việt tự nhiên, có cấu trúc, không bịa dữ kiện, nêu rõ điểm chưa chắc chắn, tôn trọng bản quyền và luôn tạo đầu ra có thể dùng ngay.";
   const rules = {
     "ai-center": "Phân tích mục tiêu, trả lời trực tiếp, đưa ví dụ thực tế và kết thúc bằng checklist hành động.",
@@ -995,6 +1031,7 @@ function systemInstruction(moduleId, actionType) {
 }
 
 function promptFor(moduleId, actionType, input, meta = {}) {
+  if (actionType === "youtube-batch-metadata") return `Tạo metadata riêng cho từng video. Tiêu đề tối đa 100 ký tự; mô tả trung thực; tối đa 15 tags; chữ thumbnail 2–7 từ. Không lặp title và không bịa người, sự kiện, số liệu hay xu hướng.\n\n${input || ""}\n\nDANH SÁCH\n${JSON.stringify((Array.isArray(meta.items) ? meta.items : []).slice(0, 10), null, 2)}`;
   if (["image-text-batch", "image-text-youtube-batch"].includes(actionType)) {
     const context = typeof meta.context === "string" ? clean(meta.context, 12000) : "";
     return `Quan sát contact sheet có các ô đánh số và tín hiệu YouTube gần đây trong ngữ cảnh. Với mỗi ô, tạo: (1) youtubeTitle nguyên bản tối đa 100 ký tự, phù hợp chủ đề và khoảng tuần/tháng; (2) title 2–5 từ để viết trực tiếp lên thumbnail; (3) subtitle ngắn; (4) tên file an toàn; (5) màu chữ HEX tương phản. Học cấu trúc, ý định tìm kiếm và nhịp câu từ các tiêu đề tham khảo nhưng tuyệt đối không sao chép hoặc chỉ thay vài từ. Không hứa hẹn sai, không bịa số liệu, không lạm dụng clickbait. Mỗi youtubeTitle trong batch phải khác nhau và khớp nội dung ảnh. Trả đủ đúng một item cho mỗi số; giữ nguyên index và filename.\n\nYÊU CẦU\n${input || "Tạo title YouTube và chữ thumbnail phù hợp từng ảnh."}\n\nNGỮ CẢNH\n${context}`;

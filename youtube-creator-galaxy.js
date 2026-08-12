@@ -8,6 +8,12 @@
   const VIDEO_PROJECT_KEY = "hh.video-editor.project.v1";
   const MEDIA_DB = "hh-video-editor-media";
   const MEDIA_STORE = "assets";
+  const BATCH_MANIFEST_DB = "hh-youtube-batch-manifest-v1";
+  const BATCH_MANIFEST_STORE = "owners";
+  const BATCH_VIDEO_LIMIT = 10;
+  const VIDEO_EXTENSIONS = /\.(mp4|mov|webm|mkv)$/i;
+  const THUMBNAIL_EXTENSIONS = /\.(jpe?g|png)$/i;
+  const SIDECAR_EXTENSIONS = /\.(json|txt|md|srt|vtt)$/i;
   const FLEET_STUDIO_TABS = Object.freeze(["overview", "content", "calendar", "comments", "analytics", "queue", "settings"]);
   const AI_DISCLOSURE_OPTIONS = Object.freeze(["yes", "no", "unreviewed"]);
   const VIDEO_EDITOR_SECTIONS = Object.freeze([
@@ -98,6 +104,13 @@
   let calendarDragItem = null;
   let queuePaused = false;
   let queueRunToken = 0;
+  let batchRouteMode = false;
+  let batchFolderName = "";
+  let batchSidecars = new Map();
+  let batchThumbnailFiles = new Map();
+  let batchAiRunning = false;
+  let batchAiProgress = { done: 0, total: 0 };
+  let batchSchedule = { startAt: "", spacingHours: 24 };
   const activeUploadRequests = new Map();
   const pausedTaskKeys = new Set();
 
@@ -328,6 +341,8 @@
         thumbnailSubtitle: String(draft?.thumbnailSubtitle || "").slice(0, 80),
         thumbnailAccent: /^#[0-9a-f]{6}$/i.test(draft?.thumbnailAccent) ? draft.thumbnailAccent : "#ff3158",
         thumbnailReady: Boolean(draft?.thumbnailReady),
+        thumbnailName: String(draft?.thumbnailName || "").slice(0, 240),
+        sidecarName: String(draft?.sidecarName || "").slice(0, 240),
         checksum: String(draft?.checksum || "").slice(0, 80),
         aiDisclosure: normalizeAiDisclosure(draft?.aiDisclosure, draft?.containsSyntheticMedia === true ? "yes" : "unreviewed"),
         channelTitles: Object.fromEntries(Object.entries(draft?.channelTitles || {}).slice(0, 100).map(([channelId, title]) => [String(channelId).slice(0, 120), String(title || "").slice(0, 100)]))
@@ -398,6 +413,102 @@
 
   function saveFleetState() {
     try { sessionStorage.setItem(privateStorageKey(FLEET_STORAGE_KEY), JSON.stringify(fleetState)); } catch {}
+  }
+
+  const normalizedAssetBase = (name) => String(name || "").split(/[\\/]/).pop().replace(/\.[^.]+$/, "").trim().toLocaleLowerCase("vi");
+  const folderPathOf = (file) => String(file?.webkitRelativePath || file?.name || "");
+
+  function openBatchManifestDb() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error("Trình duyệt không hỗ trợ lưu manifest cục bộ."));
+      const request = indexedDB.open(BATCH_MANIFEST_DB, 1);
+      request.onupgradeneeded = () => {
+        if (!request.result.objectStoreNames.contains(BATCH_MANIFEST_STORE)) request.result.createObjectStore(BATCH_MANIFEST_STORE, { keyPath: "ownerId" });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("Không mở được kho manifest."));
+    });
+  }
+
+  async function persistBatchManifest() {
+    const db = await openBatchManifestDb();
+    try {
+      const record = {
+        ownerId: currentIdentityId(), folderName: batchFolderName, savedAt: new Date().toISOString(),
+        selectedChannelIds: [...fleetState.selectedChannelIds], schedule: { ...batchSchedule },
+        files: fleetUploadFiles.map((file) => { const fingerprint = fleetFileFingerprint(file); const draft = fleetDraft(fingerprint, file); return { fingerprint, path: folderPathOf(file), name: file.name, size: file.size, lastModified: file.lastModified || 0, title: draft?.title || "", description: draft?.description || "", tags: draft?.tags || "", thumbnailName: draft?.thumbnailName || "", sidecarName: draft?.sidecarName || "" }; })
+      };
+      await new Promise((resolve, reject) => { const transaction = db.transaction(BATCH_MANIFEST_STORE, "readwrite"); transaction.objectStore(BATCH_MANIFEST_STORE).put(record); transaction.oncomplete = resolve; transaction.onerror = () => reject(transaction.error); });
+    } finally { db.close(); }
+  }
+
+  async function readBatchManifest() {
+    const db = await openBatchManifestDb();
+    try { return await new Promise((resolve, reject) => { const request = db.transaction(BATCH_MANIFEST_STORE, "readonly").objectStore(BATCH_MANIFEST_STORE).get(currentIdentityId()); request.onsuccess = () => resolve(request.result || null); request.onerror = () => reject(request.error); }); }
+    finally { db.close(); }
+  }
+
+  async function applySidecarToDraft(file, sidecar) {
+    const draft = fleetDraft(fleetFileFingerprint(file), file);
+    if (!draft || !sidecar) return;
+    draft.sidecarName = sidecar.name;
+    let text = "";
+    try { text = String(await sidecar.text()).slice(0, 12000); } catch {}
+    if (!text) return;
+    if (/\.json$/i.test(sidecar.name)) {
+      try { const data = JSON.parse(text); draft.title = String(data.title || data.youtubeTitle || draft.title).slice(0, 100); draft.description = String(data.description || data.caption || draft.description).slice(0, 5000); draft.tags = (Array.isArray(data.tags) ? data.tags.join(", ") : String(data.tags || draft.tags)).slice(0, 500); draft.thumbnailTitle = String(data.thumbnailTitle || data.thumbText || draft.thumbnailTitle || draft.title).slice(0, 80); draft.thumbnailSubtitle = String(data.thumbnailSubtitle || draft.thumbnailSubtitle || "").slice(0, 80); return; } catch {}
+    }
+    if (/\.(srt|vtt)$/i.test(sidecar.name)) { draft.description ||= `Phụ đề nguồn: ${sidecar.name}`; return; }
+    const lines = text.split(/\r?\n/).map((line) => line.trim()); const first = lines.find(Boolean) || "";
+    if (first) draft.title = first.slice(0, 100);
+    const body = lines.slice(lines.indexOf(first) + 1).join("\n").trim(); if (body) draft.description = body.slice(0, 5000);
+  }
+
+  async function loadBatchFolderFiles(files) {
+    const incoming = [...(files || [])].filter((file) => file && !String(file.name || "").startsWith("."));
+    const videos = incoming.filter((file) => file.type.startsWith("video/") || file.type === "application/octet-stream" || VIDEO_EXTENSIONS.test(file.name));
+    if (!videos.length) throw new Error("Thư mục chưa có video MP4, MOV, WebM hoặc MKV.");
+    if (videos.length > BATCH_VIDEO_LIMIT) throw new Error(`Mỗi hàng đợi nhận tối đa ${BATCH_VIDEO_LIMIT} video để kiểm soát quota. Hãy chia thư mục thành nhiều đợt.`);
+    const images = incoming.filter((file) => file.type.startsWith("image/") || THUMBNAIL_EXTENSIONS.test(file.name));
+    const sidecars = incoming.filter((file) => SIDECAR_EXTENSIONS.test(file.name));
+    batchSidecars = new Map(sidecars.map((file) => [normalizedAssetBase(file.name), file]));
+    batchThumbnailFiles = new Map(images.map((file) => [normalizedAssetBase(file.name), file]));
+    batchFolderName = folderPathOf(videos[0]).split(/[\\/]/)[0] || "Thư mục đã chọn";
+    await loadFleetVideoFiles(videos);
+    for (const file of fleetUploadFiles) {
+      const base = normalizedAssetBase(file.name); const draft = fleetDraft(fleetFileFingerprint(file), file); const thumb = batchThumbnailFiles.get(base); const sidecar = batchSidecars.get(base);
+      if (thumb && thumb.size <= 2 * 1024 * 1024 && /image\/(jpeg|png)/.test(thumb.type || "")) { draft.thumbnailName = thumb.name; draft.thumbnailReady = true; }
+      if (sidecar) await applySidecarToDraft(file, sidecar);
+    }
+    saveFleetState(); await persistBatchManifest().catch(() => {}); render();
+    status(`Đã quét ${videos.length} video, ghép ${images.length} ảnh và ${sidecars.length} sidecar trong “${batchFolderName}”.`, "success");
+  }
+
+  const batchMetadataFallback = (file, index) => { const base = String(file?.name || `Video ${index + 1}`).replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim(); return { title: base.slice(0, 100), description: `Nội dung: ${base}. Hãy kiểm tra lại thông tin và quyền sử dụng trước khi xuất bản.`, tags: base.split(/\s+/).filter((word) => word.length > 2).slice(0, 12).join(", "), thumbnailTitle: base.split(/\s+/).slice(0, 6).join(" ").slice(0, 80), thumbnailSubtitle: "" }; };
+
+  async function generateBatchMetadata() {
+    if (!fleetUploadFiles.length) throw new Error("Hãy chọn thư mục video trước khi tạo metadata.");
+    batchAiRunning = true; batchAiProgress = { done: 0, total: fleetUploadFiles.length }; render();
+    try {
+      const items = fleetUploadFiles.map((file, index) => { const draft = fleetDraft(fleetFileFingerprint(file), file); return { index: index + 1, filename: file.name, sidecar: draft?.sidecarName || "", currentTitle: draft?.title || "" }; });
+      let rows = [];
+      try { const response = await fetch(`${apiBase()}/api/modules/youtube-batch/actions`, { method: "POST", credentials: "include", cache: "no-store", headers: authHeaders(), body: JSON.stringify({ actionType: "youtube-batch-metadata", input: `Tạo metadata YouTube tiếng Việt nguyên bản cho thư mục “${batchFolderName || "video"}”. Không bịa dữ kiện.`, meta: { provider: "auto", allowProviderFallback: true, items } }) }); const payload = await response.json().catch(() => ({})); if (!response.ok || !payload?.ok) throw new Error(payload.error || `AI HTTP ${response.status}`); rows = payload.action?.structured?.items || []; } catch {}
+      fleetUploadFiles.forEach((file, index) => { const draft = fleetDraft(fleetFileFingerprint(file), file); const fallback = batchMetadataFallback(file, index); const row = rows.find((item) => Number(item.index) === index + 1 || item.filename === file.name) || fallback; draft.title = String(row.title || fallback.title).slice(0, 100); draft.description = String(row.description || fallback.description).slice(0, 5000); draft.tags = (Array.isArray(row.tags) ? row.tags.join(", ") : String(row.tags || fallback.tags)).slice(0, 500); draft.thumbnailTitle = String(row.thumbnailTitle || fallback.thumbnailTitle).slice(0, 80); draft.thumbnailSubtitle = String(row.thumbnailSubtitle || fallback.thumbnailSubtitle).slice(0, 80); batchAiProgress.done = index + 1; });
+      syncActiveFleetDraft(); saveFleetState(); await persistBatchManifest().catch(() => {}); status(`Đã tạo metadata cho ${fleetUploadFiles.length} video. Hãy duyệt nhanh trước khi upload.`, "success");
+    } finally { batchAiRunning = false; render(); }
+  }
+
+  function applyBatchSchedule() {
+    const startAt = root?.querySelector("[data-ycg-batch-start]")?.value || batchSchedule.startAt; const spacingHours = Math.min(168, Math.max(1, Number(root?.querySelector("[data-ycg-batch-spacing]")?.value || batchSchedule.spacingHours || 24))); const start = new Date(startAt);
+    if (!Number.isFinite(start.getTime()) || start.getTime() <= Date.now() + 60_000) throw new Error("Thời điểm bắt đầu phải ở tương lai ít nhất một phút.");
+    batchSchedule = { startAt, spacingHours }; let taskCount = 0;
+    fleetUploadFiles.forEach((file, videoIndex) => fleetState.selectedChannelIds.forEach((channelId) => { const cell = matrixTask(fleetFileFingerprint(file), channelId, true); cell.enabled = cell.enabled !== false; cell.mode = "schedule"; cell.publishAt = new Date(start.getTime() + videoIndex * spacingHours * 60 * 60 * 1000).toISOString().slice(0, 16); taskCount += 1; }));
+    invalidateFleetPublish(); saveFleetState(); persistBatchManifest().catch(() => {}); render(); status(`Đã xếp ${fleetUploadFiles.length} mốc cho ${taskCount} tác vụ; cùng video dùng chung mốc trên các kênh.`, "success");
+  }
+
+  function batchWorkspaceBanner() {
+    if (!batchRouteMode) return "";
+    return `<section class="ycg-batch-launchpad"><div><small>AUTOMATED FOLDER → YOUTUBE</small><h2>YouTube Batch Publisher</h2><p>Chọn thư mục, ghép video với ảnh/JSON/TXT/SRT cùng tên, tạo metadata AI, chia lịch và gửi tới nhiều kênh bằng resumable upload. Video thiếu ảnh sẽ tự tạo thumbnail từ khung hình và chữ đã duyệt.</p></div><div class="ycg-batch-launchpad__actions"><label class="is-primary">Chọn thư mục<input type="file" webkitdirectory directory multiple accept="video/*,image/jpeg,image/png,.json,.txt,.md,.srt,.vtt" data-ycg-batch-folder></label><button type="button" data-ycg-action="batch-restore-manifest">Khôi phục manifest</button><button type="button" data-ycg-action="batch-open-galaxy">Creator Galaxy</button></div><ul><li><b>${fleetUploadFiles.length}</b> video</li><li><b>${batchThumbnailFiles.size}</b> thumbnail</li><li><b>${batchSidecars.size}</b> sidecar</li><li><b>${fleetState.selectedChannelIds.length}</b> kênh</li></ul>${fleetUploadFiles.length ? `<div class="ycg-batch-automation"><button type="button" data-ycg-action="batch-ai-metadata" ${batchAiRunning ? "disabled" : ""}>${batchAiRunning ? `AI ${batchAiProgress.done}/${batchAiProgress.total}` : "✦ Tạo title, mô tả, tags và chữ thumbnail"}</button><label>Bắt đầu<input type="datetime-local" data-ycg-batch-start value="${esc(batchSchedule.startAt)}"></label><label>Cách nhau<input type="number" min="1" max="168" data-ycg-batch-spacing value="${batchSchedule.spacingHours}"><span>giờ</span></label><button type="button" data-ycg-action="batch-apply-schedule">Áp lịch toàn bộ</button><span>${esc(batchFolderName)}</span></div>` : `<div class="ycg-batch-empty"><strong>Chọn thư mục video để bắt đầu</strong><span>Trình duyệt chỉ đọc file sau khi bạn cấp quyền. Nếu tải lại trang, hãy chọn lại đúng thư mục để tiếp tục checkpoint.</span></div>`}</section>`;
   }
 
   function fleetFileFingerprint(file) {
@@ -1405,12 +1516,12 @@
   }
 
   function fleetView() {
-    if (!channelStatus.connected) return emptyState(
+    if (!channelStatus.connected) return `${batchWorkspaceBanner()}${emptyState(
       "Kết nối kênh để mở Studio đa kênh",
       "Bạn có thể thêm tối đa 100 kênh. Kênh, token và tác vụ luôn được khóa theo tài khoản HH hiện tại.",
       channelStatus.authRequired ? "signin" : "connect-creator",
       channelStatus.authRequired ? "Đăng nhập" : "Thêm kênh YouTube"
-    );
+    )}`;
     const channels = (fleetOverview?.channels || channelStatus.channels || []).filter(Boolean);
     if (contentDrawer) return videoStudioWorkspaceMarkup(channels);
     if (videoRouteTarget()) return `<section class="ycg-video-workspace is-loading"><div class="ycg-loading"><i></i><strong>Đang tải workspace video từ YouTube…</strong></div></section>`;
@@ -1464,7 +1575,7 @@
     const uploadDock = `<section class="ycg-upload-action-dock" aria-label="Tải video lên YouTube"><div><strong>${fleetUploadFiles.length} video → ${selectedChannels.length} kênh · ${estimatedTasks} tác vụ</strong><small>${fleetPreflight ? `${fleetPreflight.ready ? "✓ Đã kiểm tra" : "! Cần xử lý trước khi tải"} · ${fmt(fleetPreflight.estimatedQuota)} quota unit ước tính` : "Hệ thống sẽ kiểm tra quyền, token, metadata và lịch trước khi tải."}</small></div><label><input type="checkbox" name="rightsConfirmed" ${fleetState.rightsConfirmed ? "checked" : ""}> Tôi có quyền sử dụng video, nhạc và thumbnail.</label><div><button type="button" data-ycg-action="fleet-preflight">Kiểm tra trước</button><button type="submit" class="is-primary ycg-upload-now" ${uploadReady && !busy.startsWith("bulk/") ? "" : "disabled"}>${uploadActionLabel}</button></div></section>`;
     const advancedMatrix = `<details class="ycg-upload-advanced"><summary><span><strong>Cài đặt nâng cao</strong><small>Lịch, AI, quyền hiển thị và ma trận từng video × kênh</small></span><b>⌄</b></summary><div>${batchMatrixMarkup(selectedChannels, limits)}${overrides}</div></details>`;
     const contentUpload = `<form data-ycg-fleet-form class="ycg-studio-content">${channelPicker}<div class="ycg-content-columns">${videoQueue}${metadataEditor}</div>${uploadDock}${advancedMatrix}</form>`;
-    const content = `<div class="ycg-content-mode"><button type="button" data-ycg-content-mode="upload" class="${fleetState.contentMode === "upload" ? "is-active" : ""}">＋ Batch Upload Matrix</button><button type="button" data-ycg-content-mode="manager" class="${fleetState.contentMode === "manager" ? "is-active" : ""}">▤ Content Manager</button><span>${fleetState.contentMode === "upload" ? "Tối đa 10 video/kênh · round-robin queue" : "Xem và chỉnh trực tiếp video thật"}</span></div>${fleetState.contentMode === "manager" ? contentManagerMarkup(channels) : contentUpload}`;
+    const content = `${batchWorkspaceBanner()}<div class="ycg-content-mode"><button type="button" data-ycg-content-mode="upload" class="${fleetState.contentMode === "upload" ? "is-active" : ""}">＋ Batch Upload Matrix</button><button type="button" data-ycg-content-mode="manager" class="${fleetState.contentMode === "manager" ? "is-active" : ""}">▤ Content Manager</button><span>${fleetState.contentMode === "upload" ? "Tối đa 10 video/kênh · round-robin queue" : "Xem và chỉnh trực tiếp video thật"}</span></div>${fleetState.contentMode === "manager" ? contentManagerMarkup(channels) : contentUpload}`;
     const queue = `<section class="ycg-panel ycg-task-center"><header><div><h3>Continuous Channel Queue</h3><small>Round-robin · mỗi kênh một video tại một thời điểm · không upload lại tác vụ thành công</small></div><div><button type="button" data-ycg-action="queue-${queuePaused ? "resume" : "pause"}-all">${queuePaused ? "Tiếp tục tất cả" : "Tạm dừng tất cả"}</button><button type="button" data-ycg-action="fleet-refresh">Làm mới</button></div></header><div class="ycg-task-summary"><span>${fleetState.results.length} tổng</span><span>${fleetState.results.filter((item) => item.status === "uploading").length} đang upload</span><span>${fleetState.results.filter((item) => item.status === "processing").length} YouTube xử lý</span><span>${fleetState.results.filter((item) => item.status === "paused").length} tạm dừng</span><span>${fleetState.results.filter((item) => item.status === "failed").length} lỗi</span></div><div class="ycg-task-table"><table><thead><tr><th>Video</th><th>Kênh</th><th>Batch</th><th>Trạng thái</th><th>Tiến trình</th><th>Tốc độ / ETA</th><th>Hành động</th></tr></thead><tbody>${fleetState.results.map((item) => `<tr><td><strong>${esc(item.fileName || "Video")}</strong><small>${esc(item.videoId || item.checksum || "")}</small></td><td>${esc(item.channelTitle || item.channelId)}</td><td>${item.batchIndex ? `${item.batchIndex}/${item.batchTotal || item.batchIndex}` : "—"}</td><td><span class="ycg-table-status ${item.status === "failed" ? "is-error" : ["uploading", "processing", "verifying", "thumbnail", "paused"].includes(item.status) ? "is-running" : "is-ready"}">${esc(item.status)}</span>${item.error ? `<small>${esc(item.error)}</small>` : ""}</td><td><progress max="100" value="${Number(item.progress || 0)}"></progress><small>${Number(item.progress || 0).toFixed(1)}%</small></td><td>${item.speedBps ? `${bytes(item.speedBps)}/s · ${Math.ceil(item.etaSeconds || 0)}s` : "—"}</td><td>${item.status === "uploading" ? `<button type="button" data-ycg-task-pause="${esc(item.taskKey)}">Tạm dừng</button>` : ["paused", "failed"].includes(item.status) && item.uploadId ? `<button type="button" data-ycg-fleet-retry="${esc(item.taskKey)}">Tiếp tục</button>` : item.status === "uploaded" && item.uploadId ? `<button type="button" data-ycg-fleet-approve="${esc(item.taskKey)}">Duyệt</button>` : ""}${["queued", "uploading", "paused", "failed"].includes(item.status) && item.uploadId ? `<button type="button" class="is-danger" data-ycg-task-cancel="${esc(item.taskKey)}">Hủy</button>` : ""}${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noopener">Mở video</a>` : ""}</td></tr>`).join("") || `<tr><td colspan="7">Chưa có tác vụ. Chọn video và kênh trong tab Đăng video.</td></tr>`}</tbody></table></div></section>`;
     const studioView = fleetState.studioTab === "content" ? content
       : fleetState.studioTab === "calendar" ? calendarView(true)
@@ -1473,7 +1584,7 @@
             : fleetState.studioTab === "queue" ? queue
               : fleetState.studioTab === "settings" ? channelSettingsMarkup(channels)
                 : overview;
-    return `<div class="ycg-multistudio"><section class="ycg-studio-simple-head"><div><small>YOUTUBE MULTI-CHANNEL STUDIO</small><h2>Quản lý nhiều kênh trong một nơi</h2><p>Đăng video, xếp lịch, phản hồi và phân tích mà không rời Studio.</p></div><div><strong>${selectedChannels.length}</strong><span>kênh đang chọn</span><button type="button" data-ycg-action="connect-creator">+ Thêm kênh</button></div></section><nav class="ycg-studio-tabs" aria-label="Công cụ quản lý kênh">${tabs.map(([id, label, count, icon]) => `<button type="button" data-ycg-fleet-tab="${id}" class="${fleetState.studioTab === id ? "is-active" : ""}"><i>${icon}</i><span>${label}</span><b>${count}</b></button>`).join("")}</nav><div class="ycg-studio-embedded">${studioView}</div></div>`;
+    return `<div class="ycg-multistudio ${batchRouteMode ? "is-batch-route" : ""}"><section class="ycg-studio-simple-head"><div><small>${batchRouteMode ? "YOUTUBE BATCH PUBLISHER" : "YOUTUBE MULTI-CHANNEL STUDIO"}</small><h2>${batchRouteMode ? "Tự động hóa video từ thư mục máy tính" : "Quản lý nhiều kênh trong một nơi"}</h2><p>${batchRouteMode ? "File vẫn trên thiết bị; upload đi thẳng tới YouTube sau khi bạn duyệt." : "Đăng video, xếp lịch, phản hồi và phân tích mà không rời Studio."}</p></div><div><strong>${selectedChannels.length}</strong><span>kênh đang chọn</span><button type="button" data-ycg-action="connect-creator">+ Thêm kênh</button></div></section><nav class="ycg-studio-tabs" aria-label="Công cụ quản lý kênh">${tabs.map(([id, label, count, icon]) => `<button type="button" data-ycg-fleet-tab="${id}" class="${fleetState.studioTab === id ? "is-active" : ""}"><i>${icon}</i><span>${label}</span><b>${count}</b></button>`).join("")}</nav><div class="ycg-studio-embedded">${studioView}</div></div>`;
   }
 
   function directorView() {
@@ -2006,11 +2117,11 @@
     });
   }
 
-  function paintFleetThumbnail(canvas, variant = fleetState.thumbnailVariant, showSafeZone = true) {
+  function paintFleetThumbnail(canvas, variant = fleetState.thumbnailVariant, showSafeZone = true, options = {}) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    const accent = fleetState.thumbnailAccent || "#ff3158";
-    const source = thumbnailImage || thumbnailVideo;
+    const accent = options.accent || fleetState.thumbnailAccent || "#ff3158";
+    const source = options.source || thumbnailImage || thumbnailVideo;
     const sourceWidth = Number(source?.videoWidth || source?.naturalWidth || source?.width || 0);
     const sourceHeight = Number(source?.videoHeight || source?.naturalHeight || source?.height || 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -2052,7 +2163,7 @@
     ctx.lineJoin = "round";
     ctx.font = `950 ${variant === "B" ? 98 : 92}px "Segoe UI", "Be Vietnam Pro", sans-serif`;
     ctx.textBaseline = "top";
-    const title = fleetState.thumbnailTitle || fleetState.title || "TIÊU ĐỀ VIDEO";
+    const title = options.title || fleetState.thumbnailTitle || fleetState.title || "TIÊU ĐỀ VIDEO";
     const words = String(title).split(/\s+/).filter(Boolean);
     const lines = [];
     let line = "";
@@ -2069,7 +2180,7 @@
     });
     ctx.fillStyle = accent;
     ctx.font = '850 34px "Segoe UI", "Be Vietnam Pro", sans-serif';
-    ctx.fillText(String(fleetState.thumbnailSubtitle || channelStatus.channel?.title || "YOUTUBE").toUpperCase(), 116, 590);
+    ctx.fillText(String(options.subtitle || fleetState.thumbnailSubtitle || channelStatus.channel?.title || "YOUTUBE").toUpperCase(), 116, 590);
     if (showSafeZone) {
       ctx.save();
       ctx.strokeStyle = "#ffffff8a";
@@ -2102,6 +2213,50 @@
     canvas.height = 720;
     paintFleetThumbnail(canvas, variant, false);
     return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Không tạo được thumbnail JPEG.")), "image/jpeg", .9));
+  }
+
+  async function createBatchThumbnailBlob(file, draft, variant = "A") {
+    if (!file) return null;
+    const video = document.createElement("video");
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    const url = URL.createObjectURL(file);
+    const waitFor = (eventName, timeout = 12000) => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("Không đọc được frame thumbnail đúng thời gian.")), timeout);
+      const finish = (callback, value) => { clearTimeout(timer); video.removeEventListener(eventName, ready); video.removeEventListener("error", failed); callback(value); };
+      const ready = () => finish(resolve);
+      const failed = () => finish(reject, new Error("Video không cung cấp được frame để tạo thumbnail."));
+      video.addEventListener(eventName, ready, { once: true });
+      video.addEventListener("error", failed, { once: true });
+    });
+    try {
+      const metadataReady = waitFor("loadedmetadata");
+      video.src = url;
+      video.load();
+      await metadataReady;
+      const duration = Number(video.duration || 0);
+      const targetTime = duration > .2 ? Math.min(Math.max(.1, duration * .18), duration - .1) : 0;
+      if (targetTime > 0) {
+        const seekReady = waitFor("seeked");
+        video.currentTime = targetTime;
+        await seekReady;
+      } else if (video.readyState < 2) await waitFor("loadeddata");
+      const canvas = document.createElement("canvas");
+      canvas.width = 1280;
+      canvas.height = 720;
+      paintFleetThumbnail(canvas, variant, false, {
+        source: video,
+        title: draft?.thumbnailTitle || draft?.title,
+        subtitle: draft?.thumbnailSubtitle,
+        accent: draft?.thumbnailAccent
+      });
+      return await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Không tạo được thumbnail tự động.")), "image/jpeg", .88));
+    } finally {
+      video.removeAttribute("src");
+      video.load();
+      URL.revokeObjectURL(url);
+    }
   }
 
   async function thumbnailBlob() {
@@ -2383,7 +2538,13 @@
     if (!finalData?.id) throw new Error("YouTube không trả về Video ID cho kênh này.");
     const preset = channelPreset(session.channelId);
     const completed = await api("upload/complete", "POST", { uploadId: session.uploadId, videoId: finalData.id, playlistId: preset.playlistId || "" });
-    const thumbnail = fleetThumbnailVariants.get(`${session.fingerprint}:${preset.thumbnailVariant}`) || null;
+    const sourceFile = fleetFileByFingerprint(session.fingerprint);
+    const thumbnailKey = `${session.fingerprint}:${preset.thumbnailVariant}`;
+    let thumbnail = fleetThumbnailVariants.get(thumbnailKey) || (sourceFile ? batchThumbnailFiles.get(normalizedAssetBase(sourceFile.name)) : null) || null;
+    if (!thumbnail && batchRouteMode && sourceFile) {
+      thumbnail = await createBatchThumbnailBlob(sourceFile, fleetDraft(session.fingerprint, sourceFile), preset.thumbnailVariant).catch(() => null);
+      if (thumbnail) fleetThumbnailVariants.set(thumbnailKey, thumbnail);
+    }
     if (thumbnail && thumbnail.size <= 2 * 1024 * 1024) {
       updateFleetResult(session.channelId, { ...taskPatch, status: "thumbnail", progress: 100 });
       const thumbnailSession = await api("thumbnail/session", "POST", {
@@ -2942,6 +3103,10 @@
     if (["connect-upload", "connect-manage", "connect-analytics", "connect-creator"].includes(action)) return connectChannel(action.replace("connect-", ""));
     if (action === "signin") return location.hash = "#/login";
     if (action === "dismiss-error") { errorMessage = ""; return render(); }
+    if (action === "batch-open-galaxy") { location.hash = "#/davinci-resolve/youtube"; return; }
+    if (action === "batch-ai-metadata") return generateBatchMetadata();
+    if (action === "batch-apply-schedule") return applyBatchSchedule();
+    if (action === "batch-restore-manifest") { const manifest = await readBatchManifest().catch(() => null); if (!manifest?.files?.length) throw new Error("Chưa có manifest đã lưu cho tài khoản này."); batchFolderName = manifest.folderName || "Thư mục đã lưu"; batchSchedule = { ...batchSchedule, ...(manifest.schedule || {}) }; fleetState.selectedChannelIds = Array.isArray(manifest.selectedChannelIds) ? manifest.selectedChannelIds : fleetState.selectedChannelIds; saveFleetState(); render(); return status(`Manifest có ${manifest.files.length} video. Hãy chọn lại thư mục “${batchFolderName}” để trình duyệt cấp lại quyền file.`, "success"); }
     if (action === "video-undo") {
       if (!contentDrawer?.originalDraft) return;
       contentDrawer.draft = { ...contentDrawer.originalDraft };
@@ -3886,6 +4051,7 @@
 
   async function handleChange(event) {
     const target = event.target;
+    if (target.matches("[data-ycg-batch-folder]")) return loadBatchFolderFiles(target.files || []);
     if (target.matches("[data-ycg-settings-channel]")) {
       fleetState.settingsChannel = target.value;
       channelSettings = null;
@@ -4359,14 +4525,16 @@
     await loadFleetVideoFiles(event.dataTransfer?.files || []);
   }
 
-  function mount(host) {
+  function mount(host, mountOptions = {}) {
     cleanup();
     root = host;
+    batchRouteMode = mountOptions.view === "youtube-batch" || location.hash.startsWith("#/davinci-resolve/youtube-batch");
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
     state = loadState();
     fleetState = loadFleetState();
     const launchTab = consumeLaunchIntent();
-    if (launchTab) fleetState.studioTab = launchTab;
+    if (batchRouteMode) { fleetState.studioTab = "content"; fleetState.contentMode = "upload"; }
+    else if (launchTab) fleetState.studioTab = launchTab;
     else if (STUDIO_MODULE_TABS[state.active]) fleetState.studioTab = STUDIO_MODULE_TABS[state.active];
     state.active = "fleet";
     saveState();
@@ -4429,6 +4597,8 @@
       fleetPreflight = null;
       fleetUploadFile = null;
       fleetUploadFiles = [];
+      batchSidecars = new Map();
+      batchThumbnailFiles = new Map();
       contentLibrary = [];
       contentDrawer = null;
       deleteDialog = null;
@@ -4453,6 +4623,10 @@
     thumbnailImage = null;
     fleetUploadFile = null;
     fleetUploadFiles = [];
+    batchSidecars = new Map();
+    batchThumbnailFiles = new Map();
+    batchAiRunning = false;
+    batchRouteMode = false;
     contentLibrary = [];
     contentDrawer = null;
     deleteDialog = null;

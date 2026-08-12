@@ -5436,6 +5436,7 @@ function initAppShell() {
     { id: "ai-video-remake", icon: "AI", title: "AI Video Remake Studio", route: "/davinci-resolve/ai-video-remake", description: "Remix video gốc, thay nhân vật, tạo video từ yêu cầu và điều phối storyboard theo từng cảnh bằng AI." },
     { id: "batch", icon: "BV", title: "Batch Video Factory", route: "/davinci-resolve/batch", description: "Dùng một sườn để trộn CSV, ảnh và video rồi render hàng loạt MP4/WebM với hàng đợi thật." },
     { id: "image-text", icon: "TX", title: "Text on Image Studio", route: "/davinci-resolve/image-text", description: "Chèn chữ nhanh vào 1.000+ ảnh, preview theo trang, font quốc tế, preset tối giản và xuất batch thumbnail YouTube 16:9." },
+    { id: "youtube-batch", icon: "YB", title: "YouTube Batch Publisher", route: "/davinci-resolve/youtube-batch", description: "Chọn cả thư mục video, ghép thumbnail/sidecar, tạo metadata AI, chia lịch và upload hàng loạt tới nhiều kênh." },
     { id: "youtube", icon: "YT", title: "YouTube Creator Galaxy", route: "/davinci-resolve/youtube", description: "14 trung tâm YouTube dùng dữ liệu thật: OAuth, đa tài khoản/kênh, Analytics, upload, thumbnail, metadata, Shorts, caption, Community, Live và preflight." },
     { id: "facebook", icon: "FB", title: "Facebook Page Command Center", route: "/davinci-resolve/facebook", description: "Kết nối và quản lý nhiều Facebook Page qua Meta Graph API: đăng/lên lịch, bình luận, insights và Batch Page Setup." }
   ];
@@ -6043,6 +6044,7 @@ function initAppShell() {
     document.body.classList.toggle("app-davinci-resolve-route", route === "/davinci-resolve" || route.startsWith("/davinci-resolve/"));
     document.body.classList.toggle("app-ai-video-remake-route", route === "/davinci-resolve/ai-video-remake");
     document.body.classList.toggle("app-image-text-route", route === "/davinci-resolve/image-text");
+    document.body.classList.toggle("app-youtube-batch-route", route === "/davinci-resolve/youtube-batch");
     document.body.classList.toggle("app-facebook-page-route", route === "/davinci-resolve/facebook");
     document.body.classList.toggle("app-comic-motion-route", route === "/comic-motion-studio");
     document.body.classList.toggle("app-comic-reader-route", route === "/comic-reader");
@@ -6351,7 +6353,7 @@ function initAppShell() {
       const resolveView = parts[1] || "davinci";
       const resolvePage = davinciResolvePages.find((item) => item.id === resolveView) || davinciResolvePages[0];
       updatePageHeader(
-        resolvePage.id === "davinci" ? "Tool · DaVinci Resolve" : resolvePage.id === "youtube" ? "Tool · YouTube Creator Galaxy" : `Tool · ${resolvePage.title}`,
+        resolvePage.id === "davinci" ? "Tool · DaVinci Resolve" : resolvePage.id === "youtube" ? "Tool · YouTube Creator Galaxy" : resolvePage.id === "youtube-batch" ? "Tool · YouTube Batch Publisher" : `Tool · ${resolvePage.title}`,
         resolvePage.description,
         route,
         resolvePage
@@ -6366,7 +6368,7 @@ function initAppShell() {
       window.HHImageTextStudio?.unmount?.();
       window.HHFacebookPageCommandCenter?.unmount?.();
       window.HHAIVideoRemakeStudio?.unmount?.();
-      if (resolveView === "youtube") window.HHYouTubeCreatorGalaxy?.mount(resolveHost, { view: resolveView });
+      if (resolveView === "youtube" || resolveView === "youtube-batch") window.HHYouTubeCreatorGalaxy?.mount(resolveHost, { view: resolveView });
       else if (resolveView === "batch") window.HHVideoBatchFactory?.mount(resolveHost);
       else if (resolveView === "cosmic") window.HHCosmicWebStudio?.mount(resolveHost);
       else if (resolveView === "image-text") window.HHImageTextStudio?.mount(resolveHost);
@@ -6647,6 +6649,7 @@ function initAppShell() {
     const comicMotion = [
       { type: "Sản xuất video AI", title: "AI Video Remake Studio", description: "Remix video gốc, thay nhân vật, tạo video theo yêu cầu và điều phối storyboard theo từng cảnh.", route: "/davinci-resolve/ai-video-remake", key: "tool ai video remake studio video remix thay nhân vật character replacement motion transfer tạo video prompt tiếng việt ai director storyboard veo gemini wan render queue" },
       { type: "Sản xuất hình ảnh", title: "Text on Image Studio", description: "Chèn chữ hàng loạt vào 1.000+ ảnh, font quốc tế, preview nhanh và xuất thumbnail YouTube 16:9.", route: "/davinci-resolve/image-text", key: "tool text on image studio chèn chữ ảnh hàng loạt batch thumbnail youtube font quốc tế preview folder zip 1280 720 1920 1080 4k" },
+      { type: "YouTube", title: "YouTube Batch Publisher", description: "Chọn thư mục video, ghép thumbnail và sidecar, tự tạo metadata, lập lịch rồi upload resumable hàng loạt tới nhiều kênh.", route: "/davinci-resolve/youtube-batch", key: "tool youtube batch publisher folder upload hàng loạt nhiều kênh title mô tả tags thumbnail lịch đăng resumable private oauth" },
       { type: "Mạng xã hội", title: "Facebook Page Command Center", description: "Quản lý nhiều Facebook Page thật qua Meta Graph API, đăng/lên lịch, bình luận, insights và chuẩn bị Page hàng loạt.", route: "/davinci-resolve/facebook", key: "tool facebook meta page manager command center bulk page setup oauth graph api schedule post comments insights multi page" },
       { type: "Đọc truyện", title: "HH Comics", description: "Kho truyện online một trang với tìm kiếm, thể loại, theo dõi, lịch sử, chi tiết truyện, reader cuộn dọc/từng trang và import CBZ/JSON/API.", route: "/comic-reader", key: "đọc truyện online hh comics manga manhwa manhua webtoon catalog chapter reader theo dõi lịch sử cbz zip json api licensed" },
       { type: "Sản xuất video", title: "Comic Motion Studio", description: "Biến ảnh truyện được cấp phép từ ảnh, folder, ZIP, CBZ, PDF hoặc URL đã xác minh thành video có voice, camera, nhạc và phụ đề.", route: "/comic-motion-studio", key: "comic motion studio truyện tranh ảnh panel speech bubble voice tts timeline subtitle zip cbz pdf website bản quyền" }
