@@ -30,5 +30,12 @@
   async function disconnect(connectionId) { if (!connectionId) throw new Error("Chưa chọn tài khoản TikTok."); return request("connection/disconnect", { method: "POST", body: { connectionId } }); }
   async function profile(connectionId) { return request("profile", { query: { connectionId } }); }
   async function videos(connectionId, limit = 20) { return request("videos", { method: "GET", query: { connectionId, limit } }); }
-  global.HHTikTokCreatorConnections = Object.freeze({ request, normalizeConnection, status, connect, select, disconnect, profile, videos });
+  async function creative(input, actionType = "tiktok-script", meta = {}) {
+    const url = new URL(`${apiOrigin()}/api/modules/tiktok-creator/actions`);
+    const response = await fetch(url, { method: "POST", headers: authHeaders(), credentials: "include", cache: "no-store", body: JSON.stringify({ input, actionType, meta: { provider: "auto", allowProviderFallback: true, ...meta } }) });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data?.ok) { const error = new Error(data.error || `Creative AI HTTP ${response.status}`); error.status = response.status; error.code = data.code || "TIKTOK_CREATIVE_ERROR"; throw error; }
+    return data.action || data;
+  }
+  global.HHTikTokCreatorConnections = Object.freeze({ request, normalizeConnection, status, connect, select, disconnect, profile, videos, creative });
 })(window);

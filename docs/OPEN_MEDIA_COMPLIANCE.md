@@ -128,6 +128,13 @@ is not proof of rights.
 
 - Wikimedia Commons: verify the individual file page; do not rely on category
   membership alone.
+- GitHub: a repository license for source code does not automatically license
+  audio. Accept only an official creator repository that explicitly applies an
+  allowlisted Creative Commons license to its original music. Pin playback to a
+  reviewed commit, store the license blob/revision and a per-file Git blob ID,
+  then hash the downloaded bytes. Exclude covers, arrangements, remixes, and
+  any track whose underlying composition may belong to somebody else. Dataset
+  and aggregator repositories are discovery-only.
 - Blender Open Movies: verify the official film page and retain the full credit
   roll when distributing the complete film.
 - Library of Congress, NARA, and other U.S. government collections: record the
@@ -140,6 +147,14 @@ is not proof of rights.
 - FMA and Musopen: curated/manual intake only.
 - Jamendo and other commercial catalogs: disabled until a written agreement
   explicitly covers the HH website use case.
+
+The current GitHub intake is `tannerhelland/free-music` at commit
+`f6bfe16f49feab2181075ab86b13b24740592aa6`. Its author states that the music is
+original and released under CC BY 4.0. HH publishes only the reviewed original
+titles in its manifest and keeps direct TASL attribution. Run
+`node scripts/verify-open-music-media.js` during revalidation; use `--write`
+only after separately confirming that the pinned source and rights evidence
+remain valid.
 
 ## Production checklist
 

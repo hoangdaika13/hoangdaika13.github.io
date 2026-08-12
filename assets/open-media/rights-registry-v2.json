@@ -6,8 +6,8 @@
   "legalNotice": "Đây là hồ sơ vận hành nhằm giảm rủi ro, không phải bảo đảm rằng sẽ không phát sinh khiếu nại và không thay thế tư vấn pháp lý.",
   "catalogSnapshot": {
     "films": 24,
-    "tracks": 20,
-    "total": 44,
+    "tracks": 55,
+    "total": 79,
     "quarantineFilms": 6,
     "sourceManifests": [
       "/assets/open-media/curated-films-v1.json",
@@ -43,8 +43,19 @@
       "All Rights Reserved"
     ],
     "requiredLayers": {
-      "film": ["master", "soundtrack", "poster", "subtitles", "privacyPublicity"],
-      "track": ["composition", "performance", "masterRecording", "artwork"]
+      "film": [
+        "master",
+        "soundtrack",
+        "poster",
+        "subtitles",
+        "privacyPublicity"
+      ],
+      "track": [
+        "composition",
+        "performance",
+        "masterRecording",
+        "artwork"
+      ]
     },
     "publicationStatuses": [
       "discovered",
@@ -108,6 +119,12 @@
       "mode": "disabled-without-written-commercial-agreement",
       "risk": "blocked",
       "note": "Không bật trên website thương mại nếu chưa có thỏa thuận bằng văn bản."
+    },
+    {
+      "provider": "GitHub",
+      "mode": "official-author-repository-fixed-commit-only",
+      "risk": "medium",
+      "note": "Only original tracks in the creator official repository: explicit audio license, commit-pinned playback and per-file Git blob evidence. Aggregator repositories remain discovery-only."
     }
   ],
   "quarantineItems": [
@@ -118,7 +135,9 @@
       "reviewStatus": "quarantine",
       "rightsBasis": "public-domain-mark",
       "jurisdiction": "US",
-      "territories": ["US"],
+      "territories": [
+        "US"
+      ],
       "reasonCode": "territorial-public-domain-unresolved",
       "reason": "Tình trạng tại Hoa Kỳ chưa tự động chứng minh quyền phát hành trên toàn thế giới.",
       "requiredLayers": {
@@ -138,7 +157,9 @@
       "reviewStatus": "quarantine",
       "rightsBasis": "public-domain-mark",
       "jurisdiction": "US",
-      "territories": ["US"],
+      "territories": [
+        "US"
+      ],
       "reasonCode": "government-and-territory-review-required",
       "reason": "Cần xác minh Rights Advisory, chủ thể tạo tác phẩm và phạm vi ngoài Hoa Kỳ.",
       "requiredLayers": {
@@ -201,7 +222,13 @@
       "territories": [],
       "reasonCode": "worldwide-public-domain-basis-missing",
       "reason": "Kết luận trước chỉ áp dụng cho Việt Nam và một số lãnh thổ, không đáp ứng chính sách WORLDWIDE mới.",
-      "requiredLayers": {"master": "manual-review", "soundtrack": "not-applicable", "poster": "manual-review", "subtitles": "not-applicable", "privacyPublicity": "manual-review"},
+      "requiredLayers": {
+        "master": "manual-review",
+        "soundtrack": "not-applicable",
+        "poster": "manual-review",
+        "subtitles": "not-applicable",
+        "privacyPublicity": "manual-review"
+      },
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Le_Voyage_dans_la_lune_(black_and_white,_1902).webm",
       "action": "Chỉ khôi phục khi có kết luận quyền WORLDWIDE bằng văn bản và rà lại đúng bản master."
     },
@@ -215,7 +242,13 @@
       "territories": [],
       "reasonCode": "worldwide-film-and-intertitle-basis-missing",
       "reason": "Chưa có kết luận quyền WORLDWIDE đồng nhất cho phim gốc, bản master và thẻ tiêu đề tiếng Anh năm 1947.",
-      "requiredLayers": {"master": "manual-review", "soundtrack": "not-applicable", "poster": "manual-review", "subtitles": "manual-review", "privacyPublicity": "manual-review"},
+      "requiredLayers": {
+        "master": "manual-review",
+        "soundtrack": "not-applicable",
+        "poster": "manual-review",
+        "subtitles": "manual-review",
+        "privacyPublicity": "manual-review"
+      },
       "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nosferatu_(1922,_English_titles_1947).webm",
       "action": "Chỉ khôi phục khi hồ sơ WORLDWIDE bao phủ riêng master, intertitles và mọi lớp phát hành."
     }
@@ -223,8 +256,36 @@
   "complaints": {
     "endpoint": "/api/open-media/notices",
     "publicEmail": "nhhoang130803@gmail.com",
-    "acceptedTypes": ["copyright", "privacy-publicity", "trademark", "license-metadata", "other"],
+    "acceptedTypes": [
+      "copyright",
+      "privacy-publicity",
+      "trademark",
+      "license-metadata",
+      "other"
+    ],
     "automaticRestoration": false,
     "preserveEvidenceOnTakedown": true
-  }
+  },
+  "catalogSources": [
+    {
+      "id": "github-tanner-free-music",
+      "provider": "GitHub",
+      "repository": "tannerhelland/free-music",
+      "repositoryUrl": "https://github.com/tannerhelland/free-music",
+      "commit": "f6bfe16f49feab2181075ab86b13b24740592aa6",
+      "licenseEvidenceUrl": "https://github.com/tannerhelland/free-music/blob/master/LICENSE.md",
+      "licenseEvidenceBlobSha": "d8d9916839d3598bb9c53160899c141295223c50",
+      "licenseCode": "CC-BY-4.0",
+      "verifiedAt": "2026-08-12",
+      "tracksPublished": 35,
+      "publicationDecision": "approved-per-track",
+      "excludedPatterns": [
+        "arrangement",
+        "remix of",
+        "cover",
+        "third-party composition"
+      ],
+      "note": "License Pack must retain track title, Tanner Helland, source URL, CC BY 4.0 and a modification notice when applicable."
+    }
+  ]
 }

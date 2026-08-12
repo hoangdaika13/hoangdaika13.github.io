@@ -96,13 +96,13 @@
       styles: [
         "video-editor-studio.css?v=4", "video-editor-resolve.css?v=8",
         "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=4", "video-editor-auto.css?v=1", "h-cosmic-web-studio.css?v=2",
-        "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=22", "image-text-studio.css?v=12", "facebook-page-command-center.css?v=4", "tiktok-creator-galaxy.css?v=1"
+        "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=22", "image-text-studio.css?v=12", "facebook-page-command-center.css?v=4", "tiktok-creator-galaxy.css?v=2"
       ],
       scripts: [
         "media-design-studio.js?v=1", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
         "video-editor-resolve.js?v=10", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1", "h-cosmic-web-studio.js?v=3",
-        "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=27", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=12", "facebook-page-command-center.js?v=4", "services/tiktokCreatorCore.js?v=1", "services/tiktokCreatorConnections.js?v=1", "services/tiktokCreatorPublishing.js?v=1", "services/tiktokCreatorAnalytics.js?v=1", "tiktok-creator-galaxy.js?v=1"
+        "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=27", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=12", "facebook-page-command-center.js?v=4", "services/tiktokCreatorCore.js?v=2", "services/tiktokCreatorConnections.js?v=2", "services/tiktokCreatorPublishing.js?v=2", "services/tiktokCreatorAnalytics.js?v=2", "tiktok-creator-galaxy.js?v=2"
       ]
     },
     "ai-video-remake": {
@@ -174,8 +174,8 @@
       scripts: ["utils/open-media-rights.js?v=4", "cinema-hub.js?v=6"]
     },
     "open-music": {
-      styles: ["open-music-hub.css?v=4"],
-      scripts: ["utils/open-media-rights.js?v=4", "vendor/jszip.min.js?v=3.10.1", "open-music-hub.js?v=3"]
+      styles: ["open-music-hub.css?v=5"],
+      scripts: ["utils/open-media-rights.js?v=4", "vendor/jszip.min.js?v=3.10.1", "open-music-hub.js?v=4"]
     },
     "open-media-governance": {
       styles: ["open-media-governance.css?v=1"],

@@ -1,7 +1,7 @@
 (function initHHOpenMusicHub(global) {
   "use strict";
 
-  const VERSION = "2.0.0";
+  const VERSION = "2.1.0";
   const MANIFEST_URL = "/assets/open-media/curated-music-v1.json";
   const STORAGE_PREFIX = "hh.open-music-hub.v1";
   const ALLOWED_LICENSE_URLS = Object.freeze({
@@ -51,6 +51,7 @@
     license: "all",
     genre: "all",
     mood: "all",
+    region: "all",
     creatorMode: false,
     currentTrackId: "",
     queue: [],
@@ -80,6 +81,7 @@
     state.license = "all";
     state.genre = "all";
     state.mood = "all";
+    state.region = "all";
     state.creatorMode = false;
     state.currentTrackId = "";
     state.queue = [];
@@ -156,6 +158,7 @@
       state.view = ["discover", "favorites", "history"].includes(value.view) ? value.view : "discover";
       state.currentTrackId = String(value.currentTrackId || "");
       state.mood = String(value.mood || "all");
+      state.region = String(value.region || "all");
       state.queue = Array.isArray(value.queue) ? value.queue.map(String).slice(0, 200) : [];
       state.favorites = new Set(Array.isArray(value.favorites) ? value.favorites.map(String) : []);
       state.history = Array.isArray(value.history) ? value.history.filter((row) => row && row.id).slice(0, MAX_HISTORY) : [];
@@ -178,6 +181,7 @@
         view: state.view,
         currentTrackId: state.currentTrackId,
         mood: state.mood,
+        region: state.region,
         queue: state.queue.slice(0, 200),
         favorites: [...state.favorites],
         history: state.history.slice(0, MAX_HISTORY),
@@ -324,6 +328,9 @@
       album: String(item.album || "Open Music"),
       genres: Array.isArray(item.genres) ? item.genres.map(String).filter(Boolean) : [],
       moods: Array.isArray(item.moods) ? item.moods.map(String).filter(Boolean) : [],
+      region: String(item.region || "Quốc tế"),
+      countryCode: String(item.countryCode || "WORLDWIDE").toUpperCase(),
+      culturalContext: String(item.culturalContext || ""),
       durationSeconds: Math.max(0, Number(item.durationSeconds) || 0),
       featured: Boolean(item.featured),
       colors,
@@ -385,6 +392,10 @@
     return [...new Set(state.tracks.flatMap((track) => track.moods))].sort((a, b) => a.localeCompare(b, "vi"));
   }
 
+  function regions() {
+    return [...new Set(state.tracks.map((track) => track.region).filter(Boolean))].sort((a, b) => a.localeCompare(b, "vi"));
+  }
+
   function filteredTracks() {
     const query = normalizeText(state.query);
     let rows = state.tracks.slice();
@@ -394,13 +405,14 @@
       rows = rows.filter((track) => order.has(track.id)).sort((a, b) => order.get(a.id) - order.get(b.id));
     }
     if (query) {
-      rows = rows.filter((track) => normalizeText([track.title, track.creator, track.album, ...track.genres, ...track.moods].join(" ")).includes(query));
+      rows = rows.filter((track) => normalizeText([track.title, track.creator, track.album, track.region, track.countryCode, track.culturalContext, ...track.genres, ...track.moods].join(" ")).includes(query));
     }
     if (state.license !== "all") {
       rows = rows.filter((track) => state.license === "CC-BY" ? /^CC-BY-\d/.test(track.rights.licenseCode) : track.rights.licenseCode === state.license);
     }
     if (state.genre !== "all") rows = rows.filter((track) => track.genres.includes(state.genre));
     if (state.mood !== "all") rows = rows.filter((track) => track.moods.includes(state.mood));
+    if (state.region !== "all") rows = rows.filter((track) => track.region === state.region);
     if (state.creatorMode) rows = rows.filter(isCreatorReady);
     if (state.view !== "history") {
       rows.sort((a, b) => Number(b.featured) - Number(a.featured) || a.title.localeCompare(b.title, "vi"));
@@ -535,6 +547,12 @@
       const moodOptions = [`<option value="all">Tất cả cảm xúc</option>`, ...moods().map((mood) => `<option value="${escapeHtml(mood)}">${escapeHtml(mood)}</option>`)].join("");
       if (moodSelect.innerHTML !== moodOptions) moodSelect.innerHTML = moodOptions;
       moodSelect.value = moods().includes(state.mood) ? state.mood : "all";
+    }
+    const regionSelect = root.querySelector("[data-omh-region]");
+    if (regionSelect) {
+      const regionOptions = [`<option value="all">Tất cả khu vực</option>`, ...regions().map((region) => `<option value="${escapeHtml(region)}">${escapeHtml(region)}</option>`)].join("");
+      if (regionSelect.innerHTML !== regionOptions) regionSelect.innerHTML = regionOptions;
+      regionSelect.value = regions().includes(state.region) ? state.region : "all";
     }
     const creatorMode = root.querySelector('[data-action="creator-mode"]');
     if (creatorMode) {
@@ -1034,6 +1052,7 @@
     state.license = "all";
     state.genre = "all";
     state.mood = "all";
+    state.region = "all";
     state.creatorMode = false;
     if (state.view !== "discover") state.view = "discover";
     renderAll();
@@ -1175,6 +1194,9 @@
       renderLibrary();
     } else if (event.target.matches("[data-omh-mood]")) {
       state.mood = event.target.value;
+      renderLibrary();
+    } else if (event.target.matches("[data-omh-region]")) {
+      state.region = event.target.value;
       renderLibrary();
     } else if (event.target.matches("[data-omh-crossfade]")) {
       const value = Number(event.target.value);
@@ -1363,6 +1385,7 @@
           <label><span class="sr-only">Giấy phép</span><select data-omh-license aria-label="Lọc theo giấy phép"><option value="all">Mọi giấy phép</option><option value="CC0-1.0">CC0</option><option value="PDM-1.0">Public Domain</option><option value="CC-BY">CC BY</option><option value="CC-BY-SA-4.0">CC BY-SA</option></select></label>
           <label><span class="sr-only">Thể loại</span><select data-omh-genre aria-label="Lọc theo thể loại"><option value="all">Tất cả thể loại</option></select></label>
           <label><span class="sr-only">Cảm xúc</span><select data-omh-mood aria-label="Lọc theo cảm xúc"><option value="all">Tất cả cảm xúc</option></select></label>
+          <label><span class="sr-only">Khu vực</span><select data-omh-region aria-label="Lọc theo khu vực"><option value="all">Tất cả khu vực</option></select></label>
         </div>
         <button type="button" class="omh-creator-mode" data-action="creator-mode" aria-pressed="false" title="Chỉ hiện nhạc đủ quyền dùng trong video"><span>✦</span> Creator</button>
         <button type="button" class="omh-queue-toggle" data-action="queue-toggle" aria-label="Mở hàng đợi">☷ <span data-omh-queue-count>0</span></button>
@@ -1494,6 +1517,7 @@
       license: state.license,
       genre: state.genre,
       mood: state.mood,
+      region: state.region,
       creatorMode: state.creatorMode,
       creatorReadyCount: state.tracks.filter(isCreatorReady).length,
       rightsRegistryOnline: state.rightsRegistryOnline,

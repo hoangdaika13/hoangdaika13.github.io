@@ -22,7 +22,7 @@ function loadMusicInternals() {
 test("open music catalog contains only explicitly allowed commercial licenses", () => {
   const allowed = new Set(["CC0-1.0", "PDM-1.0", "CC-BY-3.0", "CC-BY-4.0", "CC-BY-SA-3.0", "CC-BY-SA-4.0"]);
   assert.equal(manifest.manifestVersion, 2);
-  assert.equal(manifest.items.length, 20);
+  assert.equal(manifest.items.length, 55);
   assert.equal(new Set(manifest.items.map((item) => item.id)).size, manifest.items.length);
   assert.deepEqual([...new Set(manifest.items.map((item) => item.rights.licenseCode))].sort(), ["CC-BY-3.0", "CC-BY-4.0", "CC-BY-SA-4.0", "CC0-1.0", "PDM-1.0"]);
   for (const item of manifest.items) {
@@ -32,11 +32,11 @@ test("open music catalog contains only explicitly allowed commercial licenses", 
     assert.equal(item.rights.commercialAllowed, true);
     assert.equal(item.rights.derivativesAllowed, true);
     assert.match(item.rights.verifiedAt, /^\d{4}-\d{2}-\d{2}$/);
-    assert.match(item.rights.attributionText, /Wikimedia Commons/);
+    assert.match(item.rights.attributionText, /(?:Wikimedia Commons|github\.com\/tannerhelland\/free-music)/);
     assert.match(item.rights.licenseUrl, /^https:\/\/creativecommons\.org\//);
-    assert.match(item.source.landingUrl, /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/);
-    assert.match(item.playback.url, /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/transcoded\//);
-    assert.match(item.playback.fallbackUrl, /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\//);
+    assert.match(item.source.landingUrl, /^https:\/\/(?:commons\.wikimedia\.org\/wiki\/File:|github\.com\/tannerhelland\/free-music\/blob\/master\/mp3\/)/);
+    assert.match(item.playback.url, /^https:\/\/(?:upload\.wikimedia\.org\/wikipedia\/commons\/transcoded\/|github\.com\/tannerhelland\/free-music\/raw\/)/);
+    assert.match(item.playback.fallbackUrl, /^https:\/\/(?:upload\.wikimedia\.org\/wikipedia\/commons\/|github\.com\/tannerhelland\/free-music\/blob\/master\/mp3\/)/);
     assert.ok(Number(item.durationSeconds) > 0);
     assert.ok(Array.isArray(item.genres) && item.genres.length > 0);
     assert.ok(Array.isArray(item.moods) && item.moods.length > 0);
@@ -57,7 +57,7 @@ test("music module exposes stable mount API and compatibility alias", () => {
   const api = sandbox.window.HHOpenMusicHub;
   assert.ok(api);
   assert.equal(api, sandbox.window.HHMusicLibrary);
-  assert.equal(api.version, "2.0.0");
+  assert.equal(api.version, "2.1.0");
   assert.equal(typeof api.mount, "function");
   assert.equal(typeof api.unmount, "function");
   assert.equal(typeof api.inspect, "function");
@@ -94,7 +94,7 @@ test("player implements real playback, queue and resilient source fallback", () 
   assert.match(source, /queue-remove/);
   assert.match(source, /retryTrackWithFallback/);
   assert.match(source, /track\.playback\.fallbackUrl/);
-  assert.match(source, /Mở nguồn/);
+  assert.match(source, /M\u1edf ngu\u1ed3n/);
 });
 
 test("favorites, history and progress are isolated by authenticated owner", () => {
@@ -164,11 +164,12 @@ test("one-page responsive UI keeps license and source information visible", () =
   const css = read("open-music-hub.css");
   assert.match(source, /omh-license-badge/);
   assert.match(source, /omh-rights-card/);
-  assert.match(source, /Xem giấy phép/);
-  assert.match(source, /Nguồn gốc/);
+  assert.match(source, /Xem gi\u1ea5y ph\u00e9p/);
+  assert.match(source, /Ngu\u1ed3n g\u1ed1c/);
   assert.match(source, /data-omh-search/);
   assert.match(source, /data-omh-license/);
   assert.match(source, /data-omh-genre/);
+  assert.match(source, /data-omh-region/);
   assert.match(css, /height:calc\(100dvh - 112px\)/);
   assert.match(css, /overflow:hidden/);
   assert.match(css, /body\.app-music-library-route \.app-mobile-nav/);
@@ -184,22 +185,56 @@ test("music governance defaults to deny and separates published CC from manual P
   assert.deepEqual(manifest.governance.requiredLayers, ["composition", "performance", "masterRecording", "artwork"]);
   const published = manifest.items.filter((item) => item.rights.reviewStatus === "published");
   const review = manifest.items.filter((item) => item.rights.reviewStatus === "review");
-  assert.equal(published.length, 17);
+  assert.equal(published.length, 52);
   assert.equal(review.length, 3);
   assert.ok(review.every((item) => item.rights.licenseCode === "PDM-1.0"));
   for (const item of manifest.items) {
-    assert.match(item.source.itemId, /^File:/);
+    assert.match(item.source.itemId, /^(?:File:|mp3\/)/);
     assert.equal(typeof item.rights.shareAlike, "boolean");
     assert.equal(item.rights.rehostAllowed, false);
     assert.equal(item.rights.downloadAllowed, false);
     assert.deepEqual(Object.keys(item.rights.layers).sort(), ["artwork", "composition", "masterRecording", "performance"]);
     assert.match(item.rights.evidence.metadataChecksum, /^sha256:[a-f0-9]{64}$/);
-    assert.equal(item.rights.evidence.mediaChecksumStatus, "unavailable");
-    assert.equal(item.rights.evidence.mediaChecksum, null);
-    assert.equal(item.rights.evidence.mediaChecksumAlgorithm, null);
-    assert.equal(item.rights.evidence.checksumScope, "remote-playback");
-    assert.equal(item.rights.evidence.sourceAuthority, "primary-rights-record");
+    if (item.source.provider === "Wikimedia Commons") {
+      assert.equal(item.rights.evidence.mediaChecksumStatus, "unavailable");
+      assert.equal(item.rights.evidence.mediaChecksum, null);
+      assert.equal(item.rights.evidence.mediaChecksumAlgorithm, null);
+      assert.equal(item.rights.evidence.checksumScope, "remote-playback");
+    } else {
+      assert.equal(item.rights.evidence.mediaChecksumStatus, "verified");
+      assert.match(item.rights.evidence.mediaChecksum, /^sha256:[a-f0-9]{64}$/);
+      assert.equal(item.rights.evidence.mediaChecksumAlgorithm, "sha256");
+      assert.equal(item.rights.evidence.checksumScope, "remote-media-bytes");
+    }
+    assert.ok(["primary-rights-record", "official-project-page"].includes(item.rights.evidence.sourceAuthority));
   }
+});
+
+test("GitHub expansion uses only pinned original tracks with repository and byte evidence", () => {
+  const rows = manifest.items.filter((item) => item.source.provider.includes("Tanner Helland Free Music"));
+  assert.equal(rows.length, 35);
+  assert.ok(rows.every((item) => item.rights.licenseCode === "CC-BY-4.0"));
+  assert.ok(rows.every((item) => item.rights.reviewStatus === "published"));
+  assert.ok(rows.every((item) => item.source.repositoryCommit === "f6bfe16f49feab2181075ab86b13b24740592aa6"));
+  assert.ok(rows.every((item) => /^https:\/\/github\.com\/tannerhelland\/free-music\/raw\/f6bfe16f49feab2181075ab86b13b24740592aa6\//.test(item.playback.url)));
+  assert.ok(rows.every((item) => /^sha256:[a-f0-9]{64}$/.test(item.rights.evidence.mediaChecksum)));
+  assert.ok(rows.every((item) => /^sha1:[a-f0-9]{40}$/.test(`sha1:${item.rights.evidence.sourceMetadataSnapshot.gitBlobSha1}`)));
+  assert.ok(rows.every((item) => item.rights.evidence.sourceMetadataSnapshot.licenseEvidenceUrl === "https://github.com/tannerhelland/free-music/blob/master/LICENSE.md"));
+  assert.ok(rows.every((item) => item.region && item.countryCode && item.culturalContext));
+  assert.doesNotMatch(rows.map((item) => item.title).join("\n"), /arrangement|remix of|cover/i);
+});
+
+test("region metadata covers multiple world areas and is searchable in the player", () => {
+  const regions = new Set(manifest.items.map((item) => item.region));
+  for (const expected of ["Bắc Mỹ", "Châu Âu", "Châu Đại Dương", "Nam Á", "Đông Nam Á", "Quốc tế"]) {
+    assert.ok(regions.has(expected), expected);
+  }
+  assert.ok(manifest.items.every((item) => item.countryCode && item.culturalContext));
+  const source = read("open-music-hub.js");
+  assert.match(source, /track\.region/);
+  assert.match(source, /track\.countryCode/);
+  assert.match(source, /data-omh-region/);
+  assert.match(source, /function regions\(\)/);
 });
 
 test("Creator Mode and License Pack require real layered rights and preserve TASL evidence", () => {

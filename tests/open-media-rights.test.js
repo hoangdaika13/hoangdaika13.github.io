@@ -109,3 +109,22 @@ test("curated film and music manifests contain only publishable licensed items",
     }
   }
 });
+
+test("open music catalog stores origin filters and pinned GitHub rights evidence", () => {
+  const music = readManifest("curated-music-v1.json");
+  assert.ok(music.items.length >= 55);
+  assert.ok(music.items.every((item) => typeof item.region === "string" && item.region.length > 0));
+  assert.ok(music.items.every((item) => typeof item.countryCode === "string" && item.countryCode.length > 0));
+  const github = music.items.filter((item) => item.source.provider === "GitHub - Tanner Helland Free Music");
+  assert.equal(github.length, 35);
+  for (const item of github) {
+    const result = rights.validateGovernanceItem(item);
+    assert.equal(result.publiclyAvailable, true, `${item.id}: ${result.errors.join(", ")}`);
+    assert.match(item.source.repositoryCommit, /^[a-f0-9]{40}$/);
+    assert.match(item.rights.evidence.mediaChecksum, /^sha256:[a-f0-9]{64}$/);
+    assert.equal(item.rights.evidence.mediaChecksumStatus, "verified");
+    assert.equal(item.rights.evidence.sourceAuthority, "official-project-page");
+    assert.equal(item.rights.rehostAllowed, false);
+    assert.equal(item.rights.downloadAllowed, false);
+  }
+});

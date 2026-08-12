@@ -95,17 +95,35 @@
         row = [];
       } else field += character;
     }
+    if (quoted) throw new Error("CSV có dấu ngoặc kép chưa đóng.");
     row.push(field.trim()); if (row.some((cell) => cell !== "")) rows.push(row);
     if (!rows.length) return [];
-    const header = rows[0].map((cell, index) => cleanId(cell || `column-${index + 1}`));
-    return rows.slice(1).map((cells) => Object.fromEntries(header.map((key, index) => [key, cells[index] ?? ""]))).slice(0, 1000);
+    const seen = new Map();
+    const header = rows[0].map((cell, index) => { const base = cleanId(cell || `column-${index + 1}`); const count = (seen.get(base) || 0) + 1; seen.set(base, count); return count === 1 ? base : `${base}-${count}`; });
+    return sanitizeRows(rows.slice(1).map((cells) => Object.fromEntries(header.map((key, index) => [key, cells[index] ?? ""]))));
+  }
+  function sanitizeRows(rows, maxRows = 1000, maxTotalChars = 1500000) {
+    const output = []; let total = 0;
+    for (const row of (Array.isArray(rows) ? rows : []).slice(0, maxRows)) {
+      if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+      const safe = {};
+      for (const [rawKey, rawValue] of Object.entries(row).slice(0, 50)) {
+        const key = cleanId(rawKey); let value;
+        try { value = rawValue && typeof rawValue === "object" ? JSON.stringify(rawValue) : String(rawValue ?? ""); } catch { value = "[Không thể đọc]"; }
+        value = value.slice(0, 2000); if (total + key.length + value.length > maxTotalChars) break;
+        safe[key] = value; total += key.length + value.length;
+      }
+      if (Object.keys(safe).length) output.push(safe);
+      if (total >= maxTotalChars) break;
+    }
+    return output;
   }
   function parseImport(text, filename = "") {
     if (/\.json$/i.test(filename) || /^[\s\r\n]*[\[{]/.test(String(text))) {
       const parsed = JSON.parse(text);
       const rows = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.rows) ? parsed.rows : Array.isArray(parsed.items) ? parsed.items : []);
       if (!rows.length) throw new Error("JSON phải là mảng hoặc có trường rows/items.");
-      return rows.filter((row) => row && typeof row === "object").slice(0, 1000);
+      return sanitizeRows(rows);
     }
     const firstLine = String(text).split(/\r?\n/, 1)[0] || "";
     return parseDelimited(text, (firstLine.match(/\t/g) || []).length > (firstLine.match(/,/g) || []).length ? "\t" : ",");
@@ -152,7 +170,14 @@
     return { id: `script-${Date.now()}`, topic, duration: seconds, tone, audience, hook: `Nếu chỉ có ${seconds} giây để hiểu ${topic}, hãy bắt đầu từ đây.`, voiceover: `Bạn muốn ${topic} nhưng chưa biết bắt đầu ở đâu? Đây là cách ngắn gọn dành cho ${audience}. Tập trung vào một bước nhỏ, cho thấy kết quả thật và kết thúc bằng hành động rõ ràng.`, caption: `${topic} — phiên bản ${tone}, ngắn gọn và có thể áp dụng ngay.`, cta: "Lưu video để thực hành và chia sẻ trải nghiệm của bạn.", shots: steps, aigc: true, source: "local-deterministic" };
   }
   function formatBytes(value) { const bytes = Number(value || 0); if (!bytes) return "0 B"; const unit = Math.min(3, Math.floor(Math.log(bytes) / Math.log(1024))); return `${(bytes / (1024 ** unit)).toFixed(unit ? 1 : 0)} ${["B", "KB", "MB", "GB"][unit]}`; }
+  function toCsv(rows) {
+    const items = Array.isArray(rows) ? rows.filter((row) => row && typeof row === "object") : [];
+    if (!items.length) return "";
+    const headers = [...new Set(items.flatMap((row) => Object.keys(row)))];
+    const quote = (value) => { const raw = String(value ?? ""); const safe = /^\s*[=+\-@]/.test(raw) ? `'${raw}` : raw; return `"${safe.replace(/"/g, '""')}"`; };
+    return `\uFEFF${headers.map(quote).join(",")}\r\n${items.map((row) => headers.map((key) => quote(row[key])).join(",")).join("\r\n")}`;
+  }
   function download(name, content, type = "text/plain;charset=utf-8") { const blob = content instanceof Blob ? content : new Blob([content], { type }); const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = name; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
-  global.HHTikTokCreatorCore = Object.freeze({ VERSION, STORAGE_PREFIX, STATUS, HUBS, WORKSPACES, OFFICIAL_LINKS, escapeHtml, cleanId, currentOwnerId, storageKey, defaultState, loadState, saveState, parseDelimited, parseImport, parseSubtitles, subtitlesToSrt, subtitlesToVtt, tokenize, buildSeoBrief, buildScript, formatBytes, download });
+  global.HHTikTokCreatorCore = Object.freeze({ VERSION, STORAGE_PREFIX, STATUS, HUBS, WORKSPACES, OFFICIAL_LINKS, escapeHtml, cleanId, currentOwnerId, storageKey, defaultState, loadState, saveState, parseDelimited, sanitizeRows, parseImport, parseSubtitles, subtitlesToSrt, subtitlesToVtt, tokenize, buildSeoBrief, buildScript, formatBytes, toCsv, download });
 })(window);

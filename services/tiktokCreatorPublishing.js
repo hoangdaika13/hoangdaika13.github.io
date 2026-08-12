@@ -47,6 +47,7 @@
     if (!payload.confirmed) errors.push("Chưa đồng ý truyền nội dung tới TikTok.");
     if (direct && payload.commercialContent && !payload.ownBrand && !payload.brandedContent) errors.push("Nội dung thương mại phải chọn Thương hiệu của tôi, Nội dung tài trợ hoặc cả hai.");
     if (direct && payload.brandedContent && payload.privacyLevel === "SELF_ONLY") errors.push("Nội dung tài trợ không được đặt quyền riêng tư Chỉ mình tôi.");
+    if (direct && payload.brandedContent && !payload.brandedPolicyConfirmed) errors.push("Nội dung tài trợ phải xác nhận TikTok Branded Content Policy.");
     ["commentEnabled", "duetEnabled", "stitchEnabled"].forEach((field) => {
       if (payload[field] !== true && payload[field] !== false) errors.push(`${field} phải là lựa chọn boolean rõ ràng.`);
     });

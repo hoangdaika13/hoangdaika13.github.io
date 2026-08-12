@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v572";
+const CACHE = "hh-identity-portal-v573";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -7,7 +7,7 @@ const CACHE = "hh-identity-portal-v572";
 // AI Video Remake upgrade compatibility: script.js?v=172 performance-loader.js?v=249 performance-loader.js?v=250 performance-loader.js?v=251 hh-identity-portal-v517 hh-identity-portal-v518 hh-identity-portal-v519 ai-video-remake-studio.css?v=1 ai-video-remake-studio.css?v=2 ai-video-remake-studio.js?v=1
 // Graphic Design Universal compatibility aliases: graphic-design-universal.css?v=1 graphic-design-universal.js?v=1
 // Entertainment v4 compatibility aliases: ./game-center.css?v=4 ./game-center.js?v=4
-// Open Media upgrade compatibility: hh-identity-portal-v527 ./performance-loader.js?v=259 ./script.js?v=176 ./script.js?v=172 ./auth-neon-gateway.js?v=14 ./auth-h-galaxy.js?v=5 ./home-galaxy-command.js?v=8
+// Open Media upgrade compatibility: hh-identity-portal-v527 hh-identity-portal-v543 ./performance-loader.js?v=259 ./script.js?v=176 ./script.js?v=172 ./auth-neon-gateway.js?v=14 ./auth-h-galaxy.js?v=5 ./home-galaxy-command.js?v=8 ./open-music-hub.css?v=4 ./open-music-hub.js?v=3
 // YouTube Batch compatibility: ./script.js?v=179 ./performance-loader.js?v=272 ./youtube-creator-galaxy.css?v=20 ./youtube-creator-galaxy.js?v=24 ./home-galaxy-command.css?v=9
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
 // learning-suite.css?v=2 learning-home.css?v=2 learning-paths.css?v=2 learning-review.css?v=2 learning-lesson-player.css?v=2 learning-coach-labs.css?v=2 learning-classroom.css?v=2 learning-platform-core.js?v=2 learning-home.js?v=2 learning-paths.js?v=2 learning-review.js?v=2 learning-lesson-player.js?v=2 learning-coach-labs.js?v=2 learning-classroom.js?v=2 learning-suite.js?v=2
@@ -56,7 +56,7 @@ const RUNTIME_ASSETS = [
   "./comic-motion-studio.css?v=6",
   "./comic-reader-hub.css?v=13",
   "./cinema-hub.css?v=5",
-  "./open-music-hub.css?v=4",
+  "./open-music-hub.css?v=5",
   "./open-media-governance.css?v=1",
   "./video-editor-resolve.css?v=8",
   "./davinci-resolve-hub.css?v=4",
@@ -65,7 +65,7 @@ const RUNTIME_ASSETS = [
   "./youtube-creator-galaxy.css?v=22",
   "./image-text-studio.css?v=12",
   "./facebook-page-command-center.css?v=4",
-  "./tiktok-creator-galaxy.css?v=1",
+  "./tiktok-creator-galaxy.css?v=2",
   "./ai-video-remake-studio.css?v=3",
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=2",
@@ -112,18 +112,18 @@ const RUNTIME_ASSETS = [
   "./youtube-creator-galaxy.js?v=27",
   "./image-text-studio.js?v=12",
   "./facebook-page-command-center.js?v=4",
-  "./services/tiktokCreatorCore.js?v=1",
-  "./services/tiktokCreatorConnections.js?v=1",
-  "./services/tiktokCreatorPublishing.js?v=1",
-  "./services/tiktokCreatorAnalytics.js?v=1",
-  "./tiktok-creator-galaxy.js?v=1",
+  "./services/tiktokCreatorCore.js?v=2",
+  "./services/tiktokCreatorConnections.js?v=2",
+  "./services/tiktokCreatorPublishing.js?v=2",
+  "./services/tiktokCreatorAnalytics.js?v=2",
+  "./tiktok-creator-galaxy.js?v=2",
   "./ai-video-remake-studio.js?v=2",
   "./comic-motion-studio.js?v=10",
   "./comic-open-source-catalog.js?v=2",
   "./comic-reader-hub.js?v=19",
   "./utils/open-media-rights.js?v=4",
   "./cinema-hub.js?v=6",
-  "./open-music-hub.js?v=3",
+  "./open-music-hub.js?v=4",
   "./open-media-governance.js?v=1",
   "./assets/open-media/curated-films-v1.json",
   "./assets/open-media/curated-music-v1.json",
@@ -487,7 +487,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=301",
+  "./performance-loader.js?v=302",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=16",
   "./script.js?v=181"

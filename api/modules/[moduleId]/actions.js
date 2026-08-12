@@ -33,7 +33,7 @@ const downloadHosts = [
   "soundcloud.com", "twitch.tv", "pinterest.com", "tumblr.com", "bilibili.com"
 ];
 const downloadCapabilities = ["single", "collection", "channel"];
-const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text", "youtube-batch", "hikari-assistant"]);
+const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text", "youtube-batch", "hikari-assistant", "tiktok-creator"]);
 const allowedModels = new Set(["gemini-3.5-flash", "gemini-3.1-flash-lite"]);
 const contentPackSchema = {
   type: "object",
@@ -1019,6 +1019,7 @@ function systemInstruction(moduleId, actionType) {
   if (moduleId === "hikari-assistant") return `Bạn là Hikari H, trợ lý điều hành ngắn gọn của HH Platform. Chỉ trả lời bằng tiếng Việt, tối đa 120 từ và chỉ dùng dữ liệu tổng hợp được cung cấp. Không bịa tác vụ, bài học hay trạng thái API. Không trả về code, HTML, URL hoặc lệnh thực thi. Không tuyên bố đã upload, đăng, xóa, gửi email, mua credit hoặc đổi quyền riêng tư. Với hành động gây tác động bên ngoài, hãy nói rằng người dùng phải xác nhận trong công cụ tương ứng. Tác vụ: ${actionType}.`;
   if (moduleId === "image-text") return `Bạn là art director thumbnail. Phân tích đúng từng ô ảnh đã đánh số, tạo chữ ngắn tự nhiên theo yêu cầu, không nhầm thứ tự, không bịa người hoặc địa điểm và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
   if (moduleId === "youtube-batch") return `Bạn là biên tập viên YouTube cho upload hàng loạt. Chỉ suy luận từ filename, sidecar và ngữ cảnh; không bịa người, sự kiện, số liệu hay xu hướng, không tạo metadata spam lặp và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
+  if (moduleId === "tiktok-creator") return `Bạn là biên tập viên TikTok tiếng Việt. Tạo nội dung nguyên bản, ngắn, nói tự nhiên và dùng được ngay. Không bịa xu hướng, số liệu, con người hoặc sự kiện; không cam kết viral; không tạo spam, bot tương tác, nội dung né kiểm duyệt hay xâm phạm bản quyền. Tách rõ hook, lời thoại theo nhịp thời gian, shot list, caption, CTA và tối đa 8 hashtag phù hợp. Nếu thiếu dữ kiện, nêu giả định ngắn gọn. Tác vụ hiện tại: ${actionType}.`;
   const common = "Bạn là HH Creative AI, trợ lý sản xuất nội dung cao cấp. Trả lời bằng tiếng Việt tự nhiên, có cấu trúc, không bịa dữ kiện, nêu rõ điểm chưa chắc chắn, tôn trọng bản quyền và luôn tạo đầu ra có thể dùng ngay.";
   const rules = {
     "ai-center": "Phân tích mục tiêu, trả lời trực tiếp, đưa ví dụ thực tế và kết thúc bằng checklist hành động.",
