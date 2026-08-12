@@ -15,3 +15,10 @@ assets/astral-realms/weapons/models/*.uncompressed.glb
 !.env.example
 __pycache__/
 *.pyc
+*.blend1
+character_generator/output/*
+!character_generator/output/.gitkeep
+assets/character-3d/astra-h08/output/*
+!assets/character-3d/astra-h08/output/.gitkeep
+!assets/character-3d/astra-h08/output/ASTRA_H08.pending.json
+assets/character-3d/orion-h09/

@@ -1,0 +1,9 @@
+Use case: stylized-concept
+Asset type: original 3D-character production sheet for HH Platform
+Primary request: Astra H-08, an original coral-haired Vietnamese-inspired anime science-fiction heroine, designed as a realtime avatar concept without copying any existing character.
+Views: front, back, left/right profile, three-quarter, neutral standing/A-pose, face close-up, hands, boots and accessories.
+Expressions: neutral, happy, sad, angry, surprised, thinking, speaking and sleepy.
+Palette: coral hair; ivory, graphite and crimson layered armor; restrained cyan emissive accents.
+Constraints: one consistent face, costume and body proportion across every view; simple studio sheet; original H emblem; no third-party names, logos or recognizable costume motifs; concept art only, not a 3D model.
+
+Generated with the built-in ImageGen workflow on 2026-08-12.

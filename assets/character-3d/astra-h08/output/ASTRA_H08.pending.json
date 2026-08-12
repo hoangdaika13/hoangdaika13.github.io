@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "character": "Astra H-08",
+  "status": "build-pending",
+  "generatedAt": "2026-08-12T14:49:59.917182+00:00",
+  "approvedForRelease": false,
+  "reason": "Visual QA blocks release export (rejected-needs-iteration). ASTRA_H08.glb/FBX were not written.",
+  "qa": {
+    "status": "rejected-needs-iteration",
+    "approvedForNextPhase": false,
+    "approvedForRelease": false
+  },
+  "outputsWritten": []
+}

@@ -1,0 +1,36 @@
+{
+  "vertices": 54104,
+  "edges": 108208,
+  "faces": 54104,
+  "triangles": 108208,
+  "body_objects": 1,
+  "feature_objects": 15,
+  "non_manifold_edges": 0,
+  "connected_components": 1,
+  "height_m": 1.7,
+  "head_height_m": 0.222,
+  "head_units": 7.658,
+  "shoulder_width_m": 0.4056,
+  "waist_width_m": 0.2918,
+  "hip_width_m": 0.3724,
+  "hand_digit_count": 10,
+  "foot_count": 2,
+  "foot_length_m": 0.2925,
+  "qa_iterations": 5,
+  "waist_to_shoulder": 0.719,
+  "hip_to_shoulder": 0.918,
+  "continuous_body": true,
+  "external_model_used": false,
+  "renders": [
+    "C:\\Users\\Admin\\Documents\\HTML\\site-latest\\character_generator\\output\\body_front.png",
+    "C:\\Users\\Admin\\Documents\\HTML\\site-latest\\character_generator\\output\\body_side.png",
+    "C:\\Users\\Admin\\Documents\\HTML\\site-latest\\character_generator\\output\\body_back.png",
+    "C:\\Users\\Admin\\Documents\\HTML\\site-latest\\character_generator\\output\\body_34.png"
+  ],
+  "detail_renders": [
+    "C:\\Users\\Admin\\Documents\\HTML\\site-latest\\character_generator\\output\\body_face_closeup.png",
+    "C:\\Users\\Admin\\Documents\\HTML\\site-latest\\character_generator\\output\\body_hand_closeup.png",
+    "C:\\Users\\Admin\\Documents\\HTML\\site-latest\\character_generator\\output\\body_foot_closeup.png"
+  ],
+  "blend": "C:\\Users\\Admin\\Documents\\HTML\\site-latest\\character_generator\\output\\HUMAN_BASE.blend"
+}

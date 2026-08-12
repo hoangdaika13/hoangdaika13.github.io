@@ -5443,6 +5443,7 @@ function initAppShell() {
   ];
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/home", items: ["command-center"] },
+    { id: "character-3d", label: "Nhân vật 3D", icon: "3D", accent: "#ff718a", route: "/character-3d", items: [] },
     { id: "create", label: "Sáng tạo", icon: "✦", accent: "#ff5dc8", route: "/create", items: [], studioItems: creativeStudioItems },
     {
       id: "music-ai",
@@ -5880,6 +5881,7 @@ function initAppShell() {
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
     const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Game", "game-center": "Game Center", "astral-realms": "HH Astral Realms", "astra-hh": "ASTRA MMO RPG", arcade: "Arcade Galaxy", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "16 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    crumbLabels["character-3d"] = "Nhân vật 3D";
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
     let crumbRoute = "";
@@ -6067,6 +6069,7 @@ function initAppShell() {
     document.body.classList.toggle("app-creative-os-route", isCreativeOSRoute(route));
     document.body.classList.toggle("app-creative-route", route === "/create" || route.startsWith("/create/"));
     document.body.classList.toggle("app-music-ai-route", route === "/music-ai" || route.startsWith("/music-ai/"));
+    document.body.classList.toggle("app-character-3d-route", route === "/character-3d" || route.startsWith("/character-3d/"));
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) {
       window.HHDeveloperTools?.cleanup?.();
       window.HHDevProSuite?.cleanup?.();
@@ -6108,6 +6111,7 @@ function initAppShell() {
     }
     if (route !== "/graphic-design" && !route.startsWith("/graphic-design/")) window.HHGraphicDesign?.unmount?.();
     if (!isCreativeOSRoute(route)) window.HHCreativeOS?.unmount?.();
+    if (route !== "/character-3d" && !route.startsWith("/character-3d/")) window.HHCharacter3DStudio?.unmount?.();
     setUser();
     renderNavigation();
     requestAnimationFrame(() => {
@@ -6126,6 +6130,16 @@ function initAppShell() {
       updatePageHeader("Trang chủ", "Bắt đầu với các công cụ phù hợp cho công việc của bạn.", route);
       workspace.replaceChildren(dashboardHome);
       updateDashboard();
+    } else if (route === "/character-3d" || route.startsWith("/character-3d/")) {
+      updatePageHeader("Nhân vật 3D", "Studio avatar anime 3D nguyên bản: điều khiển WebGL, animation, biểu cảm, giọng nữ tiếng Việt, import GLB/VRM, chụp PNG, ghi video và quản lý quyền asset.", route);
+      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment/astral-realms">Astral Realms</button><button type="button" data-app-route="/davinci-resolve/ai-video-remake">AI Video</button><button class="app-primary-action" type="button" data-character-3d-quick-capture>Chụp PNG</button>`;
+      workspace.innerHTML = '<div data-character-3d-studio-host></div>';
+      if (window.HHCharacter3DStudio?.mount) window.HHCharacter3DStudio.mount(workspace.firstElementChild, {
+        currentUser: readCurrentAuthUser(),
+        navigate: (nextRoute) => { location.hash = `#${nextRoute}`; }
+      });
+      else mountSimpleView("Nhân vật 3D", "Đang khởi tạo viewport WebGL và thư viện nhân vật...", "");
+      remember("character-3d");
     } else if (route === "/work" || workGalaxyPageItems.some((item) => item.route === route)) {
       const workView = route === "/work" ? "mission-control" : parts[1];
       const workPage = workGalaxyPageItems.find((item) => item.id === workView) || workGalaxyPageItems[0];
@@ -6660,6 +6674,13 @@ function initAppShell() {
     ];
     modules.unshift(
       ...comicMotion,
+      {
+        type: "Studio 3D",
+        title: "Nhân vật 3D",
+        description: "Tạo và điều khiển avatar anime 3D nguyên bản, animation, biểu cảm, giọng nữ tiếng Việt, PNG, video và project có kiểm tra giấy phép.",
+        route: "/character-3d",
+        key: "nhân vật 3d character avatar astra h08 anime vrm glb animation lip sync tiếng việt png video mocap rights license threejs"
+      },
       {
         type: "Bản quyền",
         title: "Bản quyền & giấy phép",

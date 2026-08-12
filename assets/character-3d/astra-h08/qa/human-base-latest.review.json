@@ -1,0 +1,49 @@
+{
+    "version":  8,
+    "reviewedAt":  "2026-08-12",
+    "reviewer":  "independent visual QA",
+    "status":  "rejected-needs-iteration",
+    "approvedForNextPhase":  false,
+    "technicalChecks":  {
+                            "continuousBody":  true,
+                            "connectedComponents":  1,
+                            "nonManifoldEdges":  0,
+                            "external3DModelUsed":  false,
+                            "blenderBackgroundBuild":  "passed"
+                        },
+    "visualChecks":  {
+                         "recognizableFemaleHumanoid":  true,
+                         "matchesReferenceSilhouette":  false,
+                         "front":  "Silhouette and waist/hip ratio improved; limb control curves are smoother, but the torso remains mannequin-like and the reference match is not yet close.",
+                         "side":  "Breast root is integrated into the torso and foot length/instep improved; head, thorax, glute, knee and foot anatomy remain below character-quality.",
+                         "back":  "Waist and hip flow are clearer, but scapular, gluteal fold, hamstring and calf planes remain insufficient.",
+                         "threeQuarter":  "The continuous body is cleaner, but shoulder seams, pelvis/perineum, hand and foot forms still read procedurally.",
+                         "shoulderFlow":  "Arm spline and width improved; a deltoid cap seam and weak clavicle/axilla definition remain.",
+                         "torsoPelvisFlow":  "Chest is no longer made from detached button masses and the central pelvis no longer self-intersects, but inguinal/perineal anatomy still fails close visual inspection.",
+                         "handsAndFingers":  "All five digits are present and separated, but palm, thumb web, knuckles and digit thickness still require a dedicated anatomical pass.",
+                         "feet":  "Foot now has a longer toe box and a defined instep/heel profile; arch, ball and ankle transition still look soft and blob-like.",
+                         "face":  "The dedicated close-up confirms the face is not close to the anime reference: head is broad/boxy, eyes are small and protruding, lids/brows are rigid strips, nose has an open triangular underside, lips float as a separate oval, and jaw/chin/cheek planes are not sculpted.",
+                         "overall":  "Technical build passes and several silhouette regressions were fixed. Visual QA remains rejected; do not proceed to release/commit."
+                     },
+    "measuredEvidence":  {
+                             "vertices":  54104,
+                             "triangles":  108208,
+                             "height_m":  1.7,
+                             "head_units":  7.658,
+                             "shoulder_width_m":  0.4056,
+                             "waist_width_m":  0.2918,
+                             "hip_width_m":  0.3724,
+                             "foot_length_m":  0.2925,
+                             "renderSetTimestamp":  "2026-08-12T21:52:16.9838316+07:00",
+                             "faceCloseup":  "character_generator/output/body_face_closeup.png"
+                         },
+    "blockingIssues":  [
+                           "Face/head is not close to the authoritative anime reference: rebuild eye sockets and embedding, expressive eye proportions, cheek planes, jaw/chin, nose, lips and side profile.",
+                           "Shoulder/clavicle/axilla flow remains cap-like and too broad, with a visible arm attachment seam.",
+                           "Hip-to-thigh, glute and crotch transitions remain procedural; the perineal/inguinal arch needs continuous anatomy rather than a shelf.",
+                           "Hands have separated digits but still lack natural palm, knuckle and thumb-web anatomy.",
+                           "Feet remain blob-like; heel, arch, ball and toe-box landmarks need a dedicated rebuild.",
+                           "Do not proceed to hair, bodysuit, armor, rig or animation release work until the HUMAN_BASE visual gate is independently approved."
+                       ],
+    "releaseGate":  "Do not start armor/hair/rig release work and do not commit or push the final asset."
+}

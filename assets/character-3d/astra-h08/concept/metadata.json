@@ -1,0 +1,18 @@
+{
+  "assetId": "astra-h08-concept-sheet-v1",
+  "name": "Astra H-08 Character Sheet V1",
+  "kind": "concept-art",
+  "provenance": "AI-assisted original concept commissioned for HH Platform",
+  "status": "concept-only",
+  "notA3DModel": true,
+  "createdAt": "2026-08-12",
+  "authorLabel": "HH Platform / OpenAI ImageGen assisted",
+  "sourcePrompt": "astra-h08-character-sheet-v1.prompt.txt",
+  "rightsReview": "review",
+  "userOwnershipConfirmed": true,
+  "ownershipConfirmedAt": "2026-08-12",
+  "allowedAsGeneratorInput": true,
+  "external3DModelsAllowed": false,
+  "inputPolicy": "This project-owned 2D sheet is the only permitted asset input for the Astra H-08 Blender generator.",
+  "notes": "Do not represent this raster concept sheet as a rigged, retopologized or production-ready 3D asset. Preserve applicable provider terms and project provenance."
+}
