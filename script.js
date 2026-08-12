@@ -5438,7 +5438,8 @@ function initAppShell() {
     { id: "image-text", icon: "TX", title: "Text on Image Studio", route: "/davinci-resolve/image-text", description: "Chèn chữ nhanh vào 1.000+ ảnh, preview theo trang, font quốc tế, preset tối giản và xuất batch thumbnail YouTube 16:9." },
     { id: "youtube-batch", icon: "YB", title: "YouTube Batch Publisher", route: "/davinci-resolve/youtube-batch", description: "Chọn cả thư mục video, ghép thumbnail/sidecar, tạo metadata AI, chia lịch và upload hàng loạt tới nhiều kênh." },
     { id: "youtube", icon: "YT", title: "YouTube Creator Galaxy", route: "/davinci-resolve/youtube", description: "14 trung tâm YouTube dùng dữ liệu thật: OAuth, đa tài khoản/kênh, Analytics, upload, thumbnail, metadata, Shorts, caption, Community, Live và preflight." },
-    { id: "facebook", icon: "FB", title: "Facebook Page Command Center", route: "/davinci-resolve/facebook", description: "Kết nối và quản lý nhiều Facebook Page qua Meta Graph API: đăng/lên lịch, bình luận, insights và Batch Page Setup." }
+    { id: "facebook", icon: "FB", title: "Facebook Page Command Center", route: "/davinci-resolve/facebook", description: "Kết nối và quản lý nhiều Facebook Page qua Meta Graph API: đăng/lên lịch, bình luận, insights và Batch Page Setup." },
+    { id: "tiktok", icon: "TT", title: "TikTok Creator Galaxy", route: "/davinci-resolve/tiktok", description: "18 workspace TikTok compliant: nghiên cứu, sáng tạo video, SEO, analytics, lịch nội bộ, Content Posting, Shop, Ads và API Console." }
   ];
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/home", items: ["command-center"] },
@@ -6076,6 +6077,7 @@ function initAppShell() {
       window.HHYouTubeCreatorGalaxy?.cleanup?.();
       window.HHImageTextStudio?.unmount?.();
       window.HHFacebookPageCommandCenter?.unmount?.();
+      window.HHTikTokCreatorGalaxy?.unmount?.();
     }
     if (route !== "/davinci-resolve/ai-video-remake") window.HHAIVideoRemakeStudio?.unmount?.();
     if (route !== "/comic-motion-studio") window.HHComicMotionStudio?.unmount?.();
@@ -6373,6 +6375,7 @@ function initAppShell() {
       else if (resolveView === "cosmic") window.HHCosmicWebStudio?.mount(resolveHost);
       else if (resolveView === "image-text") window.HHImageTextStudio?.mount(resolveHost);
       else if (resolveView === "facebook") window.HHFacebookPageCommandCenter?.mount(resolveHost);
+      else if (resolveView === "tiktok") window.HHTikTokCreatorGalaxy?.mount(resolveHost);
       else if (resolveView === "ai-video-remake" && window.HHAIVideoRemakeStudio?.mount) {
         window.HHAIVideoRemakeStudio.mount(resolveHost, {
           currentUser: readCurrentAuthUser(),
@@ -6651,6 +6654,7 @@ function initAppShell() {
       { type: "Sản xuất hình ảnh", title: "Text on Image Studio", description: "Chèn chữ hàng loạt vào 1.000+ ảnh, font quốc tế, preview nhanh và xuất thumbnail YouTube 16:9.", route: "/davinci-resolve/image-text", key: "tool text on image studio chèn chữ ảnh hàng loạt batch thumbnail youtube font quốc tế preview folder zip 1280 720 1920 1080 4k" },
       { type: "YouTube", title: "YouTube Batch Publisher", description: "Chọn thư mục video, ghép thumbnail và sidecar, tự tạo metadata, lập lịch rồi upload resumable hàng loạt tới nhiều kênh.", route: "/davinci-resolve/youtube-batch", key: "tool youtube batch publisher folder upload hàng loạt nhiều kênh title mô tả tags thumbnail lịch đăng resumable private oauth" },
       { type: "Mạng xã hội", title: "Facebook Page Command Center", description: "Quản lý nhiều Facebook Page thật qua Meta Graph API, đăng/lên lịch, bình luận, insights và chuẩn bị Page hàng loạt.", route: "/davinci-resolve/facebook", key: "tool facebook meta page manager command center bulk page setup oauth graph api schedule post comments insights multi page" },
+      { type: "Mạng xã hội", title: "TikTok Creator Galaxy", description: "18 workspace TikTok compliant cho nghiên cứu, video, SEO, analytics, lịch nội bộ, Content Posting, Shop, Ads và API.", route: "/davinci-resolve/tiktok", key: "tool tiktok creator galaxy trend seo analytics competitor video ai script subtitle scheduler publisher community shop affiliate product research live ads influencer developer api media utilities" },
       { type: "Đọc truyện", title: "HH Comics", description: "Kho truyện online một trang với tìm kiếm, thể loại, theo dõi, lịch sử, chi tiết truyện, reader cuộn dọc/từng trang và import CBZ/JSON/API.", route: "/comic-reader", key: "đọc truyện online hh comics manga manhwa manhua webtoon catalog chapter reader theo dõi lịch sử cbz zip json api licensed" },
       { type: "Sản xuất video", title: "Comic Motion Studio", description: "Biến ảnh truyện được cấp phép từ ảnh, folder, ZIP, CBZ, PDF hoặc URL đã xác minh thành video có voice, camera, nhạc và phụ đề.", route: "/comic-motion-studio", key: "comic motion studio truyện tranh ảnh panel speech bubble voice tts timeline subtitle zip cbz pdf website bản quyền" }
     ];

@@ -77,6 +77,10 @@
       "destination": "/api/platform/summary?facebookPageManager=1&facebookAction=:facebookAction"
     },
     {
+      "source": "/api/tiktok/:tiktokAction*",
+      "destination": "/api/platform/summary?tiktokCreatorManager=1&tiktokAction=:tiktokAction"
+    },
+    {
       "source": "/api/community-admin",
       "destination": "/api/community?adminRoute=1"
     },

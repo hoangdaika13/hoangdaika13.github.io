@@ -2,6 +2,7 @@ const { clean, currentUser, database, enforceRateLimit, isAdminUser, setCors, wi
 const privacyConsentHandler = require("../../utils/privacy-consent-api");
 const youtubePublisherHandler = require("../../utils/youtubePublisher");
 const facebookPageManagerHandler = require("../../utils/facebookPageManager");
+const tiktokCreatorManagerHandler = require("../../utils/tiktokCreatorManager");
 const metaWebhookHandler = require("../../utils/metaWebhook");
 const { quotaStatus, requireRoles } = require("../../services/apiGateway");
 
@@ -12,7 +13,10 @@ const TELEMETRY_TYPES = new Set(["page_view", "action", "error", "performance", 
 const MAX_JSON_BODY = 64 * 1024;
 
 function hydrateJsonBody(req) {
-  if (req.body !== undefined || !["POST", "PUT", "PATCH", "DELETE"].includes(String(req.method || "").toUpperCase())) return Promise.resolve();
+  if (req.body !== undefined || !["POST", "PUT", "PATCH", "DELETE"].includes(String(req.method || "").toUpperCase())) {
+    if (req.rawBody === undefined && Buffer.isBuffer(req.body)) req.rawBody = req.body;
+    return Promise.resolve();
+  }
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
@@ -25,8 +29,9 @@ function hydrateJsonBody(req) {
     });
     req.on("end", () => {
       try {
-        const raw = Buffer.concat(chunks).toString("utf8");
-        req.body = raw ? JSON.parse(raw) : {};
+        const raw = Buffer.concat(chunks);
+        req.rawBody = raw;
+        req.body = raw.length ? JSON.parse(raw.toString("utf8")) : {};
         resolve();
       } catch {
         reject(Object.assign(new Error("Invalid JSON body"), { statusCode: 400 }));
@@ -206,6 +211,10 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
 
 module.exports = async function handler(req, res) {
   if (String(req.query.facebookWebhook || "") === "1") return metaWebhookHandler(req, res);
+  if (String(req.query.tiktokCreatorManager || "") === "1" && String(req.query.tiktokAction || req.query.action || "") === "webhook") {
+    if (String(req.method || "").toUpperCase() !== "POST") return res.status(405).json({ error: "Method not allowed." });
+    return tiktokCreatorManagerHandler(req, res);
+  }
   try {
     await hydrateJsonBody(req);
   } catch (error) {
@@ -213,6 +222,7 @@ module.exports = async function handler(req, res) {
   }
   if (String(req.query.youtubePublisher || "") === "1") return youtubePublisherHandler(req, res);
   if (String(req.query.facebookPageManager || "") === "1") return facebookPageManagerHandler(req, res);
+  if (String(req.query.tiktokCreatorManager || "") === "1") return tiktokCreatorManagerHandler(req, res);
   if (req.query.privacyRoute === "consent") return privacyConsentHandler(req, res);
   if (req.method === "GET" && req.query.view === "health") {
     setCors(req, res);
