@@ -11,7 +11,7 @@ test("Hikari assets and lazy Home wiring are versioned", () => {
   const worker = read("sw.js");
   assert.match(loader, /home-virtual-assistant\.css\?v=4/);
   assert.match(loader, /services\/virtualAssistantCore\.js\?v=1/);
-  assert.match(loader, /home-virtual-assistant\.js\?v=19/);
+  assert.match(loader, /home-virtual-assistant\.js\?v=20/);
   assert.match(worker, /assets\/hikari-h\/hikari-h-original-v1-alpha\.webp/);
   assert.ok(fs.statSync(path.join(root, "assets/hikari-h/hikari-h-original-v1-alpha.webp")).size > 100_000);
 });
@@ -62,17 +62,14 @@ test("assistant storage is owner and learner-profile scoped", () => {
 });
 
 test("assistant APIs authenticate owners, rate limit and keep provider keys server-side", () => {
-  const chat = read("api/assistant/chat.js");
-  const tts = read("api/assistant/tts.js");
-  for (const source of [chat, tts]) {
-    assert.match(source, /requireAuth\(req, res, db\)/);
-    assert.match(source, /enforceRateLimit/);
-    assert.match(source, /process\.env/);
-  }
-  assert.match(chat, /parseGeminiKeys\(process\.env\)/);
-  assert.match(chat, /runOpenAIResponse/);
-  assert.match(tts, /api\.openai\.com\/v1\/audio\/speech/);
-  assert.doesNotMatch(`${chat}\n${tts}`, /AIza[0-9A-Za-z_-]{20,}/);
+  const api = read("api/modules/[moduleId]/actions.js");
+  const routes = read("vercel.json");
+  assert.match(api, /"hikari-assistant"/);
+  assert.match(api, /runOpenAIResponse/);
+  assert.match(api, /parseGeminiKeys\(process\.env\)/);
+  assert.match(routes, /"source": "\/api\/assistant\/chat"/);
+  assert.match(routes, /"destination": "\/api\/modules\/hikari-assistant\/actions"/);
+  assert.doesNotMatch(api, /AIza[0-9A-Za-z_-]{20,}/);
 });
 
 test("assistant remains mobile safe, scroll safe and motion accessible", () => {

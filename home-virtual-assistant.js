@@ -205,15 +205,15 @@
     const token = global.HHAuthSession?.token?.() || "";
     if (!token) return { reply: "Lệnh này chưa có trong bộ điều khiển local. AI đang ngoại tuyến ở chế độ khách.", provider: "offline" };
     try {
-      const response = await fetch("/api/assistant/chat", {
+      const response = await fetch("/api/modules/hikari-assistant/actions", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ message: input, context: { taskCount: context.taskCount, lessonDue: context.lessonDue, unreadCount: context.unreadCount, online: context.online, apiStatus: context.apiStatus } })
+        body: JSON.stringify({ input: `${input}\n\nDữ liệu tổng hợp đã xác minh: ${JSON.stringify({ taskCount: context.taskCount, lessonDue: context.lessonDue, unreadCount: context.unreadCount, online: context.online, apiStatus: context.apiStatus })}`, actionType: "assistant-chat", meta: { requireProvider: true, allowProviderFallback: true, systemPrompt: "Chỉ trả lời câu hỏi hiện tại; không đưa lệnh hay URL." } })
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "AI không phản hồi.");
-      return { reply: String(data.reply || "AI không trả về nội dung.").slice(0, 900), provider: data.provider || "AI" };
+      return { reply: String(data.action?.output || "AI không trả về nội dung.").slice(0, 900), provider: data.action?.provider || "AI" };
     } catch {
       return { reply: "AI đang ngoại tuyến. Bạn vẫn có thể dùng các lệnh mở công cụ, kiểm tra việc và bài học.", provider: "offline" };
     }

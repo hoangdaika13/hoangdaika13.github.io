@@ -33,7 +33,7 @@ const downloadHosts = [
   "soundcloud.com", "twitch.tv", "pinterest.com", "tumblr.com", "bilibili.com"
 ];
 const downloadCapabilities = ["single", "collection", "channel"];
-const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text", "youtube-batch"]);
+const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text", "youtube-batch", "hikari-assistant"]);
 const allowedModels = new Set(["gemini-3.5-flash", "gemini-3.1-flash-lite"]);
 const contentPackSchema = {
   type: "object",
@@ -1016,6 +1016,7 @@ async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
 }
 
 function systemInstruction(moduleId, actionType) {
+  if (moduleId === "hikari-assistant") return `Bạn là Hikari H, trợ lý điều hành ngắn gọn của HH Platform. Chỉ trả lời bằng tiếng Việt, tối đa 120 từ và chỉ dùng dữ liệu tổng hợp được cung cấp. Không bịa tác vụ, bài học hay trạng thái API. Không trả về code, HTML, URL hoặc lệnh thực thi. Không tuyên bố đã upload, đăng, xóa, gửi email, mua credit hoặc đổi quyền riêng tư. Với hành động gây tác động bên ngoài, hãy nói rằng người dùng phải xác nhận trong công cụ tương ứng. Tác vụ: ${actionType}.`;
   if (moduleId === "image-text") return `Bạn là art director thumbnail. Phân tích đúng từng ô ảnh đã đánh số, tạo chữ ngắn tự nhiên theo yêu cầu, không nhầm thứ tự, không bịa người hoặc địa điểm và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
   if (moduleId === "youtube-batch") return `Bạn là biên tập viên YouTube cho upload hàng loạt. Chỉ suy luận từ filename, sidecar và ngữ cảnh; không bịa người, sự kiện, số liệu hay xu hướng, không tạo metadata spam lặp và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
   const common = "Bạn là HH Creative AI, trợ lý sản xuất nội dung cao cấp. Trả lời bằng tiếng Việt tự nhiên, có cấu trúc, không bịa dữ kiện, nêu rõ điểm chưa chắc chắn, tôn trọng bản quyền và luôn tạo đầu ra có thể dùng ngay.";
@@ -1445,6 +1446,35 @@ module.exports = async function handler(req, res) {
     const moduleId = clean(req.query.moduleId, 120);
     const collection = db.collection("moduleActions");
     const user = await currentUser(req);
+    if (moduleId === "hikari-assistant" && !user?._id) return res.status(401).json({ error: "Bạn cần đăng nhập để dùng AI hoặc Cloud TTS.", code: "AUTH_REQUIRED" });
+    if (moduleId === "hikari-assistant" && req.query.assistantTts === "1") {
+      if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+      if (!user?._id) return res.status(401).json({ error: "Bạn cần đăng nhập để dùng Cloud TTS.", code: "AUTH_REQUIRED" });
+      await enforceRateLimit(db, `hikari-tts:${user._id}`, 30, 15 * 60 * 1000);
+      const apiKey = parseOpenAIKeys(process.env)[0];
+      if (!apiKey) return res.status(503).json({ error: "Cloud TTS chưa được cấu hình; hãy dùng giọng trình duyệt miễn phí.", code: "TTS_NOT_CONFIGURED" });
+      const text = clean(body.text, 900);
+      if (!text) return res.status(400).json({ error: "Nội dung đọc đang trống." });
+      const allowedVoices = new Set(["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse", "marin", "cedar"]);
+      const requestedVoice = clean(body.voice, 30);
+      const voice = allowedVoices.has(requestedVoice) ? requestedVoice : "coral";
+      const speed = Math.min(1.5, Math.max(.65, Number(body.speed) || 1));
+      const response = await fetch("https://api.openai.com/v1/audio/speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({ model: clean(process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts", 80), input: text, voice, instructions: "Speak in natural, warm Vietnamese as a concise futuristic virtual assistant. Do not add words.", response_format: "mp3", speed }),
+        signal: AbortSignal.timeout(25000)
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        return res.status(response.status >= 500 ? 502 : response.status).json({ error: clean(data?.error?.message || `TTS HTTP ${response.status}`, 240) });
+      }
+      const audio = Buffer.from(await response.arrayBuffer());
+      res.setHeader("Content-Type", "audio/mpeg");
+      res.setHeader("Cache-Control", "private, max-age=3600");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      return res.status(200).send(audio);
+    }
     if (moduleId === "comic-reader" && req.query.provider === "mangadex") {
       return handleMangaDexSource(req, res, { db });
     }

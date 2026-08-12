@@ -50,7 +50,7 @@
       scripts: [
         "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=9", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
         "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=11", "home-live-widgets.js?v=6", "home-cosmic-os.js?v=11",
-        "services/virtualAssistantCore.js?v=1", "services/virtualAssistantCommands.js?v=1", "services/virtualAssistantVoice.js?v=1", "services/virtualAssistantCharacter.js?v=1", "home-virtual-assistant.js?v=19"
+        "services/virtualAssistantCore.js?v=1", "services/virtualAssistantCommands.js?v=1", "services/virtualAssistantVoice.js?v=1", "services/virtualAssistantCharacter.js?v=1", "home-virtual-assistant.js?v=20"
       ]
     },
     platform: {

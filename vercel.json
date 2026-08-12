@@ -13,6 +13,14 @@
   ],
   "rewrites": [
     {
+      "source": "/api/assistant/chat",
+      "destination": "/api/modules/hikari-assistant/actions"
+    },
+    {
+      "source": "/api/assistant/tts",
+      "destination": "/api/modules/hikari-assistant/actions?assistantTts=1"
+    },
+    {
       "source": "/api/open-media/:openMediaAction",
       "destination": "/api/store/open-media?openMediaAction=:openMediaAction"
     },

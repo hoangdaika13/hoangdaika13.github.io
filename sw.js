@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v567";
+const CACHE = "hh-identity-portal-v568";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -164,7 +164,7 @@ const RUNTIME_ASSETS = [
   "./services/virtualAssistantCommands.js?v=1",
   "./services/virtualAssistantVoice.js?v=1",
   "./services/virtualAssistantCharacter.js?v=1",
-  "./home-virtual-assistant.js?v=19",
+  "./home-virtual-assistant.js?v=20",
   "./assets/hikari-h/hikari-h-original-v1-alpha.webp",
   "./home-live-widgets.js?v=6",
   "./home-cosmic-os.js?v=11",
@@ -481,7 +481,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=296",
+  "./performance-loader.js?v=297",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=16",
   "./script.js?v=180"
