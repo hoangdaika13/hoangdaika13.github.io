@@ -50,6 +50,15 @@ test("batch metadata, schedules and multi-channel queue remain reviewable", () =
   assert.match(client, /Hãy duyệt nhanh trước khi upload/);
   assert.match(client, /videoIndex \* spacingHours/);
   assert.match(client, /fleetThumbnailVariants\.set\(thumbnailKey, thumbnail\)/);
+  assert.match(client, /runBatchAutomation/);
+  assert.match(client, /approveFleetPublish\(item\.taskKey, \{ automatic: true, silent: true \}\)/);
+  assert.match(client, /retryFleetChannel\(item\.taskKey\)/);
+  assert.match(client, /\["content", "calendar", "queue", "settings"\]/);
+  assert.match(client, /\["content", "Thư mục & đăng"/);
+  assert.match(client, /\["queue", "Tự động"/);
+  assert.match(client, /error\.code === "YOUTUBE_PROCESSING_PENDING"/);
+  assert.match(client, /attempts >= 360/);
+  assert.match(client, /visibilitychange/);
 });
 
 test("server isolates owners and enforces safe bulk limits", () => {

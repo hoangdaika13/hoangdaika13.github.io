@@ -111,6 +111,9 @@
   let batchAiRunning = false;
   let batchAiProgress = { done: 0, total: 0 };
   let batchSchedule = { startAt: "", spacingHours: 24 };
+  let batchAutomationTimer = 0;
+  let batchAutomationRunning = false;
+  const batchAutomationAttempts = new Map();
   const activeUploadRequests = new Map();
   const pausedTaskKeys = new Set();
 
@@ -1537,7 +1540,7 @@
     const estimatedTasks = selectedMatrixTasks(selectedChannels.map((channel) => channel.id)).length;
     const runningTasks = fleetState.results.filter((item) => ["queued", "uploading", "verifying", "thumbnail", "processing"].includes(item.status)).length;
     const unansweredComments = (dashboard?.comments || []).filter((item) => Number(item.replyCount || 0) === 0).length;
-    const tabs = [
+    const studioTabs = [
       ["overview", "Tổng quan", channels.length, "⌂"],
       ["content", "Đăng video", fleetUploadFiles.length, "+"],
       ["calendar", "Lịch đăng", state.calendar.length, "□"],
@@ -1546,6 +1549,12 @@
       ["queue", "Tiến trình", runningTasks, "◷"],
       ["settings", "Cài đặt", channels.length, "⚙"]
     ];
+    const tabs = batchRouteMode ? [
+      ["content", "Thư mục & đăng", fleetUploadFiles.length, "+"],
+      ["calendar", "Lịch", state.calendar.length, "□"],
+      ["queue", "Tự động", runningTasks, "◷"],
+      ["settings", "Kênh & cài đặt", channels.length, "⚙"]
+    ] : studioTabs;
     const channelTable = `<div class="ycg-studio-channel-table"><table><thead><tr><th></th><th>Kênh</th><th>Người đăng ký</th><th>Lượt xem</th><th>Trạng thái</th><th>Đồng bộ</th><th>Quản lý</th></tr></thead><tbody>${filteredChannels.map((channel) => {
       const row = observatoryMap.get(channel.id);
       const ready = channel.permissions?.upload && channel.token?.healthy;
@@ -1575,8 +1584,8 @@
     const uploadDock = `<section class="ycg-upload-action-dock" aria-label="Tải video lên YouTube"><div><strong>${fleetUploadFiles.length} video → ${selectedChannels.length} kênh · ${estimatedTasks} tác vụ</strong><small>${fleetPreflight ? `${fleetPreflight.ready ? "✓ Đã kiểm tra" : "! Cần xử lý trước khi tải"} · ${fmt(fleetPreflight.estimatedQuota)} quota unit ước tính` : "Hệ thống sẽ kiểm tra quyền, token, metadata và lịch trước khi tải."}</small></div><label><input type="checkbox" name="rightsConfirmed" ${fleetState.rightsConfirmed ? "checked" : ""}> Tôi có quyền sử dụng video, nhạc và thumbnail.</label><div><button type="button" data-ycg-action="fleet-preflight">Kiểm tra trước</button><button type="submit" class="is-primary ycg-upload-now" ${uploadReady && !busy.startsWith("bulk/") ? "" : "disabled"}>${uploadActionLabel}</button></div></section>`;
     const advancedMatrix = `<details class="ycg-upload-advanced"><summary><span><strong>Cài đặt nâng cao</strong><small>Lịch, AI, quyền hiển thị và ma trận từng video × kênh</small></span><b>⌄</b></summary><div>${batchMatrixMarkup(selectedChannels, limits)}${overrides}</div></details>`;
     const contentUpload = `<form data-ycg-fleet-form class="ycg-studio-content">${channelPicker}<div class="ycg-content-columns">${videoQueue}${metadataEditor}</div>${uploadDock}${advancedMatrix}</form>`;
-    const content = `${batchWorkspaceBanner()}<div class="ycg-content-mode"><button type="button" data-ycg-content-mode="upload" class="${fleetState.contentMode === "upload" ? "is-active" : ""}">＋ Batch Upload Matrix</button><button type="button" data-ycg-content-mode="manager" class="${fleetState.contentMode === "manager" ? "is-active" : ""}">▤ Content Manager</button><span>${fleetState.contentMode === "upload" ? "Tối đa 10 video/kênh · round-robin queue" : "Xem và chỉnh trực tiếp video thật"}</span></div>${fleetState.contentMode === "manager" ? contentManagerMarkup(channels) : contentUpload}`;
-    const queue = `<section class="ycg-panel ycg-task-center"><header><div><h3>Continuous Channel Queue</h3><small>Round-robin · mỗi kênh một video tại một thời điểm · không upload lại tác vụ thành công</small></div><div><button type="button" data-ycg-action="queue-${queuePaused ? "resume" : "pause"}-all">${queuePaused ? "Tiếp tục tất cả" : "Tạm dừng tất cả"}</button><button type="button" data-ycg-action="fleet-refresh">Làm mới</button></div></header><div class="ycg-task-summary"><span>${fleetState.results.length} tổng</span><span>${fleetState.results.filter((item) => item.status === "uploading").length} đang upload</span><span>${fleetState.results.filter((item) => item.status === "processing").length} YouTube xử lý</span><span>${fleetState.results.filter((item) => item.status === "paused").length} tạm dừng</span><span>${fleetState.results.filter((item) => item.status === "failed").length} lỗi</span></div><div class="ycg-task-table"><table><thead><tr><th>Video</th><th>Kênh</th><th>Batch</th><th>Trạng thái</th><th>Tiến trình</th><th>Tốc độ / ETA</th><th>Hành động</th></tr></thead><tbody>${fleetState.results.map((item) => `<tr><td><strong>${esc(item.fileName || "Video")}</strong><small>${esc(item.videoId || item.checksum || "")}</small></td><td>${esc(item.channelTitle || item.channelId)}</td><td>${item.batchIndex ? `${item.batchIndex}/${item.batchTotal || item.batchIndex}` : "—"}</td><td><span class="ycg-table-status ${item.status === "failed" ? "is-error" : ["uploading", "processing", "verifying", "thumbnail", "paused"].includes(item.status) ? "is-running" : "is-ready"}">${esc(item.status)}</span>${item.error ? `<small>${esc(item.error)}</small>` : ""}</td><td><progress max="100" value="${Number(item.progress || 0)}"></progress><small>${Number(item.progress || 0).toFixed(1)}%</small></td><td>${item.speedBps ? `${bytes(item.speedBps)}/s · ${Math.ceil(item.etaSeconds || 0)}s` : "—"}</td><td>${item.status === "uploading" ? `<button type="button" data-ycg-task-pause="${esc(item.taskKey)}">Tạm dừng</button>` : ["paused", "failed"].includes(item.status) && item.uploadId ? `<button type="button" data-ycg-fleet-retry="${esc(item.taskKey)}">Tiếp tục</button>` : item.status === "uploaded" && item.uploadId ? `<button type="button" data-ycg-fleet-approve="${esc(item.taskKey)}">Duyệt</button>` : ""}${["queued", "uploading", "paused", "failed"].includes(item.status) && item.uploadId ? `<button type="button" class="is-danger" data-ycg-task-cancel="${esc(item.taskKey)}">Hủy</button>` : ""}${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noopener">Mở video</a>` : ""}</td></tr>`).join("") || `<tr><td colspan="7">Chưa có tác vụ. Chọn video và kênh trong tab Đăng video.</td></tr>`}</tbody></table></div></section>`;
+    const content = batchRouteMode ? `${batchWorkspaceBanner()}${contentUpload}` : `${batchWorkspaceBanner()}<div class="ycg-content-mode"><button type="button" data-ycg-content-mode="upload" class="${fleetState.contentMode === "upload" ? "is-active" : ""}">＋ Batch Upload Matrix</button><button type="button" data-ycg-content-mode="manager" class="${fleetState.contentMode === "manager" ? "is-active" : ""}">▤ Content Manager</button><span>${fleetState.contentMode === "upload" ? "Tối đa 10 video/kênh · round-robin queue" : "Xem và chỉnh trực tiếp video thật"}</span></div>${fleetState.contentMode === "manager" ? contentManagerMarkup(channels) : contentUpload}`;
+    const queue = `<section class="ycg-panel ycg-task-center"><header><div><h3>${batchRouteMode ? "Hàng đợi tự động" : "Continuous Channel Queue"}</h3><small>${batchRouteMode ? "Tự tiếp tục lỗi mạng · tự kiểm tra xử lý · tự áp lịch/hiển thị · không upload trùng" : "Round-robin · mỗi kênh một video tại một thời điểm · không upload lại tác vụ thành công"}</small></div><div>${batchRouteMode ? `<span class="ycg-batch-auto-state">${batchAutomationRunning ? "Đang tự xử lý…" : "AUTO ON"}</span>` : `<button type="button" data-ycg-action="queue-${queuePaused ? "resume" : "pause"}-all">${queuePaused ? "Tiếp tục tất cả" : "Tạm dừng tất cả"}</button>`}<button type="button" data-ycg-action="fleet-refresh">Làm mới</button></div></header><div class="ycg-task-summary"><span>${fleetState.results.length} tổng</span><span>${fleetState.results.filter((item) => item.status === "uploading").length} đang upload</span><span>${fleetState.results.filter((item) => item.status === "processing").length} YouTube xử lý</span><span>${fleetState.results.filter((item) => item.status === "paused").length} tạm dừng</span><span>${fleetState.results.filter((item) => item.status === "failed").length} lỗi</span></div><div class="ycg-task-table"><table><thead><tr><th>Video</th><th>Kênh</th><th>Batch</th><th>Trạng thái</th><th>Tiến trình</th><th>Tốc độ / ETA</th><th>Hành động</th></tr></thead><tbody>${fleetState.results.map((item) => `<tr><td><strong>${esc(item.fileName || "Video")}</strong><small>${esc(item.videoId || item.checksum || "")}</small></td><td>${esc(item.channelTitle || item.channelId)}</td><td>${item.batchIndex ? `${item.batchIndex}/${item.batchTotal || item.batchIndex}` : "—"}</td><td><span class="ycg-table-status ${item.status === "failed" ? "is-error" : ["uploading", "processing", "verifying", "thumbnail", "paused", "auto-retrying", "auto-approving"].includes(item.status) ? "is-running" : "is-ready"}">${esc(item.status)}</span>${item.error ? `<small>${esc(item.error)}</small>` : ""}</td><td><progress max="100" value="${Number(item.progress || 0)}"></progress><small>${Number(item.progress || 0).toFixed(1)}%</small></td><td>${item.speedBps ? `${bytes(item.speedBps)}/s · ${Math.ceil(item.etaSeconds || 0)}s` : "—"}</td><td>${batchRouteMode ? (["failed", "paused"].includes(item.status) ? `<span>Đang chờ tự tiếp tục</span>` : item.status === "uploaded" ? `<span>Đang chờ tự duyệt</span>` : "") : item.status === "uploading" ? `<button type="button" data-ycg-task-pause="${esc(item.taskKey)}">Tạm dừng</button>` : ["paused", "failed"].includes(item.status) && item.uploadId ? `<button type="button" data-ycg-fleet-retry="${esc(item.taskKey)}">Tiếp tục</button>` : item.status === "uploaded" && item.uploadId ? `<button type="button" data-ycg-fleet-approve="${esc(item.taskKey)}">Duyệt</button>` : ""}${["queued", "uploading", "paused", "failed"].includes(item.status) && item.uploadId ? `<button type="button" class="is-danger" data-ycg-task-cancel="${esc(item.taskKey)}">Hủy</button>` : ""}${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noopener">Mở video</a>` : ""}</td></tr>`).join("") || `<tr><td colspan="7">Chưa có tác vụ. Chọn video và kênh trong tab Đăng video.</td></tr>`}</tbody></table></div></section>`;
     const studioView = fleetState.studioTab === "content" ? content
       : fleetState.studioTab === "calendar" ? calendarView(true)
         : fleetState.studioTab === "comments" ? commentsView()
@@ -1584,7 +1593,7 @@
             : fleetState.studioTab === "queue" ? queue
               : fleetState.studioTab === "settings" ? channelSettingsMarkup(channels)
                 : overview;
-    return `<div class="ycg-multistudio ${batchRouteMode ? "is-batch-route" : ""}"><section class="ycg-studio-simple-head"><div><small>${batchRouteMode ? "YOUTUBE BATCH PUBLISHER" : "YOUTUBE MULTI-CHANNEL STUDIO"}</small><h2>${batchRouteMode ? "Tự động hóa video từ thư mục máy tính" : "Quản lý nhiều kênh trong một nơi"}</h2><p>${batchRouteMode ? "File vẫn trên thiết bị; upload đi thẳng tới YouTube sau khi bạn duyệt." : "Đăng video, xếp lịch, phản hồi và phân tích mà không rời Studio."}</p></div><div><strong>${selectedChannels.length}</strong><span>kênh đang chọn</span><button type="button" data-ycg-action="connect-creator">+ Thêm kênh</button></div></section><nav class="ycg-studio-tabs" aria-label="Công cụ quản lý kênh">${tabs.map(([id, label, count, icon]) => `<button type="button" data-ycg-fleet-tab="${id}" class="${fleetState.studioTab === id ? "is-active" : ""}"><i>${icon}</i><span>${label}</span><b>${count}</b></button>`).join("")}</nav><div class="ycg-studio-embedded">${studioView}</div></div>`;
+    return `<div class="ycg-multistudio ${batchRouteMode ? "is-batch-route" : ""}"><section class="ycg-studio-simple-head"><div><small>${batchRouteMode ? "YOUTUBE BATCH PUBLISHER" : "YOUTUBE MULTI-CHANNEL STUDIO"}</small><h2>${batchRouteMode ? "Tự động hóa video từ thư mục máy tính" : "Quản lý nhiều kênh trong một nơi"}</h2><p>${batchRouteMode ? "File vẫn trên thiết bị; sau khi bắt đầu, hệ thống tự tiếp tục lỗi mạng và tự áp lịch/hiển thị khi YouTube xử lý xong." : "Đăng video, xếp lịch, phản hồi và phân tích mà không rời Studio."}</p></div><div><strong>${selectedChannels.length}</strong><span>kênh đang chọn</span><button type="button" data-ycg-action="connect-creator">+ Thêm kênh</button></div></section><nav class="ycg-studio-tabs" aria-label="Công cụ quản lý kênh">${tabs.map(([id, label, count, icon]) => `<button type="button" data-ycg-fleet-tab="${id}" class="${fleetState.studioTab === id ? "is-active" : ""}"><i>${icon}</i><span>${label}</span><b>${count}</b></button>`).join("")}</nav><div class="ycg-studio-embedded">${studioView}</div></div>`;
   }
 
   function directorView() {
@@ -2455,6 +2464,7 @@
     else fleetState.results.unshift({ channelId, taskKey, ...patch });
     fleetState.results = fleetState.results.slice(0, 1200);
     saveFleetState();
+    if (batchRouteMode && ["failed", "paused", "uploaded", "processing"].includes(String(patch.status || ""))) scheduleBatchAutomation();
   }
 
   function putFleetChunk(session, file, start, end) {
@@ -2665,17 +2675,68 @@
     }));
   }
 
-  async function approveFleetPublish(taskKey) {
+  async function approveFleetPublish(taskKey, options = {}) {
     const result = fleetState.results.find((item) => (item.taskKey || item.channelId) === taskKey);
     if (!result?.uploadId || !result?.videoId) throw new Error("Kênh này chưa có video đã xử lý để duyệt.");
     const channelId = result.channelId;
     const preset = channelPreset(channelId);
     const target = preset.privacyStatus === "schedule" ? `lên lịch ${dateTime(preset.publishAt)}` : preset.privacyStatus === "unlisted" ? "chuyển Unlisted" : "giữ Private";
-    if (!confirm(`Duyệt video ${result.videoId} và ${target} trên đúng kênh này?`)) return;
+    if (!options.automatic && !confirm(`Duyệt video ${result.videoId} và ${target} trên đúng kênh này?`)) return;
     const approved = await api("bulk/publish/approve", "POST", { uploadId: result.uploadId, approved: true });
     updateFleetResult(channelId, { taskKey, status: approved.status || "approved", error: "" });
     render();
-    return status(`YouTube đã xác nhận: ${target}.`, "success");
+    if (!options.silent) return status(`YouTube đã xác nhận: ${target}.`, "success");
+    return approved;
+  }
+
+  const batchAttemptKey = (action, item) => `${action}:${item.taskKey || item.uploadId || item.channelId}`;
+
+  function scheduleBatchAutomation(delay = 1500) {
+    clearTimeout(batchAutomationTimer);
+    if (!batchRouteMode || !root) return;
+    batchAutomationTimer = setTimeout(() => runBatchAutomation().catch(() => {}), delay);
+  }
+
+  async function runBatchAutomation() {
+    if (!batchRouteMode || batchAutomationRunning || queuePaused || document.hidden) return;
+    batchAutomationRunning = true;
+    try {
+      const retryable = fleetState.results.filter((item) => ["failed", "paused", "auto-retrying"].includes(item.status) && item.uploadId && item.taskKey && fleetFileByFingerprint(item.fingerprint));
+      for (const item of retryable) {
+        const key = batchAttemptKey("retry", item); const attempts = Number(batchAutomationAttempts.get(key) || 0);
+        if (attempts >= 3) continue;
+        batchAutomationAttempts.set(key, attempts + 1);
+        updateFleetResult(item.channelId, { taskKey: item.taskKey, status: "auto-retrying", error: "" }); render();
+        try { await retryFleetChannel(item.taskKey); batchAutomationAttempts.delete(key); }
+        catch (error) { updateFleetResult(item.channelId, { taskKey: item.taskKey, status: "failed", error: error.message }); }
+      }
+      const approvable = fleetState.results.filter((item) => ["uploaded", "processing", "auto-approving"].includes(item.status) && item.uploadId && item.videoId);
+      for (const item of approvable) {
+        const key = batchAttemptKey("approve", item); const attempts = Number(batchAutomationAttempts.get(key) || 0);
+        if (attempts >= 360) continue;
+        batchAutomationAttempts.set(key, attempts + 1);
+        updateFleetResult(item.channelId, { taskKey: item.taskKey, status: "auto-approving", error: "" }); render();
+        try { await approveFleetPublish(item.taskKey, { automatic: true, silent: true }); batchAutomationAttempts.delete(key); }
+        catch (error) {
+          const waiting = error.code === "YOUTUBE_PROCESSING_PENDING";
+          updateFleetResult(item.channelId, { taskKey: item.taskKey, status: waiting ? "processing" : "failed", error: waiting ? "YouTube đang xử lý; hệ thống sẽ tự kiểm tra lại." : error.message });
+        }
+      }
+    } finally {
+      batchAutomationRunning = false;
+      if (root) render();
+      const hasPending = fleetState.results.some((item) => {
+        if (!item.uploadId) return false;
+        if (["failed", "paused", "auto-retrying"].includes(item.status)) {
+          return Boolean(item.taskKey && fleetFileByFingerprint(item.fingerprint)) && Number(batchAutomationAttempts.get(batchAttemptKey("retry", item)) || 0) < 3;
+        }
+        if (["uploaded", "processing", "auto-approving"].includes(item.status)) {
+          return Boolean(item.videoId) && Number(batchAutomationAttempts.get(batchAttemptKey("approve", item)) || 0) < 360;
+        }
+        return false;
+      });
+      if (hasPending) scheduleBatchAutomation(10000);
+    }
   }
 
   async function runFleetPreflight() {
@@ -4533,7 +4594,7 @@
     state = loadState();
     fleetState = loadFleetState();
     const launchTab = consumeLaunchIntent();
-    if (batchRouteMode) { fleetState.studioTab = "content"; fleetState.contentMode = "upload"; }
+    if (batchRouteMode) { fleetState.studioTab = ["content", "calendar", "queue", "settings"].includes(fleetState.studioTab) ? fleetState.studioTab : "content"; fleetState.contentMode = "upload"; }
     else if (launchTab) fleetState.studioTab = launchTab;
     else if (STUDIO_MODULE_TABS[state.active]) fleetState.studioTab = STUDIO_MODULE_TABS[state.active];
     state.active = "fleet";
@@ -4576,6 +4637,9 @@
     }, options);
     window.addEventListener("online", () => refresh(false), options);
     window.addEventListener("offline", render, options);
+    document.addEventListener("visibilitychange", () => {
+      if (batchRouteMode && !document.hidden) scheduleBatchAutomation(500);
+    }, options);
     window.addEventListener("beforeunload", (event) => {
       if (!contentDrawer?.dirty) return;
       event.preventDefault();
@@ -4610,9 +4674,14 @@
     }, options);
     render();
     refresh(true, hasOauthResult);
+    if (batchRouteMode) scheduleBatchAutomation(3000);
   }
 
   function cleanup() {
+    clearTimeout(batchAutomationTimer);
+    batchAutomationTimer = 0;
+    batchAutomationRunning = false;
+    batchAutomationAttempts.clear();
     controller?.abort();
     controller = null;
     if (publisherMounted) window.HHYouTubePublisher?.unmount?.();

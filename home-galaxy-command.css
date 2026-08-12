@@ -1378,6 +1378,29 @@
     .hgc-activity-copy { display: none; }
   }
 
+  /* Home remains a normal scroll surface. The app shell owns the viewport,
+     while .app-main receives mouse-wheel, touchpad and touch scrolling. */
+  .app-main.hgc-main-active {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .app-main.hgc-main-active .app-workspace,
+  .dashboard-home.hgc-active,
+  .dashboard-home.hgc-active > #homeGalaxyCommandRoot {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .dashboard-home.hgc-active > #homeGalaxyCommandRoot,
+  .dashboard-home.hgc-active > #homeGalaxyCommandRoot > .hgc.hgm-active {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
   /* Living Galaxy V2: fifteen domains, real Today signals, progress constellation and cosmic dock. */
   .hgc { display: flex; flex-direction: column; }
   .hgc-space { order: 0; }
@@ -2065,4 +2088,30 @@
     .hgc-v3 .hgc-dock button { min-height: 34px; }
     .hgc-planet-inspector { min-height: 54px; }
   }
+}
+
+/* Scroll contract: keep the application shell fixed, but never trap the Home
+   workspace at one viewport. These final overrides intentionally come after
+   all one-screen and responsive rules. */
+@layer home-scroll-fix {
+body.hgc-home-active .app-main.hgc-main-active {
+  overflow: hidden auto !important;
+  overscroll-behavior-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+body.hgc-home-active .app-main.hgc-main-active .app-workspace,
+body.hgc-home-active .dashboard-home.hgc-active,
+body.hgc-home-active .dashboard-home.hgc-active > #homeGalaxyCommandRoot {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+}
+
+body.hgc-home-active .dashboard-home.hgc-active > #homeGalaxyCommandRoot,
+body.hgc-home-active .dashboard-home.hgc-active > #homeGalaxyCommandRoot > .hgc.hgm-active {
+  max-width: 100%;
+  overflow-x: clip !important;
+}
 }

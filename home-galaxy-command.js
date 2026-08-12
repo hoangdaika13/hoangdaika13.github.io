@@ -920,6 +920,17 @@
   function syncMainState(active = !location.hash || /^#\/home(?:$|[/?])/.test(location.hash)) {
     const main = mountedHome?.closest(".app-main") || document.querySelector(".app-main");
     main?.classList.toggle("hgc-main-active", active);
+    if (main) {
+      if (active) {
+        main.style.setProperty("overflow-x", "hidden", "important");
+        main.style.setProperty("overflow-y", "auto", "important");
+        main.style.setProperty("overscroll-behavior-y", "auto", "important");
+      } else {
+        main.style.removeProperty("overflow-x");
+        main.style.removeProperty("overflow-y");
+        main.style.removeProperty("overscroll-behavior-y");
+      }
+    }
     document.body.classList.toggle("hgc-home-active", active);
   }
 

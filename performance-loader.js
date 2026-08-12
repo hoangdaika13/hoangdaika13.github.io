@@ -23,7 +23,7 @@
     "auth-cosmic-prism-interactions.css?v=2", "auth-cosmic-prism-interactions.js?v=2"
   ]);
 
-  // Compatibility contracts: scripts: ["auth-creative-universe.js?v=5"] home-galaxy-command.js?v=8
+  // Compatibility contracts: scripts: ["auth-creative-universe.js?v=5"] home-galaxy-command.js?v=8 home-galaxy-command.css?v=9
   const groups = Object.freeze({
     "auth-effects": {
       /*
@@ -44,12 +44,12 @@
     },
     "home-enhancements": {
       styles: [
-        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=9", "home-live-widgets.css?v=11", "home-cosmic-os.css?v=3", "home-galaxy-mission.css?v=7", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=11", "home-live-widgets.css?v=11", "home-cosmic-os.css?v=3", "home-galaxy-mission.css?v=7", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
         "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=9", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
-        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=10", "home-live-widgets.js?v=6", "home-cosmic-os.js?v=11"
+        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=11", "home-live-widgets.js?v=6", "home-cosmic-os.js?v=11"
       ]
     },
     platform: {
@@ -95,13 +95,13 @@
       styles: [
         "video-editor-studio.css?v=4", "video-editor-resolve.css?v=8",
         "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=4", "video-editor-auto.css?v=1", "h-cosmic-web-studio.css?v=2",
-        "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=21", "image-text-studio.css?v=12", "facebook-page-command-center.css?v=4"
+        "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=22", "image-text-studio.css?v=12", "facebook-page-command-center.css?v=4"
       ],
       scripts: [
         "media-design-studio.js?v=1", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
         "video-editor-resolve.js?v=10", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1", "h-cosmic-web-studio.js?v=3",
-        "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=26", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=12", "facebook-page-command-center.js?v=4"
+        "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=27", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=12", "facebook-page-command-center.js?v=4"
       ]
     },
     "ai-video-remake": {
