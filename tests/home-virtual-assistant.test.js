@@ -9,10 +9,10 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 test("Hikari assets and lazy Home wiring are versioned", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  assert.match(loader, /home-virtual-assistant\.css\?v=6/);
+  assert.match(loader, /home-virtual-assistant\.css\?v=7/);
   assert.match(loader, /services\/virtualAssistantCore\.js\?v=2/);
-  assert.match(loader, /services\/virtualAssistant3DRenderer\.js\?v=2/);
-  assert.match(loader, /home-virtual-assistant\.js\?v=21/);
+  assert.doesNotMatch(loader, /virtualAssistant3DRenderer/);
+  assert.match(loader, /home-virtual-assistant\.js\?v=22/);
   assert.match(worker, /assets\/hikari-h\/hikari-h-original-v1-alpha\.webp/);
   assert.ok(fs.statSync(path.join(root, "assets/hikari-h/hikari-h-original-v1-alpha.webp")).size > 100_000);
 });
@@ -23,20 +23,20 @@ test("assistant exposes lifecycle, fifteen animation states and licensed fallbac
   for (const marker of ["mount", "unmount", "speak", "listen", "setState", "executeCommand", "open", "close", "minimize"]) assert.match(client, new RegExp(`\\b${marker}\\b`));
   for (const state of ["loading", "appear", "idle", "idle-look-around", "greeting", "listening", "thinking", "speaking", "explaining", "pointing", "celebrating", "warning", "sleeping", "minimized", "goodbye"]) assert.match(character, new RegExp(`"${state}"`));
   assert.match(character, /class CharacterAdapter/);
-  assert.match(character, /procedural-3d/);
-  assert.match(character, /original-2d-fallback/);
+  assert.match(character, /anime-2d-original/);
+  assert.match(character, /hikari-h-original-v1-alpha\.webp/);
   assert.match(character, /requestAnimationFrame/);
   assert.match(character, /document\.hidden/);
   assert.match(character, /removeEventListener\("visibilitychange"/);
 });
 
-test("Hikari uses a real disposable Three.js renderer with human motion layers", () => {
-  const renderer = read("services/virtualAssistant3DRenderer.js");
-  for (const marker of ["WebGLRenderer", "ACESFilmicToneMapping", "hips", "spine", "chest", "head", "jaw", "hairChains", "setState", "lookAt", "setViseme", "setQuality", "dispose"]) assert.match(renderer, new RegExp(marker));
-  assert.match(renderer, /renderer\.forceContextLoss/);
-  assert.match(renderer, /ResizeObserver/);
-  assert.match(renderer, /document\.createElement\("canvas"\)/);
-  assert.doesNotMatch(renderer, /https?:\/\//);
+test("Hikari restores the original anime artwork and removes the 3D canvas", () => {
+  const client = read("home-virtual-assistant.js");
+  const character = read("services/virtualAssistantCharacter.js");
+  assert.match(client, /Hikari nữ anime · ảnh nguyên bản/);
+  assert.match(character, /querySelectorAll\("\.hva-3d-canvas"\)/);
+  assert.match(character, /img\.hidden = false/);
+  assert.doesNotMatch(read("performance-loader.js"), /virtualAssistant3DRenderer/);
 });
 
 test("voice requires explicit user interaction and microphone is never opened on mount", () => {

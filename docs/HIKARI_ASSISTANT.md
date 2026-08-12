@@ -4,12 +4,12 @@ Hikari H is an original HH Platform character and a local-first Home assistant. 
 
 ## Current renderer
 
-`services/virtualAssistant3DRenderer.js` exposes the Three.js renderer used by `CharacterAdapter`. It builds an original procedural humanoid at runtime and provides hierarchical hips/spine/chest/head, arms, hands, legs, eyes and hair. Breathing, center-of-mass shift, blink, gaze, lip motion, gestures and secondary hair motion are updated with delta time. It pauses with the Home lifecycle and explicitly disposes geometry, materials and the WebGL context. The original transparent 2D asset remains the fallback when WebGL is unavailable.
+`services/virtualAssistantCharacter.js` exposes `CharacterAdapter` and displays the original transparent anime artwork in `assets/hikari-h/hikari-h-original-v1-alpha.webp`. Cinematic 2D breathing, blink, gaze, greeting, listening, thinking, speaking, pointing, warning, sleeping and warp states are driven by CSS and the assistant lifecycle. The former procedural WebGL body is intentionally not loaded so it cannot overlap the anime character.
 
 ## Installing a licensed VRM or GLB
 
 1. Obtain a model whose licence explicitly permits the website's commercial/public use, modification and streaming. Save the licence URL, author, licence text and acquisition date.
-2. A future rigged VRM/GLB may replace the procedural body only after its avatar, texture and redistribution licences are recorded. Do not download a random character model.
+2. A future rigged VRM/GLB may replace the artwork only after the user requests it and its avatar, texture and redistribution licences are recorded. Do not download a random character model.
 
 ## Vietnamese voices
 

@@ -23,21 +23,12 @@
     }
 
     async load() {
-      const renderer = global.HHCharacter3DRenderer;
-      if (renderer?.mount) {
-        try {
-          this.renderer = await renderer.mount(this.host, this.options);
-          this.host.dataset.hvaAsset = this.options.modelUrl ? "procedural-3d-ready-for-model" : "procedural-3d";
-          this.host.querySelector("[data-hva-character-image]")?.setAttribute("hidden", "");
-        } catch {
-          this.renderer = null;
-        }
-      }
-      if (!this.renderer) {
-        const img = this.host.querySelector("[data-hva-character-image]");
-        if (img) { img.hidden = false; img.src = this.options.fallbackImage || "assets/hikari-h/hikari-h-original-v1-alpha.webp"; }
-        this.host.dataset.hvaAsset = "original-2d-fallback";
-      }
+      this.renderer?.dispose?.();
+      this.renderer = null;
+      this.host.querySelectorAll(".hva-3d-canvas").forEach((canvas) => canvas.remove());
+      const img = this.host.querySelector("[data-hva-character-image]");
+      if (img) { img.hidden = false; img.src = this.options.fallbackImage || "assets/hikari-h/hikari-h-original-v1-alpha.webp"; }
+      this.host.dataset.hvaAsset = "anime-2d-original";
       this.setState("appear");
       setTimeout(() => this.state === "appear" && this.setState("idle"), 650);
       this.start();
@@ -70,8 +61,7 @@
     }
 
     start() {
-      if (this.hidden || this.frame) return;
-      if (this.quality === "static") { this.renderer?.update?.(1 / 60, { force: true }); return; }
+      if (this.hidden || this.frame || this.quality === "static") return;
       const tick = (now) => {
         this.frame = 0;
         if (this.hidden || !this.host?.isConnected) return;

@@ -39,7 +39,7 @@
           <div class="hva-rim" aria-hidden="true"></div><div class="hva-particles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
           <img data-hva-character-image src="assets/hikari-h/hikari-h-original-v1-alpha.webp" alt="Hikari H, trợ lý khoa học viễn tưởng nguyên bản của HH Platform">
           <span class="hva-eye-glow" aria-hidden="true"></span><span class="hva-mouth" aria-hidden="true"></span><span class="hva-shadow" aria-hidden="true"></span>
-          <small class="hva-model-state" data-hva-model-state>Đang dựng nhân vật 3D nguyên bản</small>
+          <small class="hva-model-state" data-hva-model-state>Hikari nữ anime · ảnh nguyên bản</small>
         </div>
         <div class="hva-dialogue" role="status" aria-live="polite">
           <span class="hva-speaker">H</span><p data-hva-transcript>Hikari đang khởi động...</p>
@@ -127,12 +127,11 @@
     const CharacterAdapter = characterApi().CharacterAdapter;
     character = new CharacterAdapter($("[data-hva-character-host]"), {
       quality: state.quality,
-      modelUrl: "",
       fallbackImage: "assets/hikari-h/hikari-h-original-v1-alpha.webp"
     });
     const asset = await character.load();
     const assetLabel = $("[data-hva-model-state]");
-    if (assetLabel) assetLabel.textContent = asset.startsWith("procedural-3d") ? "Hikari 3D · chuyển động hình người" : "Nhân vật nguyên bản · 2D cinematic fallback";
+    if (assetLabel) assetLabel.textContent = asset === "anime-2d-original" ? "Hikari nữ anime · ảnh nguyên bản" : "Hikari nữ anime · ảnh dự phòng";
     return asset;
   }
 
