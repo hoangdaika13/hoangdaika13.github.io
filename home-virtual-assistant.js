@@ -39,7 +39,7 @@
           <div class="hva-rim" aria-hidden="true"></div><div class="hva-particles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
           <img data-hva-character-image src="assets/hikari-h/hikari-h-original-v1-alpha.webp" alt="Hikari H, trợ lý khoa học viễn tưởng nguyên bản của HH Platform">
           <span class="hva-eye-glow" aria-hidden="true"></span><span class="hva-mouth" aria-hidden="true"></span><span class="hva-shadow" aria-hidden="true"></span>
-          <small class="hva-model-state" data-hva-model-state>Nhân vật nguyên bản · 2D cinematic fallback</small>
+          <small class="hva-model-state" data-hva-model-state>Đang dựng nhân vật 3D nguyên bản</small>
         </div>
         <div class="hva-dialogue" role="status" aria-live="polite">
           <span class="hva-speaker">H</span><p data-hva-transcript>Hikari đang khởi động...</p>
@@ -127,12 +127,12 @@
     const CharacterAdapter = characterApi().CharacterAdapter;
     character = new CharacterAdapter($("[data-hva-character-host]"), {
       quality: state.quality,
-      modelUrl: "assets/hikari-h/hikari-h.vrm",
+      modelUrl: "",
       fallbackImage: "assets/hikari-h/hikari-h-original-v1-alpha.webp"
     });
     const asset = await character.load();
     const assetLabel = $("[data-hva-model-state]");
-    if (assetLabel) assetLabel.textContent = asset === "model-3d" ? "VRM 3D · CharacterAdapter" : "Nhân vật nguyên bản · 2D cinematic fallback";
+    if (assetLabel) assetLabel.textContent = asset.startsWith("procedural-3d") ? "Hikari 3D · chuyển động hình người" : "Nhân vật nguyên bản · 2D cinematic fallback";
     return asset;
   }
 
@@ -188,7 +188,8 @@
       return { spoken: false };
     }
     setCharacterState("speaking");
-    setStatus("Đang nói", state.voiceProvider === "cloud" ? "Cloud TTS" : "Web Speech fallback");
+    const providerLabels = { browser: "Web Speech · tiếng Việt", google: "Google Cloud TTS", openai: "OpenAI TTS", selfhost: "TTS self-host" };
+    setStatus("Đang nói", providerLabels[state.voiceProvider] || "Web Speech fallback");
     $("[data-hva-action='stop-voice']")?.removeAttribute("hidden");
     const result = await voice().speak(text, state, {
       onLip: (value) => character?.lip?.(value),
@@ -197,7 +198,7 @@
     });
     $("[data-hva-action='stop-voice']")?.setAttribute("hidden", "");
     setCharacterState("idle");
-    setStatus("Sẵn sàng", result.provider === "cloud" ? "Cloud TTS" : "Local Assistant");
+    setStatus("Sẵn sàng", providerLabels[result.provider] || "Local Assistant");
     return result;
   }
 
@@ -290,17 +291,26 @@
   }
 
   function settingsMarkup() {
-    const voiceOptions = voice().voices().map((item) => `<option value="${escapeHtml(item.voiceURI)}" ${item.voiceURI === state.voiceURI ? "selected" : ""}>${escapeHtml(item.name)} · ${escapeHtml(item.lang)}</option>`).join("");
+    const voiceOptions = voice().catalog().map((item) => `<option value="${escapeHtml(item.voiceURI)}" ${item.voiceURI === state.voiceURI ? "selected" : ""}>${escapeHtml(item.name)} · ${escapeHtml(item.lang)}${item.gender === "female-estimated" ? " · nữ*" : item.gender === "male-estimated" ? " · nam*" : ""}</option>`).join("");
+    const presets = voice().PRESETS.map((item) => `<option value="${item.id}" ${item.id === state.voicePreset ? "selected" : ""}>${escapeHtml(item.label)}${item.gender === "female" ? " · nữ" : " · nam"}</option>`).join("");
+    const googleVoices = voice().GOOGLE_VOICES.map((item) => `<option value="${item.id}" ${item.id === state.googleVoice ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("");
+    const openaiVoices = voice().OPENAI_VOICES.map((item) => `<option value="${item}" ${item === state.openaiVoice ? "selected" : ""}>${escapeHtml(item)}</option>`).join("");
     return `<div class="hva-settings">
-      <label><span>Nguồn giọng</span><select data-hva-setting="voiceProvider"><option value="browser" ${state.voiceProvider === "browser" ? "selected" : ""}>Trình duyệt · miễn phí</option><option value="cloud" ${state.voiceProvider === "cloud" ? "selected" : ""}>Cloud TTS · cần tài khoản</option></select></label>
-      <label><span>Giọng trình duyệt</span><select data-hva-setting="voiceURI"><option value="">Tự chọn tiếng Việt</option>${voiceOptions}</select></label>
+      <label><span>Phong cách giọng <b>Mặc định nữ Việt</b></span><select data-hva-setting="voicePreset">${presets}</select></label>
+      <label><span>Nguồn giọng</span><select data-hva-setting="voiceProvider"><option value="browser" ${state.voiceProvider === "browser" ? "selected" : ""}>Trình duyệt · miễn phí, không cần khóa</option><option value="google" ${state.voiceProvider === "google" ? "selected" : ""}>Google Cloud · có hạn mức miễn phí, cần billing</option><option value="openai" ${state.voiceProvider === "openai" ? "selected" : ""}>OpenAI · tính phí theo API</option><option value="selfhost" ${state.voiceProvider === "selfhost" ? "selected" : ""}>TTS GitHub self-host · cần máy chủ riêng</option></select></label>
+      <label><span>Giọng trình duyệt <b>* giới tính ước tính theo tên</b></span><select data-hva-setting="voiceURI"><option value="">Tự chọn nữ tiếng Việt tốt nhất</option>${voiceOptions}</select></label>
+      <label><span>Giọng Google Việt Nam</span><select data-hva-setting="googleVoice">${googleVoices}</select></label>
+      <label><span>Giọng OpenAI</span><select data-hva-setting="openaiVoice">${openaiVoices}</select></label>
+      <label><span>Giọng self-host do máy chủ ánh xạ</span><select data-hva-setting="selfhostVoice"><option value="vi-female-1" ${state.selfhostVoice === "vi-female-1" ? "selected" : ""}>Nữ Việt 1 · mặc định</option><option value="vi-female-2" ${state.selfhostVoice === "vi-female-2" ? "selected" : ""}>Nữ Việt 2</option><option value="vi-male-1" ${state.selfhostVoice === "vi-male-1" ? "selected" : ""}>Nam Việt 1</option><option value="vi-male-2" ${state.selfhostVoice === "vi-male-2" ? "selected" : ""}>Nam Việt 2</option></select></label>
+      <button class="hva-preview-voice" type="button" data-hva-action="preview-voice">▶ Nghe thử giọng đã chọn</button>
       <label><span>Tốc độ <b>${state.rate.toFixed(2)}</b></span><input data-hva-setting="rate" type="range" min="0.65" max="1.5" step="0.05" value="${state.rate}"></label>
       <label><span>Cao độ <b>${state.pitch.toFixed(2)}</b></span><input data-hva-setting="pitch" type="range" min="0.7" max="1.5" step="0.05" value="${state.pitch}"></label>
       <label><span>Âm lượng <b>${Math.round(state.volume * 100)}%</b></span><input data-hva-setting="volume" type="range" min="0" max="1" step="0.05" value="${state.volume}"></label>
       <label><span>Chất lượng</span><select data-hva-setting="quality"><option value="static" ${state.quality === "static" ? "selected" : ""}>Tĩnh</option><option value="balanced" ${state.quality === "balanced" ? "selected" : ""}>Cân bằng</option><option value="cinematic" ${state.quality === "cinematic" ? "selected" : ""}>Điện ảnh</option></select></label>
       <label class="hva-switch"><input data-hva-setting="soundEnabled" type="checkbox" ${state.soundEnabled ? "checked" : ""}><span>Âm thanh hiệu ứng</span></label>
       <label class="hva-switch"><input data-hva-setting="animationEnabled" type="checkbox" ${state.animationEnabled ? "checked" : ""}><span>Chuyển động nhân vật</span></label>
-      <p>Dữ liệu gửi AI: câu bạn nhập và bốn số liệu tổng hợp cần thiết. Không gửi token, toàn bộ localStorage hoặc audio thô.</p>
+      <p>Web Speech miễn phí phụ thuộc giọng cài trên thiết bị. Google Cloud có hạn mức miễn phí nhưng yêu cầu bật billing. Self-host chỉ hoạt động sau khi quản trị viên xác minh giấy phép code, model và dữ liệu giọng; không clone giọng nếu chưa có đồng ý rõ ràng.</p>
+      <p>Dữ liệu gửi AI: câu bạn nhập và bốn số liệu tổng hợp cần thiết. Khóa API chỉ nằm trên server; không gửi token, toàn bộ localStorage hoặc audio thô.</p>
     </div>`;
   }
 
@@ -359,6 +369,10 @@
     }
     if (action === "stop-voice") { voice().stop(); character?.lip?.(0); setCharacterState("idle"); return setStatus("Đã dừng giọng nói"); }
     if (action === "listen") return listen();
+    if (action === "preview-voice") {
+      state.voiceEnabled = true; core().save(state);
+      return speak("Xin chào, mình là Hikari. Đây là giọng tiếng Việt bạn vừa chọn.");
+    }
     if (action === "clear-history") { state.history = []; core().save(state); return openDrawer("history"); }
   }
 
@@ -375,8 +389,13 @@
     if (!field) return;
     const key = field.dataset.hvaSetting;
     state[key] = field.type === "checkbox" ? field.checked : (["rate", "pitch", "volume"].includes(key) ? Number(field.value) : field.value);
+    if (key === "voicePreset") {
+      const selected = voice().preset(state.voicePreset);
+      state.rate = selected.rate; state.pitch = selected.pitch;
+      state.googleVoice = selected.googleVoice; state.openaiVoice = selected.openaiVoice;
+    }
     core().save(state);
-    if (key === "quality") { host.dataset.hvaQuality = state.quality; character.quality = state.quality; character.start(); }
+    if (key === "quality") { host.dataset.hvaQuality = state.quality; character.quality = state.quality; character.renderer?.setQuality?.(state.quality); character.start(); }
     if (key === "animationEnabled") host.dataset.hvaAnimation = String(state.animationEnabled);
     openDrawer("settings");
   }

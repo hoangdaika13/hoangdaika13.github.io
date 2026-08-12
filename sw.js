@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v568";
+const CACHE = "hh-identity-portal-v570";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -18,7 +18,7 @@ const RUNTIME_ASSETS = [
   "./app-theme-system.css?v=6",
   "./dashboard-aurora.css?v=4",
   "./home-galaxy-command.css?v=11",
-  "./home-virtual-assistant.css?v=4",
+  "./home-virtual-assistant.css?v=6",
   "./home-live-widgets.css?v=11",
   "./home-cosmic-os.css?v=3",
   "./home-galaxy-mission.css?v=7",
@@ -160,11 +160,12 @@ const RUNTIME_ASSETS = [
   "./music-ai-studio.js?v=9",
   "./dashboard-aurora.js?v=5",
   "./home-galaxy-command.js?v=11",
-  "./services/virtualAssistantCore.js?v=1",
+  "./services/virtualAssistantCore.js?v=2",
   "./services/virtualAssistantCommands.js?v=1",
-  "./services/virtualAssistantVoice.js?v=1",
-  "./services/virtualAssistantCharacter.js?v=1",
-  "./home-virtual-assistant.js?v=20",
+  "./services/virtualAssistantVoice.js?v=2",
+  "./services/virtualAssistant3DRenderer.js?v=2",
+  "./services/virtualAssistantCharacter.js?v=2",
+  "./home-virtual-assistant.js?v=21",
   "./assets/hikari-h/hikari-h-original-v1-alpha.webp",
   "./home-live-widgets.js?v=6",
   "./home-cosmic-os.js?v=11",

@@ -1,7 +1,7 @@
 (function (global) {
   "use strict";
 
-  const VERSION = 1;
+  const VERSION = 2;
   const BASE_KEY = "hh.virtual-assistant.v1";
   const DEFAULTS = Object.freeze({
     open: true,
@@ -9,7 +9,11 @@
     voiceEnabled: false,
     soundEnabled: true,
     voiceProvider: "browser",
+    voicePreset: "hikari-gentle",
     voiceURI: "",
+    googleVoice: "vi-VN-Neural2-A",
+    openaiVoice: "coral",
+    selfhostVoice: "vi-female-1",
     rate: 1,
     pitch: 1.05,
     volume: 0.78,
@@ -46,7 +50,13 @@
       voiceEnabled: saved.voiceEnabled === true,
       soundEnabled: saved.soundEnabled !== false,
       animationEnabled: saved.animationEnabled !== false,
-      voiceProvider: ["browser", "cloud"].includes(saved.voiceProvider) ? saved.voiceProvider : "browser",
+      voiceProvider: saved.voiceProvider === "cloud"
+        ? "openai"
+        : (["browser", "google", "openai", "selfhost"].includes(saved.voiceProvider) ? saved.voiceProvider : "browser"),
+      voicePreset: typeof saved.voicePreset === "string" ? saved.voicePreset : "hikari-gentle",
+      googleVoice: typeof saved.googleVoice === "string" ? saved.googleVoice : "vi-VN-Neural2-A",
+      openaiVoice: typeof saved.openaiVoice === "string" ? saved.openaiVoice : "coral",
+      selfhostVoice: typeof saved.selfhostVoice === "string" ? saved.selfhostVoice : "vi-female-1",
       quality: ["static", "balanced", "cinematic"].includes(saved.quality) ? saved.quality : "balanced",
       rate: Math.min(1.5, Math.max(.65, Number(saved.rate) || 1)),
       pitch: Math.min(1.5, Math.max(.7, Number(saved.pitch) || 1.05)),

@@ -17,19 +17,25 @@
       this.visibilityHandler = () => {
         this.hidden = document.hidden;
         if (!this.hidden) this.start();
-        else cancelAnimationFrame(this.frame);
+        else { cancelAnimationFrame(this.frame); this.frame = 0; }
       };
       document.addEventListener("visibilitychange", this.visibilityHandler);
     }
 
     async load() {
       const renderer = global.HHCharacter3DRenderer;
-      if (this.options.modelUrl && renderer?.mount && /\.(?:vrm|glb)$/i.test(this.options.modelUrl)) {
-        this.renderer = await renderer.mount(this.host, this.options);
-        this.host.dataset.hvaAsset = "model-3d";
-      } else {
+      if (renderer?.mount) {
+        try {
+          this.renderer = await renderer.mount(this.host, this.options);
+          this.host.dataset.hvaAsset = this.options.modelUrl ? "procedural-3d-ready-for-model" : "procedural-3d";
+          this.host.querySelector("[data-hva-character-image]")?.setAttribute("hidden", "");
+        } catch {
+          this.renderer = null;
+        }
+      }
+      if (!this.renderer) {
         const img = this.host.querySelector("[data-hva-character-image]");
-        if (img) img.src = this.options.fallbackImage || "assets/hikari-h/hikari-h-original-v1-alpha.webp";
+        if (img) { img.hidden = false; img.src = this.options.fallbackImage || "assets/hikari-h/hikari-h-original-v1-alpha.webp"; }
         this.host.dataset.hvaAsset = "original-2d-fallback";
       }
       this.setState("appear");
@@ -64,7 +70,8 @@
     }
 
     start() {
-      if (this.hidden || this.frame || this.quality === "static") return;
+      if (this.hidden || this.frame) return;
+      if (this.quality === "static") { this.renderer?.update?.(1 / 60, { force: true }); return; }
       const tick = (now) => {
         this.frame = 0;
         if (this.hidden || !this.host?.isConnected) return;

@@ -1451,20 +1451,58 @@ module.exports = async function handler(req, res) {
       if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
       if (!user?._id) return res.status(401).json({ error: "Bạn cần đăng nhập để dùng Cloud TTS.", code: "AUTH_REQUIRED" });
       await enforceRateLimit(db, `hikari-tts:${user._id}`, 30, 15 * 60 * 1000);
-      const apiKey = parseOpenAIKeys(process.env)[0];
-      if (!apiKey) return res.status(503).json({ error: "Cloud TTS chưa được cấu hình; hãy dùng giọng trình duyệt miễn phí.", code: "TTS_NOT_CONFIGURED" });
       const text = clean(body.text, 900);
       if (!text) return res.status(400).json({ error: "Nội dung đọc đang trống." });
-      const allowedVoices = new Set(["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse", "marin", "cedar"]);
-      const requestedVoice = clean(body.voice, 30);
-      const voice = allowedVoices.has(requestedVoice) ? requestedVoice : "coral";
+      const requestedProvider = clean(body.provider || process.env.HIKARI_TTS_PROVIDER || "openai", 20).toLowerCase();
+      const provider = new Set(["google", "openai", "selfhost"]).has(requestedProvider) ? requestedProvider : "openai";
       const speed = Math.min(1.5, Math.max(.65, Number(body.speed) || 1));
-      const response = await fetch("https://api.openai.com/v1/audio/speech", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({ model: clean(process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts", 80), input: text, voice, instructions: "Speak in natural, warm Vietnamese as a concise futuristic virtual assistant. Do not add words.", response_format: "mp3", speed }),
-        signal: AbortSignal.timeout(25000)
-      });
+      const pitch = Math.min(1.5, Math.max(.7, Number(body.pitch) || 1));
+      let response;
+      if (provider === "google") {
+        const apiKey = clean(process.env.GOOGLE_CLOUD_TTS_API_KEY, 240);
+        if (!apiKey) return res.status(503).json({ error: "Google Cloud TTS chưa được cấu hình. Hãy thêm GOOGLE_CLOUD_TTS_API_KEY ở Vercel hoặc dùng giọng trình duyệt.", code: "TTS_NOT_CONFIGURED" });
+        const allowedGoogleVoices = new Set([
+          "vi-VN-Neural2-A", "vi-VN-Neural2-D", "vi-VN-Wavenet-A", "vi-VN-Wavenet-B", "vi-VN-Wavenet-C", "vi-VN-Wavenet-D",
+          "vi-VN-Standard-A", "vi-VN-Standard-B", "vi-VN-Standard-C", "vi-VN-Standard-D", "vi-VN-Chirp3-HD-Leda",
+          "vi-VN-Chirp3-HD-Pulcherrima", "vi-VN-Chirp3-HD-Sulafat", "vi-VN-Chirp3-HD-Vindemiatrix", "vi-VN-Chirp3-HD-Zephyr"
+        ]);
+        const requestedVoice = clean(body.voice || process.env.HIKARI_GOOGLE_VOICE, 80);
+        const voice = allowedGoogleVoices.has(requestedVoice) ? requestedVoice : "vi-VN-Neural2-A";
+        response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${encodeURIComponent(apiKey)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ input: { text }, voice: { languageCode: "vi-VN", name: voice }, audioConfig: { audioEncoding: "MP3", speakingRate: speed, pitch: Math.round((pitch - 1) * 100) / 10 } }),
+          signal: AbortSignal.timeout(25000)
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const audio = Buffer.from(String(data.audioContent || ""), "base64");
+          if (!audio.length) return res.status(502).json({ error: "Google TTS không trả về âm thanh." });
+          res.setHeader("Content-Type", "audio/mpeg");
+          res.setHeader("Cache-Control", "private, max-age=3600");
+          res.setHeader("X-Hikari-TTS-Provider", "google");
+          res.setHeader("X-Content-Type-Options", "nosniff");
+          return res.status(200).send(audio);
+        }
+      } else if (provider === "selfhost") {
+        const endpoint = clean(process.env.HIKARI_SELFHOST_TTS_URL, 500);
+        if (!/^https:\/\//i.test(endpoint)) return res.status(503).json({ error: "TTS mã nguồn mở self-host chưa được cấu hình bằng HTTPS.", code: "TTS_NOT_CONFIGURED" });
+        const headers = { "Content-Type": "application/json" };
+        if (process.env.HIKARI_SELFHOST_TTS_TOKEN) headers.Authorization = `Bearer ${process.env.HIKARI_SELFHOST_TTS_TOKEN}`;
+        response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify({ text, voice: clean(body.voice || "vi-female-1", 40), speed, format: "mp3" }), signal: AbortSignal.timeout(25000) });
+      } else {
+        const apiKey = parseOpenAIKeys(process.env)[0];
+        if (!apiKey) return res.status(503).json({ error: "OpenAI TTS chưa được cấu hình; hãy dùng giọng trình duyệt miễn phí.", code: "TTS_NOT_CONFIGURED" });
+        const allowedOpenAIVoices = new Set(["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse", "marin", "cedar"]);
+        const requestedVoice = clean(body.voice, 30);
+        const voice = allowedOpenAIVoices.has(requestedVoice) ? requestedVoice : "coral";
+        response = await fetch("https://api.openai.com/v1/audio/speech", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+          body: JSON.stringify({ model: clean(process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts", 80), input: text, voice, instructions: "Speak in natural, warm Vietnamese as a concise futuristic virtual assistant. Do not add words.", response_format: "mp3", speed }),
+          signal: AbortSignal.timeout(25000)
+        });
+      }
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         return res.status(response.status >= 500 ? 502 : response.status).json({ error: clean(data?.error?.message || `TTS HTTP ${response.status}`, 240) });
@@ -1472,6 +1510,7 @@ module.exports = async function handler(req, res) {
       const audio = Buffer.from(await response.arrayBuffer());
       res.setHeader("Content-Type", "audio/mpeg");
       res.setHeader("Cache-Control", "private, max-age=3600");
+      res.setHeader("X-Hikari-TTS-Provider", provider);
       res.setHeader("X-Content-Type-Options", "nosniff");
       return res.status(200).send(audio);
     }
