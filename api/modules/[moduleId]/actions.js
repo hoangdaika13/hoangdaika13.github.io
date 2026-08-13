@@ -26,6 +26,7 @@ const { handleComicSource } = require("../../../utils/comic-source");
 const { handleMangaDexSource } = require("../../../utils/mangadex-source");
 const { handleOTruyenSource } = require("../../../utils/otruyen-source");
 const { handleOpenBooksSource } = require("../../../utils/open-books-source");
+const handleEducation = require("../../../utils/education-handler");
 
 const downloadHosts = [
   "youtube.com", "youtu.be", "tiktok.com", "facebook.com", "fb.watch",
@@ -1440,6 +1441,7 @@ async function runOpenAI(moduleId, actionType, input, meta = {}, safetyIdentifie
 
 module.exports = async function handler(req, res) {
   if (req.query.moduleId === "download-center") return downloadCenterAction(req, res);
+  if (req.query.moduleId === "education") return handleEducation(req, res);
   if (req.query.moduleId === "music-ai" && (req.query.media === "veo" || musicMediaActions.has(clean(req.body?.actionType, 80)))) {
     return musicMediaAction(req, res);
   }

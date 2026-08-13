@@ -54,15 +54,6 @@
     "features": ["Markdown", "Categories", "Tags", "Search", "Bookmark", "Related Articles"]
   },
   {
-    "id": "learning-center",
-    "title": "Learning Center",
-    "status": "dynamic-local",
-    "description": "Khong gian hoc tap gom courses, lessons, progress, quiz, certificates va notes.",
-    "requiresBackend": false,
-    "accent": "#f97316",
-    "features": ["Courses", "Lessons", "Progress", "Quiz", "Certificates", "Notes"]
-  },
-  {
     "id": "community",
     "title": "Community",
     "status": "needs-backend",

@@ -211,13 +211,10 @@
     // Compatibility asset aliases for clients upgrading from Entertainment v4:
     // "game-center.css?v=4" "game-center.js?v=4"
     learning: {
-      styles: [
-        "learning-suite.css?v=3", "learning-home.css?v=2", "learning-paths.css?v=3", "learning-review.css?v=3",
-        "learning-lesson-player.css?v=2", "learning-coach-labs.css?v=3", "learning-classroom.css?v=3"
-      ],
+      styles: ["hh-school.css?v=2"],
       scripts: [
-        "learning-platform-core.js?v=5", "learning-home.js?v=2", "learning-paths.js?v=3", "learning-review.js?v=3",
-        "learning-lesson-player.js?v=2", "learning-coach-labs.js?v=3", "learning-classroom.js?v=4", "learning-suite.js?v=3"
+        "hh-school-curriculum.js?v=2", "hh-school-core.js?v=2", "hh-school-offline.js?v=2",
+        "hh-school-sync.js?v=2", "hh-school.js?v=2"
       ]
     },
     english: {

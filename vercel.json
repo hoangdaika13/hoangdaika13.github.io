@@ -17,6 +17,10 @@
       "destination": "/api/modules/hikari-assistant/actions"
     },
     {
+      "source": "/api/education/:resource",
+      "destination": "/api/modules/education/actions?educationResource=:resource"
+    },
+    {
       "source": "/api/assistant/tts",
       "destination": "/api/modules/hikari-assistant/actions?assistantTts=1"
     },

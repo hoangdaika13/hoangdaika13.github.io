@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "version": "2026.08.13-ctgdpt2018-v2",
+  "publisher": "HH Platform",
+  "licenseCode": "HH-ORIGINAL",
+  "sourceFile": "hh-school-curriculum.js",
+  "grades": 12,
+  "contentPolicy": "Original examples only; no textbook or commercial test-bank copying.",
+  "statuses": ["checked"],
+  "disclaimer": "HH School is not an official textbook and is not endorsed by the Ministry of Education and Training."
+}

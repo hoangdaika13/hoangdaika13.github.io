@@ -200,6 +200,9 @@ function publicUser(user) {
     consent: Boolean(user.consent),
     restrictedFeatures: Array.isArray(user.restrictedFeatures) ? user.restrictedFeatures.map((item) => clean(item, 100)).filter(Boolean).slice(0, 100) : [],
     roles: [...roles],
+    educationRole: ["student", "parent", "teacher", "content-reviewer", "school-admin", "platform-admin"].includes(clean(user.educationRole, 40).toLowerCase())
+      ? clean(user.educationRole, 40).toLowerCase()
+      : "student",
     verified: Boolean(user.verifiedAt || user.emailVerifiedAt),
     access: {
       admin,

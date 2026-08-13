@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v577";
+const CACHE = "hh-identity-portal-v579";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -10,7 +10,7 @@ const CACHE = "hh-identity-portal-v577";
 // Open Media upgrade compatibility: hh-identity-portal-v527 hh-identity-portal-v543 ./performance-loader.js?v=259 ./script.js?v=176 ./script.js?v=172 ./auth-neon-gateway.js?v=14 ./auth-h-galaxy.js?v=5 ./home-galaxy-command.js?v=8 ./open-music-hub.css?v=4 ./open-music-hub.js?v=3
 // YouTube Batch compatibility: ./script.js?v=179 ./performance-loader.js?v=272 ./youtube-creator-galaxy.css?v=20 ./youtube-creator-galaxy.js?v=24 ./home-galaxy-command.css?v=9
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
-// learning-suite.css?v=2 learning-home.css?v=2 learning-paths.css?v=2 learning-review.css?v=2 learning-lesson-player.css?v=2 learning-coach-labs.css?v=2 learning-classroom.css?v=2 learning-platform-core.js?v=2 learning-home.js?v=2 learning-paths.js?v=2 learning-review.js?v=2 learning-lesson-player.js?v=2 learning-coach-labs.js?v=2 learning-classroom.js?v=2 learning-suite.js?v=2
+// HH School v1 replaces the former Learning OS bundle; legacy caches are removed during activation.
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
@@ -355,13 +355,7 @@ const RUNTIME_ASSETS = [
   "./astra-universe-expansion.css?v=4",
   "./game-arcade.css?v=5",
   "./cinematic-game-arcade.css?v=6",
-  "./learning-suite.css?v=3",
-  "./learning-home.css?v=2",
-  "./learning-paths.css?v=3",
-  "./learning-review.css?v=3",
-  "./learning-lesson-player.css?v=2",
-  "./learning-coach-labs.css?v=3",
-  "./learning-classroom.css?v=3",
+  "./hh-school.css?v=2",
   "./english-learning.css?v=17",
   "./english-galaxy.css?v=1",
   "./english-learning-galaxy.css?v=6",
@@ -452,14 +446,12 @@ const RUNTIME_ASSETS = [
   "./astra-universe-expansion.js?v=4",
   "./game-arcade.js?v=5",
   "./cinematic-game-arcade.js?v=3",
-  "./learning-platform-core.js?v=5",
-  "./learning-home.js?v=2",
-  "./learning-paths.js?v=3",
-  "./learning-review.js?v=3",
-  "./learning-lesson-player.js?v=2",
-  "./learning-coach-labs.js?v=3",
-  "./learning-classroom.js?v=4",
-  "./learning-suite.js?v=3",
+  "./hh-school-curriculum.js?v=2",
+  "./hh-school-core.js?v=2",
+  "./hh-school-offline.js?v=2",
+  "./hh-school-sync.js?v=2",
+  "./hh-school-search-worker.js?v=2",
+  "./hh-school.js?v=2",
   "./english-curriculum.js?v=1",
   "./english-career-expansion.js?v=1",
   "./english-career-curriculum.js?v=2",
@@ -500,13 +492,85 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=305",
+  "./performance-loader.js?v=306",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=16",
   "./script.js?v=182"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
+
+const HH_SCHOOL_DB = "hh-school-offline-v1";
+const HH_SCHOOL_QUEUE = "syncQueue";
+function openHHSchoolQueue() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(HH_SCHOOL_DB, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains("profiles")) db.createObjectStore("profiles", { keyPath: "key" });
+      if (!db.objectStoreNames.contains("curriculumPacks")) db.createObjectStore("curriculumPacks", { keyPath: "key" });
+      if (!db.objectStoreNames.contains(HH_SCHOOL_QUEUE)) {
+        const queue = db.createObjectStore(HH_SCHOOL_QUEUE, { keyPath: "id" });
+        queue.createIndex("createdAt", "createdAt");
+        queue.createIndex("ownerProfile", "ownerProfile");
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("HH School offline database unavailable"));
+  });
+}
+function idbRequest(request) {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+async function updateHHSchoolQueue(db, item, remove = false) {
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(HH_SCHOOL_QUEUE, "readwrite");
+    const store = tx.objectStore(HH_SCHOOL_QUEUE);
+    if (remove) store.delete(item.id);
+    else store.put({ ...item, attempts: Number(item.attempts || 0) + 1, lastAttemptAt: Date.now() });
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error("HH School queue transaction aborted"));
+  });
+}
+async function flushHHSchoolQueue() {
+  const db = await openHHSchoolQueue();
+  const results = [];
+  try {
+    const items = await idbRequest(db.transaction(HH_SCHOOL_QUEUE).objectStore(HH_SCHOOL_QUEUE).getAll());
+    for (const item of items) {
+      try {
+        const queued = item.request || {};
+        const target = new URL(String(queued.url || ""), self.location.origin);
+        if (target.origin !== self.location.origin || !target.pathname.startsWith("/api/education/")) throw new Error("Unsafe HH School sync target");
+        const response = await fetch(target.href, {
+          method: queued.method || "PUT",
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: typeof queued.body === "string" ? queued.body : JSON.stringify(queued.body || {})
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        await updateHHSchoolQueue(db, item, true);
+        results.push({ id: item.id, ok: true });
+      } catch (error) {
+        await updateHHSchoolQueue(db, item, false);
+        results.push({ id: item.id, ok: false, error: String(error?.message || error) });
+      }
+    }
+  } finally {
+    db.close();
+  }
+  const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  clients.forEach(client => client.postMessage({ type: "HH_SCHOOL_SYNC_RESULT", results }));
+  return results;
+}
+self.addEventListener("sync", event => {
+  if (event.tag === "hh-school-progress") event.waitUntil(flushHHSchoolQueue());
+});
 self.addEventListener("fetch", event => {
   const request = event.request;
   if (request.method !== "GET") return;
