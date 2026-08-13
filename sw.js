@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v589";
+const CACHE = "hh-identity-portal-v590";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -71,7 +71,7 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=184",
+  "./script.js?v=185",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -280,8 +280,8 @@ const RUNTIME_ASSETS = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./system-platform.css?v=2",
-  "./system-platform.js?v=4",
+  "./system-platform.css?v=3",
+  "./system-platform.js?v=5",
   "./sidebar-navigation-pro.css?v=9",
   "./game-runtime.css?v=1",
   "./astral-realms.css?v=77",
@@ -502,10 +502,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=314",
+  "./performance-loader.js?v=315",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=16",
-  "./script.js?v=184"
+  "./script.js?v=185"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

@@ -5595,7 +5595,15 @@ function initAppShell() {
     },
     { id: "english", label: "HH English", icon: "E", accent: "#60e9f2", route: "/english", items: [] },
     { id: "japanese", label: "HH Japanese", icon: "日", accent: "#e75158", route: "/japanese", items: [] },
-    { id: "system", label: "Hệ thống", icon: "⚙", accent: "#68dda8", route: "/system", items: ["app-launcher", "widgets-engine", "marketplace", "mobile-pwa", "modern-ui-kit", "cookie-consent-manager", "data-export-import"] },
+    {
+      id: "system",
+      label: "Hệ thống",
+      icon: "⚙",
+      accent: "#68dda8",
+      route: "/system",
+      pages: [{ id: "system-center", title: "Trung tâm Hệ thống", route: "/system" }],
+      items: ["app-launcher", "widgets-engine", "marketplace", "mobile-pwa", "modern-ui-kit", "cookie-consent-manager", "data-export-import"]
+    },
     { id: "support", label: "Ủng hộ nhà phát triển", icon: "♥", accent: "#ff6fae", route: "/support", items: [] }
   ];
   const graphicDesignPages = groups.find((group) => group.id === "graphic-design")?.pages || [];
@@ -6471,7 +6479,7 @@ function initAppShell() {
       mountAdmin();
       remember("admin-panel");
     } else if (route === "/system") {
-      updatePageHeader("Hệ thống", "Quản lý phiên của chính bạn, tích hợp, hạn mức, backup, audit cục bộ, feature flags và trạng thái PWA.", route);
+      updatePageHeader("Trung tâm Hệ thống", "Theo dõi sức khỏe hệ thống, PWA, lưu trữ, sao lưu, phiên bảo mật, tích hợp, tác vụ và chẩn đoán trong một nơi.", route);
       workspace.innerHTML = '<div data-system-platform-host></div>';
       if (window.HHSystemPlatform?.mount) window.HHSystemPlatform.mount(workspace.firstElementChild, {
         // System REST routes are Vercel/same-origin APIs. Realtime is probed
