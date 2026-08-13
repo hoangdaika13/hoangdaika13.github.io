@@ -6473,7 +6473,13 @@ function initAppShell() {
     } else if (route === "/system") {
       updatePageHeader("Hệ thống", "Quản lý phiên của chính bạn, tích hợp, hạn mức, backup, audit cục bộ, feature flags và trạng thái PWA.", route);
       workspace.innerHTML = '<div data-system-platform-host></div>';
-      if (window.HHSystemPlatform?.mount) window.HHSystemPlatform.mount(workspace.firstElementChild, { apiBase: REALTIME_URL, currentUser: readCurrentAuthUser() });
+      if (window.HHSystemPlatform?.mount) window.HHSystemPlatform.mount(workspace.firstElementChild, {
+        // System REST routes are Vercel/same-origin APIs. Realtime is probed
+        // separately so /api/* is never sent to the Socket.IO host.
+        apiBase: window.HH_API_BASE || "",
+        realtimeUrl: SOCKET_URL,
+        currentUser: readCurrentAuthUser()
+      });
       else mountSimpleView("Hệ thống", "Đang tải trung tâm hệ thống...", "");
     } else if (route === "/system/cookie-consent-manager") {
       updatePageHeader("Trung tâm quyền riêng tư", "Kiểm soát cookie thiết yếu, phân tích và cá nhân hóa trên thiết bị này.", route, module);

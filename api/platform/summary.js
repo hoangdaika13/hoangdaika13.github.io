@@ -1,10 +1,12 @@
 const { clean, currentUser, database, enforceRateLimit, isAdminUser, setCors, withApi } = require("../../utils/platform");
+const crypto = require("node:crypto");
 const privacyConsentHandler = require("../../utils/privacy-consent-api");
 const youtubePublisherHandler = require("../../utils/youtubePublisher");
 const facebookPageManagerHandler = require("../../utils/facebookPageManager");
 const tiktokCreatorManagerHandler = require("../../utils/tiktokCreatorManager");
 const metaWebhookHandler = require("../../utils/metaWebhook");
 const { quotaStatus, requireRoles } = require("../../services/apiGateway");
+const { ObjectId } = require("mongodb");
 
 const ACTIVE_WINDOW_MS = 2 * 60 * 1000;
 const TELEMETRY_RETENTION_SECONDS = 30 * 24 * 60 * 60;
@@ -95,12 +97,153 @@ function rolloutBucket(identity, key) {
   return [...`${identity}:${key}`].reduce((value, character) => ((value * 31) + character.charCodeAt(0)) >>> 0, 7) % 100;
 }
 
+function safeIncident(input = {}) {
+  const allowedKinds = new Set(["runtime-error", "unhandled-rejection", "session-sync", "health-check", "storage-inspection", "system-me"]);
+  const kind = safeKey(input.kind, "runtime-error");
+  return {
+    kind: allowedKinds.has(kind) ? kind : "runtime-error",
+    module: safeKey(input.module, "system").slice(0, 80),
+    message: clean(input.message, 300).replace(/\bBearer\s+[\w.-]+|\b(?:sk|AIza|AQ\.)[-_.\w]{12,}|[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}|\b\d{1,3}(?:\.\d{1,3}){3}\b/g, "[redacted]"),
+    count: Math.max(1, Math.min(10000, Number(input.count || 1))),
+    release: clean(input.release, 80),
+    firstAt: new Date(input.firstAt || Date.now()),
+    lastAt: new Date(input.lastAt || Date.now())
+  };
+}
+
+const SYSTEM_JOB_SOURCES = new Set(["tool", "youtube", "tiktok", "facebook", "social"]);
+const TERMINAL_JOB_STATES = new Set(["completed", "success", "failed", "error", "cancelled", "canceled", "published", "uploaded"]);
+const objectId = (value) => /^[a-f0-9]{24}$/i.test(String(value || "")) ? new ObjectId(String(value)) : null;
+
+function publicSystemJob(input = {}, source = "tool") {
+  const id = String(input._id || input.id || "");
+  const status = clean(input.status || input.state || "unknown", 50).toLowerCase();
+  let progress = Math.max(0, Math.min(100, Number(input.progress || 0)));
+  if (!progress && Number(input.total || 0) > 0) progress = Math.round(Math.max(0, Number(input.completed || 0)) / Number(input.total) * 100);
+  const controls = [];
+  if (source === "tool" && !TERMINAL_JOB_STATES.has(status)) controls.push("cancel");
+  if (source === "tiktok") {
+    if (["ready", "uploading", "processing", "scheduled-internal"].includes(status)) controls.push("pause");
+    if (status === "paused") controls.push("resume");
+    if (["failed", "error"].includes(status)) controls.push("retry");
+  }
+  if (source === "media") {
+    // External workers require a provider acknowledgement in Media Cloud. Only
+    // local orchestration plans can be controlled safely from System Center.
+    if (!input.remoteId && ["needs-worker", "queued", "running"].includes(status)) controls.push("pause", "cancel");
+    if (!input.remoteId && status === "paused") controls.push("resume", "cancel");
+    if (!input.remoteId && ["failed", "error"].includes(status)) controls.push("retry");
+  }
+  return {
+    id,
+    source,
+    kind: clean(input.kind || input.action || input.toolId || "job", 80),
+    label: clean(input.name || input.title || input.fileName || input.toolId || input.kind || input.action || `${source} job`, 180),
+    status,
+    progress,
+    speed: clean(input.speed || "", 60),
+    eta: clean(input.eta || input.estimatedTimeRemaining || "", 60),
+    checkpoint: clean(input.checkpoint || input.processingStatus || input.providerStatus || "", 120),
+    requestId: clean(input.requestId || input.providerReference || "", 160),
+    updatedAt: input.updatedAt || input.createdAt || null,
+    route: { tool: "/tools", youtube: "/davinci-resolve/youtube", tiktok: "/davinci-resolve/tiktok", facebook: "/davinci-resolve/facebook", social: "/social-media-tools", media: "/media-design", "ai-video": "/davinci-resolve/ai-video-remake" }[source] || "/system",
+    projectId: input.projectId ? String(input.projectId) : "",
+    controls
+  };
+}
+
+async function systemUserSnapshot(db, user) {
+  const projection = { accessToken: 0, refreshToken: 0, encryptedAccessToken: 0, encryptedRefreshToken: 0, tokenHash: 0, payload: 0, metadata: 0, result: 0, logs: 0, spec: 0 };
+  const ownedMediaProjects = await db.collection("mediaProjects").find({ ownerId: user._id, $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }] }, { projection: { _id: 1 } }).limit(300).toArray().catch(() => []);
+  const ownedProjectIds = ownedMediaProjects.map(item => item._id);
+  const [youtube, tiktok, facebook, toolJobs, youtubeJobs, tiktokJobs, facebookJobs, socialJobs, mediaJobs, aiVideoJobs, loginHistory] = await Promise.all([
+    db.collection("youtubeConnections").find({ userId: user._id }, { projection }).sort({ active: -1, updatedAt: -1 }).limit(30).toArray().catch(() => []),
+    db.collection("tiktokConnections").find({ userId: user._id }, { projection }).sort({ active: -1, updatedAt: -1 }).limit(30).toArray().catch(() => []),
+    db.collection("facebookPageConnections").find({ userId: user._id }, { projection }).sort({ active: -1, updatedAt: -1 }).limit(50).toArray().catch(() => []),
+    db.collection("toolJobs").find({ userId: user._id }, { projection }).sort({ updatedAt: -1 }).limit(40).toArray().catch(() => []),
+    db.collection("youtubeBulkJobs").find({ userId: user._id }, { projection: { ...projection, results: 0 } }).sort({ updatedAt: -1 }).limit(40).toArray().catch(() => []),
+    db.collection("tiktokJobs").find({ userId: user._id }, { projection }).sort({ updatedAt: -1 }).limit(40).toArray().catch(() => []),
+    db.collection("facebookPublishJobs").find({ userId: user._id }, { projection: { ...projection, results: 0 } }).sort({ updatedAt: -1 }).limit(40).toArray().catch(() => []),
+    db.collection("social_publish_jobs").find({ ownerId: user._id }, { projection }).sort({ updatedAt: -1 }).limit(40).toArray().catch(() => []),
+    ownedProjectIds.length ? db.collection("mediaRenderJobs").find({ projectId: { $in: ownedProjectIds } }, { projection }).sort({ updatedAt: -1 }).limit(40).toArray().catch(() => []) : [],
+    db.collection("aiVideoRemakeJobs").find({ userId: user._id }, { projection: { ...projection, input: 0, rightsManifest: 0, estimate: 0 } }).sort({ updatedAt: -1 }).limit(40).toArray().catch(() => []),
+    db.collection("loginEvents").find({ userId: user._id }, { projection: { userAgent: 0, ip: 0, userId: 0 } }).sort({ createdAt: -1 }).limit(12).toArray().catch(() => [])
+  ]);
+  const serverConfigured = {
+    youtube: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    tiktok: Boolean(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_SECRET),
+    facebook: Boolean(process.env.META_APP_ID && process.env.META_APP_SECRET),
+    gemini: Boolean(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY),
+    openai: Boolean(process.env.OPENAI_API_KEY),
+    resend: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM)
+  };
+  const providerCard = (id, label, rows, route, scopeOf, expiryOf) => {
+    const active = rows.find((row) => row.active) || rows[0];
+    return {
+      id, label, state: active ? "connected" : serverConfigured[id] ? "degraded" : "unconfigured",
+      stateLabel: active ? `Đã kết nối ${rows.length}` : serverConfigured[id] ? "Server đã cấu hình · chưa có tài khoản" : "Chưa cấu hình",
+      accountLabel: active ? clean(active.channelTitle || active.displayName || active.pageName || `${rows.length} tài khoản`, 180) : "",
+      scopes: active ? scopeOf(active) : [], expiresAt: active ? expiryOf(active) : null, source: "server-vault-user-scoped", route
+    };
+  };
+  const integrations = [
+    providerCard("youtube", "YouTube", youtube, "/davinci-resolve/youtube", row => String(row.scopes || "").split(/\s+/).filter(Boolean).slice(0, 20), row => row.expiresAt || null),
+    providerCard("tiktok", "TikTok", tiktok, "/davinci-resolve/tiktok", row => Array.isArray(row.scopes) ? row.scopes.slice(0, 20) : [], row => row.accessTokenExpiresAt || null),
+    providerCard("facebook", "Facebook / Instagram", facebook, "/davinci-resolve/facebook", row => Array.isArray(row.grantedPermissions) ? row.grantedPermissions.slice(0, 20) : [], row => row.tokenExpiresAt || null),
+    ...[["gemini", "Gemini", "/ai"], ["openai", "OpenAI", "/ai"], ["resend", "Resend / Email", "/system"]].map(([id, label, route]) => ({ id, label, state: serverConfigured[id] ? "degraded" : "unconfigured", stateLabel: serverConfigured[id] ? "Đã cấu hình · không live-probe trong request này" : "Chưa cấu hình", accountLabel: "Khóa được giữ phía server", scopes: [], expiresAt: null, source: "server-config-only", route }))
+  ];
+  const jobs = [
+    ...toolJobs.map(item => publicSystemJob(item, "tool")), ...youtubeJobs.map(item => publicSystemJob(item, "youtube")),
+    ...tiktokJobs.map(item => publicSystemJob(item, "tiktok")), ...facebookJobs.map(item => publicSystemJob(item, "facebook")), ...socialJobs.map(item => publicSystemJob(item, "social")),
+    ...mediaJobs.map(item => publicSystemJob(item, "media")), ...aiVideoJobs.map(item => publicSystemJob(item, "ai-video"))
+  ].sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)).slice(0, 100);
+  return { integrations, jobs, loginHistory: loginHistory.map(item => ({ type: clean(item.type, 60), browser: clean(item.browser, 60), platform: clean(item.platform, 60), success: item.success !== false, reason: item.success === false ? clean(item.reason, 100) : "", createdAt: item.createdAt || null })) };
+}
+
+async function controlSystemJob(db, user, body) {
+  const source = clean(body.source, 30).toLowerCase(); const control = clean(body.control, 20).toLowerCase(); const id = objectId(body.jobId);
+  if (![...SYSTEM_JOB_SOURCES, "media", "ai-video"].includes(source) || !id || !["pause", "resume", "retry", "cancel"].includes(control)) { const error = new Error("Điều khiển tác vụ không hợp lệ."); error.statusCode = 400; throw error; }
+  if (source === "tool" && control === "cancel") {
+    const current = await db.collection("toolJobs").findOne({ _id: id, userId: user._id });
+    if (!current) { const error = new Error("Tác vụ không thuộc tài khoản hiện tại."); error.statusCode = 404; throw error; }
+    if (!TERMINAL_JOB_STATES.has(String(current.state || "").toLowerCase())) await db.collection("toolJobs").updateOne({ _id: id, userId: user._id }, { $set: { state: "cancelled", finishedAt: new Date(), updatedAt: new Date() } });
+    return publicSystemJob({ ...current, state: "cancelled", updatedAt: new Date() }, source);
+  }
+  if (source === "tiktok") {
+    const current = await db.collection("tiktokJobs").findOne({ _id: id, userId: user._id });
+    if (!current) { const error = new Error("Tác vụ không thuộc tài khoản hiện tại."); error.statusCode = 404; throw error; }
+    const next = control === "pause" ? "paused" : ["resume", "retry"].includes(control) ? "ready" : "";
+    if (!next) { const error = new Error("TikTok job chưa hỗ trợ hủy từ System Center."); error.statusCode = 409; throw error; }
+    await db.collection("tiktokJobs").updateOne({ _id: id, userId: user._id }, { $set: { status: next, updatedAt: new Date() }, ...(control === "retry" ? { $inc: { retryCount: 1 } } : {}) });
+    return publicSystemJob({ ...current, status: next, updatedAt: new Date() }, source);
+  }
+  if (source === "media") {
+    const current = await db.collection("mediaRenderJobs").findOne({ _id: id });
+    const project = current ? await db.collection("mediaProjects").findOne({ _id: current.projectId, ownerId: user._id, $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }] }, { projection: { _id: 1 } }) : null;
+    if (!current || !project) { const error = new Error("Render job không thuộc tài khoản hiện tại."); error.statusCode = 404; throw error; }
+    if (current.remoteId) { const error = new Error("Render đang do worker ngoài xử lý; hãy điều khiển trong Media module để backend nhận xác nhận từ worker."); error.statusCode = 409; throw error; }
+    const next = { pause: "paused", resume: "queued", retry: "needs-worker", cancel: "canceled" }[control];
+    await db.collection("mediaRenderJobs").updateOne({ _id: id, projectId: project._id }, { $set: { status: next, message: "System Center đã cập nhật kế hoạch local; chưa có external worker.", updatedAt: new Date() }, $push: { logs: { code: `SYSTEM_${control.toUpperCase()}`, message: "Không có external worker; cập nhật trạng thái điều phối.", at: new Date() } } });
+    return publicSystemJob({ ...current, status: next, updatedAt: new Date() }, source);
+  }
+  if (source === "ai-video") {
+    if (control === "retry") { const error = new Error("Retry AI Video cần quote mới và xác nhận rủi ro tính phí trùng trong module nguồn."); error.statusCode = 409; throw error; }
+    const current = await db.collection("aiVideoRemakeJobs").findOne({ _id: id, userId: user._id });
+    if (!current) { const error = new Error("AI Video job không thuộc tài khoản hiện tại."); error.statusCode = 404; throw error; }
+    // Provider-aware control already exists in the dedicated service. System
+    // Center refuses to fake provider acknowledgement and sends users there.
+    const error = new Error("AI Video cần xác nhận điều khiển từ provider; hãy mở module nguồn để thực hiện an toàn."); error.statusCode = 409; throw error;
+  }
+  const error = new Error("Loại tác vụ này cần điều khiển trong module nguồn để giữ đúng checkpoint/provider."); error.statusCode = 409; throw error;
+}
+
 const DEFAULT_REALTIME_SERVER_URL = "https://hoangdaika13-astra-realtime.onrender.com";
 
 async function realtimeReadiness() {
   const baseUrl = String(process.env.REALTIME_SERVER_URL || DEFAULT_REALTIME_SERVER_URL).trim().replace(/\/$/, "");
   if (!baseUrl) return { configured: false, connected: false, url: "", error: "missing-url" };
   const controller = new AbortController();
+  const started = Date.now();
   const timeout = setTimeout(() => controller.abort(), 3500);
   try {
     const response = await fetch(`${baseUrl}/health`, {
@@ -114,6 +257,7 @@ async function realtimeReadiness() {
       url: baseUrl,
       databaseConnected: data?.database?.connected === true,
       turnConfigured: data?.calls?.turnConfigured === true,
+      latencyMs: Date.now() - started,
       checkedAt: data?.checkedAt || new Date()
     };
   } catch (error) {
@@ -121,6 +265,7 @@ async function realtimeReadiness() {
       configured: true,
       connected: false,
       url: baseUrl,
+      latencyMs: Date.now() - started,
       error: error?.name === "AbortError" ? "timeout" : "unreachable"
     };
   } finally {
@@ -129,24 +274,30 @@ async function realtimeReadiness() {
 }
 
 async function databaseReadiness() {
-  if (!String(process.env.MONGODB_URI || "").trim()) return false;
+  if (!String(process.env.MONGODB_URI || "").trim()) return { configured: false, connected: false, latencyMs: null, checkedAt: new Date(), error: "not-configured" };
+  const started = Date.now();
   let timeout;
   try {
-    await Promise.race([
+    const db = await Promise.race([
       database(),
       new Promise((_, reject) => {
         timeout = setTimeout(() => reject(new Error("database-timeout")), 3500);
       })
     ]);
-    return true;
-  } catch {
-    return false;
+    await db.command({ ping: 1 });
+    return { configured: true, connected: true, latencyMs: Date.now() - started, checkedAt: new Date(), error: "" };
+  } catch (error) {
+    return { configured: true, connected: false, latencyMs: Date.now() - started, checkedAt: new Date(), error: error?.message === "database-timeout" ? "timeout" : "unreachable" };
   } finally {
     clearTimeout(timeout);
   }
 }
 
 function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
+  const databaseStatus = typeof databaseConnected === "object" ? databaseConnected : { configured: Boolean(process.env.MONGODB_URI), connected: Boolean(databaseConnected), latencyMs: null, checkedAt: new Date(), error: databaseConnected ? "" : "unreachable" };
+  const publicDatabaseStatus = databaseStatus.configured
+    ? { ...databaseStatus, database: process.env.MONGODB_DB || "hoangdaika13_site" }
+    : { configured: false, connected: false, database: process.env.MONGODB_DB || "hoangdaika13_site" };
   const has = (...names) => names.every((name) => Boolean(String(process.env[name] || "").trim()));
   const gemini = Boolean(String(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || "").trim());
   const openai = Boolean(String(process.env.OPENAI_API_KEY || "").trim());
@@ -172,7 +323,7 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
   if (!realtime.connected) missing.push({ id: "realtime-server", label: "Realtime/Socket.io", connect: "Render cần online, kết nối MongoDB và dùng cùng JWT_SECRET với Vercel" });
   return {
     checkedAt: new Date(),
-    database: { configured: Boolean(process.env.MONGODB_URI), connected: databaseConnected, database: process.env.MONGODB_DB || "hoangdaika13_site" },
+    database: publicDatabaseStatus,
     auth: {
       googleOAuth: has("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"),
       passkey: true,
@@ -205,7 +356,14 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
       checkedAt: realtime.checkedAt || new Date(),
       error: realtime.error || ""
     },
-    requiresConnection: missing
+    requiresConnection: missing,
+    services: [
+      { id: "frontend", label: "Website frontend", state: "online", detail: "Health route đang phản hồi", latencyMs: null, lastSuccessAt: new Date(), lastErrorAt: null, requestId: "", checkedAt: new Date(), source: "vercel-function" },
+      { id: "api", label: "API Vercel", state: "online", detail: "Health handler đang chạy", latencyMs: null, lastSuccessAt: new Date(), lastErrorAt: null, requestId: "", checkedAt: new Date(), source: "server-handler" },
+      { id: "database", label: "MongoDB", state: databaseStatus.connected ? "online" : databaseStatus.configured ? "offline" : "unconfigured", detail: databaseStatus.connected ? "Ping database thành công" : databaseStatus.error || "Chưa cấu hình", latencyMs: databaseStatus.latencyMs, lastSuccessAt: databaseStatus.connected ? databaseStatus.checkedAt : null, lastErrorAt: databaseStatus.connected ? null : databaseStatus.checkedAt, requestId: "", checkedAt: databaseStatus.checkedAt, source: "mongodb-ping" },
+      { id: "realtime", label: "Realtime / WebSocket", state: realtime.connected ? "online" : realtime.configured ? "offline" : "unconfigured", detail: realtime.connected ? "HTTP health và database realtime đã xác nhận" : realtime.error || "Chưa cấu hình", latencyMs: Number(realtime.latencyMs || 0) || null, lastSuccessAt: realtime.connected ? realtime.checkedAt : null, lastErrorAt: realtime.connected ? null : realtime.checkedAt, requestId: "", checkedAt: realtime.checkedAt || new Date(), source: "realtime-http-health" },
+      ...[["object-storage", "Object Storage", objectStorage], ["resend", "Resend / email", email], ["google-oauth", "Google OAuth", has("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET")], ["youtube", "YouTube", youtube], ["facebook", "Facebook", facebook], ["gemini", "Gemini", gemini], ["openai", "OpenAI", openai]].map(([id, label, configured]) => ({ id, label, state: configured ? "degraded" : "unconfigured", detail: configured ? "Đã cấu hình; health request này không gọi provider để tránh quota" : "Thiếu cấu hình server", latencyMs: null, lastSuccessAt: null, lastErrorAt: null, requestId: "", checkedAt: new Date(), source: "server-config-only" }))
+    ]
   };
 }
 
@@ -232,7 +390,24 @@ module.exports = async function handler(req, res) {
     ]);
     return res.status(200).json({ ok: true, health: readinessSnapshot({ databaseConnected, realtime }) });
   }
-  return withApi(req, res, async ({ db }) => {
+  return withApi(req, res, async ({ db, body: parsedBody }) => {
+    if (req.method === "POST" && req.query.view === "system-job-control") {
+      const user = await currentUser(req);
+      if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để điều khiển tác vụ.", code: "AUTH_REQUIRED" });
+      await enforceRateLimit(db, `system-job-control:${user._id}`, 80, 15 * 60 * 1000);
+      const job = await controlSystemJob(db, user, parsedBody || {});
+      return res.status(200).json({ ok: true, confirmed: true, job, checkedAt: new Date(), privacy: { ownerIsolated: true, secretsReturned: false } });
+    }
+    if (req.method === "POST" && req.query.view === "system-incident-report") {
+      const user = await currentUser(req);
+      if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để gửi báo cáo lỗi.", code: "AUTH_REQUIRED" });
+      await enforceRateLimit(db, `system-incident-report:${user._id}`, 20, 60 * 60 * 1000);
+      if (parsedBody?.screenshotIncluded === true) return res.status(400).json({ error: "Screenshot chỉ được gửi qua luồng có consent riêng.", code: "SCREENSHOT_CONSENT_REQUIRED" });
+      const incident = safeIncident(parsedBody?.incident);
+      const requestId = `sys-${crypto.randomBytes(10).toString("hex")}`;
+      await db.collection("systemUserIncidents").insertOne({ userId: user._id, requestId, ...incident, screenshotIncluded: false, status: "received", createdAt: new Date(), privacy: { secretScrubbed: true, fullEmailStored: false, cookieStored: false, screenshotStored: false } });
+      return res.status(202).json({ ok: true, confirmed: true, requestId, status: "received", privacy: { ownerIsolated: true, secretScrubbed: true, screenshotIncluded: false } });
+    }
     if (req.method === "POST") {
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
       const user = await currentUser(req);
@@ -286,6 +461,11 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, confirmed: true, quotas, checkedAt: new Date(), privacy: { aggregateOnly: true, identitiesReturned: false, queriesStored: false, secretsReturned: false } });
     }
     const user = await currentUser(req);
+    if (req.query.view === "system-me") {
+      if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để xem Hệ thống cá nhân.", code: "AUTH_REQUIRED" });
+      const snapshot = await systemUserSnapshot(db, user);
+      return res.status(200).json({ ok: true, confirmed: true, ...snapshot, checkedAt: new Date(), privacy: { ownerIsolated: true, adminDataIncluded: false, tokensReturned: false, secretsReturned: false, payloadsReturned: false } });
+    }
     if (req.query.view === "gateway-audit") {
       requireRoles(user, ["admin"]);
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000);

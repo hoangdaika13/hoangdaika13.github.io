@@ -1,35 +1,49 @@
 (function initHHSystemPlatform(globalScope, factory) {
   "use strict";
-
   const api = factory(globalScope || {});
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (globalScope) globalScope.HHSystemPlatform = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function systemPlatformFactory(globalScope) {
   "use strict";
 
-  const VERSION = 1;
-  const INTEGRATION_VERSION = "system-platform.v2";
+  const VERSION = 3;
+  const INTEGRATION_VERSION = "system-platform.v3";
   const STORAGE_KEY = "hh.system.center.v1";
-  const BACKUP_SCHEMA = "hh.system.backup.v1";
-  const SENSITIVE_KEY = /(?:password|passcode|secret|token|authorization|cookie|credential|private[-_]?key|api[-_]?key|card|cvv)/i;
+  const BACKUP_SCHEMA = "hh.system.backup.v2";
+  const CHECKPOINT_KEY = "hh.system.backup-checkpoints.v2";
+  const INCIDENT_KEY = "hh.system.incidents.v2";
+  const CONSENT_KEY = "hh-consent-preferences.v1";
+  const SENSITIVE_KEY = /(?:password|passcode|secret|token|authorization|cookie|credential|private[-_]?key|api[-_]?key|card|cvv|session|email|phone|address|message|prompt|content)/i;
+  const SENSITIVE_VALUE = /(?:\bBearer\s+[\w.-]+|\b(?:sk|AIza|AQ\.)[-_.\w]{16,}|eyJ[a-zA-Z0-9_-]{12,}\.[a-zA-Z0-9_-]{12,}\.[a-zA-Z0-9_-]{8,}|(?:^|\s)[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,})/g;
+  const activeControllers = new Set();
   const controllers = new WeakMap();
 
+  const BACKUP_SECTIONS = Object.freeze({
+    appearance: { label: "Giao diện & thiết bị", prefixes: ["hh.system.center.", "hh.command-center.theme.", "hh-color-mode", "hh-theme-color", "hh-language"] },
+    projects: { label: "Dự án & preset", prefixes: ["hh.photo.", "hh.graphic-", "hh.graphic.", "hh.creative-", "hh.video-editor.", "hh-image-text-studio-"] },
+    notes: { label: "Ghi chú & công việc", prefixes: ["hh.command-center.todos.", "hh-project-center", "hh.home.focus."] },
+    learning: { label: "Tiến độ học & SRS", prefixes: ["hh.learning.", "hh.english.", "hh.japanese.", "hh-school-"] },
+    social: { label: "Social workspace cục bộ", prefixes: ["hh.social-media-tools.", "hh.facebook-page-command-center.", "hh.communication."] },
+    rights: { label: "Quyền & metadata asset", prefixes: ["hh.music.publishing-rights.", "hh.open-media.", "hh.character3d.integration."] }
+  });
+
   const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
-  const text = (value, limit = 500) => String(value == null ? "" : value)
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
-    .normalize("NFC")
-    .slice(0, limit);
-  const escapeHtml = value => text(value, 5000).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  const text = (value, limit = 500) => String(value == null ? "" : value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").normalize("NFC").slice(0, limit);
+  const escapeHtml = value => text(value, 10000).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const now = () => new Date().toISOString();
-  const uid = prefix => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const uid = prefix => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+  const formatBytes = value => { const bytes = Math.max(0, Number(value) || 0); if (bytes < 1024) return `${bytes} B`; const units = ["KB", "MB", "GB", "TB"]; let amount = bytes; let index = -1; do { amount /= 1024; index += 1; } while (amount >= 1024 && index < units.length - 1); return `${amount.toFixed(amount >= 10 ? 1 : 2)} ${units[index]}`; };
+  const dateLabel = value => { try { return value ? new Date(value).toLocaleString("vi-VN") : "Chưa có"; } catch { return "Chưa có"; } };
+  const redactText = value => text(value, 12000).replace(SENSITIVE_VALUE, "[đã ẩn]").replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g, "[ip-ẩn]");
 
   function sanitize(value, depth = 0) {
-    if (depth > 6 || value == null) return value == null ? null : undefined;
-    if (["string", "boolean"].includes(typeof value)) return typeof value === "string" ? text(value, 10000) : value;
+    if (depth > 8 || value == null) return value == null ? null : undefined;
+    if (typeof value === "string") return redactText(value);
+    if (typeof value === "boolean") return value;
     if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-    if (Array.isArray(value)) return value.slice(0, 200).map(item => sanitize(item, depth + 1)).filter(item => item !== undefined);
+    if (Array.isArray(value)) return value.slice(0, 500).map(item => sanitize(item, depth + 1)).filter(item => item !== undefined);
     if (typeof value !== "object") return undefined;
-    return Object.entries(value).slice(0, 200).reduce((result, [key, item]) => {
+    return Object.entries(value).slice(0, 500).reduce((result, [key, item]) => {
       const safeKey = text(key, 100).trim();
       if (!safeKey || SENSITIVE_KEY.test(safeKey)) return result;
       const safeValue = sanitize(item, depth + 1);
@@ -38,295 +52,266 @@
     }, {});
   }
 
+  function stableJson(value) {
+    if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+    if (value && typeof value === "object") return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(",")}}`;
+    return JSON.stringify(value);
+  }
+
+  // Synchronous SHA-256 keeps backup validation available offline and in tests.
+  function sha256(value) {
+    let ascii = unescape(encodeURIComponent(String(value)));
+    const maxWord = 2 ** 32; const words = []; const hash = []; const k = []; const composite = {}; const bitLength = ascii.length * 8;
+    for (let candidate = 2, count = 0; count < 64; candidate += 1) {
+      if (composite[candidate]) continue;
+      for (let multiple = candidate * candidate; multiple < 313; multiple += candidate) composite[multiple] = true;
+      hash[count] = (candidate ** 0.5 % 1 * maxWord) | 0;
+      k[count] = (candidate ** (1 / 3) % 1 * maxWord) | 0;
+      count += 1;
+    }
+    ascii += "\x80"; while (ascii.length % 64 !== 56) ascii += "\x00";
+    for (let i = 0; i < ascii.length; i += 1) words[i >> 2] |= ascii.charCodeAt(i) << ((3 - i) % 4) * 8;
+    words.push((bitLength / maxWord) | 0); words.push(bitLength);
+    const rightRotate = (number, amount) => number >>> amount | number << (32 - amount);
+    for (let block = 0; block < words.length;) {
+      const schedule = words.slice(block, block += 16); const previous = hash.slice(); let working = hash.slice(0, 8);
+      for (let i = 0; i < 64; i += 1) {
+        const w15 = schedule[i - 15], w2 = schedule[i - 2];
+        const a = working[0], e = working[4];
+        const temp1 = (working[7] + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) + (e & working[5] ^ ~e & working[6]) + k[i] + (schedule[i] = i < 16 ? schedule[i] : (schedule[i - 16] + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ w15 >>> 3) + schedule[i - 7] + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ w2 >>> 10)) | 0)) | 0;
+        const temp2 = ((rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) + (a & working[1] ^ a & working[2] ^ working[1] & working[2])) | 0;
+        working = [(temp1 + temp2) | 0, working[0], working[1], working[2], (working[3] + temp1) | 0, working[4], working[5], working[6]];
+      }
+      for (let i = 0; i < 8; i += 1) hash[i] = (working[i] + previous[i]) | 0;
+    }
+    return hash.slice(0, 8).map(number => (number >>> 0).toString(16).padStart(8, "0")).join("");
+  }
+
   function sanitizeSession(input = {}) {
     const device = input.device && typeof input.device === "object" ? input.device : {};
-    return {
-      id: text(input.id, 120),
-      current: input.current === true,
-      device: {
-        label: text(device.label, 120),
-        browser: text(device.browser, 60),
-        platform: text(device.platform, 60),
-        type: text(device.type, 40)
-      },
-      createdAt: text(input.createdAt, 40),
-      lastSeenAt: text(input.lastSeenAt, 40),
-      expiresAt: text(input.expiresAt, 40)
-    };
+    return { id: text(input.id, 120), type: text(input.type, 40), current: input.current === true, device: { label: text(device.label, 120), browser: text(device.browser, 60), platform: text(device.platform, 60), type: text(device.type, 40) }, createdAt: text(input.createdAt, 40), lastSeenAt: text(input.lastSeenAt, 40), expiresAt: text(input.expiresAt, 40) };
   }
 
   function normalizeQuota(input = {}) {
-    const limit = Math.max(0, Number(input.limit) || 0);
-    const used = Math.max(0, Number(input.used) || 0);
-    return {
-      provider: text(input.provider, 80),
-      used,
-      limit,
-      remaining: Math.max(0, Number.isFinite(Number(input.remaining)) ? Number(input.remaining) : limit - used),
-      note: text(input.note, 160),
-      source: text(input.source, 80),
-      resetAt: text(input.resetAt, 40)
-    };
+    const limit = Math.max(0, Number(input.limit) || 0); const used = Math.max(0, Number(input.used) || 0);
+    return { provider: text(input.provider, 80), used, limit, remaining: Math.max(0, Number.isFinite(Number(input.remaining)) ? Number(input.remaining) : limit - used), note: text(input.note, 160), source: text(input.source, 80), resetAt: text(input.resetAt, 40) };
+  }
+
+  function normalizeSystemJob(input = {}) {
+    const allowedControls = new Set(["pause", "resume", "retry", "cancel"]);
+    return { id: text(input.id, 120), source: text(input.source, 60), kind: text(input.kind, 80), label: text(input.label, 180), status: text(input.status, 50), progress: Math.max(0, Math.min(100, Number(input.progress) || 0)), speed: text(input.speed, 60), eta: text(input.eta, 60), checkpoint: text(input.checkpoint, 120), requestId: text(input.requestId, 160), projectId: text(input.projectId, 120), updatedAt: text(input.updatedAt, 40), route: /^\/[a-z0-9/_?=&.-]+$/i.test(String(input.route || "")) ? String(input.route) : "/system", controls: (Array.isArray(input.controls) ? input.controls : []).filter(item => allowedControls.has(item)).slice(0, 4) };
   }
 
   function capabilitySnapshot(scope = globalScope) {
     const navigatorRef = scope?.navigator || {};
     const standalone = scope?.matchMedia?.("(display-mode: standalone)")?.matches === true || navigatorRef.standalone === true;
-    return {
-      online: navigatorRef.onLine !== false,
-      serviceWorker: Boolean(navigatorRef.serviceWorker),
-      cacheStorage: Boolean(scope?.caches),
-      installMode: standalone ? "standalone" : "browser",
-      backgroundSync: Boolean(scope?.SyncManager),
-      truthful: true
-    };
+    return { online: navigatorRef.onLine !== false, serviceWorker: Boolean(navigatorRef.serviceWorker), cacheStorage: Boolean(scope?.caches), indexedDB: Boolean(scope?.indexedDB), storageManager: Boolean(navigatorRef.storage), installMode: standalone ? "standalone" : "browser", backgroundSync: Boolean(scope?.SyncManager), notifications: "Notification" in scope, truthful: true };
   }
 
   function defaultState() {
-    return {
-      version: VERSION,
-      preferences: { theme: "system", density: "comfortable", language: "vi", reducedData: false, offlineHints: true },
-      localFlags: { compactNavigation: false, quietMotion: false },
-      backups: [],
-      audit: [],
-      updatedAt: now()
-    };
+    return { version: VERSION, preferences: { theme: "system", density: "comfortable", language: "vi", reducedData: false, offlineHints: true, reducedMotion: false, highContrast: false, largeText: false, quietHours: "22:00-07:00" }, localFlags: { compactNavigation: false, quietMotion: false }, notifications: { email: true, push: false, inApp: true, security: true, jobs: true, learning: true }, backups: [], checkpoints: [], audit: [], updatedAt: now() };
   }
 
   function migrate(input) {
-    const base = defaultState();
-    if (!input || typeof input !== "object") return base;
-    const preferences = input.preferences || {};
-    return {
-      version: VERSION,
-      preferences: {
-        theme: ["system", "dark", "light"].includes(preferences.theme) ? preferences.theme : base.preferences.theme,
-        density: ["comfortable", "compact"].includes(preferences.density) ? preferences.density : base.preferences.density,
-        language: ["vi", "en"].includes(preferences.language) ? preferences.language : base.preferences.language,
-        reducedData: Boolean(preferences.reducedData),
-        offlineHints: preferences.offlineHints !== false
-      },
-      localFlags: Object.fromEntries(Object.entries(sanitize(input.localFlags || {}) || {}).slice(0, 40).map(([key, value]) => [text(key, 80), Boolean(value)])),
-      backups: (Array.isArray(input.backups) ? input.backups : []).slice(-20).map(item => ({ id: text(item.id, 100), kind: ["export", "import"].includes(item.kind) ? item.kind : "export", createdAt: text(item.createdAt, 40) })),
-      audit: (Array.isArray(input.audit) ? input.audit : []).slice(-150).map(item => sanitize(item)).filter(Boolean),
-      updatedAt: text(input.updatedAt || now(), 40)
-    };
+    const base = defaultState(); if (!input || typeof input !== "object") return base; const preferences = input.preferences || {};
+    return { ...base, preferences: { ...base.preferences, theme: ["system", "dark", "light"].includes(preferences.theme) ? preferences.theme : base.preferences.theme, density: ["comfortable", "compact"].includes(preferences.density) ? preferences.density : base.preferences.density, language: ["vi", "en"].includes(preferences.language) ? preferences.language : base.preferences.language, reducedData: Boolean(preferences.reducedData), offlineHints: preferences.offlineHints !== false, reducedMotion: Boolean(preferences.reducedMotion), highContrast: Boolean(preferences.highContrast), largeText: Boolean(preferences.largeText), quietHours: text(preferences.quietHours || base.preferences.quietHours, 20) }, localFlags: Object.fromEntries(Object.entries(sanitize(input.localFlags || {}) || {}).slice(0, 40).map(([key, value]) => [text(key, 80), Boolean(value)])), notifications: { ...base.notifications, ...(sanitize(input.notifications || {}) || {}) }, backups: (Array.isArray(input.backups) ? input.backups : []).slice(-30).map(sanitize).filter(Boolean), checkpoints: (Array.isArray(input.checkpoints) ? input.checkpoints : []).slice(-5).map(sanitize).filter(Boolean), audit: (Array.isArray(input.audit) ? input.audit : []).slice(-200).map(sanitize).filter(Boolean), updatedAt: text(input.updatedAt || now(), 40), version: VERSION };
   }
 
-  function createStore(storage) {
-    let state = defaultState();
-    try { state = migrate(JSON.parse(storage?.getItem?.(STORAGE_KEY) || "null")); } catch { state = defaultState(); }
+  function storageEntries(storage) {
+    const rows = [];
+    if (!storage) return rows;
+    if (Number.isFinite(Number(storage.length)) && typeof storage.key === "function") for (let i = 0; i < storage.length; i += 1) { try { const key = storage.key(i); if (key) rows.push([key, storage.getItem(key)]); } catch { /* Storage blocked by privacy mode. */ } }
+    else if (storage.values instanceof Map) rows.push(...storage.values.entries());
+    return rows;
+  }
 
-    function persist() {
-      state.updatedAt = now();
-      try { storage?.setItem?.(STORAGE_KEY, JSON.stringify(state)); } catch { /* Private mode or local quota. */ }
+  function sectionForKey(key) { return Object.entries(BACKUP_SECTIONS).find(([, section]) => section.prefixes.some(prefix => key === prefix || key.startsWith(prefix)))?.[0] || ""; }
+  function safeStoredValue(raw) { try { return sanitize(JSON.parse(raw)); } catch { return redactText(raw); } }
+
+  function createStore(storage) {
+    let state = defaultState(); try { state = migrate(JSON.parse(storage?.getItem?.(STORAGE_KEY) || "null")); } catch { state = defaultState(); }
+    const persist = () => { state.updatedAt = now(); try { storage?.setItem?.(STORAGE_KEY, JSON.stringify(state)); } catch { /* Private browsing or quota. */ } };
+    const audit = (action, detail = {}) => { state.audit.push({ id: uid("audit"), action: text(action, 100), detail: sanitize(detail) || {}, createdAt: now(), scope: "this-device" }); state.audit = state.audit.slice(-200); };
+    function updatePreferences(patch = {}) { state.preferences = migrate({ ...state, preferences: { ...state.preferences, ...sanitize(patch) } }).preferences; audit("settings.updated", { fields: Object.keys(patch).filter(key => !SENSITIVE_KEY.test(key)) }); persist(); return clone(state.preferences); }
+    function updateNotifications(patch = {}) { state.notifications = { ...state.notifications, ...Object.fromEntries(Object.entries(sanitize(patch) || {}).map(([key, value]) => [key, Boolean(value)])) }; audit("notifications.updated", { fields: Object.keys(patch) }); persist(); return clone(state.notifications); }
+    function setLocalFlag(key, enabled) { const flag = text(key, 80).replace(/[^a-zA-Z0-9_.:-]/g, "-"); if (!flag || SENSITIVE_KEY.test(flag)) throw new Error("Khóa feature flag không hợp lệ."); state.localFlags[flag] = Boolean(enabled); audit("local-flag.updated", { flag, enabled: Boolean(enabled) }); persist(); return Boolean(enabled); }
+    function buildBackup(selected = Object.keys(BACKUP_SECTIONS)) {
+      const sections = [...new Set(selected)].filter(key => BACKUP_SECTIONS[key]); const namespaces = {};
+      for (const [key, raw] of storageEntries(storage)) { const section = sectionForKey(key); if (section && sections.includes(section) && key !== STORAGE_KEY && key !== CHECKPOINT_KEY && key !== INCIDENT_KEY) namespaces[key] = safeStoredValue(raw); }
+      const createdAt = now(); const unsigned = { schema: BACKUP_SCHEMA, version: VERSION, createdAt, manifest: { sections, namespaceCount: Object.keys(namespaces).length }, data: { preferences: clone(state.preferences), localFlags: clone(state.localFlags), notifications: clone(state.notifications), namespaces }, privacy: { secretsIncluded: false, sessionsIncluded: false, accountDataIncluded: false, sanitized: true } };
+      const payload = { ...unsigned, checksum: { algorithm: "SHA-256", value: sha256(stableJson(unsigned)) } };
+      state.backups.push({ id: uid("backup"), kind: "export", createdAt, sections, checksum: payload.checksum.value }); audit("backup.exported", { schema: BACKUP_SCHEMA, sections, namespaceCount: Object.keys(namespaces).length }); persist(); return JSON.stringify(payload, null, 2);
     }
-    function audit(action, detail = {}) {
-      state.audit.push({ id: uid("audit"), action: text(action, 100), detail: sanitize(detail) || {}, createdAt: now(), scope: "this-device" });
-      state.audit = state.audit.slice(-150);
+    function validateBackup(raw) { const parsed = typeof raw === "string" ? JSON.parse(raw) : clone(raw); if (!parsed || parsed.schema !== BACKUP_SCHEMA || Number(parsed.version) !== VERSION || !parsed.data || parsed.checksum?.algorithm !== "SHA-256") throw new Error("Tệp backup không đúng định dạng HH System V2."); const { checksum, ...unsigned } = parsed; if (sha256(stableJson(unsigned)) !== checksum.value) throw new Error("Checksum backup không khớp; tệp có thể đã hỏng hoặc bị sửa."); return parsed; }
+    function previewBackup(raw) { const parsed = validateBackup(raw); const namespaces = parsed.data.namespaces || {}; const rows = Object.keys(namespaces).map(key => ({ key, section: sectionForKey(key), exists: storage?.getItem?.(key) != null, currentBytes: text(storage?.getItem?.(key)).length * 2, incomingBytes: JSON.stringify(namespaces[key]).length * 2 })); return { parsed, rows, conflicts: rows.filter(row => row.exists).length, additions: rows.filter(row => !row.exists).length }; }
+    function importBackup(raw, resolution = "merge") {
+      if (!["merge", "overwrite", "skip"].includes(resolution)) throw new Error("Cách xử lý xung đột không hợp lệ."); const preview = previewBackup(raw); const before = {};
+      for (const row of preview.rows) before[row.key] = storage?.getItem?.(row.key);
+      const checkpoint = { id: uid("checkpoint"), createdAt: now(), before }; state.checkpoints.push(checkpoint); state.checkpoints = state.checkpoints.slice(-5);
+      let imported = 0; let skipped = 0;
+      for (const [key, value] of Object.entries(preview.parsed.data.namespaces || {})) {
+        const current = storage?.getItem?.(key); if (current != null && resolution === "skip") { skipped += 1; continue; }
+        let next = value;
+        if (current != null && resolution === "merge" && value && typeof value === "object" && !Array.isArray(value)) { try { next = { ...(JSON.parse(current) || {}), ...value }; } catch { next = value; } }
+        storage?.setItem?.(key, typeof next === "string" ? next : JSON.stringify(next)); imported += 1;
+      }
+      const safe = sanitize(preview.parsed.data) || {}; state.preferences = migrate({ preferences: safe.preferences }).preferences; state.localFlags = migrate({ localFlags: safe.localFlags }).localFlags; state.notifications = { ...state.notifications, ...(safe.notifications || {}) };
+      const createdAt = now(); state.backups.push({ id: uid("backup"), kind: "import", createdAt, imported, skipped, checkpointId: checkpoint.id }); audit("backup.imported", { imported, skipped, resolution, checkpointId: checkpoint.id }); persist(); return { imported, skipped, checkpointId: checkpoint.id };
     }
-    function updatePreferences(patch = {}) {
-      const next = migrate({ ...state, preferences: { ...state.preferences, ...sanitize(patch) } });
-      state.preferences = next.preferences;
-      audit("settings.updated", { fields: Object.keys(patch).filter(key => !SENSITIVE_KEY.test(key)) });
-      persist();
-      return clone(state.preferences);
-    }
-    function setLocalFlag(key, enabled) {
-      const flag = text(key, 80).replace(/[^a-zA-Z0-9_.:-]/g, "-");
-      if (!flag || SENSITIVE_KEY.test(flag)) throw new Error("Khóa feature flag không hợp lệ.");
-      state.localFlags[flag] = Boolean(enabled);
-      audit("local-flag.updated", { flag, enabled: Boolean(enabled) });
-      persist();
-      return Boolean(state.localFlags[flag]);
-    }
-    function exportBackup() {
-      const createdAt = now();
-      const payload = { schema: BACKUP_SCHEMA, version: VERSION, createdAt, data: { preferences: clone(state.preferences), localFlags: clone(state.localFlags) }, privacy: { secretsIncluded: false, sessionsIncluded: false, accountDataIncluded: false } };
-      state.backups.push({ id: uid("backup"), kind: "export", createdAt });
-      audit("backup.exported", { schema: BACKUP_SCHEMA });
-      persist();
-      return JSON.stringify(payload, null, 2);
-    }
-    function importBackup(raw) {
-      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-      if (!parsed || parsed.schema !== BACKUP_SCHEMA || Number(parsed.version) !== VERSION || !parsed.data) throw new Error("Tệp backup không đúng định dạng HH System v1.");
-      const safe = sanitize(parsed.data) || {};
-      const imported = migrate({ ...state, preferences: safe.preferences, localFlags: safe.localFlags });
-      state.preferences = imported.preferences;
-      state.localFlags = imported.localFlags;
-      const createdAt = now();
-      state.backups.push({ id: uid("backup"), kind: "import", createdAt });
-      audit("backup.imported", { schema: BACKUP_SCHEMA });
-      persist();
-      return inspect();
-    }
+    function rollbackCheckpoint(id) { const checkpoint = state.checkpoints.find(item => item.id === id) || state.checkpoints.at(-1); if (!checkpoint) throw new Error("Chưa có checkpoint để rollback."); for (const [key, value] of Object.entries(checkpoint.before || {})) { if (value == null) storage?.removeItem?.(key); else storage?.setItem?.(key, value); } audit("backup.rolled-back", { checkpointId: checkpoint.id }); persist(); return checkpoint.id; }
     function inspect() { return clone(state); }
-    return { inspect, updatePreferences, setLocalFlag, exportBackup, importBackup };
+    return { inspect, updatePreferences, updateNotifications, setLocalFlag, exportBackup: buildBackup, validateBackup, previewBackup, importBackup, rollbackCheckpoint };
+  }
+
+  async function cacheSize(cache) { let bytes = 0; let entries = 0; for (const request of await cache.keys()) { entries += 1; const response = await cache.match(request); const header = Number(response?.headers?.get?.("content-length")); if (Number.isFinite(header) && header > 0) bytes += header; else try { bytes += (await response.clone().arrayBuffer()).byteLength; } catch { /* Opaque response. */ } } return { bytes, entries }; }
+
+  async function inspectStorage(scope = globalScope) {
+    const navigatorRef = scope.navigator || {}; const estimate = await navigatorRef.storage?.estimate?.().catch?.(() => null) || null; const persisted = await navigatorRef.storage?.persisted?.().catch?.(() => false) || false;
+    const local = storageEntries(scope.localStorage); const localBytes = local.reduce((sum, [key, value]) => sum + (String(key).length + String(value || "").length) * 2, 0); const sections = {};
+    for (const [key, value] of local) { const section = sectionForKey(key) || "other"; sections[section] ||= { id: section, keys: 0, bytes: 0 }; sections[section].keys += 1; sections[section].bytes += (key.length + String(value || "").length) * 2; }
+    const caches = []; if (scope.caches?.keys) for (const name of await scope.caches.keys()) { const item = await cacheSize(await scope.caches.open(name)).catch(() => ({ bytes: 0, entries: 0 })); caches.push({ name: text(name, 180), ...item }); }
+    let databases = []; if (scope.indexedDB?.databases) databases = (await scope.indexedDB.databases().catch(() => [])).map(item => ({ name: text(item.name, 180), version: Number(item.version || 0) })).filter(item => item.name);
+    return { supported: Boolean(navigatorRef.storage), usage: Number(estimate?.usage || localBytes), quota: Number(estimate?.quota || 0), persisted, localStorage: { bytes: localBytes, keys: local.length, sections: Object.values(sections) }, caches, indexedDB: databases, checkedAt: now() };
+  }
+
+  async function requestPersistentStorage(scope = globalScope) { if (!scope.navigator?.storage?.persist) throw new Error("Trình duyệt không hỗ trợ yêu cầu lưu trữ bền vững."); const granted = await scope.navigator.storage.persist(); return { granted: granted === true, confirmed: true }; }
+  function deleteLocalSection(storage, sectionId) {
+    if (!BACKUP_SECTIONS[sectionId]) throw new Error("Nhóm dữ liệu không hợp lệ.");
+    const keys = storageEntries(storage).map(([key]) => key).filter(key => sectionForKey(key) === sectionId);
+    for (const key of keys) storage?.removeItem?.(key);
+    const remaining = storageEntries(storage).map(([key]) => key).filter(key => sectionForKey(key) === sectionId);
+    if (remaining.length) throw new Error("Trình duyệt chưa xác nhận xóa hết nhóm dữ liệu.");
+    return { confirmed: true, sectionId, removed: keys.length, keys };
+  }
+  async function deleteCache(scope, name) { if (!name || !scope.caches?.delete) throw new Error("Cache Storage không khả dụng."); const existed = (await scope.caches.keys()).includes(name); if (!existed) throw new Error("Cache đã không còn tồn tại."); const deleted = await scope.caches.delete(name); if (!deleted) throw new Error("Trình duyệt không xác nhận xóa cache."); return { confirmed: true, name }; }
+
+  async function inspectPwa(scope = globalScope) {
+    if (!scope.navigator?.serviceWorker) return { supported: false, state: "unsupported", checkedAt: now() };
+    const registration = await scope.navigator.serviceWorker.getRegistration?.().catch(() => null);
+    const describe = worker => worker ? { state: worker.state || "unknown", scriptURL: text(worker.scriptURL, 500) } : null;
+    return { supported: true, controlled: Boolean(scope.navigator.serviceWorker.controller), controller: describe(scope.navigator.serviceWorker.controller), installing: describe(registration?.installing), waiting: describe(registration?.waiting), active: describe(registration?.active), scope: text(registration?.scope, 500), registration, checkedAt: now() };
   }
 
   function createFetchAdapter(fetcher, apiBase = "") {
-    const request = async (path, options = {}) => {
-      if (typeof fetcher !== "function") throw new Error("Trình duyệt không hỗ trợ kết nối backend.");
-      const response = await fetcher(`${String(apiBase).replace(/\/$/, "")}${path}`, { cache: "no-store", credentials: "include", ...options, headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) } });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || `Backend trả HTTP ${response.status}.`);
-      return data;
-    };
+    const request = async (path, options = {}) => { if (typeof fetcher !== "function") throw new Error("Trình duyệt không hỗ trợ kết nối backend."); const started = Date.now(); const response = await fetcher(`${String(apiBase).replace(/\/$/, "")}${path}`, { cache: "no-store", credentials: "include", ...options, headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) } }); const data = await response.json().catch(() => ({})); if (!response.ok) { const error = new Error(data.error || `Backend trả HTTP ${response.status}.`); error.code = data.code || "HTTP_ERROR"; error.status = response.status; throw error; } return { data, latencyMs: Date.now() - started, requestId: text(response.headers?.get?.("x-request-id") || data.requestId, 160) }; };
     return {
-      async health() {
-        const data = await request("/api/platform/summary?view=health");
-        if (data.ok !== true || !data.health) throw new Error("Backend chưa xác nhận trạng thái hệ thống.");
-        return { confirmed: true, checkedAt: data.health.checkedAt || now(), health: sanitize(data.health) || {} };
-      },
-      async gatewayStatus() {
-        const data = await request("/api/platform/summary?view=gateway-quotas");
-        if (data.ok !== true || data.confirmed !== true || !Array.isArray(data.quotas)) throw new Error("Gateway chưa xác nhận quota.");
-        return { confirmed: true, checkedAt: data.checkedAt || now(), quotas: data.quotas.map(normalizeQuota).filter(item => item.provider) };
-      },
-      async sessions() {
-        const data = await request("/api/auth/sessions");
-        return (Array.isArray(data.sessions) ? data.sessions : []).slice(0, 50).map(sanitizeSession).filter(item => item.id);
-      },
-      async revokeSession(sessionId) {
-        const data = await request("/api/auth/session-revoke", { method: "POST", body: JSON.stringify({ sessionId: text(sessionId, 120) }) });
-        if (data.ok !== true) throw new Error("Backend chưa xác nhận thu hồi phiên.");
-        return { confirmed: true };
-      }
+      async health() { const { data, latencyMs, requestId } = await request("/api/platform/summary?view=health"); if (data.ok !== true || !data.health) throw new Error("Backend chưa xác nhận trạng thái hệ thống."); return { confirmed: true, checkedAt: data.health.checkedAt || now(), health: sanitize(data.health) || {}, latencyMs, requestId }; },
+      async systemMe() { const { data, latencyMs, requestId } = await request("/api/platform/summary?view=system-me"); if (data.ok !== true || data.confirmed !== true) throw new Error("Backend chưa xác nhận dữ liệu Hệ thống cá nhân."); return { ...sanitize(data), confirmed: true, latencyMs, requestId }; },
+      async gatewayStatus() { const { data } = await request("/api/platform/summary?view=gateway-quotas"); if (data.ok !== true || data.confirmed !== true || !Array.isArray(data.quotas)) throw new Error("Gateway chưa xác nhận quota."); return { confirmed: true, checkedAt: data.checkedAt || now(), quotas: data.quotas.map(normalizeQuota).filter(item => item.provider) }; },
+      async sessions() { const { data } = await request("/api/auth/sessions"); return (Array.isArray(data.sessions) ? data.sessions : []).slice(0, 50).map(sanitizeSession).filter(item => item.id); },
+      async revokeSession(sessionId) { const { data } = await request("/api/auth/session-revoke", { method: "POST", body: JSON.stringify({ sessionId: text(sessionId, 120) }) }); if (data.ok !== true) throw new Error("Backend chưa xác nhận thu hồi phiên."); return { confirmed: true }; },
+      async revokeOtherSessions() { const { data } = await request("/api/auth/session-revoke-all", { method: "POST", body: JSON.stringify({ exceptCurrent: true }) }); if (data.ok !== true || data.currentPreserved !== true) throw new Error("Backend chưa xác nhận giữ lại phiên hiện tại."); return { confirmed: true, revoked: Number(data.revoked || 0) }; },
+      async controlJob(jobId, source, control) { const { data } = await request("/api/platform/summary?view=system-job-control", { method: "POST", body: JSON.stringify({ jobId: text(jobId, 120), source: text(source, 60), control: text(control, 20) }) }); if (data.ok !== true || data.confirmed !== true) throw new Error("Backend chưa xác nhận điều khiển tác vụ."); return normalizeSystemJob(data.job); },
+      async reportIncident(incident) { const { data } = await request("/api/platform/summary?view=system-incident-report", { method: "POST", body: JSON.stringify({ incident: sanitize(incident) || {}, screenshotIncluded: false }) }); if (data.ok !== true || data.confirmed !== true || !data.requestId) throw new Error("Backend chưa xác nhận nhận báo cáo."); return { confirmed: true, requestId: text(data.requestId, 120) }; }
     };
   }
 
-  const rolePermissions = Object.freeze({
-    owner: ["Quản trị nền tảng", "RBAC", "Feature flags", "Audit"],
-    super_admin: ["Quản trị nền tảng", "RBAC", "Feature flags", "Audit"],
-    admin: ["Quản trị nội dung", "Phiên người dùng", "Audit"],
-    moderator: ["Kiểm duyệt nội dung"],
-    support: ["Xử lý yêu cầu hỗ trợ"],
-    analyst: ["Xem số liệu tổng hợp an toàn"],
-    member: ["Thiết lập cá nhân", "Dữ liệu trên thiết bị"]
-  });
+  async function latencyProbe(fetcher, url) { const started = performance?.now?.() || Date.now(); try { const response = await fetcher(url, { cache: "no-store", credentials: url.startsWith("/") ? "include" : "omit", headers: { Accept: "application/json" } }); return { ok: response.ok, status: response.status, latencyMs: Math.round((performance?.now?.() || Date.now()) - started) }; } catch (error) { return { ok: false, status: 0, latencyMs: Math.round((performance?.now?.() || Date.now()) - started), error: redactText(error.message) }; } }
 
-  function accessSnapshot(user = {}) {
-    const roles = [...new Set((Array.isArray(user.roles) ? user.roles : []).map(role => text(role, 40).toLowerCase()).filter(Boolean))];
-    if (!roles.length) roles.push("member");
-    return { roles, permissions: [...new Set(roles.flatMap(role => rolePermissions[role] || []))], source: "signed-in-profile", enforcement: "server" };
+  async function runDiagnostics(scope = globalScope, options = {}) {
+    const fetcher = options.fetch || scope.fetch?.bind(scope); const rows = []; const add = (id, label, status, detail = {}, source = "browser") => rows.push({ id, label, status, detail: sanitize(detail), source, checkedAt: now() });
+    if (fetcher) { const api = await latencyProbe(fetcher, `${String(options.apiBase || "").replace(/\/$/, "")}/api/platform/summary?view=health`); add("api", "API Vercel", api.ok ? "pass" : "fail", api, "http-probe"); if (options.realtimeUrl) { const realtime = await latencyProbe(fetcher, `${String(options.realtimeUrl).replace(/\/$/, "")}/health`); add("realtime", "Realtime heartbeat", realtime.ok ? "pass" : "fail", realtime, "http-probe"); } }
+    const pwa = await inspectPwa(scope); add("service-worker", "Service Worker", pwa.controlled ? "pass" : pwa.supported ? "warn" : "fail", { state: pwa.active?.state || pwa.state, waiting: Boolean(pwa.waiting) }, "browser-api");
+    const storage = await inspectStorage(scope); add("indexeddb", "IndexedDB", scope.indexedDB ? "pass" : "fail", { databases: storage.indexedDB.length }, "browser-api"); add("cache", "Cache Storage", scope.caches ? "pass" : "fail", { caches: storage.caches.length }, "browser-api");
+    const permission = scope.Notification?.permission || "unsupported"; add("notification", "Notification", permission === "granted" ? "pass" : permission === "denied" ? "warn" : "info", { permission }, "browser-permission");
+    const video = scope.document?.createElement?.("video"); add("media-codec", "Media codec", video?.canPlayType?.("video/mp4; codecs=avc1.42E01E") ? "pass" : "warn", { h264: video?.canPlayType?.("video/mp4; codecs=avc1.42E01E") || "unknown", webm: video?.canPlayType?.("video/webm; codecs=vp9") || "unknown" }, "media-capabilities");
+    add("upload", "Upload capability", typeof scope.File === "function" && typeof scope.FormData === "function" ? "pass" : "fail", { fileApi: typeof scope.File === "function", formData: typeof scope.FormData === "function" }, "browser-api");
+    const memory = scope.performance?.memory; add("memory", "Bộ nhớ tab", memory ? "pass" : "info", memory ? { usedJSHeapSize: memory.usedJSHeapSize, jsHeapSizeLimit: memory.jsHeapSizeLimit } : { supported: false }, "performance-api");
+    const vitalTypes = ["largest-contentful-paint", "layout-shift", "event", "navigation"]; const vitals = {}; for (const type of vitalTypes) try { const entries = scope.performance?.getEntriesByType?.(type) || []; vitals[type] = entries.length; } catch { vitals[type] = 0; } add("web-vitals", "Performance entries", "pass", vitals, "performance-api");
+    return { schema: "hh.support-diagnostics.v2", version: VERSION, createdAt: now(), app: { release: INTEGRATION_VERSION, route: text(scope.location?.hash || scope.location?.pathname, 200) }, browser: { userAgent: redactText(scope.navigator?.userAgent), language: text(scope.navigator?.language, 30), online: scope.navigator?.onLine !== false }, checks: rows, summary: { pass: rows.filter(row => row.status === "pass").length, warn: rows.filter(row => row.status === "warn").length, fail: rows.filter(row => row.status === "fail").length }, privacy: { secretsIncluded: false, cookiesIncluded: false, fullEmailIncluded: false, privateContentIncluded: false } };
   }
+
+  function integrityReport(storageSnapshot, pwaSnapshot) { const findings = []; const names = storageSnapshot.caches.map(item => item.name); const releaseCaches = names.filter(name => /^hh-identity-portal-v\d+$/.test(name)); if (releaseCaches.length > 1) findings.push({ severity: "warning", code: "STALE_RELEASE_CACHE", detail: `${releaseCaches.length} cache release đang tồn tại.`, action: "review-cache" }); const fingerprints = new Map(); for (const [key, raw] of storageEntries(globalScope.localStorage)) { if (!raw || key === STORAGE_KEY) continue; const hash = sha256(raw); if (fingerprints.has(hash)) findings.push({ severity: "info", code: "DUPLICATE_LOCAL_RECORD", detail: `${key} trùng nội dung với ${fingerprints.get(hash)}.`, action: "report-only" }); else fingerprints.set(hash, key); try { if (/^hh[.-]/.test(key)) JSON.parse(raw); } catch { findings.push({ severity: "warning", code: "INVALID_LOCAL_JSON", detail: `${key} không đọc được dưới dạng JSON.`, action: "quarantine-before-repair" }); } } if (pwaSnapshot.waiting) findings.push({ severity: "info", code: "PWA_UPDATE_WAITING", detail: "Có Service Worker mới đang chờ.", action: "apply-when-safe" }); return { checkedAt: now(), findings, autoDeleted: false, policy: "quarantine-before-delete" }; }
+
+  const rolePermissions = Object.freeze({ owner: ["Cấu hình workspace", "Xuất dữ liệu cá nhân", "Quản lý phiên"], admin: ["Thiết lập cá nhân", "Quản lý phiên"], editor: ["Dự án", "Preset"], reviewer: ["Duyệt trong workspace"], publisher: ["Xuất bản theo scope backend"], analyst: ["Xem số liệu của workspace"], viewer: ["Chỉ xem"], member: ["Thiết lập cá nhân", "Dữ liệu trên thiết bị"] });
+  function accessSnapshot(user = {}) { const roles = [...new Set((Array.isArray(user.roles) ? user.roles : []).map(role => text(role, 40).toLowerCase()).filter(Boolean))]; if (!roles.length) roles.push("member"); return { roles, permissions: [...new Set(roles.flatMap(role => rolePermissions[role] || rolePermissions.member))], source: "signed-in-profile", enforcement: "server" }; }
+
+  const statusBadge = (label, state = "unknown", detail = "") => `<article class="system-health-item"><i data-state="${escapeHtml(state)}"></i><div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(detail || state)}</span></div><b data-state="${escapeHtml(state)}">${escapeHtml(({ online: "Online", degraded: "Giảm cấp", offline: "Offline", unconfigured: "Chưa cấu hình", connected: "Đã kết nối", unknown: "Chưa kiểm tra" })[state] || state)}</b></article>`;
+  const empty = message => `<p class="system-empty">${escapeHtml(message)}</p>`;
 
   function renderMarkup(state, access) {
-    const checked = (value, expected = true) => value === expected ? " checked" : "";
-    return `<section class="system-platform" data-system-platform>
-      <header class="system-hero"><div><p>HH SYSTEM · ${INTEGRATION_VERSION}</p><h2>Hệ thống của bạn, minh bạch và local-first</h2><span>Cài đặt, backup và nhật ký thao tác chỉ trên thiết bị này. Quyền, phiên đăng nhập và provider chỉ được báo thành công sau khi backend xác nhận.</span></div><output data-system-notice role="status" aria-live="polite">Sẵn sàng.</output></header>
-      <nav class="system-tabs" aria-label="Khu vực hệ thống">
-        ${[["overview","Tổng quan"],["account","Thiết bị & quyền"],["providers","API & tích hợp"],["data","Backup"],["flags","Feature flags"],["audit","Audit log"]].map(([id,label], index) => `<button type="button" data-system-tab="${id}"${index === 0 ? ' aria-current="page"' : ""}>${label}</button>`).join("")}
-      </nav>
-      <section class="system-panel" data-system-panel="overview">
-        <div class="system-status-grid"><article><span>Kết nối</span><strong data-system-online>Đang kiểm tra</strong><small>Trạng thái thật từ trình duyệt</small></article><article><span>PWA</span><strong data-system-pwa>Đang kiểm tra</strong><small>Không giả lập khả năng cài đặt</small></article><article><span>Backend</span><strong data-system-backend>Chưa kiểm tra</strong><small data-system-backend-time>Chờ adapter xác nhận</small></article><article><span>Offline</span><strong data-system-offline>Chưa xác định</strong><small>Cache phụ thuộc service worker hiện có</small></article></div>
-        <form class="system-settings" data-system-settings><header><div><span>Thiết lập thiết bị</span><h3>Trải nghiệm cá nhân</h3></div><button type="submit">Lưu trên thiết bị</button></header><div><label>Giao diện<select name="theme"><option value="system"${state.preferences.theme === "system" ? " selected" : ""}>Theo hệ thống</option><option value="dark"${state.preferences.theme === "dark" ? " selected" : ""}>Tối</option><option value="light"${state.preferences.theme === "light" ? " selected" : ""}>Sáng</option></select></label><label>Mật độ<select name="density"><option value="comfortable"${state.preferences.density === "comfortable" ? " selected" : ""}>Thoải mái</option><option value="compact"${state.preferences.density === "compact" ? " selected" : ""}>Gọn</option></select></label><label>Ngôn ngữ<select name="language"><option value="vi"${state.preferences.language === "vi" ? " selected" : ""}>Tiếng Việt</option><option value="en"${state.preferences.language === "en" ? " selected" : ""}>English</option></select></label></div><label class="system-check"><input name="reducedData" type="checkbox"${checked(state.preferences.reducedData)}><span><b>Giảm dữ liệu</b><small>Ưu tiên nội dung nhẹ khi module hỗ trợ.</small></span></label><label class="system-check"><input name="offlineHints" type="checkbox"${checked(state.preferences.offlineHints)}><span><b>Gợi ý ngoại tuyến</b><small>Hiện rõ phần nào cần mạng.</small></span></label></form>
-      </section>
-      <section class="system-panel" data-system-panel="account" hidden><div class="system-two-column"><article class="system-card"><header><div><span>Phiên của tôi</span><h3>Thiết bị đăng nhập</h3></div><button type="button" data-system-refresh-sessions>Làm mới</button></header><p>Chỉ hiển thị các phiên thuộc tài khoản hiện tại. Không có theo dõi người dùng khác.</p><div data-system-sessions><p class="system-empty">Đang chờ backend.</p></div></article><article class="system-card"><header><div><span>RBAC</span><h3>Quyền hiện tại</h3></div></header><p>Backend mới là nơi thực thi quyền; giao diện này chỉ giải thích hồ sơ đã đăng nhập.</p><div class="system-chips">${access.roles.map(role => `<span>${escapeHtml(role)}</span>`).join("")}</div><ul>${access.permissions.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul></article></div></section>
-      <section class="system-panel" data-system-panel="providers" hidden><div class="system-two-column"><article class="system-card"><header><div><span>API quota</span><h3>Hạn mức provider</h3></div><button type="button" data-system-refresh-health>Kiểm tra</button></header><p>Chỉ hiển thị số liệu backend có thể xác nhận. “Đã cấu hình” không đồng nghĩa còn quota.</p><div data-system-quotas><p class="system-empty">Chưa có số liệu quota được xác nhận.</p></div></article><article class="system-card"><header><div><span>Integration center</span><h3>Kết nối máy chủ</h3></div></header><p>Client không nhận hoặc lưu API key, secret, token hay password.</p><div data-system-integrations><p class="system-empty">Nhấn Kiểm tra để tải trạng thái cấu hình.</p></div></article></div></section>
-      <section class="system-panel" data-system-panel="data" hidden><div class="system-two-column"><article class="system-card"><header><div><span>Portable JSON</span><h3>Export / Import</h3></div></header><p>Backup chỉ gồm preferences và local feature flags; không gồm tài khoản, phiên hoặc bí mật.</p><div class="system-actions"><button type="button" data-system-export>Xuất backup</button><label class="system-file">Nhập backup<input type="file" accept="application/json,.json" data-system-import></label></div></article><article class="system-card"><header><div><span>Lịch sử</span><h3>Backup trên thiết bị</h3></div></header><div data-system-backups>${state.backups.slice().reverse().map(item => `<p><b>${item.kind === "import" ? "Đã nhập" : "Đã xuất"}</b><span>${escapeHtml(new Date(item.createdAt).toLocaleString("vi-VN"))}</span></p>`).join("") || '<p class="system-empty">Chưa có backup.</p>'}</div></article></div></section>
-      <section class="system-panel" data-system-panel="flags" hidden><article class="system-card"><header><div><span>Thiết bị này</span><h3>Feature flags cục bộ</h3></div></header><p>Các công tắc này chỉ điều chỉnh trình bày trên thiết bị, không vượt RBAC hoặc kill switch của backend.</p><div class="system-flag-list">${Object.entries(state.localFlags).map(([key, enabled]) => `<label><span><b>${escapeHtml(key)}</b><small>Phạm vi: thiết bị này</small></span><input type="checkbox" role="switch" data-system-flag="${escapeHtml(key)}"${checked(enabled)}></label>`).join("")}</div></article></section>
-      <section class="system-panel" data-system-panel="audit" hidden><article class="system-card"><header><div><span>Nhật ký cục bộ</span><h3>Audit log thiết bị</h3></div></header><p>Chỉ ghi loại thao tác và thời gian; không ghi nội dung form nhạy cảm hoặc dữ liệu người dùng khác.</p><ol class="system-audit" data-system-audit>${state.audit.slice().reverse().map(item => `<li><span>${escapeHtml(item.action)}</span><time datetime="${escapeHtml(item.createdAt)}">${escapeHtml(new Date(item.createdAt).toLocaleString("vi-VN"))}</time></li>`).join("") || '<li class="system-empty">Chưa có thao tác.</li>'}</ol></article></section>
+    const tabs = [["overview", "Tổng quan"], ["security", "Bảo mật"], ["data", "Dữ liệu"], ["pwa", "PWA"], ["integrations", "Tích hợp"], ["jobs", "Tác vụ"], ["diagnostics", "Chẩn đoán"], ["privacy", "Quyền riêng tư"], ["advanced", "Nâng cao"]];
+    const backupChoices = Object.entries(BACKUP_SECTIONS).map(([key, section]) => `<label class="system-choice"><input type="checkbox" name="backupSection" value="${escapeHtml(key)}" checked><span><b>${escapeHtml(section.label)}</b><small>Chỉ namespace local đã cho phép</small></span></label>`).join("");
+    return `<section class="system-platform" data-system-platform data-density="${escapeHtml(state.preferences.density)}">
+      <header class="system-hero"><div><p>HH SYSTEM · ${INTEGRATION_VERSION}</p><h2>Trung tâm Hệ thống cá nhân</h2><span>Thiết bị, dữ liệu, phiên, PWA, kết nối và tác vụ của riêng bạn. Trạng thái server chỉ được hiển thị sau khi backend xác nhận.</span></div><div class="system-hero-actions"><button type="button" data-system-run-diagnostics>Chẩn đoán hệ thống</button><output data-system-notice role="status" aria-live="polite">Sẵn sàng.</output></div></header>
+      <nav class="system-tabs" aria-label="Khu vực Hệ thống">${tabs.map(([id, label], index) => `<button type="button" data-system-tab="${id}"${index ? "" : ' aria-current="page"'}>${label}</button>`).join("")}</nav>
+      <section class="system-panel" data-system-panel="overview"><div class="system-kpi-grid"><article><span>Website / API</span><strong data-system-api>Đang kiểm tra</strong><small data-system-api-detail>HTTP probe thật</small></article><article><span>PWA / cập nhật</span><strong data-system-pwa-summary>Đang kiểm tra</strong><small>Service Worker lifecycle</small></article><article><span>Lưu trữ</span><strong data-system-storage-summary>Đang đo</strong><small>Quota của origin</small></article><article><span>Phiên đăng nhập</span><strong data-system-session-summary>Đang tải</strong><small>Chỉ tài khoản hiện tại</small></article><article><span>Job đang chạy</span><strong data-system-job-summary>Đang tải</strong><small>Backend user-scoped</small></article><article><span>Cảnh báo</span><strong data-system-warning-summary>0</strong><small>Không gồm dữ liệu Admin</small></article></div><article class="system-card system-wide"><header><div><span>System Health Center</span><h3>Trạng thái dịch vụ</h3></div><button type="button" data-system-refresh-health>Kiểm tra lại</button></header><div class="system-health-grid" data-system-health>${empty("Đang chạy kiểm tra backend.")}</div></article></section>
+      <section class="system-panel" data-system-panel="security" hidden><div class="system-grid"><article class="system-card"><header><div><span>Security & Session</span><h3>Thiết bị đăng nhập</h3></div><button type="button" data-system-refresh-sessions>Làm mới</button></header><p>Mọi thao tác thu hồi phải được backend xác nhận. IP đầy đủ và token không được gửi xuống giao diện.</p><div data-system-sessions>${empty("Đang tải phiên của bạn.")}</div><div class="system-actions"><button type="button" data-system-revoke-others>Thu hồi mọi phiên khác</button><a href="#/security">Mở Passkey & bảo mật</a></div></article><article class="system-card"><header><div><span>Permission Matrix</span><h3>Quyền hiện tại</h3></div></header><p>Frontend chỉ giải thích. Backend thực thi theo tài khoản → workspace → vai trò → module → hành động.</p><div class="system-chips">${access.roles.map(role => `<span>${escapeHtml(role)}</span>`).join("")}</div><ul>${access.permissions.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul><div data-system-login-history>${empty("Lịch sử đăng nhập được lấy từ backend cá nhân.")}</div></article></div></section>
+      <section class="system-panel" data-system-panel="data" hidden><div class="system-grid"><article class="system-card"><header><div><span>Storage Inspector</span><h3>Dữ liệu trình duyệt thật</h3></div><button type="button" data-system-refresh-storage>Đo lại</button></header><div data-system-storage>${empty("Đang đọc StorageManager, Cache và IndexedDB.")}</div><div class="system-actions"><button type="button" data-system-persist-storage>Yêu cầu lưu trữ bền vững</button></div></article><article class="system-card"><header><div><span>Backup & Restore V2</span><h3>Backup chọn lọc, có checksum</h3></div></header><div class="system-choice-grid" data-system-backup-sections>${backupChoices}</div><div class="system-actions"><button type="button" data-system-export>Xuất backup</button><label class="system-file">Kiểm tra tệp backup<input type="file" accept="application/json,.json" data-system-import></label><button type="button" data-system-rollback>Rollback checkpoint gần nhất</button></div><div data-system-backup-preview>${empty("Nhập tệp để xem preview và xung đột trước khi áp dụng.")}</div></article><article class="system-card system-wide"><header><div><span>Data Integrity</span><h3>Kiểm tra toàn vẹn</h3></div><button type="button" data-system-integrity>Chạy kiểm tra</button></header><div data-system-integrity-results>${empty("Không tự xóa record mồ côi; mọi phát hiện chỉ được báo cáo hoặc cách ly trước.")}</div></article></div></section>
+      <section class="system-panel" data-system-panel="pwa" hidden><div class="system-grid"><article class="system-card"><header><div><span>PWA & Update Manager</span><h3>Vòng đời Service Worker</h3></div><button type="button" data-system-check-update>Kiểm tra cập nhật</button></header><div data-system-pwa>${empty("Đang đọc registration hiện tại.")}</div><div class="system-actions"><button type="button" data-system-apply-update disabled>Áp dụng & tải lại an toàn</button></div></article><article class="system-card"><header><div><span>Cache & Offline Pack</span><h3>Xóa riêng từng cache</h3></div></header><p>Luôn xem tên, số mục và dung lượng trước khi xóa. Không có nút “xóa tất cả”.</p><div data-system-caches>${empty("Đang kiểm kê cache.")}</div></article></div></section>
+      <section class="system-panel" data-system-panel="integrations" hidden><div class="system-grid"><article class="system-card system-wide"><header><div><span>Integration Center V2</span><h3>Tài khoản & provider</h3></div><button type="button" data-system-refresh-integrations>Đồng bộ backend</button></header><p>“Đã cấu hình” không đồng nghĩa “online”. Token, secret và API key không bao giờ được trả về trình duyệt.</p><div class="system-provider-grid" data-system-integrations>${empty("Đang tải kết nối của tài khoản hiện tại.")}</div></article><article class="system-card system-wide"><header><div><span>Gateway quota</span><h3>Hạn mức đã xác nhận</h3></div></header><div data-system-quotas>${empty("Không hiển thị số liệu ước đoán.")}</div></article></div></section>
+      <section class="system-panel" data-system-panel="jobs" hidden><article class="system-card system-wide"><header><div><span>Unified Job Center</span><h3>Tác vụ dài của bạn</h3></div><button type="button" data-system-refresh-jobs>Làm mới</button></header><p>Nút điều khiển chỉ xuất hiện khi backend của loại job đó hỗ trợ thật. Các job khác mở đúng module nguồn.</p><div data-system-jobs>${empty("Đang tải job user-scoped.")}</div></article></section>
+      <section class="system-panel" data-system-panel="diagnostics" hidden><div class="system-grid"><article class="system-card"><header><div><span>Diagnostics Lab</span><h3>Kiểm tra hệ thống thật</h3></div><button type="button" data-system-run-diagnostics>Chạy chẩn đoán</button></header><div data-system-diagnostics>${empty("Kiểm tra route, latency, realtime, PWA, storage, permission, codec và performance.")}</div><div class="system-actions"><button type="button" data-system-support-bundle disabled>Xuất SUPPORT-BUNDLE</button></div></article><article class="system-card"><header><div><span>Error & Incident</span><h3>Lỗi gần đây trên thiết bị</h3></div></header><div data-system-incidents>${empty("Chưa ghi nhận lỗi runtime trong phiên này.")}</div><p>Chỉ lưu mã lỗi, module và thời gian đã scrub. Screenshot chỉ có thể thêm khi bạn chủ động đồng ý.</p></article></div></section>
+      <section class="system-panel" data-system-panel="privacy" hidden><div class="system-grid"><article class="system-card"><header><div><span>Privacy Center</span><h3>Consent & dữ liệu cá nhân</h3></div><a href="#/system/cookie-consent-manager">Mở quản lý consent</a></header><div data-system-consent>${empty("Đọc từ Privacy Center hiện có; không tạo consent store thứ hai.")}</div><ul><li>Local: preferences, cache, checkpoint và dữ liệu offline.</li><li>Cloud: chỉ dữ liệu backend theo owner/workspace.</li><li>Không đưa token, cookie hoặc nội dung riêng tư vào support bundle.</li></ul></article><article class="system-card"><header><div><span>Notification Control</span><h3>Kênh thông báo</h3></div></header><form data-system-notifications class="system-toggle-list">${Object.entries(state.notifications).map(([key, enabled]) => `<label><span>${escapeHtml(({ email: "Email", push: "Push", inApp: "Trong website", security: "Bảo mật", jobs: "Render / upload", learning: "Bài học đến hạn" })[key] || key)}</span><input type="checkbox" name="${escapeHtml(key)}"${enabled ? " checked" : ""}></label>`).join("")}<div class="system-actions"><button type="submit">Lưu trên thiết bị</button><button type="button" data-system-test-notification>Gửi thử trên thiết bị</button></div></form></article></div></section>
+      <section class="system-panel" data-system-panel="advanced" hidden><div class="system-grid"><article class="system-card"><header><div><span>Accessibility & Device</span><h3>Hồ sơ hiển thị</h3></div></header><form data-system-accessibility class="system-toggle-list"><label><span>Giảm chuyển động</span><input type="checkbox" name="reducedMotion"${state.preferences.reducedMotion ? " checked" : ""}></label><label><span>Độ tương phản cao</span><input type="checkbox" name="highContrast"${state.preferences.highContrast ? " checked" : ""}></label><label><span>Chữ lớn</span><input type="checkbox" name="largeText"${state.preferences.largeText ? " checked" : ""}></label><label><span>Giảm dữ liệu</span><input type="checkbox" name="reducedData"${state.preferences.reducedData ? " checked" : ""}></label><button type="submit">Áp dụng trên thiết bị</button></form></article><article class="system-card"><header><div><span>Feature Flag & Release</span><h3>Công tắc cục bộ</h3></div></header><p>Không chỉnh server flag hoặc kill switch tại đây. Chỉ owner/admin mới làm việc đó trong Admin Panel.</p><div class="system-toggle-list">${Object.entries(state.localFlags).map(([key, enabled]) => `<label><span><b>${escapeHtml(key)}</b><small>Phạm vi: thiết bị này</small></span><input type="checkbox" role="switch" data-system-flag="${escapeHtml(key)}"${enabled ? " checked" : ""}></label>`).join("")}</div></article><article class="system-card system-wide"><header><div><span>Audit local</span><h3>Nhật ký thiết bị</h3></div></header><ol class="system-audit" data-system-audit>${state.audit.slice().reverse().map(item => `<li><span>${escapeHtml(item.action)}</span><time>${escapeHtml(dateLabel(item.createdAt))}</time></li>`).join("") || '<li class="system-empty">Chưa có thao tác.</li>'}</ol></article></div></section>
     </section>`;
   }
 
-  function downloadJson(documentRef, filename, value) {
-    const url = globalScope.URL?.createObjectURL?.(new Blob([value], { type: "application/json;charset=utf-8" }));
-    if (!url) throw new Error("Trình duyệt không hỗ trợ tải backup.");
-    const anchor = documentRef.createElement("a");
-    anchor.href = url; anchor.download = filename; anchor.click();
-    globalScope.setTimeout?.(() => globalScope.URL.revokeObjectURL(url), 1000);
-  }
+  function download(documentRef, filename, blob) { const url = globalScope.URL?.createObjectURL?.(blob); if (!url) throw new Error("Trình duyệt không hỗ trợ tải tệp."); const anchor = documentRef.createElement("a"); anchor.href = url; anchor.download = filename; anchor.click(); globalScope.setTimeout?.(() => globalScope.URL.revokeObjectURL(url), 1500); }
+  function applyAccessibility(preferences, documentRef) { const root = documentRef?.documentElement; if (!root) return; root.classList.toggle("hh-reduced-motion", preferences.reducedMotion); root.classList.toggle("hh-high-contrast", preferences.highContrast); root.classList.toggle("hh-large-text", preferences.largeText); root.dataset.reducedData = preferences.reducedData ? "true" : "false"; }
 
   async function mount(container, options = {}) {
-    if (!container?.querySelector) throw new TypeError("HHSystemPlatform cần một container hợp lệ.");
-    controllers.get(container)?.abort();
-    const controller = new AbortController();
-    controllers.set(container, controller);
-    const storage = options.storage || globalScope.localStorage;
-    const store = createStore(storage);
-    const user = options.currentUser || (() => { try { return JSON.parse(storage?.getItem?.("hh-auth-user") || "{}"); } catch { return {}; } })();
-    const access = accessSnapshot(user);
-    const adapter = options.adapter || createFetchAdapter(options.fetch || globalScope.fetch?.bind(globalScope), options.apiBase || "");
-    container.innerHTML = renderMarkup(store.inspect(), access);
-    const page = container.querySelector("[data-system-platform]");
-    const signal = controller.signal;
+    if (!container?.querySelector) throw new TypeError("HHSystemPlatform cần một container hợp lệ."); controllers.get(container)?.abort(); const controller = new AbortController(); controllers.set(container, controller); activeControllers.add(controller); const signal = controller.signal;
+    const storage = options.storage || globalScope.localStorage; const store = createStore(storage); const user = options.currentUser || (() => { try { return JSON.parse(storage?.getItem?.("hh-auth-user") || "{}"); } catch { return {}; } })(); const access = accessSnapshot(user); const adapter = options.adapter || createFetchAdapter(options.fetch || globalScope.fetch?.bind(globalScope), options.apiBase ?? globalScope.HH_API_BASE ?? "");
+    container.innerHTML = renderMarkup(store.inspect(), access); const page = container.querySelector("[data-system-platform]"); let latestStorage = null; let latestPwa = null; let latestMe = null; let latestDiagnostics = null; let pendingImport = null;
     const notice = (message, state = "") => { const node = page.querySelector("[data-system-notice]"); node.textContent = message; node.dataset.state = state; };
-    const onlineNode = page.querySelector("[data-system-online]");
-    const updateOnline = () => { const online = globalScope.navigator?.onLine !== false; onlineNode.textContent = online ? "Trực tuyến" : "Ngoại tuyến"; onlineNode.dataset.state = online ? "ready" : "warning"; page.querySelector("[data-system-offline]").textContent = globalScope.navigator?.serviceWorker?.controller ? "Cache đang được quản lý" : "Chưa có controller"; };
-    updateOnline();
-    globalScope.addEventListener?.("online", updateOnline, { signal });
-    globalScope.addEventListener?.("offline", updateOnline, { signal });
-    const capabilities = capabilitySnapshot(globalScope);
-    page.querySelector("[data-system-pwa]").textContent = capabilities.installMode === "standalone" ? "Đang chạy dạng ứng dụng" : capabilities.serviceWorker ? "Trình duyệt hỗ trợ" : "Không hỗ trợ";
+    const busy = async (button, task) => { if (button) button.disabled = true; try { return await task(); } finally { if (button) button.disabled = false; } };
+    const recordIncident = (kind, message, module = "system") => { const incident = { id: uid("incident"), kind: text(kind, 60), module: text(module, 80), message: redactText(message).slice(0, 300), firstAt: now(), lastAt: now(), count: 1, release: INTEGRATION_VERSION }; let rows = []; try { rows = JSON.parse(storage?.getItem?.(INCIDENT_KEY) || "[]"); } catch { rows = []; } const existing = rows.find(item => item.kind === incident.kind && item.message === incident.message); if (existing) { existing.count = Number(existing.count || 1) + 1; existing.lastAt = now(); } else rows.push(incident); rows = rows.slice(-50); try { storage?.setItem?.(INCIDENT_KEY, JSON.stringify(rows)); } catch {} renderIncidents(rows); };
+    const renderIncidents = rows => { page.querySelector("[data-system-incidents]").innerHTML = rows.length ? rows.slice().reverse().map(item => `<article class="system-incident"><div><b>${escapeHtml(item.kind)}</b><small>${escapeHtml(item.module)} · ${escapeHtml(dateLabel(item.lastAt))} · ${escapeHtml(item.count || 1)} lần</small>${item.reportedAt ? `<em>Đã gửi · ${escapeHtml(item.requestId || "backend xác nhận")}</em>` : ""}</div><div class="system-actions"><button type="button" data-system-retry-incident="${escapeHtml(item.id)}">Thử chẩn đoán lại</button><button type="button" data-system-report-incident="${escapeHtml(item.id)}"${item.reportedAt ? " disabled" : ""}>Gửi báo cáo an toàn</button></div></article>`).join("") : empty("Chưa ghi nhận lỗi runtime trong phiên này."); };
+    try { renderIncidents(JSON.parse(storage?.getItem?.(INCIDENT_KEY) || "[]")); } catch { renderIncidents([]); }
+    const onError = event => recordIncident("runtime-error", event.message || "Lỗi runtime", "browser"); const onRejection = event => recordIncident("unhandled-rejection", event.reason?.message || String(event.reason || "Promise rejected"), "browser"); globalScope.addEventListener?.("error", onError, { signal }); globalScope.addEventListener?.("unhandledrejection", onRejection, { signal });
 
-    const renderSessions = sessions => {
-      page.querySelector("[data-system-sessions]").innerHTML = sessions.length ? sessions.map(session => `<article><div><strong>${escapeHtml(session.device?.label || `${session.device?.browser || "Trình duyệt"} · ${session.device?.platform || "Thiết bị"}`)}</strong><small>${session.current ? "Phiên hiện tại" : `Hoạt động ${escapeHtml(session.lastSeenAt ? new Date(session.lastSeenAt).toLocaleString("vi-VN") : "chưa rõ")}`}</small></div><button type="button" data-system-revoke="${escapeHtml(session.id)}">${session.current ? "Đăng xuất phiên này" : "Thu hồi"}</button></article>`).join("") : '<p class="system-empty">Không có phiên đang hoạt động hoặc backend chưa trả dữ liệu.</p>';
-    };
-    const loadSessions = async () => { try { renderSessions(await adapter.sessions()); notice("Đã đồng bộ phiên đăng nhập của bạn.", "success"); } catch (error) { renderSessions([]); notice(error.message, "error"); } };
-    const renderHealth = (result, gatewayStatus = {}) => {
-      const health = result.health || {};
-      page.querySelector("[data-system-backend]").textContent = result.confirmed ? "Backend đã xác nhận" : "Chưa xác nhận";
-      page.querySelector("[data-system-backend-time]").textContent = `Kiểm tra ${new Date(result.checkedAt || Date.now()).toLocaleString("vi-VN")}`;
-      const integrations = [
-        ["Database", health.database?.connected], ["Google OAuth", health.auth?.googleOAuth], ["Email", health.auth?.emailVerification], ["Gemini", health.ai?.gemini], ["ElevenLabs", health.ai?.elevenLabs], ["payOS", health.payments?.payos], ["Object Storage", health.storage?.objectStorage], ["Realtime", health.realtime?.connected]
-      ];
-      page.querySelector("[data-system-integrations]").innerHTML = integrations.map(([label, ready]) => `<p><span>${escapeHtml(label)}</span><b data-state="${ready ? "ready" : "setup"}">${ready ? "Đã cấu hình" : "Cần cấu hình server"}</b></p>`).join("");
-      page.querySelector("[data-system-quotas]").innerHTML = gatewayStatus.confirmed && gatewayStatus.quotas?.length
-        ? gatewayStatus.quotas.map(item => `<p><span>${escapeHtml(item.provider)} <small>${escapeHtml(item.note || "Lượt qua HH Gateway")}</small></span><b>${Number(item.used || 0)} / ${Number(item.limit || 0)} · còn ${Number(item.remaining || 0)}</b></p>`).join("")
-        : '<p class="system-empty">Gateway chưa cung cấp quota đã xác nhận. Không hiển thị số liệu ước đoán.</p>';
-    };
-    const loadHealth = async () => {
-      try {
-        const [result, gatewayStatus] = await Promise.all([adapter.health(), adapter.gatewayStatus?.().catch(error => ({ confirmed: false, error: error.message, quotas: [] })) || Promise.resolve({ confirmed: false, quotas: [] })]);
-        renderHealth(result, gatewayStatus);
-        notice(gatewayStatus.confirmed ? "Trạng thái tích hợp và quota gateway đã được backend xác nhận." : "Trạng thái tích hợp đã xác nhận; quota gateway chưa sẵn sàng.", gatewayStatus.confirmed ? "success" : "");
-      } catch (error) { notice(error.message, "error"); }
-    };
+    const renderSessions = sessions => { page.querySelector("[data-system-session-summary]").textContent = `${sessions.length} phiên`; page.querySelector("[data-system-sessions]").innerHTML = sessions.length ? sessions.map(session => `<article class="system-row"><div><b>${escapeHtml(session.device.label || `${session.device.browser || "Trình duyệt"} · ${session.device.platform || "Thiết bị"}`)}</b><small>${session.current ? "Thiết bị hiện tại" : `Hoạt động ${dateLabel(session.lastSeenAt)}`} · hết hạn ${dateLabel(session.expiresAt)}</small></div>${session.current ? '<span data-state="online">Đang dùng</span>' : `<button type="button" data-system-revoke="${escapeHtml(session.id)}">Thu hồi</button>`}</article>`).join("") : empty("Không có phiên đang hoạt động hoặc bạn chưa đăng nhập."); };
+    const loadSessions = async () => { try { const sessions = await adapter.sessions(); renderSessions(sessions); notice("Đã đồng bộ phiên đăng nhập từ backend.", "success"); } catch (error) { renderSessions([]); notice(error.message, "error"); if (error.status !== 401) recordIncident("session-sync", error.message); } };
+
+    const healthServices = result => { const health = result.health || {}; if (Array.isArray(health.services)) return health.services; return [{ id: "database", label: "MongoDB", state: health.database?.connected ? "online" : health.database?.configured ? "offline" : "unconfigured", detail: health.database?.connected ? "Truy vấn thành công" : "Chưa kết nối", source: "readiness" }, { id: "realtime", label: "Realtime/WebSocket", state: health.realtime?.connected ? "online" : health.realtime?.configured ? "offline" : "unconfigured", detail: health.realtime?.error || "HTTP /health", source: "http-probe" }, ...[["google", "Google OAuth", health.auth?.googleOAuth], ["email", "Resend / email", health.auth?.emailVerification], ["storage", "Object Storage", health.storage?.objectStorage], ["gemini", "Gemini", health.ai?.gemini], ["openai", "OpenAI", health.ai?.openai]].map(([id, label, configured]) => ({ id, label, state: configured ? "degraded" : "unconfigured", detail: configured ? "Đã cấu hình · chưa live-probe" : "Thiếu cấu hình", source: "server-config" }))]; };
+    const loadHealth = async () => { const button = page.querySelector("[data-system-refresh-health]"); return busy(button, async () => { try { const result = await adapter.health(); const services = healthServices(result); page.querySelector("[data-system-health]").innerHTML = services.map(item => statusBadge(item.label, item.state, `${item.detail || ""}${item.latencyMs != null ? ` · ${item.latencyMs} ms` : ""}`)).join(""); page.querySelector("[data-system-api]").textContent = `${result.latencyMs} ms`; page.querySelector("[data-system-api-detail]").textContent = `Backend xác nhận · ${dateLabel(result.checkedAt)}`; const warnings = services.filter(item => ["offline", "degraded"].includes(item.state)).length; page.querySelector("[data-system-warning-summary]").textContent = String(warnings); notice("Đã kiểm tra trạng thái backend thật.", "success"); } catch (error) { page.querySelector("[data-system-api]").textContent = "Không kết nối"; page.querySelector("[data-system-health]").innerHTML = statusBadge("API Vercel", "offline", error.message); notice(error.message, "error"); recordIncident("health-check", error.message); } }); };
+
+    const renderStorage = snapshot => { const percent = snapshot.quota ? Math.min(100, snapshot.usage / snapshot.quota * 100) : 0; page.querySelector("[data-system-storage-summary]").textContent = `${formatBytes(snapshot.usage)} / ${snapshot.quota ? formatBytes(snapshot.quota) : "không rõ"}`; page.querySelector("[data-system-storage]").innerHTML = `<div class="system-meter"><span style="width:${percent.toFixed(1)}%"></span></div><div class="system-stat-list"><p><span>Origin đã dùng</span><b>${formatBytes(snapshot.usage)}</b></p><p><span>Quota</span><b>${snapshot.quota ? formatBytes(snapshot.quota) : "Không được công bố"}</b></p><p><span>Persistent storage</span><b>${snapshot.persisted ? "Đã cấp" : "Chưa cấp"}</b></p><p><span>LocalStorage</span><b>${formatBytes(snapshot.localStorage.bytes)} · ${snapshot.localStorage.keys} khóa</b></p><p><span>IndexedDB</span><b>${snapshot.indexedDB.length} database</b></p><p><span>Cache Storage</span><b>${snapshot.caches.length} cache</b></p></div><div class="system-storage-sections">${snapshot.localStorage.sections.map(item => `<article><span><b>${escapeHtml(BACKUP_SECTIONS[item.id]?.label || item.id)}</b><small>${item.keys} khóa · ${formatBytes(item.bytes)}</small></span>${BACKUP_SECTIONS[item.id] ? `<button type="button" data-system-delete-section="${escapeHtml(item.id)}" data-system-section-bytes="${item.bytes}" data-system-section-keys="${item.keys}">Backup & xóa nhóm</button>` : '<small>Không thuộc nhóm có thể xóa tự động</small>'}</article>`).join("")}</div>`; page.querySelector("[data-system-caches]").innerHTML = snapshot.caches.length ? snapshot.caches.map(item => `<article class="system-row"><div><b>${escapeHtml(item.name)}</b><small>${item.entries} mục · ${formatBytes(item.bytes)}</small></div><button type="button" data-system-delete-cache="${escapeHtml(item.name)}">Xóa cache này</button></article>`).join("") : empty("Không có cache trong origin này."); };
+    const loadStorage = async () => { try { latestStorage = await inspectStorage(globalScope); renderStorage(latestStorage); return latestStorage; } catch (error) { notice(`Không thể kiểm kê storage: ${error.message}`, "error"); recordIncident("storage-inspection", error.message); return null; } };
+
+    const renderPwa = snapshot => { page.querySelector("[data-system-pwa-summary]").textContent = !snapshot.supported ? "Không hỗ trợ" : snapshot.waiting ? "Có bản cập nhật" : snapshot.controlled ? "Đang hoạt động" : "Chưa điều khiển"; page.querySelector("[data-system-pwa]").innerHTML = `<div class="system-stat-list"><p><span>Trình duyệt hỗ trợ</span><b>${snapshot.supported ? "Có" : "Không"}</b></p><p><span>Controller</span><b>${snapshot.controller?.state || "Không có"}</b></p><p><span>Installing</span><b>${snapshot.installing?.state || "Không"}</b></p><p><span>Waiting</span><b>${snapshot.waiting?.state || "Không"}</b></p><p><span>Active</span><b>${snapshot.active?.state || "Không"}</b></p><p><span>Kiểm tra</span><b>${dateLabel(snapshot.checkedAt)}</b></p></div>`; const apply = page.querySelector("[data-system-apply-update]"); apply.disabled = !snapshot.waiting; };
+    const loadPwa = async () => { latestPwa = await inspectPwa(globalScope); renderPwa(latestPwa); return latestPwa; };
+
+    const renderMe = data => { latestMe = data; const integrations = Array.isArray(data.integrations) ? data.integrations : []; page.querySelector("[data-system-integrations]").innerHTML = integrations.length ? integrations.map(item => `<article class="system-provider"><header><i data-state="${escapeHtml(item.state)}"></i><div><b>${escapeHtml(item.label)}</b><small>${escapeHtml(item.accountLabel || item.detail || "Không có tài khoản")}</small></div></header><dl><div><dt>Trạng thái</dt><dd>${escapeHtml(item.stateLabel || item.state)}</dd></div><div><dt>Scopes</dt><dd>${escapeHtml((item.scopes || []).join(", ") || "Chưa có")}</dd></div><div><dt>Hết hạn</dt><dd>${escapeHtml(dateLabel(item.expiresAt))}</dd></div><div><dt>Nguồn</dt><dd>${escapeHtml(item.source || "backend")}</dd></div></dl>${item.route ? `<a href="#${escapeHtml(item.route)}">Mở cấu hình</a>` : ""}</article>`).join("") : empty("Chưa có provider nào được backend trả về."); const jobs = (data.jobs || []).map(normalizeSystemJob).filter(item => item.id); page.querySelector("[data-system-job-summary]").textContent = String(jobs.filter(item => !["completed", "success", "failed", "cancelled", "canceled"].includes(item.status)).length); page.querySelector("[data-system-jobs]").innerHTML = jobs.length ? jobs.map(job => `<article class="system-job"><div class="system-job-title"><span>${escapeHtml(job.source)}</span><b>${escapeHtml(job.label || job.kind)}</b><small>${escapeHtml(job.status)} · ${escapeHtml(dateLabel(job.updatedAt))}</small></div><div class="system-progress"><span style="width:${job.progress}%"></span></div><div class="system-job-meta"><span>${job.progress}%</span><span>${escapeHtml(job.checkpoint || "Chưa có checkpoint")}</span><span>${escapeHtml(job.eta || "ETA chưa có")}</span></div><div class="system-actions">${job.controls.map(control => `<button type="button" data-system-job-control="${control}" data-system-job-id="${escapeHtml(job.id)}" data-system-job-source="${escapeHtml(job.source)}">${escapeHtml(({ pause: "Tạm dừng", resume: "Tiếp tục", retry: "Thử lại", cancel: "Hủy" })[control])}</button>`).join("")}<a href="#${escapeHtml(job.route)}">Mở module</a></div></article>`).join("") : empty("Không có tác vụ gần đây của tài khoản này."); const history = data.loginHistory || []; page.querySelector("[data-system-login-history]").innerHTML = history.length ? `<h4>Lịch sử đăng nhập</h4>${history.map(item => `<article class="system-row"><div><b>${escapeHtml(item.type || "Đăng nhập")}</b><small>${escapeHtml(item.browser || "Trình duyệt")} · ${escapeHtml(item.platform || "Thiết bị")} · ${dateLabel(item.createdAt)}</small></div><span data-state="${item.success === false ? "offline" : "online"}">${item.success === false ? "Thất bại" : "Thành công"}</span></article>`).join("")}` : empty("Chưa có lịch sử đăng nhập."); };
+    const loadMe = async () => { try { renderMe(await adapter.systemMe()); } catch (error) { page.querySelector("[data-system-integrations]").innerHTML = empty(error.status === 401 ? "Đăng nhập để xem kết nối cá nhân." : error.message); page.querySelector("[data-system-jobs]").innerHTML = empty(error.status === 401 ? "Đăng nhập để xem tác vụ cá nhân." : error.message); if (error.status !== 401) recordIncident("system-me", error.message); } };
+
+    const loadQuota = async () => { try { const status = await adapter.gatewayStatus(); page.querySelector("[data-system-quotas]").innerHTML = status.quotas.length ? status.quotas.map(item => `<article class="system-row"><div><b>${escapeHtml(item.provider)}</b><small>${escapeHtml(item.note || item.source)}</small></div><span>${item.used} / ${item.limit || "∞"} · còn ${item.remaining}</span></article>`).join("") : empty("Gateway không trả quota nào."); } catch (error) { page.querySelector("[data-system-quotas]").innerHTML = empty(`Quota chưa sẵn sàng: ${error.message}`); } };
+
+    const consent = (() => { try { return JSON.parse(storage?.getItem?.(CONSENT_KEY) || "null"); } catch { return null; } })(); page.querySelector("[data-system-consent]").innerHTML = consent ? `<div class="system-stat-list">${Object.entries(sanitize(consent) || {}).slice(0, 12).map(([key, value]) => `<p><span>${escapeHtml(key)}</span><b>${value === true ? "Cho phép" : value === false ? "Không cho phép" : escapeHtml(String(value))}</b></p>`).join("")}</div>` : empty("Chưa lưu lựa chọn consent trên thiết bị này. Mở Privacy Center để thiết lập.");
 
     page.addEventListener("click", async event => {
-      const tab = event.target.closest("[data-system-tab]");
-      if (tab) {
-        page.querySelectorAll("[data-system-tab]").forEach(node => node.toggleAttribute("aria-current", node === tab));
-        page.querySelectorAll("[data-system-panel]").forEach(panel => { panel.hidden = panel.dataset.systemPanel !== tab.dataset.systemTab; });
-        return;
-      }
-      if (event.target.closest("[data-system-refresh-sessions]")) return loadSessions();
-      if (event.target.closest("[data-system-refresh-health]")) return loadHealth();
-      const revoke = event.target.closest("[data-system-revoke]");
-      if (revoke) {
-        revoke.disabled = true;
-        try { await adapter.revokeSession(revoke.dataset.systemRevoke); notice("Backend đã xác nhận thu hồi phiên.", "success"); await loadSessions(); }
-        catch (error) { revoke.disabled = false; notice(error.message, "error"); }
-        return;
-      }
-      if (event.target.closest("[data-system-export]")) {
-        try { const value = store.exportBackup(); downloadJson(container.ownerDocument, `hh-system-backup-${new Date().toISOString().slice(0, 10)}.json`, value); notice("Đã xuất backup không chứa bí mật.", "success"); }
-        catch (error) { notice(error.message, "error"); }
-      }
+      const tab = event.target.closest("[data-system-tab]"); if (tab) { page.querySelectorAll("[data-system-tab]").forEach(node => node.toggleAttribute("aria-current", node === tab)); page.querySelectorAll("[data-system-panel]").forEach(panel => { panel.hidden = panel.dataset.systemPanel !== tab.dataset.systemTab; }); return; }
+      const diagnosticButton = event.target.closest("[data-system-run-diagnostics]"); if (diagnosticButton) return busy(diagnosticButton, async () => { notice("Đang chẩn đoán các thành phần...", ""); latestDiagnostics = await runDiagnostics(globalScope, { fetch: options.fetch, apiBase: options.apiBase ?? globalScope.HH_API_BASE ?? "", realtimeUrl: options.realtimeUrl || globalScope.HH_SOCKET_URL || "" }); page.querySelector("[data-system-diagnostics]").innerHTML = latestDiagnostics.checks.map(check => `<article class="system-row"><div><b>${escapeHtml(check.label)}</b><small>${escapeHtml(check.source)} · ${escapeHtml(JSON.stringify(check.detail || {}))}</small></div><span data-state="${check.status === "pass" ? "online" : check.status === "fail" ? "offline" : "degraded"}">${escapeHtml(check.status)}</span></article>`).join(""); page.querySelector("[data-system-support-bundle]").disabled = false; notice(`Chẩn đoán xong: ${latestDiagnostics.summary.pass} đạt, ${latestDiagnostics.summary.warn} cảnh báo, ${latestDiagnostics.summary.fail} lỗi.`, latestDiagnostics.summary.fail ? "error" : "success"); });
+      if (event.target.closest("[data-system-refresh-health]")) return loadHealth(); if (event.target.closest("[data-system-refresh-sessions]")) return loadSessions(); if (event.target.closest("[data-system-refresh-storage]")) return loadStorage(); if (event.target.closest("[data-system-refresh-integrations]")) return Promise.all([loadMe(), loadQuota()]); if (event.target.closest("[data-system-refresh-jobs]")) return loadMe();
+      const revoke = event.target.closest("[data-system-revoke]"); if (revoke) return busy(revoke, async () => { try { await adapter.revokeSession(revoke.dataset.systemRevoke); notice("Backend đã xác nhận thu hồi phiên.", "success"); await loadSessions(); } catch (error) { notice(error.message, "error"); } });
+      const revokeOthers = event.target.closest("[data-system-revoke-others]"); if (revokeOthers) return busy(revokeOthers, async () => { try { const result = await adapter.revokeOtherSessions(); notice(`Đã thu hồi ${result.revoked} phiên khác; phiên hiện tại được giữ lại.`, "success"); await loadSessions(); } catch (error) { notice(error.message, "error"); } });
+      if (event.target.closest("[data-system-persist-storage]")) { try { const result = await requestPersistentStorage(globalScope); notice(result.granted ? "Trình duyệt đã cấp lưu trữ bền vững." : "Trình duyệt chưa cấp lưu trữ bền vững.", result.granted ? "success" : ""); await loadStorage(); } catch (error) { notice(error.message, "error"); } return; }
+      const cacheButton = event.target.closest("[data-system-delete-cache]"); if (cacheButton) { const name = cacheButton.dataset.systemDeleteCache; if (!globalScope.confirm?.(`Xóa riêng cache “${name}”? Dữ liệu offline trong cache này sẽ phải tải lại.`)) return; return busy(cacheButton, async () => { try { const raw = store.exportBackup(Object.keys(BACKUP_SECTIONS)); download(container.ownerDocument, `hh-before-cache-delete-${Date.now()}.json`, new Blob([raw], { type: "application/json" })); await deleteCache(globalScope, name); notice(`Đã tải backup và trình duyệt xác nhận xóa cache ${name}.`, "success"); await Promise.all([loadStorage(), loadPwa()]); } catch (error) { notice(error.message, "error"); } }); }
+      const sectionButton = event.target.closest("[data-system-delete-section]"); if (sectionButton) { const sectionId = sectionButton.dataset.systemDeleteSection; const label = BACKUP_SECTIONS[sectionId]?.label || sectionId; const large = Number(sectionButton.dataset.systemSectionBytes || 0) > 1024 * 1024 || Number(sectionButton.dataset.systemSectionKeys || 0) > 20; const confirmed = large ? globalScope.prompt?.(`Nhóm “${label}” có nhiều dữ liệu. Nhập chính xác tên nhóm để backup rồi xóa:`, "") === label : globalScope.confirm?.(`Tải backup rồi xóa riêng nhóm “${label}”?`); if (!confirmed) return; return busy(sectionButton, async () => { try { const raw = store.exportBackup([sectionId]); download(container.ownerDocument, `hh-before-delete-${sectionId}-${Date.now()}.json`, new Blob([raw], { type: "application/json" })); const result = deleteLocalSection(storage, sectionId); notice(`Đã backup và xóa ${result.removed} khóa trong nhóm ${label}.`, "success"); await loadStorage(); } catch (error) { notice(error.message, "error"); } }); }
+      const updateButton = event.target.closest("[data-system-check-update]"); if (updateButton) return busy(updateButton, async () => { try { const snapshot = await inspectPwa(globalScope); await snapshot.registration?.update?.(); await new Promise(resolve => globalScope.setTimeout?.(resolve, 500)); await loadPwa(); notice(latestPwa?.waiting ? "Có bản cập nhật đang chờ áp dụng." : "Đã kiểm tra; chưa có worker mới đang chờ.", "success"); } catch (error) { notice(error.message, "error"); } });
+      const applyUpdate = event.target.closest("[data-system-apply-update]"); if (applyUpdate) { const running = (latestMe?.jobs || []).some(job => !["completed", "success", "failed", "cancelled", "canceled", "paused"].includes(job.status)); if (running) { notice("Đang có upload/render/job chạy. Hãy tạm dừng hoặc hoàn tất trước khi reload.", "error"); return; } if (!latestPwa?.waiting) return notice("Không có bản cập nhật đang chờ.", "error"); const changed = new Promise(resolve => globalScope.navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true })); latestPwa.waiting.postMessage({ type: "HH_APPLY_UPDATE" }); notice("Đang áp dụng Service Worker mới...", ""); await Promise.race([changed, new Promise(resolve => globalScope.setTimeout(resolve, 5000))]); globalScope.location?.reload?.(); return; }
+      if (event.target.closest("[data-system-export]")) { try { const selected = [...page.querySelectorAll('[name="backupSection"]:checked')].map(input => input.value); const raw = store.exportBackup(selected); download(container.ownerDocument, `hh-system-backup-v2-${new Date().toISOString().slice(0, 10)}.json`, new Blob([raw], { type: "application/json;charset=utf-8" })); notice("Đã xuất backup V2 có SHA-256 và không chứa bí mật.", "success"); } catch (error) { notice(error.message, "error"); } return; }
+      const applyImport = event.target.closest("[data-system-apply-import]"); if (applyImport && pendingImport) { try { const resolution = page.querySelector("[name=importResolution]:checked")?.value || "merge"; const result = store.importBackup(pendingImport.raw, resolution); pendingImport = null; page.querySelector("[data-system-backup-preview]").innerHTML = `<p data-state="online">Đã nhập ${result.imported}, bỏ qua ${result.skipped}. Checkpoint ${escapeHtml(result.checkpointId)} đã được tạo.</p>`; notice("Import hoàn tất và có thể rollback.", "success"); } catch (error) { notice(error.message, "error"); } return; }
+      if (event.target.closest("[data-system-rollback]")) { if (!globalScope.confirm?.("Khôi phục checkpoint gần nhất của lần import?")) return; try { const id = store.rollbackCheckpoint(); notice(`Đã rollback checkpoint ${id}.`, "success"); } catch (error) { notice(error.message, "error"); } return; }
+      if (event.target.closest("[data-system-integrity]")) { latestStorage ||= await inspectStorage(globalScope); latestPwa ||= await inspectPwa(globalScope); const report = integrityReport(latestStorage, latestPwa); page.querySelector("[data-system-integrity-results]").innerHTML = report.findings.length ? report.findings.map(item => `<article class="system-row"><div><b>${escapeHtml(item.code)}</b><small>${escapeHtml(item.detail)}</small></div><span data-state="${item.severity === "warning" ? "degraded" : "online"}">${escapeHtml(item.action)}</span></article>`).join("") : `<p data-state="online">Không phát hiện vấn đề toàn vẹn trong phạm vi trình duyệt có thể kiểm tra.</p>`; notice("Đã kiểm tra toàn vẹn; không tự xóa dữ liệu.", "success"); return; }
+      const jobControl = event.target.closest("[data-system-job-control]"); if (jobControl) return busy(jobControl, async () => { try { await adapter.controlJob(jobControl.dataset.systemJobId, jobControl.dataset.systemJobSource, jobControl.dataset.systemJobControl); notice("Backend đã xác nhận cập nhật tác vụ.", "success"); await loadMe(); } catch (error) { notice(error.message, "error"); } });
+      const retryIncident = event.target.closest("[data-system-retry-incident]"); if (retryIncident) { page.querySelector("[data-system-run-diagnostics]")?.click(); return; }
+      const reportIncident = event.target.closest("[data-system-report-incident]"); if (reportIncident) return busy(reportIncident, async () => { try { const rows = JSON.parse(storage?.getItem?.(INCIDENT_KEY) || "[]"); const incident = rows.find(item => item.id === reportIncident.dataset.systemReportIncident); if (!incident) throw new Error("Incident không còn tồn tại trên thiết bị."); const result = await adapter.reportIncident(incident); incident.reportedAt = now(); incident.requestId = result.requestId; storage?.setItem?.(INCIDENT_KEY, JSON.stringify(rows.slice(-50))); renderIncidents(rows); notice(`Backend đã nhận báo cáo ${result.requestId}.`, "success"); } catch (error) { notice(error.message, "error"); } });
+      if (event.target.closest("[data-system-support-bundle]")) { if (!latestDiagnostics) return; let incidents = []; try { incidents = sanitize(JSON.parse(storage?.getItem?.(INCIDENT_KEY) || "[]")) || []; } catch { incidents = []; } const bundle = { ...latestDiagnostics, incidents }; if (typeof globalScope.JSZip === "function") { const zip = new globalScope.JSZip(); zip.file("diagnostics.json", JSON.stringify(bundle, null, 2)); zip.file("README.txt", "HH Platform support bundle. Không chứa token, cookie, email đầy đủ hoặc nội dung riêng tư.\n"); download(container.ownerDocument, `SUPPORT-BUNDLE-${Date.now()}.zip`, await zip.generateAsync({ type: "blob", compression: "DEFLATE" })); } else download(container.ownerDocument, `SUPPORT-BUNDLE-${Date.now()}.json`, new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" })); notice("Đã xuất support bundle đã lọc dữ liệu nhạy cảm.", "success"); return; }
+      if (event.target.closest("[data-system-test-notification]")) { try { if (!("Notification" in globalScope)) throw new Error("Trình duyệt không hỗ trợ Notification."); const permission = globalScope.Notification.permission === "default" ? await globalScope.Notification.requestPermission() : globalScope.Notification.permission; if (permission !== "granted") throw new Error("Bạn chưa cấp quyền thông báo."); new globalScope.Notification("HH Platform", { body: "Thông báo thử từ Trung tâm Hệ thống.", icon: "assets/hh-neon-logo-v2.png?v=3" }); notice("Trình duyệt đã tạo thông báo thử.", "success"); } catch (error) { notice(error.message, "error"); } }
     }, { signal });
-    page.querySelector("[data-system-settings]").addEventListener("submit", event => {
-      event.preventDefault(); const form = new FormData(event.currentTarget);
-      store.updatePreferences({ theme: form.get("theme"), density: form.get("density"), language: form.get("language"), reducedData: form.has("reducedData"), offlineHints: form.has("offlineHints") });
-      notice("Đã lưu thiết lập trên thiết bị này.", "success");
-    }, { signal });
-    page.querySelectorAll("[data-system-flag]").forEach(input => input.addEventListener("change", () => { store.setLocalFlag(input.dataset.systemFlag, input.checked); notice("Đã cập nhật feature flag cục bộ; quyền backend không thay đổi.", "success"); }, { signal }));
-    page.querySelector("[data-system-import]").addEventListener("change", async event => {
-      const file = event.target.files?.[0]; if (!file) return;
-      try { store.importBackup(await file.text()); notice("Đã nhập backup hợp lệ. Mở lại Hệ thống để thấy toàn bộ thiết lập.", "success"); }
-      catch (error) { notice(error.message, "error"); }
-      finally { event.target.value = ""; }
-    }, { signal });
-    loadHealth();
-    loadSessions();
-    return { unmount: () => controller.abort(), integrationVersion: INTEGRATION_VERSION };
+
+    page.querySelector("[data-system-import]").addEventListener("change", async event => { const file = event.target.files?.[0]; if (!file) return; try { const raw = await file.text(); const preview = store.previewBackup(raw); pendingImport = { raw, preview }; page.querySelector("[data-system-backup-preview]").innerHTML = `<div class="system-import-preview"><b>${preview.additions} mục mới · ${preview.conflicts} xung đột</b><div class="system-choice-row"><label><input type="radio" name="importResolution" value="merge" checked> Gộp</label><label><input type="radio" name="importResolution" value="overwrite"> Ghi đè</label><label><input type="radio" name="importResolution" value="skip"> Bỏ qua xung đột</label></div><ul>${preview.rows.slice(0, 30).map(row => `<li>${escapeHtml(row.key)} · ${row.exists ? "xung đột" : "mới"}</li>`).join("")}</ul><button type="button" data-system-apply-import>Áp dụng & tạo checkpoint</button></div>`; notice("Checksum hợp lệ. Hãy xem preview trước khi nhập.", "success"); } catch (error) { pendingImport = null; notice(error.message, "error"); } finally { event.target.value = ""; } }, { signal });
+    page.querySelector("[data-system-notifications]").addEventListener("submit", event => { event.preventDefault(); const form = new FormData(event.currentTarget); const patch = Object.fromEntries(Object.keys(store.inspect().notifications).map(key => [key, form.has(key)])); store.updateNotifications(patch); notice("Đã lưu tùy chọn thông báo trên thiết bị.", "success"); }, { signal });
+    page.querySelector("[data-system-accessibility]").addEventListener("submit", event => { event.preventDefault(); const form = new FormData(event.currentTarget); const preferences = store.updatePreferences({ reducedMotion: form.has("reducedMotion"), highContrast: form.has("highContrast"), largeText: form.has("largeText"), reducedData: form.has("reducedData") }); applyAccessibility(preferences, container.ownerDocument); notice("Đã áp dụng hồ sơ accessibility trên thiết bị.", "success"); }, { signal });
+    page.querySelectorAll("[data-system-flag]").forEach(input => input.addEventListener("change", () => { store.setLocalFlag(input.dataset.systemFlag, input.checked); notice("Đã cập nhật công tắc cục bộ; quyền backend không thay đổi.", "success"); }, { signal }));
+
+    applyAccessibility(store.inspect().preferences, container.ownerDocument); await Promise.allSettled([loadHealth(), loadSessions(), loadStorage(), loadPwa(), loadMe(), loadQuota()]);
+    return { unmount: () => { controller.abort(); activeControllers.delete(controller); }, integrationVersion: INTEGRATION_VERSION };
   }
 
-  function unmount(container) {
-    if (container) { controllers.get(container)?.abort(); controllers.delete(container); }
-    else controllers.forEach?.(controller => controller.abort());
-  }
+  function unmount(container) { if (container) { const controller = controllers.get(container); controller?.abort(); activeControllers.delete(controller); controllers.delete(container); } else { for (const controller of activeControllers) controller.abort(); activeControllers.clear(); } }
 
-  return Object.freeze({ VERSION, INTEGRATION_VERSION, STORAGE_KEY, BACKUP_SCHEMA, sanitize, sanitizeSession, normalizeQuota, capabilitySnapshot, migrate, createStore, createFetchAdapter, accessSnapshot, mount, unmount });
+  return Object.freeze({ VERSION, INTEGRATION_VERSION, STORAGE_KEY, BACKUP_SCHEMA, BACKUP_SECTIONS, sanitize, sanitizeSession, normalizeQuota, normalizeSystemJob, capabilitySnapshot, sha256, stableJson, migrate, createStore, inspectStorage, requestPersistentStorage, deleteLocalSection, deleteCache, inspectPwa, createFetchAdapter, runDiagnostics, integrityReport, accessSnapshot, mount, unmount });
 });

@@ -769,6 +769,14 @@ module.exports = async function handler(req, res) {
       const auth = await requireAuth(req, res, db);
       if (!auth) return;
       const now = new Date();
+      if (body.exceptCurrent === true) {
+        if (!auth.session?.sessionId) return res.status(409).json({ error: "Không xác định được phiên hiện tại để giữ lại.", code: "CURRENT_SESSION_UNKNOWN" });
+        const result = await db.collection("authSessions").updateMany(
+          { userId: auth.user._id, sessionId: { $ne: auth.session.sessionId }, revokedAt: null },
+          { $set: { revokedAt: now, revokeReason: "revoke-other-sessions" } }
+        );
+        return res.status(200).json({ ok: true, currentPreserved: true, revoked: Number(result.modifiedCount || 0) });
+      }
       await Promise.all([
         db.collection("authSessions").updateMany({ userId: auth.user._id, revokedAt: null }, { $set: { revokedAt: now, revokeReason: "revoke-all" } }),
         db.collection("users").updateOne({ _id: auth.user._id }, { $inc: { tokenVersion: 1 }, $set: { lastLogoutAt: now } })
