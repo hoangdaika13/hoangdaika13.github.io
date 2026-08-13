@@ -40,6 +40,7 @@ test("route, lazy loader, service worker and UI behavior are integrated", () => 
   assert.match(ui,/BẢN MÔ PHỎNG/); assert.match(ui,/data-smt-job-action/); assert.match(ui,/JSZip/); assert.match(ui,/sanitizedAsset/); assert.match(ui,/oembed/); assert.match(ui,/provider-worker-required|Xuất thủ công/);
   assert.match(css,/@media\(max-width:700px\)/); assert.match(css,/focus-visible/); assert.match(css,/prefers-reduced-motion/);
   assert.match(uiV2,/data-smt2-group/); assert.match(uiV2,/data-smt2-favorite/); assert.match(uiV2,/settingsMarkup/); assert.match(uiV2,/startOAuth/); assert.match(uiV2,/hh\.social\.oauth\.pending/); assert.match(uiV2,/BẢN MÔ PHỎNG/);
+  assert.match(uiV2,/groupForTool/);
   assert.match(cssV2,/\.smt2-tool-list/); assert.match(cssV2,/@media\(max-width:720px\)/); assert.match(cssV2,/focus-visible/); assert.match(cssV2,/prefers-reduced-motion/);
 });
 
