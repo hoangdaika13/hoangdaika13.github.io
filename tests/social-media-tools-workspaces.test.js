@@ -6,9 +6,9 @@ const core = require("../social-media-tools-core.js");
 global.HHSocialMediaCore = core;
 const workspaces = require("../social-media-tools-workspaces.js");
 
-test("all 61 tools have an explicit workspace definition", () => {
+test("all 85 tools have an explicit workspace definition", () => {
   assert.deepEqual(workspaces.validateCatalog(core.TOOL_CATALOG), { missing:[], extra:[] });
-  assert.equal(Object.keys(workspaces.definitions).length, 61);
+  assert.equal(Object.keys(workspaces.definitions).length, 85);
 });
 
 test("tools from different families render different workspace structures", () => {

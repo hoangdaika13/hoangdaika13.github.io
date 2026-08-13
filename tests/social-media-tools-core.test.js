@@ -4,9 +4,9 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const core = require("../social-media-tools-core.js");
 
-test("catalog exposes the complete 61-tool ecosystem without duplicate ids", () => {
-  assert.equal(core.TOOL_CATALOG.length, 61);
-  assert.equal(new Set(core.TOOL_CATALOG.map((tool) => tool.id)).size, 61);
+test("catalog exposes the complete 85-tool ecosystem without duplicate ids", () => {
+  assert.equal(core.TOOL_CATALOG.length, 85);
+  assert.equal(new Set(core.TOOL_CATALOG.map((tool) => tool.id)).size, 85);
   assert.ok(core.TOOL_CATALOG.some((tool) => tool.id === "instagram-filter" && tool.mode === "local"));
   assert.ok(core.TOOL_CATALOG.some((tool) => tool.id === "social-listening" && tool.mode === "provider"));
   assert.ok(core.TOOL_CATALOG.some((tool) => tool.id === "analytics" && tool.mode === "provider"));

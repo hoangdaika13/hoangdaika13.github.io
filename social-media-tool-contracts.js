@@ -3,8 +3,9 @@
 
   const Core = () => root.HHSocialMediaCore;
   const Workspaces = () => root.HHSocialToolWorkspaces;
-  const CONTRACT_VERSION = 6;
-  const LOCAL_ENGINES = new Set(["caption-formatter","social-character-counter","case-converter","whitespace-cleaner","unicode-font-styler","alt-text-checker","hashtag-workspace","hashtag-cleaner","utm-builder","username-link-builder","whatsapp-link","telegram-link","social-share-link","youtube-timestamp","youtube-embed","social-dimensions","open-graph","link-preview-audit","x-revenue"]);
+  const CONTRACT_VERSION = 7;
+  const COMMUNICATION_ENGINES = new Set(["content-strategy-brief","audience-persona","content-pillar-planner","campaign-objective","channel-mix-planner","editorial-angle-lab","hook-library","headline-analyzer","cta-optimizer","ad-copy-variants","ab-test-planner","pr-release-builder","media-pitch-builder","press-kit-checklist","crisis-response-builder","holding-statement","brand-safety-audit","claim-compliance-checker","tone-of-voice-audit","moderation-policy","response-template-library","sentiment-triage","kpi-planner","roi-calculator"]);
+  const LOCAL_ENGINES = new Set(["caption-formatter","social-character-counter","case-converter","whitespace-cleaner","unicode-font-styler","alt-text-checker","hashtag-workspace","hashtag-cleaner","utm-builder","username-link-builder","whatsapp-link","telegram-link","social-share-link","youtube-timestamp","youtube-embed","social-dimensions","open-graph","link-preview-audit","x-revenue",...COMMUNICATION_ENGINES]);
   const PROVIDER_TOOLS = new Set(["instagram-owned-media","youtube-thumbnail","vimeo-thumbnail","calendar","approval","publishing-queue","analytics","community-inbox","competitor-research","social-listening","repurpose"]);
   const DEVELOPMENT_TOOLS = new Set([]);
   const WORKSPACE_ENGINES = new Set(["instagram-filter","instagram-post","instagram-story","instagram-dm","x-composer","tweet-card","threads-composer","whatsapp-mockup","imessage-mockup","facebook-composer","tiktok-kit","linkedin-composer","pinterest-pin","reddit-formatter","telegram-composer","discord-announcement","mastodon-bluesky","snapchat-story","profile-picture","cover-generator","meme-studio","quote-card","product-kit","brand-kit","qr-campaign","subtitle-studio","video-resizer","export-kit","bio-link","emoji-picker","color-palette"]);
@@ -22,6 +23,7 @@
     if (["analytics","inbox","research","media-library"].includes(kind)) return ["accountId","provider"];
     if (kind === "ai-repurpose") return ["caption","platform","brandVoice"];
     if (["dimensions","emoji-board"].includes(kind)) return [];
+    if (["communication-planner","copy-lab","pr-desk","brand-safety","community-ops","measurement-lab"].includes(kind)) return root.HHSocialCommunicationEngines?.FIELDS?.[tool.id] || ["title","caption"];
     return ["title","caption"];
   }
 
@@ -53,6 +55,7 @@
 
   function validate(tool, project = {}, context = {}) {
     const errors=[]; const warnings=[]; const fields=inputFields(tool);
+    if (COMMUNICATION_ENGINES.has(tool.id)) { const checked=root.HHSocialCommunicationEngines?.validate?.(tool.id,project)||{errors:[{field:"toolId",code:"engine-missing",message:"Communication Engine chưa được nạp."}],warnings:[]}; errors.push(...checked.errors); warnings.push(...checked.warnings); }
     if (fields.includes("caption") && !String(project.caption||"").trim() && !["counter","cleanup-editor"].includes(Workspaces().definitions[tool.id]?.kind)) errors.push({ field:"caption", code:"required", message:"Nội dung đang trống." });
     if (fields.includes("altText")) { const value=String(project.altText||"").trim(); if (!value) errors.push({ field:"altText",code:"required",message:"Alt text đang trống." }); if ([...value].length>300) warnings.push({field:"altText",code:"long",message:"Alt text dài hơn 300 ký tự."}); }
     if (fields.includes("canonicalUrl") && !Core().normalizeUrl(project.canonicalUrl)) errors.push({field:"canonicalUrl",code:"https",message:"Cần URL HTTPS hợp lệ."});
@@ -75,10 +78,11 @@
 
   function contractFor(tool, context = {}) {
     const type=outputType(tool); const spec=Workspaces().definitions[tool.id]||{};
-    const ready=readiness(tool,context); return Object.freeze({ version:CONTRACT_VERSION,id:tool.id,kind:spec.kind||"generic",mode:tool.mode,inputs:inputFields(tool),outputType:type,exports:EXPORTS[type]||EXPORTS.text,applyBack:true,undoRedo:true,presets:true,upload:Boolean(spec.upload),exportImage:Boolean(spec.exportImage),readiness:ready,validator:"tool-specific",processor:LOCAL_ENGINES.has(tool.id)?"local-engine":WORKSPACE_ENGINES.has(tool.id)?"workspace-engine":tool.mode==="provider"?"official-provider":"not-implemented" });
+    const communication=COMMUNICATION_ENGINES.has(tool.id)?root.HHSocialCommunicationEngines?.engineFor?.(tool.id):null;
+    const ready=readiness(tool,context); return Object.freeze({ version:CONTRACT_VERSION,id:tool.id,kind:spec.kind||"generic",mode:tool.mode,inputs:inputFields(tool),outputType:type,exports:communication?.exports||EXPORTS[type]||EXPORTS.text,applyBack:true,undoRedo:true,presets:true,upload:Boolean(spec.upload),exportImage:Boolean(spec.exportImage),readiness:ready,validator:"tool-specific",processor:communication?"communication-engine":LOCAL_ENGINES.has(tool.id)?"local-engine":WORKSPACE_ENGINES.has(tool.id)?"workspace-engine":tool.mode==="provider"?"official-provider":"not-implemented" });
   }
 
   function catalogContracts(catalog, context = {}) { return catalog.map((tool)=>contractFor(tool,context)); }
-  root.HHSocialToolContracts=Object.freeze({CONTRACT_VERSION,LOCAL_ENGINES,WORKSPACE_ENGINES,MIME_LIMITS,EXPORTS,inputFields,outputType,readiness,validate,contractFor,catalogContracts});
+  root.HHSocialToolContracts=Object.freeze({CONTRACT_VERSION,LOCAL_ENGINES,COMMUNICATION_ENGINES,WORKSPACE_ENGINES,MIME_LIMITS,EXPORTS,inputFields,outputType,readiness,validate,contractFor,catalogContracts});
   if(typeof module!=="undefined"&&module.exports)module.exports=root.HHSocialToolContracts;
 })(typeof window!=="undefined"?window:globalThis);

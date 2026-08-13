@@ -6,11 +6,11 @@ const assert = require("node:assert/strict");
 global.HHSocialMediaCore = require("../social-media-tools-core.js");
 const capabilities = require("../social-media-tool-capabilities.js");
 
-test("V6 gives every social tool a dedicated non-empty task workflow", () => {
+test("V7 gives every social tool a dedicated non-empty task workflow", () => {
   const audit = capabilities.validateCatalog(global.HHSocialMediaCore.TOOL_CATALOG);
   assert.deepEqual(audit, { missing:[], extra:[], actionless:[] });
-  assert.equal(capabilities.VERSION, 6);
-  assert.equal(Object.keys(capabilities.CAPABILITIES).length, 61);
+  assert.equal(capabilities.VERSION, 7);
+  assert.equal(Object.keys(capabilities.CAPABILITIES).length, 85);
   for (const tool of global.HHSocialMediaCore.TOOL_CATALOG) {
     const workflow = capabilities.forTool(tool);
     assert.equal(workflow.toolId, tool.id);

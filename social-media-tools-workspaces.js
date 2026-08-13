@@ -34,6 +34,12 @@
   register("video-code", ["youtube-embed"]);
   register("dimensions", ["social-dimensions"]);
   register("palette", ["color-palette"], { upload:true });
+  register("communication-planner", ["content-strategy-brief","audience-persona","content-pillar-planner","campaign-objective","channel-mix-planner","editorial-angle-lab"]);
+  register("copy-lab", ["hook-library","headline-analyzer","cta-optimizer","ad-copy-variants","ab-test-planner"]);
+  register("pr-desk", ["pr-release-builder","media-pitch-builder","press-kit-checklist"]);
+  register("brand-safety", ["crisis-response-builder","holding-statement","brand-safety-audit","claim-compliance-checker","tone-of-voice-audit"]);
+  register("community-ops", ["moderation-policy","response-template-library","sentiment-triage"]);
+  register("measurement-lab", ["kpi-planner","roi-calculator"]);
 
   const platformTheme = (tool) => ({
     "instagram-post":["INSTAGRAM","#ed4b8e"], "instagram-story":["STORY","#b94bf1"], "x-composer":["X","#e7f6ff"], "tweet-card":["X CARD","#55b9f3"], "threads-composer":["THREADS","#ffffff"],
@@ -87,6 +93,18 @@
     return `<div class="smw-research">${cardHeader(tool,tool.id==="competitor-research"?"◎":"⌁")}<div class="smw-query"><span>⌕</span><p>${tool.id==="competitor-research"?"Nhập tài khoản đối thủ để so sánh tăng trưởng":"Nhập từ khóa, thương hiệu hoặc chủ đề cần theo dõi"}</p><button data-smt2-connect>Kết nối nguồn dữ liệu</button></div><section>${["Tín hiệu","Tăng trưởng","Tương tác","Nội dung nổi bật"].map((label)=>`<article><small>${label}</small><strong>—</strong><span>Cần dữ liệu API</span></article>`).join("")}</section></div>`;
   }
 
+  function renderCommunication(tool,p){
+    const maps={
+      "communication-planner":["STRATEGY",["Bối cảnh","Đối tượng","Thông điệp","Kênh"]],
+      "copy-lab":["COPY LAB",["Hook","Lợi ích","Bằng chứng","CTA"]],
+      "pr-desk":["PRESS DESK",["Headline","Lead","Fact sheet","Media contact"]],
+      "brand-safety":["TRUST & SAFETY",["Tín hiệu","Mức độ","Phản hồi","Phê duyệt"]],
+      "community-ops":["COMMUNITY OPS",["Phân loại","Ưu tiên","Mẫu trả lời","SLA"]],
+      "measurement-lab":["MEASUREMENT",["Mục tiêu","KPI","Baseline","Kết quả"]]
+    },[label,steps]=maps[DEFINITIONS[tool.id].kind];
+    return `<div class="smw-communication"><header>${cardHeader(tool,label)}<span>ENGINE LOCAL · KHÔNG GỬI DỮ LIỆU</span></header><div class="smw-communication-flow">${steps.map((step,index)=>`<article><i>${index+1}</i><strong>${step}</strong><p>${index===0?esc(p.objective||p.caption||"Nhập dữ liệu ở thiết lập"):"Chạy công cụ để tạo kết quả có cấu trúc"}</p></article>`).join("")}</div><section><small>KẾT QUẢ CHUYÊN BIỆT</small>${emptyResult(`Kết quả ${tool.name}`)}</section></div>`;
+  }
+
   function render(tool, p) {
     const spec=DEFINITIONS[tool.id] || { kind:"generic", upload:false, exportImage:false };
     let html="";
@@ -108,6 +126,7 @@
     else if (spec.kind === "palette") html=`<div class="smw-palette-workspace" data-smt2-canvas>${cardHeader(tool,"◈")}<div class="smw-palette-image"><span>＋</span><strong>Tải ảnh để phân tích</strong></div><section>${["#0B1826","#6651D9","#56DDEA","#EDF6FF","#F4C866"].map((color)=>`<article style="--swatch:${color}"><i></i><b>${color}</b></article>`).join("")}</section></div>`;
     else if (spec.kind === "bio-page") html=`<div class="smw-bio"><span class="smw-avatar">H</span><h2 data-smt2-preview-title>${esc(p.title)}</h2><p data-smt2-preview-caption>${esc(p.caption||"Giới thiệu ngắn về bạn hoặc thương hiệu")}</p>${["Website chính","Nội dung mới nhất","Liên hệ hợp tác"].map((x)=>`<button>${x}<b>→</b></button>`).join("")}<small>hoang8.com</small></div>`;
     else if (spec.kind === "external-studio") html=`<div class="smw-launcher">${cardHeader(tool,"↗")}<span>◈</span><h2>Workspace chuyên dụng</h2><p>Công cụ này đã có editor riêng đầy đủ trong HH Platform và sẽ được mở ở đúng module.</p><button data-smt2-run>Mở ${esc(tool.name)}</button></div>`;
+    else if (["communication-planner","copy-lab","pr-desk","brand-safety","community-ops","measurement-lab"].includes(spec.kind)) html=renderCommunication(tool,p);
     else if (spec.kind === "ai-repurpose") html=`<div class="smw-ai">${cardHeader(tool,"AI")}<div class="smw-ai-flow"><article><small>NỘI DUNG GỐC</small><p data-smt2-preview-caption>${esc(p.caption||"Nhập bài viết hoặc kịch bản gốc")}</p></article><span>✦</span><section>${["Instagram caption","TikTok hook","X thread","LinkedIn post"].map((x)=>`<article><strong>${x}</strong><small>Chờ AI tạo</small></article>`).join("")}</section></div></div>`;
     else if (spec.kind === "export-package") html=`<div class="smw-export">${cardHeader(tool,"ZIP")}<div class="smw-package"><span>ZIP</span><strong>Social Media Kit</strong><p>${p.assets?.length||0} asset · caption.txt · metadata.json · CREDITS.txt</p></div><section>${["Ảnh & video","Caption","Alt text","Metadata","Bằng chứng nguồn"].map((x,i)=>`<article><b>${i+1}</b><span>${x}</span><em>${i<(p.assets?.length?5:3)?"Sẵn sàng":"Chưa có"}</em></article>`).join("")}</section></div>`;
     else html=`<div class="smw-generic">${cardHeader(tool,"◇")}${emptyResult(tool.name)}</div>`;

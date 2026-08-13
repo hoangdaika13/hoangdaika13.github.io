@@ -21,7 +21,7 @@
     "test:games": "node --test tests/game-*.test.js tests/astra-universe-expansion.test.js tests/game-entertainment-integration.test.js",
     "test:games:backend": "node --test tests/game-cloud-api.test.js realtime-server/test/game-center.test.js realtime-server/test/astra-realtime.test.js",
     "test:character-3d": "node --test tests/character-3d-export.test.js tests/character-3d-studio.test.js",
-    "test:social-media-tools": "node --test tests/social-media-tools-*.test.js tests/social-media-*-v6.test.js",
+    "test:social-media-tools": "node --test tests/social-media-tools-*.test.js tests/social-media-*-v6.test.js tests/social-media-*-v7.test.js",
     "migrate:social-media-tools": "node scripts/migrate-social-media-tools.js"
   },
   "dependencies": {

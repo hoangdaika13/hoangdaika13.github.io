@@ -1,12 +1,12 @@
 (function initSocialMediaToolCapabilities(root) {
   "use strict";
 
-  const VERSION = 6;
+  const VERSION = 7;
   const action = (handler, label, icon, hint = "") => Object.freeze({ handler, label, icon, hint });
   const run = (label, hint = "") => action("run", label, "▶", hint);
   const validate = (label = "Kiểm tra đầu vào") => action("validate", label, "✓", "Chạy validator riêng trước khi xử lý.");
   const apply = (label = "Áp dụng kết quả") => action("apply", label, "↙", "Đưa kết quả đã kiểm tra trở lại dự án.");
-  const exportResult = (label = "Xuất kết quả") => action("export", label, "⇩", "Xuất đúng định dạng mà Tool Contract cho phép.");
+  const exportResult = (label = "Xuất kết quả", format = "") => action(format?`export:${format}`:"export", label, "⇩", "Xuất đúng định dạng mà Tool Contract cho phép.");
   const preview = (label = "Làm mới preview") => action("preview", label, "◉", "Cập nhật bản xem trước mà không gửi dữ liệu ra ngoài.");
   const image = (label = "Xuất ảnh") => action("download", label, "▧", "Render ảnh từ workspace hiện tại.");
   const variants = (label = "Tạo bộ kích thước") => action("variants", label, "▦", "Tạo các biến thể nền tảng kèm safe-zone và rights manifest.");
@@ -74,7 +74,31 @@
     "social-dimensions":[run("Tra kích thước"),exportResult("Xuất bảng CSV/JSON")],
     "color-palette":[validate("Kiểm tra ảnh"),run("Trích bảng màu"),apply("Áp dụng palette"),exportResult("Xuất HEX/JSON")],
     "link-preview-audit":[validate("Kiểm tra URL/ảnh"),run("Audit preview đa nền tảng"),apply("Áp dụng metadata"),exportResult("Xuất báo cáo")],
-    "alt-text-checker":[validate("Kiểm tra đầu vào"),run("Phân tích lỗi Alt Text"),apply("Áp dụng Alt Text"),exportResult("Xuất lịch sử/báo cáo")]
+    "alt-text-checker":[validate("Kiểm tra đầu vào"),run("Phân tích lỗi Alt Text"),apply("Áp dụng Alt Text"),exportResult("Xuất lịch sử/báo cáo")],
+    "content-strategy-brief":[validate("Kiểm tra brief"),run("Tạo chiến lược RACE"),apply("Áp dụng brief"),exportResult("Xuất strategy","txt")],
+    "audience-persona":[validate("Kiểm tra insight"),run("Tạo persona/JTBD"),apply("Áp dụng persona"),exportResult("Xuất persona","json")],
+    "content-pillar-planner":[validate("Kiểm tra mục tiêu"),run("Lập trụ cột nội dung"),apply(),exportResult("Xuất CSV","csv")],
+    "campaign-objective":[validate("Kiểm tra SMART"),run("Tạo Objective/KPI"),apply(),exportResult()],
+    "channel-mix-planner":[validate("Kiểm tra kênh"),run("Phân bổ channel mix"),apply(),exportResult("Xuất CSV","csv")],
+    "editorial-angle-lab":[validate("Kiểm tra chủ đề"),run("Tạo góc biên tập"),apply(),exportResult()],
+    "hook-library":[validate("Kiểm tra audience"),run("Tạo thư viện hook"),apply("Dùng hook đầu"),exportResult("Xuất hook","csv")],
+    "headline-analyzer":[validate("Kiểm tra headline"),run("Chấm và cảnh báo"),apply(),exportResult()],
+    "cta-optimizer":[validate("Kiểm tra mục tiêu"),run("Tạo CTA variants"),apply("Dùng CTA đầu"),exportResult()],
+    "ad-copy-variants":[validate("Kiểm tra offer"),run("Tạo quảng cáo A/B"),apply("Dùng variant A"),exportResult("Xuất CSV","csv")],
+    "ab-test-planner":[validate("Kiểm tra giả thuyết"),run("Lập kế hoạch test"),apply(),exportResult()],
+    "pr-release-builder":[validate("Kiểm tra facts"),run("Soạn thông cáo"),apply(),exportResult("Xuất thông cáo","txt")],
+    "media-pitch-builder":[validate("Kiểm tra cá nhân hóa"),run("Soạn media pitch"),apply(),exportResult()],
+    "press-kit-checklist":[validate("Kiểm tra tài sản"),run("Audit press kit"),apply(),exportResult("Xuất checklist","csv")],
+    "crisis-response-builder":[validate("Kiểm tra sự kiện"),run("Tạo response plan"),apply("Dùng holding statement"),exportResult()],
+    "holding-statement":[validate("Kiểm tra facts"),run("Soạn holding statement"),apply(),exportResult()],
+    "brand-safety-audit":[validate("Kiểm tra nội dung"),run("Audit brand safety"),exportResult("Xuất audit","json")],
+    "claim-compliance-checker":[validate("Kiểm tra nội dung"),run("Phát hiện claim"),exportResult("Xuất danh sách claim","json")],
+    "tone-of-voice-audit":[validate("Kiểm tra tone"),run("Audit giọng thương hiệu"),apply(),exportResult()],
+    "moderation-policy":[validate("Kiểm tra phạm vi"),run("Tạo chính sách moderation"),apply(),exportResult()],
+    "response-template-library":[validate("Kiểm tra tone"),run("Tạo response library"),apply("Dùng mẫu đầu"),exportResult("Xuất CSV","csv")],
+    "sentiment-triage":[validate("Kiểm tra tin nhắn"),run("Phân loại & ưu tiên"),apply("Áp dụng mức ưu tiên"),exportResult()],
+    "kpi-planner":[validate("Kiểm tra KPI"),run("Tạo measurement plan"),apply(),exportResult("Xuất CSV","csv")],
+    "roi-calculator":[validate("Kiểm tra ngân sách"),run("Tính ROI/ROAS/CPA"),exportResult("Xuất CSV","csv")]
   });
 
   function forTool(toolOrId) {
