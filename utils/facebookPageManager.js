@@ -13,7 +13,11 @@ const PERMISSIONS = Object.freeze([
   "pages_manage_posts",
   "pages_manage_engagement",
   "pages_manage_metadata",
-  "read_insights"
+  "read_insights",
+  "instagram_basic",
+  "instagram_content_publish",
+  "instagram_manage_comments",
+  "instagram_manage_insights"
 ]);
 const MAX_PAGES = 200;
 const MAX_BATCH_PUBLISH = 20;
@@ -61,7 +65,7 @@ function safeFrontend(value) {
 
 function safeReturnHash(value) {
   const hash = clean(value || "#/davinci-resolve/facebook", 240);
-  return /^#\/davinci-resolve\/facebook(?:[/?].*)?$/.test(hash) ? hash : "#/davinci-resolve/facebook";
+  return /^#\/(?:davinci-resolve\/facebook|social-media-tools)(?:[/?].*)?$/.test(hash) ? hash : "#/davinci-resolve/facebook";
 }
 
 function hmacIdentity(value) {
@@ -361,7 +365,7 @@ module.exports = async function facebookPageManager(req, res) {
         const permissionResult = await graph("me/permissions", userToken).catch(() => ({ data: [] }));
         const grantedPermissions = (permissionResult.data || []).filter((item) => item.status === "granted").map((item) => clean(item.permission, 100)).filter(Boolean);
         const declinedPermissions = (permissionResult.data || []).filter((item) => item.status === "declined").map((item) => clean(item.permission, 100)).filter(Boolean);
-        let next = `${GRAPH_ORIGIN}/me/accounts?fields=id,name,access_token,category,category_list,tasks,picture.type(square)&limit=100`;
+        let next = `${GRAPH_ORIGIN}/me/accounts?fields=id,name,access_token,category,category_list,tasks,picture.type(square),instagram_business_account%7Bid,username,name,profile_picture_url%7D&limit=100`;
         let pages = [];
         for (let page = 0; next && page < 3 && pages.length < MAX_PAGES; page += 1) {
           const result = await graph(next, userToken);
@@ -384,6 +388,15 @@ module.exports = async function facebookPageManager(req, res) {
             tasks: Array.isArray(page.tasks) ? page.tasks.map((task) => clean(task, 80)).filter(Boolean).slice(0, 30) : [],
             grantedPermissions,
             declinedPermissions,
+            instagramAccount: page.instagram_business_account?.id ? {
+              id: clean(page.instagram_business_account.id, 120),
+              username: clean(page.instagram_business_account.username, 120),
+              name: clean(page.instagram_business_account.name, 180),
+              profilePicture: clean(page.instagram_business_account.profile_picture_url, 1200),
+              canPublish: grantedPermissions.includes("instagram_content_publish"),
+              canManageComments: grantedPermissions.includes("instagram_manage_comments"),
+              canReadInsights: grantedPermissions.includes("instagram_manage_insights")
+            } : null,
             accessToken: encryptToken(page.access_token, owner),
             tokenVersion: "v2",
             tokenUpdatedAt: now,

@@ -27,7 +27,7 @@ function callbackUrl() {
 }
 function encryptionConfigured() { return String(process.env.TIKTOK_TOKEN_ENCRYPTION_KEY || "").length >= 32; }
 function auditConfigured() { return String(process.env.TIKTOK_CONTENT_POSTING_AUDITED || "").toLowerCase() === "true"; }
-function safeHash(value) { const hash = clean(value || "#/davinci-resolve/tiktok", 240); return /^#\/davinci-resolve\/tiktok(?:[/?].*)?$/.test(hash) ? hash : "#/davinci-resolve/tiktok"; }
+function safeHash(value) { const hash = clean(value || "#/davinci-resolve/tiktok", 240); return /^#\/(?:davinci-resolve\/tiktok|social-media-tools)(?:[/?].*)?$/.test(hash) ? hash : "#/davinci-resolve/tiktok"; }
 function safeFrontend(value) { try { const url = new URL(String(value || "https://hoang8.com")); return new Set(["https://hoang8.com", "https://www.hoang8.com", process.env.PUBLIC_SITE_URL, process.env.FRONTEND_URL].filter(Boolean)).has(url.origin) ? url.origin : "https://hoang8.com"; } catch { return "https://hoang8.com"; } }
 function requiredScopes(input) { const requested = new Set(Array.isArray(input) ? input : []); return ALL_SCOPES.filter((scope) => requested.has(scope) || BASE_SCOPES.includes(scope)); }
 function connectionHint(req, body = {}) { return clean(body.connectionId || req.query.connectionId || "none", 120) || "none"; }

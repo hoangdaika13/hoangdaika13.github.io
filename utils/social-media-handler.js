@@ -49,14 +49,29 @@ async function workspaces(req, res, db, user, body) {
 async function accounts(req, res, db, user) {
   const workspaceId = id(req.query.workspaceId, "personal"); if (!await workspaceAccess(db, user, workspaceId)) return res.status(403).json({ error: "Không được truy cập workspace này." });
   if (req.method !== "GET") return res.status(405).json({ error: "Kết nối tài khoản được thực hiện trong Facebook, TikTok hoặc YouTube hiện có." });
+  const projection = { accessToken: 0, refreshToken: 0, userAccessToken: 0, tokenCiphertext: 0, clientSecret: 0, metaIdentityHash: 0 };
   const [social, facebook, tiktok, youtube] = await Promise.all([
-    db.collection("social_accounts").find({ ownerId: user._id, workspaceId }).limit(100).toArray(),
-    db.collection("facebookConnections").find({ userId: user._id, status: "connected" }).limit(50).toArray().catch(() => []),
-    db.collection("tiktokCreatorConnections").find({ ownerId: user._id, active: true }).limit(50).toArray().catch(() => []),
-    db.collection("youtubeConnections").find({ userId: user._id }).limit(50).toArray().catch(() => [])
+    db.collection("social_accounts").find({ ownerId: user._id, workspaceId }, { projection }).limit(100).toArray(),
+    db.collection("facebookPageConnections").find({ userId: user._id }, { projection }).sort({ active: -1, pageName: 1 }).limit(100).toArray().catch(() => []),
+    db.collection("tiktokConnections").find({ userId: user._id }, { projection }).sort({ active: -1, updatedAt: -1 }).limit(50).toArray().catch(() => []),
+    db.collection("youtubeConnections").find({ userId: user._id }, { projection }).sort({ active: -1, updatedAt: -1 }).limit(100).toArray().catch(() => [])
   ]);
-  const mapped = [...social.map(publicAccount), ...facebook.map((item) => ({ id: String(item._id), workspaceId, provider: "facebook", displayName: item.pageName || item.name, username: item.pageId, status: "connected", capabilities: { publish: true } })), ...tiktok.map((item) => ({ id: String(item._id), workspaceId, provider: "tiktok", displayName: item.displayName, username: item.username, status: "connected", capabilities: { publish: true } })), ...youtube.map((item) => ({ id: String(item._id), workspaceId, provider: "youtube", displayName: item.channelTitle, username: item.channelId, status: "connected", capabilities: { publish: true } }))];
-  return res.status(200).json({ items: mapped, tokenDelivery: "server-only" });
+  const facebookItems = facebook.map((item) => {
+    const permissions = Array.isArray(item.grantedPermissions) ? item.grantedPermissions : [];
+    const tasks = Array.isArray(item.tasks) ? item.tasks : [];
+    return { id: String(item.pageId || item._id), workspaceId, provider: "facebook", displayName: item.pageName || "Facebook Page", username: item.pageId, status: "connected", scopes: permissions, active: Boolean(item.active), capabilities: { read: permissions.includes("pages_read_engagement"), publish: permissions.includes("pages_manage_posts") || tasks.includes("CREATE_CONTENT"), comments: permissions.includes("pages_manage_engagement") || tasks.includes("MODERATE"), analytics: permissions.includes("read_insights") || permissions.includes("pages_read_engagement") }, sourceManager: "/davinci-resolve/facebook", updatedAt: item.updatedAt };
+  });
+  const instagramItems = facebook.filter((item) => item.instagramAccount?.id).map((item) => ({ id: String(item.instagramAccount.id), workspaceId, provider: "instagram", displayName: item.instagramAccount.name || item.instagramAccount.username || "Instagram Professional", username: item.instagramAccount.username || item.instagramAccount.id, status: "connected", scopes: Array.isArray(item.grantedPermissions) ? item.grantedPermissions.filter((scope) => scope.startsWith("instagram_")) : [], active: Boolean(item.active), capabilities: { read: true, publish: Boolean(item.instagramAccount.canPublish), comments: Boolean(item.instagramAccount.canManageComments), analytics: Boolean(item.instagramAccount.canReadInsights) }, sourceManager: "/davinci-resolve/facebook", updatedAt: item.updatedAt }));
+  const tiktokItems = tiktok.map((item) => { const scopes = Array.isArray(item.scopes) ? item.scopes : []; return { id: String(item.connectionId || item._id), workspaceId, provider: "tiktok", displayName: item.displayName || item.username || "TikTok", username: item.username || item.openId, status: item.status || "connected", scopes, active: Boolean(item.active), capabilities: { read: scopes.includes("user.info.basic"), media: scopes.includes("video.list"), upload: scopes.includes("video.upload"), publish: scopes.includes("video.publish"), analytics: scopes.includes("user.info.stats") }, sourceManager: "/davinci-resolve/tiktok", updatedAt: item.updatedAt } });
+  const youtubeItems = youtube.map((item) => { const scopes = String(item.scopes || "").split(/\s+/).filter(Boolean); return { id: String(item.channelId || item._id), workspaceId, provider: "youtube", displayName: item.channelTitle || "Kênh YouTube", username: item.channelId, status: "connected", scopes, active: Boolean(item.active), capabilities: { read: true, upload: scopes.some((scope) => scope.endsWith("youtube.upload")), publish: scopes.some((scope) => scope.endsWith("youtube.upload")), manage: scopes.some((scope) => scope.endsWith("youtube.force-ssl")), analytics: scopes.some((scope) => scope.includes("yt-analytics")) }, sourceManager: "/davinci-resolve/youtube", updatedAt: item.updatedAt } });
+  const mapped = [...social.map(publicAccount), ...facebookItems, ...instagramItems, ...tiktokItems, ...youtubeItems];
+  const providers = {
+    facebook: { configured: Boolean(process.env.META_APP_ID && process.env.META_APP_SECRET && process.env.META_TOKEN_ENCRYPTION_KEY), connected: facebookItems.length > 0, accounts: facebookItems.length, callbackUrl: process.env.META_CALLBACK_URL || `${process.env.PUBLIC_SITE_URL || "https://hoang8.com"}/api/facebook/oauth/callback` },
+    instagram: { configured: Boolean(process.env.META_APP_ID && process.env.META_APP_SECRET && process.env.META_TOKEN_ENCRYPTION_KEY), connected: instagramItems.length > 0, accounts: instagramItems.length, via: "facebook-login" },
+    tiktok: { configured: Boolean(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_SECRET && process.env.TIKTOK_TOKEN_ENCRYPTION_KEY), connected: tiktokItems.length > 0, accounts: tiktokItems.length, callbackUrl: process.env.TIKTOK_REDIRECT_URI || `${process.env.PUBLIC_SITE_URL || "https://hoang8.com"}/api/tiktok/oauth/callback`, audited: /^(1|true|yes)$/i.test(process.env.TIKTOK_CONTENT_POSTING_AUDITED || "") },
+    youtube: { configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.YOUTUBE_TOKEN_ENCRYPTION_KEY), connected: youtubeItems.length > 0, accounts: youtubeItems.length, callbackUrl: process.env.YOUTUBE_CALLBACK_URL || `${process.env.PUBLIC_SITE_URL || "https://hoang8.com"}/api/youtube/oauth/callback` }
+  };
+  return res.status(200).json({ items: mapped, providers, tokenDelivery: "server-only", autoSynced: true, ownerIsolated: true });
 }
 
 async function projects(req, res, db, user, body) {

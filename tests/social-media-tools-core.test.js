@@ -19,6 +19,12 @@ test("caption formatter deduplicates hashtags and counters use Unicode character
   assert.equal(stats.limit, 280); assert.equal(stats.hashtags[0], "#HH"); assert.equal(stats.links.length, 1); assert.equal(stats.characters, [..."Xin chào 👋 #HH https://hoang8.com"].length);
 });
 
+test("thread splitter keeps every generated post inside platform limits", () => {
+  const parts = core.splitThread(Array.from({ length: 180 }, (_, index) => `từ${index}`).join(" "), "x");
+  assert.ok(parts.length > 1); assert.ok(parts.every((part) => [...part].length <= 280));
+  assert.equal(parts.join(" ").split(/\s+/).length, 180);
+});
+
 test("crop, UTM, Open Graph and filename utilities validate input", () => {
   assert.deepEqual(core.cropSize("9:16", 1080), { width:1080, height:1920, ratio:"9:16" });
   assert.throws(() => core.cropSize("2:3"), /không hợp lệ/);

@@ -492,7 +492,7 @@ function publicConnection(connection, allConnections = []) {
 
 function safeReturnHash(value) {
   const route = clean(value, 220);
-  return /^#\/(?:davinci-resolve\/youtube|music-ai\/youtube-publisher)(?:[/?#].*)?$/.test(route)
+  return /^#\/(?:davinci-resolve\/youtube|music-ai\/youtube-publisher|social-media-tools)(?:[/?#].*)?$/.test(route)
     ? route
     : "#/davinci-resolve/youtube";
 }

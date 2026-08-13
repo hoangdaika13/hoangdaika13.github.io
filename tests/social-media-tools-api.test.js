@@ -35,7 +35,19 @@ test("single dynamic Vercel function routes all Social Media resources", () => {
 
 test("route, lazy loader, service worker and UI behavior are integrated", () => {
   const script=read("script.js"), loader=read("performance-loader.js"), sw=read("sw.js"), ui=read("social-media-tools.js"), css=read("social-media-tools.css");
-  assert.match(script,/route: "\/social-media-tools"/); assert.match(script,/HHSocialMediaTools\.mount/); assert.match(loader,/social-media-tools-core\.js\?v=1/); assert.match(sw,/social-media-tools\.js\?v=1/);
+  const uiV2=read("social-media-tools-v2.js"), cssV2=read("social-media-tools-v2.css");
+  assert.match(script,/route: "\/social-media-tools"/); assert.match(script,/HHSocialMediaTools\.mount/); assert.match(loader,/social-media-tools-core\.js\?v=2/); assert.match(sw,/social-media-tools-v2\.js\?v=1/);
   assert.match(ui,/BẢN MÔ PHỎNG/); assert.match(ui,/data-smt-job-action/); assert.match(ui,/JSZip/); assert.match(ui,/sanitizedAsset/); assert.match(ui,/oembed/); assert.match(ui,/provider-worker-required|Xuất thủ công/);
   assert.match(css,/@media\(max-width:700px\)/); assert.match(css,/focus-visible/); assert.match(css,/prefers-reduced-motion/);
+  assert.match(uiV2,/data-smt2-group/); assert.match(uiV2,/data-smt2-favorite/); assert.match(uiV2,/settingsMarkup/); assert.match(uiV2,/startOAuth/); assert.match(uiV2,/hh\.social\.oauth\.pending/); assert.match(uiV2,/BẢN MÔ PHỎNG/);
+  assert.match(cssV2,/\.smt2-tool-list/); assert.match(cssV2,/@media\(max-width:720px\)/); assert.match(cssV2,/focus-visible/); assert.match(cssV2,/prefers-reduced-motion/);
+});
+
+test("provider connections reuse the real encrypted owner-scoped vaults", () => {
+  const backend=read("utils/social-media-handler.js"), facebook=read("utils/facebookPageManager.js");
+  assert.match(backend,/facebookPageConnections/); assert.match(backend,/tiktokConnections/); assert.match(backend,/youtubeConnections/);
+  assert.match(backend,/projection = \{ accessToken: 0, refreshToken: 0/); assert.match(backend,/autoSynced: true/); assert.match(backend,/providers/);
+  assert.doesNotMatch(backend,/facebookConnections|tiktokCreatorConnections/);
+  assert.match(facebook,/instagram_business_account/); assert.match(facebook,/instagram_content_publish/); assert.match(facebook,/instagram_manage_comments/);
+  assert.match(facebook,/social-media-tools/); assert.match(read("utils/tiktokCreatorManager.js"),/social-media-tools/); assert.match(read("utils/youtubePublisher.js"),/social-media-tools/);
 });
