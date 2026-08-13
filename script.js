@@ -6272,7 +6272,7 @@ function initAppShell() {
       });
       else mountSimpleView("HH School", "Đang tải trường học số lớp 1–12...", "");
     } else if (route === "/english" || route.startsWith("/english/")) {
-      updatePageHeader("HH English", "English Learning Galaxy: từ vựng tải theo gói, 16 chế độ luyện, CEFR A0–C2 và 70 lộ trình nghề nghiệp tự thích ứng.", route);
+      updatePageHeader("HH English", "English Learning Galaxy: Skill Graph theo CEFR 2020, 16 chế độ luyện, CEFR A0–C2 và 70 lộ trình nghề nghiệp tự thích ứng.", route);
       workspace.innerHTML = '<div data-hh-english-host></div>';
       if (window.HHEnglish?.mount) window.HHEnglish.mount(workspace.firstElementChild, { view: parts[1] || "dashboard" });
       else mountSimpleView("HH English", "Đang tải không gian học tiếng Anh...", "");

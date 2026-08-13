@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson } = require("../english-learning.js");
+const skillGraph = require("../english-skill-graph.js");
 const fs = require("node:fs");
 const path = require("node:path");
 const { defaultState: galaxyDefaultState, listeningLibrary, readingLibrary, progressForListening, progressForReading, unlockedSentenceIndex, completeListeningSentence, completedParagraphIndexes, unlockedParagraphIndex } = require("../english-learning-galaxy.js");
@@ -262,4 +263,33 @@ test("HH English dashboard is compact while lesson workspaces keep their bounded
   assert.match(baseCss, /\.hhe-app:is\(\[data-view="listening"\],\[data-view="reading"\]\)\{height:calc\(100dvh - 106px\)/);
   assert.match(shell, /const scrollContainers = \[/);
   assert.doesNotMatch(shell.slice(shell.indexOf("const focusCurrentView"), shell.indexOf("const render", shell.indexOf("const focusCurrentView"))), /scrollIntoView/);
+});
+
+test("CEFR 2020 Skill Graph separates domains and reports evidence without claiming certification", () => {
+  assert.deepEqual(skillGraph.domains.map((item) => item.id), ["reception", "production", "interaction", "mediation", "foundation"]);
+  const state = {
+    completed: { "a0-1-1": true },
+    practiceByLevel: { A0: { listening: 80, reading: 60, grammar: 40 } },
+    writingHistory: [{ level: "A0", words: 20, prompt: "Introduce yourself", body: "My name is Lan." }],
+    speakingAttempts: [{ score: 72 }],
+    speakingRoleplays: [{ score: 65 }],
+    wordMastery: { hello: { score: 84 } },
+    galaxy: { listeningProgress: {}, readingProgress: {} }
+  };
+  const graph = skillGraph.buildSkillGraph(state, { allLessons: courses.flatMap((unit) => unit.lessons), levelOrder: courseLevels.map((level) => level.id) });
+  assert.equal(graph.version, "1.0.0");
+  assert.equal(graph.domains.length, 5);
+  assert.ok(graph.components.some((item) => item.id === "mediation" || item.id === "text-mediation"));
+  assert.match(graph.disclaimer, /không phải chứng chỉ CEFR chính thức/);
+  assert.ok(graph.mission.action);
+  const html = skillGraph.renderView(state, { allLessons: courses.flatMap((unit) => unit.lessons), levelOrder: courseLevels.map((level) => level.id) });
+  for (const marker of ["CEFR 2020 SKILL GRAPH", "Reception", "Production", "Interaction", "Mediation", "EVIDENCE LEDGER", "I can"]) assert.match(html, new RegExp(marker));
+});
+
+test("HH English Skill Graph assets are versioned and cached offline", () => {
+  const loader = fs.readFileSync(path.join(__dirname, "..", "performance-loader.js"), "utf8");
+  const worker = fs.readFileSync(path.join(__dirname, "..", "sw.js"), "utf8");
+  for (const asset of ["english-skill-graph.css?v=1", "english-skill-graph.js?v=1", "english-learning.js?v=23"]) {
+    assert.match(loader + worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
+  }
 });

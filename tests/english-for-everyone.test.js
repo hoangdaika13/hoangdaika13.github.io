@@ -89,7 +89,7 @@ test("one-page family workspace exposes all requested content and accessibility 
   assert.match(learning, /HH SMART START · 4 BƯỚC/);
   assert.match(learning, /data-hhe-onboarding-dot="4"/);
   assert.match(learning, /data-view="\$\{state\.activeView\}"[^>]*data-age-mode/);
-  for (const asset of ["english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=22"]) assert.match(loader + serviceWorker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
+  for (const asset of ["english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=23", "english-skill-graph.js?v=1", "english-skill-graph.css?v=1"]) assert.match(loader + serviceWorker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   assert.match(css, /height:calc\(100dvh - 180px\)/);
   assert.match(css, /min-height:44px/);
   assert.match(css, /data-dyslexia/);
