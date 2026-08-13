@@ -9,6 +9,8 @@ test("catalog exposes the complete 46-tool ecosystem without duplicate ids", () 
   assert.equal(new Set(core.TOOL_CATALOG.map((tool) => tool.id)).size, 46);
   assert.ok(core.TOOL_CATALOG.some((tool) => tool.id === "instagram-filter" && tool.mode === "local"));
   assert.ok(core.TOOL_CATALOG.some((tool) => tool.id === "social-listening" && tool.mode === "provider"));
+  assert.ok(core.TOOL_CATALOG.some((tool) => tool.id === "analytics" && tool.mode === "provider"));
+  assert.ok(core.TOOL_CATALOG.some((tool) => tool.id === "instagram-owned-media" && tool.mode === "provider"));
 });
 
 test("caption formatter deduplicates hashtags and counters use Unicode characters", () => {
