@@ -6119,7 +6119,7 @@ function initAppShell() {
       workspace.replaceChildren(dashboardHome);
       updateDashboard();
     } else if (route === "/social-media-tools" || route.startsWith("/social-media-tools/")) {
-      updatePageHeader("Công cụ truyền thông xã hội", "46 công cụ sáng tạo, định dạng, xem trước, xuất asset và vận hành nội dung đa nền tảng bằng API chính thức khi có quyền.", route);
+      updatePageHeader("Công cụ truyền thông xã hội", "61 công cụ sáng tạo, văn bản, liên kết, ảnh, video, xem trước, xuất asset và vận hành đa nền tảng bằng API chính thức khi có quyền.", route);
       pageActions.innerHTML = `<button type="button" data-app-route="/davinci-resolve/facebook">Facebook</button><button type="button" data-app-route="/davinci-resolve/tiktok">TikTok</button><button type="button" data-app-route="/davinci-resolve/youtube">YouTube</button>`;
       workspace.innerHTML = '<div data-social-media-tools-host></div>';
       if (window.HHSocialMediaTools?.mount) window.HHSocialMediaTools.mount(workspace.firstElementChild, { currentUser: readCurrentAuthUser(), navigate: (nextRoute) => { location.hash = `#${nextRoute}`; } });
@@ -6686,7 +6686,7 @@ function initAppShell() {
       {
         type: "Mạng xã hội",
         title: "Công cụ truyền thông xã hội",
-        description: "46 công cụ tạo nội dung, chỉnh ảnh, mockup có watermark, metadata, oEmbed, lịch, queue và xuất Social Media Kit.",
+        description: "61 công cụ tạo nội dung, xử lý văn bản, liên kết chia sẻ, chỉnh ảnh, metadata, oEmbed, lịch, queue và xuất Social Media Kit.",
         route: "/social-media-tools",
         key: "social media tools instagram facebook tiktok x threads whatsapp imessage youtube vimeo open graph utm caption thumbnail story mockup queue"
       }

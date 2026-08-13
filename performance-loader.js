@@ -125,8 +125,8 @@
       ]
     },
     "social-media-tools": {
-      styles: ["social-media-tools-v2.css?v=1"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "social-media-tools-core.js?v=2", "social-media-tools-v2.js?v=1"]
+      styles: ["social-media-tools-v2.css?v=3"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "social-media-tools-core.js?v=3", "social-media-tools-v2.js?v=3"]
     },
     "comic-motion": {
       // Compatibility: comic-motion-studio.css?v=3 comic-motion-studio.css?v=4 comic-motion-studio.css?v=5 comic-motion-studio.js?v=6 comic-motion-studio.js?v=7 comic-motion-studio.js?v=8 comic-motion-studio.js?v=9

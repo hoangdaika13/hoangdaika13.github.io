@@ -73,6 +73,74 @@
     return null;
   }
 
+  function textMetrics(value, platform = "instagram") {
+    const text = String(value || ""); const stats = captionStats(text, platform);
+    const words = text.trim() ? text.trim().split(/\s+/u).length : 0;
+    const lines = text ? text.split(/\r?\n/).length : 0;
+    return { ...stats, words, lines, readingSeconds: words ? Math.max(1, Math.ceil(words / 3.3)) : 0, bytes: new TextEncoder().encode(text).length };
+  }
+
+  function transformText(value, mode = "sentence") {
+    const text = String(value || ""); const words = text.trim().split(/\s+/u).filter(Boolean);
+    if (mode === "upper") return text.toLocaleUpperCase("vi");
+    if (mode === "lower") return text.toLocaleLowerCase("vi");
+    if (mode === "title") return words.map((word) => [...word].map((char, index) => index ? char.toLocaleLowerCase("vi") : char.toLocaleUpperCase("vi")).join("")).join(" ");
+    if (mode === "camel") return words.map((word, index) => { const lower = word.toLocaleLowerCase("vi"); return index ? [...lower].map((char, charIndex) => charIndex ? char : char.toLocaleUpperCase("vi")).join("") : lower; }).join("");
+    if (mode === "kebab") return slug(text, "");
+    if (mode === "toggle") return [...text].map((char) => char === char.toLocaleUpperCase("vi") ? char.toLocaleLowerCase("vi") : char.toLocaleUpperCase("vi")).join("");
+    return text.toLocaleLowerCase("vi").replace(/(^|[.!?]\s+)([\p{L}])/gu, (match, prefix, char) => `${prefix}${char.toLocaleUpperCase("vi")}`);
+  }
+
+  function normalizeSocialText(value, options = {}) {
+    let text = String(value || "").replace(/\r\n?/g, "\n").replace(/[\t\u00a0]+/g, " ").replace(/[ ]{2,}/g, " ").replace(/ +\n/g, "\n");
+    if (options.compactLines !== false) text = text.replace(/\n{3,}/g, "\n\n");
+    return options.preserveOuterSpace ? text : text.trim();
+  }
+
+  function cleanHashtags(value, max = 30) {
+    const raw = String(value || "").split(/[\s,;|]+/u).map((tag) => clean(tag, 100).replace(/^#+/, "").replace(/[^\p{L}\p{N}_]/gu, "")).filter(Boolean);
+    const uniqueMap = new Map(); for (const tag of raw) { const key = tag.toLocaleLowerCase("vi"); if (!uniqueMap.has(key)) uniqueMap.set(key, tag); }
+    const unique = [...uniqueMap.values()].slice(0, Math.max(1, Math.min(100, Number(max) || 30)));
+    return { items: unique, text: unique.map((tag) => `#${tag}`).join(" "), removed: Math.max(0, raw.length - unique.length) };
+  }
+
+  function profileUrl(provider, username) {
+    const handle = clean(username, 120).replace(/^@/, "").replace(/[^a-zA-Z0-9._-]/g, "");
+    if (!handle) throw new Error("Cần nhập tên tài khoản hợp lệ.");
+    const bases = { instagram:"https://www.instagram.com/", tiktok:"https://www.tiktok.com/@", x:"https://x.com/", threads:"https://www.threads.net/@", youtube:"https://www.youtube.com/@", linkedin:"https://www.linkedin.com/in/", pinterest:"https://www.pinterest.com/", telegram:"https://t.me/", facebook:"https://www.facebook.com/" };
+    if (!bases[provider]) throw new Error("Nền tảng chưa được hỗ trợ.");
+    return `${bases[provider]}${encodeURIComponent(handle)}`;
+  }
+
+  function buildShareUrl(input = {}) {
+    const provider = clean(input.provider, 30).toLowerCase(); const text = clean(input.text, 4000); const target = normalizeUrl(input.url || "https://hoang8.com/");
+    const encodedUrl = encodeURIComponent(target); const encodedText = encodeURIComponent(text); const combined = encodeURIComponent([text, target].filter(Boolean).join(" "));
+    if (provider === "whatsapp") { const phone = String(input.phone || "").replace(/\D/g, "").slice(0, 18); return `https://wa.me/${phone}?text=${combined}`; }
+    if (provider === "telegram") return `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`;
+    if (provider === "facebook") return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+    if (provider === "x") return `https://x.com/intent/post?url=${encodedUrl}&text=${encodedText}`;
+    if (provider === "linkedin") return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+    if (provider === "reddit") return `https://www.reddit.com/submit?url=${encodedUrl}&title=${encodedText}`;
+    if (provider === "email") return `mailto:?subject=${encodeURIComponent(clean(input.title, 180))}&body=${combined}`;
+    throw new Error("Nền tảng chia sẻ chưa được hỗ trợ.");
+  }
+
+  function buildYouTubeEmbed(value, options = {}) {
+    const ref = parseVideoRef(value, "youtube"); if (!ref) throw new Error("URL hoặc ID YouTube không hợp lệ.");
+    const start = Math.max(0, Math.floor(Number(options.start) || 0)); const query = new URLSearchParams({ rel:"0" });
+    if (start) query.set("start", String(start)); if (options.autoplay === true) query.set("autoplay", "1");
+    const src = `https://www.youtube-nocookie.com/embed/${ref.id}?${query}`;
+    return { id:ref.id, src, html:`<iframe width="560" height="315" src="${escapeAttribute(src)}" title="YouTube video player" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>` };
+  }
+
+  const SOCIAL_DIMENSIONS = Object.freeze([
+    { platform:"Instagram", asset:"Bài đăng dọc", ratio:"4:5", width:1080, height:1350 }, { platform:"Instagram", asset:"Story / Reel", ratio:"9:16", width:1080, height:1920 },
+    { platform:"TikTok", asset:"Video / Cover", ratio:"9:16", width:1080, height:1920 }, { platform:"YouTube", asset:"Thumbnail", ratio:"16:9", width:1280, height:720 },
+    { platform:"YouTube", asset:"Shorts", ratio:"9:16", width:1080, height:1920 }, { platform:"Facebook", asset:"Bài đăng", ratio:"1.91:1", width:1200, height:630 },
+    { platform:"LinkedIn", asset:"Bài đăng", ratio:"1.91:1", width:1200, height:627 }, { platform:"Pinterest", asset:"Pin", ratio:"2:3", width:1000, height:1500 },
+    { platform:"X", asset:"Ảnh bài đăng", ratio:"16:9", width:1600, height:900 }
+  ].map(Object.freeze));
+
   function roleCan(role, action) {
     const matrix = { owner: ["read", "edit", "review", "publish", "manage", "analytics"], admin: ["read", "edit", "review", "publish", "manage", "analytics"], editor: ["read", "edit"], reviewer: ["read", "review"], publisher: ["read", "publish"], analyst: ["read", "analytics"] };
     return Boolean(matrix[role]?.includes(action));
@@ -127,14 +195,17 @@
     ["x-composer","X / Threads","Tweet & thread composer","local"],["tweet-card","X / Threads","Tweet thành hình","local"],["x-revenue","X / Threads","Ước tính doanh thu","local"],["threads-composer","X / Threads","Threads composer","local"],
     ["whatsapp-mockup","Tin nhắn","WhatsApp Message Studio","local"],["imessage-mockup","Tin nhắn","iMessage Mockup Studio","local"],
     ["youtube-thumbnail","Video","Thumbnail YouTube qua oEmbed","api"],["vimeo-thumbnail","Video","Thumbnail Vimeo qua oEmbed","api"],["open-graph","Công cụ chung","Open Graph & JSON-LD","local"],
-    ["facebook-composer","Facebook","Post & Reels composer","manual"],["tiktok-kit","TikTok","Caption, Cover & Safe-Zone","manual"],["linkedin-composer","Mạng nghề nghiệp","LinkedIn Post & Article","local"],["pinterest-pin","Mạng hình ảnh","Pinterest Pin","local"],["reddit-formatter","Cộng đồng","Reddit Formatter","local"],["telegram-composer","Tin nhắn","Telegram Composer","local"],["discord-announcement","Cộng đồng","Discord Announcement","local"],["mastodon-bluesky","Mạng mở","Mastodon & Bluesky","local"],["snapchat-story","Story","Social Story Designer","local"],["bio-link","Công cụ chung","Social Bio Link","local"],["qr-campaign","Công cụ chung","QR Campaign","reuse"],["profile-picture","Thiết kế","Profile Picture","local"],["cover-generator","Thiết kế","Banner & Cover","local"],["meme-studio","Thiết kế","Meme Studio","local"],["quote-card","Thiết kế","Quote Card","local"],["product-kit","Thương mại","Product Social Kit","local"],["hashtag-workspace","Nội dung","Hashtag Workspace","local"],["utm-builder","Công cụ chung","UTM Campaign Builder","local"],["caption-formatter","Nội dung","Caption Formatter","local"],["emoji-picker","Nội dung","Emoji & Symbol Picker","local"],["subtitle-studio","Video","Subtitle Studio","reuse"],["video-resizer","Video","Social Video Resizer","reuse"],["brand-kit","Thiết kế","Watermark & Brand Kit","local"],["repurpose","AI","Content Repurposing","ai"],["calendar","Vận hành","Social Calendar","api"],["approval","Vận hành","Approval Workflow","api"],["publishing-queue","Vận hành","Unified Publishing Queue","api"],["analytics","Vận hành","Unified Analytics thật","provider"],["community-inbox","Vận hành","Comment & Inbox","provider"],["competitor-research","Nghiên cứu","Competitor Research qua API","provider"],["social-listening","Nghiên cứu","Social Listening","provider"],["export-kit","Xuất","Social Media Kit ZIP","local"]
+    ["facebook-composer","Facebook","Post & Reels composer","manual"],["tiktok-kit","TikTok","Caption, Cover & Safe-Zone","manual"],["linkedin-composer","Mạng nghề nghiệp","LinkedIn Post & Article","local"],["pinterest-pin","Mạng hình ảnh","Pinterest Pin","local"],["reddit-formatter","Cộng đồng","Reddit Formatter","local"],["telegram-composer","Tin nhắn","Telegram Composer","local"],["discord-announcement","Cộng đồng","Discord Announcement","local"],["mastodon-bluesky","Mạng mở","Mastodon & Bluesky","local"],["snapchat-story","Story","Social Story Designer","local"],["bio-link","Công cụ chung","Social Bio Link","local"],["qr-campaign","Công cụ chung","QR Campaign","reuse"],["profile-picture","Thiết kế","Profile Picture","local"],["cover-generator","Thiết kế","Banner & Cover","local"],["meme-studio","Thiết kế","Meme Studio","local"],["quote-card","Thiết kế","Quote Card","local"],["product-kit","Thương mại","Product Social Kit","local"],["hashtag-workspace","Nội dung","Hashtag Workspace","local"],["utm-builder","Công cụ chung","UTM Campaign Builder","local"],["caption-formatter","Nội dung","Caption Formatter","local"],["emoji-picker","Nội dung","Emoji & Symbol Picker","local"],["subtitle-studio","Video","Subtitle Studio","reuse"],["video-resizer","Video","Social Video Resizer","reuse"],["brand-kit","Thiết kế","Watermark & Brand Kit","local"],["repurpose","AI","Content Repurposing","ai"],["calendar","Vận hành","Social Calendar","api"],["approval","Vận hành","Approval Workflow","api"],["publishing-queue","Vận hành","Unified Publishing Queue","api"],["analytics","Vận hành","Unified Analytics thật","provider"],["community-inbox","Vận hành","Comment & Inbox","provider"],["competitor-research","Nghiên cứu","Competitor Research qua API","provider"],["social-listening","Nghiên cứu","Social Listening","provider"],["export-kit","Xuất","Social Media Kit ZIP","local"],
+    ["social-character-counter","Văn bản","Đếm ký tự đa nền tảng","local"],["case-converter","Văn bản","Đổi kiểu chữ","local"],["whitespace-cleaner","Văn bản","Làm sạch khoảng trắng","local"],["unicode-font-styler","Văn bản","Kiểu chữ bio Unicode","local"],["hashtag-cleaner","Nội dung","Làm sạch hashtag","local"],
+    ["username-link-builder","Liên kết","Tạo link hồ sơ","local"],["whatsapp-link","Liên kết","Tạo link WhatsApp","local"],["telegram-link","Liên kết","Tạo link chia sẻ Telegram","local"],["social-share-link","Liên kết","Tạo link chia sẻ mạng xã hội","local"],
+    ["youtube-embed","Video","Mã nhúng YouTube riêng tư","local"],["youtube-timestamp","Video","Link YouTube theo thời gian","local"],["social-dimensions","Thiết kế","Kích thước ảnh mạng xã hội","local"],["color-palette","Thiết kế","Trích bảng màu từ ảnh","local"],["link-preview-audit","Công cụ chung","Kiểm tra Link Preview","local"],["alt-text-checker","Nội dung","Kiểm tra Alt Text","local"]
   ].map(([id, group, name, mode]) => Object.freeze({ id, group, name, mode })));
 
-  function defaultProject(context = {}) { const ownerId = ownerIdFor(context.currentUser); const workspaceId = safeId(context.workspaceId || "personal", "personal"); return { schemaVersion: SCHEMA_VERSION, ownerId, workspaceId, id: safeId(context.id || "draft-1"), toolId: "instagram-post", platform: "instagram", title: "Chiến dịch mới", caption: "", altText: "", location: "", theme: "dark", ratio: "4:5", exposure: 100, contrast: 100, saturation: 100, temperature: 0, blur: 0, sourceUrl: "", canonicalUrl: "https://hoang8.com/", imageUrl: "https://hoang8.com/assets/hh-neon-logo-v2.png", siteName: "HH Platform", utmSource: "social", utmMedium: "organic", utmCampaign: "chien-dich-moi", impressions: 0, eligibleRate: .5, rpm: 1, uncertainty: .35, assets: [], history: [], updatedAt: new Date().toISOString() }; }
+  function defaultProject(context = {}) { const ownerId = ownerIdFor(context.currentUser); const workspaceId = safeId(context.workspaceId || "personal", "personal"); return { schemaVersion: SCHEMA_VERSION, ownerId, workspaceId, id: safeId(context.id || "draft-1"), toolId: "instagram-post", platform: "instagram", title: "Chiến dịch mới", caption: "", altText: "", location: "", theme: "dark", ratio: "4:5", exposure: 100, contrast: 100, saturation: 100, temperature: 0, blur: 0, sourceUrl: "", canonicalUrl: "https://hoang8.com/", imageUrl: "https://hoang8.com/assets/hh-neon-logo-v2.png", siteName: "HH Platform", utmSource: "social", utmMedium: "organic", utmCampaign: "chien-dich-moi", socialProvider: "instagram", shareProvider: "whatsapp", phone: "", startSeconds: 0, textMode: "sentence", textStyle: "bold", autoplay: false, impressions: 0, eligibleRate: .5, rpm: 1, uncertainty: .35, assets: [], history: [], updatedAt: new Date().toISOString() }; }
   function storageKey(ownerId, workspaceId, projectId) { return `${STORAGE_PREFIX}:${safeId(ownerId)}:${safeId(workspaceId)}:${safeId(projectId)}`; }
   function createStore(options = {}) { const storage = options.storage || root.localStorage; let state = defaultProject(options); const key = () => storageKey(state.ownerId, state.workspaceId, state.id); try { const found = JSON.parse(storage?.getItem?.(key()) || "null"); if (found?.ownerId === state.ownerId && found?.workspaceId === state.workspaceId) state = { ...state, ...found, assets:(found.assets||[]).map(({url,...asset})=>asset) }; } catch {} const save = () => { state.updatedAt = new Date().toISOString(); const persisted={...state,assets:(state.assets||[]).map(({url,...asset})=>asset)}; storage?.setItem?.(key(), JSON.stringify(persisted)); return JSON.parse(JSON.stringify(state)); }; return Object.freeze({ get: () => JSON.parse(JSON.stringify(state)), update(mutator) { const previous = JSON.parse(JSON.stringify(state)); const next = mutator(JSON.parse(JSON.stringify(state))) || state; state = { ...state, ...next, ownerId: previous.ownerId, workspaceId: previous.workspaceId, history: [...(previous.history || []).slice(-19), { at: new Date().toISOString(), snapshot: { title: previous.title, caption: previous.caption, toolId: previous.toolId } }] }; return save(); }, replace(next) { if (next.ownerId !== state.ownerId || next.workspaceId !== state.workspaceId) throw new Error("Dự án không thuộc workspace hiện tại."); state = { ...state, ...next }; return save(); } }); }
 
-  const api = Object.freeze({ SCHEMA_VERSION, STORAGE_PREFIX, ROLES, JOB_STATES, PLATFORM_LIMITS, TOOL_CATALOG, clean, safeId, ownerIdFor, slug, filename, normalizeUrl, captionStats, formatCaption, splitThread, buildUtm, buildOpenGraph, estimateXRevenue, parseVideoRef, roleCan, nextJobState, cropSize, createOAuthState, idempotencyKey, sha256, detectMime, defaultProject, storageKey, createStore });
+  const api = Object.freeze({ SCHEMA_VERSION, STORAGE_PREFIX, ROLES, JOB_STATES, PLATFORM_LIMITS, SOCIAL_DIMENSIONS, TOOL_CATALOG, clean, safeId, ownerIdFor, slug, filename, normalizeUrl, captionStats, textMetrics, transformText, normalizeSocialText, cleanHashtags, profileUrl, buildShareUrl, buildYouTubeEmbed, formatCaption, splitThread, buildUtm, buildOpenGraph, estimateXRevenue, parseVideoRef, roleCan, nextJobState, cropSize, createOAuthState, idempotencyKey, sha256, detectMime, defaultProject, storageKey, createStore });
   root.HHSocialMediaCore = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

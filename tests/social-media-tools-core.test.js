@@ -4,13 +4,25 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const core = require("../social-media-tools-core.js");
 
-test("catalog exposes the complete 46-tool ecosystem without duplicate ids", () => {
-  assert.equal(core.TOOL_CATALOG.length, 46);
-  assert.equal(new Set(core.TOOL_CATALOG.map((tool) => tool.id)).size, 46);
+test("catalog exposes the complete 61-tool ecosystem without duplicate ids", () => {
+  assert.equal(core.TOOL_CATALOG.length, 61);
+  assert.equal(new Set(core.TOOL_CATALOG.map((tool) => tool.id)).size, 61);
   assert.ok(core.TOOL_CATALOG.some((tool) => tool.id === "instagram-filter" && tool.mode === "local"));
   assert.ok(core.TOOL_CATALOG.some((tool) => tool.id === "social-listening" && tool.mode === "provider"));
   assert.ok(core.TOOL_CATALOG.some((tool) => tool.id === "analytics" && tool.mode === "provider"));
   assert.ok(core.TOOL_CATALOG.some((tool) => tool.id === "instagram-owned-media" && tool.mode === "provider"));
+});
+
+test("local social utility engines produce valid reusable output", () => {
+  const metrics = core.textMetrics("Xin chào 👋 #HH", "x");
+  assert.equal(metrics.words, 4); assert.equal(metrics.limit, 280); assert.ok(metrics.bytes >= metrics.characters);
+  assert.equal(core.transformText("xin CHÀO", "upper"), "XIN CHÀO");
+  assert.equal(core.normalizeSocialText("  Một   hai\n\n\nba  "), "Một hai\n\nba");
+  assert.deepEqual(core.cleanHashtags("#HH, hh #Việt-Nam").items, ["HH", "ViệtNam"]);
+  assert.equal(core.profileUrl("instagram", "@hoang8"), "https://www.instagram.com/hoang8");
+  assert.match(core.buildShareUrl({ provider:"whatsapp", phone:"+84 90", text:"Xin chào", url:"https://hoang8.com/" }), /^https:\/\/wa\.me\/8490\?text=/);
+  const embed = core.buildYouTubeEmbed("dQw4w9WgXcQ", { start:42 }); assert.match(embed.src, /youtube-nocookie\.com/); assert.match(embed.html, /start=42/);
+  assert.ok(core.SOCIAL_DIMENSIONS.some((item) => item.platform === "YouTube" && item.width === 1280));
 });
 
 test("caption formatter deduplicates hashtags and counters use Unicode characters", () => {
