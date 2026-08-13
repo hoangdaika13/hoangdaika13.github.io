@@ -27,9 +27,11 @@ https://www.unesco.org/en/legal-affairs/recommendation-open-educational-resource
 ## Initial content
 
 The lesson and question samples in `hh-school-curriculum.js` are original HH
-School examples. Their editorial state is explicitly `checked`; none is
-represented as approved by the Ministry or as an
-official school grade.
+School examples. The four human-authored seeds in each grade retain the
+editorial state `checked`. The four generated practice variants in each grade
+are explicitly `machine_generated`, remain quarantined from broad publication,
+and do not become reviewed merely because technical tests pass. None is
+represented as approved by the Ministry or as an official school grade.
 
 External learning material must follow:
 

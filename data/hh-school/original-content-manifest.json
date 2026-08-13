@@ -1,11 +1,13 @@
 {
-  "schemaVersion": 1,
-  "version": "2026.08.13-ctgdpt2018-v2",
+  "schemaVersion": 2,
+  "version": "2026.08.13-ctgdpt2018-v3",
   "publisher": "HH Platform",
   "licenseCode": "HH-ORIGINAL",
   "sourceFile": "hh-school-curriculum.js",
   "grades": 12,
   "contentPolicy": "Original examples only; no textbook or commercial test-bank copying.",
-  "statuses": ["checked"],
+  "lessonsPerGrade": 8,
+  "questionsPerLesson": 6,
+  "statuses": ["checked", "machine_generated"],
   "disclaimer": "HH School is not an official textbook and is not endorsed by the Ministry of Education and Training."
 }

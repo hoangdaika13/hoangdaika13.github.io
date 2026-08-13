@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v579";
+const CACHE = "hh-identity-portal-v581";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -137,7 +137,7 @@ const RUNTIME_ASSETS = [
   "./utils/open-media-rights.js?v=4",
   "./cinema-hub.js?v=6",
   "./open-music-hub.js?v=4",
-  "./open-media-governance.js?v=1",
+  "./open-media-governance.js?v=2",
   "./assets/open-media/curated-films-v1.json",
   "./assets/open-media/curated-music-v1.json",
   "./assets/open-media/rights-registry-v2.json",
@@ -355,7 +355,7 @@ const RUNTIME_ASSETS = [
   "./astra-universe-expansion.css?v=4",
   "./game-arcade.css?v=5",
   "./cinematic-game-arcade.css?v=6",
-  "./hh-school.css?v=2",
+  "./hh-school.css?v=3",
   "./english-learning.css?v=17",
   "./english-galaxy.css?v=1",
   "./english-learning-galaxy.css?v=6",
@@ -446,12 +446,13 @@ const RUNTIME_ASSETS = [
   "./astra-universe-expansion.js?v=4",
   "./game-arcade.js?v=5",
   "./cinematic-game-arcade.js?v=3",
-  "./hh-school-curriculum.js?v=2",
-  "./hh-school-core.js?v=2",
-  "./hh-school-offline.js?v=2",
-  "./hh-school-sync.js?v=2",
-  "./hh-school-search-worker.js?v=2",
-  "./hh-school.js?v=2",
+  "./hh-school-curriculum.js?v=3",
+  "./hh-school-core.js?v=3",
+  "./hh-school-offline.js?v=3",
+  "./hh-school-sync.js?v=3",
+  "./hh-school-search-worker.js?v=3",
+  "./hh-school-code-worker.js?v=2",
+  "./hh-school.js?v=4",
   "./english-curriculum.js?v=1",
   "./english-career-expansion.js?v=1",
   "./english-career-curriculum.js?v=2",
@@ -492,7 +493,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=306",
+  "./performance-loader.js?v=307",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=16",
   "./script.js?v=182"
@@ -504,11 +505,13 @@ const HH_SCHOOL_DB = "hh-school-offline-v1";
 const HH_SCHOOL_QUEUE = "syncQueue";
 function openHHSchoolQueue() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(HH_SCHOOL_DB, 1);
+    const request = indexedDB.open(HH_SCHOOL_DB, 3);
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains("profiles")) db.createObjectStore("profiles", { keyPath: "key" });
       if (!db.objectStoreNames.contains("curriculumPacks")) db.createObjectStore("curriculumPacks", { keyPath: "key" });
+      if (!db.objectStoreNames.contains("curriculumHistory")) db.createObjectStore("curriculumHistory", { keyPath: "key" });
+      if (!db.objectStoreNames.contains("submissionFiles")) db.createObjectStore("submissionFiles", { keyPath: "key" });
       if (!db.objectStoreNames.contains(HH_SCHOOL_QUEUE)) {
         const queue = db.createObjectStore(HH_SCHOOL_QUEUE, { keyPath: "id" });
         queue.createIndex("createdAt", "createdAt");
@@ -543,6 +546,7 @@ async function flushHHSchoolQueue() {
     const items = await idbRequest(db.transaction(HH_SCHOOL_QUEUE).objectStore(HH_SCHOOL_QUEUE).getAll());
     for (const item of items) {
       try {
+        if (Number(item.attempts || 0) >= Number(item.maxAttempts || 5)) { results.push({ id: item.id, ok: false, terminal: true, error: "Retry limit reached" }); continue; }
         const queued = item.request || {};
         const target = new URL(String(queued.url || ""), self.location.origin);
         if (target.origin !== self.location.origin || !target.pathname.startsWith("/api/education/")) throw new Error("Unsafe HH School sync target");

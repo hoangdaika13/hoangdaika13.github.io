@@ -243,6 +243,10 @@ test("notice backend stores restrictions and never exposes provider secrets to t
   assert.match(noticeSource, /enforceRateLimit/);
   assert.match(noticeSource, /assertSameOrigin/);
   assert.match(noticeSource, /process\.env\.RESEND_API_KEY/);
+  assert.match(noticeSource, /Idempotency-Key/);
+  assert.match(noticeSource, /notification-recovery/);
+  assert.match(noticeSource, /open-media\/claimant/);
+  assert.match(vercelConfig, /notification-recovery/);
   assert.match(noticeSource, /openMediaRestrictions/);
   assert.match(rightsSource, /validateGovernanceItem/);
   assert.match(rightsSource, /private, no-store/);
@@ -253,6 +257,24 @@ test("notice backend stores restrictions and never exposes provider secrets to t
   assert.doesNotMatch(clientSource, /RESEND_API_KEY|MONGODB_URI|JWT_SECRET/);
   assert.match(clientSource, /\/api\/open-media/);
   assert.doesNotMatch(clientSource, /REALTIME_URL|apiBase/);
+});
+
+test("notice email sends both admin alert and claimant receipt with idempotency", async () => {
+  const previous = { key: process.env.RESEND_API_KEY, from: process.env.EMAIL_FROM, target: process.env.COPYRIGHT_EMAIL };
+  const originalFetch = global.fetch; const calls = [];
+  process.env.RESEND_API_KEY = "test-only-key"; process.env.EMAIL_FROM = "HH Rights <rights@hoang8.com>"; process.env.COPYRIGHT_EMAIL = "nhhoang130803@gmail.com";
+  global.fetch = async (_url, options) => { calls.push(options); return { ok: true, status: 200, json: async () => ({ id: `email-${calls.length}` }) }; };
+  try {
+    const delivery = await noticesApi.sendNotification({ caseId: "OM-20260813-TEST", noticeType: "copyright", email: "claimant@example.com", claimantName: "Claimant", reportedItemId: "film-1", originalWork: "Original work evidence", rightsBasis: "Owner", description: "A detailed notice description" });
+    assert.equal(delivery.status, "sent"); assert.equal(calls.length, 2);
+    assert.match(calls[0].headers["Idempotency-Key"], /open-media\/admin/);
+    assert.match(calls[1].headers["Idempotency-Key"], /open-media\/claimant/);
+    assert.deepEqual(JSON.parse(calls[0].body).to, ["nhhoang130803@gmail.com"]);
+    assert.deepEqual(JSON.parse(calls[1].body).to, ["claimant@example.com"]);
+  } finally {
+    global.fetch = originalFetch;
+    for (const [name, value] of [["RESEND_API_KEY", previous.key], ["EMAIL_FROM", previous.from], ["COPYRIGHT_EMAIL", previous.target]]) value === undefined ? delete process.env[name] : process.env[name] = value;
+  }
 });
 
 test("restoration is a separate reviewed action with HTTPS evidence", () => {
@@ -294,7 +316,7 @@ test("copyright center is reachable from the shell and cached with aligned versi
   assert.match(shell, /HHOpenMediaGovernance\?\.mount/);
   assert.match(shell, /HHOpenMediaGovernance\?\.unmount/);
   assert.match(shell, /nhhoang130803@gmail\.com/);
-  assert.match(loader, /"open-media-governance"[\s\S]*?open-media-governance\.js\?v=1/);
+  assert.match(loader, /"open-media-governance"[\s\S]*?open-media-governance\.js\?v=2/);
   assert.match(loader, /utils\/open-media-rights\.js\?v=4/);
   assert.doesNotMatch(loader, /utils\/open-media-rights\.js\?v=3/);
   assert.match(html, /performance-loader\.js\?v=272/);
@@ -302,7 +324,7 @@ test("copyright center is reachable from the shell and cached with aligned versi
   assert.match(serviceWorker, /hh-identity-portal-v543/);
   for (const asset of [
     "open-media-governance.css?v=1",
-    "open-media-governance.js?v=1",
+    "open-media-governance.js?v=2",
     "assets/open-media/rights-registry-v2.json",
     "cinema-hub.css?v=5",
     "cinema-hub.js?v=6",

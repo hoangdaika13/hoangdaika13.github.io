@@ -7,7 +7,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 test("/learn lazy-loads only HH School and keeps language routes independent", () => {
   const loader = read("performance-loader.js"); const router = read("script.js"); const worker = read("sw.js");
-  for (const asset of ["hh-school.css?v=2", "hh-school-curriculum.js?v=2", "hh-school-core.js?v=2", "hh-school-offline.js?v=2", "hh-school-sync.js?v=2", "hh-school.js?v=2"]) {
+  for (const asset of ["hh-school.css?v=3", "hh-school-curriculum.js?v=3", "hh-school-core.js?v=3", "hh-school-offline.js?v=3", "hh-school-sync.js?v=3", "hh-school.js?v=4"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
@@ -28,7 +28,7 @@ test("old Learning Center fake certificate and handlers are removed", () => {
 
 test("HH School exposes required navigation, accessibility and responsive contracts", () => {
   const client = read("hh-school.js"); const css = read("hh-school.css");
-  assert.match(client, /new root\.Worker\("hh-school-search-worker\.js\?v=2"\)/);
+  assert.match(client, /new root\.Worker\("hh-school-search-worker\.js\?v=3"\)/);
   for (const label of ["Hôm nay", "Lộ trình", "Môn học", "Luyện tập", "Kiểm tra", "Thư viện", "Tiến độ"]) assert.match(client, new RegExp(label));
   for (const feature of ["Teacher Mode", "Family Mode", "Education Admin Console", "learnerProfileId", "AI TUTOR AN TOÀN"]) assert.match(client, new RegExp(feature));
   assert.match(css, /@media\(max-width:760px\)/);
@@ -46,6 +46,10 @@ test("backend authenticates, scopes ownership and fails closed for AI", () => {
   assert.match(api, /AI_TUTOR_NOT_CONFIGURED/);
   assert.match(api, /grade <= 5/);
   assert.match(api, /education_audit_logs/);
+  assert.match(api, /education_family_links/);
+  assert.match(api, /req\.query\.scope === "linked"/);
+  assert.match(api, /Reviewer chỉ được đề xuất/);
+  assert.match(api, /enforceRateLimit\(db, `education-ai:/);
   assert.match(gateway, /handleEducation/);
   assert.match(vercel, /\/api\/education\/:resource/);
 });
@@ -58,6 +62,9 @@ test("offline progress queue has a real same-origin background sync handler", ()
   assert.match(worker, /target\.origin !== self\.location\.origin/);
   assert.match(worker, /target\.pathname\.startsWith\("\/api\/education\/"\)/);
   assert.match(worker, /credentials: "include"/);
+  assert.match(offline, /maxAttempts: 5/);
+  assert.match(offline, /submissionFiles/);
+  assert.match(offline, /saveSubmissionFile/);
 });
 
 test("no education secret or service key is embedded in browser bundle", () => {
@@ -69,6 +76,21 @@ test("no education secret or service key is embedded in browser bundle", () => {
 test("all HH School action controls have real handlers and migration covers required collections", () => {
   const client = read("hh-school.js"); const migration = read("scripts/migrate-hh-school.js"); const platform = read("utils/platform.js");
   for (const action of ["data-school-generate-practice", "data-tutor-report", "dataset.familyOpen", "data-admin-new-draft", "data-teacher-create-class"]) assert.match(client, new RegExp(action.replace(/[.?]/g, "\\$&")));
-  for (const collection of ["education_grades", "education_subjects", "education_curricula", "education_lessons", "education_questions", "education_attempts", "education_mastery", "education_classes", "education_enrollments", "education_sources", "education_licenses", "education_ai_sessions", "education_audit_logs"]) assert.match(migration, new RegExp(collection));
+  for (const collection of ["education_grades", "education_subjects", "education_curricula", "education_lessons", "education_questions", "education_attempts", "education_mastery", "education_classes", "education_enrollments", "education_submissions", "education_family_links", "education_sources", "education_licenses", "education_ai_sessions", "education_audit_logs"]) assert.match(migration, new RegExp(collection));
   assert.match(platform, /educationRole/);
+});
+
+test("Informatics Worker is a no-eval restricted learning subset", () => {
+  const worker = read("hh-school-code-worker.js");
+  assert.doesNotMatch(worker, /\beval\s*\(|\bFunction\s*\(/);
+  assert.match(worker, /Chỉ hỗ trợ let\/const và console\.log/);
+  assert.match(worker, /fetch\|XMLHttpRequest\|WebSocket/);
+  assert.match(read("hh-school.js"), /data-code-stop/);
+});
+
+test("Lesson Player commits the tenth step before returning to Today", () => {
+  const client = read("hh-school.js");
+  assert.match(client, /entry\.step \|\| 0\) >= lesson\.steps\.length - 1/);
+  assert.match(client, /status: "completed", completedAt:/);
+  assert.match(client, /return routeTo\("today"\)/);
 });

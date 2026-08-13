@@ -1,7 +1,9 @@
 (function initHHSchoolCurriculum(root) {
   "use strict";
 
-  const VERSION = "2026.08.13-ctgdpt2018-v2";
+  const VERSION = "2026.08.13-ctgdpt2018-v3";
+  const PUBLISHABLE_STATUSES = Object.freeze(["reviewed", "approved"]);
+  const OPEN_LICENSES = Object.freeze(["CC0-1.0", "CC-BY-3.0", "CC-BY-4.0", "CC-BY-SA-3.0", "CC-BY-SA-4.0", "HH-ORIGINAL"]);
   const SOURCE = Object.freeze({
     sourceUrl: "https://moet.gov.vn/content/tintuc/Lists/News/Attachments/8421/chuong-trinh-tong-the-ctgdpt-2018.pdf",
     sourceTitle: "Chương trình Giáo dục phổ thông 2018 - Chương trình tổng thể",
@@ -87,6 +89,33 @@
   };
   const gradeBy = (grade) => GRADES.find((item) => item.number === Number(grade) || item.id === grade) || GRADES[0];
   const subjectBy = (id) => Object.values(CATALOG).find((item) => item.id === id) || null;
+  const licenseGate = (source) => Boolean(source && OPEN_LICENSES.includes(source.licenseCode) && source.sourceUrl && source.sourceTitle && source.publisher && source.attribution && source.retrievedAt && source.evidencePath && source.allowedForCommercialUse !== false);
+  const canPublish = (record) => Boolean(record && PUBLISHABLE_STATUSES.includes(record.contentStatus) && licenseGate(record.source));
+
+  function enrichQuestions(lesson) {
+    const base = lesson.questions.map((question) => Object.freeze({ ...question, gradeId: lesson.gradeId, subjectId: lesson.subjectId, lessonId: lesson.lessonId, source: lesson.source, contentStatus: lesson.contentStatus }));
+    const method = lesson.workedExample.method;
+    const additions = [
+      { type: "fill", prompt: `Điền từ còn thiếu: Bước đầu tiên là “${method[0].split(" ").slice(0, -1).join(" ")} ___”.`, answer: method[0].split(" ").slice(-1)[0], skillId: `${lesson.subjectId}-method`, cognitiveLevel: "nhận biết", difficulty: 1, explanation: `Bước đầu tiên đầy đủ là: ${method[0]}.`, distractorRationale: "Cần đọc chính xác trình tự của bài." },
+      { type: "order", prompt: "Sắp xếp ba bước theo đúng trình tự.", options: method, answer: method.map((_, index) => String(index)), skillId: `${lesson.subjectId}-sequence`, cognitiveLevel: "thông hiểu", difficulty: 2, explanation: method.join(" → "), distractorRationale: "Trình tự sai có thể dẫn đến kết luận khi chưa đủ dữ kiện." },
+      { type: "scenario", prompt: "Nêu cách em sẽ kiểm tra kết quả trong một tình huống tương tự.", answer: "kiểm tra dữ kiện", acceptedKeywords: ["kiểm tra"], skillId: `${lesson.subjectId}-transfer`, cognitiveLevel: "vận dụng", difficulty: 3, explanation: "Câu trả lời cần có một bước kiểm tra hoặc đối chiếu rõ ràng.", distractorRationale: "Chỉ nêu kết quả chưa chứng minh được cách suy luận." }
+    ].map((question, index) => Object.freeze({ ...question, id: `${lesson.lessonId}-q${base.length + index + 1}`, gradeId: lesson.gradeId, subjectId: lesson.subjectId, lessonId: lesson.lessonId, source: lesson.source, contentStatus: lesson.contentStatus }));
+    return Object.freeze([...base, ...additions]);
+  }
+
+  function expandLesson(lesson, variant = 1) {
+    const expanded = { ...lesson, questions: enrichQuestions(lesson), mission: { id: `${lesson.lessonId}-mission`, title: "Nhiệm vụ vận dụng thực tế", prompt: lesson.steps.find((step) => step.id === "apply")?.body || "Tạo một ví dụ có căn cứ từ đời sống.", status: lesson.contentStatus } };
+    if (variant === 1) return Object.freeze(expanded);
+    const lessonId = `${lesson.lessonId}-v${variant}`;
+    const generated = {
+      ...expanded, lessonId, title: `${lesson.title} · Biến thể vận dụng ${variant}`,
+      outcome: `${lesson.outcome} Người học giải thích được cách kiểm tra trong một tình huống mới.`, contentStatus: "machine_generated",
+      steps: Object.freeze(lesson.steps.map((step) => Object.freeze({ ...step, body: step.id === "apply" ? "Chọn một tình huống mới trong gia đình hoặc trường học, ghi dữ kiện và trình bày cách kiểm tra." : step.body }))),
+      mission: { id: `${lessonId}-mission`, title: "Nhiệm vụ vận dụng thực tế", prompt: "Ghi một tình huống mới, dữ kiện đã dùng và cách em kiểm tra kết luận.", status: "machine_generated" }
+    };
+    generated.questions = Object.freeze(expanded.questions.map((question, index) => Object.freeze({ ...question, id: `${lessonId}-q${index + 1}`, lessonId, contentStatus: "machine_generated" })));
+    return Object.freeze(generated);
+  }
 
   function lessonForGrade(gradeNumber) {
     const seed = LESSON_SEEDS[gradeNumber];
@@ -211,17 +240,19 @@
             ? ["math", "literature", "foreign-1", "natural-science"]
             : ["math", "literature", "foreign-1", "history"];
     const companionIds = rotation.filter((subjectId) => subjectId !== main.subjectId).slice(0, 3);
-    return Object.freeze([main, ...companionIds.map((subjectId, index) => companionLesson(gradeNumber, subjectId, index + 2))]);
+    const originals = [main, ...companionIds.map((subjectId, index) => companionLesson(gradeNumber, subjectId, index + 2))];
+    return Object.freeze(originals.flatMap((lesson) => [expandLesson(lesson, 1), expandLesson(lesson, 2)]));
   }
 
   function packForGrade(grade) {
     const item = gradeBy(grade);
     const payload = {
-      schemaVersion: 1, version: VERSION, grade: item, lessons: supportingLessons(item.number),
+      schemaVersion: 2, version: VERSION, grade: item, lessons: supportingLessons(item.number),
       requirements: item.subjects.map((entry) => ({ subjectId: entry.id, outcome: `Phát triển năng lực ${entry.name} phù hợp lớp ${item.number}; yêu cầu chi tiết phải qua biên tập trước khi xuất bản.`, status: "checked" })),
       sources: [SOURCE, ORIGINAL]
     };
-    return Object.freeze({ ...payload, checksum: checksum(payload) });
+    const assessment = Object.freeze({ id: `grade-${item.number}-assessment-v2`, gradeId: item.id, title: `Kiểm tra ngắn lớp ${item.number}`, questionIds: payload.lessons.flatMap((lesson) => lesson.questions.slice(0, 1).map((question) => question.id)).slice(0, 8), resultType: "in-app-assessment", contentStatus: "machine_generated", source: ORIGINAL });
+    return Object.freeze({ ...payload, assessments: Object.freeze([assessment]), missions: Object.freeze(payload.lessons.map((lesson) => lesson.mission)), checksum: checksum({ ...payload, assessments: [assessment] }) });
   }
 
   function search(query, grade) {
@@ -233,7 +264,7 @@
       .slice(0, 50);
   }
 
-  const api = Object.freeze({ VERSION, GRADES, CATALOG, SOURCE, ORIGINAL, highRequired, highElectives, gradeBy, subjectBy, packForGrade, lessonForGrade, supportingLessons, search, normalizeText, checksum });
+  const api = Object.freeze({ VERSION, GRADES, CATALOG, SOURCE, ORIGINAL, OPEN_LICENSES, PUBLISHABLE_STATUSES, highRequired, highElectives, gradeBy, subjectBy, packForGrade, lessonForGrade, supportingLessons, search, normalizeText, checksum, licenseGate, canPublish });
   root.HHSchoolCurriculum = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

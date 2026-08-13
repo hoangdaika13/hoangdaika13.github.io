@@ -300,8 +300,10 @@
         body: JSON.stringify(formPayload(form))
       });
       const delivery = payload.notificationStatus === "sent"
-        ? `Email đã được chuyển tới ${payload.contact || current.state.registry?.publicContact || PUBLIC_EMAIL}.`
-        : `Hồ sơ đã được lưu nhưng email chưa được nhà cung cấp xác nhận; vui lòng gửi thêm tới ${payload.contact || current.state.registry?.publicContact || PUBLIC_EMAIL}.`;
+        ? `Email đã được gửi tự động tới bộ phận bản quyền và thư xác nhận đã gửi tới email của bạn.`
+        : payload.notificationStatus === "admin-sent"
+          ? `Email đã được gửi tự động tới bộ phận bản quyền; thư xác nhận cho người gửi đang được hệ thống thử lại.`
+          : `Hồ sơ đã được lưu an toàn. Hệ thống email đang tự động thử gửi lại; bạn không cần bấm gửi Gmail thủ công.`;
       current.state.noticeStatus = `Đã tiếp nhận. Mã hồ sơ: ${payload.caseId || "đang tạo"}. ${delivery} ${payload.message || ""}`;
       current.state.selectedItemId = "";
     } catch (error) {

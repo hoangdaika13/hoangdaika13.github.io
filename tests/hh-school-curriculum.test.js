@@ -11,11 +11,14 @@ test("HH School publishes all twelve grade structures with deterministic packs",
     const second = curriculum.packForGrade(grade.number);
     assert.equal(first.checksum, second.checksum);
     assert.equal(first.grade.number, grade.number);
-    assert.ok(first.lessons.length >= 4);
+    assert.equal(first.lessons.length, 8);
     assert.equal(new Set(first.lessons.map((lesson) => lesson.lessonId)).size, first.lessons.length);
     assert.ok(new Set(first.lessons.map((lesson) => lesson.subjectId)).size >= 4);
-    assert.ok(first.lessons.every((lesson) => lesson.questions.length >= 3 && lesson.steps.length === 10));
-    assert.ok(first.lessons.every((lesson) => ["checked", "reviewed", "approved"].includes(lesson.contentStatus)));
+    assert.ok(first.lessons.every((lesson) => lesson.questions.length >= 6 && lesson.steps.length === 10));
+    assert.ok(first.lessons.every((lesson) => ["machine_generated", "checked", "reviewed", "approved"].includes(lesson.contentStatus)));
+    assert.equal(first.lessons.filter((lesson) => lesson.contentStatus === "machine_generated").length, 4);
+    assert.equal(first.assessments.length, 1);
+    assert.equal(first.missions.length, 8);
   }
 });
 
@@ -40,4 +43,12 @@ test("content registry is explicit about original versus reference-only material
   assert.equal(curriculum.ORIGINAL.allowedToModify, true);
   assert.ok(pack.lessons.every((lesson) => lesson.source.sourceTitle && lesson.source.licenseCode));
   assert.ok(curriculum.search("so thap phan", 5).some((lesson) => lesson.gradeId === "grade-5"));
+});
+
+test("license and publication gates reject reference-only and machine-generated records", () => {
+  const pack = curriculum.packForGrade(8);
+  assert.equal(curriculum.licenseGate(curriculum.SOURCE), false);
+  assert.equal(curriculum.licenseGate(curriculum.ORIGINAL), true);
+  assert.equal(curriculum.canPublish(pack.lessons.find((lesson) => lesson.contentStatus === "machine_generated")), false);
+  assert.equal(curriculum.canPublish({ ...pack.lessons[0], contentStatus: "reviewed" }), true);
 });

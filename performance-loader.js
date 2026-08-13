@@ -194,7 +194,7 @@
     },
     "open-media-governance": {
       styles: ["open-media-governance.css?v=1"],
-      scripts: ["utils/open-media-rights.js?v=4", "open-media-governance.js?v=1"]
+      scripts: ["utils/open-media-rights.js?v=4", "open-media-governance.js?v=2"]
     },
     work: {
       styles: ["work-center.css?v=4", "download-center-pro.css?v=1", "team-collaboration-pro.css?v=2"],
@@ -211,10 +211,10 @@
     // Compatibility asset aliases for clients upgrading from Entertainment v4:
     // "game-center.css?v=4" "game-center.js?v=4"
     learning: {
-      styles: ["hh-school.css?v=2"],
+      styles: ["hh-school.css?v=3"],
       scripts: [
-        "hh-school-curriculum.js?v=2", "hh-school-core.js?v=2", "hh-school-offline.js?v=2",
-        "hh-school-sync.js?v=2", "hh-school.js?v=2"
+        "hh-school-curriculum.js?v=3", "hh-school-core.js?v=3", "hh-school-offline.js?v=3",
+        "hh-school-sync.js?v=3", "hh-school.js?v=4"
       ]
     },
     english: {

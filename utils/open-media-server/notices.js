@@ -119,30 +119,35 @@ async function sendNotification(notice) {
   const apiKey = String(process.env.RESEND_API_KEY || "");
   const from = String(process.env.COPYRIGHT_FROM_EMAIL || process.env.EMAIL_FROM || "");
   const recipient = String(process.env.COPYRIGHT_EMAIL || PUBLIC_COPYRIGHT_EMAIL);
-  if (!apiKey || !from || !recipient) return { status: "not-configured" };
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
-  try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      signal: controller.signal,
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from,
-        to: [recipient],
-        reply_to: notice.email,
-        subject: `[${notice.caseId}] Thông báo ${headerSafe(notice.noticeType)} về Open Media`,
-        html: `<h2>Thông báo quyền mới</h2><p><strong>Mã hồ sơ:</strong> ${escapeHtml(notice.caseId)}</p><p><strong>Người gửi:</strong> ${escapeHtml(notice.claimantName)} (${escapeHtml(notice.email)})</p><p><strong>Nội dung:</strong> ${escapeHtml(notice.reportedItemId || notice.reportedUrl)}</p><p><strong>Tác phẩm/quyền:</strong> ${escapeHtml(notice.originalWork)}</p><p><strong>Mô tả:</strong> ${escapeHtml(notice.description)}</p><p>Hồ sơ đã được lưu trong MongoDB. Không khôi phục nội dung tự động.</p>`
-      })
-    });
-    if (!response.ok) return { status: "failed", code: `resend-${response.status}` };
-    const payload = await response.json().catch(() => ({}));
-    return { status: "sent", providerId: clean(payload.id, 200) };
-  } catch (error) {
-    return { status: "failed", code: error?.name === "AbortError" ? "timeout" : "provider-error" };
-  } finally {
-    clearTimeout(timer);
-  }
+  if (!apiKey || !from || !recipient) return { status: "not-configured", retryable: true, attemptedAt: new Date() };
+  const send = async (message, idempotencyKey) => {
+    let lastCode = "provider-error";
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        const response = await fetch("https://api.resend.com/emails", { method: "POST", signal: controller.signal, headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: JSON.stringify({ from, ...message }) });
+        const payload = await response.json().catch(() => ({}));
+        if (response.ok && payload.id) return { sent: true, providerId: clean(payload.id, 200) };
+        lastCode = `resend-${response.status}`;
+        if (response.status >= 400 && response.status < 500 && response.status !== 429) break;
+      } catch (error) { lastCode = error?.name === "AbortError" ? "timeout" : "provider-error"; }
+      finally { clearTimeout(timer); }
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+    }
+    return { sent: false, code: lastCode };
+  };
+  const admin = await send({ to: [recipient], reply_to: notice.email, subject: `[${notice.caseId}] Thông báo ${headerSafe(notice.noticeType)} về Open Media`, html: `<h2>Thông báo quyền mới</h2><p><strong>Mã hồ sơ:</strong> ${escapeHtml(notice.caseId)}</p><p><strong>Người gửi:</strong> ${escapeHtml(notice.claimantName)} (${escapeHtml(notice.email)})</p><p><strong>Nội dung:</strong> ${escapeHtml(notice.reportedItemId || notice.reportedUrl)}</p><p><strong>Tác phẩm/quyền:</strong> ${escapeHtml(notice.originalWork)}</p><p><strong>Căn cứ:</strong> ${escapeHtml(notice.rightsBasis)}</p><p><strong>Mô tả:</strong> ${escapeHtml(notice.description)}</p><p>Hồ sơ đã được lưu trong MongoDB. Không khôi phục nội dung tự động.</p>` }, `open-media/admin/${notice.caseId}`);
+  const claimant = await send({ to: [notice.email], reply_to: recipient, subject: `[${notice.caseId}] HH Platform đã nhận thông báo quyền`, html: `<h2>HH Platform đã nhận thông báo của bạn</h2><p>Xin chào ${escapeHtml(notice.claimantName)},</p><p>Hồ sơ <strong>${escapeHtml(notice.caseId)}</strong> đã được lưu an toàn và chuyển vào hàng kiểm tra. Việc tiếp nhận không đồng nghĩa với quyết định cuối cùng.</p><p>Nội dung được báo: ${escapeHtml(notice.reportedItemId || notice.reportedUrl)}</p><p>Nếu cần bổ sung bằng chứng, hãy trả lời email này và giữ nguyên mã hồ sơ.</p>` }, `open-media/claimant/${notice.caseId}`);
+  return { status: admin.sent ? (claimant.sent ? "sent" : "admin-sent") : "failed", admin, claimant, retryable: !admin.sent || !claimant.sent, attemptedAt: new Date() };
+}
+
+async function retryNotifications(req, res, db) {
+  const secret = String(process.env.CRON_SECRET || ""); const authorization = String(req.headers?.authorization || "");
+  if (!secret || authorization !== `Bearer ${secret}`) return res.status(401).json({ error: "Cron không được xác thực." });
+  const collection = db.collection("openMediaNotices"); const rows = await collection.find({ "notification.retryable": true, "notificationAttempts": { $lt: 8 } }).sort({ updatedAt: 1 }).limit(25).toArray();
+  let sent = 0;
+  for (const notice of rows) { const notification = await sendNotification(notice); await collection.updateOne({ _id: notice._id }, { $set: { notification, updatedAt: new Date() }, $inc: { notificationAttempts: 1 }, $push: { history: { status: notice.status, at: new Date(), actor: "notification-recovery", notificationStatus: notification.status } } }); if (notification.status === "sent") sent += 1; }
+  return res.status(200).json({ ok: true, checked: rows.length, sent });
 }
 
 async function ensureIndexes(collection) {
@@ -177,14 +182,14 @@ async function postNotice(req, res, db, body) {
     submittedByUserId: user?._id || null,
     networkFingerprint: auditFingerprint(ip),
     userAgent: clean(req.headers?.["user-agent"], 500),
-    notification: { status: "pending" },
+    notification: { status: "pending", retryable: true }, notificationAttempts: 0,
     history: [{ status: "received", at: now, actor: "claimant" }],
     createdAt: now,
     updatedAt: now
   };
   const result = await collection.insertOne(notice);
   const notification = await sendNotification(notice);
-  await collection.updateOne({ _id: result.insertedId }, { $set: { notification, updatedAt: new Date() } });
+  await collection.updateOne({ _id: result.insertedId }, { $set: { notification, updatedAt: new Date() }, $inc: { notificationAttempts: 1 } });
   return res.status(201).json({
     ok: true,
     caseId: notice.caseId,
@@ -252,6 +257,7 @@ async function patchNotice(req, res, db, body) {
 module.exports = async function handler(req, res) {
   return withApi(req, res, async ({ db, body }) => {
     if (req.method === "POST") return postNotice(req, res, db, body);
+    if (req.method === "GET" && clean(req.query?.cron, 60) === "notification-recovery") return retryNotifications(req, res, db);
     if (req.method === "GET") return getNotices(req, res, db);
     if (req.method === "PATCH") return patchNotice(req, res, db, body);
     return res.status(405).json({ error: "Method not allowed" });
@@ -267,5 +273,6 @@ module.exports.__test = Object.freeze({
   auditFingerprint,
   caseId,
   headerSafe,
+  sendNotification,
   STATUS_TRANSITIONS
 });

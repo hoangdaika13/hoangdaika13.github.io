@@ -9,6 +9,10 @@
     {
       "path": "/api/donations?cron=receipt-recovery",
       "schedule": "15 2 * * *"
+    },
+    {
+      "path": "/api/open-media/notices?cron=notification-recovery",
+      "schedule": "25 2 * * *"
     }
   ],
   "rewrites": [
