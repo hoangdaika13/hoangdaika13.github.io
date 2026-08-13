@@ -124,6 +124,10 @@
         "character-3d-studio.js?v=4"
       ]
     },
+    "social-media-tools": {
+      styles: ["social-media-tools.css?v=1"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "social-media-tools-core.js?v=1", "social-media-tools.js?v=1"]
+    },
     "comic-motion": {
       // Compatibility: comic-motion-studio.css?v=3 comic-motion-studio.css?v=4 comic-motion-studio.css?v=5 comic-motion-studio.js?v=6 comic-motion-studio.js?v=7 comic-motion-studio.js?v=8 comic-motion-studio.js?v=9
       styles: ["comic-motion-studio.css?v=6"],
@@ -255,6 +259,7 @@
   function groupsForRoute(route) {
     const value = normalizeRoute(route);
     if (value === "/home") return [];
+    if (value.startsWith("/social-media-tools")) return ["social-media-tools"];
     if (value.startsWith("/character-3d")) return ["character-3d"];
     if (value.startsWith("/dev-tools")) return ["dev"];
     if (value === "/davinci-resolve/ai-video-remake") return ["davinci", "ai-video-remake"];

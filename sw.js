@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v581";
+const CACHE = "hh-identity-portal-v582";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -71,7 +71,7 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=182",
+  "./script.js?v=183",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -108,6 +108,9 @@ const RUNTIME_ASSETS = [
   "./character-3d-studio.css?v=1",
   "./character-3d-studio.js?v=4",
   "./character-3d-runtime.js?v=1",
+  "./social-media-tools.css?v=1",
+  "./social-media-tools-core.js?v=1",
+  "./social-media-tools.js?v=1",
   "./services/character3d/RightsRegistry.js?v=2",
   "./services/character3d/AssetLoader.js?v=3",
   "./services/character3d/AnimationController.js?v=2",
@@ -493,10 +496,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=307",
+  "./performance-loader.js?v=308",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=16",
-  "./script.js?v=182"
+  "./script.js?v=183"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
