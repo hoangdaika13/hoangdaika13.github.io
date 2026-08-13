@@ -125,8 +125,8 @@
       ]
     },
     "social-media-tools": {
-      styles: ["social-media-tools-v2.css?v=5"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/qrcode.js?v=1", "social-media-tools-core.js?v=5", "social-media-tools-workspaces.js?v=5", "social-media-tool-contracts.js?v=5", "social-media-local-engines.js?v=5", "social-media-pipeline.js?v=5", "social-media-tools-v2.js?v=5"]
+      styles: ["social-media-tools-v2.css?v=6"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/qrcode.js?v=1", "social-media-tools-core.js?v=6", "social-media-tools-workspaces.js?v=6", "social-media-tool-contracts.js?v=6", "social-media-local-engines.js?v=6", "social-media-pipeline.js?v=6", "social-media-tool-capabilities.js?v=6", "social-media-tools-v2.js?v=6"]
     },
     "comic-motion": {
       // Compatibility: comic-motion-studio.css?v=3 comic-motion-studio.css?v=4 comic-motion-studio.css?v=5 comic-motion-studio.js?v=6 comic-motion-studio.js?v=7 comic-motion-studio.js?v=8 comic-motion-studio.js?v=9

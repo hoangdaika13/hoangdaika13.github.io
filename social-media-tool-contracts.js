@@ -3,7 +3,7 @@
 
   const Core = () => root.HHSocialMediaCore;
   const Workspaces = () => root.HHSocialToolWorkspaces;
-  const CONTRACT_VERSION = 5;
+  const CONTRACT_VERSION = 6;
   const LOCAL_ENGINES = new Set(["caption-formatter","social-character-counter","case-converter","whitespace-cleaner","unicode-font-styler","alt-text-checker","hashtag-workspace","hashtag-cleaner","utm-builder","username-link-builder","whatsapp-link","telegram-link","social-share-link","youtube-timestamp","youtube-embed","social-dimensions","open-graph","link-preview-audit","x-revenue"]);
   const PROVIDER_TOOLS = new Set(["instagram-owned-media","youtube-thumbnail","vimeo-thumbnail","calendar","approval","publishing-queue","analytics","community-inbox","competitor-research","social-listening","repurpose"]);
   const DEVELOPMENT_TOOLS = new Set([]);
@@ -56,8 +56,19 @@
     if (fields.includes("caption") && !String(project.caption||"").trim() && !["counter","cleanup-editor"].includes(Workspaces().definitions[tool.id]?.kind)) errors.push({ field:"caption", code:"required", message:"Nội dung đang trống." });
     if (fields.includes("altText")) { const value=String(project.altText||"").trim(); if (!value) errors.push({ field:"altText",code:"required",message:"Alt text đang trống." }); if ([...value].length>300) warnings.push({field:"altText",code:"long",message:"Alt text dài hơn 300 ký tự."}); }
     if (fields.includes("canonicalUrl") && !Core().normalizeUrl(project.canonicalUrl)) errors.push({field:"canonicalUrl",code:"https",message:"Cần URL HTTPS hợp lệ."});
-    if (fields.includes("sourceUrl") && !Core().parseVideoRef(project.sourceUrl,"youtube")) errors.push({field:"sourceUrl",code:"video",message:"URL hoặc ID YouTube không hợp lệ."});
+    if (fields.includes("sourceUrl")) { const provider=tool.id.startsWith("vimeo")?"vimeo":"youtube"; if (!Core().parseVideoRef(project.sourceUrl,provider)) errors.push({field:"sourceUrl",code:"video",message:`URL hoặc ID ${provider==="vimeo"?"Vimeo":"YouTube"} không hợp lệ.`}); }
     if (fields.includes("assets") && !(project.assets||[]).length && ["image-filter","palette"].includes(Workspaces().definitions[tool.id]?.kind)) errors.push({field:"assets",code:"required",message:"Hãy tải ít nhất một ảnh."});
+    if (["calendar","approval","publishing-queue"].includes(tool.id)) {
+      if (!project.accountId) errors.push({field:"accountId",code:"required",message:"Hãy chọn tài khoản/kênh xuất bản."});
+      if (!String(project.scheduledAt||"").trim()) errors.push({field:"scheduledAt",code:"required",message:"Hãy chọn thời điểm theo lịch."});
+      if (!String(project.timezone||"").trim()) errors.push({field:"timezone",code:"required",message:"Múi giờ không được để trống."});
+    }
+    if (["instagram-filter","instagram-post","instagram-story","tiktok-kit","pinterest-pin","profile-picture","cover-generator","product-kit","brand-kit","export-kit"].includes(tool.id)) {
+      const unconfirmed=(project.assets||[]).filter((asset)=>asset.rightsConfirmed!==true);
+      if (unconfirmed.length) warnings.push({field:"assets",code:"rights-unconfirmed",message:`${unconfirmed.length} asset chưa xác nhận quyền sử dụng; không thể xuất gói phát hành.`});
+    }
+    const platform=project.socialProvider||project.platform; const limit=Core().PLATFORM_LIMITS?.[platform];
+    if (limit && [...String(project.caption||"")].length>limit) errors.push({field:"caption",code:"platform-limit",message:`Nội dung vượt giới hạn ${limit} ký tự của ${platform}.`});
     const status=readiness(tool,context); if (!status.operational && !["development"].includes(status.code)) warnings.push({field:"provider",code:status.code,message:status.label});
     return { valid:errors.length===0, errors, warnings, status };
   }

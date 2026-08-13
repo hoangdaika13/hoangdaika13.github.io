@@ -36,7 +36,7 @@ test("single dynamic Vercel function routes all Social Media resources", () => {
 test("route, lazy loader, service worker and UI behavior are integrated", () => {
   const script=read("script.js"), loader=read("performance-loader.js"), sw=read("sw.js"), ui=read("social-media-tools.js"), css=read("social-media-tools.css");
   const uiV2=read("social-media-tools-v2.js"), cssV2=read("social-media-tools-v2.css");
-  assert.match(script,/route: "\/social-media-tools"/); assert.match(script,/HHSocialMediaTools\.mount/); assert.match(loader,/social-media-tools-core\.js\?v=5/); assert.match(loader,/social-media-tool-contracts\.js\?v=5/); assert.match(loader,/social-media-local-engines\.js\?v=5/); assert.match(loader,/social-media-pipeline\.js\?v=5/); assert.match(sw,/social-media-tools-v2\.js\?v=5/);
+  assert.match(script,/route: "\/social-media-tools"/); assert.match(script,/HHSocialMediaTools\.mount/); assert.match(loader,/social-media-tools-core\.js\?v=6/); assert.match(loader,/social-media-tool-contracts\.js\?v=6/); assert.match(loader,/social-media-local-engines\.js\?v=6/); assert.match(loader,/social-media-pipeline\.js\?v=6/); assert.match(loader,/social-media-tool-capabilities\.js\?v=6/); assert.match(sw,/social-media-tools-v2\.js\?v=6/);
   assert.match(ui,/BẢN MÔ PHỎNG/); assert.match(ui,/data-smt-job-action/); assert.match(ui,/JSZip/); assert.match(ui,/sanitizedAsset/); assert.match(ui,/oembed/); assert.match(ui,/provider-worker-required|Xuất thủ công/);
   assert.match(css,/@media\(max-width:700px\)/); assert.match(css,/focus-visible/); assert.match(css,/prefers-reduced-motion/);
   assert.match(uiV2,/data-smt2-group/); assert.match(uiV2,/data-smt2-favorite/); assert.match(uiV2,/settingsMarkup/); assert.match(uiV2,/startOAuth/); assert.match(uiV2,/hh\.social\.oauth\.pending/); assert.match(uiV2,/BẢN MÔ PHỎNG/);
@@ -44,7 +44,7 @@ test("route, lazy loader, service worker and UI behavior are integrated", () => 
   assert.match(uiV2,/libraryMarkup/); assert.match(uiV2,/data-smt2-library-dialog/); assert.match(uiV2,/toolGuideMarkup/); assert.match(uiV2,/paletteFromActiveAsset/);
   assert.match(cssV2,/\.smt2-tool-list/); assert.match(cssV2,/@media\(max-width:720px\)/); assert.match(cssV2,/focus-visible/); assert.match(cssV2,/prefers-reduced-motion/);
   assert.match(cssV2,/\.smt2-library-grid/); assert.match(cssV2,/\.smt2-library-dialog/);
-  assert.match(uiV2,/data-smt2-apply/);assert.match(uiV2,/data-smt2-redo/);assert.match(uiV2,/savePreset/);assert.match(uiV2,/ENGINE_V5_IDS/);assert.match(cssV2,/\.smt2-contract/);assert.match(cssV2,/\.smt2-result-panel/);
+  assert.match(uiV2,/data-smt2-apply/);assert.match(uiV2,/data-smt2-redo/);assert.match(uiV2,/savePreset/);assert.match(uiV2,/ENGINE_V6_IDS/);assert.match(uiV2,/data-smt2-capability/);assert.match(cssV2,/\.smt2-contract/);assert.match(cssV2,/\.smt2-result-panel/);assert.match(cssV2,/\.smt2-capability-bar/);
   const workspaces=read("social-media-tools-workspaces.js"); assert.match(workspaces,/validateCatalog/); assert.match(workspaces,/renderConversation/); assert.match(workspaces,/renderOperations/); assert.match(workspaces,/renderDashboard/); assert.match(cssV2,/\.smw-accessibility/); assert.match(cssV2,/\.smw-social-frame/);
 });
 
