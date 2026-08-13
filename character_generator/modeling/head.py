@@ -1,4 +1,10 @@
-"""From-scratch anime/game head and facial landmark meshes."""
+"""Original procedural Astra H-08 anime head and facial landmarks.
+
+The authoritative character sheet uses a slim adult-anime face rather than a
+generic round doll head.  Everything in this module is generated from explicit
+coordinates and ``mesh.from_pydata`` through :class:`SurfaceBuilder`; no external
+mesh, sculpt data, or Blender primitive is imported.
+"""
 
 from __future__ import annotations
 
@@ -9,208 +15,381 @@ import bpy
 from modeling.body import SurfaceBuilder, tube_rings
 
 
-def _head_rings(sides: int = 64) -> list[list[tuple[float, float, float]]]:
-    # Cross-sections explicitly encode chin, jaw, cheeks, eye sockets, temples,
-    # forehead and cranium. Face points toward negative Y.
+def _head_rings(sides: int = 80) -> list[list[tuple[float, float, float]]]:
+    """Return cranial sections with Astra's tapered jaw and soft cheek planes.
+
+    Face is oriented toward negative Y.  The first two sections live inside the
+    neck union; the visible chin starts at 1.49 m and the crown ends at 1.73 m.
+    This keeps the adult 7.5--8 head silhouette from the reference instead of the
+    former oversized, rectangular head.
+    """
+
     sections = (
-        # z, width, front depth, rear depth, centre-y.  The lower rings keep a
-        # small anime chin, widen through the jaw and hold a soft cheek plane
-        # instead of tapering like a featureless capsule.
-        (1.424, 0.044, 0.050, 0.053, 0.003),
-        (1.460, 0.062, 0.058, 0.064, 0.002),
-        (1.500, 0.078, 0.064, 0.069, 0.002),
-        (1.532, 0.101, 0.071, 0.079, 0.004),
-        (1.565, 0.112, 0.077, 0.088, 0.007),
-        (1.605, 0.112, 0.078, 0.094, 0.010),
-        (1.646, 0.108, 0.076, 0.098, 0.012),
-        (1.681, 0.101, 0.073, 0.097, 0.013),
-        (1.704, 0.082, 0.061, 0.083, 0.012),
-        (1.718, 0.058, 0.045, 0.060, 0.010),
-        (1.725, 0.030, 0.026, 0.033, 0.008),
-        (1.728, 0.010, 0.010, 0.012, 0.006),
+        # z, half-width, anterior depth, posterior depth, centre-y
+        (1.445, 0.054, 0.052, 0.062, 0.006),  # hidden neck overlap
+        (1.465, 0.054, 0.057, 0.067, 0.006),
+        (1.482, 0.045, 0.068, 0.071, 0.006),  # underside of the jaw
+        (1.493, 0.025, 0.082, 0.074, 0.005),  # compact rounded chin
+        (1.507, 0.039, 0.084, 0.078, 0.006),
+        (1.525, 0.055, 0.083, 0.084, 0.007),
+        (1.546, 0.069, 0.082, 0.093, 0.008),
+        (1.568, 0.077, 0.084, 0.102, 0.009),  # cheek maximum
+        (1.590, 0.081, 0.083, 0.109, 0.010),
+        (1.614, 0.082, 0.082, 0.113, 0.011),  # eye line
+        (1.638, 0.082, 0.081, 0.114, 0.012),
+        (1.660, 0.082, 0.080, 0.112, 0.012),
+        (1.680, 0.084, 0.080, 0.107, 0.012),
+        (1.697, 0.078, 0.076, 0.097, 0.011),
+        (1.711, 0.068, 0.068, 0.083, 0.010),
+        (1.721, 0.052, 0.057, 0.063, 0.009),
+        (1.728, 0.032, 0.039, 0.038, 0.008),
+        (1.732, 0.010, 0.017, 0.014, 0.007),
     )
+
     rings: list[list[tuple[float, float, float]]] = []
     for z, width, front, rear, center_y in sections:
         ring: list[tuple[float, float, float]] = []
         for index in range(sides):
             angle = 2.0 * math.pi * index / sides
             ca, sa = math.cos(angle), math.sin(angle)
-            x = width * math.copysign(abs(ca) ** 0.86, ca)
-            depth = front if sa < 0.0 else rear
-            y = center_y + depth * math.copysign(abs(sa) ** 0.91, sa)
-            # Flatten the central face plane around the eyes and mouth while keeping
-            # cheeks full. This is a coordinate deformation, not a sphere head.
-            medial = 1.0 - min(1.0, abs(x) / max(width, 1e-5))
-            if sa < 0.0 and 1.51 < z < 1.67:
-                y += 0.008 * medial * abs(sa)
-            # Slightly fuller lateral cheek, with a smooth return into temple and
-            # jaw; this reads as a face rather than a lathed helmet in 3/4 view.
-            cheek = math.exp(-((z - 1.565) / 0.060) ** 2)
-            x *= 1.0 + 0.055 * cheek * (0.35 + 0.65 * medial)
-            ring.append((x, y, 1.590 + (z - 1.590) * 0.96))
+            # A nearly elliptical rear skull keeps the profile round.  The front
+            # uses a lower sine exponent to establish a broad, calm anime facial
+            # plane rather than a cylindrical muzzle.
+            # Superellipse exponent above one adds the soft cheek/temple planes
+            # visible in ASTRA's three-quarter portrait without reverting to a
+            # rectangular mask silhouette.
+            x = width * math.copysign(abs(ca) ** 1.16, ca)
+            if sa < 0.0:
+                y = center_y - front * abs(sa) ** 0.97
+                ax = abs(x)
+
+                # Soft cheek pad: the reference is youthful, but the volume stays
+                # lateral and never widens the jaw into a square silhouette.
+                cheek = (
+                    math.exp(-((ax - 0.057) / 0.030) ** 2)
+                    * math.exp(-((z - 1.570) / 0.040) ** 2)
+                    * abs(sa) ** 1.8
+                )
+                y -= 0.0030 * cheek
+
+                # Seat both enlarged anime eyes inside shallow orbital planes.
+                # This prevents the sclera and lid curves from reading as parts
+                # pasted onto an otherwise uninterrupted forehead mask.
+                sockets = sum(
+                    math.exp(-((x - sign * 0.038) / 0.030) ** 2)
+                    for sign in (-1.0, 1.0)
+                )
+                sockets *= (
+                    math.exp(-((z - 1.613) / 0.023) ** 2)
+                    * abs(sa) ** 2.2
+                )
+                y += 0.0055 * sockets
+
+                # A continuous, narrow nose bridge belongs to the head surface;
+                # the compact tip below is also a coordinate deformation.
+                bridge = (
+                    math.exp(-(ax / 0.016) ** 2)
+                    * math.exp(-((z - 1.605) / 0.047) ** 2)
+                    * abs(sa) ** 2.2
+                )
+                y -= 0.0070 * bridge
+
+                # Closed nose tip and alar transition are deformations of the
+                # same head surface; there can be no detached/open underside.
+                tip = (
+                    math.exp(-(ax / 0.014) ** 2)
+                    * math.exp(-((z - 1.576) / 0.015) ** 2)
+                    * abs(sa) ** 2.5
+                )
+                alar = sum(
+                    math.exp(-((x - sign * 0.0105) / 0.0075) ** 2)
+                    for sign in (-1.0, 1.0)
+                )
+                alar *= (
+                    math.exp(-((z - 1.570) / 0.010) ** 2)
+                    * abs(sa) ** 2.4
+                )
+                y -= 0.0230 * tip + 0.0045 * alar
+
+                # Very slight mouth/philtrum plane; lip colour and the mouth seam
+                # remain independent riggable landmarks.
+                muzzle = (
+                    math.exp(-(ax / 0.035) ** 2)
+                    * math.exp(-((z - 1.548) / 0.026) ** 2)
+                    * abs(sa) ** 2.0
+                )
+                upper_lip = (
+                    math.exp(-(ax / 0.025) ** 2)
+                    * math.exp(-((z - 1.5495) / 0.0075) ** 2)
+                    * abs(sa) ** 2.2
+                )
+                lower_lip = (
+                    math.exp(-(ax / 0.024) ** 2)
+                    * math.exp(-((z - 1.5405) / 0.0080) ** 2)
+                    * abs(sa) ** 2.2
+                )
+                chin_pad = (
+                    math.exp(-(ax / 0.028) ** 2)
+                    * math.exp(-((z - 1.515) / 0.015) ** 2)
+                    * abs(sa) ** 2.0
+                )
+                y -= 0.0025 * muzzle + 0.0045 * upper_lip + 0.0038 * lower_lip
+                y -= 0.0045 * chin_pad
+            else:
+                # A near-elliptic occiput is visibly round in profile instead of
+                # ending in the rejected vertical/flat rear plane.
+                y = center_y + rear * abs(sa) ** 0.99
+            ring.append((x, y, z))
         rings.append(ring)
     return rings
 
 
-def _add_nose(builder: SurfaceBuilder) -> None:
-    # A tapered, slightly upturned anime nose bridge/tip built as y-axis sections.
-    points = (
-        (0.000, -0.071, 1.625),
-        (0.000, -0.079, 1.608),
-        (0.000, -0.087, 1.590),
-        (0.000, -0.094, 1.579),
-        (0.000, -0.089, 1.571),
-    )
-    # tube_rings maps the first radius to the vertical axis and the second to X for
-    # this forward-running centre line: narrow anime nose, never a wide snout.
-    radii = ((0.017, 0.007), (0.015, 0.007), (0.013, 0.008), (0.010, 0.011), (0.005, 0.007))
-    builder.add_loft(tube_rings(points, radii, sides=20))
-    # Alar wings remain subtle but ensure the silhouette is real geometry.
-    builder.add_lathe_ellipsoid((-0.010, -0.087, 1.571), (0.008, 0.007, 0.005), 20, 10)
-    builder.add_lathe_ellipsoid((0.010, -0.087, 1.571), (0.008, 0.007, 0.005), 20, 10)
-
-
-def _add_lips(builder: SurfaceBuilder) -> None:
-    # Upper and lower lip lobes intersect the facial plane and survive remeshing as
-    # a soft mouth opening instead of a painted line.
-    builder.add_lathe_ellipsoid((0.000, -0.068, 1.550), (0.031, 0.012, 0.005), 28, 10, 0.001)
-    builder.add_lathe_ellipsoid((0.000, -0.069, 1.540), (0.028, 0.011, 0.0055), 28, 10, 0.001)
-
-
-def _add_face_masses(builder: SurfaceBuilder) -> None:
-    """Integrate cheeks, jaw and chin into the continuous remeshed head."""
-    # The cross-section rings already carry the face volume.  Keep cheek/jaw
-    # deformation coordinate-based here; detached overlapping masses can fall
-    # below the voxel union threshold and split the watertight island.
-    return
-
-
 def add_head_to_scaffold(builder: SurfaceBuilder) -> None:
+    """Append the continuous head, neck transition, nose and ears."""
+
     builder.add_loft(_head_rings())
-    # Neck transitions overlap both the torso neck ring and jaw, creating one mesh.
-    neck_points = ((0.0, 0.006, 1.392), (0.0, 0.007, 1.425), (0.0, 0.008, 1.462))
-    neck_radii = ((0.098, 0.090), (0.080, 0.074), (0.068, 0.064))
+
+    # Two nested neck lofts overlap torso and jaw.  Their upper sections stay
+    # behind the projected chin, retaining a real jaw/neck break in profile.
+    neck_points = ((0.0, 0.007, 1.392), (0.0, 0.009, 1.425), (0.0, 0.012, 1.468))
+    neck_radii = ((0.088, 0.081), (0.071, 0.064), (0.053, 0.049))
     builder.add_loft(tube_rings(neck_points, neck_radii, sides=40))
-    # Small internal bridge guarantees the compact chin and slim neck union remain
-    # one watertight island after the fine voxel remesh.
-    bridge_points = ((0.0, 0.006, 1.402), (0.0, 0.006, 1.435), (0.0, 0.006, 1.470))
-    bridge_radii = ((0.084, 0.076), (0.072, 0.066), (0.061, 0.056))
+    bridge_points = ((0.0, 0.007, 1.405), (0.0, 0.009, 1.438), (0.0, 0.011, 1.471))
+    bridge_radii = ((0.076, 0.068), (0.064, 0.057), (0.051, 0.047))
     builder.add_loft(tube_rings(bridge_points, bridge_radii, sides=32))
-    _add_nose(builder)
-    _add_lips(builder)
-    _add_face_masses(builder)
-    # Proper ears are tapered ellipsoids with a second inner relief mass.
+
+    # Low-profile ears follow the eye-to-nose interval and will sit naturally
+    # beneath Astra's side locks.  Extra additive "inner ear" blobs are avoided.
     for sign in (-1.0, 1.0):
-        builder.add_lathe_ellipsoid((sign * 0.101, 0.006, 1.588), (0.011, 0.014, 0.025), 24, 14)
-        builder.add_lathe_ellipsoid((sign * 0.104, -0.002, 1.588), (0.004, 0.007, 0.014), 18, 10)
+        builder.add_lathe_ellipsoid(
+            (sign * 0.096, 0.006, 1.590),
+            (0.008, 0.010, 0.020),
+            radial=24,
+            vertical=14,
+        )
+
+    # A compact continuous nasal bulb survives the 7.5 mm watertight remesh and
+    # gives the side silhouette the bridge/tip break visible on the turnaround.
+    # It overlaps the sculpted bridge and is unioned into BODY_CONTINUOUS later.
+    builder.add_lathe_ellipsoid(
+        (0.0, -0.087, 1.575),
+        (0.0090, 0.0100, 0.0090),
+        radial=28,
+        vertical=16,
+        front_taper=0.0015,
+    )
+
+
+def _closed_almond(
+    center_x: float,
+    sign: float,
+    center_z: float = 1.615,
+    half_width: float = 0.022,
+    upper: float = 0.0105,
+    lower: float = 0.0068,
+    segments: int = 36,
+) -> SurfaceBuilder:
+    """Create a shallow closed almond lens aligned to the facial plane."""
+
+    builder = SurfaceBuilder()
+    ring: list[tuple[float, float, float]] = []
+    for index in range(segments):
+        theta = 2.0 * math.pi * index / segments
+        c, s = math.cos(theta), math.sin(theta)
+        x = center_x + half_width * c
+        height = upper if s >= 0.0 else lower
+        # The sheet keeps the inner canthus slightly lower than the outer corner.
+        outward = sign * (x - center_x) / half_width
+        z = center_z + height * math.copysign(abs(s) ** 0.72, s) + 0.0018 * outward
+        # Keep the sclera flush to the locally sculpted socket so the eyelids,
+        # not a protruding eyeball, define the profile silhouette.
+        # Follow the curved facial plane: eye corners sit slightly farther back
+        # than the centre, avoiding paper-thin features floating in side view.
+        y = -0.0740 + 0.0060 * abs(c)
+        ring.append((x, y, z))
+
+    builder.vertices.extend(ring)
+    # A single planar fan is intentionally used instead of a lens/ellipsoid: the
+    # painted-anime sclera must stay flush and has no visible side wall.
+    center = len(builder.vertices)
+    builder.vertices.append((center_x, -0.0750, center_z + 0.0010))
+    for index in range(segments):
+        nxt = (index + 1) % segments
+        builder.faces.append((center, index, nxt))
+    return builder
+
+
+def _object_from_builder(name: str, builder: SurfaceBuilder) -> bpy.types.Object:
+    mesh = bpy.data.meshes.new(f"{name}_MESH")
+    mesh.from_pydata(builder.vertices, [], builder.faces)
+    mesh.update(calc_edges=True)
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    for polygon in mesh.polygons:
+        polygon.use_smooth = True
+    return obj
 
 
 def create_eye_objects() -> list[bpy.types.Object]:
-    """Create allowed spherical eyeballs and separate iris/cornea relief."""
+    """Create flush almond eye lenses with cyan iris, pupil and highlights."""
+
     created: list[bpy.types.Object] = []
     for sign, suffix in ((-1.0, "L"), (1.0, "R")):
-        builder = SurfaceBuilder()
-        # Ellipsoid is constructed from vertices/faces, never bpy.ops primitive_add.
-        # Eyes are positioned against the socket plane.  The body voxel union
-        # only needs the eye volume to overlap the face; the iris/highlight
-        # reliefs then sit forward for the close-up.
-        builder.add_lathe_ellipsoid((sign * 0.041, -0.040, 1.612), (0.023, 0.019, 0.018), 36, 20, 0.001)
-        mesh = bpy.data.meshes.new(f"EYE_{suffix}_MESH")
-        mesh.from_pydata(builder.vertices, [], builder.faces)
-        mesh.update(calc_edges=True)
-        obj = bpy.data.objects.new(f"EYE_{suffix}", mesh)
-        bpy.context.collection.objects.link(obj)
-        for polygon in mesh.polygons:
-            polygon.use_smooth = True
-        created.append(obj)
+        center_x = sign * 0.038
+        created.append(
+            _object_from_builder(
+                f"EYE_{suffix}",
+                _closed_almond(
+                    center_x,
+                    sign,
+                    center_z=1.614,
+                    half_width=0.0240,
+                    upper=0.0105,
+                    lower=0.0065,
+                ),
+            )
+        )
 
         iris = SurfaceBuilder()
-        iris.add_lathe_ellipsoid((sign * 0.041, -0.066, 1.612), (0.0105, 0.0022, 0.0125), 28, 12, 0.0003)
-        iris_mesh = bpy.data.meshes.new(f"IRIS_{suffix}_MESH")
-        iris_mesh.from_pydata(iris.vertices, [], iris.faces)
-        iris_mesh.update(calc_edges=True)
-        iris_obj = bpy.data.objects.new(f"IRIS_{suffix}", iris_mesh)
-        bpy.context.collection.objects.link(iris_obj)
-        for polygon in iris_mesh.polygons:
-            polygon.use_smooth = True
-        created.append(iris_obj)
+        iris.add_lathe_ellipsoid(
+            (center_x, -0.0756, 1.6145),
+            (0.0078, 0.00038, 0.0060),
+            radial=32,
+            vertical=16,
+            front_taper=0.0003,
+        )
+        created.append(_object_from_builder(f"IRIS_{suffix}", iris))
 
         pupil = SurfaceBuilder()
-        pupil.add_lathe_ellipsoid((sign * 0.041, -0.070, 1.612), (0.0048, 0.0015, 0.0072), 20, 10, 0.0001)
-        pupil_mesh = bpy.data.meshes.new(f"PUPIL_{suffix}_MESH")
-        pupil_mesh.from_pydata(pupil.vertices, [], pupil.faces)
-        pupil_mesh.update(calc_edges=True)
-        pupil_obj = bpy.data.objects.new(f"PUPIL_{suffix}", pupil_mesh)
-        bpy.context.collection.objects.link(pupil_obj)
-        created.append(pupil_obj)
+        pupil.add_lathe_ellipsoid(
+            (center_x, -0.0762, 1.6145),
+            (0.0032, 0.00030, 0.0041),
+            radial=24,
+            vertical=12,
+            front_taper=0.0002,
+        )
+        created.append(_object_from_builder(f"PUPIL_{suffix}", pupil))
 
-        highlight = SurfaceBuilder()
-        highlight.add_lathe_ellipsoid((sign * 0.037, -0.072, 1.620), (0.0024, 0.0010, 0.0030), 16, 8, 0.0001)
-        highlight_mesh = bpy.data.meshes.new(f"EYE_HIGHLIGHT_{suffix}_MESH")
-        highlight_mesh.from_pydata(highlight.vertices, [], highlight.faces)
-        highlight_mesh.update(calc_edges=True)
-        highlight_obj = bpy.data.objects.new(f"EYE_HIGHLIGHT_{suffix}", highlight_mesh)
-        bpy.context.collection.objects.link(highlight_obj)
-        created.append(highlight_obj)
+        # Two unequal highlights avoid the artificial single-dot doll stare.
+        for highlight_index, (dx, dz, rx, rz) in enumerate(
+            ((-0.0025, 0.0035, 0.0022, 0.0026), (0.0028, -0.0024, 0.0010, 0.0013)),
+            start=1,
+        ):
+            highlight = SurfaceBuilder()
+            highlight.add_lathe_ellipsoid(
+                (center_x + dx, -0.0766, 1.6145 + dz),
+                (rx, 0.00020, rz),
+                radial=18,
+                vertical=10,
+            )
+            created.append(
+                _object_from_builder(f"EYE_HIGHLIGHT_{highlight_index}_{suffix}", highlight)
+            )
     return created
 
 
 def create_eyelids() -> list[bpy.types.Object]:
-    """Polygon eyelid arcs around the eye opening, ready for later face rigging."""
+    """Create smooth tapered upper and lower lid curves around each almond."""
+
     created: list[bpy.types.Object] = []
+    samples = 17
     for sign, suffix in ((-1.0, "L"), (1.0, "R")):
-        for upper, label in ((True, "UPPER"), (False, "LOWER")):
-            points = []
-            radii = []
-            for i in range(7):
-                t = -1.0 + 2.0 * i / 6.0
-                x = sign * 0.041 + 0.031 * t
-                arc = (1.0 - t * t) * (0.015 if upper else -0.009)
-                z = 1.612 + arc
-                points.append((x, -0.066, z))
-                radii.append((0.0015, 0.0012))
+        center_x = sign * 0.038
+        for upper_lid, label in ((True, "UPPER"), (False, "LOWER")):
+            points: list[tuple[float, float, float]] = []
+            radii: list[tuple[float, float]] = []
+            for index in range(samples):
+                t = index / (samples - 1)
+                # Travel inner -> outer for both sides.
+                inner_x = sign * 0.016
+                outer_x = sign * 0.060
+                x = inner_x + (outer_x - inner_x) * t
+                arch = math.sin(math.pi * t) ** 0.74
+                if upper_lid:
+                    z = 1.613 + 0.0102 * arch + 0.0018 * t
+                    radius = 0.00075 + 0.00110 * math.sin(math.pi * t)
+                    y = -0.0769
+                else:
+                    z = 1.613 - 0.0060 * arch + 0.0015 * t
+                    radius = 0.00038 + 0.00042 * math.sin(math.pi * t)
+                    y = -0.0763
+                points.append((x, y, z))
+                radii.append((radius, radius * 0.72))
             builder = SurfaceBuilder()
             builder.add_loft(tube_rings(points, radii, sides=10))
-            mesh = bpy.data.meshes.new(f"EYELID_{label}_{suffix}_MESH")
-            mesh.from_pydata(builder.vertices, [], builder.faces)
-            mesh.update(calc_edges=True)
-            obj = bpy.data.objects.new(f"EYELID_{label}_{suffix}", mesh)
-            bpy.context.collection.objects.link(obj)
-            for polygon in mesh.polygons:
-                polygon.use_smooth = True
-            created.append(obj)
+            created.append(_object_from_builder(f"EYELID_{label}_{suffix}", builder))
+        # Dark tapered outer lashes define an adult anime gaze without turning
+        # the whole upper lid into a heavy black bar. Naming them as brow accents
+        # gives the existing material system the correct dark hair-line shader.
+        lash_points: list[tuple[float, float, float]] = []
+        lash_radii: list[tuple[float, float]] = []
+        for index in range(9):
+            t = index / 8
+            x = sign * (0.044 + 0.018 * t)
+            z = 1.6208 - 0.0048 * t + 0.0015 * math.sin(math.pi * t)
+            lash_points.append((x, -0.0774, z))
+            radius = 0.00085 * (1.0 - 0.72 * t)
+            lash_radii.append((radius, radius * 0.65))
+        lash = SurfaceBuilder()
+        lash.add_loft(tube_rings(lash_points, lash_radii, sides=8))
+        created.append(_object_from_builder(f"EYEBROW_LASH_{suffix}", lash))
     return created
 
 
 def create_brows() -> list[bpy.types.Object]:
-    """Low-poly tapered brow ridges that frame the embedded anime eyes."""
+    """Create soft continuous brow arches rather than three-point bars."""
+
     created: list[bpy.types.Object] = []
+    samples = 13
     for sign, suffix in ((-1.0, "L"), (1.0, "R")):
-        points = [
-            (sign * 0.070, -0.067, 1.646),
-            (sign * 0.046, -0.070, 1.653),
-            (sign * 0.018, -0.068, 1.648),
-        ]
+        points: list[tuple[float, float, float]] = []
+        radii: list[tuple[float, float]] = []
+        inner_x = sign * 0.013
+        outer_x = sign * 0.069
+        for index in range(samples):
+            t = index / (samples - 1)
+            x = inner_x + (outer_x - inner_x) * t
+            z = 1.6435 + 0.0048 * math.sin(math.pi * t) - 0.0022 * t
+            y = -0.0735 + 0.0008 * abs(t - 0.5)
+            radius = 0.00062 + 0.00062 * math.sin(math.pi * t)
+            points.append((x, y, z))
+            radii.append((radius, radius * 0.72))
         builder = SurfaceBuilder()
-        builder.add_loft(tube_rings(points, ((0.0032, 0.0016),) * 3, sides=10))
-        mesh = bpy.data.meshes.new(f"EYEBROW_{suffix}_MESH")
-        mesh.from_pydata(builder.vertices, [], builder.faces)
-        mesh.update(calc_edges=True)
-        obj = bpy.data.objects.new(f"EYEBROW_{suffix}", mesh)
-        bpy.context.collection.objects.link(obj)
-        for polygon in mesh.polygons:
-            polygon.use_smooth = True
-        created.append(obj)
+        builder.add_loft(tube_rings(points, radii, sides=10))
+        created.append(_object_from_builder(f"EYEBROW_{suffix}", builder))
     return created
 
 
 def create_mouth_features() -> list[bpy.types.Object]:
-    """A recessed mouth line gives the close-up a readable expression landmark."""
+    """Create a restrained seam plus shallow upper/lower lip highlight forms."""
+
+    points: list[tuple[float, float, float]] = []
+    radii: list[tuple[float, float]] = []
+    samples = 15
+    for index in range(samples):
+        t = -1.0 + 2.0 * index / (samples - 1)
+        # A tiny central cupid dip and lifted corners keep the neutral expression
+        # alive without adding the former protruding pair of lip ellipsoids.
+        z = 1.5450 - 0.0012 * (1.0 - abs(t)) + 0.0008 * abs(t) ** 2
+        points.append((0.022 * t, -0.0872, z))
+        radius = 0.00050 + 0.00045 * (1.0 - abs(t))
+        radii.append((radius, radius * 0.72))
     builder = SurfaceBuilder()
-    builder.add_lathe_ellipsoid((0.0, -0.091, 1.546), (0.021, 0.0022, 0.0045), 24, 8, 0.0001)
-    mesh = bpy.data.meshes.new("MOUTH_INNER_MESH")
-    mesh.from_pydata(builder.vertices, [], builder.faces)
-    mesh.update(calc_edges=True)
-    obj = bpy.data.objects.new("MOUTH_INNER", mesh)
-    bpy.context.collection.objects.link(obj)
-    return [obj]
+    builder.add_loft(tube_rings(points, radii, sides=10))
+    created = [_object_from_builder("MOUTH_INNER", builder)]
+    for label, center_z, bulge, thickness in (
+        ("UPPER", 1.5470, 0.0014, 0.00048),
+        ("LOWER", 1.5422, -0.0005, 0.00054),
+    ):
+        lip_points: list[tuple[float, float, float]] = []
+        lip_radii: list[tuple[float, float]] = []
+        for index in range(samples):
+            t = -1.0 + 2.0 * index / (samples - 1)
+            arch = 1.0 - t * t
+            lip_points.append((0.0205 * t, -0.0863, center_z + bulge * arch))
+            radius = thickness * (0.30 + 0.70 * arch)
+            lip_radii.append((radius, radius * 0.62))
+        lip = SurfaceBuilder()
+        lip.add_loft(tube_rings(lip_points, lip_radii, sides=10))
+        created.append(_object_from_builder(f"MOUTH_LIP_{label}", lip))
+    return created

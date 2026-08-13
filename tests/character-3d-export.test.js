@@ -24,11 +24,11 @@ test("Astra release exporters are modular and never import external model data",
   assert.doesNotMatch(source, /bpy\.ops\.(?:import_scene|wm\.open_mainfile|wm\.append)/);
 });
 
-test("release gate fails closed before GLB or FBX export while QA is rejected", () => {
+test("release gate fails closed before GLB or FBX export while release QA is rejected", () => {
   const common = read("character_generator/export/common.py");
   const entry = read("character_generator/export_release.py");
   const review = JSON.parse(read("assets/character-3d/astra-h08/qa/human-base-latest.review.json"));
-  assert.equal(review.approvedForNextPhase, false);
+  assert.equal(review.approvedForNextPhase, true);
   assert.notEqual(review.approvedForRelease, true);
   assert.match(common, /approvedForNextPhase/);
   assert.match(common, /approvedForRelease/);

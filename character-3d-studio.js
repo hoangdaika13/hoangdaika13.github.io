@@ -112,7 +112,7 @@
         if (manifest.model?.sha256 && asset.sha256 && manifest.model.sha256.toLowerCase() !== asset.sha256.toLowerCase()) throw new Error("Manifest SHA-256 không khớp GLB local.");
         if (this.currentAsset) this.loader.release(this.currentAsset);
         this.currentAsset = asset;
-        this.runtime.setModel(asset.scene, { animations: asset.animations, report: asset.report, disposePrevious: true });
+        this.runtime.setModel(asset.scene, { animations: asset.animations, report: asset.report, disposePrevious: true, bindControllers: false });
         await this.animation.bind(asset.scene, asset.animations);
         const caps = this.customizer.bind(asset.scene); this.expression.bind(asset.scene);
         const id = "astra-h08-release-v1";
@@ -139,7 +139,7 @@
       try {
         this.setStatus(`Đang xác minh ${file.name}: extension, MIME, magic bytes và dung lượng…`);
         const asset = await this.loader.loadFile(file); if (this.currentAsset) this.loader.release(this.currentAsset);
-        this.currentAsset = asset; this.runtime.setModel(asset.scene, { animations: asset.animations, report: asset.report, disposePrevious: true }); await this.animation.bind(asset.scene, asset.animations); const caps = this.customizer.bind(asset.scene); this.expression.bind(asset.scene);
+        this.currentAsset = asset; this.runtime.setModel(asset.scene, { animations: asset.animations, report: asset.report, disposePrevious: true, bindControllers: false }); await this.animation.bind(asset.scene, asset.animations); const caps = this.customizer.bind(asset.scene); this.expression.bind(asset.scene);
         const id = `local-${asset.sha256 || Date.now().toString(36)}`; this.project.assetId = id; this.project.assetName = asset.name; this.project.assetHash = asset.sha256; this.project.privatePreviewOnly = true;
         this.rights.register({ assetId: id, title: asset.name, author: "", sourceUrl: "local://user-import", licenseId: "UNKNOWN", commercialUse: false, modification: false, redistribution: false, avatarUse: false, attribution: "", sha256: asset.sha256, status: "review", provenance: "User-selected local file" });
         this.updateReport(asset.report); this.setAssetControls(true); this.updateRights(); this.root.querySelector("[data-c3d-customizer-note]").textContent = caps.morphs.length ? `${caps.morphs.length} morph và ${caps.colors.length} nhóm material có thể chỉnh thật.` : `Model có ${caps.colors.length} nhóm material; không phát hiện morph target để chỉnh hình.`;
@@ -163,7 +163,7 @@
       this.root.querySelectorAll("[data-c3d-expression-level]").forEach((node) => { node.disabled = !hasShapeKeys; });
     }
     updateRights() { const result = this.rights.evaluate(this.project.assetId, "publish"); const record = result.record; const box = this.root.querySelector("[data-c3d-rights]"); box.innerHTML = `<strong data-state="${esc(record?.status || "review")}">${esc(record?.licenseId || "UNKNOWN")} · ${esc(record?.status || "review")}</strong><span>Commercial ${record?.commercialUse ? "✓" : "?"} · Modify ${record?.modification ? "✓" : "?"} · Avatar ${record?.avatarUse ? "✓" : "?"}</span><span>Public export: ${result.allowed ? "được phép" : "đang khóa"}</span><button type="button" data-c3d-action="edit-rights">Hồ sơ quyền asset</button>`; }
-    updateDiagnostics() { const data = this.runtime?.diagnostics?.(); if (!data) return; const box = this.root.querySelector("[data-c3d-diagnostics]"); box.innerHTML = `<b>${data.fps || "--"} FPS · ${esc(data.quality)}</b><span>${Number(data.render?.triangles || 0).toLocaleString("vi-VN")} triangles · ${data.render?.calls || 0} calls</span><span>${data.gpuResources?.geometries || 0} geometry · ${data.gpuResources?.textures || 0} texture (viewport)</span>`; }
+    updateDiagnostics() { const data = this.runtime?.diagnostics?.(); if (!data) return; this.syncTimeline(true); const box = this.root.querySelector("[data-c3d-diagnostics]"); box.innerHTML = `<b>${data.fps || "--"} FPS · ${esc(data.quality)}</b><span>${Number(data.render?.triangles || 0).toLocaleString("vi-VN")} triangles · ${data.render?.calls || 0} calls</span><span>${data.gpuResources?.geometries || 0} geometry · ${data.gpuResources?.textures || 0} texture (viewport)</span>`; }
     readProject() { this.project.name = this.root.querySelector("[data-c3d-project-name]").value.trim().slice(0,120) || "Character 3D Project"; this.project.quality = this.root.querySelector("[data-c3d-quality]").value; this.project.projection = this.root.querySelector("[data-c3d-projection]").value; this.project.ownerId = this.owner; this.project.updatedAt = new Date().toISOString(); return structuredClone ? structuredClone(this.project) : JSON.parse(JSON.stringify(this.project)); }
     async save(options = {}) { const project = this.readProject(); await database.put({ key: this.projectKey, ownerId: this.owner, projectId: this.projectId, project, updatedAt: project.updatedAt }); if (!options.silent) this.setStatus("Dự án đã lưu trong IndexedDB theo đúng ownerId.", "success"); return project; }
     scheduleSave() { clearTimeout(this.autosave); this.autosave = setTimeout(() => this.save({ silent: true }).catch(() => {}), 700); }
@@ -179,7 +179,7 @@
     onClick(event) {
       const action = event.target.closest("[data-c3d-action]")?.dataset.c3dAction; const state = event.target.closest("[data-c3d-state]")?.dataset.c3dState; const expression = event.target.closest("[data-c3d-expression]")?.dataset.c3dExpression; const morph = event.target.closest("[data-c3d-morph]")?.dataset.c3dMorph; const camera = event.target.closest("[data-c3d-camera]")?.dataset.c3dCamera; const target = event.target.closest("[data-c3d-send]")?.dataset.c3dSend;
       const clipName = event.target.closest("[data-c3d-clip]")?.dataset.c3dClip;
-      if (clipName) { const supported = this.animation.playClip(clipName); this.setStatus(supported ? `Action ${clipName} đang chạy.` : `Action ${clipName} không có trong asset hiện tại.`, supported ? "success" : "info"); return; }
+      if (clipName) { const supported = this.animation.playClip(clipName, { loop: this.root.querySelector("[data-c3d-loop]")?.checked !== false }); this.syncTimeline(); this.setStatus(supported ? `Action ${clipName} đang chạy.` : `Action ${clipName} không có trong asset hiện tại.`, supported ? "success" : "info"); return; }
       if (morph) { const supported = this.customizer.setMorph(morph, Number(this.root.querySelector("[data-c3d-expression-level]").value)); this.setStatus(supported ? `Shape key ${morph} đã áp dụng trên mesh thật.` : `Shape key ${morph} không có binding trong asset.`, supported ? "success" : "info"); return; }
       if (state) { const supported = this.animation.setState(state, { force: true }); this.setStatus(supported ? `State ${state} đang chạy/crossfade.` : `Model hiện tại không có clip ${state}; không giả lập clip.`, supported ? "success" : "info"); return; }
       if (expression) { const level = Number(this.root.querySelector("[data-c3d-expression-level]").value); const supported = this.expression.preset(expression, level); this.project.expression = expression; this.setStatus(supported ? `Biểu cảm ${expression} đang chuyển mượt.` : `Model hiện tại không có morph ${expression}.`, supported ? "success" : "info"); this.scheduleSave(); return; }
@@ -201,11 +201,22 @@
       else if (event.target.matches("[data-c3d-projection]")) { this.project.projection = event.target.value; this.runtime.setProjection(event.target.value); this.exporter.bind({ camera: this.runtime.camera }); this.scheduleSave(); }
       else if (event.target.matches("[data-c3d-color]")) { const count = this.customizer.setColor(event.target.dataset.c3dColor, event.target.value, { intensity: 2.5 }); this.setStatus(count ? `Đã chỉnh ${count} material thật.` : "Model không có material tương ứng; không thay đổi giả.", count ? "success" : "info"); }
       else if (event.target.matches("[data-c3d-speed]")) this.animation.setSpeed(event.target.value);
+      else if (event.target.matches("[data-c3d-loop]")) this.animation.setLoop(event.target.checked);
       else if (event.target.matches("[data-c3d-grid]")) this.runtime.setGrid(event.target.checked);
       else if (event.target.matches("[data-c3d-transparent]")) this.runtime.setTransparent(event.target.checked);
       else if (event.target.matches("[data-c3d-background]")) this.runtime.setBackground(event.target.value);
       else if (event.target.matches("[data-c3d-scrub]")) this.animation.scrub(Number(event.target.value));
       else if (event.target.matches("[data-c3d-project-name]")) this.scheduleSave();
+    }
+
+    syncTimeline(followPlayback = false) {
+      const scrub = this.root?.querySelector("[data-c3d-scrub]");
+      if (!scrub) return;
+      const duration = Number(this.animation?.activeAction?.getClip?.()?.duration) || 0;
+      scrub.max = String(Math.max(0, duration));
+      const playbackTime = Number(this.animation?.activeAction?.time) || 0;
+      const requestedTime = followPlayback ? playbackTime : (Number(scrub.value) || 0);
+      scrub.value = String(Math.min(requestedTime, duration));
     }
 
     onFile(event) { if (event.target.matches("[data-c3d-model-file]") && event.target.files?.[0]) this.importModel(event.target.files[0]); if (event.target.matches("[data-c3d-audio-file]") && event.target.files?.[0]) { this.animation.setState("speaking", { force: true }); this.voice.playFile(event.target.files[0]).finally(() => this.animation.setState("idle", { force: true })).catch((error) => this.setStatus(error.message,"error")); } }

@@ -17,16 +17,19 @@ Color = tuple[float, float, float, float]
 
 
 PALETTE: dict[str, Color] = {
-    "skin": (0.72, 0.38, 0.30, 1.0),
-    "skin_soft": (0.92, 0.58, 0.48, 1.0),
+    # Linear-space rose ivory calibrated against the supplied portrait.  The
+    # previous saturated brown values turned the face into a dark mask under the
+    # neutral QA rig and destroyed the anime facial read.
+    "skin": (0.78, 0.45, 0.39, 1.0),
+    "skin_soft": (0.84, 0.57, 0.50, 1.0),
     "eye_white": (0.86, 0.91, 0.94, 1.0),
     "iris_cyan": (0.015, 0.52, 0.62, 1.0),
-    "hair_coral": (0.92, 0.19, 0.25, 1.0),
-    "hair_root": (0.31, 0.035, 0.060, 1.0),
-    "hair_tip": (1.00, 0.39, 0.42, 1.0),
-    "suit": (0.010, 0.013, 0.018, 1.0),
-    "suit_panel": (0.035, 0.045, 0.055, 1.0),
-    "armor_white": (0.78, 0.76, 0.68, 1.0),
+    "hair_coral": (0.64, 0.16, 0.18, 1.0),
+    "hair_root": (0.28, 0.035, 0.052, 1.0),
+    "hair_tip": (0.92, 0.34, 0.35, 1.0),
+    "suit": (0.012, 0.016, 0.021, 1.0),
+    "suit_panel": (0.030, 0.039, 0.047, 1.0),
+    "armor_white": (0.82, 0.80, 0.74, 1.0),
     "armor_red": (0.49, 0.035, 0.040, 1.0),
     "metal_dark": (0.025, 0.032, 0.040, 1.0),
     "cyan": (0.005, 0.72, 0.86, 1.0),
@@ -90,19 +93,19 @@ def _skin() -> bpy.types.Material:
     color = PALETTE["skin"]
     material.diffuse_color = color
     _set(shader, color, "Base Color")
-    _set(shader, 0.49, "Roughness")
+    _set(shader, 0.55, "Roughness")
     _set(shader, 1.42, "IOR")
-    _set(shader, 0.075, "Subsurface Weight", "Subsurface")
+    _set(shader, 0.095, "Subsurface Weight", "Subsurface")
     _set(shader, (1.0, 0.47, 0.30), "Subsurface Radius")
 
     noise = tree.nodes.new("ShaderNodeTexNoise")
     noise.name = "SKIN_MICRO_VARIATION"
-    noise.inputs["Scale"].default_value = 115.0
+    noise.inputs["Scale"].default_value = 145.0
     noise.inputs["Detail"].default_value = 2.0
     noise.inputs["Roughness"].default_value = 0.6
     bump = tree.nodes.new("ShaderNodeBump")
     bump.name = "SKIN_MICRO_BUMP"
-    bump.inputs["Strength"].default_value = 0.055
+    bump.inputs["Strength"].default_value = 0.035
     bump.inputs["Distance"].default_value = 0.0005
     tree.links.new(noise.outputs["Fac"], bump.inputs["Height"])
     normal = _input(shader, "Normal")
@@ -111,13 +114,25 @@ def _skin() -> bpy.types.Material:
     return material
 
 
+def _face_skin() -> bpy.types.Material:
+    """Warm matte face material; the suit must never override facial skin."""
+    material = _simple_principled(
+        "FACE_SKIN",
+        PALETTE["skin_soft"],
+        roughness=0.58,
+        ior=1.42,
+        coat=0.015,
+    )
+    return material
+
+
 def _hair(name: str, base: Color, root: Color, tip: Color) -> bpy.types.Material:
     material, tree, shader = _fresh_material(name)
     material.diffuse_color = base
-    _set(shader, 0.32, "Roughness")
+    _set(shader, 0.38, "Roughness")
     _set(shader, 1.47, "IOR")
-    _set(shader, 0.15, "Coat Weight", "Clearcoat")
-    _set(shader, 0.18, "Coat Roughness", "Clearcoat Roughness")
+    _set(shader, 0.10, "Coat Weight", "Clearcoat")
+    _set(shader, 0.24, "Coat Roughness", "Clearcoat Roughness")
 
     texcoord = tree.nodes.new("ShaderNodeTexCoord")
     texcoord.name = "HAIR_COORDINATES"
@@ -155,17 +170,20 @@ def _technical_fabric(name: str, color: Color, roughness: float) -> bpy.types.Ma
     material.diffuse_color = color
     _set(shader, color, "Base Color")
     _set(shader, roughness, "Roughness")
-    _set(shader, 1.51, "IOR")
-    _set(shader, 0.10, "Coat Weight", "Clearcoat")
+    _set(shader, 1.46, "IOR")
+    _set(shader, 0.015, "Coat Weight", "Clearcoat")
+    _set(shader, 0.42, "Coat Roughness", "Clearcoat Roughness")
+    _set(shader, 0.16, "Sheen Weight", "Sheen")
+    _set(shader, 0.44, "Sheen Roughness")
     noise = tree.nodes.new("ShaderNodeTexNoise")
     noise.name = "FABRIC_MICRO_WEAVE"
-    noise.inputs["Scale"].default_value = 180.0
-    noise.inputs["Detail"].default_value = 1.4
+    noise.inputs["Scale"].default_value = 240.0
+    noise.inputs["Detail"].default_value = 2.0
     noise.inputs["Roughness"].default_value = 0.72
     bump = tree.nodes.new("ShaderNodeBump")
     bump.name = "FABRIC_NORMAL"
-    bump.inputs["Strength"].default_value = 0.13
-    bump.inputs["Distance"].default_value = 0.0007
+    bump.inputs["Strength"].default_value = 0.19
+    bump.inputs["Distance"].default_value = 0.00045
     tree.links.new(noise.outputs["Fac"], bump.inputs["Height"])
     normal = _input(shader, "Normal")
     if normal is not None:
@@ -188,17 +206,21 @@ def build_materials() -> dict[str, bpy.types.Material]:
     """Create/update the complete stable Astra material namespace."""
     materials = {
         "BODY_SKIN": _skin(),
+        "FACE_SKIN": _face_skin(),
         "EYE_WHITE": _simple_principled("EYE_WHITE", PALETTE["eye_white"], roughness=0.20, coat=0.24),
         "IRIS_CYAN": _simple_principled("IRIS_CYAN", PALETTE["iris_cyan"], roughness=0.16, coat=0.35),
-        "EYELID_SKIN": _simple_principled("EYELID_SKIN", (0.62, 0.25, 0.24, 1.0), roughness=0.52),
+        "EYELID_SKIN": _simple_principled("EYELID_SKIN", (0.38, 0.055, 0.070, 1.0), roughness=0.48),
+        "EYEBROW_MAT": _simple_principled("EYEBROW_MAT", (0.25, 0.025, 0.040, 1.0), roughness=0.47),
+        "MOUTH_INNER_MAT": _simple_principled("MOUTH_INNER_MAT", (0.24, 0.018, 0.026, 1.0), roughness=0.56),
+        "LIP_NATURAL": _simple_principled("LIP_NATURAL", (0.60, 0.16, 0.18, 1.0), roughness=0.46),
         "HAIR_MAT": _hair("HAIR_MAT", PALETTE["hair_coral"], PALETTE["hair_root"], PALETTE["hair_tip"]),
         "HAIR_ROOT": _hair("HAIR_ROOT", PALETTE["hair_root"], (0.20, 0.015, 0.03, 1.0), PALETTE["hair_coral"]),
         "HAIR_TIP": _hair("HAIR_TIP", PALETTE["hair_tip"], PALETTE["hair_coral"], (1.0, 0.53, 0.51, 1.0)),
-        "BODYSUIT_BLACK": _technical_fabric("BODYSUIT_BLACK", PALETTE["suit"], 0.36),
-        "BODYSUIT_PANEL": _technical_fabric("BODYSUIT_PANEL", PALETTE["suit_panel"], 0.29),
-        "ARMOR_WHITE": _simple_principled("ARMOR_WHITE", PALETTE["armor_white"], metallic=0.08, roughness=0.29, coat=0.30),
-        "ARMOR_RED": _simple_principled("ARMOR_RED", PALETTE["armor_red"], metallic=0.13, roughness=0.25, coat=0.36),
-        "METAL_DARK": _simple_principled("METAL_DARK", PALETTE["metal_dark"], metallic=0.82, roughness=0.24),
+        "BODYSUIT_BLACK": _technical_fabric("BODYSUIT_BLACK", PALETTE["suit"], 0.54),
+        "BODYSUIT_PANEL": _technical_fabric("BODYSUIT_PANEL", PALETTE["suit_panel"], 0.48),
+        "ARMOR_WHITE": _simple_principled("ARMOR_WHITE", PALETTE["armor_white"], metallic=0.04, roughness=0.36, coat=0.20),
+        "ARMOR_RED": _simple_principled("ARMOR_RED", PALETTE["armor_red"], metallic=0.09, roughness=0.33, coat=0.24),
+        "METAL_DARK": _simple_principled("METAL_DARK", PALETTE["metal_dark"], metallic=0.78, roughness=0.30),
         "EMISSION_CYAN": _emission(),
     }
     for name, material in materials.items():
@@ -213,13 +235,31 @@ def _default_role_for_object(obj: bpy.types.Object) -> str | None:
         return explicit
     name = obj.name.upper()
     if name == "BODY_CONTINUOUS":
-        return "BODY_SKIN"
+        return "FACE_SKIN"
+    if name.startswith("EYEBROW_"):
+        return "EYEBROW_MAT"
+    if name == "MOUTH_INNER":
+        return "MOUTH_INNER_MAT"
+    if name.startswith("MOUTH_LIP"):
+        return "LIP_NATURAL"
     if name.startswith("IRIS_"):
         return "IRIS_CYAN"
+    if name.startswith("PUPIL_"):
+        return "METAL_DARK"
     if name.startswith("EYE_"):
         return "EYE_WHITE"
     if name.startswith("EYELID_"):
         return "EYELID_SKIN"
+    if name.startswith("HAIR_ACCESSORY_CYAN"):
+        return "EMISSION_CYAN"
+    if name.startswith("HAIR_ACCESSORY_RED"):
+        return "ARMOR_RED"
+    if name.startswith("HAIR_ACCESSORY_FRAME"):
+        return "ARMOR_WHITE"
+    if name.startswith(("HAIR_ACCESSORY_CORE", "HAIR_BRAID_CLASP_TOP")):
+        return "METAL_DARK"
+    if name.startswith("HAIR_BRAID_CLASP_END"):
+        return "ARMOR_RED"
     if name.startswith("HAIR_"):
         return "HAIR_MAT"
     if name == "BODYSUIT":

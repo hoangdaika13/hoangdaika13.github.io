@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "character": "Astra H-08",
+  "authoritativeReferences": [
+    "assets/character-3d/astra-h08/concept/astra-h08-character-sheet-v1.png",
+    "C:/Users/Admin/.codex/generated_images/019f96ef-5293-7043-a6da-cb683195f5ca/exec-d5da03ba-670b-4701-8e39-279a8e8fa6a9.png"
+  ],
+  "referencePriority": {
+    "faceHairArmorExpressions": 0,
+    "orthographicBodyAndBoots": 1
+  },
+  "lockedDesign": {
+    "sexPresentation": "adult female",
+    "style": "anime sci-fi action game",
+    "body": {
+      "heightMeters": 1.7,
+      "targetHeadUnits": [7.5, 8.0],
+      "silhouette": "athletic slim with long legs, narrow waist and natural hips",
+      "pose": "neutral relaxed A-pose"
+    },
+    "face": {
+      "shape": "soft tapered jaw with a small rounded chin and full cheek plane",
+      "eyes": "large cyan almond anime eyes with integrated lids, dark lashes and gradient iris",
+      "nose": "small closed anime nose with a subtle bridge and no open underside",
+      "mouth": "small natural lips integrated into the facial surface"
+    },
+    "hair": {
+      "baseColor": "#E36D6C",
+      "shadowColor": "#923A3A",
+      "structure": "asymmetric layered coral clumps, side locks, ahoge and one centered long braid",
+      "accessory": "ivory, gunmetal and cyan mechanical clip on character left"
+    },
+    "outfit": {
+      "bodysuit": "charcoal black fitted futuristic suit",
+      "armor": "layered ivory sci-fi plates with red accents and restrained cyan emission",
+      "requiredAreas": [
+        "collar",
+        "chest",
+        "shoulders",
+        "forearms",
+        "hips",
+        "thigh straps",
+        "knees",
+        "shins",
+        "boots",
+        "gloves"
+      ]
+    },
+    "palette": {
+      "hair": "#E36D6C",
+      "hairShadow": "#923A3A",
+      "bodysuit": "#333333",
+      "armor": "#E4DCD4",
+      "armorShadow": "#BBB1A9",
+      "emission": "#2EEAE6"
+    }
+  },
+  "releaseEvidence": {
+    "baseViews": ["front", "side", "back", "threeQuarter", "face", "hand", "foot"],
+    "finalViews": ["front", "leftProfile", "rightProfile", "back", "threeQuarter", "faceNeutral"],
+    "expressions": ["neutral", "happy", "sad", "angry", "surprised", "thinking", "speaking", "sleepy"],
+    "animations": [
+      "Idle",
+      "Idle_Breathing",
+      "Walk",
+      "Run",
+      "Jump_Start",
+      "Jump_Loop",
+      "Jump_Land",
+      "Attack_01",
+      "Attack_02",
+      "Wave",
+      "Look_Around",
+      "Turn_Left",
+      "Turn_Right"
+    ]
+  },
+  "modelPolicy": {
+    "external3DModels": false,
+    "only2DReferenceInput": true,
+    "bodyMustBeContinuous": true,
+    "primitiveFinalBody": false
+  }
+}

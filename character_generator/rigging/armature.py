@@ -184,9 +184,9 @@ def _bone_specs(scale: float = 1.0) -> tuple[BoneSpec, ...]:
     for side in SIDES:
         sign = 1.0 if side == "L" else -1.0
         shoulder = p(sign * 0.185, 0.004, 1.36)
-        elbow = p(sign * 0.264, -0.004, 1.09)
-        wrist = p(sign * 0.304, -0.018, 0.825)
-        palm_end = p(sign * 0.315, -0.028, 0.745)
+        elbow = p(sign * 0.266, -0.004, 1.09)
+        wrist = p(sign * 0.344, -0.018, 0.825)
+        palm_end = p(sign * 0.355, -0.028, 0.745)
         hip = p(sign * 0.125, 0.010, 0.925)
         knee = p(sign * 0.138, -0.026, 0.475)
         ankle = p(sign * 0.136, -0.004, 0.095)
@@ -649,11 +649,12 @@ def _copy_transforms(
     constraint.name = name
     constraint.target = rig
     constraint.subtarget = subtarget
-    constraint.target_space = "POSE"
-    constraint.owner_space = "POSE"
-    constraint.influence = 0.0 if inverse else 1.0
+    constraint.target_space = "LOCAL"
+    constraint.owner_space = "LOCAL"
+    constraint.influence = 1.0 if inverse else 0.0
     if hasattr(constraint, "mix_mode"):
         constraint.mix_mode = "REPLACE"
+    # FK is active when blend=0, IK when blend=1.
     _drive_constraint_influence(constraint, rig, blend_control, inverse)
     return constraint
 

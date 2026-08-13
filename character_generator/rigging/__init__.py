@@ -31,7 +31,15 @@ from .hair_rig import (
     build_hair_rig,
     validate_hair_rig,
 )
-from .weights import WeightingError, bind_meshes_to_rig
+from .weights import (
+    WeightProfile,
+    WeightingError,
+    apply_weight_profile,
+    assign_rigid_bone,
+    bind_meshes_to_rig,
+    build_anatomical_weight_profile,
+    copy_weight_profile,
+)
 
 __all__ = (
     "IK_FK_PROPERTY",
@@ -56,5 +64,10 @@ __all__ = (
     "build_hair_rig",
     "validate_hair_rig",
     "WeightingError",
+    "WeightProfile",
+    "apply_weight_profile",
+    "assign_rigid_bone",
     "bind_meshes_to_rig",
+    "build_anatomical_weight_profile",
+    "copy_weight_profile",
 )

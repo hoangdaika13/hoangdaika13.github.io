@@ -75,8 +75,52 @@ def _resolve_hair_objects(objects: Iterable[bpy.types.Object | str] | None) -> l
     return [obj for obj in candidates if obj is not None]
 
 
+def _normalize_braid_groups(objects: list[bpy.types.Object]) -> None:
+    """Guarantee one supported deform group per braid vertex.
+
+    Old scenes can retain twelve procedural segment groups even though the
+    release skeleton owns five braid bones.  Rebanding by world-space height
+    makes neutral/profile and animated output deterministic without changing
+    the authored braid silhouette.
+    """
+    braid = next((obj for obj in objects if obj.name == "HAIR_BRAID" and obj.type == "MESH"), None)
+    if braid is None or not braid.data.vertices:
+        return
+    supported = HAIR_CHAINS["braid"]
+    for group in tuple(braid.vertex_groups):
+        if group.name.startswith("braid_") and group.name not in supported:
+            braid.vertex_groups.remove(group)
+    groups = [braid.vertex_groups.get(name) or braid.vertex_groups.new(name=name) for name in supported]
+    vertex_indices = list(range(len(braid.data.vertices)))
+    for group in groups:
+        group.remove(vertex_indices)
+    heights = [(braid.matrix_world @ vertex.co).z for vertex in braid.data.vertices]
+    high, low = max(heights), min(heights)
+    span = max(high - low, 1.0e-6)
+    weighted: list[list[tuple[int, float]]] = [[] for _ in groups]
+    for index, height in enumerate(heights):
+        coordinate = min(len(groups) - 1.0, ((high - height) / span) * (len(groups) - 1))
+        lower = int(coordinate)
+        upper = min(len(groups) - 1, lower + 1)
+        blend = coordinate - lower
+        weighted[lower].append((index, 1.0 - blend))
+        if upper != lower and blend > 1.0e-4:
+            weighted[upper].append((index, blend))
+    for group, assignments in zip(groups, weighted):
+        # Blender's vertex-group API accepts one weight per add call; grouping
+        # rounded weights keeps the build deterministic without thousands of
+        # individual calls and provides smooth bend continuity at bone seams.
+        buckets: dict[float, list[int]] = {}
+        for index, weight in assignments:
+            rounded = round(max(0.0, min(1.0, weight)), 3)
+            if rounded > 0.0:
+                buckets.setdefault(rounded, []).append(index)
+        for weight, indices in buckets.items():
+            group.add(indices, weight, "REPLACE")
+
+
 def _bounds(objects: list[bpy.types.Object], rig: bpy.types.Object) -> tuple[Vector, Vector]:
-    points = [obj.matrix_world @ corner for obj in objects for corner in obj.bound_box]
+    points = [obj.matrix_world @ Vector(corner) for obj in objects for corner in obj.bound_box]
     if not points:
         head = rig.data.bones.get("head")
         if head is None:
@@ -127,6 +171,7 @@ def build_hair_rig(rig: bpy.types.Object | str | None = None, hair_objects: Iter
         raise HairRigError(str(exc)) from exc
     resolved = _resolve_rig(rig)
     objects = _resolve_hair_objects(hair_objects)
+    _normalize_braid_groups(objects)
     ungrouped = [
         obj.name
         for obj in objects

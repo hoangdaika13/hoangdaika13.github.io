@@ -18,6 +18,7 @@ from modeling.head import (
     create_eyelids,
     create_mouth_features,
 )
+from reference_metrics import evaluate_body_report
 
 
 ROOT = Path(__file__).resolve().parent
@@ -78,11 +79,20 @@ def assemble_body() -> tuple[bpy.types.Object, list[bpy.types.Object]]:
         vertex.co.x *= final_scale
         vertex.co.y *= final_scale
         vertex.co.z = (vertex.co.z - current_min) * final_scale
-    body.data.materials.append(material("BODY_SKIN", (0.66, 0.31, 0.22, 1.0), 0.62))
+    # Blender colour inputs are linear, not display-space sRGB.  The old warm
+    # value rendered almost white under the four-point studio rig and hid the
+    # planes we need to judge.  This softer rose-beige keeps the surface readable
+    # without changing the authored mesh or pretending that a shader is anatomy.
+    body.data.materials.append(material("BODY_SKIN", (0.42, 0.18, 0.13, 1.0), 0.66))
 
     # Keep eyes, lids, brows and mouth as explicit landmarks so the close-up QA
     # can inspect their embedding independently of the continuous body surface.
-    features = create_eye_objects() + create_eyelids() + create_brows() + create_mouth_features()
+    features = (
+        create_eye_objects()
+        + create_eyelids()
+        + create_brows()
+        + create_mouth_features()
+    )
     for obj in features:
         for vertex in obj.data.vertices:
             vertex.co.x *= final_scale
@@ -106,6 +116,8 @@ def assemble_body() -> tuple[bpy.types.Object, list[bpy.types.Object]]:
             obj.data.materials.append(pupil_mat)
         elif obj.name.startswith("MOUTH_"):
             obj.data.materials.append(mouth_mat)
+        elif obj.name.startswith("EYEBROW_"):
+            obj.data.materials.append(brow_mat)
         else:
             obj.data.materials.append(lid_mat)
     return body, features
@@ -304,6 +316,7 @@ def validate(body: bpy.types.Object, features: list[bpy.types.Object]) -> dict:
         "continuous_body": boundary == 0 and components == 1,
         "external_model_used": False,
     }
+    report["reference_metrics"] = evaluate_body_report(report)
     if stats["vertices"] < 15000:
         log(f"WARNING: body has {stats['vertices']} vertices; requested lower target is 15000")
     if boundary:

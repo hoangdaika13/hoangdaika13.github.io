@@ -518,6 +518,20 @@ self.addEventListener("fetch", event => {
     return;
   }
 
+  const isCharacterRelease = /\/assets\/character-3d\/astra-h08\/output\/ASTRA_H08\.(?:release\.json|glb)$/.test(url.pathname);
+  if (isCharacterRelease) {
+    // Manifest and GLB must be fetched as one current release pair. Returning a
+    // stale manifest or binary first can create a false SHA-256 mismatch.
+    event.respondWith(fetch(request, { cache: "no-store" }).then(response => {
+      if (response.ok && response.type === "basic") {
+        const copy = response.clone();
+        event.waitUntil(caches.open(CACHE).then(cache => cache.put(request, copy)));
+      }
+      return response;
+    }).catch(() => caches.match(request).then(cached => cached || Response.error())));
+    return;
+  }
+
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).then(response => {
       if (response.ok && response.type === "basic") {

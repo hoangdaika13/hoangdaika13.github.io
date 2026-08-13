@@ -132,6 +132,9 @@ def write_pending_report(reason: str, review: dict[str, Any] | None = None) -> d
         "status": "build-pending",
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "approvedForRelease": False,
+        "provenance": PROVENANCE,
+        "noExternalModel": PROVENANCE.get("external_3d_models") is False,
+        "external3DModelUsed": False,
         "reason": str(reason),
         "qa": {
             "status": (review or {}).get("status", "missing-or-unreadable"),
@@ -212,6 +215,16 @@ def _contains_role(names: Iterable[str], role: str) -> bool:
     return any(normalized_role in name.casefold().replace("_", "") for name in names)
 
 
+def _contains_object_role(objects: Iterable[bpy.types.Object], role: str) -> bool:
+    """Accept a meaningful object name or explicit generated role metadata."""
+    normalized_role = role.casefold().replace("_", "")
+    for obj in objects:
+        candidates = [obj.name, str(obj.get("astra.release_role", "")), str(obj.get("astra.roles", ""))]
+        if any(normalized_role in value.casefold().replace("_", "") for value in candidates):
+            return True
+    return False
+
+
 def validate_scene(inventory: SceneInventory) -> dict[str, Any]:
     failures: list[str] = []
     warnings: list[str] = []
@@ -226,7 +239,7 @@ def validate_scene(inventory: SceneInventory) -> dict[str, Any]:
     if inventory.bones <= 0 or inventory.bones > 150:
         failures.append(f"Bone count {inventory.bones} must be between 1 and 150.")
 
-    missing_objects = [role for role in REQUIRED_OBJECT_ROLES if not _contains_role(object_names, role)]
+    missing_objects = [role for role in REQUIRED_OBJECT_ROLES if not _contains_object_role(inventory.objects, role)]
     missing_materials = [role for role in REQUIRED_MATERIAL_ROLES if not _contains_role(inventory.materials, role)]
     missing_shapes = [name for name in REQUIRED_SHAPE_KEYS if name not in inventory.shape_keys]
     missing_actions = [name for name in REQUIRED_ACTIONS if name not in inventory.actions]
@@ -321,6 +334,8 @@ def write_report(
         "blenderVersion": bpy.app.version_string,
         "fps": FPS,
         "provenance": PROVENANCE,
+        "noExternalModel": PROVENANCE.get("external_3d_models") is False,
+        "external3DModelUsed": False,
         "qa": {
             "reviewedAt": review.get("reviewedAt"),
             "status": review.get("status"),
@@ -343,6 +358,9 @@ def write_report(
         "model": output_records.get("glb"),
         "report": str(REPORT_PATH.relative_to(PROJECT_ROOT)).replace("\\", "/"),
         "approvedForRelease": True,
+        "provenance": PROVENANCE,
+        "noExternalModel": PROVENANCE.get("external_3d_models") is False,
+        "external3DModelUsed": False,
         "stats": inventory.report(),
     }
     MANIFEST_PATH.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

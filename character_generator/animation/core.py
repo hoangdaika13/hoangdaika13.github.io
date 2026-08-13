@@ -415,7 +415,11 @@ def _walk_samples(spec: ActionSpec, run: bool) -> list[PoseSample]:
         right = -left
         left_bend = max(0.0, -left)
         right_bend = max(0.0, -right)
-        arm = 0.72 if run else 0.42
+        # The proof camera sees the locomotion from three-quarter view.  A
+        # restrained 20-degree shoulder swing looked almost static there, so
+        # keep a clear contralateral silhouette while staying below the armor
+        # collision range used by the larger gesture clips.
+        arm = 1.02 if run else 0.64
         hip = math.cos(phase)
         root_height = lift * (0.30 + 0.70 * abs(math.sin(phase)))
         samples.append(
@@ -427,6 +431,8 @@ def _walk_samples(spec: ActionSpec, run: bool) -> list[PoseSample]:
                 spine_02=BonePose(rotation=((0.10 if run else 0.01), 0.0, -left * 0.025)),
                 chest=BonePose(rotation=((0.06 if run else 0.0), 0.0, left * 0.080)),
                 head=BonePose(rotation=(-(0.07 if run else 0.01), 0.0, -left * 0.025)),
+                clavicle_L=BonePose(rotation=(0.0, 0.0, right * (0.045 if run else 0.028))),
+                clavicle_R=BonePose(rotation=(0.0, 0.0, left * (0.045 if run else 0.028))),
                 thigh_fk_L=BonePose(rotation=(left * amplitude, 0.0, 0.0)),
                 thigh_fk_R=BonePose(rotation=(right * amplitude, 0.0, 0.0)),
                 shin_fk_L=BonePose(rotation=(-left_bend * (1.12 if run else 0.72), 0.0, 0.0)),
@@ -435,10 +441,12 @@ def _walk_samples(spec: ActionSpec, run: bool) -> list[PoseSample]:
                 foot_fk_R=BonePose(rotation=(-right * (0.24 if run else 0.15), 0.0, 0.0)),
                 toe_fk_L=BonePose(rotation=(max(0.0, left) * 0.16, 0.0, 0.0)),
                 toe_fk_R=BonePose(rotation=(max(0.0, right) * 0.16, 0.0, 0.0)),
-                upper_arm_fk_L=BonePose(rotation=(right * arm, 0.0, -0.045)),
-                upper_arm_fk_R=BonePose(rotation=(left * arm, 0.0, 0.045)),
-                forearm_fk_L=BonePose(rotation=(-0.18 - max(0.0, right) * 0.32, 0.0, 0.0)),
-                forearm_fk_R=BonePose(rotation=(-0.18 - max(0.0, left) * 0.32, 0.0, 0.0)),
+                upper_arm_fk_L=BonePose(rotation=(right * arm, 0.0, -0.070)),
+                upper_arm_fk_R=BonePose(rotation=(left * arm, 0.0, 0.070)),
+                forearm_fk_L=BonePose(rotation=(-0.30 - max(0.0, right) * (0.44 if run else 0.32), 0.0, 0.0)),
+                forearm_fk_R=BonePose(rotation=(-0.30 - max(0.0, left) * (0.44 if run else 0.32), 0.0, 0.0)),
+                hand_fk_L=BonePose(rotation=(right * 0.06, 0.0, -right * 0.035)),
+                hand_fk_R=BonePose(rotation=(left * 0.06, 0.0, left * 0.035)),
             )
         )
     return samples
@@ -451,69 +459,89 @@ def _jump_samples(spec: ActionSpec, phase_name: str) -> list[PoseSample]:
     elif phase_name == "Jump_Loop":
         states = ((1, 0.42, 0.0), (middle, 0.32, 0.014), (spec.frame_end, 0.42, 0.0))
     else:
-        states = ((1, 0.30, 0.070), (middle, 1.0, -0.025), (spec.frame_end, 0.0, 0.0))
+        # Frame 20 is the release proof.  Make it the compression beat rather
+        # than an interpolation towards recovery: hips drop, knees absorb the
+        # impact and the torso counters forward before settling at frame 30.
+        states = ((1, 0.25, 0.070), (10, 0.72, -0.035), (20, 1.25, -0.105), (spec.frame_end, 0.0, 0.0))
     samples: list[PoseSample] = []
     for frame, crouch, height in states:
         samples.append(
             _sample(
                 frame,
                 root=BonePose(location=(0.0, 0.0, height)),
-                pelvis=BonePose(rotation=(-0.12 * crouch, 0.0, 0.0), location=(0.0, 0.0, -0.035 * crouch)),
-                spine_01=BonePose(rotation=(0.20 * crouch, 0.0, 0.0)),
-                chest=BonePose(rotation=(-0.12 * crouch, 0.0, 0.0)),
-                thigh_fk_L=BonePose(rotation=(0.58 * crouch, 0.0, -0.08)),
-                thigh_fk_R=BonePose(rotation=(0.58 * crouch, 0.0, 0.08)),
-                shin_fk_L=BonePose(rotation=(-1.05 * crouch, 0.0, 0.0)),
-                shin_fk_R=BonePose(rotation=(-1.05 * crouch, 0.0, 0.0)),
-                foot_fk_L=BonePose(rotation=(0.36 * crouch, 0.0, 0.0)),
-                foot_fk_R=BonePose(rotation=(0.36 * crouch, 0.0, 0.0)),
-                upper_arm_fk_L=BonePose(rotation=(-0.55 * crouch, 0.0, -0.16)),
-                upper_arm_fk_R=BonePose(rotation=(-0.55 * crouch, 0.0, 0.16)),
-                forearm_fk_L=BonePose(rotation=(-0.30 * crouch, 0.0, 0.0)),
-                forearm_fk_R=BonePose(rotation=(-0.30 * crouch, 0.0, 0.0)),
+                pelvis=BonePose(rotation=(-0.16 * crouch, 0.0, 0.0), location=(0.0, 0.012 * crouch, -0.052 * crouch)),
+                spine_01=BonePose(rotation=(0.25 * crouch, 0.0, 0.0)),
+                spine_02=BonePose(rotation=(0.15 * crouch, 0.0, 0.0)),
+                chest=BonePose(rotation=(-0.18 * crouch, 0.0, 0.0)),
+                neck=BonePose(rotation=(-0.08 * crouch, 0.0, 0.0)),
+                head=BonePose(rotation=(-0.07 * crouch, 0.0, 0.0)),
+                thigh_fk_L=BonePose(rotation=(0.72 * crouch, 0.0, -0.10)),
+                thigh_fk_R=BonePose(rotation=(0.72 * crouch, 0.0, 0.10)),
+                shin_fk_L=BonePose(rotation=(-1.16 * crouch, 0.0, 0.0)),
+                shin_fk_R=BonePose(rotation=(-1.16 * crouch, 0.0, 0.0)),
+                foot_fk_L=BonePose(rotation=(0.43 * crouch, 0.0, 0.0)),
+                foot_fk_R=BonePose(rotation=(0.43 * crouch, 0.0, 0.0)),
+                upper_arm_fk_L=BonePose(rotation=(-0.72 * crouch, 0.0, -0.18)),
+                upper_arm_fk_R=BonePose(rotation=(-0.72 * crouch, 0.0, 0.18)),
+                forearm_fk_L=BonePose(rotation=(-0.42 * crouch, 0.0, 0.0)),
+                forearm_fk_R=BonePose(rotation=(-0.42 * crouch, 0.0, 0.0)),
             )
         )
     return samples
 
 
 def _attack_samples(spec: ActionSpec, attack_two: bool) -> list[PoseSample]:
+    """Build two visibly different unarmed combat silhouettes.
+
+    Attack_01 is a compact right-hand driving strike whose proof beat is frame
+    24.  Attack_02 is a broader left-leading cross-body sweep keyed exactly at
+    frame 34.  Keeping those beats explicit avoids the former neutral-looking
+    interpolated frames while retaining conservative rotations for rigid armor.
+    """
+
     if attack_two:
-        frames = (1, 17, 34, 49, spec.frame_end)
+        frames = (1, 18, 34, 50, spec.frame_end)
         poses = (
+            # twist, drive, guard, lunge
             (0.0, 0.0, 0.0, 0.0),
-            (-0.55, 0.70, -0.75, 0.45),
-            (0.72, -1.05, 1.10, -0.85),
-            (-0.48, 0.80, -0.95, 0.55),
+            (-0.34, 0.48, -0.62, 0.20),
+            (0.62, 1.02, -0.34, 0.52),
+            (-0.24, 0.30, -0.50, 0.16),
             (0.0, 0.0, 0.0, 0.0),
         )
     else:
-        frames = (1, 15, 28, 38, spec.frame_end)
+        frames = (1, 12, 24, 36, spec.frame_end)
         poses = (
+            # twist, drive, guard, lunge
             (0.0, 0.0, 0.0, 0.0),
-            (-0.42, 0.62, -0.95, 0.58),
-            (0.68, -0.88, 1.05, -0.72),
-            (0.24, -0.22, 0.32, -0.18),
+            (-0.30, 0.38, -0.48, -0.10),
+            (-0.48, 1.10, -0.56, 0.46),
+            (0.18, 0.22, -0.34, 0.10),
             (0.0, 0.0, 0.0, 0.0),
         )
     samples: list[PoseSample] = []
-    for frame, (twist, right_arm, left_arm, lunge) in zip(frames, poses):
+    for frame, (twist, drive, guard, lunge) in zip(frames, poses):
         samples.append(
             _sample(
                 frame,
-                root=BonePose(location=(lunge * 0.025, -abs(lunge) * 0.030, 0.0)),
-                pelvis=BonePose(rotation=(0.0, 0.0, twist * 0.45), location=(lunge * 0.018, 0.0, 0.0)),
-                spine_01=BonePose(rotation=(-abs(twist) * 0.08, 0.0, twist * 0.30)),
-                spine_02=BonePose(rotation=(0.0, 0.0, twist * 0.36)),
-                chest=BonePose(rotation=(0.0, twist * 0.10, twist * 0.52)),
-                neck=BonePose(rotation=(0.0, 0.0, -twist * 0.20)),
-                head=BonePose(rotation=(0.0, -twist * 0.08, -twist * 0.26)),
-                upper_arm_fk_R=BonePose(rotation=(right_arm, -0.45 * right_arm, 0.35)),
-                forearm_fk_R=BonePose(rotation=(-0.75 - abs(right_arm) * 0.35, 0.0, 0.10)),
-                hand_fk_R=BonePose(rotation=(0.0, right_arm * 0.30, -right_arm * 0.18)),
-                upper_arm_fk_L=BonePose(rotation=(left_arm * 0.55, 0.22, -0.45)),
-                forearm_fk_L=BonePose(rotation=(-0.42 - abs(left_arm) * 0.18, 0.0, -0.06)),
-                thigh_fk_L=BonePose(rotation=(max(0.0, lunge) * 0.22, 0.0, -0.10)),
-                thigh_fk_R=BonePose(rotation=(-max(0.0, lunge) * 0.16, 0.0, 0.10)),
+                root=BonePose(location=(lunge * 0.030, -abs(lunge) * 0.040, 0.0)),
+                pelvis=BonePose(rotation=(-0.05 * abs(lunge), 0.0, twist * 0.42), location=(lunge * 0.020, 0.0, -abs(lunge) * 0.010)),
+                spine_01=BonePose(rotation=(-abs(twist) * 0.10, 0.0, twist * 0.28)),
+                spine_02=BonePose(rotation=(-abs(twist) * 0.05, 0.0, twist * 0.34)),
+                chest=BonePose(rotation=(-abs(twist) * 0.04, twist * 0.08, twist * 0.48)),
+                neck=BonePose(rotation=(0.0, 0.0, -twist * 0.18)),
+                head=BonePose(rotation=(0.0, -twist * 0.06, -twist * 0.24)),
+                # Attack two leads with the opposite arm and opens into a broad
+                # cross-body line; attack one drives the right fist forward.
+                upper_arm_fk_R=BonePose(rotation=((guard if attack_two else drive), -0.10, (0.36 if attack_two else 0.18))),
+                forearm_fk_R=BonePose(rotation=((-0.72 - abs(guard) * 0.22) if attack_two else (-0.14 - max(0.0, 1.0 - drive) * 0.22), 0.0, 0.06)),
+                hand_fk_R=BonePose(rotation=(0.0, (guard if attack_two else drive) * 0.18, -0.10)),
+                upper_arm_fk_L=BonePose(rotation=((drive if attack_two else guard), 0.10, (-0.56 if attack_two else -0.34))),
+                forearm_fk_L=BonePose(rotation=((-0.20 if attack_two else -0.82 - abs(guard) * 0.18), 0.0, -0.05)),
+                hand_fk_L=BonePose(rotation=(0.0, (-drive * 0.16 if attack_two else 0.0), 0.08)),
+                thigh_fk_L=BonePose(rotation=(max(0.0, lunge) * 0.32, 0.0, -0.12)),
+                thigh_fk_R=BonePose(rotation=(-max(0.0, lunge) * 0.24, 0.0, 0.12)),
+                shin_fk_L=BonePose(rotation=(-max(0.0, lunge) * 0.30, 0.0, 0.0)),
             )
         )
     return samples
@@ -531,9 +559,13 @@ def _wave_samples(spec: ActionSpec) -> list[PoseSample]:
                 chest=BonePose(rotation=(0.0, 0.0, -0.05 * raised)),
                 neck=BonePose(rotation=(0.0, 0.0, 0.04 * raised)),
                 head=BonePose(rotation=(0.0, -0.04 * raised, 0.05 * raised)),
-                upper_arm_fk_R=BonePose(rotation=(-0.30 * raised, -0.18 * raised, 1.30 * raised)),
-                forearm_fk_R=BonePose(rotation=(-1.35 * raised, 0.0, -0.08 * raised)),
-                hand_fk_R=BonePose(rotation=(0.0, wave, wave * 0.20)),
+                # Rotation X lifts the down-sloping upper-arm rest chain.  Keep
+                # the elbow outside the face and let a deep elbow fold place the
+                # palm beside, rather than in front of, the head.
+                clavicle_L=BonePose(rotation=(0.0, -0.05 * raised, -0.10 * raised)),
+                upper_arm_fk_L=BonePose(rotation=(1.18 * raised, -0.10 * raised, -0.18 * raised)),
+                forearm_fk_L=BonePose(rotation=(-1.28 * raised, 0.0, 0.18 * raised)),
+                hand_fk_L=BonePose(rotation=(0.10 * raised, wave * 0.72, -wave * 0.22)),
             )
         )
     return samples

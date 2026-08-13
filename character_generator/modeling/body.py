@@ -97,20 +97,20 @@ def torso_rings(sides: int = 64) -> list[list[tuple[float, float, float]]]:
         # remove the former shelf-like horizontal bands at the crotch and waist.
         (0.810, 0.090, 0.078, 0.008, 0.98, 0.99),
         (0.835, 0.125, 0.098, 0.010, 0.96, 0.98),
-        (0.870, 0.175, 0.123, 0.012, 0.92, 0.95),
-        (0.910, 0.202, 0.138, 0.014, 0.89, 0.92),
-        (0.945, 0.211, 0.145, 0.016, 0.88, 0.91),
-        (0.980, 0.205, 0.140, 0.012, 0.90, 0.93),
-        (1.015, 0.186, 0.128, 0.004, 0.92, 0.95),
-        (1.055, 0.155, 0.112, -0.002, 0.96, 0.98),
-        (1.105, 0.153, 0.110, -0.004, 0.96, 0.98),
-        (1.160, 0.176, 0.123, -0.003, 0.94, 0.96),
+        (0.870, 0.155, 0.116, 0.012, 0.92, 0.95),
+        (0.910, 0.172, 0.126, 0.014, 0.89, 0.92),
+        (0.945, 0.181, 0.131, 0.016, 0.88, 0.91),
+        (0.980, 0.178, 0.128, 0.012, 0.90, 0.93),
+        (1.015, 0.174, 0.123, 0.004, 0.92, 0.95),
+        (1.055, 0.145, 0.108, -0.002, 0.96, 0.98),
+        (1.105, 0.143, 0.106, -0.004, 0.96, 0.98),
+        (1.160, 0.166, 0.119, -0.003, 0.94, 0.96),
         (1.220, 0.194, 0.136, -0.002, 0.92, 0.94),
         (1.280, 0.207, 0.141, 0.000, 0.91, 0.93),
         (1.335, 0.204, 0.137, 0.002, 0.92, 0.94),
         (1.385, 0.205, 0.132, 0.004, 0.93, 0.95),
         (1.425, 0.170, 0.110, 0.006, 0.96, 0.98),
-        (1.450, 0.090, 0.079, 0.006, 0.98, 0.99),
+        (1.450, 0.082, 0.072, 0.006, 0.98, 0.99),
     )
     rings: list[list[tuple[float, float, float]]] = []
     for section_index, (z, width, depth, center_y, exp_x, exp_y) in enumerate(sections):
@@ -206,6 +206,19 @@ def sculpt_reference_proportions(obj: bpy.types.Object) -> None:
         x, y, z = vertex.co
         ax = abs(x)
 
+        # Establish a shallow axilla hollow between the pectoral sidewall and
+        # deltoid.  Voxel union correctly makes one surface but otherwise leaves
+        # a visible bead where the two procedural lofts overlap.
+        if 1.245 < z < 1.355 and 0.155 < ax < 0.245:
+            axilla_z = _cosine_falloff(z, 1.295, 0.058)
+            axilla_x = _cosine_falloff(ax, 0.198, 0.050)
+            weight = axilla_z * axilla_x
+            vertex.co.z -= 0.010 * weight
+            if y < 0.0:
+                vertex.co.y += 0.012 * weight
+            else:
+                vertex.co.y -= 0.004 * weight
+
         # Compact the shoulder/upper-arm envelope. Preserve a rounded clavicle
         # slope and avoid a hard shoulder cap/axilla ledge.
         if 1.25 < z < 1.43 and ax > 0.145:
@@ -232,11 +245,21 @@ def sculpt_reference_proportions(obj: bpy.types.Object) -> None:
             shoulder = min(1.0, max(0.0, (ax - 0.10) / 0.15))
             vertex.co.z -= 0.018 * shoulder * _cosine_falloff(z, 1.365, 0.075)
 
+        # Collarbone ledge and a restrained sternal channel give the fitted suit
+        # a readable clavicle/chest plane rather than one inflated barrel.
+        if 1.335 < z < 1.405 and ax < 0.18 and y < 0.0:
+            clavicle = _cosine_falloff(z, 1.368, 0.038)
+            lateral = _cosine_falloff(ax, 0.105, 0.090)
+            vertex.co.y -= 0.0045 * clavicle * lateral
+        if 1.195 < z < 1.355 and ax < 0.034 and y < 0.0:
+            sternum = _cosine_falloff(z, 1.280, 0.095) * (1.0 - ax / 0.034)
+            vertex.co.y += 0.006 * sternum
+
         # Preserve a slim rib cage and lengthen the visible waist; the reference
         # is athletic, not the short barrel silhouette produced by the union.
         if 1.02 < z < 1.30 and ax < 0.24:
-            waist = _cosine_falloff(z, 1.105, 0.105)
-            vertex.co.x *= 1.0 - 0.105 * waist
+            waist = _cosine_falloff(z, 1.105, 0.125)
+            vertex.co.x *= 1.0 - 0.135 * waist
             if y > 0.0:
                 vertex.co.y *= 1.0 - 0.040 * waist
 
@@ -251,6 +274,17 @@ def sculpt_reference_proportions(obj: bpy.types.Object) -> None:
             elif 0.09 <= ax < 0.23:
                 outer = min(1.0, (ax - 0.09) / 0.14)
                 vertex.co.x *= 1.0 - 0.025 * outer * pelvis
+
+        # Inguinal crease and gluteal fold are shallow coordinate depressions,
+        # not disconnected decorative geometry.  Both improve the hip-to-thigh
+        # read while retaining one manifold surface for later deformation.
+        if 0.805 < z < 0.955 and 0.060 < ax < 0.185:
+            crease_z = _cosine_falloff(z, 0.885, 0.072)
+            crease_x = _cosine_falloff(ax, 0.125, 0.070)
+            if y < 0.005:
+                vertex.co.y += 0.007 * crease_z * crease_x
+            elif y > 0.035:
+                vertex.co.y -= 0.006 * _cosine_falloff(z, 0.855, 0.055) * crease_x
 
         # Round the lower abdominal-to-pelvis transition, removing the apparent
         # horizontal crotch shelf while keeping the medial gap continuous.
@@ -278,6 +312,15 @@ def sculpt_reference_proportions(obj: bpy.types.Object) -> None:
             vertex.co.x *= 1.0 - 0.045 * knee
             if y < 0.0:
                 vertex.co.y -= 0.008 * knee
+
+        # Patella stays subtle, while the rear popliteal notch prevents the knee
+        # from reading as a featureless bend in profile.
+        if 0.425 < z < 0.510 and ax > 0.070:
+            knee_plane = _cosine_falloff(z, 0.468, 0.045)
+            if y < -0.015:
+                vertex.co.y -= 0.0045 * knee_plane
+            elif y > 0.015:
+                vertex.co.y -= 0.0060 * knee_plane
         if 0.22 < z < 0.42 and ax > 0.07:
             calf = _cosine_falloff(z, 0.325, 0.115)
             # Calf belly sits posteriorly; flatten the tibial front.
@@ -294,6 +337,17 @@ def sculpt_reference_proportions(obj: bpy.types.Object) -> None:
         if 0.74 < z < 0.84 and ax > 0.25:
             wrist = _cosine_falloff(z, 0.795, 0.050)
             vertex.co.x *= 1.0 - 0.045 * wrist
+
+        # Palm, knuckle line and thumb web.  This keeps all digits attached while
+        # replacing the remeshed cuff/needle transition seen in the close-up.
+        if 0.705 < z < 0.825 and ax > 0.250:
+            palm = _cosine_falloff(z, 0.770, 0.064)
+            vertex.co.y -= 0.004 * palm
+            if ax > 0.305:
+                vertex.co.x *= 1.0 - 0.025 * palm
+        if 0.735 < z < 0.790 and ax > 0.315:
+            thumb_web = _cosine_falloff(z, 0.760, 0.032)
+            vertex.co.z += 0.004 * thumb_web
 
         # A real longitudinal arch and tapered toe box, ready for extracting the
         # armored boot shell in a later phase.
@@ -397,11 +451,11 @@ def add_arms(builder: SurfaceBuilder) -> None:
             (sign * 0.207, 0.002, 1.292),
             (sign * 0.224, 0.000, 1.238),
             (sign * 0.239, -0.002, 1.168),
-            (sign * 0.252, -0.004, 1.092),
-            (sign * 0.265, -0.008, 1.020),
-            (sign * 0.276, -0.012, 0.950),
-            (sign * 0.286, -0.016, 0.875),
-            (sign * 0.292, -0.018, 0.825),
+            (sign * 0.254, -0.004, 1.092),
+            (sign * 0.270, -0.008, 1.020),
+            (sign * 0.286, -0.012, 0.950),
+            (sign * 0.318, -0.016, 0.875),
+            (sign * 0.332, -0.018, 0.825),
         )
         radii = (
             (0.037, 0.043),
@@ -435,18 +489,18 @@ def add_legs(builder: SurfaceBuilder) -> None:
             (sign * 0.136, -0.004, 0.095),
         )
         radii = (
-            (0.084, 0.099),
-            (0.092, 0.107),
-            (0.093, 0.108),
-            (0.088, 0.102),
-            (0.080, 0.094),
+            (0.078, 0.094),
+            (0.086, 0.101),
+            (0.087, 0.102),
+            (0.083, 0.097),
+            (0.076, 0.090),
             (0.067, 0.076),
             (0.066, 0.073),
-            (0.074, 0.081),
-            (0.076, 0.083),
-            (0.067, 0.073),
-            (0.052, 0.057),
-            (0.042, 0.047),
+            (0.069, 0.077),
+            (0.071, 0.079),
+            (0.061, 0.069),
+            (0.047, 0.053),
+            (0.038, 0.043),
         )
         builder.add_loft(smooth_tube_rings(points, radii, sides=36, steps=5))
 
@@ -457,15 +511,15 @@ def add_legs(builder: SurfaceBuilder) -> None:
             # y, bottom-z, top-z, half-width.  A nearly level contact surface,
             # lifted medial arch, high instep and tapered toe read as a foot from
             # both side and three-quarter views.
-            (0.072, 0.018, 0.083, 0.025),
-            (0.052, 0.014, 0.103, 0.039),
-            (0.018, 0.014, 0.111, 0.047),
-            (-0.028, 0.020, 0.108, 0.051),
-            (-0.078, 0.024, 0.094, 0.054),
-            (-0.126, 0.016, 0.076, 0.058),
+            (0.074, 0.021, 0.090, 0.026),
+            (0.052, 0.014, 0.108, 0.039),
+            (0.018, 0.014, 0.116, 0.047),
+            (-0.028, 0.022, 0.112, 0.051),
+            (-0.078, 0.029, 0.096, 0.054),
+            (-0.126, 0.018, 0.078, 0.058),
             (-0.168, 0.014, 0.061, 0.055),
-            (-0.202, 0.014, 0.050, 0.041),
-            (-0.222, 0.016, 0.042, 0.020),
+            (-0.202, 0.014, 0.048, 0.040),
+            (-0.222, 0.017, 0.038, 0.018),
         )
         foot_rings: list[list[tuple[float, float, float]]] = []
         for y, bottom, top, width in foot_sections:
@@ -502,7 +556,10 @@ def add_legs(builder: SurfaceBuilder) -> None:
 def add_hands(builder: SurfaceBuilder) -> None:
     """Add a palm plus five individually articulated finger silhouettes per hand."""
     for sign in (-1.0, 1.0):
-        hand_x = 0.292
+        # Leave a real topological air gap between hands and hips.  At the old
+        # 0.292 centre the voxel union welded the inner palm/forearm to the outer
+        # hip; opposing arm/leg weights then tore that bridge into long triangles.
+        hand_x = 0.332
         palm_points = (
             (sign * hand_x, -0.018, 0.832),
             (sign * (hand_x + 0.004), -0.021, 0.800),
@@ -517,8 +574,8 @@ def add_hands(builder: SurfaceBuilder) -> None:
         # Keep the four digits separated after the 7.5 mm voxel union.  The
         # earlier 17–18 mm center spacing was almost exactly two finger
         # diameters, so remeshing fused the proximal phalanges into a mitten.
-        finger_offsets = (-0.038, -0.013, 0.013, 0.038)
-        finger_lengths = (0.066, 0.079, 0.075, 0.061)
+        finger_offsets = (-0.037, -0.0125, 0.0125, 0.037)
+        finger_lengths = (0.066, 0.078, 0.074, 0.061)
         for finger_index, (offset, length) in enumerate(zip(finger_offsets, finger_lengths)):
             x_base = sign * (hand_x + 0.011 + offset * sign)
             splay = (finger_index - 1.5) * 0.0045
@@ -527,10 +584,12 @@ def add_hands(builder: SurfaceBuilder) -> None:
                  0.746 - length * fraction)
                 for fraction in (0.0, 0.22, 0.43, 0.64, 0.83, 1.0)
             )
-            radius = 0.0076 if finger_index in (1, 2) else 0.0068
+            # Slightly fuller proximal phalanges survive the watertight union and
+            # better match the gloved reference hand; distal tips stay tapered.
+            radius = 0.0084 if finger_index in (1, 2) else 0.0076
             finger_radii = tuple(
                 (radius * scale, radius * scale * 0.76)
-                for scale in (1.0, 0.96, 0.90, 0.85, 0.76, 0.38)
+                for scale in (1.08, 1.03, 0.97, 0.90, 0.80, 0.45)
             )
             builder.add_loft(
                 tube_rings(points, finger_radii, sides=16)
@@ -543,11 +602,11 @@ def add_hands(builder: SurfaceBuilder) -> None:
             (thumb_x + sign * 0.006, -0.029, 0.789),
             (thumb_x + sign * 0.013, -0.034, 0.775),
             (thumb_x + sign * 0.020, -0.038, 0.756),
-            (thumb_x + sign * 0.026, -0.040, 0.740),
+            (thumb_x + sign * 0.025, -0.040, 0.742),
         )
         builder.add_loft(
-            tube_rings(thumb_points, ((0.010, 0.009), (0.0097, 0.0086), (0.009, 0.008),
-                                      (0.0075, 0.0065), (0.0038, 0.0032)), sides=14)
+            tube_rings(thumb_points, ((0.0115, 0.0102), (0.0110, 0.0097), (0.0102, 0.0090),
+                                      (0.0087, 0.0075), (0.0048, 0.0041)), sides=16)
         )
 
 
@@ -627,13 +686,39 @@ def make_watertight(obj: bpy.types.Object, voxel_size: float = 0.0075) -> None:
     for polygon in obj.data.polygons:
         polygon.use_smooth = True
 
-    # Controlled smoothing removes voxel stair-stepping while retaining the waist,
-    # knees, face attachment points and separated fingers.
-    smooth = obj.modifiers.new("Anatomical_Smooth", "SMOOTH")
-    smooth.factor = 0.34
-    smooth.iterations = 4
-    bpy.context.view_layer.objects.active = obj
-    bpy.ops.object.modifier_apply(modifier=smooth.name)
+    # Voxel union leaves narrow ring-like ridges where dense lofts overlap.  A
+    # bounded Laplacian pass removes those seams before the final modifier while
+    # preserving silhouette landmarks authored above.
+    adjacency: list[list[int]] = [[] for _ in obj.data.vertices]
+    for edge in obj.data.edges:
+        left, right = edge.vertices
+        adjacency[left].append(right)
+        adjacency[right].append(left)
+    protected = []
+    for vertex in obj.data.vertices:
+        x, y, z = vertex.co
+        protected.append(
+            z < 0.035
+            or z > 1.485
+            or (z < 0.84 and abs(x) > 0.285)  # fingers and their separation
+            or (z < 0.13 and abs(y) > 0.14)   # heel/toe contact landmarks
+        )
+    for _iteration in range(3):
+        previous = [vertex.co.copy() for vertex in obj.data.vertices]
+        for index, vertex in enumerate(obj.data.vertices):
+            neighbors = adjacency[index]
+            if protected[index] or not neighbors:
+                continue
+            average = sum((previous[neighbor] for neighbor in neighbors), Vector()) / len(neighbors)
+            # Keep the vertical landmark almost fixed; smooth mainly across the
+            # surface tangent to avoid shrinking the 1.70 m proportions.
+            delta = average - previous[index]
+            delta.z *= 0.22
+            vertex.co = previous[index] + delta * 0.18
+
+    # A global Smooth modifier can close the narrow arm/hip clearance that the
+    # scaffold deliberately creates.  The bounded Laplacian pass above already
+    # removes voxel stair-stepping while preserving that deformation-safe gap.
 
 
 def mesh_statistics(obj: bpy.types.Object) -> dict[str, int]:

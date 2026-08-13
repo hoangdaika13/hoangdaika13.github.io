@@ -489,6 +489,66 @@ def _mesh_object(
     return obj, intervals
 
 
+def _scalp_shell(
+    fit: HairFit,
+    collection: bpy.types.Collection,
+    material: bpy.types.Material,
+) -> bpy.types.Object:
+    """Create a thin coral skull shell beneath layered clumps.
+
+    It closes the white scalp gaps visible in profile/back while stopping above
+    the eyebrows so the face and both eyes stay open.
+    """
+    radial, rings = 48, 12
+    vertices: list[tuple[float, float, float]] = []
+    faces: list[tuple[int, int, int, int]] = []
+    top = fit.crown_z + 0.008 * fit.scale
+    rx = min(fit.head_half_width + 0.006 * fit.scale, 0.104 * fit.scale)
+    # Facial feature planes inflate y_min.  Use a compact skull envelope so the
+    # shell reads as a rounded bob in profile, never a visor.
+    front = min(max(0.086 * fit.scale, fit.center_y - fit.front_y), 0.104 * fit.scale)
+    rear = min(max(0.096 * fit.scale, fit.rear_y - fit.center_y), 0.116 * fit.scale)
+    for row in range(rings + 1):
+        phi = (math.pi * 0.5) * row / rings
+        horizontal = math.sin(phi)
+        for side in range(radial):
+            theta = 2.0 * math.pi * side / radial
+            ca, sa = math.cos(theta), math.sin(theta)
+            depth = rear if sa >= 0.0 else front
+            # Forehead shell stops above the brows; side/rear descend to ears
+            # and nape. This keeps continuous hair mass without creating a mask.
+            drop = (0.155 + 0.075 * max(0.0, sa) - 0.105 * max(0.0, -sa)) * fit.scale
+            vertices.append((
+                fit.center_x + rx * horizontal * ca,
+                fit.center_y + depth * horizontal * sa,
+                top - drop * (1.0 - math.cos(phi)),
+            ))
+    for row in range(rings):
+        a, b = row * radial, (row + 1) * radial
+        for side in range(radial):
+            nxt = (side + 1) % radial
+            mid_angle = 2.0 * math.pi * (side + 0.5) / radial
+            # Keep the upper half of the front crown closed, then open the lower
+            # forehead for the authored fringe.  Removing the entire forward
+            # wedge exposed a white triangular scalp hole in profile/back QA.
+            forward = max(0.0, -math.sin(mid_angle))
+            if row >= rings // 2 and forward > 0.22 and abs(math.cos(mid_angle)) < 0.92:
+                continue
+            faces.append((a + side, a + nxt, b + nxt, b + side))
+    mesh = bpy.data.meshes.new("HAIR_SCALP_SHELL_MESH")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update(calc_edges=True)
+    mesh.materials.append(material)
+    for polygon in mesh.polygons:
+        polygon.use_smooth = True
+    obj = bpy.data.objects.new("HAIR_SCALP_SHELL", mesh)
+    collection.objects.link(obj)
+    _tag_object(obj, "continuous_scalp_shell")
+    group = obj.vertex_groups.new(name="hair_back_01")
+    group.add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
+    return obj
+
+
 def _spec(
     points: Sequence[tuple[float, float, float]],
     widths: Sequence[float],
@@ -533,33 +593,32 @@ def _layout_specs(fit: HairFit) -> dict[str, list[ClumpSpec]]:
         return _spec(points, scaled_widths, scaled_thicknesses, samples=samples)
 
     crown = [
-        clump([c(-0.010, -0.002, 0.013), c(-0.050, -0.030, 0.002), f(-0.078, -0.004, -0.060), side(-1, 0.005, -0.018, -0.125)], [0.014, 0.030, 0.028, 0.001], [0.005, 0.009, 0.008, 0.001]),
-        clump([c(0.010, -0.001, 0.014), c(0.050, -0.026, 0.000), f(0.078, -0.003, -0.055), side(1, 0.005, -0.012, -0.120)], [0.014, 0.030, 0.027, 0.001], [0.005, 0.009, 0.008, 0.001]),
-        clump([c(-0.015, 0.003, 0.016), c(-0.045, 0.040, 0.006), b(-0.072, 0.004, -0.058), side(-1, 0.004, 0.032, -0.145)], [0.015, 0.032, 0.030, 0.001], [0.005, 0.010, 0.009, 0.001]),
-        clump([c(0.015, 0.004, 0.016), c(0.045, 0.041, 0.006), b(0.072, 0.004, -0.058), side(1, 0.004, 0.033, -0.145)], [0.015, 0.032, 0.030, 0.001], [0.005, 0.010, 0.009, 0.001]),
-        clump([c(-0.004, 0.007, 0.019), c(-0.018, 0.058, 0.010), b(-0.030, 0.011, -0.070), b(-0.050, 0.018, -0.170)], [0.016, 0.034, 0.032, 0.001], [0.005, 0.010, 0.009, 0.001]),
-        clump([c(0.004, 0.008, 0.019), c(0.019, 0.059, 0.010), b(0.032, 0.012, -0.070), b(0.052, 0.018, -0.170)], [0.016, 0.034, 0.032, 0.001], [0.005, 0.010, 0.009, 0.001]),
+        clump([c(-0.006, -0.002, 0.008), c(-0.044, -0.020, -0.004), f(-0.072, 0.004, -0.052), side(-1, -0.002, -0.014, -0.118)], [0.016, 0.028, 0.025, 0.001], [0.005, 0.008, 0.007, 0.001]),
+        clump([c(0.010, -0.001, 0.008), c(0.046, -0.018, -0.005), f(0.074, 0.004, -0.050), side(1, -0.002, -0.010, -0.116)], [0.016, 0.028, 0.025, 0.001], [0.005, 0.008, 0.007, 0.001]),
+        clump([c(-0.012, 0.006, 0.009), c(-0.040, 0.036, -0.002), b(-0.068, 0.002, -0.060), side(-1, 0.000, 0.030, -0.142)], [0.017, 0.031, 0.028, 0.001], [0.005, 0.009, 0.008, 0.001]),
+        clump([c(0.012, 0.006, 0.009), c(0.040, 0.036, -0.002), b(0.068, 0.002, -0.060), side(1, 0.000, 0.030, -0.142)], [0.017, 0.031, 0.028, 0.001], [0.005, 0.009, 0.008, 0.001]),
     ]
 
-    # Asymmetric swept fringe follows the sheet's strong side part.  Every panel
-    # ends as a real tapered clump and leaves deliberate gaps around the eyes.
+    # Asymmetric swept fringe follows the sheet's strong side part.  Keep the
+    # upper volume rooted in the crown, but terminate the central panels above
+    # the pupils so both eyes remain readable in front/profile release renders.
     front = [
-        clump([c(0.022, -0.010, 0.012), c(0.004, -0.052, -0.012), f(-0.020, -0.014, -0.060), f(-0.052, -0.018, -0.135), f(-0.072, -0.006, -0.190)], [0.016, 0.031, 0.030, 0.018, 0.001], [0.005, 0.009, 0.008, 0.006, 0.001]),
-        clump([c(0.045, -0.006, 0.005), c(0.038, -0.048, -0.020), f(0.015, -0.016, -0.065), f(-0.010, -0.020, -0.125), f(-0.025, -0.008, -0.170)], [0.014, 0.027, 0.026, 0.015, 0.001], [0.005, 0.008, 0.007, 0.005, 0.001]),
-        clump([c(0.065, -0.001, -0.004), c(0.070, -0.040, -0.035), f(0.060, -0.012, -0.080), f(0.047, -0.009, -0.135)], [0.013, 0.024, 0.018, 0.001], [0.004, 0.008, 0.006, 0.001]),
-        clump([c(-0.012, -0.012, 0.010), c(-0.040, -0.050, -0.018), f(-0.070, -0.012, -0.070), f(-0.092, -0.008, -0.145)], [0.015, 0.028, 0.020, 0.001], [0.005, 0.008, 0.006, 0.001]),
-        clump([c(-0.040, -0.002, 0.000), c(-0.070, -0.035, -0.030), f(-0.094, -0.004, -0.095), side(-1, 0.010, -0.045, -0.180)], [0.013, 0.024, 0.018, 0.001], [0.004, 0.007, 0.006, 0.001]),
-        clump([c(0.008, -0.018, 0.008), f(0.004, 0.004, -0.045), f(0.016, -0.013, -0.095), f(0.025, -0.006, -0.148)], [0.010, 0.018, 0.012, 0.001], [0.004, 0.006, 0.004, 0.001]),
-        clump([c(-0.060, -0.010, -0.006), f(-0.083, 0.000, -0.060), f(-0.103, -0.004, -0.118), f(-0.112, 0.004, -0.165)], [0.010, 0.019, 0.012, 0.001], [0.004, 0.006, 0.004, 0.001]),
+        # One broad side-part sweep replaces the former row of vertical petals.
+        clump([c(0.052, -0.004, 0.006), c(0.028, -0.032, -0.010), f(-0.004, 0.006, -0.044), f(-0.042, 0.012, -0.082), f(-0.082, 0.018, -0.118)], [0.018, 0.034, 0.031, 0.018, 0.001], [0.005, 0.009, 0.008, 0.005, 0.001]),
+        clump([c(0.075, 0.000, -0.003), c(0.068, -0.025, -0.022), f(0.052, 0.010, -0.052), f(0.034, 0.016, -0.092), f(0.020, 0.020, -0.118)], [0.014, 0.025, 0.022, 0.012, 0.001], [0.0045, 0.007, 0.006, 0.004, 0.001]),
+        clump([c(0.018, -0.008, 0.004), c(-0.012, -0.030, -0.012), f(-0.044, 0.010, -0.050), f(-0.078, 0.016, -0.092), f(-0.106, 0.020, -0.126)], [0.015, 0.028, 0.024, 0.013, 0.001], [0.005, 0.008, 0.0065, 0.004, 0.001]),
+        clump([c(-0.040, 0.000, -0.002), c(-0.070, -0.020, -0.026), f(-0.095, 0.012, -0.068), side(-1, 0.002, -0.018, -0.132)], [0.013, 0.023, 0.016, 0.001], [0.004, 0.0065, 0.005, 0.001]),
+        clump([c(0.090, 0.008, -0.012), c(0.098, -0.010, -0.042), side(1, 0.000, -0.018, -0.082), side(1, 0.004, -0.008, -0.120)], [0.010, 0.018, 0.012, 0.001], [0.0035, 0.0055, 0.004, 0.001]),
     ]
 
     temples: dict[str, list[ClumpSpec]] = {"TEMPLE_L": [], "TEMPLE_R": []}
     sides: dict[str, list[ClumpSpec]] = {"SIDE_L": [], "SIDE_R": []}
     for sign, suffix in ((-1.0, "L"), (1.0, "R")):
         temples[f"TEMPLE_{suffix}"] = [
-            clump([side(sign, -0.004, -0.030, -0.090), side(sign, 0.005, -0.055, -0.145), f(sign * 0.103, 0.002, -0.230), f(sign * 0.090, 0.012, -0.315)], [0.015, 0.020, 0.014, 0.001], [0.005, 0.007, 0.005, 0.001]),
-            clump([side(sign, 0.000, -0.005, -0.115), side(sign, 0.012, -0.018, -0.180), c(sign * 0.120, -0.065, -0.260), c(sign * 0.105, -0.050, -0.350)], [0.013, 0.019, 0.013, 0.001], [0.004, 0.006, 0.004, 0.001]),
-            clump([side(sign, 0.002, 0.012, -0.130), side(sign, 0.014, 0.000, -0.195), c(sign * 0.128, -0.028, -0.265)], [0.012, 0.017, 0.001], [0.004, 0.006, 0.001]),
+            # Keep locks outside the cheek plane.  Earlier roots moved inward to
+            # f(x, front_y) and covered the eye/nose silhouette from profile.
+            clump([side(sign, -0.002, -0.016, -0.085), side(sign, 0.004, -0.020, -0.132), side(sign, 0.006, -0.014, -0.190), side(sign, 0.002, -0.006, -0.250)], [0.012, 0.016, 0.011, 0.001], [0.004, 0.0055, 0.004, 0.001]),
+            clump([side(sign, 0.002, 0.004, -0.108), side(sign, 0.009, 0.002, -0.155), side(sign, 0.011, 0.010, -0.205), side(sign, 0.004, 0.018, -0.265)], [0.011, 0.015, 0.010, 0.001], [0.0035, 0.005, 0.0038, 0.001]),
         ]
         sides[f"SIDE_{suffix}"] = [
             clump([side(sign, -0.008, 0.015, -0.095), side(sign, 0.020, 0.030, -0.115), side(sign, 0.065, 0.015, -0.105)], [0.015, 0.023, 0.001], [0.005, 0.008, 0.001]),
@@ -618,44 +677,38 @@ def _layout_specs(fit: HairFit) -> dict[str, list[ClumpSpec]]:
     }
 
 
-def _braid_specs(fit: HairFit, segment_count: int = 12) -> tuple[list[ClumpSpec], list[list[int]], Vector]:
-    """Create alternating overlapping lobes instead of a stack of beads."""
+def _braid_specs(fit: HairFit, segment_count: int = 14) -> tuple[list[ClumpSpec], list[list[int]], Vector]:
+    """Create three continuous interwoven strands fitted close to the back."""
     s = fit.scale
     start_z = fit.crown_z - 0.220 * s
-    segment_length = 0.043 * s
-    base_y = fit.rear_y + 0.049 * s
+    segment_length = 0.034 * s
+    base_y = fit.rear_y + 0.031 * s
     specs: list[ClumpSpec] = []
-    groups: list[list[int]] = []
-    for index in range(segment_count):
-        phase = -1.0 if index % 2 else 1.0
-        taper = 1.0 - 0.045 * index
-        radius = max(0.013 * s, 0.027 * s * taper)
-        center_x = fit.center_x + math.sin(index * 0.58) * 0.005 * s
-        center_y = base_y + math.sin(index * 0.42) * 0.004 * s
-        z_top = start_z - segment_length * index
-        z_bottom = z_top - segment_length * 1.12
-        first_index = len(specs)
-        for lobe_sign in (-1.0, 1.0):
-            weave = phase * lobe_sign
-            points = (
-                (center_x - weave * radius * 0.30, center_y - weave * 0.002 * s, z_top),
-                (center_x + weave * radius * 0.95, center_y + weave * 0.004 * s, z_top - segment_length * 0.46),
-                (center_x + weave * radius * 0.45, center_y + weave * 0.002 * s, z_top - segment_length * 0.78),
-                (center_x - weave * radius * 0.28, center_y, z_bottom),
-            )
-            specs.append(
-                _spec(
-                    points,
-                    (0.004 * s, radius * 0.70, radius * 0.55, 0.001 * s),
-                    (0.003 * s, 0.010 * s * taper, 0.008 * s * taper, 0.001 * s),
-                    samples=4,
-                    sides=8,
-                )
-            )
-        groups.append([first_index, first_index + 1])
+    # The export skeleton deliberately carries five braid bones.  Distribute
+    # all twelve visual weave segments across those supported groups so no
+    # vertex group is silently ignored or falls back to braid_01 at bind time.
+    groups: list[list[int]] = [[] for _ in range(5)]
+    for strand in range(3):
+        phase = strand * (2.0 * math.pi / 3.0)
+        points: list[tuple[float, float, float]] = []
+        widths: list[float] = []
+        thicknesses: list[float] = []
+        for index in range(segment_count + 1):
+            progress = index / segment_count
+            amplitude = (0.020 - 0.007 * progress) * s
+            angle = phase + index * (2.0 * math.pi / 3.0)
+            points.append((
+                fit.center_x + math.cos(angle) * amplitude,
+                base_y + math.sin(angle) * 0.005 * s,
+                start_z - segment_length * index,
+            ))
+            widths.append((0.011 - 0.004 * progress) * s)
+            thicknesses.append((0.0065 - 0.0025 * progress) * s)
+        specs.append(_spec(points, widths, thicknesses, samples=3, sides=8))
+    groups[0].extend(range(len(specs)))
     tail_anchor = Vector(
         (
-            fit.center_x + math.sin(segment_count * 0.58) * 0.005 * s,
+            fit.center_x,
             base_y,
             start_z - segment_length * segment_count,
         )
@@ -1005,7 +1058,9 @@ def build_hair(
     )
 
     layouts = _layout_specs(fit)
-    created: list[bpy.types.Object] = []
+    created: list[bpy.types.Object] = [
+        _scalp_shell(fit, collection, materials["HAIR_CORAL"])
+    ]
     region_names = (
         ("HAIR_CROWN_LAYERS", "CROWN", "layered_crown"),
         ("HAIR_FRONT", "FRONT", "swept_bangs"),

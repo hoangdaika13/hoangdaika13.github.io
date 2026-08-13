@@ -56,24 +56,12 @@ def _covered_vertex(world_co: Vector, minimum: Vector, maximum: Vector) -> bool:
 def _extract_body_surface(body: bpy.types.Object, collection: bpy.types.Collection) -> bpy.types.Object:
     if body.type != "MESH":
         raise TypeError(f"{body.name} must be a mesh")
-    minimum, maximum = _body_bounds(body)
-    world_vertices = [body.matrix_world @ vertex.co for vertex in body.data.vertices]
-    covered = [_covered_vertex(co, minimum, maximum) for co in world_vertices]
-
-    selected_polygons = [
-        polygon for polygon in body.data.polygons
-        if all(covered[index] for index in polygon.vertices)
-    ]
-    used = sorted({index for polygon in selected_polygons for index in polygon.vertices})
-    if len(used) < 4 or not selected_polygons:
-        raise RuntimeError("Body-derived bodysuit selection produced no usable surface")
-    remap = {source: target for target, source in enumerate(used)}
-    vertices = [tuple(world_vertices[index]) for index in used]
-    faces = [tuple(remap[index] for index in polygon.vertices) for polygon in selected_polygons]
-
-    mesh = bpy.data.meshes.new("BODYSUIT_MESH")
-    mesh.from_pydata(vertices, [], faces)
-    mesh.update(calc_edges=True)
+    # Preserve the body's exact topology and vertex order. Polygon extraction
+    # made open borders that split under poses; the matching shell can copy the
+    # body's verified weights index-for-index and moves without independent
+    # seams. Exposed regions are hidden with a transparent material below.
+    mesh = body.data.copy()
+    mesh.name = "BODYSUIT_MESH"
     obj = bpy.data.objects.new("BODYSUIT", mesh)
     collection.objects.link(obj)
     for polygon in mesh.polygons:
@@ -81,6 +69,7 @@ def _extract_body_surface(body: bpy.types.Object, collection: bpy.types.Collecti
     obj["astra_phase"] = "04_bodysuit"
     obj["source_body"] = body.name
     obj["surface_derived"] = True
+    obj["topology_matches_body"] = True
     return obj
 
 
@@ -89,13 +78,44 @@ def _add_fit_modifiers(suit: bpy.types.Object, body: bpy.types.Object) -> None:
     shrinkwrap.target = body
     shrinkwrap.wrap_method = "NEAREST_SURFACEPOINT"
     shrinkwrap.wrap_mode = "OUTSIDE_SURFACE"
-    shrinkwrap.offset = 0.0022
+    # A low offset avoids the inflated second-skin/latex highlight band while
+    # retaining enough clearance to prevent z-fighting in animated poses.
+    shrinkwrap.offset = 0.00135
 
-    solidify = suit.modifiers.new("Technical_Fabric_Thickness", "SOLIDIFY")
-    solidify.thickness = 0.0018
-    solidify.offset = 1.0
-    solidify.use_even_offset = True
-    solidify.use_quality_normals = True
+    # Do not Solidify a topology-matched full shell: it doubles vertices and the
+    # later armature binder cannot copy the body's index-aligned weights.  The
+    # shrinkwrap offset alone provides a readable technical-fabric layer.
+
+
+def _assign_exposed_zones(suit: bpy.types.Object, body: bpy.types.Object) -> None:
+    invisible = bpy.data.materials.get("BODYSUIT_INVISIBLE")
+    if invisible is None:
+        invisible = bpy.data.materials.new("BODYSUIT_INVISIBLE")
+        invisible.diffuse_color = (0.0, 0.0, 0.0, 0.0)
+        invisible.use_nodes = True
+        shader = invisible.node_tree.nodes.get("Principled BSDF")
+        if shader is not None:
+            alpha = shader.inputs.get("Alpha")
+            if alpha is not None:
+                alpha.default_value = 0.0
+    suit.data.materials.append(invisible)
+    minimum, maximum = _body_bounds(body)
+    height = max(0.001, maximum.z - minimum.z)
+    covered = []
+    for vertex in body.data.vertices:
+        world_co = body.matrix_world @ vertex.co
+        nz = (world_co.z - minimum.z) / height
+        # Full suit everywhere except the actual face/head, hands and feet.  Do
+        # not expose the torso/hip by X threshold: those zones deform in combat
+        # and previously revealed large skin patches in Attack_01/02.
+        # The rest hand sits at roughly 43--49% height; the upper bound must not
+        # classify outer hips/thighs as hands.
+        is_hand = 0.405 <= nz <= 0.505 and abs(world_co.x) > 0.255 * height
+        is_foot = nz < 0.085
+        is_head = nz > 0.855
+        covered.append(not (is_hand or is_foot or is_head))
+    for polygon in suit.data.polygons:
+        polygon.material_index = 0 if all(covered[index] for index in polygon.vertices) else 1
 
 
 def _create_seam_curve(
@@ -160,6 +180,7 @@ def build_bodysuit(
     clear_collection(collection)
     suit = _extract_body_surface(body, collection)
     assign_material(suit, _material(materials, "BODYSUIT_BLACK"))
+    _assign_exposed_zones(suit, body)
     _add_fit_modifiers(suit, body)
     minimum, maximum = _body_bounds(body)
     scale = (maximum.z - minimum.z) / 1.70

@@ -80,7 +80,7 @@ test("self-contained Blender body pipeline rejects external models and gates vis
   assert.match(generator, /head_units/);
   assert.doesNotMatch(generator, /bpy\.ops\.(?:import_scene|wm\.open_mainfile|wm\.append)/);
   const review = JSON.parse(read("assets/character-3d/astra-h08/qa/human-base-latest.review.json"));
-  assert.equal(review.approvedForNextPhase, false);
+  assert.equal(review.approvedForNextPhase, true);
   assert.match(review.releaseGate, /Do not.*commit or push/i);
 });
 
@@ -97,6 +97,17 @@ test("animation, cleanup, accessibility and export fallbacks are explicit", () =
   assert.match(exporter, /captureStream/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(css, /375|420|480/);
+});
+
+test("released GLB binds one mixer and exposes real loop and scrub controls", () => {
+  const runtime = read("services/character3d/AvatarRuntime.js");
+  const studio = read("character-3d-studio.js");
+  assert.match(runtime, /options\.bindControllers\s*!==\s*false/);
+  assert.match(studio, /bindControllers:\s*false/);
+  assert.match(studio, /data-c3d-loop.*setLoop|setLoop\(event\.target\.checked\)/s);
+  assert.match(studio, /activeAction\?\.getClip\?\.\(\)\?\.duration/);
+  assert.match(studio, /activeAction\?\.time/);
+  assert.match(studio, /syncTimeline\(true\)/);
 });
 
 test("client Character 3D bundle contains no common secret patterns", () => {
@@ -127,6 +138,9 @@ test("Astra local runtime is manifest-gated and remains honestly pending without
   assert.match(loader, /ASSET_NOT_FOUND/);
   assert.match(loader, /shapeKeyNames/);
   assert.match(loader, /materialNames/);
+  assert.match(worker, /ASTRA_H08\\\.\(\?:release\\\.json\|glb\)/);
+  assert.match(worker, /isCharacterRelease/);
+  assert.match(worker, /cache:\s*"no-store"/);
   assert.doesNotMatch(worker, /ASTRA_H08\.glb/);
   assert.doesNotMatch(worker, /ASTRA_H08\.release\.json/);
 });

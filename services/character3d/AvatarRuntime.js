@@ -232,7 +232,11 @@
       this.modelRoot = root; this.scene.add(root);
       root.position.y = Number.isFinite(root.position.y) ? root.position.y : 0;
       root.traverse?.((object) => { if (object.isMesh) { object.castShadow = QUALITY_PROFILES[this.quality].shadows; object.receiveShadow = true; } });
-      this.animationController?.bind?.(root, options.animations || []).catch?.(() => {});
+      // The studio owns the awaited animation bind so model installation cannot
+      // race a second, fire-and-forget mixer reset on the same controller.
+      if (options.bindControllers !== false) {
+        this.animationController?.bind?.(root, options.animations || []).catch?.(() => {});
+      }
       this.expressionController?.bind?.(root, options.expressionOptions || {});
       if (options.fit !== false && !root.userData?.hhFit) this.fitModel(root, options.fitOptions);
       this.emit("modelchange", { root, report: options.report || null });

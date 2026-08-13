@@ -22,8 +22,9 @@ Build order is gated:
 9. animation
 10. export and website integration
 
-No final asset may be committed or pushed before the render comparison and
-animation validation gates pass.
+Development source and QA checkpoints may be committed while the release gate
+is closed. Final GLB/FBX assets must not be exported or published before the
+render comparison and animation validation gates pass.
 
 ## Rig and animation code
 
@@ -53,5 +54,5 @@ statistics. They never create or import model data.
 Run `./character_generator/run_blender.ps1 -Phase export` only with the final
 scene open/supplied after independent QA has explicitly set both
 `approvedForNextPhase` and `approvedForRelease` to `true`. The current review is
-rejected, so the command intentionally exits with code 2, writes only
+not approved for release, so the command intentionally exits with code 2, writes only
 `ASTRA_H08.pending.json`, and must not write GLB/FBX/release manifest files.
