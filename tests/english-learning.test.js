@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson } = require("../english-learning.js");
+const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit } = require("../english-learning.js");
 const skillGraph = require("../english-skill-graph.js");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -30,6 +30,12 @@ test("CEFR curriculum contains seven levels and sixty-nine complete lessons", ()
       assert.ok(exercise.explanation.length > 20);
     });
   });
+  courseLevels.forEach((level) => level.units.forEach((unit) => {
+    assert.equal(typeof unit.primarySkill, "string", `${level.id}/${unit.id} primary skill`);
+    assert.ok(skillForUnit(unit).length > 0, `${level.id}/${unit.id} safe skill label`);
+  }));
+  assert.equal(skillForUnit({ lessons: [{ primarySkill: "listening" }] }), "listening");
+  assert.equal(skillForUnit({}), "english");
 });
 
 test("Career English provides seventy adaptive seven-day industry tracks", () => {
@@ -289,7 +295,7 @@ test("CEFR 2020 Skill Graph separates domains and reports evidence without claim
 test("HH English Skill Graph assets are versioned and cached offline", () => {
   const loader = fs.readFileSync(path.join(__dirname, "..", "performance-loader.js"), "utf8");
   const worker = fs.readFileSync(path.join(__dirname, "..", "sw.js"), "utf8");
-  for (const asset of ["english-skill-graph.css?v=1", "english-skill-graph.js?v=1", "english-learning.js?v=23"]) {
+  for (const asset of ["english-skill-graph.css?v=1", "english-skill-graph.js?v=1", "english-learning.js?v=24"]) {
     assert.match(loader + worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
 });

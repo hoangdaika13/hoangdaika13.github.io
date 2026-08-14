@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v591";
+const CACHE = "hh-identity-portal-v592";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -473,7 +473,7 @@ const RUNTIME_ASSETS = [
   "./english-for-everyone.js?v=2",
   "./assets/english-vocabulary/manifest.json",
   "./english-skill-graph.js?v=1",
-  "./english-learning.js?v=23",
+  "./english-learning.js?v=24",
   "./japanese-vocabulary-packs.js?v=1",
   "./japanese-vocabulary-10k.js?v=1",
   "./japanese-vietnamese-pack.js?v=1",
@@ -504,7 +504,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=316",
+  "./performance-loader.js?v=317",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=16",
   "./script.js?v=185"

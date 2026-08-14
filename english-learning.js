@@ -181,8 +181,10 @@
   ];
 
   const lessonIds = [];
+  const primarySkillForA0Unit = (unitIndex) => unitIndex === 0 ? "pronunciation" : unitIndex === 1 ? "speaking" : unitIndex === 2 ? "listening" : unitIndex === 3 ? "reading" : "vocabulary";
   const a0Courses = unitSpecs.map((unit, unitIndex) => ({
     ...unit,
+    primarySkill: primarySkillForA0Unit(unitIndex),
     lessons: unit.lessons.map((lesson, lessonIndex) => {
       const id = `a0-${unitIndex + 1}-${lessonIndex + 1}`;
       lessonIds.push(id);
@@ -201,7 +203,7 @@
           points: 20
         };
       });
-      return { id, level: "A0", unitId: unit.id, primarySkill: unitIndex === 0 ? "pronunciation" : unitIndex === 1 ? "speaking" : unitIndex === 2 ? "listening" : unitIndex === 3 ? "reading" : "vocabulary", title: lesson[0], canDo: lesson[1], grammar: lesson[2].trim(), dialogue: lesson[3], vocabulary, exercises, minutes: 10 + lessonIndex * 2, xp: 50 };
+      return { id, level: "A0", unitId: unit.id, primarySkill: primarySkillForA0Unit(unitIndex), title: lesson[0], canDo: lesson[1], grammar: lesson[2].trim(), dialogue: lesson[3], vocabulary, exercises, minutes: 10 + lessonIndex * 2, xp: 50 };
     })
   }));
 
@@ -368,6 +370,7 @@
     return item.lessons.find((lesson) => !state.completed?.[lesson.id]) || item.lessons[0];
   };
   const skillLabels = { listening: "Nghe", speaking: "Nói", reading: "Đọc", writing: "Viết", grammar: "Ngữ pháp", vocabulary: "Từ vựng" };
+  const skillForUnit = (unit) => String(unit?.primarySkill || unit?.lessons?.[0]?.primarySkill || "english");
   const careerStageLabels = { student: "Đang học / khám phá nghề", starter: "Mới vào nghề", specialist: "Đang làm chuyên môn", manager: "Quản lý / dẫn dắt" };
   const careerIntensityLabels = { foundation: "Nền tảng dễ dùng", balanced: "Cân bằng thực hành", advanced: "Chuyên sâu nghề nghiệp" };
   const rotateOptions = (items, offset = 0) => {
@@ -837,11 +840,11 @@
   const learnView = (state) => {
     const levelId = selectedLevelId(state); const level = levelById(levelId); const ids = levelLessonIds(levelId); const done = completedCount(state, levelId);
     const totalMinutes = level.units.flatMap((item) => item.lessons).reduce((sum, item) => sum + item.minutes, 0);
-    return `<section class="hhe-learning"><header class="hhe-section-head"><div><small>${levelId} · ${escapeHtml(level.band.toUpperCase())}</small><h2>Lộ trình học từ A0 đến C2</h2><p>${level.units.length} unit · ${ids.length} bài cấp ${levelId} · khoảng ${Math.max(1, Math.round(totalMinutes / 60))} giờ học tập trung</p></div><span>${levelProgress(state, levelId)}% hoàn thành</span></header>
+    return `<section class="hhe-learning"><header class="hhe-section-head"><div><small>${levelId} · ${escapeHtml(String(level.band || level.name || levelId).toUpperCase())}</small><h2>Lộ trình học từ A0 đến C2</h2><p>${level.units.length} unit · ${ids.length} bài cấp ${levelId} · khoảng ${Math.max(1, Math.round(totalMinutes / 60))} giờ học tập trung</p></div><span>${levelProgress(state, levelId)}% hoàn thành</span></header>
       <section class="hhe-level-picker" aria-label="Chọn trình độ CEFR"><header><div><small>CHỌN ĐIỂM BẮT ĐẦU</small><h3>Mọi cấp độ đều mở</h3><p>Làm bài xếp lớp để nhận gợi ý hoặc tự chọn cấp phù hợp. Bạn luôn có thể quay lại bài dễ hơn.</p></div>${state.placement ? `<span>Gợi ý: ${state.placement.level}</span>` : `<button type="button" data-hhe-view="placement">Xếp lớp miễn phí</button>`}</header><div>${courseLevels.map((item) => `<button type="button" class="${item.id === levelId ? "active" : ""}" style="--level:${item.color}" data-hhe-level="${item.id}" aria-pressed="${item.id === levelId}"><b>${item.id}</b><span>${escapeHtml(item.name)}</span><small>${completedCount(state, item.id)}/${levelLessonIds(item.id).length} bài</small>${state.placement?.level === item.id ? "<i>Đề xuất</i>" : ""}</button>`).join("")}</div></section>
       <section class="hhe-level-intro" style="--level:${level.color}"><div><small>${levelId} CAN DO</small><h3>${escapeHtml(level.description)}</h3><p>${escapeHtml(level.canDo)}</p></div><div><strong>${done}/${ids.length}</strong><span>bài hoàn thành</span></div></section>
       <label class="hhe-course-search"><span>Tìm bài học ${levelId}</span><input type="search" data-hhe-search placeholder="Tìm theo chủ đề hoặc mục tiêu bài học..." autocomplete="off"><kbd>/</kbd></label><p class="hhe-search-empty" data-hhe-search-empty hidden>Không tìm thấy bài phù hợp trong cấp ${levelId}. Hãy thử từ khóa khác.</p>
-      <div class="hhe-unit-list">${level.units.map((item, index) => `<section style="--unit:${item.color}" data-hhe-unit data-search="${escapeHtml(`${item.title} ${item.vi} ${item.primarySkill}`)}"><header><span>${String(index + 1).padStart(2, "0")}</span><div><small>${levelId} · UNIT ${index + 1} · ${escapeHtml(item.primarySkill.toUpperCase())}</small><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.vi)}</p></div><b>${item.lessons.filter((lessonItem) => state.completed[lessonItem.id]).length}/${item.lessons.length}</b></header><div>${item.lessons.map((lessonItem, lessonIndex) => `<button type="button" class="${state.completed[lessonItem.id] ? "done" : ""}" data-hhe-open-lesson="${lessonItem.id}" data-search="${escapeHtml(`${lessonItem.title} ${lessonItem.canDo} ${lessonItem.grammar}`)}"><span>${state.completed[lessonItem.id] ? "✓" : lessonIndex + 1}</span><div><strong>${escapeHtml(lessonItem.title)}</strong><small>${escapeHtml(lessonItem.canDo)}</small></div><b>${lessonItem.minutes}m</b></button>`).join("")}</div></section>`).join("")}</div>
+      <div class="hhe-unit-list">${level.units.map((item, index) => `<section style="--unit:${item.color}" data-hhe-unit data-search="${escapeHtml(`${item.title} ${item.vi} ${skillForUnit(item)}`)}"><header><span>${String(index + 1).padStart(2, "0")}</span><div><small>${levelId} · UNIT ${index + 1} · ${escapeHtml(skillForUnit(item).toUpperCase())}</small><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.vi)}</p></div><b>${item.lessons.filter((lessonItem) => state.completed[lessonItem.id]).length}/${item.lessons.length}</b></header><div>${item.lessons.map((lessonItem, lessonIndex) => `<button type="button" class="${state.completed[lessonItem.id] ? "done" : ""}" data-hhe-open-lesson="${lessonItem.id}" data-search="${escapeHtml(`${lessonItem.title} ${lessonItem.canDo} ${lessonItem.grammar}`)}"><span>${state.completed[lessonItem.id] ? "✓" : lessonIndex + 1}</span><div><strong>${escapeHtml(lessonItem.title)}</strong><small>${escapeHtml(lessonItem.canDo)}</small></div><b>${lessonItem.minutes}m</b></button>`).join("")}</div></section>`).join("")}</div>
       <section class="hhe-open-path"><span>✓</span><div><strong>Không khóa tiến độ</strong><p>Nếu một bài quá khó, bạn có thể đổi cấp hoặc học lại bài trước mà không mất dữ liệu.</p></div><button type="button" data-hhe-view="progress">Xem toàn bộ tiến độ</button></section></section>`;
   };
 
@@ -1672,6 +1675,6 @@
   const handleVoicesChanged = () => { if (host?.querySelector(".hhe-voice-studio")) render(); };
   const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); root.HHEnglishLearningGalaxy?.unmount?.(host); root.HHEnglishVocabulary?.unmount?.(host); root.HHEnglishForEveryone?.unmount?.(host); if (focusTimer) clearInterval(focusTimer); focusTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
 
-  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, galaxyData };
-  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, galaxyData };
+  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit, galaxyData };
+  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit, galaxyData };
 })();

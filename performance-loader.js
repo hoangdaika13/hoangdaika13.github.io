@@ -223,7 +223,7 @@
     },
     english: {
       styles: ["english-learning.css?v=17", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=6", "english-vocabulary.css?v=1", "english-for-everyone.css?v=1", "english-skill-graph.css?v=1"],
-      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=2", "english-learning-galaxy.js?v=4", "english-for-everyone.js?v=2", "english-vocabulary.js?v=1", "english-skill-graph.js?v=1", "english-learning.js?v=23"]
+      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=2", "english-learning-galaxy.js?v=4", "english-for-everyone.js?v=2", "english-vocabulary.js?v=1", "english-skill-graph.js?v=1", "english-learning.js?v=24"]
     },
     japanese: {
       styles: ["japanese-learning.css?v=8", "japanese-os-v3.css?v=4", "japanese-os-v4.css?v=2"],
