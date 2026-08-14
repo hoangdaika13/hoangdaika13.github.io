@@ -66,8 +66,8 @@ test("Admin Galaxy backend returns real, privacy-safe control-plane data", () =>
 });
 
 test("Admin Galaxy cache manifest ships the current assets", () => {
-  assert.match(read("performance-loader.js"), /community-admin\.css\?v=10/);
-  assert.match(read("performance-loader.js"), /community-admin\.js\?v=12/);
+  assert.match(read("performance-loader.js"), /community-admin\.css\?v=11/);
+  assert.match(read("performance-loader.js"), /community-admin\.js\?v=13/);
   assert.match(read("sw.js"), /hh-identity-portal-v\d+/);
-  assert.match(read("index.html"), /performance-loader\.js\?v=53/);
+  assert.match(read("index.html"), /performance-loader\.js\?v=334/);
 });

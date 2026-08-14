@@ -240,8 +240,8 @@
       scripts: ["insights-pro.js?v=7"]
     },
     admin: {
-      styles: ["community-admin.css?v=10"],
-      scripts: ["community-admin.js?v=12"]
+      styles: ["community-admin.css?v=11"],
+      scripts: ["community-admin.js?v=13"]
     },
     support: {
       styles: ["support-platform.css?v=10"],

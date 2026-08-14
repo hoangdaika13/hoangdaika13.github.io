@@ -1,5 +1,11 @@
 const { ObjectId } = require("mongodb");
 const { adminEmails, adminUserIds, clean, currentUser, enforceRateLimit, isOwnerUser, withApi } = require("./platform");
+const { configured: comicWorkerConfiguration, workerHealth } = require("./comic-motion-worker");
+const {
+  approvedManualRecord,
+  publicRightsRecord,
+  trustedApprovalForRecord
+} = require("./comic-motion-rights-admin");
 const {
   PERMISSION_CATALOG,
   ROLE_PERMISSIONS,
@@ -100,7 +106,9 @@ function ensureAdminIndexes(db) {
       db.collection("communityPrivilegeActivations").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
       db.collection("communityApprovalRequests").createIndex({ status: 1, createdAt: -1 }),
       db.collection("communityApprovalRequests").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-      db.collection("communityControlPolicies").createIndex({ key: 1 }, { unique: true })
+      db.collection("communityControlPolicies").createIndex({ key: 1 }, { unique: true }),
+      db.collection("comicMotionRights").createIndex({ reviewStatus: 1, updatedAt: -1 }),
+      db.collection("comicMotionRights").createIndex({ seriesId: 1, chapterId: 1, ownerId: 1 })
     ]).catch((error) => {
       adminIndexesPromise = null;
       throw error;
@@ -466,6 +474,7 @@ async function detectedFindings(db, now = new Date()) {
 
 function runtimeServices({ databaseLatencyMs = 0, failedJobs = 0 } = {}) {
   const objectStorage = Boolean(process.env.BLOB_READ_WRITE_TOKEN || envReady("S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"));
+  const comicWorker = comicWorkerConfiguration();
   return [
     { id: "frontend", name: "Frontend", detail: process.env.VERCEL_ENV ? `Vercel ${process.env.VERCEL_ENV}` : "Static application", status: "operational", latencyMs: 0 },
     { id: "api", name: "Serverless API", detail: "API nội bộ phản hồi", status: "operational", latencyMs: 0 },
@@ -474,7 +483,8 @@ function runtimeServices({ databaseLatencyMs = 0, failedJobs = 0 } = {}) {
     { id: "storage", name: "Object Storage", detail: objectStorage ? "Kho file lớn đã kết nối" : "Đang dùng MongoDB cho dữ liệu nhỏ", status: objectStorage ? "operational" : "warning", latencyMs: 0 },
     { id: "queue", name: "Background Queue", detail: failedJobs ? `${failedJobs} tác vụ lỗi` : "Không có tác vụ lỗi", status: statusFromCount(failedJobs, 1, 5), latencyMs: 0 },
     { id: "cron", name: "Cron Scheduler", detail: process.env.CRON_SECRET ? "Đã bảo vệ bằng secret" : "Chưa xác nhận cấu hình", status: process.env.CRON_SECRET ? "operational" : "warning", latencyMs: 0 },
-    { id: "payos", name: "PayOS Webhook", detail: envReady("PAYOS_CLIENT_ID", "PAYOS_API_KEY", "PAYOS_CHECKSUM_KEY") ? "VietQR sẵn sàng" : "Thiếu cấu hình", status: envReady("PAYOS_CLIENT_ID", "PAYOS_API_KEY", "PAYOS_CHECKSUM_KEY") ? "operational" : "warning", latencyMs: 0 }
+    { id: "payos", name: "PayOS Webhook", detail: envReady("PAYOS_CLIENT_ID", "PAYOS_API_KEY", "PAYOS_CHECKSUM_KEY") ? "VietQR sẵn sàng" : "Thiếu cấu hình", status: envReady("PAYOS_CLIENT_ID", "PAYOS_API_KEY", "PAYOS_CHECKSUM_KEY") ? "operational" : "warning", latencyMs: 0 },
+    { id: "comic-motion-worker", name: "Comic Motion Worker", detail: comicWorker.configured ? "FFmpeg/GPU worker đã cấu hình" : `Thiếu ${comicWorker.missing.join(", ")}`, status: comicWorker.configured ? "operational" : "warning", latencyMs: 0 }
   ];
 }
 
@@ -526,12 +536,13 @@ module.exports = async function handler(req, res) {
       const databaseStartedAt = Date.now();
       await db.command({ ping: 1 });
       const databaseLatencyMs = Date.now() - databaseStartedAt;
-      const [findings, totalUsers, onlineVisitors, pendingReports, pendingAppeals, failedJobs, pendingJobs, recentChanges] = await Promise.all([
+      const [findings, totalUsers, onlineVisitors, pendingReports, pendingAppeals, pendingComicRights, failedJobs, pendingJobs, recentChanges] = await Promise.all([
         detectedFindings(db, now),
         db.collection("users").countDocuments({ status: { $ne: "deleted" } }),
         db.collection("presence").countDocuments({ lastSeenAt: { $gte: presenceSince } }),
         db.collection("communityReports").countDocuments({ status: { $in: ["pending", "escalated"] } }),
         db.collection("communityAppeals").countDocuments({ status: { $in: ["pending", "escalated"] } }),
+        db.collection("comicMotionRights").countDocuments({ reviewStatus: { $in: ["submitted", "unreviewed"] } }),
         db.collection("communityQueueJobs").countDocuments({ status: "failed" }),
         db.collection("communityQueueJobs").countDocuments({ status: { $in: ["queued", "running", "paused"] } }),
         db.collection("communityAdminAuditLogs").find({}, { projection: { action: 1, targetType: 1, targetId: 1, admin: 1, reason: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(8).toArray()
@@ -566,7 +577,7 @@ module.exports = async function handler(req, res) {
           onlineVisitors,
           openIncidents: openFindings.length,
           criticalIncidents: openFindings.filter((item) => item.severity === "critical").length,
-          pendingTrust: pendingReports + pendingAppeals,
+          pendingTrust: pendingReports + pendingAppeals + pendingComicRights,
           pendingJobs,
           failedJobs
         },
@@ -749,7 +760,8 @@ module.exports = async function handler(req, res) {
           youtube: providerState(Boolean(process.env.YOUTUBE_API_KEY), "YouTube Data API"),
           openai: providerState(Boolean(process.env.OPENAI_API_KEYS || process.env.OPENAI_API_KEY), "OpenAI Responses API"),
           gemini: providerState(Boolean(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY), "Google AI"),
-          objectStorage: providerState(Boolean(process.env.BLOB_READ_WRITE_TOKEN || envReady("S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY")), "Vercel Blob hoặc S3/R2")
+          objectStorage: providerState(Boolean(process.env.BLOB_READ_WRITE_TOKEN || envReady("S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY")), "Vercel Blob hoặc S3/R2"),
+          comicMotionWorker: providerState(comicWorkerConfiguration().configured, "FFmpeg/GPU worker cho Comic Motion dài")
         },
         jobs: jobs.map((item) => ({
           id: String(item._id),
@@ -1049,6 +1061,68 @@ module.exports = async function handler(req, res) {
         collection.countDocuments(filter)
       ]);
       return res.status(200).json({ ok: true, items: items.map((item) => ({ ...item, id: String(item._id), _id: undefined })), pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) } });
+    }
+
+    if (req.method === "GET" && view === "comic-rights") {
+      requirePermission(admin, "rights.view");
+      const { limit, page, skip } = pageParams(req.query);
+      const q = clean(req.query.q, 160);
+      const status = clean(req.query.status || "all", 40).toLowerCase();
+      const statusFilter = status === "all" ? {} : ["allowed", "manual-review", "denied", "unknown"].includes(status)
+        ? { status }
+        : { reviewStatus: status };
+      const filter = {
+        ...statusFilter,
+        ...(q ? { $or: [
+          { seriesId: { $regex: escapeRegex(q), $options: "i" } },
+          { chapterId: { $regex: escapeRegex(q), $options: "i" } },
+          { provider: { $regex: escapeRegex(q), $options: "i" } },
+          { licenseCode: { $regex: escapeRegex(q), $options: "i" } },
+          { evidenceId: { $regex: escapeRegex(q), $options: "i" } }
+        ] } : {})
+      };
+      const collection = db.collection("comicMotionRights");
+      const [rows, total, submitted, approved, denied, revoked, health] = await Promise.all([
+        collection.find(filter).sort({ updatedAt: -1, createdAt: -1 }).skip(skip).limit(limit).toArray(),
+        collection.countDocuments(filter),
+        collection.countDocuments({ reviewStatus: { $in: ["submitted", "unreviewed"] } }),
+        collection.countDocuments({ reviewStatus: "approved", revokedAt: null }),
+        collection.countDocuments({ $or: [{ reviewStatus: "denied" }, { status: "denied", revokedAt: null }] }),
+        collection.countDocuments({ $or: [{ reviewStatus: "revoked" }, { revokedAt: { $ne: null } }] }),
+        workerHealth()
+      ]);
+      const items = rows.map(publicRightsRecord);
+      return res.status(200).json({
+        ok: true,
+        items,
+        summary: {
+          total: await collection.countDocuments({}),
+          submitted,
+          approved,
+          denied,
+          revoked,
+          trustedCatalogEligible: items.filter((item) => item.trustedCatalogEligible && item.reviewStatus !== "approved").length
+        },
+        worker: {
+          connected: health.connected === true,
+          status: clean(health.status || "Chưa kết nối", 80),
+          missing: (Array.isArray(health.missing) ? health.missing : []).map((item) => clean(item, 100)).slice(0, 10),
+          checkedAt: health.checkedAt || null,
+          version: clean(health.worker?.version, 80),
+          ffmpeg: health.worker?.ffmpeg === true,
+          queueDepth: Math.max(0, Number(health.worker?.queueDepth || 0)),
+          fallback: clean(health.fallback, 240)
+        },
+        pagination: { page, limit, total, pages: Math.max(1, Math.ceil(total / limit)) },
+        policy: {
+          bulkApproveUnknownSources: false,
+          trustedCatalogCanAutoApprove: true,
+          manualApprovalRequiresEvidenceSha256: true,
+          commercialAndDerivativeRightsRequired: true,
+          worldwideOnly: true,
+          secretsReturned: false
+        }
+      });
     }
 
     if (req.method === "GET" && view === "content") {
@@ -1393,6 +1467,87 @@ module.exports = async function handler(req, res) {
       const after = await collection.findOne({ _id: idOf(targetId) }, { projection: { payload: 0, secret: 0, token: 0 } });
       await writeAdminAudit(db, req, admin, { action: `queue-job:${operation}`, targetType: "queue-job", targetId, reason, before, after });
       return res.status(200).json({ ok: true, operation, jobId: targetId });
+    }
+
+    if (action === "comic-rights:trusted-sync") {
+      requirePermission(admin, "rights.review");
+      const reason = requiredReason(body);
+      const collection = db.collection("comicMotionRights");
+      const candidates = await collection.find({ reviewStatus: { $in: ["submitted", "unreviewed"] }, status: { $in: ["manual-review", "unknown"] }, revokedAt: null }).sort({ updatedAt: -1 }).limit(1000).toArray();
+      const now = new Date();
+      let approvedCount = 0;
+      let jobsReleased = 0;
+      const approvedRecordIds = [];
+      for (const record of candidates) {
+        const approved = trustedApprovalForRecord(record, String(admin._id), now);
+        if (!approved) continue;
+        await collection.updateOne({ _id: record._id, reviewStatus: { $in: ["submitted", "unreviewed"] }, status: { $in: ["manual-review", "unknown"] }, revokedAt: null }, { $set: { ...approved, updatedAt: now } });
+        const released = await db.collection("comicMotionJobs").updateMany(
+          { ownerId: String(record.ownerId), seriesId: record.seriesId, chapterId: record.chapterId, status: "blocked-rights" },
+          { $set: { status: "draft", currentStage: "draft", rights: approved, blocker: null, statusReason: "Quyền đã được xác minh từ trusted catalog; chờ Render Worker hoặc thao tác tiếp tục.", updatedAt: now } }
+        );
+        jobsReleased += Number(released.modifiedCount || 0);
+        approvedCount += 1;
+        approvedRecordIds.push(String(record._id));
+        await db.collection("comicMotionAuditEvents").insertOne({ type: "rights:trusted-approved", ownerId: String(record.ownerId), seriesId: record.seriesId, chapterId: record.chapterId, provider: record.provider, reviewerId: String(admin._id), createdAt: now, updatedAt: now });
+      }
+      await writeAdminAudit(db, req, admin, {
+        action,
+        targetType: "comic-rights-catalog",
+        targetId: "trusted-server-manifest",
+        reason,
+        before: { candidateCount: candidates.length },
+        after: { approvedCount, jobsReleased, approvedRecordIds: approvedRecordIds.slice(0, 100) }
+      });
+      return res.status(200).json({ ok: true, approvedCount, skippedCount: candidates.length - approvedCount, jobsReleased, policy: "Chỉ bản ghi khớp trusted catalog phía máy chủ được tự duyệt." });
+    }
+
+    if (["comic-rights:approve", "comic-rights:deny", "comic-rights:revoke"].includes(action)) {
+      requirePermission(admin, "rights.review");
+      const recordId = idOf(body.recordId);
+      const collection = db.collection("comicMotionRights");
+      const beforeDoc = recordId ? await collection.findOne({ _id: recordId }) : null;
+      if (!beforeDoc) return res.status(404).json({ error: "Không tìm thấy hồ sơ quyền Comic Motion." });
+      const reason = requiredReason(body);
+      const now = new Date();
+      const before = publicRightsRecord(beforeDoc);
+      let next;
+      if (action === "comic-rights:approve") {
+        if (beforeDoc.revokedAt || beforeDoc.reviewStatus === "revoked") return res.status(409).json({ error: "Hồ sơ đã bị thu hồi; hãy tạo hồ sơ bằng chứng mới thay vì ghi đè quyết định cũ." });
+        next = approvedManualRecord(beforeDoc, body, String(admin._id), now);
+        await collection.updateOne({ _id: recordId, revokedAt: null }, { $set: { ...next, reviewReason: reason, updatedAt: now } });
+        await db.collection("comicMotionJobs").updateMany(
+          { ownerId: String(beforeDoc.ownerId), seriesId: beforeDoc.seriesId, chapterId: beforeDoc.chapterId, status: "blocked-rights" },
+          { $set: { status: "draft", currentStage: "draft", rights: next, blocker: null, statusReason: "Quyền đã được quản trị viên xác minh; chờ Render Worker hoặc thao tác tiếp tục.", updatedAt: now } }
+        );
+      } else {
+        const revoked = action === "comic-rights:revoke";
+        next = {
+          status: "denied",
+          reviewStatus: revoked ? "revoked" : "denied",
+          reviewerId: String(admin._id),
+          reviewedAt: now,
+          revokedAt: revoked ? now : null,
+          reviewMethod: "manual-admin-decision",
+          reviewReason: reason,
+          reasonCode: revoked ? "RIGHTS_REVOKED" : "RIGHTS_DENIED_BY_REVIEW",
+          reasons: [reason],
+          updatedAt: now
+        };
+        await collection.updateOne({ _id: recordId }, { $set: next });
+        await db.collection("comicMotionJobs").updateMany(
+          { ownerId: String(beforeDoc.ownerId), seriesId: beforeDoc.seriesId, chapterId: beforeDoc.chapterId, status: { $nin: ["completed", "cancelled", "failed", "blocked-rights"] } },
+          { $set: { status: "blocked-rights", currentStage: "blocked-rights", rights: { ...beforeDoc, ...next }, statusReason: reason, updatedAt: now } }
+        );
+        await db.collection("comicMotionArtifacts").updateMany(
+          { ownerId: String(beforeDoc.ownerId), seriesId: beforeDoc.seriesId, chapterId: beforeDoc.chapterId, hiddenAt: null },
+          { $set: { hiddenAt: now, hiddenReason: reason, updatedAt: now } }
+        );
+      }
+      const afterDoc = await collection.findOne({ _id: recordId });
+      await db.collection("comicMotionAuditEvents").insertOne({ type: action.replace("comic-rights:", "rights:"), ownerId: String(beforeDoc.ownerId), seriesId: beforeDoc.seriesId, chapterId: beforeDoc.chapterId, provider: beforeDoc.provider, reviewerId: String(admin._id), reason, createdAt: now, updatedAt: now });
+      await writeAdminAudit(db, req, admin, { action, targetType: "comic-rights", targetId: String(recordId), reason, before, after: publicRightsRecord(afterDoc) });
+      return res.status(200).json({ ok: true, rights: publicRightsRecord(afterDoc) });
     }
 
     if (["user:status", "user:verify", "user:revoke-sessions", "user:roles", "user:feature-access"].includes(action)) {

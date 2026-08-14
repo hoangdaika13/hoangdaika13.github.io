@@ -10,6 +10,8 @@
   let activityTimer = 0;
   let userQuery = {};
   let contentQuery = { type: "post", status: "active" };
+  let rightsQuery = { status: "all", page: 1 };
+  let rightsEntries = [];
   let auditEntries = [];
   let auditQuery = {};
   let featureFlags = [];
@@ -42,6 +44,7 @@
     reports: "trust",
     appeals: "trust",
     content: "trust",
+    rights: "trust",
     platform: "platform",
     settings: "platform",
     growth: "growth"
@@ -463,7 +466,7 @@
       ...openAppeals.map((item) => ({ ...item, kind: "appeals", label: "Kháng nghị" }))
     ].sort((left, right) => new Date(left.createdAt || 0) - new Date(right.createdAt || 0)).slice(0, 16).map((item) => `<article><i>${item.kind === "reports" ? "!" : "↺"}</i><span><small>${esc(item.label)} · ${esc(item.targetType || "Hồ sơ")}</small><strong>${esc(item.category || item.reason || "Yêu cầu kiểm duyệt")}</strong><p>${esc(item.description || item.message || "Không có mô tả")}</p></span><div><b class="${esc(item.status || "pending")}">${esc(item.status || "pending")}</b><time>${dateText(item.createdAt)}</time>${has(item.kind === "reports" ? "reports.manage" : "appeals.manage") ? `<button type="button" data-admin-resolve="${esc(item.id)}" data-kind="${item.kind}">Xử lý</button>` : ""}</div></article>`).join("") || '<p class="hh-admin-empty">Không có hồ sơ cần xử lý.</p>';
     const previews = contentItems.slice(0, 8).map((item) => `<article><header><span><strong>${esc(item.author?.name || "Thành viên HH")}</strong><small>${dateText(item.createdAt)} · ${esc(item.privacy || "public")}</small></span><b>${esc(item.mediaType || "post")}</b></header><p>${esc(item.content || "Nội dung media")}</p><footer><button type="button" data-admin-view="content">Mở kiểm duyệt</button></footer></article>`).join("") || '<p class="hh-admin-empty">Chưa có nội dung.</p>';
-    const content = `${subnav([["trust", "Trust Queue"], ["reports", "Reports", "reports.manage"], ["appeals", "Appeals", "appeals.manage"], ["content", "Nội dung", "content.manage"]])}
+    const content = `${subnav([["trust", "Trust Queue"], ["reports", "Reports", "reports.manage"], ["appeals", "Appeals", "appeals.manage"], ["content", "Nội dung", "content.manage"], ["rights", "Quyền Comic Motion", "rights.view"]])}
       <section class="hh-admin-trust-metrics">${metrics}</section>
       <section class="hh-admin-trust-grid">
         <article class="hh-admin-unified-queue"><header><span><small>UNIFIED DECISION QUEUE</small><strong>Report và kháng nghị</strong></span><b>${openReports.length + openAppeals.length} chờ</b></header><div>${queue}</div></article>
@@ -477,7 +480,7 @@
     panelRef.innerHTML = shell(loading(), view === "reports" ? "Quản lý báo cáo" : "Quản lý kháng nghị");
     const data = await api(view, { query: { status: "all" } });
     const rows = (data.items || []).map((item) => `<article><header><span><small>${esc(item.targetType || "Hồ sơ")}</small><strong>${esc(item.category || item.reason || "Yêu cầu kiểm duyệt")}</strong></span><b class="hh-admin-status ${esc(item.status || "pending")}">${esc(item.status || "pending")}</b></header><p>${esc(item.description || item.message || "Không có mô tả")}</p><footer><time>${dateText(item.createdAt)}</time>${["pending","escalated"].includes(item.status || "pending") ? `<button type="button" data-admin-resolve="${esc(item.id)}" data-kind="${view}">Xử lý</button>` : ""}</footer></article>`).join("") || '<p class="hh-admin-empty">Không có hồ sơ trong hàng đợi.</p>';
-    panelRef.innerHTML = shell(`${subnav([["trust", "Trust Queue"], ["reports", "Reports", "reports.manage"], ["appeals", "Appeals", "appeals.manage"], ["content", "Nội dung", "content.manage"]])}<section class="hh-admin-queue">${rows}</section>`, view === "reports" ? "Quản lý báo cáo" : "Quản lý kháng nghị", "Phân loại, xử lý và lưu lịch sử quyết định.");
+    panelRef.innerHTML = shell(`${subnav([["trust", "Trust Queue"], ["reports", "Reports", "reports.manage"], ["appeals", "Appeals", "appeals.manage"], ["content", "Nội dung", "content.manage"], ["rights", "Quyền Comic Motion", "rights.view"]])}<section class="hh-admin-queue">${rows}</section>`, view === "reports" ? "Quản lý báo cáo" : "Quản lý kháng nghị", "Phân loại, xử lý và lưu lịch sử quyết định.");
   }
 
   function resolveRecord(id, kind) {
@@ -492,12 +495,113 @@
     const removed = contentQuery.status === "removed";
     const rows = (data.items || []).map((item) => `<article><header><span><strong>${esc(item.author?.name || "Thành viên HH")}</strong><small>${dateText(item.createdAt)} · ${esc(item.privacy || "public")}${item.moderation?.mode ? ` · ${esc(item.moderation.mode)}` : ""}</small></span><div>${removed ? `<button type="button" data-admin-content-action="restore" data-content-id="${esc(item.id)}" data-content-type="${esc(data.type)}">Khôi phục</button>` : `<button type="button" data-admin-content-action="limit" data-content-id="${esc(item.id)}" data-content-type="${esc(data.type)}">Giới hạn phân phối</button><button class="danger" type="button" data-admin-content-action="remove" data-content-id="${esc(item.id)}" data-content-type="${esc(data.type)}">Gỡ nội dung</button>`}</div></header><p>${esc(item.content || "Nội dung media")}</p></article>`).join("") || '<p class="hh-admin-empty">Không có nội dung cần hiển thị.</p>';
     const toolbar = `<form class="hh-admin-toolbar" data-admin-content-filter><select name="type"><option value="post" ${contentQuery.type === "post" ? "selected" : ""}>Bài viết</option><option value="story" ${contentQuery.type === "story" ? "selected" : ""}>Tin</option></select><select name="status"><option value="active" ${contentQuery.status !== "removed" ? "selected" : ""}>Đang hoạt động</option><option value="removed" ${contentQuery.status === "removed" ? "selected" : ""}>Đã gỡ</option></select><button type="submit">Áp dụng</button></form>`;
-    panelRef.innerHTML = shell(`${subnav([["trust", "Trust Queue"], ["reports", "Reports", "reports.manage"], ["appeals", "Appeals", "appeals.manage"], ["content", "Nội dung", "content.manage"]])}${toolbar}<section class="hh-admin-content-list">${rows}</section>`, "Quản lý nội dung", "Giới hạn phân phối, gỡ hoặc khôi phục bằng soft delete và lưu đầy đủ lý do.");
+    panelRef.innerHTML = shell(`${subnav([["trust", "Trust Queue"], ["reports", "Reports", "reports.manage"], ["appeals", "Appeals", "appeals.manage"], ["content", "Nội dung", "content.manage"], ["rights", "Quyền Comic Motion", "rights.view"]])}${toolbar}<section class="hh-admin-content-list">${rows}</section>`, "Quản lý nội dung", "Giới hạn phân phối, gỡ hoặc khôi phục bằng soft delete và lưu đầy đủ lý do.");
   }
 
   function moderateContent(id, type, mode) {
     const dialog = modal("Kiểm duyệt nội dung", '<label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>', mode === "remove" ? "Gỡ nội dung" : "Khôi phục");
     dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const reason = new FormData(event.currentTarget).get("reason"); try { await api("action", { method: "POST", body: { action: "content:moderate", targetId: id, targetType: type, mode, reason } }); dialog.close(); dialog.remove(); notice("Nội dung đã được cập nhật và ghi audit log."); await renderContent(); } catch (error) { notice(error.message, "error"); } });
+  }
+
+  async function renderRights(query = {}) {
+    rightsQuery = { ...rightsQuery, ...query };
+    panelRef.innerHTML = shell(loading("Đang đối chiếu hồ sơ quyền và Render Worker..."), "Quyền Comic Motion");
+    const data = await api("comic-rights", { query: rightsQuery });
+    rightsEntries = data.items || [];
+    const summary = data.summary || {};
+    const worker = data.worker || {};
+    const metrics = [
+      ["Tổng hồ sơ", summary.total, "▦"],
+      ["Chờ kiểm tra", summary.submitted, "◇"],
+      ["Đã duyệt", summary.approved, "✓"],
+      ["Từ chối", summary.denied, "×"],
+      ["Đã thu hồi", summary.revoked, "!"],
+      ["Trusted có thể đồng bộ", summary.trustedCatalogEligible, "↻"]
+    ].map(([label, value, icon]) => `<article><i>${icon}</i><small>${esc(label)}</small><strong>${Number(value || 0).toLocaleString("vi-VN")}</strong></article>`).join("");
+    const missing = (worker.missing || []).map((item) => `<code>${esc(item)}</code>`).join("");
+    const workerCard = `<section class="hh-admin-rights-worker ${worker.connected ? "connected" : "disconnected"}">
+      <header><span><small>COMIC MOTION RENDER WORKER</small><strong>${worker.connected ? "Đã kết nối và xác minh" : "Chưa kết nối"}</strong></span><b><i></i>${esc(worker.status || "Chưa kết nối")}</b></header>
+      <div><span><small>FFmpeg</small><strong>${worker.ffmpeg ? "Sẵn sàng" : "Chưa xác nhận"}</strong></span><span><small>Phiên bản</small><strong>${esc(worker.version || "-")}</strong></span><span><small>Queue</small><strong>${Number(worker.queueDepth || 0)}</strong></span><span><small>Kiểm tra</small><strong>${dateText(worker.checkedAt)}</strong></span></div>
+      ${missing ? `<p>Thiếu cấu hình Vercel: ${missing}</p>` : ""}
+      ${worker.fallback ? `<p>${esc(worker.fallback)}</p>` : ""}
+      <footer><button type="button" data-admin-rights-worker-test>Kiểm tra lại kết nối</button><button type="button" data-admin-route="/davinci-resolve/comic-motion">Mở Comic Motion</button></footer>
+    </section>`;
+    const rows = rightsEntries.map((item) => {
+      const evidenceReady = Boolean(item.evidenceUrl && item.evidenceHash && item.evidenceId);
+      const canReview = has("rights.review");
+      const approved = item.reviewStatus === "approved" && !item.revokedAt;
+      return `<article class="hh-admin-rights-record ${esc(item.status)}">
+        <header><span><small>${esc(item.provider || "imported")} · ${esc(item.licenseCode)}</small><strong>${esc(item.seriesId || "Chưa có series")}</strong><code>${esc(item.chapterId || "Toàn bộ series")}</code></span><b class="hh-admin-status ${esc(item.reviewStatus)}">${esc(item.reviewStatus || item.status)}</b></header>
+        <div class="hh-admin-rights-facts"><span><small>Thương mại</small><strong>${item.commercialUseAllowed ? "Có" : "Chưa"}</strong></span><span><small>Phái sinh</small><strong>${item.derivativesAllowed ? "Có" : "Chưa"}</strong></span><span><small>Lãnh thổ</small><strong>${esc(item.territory || "Chưa rõ")}</strong></span><span><small>Bằng chứng</small><strong>${evidenceReady ? "Đủ metadata" : "Chưa đủ"}</strong></span></div>
+        <p>${esc((item.reasons || [])[0] || item.attributionText || "Chưa có ghi chú kiểm duyệt.")}</p>
+        <footer><div>${item.sourceUrl ? `<a href="${esc(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">Nguồn gốc ↗</a>` : ""}${item.evidenceUrl ? `<a href="${esc(item.evidenceUrl)}" target="_blank" rel="noopener noreferrer">Bằng chứng ↗</a>` : ""}${item.licenseUrl ? `<a href="${esc(item.licenseUrl)}" target="_blank" rel="noopener noreferrer">Giấy phép ↗</a>` : ""}</div>${canReview ? `<nav>${!approved ? `<button type="button" data-admin-rights-action="approve" data-rights-id="${esc(item.id)}">Duyệt có bằng chứng</button><button type="button" data-admin-rights-action="deny" data-rights-id="${esc(item.id)}">Từ chối</button>` : `<button class="danger" type="button" data-admin-rights-action="revoke" data-rights-id="${esc(item.id)}">Thu hồi</button>`}</nav>` : ""}</footer>
+      </article>`;
+    }).join("") || '<p class="hh-admin-empty">Chưa có hồ sơ quyền Comic Motion phù hợp bộ lọc.</p>';
+    const pagination = data.pagination || {};
+    const filters = `<form class="hh-admin-toolbar hh-admin-rights-filter" data-admin-rights-filter><label><span>⌕</span><input name="q" value="${esc(rightsQuery.q || "")}" placeholder="Series, chapter, provider, license"></label><select name="status">${[["all","Mọi trạng thái"],["submitted","Chờ kiểm tra"],["approved","Đã duyệt"],["denied","Từ chối"],["revoked","Thu hồi"],["manual-review","Cần duyệt thủ công"]].map(([value,label]) => `<option value="${value}" ${rightsQuery.status === value ? "selected" : ""}>${label}</option>`).join("")}</select><button type="submit">Lọc hồ sơ</button>${has("rights.review") ? '<button type="button" data-admin-rights-trusted-sync>Đồng bộ mục đạt trusted preflight</button>' : ""}</form>`;
+    const content = `${subnav([["trust", "Trust Queue"], ["reports", "Reports", "reports.manage"], ["appeals", "Appeals", "appeals.manage"], ["content", "Nội dung", "content.manage"], ["rights", "Quyền Comic Motion", "rights.view"]])}
+      <section class="hh-admin-trust-metrics hh-admin-rights-metrics">${metrics}</section>
+      ${workerCard}
+      <section class="hh-admin-rights-policy"><i>⚖</i><span><strong>Không duyệt hàng loạt nguồn không rõ quyền</strong><small>Đồng bộ tự động chỉ áp dụng bản ghi khớp manifest tin cậy phía máy chủ. OTruyen, MangaDex, Unknown, NC, ND và repository license vẫn bị cách ly.</small></span></section>
+      ${filters}
+      <section class="hh-admin-rights-list">${rows}</section>
+      <footer class="hh-admin-pagination"><span>${Number(pagination.total || 0).toLocaleString("vi-VN")} hồ sơ</span><div><button type="button" data-admin-rights-page="${Math.max(1, Number(pagination.page || 1) - 1)}" ${Number(pagination.page || 1) <= 1 ? "disabled" : ""}>Trước</button><b>${Number(pagination.page || 1)}/${Number(pagination.pages || 1)}</b><button type="button" data-admin-rights-page="${Math.min(Number(pagination.pages || 1), Number(pagination.page || 1) + 1)}" ${Number(pagination.page || 1) >= Number(pagination.pages || 1) ? "disabled" : ""}>Sau</button></div></footer>`;
+    panelRef.innerHTML = shell(content, "Comic Rights Review Console", "Đối chiếu quyền chuyển thể, bằng chứng, trạng thái worker và audit trước khi bất kỳ chương nào được render.");
+  }
+
+  function reviewComicRights(recordId, mode) {
+    const item = rightsEntries.find((entry) => String(entry.id) === String(recordId));
+    if (!item) return notice("Không tìm thấy hồ sơ quyền trong trang hiện tại.", "error");
+    if (mode !== "approve") {
+      const dialog = modal(mode === "revoke" ? "Thu hồi quyền Comic Motion" : "Từ chối hồ sơ quyền", `<section class="wide hh-admin-rights-decision"><p>${esc(item.seriesId)} · ${esc(item.chapterId || "toàn bộ series")}</p><label><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label></section>`, mode === "revoke" ? "Thu hồi và chặn job" : "Từ chối và chặn job");
+      dialog.querySelector("form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const done = beginFormSubmission(event.currentTarget);
+        if (!done) return;
+        try {
+          const reason = new FormData(event.currentTarget).get("reason");
+          await api("action", { method: "POST", body: { action: `comic-rights:${mode}`, recordId, reason } });
+          dialog.close(); dialog.remove(); notice(mode === "revoke" ? "Đã thu hồi quyền, chặn job và ẩn artifact liên quan." : "Đã từ chối hồ sơ và chặn job liên quan.");
+          await renderRights();
+        } catch (error) { done(); notice(error.message, "error"); }
+      });
+      return;
+    }
+    const licenseOptions = ["CC0-1.0","CC-BY-2.0","CC-BY-2.5","CC-BY-3.0","CC-BY-4.0","CC-BY-SA-3.0","CC-BY-SA-4.0","OWNED"].map((value) => `<option value="${value}" ${item.licenseCode === value ? "selected" : ""}>${value}</option>`).join("");
+    const dialog = modal("Duyệt quyền bằng chứng", `<section class="wide hh-admin-rights-review-form"><div class="hh-admin-rights-warning"><i>!</i><span><strong>Quyết định pháp lý có audit</strong><small>Chỉ duyệt sau khi đã mở và đối chiếu trang nguồn, giấy phép, tác giả và file bằng chứng. Không nhập hash giả.</small></span></div><label><span>Mã giấy phép</span><select name="licenseCode">${licenseOptions}</select></label><label><span>Tác giả/chủ sở hữu</span><input name="author" maxlength="240" value="${esc(item.author || "")}" required></label><label class="wide"><span>URL nguồn HTTPS</span><input name="sourceUrl" type="url" value="${esc(item.sourceUrl || "")}" required></label><label class="wide"><span>URL giấy phép chuẩn</span><input name="licenseUrl" type="url" value="${esc(item.licenseUrl || "")}" placeholder="https://creativecommons.org/licenses/by/4.0/"></label><label class="wide"><span>URL bằng chứng đã lưu</span><input name="evidenceUrl" type="url" value="${esc(item.evidenceUrl || "")}" required></label><label><span>Mã hồ sơ bằng chứng</span><input name="evidenceId" maxlength="160" value="${esc(item.evidenceId || "")}" required></label><label><span>SHA-256 bằng chứng</span><input name="evidenceHash" pattern="[A-Fa-f0-9]{64}" maxlength="64" value="${esc(item.evidenceHash || "")}" required></label><label class="wide"><span>Nội dung ghi công</span><textarea name="attributionText" maxlength="2000">${esc(item.attributionText || "")}</textarea></label><section class="wide hh-admin-rights-checks"><label><input type="checkbox" name="commercialUseAllowed" ${item.commercialUseAllowed ? "checked" : ""}><span>Cho phép thương mại</span></label><label><input type="checkbox" name="derivativesAllowed" ${item.derivativesAllowed ? "checked" : ""}><span>Cho phép phái sinh/video</span></label><label><input type="checkbox" name="redistributionAllowed" ${item.redistributionAllowed ? "checked" : ""}><span>Cho phép phân phối</span></label></section><label class="wide"><span>Lý do quyết định</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label></section>`, "Duyệt và mở khóa job");
+    dialog.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const done = beginFormSubmission(event.currentTarget);
+      if (!done) return;
+      const form = new FormData(event.currentTarget);
+      const body = Object.fromEntries(form);
+      body.action = "comic-rights:approve";
+      body.recordId = recordId;
+      body.territory = "worldwide";
+      body.commercialUseAllowed = form.has("commercialUseAllowed");
+      body.derivativesAllowed = form.has("derivativesAllowed");
+      body.redistributionAllowed = form.has("redistributionAllowed");
+      try {
+        await api("action", { method: "POST", body });
+        dialog.close(); dialog.remove(); notice("Hồ sơ đã được duyệt, ghi decision hash và mở khóa job bị chặn.");
+        await renderRights();
+      } catch (error) { done(); notice(error.message, "error"); }
+    });
+  }
+
+  async function syncTrustedComicRights() {
+    const dialog = modal("Đồng bộ trusted preflight", '<section class="wide hh-admin-rights-decision"><p>Máy chủ chỉ duyệt các bản ghi khớp manifest nguồn chính thức đã được kiểm tra. Mọi nguồn còn lại tiếp tục ở trạng thái chờ duyệt.</p><label><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000">Đồng bộ các bản ghi khớp trusted catalog phía máy chủ</textarea></label></section>', "Đồng bộ an toàn");
+    dialog.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const done = beginFormSubmission(event.currentTarget);
+      if (!done) return;
+      try {
+        const reason = new FormData(event.currentTarget).get("reason");
+        const data = await api("action", { method: "POST", body: { action: "comic-rights:trusted-sync", reason } });
+        dialog.close(); dialog.remove(); notice(`Đã duyệt ${Number(data.approvedCount || 0)} hồ sơ trusted; bỏ qua ${Number(data.skippedCount || 0)} hồ sơ chưa đủ bằng chứng.`);
+        await renderRights();
+      } catch (error) { done(); notice(error.message, "error"); }
+    });
   }
 
   async function renderAudit(query = {}) {
@@ -767,6 +871,7 @@
       ["identity", "Identity & Access", "Vai trò và danh tính Google"],
       ["users", "Tìm người dùng", "Khóa, xác minh và thu hồi phiên"],
       ["security", "Security Findings", "Điều tra cảnh báo production"],
+      ["rights", "Comic Rights Console", "Bằng chứng, giấy phép và Render Worker"],
       ["platform", "Platform & Release", "Deployment, queue và provider"],
       ["audit", "Tamper-evident Audit", "Lọc hành động trước/sau"],
       ["growth", "Growth & Data", "PayOS, funnel và AI usage"]
@@ -833,6 +938,7 @@
     if (view === "trust") return renderTrust();
     if (["reports", "appeals"].includes(view)) return renderQueue(view);
     if (view === "content") return renderContent();
+    if (view === "rights") return renderRights();
     if (view === "platform") return renderPlatform();
     if (view === "growth") return renderGrowth();
     if (view === "audit") return renderAudit();
@@ -889,6 +995,10 @@
     const page = event.target.closest("[data-admin-users-page]"); if (page) { await renderUsers({ page: page.dataset.adminUsersPage }); return; }
     const resolve = event.target.closest("[data-admin-resolve]"); if (resolve) { resolveRecord(resolve.dataset.adminResolve, resolve.dataset.kind); return; }
     const content = event.target.closest("[data-admin-content-action]"); if (content) { moderateContent(content.dataset.contentId, content.dataset.contentType, content.dataset.adminContentAction); return; }
+    const rightsAction = event.target.closest("[data-admin-rights-action]"); if (rightsAction) { reviewComicRights(rightsAction.dataset.rightsId, rightsAction.dataset.adminRightsAction); return; }
+    const rightsPage = event.target.closest("[data-admin-rights-page]"); if (rightsPage) { await renderRights({ page: rightsPage.dataset.adminRightsPage }).catch((error) => notice(error.message, "error")); return; }
+    if (event.target.closest("[data-admin-rights-trusted-sync]")) { syncTrustedComicRights(); return; }
+    if (event.target.closest("[data-admin-rights-worker-test]")) { await renderRights().catch((error) => notice(error.message, "error")); return; }
     const incident = event.target.closest("[data-admin-incident]"); if (incident) { updateIncident(incident.dataset.adminIncident, incident.dataset.incidentStatus, incident.dataset.incidentAssignee); return; }
     const job = event.target.closest("[data-admin-job]"); if (job) { updateJob(job.dataset.adminJob, job.dataset.jobOperation); return; }
     const setting = event.target.closest("[data-admin-setting]"); if (setting) { updateSetting(setting.dataset.adminSetting); return; }
@@ -911,6 +1021,12 @@
     if (contentForm) {
       event.preventDefault();
       await renderContent(Object.fromEntries(new FormData(contentForm))).catch((error) => notice(error.message, "error"));
+      return;
+    }
+    const rightsForm = event.target.closest("[data-admin-rights-filter]");
+    if (rightsForm) {
+      event.preventDefault();
+      await renderRights({ ...Object.fromEntries(new FormData(rightsForm)), page: 1 }).catch((error) => notice(error.message, "error"));
       return;
     }
     const auditForm = event.target.closest("[data-admin-audit-filter]");

@@ -17,7 +17,7 @@
     "test:youtube-publisher": "node --test tests/youtube-publisher-contract.test.js tests/youtube-creator-galaxy.test.js tests/youtube-security.test.js",
     "test:ai-video": "node --test tests/ai-video-remake-*.test.js",
     "test:comic-motion": "node --test tests/comic-motion-studio.test.js tests/comic-reader-hub.test.js tests/comic-otruyen-provider.test.js tests/comic-mangadex-provider.test.js tests/comic-open-books-provider.test.js",
-    "test:comic-library-bridge": "node --test tests/comic-library-bridge.test.js tests/comic-motion-handoff.test.js tests/comic-motion-batch.test.js tests/comic-motion-rights.test.js tests/comic-motion-worker-security.test.js tests/comic-motion-reader-integration.test.js",
+    "test:comic-library-bridge": "node --test tests/comic-library-bridge.test.js tests/comic-motion-handoff.test.js tests/comic-motion-batch.test.js tests/comic-motion-rights.test.js tests/comic-motion-rights-admin.test.js tests/comic-motion-worker-security.test.js tests/comic-motion-reader-integration.test.js",
     "test:music-galaxy": "node --test tests/music-galaxy-contract.test.js tests/music-production-suite-integration.test.js tests/music-ai-studio-contract.test.js",
     "test:learning": "node --test tests/hh-school-*.test.js",
     "migrate:hh-school": "node scripts/migrate-hh-school.js",

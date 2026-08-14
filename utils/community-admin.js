@@ -51,12 +51,12 @@ const POWER_PERMISSIONS = Object.freeze([
 
 const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
-  super_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.roles", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export", ...POWER_PERMISSIONS],
-  admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
+  super_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.roles", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "rights.view", "rights.review", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export", ...POWER_PERMISSIONS],
+  admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "users.features", "sessions.revoke", "content.manage", "reports.manage", "appeals.manage", "rights.view", "rights.review", "platform.view", "platform.manage", "growth.view", "config.manage", "flags.manage", "templates.manage", "audit.view", "reports.export"],
   security_admin: ["dashboard.view", "incidents.view", "incidents.manage", "security.view", "privacy.view", "activity.view", "users.view", "users.moderate", "sessions.revoke", "platform.view", "audit.view", "audit.network.view", "reports.export", "permissions.simulate", "privileges.activate", "approvals.request", "security.waf.manage", "security.rate-limits.manage", "security.network-blocks.manage", "security.providers.disable", "observability.view", "observability.logs.view", "observability.traces.view", "observability.alerts.manage"],
   release_manager: ["dashboard.view", "incidents.view", "platform.view", "platform.manage", "config.manage", "flags.manage", "audit.view", "reports.export", "permissions.simulate", "privileges.activate", "approvals.request", "platform.deployments.view", "platform.production.promote", "platform.production.rollback", "platform.cron.manage", "platform.webhooks.manage", "platform.maintenance.manage", "observability.view"],
-  content_moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
-  moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "audit.view"],
+  content_moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "rights.view", "audit.view"],
+  moderator: ["dashboard.view", "activity.view", "users.view", "content.manage", "reports.manage", "appeals.manage", "rights.view", "audit.view"],
   support: ["dashboard.view", "incidents.view", "users.view", "users.moderate", "reports.manage", "appeals.manage"],
   analyst: ["dashboard.view", "privacy.view", "activity.view", "users.view", "growth.view", "audit.view", "reports.export", "observability.view"]
 });
@@ -88,7 +88,9 @@ const PERMISSION_LABELS = Object.freeze({
   "payments.refunds.approve": "Phê duyệt hoàn tiền",
   "observability.slo.manage": "Quản lý SLO",
   "content.publishing.lock": "Khóa phát hành nội dung",
-  "ai.budgets.manage": "Quản lý ngân sách AI"
+  "ai.budgets.manage": "Quản lý ngân sách AI",
+  "rights.view": "Xem hồ sơ quyền Comic Motion",
+  "rights.review": "Duyệt, từ chối và thu hồi quyền Comic Motion"
 });
 const allPermissionIds = [...new Set(Object.values(ROLE_PERMISSIONS).flat().filter((permission) => permission !== "*"))].sort();
 const permissionGroup = (permission) => {
@@ -113,6 +115,7 @@ const permissionGroup = (permission) => {
     content: "Content",
     reports: "Content",
     appeals: "Content",
+    rights: "Content",
     observability: "Observability",
     audit: "Observability",
     activity: "Observability",

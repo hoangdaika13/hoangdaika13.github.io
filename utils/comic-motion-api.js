@@ -1,6 +1,6 @@
 "use strict";
 
-const { createHash, randomUUID } = require("node:crypto");
+const { randomUUID } = require("node:crypto");
 const { clean, enforceRateLimit } = require("./platform");
 const { evaluateRights } = require("./comic-motion-rights");
 const {
@@ -13,30 +13,9 @@ const {
   workerHealth, dispatchWorkerJob, applyWorkerCallback, getWorkerManifest
 } = require("./comic-motion-worker");
 const { adapterFor } = require("./comic-motion-adapters");
+const { trustedRightsForSeries } = require("./comic-motion-trusted-catalog");
 
 const PUBLIC_WORKER_ACTIONS = new Set(["worker-job-callback"]);
-const TRUSTED_OPEN_COMICS = Object.freeze({
-  "github-open:pepper-and-carrot": Object.freeze({
-    status: "allowed",
-    licenseCode: "CC-BY-4.0",
-    licenseVersion: "4.0",
-    licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
-    sourceUrl: "https://github.com/ollm/OpenComic/tree/master/Pepper%20%26%20Carrot",
-    author: "David Revoy",
-    artist: "David Revoy",
-    commercialUseAllowed: true,
-    derivativesAllowed: true,
-    redistributionAllowed: true,
-    territory: "worldwide",
-    attributionText: "Pepper & Carrot © David Revoy · CC BY 4.0 · bản mẫu từ ollm/OpenComic",
-    evidenceId: "hh-open-catalog:pepper-and-carrot:v1",
-    evidenceHash: createHash("sha256").update("https://github.com/ollm/OpenComic/tree/master/Pepper%20%26%20Carrot|CC-BY-4.0|David Revoy").digest("hex"),
-    evidenceCapturedAt: new Date("2026-08-14T00:00:00.000Z"),
-    reviewerId: "hh-open-catalog-v1",
-    reviewStatus: "approved",
-    reviewedAt: new Date("2026-08-14T00:00:00.000Z")
-  })
-});
 
 function ownerIdOf(user) {
   return user?._id ? String(user._id) : "";
@@ -59,7 +38,7 @@ function isTrustedRightsRecord(record) {
 }
 
 async function verifiedRightsFor(db, ownerId, series, chapters = []) {
-  if (TRUSTED_OPEN_COMICS[series.id]) return TRUSTED_OPEN_COMICS[series.id];
+  if (trustedRightsForSeries(series.id)) return trustedRightsForSeries(series.id);
   if (!chapters.length) return null;
   const records = await Promise.all(chapters.map((chapter) => db.collection("comicMotionRights").findOne({ ownerId: String(ownerId), seriesId: series.id, chapterId: chapter.id })));
   if (!records.every(isTrustedRightsRecord)) return null;
@@ -176,7 +155,7 @@ async function rightsCheck(db, ownerId, body) {
   const seriesId = clean(body.seriesId || body.series?.id, 180);
   const chapterId = clean(body.chapterId || body.chapter?.id, 180);
   const existing = seriesId ? await db.collection("comicMotionRights").findOne({ ownerId: String(ownerId), seriesId, chapterId }) : null;
-  const trusted = TRUSTED_OPEN_COMICS[seriesId] || (isTrustedRightsRecord(existing) ? existing : null);
+  const trusted = trustedRightsForSeries(seriesId) || (isTrustedRightsRecord(existing) ? existing : null);
   const rights = evaluateRights(trusted || body.rights || {}, {
     provider, sourceType, commercialMode: body.commercialMode !== false,
     requireEvidence: true, trustedReview: Boolean(trusted)
