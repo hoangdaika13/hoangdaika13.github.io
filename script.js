@@ -5306,6 +5306,7 @@ function initAppShell() {
     return routeParts[0] === "create" && creativeOSViews.has(routeParts[1]);
   };
   const musicAIPageItems = [
+    { id: "autopilot", icon: "AP", section: "Bắt đầu", title: "HH Music Autopilot", description: "Từ brief đến 3 preview, full song, kiểm âm, master, Rights Pack và handoff xuất bản", route: "/music-ai/autopilot" },
     { id: "studio", icon: "ST", section: "Bắt đầu", title: "Music Production Studio", description: "DAW tạo nhạc AI thống nhất từ ý tưởng tới xuất bản", route: "/music-ai/studio" },
     { id: "musical-brain", icon: "MB", section: "Trí tuệ âm nhạc", title: "HH Musical Brain", description: "BPM, tone, hợp âm, cấu trúc và Song DNA", route: "/music-ai/musical-brain" },
     { id: "audio-midi", icon: "M2", section: "Trí tuệ âm nhạc", title: "Audio-to-MIDI 2.0", description: "Nhận diện note, hợp âm, quantize và MIDI export", route: "/music-ai/audio-midi" },
@@ -5439,7 +5440,7 @@ function initAppShell() {
       icon: "♫",
       accent: "#72eadb",
       route: "/music-ai",
-      landingRoute: "/music-ai/studio",
+      landingRoute: "/music-ai/autopilot",
       items: [],
       pages: musicAIPlanetItems
     },
@@ -6101,6 +6102,7 @@ function initAppShell() {
     if (route !== "/system") window.HHSystemPlatform?.unmount?.();
     if (!(route === "/work" || workGalaxyPageItems.some((item) => item.route === route))) window.HHWorkCenter?.unmount?.();
     if (route !== "/music-ai" && !route.startsWith("/music-ai/")) {
+      window.HHMusicAutopilot?.unmount?.();
       window.HHMusicAIStudio?.unmount?.();
       window.HHMusicProductionSuite?.unmount?.();
     }
@@ -6286,14 +6288,19 @@ function initAppShell() {
       });
       else mountSimpleView("HH Japanese", "Đang tải Từ điển, Kanji và lộ trình JLPT...", "");
     } else if (route === "/music-ai" || route.startsWith("/music-ai/")) {
-      const musicView = parts[1] || "studio";
+      const musicView = parts[1] || "autopilot";
       const musicPage = musicAIAllPageItems.find((item) => item.id === musicView) || musicAIPageItems[0];
       const musicPlanet = musicAIPlanetItems.find((item) => musicItemMatchesRoute(item, route));
       const musicTitle = musicPlanet && musicPlanet.id !== musicView ? `${musicPlanet.title} · ${musicPage.title}` : musicPage.title;
       updatePageHeader(musicTitle, musicPage.description, route);
-      pageActions.innerHTML = `<button type="button" data-app-route="/music-ai/studio">Music Galaxy</button>${musicPlanet ? `<button class="app-primary-action" type="button" data-app-route="${musicPlanet.route}">${musicPlanet.icon} · ${musicPlanet.title}</button>` : ""}`;
+      pageActions.innerHTML = `<button type="button" data-app-route="/music-ai/studio">Music Galaxy</button><button class="app-primary-action" type="button" data-app-route="/music-ai/autopilot">AP · Autopilot</button>${musicPlanet ? `<button type="button" data-app-route="${musicPlanet.route}">${musicPlanet.icon} · ${musicPlanet.title}</button>` : ""}`;
       workspace.innerHTML = '<div data-music-ai-studio-host></div>';
-      if (window.HHMusicProductionSuite?.supports?.(musicView)) {
+      if (musicView === "autopilot" && window.HHMusicAutopilot?.mount) {
+        window.HHMusicAIStudio?.unmount?.();
+        window.HHMusicProductionSuite?.unmount?.();
+        window.HHMusicAutopilot.mount(workspace.firstElementChild);
+      } else if (window.HHMusicProductionSuite?.supports?.(musicView)) {
+        window.HHMusicAutopilot?.unmount?.();
         window.HHMusicAIStudio?.unmount?.();
         window.HHMusicProductionSuite.mount(workspace.firstElementChild, {
           view: musicView,
@@ -6304,6 +6311,7 @@ function initAppShell() {
           }
         });
       } else if (window.HHMusicAIStudio?.mount) {
+        window.HHMusicAutopilot?.unmount?.();
         window.HHMusicProductionSuite?.unmount?.();
         window.HHMusicAIStudio.mount(workspace.firstElementChild, { view: musicView });
       }

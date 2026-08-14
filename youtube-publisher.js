@@ -70,6 +70,36 @@
     return String(user?.id || user?._id || "guest").replace(/[^a-z0-9_-]/gi, "").slice(0, 80) || "guest";
   }
 
+  function currentAutopilotOwnerId() {
+    const runtimeUser = window.HHAuthz?.currentUser?.();
+    let user = runtimeUser;
+    if (!user) {
+      try { user = JSON.parse(localStorage.getItem("hh-auth-user") || "null"); }
+      catch { user = null; }
+    }
+    return String(user?._id || user?.id || user?.email || "guest")
+      .toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "guest";
+  }
+
+  function takeAutopilotHandoff() {
+    if (window.HHMusicAutopilotHandoff && typeof window.HHMusicAutopilotHandoff === "object") {
+      const value = window.HHMusicAutopilotHandoff;
+      window.HHMusicAutopilotHandoff = null;
+      return value;
+    }
+    const prefix = "hh.music-autopilot.youtube-handoff.v1:";
+    const keys = [...new Set([`${prefix}${currentAutopilotOwnerId()}`, `${prefix}${currentIdentityId()}`])];
+    for (const key of keys) {
+      try {
+        const value = JSON.parse(sessionStorage.getItem(key) || "null");
+        if (!value || typeof value !== "object") continue;
+        sessionStorage.removeItem(key);
+        return value;
+      } catch {}
+    }
+    return null;
+  }
+
   function currentChannelId() {
     return String(status?.channel?.id || "unassigned").replace(/[^a-z0-9_-]/gi, "").slice(0, 120) || "unassigned";
   }
@@ -236,9 +266,16 @@
 
   function seedFromMusicProject(force = false) {
     const pack = options.pack || {};
-    if (force || !draft.title) draft.title = String(pack.title || "").slice(0, 100);
-    if (force || !draft.description) draft.description = String(pack.description || "").slice(0, 5000);
-    if (force || !draft.tags) draft.tags = String(pack.tags || "").slice(0, 480);
+    const handoff = takeAutopilotHandoff();
+    const source = { ...pack, ...(handoff || {}) };
+    if (handoff || force || !draft.title) draft.title = String(source.title || "").slice(0, 100);
+    if (handoff || force || !draft.description) draft.description = String(source.description || "").slice(0, 5000);
+    if (handoff || force || !draft.tags) draft.tags = String(source.tags || "").slice(0, 480);
+    if (handoff) {
+      draft.containsSyntheticMedia = source.containsSyntheticMedia !== false;
+      if (["private", "unlisted", "public", "schedule"].includes(source.privacyMode)) draft.privacyMode = source.privacyMode;
+      draft.publishAt = String(source.publishAt || "").slice(0, 40);
+    }
     saveDraft();
   }
 

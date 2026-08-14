@@ -10,13 +10,14 @@ test("Music AI is a standalone DAW route with primary workspaces and specialized
   const shell = read("script.js");
   assert.match(shell, /id: "music-ai"/);
   assert.match(shell, /label: "Làm nhạc AI"/);
-  for (const route of ["studio", "composer", "lyrics", "arrange", "record", "mix", "master", "video", "publish", "stems", "vocal", "sound-design", "image-music", "realtime-jam", "visualizer", "rights"]) {
+  for (const route of ["autopilot", "studio", "composer", "lyrics", "arrange", "record", "mix", "master", "video", "publish", "stems", "vocal", "sound-design", "image-music", "realtime-jam", "visualizer", "rights"]) {
     assert.match(shell, new RegExp(`/music-ai/${route}`));
   }
   assert.match(shell, /HHMusicProductionSuite\.mount/);
   assert.match(shell, /HHMusicAIStudio\.mount/);
   assert.match(shell, /app-music-ai-route/);
-  assert.match(shell, /landingRoute: "\/music-ai\/studio"/);
+  assert.match(shell, /landingRoute: "\/music-ai\/autopilot"/);
+  assert.match(shell, /HHMusicAutopilot\.mount/);
   assert.match(shell, /const musicAIPageItems =/);
   assert.match(shell, /const musicAILegacyPageItems =/);
 });
@@ -120,7 +121,7 @@ test("Music AI assets are loaded by the page and offline worker", () => {
   const index = read("index.html");
   const worker = read("sw.js");
   const loader = read("performance-loader.js");
-  for (const asset of ["music-production-suite.css?v=5", "music-production-suite.js?v=7", "creative-os-core.js?v=4", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1", "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=2", "music-publishing-rights.js?v=1", "music-ai-studio.css?v=6", "music-ai-apps.css?v=2", "music-ai-apps.js?v=3", "music-ai-studio.js?v=9", "youtube-publisher.css?v=2", "youtube-publisher.js?v=2", "script.js?v=145", "app-shell.css?v=54"]) {
+  for (const asset of ["music-production-suite.css?v=5", "music-production-suite.js?v=7", "creative-os-core.js?v=4", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1", "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=2", "music-publishing-rights.js?v=1", "music-autopilot.css?v=2", "music-autopilot-core.js?v=2", "music-autopilot.js?v=2", "music-ai-studio.css?v=6", "music-ai-apps.css?v=2", "music-ai-apps.js?v=3", "music-ai-studio.js?v=9", "youtube-publisher.css?v=4", "youtube-publisher.js?v=9", "script.js?v=186", "app-shell.css?v=54"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index + worker + loader, pattern);
   }

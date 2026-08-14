@@ -92,6 +92,44 @@ const imageTextBatchSchema = {
   },
   required: ["items"]
 };
+const musicAutopilotPlanSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    concept: { type: "string", description: "Creative direction nguyên bản, không bắt chước nghệ sĩ hoặc bài hát cụ thể." },
+    genre: { type: "string", description: "Thể loại và nhánh phong cách." },
+    mood: { type: "string", description: "Cảm xúc và đường cong năng lượng." },
+    bpm: { type: "integer", description: "BPM mục tiêu từ 35 đến 220." },
+    musicalKey: { type: "string", description: "Tông hoặc thang âm đề xuất." },
+    language: { type: "string", description: "Ngôn ngữ lời hát." },
+    instrumental: { type: "boolean", description: "True nếu không có giọng hát." },
+    lyrics: { type: "string", description: "Lời nguyên bản có nhãn section; để trống cho instrumental." },
+    structure: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          name: { type: "string" },
+          durationSeconds: { type: "integer" },
+          direction: { type: "string" },
+          energy: { type: "integer" }
+        },
+        required: ["name", "durationSeconds", "direction", "energy"]
+      }
+    },
+    musicPrompt: { type: "string", description: "Prompt sản xuất nhạc gồm BPM, nhạc cụ, cấu trúc, vocals và negative directions." },
+    negativePrompt: { type: "string", description: "Những đặc điểm phải tránh." },
+    artworkPrompt: { type: "string", description: "Prompt key visual không chứa logo, watermark hoặc nhân vật có bản quyền." },
+    motionPrompt: { type: "string", description: "Prompt visualizer hoặc loop video điện ảnh." },
+    titles: { type: "array", items: { type: "string" } },
+    description: { type: "string" },
+    tags: { type: "array", items: { type: "string" } },
+    chapters: { type: "array", items: { type: "string" } },
+    rightsWarnings: { type: "array", items: { type: "string" } }
+  },
+  required: ["concept", "genre", "mood", "bpm", "musicalKey", "language", "instrumental", "lyrics", "structure", "musicPrompt", "negativePrompt", "artworkPrompt", "motionPrompt", "titles", "description", "tags", "chapters", "rightsWarnings"]
+};
 const youtubeBatchMetadataSchema = {
   type: "object",
   additionalProperties: false,
@@ -186,6 +224,7 @@ function schemaForAction(actionType) {
   if (actionType === "design-plan") return designPlanSchema;
   if (["image-text-batch", "image-text-youtube-batch"].includes(actionType)) return imageTextBatchSchema;
   if (actionType === "youtube-batch-metadata") return youtubeBatchMetadataSchema;
+  if (actionType === "music-autopilot-plan") return musicAutopilotPlanSchema;
   return null;
 }
 
@@ -316,7 +355,7 @@ function requestIp(req) {
   return clean(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "guest").split(",")[0], 120);
 }
 
-const musicMediaActions = new Set(["music-image", "design-image", "music-track", "music-sfx", "music-video-start", "music-video-status"]);
+const musicMediaActions = new Set(["music-image", "design-image", "music-track", "music-lyria", "music-sfx", "music-video-start", "music-video-status"]);
 
 function musicProviderStatus(user) {
   const geminiConfigured = geminiKeys().length > 0;
@@ -327,8 +366,11 @@ function musicProviderStatus(user) {
       concept: { configured: geminiConfigured, provider: "Gemini", model: process.env.GEMINI_MODEL || "gemini-3.5-flash", capabilities: ["brief", "prompt-pack", "metadata", "research"] },
       image: { configured: geminiConfigured, provider: "Gemini Images", model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image", capabilities: ["text-to-image", "reference-image", "16:9", "1K-4K"] },
       video: { configured: geminiConfigured, provider: "Google Veo", model: process.env.GEMINI_VIDEO_MODEL || "veo-3.1-fast-generate-preview", capabilities: ["text-to-video", "image-to-video", "16:9", "9:16", "720p-4K"] },
-      music: { configured: Boolean(clean(process.env.ELEVENLABS_API_KEY, 400)), provider: "Eleven Music", model: process.env.ELEVEN_MUSIC_MODEL || "music_v2", capabilities: ["instrumental", "vocals", "3-120s", "mp3-48k"] },
+      lyria: { configured: geminiConfigured, provider: "Gemini Lyria", model: process.env.GEMINI_LYRIA_MODEL || "lyria-3-clip-preview", capabilities: ["clip-30s", "full-song", "vocals", "timed-lyrics", "image-to-music", "SynthID"] },
+      music: { configured: Boolean(clean(process.env.ELEVENLABS_API_KEY, 400)), provider: "Eleven Music", model: process.env.ELEVEN_MUSIC_MODEL || "music_v2", capabilities: ["instrumental", "vocals", "3-120s-direct", "composition-plan", "inpainting", "C2PA"] },
       sound: { configured: Boolean(clean(process.env.ELEVENLABS_API_KEY, 400)), provider: "Eleven Sound Effects", model: process.env.ELEVEN_SFX_MODEL || "eleven_text_to_sound_v2", capabilities: ["ambience", "foley", "one-shot", "loop", "0.5-30s"] },
+      stems: { configured: Boolean(clean(process.env.MUSIC_STEM_API_URL, 1000)), provider: "Demucs Worker", model: "htdemucs", capabilities: ["vocals", "drums", "bass", "other", "karaoke", "acapella"] },
+      realtime: { configured: geminiConfigured, experimental: true, provider: "Lyria RealTime", model: "lyria-realtime-exp", capabilities: ["websocket", "weighted-prompts", "bpm", "density", "live-steering"] },
       renderer: { configured: true, cloudConfigured: Boolean(clean(process.env.MUSIC_RENDER_API_URL, 1000)), provider: "Local FFmpeg", model: "FFmpeg", capabilities: ["batch-script", "long-form", "1080p-4K", "local-files"] }
     }
   };
@@ -438,26 +480,37 @@ async function generateMusicTrack(body) {
   const outputFormat = new Set(["mp3_48000_192", "mp3_44100_128"]).has(meta.outputFormat) ? meta.outputFormat : "mp3_48000_192";
   const compositionPlan = Array.isArray(meta.compositionPlan?.chunks)
     ? {
-        chunks: meta.compositionPlan.chunks.slice(0, 30).map((chunk) => ({
-          text: clean(chunk?.text, 4000),
-          duration_ms: Math.min(120000, Math.max(3000, Number(chunk?.duration_ms || chunk?.durationMs || 15000))),
-          positive_styles: (Array.isArray(chunk?.positive_styles) ? chunk.positive_styles : []).slice(0, 50).map((item) => clean(item, 100)).filter(Boolean),
-          negative_styles: (Array.isArray(chunk?.negative_styles) ? chunk.negative_styles : []).slice(0, 50).map((item) => clean(item, 100)).filter(Boolean),
-          context_adherence: new Set(["low", "medium", "high"]).has(chunk?.context_adherence) ? chunk.context_adherence : "high"
-        })).filter((chunk) => chunk.text)
+        chunks: meta.compositionPlan.chunks.slice(0, 30).map((chunk) => {
+          const songId = clean(chunk?.song_id || chunk?.songId, 240);
+          const startMs = Math.max(0, Number(chunk?.range?.start_ms ?? chunk?.range?.startMs ?? 0));
+          const endMs = Math.max(startMs + 50, Number(chunk?.range?.end_ms ?? chunk?.range?.endMs ?? 0));
+          if (songId && endMs > startMs) return { song_id: songId, range: { start_ms: startMs, end_ms: Math.min(startMs + 120000, endMs) } };
+          const conditioningId = clean(chunk?.conditioning_ref?.song_id || chunk?.conditioningRef?.songId, 240);
+          const conditioningStart = Math.max(0, Number(chunk?.conditioning_ref?.range?.start_ms ?? chunk?.conditioningRef?.range?.startMs ?? 0));
+          const conditioningEnd = Math.min(conditioningStart + 30000, Math.max(conditioningStart + 50, Number(chunk?.conditioning_ref?.range?.end_ms ?? chunk?.conditioningRef?.range?.endMs ?? 0)));
+          return {
+            text: clean(chunk?.text, 4000),
+            duration_ms: Math.min(120000, Math.max(3000, Number(chunk?.duration_ms || chunk?.durationMs || 15000))),
+            positive_styles: (Array.isArray(chunk?.positive_styles) ? chunk.positive_styles : []).slice(0, 50).map((item) => clean(item, 100)).filter(Boolean),
+            negative_styles: (Array.isArray(chunk?.negative_styles) ? chunk.negative_styles : []).slice(0, 50).map((item) => clean(item, 100)).filter(Boolean),
+            context_adherence: new Set(["low", "medium", "high"]).has(chunk?.context_adherence) ? chunk.context_adherence : "high",
+            ...(conditioningId && conditioningEnd > conditioningStart ? { conditioning_ref: { song_id: conditioningId, range: { start_ms: conditioningStart, end_ms: conditioningEnd } }, condition_strength: new Set(["low", "medium", "high", "xhigh"]).has(chunk?.condition_strength) ? chunk.condition_strength : "high" } : {})
+          };
+        }).filter((chunk) => chunk.song_id || chunk.text)
       }
     : null;
   const seed = Number.isInteger(Number(meta.seed)) ? Math.min(2147483647, Math.max(0, Number(meta.seed))) : undefined;
   if (meta.compositionPlan && !compositionPlan?.chunks.length) throw providerError("Composition plan không có section hợp lệ.", 400, "MUSIC_PLAN_INVALID");
   if (!prompt && !compositionPlan?.chunks.length) throw providerError("Hãy nhập prompt nhạc hoặc composition plan trước khi tạo track.", 400, "MUSIC_PROMPT_REQUIRED");
   const requestBody = compositionPlan?.chunks.length
-    ? { composition_plan: compositionPlan, model_id: process.env.ELEVEN_MUSIC_MODEL || "music_v2", sign_with_c2pa: true }
+    ? { composition_plan: compositionPlan, model_id: process.env.ELEVEN_MUSIC_MODEL || "music_v2", sign_with_c2pa: true, store_for_inpainting: meta.storeForInpainting !== false }
     : {
         prompt,
         music_length_ms: durationMs,
         model_id: process.env.ELEVEN_MUSIC_MODEL || "music_v2",
         force_instrumental: meta.instrumental !== false,
-        sign_with_c2pa: true
+        sign_with_c2pa: true,
+        store_for_inpainting: meta.storeForInpainting !== false
       };
   if (seed !== undefined) requestBody.seed = seed;
   const response = await fetch(`https://api.elevenlabs.io/v1/music?output_format=${outputFormat}`, {
@@ -472,7 +525,68 @@ async function generateMusicTrack(body) {
   }
   const bytes = Buffer.from(await response.arrayBuffer());
   if (!bytes.length || bytes.length > 3_100_000) throw providerError("Track vượt giới hạn truyền tải của Vercel. Hãy giảm thời lượng xuống 60 giây.", 413, "MUSIC_OUTPUT_TOO_LARGE");
-  return { ok: true, media: { kind: "audio", data: bytes.toString("base64"), mimeType: response.headers.get("content-type") || "audio/mpeg", durationSeconds: compositionPlan ? compositionPlan.chunks.reduce((sum, chunk) => sum + chunk.duration_ms, 0) / 1000 : durationMs / 1000, model: process.env.ELEVEN_MUSIC_MODEL || "music_v2", songId: clean(response.headers.get("song-id"), 240), compositionPlan: Boolean(compositionPlan), c2paRequested: true } };
+  const compositionDurationMs = compositionPlan?.chunks.reduce((sum, chunk) => {
+    const explicitDuration = Number(chunk.duration_ms);
+    const referenceDuration = Number(chunk?.range?.end_ms) - Number(chunk?.range?.start_ms);
+    return sum + (Number.isFinite(explicitDuration) && explicitDuration > 0
+      ? explicitDuration
+      : Number.isFinite(referenceDuration) && referenceDuration > 0 ? referenceDuration : 0);
+  }, 0);
+  return { ok: true, media: { kind: "audio", data: bytes.toString("base64"), mimeType: response.headers.get("content-type") || "audio/mpeg", durationSeconds: compositionPlan ? compositionDurationMs / 1000 : durationMs / 1000, model: process.env.ELEVEN_MUSIC_MODEL || "music_v2", songId: clean(response.headers.get("song-id"), 240), compositionPlan: Boolean(compositionPlan), c2paRequested: true } };
+}
+
+function interactionAudio(data) {
+  const direct = data?.output_audio || data?.outputAudio;
+  if (direct?.data) return { data: String(direct.data), mimeType: clean(direct.mime_type || direct.mimeType || "audio/mpeg", 80) };
+  for (const step of data?.steps || []) {
+    for (const block of step?.content || []) {
+      if (block?.type === "audio" && block.data) return { data: String(block.data), mimeType: clean(block.mime_type || block.mimeType || "audio/mpeg", 80) };
+    }
+  }
+  return null;
+}
+
+function interactionText(data) {
+  if (typeof data?.output_text === "string") return clean(data.output_text, 16000);
+  if (typeof data?.outputText === "string") return clean(data.outputText, 16000);
+  return (data?.steps || []).flatMap((step) => step?.content || []).filter((block) => block?.type === "text").map((block) => clean(block.text, 12000)).filter(Boolean).join("\n");
+}
+
+function lyriaReferenceImages(meta = {}) {
+  const list = Array.isArray(meta.referenceImages) ? meta.referenceImages : [];
+  let total = 0;
+  return list.slice(0, 10).map((item) => {
+    const mimeType = clean(item?.mimeType, 80).toLowerCase();
+    const data = String(item?.data || "").replace(/^data:[^;]+;base64,/, "");
+    total += data.length;
+    if (!/^image\/(jpeg|png|webp)$/.test(mimeType) || !/^[a-z0-9+/=\r\n]+$/i.test(data) || data.length > 1_500_000 || total > 2_600_000) return null;
+    return { type: "image", mime_type: mimeType, data };
+  }).filter(Boolean);
+}
+
+async function generateLyriaTrack(body) {
+  const prompt = clean(body.input || body.prompt, 12000);
+  if (!prompt) throw providerError("Hãy nhập music brief hoặc lời bài hát trước khi dùng Lyria.", 400, "LYRIA_PROMPT_REQUIRED");
+  const meta = body.meta || {};
+  const model = meta.model === "lyria-3-pro-preview" ? "lyria-3-pro-preview" : "lyria-3-clip-preview";
+  const references = lyriaReferenceImages(meta);
+  return withGeminiMediaKey(async (apiKey) => {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({ model, input: references.length ? [{ type: "text", text: prompt }, ...references] : prompt, ...(model === "lyria-3-pro-preview" && meta.wav === true ? { response_format: { type: "audio" } } : {}) }),
+      signal: AbortSignal.timeout(model === "lyria-3-pro-preview" ? 55000 : 35000)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = providerError(data?.error?.message || `Lyria HTTP ${response.status}.`, response.status, "LYRIA_ERROR");
+      error.status = response.status;
+      throw error;
+    }
+    const audio = interactionAudio(data);
+    if (!audio?.data || audio.data.length > 3_100_000) throw providerError("Audio Lyria rỗng hoặc vượt giới hạn truyền tải trực tiếp; hãy dùng Clip hoặc worker lưu trữ.", 413, "LYRIA_OUTPUT_TOO_LARGE");
+    return { ok: true, media: { kind: "audio", data: audio.data, mimeType: audio.mimeType, durationSeconds: model === "lyria-3-clip-preview" ? 30 : 0, model, lyrics: interactionText(data), synthIdExpected: true, estimatedCostUsd: model === "lyria-3-clip-preview" ? 0.04 : 0.08, interactionId: clean(data.id, 240) } };
+  });
 }
 
 async function generateMusicSoundEffect(body) {
@@ -614,11 +728,12 @@ async function musicMediaAction(req, res) {
     let result;
     if (actionType === "music-image" || actionType === "design-image") result = await generateMusicImage(body);
     else if (actionType === "music-track") result = await generateMusicTrack(body);
+    else if (actionType === "music-lyria") result = await generateLyriaTrack(body);
     else if (actionType === "music-sfx") result = await generateMusicSoundEffect(body);
     else if (actionType === "music-video-start") result = await startMusicVideo(body);
     else if (actionType === "music-video-status") result = await musicVideoStatus(body);
     else return res.status(400).json({ error: "Tác vụ media không được hỗ trợ." });
-    await db.collection("events").insertOne({ type: actionType === "design-image" ? "graphic-design:media" : "music-ai:media", actionType, userId: user._id, provider: actionType === "music-track" ? "eleven-music" : actionType === "music-sfx" ? "eleven-sfx" : "gemini-media", createdAt: new Date() });
+    await db.collection("events").insertOne({ type: actionType === "design-image" ? "graphic-design:media" : "music-ai:media", actionType, userId: user._id, provider: actionType === "music-track" ? "eleven-music" : actionType === "music-lyria" ? "gemini-lyria" : actionType === "music-sfx" ? "eleven-sfx" : "gemini-media", createdAt: new Date() });
     return res.status(200).json(result);
   } catch (error) {
     console.error("Music media error", error?.message || error);
@@ -1054,7 +1169,8 @@ function promptFor(moduleId, actionType, input, meta = {}) {
     workflow: "Chạy toàn bộ pipeline theo đúng thứ tự các bước đã bật; mỗi phần phải có tiêu đề và đầu ra hoàn chỉnh.",
     "content-pack": "Tạo gói nội dung hoàn chỉnh theo JSON schema. Mỗi trường phải là nội dung thực, không phải hướng dẫn chung.",
     "design-plan": "Tạo kế hoạch thiết kế theo JSON schema từ brief và cấu trúc tài liệu hiện tại. Đưa ra bố cục, palette, typography, component, responsive, accessibility và bước triển khai cụ thể; không tuyên bố đã tạo asset hoặc layer nếu hệ thống chưa thực hiện.",
-    "music-plan": "Lập production brief hoàn chỉnh cho một video nhạc AI dài: concept, mood, BPM, cấu trúc master, biến thể track, hình ảnh chủ đạo, chuyển động loop, tiêu chí kiểm âm, tiêu đề và rủi ro bản quyền. Trả nội dung có nhãn rõ, ngắn gọn và dùng được ngay."
+    "music-plan": "Lập production brief hoàn chỉnh cho một video nhạc AI dài: concept, mood, BPM, cấu trúc master, biến thể track, hình ảnh chủ đạo, chuyển động loop, tiêu chí kiểm âm, tiêu đề và rủi ro bản quyền. Trả nội dung có nhãn rõ, ngắn gọn và dùng được ngay.",
+    "music-autopilot-plan": "Tạo kế hoạch sản xuất nhạc nguyên bản hoàn chỉnh theo schema: concept, lời có section, cấu trúc có thời lượng và energy, prompt nhạc, negative prompt, artwork, motion, metadata và cảnh báo quyền. Không nhắc tên nghệ sĩ/bài hát cụ thể và không sao chép lời có bản quyền."
   };
   return [
     actionNotes[actionType] || "Thực hiện yêu cầu với chất lượng xuất bản.",

@@ -165,10 +165,10 @@
         "music-audio-labs.css?v=1", "music-mix-master.css?v=1", "music-visual-studio.css?v=1",
         "music-publishing-rights.css?v=1", "music-intelligence-engine.css?v=1", "music-generative-arrangement.css?v=1",
         "music-adaptive-library.css?v=1", "music-mix-performance.css?v=1", "music-project-governance.css?v=1",
-        "music-ai-studio.css?v=6", "music-ai-apps.css?v=2", "youtube-publisher.css?v=4"
+        "music-autopilot.css?v=2", "music-ai-studio.css?v=6", "music-ai-apps.css?v=2", "youtube-publisher.css?v=4"
       ],
       scripts: [
-        "creative-os-core.js?v=4", "youtube-publisher.js?v=7", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
+        "creative-os-core.js?v=4", "youtube-publisher.js?v=9", "music-autopilot-core.js?v=2", "music-autopilot.js?v=2", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
         "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=2",
         "music-publishing-rights.js?v=1", "music-intelligence-engine.js?v=1", "music-generative-arrangement.js?v=1",
         "music-adaptive-library.js?v=1", "music-mix-performance.js?v=1", "music-project-governance.js?v=1",

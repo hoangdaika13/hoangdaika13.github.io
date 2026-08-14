@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v620";
+const CACHE = "hh-identity-portal-v622";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -71,7 +71,7 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=185",
+  "./script.js?v=186",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -130,9 +130,12 @@ const RUNTIME_ASSETS = [
   "./assets/character-3d/rights-registry.json",
   "./assets/character-3d/astra-h08/concept/astra-h08-character-sheet-v1.png",
   "./music-ai-studio.css?v=6",
+  "./music-autopilot.css?v=2",
   "./music-ai-apps.css?v=2",
   "./youtube-publisher.css?v=4",
-  "./youtube-publisher.js?v=7",
+  "./youtube-publisher.js?v=9",
+  "./music-autopilot-core.js?v=2",
+  "./music-autopilot.js?v=2",
   "./youtube-creator-galaxy.js?v=27",
   "./image-text-studio.js?v=12",
   "./facebook-page-command-center.js?v=4",
@@ -507,10 +510,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=329",
+  "./performance-loader.js?v=332",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=22",
-  "./script.js?v=185"
+  "./script.js?v=186"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {
