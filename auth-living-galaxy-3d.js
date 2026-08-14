@@ -328,17 +328,29 @@
     canvas.width = canvas.height = 512;
     const context = canvas.getContext("2d");
     const base = context.createLinearGradient(0, 0, 512, 512);
-    base.addColorStop(0, "#fff2a1"); base.addColorStop(.45, "#ff9d31"); base.addColorStop(1, "#b92016");
+    base.addColorStop(0, "#ffd864"); base.addColorStop(.46, "#ff8b21"); base.addColorStop(1, "#b51f12");
     context.fillStyle = base; context.fillRect(0, 0, 512, 512);
     let seed = 15485863;
-    for (let i = 0; i < 420; i += 1) {
+    for (let i = 0; i < 960; i += 1) {
       seed = seed * 48271 % 2147483647;
       const x = seed % 512;
       seed = seed * 48271 % 2147483647;
       const y = seed % 512;
-      const radius = 1 + seed % 12;
-      context.fillStyle = i % 7 ? "rgba(255,240,154,.11)" : "rgba(101,17,11,.18)";
-      context.beginPath(); context.ellipse(x, y, radius * 2.1, radius * .55, 0, 0, ORBIT_TAU); context.fill();
+      const radius = 1 + seed % 6;
+      context.fillStyle = i % 8 ? "rgba(255,239,138,.15)" : "rgba(112,20,8,.2)";
+      context.beginPath(); context.ellipse(x, y, radius * 1.28, radius * .72, (seed % 100) / 100 * Math.PI, 0, ORBIT_TAU); context.fill();
+    }
+    for (let i = 0; i < 24; i += 1) {
+      seed = seed * 48271 % 2147483647;
+      const x = seed % 512;
+      seed = seed * 48271 % 2147483647;
+      const y = 36 + seed % 440;
+      const radius = 3 + seed % 10;
+      context.fillStyle = "rgba(83,12,10,.42)";
+      context.beginPath(); context.ellipse(x, y, radius * 1.8, radius * .68, -.18, 0, ORBIT_TAU); context.fill();
+      context.strokeStyle = "rgba(255,209,79,.22)";
+      context.lineWidth = 2;
+      context.beginPath(); context.ellipse(x, y, radius * 2.5, radius * 1.15, -.18, 0, ORBIT_TAU); context.stroke();
     }
     return canvasTexture(THREE, canvas, true);
   };
@@ -371,19 +383,63 @@
     `
   });
 
-  const makeHTexture = (THREE) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = 512;
-    const context = canvas.getContext("2d");
-    context.clearRect(0, 0, 512, 512);
-    context.textAlign = "center";
-    context.textBaseline = "middle";
-    context.font = "900 330px Arial";
-    context.shadowColor = "#ffffff";
-    context.shadowBlur = 34;
-    context.fillStyle = "#fffef4";
-    context.fillText("H", 256, 272);
-    return new THREE.CanvasTexture(canvas);
+  const createSunSurfaceMaterial = (THREE) => new THREE.ShaderMaterial({
+    uniforms: {
+      uMap: { value: makeSunTexture(THREE) },
+      uTime: { value: 0 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      varying vec3 vViewDirection;
+      void main() {
+        vUv = uv;
+        vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+        vNormal = normalize(normalMatrix * normal);
+        vViewDirection = normalize(-viewPosition.xyz);
+        gl_Position = projectionMatrix * viewPosition;
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D uMap;
+      uniform float uTime;
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      varying vec3 vViewDirection;
+      void main() {
+        vec2 plasmaUv = vUv;
+        plasmaUv.x = fract(plasmaUv.x + uTime * 0.008 + sin(vUv.y * 42.0 + uTime * 0.7) * 0.009);
+        plasmaUv.y = fract(plasmaUv.y + sin(vUv.x * 31.0 - uTime * 0.55) * 0.006);
+        vec3 surface = texture2D(uMap, plasmaUv).rgb;
+        float cells = sin((vUv.x + vUv.y) * 92.0 + uTime * 1.4) * sin(vUv.y * 117.0 - uTime) * 0.075;
+        float facing = max(dot(normalize(vNormal), normalize(vViewDirection)), 0.0);
+        float limb = 0.34 + pow(facing, 0.38) * 0.86;
+        float hotCore = pow(facing, 2.4) * 0.44;
+        float flare = pow(1.0 - facing, 3.2) * 0.34;
+        vec3 color = surface * (limb + cells) + vec3(1.0, 0.62, 0.14) * hotCore + vec3(1.0, 0.22, 0.015) * flare;
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `
+  });
+
+  const createSolarCorona = (THREE, root) => {
+    const count = mode() === "cinematic" ? 420 : 180;
+    const positions = new Float32Array(count * 3);
+    let seed = 67867967;
+    const random = () => ((seed = seed * 16807 % 2147483647) - 1) / 2147483646;
+    for (let index = 0; index < count; index += 1) {
+      const angle = random() * ORBIT_TAU;
+      const radius = 58 + random() * 14;
+      positions[index * 3] = Math.cos(angle) * radius;
+      positions[index * 3 + 1] = Math.sin(angle) * radius;
+      positions[index * 3 + 2] = (random() - .5) * 13;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    const material = new THREE.PointsMaterial({ color: 0xffb14a, size: mode() === "cinematic" ? 1.7 : 1.25, transparent: true, opacity: .62, depthWrite: false, blending: THREE.AdditiveBlending });
+    const corona = new THREE.Points(geometry, material);
+    root.add(corona);
+    return corona;
   };
 
   const createStars = (THREE, scene, count, radius, size, opacity) => {
@@ -615,14 +671,10 @@
       const status = document.createElement("span");
       status.className = "hh-living-galaxy-status";
       status.innerHTML = `<i></i><span>${mode() === "cinematic" ? "3D CINEMATIC" : "3D BALANCED"} · DỮ LIỆU THẬT</span>`;
-      const core = document.createElement("span");
-      core.className = "hh-living-galaxy-core";
-      core.textContent = "H";
-      core.setAttribute("aria-hidden", "true");
       const meteorLayer = document.createElement("div");
       meteorLayer.className = "hh-living-meteor-layer";
       meteorLayer.setAttribute("aria-hidden", "true");
-      galaxy.prepend(depth, canvas, meteorLayer, core, status);
+      galaxy.prepend(depth, canvas, meteorLayer, status);
 
       const hitLayer = document.createElement("div");
       hitLayer.className = "hh-living-galaxy-hitlayer";
@@ -652,27 +704,33 @@
       scene.add(root);
       const sun = new THREE.Mesh(
         new THREE.SphereGeometry(51, mode() === "cinematic" ? 64 : 36, mode() === "cinematic" ? 48 : 24),
-        new THREE.MeshBasicMaterial({ map: makeSunTexture(THREE), color: 0xffb14d })
+        createSunSurfaceMaterial(THREE)
       );
       root.add(sun);
       const sunShell = new THREE.Mesh(new THREE.SphereGeometry(56, 48, 28), createAtmosphereMaterial(THREE, "#ff9e46"));
-      sunShell.material.uniforms.uIntensity.value = .68;
+      sunShell.material.uniforms.uIntensity.value = .96;
       sunShell.renderOrder = 4;
       root.add(sunShell);
-      const glowTexture = makeRadialTexture(THREE, [[0,"rgba(255,255,245,1)"],[.12,"rgba(255,190,92,.95)"],[.35,"rgba(255,62,109,.38)"],[.7,"rgba(104,57,255,.12)"],[1,"rgba(0,0,0,0)"]]);
+      const solarCorona = createSolarCorona(THREE, root);
+      const solarFlares = new THREE.Group();
+      for (let index = 0; index < (mode() === "cinematic" ? 5 : 3); index += 1) {
+        const flare = new THREE.Mesh(
+          new THREE.TorusGeometry(55 + index * 1.7, .88 + index * .13, 7, 72, Math.PI * (.34 + index * .09)),
+          new THREE.MeshBasicMaterial({ color: index % 2 ? 0xffd478 : 0xff6236, transparent: true, opacity: .56 - index * .045, depthWrite: false, blending: THREE.AdditiveBlending })
+        );
+        flare.rotation.set(.34 + index * .56, .22 + index * .41, index * 1.21);
+        solarFlares.add(flare);
+      }
+      root.add(solarFlares);
+      const glowTexture = makeRadialTexture(THREE, [[0,"rgba(255,250,205,.95)"],[.13,"rgba(255,183,69,.82)"],[.36,"rgba(255,78,45,.31)"],[.68,"rgba(220,50,126,.1)"],[1,"rgba(0,0,0,0)"]]);
       const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-      glow.scale.set(250, 250, 1);
+      glow.scale.set(224, 224, 1);
       glow.position.z = -8;
       root.add(glow);
-      const hMark = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeHTexture(THREE), transparent: true, depthTest: false, depthWrite: false }));
-      hMark.scale.set(84, 84, 1);
-      hMark.position.set(0, 0, 59);
-      hMark.renderOrder = 100;
-      root.add(hMark);
-      for (let index = 0; index < 3; index += 1) {
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(71 + index * 12, .38 + index * .12, 8, 128), new THREE.MeshBasicMaterial({ color: [0xffb66b,0xff62c7,0x62e8ff][index], transparent: true, opacity: .34 - index * .06, blending: THREE.AdditiveBlending }));
-        ring.rotation.set(1.17 + index * .1, .15, index * .72);
-        root.add(ring);
+      for (let index = 0; index < 2; index += 1) {
+        const magneticRing = new THREE.Mesh(new THREE.TorusGeometry(70 + index * 13, .26 + index * .09, 7, 128), new THREE.MeshBasicMaterial({ color: [0xffb66b,0xff6ba8][index], transparent: true, opacity: .18 - index * .035, blending: THREE.AdditiveBlending }));
+        magneticRing.rotation.set(1.13 + index * .16, .15, index * .86);
+        root.add(magneticRing);
       }
 
       const starFar = createStars(THREE, scene, mode() === "cinematic" ? 1300 : 620, 760, 1.25, .64);
@@ -800,7 +858,7 @@
       });
 
       sceneState = {
-        THREE, canvas, renderer, scene, camera, root, sun, sunShell, glow, hMark, starFar, starNear, nebula, asteroidBelts, planets, status, meteorLayer,
+        THREE, canvas, renderer, scene, camera, root, sun, sunShell, solarCorona, solarFlares, glow, starFar, starNear, nebula, asteroidBelts, planets, status, meteorLayer,
         meteorGlowTexture, meteorTailTexture, meteors: [], meteorSerial: 0, nextMeteorAt: 2.8, nextShowerAt: 24 + Math.random() * 10, showerQueue: [],
         warpBoostUntil: 0, errorPulseUntil: 0,
         projectionVector: new THREE.Vector3(), last: performance.now(), elapsed: 0, frameBudget: 0
@@ -852,9 +910,14 @@
     state.camera.lookAt(pointer.x * 5, pointer.y * -4, 0);
     state.root.rotation.z = Math.sin(elapsed * .08) * .016 + errorPulse;
     state.sun.rotation.y += delta * .11;
+    state.sun.material.uniforms.uTime.value = elapsed;
     state.sunShell.scale.setScalar(1 + Math.sin(elapsed * 1.7) * .016);
+    state.solarCorona.rotation.z = elapsed * .035;
+    state.solarCorona.material.opacity = .5 + Math.sin(elapsed * 1.85) * .12;
+    state.solarFlares.rotation.y = elapsed * .022;
+    state.solarFlares.rotation.z = -elapsed * .013;
     state.glow.material.rotation = elapsed * .018;
-    state.glow.scale.setScalar(250 + Math.sin(elapsed * 1.3) * 8);
+    state.glow.scale.setScalar(224 + Math.sin(elapsed * 1.3) * 7);
     state.starFar.rotation.y = elapsed * .003;
     state.starNear.rotation.y = -elapsed * .008;
     state.asteroidBelts.forEach((belt, index) => { belt.rotation.z += delta * (index ? -.006 : .009); });

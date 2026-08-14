@@ -12,8 +12,8 @@ test("login mounts a real WebGL living galaxy without replacing authentication",
   const runtime = read("auth-living-galaxy-3d.js");
   const css = read("auth-living-galaxy-3d.css");
 
-  assert.match(html, /auth-living-galaxy-3d\.css\?v=8/);
-  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=11/);
+  assert.match(html, /auth-living-galaxy-3d\.css\?v=10/);
+  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=14/);
   assert.match(gateway, /high:\s*"Điện ảnh"/);
   assert.match(gateway, /soft:\s*"Cân bằng"/);
   assert.match(gateway, /off:\s*"Tĩnh"/);
@@ -42,6 +42,10 @@ test("login mounts a real WebGL living galaxy without replacing authentication",
   assert.match(runtime, /bumpMap:\s*surface\.bumpMap/);
   assert.match(runtime, /new THREE\.RingGeometry/);
   assert.match(runtime, /createAtmosphereMaterial/);
+  assert.match(runtime, /createSunSurfaceMaterial/);
+  assert.match(runtime, /createSolarCorona/);
+  assert.doesNotMatch(runtime, /makeHTexture|fillText\("H"/);
+  assert.doesNotMatch(runtime, /core\.textContent\s*=\s*"H"|hh-living-galaxy-core/);
   assert.match(runtime, /createAsteroidBelt/);
   assert.match(runtime, /planet\.clouds/);
   assert.match(runtime, /planet\.moonPivots/);

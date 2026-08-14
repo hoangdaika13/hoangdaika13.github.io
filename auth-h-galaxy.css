@@ -525,11 +525,15 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
 .hh-galaxy-sun span {
   position: relative;
   z-index: 2;
-  color: #321334;
-  font-size: clamp(40px, 4.4vw, 66px);
-  font-weight: 1000;
-  line-height: 1;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, .7), 0 0 14px rgba(255, 255, 255, .76);
+  width: 68%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255,255,255,.88), transparent 10%),
+    repeating-radial-gradient(ellipse at 42% 48%, rgba(255,245,163,.4) 0 2px, rgba(255,111,28,.22) 3px 6px),
+    conic-gradient(from 18deg, #fff1a1, #ff9b2f, #db3e24, #ffcb4d, #fff1a1);
+  box-shadow: inset -10px -12px 16px rgba(112,18,26,.48), 0 0 18px rgba(255,222,111,.9);
+  animation: hh-galaxy-solar-plasma 8s linear infinite;
 }
 
 .hh-galaxy-sun small {
@@ -921,6 +925,10 @@ html[data-motion-level="soft"] .hh-galaxy-planet:nth-of-type(2) {
 @keyframes hh-galaxy-sun-breathe {
   0%, 100% { transform: translate(-50%, -50%) scale(.96); filter: saturate(1); }
   50% { transform: translate(-50%, -50%) scale(1.04); filter: saturate(1.2) brightness(1.08); }
+}
+
+@keyframes hh-galaxy-solar-plasma {
+  to { transform: rotate(1turn); }
 }
 
 @keyframes hh-galaxy-corona {

@@ -285,7 +285,7 @@
     galaxyRuntime.addEventListener("load", () => {
       if (window.HHLivingGalaxy3D) return window.HHLivingGalaxy3D.mount?.();
       const livingRuntime = document.createElement("script");
-      livingRuntime.src = "auth-living-galaxy-3d.js?v=11";
+      livingRuntime.src = "auth-living-galaxy-3d.js?v=14";
       livingRuntime.defer = true;
       livingRuntime.dataset.hhLivingGalaxyRuntime = "true";
       document.head.append(livingRuntime);

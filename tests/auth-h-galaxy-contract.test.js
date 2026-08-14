@@ -17,8 +17,13 @@ test("interactive H galaxy exposes exactly twenty-three unique product planets",
   assert.equal(new Set(keys).size, 23);
   assert.equal((html.match(/data-hh-weight=/g) || []).length, 23);
   assert.equal((html.match(/data-hh-model=/g) || []).length, 23);
+  assert.match(html, /auth-h-channel-mark/);
+  assert.match(html, /Bước vào thiên hà\./);
+  assert.match(html, /Đánh thức mọi ý tưởng\./);
+  assert.match(html, /<div class="hh-galaxy-sun"[^>]*><span><\/span>/);
+  assert.doesNotMatch(html, /<div class="hh-galaxy-sun"[^>]*><span>H<\/span>/);
   assert.match(html, /id="hhGalaxyInspector" role="tabpanel"/);
-  assert.match(html, /auth-h-galaxy\.css\?v=8/);
+  assert.match(html, /auth-h-galaxy\.css\?v=9/);
   assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=8/);
   assert.match(html, /data-hh-galaxy-detail/);
   assert.doesNotMatch(html, /auth-feature-showcase|auth-benefits/);
