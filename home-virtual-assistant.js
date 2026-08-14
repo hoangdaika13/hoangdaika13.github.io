@@ -1,7 +1,7 @@
 (function (global) {
   "use strict";
 
-  const VERSION = 1;
+  const VERSION = 2;
   const GREETING = "Xin chào! Mình là Hikari H, trợ lý điều hành của HH Platform. Mình có thể giúp bạn mở công cụ, tìm nhiệm vụ, kiểm tra lịch học hoặc tiếp tục công việc gần nhất.";
   const HOME_ROUTE = /^#\/home(?:$|[/?])/;
   let host = null;
@@ -12,13 +12,21 @@
   let idleTimer = 0;
   let mounted = false;
   let hostObserver = null;
+  let preferences = null;
+  let pendingAction = null;
 
   const core = () => global.HHVirtualAssistantCore;
   const commands = () => global.HHVirtualAssistantCommands;
+  const actions = () => global.HHVirtualAssistantActions;
   const voice = () => global.HHVirtualAssistantVoice;
   const characterApi = () => global.HHVirtualAssistantCharacter;
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
   const homeActive = () => !location.hash || HOME_ROUTE.test(location.hash);
+  const shellUnlocked = () => document.body?.classList.contains("auth-unlocked") === true;
+  const assistantActive = () => {
+    const next = core()?.loadPreferences?.();
+    return Boolean(shellUnlocked() && next?.enabled && (next.showOnAllPages || homeActive()));
+  };
   const $ = (selector) => host?.querySelector(selector);
   const $$ = (selector) => [...(host?.querySelectorAll(selector) || [])];
 
@@ -46,6 +54,7 @@
           <button type="button" data-hva-action="stop-voice" aria-label="Dừng giọng nói" hidden>■</button>
         </div>
         <div class="hva-status"><span data-hva-status>Đang tải nhân vật</span><em data-hva-mode>Local Assistant</em></div>
+        <div class="hva-action-preview" data-hva-action-preview hidden></div>
         <div class="hva-voice-consent" data-hva-voice-consent ${state.voiceEnabled ? "hidden" : ""}>
           <button type="button" data-hva-action="enable-voice">♪ Bật giọng nói cho Hikari</button><small>Chỉ phát sau thao tác của bạn</small>
         </div>
@@ -112,14 +121,9 @@
 
   function bindInlineActions() {
     if (!host) return;
-    host.querySelectorAll("[data-hva-command]").forEach((button) => {
-      button.onclick = () => executeCommand(button.dataset.hvaCommand);
-    });
-    host.querySelectorAll("[data-hva-action]").forEach((button) => {
-      button.onclick = (event) => Promise.resolve(handleClick(event)).catch((error) => { setTranscript(error.message); setStatus("Có lỗi", "Local Assistant"); });
-    });
-    const form = $("[data-hva-form]");
-    if (form) form.onsubmit = handleSubmit;
+    host.onclick = (event) => Promise.resolve(handleClick(event)).catch((error) => { setTranscript(error.message); setStatus("Có lỗi", "Local Assistant"); });
+    host.onchange = handleChange;
+    host.onsubmit = handleSubmit;
   }
 
   async function loadCharacterForCurrentHost() {
@@ -137,7 +141,7 @@
 
   async function adoptCurrentHost() {
     const current = document.getElementById("hhVirtualAssistantHost");
-    if (!current || current === host || !homeActive()) return false;
+    if (!current || current === host || !assistantActive()) return false;
     host = current;
     host.dataset.hvaQuality = state.quality;
     host.dataset.hvaAnimation = String(state.animationEnabled);
@@ -180,6 +184,7 @@
   }
 
   async function speak(text) {
+    if (!preferences?.enabled) return { spoken: false, disabled: true };
     setTranscript(text);
     if (!state.voiceEnabled) {
       setCharacterState("idle");
@@ -202,6 +207,7 @@
   }
 
   async function askAi(input, context) {
+    if (!preferences?.cloudAiAllowed) return { reply: "AI cloud đang tắt trong cài đặt riêng của bạn. Các lệnh local và mở chức năng vẫn hoạt động bình thường.", provider: "offline" };
     const token = global.HHAuthSession?.token?.() || "";
     if (!token) return { reply: "Lệnh này chưa có trong bộ điều khiển local. AI đang ngoại tuyến ở chế độ khách.", provider: "offline" };
     try {
@@ -220,12 +226,12 @@
   }
 
   function navigateSafe(route) {
-    if (!commands().safeRoute(route)) return false;
+    if (!actions()?.safeRoute?.(route) && !commands().safeRoute(route)) return false;
     setCharacterState("pointing");
     playEffect("warp");
     host?.classList.add("is-warping");
     setTimeout(() => {
-      if (commands().safeRoute(route)) location.hash = `#${route}`;
+      if (actions()?.safeRoute?.(route) || commands().safeRoute(route)) location.hash = `#${route}`;
       host?.classList.remove("is-warping");
     }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 380);
     return true;
@@ -249,6 +255,21 @@
     setCharacterState("thinking");
     setStatus("Đang suy nghĩ", "Local Assistant");
     const context = core().context();
+    const plan = actions()?.prepare?.(cleanInput, context);
+    if (plan?.matched) {
+      plan.originalInput = cleanInput;
+      if (plan.confirmationRequired) {
+        pendingAction = plan;
+        renderActionPreview(plan);
+        setCharacterState(plan.risk === "destructive" ? "warning" : "explaining");
+        setStatus("Chờ bạn xác nhận", riskLabel(plan.risk));
+        setTranscript(plan.summary, "assistant");
+        return true;
+      }
+      const executed = await executePreparedAction(plan, false);
+      await speak(executed.reply);
+      return true;
+    }
     const result = commands().match(cleanInput, context);
     if (result.matched) {
       if (result.kind === "control") applyControl(result.control);
@@ -260,6 +281,35 @@
     setStatus(ai.provider === "offline" ? "AI đang ngoại tuyến" : "Đã nhận phản hồi", ai.provider);
     await speak(ai.reply);
     return true;
+  }
+
+  function riskLabel(risk) {
+    return actions()?.RISKS?.[risk]?.label || "Hành động Hikari";
+  }
+
+  function renderActionPreview(plan) {
+    const node = $("[data-hva-action-preview]");
+    if (!node) return;
+    if (!plan) { node.hidden = true; node.innerHTML = ""; return; }
+    const target = plan.route ? `<small>Đích: ${escapeHtml(plan.route)}</small>` : "";
+    node.innerHTML = `<header><span data-risk="${escapeHtml(plan.risk)}">${escapeHtml(riskLabel(plan.risk))}</span><strong>Hikari chuẩn bị làm</strong></header><p>${escapeHtml(plan.summary)}</p>${target}<div><button type="button" data-hva-action="confirm-action">Xác nhận</button><button type="button" data-hva-action="edit-action">Chỉnh lại</button><button type="button" data-hva-action="cancel-action">Hủy</button></div>`;
+    node.hidden = false;
+  }
+
+  async function executePreparedAction(plan, confirmed) {
+    const result = await actions().execute(plan, {
+      confirmed,
+      context: core().context(),
+      permissions: preferences,
+      storage: global.localStorage,
+      navigate: navigateSafe
+    });
+    pendingAction = null;
+    renderActionPreview(null);
+    setStatus(result.completed ? "Đã hoàn tất" : result.status === "handoff" ? "Đã mở quy trình" : "Sẵn sàng", result.completed ? "Hikari Action" : "Cần xác nhận tại công cụ");
+    setCharacterState(result.completed ? "celebrating" : "pointing");
+    setTimeout(() => setCharacterState("idle"), 900);
+    return result;
   }
 
   function syncOpenState() {
@@ -295,6 +345,15 @@
     const googleVoices = voice().GOOGLE_VOICES.map((item) => `<option value="${item.id}" ${item.id === state.googleVoice ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("");
     const openaiVoices = voice().OPENAI_VOICES.map((item) => `<option value="${item}" ${item === state.openaiVoice ? "selected" : ""}>${escapeHtml(item)}</option>`).join("");
     return `<div class="hva-settings">
+      <section class="hva-permissions" aria-label="Quyền Hikari">
+        <strong>Hikari trên tài khoản này</strong>
+        <label class="hva-switch"><input data-hva-preference="enabled" type="checkbox" ${preferences.enabled ? "checked" : ""}><span>Bật trợ lý Hikari</span></label>
+        <label class="hva-switch"><input data-hva-preference="showOnAllPages" type="checkbox" ${preferences.showOnAllPages ? "checked" : ""}><span>Hiển thị trên mọi trang</span></label>
+        <label class="hva-switch"><input data-hva-preference="microphoneAllowed" type="checkbox" ${preferences.microphoneAllowed ? "checked" : ""}><span>Cho phép dùng microphone khi bấm Nói</span></label>
+        <label class="hva-switch"><input data-hva-preference="cloudAiAllowed" type="checkbox" ${preferences.cloudAiAllowed ? "checked" : ""}><span>Cho phép hỏi AI cloud</span></label>
+        <label class="hva-switch"><input data-hva-preference="allowLocalActions" type="checkbox" ${preferences.allowLocalActions ? "checked" : ""}><span>Cho phép tác vụ local sau xác nhận</span></label>
+        <small>Tác vụ đăng, gửi, xóa hoặc đổi quyền luôn phải xác nhận; không thể tắt lớp bảo vệ này.</small>
+      </section>
       <label><span>Phong cách giọng <b>Mặc định nữ Việt</b></span><select data-hva-setting="voicePreset">${presets}</select></label>
       <label><span>Nguồn giọng</span><select data-hva-setting="voiceProvider"><option value="browser" ${state.voiceProvider === "browser" ? "selected" : ""}>Trình duyệt · miễn phí, không cần khóa</option><option value="google" ${state.voiceProvider === "google" ? "selected" : ""}>Google Cloud · có hạn mức miễn phí, cần billing</option><option value="openai" ${state.voiceProvider === "openai" ? "selected" : ""}>OpenAI · tính phí theo API</option><option value="selfhost" ${state.voiceProvider === "selfhost" ? "selected" : ""}>TTS GitHub self-host · cần máy chủ riêng</option></select></label>
       <label><span>Giọng trình duyệt <b>* giới tính ước tính theo tên</b></span><select data-hva-setting="voiceURI"><option value="">Tự chọn nữ tiếng Việt tốt nhất</option>${voiceOptions}</select></label>
@@ -328,6 +387,12 @@
   function closeDrawer() { $("[data-hva-drawer]")?.setAttribute("hidden", ""); }
 
   async function listen() {
+    if (!preferences?.microphoneAllowed) {
+      setCharacterState("warning");
+      setTranscript("Microphone đang tắt cho hồ sơ này. Hãy mở Cài đặt Hikari và bật ‘Cho phép dùng microphone khi bấm Nói’.", "assistant");
+      setStatus("Microphone đang tắt", "Quyền riêng tư");
+      return false;
+    }
     setCharacterState("listening"); setStatus("Đang nghe · microphone bật", "Speech recognition");
     try {
       const transcript = await voice().listen({
@@ -357,6 +422,19 @@
     const button = event.target.closest("[data-hva-action]");
     if (!button) return;
     const action = button.dataset.hvaAction;
+    if (action === "confirm-action") {
+      if (!pendingAction) return renderActionPreview(null);
+      button.disabled = true;
+      return executePreparedAction(pendingAction, true).then((result) => speak(result.reply)).catch((error) => {
+        button.disabled = false; setCharacterState("warning"); setStatus("Không thể thực hiện", "Hikari Action"); setTranscript(error.message, "assistant");
+      });
+    }
+    if (action === "cancel-action") { pendingAction = null; renderActionPreview(null); setCharacterState("idle"); setStatus("Đã hủy", "Không có thay đổi"); return setTranscript("Đã hủy. Hikari chưa thay đổi dữ liệu nào.", "assistant"); }
+    if (action === "edit-action") {
+      const input = $("[data-hva-form] input[name=command]");
+      if (input && pendingAction?.originalInput) input.value = pendingAction.originalInput;
+      pendingAction = null; renderActionPreview(null); input?.focus(); return;
+    }
     if (action === "toggle") return state.open && !state.minimized ? minimize() : open();
     if (action === "minimize") return minimize();
     if (action === "close") return close();
@@ -384,6 +462,16 @@
   }
 
   function handleChange(event) {
+    const preferenceField = event.target.closest("[data-hva-preference]");
+    if (preferenceField) {
+      const key = preferenceField.dataset.hvaPreference;
+      preferences = core().savePreferences({ [key]: preferenceField.checked === true });
+      if (key === "microphoneAllowed" && !preferences.microphoneAllowed) voice().stop();
+      if (key === "enabled" && !preferences.enabled) { setTimeout(unmount, 0); return; }
+      if (key === "showOnAllPages" && !preferences.showOnAllPages && !homeActive()) { setTimeout(unmount, 0); return; }
+      openDrawer("settings");
+      return;
+    }
     const field = event.target.closest("[data-hva-setting]");
     if (!field) return;
     const key = field.dataset.hvaSetting;
@@ -437,8 +525,9 @@
   }
 
   async function mount(target = document.body) {
-    if (!homeActive()) return false;
-    if (!core() || !commands() || !voice() || !characterApi()) return false;
+    if (!core() || !commands() || !actions() || !voice() || !characterApi()) return false;
+    preferences = core().loadPreferences();
+    if (!assistantActive()) { unmount(); return false; }
     if (mounted && host?.isConnected) { recoverCharacterState(); updateSignals(); return true; }
     unmount();
     state = core().load();
@@ -457,18 +546,6 @@
     ensurePortal();
     mounted = true;
     controller = new AbortController();
-    global.addEventListener("click", (event) => {
-      if (!event.target.closest?.("#hhVirtualAssistantHost")) return;
-      Promise.resolve(handleClick(event)).catch((error) => { setTranscript(error.message); setStatus("Có lỗi", "Local Assistant"); });
-    }, { signal: controller.signal, capture: true });
-    document.addEventListener("click", (event) => {
-      if (!event.target.closest?.("#hhVirtualAssistantHost")) return;
-      Promise.resolve(handleClick(event)).catch((error) => { setTranscript(error.message); setStatus("Có lỗi", "Local Assistant"); });
-    }, { signal: controller.signal, capture: true });
-    global.addEventListener("change", (event) => {
-      if (!event.target.closest?.("#hhVirtualAssistantHost")) return;
-      handleChange(event);
-    }, { signal: controller.signal, capture: true });
     host.addEventListener("pointermove", (event) => { resetIdle(); character?.setPointer?.(event.clientX, event.clientY); }, { signal: controller.signal, passive: true });
     document.addEventListener("click", onPlanetSelected, { signal: controller.signal, capture: true });
     document.addEventListener("visibilitychange", () => {
@@ -491,7 +568,7 @@
     hostObserver?.disconnect?.();
     hostObserver = new MutationObserver(() => {
       const current = document.getElementById("hhVirtualAssistantHost");
-      if (!current || !homeActive()) return;
+      if (!current || !assistantActive()) return;
       if (current !== host) adoptCurrentHost().catch(() => {});
       else {
         ensurePortal();
@@ -522,20 +599,30 @@
     hostObserver?.disconnect?.(); hostObserver = null;
     voice()?.stop?.(); character?.destroy?.(); character = null;
     controller?.abort?.(); controller = null;
-    host?.remove?.(); host = null; mounted = false;
+    host?.remove?.(); host = null; mounted = false; pendingAction = null;
   }
 
   function setState(next) { return character?.setState?.(next) || false; }
-  function routeSync() { if (homeActive()) setTimeout(() => mount(), 120); else unmount(); }
+  function routeSync() { if (assistantActive()) setTimeout(() => mount(), 120); else unmount(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", routeSync, { once: true }); else routeSync();
   addEventListener("hashchange", routeSync);
   addEventListener("hh:auth-change", () => { unmount(); routeSync(); });
+  addEventListener("hh:route-rendered", routeSync);
+  addEventListener("hh:assistant-preference-change", () => { preferences = core()?.loadPreferences?.() || preferences; if (preferences?.enabled) routeSync(); else unmount(); });
   addEventListener("hh:asset-group-ready", (event) => {
-    if (event.detail?.group !== "home-enhancements") return;
-    if (!homeActive()) return;
+    if (!["assistant", "home-enhancements"].includes(event.detail?.group)) return;
+    if (!assistantActive()) return;
     if (!host?.isConnected) routeSync();
     else recoverCharacterState();
   });
 
-  global.HHVirtualAssistant = Object.freeze({ VERSION, mount, unmount, speak, listen, setState, executeCommand, open, close, minimize });
+  function setEnabled(enabled) {
+    preferences = core().setEnabled(enabled === true);
+    if (preferences.enabled) routeSync(); else unmount();
+    return preferences.enabled;
+  }
+  function isEnabled() { return core()?.isEnabled?.() === true; }
+  function permissions() { return { ...(core()?.loadPreferences?.() || {}) }; }
+
+  global.HHVirtualAssistant = Object.freeze({ VERSION, mount, unmount, speak, listen, setState, executeCommand, open, close, minimize, setEnabled, isEnabled, permissions });
 })(window);

@@ -9,10 +9,12 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 test("Hikari assets and lazy Home wiring are versioned", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  assert.match(loader, /home-virtual-assistant\.css\?v=7/);
-  assert.match(loader, /services\/virtualAssistantCore\.js\?v=2/);
+  assert.match(loader, /assistant:\s*\{/);
+  assert.match(loader, /home-virtual-assistant\.css\?v=8/);
+  assert.match(loader, /services\/virtualAssistantCore\.js\?v=3/);
+  assert.match(loader, /services\/virtualAssistantActions\.js\?v=1/);
   assert.doesNotMatch(loader, /virtualAssistant3DRenderer/);
-  assert.match(loader, /home-virtual-assistant\.js\?v=22/);
+  assert.match(loader, /home-virtual-assistant\.js\?v=23/);
   assert.match(worker, /assets\/hikari-h\/hikari-h-original-v1-alpha\.webp/);
   assert.ok(fs.statSync(path.join(root, "assets/hikari-h/hikari-h-original-v1-alpha.webp")).size > 100_000);
 });
@@ -57,22 +59,65 @@ test("voice requires explicit user interaction and microphone is never opened on
   assert.match(voice, /female-estimated/);
 });
 
-test("commands use a fixed route whitelist with ten or more real local intents", () => {
+test("assistant uses fixed route whitelists with real local intents", () => {
   const commands = read("services/virtualAssistantCommands.js");
+  const actions = read("services/virtualAssistantActions.js");
   const client = read("home-virtual-assistant.js");
   assert.match(commands, /const ALLOWED = new Set\(Object\.values\(ROUTES\)\)/);
-  assert.match(client, /commands\(\)\.safeRoute\(route\)/);
+  assert.match(actions, /const ROUTE_SET = new Set\(ROUTES\.map/);
+  assert.match(client, /actions\(\)\?\.safeRoute/);
   assert.doesNotMatch(client, /eval\(/);
+  assert.doesNotMatch(actions, /eval\(/);
   assert.ok((commands.match(/return (?:routeResult|controlResult|\{ matched: true)/g) || []).length >= 10);
   for (const route of ["/home", "/japanese", "/english", "/davinci-resolve/youtube-batch", "/davinci-resolve/image-text", "/work", "/learn/review", "/analytics"]) assert.match(commands, new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
 test("assistant storage is owner and learner-profile scoped", () => {
   const core = read("services/virtualAssistantCore.js");
+  const actions = read("services/virtualAssistantActions.js");
   assert.match(core, /BASE_KEY = "hh\.virtual-assistant\.v1"/);
+  assert.match(core, /PREFERENCE_KEY = "hh\.hikari\.preferences\.v2"/);
   assert.match(core, /`\$\{BASE_KEY\}:\$\{ownerId\(\)\}:\$\{profileId\(\)\}`/);
+  assert.match(core, /hh:assistant-preference-change/);
   assert.match(core, /learnerProfileId/);
   assert.match(core, /history: Array\.isArray/);
+  assert.match(actions, /ownerId/);
+  assert.match(actions, /learnerProfileId/);
+});
+
+test("platform actions are deterministic, confirmed and never let AI invent executors", async () => {
+  const actions = require("../services/virtualAssistantActions.js");
+  const context = { owner: "owner-a", profile: "student-1", taskCount: 2, lessonDue: 3, unreadCount: 1, online: true, apiStatus: "Online" };
+  const task = actions.prepare("Tạo công việc viết báo cáo", context);
+  assert.equal(task.id, "task.create-local");
+  assert.equal(task.risk, "write-local");
+  assert.equal(task.confirmationRequired, true);
+  const values = new Map();
+  const storage = { getItem: key => values.get(key) || null, setItem: (key, value) => values.set(key, String(value)) };
+  const waiting = await actions.execute(task, { context, storage, permissions: { allowLocalActions: true }, confirmed: false });
+  assert.equal(waiting.status, "awaiting-confirmation");
+  assert.equal(values.size, 0);
+  const done = await actions.execute(task, { context, storage, permissions: { allowLocalActions: true }, confirmed: true });
+  assert.equal(done.completed, true);
+  assert.match(values.get("hh.command-center.todos.v2"), /owner-a/);
+  await assert.rejects(() => actions.execute(task, { context: { ...context, owner: "owner-b" }, storage, permissions: { allowLocalActions: true }, confirmed: true }), /Hồ sơ đã thay đổi/);
+  const publish = actions.prepare("Đăng video lên TikTok", context);
+  assert.equal(publish.risk, "external");
+  assert.equal(publish.confirmationRequired, true);
+  assert.equal((await actions.execute(publish, { context, storage, permissions: { allowLocalActions: true }, confirmed: true, navigate: () => true })).completed, false);
+  assert.equal(actions.prepare("hãy chạy mã tùy ý", context).matched, false);
+});
+
+test("disabled Hikari stays unmounted and exposes per-profile controls", () => {
+  const client = read("home-virtual-assistant.js");
+  const core = read("services/virtualAssistantCore.js");
+  const system = read("system-platform.js");
+  assert.match(client, /if \(!assistantActive\(\)\) \{ unmount\(\); return false; \}/);
+  assert.match(client, /HHVirtualAssistant = Object\.freeze\([\s\S]*setEnabled[\s\S]*isEnabled[\s\S]*permissions/);
+  assert.match(core, /enabled: saved\.enabled !== false/);
+  assert.match(core, /microphoneAllowed: saved\.microphoneAllowed === true/);
+  assert.match(system, /data-system-hikari-preferences/);
+  assert.match(system, /không tải nhân vật, không mở microphone và không gọi AI/);
 });
 
 test("assistant APIs authenticate owners, rate limit and keep provider keys server-side", () => {

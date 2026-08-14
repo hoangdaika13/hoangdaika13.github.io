@@ -42,15 +42,21 @@
       styles: [],
       scripts: []
     },
+    assistant: {
+      styles: ["home-virtual-assistant.css?v=8"],
+      scripts: [
+        "services/virtualAssistantCore.js?v=3", "services/virtualAssistantActions.js?v=1", "services/virtualAssistantCommands.js?v=2",
+        "services/virtualAssistantVoice.js?v=2", "services/virtualAssistantCharacter.js?v=3", "home-virtual-assistant.js?v=23"
+      ]
+    },
     "home-enhancements": {
       styles: [
-        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=11", "home-virtual-assistant.css?v=7", "home-live-widgets.css?v=11", "home-cosmic-os.css?v=3", "home-galaxy-mission.css?v=8", "home-galaxy-operations.css?v=2", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=11", "home-live-widgets.css?v=11", "home-cosmic-os.css?v=3", "home-galaxy-mission.css?v=8", "home-galaxy-operations.css?v=2", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
         "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=10", "home-galaxy-operations.js?v=5", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
-        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=11", "home-live-widgets.js?v=6", "home-cosmic-os.js?v=11",
-        "services/virtualAssistantCore.js?v=2", "services/virtualAssistantCommands.js?v=1", "services/virtualAssistantVoice.js?v=2", "services/virtualAssistantCharacter.js?v=3", "home-virtual-assistant.js?v=22"
+        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=11", "home-live-widgets.js?v=6", "home-cosmic-os.js?v=11"
       ]
     },
     platform: {
@@ -62,7 +68,7 @@
       scripts: [
         "extension-suite.js?v=2", "professional-tools.js?v=4", "tool-manifests.js?v=1", "tool-runtime.js?v=1",
         "feature-lab.js?v=6", "platform-tools.js?v=1", "tool-workspace-pro.js?v=1", "utility-lab-tools.js?v=9", "feature-engines.js?v=2",
-        "ai-center-advanced.js?v=2", "platform-p0.js?v=1", "vendor/jszip.min.js?v=3.10.1", "system-platform.js?v=5"
+        "ai-center-advanced.js?v=2", "platform-p0.js?v=1", "vendor/jszip.min.js?v=3.10.1", "system-platform.js?v=6"
       ]
     },
     dev: {
@@ -256,7 +262,7 @@
     return value.startsWith("/") ? value : `/${value}`;
   }
 
-  function groupsForRoute(route) {
+  function featureGroupsForRoute(route) {
     const value = normalizeRoute(route);
     if (value === "/home") return [];
     if (value.startsWith("/social-media-tools")) return ["social-media-tools"];
@@ -286,6 +292,10 @@
     if (value.startsWith("/create")) return ["creative", "platform"];
     if (value.startsWith("/system") || value.startsWith("/tools") || value === "/favorites" || value === "/recent") return ["platform"];
     return [];
+  }
+
+  function groupsForRoute(route) {
+    return ["assistant", ...featureGroupsForRoute(route)];
   }
 
   function loadStyle(url) {

@@ -1,8 +1,9 @@
 (function (global) {
   "use strict";
 
-  const VERSION = 2;
+  const VERSION = 3;
   const BASE_KEY = "hh.virtual-assistant.v1";
+  const PREFERENCE_KEY = "hh.hikari.preferences.v2";
   const DEFAULTS = Object.freeze({
     open: true,
     minimized: false,
@@ -23,6 +24,14 @@
     y: null,
     history: []
   });
+  const PREFERENCE_DEFAULTS = Object.freeze({
+    enabled: true,
+    showOnAllPages: true,
+    microphoneAllowed: false,
+    cloudAiAllowed: true,
+    allowLocalActions: true,
+    confirmExternalActions: true
+  });
 
   const cleanId = (value) => String(value || "guest").toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 72) || "guest";
   const readJson = (key, fallback = {}) => {
@@ -39,6 +48,7 @@
     return cleanId(learning.learnerProfileId || learning.activeProfileId || japanese.learnerProfileId || "default");
   };
   const storageKey = () => `${BASE_KEY}:${ownerId()}:${profileId()}`;
+  const preferenceKey = () => `${PREFERENCE_KEY}:${ownerId()}:${profileId()}`;
 
   function load() {
     const saved = readJson(storageKey(), {});
@@ -71,6 +81,39 @@
     return safe;
   }
 
+  function loadPreferences() {
+    const saved = readJson(preferenceKey(), {});
+    return {
+      ...PREFERENCE_DEFAULTS,
+      enabled: saved.enabled !== false,
+      showOnAllPages: saved.showOnAllPages !== false,
+      microphoneAllowed: saved.microphoneAllowed === true,
+      cloudAiAllowed: saved.cloudAiAllowed !== false,
+      allowLocalActions: saved.allowLocalActions !== false,
+      // External and destructive actions always require a confirmation. This
+      // setting is intentionally fail-closed and cannot be disabled by data.
+      confirmExternalActions: true
+    };
+  }
+
+  function savePreferences(patch = {}) {
+    const current = loadPreferences();
+    const next = {
+      enabled: Object.prototype.hasOwnProperty.call(patch, "enabled") ? patch.enabled === true : current.enabled,
+      showOnAllPages: Object.prototype.hasOwnProperty.call(patch, "showOnAllPages") ? patch.showOnAllPages === true : current.showOnAllPages,
+      microphoneAllowed: Object.prototype.hasOwnProperty.call(patch, "microphoneAllowed") ? patch.microphoneAllowed === true : current.microphoneAllowed,
+      cloudAiAllowed: Object.prototype.hasOwnProperty.call(patch, "cloudAiAllowed") ? patch.cloudAiAllowed === true : current.cloudAiAllowed,
+      allowLocalActions: Object.prototype.hasOwnProperty.call(patch, "allowLocalActions") ? patch.allowLocalActions === true : current.allowLocalActions,
+      confirmExternalActions: true
+    };
+    try { localStorage.setItem(preferenceKey(), JSON.stringify(next)); } catch {}
+    global.dispatchEvent?.(new CustomEvent("hh:assistant-preference-change", { detail: { ...next, ownerId: ownerId(), learnerProfileId: profileId() } }));
+    return next;
+  }
+
+  function setEnabled(enabled) { return savePreferences({ enabled: enabled === true }); }
+  function isEnabled() { return loadPreferences().enabled; }
+
   function context() {
     const todos = readJson("hh.command-center.todos.v2", []);
     const learning = readJson("hh.learning.os.v1", {});
@@ -95,5 +138,5 @@
     });
   }
 
-  global.HHVirtualAssistantCore = Object.freeze({ VERSION, DEFAULTS, ownerId, profileId, storageKey, load, save, context });
+  global.HHVirtualAssistantCore = Object.freeze({ VERSION, DEFAULTS, PREFERENCE_DEFAULTS, ownerId, profileId, storageKey, preferenceKey, load, save, loadPreferences, savePreferences, setEnabled, isEnabled, context });
 })(window);
