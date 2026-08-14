@@ -8,6 +8,8 @@ const {
 
 const MAX_HTML_BYTES = 5 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+const MAX_IMAGE_PIXELS = 80_000_000;
+const MAX_IMAGE_DIMENSION = 20_000;
 const MAX_IMAGES = 120;
 const MAX_CHAPTERS = 200;
 const FETCH_TIMEOUT_MS = 12_000;
@@ -97,6 +99,52 @@ async function readLimited(response, limit) {
   return Buffer.concat(chunks, total);
 }
 
+function detectImageMime(buffer) {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 12) return "";
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return "image/jpeg";
+  if (buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "image/png";
+  const ascii6 = buffer.subarray(0, 6).toString("ascii");
+  if (ascii6 === "GIF87a" || ascii6 === "GIF89a") return "image/gif";
+  if (buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP") return "image/webp";
+  if (buffer.subarray(4, 8).toString("ascii") === "ftyp" && /^(?:avif|avis|mif1|msf1)$/.test(buffer.subarray(8, 12).toString("ascii"))) return "image/avif";
+  return "";
+}
+
+function imageDimensions(buffer, mime) {
+  if (mime === "image/png" && buffer.length >= 24) return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
+  if (mime === "image/gif" && buffer.length >= 10) return { width: buffer.readUInt16LE(6), height: buffer.readUInt16LE(8) };
+  if (mime === "image/webp" && buffer.length >= 30 && buffer.subarray(12, 16).toString("ascii") === "VP8X") {
+    return { width: 1 + buffer.readUIntLE(24, 3), height: 1 + buffer.readUIntLE(27, 3) };
+  }
+  if (mime === "image/jpeg") {
+    let offset = 2;
+    while (offset + 9 < buffer.length) {
+      if (buffer[offset] !== 0xff) { offset += 1; continue; }
+      const marker = buffer[offset + 1];
+      if ([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(marker)) {
+        return { height: buffer.readUInt16BE(offset + 5), width: buffer.readUInt16BE(offset + 7) };
+      }
+      if (marker === 0xd8 || marker === 0xd9) { offset += 2; continue; }
+      const length = buffer.readUInt16BE(offset + 2);
+      if (length < 2) break;
+      offset += 2 + length;
+    }
+  }
+  return null;
+}
+
+function validateImageBytes(buffer, declaredType = "") {
+  const detected = detectImageMime(buffer);
+  if (!detected) fail("Tài nguyên không có magic bytes của ảnh được hỗ trợ.", 415, "IMAGE_MAGIC_BYTES_INVALID");
+  const declared = String(declaredType || "").split(";")[0].trim().toLowerCase();
+  if (declared && declared !== detected) fail("MIME ảnh không khớp nội dung tệp.", 415, "IMAGE_MIME_MISMATCH");
+  const dimensions = imageDimensions(buffer, detected);
+  if (dimensions && (!dimensions.width || !dimensions.height || dimensions.width > MAX_IMAGE_DIMENSION || dimensions.height > MAX_IMAGE_DIMENSION || dimensions.width * dimensions.height > MAX_IMAGE_PIXELS)) {
+    fail("Ảnh vượt giới hạn kích thước hoặc có nguy cơ decompression bomb.", 413, "IMAGE_PIXEL_LIMIT");
+  }
+  return { mimeType: detected, dimensions };
+}
+
 async function fetchSafe(input, { type = "html" } = {}) {
   let url = await assertPublicHttpsUrl(input);
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
@@ -131,6 +179,10 @@ async function fetchSafe(input, { type = "html" } = {}) {
       fail("Tài nguyên không phải ảnh được hỗ trợ.", 415, "IMAGE_REQUIRED");
     }
     const body = await readLimited(response, type === "image" ? MAX_IMAGE_BYTES : MAX_HTML_BYTES);
+    if (type === "image") {
+      const verified = validateImageBytes(body, contentType);
+      return { body, contentType: verified.mimeType, dimensions: verified.dimensions, url: url.href };
+    }
     return { body, contentType, url: url.href };
   }
   fail("Không thể tải nguồn.", 502, "SOURCE_FETCH_FAILED");
@@ -464,6 +516,9 @@ module.exports = {
     sequenceFingerprint,
     attrOf,
     bestSrc,
-    verifyAsset
+    verifyAsset,
+    detectImageMime,
+    imageDimensions,
+    validateImageBytes
   })
 };

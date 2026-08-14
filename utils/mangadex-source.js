@@ -241,4 +241,4 @@ async function handleMangaDexSource(req, res, { db }) {
   return res.status(200).json({ ok: true, policy: { languages: ["vi"], contentRatings: ["safe", "suggestive"], storesImages: false, attributionRequired: true }, ...result });
 }
 
-module.exports = { handleMangaDexSource, mapSeries, mapChapter, catalogPath, selectedTagIds, isAllowedRating, UUID };
+module.exports = { handleMangaDexSource, mapSeries, mapChapter, catalogPath, selectedTagIds, isAllowedRating, chapterPages, UUID };

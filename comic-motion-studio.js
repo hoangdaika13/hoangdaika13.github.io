@@ -72,6 +72,12 @@
   let sourceLatencyEma = 0;
   let chapterPreviewUrls = new Map();
   let libraryCheckCursor = 0;
+  let batchHandoff = null;
+  let batchJobs = [];
+  let batchWorkerHealth = { connected: false, status: "Chưa kiểm tra", missing: [] };
+  let batchBusy = false;
+  let batchPollTimer = 0;
+  let batchLastSyncedAt = "";
 
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
@@ -421,6 +427,94 @@
     return response;
   }
 
+  async function batchApi(action, payload = {}, signal = controller?.signal) {
+    if (window.HHComicLibraryBridge?.api) return window.HHComicLibraryBridge.api(action, payload, signal);
+    const response = await fetch(`${apiBase}/api/modules/comic-motion/actions`, {
+      method: "POST", credentials: "include", headers: authHeaders(), signal,
+      body: JSON.stringify({ action, ...payload })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.ok !== true) {
+      const error = new Error(data.error || `Comic Motion API HTTP ${response.status}`);
+      error.code = data.code || "COMIC_MOTION_API_ERROR";
+      error.statusCode = response.status;
+      throw error;
+    }
+    return data;
+  }
+
+  function batchStatusLabel(value) {
+    return ({ draft: "Chờ kết nối worker", "rights-check": "Kiểm tra quyền", queued: "Đang chờ", resolving: "Resolve chương", downloading: "Tải trang", analyzing: "Phân tích", ocr: "OCR", storyboard: "Storyboard", "awaiting-review": "Chờ duyệt", voice: "Tạo giọng", "audio-mix": "Trộn âm", rendering: "Đang render", packaging: "Đóng gói", completed: "Hoàn thành", paused: "Tạm dừng", retrying: "Đang thử lại", failed: "Lỗi", cancelled: "Đã hủy", "blocked-rights": "Bị chặn quyền" })[value] || value || "Chưa tạo";
+  }
+
+  async function refreshBatchJobs() {
+    const seriesId = batchHandoff?.descriptor?.series?.id || "";
+    try {
+      const result = await batchApi("batch-job-list", { seriesId, limit: 200 });
+      batchJobs = Array.isArray(result.jobs) ? result.jobs : [];
+      batchLastSyncedAt = new Date().toISOString();
+      if (root?.isConnected && focusedSection === "batch") render();
+      return batchJobs;
+    } catch (error) {
+      if (error.statusCode !== 401) status(error.message || "Không thể đồng bộ batch jobs.", "error");
+      return batchJobs;
+    }
+  }
+
+  function scheduleBatchPolling() {
+    clearTimeout(batchPollTimer);
+    if (!root || document.hidden || !batchJobs.some((job) => !["completed", "failed", "cancelled", "blocked-rights"].includes(job.status))) return;
+    batchPollTimer = setTimeout(async () => { await refreshBatchJobs(); scheduleBatchPolling(); }, 5000);
+  }
+
+  async function openHandoff(handoffId, options = {}) {
+    const id = String(handoffId || "").slice(0, 180);
+    if (!id) throw new Error("Handoff ID đang trống.");
+    const consume = options.consume === true;
+    const result = window.HHComicLibraryBridge?.openHandoff
+      ? await window.HHComicLibraryBridge.openHandoff(id, { consume, signal: options.signal })
+      : (await batchApi(consume ? "library-handoff-consume" : "library-handoff-get", { handoffId: id }, options.signal)).handoff;
+    batchHandoff = result;
+    focusedSection = "batch";
+    await refreshBatchJobs();
+    if (root?.isConnected) render();
+    return result;
+  }
+
+  async function getBatchStatus(jobId = "") {
+    if (jobId) return (await batchApi("batch-job-get", { jobId })).job;
+    return refreshBatchJobs();
+  }
+
+  async function pauseBatch(jobId) { const result = await batchApi("batch-job-pause", { jobId }); await refreshBatchJobs(); return result.job; }
+  async function resumeBatch(jobId) { const result = await batchApi("batch-job-resume", { jobId }); await refreshBatchJobs(); return result.job; }
+  async function retryBatch(jobId, options = {}) { const result = await batchApi("batch-job-retry", { jobId, checkpoint: options.checkpoint, pageIndex: options.pageIndex }); await refreshBatchJobs(); return result.job; }
+
+  async function createBatchFromHandoff() {
+    if (!batchHandoff?.id || batchHandoff.consumedAt || batchBusy) return batchJobs;
+    batchBusy = true;
+    if (root?.isConnected) render();
+    try {
+      const result = await batchApi("batch-job-create", {
+        handoffId: batchHandoff.id,
+        presetId: batchHandoff.descriptor?.preset?.id,
+        preset: batchHandoff.descriptor?.preset,
+        commercialMode: true
+      });
+      batchJobs = result.jobs || [];
+      batchHandoff.consumedAt = new Date().toISOString();
+      batchLastSyncedAt = new Date().toISOString();
+      window.HHComicLibraryBridge?.clearHandoffFromLocation?.();
+      notify(`${batchJobs.length} job đã được lưu${result.duplicates ? ` · ${result.duplicates} job trùng được dùng lại` : ""}.`, "success");
+      return batchJobs;
+    } finally {
+      batchBusy = false;
+      await refreshBatchJobs();
+      scheduleBatchPolling();
+      if (root?.isConnected) render();
+    }
+  }
+
   function capabilities() {
     const capture = Boolean(window.HTMLCanvasElement?.prototype?.captureStream && window.MediaRecorder);
     const supported = (list) => list.find((mime) => !MediaRecorder?.isTypeSupported || MediaRecorder.isTypeSupported(mime)) || "";
@@ -515,7 +609,21 @@
   function exportPaneMarkup(caps) {
     return `<section class="cms-module-pane" data-cms-pane="export"><header class="cms-pane-header"><div><small>EXPORT</small><h2>Xuất video</h2></div><span class="cms-badge">${state.renderQueue.filter((item) => item.status === "queued").length} chờ</span></header><section class="cms-panel"><div class="cms-form-grid"><label>Khung hình<select data-cms-project="format">${Object.entries(FORMATS).map(([id, value]) => `<option value="${id}" ${state.format.id === id ? "selected" : ""}>${value.label}</option>`).join("")}</select></label><label>Chất lượng<select data-cms-project="quality">${Object.entries(QUALITY_PRESETS).map(([id, value]) => `<option value="${id}" ${state.format.quality === id ? "selected" : ""}>${value.label}</option>`).join("")}</select></label></div><label>FPS<select data-cms-project="fps">${[24,30,60].map((fps) => `<option value="${fps}" ${state.format.fps === fps ? "selected" : ""}>${fps} FPS</option>`).join("")}</select></label><div class="cms-inline-actions"><button type="button" data-cms-action="preview-10">Preview 10 giây</button><button type="button" data-cms-action="enqueue-render">Thêm vào hàng đợi</button><button class="cms-primary" type="button" data-cms-action="render">Xuất ngay · ${caps.mp4Mime ? "MP4" : "WebM"}</button></div><div class="cms-inline-actions"><button type="button" data-cms-action="export-subtitles-srt">Tải SRT</button><button type="button" data-cms-action="export-subtitles-vtt">Tải WebVTT</button><button type="button" data-cms-action="export-project">Lưu .hhcomic</button></div></section><section class="cms-panel cms-advanced"><small>INTRO / OUTRO</small><h3>Chèn trực tiếp vào timeline</h3><div class="cms-form-grid"><label>Intro ảnh<input type="file" accept="image/*" data-cms-intro-file></label><label>Outro ảnh<input type="file" accept="image/*" data-cms-outro-file></label></div><div class="cms-form-grid"><label>Intro (giây)<input type="number" min="0.5" max="15" step="0.5" value="${state.introDuration}" data-cms-project="introDuration"></label><label>Outro (giây)<input type="number" min="0.5" max="15" step="0.5" value="${state.outroDuration}" data-cms-project="outroDuration"></label></div></section><section class="cms-panel"><small>RENDER QUEUE</small><h3>Hàng đợi kết xuất</h3><ul class="cms-render-queue">${state.renderQueue.map((item) => `<li><span>${esc(item.formatId)} · ${esc(item.quality)} · ${item.fps} FPS</span><small>${esc(item.status)}${item.error ? ` · ${esc(item.error)}` : ""}</small>${item.status === "error" ? `<button type="button" data-cms-retry-render="${esc(item.id)}">Thử lại</button>` : ""}</li>`).join("") || "<li class=\"cms-task-empty\">Chưa có job render</li>"}</ul></section></section>`;
   }
+
+  function batchPaneMarkup() {
+    const descriptor = batchHandoff?.descriptor;
+    const stats = batchJobs.reduce((result, job) => { result.total += 1; result[job.status] = (result[job.status] || 0) + 1; result.bytes += Number(job.estimatedBytes || 0); result.seconds += Number(job.estimatedDurationSeconds || 0); return result; }, { total: 0, bytes: 0, seconds: 0 });
+    const missing = batchWorkerHealth.missing?.length ? `Thiếu: ${batchWorkerHealth.missing.join(", ")}` : "";
+    return `<section class="cms-module-pane cms-batch-pane" data-cms-pane="batch"><header class="cms-pane-header"><div><small>LIBRARY BATCH</small><h2>Reader → Comic Motion</h2></div><span class="cms-badge">${stats.total} job</span></header>
+      <section class="cms-batch-health ${batchWorkerHealth.connected ? "is-connected" : "is-disconnected"}"><div><small>RENDER WORKER</small><strong>${esc(batchWorkerHealth.status || "Chưa kiểm tra")}</strong><span>${esc(missing || (batchWorkerHealth.connected ? `FFmpeg ${batchWorkerHealth.worker?.ffmpeg ? "sẵn sàng" : "chưa xác nhận"} · hàng đợi ${batchWorkerHealth.worker?.queueDepth || 0}` : "Browser Renderer vẫn dùng được cho video ngắn."))}</span></div><button type="button" data-cms-batch-action="worker-health">Kiểm tra kết nối</button></section>
+      ${descriptor ? `<section class="cms-batch-handoff"><img src="${esc(descriptor.series.cover || "")}" alt=""><div><small>HANDOFF CÒN HẠN</small><strong>${esc(descriptor.series.title)}</strong><span>${descriptor.chapters.length} chương · ${descriptor.chapters.reduce((sum, chapter) => sum + Number(chapter.pageCount || 0), 0)} trang · ${esc(descriptor.rights.status)}</span></div>${batchJobs.some((job) => job.batchId) ? "" : `<button class="cms-primary" type="button" data-cms-batch-action="create"${batchBusy ? " disabled" : ""}>${batchBusy ? "Đang tạo…" : "Tạo batch job"}</button>`}</section>` : `<section class="cms-empty cms-batch-empty"><strong>Chưa nhận handoff từ Đọc truyện</strong><p>Chọn các chương trong HH Comics, kiểm tra Rights Gate rồi bấm Mở Comic Motion.</p><button type="button" data-cms-batch-action="open-reader">Mở Đọc truyện</button></section>`}
+      <section class="cms-batch-stats"><span><small>Tổng</small><b>${stats.total}</b></span><span><small>Đang chạy</small><b>${batchJobs.filter((job) => ["resolving","downloading","analyzing","ocr","storyboard","voice","audio-mix","rendering","packaging","retrying"].includes(job.status)).length}</b></span><span><small>Hoàn thành</small><b>${stats.completed || 0}</b></span><span><small>Lỗi</small><b>${stats.failed || 0}</b></span><span><small>Chặn quyền</small><b>${stats["blocked-rights"] || 0}</b></span><span><small>Ước tính</small><b>${Math.ceil(stats.seconds / 60)}′ · ${(stats.bytes / 1048576).toFixed(0)} MB</b></span></section>
+      <div class="cms-batch-toolbar"><button type="button" data-cms-batch-action="refresh">↻ Đồng bộ</button><button type="button" data-cms-batch-action="pause-all"${batchJobs.some((job) => ["draft","queued","resolving","downloading","analyzing","ocr","storyboard","voice","audio-mix","rendering","packaging","retrying"].includes(job.status)) ? "" : " disabled"}>Pause tất cả</button><button type="button" data-cms-batch-action="resume-all"${batchJobs.some((job) => ["paused","draft"].includes(job.status)) ? "" : " disabled"}>Resume</button><button type="button" data-cms-batch-action="retry-failed"${stats.failed ? "" : " disabled"}>Retry lỗi</button><span>Đồng bộ ${batchLastSyncedAt ? new Date(batchLastSyncedAt).toLocaleTimeString("vi-VN") : "chưa có"}</span></div>
+      <div class="cms-batch-jobs">${batchJobs.map((job) => `<article class="cms-batch-job is-${esc(job.status)}" data-cms-batch-job="${esc(job.id)}"><div class="cms-batch-job-head"><span>${esc(job.chapter?.number || "?")}</span><div><strong>${esc(job.series?.title || "Truyện")}</strong><small>Chương ${esc(job.chapter?.number || "?")} · ${job.pageCount || 0} trang · ${job.parts?.length || 1} phần</small></div><b>${esc(batchStatusLabel(job.status))}</b></div><progress max="100" value="${Math.max(0, Math.min(100, Number(job.progress) || 0))}"></progress><p>${esc(job.statusReason || job.lastError || `Cập nhật ${job.updatedAt ? new Date(job.updatedAt).toLocaleString("vi-VN") : "—"}`)}</p><div class="cms-batch-job-actions">${["draft","queued","resolving","downloading","analyzing","ocr","storyboard","voice","audio-mix","rendering","packaging","retrying"].includes(job.status) ? `<button type="button" data-cms-job-action="pause" data-job-id="${esc(job.id)}">Pause</button>` : ""}${["paused","draft"].includes(job.status) ? `<button type="button" data-cms-job-action="resume" data-job-id="${esc(job.id)}">Resume</button>` : ""}${job.status === "failed" ? `<button type="button" data-cms-job-action="retry" data-job-id="${esc(job.id)}">Retry</button>` : ""}${!["completed","cancelled","failed","blocked-rights"].includes(job.status) ? `<button type="button" data-cms-job-action="cancel" data-job-id="${esc(job.id)}">Hủy</button>` : ""}<button type="button" data-cms-job-action="license" data-job-id="${esc(job.id)}">License Pack</button>${["completed","cancelled","failed","blocked-rights"].includes(job.status) ? `<button type="button" data-cms-job-action="delete" data-job-id="${esc(job.id)}">Xóa</button>` : ""}</div></article>`).join("") || `<div class="cms-empty cms-empty--small">Chưa có batch job bền vững.</div>`}</div>
+    </section>`;
+  }
   function workspacePaneMarkup(scene, caps) {
+    if (focusedSection === "batch") return batchPaneMarkup();
     if (focusedSection === "source" || focusedSection === "workspace") return sourcePaneMarkup();
     if (focusedSection === "script") return scriptPaneMarkup(scene);
     if (focusedSection === "voice") return voicePaneMarkup(scene);
@@ -545,7 +653,7 @@
     const caps = capabilities();
     const scene = activeScene();
     root.innerHTML = `<section class="cms-app" data-cms-focus="${esc(focusedSection)}" data-cms-mode="${esc(state.uiMode)}">
-      <header class="cms-topbar"><div class="cms-brand"><small>COMIC MOTION STUDIO</small><input value="${esc(state.name)}" maxlength="180" data-cms-project="name" aria-label="Tên dự án"><span data-cms-save-status>Đã tự lưu</span></div><nav class="cms-section-nav" aria-label="Khu vực làm việc"><button type="button" data-cms-section="source" class="${focusedSection === "source" || focusedSection === "workspace" ? "is-active" : ""}">Nguồn</button><button type="button" data-cms-section="script" class="${focusedSection === "script" ? "is-active" : ""}">Kịch bản</button><button type="button" data-cms-section="voice" class="${focusedSection === "voice" ? "is-active" : ""}">Voice</button><button type="button" data-cms-section="motion" class="${focusedSection === "motion" ? "is-active" : ""}">Chuyển động</button><button type="button" data-cms-section="timeline" class="${focusedSection === "timeline" ? "is-active" : ""}">Timeline</button><button type="button" data-cms-section="export" class="${focusedSection === "export" ? "is-active" : ""}">Xuất video</button></nav><div class="cms-top-actions"><button type="button" data-cms-action="toggle-mode">${state.uiMode === "advanced" ? "Advanced" : "Basic"}</button><button type="button" data-cms-action="command-palette">Ctrl K</button><button type="button" data-cms-action="preview-10">Preview</button><button type="button" data-cms-action="render" class="cms-primary">Xuất ${caps.mp4Mime ? "MP4" : "WebM"}</button></div></header>
+      <header class="cms-topbar"><div class="cms-brand"><small>COMIC MOTION STUDIO</small><input value="${esc(state.name)}" maxlength="180" data-cms-project="name" aria-label="Tên dự án"><span data-cms-save-status>Đã tự lưu</span></div><nav class="cms-section-nav" aria-label="Khu vực làm việc"><button type="button" data-cms-section="batch" class="${focusedSection === "batch" ? "is-active" : ""}">Batch</button><button type="button" data-cms-section="source" class="${focusedSection === "source" || focusedSection === "workspace" ? "is-active" : ""}">Nguồn</button><button type="button" data-cms-section="script" class="${focusedSection === "script" ? "is-active" : ""}">Kịch bản</button><button type="button" data-cms-section="voice" class="${focusedSection === "voice" ? "is-active" : ""}">Voice</button><button type="button" data-cms-section="motion" class="${focusedSection === "motion" ? "is-active" : ""}">Chuyển động</button><button type="button" data-cms-section="timeline" class="${focusedSection === "timeline" ? "is-active" : ""}">Timeline</button><button type="button" data-cms-section="export" class="${focusedSection === "export" ? "is-active" : ""}">Xuất video</button></nav><div class="cms-top-actions"><button type="button" data-cms-action="toggle-mode">${state.uiMode === "advanced" ? "Advanced" : "Basic"}</button><button type="button" data-cms-action="command-palette">Ctrl K</button><button type="button" data-cms-action="preview-10">Preview</button><button type="button" data-cms-action="render" class="cms-primary">Xuất ${caps.mp4Mime ? "MP4" : "WebM"}</button></div></header>
       <div class="cms-workspace cms-workspace-v2"><section class="cms-module-shell">${workspacePaneMarkup(scene, caps)}</section><main class="cms-preview"><div class="cms-stage"><canvas width="${state.format.width}" height="${state.format.height}" data-cms-canvas></canvas><div class="cms-safe-zone" aria-hidden="true"></div><div class="cms-stage-empty" ${scene ? "hidden" : ""}><strong>Preview video</strong><p>Thêm trang truyện để xem chuyển động camera.</p></div></div><div class="cms-transport"><button type="button" data-cms-action="play">${previewPlaying ? "❚❚" : "▶"}</button><input type="range" min="0" max="${Math.max(0.1, totalDuration())}" step="0.01" value="${previewOffset}" data-cms-scrubber><span data-cms-time>${formatTime(previewOffset)} / ${formatTime(totalDuration())}</span><button type="button" data-cms-action="thumbnail">Thumbnail</button></div><div class="cms-render-info"><span>${state.format.width}×${state.format.height} · ${state.format.fps} FPS</span><span>${caps.mp4Mime ? "MP4 khả dụng" : caps.webmMime ? "WebM thật" : "Render không khả dụng"}</span></div></main></div>
       <footer class="cms-timeline cms-timeline--compact">${focusedSection === "timeline" ? "" : timelineMarkup()}</footer><div class="cms-status" data-cms-status data-type="info">Sẵn sàng. Dự án được lưu riêng theo tài khoản.</div><div class="cms-toast" data-cms-toast data-type="info" hidden role="status" aria-live="polite"></div><aside class="cms-task-center" data-cms-task-center><header><strong>Task Center</strong><span data-cms-task-count>0</span></header><ul data-cms-task-list></ul><button type="button" data-cms-action="request-notifications">Bật thông báo Windows</button></aside>${sourceDialogMarkup()}<dialog class="cms-command-dialog" data-cms-command-dialog><form method="dialog"><input autofocus placeholder="Tìm thao tác…" data-cms-command-input><div data-cms-command-results><button type="button" data-cms-command="source">Mở Nguồn</button><button type="button" data-cms-command="script">Mở Kịch bản</button><button type="button" data-cms-command="voice">Mở Voice</button><button type="button" data-cms-command="motion">Mở Chuyển động</button><button type="button" data-cms-command="timeline">Mở Timeline</button><button type="button" data-cms-command="export">Mở Xuất video</button><button type="button" data-cms-command="storyboard">Tự dựng storyboard</button></div></form></dialog>
     </section>`;
@@ -1336,6 +1444,54 @@
     }
   }
   async function handleClick(event) {
+    const batchActionButton = event.target.closest("[data-cms-batch-action]");
+    if (batchActionButton) {
+      const actionName = batchActionButton.dataset.cmsBatchAction;
+      if (actionName === "open-reader") { window.location.hash = "#/comic-reader"; return; }
+      if (actionName === "refresh") { await refreshBatchJobs(); scheduleBatchPolling(); return; }
+      if (actionName === "worker-health") {
+        batchActionButton.disabled = true;
+        try { batchWorkerHealth = (await batchApi("worker-health")).health; render(); }
+        catch (error) { status(error.message || "Không thể kiểm tra worker.", "error"); }
+        return;
+      }
+      if (actionName === "create") {
+        try { await createBatchFromHandoff(); }
+        catch (error) { notify(error.message || "Không thể tạo batch job.", "error"); }
+        return;
+      }
+      const operations = actionName === "pause-all" ? batchJobs.filter((job) => ["draft","queued","resolving","downloading","analyzing","ocr","storyboard","voice","audio-mix","rendering","packaging","retrying"].includes(job.status)).map((job) => ["batch-job-pause", job.id])
+        : actionName === "resume-all" ? batchJobs.filter((job) => ["paused","draft"].includes(job.status)).map((job) => ["batch-job-resume", job.id])
+          : actionName === "retry-failed" ? batchJobs.filter((job) => job.status === "failed").map((job) => ["batch-job-retry", job.id]) : [];
+      if (operations.length) {
+        batchBusy = true;
+        for (const [operation, jobId] of operations) {
+          try { await batchApi(operation, { jobId }); } catch (error) { notify(`${jobId.slice(0, 8)}: ${error.message}`, "error"); }
+        }
+        batchBusy = false; await refreshBatchJobs(); scheduleBatchPolling(); render();
+      }
+      return;
+    }
+    const jobActionButton = event.target.closest("[data-cms-job-action]");
+    if (jobActionButton) {
+      const jobId = jobActionButton.dataset.jobId;
+      const actionName = jobActionButton.dataset.cmsJobAction;
+      jobActionButton.disabled = true;
+      try {
+        if (actionName === "pause") await pauseBatch(jobId);
+        else if (actionName === "resume") await resumeBatch(jobId);
+        else if (actionName === "retry") await retryBatch(jobId);
+        else if (actionName === "cancel") await batchApi("batch-job-cancel", { jobId });
+        else if (actionName === "delete") await batchApi("batch-job-delete", { jobId });
+        else if (actionName === "license") {
+          if (!window.HHComicLibraryBridge?.downloadLicensePack) throw new Error("License Pack engine chưa được tải.");
+          await window.HHComicLibraryBridge.downloadLicensePack(jobId);
+          notify("Đã tạo License Pack từ dữ liệu quyền trên máy chủ.", "success");
+        }
+        await refreshBatchJobs(); scheduleBatchPolling(); render();
+      } catch (error) { notify(error.message || "Không thể cập nhật job.", "error"); jobActionButton.disabled = false; }
+      return;
+    }
     if (event.target.closest("[data-cms-close-source]")) {
       sourceController?.abort();
       sourcePause = false;
@@ -1480,7 +1636,9 @@
   async function mount(host, mountOptions = {}) {
     unmount();
     const epoch = ++mountEpoch;
-    root = host; apiBase = String(mountOptions.apiBase || window.HH_CONFIG?.API_BASE || "").replace(/\/$/, ""); state = loadState(); loadSourceLibrary(); loadTaskCenter(); controller = new AbortController(); const listenerOptions = { signal: controller.signal };
+    root = host; apiBase = String(mountOptions.apiBase || window.HH_CONFIG?.API_BASE || "").replace(/\/$/, ""); state = loadState(); loadSourceLibrary(); loadTaskCenter();
+    batchHandoff = null; batchJobs = []; batchWorkerHealth = { connected: false, status: "Chưa kiểm tra", missing: [] }; batchBusy = false; batchLastSyncedAt = "";
+    controller = new AbortController(); const listenerOptions = { signal: controller.signal };
     root.addEventListener("click", (event) => handleClick(event).catch((error) => status(error.message, "error")), listenerOptions);
     root.addEventListener("input", updateInput, listenerOptions);
     root.addEventListener("change", (event) => {
@@ -1495,6 +1653,7 @@
       previewOffset = Number(event.target.value); const position = sceneAtTime(previewOffset); if (position) { state.currentSceneId = position.scene.id; drawScene(root.querySelector("[data-cms-canvas]").getContext("2d"), position.scene, position.localTime); }
     }, listenerOptions);
     window.addEventListener("hh:auth-change", async () => { state = loadState(); if (await refreshAssets(epoch)) render(); }, listenerOptions);
+    document.addEventListener("visibilitychange", () => { if (document.hidden) clearTimeout(batchPollTimer); else { refreshBatchJobs().then(scheduleBatchPolling).catch(() => {}); } }, listenerOptions);
     window.addEventListener("keydown", (event) => {
       const typing = /INPUT|TEXTAREA|SELECT/.test(event.target?.tagName || "");
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); root?.querySelector("[data-cms-command-dialog]")?.showModal(); return; }
@@ -1503,6 +1662,18 @@
     }, listenerOptions);
     if (!await refreshAssets(epoch) || epoch !== mountEpoch || root !== host || controller?.signal.aborted) return false;
     render();
+    const handoffId = window.HHComicLibraryBridge?.handoffFromLocation?.() || (() => { try { return new URL(window.location.href).searchParams.get("handoff") || ""; } catch { return ""; } })();
+    if (handoffId) {
+      try {
+        await openHandoff(handoffId, { consume: false, signal: controller.signal });
+        if (!batchHandoff?.consumedAt && batchHandoff?.descriptor?.rights?.status === "allowed") await createBatchFromHandoff();
+      }
+      catch (error) { status(error.message || "Handoff không hợp lệ hoặc đã hết hạn.", "error"); focusedSection = "batch"; render(); }
+    } else {
+      await refreshBatchJobs();
+    }
+    batchApi("worker-health").then((result) => { batchWorkerHealth = result.health; if (root?.isConnected && focusedSection === "batch") render(); }).catch(() => {});
+    scheduleBatchPolling();
     clearInterval(seriesCheckTimer);
     seriesCheckTimer = setInterval(() => { checkSourceLibraryUpdates().catch(() => {}); }, 30 * 60 * 1000);
     updateTaskCenter();
@@ -1513,15 +1684,21 @@
     sourceBusy = false;
     clearInterval(seriesCheckTimer); seriesCheckTimer = 0;
     clearTimeout(taskTicker); taskTicker = 0;
+    clearTimeout(batchPollTimer); batchPollTimer = 0;
     sourceController?.abort(); sourceController = null;
     previewPlaying = false; cancelAnimationFrame(previewFrame); clearTimeout(autosaveTimer); renderCancelled = true;
     if (recorder?.state === "recording") recorder.stop(); recorder = null; window.speechSynthesis?.cancel?.(); controller?.abort(); controller = null;
     for (const url of objectUrls.values()) URL.revokeObjectURL(url); objectUrls.clear(); imageCache.clear();
     for (const url of chapterPreviewUrls.values()) URL.revokeObjectURL(url); chapterPreviewUrls.clear();
     resetSourcePreview();
+    batchHandoff = null; batchJobs = []; batchBusy = false;
     if (root) root.innerHTML = ""; root = null;
   }
 
-  window.HHComicMotionStudio = Object.freeze({ mount, unmount, normalizeState, normalizeScene, normalizeSourceUrl, capabilities, extractSubtitles: subtitleText, formats: FORMATS });
+  window.HHComicMotionStudio = Object.freeze({
+    mount, unmount, version: "4.0.0", normalizeState, normalizeScene, normalizeSourceUrl,
+    capabilities, extractSubtitles: subtitleText, formats: FORMATS,
+    openHandoff, getBatchStatus, pauseBatch, resumeBatch, retryBatch
+  });
   window.dispatchEvent(new CustomEvent("hh:comic-motion-ready"));
 })();

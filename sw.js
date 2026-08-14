@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v622";
+const CACHE = "hh-identity-portal-v623";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -53,8 +53,8 @@ const RUNTIME_ASSETS = [
   "./media-design-publish.css?v=1",
   "./video-editor-studio.css?v=4",
   "./video-batch-factory.css?v=4",
-  "./comic-motion-studio.css?v=6",
-  "./comic-reader-hub.css?v=13",
+  "./comic-motion-studio.css?v=7",
+  "./comic-reader-hub.css?v=14",
   "./cinema-hub.css?v=5",
   "./open-music-hub.css?v=5",
   "./open-media-governance.css?v=1",
@@ -145,9 +145,10 @@ const RUNTIME_ASSETS = [
   "./services/tiktokCreatorAnalytics.js?v=2",
   "./tiktok-creator-galaxy.js?v=2",
   "./ai-video-remake-studio.js?v=2",
-  "./comic-motion-studio.js?v=10",
+  "./services/comicLibraryBridge.js?v=1",
+  "./comic-motion-studio.js?v=11",
   "./comic-open-source-catalog.js?v=2",
-  "./comic-reader-hub.js?v=19",
+  "./comic-reader-hub.js?v=20",
   "./utils/open-media-rights.js?v=4",
   "./cinema-hub.js?v=6",
   "./open-music-hub.js?v=4",
@@ -510,7 +511,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=332",
+  "./performance-loader.js?v=333",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=22",
   "./script.js?v=186"

@@ -136,12 +136,12 @@
     },
     "comic-motion": {
       // Compatibility: comic-motion-studio.css?v=3 comic-motion-studio.css?v=4 comic-motion-studio.css?v=5 comic-motion-studio.js?v=6 comic-motion-studio.js?v=7 comic-motion-studio.js?v=8 comic-motion-studio.js?v=9
-      styles: ["comic-motion-studio.css?v=6"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/tesseract.min.js?v=6.0.1", "comic-motion-studio.js?v=10"]
+      styles: ["comic-motion-studio.css?v=7"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/tesseract.min.js?v=6.0.1", "services/comicLibraryBridge.js?v=1", "comic-motion-studio.js?v=11"]
     },
     "comic-reader": {
-      styles: ["comic-reader-hub.css?v=13"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-open-source-catalog.js?v=2", "comic-reader-hub.js?v=19"]
+      styles: ["comic-reader-hub.css?v=14"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-open-source-catalog.js?v=2", "services/comicLibraryBridge.js?v=1", "comic-reader-hub.js?v=20"]
     },
     graphic: {
       styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],

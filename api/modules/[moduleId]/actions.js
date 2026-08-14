@@ -23,6 +23,7 @@ const {
 } = require("../../../utils/openai-provider");
 const { createHmac } = require("node:crypto");
 const { handleComicSource } = require("../../../utils/comic-source");
+const { handleComicMotionApi } = require("../../../utils/comic-motion-api");
 const { handleMangaDexSource } = require("../../../utils/mangadex-source");
 const { handleOTruyenSource } = require("../../../utils/otruyen-source");
 const { handleOpenBooksSource } = require("../../../utils/open-books-source");
@@ -1643,6 +1644,10 @@ module.exports = async function handler(req, res) {
     }
     if (moduleId === "comic-reader" && req.query.provider === "open-books") {
       return handleOpenBooksSource(req, res, { db });
+    }
+    const comicMotionLibraryAction = clean(body.action, 80);
+    if (moduleId === "comic-motion" && (req.query.workerManifest || /^(?:library-|batch-job-|worker-|preset-)/.test(comicMotionLibraryAction))) {
+      return handleComicMotionApi(req, res, { db, body, user });
     }
     if (moduleId === "comic-motion" || req.query.comicSource === "1") {
       return handleComicSource(req, res, { db, body, user });

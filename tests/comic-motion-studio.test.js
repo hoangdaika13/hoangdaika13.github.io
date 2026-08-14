@@ -69,6 +69,18 @@ test("Comic source SSRF checks identify private and reserved addresses", () => {
   assert.equal(isPrivateIp("2606:4700:4700::1111"), false);
 });
 
+test("Comic source validates image magic bytes, MIME and pixel limits", () => {
+  const { detectImageMime, validateImageBytes } = require("../utils/comic-source.js").__test;
+  const png = Buffer.alloc(24);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(png);
+  png.writeUInt32BE(1200, 16); png.writeUInt32BE(1800, 20);
+  assert.equal(detectImageMime(png), "image/png");
+  assert.deepEqual(validateImageBytes(png, "image/png").dimensions, { width: 1200, height: 1800 });
+  assert.throws(() => validateImageBytes(png, "image/jpeg"), (error) => error.code === "IMAGE_MIME_MISMATCH");
+  const bomb = Buffer.from(png); bomb.writeUInt32BE(20000, 16); bomb.writeUInt32BE(20000, 20);
+  assert.throws(() => validateImageBytes(bomb, "image/png"), (error) => error.code === "IMAGE_PIXEL_LIMIT");
+});
+
 test("Comic source keeps the dominant chapter sequence and excludes surrounding page art", () => {
   const { selectChapterImages, extractPageTitle } = require("../utils/comic-source.js").__test;
   const candidates = [
@@ -116,15 +128,16 @@ test("Comic Motion Studio is registered in route, sidebar, search, lazy loader a
   assert.match(script, /HHComicMotionStudio\?\.mount/);
   assert.match(script, /HHComicMotionStudio\?\.unmount/);
   assert.match(script, /Comic Motion Studio/);
-  assert.match(loader, /comic-motion-studio\.css\?v=3/);
-  assert.match(loader, /comic-motion-studio\.js\?v=6/);
+  assert.match(loader, /comic-motion-studio\.css\?v=7/);
+  assert.match(loader, /services\/comicLibraryBridge\.js\?v=1/);
+  assert.match(loader, /comic-motion-studio\.js\?v=11/);
   assert.match(loader, /vendor\/jszip\.min\.js/);
   assert.match(loader, /vendor\/tesseract\.min\.js/);
   assert.match(loader, /STYLE_TIMEOUT_MS\s*=\s*15000/);
   assert.match(loader, /SCRIPT_TIMEOUT_MS\s*=\s*20000/);
   assert.match(loader, /assetPromises\.delete\(key\)/);
   assert.match(loader, /retryForRoute/);
-  assert.match(worker, /hh-identity-portal-v403/);
+  assert.match(worker, /hh-identity-portal-v623/);
   assert.match(worker, /pdf\.worker\.min\.mjs/);
   assert.match(worker, /vie\.traineddata\.gz/);
 

@@ -6358,8 +6358,8 @@ function initAppShell() {
       window.HHCreativeSuite?.mountScriptStudio?.(workspace.firstElementChild);
       remember("ai-script");
     } else if (route === "/comic-motion-studio") {
-      updatePageHeader("Comic Motion Studio", "Biến ảnh truyện được cấp phép thành video kể chuyện có camera, voice, nhạc, phụ đề và timeline.", route);
-      pageActions.innerHTML = `<button type="button" data-app-route="/davinci-resolve">Video Studio</button><button class="app-primary-action" type="button" data-command-open>Tìm công cụ</button>`;
+      updatePageHeader("Comic Motion Studio", "Nhận truyện/chương từ HH Comics qua handoff bảo mật, kiểm tra quyền và điều phối video hàng loạt theo từng chương.", route);
+      pageActions.innerHTML = `<button type="button" data-app-route="/comic-reader">Chọn truyện</button><button type="button" data-app-route="/davinci-resolve">Video Studio</button><button class="app-primary-action" type="button" data-command-open>Tìm công cụ</button>`;
       workspace.innerHTML = '<div data-comic-motion-host></div>';
       if (window.HHComicMotionStudio?.mount) {
         const comicHost = workspace.firstElementChild;

@@ -77,7 +77,11 @@
     remoteGenreSlugs: new Map(),
     remote: { loading: false, page: 0, perPage: 72, total: 0, hasMore: true, context: "latest", error: "" },
     mangadex: { loading: false, offset: 0, limit: 48, total: 0, hasMore: true, context: "latest", error: "" },
-    openBooks: { loading: false, total: 0, error: "" }
+    openBooks: { loading: false, total: 0, error: "" },
+    motionSelected: new Set(),
+    motionDialog: null,
+    motionBusy: false,
+    motionJobs: []
   };
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
@@ -632,6 +636,53 @@
 
   function activeSeries() { return state.catalog.find((series) => series.id === state.activeSeriesId) || null; }
   function activeChapter() { return activeSeries()?.chapters?.find((chapter) => chapter.id === state.activeChapterId) || null; }
+  function getSeriesDescriptor(seriesId = state.activeSeriesId) {
+    const series = state.catalog.find((entry) => entry.id === seriesId);
+    if (!series) return null;
+    return global.HHComicLibraryBridge?.seriesDescriptor?.(series) || {
+      id: series.id, title: series.title, author: series.author || "", artist: series.artist || "",
+      provider: series.provider || series.sourceType || "imported", sourceType: series.sourceType || "imported",
+      sourceUrl: series.sourceUrl || "", updatedAt: series.updatedAt || null
+    };
+  }
+  function getChapterDescriptor(seriesId = state.activeSeriesId, chapterId = state.activeChapterId, options = {}) {
+    const series = state.catalog.find((entry) => entry.id === seriesId);
+    const chapter = series?.chapters?.find((entry) => entry.id === chapterId);
+    if (!series || !chapter) return null;
+    return global.HHComicLibraryBridge?.chapterDescriptor?.(series, chapter, options) || {
+      id: chapter.id, number: chapter.number, title: chapter.title || "", providerChapterId: chapter.remoteChapterId || chapter.id,
+      provider: series.sourceType || "imported", pageCount: chapter.pages?.length || 0, sourceUrl: chapter.sourceUrl || chapter.apiUrl || ""
+    };
+  }
+  function getMotionEligibility(seriesId = state.activeSeriesId, chapterIds = []) {
+    const series = state.catalog.find((entry) => entry.id === seriesId);
+    if (!series) return { status: "unknown", reasons: ["Không tìm thấy truyện trong thư viện."] };
+    const chapters = (chapterIds.length ? chapterIds : [state.activeChapterId]).map((id) => series.chapters?.find((chapter) => chapter.id === id)).filter(Boolean);
+    const rights = global.HHComicLibraryBridge?.localRights?.(series, chapters.length === 1 ? chapters[0] : null) || { status: "manual-review", licenseCode: "UNKNOWN" };
+    const reasons = rights.status === "allowed" ? ["Nguồn có giấy phép chuyển thể phù hợp và thông tin ghi công."]
+      : rights.status === "denied" ? ["Giấy phép hiện tại không cho phép tác phẩm phái sinh."]
+        : ["Cần bằng chứng quyền chuyển thể được kiểm duyệt trước khi render."];
+    return { ...rights, reasons, chapterIds: chapters.map((chapter) => chapter.id) };
+  }
+  async function createMotionHandoff(options = {}) {
+    if (!global.HHComicLibraryBridge) throw new Error("Comic Library Bridge chưa được tải.");
+    const series = state.catalog.find((entry) => entry.id === (options.seriesId || state.activeSeriesId));
+    const chapterIds = Array.isArray(options.chapterIds) && options.chapterIds.length ? options.chapterIds : [...state.motionSelected];
+    const chapters = chapterIds.map((id) => series?.chapters?.find((chapter) => chapter.id === id)).filter(Boolean);
+    if (!series || !chapters.length) throw new Error("Hãy chọn ít nhất một chương.");
+    const eligibility = getMotionEligibility(series.id, chapterIds);
+    if (eligibility.status !== "allowed") {
+      const error = new Error(eligibility.reasons[0] || "Nội dung chưa đủ quyền chuyển thể.");
+      error.code = eligibility.status === "denied" ? "COMIC_RIGHTS_DENIED" : "COMIC_RIGHTS_REVIEW_REQUIRED";
+      throw error;
+    }
+    const descriptor = global.HHComicLibraryBridge.descriptor(series, chapters, {
+      rights: eligibility, presetId: options.presetId || "youtube-16x9", mode: options.mode || "quick-review",
+      format: options.format || "16:9", pageRanges: options.pageRanges || {},
+      cleanReaderBlockedPages: [...state.blockedPages]
+    });
+    return global.HHComicLibraryBridge.createMotionHandoff(descriptor);
+  }
   function bookmarkKey(seriesId, chapterId, page) { return `${seriesId}::${chapterId}::${Number(page) || 0}`; }
   function isCurrentPageBookmarked() {
     const chapter = activeChapter();
@@ -845,6 +896,30 @@
     </div>`;
   }
 
+  function motionStatusLabel(status) {
+    return ({ allowed: "Được phép", "manual-review": "Cần duyệt quyền", denied: "Bị từ chối", unknown: "Chưa rõ quyền", completed: "Đã có video", failed: "Video lỗi", queued: "Đang chờ", rendering: "Đang render", draft: "Chờ worker" })[status] || "Chưa tạo";
+  }
+
+  function motionDialogMarkup() {
+    const dialog = state.motionDialog;
+    if (!dialog) return "";
+    const estimate = dialog.estimate;
+    const eligibility = dialog.eligibility;
+    const chapterNames = dialog.chapters.map((chapter) => `Ch. ${chapter.number}`).join(", ");
+    return `<dialog class="cr-motion-dialog" data-motion-dialog open><form method="dialog"><header><div><span>COMIC LIBRARY BRIDGE</span><h2>Xác nhận tạo Comic Motion</h2></div><button type="button" data-motion-action="close" aria-label="Đóng">×</button></header><div class="cr-motion-summary"><section><small>Truyện</small><strong>${escapeHtml(dialog.series.title)}</strong><p>${escapeHtml(chapterNames)}</p></section><section><small>Quyền chuyển thể</small><strong class="is-${escapeHtml(eligibility.status)}">${escapeHtml(motionStatusLabel(eligibility.status))}</strong><p>${escapeHtml(eligibility.reasons?.[0] || "")}</p></section><section><small>Khối lượng</small><strong>${estimate.pages.toLocaleString("vi-VN")} trang · ${estimate.parts} phần</strong><p>Khoảng ${Math.ceil(estimate.durationSeconds / 60)} phút · ${(estimate.estimatedBytes / 1048576).toFixed(0)} MB dự kiến</p></section><section><small>Chi phí API</small><strong>${estimate.apiCostUsd == null ? "Chưa cấu hình đơn giá" : `${estimate.apiCostUsd.toFixed(2)} USD`}</strong><p>Không phát sinh chi phí cho đến khi worker/API xác nhận.</p></section></div><div class="cr-motion-options"><label>Preset<select data-motion-preset><option value="youtube-16x9">YouTube 16:9</option><option value="youtube-shorts">YouTube Shorts 9:16</option><option value="tiktok-reels">TikTok / Reels 9:16</option><option value="manga-cinematic">Manga cinematic</option><option value="webtoon-scroll">Webtoon scroll</option></select></label><label>Chế độ<select data-motion-mode><option value="quick-review">Quick Review</option><option value="auto">Auto</option><option value="pro">Pro</option></select></label></div>${eligibility.status !== "allowed" ? `<aside class="cr-motion-warning"><strong>Chưa thể tạo handoff</strong><p>Reader chỉ cho đọc không đồng nghĩa được chuyển thể. Hãy bổ sung bằng chứng giấy phép và được duyệt trước.</p></aside>` : ""}<footer><button type="button" data-motion-action="close">Hủy</button><button type="button" data-motion-action="rights">Kiểm tra quyền</button><button class="is-primary" type="button" data-motion-action="confirm"${eligibility.status === "allowed" || state.motionBusy ? "" : " disabled"}>${state.motionBusy ? "Đang tạo handoff…" : "Mở Comic Motion"}</button></footer></form></dialog>`;
+  }
+
+  function motionWorkspaceMarkup(series) {
+    const chapters = [...(series.chapters || [])].reverse();
+    const eligibility = getMotionEligibility(series.id, chapters.map((chapter) => chapter.id));
+    const jobByChapter = new Map(state.motionJobs.filter((job) => job.seriesId === series.id).map((job) => [job.chapterId, job]));
+    return `<section class="cr-motion-bridge"><header><div><span>COMIC MOTION</span><strong>Tạo video từ chính kho truyện</strong><small>Handoff một lần · Rights Gate · mỗi chương là một job riêng</small></div><span class="cr-rights-badge is-${escapeHtml(eligibility.status)}">${escapeHtml(motionStatusLabel(eligibility.status))}</span></header><div class="cr-motion-toolbar"><button type="button" data-motion-select="all">Chọn tất cả đang hiện</button><button type="button" data-motion-select="latest5">5 chương mới nhất</button><button type="button" data-motion-select="unprocessed">Chương chưa xử lý</button><label>Từ<input type="number" min="1" data-motion-range-start placeholder="1"></label><label>đến<input type="number" min="1" data-motion-range-end placeholder="10"></label><button type="button" data-motion-select="range">Chọn khoảng</button><button type="button" data-motion-select="none">Bỏ chọn</button></div><div class="cr-motion-actions"><strong><span data-motion-selected-count>${state.motionSelected.size}</span> chương đã chọn</strong><button type="button" data-motion-action="rights">Kiểm tra quyền chuyển thể</button><button type="button" data-motion-action="latest">Tạo video 5 chương mới nhất</button><button class="is-primary" type="button" data-motion-action="review"${state.motionSelected.size ? "" : " disabled"}>Tạo video</button><button type="button" data-motion-action="open-studio">Mở Comic Motion</button></div><div class="cr-chapter-list" data-chapter-list>${chapters.map((chapter) => {
+      const job = jobByChapter.get(chapter.id);
+      const pageCount = chapter.pages?.length || chapter.pageCount || 0;
+      return `<div class="cr-chapter-row" data-motion-chapter-row><label><input type="checkbox" data-motion-chapter="${escapeHtml(chapter.id)}"${state.motionSelected.has(chapter.id) ? " checked" : ""}><span class="sr-only">Chọn chương ${escapeHtml(chapter.number)}</span></label><button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(chapter.id)}"><span><strong>Chương ${escapeHtml(chapter.number)}</strong><small>${escapeHtml(chapter.title || "")} · ${pageCount ? `${pageCount} trang` : "chưa resolve trang"}</small></span><i>${timeAgo(chapter.updatedAt)}</i><b>${escapeHtml(motionStatusLabel(job?.status))}</b></button></div>`;
+    }).join("")}</div></section>`;
+  }
+
   function detailView(series) {
     if (!series) return homeView();
     const followed = state.follows.has(series.id);
@@ -852,7 +927,8 @@
     return `<div class="cr-detail">
       <button type="button" class="cr-back" data-nav="home">← Trở lại kho truyện</button>
       <section class="cr-detail-hero"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" referrerpolicy="no-referrer"><div><span>${escapeHtml(series.sourceType === "original" ? "HH ORIGINALS" : series.sourceType === "otruyen" ? "OTRUYEN · LIVE" : series.sourceType === "mangadex" ? "MANGADEX · LIVE" : series.sourceType === "github-open" ? `GITHUB OPEN · ${series.license || "OPEN"}` : "THƯ VIỆN ĐÃ NHẬP")}</span><h1>${escapeHtml(series.title)}</h1><p class="cr-detail-author">Tác giả: <strong>${escapeHtml(series.author || "Đang cập nhật")}</strong></p><div class="cr-tags">${(series.genres || []).map((genre) => `<button type="button" data-genre="${escapeHtml(genre)}">${escapeHtml(genreLabel(genre))}</button>`).join("")}</div><p>${escapeHtml(series.description || "Chưa có mô tả.")}</p><div class="cr-detail-actions"><button type="button" class="is-primary" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(progress?.chapterId || series.chapters?.[0]?.id || "")}"${series.chapters?.length || series.chaptersLoaded === false ? "" : " disabled"}>▶ ${progress ? "Đọc tiếp" : "Đọc từ đầu"}</button><button type="button" data-follow="${escapeHtml(series.id)}">${followed ? "✓ Đang theo dõi" : "♡ Theo dõi"}</button>${series.sourceUrl ? `<a href="${escapeHtml(series.sourceUrl)}" target="_blank" rel="noopener noreferrer">Xem nguồn ↗</a>` : ""}</div><dl><div><dt>Định dạng</dt><dd>${escapeHtml(inferFormat(series))}</dd></div><div><dt>Độc giả</dt><dd>${escapeHtml(inferDemographic(series))}</dd></div><div><dt>Trạng thái</dt><dd>${escapeHtml(series.status || "Đang cập nhật")}</dd></div><div><dt>Đánh giá</dt><dd>★ ${Number(series.rating || 4.5).toFixed(1)}</dd></div><div><dt>Nguồn</dt><dd>${escapeHtml(series.sourceLabel || series.rights || "HH Comics")}</dd></div><div><dt>Số chương</dt><dd>${series.chaptersLoaded === false ? "Đang tải…" : series.chapterTotal && series.chapterTotal > series.chapters.length ? `${series.chapters.length}/${series.chapterTotal} mới nhất` : series.chapters?.length || 0}</dd></div></dl><aside class="cr-source-note">Ảnh chương được tải trực tiếp khi bạn mở truyện; HH Comics không sao chép kho ảnh nguồn vào máy chủ.</aside></div></section>
-      <section class="cr-chapters"><header><div><strong>Danh sách chương</strong><small>${series.chapters?.length || 0} chương · lưu tiến độ tự động</small></div><input type="search" placeholder="Tìm chương…" data-chapter-search></header><div data-chapter-list>${[...(series.chapters || [])].reverse().map((chapter) => `<button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(chapter.id)}"><span><strong>Chương ${chapter.number}</strong><small>${escapeHtml(chapter.title || "")}</small></span><i>${timeAgo(chapter.updatedAt)}</i><b>${progress?.chapterId === chapter.id ? "Đang đọc" : "Đọc →"}</b></button>`).join("")}</div></section>
+      <section class="cr-chapters"><header><div><strong>Danh sách chương</strong><small>${series.chapters?.length || 0} chương · lưu tiến độ tự động</small></div><input type="search" placeholder="Tìm chương…" data-chapter-search></header>${motionWorkspaceMarkup(series)}</section>
+      ${motionDialogMarkup()}
     </div>`;
   }
 
@@ -892,13 +968,14 @@
     const bookmarked = isCurrentPageBookmarked();
     state.readerPage = clamp(state.readerPage, 0, Math.max(0, pages.length - 1));
     return `<div class="cr-reader is-${state.readerMode} width-${state.readerWidth} theme-${state.readerTheme}" data-reader>
-      <header class="cr-reader-bar"><button type="button" class="cr-reader-back" data-series="${escapeHtml(series.id)}" aria-label="Trở về trang truyện">←</button><div><strong>${escapeHtml(series.title)}</strong><small>Chương ${chapter.number} · <span data-reader-page-label>Trang ${state.readerPage + 1}/${pages.length}</span>${chapter.filteredPages ? ` · Clean Reader đã ẩn ${chapter.filteredPages} trang` : ""}</small></div><button type="button" class="cr-reader-chapter-button" data-action="reader-chapters" aria-expanded="false">☰ Chương</button><select data-reader-chapter aria-label="Chọn chương">${chapters.map((entry) => `<option value="${escapeHtml(entry.id)}"${entry.id === chapter.id ? " selected" : ""}>Chương ${entry.number}</option>`).join("")}</select><div class="cr-reader-modes"><button type="button" data-reader-mode="scroll"${state.readerMode === "scroll" ? ' class="is-active"' : ""}>Cuộn dọc</button><button type="button" data-reader-mode="page"${state.readerMode === "page" ? ' class="is-active"' : ""}>Từng trang</button></div><button type="button" data-action="reader-bookmark" class="${bookmarked ? "is-bookmarked" : ""}" aria-label="${bookmarked ? "Bỏ dấu trang" : "Đánh dấu trang này"}">${bookmarked ? "★" : "☆"}</button><button type="button" data-action="reader-share" aria-label="Sao chép liên kết">↗</button><button type="button" data-action="reader-settings" aria-label="Cài đặt trình đọc" aria-expanded="false">⚙</button><button type="button" data-action="reader-fullscreen" aria-label="Toàn màn hình">⛶</button></header>
-      <aside class="cr-reader-settings" hidden><header><strong>Cài đặt đọc</strong><small>Được lưu trên thiết bị này</small></header><label>Độ rộng trang<div>${[["compact","Gọn"],["fit","Vừa màn hình"],["wide","Rộng"]].map(([value,label]) => `<button type="button" data-reader-width="${value}"${state.readerWidth === value ? ' class="is-active"' : ""}>${label}</button>`).join("")}</div></label><label>Nền đọc<div>${[["dark","Tối"],["black","Đen"],["paper","Giấy"]].map(([value,label]) => `<button type="button" data-reader-theme="${value}"${state.readerTheme === value ? ' class="is-active"' : ""}>${label}</button>`).join("")}</div></label><button type="button" class="cr-clean-page" data-action="reader-hide-page">Ẩn vĩnh viễn trang quảng cáo đang xem</button><p>Clean Reader tự loại trang quảng bá ngắn ở đầu/cuối chapter. Phím tắt: ← → đổi trang/chương · M đổi chế độ · F toàn màn hình · Esc trở về.</p></aside>
+      <header class="cr-reader-bar"><button type="button" class="cr-reader-back" data-series="${escapeHtml(series.id)}" aria-label="Trở về trang truyện">←</button><div><strong>${escapeHtml(series.title)}</strong><small>Chương ${chapter.number} · <span data-reader-page-label>Trang ${state.readerPage + 1}/${pages.length}</span>${chapter.filteredPages ? ` · Clean Reader đã ẩn ${chapter.filteredPages} trang` : ""}</small></div><button type="button" class="cr-reader-chapter-button" data-action="reader-chapters" aria-expanded="false">☰ Chương</button><select data-reader-chapter aria-label="Chọn chương">${chapters.map((entry) => `<option value="${escapeHtml(entry.id)}"${entry.id === chapter.id ? " selected" : ""}>Chương ${entry.number}</option>`).join("")}</select><div class="cr-reader-modes"><button type="button" data-reader-mode="scroll"${state.readerMode === "scroll" ? ' class="is-active"' : ""}>Cuộn dọc</button><button type="button" data-reader-mode="page"${state.readerMode === "page" ? ' class="is-active"' : ""}>Từng trang</button></div><button type="button" data-motion-action="reader-current" aria-label="Tạo video chương này">🎬</button><button type="button" data-action="reader-bookmark" class="${bookmarked ? "is-bookmarked" : ""}" aria-label="${bookmarked ? "Bỏ dấu trang" : "Đánh dấu trang này"}">${bookmarked ? "★" : "☆"}</button><button type="button" data-action="reader-share" aria-label="Sao chép liên kết">↗</button><button type="button" data-action="reader-settings" aria-label="Cài đặt trình đọc" aria-expanded="false">⚙</button><button type="button" data-action="reader-fullscreen" aria-label="Toàn màn hình">⛶</button></header>
+      <aside class="cr-reader-settings" hidden><header><strong>Cài đặt đọc</strong><small>Được lưu trên thiết bị này</small></header><label>Độ rộng trang<div>${[["compact","Gọn"],["fit","Vừa màn hình"],["wide","Rộng"]].map(([value,label]) => `<button type="button" data-reader-width="${value}"${state.readerWidth === value ? ' class="is-active"' : ""}>${label}</button>`).join("")}</div></label><label>Nền đọc<div>${[["dark","Tối"],["black","Đen"],["paper","Giấy"]].map(([value,label]) => `<button type="button" data-reader-theme="${value}"${state.readerTheme === value ? ' class="is-active"' : ""}>${label}</button>`).join("")}</div></label><section class="cr-reader-motion-tools"><strong>Comic Motion</strong><button type="button" data-motion-action="reader-current">Tạo video chương này</button><button type="button" data-motion-action="reader-from-current">Tạo từ trang hiện tại</button><div><input type="number" min="1" max="${pages.length}" value="${state.readerPage + 1}" data-motion-page-start aria-label="Trang bắt đầu"><input type="number" min="1" max="${pages.length}" value="${pages.length}" data-motion-page-end aria-label="Trang kết thúc"><button type="button" data-motion-action="reader-range">Chọn đoạn trang</button></div><button type="button" data-motion-action="open-studio">Mở trong Comic Motion</button></section><button type="button" class="cr-clean-page" data-action="reader-hide-page">Ẩn vĩnh viễn trang quảng cáo đang xem</button><p>Clean Reader tự loại trang quảng bá ngắn ở đầu/cuối chapter. Phím tắt: ← → đổi trang/chương · M đổi chế độ · F toàn màn hình · Esc trở về.</p></aside>
       <aside class="cr-reader-chapters" hidden><header><strong>${chapters.length} chương</strong><button type="button" data-action="reader-chapters">×</button></header><div>${[...chapters].reverse().map((entry) => `<button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(entry.id)}"${entry.id === chapter.id ? ' class="is-active"' : ""}><span>Chương ${entry.number}</span><small>${escapeHtml(entry.title || "")}</small></button>`).join("")}</div></aside>
       <main class="cr-reader-pages" data-reader-pages>${state.readerMode === "scroll" ? pages.map((page, index) => `<figure data-page="${index}"><img src="${escapeHtml(page)}" data-reader-image data-original-src="${escapeHtml(page)}" alt="Trang ${index + 1}" loading="${index < 3 ? "eager" : "lazy"}" referrerpolicy="no-referrer"><button type="button" class="cr-image-retry" data-action="reader-retry-image" hidden>↻ Thử tải lại</button><figcaption>${index + 1} / ${pages.length}</figcaption></figure>`).join("") : `<figure data-page="${state.readerPage}"><img src="${escapeHtml(pages[state.readerPage] || "")}" data-reader-image data-original-src="${escapeHtml(pages[state.readerPage] || "")}" alt="Trang ${state.readerPage + 1}" referrerpolicy="no-referrer"><button type="button" class="cr-image-retry" data-action="reader-retry-image" hidden>↻ Thử tải lại</button><figcaption>${state.readerPage + 1} / ${pages.length}</figcaption></figure>`}</main>
       <button type="button" class="cr-tap-zone is-prev" data-reader-nav="prev" aria-label="Trang trước"></button><button type="button" class="cr-tap-zone is-next" data-reader-nav="next" aria-label="Trang sau"></button>
       <button type="button" class="cr-reader-top" data-action="reader-top" aria-label="Lên đầu chương">↑</button>
       <footer><button type="button" data-reader-nav="prev"${state.readerMode === "page" && state.readerPage > 0 ? "" : chapterIndex > 0 ? "" : " disabled"}>← ${state.readerMode === "page" && state.readerPage > 0 ? "Trang trước" : "Chương trước"}</button><div><span data-reader-progress>${Math.round((state.readerPage + 1) / Math.max(1, pages.length) * 100)}%</span><input type="range" min="1" max="${Math.max(1, pages.length)}" value="${state.readerPage + 1}" data-reader-page-slider aria-label="Nhảy tới trang"><small data-reader-slider-label>${state.readerPage + 1}/${pages.length}</small></div><button type="button" data-reader-nav="next"${state.readerMode === "page" && state.readerPage < pages.length - 1 ? "" : chapterIndex < chapters.length - 1 ? "" : " disabled"}>${state.readerMode === "page" && state.readerPage < pages.length - 1 ? "Trang sau" : "Chương sau"} →</button></footer>
+      ${motionDialogMarkup()}
     </div>`;
   }
 
@@ -1030,6 +1107,8 @@
 
   async function openSeries(id) {
     state.activeSeriesId = id;
+    state.motionSelected.clear();
+    state.motionDialog = null;
     state.view = "detail";
     render();
     const series = activeSeries();
@@ -1056,6 +1135,7 @@
         if (root?.isConnected && state.activeSeriesId === id) render();
       }
     }
+    loadMotionJobs(id).catch(() => {});
   }
 
   async function openReader(seriesId, chapterId, requestedPage = null) {
@@ -1237,7 +1317,115 @@
     }));
   }
 
+  async function loadMotionJobs(seriesId = state.activeSeriesId) {
+    if (!global.HHComicLibraryBridge?.api || !seriesId) return;
+    try {
+      const payload = await global.HHComicLibraryBridge.api("batch-job-list", { seriesId, limit: 200 });
+      state.motionJobs = Array.isArray(payload.jobs) ? payload.jobs : [];
+      if (state.view === "detail" && state.activeSeriesId === seriesId && root?.isConnected) render();
+    } catch (error) {
+      if (error.status !== 401) notify(error.message || "Không thể tải trạng thái Comic Motion.", "error");
+    }
+  }
+
+  function selectMotionChapters(mode) {
+    const series = activeSeries();
+    if (!series) return;
+    const visible = [...root.querySelectorAll("[data-motion-chapter-row]")].filter((row) => !row.hidden).map((row) => row.querySelector("[data-motion-chapter]")?.dataset.motionChapter).filter(Boolean);
+    const chapters = series.chapters || [];
+    if (mode === "none") state.motionSelected.clear();
+    else if (mode === "all") visible.forEach((id) => state.motionSelected.add(id));
+    else if (mode === "latest5") {
+      state.motionSelected.clear();
+      [...chapters].sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0)).slice(0, 5).forEach((chapter) => state.motionSelected.add(chapter.id));
+    } else if (mode === "unprocessed") {
+      const completed = new Set(state.motionJobs.filter((job) => job.status === "completed").map((job) => job.chapterId));
+      state.motionSelected.clear(); chapters.filter((chapter) => !completed.has(chapter.id)).forEach((chapter) => state.motionSelected.add(chapter.id));
+    } else if (mode === "range") {
+      const start = Number(root.querySelector("[data-motion-range-start]")?.value);
+      const end = Number(root.querySelector("[data-motion-range-end]")?.value);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start > end) return notify("Hãy nhập khoảng chương hợp lệ.", "error");
+      state.motionSelected.clear(); chapters.filter((chapter) => { const number = chapterNumberValue(chapter.number); return number >= start && number <= end; }).forEach((chapter) => state.motionSelected.add(chapter.id));
+    }
+    render();
+  }
+
+  function reviewMotion(chapterIds, pageRanges = {}) {
+    const series = activeSeries();
+    const chapters = (chapterIds || []).map((id) => series?.chapters?.find((chapter) => chapter.id === id)).filter(Boolean);
+    if (!series || !chapters.length) return notify("Hãy chọn ít nhất một chương.", "error");
+    const eligibility = getMotionEligibility(series.id, chapters.map((chapter) => chapter.id));
+    const motionDescriptor = global.HHComicLibraryBridge?.descriptor?.(series, chapters, { rights: eligibility, pageRanges, presetId: "youtube-16x9", mode: "quick-review" });
+    const estimate = global.HHComicLibraryBridge?.estimate?.(motionDescriptor) || { pages: 0, parts: chapters.length, durationSeconds: 0, estimatedBytes: 0, apiCostUsd: null };
+    state.motionDialog = { series, chapters, pageRanges, eligibility, estimate };
+    render();
+    root?.querySelector("[data-motion-dialog]")?.focus?.();
+  }
+
+  async function confirmMotionHandoff() {
+    if (state.motionBusy || !state.motionDialog) return;
+    state.motionBusy = true;
+    render();
+    try {
+      const preset = root.querySelector("[data-motion-preset]")?.value || "youtube-16x9";
+      const mode = root.querySelector("[data-motion-mode]")?.value || "quick-review";
+      const handoff = await createMotionHandoff({
+        seriesId: state.motionDialog.series.id,
+        chapterIds: state.motionDialog.chapters.map((chapter) => chapter.id),
+        pageRanges: state.motionDialog.pageRanges,
+        presetId: preset,
+        mode,
+        format: /shorts|tiktok|reels/.test(preset) ? "9:16" : "16:9"
+      });
+      global.HHComicLibraryBridge.navigateToMotion(handoff.id);
+    } catch (error) {
+      state.motionBusy = false;
+      notify(error.message || "Không thể tạo handoff Comic Motion.", "error");
+      render();
+    }
+  }
+
+  async function checkMotionRights() {
+    const series = state.motionDialog?.series || activeSeries();
+    const chapters = state.motionDialog?.chapters || [...state.motionSelected].map((id) => series?.chapters?.find((chapter) => chapter.id === id)).filter(Boolean);
+    if (!series) return;
+    const local = getMotionEligibility(series.id, chapters.map((chapter) => chapter.id));
+    try {
+      const response = await global.HHComicLibraryBridge.api("library-rights-check", { series, seriesId: series.id, provider: series.sourceType, sourceType: series.sourceType, rights: local, commercialMode: true });
+      if (state.motionDialog) {
+        state.motionDialog.eligibility = { ...response.rights, reasons: response.rights.reasons || local.reasons };
+        render();
+      }
+      notify(`Rights Gate: ${motionStatusLabel(response.rights.status)}.`, response.rights.status === "allowed" ? "success" : "info");
+    } catch (error) { notify(error.message || "Không thể kiểm tra Rights Gate.", "error"); }
+  }
+
   function handleClick(event) {
+    const motionSelect = event.target.closest("[data-motion-select]");
+    const motionAction = event.target.closest("[data-motion-action]");
+    if (motionSelect) return selectMotionChapters(motionSelect.dataset.motionSelect);
+    if (motionAction) {
+      const actionName = motionAction.dataset.motionAction;
+      if (actionName === "close") { state.motionDialog = null; state.motionBusy = false; return render(); }
+      if (actionName === "review") return reviewMotion([...state.motionSelected]);
+      if (actionName === "latest") { selectMotionChapters("latest5"); return reviewMotion([...state.motionSelected]); }
+      if (actionName === "rights") return checkMotionRights();
+      if (actionName === "confirm") return confirmMotionHandoff();
+      if (actionName === "open-studio") { global.location.hash = "#/comic-motion-studio"; return; }
+      if (["reader-current", "reader-from-current", "reader-range"].includes(actionName)) {
+        const chapter = activeChapter(); if (!chapter) return;
+        state.motionSelected = new Set([chapter.id]);
+        const pageCount = chapter.pages?.length || 1;
+        let start = 1, end = pageCount;
+        if (actionName === "reader-from-current") start = state.readerPage + 1;
+        if (actionName === "reader-range") {
+          start = Number(root.querySelector("[data-motion-page-start]")?.value) || 1;
+          end = Number(root.querySelector("[data-motion-page-end]")?.value) || pageCount;
+          if (start < 1 || end < start || end > pageCount) return notify("Đoạn trang không hợp lệ.", "error");
+        }
+        return reviewMotion([chapter.id], { [chapter.id]: { pageStart: start, pageEnd: end } });
+      }
+    }
     const action = event.target.closest("[data-action]");
     const nav = event.target.closest("[data-nav]");
     const read = event.target.closest("[data-read]");
@@ -1340,7 +1528,15 @@
   }
 
   function handleInput(event) {
-    if (event.target.matches("[data-search]")) {
+    if (event.target.matches("[data-motion-chapter]")) {
+      const id = event.target.dataset.motionChapter;
+      event.target.checked ? state.motionSelected.add(id) : state.motionSelected.delete(id);
+      const counter = root.querySelector("[data-motion-selected-count]");
+      if (counter) counter.textContent = String(state.motionSelected.size);
+      const review = root.querySelector('[data-motion-action="review"]');
+      if (review) review.disabled = state.motionSelected.size === 0;
+    }
+    else if (event.target.matches("[data-search]")) {
       state.query = event.target.value; state.genre = ALL_FILTER; state.view = "home"; clearDeepLink();
       clearTimeout(handleInput.timer);
       handleInput.timer = setTimeout(() => {
@@ -1364,7 +1560,7 @@
     }
     else if (event.target.matches("[data-chapter-search]")) {
       const query = event.target.value.toLocaleLowerCase();
-      root.querySelectorAll("[data-chapter-list]>button").forEach((button) => button.hidden = !button.textContent.toLocaleLowerCase().includes(query));
+      root.querySelectorAll("[data-motion-chapter-row]").forEach((row) => row.hidden = !row.textContent.toLocaleLowerCase().includes(query));
     }
   }
 
@@ -1380,6 +1576,10 @@
     state.remote = { loading: false, page: 0, perPage: 24, total: 0, hasMore: true, context: "latest", error: "" };
     state.mangadex = { loading: false, offset: 0, limit: 24, total: 0, hasMore: true, context: "latest", error: "" };
     state.openBooks = { loading: false, total: 0, error: "" };
+    state.motionSelected = new Set();
+    state.motionDialog = null;
+    state.motionBusy = false;
+    state.motionJobs = [];
     state.remoteGenres = [];
     state.remoteGenreSlugs = new Map();
     state.view = "home";
@@ -1424,5 +1624,8 @@
     root = null;
   }
 
-  global.HHComicReaderHub = Object.freeze({ mount, unmount, version: "3.0.0" });
+  global.HHComicReaderHub = Object.freeze({
+    mount, unmount, version: "4.0.0", getSeriesDescriptor, getChapterDescriptor,
+    getMotionEligibility, createMotionHandoff
+  });
 })(window);
