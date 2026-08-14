@@ -44,11 +44,11 @@
     },
     "home-enhancements": {
       styles: [
-        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=11", "home-virtual-assistant.css?v=7", "home-live-widgets.css?v=11", "home-cosmic-os.css?v=3", "home-galaxy-mission.css?v=7", "home-galaxy-operations.css?v=1", "home-galaxy-control-deck.css?v=2", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=11", "home-virtual-assistant.css?v=7", "home-live-widgets.css?v=11", "home-cosmic-os.css?v=3", "home-galaxy-mission.css?v=8", "home-galaxy-operations.css?v=2", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
-        "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=9", "home-galaxy-operations.js?v=4", "home-galaxy-control-deck.js?v=2", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
+        "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=10", "home-galaxy-operations.js?v=5", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
         "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=11", "home-live-widgets.js?v=6", "home-cosmic-os.js?v=11",
         "services/virtualAssistantCore.js?v=2", "services/virtualAssistantCommands.js?v=1", "services/virtualAssistantVoice.js?v=2", "services/virtualAssistantCharacter.js?v=3", "home-virtual-assistant.js?v=22"
       ]

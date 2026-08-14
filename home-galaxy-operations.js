@@ -364,7 +364,7 @@
       "Tìm asset vừa tải lên",
       "Bật Focus 25 phút"
     ];
-    return `<button type="button" class="hgo-navigator-core" data-hgo-navigator-open aria-label="Mở trợ lý H Navigator"><span>H</span><b>NAV</b></button>
+    return `<button type="button" class="hgo-navigator-core" data-hgo-navigator-open aria-label="Mở trợ lý H Navigator"><span>◉</span><b>NAV</b></button>
       <aside class="hgo-navigator" data-hgo-navigator hidden>
         <button type="button" class="hgo-navigator-backdrop" data-hgo-navigator-close aria-label="Đóng H Navigator"></button>
         <section role="dialog" aria-modal="true" aria-labelledby="hgoNavigatorTitle">

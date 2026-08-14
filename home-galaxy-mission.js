@@ -57,6 +57,22 @@
     { id: "sync", icon: "◷", label: "Đồng bộ gần nhất", color: "#ffb956" }
   ]);
 
+  const PLANET_VISUALS = Object.freeze({
+    creative: { model: "gas", size: 76, alt: "#7c3cff" },
+    work: { model: "desert", size: 64, alt: "#ff8b4f" },
+    media: { model: "crystal", size: 72, alt: "#5d75ff" },
+    dev: { model: "metal", size: 69, alt: "#1769ff" },
+    communication: { model: "ocean", size: 67, alt: "#157ccf" },
+    learning: { model: "forest", size: 65, alt: "#4f9f55" },
+    analytics: { model: "lava", size: 68, alt: "#ff4d5f" },
+    system: { model: "ice", size: 63, alt: "#8e77ff" }
+  });
+
+  const WIDGET_ALT_TONES = Object.freeze({
+    weather: "#357cff", performance: "#8c37ff", vitals: "#ff55d4", resources: "#ff6f42", api: "#27baff",
+    services: "#39d97b", storage: "#4f6dff", pwa: "#b04cff", network: "#19d6a3", sync: "#ff6f9d"
+  });
+
   const ACTIONS = Object.freeze([
     { id: "task", icon: "+", label: "Tạo task" },
     { id: "ai", icon: "✦", label: "Mở AI Center" },
@@ -924,7 +940,7 @@
     const tone = instance.prefs.widgetTones?.[widget.id] || widget.color;
     const unsupported = data?.supported === false;
     const hidden = !instance.prefs.widgets.includes(widget.id) || (instance.prefs.hideUnsupported && unsupported);
-    return `<article class="hgm-live-card is-${size}${unsupported ? " is-unsupported" : ""}" data-hgm-widget="${widget.id}" data-size="${size}" data-refresh="${instance.prefs.widgetRefresh?.[widget.id] || 15}" draggable="true" style="--widget:${tone}" ${hidden ? "hidden" : ""}>
+    return `<article class="hgm-live-card is-${size}${unsupported ? " is-unsupported" : ""}" data-hgm-widget="${widget.id}" data-size="${size}" data-refresh="${instance.prefs.widgetRefresh?.[widget.id] || 15}" draggable="true" style="--widget:${tone};--widget-alt:${WIDGET_ALT_TONES[widget.id] || tone}" ${hidden ? "hidden" : ""}>
       <button type="button" data-hgm-live-open="${widget.id}" aria-expanded="false">
         <span class="hgm-satellite"><i>${widget.icon}</i><b></b></span>
         <span class="hgm-live-copy"><small>${escapeHtml(widget.label)}</small><strong>${escapeHtml(data?.value || "Đang đồng bộ")}</strong><em>${escapeHtml(data?.meta || "Chưa có dữ liệu")}</em></span>
@@ -941,7 +957,8 @@
     const active = instance.focusPlanet === planet.id;
     const pinned = instance.prefs.pinnedPlanets?.includes(planet.id);
     const status = data?.status || "Đang đọc dữ liệu";
-    return `<button class="hgm-planet hgm-planet--${index + 1}${unread ? " has-signal" : ""}${data?.alert ? " has-alert" : ""}${data?.processing ? " is-processing" : ""}${active ? " is-selected" : ""}${pinned ? " is-pinned" : ""}" type="button" data-hgm-planet="${planet.id}" data-pinned="${pinned ? "true" : "false"}" style="--planet:${planet.color};--planet-index:${index}" aria-pressed="${active}" aria-label="${escapeHtml(`${planet.label}: ${status}`)}">
+    const visual = PLANET_VISUALS[planet.id] || { model: "terrestrial", size: 64, alt: planet.color };
+    return `<button class="hgm-planet hgm-planet--${index + 1}${unread ? " has-signal" : ""}${data?.alert ? " has-alert" : ""}${data?.processing ? " is-processing" : ""}${active ? " is-selected" : ""}${pinned ? " is-pinned" : ""}" type="button" data-hgm-planet="${planet.id}" data-hgm-model="${visual.model}" data-pinned="${pinned ? "true" : "false"}" style="--planet:${planet.color};--planet-alt:${visual.alt};--planet-size:${visual.size}px;--planet-index:${index}" aria-pressed="${active}" aria-label="${escapeHtml(`${planet.label}: ${status}`)}">
       <span class="hgm-planet-sphere"><i>${planet.icon}</i><b></b><em></em></span>
       <strong>${escapeHtml(planet.label)}</strong>
       <small>${escapeHtml(status)}</small>
@@ -1060,7 +1077,7 @@
           <div class="hgm-orbit hgm-orbit--1"></div><div class="hgm-orbit hgm-orbit--2"></div><div class="hgm-orbit hgm-orbit--3"></div><div class="hgm-orbit hgm-orbit--4"></div>
           <div class="hgm-energy" data-hgm-energy aria-hidden="true"></div>
           <div class="hgm-flares" aria-hidden="true">${Array.from({ length: 8 }, (_, index) => `<i style="--flare:${index * 45}deg;--flare-delay:${index * -.37}s"></i>`).join("")}</div>
-          <div class="hgm-sun"><span>H</span><i></i><b></b><em></em></div>
+          <div class="hgm-sun" aria-label="Lõi mặt trời plasma"><span></span><i></i><b></b><em></em></div>
           <div class="hgm-planets" data-hgm-planets></div>
           ${dockMarkup(instance)}
         </div>

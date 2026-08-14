@@ -14,7 +14,7 @@ const operations = require(path.join(root, "home-galaxy-operations.js"));
 
 test("Galaxy Operations V3 is versioned on home and offline shell", () => {
   assert.equal(operations.VERSION, "3.0.0");
-  for (const asset of ["home-galaxy-operations.css?v=1", "home-galaxy-operations.js?v=4"]) {
+  for (const asset of ["home-galaxy-operations.css?v=2", "home-galaxy-operations.js?v=5"]) {
     assert.ok(loader.includes(asset), `loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }

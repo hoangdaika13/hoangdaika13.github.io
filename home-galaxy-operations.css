@@ -914,38 +914,41 @@
 .hgo-navigator-core {
   position: absolute;
   z-index: 18;
-  top: 50%;
-  left: 50%;
+  top: calc(50% + 58px);
+  left: calc(50% - 62px);
   display: grid;
-  width: 88px;
-  height: 88px;
+  width: 43px;
+  height: 43px;
   place-items: center;
   padding: 0;
-  border: 1px solid rgba(255, 246, 178, .45);
+  border: 1px solid rgba(112, 238, 255, .58);
   border-radius: 50%;
-  color: #14081b;
-  background: transparent;
+  color: #fff;
+  background: radial-gradient(circle at 32% 25%, rgba(255,255,255,.4), rgba(26,162,203,.28) 27%, rgba(4,10,24,.9) 72%);
+  box-shadow: inset -7px -8px 13px rgba(0,0,0,.52), 0 0 13px rgba(91,229,255,.52), 0 0 29px rgba(255,81,201,.18);
   transform: translate(-50%, -50%);
   cursor: pointer;
 }
 
 .hgo-navigator-core span {
-  font-size: 49px;
+  font-size: 15px;
   font-weight: 1000;
+  text-shadow: 0 0 8px #fff, 0 0 13px #63eaff;
 }
 
 .hgo-navigator-core b {
   position: absolute;
-  bottom: 10px;
-  font-size: 5px;
+  bottom: -13px;
+  color: #8df4ff;
+  font-size: 6px;
   letter-spacing: .1em;
 }
 
 .hgo-navigator-core:hover,
 .hgo-navigator-core:focus-visible {
-  color: #050712;
+  color: #fff;
   text-shadow: 0 0 8px #fff;
-  transform: translate(-50%, -50%) scale(1.08);
+  transform: translate(-50%, -50%) scale(1.14) rotate(-5deg);
 }
 
 .hgo-navigator {

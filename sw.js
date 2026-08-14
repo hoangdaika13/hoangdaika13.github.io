@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v614";
+const CACHE = "hh-identity-portal-v619";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -21,9 +21,9 @@ const RUNTIME_ASSETS = [
   "./home-virtual-assistant.css?v=7",
   "./home-live-widgets.css?v=11",
   "./home-cosmic-os.css?v=3",
-  "./home-galaxy-mission.css?v=7",
-  "./home-galaxy-operations.css?v=1",
-  "./home-galaxy-control-deck.css?v=2",
+  "./home-galaxy-mission.css?v=8",
+  "./home-galaxy-operations.css?v=2",
+  "./home-galaxy-control-deck.css?v=3",
   "./command-center-pro.css?v=4",
   "./home-daily-command.css?v=4",
   "./home-command-search.css?v=2",
@@ -198,9 +198,9 @@ const RUNTIME_ASSETS = [
   "./assets/hikari-h/hikari-h-original-v1-alpha.webp",
   "./home-live-widgets.js?v=6",
   "./home-cosmic-os.js?v=11",
-  "./home-galaxy-mission.js?v=9",
-  "./home-galaxy-operations.js?v=4",
-  "./home-galaxy-control-deck.js?v=2",
+  "./home-galaxy-mission.js?v=10",
+  "./home-galaxy-operations.js?v=5",
+  "./home-galaxy-control-deck.js?v=3",
   "./command-center-pro.js?v=6",
   "./home-daily-command.js?v=6",
   "./home-command-search.js?v=4",
@@ -506,7 +506,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=326",
+  "./performance-loader.js?v=329",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=22",
   "./script.js?v=185"

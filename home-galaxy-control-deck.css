@@ -1768,17 +1768,23 @@ html.hgcd-page-lock body {
   height: 68px;
   place-items: center;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 29%, #fff 0 6%, #ffec7a 12%, #ff9c4b 35%, var(--preview-b) 66%, #3a174f);
+  background:
+    radial-gradient(circle at 34% 27%, #fff 0 3%, #ffef96 8%, transparent 16%),
+    radial-gradient(ellipse at 62% 66%, rgba(99,18,24,.52), transparent 12%),
+    repeating-radial-gradient(ellipse at 46% 48%, rgba(255,238,126,.22) 0 1px, transparent 2px 4px),
+    radial-gradient(circle, #ffd75d 0 22%, #ff8b29 49%, var(--preview-b) 73%, #361443);
   box-shadow: 0 0 16px #ffbd59, 0 0 calc(24px + var(--preview-glow) * 31px) color-mix(in srgb, var(--preview-b), transparent 43%);
   transform: translate(-50%, -50%);
 }
 
 .hgcd-preview-sun > span {
-  position: relative;
+  position: absolute;
+  inset: 8%;
   z-index: 3;
-  color: #191027;
-  font-size: 28px;
-  font-weight: 1000;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 9deg, rgba(255,255,210,.2) 0 5deg, transparent 6deg 17deg);
+  mix-blend-mode: screen;
+  animation: hgcdSpin calc(9s / var(--preview-speed)) linear infinite;
 }
 
 .hgcd-preview-sun > i,

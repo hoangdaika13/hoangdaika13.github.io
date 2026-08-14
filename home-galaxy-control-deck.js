@@ -390,7 +390,7 @@
       <div class="hgcd-preview-space">
         <i class="hgcd-preview-nebula"></i><i class="hgcd-preview-stars"></i><i class="hgcd-preview-comet"></i>
         <div class="hgcd-preview-orbits"><i></i><i></i><i></i></div>
-        <div class="hgcd-preview-sun"><span>H</span><i></i><b></b></div>
+        <div class="hgcd-preview-sun"><span></span><i></i><b></b></div>
         ${planets.map((planet, index) => `<span class="hgcd-preview-planet p${index + 1}${instance.draft.pinnedPlanets.includes(planet.id) ? " is-pinned" : ""}" style="--planet:${planet.color}"><i>${planet.icon}</i></span>`).join("")}
       </div>
       <div class="hgcd-preview-live"><span>LIVE ORBIT</span>${widgets.length ? widgets.map((id) => {

@@ -14,10 +14,10 @@ const mission = require(path.join(root, "home-galaxy-mission.js"));
 
 test("Galaxy Mission Control V3 is versioned on home and offline shell", () => {
   assert.equal(mission.VERSION, "3.0.0");
-  assert.match(loader, /home-galaxy-mission\.css\?v=7/);
-  assert.match(loader, /home-galaxy-mission\.js\?v=9/);
-  assert.match(worker, /home-galaxy-mission\.css\?v=7/);
-  assert.match(worker, /home-galaxy-mission\.js\?v=9/);
+  assert.match(loader, /home-galaxy-mission\.css\?v=8/);
+  assert.match(loader, /home-galaxy-mission\.js\?v=10/);
+  assert.match(worker, /home-galaxy-mission\.css\?v=8/);
+  assert.match(worker, /home-galaxy-mission\.js\?v=10/);
   assert.match(source, /hh\.home\.galaxy\.preferences\.v2/);
   assert.match(source, /newlyIntroduced/);
 });
@@ -161,4 +161,11 @@ test("cosmic rendering is adaptive, semantic, mobile-safe and motion-safe", () =
   assert.match(styles, /focus-visible/);
   assert.match(styles, /border-radius:\s*50%/);
   assert.match(styles, /\[data-paused="true"\]/);
+  assert.match(source, /PLANET_VISUALS/);
+  assert.match(source, /WIDGET_ALT_TONES/);
+  assert.match(source, /data-hgm-model/);
+  assert.doesNotMatch(source, /<div class="hgm-sun"><span>H<\/span>/);
+  assert.match(styles, /hgmHomeSolarPlasma/);
+  assert.match(styles, /hgmWidgetOrbit/);
+  assert.match(styles, /hgm-planet\[data-hgm-model="lava"\]/);
 });

@@ -15,7 +15,7 @@ const deck = require(path.join(root, "home-galaxy-control-deck.js"));
 
 test("Galaxy Control Deck V3 is versioned in the route loader and offline shell", () => {
   assert.equal(deck.VERSION, "3.0.0");
-  for (const asset of ["home-galaxy-control-deck.css?v=2", "home-galaxy-control-deck.js?v=2"]) {
+  for (const asset of ["home-galaxy-control-deck.css?v=3", "home-galaxy-control-deck.js?v=3"]) {
     assert.ok(loader.includes(asset), `loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }
