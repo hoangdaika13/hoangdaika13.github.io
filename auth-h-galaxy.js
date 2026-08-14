@@ -22,6 +22,30 @@
       detail: "Theo dõi nhịp làm việc, mở nhanh tác vụ đang ưu tiên và gom các tín hiệu quan trọng vào một màn hình.",
       features: ["Dashboard", "Command Center", "Weather & AQI", "Sticky Notes", "Quick Actions"]
     },
+    character: {
+      icon: "3D",
+      title: "Nhân vật 3D",
+      kicker: "REALTIME CHARACTER STUDIO",
+      count: "STUDIO 3D",
+      route: "#/character-3d",
+      accent: "#ff718a",
+      accent2: "#8f6dff",
+      description: "Tạo, điều khiển, diễn hoạt và xuất nhân vật 3D nguyên bản ngay trên website.",
+      detail: "Viewport WebGL, rig, biểu cảm, giọng nói, lip-sync và quy trình xuất asset được gom trong một studio.",
+      features: ["Character Studio", "Rig & Animation", "Expression", "Voice Lip-sync", "GLB Export"]
+    },
+    social: {
+      icon: "SM",
+      title: "Công cụ truyền thông xã hội",
+      kicker: "SOCIAL CREATOR GALAXY",
+      count: "85 TOOL",
+      route: "#/social-media-tools",
+      accent: "#63ead8",
+      accent2: "#4a8cff",
+      description: "Hệ sinh thái 85 công cụ nội dung, media, xuất bản, phân tích và quản lý đa nền tảng.",
+      detail: "Preview trực tiếp, Tool Contract riêng, media pipeline và API chính thức khi tài khoản đã cấp quyền.",
+      features: ["Live Preview", "Media Pipeline", "Publishing Hub", "Analytics", "Rights Manifest"]
+    },
     system: {
       icon: "⚙",
       title: "Hệ thống",
@@ -57,6 +81,42 @@
       description: "Sáng tác, phối khí, dựng loop, mix & master và tạo visualizer cho bản nhạc.",
       detail: "Phát triển bài hát theo từng lớp âm thanh, quản lý project và hoàn thiện bản phát hành trong cùng một studio.",
       features: ["AI Composer", "DAW Workspace", "Mix & Master", "Visualizer", "Publishing"]
+    },
+    tools: {
+      icon: "H",
+      title: "Tool",
+      kicker: "CREATOR TOOL UNIVERSE",
+      count: "10 HỆ TOOL",
+      route: "#/davinci-resolve",
+      accent: "#6be8ff",
+      accent2: "#786cff",
+      description: "Bộ công cụ video, YouTube, Facebook, TikTok, thumbnail, phụ đề và tự động hóa sáng tạo.",
+      detail: "Kết nối các studio chuyên biệt với hàng đợi, media library và luồng xuất bản dùng được thật.",
+      features: ["Video Studio", "YouTube Galaxy", "Facebook Center", "TikTok Galaxy", "AI Video"]
+    },
+    comicMotion: {
+      icon: "CM",
+      title: "Comic Motion",
+      kicker: "COMIC MOTION STUDIO",
+      count: "STUDIO",
+      route: "#/comic-motion-studio",
+      accent: "#ffb15d",
+      accent2: "#ff6978",
+      description: "Biến khung truyện và hình ảnh thành cảnh chuyển động, camera và hiệu ứng điện ảnh.",
+      detail: "Tổ chức panel, timing, chuyển cảnh, phụ đề và xuất video từ một project không phá hủy.",
+      features: ["Panel Motion", "Camera", "FX", "Subtitle", "Video Export"]
+    },
+    comicReader: {
+      icon: "CR",
+      title: "Đọc truyện",
+      kicker: "HH COMICS READER",
+      count: "THƯ VIỆN",
+      route: "#/comic-reader",
+      accent: "#ff8f70",
+      accent2: "#ff4eaa",
+      description: "Kho truyện và sách có nguồn, tìm kiếm, theo dõi, lịch sử và nhiều chế độ đọc.",
+      detail: "Catalog, API được phép, thư viện cá nhân và reader responsive được quản lý trong một nơi.",
+      features: ["Catalog", "Reader", "Theo dõi", "Lịch sử", "Nguồn hợp lệ"]
     },
     media: {
       icon: "◈",
@@ -129,6 +189,42 @@
       description: "Thư giãn với game center, arcade và hành trình khám phá không gian ASTRA.",
       detail: "Khám phá trải nghiệm tương tác, thử thách điểm số và những hành trình vũ trụ có thể chơi ngay trên trình duyệt.",
       features: ["Game Center", "Arcade", "ASTRA Space", "Realtime Play", "Achievements"]
+    },
+    cinema: {
+      icon: "▶",
+      title: "Phim",
+      kicker: "OPEN CINEMA",
+      count: "PHIM MỞ",
+      route: "#/cinema",
+      accent: "#7b8cff",
+      accent2: "#bc6cff",
+      description: "Thư viện phim công cộng và phim có giấy phép mở với hồ sơ quyền minh bạch.",
+      detail: "Mỗi phim đi cùng nguồn, giấy phép, ghi công, player và trạng thái kiểm duyệt trước khi xuất bản.",
+      features: ["Open Films", "Player", "Subtitle", "Attribution", "Rights Registry"]
+    },
+    musicLibrary: {
+      icon: "♪",
+      title: "Nhạc",
+      kicker: "OPEN MUSIC LIBRARY",
+      count: "NHẠC MỞ",
+      route: "#/music",
+      accent: "#54e6bd",
+      accent2: "#45a4ff",
+      description: "Nghe và tải nhạc Public Domain hoặc Creative Commons đã lưu nguồn và giấy phép.",
+      detail: "Playlist, Creator Mode và License Pack giúp tìm đúng bản nhạc phù hợp cho từng nội dung.",
+      features: ["Playlist", "Creator Mode", "License Pack", "Credits", "Global Music"]
+    },
+    copyright: {
+      icon: "©",
+      title: "Bản quyền",
+      kicker: "RIGHTS & COMPLIANCE",
+      count: "KIỂM DUYỆT",
+      route: "#/copyright",
+      accent: "#f7c86a",
+      accent2: "#ff8a62",
+      description: "Trung tâm kiểm tra quyền, hồ sơ nguồn, ghi công và tiếp nhận khiếu nại nội dung.",
+      detail: "Quản lý bằng chứng giấy phép, trạng thái duyệt và quy trình tạm gỡ an toàn cho từng asset.",
+      features: ["Rights Registry", "License Gate", "Attribution", "Takedown", "Evidence"]
     },
     analytics: {
       icon: "↗",

@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v604";
+const CACHE = "hh-identity-portal-v607";
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
 // Image Text Studio compatibility: ./image-text-studio.css?v=11 ./image-text-studio.js?v=11
@@ -209,8 +209,8 @@ const RUNTIME_ASSETS = [
   "./extension-suite.css?v=1",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=5",
-  "./auth-h-galaxy.css?v=7",
-  "./auth-living-galaxy-3d.css?v=6",
+  "./auth-h-galaxy.css?v=8",
+  "./auth-living-galaxy-3d.css?v=8",
   "./auth-living-background.css?v=1",
   "./auth-spatial-aurora.css?v=1",
   "./auth-identity-constellation.css?v=1",
@@ -230,9 +230,9 @@ const RUNTIME_ASSETS = [
   "./assets/hh-neon-logo-v2.png?v=3",
   "./auth-platform.js?v=13",
   "./auth-experience.js?v=8",
-  "./auth-neon-gateway.js?v=16",
-  "./auth-h-galaxy.js?v=7",
-  "./auth-living-galaxy-3d.js?v=8",
+  "./auth-neon-gateway.js?v=19",
+  "./auth-h-galaxy.js?v=8",
+  "./auth-living-galaxy-3d.js?v=11",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
   "./auth-identity-constellation.js?v=2",
@@ -508,7 +508,7 @@ const CORE = [
   "./app-theme-system.js?v=5",
   "./performance-loader.js?v=326",
   "./auth-platform.js?v=13",
-  "./auth-neon-gateway.js?v=16",
+  "./auth-neon-gateway.js?v=19",
   "./script.js?v=185"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));

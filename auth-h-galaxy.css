@@ -1,6 +1,6 @@
 /*
  * HH Interactive Galaxy
- * Fourteen product planets orbit one H sun. The scene stays decorative on
+ * Twenty-three product planets orbit one H sun. The scene stays decorative on
  * narrow screens and becomes an explorable category map on desktop.
  */
 
@@ -20,6 +20,14 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy {
   clip-path: inset(0 41.5% 0 0);
   isolation: isolate;
   pointer-events: none;
+}
+
+/* The galaxy is the product preview. Keep the orbit field clean instead of
+   placing dashboard cards and the old inspector behind the planets. */
+#authGate .auth-product-preview,
+#authGate .auth-tool-stream,
+#authGate .hh-galaxy-inspector {
+  display: none !important;
 }
 
 body.home-neon.auth-locked #authGate > .hh-h-galaxy::before,
@@ -277,6 +285,9 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
 .hh-galaxy-orbit--five { --orbit-size: 64%; --orbit-speed: 48s; --orbit-half-speed: 24s; --orbit-delay: -9s; --static-start: 36%; --orbit-color: rgba(157, 255, 102, .29); }
 .hh-galaxy-orbit--six { --orbit-size: 77%; --orbit-speed: 57s; --orbit-half-speed: 28.5s; --orbit-delay: -42s; --static-start: 42%; --orbit-direction: reverse; --orbit-color: rgba(255, 135, 80, .28); }
 .hh-galaxy-orbit--seven { --orbit-size: 92%; --orbit-speed: 66s; --orbit-half-speed: 33s; --orbit-delay: -18s; --static-start: 8%; --orbit-color: rgba(108, 161, 255, .3); }
+.hh-galaxy-orbit--eight { --orbit-size: 108%; --orbit-speed: 76s; --orbit-half-speed: 38s; --orbit-delay: -29s; --static-start: 16%; --orbit-direction: reverse; --orbit-color: rgba(111, 241, 211, .25); }
+.hh-galaxy-orbit--nine { --orbit-size: 124%; --orbit-speed: 88s; --orbit-half-speed: 44s; --orbit-delay: -47s; --static-start: 31%; --orbit-color: rgba(255, 194, 101, .23); }
+.hh-galaxy-orbit--ten { --orbit-size: 142%; --orbit-speed: 102s; --orbit-half-speed: 51s; --orbit-delay: -63s; --static-start: 48%; --orbit-direction: reverse; --orbit-color: rgba(195, 125, 255, .22); }
 
 .hh-galaxy-planet {
   --planet-a: #54e7ff;
@@ -424,25 +435,35 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
   outline-offset: 5px;
 }
 
-[data-hh-planet="1"] { --planet-a: #ffe781; --planet-b: #ff7a21; --planet-size: 29px; --planet-tilt: -8deg; --planet-texture: radial-gradient(ellipse at 36% 54%, rgba(119, 55, 21, .7) 0 13%, transparent 15%), radial-gradient(ellipse at 70% 33%, rgba(255, 242, 141, .62) 0 10%, transparent 12%); }
-[data-hh-planet="2"] { --planet-a: #ff72dc; --planet-b: #a518e7; --planet-size: 27px; --planet-tilt: 17deg; --planet-texture: repeating-linear-gradient(76deg, transparent 0 4px, rgba(255, 255, 255, .36) 5px, transparent 7px); }
-[data-hh-planet="3"] { --planet-a: #65efff; --planet-b: #0876d7; --planet-size: 33px; --planet-tilt: -22deg; --planet-texture: radial-gradient(ellipse at 30% 68%, rgba(9, 43, 124, .74) 0 16%, transparent 18%), radial-gradient(ellipse at 70% 32%, rgba(136, 255, 245, .54) 0 14%, transparent 16%); }
-[data-hh-planet="4"] { --planet-a: #ffab63; --planet-b: #df304a; --planet-size: 35px; --planet-tilt: 11deg; --planet-texture: repeating-linear-gradient(0deg, rgba(255, 239, 151, .38) 0 2px, transparent 3px 6px); }
-[data-hh-planet="5"] { --planet-a: #b8ff72; --planet-b: #15a765; --planet-size: 31px; --planet-tilt: -14deg; --planet-texture: radial-gradient(ellipse at 32% 35%, rgba(8, 87, 70, .72) 0 18%, transparent 20%), radial-gradient(ellipse at 69% 66%, rgba(229, 255, 133, .44) 0 15%, transparent 17%); }
-[data-hh-planet="6"] { --planet-a: #bf93ff; --planet-b: #5c32d8; --planet-size: 37px; --planet-tilt: 21deg; --planet-texture: repeating-radial-gradient(ellipse at center, transparent 0 4px, rgba(255, 255, 255, .24) 5px, transparent 7px); }
-[data-hh-planet="7"] { --planet-a: #78d7ff; --planet-b: #2555ff; --planet-size: 29px; --planet-tilt: -19deg; --planet-texture: linear-gradient(90deg, transparent 46%, rgba(28, 43, 89, .7) 48% 52%, transparent 54%), linear-gradient(0deg, transparent 46%, rgba(28, 43, 89, .7) 48% 52%, transparent 54%); }
-[data-hh-planet="8"] { --planet-a: #ff6fcf; --planet-b: #7c1cd5; --planet-size: 39px; --planet-tilt: 9deg; --planet-texture: radial-gradient(circle at 31% 32%, rgba(255, 215, 246, .42) 0 7%, transparent 9%), radial-gradient(circle at 67% 63%, rgba(48, 8, 94, .7) 0 12%, transparent 14%); }
-[data-hh-planet="9"] { --planet-a: #64ffd3; --planet-b: #037e87; --planet-size: 33px; --planet-tilt: -25deg; --planet-texture: repeating-linear-gradient(18deg, transparent 0 5px, rgba(204, 255, 248, .37) 6px, transparent 8px); }
-[data-hh-planet="10"] { --planet-a: #ffd26d; --planet-b: #d43b27; --planet-size: 31px; --planet-tilt: 15deg; --planet-texture: radial-gradient(circle at 35% 38%, rgba(91, 24, 20, .64) 0 9%, transparent 11%), radial-gradient(circle at 68% 64%, rgba(255, 237, 156, .42) 0 12%, transparent 14%); }
-[data-hh-planet="11"] { --planet-a: #72cbff; --planet-b: #1641c8; --planet-size: 37px; --planet-tilt: -12deg; --planet-texture: repeating-linear-gradient(-8deg, rgba(217, 246, 255, .28) 0 2px, transparent 3px 7px); }
-[data-hh-planet="12"] { --planet-a: #f899ff; --planet-b: #9622a9; --planet-size: 29px; --planet-tilt: 23deg; --planet-texture: radial-gradient(ellipse at 36% 62%, rgba(74, 13, 83, .66) 0 16%, transparent 18%), radial-gradient(ellipse at 70% 30%, rgba(255, 218, 255, .4) 0 12%, transparent 14%); }
-[data-hh-planet="13"] { --planet-a: #dfff7b; --planet-b: #459129; --planet-size: 39px; --planet-tilt: -16deg; --planet-texture: repeating-linear-gradient(4deg, transparent 0 4px, rgba(247, 255, 189, .3) 5px, transparent 8px); }
-[data-hh-planet="14"] { --planet-a: #ff896b; --planet-b: #8d183a; --planet-size: 33px; --planet-tilt: 18deg; --planet-texture: radial-gradient(circle at 29% 40%, rgba(72, 11, 40, .68) 0 10%, transparent 12%), radial-gradient(circle at 68% 60%, rgba(255, 212, 190, .38) 0 13%, transparent 15%); }
-[data-hh-planet="15"] { --planet-a: #ff69b7; --planet-b: #7429d6; --planet-size: 35px; --planet-tilt: -21deg; --planet-texture: radial-gradient(circle at 32% 31%, rgba(255, 225, 245, .42) 0 8%, transparent 10%), repeating-linear-gradient(22deg, transparent 0 5px, rgba(83, 17, 114, .52) 6px, transparent 9px); }
+[data-hh-planet="1"] { --planet-a:#ffe781;--planet-b:#b84d20;--planet-size:32px;--planet-tilt:-8deg; }
+[data-hh-planet="2"] { --planet-a:#ff718a;--planet-b:#5634c7;--planet-size:30px;--planet-tilt:17deg; }
+[data-hh-planet="3"] { --planet-a:#63ead8;--planet-b:#166be8;--planet-size:46px;--planet-tilt:-22deg; }
+[data-hh-planet="4"] { --planet-a:#ff68cf;--planet-b:#6b38e7;--planet-size:40px;--planet-tilt:11deg; }
+[data-hh-planet="5"] { --planet-a:#ffb35f;--planet-b:#c92f56;--planet-size:41px;--planet-tilt:-14deg; }
+[data-hh-planet="6"] { --planet-a:#6be8ff;--planet-b:#4634c8;--planet-size:36px;--planet-tilt:21deg; }
+[data-hh-planet="7"] { --planet-a:#ffb15d;--planet-b:#ad4229;--planet-size:29px;--planet-tilt:-19deg; }
+[data-hh-planet="8"] { --planet-a:#ff8f70;--planet-b:#a51d75;--planet-size:32px;--planet-tilt:9deg; }
+[data-hh-planet="9"] { --planet-a:#a8ff68;--planet-b:#087e9a;--planet-size:43px;--planet-tilt:-25deg; }
+[data-hh-planet="10"] { --planet-a:#c49aff;--planet-b:#5430cc;--planet-size:41px;--planet-tilt:15deg; }
+[data-hh-planet="11"] { --planet-a:#66d7ff;--planet-b:#1940ba;--planet-size:42px;--planet-tilt:-12deg; }
+[data-hh-planet="12"] { --planet-a:#ff79d7;--planet-b:#7220b3;--planet-size:36px;--planet-tilt:23deg; }
+[data-hh-planet="13"] { --planet-a:#5ff5dc;--planet-b:#08778c;--planet-size:39px;--planet-tilt:-16deg; }
+[data-hh-planet="14"] { --planet-a:#ffd46a;--planet-b:#b72d22;--planet-size:42px;--planet-tilt:18deg; }
+[data-hh-planet="15"] { --planet-a:#7b8cff;--planet-b:#5b249e;--planet-size:33px;--planet-tilt:-21deg; }
+[data-hh-planet="16"] { --planet-a:#54e6bd;--planet-b:#1471c2;--planet-size:34px;--planet-tilt:12deg; }
+[data-hh-planet="17"] { --planet-a:#f7c86a;--planet-b:#9b481f;--planet-size:27px;--planet-tilt:-18deg; }
+[data-hh-planet="18"] { --planet-a:#69c8ff;--planet-b:#263cbb;--planet-size:34px;--planet-tilt:20deg; }
+[data-hh-planet="19"] { --planet-a:#f19aff;--planet-b:#6742c8;--planet-size:40px;--planet-tilt:-13deg; }
+[data-hh-planet="20"] { --planet-a:#d8ff78;--planet-b:#2e8c49;--planet-size:34px;--planet-tilt:16deg; }
+[data-hh-planet="21"] { --planet-a:#ff6b8a;--planet-b:#7c2349;--planet-size:35px;--planet-tilt:-20deg; }
+[data-hh-planet="22"] { --planet-a:#55f1ff;--planet-b:#256d83;--planet-size:31px;--planet-tilt:10deg; }
+[data-hh-planet="23"] { --planet-a:#ff8a6c;--planet-b:#7f2ad0;--planet-size:26px;--planet-tilt:-15deg; }
 
 [data-hh-planet="4"]::before,
-[data-hh-planet="8"]::before,
-[data-hh-planet="13"]::before {
+[data-hh-planet="5"]::before,
+[data-hh-planet="10"]::before,
+[data-hh-planet="15"]::before,
+[data-hh-planet="18"]::before {
   position: absolute;
   left: 50%;
   top: 50%;

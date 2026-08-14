@@ -12,8 +12,8 @@ test("login mounts a real WebGL living galaxy without replacing authentication",
   const runtime = read("auth-living-galaxy-3d.js");
   const css = read("auth-living-galaxy-3d.css");
 
-  assert.match(html, /auth-living-galaxy-3d\.css\?v=6/);
-  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=8/);
+  assert.match(html, /auth-living-galaxy-3d\.css\?v=8/);
+  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=11/);
   assert.match(gateway, /high:\s*"Điện ảnh"/);
   assert.match(gateway, /soft:\s*"Cân bằng"/);
   assert.match(gateway, /off:\s*"Tĩnh"/);
@@ -35,7 +35,16 @@ test("login mounts a real WebGL living galaxy without replacing authentication",
   assert.match(runtime, /vFront/);
   assert.match(runtime, /const tilt = new THREE\.Euler/);
   assert.match(runtime, /planet\.energy\.forEach/);
-  assert.match(runtime, /detailLimit = currentMode === "cinematic" \? 8 : 5/);
+  assert.match(runtime, /detailLimit = currentMode === "cinematic" \? 11 : 6/);
+  assert.match(runtime, /makePlanetSurface/);
+  assert.match(runtime, /button\.dataset\.hhModel/);
+  assert.match(runtime, /button\.dataset\.hhWeight/);
+  assert.match(runtime, /bumpMap:\s*surface\.bumpMap/);
+  assert.match(runtime, /new THREE\.RingGeometry/);
+  assert.match(runtime, /createAtmosphereMaterial/);
+  assert.match(runtime, /createAsteroidBelt/);
+  assert.match(runtime, /planet\.clouds/);
+  assert.match(runtime, /planet\.moonPivots/);
   assert.match(runtime, /orbitMaterial\.uniforms\.uOpacity/);
   assert.match(runtime, /spawnMeteor/);
   for (const layer of ["far", "mid", "near"]) assert.match(runtime, new RegExp(`${layer}: \\{ z:`));
