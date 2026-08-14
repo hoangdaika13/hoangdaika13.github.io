@@ -207,7 +207,7 @@
   };
 
   const scorePassword = (value) => [
-    value.length >= 8,
+    Array.from(value).length >= 12,
     /[a-zà-ỹ]/.test(value),
     /[A-ZÀ-Ỹ]/.test(value),
     /\d/.test(value),
@@ -229,7 +229,7 @@
       node.textContent = labels[score];
     });
     const checks = {
-      length: value.length >= 8,
+      length: Array.from(value).length >= 12,
       lower: /[a-zà-ỹ]/.test(value),
       upper: /[A-ZÀ-Ỹ]/.test(value),
       number: /\d/.test(value),

@@ -13,6 +13,7 @@ const TELEMETRY_RETENTION_SECONDS = 30 * 24 * 60 * 60;
 const TELEMETRY_TYPES = new Set(["page_view", "action", "error", "performance", "session_start", "session_end", "diagnostic", "export", "refresh", "form_start", "form_submit", "form_validation", "control_change", "experiment_exposure", "experiment_conversion", "conversion"]);
 
 const MAX_JSON_BODY = 64 * 1024;
+const CSP_REPORT_RETENTION_SECONDS = 30 * 24 * 60 * 60;
 
 function hydrateJsonBody(req) {
   if (req.body !== undefined || !["POST", "PUT", "PATCH", "DELETE"].includes(String(req.method || "").toUpperCase())) {
@@ -95,6 +96,32 @@ function safeTelemetryEvent(item, now) {
 
 function rolloutBucket(identity, key) {
   return [...`${identity}:${key}`].reduce((value, character) => ((value * 31) + character.charCodeAt(0)) >>> 0, 7) % 100;
+}
+
+function safeCspLocation(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return `${url.origin}${url.pathname}`.slice(0, 500);
+  } catch {
+    return clean(value, 500).split(/[?#]/)[0];
+  }
+}
+
+function safeCspReport(body = {}) {
+  const report = body["csp-report"] || body.body || body;
+  const now = new Date();
+  return {
+    document: safeCspLocation(report["document-uri"] || report.documentURL),
+    blocked: safeCspLocation(report["blocked-uri"] || report.blockedURL),
+    effectiveDirective: safeKey(report["effective-directive"] || report.effectiveDirective, "unknown").slice(0, 100),
+    violatedDirective: clean(report["violated-directive"] || report.violatedDirective, 200),
+    disposition: ["enforce", "report"].includes(report.disposition) ? report.disposition : "enforce",
+    statusCode: Math.max(0, Math.min(599, Number(report["status-code"] || report.statusCode || 0))),
+    sourceFile: safeCspLocation(report["source-file"] || report.sourceFile),
+    lineNumber: Math.max(0, Math.min(10_000_000, Number(report["line-number"] || report.lineNumber || 0))),
+    createdAt: now,
+    expiresAt: new Date(now.getTime() + CSP_REPORT_RETENTION_SECONDS * 1000)
+  };
 }
 
 function safeIncident(input = {}) {
@@ -390,6 +417,23 @@ module.exports = async function handler(req, res) {
     ]);
     return res.status(200).json({ ok: true, health: readinessSnapshot({ databaseConnected, realtime }) });
   }
+  if (req.query.securityReport === "csp") {
+    return withApi(req, res, async ({ db, body }) => {
+      if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+      const forwardedIp = clean(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown").split(",")[0], 80);
+      await enforceRateLimit(db, `csp-report:${forwardedIp}`, 60, 15 * 60 * 1000);
+      await Promise.all([
+        db.collection("securityCspReports").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+        db.collection("securityCspReports").createIndex({ effectiveDirective: 1, createdAt: -1 })
+      ]);
+      await db.collection("securityCspReports").insertOne({
+        ...safeCspReport(body),
+        requestId: clean(req.hhRequestId, 128),
+        userAgentHash: crypto.createHash("sha256").update(clean(req.headers["user-agent"], 500)).digest("hex")
+      });
+      return res.status(204).end();
+    }, { maxBodyBytes: 64 * 1024, maxDepth: 12, maxNodes: 1_000, maxArrayLength: 100 });
+  }
   return withApi(req, res, async ({ db, body: parsedBody }) => {
     if (req.method === "POST" && req.query.view === "system-job-control") {
       const user = await currentUser(req);
@@ -560,4 +604,4 @@ module.exports = async function handler(req, res) {
 
 module.exports.config = { api: { bodyParser: false } };
 
-module.exports.__test = Object.freeze({ safeTelemetryEvent, safeTelemetryMeta, safeRoute, TELEMETRY_TYPES });
+module.exports.__test = Object.freeze({ safeCspReport, safeTelemetryEvent, safeTelemetryMeta, safeRoute, TELEMETRY_TYPES });

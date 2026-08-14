@@ -374,7 +374,7 @@
       const password = String(data.get("password") || "");
       if (step === 1) {
         if (!/^\S+@\S+\.\S+$/.test(email)) return fieldError(registerForm, "email", "Hãy nhập một địa chỉ email hợp lệ.");
-        if (password.length < 8) return fieldError(registerForm, "password", "Mật khẩu cần ít nhất 8 ký tự.");
+        if (Array.from(password).length < 12) return fieldError(registerForm, "password", "Mật khẩu cần ít nhất 12 ký tự.");
         if (password !== data.get("confirmPassword")) return fieldError(registerForm, "confirmPassword", "Mật khẩu xác nhận chưa khớp.");
       }
       if (step === 2 && String(data.get("name") || "").trim().length < 2) return fieldError(registerForm, "name", "Tên hiển thị cần ít nhất 2 ký tự.");
@@ -605,8 +605,8 @@
             status.textContent = "Hãy nhập đủ mã xác minh 6 số.";
             return;
           }
-          if (password.length < 8) {
-            status.textContent = "Mật khẩu mới cần ít nhất 8 ký tự.";
+          if (Array.from(password).length < 12) {
+            status.textContent = "Mật khẩu mới cần ít nhất 12 ký tự.";
             return;
           }
           const verified = await api(AUTH_ENDPOINTS.recoveryVerify, { method: "POST", body: JSON.stringify({ email, code }) });
@@ -739,7 +739,7 @@
     }));
     registerForm.querySelector("[data-register-password]")?.addEventListener("input", (event) => {
       const value = event.target.value;
-      const rules = { length: value.length >= 8, case: /[a-zà-ỹ]/.test(value) && /[A-ZÀ-Ỹ]/.test(value), number: /\d/.test(value), symbol: /[^A-Za-zÀ-ỹ\d]/.test(value) };
+      const rules = { length: Array.from(value).length >= 12, case: /[a-zà-ỹ]/.test(value) && /[A-ZÀ-Ỹ]/.test(value), number: /\d/.test(value), symbol: /[^A-Za-zÀ-ỹ\d]/.test(value) };
       Object.entries(rules).forEach(([name, pass]) => registerForm.querySelector(`[data-rule="${name}"]`)?.classList.toggle("pass", pass));
     });
     registerForm.querySelector("[data-register-email]")?.addEventListener("input", (event) => {

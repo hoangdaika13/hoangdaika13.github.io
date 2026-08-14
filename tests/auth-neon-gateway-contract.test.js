@@ -9,22 +9,22 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 test("HH Neon Gateway assets are wired into the application shell", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  assert.match(html, /auth-neon-gateway\.css\?v=5/);
-  assert.match(html, /auth-h-galaxy\.css\?v=7/);
-  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=5/);
-  assert.match(read("auth-neon-gateway.js"), /auth-living-galaxy-3d\.js\?v=8/);
-  assert.match(html, /auth-neon-gateway\.js\?v=14/);
-  assert.match(worker, /auth-neon-gateway\.css\?v=5/);
-  assert.match(worker, /auth-h-galaxy\.css\?v=7/);
-  assert.match(worker, /auth-h-galaxy\.js\?v=5/);
-  assert.match(worker, /auth-living-galaxy-3d\.js\?v=8/);
-  assert.match(worker, /auth-neon-gateway\.js\?v=14/);
+  assert.match(html, /auth-neon-gateway\.css\?v=9/);
+  assert.match(html, /auth-h-galaxy\.css\?v=9/);
+  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=8/);
+  assert.match(read("auth-neon-gateway.js"), /auth-living-galaxy-3d\.js\?v=14/);
+  assert.match(html, /auth-neon-gateway\.js\?v=22/);
+  assert.match(worker, /auth-neon-gateway\.css\?v=9/);
+  assert.match(worker, /auth-h-galaxy\.css\?v=9/);
+  assert.match(worker, /auth-h-galaxy\.js\?v=8/);
+  assert.match(worker, /auth-living-galaxy-3d\.js\?v=14/);
+  assert.match(worker, /auth-neon-gateway\.js\?v=22/);
   assert.match(html, /auth-creative-universe\.css\?v=5/);
   assert.match(read("performance-loader.js"), /scripts:\s*\["auth-creative-universe\.js\?v=5"\]/);
   assert.match(html, /data-auth-motion-toggle/);
   assert.match(html, /class="auth-gateway-scene"/);
   assert.doesNotMatch(html, /class="auth-solar-system"/);
-  assert.equal([...html.matchAll(/data-hh-planet="\d+"/g)].length, 15);
+  assert.equal([...html.matchAll(/data-hh-planet="\d+"/g)].length, 23);
 });
 
 test("login galaxy replaces the old showcase and keeps Google-only auth", () => {
@@ -37,10 +37,10 @@ test("login galaxy replaces the old showcase and keeps Google-only auth", () => 
   assert.match(html, /data-oauth-provider="google"/i);
 });
 
-test("registration keeps the eight-character password contract", () => {
+test("registration keeps the hardened twelve-character password contract", () => {
   const html = read("index.html");
-  assert.match(html, /minlength="8"[^>]*data-register-password/);
-  assert.match(html, /name="confirmPassword"[^>]*minlength="8"/);
+  assert.match(html, /minlength="12"[^>]*data-register-password/);
+  assert.match(html, /name="confirmPassword"[^>]*minlength="12"/);
   assert.doesNotMatch(html, /minlength="15"/);
 });
 

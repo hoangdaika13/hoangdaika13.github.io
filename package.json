@@ -9,6 +9,8 @@
     "test:space": "node --test tests/space-explorer-contract.test.js",
     "test:auth": "node --test tests/auth-neon-gateway-contract.test.js",
     "test:security": "node --test tests/security-*.test.js",
+    "test:security:full": "node --test tests/security-*.test.js tests/auth-*.test.js tests/backend-readiness-contract.test.js",
+    "audit:prod": "npm audit --omit=dev --audit-level=moderate",
     "test:english": "node --test tests/english-learning.test.js",
     "test:japanese": "node --test tests/japanese-learning.test.js tests/japanese-dictionary-api.test.js tests/japanese-os-v3.test.js",
     "test:communication": "node --test tests/communication-*.test.js",

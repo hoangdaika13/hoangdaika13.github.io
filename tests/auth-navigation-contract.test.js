@@ -6,17 +6,20 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("registration accepts passwords from eight characters on client and API", () => {
+test("registration enforces the twelve-character password policy on client and API", () => {
   const html = read("index.html");
-  const client = read("script.js");
+  const client = read("auth-platform.js");
   const api = read("api/auth/[...action].js");
+  const policy = read("utils/password-policy.js");
 
-  assert.match(html, /name="password"[^>]*minlength="8"[^>]*data-register-password/);
-  assert.match(html, /name="confirmPassword"[^>]*minlength="8"/);
+  assert.match(html, /name="password"[^>]*minlength="12"[^>]*data-register-password/);
+  assert.match(html, /name="confirmPassword"[^>]*minlength="12"/);
   assert.doesNotMatch(html, /minlength="15"|15 ký tự/);
-  assert.match(client, /password\.length < 8/);
-  assert.match(client, /value\.length >= 8/);
-  assert.match(api, /value\.length >= 8/);
+  assert.match(client, /Array\.from\(password\)\.length < 12/);
+  assert.match(client, /Array\.from\(value\)\.length >= 12/);
+  assert.match(api, /checkPassword\(password\)/);
+  assert.match(policy, /MIN_PASSWORD_CHARACTERS = 12/);
+  assert.match(policy, /MAX_PASSWORD_BYTES = 72/);
   assert.doesNotMatch(api, /value\.length >= 15|15 ký tự/);
 });
 

@@ -6,6 +6,37 @@ const { clean, currentUser, ownerFrom, withApi } = require("../../utils/platform
 
 const MAX_MONGODB_TEXT_BYTES = 48 * 1024;
 const MAX_SERVER_UPLOAD_BYTES = 3 * 1024 * 1024;
+const ACTIVE_MIME_TYPES = new Set([
+  "image/svg+xml", "text/html", "application/xhtml+xml", "application/xml", "text/xml",
+  "text/javascript", "application/javascript", "application/x-httpd-php",
+  "application/x-msdownload", "application/x-msdos-program", "application/x-sh"
+]);
+const ACTIVE_EXTENSIONS = new Set(["svg", "svgz", "html", "htm", "xhtml", "xml", "js", "mjs", "cjs", "php", "exe", "dll", "com", "bat", "cmd", "ps1", "sh", "msi", "scr", "jar"]);
+const MIME_EXTENSIONS = Object.freeze({
+  "text/plain": ["txt", "md", "srt"],
+  "text/markdown": ["md"],
+  "text/csv": ["csv"],
+  "text/vtt": ["vtt"],
+  "application/json": ["json"],
+  "image/jpeg": ["jpg", "jpeg"],
+  "image/png": ["png"],
+  "image/gif": ["gif"],
+  "image/webp": ["webp"],
+  "image/avif": ["avif"],
+  "audio/mpeg": ["mp3"],
+  "audio/wav": ["wav"],
+  "audio/ogg": ["ogg", "oga"],
+  "audio/flac": ["flac"],
+  "audio/mp4": ["m4a"],
+  "video/mp4": ["mp4", "m4v"],
+  "video/webm": ["webm"],
+  "video/quicktime": ["mov"],
+  "application/pdf": ["pdf"],
+  "application/zip": ["zip"],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ["docx"],
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ["xlsx"],
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": ["pptx"]
+});
 
 function blobConfigured() {
   return Boolean(String(process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN || "").trim());
@@ -32,6 +63,79 @@ function safeFilename(value) {
     .replace(/[^\w.-]+/g, "-")
     .replace(/^-+|-+$/g, "");
   return filename || "untitled.bin";
+}
+
+function uploadError(message, code = "FILE_TYPE_REJECTED", statusCode = 415) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.code = code;
+  return error;
+}
+
+function extensionOf(name) {
+  const match = String(name || "").toLowerCase().match(/\.([a-z0-9]{1,12})$/);
+  return match ? match[1] : "";
+}
+
+function startsWithBytes(payload, bytes) {
+  return payload.length >= bytes.length && bytes.every((byte, index) => payload[index] === byte);
+}
+
+function ascii(payload, start, end) {
+  return payload.subarray(start, end).toString("ascii");
+}
+
+function hasBinarySignature(mimeType, payload) {
+  if (mimeType === "image/jpeg") return startsWithBytes(payload, [0xff, 0xd8, 0xff]);
+  if (mimeType === "image/png") return startsWithBytes(payload, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  if (mimeType === "image/gif") return ["GIF87a", "GIF89a"].includes(ascii(payload, 0, 6));
+  if (mimeType === "image/webp") return ascii(payload, 0, 4) === "RIFF" && ascii(payload, 8, 12) === "WEBP";
+  if (mimeType === "image/avif") return ascii(payload, 4, 8) === "ftyp" && /avif|avis/.test(ascii(payload, 8, 32));
+  if (mimeType === "audio/mpeg") return ascii(payload, 0, 3) === "ID3" || (payload[0] === 0xff && (payload[1] & 0xe0) === 0xe0);
+  if (mimeType === "audio/wav") return ascii(payload, 0, 4) === "RIFF" && ascii(payload, 8, 12) === "WAVE";
+  if (mimeType === "audio/ogg") return ascii(payload, 0, 4) === "OggS";
+  if (mimeType === "audio/flac") return ascii(payload, 0, 4) === "fLaC";
+  if (["audio/mp4", "video/mp4", "video/quicktime"].includes(mimeType)) return ascii(payload, 4, 8) === "ftyp";
+  if (mimeType === "video/webm") return startsWithBytes(payload, [0x1a, 0x45, 0xdf, 0xa3]);
+  if (mimeType === "application/pdf") return ascii(payload, 0, 5) === "%PDF-";
+  if (mimeType === "application/zip" || mimeType.includes("openxmlformats-officedocument")) {
+    return startsWithBytes(payload, [0x50, 0x4b, 0x03, 0x04]) || startsWithBytes(payload, [0x50, 0x4b, 0x05, 0x06]);
+  }
+  return false;
+}
+
+function validateTextPayload(mimeType, payload) {
+  let text;
+  try { text = new TextDecoder("utf-8", { fatal: true }).decode(payload); }
+  catch { throw uploadError("Tệp văn bản không phải UTF-8 hợp lệ.", "FILE_TEXT_INVALID", 400); }
+  if (text.includes("\0")) throw uploadError("Tệp văn bản chứa dữ liệu nhị phân không hợp lệ.", "FILE_TEXT_INVALID", 400);
+  if (mimeType === "application/json") {
+    try { JSON.parse(text || "null"); }
+    catch { throw uploadError("Tệp JSON không hợp lệ.", "FILE_JSON_INVALID", 400); }
+  }
+}
+
+function validateUpload(name, declaredType, payload) {
+  const mimeType = clean(declaredType, 120).split(";")[0].trim().toLowerCase();
+  const extension = extensionOf(name);
+  if (!mimeType || ACTIVE_MIME_TYPES.has(mimeType) || ACTIVE_EXTENSIONS.has(extension)) {
+    throw uploadError("Định dạng chủ động hoặc có thể thực thi không được phép lưu trữ.");
+  }
+  const expectedExtensions = MIME_EXTENSIONS[mimeType];
+  if (!expectedExtensions) throw uploadError("Định dạng tệp chưa nằm trong danh sách an toàn được hỗ trợ.");
+  if (!extension || !expectedExtensions.includes(extension)) {
+    throw uploadError("Phần mở rộng tệp không khớp với loại nội dung đã khai báo.", "FILE_EXTENSION_MISMATCH");
+  }
+  if (mimeType.startsWith("text/") || mimeType === "application/json") validateTextPayload(mimeType, payload);
+  else if (!hasBinarySignature(mimeType, payload)) {
+    throw uploadError("Chữ ký nội dung tệp không khớp với định dạng đã khai báo.", "FILE_SIGNATURE_MISMATCH");
+  }
+  return mimeType;
+}
+
+function safeStoredMime(value) {
+  const mimeType = clean(value, 120).split(";")[0].trim().toLowerCase();
+  return MIME_EXTENSIONS[mimeType] && !ACTIVE_MIME_TYPES.has(mimeType) ? mimeType : "application/octet-stream";
 }
 
 function decodePayload(body) {
@@ -75,8 +179,11 @@ module.exports = async function handler(req, res) {
       if (!row) return res.status(404).json({ error: "Không tìm thấy file." });
 
       if (!row.pathname) {
-        res.setHeader("Content-Type", row.mimeType || "text/plain; charset=utf-8");
+        res.setHeader("Content-Type", safeStoredMime(row.mimeType));
         res.setHeader("Content-Disposition", `attachment; filename="${safeFilename(row.name)}"`);
+        res.setHeader("Content-Security-Policy", "sandbox; default-src 'none'");
+        res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+        res.setHeader("X-Download-Options", "noopen");
         return res.status(200).send(row.content || "");
       }
 
@@ -85,9 +192,12 @@ module.exports = async function handler(req, res) {
         return res.status(404).json({ error: "Không tìm thấy dữ liệu Blob." });
       }
       res.statusCode = 200;
-      res.setHeader("Content-Type", result.blob.contentType || row.mimeType || "application/octet-stream");
+      res.setHeader("Content-Type", safeStoredMime(row.mimeType || result.blob.contentType));
       res.setHeader("Content-Disposition", `attachment; filename="${safeFilename(row.name)}"`);
       res.setHeader("Cache-Control", "private, no-store");
+      res.setHeader("Content-Security-Policy", "sandbox; default-src 'none'");
+      res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+      res.setHeader("X-Download-Options", "noopen");
       if (result.blob.etag) res.setHeader("ETag", result.blob.etag);
       await pipeline(Readable.fromWeb(result.stream), res);
       return;
@@ -105,13 +215,19 @@ module.exports = async function handler(req, res) {
     if (req.method === "POST") {
       const now = new Date();
       const name = safeFilename(body.name);
-      const mimeType = clean(body.mimeType || "application/octet-stream", 120);
       const payload = decodePayload(body);
+      const mimeType = validateUpload(name, body.mimeType, payload);
       const limit = blobConfigured() ? MAX_SERVER_UPLOAD_BYTES : MAX_MONGODB_TEXT_BYTES;
       if (payload.byteLength > limit) {
         return res.status(413).json({
           error: `File vượt giới hạn ${(limit / 1024 / 1024).toFixed(limit >= 1024 * 1024 ? 0 : 2)} MB.`,
           code: "FILE_TOO_LARGE"
+        });
+      }
+      if (!blobConfigured() && !mimeType.startsWith("text/") && mimeType !== "application/json") {
+        return res.status(503).json({
+          error: "Kho MongoDB dự phòng chỉ nhận tệp văn bản UTF-8. Hãy kết nối Vercel Blob để lưu media.",
+          code: "OBJECT_STORAGE_REQUIRED"
         });
       }
 
@@ -163,3 +279,5 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   });
 };
+
+module.exports.__test = Object.freeze({ safeStoredMime, validateUpload });

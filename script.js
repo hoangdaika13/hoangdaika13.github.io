@@ -717,8 +717,8 @@ function initRealtimeAuth() {
     event.preventDefault();
     const form = new FormData(formNode);
     const password = String(form.get("password") || "");
-    if (password.length < 8) {
-      setStatus("Mật khẩu cần ít nhất 8 ký tự.");
+    if (Array.from(password).length < 12) {
+      setStatus("Mật khẩu cần ít nhất 12 ký tự.");
       gateStatus?.classList.add("is-error");
       formNode.querySelector('[name="password"]')?.focus();
       return;
@@ -800,7 +800,7 @@ function initRealtimeAuth() {
   }));
   gate?.querySelector("[data-register-password]")?.addEventListener("input", (event) => {
     const value = event.target.value;
-    const score = [value.length >= 8, /[a-zà-ỹ]/.test(value), /[A-ZÀ-Ỹ]/.test(value), /\d/.test(value), /[^A-Za-zÀ-ỹ\d]/.test(value)].filter(Boolean).length;
+    const score = [Array.from(value).length >= 12, /[a-zà-ỹ]/.test(value), /[A-ZÀ-Ỹ]/.test(value), /\d/.test(value), /[^A-Za-zÀ-ỹ\d]/.test(value)].filter(Boolean).length;
     const meter = gate.querySelector("[data-password-strength]");
     if (!meter) return;
     meter.dataset.score = String(score);

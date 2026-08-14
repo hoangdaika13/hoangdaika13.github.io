@@ -64,6 +64,13 @@ const DESIGN_ROLES = new Set(["viewer", "commenter", "editor", "owner"]);
 const DESIGN_ROLE_RANK = Object.freeze({ viewer: 0, commenter: 1, editor: 2, owner: 3 });
 const ASTRA_WORLD = { width: 12000, height: 8000 };
 const ASTRA_SHIPS = new Set(["asteria", "nomad", "aurora", "titan", "lumen", "odyssey"]);
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const UNSAFE_BODY_KEYS = new Set(["__proto__", "prototype", "constructor"]);
+const REALTIME_COMMON_PASSWORDS = new Set(["password1234", "password12345", "qwerty123456", "123456789012", "welcome12345"]);
+const REALTIME_TEXT_MIMES = new Map([
+  ["txt", "text/plain"], ["md", "text/markdown"], ["csv", "text/csv"],
+  ["json", "application/json"], ["srt", "text/plain"], ["vtt", "text/vtt"]
+]);
 
 const allowedOrigins = [...new Set([
   "https://hoang8.com",
@@ -75,17 +82,59 @@ const allowedOrigins = [...new Set([
 ].filter(Boolean))];
 
 app.disable("x-powered-by");
-app.use((_req, res, next) => {
+app.use((req, res, next) => {
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-XSS-Protection", "0");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  res.setHeader("X-Request-ID", randomUUID());
+  if (String(req.headers["x-forwarded-proto"] || "").toLowerCase() === "https") {
+    res.setHeader("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
+  }
   next();
 });
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: "2mb" }));
+app.use((req, res, next) => {
+  if (MUTATING_METHODS.has(String(req.method || "").toUpperCase())) {
+    const origin = String(req.headers.origin || "").trim();
+    const trustedOrigin = Boolean(origin && allowedOrigins.includes(origin));
+    const fetchSite = String(req.headers["sec-fetch-site"] || "").toLowerCase();
+    const fetchMode = String(req.headers["sec-fetch-mode"] || "").toLowerCase();
+    const fetchDest = String(req.headers["sec-fetch-dest"] || "").toLowerCase();
+    if ((origin && !trustedOrigin) || (fetchSite === "cross-site" && !trustedOrigin) || fetchMode === "navigate" || ["document", "iframe", "frame", "object", "embed"].includes(fetchDest)) {
+      return res.status(403).json({ error: "Request origin or browser context is not trusted.", code: "REQUEST_CONTEXT_REJECTED" });
+    }
+  }
+  const stack = [{ value: req.body, depth: 0 }];
+  let nodes = 0;
+  while (stack.length) {
+    const current = stack.pop();
+    nodes += 1;
+    if (nodes > 15_000 || current.depth > 20) return res.status(413).json({ error: "Request body is too complex.", code: "BODY_TOO_COMPLEX" });
+    if (!current.value || typeof current.value !== "object") continue;
+    if (Array.isArray(current.value)) {
+      if (current.value.length > 5_000) return res.status(413).json({ error: "Request array is too large.", code: "BODY_ARRAY_TOO_LARGE" });
+      current.value.forEach((value) => stack.push({ value, depth: current.depth + 1 }));
+      continue;
+    }
+    const keys = Object.keys(current.value);
+    if (keys.length > 1_000) return res.status(413).json({ error: "Request object has too many fields.", code: "BODY_OBJECT_TOO_LARGE" });
+    for (const key of keys) {
+      if (key.length > 160 || UNSAFE_BODY_KEYS.has(key.toLowerCase()) || key.startsWith("$") || key.includes(".")) {
+        return res.status(400).json({ error: "Request body contains an unsafe field name.", code: "BODY_KEY_REJECTED" });
+      }
+      stack.push({ value: current.value[key], depth: current.depth + 1 });
+    }
+  }
+  next();
+});
 app.use(passport.initialize());
 
 const io = new Server(server, {
@@ -123,6 +172,31 @@ const seedProducts = [
 
 function cleanString(value, max = 2000) {
   return String(value || "").trim().slice(0, max);
+}
+
+function realtimePasswordAccepted(value) {
+  const password = typeof value === "string" ? value : "";
+  const normalized = password.normalize("NFKC").trim().toLocaleLowerCase("en-US");
+  return Array.from(password).length >= 12
+    && Buffer.byteLength(password, "utf8") <= 72
+    && !REALTIME_COMMON_PASSWORDS.has(normalized)
+    && !/^(.)\1{11,}$/u.test(normalized);
+}
+
+function realtimeTextUpload(body = {}) {
+  const rawName = cleanString(body.name || "untitled.txt", 180);
+  const name = rawName.normalize("NFKD").replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "") || "untitled.txt";
+  const extension = name.toLowerCase().match(/\.([a-z0-9]{1,12})$/)?.[1] || "";
+  const expectedMime = REALTIME_TEXT_MIMES.get(extension);
+  const mimeType = cleanString(body.mimeType || "text/plain", 120).split(";")[0].toLowerCase();
+  const content = String(body.content || "");
+  if (!expectedMime || mimeType !== expectedMime) return { error: "File extension and MIME type are not supported or do not match.", code: "FILE_TYPE_REJECTED" };
+  if (Buffer.byteLength(content, "utf8") > 48 * 1024 || content.includes("\0")) return { error: "Text file is invalid or exceeds 48 KB.", code: "FILE_TOO_LARGE" };
+  if (mimeType === "application/json") {
+    try { JSON.parse(content || "null"); }
+    catch { return { error: "JSON file is invalid.", code: "FILE_JSON_INVALID" }; }
+  }
+  return { name, mimeType, content, size: Buffer.byteLength(content, "utf8") };
 }
 
 function jwtSecret() {
@@ -481,8 +555,8 @@ app.get("/health", async (_req, res) => {
 app.post("/api/auth/register", async (req, res) => {
   if (!enforceHttpRateLimit(req, res, "register", 10, 60 * 60 * 1000)) return;
   const { name, email, password, consent } = req.body || {};
-  if (!name || !/^\S+@\S+\.\S+$/.test(String(email || "")) || !password || password.length < 8 || Buffer.byteLength(String(password), "utf8") > 72) {
-    return res.status(400).json({ error: "Ten, email va mat khau toi thieu 8 ky tu la bat buoc." });
+  if (!name || !/^\S+@\S+\.\S+$/.test(String(email || "")) || !realtimePasswordAccepted(password)) {
+    return res.status(400).json({ error: "Ten, email va mat khau an toan tu 12 ky tu la bat buoc.", code: "PASSWORD_POLICY_REJECTED" });
   }
   const collection = await users();
   const normalizedEmail = String(email).trim().toLowerCase();
@@ -660,14 +734,16 @@ app.get("/api/helpdesk/tickets", async (req, res) => {
 
 app.post("/api/storage/files", async (req, res) => {
   const user = await currentUser(req);
-  const content = cleanString(req.body?.content, 50000);
+  if (!user) return res.status(401).json({ error: "Authentication is required for private cloud storage.", code: "AUTH_REQUIRED" });
+  const upload = realtimeTextUpload(req.body);
+  if (upload.error) return res.status(upload.code === "FILE_TOO_LARGE" ? 413 : 415).json({ error: upload.error, code: upload.code });
   const payload = {
-    name: cleanString(req.body?.name || "untitled.txt", 180),
-    mimeType: cleanString(req.body?.mimeType || "text/plain", 120),
-    size: Number(req.body?.size || content.length || 0),
-    content,
-    note: "This endpoint stores small text/base64 payloads only. Use S3/R2/GridFS for large production files.",
-    ...ownerFrom(user, req.body),
+    name: upload.name,
+    mimeType: upload.mimeType,
+    size: upload.size,
+    content: upload.content,
+    note: "This endpoint stores validated UTF-8 text only. Use the private Vercel Blob gateway for media.",
+    userId: user._id,
     createdAt: new Date()
   };
   const result = await (await storageFiles()).insertOne(payload);
@@ -677,8 +753,8 @@ app.post("/api/storage/files", async (req, res) => {
 
 app.get("/api/storage/files", async (req, res) => {
   const user = await currentUser(req);
-  const query = user ? { userId: user._id } : { anonymousId: cleanString(req.query.anonymousId, 160) };
-  const rows = await (await storageFiles()).find(query, { projection: { content: 0 } }).sort({ createdAt: -1 }).limit(50).toArray();
+  if (!user) return res.status(401).json({ error: "Authentication is required for private cloud storage.", code: "AUTH_REQUIRED" });
+  const rows = await (await storageFiles()).find({ userId: user._id }, { projection: { content: 0 } }).sort({ createdAt: -1 }).limit(50).toArray();
   res.json({ files: rows });
 });
 

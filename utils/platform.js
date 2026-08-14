@@ -1,5 +1,5 @@
 // Shared server runtime. Kept outside /api so Vercel never counts it as a function.
-const { createHash, createHmac } = require("crypto");
+const { createHash, createHmac, randomUUID } = require("crypto");
 const { MongoClient, ObjectId } = require("mongodb");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -11,6 +11,17 @@ let rateLimitIndexReady = false;
 
 const ADMIN_ROLES = new Set(["owner", "super_admin", "admin", "moderator", "support", "analyst"]);
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+// Keep enough room for a 3 MiB file encoded as base64 while staying below the
+// serverless platform request ceiling.
+const DEFAULT_BODY_LIMIT = 4_400_000;
+const DEFAULT_BODY_COMPLEXITY = Object.freeze({
+  maxDepth: 24,
+  maxNodes: 20_000,
+  maxArrayLength: 5_000,
+  maxObjectKeys: 1_000,
+  maxKeyLength: 160
+});
+const UNSAFE_OBJECT_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 
 function adminEmails() {
   return new Set([
@@ -101,13 +112,19 @@ function setCors(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,PUT,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-HH-CSRF");
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-XSS-Protection", "0");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
   res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
   res.setHeader("Origin-Agent-Cluster", "?1");
+  const requestId = randomUUID();
+  req.hhRequestId = requestId;
+  res.setHeader("X-Request-ID", requestId);
 }
 
 function assertTrustedMutation(req) {
@@ -117,7 +134,18 @@ function assertTrustedMutation(req) {
   let refererOrigin = "";
   try { refererOrigin = new URL(referer).origin; } catch {}
   const browserOrigin = origin || (referer ? refererOrigin || "__invalid_referer__" : "");
-  if (browserOrigin && allowedOrigins().includes(browserOrigin)) return;
+  const trustedBrowserOrigin = Boolean(browserOrigin && allowedOrigins().includes(browserOrigin));
+  const fetchSite = String(req.headers["sec-fetch-site"] || "").trim().toLowerCase();
+  const fetchMode = String(req.headers["sec-fetch-mode"] || "").trim().toLowerCase();
+  const fetchDest = String(req.headers["sec-fetch-dest"] || "").trim().toLowerCase();
+  const documentDestination = new Set(["document", "iframe", "frame", "object", "embed"]).has(fetchDest);
+  if ((fetchSite === "cross-site" && !trustedBrowserOrigin) || fetchMode === "navigate" || documentDestination) {
+    const error = new Error("Yêu cầu trình duyệt không có ngữ cảnh tin cậy.");
+    error.statusCode = 403;
+    error.code = "FETCH_METADATA_REJECTED";
+    throw error;
+  }
+  if (trustedBrowserOrigin) return;
   if (!browserOrigin && !requestCookie(req, "hh_session")) return;
   const error = new Error("Yêu cầu đăng nhập không có nguồn tin cậy.");
   error.statusCode = 403;
@@ -125,12 +153,65 @@ function assertTrustedMutation(req) {
   throw error;
 }
 
-function bodyOf(req) {
-  if (typeof req.body === "string") {
-    if (Buffer.byteLength(req.body, "utf8") > 64 * 1024) throw new Error("Request body too large");
-    return JSON.parse(req.body || "{}");
+function requestError(message, statusCode, code) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.code = code;
+  return error;
+}
+
+function assertSafeJson(value, options = {}) {
+  const limits = { ...DEFAULT_BODY_COMPLEXITY, ...options };
+  const stack = [{ value, depth: 0 }];
+  let nodes = 0;
+  while (stack.length) {
+    const current = stack.pop();
+    nodes += 1;
+    if (nodes > limits.maxNodes) throw requestError("Request body is too complex", 413, "BODY_TOO_COMPLEX");
+    if (current.depth > limits.maxDepth) throw requestError("Request body nesting is too deep", 413, "BODY_TOO_DEEP");
+    if (current.value === null || typeof current.value !== "object") continue;
+    const prototype = Object.getPrototypeOf(current.value);
+    if (Buffer.isBuffer(current.value) || (!Array.isArray(current.value) && prototype !== Object.prototype && prototype !== null)) {
+      throw requestError("Request body contains an unsupported value", 400, "BODY_VALUE_UNSUPPORTED");
+    }
+    if (Array.isArray(current.value)) {
+      if (current.value.length > limits.maxArrayLength) throw requestError("Request array is too large", 413, "BODY_ARRAY_TOO_LARGE");
+      for (let index = current.value.length - 1; index >= 0; index -= 1) {
+        stack.push({ value: current.value[index], depth: current.depth + 1 });
+      }
+      continue;
+    }
+    const keys = Object.keys(current.value);
+    if (keys.length > limits.maxObjectKeys) throw requestError("Request object has too many fields", 413, "BODY_OBJECT_TOO_LARGE");
+    for (const key of keys) {
+      const normalizedKey = String(key).toLowerCase();
+      if (key.length > limits.maxKeyLength || UNSAFE_OBJECT_KEYS.has(normalizedKey) || key.startsWith("$") || key.includes(".")) {
+        throw requestError("Request body contains an unsafe field name", 400, "BODY_KEY_REJECTED");
+      }
+      stack.push({ value: current.value[key], depth: current.depth + 1 });
+    }
   }
-  return req.body || {};
+  return value;
+}
+
+function bodyOf(req, options = {}) {
+  const maxBodyBytes = Math.max(1024, Math.min(Number(options.maxBodyBytes) || DEFAULT_BODY_LIMIT, DEFAULT_BODY_LIMIT));
+  const contentLength = Number(req.headers?.["content-length"] || 0);
+  if (Number.isFinite(contentLength) && contentLength > maxBodyBytes) {
+    throw requestError("Request body too large", 413, "BODY_TOO_LARGE");
+  }
+  let parsed = req.body;
+  if (typeof parsed === "string") {
+    if (Buffer.byteLength(parsed, "utf8") > maxBodyBytes) throw requestError("Request body too large", 413, "BODY_TOO_LARGE");
+    try { parsed = JSON.parse(parsed || "{}"); }
+    catch { throw requestError("Request body is not valid JSON", 400, "BODY_JSON_INVALID"); }
+  }
+  if (parsed === undefined || parsed === null || parsed === "") parsed = {};
+  let serialized;
+  try { serialized = JSON.stringify(parsed); }
+  catch { throw requestError("Request body is not serializable", 400, "BODY_VALUE_UNSUPPORTED"); }
+  if (Buffer.byteLength(serialized || "", "utf8") > maxBodyBytes) throw requestError("Request body too large", 413, "BODY_TOO_LARGE");
+  return assertSafeJson(parsed, options);
 }
 
 function clean(value, max = 2000) {
@@ -244,12 +325,12 @@ function ownerFrom(user, body = {}) {
     : { anonymousId: clean(body.anonymousId, 160), user: null };
 }
 
-async function withApi(req, res, handler) {
+async function withApi(req, res, handler, options = {}) {
   setCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
   try {
     assertTrustedMutation(req);
-    return await handler({ db: await database(), body: bodyOf(req) });
+    return await handler({ db: await database(), body: bodyOf(req, options) });
   } catch (error) {
     console.error("API error", error?.message || error);
     const explicitStatus = Number(error?.statusCode || 0);
@@ -309,5 +390,5 @@ module.exports = {
   signUser,
   verifyOAuthState,
   withApi,
-  __test: Object.freeze({ allowedOrigins, assertTrustedMutation, requestCookie })
+  __test: Object.freeze({ allowedOrigins, assertSafeJson, assertTrustedMutation, requestCookie })
 };

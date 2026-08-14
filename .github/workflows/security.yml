@@ -1,0 +1,74 @@
+name: Security gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+      - name: Audit production dependency graph
+        run: npm run audit:prod
+      - name: Run platform security and authentication contracts
+        run: npm run test:security:full
+      - name: Install and audit the realtime service
+        run: |
+          npm --prefix realtime-server ci --ignore-scripts
+          npm --prefix realtime-server audit --omit=dev --audit-level=moderate
+      - name: Run realtime contracts
+        run: |
+          npm --prefix realtime-server run test:astra
+          npm --prefix realtime-server run test:communication
+      - name: Syntax-check security-critical runtimes
+        run: |
+          node --check utils/platform.js
+          node --check api/auth/[...action].js
+          node --check api/storage/files.js
+          node --check realtime-server/src/server.js
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+
+  codeql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v3

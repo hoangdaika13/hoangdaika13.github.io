@@ -33,6 +33,7 @@ const {
   webauthnServer
 } = require("../../utils/auth-security");
 const { loginThankYouEmail, welcomeEmail } = require("../../utils/auth-emails");
+const { checkPassword } = require("../../utils/password-policy");
 
 const RESET_OTP_TTL_MS = 10 * 60 * 1000;
 const RESET_TOKEN_TTL_MS = 10 * 60 * 1000;
@@ -58,10 +59,6 @@ const ROUTE_ALIASES = Object.freeze({
   "session-revoke-all": "sessions/revoke-all"
 });
 // Session transport is issued by auth-security as: hh_session=...; HttpOnly; Secure; SameSite=None.
-
-function strongPassword(value) {
-  return value.length >= 8 && Buffer.byteLength(value, "utf8") <= 72;
-}
 
 function validEmail(value) {
   return /^\S+@\S+\.\S+$/.test(value);
@@ -578,7 +575,8 @@ module.exports = async function handler(req, res) {
         });
       }
       if (!name || !validEmail(email)) return res.status(400).json({ error: "Họ tên hoặc email không hợp lệ." });
-      if (!strongPassword(password)) return res.status(400).json({ error: "Mật khẩu cần từ 8 ký tự và không vượt quá giới hạn mã hóa an toàn." });
+      const passwordCheck = checkPassword(password);
+      if (!passwordCheck.valid) return res.status(400).json({ error: passwordCheck.message, code: passwordCheck.code });
       if (await db.collection("users").findOne({ email })) return res.status(409).json({ error: "Email này đã được đăng ký." });
       const now = new Date();
       const user = {
@@ -688,7 +686,8 @@ module.exports = async function handler(req, res) {
     if (route === "forgot-password/reset" && req.method === "POST") {
       const email = clean(body.email, 160).toLowerCase();
       const password = String(body.password || "");
-      if (!strongPassword(password)) return res.status(400).json({ error: "Mật khẩu mới cần từ 8 ký tự." });
+      const passwordCheck = checkPassword(password);
+      if (!passwordCheck.valid) return res.status(400).json({ error: passwordCheck.message, code: passwordCheck.code });
       const resetHash = hmacHash(`${email}:${clean(body.resetToken, 200)}`, "reset-token");
       const challenge = await db.collection("authChallenges").findOne({ type: "password-reset-token", lookup: email, consumedAt: null, expiresAt: { $gt: new Date() } }, { sort: { createdAt: -1 } });
       if (!challenge || !safeEqual(challenge.secretHash, resetHash)) return res.status(400).json({ error: "Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn." });
@@ -857,5 +856,5 @@ module.exports = async function handler(req, res) {
     const provider = action[0];
     if (provider === "google" && action[1] === "callback" && req.method === "GET") return oauthCallback(req, res, db, provider, req.query.code, req.query.state);
     return res.status(405).json({ error: "Phương thức hoặc tuyến API không được hỗ trợ." });
-  });
+  }, { maxBodyBytes: 256 * 1024, maxDepth: 16, maxNodes: 4_000, maxArrayLength: 1_000 });
 };
