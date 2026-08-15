@@ -94,16 +94,17 @@ test("PK refuses non-consenting and safe-zone attacks, then uses only server wea
   });
   const attacker = makePlayer("attacker", 40, 0);
   const target = makePlayer("target", 41, 0);
+  attacker.weaponClass = "sniper";
   shard.players.set(attacker.socketId, attacker);
   shard.players.set(target.socketId, target);
 
-  _test.applyAttack(shard, attacker, { action: "attack", targetId: target.socketId, weaponClass: "sniper", power: 999999 }, 10000);
+  _test.applyAttack(shard, attacker, { action: "attack", targetId: target.socketId, weaponClass: "sniper", power: 999999, actionSequenceId: "pk-1", combatMarker: "active_start" }, 10000);
   assert.equal(target.health, 100, "PK without mutual consent must do nothing");
 
   attacker.pk.enabled = true;
   target.pk.enabled = true;
   attacker.seq += 1;
-  _test.applyAttack(shard, attacker, { action: "attack", targetId: target.socketId, weaponClass: "sniper", power: 999999 }, 12000);
+  _test.applyAttack(shard, attacker, { action: "attack", targetId: target.socketId, weaponClass: "sniper", power: 999999, actionSequenceId: "pk-2", combatMarker: "active_start" }, 12000);
   assert.equal(target.health, 67, "sniper damage must come from the server profile, not client power");
 
   attacker.x = 0;
@@ -111,7 +112,7 @@ test("PK refuses non-consenting and safe-zone attacks, then uses only server wea
   target.x = 1;
   target.z = 0;
   attacker.seq += 1;
-  _test.applyAttack(shard, attacker, { action: "attack", targetId: target.socketId, weaponClass: "sniper", power: 999999 }, 14000);
+  _test.applyAttack(shard, attacker, { action: "attack", targetId: target.socketId, weaponClass: "sniper", power: 999999, actionSequenceId: "pk-3", combatMarker: "active_start" }, 14000);
   assert.equal(target.health, 67, "Safe Zone must block PK damage");
   assert.equal(_test.isPkSafePosition(0, 0), true);
   assert.equal(_test.isPkSafePosition(40, 0), false);

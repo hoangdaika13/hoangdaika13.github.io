@@ -57,10 +57,10 @@ const HUNT_ZONE_PROFILES = Object.freeze({
 });
 const ELEMENTS = new Set(["plasma", "cryo", "void", "nature", "quantum", "solar"]);
 const CHARACTER_PROFILES = Object.freeze({
-  lyra: { element: "plasma", attackScale: 1, speedScale: 1 },
-  cael: { element: "cryo", attackScale: 0.92, speedScale: 1.12 },
-  nyx: { element: "void", attackScale: 1.08, speedScale: 1.06 },
-  sol: { element: "solar", attackScale: 1.18, speedScale: 0.94 }
+  lyra: { element: "plasma", attackScale: 1, speedScale: 1, weaponClass: "sword" },
+  cael: { element: "cryo", attackScale: 0.92, speedScale: 1.12, weaponClass: "rifle" },
+  nyx: { element: "void", attackScale: 1.08, speedScale: 1.06, weaponClass: "dualBlade" },
+  sol: { element: "solar", attackScale: 1.18, speedScale: 0.94, weaponClass: "greatsword" }
 });
 const APPEARANCE_VERSION = 3;
 const APPEARANCE_BASE_MODELS = new Set(["human-adult-a01", "human-adult-b01"]);
@@ -142,6 +142,16 @@ function publicPlayer(player) {
     element: player.element,
     appearance: player.appearance,
     action: player.action,
+    animationState: player.action || (Math.hypot(player.move?.x || 0, player.move?.z || 0) > 0.05 ? "locomotion" : "idle"),
+    normalizedTime: 0,
+    locomotionVector: normalizedMove(player.move),
+    facingYaw: Number(player.rotation || 0),
+    aimPitch: 0,
+    weaponId: clean(player.weaponClass || "unarmed", 80),
+    actionSequenceId: clean(player.lastActionSequenceId, 100),
+    combatState: player.action || "ready",
+    expressionId: "neutral",
+    serverTimestamp: Date.parse(player.updatedAt) || Date.now(),
     hunterPoints: Math.round(player.hunterPoints || 0),
     pk: {
       enabled: player.pk?.enabled === true,
@@ -405,7 +415,12 @@ function nearestLivingPlayer(shard, enemy) {
 function applyAttack(shard, player, input, now) {
   const action = clean(input.action, 24);
   if (!["attack", "skill", "ultimate"].includes(action)) return;
+  const actionSequenceId = clean(input.actionSequenceId, 100);
+  const combatMarker = clean(input.combatMarker, 32);
+  if (!actionSequenceId || combatMarker !== "active_start") return;
+  if (actionSequenceId && shard.processedCombatEvents.has(`sequence:${player.socketId}:${actionSequenceId}`)) return;
   const weaponClass = WEAPON_COMBAT_PROFILES[clean(input.weaponClass, 24)] ? clean(input.weaponClass, 24) : "sword";
+  if (weaponClass !== player.weaponClass) return;
   const combat = WEAPON_COMBAT_PROFILES[weaponClass];
   const actionIndex = action === "attack" ? 0 : action === "skill" ? 1 : 2;
   const cooldown = combat.cooldown[actionIndex];
@@ -419,7 +434,7 @@ function applyAttack(shard, player, input, now) {
   if (!target || target === player || target.health <= 0) return;
   const range = combat.range[actionIndex];
   if (Math.hypot(target.x - player.x, target.z - player.z) > range) return;
-  const eventId = `${player.socketId}:${player.seq}:${action}:${targetId}`;
+  const eventId = `${player.socketId}:${actionSequenceId || player.seq}:${action}:${targetId}`;
   if (shard.processedCombatEvents.has(eventId)) return;
   if (targetPlayer) {
     const consent = player.pk?.enabled === true && targetPlayer.pk?.enabled === true;
@@ -431,6 +446,9 @@ function applyAttack(shard, player, input, now) {
 
   player[cooldownKey] = now;
   player.action = action;
+  player.weaponClass = weaponClass;
+  player.lastActionSequenceId = actionSequenceId;
+  if (actionSequenceId) shard.processedCombatEvents.set(`sequence:${player.socketId}:${actionSequenceId}`, now);
   const profile = CHARACTER_PROFILES[player.characterId] || CHARACTER_PROFILES.lyra;
   let damage = Math.round(combat.damage[actionIndex] * profile.attackScale * (targetPlayer ? 0.72 : 1));
   shard.processedCombatEvents.set(eventId, now);
@@ -596,6 +614,7 @@ function registerAstralRealmsRealtime({ io, gameCenter } = {}) {
           ultimate: 0,
           hunterPoints: 0,
           element: "plasma",
+          weaponClass: CHARACTER_PROFILES.lyra.weaponClass,
           appearance: sanitizeAppearance(payload.appearance),
           action: "idle",
           respawnAt: 0,
@@ -617,8 +636,15 @@ function registerAstralRealmsRealtime({ io, gameCenter } = {}) {
       player.rotation = clamp(payload.rotation, -Math.PI * 4, Math.PI * 4);
       player.element = ELEMENTS.has(payload.element) ? payload.element : player.element;
       if (CHARACTER_PROFILES[payload.characterId]) {
+        if (player.characterId !== payload.characterId) player.weaponClass = CHARACTER_PROFILES[payload.characterId].weaponClass;
         player.characterId = payload.characterId;
         player.element = CHARACTER_PROFILES[payload.characterId].element;
+      }
+      const equipWeaponClass = clean(payload.equipWeaponClass, 24);
+      const equipSequenceId = clean(payload.equipSequenceId, 100);
+      if (equipSequenceId && WEAPON_COMBAT_PROFILES[equipWeaponClass] && !context.shard.processedCombatEvents.has(`equip:${socket.id}:${equipSequenceId}`)) {
+        player.weaponClass = equipWeaponClass;
+        context.shard.processedCombatEvents.set(`equip:${socket.id}:${equipSequenceId}`, now);
       }
       if (payload.appearance && typeof payload.appearance === "object") {
         player.appearance = sanitizeAppearance(payload.appearance);

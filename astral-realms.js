@@ -1753,6 +1753,10 @@
       this.characterRuntimes = new Map();
       this.characterAssetStatus = new Map(CHARACTER_ORDER.map((id) => [id, "HH Human Rig PBR"]));
       this.characterAction = { name: "", startedAt: 0, duration: 0, until: 0, strength: 0 };
+      this.characterRuntimeV3 = root.HHAstraCharacterRuntimeV3 || null;
+      this.pendingCombatActionsV3 = new Map();
+      this.combatSequenceV3 = 0;
+      this.characterLabTabV3 = "overview";
       this.characterLandAt = 0;
       this.characterImporting = false;
       this.GLTFLoaderClass = null;
@@ -2031,6 +2035,7 @@
             <button type="button" data-har-panel="companions"><span>✧</span>Đồng đội</button>
             <button type="button" data-har-panel="ship"><span>⌁</span>Tàu H</button>
             <button type="button" data-har-panel="training"><span>◎</span>Training</button>
+            ${this.canUseCharacterLabV3() ? '<button type="button" data-har-panel="character-lab"><span>⌘</span>Character Lab</button>' : ""}
             <button type="button" data-har-panel="codex"><span>▣</span>Codex</button>
           </nav>
 
@@ -9933,7 +9938,177 @@
       mesh.userData.characterRuntime = runtime;
       mesh.userData.lodVariants = runtime.lodVariants;
       this.characterRuntimes.set(runtimeKey, runtime);
+      this.mountCharacterRuntimeV3(runtimeKey, runtime);
       return runtime;
+    }
+
+    mountCharacterRuntimeV3(runtimeKey, runtime) {
+      const facade = this.characterRuntimeV3 || root.HHAstraCharacterRuntimeV3;
+      if (!facade?.mountCharacter || !runtime?.mesh) return false;
+      const profileId = `astra-${runtime.profile?.id || runtimeKey}-skeleton-v3`;
+      const animationSetId = `astra-${runtime.profile?.id || runtimeKey}-animations-v3`;
+      const boneMap = Object.fromEntries(Object.entries(runtime.bones || {}).filter(([, bone]) => bone?.name).map(([slot, bone]) => [slot, bone.name]));
+      const source = runtime.mesh.userData || {};
+      const characterId = String(runtimeKey).replace(/[^a-z0-9._:-]/gi, "-").slice(0, 80);
+      const weaponClass = this.equippedWeaponClass(runtime.profile?.id || this.state.roster.activeId);
+      const weaponProfileId = `astra-${weaponClass}-grip-v3`;
+      const weaponObject = runtime.mesh.userData?.weapon || (runtime.profile?.id === this.state.roster.activeId ? this.playerWeapon : null);
+      const socketNames = ["Grip_R", "Grip_L", "Muzzle", "Blade_Base", "Blade_Tip", "String_Grip", "Arrow_Nock", "Holster_Back", "Holster_Hip_L", "Holster_Hip_R", "Shield_Grip", "Scope_Aim", "Shell_Eject", "Trail_Start", "Trail_End"];
+      const sockets = Object.fromEntries(socketNames.flatMap((name) => {
+        const aliases = name === "Blade_Base" ? [name, "BladeRoot"] : name === "Blade_Tip" ? [name, "BladeTip"] : [name];
+        const socket = aliases.map((alias) => weaponObject?.getObjectByName?.(alias)).find(Boolean);
+        return socket ? [[name, { name: socket.name, derived: socket.userData?.hhDerivedSocket === true }]] : [];
+      }));
+      try {
+        facade.registerSkeletonProfile({ id: profileId, boneMap, height: runtime.qaReport?.height || 1.72, jointLimits: {} });
+        facade.registerAnimationSet(animationSetId, [...(runtime.clips || new Map()).entries()].map(([name, clip]) => {
+          const declared = this.motionLibraryManifest?.clips?.find?.((entry) => String(entry.name || "").toLowerCase() === String(name).toLowerCase());
+          return {
+            id: String(name || clip?.name || "clip").replace(/[^a-z0-9._:-]/gi, "-").slice(0, 80),
+            clipName: clip?.name || name,
+            category: declared?.category || (/idle/i.test(name) ? "idle" : /walk|run|sprint|strafe/i.test(name) ? "locomotion" : "action"),
+            looping: /idle|walk|run|sprint|strafe/i.test(name),
+            rootMotion: false,
+            duration: Math.max(0.001, Number(clip?.duration || declared?.duration || 1)),
+            locomotionSpeed: Number(declared?.speed || 0),
+            direction: Number(declared?.direction || 0),
+            markers: Array.isArray(declared?.markers) ? declared.markers : []
+          };
+        }));
+        facade.registerCharacter({
+          id: characterId,
+          displayName: runtime.profile?.name || characterId,
+          model: source.sourceAssetPath || source.sourceProvider || "runtime-object",
+          skeletonProfileId: profileId,
+          animationSetId,
+          facialProfileId: runtime.facialChannels ? "native-morph-subset" : "safe-fallback",
+          secondaryMotionProfileId: runtime.secondaryBones?.length ? "spring-bone-v3" : "none",
+          defaultWeapon: this.equippedWeaponId(runtime.profile?.id),
+          bodyScale: source.characterFitScale || 1,
+          rights: {
+            author: source.sourceAuthor || "HH Platform",
+            source: source.sourcePage || source.sourceAssetPath || "repository-local",
+            license: source.sourceLicense || "repository-local",
+            attribution: source.sourceAttribution || ""
+          }
+        });
+        facade.registerWeaponProfile(weaponProfileId, { weaponClass, sockets, handIkWeight: 1, animationSet: weaponClass });
+        facade.mountCharacter({
+          characterId,
+          object3d: runtime.mesh,
+          mixer: runtime.mixer,
+          legacyRuntime: runtime,
+          role: runtime.role === "hero" ? "player" : runtime.role,
+          skeletonProfileId: profileId,
+          element: runtime.profile?.element || this.state.player.element,
+          backend: this.rendererBackend,
+          ownerId: this.options.currentUser?.id || "local",
+          groundSampler: (record) => this.sampleCharacterGroundV3(record),
+          onCombatMarker: (event) => this.handleCombatMarkerV3(characterId, event)
+        });
+        facade.equipWeapon(characterId, weaponProfileId, "hand");
+        runtime.characterRuntimeV3Id = characterId;
+        runtime.weaponProfileV3Id = weaponProfileId;
+        return true;
+      } catch (error) {
+        runtime.characterRuntimeV3Error = String(error?.message || error).slice(0, 180);
+        return false;
+      }
+    }
+
+    sampleCharacterGroundV3(record) {
+      const position = record?.object3d?.position;
+      if (!position || !this.THREE) return null;
+      const yaw = record?.locomotion?.facingYaw || record.object3d.rotation?.y || 0;
+      const sideX = Math.cos(yaw) * 0.16;
+      const sideZ = -Math.sin(yaw) * 0.16;
+      const normal = this.terrainNormalAt(position.x, position.z, new this.THREE.Vector3());
+      const makeFoot = (side) => {
+        const x = position.x + sideX * side;
+        const z = position.z + sideZ * side;
+        return {
+          point: { x, y: this.terrainHeightAt(x, z), z },
+          normal: { x: normal.x, y: normal.y, z: normal.z },
+          grounded: this.isGrounded,
+          phase: Math.sin((record.legacyRuntime?.gaitPhase || 0) + (side < 0 ? 0 : Math.PI)) > -0.15 ? "plant" : "swing",
+          plantMarker: Math.sin((record.legacyRuntime?.gaitPhase || 0) + (side < 0 ? 0 : Math.PI)) > -0.15,
+          toeRoll: Math.max(0, Math.sin(record.legacyRuntime?.gaitPhase || 0)) * 0.18,
+          heelContact: Math.max(0, -Math.sin(record.legacyRuntime?.gaitPhase || 0))
+        };
+      };
+      return { left: makeFoot(-1), right: makeFoot(1), normal: { x: normal.x, y: normal.y, z: normal.z } };
+    }
+
+    syncCharacterRuntimeV3(dt, time) {
+      const facade = this.characterRuntimeV3 || root.HHAstraCharacterRuntimeV3;
+      if (!facade?.update) return;
+      const activeRuntime = this.characterRuntimes.get(this.state.roster.activeId);
+      const characterId = activeRuntime?.characterRuntimeV3Id;
+      if (characterId) {
+        const keyboardX = (this.keys.has("KeyD") || this.keys.has("ArrowRight") ? 1 : 0) - (this.keys.has("KeyA") || this.keys.has("ArrowLeft") ? 1 : 0);
+        const keyboardZ = (this.keys.has("KeyW") || this.keys.has("ArrowUp") ? 1 : 0) - (this.keys.has("KeyS") || this.keys.has("ArrowDown") ? 1 : 0);
+        const gamepad = this.gamepadMove || { x: 0, z: 0 };
+        const touch = this.touchMove || { x: 0, z: 0 };
+        try {
+          facade.setLocomotionInput(characterId, {
+            x: clamp(keyboardX + gamepad.x + touch.x, -1, 1),
+            z: clamp(keyboardZ + gamepad.z + touch.z, -1, 1),
+            sprint: this.keys.has("ShiftLeft") || this.keys.has("ShiftRight") || this.gamepadSprint,
+            combat: Boolean(this.lockedTargetId || this.aimMode),
+            cameraYaw: this.cameraYaw,
+            grounded: this.isGrounded,
+            verticalVelocity: this.verticalVelocity,
+            injured: this.state.player.health / Math.max(1, this.state.player.maxHealth) < 0.3,
+            exhausted: this.state.player.stamina / Math.max(1, this.state.player.maxStamina) < 0.12,
+            aim: this.aimMode
+          });
+          if (this.facePreview.expression && this.facePreview.expression !== "neutral") facade.setFacialState(characterId, this.facePreview.expression);
+        } catch {}
+      }
+      facade.update(dt, time, {
+        activeCharacterId: characterId,
+        distanceFor: (id) => id === characterId ? 0 : 12,
+        applySeparation: false
+      });
+    }
+
+    handleCombatMarkerV3(characterId, event) {
+      if (event.name === "active_start") this.resolveCombatActionV3(event.sequenceId);
+      if (event.name === "hit_stop") this.hitStopUntil = Math.max(this.hitStopUntil, performance.now() + 42);
+      if (event.name === "camera_impulse") this.cameraShake = Math.max(this.cameraShake, 0.12);
+      if (event.name === "trail_start" && this.playerWeapon) this.playerWeapon.userData.trailActive = true;
+      if (event.name === "trail_end" && this.playerWeapon) this.playerWeapon.userData.trailActive = false;
+      const runtime = [...this.characterRuntimes.values()].find((entry) => entry.characterRuntimeV3Id === characterId);
+      if (runtime) runtime.combatMarkerV3 = event.name;
+    }
+
+    resolveCombatActionV3(sequenceId) {
+      const pending = this.pendingCombatActionsV3.get(sequenceId);
+      if (!pending || pending.resolved) return false;
+      pending.resolved = true;
+      this.pendingCombatActionsV3.delete(sequenceId);
+      const { kind, weaponClass, target, combatProfile, range, damageBase, element } = pending;
+      if (this.authoritative) {
+        this.emitInput({ action: kind, weaponClass, targetId: target?.userData?.id || "", power: 1, actionSequenceId: sequenceId, combatMarker: "active_start" });
+        return true;
+      }
+      if (!target || target.visible === false || target.userData?.defeated) return false;
+      const targets = [target];
+      if (kind !== "attack") {
+        const limit = Number(combatProfile.aoe?.[kind] || (kind === "ultimate" ? 8 : 2));
+        this.enemies.forEach((enemy) => {
+          if (targets.length >= limit || targets.includes(enemy) || !enemy.visible || enemy.userData.defeated) return;
+          const distance = Math.hypot(enemy.position.x - this.state.player.x, enemy.position.z - this.state.player.z);
+          if (distance <= range) targets.push(enemy);
+        });
+      }
+      targets.forEach((combatTarget, index) => {
+        const distanceAtContact = Math.hypot(combatTarget.position.x - this.state.player.x, combatTarget.position.z - this.state.player.z);
+        if (distanceAtContact <= range + 1.2 && this.targetInsideWeaponHitbox(combatTarget, combatProfile, range)) {
+          this.damageTarget(combatTarget, Math.round(damageBase * (index ? 0.72 : 1)), element, kind);
+        }
+      });
+      return true;
     }
 
     findCharacterClip(runtime, state) {
@@ -11825,6 +12000,8 @@
       mesh.userData.weapon = weapon;
       mesh.userData.lodVariants.attachments = [weapon];
       weapon.visible = mesh.userData.modelTier !== "impostor";
+      const runtime = this.characterRuntimes.get(characterId);
+      if (runtime) this.mountCharacterRuntimeV3(characterId, runtime);
       if (characterId === this.state.roster.activeId) {
         this.playerWeapon = weapon;
         this.resetWeaponVisibilityValidation(weapon, "loadout-refresh");
@@ -12701,6 +12878,10 @@
       this.playerMesh = this.characterMeshes.get(characterId);
       this.placeSquadFormation(true);
       this.refreshEquippedWeapon(characterId);
+      this.emitInput({
+        equipWeaponClass: this.equippedWeaponClass(characterId),
+        equipSequenceId: `equip-${characterId}-${Date.now().toString(36)}`
+      });
       this.playerWeapon = this.playerMesh.userData.weapon;
       this.syncActiveCharacterDataset(this.playerMesh);
       this.resetGameplayCharacterVisibility("character-switch");
@@ -13032,6 +13213,7 @@
             this.state.playTime += dt;
             this.state.worldTime = (this.state.worldTime + dt * this.worldHoursPerSecond) % 24;
           }
+          this.syncCharacterRuntimeV3(dt, time);
           if (this.genesisActive) {
             const runtime = this.characterRuntimes.get(this.state.roster.activeId);
             if (runtime?.motionProfile === "sketchfab-static-safe") {
@@ -14492,29 +14674,37 @@
         ? Math.min(680, Math.hypot(target.position.x - this.state.player.x, target.position.z - this.state.player.z) / Math.max(1, Number(combatProfile.projectileSpeed || 40)) * 1000)
         : 0;
       const contactDelay = Math.max(Number(combatProfile.contact?.[kind] || 145), travelDelay);
-      root.setTimeout(() => {
-        if (this.destroyed || !this.running) return;
-        if (this.authoritative) {
-          this.emitInput({ action: kind, weaponClass, targetId: target?.userData?.id || "", power: 1 });
-          return;
-        }
-        if (!target || target.visible === false || target.userData?.defeated) return;
-        const targets = [target];
-        if (kind !== "attack") {
-          const limit = Number(combatProfile.aoe?.[kind] || (kind === "ultimate" ? 8 : 2));
-          this.enemies.forEach((enemy) => {
-            if (targets.length >= limit || targets.includes(enemy) || !enemy.visible || enemy.userData.defeated) return;
-            const distance = Math.hypot(enemy.position.x - this.state.player.x, enemy.position.z - this.state.player.z);
-            if (distance <= range) targets.push(enemy);
-          });
-        }
-        targets.forEach((combatTarget, index) => {
-          const distanceAtContact = Math.hypot(combatTarget.position.x - this.state.player.x, combatTarget.position.z - this.state.player.z);
-          if (distanceAtContact <= range + 1.2 && this.targetInsideWeaponHitbox(combatTarget, combatProfile, range)) {
-            this.damageTarget(combatTarget, Math.round(damageBase * (index ? 0.72 : 1)), element, kind);
-          }
-        });
-      }, contactDelay);
+      const durationMs = kind === "ultimate" ? 920 : kind === "skill" ? 680 : 430;
+      const sequenceId = `astra-${characterId}-${++this.combatSequenceV3}-${Math.round(now).toString(36)}`;
+      const activeStart = clamp(contactDelay / 1000, 0.04, Math.max(0.05, durationMs / 1000 - 0.12));
+      const activeEnd = Math.min(durationMs / 1000 - 0.04, activeStart + Math.max(0.06, Number(combatProfile.hitbox?.activeMs || 110) / 1000));
+      this.pendingCombatActionsV3.set(sequenceId, { kind, weaponClass, target, combatProfile, range, damageBase, element, createdAt: now, resolved: false });
+      const runtimeId = this.characterRuntimes.get(characterId)?.characterRuntimeV3Id;
+      const markerRequest = runtimeId && this.characterRuntimeV3?.requestCombatAction?.(runtimeId, {
+        type: kind,
+        sequenceId,
+        duration: durationMs / 1000,
+        cooldownMs: cooldowns[kind],
+        markers: [
+          { name: "windup_start", time: 0 },
+          { name: "trail_start", time: Math.max(0.01, activeStart - 0.06) },
+          { name: ["ranged", "magic"].includes(combatProfile.mode) ? "projectile_spawn" : "active_start", time: activeStart },
+          ...(["ranged", "magic"].includes(combatProfile.mode) ? [{ name: "active_start", time: activeStart }] : []),
+          { name: "hit_stop", time: activeStart },
+          { name: "camera_impulse", time: activeStart },
+          { name: "active_end", time: activeEnd },
+          { name: "trail_end", time: activeEnd },
+          { name: "combo_open", time: Math.min(durationMs / 1000 - 0.1, activeEnd + 0.04) },
+          { name: "cancel_open", time: Math.min(durationMs / 1000 - 0.08, activeEnd + 0.08) },
+          { name: "combo_close", time: Math.min(durationMs / 1000 - 0.04, activeEnd + 0.2) },
+          { name: "cancel_close", time: Math.min(durationMs / 1000 - 0.02, activeEnd + 0.24) },
+          { name: "recovery_end", time: durationMs / 1000 }
+        ]
+      });
+      if (!markerRequest?.accepted) {
+        this.pendingCombatActionsV3.delete(sequenceId);
+        this.toast(`Combat Runtime V3 từ chối đòn: ${markerRequest?.reason || "runtime chưa kết nối"}.`, "error");
+      }
     }
 
     swingAnimation(kind, weaponClass = this.equippedWeaponClass()) {
@@ -14738,6 +14928,15 @@
       this.state.player.health = Math.max(0, this.state.player.health - damage);
       this.invulnerableUntil = performance.now() + 420;
       this.setCharacterAction("hit", 360, clamp(damage / 30, 0.45, 1.4));
+      const runtimeId = this.characterRuntimes.get(this.state.roster.activeId)?.characterRuntimeV3Id;
+      this.characterRuntimeV3?.applyHit?.(runtimeId, {
+        intensity: clamp(damage / 45, 0.08, 0.78),
+        region: "chest",
+        direction: { x: 0, y: 0, z: -1 },
+        weapon: source,
+        element: "neutral",
+        serverConfirmed: true
+      });
       this.spawnPulse(this.state.player.x, this.state.player.y + 1, this.state.player.z, "#ff5e72", 0.35, 2.6);
       if (!this.state.player.health) this.playerDefeated(source);
     }
@@ -14889,6 +15088,24 @@
         return;
       }
       const data = target.userData;
+      const runtimeId = this.characterRuntimes.get(this.state.roster.activeId)?.characterRuntimeV3Id;
+      const interactionType = ({ npc: "talk", collectible: "pickup", portal: "door", puzzle: "switch", training: "switch" })[data.type] || "switch";
+      const interactionResult = runtimeId ? this.characterRuntimeV3?.requestAction?.(runtimeId, {
+        type: "interaction",
+        target: {
+          type: interactionType,
+          approachPoint: { x: target.position?.x || this.state.player.x, y: target.position?.y || this.state.player.y, z: target.position?.z || this.state.player.z },
+          facingYaw: Math.atan2((target.position?.x || 0) - this.state.player.x, (target.position?.z || 0) - this.state.player.z),
+          animationId: `${interactionType}-v3`,
+          duration: interactionType === "talk" ? 1.2 : 0.65,
+          interruptPolicy: interactionType === "pickup" ? "locked" : "cancelable",
+          serverValidated: !this.authoritative
+        }
+      }) : null;
+      if (this.authoritative && interactionResult?.accepted === false) {
+        this.toast("Tương tác online đang chờ server xác nhận; không thực hiện giả ở client.", "error");
+        return;
+      }
       if (data.type === "npc") return this.openDialogue(data.id);
       if (data.type === "collectible") return this.collectNode(target);
       if (data.type === "portal") return this.activatePortal(target);
@@ -15138,6 +15355,10 @@
       if (!item || !record?.quantity || item.type !== "weapon") return;
       this.state.player.weapon = itemId;
       if (this.state.loadouts?.[this.state.roster.activeId]) this.state.loadouts[this.state.roster.activeId].weapon = itemId;
+      this.emitInput({
+        equipWeaponClass: item.weaponClass || "sword",
+        equipSequenceId: `equip-${this.state.roster.activeId}-${Date.now().toString(36)}`
+      });
       this.refreshEquippedWeapon();
       const combat = WEAPON_COMBAT_PROFILES[item.weaponClass || "sword"] || WEAPON_COMBAT_PROFILES.sword;
       this.setCharacterAction(`equip_${item.weaponClass || "sword"}`, 480, 0.9);
@@ -15155,6 +15376,8 @@
       this.isGrounded = true;
       this.gliding = false;
       this.positionCharacterInWorld(this.playerMesh, this.state.player.x, this.state.player.y, this.state.player.z);
+      const runtimeId = this.characterRuntimes.get(this.state.roster.activeId)?.characterRuntimeV3Id;
+      this.characterRuntimeV3?.instance?.characters?.get?.(runtimeId)?.secondary?.reset?.("teleport");
       this.updateCamera(true);
       this.closePanel();
       this.spawnPulse(this.state.player.x, this.state.player.y + 0.2, this.state.player.z, "#76eaff", 0.8, 5);
@@ -15167,6 +15390,8 @@
       this.state.player.element = elementId;
       this.root.querySelectorAll("[data-element]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.element === elementId)));
       this.applyWeaponElementMaterial(this.playerWeapon, elementId);
+      const runtimeId = this.characterRuntimes.get(this.state.roster.activeId)?.characterRuntimeV3Id;
+      this.characterRuntimeV3?.instance?.characters?.get?.(runtimeId)?.elemental?.set?.(elementId);
       if (notify) this.toast(`Lõi ${ELEMENTS[elementId].label} đã đồng bộ.`);
       this.updateUi(true);
     }
@@ -15502,6 +15727,7 @@
         craft: () => this.renderCraftPanel(),
         skills: () => this.renderSkillsPanel(),
         characters: () => this.renderCharactersPanel(),
+        "character-lab": () => this.renderCharacterLabV3Panel(),
         creator: () => this.renderCharacterCreatorPanel(),
         party: () => this.renderPartyPanel(),
         settings: () => this.renderSettingsPanel(),
@@ -15521,6 +15747,7 @@
         craft: ["Astral Forge", "Crafting Station", "#ffaf67"],
         skills: ["Cây kỹ năng", "Resonance Matrix", "#ff70ce"],
         characters: ["Đội hình Astral", "Character Observatory", "#ff78d2"],
+        "character-lab": ["Character Lab V3", "Developer Runtime Diagnostics", "#65f1c7"],
         creator: ["Character Creator", "Appearance Observatory", "#71efff"],
         party: ["Co-op 1–8", "Realtime Shard", "#73eaff"],
         settings: ["Thiết lập", "Graphics & Controls", "#ffd36b"],
@@ -15562,8 +15789,47 @@
         }).join("")}</ul></div>` : ""}
         <div class="har-section"><h3>Character Pipeline</h3><div class="har-character-pipeline">${CHARACTER_PIPELINE.map((item) => `<div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.role)}</span><small>${escapeHtml(item.id === "three" ? `Runtime V${CHARACTER_VISUAL_VERSION}` : item.state)}</small></div>`).join("")}</div></div>
         <div class="har-section"><h3>Nguồn hình học nhân vật</h3><p>Catalog có ${this.characterPipelineManifest.filter((entry) => entry.url.startsWith("./assets/astral-realms/characters/")).length} GLB local có license và provenance, cùng thư viện VALID mở rộng. Chỉ model đang dùng mới được tải từ pipeline; GLB HH và procedural human luôn giữ vai trò fallback, nên máy yếu hoặc mạng chậm vẫn không có khung hình trống.</p>
-          <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="open-character-creator">Mở Character Select Hub · ${CHARACTER_SELECT_PROFILES.length} nhân vật</button><span class="har-chip">Chỉ tại H-Central</span></div>
+          <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="open-character-creator">Mở Character Select Hub · ${CHARACTER_SELECT_PROFILES.length} nhân vật</button>${this.canUseCharacterLabV3() ? '<button class="har-secondary-button" type="button" data-panel-action="open-character-lab-v3">Character Lab V3</button>' : ""}<span class="har-chip">Chỉ tại H-Central</span></div>
         </div>`;
+    }
+
+    canUseCharacterLabV3() {
+      const hostname = String(root.location?.hostname || "");
+      const role = String(this.options.currentUser?.role || this.options.currentUser?.systemRole || "").toLowerCase();
+      return ["localhost", "127.0.0.1"].includes(hostname) || ["owner", "root", "admin", "developer"].includes(role);
+    }
+
+    renderCharacterLabV3Panel() {
+      if (!this.canUseCharacterLabV3()) return '<div class="har-section"><h3>Không có quyền</h3><p>Character Lab chỉ dành cho developer/admin và không xuất hiện với người chơi bình thường.</p></div>';
+      const facade = this.characterRuntimeV3 || root.HHAstraCharacterRuntimeV3;
+      const runtime = this.characterRuntimes.get(this.state.roster.activeId);
+      const characterId = runtime?.characterRuntimeV3Id;
+      let diagnostics = null;
+      try { diagnostics = facade?.getDiagnostics?.(characterId); } catch {}
+      const character = diagnostics?.characters?.[0];
+      const tab = facade?.setLabTab?.(this.characterLabTabV3) || this.characterLabTabV3;
+      const tabs = facade?.LAB_TABS || [];
+      const empty = '<span class="har-v3-pending">Chưa kết nối</span>';
+      const value = (input, fallback = empty) => input === undefined || input === null || input === "" ? fallback : escapeHtml(typeof input === "object" ? JSON.stringify(input) : String(input));
+      const cards = ({
+        overview: [["Character ID", character?.id], ["Model / LOD", `${character?.model || ""} · ${character?.lod || ""}`], ["Backend", diagnostics?.backend], ["Quality", diagnostics?.qualityTier], ["FPS", this.fps], ["Triangles", character?.triangles], ["Draw calls", character?.drawCalls], ["Texture memory", character?.textureMemory]],
+        locomotion: [["Current state", character?.state], ["Previous state", character?.previousState], ["State time", character?.stateTime], ["Speed", character?.speed], ["Acceleration", character?.acceleration], ["Blend weights", character?.blendWeights], ["Current clip", character?.currentClip], ["Ground normal", character?.groundNormal]],
+        ik: [["Foot lock", character?.footLock], ["IK weights", character?.ikWeights], ["Grip error", character?.grip?.gripError], ["Grip profile", character?.grip?.profile?.id], ["Missing bones", character?.missingBones?.length ? character.missingBones : "Đủ bone bắt buộc"], ["Slope sampling", character?.groundNormal]],
+        weapons: [["Weapon", character?.grip?.equipped?.profileId], ["Attach state", character?.grip?.equipped?.attached], ["Class", character?.grip?.profile?.weaponClass], ["Missing sockets", character?.grip?.profile?.missingSockets?.length ? character.grip.profile.missingSockets : "Không"], ["Calibration", character?.grip?.gripError || "Chưa đo frame grip"]],
+        combat: [["Combat state", character?.combat?.state], ["Sequence", character?.combat?.sequenceId], ["Marker", character?.combat?.marker?.lastMarker], ["Active hitboxes", character?.activeHitboxes], ["Combo window", character?.combat?.marker?.windows?.combo], ["Cancel window", character?.combat?.marker?.windows?.cancel], ["Server confirmed", character?.combat?.serverConfirmed]],
+        face: [["Expression", character?.facial?.expression], ["Morph channels", character?.facial?.channels], ["Facial mode", character?.facial?.mode], ["Lip-sync", character?.facial?.lipSync], ["Vietnamese / English / Japanese", "Timestamped viseme; amplitude chỉ là fallback"]],
+        secondary: [["Enabled", character?.secondary?.enabled], ["Spring chains", character?.secondary?.chains], ["Safe resets", character?.secondary?.resets], ["Fixed timestep", "60 Hz; giảm theo quality/distance"], ["Teleport / tab resume", "Reset vận tốc mô phỏng"]],
+        damage: [["Ragdoll", character?.ragdoll], ["Hit layer", character?.combat?.state === "hit-reaction"], ["Server authority", "Knockdown/death bắt buộc server xác nhận"], ["Get-up", "Theo tư thế front/back/left/right"]],
+        performance: [["LOD", character?.lod], ["Quality tier", diagnostics?.qualityTier], ["Triangles", character?.triangles], ["Draw calls", character?.drawCalls], ["Texture memory", character?.textureMemory], ["Mounted", diagnostics?.mountedCharacters], ["Backend", diagnostics?.backend]],
+        network: [["Snapshot buffer", character?.network?.snapshots], ["Reconciliation", character?.network?.lastReconciliation], ["Sequence", character?.combat?.sequenceId], ["Authority", this.authoritative ? "Server-authoritative" : "Local fallback"], ["Damage injection", "Server từ chối client damage"]],
+        assets: [["Validation", character?.assetValidation?.status], ["Definition", diagnostics?.characterDefinitions], ["Skeleton profiles", diagnostics?.skeletonProfiles], ["Missing bones", character?.missingBones], ["Missing assets", character?.missingAssets], ["Budget warnings", character?.assetValidation?.warnings], ["Model source", character?.model], ["Fallback", character?.facial?.mode === "Chưa kết nối" ? "Thiếu morph target; dùng mặt neutral an toàn" : "Không"]]
+      })[tab] || [];
+      return `<div class="har-v3-lab" data-character-lab-v3>
+        <div class="har-v3-lab__hero"><div><small>HH CINEMATIC CHARACTER RUNTIME V3 · LIVE</small><h3>${value(character?.id, "Chưa mount character")}</h3><p>Dữ liệu trực tiếp; trạng thái thiếu asset luôn ghi “Chưa kết nối”, không giả sẵn sàng.</p></div><span>${value(diagnostics?.backend, "unmounted")}</span></div>
+        <div class="har-v3-tabs" role="tablist" aria-label="Character Lab V3">${tabs.map(([id, label]) => `<button type="button" role="tab" aria-selected="${id === tab}" class="${id === tab ? "is-active" : ""}" data-panel-action="character-lab-tab" data-tab="${id}">${escapeHtml(label)}</button>`).join("")}</div>
+        <div class="har-v3-metrics">${cards.map(([label, entry]) => `<article><small>${escapeHtml(label)}</small><strong>${value(entry)}</strong></article>`).join("")}</div>
+        <div class="har-v3-actions"><button type="button" data-panel-action="character-lab-pause">Pause animation</button><button type="button" data-panel-action="character-lab-step">Step frame</button><button type="button" data-panel-action="character-lab-slow">Slow motion</button><button type="button" data-panel-action="character-lab-toggle-ik">Toggle IK</button><button type="button" data-panel-action="character-lab-force-weapon">Force weapon</button><button type="button" data-panel-action="character-lab-export">Export diagnostics JSON</button></div>
+      </div>`;
     }
 
     activeAppearanceRecipe() {
@@ -16295,7 +16561,7 @@
             <label class="har-field">Camera lệch vai<select data-setting="shoulderCamera"><option value="true">Bật · nhấn V để đổi vai</option><option value="false">Camera giữa nhân vật</option></select></label>
             <label class="har-field">Tự theo hướng chạy<select data-setting="cameraAutoFollow"><option value="true">Bật sau 0,9 giây</option><option value="false">Chỉ theo chuột</option></select></label>
             <label class="har-field">Aim assist<select data-setting="aimAssist"><option value="true">Bật hỗ trợ ngắm</option><option value="false">Tắt hoàn toàn</option></select></label>
-            <label class="har-field">Character Lab<select data-setting="characterLab"><option value="false">Ẩn công cụ QA</option><option value="true">Hiện dữ liệu runtime thật</option></select></label>
+            ${this.canUseCharacterLabV3() ? '<label class="har-field">Character Lab<select data-setting="characterLab"><option value="false">Ẩn công cụ QA</option><option value="true">Hiện dữ liệu runtime thật</option></select></label>' : ""}
             <label class="har-field">Đảo trục dọc<select data-setting="invertCameraY"><option value="false">Bình thường</option><option value="true">Đảo trục Y</option></select></label>
             <label class="har-field">Khoảng cách camera<input type="range" min="5.2" max="18" step="0.2" value="${this.state.settings.cameraDistance}" data-setting="cameraDistance"></label>
             <label class="har-field">Rung camera<input type="range" min="0" max="100" value="${this.state.settings.cameraShake}" data-setting="cameraShake"></label>
@@ -16304,7 +16570,7 @@
           </div>
         </div>
         <div class="har-section"><h3>Điều khiển</h3><p>Click cảnh để bật Free-look · di chuột xoay camera · Esc trả chuột · chuột phải ngắm vai · WASD di chuyển · Shift chạy · Space nhảy · F đánh · Q né · E kỹ năng · R tuyệt kỹ · Tab khóa mục tiêu.</p><p>Camera: ${escapeHtml(this.root.dataset.cameraControl || "drag-fallback")} · va chạm ${escapeHtml(this.root.dataset.cameraCollision || "clear")} · vũ khí ${escapeHtml(this.root.dataset.characterWeaponAsset || "đang tải")}.</p></div>
-        ${this.state.settings.characterLab ? this.renderCharacterLab() : ""}
+        ${this.state.settings.characterLab && this.canUseCharacterLabV3() ? this.renderCharacterLab() : ""}
         <div class="har-section"><h3>Lưu tiến trình</h3><p>${record ? `Local v${record.version} · ${new Date(record.updatedAt).toLocaleString("vi-VN")} · ${this.state.cloud.status}` : "Chưa có bản lưu."}</p>
           <div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="manual-save">Lưu checkpoint</button><button class="har-secondary-button" type="button" data-panel-action="sync-cloud">Đồng bộ tài khoản</button></div>
         </div>
@@ -16408,6 +16674,7 @@
           if (["reduceEffects", "dynamicResolution", "postFx", "livingWorld", "facialAnimation", "surfaceFx", "microDetail", "naturalMotion", "eyePerformance", "secondaryMotion", "freeLookCamera", "shoulderCamera", "cameraAutoFollow", "aimAssist", "characterLab", "invertCameraY", "genesisWeaponPreview"].includes(key)) value = value === "true";
           if (["volume", "cameraSensitivity", "cameraShake", "weatherDensity", "cameraDistance"].includes(key)) value = Number(value);
           this.state.settings[key] = value;
+          if (key === "characterLab" && !this.canUseCharacterLabV3()) this.state.settings.characterLab = false;
           try { root.localStorage?.setItem("hh.astral-realms.settings.v1", JSON.stringify(this.state.settings)); } catch {}
           if (key === "cameraDistance") this.cameraDistance = clamp(value, 5.2, 18);
           if (key === "freeLookCamera" && value === false && document.pointerLockElement === this.renderer?.domElement) document.exitPointerLock?.();
@@ -16417,6 +16684,8 @@
             this.toast(value === "hybrid" ? "Hybrid Cursor: di chuột trên cảnh để nhìn, mọi nút UI vẫn bấm trực tiếp." : value === "pointer-lock" ? "Pointer Lock chỉ bật khi click trực tiếp vào cảnh." : "Camera chuyển sang giữ chuột phải để xoay.", "success");
           }
           if (key === "quality") {
+            const runtimeTier = ({ cinematic: "cinematic", high: "high", medium: "balanced", low: "low", auto: "balanced" })[value] || "balanced";
+            this.characterRuntimeV3?.setQualityTier?.(runtimeTier, value !== "auto");
             this.root.dataset.quality = value;
             if (value === "cinematic") {
               Object.assign(this.state.settings, {
@@ -16749,6 +17018,58 @@
       else if (action === "toggle-training") this.toggleTraining();
       else if (action === "scan-codex") this.scanCurrentZone();
       else if (action === "open-characters") this.openPanel("characters");
+      else if (action === "open-character-lab-v3") {
+        if (!this.canUseCharacterLabV3()) this.toast("Character Lab chỉ dành cho developer/admin.", "error");
+        else this.openPanel("character-lab");
+      }
+      else if (action === "character-lab-tab") {
+        this.characterLabTabV3 = this.characterRuntimeV3?.setLabTab?.(data.tab) || data.tab || "overview";
+        this.renderCurrentPanel();
+      }
+      else if (action === "character-lab-pause") {
+        const runtime = this.characterRuntimes.get(this.state.roster.activeId);
+        if (runtime?.mixer) runtime.mixer.timeScale = runtime.mixer.timeScale === 0 ? 1 : 0;
+        this.toast(runtime?.mixer ? `Animation ${runtime.mixer.timeScale === 0 ? "đã pause" : "đã tiếp tục"}.` : "Mixer chưa kết nối.", runtime?.mixer ? "success" : "error");
+        this.renderCurrentPanel();
+      }
+      else if (action === "character-lab-step") {
+        const runtime = this.characterRuntimes.get(this.state.roster.activeId);
+        runtime?.mixer?.update?.(1 / 60);
+        this.characterRuntimeV3?.update?.(1 / 60, performance.now(), { activeCharacterId: runtime?.characterRuntimeV3Id });
+        this.toast(runtime?.mixer ? "Đã tiến đúng một frame 1/60 giây." : "Mixer chưa kết nối.", runtime?.mixer ? "success" : "error");
+        this.renderCurrentPanel();
+      }
+      else if (action === "character-lab-slow") {
+        const runtime = this.characterRuntimes.get(this.state.roster.activeId);
+        if (runtime?.mixer) runtime.mixer.timeScale = runtime.mixer.timeScale === 0.25 ? 1 : 0.25;
+        this.toast(runtime?.mixer ? `Time scale ${runtime.mixer.timeScale}×.` : "Mixer chưa kết nối.", runtime?.mixer ? "success" : "error");
+        this.renderCurrentPanel();
+      }
+      else if (action === "character-lab-toggle-ik") {
+        const runtimeId = this.characterRuntimes.get(this.state.roster.activeId)?.characterRuntimeV3Id;
+        const record = this.characterRuntimeV3?.instance?.characters?.get?.(runtimeId);
+        if (record) { record.fullBodyIk.enabled = !record.fullBodyIk.enabled; record.feet.enabled = record.fullBodyIk.enabled; }
+        this.toast(record ? `IK ${record.fullBodyIk.enabled ? "đã bật" : "đã tắt"}.` : "IK runtime chưa kết nối.", record ? "success" : "error");
+        this.renderCurrentPanel();
+      }
+      else if (action === "character-lab-force-weapon") {
+        const ownedWeapon = Object.keys(this.state.inventory || {}).find((itemId) => this.state.inventory[itemId]?.quantity > 0 && ITEMS[itemId]?.type === "weapon" && itemId !== this.equippedWeaponId());
+        if (ownedWeapon) this.equipItem(ownedWeapon);
+        else this.toast("Không có vũ khí khác trong kho để force; không tạo asset giả.", "error");
+        this.renderCurrentPanel();
+      }
+      else if (action === "character-lab-export") {
+        const runtime = this.characterRuntimes.get(this.state.roster.activeId);
+        const diagnostics = this.characterRuntimeV3?.getDiagnostics?.(runtime?.characterRuntimeV3Id) || { status: "Chưa kết nối" };
+        const blob = new Blob([JSON.stringify(diagnostics, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = `hh-astra-character-v3-${Date.now()}.json`;
+        anchor.click();
+        root.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        this.toast("Đã xuất diagnostics JSON từ runtime thật.", "success");
+      }
       else if (action === "open-skills") this.openPanel("skills");
       else if (action === "save-loadout") this.saveLoadout();
       else if (action === "craft") this.craft(data.recipe);
@@ -17282,6 +17603,7 @@
       if (!mesh) return;
       const runtimeKey = `remote:${id}`;
       const runtime = this.characterRuntimes.get(runtimeKey) || mesh.userData?.characterRuntime;
+      if (runtime?.characterRuntimeV3Id) this.characterRuntimeV3?.unmountCharacter?.(runtime.characterRuntimeV3Id);
       mesh.parent?.remove(mesh);
       this.disposeCharacterObject(mesh, runtime);
       this.characterRuntimes.delete(runtimeKey);
@@ -17402,12 +17724,26 @@
       this.state.party.combatants = Array.isArray(payload.players) ? payload.players : [];
       if (self) {
         const wasAlive = this.state.player.health > 0;
+        const previousHealth = this.state.player.health;
         const error = Math.hypot(self.x - this.state.player.x, self.z - this.state.player.z);
+        const localRuntimeId = this.characterRuntimes.get(this.state.roster.activeId)?.characterRuntimeV3Id;
+        const localNetwork = this.characterRuntimeV3?.instance?.characters?.get?.(localRuntimeId)?.network;
+        localNetwork?.reconcile?.({ x: self.x, z: self.z }, { x: this.state.player.x, z: this.state.player.z });
         const blend = error > 3 ? 1 : 0.22;
         this.state.player.x += (self.x - this.state.player.x) * blend;
         this.state.player.z += (self.z - this.state.player.z) * blend;
         this.state.player.health = self.health;
         this.state.player.stamina = self.stamina;
+        if (self.health < previousHealth) {
+          const runtimeId = this.characterRuntimes.get(this.state.roster.activeId)?.characterRuntimeV3Id;
+          this.characterRuntimeV3?.applyHit?.(runtimeId, {
+            intensity: clamp((previousHealth - self.health) / 45, 0.08, 1),
+            region: self.health <= 0 ? "chest" : "back",
+            direction: { x: 0, y: 0, z: -1 },
+            weapon: "server-authoritative",
+            serverConfirmed: true
+          });
+        }
         if (wasAlive && self.health <= 0) {
           this.state.hunter.killStreak = 0;
           this.setCharacterAction("defeated", 1600, 1);
@@ -17457,6 +17793,20 @@
         mesh.userData.maxHealth = player.maxHealth;
         mesh.userData.pk = player.pk || {};
         mesh.userData.action = player.action || "idle";
+        const remoteRuntimeId = this.characterRuntimes.get(`remote:${player.socketId}`)?.characterRuntimeV3Id;
+        this.characterRuntimeV3?.instance?.characters?.get?.(remoteRuntimeId)?.network?.acceptSnapshot?.({
+          characterId: remoteRuntimeId,
+          animationState: player.animationState || player.action || "idle",
+          normalizedTime: player.normalizedTime || 0,
+          locomotionVector: player.locomotionVector || { x: 0, z: 0 },
+          facingYaw: player.facingYaw ?? player.rotation ?? 0,
+          aimPitch: player.aimPitch || 0,
+          weaponId: player.weaponId || "unarmed",
+          actionSequenceId: player.actionSequenceId || "",
+          combatState: player.combatState || player.action || "ready",
+          expressionId: player.expressionId || "neutral",
+          serverTimestamp: player.serverTimestamp || Date.parse(payload.serverTime) || Date.now()
+        });
       });
       this.remotePlayers.forEach((mesh, id) => {
         if (!activeRemoteIds.has(id)) {
@@ -17720,6 +18070,10 @@
       this.stopFacePilot();
       this.restoreCameraOccluders();
       this.clearEnvironmentColliders();
+      this.characterRuntimes.forEach((runtime) => {
+        if (runtime.characterRuntimeV3Id) this.characterRuntimeV3?.unmountCharacter?.(runtime.characterRuntimeV3Id);
+      });
+      this.pendingCombatActionsV3.clear();
       this.characterRuntimes.forEach((runtime) => runtime.mixer?.stopAllAction?.());
       this.unbindSocket();
       this.cleanup.splice(0).forEach((dispose) => {

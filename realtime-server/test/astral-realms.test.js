@@ -87,6 +87,8 @@ test("HH Astral Realms limits movement and resolves combat on the authoritative 
       outfit: ["central-jacket-02", "combat-boots-01", "unknown-paid-item"]
     },
     action: "attack",
+    actionSequenceId: "runtime-v3-attack-1",
+    combatMarker: "active_start",
     targetId: "aurora-wisp-1",
     power: 999
   });
@@ -97,6 +99,8 @@ test("HH Astral Realms limits movement and resolves combat on the authoritative 
     move: { x: 999, z: 999 },
     sprint: true,
     action: "attack",
+    actionSequenceId: "runtime-v3-attack-2",
+    combatMarker: "active_start",
     targetId: "aurora-wisp-1",
     power: 999
   });
