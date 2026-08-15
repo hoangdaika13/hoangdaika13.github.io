@@ -135,7 +135,7 @@ test("HH ASTRA loads every V3 module before the game and contains no timeout-bas
   const loader = fs.readFileSync(path.join(ROOT, "performance-loader.js"), "utf8");
   const game = fs.readFileSync(path.join(ROOT, "astral-realms.js"), "utf8");
   const runtimeIndex = loader.indexOf("services/astra-character/CharacterRuntimeV3.js?v=1");
-  const gameIndex = loader.indexOf("astral-realms.js?v=95");
+  const gameIndex = loader.indexOf("astral-realms.js?v=96");
   assert.ok(runtimeIndex >= 0 && gameIndex > runtimeIndex);
   assert.match(game, /pendingCombatActionsV3/);
   assert.match(game, /combatMarker:\s*"active_start"/);

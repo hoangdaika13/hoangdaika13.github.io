@@ -213,9 +213,10 @@
       scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=5"]
     },
     game: {
-      styles: ["game-runtime.css?v=1", "astral-realms.css?v=78", "space-explorer.css?v=4", "game-center.css?v=6", "astra-universe-expansion.css?v=4", "game-arcade.css?v=5"],
+      styles: ["game-runtime.css?v=1", "astral-realms.css?v=79", "space-explorer.css?v=4", "game-center.css?v=6", "astra-universe-expansion.css?v=4", "game-arcade.css?v=5"],
       scripts: [
         "game-platform-adapters.js?v=1", "game-runtime.js?v=1",
+        "services/astra-story/NexusEchoStoryV3.js?v=1",
         "services/astra-character/AstraCharacterCore.js?v=1", "services/astra-character/CharacterDefinition.js?v=1", "services/astra-character/CharacterAssetValidator.js?v=1", "services/astra-character/SkeletonProfile.js?v=1",
         "services/astra-character/AnimationRegistry.js?v=1", "services/astra-character/AnimationRetargeter.js?v=1", "services/astra-character/AnimationStateMachine.js?v=1", "services/astra-character/AdditiveAnimationLayer.js?v=1",
         "services/astra-character/LocomotionController.js?v=1", "services/astra-character/MotionWarping.js?v=1", "services/astra-character/FootPlacementIK.js?v=1", "services/astra-character/FullBodyIK.js?v=1", "services/astra-character/LookAtController.js?v=1",
@@ -223,7 +224,7 @@
         "services/astra-character/FacialPerformanceController.js?v=1", "services/astra-character/LipSyncController.js?v=1", "services/astra-character/SecondaryMotionController.js?v=1", "services/astra-character/ContextualInteractionController.js?v=1",
         "services/astra-character/CharacterCollisionController.js?v=1", "services/astra-character/CharacterLODController.js?v=1", "services/astra-character/CharacterNetworkReplicator.js?v=1", "services/astra-character/CharacterPerformanceGovernor.js?v=1",
         "services/astra-character/CinematicCharacterDirector.js?v=1", "services/astra-character/ElementalCharacterIdentity.js?v=1", "services/astra-character/CharacterCustomizationController.js?v=1", "services/astra-character/CharacterDebugOverlay.js?v=1", "services/astra-character/CharacterRuntimeV3.js?v=1",
-        "astral-realms.js?v=95", "space-explorer.js?v=4", "game-center.js?v=7", "astra-universe-expansion.js?v=4", "game-arcade.js?v=5"
+        "astral-realms.js?v=96", "space-explorer.js?v=4", "game-center.js?v=7", "astra-universe-expansion.js?v=4", "game-arcade.js?v=5"
       ]
     },
     "cinematic-game": {

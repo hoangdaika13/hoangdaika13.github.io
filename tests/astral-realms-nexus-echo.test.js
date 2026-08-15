@@ -19,14 +19,14 @@ test("Nexus Echo is one causal eight-chapter canon", () => {
   const archive = between("  const ASTRAL_CINEMATICS", "  const BIOME_PROFILES");
   assert.equal((archive.match(/requiredEvent:/g) || []).length, 8);
   for (const fact of [
-    "72 giờ trong tương lai",
-    "mạng Astral sụp đổ",
-    "Temporal Key",
-    "hệ thống phòng vệ Astral",
-    "con tàu mất tích của Nax nguyên bản",
-    "Nax nguyên bản đã chết",
-    "ra lệnh xóa Nax",
-    "không xóa ký ức hay bản ngã"
+    "Con quái vật gọi tên tôi",
+    "Thành phố không có bóng",
+    "Bốn lời khai",
+    "Vũ khí biết khóc",
+    "Cuộc chiến H-Central",
+    "Hành tinh ngày mai đã chết",
+    "Người săn cuối cùng",
+    "Kho Lưu Trữ Sống"
   ]) assert.ok(archive.includes(fact), `missing canonical fact: ${fact}`);
   assert.doesNotMatch(archive, /mọi lựa chọn|chọn phe|nhiều kết thúc/i);
 });

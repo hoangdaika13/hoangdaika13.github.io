@@ -2,8 +2,9 @@
   "use strict";
 
   const GAME_ID = "astral-realms";
-  const SCHEMA_VERSION = 11;
-  const STORY_CANON_VERSION = 2;
+  const SCHEMA_VERSION = 12;
+  const STORY_CANON_VERSION = 3;
+  const NEXUS_STORY = root.HHAstraNexusEchoStory || (typeof require === "function" ? require("./services/astra-story/NexusEchoStoryV3.js") : null);
   const RENDER_SCALE_STEPS = Object.freeze([1, 0.85, 0.7, 0.6]);
   const DB_NAME = "hh-astral-realms";
   const DB_VERSION = 1;
@@ -383,24 +384,24 @@
     { id: "abyss", name: "Nexus Abyss", x: 124, z: 94, radius: 31, color: "#ff5e9f", weather: "Nhật thực Nexus", description: "Vực cuối nơi không gian, trọng lực và ánh sáng cùng biến dạng." }
   ]);
   const ASTRAL_CINEMATICS = Object.freeze([
-    { id: "central", chapter: 1, title: "Tín hiệu thức tỉnh", kicker: "NEXUS ECHO · H-CENTRAL", description: "Nax Veyra được tái tạo tại H-Central. Ngay khi ý thức ổn định, Nax nhận một tín hiệu cầu cứu mang chính chữ ký của mình, được gửi ngược về từ 72 giờ trong tương lai.", objective: "Cùng Luma xác minh tín hiệu tương lai", duration: 32000, camera: "opening-six-shot", motion: "opening", requiredEvent: "quest:awakening" },
-    { id: "aurora", chapter: 2, title: "Hồ gương Aurora", kicker: "NEXUS ECHO · AURORA VALE", description: "Ký ức được lưu trong hồ gương tái hiện khoảnh khắc mạng Astral sụp đổ. Tín hiệu của Nax là thật, và chỉ còn 72 giờ để ngăn thảm họa.", objective: "Khôi phục ký ức trong lõi Aurora", duration: 11800, camera: "water-sweep", motion: "walk", requiredEvent: "restored:aurora" },
-    { id: "crimson", chapter: 3, title: "Trái tim lò rèn", kicker: "NEXUS ECHO · CRIMSON FORGE", description: "Từ lõi Plasma còn hoạt động, Cael rèn Temporal Key — công cụ duy nhất có thể giải mã lớp thời gian đang khóa tín hiệu của Nax.", objective: "Cùng Cael hoàn thiện Temporal Key", duration: 11600, camera: "forge-rise", motion: "idle", requiredEvent: "restored:crimson" },
-    { id: "void", chapter: 4, title: "Khu vườn không bóng", kicker: "NEXUS ECHO · VOID GARDEN", description: "Temporal Key mở kho lưu trữ cấm. Nyx phát hiện Nexus không phải sinh vật ngoài hành tinh, mà là hệ thống phòng vệ Astral đã nhận sai toàn bộ sự sống là mối đe dọa.", objective: "Giải mã giao thức phòng vệ Nexus", duration: 12400, camera: "gravity-roll", motion: "talk", requiredEvent: "restored:void" },
-    { id: "sky", chapter: 5, title: "Tàn tích tầng mây", kicker: "NEXUS ECHO · SKY RUINS", description: "Giữa các tàn tích tầng mây, đội tìm lại bản đồ điều hướng dẫn tới con tàu mất tích của Nax nguyên bản — nguồn duy nhất còn giữ ký ức chưa bị Nexus sửa đổi.", objective: "Khôi phục bản đồ tới con tàu nguyên bản", duration: 11800, camera: "sky-dive", motion: "glide", requiredEvent: "restored:sky" },
-    { id: "ocean", chapter: 6, title: "Mặt trăng đại dương", kicker: "NEXUS ECHO · OCEAN MOON", description: "Nhật ký con tàu xác nhận Nax nguyên bản đã chết khi cứu H-Central. Nax hiện tại là một bản tái tạo, nhưng ký ức mới và ý thức đang sống thuộc về chính mình.", objective: "Đưa nhật ký gốc trở lại mạng Astral", duration: 12800, camera: "ocean-glide", motion: "walk", requiredEvent: "restored:ocean" },
-    { id: "station", chapter: 7, title: "Quỹ đạo phong tỏa", kicker: "NEXUS ECHO · ASTRAL STATION", description: "Astral Station phong tỏa quỹ đạo và ra lệnh xóa Nax để reset hệ thống. Luma thú nhận cô đã che giấu cái chết của Nax nguyên bản nhằm giữ hy vọng cứu thành phố.", objective: "Thoát lệnh xóa và mở đường tới Nexus", duration: 12600, camera: "station-track", motion: "talk", requiredEvent: "restored:station" },
-    { id: "abyss", chapter: 8, title: "Điểm tận cùng Nexus", kicker: "NEXUS ECHO · NEXUS ABYSS", description: "Nax hợp nhất tám lõi, sửa giao thức phòng vệ và cứu mạng Astral mà không xóa ký ức hay bản ngã. Tín hiệu 72 giờ khép lại đúng lúc một Echo mới xuất hiện ngoài rìa thiên hà.", objective: "Sửa mạng Astral và giữ lại bản ngã", duration: 14800, camera: "abyss-spiral", motion: "attack1", requiredEvent: "restored:abyss" }
+    { id: "central", chapter: 1, title: "Con quái vật gọi tên tôi", kicker: "NEXUS ECHO · KÝ ỨC KHÔNG ĐƯỢC PHÉP TỒN TẠI", description: "Trong cuộc săn cấp phép đầu tiên, một Nexus hạ vũ khí và gọi Nax bằng cái tên đã bị xóa khỏi mọi hồ sơ. Lõi của nó chứa hình ảnh H-Central phát động thảm họa đầu tiên.", objective: "Giữ lại lõi ký ức và đối chiếu lệnh tiêu hủy", duration: 32000, camera: "opening-six-shot", motion: "opening", requiredEvent: "quest:awakening" },
+    { id: "aurora", chapter: 2, title: "Thành phố không có bóng", kicker: "NEXUS ECHO · AURORA VALE", description: "Cư dân Aurora sống bình yên vì không thể nhớ người đã mất. Mỗi đêm, bóng của họ rời cơ thể và biến thành những Nexus đang cố gọi lại tên mình.", objective: "Khôi phục hộ tịch và đối mặt Người Mẹ Không Mặt", duration: 12800, camera: "water-sweep", motion: "walk", requiredEvent: "restored:aurora" },
+    { id: "crimson", chapter: 3, title: "Bốn lời khai", kicker: "NEXUS ECHO · CRIMSON FORGE", description: "Nax, Cael, Nyx và Sol thấy bốn phiên bản mâu thuẫn của cùng một chiến dịch. Hộp đen chứng minh Cael đã khai hỏa khi gia đình mình vẫn còn trên hành tinh.", objective: "Bảo vệ nhân chứng và phục dựng timestamp thật", duration: 12600, camera: "forge-rise", motion: "talk", requiredEvent: "restored:crimson" },
+    { id: "void", chapter: 4, title: "Vũ khí biết khóc", kicker: "NEXUS ECHO · VOID GARDEN", description: "Vũ khí Astral phát lại cảm xúc của những lõi Nexus bị ép thành vật liệu. Thợ Săn Số 0 chiếm quyền vũ khí, buộc đội hình chiến đấu bằng môi trường và sự tin tưởng.", objective: "Phá dây chuyền lõi mà không tiêu hủy ký ức", duration: 13200, camera: "gravity-roll", motion: "attack1", requiredEvent: "restored:void" },
+    { id: "sky", chapter: 5, title: "Cuộc chiến H-Central", kicker: "NEXUS ECHO · SKY RUINS", description: "Hồ sơ bị công bố khiến H-Central chia rẽ. Helios giữ điện cho bệnh viện, Tro Tàn đòi giải phóng người chết và Người Gác tìm một con đường chậm nhưng không xóa ai.", objective: "Ngăn thảm sát và đưa ba phe vào cùng một cuộc đối thoại", duration: 13400, camera: "sky-dive", motion: "glide", requiredEvent: "restored:sky" },
+    { id: "ocean", chapter: 6, title: "Hành tinh ngày mai đã chết", kicker: "NEXUS ECHO · OCEAN MOON", description: "Một hành tinh đảo thời gian cho đội thấy ba tương lai: Helios kiểm soát mọi ký ức, Tro Tàn ghi đè hiện tại và Nexus Prime viết lại thời gian. Không tương lai nào vô tội.", objective: "Cứu những người chưa chết và mang về giao thức chuyển đổi", duration: 14200, camera: "ocean-glide", motion: "walk", requiredEvent: "restored:ocean" },
+    { id: "station", chapter: 7, title: "Người săn cuối cùng", kicker: "NEXUS ECHO · ASTRAL STATION", description: "Kẻ gửi tín hiệu là Nax tương lai — người đã đi qua mọi kết cục và tin rằng xóa đau khổ là cách duy nhất. Hắn học chính lịch sử chiến đấu của người chơi.", objective: "Phá vòng lặp dự đoán và giữ Sol khỏi phong ấn", duration: 14600, camera: "station-track", motion: "attack1", requiredEvent: "restored:station" },
+    { id: "abyss", chapter: 8, title: "Ký ức của một vì sao", kicker: "NEXUS ECHO · NEXUS ABYSS", description: "Trận cuối ghép lại lịch sử thật thay vì tiêu diệt Nexus Prime. H-Central trở thành Kho Lưu Trữ Sống, nơi quá khứ được quyền lên tiếng nhưng không ghi đè người hiện tại.", objective: "Giữ ba Memory Anchor và chữa lành Nexus Prime", duration: 16800, camera: "abyss-spiral", motion: "attack1", requiredEvent: "restored:abyss" }
   ]);
   const HUNT_CHAPTERS = Object.freeze([
-    { chapter: 1, zoneId: "central", title: "Giấy phép Thợ săn H-Central", storyBeat: "Nax phải chứng minh bản tái tạo có thể bảo vệ người sống bằng cách vượt qua đàn quái thử nghiệm thoát khỏi khu cách ly.", huntQuota: 3, eliteQuota: 0, bossQuota: 0, scoreTarget: 300 },
-    { chapter: 2, zoneId: "aurora", title: "Bầy đột biến Hồ Gương", storyBeat: "Dấu vết ký ức 72 giờ bị một bầy sinh vật Cryo nuốt giữ; hạ thủ lĩnh Yeti mới mở được bản ghi sụp đổ Astral.", huntQuota: 5, eliteQuota: 1, bossQuota: 1, scoreTarget: 900 },
-    { chapter: 3, zoneId: "crimson", title: "Cuộc săn Lõi Plasma", storyBeat: "Cael chỉ có thể rèn Temporal Key sau khi đội săn thu hồi đủ lõi từ thú giáp hóa và đánh bại thủ lĩnh Crimson.", huntQuota: 6, eliteQuota: 1, bossQuota: 1, scoreTarget: 1250 },
-    { chapter: 4, zoneId: "void", title: "Kẻ săn trong Khu vườn Không Bóng", storyBeat: "Những thú săn Void là tiến trình phòng vệ Nexus bị lỗi; hạ Warden để đọc được mệnh lệnh gốc của hệ thống.", huntQuota: 7, eliteQuota: 2, bossQuota: 1, scoreTarget: 1700 },
-    { chapter: 5, zoneId: "sky", title: "Đại săn Tầng Mây", storyBeat: "Đàn quái bay giữ các mảnh bản đồ con tàu Nax; chiến thắng Rồng Lượng Tử mới ghép được tuyến đường hoàn chỉnh.", huntQuota: 8, eliteQuota: 2, bossQuota: 1, scoreTarget: 2200 },
-    { chapter: 6, zoneId: "ocean", title: "Leviathan của Mặt trăng Đại dương", storyBeat: "Nhật ký gốc nằm trong tổ sinh vật biển sâu; cuộc săn xác nhận Nax nguyên bản đã hy sinh để cứu H-Central.", huntQuota: 8, eliteQuota: 2, bossQuota: 1, scoreTarget: 2700 },
-    { chapter: 7, zoneId: "station", title: "Phong tỏa và Quái Cơ Giới", storyBeat: "Astral Station thả sinh vật nhân tạo truy xóa Nax; đội săn phải phá vòng phong tỏa mà không làm hại thường dân.", huntQuota: 9, eliteQuota: 2, bossQuota: 1, scoreTarget: 3300 },
-    { chapter: 8, zoneId: "abyss", title: "Grand Hunt · Điểm tận cùng Nexus", storyBeat: "Nax săn các Herald cuối cùng, hợp nhất tám lõi và sửa mạng Astral mà vẫn giữ ký ức cùng bản ngã độc lập.", huntQuota: 10, eliteQuota: 3, bossQuota: 1, scoreTarget: 4200 }
+    { chapter: 1, zoneId: "central", title: "Con quái vật gọi tên tôi", storyBeat: "Hạ mục tiêu theo giấy phép nhưng giữ lõi nguyên vẹn để nghe lời khai mà H-Central muốn tiêu hủy.", huntQuota: 3, eliteQuota: 0, bossQuota: 0, scoreTarget: 300 },
+    { chapter: 2, zoneId: "aurora", title: "Bóng của Aurora", storyBeat: "Theo dấu những cái bóng rời khỏi cư dân và giải phóng Người Mẹ Không Mặt mà không xóa tên những đứa trẻ bà bảo vệ.", huntQuota: 5, eliteQuota: 1, bossQuota: 1, scoreTarget: 900 },
+    { chapter: 3, zoneId: "crimson", title: "Bốn lời khai", storyBeat: "Thu hồi hộp đen từ thú giáp hóa, bảo vệ nhân chứng và buộc Vua Thành Phố Đã Mất dựng lại timestamp thật.", huntQuota: 6, eliteQuota: 1, bossQuota: 1, scoreTarget: 1250 },
+    { chapter: 4, zoneId: "void", title: "Vũ khí biết khóc", storyBeat: "Khi Thợ Săn Số 0 khóa vũ khí, né tránh và phối hợp đội hình để tách ký ức khỏi dây chuyền lõi.", huntQuota: 7, eliteQuota: 2, bossQuota: 1, scoreTarget: 1700 },
+    { chapter: 5, zoneId: "sky", title: "Cuộc chiến H-Central", storyBeat: "Giữ các tuyến cứu hộ và trạm điện hoạt động trong khi Ca Đoàn Một Triệu Giọng biến những lời khai bị nén thành vũ khí.", huntQuota: 8, eliteQuota: 2, bossQuota: 1, scoreTarget: 2200 },
+    { chapter: 6, zoneId: "ocean", title: "Hành tinh ngày mai đã chết", storyBeat: "Đóng các vòng lặp tương lai và dùng ánh sáng của Sol để giải phóng Mặt Trời Bị Xiềng theo từng nhịp an toàn.", huntQuota: 8, eliteQuota: 2, bossQuota: 1, scoreTarget: 2700 },
+    { chapter: 7, zoneId: "station", title: "Người săn cuối cùng", storyBeat: "Nax tương lai đọc lịch sử combo của người chơi; đổi nhịp chiến đấu và dùng Memory Anchor của cả đội để phá dự đoán.", huntQuota: 9, eliteQuota: 2, bossQuota: 1, scoreTarget: 3300 },
+    { chapter: 8, zoneId: "abyss", title: "Ký ức của một vì sao", storyBeat: "Không tiêu diệt Nexus Prime: ổn định lời khai mâu thuẫn, giữ ba Memory Anchor và ngăn mọi phe độc chiếm Kho Lưu Trữ Sống.", huntQuota: 10, eliteQuota: 3, bossQuota: 1, scoreTarget: 4200 }
   ]);
   const HUNTER_RANKS = Object.freeze([
     { id: "novice", label: "Tân binh", score: 0 },
@@ -1114,7 +1115,15 @@
       canonVersion: STORY_CANON_VERSION,
       chapter: 1,
       step: "cinematic",
-      completedEvents: []
+      completedEvents: [],
+      narrative: NEXUS_STORY?.createState?.() || {
+        version: STORY_CANON_VERSION,
+        revealedMemories: [], contradictions: [], responses: {},
+        companionTrust: { lyra: 10, cael: 0, nyx: 0, sol: 0 },
+        conversationsSeen: [], banterSeen: [], banterLog: [], bossCodex: {}, sideQuests: {},
+        factionInsight: { "helios-council": 0, "ash-choir": 0, "silent-wardens": 0 },
+        cityPhase: "official-order", lastEventAt: ""
+      }
     };
   }
 
@@ -1177,7 +1186,8 @@
       canonVersion: STORY_CANON_VERSION,
       chapter,
       step,
-      completedEvents: [...events].slice(-80)
+      completedEvents: [...events].slice(-80),
+      narrative: NEXUS_STORY?.normalizeState?.(raw?.narrative) || defaultStoryState().narrative
     };
   }
 
@@ -2033,6 +2043,8 @@
             <button type="button" data-har-panel="world"><span>✦</span>Thế giới</button>
             <button type="button" data-har-panel="factions"><span>◈</span>Phe phái</button>
             <button type="button" data-har-panel="companions"><span>✧</span>Đồng đội</button>
+            <button type="button" data-har-panel="memory"><span>◫</span>Ký ức</button>
+            <button type="button" data-har-panel="camp"><span>♨</span>Trại nghỉ</button>
             <button type="button" data-har-panel="ship"><span>⌁</span>Tàu H</button>
             <button type="button" data-har-panel="training"><span>◎</span>Training</button>
             ${this.canUseCharacterLabV3() ? '<button type="button" data-har-panel="character-lab"><span>⌘</span>Character Lab</button>' : ""}
@@ -2213,9 +2225,9 @@
               <div class="har-start-card">
                 <div class="har-start-heading">
                   <div class="har-start-sun" aria-hidden="true">H</div>
-                  <div><small>H Galaxy · Original Monster-Hunting RPG</small><h1>Astral Realms</h1></div>
+                  <div><small>H Galaxy · Cinematic Memory RPG</small><h1>Astral Realms</h1></div>
                 </div>
-                <p>Săn quái vật Nexus, phá bộ phận để thu vật liệu, rèn trang bị và mở khóa tám chương tuyến tính của Nexus Echo.</p>
+                <p>Săn Nexus để giải cứu ký ức sống, đối chiếu lời khai bị xóa và đưa bốn con người bị lịch sử tổn thương tới Kho Lưu Trữ Sống trong tám chương canon.</p>
                 <div class="har-start-features" aria-label="Dữ liệu tiến trình thật">
                   <div class="har-start-feature"><small>Nhân vật</small><strong data-har-start-character>Nax Veyra</strong><span>Cấp <b data-har-start-level>1</b></span></div>
                   <div class="har-start-feature"><small>Khu vực</small><strong data-har-start-zone>H-Central</strong><span data-har-start-chapter>Chương 1</span></div>
@@ -2524,6 +2536,7 @@
         const preferences = JSON.parse(root.localStorage?.getItem("hh.astral-realms.settings.v1") || "null");
         if (preferences && typeof preferences === "object") this.state = normalizeState({ ...this.state, settings: { ...this.state.settings, ...preferences } });
       } catch {}
+      this.syncNarrativePresentation();
       this.renderStartScreen();
       void this.prepareStartPreview();
       this.updateCinematicChapterRail(this.currentStoryChapter().id);
@@ -2586,6 +2599,7 @@
           this.state = normalizeState(this.savedRecord.data);
           this.state.settings = { ...this.state.settings, ...preferredSettings };
         }
+        this.syncNarrativePresentation();
         const compatibilityMode = this.applyCompatibilityProfile({ forced: this.forceCompatibility });
         this.root.dataset.quality = this.state.settings.quality;
         this.root.dataset.visualStyle = this.state.settings.visualStyle;
@@ -2709,6 +2723,109 @@
       return ASTRAL_CINEMATICS[chapter - 1] || ASTRAL_CINEMATICS[0];
     }
 
+    narrativeState() {
+      this.state.story ||= defaultStoryState();
+      if (!NEXUS_STORY?.normalizeState) return this.state.story.narrative || defaultStoryState().narrative;
+      this.state.story.narrative = NEXUS_STORY.normalizeState(this.state.story.narrative);
+      return this.state.story.narrative;
+    }
+
+    syncNarrativePresentation() {
+      if (!this.root) return;
+      const narrative = this.narrativeState();
+      const city = NEXUS_STORY?.CITY_PHASES?.[narrative.cityPhase];
+      this.root.dataset.nexusCityPhase = narrative.cityPhase || "official-order";
+      if (city?.accent) this.root.style.setProperty("--nexus-story-accent", city.accent);
+    }
+
+    applyNarrativeResult(result, { announce = true } = {}) {
+      if (!result?.state) return result;
+      this.state.story.narrative = result.state;
+      this.syncNarrativePresentation();
+      if (announce && result.unlockedMemories?.length) {
+        const memory = NEXUS_STORY.MEMORIES.find((entry) => entry.id === result.unlockedMemories.at(-1));
+        if (memory) this.toast(`Memory Codex · ${memory.title}`, "success");
+      }
+      if (announce && result.completedQuests?.length) {
+        const quest = NEXUS_STORY.SIDE_QUESTS.find((entry) => entry.id === result.completedQuests.at(-1));
+        if (quest) this.toast(`Nhiệm vụ ký ức hoàn tất · ${quest.title}`, "success");
+      }
+      return result;
+    }
+
+    recordNarrativeGameplayEvent(type, detail = {}) {
+      if (!NEXUS_STORY?.recordEvent) return null;
+      const result = NEXUS_STORY.recordEvent(this.narrativeState(), {
+        type,
+        chapter: detail.chapter || this.state.story?.chapter || 1,
+        zoneId: detail.zoneId || this.currentZone?.id || "central",
+        characterId: detail.characterId || "",
+        bossId: detail.bossId || "",
+        at: nowIso()
+      });
+      this.applyNarrativeResult(result);
+      return result;
+    }
+
+    triggerNarrativeBanter(zoneId = this.currentZone?.id) {
+      if (!NEXUS_STORY?.nextBanter) return null;
+      const result = NEXUS_STORY.nextBanter(this.narrativeState(), zoneId, this.state.story?.chapter || 1);
+      this.applyNarrativeResult(result, { announce: false });
+      if (!result.banter) return null;
+      this.toast(result.banter.line);
+      this.recordWorldEvent({ type: "banter", title: "Đối thoại đội hình", detail: result.banter.line, zoneId });
+      return result.banter;
+    }
+
+    startNarrativeSideQuest(questId) {
+      if (!NEXUS_STORY?.startSideQuest) return this.toast("Story Engine chưa kết nối.", "error");
+      const result = NEXUS_STORY.startSideQuest(this.narrativeState(), questId, this.state.story?.chapter || 1);
+      this.applyNarrativeResult(result, { announce: false });
+      if (!result.started) return this.toast(result.reason || "Không thể theo dõi nhiệm vụ.", "error");
+      this.catchUpNarrativeQuest(questId);
+      const status = this.narrativeState().sideQuests?.[questId]?.status;
+      this.recordWorldEvent({ type: "memory-quest", title: `${status === "completed" ? "Đã phục dựng" : "Đang theo dõi"} · ${result.quest.title}`, detail: result.quest.summary, zoneId: result.quest.zoneId });
+      this.toast(`${status === "completed" ? "Đã phục dựng từ hành động trước đó" : "Đã theo dõi"} · ${result.quest.title}`, "success");
+      this.saveProgress(`Nhiệm vụ ký ức · ${result.quest.title}`);
+      this.renderCurrentPanel();
+    }
+
+    catchUpNarrativeQuest(questId) {
+      const quest = NEXUS_STORY?.SIDE_QUESTS?.find((entry) => entry.id === questId);
+      if (!quest) return;
+      for (let guard = 0; guard < quest.objectives.length; guard += 1) {
+        const progress = this.narrativeState().sideQuests?.[questId];
+        if (!progress || progress.status !== "active") break;
+        const objective = quest.objectives[progress.objective];
+        const satisfied = objective.type === "scan"
+          ? this.state.exploration?.scans?.includes(`zone:${objective.zoneId}:scan`)
+          : objective.type === "travel"
+            ? this.currentZone?.id === objective.zoneId
+            : objective.type === "restore"
+              ? this.state.world?.zones?.[objective.zoneId]?.restored === true
+              : objective.type === "hunt"
+                ? Number(this.state.hunter?.chapters?.[objective.zoneId]?.kills || 0) > 0
+                : objective.type === "boss"
+                  ? Number(this.state.hunter?.chapters?.[objective.zoneId]?.bosses || 0) > 0
+                  : objective.type === "talk"
+                    ? Number(this.state.companions?.[objective.characterId]?.bond || 0) > 0
+                    : false;
+        if (!satisfied) break;
+        this.recordNarrativeGameplayEvent(objective.type, { zoneId: objective.zoneId || quest.zoneId, characterId: objective.characterId || "", chapter: quest.chapter });
+      }
+    }
+
+    chooseNarrativeResponse(dilemmaId, responseId) {
+      if (!NEXUS_STORY?.chooseResponse) return this.toast("Story Engine chưa kết nối.", "error");
+      const result = NEXUS_STORY.chooseResponse(this.narrativeState(), dilemmaId, responseId, this.state.story?.chapter || 1);
+      this.applyNarrativeResult(result, { announce: false });
+      if (!result.accepted) return this.toast(result.reason || "Phản hồi không hợp lệ.", "error");
+      this.recordWorldEvent({ type: "memory-response", title: result.option.label, detail: `${result.option.effect} Tuyến kết thúc canon không thay đổi.`, zoneId: this.currentZone.id });
+      this.toast(`Đã ghi phản hồi · ${result.option.label}`, "success");
+      this.saveProgress(`Phản hồi cốt truyện · Chương ${result.dilemma.chapter}`);
+      this.renderCurrentPanel();
+    }
+
     isStoryChapterUnlocked(chapterId) {
       const cinematic = this.cinematicById(chapterId);
       return cinematic.chapter <= (this.state.story?.chapter || 1);
@@ -2728,10 +2845,11 @@
       const current = this.currentStoryChapter();
       if (current.chapter !== chapterNumber || this.state.story.step === "complete") return false;
       this.recordStoryEvent(`chapter:${chapterNumber}:complete`);
+      if (NEXUS_STORY?.completeChapter) this.applyNarrativeResult(NEXUS_STORY.completeChapter(this.narrativeState(), chapterNumber));
       if (chapterNumber >= ASTRAL_CINEMATICS.length) {
         this.state.story.step = "complete";
         this.recordStoryEvent("nexus:repaired");
-        this.toast("Nexus Echo hoàn tất · mạng Astral đã được sửa và bản ngã của Nax được bảo toàn.", "success");
+        this.toast("Nexus Echo hoàn tất · H-Central đã trở thành Kho Lưu Trữ Sống.", "success");
       } else {
         this.state.story.chapter = chapterNumber + 1;
         this.state.story.step = "cinematic";
@@ -13542,6 +13660,8 @@
           this.saveProgress(`Khám phá ${zone.name}`);
         }
         this.toast(`${zone.name} · ${zone.weather}`);
+        this.recordNarrativeGameplayEvent("travel", { zoneId: zone.id });
+        this.triggerNarrativeBanter(zone.id);
         this.applyBiomeVisualState(zone);
         this.updateWeatherAppearance();
       }
@@ -14875,6 +14995,7 @@
       if (data.boss && !hunter.bossTrophies.includes(monsterId)) hunter.bossTrophies = [...hunter.bossTrophies, monsterId].slice(-40);
       const weaponId = this.state.player.weapon || "unarmed";
       hunter.weaponMastery[weaponId] = clamp(Number(hunter.weaponMastery[weaponId] || 0) + gained, 0, 9999999);
+      this.recordNarrativeGameplayEvent(data.boss ? "boss" : "hunt", { zoneId, chapter: chapter.chapter, bossId: data.boss ? NEXUS_STORY?.CHAPTERS?.[chapter.chapter - 1]?.bossId : "" });
 
       const currentChapter = this.currentHuntChapter();
       if (currentChapter.zoneId === zoneId && this.state.story?.step !== "complete") {
@@ -15720,6 +15841,8 @@
         world: () => this.renderWorldPanel(),
         factions: () => this.renderFactionPanel(),
         companions: () => this.renderCompanionPanel(),
+        memory: () => this.renderMemoryPanel(),
+        camp: () => this.renderCampPanel(),
         ship: () => this.renderShipPanel(),
         training: () => this.renderTrainingPanel(),
         codex: () => this.renderCodexPanel(),
@@ -15740,6 +15863,8 @@
         world: ["Thế giới sống", "Persistent World", "#65f1c7"],
         factions: ["Phe phái & danh tiếng", "Faction Observatory", "#ffd36b"],
         companions: ["Đồng đội", "Companion Stories", "#ff78d2"],
+        memory: ["Memory Codex", "Nexus Echo · Lời khai mâu thuẫn", "#a986ff"],
+        camp: ["Trại nghỉ", "Trust · Banter · Character Arc", "#65f1c7"],
         ship: ["Personal Ship", "Horizon H Command", "#6feeff"],
         training: ["Training Arena", "Combat Analytics", "#ff805f"],
         codex: ["Astral Codex", "Lore & Discoveries", "#ae78ff"],
@@ -16003,8 +16128,12 @@
 
     renderFactionPanel() {
       const activeEvent = this.state.world?.activeEvent;
+      const narrative = this.narrativeState();
+      const storyFactions = NEXUS_STORY?.FACTIONS || [];
       return `
-        <div class="har-section"><h3>Danh tiếng không khóa nội dung</h3><p>Mỗi phe có reputation riêng. Chọn phe hỗ trợ trong sự kiện hiện tại; phần thưởng, cửa hàng và nhiệm vụ sẽ mở theo rank.</p></div>
+        <div class="har-section har-nexus-question"><small>BA CÁCH CỨU THIÊN HÀ · KHÔNG PHE NÀO VÔ TỘI</small><h3>Nếu hòa bình được xây trên ký ức bị xóa, hòa bình ấy có đáng bảo vệ?</h3><p>Người chơi thu thập mức hiểu biết về từng phe, không bị ép “chọn phe” và không mở ending giả. Tuyến canon cần cả ba phía chia sẻ quyền kiểm soát.</p></div>
+        <div class="har-story-faction-grid">${storyFactions.map((faction) => `<article style="--item-accent:${faction.color}"><small>${escapeHtml(faction.name)}</small><strong>${Math.round(narrative.factionInsight?.[faction.id] || 0)} insight</strong><p>${escapeHtml(faction.doctrine)}</p><span>Cái giá: ${escapeHtml(faction.cost)}</span><details><summary>Sự thật họ không nói hết</summary><p>${escapeHtml(faction.truth)}</p></details></article>`).join("")}</div>
+        <div class="har-section"><h3>Danh tiếng khu vực</h3><p>Mỗi tổ chức địa phương có reputation riêng. Chọn đơn vị hỗ trợ trong sự kiện hiện tại; phần thưởng, cửa hàng và nhiệm vụ mở theo rank.</p></div>
         <ul class="har-list">${FACTIONS.map((faction) => {
           const record = this.state.world.factions[faction.id] || { reputation: 0, rank: "Neutral", supportedEvents: 0 };
           const selected = activeEvent?.factionId === faction.id;
@@ -16030,6 +16159,59 @@
           </li>`;
         }).join("")}</ul>
       `;
+    }
+
+    renderMemoryPanel() {
+      if (!NEXUS_STORY?.chapterSnapshot) return `<div class="har-section"><h3>Story Engine chưa kết nối</h3><p>Không hiển thị dữ liệu minh họa khi module ký ức chưa tải.</p></div>`;
+      const currentChapter = this.state.story?.chapter || 1;
+      const narrative = this.narrativeState();
+      const snapshot = NEXUS_STORY.chapterSnapshot(narrative, currentChapter);
+      const response = snapshot.dilemma.response;
+      const responseOption = snapshot.dilemma.options.find((option) => option.id === response);
+      return `
+        <div class="har-section har-memory-hero" style="--memory-accent:${snapshot.city?.accent || "#a986ff"}">
+          <small>NEXUS ECHO · CHƯƠNG ${snapshot.chapter.number}/8 · ${escapeHtml(snapshot.chapter.theme)}</small>
+          <h3>${escapeHtml(snapshot.chapter.title)}</h3>
+          <p>${escapeHtml(snapshot.chapter.premise)}</p>
+          <blockquote>“Nếu hòa bình được xây trên việc xóa sạch ký ức của người đã chết, hòa bình ấy có đáng được bảo vệ?”</blockquote>
+          <div class="har-stat-grid"><div><small>Ký ức</small><strong>${narrative.revealedMemories.length}/${NEXUS_STORY.MEMORIES.length}</strong></div><div><small>Mâu thuẫn</small><strong>${narrative.contradictions.length}/${NEXUS_STORY.CONTRADICTIONS.length}</strong></div><div><small>Boss hiểu rõ</small><strong>${Object.values(narrative.bossCodex).filter((entry) => entry.understood).length}/8</strong></div><div><small>Hoàn thiện Codex</small><strong>${snapshot.completion}%</strong></div></div>
+        </div>
+        <div class="har-story-rail" aria-label="Tám chương Nexus Echo">${NEXUS_STORY.CHAPTERS.map((chapter) => `<div class="${chapter.number === currentChapter ? "is-active" : chapter.number < currentChapter ? "is-complete" : "is-locked"}"><span>${String(chapter.number).padStart(2, "0")}</span><strong>${escapeHtml(chapter.title)}</strong><small>${chapter.number <= currentChapter ? escapeHtml(chapter.theme) : "Chưa mở"}</small></div>`).join("")}</div>
+        <div class="har-section"><h3>Ba mảnh ký ức của chương</h3><p>Archive mở bằng scan, Echo mở qua săn và Testimony chỉ mở khi boss được server/local combat xác nhận đã hạ.</p></div>
+        <div class="har-memory-grid">${snapshot.memories.map((memory) => `<article class="${memory.revealed ? "is-found" : "is-locked"}"><small>${escapeHtml(memory.kind.toUpperCase())}</small><strong>${memory.revealed ? escapeHtml(memory.title) : "Dữ liệu bị mã hóa"}</strong><p>${memory.revealed ? escapeHtml(memory.text) : `Thực hiện ${memory.source === "scan" ? "scan khu vực" : memory.source === "hunt" ? "cuộc săn" : "boss encounter"} để mở lời khai này.`}</p></article>`).join("")}</div>
+        <div class="har-section har-memory-dilemma"><small>PHẢN HỒI NHÂN VẬT · KHÔNG PHÂN NHÁNH ENDING</small><h3>${escapeHtml(snapshot.dilemma.prompt)}</h3><p>Phản hồi thay đổi Trust, hội thoại và kỹ năng phối hợp; kết thúc Kho Lưu Trữ Sống vẫn là canon duy nhất.</p>
+          <div class="har-response-grid">${snapshot.dilemma.options.map((option) => `<button type="button" class="${response === option.id ? "is-selected" : ""}" data-panel-action="narrative-response" data-dilemma="${snapshot.dilemma.id}" data-response="${option.id}" ${response ? "disabled" : ""}><strong>${escapeHtml(option.label)}</strong><span>${escapeHtml(option.effect)}</span></button>`).join("")}</div>
+          ${responseOption ? `<p class="har-memory-result"><strong>Đã ghi nhận:</strong> ${escapeHtml(responseOption.label)} · ${escapeHtml(responseOption.effect)}</p>` : ""}
+        </div>
+        <div class="har-section"><h3>Lời khai mâu thuẫn</h3><p>${snapshot.contradictions.length ? snapshot.contradictions.map((entry) => `<span class="har-event-line"><b>${escapeHtml(entry.title)}</b> · ${escapeHtml(entry.question)}</span>`).join("") : "Chưa đủ hai nguồn độc lập để xác nhận mâu thuẫn."}</p></div>
+        <div class="har-section"><h3>Boss Codex · ${escapeHtml(snapshot.boss.name)}</h3><p><strong>Cơ chế:</strong> ${escapeHtml(snapshot.boss.mechanic)}</p><p>${narrative.bossCodex?.[snapshot.boss.id]?.understood ? `<b>Góc nhìn sau sự thật:</b> ${escapeHtml(snapshot.boss.trueView)}` : `<b>Báo cáo Helios:</b> ${escapeHtml(snapshot.boss.firstView)}`}</p></div>
+        <div class="har-section"><h3>Nhiệm vụ ký ức</h3><p>Nút chỉ bắt đầu theo dõi. Tiến độ chỉ tăng từ travel, scan, hunt, boss, restore và trò chuyện thật trong game.</p></div>
+        <ul class="har-list">${snapshot.sideQuests.map((quest) => {
+          const progress = quest.progress || { status: "locked", objective: 0 };
+          const objective = quest.objectives[Math.min(progress.objective, quest.objectives.length - 1)];
+          const labels = { locked: "Chưa mở", available: "Có thể nhận", active: "Đang theo dõi", completed: "Hoàn thành" };
+          return `<li class="har-list-item ${progress.status === "active" ? "is-active" : ""}"><div><strong>${escapeHtml(quest.title)}</strong><span>${escapeHtml(quest.summary)}</span><small>${labels[progress.status] || progress.status} · ${Math.min(progress.objective, quest.objectives.length)}/${quest.objectives.length}${progress.status === "active" && objective ? ` · Tiếp theo: ${escapeHtml(objective.text)}` : ""}</small></div><button type="button" class="har-chip ${progress.status === "available" ? "is-active" : ""}" data-panel-action="start-memory-quest" data-quest-id="${quest.id}" ${progress.status === "available" ? "" : "disabled"}>${labels[progress.status] || "Theo dõi"}</button></li>`;
+        }).join("")}</ul>`;
+    }
+
+    renderCampPanel() {
+      if (!NEXUS_STORY?.CHARACTERS) return `<div class="har-section"><h3>Story Engine chưa kết nối</h3><p>Trại nghỉ không tạo hội thoại giả.</p></div>`;
+      const narrative = this.narrativeState();
+      const banterById = Object.fromEntries(NEXUS_STORY.BANTER.map((entry) => [entry.id, entry]));
+      return `
+        <div class="har-section har-camp-hero"><small>HORIZON H · QUIET DECK</small><h3>Trại nghỉ của đội hình</h3><p>Đây là nơi chữa mâu thuẫn và mở character arc. Mỗi cuộc trò chuyện có cooldown thật, được lưu vào save và có thể mở phản ứng khuôn mặt nếu GLB hỗ trợ.</p></div>
+        <div class="har-camp-grid">${CHARACTER_ORDER.map((id) => {
+          const profile = NEXUS_STORY.CHARACTERS[id];
+          const companion = this.state.companions[id] || { bond: 0, lastActivityAt: "" };
+          const trust = Math.round(narrative.companionTrust[id] || 0);
+          const cooldown = companion.lastActivityAt && Date.now() - new Date(companion.lastActivityAt).getTime() < 60000;
+          const unlockedMilestones = profile.milestones.filter((milestone) => narrative.conversationsSeen.includes(`${id}:${milestone.trust}`));
+          const latest = unlockedMilestones.at(-1);
+          const next = profile.milestones.find((milestone) => milestone.trust > trust);
+          return `<article style="--item-accent:${CHARACTERS[id].accent}"><small>${escapeHtml(profile.epithet)}</small><h3>${escapeHtml(profile.name)}</h3><p>${escapeHtml(profile.conflict)}</p><div class="har-progress-row"><div class="har-meter har-meter--xp"><i style="--value:${trust}%"></i></div><output>${trust} Trust</output></div>${latest ? `<blockquote><b>${escapeHtml(latest.title)}</b><br>${escapeHtml(latest.line)}</blockquote>` : `<p>Chưa có lời khai riêng được mở.</p>`}<small>${next ? `Mốc tiếp theo ${next.trust} · ${escapeHtml(next.title)}` : escapeHtml(profile.skill)}</small><button class="har-chip ${cooldown ? "" : "is-active"}" type="button" data-panel-action="bond-companion" data-companion="${id}" ${cooldown ? "disabled" : ""}>${cooldown ? "Đang bình tâm" : "Trò chuyện riêng"}</button></article>`;
+        }).join("")}</div>
+        <div class="har-section"><h3>Party Banter đã nghe</h3><p>Đối thoại chỉ phát lần đầu khi đúng chương và khu vực, không chọn ngẫu nhiên vô nghĩa.</p>${narrative.banterLog.length ? narrative.banterLog.slice().reverse().map((record) => { const entry = banterById[record.id]; return entry ? `<span class="har-event-line"><b>${escapeHtml(entry.zoneId.toUpperCase())}</b> · ${escapeHtml(entry.line)}</span>` : ""; }).join("") : "<p>Chưa có banter. Hãy cùng đội hình bước vào khu vực cốt truyện hiện tại.</p>"}</div>
+        <div class="har-section"><h3>Character truth đã mở</h3><div class="har-truth-grid">${CHARACTER_ORDER.map((id) => { const profile = NEXUS_STORY.CHARACTERS[id]; const trust = narrative.companionTrust[id] || 0; return `<div><strong>${escapeHtml(profile.name)}</strong><span>${trust >= 50 ? escapeHtml(profile.secret) : "Cần Trust 50 để nhân vật tự tiết lộ bí mật."}</span><small>${trust >= 70 ? escapeHtml(profile.skill) : "Kỹ năng phối hợp mở tại Trust 70."}</small></div>`; }).join("")}</div></div>`;
     }
 
     renderShipPanel() {
@@ -16072,8 +16254,9 @@
     renderCodexPanel() {
       const discovered = this.state.exploration?.codex || [];
       const events = this.state.world?.eventLog || [];
+      const narrative = this.narrativeState();
       return `
-        <div class="har-section"><h3>Astral Codex</h3><p>Nhật ký chỉ ghi những gì người chơi thật sự quét, mở khóa hoặc hoàn thành.</p></div>
+        <div class="har-section"><h3>Astral Codex</h3><p>Nhật ký chỉ ghi những gì người chơi thật sự quét, mở khóa hoặc hoàn thành. Memory Codex giữ riêng lời khai, mâu thuẫn và góc nhìn boss trước/sau khi biết sự thật.</p><div class="har-stat-grid"><div><small>Memory</small><strong>${narrative.revealedMemories?.length || 0}/${NEXUS_STORY?.MEMORIES?.length || 24}</strong></div><div><small>Mâu thuẫn</small><strong>${narrative.contradictions?.length || 0}</strong></div><div><small>Trust trung bình</small><strong>${Math.round(Object.values(narrative.companionTrust || {}).reduce((sum, value) => sum + value, 0) / 4)}</strong></div><div><small>City phase</small><strong>${escapeHtml(NEXUS_STORY?.CITY_PHASES?.[narrative.cityPhase]?.label || "Chưa kết nối")}</strong></div></div><div class="har-inline-actions"><button class="har-primary-button" type="button" data-panel-action="open-memory-codex">Mở Memory Codex</button><button class="har-secondary-button" type="button" data-panel-action="open-camp">Mở Trại nghỉ</button></div></div>
         <div class="har-codex-grid">
           ${ZONES.map((zone) => {
             const record = this.state.world.zones[zone.id];
@@ -16882,6 +17065,7 @@
       this.state.stats.worldEventsCompleted = Number(this.state.stats.worldEventsCompleted || 0) + 1;
       this.state.world.activeEvent = null;
       this.recordStoryEvent(`restored:${event.zoneId}`);
+      this.recordNarrativeGameplayEvent("restore", { zoneId: event.zoneId });
       this.evaluateStoryProgress({ save: false });
       this.recordWorldEvent({ type: "resolved", title: `Đã phục hồi ${ZONES.find((zone) => zone.id === event.zoneId)?.name || "khu vực"}`, detail: `+100 REP cho ${FACTIONS.find((item) => item.id === event.factionId)?.name || "phe hỗ trợ"}.`, zoneId: event.zoneId, factionId: event.factionId });
       this.grantXp(180);
@@ -16910,6 +17094,15 @@
       record.storyStage = Math.min(5, Math.floor(record.bond / 2));
       record.lastActivityAt = nowIso();
       this.state.progression.mastery[id].bond += 10;
+      if (NEXUS_STORY?.syncCompanionBond) {
+        const narrative = NEXUS_STORY.syncCompanionBond(this.narrativeState(), id, record.bond);
+        this.applyNarrativeResult(narrative, { announce: false });
+        if (narrative.conversation) {
+          this.recordWorldEvent({ type: "camp-dialogue", title: `${narrative.conversation.character} · ${narrative.conversation.title}`, detail: narrative.conversation.line, zoneId: this.currentZone.id });
+          this.characterRuntimeV3?.setFacialState?.(this.characterRuntimes.get(id)?.characterRuntimeV3Id, { expression: id === "cael" ? "sad" : id === "nyx" ? "focused" : "confident", intensity: 0.7 });
+        }
+      }
+      this.recordNarrativeGameplayEvent("talk", { zoneId: this.currentZone.id, characterId: id });
       this.recordWorldEvent({ type: "companion", title: `Ký ức mở: ${COMPANION_STORIES[id].title}`, detail: `${CHARACTERS[id].name} bond ${record.bond}/10.`, zoneId: this.currentZone.id });
       this.toast(`${CHARACTERS[id].name} đã tin tưởng bạn hơn.`, "success");
       this.saveProgress("Tăng bond đồng đội");
@@ -16970,6 +17163,7 @@
       this.state.exploration.codex.push(zone.id);
       this.state.exploration.mapFog[zone.id] = clamp((this.state.exploration.mapFog[zone.id] || 100) - 25, 0, 100);
       this.state.world.zones[zone.id].discovered = true;
+      this.recordNarrativeGameplayEvent("scan", { zoneId: zone.id });
       this.recordWorldEvent({ type: "scan", title: `Đã quét ${zone.name}`, detail: "Entry mới được thêm vào Astral Codex.", zoneId: zone.id });
       const scanReward = ["aurora", "sky", "ocean"].includes(zone.id)
         ? "aurora-shard"
@@ -17013,6 +17207,10 @@
       else if (action === "resolve-world-event") this.resolveWorldEvent();
       else if (action === "abandon-world-event") this.abandonWorldEvent();
       else if (action === "bond-companion") this.bondCompanion(data.companion);
+      else if (action === "start-memory-quest") this.startNarrativeSideQuest(data.questId);
+      else if (action === "narrative-response") this.chooseNarrativeResponse(data.dilemma, data.response);
+      else if (action === "open-memory-codex") this.openPanel("memory");
+      else if (action === "open-camp") this.openPanel("camp");
       else if (action === "upgrade-ship") this.upgradeShipModule(data.module);
       else if (action === "launch-expedition") this.launchExpedition();
       else if (action === "toggle-training") this.toggleTraining();
