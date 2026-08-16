@@ -528,8 +528,8 @@
     const allSentencesDone = completed.length === item.sentences.length;
     const meanings = item.sentences.map((sentence, index) => [sentence[1], index]).sort((a, b) => ((a[1] * 7 + current.index * 3) % item.sentences.length) - ((b[1] * 7 + current.index * 3) % item.sentences.length));
     let content = "";
-    if (tool === "listen") content = `<form class="hheg-sentence-check" data-hheg-sentence-check data-answer="${current.index}" data-sentence="${current.index}"><header><small>BƯỚC ${current.index + 1} · NGHE HIỂU</small><h3>Câu này có nghĩa là gì?</h3><p>Nghe câu ít nhất một lần, sau đó chọn nghĩa đúng để mở câu tiếp theo.</p></header><fieldset>${meanings.map(([meaning, index]) => `<label><input type="radio" name="meaning" value="${index}"><span>${esc(meaning)}</span></label>`).join("")}</fieldset><button class="primary" type="submit">Kiểm tra & mở câu ${Math.min(item.sentences.length, current.index + 2)}</button><output data-hheg-sentence-output>${completed.includes(current.index) ? "✓ Câu này đã hoàn thành; bạn có thể luyện lại bất cứ lúc nào." : "Hoàn thành từng câu theo đúng thứ tự."}</output></form>`;
-    else if (tool === "dictation") content = `<form class="hheg-dictation" data-hheg-dictation data-answer="${esc(current.en)}" data-sentence="${current.index}"><header><div><small>CHÍNH TẢ · CÂU ${current.index + 1}</small><h3>Nghe mà không nhìn đáp án</h3></div><button type="button" data-hheg-sentence="${current.index}">▶ Nghe</button></header><textarea name="dictation" autocomplete="off" spellcheck="false" placeholder="Type what you hear..."></textarea><button class="primary" type="submit">Kiểm tra từng từ</button><output data-hheg-dictation-output>Đạt từ 70% sẽ hoàn thành câu và đưa từ sai vào SRS.</output></form>`;
+    if (tool === "listen") content = `<form class="hheg-sentence-check" data-hheg-sentence-check data-sentence="${current.index}"><header><small>BƯỚC ${current.index + 1} · NGHE HIỂU</small><h3>Câu này có nghĩa là gì?</h3><p>Nghe câu ít nhất một lần, sau đó chọn nghĩa đúng để mở câu tiếp theo.</p></header><fieldset>${meanings.map(([meaning, index]) => `<label><input type="radio" name="meaning" value="${index}"><span>${esc(meaning)}</span></label>`).join("")}</fieldset><button class="primary" type="submit">Kiểm tra & mở câu ${Math.min(item.sentences.length, current.index + 2)}</button><output data-hheg-sentence-output>${completed.includes(current.index) ? "✓ Câu này đã hoàn thành; bạn có thể luyện lại bất cứ lúc nào." : "Hoàn thành từng câu theo đúng thứ tự."}</output></form>`;
+    else if (tool === "dictation") content = `<form class="hheg-dictation" data-hheg-dictation data-sentence="${current.index}"><header><div><small>CHÍNH TẢ · CÂU ${current.index + 1}</small><h3>Nghe mà không nhìn đáp án</h3></div><button type="button" data-hheg-sentence="${current.index}">▶ Nghe</button></header><textarea name="dictation" autocomplete="off" spellcheck="false" placeholder="Type what you hear..."></textarea><button class="primary" type="submit">Kiểm tra từng từ</button><output data-hheg-dictation-output>Đạt từ 70% sẽ hoàn thành câu và đưa từ sai vào SRS.</output></form>`;
     else if (tool === "shadow") content = `<section class="hheg-shadow"><header><small>SHADOWING · CÂU ${current.index + 1}</small><h3>Nghe mẫu → ghi âm → nghe lại</h3></header><blockquote>${esc(current.en)}</blockquote><div class="hheg-three-actions"><button type="button" data-hheg-sentence="${current.index}">▶ Nghe mẫu</button><button class="primary" type="button" data-hhe-record>● Bắt đầu ghi</button><button type="button" data-hheg-action="shadow">So sánh</button></div><div class="hheg-record-controls"><button type="button" data-hhe-stop disabled>■ Dừng</button><button type="button" data-hhe-delete-record disabled>Xóa</button></div><audio data-hhe-audio controls hidden></audio><small data-hhe-record-status>${state.settings.microphoneConsent ? "Microphone đã sẵn sàng; bản ghi chỉ nằm trên thiết bị." : "Bật microphone một lần ở Phát âm để bắt đầu."}</small></section>`;
     else if (tool === "pronunciation") content = `<section class="hheg-pronunciation"><header><small>PHÁT ÂM · CÂU ${current.index + 1}</small><h3>Luyện nhịp, trọng âm và độ rõ</h3><p>HH so sánh transcript nhận dạng trên thiết bị; không tuyên bố chấm phoneme hay giọng chuẩn chuyên gia.</p></header><blockquote>${esc(current.en)}</blockquote><div><button type="button" data-hheg-sentence="${current.index}">▶ Nghe mẫu</button><button class="primary" type="button" data-hheg-action="shadow">Mở phòng so sánh giọng</button></div><label><input type="checkbox" data-hhe-mic-consent ${state.settings.microphoneConsent ? "checked" : ""}> Cho phép microphone cho phiên học này</label></section>`;
     else content = allSentencesDone ? `<form class="hheg-quiz" data-hheg-listening-quiz="${item.id}"><header><small>QUIZ CUỐI BÀI</small><h3>Ý chính · chi tiết · suy luận</h3></header>${item.questions.map((question, index) => questionMarkup(question, index, `listen-${item.id}`)).join("")}<button class="primary" type="submit">Chấm bài nghe</button><output data-hheg-quiz-output></output></form>` : `<section class="hheg-tool-locked"><span>🔒</span><h3>Quiz mở sau khi hoàn thành ${item.sentences.length} câu</h3><p>Bạn đã hoàn thành ${completed.length}/${item.sentences.length} câu. Tiếp tục câu hiện tại để tránh bỏ sót kiến thức.</p><button class="primary" type="button" data-hheg-tool="listen">Quay lại nghe hiểu</button></section>`;
@@ -626,7 +626,7 @@
       <header class="hheg-workspace-head"><div><small>LISTEN & READ TOGETHER</small><h2>Một nội dung, bốn bước: nghe · đọc · chép · nói.</h2><p>Bấm vào câu để phát đúng vị trí, ẩn từ để luyện nghe và đưa từ chưa nghe đúng vào hàng đợi ôn.</p></div><div><button type="button" data-hhe-view="listening">Listening</button><button type="button" data-hhe-view="reading">Reading</button><button type="button" data-hheg-action="shadow">Shadowing</button></div></header>
       ${listeningPlayerMarkup(state, context, true)}
       <section class="hheg-together-grid">
-        <form class="hheg-dictation" data-hheg-dictation data-answer="${esc(current.en)}"><header><div><small>TRANSCRIPT CHECK</small><h3>So sánh câu bạn nghe được</h3></div></header><textarea name="dictation" autocomplete="off" spellcheck="false" placeholder="Type the sentence you hear..."></textarea><button class="primary" type="submit">So sánh transcript</button><output data-hheg-dictation-output></output></form>
+        <form class="hheg-dictation" data-hheg-dictation><header><div><small>TRANSCRIPT CHECK</small><h3>So sánh câu bạn nghe được</h3></div></header><textarea name="dictation" autocomplete="off" spellcheck="false" placeholder="Type the sentence you hear..."></textarea><button class="primary" type="submit">So sánh transcript</button><output data-hheg-dictation-output></output></form>
         <section class="hheg-next-step"><small>VÒNG HỌC LIÊN KẾT</small><h3>Từ nghe sai sẽ đi đâu?</h3><ol><li><b>1</b><span>So sánh transcript trên thiết bị</span></li><li><b>2</b><span>Lưu từ chưa khớp vào Vocabulary Planet</span></li><li><b>3</b><span>Đặt lịch ôn ngay hôm nay</span></li><li><b>4</b><span>Mở Speaking Galaxy để shadowing</span></li></ol><button type="button" data-hhe-view="vocabulary">Mở hàng đợi ôn →</button></section>
       </section>
     </section>`;
@@ -1175,7 +1175,7 @@
     const state = instance.runtime.readState();
     if (form.matches("[data-hheg-sentence-check]")) {
       const selected = Number(new FormData(form).get("meaning"));
-      const answer = Number(form.dataset.answer);
+      const answer = Math.max(0, Number(form.dataset.sentence) || 0);
       const output = form.querySelector("[data-hheg-sentence-output]");
       if (!Number.isInteger(selected)) { instance.runtime.toast("Hãy chọn một đáp án trước.", "error"); return; }
       if (selected !== answer) {
@@ -1193,20 +1193,22 @@
       return;
     }
     if (form.matches("[data-hheg-dictation]")) {
-      const answer = form.dataset.answer || "";
       const typed = clean(new FormData(form).get("dictation"), 1000);
       if (!typed) { instance.runtime.toast("Hãy nhập câu bạn nghe được.", "error"); return; }
+      const item = activeListening(instance, state);
+      const progress = progressForListening(state, item.id);
+      const sentenceIndex = form.dataset.sentence != null ? Math.max(0, Math.min(item.sentences.length - 1, Number(form.dataset.sentence) || 0)) : -1;
+      const timed = timedSentences(item, state.settings.voiceRate);
+      const current = sentenceIndex >= 0 ? timed[sentenceIndex] : timed.find((row) => progress.position >= row.start && progress.position < row.end) || timed[0];
+      const answer = current?.en || item.sentences?.[Math.max(0, sentenceIndex)]?.[0] || "";
       const result = instance.runtime.compareTranscript(typed, answer);
       const output = form.querySelector("[data-hheg-dictation-output]");
       output.innerHTML = `<b>${result.score}%</b> ${result.missed.length ? `Từ chưa khớp: ${esc(result.missed.join(" · "))}` : "Bạn đã nghe đúng toàn bộ từ."}`;
-      const item = activeListening(instance, state);
-      const progress = progressForListening(state, item.id);
       progress.dictations.unshift({ attemptId: `dict-${Date.now()}`, target: answer, transcript: typed, score: result.score, missed: result.missed, createdAt: new Date().toISOString() });
       progress.dictations = progress.dictations.slice(0, 40);
       state.galaxy.listeningProgress[item.id] = progress;
       saveMissedWords(instance, state, result.missed, answer);
       if (form.dataset.sentence != null && result.score >= 70) {
-        const sentenceIndex = Math.max(0, Math.min(item.sentences.length - 1, Number(form.dataset.sentence) || 0));
         const completedProgress = completeListeningSentence(state, item, sentenceIndex, result.score);
         state.galaxy.listeningTool = completedProgress.completedSentences.length === item.sentences.length ? "quiz" : "listen";
       }

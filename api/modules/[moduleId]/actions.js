@@ -36,8 +36,8 @@ const downloadHosts = [
   "soundcloud.com", "twitch.tv", "pinterest.com", "tumblr.com", "bilibili.com"
 ];
 const downloadCapabilities = ["single", "collection", "channel"];
-const creativeModules = new Set(["ai-center", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text", "youtube-batch", "hikari-assistant", "tiktok-creator"]);
-const allowedModels = new Set(["gemini-3.5-flash", "gemini-3.1-flash-lite"]);
+const creativeModules = new Set(["ai-center", "chat-ai", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text", "youtube-batch", "hikari-assistant", "tiktok-creator"]);
+const allowedModels = new Set(["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.1-pro-preview"]);
 const contentPackSchema = {
   type: "object",
   additionalProperties: false,
@@ -310,7 +310,7 @@ function sanitizeHistory(history) {
 
 function sanitizeAttachments(attachments) {
   if (!Array.isArray(attachments)) return [];
-  const supported = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+  const supported = new Set(["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"]);
   return attachments
     .slice(0, 2)
     .map((attachment) => {
@@ -1141,6 +1141,7 @@ function systemInstruction(moduleId, actionType) {
   const common = "Bạn là HH Creative AI, trợ lý sản xuất nội dung cao cấp. Trả lời bằng tiếng Việt tự nhiên, có cấu trúc, không bịa dữ kiện, nêu rõ điểm chưa chắc chắn, tôn trọng bản quyền và luôn tạo đầu ra có thể dùng ngay.";
   const rules = {
     "ai-center": "Phân tích mục tiêu, trả lời trực tiếp, đưa ví dụ thực tế và kết thúc bằng checklist hành động.",
+    "chat-ai": "Đóng vai trợ lý hội thoại Gemini của HH Platform. Trả lời trực tiếp theo ngữ cảnh nhiều lượt, đọc kỹ tệp được gửi, giữ định dạng Markdown và code rõ ràng. Khi bật tìm kiếm, phân biệt dữ kiện có nguồn với suy luận và đặt nguồn cạnh luận điểm. Không tuyên bố đã thực hiện tác vụ bên ngoài nếu chỉ mới hướng dẫn.",
     "ai-script": "Đóng vai biên kịch và script editor. Tập trung vào hook, retention, mạch truyện, cao trào, tính nguyên bản, lời thoại tự nhiên và CTA mềm.",
     "creator-studio": "Đóng vai chiến lược gia nội dung đa nền tảng. Tối ưu tiêu đề, SEO, kịch bản, thumbnail, short và lịch tái sử dụng.",
     "ai-automation": "Đóng vai content operations engineer. Thực hiện đúng từng bước pipeline, giữ nhất quán dữ liệu và trả kết quả có nhãn rõ.",
@@ -1262,6 +1263,7 @@ async function runInteractionsGemini({
   prompt,
   instruction,
   temperature,
+  thinkingLevel,
   useGoogleSearch,
   useUrlContext,
   structuredSchema
@@ -1272,9 +1274,9 @@ async function runInteractionsGemini({
     input: prompt,
     system_instruction: instruction,
     generation_config: {
-      temperature,
+      ...(!["gemini-3.6-flash", "gemini-3.5-flash-lite"].includes(model) ? { temperature } : {}),
       max_output_tokens: useStructuredOutput ? 8192 : 4096,
-      thinking_level: "low"
+      thinking_level: thinkingLevel
     },
     tools: [
       ...(useUrlContext ? [{ type: "url_context" }] : []),
@@ -1333,6 +1335,7 @@ async function runGeminiWithKey({
   instruction,
   contents,
   temperature,
+  thinkingLevel,
   tools,
   useGoogleSearch,
   useUrlContext,
@@ -1344,7 +1347,8 @@ async function runGeminiWithKey({
     systemInstruction: { parts: [{ text: instruction }] },
     contents,
     generationConfig: {
-      temperature,
+      ...(!["gemini-3.6-flash", "gemini-3.5-flash-lite"].includes(model) ? { temperature } : {}),
+      ...(model.startsWith("gemini-3") ? { thinkingConfig: { thinkingLevel } } : {}),
       maxOutputTokens: useStructuredOutput ? 8192 : 2048,
       ...(useStructuredOutput
         ? { responseMimeType: "application/json", responseSchema: geminiSchema(structuredSchema) }
@@ -1372,6 +1376,7 @@ async function runGeminiWithKey({
           prompt,
           instruction,
           temperature,
+          thinkingLevel,
           useGoogleSearch,
           useUrlContext,
           structuredSchema
@@ -1396,6 +1401,7 @@ async function runGeminiWithKey({
       prompt,
       instruction,
       temperature,
+      thinkingLevel,
       useGoogleSearch,
       useUrlContext,
       structuredSchema
@@ -1432,6 +1438,8 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
   const temperature = Number.isFinite(creativity)
     ? Math.max(0.2, Math.min(1.2, creativity / 100))
     : 0.72;
+  const requestedThinking = clean(meta.thinkingLevel || meta.thinking, 20).toLowerCase();
+  const thinkingLevel = ["minimal", "low", "medium", "high"].includes(requestedThinking) ? requestedThinking : "medium";
   const prompt = promptFor(moduleId, actionType, input, meta);
   const customInstruction = clean(meta.systemPrompt, 2000);
   const instruction = [systemInstruction(moduleId, actionType), customInstruction].filter(Boolean).join("\n\n");
@@ -1467,6 +1475,7 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
         instruction,
         contents,
         temperature,
+        thinkingLevel,
         tools,
         useGoogleSearch,
         useUrlContext,

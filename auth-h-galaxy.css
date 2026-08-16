@@ -288,6 +288,7 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
 .hh-galaxy-orbit--eight { --orbit-size: 108%; --orbit-speed: 76s; --orbit-half-speed: 38s; --orbit-delay: -29s; --static-start: 16%; --orbit-direction: reverse; --orbit-color: rgba(111, 241, 211, .25); }
 .hh-galaxy-orbit--nine { --orbit-size: 124%; --orbit-speed: 88s; --orbit-half-speed: 44s; --orbit-delay: -47s; --static-start: 31%; --orbit-color: rgba(255, 194, 101, .23); }
 .hh-galaxy-orbit--ten { --orbit-size: 142%; --orbit-speed: 102s; --orbit-half-speed: 51s; --orbit-delay: -63s; --static-start: 48%; --orbit-direction: reverse; --orbit-color: rgba(195, 125, 255, .22); }
+.hh-galaxy-orbit--eleven { --orbit-size: 154%; --orbit-speed: 114s; --orbit-half-speed: 57s; --orbit-delay: -76s; --static-start: 62%; --orbit-color: rgba(169, 131, 255, .2); }
 
 .hh-galaxy-planet {
   --planet-a: #54e7ff;
@@ -458,6 +459,8 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
 [data-hh-planet="21"] { --planet-a:#ff6b8a;--planet-b:#7c2349;--planet-size:35px;--planet-tilt:-20deg; }
 [data-hh-planet="22"] { --planet-a:#55f1ff;--planet-b:#256d83;--planet-size:31px;--planet-tilt:10deg; }
 [data-hh-planet="23"] { --planet-a:#ff8a6c;--planet-b:#7f2ad0;--planet-size:26px;--planet-tilt:-15deg; }
+[data-hh-planet="24"] { --planet-a:#d7b0ff;--planet-b:#3156b7;--planet-size:31px;--planet-tilt:14deg; }
+[data-hh-planet="25"] { --planet-a:#7af0ff;--planet-b:#5948d9;--planet-size:38px;--planet-tilt:-12deg; }
 
 [data-hh-planet="4"]::before,
 [data-hh-planet="5"]::before,

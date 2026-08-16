@@ -90,7 +90,7 @@ test("V5 data provenance and browser assets are versioned and cached", () => {
   const worker = read("sw.js");
   const index = read("index.html");
   const css = read("japanese-os-v4.css");
-  for (const asset of ["japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.css?v=2", "japanese-os-v4.js?v=5"]) {
+  for (const asset of ["japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.css?v=2", "japanese-os-v4.js?v=7"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
     assert.match(worker, pattern);

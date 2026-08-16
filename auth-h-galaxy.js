@@ -274,6 +274,30 @@
       detail: "Tra cứu Nhật–Việt, học offline, luyện mora và shadowing, mô phỏng JLPT, theo dõi SRS và tiến độ giao tiếp trong một lộ trình.",
       features: ["Vietnamese Core", "Kanji Graph", "Smart Reader", "JLPT Simulator", "Life in Japan"]
     },
+    fortune: {
+      icon: "☾",
+      title: "Xem bói",
+      kicker: "REFLECTION & SYMBOLS",
+      count: "8 CÔNG CỤ",
+      route: "#/fortune",
+      accent: "#a983ff",
+      accent2: "#54dce5",
+      description: "Tarot 1/3/5 lá, cung và con giáp, thần số học, quẻ biến, pha Mặt Trăng và đối chiếu biểu tượng.",
+      detail: "Công thức, seed và giới hạn phương pháp đều được hiển thị; dữ liệu nhạy cảm chỉ xử lý trong phiên, không thay thế lời khuyên chuyên môn.",
+      features: ["Tarot 5 lá", "Chu kỳ cá nhân", "Quẻ biến", "Pha Mặt Trăng", "Đối chiếu biểu tượng"]
+    },
+    chatAI: {
+      icon: "AI",
+      title: "Chat AI",
+      kicker: "GEMINI MULTIMODAL",
+      count: "6 CHẾ ĐỘ",
+      route: "#/chat-ai",
+      accent: "#71e9ff",
+      accent2: "#866fff",
+      description: "Trò chuyện Gemini nhiều lượt, nghiên cứu có nguồn, phân tích ảnh/PDF, viết và lập trình.",
+      detail: "API key được giữ trên Vercel; lịch sử tách theo tài khoản, có chế độ riêng tư, nhánh hội thoại, giọng nói và xuất dữ liệu.",
+      features: ["Gemini 3.6", "Google Search", "Ảnh & PDF", "Code", "Voice"]
+    },
     support: {
       icon: "♥",
       title: "Ủng hộ HH",

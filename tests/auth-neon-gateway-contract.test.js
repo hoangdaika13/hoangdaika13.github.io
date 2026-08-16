@@ -10,21 +10,21 @@ test("HH Neon Gateway assets are wired into the application shell", () => {
   const html = read("index.html");
   const worker = read("sw.js");
   assert.match(html, /auth-neon-gateway\.css\?v=9/);
-  assert.match(html, /auth-h-galaxy\.css\?v=9/);
-  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=8/);
+  assert.match(html, /auth-h-galaxy\.css\?v=11/);
+  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=11/);
   assert.match(read("auth-neon-gateway.js"), /auth-living-galaxy-3d\.js\?v=14/);
-  assert.match(html, /auth-neon-gateway\.js\?v=22/);
+  assert.match(html, /auth-neon-gateway\.js\?v=25/);
   assert.match(worker, /auth-neon-gateway\.css\?v=9/);
-  assert.match(worker, /auth-h-galaxy\.css\?v=9/);
-  assert.match(worker, /auth-h-galaxy\.js\?v=8/);
+  assert.match(worker, /auth-h-galaxy\.css\?v=11/);
+  assert.match(worker, /auth-h-galaxy\.js\?v=11/);
   assert.match(worker, /auth-living-galaxy-3d\.js\?v=14/);
-  assert.match(worker, /auth-neon-gateway\.js\?v=22/);
+  assert.match(worker, /auth-neon-gateway\.js\?v=25/);
   assert.match(html, /auth-creative-universe\.css\?v=5/);
   assert.match(read("performance-loader.js"), /scripts:\s*\["auth-creative-universe\.js\?v=5"\]/);
   assert.match(html, /data-auth-motion-toggle/);
   assert.match(html, /class="auth-gateway-scene"/);
   assert.doesNotMatch(html, /class="auth-solar-system"/);
-  assert.equal([...html.matchAll(/data-hh-planet="\d+"/g)].length, 23);
+  assert.equal([...html.matchAll(/data-hh-planet="\d+"/g)].length, 25);
 });
 
 test("login galaxy replaces the old showcase and keeps Google-only auth", () => {

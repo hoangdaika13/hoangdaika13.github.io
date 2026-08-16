@@ -5434,6 +5434,7 @@ function initAppShell() {
     { id: "character-3d", label: "Nhân vật 3D", icon: "3D", accent: "#ff718a", route: "/character-3d", items: [] },
     { id: "social-media-tools", label: "Công cụ truyền thông xã hội", icon: "SM", accent: "#63ead8", route: "/social-media-tools", items: [] },
     { id: "create", label: "Sáng tạo", icon: "✦", accent: "#ff5dc8", route: "/create", items: [], studioItems: creativeStudioItems },
+    { id: "chat-ai", label: "Chat AI", icon: "AI", accent: "#7b8cff", route: "/chat-ai", items: [] },
     {
       id: "music-ai",
       label: "Làm nhạc AI",
@@ -5596,6 +5597,7 @@ function initAppShell() {
     },
     { id: "english", label: "HH English", icon: "E", accent: "#60e9f2", route: "/english", items: [] },
     { id: "japanese", label: "HH Japanese", icon: "日", accent: "#e75158", route: "/japanese", items: [] },
+    { id: "fortune", label: "Xem bói", icon: "☾", accent: "#a983ff", route: "/fortune", items: [] },
     {
       id: "system",
       label: "Hệ thống",
@@ -5874,7 +5876,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Game", "game-center": "Game Center", "astral-realms": "HH Astral Realms", "astra-hh": "ASTRA MMO RPG", arcade: "Arcade Galaxy", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "16 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "chat-ai": "Chat AI", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Game", "game-center": "Game Center", "astral-realms": "HH Astral Realms", "astra-hh": "ASTRA MMO RPG", arcade: "Arcade Galaxy", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "16 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     crumbLabels["character-3d"] = "Nhân vật 3D";
     crumbLabels["social-media-tools"] = "Công cụ truyền thông xã hội";
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
@@ -5919,6 +5921,8 @@ function initAppShell() {
     learn: "Đang chuẩn bị lộ trình và dữ liệu học tập...",
     english: "Đang nạp bài học và tiến độ HH English...",
     japanese: "Đang nạp Từ điển, Kanji, ngữ pháp và lộ trình JLPT...",
+    fortune: "Đang mở không gian Tarot, cung hoàng đạo và nhật ký suy ngẫm...",
+    "chat-ai": "Đang kết nối Gemini, lịch sử hội thoại và công cụ đa phương thức...",
     system: "Đang kiểm tra cấu hình và dịch vụ hệ thống...",
     support: "Đang mở trung tâm hỗ trợ và thanh toán an toàn..."
   };
@@ -6058,6 +6062,8 @@ function initAppShell() {
     document.body.classList.toggle("app-learning-route", route === "/learn" || route.startsWith("/learn/"));
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
     document.body.classList.toggle("app-japanese-route", route === "/japanese" || route.startsWith("/japanese/"));
+    document.body.classList.toggle("app-fortune-route", route === "/fortune" || route.startsWith("/fortune/"));
+    document.body.classList.toggle("app-chat-ai-route", route === "/chat-ai" || route.startsWith("/chat-ai/"));
     document.body.classList.toggle("app-communication-route", route === "/communication" || route.startsWith("/communication/"));
     document.body.classList.toggle("app-work-route", route === "/work" || route.startsWith("/work/"));
     document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
@@ -6094,6 +6100,8 @@ function initAppShell() {
     }
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     if (route !== "/japanese" && !route.startsWith("/japanese/")) window.HHJapanese?.unmount?.();
+    if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
+    if (route !== "/chat-ai" && !route.startsWith("/chat-ai/")) window.HHChatAI?.unmount?.();
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
     const communicationView = route === "/communication" ? "command-center" : route.split("/").filter(Boolean)[1];
     if (!(route === "/communication" || window.HHCommunicationSuite?.supports?.(communicationView))) window.HHCommunicationSuite?.unmount?.();
@@ -6287,6 +6295,23 @@ function initAppShell() {
         runAI: (request) => creativeAIRequest("ai-center", JSON.stringify(request), request?.task || "japanese-learning", { source: "hh-japanese" })
       });
       else mountSimpleView("HH Japanese", "Đang tải Từ điển, Kanji và lộ trình JLPT...", "");
+    } else if (route === "/fortune" || route.startsWith("/fortune/")) {
+      updatePageHeader("Xem bói", "Tarot nguyên bản, cung hoàng đạo, con giáp, thần số học, Kinh Dịch và nhật ký riêng tư dành cho giải trí, tự chiêm nghiệm.", route);
+      pageActions.innerHTML = `<button type="button" data-app-route="/fortune/tarot">Rút Tarot</button><button type="button" data-app-route="/fortune/journal">Nhật ký</button><button class="app-primary-action" type="button" data-app-route="/fortune/today">Hôm nay</button>`;
+      workspace.innerHTML = '<div data-fortune-hub-host></div>';
+      if (window.HHFortuneHub?.mount) window.HHFortuneHub.mount(workspace.firstElementChild, {
+        currentUser: readCurrentAuthUser(),
+        view: parts[1] || "today"
+      });
+      else mountSimpleView("Xem bói", "Đang tải không gian tự chiêm nghiệm...", "");
+      remember("fortune");
+    } else if (route === "/chat-ai" || route.startsWith("/chat-ai/")) {
+      updatePageHeader("Chat AI", "Trợ lý Gemini đa phương thức: trò chuyện nhiều lượt, nghiên cứu có nguồn, phân tích ảnh/PDF, viết và lập trình.", route);
+      pageActions.innerHTML = `<button type="button" data-app-route="/create/ai-center">AI Center</button><button class="app-primary-action" type="button" data-app-route="/chat-ai/new">＋ Chat mới</button>`;
+      workspace.innerHTML = '<div data-chat-ai-host></div>';
+      if (window.HHChatAI?.mount) window.HHChatAI.mount(workspace.firstElementChild, { currentUser: readCurrentAuthUser(), apiBase: String(window.HH_REALTIME_URL || location.origin), newSession: parts[1] === "new" });
+      else mountSimpleView("Chat AI", "Đang kết nối Gemini và lịch sử hội thoại...", "");
+      remember("chat-ai");
     } else if (route === "/music-ai" || route.startsWith("/music-ai/")) {
       const musicView = parts[1] || "autopilot";
       const musicPage = musicAIAllPageItems.find((item) => item.id === musicView) || musicAIPageItems[0];
@@ -6711,6 +6736,20 @@ function initAppShell() {
         description: "61 công cụ tạo nội dung, xử lý văn bản, liên kết chia sẻ, chỉnh ảnh, metadata, oEmbed, lịch, queue và xuất Social Media Kit.",
         route: "/social-media-tools",
         key: "social media tools instagram facebook tiktok x threads whatsapp imessage youtube vimeo open graph utm caption thumbnail story mockup queue"
+      },
+      {
+        type: "Chiêm nghiệm",
+        title: "Xem bói",
+        description: "Tarot 1/3/5 lá, cung và con giáp, thần số học có công thức, quẻ biến, pha Mặt Trăng, đối chiếu hai hồ sơ và nhật ký riêng tư.",
+        route: "/fortune",
+        key: "xem bói tarot 5 lá cung hoàng đạo zodiac 12 con giáp thần số học numerology chu kỳ cá nhân tên pythagoras kinh dịch quẻ biến gieo quẻ sáu hào moon pha mặt trăng tương tác biểu tượng nhật ký chiêm nghiệm giải trí"
+      },
+      {
+        type: "Trí tuệ nhân tạo",
+        title: "Chat AI",
+        description: "Chat Gemini nhiều lượt, Google Search có nguồn, phân tích ảnh/PDF, hỗ trợ code, viết, giọng nói, nhánh hội thoại và xuất dữ liệu.",
+        route: "/chat-ai",
+        key: "chat ai gemini 3.6 flash 3.5 flash lite research google search image pdf code writing voice conversation"
       }
     );
     return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...workGalaxy, ...musicAI, { type: "Học tập", title: "HH English", description: "English Learning Galaxy: kho từ vựng tải theo gói, 16 chế độ học, CEFR A0-C2, Mistake Notebook và 70 lộ trình chuyên ngành.", route: "/english", key: "hh english english galaxy galaxy vocabulary words collocations idioms phrasal verbs a0 a1 a2 b1 b2 c1 c2 cefr flashcard typed recall audio cloze matching sentence order dictation shadowing mini story role play speed review mistake notebook word family picture vocabulary speaking writing placement career business technology healthcare education tourism engineering" }, { type: "Học tập", title: "HH Japanese OS V5", description: "42.301 từ/cụm, 30.000 câu có nguồn, 800 nhiệm vụ, Active Vocabulary, Particle Lab, Smart Reader V3, Kanji Writing V2 và Review Console.", route: "/japanese", key: "hh japanese os v5 42301 30000 sentences 800 missions active vocabulary particle lab smart reader v3 kanji writing v2 shadowing review console jmdict tatoeba kanjivg conversation writing immersion teacher family collocation onomatopoeia keigo counter tiếng nhật vietnamese core can-do jf cefr dual progress grammar mora life in japan jlpt simulator little kids kids teens students adults senior từ điển nhật việt kanji hiragana katakana romaji ngữ pháp jlpt n5 n4 n3 n2 n1 flashcard srs đọc nghe nói hội thoại" }, { type: "Sản xuất video", title: "HH Video Studio", description: "Trình dựng video chạy trực tiếp trên web: Media Pool, timeline nhiều rãnh, màu, audio, phụ đề, phiên bản và xuất MP4/WebM thật.", route: "/davinci-resolve", key: "tool davinci resolve hh video studio web editor media pool timeline multi track trim ripple color audio subtitle srt vtt mp4 webm export queue indexeddb" }, { type: "YouTube", title: "YouTube Creator Galaxy", description: "14 trung tâm YouTube dùng dữ liệu thật: OAuth, đa tài khoản/kênh, Analytics, upload, thumbnail, metadata, Shorts, caption, Community, Live và preflight.", route: "/davinci-resolve/youtube", key: "tool youtube creator galaxy oauth multi account channel fleet analytics upload scheduler thumbnail seo shorts caption community comments live calendar copyright preflight" }, { type: "Phim", title: "Phim", description: "Phim công cộng và Creative Commons đã kiểm tra nguồn, giấy phép và điều kiện ghi công.", route: "/cinema", key: "phim cinema movie public domain creative commons phim mở miễn phí hợp pháp bản quyền giấy phép attribution" }, { type: "Nhạc", title: "Nhạc", description: "Thư viện nhạc Public Domain và Creative Commons có nguồn, tác giả và giấy phép rõ ràng.", route: "/music", key: "nhạc music audio public domain creative commons nghe nhạc miễn phí hợp pháp giấy phép attribution playlist" }, { type: "Game", title: "HH Game Center", description: "Tổng quan chỉ dành cho game: XP, huy hiệu, nhiệm vụ, bạn bè online, leaderboard, cloud save và phòng realtime.", route: "/entertainment", key: "giải trí game center mmo rpg arcade leaderboard xp huy hiệu nhiệm vụ realtime cloud save" }, { type: "Game", title: "HH Astral Realms", description: "Action RPG thế giới mở 3D: bốn khu vực, chiến đấu sáu nguyên tố, nhiệm vụ, kho đồ, chế tạo, boss và co-op 1–4 người.", route: "/entertainment/astral-realms", key: "astral realms action rpg open world 3d genshin inspired h galaxy aurora crimson void boss crafting elemental co-op" }, { type: "Game", title: "ASTRA MMO RPG", description: "Game vũ trụ MMO RPG: lái tàu, phe phái, party, nhiệm vụ, skill tree, căn cứ, boss, khai khoáng và giao thương.", route: "/entertainment/astra-hh", key: "giải trí game astra hh mmo rpg vũ trụ phi thuyền hành tinh party raid boss co-op space explorer" }, { type: "Game", title: "Arcade Galaxy", description: "22 game hoàn chỉnh thuộc bốn nhóm Action, Strategy, Puzzle và Simulation, dùng chung tiến trình, nhiệm vụ, thành tích và điều khiển đa thiết bị.", route: "/entertainment/arcade", key: "arcade galaxy 22 game action strategy puzzle simulation neon drift defense colony cipher miner rhythm quiz sandbox chess survival farm fishing mecha planet pet dungeon card tycoon runner black hole nebula boss rush" }, { type: "Studio", title: "Media & Design", description: "35 công cụ trong Media Cosmos với Media Cloud, Review Studio, Motion Compositing, Universal Canvas, AI Task Center và Dev Handoff.", route: "/media-design", key: "media design media cosmos professional universal project media cloud private blob multipart review studio annotation version compare approval universal canvas infinite artboard motion compositing node graph ai task center provenance dev mode handoff storybook photo editor photoshop render queue rights consent c2pa" }, { type: "Developer", title: "Developer Galaxy", description: "8 hành tinh DEV, 13 workspace chuyên sâu và 34 công cụ cho project, code, API, data, Git, delivery, security và observability.", route: "/dev-tools", key: "developer galaxy dev project code api data git delivery security observability smart input recipe pipeline mock json regex database playground diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/today", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];

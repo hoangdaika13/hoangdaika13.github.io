@@ -1,5 +1,5 @@
-const CACHE = "hh-identity-portal-v625";
-// Compatibility from the previous worker: hh-identity-portal-v624.
+const CACHE = "hh-identity-portal-v646";
+// Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
 // Astral route compatibility identifiers: astral-realms.css?v=77 astral-realms.js?v=94.
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
@@ -13,6 +13,7 @@ const CACHE = "hh-identity-portal-v625";
 // YouTube Batch compatibility: ./script.js?v=179 ./performance-loader.js?v=272 ./youtube-creator-galaxy.css?v=20 ./youtube-creator-galaxy.js?v=24 ./home-galaxy-command.css?v=9
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
 // HH School v1 replaces the former Learning OS bundle; legacy caches are removed during activation.
+// HH English compatibility: english-learning.js?v=22 english-learning.js?v=24; v27 loads Learning OS v3.
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
@@ -72,8 +73,10 @@ const RUNTIME_ASSETS = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
+  "./fortune-hub.css?v=2",
+  "./chat-ai-hub.css?v=2",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=186",
+  "./script.js?v=189",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -216,7 +219,7 @@ const RUNTIME_ASSETS = [
   "./extension-suite.css?v=1",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=9",
-  "./auth-h-galaxy.css?v=9",
+  "./auth-h-galaxy.css?v=11",
   "./auth-living-galaxy-3d.css?v=10",
   "./auth-living-background.css?v=1",
   "./auth-spatial-aurora.css?v=1",
@@ -237,8 +240,8 @@ const RUNTIME_ASSETS = [
   "./assets/hh-neon-logo-v2.png?v=3",
   "./auth-platform.js?v=13",
   "./auth-experience.js?v=8",
-  "./auth-neon-gateway.js?v=22",
-  "./auth-h-galaxy.js?v=8",
+  "./auth-neon-gateway.js?v=25",
+  "./auth-h-galaxy.js?v=11",
   "./auth-living-galaxy-3d.js?v=14",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
@@ -376,6 +379,7 @@ const RUNTIME_ASSETS = [
   "./hh-school.css?v=3",
   "./english-learning.css?v=17",
   "./english-skill-graph.css?v=1",
+  "./english-learning-os.css?v=3",
   "./english-galaxy.css?v=1",
   "./english-learning-galaxy.css?v=6",
   "./english-vocabulary.css?v=1",
@@ -449,6 +453,8 @@ const RUNTIME_ASSETS = [
   "./media-next-suite.js?v=2",
   "./editor-workflow-pro.js?v=2",
   "./support-platform.js?v=16",
+  "./fortune-hub.js?v=6",
+  "./chat-ai-hub.js?v=2",
   "./media-design-page.js?v=13",
   "./tool-manifests.js?v=1",
   "./tool-runtime.js?v=1",
@@ -508,13 +514,14 @@ const RUNTIME_ASSETS = [
   "./english-career-expansion.js?v=1",
   "./english-career-curriculum.js?v=2",
   "./english-galaxy.js?v=2",
-  "./english-learning-galaxy.js?v=4",
-  "./english-vocabulary.js?v=1",
+  "./english-learning-galaxy.js?v=5",
+  "./english-vocabulary.js?v=2",
   "./english-vocabulary-worker.js?v=1",
   "./english-for-everyone.js?v=2",
   "./assets/english-vocabulary/manifest.json",
   "./english-skill-graph.js?v=1",
-  "./english-learning.js?v=24",
+  "./english-learning-os.js?v=7",
+  "./english-learning.js?v=28",
   "./japanese-vocabulary-packs.js?v=1",
   "./japanese-vocabulary-10k.js?v=1",
   "./japanese-vietnamese-pack.js?v=1",
@@ -524,7 +531,7 @@ const RUNTIME_ASSETS = [
   "./japanese-search-worker.js?v=1",
   "./japanese-learning.js?v=8",
   "./japanese-os-v3.js?v=2",
-  "./japanese-os-v4.js?v=5",
+  "./japanese-os-v4.js?v=7",
   "./config.js?v=10",
   "./data/ai-super-platform-modules.json"
 ];
@@ -545,10 +552,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=334",
+  "./performance-loader.js?v=353",
   "./auth-platform.js?v=13",
-  "./auth-neon-gateway.js?v=22",
-  "./script.js?v=186"
+  "./auth-neon-gateway.js?v=25",
+  "./script.js?v=189"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

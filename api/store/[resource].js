@@ -10,6 +10,7 @@ const TOOL_GATEWAYS = Object.freeze({
 });
 const mediaCloud = require("../../services/mediaCloud");
 const aiVideoRemake = require("../../services/ai-video-remake");
+const englishLearningSync = require("../../services/englishLearningSync");
 const OPEN_MEDIA_HANDLERS = Object.freeze({
   rights: require("../../utils/open-media-server/rights"),
   notices: require("../../utils/open-media-server/notices"),
@@ -29,6 +30,7 @@ module.exports = async function handler(req, res) {
 
   if (resource === "media") return mediaCloud.handler(req, res);
   if (resource === "ai-video-remake") return aiVideoRemake(req, res);
+  if (resource === "english-learning") return englishLearningSync(req, res);
   if (resource === "open-media") {
     const action = clean(req.query?.openMediaAction, 30).toLocaleLowerCase("en-US");
     const openMediaHandler = OPEN_MEDIA_HANDLERS[action];
