@@ -20,7 +20,8 @@
     { id: "notes", icon: "▤", label: "Sticky Notes", tone: "#ffe56d" },
     { id: "pomodoro", icon: "◉", label: "Pomodoro", tone: "#ff786f" },
     { id: "media", icon: "♫", label: "Media mini", tone: "#7da7ff" },
-    { id: "jobs", icon: "⇣", label: "Tác vụ đang chạy", tone: "#9af06f" }
+    { id: "jobs", icon: "⇣", label: "Tác vụ đang chạy", tone: "#9af06f" },
+    { id: "moon", icon: "☾", label: "Pha Mặt Trăng", tone: "#c7a7ff" }
   ]);
   const THEMES = ["aero", "classic", "neon", "crt", "minimal", "cyber"];
   const SIZES = ["small", "medium", "large"];
@@ -302,7 +303,7 @@
     tabLagExpected = now + 1000;
     live.now = new Date();
     updateTopbar();
-    refreshWidgetBodies(["clock", "calendar", "pomodoro"]);
+    refreshWidgetBodies(["clock", "calendar", "pomodoro", "moon"]);
     if (activePanel === "clock" || activePanel === "pomodoro") {
       const preview = host?.querySelector(".hlw-clock-preview");
       if (preview) preview.innerHTML = clockBody();
@@ -395,6 +396,20 @@
     return `<div class="hlw-calendar"><header><b>${now.toLocaleDateString("vi-VN", { month: "long", year: "numeric" })}</b><span>${now.getDate()}</span></header><div>${["T2", "T3", "T4", "T5", "T6", "T7", "CN", ...cells].map((day, index) => `<i class="${Number(day) === now.getDate() && index > 6 ? "is-today" : ""}">${day || ""}</i>`).join("")}</div></div>`;
   }
 
+  function moonPhase(date = new Date()) {
+    const reference = Date.UTC(2000, 0, 6, 18, 14); const synodic = 29.530588853;
+    const phase = ((((date.getTime() - reference) / 86400000) / synodic) % 1 + 1) % 1;
+    const illumination = Math.round((1 - Math.cos(phase * Math.PI * 2)) / 2 * 1000) / 10;
+    const index = Math.floor(phase * 8 + .5) % 8;
+    const phases = [["Trăng non","●"],["Lưỡi liềm đầu tháng","◔"],["Thượng huyền","◑"],["Khuyết đầu tháng","◕"],["Trăng tròn","○"],["Khuyết cuối tháng","◕"],["Hạ huyền","◐"],["Lưỡi liềm cuối tháng","◔"]];
+    return { name: phases[index][0], symbol: phases[index][1], illumination, age: Math.round(phase * synodic * 10) / 10, waxing: phase < .5 };
+  }
+
+  function moonBody() {
+    const moon = moonPhase(live.now);
+    return `<div class="hlw-moon"><i>${moon.symbol}</i><div><strong>${escapeHtml(moon.name)}</strong><b>${moon.illumination}% chiếu sáng</b><small>Tuổi trăng ~${moon.age} ngày · ${moon.waxing ? "sáng dần" : "khuyết dần"}</small></div></div>`;
+  }
+
   function appsBody() {
     return `<div class="hlw-app-shortcuts">${[["notes", "▤", "Ghi chú"], ["calculator", "±", "Máy tính"], ["pomodoro", "◉", "Pomodoro"], ["timer", "⌛", "Timer"], ["media", "♫", "Nhạc"], ["recorder", "●", "Ghi âm"]].map(([id, icon, label]) => `<button type="button" data-hlw-mini="${id}"><i>${icon}</i><span>${label}</span></button>`).join("")}</div>`;
   }
@@ -427,6 +442,7 @@
     if (id === "notes") return notesBody();
     if (id === "pomodoro") return pomodoroBody();
     if (id === "jobs") return jobsBody();
+    if (id === "moon") return moonBody();
     return mediaBody();
   }
 
@@ -538,6 +554,7 @@
 
   function calendarPanel() { return `${panelHeader("Lịch mini", "THÁNG NÀY")}<div class="hlw-calendar-large">${calendarBody()}</div><div data-hlw-inline-mini>${miniMarkup("countdown")}</div>`; }
   function jobsPanel() { return `${panelHeader("Tác vụ đang chạy", "DỮ LIỆU CỤC BỘ THẬT")}<div class="hlw-jobs-large">${jobsBody()}</div><div class="hlw-detail-list"><span><b>Video Batch Factory</b><em>Đọc hàng đợi theo tài khoản</em></span><span><b>Comic Motion Studio</b><em>Render queue và chương mới</em></span><span><b>YouTube Creator</b><em>Chỉ hiển thị trạng thái đã lưu, không đọc token</em></span></div><button type="button" data-hlw-route="/davinci-resolve">Mở Tool Center</button>`; }
+  function moonPanel() { const moon = moonPhase(live.now); return `${panelHeader("Pha Mặt Trăng", "XẤP XỈ THIÊN VĂN · KHÔNG GÁN NGÀY TỐT/XẤU")}<div class="hlw-moon-panel">${moonBody()}<dl><div><dt>Chiếu sáng</dt><dd>${moon.illumination}%</dd></div><div><dt>Tuổi trăng</dt><dd>${moon.age} ngày</dd></div><div><dt>Xu hướng</dt><dd>${moon.waxing ? "Sáng dần" : "Khuyết dần"}</dd></div></dl><p>Tính từ chu kỳ giao hội trung bình 29,530588853 ngày. Dùng Fortune Hub để xem phương pháp, lịch và ghi chú chi tiết.</p><button type="button" data-hlw-route="/fortune/moon">Mở Xem bói · Mặt Trăng</button></div>`; }
 
   function renderPanel() {
     const panel = host?.querySelector("[data-hlw-panel]");
@@ -550,6 +567,7 @@
     else if (activePanel === "clock" || activePanel === "pomodoro") panel.innerHTML = clockPanel();
     else if (activePanel === "calendar") panel.innerHTML = calendarPanel();
     else if (activePanel === "jobs") panel.innerHTML = jobsPanel();
+    else if (activePanel === "moon") panel.innerHTML = moonPanel();
     else if (activePanel === "notes") { activeMini = "notes"; panel.innerHTML = appsPanel(); }
     else if (activePanel === "media") { activeMini = "media"; panel.innerHTML = appsPanel(); }
     else panel.innerHTML = appsPanel();

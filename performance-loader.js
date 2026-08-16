@@ -53,12 +53,12 @@
     },
     "home-enhancements": {
       styles: [
-        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=11", "home-live-widgets.css?v=11", "home-cosmic-os.css?v=3", "home-galaxy-mission.css?v=8", "home-galaxy-operations.css?v=2", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=11", "home-live-widgets.css?v=12", "home-cosmic-os.css?v=3", "home-galaxy-mission.css?v=8", "home-galaxy-operations.css?v=2", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
         "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=10", "home-galaxy-operations.js?v=5", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
-        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=11", "home-live-widgets.js?v=6", "home-cosmic-os.js?v=11"
+        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=11", "home-live-widgets.js?v=7", "home-cosmic-os.js?v=11"
       ]
     },
     platform: {
@@ -250,12 +250,12 @@
       scripts: ["japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=8", "japanese-os-v3.js?v=2", "japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.js?v=7"]
     },
     fortune: {
-      styles: ["fortune-hub.css?v=2"],
-      scripts: ["fortune-hub.js?v=6"]
+      styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "fortune-iching-64.js?v=1", "fortune-astrology.js?v=1", "fortune-hub.js?v=8"]
     },
     "chat-ai": {
-      styles: ["chat-ai-hub.css?v=2"],
-      scripts: ["chat-ai-hub.js?v=2"]
+      styles: ["chat-ai-hub.css?v=5"],
+      scripts: ["chat-ai-hub.js?v=5"]
     },
     analytics: {
       styles: ["insights-pro.css?v=3"],

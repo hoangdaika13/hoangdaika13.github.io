@@ -8,16 +8,28 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const chat = require(path.join(root, "chat-ai-hub.js"));
 
 test("Chat AI exposes current Gemini modes and owner-isolated local state", () => {
-  assert.equal(chat.VERSION, "1.0.1");
+  assert.equal(chat.VERSION, "2.0.0");
   assert.deepEqual(chat.MODELS.map((item) => item.id), ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"]);
   assert.deepEqual(chat.MODES.map((item) => item.id), ["chat", "research", "code", "write", "study", "vision"]);
   assert.notEqual(chat.storageKey("owner-a"), chat.storageKey("owner-b"));
   const state = chat.normalizeState({ model: "untrusted-model", sessions: [], thinkingLevel: "invalid" });
   assert.equal(state.model, "gemini-3.6-flash");
   assert.equal(state.thinkingLevel, "medium");
+  assert.equal(state.autoFallback, true);
+  assert.equal(state.contextBudget, 24000);
   assert.equal(state.sessions.length, 1);
   assert.equal(typeof chat.mount, "function");
   assert.equal(typeof chat.unmount, "function");
+});
+
+test("Chat AI compacts long context without inventing a summary", () => {
+  const messages = Array.from({ length: 30 }, (_, index) => ({ role: index % 2 ? "assistant" : "user", text: `Tin ${index} ${"x".repeat(900)}` }));
+  const context = chat.compactHistory(messages, 8000);
+  assert.ok(context.history.length <= 17);
+  assert.ok(context.chars <= 8200);
+  assert.ok(context.omitted > 0);
+  assert.match(context.history[0].text, /chỉ là trích đoạn, không phải dữ kiện mới/);
+  assert.ok(context.estimatedTokens > 0);
 });
 
 test("Chat AI interface provides real conversation, attachment, privacy and export controls", () => {
@@ -26,12 +38,15 @@ test("Chat AI interface provides real conversation, attachment, privacy and expo
     "data-chat-ai-form", "data-chat-ai-files", "data-chat-ai-stop", "data-chat-ai-mic",
     "data-chat-ai-private", "data-chat-ai-branch", "data-chat-ai-regenerate", "data-chat-ai-export",
     "data-chat-ai-search-toggle", "data-chat-ai-thinking", "data-chat-ai-download-artifact",
-    "data-chat-ai-export-format"
+    "data-chat-ai-export-format", "data-chat-ai-mobile-panel", "data-chat-ai-mobile-close"
   ]) assert.match(source, new RegExp(contract));
   assert.match(source, /\/api\/modules\/chat-ai\/actions/);
   assert.match(source, /provider:\s*"gemini"/);
   assert.match(source, /allowProviderFallback:\s*false/);
   assert.match(source, /requireProvider:\s*true/);
+  assert.match(source, /allowModelFallback:\s*runtime\.state\.autoFallback/);
+  assert.match(source, /data-chat-ai-context-budget/);
+  assert.match(source, /data-chat-ai-fallback-toggle/);
   assert.match(source, /application\/pdf/);
   assert.match(source, /runtime\.incognito/);
   assert.doesNotMatch(source, /GEMINI_API_KEY|GOOGLE_AI_API_KEY/);
@@ -47,6 +62,8 @@ test("Gemini backend supports Chat AI, current models, thinking levels and serve
   assert.match(backend, /!\["gemini-3\.6-flash", "gemini-3\.5-flash-lite"\]\.includes\(model\)/);
   assert.match(backend, /const supported = new Set\(\[[^\]]*"application\/pdf"/);
   assert.match(backend, /x-goog-api-key/);
+  assert.match(backend, /modelCandidates/);
+  assert.match(backend, /retry-after/);
   assert.doesNotMatch(read("index.html"), /GEMINI_API_KEY|GOOGLE_AI_API_KEY/);
 });
 
@@ -59,10 +76,10 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   assert.match(client, /id: "chat-ai"[\s\S]*?route: "\/chat-ai"/);
   assert.match(client, /window\.HHChatAI\?\.mount/);
   assert.match(client, /title: "Chat AI"[\s\S]*?gemini 3\.6 flash/);
-  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=2[\s\S]*?chat-ai-hub\.js\?v=2/);
+  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=5[\s\S]*?chat-ai-hub\.js\?v=5/);
   assert.match(loader, /value\.startsWith\("\/chat-ai"\)/);
-  assert.match(worker, /chat-ai-hub\.css\?v=2/);
-  assert.match(worker, /chat-ai-hub\.js\?v=2/);
+  assert.match(worker, /chat-ai-hub\.css\?v=5/);
+  assert.match(worker, /chat-ai-hub\.js\?v=5/);
   assert.match(html, /data-hh-galaxy-key="chatAI"/);
   assert.match(html, /25 LĨNH VỰC/);
   assert.match(galaxy, /chatAI:\s*\{[\s\S]*?route: "#\/chat-ai"/);
@@ -76,4 +93,7 @@ test("Chat AI layout is responsive, accessible and motion-safe", () => {
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /overflow:auto/);
+  assert.match(css, /\.chat-ai-hub\.is-sessions-open \.chat-ai-sidebar/);
+  assert.match(css, /\.chat-ai-hub\.is-inspector-open \.chat-ai-inspector/);
+  assert.match(css, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
 });

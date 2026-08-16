@@ -278,13 +278,13 @@
       icon: "☾",
       title: "Xem bói",
       kicker: "REFLECTION & SYMBOLS",
-      count: "8 CÔNG CỤ",
+      count: "15 CÔNG CỤ",
       route: "#/fortune",
       accent: "#a983ff",
       accent2: "#54dce5",
-      description: "Tarot 1/3/5 lá, cung và con giáp, thần số học, quẻ biến, pha Mặt Trăng và đối chiếu biểu tượng.",
-      detail: "Công thức, seed và giới hạn phương pháp đều được hiển thị; dữ liệu nhạy cảm chỉ xử lý trong phiên, không thay thế lời khuyên chuyên môn.",
-      features: ["Tarot 5 lá", "Chu kỳ cá nhân", "Quẻ biến", "Pha Mặt Trăng", "Đối chiếu biểu tượng"]
+      description: "Tarot 1–10 lá, 64 quẻ, bản đồ sao, thần số, lịch chiêm nghiệm và Gemini Reflection Copilot.",
+      detail: "Mỗi kết quả có giải thích nhiều tầng, công thức, seed và giới hạn rõ ràng; dữ liệu nhạy cảm mặc định chỉ nằm trong phiên.",
+      features: ["Tarot Studio", "Kinh Dịch 64 quẻ", "Bản đồ sao", "Lịch chiêm nghiệm", "Gemini Copilot"]
     },
     chatAI: {
       icon: "AI",

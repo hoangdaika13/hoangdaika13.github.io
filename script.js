@@ -6301,7 +6301,8 @@ function initAppShell() {
       workspace.innerHTML = '<div data-fortune-hub-host></div>';
       if (window.HHFortuneHub?.mount) window.HHFortuneHub.mount(workspace.firstElementChild, {
         currentUser: readCurrentAuthUser(),
-        view: parts[1] || "today"
+        view: parts[1] || "today",
+        apiBase: String(window.HH_REALTIME_URL || location.origin)
       });
       else mountSimpleView("Xem bói", "Đang tải không gian tự chiêm nghiệm...", "");
       remember("fortune");

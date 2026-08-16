@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v646";
+const CACHE = "hh-identity-portal-v649";
 // Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
 // Astral route compatibility identifiers: astral-realms.css?v=77 astral-realms.js?v=94.
 // Compatibility aliases are kept as documentation for clients upgrading from the
@@ -22,7 +22,7 @@ const RUNTIME_ASSETS = [
   "./dashboard-aurora.css?v=4",
   "./home-galaxy-command.css?v=11",
   "./home-virtual-assistant.css?v=8",
-  "./home-live-widgets.css?v=11",
+  "./home-live-widgets.css?v=12",
   "./home-cosmic-os.css?v=3",
   "./home-galaxy-mission.css?v=8",
   "./home-galaxy-operations.css?v=2",
@@ -73,8 +73,9 @@ const RUNTIME_ASSETS = [
   "./photo-editor-pro.css?v=4",
   "./editor-workflow-pro.css?v=2",
   "./support-platform.css?v=10",
-  "./fortune-hub.css?v=2",
-  "./chat-ai-hub.css?v=2",
+  "./fortune-hub.css?v=3",
+  "./fortune-hub-v3.css?v=2",
+  "./chat-ai-hub.css?v=5",
   "./vendor/pdf-lib.min.js?v=1.17.1",
   "./script.js?v=189",
   "./graphic-design-studio.css?v=6",
@@ -206,7 +207,7 @@ const RUNTIME_ASSETS = [
   "./services/virtualAssistantCharacter.js?v=3",
   "./home-virtual-assistant.js?v=23",
   "./assets/hikari-h/hikari-h-original-v1-alpha.webp",
-  "./home-live-widgets.js?v=6",
+  "./home-live-widgets.js?v=7",
   "./home-cosmic-os.js?v=11",
   "./home-galaxy-mission.js?v=10",
   "./home-galaxy-operations.js?v=5",
@@ -453,8 +454,11 @@ const RUNTIME_ASSETS = [
   "./media-next-suite.js?v=2",
   "./editor-workflow-pro.js?v=2",
   "./support-platform.js?v=16",
-  "./fortune-hub.js?v=6",
-  "./chat-ai-hub.js?v=2",
+  "./vendor/astronomy-engine-2.1.19.min.js?v=1",
+  "./fortune-iching-64.js?v=1",
+  "./fortune-astrology.js?v=1",
+  "./fortune-hub.js?v=8",
+  "./chat-ai-hub.js?v=5",
   "./media-design-page.js?v=13",
   "./tool-manifests.js?v=1",
   "./tool-runtime.js?v=1",
@@ -552,10 +556,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=353",
+  "./performance-loader.js?v=356",
   "./auth-platform.js?v=13",
   "./auth-neon-gateway.js?v=25",
-  "./script.js?v=189"
+  "./script.js?v=190"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

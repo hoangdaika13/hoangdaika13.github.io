@@ -33,6 +33,7 @@
     "@payos/node": "^2.0.5",
     "@simplewebauthn/server": "^13.2.2",
     "@vercel/blob": "^2.6.1",
+    "astronomy-engine": "^2.1.19",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.20.0",

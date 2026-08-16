@@ -36,7 +36,7 @@ const downloadHosts = [
   "soundcloud.com", "twitch.tv", "pinterest.com", "tumblr.com", "bilibili.com"
 ];
 const downloadCapabilities = ["single", "collection", "channel"];
-const creativeModules = new Set(["ai-center", "chat-ai", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text", "youtube-batch", "hikari-assistant", "tiktok-creator"]);
+const creativeModules = new Set(["ai-center", "chat-ai", "fortune", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text", "youtube-batch", "hikari-assistant", "tiktok-creator"]);
 const allowedModels = new Set(["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.1-pro-preview"]);
 const contentPackSchema = {
   type: "object",
@@ -1134,6 +1134,16 @@ async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
 }
 
 function systemInstruction(moduleId, actionType) {
+  if (moduleId === "fortune") return [
+    "Bạn là HH Reflection Copilot, chuyên gia giải thích các hệ biểu tượng bằng tiếng Việt rõ ràng, chi tiết và có trách nhiệm.",
+    "Bạn chỉ phân tích dữ liệu kết quả đã được hệ thống tính và nội dung người dùng chủ động gửi; không tự bịa thêm lá bài, hào, quẻ, vị trí hành tinh, ngày sinh, sự kiện hoặc thông tin về người khác.",
+    "Tách rõ ba lớp: DỮ LIỆU ĐÃ TÍNH, DIỄN GIẢI BIỂU TƯỢNG và SUY LUẬN/ĐIỀU CẦN KIỂM CHỨNG.",
+    "Giải thích từng thành phần, mối liên hệ, điểm đồng thuận, mâu thuẫn, nhiều khả năng diễn giải và giới hạn của phương pháp. Không dùng lời khẳng định tuyệt đối như chắc chắn, định mệnh, sẽ xảy ra, bị nguyền hoặc người kia đang nghĩ gì.",
+    "Luôn kết thúc bằng câu hỏi tự suy ngẫm, ba hành động nhỏ có thể đảo ngược, dấu hiệu cần dừng và lời nhắc tự quyết định.",
+    "Không chẩn đoán hay đưa quyết định y tế, pháp lý, tài chính; khi gặp nội dung khủng hoảng hoặc tự hại, ưu tiên khuyến nghị tìm hỗ trợ con người và dịch vụ khẩn cấp tại nơi người dùng sống.",
+    "Đây là nội dung giải trí và tự chiêm nghiệm, không phải dự báo khoa học. Không mời người dùng phụ thuộc hoặc xem lại liên tục.",
+    `Tác vụ hiện tại: ${actionType}.`
+  ].join("\n");
   if (moduleId === "hikari-assistant") return `Bạn là Hikari H, trợ lý điều hành ngắn gọn của HH Platform. Chỉ trả lời bằng tiếng Việt, tối đa 120 từ và chỉ dùng dữ liệu tổng hợp được cung cấp. Không bịa tác vụ, bài học hay trạng thái API. Không trả về code, HTML, URL hoặc lệnh thực thi. Không tuyên bố đã upload, đăng, xóa, gửi email, mua credit hoặc đổi quyền riêng tư. Với hành động gây tác động bên ngoài, hãy nói rằng người dùng phải xác nhận trong công cụ tương ứng. Tác vụ: ${actionType}.`;
   if (moduleId === "image-text") return `Bạn là art director thumbnail. Phân tích đúng từng ô ảnh đã đánh số, tạo chữ ngắn tự nhiên theo yêu cầu, không nhầm thứ tự, không bịa người hoặc địa điểm và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
   if (moduleId === "youtube-batch") return `Bạn là biên tập viên YouTube cho upload hàng loạt. Chỉ suy luận từ filename, sidecar và ngữ cảnh; không bịa người, sự kiện, số liệu hay xu hướng, không tạo metadata spam lặp và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
@@ -1152,6 +1162,27 @@ function systemInstruction(moduleId, actionType) {
 }
 
 function promptFor(moduleId, actionType, input, meta = {}) {
+  if (moduleId === "fortune" && actionType === "fortune-deep-analysis") {
+    const depth = clean(meta.depth, 20) === "expert" ? "chuyên sâu tối đa" : "chi tiết, dễ hiểu";
+    const requested = Array.isArray(meta.sections) ? meta.sections.map((item) => clean(item, 60)).filter(Boolean).slice(0, 8) : [];
+    return [
+      `Hãy tạo một bản phân tích ${depth} từ đúng dữ liệu dưới đây.`,
+      requested.length ? `Các phần người dùng chọn: ${requested.join(", ")}.` : "Bao gồm tóm tắt, giải thích, câu hỏi suy ngẫm, hành động nhỏ và kiểm tra an toàn.",
+      "Cấu trúc bắt buộc:",
+      "1. Tóm tắt trung lập (nói rõ loại hệ thống và dữ liệu nào thực sự có).",
+      "2. Giải thích từng thành phần theo đúng thứ tự dữ liệu.",
+      "3. Liên kết giữa các thành phần: điểm lặp, bổ trợ và mâu thuẫn.",
+      "4. Ít nhất hai cách diễn giải hợp lý nếu dữ liệu cho phép; không chọn một cách như sự thật.",
+      "5. Điều dữ liệu không thể kết luận và những giả định cần kiểm chứng.",
+      "6. Câu hỏi tự suy ngẫm gắn với tình huống thực tế.",
+      "7. Ba hành động nhỏ, an toàn, cụ thể, có thể đảo ngược và thời điểm xem lại.",
+      "8. Cảnh báo câu chữ tuyệt đối/gây sợ nếu đầu vào có; viết lại theo cách an toàn.",
+      "9. Giới hạn phương pháp và nhãn 'Nội dung do AI tạo'.",
+      "Không lặp ý để kéo dài. Không suy đoán dữ liệu cá nhân không có trong đầu vào.",
+      "\nDỮ LIỆU NGƯỜI DÙNG ĐÃ CHỌN\n",
+      clean(input, 12000)
+    ].join("\n");
+  }
   if (actionType === "youtube-batch-metadata") return `Tạo metadata riêng cho từng video. Tiêu đề tối đa 100 ký tự; mô tả trung thực; tối đa 15 tags; chữ thumbnail 2–7 từ. Không lặp title và không bịa người, sự kiện, số liệu hay xu hướng.\n\n${input || ""}\n\nDANH SÁCH\n${JSON.stringify((Array.isArray(meta.items) ? meta.items : []).slice(0, 10), null, 2)}`;
   if (["image-text-batch", "image-text-youtube-batch"].includes(actionType)) {
     const context = typeof meta.context === "string" ? clean(meta.context, 12000) : "";
@@ -1266,7 +1297,8 @@ async function runInteractionsGemini({
   thinkingLevel,
   useGoogleSearch,
   useUrlContext,
-  structuredSchema
+  structuredSchema,
+  maxOutputTokens = 4096
 }) {
   const useStructuredOutput = Boolean(structuredSchema);
   const payload = {
@@ -1275,7 +1307,7 @@ async function runInteractionsGemini({
     system_instruction: instruction,
     generation_config: {
       ...(!["gemini-3.6-flash", "gemini-3.5-flash-lite"].includes(model) ? { temperature } : {}),
-      max_output_tokens: useStructuredOutput ? 8192 : 4096,
+      max_output_tokens: useStructuredOutput ? 8192 : Math.max(1024, Math.min(8192, Number(maxOutputTokens) || 4096)),
       thinking_level: thinkingLevel
     },
     tools: [
@@ -1304,6 +1336,7 @@ async function runInteractionsGemini({
     const error = new Error(clean(data?.error?.message || `Interactions API lỗi HTTP ${response.status}.`, 300));
     error.code = "GEMINI_INTERACTIONS_ERROR";
     error.status = response.status;
+    error.retryAfterMs = retryAfterMs(response);
     throw error;
   }
   const output = interactionText(data);
@@ -1319,9 +1352,19 @@ async function runInteractionsGemini({
   };
 }
 
-function retryDelay(attempt, status) {
+function retryDelay(attempt, status, retryAfterMs = 0) {
   if (status !== 408 && status !== 429 && status < 500) return 0;
-  return Math.min(2200, (320 * (2 ** attempt)) + Math.floor(Math.random() * 220));
+  const exponential = (320 * (2 ** attempt)) + Math.floor(Math.random() * 220);
+  return Math.min(5000, Math.max(Number(retryAfterMs) || 0, exponential));
+}
+
+function retryAfterMs(response) {
+  const raw = response?.headers?.get?.("retry-after");
+  if (!raw) return 0;
+  const seconds = Number(raw);
+  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+  const date = Date.parse(raw);
+  return Number.isFinite(date) ? Math.max(0, date - Date.now()) : 0;
 }
 
 async function wait(ms) {
@@ -1340,7 +1383,8 @@ async function runGeminiWithKey({
   useGoogleSearch,
   useUrlContext,
   structuredSchema,
-  canUseInteractions
+  canUseInteractions,
+  maxOutputTokens = 2048
 }) {
   const useStructuredOutput = Boolean(structuredSchema);
   const payload = {
@@ -1349,7 +1393,7 @@ async function runGeminiWithKey({
     generationConfig: {
       ...(!["gemini-3.6-flash", "gemini-3.5-flash-lite"].includes(model) ? { temperature } : {}),
       ...(model.startsWith("gemini-3") ? { thinkingConfig: { thinkingLevel } } : {}),
-      maxOutputTokens: useStructuredOutput ? 8192 : 2048,
+      maxOutputTokens: useStructuredOutput ? 8192 : Math.max(1024, Math.min(8192, Number(maxOutputTokens) || 2048)),
       ...(useStructuredOutput
         ? { responseMimeType: "application/json", responseSchema: geminiSchema(structuredSchema) }
         : {})
@@ -1379,7 +1423,8 @@ async function runGeminiWithKey({
           thinkingLevel,
           useGoogleSearch,
           useUrlContext,
-          structuredSchema
+          structuredSchema,
+          maxOutputTokens
         });
       } catch (interactionError) {
         const error = new Error(clean(`${providerMessage} Interactions: ${interactionError.message}`, 300));
@@ -1391,6 +1436,7 @@ async function runGeminiWithKey({
     const error = new Error(providerMessage);
     error.code = "GEMINI_PROVIDER_ERROR";
     error.status = response.status;
+    error.retryAfterMs = retryAfterMs(response);
     throw error;
   }
   const output = generatedText(data);
@@ -1404,7 +1450,8 @@ async function runGeminiWithKey({
       thinkingLevel,
       useGoogleSearch,
       useUrlContext,
-      structuredSchema
+      structuredSchema,
+      maxOutputTokens
     });
   }
   if (!output) {
@@ -1431,6 +1478,10 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
   const model = allowedModels.has(requestedModel)
     ? requestedModel
     : (allowedModels.has(process.env.GEMINI_MODEL) ? process.env.GEMINI_MODEL : "gemini-3.5-flash");
+  const modelCandidates = [...new Set([
+    model,
+    ...(meta.allowModelFallback === false || model === "gemini-3.5-flash-lite" ? [] : ["gemini-3.5-flash-lite"])
+  ])].filter((candidate) => allowedModels.has(candidate));
   const useGoogleSearch = Boolean(meta.useGoogleSearch) || ["research", "url-research"].includes(actionType);
   const useUrlContext = actionType === "url-research";
   const structuredSchema = schemaForAction(actionType);
@@ -1440,6 +1491,7 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
     : 0.72;
   const requestedThinking = clean(meta.thinkingLevel || meta.thinking, 20).toLowerCase();
   const thinkingLevel = ["minimal", "low", "medium", "high"].includes(requestedThinking) ? requestedThinking : "medium";
+  const maxOutputTokens = moduleId === "fortune" ? 4096 : 2048;
   const prompt = promptFor(moduleId, actionType, input, meta);
   const customInstruction = clean(meta.systemPrompt, 2000);
   const instruction = [systemInstruction(moduleId, actionType), customInstruction].filter(Boolean).join("\n\n");
@@ -1467,30 +1519,41 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
   let lastError = null;
   for (let attempt = 0; attempt < candidates.length; attempt += 1) {
     const apiKey = candidates[attempt];
-    try {
-      const result = await runGeminiWithKey({
-        apiKey,
-        model,
-        prompt,
-        instruction,
-        contents,
-        temperature,
-        thinkingLevel,
-        tools,
-        useGoogleSearch,
-        useUrlContext,
-        structuredSchema,
-        canUseInteractions: attachments.length === 0 && history.length === 0
-      });
-      pool.reportSuccess(apiKey);
-      return { ...result, keyAttempts: attempt + 1, keyPoolSize: pool.keys.length };
-    } catch (error) {
-      lastError = error;
-      const status = Number(error.status || 0);
-      pool.reportFailure(apiKey, status, error.message);
-      if (!canTryAnotherKey(status, error.message) || attempt === candidates.length - 1 || Date.now() - startedAt > 25000) break;
-      await wait(retryDelay(attempt, status));
+    for (let modelAttempt = 0; modelAttempt < modelCandidates.length; modelAttempt += 1) {
+      const activeModel = modelCandidates[modelAttempt];
+      try {
+        const result = await runGeminiWithKey({
+          apiKey,
+          model: activeModel,
+          prompt,
+          instruction,
+          contents,
+          temperature,
+          thinkingLevel: activeModel.includes("lite") && thinkingLevel === "high" ? "medium" : thinkingLevel,
+          tools,
+          useGoogleSearch,
+          useUrlContext,
+          structuredSchema,
+          canUseInteractions: attachments.length === 0 && history.length === 0,
+          maxOutputTokens
+        });
+        pool.reportSuccess(apiKey);
+        return { ...result, requestedModel: model, fallbackUsed: activeModel !== model, keyAttempts: attempt + 1, keyPoolSize: pool.keys.length };
+      } catch (error) {
+        lastError = error;
+        const status = Number(error.status || 0);
+        const canFallbackModel = modelAttempt < modelCandidates.length - 1 && [400, 404, 408, 429, 500, 502, 503, 504].includes(status);
+        if (canFallbackModel && Date.now() - startedAt <= 25000) {
+          await wait(retryDelay(modelAttempt, status, error.retryAfterMs));
+          continue;
+        }
+        pool.reportFailure(apiKey, status, error.message);
+        break;
+      }
     }
+    const status = Number(lastError?.status || 0);
+    if (!canTryAnotherKey(status, lastError?.message) || attempt === candidates.length - 1 || Date.now() - startedAt > 25000) break;
+    await wait(retryDelay(attempt, status, lastError?.retryAfterMs));
   }
   throw lastError || new Error("Gemini provider is unavailable.");
 }
@@ -1577,6 +1640,21 @@ module.exports = async function handler(req, res) {
     const moduleId = clean(req.query.moduleId, 120);
     const collection = db.collection("moduleActions");
     const user = await currentUser(req);
+    if (moduleId === "fortune" && req.query.fortuneVault === "1") {
+      if (!user?._id) return res.status(401).json({ error: "Bạn cần đăng nhập để đồng bộ kho nhật ký mã hóa.", code: "AUTH_REQUIRED" });
+      await enforceRateLimit(db, `fortune-vault:${user._id}`, 20, 10 * 60 * 1000);
+      const vaults = db.collection("fortuneVaults");
+      if (req.method === "GET") {
+        const record = await vaults.findOne({ userId: user._id }, { projection: { _id: 0, vault: 1, updatedAt: 1 } });
+        return res.status(200).json({ ok: true, configured: Boolean(record?.vault), vault: record?.vault || null, updatedAt: record?.updatedAt || null });
+      }
+      if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+      const source = body.vault && typeof body.vault === "object" ? body.vault : {};
+      const vault = { version: 1, salt: clean(source.salt, 200), iv: clean(source.iv, 200), ciphertext: clean(source.ciphertext, 700000) };
+      if (!vault.salt || !vault.iv || vault.ciphertext.length < 16) return res.status(400).json({ error: "Kho mã hóa không hợp lệ.", code: "INVALID_VAULT" });
+      await vaults.updateOne({ userId: user._id }, { $set: { userId: user._id, vault, updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } }, { upsert: true });
+      return res.status(200).json({ ok: true, encryptedOnly: true, updatedAt: new Date().toISOString() });
+    }
     if (moduleId === "hikari-assistant" && !user?._id) return res.status(401).json({ error: "Bạn cần đăng nhập để dùng AI hoặc Cloud TTS.", code: "AUTH_REQUIRED" });
     if (moduleId === "hikari-assistant" && req.query.assistantTts === "1") {
       if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -1751,12 +1829,13 @@ module.exports = async function handler(req, res) {
       if (result.provider) provider = result.provider;
     }
 
+    const privateFortuneAction = moduleId === "fortune" && actionType === "fortune-deep-analysis";
     const doc = {
       moduleId,
       actionType,
-      input,
-      output: result.output,
-      structured: result.structured || null,
+      input: privateFortuneAction ? `[redacted:${input.length}]` : input,
+      output: privateFortuneAction ? "[redacted]" : result.output,
+      structured: privateFortuneAction ? null : (result.structured || null),
       provider,
       providerError: providerErrors.join(" | "),
       model: result.model || "hh-local",
@@ -1767,6 +1846,8 @@ module.exports = async function handler(req, res) {
       providerApi: result.providerApi || (provider === "local" ? "local" : ""),
       keyAttempts: Number(result.keyAttempts || 0),
       keyPoolSize: Number(result.keyPoolSize || 0),
+      requestedModel: clean(result.requestedModel, 100),
+      fallbackUsed: Boolean(result.fallbackUsed),
       meta: storedMeta(meta),
       ...ownerFrom(user, body),
       createdAt: new Date()
@@ -1780,6 +1861,13 @@ module.exports = async function handler(req, res) {
       actionId: insert.insertedId,
       createdAt: new Date()
     });
-    return res.status(200).json({ ok: true, action: { ...doc, _id: insert.insertedId } });
+    return res.status(200).json({
+      ok: true,
+      action: {
+        ...doc,
+        ...(privateFortuneAction ? { input: "[not-stored]", output: result.output, structured: result.structured || null } : {}),
+        _id: insert.insertedId
+      }
+    });
   });
 };

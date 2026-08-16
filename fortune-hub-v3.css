@@ -1,0 +1,33 @@
+/* Fortune Hub V3 advanced interactions */
+.fortune-journal-security{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.45fr) auto;align-items:end;gap:12px;margin-bottom:13px;padding:15px;border:1px solid rgba(108,232,237,.16);border-radius:17px;background:linear-gradient(135deg,rgba(28,45,65,.68),rgba(44,24,66,.65))}
+.fortune-journal-security>div{display:grid;gap:4px}.fortune-journal-security>div span{color:var(--fortune-cyan);font-size:8px;font-weight:900;letter-spacing:.15em}.fortune-journal-security>div small{color:#8f879f;font-size:8px}.fortune-journal-security label{display:grid;gap:5px;color:#a89fb8;font-size:9px}.fortune-journal-security input{min-height:39px;border:1px solid var(--fortune-line);border-radius:10px;background:#0b0a18;color:#fff;padding:8px 10px}.fortune-journal-security button{min-height:39px;padding:8px 12px;border:1px solid var(--fortune-line);border-radius:10px;background:rgba(255,255,255,.045)}
+.fortune-vault-sync{grid-column:1/-1;display:grid!important;grid-template-columns:auto auto minmax(0,1fr);align-items:center;gap:7px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)}.fortune-vault-sync small{color:#80798f!important;font-size:8px!important;line-height:1.45}
+.fortune-journal>div{min-width:0}.fortune-journal-moods{display:grid!important;grid-template-columns:repeat(2,1fr)!important;align-items:center!important;gap:10px!important;margin-top:10px}.fortune-journal-moods label{display:grid;gap:5px;color:#958ca5;font-size:9px}.fortune-journal-moods input{accent-color:var(--fortune-cyan)}.fortune-journal-analytics{margin-top:12px;padding:14px;border:1px solid var(--fortune-line);border-radius:16px;background:rgba(255,255,255,.025)}.fortune-journal-analytics header{display:grid;gap:4px}.fortune-journal-analytics header span{color:#9e8fc4;font-size:8px;letter-spacing:.13em}.fortune-journal-analytics header strong{font-size:12px}
+.fortune-mood-chart{display:grid;grid-template-columns:repeat(14,minmax(8px,1fr));align-items:end;gap:4px;height:120px;margin-top:12px;padding-top:9px;border-bottom:1px solid rgba(255,255,255,.1)}.fortune-mood-chart>span{position:relative;display:flex;align-items:end;justify-content:center;gap:2px;height:100%}.fortune-mood-chart i,.fortune-mood-chart b{display:block;width:4px;border-radius:99px 99px 0 0}.fortune-mood-chart i{height:calc(var(--before) * 17%);background:#a176ff}.fortune-mood-chart b{height:calc(var(--after) * 17%);background:#60e1e6}.fortune-mood-chart small{position:absolute;bottom:-15px;color:#716a7e;font-size:6px}.fortune-mood-legend{display:flex;gap:12px;margin-top:19px;color:#8d849b;font-size:8px}.fortune-mood-legend span{display:flex;align-items:center;gap:4px}.fortune-mood-legend i,.fortune-mood-legend b{display:block;width:8px;height:8px;border-radius:2px;background:#a176ff}.fortune-mood-legend b{background:#60e1e6}.fortune-journal-mood-empty{margin-top:12px;padding:20px;border:1px dashed var(--fortune-line);border-radius:12px;color:#81798d;font-size:9px;text-align:center}
+.fortune-journal-tools{display:grid;grid-template-columns:minmax(0,1fr) 140px repeat(3,auto);gap:6px;margin-bottom:10px}.fortune-journal-tools input,.fortune-journal-tools select,.fortune-journal-tools button{min-width:0;min-height:39px;border:1px solid var(--fortune-line);border-radius:10px;background:#0d0a1d;color:#fff;padding:8px 9px;font-size:9px}.fortune-journal-list article[hidden]{display:none}.fortune-journal-list article footer{display:flex;justify-content:space-between;gap:8px;margin-top:10px;color:#8b8299;font-size:8px}.fortune-journal [data-fortune-journal-empty]{color:#8f879d;text-align:center}
+.fortune-planet-inspector{margin:9px 0;padding:12px;border:1px solid rgba(108,232,237,.15);border-radius:13px;background:rgba(108,232,237,.04)}.fortune-planet-inspector header{display:flex;align-items:center;gap:9px}.fortune-planet-inspector header i{display:grid;width:34px;height:34px;place-items:center;border-radius:11px;background:rgba(169,131,255,.16);font-size:19px;font-style:normal}.fortune-planet-inspector header div{display:grid;gap:3px}.fortune-planet-inspector header small{color:var(--fortune-cyan);font-size:7px;letter-spacing:.13em}.fortune-planet-inspector p{margin:8px 0;color:#b9b1c7;font-size:9px;line-height:1.55}.fortune-planet-inspector>small{color:#8f879e;font-size:8px;line-height:1.45}
+.fortune-tarot-card{animation:fortuneCardReveal .56s cubic-bezier(.2,.8,.2,1) both;transform-origin:center bottom}.fortune-tarot-card:nth-child(2){animation-delay:.06s}.fortune-tarot-card:nth-child(3){animation-delay:.12s}.fortune-tarot-card:nth-child(4){animation-delay:.18s}.fortune-tarot-card:nth-child(n+5){animation-delay:.24s}.fortune-tarot-card.is-dragging{opacity:.4;transform:scale(.96)}
+@keyframes fortuneCardReveal{from{opacity:0;transform:perspective(900px) rotateY(76deg) translateY(18px)}to{opacity:1;transform:perspective(900px) rotateY(0) translateY(0)}}
+.fortune-undo{position:fixed;left:50%;bottom:22px;z-index:1300;transform:translateX(-50%);min-height:42px;padding:9px 15px;border:1px solid rgba(108,232,237,.32);border-radius:12px;background:#152b38;color:#e8ffff;box-shadow:0 14px 40px rgba(0,0,0,.35);font-size:10px;font-weight:800}
+@media(max-width:720px){.fortune-journal-security{grid-template-columns:1fr}.fortune-vault-sync{grid-template-columns:1fr}.fortune-journal-tools{grid-template-columns:1fr 1fr}.fortune-journal-tools input{grid-column:1/-1}}
+@media(max-width:430px){.fortune-journal-tools{grid-template-columns:1fr}.fortune-journal-tools input{grid-column:auto}}
+@media(prefers-reduced-motion:reduce){.fortune-tarot-card{animation:none!important}}
+
+/* Fortune Hub V3 · calmer hierarchy and touch-friendly controls */
+.fortune-view>*{width:min(100%,1180px);margin-inline:auto}
+.fortune-calc-card,.fortune-method-card,.fortune-journal form,.fortune-journal-list article{box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
+.fortune-view :is(button,select,textarea,input:not([type="checkbox"]):not([type="radio"]):not([type="range"])){min-height:40px}
+.fortune-view-head{padding-bottom:2px}
+.fortune-view-head p{max-width:820px}
+
+@media(max-width:820px){
+  .fortune-mobile-head{position:sticky;top:0;z-index:8;backdrop-filter:blur(18px)}
+  .fortune-view :is(button,select,input:not([type="checkbox"]):not([type="radio"]):not([type="range"])){min-height:44px}
+  .fortune-view-head p{font-size:12px;line-height:1.65}
+}
+
+@media(max-width:430px){
+  .fortune-view-head h2{font-size:clamp(27px,9vw,34px)}
+  .fortune-view-head>button{width:100%}
+  .fortune-disclaimer{gap:8px;padding-inline:12px}
+}

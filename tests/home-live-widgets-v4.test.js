@@ -13,14 +13,22 @@ const worker = read("sw.js");
 const health = read("api/platform/summary.js");
 
 test("Living Desktop Galaxy V4 assets and one-screen hosts are wired", () => {
-  assert.match(loader, /home-live-widgets\.css\?v=11/);
-  assert.match(loader, /home-live-widgets\.js\?v=6/);
-  assert.match(worker, /home-live-widgets\.css\?v=11/);
-  assert.match(worker, /home-live-widgets\.js\?v=6/);
+  assert.match(loader, /home-live-widgets\.css\?v=12/);
+  assert.match(loader, /home-live-widgets\.js\?v=7/);
+  assert.match(worker, /home-live-widgets\.css\?v=12/);
+  assert.match(worker, /home-live-widgets\.js\?v=7/);
   assert.match(galaxy, /data-hlw-host/);
   assert.match(galaxy, /data-hlw-event-bar/);
   assert.match(galaxy, /LIVING DESKTOP GALAXY V4/);
   assert.match(styles, /grid-template-rows:\s*auto minmax\(0, 1fr\) 28px auto/);
+});
+
+test("Widget Rack offers a truthful local Moon phase shortcut to Fortune Hub", () => {
+  assert.match(source, /id: "moon"/);
+  assert.match(source, /29\.530588853/);
+  assert.match(source, /không gán ngày tốt\/xấu/i);
+  assert.match(source, /data-hlw-route="\/fortune\/moon"/);
+  assert.match(styles, /\.hlw-moon/);
 });
 
 test("latency monitor uses truthful HTTP API and WebSocket measurements", () => {
