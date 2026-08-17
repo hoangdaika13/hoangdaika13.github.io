@@ -1164,9 +1164,19 @@ function systemInstruction(moduleId, actionType) {
 function promptFor(moduleId, actionType, input, meta = {}) {
   if (moduleId === "fortune" && actionType === "fortune-deep-analysis") {
     const depth = clean(meta.depth, 20) === "expert" ? "chuyên sâu tối đa" : "chi tiết, dễ hiểu";
+    const modes = {
+      easy: "giải thích dễ hiểu, dùng câu ngắn và định nghĩa thuật ngữ",
+      deep: "phân tích chuyên sâu nhưng không kéo dài bằng ý lặp",
+      compare: "so sánh hai phương pháp và giữ riêng công thức của từng hệ",
+      consensus: "tìm điểm đồng thuận, khác biệt và mâu thuẫn mà không ép chúng thành một kết luận",
+      journal: "chuyển dữ liệu thành câu hỏi nhật ký trung lập, không đưa dự báo",
+      action: "chuyển phần hữu ích thành các hành động nhỏ, an toàn, có thể đảo ngược",
+      audit: "kiểm tra câu tuyệt đối, gây sợ và dữ kiện không có trong đầu vào"
+    };
+    const mode = modes[clean(meta.mode, 24)] || modes.easy;
     const requested = Array.isArray(meta.sections) ? meta.sections.map((item) => clean(item, 60)).filter(Boolean).slice(0, 8) : [];
     return [
-      `Hãy tạo một bản phân tích ${depth} từ đúng dữ liệu dưới đây.`,
+      `Hãy tạo một bản phân tích ${depth} từ đúng dữ liệu dưới đây. Chế độ: ${mode}.`,
       requested.length ? `Các phần người dùng chọn: ${requested.join(", ")}.` : "Bao gồm tóm tắt, giải thích, câu hỏi suy ngẫm, hành động nhỏ và kiểm tra an toàn.",
       "Cấu trúc bắt buộc:",
       "1. Tóm tắt trung lập (nói rõ loại hệ thống và dữ liệu nào thực sự có).",
@@ -1178,6 +1188,7 @@ function promptFor(moduleId, actionType, input, meta = {}) {
       "7. Ba hành động nhỏ, an toàn, cụ thể, có thể đảo ngược và thời điểm xem lại.",
       "8. Cảnh báo câu chữ tuyệt đối/gây sợ nếu đầu vào có; viết lại theo cách an toàn.",
       "9. Giới hạn phương pháp và nhãn 'Nội dung do AI tạo'.",
+      "Trước khi trả lời, lập kiểm tra nội bộ: mọi tên lá, vị trí hành tinh, hào, quẻ, con số và timestamp nhắc lại đều phải xuất hiện nguyên văn trong đầu vào. Nếu không có, ghi 'không có dữ liệu' thay vì suy đoán.",
       "Không lặp ý để kéo dài. Không suy đoán dữ liệu cá nhân không có trong đầu vào.",
       "\nDỮ LIỆU NGƯỜI DÙNG ĐÃ CHỌN\n",
       clean(input, 12000)

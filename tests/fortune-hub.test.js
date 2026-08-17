@@ -169,7 +169,7 @@ test("module includes working controls, privacy language and lifecycle", () => {
   assert.equal(typeof fortune.mount, "function");
   assert.equal(typeof fortune.unmount, "function");
   assert.match(source, /getWesternZodiac\(Number\(match\[1\]\), Number\(match\[2\]\)\)/);
-  assert.deepEqual(fortune.inspect(), { version: "3.0.0", mounted: false, view: "today", ownerId: null, historyCount: 0, journalCount: 0 });
+  assert.deepEqual(fortune.inspect(), { version: "4.0.0", mounted: false, view: "today", ownerId: null, historyCount: 0, journalCount: 0 });
 });
 
 test("fortune route is lazy loaded, searchable and represented as a major planet", () => {
@@ -181,16 +181,19 @@ test("fortune route is lazy loaded, searchable and represented as a major planet
   assert.match(client, /id: "fortune"[\s\S]*?route: "\/fortune"/);
   assert.match(client, /window\.HHFortuneHub\?\.mount/);
   assert.match(client, /title: "Xem bói"[\s\S]*?key: "xem bói tarot/);
-  assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-hub\.js\?v=8/);
+  assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?fortune-hub-v4\.css\?v=1[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-suite-v4\.js\?v=1[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-astrology-v4\.js\?v=1[\s\S]*?fortune-hub\.js\?v=9/);
   assert.match(loader, /value\.startsWith\("\/fortune"\)/);
   assert.match(html, /data-hh-galaxy-key="fortune"/);
   assert.match(html, /25 LĨNH VỰC/);
   assert.match(galaxy, /fortune:\s*\{[\s\S]*?route: "#\/fortune"/);
   assert.match(worker, /fortune-hub\.css\?v=3/);
+  assert.match(worker, /fortune-hub-v4\.css\?v=1/);
   assert.match(worker, /fortune-iching-64\.js\?v=1/);
+  assert.match(worker, /fortune-suite-v4\.js\?v=1/);
   assert.match(worker, /fortune-astrology\.js\?v=1/);
+  assert.match(worker, /fortune-astrology-v4\.js\?v=1/);
   assert.match(worker, /fortune-hub-v3\.css\?v=2/);
-  assert.match(worker, /fortune-hub\.js\?v=8/);
+  assert.match(worker, /fortune-hub\.js\?v=9/);
 });
 
 test("Gemini fortune route enforces opt-in, safety and server-side redaction", () => {
