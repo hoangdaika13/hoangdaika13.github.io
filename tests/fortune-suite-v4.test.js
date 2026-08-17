@@ -14,7 +14,7 @@ const profile = {
 };
 
 test("Fortune Suite V4 exposes a complete deterministic Tarot 78 deck", () => {
-  assert.equal(suite.VERSION, "4.1.0");
+  assert.equal(suite.VERSION, "5.0.0");
   assert.equal(suite.TAROT_78.length, 78);
   assert.equal(new Set(suite.TAROT_78.map((card) => card.id)).size, 78);
   assert.equal(suite.TAROT_78.filter((card) => card.arcana === "major").length, 22);
@@ -30,6 +30,78 @@ test("Fortune Suite V4 exposes a complete deterministic Tarot 78 deck", () => {
   assert.ok(suite.TAROT_78.some((card) => card.name === "Ace of Wands · Át Gậy"));
   assert.ok(suite.TAROT_78.some((card) => card.name === "King of Cups · Vua Cốc"));
   assert.deepEqual(first.provenance.labels, ["BIỂU TƯỢNG"]);
+});
+
+test("every mature engine emits a verifiable Fortune Result Contract", () => {
+  const results = [
+    suite.drawTarot78("contract-tarot", { count: 3 }),
+    suite.tarotQuiz("contract-academy", { mode: "symbol" }),
+    suite.castIChingAdvanced("contract-iching", { mode: "manual", manual: [6, 7, 8, 9, 7, 8] }, globalThis.HHFortuneIChing64),
+    suite.advancedNumerology("2003-08-13", "Nguyễn Hoàng", "pythagorean", "2026-08-17"),
+    suite.calculateSolarZodiac("2003-08-13", profile, Astronomy),
+    suite.calculateMoonSky("2026-08-17", profile, Astronomy),
+    suite.easternCalendar("2026-08-17", profile, Astronomy),
+    suite.drawSymbolDeck("lenormand", "contract-lenormand", 9)
+  ];
+  for (const result of results) {
+    const contract = result.resultContract;
+    assert.equal(contract.schema, "hh.fortune.result-contract.v2");
+    assert.match(contract.resultId, /^fortune-/);
+    assert.match(contract.inputDigest, /^[a-f0-9]{64}$/);
+    assert.match(contract.resultDigest, /^[a-f0-9]{64}$/);
+    assert.match(contract.sha256, /^[a-f0-9]{64}$/);
+    assert.equal(suite.verifyResultContract(contract).ok, true);
+    assert.equal("accuracy" in contract, false);
+    assert.ok(contract.qualityStatus.input);
+    assert.ok(Array.isArray(contract.sourceReferences));
+  }
+  const altered = { ...results[0].resultContract, seed: "changed-after-draw" };
+  assert.equal(suite.verifyResultContract(altered).ok, false);
+});
+
+test("method registry and interpretation packs expose versioned provenance", () => {
+  assert.ok(suite.METHOD_REGISTRY.length >= 10);
+  assert.equal(suite.methodDefinition("tarot-rws-78").version, "2.0.0");
+  assert.equal(suite.INTERPRETATION_PACKS["hh-rws-reflection"].language, "vi");
+  assert.match(suite.SOURCE_REFERENCES.jpl.url, /jpl\.nasa\.gov/);
+});
+
+test("solar zodiac uses real longitude and discloses all-day boundary uncertainty", () => {
+  const result = suite.calculateSolarZodiac("2026-03-20", { ...profile, time: "", birthTimeAccuracy: "unknown" }, Astronomy);
+  assert.equal(result.ok, true);
+  assert.ok(result.sign.longitude >= 0 && result.sign.longitude < 360);
+  assert.equal(result.knownTime, false);
+  assert.ok(result.dailyRange.from.longitude >= 0);
+  assert.match(result.distinction, /không đồng nhất với chòm sao/);
+});
+
+test("Chinese zodiac keeps Lunar New Year and Li Chun boundaries separate", () => {
+  const beforeNewYear = suite.calculateChineseZodiac("2026-02-16", profile, "lunar-new-year", Astronomy);
+  const afterNewYear = suite.calculateChineseZodiac("2026-02-17", profile, "lunar-new-year", Astronomy);
+  const lichun = suite.calculateChineseZodiac("2026-02-10", profile, "lichun", Astronomy);
+  assert.equal(beforeNewYear.cycleYear, 2025);
+  assert.equal(afterNewYear.cycleYear, 2026);
+  assert.equal(lichun.boundary, "lichun");
+  assert.match(lichun.formula, /315°/);
+});
+
+test("symbol decks preserve historical metadata and support complete Lenormand tableau", () => {
+  const tableau = suite.drawSymbolDeck("lenormand", "grand-tableau", 36);
+  assert.equal(tableau.cards.length, 36);
+  assert.equal(tableau.layout, "grand-tableau");
+  assert.ok(tableau.cards.every((card) => card.englishName && card.playingCard));
+  const runes = suite.drawSymbolDeck("runes", "rune-default", 24);
+  assert.ok(runes.cards.every((card) => card.transliteration && card.family && card.reversed === false));
+  const reversed = suite.drawSymbolDeck("runes", "rune-modern", 24, { allowReversed: true });
+  assert.equal(reversed.allowReversed, true);
+});
+
+test("Moon & Sky includes twilight, monthly phase timeline and local timestamps", () => {
+  const result = suite.calculateMoonSky("2026-08-17", profile, Astronomy);
+  assert.deepEqual(Object.keys(result.twilight), ["civil", "nautical", "astronomical"]);
+  assert.ok(result.phaseTimeline.length >= 3);
+  assert.equal(result.horizonModel.refraction, "normal");
+  assert.ok(result.localTimes.rise || result.noRiseInWindow);
 });
 
 test("all standard Rider-Waite-Smith card images exist with a verified rights manifest", () => {

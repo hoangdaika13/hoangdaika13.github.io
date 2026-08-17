@@ -168,8 +168,11 @@ test("module includes working controls, privacy language and lifecycle", () => {
   assert.match(source, /data-fortune-calendar-mode/);
   assert.equal(typeof fortune.mount, "function");
   assert.equal(typeof fortune.unmount, "function");
-  assert.match(source, /getWesternZodiac\(Number\(match\[1\]\), Number\(match\[2\]\)\)/);
-  assert.deepEqual(fortune.inspect(), { version: "5.0.0", mounted: false, view: "today", ownerId: null, historyCount: 0, journalCount: 0 });
+  assert.match(source, /calculateSolarZodiac/);
+  assert.match(source, /calculateChineseZodiac/);
+  assert.match(source, /data-fortune-contract-verify/);
+  assert.match(source, /FORTUNE RESULT CONTRACT/);
+  assert.deepEqual(fortune.inspect(), { version: "6.0.0", mounted: false, view: "today", ownerId: null, historyCount: 0, journalCount: 0 });
 });
 
 test("fortune route is lazy loaded, searchable and represented as a major planet", () => {
