@@ -172,7 +172,7 @@ test("module includes working controls, privacy language and lifecycle", () => {
   assert.match(source, /calculateChineseZodiac/);
   assert.match(source, /data-fortune-contract-verify/);
   assert.match(source, /FORTUNE RESULT CONTRACT/);
-  assert.deepEqual(fortune.inspect(), { version: "6.0.0", mounted: false, view: "today", ownerId: null, historyCount: 0, journalCount: 0 });
+  assert.deepEqual(fortune.inspect(), { version: "7.0.0", mounted: false, view: "today", ownerId: null, historyCount: 0, journalCount: 0 });
 });
 
 test("fortune route is lazy loaded, searchable and represented as a major planet", () => {
@@ -184,20 +184,20 @@ test("fortune route is lazy loaded, searchable and represented as a major planet
   assert.match(client, /id: "fortune"[\s\S]*?route: "\/fortune"/);
   assert.match(client, /window\.HHFortuneHub\?\.mount/);
   assert.match(client, /title: "Xem bói"[\s\S]*?key: "xem bói tarot/);
-  assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?fortune-hub-v4\.css\?v=3[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-accuracy-lab\.js\?v=1[\s\S]*?fortune-suite-v4\.js\?v=3[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-astrology-v4\.js\?v=2[\s\S]*?fortune-hub\.js\?v=11/);
+  assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?fortune-hub-v4\.css\?v=4[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-accuracy-lab\.js\?v=1[\s\S]*?fortune-suite-v4\.js\?v=3[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-astrology-v4\.js\?v=2[\s\S]*?fortune-hub\.js\?v=12/);
   assert.match(loader, /value\.startsWith\("\/fortune"\)/);
   assert.match(html, /data-hh-galaxy-key="fortune"/);
   assert.match(html, /25 LĨNH VỰC/);
   assert.match(galaxy, /fortune:\s*\{[\s\S]*?route: "#\/fortune"/);
   assert.match(worker, /fortune-hub\.css\?v=3/);
-  assert.match(worker, /fortune-hub-v4\.css\?v=3/);
+  assert.match(worker, /fortune-hub-v4\.css\?v=4/);
   assert.match(worker, /fortune-iching-64\.js\?v=1/);
   assert.match(worker, /fortune-accuracy-lab\.js\?v=1/);
   assert.match(worker, /fortune-suite-v4\.js\?v=3/);
   assert.match(worker, /fortune-astrology\.js\?v=1/);
   assert.match(worker, /fortune-astrology-v4\.js\?v=2/);
   assert.match(worker, /fortune-hub-v3\.css\?v=2/);
-  assert.match(worker, /fortune-hub\.js\?v=11/);
+  assert.match(worker, /fortune-hub\.js\?v=12/);
 });
 
 test("Gemini fortune route enforces opt-in, safety and server-side redaction", () => {
@@ -248,4 +248,56 @@ test("fortune layout supports keyboard focus, reduced motion and 375px screens",
   assert.match(css, /overflow-wrap: anywhere/);
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.doesNotMatch(css, /width:\s*100vw/);
+});
+
+test("Mystic Living Observatory exposes real themes, motion controls and world scenes", () => {
+  const client = read("fortune-hub.js");
+  const css = read("fortune-hub-v4.css");
+  for (const theme of ["cosmic-oracle", "eastern-temple", "moonlit-forest", "arcane-library", "crystal-dream", "blood-moon"]) {
+    assert.match(client, new RegExp(theme));
+    assert.match(css, new RegExp(theme));
+  }
+  assert.match(client, /fortune-mystic-scene/);
+  assert.match(client, /data-fortune-cosmos/);
+  assert.match(client, /data-fortune-motion/);
+  assert.match(client, /data-fortune-density/);
+  assert.match(client, /startViewTransition/);
+  assert.match(client, /visibilitychange/);
+  assert.match(client, /cancelAnimationFrame/);
+  assert.match(client, /prefers-reduced-motion: reduce/);
+  assert.match(css, /data-world="tarot"/);
+  assert.match(css, /data-world="iching"/);
+  assert.match(css, /data-world="astrology"/);
+  assert.match(css, /data-world="moon"/);
+  assert.match(css, /data-world="numerology"/);
+  assert.match(css, /data-world="runes"/);
+  assert.match(css, /data-world="eastern"/);
+  assert.match(css, /data-world="journal"/);
+  assert.match(css, /Mystic Galaxy motion layer V2/);
+  assert.match(css, /mysticAuroraOrbit/);
+  assert.match(css, /mysticPortalBreath/);
+  assert.match(css, /mysticStarDrift/);
+  for (const view of ["today", "profile", "session", "tarot", "academy", "symbols", "zodiac", "numerology", "iching", "moon", "sky", "chart", "eastern", "compatibility", "calendar", "journal", "copilot", "accuracy", "methods", "history"]) {
+    assert.match(css, new RegExp(`data-fortune-view="${view}"`));
+  }
+  assert.match(css, /Every Fortune tool owns a continuous symbolic motion/);
+  assert.match(css, /\.fortune-nav__item:after\{top:auto!important;bottom:3px/);
+  assert.match(css, /\.fortune-nav__item span\{font-size:14px/);
+  assert.match(css, /\.fortune-view-head p\{font-size:14px/);
+});
+
+test("Tarot cinematic flow conceals, reveals and verifies the result contract", () => {
+  const client = read("fortune-hub.js");
+  const css = read("fortune-hub-v4.css");
+  assert.match(client, /tarotRevealed:\s*new Set\(\)/);
+  assert.match(client, /data-fortune-card-reveal/);
+  assert.match(client, /data-fortune-reveal-all/);
+  assert.match(client, /fortune-contract-seal/);
+  assert.match(client, /is-verified/);
+  assert.match(client, /is-invalid/);
+  assert.match(css, /fortune-card-seal/);
+  assert.match(css, /is-concealed/);
+  assert.match(css, /is-revealed/);
+  assert.match(css, /mysticSealVerified/);
+  assert.match(css, /article:nth-child\(10\):last-child/);
 });

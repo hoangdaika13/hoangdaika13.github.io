@@ -250,8 +250,8 @@
       scripts: ["japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=8", "japanese-os-v3.js?v=2", "japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.js?v=7"]
     },
     fortune: {
-      styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=3"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=3", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-hub.js?v=11"]
+      styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=4"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=3", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-hub.js?v=12"]
     },
     "chat-ai": {
       styles: ["chat-ai-hub.css?v=5"],

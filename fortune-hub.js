@@ -7,7 +7,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createFortuneHub(globalScope) {
   "use strict";
 
-  const VERSION = "6.0.0";
+  const VERSION = "7.0.0";
   const STORAGE_SCHEMA = "hh.fortune.hub.v1";
   const MAX_HISTORY = 80;
   const MAX_JOURNAL = 120;
@@ -19,7 +19,22 @@
   const NUMBER_MEANINGS = Object.freeze({
     1: "khởi xướng và tự chủ", 2: "hợp tác và tinh tế", 3: "biểu đạt và sáng tạo", 4: "cấu trúc và bền bỉ", 5: "thay đổi và trải nghiệm", 6: "trách nhiệm và chăm sóc", 7: "chiêm nghiệm và phân tích", 8: "quản trị và kết quả", 9: "nhân văn và hoàn thiện", 11: "trực giác và truyền cảm hứng", 22: "tầm nhìn và năng lực kiến tạo", 33: "phục vụ và lòng trắc ẩn"
   });
-  const THEMES = Object.freeze(["galaxy", "eastern", "minimal", "mystic"]);
+  const THEMES = Object.freeze(["cosmic-oracle", "eastern-temple", "moonlit-forest", "arcane-library", "crystal-dream", "blood-moon"]);
+  const MOTION_LEVELS = Object.freeze(["static", "balanced", "cinematic"]);
+  const LEGACY_THEME_MAP = Object.freeze({ galaxy: "cosmic-oracle", eastern: "eastern-temple", minimal: "crystal-dream", mystic: "cosmic-oracle" });
+  const THEME_OPTIONS = Object.freeze([
+    ["cosmic-oracle", "Cosmic Oracle", "Tím · cyan · tinh vân"], ["eastern-temple", "Eastern Temple", "Đỏ son · vàng · mực tàu"],
+    ["moonlit-forest", "Moonlit Forest", "Rừng đêm · đom đóm"], ["arcane-library", "Arcane Library", "Sách cổ · nến · đồng"],
+    ["crystal-dream", "Crystal Dream", "Pha lê · pastel"], ["blood-moon", "Blood Moon", "Đỏ đen điện ảnh"]
+  ]);
+  const VIEW_VISUALS = Object.freeze({
+    today: ["✦", "Đại sảnh Huyền Giới", "observatory"], tarot: ["♢", "Tarot 78", "tarot"], academy: ["▣", "Tarot Academy", "tarot"],
+    iching: ["☯", "Kinh Dịch 64 quẻ", "iching"], chart: ["◎", "Astrology Studio", "astrology"], moon: ["☾", "Mặt Trăng", "moon"], sky: ["✺", "Moon & Sky", "moon"],
+    numerology: ["#", "Thần số học", "numerology"], symbols: ["ᚠ", "Lenormand · Rune", "runes"], eastern: ["☯", "Hệ phương Đông", "eastern"],
+    journal: ["✎", "Nhật ký", "journal"], calendar: ["▦", "Lịch chiêm nghiệm", "journal"], copilot: ["AI", "Reflection Copilot", "oracle"],
+    zodiac: ["☼", "Cung & con giáp", "astrology"], compatibility: ["∞", "Tương tác", "oracle"], profile: ["◉", "Hồ sơ phiên", "observatory"],
+    session: ["➜", "Phiên tổng hợp", "oracle"], accuracy: ["✓", "Accuracy Lab", "oracle"], methods: ["ⓘ", "Phương pháp", "library"], history: ["◷", "Lịch sử", "library"]
+  });
   const PROFILE_CITIES = Object.freeze({
     hanoi: { label: "Hà Nội", latitude: 21.0285, longitude: 105.8542, elevation: 12, timezone: 7, timezoneId: "Asia/Ho_Chi_Minh" },
     hochiminh: { label: "TP. Hồ Chí Minh", latitude: 10.8231, longitude: 106.6297, elevation: 19, timezone: 7, timezoneId: "Asia/Ho_Chi_Minh" },
@@ -462,10 +477,12 @@
       id: String(item.id), text: String(item.text).slice(0, 4000), tag: String(item.tag || "Suy ngẫm").slice(0, 40), createdAt: String(item.createdAt || ""), moodBefore: clamp(item.moodBefore, 1, 5, 3), moodAfter: clamp(item.moodAfter, 1, 5, 3), sessionType: String(item.sessionType || "manual").slice(0, 40)
     }));
     const profile = raw.profile?.remembered ? sanitizeProfile(raw.profile, true) : null;
+    const requestedTheme = LEGACY_THEME_MAP[raw.settings?.theme] || raw.settings?.theme;
     const settings = {
-      theme: THEMES.includes(raw.settings?.theme) ? raw.settings.theme : "galaxy",
+      theme: THEMES.includes(requestedTheme) ? requestedTheme : "cosmic-oracle",
       sound: Boolean(raw.settings?.sound), experience: raw.settings?.experience === "advanced" ? "advanced" : "beginner",
-      journalReminder: Boolean(raw.settings?.journalReminder)
+      journalReminder: Boolean(raw.settings?.journalReminder), motion: MOTION_LEVELS.includes(raw.settings?.motion) ? raw.settings.motion : "balanced",
+      particleDensity: clamp(raw.settings?.particleDensity, 0, 100, 62), glow: clamp(raw.settings?.glow, 0, 100, 72), glass: clamp(raw.settings?.glass, 20, 100, 72)
     };
     const vault = raw.journalVault && typeof raw.journalVault === "object" && raw.journalVault.ciphertext ? { version: 1, salt: String(raw.journalVault.salt || ""), iv: String(raw.journalVault.iv || ""), ciphertext: String(raw.journalVault.ciphertext || "") } : null;
     return { version: VERSION, view: VIEWS.has(raw.view) ? raw.view : "today", history, journal: vault ? [] : journal, journalVault: vault, profile, settings, favorites: [...new Set((Array.isArray(raw.favorites) ? raw.favorites : []).map(String))].slice(0, 80) };
@@ -585,7 +602,7 @@
     if (!contract) return "";
     const status = contract.qualityStatus || {}; const statuses = [["Đầu vào", status.input], ["Múi giờ", status.timezone], ["Phép tính", status.calculation], ["Diễn giải", status.interpretation]];
     const facts = (contract.calculatedFacts || []).slice(0, 12); const interpretations = (contract.symbolicInterpretations || []).slice(0, 8); const ai = (contract.aiGeneratedSections || []).slice(0, 6);
-    return `<section class="fortune-result-contract" data-fortune-result-contract><header><div><span>FORTUNE RESULT CONTRACT</span><h3>Ba lớp dữ liệu có thể kiểm chứng</h3></div><b>${escapeHtml(contract.methodId)} · v${escapeHtml(contract.methodVersion)}</b></header><div class="fortune-contract-status">${statuses.map(([label,item]) => `<div data-status="${escapeHtml(item?.id || "not-required")}"><span>${label}</span><strong>${escapeHtml(item?.label || "Không yêu cầu")}</strong></div>`).join("")}</div><div class="fortune-contract-layers"><article data-layer="calculation"><header><b>TÍNH TOÁN</b><span>${facts.length} fact</span></header>${facts.length ? `<dl>${facts.map((fact) => `<div><dt>${escapeHtml(fact.label)}</dt><dd>${escapeHtml(fact.value == null ? "—" : String(fact.value))}${fact.unit ? ` <small>${escapeHtml(fact.unit)}</small>` : ""}</dd></div>`).join("")}</dl>` : "<p>Phương pháp này không yêu cầu dữ kiện thiên văn.</p>"}</article><article data-layer="method"><header><b>TRƯỜNG PHÁI</b><span>${escapeHtml(contract.interpretationPack)}</span></header><dl><div><dt>Engine</dt><dd>${escapeHtml(contract.calculationEngine)} · ${escapeHtml(contract.engineVersion)}</dd></div><div><dt>Khung tham chiếu</dt><dd>${escapeHtml(contract.referenceFrame)}</dd></div><div><dt>Thời gian / lịch</dt><dd>${escapeHtml(contract.timeScale)} · ${escapeHtml(contract.calendarSystem)}</dd></div><div><dt>Ngẫu nhiên</dt><dd>${escapeHtml(contract.randomMethod)}</dd></div></dl>${interpretations.map((item) => `<p><strong>${escapeHtml(item.label)}</strong>${escapeHtml(item.text)}</p>`).join("")}</article><article data-layer="interpretation"><header><b>DIỄN GIẢI</b><span>${ai.length ? "Có AI, đã gắn nhãn" : "Không có AI"}</span></header>${ai.length ? ai.map((item) => `<p>${escapeHtml(typeof item === "string" ? item : item.text || item.label || "Nội dung AI")}</p>`).join("") : "<p>Không có nội dung AI trong kết quả này. Diễn giải biểu tượng không phải sự thật khách quan.</p>"}<ul>${(contract.limitations || []).slice(0, 8).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></article></div><details><summary>Nguồn, digest và chứng thư</summary><dl class="fortune-v4-contract"><div><dt>Result ID</dt><dd><code>${escapeHtml(contract.resultId)}</code></dd></div><div><dt>Input digest</dt><dd><code>${escapeHtml(contract.inputDigest)}</code></dd></div><div><dt>Result digest</dt><dd><code>${escapeHtml(contract.resultDigest)}</code></dd></div><div><dt>SHA-256</dt><dd><code>${escapeHtml(contract.sha256)}</code></dd></div><div><dt>Timezone / tzdb</dt><dd>${escapeHtml(contract.timezoneId || "Không yêu cầu")} · ${escapeHtml(contract.tzdbVersion)}</dd></div></dl><div class="fortune-contract-sources">${(contract.sourceReferences || []).map((source) => `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer"><b>${escapeHtml(source.title)}</b><span>${escapeHtml(source.role)}</span></a>`).join("")}</div></details><footer><button type="button" data-fortune-contract-verify>✓ Xác minh SHA-256</button><button type="button" data-fortune-contract-download>↓ Tải contract JSON</button></footer></section>`;
+    return `<section class="fortune-result-contract" data-fortune-result-contract><header><div><span>FORTUNE RESULT CONTRACT</span><h3>Cuộn Chứng Thư · ba lớp dữ liệu</h3></div><div class="fortune-contract-seal" title="Ấn chứng SHA-256"><i>✦</i><span>SHA-256</span></div><b>${escapeHtml(contract.methodId)} · v${escapeHtml(contract.methodVersion)}</b></header><div class="fortune-contract-status">${statuses.map(([label,item]) => `<div data-status="${escapeHtml(item?.id || "not-required")}"><span>${label}</span><strong>${escapeHtml(item?.label || "Không yêu cầu")}</strong></div>`).join("")}</div><div class="fortune-contract-layers"><article data-layer="calculation"><header><b>TÍNH TOÁN</b><span>${facts.length} fact</span></header>${facts.length ? `<dl>${facts.map((fact) => `<div><dt>${escapeHtml(fact.label)}</dt><dd>${escapeHtml(fact.value == null ? "—" : String(fact.value))}${fact.unit ? ` <small>${escapeHtml(fact.unit)}</small>` : ""}</dd></div>`).join("")}</dl>` : "<p>Phương pháp này không yêu cầu dữ kiện thiên văn.</p>"}</article><article data-layer="method"><header><b>TRƯỜNG PHÁI</b><span>${escapeHtml(contract.interpretationPack)}</span></header><dl><div><dt>Engine</dt><dd>${escapeHtml(contract.calculationEngine)} · ${escapeHtml(contract.engineVersion)}</dd></div><div><dt>Khung tham chiếu</dt><dd>${escapeHtml(contract.referenceFrame)}</dd></div><div><dt>Thời gian / lịch</dt><dd>${escapeHtml(contract.timeScale)} · ${escapeHtml(contract.calendarSystem)}</dd></div><div><dt>Ngẫu nhiên</dt><dd>${escapeHtml(contract.randomMethod)}</dd></div></dl>${interpretations.map((item) => `<p><strong>${escapeHtml(item.label)}</strong>${escapeHtml(item.text)}</p>`).join("")}</article><article data-layer="interpretation"><header><b>DIỄN GIẢI</b><span>${ai.length ? "Có AI, đã gắn nhãn" : "Không có AI"}</span></header>${ai.length ? ai.map((item) => `<p>${escapeHtml(typeof item === "string" ? item : item.text || item.label || "Nội dung AI")}</p>`).join("") : "<p>Không có nội dung AI trong kết quả này. Diễn giải biểu tượng không phải sự thật khách quan.</p>"}<ul>${(contract.limitations || []).slice(0, 8).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></article></div><details><summary>Nguồn, digest và chứng thư</summary><dl class="fortune-v4-contract"><div><dt>Result ID</dt><dd><code>${escapeHtml(contract.resultId)}</code></dd></div><div><dt>Input digest</dt><dd><code>${escapeHtml(contract.inputDigest)}</code></dd></div><div><dt>Result digest</dt><dd><code>${escapeHtml(contract.resultDigest)}</code></dd></div><div><dt>SHA-256</dt><dd><code>${escapeHtml(contract.sha256)}</code></dd></div><div><dt>Timezone / tzdb</dt><dd>${escapeHtml(contract.timezoneId || "Không yêu cầu")} · ${escapeHtml(contract.tzdbVersion)}</dd></div></dl><div class="fortune-contract-sources">${(contract.sourceReferences || []).map((source) => `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer"><b>${escapeHtml(source.title)}</b><span>${escapeHtml(source.role)}</span></a>`).join("")}</div></details><footer><button type="button" data-fortune-contract-verify>✦ Xác minh ấn chứng</button><button type="button" data-fortune-contract-download>↓ Mở phong ấn JSON</button></footer></section>`;
   }
   function explanationMarkup(runtime, title, layers) {
     const advanced = runtime.state.settings.experience === "advanced";
@@ -627,8 +644,8 @@
   }
 
   function tarotMarkup(runtime) {
-    const cards = runtime.session.tarot || [];
-    let results = cards.length ? `<div class="fortune-card-spread" data-fortune-result>${cards.map((card,index) => `<article class="fortune-tarot-card is-revealed${card.reversed ? " is-reversed" : ""}" style="--card-accent:${card.color}" draggable="true" data-fortune-card-index="${index}"><div class="fortune-tarot-face"><small><input type="text" maxlength="60" data-fortune-card-position="${index}" value="${escapeHtml(card.position)}" aria-label="Tên vị trí lá ${index+1}"></small>${card.image ? `<figure><img src="${escapeHtml(card.image)}" alt="${escapeHtml(card.name)}" width="360" height="617" loading="lazy" decoding="async"></figure>` : `<i aria-hidden="true">${card.symbol}</i>`}<h3>${escapeHtml(card.name)}</h3><span>${card.reversed ? "Lá đảo · Reversed" : "Lá xuôi · Upright"}</span></div><div class="fortune-tarot-reading"><p>${escapeHtml(card.interpretation)}</p><strong>Câu hỏi mở</strong><p>${escapeHtml(card.question)}</p>${card.symbols?.length ? `<details class="fortune-symbol-atlas"><summary>Giải thích chi tiết trên hình</summary>${card.symbols.map((symbol) => `<button type="button" data-fortune-copy="${escapeHtml(symbol)}"><b>◎</b><span>${escapeHtml(symbol)}</span></button>`).join("")}</details>` : ""}<textarea rows="2" maxlength="500" data-fortune-card-note="${index}" placeholder="Ghi chú riêng cho lá này...">${escapeHtml(card.note||"")}</textarea><footer><button type="button" data-fortune-card-pin="${index}">${card.pinned?"★ Đã ghim":"☆ Ghim"}</button><button type="button" data-fortune-card-move="${index}:-1" aria-label="Đưa lá sang trái">←</button><button type="button" data-fortune-card-move="${index}:1" aria-label="Đưa lá sang phải">→</button></footer></div></article>`).join("")}</div>${runtime.session.tarotPrevious?.length?`<details class="fortune-tarot-compare"><summary>So sánh với lần trải trước</summary><div>${runtime.session.tarotPrevious.map((card,index)=>`<span><b>${index+1}</b>${escapeHtml(card.name)} · ${escapeHtml(card.position)}</span>`).join("")}</div></details>`:""}<div class="fortune-result-actions"><label>Tỷ lệ ảnh<select data-fortune-export-ratio><option value="1:1">1:1</option><option value="9:16">9:16</option><option value="16:9">16:9</option></select></label><button type="button" data-fortune-export="txt">Tải TXT</button><button type="button" data-fortune-export="json">Tải JSON</button><button type="button" data-fortune-export="png">Tải PNG</button><button type="button" data-fortune-copy-result>Sao chép</button><button type="button" data-fortune-share>Chia sẻ</button></div><p class="fortune-tarot-rights">Hình Rider–Waite–Smith 1909 · Pamela Colman Smith · Public Domain Mark 1.0 · nguồn Wikimedia Commons. Diễn giải tiếng Việt do HH biên soạn.</p>` : `<div class="fortune-empty"><i>♢</i><strong>Chưa có lá bài nào được rút</strong><p>Chọn kiểu trải bài rồi bấm “Rút bài”. Mỗi lần bấm dùng một seed mới và có thể tái tạo từ seed hiển thị.</p></div>`;
+    const cards = runtime.session.tarot || []; const revealed = runtime.session.tarotRevealed instanceof Set ? runtime.session.tarotRevealed : new Set();
+    let results = cards.length ? `<div class="fortune-card-spread" data-fortune-result>${cards.map((card,index) => `<article class="fortune-tarot-card ${revealed.has(index) ? "is-revealed" : "is-concealed"}${card.reversed ? " is-reversed" : ""}" style="--card-accent:${card.color};--card-order:${index}" draggable="${revealed.has(index) ? "true" : "false"}" data-fortune-card-index="${index}"><button class="fortune-card-seal" type="button" data-fortune-card-reveal="${index}" aria-label="Lật lá ${index + 1}"><span>✦</span><b>CHẠM ĐỂ LẬT</b><small>${escapeHtml(card.position)}</small></button><div class="fortune-tarot-face"><small><input type="text" maxlength="60" data-fortune-card-position="${index}" value="${escapeHtml(card.position)}" aria-label="Tên vị trí lá ${index+1}"></small>${card.image ? `<figure><img src="${escapeHtml(card.image)}" alt="${escapeHtml(card.name)}" width="360" height="617" loading="lazy" decoding="async"></figure>` : `<i aria-hidden="true">${card.symbol}</i>`}<h3>${escapeHtml(card.name)}</h3><span>${card.reversed ? "Lá đảo · Reversed" : "Lá xuôi · Upright"}</span></div><div class="fortune-tarot-reading"><p>${escapeHtml(card.interpretation)}</p><strong>Câu hỏi mở</strong><p>${escapeHtml(card.question)}</p>${card.symbols?.length ? `<details class="fortune-symbol-atlas"><summary>Giải thích chi tiết trên hình</summary>${card.symbols.map((symbol) => `<button type="button" data-fortune-copy="${escapeHtml(symbol)}"><b>◎</b><span>${escapeHtml(symbol)}</span></button>`).join("")}</details>` : ""}<textarea rows="2" maxlength="500" data-fortune-card-note="${index}" placeholder="Ghi chú riêng cho lá này...">${escapeHtml(card.note||"")}</textarea><footer><button type="button" data-fortune-card-pin="${index}">${card.pinned?"★ Đã ghim":"☆ Ghim"}</button><button type="button" data-fortune-card-move="${index}:-1" aria-label="Đưa lá sang trái">←</button><button type="button" data-fortune-card-move="${index}:1" aria-label="Đưa lá sang phải">→</button></footer></div></article>`).join("")}</div>${runtime.session.tarotPrevious?.length?`<details class="fortune-tarot-compare"><summary>So sánh với lần trải trước</summary><div>${runtime.session.tarotPrevious.map((card,index)=>`<span><b>${index+1}</b>${escapeHtml(card.name)} · ${escapeHtml(card.position)}</span>`).join("")}</div></details>`:""}<div class="fortune-result-actions"><button type="button" data-fortune-reveal-all>✦ Lật tất cả</button><label>Tỷ lệ ảnh<select data-fortune-export-ratio><option value="1:1">1:1</option><option value="9:16">9:16</option><option value="16:9">16:9</option></select></label><button type="button" data-fortune-export="txt">Tải TXT</button><button type="button" data-fortune-export="json">Tải JSON</button><button type="button" data-fortune-export="png">Tải PNG</button><button type="button" data-fortune-copy-result>Sao chép</button><button type="button" data-fortune-share>Chia sẻ</button></div><p class="fortune-tarot-rights">Hình Rider–Waite–Smith 1909 · Pamela Colman Smith · Public Domain Mark 1.0 · nguồn Wikimedia Commons. Diễn giải tiếng Việt do HH biên soạn.</p>` : `<div class="fortune-empty"><i>♢</i><strong>Chưa có lá bài nào được rút</strong><p>Chọn kiểu trải bài rồi bấm “Rút bài”. Mỗi lần bấm dùng một seed mới và có thể tái tạo từ seed hiển thị.</p></div>`;
     if (cards.length) results += explanationMarkup(runtime, "Cách đọc trải bài này", [
       { label: "Dữ liệu đầu vào", text: `Trải ${cards.length} lá dùng seed ${runtime.session.tarotSeed}; câu hỏi chỉ giúp định hướng chú ý và không được lưu.` },
       { label: "Cách chọn lá", text: "Bộ Rider–Waite–Smith chuẩn gồm 78 lá (22 Major + 56 Minor) được xáo bằng bộ sinh số có seed; mỗi lá chỉ xuất hiện một lần trong cùng trải bài." },
@@ -912,9 +929,19 @@
     return markup + resultContractMarkup(currentResultContract(runtime, view));
   }
 
+  function timePhase(dateValue = new Date()) {
+    const hour = dateValue.getHours(); if (hour >= 5 && hour < 10) return "dawn"; if (hour >= 10 && hour < 17) return "day"; if (hour >= 17 && hour < 20) return "dusk"; return "night";
+  }
+  function mysticSceneMarkup(runtime) {
+    const visual = VIEW_VISUALS[runtime.state.view] || VIEW_VISUALS.today; const moon = calculateMoonPhase(localDateKey()) || { symbol: "☾", illumination: 50, waxing: true };
+    const orbitItems = [["tarot","♢"],["iching","☯"],["chart","◎"],["moon","☾"],["numerology","#"],["symbols","ᚠ"],["eastern","☯"],["journal","✎"],["zodiac","☼"],["sky","✺"],["copilot","AI"],["calendar","▦"],["academy","▣"],["accuracy","✓"],["history","◷"]];
+    return `<div class="fortune-mystic-scene" aria-hidden="true" data-fortune-scene data-world="${escapeHtml(visual[2])}"><canvas data-fortune-cosmos></canvas><div class="fortune-nebula fortune-nebula--a"></div><div class="fortune-nebula fortune-nebula--b"></div><div class="fortune-nebula fortune-nebula--c"></div><svg class="fortune-constellations" viewBox="0 0 1000 700" preserveAspectRatio="none"><g><path d="M60 140 L170 82 L285 160 L390 94 L505 184"/><path d="M640 80 L735 152 L850 104 L938 196"/><path d="M560 520 L665 430 L770 508 L892 425"/></g><g>${[[60,140],[170,82],[285,160],[390,94],[505,184],[640,80],[735,152],[850,104],[938,196],[560,520],[665,430],[770,508],[892,425]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="3"/>`).join("")}</g></svg><div class="fortune-sky-moon" style="--moon-light:${moon.illumination}%"><span>${escapeHtml(moon.symbol)}</span><i></i><b>${moon.illumination}%</b></div><div class="fortune-mystic-portal"><span class="fortune-portal-ring fortune-portal-ring--outer"></span><span class="fortune-portal-ring fortune-portal-ring--middle"></span><span class="fortune-portal-ring fortune-portal-ring--inner"></span><div><i data-fortune-world-icon>${escapeHtml(visual[0])}</i><b data-fortune-world-label>${escapeHtml(visual[1])}</b><small>MYSTIC LIVING OBSERVATORY</small></div></div><div class="fortune-orbit-icons">${orbitItems.map(([view,icon], index) => `<span style="--orbit-angle:${(360 / orbitItems.length * index).toFixed(2)}deg" data-orbit-view="${view}">${escapeHtml(icon)}</span>`).join("")}</div><div class="fortune-world-stage"><div class="fortune-world-cards"><i></i><i></i><i></i></div><div class="fortune-world-coins"><i>☰</i><i>☷</i><i>☯</i></div><div class="fortune-world-zodiac"><i>☉</i><b></b><span></span></div><div class="fortune-world-lunar"><i>⊕</i><b>◐</b></div><div class="fortune-world-numbers"><i>3</i><i>7</i><i>9</i><i>11</i></div><div class="fortune-world-runes"><i>ᚠ</i><i>ᚨ</i><i>ᛃ</i></div><div class="fortune-world-compass"><i>☯</i><b>子 午 卯 酉</b></div><div class="fortune-world-pages"><i></i><b>✦</b></div></div><div class="fortune-meteor-field"><i></i><i></i><i></i></div><div class="fortune-mystic-fog"></div></div>`;
+  }
+
   function shellMarkup(runtime) {
-    return `<section class="fortune-hub" data-fortune-hub data-view="${escapeHtml(runtime.state.view)}" data-theme="${escapeHtml(runtime.state.settings.theme)}" data-experience="${escapeHtml(runtime.state.settings.experience)}">
-      <aside class="fortune-sidebar"><div class="fortune-brand"><i>☾</i><div><small>HH PLATFORM</small><strong>Xem bói</strong></div></div><p>Không gian biểu tượng dành cho giải trí và tự chiêm nghiệm.</p><nav aria-label="Điều hướng Xem bói">${navMarkup(runtime.state.view)}</nav><section class="fortune-preferences"><label><span>Giao diện</span><select data-fortune-theme>${[["galaxy","Thiên hà"],["eastern","Á Đông"],["minimal","Tối giản"],["mystic","Huyền bí"]].map(([id,label])=>`<option value="${id}"${runtime.state.settings.theme===id?" selected":""}>${label}</option>`).join("")}</select></label><label><span>Giải thích</span><select data-fortune-experience><option value="beginner"${runtime.state.settings.experience==="beginner"?" selected":""}>Dễ hiểu</option><option value="advanced"${runtime.state.settings.experience==="advanced"?" selected":""}>Chuyên sâu</option></select></label><button type="button" class="${runtime.state.settings.sound?"is-active":""}" data-fortune-sound>${runtime.state.settings.sound?"♫ Âm thanh bật":"♪ Âm thanh tắt"}</button></section><details class="fortune-privacy"><summary>Riêng tư & an toàn</summary><p>Hồ sơ mặc định chỉ trong phiên. Nhật ký có thể khóa AES-GCM bằng PIN; AI chỉ nhận nội dung sau khi bạn đồng ý.</p><button type="button" data-fortune-view="history">Quản lý dữ liệu</button></details></aside>
+    const settings = runtime.state.settings; const style = `--fortune-particle-density:${settings.particleDensity};--fortune-glow-strength:${settings.glow / 100};--fortune-glass-opacity:${settings.glass / 100}`;
+    return `<section class="fortune-hub" data-fortune-hub data-view="${escapeHtml(runtime.state.view)}" data-world="${escapeHtml((VIEW_VISUALS[runtime.state.view] || VIEW_VISUALS.today)[2])}" data-theme="${escapeHtml(settings.theme)}" data-motion="${escapeHtml(settings.motion)}" data-time-phase="${timePhase()}" data-experience="${escapeHtml(settings.experience)}" style="${style}">${mysticSceneMarkup(runtime)}
+      <aside class="fortune-sidebar"><div class="fortune-brand"><i>☾</i><div><small>MYSTIC OBSERVATORY</small><strong>Xem bói</strong></div></div><p>Không gian biểu tượng sống động dành cho giải trí và tự chiêm nghiệm.</p><nav aria-label="Điều hướng Xem bói">${navMarkup(runtime.state.view)}</nav><section class="fortune-preferences"><label><span>Huyền cảnh</span><select data-fortune-theme>${THEME_OPTIONS.map(([id,label,detail])=>`<option value="${id}"${settings.theme===id?" selected":""}>${label} · ${detail}</option>`).join("")}</select></label><label><span>Mức chuyển động</span><select data-fortune-motion><option value="static"${settings.motion==="static"?" selected":""}>Tĩnh · không hạt</option><option value="balanced"${settings.motion==="balanced"?" selected":""}>Cân bằng · mặc định</option><option value="cinematic"${settings.motion==="cinematic"?" selected":""}>Điện ảnh · đầy đủ</option></select></label><label><span>Giải thích</span><select data-fortune-experience><option value="beginner"${settings.experience==="beginner"?" selected":""}>Dễ hiểu</option><option value="advanced"${settings.experience==="advanced"?" selected":""}>Chuyên sâu</option></select></label><details class="fortune-effect-tuner"><summary>Điều chỉnh hiệu ứng</summary><label><span>Mật độ hạt <b data-fortune-density-value>${settings.particleDensity}%</b></span><input type="range" min="0" max="100" step="1" value="${settings.particleDensity}" data-fortune-density></label><label><span>Hào quang <b data-fortune-glow-value>${settings.glow}%</b></span><input type="range" min="0" max="100" step="1" value="${settings.glow}" data-fortune-glow></label><label><span>Kính mờ <b data-fortune-glass-value>${settings.glass}%</b></span><input type="range" min="20" max="100" step="1" value="${settings.glass}" data-fortune-glass></label></details><button type="button" class="${settings.sound?"is-active":""}" data-fortune-sound>${settings.sound?"♫ Âm thanh bật":"♪ Âm thanh tắt"}</button></section><details class="fortune-privacy"><summary>Riêng tư & an toàn</summary><p>Hồ sơ mặc định chỉ trong phiên. Nhật ký có thể khóa AES-GCM bằng PIN; AI chỉ nhận nội dung sau khi bạn đồng ý.</p><button type="button" data-fortune-view="history">Quản lý dữ liệu</button></details></aside>
       <main class="fortune-main"><div class="fortune-mobile-head"><button type="button" data-fortune-nav-toggle aria-label="Mở danh mục">☰</button><strong>☾ Xem bói</strong><button type="button" data-fortune-view="history" aria-label="Mở lịch sử">◷</button></div><div class="fortune-view" data-fortune-view-root>${viewMarkup(runtime)}</div><footer class="fortune-disclaimer"><span>ⓘ</span><p><strong>Nội dung giải trí và tự chiêm nghiệm.</strong> Không phải dự báo khoa học, chẩn đoán hay lời khuyên y tế, pháp lý hoặc tài chính.</p><button type="button" data-fortune-about>Mở hướng dẫn</button></footer></main>
       <div class="fortune-toast" role="status" aria-live="polite" hidden></div>${runtime.deletedRecord ? `<button class="fortune-undo" type="button" data-fortune-undo-delete>Hoàn tác xóa ${escapeHtml(runtime.deletedRecord.label || "dữ liệu")}</button>` : ""}
     </section>`;
@@ -926,9 +953,61 @@
     security.insertAdjacentHTML("beforeend", `<div class="fortune-vault-sync" data-fortune-vault-sync-controls><button type="button" data-fortune-vault-upload>Đồng bộ bản mã hóa</button><button type="button" data-fortune-vault-download>Khôi phục từ tài khoản</button><small>Chỉ ciphertext, salt và IV được gửi; máy chủ không nhận PIN hoặc bản rõ.</small></div>`);
   }
 
+  function reducedMotionPreferred() { return Boolean(globalScope.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches); }
+  function stopMysticScene(runtime) {
+    if (!runtime) return; if (runtime.mysticFrame) globalScope.cancelAnimationFrame?.(runtime.mysticFrame); runtime.mysticFrame = 0;
+    runtime.mysticResizeObserver?.disconnect?.(); runtime.mysticResizeObserver = null;
+    if (runtime.mysticVisibility && globalScope.document) globalScope.document.removeEventListener("visibilitychange", runtime.mysticVisibility);
+    if (runtime.mysticPointer && runtime.root) runtime.root.removeEventListener("pointermove", runtime.mysticPointer);
+    runtime.mysticVisibility = null; runtime.mysticPointer = null; runtime.mysticScene = null;
+  }
+  function initMysticScene(runtime) {
+    if (!runtime?.root || !globalScope.document || !globalScope.requestAnimationFrame) return;
+    const canvas = runtime.root.querySelector("[data-fortune-cosmos]"); if (!canvas?.getContext) return; const context = canvas.getContext("2d", { alpha: true }); if (!context) return;
+    const scene = { canvas, context, width: 1, height: 1, particles: [], meteors: [], pointerX: .5, pointerY: .5, lastFrame: 0, paused: false, generation: 0, configKey: `${runtime.state.settings.motion}|${runtime.state.settings.particleDensity}` }; runtime.mysticScene = scene;
+    const rebuild = () => {
+      const rect = runtime.root.getBoundingClientRect(); const width = Math.max(1, Math.round(rect.width)); const height = Math.max(1, Math.round(rect.height)); const dpr = Math.min(Number(globalScope.devicePixelRatio) || 1, runtime.state.settings.motion === "cinematic" ? 1.75 : 1.35);
+      scene.width = width; scene.height = height; canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr); canvas.style.width = `${width}px`; canvas.style.height = `${height}px`; context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const mobileFactor = width < 720 ? .48 : 1; const motionFactor = runtime.state.settings.motion === "cinematic" ? 1.45 : runtime.state.settings.motion === "static" ? 0 : 1; const requested = Math.round((35 + runtime.state.settings.particleDensity * 1.15) * mobileFactor * motionFactor); const count = Math.min(190, requested);
+      scene.particles = Array.from({ length: count }, (_, index) => ({ x: Math.random() * width, y: Math.random() * height, z: .25 + Math.random() * .75, size: .45 + Math.random() * (index % 9 === 0 ? 2.2 : 1.15), alpha: .22 + Math.random() * .7, hue: [188, 218, 267, 310, 42][index % 5], phase: Math.random() * Math.PI * 2, speed: .08 + Math.random() * .3 })); scene.generation += 1;
+    };
+    const draw = (timestamp = 0) => {
+      if (!runtime.mysticScene || runtime.mysticScene !== scene) return; const motion = reducedMotionPreferred() ? "static" : runtime.state.settings.motion;
+      if (scene.paused || globalScope.document?.hidden) { runtime.mysticFrame = 0; return; }
+      if (motion === "balanced" && timestamp - scene.lastFrame < 30) { runtime.mysticFrame = globalScope.requestAnimationFrame(draw); return; }
+      const delta = Math.min(42, Math.max(0, timestamp - scene.lastFrame || 16)); scene.lastFrame = timestamp; context.clearRect(0, 0, scene.width, scene.height); const drift = motion === "static" ? 0 : motion === "cinematic" ? .055 : .028;
+      for (const star of scene.particles) {
+        star.phase += delta * .0015 * star.speed; star.y -= drift * delta * star.z; star.x += (scene.pointerX - .5) * .012 * delta * star.z;
+        if (star.y < -8) { star.y = scene.height + 8; star.x = Math.random() * scene.width; } if (star.x < -8) star.x = scene.width + 8; if (star.x > scene.width + 8) star.x = -8;
+        const twinkle = motion === "static" ? 1 : .65 + Math.sin(star.phase) * .35; const px = star.x + (scene.pointerX - .5) * 24 * star.z; const py = star.y + (scene.pointerY - .5) * 15 * star.z;
+        context.beginPath(); context.fillStyle = `hsla(${star.hue} 95% 80% / ${star.alpha * twinkle})`; context.shadowColor = `hsla(${star.hue} 100% 70% / .7)`; context.shadowBlur = star.size > 1.5 ? 10 * runtime.state.settings.glow / 100 : 0; context.arc(px, py, star.size * twinkle, 0, Math.PI * 2); context.fill();
+      }
+      context.shadowBlur = 0;
+      if (motion === "cinematic" && Math.random() < .007 && scene.meteors.length < 3) scene.meteors.push({ x: Math.random() * scene.width * .8, y: -30, life: 0, speed: 7 + Math.random() * 5 });
+      scene.meteors = scene.meteors.filter((meteor) => { meteor.x += meteor.speed * 1.45; meteor.y += meteor.speed; meteor.life += delta; context.beginPath(); const gradient = context.createLinearGradient(meteor.x - 95, meteor.y - 65, meteor.x, meteor.y); gradient.addColorStop(0, "rgba(141,224,255,0)"); gradient.addColorStop(1, "rgba(255,255,255,.85)"); context.strokeStyle = gradient; context.lineWidth = 1.3; context.moveTo(meteor.x - 95, meteor.y - 65); context.lineTo(meteor.x, meteor.y); context.stroke(); return meteor.y < scene.height + 80 && meteor.life < 1800; });
+      runtime.mysticFrame = motion === "static" ? 0 : globalScope.requestAnimationFrame(draw);
+    };
+    runtime.mysticPointer = (event) => { const rect = runtime.root.getBoundingClientRect(); scene.pointerX = clamp((event.clientX - rect.left) / Math.max(1, rect.width), 0, 1, .5); scene.pointerY = clamp((event.clientY - rect.top) / Math.max(1, rect.height), 0, 1, .5); runtime.root.style.setProperty("--mystic-pointer-x", `${(scene.pointerX * 100).toFixed(1)}%`); runtime.root.style.setProperty("--mystic-pointer-y", `${(scene.pointerY * 100).toFixed(1)}%`); };
+    runtime.mysticVisibility = () => { scene.paused = Boolean(globalScope.document.hidden); if (!scene.paused && !runtime.mysticFrame && runtime.state.settings.motion !== "static") runtime.mysticFrame = globalScope.requestAnimationFrame(draw); };
+    runtime.root.addEventListener("pointermove", runtime.mysticPointer, { passive: true }); globalScope.document.addEventListener("visibilitychange", runtime.mysticVisibility); runtime.mysticResizeObserver = globalScope.ResizeObserver ? new globalScope.ResizeObserver(rebuild) : null; runtime.mysticResizeObserver?.observe(runtime.root); rebuild(); draw(0);
+  }
+  function syncMysticScene(runtime) {
+    if (!runtime?.root) return; const visual = VIEW_VISUALS[runtime.state.view] || VIEW_VISUALS.today; const settings = runtime.state.settings;
+    runtime.root.dataset.view = runtime.state.view; runtime.root.dataset.world = visual[2]; runtime.root.dataset.theme = settings.theme; runtime.root.dataset.motion = reducedMotionPreferred() ? "static" : settings.motion; runtime.root.dataset.timePhase = timePhase();
+    runtime.root.style.setProperty("--fortune-particle-density", settings.particleDensity); runtime.root.style.setProperty("--fortune-glow-strength", settings.glow / 100); runtime.root.style.setProperty("--fortune-glass-opacity", settings.glass / 100);
+    const scene = runtime.root.querySelector("[data-fortune-scene]"); if (scene) scene.dataset.world = visual[2]; const icon = runtime.root.querySelector("[data-fortune-world-icon]"); const label = runtime.root.querySelector("[data-fortune-world-label]"); if (icon) icon.textContent = visual[0]; if (label) label.textContent = visual[1];
+    const configKey = `${settings.motion}|${settings.particleDensity}`; if (!runtime.mysticScene) initMysticScene(runtime); else if (runtime.mysticScene.configKey !== configKey) { stopMysticScene(runtime); initMysticScene(runtime); }
+  }
+  function transitionToView(runtime, view) {
+    const commit = () => { runtime.state.view = view; writeState(runtime); render(runtime, true); };
+    const documentObject = globalScope.document; if (!documentObject?.startViewTransition || runtime.state.settings.motion === "static" || reducedMotionPreferred()) { commit(); return; }
+    documentObject.documentElement.dataset.fortuneTransition = (VIEW_VISUALS[view] || VIEW_VISUALS.today)[2]; const transition = documentObject.startViewTransition(commit); transition?.finished?.finally?.(() => { delete documentObject.documentElement.dataset.fortuneTransition; });
+  }
+
   function render(runtime, keepShell = false) {
     if (!runtime?.target) return;
     if (!keepShell || !runtime.root) {
+      stopMysticScene(runtime);
       runtime.target.innerHTML = shellMarkup(runtime);
       runtime.root = runtime.target.querySelector("[data-fortune-hub]");
       runtime.root.addEventListener("click", runtime.onClick);
@@ -949,6 +1028,7 @@
       if (runtime.state.view === "journal") filterJournalDom(runtime);
     }
     enhanceJournalControls(runtime);
+    syncMysticScene(runtime);
   }
 
   function showToast(runtime, message, tone = "ok") {
@@ -1328,16 +1408,33 @@
     const viewButton = event.target.closest("[data-fortune-view]");
     if (viewButton) {
       const view = viewButton.dataset.fortuneView;
-      if (VIEWS.has(view)) { runtime.state.view = view; writeState(runtime); render(runtime, true); }
+      if (VIEWS.has(view)) transitionToView(runtime, view);
       return;
     }
     if (event.target.closest("[data-fortune-contract-verify]")) {
       const contract = currentResultContract(runtime); const verification = suiteV4()?.verifyResultContract?.(contract);
+      const panel = runtime.root.querySelector("[data-fortune-result-contract]"); panel?.classList.remove("is-verified", "is-invalid"); panel?.classList.add(verification?.ok ? "is-verified" : "is-invalid");
       showToast(runtime, verification?.ok ? "Result Contract và SHA-256 khớp hoàn toàn." : (verification?.errors || ["Không có contract để xác minh."]).join(" "), verification?.ok ? "success" : "error"); return;
     }
     if (event.target.closest("[data-fortune-contract-download]")) {
       const contract = currentResultContract(runtime); if (!contract) { showToast(runtime, "Chưa có Result Contract.", "error"); return; }
       downloadFile(`hh-fortune-contract-${contract.methodId}-${Date.now()}.json`, JSON.stringify(contract, null, 2), "application/json"); showToast(runtime, "Đã tải Fortune Result Contract JSON."); return;
+    }
+    const revealCard = event.target.closest("[data-fortune-card-reveal]");
+    if (revealCard) {
+      const index = Number(revealCard.dataset.fortuneCardReveal);
+      if (runtime.session.tarot[index]) {
+        runtime.session.tarotRevealed.add(index);
+        playFortuneTone(runtime);
+        render(runtime, true);
+      }
+      return;
+    }
+    if (event.target.closest("[data-fortune-reveal-all]")) {
+      runtime.session.tarotRevealed = new Set(runtime.session.tarot.map((_, index) => index));
+      playFortuneTone(runtime);
+      render(runtime, true);
+      return;
     }
     if (event.target.closest("[data-fortune-nav-toggle]")) { runtime.root.classList.toggle("is-nav-open"); return; }
     if (event.target.closest("[data-fortune-toggle-experience]")) {
@@ -1560,7 +1657,7 @@
     if (event.target.closest("[data-fortune-quick-draw]")) {
       runtime.session.question = runtime.root.querySelector("[data-fortune-quick-question]")?.value.trim() || "";
       runtime.session.tarotCount = 3; runtime.session.tarotSeed = ""; runtime.session.tarotAllowReversed = true;
-      const v4 = suiteV4(); runtime.session.tarot78 = v4?.drawTarot78?.("", { count: 3, allowReversed: true }) || null; runtime.session.tarotSeed = runtime.session.tarot78?.seed || `${Date.now()}`; runtime.session.tarot = runtime.session.tarot78 ? tarotCardsForView(runtime.session.tarot78) : drawTarot(runtime.session.tarotSeed, 3);
+      const v4 = suiteV4(); runtime.session.tarot78 = v4?.drawTarot78?.("", { count: 3, allowReversed: true }) || null; runtime.session.tarotSeed = runtime.session.tarot78?.seed || `${Date.now()}`; runtime.session.tarot = runtime.session.tarot78 ? tarotCardsForView(runtime.session.tarot78) : drawTarot(runtime.session.tarotSeed, 3); runtime.session.tarotRevealed = new Set();
       addHistory(runtime, "tarot", "Trải bài 3 lá", runtime.session.tarot.map((card) => `${card.position}: ${card.name}`).join(" · "));
       runtime.state.view = "tarot"; writeState(runtime); render(runtime, true); return;
     }
@@ -1571,7 +1668,7 @@
       runtime.session.tarotSeed = runtime.root.querySelector("[data-fortune-tarot-seed]")?.value.trim() || ""; runtime.session.tarotAllowReversed = Boolean(runtime.root.querySelector("[data-fortune-tarot-reversed]")?.checked); runtime.session.tarotPositionsText = runtime.root.querySelector("[data-fortune-tarot-positions]")?.value.trim() || ""; const customPositions = runtime.session.tarotPositionsText.split(/\r?\n|;/).map((item) => item.trim()).filter(Boolean);
       const v4 = suiteV4();
       runtime.session.tarot78 = v4?.drawTarot78?.(runtime.session.tarotSeed, { count: runtime.session.tarotCount, allowReversed: runtime.session.tarotAllowReversed, positions: customPositions.length >= runtime.session.tarotCount ? customPositions : undefined }) || null; runtime.session.tarotSeed = runtime.session.tarot78?.seed || runtime.session.tarotSeed;
-      runtime.session.tarot = runtime.session.tarot78 ? tarotCardsForView(runtime.session.tarot78) : drawTarot(runtime.session.tarotSeed, runtime.session.tarotCount);
+      runtime.session.tarot = runtime.session.tarot78 ? tarotCardsForView(runtime.session.tarot78) : drawTarot(runtime.session.tarotSeed, runtime.session.tarotCount); runtime.session.tarotRevealed = new Set();
       addHistory(runtime, "tarot", `Trải bài ${runtime.session.tarotCount} lá`, runtime.session.tarot.map((card) => `${card.position}: ${card.name}`).join(" · "));
       playFortuneTone(runtime); render(runtime, true); return;
     }
@@ -1699,8 +1796,15 @@
 
   function handleInput(runtime, event) {
     if (event.target.matches("[data-fortune-theme]")) {
-      runtime.state.settings.theme = THEMES.includes(event.target.value) ? event.target.value : "galaxy";
-      runtime.root.dataset.theme = runtime.state.settings.theme; writeState(runtime); return;
+      runtime.state.settings.theme = THEMES.includes(event.target.value) ? event.target.value : "cosmic-oracle";
+      runtime.root.dataset.theme = runtime.state.settings.theme; writeState(runtime); syncMysticScene(runtime); return;
+    }
+    if (event.target.matches("[data-fortune-motion]")) {
+      runtime.state.settings.motion = MOTION_LEVELS.includes(event.target.value) ? event.target.value : "balanced"; writeState(runtime); syncMysticScene(runtime); return;
+    }
+    const tuner = [["[data-fortune-density]", "particleDensity", "[data-fortune-density-value]"], ["[data-fortune-glow]", "glow", "[data-fortune-glow-value]"], ["[data-fortune-glass]", "glass", "[data-fortune-glass-value]"]].find(([selector]) => event.target.matches(selector));
+    if (tuner) {
+      const [, key, outputSelector] = tuner; const minimum = key === "glass" ? 20 : 0; runtime.state.settings[key] = clamp(event.target.value, minimum, 100, runtime.state.settings[key]); const output = runtime.root.querySelector(outputSelector); if (output) output.textContent = `${runtime.state.settings[key]}%`; writeState(runtime); syncMysticScene(runtime); return;
     }
     if (event.target.matches("[data-fortune-experience]")) {
       runtime.state.settings.experience = event.target.value === "advanced" ? "advanced" : "beginner";
@@ -1755,7 +1859,7 @@
     const runtime = {
       target, options, ownerId: resolveOwnerId(options), storage: options.storage || globalScope.localStorage,
       state: null, profile: null, builder: createBuilderState(), journalEntries: [], journalKey: null,
-       session: { tarot: [], tarotPrevious: [], tarotCount: 3, tarotSeed: "", tarot78: null, question: "", western: null, zodiacDate: "", chinese: null, chineseYear: "", chineseBeforeTet: false, numerology: null, numerologyV4: null, cycles: null, birthDate: "", targetDate: localDateKey(), nameInput: "", nameSystem: "pythagorean", nameNumerology: null, iching: null, ichingAdvanced: null, ichingSeed: "", ichingMode: "coins", ichingManual: [7, 7, 7, 7, 7, 7], ichingQuestion: "", moonDate: localDateKey(), moon: null, skyDate: localDateKey(), sky: null, easternDate: localDateKey(), eastern: null, symbolType: "lenormand", symbolCount: 3, symbolSeed: "", symbolDeck: null, astrologyMode: "natal", astrologyTarget: localDateKey(), astrologyAlerts: false, astrologyPlanet: "", astrologyV4: null, calculationCertificate: null, accuracyReport: null, birthChart: null, birthChartErrors: [], compareA: "", compareB: "", compareBeforeA: false, compareBeforeB: false, compareContext: "relationship", compatibility: null, tarotQuiz: null, academyRound: 1, academyFeedback: "", copilot: null, copilotInput: "", copilotMode: "easy", copilotDepth: "detailed", copilotSourceView: "" },
+       session: { tarot: [], tarotPrevious: [], tarotRevealed: new Set(), tarotCount: 3, tarotSeed: "", tarot78: null, question: "", western: null, zodiacDate: "", chinese: null, chineseYear: "", chineseBeforeTet: false, numerology: null, numerologyV4: null, cycles: null, birthDate: "", targetDate: localDateKey(), nameInput: "", nameSystem: "pythagorean", nameNumerology: null, iching: null, ichingAdvanced: null, ichingSeed: "", ichingMode: "coins", ichingManual: [7, 7, 7, 7, 7, 7], ichingQuestion: "", moonDate: localDateKey(), moon: null, skyDate: localDateKey(), sky: null, easternDate: localDateKey(), eastern: null, symbolType: "lenormand", symbolCount: 3, symbolSeed: "", symbolDeck: null, astrologyMode: "natal", astrologyTarget: localDateKey(), astrologyAlerts: false, astrologyPlanet: "", astrologyV4: null, calculationCertificate: null, accuracyReport: null, birthChart: null, birthChartErrors: [], compareA: "", compareB: "", compareBeforeA: false, compareBeforeB: false, compareContext: "relationship", compatibility: null, tarotQuiz: null, academyRound: 1, academyFeedback: "", copilot: null, copilotInput: "", copilotMode: "easy", copilotDepth: "detailed", copilotSourceView: "" },
       root: null, toastTimer: 0, storageError: false, historyQuery: "", historyType: "all", journalQuery: "", journalTag: "all", methodQuery: "", calendarAnchor: localDateKey(), calendarMode: "month", chartPlanetIndex: 0, copilotBusy: false, aiController: null, deletedRecord: null, dragCardIndex: -1, ambientNodes: []
     };
     runtime.state = readState(runtime.storage, runtime.ownerId);
@@ -1777,6 +1881,7 @@
 
   function unmount() {
     if (!activeRuntime) return;
+    stopMysticScene(activeRuntime);
     clearTimeout(activeRuntime.toastTimer);
     activeRuntime.aiController?.abort?.();
     activeRuntime.ambientNodes?.forEach((node) => { try { node.stop?.(); node.disconnect?.(); } catch (_error) {} });
