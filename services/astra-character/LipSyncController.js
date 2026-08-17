@@ -5,7 +5,8 @@
     constructor() { this.cues = []; this.playing = false; this.startedAt = 0; this.delayMs = 0; this.mode = "none"; this.lastViseme = { viseme_rest: 1 }; }
     play(input = {}) {
       this.delayMs = A.clamp(input.delayMs || 0, -500, 500);
-      this.startedAt = Number(input.startedAt || A.now());
+      const requestedStart = Number(input.startedAt);
+      this.startedAt = Number.isFinite(requestedStart) ? requestedStart : A.now();
       this.cues = (input.cues || []).map((cue) => ({ start: Math.max(0, Number(cue.start || 0)), end: Math.max(Number(cue.start || 0), Number(cue.end || cue.start || 0) + 0.01), viseme: String(cue.viseme || "rest") })).sort((left, right) => left.start - right.start);
       this.mode = this.cues.length ? "timestamped-viseme" : input.amplitude ? "amplitude-fallback" : "none";
       this.amplitude = typeof input.amplitude === "function" ? input.amplitude : null;

@@ -184,13 +184,13 @@ test("fortune route is lazy loaded, searchable and represented as a major planet
   assert.match(client, /id: "fortune"[\s\S]*?route: "\/fortune"/);
   assert.match(client, /window\.HHFortuneHub\?\.mount/);
   assert.match(client, /title: "Xem bói"[\s\S]*?key: "xem bói tarot/);
-  assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?fortune-hub-v4\.css\?v=5[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-accuracy-lab\.js\?v=1[\s\S]*?fortune-suite-v4\.js\?v=4[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-astrology-v4\.js\?v=2[\s\S]*?fortune-moon-3d\.js\?v=1[\s\S]*?fortune-hub\.js\?v=13/);
+  assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?fortune-hub-v4\.css\?v=8[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?iztro-2\.6\.0\.min\.js\?v=2\.6\.0[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-accuracy-lab\.js\?v=1[\s\S]*?fortune-suite-v4\.js\?v=4[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-astrology-v4\.js\?v=2[\s\S]*?fortune-moon-3d\.js\?v=1[\s\S]*?fortune-extended-tools\.js\?v=1[\s\S]*?fortune-hub\.js\?v=14/);
   assert.match(loader, /value\.startsWith\("\/fortune"\)/);
   assert.match(html, /data-hh-galaxy-key="fortune"/);
   assert.match(html, /25 LĨNH VỰC/);
   assert.match(galaxy, /fortune:\s*\{[\s\S]*?route: "#\/fortune"/);
   assert.match(worker, /fortune-hub\.css\?v=3/);
-  assert.match(worker, /fortune-hub-v4\.css\?v=5/);
+  assert.match(worker, /fortune-hub-v4\.css\?v=8/);
   assert.match(worker, /fortune-iching-64\.js\?v=1/);
   assert.match(worker, /fortune-accuracy-lab\.js\?v=1/);
   assert.match(worker, /fortune-suite-v4\.js\?v=4/);
@@ -198,7 +198,9 @@ test("fortune route is lazy loaded, searchable and represented as a major planet
   assert.match(worker, /fortune-astrology-v4\.js\?v=2/);
   assert.match(worker, /fortune-hub-v3\.css\?v=2/);
   assert.match(worker, /fortune-moon-3d\.js\?v=1/);
-  assert.match(worker, /fortune-hub\.js\?v=13/);
+  assert.match(worker, /iztro-2\.6\.0\.min\.js\?v=2\.6\.0/);
+  assert.match(worker, /fortune-extended-tools\.js\?v=1/);
+  assert.match(worker, /fortune-hub\.js\?v=14/);
 });
 
 test("Gemini fortune route enforces opt-in, safety and server-side redaction", () => {
@@ -313,4 +315,13 @@ test("Fortune Pro tools use compact inspectors, automatic de-identified AI and d
   assert.match(client, /fortune-lunar-date/); assert.match(client, /lunarCalendarDate/); assert.match(client, /Không lớp nào được dùng để gán cát\/hung/);
   assert.match(css, /fortune-tarot-filmstrip/); assert.match(css, /fortune-academy-pro/); assert.match(css, /fortune-lenormand-art/); assert.match(css, /fortune-moon-3d-shell/);
   assert.match(moon, /SphereGeometry\(1, 96, 64\)/); assert.match(moon, /lroc-color-2k\.jpg/); assert.match(moon, /IntersectionObserver/); assert.match(moon, /document\?\.hidden/);
+});
+
+test("embedded Gemini and extended fortune studios stay inside their own tools", () => {
+  const client = read("fortune-hub.js"); const css = read("fortune-hub-v4.css"); const extended = read("fortune-extended-tools.js");
+  for (const view of ["tarot", "symbols", "zodiac", "numerology", "iching", "chart", "tuvi", "compatibility", "session"]) assert.match(client, new RegExp(`\\"${view}\\"`));
+  assert.match(client, /embeddedAutomaticAiMarkup/); assert.match(client, /không cần mở Reflection Copilot/); assert.doesNotMatch(client.match(/function navMarkup[\s\S]*?function toolbarMarkup/)?.[0] || "", /data-fortune-view="copilot"/);
+  assert.match(client, /Tử Vi Đẩu Số · 12 cung/); assert.match(client, /Nhân tướng học · Self-observation Lab/); assert.match(client, /Giấc mơ & Symbol Journal/);
+  assert.match(extended, /calculateZiWei/); assert.match(extended, /Không dùng camera/); assert.match(extended, /không gửi Gemini/);
+  assert.match(css, /fortune-iching-pro \.fortune-iching-manual\{grid-template-columns:repeat\(2/); assert.match(css, /fortune-tuvi-board/); assert.match(css, /fortune-physio-form/);
 });

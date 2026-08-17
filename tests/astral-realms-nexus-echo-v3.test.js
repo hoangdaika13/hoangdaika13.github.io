@@ -107,8 +107,9 @@ test("camp conversations and location banter are persistent and non-repeating", 
 });
 
 test("HH ASTRA loads and exposes every real Memory Canon interaction", () => {
-  assert.match(loader, /services\/astra-story\/NexusEchoStoryV3\.js\?v=1[\s\S]*astral-realms\.js\?v=96/);
+  assert.match(loader, /services\/astra-story\/NexusEchoStoryV3\.js\?v=1[\s\S]*astral-realms\.js\?v=97/);
   assert.match(worker, /services\/astra-story\/NexusEchoStoryV3\.js\?v=1/);
+  assert.match(worker, /hh-identity-portal-v626/);
   for (const contract of [
     "recordNarrativeGameplayEvent", "triggerNarrativeBanter", "startNarrativeSideQuest", "chooseNarrativeResponse",
     "renderMemoryPanel", "renderCampPanel", "data-har-panel=\"memory\"", "data-har-panel=\"camp\"",
@@ -116,4 +117,5 @@ test("HH ASTRA loads and exposes every real Memory Canon interaction", () => {
   ]) assert.ok(game.includes(contract), `missing integration ${contract}`);
   for (const style of [".har-memory-hero", ".har-story-rail", ".har-memory-grid", ".har-response-grid", ".har-camp-grid", ".har-story-faction-grid"]) assert.match(css, new RegExp(style.replace(".", "\\.")));
   assert.match(game, /const SCHEMA_VERSION = 12/);
+  assert.match(game, /ensureNexusStoryRuntime\(\)/);
 });

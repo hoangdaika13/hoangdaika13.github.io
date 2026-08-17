@@ -224,7 +224,7 @@
         "services/astra-character/FacialPerformanceController.js?v=1", "services/astra-character/LipSyncController.js?v=1", "services/astra-character/SecondaryMotionController.js?v=1", "services/astra-character/ContextualInteractionController.js?v=1",
         "services/astra-character/CharacterCollisionController.js?v=1", "services/astra-character/CharacterLODController.js?v=1", "services/astra-character/CharacterNetworkReplicator.js?v=1", "services/astra-character/CharacterPerformanceGovernor.js?v=1",
         "services/astra-character/CinematicCharacterDirector.js?v=1", "services/astra-character/ElementalCharacterIdentity.js?v=1", "services/astra-character/CharacterCustomizationController.js?v=1", "services/astra-character/CharacterDebugOverlay.js?v=1", "services/astra-character/CharacterRuntimeV3.js?v=1",
-        "astral-realms.js?v=96", "space-explorer.js?v=4", "game-center.js?v=7", "astra-universe-expansion.js?v=4", "game-arcade.js?v=5"
+        "astral-realms.js?v=97", "space-explorer.js?v=4", "game-center.js?v=7", "astra-universe-expansion.js?v=4", "game-arcade.js?v=5"
       ]
     },
     "cinematic-game": {
@@ -250,8 +250,8 @@
       scripts: ["japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=8", "japanese-os-v3.js?v=2", "japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.js?v=7"]
     },
     fortune: {
-      styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=5"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=4", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-moon-3d.js?v=1", "fortune-hub.js?v=13"]
+      styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "vendor/iztro-2.6.0.min.js?v=2.6.0", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=4", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-moon-3d.js?v=1", "fortune-extended-tools.js?v=1", "fortune-hub.js?v=14"]
     },
     "chat-ai": {
       styles: ["chat-ai-hub.css?v=5"],

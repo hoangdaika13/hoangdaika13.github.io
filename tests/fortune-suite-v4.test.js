@@ -189,9 +189,10 @@ test("Eastern calendar exposes 24 solar terms and honest engine readiness", () =
   assert.equal(result.ok, true);
   assert.deepEqual(result.yearPillar, { year: 2026, stem: "Bính", branch: "Ngọ" });
   assert.equal(result.solarTerms.length, 24);
-  assert.ok(result.engines.every((engine) => engine.status !== "ready"));
+  assert.equal(result.engines.find((engine) => engine.id === "bazi").status, "review");
+  assert.equal(result.engines.find((engine) => engine.id === "tuvi").status, "ready");
   assert.equal(suite.READINESS.find((engine) => engine.id === "bazi").status, "review");
-  assert.equal(suite.READINESS.find((engine) => engine.id === "tuvi").status, "review");
+  assert.equal(suite.READINESS.find((engine) => engine.id === "tuvi").status, "ready");
   assert.equal(suite.READINESS.find((engine) => engine.id === "face-palm").status, "disabled");
 });
 

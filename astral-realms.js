@@ -4,7 +4,7 @@
   const GAME_ID = "astral-realms";
   const SCHEMA_VERSION = 12;
   const STORY_CANON_VERSION = 3;
-  const NEXUS_STORY = root.HHAstraNexusEchoStory || (typeof require === "function" ? require("./services/astra-story/NexusEchoStoryV3.js") : null);
+  let NEXUS_STORY = root.HHAstraNexusEchoStory || (typeof require === "function" ? require("./services/astra-story/NexusEchoStoryV3.js") : null);
   const RENDER_SCALE_STEPS = Object.freeze([1, 0.85, 0.7, 0.6]);
   const DB_NAME = "hh-astral-realms";
   const DB_VERSION = 1;
@@ -18308,9 +18308,21 @@
 
   let activeGame = null;
 
+  async function ensureNexusStoryRuntime() {
+    if (NEXUS_STORY?.VERSION >= 3) return NEXUS_STORY;
+    try {
+      await import("./services/astra-story/NexusEchoStoryV3.js?v=1");
+      NEXUS_STORY = root.HHAstraNexusEchoStory || null;
+    } catch {
+      NEXUS_STORY = null;
+    }
+    return NEXUS_STORY;
+  }
+
   async function mount(host, options = {}) {
     if (!host) throw new Error("HHAstralRealms.mount cần host element.");
     if (activeGame) await activeGame.destroy();
+    await ensureNexusStoryRuntime();
     activeGame = new AstralRealmsGame(host, options);
     await activeGame.init();
     return activeGame;
