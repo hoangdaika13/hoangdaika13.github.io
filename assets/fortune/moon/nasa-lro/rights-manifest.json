@@ -1,0 +1,26 @@
+{
+  "schema": "hh.open-media-rights.v1",
+  "assetId": "nasa-lro-cgi-moon-kit-2025",
+  "title": "NASA CGI Moon Kit — LROC color and LOLA elevation maps",
+  "sourcePage": "https://svs.gsfc.nasa.gov/4720/",
+  "provider": "NASA Scientific Visualization Studio",
+  "visualizer": "Ernie Wright (USRA)",
+  "scientist": "Noah Petro (NASA/GSFC)",
+  "usageGuidelines": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+  "reviewedAt": "2026-08-17",
+  "reviewedBy": "HH rights review",
+  "files": [
+    {
+      "file": "lroc-color-2k.jpg",
+      "source": "https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/lroc_color_2k.jpg",
+      "sha256": "F7130A1822681FA7512D7DCFD40DB8C10B9BA4F06777910348698260ED7A2170"
+    },
+    {
+      "file": "lroc-height-1k.jpg",
+      "source": "https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/ldem_3_8bit.jpg",
+      "sha256": "6D93F887E7D8BEDFE35AB89BA785E5E3CA12381BD092A5E6ABE2C707DDA8BB98"
+    }
+  ],
+  "credit": "Moon surface data and textures: NASA's Scientific Visualization Studio, LRO/LROC/LOLA.",
+  "notes": "NASA attribution does not imply endorsement. Logos, identifiable people and third-party materials are not included. The color map is optimized for visual rendering rather than scientific measurement."
+}

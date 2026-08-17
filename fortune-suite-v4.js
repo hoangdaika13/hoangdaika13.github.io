@@ -21,11 +21,12 @@
     astronomy: Object.freeze({ id: "astronomy-engine", title: "Astronomy Engine", url: "https://github.com/cosinekitty/astronomy", role: "VSOP87/NOVAS · MIT" }),
     usno: Object.freeze({ id: "usno-moon", title: "USNO Moon Data Services", url: "https://aa.usno.navy.mil/data/api.html", role: "Pha Mặt Trăng và mốc UTC" }),
     nasaMoon: Object.freeze({ id: "nasa-moon", title: "NASA Moon Phases", url: "https://science.nasa.gov/moon/moon-phases/", role: "Giải thích thiên văn Mặt Trăng" }),
+    nasaMoonKit: Object.freeze({ id: "nasa-svs-cgi-moon-kit", title: "NASA SVS · CGI Moon Kit", url: "https://svs.gsfc.nasa.gov/4720/", role: "Texture LRO/LROC và bản đồ độ cao LOLA cho mô hình 3D" }),
     hko: Object.freeze({ id: "hko-solar-terms", title: "Hong Kong Observatory · 24 Solar Terms", url: "https://www.hko.gov.hk/en/gts/time/24solarterms.htm", role: "Định nghĩa 24 tiết khí theo kinh độ Mặt Trời" }),
     rws: Object.freeze({ id: "rws-waite-1911", title: "The Pictorial Key to the Tarot · 1911", url: "https://sacred-texts.com/tarot/pkt/pkttp.htm", role: "Nguồn lịch sử RWS công cộng" }),
     rwsImages: Object.freeze({ id: "rws-wikimedia", title: "Rider–Waite–Smith · Wikimedia Commons", url: "https://commons.wikimedia.org/wiki/Category:Rider-Waite-Smith_tarot_deck_(Geldard)", role: "78 hình Public Domain Mark 1.0" }),
     iching: Object.freeze({ id: "ctext-zhouyi", title: "Chinese Text Project · Zhouyi", url: "https://ctext.org/book-of-changes/ens", role: "Văn bản và cấu trúc 64 quẻ" }),
-    lenormand: Object.freeze({ id: "british-museum-lenormand", title: "British Museum · Lenormand 36", url: "https://www.britishmuseum.org/collection/object/P_1896-0501-525-", role: "Bộ bài lịch sử 36 lá" }),
+    lenormand: Object.freeze({ id: "wikimedia-game-of-hope-1799", title: "Das Spiel der Hoffnung (1799) · Wikimedia Commons", url: "https://commons.wikimedia.org/wiki/File:Das_Spiel_der_Hofnung_(The_Game_of_Hope).png", role: "Ảnh bộ 36 lá lịch sử · Public Domain Mark 1.0" }),
     runes: Object.freeze({ id: "unicode-runic", title: "Unicode Standard · Runic", url: "https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-8/", role: "Tên, ký tự và thứ tự Elder Futhark" }),
     hh: Object.freeze({ id: "hh-original", title: "HH Original Reflection Content", url: "#/fortune/methods", role: "Diễn giải tiếng Việt nguyên bản" })
   });
@@ -34,7 +35,7 @@
     "hh-iching-reflection": Object.freeze({ id: "hh-iching-reflection", version: "2.0.0", language: "vi", nature: "symbolic", sourceIds: ["ctext-zhouyi", "hh-original"] }),
     "hh-numerology-transparent": Object.freeze({ id: "hh-numerology-transparent", version: "2.0.0", language: "vi", nature: "symbolic", sourceIds: ["hh-original"] }),
     "hh-astrology-reflection": Object.freeze({ id: "hh-astrology-reflection", version: "2.0.0", language: "vi", nature: "symbolic", sourceIds: ["astronomy-engine", "hh-original"] }),
-    "hh-symbol-decks": Object.freeze({ id: "hh-symbol-decks", version: "2.0.0", language: "vi", nature: "symbolic", sourceIds: ["british-museum-lenormand", "unicode-runic", "hh-original"] }),
+    "hh-symbol-decks": Object.freeze({ id: "hh-symbol-decks", version: "2.1.0", language: "vi", nature: "symbolic", sourceIds: ["wikimedia-game-of-hope-1799", "unicode-runic", "hh-original"] }),
     "none-calculation-only": Object.freeze({ id: "none-calculation-only", version: "1.0.0", language: "vi", nature: "calculation", sourceIds: [] })
   });
   const METHOD_REGISTRY = Object.freeze([
@@ -43,10 +44,10 @@
     { id: "zodiac-solar-longitude", version: "2.0.0", engine: ASTRONOMY_VERSION, engineVersion: "2.1.19", pack: "hh-astrology-reflection", referenceFrame: "geocentric ecliptic of date", timeScale: "UTC", randomMethod: "none", sources: [SOURCE_REFERENCES.astronomy, SOURCE_REFERENCES.jpl, SOURCE_REFERENCES.iana], limitations: ["Cung là lớp chiêm tinh biểu tượng; chòm sao thiên văn là khái niệm khác."] },
     { id: "numerology-transparent", version: "2.0.0", engine: "HH local formula engine", engineVersion: VERSION, pack: "hh-numerology-transparent", referenceFrame: "not-applicable", timeScale: "civil date", randomMethod: "none", sources: [SOURCE_REFERENCES.hh], limitations: ["Không đo trí tuệ, sức khỏe, đạo đức hoặc xác suất thành công."] },
     { id: "iching-king-wen-64", version: "2.0.0", engine: "HH Zhouyi structure engine", engineVersion: VERSION, pack: "hh-iching-reflection", referenceFrame: "bottom-up six lines", timeScale: "not-applicable", randomMethod: "Web Crypto seed + Mulberry32 replay", sources: [SOURCE_REFERENCES.iching, SOURCE_REFERENCES.hh], limitations: ["Không có một quy tắc diễn giải duy nhất cho nhiều hào động."] },
-    { id: "moon-sky", version: "2.0.0", engine: ASTRONOMY_VERSION, engineVersion: "2.1.19", pack: "none-calculation-only", referenceFrame: "topocentric/geocentric apparent", timeScale: "UTC + IANA local", randomMethod: "none", sources: [SOURCE_REFERENCES.astronomy, SOURCE_REFERENCES.usno, SOURCE_REFERENCES.nasaMoon, SOURCE_REFERENCES.iana], limitations: ["Đường chân trời và khúc xạ thực tế có thể làm đổi thời gian quan sát.", "Không dùng cho điều hướng."] },
+    { id: "moon-sky", version: "2.1.0", engine: ASTRONOMY_VERSION, engineVersion: "2.1.19", pack: "none-calculation-only", referenceFrame: "topocentric/geocentric apparent", timeScale: "UTC + IANA local", randomMethod: "none", sources: [SOURCE_REFERENCES.astronomy, SOURCE_REFERENCES.usno, SOURCE_REFERENCES.nasaMoon, SOURCE_REFERENCES.nasaMoonKit, SOURCE_REFERENCES.iana], limitations: ["Đường chân trời và khúc xạ thực tế có thể làm đổi thời gian quan sát.", "Texture CGI phục vụ trực quan; Astronomy Engine mới là nguồn số liệu.", "Không dùng cho điều hướng."] },
     { id: "astrology-v5", version: "5.0.0", engine: ASTRONOMY_VERSION, engineVersion: "2.1.19", pack: "hh-astrology-reflection", referenceFrame: "geocentric ecliptic of date", timeScale: "UTC + IANA local", randomMethod: "none", sources: [SOURCE_REFERENCES.astronomy, SOURCE_REFERENCES.jpl, SOURCE_REFERENCES.iana, SOURCE_REFERENCES.hh], limitations: ["Độ chính xác thiên văn không chứng minh diễn giải chiêm tinh.", "Không biết giờ sinh thì không tính ASC, MC hoặc nhà."] },
     { id: "eastern-calendar-foundation", version: "2.0.0", engine: `${ASTRONOMY_VERSION} + Intl Chinese Calendar`, engineVersion: "2.1.19", pack: "none-calculation-only", referenceFrame: "apparent solar longitude", timeScale: "UTC + IANA local", randomMethod: "none", sources: [SOURCE_REFERENCES.astronomy, SOURCE_REFERENCES.hko, SOURCE_REFERENCES.iana], limitations: ["HKO dùng UTC+8; mọi mốc hiển thị phải đổi bằng timezone hồ sơ.", "Bát Tự và Tử Vi chưa được suy ra từ lớp lịch nền."] },
-    { id: "lenormand-classic-36", version: "2.0.0", engine: "HH deterministic deck engine", engineVersion: VERSION, pack: "hh-symbol-decks", referenceFrame: "classic 36-card order", timeScale: "not-applicable", randomMethod: "Web Crypto seed + Mulberry32 replay", sources: [SOURCE_REFERENCES.lenormand, SOURCE_REFERENCES.hh], limitations: ["Kết hợp lá là quy tắc trường phái, không phải dữ kiện khách quan."] },
+    { id: "lenormand-classic-36", version: "2.1.0", engine: "HH deterministic deck engine", engineVersion: VERSION, pack: "hh-symbol-decks", referenceFrame: "Game of Hope 36-card order", timeScale: "not-applicable", randomMethod: "Web Crypto seed + Mulberry32 replay", sources: [SOURCE_REFERENCES.lenormand, SOURCE_REFERENCES.hh], limitations: ["Ảnh lịch sử được dùng theo Public Domain Mark của trang file Wikimedia; hồ sơ quyền và checksum đi kèm asset.", "Kết hợp lá là quy tắc trường phái, không phải dữ kiện khách quan."] },
     { id: "elder-futhark-24", version: "2.0.0", engine: "HH deterministic deck engine", engineVersion: VERSION, pack: "hh-symbol-decks", referenceFrame: "Unicode Elder Futhark order", timeScale: "not-applicable", randomMethod: "Web Crypto seed + Mulberry32 replay", sources: [SOURCE_REFERENCES.runes, SOURCE_REFERENCES.hh], limitations: ["Rune đảo không được coi là quy tắc lịch sử bắt buộc.", "Ý nghĩa biểu tượng tách khỏi dữ liệu ngôn ngữ học."] },
     { id: "oracle-hh-24", version: "2.0.0", engine: "HH deterministic deck engine", engineVersion: VERSION, pack: "hh-symbol-decks", referenceFrame: "HH original order", timeScale: "not-applicable", randomMethod: "Web Crypto seed + Mulberry32 replay", sources: [SOURCE_REFERENCES.hh], limitations: ["Bộ Oracle và toàn bộ diễn giải là nội dung HH nguyên bản."] }
   ].map((entry) => Object.freeze(entry)));
@@ -310,11 +311,13 @@
     return { total: cards.length, reversedRate: cards.length ? Math.round(reversed / cards.length * 100) : 0, topCards: [...counts].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([id, count]) => ({ card: TAROT_78.find((item) => item.id === id), count })), suits: Object.fromEntries(suits) };
   }
   function tarotQuiz(seed = "academy", options = {}) {
-    const mode = ["meaning", "name", "element", "symbol"].includes(options.mode) ? options.mode : "meaning"; const random = createRandom(seed); const card = TAROT_78[Math.floor(random() * TAROT_78.length)];
+    const mode = ["meaning", "name", "element", "symbol", "number", "court"].includes(options.mode) ? options.mode : "meaning"; const random = createRandom(seed); const card = TAROT_78[Math.floor(random() * TAROT_78.length)];
     const pool = TAROT_78.filter((item) => item.id !== card.id); let correct; let question; let distractors;
     if (mode === "name") { correct = card.name; question = "Hình này là lá nào?"; distractors = shuffleWithRandom(pool, random).slice(0, 3).map((item) => item.name); }
     else if (mode === "element") { correct = card.element || "Tùy trường phái"; question = "Lá này thuộc nguyên tố hoặc nhóm nào?"; distractors = [...new Set(shuffleWithRandom(pool, random).map((item) => item.element || "Tùy trường phái").filter((item) => item !== correct))].slice(0, 3); while (distractors.length < 3) distractors.push(["Lửa", "Nước", "Khí", "Đất", "Tùy trường phái"].find((item) => item !== correct && !distractors.includes(item)) || `Nhóm ${distractors.length + 1}`); }
     else if (mode === "symbol") { correct = card.symbols?.[0] || card.light; question = "Chi tiết biểu tượng nào thuộc lá này?"; distractors = shuffleWithRandom(pool.filter((item) => item.symbols?.length), random).slice(0, 3).map((item) => item.symbols[0]); }
+    else if (mode === "number") { correct = card.arcana === "major" ? `Major ${card.number}` : `Bậc ${card.number} · ${card.group}`; question = "Lá này nằm ở bậc số hoặc nhóm cấu trúc nào?"; distractors = [...new Set(shuffleWithRandom(pool, random).map((item) => item.arcana === "major" ? `Major ${item.number}` : `Bậc ${item.number} · ${item.group}`).filter((item) => item !== correct))].slice(0, 3); }
+    else if (mode === "court") { correct = card.group === "Court Cards" ? `${card.vietnameseName} là Court Card` : `${card.vietnameseName} không phải Court Card`; question = "Nhận diện vai trò Court Card của lá này."; distractors = card.group === "Court Cards" ? ["Đây là Pip Card", "Đây là Major Arcana", "Không có phân nhóm"] : ["Đây là Court Card", "Đây luôn là lá Hoàng gia", "Không thể phân loại"]; }
     else { correct = card.light; question = "Điều nào mô tả lớp ánh sáng của lá này theo bộ nội dung HH?"; distractors = shuffleWithRandom(pool, random).slice(0, 3).map((item) => item.light); }
     const answers = shuffleWithRandom([correct, ...distractors], random);
     const base = { seed, mode, question, card, answers, correctIndex: answers.indexOf(correct), rubric: { correct: "Nhận diện đúng dữ liệu hoặc lớp nội dung đang học.", review: "Đối chiếu hình, cấu trúc và nguồn trước khi ghi nhớ." } };
@@ -325,6 +328,57 @@
     const intervalDays = score < 2 ? 1 : repetitions === 0 ? 1 : repetitions === 1 ? 3 : Math.max(4, Math.round((Number(previous.intervalDays) || 3) * ease));
     const reviewedAt = new Date(); const dueAt = new Date(reviewedAt.getTime() + intervalDays * 86400000);
     return { score, repetitions: score < 2 ? 0 : repetitions + 1, ease: Number(ease.toFixed(2)), intervalDays, reviewedAt: reviewedAt.toISOString(), dueAt: dueAt.toISOString() };
+  }
+
+  const TAROT_ACADEMY_TRACKS = Object.freeze([
+    { id: "foundation", title: "Nền tảng 78 lá", level: "Nhập môn", lessons: [
+      ["Cấu trúc bộ bài", "Phân biệt 22 Major Arcana, 40 Pip Cards và 16 Court Cards trước khi học ý nghĩa riêng lẻ.", ["Nhận diện ba nhóm", "Đọc số và chất", "Không học thuộc một từ khóa duy nhất"]],
+      ["Câu hỏi mở", "Chuyển hình ảnh thành câu hỏi có thể kiểm chứng thay vì lời khẳng định chắc chắn.", ["Tách dữ kiện", "Nêu giả định", "Chọn hành động có thể đảo ngược"]],
+      ["Thuận và góc khuất", "Cùng một lá có thể mô tả nguồn lực hoặc điểm mù; lá đảo là tùy chọn trường phái, không phải mặc định xấu.", ["Đọc hai chiều", "Tránh tốt/xấu tuyệt đối", "Kiểm tra bằng bối cảnh"]]
+    ]},
+    { id: "major", title: "Hành trình Major Arcana", level: "Cơ bản", lessons: [
+      ["The Fool đến The Chariot", "Theo dõi tiến trình từ khởi đầu, tạo tác, tiếp nhận, nuôi dưỡng, cấu trúc, truyền thống, lựa chọn đến định hướng.", ["0–VII", "Hình tượng trung tâm", "Bài học phát triển"]],
+      ["Strength đến Temperance", "Quan sát sức bền, chiêm nghiệm, chu kỳ, hệ quả, đổi góc nhìn, chuyển hóa và điều phối.", ["VIII–XIV", "Nội lực", "Tích hợp đối cực"]],
+      ["The Devil đến The World", "Đọc ràng buộc, đổ vỡ, hồi phục, bất định, sáng rõ, đánh giá lại và hoàn tất như các tiến trình.", ["XV–XXI", "Khủng hoảng và phục hồi", "Khép chu kỳ"]]
+    ]},
+    { id: "suits", title: "Bốn chất & nguyên tố", level: "Cơ bản", lessons: [
+      ["Wands · Lửa", "Động lực, sáng tạo và hành động. Luôn đối chiếu mức năng lượng thực tế.", ["Chủ động", "Cảm hứng", "Nguy cơ quá sức"]],
+      ["Cups · Nước", "Cảm xúc, quan hệ và khả năng tiếp nhận. Không dùng lá bài để đoán ý nghĩ người khác.", ["Cảm nhận", "Kết nối", "Ranh giới"]],
+      ["Swords · Khí", "Tư duy, ngôn ngữ và quyết định. Phân biệt suy nghĩ với dữ kiện.", ["Phân tích", "Giao tiếp", "Xung đột"]],
+      ["Pentacles · Đất", "Nguồn lực, cơ thể, công việc và điều hữu hình. Ưu tiên bước cụ thể.", ["Ổn định", "Kỹ năng", "Giá trị thực tế"]]
+    ]},
+    { id: "numbers", title: "Số học Ace–Ten", level: "Trung cấp", lessons: [
+      ["Ace–Three", "Ace mở hạt giống, Two đặt hai lực cạnh nhau, Three tạo sự phối hợp và mở rộng.", ["Khởi nguồn", "Đối cực", "Tăng trưởng"]],
+      ["Four–Seven", "Four tạo cấu trúc, Five tạo ma sát, Six điều hòa, Seven kiểm tra lựa chọn và bền bỉ.", ["Ổn định", "Điều chỉnh", "Thử thách"]],
+      ["Eight–Ten", "Eight tăng nhịp và kỹ năng, Nine gần hoàn tất, Ten đưa chu kỳ tới ngưỡng phân bổ lại.", ["Chuyển động", "Tích lũy", "Hoàn tất"]]
+    ]},
+    { id: "court", title: "Court Cards", level: "Trung cấp", lessons: [
+      ["Page", "Tiếp nhận tín hiệu mới với tò mò; có thể là vai trò học hỏi hơn là một người cụ thể.", ["Tin mới", "Học việc", "Tò mò"]],
+      ["Knight", "Đưa năng lượng của chất vào chuyển động; kiểm tra tốc độ, hướng và hệ quả.", ["Hành động", "Theo đuổi", "Điều tiết"]],
+      ["Queen", "Giữ chiều sâu, tiêu chuẩn và khả năng nuôi dưỡng phẩm chất từ bên trong.", ["Nội lực", "Chăm sóc", "Ranh giới"]],
+      ["King", "Chịu trách nhiệm định hướng nguồn lực và tác động ra bên ngoài.", ["Lãnh đạo", "Trách nhiệm", "Kết quả"]]
+    ]},
+    { id: "symbols", title: "Symbol Atlas", level: "Trung cấp", lessons: [
+      ["Màu sắc và ánh sáng", "Quan sát độ tương phản, nguồn sáng và hướng nhìn trước khi gán ý nghĩa.", ["Mô tả trước", "Diễn giải sau", "Không tách khỏi toàn cảnh"]],
+      ["Nhân vật và tư thế", "Tư thế, khoảng cách và hướng cơ thể tạo quan hệ thị giác nhưng không chứng minh ý định con người.", ["Hướng nhìn", "Khoảng cách", "Tương tác"]],
+      ["Phong cảnh và vật thể", "Núi, nước, đường đi, công trình và vật dụng tạo lớp bối cảnh để đặt câu hỏi.", ["Bối cảnh", "Chuyển động", "Nguồn lực"]]
+    ]},
+    { id: "spreads", title: "Spread & Synthesis", level: "Nâng cao", lessons: [
+      ["Một và ba lá", "Dùng một lá cho trọng tâm; ba lá cho ba vai trò rõ, không mặc định quá khứ–hiện tại–tương lai.", ["Vai trò vị trí", "Điểm lặp", "Mâu thuẫn"]],
+      ["Năm và bảy lá", "Đọc theo cụm: nền, tác động, điểm mù, nguồn lực và bước thử; sau đó nối thành câu chuyện có điều kiện.", ["Cụm ý", "Mạch đọc", "Điều chưa biết"]],
+      ["Celtic Cross", "Giữ đúng 10 vị trí; lá thứ hai nằm ngang trên lá thứ nhất và bốn lá cột phải đọc từ dưới lên.", ["Trục trung tâm", "Thập tự", "Cột tổng hợp"]]
+    ]},
+    { id: "ethics", title: "Thực hành & đạo đức", level: "Bắt buộc", lessons: [
+      ["Ranh giới an toàn", "Không dùng Tarot thay quyết định y tế, pháp lý, tài chính hoặc để tạo phụ thuộc.", ["Không tuyệt đối", "Không gây sợ", "Khuyến khích tự quyết"]],
+      ["Nhật ký kiểm chứng", "Ghi diễn giải ban đầu, dữ kiện thật, điều không khớp và kết quả sau một khoảng thời gian.", ["Dự đoán kiểm chứng được", "Không sửa ký ức", "Học từ sai lệch"]],
+      ["Đọc cho người khác", "Xin đồng thuận, tránh hỏi về người thứ ba và tôn trọng quyền từ chối.", ["Đồng thuận", "Riêng tư", "Không gán nhãn"]]
+    ]}
+  ].map((track) => Object.freeze({ ...track, lessons: Object.freeze(track.lessons.map(([title, overview, objectives], index) => Object.freeze({ id: `${track.id}-${index + 1}`, title, overview, objectives: Object.freeze(objectives) }))) })));
+
+  function tarotAcademyLesson(trackId = "foundation", lessonIndex = 0) {
+    const track = TAROT_ACADEMY_TRACKS.find((item) => item.id === trackId) || TAROT_ACADEMY_TRACKS[0];
+    const index = clamp(lessonIndex, 0, track.lessons.length - 1, 0); const lesson = track.lessons[index];
+    return { track: { id: track.id, title: track.title, level: track.level, lessonCount: track.lessons.length }, lesson, index, previous: index > 0, next: index < track.lessons.length - 1 };
   }
 
   const TRIGRAM_META = Object.freeze({
@@ -361,6 +415,24 @@
 
   const PYTHAGOREAN = Object.freeze({ A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9, J: 1, K: 2, L: 3, M: 4, N: 5, O: 6, P: 7, Q: 8, R: 9, S: 1, T: 2, U: 3, V: 4, W: 5, X: 6, Y: 7, Z: 8 });
   const CHALDEAN = Object.freeze({ A: 1, I: 1, J: 1, Q: 1, Y: 1, B: 2, K: 2, R: 2, C: 3, G: 3, L: 3, S: 3, D: 4, M: 4, T: 4, E: 5, H: 5, N: 5, X: 5, U: 6, V: 6, W: 6, O: 7, Z: 7, F: 8, P: 8 });
+  const NUMEROLOGY_GUIDES = Object.freeze({
+    1: ["Khởi tạo", "tự chủ, tiên phong và định hướng", "cô lập hoặc ép tốc độ", "chọn một bước do chính bạn chịu trách nhiệm", "Bạn muốn bắt đầu điều gì bằng nguồn lực đang có?"],
+    2: ["Kết nối", "hợp tác, lắng nghe và tinh tế", "do dự hoặc phụ thuộc vào phản hồi", "nói rõ nhu cầu và kiểm tra sự đồng thuận", "Ranh giới nào giúp mối quan hệ cân bằng hơn?"],
+    3: ["Biểu đạt", "sáng tạo, ngôn ngữ và niềm vui", "phân tán hoặc che khó khăn bằng sự vui vẻ", "hoàn thành một bản nháp nhỏ rồi nhận phản hồi", "Ý tưởng nào cần một hình dạng cụ thể?"],
+    4: ["Nền tảng", "kỷ luật, quy trình và độ tin cậy", "cứng nhắc hoặc đồng nhất an toàn với bất động", "xây một thói quen đủ nhỏ để duy trì", "Cấu trúc nào đang hỗ trợ và cấu trúc nào cần sửa?"],
+    5: ["Chuyển động", "tự do, trải nghiệm và thích nghi", "bốc đồng hoặc đổi hướng trước khi học xong", "thử nghiệm có giới hạn và tiêu chí dừng", "Bạn cần tự do khỏi điều gì và cam kết với điều gì?"],
+    6: ["Chăm sóc", "trách nhiệm, hài hòa và cộng đồng", "ôm việc hoặc kiểm soát dưới danh nghĩa giúp đỡ", "thống nhất kỳ vọng và chia đều trách nhiệm", "Bạn có thể chăm sóc mà không quên nhu cầu của mình thế nào?"],
+    7: ["Chiêm nghiệm", "nghiên cứu, chiều sâu và phân tích", "thu mình hoặc đòi đủ chắc chắn mới hành động", "kiểm chứng một giả thuyết bằng dữ kiện nhỏ", "Điều gì đã biết, điều gì mới chỉ là suy đoán?"],
+    8: ["Điều hành", "nguồn lực, trách nhiệm và tác động", "quá tập trung thành tích hoặc quyền kiểm soát", "đặt tiêu chí minh bạch cho một quyết định nguồn lực", "Thành công nào vẫn phù hợp với giá trị của bạn?"],
+    9: ["Hoàn tất", "tổng hợp, lòng trắc ẩn và buông bỏ", "hy sinh quá mức hoặc khó khép vòng lặp", "hoàn tất, bàn giao hoặc từ bỏ một việc đúng lúc", "Điều gì đã hoàn thành vai trò của nó?"],
+    11: ["Trực giác có kiểm chứng", "độ nhạy, cảm hứng và khả năng kết nối ý tưởng", "quá tải hoặc biến cảm giác thành sự thật", "ghi cảm nhận rồi tìm bằng chứng ủng hộ và phản bác", "Tín hiệu nào cần được kiểm tra trước khi tin?"],
+    22: ["Kiến tạo quy mô", "tầm nhìn đi cùng hệ thống và hợp tác", "gánh mục tiêu quá lớn hoặc cầu toàn", "chia tầm nhìn thành cột mốc có chủ sở hữu", "Phiên bản nhỏ nhất vẫn chứng minh được ý tưởng là gì?"],
+    33: ["Phụng sự có ranh giới", "giảng giải, chữa lành theo nghĩa biểu tượng và nâng đỡ", "cứu hộ người khác hoặc bỏ quên bản thân", "hỗ trợ trong phạm vi năng lực và chuyển chuyên gia khi cần", "Bạn có thể giúp mà vẫn tôn trọng quyền tự quyết ra sao?"]
+  });
+  function numerologyGuide(numberValue, label = "Chỉ số") {
+    const number = Number(numberValue); const guide = NUMEROLOGY_GUIDES[number] || NUMEROLOGY_GUIDES[reduceNumber(number, false)] || NUMEROLOGY_GUIDES[9];
+    return { number, label, title: guide[0], resources: guide[1], blindSpots: guide[2], practice: guide[3], reflectionQuestion: guide[4], boundary: "Đây là ngôn ngữ biểu tượng để tự quan sát, không phải đánh giá tính cách, năng lực hay tương lai." };
+  }
   function normalizeLetters(value) { return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/Đ/g, "D").replace(/[^A-Z ]/g, "").replace(/\s+/g, " ").trim(); }
   function reduceNumber(value, masters = true) { let number = Math.abs(Number(value) || 0); while (number > 9 && (!masters || ![11, 22, 33].includes(number))) number = String(number).split("").reduce((sum, digit) => sum + Number(digit), 0); return number; }
   function sumTrail(values, masters = true) { const total = values.reduce((sum, value) => sum + Number(value || 0), 0); return { total, value: reduceNumber(total, masters), formula: `${values.join(" + ")} = ${total}${total === reduceNumber(total, masters) ? "" : ` → ${reduceNumber(total, masters)}`}` }; }
@@ -387,6 +459,11 @@
     const base = {
       system, date: dateValue, originalName: String(nameValue || "").slice(0, 120), normalizedName: letters, name: letters, keepMasterNumbers, mappingTable: { ...table }, mappingTrace, lifePath: life, birthday, attitude, expression, soulUrge: soul, personality, maturity, balance, pinnacles, challenges,
       cycles: { personalYear, personalMonth, personalDay, targetDate: targetDateValue }, karmicDebt, karmicLessons, loShu,
+      interpretations: {
+        lifePath: numerologyGuide(life.value, "Đường đời"), birthday: numerologyGuide(birthday.value, "Ngày sinh"), attitude: numerologyGuide(attitude.value, "Thái độ"),
+        expression: expression ? numerologyGuide(expression.value, "Biểu đạt") : null, soulUrge: soul ? numerologyGuide(soul.value, "Nội tâm") : null, personality: personality ? numerologyGuide(personality.value, "Ấn tượng") : null,
+        maturity: maturity ? numerologyGuide(maturity.value, "Trưởng thành") : null, personalYear: numerologyGuide(personalYear, "Năm cá nhân"), personalMonth: numerologyGuide(personalMonth, "Tháng cá nhân"), personalDay: numerologyGuide(personalDay, "Ngày cá nhân")
+      },
       provenance: createProvenance({ kind: "numerology", method: system, algorithmVersion: "numerology-v5", labels: ["symbolic"], input: { date: dateValue, targetDate: targetDateValue, nameSystem: system, nameProvided: Boolean(letters), keepMasterNumbers, normalizedName: letters } })
     };
     return attachResultContract(base, { methodId: "numerology-transparent", input: { date: dateValue, targetDate: targetDateValue, originalNameProvided: Boolean(nameValue), normalizedName: letters, system, keepMasterNumbers }, calculatedFacts: [{ factId: "numerology.life-path", type: "formula", label: "Đường đời", value: life.value }, { factId: "numerology.birthday", type: "formula", label: "Ngày sinh", value: birthday.value }, { factId: "numerology.attitude", type: "formula", label: "Thái độ", value: attitude.value }, ...(expression ? [{ factId: "numerology.expression", type: "formula", label: "Biểu đạt", value: expression.value }] : [])], symbolicInterpretations: [{ interpretationId: "numerology.limit", label: "Giới hạn", text: "Các con số chỉ là lớp biểu tượng minh bạch, không đánh giá con người." }], limitations: ["Tên tiếng Việt được Latin hóa có thể mất khác biệt ngữ âm; chuỗi chuyển đổi luôn được hiển thị.", `Chính sách master number: ${keepMasterNumbers ? "giữ 11/22/33" : "rút gọn toàn bộ"}.`] });
@@ -507,7 +584,39 @@
 
   const LENORMAND_EN = Object.freeze(["Rider", "Clover", "Ship", "House", "Tree", "Clouds", "Snake", "Coffin", "Bouquet", "Scythe", "Whip", "Birds", "Child", "Fox", "Bear", "Stars", "Stork", "Dog", "Tower", "Garden", "Mountain", "Crossroads", "Mice", "Heart", "Ring", "Book", "Letter", "Man", "Woman", "Lily", "Sun", "Moon", "Key", "Fish", "Anchor", "Cross"]);
   const LENORMAND_INSETS = Object.freeze(["9♥", "6♦", "10♠", "K♥", "7♥", "K♣", "Q♣", "9♦", "Q♠", "J♦", "J♣", "7♦", "J♠", "9♣", "10♣", "6♥", "Q♥", "10♥", "6♠", "8♠", "8♣", "Q♦", "7♣", "J♥", "A♣", "10♦", "7♠", "A♥", "A♠", "K♠", "A♦", "8♥", "8♦", "K♦", "9♠", "6♣"]);
-  const LENORMAND_36 = Object.freeze(["Kỵ sĩ", "Cỏ bốn lá", "Con thuyền", "Ngôi nhà", "Cây", "Mây", "Rắn", "Quan tài", "Bó hoa", "Lưỡi hái", "Roi", "Chim", "Đứa trẻ", "Cáo", "Gấu", "Sao", "Cò", "Chó", "Tháp", "Khu vườn", "Núi", "Ngã rẽ", "Chuột", "Trái tim", "Nhẫn", "Sách", "Thư", "Người nam", "Người nữ", "Hoa huệ", "Mặt Trời", "Mặt Trăng", "Chìa khóa", "Cá", "Mỏ neo", "Thập tự"].map((name, index) => Object.freeze({ id: `lenormand-${index + 1}`, number: index + 1, name, englishName: LENORMAND_EN[index], playingCard: LENORMAND_INSETS[index], symbol: String.fromCodePoint(0x25c7 + index % 4), prompt: `Hình tượng ${name.toLocaleLowerCase("vi")} mời bạn quan sát một dữ kiện, mối liên hệ hoặc lựa chọn cụ thể.`, sourceId: "british-museum-lenormand" })));
+  const LENORMAND_GUIDES = Object.freeze([
+    ["tin tức, chuyển động", "Điều gì đang đến gần và cần được phản hồi?"], ["cơ hội nhỏ, nhẹ nhõm", "Cơ hội ngắn hạn nào đáng thử với rủi ro thấp?"], ["hành trình, khoảng cách", "Điều gì cần mở rộng tầm nhìn hoặc vượt khỏi vùng quen?"], ["nhà, nền an toàn", "Nền tảng nào đang bảo vệ bạn và nền nào cần sửa?"],
+    ["sức sống, phát triển dài hạn", "Điều gì cần thời gian, chăm sóc và nhịp đều?"], ["mơ hồ, thay đổi góc nhìn", "Dữ kiện nào đang bị che và cần chờ rõ hơn?"], ["phức tạp, đường vòng", "Vấn đề nào cần chiến lược thay vì phản ứng trực diện?"], ["kết thúc, tạm dừng", "Điều gì đã khép lại hoặc cần được để yên?"],
+    ["quà tặng, thiện ý", "Bạn có thể đón nhận hoặc trao sự trân trọng cụ thể nào?"], ["cắt bỏ, quyết định nhanh", "Điều gì cần giới hạn rõ trước khi gây thêm tổn thất?"], ["lặp lại, tranh luận", "Vòng lặp nào đang tiêu hao và cần một quy tắc mới?"], ["đối thoại, xao động", "Cuộc trò chuyện nào cần bình tĩnh và nghe đủ hai phía?"],
+    ["khởi đầu, sự đơn giản", "Bạn có thể bắt đầu lại bằng một bước nhỏ nào?"], ["chiến lược, công việc", "Điều gì cần kiểm tra kỹ động cơ, vai trò và lợi ích?"], ["sức mạnh, bảo trợ", "Nguồn lực hoặc quyền lực nào cần được dùng có trách nhiệm?"], ["định hướng, mạng lưới", "Mục tiêu nào đủ rõ để giúp bạn chọn đường?"],
+    ["thay đổi, cải tiến", "Sự dịch chuyển nào đang diễn ra và cần chuẩn bị gì?"], ["tin cậy, hỗ trợ", "Ai hoặc điều gì đã chứng minh độ tin cậy bằng hành động lặp lại?"], ["ranh giới, tổ chức", "Khoảng cách hoặc cấu trúc nào giúp bạn nhìn khách quan hơn?"], ["cộng đồng, công khai", "Không gian xã hội nào ảnh hưởng đến lựa chọn này?"],
+    ["trở ngại, trì hoãn", "Vật cản nào cần đổi tuyến, giảm tải hoặc xin hỗ trợ?"], ["lựa chọn, phân nhánh", "Tiêu chí nào giúp loại bớt phương án mà không vội vàng?"], ["hao hụt, lo lắng", "Rò rỉ nhỏ nào đang bào mòn thời gian hoặc năng lượng?"], ["tình cảm, giá trị", "Cảm xúc nào cần được gọi tên và trao đổi trực tiếp?"],
+    ["cam kết, chu kỳ", "Cam kết nào cần điều khoản, kỳ vọng và thời điểm xem lại?"], ["tri thức, điều chưa mở", "Điều gì cần học thêm hoặc chưa nên kết luận?"], ["thông điệp, tài liệu", "Thông tin nào cần được viết rõ và kiểm tra nguồn?"], ["người/đại diện chủ động", "Hãy đọc như một vai trò hoặc người được xác định rõ, không tự đoán danh tính."],
+    ["người/đại diện tiếp nhận", "Hãy đọc như một vai trò hoặc người được xác định rõ, không tự đoán danh tính."], ["trưởng thành, hòa bình", "Điều gì cần kinh nghiệm, kiên nhẫn và ranh giới lành mạnh?"], ["thành công, sáng rõ", "Điều gì đã rõ hơn và có thể chuyển thành hành động cụ thể?"], ["cảm nhận, ghi nhận", "Phản hồi hoặc cảm xúc nào cần kiểm chứng thay vì phóng đại?"],
+    ["lời giải, điều chắc chắn", "Dữ kiện then chốt nào đang mở khóa bước tiếp theo?"], ["nguồn lực, dòng chảy", "Nguồn lực nào đang tăng, giảm hoặc cần được phân bổ lại?"], ["ổn định, nghề nghiệp", "Điểm neo nào đủ bền để xây kế hoạch dài hạn?"], ["gánh nặng, ý nghĩa", "Điều khó nào cần được thừa nhận và chia nhỏ thay vì thần bí hóa?"]
+  ]);
+  const LENORMAND_SPRITE = "assets/fortune/lenormand/game-of-hope/spiel-der-hoffnung-36.webp";
+  const LENORMAND_36 = Object.freeze(["Kỵ sĩ", "Cỏ bốn lá", "Con thuyền", "Ngôi nhà", "Cây", "Mây", "Rắn", "Quan tài", "Bó hoa", "Lưỡi hái", "Roi", "Chim", "Đứa trẻ", "Cáo", "Gấu", "Sao", "Cò", "Chó", "Tháp", "Khu vườn", "Núi", "Ngã rẽ", "Chuột", "Trái tim", "Nhẫn", "Sách", "Thư", "Người nam", "Người nữ", "Hoa huệ", "Mặt Trời", "Mặt Trăng", "Chìa khóa", "Cá", "Mỏ neo", "Thập tự"].map((name, index) => Object.freeze({
+    id: `lenormand-${index + 1}`, number: index + 1, name, englishName: LENORMAND_EN[index], playingCard: LENORMAND_INSETS[index], symbol: String.fromCodePoint(0x25c7 + index % 4),
+    keywords: LENORMAND_GUIDES[index][0].split(", "), prompt: LENORMAND_GUIDES[index][1], image: LENORMAND_SPRITE, spriteColumn: index % 6, spriteRow: Math.floor(index / 6),
+    sourceId: "game-of-hope-wikimedia-pdm", sourcePage: "https://commons.wikimedia.org/wiki/File:Das_Spiel_der_Hofnung_(The_Game_of_Hope).png"
+  })));
+
+  function lenormandReading(cardsValue = []) {
+    const cards = Array.isArray(cardsValue) ? cardsValue.filter((card) => card?.id?.startsWith("lenormand-")).slice(0, 36) : [];
+    const pairs = cards.slice(0, -1).map((card, index) => {
+      const next = cards[index + 1];
+      return { from: card.id, to: next.id, label: `${card.name} + ${next.name}`, reading: `${card.name} đặt chủ đề “${card.keywords.join(", ")}”; ${next.name} cho biết chủ đề ấy được tiếp nối qua “${next.keywords.join(", ")}”. Hãy kiểm tra mối nối này bằng một dữ kiện hoặc cuộc trò chuyện thật.`, question: `Trong tình huống hiện tại, ${card.prompt.replace(/\?$/, "").toLocaleLowerCase("vi")}; đồng thời ${next.prompt.toLocaleLowerCase("vi")}` };
+    });
+    const thirds = cards.length >= 3 ? [
+      { label: "Mở cảnh", cards: cards.slice(0, Math.ceil(cards.length / 3)).map((card) => card.name), instruction: "Mô tả điều đang bước vào bối cảnh mà chưa vội kết luận." },
+      { label: "Điểm chuyển", cards: cards.slice(Math.ceil(cards.length / 3), Math.ceil(cards.length * 2 / 3)).map((card) => card.name), instruction: "Tìm lực cản, nguồn hỗ trợ và chi tiết làm thay đổi mạch đọc." },
+      { label: "Hướng quan sát", cards: cards.slice(Math.ceil(cards.length * 2 / 3)).map((card) => card.name), instruction: "Chuyển mạch biểu tượng thành câu hỏi và bước thử có thể đảo ngược." }
+    ] : [];
+    const houses = cards.length === 36 ? cards.map((card, index) => ({ position: index + 1, house: LENORMAND_36[index], card, match: card.number === index + 1, note: `${card.name} nằm ở nhà ${LENORMAND_36[index].name}: đặt “${card.keywords.join(", ")}” trong lĩnh vực “${LENORMAND_36[index].keywords.join(", ")}”.` })) : [];
+    const findPosition = (number) => { const index = cards.findIndex((card) => card.number === number); return index < 0 ? null : { index: index + 1, row: Math.floor(index / 8) + 1, column: index % 8 + 1 }; };
+    return { count: cards.length, pairs, thirds, houses, significators: { man: findPosition(28), woman: findPosition(29) }, guidance: cards.length === 36 ? ["Grand Tableau dùng bố cục 8×4 + 4 lá cuối.", "Đọc nhà, lá đại diện và các lá kề trước khi nối đường xa.", "Không tự chọn lá Người nam/nữ làm đại diện nếu người dùng chưa xác định."] : ["Đọc từ trái sang phải như một câu, nhưng giữ vai trò từng vị trí.", "Cặp lá mô tả quan hệ biểu tượng; không phải bằng chứng về người hoặc sự kiện.", "Kết thúc bằng một câu hỏi có thể kiểm chứng."] };
+  }
   const RUNES_24 = Object.freeze([["ᚠ", "Fehu", "f", "Freyr's ætt"], ["ᚢ", "Uruz", "u", "Freyr's ætt"], ["ᚦ", "Thurisaz", "þ", "Freyr's ætt"], ["ᚨ", "Ansuz", "a", "Freyr's ætt"], ["ᚱ", "Raidho", "r", "Freyr's ætt"], ["ᚲ", "Kenaz", "k", "Freyr's ætt"], ["ᚷ", "Gebo", "g", "Freyr's ætt"], ["ᚹ", "Wunjo", "w", "Freyr's ætt"], ["ᚺ", "Hagalaz", "h", "Hagal's ætt"], ["ᚾ", "Nauthiz", "n", "Hagal's ætt"], ["ᛁ", "Isa", "i", "Hagal's ætt"], ["ᛃ", "Jera", "j", "Hagal's ætt"], ["ᛇ", "Eihwaz", "ï", "Hagal's ætt"], ["ᛈ", "Perthro", "p", "Hagal's ætt"], ["ᛉ", "Algiz", "z", "Hagal's ætt"], ["ᛋ", "Sowilo", "s", "Hagal's ætt"], ["ᛏ", "Tiwaz", "t", "Tyr's ætt"], ["ᛒ", "Berkano", "b", "Tyr's ætt"], ["ᛖ", "Ehwaz", "e", "Tyr's ætt"], ["ᛗ", "Mannaz", "m", "Tyr's ætt"], ["ᛚ", "Laguz", "l", "Tyr's ætt"], ["ᛜ", "Ingwaz", "ŋ", "Tyr's ætt"], ["ᛞ", "Dagaz", "d", "Tyr's ætt"], ["ᛟ", "Othala", "o", "Tyr's ætt"]].map(([symbol, name, transliteration, family], index) => Object.freeze({ id: `rune-${index + 1}`, number: index + 1, name, symbol, transliteration, family, sourceId: "unicode-runic", prompt: `Rune ${name} được dùng như câu gợi mở biểu tượng; dữ liệu ngôn ngữ “${transliteration}” được tách khỏi diễn giải HH.` })));
   const ORACLE_24 = Object.freeze(["Khoảng thở", "Cánh cửa", "Mạch nước", "Sợi chỉ", "Ngọn đồi", "Đốm lửa", "Mầm non", "Bến đỗ", "Làn gió", "Tấm gương", "Dòng chảy", "Chiếc cầu", "Đường chân trời", "Vệt sáng", "Hạt cát", "Vòng tròn", "Tiếng chuông", "Bậc thềm", "Cánh rừng", "Giọt mưa", "Trang giấy", "Ngọn hải đăng", "Mùa chuyển", "Điểm neo"].map((name, index) => Object.freeze({ id: `oracle-${index + 1}`, number: index + 1, name, symbol: ["✦", "◌", "◇", "△"][index % 4], prompt: `${name} gợi một câu hỏi: điều gì có thể được quan sát hoặc thử ở quy mô nhỏ?` })));
   function drawSymbolDeck(typeValue, seedValue, countValue = 1, options = {}) {
@@ -527,8 +636,8 @@
   ]);
 
   return Object.freeze({
-    VERSION, CONTENT_VERSION, ASTRONOMY_VERSION, LABELS, ZODIAC_MODES, HOUSE_SYSTEMS, DEFAULT_ORBS, SOURCE_REFERENCES, INTERPRETATION_PACKS, METHOD_REGISTRY, TAROT_78, SPREADS, LENORMAND_36, RUNES_24, ORACLE_24, READINESS,
+    VERSION, CONTENT_VERSION, ASTRONOMY_VERSION, LABELS, ZODIAC_MODES, HOUSE_SYSTEMS, DEFAULT_ORBS, SOURCE_REFERENCES, INTERPRETATION_PACKS, METHOD_REGISTRY, TAROT_78, SPREADS, TAROT_ACADEMY_TRACKS, LENORMAND_36, RUNES_24, ORACLE_24, READINESS,
     clamp, normalizeAngle, hashSeed, createRandom, validDateValue, timeZoneSupported, zoneOffsetMinutes, localInputToInstant, normalizeProfile, createProvenance, methodDefinition, createSecureSeed, createResultContract, verifyResultContract, attachResultContract,
-    calculateSolarZodiac, drawTarot78, tarotStatistics, tarotQuiz, academyReviewSchedule, castIChingAdvanced, advancedNumerology, calculateMoonSky, canChiYear, lunarCalendarDate, chineseRelatedYear, solarTerms, calculateChineseZodiac, easternCalendar, drawSymbolDeck
+    calculateSolarZodiac, drawTarot78, tarotStatistics, tarotQuiz, academyReviewSchedule, tarotAcademyLesson, castIChingAdvanced, advancedNumerology, numerologyGuide, calculateMoonSky, canChiYear, lunarCalendarDate, chineseRelatedYear, solarTerms, calculateChineseZodiac, easternCalendar, drawSymbolDeck, lenormandReading
   });
 });

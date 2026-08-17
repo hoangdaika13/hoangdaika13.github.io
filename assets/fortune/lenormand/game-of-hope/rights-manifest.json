@@ -1,0 +1,23 @@
+{
+  "schema": "hh.open-media-rights.v1",
+  "assetId": "lenormand-game-of-hope-36-sprite",
+  "title": "Das Spiel der Hoffnung (The Game of Hope) — 36-card sprite",
+  "creator": "Johann Kaspar Hechtel",
+  "workDate": "1799",
+  "sourcePage": "https://commons.wikimedia.org/wiki/File:Das_Spiel_der_Hofnung_(The_Game_of_Hope).png",
+  "originalSource": "https://www.britishmuseum.org/collection/object/P_1896-0501-495",
+  "licenseCode": "Public-Domain-Mark-1.0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+  "commercialUse": true,
+  "modification": true,
+  "territory": "worldwide where the Public Domain Mark assessment applies",
+  "reviewedAt": "2026-08-17",
+  "reviewedBy": "HH rights review",
+  "derivative": {
+    "operation": "Wikimedia 1920px preview transcoded from PNG to WebP without content alteration",
+    "file": "spiel-der-hoffnung-36.webp",
+    "sha256": "60A3A5A978C6276B8A794B442C7160A222A07F94FD2800F398647512E43CB36F"
+  },
+  "credit": "Johann Kaspar Hechtel, Das Spiel der Hoffnung (1799). Public Domain Mark 1.0. File source: Wikimedia Commons; original object held by the British Museum.",
+  "notes": "The sprite is arranged as six rows by six columns in card-number order 1–36. The Vietnamese interpretation text is original HH editorial content and is not copied from a commercial deck guidebook."
+}

@@ -64,6 +64,10 @@ test("method registry and interpretation packs expose versioned provenance", () 
   assert.equal(suite.methodDefinition("tarot-rws-78").version, "2.0.0");
   assert.equal(suite.INTERPRETATION_PACKS["hh-rws-reflection"].language, "vi");
   assert.match(suite.SOURCE_REFERENCES.jpl.url, /jpl\.nasa\.gov/);
+  assert.equal(suite.SOURCE_REFERENCES.lenormand.id, "wikimedia-game-of-hope-1799");
+  assert.match(suite.SOURCE_REFERENCES.lenormand.url, /commons\.wikimedia\.org/);
+  assert.match(suite.SOURCE_REFERENCES.nasaMoonKit.url, /svs\.gsfc\.nasa\.gov/);
+  assert.ok(suite.methodDefinition("moon-sky").sources.some((source) => source.id === "nasa-svs-cgi-moon-kit"));
 });
 
 test("solar zodiac uses real longitude and discloses all-day boundary uncertainty", () => {
@@ -116,6 +120,10 @@ test("Tarot Academy never needs to disclose the answer before evaluation", () =>
   assert.equal(quiz.answers.length, 4);
   assert.ok(quiz.correctIndex >= 0 && quiz.correctIndex < 4);
   assert.equal(quiz.answers[quiz.correctIndex], quiz.card.light);
+  assert.equal(suite.TAROT_ACADEMY_TRACKS.length, 8);
+  assert.equal(suite.TAROT_ACADEMY_TRACKS.reduce((sum, track) => sum + track.lessons.length, 0), 26);
+  assert.equal(suite.tarotAcademyLesson("court", 2).lesson.title, "Queen");
+  assert.equal(suite.tarotQuiz("academy-court", { mode: "court" }).answers.length, 4);
 });
 
 test("advanced I Ching supports coins, yarrow and strict manual lines", () => {
@@ -159,6 +167,9 @@ test("advanced numerology keeps methods separate and exposes every formula layer
   assert.equal(Object.keys(pythagorean.loShu).length, 9);
   assert.notEqual(pythagorean.expression.total, chaldean.expression.total);
   assert.match(pythagorean.provenance.method, /pythagorean/);
+  assert.equal(pythagorean.interpretations.lifePath.number, 8);
+  assert.match(pythagorean.interpretations.lifePath.resources, /nguồn lực|trách nhiệm/);
+  assert.match(pythagorean.interpretations.lifePath.boundary, /không phải đánh giá/);
   assert.equal(suite.advancedNumerology("2026-02-30"), null);
 });
 
@@ -188,10 +199,26 @@ test("Lenormand, Rune and Oracle decks are complete and deterministic", () => {
   assert.equal(suite.LENORMAND_36.length, 36);
   assert.equal(suite.RUNES_24.length, 24);
   assert.equal(suite.ORACLE_24.length, 24);
+  assert.ok(suite.LENORMAND_36.every((card) => card.image && card.keywords.length && Number.isInteger(card.spriteColumn) && Number.isInteger(card.spriteRow)));
+  const tableau = suite.drawSymbolDeck("lenormand", "tableau-reading", 36); const reading = suite.lenormandReading(tableau.cards);
+  assert.equal(reading.houses.length, 36); assert.equal(reading.pairs.length, 35); assert.equal(reading.thirds.length, 3);
   for (const type of ["lenormand", "runes", "oracle"]) {
     const draw = suite.drawSymbolDeck(type, "symbol-seed", 9);
     assert.equal(draw.cards.length, 9);
     assert.deepEqual(draw.cards, suite.drawSymbolDeck(type, "symbol-seed", 9).cards);
     assert.deepEqual(draw.provenance.labels, ["BIỂU TƯỢNG"]);
   }
+});
+
+test("Lenormand and NASA Moon assets keep source, license and checksum evidence", () => {
+  const fs = require("node:fs"); const crypto = require("node:crypto");
+  const verify = (relativeManifest) => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, relativeManifest), "utf8"));
+    const directory = path.dirname(path.join(root, relativeManifest)); const files = manifest.files || [manifest.derivative];
+    for (const file of files) { const bytes = fs.readFileSync(path.join(directory, file.file)); assert.equal(crypto.createHash("sha256").update(bytes).digest("hex").toUpperCase(), file.sha256.toUpperCase()); }
+    return manifest;
+  };
+  const lenormand = verify("assets/fortune/lenormand/game-of-hope/rights-manifest.json");
+  const moon = verify("assets/fortune/moon/nasa-lro/rights-manifest.json");
+  assert.equal(lenormand.licenseCode, "Public-Domain-Mark-1.0"); assert.match(lenormand.sourcePage, /commons\.wikimedia\.org/); assert.match(moon.sourcePage, /svs\.gsfc\.nasa\.gov/);
 });

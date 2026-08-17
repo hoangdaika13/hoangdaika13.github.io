@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v652";
+const CACHE = "hh-identity-portal-v653";
 // Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
 // Astral route compatibility identifiers: astral-realms.css?v=77 astral-realms.js?v=94.
 // Compatibility aliases are kept as documentation for clients upgrading from the
@@ -75,7 +75,7 @@ const RUNTIME_ASSETS = [
   "./support-platform.css?v=10",
   "./fortune-hub.css?v=3",
   "./fortune-hub-v3.css?v=2",
-  "./fortune-hub-v4.css?v=4",
+  "./fortune-hub-v4.css?v=5",
   "./chat-ai-hub.css?v=5",
   "./vendor/pdf-lib.min.js?v=1.17.1",
   "./script.js?v=189",
@@ -458,10 +458,14 @@ const RUNTIME_ASSETS = [
   "./vendor/astronomy-engine-2.1.19.min.js?v=1",
   "./fortune-iching-64.js?v=1",
   "./fortune-accuracy-lab.js?v=1",
-  "./fortune-suite-v4.js?v=3",
+  "./fortune-suite-v4.js?v=4",
   "./fortune-astrology.js?v=1",
   "./fortune-astrology-v4.js?v=2",
-  "./fortune-hub.js?v=12",
+  "./fortune-moon-3d.js?v=1",
+  "./fortune-hub.js?v=13",
+  "./assets/fortune/lenormand/game-of-hope/spiel-der-hoffnung-36.webp",
+  "./assets/fortune/moon/nasa-lro/lroc-color-2k.jpg",
+  "./assets/fortune/moon/nasa-lro/lroc-height-1k.jpg",
   "./chat-ai-hub.js?v=5",
   "./media-design-page.js?v=13",
   "./tool-manifests.js?v=1",
