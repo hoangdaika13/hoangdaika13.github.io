@@ -1137,6 +1137,7 @@ function systemInstruction(moduleId, actionType) {
   if (moduleId === "fortune") return [
     "Bạn là HH Reflection Copilot, chuyên gia giải thích các hệ biểu tượng bằng tiếng Việt rõ ràng, chi tiết và có trách nhiệm.",
     "Bạn chỉ phân tích dữ liệu kết quả đã được hệ thống tính và nội dung người dùng chủ động gửi; không tự bịa thêm lá bài, hào, quẻ, vị trí hành tinh, ngày sinh, sự kiện hoặc thông tin về người khác.",
+    "Khi gói FACT LOCK có dữ kiện, mọi câu nhắc lại dữ kiện tính toán hoặc biểu tượng phải kèm đúng cú pháp [factId:<id>]. Không được viện dẫn id ngoài danh sách.",
     "Tách rõ ba lớp: DỮ LIỆU ĐÃ TÍNH, DIỄN GIẢI BIỂU TƯỢNG và SUY LUẬN/ĐIỀU CẦN KIỂM CHỨNG.",
     "Giải thích từng thành phần, mối liên hệ, điểm đồng thuận, mâu thuẫn, nhiều khả năng diễn giải và giới hạn của phương pháp. Không dùng lời khẳng định tuyệt đối như chắc chắn, định mệnh, sẽ xảy ra, bị nguyền hoặc người kia đang nghĩ gì.",
     "Luôn kết thúc bằng câu hỏi tự suy ngẫm, ba hành động nhỏ có thể đảo ngược, dấu hiệu cần dừng và lời nhắc tự quyết định.",
@@ -1161,6 +1162,27 @@ function systemInstruction(moduleId, actionType) {
   return `${common}\n\n${rules[moduleId] || rules["ai-center"]}\nTác vụ hiện tại: ${actionType}.`;
 }
 
+function normalizeFortuneFactLock(meta = {}) {
+  const source = meta.factLock && typeof meta.factLock === "object" ? meta.factLock : {}; const seen = new Set(); const facts = [];
+  for (const item of Array.isArray(source.facts) ? source.facts.slice(0, 160) : []) {
+    const factId = clean(item?.factId, 100).toLowerCase(); if (!/^[a-z0-9][a-z0-9._-]{0,99}$/.test(factId) || seen.has(factId)) continue;
+    const value = clean(item?.value, 360); if (!value) continue; seen.add(factId); facts.push({ factId, type: clean(item?.type || "calculation", 40), value });
+  }
+  const allowedEntities = [...new Set((Array.isArray(source.allowedEntities) ? source.allowedEntities : []).map((item) => clean(item, 120)).filter(Boolean))].slice(0, 160);
+  return { schema: "hh.fortune.fact-lock.v1", facts, allowedEntities, sourceView: clean(source.sourceView, 40), mode: clean(source.mode, 40), selectedTextDigest: clean(source.selectedTextDigest, 64) };
+}
+
+function validateFortuneFactLockedOutput(outputValue, meta = {}) {
+  const output = clean(outputValue, 48000); const lock = normalizeFortuneFactLock(meta); if (!lock.facts.length) return { output, factValidation: { ok: true, mode: "unstructured-user-input", factCount: 0, citedFactCount: 0, warnings: ["Không có fact cấu trúc; chỉ kiểm tra rào chắn ngôn ngữ."] } };
+  const allowedIds = new Set(lock.facts.map((fact) => fact.factId)); const cited = [...output.matchAll(/\[factId:([a-z0-9._-]+)\]/gi)].map((match) => match[1].toLowerCase()); const invalid = [...new Set(cited.filter((id) => !allowedIds.has(id)))]; const valid = [...new Set(cited.filter((id) => allowedIds.has(id)))];
+  if (invalid.length || !valid.length) { const error = new Error(invalid.length ? `Gemini viện dẫn factId không tồn tại: ${invalid.join(", ")}.` : "Gemini không viện dẫn factId bắt buộc; bản nháp đã bị chặn."); error.statusCode = 502; error.code = "FORTUNE_FACT_LOCK_REJECTED"; throw error; }
+  const knownEntities = ["Mặt Trời", "Mặt Trăng", "Sao Thủy", "Sao Kim", "Sao Hỏa", "Sao Mộc", "Sao Thổ", "Thiên Vương", "Hải Vương", "Diêm Vương", "Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto", "ASC", "MC"];
+  const allowedNormalized = new Set(lock.allowedEntities.map((item) => item.toLocaleLowerCase("vi"))); const unsupportedEntities = knownEntities.filter((entity) => { const normalized = entity.toLocaleLowerCase("vi"); const mentioned = new RegExp(`(^|[^\\p{L}])${entity.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^\\p{L}]|$)`, "iu").test(output); const allowed = [...allowedNormalized].some((item) => item === normalized || item.includes(normalized) || normalized.includes(item)); return mentioned && !allowed; });
+  if (unsupportedEntities.length) { const error = new Error(`Gemini thêm thực thể không có trong FACT LOCK: ${unsupportedEntities.join(", ")}.`); error.statusCode = 502; error.code = "FORTUNE_ENTITY_REJECTED"; throw error; }
+  const safetyFlags = []; if (/\b(chắc chắn|định mệnh|sẽ xảy ra|bị nguyền|100%)\b/iu.test(output)) safetyFlags.push("absolute-language");
+  return { output, factValidation: { ok: true, mode: "fact-locked", factCount: lock.facts.length, citedFactCount: valid.length, citedFactIds: valid, invalidFactIds: [], safetyFlags } };
+}
+
 function promptFor(moduleId, actionType, input, meta = {}) {
   if (moduleId === "fortune" && actionType === "fortune-deep-analysis") {
     const depth = clean(meta.depth, 20) === "expert" ? "chuyên sâu tối đa" : "chi tiết, dễ hiểu";
@@ -1175,6 +1197,7 @@ function promptFor(moduleId, actionType, input, meta = {}) {
     };
     const mode = modes[clean(meta.mode, 24)] || modes.easy;
     const requested = Array.isArray(meta.sections) ? meta.sections.map((item) => clean(item, 60)).filter(Boolean).slice(0, 8) : [];
+    const factLock = normalizeFortuneFactLock(meta);
     return [
       `Hãy tạo một bản phân tích ${depth} từ đúng dữ liệu dưới đây. Chế độ: ${mode}.`,
       requested.length ? `Các phần người dùng chọn: ${requested.join(", ")}.` : "Bao gồm tóm tắt, giải thích, câu hỏi suy ngẫm, hành động nhỏ và kiểm tra an toàn.",
@@ -1189,7 +1212,9 @@ function promptFor(moduleId, actionType, input, meta = {}) {
       "8. Cảnh báo câu chữ tuyệt đối/gây sợ nếu đầu vào có; viết lại theo cách an toàn.",
       "9. Giới hạn phương pháp và nhãn 'Nội dung do AI tạo'.",
       "Trước khi trả lời, lập kiểm tra nội bộ: mọi tên lá, vị trí hành tinh, hào, quẻ, con số và timestamp nhắc lại đều phải xuất hiện nguyên văn trong đầu vào. Nếu không có, ghi 'không có dữ liệu' thay vì suy đoán.",
+      factLock.facts.length ? "Mọi câu nhắc tới một dữ kiện trong FACT LOCK phải kết thúc bằng đúng [factId:<id>] tương ứng. Không tạo factId mới. Nếu không có factId hỗ trợ, không viết dữ kiện đó." : "Không có FACT LOCK cấu trúc; chỉ diễn giải nội dung người dùng chủ động nhập và không tự bổ sung dữ kiện.",
       "Không lặp ý để kéo dài. Không suy đoán dữ liệu cá nhân không có trong đầu vào.",
+      factLock.facts.length ? `\nFACT LOCK (JSON)\n${JSON.stringify(factLock)}` : "",
       "\nDỮ LIỆU NGƯỜI DÙNG ĐÃ CHỌN\n",
       clean(input, 12000)
     ].join("\n");
@@ -1840,6 +1865,11 @@ module.exports = async function handler(req, res) {
       if (result.provider) provider = result.provider;
     }
 
+    if (moduleId === "fortune" && actionType === "fortune-deep-analysis") {
+      const validated = validateFortuneFactLockedOutput(result.output, meta);
+      result = { ...result, output: validated.output, factValidation: validated.factValidation };
+    }
+
     const privateFortuneAction = moduleId === "fortune" && actionType === "fortune-deep-analysis";
     const doc = {
       moduleId,
@@ -1853,6 +1883,7 @@ module.exports = async function handler(req, res) {
       interactionId: result.interactionId || "",
       requestId: result.requestId || "",
       usage: result.usage || null,
+      factValidation: privateFortuneAction ? (result.factValidation || null) : undefined,
       sources: result.sources || [],
       providerApi: result.providerApi || (provider === "local" ? "local" : ""),
       keyAttempts: Number(result.keyAttempts || 0),

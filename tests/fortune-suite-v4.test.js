@@ -14,7 +14,7 @@ const profile = {
 };
 
 test("Fortune Suite V4 exposes a complete deterministic Tarot 78 deck", () => {
-  assert.equal(suite.VERSION, "4.0.0");
+  assert.equal(suite.VERSION, "4.1.0");
   assert.equal(suite.TAROT_78.length, 78);
   assert.equal(new Set(suite.TAROT_78.map((card) => card.id)).size, 78);
   assert.equal(suite.TAROT_78.filter((card) => card.arcana === "major").length, 22);
@@ -25,7 +25,18 @@ test("Fortune Suite V4 exposes a complete deterministic Tarot 78 deck", () => {
   assert.equal(first.seed, second.seed);
   assert.equal(first.cards.length, 15);
   assert.equal(new Set(first.cards.map((card) => card.id)).size, 15);
+  assert.ok(first.cards.every((card) => /assets\/fortune\/tarot\/rws\/.+\.webp$/.test(card.image)));
+  assert.ok(suite.TAROT_78.some((card) => card.name === "The Fool · Kẻ Khờ"));
+  assert.ok(suite.TAROT_78.some((card) => card.name === "Ace of Wands · Át Gậy"));
+  assert.ok(suite.TAROT_78.some((card) => card.name === "King of Cups · Vua Cốc"));
   assert.deepEqual(first.provenance.labels, ["BIỂU TƯỢNG"]);
+});
+
+test("all standard Rider-Waite-Smith card images exist with a verified rights manifest", () => {
+  const fs = require("node:fs"); const manifest = JSON.parse(fs.readFileSync(path.join(root, "assets/fortune/tarot/rws/rights-manifest.json"), "utf8"));
+  assert.equal(manifest.count, 78); assert.equal(manifest.assets.length, 78); assert.match(manifest.rightsStatus, /public domain/i);
+  for (const card of suite.TAROT_78) assert.equal(fs.existsSync(path.join(root, card.image)), true, card.image);
+  assert.ok(manifest.assets.every((asset) => asset.license === "Public Domain Mark 1.0" && /^[a-f0-9]{64}$/.test(asset.sha256)));
 });
 
 test("Tarot Academy never needs to disclose the answer before evaluation", () => {

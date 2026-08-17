@@ -6,14 +6,16 @@
 })(typeof window !== "undefined" ? window : globalThis, function createFortuneSuiteV4(globalScope) {
   "use strict";
 
-  const VERSION = "4.0.0";
+  const VERSION = "4.1.0";
   const CONTENT_VERSION = "hh-reflection-content-2026.08";
   const ASTRONOMY_VERSION = "Astronomy Engine 2.1.19";
   const LABELS = Object.freeze({ calculation: "TÍNH TOÁN", symbolic: "BIỂU TƯỢNG", ai: "AI" });
   const ZODIAC_MODES = Object.freeze(["tropical", "sidereal"]);
-  const HOUSE_SYSTEMS = Object.freeze(["equal", "whole-sign"]);
+  const HOUSE_SYSTEMS = Object.freeze(["equal", "whole-sign", "porphyry"]);
   const DEFAULT_ORBS = Object.freeze({ conjunction: 8, sextile: 5, square: 7, trine: 7, opposition: 8 });
   const AU_KM = 149597870.7;
+
+  function accuracyLab() { return globalScope.HHFortuneAccuracyLab || (typeof require === "function" ? require("./fortune-accuracy-lab") : null); }
 
   function clamp(value, min, max, fallback = min) {
     const number = Number(value);
@@ -52,7 +54,9 @@
     const localAsUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour) % 24, Number(parts.minute), Number(parts.second));
     return Math.round((localAsUtc - instant.getTime()) / 60000);
   }
-  function localInputToInstant(dateValue, timeValue, timeZone) {
+  function localInputToInstant(dateValue, timeValue, timeZone, calendarSystem = "gregorian", dstResolution = "") {
+    const analyzed = accuracyLab()?.analyzeLocalTime?.(dateValue, timeValue, timeZone, dstResolution, calendarSystem);
+    if (analyzed) return analyzed.ok ? new Date(analyzed.selected.instantUtc) : null;
     if (!validDateValue(dateValue) || !/^\d{2}:\d{2}$/.test(String(timeValue || "")) || !timeZoneSupported(timeZone)) return null;
     const [year, month, day] = String(dateValue).split("-").map(Number);
     const [hour, minute] = String(timeValue).split(":").map(Number);
@@ -67,14 +71,20 @@
   }
   function normalizeProfile(raw = {}) {
     const timezoneId = timeZoneSupported(raw.timezoneId) ? String(raw.timezoneId) : "Asia/Ho_Chi_Minh";
-    const instant = localInputToInstant(raw.date, raw.time, timezoneId);
+    const calendarSystem = ["gregorian", "julian"].includes(raw.calendarSystem) ? raw.calendarSystem : "gregorian"; const normalizedDate = accuracyLab()?.calendarDateToGregorian?.(raw.date, calendarSystem); const instant = localInputToInstant(raw.date, raw.time, timezoneId, calendarSystem, raw.dstResolution);
     return {
-      date: validDateValue(raw.date) ? String(raw.date) : "",
+      date: normalizedDate ? String(raw.date) : "",
       time: /^\d{2}:\d{2}$/.test(String(raw.time || "")) ? String(raw.time) : "",
       place: String(raw.place || "").trim().slice(0, 120),
       latitude: clamp(raw.latitude, -90, 90, 0),
       longitude: clamp(raw.longitude, -180, 180, 0),
       elevation: clamp(raw.elevation, -500, 9000, 0),
+      birthTimeAccuracy: ["exact", "estimated", "unknown"].includes(raw.birthTimeAccuracy) ? raw.birthTimeAccuracy : (raw.time ? "estimated" : "unknown"),
+      birthTimeSource: ["birth-certificate", "family-memory", "self-estimated", "unknown"].includes(raw.birthTimeSource) ? raw.birthTimeSource : "unknown",
+      birthTimeUncertaintyMinutes: [1, 15, 60, 720].includes(Number(raw.birthTimeUncertaintyMinutes)) ? Number(raw.birthTimeUncertaintyMinutes) : (raw.birthTimeAccuracy === "exact" ? 1 : raw.birthTimeAccuracy === "unknown" ? 720 : 15),
+      locationConfidence: ["verified", "selected", "approximate"].includes(raw.locationConfidence) ? raw.locationConfidence : "selected",
+      calendarSystem,
+      dstResolution: ["earlier", "later"].includes(raw.dstResolution) ? raw.dstResolution : "",
       timezoneId,
       timezoneOffsetMinutes: instant ? zoneOffsetMinutes(timezoneId, instant) : null,
       zodiacMode: ZODIAC_MODES.includes(raw.zodiacMode) ? raw.zodiacMode : "tropical",
@@ -98,42 +108,44 @@
       input: {
         date: normalized.date, time: normalized.time, place: normalized.place, latitude: normalized.latitude, longitude: normalized.longitude,
         elevation: normalized.elevation, timezoneId: normalized.timezoneId, timezoneOffsetMinutes: normalized.timezoneOffsetMinutes,
+        birthTimeAccuracy: normalized.birthTimeAccuracy, birthTimeSource: normalized.birthTimeSource, birthTimeUncertaintyMinutes: normalized.birthTimeUncertaintyMinutes,
+        locationConfidence: normalized.locationConfidence, calendarSystem: normalized.calendarSystem, dstResolution: normalized.dstResolution,
         zodiacMode: normalized.zodiacMode, houseSystem: normalized.houseSystem, aspectOrbs: normalized.aspectOrbs, ...input
       },
-      timezoneData: "IANA tzdb do môi trường chạy cung cấp; offset được chụp tại thời điểm tính",
+      timezoneData: { targetVersion: "2026c", runtimeVersion: "unknown-runtime-icu", note: "IANA tzdb do môi trường chạy cung cấp; offset được chụp tại thời điểm tính." },
       reproducible: Boolean(seed || (normalized.date && normalized.time && normalized.timezoneId))
     });
   }
 
   const MAJOR_NAMES = Object.freeze([
-    ["wanderer", "✦", "Người Lữ Hành"], ["maker", "◇", "Người Kiến Tạo"], ["inner-voice", "☾", "Tiếng Nói Bên Trong"], ["garden", "❀", "Khu Vườn"],
-    ["structure", "▦", "Nền Móng"], ["mentor", "⌁", "Người Dẫn Đường"], ["choice", "∞", "Giao Điểm"], ["momentum", "➶", "Động Lực"],
-    ["calm-strength", "◉", "Sức Mạnh Dịu Dàng"], ["lantern", "✧", "Ngọn Đèn"], ["turning", "↻", "Vòng Chuyển"], ["balance", "⚖", "Cán Cân"],
-    ["new-angle", "⌄", "Góc Nhìn Khác"], ["release", "◐", "Chuyển Hóa"], ["harmony", "≈", "Dòng Hòa Hợp"], ["attachment", "◆", "Sợi Ràng Buộc"],
-    ["breakthrough", "ϟ", "Khoảnh Khắc Phá Vỡ"], ["north-star", "★", "Sao Dẫn Lối"], ["mist", "☽", "Miền Sương"], ["sunrise", "☀", "Bình Minh"],
-    ["awakening", "⌁", "Tiếng Gọi"], ["wholeness", "◎", "Toàn Cảnh"]
+    ["fool", "0", "Kẻ Khờ", "The Fool"], ["magician", "I", "Nhà Ảo Thuật", "The Magician"], ["high-priestess", "II", "Nữ Tư Tế", "The High Priestess"], ["empress", "III", "Nữ Hoàng", "The Empress"],
+    ["emperor", "IV", "Hoàng Đế", "The Emperor"], ["hierophant", "V", "Giáo Hoàng", "The Hierophant"], ["lovers", "VI", "Những Người Yêu", "The Lovers"], ["chariot", "VII", "Cỗ Xe", "The Chariot"],
+    ["strength", "VIII", "Sức Mạnh", "Strength"], ["hermit", "IX", "Ẩn Sĩ", "The Hermit"], ["wheel-of-fortune", "X", "Bánh Xe Số Phận", "Wheel of Fortune"], ["justice", "XI", "Công Lý", "Justice"],
+    ["hanged-man", "XII", "Người Treo Ngược", "The Hanged Man"], ["death", "XIII", "Cái Chết", "Death"], ["temperance", "XIV", "Tiết Chế", "Temperance"], ["devil", "XV", "Ác Quỷ", "The Devil"],
+    ["tower", "XVI", "Tòa Tháp", "The Tower"], ["star", "XVII", "Ngôi Sao", "The Star"], ["moon", "XVIII", "Mặt Trăng", "The Moon"], ["sun", "XIX", "Mặt Trời", "The Sun"],
+    ["judgement", "XX", "Phán Xét", "Judgement"], ["world", "XXI", "Thế Giới", "The World"]
   ]);
   const SUITS = Object.freeze([
-    { id: "wands", name: "Gậy", symbol: "♣", element: "Lửa", focus: "động lực, sáng tạo và hành động", color: "#ff9b71" },
-    { id: "cups", name: "Cốc", symbol: "♥", element: "Nước", focus: "cảm xúc, kết nối và tiếp nhận", color: "#6fd8ff" },
-    { id: "swords", name: "Kiếm", symbol: "♠", element: "Khí", focus: "tư duy, giao tiếp và quyết định", color: "#a9b7ff" },
-    { id: "pentacles", name: "Tiền", symbol: "♦", element: "Đất", focus: "nguồn lực, cơ thể và giá trị thực tế", color: "#80e1a5" }
+    { id: "wands", name: "Gậy", english: "Wands", symbol: "♣", element: "Lửa", focus: "động lực, sáng tạo và hành động", color: "#ff9b71" },
+    { id: "cups", name: "Cốc", english: "Cups", symbol: "♥", element: "Nước", focus: "cảm xúc, kết nối và tiếp nhận", color: "#6fd8ff" },
+    { id: "swords", name: "Kiếm", english: "Swords", symbol: "♠", element: "Khí", focus: "tư duy, giao tiếp và quyết định", color: "#a9b7ff" },
+    { id: "pentacles", name: "Tiền", english: "Pentacles", symbol: "♦", element: "Đất", focus: "nguồn lực, cơ thể và giá trị thực tế", color: "#80e1a5" }
   ]);
   const RANKS = Object.freeze([
-    ["ace", "Át", "một hạt giống mới"], ["two", "Hai", "sự cân nhắc giữa hai hướng"], ["three", "Ba", "việc phối hợp để mở rộng"], ["four", "Bốn", "một cấu trúc cần ổn định"],
-    ["five", "Năm", "ma sát tạo cơ hội điều chỉnh"], ["six", "Sáu", "nhịp chuyển sang trạng thái hài hòa hơn"], ["seven", "Bảy", "bài kiểm tra về lựa chọn và bền bỉ"], ["eight", "Tám", "chuyển động có nhịp và kỹ năng"],
-    ["nine", "Chín", "giai đoạn gần hoàn tất cần giữ sức"], ["ten", "Mười", "một chu kỳ đạt ngưỡng và cần phân bổ lại"], ["student", "Người Học", "tò mò và tiếp nhận thông tin mới"],
-    ["traveler", "Người Tiến", "đưa năng lượng vào hành động"], ["keeper", "Người Giữ", "chăm sóc chiều sâu và tiêu chuẩn"], ["guide", "Người Dẫn", "chịu trách nhiệm định hướng nguồn lực"]
+    ["ace", "Át", "Ace", "một hạt giống mới"], ["two", "Hai", "Two", "sự cân nhắc giữa hai hướng"], ["three", "Ba", "Three", "việc phối hợp để mở rộng"], ["four", "Bốn", "Four", "một cấu trúc cần ổn định"],
+    ["five", "Năm", "Five", "ma sát tạo cơ hội điều chỉnh"], ["six", "Sáu", "Six", "nhịp chuyển sang trạng thái hài hòa hơn"], ["seven", "Bảy", "Seven", "bài kiểm tra về lựa chọn và bền bỉ"], ["eight", "Tám", "Eight", "chuyển động có nhịp và kỹ năng"],
+    ["nine", "Chín", "Nine", "giai đoạn gần hoàn tất cần giữ sức"], ["ten", "Mười", "Ten", "một chu kỳ đạt ngưỡng và cần phân bổ lại"], ["page", "Tiểu Đồng", "Page", "tò mò và tiếp nhận thông tin mới"],
+    ["knight", "Hiệp Sĩ", "Knight", "đưa năng lượng vào hành động"], ["queen", "Nữ Hoàng", "Queen", "chăm sóc chiều sâu và tiêu chuẩn"], ["king", "Vua", "King", "chịu trách nhiệm định hướng nguồn lực"]
   ]);
-  const MAJOR_CARDS = MAJOR_NAMES.map(([id, symbol, name], index) => Object.freeze({
-    id: `major-${id}`, arcana: "major", number: index, suit: "Major", symbol, name,
-    light: `Mặt sáng của ${name.toLocaleLowerCase("vi")} khuyến khích quan sát điều đang mở ra và chọn một bước có chủ đích.`,
-    shadow: `Mặt khuất nhắc rằng biểu tượng ${name.toLocaleLowerCase("vi")} không thay thế dữ kiện, ranh giới hay trách nhiệm cá nhân.`,
-    balanced: `Giữ cả cơ hội lẫn giới hạn của ${name.toLocaleLowerCase("vi")} trong cùng một góc nhìn.`,
-    question: `Điều gì từ hình tượng ${name} thật sự liên hệ với trải nghiệm hiện tại của bạn?`, color: `hsl(${(index * 31 + 180) % 360} 78% 68%)`, contentVersion: CONTENT_VERSION
+  const MAJOR_CARDS = MAJOR_NAMES.map(([id, symbol, vietnameseName, englishName], index) => Object.freeze({
+    id: `major-${id}`, arcana: "major", number: index, suit: "Major Arcana", symbol, name: `${englishName} · ${vietnameseName}`, englishName, vietnameseName, image: `assets/fortune/tarot/rws/major-${id}.webp`,
+    light: `Mặt sáng của ${vietnameseName.toLocaleLowerCase("vi")} khuyến khích quan sát điều đang mở ra và chọn một bước có chủ đích.`,
+    shadow: `Mặt khuất nhắc rằng biểu tượng ${vietnameseName.toLocaleLowerCase("vi")} không thay thế dữ kiện, ranh giới hay trách nhiệm cá nhân.`,
+    balanced: `Giữ cả cơ hội lẫn giới hạn của ${vietnameseName.toLocaleLowerCase("vi")} trong cùng một góc nhìn.`,
+    question: `Điều gì từ hình tượng ${vietnameseName} thật sự liên hệ với trải nghiệm hiện tại của bạn?`, color: `hsl(${(index * 31 + 180) % 360} 78% 68%)`, contentVersion: CONTENT_VERSION
   }));
-  const MINOR_CARDS = SUITS.flatMap((suit) => RANKS.map(([rankId, rankName, stage], rankIndex) => Object.freeze({
-    id: `${suit.id}-${rankId}`, arcana: "minor", number: rankIndex + 1, suit: suit.name, element: suit.element, symbol: suit.symbol, name: `${rankName} ${suit.name}`,
+  const MINOR_CARDS = SUITS.flatMap((suit) => RANKS.map(([rankId, rankName, englishRank, stage], rankIndex) => Object.freeze({
+    id: `${suit.id}-${rankId}`, arcana: "minor", number: rankIndex + 1, suit: suit.name, element: suit.element, symbol: suit.symbol, name: `${englishRank} of ${suit.english} · ${rankName} ${suit.name}`, englishName: `${englishRank} of ${suit.english}`, vietnameseName: `${rankName} ${suit.name}`, image: `assets/fortune/tarot/rws/${suit.id}-${rankId}.webp`,
     light: `${stage}; vận dụng ${suit.focus} bằng một hành động vừa sức và có kiểm chứng.`,
     shadow: `${stage} có thể bị lệch khi ${suit.focus} trở thành phản ứng tự động hoặc quá tải.`,
     balanced: `Quan sát ${suit.focus}, sau đó chọn nhịp tiến phù hợp với nguồn lực thực tế.`,

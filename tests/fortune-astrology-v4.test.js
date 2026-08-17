@@ -24,7 +24,8 @@ test("Astrology V4 calculates natal planets, points, houses and provenance", () 
   assert.ok(chart.midheaven.longitude >= 0 && chart.midheaven.longitude < 360);
   assert.equal(chart.provenance.kind, "astrology-natal");
   assert.equal(chart.provenance.input.timezoneId, "Asia/Ho_Chi_Minh");
-  assert.deepEqual(chart.unsupported, [{ id: "chiron", label: "Chiron", status: "not-calculated", reason: "Astronomy Engine không cung cấp quỹ đạo Chiron; không tạo dữ liệu thay thế." }]);
+  assert.equal(chart.unsupported.find((item) => item.id === "chiron").status, "not-calculated");
+  assert.equal(chart.unsupported.find((item) => item.id === "true-node").status, "not-calculated");
 });
 
 test("Whole Sign and Equal House stay separate", () => {
@@ -87,10 +88,37 @@ test("relocation and astrocartography preserve the natal instant", () => {
   assert.match(map.note, /xấp xỉ/i);
 });
 
-test("missing birth time is rejected and unsupported Chiron is never fabricated", () => {
+test("unknown birth time keeps planets but hides angles and houses", () => {
   const invalid = astrology.calculateChart({ ...profile, time: "" }, Astronomy);
-  assert.equal(invalid.ok, false);
+  assert.equal(invalid.ok, true); assert.equal(invalid.mode, "untimed"); assert.equal(invalid.houses.length, 0); assert.equal(invalid.ascendant, null); assert.equal(invalid.midheaven, null);
+  assert.ok(invalid.planets.every((planet) => planet.house === null)); assert.equal(invalid.dailyRanges.length, 10);
   const chart = astrology.calculateChart(profile, Astronomy);
   assert.equal(chart.planets.some((planet) => planet.body === "Chiron"), false);
   assert.equal(chart.points.some((point) => point.body === "Chiron"), false);
+});
+
+test("planet motion, aspect phase and solar conditions are disclosed", () => {
+  const chart = astrology.calculateChart(profile, Astronomy);
+  assert.ok(chart.planets.every((planet) => Number.isFinite(planet.speedDegreesPerDay)));
+  assert.ok(chart.planets.every((planet) => ["direct", "retrograde", "station"].includes(planet.direction)));
+  assert.ok(chart.aspects.every((aspect) => ["applying", "separating", "undetermined"].includes(aspect.phase)));
+  assert.deepEqual(chart.method.solarOrbs, astrology.SOLAR_ORBS);
+});
+
+test("Porphyry, method comparison and birth-time range are available without pretending Placidus", () => {
+  const porphyry = astrology.calculateChart({ ...profile, houseSystem: "porphyry" }, Astronomy);
+  const comparison = astrology.compareChartMethods(profile, Astronomy);
+  const range = astrology.birthTimeRange({ ...profile, birthTimeAccuracy: "estimated" }, 60, Astronomy);
+  assert.equal(porphyry.ok, true); assert.equal(porphyry.houses.length, 12); assert.equal(porphyry.method.houses, "Porphyry");
+  assert.equal(comparison.combinations.length, 6); assert.equal(comparison.houseSystems.find((item) => item.id === "placidus").status, "review");
+  assert.equal(range.ok, true); assert.equal(range.uncertaintyMinutes, 60); assert.equal(range.planetChanges.length, 10);
+});
+
+test("Composite and Davison remain separate and transit timeline emits typed events", () => {
+  const second = { ...profile, date: "2000-01-01", time: "12:10", place: "Tokyo", timezoneId: "Asia/Tokyo", latitude: 35.6762, longitude: 139.6503 };
+  const composite = astrology.compositeChart(profile, second, Astronomy); const davison = astrology.davisonChart(profile, second, Astronomy);
+  const timeline = astrology.transitTimeline(profile, "2026-08-17T00:00:00Z", 14, Astronomy);
+  assert.equal(composite.ok, true); assert.equal(composite.mode, "composite"); assert.equal(composite.houses.length, 0);
+  assert.equal(davison.ok, true); assert.equal(davison.mode, "davison"); assert.ok(davison.midpoint.instantUtc);
+  assert.equal(timeline.ok, true); assert.equal(timeline.alertsEnabled, false); assert.ok(timeline.events.every((event) => ["ingress", "station", "exact-aspect-window"].includes(event.type)));
 });
