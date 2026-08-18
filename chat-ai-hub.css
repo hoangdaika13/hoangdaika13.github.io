@@ -181,6 +181,22 @@ body.app-chat-ai-route .workspace-grid{padding:0;overflow:hidden}body.app-chat-a
   .chat-ai-orb{width:78px;height:78px}.chat-ai-welcome small{font-size:8px}.chat-ai-welcome p{font-size:12px}.chat-ai-top-actions{grid-template-columns:repeat(3,minmax(0,1fr))}.chat-ai-top-actions>.chat-ai-processing{grid-column:1/-1}.chat-ai-top-actions button{padding-inline:5px}.chat-ai-composer__bar>div:first-child{flex-wrap:wrap}.chat-ai-composer__bar>div:first-child [data-chat-ai-clear-draft]{display:none}
 }
 .chat-ai-hub[data-chat-ai-paused="true"] *,.chat-ai-hub[data-chat-ai-paused="true"] :before,.chat-ai-hub[data-chat-ai-paused="true"] :after{animation-play-state:paused!important}
+
+/* Isolate the Chat AI footers from generic application footer rules. */
+.chat-ai-hub .chat-ai-sidebar>footer{
+  position:static!important;inset:auto!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-content:start!important;align-items:start!important;justify-items:stretch!important;width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;margin:0!important;padding:11px 9px 4px!important;border:0!important;border-top:1px solid rgba(255,255,255,.08)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;transform:none!important;overflow:visible!important
+}
+.chat-ai-hub .chat-ai-sidebar>footer span{
+  display:grid!important;grid-template-columns:8px minmax(0,1fr)!important;align-items:start!important;gap:8px!important;width:100%!important;min-width:0!important;margin:0!important;padding:0!important;color:#dbe5ff!important;font-size:10px!important;font-weight:750!important;line-height:1.45!important;letter-spacing:0!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important
+}
+.chat-ai-hub .chat-ai-sidebar>footer span i{margin-top:4px!important;flex:none!important}
+.chat-ai-hub .chat-ai-sidebar>footer small{display:block!important;width:100%!important;min-width:0!important;margin:2px 0 0!important;padding-left:16px!important;color:#7f8bab!important;font-size:9px!important;line-height:1.45!important;white-space:normal!important;overflow-wrap:anywhere!important}
+.chat-ai-hub .chat-ai-message footer{
+  position:static!important;inset:auto!important;display:flex!important;flex-flow:row wrap!important;align-items:center!important;justify-content:flex-start!important;gap:4px!important;width:auto!important;min-width:0!important;max-width:100%!important;height:auto!important;margin:10px 0 0!important;padding:7px 0 0!important;border:0!important;border-top:1px solid rgba(255,255,255,.065)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;transform:none!important;overflow:visible!important
+}
+.chat-ai-hub .chat-ai-message footer button{position:static!important;flex:0 0 auto!important;min-width:0!important;min-height:28px!important;margin:0!important;padding:5px 8px!important;border:1px solid transparent!important;border-radius:8px!important;background:transparent!important;box-shadow:none!important;color:#8e99ba!important;font-size:9px!important;line-height:1.2!important;white-space:nowrap!important;transform:none!important}
+.chat-ai-hub .chat-ai-message footer button:hover,.chat-ai-hub .chat-ai-message footer button:focus-visible{border-color:rgba(110,226,255,.18)!important;background:rgba(102,121,255,.09)!important;color:#fff!important}
+.chat-ai-hub.is-sidebar-collapsed .chat-ai-sidebar>footer{display:none!important}
 @media(prefers-reduced-motion:reduce){
   .chat-ai-cosmos,.chat-ai-welcome:before{display:none!important}.chat-ai-hub *,.chat-ai-hub :before,.chat-ai-hub :after{animation:none!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.chat-ai-orb,.chat-ai-brand>i,.chat-ai-avatar{transform:none!important}
 }

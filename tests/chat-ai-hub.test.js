@@ -8,7 +8,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const chat = require(path.join(root, "chat-ai-hub.js"));
 
 test("HH Intelligence exposes processing modes and owner-isolated local state", () => {
-  assert.equal(chat.VERSION, "3.0.0");
+  assert.equal(chat.VERSION, "3.0.1");
   assert.deepEqual(chat.PROCESSING_MODES.map((item) => item.id), ["auto", "fast", "deep", "economy"]);
   assert.deepEqual(chat.MODELS.map((item) => item.id), ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"]);
   assert.deepEqual(chat.MODES.map((item) => item.id), ["chat", "research", "code", "write", "study", "vision"]);
@@ -67,6 +67,24 @@ test("HH Basic Assist fallback is useful and explicitly labeled", () => {
   assert.match(output, /Tạo bản khác/);
 });
 
+test("legacy local fallback messages migrate without rewriting user content", () => {
+  const legacy = "## HH Continuity đang tiếp quản\nGemini và các provider cloud hiện chưa phản hồi ổn định. Đây không phải phản hồi của Gemini. Bấm **Tạo lại bằng cloud** khi provider phục hồi.";
+  const state = chat.normalizeState({
+    sessions: [{ id: "legacy", messages: [
+      { id: "assistant", role: "assistant", provider: "local-client", continuity: true, text: legacy },
+      { id: "user", role: "user", text: legacy }
+    ] }]
+  });
+  const [assistant, user] = state.sessions[0].messages;
+  assert.match(assistant.text, /HH Basic Assist đang hỗ trợ/);
+  assert.match(assistant.text, /Dịch vụ AI đám mây hiện chưa phản hồi ổn định/);
+  assert.match(assistant.text, /không phải kết quả từ dịch vụ AI đám mây/);
+  assert.match(assistant.text, /Tạo bản khác/);
+  assert.match(assistant.text, /HH Intelligence khôi phục/);
+  assert.doesNotMatch(assistant.text, /HH Continuity|Tạo lại bằng cloud|provider phục hồi|phản hồi của Gemini/);
+  assert.equal(user.text, legacy);
+});
+
 test("Gemini backend supports Chat AI, current models, thinking levels and server-side secrets", () => {
   const backend = read("api/modules/[moduleId]/actions.js");
   assert.match(backend, /creativeModules = new Set\(\[[^\]]*"chat-ai"/);
@@ -94,10 +112,10 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   assert.match(client, /id: "chat-ai"[\s\S]*?route: "\/chat-ai"/);
   assert.match(client, /window\.HHChatAI\?\.mount/);
   assert.match(client, /title: "Chat AI"[\s\S]*?smart router/);
-  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=7[\s\S]*?chat-ai-hub\.js\?v=7/);
+  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=8[\s\S]*?chat-ai-hub\.js\?v=8/);
   assert.match(loader, /value\.startsWith\("\/chat-ai"\)/);
-  assert.match(worker, /chat-ai-hub\.css\?v=7/);
-  assert.match(worker, /chat-ai-hub\.js\?v=7/);
+  assert.match(worker, /chat-ai-hub\.css\?v=8/);
+  assert.match(worker, /chat-ai-hub\.js\?v=8/);
   assert.match(html, /data-hh-galaxy-key="chatAI"/);
   assert.match(html, /23 LĨNH VỰC/);
   assert.match(galaxy, /chatAI:\s*\{[\s\S]*?route: "#\/chat-ai"/);
@@ -114,4 +132,8 @@ test("Chat AI layout is responsive, accessible and motion-safe", () => {
   assert.match(css, /\.chat-ai-hub\.is-sessions-open \.chat-ai-sidebar/);
   assert.match(css, /\.chat-ai-hub\.is-inspector-open \.chat-ai-inspector/);
   assert.match(css, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(css, /\.chat-ai-hub \.chat-ai-sidebar>footer\{/);
+  assert.match(css, /\.chat-ai-hub \.chat-ai-message footer\{/);
+  assert.match(css, /position:static!important/);
+  assert.match(css, /background:transparent!important/);
 });

@@ -6,7 +6,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createChatAIHub(globalScope) {
   "use strict";
 
-  const VERSION = "3.0.0";
+  const VERSION = "3.0.1";
   const STORAGE_SCHEMA = "hh.chat.ai.v1";
   const MAX_SESSIONS = 40;
   const MAX_MESSAGES = 80;
@@ -64,9 +64,22 @@
     const session = blankSession();
     return { version: VERSION, activeId: session.id, sessions: [session], processingMode: "auto", thinkingLevel: "medium", mode: "chat", webSearch: false, autoFallback: true, contextBudget: 24000, responseStyle: "balanced", systemPrompt: "Bạn là HH AI trong HH Intelligence. Hãy trả lời chính xác, hữu ích, tự nhiên bằng tiếng Việt và không tuyên bố đã thực hiện hành động bên ngoài khi chưa có xác nhận.", draft: "", panel: "context", favoritePrompts: [], memoryEnabled: false, memoryProfile: "", voiceName: "", inspectorOpen: false, sidebarCollapsed: false };
   }
+  function migrateLegacyContinuityText(value) {
+    return clean(value, 48000)
+      .replace(/HH Continuity đang tiếp quản/gi, "HH Basic Assist đang hỗ trợ")
+      .replace(/Gemini và các provider cloud hiện chưa phản hồi ổn định\.?/gi, "Dịch vụ AI đám mây hiện chưa phản hồi ổn định.")
+      .replace(/không phải (?:phản hồi|câu trả lời) của Gemini/gi, "không phải kết quả từ dịch vụ AI đám mây")
+      .replace(/Tạo lại bằng cloud/gi, "Tạo bản khác")
+      .replace(/khi provider phục hồi/gi, "khi HH Intelligence khôi phục")
+      .replace(/provider phục hồi/gi, "HH Intelligence khôi phục");
+  }
   function normalizeMessage(message, index) {
     const role = message?.role === "assistant" ? "assistant" : "user";
-    return { id: clean(message?.id, 120) || `message-${index}`, role, text: clean(message?.text, 48000), createdAt: message?.createdAt || new Date().toISOString(), provider: clean(message?.provider, 80), model: clean(message?.model, 100), latencyMs: Math.max(0, Number(message?.latencyMs) || 0), usage: message?.usage && typeof message.usage === "object" ? message.usage : null, sources: (Array.isArray(message?.sources) ? message.sources : []).map((source) => ({ title: clean(source?.title || source?.url, 240), url: safeUrl(source?.url) })).filter((source) => source.url).slice(0, 12), attachments: (Array.isArray(message?.attachments) ? message.attachments : []).map((file) => ({ name: clean(file?.name, 180), mimeType: clean(file?.mimeType, 80), size: Math.max(0, Number(file?.size) || 0) })).slice(0, 4), stopped: Boolean(message?.stopped), error: Boolean(message?.error), continuity: Boolean(message?.continuity), pinned: Boolean(message?.pinned), providerError: clean(message?.providerError, 500) };
+    const provider = clean(message?.provider, 80);
+    const continuity = Boolean(message?.continuity) || provider === "local" || provider.startsWith("local-");
+    const originalText = clean(message?.text, 48000);
+    const text = role === "assistant" && continuity ? migrateLegacyContinuityText(originalText) : originalText;
+    return { id: clean(message?.id, 120) || `message-${index}`, role, text, createdAt: message?.createdAt || new Date().toISOString(), provider, model: clean(message?.model, 100), latencyMs: Math.max(0, Number(message?.latencyMs) || 0), usage: message?.usage && typeof message.usage === "object" ? message.usage : null, sources: (Array.isArray(message?.sources) ? message.sources : []).map((source) => ({ title: clean(source?.title || source?.url, 240), url: safeUrl(source?.url) })).filter((source) => source.url).slice(0, 12), attachments: (Array.isArray(message?.attachments) ? message.attachments : []).map((file) => ({ name: clean(file?.name, 180), mimeType: clean(file?.mimeType, 80), size: Math.max(0, Number(file?.size) || 0) })).slice(0, 4), stopped: Boolean(message?.stopped), error: Boolean(message?.error), continuity, pinned: Boolean(message?.pinned), providerError: clean(message?.providerError, 500) };
   }
   function normalizeState(raw) {
     const base = defaultState();
@@ -475,5 +488,5 @@
   function unmount() { if (!instance) return; instance.controller?.abort(); instance.lifecycleController?.abort(); clearTimeout(instance.toastTimer); globalScope.speechSynthesis?.cancel?.(); instance = null; }
   function inspect() { return { version: VERSION, mounted: Boolean(instance), owner: instance?.owner || null, sessions: instance?.state?.sessions?.length || 0, busy: Boolean(instance?.busy), providerStatus: instance?.providerStatus || "idle" }; }
 
-  return Object.freeze({ VERSION, STORAGE_SCHEMA, MODELS, PROCESSING_MODES, MODES, PROMPTS, MAX_SESSIONS, MAX_MESSAGES, MAX_CONTEXT_CHARS, estimateTokens, compactHistory, routeProcessing, localContinuityResponse, storageKey, normalizeState, mount, unmount, inspect });
+  return Object.freeze({ VERSION, STORAGE_SCHEMA, MODELS, PROCESSING_MODES, MODES, PROMPTS, MAX_SESSIONS, MAX_MESSAGES, MAX_CONTEXT_CHARS, estimateTokens, compactHistory, routeProcessing, localContinuityResponse, migrateLegacyContinuityText, storageKey, normalizeState, mount, unmount, inspect });
 });
