@@ -133,6 +133,8 @@ test("Gemini backend supports Chat AI, current models, thinking levels and serve
   assert.match(backend, /Không biến lời chào, tâm sự hoặc yêu cầu đơn giản thành báo cáo nghiên cứu/);
   assert.match(backend, /HH Basic Assist · \$\{profile\.label\}/);
   assert.match(backend, /GOOGLE_SEARCH_API_KEY \|\| process\.env\.YOUTUBE_API_KEY/);
+  assert.match(backend, /openKnowledgeResearchOutput/);
+  assert.match(backend, /mediawiki-crossref/);
   assert.match(backend, /const youtubeIntent =/);
   assert.doesNotMatch(backend, /## HH Continuity đang tiếp quản/);
   assert.doesNotMatch(read("index.html"), /GEMINI_API_KEY|GOOGLE_AI_API_KEY/);

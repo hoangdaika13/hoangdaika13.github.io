@@ -979,6 +979,71 @@ async function googleResearchOutput(input, actionType) {
   };
 }
 
+function plainResearchSnippet(value, max = 420) {
+  return clean(String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;|&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " "), max);
+}
+
+async function openKnowledgeResearchOutput(input, actionType) {
+  const query = clean(String(input || "").replace(/https?:\/\/[^\s<>"']+/gi, " ").replace(/\s+/g, " ").trim(), 260);
+  if (!query) return null;
+  const headers = { Accept: "application/json", "User-Agent": "HH-Open-Research/1.0 (https://hoang8.com)" };
+  const wikiUrl = (language) => `https://${language}.wikipedia.org/w/api.php?${new URLSearchParams({ action: "query", list: "search", srsearch: query, srlimit: "4", utf8: "1", format: "json", origin: "*" })}`;
+  const crossrefUrl = `https://api.crossref.org/works?${new URLSearchParams({ "query.bibliographic": query, rows: "4", select: "DOI,title,published,URL,publisher" })}`;
+  const requests = await Promise.allSettled([
+    fetch(wikiUrl("vi"), { headers, signal: AbortSignal.timeout(5500) }).then(async (response) => response.ok ? response.json() : null),
+    fetch(wikiUrl("en"), { headers, signal: AbortSignal.timeout(5500) }).then(async (response) => response.ok ? response.json() : null),
+    fetch(crossrefUrl, { headers, signal: AbortSignal.timeout(5500) }).then(async (response) => response.ok ? response.json() : null)
+  ]);
+  const wikiItems = []; const seenWiki = new Set();
+  for (const [requestIndex, language] of [[0, "vi"], [1, "en"]]) {
+    const data = requests[requestIndex]?.status === "fulfilled" ? requests[requestIndex].value : null;
+    for (const item of data?.query?.search || []) {
+      const title = plainResearchSnippet(item?.title, 180); const key = title.toLocaleLowerCase("vi");
+      if (!title || seenWiki.has(key)) continue; seenWiki.add(key);
+      wikiItems.push({ title, snippet: plainResearchSnippet(item?.snippet), url: `https://${language}.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`, language });
+    }
+  }
+  const crossrefData = requests[2]?.status === "fulfilled" ? requests[2].value : null;
+  const works = (crossrefData?.message?.items || []).map((item) => {
+    const title = plainResearchSnippet(Array.isArray(item?.title) ? item.title[0] : item?.title, 240);
+    const doi = plainResearchSnippet(item?.DOI, 180); const year = Number(item?.published?.["date-parts"]?.[0]?.[0]) || 0;
+    return { title, doi, year, publisher: plainResearchSnippet(item?.publisher, 140), url: doi ? `https://doi.org/${encodeURI(doi)}` : clean(item?.URL, 1200) };
+  }).filter((item) => item.title && item.url).slice(0, 4);
+  if (!wikiItems.length && !works.length) return null;
+  const sources = [
+    ...wikiItems.slice(0, 6).map((item) => ({ url: item.url, title: `${item.title} · Wikipedia ${item.language.toUpperCase()}`, type: "wikipedia" })),
+    ...works.map((item) => ({ url: item.url, title: `${item.title} · Crossref${item.year ? ` ${item.year}` : ""}`, type: "crossref" }))
+  ];
+  return {
+    output: [
+      actionType === "url-research" ? "NGHIÊN CỨU URL · NGUỒN MỞ" : "NGHIÊN CỨU NGUỒN MỞ",
+      `Truy vấn: ${query}`,
+      `Nguồn khám phá: ${sources.length}`,
+      "",
+      wikiItems.length ? "BÁCH KHOA THAM KHẢO" : "",
+      ...wikiItems.slice(0, 6).map((item, index) => `[${index + 1}] ${item.title}\n${item.snippet || "Không có trích đoạn."}\n${item.url}`),
+      works.length ? "\nTÀI LIỆU/DOI LIÊN QUAN" : "",
+      ...works.map((item, index) => `[${wikiItems.slice(0, 6).length + index + 1}] ${item.title}\n${[item.publisher, item.year].filter(Boolean).join(" · ")}\n${item.url}`),
+      "",
+      "GIỚI HẠN VÀ CÁCH KIỂM CHỨNG",
+      "Đây là danh sách nguồn khám phá tự động khi AI Search tạm hết quota, chưa phải kết luận tổng hợp.",
+      "Mở từng nguồn, kiểm tra tác giả/ngày/phương pháp và đối chiếu ít nhất hai nguồn độc lập trước khi sử dụng.",
+      "Trích đoạn Wikipedia đi kèm liên kết nguồn và tuân theo giấy phép CC BY-SA; Crossref chỉ cung cấp metadata/DOI, không đồng nghĩa toàn văn được phép sao chép."
+    ].filter(Boolean).join("\n\n"),
+    sources,
+    model: "open-knowledge-search-v1",
+    providerApi: "mediawiki-crossref",
+    provider: "open-research"
+  };
+}
+
 async function youtubeResearchOutput(input, actionType) {
   const key = String(process.env.YOUTUBE_API_KEY || "").trim();
   if (!key) return null;
@@ -1183,6 +1248,8 @@ async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
   if (["research", "url-research"].includes(actionType)) {
     const research = await googleResearchOutput(input, actionType).catch(() => null);
     if (research) return research;
+    const openResearch = await openKnowledgeResearchOutput(input, actionType).catch(() => null);
+    if (openResearch) return openResearch;
     const youtubeIntent = /(?:youtube|youtu\.be|video|kênh|creator|shorts?)/iu.test(String(input || ""));
     if (youtubeIntent) {
       const youtubeResearch = await youtubeResearchOutput(input, actionType).catch(() => null);
