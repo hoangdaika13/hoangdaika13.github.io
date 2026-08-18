@@ -29,12 +29,14 @@ test("the retired Hikari assistant is absent from the client, cache and API", ()
   ]) assert.equal(fs.existsSync(path.join(root, file)), false, `${file} must stay removed`);
 });
 
-test("Home renders from the critical shell without a blocking asset group", () => {
+test("Home keeps the shared loader without waiting for an asset group", () => {
   const loader = read("performance-loader.js");
   const router = read("script.js");
 
   assert.match(loader, /if \(value === "\/home"\) return \[\]/);
   assert.match(loader, /function groupsForRoute\(route\) \{\s*return featureGroupsForRoute\(route\);\s*\}/);
-  assert.match(router, /if \(normalized === "\/home"\) \{\s*hideCosmicRouteLoaderImmediately\(\);\s*return;/);
+  assert.doesNotMatch(router, /if \(normalized === "\/home"\) \{\s*hideCosmicRouteLoaderImmediately\(\);\s*return;/);
+  assert.match(router, /shellRevealFrame = requestAnimationFrame\(renderRouteWithTransition\)/);
+  assert.match(router, /const showCosmicRouteLoader = \(route = routeFromHash\(\)\)/);
   assert.match(router, /setTimeout\(\(\) => \{\s*hideCosmicRouteLoaderImmediately\(\);[\s\S]*?\}, 8000\)/);
 });

@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v661";
+const CACHE = "hh-identity-portal-v662";
 // Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
@@ -75,7 +75,7 @@ const RUNTIME_ASSETS = [
   "./fortune-hub-v4.css?v=8",
   "./chat-ai-hub.css?v=6",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=193",
+  "./script.js?v=194",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -442,7 +442,7 @@ const CORE = [
   "./performance-loader.js?v=367",
   "./auth-platform.js?v=15",
   "./auth-neon-gateway.js?v=26",
-  "./script.js?v=193"
+  "./script.js?v=194"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

@@ -5655,12 +5655,12 @@ function initAppShell() {
     }
     releaseAuthInteractionLocks();
     if (renderedRoute) {
-      renderRouteSafely();
+      requestAnimationFrame(renderRouteWithTransition);
       return;
     }
     cancelAnimationFrame(shellRevealFrame);
     shellRevealFrame = requestAnimationFrame(() => {
-      shellRevealFrame = requestAnimationFrame(renderRouteSafely);
+      shellRevealFrame = requestAnimationFrame(renderRouteWithTransition);
     });
   };
   const setUser = () => {
@@ -5943,12 +5943,6 @@ function initAppShell() {
   const showCosmicRouteLoader = (route = routeFromHash()) => {
     if (!cosmicRouteLoader) return;
     const normalized = String(route || "/home").split("?")[0];
-    // Home is already part of the critical shell. Never cover it with a
-    // blocking transition after login or while optional enhancements hydrate.
-    if (normalized === "/home") {
-      hideCosmicRouteLoaderImmediately();
-      return;
-    }
     if (document.querySelector("[data-cg-wormhole].is-active")) {
       hideCosmicRouteLoaderImmediately();
       return;
