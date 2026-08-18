@@ -8,7 +8,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const chat = require(path.join(root, "chat-ai-hub.js"));
 
 test("HH Intelligence exposes processing modes and owner-isolated local state", () => {
-  assert.equal(chat.VERSION, "3.1.0");
+  assert.equal(chat.VERSION, "3.2.0");
   assert.deepEqual(chat.PROCESSING_MODES.map((item) => item.id), ["auto", "fast", "deep", "economy"]);
   assert.deepEqual(chat.MODELS.map((item) => item.id), ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"]);
   assert.deepEqual(chat.MODES.map((item) => item.id), ["chat", "research", "code", "write", "study", "vision"]);
@@ -23,6 +23,19 @@ test("HH Intelligence exposes processing modes and owner-isolated local state", 
   assert.equal(state.sessions.length, 1);
   assert.equal(typeof chat.mount, "function");
   assert.equal(typeof chat.unmount, "function");
+});
+
+test("assistant output reveals in adaptive chunks without losing text", () => {
+  const short = "một hai ba bốn";
+  const shortChunks = chat.revealChunks(short);
+  assert.equal(shortChunks.length, 4);
+  assert.equal(shortChunks.join(""), short);
+  const long = Array.from({ length: 620 }, (_, index) => `từ${index}`).join(" ");
+  const longChunks = chat.revealChunks(long);
+  assert.ok(longChunks.length < 200, "long responses should batch tokens for smooth rendering");
+  assert.equal(longChunks.join(""), long);
+  assert.equal(chat.isNearStreamBottom({ scrollHeight: 1000, scrollTop: 700, clientHeight: 240 }), true);
+  assert.equal(chat.isNearStreamBottom({ scrollHeight: 1000, scrollTop: 100, clientHeight: 240 }), false);
 });
 
 test("each Chat AI mode has an isolated request contract", () => {
@@ -79,6 +92,9 @@ test("Chat AI interface provides real conversation, attachment, privacy and expo
   assert.match(source, /mode:\s*mode\.id/);
   assert.match(source, /mode:\s*next\.mode/);
   assert.match(source, /requiresAttachment/);
+  assert.match(source, /revealAssistant/);
+  assert.match(source, /requestAnimationFrame/);
+  assert.match(source, /forceBottom/);
   assert.match(source, /HH INTELLIGENCE/);
   assert.match(source, /In \/ PDF/);
   assert.match(source, /application\/pdf/);
@@ -149,12 +165,12 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   assert.match(client, /id: "chat-ai"[\s\S]*?route: "\/chat-ai"/);
   assert.match(client, /window\.HHChatAI\?\.mount/);
   assert.match(client, /title: "Chat AI"[\s\S]*?smart router/);
-  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=9[\s\S]*?chat-ai-hub\.js\?v=9/);
-  assert.match(html, /performance-loader\.js\?v=368/);
-  assert.match(worker, /performance-loader\.js\?v=368/);
+  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=10[\s\S]*?chat-ai-hub\.js\?v=10/);
+  assert.match(html, /performance-loader\.js\?v=369/);
+  assert.match(worker, /performance-loader\.js\?v=369/);
   assert.match(loader, /value\.startsWith\("\/chat-ai"\)/);
-  assert.match(worker, /chat-ai-hub\.css\?v=9/);
-  assert.match(worker, /chat-ai-hub\.js\?v=9/);
+  assert.match(worker, /chat-ai-hub\.css\?v=10/);
+  assert.match(worker, /chat-ai-hub\.js\?v=10/);
   assert.match(html, /data-hh-galaxy-key="chatAI"/);
   assert.match(html, /23 LĨNH VỰC/);
   assert.match(galaxy, /chatAI:\s*\{[\s\S]*?route: "#\/chat-ai"/);
@@ -177,4 +193,7 @@ test("Chat AI layout is responsive, accessible and motion-safe", () => {
   assert.match(css, /background:transparent!important/);
   assert.match(css, /\.chat-ai-composer__mode/);
   assert.match(css, /\.chat-ai-message__mode/);
+  assert.match(css, /\.chat-ai-stream-caret/);
+  assert.match(css, /overflow-anchor:none/);
+  assert.match(css, /scroll-behavior:auto!important/);
 });
