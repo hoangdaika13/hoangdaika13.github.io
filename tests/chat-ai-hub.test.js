@@ -7,13 +7,14 @@ const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const chat = require(path.join(root, "chat-ai-hub.js"));
 
-test("Chat AI exposes current Gemini modes and owner-isolated local state", () => {
-  assert.equal(chat.VERSION, "2.1.0");
+test("HH Intelligence exposes processing modes and owner-isolated local state", () => {
+  assert.equal(chat.VERSION, "3.0.0");
+  assert.deepEqual(chat.PROCESSING_MODES.map((item) => item.id), ["auto", "fast", "deep", "economy"]);
   assert.deepEqual(chat.MODELS.map((item) => item.id), ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"]);
   assert.deepEqual(chat.MODES.map((item) => item.id), ["chat", "research", "code", "write", "study", "vision"]);
   assert.notEqual(chat.storageKey("owner-a"), chat.storageKey("owner-b"));
   const state = chat.normalizeState({ model: "untrusted-model", sessions: [], thinkingLevel: "invalid" });
-  assert.equal(state.model, "gemini-3.6-flash");
+  assert.equal(state.processingMode, "auto");
   assert.equal(state.thinkingLevel, "medium");
   assert.equal(state.autoFallback, true);
   assert.equal(state.contextBudget, 24000);
@@ -38,7 +39,7 @@ test("Chat AI interface provides real conversation, attachment, privacy and expo
     "data-chat-ai-form", "data-chat-ai-files", "data-chat-ai-stop", "data-chat-ai-mic",
     "data-chat-ai-private", "data-chat-ai-branch", "data-chat-ai-regenerate", "data-chat-ai-export",
     "data-chat-ai-search-toggle", "data-chat-ai-thinking", "data-chat-ai-download-artifact",
-    "data-chat-ai-export-format", "data-chat-ai-mobile-panel", "data-chat-ai-mobile-close"
+    "data-chat-ai-export-format", "data-chat-ai-mobile-panel", "data-chat-ai-mobile-close", "data-chat-ai-processing", "data-chat-ai-refine", "data-chat-ai-message-pin", "data-chat-ai-edit-message", "data-chat-ai-remove-queue", "data-chat-ai-memory-toggle"
   ]) assert.match(source, new RegExp(contract));
   assert.match(source, /\/api\/modules\/chat-ai\/actions/);
   assert.match(source, /provider:\s*"gemini"/);
@@ -47,20 +48,23 @@ test("Chat AI interface provides real conversation, attachment, privacy and expo
   assert.match(source, /allowModelFallback:\s*runtime\.state\.autoFallback/);
   assert.match(source, /HH_API_BASE/);
   assert.match(source, /localContinuityResponse/);
-  assert.match(source, /HH Continuity/);
+  assert.match(source, /HH Basic Assist/);
   assert.match(source, /data-chat-ai-context-budget/);
   assert.match(source, /data-chat-ai-fallback-toggle/);
+  assert.match(source, /routeProcessing/);
+  assert.match(source, /HH INTELLIGENCE/);
+  assert.match(source, /In \/ PDF/);
   assert.match(source, /application\/pdf/);
   assert.match(source, /runtime\.incognito/);
   assert.doesNotMatch(source, /GEMINI_API_KEY|GOOGLE_AI_API_KEY/);
 });
 
-test("Chat AI continuity fallback is useful, explicit and never impersonates Gemini", () => {
+test("HH Basic Assist fallback is useful and explicitly labeled", () => {
   const output = chat.localContinuityResponse("Fix lỗi API JavaScript", { mode: "code" });
-  assert.match(output, /HH Continuity đang tiếp quản/);
-  assert.match(output, /không phải câu trả lời của Gemini/);
+  assert.match(output, /HH Basic Assist đang hỗ trợ/);
+  assert.match(output, /không phải kết quả từ dịch vụ AI đám mây/);
   assert.match(output, /thông báo lỗi nguyên văn/);
-  assert.match(output, /Tạo lại bằng cloud/);
+  assert.match(output, /Tạo bản khác/);
 });
 
 test("Gemini backend supports Chat AI, current models, thinking levels and server-side secrets", () => {
@@ -89,11 +93,11 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   const galaxy = read("auth-h-galaxy.js");
   assert.match(client, /id: "chat-ai"[\s\S]*?route: "\/chat-ai"/);
   assert.match(client, /window\.HHChatAI\?\.mount/);
-  assert.match(client, /title: "Chat AI"[\s\S]*?gemini 3\.6 flash/);
-  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=6[\s\S]*?chat-ai-hub\.js\?v=6/);
+  assert.match(client, /title: "Chat AI"[\s\S]*?smart router/);
+  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=7[\s\S]*?chat-ai-hub\.js\?v=7/);
   assert.match(loader, /value\.startsWith\("\/chat-ai"\)/);
-  assert.match(worker, /chat-ai-hub\.css\?v=6/);
-  assert.match(worker, /chat-ai-hub\.js\?v=6/);
+  assert.match(worker, /chat-ai-hub\.css\?v=7/);
+  assert.match(worker, /chat-ai-hub\.js\?v=7/);
   assert.match(html, /data-hh-galaxy-key="chatAI"/);
   assert.match(html, /23 LĨNH VỰC/);
   assert.match(galaxy, /chatAI:\s*\{[\s\S]*?route: "#\/chat-ai"/);

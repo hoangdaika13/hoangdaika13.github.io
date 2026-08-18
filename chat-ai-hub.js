@@ -6,18 +6,26 @@
 })(typeof window !== "undefined" ? window : globalThis, function createChatAIHub(globalScope) {
   "use strict";
 
-  const VERSION = "2.1.0";
+  const VERSION = "3.0.0";
   const STORAGE_SCHEMA = "hh.chat.ai.v1";
   const MAX_SESSIONS = 40;
   const MAX_MESSAGES = 80;
   const MAX_TEXT_FILE = 220_000;
   const MAX_BINARY_FILE = 1_550_000;
   const MAX_CONTEXT_CHARS = 32_000;
+  // Provider model ids stay internal. The product UI only exposes HH processing
+  // profiles and the backend remains responsible for final routing/fallback.
   const MODELS = Object.freeze([
-    { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash", detail: "Mạnh · đa phương thức" },
-    { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash", detail: "Lập luận sâu" },
-    { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite", detail: "Nhanh · tiết kiệm" },
-    { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview", detail: "Preview · chi phí cao" }
+    { id: "gemini-3.6-flash" },
+    { id: "gemini-3.5-flash" },
+    { id: "gemini-3.5-flash-lite" },
+    { id: "gemini-3.1-pro-preview" }
+  ]);
+  const PROCESSING_MODES = Object.freeze([
+    { id: "auto", label: "Tự động thông minh", detail: "HH tự cân bằng tốc độ và chiều sâu" },
+    { id: "fast", label: "Phản hồi nhanh", detail: "Ưu tiên tốc độ" },
+    { id: "deep", label: "Suy luận sâu", detail: "Ưu tiên phân tích nhiều tầng" },
+    { id: "economy", label: "Tiết kiệm dữ liệu", detail: "Ngữ cảnh gọn và phản hồi ngắn" }
   ]);
   const MODES = Object.freeze([
     { id: "chat", icon: "✦", label: "Trò chuyện", action: "chat", search: false, prompt: "Trả lời trực tiếp, rõ ràng và hữu ích." },
@@ -51,24 +59,27 @@
     return clean(user._id || user.id || user.email || "guest", 180).replace(/[^a-z0-9@._-]/gi, "_") || "guest";
   }
   function storageKey(owner) { return `${STORAGE_SCHEMA}:${owner}`; }
-  function blankSession(title = "Cuộc trò chuyện mới") { return { id: uid("chat"), title, pinned: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), messages: [] }; }
+  function blankSession(title = "Cuộc trò chuyện mới") { return { id: uid("chat"), title, pinned: false, folder: "Chung", tags: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), messages: [] }; }
   function defaultState() {
     const session = blankSession();
-    return { version: VERSION, activeId: session.id, sessions: [session], model: "gemini-3.6-flash", thinkingLevel: "medium", mode: "chat", googleSearch: false, autoFallback: true, contextBudget: 24000, responseStyle: "balanced", systemPrompt: "Bạn là HH Chat AI, trợ lý Gemini chính xác, hữu ích và trả lời bằng tiếng Việt tự nhiên.", draft: "", panel: "context" };
+    return { version: VERSION, activeId: session.id, sessions: [session], processingMode: "auto", thinkingLevel: "medium", mode: "chat", webSearch: false, autoFallback: true, contextBudget: 24000, responseStyle: "balanced", systemPrompt: "Bạn là HH AI trong HH Intelligence. Hãy trả lời chính xác, hữu ích, tự nhiên bằng tiếng Việt và không tuyên bố đã thực hiện hành động bên ngoài khi chưa có xác nhận.", draft: "", panel: "context", favoritePrompts: [], memoryEnabled: false, memoryProfile: "", voiceName: "", inspectorOpen: false, sidebarCollapsed: false };
   }
   function normalizeMessage(message, index) {
     const role = message?.role === "assistant" ? "assistant" : "user";
-    return { id: clean(message?.id, 120) || `message-${index}`, role, text: clean(message?.text, 48000), createdAt: message?.createdAt || new Date().toISOString(), provider: clean(message?.provider, 80), model: clean(message?.model, 100), latencyMs: Math.max(0, Number(message?.latencyMs) || 0), usage: message?.usage && typeof message.usage === "object" ? message.usage : null, sources: (Array.isArray(message?.sources) ? message.sources : []).map((source) => ({ title: clean(source?.title || source?.url, 240), url: safeUrl(source?.url) })).filter((source) => source.url).slice(0, 12), attachments: (Array.isArray(message?.attachments) ? message.attachments : []).map((file) => ({ name: clean(file?.name, 180), mimeType: clean(file?.mimeType, 80), size: Math.max(0, Number(file?.size) || 0) })).slice(0, 4), stopped: Boolean(message?.stopped), error: Boolean(message?.error), continuity: Boolean(message?.continuity), providerError: clean(message?.providerError, 500) };
+    return { id: clean(message?.id, 120) || `message-${index}`, role, text: clean(message?.text, 48000), createdAt: message?.createdAt || new Date().toISOString(), provider: clean(message?.provider, 80), model: clean(message?.model, 100), latencyMs: Math.max(0, Number(message?.latencyMs) || 0), usage: message?.usage && typeof message.usage === "object" ? message.usage : null, sources: (Array.isArray(message?.sources) ? message.sources : []).map((source) => ({ title: clean(source?.title || source?.url, 240), url: safeUrl(source?.url) })).filter((source) => source.url).slice(0, 12), attachments: (Array.isArray(message?.attachments) ? message.attachments : []).map((file) => ({ name: clean(file?.name, 180), mimeType: clean(file?.mimeType, 80), size: Math.max(0, Number(file?.size) || 0) })).slice(0, 4), stopped: Boolean(message?.stopped), error: Boolean(message?.error), continuity: Boolean(message?.continuity), pinned: Boolean(message?.pinned), providerError: clean(message?.providerError, 500) };
   }
   function normalizeState(raw) {
     const base = defaultState();
     const source = raw && typeof raw === "object" ? raw : {};
-    const sessions = (Array.isArray(source.sessions) ? source.sessions : []).slice(0, MAX_SESSIONS).map((session, index) => ({ id: clean(session?.id, 120) || `session-${index}`, title: clean(session?.title, 120) || "Cuộc trò chuyện", pinned: Boolean(session?.pinned), createdAt: session?.createdAt || new Date().toISOString(), updatedAt: session?.updatedAt || session?.createdAt || new Date().toISOString(), messages: (Array.isArray(session?.messages) ? session.messages : []).slice(-MAX_MESSAGES).map(normalizeMessage) }));
+    const sessions = (Array.isArray(source.sessions) ? source.sessions : []).slice(0, MAX_SESSIONS).map((session, index) => ({ id: clean(session?.id, 120) || `session-${index}`, title: clean(session?.title, 120) || "Cuộc trò chuyện", pinned: Boolean(session?.pinned), folder: clean(session?.folder, 40) || "Chung", tags: (Array.isArray(session?.tags) ? session.tags : []).map((tag) => clean(tag, 24)).filter(Boolean).slice(0, 6), createdAt: session?.createdAt || new Date().toISOString(), updatedAt: session?.updatedAt || session?.createdAt || new Date().toISOString(), messages: (Array.isArray(session?.messages) ? session.messages : []).slice(-MAX_MESSAGES).map(normalizeMessage) }));
     if (!sessions.length) sessions.push(base.sessions[0]);
-    const model = MODELS.some((item) => item.id === source.model) ? source.model : base.model;
+    const legacyMode = source.model === "gemini-3.5-flash-lite" ? "fast" : source.model === "gemini-3.5-flash" || source.model === "gemini-3.1-pro-preview" ? "deep" : "auto";
+    const processingMode = PROCESSING_MODES.some((item) => item.id === source.processingMode) ? source.processingMode : legacyMode;
     const mode = MODES.some((item) => item.id === source.mode) ? source.mode : base.mode;
     const thinkingLevel = ["minimal", "low", "medium", "high"].includes(source.thinkingLevel) ? source.thinkingLevel : base.thinkingLevel;
-    return { ...base, sessions, activeId: sessions.some((session) => session.id === source.activeId) ? source.activeId : sessions[0].id, model, mode, thinkingLevel, googleSearch: Boolean(source.googleSearch), autoFallback: source.autoFallback !== false, contextBudget: Math.max(8000, Math.min(MAX_CONTEXT_CHARS, Number(source.contextBudget) || base.contextBudget)), responseStyle: ["concise", "balanced", "detailed"].includes(source.responseStyle) ? source.responseStyle : base.responseStyle, systemPrompt: clean(source.systemPrompt, 2000) || base.systemPrompt, draft: clean(source.draft, 24000), panel: ["context", "prompts", "settings", "artifacts"].includes(source.panel) ? source.panel : "context" };
+    const savedSystemPrompt = clean(source.systemPrompt, 2000);
+    const systemPrompt = /trợ lý Gemini|Gemini chính xác/i.test(savedSystemPrompt) ? base.systemPrompt : (savedSystemPrompt || base.systemPrompt);
+    return { ...base, sessions, activeId: sessions.some((session) => session.id === source.activeId) ? source.activeId : sessions[0].id, processingMode, mode, thinkingLevel, webSearch: Boolean(source.webSearch ?? source.googleSearch), autoFallback: source.autoFallback !== false, contextBudget: Math.max(8000, Math.min(MAX_CONTEXT_CHARS, Number(source.contextBudget) || base.contextBudget)), responseStyle: ["concise", "balanced", "detailed"].includes(source.responseStyle) ? source.responseStyle : base.responseStyle, systemPrompt, draft: clean(source.draft, 24000), panel: ["context", "prompts", "settings", "artifacts"].includes(source.panel) ? source.panel : "context", favoritePrompts: (Array.isArray(source.favoritePrompts) ? source.favoritePrompts : []).map((item) => clean(item, 2000)).filter(Boolean).slice(0, 20), memoryEnabled: source.memoryEnabled === true, memoryProfile: clean(source.memoryProfile, 1200), voiceName: clean(source.voiceName, 160), inspectorOpen: source.inspectorOpen === true, sidebarCollapsed: source.sidebarCollapsed === true };
   }
   function readState(storage, owner) { try { return normalizeState(JSON.parse(storage?.getItem(storageKey(owner)) || "{}")); } catch { return defaultState(); } }
   function writeState(runtime) {
@@ -78,7 +89,22 @@
   }
   function currentSession(runtime) { return runtime.incognito ? runtime.privateSession : runtime.state.sessions.find((session) => session.id === runtime.state.activeId) || runtime.state.sessions[0]; }
   function currentMode(runtime) { return MODES.find((mode) => mode.id === runtime.state.mode) || MODES[0]; }
+  function currentProcessingMode(runtime) { return PROCESSING_MODES.find((mode) => mode.id === runtime.state.processingMode) || PROCESSING_MODES[0]; }
   function sortSessions(sessions) { return [...sessions].sort((a, b) => Number(b.pinned) - Number(a.pinned) || Date.parse(b.updatedAt) - Date.parse(a.updatedAt)); }
+
+  function routeProcessing(input = "", options = {}) {
+    const textValue = clean(input, 48000).toLowerCase();
+    const requested = PROCESSING_MODES.some((item) => item.id === options.processingMode) ? options.processingMode : "auto";
+    const hasFiles = Number(options.attachmentCount || 0) > 0;
+    const research = options.mode === "research" || /\b(mới nhất|hiện nay|nghiên cứu|nguồn|tin tức|giá|luật)\b/i.test(textValue);
+    const deepTask = options.mode === "code" || options.mode === "study" || textValue.length > 4500 || /\b(phân tích sâu|chứng minh|kiến trúc|debug|thuật toán|toán học)\b/i.test(textValue);
+    if (requested === "fast") return { model: "gemini-3.5-flash-lite", thinkingLevel: "low", contextBudget: Math.min(16000, options.contextBudget || 16000), useWebSearch: research };
+    if (requested === "economy") return { model: "gemini-3.5-flash-lite", thinkingLevel: "minimal", contextBudget: Math.min(12000, options.contextBudget || 12000), useWebSearch: false };
+    if (requested === "deep") return { model: "gemini-3.5-flash", thinkingLevel: "high", contextBudget: options.contextBudget || 32000, useWebSearch: research };
+    if (hasFiles || research) return { model: "gemini-3.6-flash", thinkingLevel: options.thinkingLevel || "medium", contextBudget: options.contextBudget || 24000, useWebSearch: research };
+    if (deepTask) return { model: "gemini-3.5-flash", thinkingLevel: options.thinkingLevel === "minimal" ? "medium" : options.thinkingLevel || "medium", contextBudget: options.contextBudget || 24000, useWebSearch: false };
+    return { model: "gemini-3.5-flash-lite", thinkingLevel: "low", contextBudget: Math.min(20000, options.contextBudget || 20000), useWebSearch: false };
+  }
 
   function estimateTokens(value) { return Math.max(0, Math.ceil(String(value || "").length / 3.2)); }
   function compactHistory(messages, budget = 24000) {
@@ -91,7 +117,7 @@
     }
     const omitted = Math.max(0, cleanMessages.length - selected.length);
     if (omitted) {
-      const older = cleanMessages.slice(0, omitted).slice(-8).map((message) => `${message.role === "assistant" ? "Gemini" : "Người dùng"}: ${clean(message.text, 220)}`).join("\n");
+      const older = cleanMessages.slice(0, omitted).slice(-8).map((message) => `${message.role === "assistant" ? "HH AI" : "Người dùng"}: ${clean(message.text, 220)}`).join("\n");
       const recap = { role: "user", text: `[NGỮ CẢNH CŨ ĐƯỢC RÚT GỌN TỪ ${omitted} TIN — chỉ là trích đoạn, không phải dữ kiện mới]\n${older}` };
       while (selected.length && used + recap.text.length > budget) { const removed = selected.shift(); used -= removed.text.length + 24; }
       selected.unshift(recap); used += recap.text.length;
@@ -129,50 +155,65 @@
   }
   function assistantIdentity(message) {
     const provider = clean(message?.provider, 80).toLowerCase();
-    if (message?.continuity || provider === "local" || provider.startsWith("local-")) return { avatar: "H", label: "HH Continuity", status: "Phản hồi dự phòng · không phải Gemini" };
-    if (provider === "openai") return { avatar: "O", label: "OpenAI · HH", status: "Provider dự phòng" };
-    return { avatar: "G", label: "Gemini · HH", status: "" };
+    if (message?.continuity || provider === "local" || provider.startsWith("local-")) return { avatar: "H", label: "HH Basic Assist", status: "Xử lý cơ bản · không dùng AI đám mây" };
+    return { avatar: "HH", label: "HH AI", status: "" };
   }
   function messageMarkup(message) {
     const assistant = message.role === "assistant";
     const identity = assistantIdentity(message);
-    return `<article class="chat-ai-message ${assistant ? "is-assistant" : "is-user"}${message.error ? " is-error" : ""}${message.continuity ? " is-continuity" : ""}" data-chat-ai-message="${escapeHtml(message.id)}"><div class="chat-ai-avatar">${assistant ? identity.avatar : "B"}</div><section><header><strong>${assistant ? identity.label : "Bạn"}</strong><span>${escapeHtml(nowLabelFrom(message.createdAt))}</span>${message.model ? `<em>${escapeHtml(message.model)}</em>` : ""}${assistant && identity.status ? `<em>${escapeHtml(identity.status)}</em>` : ""}</header><div class="chat-ai-message__body">${message.loading ? `<div class="chat-ai-thinking"><i></i><i></i><i></i><span>AI đang xử lý ngữ cảnh và kiểm tra provider…</span></div>` : markdownMarkup(message.text, message.id)}</div>${message.attachments?.length ? `<div class="chat-ai-file-chips">${message.attachments.map((file) => `<span>${file.mimeType === "application/pdf" ? "PDF" : file.mimeType?.startsWith("image/") ? "Ảnh" : "TXT"} · ${escapeHtml(file.name)}</span>`).join("")}</div>` : ""}${sourceMarkup(message.sources)}${assistant && !message.loading ? `<footer><button type="button" data-chat-ai-copy="${escapeHtml(message.id)}">Sao chép</button><button type="button" data-chat-ai-regenerate="${escapeHtml(message.id)}">Tạo lại bằng cloud</button><button type="button" data-chat-ai-speak="${escapeHtml(message.id)}">Đọc</button><button type="button" data-chat-ai-branch="${escapeHtml(message.id)}">Tách nhánh</button></footer>` : ""}</section></article>`;
+    const footer = message.loading ? "" : assistant
+      ? `<footer><button type="button" data-chat-ai-copy="${escapeHtml(message.id)}">Sao chép</button><button type="button" data-chat-ai-regenerate="${escapeHtml(message.id)}">Tạo bản khác</button><button type="button" data-chat-ai-refine="continue">Viết tiếp</button><button type="button" data-chat-ai-refine="shorter">Ngắn hơn</button><button type="button" data-chat-ai-refine="detailed">Chi tiết hơn</button><button type="button" data-chat-ai-speak="${escapeHtml(message.id)}">Đọc</button><button type="button" data-chat-ai-message-pin="${escapeHtml(message.id)}">${message.pinned ? "Bỏ ghim" : "Ghim"}</button><button type="button" data-chat-ai-branch="${escapeHtml(message.id)}">Tách nhánh</button></footer>`
+      : `<footer><button type="button" data-chat-ai-edit-message="${escapeHtml(message.id)}">Sửa &amp; gửi lại</button><button type="button" data-chat-ai-copy="${escapeHtml(message.id)}">Sao chép</button></footer>`;
+    return `<article class="chat-ai-message ${assistant ? "is-assistant" : "is-user"}${message.error ? " is-error" : ""}${message.continuity ? " is-continuity" : ""}${message.pinned ? " is-pinned" : ""}" data-chat-ai-message="${escapeHtml(message.id)}"><div class="chat-ai-avatar">${assistant ? identity.avatar : "B"}</div><section><header><strong>${assistant ? identity.label : "Bạn"}</strong><span>${escapeHtml(nowLabelFrom(message.createdAt))}</span>${message.pinned ? `<em>✦ Đã ghim</em>` : ""}${assistant && identity.status ? `<em>${escapeHtml(identity.status)}</em>` : ""}</header><div class="chat-ai-message__body">${message.loading ? `<div class="chat-ai-thinking"><span class="chat-ai-thinking__orbit"><i></i><i></i><i></i></span><span>HH AI đang phân tích yêu cầu…</span></div>` : markdownMarkup(message.text, message.id)}</div>${message.attachments?.length ? `<div class="chat-ai-file-chips">${message.attachments.map((file) => `<span>${file.mimeType === "application/pdf" ? "PDF" : file.mimeType?.startsWith("image/") ? "Ảnh" : "TXT"} · ${escapeHtml(file.name)}</span>`).join("")}</div>` : ""}${sourceMarkup(message.sources)}${footer}</section></article>`;
   }
   function nowLabelFrom(value) { const date = new Date(value); return Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit" }).format(date) : ""; }
   function sessionsMarkup(runtime) {
     const query = runtime.query.toLocaleLowerCase("vi");
-    return sortSessions(runtime.state.sessions).filter((session) => !query || `${session.title} ${session.messages.map((message) => message.text).join(" ")}`.toLocaleLowerCase("vi").includes(query)).map((session) => `<article class="chat-ai-session${session.id === runtime.state.activeId && !runtime.incognito ? " is-active" : ""}"><button type="button" data-chat-ai-session="${escapeHtml(session.id)}"><i>${session.pinned ? "◆" : "◇"}</i><span><strong>${escapeHtml(session.title)}</strong><small>${session.messages.length} tin · ${escapeHtml(nowLabelFrom(session.updatedAt))}</small></span></button><button type="button" data-chat-ai-pin="${escapeHtml(session.id)}" aria-label="${session.pinned ? "Bỏ ghim" : "Ghim"}">${session.pinned ? "●" : "○"}</button><button type="button" data-chat-ai-delete="${escapeHtml(session.id)}" aria-label="Xóa cuộc trò chuyện">×</button></article>`).join("") || `<div class="chat-ai-empty-small">Không tìm thấy cuộc trò chuyện.</div>`;
+    return sortSessions(runtime.state.sessions).filter((session) => (!runtime.folderFilter || session.folder === runtime.folderFilter) && (!query || `${session.title} ${session.folder} ${(session.tags || []).join(" ")} ${session.messages.map((message) => message.text).join(" ")}`.toLocaleLowerCase("vi").includes(query))).map((session) => `<article class="chat-ai-session${session.id === runtime.state.activeId && !runtime.incognito ? " is-active" : ""}"><button type="button" data-chat-ai-session="${escapeHtml(session.id)}"><i>${session.pinned ? "◆" : "◇"}</i><span><strong>${escapeHtml(session.title)}</strong><small>${escapeHtml(session.folder || "Chung")} · ${session.messages.length} tin · ${escapeHtml(nowLabelFrom(session.updatedAt))}</small></span></button><button type="button" data-chat-ai-pin="${escapeHtml(session.id)}" aria-label="${session.pinned ? "Bỏ ghim" : "Ghim"}">${session.pinned ? "●" : "○"}</button><button type="button" data-chat-ai-delete="${escapeHtml(session.id)}" aria-label="Xóa cuộc trò chuyện">×</button></article>`).join("") || `<div class="chat-ai-empty-small">Không tìm thấy cuộc trò chuyện.</div>`;
   }
   function pendingMarkup(runtime) {
-    return runtime.pending.map((file, index) => `<article><i>${file.mimeType === "application/pdf" ? "PDF" : file.mimeType.startsWith("image/") ? "IMG" : "TXT"}</i><span><strong>${escapeHtml(file.name)}</strong><small>${Math.max(1, Math.round(file.size / 1024))} KB</small></span><button type="button" data-chat-ai-remove-file="${index}" aria-label="Bỏ tệp">×</button></article>`).join("");
+    const files = runtime.pending.map((file, index) => `<article><i>${file.mimeType === "application/pdf" ? "PDF" : file.mimeType.startsWith("image/") ? "IMG" : "TXT"}</i><span><strong>${escapeHtml(file.name)}</strong><small>${Math.max(1, Math.round(file.size / 1024))} KB · sẵn sàng</small></span><button type="button" data-chat-ai-remove-file="${index}" aria-label="Bỏ tệp">×</button></article>`).join("");
+    const queue = runtime.queue.map((item, index) => `<article class="chat-ai-queue-item"><i>${index + 1}</i><span><strong>${escapeHtml(item.input.slice(0, 70) || "Yêu cầu có tệp")}</strong><small>Đang chờ HH AI xử lý</small></span><button type="button" data-chat-ai-remove-queue="${index}" aria-label="Bỏ khỏi hàng đợi">×</button></article>`).join("");
+    return files + queue;
   }
   function artifactsMarkup(session) {
     const artifacts = [];
     session.messages.filter((message) => message.role === "assistant").forEach((message) => String(message.text || "").split(/```/).forEach((part, index) => { if (index % 2) { const newline = part.indexOf("\n"); artifacts.push({ language: newline > -1 ? part.slice(0, newline) : "text", code: newline > -1 ? part.slice(newline + 1) : part, messageId: message.id }); } }));
     return artifacts.length ? artifacts.map((artifact, index) => `<article><header><strong>${escapeHtml(artifact.language || "code")}</strong><button type="button" data-chat-ai-download-artifact="${index}">Tải file</button></header><pre>${escapeHtml(artifact.code.slice(0, 1200))}</pre></article>`).join("") : `<div class="chat-ai-empty-small">Code block từ câu trả lời sẽ xuất hiện tại đây.</div>`;
   }
+  function voiceOptions(selected = "") {
+    const voices = globalScope.speechSynthesis?.getVoices?.() || [];
+    const vietnamese = voices.filter((voice) => /^vi(?:-|_)/i.test(voice.lang));
+    const list = vietnamese.length ? vietnamese : voices.slice(0, 30);
+    return `<option value="">Giọng Việt mặc định</option>${list.map((voice) => `<option value="${escapeHtml(voice.name)}" ${voice.name === selected ? "selected" : ""}>${escapeHtml(voice.name)} · ${escapeHtml(voice.lang)}</option>`).join("")}`;
+  }
   function rightPanelMarkup(runtime, session) {
     const panel = runtime.state.panel;
-    const tabs = `<nav>${[["context","Ngữ cảnh"],["prompts","Prompt"],["artifacts","Tệp code"],["settings","Cài đặt"]].map(([id, label]) => `<button type="button" class="${panel === id ? "is-active" : ""}" data-chat-ai-panel="${id}">${label}</button>`).join("")}</nav>`;
+    const tabs = `<nav>${[["context","Ngữ cảnh"],["prompts","Công cụ"],["artifacts","Tệp code"],["settings","Tùy chỉnh"]].map(([id, label]) => `<button type="button" class="${panel === id ? "is-active" : ""}" data-chat-ai-panel="${id}">${label}</button>`).join("")}</nav>`;
     let body = "";
     if (panel === "prompts") {
-      body = `<section class="chat-ai-prompt-grid">${PROMPTS.map(([title, prompt], index) => `<button type="button" data-chat-ai-prompt="${index}"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(prompt.slice(0, 92))}</span></button>`).join("")}</section>`;
+      body = `<section class="chat-ai-prompt-grid"><header><strong>Công cụ nhanh</strong><button type="button" data-chat-ai-save-prompt>＋ Lưu nội dung đang soạn</button></header>${PROMPTS.map(([title, prompt], index) => `<article><button type="button" data-chat-ai-prompt="${index}"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(prompt.slice(0, 92))}</span></button><button type="button" data-chat-ai-favorite-prompt="${index}" aria-label="Lưu prompt ${escapeHtml(title)}">☆</button></article>`).join("")}${runtime.state.favoritePrompts.length ? `<h3>Đã lưu</h3>${runtime.state.favoritePrompts.map((prompt, index) => `<article><button type="button" data-chat-ai-saved-prompt="${index}"><strong>Prompt ${index + 1}</strong><span>${escapeHtml(prompt.slice(0, 92))}</span></button><button type="button" data-chat-ai-remove-saved-prompt="${index}" aria-label="Xóa prompt">×</button></article>`).join("")}` : ""}</section>`;
     } else if (panel === "artifacts") {
       body = `<section class="chat-ai-artifacts" data-chat-ai-artifacts>${artifactsMarkup(session)}</section>`;
     } else if (panel === "settings") {
-      body = `<section class="chat-ai-settings"><label><span>Tên cuộc trò chuyện</span><input data-chat-ai-title value="${escapeHtml(session.title)}" maxlength="120" ${runtime.incognito ? "disabled" : ""}></label><label><span>Chỉ dẫn hệ thống</span><textarea data-chat-ai-system maxlength="2000" rows="7">${escapeHtml(runtime.state.systemPrompt)}</textarea></label><label><span>Mức suy luận</span><select data-chat-ai-thinking>${[["minimal","Tối thiểu"],["low","Thấp"],["medium","Cân bằng"],["high","Cao"]].map(([id,label]) => `<option value="${id}" ${runtime.state.thinkingLevel === id ? "selected" : ""}>${label}</option>`).join("")}</select></label><label><span>Độ dài câu trả lời</span><select data-chat-ai-response-style>${[["concise","Ngắn gọn"],["balanced","Cân bằng"],["detailed","Chi tiết"]].map(([id,label])=>`<option value="${id}"${runtime.state.responseStyle===id?" selected":""}>${label}</option>`).join("")}</select></label><label><span>Ngân sách ngữ cảnh</span><select data-chat-ai-context-budget>${[[12000,"Nhẹ · ~3.750 tokens"],[24000,"Cân bằng · ~7.500 tokens"],[32000,"Dài · ~10.000 tokens"]].map(([value,label])=>`<option value="${value}"${runtime.state.contextBudget===value?" selected":""}>${label}</option>`).join("")}</select></label><label class="chat-ai-toggle"><input type="checkbox" data-chat-ai-search-toggle ${runtime.state.googleSearch ? "checked" : ""}><span>Dùng Google Search khi cần dữ kiện mới</span></label><label class="chat-ai-toggle"><input type="checkbox" data-chat-ai-fallback-toggle ${runtime.state.autoFallback ? "checked" : ""}><span>Tự động tiếp quản khi model/provider chính quá tải</span></label><button type="button" data-chat-ai-reset-system>Khôi phục chỉ dẫn mặc định</button><small>Thứ tự hợp lệ: Gemini đã chọn → Gemini Flash-Lite → OpenAI nếu máy chủ đã cấu hình → HH Continuity. Giao diện luôn ghi đúng provider thực tế; khóa API chỉ nằm trên Vercel.</small></section>`;
+      const technicalProvider = escapeHtml(runtime.lastMeta.technicalProvider || "Chưa có yêu cầu");
+      const technicalModel = escapeHtml(runtime.lastMeta.technicalModel || "Chưa có");
+      body = `<section class="chat-ai-settings"><label><span>Tên cuộc trò chuyện</span><input data-chat-ai-title value="${escapeHtml(session.title)}" maxlength="120" ${runtime.incognito ? "disabled" : ""}></label><label><span>Thư mục</span><input data-chat-ai-folder value="${escapeHtml(session.folder || "Chung")}" maxlength="40" ${runtime.incognito ? "disabled" : ""}></label><label><span>Nhãn, phân cách bằng dấu phẩy</span><input data-chat-ai-tags value="${escapeHtml((session.tags || []).join(", "))}" maxlength="160" ${runtime.incognito ? "disabled" : ""}></label><label><span>Chế độ xử lý</span><select data-chat-ai-processing>${PROCESSING_MODES.map((mode) => `<option value="${mode.id}" ${runtime.state.processingMode === mode.id ? "selected" : ""}>${mode.label}</option>`).join("")}</select></label><label><span>Mức suy luận thủ công</span><select data-chat-ai-thinking>${[["minimal","Tối thiểu"],["low","Thấp"],["medium","Cân bằng"],["high","Cao"]].map(([id,label]) => `<option value="${id}" ${runtime.state.thinkingLevel === id ? "selected" : ""}>${label}</option>`).join("")}</select></label><label><span>Độ dài câu trả lời</span><select data-chat-ai-response-style>${[["concise","Ngắn gọn"],["balanced","Cân bằng"],["detailed","Chi tiết"]].map(([id,label])=>`<option value="${id}"${runtime.state.responseStyle===id?" selected":""}>${label}</option>`).join("")}</select></label><label><span>Độ dài ngữ cảnh</span><select data-chat-ai-context-budget>${[[12000,"Nhẹ"],[24000,"Cân bằng"],[32000,"Dài"]].map(([value,label])=>`<option value="${value}"${runtime.state.contextBudget===value?" selected":""}>${label}</option>`).join("")}</select></label><label><span>Giọng đọc</span><select data-chat-ai-voice>${voiceOptions(runtime.state.voiceName)}</select></label><label class="chat-ai-toggle"><input type="checkbox" data-chat-ai-search-toggle ${runtime.state.webSearch ? "checked" : ""}><span>Tìm kiếm web khi cần dữ kiện mới</span></label><label class="chat-ai-toggle"><input type="checkbox" data-chat-ai-fallback-toggle ${runtime.state.autoFallback ? "checked" : ""}><span>Tự chuyển phương án xử lý khi dịch vụ quá tải</span></label><label class="chat-ai-toggle"><input type="checkbox" data-chat-ai-memory-toggle ${runtime.state.memoryEnabled ? "checked" : ""}><span>Cho phép dùng hồ sơ cá nhân hóa lưu trên thiết bị</span></label><label ${runtime.state.memoryEnabled ? "" : "hidden"}><span>Hồ sơ cá nhân hóa</span><textarea data-chat-ai-memory maxlength="1200" rows="4" placeholder="Ví dụ: Tôi thích câu trả lời ngắn, ưu tiên tiếng Việt…">${escapeHtml(runtime.state.memoryProfile)}</textarea></label><label><span>Chỉ dẫn hệ thống</span><textarea data-chat-ai-system maxlength="2000" rows="6">${escapeHtml(runtime.state.systemPrompt)}</textarea></label><button type="button" data-chat-ai-reset-system>Khôi phục chỉ dẫn mặc định</button><button type="button" data-chat-ai-clear-memory ${runtime.state.memoryProfile ? "" : "disabled"}>Xóa hồ sơ cá nhân hóa</button><details class="chat-ai-technical"><summary>Thông tin kỹ thuật</summary><p>Nhà cung cấp thực tế: <strong>${technicalProvider}</strong><br>Model nội bộ: <strong>${technicalModel}</strong><br>Độ trễ: <strong>${runtime.lastMeta.latencyMs ? `${runtime.lastMeta.latencyMs} ms` : "Chưa có"}</strong><br>Khóa truy cập chỉ nằm trên máy chủ.</p></details><small>HH Intelligence có thể dùng dịch vụ AI bên thứ ba. Thông tin kỹ thuật được thu gọn để giao diện dễ sử dụng nhưng vẫn minh bạch khi bạn cần kiểm tra.</small></section>`;
     } else {
       const stats = runtime.contextStats || compactHistory(session.messages, runtime.state.contextBudget);
-      body = `<section class="chat-ai-context"><article><span>MODEL ƯU TIÊN</span><strong>${escapeHtml(MODELS.find((model) => model.id === runtime.state.model)?.label || runtime.state.model)}</strong><small>${escapeHtml(runtime.state.thinkingLevel)} thinking · ${runtime.state.autoFallback ? "tiếp quản tự động bật" : "chỉ fallback local"}</small></article><article><span>NGỮ CẢNH GỬI ĐI</span><strong>~${stats.estimatedTokens.toLocaleString("vi-VN")} tokens</strong><small>${stats.history.length} phần · ${stats.omitted ? `${stats.omitted} tin cũ đã rút gọn` : "chưa cần rút gọn"}</small><meter min="0" max="${runtime.state.contextBudget}" value="${Math.min(stats.chars,runtime.state.contextBudget)}"></meter></article><article><span>HỘI THOẠI</span><strong>${session.messages.length} tin nhắn</strong><small>${runtime.incognito ? "Không lưu" : "Đã lưu trên thiết bị"}</small></article><article><span>TÌM KIẾM</span><strong>${runtime.state.googleSearch || currentMode(runtime).search ? "Được bật" : "Đang tắt"}</strong><small>Nguồn chỉ hiện khi cloud provider trả citation</small></article><article><span>PHIÊN GẦN NHẤT</span><strong>${runtime.lastMeta.provider || "Chưa gọi API"}</strong><small>${runtime.lastMeta.latencyMs ? `${runtime.lastMeta.latencyMs}ms · ${runtime.lastMeta.tokens || "--"} tokens${runtime.lastMeta.fallbackUsed ? " · đã tiếp quản" : ""}` : "Sẵn sàng"}</small></article><details open><summary>Continuity chống gián đoạn</summary><p>HH rút gọn ngữ cảnh, dùng backoff có jitter, đổi model, đổi provider đã cấu hình rồi mới dùng phản hồi local được gắn nhãn rõ. Phản hồi local không giả mạo Gemini và không bịa dữ kiện thời gian thực.</p></details><details><summary>Quyền riêng tư</summary><p>Không nhập mật khẩu, khóa API hoặc bí mật. Ảnh/PDF chỉ gửi khi bạn bấm Gửi. Dữ liệu cloud tuân theo điều khoản của provider đang hiển thị.</p></details></section>`;
+      const percent = Math.round(Math.min(100, stats.chars / runtime.state.contextBudget * 100));
+      body = `<section class="chat-ai-context"><article><span>CHẾ ĐỘ XỬ LÝ</span><strong>${escapeHtml(currentProcessingMode(runtime).label)}</strong><small>${escapeHtml(currentProcessingMode(runtime).detail)}</small></article><article><span>SỨC CHỨA NGỮ CẢNH</span><strong>${percent}% đang dùng</strong><small>${stats.history.length} phần · ${stats.omitted ? `${stats.omitted} tin cũ đã rút gọn` : "chưa cần rút gọn"}</small><meter min="0" max="${runtime.state.contextBudget}" value="${Math.min(stats.chars,runtime.state.contextBudget)}"></meter></article><article><span>HỘI THOẠI</span><strong>${session.messages.length} tin nhắn</strong><small>${runtime.incognito ? "Không lưu" : `Lưu trên thiết bị · ${escapeHtml(session.folder || "Chung")}`}</small></article><article><span>TÌM KIẾM WEB</span><strong>${runtime.state.webSearch || currentMode(runtime).search ? "Được bật" : "Đang tắt"}</strong><small>Nguồn sẽ xuất hiện khi dịch vụ trả citation</small></article><article><span>TRẠNG THÁI GẦN NHẤT</span><strong>${runtime.lastMeta.latencyMs ? "Đã hoàn tất" : "Sẵn sàng"}</strong><small>${runtime.lastMeta.latencyMs ? `${runtime.lastMeta.latencyMs} ms${runtime.lastMeta.fallbackUsed ? " · đã tự chuyển phương án" : ""}` : "Chưa có yêu cầu"}</small></article><details open><summary>HH Smart Router</summary><p>HH tự chọn phương án phù hợp theo độ dài, loại tác vụ, tệp và nhu cầu tìm kiếm. Khi dịch vụ quá tải, hệ thống đổi phương án trước khi chuyển sang HH Basic Assist.</p></details><details><summary>Quyền riêng tư</summary><p>Không nhập mật khẩu, khóa API hoặc bí mật. Ảnh/PDF chỉ được gửi khi bạn bấm Gửi. Hồ sơ cá nhân hóa mặc định tắt và chỉ lưu trên thiết bị.</p></details></section>`;
     }
-    return `<aside class="chat-ai-inspector"><header class="chat-ai-drawer-head"><strong>AI Center</strong><button type="button" data-chat-ai-mobile-close aria-label="Đóng AI Center">×</button></header>${tabs}<div class="chat-ai-inspector__body">${body}</div></aside>`;
+    return `<aside class="chat-ai-inspector"><header class="chat-ai-drawer-head"><strong>Tùy chỉnh HH AI</strong><button type="button" data-chat-ai-mobile-close aria-label="Đóng tùy chỉnh">×</button></header>${tabs}<div class="chat-ai-inspector__body">${body}</div></aside>`;
   }
   function shellMarkup(runtime) {
     const session = currentSession(runtime);
-    const messages = session.messages.length ? session.messages.map(messageMarkup).join("") : `<section class="chat-ai-welcome"><div class="chat-ai-orb">G</div><small>GEMINI-FIRST · CONTINUITY READY</small><h2>Tôi có thể giúp bạn làm gì?</h2><p>Trò chuyện nhiều lượt, nghiên cứu có nguồn, phân tích ảnh/PDF, viết nội dung và hỗ trợ lập trình trong một workspace riêng.</p><div>${PROMPTS.slice(0, 4).map(([title], index) => `<button type="button" data-chat-ai-prompt="${index}">${escapeHtml(title)}</button>`).join("")}</div></section>`;
+    const messages = session.messages.length ? session.messages.map(messageMarkup).join("") : `<section class="chat-ai-welcome"><div class="chat-ai-orb"><span>HH</span><i></i><b></b></div><small>HH INTELLIGENCE · COSMIC WORKSPACE</small><h2>Hôm nay chúng ta sẽ tạo nên điều gì?</h2><p>Trò chuyện nhiều lượt, nghiên cứu có nguồn, phân tích ảnh/PDF, viết nội dung và hỗ trợ lập trình trong một không gian riêng của bạn.</p><div>${PROMPTS.slice(0, 4).map(([title], index) => `<button type="button" data-chat-ai-prompt="${index}"><i>✦</i>${escapeHtml(title)}</button>`).join("")}</div></section>`;
     const mobilePanelClass = runtime.mobilePanel ? ` is-${runtime.mobilePanel}-open` : "";
-    const providerLabel = runtime.providerStatus === "online" ? "Gemini sẵn sàng" : runtime.providerStatus === "degraded" ? "Continuity sẵn sàng" : runtime.providerStatus === "offline" ? "Local continuity sẵn sàng" : "Đang kiểm tra provider";
-    return `<section class="chat-ai-hub${mobilePanelClass}" data-chat-ai-hub data-busy="${runtime.busy}" data-private="${runtime.incognito}"><header class="chat-ai-topbar"><div class="chat-ai-brand"><i>AI</i><span><small>HH PLATFORM</small><strong>Chat AI</strong></span></div><div class="chat-ai-mobile-actions" aria-label="Bảng điều khiển Chat AI"><button type="button" data-chat-ai-mobile-panel="sessions" aria-expanded="${runtime.mobilePanel === "sessions"}">☰ Lịch sử</button><button type="button" data-chat-ai-mobile-panel="inspector" aria-expanded="${runtime.mobilePanel === "inspector"}">✦ AI Center</button></div><div class="chat-ai-mode-tabs">${MODES.map((mode) => `<button type="button" class="${runtime.state.mode === mode.id ? "is-active" : ""}" data-chat-ai-mode="${mode.id}"><i>${mode.icon}</i>${mode.label}</button>`).join("")}</div><div class="chat-ai-top-actions"><label><span>Model Gemini ưu tiên</span><select data-chat-ai-model>${MODELS.map((model) => `<option value="${model.id}" ${runtime.state.model === model.id ? "selected" : ""}>${model.label}</option>`).join("")}</select></label><button type="button" class="${runtime.incognito ? "is-active" : ""}" data-chat-ai-private title="Không lưu hội thoại">◉ Riêng tư</button><button type="button" data-chat-ai-export>⇩ Xuất</button></div></header><div class="chat-ai-layout"><aside class="chat-ai-sidebar"><header class="chat-ai-drawer-head"><strong>Lịch sử trò chuyện</strong><button type="button" data-chat-ai-mobile-close aria-label="Đóng lịch sử">×</button></header><button type="button" class="chat-ai-new" data-chat-ai-new>＋ Cuộc trò chuyện mới</button><label class="chat-ai-search"><span>⌕</span><input type="search" data-chat-ai-session-search value="${escapeHtml(runtime.query)}" placeholder="Tìm lịch sử..."></label><div class="chat-ai-session-list" data-chat-ai-sessions>${runtime.incognito ? `<article class="chat-ai-private-card"><i>◉</i><strong>Phiên riêng tư</strong><span>Không ghi vào lịch sử</span></article>` : sessionsMarkup(runtime)}</div><footer><span data-chat-ai-provider-state="${runtime.providerStatus}"><i></i>${providerLabel}</span><small>Khóa API được giữ phía server</small></footer></aside><main class="chat-ai-main"><section class="chat-ai-stream" data-chat-ai-stream aria-live="polite">${messages}</section><section class="chat-ai-pending" data-chat-ai-pending ${runtime.pending.length ? "" : "hidden"}>${pendingMarkup(runtime)}</section><form class="chat-ai-composer" data-chat-ai-form><textarea data-chat-ai-input rows="3" maxlength="24000" placeholder="Nhắn tin cho Chat AI…" ${runtime.busy ? "disabled" : ""}>${escapeHtml(runtime.state.draft)}</textarea><div class="chat-ai-composer__bar"><div><label title="Ảnh, PDF hoặc văn bản nhỏ">＋ Tệp<input type="file" data-chat-ai-files multiple accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/markdown,text/csv,application/json,.txt,.md,.csv,.json"></label><button type="button" data-chat-ai-mic title="Nhập bằng giọng nói">◉ Nói</button><button type="button" data-chat-ai-clear-draft>Xóa</button></div><span><b data-chat-ai-count>${runtime.state.draft.length}</b>/24000 · Enter để gửi</span><div><button type="button" data-chat-ai-stop ${runtime.busy ? "" : "hidden"}>Dừng</button><button type="submit" class="chat-ai-send" ${runtime.busy ? "disabled" : ""}>Gửi <i>➤</i></button></div></div></form><footer class="chat-ai-honesty">Provider AI có thể mắc lỗi. Hãy kiểm tra thông tin quan trọng và nguồn được dẫn; phản hồi local luôn được gắn nhãn.</footer></main>${rightPanelMarkup(runtime, session)}</div><button type="button" class="chat-ai-mobile-backdrop" data-chat-ai-mobile-close aria-label="Đóng bảng điều khiển"></button><div class="chat-ai-toast" data-chat-ai-toast role="status" aria-live="polite" hidden></div>${runtime.deleted ? `<button class="chat-ai-undo" type="button" data-chat-ai-undo>Hoàn tác xóa “${escapeHtml(runtime.deleted.title)}”</button>` : ""}</section>`;
+    const providerLabel = runtime.providerStatus === "online" ? "HH Intelligence sẵn sàng" : runtime.providerStatus === "degraded" ? "HH AI đã tự chuyển phương án" : runtime.providerStatus === "offline" ? "HH Basic Assist sẵn sàng" : "Đang kiểm tra dịch vụ AI";
+    const layoutClass = `${mobilePanelClass}${runtime.state.inspectorOpen ? "" : " is-inspector-hidden"}${runtime.state.sidebarCollapsed ? " is-sidebar-collapsed" : ""}`;
+    const folders = [...new Set(runtime.state.sessions.map((item) => item.folder || "Chung"))].sort((a, b) => a.localeCompare(b, "vi"));
+    return `<section class="chat-ai-hub${layoutClass}" data-chat-ai-hub data-busy="${runtime.busy}" data-private="${runtime.incognito}"><div class="chat-ai-cosmos" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b><b></b><span></span><span></span><span></span></div><header class="chat-ai-topbar"><div class="chat-ai-brand"><i><span>HH</span></i><span><small>HH INTELLIGENCE</small><strong>Chat AI</strong></span></div><div class="chat-ai-mobile-actions" aria-label="Bảng điều khiển Chat AI"><button type="button" data-chat-ai-mobile-panel="sessions" aria-expanded="${runtime.mobilePanel === "sessions"}">☰ Hội thoại</button><button type="button" data-chat-ai-mobile-panel="inspector" aria-expanded="${runtime.mobilePanel === "inspector"}">✦ Tùy chỉnh</button></div><div class="chat-ai-mode-tabs">${MODES.map((mode) => `<button type="button" class="${runtime.state.mode === mode.id ? "is-active" : ""}" data-chat-ai-mode="${mode.id}"><i>${mode.icon}</i>${mode.label}</button>`).join("")}</div><div class="chat-ai-top-actions"><label class="chat-ai-processing"><span>Chế độ xử lý</span><select data-chat-ai-processing>${PROCESSING_MODES.map((mode) => `<option value="${mode.id}" ${runtime.state.processingMode === mode.id ? "selected" : ""}>${mode.label}</option>`).join("")}</select></label><button type="button" class="${runtime.incognito ? "is-active" : ""}" data-chat-ai-private title="Không lưu hội thoại">◉ Riêng tư</button><button type="button" class="${runtime.state.inspectorOpen ? "is-active" : ""}" data-chat-ai-toggle-inspector>✦ Tùy chỉnh</button><button type="button" data-chat-ai-export>⇩ Xuất</button></div></header><div class="chat-ai-layout"><aside class="chat-ai-sidebar"><header class="chat-ai-drawer-head"><strong>Hội thoại</strong><button type="button" data-chat-ai-mobile-close aria-label="Đóng lịch sử">×</button></header><button type="button" class="chat-ai-new" data-chat-ai-new>＋ Cuộc trò chuyện mới</button><label class="chat-ai-search"><span>⌕</span><input type="search" data-chat-ai-session-search value="${escapeHtml(runtime.query)}" placeholder="Tìm lịch sử..."></label><div class="chat-ai-folder-row"><select data-chat-ai-folder-filter aria-label="Lọc thư mục"><option value="">Tất cả thư mục</option>${folders.map((folder) => `<option value="${escapeHtml(folder)}" ${runtime.folderFilter === folder ? "selected" : ""}>${escapeHtml(folder)}</option>`).join("")}</select><button type="button" data-chat-ai-toggle-sidebar title="Thu gọn hội thoại">‹</button></div><div class="chat-ai-session-list" data-chat-ai-sessions>${runtime.incognito ? `<article class="chat-ai-private-card"><i>◉</i><strong>Phiên riêng tư</strong><span>Không ghi vào lịch sử</span></article>` : sessionsMarkup(runtime)}</div><footer><span data-chat-ai-provider-state="${runtime.providerStatus}"><i></i>${providerLabel}</span><small>Dữ liệu nhạy cảm và khóa truy cập được giữ phía máy chủ</small></footer></aside><main class="chat-ai-main"><section class="chat-ai-stream" data-chat-ai-stream aria-live="polite">${messages}</section><section class="chat-ai-pending" data-chat-ai-pending ${runtime.pending.length || runtime.queue.length ? "" : "hidden"}>${pendingMarkup(runtime)}</section><form class="chat-ai-composer" data-chat-ai-form data-drop-active="false"><textarea data-chat-ai-input rows="3" maxlength="24000" placeholder="Nhắn tin hoặc dùng /research, /code, /write, /study…">${escapeHtml(runtime.state.draft)}</textarea><div class="chat-ai-composer__bar"><div><label title="Kéo thả, dán hoặc chọn tệp">＋ Tệp<input type="file" data-chat-ai-files multiple accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/markdown,text/csv,application/json,.txt,.md,.csv,.json"></label><button type="button" data-chat-ai-mic title="Nhập bằng giọng nói">◉ Nói</button><button type="button" data-chat-ai-save-prompt title="Lưu nội dung đang soạn">☆ Lưu</button><button type="button" data-chat-ai-clear-draft>Xóa</button></div><span><b data-chat-ai-count>${runtime.state.draft.length}</b>/24000 · Enter để gửi${runtime.queue.length ? ` · ${runtime.queue.length} đang chờ` : ""}</span><div><button type="button" data-chat-ai-stop ${runtime.busy ? "" : "hidden"}>Dừng</button><button type="submit" class="chat-ai-send">${runtime.busy ? "Xếp hàng" : "Gửi"} <i>➤</i></button></div></div></form><footer class="chat-ai-honesty">HH Intelligence có thể dùng dịch vụ AI bên thứ ba và có thể mắc lỗi. Hãy kiểm tra dữ kiện quan trọng; thông tin kỹ thuật nằm trong Tùy chỉnh.</footer></main>${rightPanelMarkup(runtime, session)}</div><button type="button" class="chat-ai-mobile-backdrop" data-chat-ai-mobile-close aria-label="Đóng bảng điều khiển"></button><div class="chat-ai-toast" data-chat-ai-toast role="status" aria-live="polite" hidden></div>${runtime.deleted ? `<button class="chat-ai-undo" type="button" data-chat-ai-undo>Hoàn tác xóa “${escapeHtml(runtime.deleted.title)}”</button>` : ""}</section>`;
   }
 
   function render(runtime, preserveFocus = false) {
@@ -181,7 +222,7 @@
     const cursor = active ? runtime.host.ownerDocument.activeElement.selectionStart : 0;
     runtime.host.innerHTML = shellMarkup(runtime);
     const exportButton = runtime.host.querySelector("[data-chat-ai-export]");
-    exportButton?.insertAdjacentHTML("beforebegin", `<label class="chat-ai-export-format"><span>Định dạng</span><select data-chat-ai-export-format aria-label="Định dạng xuất hội thoại"><option value="md">Markdown</option><option value="txt">TXT</option><option value="json">JSON</option></select></label>`);
+    exportButton?.insertAdjacentHTML("beforebegin", `<label class="chat-ai-export-format"><span>Định dạng</span><select data-chat-ai-export-format aria-label="Định dạng xuất hội thoại"><option value="md">Markdown</option><option value="txt">TXT</option><option value="json">JSON</option><option value="pdf">In / PDF</option></select></label>`);
     if (active) { const input = runtime.host.querySelector("[data-chat-ai-input]"); input?.focus(); input?.setSelectionRange(cursor, cursor); }
     const stream = runtime.host.querySelector("[data-chat-ai-stream]"); if (stream) stream.scrollTop = stream.scrollHeight;
   }
@@ -221,15 +262,15 @@
     const studyTask = mode === "study" || /\b(?:học|giải thích|bài tập|ôn tập|kiểm tra)\b/i.test(request);
     const writeTask = mode === "write" || /\b(?:viết|kịch bản|caption|bài đăng|nội dung|mô tả)\b/i.test(request);
     let actions;
-    if (greeting) actions = ["Chào bạn! Chat AI đang ở chế độ duy trì nên mình vẫn nhận và giữ hội thoại này.", "Bạn có thể gửi mục tiêu, đoạn code hoặc nội dung cần xử lý; khi cloud sẵn sàng, nút **Tạo lại bằng cloud** sẽ chạy lại đúng yêu cầu."];
+    if (greeting) actions = ["Chào bạn! HH Basic Assist đang giữ hội thoại trong lúc dịch vụ AI đám mây khôi phục.", "Bạn có thể gửi mục tiêu, đoạn code hoặc nội dung cần xử lý; khi HH Intelligence sẵn sàng, nút **Tạo bản khác** sẽ chạy lại đúng yêu cầu."];
     else if (codeTask) actions = ["Chốt đầu ra mong muốn và cách tái hiện lỗi ngắn nhất.", "Ghi lại thông báo lỗi nguyên văn, môi trường chạy và dữ liệu đầu vào tối thiểu.", "Khoanh vùng thay đổi gần nhất, sửa một nguyên nhân mỗi lần rồi chạy syntax check và test hồi quy.", "Không đưa khóa API, token hoặc mật khẩu vào hội thoại hay mã client."];
     else if (researchTask) actions = ["Tách câu hỏi thành phạm vi, thời điểm và tiêu chí so sánh có thể kiểm chứng.", "Ưu tiên nguồn chính thức hoặc tài liệu gốc; ghi ngày truy cập cạnh dữ kiện dễ thay đổi.", "Tách rõ dữ kiện, suy luận và phần chưa xác minh.", "Chế độ local không có truy cập web nên chưa khẳng định thông tin thời gian thực."];
     else if (studyTask) actions = ["Nêu khái niệm bằng một câu đơn giản trước.", "Chia thành ba phần: nền tảng, ví dụ có lời giải và bài tự luyện chưa hiện đáp án.", "Tự giải thích lại bằng lời của bạn, sau đó kiểm tra điểm còn mơ hồ.", "Dùng nút tạo lại bằng cloud khi cần chấm hoặc phản hồi sâu theo ngữ cảnh."];
     else if (writeTask) actions = ["Xác định người đọc, mục tiêu và một thông điệp chính.", "Dựng khung: mở gây chú ý → giá trị cụ thể → bằng chứng/ví dụ → lời kêu gọi.", "Cắt câu lặp, kiểm tra tên riêng, dữ kiện và bản quyền trước khi xuất bản.", "Tạo ít nhất hai biến thể để so sánh giọng điệu và độ rõ."];
     else actions = ["Viết lại mục tiêu thành một kết quả có thể kiểm tra.", "Chia yêu cầu thành dữ liệu đầu vào, các bước xử lý và đầu ra mong muốn.", "Làm bước nhỏ có thể đảo ngược trước, ghi lại kết quả rồi mới mở rộng.", "Kiểm tra các giả định quan trọng trước khi dùng kết quả để quyết định."];
     return [
-      "## HH Continuity đang tiếp quản",
-      "Cloud AI hiện chưa phản hồi ổn định. Yêu cầu của bạn vẫn được giữ nguyên; nội dung dưới đây do bộ xử lý local tạo và **không phải câu trả lời của Gemini**.",
+      "## HH Basic Assist đang hỗ trợ",
+      "Dịch vụ AI đám mây hiện chưa phản hồi ổn định. Yêu cầu của bạn vẫn được giữ nguyên; nội dung dưới đây do bộ xử lý cơ bản trên thiết bị tạo và **không phải kết quả từ dịch vụ AI đám mây**.",
       "",
       `**Yêu cầu đã nhận:** ${request}`,
       hasBinary ? "\n**Tệp đính kèm:** chế độ local không đọc nội dung ảnh/PDF, vì vậy chưa đưa ra kết luận về tệp." : "",
@@ -237,33 +278,48 @@
       "### Hướng xử lý an toàn ngay bây giờ",
       ...actions.map((item, index) => `${index + 1}. ${item}`),
       "",
-      "Khi provider cloud có dung lượng, bấm **Tạo lại bằng cloud** ở câu trả lời này để nhận phân tích đầy đủ mà không phải nhập lại nội dung."
+      "Khi HH Intelligence khôi phục đầy đủ, bấm **Tạo bản khác** ở câu trả lời này để nhận phân tích sâu hơn mà không phải nhập lại nội dung."
     ].filter(Boolean).join("\n");
   }
   async function providerRequest(runtime, input, history, attachments) {
     const base = clean(runtime.options.apiBase || globalScope.HH_API_BASE || globalScope.location?.origin, 600).replace(/\/$/, "");
     const token = globalScope.HHAuthSession?.token?.() || "";
     const mode = currentMode(runtime);
+    const routing = routeProcessing(input, { processingMode: runtime.state.processingMode, thinkingLevel: runtime.state.thinkingLevel, contextBudget: runtime.state.contextBudget, mode: mode.id, attachmentCount: attachments.length });
     const styleInstruction = runtime.state.responseStyle === "concise" ? "Trả lời ngắn gọn, ưu tiên kết luận và bước làm." : runtime.state.responseStyle === "detailed" ? "Giải thích chi tiết theo từng tầng, có ví dụ và giới hạn." : "Giữ độ dài cân bằng, rõ ràng và đủ để áp dụng.";
-    const response = await fetch(`${base}/api/modules/chat-ai/actions`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ input, actionType: mode.action, anonymousId: anonymousId(), meta: { provider: "gemini", allowProviderFallback: runtime.state.autoFallback, allowModelFallback: runtime.state.autoFallback, requireProvider: false, model: runtime.state.model, thinkingLevel: runtime.state.thinkingLevel, useGoogleSearch: runtime.state.googleSearch || mode.search, systemPrompt: `${runtime.state.systemPrompt}\n\nChế độ hiện tại: ${mode.label}. ${mode.prompt}\n${styleInstruction}`, history, attachments } }), signal: runtime.controller.signal });
+    const memoryInstruction = runtime.state.memoryEnabled && runtime.state.memoryProfile ? `\n\nHồ sơ cá nhân hóa do người dùng chủ động bật:\n${runtime.state.memoryProfile}` : "";
+    const response = await fetch(`${base}/api/modules/chat-ai/actions`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ input, actionType: mode.action, anonymousId: anonymousId(), meta: { provider: "gemini", allowProviderFallback: runtime.state.autoFallback, allowModelFallback: runtime.state.autoFallback, requireProvider: false, model: routing.model, thinkingLevel: routing.thinkingLevel, useGoogleSearch: runtime.state.webSearch || mode.search || routing.useWebSearch, systemPrompt: `${runtime.state.systemPrompt}${memoryInstruction}\n\nChế độ hiện tại: ${mode.label}. ${mode.prompt}\n${styleInstruction}`, history, attachments } }), signal: runtime.controller.signal });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) { const error = new Error(clean(payload.error || "Chat AI backend chưa phản hồi.", 500)); error.code = payload.code || "CHAT_AI_ERROR"; error.status = response.status; error.retryAfterMs = retryAfterMilliseconds(response.headers.get("retry-after")); throw error; }
     if (!payload.action?.output) throw new Error("Chat AI backend trả về nội dung rỗng.");
-    return payload.action;
+    return { ...payload.action, requestedModel: payload.action.requestedModel || routing.model };
   }
-  async function send(runtime, override = "") {
-    if (runtime.busy) return;
+  async function send(runtime, override = "", queuedAttachments = null) {
     const inputNode = runtime.host.querySelector("[data-chat-ai-input]");
-    const raw = clean(override || inputNode?.value || runtime.state.draft, 24000);
-    if (!raw && !runtime.pending.length) { inputNode?.focus(); return toast(runtime, "Hãy nhập nội dung hoặc chọn tệp.", "warning"); }
+    let raw = clean(override || inputNode?.value || runtime.state.draft, 24000);
+    const attachmentSource = Array.isArray(queuedAttachments) ? queuedAttachments : runtime.pending;
+    if (!raw && !attachmentSource.length) { inputNode?.focus(); return toast(runtime, "Hãy nhập nội dung hoặc chọn tệp.", "warning"); }
+    const command = raw.match(/^\/(research|code|write|study|vision|image|chat)\s*/i);
+    if (command) {
+      const commandMode = command[1].toLowerCase() === "image" ? "vision" : command[1].toLowerCase();
+      runtime.state.mode = MODES.some((mode) => mode.id === commandMode) ? commandMode : runtime.state.mode;
+      if (currentMode(runtime).search) runtime.state.webSearch = true;
+      raw = clean(raw.slice(command[0].length), 24000) || raw;
+    }
+    if (runtime.busy) {
+      runtime.queue.push({ input: raw, attachments: attachmentSource.slice(0, 4), queuedAt: Date.now() });
+      runtime.queue = runtime.queue.slice(0, 8);
+      runtime.state.draft = ""; runtime.pending = []; writeState(runtime); render(runtime); toast(runtime, "Đã thêm yêu cầu vào hàng đợi."); return;
+    }
     const session = currentSession(runtime);
-    const context = compactHistory(session.messages, runtime.state.contextBudget);
+    const routedContext = routeProcessing(raw, { processingMode: runtime.state.processingMode, thinkingLevel: runtime.state.thinkingLevel, contextBudget: runtime.state.contextBudget, mode: runtime.state.mode, attachmentCount: attachmentSource.length });
+    const context = compactHistory(session.messages, routedContext.contextBudget);
     const history = context.history;
     runtime.contextStats = context;
-    const textFiles = runtime.pending.filter((file) => file.kind === "text");
-    const binaryFiles = runtime.pending.filter((file) => file.kind === "binary");
+    const textFiles = attachmentSource.filter((file) => file.kind === "text");
+    const binaryFiles = attachmentSource.filter((file) => file.kind === "binary");
     const input = [raw, ...textFiles.map((file) => `\n\n--- TỆP ${file.name} ---\n${file.text}`)].join("").slice(0, 48000);
-    const metadata = runtime.pending.map(({ name, mimeType, size }) => ({ name, mimeType, size }));
+    const metadata = attachmentSource.map(({ name, mimeType, size }) => ({ name, mimeType, size }));
     const userMessage = { id: uid("user"), role: "user", text: raw || `Phân tích ${metadata.map((file) => file.name).join(", ")}`, createdAt: new Date().toISOString(), attachments: metadata };
     const loading = { id: uid("assistant"), role: "assistant", text: "", createdAt: new Date().toISOString(), loading: true };
     session.messages.push(userMessage, loading); session.messages = session.messages.slice(-MAX_MESSAGES); session.updatedAt = new Date().toISOString(); if (session.title === "Cuộc trò chuyện mới") session.title = clean(raw || metadata[0]?.name, 58) || session.title;
@@ -273,27 +329,35 @@
       const action = await providerRequest(runtime, input, history, binaryFiles.map(({ name, mimeType, size, data }) => ({ name, mimeType, size, data })));
       const actualProvider = clean(action.provider || "gemini", 80).toLowerCase();
       const continuity = actualProvider === "local" || actualProvider.startsWith("local-");
-      Object.assign(loading, { loading: false, error: false, continuity, text: action.output, provider: actualProvider, providerError: action.providerError || "", model: action.model || (continuity ? "hh-continuity-v1" : runtime.state.model), latencyMs: Math.round(performance.now() - startedAt), usage: action.usage || null, sources: action.sources || [] });
+      Object.assign(loading, { loading: false, error: false, continuity, text: action.output, provider: actualProvider, providerError: action.providerError || "", model: action.model || (continuity ? "hh-basic-assist-v1" : action.requestedModel), latencyMs: Math.round(performance.now() - startedAt), usage: action.usage || null, sources: action.sources || [] });
       runtime.providerStatus = actualProvider === "gemini" ? "online" : "degraded";
-      runtime.lastMeta = { provider: `${assistantIdentity(loading).label} · ${loading.model}`, latencyMs: loading.latencyMs, tokens: action.usage?.totalTokenCount || action.usage?.total_tokens || action.usage?.totalTokens || "--", fallbackUsed: Boolean(action.fallbackUsed || actualProvider !== "gemini"), requestedModel: action.requestedModel || runtime.state.model };
+      runtime.lastMeta = { label: assistantIdentity(loading).label, technicalProvider: actualProvider, technicalModel: loading.model, latencyMs: loading.latencyMs, tokens: action.usage?.totalTokenCount || action.usage?.total_tokens || action.usage?.totalTokens || "--", fallbackUsed: Boolean(action.fallbackUsed || actualProvider !== "gemini"), requestedModel: action.requestedModel || "" };
     } catch (error) {
       const limited = Number(error.status) === 429 || /quota|resource_exhausted|rate limit/i.test(error.message);
       if (limited) runtime.cooldownUntil = Date.now() + Math.max(15000, Number(error.retryAfterMs) || 30000);
       if (error.name === "AbortError") {
-        Object.assign(loading, { loading: false, stopped: true, error: false, text: "Đã dừng hiển thị yêu cầu này. Tác vụ cloud có thể vẫn hoàn tất vì HTTP abort không bảo đảm hủy xử lý tại provider." });
+        Object.assign(loading, { loading: false, stopped: true, error: false, text: "Đã dừng hiển thị yêu cầu này. Tác vụ đám mây có thể vẫn hoàn tất vì việc đóng kết nối không luôn đồng nghĩa với hủy xử lý phía máy chủ." });
       } else {
-        Object.assign(loading, { loading: false, error: false, continuity: true, provider: "local-client", model: "hh-continuity-v1", providerError: clean(error.message, 500), latencyMs: Math.round(performance.now() - startedAt), text: localContinuityResponse(input, { mode: runtime.state.mode, hasBinary: binaryFiles.length > 0 }) });
+        Object.assign(loading, { loading: false, error: false, continuity: true, provider: "local-client", model: "hh-basic-assist-v1", providerError: clean(error.message, 500), latencyMs: Math.round(performance.now() - startedAt), text: localContinuityResponse(input, { mode: runtime.state.mode, hasBinary: binaryFiles.length > 0 }) });
         runtime.providerStatus = "offline";
-        runtime.lastMeta = { provider: "HH Continuity · hh-continuity-v1", latencyMs: loading.latencyMs, tokens: "local", fallbackUsed: true, requestedModel: runtime.state.model };
+        runtime.lastMeta = { label: "HH Basic Assist", technicalProvider: "local-client", technicalModel: "hh-basic-assist-v1", latencyMs: loading.latencyMs, tokens: "local", fallbackUsed: true, requestedModel: "" };
       }
     } finally {
       runtime.busy = false; runtime.controller = null; session.updatedAt = new Date().toISOString(); writeState(runtime); render(runtime);
+      const next = runtime.queue.shift();
+      if (next) globalScope.setTimeout?.(() => send(runtime, next.input, next.attachments), 0);
     }
   }
   function download(filename, content, type = "text/plain;charset=utf-8") { const blob = new Blob([content], { type }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = filename; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
   function exportSession(runtime, format = "md") {
     const session = currentSession(runtime); const stamp = new Date().toISOString().slice(0, 10); const safe = session.title.replace(/[^a-z0-9À-ỹ_-]+/gi, "-").replace(/^-|-$/g, "").slice(0, 60) || "chat-ai";
     if (format === "json") return download(`${safe}-${stamp}.json`, JSON.stringify({ version: VERSION, exportedAt: new Date().toISOString(), session }, null, 2), "application/json");
+    if (format === "pdf") {
+      const printable = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(session.title)}</title><style>body{font-family:Arial,sans-serif;max-width:820px;margin:32px auto;color:#18203a}h1{color:#4d4bd8}article{border:1px solid #dfe3f2;border-radius:12px;padding:14px;margin:12px 0}article h3{margin:0 0 8px;color:#5a63b8}.meta{color:#7b839c;font-size:12px}pre{white-space:pre-wrap;background:#f5f6fa;padding:10px;border-radius:8px}</style></head><body><h1>${escapeHtml(session.title)}</h1>${session.messages.map((message) => `<article><h3>${message.role === "assistant" ? "HH AI" : "Bạn"}</h3><div class="meta">${escapeHtml(nowLabelFrom(message.createdAt))}</div><div>${markdownMarkup(message.text, message.id)}</div></article>`).join("")}</body></html>`;
+      const popup = globalScope.open?.("", "_blank", "noopener,noreferrer,width=920,height=760");
+      if (popup?.document) { popup.document.write(printable); popup.document.close(); popup.focus?.(); popup.addEventListener?.("load", () => popup.print?.(), { once: true }); return; }
+      return download(`${safe}-${stamp}.html`, printable, "text/html;charset=utf-8");
+    }
     const content = [`# ${session.title}`, "", ...session.messages.map((message) => `## ${message.role === "assistant" ? assistantIdentity(message).label : "Bạn"}\n\n${message.text}${message.sources?.length ? `\n\nNguồn:\n${message.sources.map((source) => `- ${source.title}: ${source.url}`).join("\n")}` : ""}`)].join("\n\n");
     download(`${safe}-${stamp}.${format}`, content, format === "md" ? "text/markdown;charset=utf-8" : "text/plain;charset=utf-8");
   }
@@ -307,7 +371,7 @@
   }
   function speak(runtime, message) {
     if (!globalScope.speechSynthesis || !globalScope.SpeechSynthesisUtterance) return toast(runtime, "Trình duyệt chưa hỗ trợ đọc văn bản.", "warning");
-    globalScope.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(message.text.slice(0, 5000)); utterance.lang = "vi-VN"; utterance.rate = 1; globalScope.speechSynthesis.speak(utterance);
+    globalScope.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(message.text.slice(0, 5000)); utterance.lang = "vi-VN"; utterance.rate = 1; const preferred = globalScope.speechSynthesis.getVoices?.().find((voice) => voice.name === runtime.state.voiceName) || globalScope.speechSynthesis.getVoices?.().find((voice) => /^vi(?:-|_)/i.test(voice.lang)); if (preferred) utterance.voice = preferred; globalScope.speechSynthesis.speak(utterance);
   }
   function startVoice(runtime) {
     const Recognition = globalScope.SpeechRecognition || globalScope.webkitSpeechRecognition;
@@ -319,43 +383,64 @@
     try { const response = await fetch(`${base}/api/modules/chat-ai/actions?anonymousId=${encodeURIComponent(anonymousId())}`, { headers: token ? { Authorization: `Bearer ${token}` } : {}, cache: "no-store" }); const data = await response.json().catch(() => ({})); const geminiReady = Boolean(data.providers?.gemini?.configured && data.providers?.gemini?.availableKeyCount !== 0); const alternateReady = Boolean(data.providers?.openai?.configured); runtime.providerStatus = response.ok && geminiReady ? "online" : response.ok && (alternateReady || data.supports?.localContinuity) ? "degraded" : "offline"; runtime.providerDetail = data.providers || null; } catch { runtime.providerStatus = "offline"; } render(runtime);
   }
 
+  async function addFiles(runtime, files) {
+    for (const file of [...(files || [])].slice(0, 4)) {
+      try { runtime.pending.push(await readFile(file)); } catch (error) { toast(runtime, error.message, "warning"); }
+    }
+    runtime.pending = runtime.pending.slice(0, 4); render(runtime);
+  }
+
   async function handleClick(runtime, event) {
     const button = event.target.closest("button,[data-chat-ai-files]"); if (!button) return;
     if (button.dataset.chatAiMobilePanel) { runtime.mobilePanel = runtime.mobilePanel === button.dataset.chatAiMobilePanel ? "" : button.dataset.chatAiMobilePanel; return render(runtime); }
     if (button.dataset.chatAiMobileClose !== undefined) { runtime.mobilePanel = ""; return render(runtime); }
+    if (button.dataset.chatAiToggleInspector !== undefined) { runtime.state.inspectorOpen = !runtime.state.inspectorOpen; writeState(runtime); return render(runtime); }
+    if (button.dataset.chatAiToggleSidebar !== undefined) { runtime.state.sidebarCollapsed = !runtime.state.sidebarCollapsed; writeState(runtime); return render(runtime); }
     if (button.dataset.chatAiNew !== undefined) { runtime.mobilePanel = ""; return newSession(runtime); }
     if (button.dataset.chatAiSession) { runtime.state.activeId = button.dataset.chatAiSession; runtime.pending = []; runtime.mobilePanel = ""; writeState(runtime); return render(runtime); }
-    if (button.dataset.chatAiMode) { runtime.state.mode = button.dataset.chatAiMode; if (currentMode(runtime).search) runtime.state.googleSearch = true; writeState(runtime); return render(runtime); }
+    if (button.dataset.chatAiMode) { runtime.state.mode = button.dataset.chatAiMode; if (currentMode(runtime).search) runtime.state.webSearch = true; writeState(runtime); return render(runtime); }
     if (button.dataset.chatAiPanel) { runtime.state.panel = button.dataset.chatAiPanel; writeState(runtime); return render(runtime); }
     if (button.dataset.chatAiPrompt !== undefined) { const prompt = PROMPTS[Number(button.dataset.chatAiPrompt)]?.[1] || ""; runtime.state.draft = prompt; writeState(runtime); render(runtime); runtime.host.querySelector("[data-chat-ai-input]")?.focus(); return; }
+    if (button.dataset.chatAiSavedPrompt !== undefined) { runtime.state.draft = runtime.state.favoritePrompts[Number(button.dataset.chatAiSavedPrompt)] || ""; writeState(runtime); render(runtime); runtime.host.querySelector("[data-chat-ai-input]")?.focus(); return; }
+    if (button.dataset.chatAiFavoritePrompt !== undefined) { const prompt = PROMPTS[Number(button.dataset.chatAiFavoritePrompt)]?.[1]; if (prompt && !runtime.state.favoritePrompts.includes(prompt)) runtime.state.favoritePrompts.unshift(prompt); runtime.state.favoritePrompts = runtime.state.favoritePrompts.slice(0, 20); writeState(runtime); render(runtime); return toast(runtime, "Đã lưu prompt yêu thích."); }
+    if (button.dataset.chatAiSavePrompt !== undefined) { const prompt = clean(runtime.state.draft, 2000); if (!prompt) return toast(runtime, "Hãy nhập nội dung trước khi lưu prompt.", "warning"); if (!runtime.state.favoritePrompts.includes(prompt)) runtime.state.favoritePrompts.unshift(prompt); runtime.state.favoritePrompts = runtime.state.favoritePrompts.slice(0, 20); writeState(runtime); render(runtime); return toast(runtime, "Đã lưu prompt trên thiết bị."); }
+    if (button.dataset.chatAiRemoveSavedPrompt !== undefined) { runtime.state.favoritePrompts.splice(Number(button.dataset.chatAiRemoveSavedPrompt), 1); writeState(runtime); return render(runtime); }
     if (button.dataset.chatAiPrivate !== undefined) { runtime.incognito = !runtime.incognito; if (runtime.incognito) runtime.privateSession = blankSession("Phiên riêng tư"); runtime.pending = []; return render(runtime); }
     if (button.dataset.chatAiExport !== undefined) {
       const format = runtime.host.querySelector("[data-chat-ai-export-format]")?.value;
-      return exportSession(runtime, ["md", "txt", "json"].includes(format) ? format : "md");
+      return exportSession(runtime, ["md", "txt", "json", "pdf"].includes(format) ? format : "md");
     }
     if (button.dataset.chatAiStop !== undefined) { runtime.controller?.abort(); return; }
     if (button.dataset.chatAiClearDraft !== undefined) { runtime.state.draft = ""; writeState(runtime); return render(runtime); }
     if (button.dataset.chatAiMic !== undefined) return startVoice(runtime);
     if (button.dataset.chatAiRemoveFile !== undefined) { runtime.pending.splice(Number(button.dataset.chatAiRemoveFile), 1); return render(runtime); }
+    if (button.dataset.chatAiRemoveQueue !== undefined) { runtime.queue.splice(Number(button.dataset.chatAiRemoveQueue), 1); return render(runtime); }
     if (button.dataset.chatAiCopy) { const message = findMessage(runtime, button.dataset.chatAiCopy); try { await copyText(message?.text || ""); toast(runtime, "Đã sao chép câu trả lời."); } catch (error) { toast(runtime, error.message, "warning"); } return; }
     if (button.dataset.chatAiCopyCode) { const code = runtime.host.querySelector(`[data-chat-ai-code="${CSS.escape(button.dataset.chatAiCopyCode)}"]`)?.textContent || ""; try { await copyText(code); toast(runtime, "Đã sao chép code."); } catch (error) { toast(runtime, error.message, "warning"); } return; }
     if (button.dataset.chatAiRegenerate) { const session = currentSession(runtime); const index = session.messages.findIndex((message) => message.id === button.dataset.chatAiRegenerate); const previous = [...session.messages.slice(0, index)].reverse().find((message) => message.role === "user"); if (previous) return send(runtime, previous.text); return; }
+    if (button.dataset.chatAiRefine) { const prompts = { continue: "Hãy tiếp tục câu trả lời ngay trước, không lặp lại phần đã viết.", shorter: "Hãy viết lại câu trả lời ngay trước ngắn gọn hơn nhưng không bỏ mất kết luận quan trọng.", detailed: "Hãy mở rộng câu trả lời ngay trước chi tiết hơn, thêm ví dụ và nêu giới hạn." }; return send(runtime, prompts[button.dataset.chatAiRefine] || prompts.continue); }
     if (button.dataset.chatAiSpeak) { const message = findMessage(runtime, button.dataset.chatAiSpeak); if (message) speak(runtime, message); return; }
+    if (button.dataset.chatAiEditMessage) { const message = findMessage(runtime, button.dataset.chatAiEditMessage); if (message) { runtime.state.draft = message.text; writeState(runtime); render(runtime); runtime.host.querySelector("[data-chat-ai-input]")?.focus(); } return; }
+    if (button.dataset.chatAiMessagePin) { const message = findMessage(runtime, button.dataset.chatAiMessagePin); if (message) { message.pinned = !message.pinned; writeState(runtime); render(runtime); } return; }
     if (button.dataset.chatAiBranch) return branchSession(runtime, button.dataset.chatAiBranch);
     if (button.dataset.chatAiPin) { const session = runtime.state.sessions.find((item) => item.id === button.dataset.chatAiPin); if (session) { session.pinned = !session.pinned; writeState(runtime); render(runtime); } return; }
     if (button.dataset.chatAiDelete) { if (runtime.state.sessions.length <= 1) return toast(runtime, "Cần giữ ít nhất một cuộc trò chuyện.", "warning"); const index = runtime.state.sessions.findIndex((item) => item.id === button.dataset.chatAiDelete); if (index > -1) { runtime.deleted = { ...runtime.state.sessions[index], index }; runtime.state.sessions.splice(index, 1); if (runtime.state.activeId === button.dataset.chatAiDelete) runtime.state.activeId = runtime.state.sessions[0].id; writeState(runtime); render(runtime); } return; }
     if (button.dataset.chatAiUndo !== undefined && runtime.deleted) { runtime.state.sessions.splice(runtime.deleted.index, 0, runtime.deleted); runtime.state.activeId = runtime.deleted.id; runtime.deleted = null; writeState(runtime); return render(runtime); }
     if (button.dataset.chatAiResetSystem !== undefined) { runtime.state.systemPrompt = defaultState().systemPrompt; writeState(runtime); return render(runtime); }
+    if (button.dataset.chatAiClearMemory !== undefined) { runtime.state.memoryProfile = ""; runtime.state.memoryEnabled = false; writeState(runtime); render(runtime); return toast(runtime, "Đã xóa hồ sơ cá nhân hóa trên thiết bị."); }
     if (button.dataset.chatAiDownloadArtifact !== undefined) { const session = currentSession(runtime); const artifacts = []; session.messages.filter((message) => message.role === "assistant").forEach((message) => String(message.text).split(/```/).forEach((part, index) => { if (index % 2) { const newline = part.indexOf("\n"); artifacts.push({ language: newline > -1 ? part.slice(0, newline) : "txt", code: newline > -1 ? part.slice(newline + 1) : part }); } })); const artifact = artifacts[Number(button.dataset.chatAiDownloadArtifact)]; if (artifact) download(`chat-ai-code-${Date.now()}.${artifact.language || "txt"}`, artifact.code); }
   }
   async function handleChange(runtime, event) {
-    if (event.target.matches("[data-chat-ai-model]")) runtime.state.model = event.target.value;
+    if (event.target.matches("[data-chat-ai-processing]")) runtime.state.processingMode = PROCESSING_MODES.some((mode) => mode.id === event.target.value) ? event.target.value : "auto";
     else if (event.target.matches("[data-chat-ai-thinking]")) runtime.state.thinkingLevel = event.target.value;
-    else if (event.target.matches("[data-chat-ai-search-toggle]")) runtime.state.googleSearch = Boolean(event.target.checked);
+    else if (event.target.matches("[data-chat-ai-search-toggle]")) runtime.state.webSearch = Boolean(event.target.checked);
     else if (event.target.matches("[data-chat-ai-fallback-toggle]")) runtime.state.autoFallback = Boolean(event.target.checked);
+    else if (event.target.matches("[data-chat-ai-memory-toggle]")) runtime.state.memoryEnabled = Boolean(event.target.checked);
+    else if (event.target.matches("[data-chat-ai-voice]")) runtime.state.voiceName = clean(event.target.value, 160);
+    else if (event.target.matches("[data-chat-ai-folder-filter]")) runtime.folderFilter = clean(event.target.value, 40);
     else if (event.target.matches("[data-chat-ai-response-style]")) runtime.state.responseStyle = ["concise", "balanced", "detailed"].includes(event.target.value) ? event.target.value : "balanced";
     else if (event.target.matches("[data-chat-ai-context-budget]")) runtime.state.contextBudget = Math.max(8000, Math.min(MAX_CONTEXT_CHARS, Number(event.target.value) || 24000));
-    else if (event.target.matches("[data-chat-ai-files]")) { const files = [...(event.target.files || [])].slice(0, 4); for (const file of files) { try { runtime.pending.push(await readFile(file)); } catch (error) { toast(runtime, error.message, "warning"); } } runtime.pending = runtime.pending.slice(0, 4); event.target.value = ""; render(runtime); return; }
+    else if (event.target.matches("[data-chat-ai-files]")) { await addFiles(runtime, event.target.files); event.target.value = ""; return; }
     else return;
     writeState(runtime); render(runtime);
   }
@@ -363,24 +448,32 @@
     if (event.target.matches("[data-chat-ai-input]")) { runtime.state.draft = event.target.value.slice(0, 24000); if (!runtime.incognito) writeState(runtime); const count = runtime.host.querySelector("[data-chat-ai-count]"); if (count) count.textContent = runtime.state.draft.length; }
     if (event.target.matches("[data-chat-ai-session-search]")) { runtime.query = event.target.value; const list = runtime.host.querySelector("[data-chat-ai-sessions]"); if (list) list.innerHTML = sessionsMarkup(runtime); }
     if (event.target.matches("[data-chat-ai-title]") && !runtime.incognito) { const session = currentSession(runtime); session.title = clean(event.target.value, 120) || "Cuộc trò chuyện"; session.updatedAt = new Date().toISOString(); writeState(runtime); }
+    if (event.target.matches("[data-chat-ai-folder]") && !runtime.incognito) { const session = currentSession(runtime); session.folder = clean(event.target.value, 40) || "Chung"; session.updatedAt = new Date().toISOString(); writeState(runtime); }
+    if (event.target.matches("[data-chat-ai-tags]") && !runtime.incognito) { const session = currentSession(runtime); session.tags = event.target.value.split(",").map((tag) => clean(tag, 24)).filter(Boolean).slice(0, 6); session.updatedAt = new Date().toISOString(); writeState(runtime); }
     if (event.target.matches("[data-chat-ai-system]")) { runtime.state.systemPrompt = event.target.value.slice(0, 2000); writeState(runtime); }
+    if (event.target.matches("[data-chat-ai-memory]")) { runtime.state.memoryProfile = event.target.value.slice(0, 1200); writeState(runtime); }
   }
   function handleKeydown(runtime, event) { if (event.target.matches("[data-chat-ai-input]") && event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); event.target.closest("form")?.requestSubmit(); } }
   function handleSubmit(runtime, event) { if (!event.target.matches("[data-chat-ai-form]")) return; event.preventDefault(); send(runtime); }
   function mount(host, options = {}) {
     unmount(); if (!host) return false;
     const controller = new AbortController(); const owner = ownerId(options); const storage = options.storage || globalScope.localStorage;
-    instance = { host, options, controller, owner, storage, state: readState(storage, owner), pending: [], busy: false, incognito: false, privateSession: blankSession("Phiên riêng tư"), providerStatus: "checking", providerDetail: null, query: "", deleted: null, lastMeta: {}, contextStats: null, cooldownUntil: 0, toastTimer: 0, storageError: false, mobilePanel: "" };
+    instance = { host, options, lifecycleController: controller, controller: null, owner, storage, state: readState(storage, owner), pending: [], queue: [], busy: false, incognito: false, privateSession: blankSession("Phiên riêng tư"), providerStatus: "checking", providerDetail: null, query: "", folderFilter: "", deleted: null, lastMeta: {}, contextStats: null, cooldownUntil: 0, toastTimer: 0, storageError: false, mobilePanel: "" };
     if (options.newSession) { const session = blankSession(); instance.state.sessions.unshift(session); instance.state.sessions = instance.state.sessions.slice(0, MAX_SESSIONS); instance.state.activeId = session.id; writeState(instance); }
     host.addEventListener("click", (event) => handleClick(instance, event).catch((error) => toast(instance, error.message, "error")), { signal: controller.signal });
     host.addEventListener("change", (event) => handleChange(instance, event).catch((error) => toast(instance, error.message, "error")), { signal: controller.signal });
     host.addEventListener("input", (event) => handleInput(instance, event), { signal: controller.signal });
     host.addEventListener("keydown", (event) => handleKeydown(instance, event), { signal: controller.signal });
     host.addEventListener("submit", (event) => handleSubmit(instance, event), { signal: controller.signal });
+    host.addEventListener("dragover", (event) => { if (![...(event.dataTransfer?.types || [])].includes("Files")) return; event.preventDefault(); const form = host.querySelector("[data-chat-ai-form]"); if (form) form.dataset.dropActive = "true"; }, { signal: controller.signal });
+    host.addEventListener("dragleave", (event) => { if (event.relatedTarget && host.contains(event.relatedTarget)) return; const form = host.querySelector("[data-chat-ai-form]"); if (form) form.dataset.dropActive = "false"; }, { signal: controller.signal });
+    host.addEventListener("drop", (event) => { if (!event.dataTransfer?.files?.length) return; event.preventDefault(); addFiles(instance, event.dataTransfer.files).catch((error) => toast(instance, error.message, "error")); }, { signal: controller.signal });
+    host.addEventListener("paste", (event) => { const files = [...(event.clipboardData?.files || [])]; if (!files.length) return; event.preventDefault(); addFiles(instance, files).catch((error) => toast(instance, error.message, "error")); }, { signal: controller.signal });
+    globalScope.document?.addEventListener("visibilitychange", () => { host.dataset.chatAiPaused = globalScope.document.hidden ? "true" : "false"; }, { signal: controller.signal });
     render(instance); checkProvider(instance); return true;
   }
-  function unmount() { if (!instance) return; instance.controller?.abort(); clearTimeout(instance.toastTimer); globalScope.speechSynthesis?.cancel?.(); instance = null; }
+  function unmount() { if (!instance) return; instance.controller?.abort(); instance.lifecycleController?.abort(); clearTimeout(instance.toastTimer); globalScope.speechSynthesis?.cancel?.(); instance = null; }
   function inspect() { return { version: VERSION, mounted: Boolean(instance), owner: instance?.owner || null, sessions: instance?.state?.sessions?.length || 0, busy: Boolean(instance?.busy), providerStatus: instance?.providerStatus || "idle" }; }
 
-  return Object.freeze({ VERSION, STORAGE_SCHEMA, MODELS, MODES, PROMPTS, MAX_SESSIONS, MAX_MESSAGES, MAX_CONTEXT_CHARS, estimateTokens, compactHistory, localContinuityResponse, storageKey, normalizeState, mount, unmount, inspect });
+  return Object.freeze({ VERSION, STORAGE_SCHEMA, MODELS, PROCESSING_MODES, MODES, PROMPTS, MAX_SESSIONS, MAX_MESSAGES, MAX_CONTEXT_CHARS, estimateTokens, compactHistory, routeProcessing, localContinuityResponse, storageKey, normalizeState, mount, unmount, inspect });
 });

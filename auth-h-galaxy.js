@@ -265,14 +265,14 @@
     chatAI: {
       icon: "AI",
       title: "Chat AI",
-      kicker: "GEMINI MULTIMODAL",
+      kicker: "HH MULTIMODAL INTELLIGENCE",
       count: "6 CHẾ ĐỘ",
       route: "#/chat-ai",
       accent: "#71e9ff",
       accent2: "#866fff",
-      description: "Trò chuyện Gemini nhiều lượt, nghiên cứu có nguồn, phân tích ảnh/PDF, viết và lập trình.",
-      detail: "API key được giữ trên Vercel; lịch sử tách theo tài khoản, có chế độ riêng tư, nhánh hội thoại, giọng nói và xuất dữ liệu.",
-      features: ["Gemini 3.6", "Google Search", "Ảnh & PDF", "Code", "Voice"]
+      description: "HH Intelligence nhiều lượt, nghiên cứu có nguồn, phân tích ảnh/PDF, viết và lập trình.",
+      detail: "Khóa truy cập được giữ phía máy chủ; lịch sử tách theo tài khoản, có chế độ riêng tư, nhánh hội thoại, giọng nói và xuất dữ liệu.",
+      features: ["Smart Router", "Tìm kiếm web", "Ảnh & PDF", "Code", "Voice"]
     },
     support: {
       icon: "♥",

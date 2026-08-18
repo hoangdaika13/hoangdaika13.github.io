@@ -73,9 +73,9 @@ const RUNTIME_ASSETS = [
   "./fortune-hub.css?v=3",
   "./fortune-hub-v3.css?v=2",
   "./fortune-hub-v4.css?v=8",
-  "./chat-ai-hub.css?v=6",
+  "./chat-ai-hub.css?v=7",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=194",
+  "./script.js?v=195",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -381,7 +381,7 @@ const RUNTIME_ASSETS = [
   "./assets/fortune/lenormand/game-of-hope/spiel-der-hoffnung-36.webp",
   "./assets/fortune/moon/nasa-lro/lroc-color-2k.jpg",
   "./assets/fortune/moon/nasa-lro/lroc-height-1k.jpg",
-  "./chat-ai-hub.js?v=6",
+  "./chat-ai-hub.js?v=7",
   "./media-design-page.js?v=13",
   "./tool-manifests.js?v=1",
   "./tool-runtime.js?v=1",
@@ -442,7 +442,7 @@ const CORE = [
   "./performance-loader.js?v=367",
   "./auth-platform.js?v=15",
   "./auth-neon-gateway.js?v=26",
-  "./script.js?v=194"
+  "./script.js?v=195"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {
