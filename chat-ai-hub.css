@@ -206,3 +206,28 @@ body.app-chat-ai-route .workspace-grid{padding:0;overflow:hidden}body.app-chat-a
 @media(prefers-reduced-motion:reduce){
   .chat-ai-cosmos,.chat-ai-welcome:before{display:none!important}.chat-ai-hub *,.chat-ai-hub :before,.chat-ai-hub :after{animation:none!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.chat-ai-orb,.chat-ai-brand>i,.chat-ai-avatar{transform:none!important}.chat-ai-stream-caret{display:none!important}
 }
+
+/* Topbar alignment: reserve a real column for every control, including the
+   dynamically inserted export-format selector. This prevents label/select
+   overlap when the workspace is narrower than the viewport. */
+@media(min-width:821px){
+  .chat-ai-topbar{grid-template-columns:minmax(175px,.85fr) minmax(0,1.45fr) minmax(480px,1.25fr)!important;align-items:center!important;gap:12px!important;padding-inline:16px!important}
+  .chat-ai-brand{min-width:0!important;line-height:1.05!important}
+  .chat-ai-brand>span{min-width:0!important;line-height:1.05!important}
+  .chat-ai-brand small,.chat-ai-brand strong{display:block!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+  .chat-ai-mode-tabs{min-width:0!important;justify-content:flex-start!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important}
+  .chat-ai-mode-tabs button{flex:0 0 auto!important;min-width:max-content!important;white-space:nowrap!important}
+  .chat-ai-top-actions{display:grid!important;grid-template-columns:minmax(145px,1fr) auto auto minmax(88px,auto) auto!important;align-items:end!important;justify-content:stretch!important;min-width:0!important;gap:6px!important}
+  .chat-ai-top-actions>label{min-width:0!important;width:100%!important;overflow:hidden!important}
+  .chat-ai-top-actions>label>span{display:block!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;line-height:1.15!important}
+  .chat-ai-top-actions>label:first-child{flex:none!important;min-width:0!important}
+  .chat-ai-top-actions>label:first-child select,.chat-ai-top-actions>.chat-ai-export-format select{width:100%!important;min-width:0!important;max-width:none!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+  .chat-ai-top-actions>button{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;min-width:max-content!important;min-height:40px!important;white-space:nowrap!important}
+  .chat-ai-top-actions>.chat-ai-export-format{min-width:0!important;width:100%!important}
+}
+@media(min-width:821px) and (max-width:1280px){
+  .chat-ai-topbar{grid-template-columns:minmax(160px,.8fr) minmax(0,1.1fr) minmax(460px,1.4fr)!important;gap:9px!important;padding-inline:12px!important}
+  .chat-ai-mode-tabs button{padding-inline:6px!important;font-size:10px!important}
+  .chat-ai-top-actions{gap:5px!important}
+  .chat-ai-top-actions>button{padding-inline:7px!important;font-size:10px!important}
+}
