@@ -912,7 +912,10 @@ function localPlanOutput(input, meta = {}) {
 }
 
 async function googleResearchOutput(input, actionType) {
-  const key = String(process.env.GOOGLE_SEARCH_API_KEY || "").trim();
+  // A Google API key can be shared across enabled APIs. Prefer the dedicated
+  // search key, then reuse the existing server-only YouTube key when its
+  // project also has Programmable Search enabled.
+  const key = String(process.env.GOOGLE_SEARCH_API_KEY || process.env.YOUTUBE_API_KEY || "").trim();
   const cx = String(process.env.GOOGLE_SEARCH_ENGINE_ID || "").trim();
   if (!key || !cx) return null;
   const urls = String(input || "").match(/https?:\/\/[^\s<>"']+/gi) || [];
@@ -1180,8 +1183,11 @@ async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
   if (["research", "url-research"].includes(actionType)) {
     const research = await googleResearchOutput(input, actionType).catch(() => null);
     if (research) return research;
-    const youtubeResearch = await youtubeResearchOutput(input, actionType).catch(() => null);
-    if (youtubeResearch) return youtubeResearch;
+    const youtubeIntent = /(?:youtube|youtu\.be|video|kênh|creator|shorts?)/iu.test(String(input || ""));
+    if (youtubeIntent) {
+      const youtubeResearch = await youtubeResearchOutput(input, actionType).catch(() => null);
+      if (youtubeResearch) return youtubeResearch;
+    }
   }
   if (moduleId === "chat-ai" && CHAT_AI_ACTIONS.has(actionType)) return localChatAIOutput(actionType, input, meta);
   return {
