@@ -8,19 +8,42 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const chat = require(path.join(root, "chat-ai-hub.js"));
 
 test("HH Intelligence exposes processing modes and owner-isolated local state", () => {
-  assert.equal(chat.VERSION, "3.0.1");
+  assert.equal(chat.VERSION, "3.1.0");
   assert.deepEqual(chat.PROCESSING_MODES.map((item) => item.id), ["auto", "fast", "deep", "economy"]);
   assert.deepEqual(chat.MODELS.map((item) => item.id), ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"]);
   assert.deepEqual(chat.MODES.map((item) => item.id), ["chat", "research", "code", "write", "study", "vision"]);
+  assert.deepEqual(chat.MODES.map((item) => item.action), ["chat", "research", "code", "write", "study", "vision"]);
   assert.notEqual(chat.storageKey("owner-a"), chat.storageKey("owner-b"));
   const state = chat.normalizeState({ model: "untrusted-model", sessions: [], thinkingLevel: "invalid" });
   assert.equal(state.processingMode, "auto");
   assert.equal(state.thinkingLevel, "medium");
   assert.equal(state.autoFallback, true);
   assert.equal(state.contextBudget, 24000);
+  assert.equal(state.webSearch, false);
   assert.equal(state.sessions.length, 1);
   assert.equal(typeof chat.mount, "function");
   assert.equal(typeof chat.unmount, "function");
+});
+
+test("each Chat AI mode has an isolated request contract", () => {
+  const expected = {
+    chat: ["chat", false, false],
+    research: ["research", true, false],
+    code: ["code", false, false],
+    write: ["write", false, false],
+    study: ["study", false, false],
+    vision: ["vision", false, true]
+  };
+  for (const [mode, contract] of Object.entries(expected)) {
+    const result = chat.modeRequestContract(mode);
+    assert.deepEqual([result.actionType, result.useGoogleSearch, result.requiresAttachment], contract);
+  }
+  assert.equal(chat.modeRequestContract("chat", { manualWebSearch: true }).useGoogleSearch, true);
+  assert.equal(chat.modeRequestContract("unknown").actionType, "chat");
+  const migrated = chat.normalizeState({ mode: "chat", webSearch: true, sessions: [] });
+  assert.equal(migrated.webSearch, false, "legacy research selection must not leave search stuck on");
+  const explicit = chat.normalizeState({ mode: "chat", webSearch: true, webSearchExplicit: true, sessions: [] });
+  assert.equal(explicit.webSearch, true, "an explicit user search preference must be preserved");
 });
 
 test("Chat AI compacts long context without inventing a summary", () => {
@@ -52,6 +75,10 @@ test("Chat AI interface provides real conversation, attachment, privacy and expo
   assert.match(source, /data-chat-ai-context-budget/);
   assert.match(source, /data-chat-ai-fallback-toggle/);
   assert.match(source, /routeProcessing/);
+  assert.match(source, /actionType:\s*modeContract\.actionType/);
+  assert.match(source, /mode:\s*mode\.id/);
+  assert.match(source, /mode:\s*next\.mode/);
+  assert.match(source, /requiresAttachment/);
   assert.match(source, /HH INTELLIGENCE/);
   assert.match(source, /In \/ PDF/);
   assert.match(source, /application\/pdf/);
@@ -100,6 +127,12 @@ test("Gemini backend supports Chat AI, current models, thinking levels and serve
   assert.match(backend, /localContinuity:\s*moduleId === "chat-ai"/);
   assert.match(backend, /local-continuity/);
   assert.match(backend, /retryDelay|retryAfterMs/);
+  assert.match(backend, /CHAT_AI_ACTIONS = new Set\(\["chat", "research", "code", "write", "study", "vision"\]\)/);
+  assert.match(backend, /moduleId === "chat-ai" && !CHAT_AI_ACTIONS\.has\(actionType\)/);
+  assert.match(backend, /Không tự đổi sang chế độ khác/);
+  assert.match(backend, /Không biến lời chào, tâm sự hoặc yêu cầu đơn giản thành báo cáo nghiên cứu/);
+  assert.match(backend, /HH Basic Assist · \$\{profile\.label\}/);
+  assert.doesNotMatch(backend, /## HH Continuity đang tiếp quản/);
   assert.doesNotMatch(read("index.html"), /GEMINI_API_KEY|GOOGLE_AI_API_KEY/);
 });
 
@@ -112,10 +145,12 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   assert.match(client, /id: "chat-ai"[\s\S]*?route: "\/chat-ai"/);
   assert.match(client, /window\.HHChatAI\?\.mount/);
   assert.match(client, /title: "Chat AI"[\s\S]*?smart router/);
-  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=8[\s\S]*?chat-ai-hub\.js\?v=8/);
+  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=9[\s\S]*?chat-ai-hub\.js\?v=9/);
+  assert.match(html, /performance-loader\.js\?v=368/);
+  assert.match(worker, /performance-loader\.js\?v=368/);
   assert.match(loader, /value\.startsWith\("\/chat-ai"\)/);
-  assert.match(worker, /chat-ai-hub\.css\?v=8/);
-  assert.match(worker, /chat-ai-hub\.js\?v=8/);
+  assert.match(worker, /chat-ai-hub\.css\?v=9/);
+  assert.match(worker, /chat-ai-hub\.js\?v=9/);
   assert.match(html, /data-hh-galaxy-key="chatAI"/);
   assert.match(html, /23 LĨNH VỰC/);
   assert.match(galaxy, /chatAI:\s*\{[\s\S]*?route: "#\/chat-ai"/);
@@ -136,4 +171,6 @@ test("Chat AI layout is responsive, accessible and motion-safe", () => {
   assert.match(css, /\.chat-ai-hub \.chat-ai-message footer\{/);
   assert.match(css, /position:static!important/);
   assert.match(css, /background:transparent!important/);
+  assert.match(css, /\.chat-ai-composer__mode/);
+  assert.match(css, /\.chat-ai-message__mode/);
 });

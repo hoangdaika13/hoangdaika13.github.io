@@ -37,6 +37,7 @@ const downloadHosts = [
 ];
 const downloadCapabilities = ["single", "collection", "channel"];
 const creativeModules = new Set(["ai-center", "chat-ai", "fortune", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text", "youtube-batch", "tiktok-creator"]);
+const CHAT_AI_ACTIONS = new Set(["chat", "research", "code", "write", "study", "vision"]);
 const allowedModels = new Set(["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.1-pro-preview"]);
 const contentPackSchema = {
   type: "object",
@@ -1045,6 +1046,61 @@ async function youtubeResearchOutput(input, actionType) {
   };
 }
 
+function localChatAIOutput(actionType, input, meta = {}) {
+  const request = clean(input, 1400).replace(/\s+/g, " ") || "Yêu cầu chưa có phần văn bản.";
+  const profiles = {
+    chat: {
+      label: "Trò chuyện",
+      note: "Mình đã giữ nguyên nội dung và ngữ cảnh hội thoại, nhưng chưa thể tạo câu trả lời AI đầy đủ.",
+      steps: ["Nói rõ kết quả bạn muốn nhận.", "Bổ sung dữ kiện còn thiếu nếu có.", "Bấm **Tạo bản khác** để gửi lại đúng yêu cầu khi HH Intelligence sẵn sàng."]
+    },
+    research: {
+      label: "Nghiên cứu",
+      note: "Các nguồn trực tuyến chưa phản hồi đủ để tạo báo cáo có thể kiểm chứng; hệ thống không tự bịa nguồn thay thế.",
+      steps: ["Thu hẹp chủ đề, phạm vi thời gian và khu vực.", "Nêu loại nguồn ưu tiên như tài liệu chính thức hoặc nghiên cứu gốc.", "Bấm **Tạo bản khác** để chạy lại nghiên cứu có trích dẫn."]
+    },
+    code: {
+      label: "Lập trình",
+      note: "Mã và thông báo lỗi đã được giữ lại; bộ xử lý cơ bản không giả vờ đã chạy hoặc kiểm thử code.",
+      steps: ["Cung cấp lỗi nguyên văn và môi trường chạy.", "Tách ca tái hiện nhỏ nhất.", "Bấm **Tạo bản khác** để nhận phân tích nguyên nhân, bản vá và kiểm thử."]
+    },
+    write: {
+      label: "Viết",
+      note: "Brief đã được giữ lại; bộ xử lý cơ bản chưa tự tạo bản thảo thay cho dịch vụ AI đám mây.",
+      steps: ["Chốt độc giả, mục tiêu và giọng văn.", "Nêu độ dài cùng định dạng đầu ra.", "Bấm **Tạo bản khác** để tạo bản hoàn chỉnh theo brief."]
+    },
+    study: {
+      label: "Học tập",
+      note: "Câu hỏi học tập đã được giữ lại; hệ thống không tự hiện đáp án hoặc tạo lời giải chưa được kiểm chứng.",
+      steps: ["Nêu lớp, môn và phần kiến thức đang vướng.", "Cho biết bạn đã thử đến bước nào.", "Bấm **Tạo bản khác** để nhận hướng dẫn từng bước và câu hỏi kiểm tra."]
+    },
+    vision: {
+      label: "Phân tích tệp",
+      note: "Bộ xử lý cơ bản không đọc nội dung ảnh/PDF nên chưa đưa ra kết luận về tệp.",
+      steps: ["Giữ tệp đính kèm trong phiên hiện tại.", "Mô tả vùng hoặc dữ kiện cần tập trung.", "Bấm **Tạo bản khác** để phân tích lại bằng mô hình đa phương thức."]
+    }
+  };
+  const profile = profiles[actionType] || profiles.chat;
+  const hasAttachment = Array.isArray(meta.attachments) && meta.attachments.length > 0;
+  return {
+    output: [
+      `## HH Basic Assist · ${profile.label}`,
+      "",
+      "Dịch vụ AI đám mây hiện chưa phản hồi ổn định. Đây là trạng thái dự phòng an toàn, **không phải kết quả từ dịch vụ AI đám mây**.",
+      "",
+      `**Yêu cầu đã nhận:** ${request}`,
+      hasAttachment ? "**Tệp:** đã nhận metadata và giữ trong lượt hiện tại; chưa suy luận nội dung bằng bộ xử lý cơ bản." : "",
+      "",
+      profile.note,
+      "",
+      "### Bước tiếp theo",
+      ...profile.steps.map((step, index) => `${index + 1}. ${step}`)
+    ].filter(Boolean).join("\n"),
+    provider: "local-continuity",
+    model: `hh-basic-assist-${profile.label === "Phân tích tệp" ? "vision" : actionType}-v2`
+  };
+}
+
 async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
   if (moduleId === "fortune" && actionType === "fortune-deep-analysis") {
     const lock = normalizeFortuneFactLock(meta);
@@ -1127,29 +1183,7 @@ async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
     const youtubeResearch = await youtubeResearchOutput(input, actionType).catch(() => null);
     if (youtubeResearch) return youtubeResearch;
   }
-  if (actionType === "chat") {
-    const request = clean(input, 1200).replace(/\s+/g, " ") || "Yêu cầu chưa có phần văn bản.";
-    const custom = clean(meta.systemPrompt, 600).replace(/\s+/g, " ");
-    return {
-      output: [
-        "## HH Continuity đang tiếp quản",
-        "",
-        "Gemini và các provider cloud hiện chưa phản hồi ổn định. Yêu cầu vẫn được lưu nguyên vẹn; nội dung này do bộ xử lý local tạo và không phải phản hồi của Gemini.",
-        "",
-        `**Yêu cầu đã nhận:** ${request}`,
-        "",
-        "### Hướng xử lý an toàn ngay bây giờ",
-        "1. Chốt đầu ra mong muốn thành một kết quả có thể kiểm tra.",
-        "2. Tách dữ liệu đầu vào, các bước xử lý và điều kiện hoàn thành.",
-        "3. Làm bước nhỏ có thể đảo ngược trước rồi kiểm tra kết quả.",
-        "4. Không coi phản hồi local là nguồn cho dữ kiện thời gian thực hoặc phân tích ảnh/PDF.",
-        "5. Bấm **Tạo lại bằng cloud** khi provider phục hồi để nhận phân tích đầy đủ.",
-        custom ? "\nChỉ dẫn hệ thống đã được giữ để dùng lại ở lượt cloud tiếp theo." : ""
-      ].filter(Boolean).join("\n"),
-      provider: "local-continuity",
-      model: "hh-continuity-v1"
-    };
-  }
+  if (moduleId === "chat-ai" && CHAT_AI_ACTIONS.has(actionType)) return localChatAIOutput(actionType, input, meta);
   return {
     output: [
       `Backend đã nhận tác vụ cho ${moduleId}.`,
@@ -1177,6 +1211,23 @@ function systemInstruction(moduleId, actionType) {
   if (moduleId === "image-text") return `Bạn là art director thumbnail. Phân tích đúng từng ô ảnh đã đánh số, tạo chữ ngắn tự nhiên theo yêu cầu, không nhầm thứ tự, không bịa người hoặc địa điểm và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
   if (moduleId === "youtube-batch") return `Bạn là biên tập viên YouTube cho upload hàng loạt. Chỉ suy luận từ filename, sidecar và ngữ cảnh; không bịa người, sự kiện, số liệu hay xu hướng, không tạo metadata spam lặp và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
   if (moduleId === "tiktok-creator") return `Bạn là biên tập viên TikTok tiếng Việt. Tạo nội dung nguyên bản, ngắn, nói tự nhiên và dùng được ngay. Không bịa xu hướng, số liệu, con người hoặc sự kiện; không cam kết viral; không tạo spam, bot tương tác, nội dung né kiểm duyệt hay xâm phạm bản quyền. Tách rõ hook, lời thoại theo nhịp thời gian, shot list, caption, CTA và tối đa 8 hashtag phù hợp. Nếu thiếu dữ kiện, nêu giả định ngắn gọn. Tác vụ hiện tại: ${actionType}.`;
+  if (moduleId === "chat-ai") {
+    const modeRules = {
+      chat: "Trò chuyện trực tiếp, tự nhiên và bám sát ý định. Không biến lời chào, tâm sự hoặc yêu cầu đơn giản thành báo cáo nghiên cứu, SEO hay YouTube.",
+      research: "Thực hiện nghiên cứu có nguồn. Ưu tiên nguồn gốc/chính thức, ghi citation cạnh dữ kiện mới, nêu ngày dữ liệu và tách dữ kiện khỏi suy luận.",
+      code: "Đóng vai senior software engineer. Xác định nguyên nhân gốc, đưa bản sửa chạy được, giải thích trade-off, bảo mật và kiểm thử. Không tuyên bố đã chạy code nếu chưa có kết quả công cụ.",
+      write: "Đóng vai biên tập viên. Tạo đúng loại nội dung, độc giả, giọng văn và định dạng được yêu cầu; trả bản dùng được ngay, không chuyển sang phân tích xu hướng nếu người dùng không yêu cầu.",
+      study: "Đóng vai gia sư. Giải thích theo trình độ, chia bước, hỏi kiểm tra và đưa gợi ý trước; không để lộ đáp án bài kiểm tra hoặc bài tập trước khi người học tự trả lời.",
+      vision: "Đóng vai chuyên gia phân tích tệp đa phương thức. Chỉ mô tả dữ kiện thực sự đọc được từ ảnh/PDF/tệp; dẫn vị trí khi có thể và nói rõ phần mờ, thiếu hoặc không chắc chắn."
+    };
+    return [
+      "Bạn là HH AI trong HH Intelligence. Trả lời bằng tiếng Việt tự nhiên, chính xác, có cấu trúc và giữ ngữ cảnh nhiều lượt.",
+      "Không tự đổi sang chế độ khác. Không tạo báo cáo Nghiên cứu hoặc YouTube khi actionType không phải research.",
+      "Không bịa dữ kiện, nguồn, thao tác bên ngoài hay kết quả đã chạy. Tôn trọng quyền riêng tư và bản quyền.",
+      modeRules[actionType] || modeRules.chat,
+      `Chế độ bắt buộc: ${actionType}.`
+    ].join("\n");
+  }
   const common = "Bạn là HH Creative AI, trợ lý sản xuất nội dung cao cấp. Trả lời bằng tiếng Việt tự nhiên, có cấu trúc, không bịa dữ kiện, nêu rõ điểm chưa chắc chắn, tôn trọng bản quyền và luôn tạo đầu ra có thể dùng ngay.";
   const rules = {
     "ai-center": "Phân tích mục tiêu, trả lời trực tiếp, đưa ví dụ thực tế và kết thúc bằng checklist hành động.",
@@ -1260,6 +1311,10 @@ function promptFor(moduleId, actionType, input, meta = {}) {
     analysis: "Phân tích định lượng và định tính; chấm hook, cấu trúc, cảm xúc, retention, originality, CTA và đưa các sửa đổi ưu tiên.",
     translate: "Dịch tự nhiên sang ngôn ngữ đích trong cấu hình, giữ tone, tên riêng và ý nghĩa; không dịch máy từng chữ.",
     chat: "Trả lời câu hỏi dựa trên ngữ cảnh kịch bản/dự án nếu có.",
+    code: "Giải quyết yêu cầu lập trình: xác định nguyên nhân, đưa code hoặc diff tối thiểu có thể chạy, nêu cách kiểm thử và các rủi ro bảo mật liên quan.",
+    write: "Tạo bản nội dung hoàn chỉnh đúng đối tượng, mục tiêu, giọng văn, độ dài và định dạng; ưu tiên câu chữ tự nhiên và có thể sử dụng ngay.",
+    study: "Hướng dẫn học theo từng bước và mức độ hiện tại; dùng ví dụ, câu hỏi kiểm tra và gợi ý tăng dần, không hiển thị sẵn đáp án bài kiểm tra.",
+    vision: "Phân tích đúng ảnh, PDF hoặc tệp đính kèm; trích dữ kiện nhìn thấy, dẫn vị trí khi có thể, đánh dấu phần không đọc được và không suy đoán ngoài tệp.",
     plan: "Tạo kế hoạch nội dung có mục tiêu, chuỗi tập, lịch đăng, KPI, rủi ro và checklist.",
     research: "Nghiên cứu bằng Google Search, tách dữ kiện với suy luận, ghi nguồn ngay cạnh luận điểm.",
     "url-research": "Dùng URL context và Google Search để tổng hợp các URL, so sánh góc nhìn và đề xuất hướng nội dung nguyên bản.",
@@ -1820,6 +1875,12 @@ module.exports = async function handler(req, res) {
     const input = clean(body.input, 48000);
     const actionType = clean(body.actionType || "run", 80);
     const meta = body.meta && typeof body.meta === "object" ? body.meta : {};
+    if (moduleId === "chat-ai" && !CHAT_AI_ACTIONS.has(actionType)) {
+      const error = new Error("Chế độ Chat AI không hợp lệ.");
+      error.statusCode = 400;
+      error.code = "CHAT_AI_MODE_INVALID";
+      throw error;
+    }
     let result = null;
     let provider = "local";
     const providerErrors = [];

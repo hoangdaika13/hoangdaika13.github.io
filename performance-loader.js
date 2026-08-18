@@ -209,8 +209,8 @@
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "vendor/iztro-2.6.0.min.js?v=2.6.0", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=4", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-moon-3d.js?v=1", "fortune-extended-tools.js?v=2", "fortune-hub.js?v=15"]
     },
     "chat-ai": {
-      styles: ["chat-ai-hub.css?v=8"],
-      scripts: ["chat-ai-hub.js?v=8"]
+      styles: ["chat-ai-hub.css?v=9"],
+      scripts: ["chat-ai-hub.js?v=9"]
     },
     analytics: {
       styles: ["insights-pro.css?v=3"],
