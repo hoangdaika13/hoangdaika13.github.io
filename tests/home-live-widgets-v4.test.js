@@ -14,9 +14,9 @@ const health = read("api/platform/summary.js");
 
 test("Living Desktop Galaxy V4 assets and one-screen hosts are wired", () => {
   assert.match(loader, /home-live-widgets\.css\?v=12/);
-  assert.match(loader, /home-live-widgets\.js\?v=7/);
+  assert.match(loader, /home-live-widgets\.js\?v=8/);
   assert.match(worker, /home-live-widgets\.css\?v=12/);
-  assert.match(worker, /home-live-widgets\.js\?v=7/);
+  assert.match(worker, /home-live-widgets\.js\?v=8/);
   assert.match(galaxy, /data-hlw-host/);
   assert.match(galaxy, /data-hlw-event-bar/);
   assert.match(galaxy, /LIVING DESKTOP GALAXY V4/);

@@ -14,7 +14,6 @@
     dev: "dev",
     learning: "learning",
     game: "game",
-    entertainment: "game",
     community: "community"
   });
   const SCORE_LABELS = Object.freeze([

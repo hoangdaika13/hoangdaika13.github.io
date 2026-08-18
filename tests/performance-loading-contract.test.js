@@ -21,7 +21,7 @@ test("the first paint only loads the shell and identity portal", () => {
 test("heavy workspaces load by route and retain deterministic dependencies", () => {
   const loader = read("performance-loader.js");
   const executableHtml = read("index.html").replace(/<!--[\s\S]*?-->/g, "");
-  for (const group of ["home", "platform", "dev", "media", "graphic", "creative", "music", "communication", "work", "game", "learning", "english", "analytics", "support"]) {
+  for (const group of ["home", "platform", "dev", "media", "graphic", "creative", "music", "communication", "work", "learning", "english", "analytics", "support"]) {
     assert.match(loader, new RegExp(`${JSON.stringify(group)}|\\b${group}:`), `${group} is not registered`);
   }
   assert.match(loader, /ensureForRoute/);

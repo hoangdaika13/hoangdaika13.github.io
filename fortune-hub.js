@@ -13,7 +13,7 @@
   const MAX_JOURNAL = 120;
   const DEFAULT_ORBS = Object.freeze({ conjunction: 8, sextile: 5, square: 7, trine: 7, opposition: 8 });
   const AI_PRIVACY_NOTICE = "Website không tự kèm hồ sơ, ngày sinh, tọa độ hoặc nhật ký khác.";
-  const AUTOMATIC_AI_VIEWS = Object.freeze(["tarot", "symbols", "zodiac", "numerology", "iching", "chart", "tuvi", "compatibility", "session"]);
+  const AUTOMATIC_AI_VIEWS = Object.freeze(["tarot", "symbols", "zodiac", "numerology", "iching", "chart", "tuvi", "physiognomy", "dreams", "moon", "sky", "eastern", "compatibility", "session"]);
   const VIEWS = new Set(["today", "profile", "session", "accuracy", "tarot", "academy", "zodiac", "numerology", "iching", "tuvi", "physiognomy", "dreams", "moon", "sky", "calendar", "chart", "eastern", "symbols", "compatibility", "journal", "copilot", "methods", "history"]);
   const SYNODIC_MONTH_DAYS = 29.530588853;
   const REFERENCE_NEW_MOON_UTC = Date.UTC(2000, 0, 6, 18, 14, 0);
@@ -853,7 +853,8 @@
     const engines = result?.engines || [{ label: "Bát Tự/Tứ Trụ", status: "review", message: "Cần fixture tiết khí và chuyên gia." }, { label: "Tử Vi Đẩu Số", status: "review", message: "Chờ engine độc lập." }, { label: "La bàn phong thủy", status: "local-only", message: "Chỉ khi cấp quyền cảm biến." }];
     let output = result?.ok ? "<article class=\"fortune-v4-card\"><header><span>" + escapeHtml(result.date) + "</span><strong>" + escapeHtml(result.lunarLabel || "Không đọc được lịch âm") + "</strong></header><div class=\"fortune-eastern-hero\"><b>" + escapeHtml(result.yearPillar.stem + " " + result.yearPillar.branch) + "</b><span>Can Chi năm · không phải toàn bộ Bát Tự</span></div><div class=\"fortune-v4-table\">" + result.solarTerms.map((term) => "<div><span>" + escapeHtml(term.name) + " · " + term.longitude + "°</span><small>" + escapeHtml(term.time || "Không có event") + "</small></div>").join("") + "</div><div class=\"fortune-v4-output-tags\"><b>TÍNH TOÁN</b><b>BIỂU TƯỢNG · có giới hạn</b></div></article>" : "<div class=\"fortune-empty fortune-empty--compact\"><i>☯</i><strong>Chưa tính nền lịch phương Đông</strong><p>Chạy công cụ để xem Can Chi năm, lịch âm của môi trường và 24 tiết khí.</p></div>";
     if (result?.ok) output = output.replace("</article>", "<div class=\"fortune-result-actions\"><button type=\"button\" data-fortune-save-current>Lưu tóm tắt</button><button type=\"button\" data-fortune-copy-result>Sao chép</button></div></article>");
-    return toolbarMarkup("Hệ phương Đông", "Can Chi, lịch âm dương và 24 tiết khí ở lớp tính toán; Bát Tự/Tử Vi chỉ bật sau kiểm duyệt riêng.") + "<section class=\"fortune-v4-workspace fortune-eastern-studio\"><div class=\"fortune-v4-two-col\"><article class=\"fortune-v4-card fortune-v4-form\"><header><span>CALENDAR FOUNDATION</span><strong>Không trộn trường phái</strong></header><label><span>Ngày</span><input type=\"date\" data-fortune-eastern-date value=\"" + escapeHtml(runtime.session.easternDate || runtime.profile.date || localDateKey()) + "\"></label><button class=\"fortune-primary\" type=\"button\" data-fortune-eastern-calc>Tính Can Chi & tiết khí</button><small class=\"fortune-hint\">Bát Tự đầy đủ cần giờ sinh, tiết khí và bộ fixture chuyên gia; không tạo bản xem trước giả.</small></article><article class=\"fortune-v4-card\"><header><span>READINESS</span><strong>Engine riêng</strong></header><div class=\"fortune-readiness-grid\">" + engines.map((item) => "<div data-status=\"" + escapeHtml(item.status) + "\"><i>" + (item.status === "review" ? "…" : "✓") + "</i><span>" + escapeHtml(item.label) + "</span><small>" + escapeHtml(item.message) + "</small></div>").join("") + "</div></article></div>" + output + "</section>";
+    const ai = result?.ok ? automaticAiMarkup(runtime, "eastern", "Can Chi, lịch âm và 24 tiết khí vẫn dùng được từ engine cục bộ.") : "";
+    return toolbarMarkup("Hệ phương Đông", "Can Chi, lịch âm dương và 24 tiết khí ở lớp tính toán; Bát Tự/Tử Vi chỉ bật sau kiểm duyệt riêng.") + "<section class=\"fortune-v4-workspace fortune-eastern-studio\"><div class=\"fortune-v4-two-col\"><article class=\"fortune-v4-card fortune-v4-form\"><header><span>CALENDAR FOUNDATION</span><strong>Không trộn trường phái</strong></header><label><span>Ngày</span><input type=\"date\" data-fortune-eastern-date value=\"" + escapeHtml(runtime.session.easternDate || runtime.profile.date || localDateKey()) + "\"></label><button class=\"fortune-primary\" type=\"button\" data-fortune-eastern-calc>Tính Can Chi & tiết khí</button><small class=\"fortune-hint\">Bát Tự đầy đủ cần giờ sinh, tiết khí và bộ fixture chuyên gia; không tạo bản xem trước giả.</small></article><article class=\"fortune-v4-card\"><header><span>READINESS</span><strong>Engine riêng</strong></header><div class=\"fortune-readiness-grid\">" + engines.map((item) => "<div data-status=\"" + escapeHtml(item.status) + "\"><i>" + (item.status === "review" ? "…" : "✓") + "</i><span>" + escapeHtml(item.label) + "</span><small>" + escapeHtml(item.message) + "</small></div>").join("") + "</div></article></div>" + output + ai + "</section>";
   }
 
   function symbolsV4LegacyMarkup(runtime) {
@@ -871,8 +872,9 @@
 
   function automaticAiMarkup(runtime, kind, localFallback = "") {
     const state = runtime.session[`${kind}Ai`] || null;
-    const titles = { tarot: "Gemini · tổng hợp trải bài", symbols: "Gemini · đọc mạch biểu tượng", zodiac: "Gemini · diễn giải cung và chu kỳ", numerology: "Gemini · luận giải thần số", iching: "Gemini · luận giải cấu trúc quẻ", chart: "Gemini · luận giải bản đồ sao", tuvi: "Gemini · luận giải lá số Tử Vi", compatibility: "Gemini · gợi ý kế hoạch tương tác", session: "Gemini · tổng hợp phiên chiêm nghiệm" };
-    const title = titles[kind] || "Gemini · phân tích tại chỗ";
+    const titles = { tarot: "Tổng hợp trải bài", symbols: "Đọc mạch biểu tượng", zodiac: "Diễn giải cung và chu kỳ", numerology: "Luận giải thần số", iching: "Luận giải cấu trúc quẻ", chart: "Luận giải bản đồ sao", tuvi: "Luận giải lá số Tử Vi", physiognomy: "Đối chiếu bản tự quan sát", dreams: "Gợi mở mô-típ giấc mơ", moon: "Giải thích dữ liệu Mặt Trăng", sky: "Tóm tắt kế hoạch quan sát", eastern: "Giải thích Can Chi và tiết khí", compatibility: "Gợi ý kế hoạch tương tác", session: "Tổng hợp phiên chiêm nghiệm" };
+    const providerLabel = state?.provider === "gemini" || !state?.provider ? "Gemini" : state.provider === "openai" ? "OpenAI dự phòng" : "HH Continuity";
+    const title = `${providerLabel} · ${titles[kind] || "Phân tích tại chỗ"}`;
     if (state?.status === "loading") return `<article class="fortune-auto-ai is-loading" aria-live="polite"><header><i>AI</i><div><small>NỘI DUNG DO AI TẠO · DỮ KIỆN ĐÃ ẨN DANH</small><h3>${title}</h3></div></header><div class="fortune-ai-skeleton"><i></i><i></i><i></i><i></i></div><p>Gemini đang đối chiếu Result Contract. Tên, ngày sinh, tọa độ, câu hỏi riêng và nhật ký không được gửi.</p></article>`;
     if (state?.status === "ready") return `<article class="fortune-auto-ai" data-fortune-result><header><i>AI</i><div><small>NỘI DUNG DO AI TẠO · FACT LOCK ĐÃ KIỂM TRA</small><h3>${title}</h3><span>${escapeHtml(state.model || "Gemini")} · ${state.factValidation?.citedFactCount || 0} factId · ${state.latencyMs || 0} ms</span></div></header><div class="fortune-auto-ai__body">${markdownMarkupSafe(state.output)}</div><footer><button type="button" data-fortune-copy="${escapeHtml(state.output)}">Sao chép</button><button type="button" data-fortune-auto-ai-retry="${kind}">Phân tích lại</button></footer></article>`;
     const error = state?.status === "error" ? `<strong>Gemini tạm chưa dùng được: ${escapeHtml(state.error || "lỗi không xác định")}</strong>` : "";
@@ -886,11 +888,16 @@
       zodiac: runtime.session.western?.ok || runtime.session.chinese?.ok,
       chart: runtime.session.astrologyV4?.ok,
       tuvi: runtime.session.tuvi?.ok,
+      physiognomy: runtime.session.physiognomyResult?.ok,
+      dreams: runtime.session.dreamResult?.ok,
+      moon: Boolean(runtime.session.moon),
+      sky: runtime.session.sky?.ok,
+      eastern: runtime.session.eastern?.ok,
       compatibility: Boolean(runtime.session.compatibility),
       session: Boolean(runtime.builder?.result)
     };
     if (!available[view]) return "";
-    const fallback = { tarot: "Các lá, vị trí và diễn giải HH cục bộ vẫn dùng được.", symbols: "Tên lá, từ khóa, cặp và Grand Tableau vẫn dùng được.", zodiac: "Kinh độ Mặt Trời và mốc lịch vẫn hiển thị từ engine cục bộ.", chart: "Vị trí hành tinh, nhà và góc hợp vẫn giữ nguyên từ Astronomy Engine.", tuvi: "Lá số 12 cung do iztro lập vẫn hiển thị đầy đủ.", compatibility: "Kế hoạch giao tiếp trung lập vẫn dùng được.", session: "Các kết quả thành phần vẫn được giữ nguyên." }[view];
+    const fallback = { tarot: "Các lá, vị trí và diễn giải HH cục bộ vẫn dùng được.", symbols: "Tên lá, từ khóa, cặp và Grand Tableau vẫn dùng được.", zodiac: "Kinh độ Mặt Trời và mốc lịch vẫn hiển thị từ engine cục bộ.", chart: "Vị trí hành tinh, nhà và góc hợp vẫn giữ nguyên từ Astronomy Engine.", tuvi: "Lá số 12 cung do iztro lập vẫn hiển thị đầy đủ.", physiognomy: "Các quan sát tự chọn và câu hỏi kiểm chứng vẫn nằm trong phiên.", dreams: "Bản đồ biểu tượng cục bộ vẫn dùng được; nội dung giấc mơ không rời trình duyệt.", moon: "Pha, độ sáng, khoảng cách và mọc/lặn vẫn lấy từ engine thiên văn.", sky: "Bảng mọc/lặn, chạng vạng và sự kiện quan sát vẫn dùng được.", eastern: "Can Chi, lịch âm và tiết khí vẫn giữ nguyên từ engine lịch.", compatibility: "Kế hoạch giao tiếp trung lập vẫn dùng được.", session: "Các kết quả thành phần vẫn được giữ nguyên." }[view];
     return automaticAiMarkup(runtime, view, fallback);
   }
 
@@ -946,27 +953,31 @@
     const options = extendedTools()?.physiognomyOptions?.() || {}; const values = runtime.session.physiognomyValues || {}; const result = runtime.session.physiognomyResult;
     const selectors = Object.entries(options).map(([id, field]) => `<label><span>${escapeHtml(field.label)}</span><select data-fortune-physio-field="${escapeHtml(id)}">${Object.entries(field.options).map(([value,label])=>`<option value="${escapeHtml(value)}"${values[id]===value?" selected":""}>${escapeHtml(label)}</option>`).join("")}</select></label>`).join("");
     const output = result?.ok ? `<article class="fortune-physio-result" data-fortune-result><header><div><small>SELF-DESCRIBED · NO CAMERA · NO BIOMETRICS</small><h3>Bản quan sát tướng pháp có kiểm chứng</h3></div><span>5 nhóm mô tả</span></header><div>${result.observations.map((item,index)=>`<section style="--physio-order:${index}"><span>${escapeHtml(item.category)}</span><h4>${escapeHtml(item.label)}</h4><p><b>Liên tưởng trong tướng pháp:</b> ${escapeHtml(item.tradition)}</p><p><b>Câu hỏi kiểm chứng:</b> ${escapeHtml(item.question)}</p></section>`).join("")}</div><details open><summary>Giới hạn bắt buộc</summary><ul>${result.limitations.map((item)=>`<li>${escapeHtml(item)}</li>`).join("")}</ul><p>${escapeHtml(result.privacy)}</p></details><button type="button" data-fortune-save-current>Lưu tóm tắt không chứa ảnh</button></article>` : `<div class="fortune-empty fortune-empty--compact"><i>◌</i><strong>Tự mô tả thay vì tải ảnh</strong><p>Chọn các nét bạn tự quan sát. Công cụ không mở camera, không nhận diện khuôn mặt và không suy luận đặc điểm nhạy cảm.</p></div>`;
-    return `${toolbarMarkup("Nhân tướng học · Self-observation Lab", "Tách mô tả hình học, liên tưởng văn hóa và câu hỏi tự kiểm chứng; không giả làm khoa học nhận diện tính cách.")}<section class="fortune-physiognomy"><article class="fortune-calc-card fortune-calc-card--wide"><header><i>◌</i><div><small>HISTORICAL SYMBOLISM · LOCAL ONLY</small><h3>Tự chọn đặc điểm quan sát được</h3></div></header><div class="fortune-physio-form">${selectors}</div><button class="fortune-primary" type="button" data-fortune-physio-calc>Tạo bản chiêm nghiệm tại chỗ</button><p class="fortune-ai-privacy">Không tải ảnh và không gửi đặc điểm khuôn mặt tới Gemini. Không dùng kết quả cho tuyển dụng, hẹn hò, tín dụng, y tế hoặc đánh giá con người.</p></article>${output}</section>`;
+    const ai = result?.ok ? automaticAiMarkup(runtime, "physiognomy", "Các quan sát tự chọn và câu hỏi kiểm chứng vẫn dùng được tại chỗ.") : "";
+    return `${toolbarMarkup("Nhân tướng học · Self-observation Lab", "Tách mô tả hình học, liên tưởng văn hóa và câu hỏi tự kiểm chứng; không giả làm khoa học nhận diện tính cách.")}<section class="fortune-physiognomy"><article class="fortune-calc-card fortune-calc-card--wide"><header><i>◌</i><div><small>HISTORICAL SYMBOLISM · LOCAL FIRST</small><h3>Tự chọn đặc điểm quan sát được</h3></div></header><div class="fortune-physio-form">${selectors}</div><button class="fortune-primary" type="button" data-fortune-physio-calc>Tạo bản chiêm nghiệm & tự phân tích</button><p class="fortune-ai-privacy">Không tải ảnh, không mở camera và không tạo mẫu sinh trắc học. Gemini chỉ nhận nhãn văn hóa bạn tự chọn cùng câu hỏi kiểm chứng; không nhận ảnh hay dữ liệu định danh. Không dùng kết quả cho tuyển dụng, hẹn hò, tín dụng, y tế hoặc đánh giá con người.</p></article>${output}${ai}</section>`;
   }
 
   function dreamsMarkup(runtime) {
     const result = runtime.session.dreamResult;
     const output = result?.ok ? `<article class="fortune-dream-result" data-fortune-result><header><div><small>LOCAL SYMBOL MAP · ${result.wordCount} TỪ</small><h3>Bản đồ biểu tượng trong giấc mơ</h3></div><span>${escapeHtml(result.emotion)}</span></header><div class="fortune-dream-symbols">${result.matches.map((item)=>`<section><b>${escapeHtml(item.matched.join(" · ") || item.id)}</b><p>${escapeHtml(item.reflection)}</p><ul>${item.questions.map((question)=>`<li>${escapeHtml(question)}</li>`).join("")}</ul></section>`).join("") || `<section><b>Không ép biểu tượng</b><p>Thư viện không tìm thấy biểu tượng rõ. Hãy bắt đầu từ cảm xúc, bối cảnh và trải nghiệm cá nhân thay vì dùng từ điển chung.</p></section>`}</div><section class="fortune-dream-prompts"><h4>Bốn bước ghi lại</h4>${result.prompts.map((prompt,index)=>`<p><b>${index+1}</b>${escapeHtml(prompt)}</p>`).join("")}</section><details open><summary>Riêng tư & giới hạn</summary><p>${escapeHtml(result.privacy)}</p><ul>${result.limitations.map((item)=>`<li>${escapeHtml(item)}</li>`).join("")}</ul></details></article>` : `<div class="fortune-empty fortune-empty--compact"><i>☁</i><strong>Ghi điều còn nhớ</strong><p>Công cụ tìm biểu tượng ngay trong trình duyệt, không gửi Gemini và không tự lưu nội dung giấc mơ.</p></div>`;
-    return `${toolbarMarkup("Giấc mơ & Symbol Journal", "Tìm mô-típ, cảm xúc và câu hỏi suy ngẫm theo bối cảnh cá nhân; không dùng từ điển giấc mơ như lời dự báo.")}<section class="fortune-dreams"><article class="fortune-calc-card fortune-calc-card--wide"><header><i>☁</i><div><small>LOCAL-FIRST · NO AUTO SAVE</small><h3>Mô tả giấc mơ</h3></div></header><label><span>Nội dung chỉ nằm trong tab hiện tại</span><textarea rows="7" maxlength="2400" data-fortune-dream-text placeholder="Viết bối cảnh, người/vật xuất hiện, chuyển động và cảm xúc...">${escapeHtml(runtime.session.dreamText || "")}</textarea></label><label><span>Cảm xúc nổi bật</span><select data-fortune-dream-emotion>${[["curious","Tò mò"],["calm","Bình tĩnh"],["joy","Vui"],["fear","Sợ"],["sad","Buồn"],["confused","Bối rối"]].map(([id,label])=>`<option value="${id}"${runtime.session.dreamEmotion===id?" selected":""}>${label}</option>`).join("")}</select></label><button class="fortune-primary" type="button" data-fortune-dream-calc>Phân tích biểu tượng tại chỗ</button></article>${output}</section>`;
+    const ai = result?.ok ? automaticAiMarkup(runtime, "dreams", "Bản đồ biểu tượng cục bộ vẫn dùng được; nội dung gốc không rời trình duyệt.") : "";
+    return `${toolbarMarkup("Giấc mơ & Symbol Journal", "Tìm mô-típ, cảm xúc và câu hỏi suy ngẫm theo bối cảnh cá nhân; không dùng từ điển giấc mơ như lời dự báo.")}<section class="fortune-dreams"><article class="fortune-calc-card fortune-calc-card--wide"><header><i>☁</i><div><small>LOCAL-FIRST · NO AUTO SAVE</small><h3>Mô tả giấc mơ</h3></div></header><label><span>Nội dung chỉ nằm trong tab hiện tại</span><textarea rows="7" maxlength="2400" data-fortune-dream-text placeholder="Viết bối cảnh, người/vật xuất hiện, chuyển động và cảm xúc...">${escapeHtml(runtime.session.dreamText || "")}</textarea></label><label><span>Cảm xúc nổi bật</span><select data-fortune-dream-emotion>${[["curious","Tò mò"],["calm","Bình tĩnh"],["joy","Vui"],["fear","Sợ"],["sad","Buồn"],["confused","Bối rối"]].map(([id,label])=>`<option value="${id}"${runtime.session.dreamEmotion===id?" selected":""}>${label}</option>`).join("")}</select></label><button class="fortune-primary" type="button" data-fortune-dream-calc>Phân tích tại chỗ & tự gợi mở</button><p class="fortune-ai-privacy">Nội dung giấc mơ thô không được gửi đi. Gemini chỉ nhận cảm xúc đã chọn và các mô-típ do engine cục bộ khớp; không tự lưu nhật ký.</p></article>${output}${ai}</section>`;
   }
 
   function moonMarkup(runtime) {
     const result = runtime.session.moon; const sky = runtime.session.moonAstronomy; const illumination = sky?.ok ? sky.illuminatedPercent : result?.illumination;
     const viewer = result ? `<div class="fortune-moon-3d-shell"><canvas data-fortune-moon-3d data-phase-angle="${sky?.ok ? sky.phaseAngle : Math.round(result.phase * 360)}" data-waxing="${sky?.waxing ?? result.waxing}" aria-label="Mô hình Mặt Trăng 3D tương tác"></canvas><div class="fortune-moon-3d-fallback" style="--moon-light:${illumination}%"><span>${escapeHtml(result.symbol)}</span></div><div class="fortune-moon-3d-controls"><button type="button" data-fortune-moon-3d-toggle>⏸ Tạm dừng</button><button type="button" data-fortune-moon-3d-reset>↺ Góc nhìn</button></div><small>Kéo để xoay · Texture LRO/LOLA · NASA SVS</small></div>` : "";
     const details = result ? `<article class="fortune-moon-result fortune-moon-result--3d" data-fortune-result>${viewer}<section><small>${escapeHtml(result.date)} · ${(sky?.waxing ?? result.waxing) ? "Đang sáng dần" : "Đang khuyết dần"}</small><h3>${escapeHtml(result.name)}</h3><div class="fortune-view-tabs"><span>THIÊN VĂN</span><span>QUAN SÁT</span><span>CHIÊM NGHIỆM</span></div><div class="fortune-moon-metrics">${[["Góc pha",sky?.ok?`${sky.phaseAngle}°`:`${Math.round(result.phase*360)}° xấp xỉ`],["Chiếu sáng",`${illumination}%`],["Tuổi trăng",`${sky?.ok?sky.ageDays:result.ageDays} ngày`],["Khoảng cách",sky?.ok?`${sky.distanceKm.toLocaleString("vi-VN")} km`:"Cần Astronomy Engine"],["Mọc",sky?.localTimes?.rise||sky?.rise||"Không có trong cửa sổ"],["Lặn",sky?.localTimes?.set||sky?.set||"Không có trong cửa sổ"],["Transit",sky?.localTimes?.transit||sky?.transit||"Không có"],["Vị trí hiện tại",sky?.currentPosition?`${sky.currentPosition.altitude}° cao · ${sky.currentPosition.azimuth}° phương vị`:"Chưa tính"]].map(([label,value])=>`<div><span>${label}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}</div>${sky?.ok ? `<div class="fortune-moon-timeline">${sky.phaseTimeline.map((event) => `<div><i>${["●","◐","○","◑"][event.quarter] || "•"}</i><span>${escapeHtml(event.label)}</span><time>${escapeHtml(formatDateTime(event.time))}</time></div>`).join("")}</div><details><summary>Sự kiện tiếp theo & điều kiện quan sát</summary><dl><div><dt>${escapeHtml(sky.nextApsis.kind)}</dt><dd>${sky.nextApsis.distanceKm.toLocaleString("vi-VN")} km · ${escapeHtml(formatDateTime(sky.nextApsis.time))}</dd></div><div><dt>Nguyệt thực</dt><dd>${escapeHtml(sky.nextLunarEclipse.kind || "—")} · ${escapeHtml(formatDateTime(sky.nextLunarEclipse.time))}</dd></div><div><dt>Chân trời</dt><dd>Có khúc xạ chuẩn; chưa mô hình hóa núi, nhà và thời tiết.</dd></div></dl></details>` : ""}<details open><summary>Chiêm nghiệm · tách khỏi thiên văn</summary><p>${escapeHtml(result.reflection)}. Đây là câu dẫn viết nhật ký, không khẳng định pha trăng quyết định giấc ngủ, hành vi hoặc sức khỏe.</p></details><button type="button" data-fortune-save-current>Lưu phần tóm tắt</button></section></article>` : `<div class="fortune-empty fortune-empty--compact"><i>☾</i><strong>Chọn một ngày để bắt đầu</strong><p>Mô hình 3D tải lười sau khi có kết quả thiên văn.</p></div>`;
-    return `${toolbarMarkup("Moon 3D Observatory", "Mô hình WebGL dùng texture NASA LRO, pha theo góc chiếu, dữ liệu mọc/lặn, transit, khoảng cách và timeline.")}<section class="fortune-moon"><div class="fortune-calc-card"><header><i>☾</i><div><small>REAL 3D · LRO / LOLA</small><h3>Mặt Trăng theo ngày và vị trí</h3></div></header><label><span>Ngày cần xem</span><input type="date" min="1900-01-01" max="2100-12-31" data-fortune-moon-date value="${escapeHtml(runtime.session.moonDate || localDateKey())}"></label><button class="fortune-primary" type="button" data-fortune-moon-calc>Tính & dựng Mặt Trăng 3D</button><button type="button" data-fortune-moon-today>Hôm nay</button><button type="button" data-fortune-view="sky">Mở lịch bầu trời đầy đủ</button><p class="fortune-hint">Mọc/lặn phụ thuộc vị trí hồ sơ. Mô hình dùng texture cho trực quan; Astronomy Engine mới là nguồn số liệu.</p></div>${details}</section><p class="fortune-media-credit">Moon texture: NASA Scientific Visualization Studio · LRO/LROC/LOLA. NASA không bảo trợ HH Platform.</p>`;
+    const ai = result ? automaticAiMarkup(runtime, "moon", "Pha, độ sáng, tuổi trăng và dữ liệu quan sát vẫn dùng được từ engine thiên văn.") : "";
+    return `${toolbarMarkup("Moon 3D Observatory", "Mô hình WebGL dùng texture NASA LRO, pha theo góc chiếu, dữ liệu mọc/lặn, transit, khoảng cách và timeline.")}<section class="fortune-moon"><div class="fortune-calc-card"><header><i>☾</i><div><small>REAL 3D · LRO / LOLA</small><h3>Mặt Trăng theo ngày và vị trí</h3></div></header><label><span>Ngày cần xem</span><input type="date" min="1900-01-01" max="2100-12-31" data-fortune-moon-date value="${escapeHtml(runtime.session.moonDate || localDateKey())}"></label><button class="fortune-primary" type="button" data-fortune-moon-calc>Tính, dựng 3D & tự giải thích</button><button type="button" data-fortune-moon-today>Hôm nay</button><button type="button" data-fortune-view="sky">Mở lịch bầu trời đầy đủ</button><p class="fortune-hint">Mọc/lặn phụ thuộc vị trí hồ sơ. Mô hình dùng texture cho trực quan; Astronomy Engine mới là nguồn số liệu.</p></div>${details}${ai}</section><p class="fortune-media-credit">Moon texture: NASA Scientific Visualization Studio · LRO/LROC/LOLA. NASA không bảo trợ HH Platform.</p>`;
   }
 
   function skyV4Markup(runtime) {
     const result = runtime.session.sky;
     const localTime = (value) => escapeHtml(value || "Không có trong cửa sổ");
     const output = result?.ok ? `<article class="fortune-v4-card fortune-sky-dashboard" data-fortune-result><header><div><span>${escapeHtml(result.date)} · ${escapeHtml(result.instantUtc)}</span><strong>${result.illuminatedPercent}% chiếu sáng · ${result.distanceKm.toLocaleString("vi-VN")} km</strong></div><button type="button" data-fortune-view="moon">Mở Moon 3D</button></header><div class="fortune-sky-metrics">${[["Tuổi trăng",`${result.ageDays} ngày`],["Mọc địa phương",result.localTimes?.rise||result.rise],["Qua kinh tuyến",result.localTimes?.transit||result.transit],["Lặn địa phương",result.localTimes?.set||result.set],["Độ cao / phương vị",result.currentPosition?`${result.currentPosition.altitude}° / ${result.currentPosition.azimuth}°`:"Không có"],[result.nextApsis.kind,`${result.nextApsis.distanceKm.toLocaleString("vi-VN")} km`],["Nguyệt thực tiếp",`${result.nextLunarEclipse.kind || "—"} · ${formatDateTime(result.nextLunarEclipse.time)}`],["Nhật thực tiếp",`${result.nextSolarEclipse.kind || "—"} · ${formatDateTime(result.nextSolarEclipse.time)}`]].map(([label,value])=>`<div><span>${escapeHtml(label)}</span><strong>${localTime(value)}</strong></div>`).join("")}</div><div class="fortune-sky-sections"><section><h4>Ba mức chạng vạng</h4>${Object.entries(result.twilight || {}).map(([id,item])=>`<div><b>${escapeHtml(id)}</b><span>Bình minh ${escapeHtml(formatDateTime(item.dawn))}</span><span>Hoàng hôn ${escapeHtml(formatDateTime(item.dusk))}</span></div>`).join("")}</section><section><h4>Cửa sổ hành tinh</h4>${result.planetEvents.map((item)=>`<div><b>${escapeHtml(item.body)}</b><span>Mọc ${escapeHtml(formatDateTime(item.rise))}</span><span>Lặn ${escapeHtml(formatDateTime(item.set))}</span></div>`).join("")}</section><section><h4>Mốc mùa</h4>${Object.entries(result.seasons || {}).map(([name,time])=>`<div><b>${escapeHtml(name)}</b><span>${escapeHtml(formatDateTime(time))}</span></div>`).join("")}</section></div><details open><summary>Checklist quan sát thực tế</summary><ol><li>Kiểm tra thời tiết, mây và tầm nhìn bằng dịch vụ thời tiết riêng.</li><li>Đối chiếu vật cản chân trời; engine chưa biết nhà, cây hoặc núi tại chỗ.</li><li>Dùng ánh sáng đỏ và bảo vệ mắt; không nhìn Mặt Trời qua thiết bị quang học thiếu lọc chuyên dụng.</li><li>Timestamp UTC và local đều được giữ trong Result Contract.</li></ol></details><div class="fortune-result-actions"><button type="button" data-fortune-save-current>Lưu tóm tắt</button><button type="button" data-fortune-copy-result>Sao chép</button></div></article>` : `<div class="fortune-empty fortune-empty--compact"><i>✺</i><strong>Chưa có dữ liệu bầu trời</strong><p>Chạy phép tính sau khi Hồ sơ phiên có timezone và tọa độ.</p></div>`;
-    return `${toolbarMarkup("Astronomy & Sky Planner", "Pha, mọc/lặn, transit, twilight, apsis, eclipse, mùa và hành tinh — không gán điềm báo.")}<section class="fortune-v4-workspace fortune-sky-studio"><div class="fortune-v4-two-col"><article class="fortune-v4-card fortune-v4-form"><header><span>MOON & SKY</span><strong>Dữ liệu phụ thuộc vị trí</strong></header><label><span>Ngày</span><input type="date" data-fortune-sky-date value="${escapeHtml(runtime.session.skyDate || localDateKey())}"></label><button class="fortune-primary" type="button" data-fortune-sky-calc>Tính toàn bộ bầu trời</button><small class="fortune-hint">Vĩ độ, kinh độ, độ cao và timezone lấy từ Hồ sơ phiên.</small></article><article class="fortune-v4-card"><header><span>PHƯƠNG PHÁP</span><strong>Astronomy Engine 2.1.19</strong></header><p>VSOP87/NOVAS, topocentric horizon và khúc xạ chuẩn. Không dùng kết quả cho điều hướng hoặc an toàn hàng không/hàng hải.</p><button type="button" data-fortune-view="profile">Kiểm tra địa điểm</button></article></div>${output}</section>`;
+    const ai = result?.ok ? automaticAiMarkup(runtime, "sky", "Bảng dữ liệu bầu trời và checklist quan sát vẫn dùng được độc lập.") : "";
+    return `${toolbarMarkup("Astronomy & Sky Planner", "Pha, mọc/lặn, transit, twilight, apsis, eclipse, mùa và hành tinh — không gán điềm báo.")}<section class="fortune-v4-workspace fortune-sky-studio"><div class="fortune-v4-two-col"><article class="fortune-v4-card fortune-v4-form"><header><span>MOON & SKY</span><strong>Dữ liệu phụ thuộc vị trí</strong></header><label><span>Ngày</span><input type="date" data-fortune-sky-date value="${escapeHtml(runtime.session.skyDate || localDateKey())}"></label><button class="fortune-primary" type="button" data-fortune-sky-calc>Tính bầu trời & tự lập kế hoạch</button><small class="fortune-hint">Vĩ độ, kinh độ, độ cao và timezone lấy từ Hồ sơ phiên.</small></article><article class="fortune-v4-card"><header><span>PHƯƠNG PHÁP</span><strong>Astronomy Engine 2.1.19</strong></header><p>VSOP87/NOVAS, topocentric horizon và khúc xạ chuẩn. Không dùng kết quả cho điều hướng hoặc an toàn hàng không/hàng hải.</p><button type="button" data-fortune-view="profile">Kiểm tra địa điểm</button></article></div>${output}${ai}</section>`;
   }
 
   function compatibilityMarkup(runtime) {
@@ -1389,12 +1400,33 @@
       if (advanced?.expression) add("numerology.expression", "calculation", `Biểu đạt ${advanced.expression.value}`); if (advanced?.soulUrge) add("numerology.soul", "calculation", `Nội tâm ${advanced.soulUrge.value}`); if (advanced?.personality) add("numerology.personality", "calculation", `Ấn tượng ${advanced.personality.value}`); if (advanced?.maturity) add("numerology.maturity", "calculation", `Trưởng thành ${advanced.maturity.value}`);
       if (runtime.session.cycles) add("numerology.cycle", "calculation", `Chu kỳ: năm ${runtime.session.cycles.personalYear}, tháng ${runtime.session.cycles.personalMonth}, ngày ${runtime.session.cycles.personalDay}`);
     }
-    else if (view === "sky" && runtime.session.sky?.ok) { add("sky.moon-phase", "calculation", `Pha ${runtime.session.sky.phaseAngle}°, chiếu sáng ${runtime.session.sky.illuminatedPercent}%`); add("sky.instant", "calculation", runtime.session.sky.instantUtc); }
+    else if (view === "physiognomy" && runtime.session.physiognomyResult?.ok) {
+      runtime.session.physiognomyResult.observations.forEach((item, index) => add(`physiognomy.observation.${index + 1}`, "symbolic", `${item.category}: ${item.label}. ${item.tradition}`));
+    }
+    else if (view === "dreams" && runtime.session.dreamResult?.ok) {
+      add("dreams.emotion", "user-selected", `Cảm xúc đã chọn: ${runtime.session.dreamResult.emotion}`);
+      runtime.session.dreamResult.matches.forEach((item, index) => add(`dreams.symbol.${index + 1}`, "local-match", `${item.matched.join(" · ") || item.id}: ${item.reflection}`));
+    }
+    else if (view === "moon" && runtime.session.moon) {
+      const sky = runtime.session.moonAstronomy; const moon = runtime.session.moon;
+      add("moon.phase", "calculation", `Pha ${sky?.ok ? sky.phaseAngle : Math.round(moon.phase * 360)}°, chiếu sáng ${sky?.ok ? sky.illuminatedPercent : moon.illumination}%`);
+      add("moon.age", "calculation", `Tuổi trăng ${sky?.ok ? sky.ageDays : moon.ageDays} ngày`);
+      if (sky?.ok) { add("moon.distance", "calculation", `Khoảng cách ${sky.distanceKm} km`); add("moon.rise-set", "calculation", `Mọc ${sky.localTimes?.rise || sky.rise || "không có"}; lặn ${sky.localTimes?.set || sky.set || "không có"}`); }
+    }
+    else if (view === "sky" && runtime.session.sky?.ok) {
+      const sky = runtime.session.sky;
+      add("sky.moon-phase", "calculation", `Pha ${sky.phaseAngle}°, chiếu sáng ${sky.illuminatedPercent}%`); add("sky.instant", "calculation", sky.instantUtc); add("sky.distance", "calculation", `Khoảng cách ${sky.distanceKm} km`); add("sky.rise-set", "calculation", `Mọc ${sky.localTimes?.rise || sky.rise || "không có"}; transit ${sky.localTimes?.transit || sky.transit || "không có"}; lặn ${sky.localTimes?.set || sky.set || "không có"}`);
+      if (sky.nextLunarEclipse) add("sky.lunar-eclipse", "calculation", `Sự kiện nguyệt thực tiếp theo: ${sky.nextLunarEclipse.kind || "không xác định"} · ${formatDateTime(sky.nextLunarEclipse.time)}`);
+    }
+    else if (view === "eastern" && runtime.session.eastern?.ok) {
+      const eastern = runtime.session.eastern; add("eastern.year-pillar", "calendar", `Can Chi năm ${eastern.yearPillar.stem} ${eastern.yearPillar.branch}`); add("eastern.lunar-label", "calendar", `Nhãn lịch âm ${eastern.lunarLabel || "không có"}`);
+      eastern.solarTerms.slice(0, 24).forEach((term, index) => add(`eastern.solar-term.${index + 1}`, "astronomy-calendar", `${term.name} ${term.longitude}° · ${term.time || "không có event"}`));
+    }
     return { schema: "hh.fortune.fact-lock.v1", facts, allowedEntities: [...entities], sourceView: view, mode: runtime.session.copilotMode || "easy", selectedTextDigest: accuracyLab()?.sha256?.(String(input || "")) || "" };
   }
 
   async function requestGeminiAnalysis(runtime, input, depth, sections, mode = "easy") {
-    const base = String(runtime.options.apiBase || globalScope.HH_REALTIME_URL || globalScope.location?.origin || "").replace(/\/$/, "");
+    const base = String(runtime.options.apiBase || globalScope.HH_API_BASE || globalScope.location?.origin || "").replace(/\/$/, "");
     if (!base || !globalScope.fetch) throw new Error("Không tìm thấy backend Gemini.");
     const token = globalScope.HHAuthSession?.token?.() || "";
     runtime.aiController?.abort?.();
@@ -1408,8 +1440,8 @@
         anonymousId: anonymousId(),
         meta: {
           provider: "gemini",
-          allowProviderFallback: false,
-          requireProvider: true,
+          allowProviderFallback: true,
+          requireProvider: false,
           model: depth === "expert" ? "gemini-3.5-flash" : "gemini-3.5-flash-lite",
            thinkingLevel: depth === "expert" ? "high" : "medium",
            depth,
@@ -1501,6 +1533,54 @@
         "YÊU CẦU: giải thích Mệnh/Thân, từng cung, chính/phụ tinh, Tứ Hóa, tam phương cần đối chiếu và đại hạn như chu kỳ biểu tượng. Không nhắc ngày/giờ/giới tính, không chẩn đoán sức khỏe, không khẳng định giàu nghèo, hôn nhân hay tai họa."
       ].join("\n");
     }
+    if (kind === "physiognomy") {
+      const result = runtime.session.physiognomyResult; if (!result?.ok) return "";
+      return [
+        "LOẠI: Nhân tướng học như lịch sử biểu tượng và tự quan sát; không phải nhận diện sinh trắc học hoặc phép đo nhân cách.",
+        ...result.observations.map((item, index) => `${index + 1}. ${item.category}: nhãn người dùng tự chọn “${item.label}”. Liên tưởng văn hóa: ${item.tradition}. Câu hỏi kiểm chứng: ${item.question}`),
+        "YÊU CẦU: đối chiếu từng liên tưởng bằng ngôn ngữ trung lập, nêu định kiến có thể có, tạo câu hỏi tự kiểm chứng và ba hành động nhỏ. Không suy luận nhân cách, trí tuệ, đạo đức, sức khỏe, sắc tộc, mức hấp dẫn hoặc vận mệnh. Không nhắc hay yêu cầu ảnh."
+      ].join("\n");
+    }
+    if (kind === "dreams") {
+      const result = runtime.session.dreamResult; if (!result?.ok) return "";
+      return [
+        "LOẠI: nhật ký mô-típ giấc mơ; nội dung giấc mơ nguyên văn không được gửi.",
+        `Cảm xúc do người dùng chọn: ${result.emotion}.`,
+        ...(result.matches.length ? result.matches.map((item, index) => `${index + 1}. Mô-típ cục bộ ${item.matched.join(" · ") || item.id}: ${item.reflection}. Câu hỏi sẵn có: ${item.questions.join(" | ")}`) : ["Engine cục bộ không tìm thấy mô-típ rõ; không được tự bịa biểu tượng."]),
+        "YÊU CẦU: đưa nhiều cách hiểu đời thường, câu hỏi gắn với cảm xúc và bối cảnh, ba bước ghi nhật ký an toàn. Không tái dựng nội dung giấc mơ, không dự báo và không chẩn đoán sức khỏe tâm thần."
+      ].join("\n");
+    }
+    if (kind === "moon") {
+      const moon = runtime.session.moon; const sky = runtime.session.moonAstronomy; if (!moon) return "";
+      return [
+        "LOẠI: dữ liệu Mặt Trăng thiên văn để giải thích và lập kế hoạch quan sát; phần chiêm nghiệm tách riêng.",
+        `Ngày quan sát: ${moon.date}. Pha: ${moon.name}. Góc pha ${sky?.ok ? sky.phaseAngle : Math.round(moon.phase * 360)}°. Chiếu sáng ${sky?.ok ? sky.illuminatedPercent : moon.illumination}%. Tuổi trăng ${sky?.ok ? sky.ageDays : moon.ageDays} ngày.`,
+        sky?.ok ? `Khoảng cách ${sky.distanceKm} km. Mọc ${sky.localTimes?.rise || sky.rise || "không có"}; transit ${sky.localTimes?.transit || sky.transit || "không có"}; lặn ${sky.localTimes?.set || sky.set || "không có"}.` : "Không có dữ liệu topocentric; chỉ dùng pha xấp xỉ cục bộ.",
+        sky?.provenance ? `Nguồn tính: ${sky.provenance.engine || "Astronomy Engine"}; record ${sky.provenance.recordId || "không có"}.` : "Nguồn pha xấp xỉ được ghi trong Result Contract.",
+        "YÊU CẦU: giải thích các số liệu, điều kiện quan sát và sai số chân trời/thời tiết. Không gán pha trăng với sức khỏe, hành vi, điềm báo hoặc quyết định cá nhân."
+      ].join("\n");
+    }
+    if (kind === "sky") {
+      const result = runtime.session.sky; if (!result?.ok) return "";
+      return [
+        "LOẠI: kế hoạch quan sát thiên văn dựa trên dữ liệu topocentric; không phải chỉ dẫn điều hướng hoặc an toàn hàng không/hàng hải.",
+        `Thời điểm UTC ${result.instantUtc}. Pha ${result.phaseAngle}°, chiếu sáng ${result.illuminatedPercent}%, tuổi trăng ${result.ageDays} ngày, khoảng cách ${result.distanceKm} km.`,
+        `Mọc ${result.localTimes?.rise || result.rise || "không có"}; transit ${result.localTimes?.transit || result.transit || "không có"}; lặn ${result.localTimes?.set || result.set || "không có"}.`,
+        `Nguyệt thực tiếp: ${result.nextLunarEclipse?.kind || "không xác định"} · ${formatDateTime(result.nextLunarEclipse?.time)}. Nhật thực tiếp: ${result.nextSolarEclipse?.kind || "không xác định"} · ${formatDateTime(result.nextSolarEclipse?.time)}.`,
+        `Nguồn tính: ${result.provenance?.engine || "Astronomy Engine"}; record ${result.provenance?.recordId || "không có"}.`,
+        "YÊU CẦU: tóm tắt cửa sổ quan sát, giải thích chạng vạng và các giới hạn do mây/vật cản; đưa checklist an toàn. Không gán điềm báo."
+      ].join("\n");
+    }
+    if (kind === "eastern") {
+      const result = runtime.session.eastern; if (!result?.ok) return "";
+      return [
+        "LOẠI: nền lịch phương Đông; Can Chi và tiết khí là dữ liệu lịch/thiên văn, lớp diễn giải chỉ mang tính biểu tượng.",
+        `Can Chi năm: ${result.yearPillar.stem} ${result.yearPillar.branch}. Nhãn lịch âm: ${result.lunarLabel || "không có"}.`,
+        `Tiết khí: ${result.solarTerms.map((term) => `${term.name} ${term.longitude}° · ${term.time || "không có event"}`).join("; ")}.`,
+        `Nguồn tính: ${result.provenance?.engine || "Astronomy Engine + Intl Chinese Calendar"}; record ${result.provenance?.recordId || "không có"}.`,
+        "YÊU CẦU: giải thích cách đọc Can Chi và 24 tiết khí, tách tính toán khỏi biểu tượng, nêu giới hạn trường phái. Không suy đoán ngày sinh, giờ sinh, tọa độ, Bát Tự hoặc Tử Vi đầy đủ. Không gán ngày cát/hung chắc chắn."
+      ].join("\n");
+    }
     if (kind === "compatibility") {
       const result = runtime.session.compatibility; if (!result) return "";
       return [
@@ -1534,7 +1614,7 @@
   }
 
   async function syncEncryptedVault(runtime, direction) {
-    const base = String(runtime.options.apiBase || globalScope.HH_REALTIME_URL || globalScope.location?.origin || "").replace(/\/$/, ""); const token = globalScope.HHAuthSession?.token?.() || "";
+    const base = String(runtime.options.apiBase || globalScope.HH_API_BASE || globalScope.location?.origin || "").replace(/\/$/, ""); const token = globalScope.HHAuthSession?.token?.() || "";
     if (!token) throw new Error("Bạn cần đăng nhập để đồng bộ kho mã hóa theo tài khoản.");
     if (!base || !globalScope.fetch) throw new Error("Không tìm thấy backend đồng bộ.");
     if (direction === "upload" && !runtime.state.journalVault) throw new Error("Hãy bật mã hóa PIN trước khi đồng bộ.");
@@ -1902,14 +1982,14 @@
     if (event.target.closest("[data-fortune-sky-calc]")) {
       const v4 = suiteV4(); runtime.session.skyDate = runtime.root.querySelector("[data-fortune-sky-date]")?.value || localDateKey();
       runtime.session.sky = v4?.calculateMoonSky?.(runtime.session.skyDate, runtime.profile, globalScope.Astronomy) || { ok: false, errors: ["Moon & Sky engine chưa được tải."] };
-      if (!runtime.session.sky.ok) showToast(runtime, runtime.session.sky.errors?.[0] || "Không thể tính bầu trời.", "error"); else { playFortuneTone(runtime); addHistory(runtime, "sky", `Moon & Sky · ${runtime.session.skyDate}`, `${runtime.session.sky.illuminatedPercent}% chiếu sáng · mọc ${runtime.session.sky.rise || "không có"}`); }
-      render(runtime, true); return;
+      if (!runtime.session.sky.ok) { showToast(runtime, runtime.session.sky.errors?.[0] || "Không thể tính bầu trời.", "error"); render(runtime, true); return; }
+      runtime.session.skyAi = null; playFortuneTone(runtime); addHistory(runtime, "sky", `Moon & Sky · ${runtime.session.skyDate}`, `${runtime.session.sky.illuminatedPercent}% chiếu sáng · mọc ${runtime.session.sky.rise || "không có"}`); await runAutomaticFortuneAi(runtime, "sky"); return;
     }
     if (event.target.closest("[data-fortune-eastern-calc]")) {
       const v4 = suiteV4(); runtime.session.easternDate = runtime.root.querySelector("[data-fortune-eastern-date]")?.value || localDateKey();
       runtime.session.eastern = v4?.easternCalendar?.(runtime.session.easternDate, runtime.profile, globalScope.Astronomy) || { ok: false, errors: ["Lịch phương Đông chưa được tải."] };
-      if (!runtime.session.eastern.ok) showToast(runtime, runtime.session.eastern.errors?.[0] || "Không thể tính lịch.", "error"); else { playFortuneTone(runtime); addHistory(runtime, "eastern", `Can Chi ${runtime.session.eastern.yearPillar.stem} ${runtime.session.eastern.yearPillar.branch}`, `${runtime.session.eastern.lunarLabel || "Lịch âm không có nhãn"} · 24 tiết khí`); }
-      render(runtime, true); return;
+      if (!runtime.session.eastern.ok) { showToast(runtime, runtime.session.eastern.errors?.[0] || "Không thể tính lịch.", "error"); render(runtime, true); return; }
+      runtime.session.easternAi = null; playFortuneTone(runtime); addHistory(runtime, "eastern", `Can Chi ${runtime.session.eastern.yearPillar.stem} ${runtime.session.eastern.yearPillar.branch}`, `${runtime.session.eastern.lunarLabel || "Lịch âm không có nhãn"} · 24 tiết khí`); await runAutomaticFortuneAi(runtime, "eastern"); return;
     }
     if (event.target.closest("[data-fortune-symbol-draw]")) {
       const v4 = suiteV4(); runtime.session.symbolType = runtime.root.querySelector("[data-fortune-symbol-type]")?.value || "lenormand"; runtime.session.symbolCount = clamp(runtime.root.querySelector("[data-fortune-symbol-count]")?.value, 1, runtime.session.symbolType === "lenormand" ? 36 : 24, 3); runtime.session.symbolSeed = runtime.root.querySelector("[data-fortune-symbol-seed]")?.value.trim() || ""; runtime.session.runeAllowReversed = Boolean(runtime.root.querySelector("[data-fortune-rune-reversed]")?.checked);
@@ -2026,21 +2106,21 @@
     if (event.target.closest("[data-fortune-physio-calc]")) {
       runtime.session.physiognomyValues = Object.fromEntries([...runtime.root.querySelectorAll("[data-fortune-physio-field]")].map((input)=>[input.dataset.fortunePhysioField,input.value])); runtime.session.physiognomyResult = extendedTools()?.createPhysiognomyReflection?.(runtime.session.physiognomyValues) || null;
       if (!runtime.session.physiognomyResult?.ok) { showToast(runtime, "Không thể tạo bản tự quan sát.", "error"); return; }
-      playFortuneTone(runtime); render(runtime, true); return;
+      runtime.session.physiognomyAi = null; playFortuneTone(runtime); await runAutomaticFortuneAi(runtime, "physiognomy"); return;
     }
     if (event.target.closest("[data-fortune-dream-calc]")) {
       runtime.session.dreamText = runtime.root.querySelector("[data-fortune-dream-text]")?.value.trim() || ""; runtime.session.dreamEmotion = runtime.root.querySelector("[data-fortune-dream-emotion]")?.value || "curious"; runtime.session.dreamResult = extendedTools()?.analyzeDream?.(runtime.session.dreamText, runtime.session.dreamEmotion) || null;
       if (!runtime.session.dreamResult?.ok) { showToast(runtime, runtime.session.dreamResult?.errors?.[0] || "Không thể phân tích giấc mơ.", "error"); return; }
-      playFortuneTone(runtime); render(runtime, true); return;
+      runtime.session.dreamsAi = null; playFortuneTone(runtime); await runAutomaticFortuneAi(runtime, "dreams"); return;
     }
     if (event.target.closest("[data-fortune-moon-today]")) {
-      runtime.session.moonDate = localDateKey(); runtime.session.moon = calculateMoonPhase(runtime.session.moonDate); runtime.session.moonAstronomy = suiteV4()?.calculateMoonSky?.(runtime.session.moonDate, runtime.profile, globalScope.Astronomy) || null; render(runtime, true); return;
+      runtime.session.moonDate = localDateKey(); runtime.session.moon = calculateMoonPhase(runtime.session.moonDate); runtime.session.moonAstronomy = suiteV4()?.calculateMoonSky?.(runtime.session.moonDate, runtime.profile, globalScope.Astronomy) || null; runtime.session.moonAi = null; await runAutomaticFortuneAi(runtime, "moon"); return;
     }
     if (event.target.closest("[data-fortune-moon-calc]")) {
       runtime.session.moonDate = runtime.root.querySelector("[data-fortune-moon-date]")?.value || "";
       runtime.session.moon = calculateMoonPhase(runtime.session.moonDate); runtime.session.moonAstronomy = suiteV4()?.calculateMoonSky?.(runtime.session.moonDate, runtime.profile, globalScope.Astronomy) || null;
       if (!runtime.session.moon) { showToast(runtime, "Hãy chọn ngày hợp lệ.", "error"); return; }
-      render(runtime, true); return;
+      runtime.session.moonAi = null; await runAutomaticFortuneAi(runtime, "moon"); return;
     }
     if (event.target.closest("[data-fortune-compare]")) {
       runtime.session.compareA = runtime.root.querySelector("[data-fortune-compare-a]")?.value || "";
@@ -2179,7 +2259,7 @@
     const runtime = {
       target, options, ownerId: resolveOwnerId(options), storage: options.storage || globalScope.localStorage,
       state: null, profile: null, builder: createBuilderState(), journalEntries: [], journalKey: null,
-       session: { tarot: [], tarotPrevious: [], tarotRevealed: new Set(), tarotFocusIndex: 0, tarotCount: 3, tarotSeed: "", tarot78: null, tarotAi: null, question: "", western: null, zodiacDate: "", zodiacAi: null, chinese: null, chineseYear: "", chineseBeforeTet: false, numerology: null, numerologyV4: null, numerologyAi: null, cycles: null, birthDate: "", targetDate: localDateKey(), nameInput: "", nameSystem: "pythagorean", nameNumerology: null, iching: null, ichingAdvanced: null, ichingAi: null, ichingSeed: "", ichingMode: "coins", ichingManual: [7, 7, 7, 7, 7, 7], ichingQuestion: "", tuvi: null, tuviDate: "", tuviTime: "", tuviGender: "male", tuviFixLeap: true, tuviPalaceIndex: 0, tuviAi: null, physiognomyValues: {}, physiognomyResult: null, dreamText: "", dreamEmotion: "curious", dreamResult: null, moonDate: localDateKey(), moon: null, moonAstronomy: null, skyDate: localDateKey(), sky: null, easternDate: localDateKey(), eastern: null, symbolType: "lenormand", symbolCount: 3, symbolSeed: "", symbolDeck: null, symbolFocusIndex: 0, symbolsAi: null, calendarSelectedDate: localDateKey(), astrologyMode: "natal", astrologyTarget: localDateKey(), astrologyAlerts: false, astrologyPlanet: "", astrologyV4: null, chartAi: null, calculationCertificate: null, accuracyReport: null, birthChart: null, birthChartErrors: [], compareA: "", compareB: "", compareBeforeA: false, compareBeforeB: false, compareContext: "relationship", compareGoal: "trao đổi rõ một vấn đề", compareCadence: "weekly", compatibility: null, compatibilityAi: null, sessionAi: null, tarotQuiz: null, academyRound: 1, academyFeedback: "", academyAnswered: false, academyHistory: [], academyTrack: "foundation", academyLessonIndex: 0, academyFlashRevealed: false, academyReview: null, copilot: null, copilotInput: "", copilotMode: "easy", copilotDepth: "detailed", copilotSourceView: "" },
+       session: { tarot: [], tarotPrevious: [], tarotRevealed: new Set(), tarotFocusIndex: 0, tarotCount: 3, tarotSeed: "", tarot78: null, tarotAi: null, question: "", western: null, zodiacDate: "", zodiacAi: null, chinese: null, chineseYear: "", chineseBeforeTet: false, numerology: null, numerologyV4: null, numerologyAi: null, cycles: null, birthDate: "", targetDate: localDateKey(), nameInput: "", nameSystem: "pythagorean", nameNumerology: null, iching: null, ichingAdvanced: null, ichingAi: null, ichingSeed: "", ichingMode: "coins", ichingManual: [7, 7, 7, 7, 7, 7], ichingQuestion: "", tuvi: null, tuviDate: "", tuviTime: "", tuviGender: "male", tuviFixLeap: true, tuviPalaceIndex: 0, tuviAi: null, physiognomyValues: {}, physiognomyResult: null, physiognomyAi: null, dreamText: "", dreamEmotion: "curious", dreamResult: null, dreamsAi: null, moonDate: localDateKey(), moon: null, moonAstronomy: null, moonAi: null, skyDate: localDateKey(), sky: null, skyAi: null, easternDate: localDateKey(), eastern: null, easternAi: null, symbolType: "lenormand", symbolCount: 3, symbolSeed: "", symbolDeck: null, symbolFocusIndex: 0, symbolsAi: null, calendarSelectedDate: localDateKey(), astrologyMode: "natal", astrologyTarget: localDateKey(), astrologyAlerts: false, astrologyPlanet: "", astrologyV4: null, chartAi: null, calculationCertificate: null, accuracyReport: null, birthChart: null, birthChartErrors: [], compareA: "", compareB: "", compareBeforeA: false, compareBeforeB: false, compareContext: "relationship", compareGoal: "trao đổi rõ một vấn đề", compareCadence: "weekly", compatibility: null, compatibilityAi: null, sessionAi: null, tarotQuiz: null, academyRound: 1, academyFeedback: "", academyAnswered: false, academyHistory: [], academyTrack: "foundation", academyLessonIndex: 0, academyFlashRevealed: false, academyReview: null, copilot: null, copilotInput: "", copilotMode: "easy", copilotDepth: "detailed", copilotSourceView: "" },
       root: null, toastTimer: 0, storageError: false, historyQuery: "", historyType: "all", journalQuery: "", journalTag: "all", methodQuery: "", calendarAnchor: localDateKey(), calendarMode: "month", chartPlanetIndex: 0, copilotBusy: false, aiController: null, deletedRecord: null, dragCardIndex: -1, ambientNodes: []
     };
     runtime.state = readState(runtime.storage, runtime.ownerId);

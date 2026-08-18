@@ -22,18 +22,6 @@
       detail: "Theo dõi nhịp làm việc, mở nhanh tác vụ đang ưu tiên và gom các tín hiệu quan trọng vào một màn hình.",
       features: ["Dashboard", "Command Center", "Weather & AQI", "Sticky Notes", "Quick Actions"]
     },
-    character: {
-      icon: "3D",
-      title: "Nhân vật 3D",
-      kicker: "REALTIME CHARACTER STUDIO",
-      count: "STUDIO 3D",
-      route: "#/character-3d",
-      accent: "#ff718a",
-      accent2: "#8f6dff",
-      description: "Tạo, điều khiển, diễn hoạt và xuất nhân vật 3D nguyên bản ngay trên website.",
-      detail: "Viewport WebGL, rig, biểu cảm, giọng nói, lip-sync và quy trình xuất asset được gom trong một studio.",
-      features: ["Character Studio", "Rig & Animation", "Expression", "Voice Lip-sync", "GLB Export"]
-    },
     social: {
       icon: "SM",
       title: "Công cụ truyền thông xã hội",
@@ -177,18 +165,6 @@
       description: "Kết nối cộng đồng qua messenger, forum, phòng trực tiếp và trung tâm thông báo.",
       detail: "Trao đổi theo phòng, theo dõi hội thoại quan trọng và cộng tác trực tiếp mà không rời khỏi HH Platform.",
       features: ["Community", "Messenger", "Forum", "Live Room", "Notifications"]
-    },
-    entertainment: {
-      icon: "◉",
-      title: "Game",
-      kicker: "GAME UNIVERSE",
-      count: "30 GAME",
-      route: "#/entertainment",
-      accent: "#ffd46a",
-      accent2: "#ff754f",
-      description: "Thư giãn với game center, arcade và hành trình khám phá không gian ASTRA.",
-      detail: "Khám phá trải nghiệm tương tác, thử thách điểm số và những hành trình vũ trụ có thể chơi ngay trên trình duyệt.",
-      features: ["Game Center", "Arcade", "ASTRA Space", "Realtime Play", "Achievements"]
     },
     cinema: {
       icon: "▶",

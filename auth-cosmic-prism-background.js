@@ -59,15 +59,6 @@
       features: ["Lộ trình", "Ôn tập", "AI Coach"]
     }),
     Object.freeze({
-      id: "game",
-      short: "GM",
-      label: "Game",
-      color: "#ff766d",
-      route: "/entertainment",
-      description: "Game Center, ASTRA Universe, thành tích và multiplayer.",
-      features: ["ASTRA", "Arcade", "Realtime"]
-    }),
-    Object.freeze({
       id: "community",
       short: "CM",
       label: "Community",

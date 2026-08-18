@@ -279,7 +279,7 @@
     const previous = live.jobs;
     live.jobs = result;
     if (previous && previous.running > 0 && result.running === 0 && result.done > previous.done) addEvent("Tác vụ nền đã hoàn tất", "success");
-    if (result.comicUpdates > (previous?.comicUpdates || 0)) addEvent(`Có ${result.comicUpdates} chương truyện mới`, "comic", "/entertainment/comics");
+    if (result.comicUpdates > (previous?.comicUpdates || 0)) addEvent(`Có ${result.comicUpdates} chương truyện mới`, "comic", "/comic-reader");
     updatePlanetSignals();
   }
 
@@ -332,8 +332,7 @@
       communication: { active: counts.unread > 0, className: "hlw-signal-notice", text: `${counts.unread} thông báo mới` },
       analytics: { active: backendBad, className: "hlw-signal-error", text: "Backend cần kiểm tra" },
       learning: { active: counts.reviews > 0, className: "hlw-signal-learning", text: `${counts.reviews} bài đến hạn` },
-      media: { active: live.jobs.running > 0, className: "hlw-signal-running", text: `${live.jobs.running} tác vụ đang chạy` },
-      entertainment: { active: live.jobs.comicUpdates > 0, className: "hlw-signal-comic", text: `${live.jobs.comicUpdates} chương mới` }
+      media: { active: live.jobs.running > 0, className: "hlw-signal-running", text: `${live.jobs.running} tác vụ đang chạy` }
     };
     Object.entries(mapping).forEach(([id, signal]) => {
       const planet = root.querySelector(`[data-hgc-planet="${id}"]`);

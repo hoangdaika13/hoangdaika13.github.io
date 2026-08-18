@@ -55,12 +55,6 @@
       capabilities: ["Cộng đồng", "Nhắn tin", "Hộp thư"]
     },
     {
-      id: "entertainment", short: "GX", label: "Game", eyebrow: "Trò chơi và thế giới tương tác", route: "/entertainment",
-      color: "#ff8a5b", orbit: 3, angle: 0,
-      description: "Khám phá game 3D, arcade, thế giới vũ trụ và các trải nghiệm tương tác của HH Platform.",
-      capabilities: ["Vũ trụ", "Trò chơi", "Trực tuyến"]
-    },
-    {
       id: "insights", short: "PT", label: "Phân tích", eyebrow: "Dữ liệu và vận hành", route: "/analytics",
       color: "#ffbd69", orbit: 3, angle: 60,
       description: "Theo dõi analytics, tìm kiếm thông minh, quản trị, API, bảo mật và tình trạng nền tảng.",

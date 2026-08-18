@@ -7,9 +7,9 @@ const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 const modules = [
-  "auth-cosmic-prism-background",
-  "auth-cosmic-prism-form",
-  "auth-cosmic-prism-interactions"
+  ["auth-cosmic-prism-background", 2, 3],
+  ["auth-cosmic-prism-form", 2, 3],
+  ["auth-cosmic-prism-interactions", 3, 3]
 ];
 
 test("Cosmic Prism is lazy-loaded with the authentication experience and cached", () => {
@@ -17,11 +17,11 @@ test("Cosmic Prism is lazy-loaded with the authentication experience and cached"
   const worker = read("sw.js");
   const html = read("index.html");
 
-  for (const module of modules) {
-    assert.match(loader, new RegExp(`${module}\\.css\\?v=2`));
-    assert.match(loader, new RegExp(`${module}\\.js\\?v=2`));
-    assert.match(worker, new RegExp(`${module}\\.css\\?v=2`));
-    assert.match(worker, new RegExp(`${module}\\.js\\?v=2`));
+  for (const [module, cssVersion, jsVersion] of modules) {
+    assert.match(loader, new RegExp(`${module}\\.css\\?v=${cssVersion}`));
+    assert.match(loader, new RegExp(`${module}\\.js\\?v=${jsVersion}`));
+    assert.match(worker, new RegExp(`${module}\\.css\\?v=${cssVersion}`));
+    assert.match(worker, new RegExp(`${module}\\.js\\?v=${jsVersion}`));
   }
 
   assert.match(html, /performance-loader\.js\?v=\d+/);
@@ -42,7 +42,7 @@ test("Cosmic Prism composes with existing auth events without replacing authenti
 });
 
 test("Cosmic Prism keeps a stable form at mobile widths and reduced motion", () => {
-  const css = modules.map((module) => read(`${module}.css`)).join("\n");
+  const css = modules.map(([module]) => read(`${module}.css`)).join("\n");
   assert.match(css, /@media\s*\(max-width:\s*(?:560|600|640|720)px\)/);
   assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
   assert.match(css, /:focus-visible/);

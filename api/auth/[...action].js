@@ -18,6 +18,7 @@ const {
   clientIp,
   createSession,
   deviceInfo,
+  emailProviderReadiness,
   ensureIndexes,
   expectedWebAuthn,
   hmacHash,
@@ -119,10 +120,12 @@ function requestRoute(req) {
 }
 
 function providerPayload(req) {
+  const emailProvider = emailProviderReadiness();
   return {
     google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     passkey: (() => { try { webauthnServer(); return true; } catch { return false; } })(),
-    email: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
+    email: emailProvider.configured,
+    emailStatus: emailProvider.status,
     captcha: Boolean(process.env.TURNSTILE_SECRET_KEY && process.env.TURNSTILE_SITE_KEY),
     turnstileSiteKey: process.env.TURNSTILE_SECRET_KEY ? clean(process.env.TURNSTILE_SITE_KEY, 200) : "",
     callbacks: { google: callbackUrl(req, "google") }
@@ -568,13 +571,18 @@ module.exports = async function handler(req, res) {
       const password = String(body.password || "");
       await enforceRateLimit(db, `register:${clientIp(req)}`, 5, 60 * 60 * 1000);
       const productionEmailRequired = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
-      if (productionEmailRequired && (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM)) {
+      const emailProvider = emailProviderReadiness();
+      if (productionEmailRequired && !emailProvider.configured) {
         return res.status(503).json({
-          error: "Đăng ký bằng email đang tạm tắt vì dịch vụ gửi mã xác minh chưa được cấu hình. Hãy tiếp tục bằng Google.",
-          code: "EMAIL_PROVIDER_UNAVAILABLE"
+          error: emailProvider.status === "missing"
+            ? "Đăng ký bằng email đang tạm tắt vì dịch vụ gửi mã xác minh chưa được cấu hình. Hãy tiếp tục bằng Google."
+            : "Cấu hình gửi email trên máy chủ không hợp lệ. Quản trị viên cần thay giá trị giữ chỗ bằng khóa Resend và người gửi đã xác minh.",
+          code: emailProvider.status === "missing" ? "EMAIL_PROVIDER_UNAVAILABLE" : "EMAIL_PROVIDER_MISCONFIGURED",
+          emailStatus: emailProvider.status
         });
       }
       if (!name || !validEmail(email)) return res.status(400).json({ error: "Họ tên hoặc email không hợp lệ." });
+      if (body.consent !== true) return res.status(400).json({ error: "Bạn cần đồng ý điều khoản để tạo tài khoản.", code: "CONSENT_REQUIRED" });
       const passwordCheck = checkPassword(password);
       if (!passwordCheck.valid) return res.status(400).json({ error: passwordCheck.message, code: passwordCheck.code });
       if (await db.collection("users").findOne({ email })) return res.status(409).json({ error: "Email này đã được đăng ký." });
@@ -602,8 +610,8 @@ module.exports = async function handler(req, res) {
       const developmentCode = process.env.NODE_ENV !== "production" && process.env.VERCEL_ENV !== "production" && !verificationDelivery.delivered ? verificationCode : undefined;
       return res.status(201).json({
         ...authResponse(user, session), verificationRequired: true,
-        verificationDelivery: verificationDelivery.delivered ? "sent" : "email-provider-unavailable",
-        welcomeDelivery: welcomeDelivery.delivered ? "sent" : "email-provider-unavailable",
+        verificationDelivery: verificationDelivery.delivered ? "sent" : verificationDelivery.configured ? "failed" : "email-provider-unavailable",
+        welcomeDelivery: welcomeDelivery.delivered ? "sent" : welcomeDelivery.configured ? "failed" : "email-provider-unavailable",
         ...(developmentCode ? { developmentCode } : {})
       });
     }
@@ -662,12 +670,12 @@ module.exports = async function handler(req, res) {
       if (user) {
         const code = await issueOtp(db, { type: "password-reset-otp", email, ttlMs: RESET_OTP_TTL_MS, purpose: "reset-otp" });
         const sent = await sendSecurityEmail({ to: email, subject: "Mã khôi phục HH Platform", html: resetEmailHtml(code), text: `Mã khôi phục HH Platform: ${code}. Mã hết hạn sau 10 phút.` });
-        delivery = sent.delivered ? "sent" : "email-provider-unavailable";
+        delivery = sent.delivered ? "sent" : sent.configured ? "failed" : "email-provider-unavailable";
         if (process.env.NODE_ENV !== "production" && process.env.VERCEL_ENV !== "production" && !sent.delivered) developmentCode = code;
       }
       return res.status(202).json({
         ok: true, delivery,
-        message: delivery === "email-provider-unavailable" ? "Yêu cầu đã được ghi nhận nhưng máy chủ chưa cấu hình dịch vụ gửi email." : "Nếu email tồn tại, mã xác minh sẽ được gửi tới hộp thư.",
+        message: delivery === "email-provider-unavailable" ? "Yêu cầu đã được ghi nhận nhưng máy chủ chưa cấu hình dịch vụ gửi email." : delivery === "failed" ? "Dịch vụ email đang tạm gián đoạn. Hãy thử gửi lại sau ít phút hoặc dùng Google." : "Nếu email tồn tại, mã xác minh sẽ được gửi tới hộp thư.",
         ...(developmentCode ? { developmentCode } : {})
       });
     }
@@ -712,7 +720,7 @@ module.exports = async function handler(req, res) {
       const code = await issueOtp(db, { type: "email-verification", email: auth.user.email, ttlMs: EMAIL_OTP_TTL_MS, purpose: "email-otp" });
       const sent = await sendSecurityEmail({ to: auth.user.email, subject: "Xác minh email HH Platform", html: verificationEmailHtml(code), text: `Mã xác minh email HH Platform: ${code}. Mã hết hạn sau 15 phút.` });
       const developmentCode = process.env.NODE_ENV !== "production" && process.env.VERCEL_ENV !== "production" && !sent.delivered ? code : undefined;
-      return res.status(202).json({ ok: true, delivery: sent.delivered ? "sent" : "email-provider-unavailable", ...(developmentCode ? { developmentCode } : {}) });
+      return res.status(202).json({ ok: true, delivery: sent.delivered ? "sent" : sent.configured ? "failed" : "email-provider-unavailable", reason: sent.reason || "", ...(developmentCode ? { developmentCode } : {}) });
     }
 
     if (route === "email-verification/verify" && req.method === "POST") {

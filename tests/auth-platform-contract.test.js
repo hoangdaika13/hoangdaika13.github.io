@@ -210,11 +210,22 @@ test("email signup and recovery expose provider availability without dead ends",
   assert.match(client, /oauthProviders\.email\s*===\s*false/);
   assert.match(client, /email-provider-unavailable/);
   assert.match(api, /EMAIL_PROVIDER_UNAVAILABLE/);
+  assert.match(api, /EMAIL_PROVIDER_MISCONFIGURED/);
+  assert.match(api, /emailProviderReadiness/);
+  assert.match(client, /verificationDelivery === "failed"/);
+  assert.match(client, /result\.delivery === "failed"/);
   assert.doesNotMatch(
     `${readOptional("auth-experience.js")}\n${readOptional("auth-platform.js")}`,
     /\.reportValidity\s*\(/,
     "Auth phải báo lỗi nội tuyến thay vì dùng popup validation thô của trình duyệt."
   );
+});
+
+test("three-step signup validates the active step and keeps provider-disabled controls locked", () => {
+  assert.match(html, /id="gateRegisterForm"[^>]*\bnovalidate\b/i);
+  assert.match(client, /if \(signupStep < 3\) \{\s*if \(validateStep\(signupStep\)\) setSignupStep\(signupStep \+ 1\)/);
+  assert.match(client, /authDisabledBeforeBusy/);
+  assert.match(api, /CONSENT_REQUIRED/);
 });
 
 test("returning-user, loading and service-isolation states are represented", () => {

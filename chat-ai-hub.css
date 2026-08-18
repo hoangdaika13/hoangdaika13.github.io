@@ -74,3 +74,16 @@ body.app-chat-ai-route .workspace-grid{padding:0;overflow:hidden}body.app-chat-a
   .chat-ai-composer__bar{flex-wrap:wrap}
   .chat-ai-composer__bar>div:last-child{margin-left:auto}
 }
+
+.chat-ai-sidebar>footer span[data-chat-ai-provider-state="degraded"] i{
+  background:#ffd36f;
+  box-shadow:0 0 12px rgba(255,211,111,.65)
+}
+.chat-ai-message.is-continuity>section{
+  border-color:rgba(255,205,108,.34);
+  background:linear-gradient(135deg,rgba(70,48,20,.38),rgba(36,26,62,.48))
+}
+.chat-ai-message.is-continuity .chat-ai-avatar{
+  background:linear-gradient(145deg,#ffe08b,#ff9e6b,#b47cff);
+  box-shadow:0 0 24px rgba(255,188,98,.28)
+}

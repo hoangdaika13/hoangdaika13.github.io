@@ -279,13 +279,13 @@
 
   if (gate.querySelector("[data-hh-galaxy]") && !window.HHHGalaxy) {
     const galaxyRuntime = document.createElement("script");
-    galaxyRuntime.src = "auth-h-galaxy.js?v=11";
+    galaxyRuntime.src = "auth-h-galaxy.js?v=12";
     galaxyRuntime.defer = true;
     galaxyRuntime.dataset.hhGalaxyRuntime = "true";
     galaxyRuntime.addEventListener("load", () => {
       if (window.HHLivingGalaxy3D) return window.HHLivingGalaxy3D.mount?.();
       const livingRuntime = document.createElement("script");
-      livingRuntime.src = "auth-living-galaxy-3d.js?v=14";
+      livingRuntime.src = "auth-living-galaxy-3d.js?v=15";
       livingRuntime.defer = true;
       livingRuntime.dataset.hhLivingGalaxyRuntime = "true";
       document.head.append(livingRuntime);

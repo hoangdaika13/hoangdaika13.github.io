@@ -41,10 +41,11 @@ test("creative universe is keyboard accessible and remembers the selected module
   const client = read("auth-creative-universe.js");
   for (const module of [
     "Trang chủ", "Sáng tạo", "Làm nhạc AI", "Media & Design", "Thiết kế đồ họa", "DEV",
-    "Công việc", "Giao tiếp", "Game", "Phân tích", "Học tập", "HH English", "HH Japanese", "Hệ thống", "Ủng hộ"
+    "Công việc", "Giao tiếp", "Phân tích", "Học tập", "HH English", "HH Japanese", "Hệ thống", "Ủng hộ"
   ]) {
     assert.match(client, new RegExp(module, "i"));
   }
+  assert.doesNotMatch(client, /\/entertainment|\/character-3d|label:\s*"Game"/);
   assert.match(css, /orbit/i);
   assert.match(client, /hh\.auth\.selected-universe/);
   assert.match(client, /hh\.auth\.pending-route/);

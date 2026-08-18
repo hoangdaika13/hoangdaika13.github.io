@@ -35,7 +35,6 @@ const planets = Object.freeze([
   { id: "design", route: "/graphic-design" },
   { id: "dev", route: "/dev-tools" },
   { id: "learning", route: "/learn" },
-  { id: "game", route: "/entertainment" },
   { id: "community", route: "/communication" }
 ]);
 
@@ -77,7 +76,7 @@ test("Cosmic Prism uses the complete seven-color product palette", () => {
   assert.equal(new Set(palette.map((color) => color.toLowerCase())).size, 7);
 });
 
-test("Creative Universe defines exactly the seven requested product planets", () => {
+test("Creative Universe defines exactly the six active product planets", () => {
   const source = readRequired(modules.interactions);
   for (const planet of planets) {
     assert.match(
@@ -94,7 +93,8 @@ test("Creative Universe defines exactly the seven requested product planets", ()
   const knownPlanetDefinitions = planets.reduce((count, planet) => (
     count + (source.match(new RegExp(`\\bid\\s*:\\s*["']${planet.id}["']`, "gi")) || []).length
   ), 0);
-  assert.equal(knownPlanetDefinitions, 7, "the product solar system must contain one definition for each of seven planets");
+  assert.equal(knownPlanetDefinitions, 6, "the product solar system must contain one definition for each active planet");
+  assert.doesNotMatch(source, /\/entertainment|\bid\s*:\s*["']game["']/i);
 });
 
 test("Cosmic Prism is responsive and honors reduced-motion preferences", () => {

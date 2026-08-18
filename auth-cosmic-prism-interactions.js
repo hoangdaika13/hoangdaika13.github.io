@@ -16,7 +16,6 @@
     { id: "design", route: "/graphic-design", aliases: ["design", "graphic-design", "media-design"] },
     { id: "dev", route: "/dev-tools", aliases: ["dev", "developer"] },
     { id: "learning", route: "/learn", aliases: ["learning", "learn", "english"] },
-    { id: "game", route: "/entertainment", aliases: ["game", "entertainment"] },
     { id: "community", route: "/communication", aliases: ["community", "communication"] }
   ]);
   const THEME_PALETTES = Object.freeze({

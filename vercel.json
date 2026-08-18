@@ -21,20 +21,12 @@
       "destination": "/api/modules/social-media-tools/actions?socialResource=webhooks&provider=:provider"
     },
     {
-      "source": "/api/assistant/chat",
-      "destination": "/api/modules/hikari-assistant/actions"
-    },
-    {
       "source": "/api/education/:resource",
       "destination": "/api/modules/education/actions?educationResource=:resource"
     },
     {
       "source": "/api/social-media/:resource",
       "destination": "/api/modules/social-media-tools/actions?socialResource=:resource"
-    },
-    {
-      "source": "/api/assistant/tts",
-      "destination": "/api/modules/hikari-assistant/actions?assistantTts=1"
     },
     {
       "source": "/api/open-media/:openMediaAction",

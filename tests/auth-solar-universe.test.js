@@ -15,7 +15,6 @@ const expectedRoutes = [
   "/dev-tools",
   "/work",
   "/communication",
-  "/entertainment",
   "/analytics",
   "/learn",
   "/english",
@@ -31,6 +30,7 @@ test("auth solar universe contains every top-level HH destination", () => {
   }
   assert.equal((client.match(/\bid:\s*"[^"]+",\s*short:/g) || []).length, expectedRoutes.length);
   assert.match(client, /modules\.length/);
+  assert.doesNotMatch(client, /\/entertainment|\/character-3d/);
 });
 
 test("planets use three real orbit shells around the HH sun", () => {

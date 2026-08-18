@@ -21,7 +21,6 @@
     "dev-tools": "DEV",
     work: "Công việc",
     communication: "Giao tiếp",
-    entertainment: "Game",
     analytics: "Phân tích",
     learn: "Học tập",
     english: "HH English",

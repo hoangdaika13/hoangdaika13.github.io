@@ -137,9 +137,26 @@ async function recordLoginEvent(db, user, req, type, extra = {}) {
   await db.collection("loginEvents").insertOne({ userId: user._id, type: clean(type, 60), ...device, success: extra.success !== false, reason: clean(extra.reason, 100), createdAt: now });
 }
 
+function emailProviderReadiness(env = process.env) {
+  const apiKey = String(env.HH_RESEND_API_KEY || env.RESEND_API_KEY || "").trim();
+  const from = String(env.HH_EMAIL_FROM || env.EMAIL_FROM || "").trim();
+  const placeholder = /^(?:encrypted|secret|sensitive|redacted|changeme|todo)$/i;
+  const keyValid = /^re_[A-Za-z0-9_-]{20,}$/.test(apiKey) && !placeholder.test(apiKey);
+  const senderMatch = from.match(/^(?:[^<>\r\n]+\s*)?<([^<>\s@]+@[^<>\s@]+)>$/) || from.match(/^([^<>\s@]+@[^<>\s@]+)$/);
+  const fromValid = Boolean(senderMatch) && !placeholder.test(from);
+  return {
+    configured: keyValid && fromValid,
+    provider: "resend",
+    status: keyValid && fromValid ? "ready" : !apiKey || !from ? "missing" : !keyValid ? "invalid-key" : "invalid-sender"
+  };
+}
+
 async function sendSecurityEmail({ to, subject, html, text, idempotencyKey, tags }) {
-  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) return { configured: false, provider: null };
-  const headers = { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" };
+  const readiness = emailProviderReadiness();
+  if (!readiness.configured) return { configured: false, delivered: false, provider: readiness.provider, reason: readiness.status };
+  const apiKey = String(process.env.HH_RESEND_API_KEY || process.env.RESEND_API_KEY || "").trim();
+  const from = String(process.env.HH_EMAIL_FROM || process.env.EMAIL_FROM || "").trim();
+  const headers = { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" };
   if (idempotencyKey) headers["Idempotency-Key"] = String(idempotencyKey).slice(0, 256);
   let lastStatus = 0;
   let lastError = "";
@@ -150,7 +167,7 @@ async function sendSecurityEmail({ to, subject, html, text, idempotencyKey, tags
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers,
-        body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, html, text, ...(Array.isArray(tags) && tags.length ? { tags } : {}) }),
+        body: JSON.stringify({ from, to: [to], subject, html, text, ...(Array.isArray(tags) && tags.length ? { tags } : {}) }),
         signal: controller.signal
       });
       const result = await response.json().catch(() => ({}));
@@ -219,6 +236,7 @@ module.exports = {
   deviceInfo,
   ensureIndexes,
   expectedWebAuthn,
+  emailProviderReadiness,
   hmacHash,
   objectId,
   parseCookies,

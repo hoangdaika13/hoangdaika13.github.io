@@ -277,7 +277,6 @@
 #authGate.hh-cosmic-prism [data-universe-id="learning"],
 #authGate.hh-cosmic-prism [data-universe-id="learn"] { --hcp-planet-color: var(--hcp-yellow); }
 #authGate.hh-cosmic-prism [data-universe-id="game"],
-#authGate.hh-cosmic-prism [data-universe-id="entertainment"] { --hcp-planet-color: var(--hcp-coral); }
 #authGate.hh-cosmic-prism [data-universe-id="community"],
 #authGate.hh-cosmic-prism [data-universe-id="communication"] { --hcp-planet-color: var(--hcp-green); }
 

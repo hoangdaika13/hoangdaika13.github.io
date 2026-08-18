@@ -1,8 +1,6 @@
 (function initHHAssetLoader(global) {
   "use strict";
 
-  // Astral cache compatibility identifiers: astral-realms.css?v=77 astral-realms.js?v=94
-
   /*
    * Offline compatibility catalog. These assets remain versioned in sw.js and
    * can still be inspected by older clients, but HH Neon Gateway no longer
@@ -12,17 +10,17 @@
     "auth-living-background.css?v=1", "auth-living-background.js?v=1",
     "auth-spatial-aurora.css?v=1", "auth-spatial-aurora.js?v=1",
     "auth-identity-constellation.css?v=1", "auth-identity-constellation.js?v=2",
-    "auth-creative-universe.css?v=5", "auth-creative-universe.js?v=6",
-    "auth-universe-memory.css?v=1", "auth-universe-memory.js?v=3",
+    "auth-creative-universe.css?v=5", "auth-creative-universe.js?v=7",
+    "auth-universe-memory.css?v=1", "auth-universe-memory.js?v=4",
     "auth-logo-motion.css?v=1", "auth-logo-motion.js?v=1",
     "auth-emotional-logo.css?v=1", "auth-emotional-logo.js?v=1",
     "auth-form-motion.css?v=4", "auth-form-motion.js?v=3",
     "auth-quantum-flow.css?v=1", "auth-quantum-flow.js?v=2",
     "auth-transition-runtime.css?v=2", "auth-transition-runtime.js?v=2",
     "auth-trust-director.css?v=1", "auth-trust-director.js?v=2",
-    "auth-cosmic-prism-background.css?v=2", "auth-cosmic-prism-background.js?v=2",
-    "auth-cosmic-prism-form.css?v=2", "auth-cosmic-prism-form.js?v=2",
-    "auth-cosmic-prism-interactions.css?v=2", "auth-cosmic-prism-interactions.js?v=2"
+    "auth-cosmic-prism-background.css?v=2", "auth-cosmic-prism-background.js?v=3",
+    "auth-cosmic-prism-form.css?v=2", "auth-cosmic-prism-form.js?v=3",
+    "auth-cosmic-prism-interactions.css?v=3", "auth-cosmic-prism-interactions.js?v=3"
   ]);
 
   // Compatibility contracts: scripts: ["auth-creative-universe.js?v=5"] home-galaxy-command.js?v=8 home-galaxy-command.css?v=9
@@ -34,7 +32,7 @@
        * observers cannot stack up again.
        */
       styles: [],
-      scripts: ["auth-creative-universe.js?v=6"]
+      scripts: ["auth-creative-universe.js?v=7"]
     },
     home: {
       /*
@@ -44,13 +42,6 @@
       styles: [],
       scripts: []
     },
-    assistant: {
-      styles: ["home-virtual-assistant.css?v=8"],
-      scripts: [
-        "services/virtualAssistantCore.js?v=3", "services/virtualAssistantActions.js?v=1", "services/virtualAssistantCommands.js?v=2",
-        "services/virtualAssistantVoice.js?v=2", "services/virtualAssistantCharacter.js?v=3", "home-virtual-assistant.js?v=23"
-      ]
-    },
     "home-enhancements": {
       styles: [
         "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=11", "home-live-widgets.css?v=12", "home-cosmic-os.css?v=3", "home-galaxy-mission.css?v=8", "home-galaxy-operations.css?v=2", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
@@ -58,7 +49,7 @@
       ],
       scripts: [
         "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=10", "home-galaxy-operations.js?v=5", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
-        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=11", "home-live-widgets.js?v=7", "home-cosmic-os.js?v=11"
+        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=12", "home-live-widgets.js?v=8", "home-cosmic-os.js?v=13"
       ]
     },
     platform: {
@@ -70,7 +61,7 @@
       scripts: [
         "extension-suite.js?v=2", "professional-tools.js?v=4", "tool-manifests.js?v=1", "tool-runtime.js?v=1",
         "feature-lab.js?v=6", "platform-tools.js?v=1", "tool-workspace-pro.js?v=1", "utility-lab-tools.js?v=9", "feature-engines.js?v=2",
-        "ai-center-advanced.js?v=2", "platform-p0.js?v=1", "vendor/jszip.min.js?v=3.10.1", "system-platform.js?v=6"
+        "ai-center-advanced.js?v=2", "platform-p0.js?v=1", "vendor/jszip.min.js?v=3.10.1", "system-platform.js?v=7"
       ]
     },
     dev: {
@@ -116,21 +107,6 @@
     "ai-video-remake": {
       styles: ["ai-video-remake-studio.css?v=3"],
       scripts: ["ai-video-remake-studio.js?v=2"]
-    },
-    "character-3d": {
-      styles: ["character-3d-studio.css?v=1"],
-      scripts: [
-        "services/character3d/RightsRegistry.js?v=2",
-        "services/character3d/AssetLoader.js?v=3",
-        "services/character3d/AnimationController.js?v=2",
-        "services/character3d/ExpressionController.js?v=2",
-        "services/character3d/CharacterCustomizer.js?v=2",
-        "services/character3d/VoiceLipSync.js?v=2",
-        "services/character3d/ExportManager.js?v=3",
-        "services/character3d/AvatarRuntime.js?v=3",
-        "character-3d-runtime.js?v=1",
-        "character-3d-studio.js?v=4"
-      ]
     },
     "social-media-tools": {
       styles: ["social-media-tools-v2.css?v=8", "social-media-preview-runtime.css?v=6"],
@@ -212,27 +188,6 @@
       styles: ["work-center.css?v=4", "download-center-pro.css?v=1", "team-collaboration-pro.css?v=2"],
       scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=5"]
     },
-    game: {
-      styles: ["game-runtime.css?v=1", "astral-realms.css?v=79", "space-explorer.css?v=4", "game-center.css?v=6", "astra-universe-expansion.css?v=4", "game-arcade.css?v=5"],
-      scripts: [
-        "game-platform-adapters.js?v=1", "game-runtime.js?v=1",
-        "services/astra-story/NexusEchoStoryV3.js?v=1",
-        "services/astra-character/AstraCharacterCore.js?v=1", "services/astra-character/CharacterDefinition.js?v=1", "services/astra-character/CharacterAssetValidator.js?v=1", "services/astra-character/SkeletonProfile.js?v=1",
-        "services/astra-character/AnimationRegistry.js?v=1", "services/astra-character/AnimationRetargeter.js?v=1", "services/astra-character/AnimationStateMachine.js?v=1", "services/astra-character/AdditiveAnimationLayer.js?v=1",
-        "services/astra-character/LocomotionController.js?v=1", "services/astra-character/MotionWarping.js?v=1", "services/astra-character/FootPlacementIK.js?v=1", "services/astra-character/FullBodyIK.js?v=1", "services/astra-character/LookAtController.js?v=1",
-        "services/astra-character/WeaponGripSolver.js?v=1", "services/astra-character/CombatMarkerTimeline.js?v=1", "services/astra-character/CombatAnimationController.js?v=1", "services/astra-character/HitReactionController.js?v=1", "services/astra-character/RagdollController.js?v=1",
-        "services/astra-character/FacialPerformanceController.js?v=1", "services/astra-character/LipSyncController.js?v=1", "services/astra-character/SecondaryMotionController.js?v=1", "services/astra-character/ContextualInteractionController.js?v=1",
-        "services/astra-character/CharacterCollisionController.js?v=1", "services/astra-character/CharacterLODController.js?v=1", "services/astra-character/CharacterNetworkReplicator.js?v=1", "services/astra-character/CharacterPerformanceGovernor.js?v=1",
-        "services/astra-character/CinematicCharacterDirector.js?v=1", "services/astra-character/ElementalCharacterIdentity.js?v=1", "services/astra-character/CharacterCustomizationController.js?v=1", "services/astra-character/CharacterDebugOverlay.js?v=1", "services/astra-character/CharacterRuntimeV3.js?v=1",
-        "astral-realms.js?v=97", "space-explorer.js?v=4", "game-center.js?v=7", "astra-universe-expansion.js?v=4", "game-arcade.js?v=5"
-      ]
-    },
-    "cinematic-game": {
-      styles: ["game-runtime.css?v=1", "cinematic-game-arcade.css?v=6"],
-      scripts: ["game-platform-adapters.js?v=1", "game-runtime.js?v=1", "cinematic-game-arcade.js?v=3"]
-    },
-    // Compatibility asset aliases for clients upgrading from Entertainment v4:
-    // "game-center.css?v=4" "game-center.js?v=4"
     learning: {
       styles: ["hh-school.css?v=3"],
       scripts: [
@@ -251,11 +206,11 @@
     },
     fortune: {
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "vendor/iztro-2.6.0.min.js?v=2.6.0", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=4", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-moon-3d.js?v=1", "fortune-extended-tools.js?v=1", "fortune-hub.js?v=14"]
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "vendor/iztro-2.6.0.min.js?v=2.6.0", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=4", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-moon-3d.js?v=1", "fortune-extended-tools.js?v=2", "fortune-hub.js?v=15"]
     },
     "chat-ai": {
-      styles: ["chat-ai-hub.css?v=5"],
-      scripts: ["chat-ai-hub.js?v=5"]
+      styles: ["chat-ai-hub.css?v=6"],
+      scripts: ["chat-ai-hub.js?v=6"]
     },
     analytics: {
       styles: ["insights-pro.css?v=3"],
@@ -267,7 +222,7 @@
     },
     support: {
       styles: ["support-platform.css?v=10"],
-      scripts: ["https://cdn.payos.vn/payos-checkout/v1/stable/payos-initialize.js", "support-platform.js?v=16"]
+      scripts: ["https://cdn.payos.vn/payos-checkout/v1/stable/payos-initialize.js", "support-platform.js?v=17"]
     }
   });
 
@@ -288,7 +243,6 @@
     const value = normalizeRoute(route);
     if (value === "/home") return [];
     if (value.startsWith("/social-media-tools")) return ["social-media-tools"];
-    if (value.startsWith("/character-3d")) return ["character-3d"];
     if (value.startsWith("/dev-tools")) return ["dev"];
     if (value === "/davinci-resolve/ai-video-remake") return ["davinci", "ai-video-remake"];
     if (value.startsWith("/davinci-resolve")) return ["davinci"];
@@ -300,8 +254,6 @@
     if (value === "/cinema" || value.startsWith("/cinema/")) return ["cinema"];
     if (value === "/music" || value.startsWith("/music/")) return ["open-music"];
     if (value === "/copyright" || value.startsWith("/copyright/")) return ["open-media-governance"];
-    if (value.startsWith("/entertainment/cinematic-arcade")) return ["cinematic-game"];
-    if (value.startsWith("/entertainment")) return ["game"];
     if (value.startsWith("/learn")) return ["learning"];
     if (value.startsWith("/english")) return ["english"];
     if (value.startsWith("/japanese")) return ["japanese"];
@@ -319,7 +271,7 @@
   }
 
   function groupsForRoute(route) {
-    return ["assistant", ...featureGroupsForRoute(route)];
+    return featureGroupsForRoute(route);
   }
 
   function loadStyle(url) {

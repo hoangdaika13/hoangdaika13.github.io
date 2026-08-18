@@ -37,7 +37,6 @@
     facebook: "hh.facebook-page-command-center.v1",
     comic: "hh.comic-motion-series-resume.v1",
     comicTasks: "hh.comic-motion-task-center.v1",
-    game: "hh.astral-realms.save.v1",
     issues: "hh.runtime.issues.v1",
     backup: "hh.system.backup.v1"
   });
@@ -57,7 +56,6 @@
     ["learning", "Học tập", "HH English, HH Japanese và lịch ôn"],
     ["creative", "Sáng tạo", "Ý tưởng, thumbnail, media và xuất bản"],
     ["website", "Quản trị web", "Backend, API, OAuth và Web Vitals"],
-    ["entertainment", "Game", "Game 3D, arcade, thế giới vũ trụ và tiến độ gần đây"],
     ["family", "Gia đình", "Lịch chung, ghi chú và hoạt động nhẹ nhàng"]
   ]);
   const PIPELINE = Object.freeze([
@@ -82,7 +80,7 @@
     "/work": "Công việc", "/work/project-center": "Project Center", "/learn/review": "Bài học đến hạn",
     "/learn/english": "HH English", "/learn/japanese": "HH Japanese", "/media-design": "Media & Design",
     "/davinci-resolve/image-text": "Thumbnail Studio", "/davinci-resolve/youtube": "YouTube Studio",
-    "/davinci-resolve/facebook": "Facebook Center", "/comic-reader": "Đọc truyện", "/entertainment/astral-realms": "Astral Realms",
+    "/davinci-resolve/facebook": "Facebook Center", "/comic-reader": "Đọc truyện",
     "/music-ai": "Music AI", "/create/ai-center": "AI Center", "/analytics": "Website Health", "/settings": "Hệ thống"
   });
   const instances = new WeakMap();
@@ -289,7 +287,6 @@
     if (/youtube|publisher/.test(value)) return "/davinci-resolve/youtube";
     if (/facebook/.test(value)) return "/davinci-resolve/facebook";
     if (/comic|reader|truyen/.test(value)) return "/comic-reader";
-    if (/astra|game/.test(value)) return "/entertainment/astral-realms";
     if (/music/.test(value)) return "/music-ai";
     if (/media|design|photo|video/.test(value)) return "/media-design";
     if (/work|task|project/.test(value)) return "/work";
@@ -339,7 +336,6 @@
     const facebook = ownedContainer(readJson(STORES.facebook, {}), owner);
     const comic = ownedContainer(readJson(STORES.comic, {}), owner);
     const comicTasks = ownedContainer(readJson(STORES.comicTasks, {}), owner);
-    const game = ownedContainer(readJson(STORES.game, {}), owner);
     const issues = ownedContainer(readJson(STORES.issues, {}), owner);
     const tasks = unique([...todos, ...asArray(planning.tasks), ...asArray(projectsStore.tasks)], (item) => item?.id || `${itemTitle(item)}:${taskDue(item)}`);
     const projects = unique([...asArray(planning.projects), ...asArray(projectsStore.projects)], (item) => item?.id || itemTitle(item));
@@ -348,7 +344,7 @@
     const recent = ownedArray(readJson(STORES.recent, []), owner);
     const activities = ownedArray(readJson(STORES.activity, []), owner);
     const runtimeIssues = ownedArray(issues.items || issues.issues || issues, owner);
-    return { todos, planning, projectsStore, orchestrator, background, communication, learning, english, japanese, japaneseOs, youtube, facebook, comic, comicTasks, game, tasks, projects, jobs, notifications, recent, activities, runtimeIssues };
+    return { todos, planning, projectsStore, orchestrator, background, communication, learning, english, japanese, japaneseOs, youtube, facebook, comic, comicTasks, tasks, projects, jobs, notifications, recent, activities, runtimeIssues };
   }
 
   function jobState(job) { return String(job?.state || job?.status || "queued").toLowerCase(); }
@@ -417,7 +413,6 @@
     if (project) rows.push({ id: `project:${project.id || itemTitle(project)}`, type: "project", icon: "□", title: itemTitle(project), meta: "Dự án đang thực hiện", route: "/work/project-center", progress: clamp(project.progress, 0, 100), at: project.updatedAt });
     if (count.dueLearning.length) rows.push({ id: "learning:due", type: "lesson", icon: "◫", title: `${count.dueLearning.length} mục học đang đến hạn`, meta: "Tiếp tục hàng ôn tập", route: "/learn/review", progress: clamp(snapshot.learning.progress || snapshot.english.progress || snapshot.japanese.progress, 0, 100) });
     if (snapshot.comic && Object.keys(snapshot.comic).length) rows.push({ id: "comic:resume", type: "comic", icon: "CR", title: itemTitle(snapshot.comic, "Truyện đang đọc"), meta: clean(snapshot.comic.chapterLabel || snapshot.comic.chapter, 100) || "Tiếp tục chương gần nhất", route: "/comic-reader", progress: clamp(snapshot.comic.progress, 0, 100), at: snapshot.comic.updatedAt });
-    if (snapshot.game && Object.keys(snapshot.game).length) rows.push({ id: "game:resume", type: "game", icon: "AR", title: itemTitle(snapshot.game, "Astral Realms"), meta: clean(snapshot.game.checkpoint || snapshot.game.zone, 100) || "Tiếp tục checkpoint", route: "/entertainment/astral-realms", progress: clamp(snapshot.game.progress || snapshot.game.chapterProgress, 0, 100), at: snapshot.game.savedAt || snapshot.game.updatedAt });
     count.activeJobs.slice(0, 2).forEach((job) => rows.push({ id: `job:${job.id || itemTitle(job)}`, type: "job", icon: "⇣", title: itemTitle(job), meta: `${jobState(job)} · ${clamp(job.progress, 0, 100)}%`, route: job.route || "/work", progress: clamp(job.progress, 0, 100), at: job.updatedAt }));
     return unique(rows, (item) => item.id).sort((a, b) => timestamp(b.at) - timestamp(a.at)).slice(0, 5);
   }
@@ -618,13 +613,12 @@
     return { ...values, percentages: {
       work: score(completed, completed + model.count.openTasks.length),
       learning: clamp(Math.round(Math.min(100, vocabularyLearned / 20)), 0, 100),
-      creative: score(contentPublished + projectsCompleted, contentPublished + projectsCompleted + model.count.activeJobs.length + 1),
-      entertainment: model.source.comic || model.source.game ? 70 : 0
+      creative: score(contentPublished + projectsCompleted, contentPublished + projectsCompleted + model.count.activeJobs.length + 1)
     } };
   }
 
   const QUEUE_KINDS = Object.freeze(["upload", "download", "render", "ocr", "ai", "import", "sync", "backup"]);
-  const CONTINUE_KINDS = Object.freeze(["project", "lesson", "upload", "thumbnail", "comic", "game"]);
+  const CONTINUE_KINDS = Object.freeze(["project", "lesson", "upload", "thumbnail", "comic"]);
   const SCENE_IDS = Object.freeze(["start-video", "publish-today", "quick-study", "check-website", "prepare-sleep", "end-day-backup"]);
   const MINI_CAPABILITIES = Object.freeze(["mini-minimize", "mini-pin", "mini-resize", "mini-snap"]);
   const SERVICE_IDS = Object.freeze(["frontend", "backend", "database", "oauth", "youtube", "facebook", "resend", "gemini", "openai", "vercel", "service-worker", "web-vitals"]);
@@ -747,11 +741,11 @@
 
   function renderMission(model) {
     const constellation = constellationProgress(model);
-    return `<div class="hco-mission" data-hco-website-mission-control><section class="hco-mission-grid"><header class="hco-panel-hero"><div><small>WEBSITE MISSION CONTROL · REAL PROBES</small><h3>Trạng thái hệ thống</h3><p>Frontend, backend, database, OAuth và Web Vitals chỉ được đánh dấu hoạt động sau phản hồi xác minh.</p></div><button type="button" data-hco-mission-refresh>↻ Kiểm tra lại</button></header><div class="hco-service-grid">${model.mission.map((item) => `<article class="is-${escapeHtml(item.state)}" data-hco-service="${escapeHtml(item.id)}"><i></i><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.detail)}</small></div><b>${escapeHtml(item.label === "Service Worker/PWA" ? "service-worker" : item.state)}</b></article>`).join("")}</div></section><section class="hco-security-beacon" data-hco-security-beacon><header><div><small>PRIVACY &amp; SECURITY BEACON</small><h3>Bảo mật theo tài khoản</h3></div><span class="is-safe">LOCAL / OWNER SCOPED</span></header><ul><li><i>◉</i><span>Phiên đăng nhập<small>${global.HHAuthSession?.token?.() ? "Đã xác thực trong phiên" : "Khách hoặc chưa có token"}</small></span></li><li><i>◇</i><span>Thiết bị mới<small>Kiểm tra trong Security Center khi có phiên khác</small></span></li><li><i>⌁</i><span>Microphone / geolocation<small>Chỉ xin quyền sau thao tác chủ động</small></span></li><li><i>↻</i><span>OAuth expiry<small>Không đọc token ở frontend</small></span></li><li><i>▣</i><span>Last backup<small>${escapeHtml(relative(readJson(STORES.backup, {})?.updatedAt))}</small></span></li><li><i>□</i><span>Local-only<small>Clipboard và file metadata không tự gửi lên server</small></span></li></ul></section><section class="hco-constellation-progress" data-hco-constellation-progress><header><div><small>CONSTELLATION PROGRESS</small><h3>Chòm sao tiến độ thật</h3></div><span>Không áp lực streak</span></header><div class="hco-progress-stars">${[["work", "Công việc", constellation.percentages.work, constellation.tasksCompleted], ["learning", "Học tập", constellation.percentages.learning, constellation.vocabularyLearned], ["creative", "Sáng tạo", constellation.percentages.creative, constellation.contentPublished], ["entertainment", "Game", constellation.percentages.entertainment, constellation.projectsCompleted]].map(([id, label, percent, value]) => `<article data-hco-star="${id}"><i style="--progress:${percent}%"></i><strong>${label}</strong><b>${percent}%</b><small>${value} hoạt động ghi nhận</small></article>`).join("")}</div></section></div>`;
+    return `<div class="hco-mission" data-hco-website-mission-control><section class="hco-mission-grid"><header class="hco-panel-hero"><div><small>WEBSITE MISSION CONTROL · REAL PROBES</small><h3>Trạng thái hệ thống</h3><p>Frontend, backend, database, OAuth và Web Vitals chỉ được đánh dấu hoạt động sau phản hồi xác minh.</p></div><button type="button" data-hco-mission-refresh>↻ Kiểm tra lại</button></header><div class="hco-service-grid">${model.mission.map((item) => `<article class="is-${escapeHtml(item.state)}" data-hco-service="${escapeHtml(item.id)}"><i></i><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.detail)}</small></div><b>${escapeHtml(item.label === "Service Worker/PWA" ? "service-worker" : item.state)}</b></article>`).join("")}</div></section><section class="hco-security-beacon" data-hco-security-beacon><header><div><small>PRIVACY &amp; SECURITY BEACON</small><h3>Bảo mật theo tài khoản</h3></div><span class="is-safe">LOCAL / OWNER SCOPED</span></header><ul><li><i>◉</i><span>Phiên đăng nhập<small>${global.HHAuthSession?.token?.() ? "Đã xác thực trong phiên" : "Khách hoặc chưa có token"}</small></span></li><li><i>◇</i><span>Thiết bị mới<small>Kiểm tra trong Security Center khi có phiên khác</small></span></li><li><i>⌁</i><span>Microphone / geolocation<small>Chỉ xin quyền sau thao tác chủ động</small></span></li><li><i>↻</i><span>OAuth expiry<small>Không đọc token ở frontend</small></span></li><li><i>▣</i><span>Last backup<small>${escapeHtml(relative(readJson(STORES.backup, {})?.updatedAt))}</small></span></li><li><i>□</i><span>Local-only<small>Clipboard và file metadata không tự gửi lên server</small></span></li></ul></section><section class="hco-constellation-progress" data-hco-constellation-progress><header><div><small>CONSTELLATION PROGRESS</small><h3>Chòm sao tiến độ thật</h3></div><span>Không áp lực streak</span></header><div class="hco-progress-stars">${[["work", "Công việc", constellation.percentages.work, constellation.tasksCompleted], ["learning", "Học tập", constellation.percentages.learning, constellation.vocabularyLearned], ["creative", "Sáng tạo", constellation.percentages.creative, constellation.contentPublished]].map(([id, label, percent, value]) => `<article data-hco-star="${id}"><i style="--progress:${percent}%"></i><strong>${label}</strong><b>${percent}%</b><small>${value} hoạt động ghi nhận</small></article>`).join("")}</div></section></div>`;
   }
 
   function renderProfiles(state) {
-    return `<div class="hco-profiles" data-hco-home-profiles><section class="hco-profile-picker"><header><div><small>HOME PROFILES · OWNER SCOPED</small><h3>Chọn không gian làm việc</h3></div><span>Không mất tiến độ</span></header><div>${PROFILES.map(([id, label, description]) => `<button type="button" class="${state.profile === id ? "is-active" : ""}" data-hco-profile="${id}"><i>${id === "work" ? "□" : id === "learning" ? "◫" : id === "creative" ? "✦" : id === "website" ? "⌁" : id === "entertainment" ? "◉" : id === "family" ? "♥" : "H"}</i><span><strong>${label}</strong><small>${description}</small></span></button>`).join("")}</div></section><section class="hco-context-panel" data-hco-context-aware><header><div><small>CONTEXT-AWARE HOMEPAGE</small><h3>Đang thích ứng theo tín hiệu</h3></div><button type="button" data-hco-ambient-toggle>${state.ambient ? "Ambient: Bật" : "Ambient: Tắt"}</button></header><p data-hco-context-copy>Buổi sáng · ưu tiên lịch và việc quan trọng. Khi có active-upload, website-incident hoặc near-deadline, hệ thống sẽ đẩy tín hiệu liên quan lên trước.</p><div class="hco-context-signals"><span>morning</span><span>work-hours</span><span>evening</span><span>active-upload</span><span>website-incident</span><span>near-deadline</span></div></section><section class="hco-screensaver-settings" data-hco-cosmic-screensaver><header><div><small>COSMIC SCREENSAVER</small><h3>Màn hình chờ thiên hà</h3></div><button type="button" data-hco-screensaver-toggle>${state.screensaver ? "Đang bật" : "Đang tắt"}</button></header><p>Tự xuất hiện sau ${Math.round(state.screensaverDelay / 60)} phút không thao tác, dừng khi tab bị ẩn và thoát bằng chuột hoặc bàn phím.</p></section></div>`;
+    return `<div class="hco-profiles" data-hco-home-profiles><section class="hco-profile-picker"><header><div><small>HOME PROFILES · OWNER SCOPED</small><h3>Chọn không gian làm việc</h3></div><span>Không mất tiến độ</span></header><div>${PROFILES.map(([id, label, description]) => `<button type="button" class="${state.profile === id ? "is-active" : ""}" data-hco-profile="${id}"><i>${id === "work" ? "□" : id === "learning" ? "◫" : id === "creative" ? "✦" : id === "website" ? "⌁" : id === "family" ? "♥" : "H"}</i><span><strong>${label}</strong><small>${description}</small></span></button>`).join("")}</div></section><section class="hco-context-panel" data-hco-context-aware><header><div><small>CONTEXT-AWARE HOMEPAGE</small><h3>Đang thích ứng theo tín hiệu</h3></div><button type="button" data-hco-ambient-toggle>${state.ambient ? "Ambient: Bật" : "Ambient: Tắt"}</button></header><p data-hco-context-copy>Buổi sáng · ưu tiên lịch và việc quan trọng. Khi có active-upload, website-incident hoặc near-deadline, hệ thống sẽ đẩy tín hiệu liên quan lên trước.</p><div class="hco-context-signals"><span>morning</span><span>work-hours</span><span>evening</span><span>active-upload</span><span>website-incident</span><span>near-deadline</span></div></section><section class="hco-screensaver-settings" data-hco-cosmic-screensaver><header><div><small>COSMIC SCREENSAVER</small><h3>Màn hình chờ thiên hà</h3></div><button type="button" data-hco-screensaver-toggle>${state.screensaver ? "Đang bật" : "Đang tắt"}</button></header><p>Tự xuất hiện sau ${Math.round(state.screensaverDelay / 60)} phút không thao tác, dừng khi tab bị ẩn và thoát bằng chuột hoặc bàn phím.</p></section></div>`;
   }
 
   function tabMarkup(instance, model) {
@@ -891,7 +885,7 @@
       recent: model.continueStack.length > 0
     };
     root.dataset.hcoSignals = Object.entries(signals).filter(([, value]) => value).map(([key]) => `signal-${key}`).join(" ");
-    const planetAliases = { work: "deadline", learning: "learning", analytics: "backendError", system: "backendError", comic: "comic", entertainment: "recent" };
+    const planetAliases = { work: "deadline", learning: "learning", analytics: "backendError", system: "backendError", comic: "comic" };
     Object.entries(planetAliases).forEach(([planet, signal]) => {
       const node = root.querySelector(`[data-hgc-planet="${planet}"],[data-hgm-planet="${planet}"]`);
       if (!node) return;

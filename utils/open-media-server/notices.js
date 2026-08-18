@@ -116,8 +116,8 @@ function headerSafe(value) {
 }
 
 async function sendNotification(notice) {
-  const apiKey = String(process.env.RESEND_API_KEY || "");
-  const from = String(process.env.COPYRIGHT_FROM_EMAIL || process.env.EMAIL_FROM || "");
+  const apiKey = String(process.env.HH_RESEND_API_KEY || process.env.RESEND_API_KEY || "");
+  const from = String(process.env.COPYRIGHT_FROM_EMAIL || process.env.HH_EMAIL_FROM || process.env.EMAIL_FROM || "");
   const recipient = String(process.env.COPYRIGHT_EMAIL || PUBLIC_COPYRIGHT_EMAIL);
   if (!apiKey || !from || !recipient) return { status: "not-configured", retryable: true, attemptedAt: new Date() };
   const send = async (message, idempotencyKey) => {

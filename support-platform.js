@@ -15,7 +15,6 @@
   const MISSION_DEFINITIONS = Object.freeze([
     { id: "infrastructure", label: "Máy chủ & Database", shortLabel: "Hạ tầng", color: "#65ebff", icon: "◈", route: "#/system" },
     { id: "domain-services", label: "Domain & Dịch vụ", shortLabel: "Domain", color: "#8f8cff", icon: "⌁", route: "#/system" },
-    { id: "astral-realms", label: "HH Astral Realms", shortLabel: "Astral Realms", color: "#ff68c8", icon: "✦", route: "#/entertainment/astral-realms" },
     { id: "ai-provider", label: "AI Provider", shortLabel: "AI", color: "#ffb65c", icon: "✧", route: "#/creative/ai-center" },
     { id: "hh-english", label: "HH English", shortLabel: "English", color: "#68f1be", icon: "◇", route: "#/english" },
     { id: "graphic-design", label: "Thiết kế đồ họa", shortLabel: "Design", color: "#b77aff", icon: "⬡", route: "#/graphic-design" },

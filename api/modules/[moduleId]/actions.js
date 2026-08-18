@@ -36,7 +36,7 @@ const downloadHosts = [
   "soundcloud.com", "twitch.tv", "pinterest.com", "tumblr.com", "bilibili.com"
 ];
 const downloadCapabilities = ["single", "collection", "channel"];
-const creativeModules = new Set(["ai-center", "chat-ai", "fortune", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text", "youtube-batch", "hikari-assistant", "tiktok-creator"]);
+const creativeModules = new Set(["ai-center", "chat-ai", "fortune", "ai-script", "creator-studio", "ai-automation", "music-ai", "creative-os", "image-text", "youtube-batch", "tiktok-creator"]);
 const allowedModels = new Set(["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.1-pro-preview"]);
 const contentPackSchema = {
   type: "object",
@@ -1046,6 +1046,29 @@ async function youtubeResearchOutput(input, actionType) {
 }
 
 async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
+  if (moduleId === "fortune" && actionType === "fortune-deep-analysis") {
+    const lock = normalizeFortuneFactLock(meta);
+    const citedFacts = lock.facts.slice(0, 24).map((fact) => `- ${fact.value} [factId:${fact.factId}]`);
+    return {
+      output: [
+        "## HH Continuity · bản phân tích cục bộ",
+        "",
+        "Gemini và provider cloud đang tạm gián đoạn. Phần này do bộ xử lý cục bộ tạo từ Fact Lock, không phải phản hồi của Gemini và không bổ sung dữ kiện mới.",
+        citedFacts.length ? "\n### Dữ kiện đã khóa\n" + citedFacts.join("\n") : "\nChưa có dữ kiện cấu trúc để phân tích.",
+        "",
+        "### Cách chiêm nghiệm an toàn",
+        "1. Tách dữ kiện đã tính khỏi lớp diễn giải biểu tượng.",
+        "2. Ghi ít nhất hai cách hiểu thay vì chọn một kết luận tuyệt đối.",
+        "3. Chọn một câu hỏi có thể kiểm chứng trong trải nghiệm thực tế.",
+        "4. Thử một hành động nhỏ, có thể đảo ngược và đặt thời điểm xem lại.",
+        "5. Không dùng kết quả thay quyết định y tế, pháp lý, tài chính hoặc an toàn.",
+        "",
+        "Bấm **Phân tích lại** khi cloud phục hồi để nhận bản luận giải đầy đủ hơn."
+      ].join("\n"),
+      provider: "local-continuity",
+      model: "hh-fortune-continuity-v1"
+    };
+  }
   if (actionType === "youtube-batch-metadata") {
     const items = (Array.isArray(meta.items) ? meta.items : []).slice(0, 10);
     const structured = { items: items.map((item, position) => {
@@ -1105,20 +1128,26 @@ async function localCreativeOutput(moduleId, actionType, input, meta = {}) {
     if (youtubeResearch) return youtubeResearch;
   }
   if (actionType === "chat") {
+    const request = clean(input, 1200).replace(/\s+/g, " ") || "Yêu cầu chưa có phần văn bản.";
+    const custom = clean(meta.systemPrompt, 600).replace(/\s+/g, " ");
     return {
       output: [
-        "HH Creative AI đã phân tích yêu cầu.",
+        "## HH Continuity đang tiếp quản",
         "",
-        `Yêu cầu: ${input || "Chưa có nội dung"}`,
+        "Gemini và các provider cloud hiện chưa phản hồi ổn định. Yêu cầu vẫn được lưu nguyên vẹn; nội dung này do bộ xử lý local tạo và không phải phản hồi của Gemini.",
         "",
-        "Hướng xử lý đề xuất:",
-        "1. Xác định mục tiêu và đầu ra cần đạt.",
-        "2. Chia nhiệm vụ thành các bước có thể kiểm tra.",
-        "3. Bổ sung ví dụ, giới hạn và tiêu chí chất lượng.",
-        "4. Tự kiểm tra kết quả trước khi sử dụng.",
+        `**Yêu cầu đã nhận:** ${request}`,
         "",
-        "Phiên này đã được lưu vào lịch sử tài khoản."
-      ].join("\n")
+        "### Hướng xử lý an toàn ngay bây giờ",
+        "1. Chốt đầu ra mong muốn thành một kết quả có thể kiểm tra.",
+        "2. Tách dữ liệu đầu vào, các bước xử lý và điều kiện hoàn thành.",
+        "3. Làm bước nhỏ có thể đảo ngược trước rồi kiểm tra kết quả.",
+        "4. Không coi phản hồi local là nguồn cho dữ kiện thời gian thực hoặc phân tích ảnh/PDF.",
+        "5. Bấm **Tạo lại bằng cloud** khi provider phục hồi để nhận phân tích đầy đủ.",
+        custom ? "\nChỉ dẫn hệ thống đã được giữ để dùng lại ở lượt cloud tiếp theo." : ""
+      ].filter(Boolean).join("\n"),
+      provider: "local-continuity",
+      model: "hh-continuity-v1"
     };
   }
   return {
@@ -1145,7 +1174,6 @@ function systemInstruction(moduleId, actionType) {
     "Đây là nội dung giải trí và tự chiêm nghiệm, không phải dự báo khoa học. Không mời người dùng phụ thuộc hoặc xem lại liên tục.",
     `Tác vụ hiện tại: ${actionType}.`
   ].join("\n");
-  if (moduleId === "hikari-assistant") return `Bạn là Hikari H, trợ lý điều hành ngắn gọn của HH Platform. Chỉ trả lời bằng tiếng Việt, tối đa 120 từ và chỉ dùng dữ liệu tổng hợp được cung cấp. Không bịa tác vụ, bài học hay trạng thái API. Không trả về code, HTML, URL hoặc lệnh thực thi. Không tuyên bố đã upload, đăng, xóa, gửi email, mua credit hoặc đổi quyền riêng tư. Với hành động gây tác động bên ngoài, hãy nói rằng người dùng phải xác nhận trong công cụ tương ứng. Tác vụ: ${actionType}.`;
   if (moduleId === "image-text") return `Bạn là art director thumbnail. Phân tích đúng từng ô ảnh đã đánh số, tạo chữ ngắn tự nhiên theo yêu cầu, không nhầm thứ tự, không bịa người hoặc địa điểm và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
   if (moduleId === "youtube-batch") return `Bạn là biên tập viên YouTube cho upload hàng loạt. Chỉ suy luận từ filename, sidecar và ngữ cảnh; không bịa người, sự kiện, số liệu hay xu hướng, không tạo metadata spam lặp và trả đúng JSON schema. Tác vụ hiện tại: ${actionType}.`;
   if (moduleId === "tiktok-creator") return `Bạn là biên tập viên TikTok tiếng Việt. Tạo nội dung nguyên bản, ngắn, nói tự nhiên và dùng được ngay. Không bịa xu hướng, số liệu, con người hoặc sự kiện; không cam kết viral; không tạo spam, bot tương tác, nội dung né kiểm duyệt hay xâm phạm bản quyền. Tách rõ hook, lời thoại theo nhịp thời gian, shot list, caption, CTA và tối đa 8 hashtag phù hợp. Nếu thiếu dữ kiện, nêu giả định ngắn gọn. Tác vụ hiện tại: ${actionType}.`;
@@ -1372,7 +1400,7 @@ async function runInteractionsGemini({
     const error = new Error(clean(data?.error?.message || `Interactions API lỗi HTTP ${response.status}.`, 300));
     error.code = "GEMINI_INTERACTIONS_ERROR";
     error.status = response.status;
-    error.retryAfterMs = retryAfterMs(response);
+    error.retryAfterMs = retryAfterMs(response, data);
     throw error;
   }
   const output = interactionText(data);
@@ -1394,13 +1422,32 @@ function retryDelay(attempt, status, retryAfterMs = 0) {
   return Math.min(5000, Math.max(Number(retryAfterMs) || 0, exponential));
 }
 
-function retryAfterMs(response) {
+function durationMilliseconds(value) {
+  if (typeof value === "string") {
+    const seconds = Number(value.match(/^([0-9.]+)s$/)?.[1]);
+    return Number.isFinite(seconds) ? Math.max(0, seconds * 1000) : 0;
+  }
+  if (value && typeof value === "object") {
+    return Math.max(0, (Number(value.seconds) || 0) * 1000 + (Number(value.nanos) || 0) / 1_000_000);
+  }
+  return 0;
+}
+
+function retryAfterMs(response, data = {}) {
   const raw = response?.headers?.get?.("retry-after");
-  if (!raw) return 0;
-  const seconds = Number(raw);
-  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
-  const date = Date.parse(raw);
-  return Number.isFinite(date) ? Math.max(0, date - Date.now()) : 0;
+  if (raw) {
+    const seconds = Number(raw);
+    if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+    const date = Date.parse(raw);
+    if (Number.isFinite(date)) return Math.max(0, date - Date.now());
+  }
+  const details = Array.isArray(data?.error?.details) ? data.error.details : [];
+  for (const detail of details) {
+    const delay = durationMilliseconds(detail?.retryDelay || detail?.retry_delay);
+    if (delay) return delay;
+  }
+  const messageDelay = Number(String(data?.error?.message || "").match(/retry\s+in\s+([0-9.]+)s/i)?.[1]);
+  return Number.isFinite(messageDelay) ? Math.max(0, messageDelay * 1000) : 0;
 }
 
 async function wait(ms) {
@@ -1472,7 +1519,7 @@ async function runGeminiWithKey({
     const error = new Error(providerMessage);
     error.code = "GEMINI_PROVIDER_ERROR";
     error.status = response.status;
-    error.retryAfterMs = retryAfterMs(response);
+    error.retryAfterMs = retryAfterMs(response, data);
     throw error;
   }
   const output = generatedText(data);
@@ -1511,6 +1558,13 @@ async function runGemini(moduleId, actionType, input, meta = {}) {
   const pool = geminiPool();
   const requestedModel = clean(meta.model, 80);
   if (!pool.keys.length || requestedModel === "local") return null;
+  if (pool.availableCount() === 0) {
+    const error = new Error("Gemini key pool đang trong thời gian cooldown sau lỗi quota hoặc provider.");
+    error.code = "GEMINI_POOL_COOLDOWN";
+    error.status = 429;
+    error.retryAfterMs = 75 * 1000;
+    throw error;
+  }
   const model = allowedModels.has(requestedModel)
     ? requestedModel
     : (allowedModels.has(process.env.GEMINI_MODEL) ? process.env.GEMINI_MODEL : "gemini-3.5-flash");
@@ -1691,74 +1745,6 @@ module.exports = async function handler(req, res) {
       await vaults.updateOne({ userId: user._id }, { $set: { userId: user._id, vault, updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } }, { upsert: true });
       return res.status(200).json({ ok: true, encryptedOnly: true, updatedAt: new Date().toISOString() });
     }
-    if (moduleId === "hikari-assistant" && !user?._id) return res.status(401).json({ error: "Bạn cần đăng nhập để dùng AI hoặc Cloud TTS.", code: "AUTH_REQUIRED" });
-    if (moduleId === "hikari-assistant" && req.query.assistantTts === "1") {
-      if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-      if (!user?._id) return res.status(401).json({ error: "Bạn cần đăng nhập để dùng Cloud TTS.", code: "AUTH_REQUIRED" });
-      await enforceRateLimit(db, `hikari-tts:${user._id}`, 30, 15 * 60 * 1000);
-      const text = clean(body.text, 900);
-      if (!text) return res.status(400).json({ error: "Nội dung đọc đang trống." });
-      const requestedProvider = clean(body.provider || process.env.HIKARI_TTS_PROVIDER || "openai", 20).toLowerCase();
-      const provider = new Set(["google", "openai", "selfhost"]).has(requestedProvider) ? requestedProvider : "openai";
-      const speed = Math.min(1.5, Math.max(.65, Number(body.speed) || 1));
-      const pitch = Math.min(1.5, Math.max(.7, Number(body.pitch) || 1));
-      let response;
-      if (provider === "google") {
-        const apiKey = clean(process.env.GOOGLE_CLOUD_TTS_API_KEY, 240);
-        if (!apiKey) return res.status(503).json({ error: "Google Cloud TTS chưa được cấu hình. Hãy thêm GOOGLE_CLOUD_TTS_API_KEY ở Vercel hoặc dùng giọng trình duyệt.", code: "TTS_NOT_CONFIGURED" });
-        const allowedGoogleVoices = new Set([
-          "vi-VN-Neural2-A", "vi-VN-Neural2-D", "vi-VN-Wavenet-A", "vi-VN-Wavenet-B", "vi-VN-Wavenet-C", "vi-VN-Wavenet-D",
-          "vi-VN-Standard-A", "vi-VN-Standard-B", "vi-VN-Standard-C", "vi-VN-Standard-D", "vi-VN-Chirp3-HD-Leda",
-          "vi-VN-Chirp3-HD-Pulcherrima", "vi-VN-Chirp3-HD-Sulafat", "vi-VN-Chirp3-HD-Vindemiatrix", "vi-VN-Chirp3-HD-Zephyr"
-        ]);
-        const requestedVoice = clean(body.voice || process.env.HIKARI_GOOGLE_VOICE, 80);
-        const voice = allowedGoogleVoices.has(requestedVoice) ? requestedVoice : "vi-VN-Neural2-A";
-        response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${encodeURIComponent(apiKey)}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ input: { text }, voice: { languageCode: "vi-VN", name: voice }, audioConfig: { audioEncoding: "MP3", speakingRate: speed, pitch: Math.round((pitch - 1) * 100) / 10 } }),
-          signal: AbortSignal.timeout(25000)
-        });
-        if (response.ok) {
-          const data = await response.json();
-          const audio = Buffer.from(String(data.audioContent || ""), "base64");
-          if (!audio.length) return res.status(502).json({ error: "Google TTS không trả về âm thanh." });
-          res.setHeader("Content-Type", "audio/mpeg");
-          res.setHeader("Cache-Control", "private, max-age=3600");
-          res.setHeader("X-Hikari-TTS-Provider", "google");
-          res.setHeader("X-Content-Type-Options", "nosniff");
-          return res.status(200).send(audio);
-        }
-      } else if (provider === "selfhost") {
-        const endpoint = clean(process.env.HIKARI_SELFHOST_TTS_URL, 500);
-        if (!/^https:\/\//i.test(endpoint)) return res.status(503).json({ error: "TTS mã nguồn mở self-host chưa được cấu hình bằng HTTPS.", code: "TTS_NOT_CONFIGURED" });
-        const headers = { "Content-Type": "application/json" };
-        if (process.env.HIKARI_SELFHOST_TTS_TOKEN) headers.Authorization = `Bearer ${process.env.HIKARI_SELFHOST_TTS_TOKEN}`;
-        response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify({ text, voice: clean(body.voice || "vi-female-1", 40), speed, format: "mp3" }), signal: AbortSignal.timeout(25000) });
-      } else {
-        const apiKey = parseOpenAIKeys(process.env)[0];
-        if (!apiKey) return res.status(503).json({ error: "OpenAI TTS chưa được cấu hình; hãy dùng giọng trình duyệt miễn phí.", code: "TTS_NOT_CONFIGURED" });
-        const allowedOpenAIVoices = new Set(["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse", "marin", "cedar"]);
-        const requestedVoice = clean(body.voice, 30);
-        const voice = allowedOpenAIVoices.has(requestedVoice) ? requestedVoice : "coral";
-        response = await fetch("https://api.openai.com/v1/audio/speech", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-          body: JSON.stringify({ model: clean(process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts", 80), input: text, voice, instructions: "Speak in natural, warm Vietnamese as a concise futuristic virtual assistant. Do not add words.", response_format: "mp3", speed }),
-          signal: AbortSignal.timeout(25000)
-        });
-      }
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        return res.status(response.status >= 500 ? 502 : response.status).json({ error: clean(data?.error?.message || `TTS HTTP ${response.status}`, 240) });
-      }
-      const audio = Buffer.from(await response.arrayBuffer());
-      res.setHeader("Content-Type", "audio/mpeg");
-      res.setHeader("Cache-Control", "private, max-age=3600");
-      res.setHeader("X-Hikari-TTS-Provider", provider);
-      res.setHeader("X-Content-Type-Options", "nosniff");
-      return res.status(200).send(audio);
-    }
     if (moduleId === "comic-reader" && req.query.provider === "mangadex") {
       return handleMangaDexSource(req, res, { db });
     }
@@ -1817,7 +1803,7 @@ module.exports = async function handler(req, res) {
             }
           : undefined,
         supports: creativeModules.has(moduleId)
-          ? { history: true, images: true, webSearch: true, googleSearch: true, structuredOutput: true, providerFallback: true }
+          ? { history: true, images: true, webSearch: true, googleSearch: true, structuredOutput: true, providerFallback: true, localContinuity: moduleId === "chat-ai" }
           : undefined,
         ...(moduleId === "music-ai" ? musicProviderStatus(user) : {}),
         actions
@@ -1827,7 +1813,8 @@ module.exports = async function handler(req, res) {
 
     if (creativeModules.has(moduleId)) {
       const actor = user?._id ? String(user._id) : requestIp(req);
-      await enforceRateLimit(db, `creative-ai:${actor}`, user ? 60 : 24, 10 * 60 * 1000);
+      const requestLimit = moduleId === "chat-ai" ? (user ? 120 : 40) : (user ? 60 : 24);
+      await enforceRateLimit(db, `creative-ai:${actor}`, requestLimit, 10 * 60 * 1000);
     }
 
     const input = clean(body.input, 48000);

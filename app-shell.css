@@ -761,7 +761,6 @@
   /* A module route shows one complete workspace and scrolls when its tools need room. */
   body.app-single-module .app-main { overflow-x: hidden; overflow-y: auto; }
   /* Group workspaces (including Giải trí) use the same scroll container. */
-  body.app-entertainment-route .app-main { overflow-x: hidden; overflow-y: auto; }
   body.app-single-module .app-breadcrumb,
   body.app-single-module .app-page-header { display: none; }
   body.app-single-module .app-workspace {

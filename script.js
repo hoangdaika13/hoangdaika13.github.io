@@ -15,16 +15,6 @@ const REALTIME_URL = window.HH_REALTIME_URL || "";
 const API_URL = String(window.HH_API_BASE || REALTIME_URL || location.origin).replace(/\/$/, "");
 const SOCKET_URL = typeof window.HH_SOCKET_URL === "string" ? window.HH_SOCKET_URL : REALTIME_URL;
 let adminRealtimeTimer = 0;
-const createGameAdapters = () => {
-  if (typeof window.HHGameAdapters?.create !== "function") return {};
-  let anonymousId = "";
-  try { anonymousId = localStorage.getItem("hh-anonymous-id") || ""; } catch { /* local storage may be blocked */ }
-  return window.HHGameAdapters.create({
-    apiBase: REALTIME_URL,
-    socket: window.HHRealtimeSocket,
-    anonymousId
-  });
-};
 
 const readCurrentAuthUser = () => {
   try { return JSON.parse(localStorage.getItem("hh-auth-user") || "null"); }
@@ -5431,7 +5421,6 @@ function initAppShell() {
   ];
   const groups = [
     { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/home", items: ["command-center"] },
-    { id: "character-3d", label: "Nhân vật 3D", icon: "3D", accent: "#ff718a", route: "/character-3d", items: [] },
     { id: "social-media-tools", label: "Công cụ truyền thông xã hội", icon: "SM", accent: "#63ead8", route: "/social-media-tools", items: [] },
     { id: "create", label: "Sáng tạo", icon: "✦", accent: "#ff5dc8", route: "/create", items: [], studioItems: creativeStudioItems },
     { id: "chat-ai", label: "Chat AI", icon: "AI", accent: "#7b8cff", route: "/chat-ai", items: [] },
@@ -5533,21 +5522,6 @@ function initAppShell() {
         { id: "smart-catch-up", title: "Smart Catch-up", route: "/communication/smart-catch-up" }
       ],
       shortcuts: [{ label: "Google + YouTube", icon: "G", tab: "google" }]
-    },
-    {
-      id: "entertainment",
-      label: "Game",
-      icon: "◉",
-      accent: "#ff8a5b",
-      route: "/entertainment",
-      items: [],
-      pages: [
-        { id: "game-center", title: "Game Center", route: "/entertainment" },
-        { id: "astral-realms", title: "HH Astral Realms", route: "/entertainment/astral-realms" },
-        { id: "astra-hh", title: "ASTRA MMO RPG", route: "/entertainment/astra-hh" },
-        { id: "cinematic-arcade", title: "Cinematic 3D Arcade", route: "/entertainment/cinematic-arcade" },
-        { id: "arcade", title: "Arcade Galaxy", route: "/entertainment/arcade" }
-      ]
     },
     {
       id: "cinema",
@@ -5876,8 +5850,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "chat-ai": "Chat AI", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", entertainment: "Game", "game-center": "Game Center", "astral-realms": "HH Astral Realms", "astra-hh": "ASTRA MMO RPG", arcade: "Arcade Galaxy", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "16 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
-    crumbLabels["character-3d"] = "Nhân vật 3D";
+    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "chat-ai": "Chat AI", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "16 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     crumbLabels["social-media-tools"] = "Công cụ truyền thông xã hội";
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
@@ -5899,7 +5872,8 @@ function initAppShell() {
   };
   const routeFromHash = () => {
     const hash = location.hash.replace(/^#/, "") || "/home";
-    return hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
+    const route = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
+    return route === "/entertainment" || route.startsWith("/entertainment/") || route === "/character-3d" || route.startsWith("/character-3d/") ? "/home" : route;
   };
   let cosmicLoaderRoute = "";
   let cosmicLoaderShownAt = 0;
@@ -5915,7 +5889,6 @@ function initAppShell() {
     dev: "Đang nạp Developer Galaxy và môi trường công cụ...",
     work: "Đang đồng bộ dự án, nhiệm vụ và lịch làm việc...",
     communication: "Đang kết nối tin nhắn, kênh và cộng tác realtime...",
-    entertainment: "Đang khởi động Game Galaxy và dữ liệu tiến trình...",
     insights: "Đang tổng hợp dữ liệu và bảng phân tích...",
     admin: "Đang xác minh quyền và tải trung tâm quản trị...",
     learn: "Đang chuẩn bị lộ trình và dữ liệu học tập...",
@@ -5969,11 +5942,17 @@ function initAppShell() {
   };
   const showCosmicRouteLoader = (route = routeFromHash()) => {
     if (!cosmicRouteLoader) return;
+    const normalized = String(route || "/home").split("?")[0];
+    // Home is already part of the critical shell. Never cover it with a
+    // blocking transition after login or while optional enhancements hydrate.
+    if (normalized === "/home") {
+      hideCosmicRouteLoaderImmediately();
+      return;
+    }
     if (document.querySelector("[data-cg-wormhole].is-active")) {
       hideCosmicRouteLoaderImmediately();
       return;
     }
-    const normalized = String(route || "/home").split("?")[0];
     const continuing = cosmicRouteLoader.classList.contains("is-active") && cosmicLoaderRoute === normalized;
     const meta = describeRouteFeedback(normalized);
     clearCosmicLoaderTimers();
@@ -5994,7 +5973,14 @@ function initAppShell() {
     requestAnimationFrame(() => cosmicRouteLoader.classList.add("is-active"));
     cosmicLoaderPhaseTimers.push(
       setTimeout(() => setCosmicLoaderPhase(1, 46, "Đang nạp giao diện và các engine cần thiết..."), 170),
-      setTimeout(() => setCosmicLoaderPhase(2, 78, "Đang khôi phục dữ liệu và trạng thái làm việc..."), 360)
+      setTimeout(() => setCosmicLoaderPhase(2, 78, "Đang khôi phục dữ liệu và trạng thái làm việc..."), 360),
+      // A failed CDN request must never leave a full-screen overlay trapping
+      // the user. The route placeholder/error remains available underneath.
+      setTimeout(() => {
+        hideCosmicRouteLoaderImmediately();
+        document.body.classList.remove("app-route-changing");
+        routeProgress?.setAttribute("aria-hidden", "true");
+      }, 8000)
     );
   };
   const finishCosmicRouteLoader = ({ error = false, message = "" } = {}) => {
@@ -6031,6 +6017,10 @@ function initAppShell() {
     if (!isUnlocked()) return;
     const hash = location.hash.replace(/^#/, "") || "/home";
     let route = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
+    if (route === "/entertainment" || route.startsWith("/entertainment/") || route === "/character-3d" || route.startsWith("/character-3d/")) {
+      route = "/home";
+      history.replaceState({}, document.title, `${location.pathname}${location.search}#/home`);
+    }
     if (route === "/analytics/admin-panel" || route.endsWith("/admin-panel")) {
       route = isCurrentUserAdmin() ? "/admin" : "/analytics";
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
@@ -6053,12 +6043,9 @@ function initAppShell() {
     document.body.classList.toggle("app-cinema-route", route === "/cinema" || route.startsWith("/cinema/"));
     document.body.classList.toggle("app-music-library-route", route === "/music" || route.startsWith("/music/"));
     document.body.classList.toggle("app-copyright-route", route === "/copyright" || route.startsWith("/copyright/"));
-    document.body.classList.toggle("app-cinematic-game-route", route === "/entertainment/cinematic-arcade" || route.startsWith("/entertainment/cinematic-arcade/"));
-    document.body.classList.toggle("app-arcade-game-route", route === "/entertainment/arcade" || route.startsWith("/entertainment/arcade/"));
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
     document.body.classList.toggle("app-graphic-design-route", route === "/graphic-design" || route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
-    document.body.classList.toggle("app-entertainment-route", route === "/entertainment" || route.startsWith("/entertainment/"));
     document.body.classList.toggle("app-learning-route", route === "/learn" || route.startsWith("/learn/"));
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
     document.body.classList.toggle("app-japanese-route", route === "/japanese" || route.startsWith("/japanese/"));
@@ -6070,7 +6057,6 @@ function initAppShell() {
     document.body.classList.toggle("app-creative-os-route", isCreativeOSRoute(route));
     document.body.classList.toggle("app-creative-route", route === "/create" || route.startsWith("/create/"));
     document.body.classList.toggle("app-music-ai-route", route === "/music-ai" || route.startsWith("/music-ai/"));
-    document.body.classList.toggle("app-character-3d-route", route === "/character-3d" || route.startsWith("/character-3d/"));
     document.body.classList.toggle("app-social-media-tools-route", route === "/social-media-tools" || route.startsWith("/social-media-tools/"));
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) {
       window.HHDeveloperTools?.cleanup?.();
@@ -6090,14 +6076,6 @@ function initAppShell() {
     if (route !== "/cinema" && !route.startsWith("/cinema/")) window.HHCinemaHub?.unmount?.();
     if (route !== "/music" && !route.startsWith("/music/")) window.HHMusicLibrary?.unmount?.();
     if (route !== "/copyright" && !route.startsWith("/copyright/")) window.HHOpenMediaGovernance?.unmount?.();
-    if (route !== "/entertainment") window.HHGameCenter?.unmount?.();
-    if (!(route === "/entertainment/arcade" || route.startsWith("/entertainment/arcade/"))) window.HHGameArcade?.unmount?.();
-    if (!route.startsWith("/entertainment/cinematic-arcade")) window.HHCinematicGameArcade?.unmount?.();
-    if (route !== "/entertainment/astral-realms") window.HHAstralRealms?.unmount?.();
-    if (route !== "/entertainment/astra-hh") {
-      window.HHSpaceExplorer?.unmount?.();
-      window.HHAstraExpansion?.unmount?.();
-    }
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     if (route !== "/japanese" && !route.startsWith("/japanese/")) window.HHJapanese?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
@@ -6116,7 +6094,6 @@ function initAppShell() {
     }
     if (route !== "/graphic-design" && !route.startsWith("/graphic-design/")) window.HHGraphicDesign?.unmount?.();
     if (!isCreativeOSRoute(route)) window.HHCreativeOS?.unmount?.();
-    if (route !== "/character-3d" && !route.startsWith("/character-3d/")) window.HHCharacter3DStudio?.unmount?.();
     if (route !== "/social-media-tools" && !route.startsWith("/social-media-tools/")) window.HHSocialMediaTools?.unmount?.();
     setUser();
     renderNavigation();
@@ -6143,16 +6120,6 @@ function initAppShell() {
       if (window.HHSocialMediaTools?.mount) window.HHSocialMediaTools.mount(workspace.firstElementChild, { currentUser: readCurrentAuthUser(), navigate: (nextRoute) => { location.hash = `#${nextRoute}`; } });
       else mountSimpleView("Công cụ truyền thông xã hội", "Đang tải Social Creator OS…", "");
       remember("social-media-tools");
-    } else if (route === "/character-3d" || route.startsWith("/character-3d/")) {
-      updatePageHeader("Nhân vật 3D", "Studio avatar anime 3D nguyên bản: điều khiển WebGL, animation, biểu cảm, giọng nữ tiếng Việt, import GLB/VRM, chụp PNG, ghi video và quản lý quyền asset.", route);
-      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment/astral-realms">Astral Realms</button><button type="button" data-app-route="/davinci-resolve/ai-video-remake">AI Video</button><button class="app-primary-action" type="button" data-character-3d-quick-capture>Chụp PNG</button>`;
-      workspace.innerHTML = '<div data-character-3d-studio-host></div>';
-      if (window.HHCharacter3DStudio?.mount) window.HHCharacter3DStudio.mount(workspace.firstElementChild, {
-        currentUser: readCurrentAuthUser(),
-        navigate: (nextRoute) => { location.hash = `#${nextRoute}`; }
-      });
-      else mountSimpleView("Nhân vật 3D", "Đang khởi tạo viewport WebGL và thư viện nhân vật...", "");
-      remember("character-3d");
     } else if (route === "/work" || workGalaxyPageItems.some((item) => item.route === route)) {
       const workView = route === "/work" ? "mission-control" : parts[1];
       const workPage = workGalaxyPageItems.find((item) => item.id === workView) || workGalaxyPageItems[0];
@@ -6210,65 +6177,6 @@ function initAppShell() {
         route
       });
       else mountSimpleView("Nhạc", "Đang tải thư viện nhạc có giấy phép mở...", "");
-    } else if (route === "/entertainment") {
-      updatePageHeader("HH Game Center", "Action RPG 3D, game MMO vũ trụ, arcade, nhiệm vụ, XP, huy hiệu và phòng chơi realtime.", route);
-      pageActions.innerHTML = `<button class="app-primary-action" type="button" data-app-route="/entertainment/cinematic-arcade">Cinematic 3D Arcade</button><button type="button" data-app-route="/entertainment/astral-realms">Astral Realms</button><button type="button" data-app-route="/entertainment/astra-hh">ASTRA MMO</button><button type="button" data-app-route="/entertainment/arcade">Arcade 2D</button>`;
-      workspace.innerHTML = '<div data-game-center-host></div>';
-      if (window.HHGameCenter?.mount) window.HHGameCenter.mount(workspace.firstElementChild, {
-        apiBase: REALTIME_URL,
-        socketUrl: SOCKET_URL,
-        currentUser: readCurrentAuthUser(),
-        ...createGameAdapters(),
-        navigate: (nextRoute) => { location.hash = `#${nextRoute}`; }
-      });
-      else mountSimpleView("HH Game Center", "Đang tải trung tâm game...", "");
-    } else if (route === "/entertainment/astral-realms") {
-      updatePageHeader("HH Astral Realms", "Action RPG thế giới mở 3D trong H Galaxy: khám phá bốn khu vực, chiến đấu nguyên tố, nhiệm vụ, chế tạo và co-op 1–4 người.", route);
-      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button class="app-primary-action" type="button" data-app-route="/entertainment/cinematic-arcade">Cinematic 3D</button><button type="button" data-app-route="/entertainment/astra-hh">ASTRA Universe</button><button type="button" data-app-route="/entertainment/arcade">Arcade 2D</button>`;
-      workspace.innerHTML = '<div data-astral-realms-host></div>';
-      if (window.HHAstralRealms?.mount) window.HHAstralRealms.mount(workspace.firstElementChild, {
-        apiBase: REALTIME_URL,
-        socketUrl: SOCKET_URL,
-        currentUser: readCurrentAuthUser(),
-        socket: window.HHRealtimeSocket,
-        ...createGameAdapters()
-      });
-      else mountSimpleView("HH Astral Realms", "Đang khởi động cổng không gian 3D...", "");
-    } else if (route === "/entertainment/astra-hh") {
-      updatePageHeader("ASTRA HH: Tín Hiệu Vô Tận", "Lái tàu, quét ngoại hành tinh, khai thác tài nguyên và truy tìm nguồn phát HH-13.", route);
-      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button class="app-primary-action" type="button" data-app-route="/entertainment/cinematic-arcade">Cinematic 3D</button><button type="button" data-app-route="/entertainment/astral-realms">Astral Realms</button><button type="button" data-app-route="/entertainment/arcade">Arcade 2D</button>`;
-      workspace.innerHTML = '<div data-astra-expansion-host></div><div data-space-explorer-host></div>';
-      if (window.HHAstraExpansion?.mount) window.HHAstraExpansion.mount(workspace.querySelector("[data-astra-expansion-host]"), {
-        apiBase: REALTIME_URL,
-        socketUrl: SOCKET_URL,
-        currentUser: readCurrentAuthUser(),
-        socket: window.HHRealtimeSocket
-      });
-      if (window.HHSpaceExplorer?.mount) window.HHSpaceExplorer.mount(workspace.querySelector("[data-space-explorer-host]"), { apiBase: REALTIME_URL });
-      else mountSimpleView("ASTRA HH", "Đang khởi động động cơ khám phá vũ trụ...", "");
-    } else if (route === "/entertainment/cinematic-arcade" || route.startsWith("/entertainment/cinematic-arcade/")) {
-      const cinematicGameId = parts[2] || "neon-skyline-rush";
-      updatePageHeader("Cinematic 3D Arcade", "Sáu game 3D chơi thật với camera chase, shoulder, flight, lock-on, orbit và sport broadcast; tự cân bằng chất lượng theo thiết bị.", route);
-      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button type="button" data-app-route="/entertainment/astral-realms">Astral Realms</button><button type="button" data-app-route="/entertainment/astra-hh">ASTRA MMO</button><button type="button" data-app-route="/entertainment/arcade">Arcade 2D</button>`;
-      workspace.innerHTML = '<div data-cinematic-game-arcade-host></div>';
-      if (window.HHCinematicGameArcade?.mount) window.HHCinematicGameArcade.mount(workspace.firstElementChild, {
-        gameId: cinematicGameId,
-        currentUser: readCurrentAuthUser(),
-        navigate: (nextRoute) => { location.hash = `#${nextRoute}`; }
-      });
-      else mountSimpleView("Cinematic 3D Arcade", "Đang dựng sân chơi WebGL 3D...", "");
-    } else if (route === "/entertainment/arcade" || route.startsWith("/entertainment/arcade/")) {
-      updatePageHeader("Arcade Galaxy", "22 game phụ trong vũ trụ HH: nông trại, câu cá, mecha, xây hành tinh, thẻ bài, đua tàu, boss rush và sinh tồn co-op.", route);
-      pageActions.innerHTML = `<button type="button" data-app-route="/entertainment">Game Center</button><button class="app-primary-action" type="button" data-app-route="/entertainment/cinematic-arcade">Cinematic 3D</button><button type="button" data-app-route="/entertainment/astral-realms">Astral Realms</button><button type="button" data-app-route="/entertainment/astra-hh">ASTRA MMO</button>`;
-      workspace.innerHTML = '<div data-game-arcade-host></div>';
-      if (window.HHGameArcade?.mount) window.HHGameArcade.mount(workspace.firstElementChild, {
-        apiBase: REALTIME_URL,
-        socketUrl: SOCKET_URL,
-        currentUser: readCurrentAuthUser(),
-        socket: window.HHRealtimeSocket,
-        initialGameId: parts[2] || "neon-drift"
-      });
-      else mountSimpleView("Arcade Galaxy", "Đang tải khu game phụ...", "");
     } else if (route === "/learn" || (route.startsWith("/learn/") && window.HHSchool?.supports?.(parts[1]))) {
       const learningRouteView = route === "/learn" ? "today" : parts[1];
       const learningMeta = window.HHSchool?.views?.[window.HHSchool?.normalizeView?.(learningRouteView) || learningRouteView];
@@ -6302,7 +6210,7 @@ function initAppShell() {
       if (window.HHFortuneHub?.mount) window.HHFortuneHub.mount(workspace.firstElementChild, {
         currentUser: readCurrentAuthUser(),
         view: parts[1] || "today",
-        apiBase: String(window.HH_REALTIME_URL || location.origin)
+        apiBase: String(window.HH_API_BASE || location.origin)
       });
       else mountSimpleView("Xem bói", "Đang tải không gian tự chiêm nghiệm...", "");
       remember("fortune");
@@ -6718,13 +6626,6 @@ function initAppShell() {
     modules.unshift(
       ...comicMotion,
       {
-        type: "Studio 3D",
-        title: "Nhân vật 3D",
-        description: "Tạo và điều khiển avatar anime 3D nguyên bản, animation, biểu cảm, giọng nữ tiếng Việt, PNG, video và project có kiểm tra giấy phép.",
-        route: "/character-3d",
-        key: "nhân vật 3d character avatar astra h08 anime vrm glb animation lip sync tiếng việt png video mocap rights license threejs"
-      },
-      {
         type: "Bản quyền",
         title: "Bản quyền & giấy phép",
         description: "Tra cứu quyền sử dụng, tải hồ sơ ghi công và gửi khiếu nại nội dung tới hoang8.com.",
@@ -6753,7 +6654,7 @@ function initAppShell() {
         key: "chat ai gemini 3.6 flash 3.5 flash lite research google search image pdf code writing voice conversation"
       }
     );
-    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...workGalaxy, ...musicAI, { type: "Học tập", title: "HH English", description: "English Learning Galaxy: kho từ vựng tải theo gói, 16 chế độ học, CEFR A0-C2, Mistake Notebook và 70 lộ trình chuyên ngành.", route: "/english", key: "hh english english galaxy galaxy vocabulary words collocations idioms phrasal verbs a0 a1 a2 b1 b2 c1 c2 cefr flashcard typed recall audio cloze matching sentence order dictation shadowing mini story role play speed review mistake notebook word family picture vocabulary speaking writing placement career business technology healthcare education tourism engineering" }, { type: "Học tập", title: "HH Japanese OS V5", description: "42.301 từ/cụm, 30.000 câu có nguồn, 800 nhiệm vụ, Active Vocabulary, Particle Lab, Smart Reader V3, Kanji Writing V2 và Review Console.", route: "/japanese", key: "hh japanese os v5 42301 30000 sentences 800 missions active vocabulary particle lab smart reader v3 kanji writing v2 shadowing review console jmdict tatoeba kanjivg conversation writing immersion teacher family collocation onomatopoeia keigo counter tiếng nhật vietnamese core can-do jf cefr dual progress grammar mora life in japan jlpt simulator little kids kids teens students adults senior từ điển nhật việt kanji hiragana katakana romaji ngữ pháp jlpt n5 n4 n3 n2 n1 flashcard srs đọc nghe nói hội thoại" }, { type: "Sản xuất video", title: "HH Video Studio", description: "Trình dựng video chạy trực tiếp trên web: Media Pool, timeline nhiều rãnh, màu, audio, phụ đề, phiên bản và xuất MP4/WebM thật.", route: "/davinci-resolve", key: "tool davinci resolve hh video studio web editor media pool timeline multi track trim ripple color audio subtitle srt vtt mp4 webm export queue indexeddb" }, { type: "YouTube", title: "YouTube Creator Galaxy", description: "14 trung tâm YouTube dùng dữ liệu thật: OAuth, đa tài khoản/kênh, Analytics, upload, thumbnail, metadata, Shorts, caption, Community, Live và preflight.", route: "/davinci-resolve/youtube", key: "tool youtube creator galaxy oauth multi account channel fleet analytics upload scheduler thumbnail seo shorts caption community comments live calendar copyright preflight" }, { type: "Phim", title: "Phim", description: "Phim công cộng và Creative Commons đã kiểm tra nguồn, giấy phép và điều kiện ghi công.", route: "/cinema", key: "phim cinema movie public domain creative commons phim mở miễn phí hợp pháp bản quyền giấy phép attribution" }, { type: "Nhạc", title: "Nhạc", description: "Thư viện nhạc Public Domain và Creative Commons có nguồn, tác giả và giấy phép rõ ràng.", route: "/music", key: "nhạc music audio public domain creative commons nghe nhạc miễn phí hợp pháp giấy phép attribution playlist" }, { type: "Game", title: "HH Game Center", description: "Tổng quan chỉ dành cho game: XP, huy hiệu, nhiệm vụ, bạn bè online, leaderboard, cloud save và phòng realtime.", route: "/entertainment", key: "giải trí game center mmo rpg arcade leaderboard xp huy hiệu nhiệm vụ realtime cloud save" }, { type: "Game", title: "HH Astral Realms", description: "Action RPG thế giới mở 3D: bốn khu vực, chiến đấu sáu nguyên tố, nhiệm vụ, kho đồ, chế tạo, boss và co-op 1–4 người.", route: "/entertainment/astral-realms", key: "astral realms action rpg open world 3d genshin inspired h galaxy aurora crimson void boss crafting elemental co-op" }, { type: "Game", title: "ASTRA MMO RPG", description: "Game vũ trụ MMO RPG: lái tàu, phe phái, party, nhiệm vụ, skill tree, căn cứ, boss, khai khoáng và giao thương.", route: "/entertainment/astra-hh", key: "giải trí game astra hh mmo rpg vũ trụ phi thuyền hành tinh party raid boss co-op space explorer" }, { type: "Game", title: "Arcade Galaxy", description: "22 game hoàn chỉnh thuộc bốn nhóm Action, Strategy, Puzzle và Simulation, dùng chung tiến trình, nhiệm vụ, thành tích và điều khiển đa thiết bị.", route: "/entertainment/arcade", key: "arcade galaxy 22 game action strategy puzzle simulation neon drift defense colony cipher miner rhythm quiz sandbox chess survival farm fishing mecha planet pet dungeon card tycoon runner black hole nebula boss rush" }, { type: "Studio", title: "Media & Design", description: "35 công cụ trong Media Cosmos với Media Cloud, Review Studio, Motion Compositing, Universal Canvas, AI Task Center và Dev Handoff.", route: "/media-design", key: "media design media cosmos professional universal project media cloud private blob multipart review studio annotation version compare approval universal canvas infinite artboard motion compositing node graph ai task center provenance dev mode handoff storybook photo editor photoshop render queue rights consent c2pa" }, { type: "Developer", title: "Developer Galaxy", description: "8 hành tinh DEV, 13 workspace chuyên sâu và 34 công cụ cho project, code, API, data, Git, delivery, security và observability.", route: "/dev-tools", key: "developer galaxy dev project code api data git delivery security observability smart input recipe pipeline mock json regex database playground diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/today", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
+    return [...modules, ...commandCenter, ...projectCommands, ...creativeTools, ...developerTools, ...workGalaxy, ...musicAI, { type: "Học tập", title: "HH English", description: "English Learning Galaxy: kho từ vựng tải theo gói, 16 chế độ học, CEFR A0-C2, Mistake Notebook và 70 lộ trình chuyên ngành.", route: "/english", key: "hh english english galaxy galaxy vocabulary words collocations idioms phrasal verbs a0 a1 a2 b1 b2 c1 c2 cefr flashcard typed recall audio cloze matching sentence order dictation shadowing mini story role play speed review mistake notebook word family picture vocabulary speaking writing placement career business technology healthcare education tourism engineering" }, { type: "Học tập", title: "HH Japanese OS V5", description: "42.301 từ/cụm, 30.000 câu có nguồn, 800 nhiệm vụ, Active Vocabulary, Particle Lab, Smart Reader V3, Kanji Writing V2 và Review Console.", route: "/japanese", key: "hh japanese os v5 42301 30000 sentences 800 missions active vocabulary particle lab smart reader v3 kanji writing v2 shadowing review console jmdict tatoeba kanjivg conversation writing immersion teacher family collocation onomatopoeia keigo counter tiếng nhật vietnamese core can-do jf cefr dual progress grammar mora life in japan jlpt simulator little kids kids teens students adults senior từ điển nhật việt kanji hiragana katakana romaji ngữ pháp jlpt n5 n4 n3 n2 n1 flashcard srs đọc nghe nói hội thoại" }, { type: "Sản xuất video", title: "HH Video Studio", description: "Trình dựng video chạy trực tiếp trên web: Media Pool, timeline nhiều rãnh, màu, audio, phụ đề, phiên bản và xuất MP4/WebM thật.", route: "/davinci-resolve", key: "tool davinci resolve hh video studio web editor media pool timeline multi track trim ripple color audio subtitle srt vtt mp4 webm export queue indexeddb" }, { type: "YouTube", title: "YouTube Creator Galaxy", description: "14 trung tâm YouTube dùng dữ liệu thật: OAuth, đa tài khoản/kênh, Analytics, upload, thumbnail, metadata, Shorts, caption, Community, Live và preflight.", route: "/davinci-resolve/youtube", key: "tool youtube creator galaxy oauth multi account channel fleet analytics upload scheduler thumbnail seo shorts caption community comments live calendar copyright preflight" }, { type: "Phim", title: "Phim", description: "Phim công cộng và Creative Commons đã kiểm tra nguồn, giấy phép và điều kiện ghi công.", route: "/cinema", key: "phim cinema movie public domain creative commons phim mở miễn phí hợp pháp bản quyền giấy phép attribution" }, { type: "Nhạc", title: "Nhạc", description: "Thư viện nhạc Public Domain và Creative Commons có nguồn, tác giả và giấy phép rõ ràng.", route: "/music", key: "nhạc music audio public domain creative commons nghe nhạc miễn phí hợp pháp giấy phép attribution playlist" }, { type: "Studio", title: "Media & Design", description: "35 công cụ trong Media Cosmos với Media Cloud, Review Studio, Motion Compositing, Universal Canvas, AI Task Center và Dev Handoff.", route: "/media-design", key: "media design media cosmos professional universal project media cloud private blob multipart review studio annotation version compare approval universal canvas infinite artboard motion compositing node graph ai task center provenance dev mode handoff storybook photo editor photoshop render queue rights consent c2pa" }, { type: "Developer", title: "Developer Galaxy", description: "8 hành tinh DEV, 13 workspace chuyên sâu và 34 công cụ cho project, code, API, data, Git, delivery, security và observability.", route: "/dev-tools", key: "developer galaxy dev project code api data git delivery security observability smart input recipe pipeline mock json regex database playground diagnostics ai toolbox base64 uuid token password timestamp sql markdown cron dns ip" }, { type: "Ủng hộ", title: "Ủng hộ nhà phát triển", description: "VietQR payOS nhúng trực tiếp, tự đối soát và gửi email cảm ơn.", route: "/support", key: "ủng hộ donate nhà phát triển vietqr payos tự động thanh toán" }, { type: "Hướng dẫn", title: "Bắt đầu sử dụng", description: "Lộ trình dành cho người mới.", route: "/learn/today", key: "bắt đầu hướng dẫn học" }, { type: "Cài đặt", title: "Cài đặt tài khoản", description: "Hồ sơ, giao diện và quyền riêng tư.", route: "/settings", key: "cài đặt tài khoản profile" }];
   };
   const renderPalette = (query = "") => {
     const normalized = query.trim().toLowerCase();
@@ -7037,10 +6938,6 @@ function initAppShell() {
   window.addEventListener("hh:youtube-creator-ready", renderRouteSafely);
   window.addEventListener("hh:comic-motion-ready", renderRouteSafely);
   window.addEventListener("hh:facebook-page-command-center-ready", renderRouteSafely);
-  window.addEventListener("hh:space-explorer-ready", renderRouteSafely);
-  // Game modules are loaded before the shell mounts them. Their ready events
-  // are intentionally informational; re-rendering the route here would mount
-  // the same module again and recurse through its own ready event.
   window.addEventListener("hh:auth-change", () => {
     setShellVisibility();
     setUser();

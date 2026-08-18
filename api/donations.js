@@ -16,7 +16,6 @@ const CONTRIBUTION_TYPES = new Set(["asset", "translation", "bug", "code", "test
 const MISSION_DEFINITIONS = Object.freeze([
   { id: "infrastructure", label: "Máy chủ & Database", shortLabel: "Hạ tầng", color: "#65ebff", defaultGoal: 3000000, route: "#/system" },
   { id: "domain-services", label: "Domain & Dịch vụ", shortLabel: "Domain", color: "#8f8cff", defaultGoal: 1200000, route: "#/system" },
-  { id: "astral-realms", label: "HH Astral Realms", shortLabel: "Astral Realms", color: "#ff68c8", defaultGoal: 5000000, route: "#/entertainment/astral-realms" },
   { id: "ai-provider", label: "AI Provider", shortLabel: "AI", color: "#ffb65c", defaultGoal: 3500000, route: "#/creative/ai-center" },
   { id: "hh-english", label: "HH English", shortLabel: "English", color: "#68f1be", defaultGoal: 2500000, route: "#/english" },
   { id: "graphic-design", label: "Thiết kế đồ họa", shortLabel: "Design", color: "#b77aff", defaultGoal: 3000000, route: "#/graphic-design" },
@@ -212,7 +211,7 @@ function maskEmail(value) {
 }
 
 function receiptReady() {
-  return Boolean(process.env.RESEND_API_KEY && (process.env.DONATION_FROM_EMAIL || process.env.EMAIL_FROM));
+  return Boolean((process.env.HH_RESEND_API_KEY || process.env.RESEND_API_KEY) && (process.env.DONATION_FROM_EMAIL || process.env.HH_EMAIL_FROM || process.env.EMAIL_FROM));
 }
 
 function createReceiptEmailAdapter() {
@@ -220,13 +219,14 @@ function createReceiptEmailAdapter() {
     provider: "resend",
     configured: receiptReady(),
     async send({ recipient, message, donationId }) {
+      const apiKey = String(process.env.HH_RESEND_API_KEY || process.env.RESEND_API_KEY || "");
       const headers = {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
         "Idempotency-Key": `donation-thanks/${String(donationId)}`
       };
       const payload = {
-        from: String(process.env.DONATION_FROM_EMAIL || process.env.EMAIL_FROM),
+        from: String(process.env.DONATION_FROM_EMAIL || process.env.HH_EMAIL_FROM || process.env.EMAIL_FROM),
         to: [recipient], subject: message.subject, html: message.html, text: message.text,
         ...(process.env.DONATION_REPLY_TO ? { reply_to: String(process.env.DONATION_REPLY_TO) } : {}),
         tags: [{ name: "category", value: "donation_receipt" }]

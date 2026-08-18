@@ -205,7 +205,13 @@
       form?.classList.toggle("auth-authenticating", busy);
       form?.querySelectorAll("button, input, select").forEach((control) => {
         if (control.matches("[data-password-toggle]")) return;
-        control.disabled = busy;
+        if (busy) {
+          control.dataset.authDisabledBeforeBusy = control.disabled ? "true" : "false";
+          control.disabled = true;
+          return;
+        }
+        control.disabled = control.dataset.authDisabledBeforeBusy === "true";
+        delete control.dataset.authDisabledBeforeBusy;
       });
       const submit = form?.querySelector('button[type="submit"]');
       if (submit) {
@@ -519,7 +525,10 @@
       event.preventDefault();
       authEpoch += 1;
       finishSessionCheck();
-      if (signupStep < 3) return setSignupStep(signupStep + 1);
+      if (signupStep < 3) {
+        if (validateStep(signupStep)) setSignupStep(signupStep + 1);
+        return;
+      }
       if (!validateStep(1) || !validateStep(2)) return;
       if (oauthProviders.email === false) {
         setStatus("Đăng ký bằng email đang tạm tắt vì máy chủ chưa cấu hình gửi mã xác minh. Hãy tiếp tục bằng Google.", "error");
@@ -547,7 +556,9 @@
           const verifyStatus = gate.querySelector("[data-email-verify-status]");
           verifyStatus.textContent = result.verificationDelivery === "sent"
             ? "Mã xác minh đã được gửi. Hãy kiểm tra cả thư mục Spam."
-            : "Máy chủ chưa cấu hình gửi email. Hãy thêm RESEND_API_KEY và EMAIL_FROM trên Vercel.";
+            : result.verificationDelivery === "failed"
+              ? "Tài khoản đã tạo nhưng Resend chưa giao được mã. Hãy bấm Gửi lại mã; nếu vẫn lỗi, dùng Google và báo quản trị viên."
+              : "Máy chủ chưa có khóa Resend và người gửi hợp lệ. Hãy dùng Google trong lúc quản trị viên hoàn tất cấu hình.";
           if (result.developmentCode) gate.querySelector("[data-email-verify-code]").value = result.developmentCode;
           showPanel("verify-email");
           setStatus("Tài khoản đã tạo · còn một bước xác minh email.", "success");
@@ -597,6 +608,10 @@
             status.textContent = "Máy chủ chưa cấu hình dịch vụ gửi mã. Vui lòng đăng nhập bằng Google.";
             return;
           }
+          if (result.delivery === "failed") {
+            status.textContent = "Dịch vụ email đang tạm gián đoạn. Hãy thử lại sau ít phút hoặc đăng nhập bằng Google.";
+            return;
+          }
           verify.hidden = false;
           panel.querySelector("[data-recovery-action]").textContent = "Xác minh và đổi mật khẩu";
           status.textContent = result.message || "Nếu email tồn tại, mã xác minh đã được gửi.";
@@ -621,8 +636,10 @@
       const panel = gate.querySelector("[data-email-verify-panel]");
       const code = panel.querySelector("[data-email-verify-code]").value.trim();
       const status = panel.querySelector("[data-email-verify-status]");
+      const action = panel.querySelector("[data-email-verify-action]");
       if (!/^\d{6}$/.test(code)) { status.textContent = "Hãy nhập đủ mã xác minh 6 số."; return; }
       try {
+        if (action) { action.disabled = true; action.setAttribute("aria-busy", "true"); }
         status.textContent = "Đang xác minh...";
         await api(AUTH_ENDPOINTS.emailVerificationVerify, { method: "POST", body: JSON.stringify({ code }) });
         user = { ...user, emailVerified: true, verified: true };
@@ -630,17 +647,21 @@
         registerForm.reset();
         setSignupStep(1);
       } catch (error) { status.textContent = error.message; }
+      finally { if (action) { action.disabled = false; action.removeAttribute("aria-busy"); } }
     };
 
     const resendEmailVerification = async () => {
       const panel = gate.querySelector("[data-email-verify-panel]");
       const status = panel.querySelector("[data-email-verify-status]");
+      const action = panel.querySelector("[data-email-verify-resend]");
       try {
+        if (action) { action.disabled = true; action.setAttribute("aria-busy", "true"); }
         status.textContent = "Đang gửi lại mã...";
         const result = await api(AUTH_ENDPOINTS.emailVerificationRequest, { method: "POST", body: "{}" });
-        status.textContent = result.delivery === "sent" ? "Đã gửi mã mới." : "Dịch vụ email chưa được cấu hình trên máy chủ.";
+        status.textContent = result.delivery === "sent" ? "Đã gửi mã mới. Hãy kiểm tra cả Spam." : result.delivery === "failed" ? "Resend chưa giao được mã. Hãy đợi một phút rồi thử lại hoặc dùng Google." : "Dịch vụ email chưa có khóa/người gửi hợp lệ trên máy chủ.";
         if (result.developmentCode) panel.querySelector("[data-email-verify-code]").value = result.developmentCode;
       } catch (error) { status.textContent = error.message; }
+      finally { if (action) { action.disabled = false; action.removeAttribute("aria-busy"); } }
     };
 
     const openQr = async () => {
@@ -851,11 +872,14 @@
       const providerNotice = gate.querySelector("[data-register-provider-notice]");
       const registerSubmit = registerForm?.querySelector('button[type="submit"]');
       const emailUnavailable = oauthProviders.email === false;
+      const emailMisconfigured = emailUnavailable && ["invalid-key", "invalid-sender"].includes(oauthProviders.emailStatus);
       gate.dataset.authEmailDelivery = emailUnavailable ? "unavailable" : "ready";
       if (providerNotice) {
         providerNotice.hidden = !emailUnavailable;
         providerNotice.textContent = emailUnavailable
-          ? "Đăng ký email đang tạm tắt vì máy chủ chưa có dịch vụ gửi mã. Bạn có thể tiếp tục bằng Google."
+          ? emailMisconfigured
+            ? "Đăng ký email đang tạm tắt vì cấu hình Resend hiện không hợp lệ. Bạn có thể tiếp tục bằng Google."
+            : "Đăng ký email đang tạm tắt vì máy chủ chưa có dịch vụ gửi mã. Bạn có thể tiếp tục bằng Google."
           : "";
       }
       if (registerSubmit) {

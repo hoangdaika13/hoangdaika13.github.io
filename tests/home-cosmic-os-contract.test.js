@@ -58,9 +58,10 @@ test("P0 Morning Brief and Continue Stack are built from real resumable records"
     "pending-publish", "comic-update", "website-warning", "next-action",
     "collectContinueStack", "data-hco-continue-stack", "data-hco-continue"
   ], "brief and continue");
-  for (const kind of ["project", "lesson", "upload", "thumbnail", "comic", "game"]) {
+  for (const kind of ["project", "lesson", "upload", "thumbnail", "comic"]) {
     assert.match(source, new RegExp(`["']${kind}["']`), `Continue Stack missing ${kind}`);
   }
+  assert.doesNotMatch(source, /["']game["']/);
   assert.match(source, /slice\(0,\s*5\)/, "Continue Stack must be capped at five real records");
   assert.doesNotMatch(source, /(?:sample|demo|mock)(?:Brief|Continue|Progress)/i);
 });
@@ -185,9 +186,10 @@ test("P2 galaxy signals and concierge reflect state without autonomous publishin
 test("P2 context profiles and constellation progress preserve truthful user data", () => {
   includesAll(source, [
     "context-aware", "morning", "work-hours", "evening", "active-upload", "website-incident", "near-deadline",
-    "home-profiles", "work", "learning", "creative", "website", "entertainment", "family",
+    "home-profiles", "work", "learning", "creative", "website", "family",
     "constellation-progress", "tasksCompleted", "vocabularyLearned", "contentPublished", "projectsCompleted", "focusMinutes", "skillsUnlocked"
   ], "context, profiles and constellation");
+  assert.doesNotMatch(source, /hh\.astral-realms|\/entertainment|\/character-3d/);
   assert.doesNotMatch(source, /(?:fakeScore|randomScore|pressureStreak)/i);
 });
 

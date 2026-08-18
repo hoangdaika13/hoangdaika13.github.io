@@ -11,27 +11,28 @@ test("HH Neon Gateway assets are wired into the application shell", () => {
   const worker = read("sw.js");
   assert.match(html, /auth-neon-gateway\.css\?v=9/);
   assert.match(html, /auth-h-galaxy\.css\?v=11/);
-  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=11/);
-  assert.match(read("auth-neon-gateway.js"), /auth-living-galaxy-3d\.js\?v=14/);
-  assert.match(html, /auth-neon-gateway\.js\?v=25/);
+  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=12/);
+  assert.match(read("auth-neon-gateway.js"), /auth-living-galaxy-3d\.js\?v=15/);
+  assert.match(html, /auth-neon-gateway\.js\?v=26/);
   assert.match(worker, /auth-neon-gateway\.css\?v=9/);
   assert.match(worker, /auth-h-galaxy\.css\?v=11/);
-  assert.match(worker, /auth-h-galaxy\.js\?v=11/);
-  assert.match(worker, /auth-living-galaxy-3d\.js\?v=14/);
-  assert.match(worker, /auth-neon-gateway\.js\?v=25/);
+  assert.match(worker, /auth-h-galaxy\.js\?v=12/);
+  assert.match(worker, /auth-living-galaxy-3d\.js\?v=15/);
+  assert.match(worker, /auth-neon-gateway\.js\?v=26/);
   assert.match(html, /auth-creative-universe\.css\?v=5/);
   assert.match(read("performance-loader.js"), /scripts:\s*\["auth-creative-universe\.js\?v=5"\]/);
   assert.match(html, /data-auth-motion-toggle/);
   assert.match(html, /class="auth-gateway-scene"/);
   assert.doesNotMatch(html, /class="auth-solar-system"/);
-  assert.equal([...html.matchAll(/data-hh-planet="\d+"/g)].length, 25);
+  assert.equal([...html.matchAll(/data-hh-planet="\d+"/g)].length, 23);
 });
 
 test("login galaxy replaces the old showcase and keeps Google-only auth", () => {
   const html = read("index.html");
-  for (const id of ["home", "creative", "music", "media", "graphic", "dev", "work", "communication", "entertainment", "analytics", "learning", "english", "japanese", "system", "support"]) {
+  for (const id of ["home", "creative", "music", "media", "graphic", "dev", "work", "communication", "analytics", "learning", "english", "japanese", "system", "support"]) {
     assert.match(html, new RegExp(`data-hh-galaxy-key="${id}"`));
   }
+  assert.doesNotMatch(html, /data-hh-galaxy-key="(?:entertainment|character)"/);
   assert.doesNotMatch(html, /auth-feature-showcase|auth-benefits/);
   assert.doesNotMatch(html, /data-oauth-provider="facebook"/i);
   assert.match(html, /data-oauth-provider="google"/i);

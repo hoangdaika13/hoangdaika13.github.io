@@ -30,6 +30,7 @@ test("physiognomy is self-described, local and never a biometric personality inf
   assert.equal(result.ok, true);
   assert.equal(result.observations.length, 5);
   assert.match(result.privacy, /Không dùng camera/);
+  assert.match(result.privacy, /không nhận ảnh hoặc dữ liệu định danh/);
   assert.match(result.limitations.join(" "), /Không suy luận nhân cách/);
 });
 
@@ -39,6 +40,7 @@ test("dream symbol journal works locally and keeps uncertainty explicit", () => 
   assert.ok(result.matches.some((item) => item.id === "water"));
   assert.ok(result.matches.some((item) => item.id === "house"));
   assert.ok(result.matches.some((item) => item.id === "lost"));
-  assert.match(result.privacy, /không gửi Gemini/);
+  assert.match(result.privacy, /Nội dung nguyên văn chỉ được xử lý trong trình duyệt/);
+  assert.match(result.privacy, /mô-típ đã khớp cục bộ/);
   assert.match(result.limitations.join(" "), /không dự báo tương lai/);
 });

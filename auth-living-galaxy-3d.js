@@ -33,9 +33,9 @@
     const recent = read("hh.app-shell.recent", []);
     const text = JSON.stringify(Array.isArray(recent) ? recent : []).toLowerCase();
     const patterns = {
-      home: ["home"], character: ["character-3d", "avatar"], social: ["social-media-tools", "social"], system: ["system", "settings"], creative: ["create", "ai"], music: ["music-ai"], tools: ["davinci-resolve", "youtube", "facebook", "tiktok"],
+      home: ["home"], social: ["social-media-tools", "social"], system: ["system", "settings"], creative: ["create", "ai"], music: ["music-ai"], tools: ["davinci-resolve", "youtube", "facebook", "tiktok"],
       comicMotion: ["comic-motion"], comicReader: ["comic-reader"], media: ["media-design", "video", "photo"], graphic: ["graphic"], dev: ["dev", "api", "git"], work: ["work", "project"],
-      communication: ["communication", "messenger", "community"], entertainment: ["game", "entertainment", "astra"],
+      communication: ["communication", "messenger", "community"],
       cinema: ["cinema", "film"], musicLibrary: ["/music", "open-music"], copyright: ["copyright", "rights"], analytics: ["analytics", "insight"], learning: ["learn", "lesson"], english: ["english"], japanese: ["japanese"], support: ["support", "donat"]
     };
     return Object.fromEntries(Object.entries(patterns).map(([key, words]) => [key, words.reduce((sum, word) => sum + (text.split(word).length - 1), 0)]));

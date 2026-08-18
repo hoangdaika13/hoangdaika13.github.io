@@ -21,11 +21,6 @@
     "test:music-galaxy": "node --test tests/music-galaxy-contract.test.js tests/music-production-suite-integration.test.js tests/music-ai-studio-contract.test.js",
     "test:learning": "node --test tests/hh-school-*.test.js",
     "migrate:hh-school": "node scripts/migrate-hh-school.js",
-    "test:games": "node --test tests/game-*.test.js tests/astral-realms*.test.js tests/astra-universe-expansion.test.js tests/game-entertainment-integration.test.js",
-    "test:astra-character-v3": "node --test tests/game-astra-character-runtime-v3.test.js realtime-server/test/astral-character-runtime-v3.test.js",
-    "test:astra-story-v3": "node --test tests/astral-realms-nexus-echo-v3.test.js tests/astral-realms-nexus-echo.test.js",
-    "test:games:backend": "node --test tests/game-cloud-api.test.js realtime-server/test/game-center.test.js realtime-server/test/astra-realtime.test.js",
-    "test:character-3d": "node --test tests/character-3d-export.test.js tests/character-3d-studio.test.js",
     "test:social-media-tools": "node --test tests/social-media-tools-*.test.js tests/social-media-preview-runtime.test.js tests/social-media-*-v6.test.js tests/social-media-*-v7.test.js",
     "migrate:social-media-tools": "node scripts/migrate-social-media-tools.js"
   },

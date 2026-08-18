@@ -8,17 +8,8 @@ online-communication-debug.png
 oauth-verification-artifacts/
 tmp/
 .tmp-photogrammetry/
-assets/astral-realms/characters/sketchfab-cc-by/miss-galaxy-motion*
-assets/astral-realms/characters/sketchfab-cc-by/qa-renders/
-assets/astral-realms/weapons/models/*.uncompressed.glb
 .env*
 !.env.example
 __pycache__/
 *.pyc
 *.blend1
-character_generator/output/*
-!character_generator/output/.gitkeep
-assets/character-3d/astra-h08/output/*
-!assets/character-3d/astra-h08/output/.gitkeep
-!assets/character-3d/astra-h08/output/ASTRA_H08.pending.json
-assets/character-3d/orion-h09/
