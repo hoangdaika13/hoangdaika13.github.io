@@ -285,43 +285,36 @@ function receiptEmail(donation) {
   const html = `<!doctype html>
 <html lang="vi">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>
-<body style="margin:0;padding:0;background-color:#07070d;color:#f6f1ff;font-family:Inter,'Segoe UI',Arial,sans-serif;-webkit-text-size-adjust:100%">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">Khoản ủng hộ ${htmlEscape(amount)} của bạn đã được xác minh. Nhhoang trân trọng cảm ơn bạn.</div>
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#07070d;background-image:linear-gradient(145deg,#07070d 0%,#171028 48%,#081b22 100%)">
-    <tr><td align="center" style="padding:20px 10px">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:620px;background-color:#11131d;border:1px solid #59456e;border-radius:22px;overflow:hidden;box-shadow:0 18px 55px rgba(0,0,0,.5)">
-        <tr><td style="height:5px;font-size:0;line-height:0;background-color:#f2d06b;background-image:linear-gradient(90deg,#f6d878,#ff79c6,#8f7dff,#66e8e1)">&nbsp;</td></tr>
-        <tr><td style="padding:23px 26px 21px;background-color:#1b1730;background-image:linear-gradient(135deg,#2b1839 0%,#171a35 52%,#0d3135 100%)">
+<body style="margin:0;padding:0;background-color:#080704;color:#fff7e7;font-family:Inter,'Segoe UI',Arial,sans-serif;-webkit-text-size-adjust:100%">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">Khoản ủng hộ ${htmlEscape(amount)} đã được xác minh. HH Platform xin gửi lời cảm ơn sâu sắc nhất tới bạn.</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#080704;background-image:linear-gradient(145deg,#080704 0%,#171006 55%,#170810 100%)">
+    <tr><td align="center" style="padding:18px 10px">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:590px;background-color:#100d09;border:1px solid #e2aa47;border-radius:22px;overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.55)">
+        <tr><td style="height:4px;font-size:0;line-height:0;background-color:#f2d06b;background-image:linear-gradient(90deg,#f6d878,#ffb84f,#ef6f9d)">&nbsp;</td></tr>
+        <tr><td style="padding:18px 22px;background-color:#181109;background-image:linear-gradient(120deg,#201506 0%,#17110b 64%,#28101a 100%);border-bottom:1px solid #5a4528">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
-            <td width="64" valign="middle"><table role="presentation" width="56" height="56" cellspacing="0" cellpadding="0" border="0" style="width:56px;height:56px;border-radius:50%;background-color:#f1ce70;background-image:linear-gradient(135deg,#fff0a8,#ef8fc7 58%,#78e8df);border:2px solid #fff1b8"><tr><td align="center" valign="middle" style="font-size:28px;line-height:56px;font-weight:950;color:#160f25">H</td></tr></table></td>
-            <td valign="middle" style="padding-left:12px"><div style="font-size:10px;line-height:1.4;letter-spacing:2.5px;font-weight:800;color:#7ff2e6">HH PLATFORM · PATRON LETTER</div><div style="margin-top:3px;font-size:13px;line-height:1.45;color:#ddd4ee">Một lời cảm ơn dành riêng cho người đồng hành</div><div style="margin-top:3px;font-size:10px;line-height:1.4;letter-spacing:1.8px;color:#f3b9dc">HH PLATFORM · COSMIC MAIL</div></td>
+            <td width="56" valign="middle"><table role="presentation" width="46" height="46" cellspacing="0" cellpadding="0" border="0" style="width:46px;height:46px;border:1px solid #e3ae4c;border-radius:50%;background-color:#201508"><tr><td align="center" valign="middle" style="font-size:21px;line-height:46px;font-weight:900;color:#f8c85f">HH</td></tr></table></td>
+            <td valign="middle"><div style="font-size:17px;line-height:1.25;font-weight:850;color:#ffffff">HH Platform</div><div style="margin-top:3px;font-size:9px;line-height:1.4;letter-spacing:2px;font-weight:800;color:#e8b54f">CLOUD · CONNECT · CREATE</div></td>
+            <td width="80" align="right" valign="middle"><div style="color:#f2b64f;font-size:23px;line-height:1">— ✦</div></td>
           </tr></table>
-          <h1 style="margin:20px 0 8px;font-size:34px;line-height:1.12;letter-spacing:-.7px;color:#ffffff">Trân trọng cảm ơn<br><span style="color:#f7d77b">${htmlEscape(name)}</span></h1>
-          <p style="margin:0;max-width:530px;font-size:14px;line-height:1.65;color:#d2cbe1">HH Platform xin gửi lời cảm ơn chân thành và sâu sắc nhất vì sự ủng hộ quý báu của bạn. Khoản ủng hộ đã được xác minh thành công và tiếp thêm năng lượng cho hành trình phát triển.</p>
         </td></tr>
-        <tr><td style="padding:17px 26px;background-color:#11131d">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#0b0e17;border:1px solid #3a3650;border-radius:18px">
-            <tr><td align="center" style="padding:17px 20px 6px;font-size:10px;line-height:1.4;letter-spacing:2.4px;font-weight:800;color:#9b91b2">KHOẢN ỦNG HỘ ĐÃ XÁC NHẬN</td></tr>
-            <tr><td align="center" style="padding:0 20px 12px;font-size:31px;line-height:1.2;font-weight:950;color:#f5d878">${htmlEscape(amount)}</td></tr>
-            <tr><td style="padding:0 20px 15px">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="font-size:12px;line-height:1.45;color:#ddd8e8">
-                <tr><td style="padding:6px 0;border-top:1px solid #272638;color:#918ba0">Hạng mục đồng hành</td><td align="right" style="padding:6px 0;border-top:1px solid #272638;font-weight:750;color:#79e8df">${htmlEscape(missionLabel)}</td></tr>
-                <tr><td style="padding:6px 0;border-top:1px solid #272638;color:#918ba0">Mã giao dịch</td><td align="right" style="padding:6px 0;border-top:1px solid #272638;font-weight:750">${htmlEscape(donation.reference)}</td></tr>
-                <tr><td style="padding:6px 0;border-top:1px solid #272638;color:#918ba0">Mã thư xác nhận</td><td align="right" style="padding:6px 0;border-top:1px solid #272638;font-weight:750">${htmlEscape(receiptId)}</td></tr>
-                <tr><td style="padding:6px 0;border-top:1px solid #272638;color:#918ba0">Thời gian xác minh</td><td align="right" style="padding:6px 0;border-top:1px solid #272638">${htmlEscape(paidAt)}</td></tr>
-              </table>
-            </td></tr>
+        <tr><td align="center" style="padding:20px 24px 10px;background-color:#100d09">
+          <table role="presentation" width="66" height="66" cellspacing="0" cellpadding="0" border="0" style="width:66px;height:66px;border:1px solid #e2aa47;border-radius:50%;background-color:#211408;box-shadow:0 0 24px rgba(246,190,75,.45)"><tr><td align="center" valign="middle" style="font-size:34px;line-height:66px;color:#ffd573">♥</td></tr></table>
+          <div style="margin-top:14px;font-size:10px;line-height:1.4;letter-spacing:2.1px;font-weight:800;color:#e8b54f">HH PLATFORM · PATRON LETTER</div>
+          <h1 style="margin:7px 0 7px;font-size:31px;line-height:1.13;letter-spacing:-.6px;color:#ffffff">Cảm ơn bạn đã ủng hộ</h1>
+          <div style="font-size:19px;line-height:1.4;font-weight:800;color:#f6c964">${htmlEscape(name)}</div>
+          <p style="margin:9px auto 0;max-width:470px;font-size:13px;line-height:1.6;color:#e1d8c8">HH Platform xin gửi lời cảm ơn chân thành và sâu sắc nhất vì sự ủng hộ quý báu của bạn. Đây là nguồn động lực để chúng tôi tiếp tục xây dựng những trải nghiệm hữu ích và chỉn chu hơn mỗi ngày.</p>
+          <div style="margin:13px auto 0;color:#e4ad47;font-size:14px;line-height:1">────────　✦　────────</div>
+        </td></tr>
+        <tr><td align="center" style="padding:10px 24px;background-color:#100d09">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:470px;background-color:#191107;border:1px solid #a7752d;border-radius:14px;box-shadow:0 0 22px rgba(225,163,58,.16)">
+            <tr><td width="58" align="center" valign="middle" style="padding:13px 4px 13px 13px;font-size:30px;color:#f7bf4d">★</td><td valign="middle" style="padding:13px 14px 13px 5px"><div style="font-size:11px;line-height:1.4;color:#d6a64b">ỦNG HỘ THÀNH CÔNG</div><div style="margin-top:2px;font-size:28px;line-height:1.2;font-weight:900;color:#f7ca66">${htmlEscape(amount)}</div></td></tr>
+            <tr><td colspan="2" style="padding:0 17px 13px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="font-size:11px;line-height:1.45;color:#e7ddcb"><tr><td style="padding:5px 0;border-top:1px solid #45321c;color:#a89881">Hạng mục đồng hành</td><td align="right" style="padding:5px 0;border-top:1px solid #45321c;color:#f1c86c">${htmlEscape(missionLabel)}</td></tr><tr><td style="padding:5px 0;border-top:1px solid #45321c;color:#a89881">Mã giao dịch</td><td align="right" style="padding:5px 0;border-top:1px solid #45321c">${htmlEscape(donation.reference)}</td></tr><tr><td style="padding:5px 0;border-top:1px solid #45321c;color:#a89881">Mã thư xác nhận</td><td align="right" style="padding:5px 0;border-top:1px solid #45321c">${htmlEscape(receiptId)}</td></tr><tr><td style="padding:5px 0;border-top:1px solid #45321c;color:#a89881">Thời gian xác minh</td><td align="right" style="padding:5px 0;border-top:1px solid #45321c">${htmlEscape(paidAt)}</td></tr></table></td></tr>
           </table>
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:14px"><tr>
-            <td width="49%" valign="top" style="padding:13px;background-color:#171323;border:1px solid #3d2d50;border-radius:14px"><div style="font-size:19px">✦</div><div style="margin-top:5px;font-size:11px;font-weight:800;color:#f3b9dc">GIÁ TRỊ BẠN TRAO</div><p style="margin:5px 0 0;font-size:12px;line-height:1.5;color:#aaa2b8">Duy trì máy chủ, dịch vụ AI và trải nghiệm miễn phí.</p></td>
-            <td width="2%" style="font-size:0">&nbsp;</td>
-            <td width="49%" valign="top" style="padding:13px;background-color:#0e2022;border:1px solid #245052;border-radius:14px"><div style="font-size:19px">◇</div><div style="margin-top:5px;font-size:11px;font-weight:800;color:#80eee5">DẤU ẤN ĐỒNG HÀNH</div><p style="margin:5px 0 0;font-size:12px;line-height:1.5;color:#a8b9ba">Một ngôi sao trong chòm sao Supporter HH.</p></td>
-          </tr></table>
-          <p style="margin:17px 0 0;font-size:13px;line-height:1.6;color:#c8c1d3">Nhhoang hiểu rằng mỗi sự ủng hộ đều đến từ niềm tin. Tôi xin trân trọng gìn giữ niềm tin ấy bằng những sản phẩm chỉn chu, hữu ích và minh bạch hơn mỗi ngày.</p>
-          <p style="margin:17px 0 8px;text-align:center"><a href="${htmlEscape(siteUrl)}/#/support" style="display:inline-block;padding:12px 23px;border-radius:999px;background-color:#f2d06b;background-image:linear-gradient(110deg,#f6d878,#ec9dcc 52%,#72e8df);color:#17101f;text-decoration:none;font-size:13px;font-weight:900;box-shadow:0 8px 26px rgba(233,154,204,.25)">Khám phá trang tri ân&nbsp; →</a></p>
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:28px;border-top:1px solid #2b2938"><tr><td style="padding-top:21px"><div style="font-size:14px;color:#938ba1">Trân trọng,</div><div style="margin-top:4px;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-style:italic;color:#f7d77b">Nhhoang</div><div style="margin-top:3px;font-size:11px;letter-spacing:1.8px;color:#736c80">FOUNDER · HH PLATFORM</div></td></tr></table>
+          <p style="margin:12px auto 0;max-width:465px;font-size:12px;line-height:1.55;color:#cfc4b3">Tôi xin trân trọng gìn giữ niềm tin bạn đã trao bằng những sản phẩm hữu ích, minh bạch và tốt hơn mỗi ngày.</p>
         </td></tr>
-        <tr><td align="center" style="padding:15px 22px;background-color:#090b12;font-size:10px;line-height:1.55;color:#6f6b79">Email giao dịch tự động, chỉ gửi sau khi khoản ủng hộ được máy chủ xác minh.<br>Đây là thư xác nhận ủng hộ, không phải hóa đơn tài chính. · <a href="${htmlEscape(siteUrl)}/#/support" style="color:#8edfd9;text-decoration:none">hoang8.com</a></td></tr>
+        <tr><td align="center" style="padding:9px 24px 17px;background-color:#100d09"><a href="${htmlEscape(siteUrl)}/#/support" style="display:inline-block;min-width:220px;padding:12px 22px;border:1px solid #f3c25d;border-radius:12px;background-color:#f2d06b;background-image:linear-gradient(105deg,#f6cf6a,#eaa446 48%,#ed6c9c);color:#1b1106;text-decoration:none;font-size:13px;font-weight:900;box-shadow:0 8px 26px rgba(233,154,100,.24)">Xem HH Platform &nbsp;✦</a></td></tr>
+        <tr><td style="padding:12px 22px;background-color:#0a0806;border-top:1px solid #49351d"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="font-size:10px;line-height:1.5;color:#8e806e"><span style="color:#d7aa50">Trân trọng,</span> Nhhoang · FOUNDER · HH PLATFORM</td><td align="right" style="font-size:10px;line-height:1.5;color:#8e806e"><a href="${htmlEscape(siteUrl)}/#/support" style="color:#e6b958;text-decoration:none">hoang8.com</a><br>COSMIC THANK-YOU · 2026.08</td></tr></table><div style="margin-top:7px;text-align:center;font-size:9px;line-height:1.45;color:#6e6559">Chỉ gửi sau khi khoản ủng hộ được máy chủ xác minh · Đây không phải hóa đơn tài chính.</div></td></tr>
       </table>
     </td></tr>
   </table>

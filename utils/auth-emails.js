@@ -57,16 +57,45 @@ function maskedIp(value) {
   return parts.length === 4 ? `${parts[0]}.${parts[1]}.•••.•••` : "Đã ẩn vì quyền riêng tư";
 }
 
-function shell({ preheader, eyebrow, title, intro, body, ctaLabel, ctaHref, footer }) {
-  const accent = "#7ff2e6";
-  const pink = "#f39acb";
-  const gold = "#f7d77b";
+function shell({ preheader, eyebrow, title, intro, body, ctaLabel, ctaHref, footer, theme = "welcome", heroIcon = "✦" }) {
+  const palettes = {
+    welcome: { accent: "#66eaff", secondary: "#f058bd", panel: "#071a2a", border: "#4dddf2", icon: "#63ecff" },
+    login: { accent: "#bc7cff", secondary: "#5ee7ff", panel: "#18102f", border: "#a875ef", icon: "#d085ff" }
+  };
+  const palette = palettes[theme] || palettes.welcome;
   const url = escapeHtml(ctaHref || siteUrl());
-  // Keep this shell intentionally compact: one clear hero, one evidence card and
-  // one CTA. Tables + inline styles render consistently in Gmail, Outlook and
-  // mobile clients, while the solid colours remain a safe fallback for clients
-  // that strip gradients or advanced CSS.
-  return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#070914;color:#f7f4ff;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escapeHtml(preheader)}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#070914"><tr><td align="center" style="padding:20px 10px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:620px;background-color:#101426;border:1px solid #293458;border-radius:22px;overflow:hidden"><tr><td style="height:6px;font-size:0;line-height:0;background-color:${accent};background-image:linear-gradient(90deg,${accent},${pink},${gold})">&nbsp;</td></tr><tr><td style="padding:22px 26px 16px;background-color:#121a31;background-image:linear-gradient(140deg,#182744 0%,#121a31 55%,#241833 100%)"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="48" valign="top"><div style="width:42px;height:42px;border-radius:14px;background-color:#1a3440;color:${accent};font-size:25px;line-height:42px;text-align:center;font-weight:800">H</div></td><td valign="middle" style="padding-left:13px"><div style="font-size:11px;line-height:1.4;letter-spacing:2.6px;font-weight:800;color:${accent}">HH PLATFORM · COSMIC MAIL</div><div style="margin-top:4px;font-size:13px;line-height:1.45;color:#c9c6d8">Một lời nhắn nhỏ từ vũ trụ HH</div></td></tr></table><div style="margin-top:22px;font-size:11px;letter-spacing:2px;font-weight:800;color:${pink}">${escapeHtml(eyebrow)}</div><h1 style="margin:7px 0 10px;font-size:34px;line-height:1.12;letter-spacing:-.7px;color:#fff">${title}</h1><p style="margin:0;font-size:15px;line-height:1.65;color:#d7d3e2">${intro}</p></td></tr><tr><td style="padding:16px 26px 10px;background-color:#0e1323">${body}</td></tr><tr><td style="padding:8px 26px 22px;background-color:#0e1323"><a href="${url}" style="display:inline-block;padding:12px 19px;border-radius:12px;background-color:${gold};background-image:linear-gradient(110deg,${gold},#efabd0 55%,${accent});color:#17111e;text-decoration:none;font-size:14px;font-weight:800">${escapeHtml(ctaLabel || "Mở HH Platform")} &nbsp;→</a></td></tr><tr><td style="padding:15px 26px;background-color:#090c17;border-top:1px solid #202842;color:#88869a;font-size:11px;line-height:1.6">${footer || `Email tự động từ <a href="${url}" style="color:${accent};text-decoration:none">hoang8.com</a> · Bạn có thể quản lý phiên đăng nhập trong tài khoản.`}</td></tr></table></td></tr></table></body></html>`;
+  // Compact, image-free and deliberately table-based for Gmail/Outlook. Solid
+  // colours are fallbacks when an email client strips gradients or shadows.
+  return `<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;background-color:#030914;color:#f7f4ff;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escapeHtml(preheader)}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#030914;background-image:linear-gradient(145deg,#03101e 0%,#09091b 52%,#16091d 100%)">
+    <tr><td align="center" style="padding:18px 10px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:590px;background-color:#08111f;border:1px solid ${palette.border};border-radius:22px;overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.52)">
+        <tr><td style="height:4px;font-size:0;line-height:0;background-color:${palette.accent};background-image:linear-gradient(90deg,${palette.accent},${palette.secondary},${palette.accent})">&nbsp;</td></tr>
+        <tr><td style="padding:18px 22px;background-color:${palette.panel};background-image:linear-gradient(120deg,${palette.panel} 0%,#0b1022 62%,#21102d 100%);border-bottom:1px solid #293550">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td width="56" valign="middle"><table role="presentation" width="46" height="46" cellpadding="0" cellspacing="0" border="0" style="width:46px;height:46px;border:1px solid ${palette.border};border-radius:50%;background-color:#11152a"><tr><td align="center" valign="middle" style="font-size:21px;line-height:46px;font-weight:900;color:${palette.accent}">HH</td></tr></table></td>
+            <td valign="middle"><div style="font-size:17px;line-height:1.25;font-weight:850;color:#ffffff">HH Platform</div><div style="margin-top:3px;font-size:9px;line-height:1.4;letter-spacing:2px;font-weight:800;color:${palette.accent}">CLOUD · CONNECT · CREATE</div></td>
+            <td width="80" align="right" valign="middle"><div style="color:${palette.secondary};font-size:23px;line-height:1">— ✦</div></td>
+          </tr></table>
+        </td></tr>
+        <tr><td align="center" style="padding:20px 24px 12px;background-color:#080f1d">
+          <table role="presentation" width="66" height="66" cellpadding="0" cellspacing="0" border="0" style="width:66px;height:66px;border:1px solid ${palette.border};border-radius:50%;background-color:#10152a;box-shadow:0 0 24px ${palette.border}"><tr><td align="center" valign="middle" style="font-size:31px;line-height:66px;color:${palette.icon}">${escapeHtml(heroIcon)}</td></tr></table>
+          <div style="margin-top:15px;font-size:10px;line-height:1.4;letter-spacing:2.1px;font-weight:800;color:${palette.accent}">${escapeHtml(eyebrow)}</div>
+          <h1 style="margin:7px 0 8px;font-size:31px;line-height:1.13;letter-spacing:-.6px;color:#ffffff">${title}</h1>
+          <p style="margin:0 auto;max-width:470px;font-size:14px;line-height:1.6;color:#d6d4e3">${intro}</p>
+          <div style="margin:14px auto 0;color:${palette.secondary};font-size:14px;line-height:1">────────　✦　────────</div>
+        </td></tr>
+        <tr><td align="center" style="padding:10px 24px 8px;background-color:#080f1d">${body}</td></tr>
+        <tr><td align="center" style="padding:10px 24px 22px;background-color:#080f1d"><a href="${url}" style="display:inline-block;min-width:220px;padding:13px 22px;border:1px solid ${palette.accent};border-radius:12px;background-color:${palette.accent};background-image:linear-gradient(105deg,${palette.accent},#7b70f2 48%,${palette.secondary});color:#07101d;text-decoration:none;font-size:14px;font-weight:900;box-shadow:0 8px 28px rgba(95,221,255,.2)">${escapeHtml(ctaLabel || "Mở HH Platform")} &nbsp;✦</a></td></tr>
+        <tr><td align="center" style="padding:13px 22px;background-color:#050a13;border-top:1px solid #26324b;color:#89889a;font-size:10px;line-height:1.55">${footer || `◉ &nbsp; <a href="${url}" style="color:${palette.accent};text-decoration:none">hoang8.com</a><br>COSMIC THANK-YOU · 2026.08 · Email giao dịch tự động`}</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
 }
 
 function welcomeEmail({ user, verificationPending = false } = {}) {
@@ -77,12 +106,14 @@ function welcomeEmail({ user, verificationPending = false } = {}) {
     text: `Xin chào ${displayName(user)},\n\nChân thành cảm ơn bạn đã tin tưởng đăng ký HH Platform. Sự hiện diện của bạn là một phần rất quý giá trong hành trình xây dựng một vũ trụ học tập, sáng tạo và kết nối hữu ích.\n${verificationPending ? "Hãy kiểm tra email xác minh được gửi kèm để hoàn tất bảo vệ tài khoản.\n" : "Tài khoản của bạn đã sẵn sàng để bắt đầu.\n"}\nMở website: ${url}\n\nVới lòng biết ơn,\nNhhoang · HH Platform`,
     html: shell({
       preheader: "Chào mừng bạn đến với HH Platform — hành trình của bạn bắt đầu từ đây.",
-      eyebrow: "WELCOME ABOARD",
-      title: `Chào mừng<br><span style="color:#f7d77b">${name}</span>`,
-      intro: "Chân thành cảm ơn bạn đã tin tưởng đăng ký. Từ hôm nay, bạn có một góc riêng để học tập, làm việc và sáng tạo cùng HH Platform.",
-      body: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:15px 16px;background-color:#15263b;border:1px solid #2e5d73;border-radius:14px"><div style="font-size:20px;line-height:1.2;color:#f7d77b">✦　✧　✦</div><div style="margin-top:7px;color:#80eee5;font-size:12px;font-weight:800;letter-spacing:1px">NGÔI SAO MỚI ĐÃ SÁNG</div><p style="margin:7px 0 0;color:#c8d7df;font-size:13px;line-height:1.6">${verificationPending ? "Một email xác minh riêng đang trên đường tới hộp thư của bạn. Hãy xác minh để bảo vệ tài khoản và mở đầy đủ trải nghiệm." : "Hồ sơ của bạn đã được ghi nhận. Hãy bắt đầu bằng một công cụ hoặc nhiệm vụ nhỏ hôm nay."}</p></td></tr><tr><td style="padding-top:12px;color:#bdb8cc;font-size:13px;line-height:1.6">Gợi ý khởi hành: khám phá <strong style="color:#f39acb">Trang chủ</strong>, chọn một hành tinh và bắt đầu theo nhịp của bạn.</td></tr></table>`,
+      eyebrow: "REGISTRATION WELCOME",
+      title: `Chào mừng bạn<br><span style="color:#f058bd;font-size:21px">${name}</span>`,
+      intro: "HH Platform trân trọng cảm ơn bạn đã tin tưởng đăng ký. Sự hiện diện của bạn là một phần quý giá trong hành trình xây dựng không gian học tập, sáng tạo và kết nối này.",
+      body: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:470px"><tr><td align="center" style="padding:11px 15px;background-color:#0b1c2c;border:1px solid #255e72;border-radius:12px;color:#c9eaf0;font-size:12px;line-height:1.55"><strong style="color:#66eaff">${verificationPending ? "XÁC MINH EMAIL ĐỂ HOÀN TẤT" : "TÀI KHOẢN ĐÃ SẴN SÀNG"}</strong><br>${verificationPending ? "Thư xác minh riêng đang được gửi tới hộp thư của bạn." : "Hãy bắt đầu khám phá HH Platform theo nhịp của riêng bạn."}</td></tr></table>`,
       ctaLabel: "Khám phá HH Platform",
-      ctaHref: `${url}/#/home`
+      ctaHref: `${url}/#/home`,
+      theme: "welcome",
+      heroIcon: "♙"
     })
   };
 }
@@ -98,12 +129,14 @@ function loginThankYouEmail({ user, session, method } = {}) {
     text: `Xin chào ${displayName(user)},\n\nChân thành cảm ơn bạn đã tiếp tục đồng hành cùng HH Platform. Chúng tôi trân trọng từng lần bạn quay lại và sẽ luôn cố gắng giữ trải nghiệm an toàn, nhẹ nhàng và hữu ích.\n\nBạn đã đăng nhập lúc ${when}.\nPhương thức: ${loginMethod}\nThiết bị: ${text(device.label, "Không xác định")}\nKhu vực mạng: ${maskedIp(device.ip)}\n\nNếu đây không phải bạn, hãy mở ${url} và thu hồi phiên đăng nhập ngay.\n\nVới lòng biết ơn,\nNhhoang · HH Platform`,
     html: shell({
       preheader: `Bạn vừa trở lại HH Platform lúc ${when}.`,
-      eyebrow: "WELCOME BACK",
-      title: `Rất vui được gặp lại<br><span style="color:#f39acb">${name}</span>`,
-      intro: "Chân thành cảm ơn bạn đã tiếp tục đồng hành cùng HH Platform. Chúng tôi trân trọng từng lần bạn quay lại.",
-      body: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;line-height:1.55;color:#d6d2df"><tr><td colspan="2" style="padding-bottom:8px;color:#80eee5;font-size:11px;font-weight:800;letter-spacing:1px">DẤU VẾT PHIÊN ĐĂNG NHẬP</td></tr><tr><td style="padding:8px 0;border-top:1px solid #252d49;color:#918ba0">Thời gian</td><td align="right" style="padding:8px 0;border-top:1px solid #252d49;font-weight:750">${escapeHtml(when)}</td></tr><tr><td style="padding:8px 0;border-top:1px solid #252d49;color:#918ba0">Phương thức</td><td align="right" style="padding:8px 0;border-top:1px solid #252d49;font-weight:750">${escapeHtml(loginMethod)}</td></tr><tr><td style="padding:8px 0;border-top:1px solid #252d49;color:#918ba0">Thiết bị</td><td align="right" style="padding:8px 0;border-top:1px solid #252d49;font-weight:750">${escapeHtml(text(device.label, "Không xác định"))}</td></tr><tr><td style="padding:8px 0;border-top:1px solid #252d49;color:#918ba0">Mạng</td><td align="right" style="padding:8px 0;border-top:1px solid #252d49;font-weight:750">${escapeHtml(maskedIp(device.ip))}</td></tr></table><div style="margin-top:13px;padding:11px 13px;background-color:#251a32;border:1px solid #603d68;border-radius:12px;color:#e7cde4;font-size:12px;line-height:1.55">Nếu bạn không nhận ra hoạt động này, hãy mở trung tâm tài khoản và thu hồi phiên đăng nhập ngay.</div>`,
-      ctaLabel: "Mở trung tâm tài khoản",
-      ctaHref: `${url}/#/home`
+      eyebrow: "SUCCESSFUL LOGIN",
+      title: "Đăng nhập thành công",
+      intro: `Chào mừng trở lại, <strong style="color:#d085ff">${name}</strong>. Chân thành cảm ơn bạn đã tiếp tục đồng hành cùng HH Platform.`,
+      body: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:500px;font-size:11px;line-height:1.45;color:#d6d2df"><tr><td width="32%" align="center" style="padding:9px 5px;background-color:#0c1d2c;border:1px solid #285b70;border-radius:9px;color:#65e9ff">♢ &nbsp; Phiên đã ghi nhận</td><td width="2%">&nbsp;</td><td width="32%" align="center" style="padding:9px 5px;background-color:#17132d;border:1px solid #594276;border-radius:9px;color:#d7b8f5">▣ &nbsp; ${escapeHtml(loginMethod)}</td><td width="2%">&nbsp;</td><td width="32%" align="center" style="padding:9px 5px;background-color:#11192e;border:1px solid #3b4e79;border-radius:9px;color:#b9d2ff">☁ &nbsp; HH Cloud Online</td></tr><tr><td colspan="5" style="padding-top:10px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0c101d;border:1px solid #2f2b43;border-radius:10px"><tr><td style="padding:7px 10px;color:#918ba0">Thời gian</td><td align="right" style="padding:7px 10px;color:#eee9f8">${escapeHtml(when)}</td></tr><tr><td style="padding:7px 10px;border-top:1px solid #24263a;color:#918ba0">Thiết bị</td><td align="right" style="padding:7px 10px;border-top:1px solid #24263a;color:#eee9f8">${escapeHtml(text(device.label, "Không xác định"))}</td></tr><tr><td style="padding:7px 10px;border-top:1px solid #24263a;color:#918ba0">Mạng đã ẩn</td><td align="right" style="padding:7px 10px;border-top:1px solid #24263a;color:#eee9f8">${escapeHtml(maskedIp(device.ip))}</td></tr></table></td></tr><tr><td colspan="5" align="center" style="padding-top:9px;color:#b9afc9;font-size:11px">Nếu không nhận ra hoạt động này, hãy thu hồi phiên đăng nhập ngay.</td></tr></table>`,
+      ctaLabel: "Mở Trang chủ",
+      ctaHref: `${url}/#/home`,
+      theme: "login",
+      heroIcon: "♢"
     })
   };
 }
