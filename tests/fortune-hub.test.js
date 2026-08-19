@@ -172,7 +172,7 @@ test("module includes working controls, privacy language and lifecycle", () => {
   assert.match(source, /calculateChineseZodiac/);
   assert.match(source, /data-fortune-contract-verify/);
   assert.match(source, /FORTUNE RESULT CONTRACT/);
-  assert.deepEqual(fortune.inspect(), { version: "9.0.0", mounted: false, view: "today", ownerId: null, historyCount: 0, journalCount: 0 });
+  assert.deepEqual(fortune.inspect(), { version: "9.1.0", mounted: false, view: "today", ownerId: null, historyCount: 0, journalCount: 0 });
 });
 
 test("fortune route is lazy loaded, searchable and represented as a major planet", () => {
@@ -184,14 +184,14 @@ test("fortune route is lazy loaded, searchable and represented as a major planet
   assert.match(client, /id: "fortune"[\s\S]*?route: "\/fortune"/);
   assert.match(client, /window\.HHFortuneHub\?\.mount/);
   assert.match(client, /title: "Xem bói"[\s\S]*?key: "xem bói tarot/);
-  assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?fortune-hub-v4\.css\?v=8[\s\S]*?fortune-hub-v5\.css\?v=6[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?iztro-2\.6\.0\.min\.js\?v=2\.6\.0[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-accuracy-lab\.js\?v=1[\s\S]*?fortune-suite-v4\.js\?v=4[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-astrology-v4\.js\?v=2[\s\S]*?fortune-moon-3d\.js\?v=1[\s\S]*?fortune-extended-tools\.js\?v=2[\s\S]*?fortune-hub\.js\?v=18/);
+  assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?fortune-hub-v4\.css\?v=8[\s\S]*?fortune-hub-v5\.css\?v=7[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?iztro-2\.6\.0\.min\.js\?v=2\.6\.0[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-accuracy-lab\.js\?v=1[\s\S]*?fortune-suite-v4\.js\?v=4[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-astrology-v4\.js\?v=2[\s\S]*?fortune-moon-3d\.js\?v=1[\s\S]*?fortune-extended-tools\.js\?v=2[\s\S]*?fortune-hub\.js\?v=19/);
   assert.match(loader, /value\.startsWith\("\/fortune"\)/);
   assert.match(html, /data-hh-galaxy-key="fortune"/);
   assert.match(html, /23 LĨNH VỰC/);
   assert.match(galaxy, /fortune:\s*\{[\s\S]*?route: "#\/fortune"/);
   assert.match(worker, /fortune-hub\.css\?v=3/);
   assert.match(worker, /fortune-hub-v4\.css\?v=8/);
-  assert.match(worker, /fortune-hub-v5\.css\?v=6/);
+  assert.match(worker, /fortune-hub-v5\.css\?v=7/);
   assert.match(worker, /fortune-iching-64\.js\?v=1/);
   assert.match(worker, /fortune-accuracy-lab\.js\?v=1/);
   assert.match(worker, /fortune-suite-v4\.js\?v=4/);
@@ -201,7 +201,7 @@ test("fortune route is lazy loaded, searchable and represented as a major planet
   assert.match(worker, /fortune-moon-3d\.js\?v=1/);
   assert.match(worker, /iztro-2\.6\.0\.min\.js\?v=2\.6\.0/);
   assert.match(worker, /fortune-extended-tools\.js\?v=2/);
-  assert.match(worker, /fortune-hub\.js\?v=18/);
+  assert.match(worker, /fortune-hub\.js\?v=19/);
 });
 
 test("Gemini fortune route enforces opt-in, safety and server-side redaction", () => {
@@ -270,6 +270,9 @@ test("Mystic Observatory V9 provides a two-column workspace, selection inspector
   assert.match(css, /grid-template-columns:220px minmax\(0,1fr\)!important/);
   assert.match(client, /function selectedInspectorItem/); assert.match(client, /if \(!canonical\) return ""/);
   assert.match(client, /data-fortune-action-note/); assert.match(client, /fortune-action-export/);
+  assert.match(client, /aria-controls="fortuneContextInspector"/); assert.match(client, /fortune-inspector-backdrop/);
+  assert.match(client, /event\.key === "Escape"/); assert.match(client, /event\.ctrlKey \|\| event\.metaKey/);
+  assert.match(client, /Thần số học · Bản đồ chỉ số/); assert.match(client, /Gieo quẻ có chứng thư/); assert.match(client, /Lập lá số có chứng thư/);
   assert.match(css, /@media\(max-width:1280px\)/); assert.match(css, /@media\(max-width:700px\)/);
   assert.match(css, /min-height:44px/); assert.match(css, /font-size:16px/); assert.match(css, /prefers-reduced-motion:reduce/);
   assert.match(css, /one-scroll architecture/);
