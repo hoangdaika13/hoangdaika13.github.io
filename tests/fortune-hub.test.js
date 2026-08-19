@@ -172,7 +172,7 @@ test("module includes working controls, privacy language and lifecycle", () => {
   assert.match(source, /calculateChineseZodiac/);
   assert.match(source, /data-fortune-contract-verify/);
   assert.match(source, /FORTUNE RESULT CONTRACT/);
-  assert.deepEqual(fortune.inspect(), { version: "7.0.0", mounted: false, view: "today", ownerId: null, historyCount: 0, journalCount: 0 });
+  assert.deepEqual(fortune.inspect(), { version: "8.0.0", mounted: false, view: "today", ownerId: null, historyCount: 0, journalCount: 0 });
 });
 
 test("fortune route is lazy loaded, searchable and represented as a major planet", () => {
@@ -184,13 +184,14 @@ test("fortune route is lazy loaded, searchable and represented as a major planet
   assert.match(client, /id: "fortune"[\s\S]*?route: "\/fortune"/);
   assert.match(client, /window\.HHFortuneHub\?\.mount/);
   assert.match(client, /title: "Xem bói"[\s\S]*?key: "xem bói tarot/);
-  assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?fortune-hub-v4\.css\?v=8[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?iztro-2\.6\.0\.min\.js\?v=2\.6\.0[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-accuracy-lab\.js\?v=1[\s\S]*?fortune-suite-v4\.js\?v=4[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-astrology-v4\.js\?v=2[\s\S]*?fortune-moon-3d\.js\?v=1[\s\S]*?fortune-extended-tools\.js\?v=2[\s\S]*?fortune-hub\.js\?v=15/);
+  assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?fortune-hub-v4\.css\?v=8[\s\S]*?fortune-hub-v5\.css\?v=3[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?iztro-2\.6\.0\.min\.js\?v=2\.6\.0[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-accuracy-lab\.js\?v=1[\s\S]*?fortune-suite-v4\.js\?v=4[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-astrology-v4\.js\?v=2[\s\S]*?fortune-moon-3d\.js\?v=1[\s\S]*?fortune-extended-tools\.js\?v=2[\s\S]*?fortune-hub\.js\?v=16/);
   assert.match(loader, /value\.startsWith\("\/fortune"\)/);
   assert.match(html, /data-hh-galaxy-key="fortune"/);
   assert.match(html, /23 LĨNH VỰC/);
   assert.match(galaxy, /fortune:\s*\{[\s\S]*?route: "#\/fortune"/);
   assert.match(worker, /fortune-hub\.css\?v=3/);
   assert.match(worker, /fortune-hub-v4\.css\?v=8/);
+  assert.match(worker, /fortune-hub-v5\.css\?v=3/);
   assert.match(worker, /fortune-iching-64\.js\?v=1/);
   assert.match(worker, /fortune-accuracy-lab\.js\?v=1/);
   assert.match(worker, /fortune-suite-v4\.js\?v=4/);
@@ -200,7 +201,7 @@ test("fortune route is lazy loaded, searchable and represented as a major planet
   assert.match(worker, /fortune-moon-3d\.js\?v=1/);
   assert.match(worker, /iztro-2\.6\.0\.min\.js\?v=2\.6\.0/);
   assert.match(worker, /fortune-extended-tools\.js\?v=2/);
-  assert.match(worker, /fortune-hub\.js\?v=15/);
+  assert.match(worker, /fortune-hub\.js\?v=16/);
 });
 
 test("Gemini fortune route enforces opt-in, safety and server-side redaction", () => {
@@ -253,6 +254,20 @@ test("fortune layout supports keyboard focus, reduced motion and 375px screens",
   assert.match(css, /overflow-wrap: anywhere/);
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.doesNotMatch(css, /width:\s*100vw/);
+});
+
+test("Mystic Observatory V5 provides grouped workspace navigation, contextual inspector and six result tabs", () => {
+  const client = read("fortune-hub.js"); const css = read("fortune-hub-v5.css");
+  assert.match(client, /OBSERVATORY_GROUPS/);
+  for (const group of ["Phổ biến", "Thiên văn & lịch", "Hệ phương Đông", "Hệ biểu tượng", "Chiêm nghiệm"]) assert.match(client, new RegExp(group));
+  for (const tab of ["Tổng quan", "Kết quả chi tiết", "Phương pháp tính", "Luận giải sâu", "HH AI phân tích", "Chiêm nghiệm"]) assert.match(client, new RegExp(tab));
+  assert.match(client, /fortune-observatory-topbar/); assert.match(client, /fortune-context-inspector/); assert.match(client, /fortune-flow-stepper/); assert.match(client, /fortune-result-workspace/);
+  assert.match(client, /hh\.fortune\.ai-cache\.v1/); assert.match(client, /runtime\.aiCache/);
+  assert.doesNotMatch(client, /fortune-nav__pinned/);
+  assert.doesNotMatch(client, /data-fortune-pin/);
+  assert.match(css, /grid-template-columns:240px minmax\(650px,1fr\) 340px/);
+  assert.match(css, /@media\(max-width:1280px\)/); assert.match(css, /@media\(max-width:700px\)/);
+  assert.match(css, /min-height:44px/); assert.match(css, /font-size:16px/); assert.match(css, /prefers-reduced-motion:reduce/);
 });
 
 test("Mystic Living Observatory exposes real themes, motion controls and world scenes", () => {
