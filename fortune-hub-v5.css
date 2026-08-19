@@ -70,3 +70,89 @@ body.app-fortune-route .app-workspace{height:auto!important;min-height:100%!impo
   .fortune-context-inspector{inset:auto 0 68px;width:100%;height:min(72dvh,650px);max-height:none;transform:none!important}
   .fortune-observatory-actions{position:sticky!important;bottom:68px;min-height:64px}
 }
+
+/* HH Mystic Observatory V9 · unified two-column workspace */
+.fortune-hub{--tool-accent:#7deaf2;--tool-accent-2:#a26dff;--tool-rgb:125,234,242}
+.fortune-hub[data-view="tarot"],.fortune-hub[data-view="academy"]{--tool-accent:#f4a8ff;--tool-accent-2:#ffc66e;--tool-rgb:226,111,255}
+.fortune-hub[data-view="iching"],.fortune-hub[data-view="eastern"]{--tool-accent:#6be3b5;--tool-accent-2:#d8aa65;--tool-rgb:75,199,151}
+.fortune-hub[data-view="numerology"]{--tool-accent:#69eff5;--tool-accent-2:#b492ff;--tool-rgb:81,226,239}
+.fortune-hub[data-view="chart"],.fortune-hub[data-view="zodiac"]{--tool-accent:#72a7ff;--tool-accent-2:#ffd36f;--tool-rgb:92,142,255}
+.fortune-hub[data-view="moon"],.fortune-hub[data-view="sky"]{--tool-accent:#9fc9ff;--tool-accent-2:#e8eef8;--tool-rgb:104,157,234}
+.fortune-hub[data-view="tuvi"]{--tool-accent:#ff786d;--tool-accent-2:#ffd264;--tool-rgb:229,77,68}
+.fortune-hub[data-view="symbols"]{--tool-accent:#79bde8;--tool-accent-2:#d5a269;--tool-rgb:81,147,190}
+.fortune-hub[data-view="journal"],.fortune-hub[data-view="calendar"]{--tool-accent:#91d9ff;--tool-accent-2:#c3a8ff;--tool-rgb:118,190,232}
+.fortune-observatory-topbar{grid-template-columns:auto minmax(320px,1fr) auto!important}
+.fortune-observatory-grid{grid-template-columns:220px minmax(0,1fr)!important}
+.fortune-sidebar{width:220px!important}
+.fortune-view{padding-inline:clamp(16px,2.3vw,32px)!important}
+.fortune-view>*{max-width:1320px!important}
+.fortune-view-head{position:relative;padding:13px 16px 15px!important;border:1px solid rgba(var(--tool-rgb),.15);border-radius:20px;background:linear-gradient(120deg,rgba(var(--tool-rgb),.075),rgba(255,255,255,.018) 55%,transparent)}
+.fortune-view-head:before{position:absolute;top:15px;bottom:15px;left:0;width:3px;border-radius:3px;background:linear-gradient(var(--tool-accent),var(--tool-accent-2));box-shadow:0 0 18px rgba(var(--tool-rgb),.42);content:""}
+.fortune-view-head>div>span,.fortune-result-workspace>header>div>span,.fortune-result-summary>span,.fortune-result-method>span,.fortune-result-deep>span,.fortune-result-reflection>span{color:var(--tool-accent)!important}
+.fortune-view-head h2{font-size:clamp(30px,3vw,40px)!important}
+.fortune-view-head p{font-size:16.5px!important;line-height:1.72!important}
+.fortune-hub .fortune-primary{border-color:rgba(var(--tool-rgb),.34)!important;background:linear-gradient(135deg,rgba(var(--tool-rgb),.24),color-mix(in srgb,var(--tool-accent-2) 20%,transparent))!important;box-shadow:0 9px 30px rgba(var(--tool-rgb),.12)!important}
+.fortune-nav__item.is-active{border-color:rgba(var(--tool-rgb),.27)!important;background:linear-gradient(90deg,rgba(var(--tool-rgb),.17),transparent)!important}.fortune-nav__item.is-active>i{color:var(--tool-accent)!important;box-shadow:0 0 18px rgba(var(--tool-rgb),.22)}
+
+.fortune-context-inspector{position:fixed!important;z-index:70!important;inset:72px 18px 82px auto!important;width:min(390px,calc(100vw - 32px))!important;height:auto!important;max-height:none!important;border:1px solid rgba(var(--tool-rgb),.22)!important;border-radius:22px!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translateX(18px)!important;transition:opacity .2s ease,visibility .2s ease,transform .2s ease!important;box-shadow:-28px 18px 85px rgba(0,0,0,.5)!important}
+.fortune-hub.is-inspector-open .fortune-context-inspector{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:none!important}
+.fortune-context-inspector[aria-hidden="true"]{display:none!important}
+.fortune-context-inspector>header>div>i{color:var(--tool-accent)!important;border-color:rgba(var(--tool-rgb),.25)!important;background:rgba(var(--tool-rgb),.1)!important}
+.fortune-inspector-focus>i{display:grid;width:86px;height:86px;place-items:center;border:1px solid rgba(var(--tool-rgb),.26);border-radius:50%;background:radial-gradient(circle,rgba(var(--tool-rgb),.2),transparent 70%);color:var(--tool-accent);font-size:38px;font-style:normal;box-shadow:0 0 35px rgba(var(--tool-rgb),.18)}
+.fortune-inspector-focus h3{font-size:22px!important}.fortune-inspector-focus p{font-size:15px!important;line-height:1.72!important}.fortune-inspector-selection dd{font-size:13px!important}.fortune-inspector-selection dt{color:var(--tool-accent)!important;font-size:11px!important}
+.fortune-topbar-actions button:disabled{opacity:.35;cursor:not-allowed}
+
+.fortune-flow-stepper{border-color:rgba(var(--tool-rgb),.2)!important;background:linear-gradient(90deg,rgba(var(--tool-rgb),.07),rgba(255,255,255,.018))!important}
+.fortune-flow-stepper>div{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important;overflow:visible!important}
+.fortune-builder-rail{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.fortune-flow-stepper button{grid-template-columns:auto minmax(0,1fr)!important;grid-template-rows:auto auto!important;min-height:58px!important;padding:7px 10px!important;border:1px solid rgba(255,255,255,.045)!important;border-radius:13px!important}
+.fortune-flow-stepper button>i{grid-row:1/3;width:31px;height:31px}.fortune-flow-stepper button>span{font-size:12px!important}.fortune-flow-stepper button>small{display:block;overflow:hidden;color:#777184;font-size:9px;text-overflow:ellipsis;white-space:nowrap}.fortune-flow-stepper button.is-current{border-color:rgba(var(--tool-rgb),.2)!important;background:rgba(var(--tool-rgb),.1)!important}.fortune-flow-stepper button.is-current>i{border-color:var(--tool-accent)!important;box-shadow:0 0 18px rgba(var(--tool-rgb),.3)!important}.fortune-flow-stepper button.is-current>span{color:#fff}.fortune-flow-stepper button.is-current>small{color:color-mix(in srgb,var(--tool-accent) 75%,#9690a3)}
+
+.fortune-result-workspace{border-color:rgba(var(--tool-rgb),.22)!important;background:linear-gradient(145deg,rgba(var(--mystic-panel),.86),rgba(7,10,25,.92)),radial-gradient(circle at 85% 0,rgba(var(--tool-rgb),.11),transparent 36%)!important}
+.fortune-session-status{display:flex!important;flex-wrap:wrap;justify-content:flex-end;gap:6px}.fortune-session-status>*{border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:6px 9px;background:rgba(255,255,255,.025);color:#aaa5b5;font-size:10px}.fortune-session-status span:first-child{color:#75efbd}.fortune-session-status span:nth-child(2){color:#f4a5df}.fortune-session-status code{color:var(--tool-accent)}
+.fortune-result-tabs{display:grid!important;grid-template-columns:minmax(0,3fr) minmax(150px,1fr) minmax(0,2fr)!important;gap:7px!important;padding:7px!important;overflow:visible!important}
+.fortune-result-tab-group{display:grid;gap:5px;min-width:0;padding:5px;border:1px solid rgba(255,255,255,.055);border-radius:12px;background:rgba(255,255,255,.018)}.fortune-result-tab-group>small{padding:0 5px;color:#777184;font-size:8px;font-weight:900;letter-spacing:.12em}.fortune-result-tab-group>div{display:grid;grid-template-columns:repeat(var(--tab-count,1),minmax(0,1fr));gap:4px}.fortune-result-tab-group[data-tab-group="results"]>div{--tab-count:3}.fortune-result-tab-group[data-tab-group="support"]>div{--tab-count:2}.fortune-result-tab-group button{min-height:42px!important;border-radius:9px!important}.fortune-result-tab-group button.is-active{border-color:rgba(var(--tool-rgb),.22)!important;background:linear-gradient(135deg,rgba(var(--tool-rgb),.17),rgba(255,255,255,.035))!important}.fortune-result-tab-group button>i{color:var(--tool-accent)!important}
+.fortune-result-panel{animation:fortunePanelIn .22s ease both}.fortune-result-summary,.fortune-result-method,.fortune-result-deep,.fortune-result-reflection,.fortune-result-ai-panel{max-width:900px!important}.fortune-result-summary p,.fortune-result-deep p,.fortune-result-reflection p,.fortune-auto-ai__body{font-size:17px!important;line-height:1.8!important}.fortune-result-deep>section p{font-size:16.5px!important}.fortune-result-method dd{font-size:15px!important}.fortune-result-detail-grid strong{font-size:17px!important}
+@keyframes fortunePanelIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+.fortune-observatory-actions{border-color:rgba(var(--tool-rgb),.2)!important}.fortune-observatory-actions>nav{align-items:center}.fortune-action-export{position:relative}.fortune-action-export>summary{display:flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid rgba(255,255,255,.11);border-radius:12px;cursor:pointer;color:#ddd7e5;font-size:12px;list-style:none}.fortune-action-export>summary::-webkit-details-marker{display:none}.fortune-action-export>div{position:absolute;right:0;bottom:calc(100% + 8px);display:grid;grid-template-columns:repeat(auto-fit,minmax(42px,1fr));gap:5px;width:220px;padding:8px;border:1px solid rgba(var(--tool-rgb),.24);border-radius:13px;background:#0b0b1c;box-shadow:0 18px 45px rgba(0,0,0,.4)}.fortune-action-export>div button{min-width:0;padding:0 8px!important}.fortune-action-export:has(button:disabled)>summary{opacity:.38;pointer-events:none}
+
+/* Generic actions live only in the canonical bottom bar. */
+.fortune-tool-surface :is([data-fortune-save-current],[data-fortune-copy-result],[data-fortune-share],[data-fortune-export],[data-fortune-astrology-export]){display:none!important}
+.fortune-tool-surface .fortune-explanation-v5,.fortune-tool-surface .fortune-tuvi-method,.fortune-tool-surface .fortune-tuvi-inspector,.fortune-tool-surface .fortune-lenormand-inspector,.fortune-tool-surface .fortune-planet-inspector,.fortune-observatory-home>.fortune-safety-card{display:none!important}
+.fortune-astrology-studio>.fortune-v4-two-col>.fortune-v4-card:not(.fortune-v4-form),.fortune-sky-studio>.fortune-v4-two-col>.fortune-v4-card:not(.fortune-v4-form),.fortune-eastern-studio>.fortune-v4-two-col>.fortune-v4-card:not(.fortune-v4-form){display:none!important}.fortune-astrology-studio>.fortune-v4-two-col,.fortune-sky-studio>.fortune-v4-two-col,.fortune-eastern-studio>.fortune-v4-two-col{grid-template-columns:minmax(0,1fr)!important}
+.fortune-tool-surface [data-fortune-view="history"]{display:none!important}
+.fortune-number-hero-grid>div[role="button"],.fortune-six-line-ledger>li[role="button"]{cursor:pointer;outline:none;transition:border-color .18s ease,background .18s ease,transform .18s ease}.fortune-number-hero-grid>div[role="button"]:is(:hover,:focus-visible),.fortune-six-line-ledger>li[role="button"]:is(:hover,:focus-visible){border-color:rgba(var(--tool-rgb),.35)!important;background:rgba(var(--tool-rgb),.08)!important;transform:translateY(-2px)}
+
+/* Motion that belongs to the active tool only. */
+@keyframes fortuneToolFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes fortuneToolGlow{0%,100%{filter:drop-shadow(0 0 3px rgba(var(--tool-rgb),.12))}50%{filter:drop-shadow(0 0 12px rgba(var(--tool-rgb),.42))}}
+@keyframes fortuneToolSlide{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+.fortune-hub:not([data-motion="static"])[data-view="tarot"] .fortune-tarot-filmstrip button.is-revealed{animation:fortuneToolFloat 5.6s ease-in-out infinite;animation-delay:calc(var(--card-order)*-.18s)}
+.fortune-hub:not([data-motion="static"])[data-view="iching"] .fortune-six-line-ledger>li.is-changing{animation:fortuneToolGlow 3.1s ease-in-out infinite}
+.fortune-hub:not([data-motion="static"])[data-view="numerology"] .fortune-number-hero-grid>div>b{animation:fortuneToolGlow 4.2s ease-in-out infinite}
+.fortune-hub:not([data-motion="static"])[data-view="chart"] .fortune-planet-grid>button{animation:fortuneToolFloat 6s ease-in-out infinite;animation-delay:calc(var(--planet-order,0)*-.2s)}
+.fortune-hub:not([data-motion="static"])[data-view="tuvi"] .fortune-tuvi-palace.is-active{animation:fortuneToolGlow 3.6s ease-in-out infinite}
+.fortune-hub:not([data-motion="static"])[data-view="symbols"] .fortune-lenormand-filmstrip>button{animation:fortuneToolSlide 6.2s ease-in-out infinite;animation-delay:calc(var(--card-order)*-.12s)}
+.fortune-hub[data-motion="cinematic"] :is(.fortune-tarot-filmstrip button.is-revealed,.fortune-tuvi-palace.is-active,.fortune-lenormand-filmstrip>button){animation-duration:3.8s!important}
+
+@media(max-width:980px){
+  .fortune-observatory-topbar{grid-template-columns:auto auto minmax(180px,1fr) auto!important}
+  .fortune-observatory-grid{grid-template-columns:minmax(0,1fr)!important}
+  .fortune-sidebar{width:min(330px,88vw)!important}
+  .fortune-result-tabs{grid-template-columns:1fr!important}
+  .fortune-result-tab-group>div{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}.fortune-result-tab-group button{flex:1 0 145px;scroll-snap-align:start}
+}
+@media(max-width:700px){
+  .fortune-observatory-topbar{grid-template-columns:auto minmax(0,1fr) auto!important}
+  .fortune-global-search{grid-column:1/-1!important}
+  .fortune-flow-stepper>div{display:flex!important;overflow-x:auto!important;scroll-snap-type:x mandatory}.fortune-flow-stepper button{flex:0 0 170px;scroll-snap-align:start}
+  .fortune-context-inspector{inset:auto 0 68px!important;width:100%!important;height:min(74dvh,680px)!important;border-radius:24px 24px 0 0!important;transform:translateY(18px)!important}
+  .fortune-hub.is-inspector-open .fortune-context-inspector{transform:none!important}
+  .fortune-result-workspace>header{display:grid!important}.fortune-session-status{justify-content:flex-start}
+  .fortune-result-tabs{display:grid!important;overflow:visible!important}.fortune-result-tab-group>div{display:flex!important}
+  .fortune-observatory-actions>nav{overflow:visible!important}.fortune-observatory-actions>nav>button{flex:1 0 auto}.fortune-action-export{flex:1 0 auto}.fortune-action-export>summary{justify-content:center;padding:0 11px}
+  .fortune-tarot-filmstrip,.fortune-lenormand-filmstrip{overflow-x:auto!important;scroll-snap-type:x mandatory!important}.fortune-tarot-filmstrip>button,.fortune-lenormand-filmstrip>button{scroll-snap-align:center}
+  .fortune-view-head h2{font-size:29px!important}.fortune-view-head p{font-size:15.5px!important}
+}
+@media(prefers-reduced-motion:reduce){.fortune-result-panel,.fortune-hub [class*="fortune-"]{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
