@@ -6,6 +6,8 @@ const { clean, currentUser, publicUser } = require("./platform");
 const SESSION_COOKIE = "hh_session";
 const SESSION_TTL_SECONDS = 12 * 60 * 60;
 const REMEMBER_TTL_SECONDS = 30 * 24 * 60 * 60;
+const SESSION_IDLE_TTL_SECONDS = 2 * 60 * 60;
+const REMEMBER_IDLE_TTL_SECONDS = 7 * 24 * 60 * 60;
 let indexesReady = false;
 
 function secret() {
@@ -66,7 +68,12 @@ function deviceInfo(req) {
   const lowered = userAgent.toLowerCase();
   const platform = /android/.test(lowered) ? "Android" : /iphone|ipad/.test(lowered) ? "iOS" : /windows/.test(lowered) ? "Windows" : /macintosh|mac os/.test(lowered) ? "macOS" : /linux/.test(lowered) ? "Linux" : "Unknown";
   const browser = /edg\//.test(lowered) ? "Edge" : /firefox\//.test(lowered) ? "Firefox" : /chrome\//.test(lowered) ? "Chrome" : /safari\//.test(lowered) ? "Safari" : "Unknown";
-  return { ip: clientIp(req), userAgent, platform, browser, label: `${browser} · ${platform}` };
+  const kind = /mobile|android|iphone|ipad/i.test(userAgent) ? "Điện thoại / máy tính bảng" : "Máy tính";
+  const country = clean(req.headers["x-vercel-ip-country"], 12).toUpperCase();
+  const regionCode = clean(req.headers["x-vercel-ip-country-region"], 40).toUpperCase();
+  const city = clean(req.headers["x-vercel-ip-city"], 80);
+  const region = [city, regionCode, country].filter(Boolean).join(", ") || "Chưa xác định";
+  return { ip: clientIp(req), userAgent, platform, browser, kind, region, label: `${browser} · ${platform}` };
 }
 
 function signSession(user, ttlSeconds) {
@@ -86,7 +93,9 @@ async function ensureIndexes(db) {
     db.collection("authChallenges").createIndex({ type: 1, lookup: 1, consumedAt: 1 }),
     db.collection("passkeys").createIndex({ credentialId: 1 }, { unique: true }),
     db.collection("passkeys").createIndex({ userId: 1, createdAt: -1 }),
-    db.collection("loginEvents").createIndex({ userId: 1, createdAt: -1 })
+    db.collection("loginEvents").createIndex({ userId: 1, createdAt: -1 }),
+    db.collection("accountRecoveryCodes").createIndex({ userId: 1, codeHash: 1, usedAt: 1, revokedAt: 1 }),
+    db.collection("accountRecoveryCodes").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
   ]);
   indexesReady = true;
 }
@@ -100,7 +109,9 @@ async function createSession(db, user, req, options = {}) {
   const session = {
     sessionId: randomToken(18), userId: user._id, tokenHash: tokenHash(token),
     type: clean(options.type || "password", 40), device, createdAt: now,
-    lastSeenAt: now, expiresAt: new Date(now.getTime() + ttlSeconds * 1000), revokedAt: null
+    remember: Boolean(options.remember), lastSeenAt: now,
+    idleExpiresAt: new Date(now.getTime() + (options.remember ? REMEMBER_IDLE_TTL_SECONDS : SESSION_IDLE_TTL_SECONDS) * 1000),
+    expiresAt: new Date(now.getTime() + ttlSeconds * 1000), revokedAt: null
   };
   await db.collection("authSessions").insertOne(session);
   return { ...session, token, ttlSeconds };
@@ -117,8 +128,15 @@ async function authenticate(req, db) {
   await ensureIndexes(db);
   const hash = tokenHash(token);
   const session = await db.collection("authSessions").findOne({ tokenHash: hash, revokedAt: null, expiresAt: { $gt: new Date() } });
-  if (cookieToken && !session) return null;
-  if (session) await db.collection("authSessions").updateOne({ _id: session._id }, { $set: { lastSeenAt: new Date() } });
+  if (!session) return null;
+  const now = new Date();
+  const idleLimitSeconds = session.remember ? REMEMBER_IDLE_TTL_SECONDS : SESSION_IDLE_TTL_SECONDS;
+  const idleExpiresAt = session.idleExpiresAt ? new Date(session.idleExpiresAt) : new Date(new Date(session.lastSeenAt || session.createdAt).getTime() + idleLimitSeconds * 1000);
+  if (!Number.isFinite(idleExpiresAt.getTime()) || idleExpiresAt <= now) {
+    await db.collection("authSessions").updateOne({ _id: session._id, revokedAt: null }, { $set: { revokedAt: now, revokeReason: "idle-timeout" } });
+    return null;
+  }
+  await db.collection("authSessions").updateOne({ _id: session._id }, { $set: { lastSeenAt: now, idleExpiresAt: new Date(now.getTime() + idleLimitSeconds * 1000) } });
   return { user, token, session, via: bearer ? "bearer" : "cookie" };
 }
 
@@ -134,7 +152,21 @@ async function requireAuth(req, res, db) {
 async function recordLoginEvent(db, user, req, type, extra = {}) {
   const now = new Date();
   const device = deviceInfo(req);
-  await db.collection("loginEvents").insertOne({ userId: user._id, type: clean(type, 60), ...device, success: extra.success !== false, reason: clean(extra.reason, 100), createdAt: now });
+  const [knownDevice, priorCount] = await Promise.all([
+    db.collection("loginEvents").findOne({ userId: user._id, browser: device.browser, platform: device.platform, success: { $ne: false } }, { projection: { _id: 1 } }),
+    db.collection("loginEvents").countDocuments({ userId: user._id }, { limit: 1 })
+  ]);
+  await db.collection("loginEvents").insertOne({
+    userId: user._id,
+    type: clean(type, 60),
+    ...device,
+    success: extra.success !== false,
+    reason: clean(extra.reason, 100),
+    newDevice: Boolean(priorCount && !knownDevice),
+    suspicious: extra.suspicious === true,
+    riskStatus: extra.suspicious === true ? "suspicious" : "normal",
+    createdAt: now
+  });
 }
 
 function emailProviderReadiness(env = process.env) {
@@ -225,7 +257,9 @@ function authResponse(user, session) {
 
 module.exports = {
   REMEMBER_TTL_SECONDS,
+  REMEMBER_IDLE_TTL_SECONDS,
   SESSION_TTL_SECONDS,
+  SESSION_IDLE_TTL_SECONDS,
   appendCookie,
   authPublicUser,
   authResponse,

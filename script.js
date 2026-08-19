@@ -5614,6 +5614,8 @@ function initAppShell() {
   const moduleById = (id) => moduleList().find((item) => item.id === id);
   const routeForModule = (id) => {
     if (id === "admin-panel") return "/admin";
+    if (id === "user-dashboard") return "/settings/account/profile";
+    if (id === "security-center") return "/settings/account/security";
     const group = groups.find((item) => item.items.includes(id) || item.legacyItems?.includes(id) || item.studioItems?.some((tool) => tool.id === id));
     return `${group?.route || "/tools"}/${id}`;
   };
@@ -6045,6 +6047,7 @@ function initAppShell() {
     document.body.classList.toggle("app-japanese-route", route === "/japanese" || route.startsWith("/japanese/"));
     document.body.classList.toggle("app-fortune-route", route === "/fortune" || route.startsWith("/fortune/"));
     document.body.classList.toggle("app-chat-ai-route", route === "/chat-ai" || route.startsWith("/chat-ai/"));
+    document.body.classList.toggle("app-account-center-route", route.startsWith("/settings/account") || route === "/settings/user-dashboard" || route === "/settings/security-center");
     document.body.classList.toggle("app-communication-route", route === "/communication" || route.startsWith("/communication/"));
     document.body.classList.toggle("app-work-route", route === "/work" || route.startsWith("/work/"));
     document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
@@ -6073,7 +6076,8 @@ function initAppShell() {
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     if (route !== "/japanese" && !route.startsWith("/japanese/")) window.HHJapanese?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
-    if (route !== "/chat-ai" && !route.startsWith("/chat-ai/")) window.HHChatAI?.unmount?.();
+      if (route !== "/chat-ai" && !route.startsWith("/chat-ai/")) window.HHChatAI?.unmount?.();
+      if (!route.startsWith("/settings/account") && route !== "/settings/user-dashboard" && route !== "/settings/security-center") window.HHAccountCenter?.unmount?.();
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
     const communicationView = route === "/communication" ? "command-center" : route.split("/").filter(Boolean)[1];
     if (!(route === "/communication" || window.HHCommunicationSuite?.supports?.(communicationView))) window.HHCommunicationSuite?.unmount?.();
@@ -6431,6 +6435,16 @@ function initAppShell() {
       if (window.HHPrivacyConsent?.mount) window.HHPrivacyConsent.mount(workspace.firstElementChild);
       else mountSimpleView("Trung tâm quyền riêng tư", "Không thể tải trình quản lý quyền riêng tư.", "");
       remember("cookie-consent-manager");
+    } else if (route.startsWith("/settings/account") || route === "/settings/user-dashboard" || route === "/settings/security-center") {
+      const requestedTab = route === "/settings/user-dashboard" ? "profile" : route === "/settings/security-center" ? "security" : (parts[2] || "overview");
+      const accountTabs = new Set(["overview", "profile", "privacy", "security", "sessions", "passkeys", "notifications", "data"]);
+      const accountTab = accountTabs.has(requestedTab) ? requestedTab : "overview";
+      updatePageHeader("Trung tâm tài khoản", "Hồ sơ, quyền riêng tư, đăng nhập, Passkey, phiên thiết bị và dữ liệu cá nhân trong một nơi.", route);
+      pageActions.innerHTML = `<button type="button" data-app-route="/settings/account/profile">Hồ sơ</button><button type="button" data-app-route="/settings/account/sessions">Thiết bị</button><button class="app-primary-action" type="button" data-app-route="/settings/account/security">Bảo mật</button>`;
+      workspace.innerHTML = '<div data-account-center-host></div>';
+      if (window.HHAccountCenter?.mount) window.HHAccountCenter.mount(workspace.firstElementChild, { activeTab: accountTab });
+      else mountSimpleView("Trung tâm tài khoản", "Đang tải hồ sơ và dữ liệu bảo mật từ máy chủ...", "");
+      remember("account-center");
     } else if (route === "/tools" || route.startsWith("/tools/")) {
       const toolId = parts[1] || "global-search";
       const toolMeta = window.HHFeatureLab?.getTool?.(toolId);
@@ -6461,7 +6475,7 @@ function initAppShell() {
       mountSimpleView(label, "Mở một mục để tiếp tục công việc.", `<div class="app-item-grid">${ids.map(moduleById).filter(Boolean).map((item) => `<button type="button" data-app-route="${routeForModule(item.id)}"><span>Tool</span><strong>${item.title}</strong><p>${item.description}</p></button>`).join("") || "<div class=app-empty-state><strong>Chưa có mục nào</strong><p>Hãy đánh dấu yêu thích hoặc mở một công cụ để xem tại đây.</p><button type=button data-app-route=/tools>Mở công cụ</button></div>"}</div>`);
     } else if (route === "/settings") {
       updatePageHeader("Cài đặt", "Điều chỉnh giao diện và dữ liệu cá nhân.", route);
-      mountSimpleView("Cài đặt", "Thiết lập được áp dụng đồng bộ cho toàn bộ giao diện trên thiết bị này.", `<div class="app-settings-list"><label><span>Sidebar thu gọn</span><input type=checkbox data-shell-setting=collapsed ${document.body.classList.contains("app-sidebar-collapsed") ? "checked" : ""}></label><label><span>Chế độ nâng cao</span><input type=checkbox data-shell-setting=advanced ${stored().advanced ? "checked" : ""}></label><label><span>Ngôn ngữ</span><select data-app-preference=language><option value=vi>Tiếng Việt</option><option value=en>English</option></select></label><label><span>Font chữ</span><select data-app-preference=font><option value=modern>Modern · Be Vietnam</option><option value=clean>Clean · Segoe UI</option><option value=rounded>Rounded · Trebuchet</option><option value=mono>Mono · Consolas</option></select></label><label><span>Cỡ chữ</span><select data-app-preference=fontScale><option value=small>Nhỏ</option><option value=medium>Tiêu chuẩn</option><option value=large>Lớn</option><option value=xlarge>Rất lớn</option></select></label><label><span>Bo góc</span><select data-app-preference=radius><option value=sharp>Vuông</option><option value=soft>Mềm</option><option value=round>Tròn</option></select></label><label><span>Mật độ giao diện</span><select data-app-preference=density><option value=comfortable>Thoải mái</option><option value=compact>Gọn</option></select></label><label><span>Tương phản</span><select data-app-preference=contrast><option value=standard>Tiêu chuẩn</option><option value=high>Cao</option></select></label><label><span>Mức hiệu ứng</span><select data-app-preference=effects><option value=full>Đầy đủ</option><option value=calm>Nhẹ</option><option value=off>Tắt</option></select></label><label><span>Giảm chuyển động</span><input type=checkbox data-app-preference=reducedMotion></label><button type=button data-dashboard-theme-menu>Mở Appearance Studio</button><button type=button data-dashboard-shortcuts>Xem phím tắt</button><button type=button data-app-route=/settings/user-dashboard>Mở hồ sơ tài khoản</button><button type=button data-app-route=/settings/security-center>Mở bảo mật</button></div>`);
+      mountSimpleView("Cài đặt", "Thiết lập được áp dụng đồng bộ cho toàn bộ giao diện trên thiết bị này.", `<div class="app-settings-list"><label><span>Sidebar thu gọn</span><input type=checkbox data-shell-setting=collapsed ${document.body.classList.contains("app-sidebar-collapsed") ? "checked" : ""}></label><label><span>Chế độ nâng cao</span><input type=checkbox data-shell-setting=advanced ${stored().advanced ? "checked" : ""}></label><label><span>Ngôn ngữ</span><select data-app-preference=language><option value=vi>Tiếng Việt</option><option value=en>English</option></select></label><label><span>Font chữ</span><select data-app-preference=font><option value=modern>Modern · Be Vietnam</option><option value=clean>Clean · Segoe UI</option><option value=rounded>Rounded · Trebuchet</option><option value=mono>Mono · Consolas</option></select></label><label><span>Cỡ chữ</span><select data-app-preference=fontScale><option value=small>Nhỏ</option><option value=medium>Tiêu chuẩn</option><option value=large>Lớn</option><option value=xlarge>Rất lớn</option></select></label><label><span>Bo góc</span><select data-app-preference=radius><option value=sharp>Vuông</option><option value=soft>Mềm</option><option value=round>Tròn</option></select></label><label><span>Mật độ giao diện</span><select data-app-preference=density><option value=comfortable>Thoải mái</option><option value=compact>Gọn</option></select></label><label><span>Tương phản</span><select data-app-preference=contrast><option value=standard>Tiêu chuẩn</option><option value=high>Cao</option></select></label><label><span>Mức hiệu ứng</span><select data-app-preference=effects><option value=full>Đầy đủ</option><option value=calm>Nhẹ</option><option value=off>Tắt</option></select></label><label><span>Giảm chuyển động</span><input type=checkbox data-app-preference=reducedMotion></label><button type=button data-dashboard-theme-menu>Mở Appearance Studio</button><button type=button data-dashboard-shortcuts>Xem phím tắt</button><button type=button data-app-route=/settings/account/profile>Mở hồ sơ tài khoản</button><button type=button data-app-route=/settings/account/security>Mở bảo mật</button></div>`);
     } else if (route === "/profile") {
       updatePageHeader("Profile", "Trang portfolio và thông tin liên hệ.", route);
       mountSimpleView("Profile", "Mở portfolio gốc trong trang này.", `<button class="app-primary-action" type=button data-shell-show-profile>Mở portfolio</button>`);

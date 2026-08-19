@@ -17,6 +17,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/account-center",
+      "destination": "/api/platform/summary?accountCenter=1"
+    },
+    {
       "source": "/api/social-media/webhooks/:provider",
       "destination": "/api/modules/social-media-tools/actions?socialResource=webhooks&provider=:provider"
     },

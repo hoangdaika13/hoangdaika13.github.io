@@ -4,6 +4,7 @@ const privacyConsentHandler = require("../../utils/privacy-consent-api");
 const youtubePublisherHandler = require("../../utils/youtubePublisher");
 const facebookPageManagerHandler = require("../../utils/facebookPageManager");
 const tiktokCreatorManagerHandler = require("../../utils/tiktokCreatorManager");
+const accountCenterHandler = require("../../utils/account-center-api");
 const metaWebhookHandler = require("../../utils/metaWebhook");
 const { quotaStatus, requireRoles } = require("../../services/apiGateway");
 const { ObjectId } = require("mongodb");
@@ -395,6 +396,7 @@ function readinessSnapshot({ databaseConnected = false, realtime = {} } = {}) {
 }
 
 module.exports = async function handler(req, res) {
+  if (String(req.query.accountCenter || "") === "1") return accountCenterHandler(req, res);
   if (String(req.query.facebookWebhook || "") === "1") return metaWebhookHandler(req, res);
   if (String(req.query.tiktokCreatorManager || "") === "1" && String(req.query.tiktokAction || req.query.action || "") === "webhook") {
     if (String(req.method || "").toUpperCase() !== "POST") return res.status(405).json({ error: "Method not allowed." });

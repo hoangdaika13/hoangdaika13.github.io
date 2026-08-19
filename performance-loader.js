@@ -212,6 +212,10 @@
       styles: ["chat-ai-hub.css?v=17"],
       scripts: ["chat-ai-hub.js?v=17"]
     },
+    account: {
+      styles: ["account-center.css?v=1"],
+      scripts: ["account-center.js?v=1"]
+    },
     analytics: {
       styles: ["insights-pro.css?v=3"],
       scripts: ["insights-pro.js?v=7"]
@@ -259,6 +263,7 @@
     if (value.startsWith("/japanese")) return ["japanese"];
     if (value.startsWith("/fortune")) return ["fortune"];
     if (value.startsWith("/chat-ai")) return ["chat-ai"];
+    if (value.startsWith("/settings/account") || value === "/settings/user-dashboard" || value === "/settings/security-center") return ["account"];
     if (value.startsWith("/support")) return ["support"];
     if (value === "/communication/google-youtube") return ["search"];
     if (value.startsWith("/communication")) return ["communication"];

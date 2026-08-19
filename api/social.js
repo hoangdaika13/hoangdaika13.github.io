@@ -28,6 +28,18 @@ const DEFAULT_PRIVACY = Object.freeze({
   birthdayVisibility: "friends",
   detailsVisibility: "public",
   contactVisibility: "public",
+  bioVisibility: "public",
+  genderVisibility: "friends",
+  pronounsVisibility: "public",
+  cityVisibility: "public",
+  hometownVisibility: "friends",
+  workplaceVisibility: "public",
+  schoolVisibility: "friends",
+  relationshipVisibility: "friends",
+  websiteVisibility: "public",
+  socialLinksVisibility: "public",
+  interestsVisibility: "public",
+  languagesVisibility: "public",
   futurePostsVisibility: "friends",
   friendRequestPermission: "everyone",
   followPermission: "everyone",
@@ -56,6 +68,18 @@ const PRIVACY_ALLOWED_VALUES = {
   birthdayVisibility: VISIBILITY,
   detailsVisibility: VISIBILITY,
   contactVisibility: VISIBILITY,
+  bioVisibility: VISIBILITY,
+  genderVisibility: VISIBILITY,
+  pronounsVisibility: VISIBILITY,
+  cityVisibility: VISIBILITY,
+  hometownVisibility: VISIBILITY,
+  workplaceVisibility: VISIBILITY,
+  schoolVisibility: VISIBILITY,
+  relationshipVisibility: VISIBILITY,
+  websiteVisibility: VISIBILITY,
+  socialLinksVisibility: VISIBILITY,
+  interestsVisibility: VISIBILITY,
+  languagesVisibility: VISIBILITY,
   futurePostsVisibility: new Set(["public", "friends", "followers", "private"]),
   friendRequestPermission: FRIEND_REQUEST_PERMISSIONS,
   followPermission: FOLLOW_PERMISSIONS,
@@ -87,6 +111,31 @@ const PRIVACY_KEYS = new Map([
   ["contact", "contactVisibility"],
   ["contactvisibility", "contactVisibility"],
   ["contact_visibility", "contactVisibility"],
+  ["bio", "bioVisibility"],
+  ["biovisibility", "bioVisibility"],
+  ["bio_visibility", "bioVisibility"],
+  ["gendervisibility", "genderVisibility"],
+  ["gender_visibility", "genderVisibility"],
+  ["pronounsvisibility", "pronounsVisibility"],
+  ["pronouns_visibility", "pronounsVisibility"],
+  ["cityvisibility", "cityVisibility"],
+  ["city_visibility", "cityVisibility"],
+  ["hometownvisibility", "hometownVisibility"],
+  ["hometown_visibility", "hometownVisibility"],
+  ["workplacevisibility", "workplaceVisibility"],
+  ["workplace_visibility", "workplaceVisibility"],
+  ["schoolvisibility", "schoolVisibility"],
+  ["school_visibility", "schoolVisibility"],
+  ["relationshipvisibility", "relationshipVisibility"],
+  ["relationship_visibility", "relationshipVisibility"],
+  ["websitevisibility", "websiteVisibility"],
+  ["website_visibility", "websiteVisibility"],
+  ["sociallinksvisibility", "socialLinksVisibility"],
+  ["social_links_visibility", "socialLinksVisibility"],
+  ["interestsvisibility", "interestsVisibility"],
+  ["interests_visibility", "interestsVisibility"],
+  ["languagesvisibility", "languagesVisibility"],
+  ["languages_visibility", "languagesVisibility"],
   ["futureposts", "futurePostsVisibility"],
   ["futurepostsvisibility", "futurePostsVisibility"],
   ["future_posts_visibility", "futurePostsVisibility"],
@@ -552,33 +601,32 @@ function serializeProfile(profile, account, context, stats = { friends: 0, follo
   const owner = Boolean(context.owner);
   const friend = Boolean(context.friend);
   const profileVisible = visibilityAllows(privacy.profileVisibility, owner, friend);
-  const detailsVisible = profileVisible && visibilityAllows(privacy.detailsVisibility, owner, friend);
   const birthdayVisible = profileVisible && visibilityAllows(privacy.birthdayVisibility, owner, friend);
-  const contactVisible = profileVisible && visibilityAllows(privacy.contactVisibility, owner, friend);
   const friendsVisible = visibilityAllows(privacy.friendsVisibility, owner, friend);
+  const fieldVisible = (key, fallback) => profileVisible && visibilityAllows(privacy[`${key}Visibility`] || privacy[fallback], owner, friend);
   return {
     id: String(profile.userId || account._id || ""),
     username: clean(profile.username, 30),
     name: clean(account.name || profile.username || "HH member", 100),
     avatar: safeStoredUrl(account.avatar, true),
-    bio: profileVisible ? clean(profile.bio, 1000) : "",
+    bio: fieldVisible("bio", "profileVisibility") ? clean(profile.bio, 1000) : "",
     cover: profileVisible ? safeStoredUrl(profile.cover, true) : "",
     birthday: birthdayVisible ? clean(profile.birthday, 10) : "",
-    gender: detailsVisible ? clean(profile.gender, 60) : "",
-    pronouns: detailsVisible ? clean(profile.pronouns, 80) : "",
-    city: detailsVisible ? clean(profile.city, 120) : "",
-    hometown: detailsVisible ? clean(profile.hometown, 120) : "",
-    workplace: detailsVisible ? clean(profile.workplace, 180) : "",
-    school: detailsVisible ? clean(profile.school, 180) : "",
-    relationship: detailsVisible ? clean(profile.relationship, 80) : "",
-    website: contactVisible ? safeStoredUrl(profile.website) : "",
-    socialLinks: contactVisible && Array.isArray(profile.socialLinks)
+    gender: fieldVisible("gender", "detailsVisibility") ? clean(profile.gender, 60) : "",
+    pronouns: fieldVisible("pronouns", "detailsVisibility") ? clean(profile.pronouns, 80) : "",
+    city: fieldVisible("city", "detailsVisibility") ? clean(profile.city, 120) : "",
+    hometown: fieldVisible("hometown", "detailsVisibility") ? clean(profile.hometown, 120) : "",
+    workplace: fieldVisible("workplace", "detailsVisibility") ? clean(profile.workplace, 180) : "",
+    school: fieldVisible("school", "detailsVisibility") ? clean(profile.school, 180) : "",
+    relationship: fieldVisible("relationship", "detailsVisibility") ? clean(profile.relationship, 80) : "",
+    website: fieldVisible("website", "contactVisibility") ? safeStoredUrl(profile.website) : "",
+    socialLinks: fieldVisible("socialLinks", "contactVisibility") && Array.isArray(profile.socialLinks)
       ? profile.socialLinks.slice(0, 12).map((item) => ({
         platform: clean(item.platform, 30), label: clean(item.label, 50), url: safeStoredUrl(item.url, false, 800)
       })).filter((item) => item.url)
       : [],
-    interests: detailsVisible && Array.isArray(profile.interests) ? profile.interests.slice(0, 24).map((item) => clean(item, 80)).filter(Boolean) : [],
-    languages: detailsVisible && Array.isArray(profile.languages) ? profile.languages.slice(0, 16).map((item) => clean(item, 80)).filter(Boolean) : [],
+    interests: fieldVisible("interests", "detailsVisibility") && Array.isArray(profile.interests) ? profile.interests.slice(0, 24).map((item) => clean(item, 80)).filter(Boolean) : [],
+    languages: fieldVisible("languages", "detailsVisibility") && Array.isArray(profile.languages) ? profile.languages.slice(0, 16).map((item) => clean(item, 80)).filter(Boolean) : [],
     limited: !profileVisible,
     owned: owner,
     connection: {
@@ -1126,7 +1174,7 @@ function profileUpdate(input) {
 
 async function updateProfile(db, user, body) {
   await enforceRateLimit(db, `social:profile:${user._id}`, 30, 60 * 60 * 1000);
-  await ensureProfile(db, user);
+  const previousProfile = await ensureProfile(db, user);
   const input = isPlainObject(body.profile) ? body.profile : body;
   const patch = profileUpdate(input);
   const accountPatch = {};
@@ -1158,6 +1206,18 @@ async function updateProfile(db, user, body) {
   if (Object.keys(accountPatch).length) {
     await db.collection("users").updateOne({ _id: user._id, status: { $ne: "deleted" } }, { $set: { ...accountPatch, updatedAt: new Date() } });
   }
+  const historyNow = new Date();
+  await db.collection("accountProfileHistory").insertOne({
+    userId: user._id,
+    before: {
+      profile: Object.fromEntries(Object.keys(patch).map((key) => [key, previousProfile[key] ?? (Array.isArray(patch[key]) ? [] : "")])),
+      account: Object.fromEntries(Object.keys(accountPatch).map((key) => [key, user[key] ?? ""]))
+    },
+    changedFields: [...Object.keys(patch), ...Object.keys(accountPatch)],
+    createdAt: historyNow,
+    expiresAt: new Date(historyNow.getTime() + 15 * 60 * 1000),
+    undoneAt: null
+  });
   await logActivity(db, {
     actorId: user._id,
     type: "profile.updated",
@@ -1168,6 +1228,43 @@ async function updateProfile(db, user, body) {
   });
   const updatedAccount = { ...user, ...accountPatch };
   return { ok: true, profile: await profilePayload(db, updatedAccount, updated, updatedAccount) };
+}
+
+async function undoProfileUpdate(db, user, body) {
+  await enforceRateLimit(db, `social:profile-undo:${user._id}`, 10, 60 * 60 * 1000);
+  const requestedId = clean(body.historyId || body.id, 80);
+  const filter = { userId: user._id, undoneAt: null, expiresAt: { $gt: new Date() } };
+  if (requestedId) {
+    if (!/^[a-f0-9]{24}$/i.test(requestedId)) fail(400, "Invalid profile history id.", "INVALID_OBJECT_ID");
+    filter._id = new ObjectId(requestedId);
+  }
+  const history = await db.collection("accountProfileHistory").findOne(filter, { sort: { createdAt: -1 } });
+  if (!history) fail(404, "Không còn thay đổi hồ sơ nào có thể hoàn tác.", "PROFILE_UNDO_EXPIRED");
+  const profilePatch = isPlainObject(history.before?.profile) ? history.before.profile : {};
+  const accountPatch = isPlainObject(history.before?.account) ? history.before.account : {};
+  const now = new Date();
+  await Promise.all([
+    Object.keys(profilePatch).length
+      ? db.collection("communityProfiles").updateOne({ userId: user._id, status: { $ne: "deleted" } }, { $set: { ...profilePatch, updatedAt: now } })
+      : Promise.resolve(),
+    Object.keys(accountPatch).length
+      ? db.collection("users").updateOne({ _id: user._id, status: { $ne: "deleted" } }, { $set: { ...accountPatch, updatedAt: now } })
+      : Promise.resolve(),
+    db.collection("accountProfileHistory").updateOne({ _id: history._id, userId: user._id, undoneAt: null }, { $set: { undoneAt: now } }),
+    logActivity(db, {
+      actorId: user._id,
+      type: "profile.undo",
+      entityType: "profile",
+      entityId: history._id,
+      metadata: { fields: (history.changedFields || []).join(",") },
+      visibility: "private"
+    })
+  ]);
+  const [profile, account] = await Promise.all([
+    db.collection("communityProfiles").findOne({ userId: user._id, status: { $ne: "deleted" } }),
+    db.collection("users").findOne({ _id: user._id, status: { $ne: "deleted" } })
+  ]);
+  return { ok: true, profile: await profilePayload(db, account, profile, account) };
 }
 
 async function updatePrivacy(db, user, body) {
@@ -1661,6 +1758,7 @@ function canonicalAction(value) {
   const action = clean(value, 50).toLocaleLowerCase("en-US").replace(/_/g, "-");
   const aliases = new Map([
     ["profile", "profile:update"], ["profile:update", "profile:update"], ["profile-update", "profile:update"], ["update-profile", "profile:update"],
+    ["profile:undo", "profile:undo"], ["profile-undo", "profile:undo"], ["undo-profile", "profile:undo"],
     ["privacy", "privacy:update"], ["privacy:update", "privacy:update"], ["privacy-update", "privacy:update"], ["update-privacy", "privacy:update"],
     ["send", "friend:send"], ["friend:send", "friend:send"], ["friend-request:send", "friend:send"], ["friend-request-send", "friend:send"], ["friendrequest:send", "friend:send"], ["send-request", "friend:send"],
     ["respond", "friend:respond"], ["friend:respond", "friend:respond"], ["friend-request:respond", "friend:respond"], ["friend-request-respond", "friend:respond"], ["friendrequest:respond", "friend:respond"],
@@ -1725,6 +1823,7 @@ module.exports = async function handler(req, res) {
     if (!action) fail(400, "Unknown social action.", "INVALID_ACTION");
 
     if (action === "profile:update") return res.status(200).json(await updateProfile(db, user, body));
+    if (action === "profile:undo") return res.status(200).json(await undoProfileUpdate(db, user, body));
     if (action === "privacy:update") return res.status(200).json(await updatePrivacy(db, user, body));
     if (action === "friend:send") return res.status(201).json(await sendFriendRequest(db, user, body));
     if (action === "friend:respond") return res.status(200).json(await respondFriendRequest(db, user, body));

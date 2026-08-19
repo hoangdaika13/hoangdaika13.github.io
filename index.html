@@ -240,10 +240,11 @@
       </div>
 
       <section class="auth-recovery-panel" data-forgot-panel hidden aria-label="Khôi phục mật khẩu">
-        <header><button type="button" data-forgot-close aria-label="Quay lại đăng nhập">←</button><div><strong>Khôi phục mật khẩu</strong><p>Nhận mã OTP có thời hạn qua email.</p></div></header>
+        <header><button type="button" data-forgot-close aria-label="Quay lại đăng nhập">←</button><div><strong>Khôi phục tài khoản</strong><p>Dùng OTP email hoặc mã khôi phục đã lưu.</p></div></header>
         <label class="auth-field"><span>Email</span><span class="auth-input-shell"><i>@</i><input type="email" data-recovery-email autocomplete="email" placeholder="you@gmail.com"></span></label>
-        <div class="auth-recovery-otp" data-recovery-verify hidden><input type="text" inputmode="numeric" maxlength="6" data-recovery-code placeholder="Mã OTP 6 số" aria-label="Mã OTP"><input type="password" minlength="12" maxlength="72" data-recovery-password autocomplete="new-password" placeholder="Mật khẩu mới (ít nhất 12 ký tự)" aria-label="Mật khẩu mới"></div>
+        <div class="auth-recovery-otp" data-recovery-verify hidden><input type="text" inputmode="text" maxlength="20" autocapitalize="characters" data-recovery-code placeholder="OTP 6 số hoặc HH-XXXX-XXXX-XXXX" aria-label="Mã OTP hoặc mã khôi phục"><input type="password" minlength="12" maxlength="72" data-recovery-password autocomplete="new-password" placeholder="Mật khẩu mới (ít nhất 12 ký tự)" aria-label="Mật khẩu mới"></div>
         <button class="button primary" type="button" data-recovery-action>Gửi mã xác minh</button>
+        <button class="auth-mini-action" type="button" data-recovery-use-code>Dùng mã khôi phục đã lưu</button>
         <small data-recovery-status aria-live="polite"></small>
       </section>
 
@@ -422,12 +423,12 @@
 
   <div class="app-user-menu" id="appUserMenu" role="menu" aria-hidden="true">
     <div class="app-user-menu__profile"><span id="shellMenuInitials">HH</span><div><strong id="shellMenuName">Tài khoản</strong><small>Thành viên HH Platform</small></div></div>
-    <button type="button" role="menuitem" data-app-route="/settings/user-dashboard">Hồ sơ cá nhân <span>›</span></button>
+    <button type="button" role="menuitem" data-app-route="/settings/account/profile">Hồ sơ cá nhân <span>›</span></button>
     <button type="button" role="menuitem" data-app-route="/settings">Cài đặt workspace <span>›</span></button>
     <button type="button" role="menuitem" data-dashboard-theme-menu>Giao diện <span>◐</span></button>
     <button type="button" role="menuitem" data-dashboard-language>Ngôn ngữ <span>VI</span></button>
     <button type="button" role="menuitem" data-dashboard-shortcuts>Phím tắt <span>⌘</span></button>
-    <button type="button" role="menuitem" data-app-route="/settings/security-center">Bảo mật tài khoản <span>›</span></button>
+    <button type="button" role="menuitem" data-app-route="/settings/account/security">Bảo mật tài khoản <span>›</span></button>
     <button type="button" role="menuitem" data-shell-logout>Đăng xuất <span>↗</span></button>
   </div>
 

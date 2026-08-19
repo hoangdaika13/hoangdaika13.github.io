@@ -17,6 +17,7 @@
     recoveryRequest: "/api/auth/password-recovery-request",
     recoveryVerify: "/api/auth/password-recovery-verify",
     recoveryReset: "/api/auth/password-recovery-reset",
+    recoveryCodeLogin: "/api/auth/recovery-code-login",
     emailVerificationRequest: "/api/auth/email-verification-request",
     emailVerificationVerify: "/api/auth/email-verification-verify",
     qrCreate: "/api/auth/qr-create",
@@ -613,11 +614,20 @@
             return;
           }
           verify.hidden = false;
+          verify.classList.remove("is-recovery-code");
+          panel.querySelector("[data-recovery-password]").hidden = false;
+          panel.querySelector("[data-recovery-password]").disabled = false;
           panel.querySelector("[data-recovery-action]").textContent = "Xác minh và đổi mật khẩu";
           status.textContent = result.message || "Nếu email tồn tại, mã xác minh đã được gửi.";
         } else {
-          if (!/^\d{6}$/.test(code)) {
-            status.textContent = "Hãy nhập đủ mã xác minh 6 số.";
+          const recoveryCode = /^HH-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}$/i.test(code);
+          if (!recoveryCode && !/^\d{6}$/.test(code)) {
+            status.textContent = "Nhập OTP 6 số hoặc mã khôi phục dạng HH-XXXX-XXXX-XXXX.";
+            return;
+          }
+          if (recoveryCode) {
+            const result = await api(AUTH_ENDPOINTS.recoveryCodeLogin, { method: "POST", body: JSON.stringify({ email, code }) });
+            await completeAuth(result, "Đăng nhập bằng mã khôi phục thành công");
             return;
           }
           if (Array.from(password).length < 12) {
@@ -648,6 +658,20 @@
         setSignupStep(1);
       } catch (error) { status.textContent = error.message; }
       finally { if (action) { action.disabled = false; action.removeAttribute("aria-busy"); } }
+    };
+
+    const useSavedRecoveryCode = () => {
+      const panel = gate.querySelector("[data-forgot-panel]");
+      const verify = panel.querySelector("[data-recovery-verify]");
+      const password = panel.querySelector("[data-recovery-password]");
+      verify.hidden = false;
+      verify.classList.add("is-recovery-code");
+      password.hidden = true;
+      password.disabled = true;
+      panel.querySelector("[data-recovery-code]").value = "";
+      panel.querySelector("[data-recovery-code]").focus();
+      panel.querySelector("[data-recovery-action]").textContent = "Đăng nhập bằng mã khôi phục";
+      panel.querySelector("[data-recovery-status]").textContent = "Mỗi mã chỉ dùng được một lần. Email cảnh báo sẽ được gửi sau khi mã được sử dụng.";
     };
 
     const resendEmailVerification = async () => {
@@ -794,6 +818,7 @@
     gate.querySelector("[data-forgot-open]")?.addEventListener("click", () => showPanel("recovery"));
     gate.querySelector("[data-forgot-close]")?.addEventListener("click", () => showPanel("login"));
     gate.querySelector("[data-recovery-action]")?.addEventListener("click", requestRecovery);
+    gate.querySelector("[data-recovery-use-code]")?.addEventListener("click", useSavedRecoveryCode);
     gate.querySelector("[data-email-verify-action]")?.addEventListener("click", verifyEmail);
     gate.querySelector("[data-email-verify-resend]")?.addEventListener("click", resendEmailVerification);
     gate.querySelector("[data-qr-close]")?.addEventListener("click", () => { clearInterval(qrPoll); showPanel("login"); });

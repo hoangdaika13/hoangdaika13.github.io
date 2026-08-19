@@ -51,6 +51,7 @@ const ROUTE_ALIASES = Object.freeze({
   "password-recovery-request": "forgot-password/request",
   "password-recovery-verify": "forgot-password/verify",
   "password-recovery-reset": "forgot-password/reset",
+  "recovery-code-login": "recovery-code/login",
   "email-verification-request": "email-verification/request",
   "email-verification-verify": "email-verification/verify",
   "qr-create": "qr/create",
@@ -63,6 +64,10 @@ const ROUTE_ALIASES = Object.freeze({
 
 function validEmail(value) {
   return /^\S+@\S+\.\S+$/.test(value);
+}
+
+function emailHtmlText(value) {
+  return clean(value, 180).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 }
 
 function appOrigin(req) {
@@ -353,6 +358,19 @@ async function notifyNewDevice(db, user, req, session) {
   return { sent: Boolean(result.delivered), reason: result.configured ? "provider-result" : "provider-unavailable" };
 }
 
+function sessionHasRecentAuthentication(session, maxAgeMs = 10 * 60 * 1000) {
+  const reauthenticatedAt = session?.reauthenticatedAt ? new Date(session.reauthenticatedAt) : null;
+  const createdAt = session?.createdAt ? new Date(session.createdAt) : null;
+  const authenticatedAt = reauthenticatedAt && Number.isFinite(reauthenticatedAt.getTime())
+    ? reauthenticatedAt
+    : createdAt;
+  return Boolean(authenticatedAt && Number.isFinite(authenticatedAt.getTime()) && Date.now() - authenticatedAt.getTime() <= maxAgeMs);
+}
+
+async function accountRecoveryCount(db, userId) {
+  return db.collection("accountRecoveryCodes").countDocuments({ userId, revokedAt: null, usedAt: null, expiresAt: { $gt: new Date() } });
+}
+
 async function rememberAuthEmailDelivery(db, user, kind, delivery) {
   const now = new Date();
   const prefix = kind === "welcome" ? "welcomeEmail" : "loginThankYouEmail";
@@ -399,6 +417,7 @@ async function sendLoginThankYou(db, user, session, method) {
 async function passkeyRegistrationOptions(req, res, db) {
   const auth = await requireAuth(req, res, db);
   if (!auth) return;
+  if (!sessionHasRecentAuthentication(auth.session)) return res.status(428).json({ error: "Hãy xác thực lại trước khi thêm Passkey.", code: "STEP_UP_REQUIRED" });
   const { generateRegistrationOptions } = webauthnServer();
   const config = expectedWebAuthn(req);
   const credentials = await db.collection("passkeys").find({ userId: auth.user._id }).toArray();
@@ -436,6 +455,7 @@ function storedPublicKeyBytes(value) {
 async function passkeyRegistrationVerify(req, res, db, body) {
   const auth = await requireAuth(req, res, db);
   if (!auth) return;
+  if (!sessionHasRecentAuthentication(auth.session)) return res.status(428).json({ error: "Phiên xác thực lại đã hết hạn. Hãy bắt đầu tạo Passkey lần nữa.", code: "STEP_UP_REQUIRED" });
   const { verifyRegistrationResponse } = webauthnServer();
   const requestId = clean(body.requestId, 120);
   const challenge = await db.collection("authChallenges").findOne({ type: "passkey-register", lookup: requestId, userId: auth.user._id, consumedAt: null, expiresAt: { $gt: new Date() } });
@@ -449,13 +469,23 @@ async function passkeyRegistrationVerify(req, res, db, body) {
   if (!verification.verified || !verification.registrationInfo) return res.status(400).json({ error: "Không thể xác minh Passkey.", code: "PASSKEY_VERIFICATION_FAILED" });
   const credential = credentialParts(verification.registrationInfo);
   if (!credential.id || !credential.publicKey.length) return res.status(400).json({ error: "Dữ liệu Passkey không hợp lệ." });
+  const passkeyName = clean(body.name, 80) || "Passkey";
   await db.collection("passkeys").updateOne(
     { credentialId: credential.id },
-    { $set: { userId: auth.user._id, credentialId: credential.id, publicKey: credential.publicKey, counter: credential.counter, transports: credential.transports.length ? credential.transports : (body.response?.response?.transports || []), name: clean(body.name, 80) || "Passkey", lastUsedAt: null, updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } },
+    { $set: { userId: auth.user._id, credentialId: credential.id, publicKey: credential.publicKey, counter: credential.counter, transports: credential.transports.length ? credential.transports : (body.response?.response?.transports || []), name: passkeyName, deviceType: clean(body.deviceType || body.response?.authenticatorAttachment || "WebAuthn", 100), lastUsedAt: null, updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } },
     { upsert: true }
   );
   await db.collection("authChallenges").updateOne({ _id: challenge._id }, { $set: { consumedAt: new Date() } });
-  return res.status(201).json({ ok: true, credential: { id: credential.id, name: clean(body.name, 80) || "Passkey" } });
+  await Promise.all([
+    db.collection("accountAudit").insertOne({ userId: auth.user._id, sessionId: auth.session?.sessionId || null, action: "passkey.added", detail: { label: passkeyName, targetId: credential.id }, createdAt: new Date() }),
+    sendSecurityEmail({
+      to: auth.user.email,
+      subject: "Passkey mới đã được thêm vào tài khoản HH",
+      html: `<p>Passkey <strong>${emailHtmlText(passkeyName)}</strong> vừa được thêm vào tài khoản của bạn.</p><p>Nếu không phải bạn, hãy thu hồi Passkey và các phiên lạ trong Trung tâm tài khoản.</p>`,
+      text: `Passkey ${passkeyName} vừa được thêm vào tài khoản HH. Nếu không phải bạn, hãy thu hồi Passkey và các phiên lạ.`
+    })
+  ]);
+  return res.status(201).json({ ok: true, credential: { id: credential.id, name: passkeyName } });
 }
 
 async function passkeyLoginOptions(req, res, db, body) {
@@ -660,6 +690,41 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ...authResponse(user, session), authEmailDelivery: loginDelivery.delivered ? "sent" : loginDelivery.configured ? "failed" : "not-configured" });
     }
 
+    if (route === "recovery-code/login" && req.method === "POST") {
+      const email = clean(body.email, 160).toLowerCase();
+      const code = clean(body.code, 32).toUpperCase();
+      await enforceRateLimit(db, `recovery-code-login:${clientIp(req)}:${email}`, 8, 30 * 60 * 1000);
+      const user = validEmail(email) ? await db.collection("users").findOne({ email }) : null;
+      if (!user || !/^HH-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}$/.test(code)) {
+        return res.status(401).json({ error: "Email hoặc mã khôi phục không hợp lệ.", code: "RECOVERY_CODE_INVALID" });
+      }
+      if (["deleted", "suspended", "locked", "banned"].includes(String(user.status || "").toLowerCase())) return res.status(403).json({ error: "Tài khoản này hiện không được phép đăng nhập." });
+      const codeHash = hmacHash(`${user._id}:${code}`, "account-recovery-code");
+      const now = new Date();
+      const consumed = await db.collection("accountRecoveryCodes").findOneAndUpdate(
+        { userId: user._id, codeHash, usedAt: null, revokedAt: null, expiresAt: { $gt: now } },
+        { $set: { usedAt: now, usedIpHash: hmacHash(clientIp(req), "recovery-code-ip") } },
+        { returnDocument: "before" }
+      );
+      if (!consumed) {
+        await recordLoginEvent(db, user, req, "recovery-code-failed", { success: false, reason: "invalid-or-used" });
+        return res.status(401).json({ error: "Email hoặc mã khôi phục không hợp lệ.", code: "RECOVERY_CODE_INVALID" });
+      }
+      const session = await createSession(db, user, req, { type: "recovery-code", remember: false });
+      setSessionCookie(res, session.token, session.ttlSeconds);
+      const delivery = await sendSecurityEmail({
+        to: user.email,
+        subject: "Mã khôi phục HH vừa được sử dụng",
+        html: `<p>Một mã khôi phục dùng một lần vừa đăng nhập vào tài khoản HH của bạn từ <strong>${emailHtmlText(session.device?.label || "thiết bị")}</strong>.</p><p>Nếu không phải bạn, hãy thu hồi phiên và tạo lại bộ mã ngay.</p>`,
+        text: `Một mã khôi phục HH vừa được sử dụng từ ${clean(session.device?.label || "thiết bị", 100)}. Nếu không phải bạn, hãy thu hồi phiên và tạo lại bộ mã.`
+      });
+      await Promise.all([
+        recordLoginEvent(db, user, req, "recovery-code-login"),
+        db.collection("accountAudit").insertOne({ userId: user._id, sessionId: session.sessionId, action: "recovery_code.used", detail: { label: "Đăng nhập bằng mã dùng một lần" }, createdAt: now })
+      ]);
+      return res.status(200).json({ ...authResponse(user, session), recoveryCodeRemaining: await accountRecoveryCount(db, user._id), securityEmailDelivery: delivery.delivered ? "sent" : delivery.configured ? "failed" : "not-configured" });
+    }
+
     if (["forgot-password/request", "otp/request"].includes(route) && req.method === "POST") {
       const email = clean(body.email, 160).toLowerCase();
       await enforceRateLimit(db, `forgot:${clientIp(req)}:${email}`, 5, 60 * 60 * 1000);
@@ -775,6 +840,7 @@ module.exports = async function handler(req, res) {
     if (["sessions/revoke-all", "logout-all"].includes(route) && req.method === "POST") {
       const auth = await requireAuth(req, res, db);
       if (!auth) return;
+      if (!sessionHasRecentAuthentication(auth.session)) return res.status(428).json({ error: "Hãy xác thực lại trước khi thu hồi toàn bộ phiên.", code: "STEP_UP_REQUIRED" });
       const now = new Date();
       if (body.exceptCurrent === true) {
         if (!auth.session?.sessionId) return res.status(409).json({ error: "Không xác định được phiên hiện tại để giữ lại.", code: "CURRENT_SESSION_UNKNOWN" });
@@ -810,9 +876,23 @@ module.exports = async function handler(req, res) {
     if (route === "passkeys/revoke" && ["POST", "DELETE"].includes(req.method)) {
       const auth = await requireAuth(req, res, db);
       if (!auth) return;
+      if (!sessionHasRecentAuthentication(auth.session)) return res.status(428).json({ error: "Hãy xác thực lại trước khi xóa Passkey.", code: "STEP_UP_REQUIRED" });
       const credentialId = clean(body.credentialId || req.query.credentialId, 1000);
-      const result = await db.collection("passkeys").deleteOne({ userId: auth.user._id, credentialId });
-      return res.status(result.deletedCount ? 200 : 404).json(result.deletedCount ? { ok: true } : { error: "Không tìm thấy Passkey." });
+      const [credential, passkeyCount, recoveryCount, privateUser] = await Promise.all([
+        db.collection("passkeys").findOne({ userId: auth.user._id, credentialId }, { projection: { name: 1 } }),
+        db.collection("passkeys").countDocuments({ userId: auth.user._id }),
+        accountRecoveryCount(db, auth.user._id),
+        db.collection("users").findOne({ _id: auth.user._id }, { projection: { passwordHash: 1, provider: 1, lastProvider: 1, email: 1 } })
+      ]);
+      if (!credential) return res.status(404).json({ error: "Không tìm thấy Passkey." });
+      const alternative = Boolean(privateUser?.passwordHash || /google/i.test(privateUser?.provider || privateUser?.lastProvider || "") || recoveryCount);
+      if (passkeyCount <= 1 && !alternative) return res.status(409).json({ error: "Hãy tạo mã khôi phục hoặc phương thức đăng nhập thay thế trước khi xóa Passkey cuối cùng.", code: "LAST_RECOVERY_METHOD" });
+      await db.collection("passkeys").deleteOne({ userId: auth.user._id, credentialId });
+      await Promise.all([
+        db.collection("accountAudit").insertOne({ userId: auth.user._id, sessionId: auth.session?.sessionId || null, action: "passkey.removed", detail: { label: clean(credential.name || "Passkey", 80), targetId: credentialId }, createdAt: new Date() }),
+        sendSecurityEmail({ to: privateUser?.email || auth.user.email, subject: "Passkey đã bị xóa khỏi tài khoản HH", html: `<p>Passkey <strong>${emailHtmlText(credential.name || "Passkey")}</strong> vừa bị xóa.</p><p>Nếu không phải bạn, hãy thu hồi các phiên lạ ngay.</p>`, text: `Passkey ${clean(credential.name || "Passkey", 80)} vừa bị xóa khỏi tài khoản HH.` })
+      ]);
+      return res.status(200).json({ ok: true });
     }
 
     if (route === "qr/create" && req.method === "POST") {

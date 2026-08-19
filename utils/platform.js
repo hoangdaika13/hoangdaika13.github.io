@@ -305,14 +305,20 @@ async function currentUser(req) {
     const user = await db.collection("users").findOne({ _id: new ObjectId(payload.sub) }, { projection: { passwordHash: 0 } });
     const disabled = ["deleted", "suspended", "locked", "banned"].includes(String(user?.status || "").toLocaleLowerCase("en-US"));
     if (!user || disabled || Number(payload.ver || 0) !== Number(user.tokenVersion || 0)) return null;
-    if (cookieToken && !bearer) {
-      const session = await db.collection("authSessions").findOne({
-        tokenHash: createHash("sha256").update(cookieToken).digest("hex"),
-        revokedAt: null,
-        expiresAt: { $gt: new Date() }
-      }, { projection: { _id: 1 } });
-      if (!session) return null;
+    const now = new Date();
+    const session = await db.collection("authSessions").findOne({
+      tokenHash: createHash("sha256").update(token).digest("hex"),
+      revokedAt: null,
+      expiresAt: { $gt: now }
+    }, { projection: { _id: 1, remember: 1, idleExpiresAt: 1, lastSeenAt: 1, createdAt: 1 } });
+    if (!session) return null;
+    const idleSeconds = session.remember ? 7 * 24 * 60 * 60 : 2 * 60 * 60;
+    const idleExpiresAt = session.idleExpiresAt ? new Date(session.idleExpiresAt) : new Date(new Date(session.lastSeenAt || session.createdAt).getTime() + idleSeconds * 1000);
+    if (!Number.isFinite(idleExpiresAt.getTime()) || idleExpiresAt <= now) {
+      await db.collection("authSessions").updateOne({ _id: session._id, revokedAt: null }, { $set: { revokedAt: now, revokeReason: "idle-timeout" } });
+      return null;
     }
+    await db.collection("authSessions").updateOne({ _id: session._id }, { $set: { lastSeenAt: now, idleExpiresAt: new Date(now.getTime() + idleSeconds * 1000) } });
     return user;
   } catch {
     return null;
