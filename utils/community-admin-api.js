@@ -1,4 +1,5 @@
 const { ObjectId } = require("mongodb");
+const { createHash } = require("crypto");
 const { adminEmails, adminUserIds, clean, currentUser, enforceRateLimit, isOwnerUser, withApi } = require("./platform");
 const { configured: comicWorkerConfiguration, workerHealth } = require("./comic-motion-worker");
 const {
@@ -22,6 +23,16 @@ const {
   verifyAuditChain,
   writeAdminAudit
 } = require("./community-admin");
+const {
+  ADAPTER_DEFINITIONS,
+  adapterRegistry,
+  assertCanAdministerTarget: assertTargetByPolicy,
+  effectivePermissions,
+  normalizeScope,
+  redactAdapterResult,
+  safeAdapterState
+} = require("./admin-control-plane");
+const { POLICY_CONSUMERS } = require("./control-policy");
 
 const USER_PROJECTION = Object.freeze({
   name: 1,
@@ -78,6 +89,7 @@ const CONTROL_ACTIONS = Object.freeze([
   { id: "observability.alert", group: "Observability", label: "Tạo quy tắc cảnh báo", permission: "observability.alerts.manage", tier: "elevated", adapter: "internal" }
 ]);
 const CONTROL_ACTION_BY_ID = new Map(CONTROL_ACTIONS.map((item) => [item.id, item]));
+const FEATURE_FLAG_CONSUMERS = Object.freeze({ "community.posting": "api/community.js" });
 let adminIndexesPromise = null;
 
 function ensureAdminIndexes(db) {
@@ -107,6 +119,20 @@ function ensureAdminIndexes(db) {
       db.collection("communityApprovalRequests").createIndex({ status: 1, createdAt: -1 }),
       db.collection("communityApprovalRequests").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
       db.collection("communityControlPolicies").createIndex({ key: 1 }, { unique: true }),
+      db.collection("communityRoleDefinitions").createIndex({ roleId: 1, version: -1 }),
+      db.collection("communityRoleAssignments").createIndex({ userId: 1, status: 1, expiresAt: 1 }),
+      db.collection("communityRoleAssignments").createIndex({ roleId: 1, status: 1 }),
+      db.collection("communityAccessGrants").createIndex({ userId: 1, status: 1, expiresAt: 1 }),
+      db.collection("communityAccessGrants").createIndex({ requestId: 1 }, { unique: true, sparse: true }),
+      db.collection("communityAccessRequests").createIndex({ status: 1, createdAt: -1 }),
+      db.collection("communityAccessRequests").createIndex({ requesterId: 1, createdAt: -1 }),
+      db.collection("communityAccessReviews").createIndex({ userId: 1, createdAt: -1 }),
+      db.collection("communityServiceAccounts").createIndex({ workspaceId: 1, status: 1 }),
+      db.collection("communityServiceTokens").createIndex({ serviceAccountId: 1, status: 1 }),
+      db.collection("communityWorkspaces").createIndex({ ownerId: 1, status: 1 }),
+      db.collection("communityWorkspaces").createIndex({ slug: 1 }, { unique: true, sparse: true }),
+      db.collection("communityAdapterHealth").createIndex({ id: 1 }, { unique: true }),
+      db.collection("communityAuditCheckpoints").createIndex({ createdAt: -1 }),
       db.collection("comicMotionRights").createIndex({ reviewStatus: 1, updatedAt: -1 }),
       db.collection("comicMotionRights").createIndex({ seriesId: 1, chapterId: 1, ownerId: 1 })
     ]).catch((error) => {
@@ -283,12 +309,14 @@ async function executeControlAction(db, admin, capability, input, now = new Date
   };
   const key = policyKeys[capability.id];
   if (key) {
+    const consumer = POLICY_CONSUMERS[key] || null;
+    const enforcementState = consumer ? "enforced" : "no_consumer";
     await db.collection("communityControlPolicies").updateOne(
       { key },
-      { $set: { key, value: input.value, note: input.note, updatedAt: now, updatedBy: admin._id }, $setOnInsert: { createdAt: now } },
+      { $set: { key, value: input.value, note: input.note, consumer, enforcementState, updatedAt: now, updatedBy: admin._id }, $setOnInsert: { createdAt: now } },
       { upsert: true }
     );
-    return { status: "policy_recorded", detail: "Chính sách đã được lưu trong HH control plane và ghi audit.", affected: 1 };
+    return { status: enforcementState === "enforced" ? "policy_recorded" : "policy_recorded_unenforced", detail: enforcementState === "enforced" ? "Chính sách đã được lưu và có consumer server-side." : "Chính sách đã lưu nhưng chưa có enforcement consumer; không được coi là đang hoạt động.", affected: 1, consumer, enforcementState };
   }
   return { status: "approved_waiting_adapter", detail: `${adapter.label} cần runbook thực thi riêng; không có thay đổi giả lập.`, affected: 0 };
 }
@@ -488,6 +516,151 @@ function runtimeServices({ databaseLatencyMs = 0, failedJobs = 0 } = {}) {
   ];
 }
 
+async function hydrateAdminAccess(db, user) {
+  if (!user?._id) return user;
+  const now = new Date();
+  const assignments = await db.collection("communityRoleAssignments").find({
+    userId: user._id,
+    status: "active",
+    $or: [{ expiresAt: { $exists: false } }, { expiresAt: null }, { expiresAt: { $gt: now } }]
+  }).limit(200).toArray();
+  const grants = await db.collection("communityAccessGrants").find({
+    userId: user._id,
+    status: "active",
+    $or: [{ expiresAt: { $exists: false } }, { expiresAt: null }, { expiresAt: { $gt: now } }]
+  }).limit(200).toArray();
+  const roleIds = [...new Set([
+    ...(Array.isArray(user.systemRoles) ? user.systemRoles : []),
+    ...assignments.map((item) => clean(item.roleId, 120))
+  ].filter(Boolean))];
+  const definitions = roleIds.length
+    ? await db.collection("communityRoleDefinitions").find({ roleId: { $in: roleIds } }).sort({ version: -1 }).limit(500).toArray()
+    : [];
+  const legacyDefinitions = roleIds.length
+    ? await db.collection("communityCustomAdminRoles").find({ roleId: { $in: roleIds } }).limit(500).toArray()
+    : [];
+  const latestByRole = new Map();
+  for (const item of [...legacyDefinitions, ...definitions]) {
+    const roleId = clean(item.roleId, 120);
+    if (!roleId) continue;
+    const previous = latestByRole.get(roleId);
+    if (!previous || Number(item.version || 0) > Number(previous.version || 0)
+      || (Number(item.version || 0) === Number(previous.version || 0) && new Date(item.updatedAt || 0) > new Date(previous.updatedAt || 0))) {
+      latestByRole.set(roleId, item);
+    }
+  }
+  const latest = [...latestByRole.values()];
+  const customRoleIds = assignments.map((item) => clean(item.roleId, 120)).filter((item) => item.startsWith("custom:"));
+  const effective = effectivePermissions({
+    roles: roleIds,
+    assignments,
+    definitions: latest,
+    // Scoped grants stay out of the legacy permission mirror. Generic
+    // requirePermission() must not turn a workspace grant into global access.
+    legacyPermissions: user.adminCustomPermissions,
+    rolePermissions: ROLE_PERMISSIONS
+  });
+  user.systemRoles = [...new Set([...(Array.isArray(user.systemRoles) ? user.systemRoles : []), ...customRoleIds])];
+  user.adminCustomPermissions = effective;
+  user.__adminRoleAssignments = assignments;
+  user.__adminRoleDefinitions = latest;
+  user.__adminPermissionGrants = grants;
+  return user;
+}
+
+function presentRoleAssignment(item = {}) {
+  return {
+    id: String(item._id || item.assignmentId || ""),
+    userId: String(item.userId || ""),
+    roleId: clean(item.roleId, 120),
+    roleVersion: Math.max(1, Number(item.roleVersion || 1)),
+    workspaceId: clean(item.workspaceId, 180),
+    scope: normalizeScope(item.scope),
+    status: clean(item.status || "active", 40),
+    grantedBy: String(item.grantedBy || ""),
+    reason: clean(item.reason, 500),
+    grantedAt: item.grantedAt || null,
+    expiresAt: item.expiresAt || null,
+    revokedAt: item.revokedAt || null,
+    lastUsedAt: item.lastUsedAt || null
+  };
+}
+
+function presentAccessRequest(item = {}) {
+  return {
+    id: String(item._id || ""),
+    requesterId: String(item.requesterId || ""),
+    targetUserId: String(item.targetUserId || ""),
+    permission: clean(item.permission, 160),
+    action: clean(item.action, 160),
+    resource: redactAdapterResult(item.resource || {}),
+    scope: normalizeScope(item.scope),
+    reason: clean(item.reason, 1000),
+    status: clean(item.status || "pending", 40),
+    requestedAt: item.requestedAt || item.createdAt || null,
+    expiresAt: item.expiresAt || null,
+    reviewedAt: item.reviewedAt || null,
+    reviewedBy: item.reviewedBy ? String(item.reviewedBy) : ""
+  };
+}
+
+function presentAccessGrant(item = {}) {
+  return {
+    id: String(item._id || ""),
+    requestId: String(item.requestId || ""),
+    userId: String(item.userId || ""),
+    permission: clean(item.permission, 160),
+    scope: normalizeScope(item.scope),
+    status: clean(item.status || "active", 40),
+    grantedBy: String(item.grantedBy || ""),
+    grantedAt: item.grantedAt || null,
+    expiresAt: item.expiresAt || null,
+    revokedAt: item.revokedAt || null,
+    secretsReturned: false
+  };
+}
+
+function presentAdapterHealth(item = {}) {
+  return safeAdapterState(
+    ADAPTER_DEFINITIONS.find((definition) => definition.id === item.id) || { id: item.id, label: item.label || item.id, requiredEnv: [], readOnly: false },
+    process.env,
+    item
+  );
+}
+
+function presentServiceAccount(item = {}) {
+  return {
+    id: String(item._id || ""),
+    name: clean(item.name, 120),
+    workspaceId: clean(item.workspaceId, 180),
+    ownerId: String(item.ownerId || ""),
+    status: clean(item.status || "active", 40),
+    scopes: Array.isArray(item.scopes) ? item.scopes.map((scope) => clean(scope, 160)).filter(Boolean).slice(0, 100) : [],
+    environment: clean(item.environment || "production", 40),
+    expiresAt: item.expiresAt || null,
+    lastUsedAt: item.lastUsedAt || null,
+    tokenCount: Number(item.tokenCount || 0),
+    createdAt: item.createdAt || null,
+    secretsReturned: false
+  };
+}
+
+function presentSession(item = {}, currentSessionId = "") {
+  return {
+    id: clean(item.sessionId || item._id, 180),
+    current: clean(item.sessionId || item._id, 180) === currentSessionId,
+    provider: clean(item.provider || item.type, 40),
+    device: clean(item.device || item.platform, 120),
+    browser: clean(item.browser, 120),
+    ip: "masked",
+    createdAt: item.createdAt || null,
+    lastSeenAt: item.lastSeenAt || item.updatedAt || null,
+    expiresAt: item.expiresAt || null,
+    revokedAt: item.revokedAt || null,
+    tokenReturned: false
+  };
+}
+
 function pageParams(query) {
   const limit = Math.max(10, Math.min(100, Number(query.limit || 30)));
   const page = Math.max(1, Math.min(10000, Number(query.page || 1)));
@@ -495,26 +668,14 @@ function pageParams(query) {
 }
 
 async function assertTargetAllowed(admin, target) {
-  const actorRole = highestRole(admin);
-  const targetRole = highestRole(target);
-  const actorRank = ROLE_RANK[actorRole] || (String(actorRole).startsWith("custom:") ? 15 : 0);
-  const targetRank = ROLE_RANK[targetRole] || (String(targetRole).startsWith("custom:") ? 15 : 0);
-  if (targetRank > 0 && actorRank <= targetRank) {
-    const error = new Error("Bạn không thể quản trị tài khoản có quyền ngang hoặc cao hơn mình.");
-    error.statusCode = 403;
-    throw error;
-  }
-  if (String(admin._id) === String(target._id)) {
-    const error = new Error("Không thể dùng thao tác này trên chính phiên quản trị đang hoạt động.");
-    error.statusCode = 400;
-    throw error;
-  }
+  return assertTargetByPolicy(admin, target, ROLE_RANK);
 }
 
 module.exports = async function handler(req, res) {
   return withApi(req, res, async ({ db, body }) => {
     const admin = await currentUser(req);
     if (!admin) return res.status(401).json({ error: "Bạn cần đăng nhập để truy cập Community Admin." });
+    await hydrateAdminAccess(db, admin);
     const view = clean(req.query.view || "me", 40);
     const access = accessFor(admin);
 
@@ -611,7 +772,7 @@ module.exports = async function handler(req, res) {
         db.collection("users").find({ status: { $ne: "deleted" } }, { projection: USER_PROJECTION }).sort({ lastLoginAt: -1, createdAt: -1 }).limit(12).toArray(),
         db.collection("users").countDocuments({ status: { $ne: "deleted" } }),
         db.collection("authSessions").countDocuments({ revokedAt: null, expiresAt: { $gt: now } }),
-        db.collection("communityCustomAdminRoles").find({}, { projection: { key: 1, name: 1, description: 1, permissions: 1, updatedAt: 1 } }).sort({ name: 1 }).limit(100).toArray(),
+        db.collection("communityCustomAdminRoles").find({}, { projection: { key: 1, name: 1, description: 1, permissions: 1, version: 1, status: 1, updatedAt: 1 } }).sort({ name: 1 }).limit(100).toArray(),
         db.collection("communityApprovalRequests").find({ status: "pending", expiresAt: { $gt: now } }).sort({ createdAt: -1 }).limit(20).toArray(),
         db.collection("communityAccessReviews").findOne({}, { sort: { completedAt: -1 } })
       ]);
@@ -648,6 +809,8 @@ module.exports = async function handler(req, res) {
           name: clean(item.name, 120),
           description: clean(item.description, 500),
           permissions: normalizePermissions(item.permissions),
+          version: Number(item.version || 1),
+          status: clean(item.status || "active", 40),
           simulation: simulatePermissions([], item.permissions),
           updatedAt: item.updatedAt || null
         })),
@@ -672,12 +835,88 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    if (req.method === "GET" && ["access-governance", "effective-access", "role-assignments", "role-history", "access-requests", "service-accounts", "sessions", "devices", "adapter-health", "integrations", "ai-operations", "data-governance", "workspace"].includes(view)) {
+      const requires = ["role-assignments", "role-history", "access-requests"].includes(view) ? "users.roles" : ["service-accounts", "sessions", "devices", "effective-access"].includes(view) ? "users.view" : view === "ai-operations" ? "ai.providers.view" : view === "data-governance" ? "privacy.view" : "platform.view";
+      requirePermission(admin, requires);
+      const now = new Date();
+      if (["access-governance", "effective-access", "role-assignments", "role-history", "access-requests"].includes(view)) {
+        const requestedUserId = idOf(req.query.userId);
+        if (requestedUserId && !hasPermission(admin, "users.roles") && String(requestedUserId) !== String(admin._id)) {
+          return res.status(403).json({ error: "Bạn chỉ được xem quyền của chính mình.", code: "TARGET_SCOPE_DENIED" });
+        }
+        const assignmentFilter = requestedUserId ? { userId: requestedUserId } : {};
+        const [assignments, definitions, requests, grants, review] = await Promise.all([
+          db.collection("communityRoleAssignments").find(assignmentFilter).sort({ status: 1, expiresAt: 1, grantedAt: -1 }).limit(500).toArray(),
+          db.collection("communityRoleDefinitions").find({}).sort({ roleId: 1, version: -1 }).limit(500).toArray(),
+          db.collection("communityAccessRequests").find(requestedUserId ? { $or: [{ requesterId: requestedUserId }, { targetUserId: requestedUserId }] } : {}).sort({ createdAt: -1 }).limit(100).toArray(),
+          db.collection("communityAccessGrants").find({ userId: requestedUserId || admin._id }).sort({ grantedAt: -1 }).limit(100).toArray(),
+          requestedUserId ? db.collection("communityAccessReviews").findOne({ userId: requestedUserId }, { sort: { createdAt: -1 } }) : null
+        ]);
+        const latestDefinitionMap = new Map();
+        for (const item of definitions) {
+          const previous = latestDefinitionMap.get(item.roleId);
+          if (!previous || Number(item.version || 0) > Number(previous.version || 0)) latestDefinitionMap.set(item.roleId, item);
+        }
+        const latestDefinitions = [...latestDefinitionMap.values()];
+        const target = requestedUserId ? await db.collection("users").findOne({ _id: requestedUserId }, { projection: USER_PROJECTION }) : admin;
+        const roles = [...new Set([...(Array.isArray(target?.systemRoles) ? target.systemRoles : []), ...assignments.map((item) => item.roleId)])];
+        const permissions = effectivePermissions({ roles, assignments, definitions: latestDefinitions, legacyPermissions: target?.adminCustomPermissions, rolePermissions: ROLE_PERMISSIONS });
+        return res.status(200).json({
+          ok: true,
+          generatedAt: now,
+          target: target ? presentUser(target) : presentUser(admin),
+          effectiveAccess: { roles, permissions, scopedPermissions: grants.map((item) => ({ permission: clean(item.permission, 160), scope: normalizeScope(item.scope), expiresAt: item.expiresAt || null })), permissionCount: permissions.includes("*") ? "all" : permissions.length, source: assignments.length ? "role-assignments+legacy-migration" : "legacy-compatible" },
+          assignments: assignments.map(presentRoleAssignment),
+          definitions: latestDefinitions.map((item) => ({ id: String(item._id || ""), roleId: clean(item.roleId, 120), version: Number(item.version || 1), name: clean(item.name, 120), status: clean(item.status || "active", 40), permissions: normalizePermissions(item.permissions), updatedAt: item.updatedAt || null })),
+          requests: requests.map(presentAccessRequest),
+          grants: grants.map(presentAccessGrant),
+          accessReview: review ? { completedAt: review.completedAt || review.createdAt || null, summary: redactAdapterResult(review.summary || {}) } : null,
+          privacy: { secretsReturned: false, privateMessagesReturned: false, rawPromptsReturned: false }
+        });
+      }
+      if (["adapter-health", "integrations"].includes(view)) {
+        const persisted = await db.collection("communityAdapterHealth").find({}).limit(100).toArray();
+        const adapters = adapterRegistry(process.env, persisted).map(presentAdapterHealth);
+        return res.status(200).json({ ok: true, generatedAt: now, adapters, definitions: ADAPTER_DEFINITIONS.map((item) => ({ id: item.id, label: item.label, requiredEnv: item.requiredEnv.slice(), readOnly: item.readOnly })), privacy: { secretsReturned: false } });
+      }
+      if (view === "service-accounts") {
+        const rows = await db.collection("communityServiceAccounts").find({}).sort({ createdAt: -1 }).limit(200).toArray();
+        return res.status(200).json({ ok: true, generatedAt: now, serviceAccounts: rows.map(presentServiceAccount), privacy: { secretsReturned: false, tokenValuesReturned: false } });
+      }
+      if (["sessions", "devices"].includes(view)) {
+        const targetId = idOf(req.query.userId) || admin._id;
+        if (String(targetId) !== String(admin._id) && !hasPermission(admin, "users.view")) return res.status(403).json({ error: "Không có quyền xem session của tài khoản khác." });
+        const bearer = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+        const currentSession = bearer ? await db.collection("authSessions").findOne({ tokenHash: createHash("sha256").update(bearer).digest("hex"), revokedAt: null }, { projection: { sessionId: 1 } }) : null;
+        const sessions = await db.collection("authSessions").find({ userId: targetId }).sort({ lastSeenAt: -1, createdAt: -1 }).limit(100).toArray();
+        return res.status(200).json({ ok: true, generatedAt: now, sessions: sessions.map((item) => presentSession(item, currentSession?.sessionId || "")), privacy: { tokensReturned: false, ipReturned: false } });
+      }
+      if (view === "ai-operations") {
+        const since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const rows = await db.collection("aiUsageEvents").aggregate([
+          { $match: { createdAt: { $gte: since } } },
+          { $group: { _id: "$provider", requests: { $sum: 1 }, units: { $sum: { $ifNull: ["$cost", 0] } }, failures: { $sum: { $cond: [{ $in: ["$outcome", ["error", "failed"]] }, 1, 0] } } } },
+          { $sort: { requests: -1 } }, { $limit: 100 }
+        ]).toArray();
+        const budgets = await db.collection("communityControlPolicies").find({ key: /^ai\.(budget|provider)/ }, { projection: { key: 1, value: 1, updatedAt: 1 } }).limit(100).toArray();
+        return res.status(200).json({ ok: true, generatedAt: now, windowDays: 30, providers: rows.map((item) => ({ provider: clean(item._id || "unknown", 80), requests: Number(item.requests || 0), units: Number(item.units || 0), failures: Number(item.failures || 0) })), budgets: budgets.map((item) => ({ key: clean(item.key, 120), value: typeof item.value === "number" || typeof item.value === "boolean" ? item.value : "redacted", updatedAt: item.updatedAt || null })), privacy: { apiKeysReturned: false, promptsReturned: false } });
+      }
+      if (view === "data-governance") {
+        const retention = await db.collection("communityControlPolicies").find({ key: /^data\.(retention|legal-hold)/ }, { projection: { key: 1, value: 1, consumer: 1, enforcementState: 1, updatedAt: 1 } }).limit(100).toArray();
+        return res.status(200).json({ ok: true, generatedAt: now, policies: retention.map((item) => ({ key: clean(item.key, 120), value: redactAdapterResult(item.value), consumer: clean(item.consumer, 180), enforcementState: clean(item.enforcementState || "no_consumer", 40), updatedAt: item.updatedAt || null })), privacy: { privateMessagesReturned: false, rawPromptsReturned: false, formValuesReturned: false, passwordsReturned: false, tokensReturned: false } });
+      }
+      if (view === "workspace") {
+        const workspaces = await db.collection("communityWorkspaces").find({}).sort({ updatedAt: -1, createdAt: -1 }).limit(200).toArray();
+        return res.status(200).json({ ok: true, generatedAt: now, workspaces: workspaces.map((item) => ({ id: String(item._id || ""), slug: clean(item.slug, 100), name: clean(item.name, 160), ownerId: String(item.ownerId || ""), status: clean(item.status || "active", 40), memberCount: Number(item.memberCount || 0), moduleIds: Array.isArray(item.moduleIds) ? item.moduleIds.map((value) => clean(value, 100)).slice(0, 50) : [], aiBudget: Number(item.aiBudget || 0), storageLimit: Number(item.storageLimit || 0), updatedAt: item.updatedAt || null })), privacy: { secretsReturned: false, privateDataReturned: false } });
+      }
+    }
+
     if (req.method === "GET" && view === "control-plane") {
       requirePermission(admin, "dashboard.view");
       const now = new Date();
       const [approvals, policies, databaseCollections] = await Promise.all([
         db.collection("communityApprovalRequests").find({ status: { $in: ["pending", "approved_waiting_adapter"] }, expiresAt: { $gt: now } }).sort({ createdAt: -1 }).limit(30).toArray(),
-        db.collection("communityControlPolicies").find({}, { projection: { key: 1, value: 1, note: 1, updatedAt: 1 } }).sort({ key: 1 }).limit(100).toArray(),
+        db.collection("communityControlPolicies").find({}, { projection: { key: 1, value: 1, note: 1, consumer: 1, enforcementState: 1, updatedAt: 1 } }).sort({ key: 1 }).limit(100).toArray(),
         db.listCollections({}, { nameOnly: true }).toArray()
       ]);
       const adapters = adapterStates();
@@ -688,7 +927,7 @@ module.exports = async function handler(req, res) {
         capabilities: controlCapabilities(admin),
         adapters: Object.entries(adapters).map(([id, item]) => ({ id, ...item })),
         approvals: approvals.map((item) => approvalForAdmin(item, admin)),
-        policies: policies.map((item) => ({ id: String(item._id), key: clean(item.key, 120), value: typeof item.value === "string" ? clean(item.value, 240) : item.value, note: clean(item.note, 500), updatedAt: item.updatedAt || null })),
+        policies: policies.map((item) => ({ id: String(item._id), key: clean(item.key, 120), value: typeof item.value === "string" ? clean(item.value, 240) : item.value, note: clean(item.note, 500), consumer: clean(item.consumer || POLICY_CONSUMERS[item.key], 180), enforcementState: clean(item.enforcementState || (POLICY_CONSUMERS[item.key] ? "enforced" : "no_consumer"), 40), updatedAt: item.updatedAt || null })),
         infrastructure: {
           services: runtimeServices(),
           databaseCollections: databaseCollections.length,
@@ -729,7 +968,7 @@ module.exports = async function handler(req, res) {
       const databaseLatencyMs = Date.now() - databaseStartedAt;
       const [jobs, flags, gatewayUsage, failedJobs] = await Promise.all([
         db.collection("communityQueueJobs").find({}, { projection: { payload: 0, secret: 0, token: 0 } }).sort({ updatedAt: -1, createdAt: -1 }).limit(60).toArray(),
-        db.collection("communityFeatureFlags").find({}, { projection: { key: 1, enabled: 1, rollout: 1, description: 1, updatedAt: 1 } }).sort({ key: 1 }).toArray(),
+        db.collection("communityFeatureFlags").find({}, { projection: { key: 1, enabled: 1, rollout: 1, description: 1, consumer: 1, enforcementState: 1, updatedAt: 1 } }).sort({ key: 1 }).toArray(),
         db.collection("gatewayAuditLogs").aggregate([
           { $match: { createdAt: { $gte: dayAgo } } },
           { $group: { _id: { provider: "$provider", outcome: "$outcome" }, requests: { $sum: 1 }, units: { $sum: "$cost" } } },
@@ -1241,18 +1480,42 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, privilege: await privilegeState(db, admin, now) });
     }
 
+    if (action === "audit:checkpoint") {
+      requirePermission(admin, "audit.view");
+      await requireElevation(db, admin);
+      const reason = requiredReason(body);
+      const now = new Date();
+      const head = await db.collection("communityAdminAuditLogs").findOne({}, { projection: { recordHash: 1, sequence: 1, createdAt: 1 }, sort: { sequence: -1, createdAt: -1 } });
+      if (!head?.recordHash) return res.status(409).json({ error: "Audit chain chưa có head để checkpoint." });
+      const checkpoint = { headHash: head.recordHash, sequence: Number(head.sequence || 0), checkedAt: now, createdBy: admin._id, mode: "database-checkpoint", externalAnchor: false, reason, createdAt: now };
+      const result = await db.collection("communityAuditCheckpoints").insertOne(checkpoint);
+      await writeAdminAudit(db, req, admin, { action, targetType: "audit-checkpoint", targetId: String(result.insertedId), reason, before: null, after: { headHash: head.recordHash, sequence: head.sequence, externalAnchor: false } });
+      return res.status(201).json({ ok: true, checkpoint: { id: String(result.insertedId), headHash: head.recordHash, sequence: Number(head.sequence || 0), externalAnchor: false, checkedAt: now } });
+    }
+
     if (action === "permission:simulate") {
       requirePermission(admin, "permissions.simulate");
       const simulation = simulatePermissions(body.currentPermissions, body.permissions);
       return res.status(200).json({ ok: true, simulation, catalog: PERMISSION_CATALOG, mutationPerformed: false });
     }
 
-    if (action === "custom-role:save") {
+    if (["custom-role:save", "role:publish"].includes(action)) {
       requirePermission(admin, "roles.custom.manage");
       await requireElevation(db, admin);
       const reason = requiredReason(body);
       const key = clean(body.key, 32).toLowerCase();
       if (!/^[a-z][a-z0-9_-]{2,31}$/.test(key)) return res.status(400).json({ error: "Mã vai trò phải gồm 3–32 ký tự chữ thường, số, gạch ngang hoặc gạch dưới." });
+      if (action === "role:publish" && !body.name) {
+        const current = await db.collection("communityCustomAdminRoles").findOne({ key });
+        if (!current) return res.status(404).json({ error: "Không tìm thấy custom role để publish." });
+        const now = new Date();
+        const version = Math.max(1, Number(current.version || 1) + 1);
+        const snapshot = { roleId: `custom:${key}`, version, status: "active", key, name: clean(current.name, 120), description: clean(current.description, 500), permissions: normalizePermissions(current.permissions), riskScore: Number(current.riskScore || 0), createdAt: now, createdBy: admin._id, updatedAt: now, updatedBy: admin._id, publishedFrom: Number(current.version || 1) };
+        await db.collection("communityRoleDefinitions").insertOne(snapshot);
+        await db.collection("communityCustomAdminRoles").updateOne({ key }, { $set: { version, updatedAt: now, updatedBy: admin._id, status: "active" } });
+        await writeAdminAudit(db, req, admin, { action, targetType: "custom-role", targetId: key, reason, before: current, after: snapshot });
+        return res.status(201).json({ ok: true, role: snapshot, published: true });
+      }
       const name = clean(body.name, 120);
       if (name.length < 3) return res.status(400).json({ error: "Tên vai trò cần ít nhất 3 ký tự." });
       const simulation = simulatePermissions([], [...(Array.isArray(body.permissions) ? body.permissions : []), "dashboard.view"]);
@@ -1260,9 +1523,12 @@ module.exports = async function handler(req, res) {
       const collection = db.collection("communityCustomAdminRoles");
       const before = await collection.findOne({ key });
       const now = new Date();
+      const version = Math.max(1, Number(before?.version || 0) + 1);
       const role = {
         key,
         roleId: `custom:${key}`,
+        version,
+        status: "active",
         name,
         description: clean(body.description, 500),
         permissions: simulation.selected,
@@ -1271,9 +1537,45 @@ module.exports = async function handler(req, res) {
         updatedBy: admin._id
       };
       await collection.updateOne({ key }, { $set: role, $setOnInsert: { createdAt: now, createdBy: admin._id } }, { upsert: true });
+      await db.collection("communityRoleDefinitions").insertOne({
+        ...role,
+        roleId: `custom:${key}`,
+        createdAt: now,
+        createdBy: admin._id,
+        updatedAt: now,
+        updatedBy: admin._id
+      });
       const after = await collection.findOne({ key });
       await writeAdminAudit(db, req, admin, { action, targetType: "custom-role", targetId: key, reason, before, after });
       return res.status(200).json({ ok: true, role: { ...role, id: String(after._id) }, simulation });
+    }
+
+    if (["role:disable", "role:rollback"].includes(action)) {
+      requirePermission(admin, "roles.custom.manage");
+      await requireElevation(db, admin);
+      const reason = requiredReason(body);
+      const key = clean(body.key, 32).toLowerCase();
+      const roleId = `custom:${key}`;
+      const collection = db.collection("communityCustomAdminRoles");
+      const current = await collection.findOne({ key });
+      if (!current) return res.status(404).json({ error: "Không tìm thấy custom role." });
+      const now = new Date();
+      if (action === "role:disable") {
+        await collection.updateOne({ key }, { $set: { status: "disabled", updatedAt: now, updatedBy: admin._id } });
+        await db.collection("communityRoleDefinitions").updateMany({ roleId }, { $set: { status: "disabled", updatedAt: now, updatedBy: admin._id } });
+        await db.collection("communityRoleAssignments").updateMany({ roleId, status: "active" }, { $set: { status: "revoked", revokedAt: now, revokedBy: admin._id, revokeReason: "role-disabled", updatedAt: now } });
+      } else {
+        const version = Math.max(1, Number(body.version || 0));
+        const selected = await db.collection("communityRoleDefinitions").findOne({ roleId, version });
+        if (!selected) return res.status(404).json({ error: "Không tìm thấy phiên bản role để rollback." });
+        const { _id: selectedId, createdAt: selectedCreatedAt, createdBy: selectedCreatedBy, ...selectedPayload } = selected;
+        await collection.updateOne({ key }, { $set: { ...selectedPayload, key, updatedAt: now, updatedBy: admin._id, status: "active" } });
+        await db.collection("communityRoleDefinitions").updateMany({ roleId }, { $set: { status: "deprecated", updatedAt: now, updatedBy: admin._id } });
+        await db.collection("communityRoleDefinitions").insertOne({ ...selectedPayload, roleId, version: Math.max(Number(current.version || 1) + 1, version + 1), status: "active", rolledBackFrom: version, createdAt: now, createdBy: admin._id, updatedAt: now, updatedBy: admin._id });
+      }
+      const after = await collection.findOne({ key });
+      await writeAdminAudit(db, req, admin, { action, targetType: "custom-role", targetId: key, reason, before: current, after: redactAdapterResult(after) });
+      return res.status(200).json({ ok: true, role: redactAdapterResult(after), action });
     }
 
     if (action === "access-review:complete") {
@@ -1290,6 +1592,207 @@ module.exports = async function handler(req, res) {
       const result = await db.collection("communityAccessReviews").insertOne({ completedBy: admin._id, completedAt: now, reason, summary, createdAt: now });
       await writeAdminAudit(db, req, admin, { action, targetType: "access-review", targetId: String(result.insertedId), reason, before: null, after: summary });
       return res.status(200).json({ ok: true, summary, completedAt: now });
+    }
+
+    if (["assignment:create", "assignment:revoke"].includes(action)) {
+      requirePermission(admin, "users.roles");
+      await requireElevation(db, admin);
+      const targetId = idOf(body.userId);
+      const target = targetId ? await db.collection("users").findOne({ _id: targetId }, { projection: { ...USER_PROJECTION, tokenVersion: 1 } }) : null;
+      if (!target) return res.status(404).json({ error: "Không tìm thấy tài khoản đích." });
+      await hydrateAdminAccess(db, target);
+      await assertTargetAllowed(admin, target);
+      const reason = requiredReason(body);
+      const now = new Date();
+      if (action === "assignment:revoke") {
+        const assignmentId = idOf(body.assignmentId);
+        const before = assignmentId ? await db.collection("communityRoleAssignments").findOne({ _id: idOf(body.assignmentId) }) : null;
+        if (!before || String(before.userId) !== String(targetId)) return res.status(404).json({ error: "Không tìm thấy role assignment." });
+        await db.collection("communityRoleAssignments").updateOne({ _id: before._id, status: "active" }, { $set: { status: "revoked", revokedAt: now, revokedBy: admin._id, revokeReason: reason, updatedAt: now } });
+        const after = await db.collection("communityRoleAssignments").findOne({ _id: before._id });
+        await writeAdminAudit(db, req, admin, { action, targetType: "role-assignment", targetId: String(before._id), reason, before: presentRoleAssignment(before), after: presentRoleAssignment(after) });
+        return res.status(200).json({ ok: true, assignment: presentRoleAssignment(after) });
+      }
+      const roleId = clean(body.roleId, 120).toLowerCase();
+      if (!/^custom:[a-z][a-z0-9_-]{2,31}$/.test(roleId)) return res.status(400).json({ error: "Chỉ custom role mới được tạo assignment riêng." });
+      const role = await db.collection("communityRoleDefinitions").findOne({ roleId, status: "active" }, { sort: { version: -1 } })
+        || await db.collection("communityCustomAdminRoles").findOne({ roleId });
+      if (!role) return res.status(404).json({ error: "Không tìm thấy role definition đang hoạt động." });
+      const expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
+      if (expiresAt && (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= now.getTime())) return res.status(400).json({ error: "Thời hạn assignment không hợp lệ." });
+      const assignment = {
+        userId: targetId,
+        roleId,
+        roleVersion: Math.max(1, Number(role.version || 1)),
+        workspaceId: clean(body.workspaceId, 180),
+        scope: normalizeScope(body.scope || { type: body.workspaceId ? "workspace" : "global", workspaceIds: body.workspaceId ? [body.workspaceId] : [] }),
+        status: "active",
+        grantedBy: admin._id,
+        reason,
+        grantedAt: now,
+        expiresAt,
+        createdAt: now,
+        updatedAt: now
+      };
+      const result = await db.collection("communityRoleAssignments").insertOne(assignment);
+      await writeAdminAudit(db, req, admin, { action, targetType: "role-assignment", targetId: String(result.insertedId), reason, before: null, after: presentRoleAssignment({ ...assignment, _id: result.insertedId }) });
+      return res.status(201).json({ ok: true, assignment: presentRoleAssignment({ ...assignment, _id: result.insertedId }) });
+    }
+
+    if (action === "access:request") {
+      requirePermission(admin, "users.view");
+      const reason = requiredReason(body);
+      const permission = clean(body.permission, 160);
+      if (!PERMISSION_CATALOG.some((item) => item.id === permission)) return res.status(400).json({ error: "Permission không có trong catalog phía server." });
+      const now = new Date();
+      const expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
+      if (expiresAt && (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= now.getTime())) return res.status(400).json({ error: "Thời hạn access request không hợp lệ." });
+      const request = {
+        requesterId: admin._id,
+        targetUserId: idOf(body.targetUserId) || admin._id,
+        permission,
+        action: clean(body.requestedAction || "view", 80),
+        resource: redactAdapterResult(body.resource || {}),
+        scope: normalizeScope(body.scope),
+        reason,
+        status: "pending",
+        requestedAt: now,
+        createdAt: now,
+        expiresAt
+      };
+      const result = await db.collection("communityAccessRequests").insertOne(request);
+      await writeAdminAudit(db, req, admin, { action, targetType: "access-request", targetId: String(result.insertedId), reason, before: null, after: presentAccessRequest({ ...request, _id: result.insertedId }) });
+      return res.status(201).json({ ok: true, request: presentAccessRequest({ ...request, _id: result.insertedId }) });
+    }
+
+    if (["access:approve", "access:reject", "access:revoke"].includes(action)) {
+      requirePermission(admin, "users.roles");
+      await requireElevation(db, admin);
+      const requestId = idOf(body.requestId);
+      const request = requestId ? await db.collection("communityAccessRequests").findOne({ _id: requestId }) : null;
+      if (!request) return res.status(404).json({ error: "Không tìm thấy access request." });
+      const reason = requiredReason(body);
+      const now = new Date();
+      if (action === "access:reject") {
+        const result = await db.collection("communityAccessRequests").updateOne({ _id: requestId, status: "pending" }, { $set: { status: "rejected", reviewedAt: now, reviewedBy: admin._id, reviewReason: reason, updatedAt: now } });
+        await writeAdminAudit(db, req, admin, { action, targetType: "access-request", targetId: String(requestId), reason, before: presentAccessRequest(request), after: { status: result.modifiedCount ? "rejected" : request.status } });
+        return res.status(200).json({ ok: true, status: result.modifiedCount ? "rejected" : request.status });
+      }
+      if (action === "access:revoke") {
+        const grant = await db.collection("communityAccessGrants").findOne({ requestId: requestId, status: "active" });
+        if (!grant) return res.status(404).json({ error: "Access request chưa có grant active." });
+        await db.collection("communityAccessGrants").updateOne({ _id: grant._id, status: "active" }, { $set: { status: "revoked", revokedAt: now, revokedBy: admin._id, revokeReason: reason, updatedAt: now } });
+        await db.collection("communityAccessRequests").updateOne({ _id: requestId }, { $set: { status: "revoked", reviewedAt: now, reviewedBy: admin._id, updatedAt: now } });
+        await writeAdminAudit(db, req, admin, { action, targetType: "access-grant", targetId: String(grant._id), reason, before: presentAccessGrant(grant), after: { status: "revoked" } });
+        return res.status(200).json({ ok: true, status: "revoked" });
+      }
+      if (request.status !== "pending") return res.status(409).json({ error: "Access request không còn ở trạng thái chờ duyệt.", code: "STALE_ACCESS_REQUEST" });
+      const targetId = idOf(request.targetUserId) || idOf(request.requesterId);
+      const target = targetId ? await db.collection("users").findOne({ _id: targetId }, { projection: { ...USER_PROJECTION, systemRoles: 1 } }) : null;
+      if (!target) return res.status(404).json({ error: "Không tìm thấy tài khoản đích." });
+      await assertTargetAllowed(admin, target);
+      const grant = { requestId, userId: target._id, permission: request.permission, scope: normalizeScope(request.scope), status: "active", grantedBy: admin._id, grantedAt: now, expiresAt: request.expiresAt || null, createdAt: now, updatedAt: now };
+      const inserted = await db.collection("communityAccessGrants").insertOne(grant);
+      await db.collection("communityAccessRequests").updateOne({ _id: requestId, status: "pending" }, { $set: { status: "approved", reviewedAt: now, reviewedBy: admin._id, grantId: inserted.insertedId, updatedAt: now } });
+      await writeAdminAudit(db, req, admin, { action, targetType: "access-grant", targetId: String(inserted.insertedId), reason, before: presentAccessRequest(request), after: presentAccessGrant({ ...grant, _id: inserted.insertedId }) });
+      return res.status(201).json({ ok: true, status: "approved", grant: presentAccessGrant({ ...grant, _id: inserted.insertedId }) });
+    }
+
+    if (action === "adapter:health-check") {
+      requirePermission(admin, "platform.view");
+      const adapterId = clean(body.adapterId, 80);
+      const definition = ADAPTER_DEFINITIONS.find((item) => item.id === adapterId);
+      if (!definition) return res.status(400).json({ error: "Adapter không hợp lệ." });
+      const now = new Date();
+      const state = safeAdapterState(definition, process.env, { state: definition.requiredEnv.every((key) => Boolean(String(process.env[key] || "").trim())) ? "configured" : "not_configured", lastCheckedAt: now, verifiedWrite: false });
+      await db.collection("communityAdapterHealth").updateOne({ id: adapterId }, { $set: { ...state, id: adapterId, checkedBy: admin._id, updatedAt: now, healthCheckMode: "configuration-only" }, $setOnInsert: { createdAt: now } }, { upsert: true });
+      await writeAdminAudit(db, req, admin, { action, targetType: "adapter", targetId: adapterId, reason: "Configuration-only health check", before: null, after: { ...state, secretsReturned: false } });
+      return res.status(200).json({ ok: true, adapter: state, executed: false, note: "Đây là kiểm tra cấu hình; chưa gọi mutation API của provider." });
+    }
+
+    if (action === "session:revoke") {
+      requirePermission(admin, "sessions.revoke");
+      const sessionId = clean(body.sessionId, 180);
+      if (!sessionId) return res.status(400).json({ error: "Session ID không hợp lệ." });
+      const bearer = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+      if (bearer) {
+        const currentSession = await db.collection("authSessions").findOne({ tokenHash: createHash("sha256").update(bearer).digest("hex"), sessionId, revokedAt: null }, { projection: { _id: 1 } });
+        if (currentSession) return res.status(400).json({ error: "Không thể thu hồi chính phiên đang thực hiện thao tác này.", code: "CURRENT_SESSION_PROTECTED" });
+      }
+      const now = new Date();
+      const result = await db.collection("authSessions").updateOne({ sessionId, revokedAt: null }, { $set: { revokedAt: now, revokeReason: requiredReason(body), revokedBy: admin._id } });
+      await writeAdminAudit(db, req, admin, { action, targetType: "auth-session", targetId: sessionId, reason: clean(body.reason, 1000), before: null, after: { revoked: result.modifiedCount > 0 } });
+      return res.status(200).json({ ok: true, revoked: result.modifiedCount > 0 });
+    }
+
+    if (action === "service-account:create") {
+      requirePermission(admin, "identity.service-accounts.manage");
+      await requireElevation(db, admin);
+      const reason = requiredReason(body);
+      const name = clean(body.name, 120);
+      if (name.length < 3) return res.status(400).json({ error: "Tên service account quá ngắn." });
+      const now = new Date();
+      const expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
+      if (expiresAt && (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= now.getTime())) return res.status(400).json({ error: "Thời hạn service account không hợp lệ." });
+      const serviceAccount = { name, ownerId: admin._id, workspaceId: clean(body.workspaceId, 180), status: "active", scopes: [...new Set((Array.isArray(body.scopes) ? body.scopes : []).map((item) => clean(item, 160)).filter(Boolean))].slice(0, 50), environment: clean(body.environment || "production", 40), expiresAt, tokenCount: 1, createdAt: now, updatedAt: now };
+      const result = await db.collection("communityServiceAccounts").insertOne(serviceAccount);
+      const { randomBytes, createHash } = require("crypto");
+      const token = `hh_sa_${randomBytes(28).toString("base64url")}`;
+      await db.collection("communityServiceTokens").insertOne({ serviceAccountId: result.insertedId, tokenHash: createHash("sha256").update(token).digest("hex"), status: "active", scopes: serviceAccount.scopes, createdAt: now, expiresAt: serviceAccount.expiresAt, lastUsedAt: null });
+      await writeAdminAudit(db, req, admin, { action, targetType: "service-account", targetId: String(result.insertedId), reason, before: null, after: presentServiceAccount({ ...serviceAccount, _id: result.insertedId }) });
+      return res.status(201).json({ ok: true, serviceAccount: presentServiceAccount({ ...serviceAccount, _id: result.insertedId }), token, tokenShownOnce: true });
+    }
+
+    if (["service-account:rotate", "service-account:revoke"].includes(action)) {
+      requirePermission(admin, "identity.service-accounts.manage");
+      await requireElevation(db, admin);
+      const serviceAccountId = idOf(body.serviceAccountId);
+      const account = serviceAccountId ? await db.collection("communityServiceAccounts").findOne({ _id: serviceAccountId }) : null;
+      if (!account) return res.status(404).json({ error: "Không tìm thấy service account." });
+      if (String(account.ownerId) !== String(admin._id) && !isPrivilegedAdmin(admin)) return res.status(403).json({ error: "Bạn không sở hữu service account này." });
+      const reason = requiredReason(body);
+      const now = new Date();
+      if (action === "service-account:revoke") {
+        await db.collection("communityServiceAccounts").updateOne({ _id: serviceAccountId, status: { $ne: "revoked" } }, { $set: { status: "revoked", tokenCount: 0, revokedAt: now, revokedBy: admin._id, updatedAt: now } });
+        await db.collection("communityServiceTokens").updateMany({ serviceAccountId, status: "active" }, { $set: { status: "revoked", revokedAt: now, revokedBy: admin._id } });
+        await writeAdminAudit(db, req, admin, { action, targetType: "service-account", targetId: String(serviceAccountId), reason, before: presentServiceAccount(account), after: { status: "revoked" } });
+        return res.status(200).json({ ok: true, status: "revoked", tokenShownOnce: false });
+      }
+      await db.collection("communityServiceTokens").updateMany({ serviceAccountId, status: "active" }, { $set: { status: "revoked", revokedAt: now, revokedBy: admin._id, revokeReason: "rotation" } });
+      const { randomBytes, createHash } = require("crypto");
+      const token = `hh_sa_${randomBytes(28).toString("base64url")}`;
+      await db.collection("communityServiceTokens").insertOne({ serviceAccountId, tokenHash: createHash("sha256").update(token).digest("hex"), status: "active", scopes: Array.isArray(account.scopes) ? account.scopes : [], createdAt: now, expiresAt: account.expiresAt || null, lastUsedAt: null });
+      await db.collection("communityServiceAccounts").updateOne({ _id: serviceAccountId }, { $set: { tokenCount: 1, updatedAt: now } });
+      await writeAdminAudit(db, req, admin, { action, targetType: "service-account", targetId: String(serviceAccountId), reason, before: presentServiceAccount(account), after: { tokenRotated: true, tokenShownOnce: true } });
+      return res.status(200).json({ ok: true, token, tokenShownOnce: true });
+    }
+
+    if (action === "workspace:update") {
+      requirePermission(admin, "platform.manage");
+      await requireElevation(db, admin);
+      const reason = requiredReason(body);
+      const workspaceId = idOf(body.workspaceId);
+      const now = new Date();
+      const before = workspaceId ? await db.collection("communityWorkspaces").findOne({ _id: workspaceId }) : null;
+      let lookupFilter = workspaceId ? { _id: workspaceId } : null;
+      if (body.delete === true || body.status === "archived") {
+        if (!before) return res.status(404).json({ error: "Không tìm thấy workspace." });
+        await db.collection("communityWorkspaces").updateOne({ _id: workspaceId }, { $set: { status: "archived", archivedAt: now, archivedBy: admin._id, updatedAt: now } });
+      } else {
+        const name = clean(body.name, 160);
+        if (name.length < 3) return res.status(400).json({ error: "Tên workspace cần ít nhất 3 ký tự." });
+        const slug = clean(body.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80), 100);
+        lookupFilter = workspaceId ? { _id: workspaceId } : { slug };
+        const requestedOwnerId = idOf(body.ownerId) || before?.ownerId || admin._id;
+        if (String(requestedOwnerId) !== String(admin._id) && !isPrivilegedAdmin(admin)) return res.status(403).json({ error: "Chỉ Super Admin mới được chuyển ownership workspace." });
+        if (!await db.collection("users").findOne({ _id: requestedOwnerId }, { projection: { _id: 1 } })) return res.status(404).json({ error: "Không tìm thấy owner workspace." });
+        const payload = { name, slug, ownerId: requestedOwnerId, status: clean(body.status || before?.status || "active", 40), memberCount: Math.max(0, Number(body.memberCount || before?.memberCount || 0)), moduleIds: Array.isArray(body.moduleIds) ? body.moduleIds.map((item) => clean(item, 100)).filter(Boolean).slice(0, 50) : (before?.moduleIds || []), aiBudget: Math.max(0, Number(body.aiBudget || before?.aiBudget || 0)), storageLimit: Math.max(0, Number(body.storageLimit || before?.storageLimit || 0)), updatedAt: now, updatedBy: admin._id };
+        const result = await db.collection("communityWorkspaces").updateOne(workspaceId ? { _id: workspaceId } : { slug }, { $set: payload, $setOnInsert: { createdAt: now } }, { upsert: true });
+        if (!workspaceId) payload._id = result.upsertedId;
+      }
+      const after = lookupFilter ? await db.collection("communityWorkspaces").findOne(lookupFilter) : null;
+      await writeAdminAudit(db, req, admin, { action, targetType: "workspace", targetId: String(after?._id || workspaceId || ""), reason, before, after: redactAdapterResult(after) });
+      return res.status(200).json({ ok: true, workspace: after ? { id: String(after._id), name: clean(after.name, 160), status: clean(after.status, 40) } : null });
     }
 
     if (action === "control:execute") {
@@ -1555,11 +2058,14 @@ module.exports = async function handler(req, res) {
       const targetId = idOf(body.userId);
       const target = targetId ? await db.collection("users").findOne({ _id: targetId }, { projection: { ...USER_PROJECTION, tokenVersion: 1 } }) : null;
       if (!target) return res.status(404).json({ error: "Không tìm thấy tài khoản." });
+      await hydrateAdminAccess(db, target);
       await assertTargetAllowed(admin, target);
       const reason = requiredReason(body);
       const before = presentUser(target);
       const now = new Date();
       let update = {};
+      let customRoles = [];
+      let customRoleIds = [];
       if (action === "user:status") {
         const status = clean(body.status, 30);
         if (!ALLOWED_USER_STATUS.has(status)) return res.status(400).json({ error: "Trạng thái tài khoản không hợp lệ." });
@@ -1570,7 +2076,7 @@ module.exports = async function handler(req, res) {
       if (action === "user:revoke-sessions") update = { $inc: { tokenVersion: 1 }, $set: { sessionsRevokedAt: now, updatedAt: now } };
       if (action === "user:roles") {
         const requestedRoles = [...new Set((Array.isArray(body.roles) ? body.roles : []).map((role) => clean(role, 40).toLowerCase()).filter(Boolean))];
-        const customRoleIds = requestedRoles.filter((role) => role.startsWith("custom:"));
+        customRoleIds = requestedRoles.filter((role) => role.startsWith("custom:"));
         const builtInRoles = requestedRoles.filter((role) => !role.startsWith("custom:"));
         if (builtInRoles.some((role) => !ALLOWED_ROLES.has(role)) || customRoleIds.some((role) => !/^custom:[a-z][a-z0-9_-]{2,31}$/.test(role))) return res.status(400).json({ error: "Vai trò quản trị không hợp lệ." });
         if (builtInRoles.some((role) => !canGrantRole(admin, role))) return res.status(403).json({ error: "Bạn không thể cấp vai trò ngang hoặc cao hơn quyền hiện tại." });
@@ -1579,8 +2085,10 @@ module.exports = async function handler(req, res) {
           await requireElevation(db, admin);
         }
         const customKeys = customRoleIds.map((role) => role.slice("custom:".length));
-        const customRoles = customKeys.length ? await db.collection("communityCustomAdminRoles").find({ key: { $in: customKeys } }).toArray() : [];
+        customRoles = customKeys.length ? await db.collection("communityCustomAdminRoles").find({ key: { $in: customKeys } }).toArray() : [];
         if (customRoles.length !== customKeys.length) return res.status(400).json({ error: "Một hoặc nhiều vai trò tùy chỉnh không còn tồn tại." });
+        // Keep the legacy mirror for older readers, but make role assignments the
+        // source of truth so later role versions propagate without reassigning users.
         const adminCustomPermissions = normalizePermissions(customRoles.flatMap((role) => role.permissions || []));
         const nextRoles = requestedRoles;
         update = { $set: { systemRoles: nextRoles, adminCustomPermissions, updatedAt: now } };
@@ -1590,6 +2098,32 @@ module.exports = async function handler(req, res) {
         update = { $set: { restrictedFeatures, featureAccessUpdatedAt: now, updatedAt: now } };
       }
       await db.collection("users").updateOne({ _id: targetId }, update);
+      if (action === "user:roles") {
+        await db.collection("communityRoleAssignments").updateMany(
+          { userId: targetId, roleId: /^custom:/, status: "active" },
+          { $set: { status: "revoked", revokedAt: now, revokedBy: admin._id, revokeReason: reason, updatedAt: now } }
+        );
+        if (customRoles.length) {
+          const roleByKey = new Map(customRoles.map((role) => [String(role.key), role]));
+          await db.collection("communityRoleAssignments").insertMany(customRoleIds.map((roleId) => {
+            const role = roleByKey.get(roleId.slice("custom:".length));
+            return {
+              userId: targetId,
+              roleId,
+              roleVersion: Math.max(1, Number(role?.version || 1)),
+              workspaceId: "",
+              scope: normalizeScope({ type: "global" }),
+              status: "active",
+              grantedBy: admin._id,
+              reason,
+              grantedAt: now,
+              expiresAt: null,
+              createdAt: now,
+              updatedAt: now
+            };
+          }));
+        }
+      }
       if (action === "user:revoke-sessions") await db.collection("sessions").updateMany({ userId: targetId, endedAt: null }, { $set: { endedAt: now, revokedAt: now, revokedBy: admin._id } });
       const afterDoc = await db.collection("users").findOne({ _id: targetId }, { projection: USER_PROJECTION });
       const after = presentUser(afterDoc);
@@ -1650,7 +2184,7 @@ module.exports = async function handler(req, res) {
       const payload = action === "email-template:update"
         ? { key, subject: clean(body.subject, 240), html: clean(body.html, 20000), enabled: body.enabled !== false, updatedAt: now, updatedBy: admin._id }
         : action === "feature-flag:update"
-          ? { key, enabled: Boolean(body.enabled), rollout: Math.max(0, Math.min(100, Number(body.rollout || 0))), description: clean(body.description, 500), updatedAt: now, updatedBy: admin._id }
+          ? { key, enabled: body.enabled === true || body.enabled === "true", rollout: Math.max(0, Math.min(100, Number(body.rollout || 0))), description: clean(body.description, 500), consumer: FEATURE_FLAG_CONSUMERS[key] || null, enforcementState: FEATURE_FLAG_CONSUMERS[key] ? "enforced" : "no_consumer", updatedAt: now, updatedBy: admin._id }
           : action === "keyword:update"
             ? { value: key, enabled: body.enabled !== false, severity: clean(body.severity || "review", 30), updatedAt: now, updatedBy: admin._id }
             : { key, name: clean(body.name, 160), value: body.value, enabled: body.enabled !== false, order: Number(body.order || 0), updatedAt: now, updatedBy: admin._id };

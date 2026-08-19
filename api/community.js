@@ -1,6 +1,7 @@
 const { ObjectId } = require("mongodb");
 const { createHash } = require("crypto");
 const { clean, currentUser, enforceRateLimit, withApi } = require("../utils/platform");
+const { enforceControlPolicy, featureFlagEnabled } = require("../utils/control-policy");
 const communityAdminHandler = require("../utils/community-admin-api");
 
 const REACTIONS = new Set(["like", "love", "care", "haha", "wow", "sad", "angry"]);
@@ -1401,6 +1402,9 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "create") {
+      if (!await featureFlagEnabled(db, "community.posting", { subjectId: String(user._id), defaultEnabled: true })) return res.status(423).json({ error: "Đăng bài đang tạm dừng theo feature flag vận hành.", code: "FEATURE_DISABLED" });
+      const publishingPolicy = await enforceControlPolicy(db, { key: "content.publishing.locked", action: "community:post:create", actor: user });
+      if (!publishingPolicy.allowed) return res.status(423).json({ error: "Xuất bản cộng đồng đang tạm khóa bởi chính sách vận hành.", code: publishingPolicy.code, policy: { key: publishingPolicy.key, enforcementState: publishingPolicy.enforcementState } });
       const content = clean(body.content, 5000);
       const mediaUrl = safeMedia(body.mediaUrl);
       const requestedIds = [...new Set((Array.isArray(body.mediaIds) ? body.mediaIds : body.mediaId ? [body.mediaId] : []).slice(0, 12).map(String))];

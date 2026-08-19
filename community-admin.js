@@ -34,10 +34,22 @@
     identity: "identity",
     power: "identity",
     users: "identity",
+    "effective-access": "identity",
+    "role-assignments": "identity",
+    "role-history": "identity",
+    "access-requests": "identity",
+    "service-accounts": "identity",
     audit: "identity",
     security: "security",
     privacy: "security",
     incidents: "security",
+    sessions: "security",
+    devices: "security",
+    "adapter-health": "platform",
+    integrations: "platform",
+    workspace: "platform",
+    "ai-operations": "growth",
+    "data-governance": "security",
     community: "community",
     activity: "community",
     trust: "trust",
@@ -89,7 +101,7 @@
   const notice = (message, type = "success") => window.HHCommunity?.notice?.(message, type);
   const has = (permission) => Boolean(access?.permissions?.includes("*") || access?.permissions?.includes(permission));
   const planetForView = (view) => VIEW_PLANETS[view] || "dashboard";
-  const statusLabel = (status) => ({ operational: "Ổn định", warning: "Cần theo dõi", critical: "Nghiêm trọng", "not-configured": "Chưa kết nối", new: "Mới", investigating: "Đang điều tra", mitigated: "Đã giảm thiểu", resolved: "Đã giải quyết", queued: "Đang chờ", running: "Đang chạy", paused: "Tạm dừng", failed: "Thất bại", cancelled: "Đã hủy", executing: "Đang thực thi", execution_failed: "Cần kiểm tra thủ công", approved_waiting_adapter: "Đã duyệt · chờ adapter", executed: "Đã thực thi" }[status] || String(status || "Không rõ"));
+  const statusLabel = (status) => ({ operational: "Ổn định", warning: "Cần theo dõi", critical: "Nghiêm trọng", "not-configured": "Chưa kết nối", not_configured: "Chưa cấu hình", configured: "Đã cấu hình · chưa verify", write_ready: "Đã verify write", health_failed: "Health thất bại", degraded: "Suy giảm", disabled: "Đã vô hiệu hóa", new: "Mới", investigating: "Đang điều tra", mitigated: "Đã giảm thiểu", resolved: "Đã giải quyết", queued: "Đang chờ", running: "Đang chạy", paused: "Tạm dừng", failed: "Thất bại", cancelled: "Đã hủy", executing: "Đang thực thi", execution_failed: "Cần kiểm tra thủ công", approved_waiting_adapter: "Đã duyệt · chờ adapter", executed: "Đã thực thi" }[status] || String(status || "Không rõ"));
 
   async function api(view = "me", options = {}) {
     if (!API_BASE) throw new Error("Backend Community Admin chưa được cấu hình.");
@@ -261,7 +273,7 @@
       ["Audit bất biến theo chuỗi SHA-256", data.policy?.immutableAuditChain],
       ["Hai người duyệt thao tác tối quan trọng", Number(data.policy?.criticalActionApprovals || 0) === 2]
     ].map(([label, ready]) => `<span class="${ready ? "ready" : "missing"}"><i>${ready ? "✓" : "!"}</i>${esc(label)}</span>`).join("");
-    const content = `${subnav([["identity", "Tổng quan IAM"], ["power", "Root Authority", "dashboard.view"], ["users", "Người dùng", "users.view"], ["audit", "Audit quyền", "audit.view"]])}
+    const content = `${governanceNav()}
       <section class="hh-admin-identity-metrics">${metrics}</section>
       <section class="hh-admin-identity-grid">
         <article class="hh-admin-access-policy"><header><span><small>ZERO-TRUST ACCESS</small><strong>Chính sách danh tính</strong></span><b>${Number(data.policy?.ownerCount || 0)} Super Admin</b></header><div>${policyChecks}</div><p>Hai Super Admin hiện tại được xác định từ email Google đã xác minh. Vai trò giao diện không thể tự cấp quyền.</p></article>
@@ -269,6 +281,86 @@
       </section>
       <section class="hh-admin-role-matrix"><header><span><small>PRIVILEGE MATRIX</small><strong>Vai trò và quyền theo tác vụ</strong></span><p>Owner không thể được cấp từ Admin Panel.</p></header><div>${roles}</div></section>`;
     panelRef.innerHTML = shell(content, "Identity & Access", "Danh tính Google đã xác minh, phiên đăng nhập và quyền chi tiết theo từng tác vụ.");
+  }
+
+  function governanceNav() {
+    return subnav([
+      ["identity", "Tổng quan IAM"],
+      ["effective-access", "Effective Access", "users.view"],
+      ["role-assignments", "Role Assignments", "users.roles"],
+      ["access-requests", "Access Requests", "users.roles"],
+      ["role-history", "Role History", "users.roles"],
+      ["service-accounts", "Service Accounts", "identity.service-accounts.manage"],
+      ["sessions", "Sessions & Devices", "users.view"],
+      ["power", "Root Authority", "dashboard.view"]
+    ]);
+  }
+
+  function securityNav() {
+    return subnav([["security", "Findings"], ["privacy", "Privacy & Consent", "privacy.view"], ["sessions", "Sessions & Devices", "users.view"], ["adapter-health", "Adapter Health", "platform.view"], ["audit", "Audit log", "audit.view"]]);
+  }
+
+  function platformNav() {
+    return subnav([["platform", "Platform Health"], ["workspace", "Workspaces", "platform.view"], ["adapter-health", "Adapter Health", "platform.view"], ["integrations", "Integration Registry", "platform.view"], ["settings", "Flags & Config", "config.manage"], ["audit", "Release Audit", "audit.view"]]);
+  }
+
+  function governanceCard(label, value, detail, tone = "cyan") {
+    return `<article class="hh-admin-governance-metric ${esc(tone)}"><small>${esc(label)}</small><strong>${esc(value)}</strong><span>${esc(detail)}</span></article>`;
+  }
+
+  async function renderGovernance(view = activeView) {
+    panelRef.innerHTML = shell(loading("Đang hợp nhất quyền, phiên và governance..."), "Identity Governance");
+    const data = await api(view);
+    if (["access-governance", "effective-access", "role-assignments", "role-history", "access-requests"].includes(view)) {
+      const accessData = data.effectiveAccess || {};
+      const assignments = Array.isArray(data.assignments) ? data.assignments : [];
+      const requests = Array.isArray(data.requests) ? data.requests : [];
+      const permissionRows = (accessData.permissions || []).map((permission) => `<span class="hh-admin-chip">${esc(permission)}</span>`).join("") || '<span class="hh-admin-empty">Chưa có permission hiệu lực.</span>';
+      const assignmentRows = assignments.map((item) => `<article class="hh-admin-governance-row ${esc(item.status)}"><span><strong>${esc(item.roleId)}</strong><small>v${Number(item.roleVersion || 1)} · ${esc(item.scope?.type || "global")} ${esc(item.workspaceId || "")}</small></span><span><small>Cấp lúc</small><b>${dateText(item.grantedAt)}</b></span><span><small>Hết hạn</small><b>${item.expiresAt ? dateText(item.expiresAt) : "Không hết hạn"}</b></span><span><small>Trạng thái</small><b>${esc(statusLabel(item.status))}</b></span>${item.status === "active" && has("users.roles") ? `<button type="button" data-admin-assignment-revoke="${esc(item.id)}" data-admin-assignment-user="${esc(item.userId)}">Thu hồi</button>` : ""}</article>`).join("") || '<p class="hh-admin-empty">Chưa có assignment nào.</p>';
+      const requestRows = requests.map((item) => `<article class="hh-admin-governance-row ${esc(item.status)}"><span><strong>${esc(item.permission)}</strong><small>${esc(item.action)} · ${esc(item.scope?.type || "global")}</small></span><span><small>Người yêu cầu</small><b>${esc(item.requesterId || "-")}</b></span><span><small>Lý do</small><b>${esc(item.reason || "-")}</b></span><span><small>Trạng thái</small><b>${esc(statusLabel(item.status))}</b></span>${item.status === "pending" && has("users.roles") ? `<button type="button" data-admin-access-decision="approve" data-admin-access-request-id="${esc(item.id)}">Duyệt</button><button type="button" data-admin-access-decision="reject" data-admin-access-request-id="${esc(item.id)}">Từ chối</button>` : ""}</article>`).join("") || '<p class="hh-admin-empty">Chưa có access request.</p>';
+      const title = view === "effective-access" ? "Effective Access" : view === "role-assignments" ? "Role Assignments" : view === "access-requests" ? "Access Requests" : view === "role-history" ? "Role History" : "Access Governance";
+      const body = `<section class="hh-admin-governance-metrics">${governanceCard("Vai trò hiệu lực", String((accessData.roles || []).length), "Bao gồm role server và role custom", "violet")}${governanceCard("Permission", accessData.permissionCount === "all" ? "ALL" : String(accessData.permissionCount || 0), "Tính từ policy server-side", "cyan")}${governanceCard("Assignments", String(assignments.length), "Có scope và thời hạn", "green")}${governanceCard("Access requests", String(requests.length), "Được ghi audit", "gold")}</section>
+        <section class="hh-admin-governance-grid"><article class="hh-admin-governance-panel"><header><span><small>EFFECTIVE PERMISSIONS</small><strong>Quyền đang có</strong></span><b>${esc(accessData.source || "server")}</b></header><div class="hh-admin-chip-list">${permissionRows}</div></article><article class="hh-admin-governance-panel"><header><span><small>TARGET</small><strong>${esc(data.target?.name || data.target?.email || "Tài khoản hiện tại")}</strong></span><button type="button" data-admin-access-request>Yêu cầu quyền</button></header><p class="hh-admin-governance-note">Scope được áp dụng ở backend. Không hiển thị secret, token hoặc dữ liệu riêng tư.</p><div class="hh-admin-governance-facts"><span><small>User ID</small><b>${esc(data.target?.id || "-")}</b></span><span><small>Role</small><b>${esc((accessData.roles || []).join(", ") || "member")}</b></span></div></article></section>
+        <section class="hh-admin-governance-panel"><header><span><small>${view === "access-requests" ? "REQUEST QUEUE" : "ROLE ASSIGNMENTS"}</small><strong>${view === "access-requests" ? "Yêu cầu truy cập" : "Assignment và thời hạn"}</strong></span>${has("users.roles") ? '<button type="button" data-admin-assignment-create>＋ Gán custom role</button>' : ""}</header><div class="hh-admin-governance-list">${view === "access-requests" ? requestRows : assignmentRows}</div></section>
+        <section class="hh-admin-governance-panel"><header><span><small>ROLE DEFINITIONS</small><strong>Phiên bản role đã publish</strong></span><span>${Number((data.definitions || []).length)} definitions</span></header><div class="hh-admin-governance-list">${(data.definitions || []).map((item) => `<article class="hh-admin-governance-row"><span><strong>${esc(item.name || item.roleId)}</strong><small>${esc(item.roleId)} · v${Number(item.version || 1)}</small></span><span><small>Status</small><b>${esc(statusLabel(item.status))}</b></span><span><small>Quyền</small><b>${Number((item.permissions || []).length)}</b></span><span><small>Cập nhật</small><b>${dateText(item.updatedAt)}</b></span></article>`).join("") || '<p class="hh-admin-empty">Chưa có version custom role.</p>'}</div></section>`;
+      panelRef.innerHTML = shell(`${governanceNav()}${body}`, title, "Phân quyền theo role, scope, thời hạn và audit; mọi quyết định đều được backend kiểm tra lại.");
+      return;
+    }
+    if (["adapter-health", "integrations"].includes(view)) {
+      const adapters = data.adapters || [];
+      const rows = adapters.map((item) => `<article class="hh-admin-adapter-row ${esc(item.state)}"><span class="hh-admin-adapter-orb">${item.canExecute ? "✓" : item.configured ? "◇" : "!"}</span><span><strong>${esc(item.label)}</strong><small>${esc(item.id)} · ${item.requiredEnv?.length ? `Cần ${item.requiredEnv.join(", ")}` : "Không có secret client"}</small></span><b>${item.stale ? "Health stale" : esc(statusLabel(item.state === "configured" ? "warning" : item.state))}</b><span><small>Last check</small><b>${item.lastCheckedAt ? dateText(item.lastCheckedAt) : "Chưa kiểm tra"}</b></span><button type="button" data-admin-adapter-health="${esc(item.id)}">Kiểm tra cấu hình</button></article>`).join("") || '<p class="hh-admin-empty">Chưa có adapter.</p>';
+      panelRef.innerHTML = shell(`${platformNav()}<section class="hh-admin-governance-metrics">${governanceCard("Adapter", String(adapters.length), "Registry server-side", "violet")}${governanceCard("Configured", String(adapters.filter((item) => item.configured).length), "Có đủ biến môi trường", "green")}${governanceCard("Write ready", String(adapters.filter((item) => item.canExecute).length), "Chỉ khi đã verify write", "cyan")}${governanceCard("Verified", "0", "Chưa tự tuyên bố provider verified", "gold")}</section><section class="hh-admin-governance-panel"><header><span><small>ADAPTER REGISTRY</small><strong>Trạng thái kết nối production</strong></span><b>Không trả secret</b></header><div class="hh-admin-adapter-list">${rows}</div></section><section class="hh-admin-boundary"><i>◈</i><span><strong>Configuration-only health check</strong><small>“Đã cấu hình” không đồng nghĩa đã kiểm tra kết nối hoặc đã thực thi thành công. Mutation provider chỉ chạy qua adapter contract và approval phù hợp.</small></span></section>`, view === "integrations" ? "Integration Registry" : "Adapter Health", "Registry adapter minh bạch: chưa cấu hình, đã cấu hình, health check và write verification được tách riêng.");
+      return;
+    }
+    if (view === "service-accounts") {
+      const accounts = data.serviceAccounts || [];
+      const rows = accounts.map((item) => `<article class="hh-admin-governance-row ${esc(item.status)}"><span><strong>${esc(item.name)}</strong><small>${esc(item.environment)} · ${esc(item.workspaceId || "global")}</small></span><span><small>Scope</small><b>${Number(item.scopes?.length || 0)} quyền</b></span><span><small>Token</small><b>${Number(item.tokenCount || 0)} active</b></span><span><small>Hết hạn</small><b>${item.expiresAt ? dateText(item.expiresAt) : "Không hết hạn"}</b></span><span><small>Tạo lúc</small><b>${dateText(item.createdAt)}</b></span>${item.status === "active" && has("identity.service-accounts.manage") ? `<button type="button" data-admin-service-rotate="${esc(item.id)}">Xoay token</button><button type="button" data-admin-service-revoke="${esc(item.id)}">Thu hồi</button>` : ""}</article>`).join("") || '<p class="hh-admin-empty">Chưa có service account.</p>';
+      panelRef.innerHTML = shell(`${governanceNav()}<section class="hh-admin-governance-panel"><header><span><small>NON-HUMAN IDENTITIES</small><strong>Service Accounts & API Tokens</strong></span>${has("identity.service-accounts.manage") ? '<button type="button" data-admin-service-account-create>＋ Tạo service account</button>' : ""}</header><p class="hh-admin-governance-note">Token chỉ hiển thị đúng một lần sau khi tạo. Audit và API không bao giờ trả plaintext token.</p><div class="hh-admin-governance-list">${rows}</div></section>`, "Service Accounts", "Danh tính máy chủ, scope, workspace binding, expiration và token rotation an toàn.");
+      return;
+    }
+    if (["sessions", "devices"].includes(view)) {
+      const sessions = data.sessions || [];
+      const rows = sessions.map((item) => `<article class="hh-admin-governance-row ${item.revokedAt ? "revoked" : "active"}"><span><strong>${esc(item.device || "Thiết bị không xác định")}</strong><small>${esc(item.browser || "Browser")} · ${esc(item.provider || "session")}</small></span><span><small>Hoạt động</small><b>${dateText(item.lastSeenAt)}</b></span><span><small>Hết hạn</small><b>${dateText(item.expiresAt)}</b></span><span><small>Network</small><b>Đã che</b></span>${!item.revokedAt && !item.current && has("sessions.revoke") ? `<button type="button" data-admin-session-revoke="${esc(item.id)}">Thu hồi</button>` : `<b>${item.revokedAt ? "Đã thu hồi" : "Phiên hiện tại"}</b>`}</article>`).join("") || '<p class="hh-admin-empty">Không có phiên đang hoạt động.</p>';
+      panelRef.innerHTML = shell(`${securityNav()}<section class="hh-admin-governance-panel"><header><span><small>SESSION CENTER</small><strong>Sessions & Devices</strong></span><b>IP và token luôn được che</b></header><div class="hh-admin-governance-list">${rows}</div></section>`, "Sessions & Devices", "Thu hồi từng phiên, theo dõi thiết bị và giữ nguyên ranh giới dữ liệu riêng tư.");
+      return;
+    }
+    if (view === "workspace") {
+      const workspaces = data.workspaces || [];
+      const rows = workspaces.map((item) => `<article class="hh-admin-governance-row ${esc(item.status)}"><span><strong>${esc(item.name || item.slug || item.id)}</strong><small>${esc(item.slug || item.id)} · owner ${esc(item.ownerId || "-")}</small></span><span><small>Members</small><b>${Number(item.memberCount || 0)}</b></span><span><small>Modules</small><b>${Number(item.moduleIds?.length || 0)}</b></span><span><small>AI budget</small><b>${Number(item.aiBudget || 0).toLocaleString("vi-VN")}</b></span><span><small>Status</small><b>${esc(statusLabel(item.status))}</b></span></article>`).join("") || '<p class="hh-admin-empty">Chưa có workspace.</p>';
+      panelRef.innerHTML = shell(`${platformNav()}<section class="hh-admin-governance-panel"><header><span><small>WORKSPACE MANAGER</small><strong>Workspace & Organization</strong></span>${has("platform.manage") ? '<button type="button" data-admin-workspace-create>＋ Tạo workspace</button>' : '<b>Owner/workspace isolation</b>'}</header><p class="hh-admin-governance-note">Dữ liệu workspace được cách ly bằng ownerId + workspaceId. Thay đổi ownership hoặc xóa workspace cần workflow elevated/dual approval.</p><div class="hh-admin-governance-list">${rows}</div></section>`, "Workspace Manager", "Workspace, module access, quota, AI budget và audit được quản lý tách biệt.");
+      return;
+    }
+    if (view === "ai-operations") {
+      const providers = data.providers || [];
+      const rows = providers.map((item) => `<article class="hh-admin-governance-row"><span><strong>${esc(item.provider)}</strong><small>${Number(item.requests || 0).toLocaleString("vi-VN")} requests</small></span><span><small>Units</small><b>${Number(item.units || 0).toLocaleString("vi-VN")}</b></span><span><small>Lỗi</small><b>${Number(item.failures || 0)}</b></span><span><small>Window</small><b>${Number(data.windowDays || 30)} ngày</b></span></article>`).join("") || '<p class="hh-admin-empty">Chưa có usage AI.</p>';
+      const budgets = (data.budgets || []).map((item) => `<span class="hh-admin-chip"><strong>${esc(item.key)}</strong> · ${esc(String(item.value))}</span>`).join("") || '<span class="hh-admin-empty">Chưa có budget policy.</span>';
+      panelRef.innerHTML = shell(`${subnav([["growth", "Growth Overview"], ["ai-operations", "AI Operations"], ["adapter-health", "Adapter Health", "platform.view"], ["data-governance", "Data Governance", "privacy.view"]])}<section class="hh-admin-governance-panel"><header><span><small>AI OPERATIONS · 30D</small><strong>Provider health và budget</strong></span><b>API keys không hiển thị</b></header><div class="hh-admin-governance-list">${rows}</div><div class="hh-admin-chip-list">${budgets}</div></section>`, "AI Operations", "Usage, lỗi, budget và fallback ở dạng aggregate; không hiển thị prompt hoặc khóa API.");
+      return;
+    }
+    if (view === "data-governance") {
+      const policies = data.policies || [];
+      panelRef.innerHTML = shell(`${securityNav()}<section class="hh-admin-governance-panel"><header><span><small>DATA GOVERNANCE</small><strong>Retention, legal hold và privacy boundary</strong></span><b>Không có raw content</b></header><div class="hh-admin-governance-list">${policies.map((item) => `<article class="hh-admin-governance-row"><span><strong>${esc(item.key)}</strong><small>${esc(String(item.value))}</small></span><span><small>Cập nhật</small><b>${dateText(item.updatedAt)}</b></span><span><small>Consumer</small><b>${esc(item.enforcementState || "no_consumer")}</b></span></article>`).join("") || '<p class="hh-admin-empty">Chưa có data policy.</p>'}</div><section class="hh-admin-boundary"><i>◈</i><span><strong>Privacy boundary</strong><small>Không hiển thị mật khẩu, token, IP đầy đủ, raw prompt, private message hoặc nội dung chat.</small></span></section></section>`, "Data Governance", "Minh bạch retention và ranh giới dữ liệu; quyết định cuối cùng luôn ở server.");
+    }
   }
 
   async function renderPower() {
@@ -282,13 +374,13 @@
     }).join("");
     const adapters = (data.adapters || []).map((item, index) => `<article class="${item.connected ? "connected" : "missing"}" style="--satellite-index:${index}"><i>${item.connected ? "✓" : "◇"}</i><span><strong>${esc(item.label)}</strong><small>${esc(item.id)} · ${item.connected ? "đã kết nối" : "cần cấu hình server"}</small></span></article>`).join("");
     const approvals = (data.approvals || []).map((item) => `<article class="${esc(item.status)}"><i>${item.tier === "critical" ? "!" : "◇"}</i><span><strong>${esc(item.label)}</strong><small>${esc(item.requestedBy?.email)} · ${Number(item.approvals?.length || 0)}/${Number(item.requiredApprovals || 2)} phê duyệt</small><p>${esc(item.reason)}</p></span><div><b>${esc(item.status)}</b>${item.canApprove && has("approvals.approve") ? `<button type="button" data-admin-approval="${esc(item.id)}" data-approval-decision="approve">Phê duyệt</button><button type="button" data-admin-approval="${esc(item.id)}" data-approval-decision="reject">Từ chối</button>` : item.status === "pending" ? "<small>Chờ Super Admin còn lại</small>" : ""}</div></article>`).join("") || '<p class="hh-admin-empty">Không có yêu cầu tối quan trọng đang chờ.</p>';
-    const policies = (data.policies || []).map((item) => `<article><i>◆</i><span><strong>${esc(item.key)}</strong><small>${esc(String(item.value))} · ${dateText(item.updatedAt)}</small></span></article>`).join("") || '<p class="hh-admin-empty">Chưa có chính sách điều khiển tùy chỉnh.</p>';
+    const policies = (data.policies || []).map((item) => `<article class="${item.enforcementState === "no_consumer" ? "warning" : ""}"><i>◆</i><span><strong>${esc(item.key)}</strong><small>${esc(String(item.value))} · ${dateText(item.updatedAt)}</small><small>${item.enforcementState === "no_consumer" ? "Chưa có enforcement consumer" : `Consumer: ${esc(item.consumer || "server")}`}</small></span></article>`).join("") || '<p class="hh-admin-empty">Chưa có chính sách điều khiển tùy chỉnh.</p>';
     const permissionGroups = [...new Set((identity.permissionCatalog || []).map((item) => item.group))].map((group, index) => {
       const permissions = (identity.permissionCatalog || []).filter((item) => item.group === group);
       const critical = permissions.filter((item) => item.tier === "critical").length;
       return `<article style="--constellation-index:${index}"><i>${String(index + 1).padStart(2, "0")}</i><span><strong>${esc(group)}</strong><small>${permissions.length} quyền · ${critical} tối quan trọng</small></span><b>${critical ? "!" : "✓"}</b></article>`;
     }).join("");
-    const roles = customAdminRoles.map((role) => `<article><span><strong>${esc(role.name)}</strong><small>custom:${esc(role.key)} · ${role.permissions.length} quyền</small></span><b class="${Number(role.simulation?.riskScore || 0) >= 50 ? "high" : ""}">Risk ${Number(role.simulation?.riskScore || 0)}</b></article>`).join("") || '<p class="hh-admin-empty">Chưa tạo vai trò tùy chỉnh.</p>';
+    const roles = customAdminRoles.map((role) => `<article><span><strong>${esc(role.name)}</strong><small>custom:${esc(role.key)} · v${Number(role.version || 1)} · ${role.permissions.length} quyền · ${esc(role.status || "active")}</small></span><b class="${Number(role.simulation?.riskScore || 0) >= 50 ? "high" : ""}">Risk ${Number(role.simulation?.riskScore || 0)}</b>${has("roles.custom.manage") ? `<button type="button" data-admin-role-lifecycle="publish" data-admin-role-key="${esc(role.key)}">Publish</button><button type="button" data-admin-role-lifecycle="disable" data-admin-role-key="${esc(role.key)}">Disable</button><button type="button" data-admin-role-lifecycle="rollback" data-admin-role-key="${esc(role.key)}" data-admin-role-version="${Number(role.version || 1)}">Rollback</button>` : ""}</article>`).join("") || '<p class="hh-admin-empty">Chưa tạo vai trò tùy chỉnh.</p>';
     const content = `${subnav([["identity", "IAM Overview"], ["power", "Root Authority"], ["users", "Người dùng", "users.view"], ["audit", "Tamper-evident Audit", "audit.view"]])}
       <section class="hh-admin-root-hero">
         <div><small>ROOT AUTHORITY SESSION</small><strong>${privilege.active ? `Quyền nâng cao đang hoạt động · ${Number(privilege.minutesRemaining || 0)} phút` : "Đang dùng quyền thường trực"}</strong><p>Quyền nâng cao cần đăng nhập Google gần đây; thao tác tối quan trọng cần hai Super Admin khác nhau.</p><span><b>${privilege.googleReauthRecent ? "Google reauth sẵn sàng" : "Cần đăng nhập lại Google"}</b><b>Tamper-evident SHA-256 chain</b></span></div>
@@ -344,7 +436,7 @@
       <article><header><small>TIMELINE / LOGS</small><strong>Bằng chứng đã làm sạch</strong></header><div>${(focusFinding.timeline || []).map((entry) => `<span><i></i><strong>${esc(statusLabel(entry.status))}</strong><small>${esc(entry.note)} · ${dateText(entry.at)}</small></span>`).join("") || "<p>Chưa có cập nhật điều tra. Raw token, IP và secret không được đưa vào giao diện.</p>"}</div></article>
       <article><header><small>ACTION & AUDIT</small><strong>Bước xử lý an toàn</strong></header><p>${esc(focusFinding.suggestedAction)}</p><span><b>${esc(focusFinding.assignee || "Chưa phân công")}</b><small>${esc(statusLabel(focusFinding.status))}</small></span>${has("incidents.manage") ? `<button type="button" data-admin-incident="${esc(focusFinding.signalKey)}" data-incident-status="${esc(focusFinding.status)}" data-incident-assignee="${esc(focusFinding.assignee)}">Mở hồ sơ điều tra</button>` : ""}</article>
     </section>` : "";
-    const content = `${subnav([["security", "Findings"], ["privacy", "Privacy & Consent", "privacy.view"], ["audit", "Audit log", "audit.view"]])}
+    const content = `${securityNav()}
       <section class="hh-admin-severity-strip">${severity}</section>
       ${investigation}
       <section class="hh-admin-finding-layout">
@@ -614,7 +706,7 @@
     const auditIntegrity = integrityData.integrity || {};
     const integrityState = auditIntegrity.valid === false ? "critical" : auditIntegrity.completeToHead ? "verified" : "partial";
     const integrityLabel = auditIntegrity.valid === false ? "Phát hiện sai lệch" : auditIntegrity.completeToHead ? "Đã kiểm tra toàn chuỗi" : "Mẫu gần nhất hợp lệ";
-    const integrity = `<section class="hh-admin-audit-integrity ${integrityState}"><i>◆</i><span><strong>Tamper-evident Audit Chain · ${esc(integrityLabel)}</strong><small>${Number(auditIntegrity.checkedEntries || 0)}/${Number(auditIntegrity.totalEntries || 0)} bản ghi được kiểm tra · không phải WORM · chưa có external anchor</small></span><button type="button" data-admin-access-review>Hoàn tất Access Review tháng</button></section>`;
+    const integrity = `<section class="hh-admin-audit-integrity ${integrityState}"><i>◆</i><span><strong>Tamper-evident Audit Chain · ${esc(integrityLabel)}</strong><small>${Number(auditIntegrity.checkedEntries || 0)}/${Number(auditIntegrity.totalEntries || 0)} bản ghi được kiểm tra · không phải WORM · chưa có external anchor</small></span><div>${has("audit.access-review") ? '<button type="button" data-admin-audit-checkpoint>Checkpoint chain</button>' : ""}<button type="button" data-admin-access-review>Hoàn tất Access Review tháng</button></div></section>`;
     panelRef.innerHTML = shell(`${subnav([["identity", "Identity & Access", "users.view"], ["power", "Root Authority", "dashboard.view"], ["security", "Security", "security.view"], ["platform", "Platform", "platform.view"], ["audit", "Audit log"]])}${filters}${integrity}<section class="hh-admin-table"><table><thead><tr><th>Hành động</th><th>Admin</th><th>Lý do</th><th>${data.networkAccess?.raw ? "IP" : "IP đã che"}</th><th>Thời gian</th><th></th></tr></thead><tbody>${rows}</tbody></table></section>`, "Tamper-evident Audit Log", "Lọc theo admin, hành động, đối tượng và thời gian; dữ liệu mạng được che nếu không có quyền chuyên biệt.");
   }
 
@@ -640,7 +732,7 @@
       ];
       return `<article class="${esc(item.status)}"><header><span><i></i><strong>${esc(item.type)}</strong></span><b>${esc(statusLabel(item.status))}</b></header><div><span><small>Provider</small><strong>${esc(item.provider)}</strong></span><span><small>Attempts</small><strong>${Number(item.attempts || 0)}</strong></span><span><small>Progress</small><strong>${Number(item.progress || 0)}%</strong></span><time>${dateText(item.updatedAt || item.createdAt)}</time></div>${item.sanitizedError ? `<p>${esc(item.sanitizedError)}</p>` : ""}<footer>${has("platform.manage") ? controls.map(([operation, label]) => `<button type="button" data-admin-job="${esc(item.id)}" data-job-operation="${operation}">${label}</button>`).join("") : ""}</footer></article>`;
     }).join("") || '<p class="hh-admin-empty">Queue hiện không có background job.</p>';
-    const flags = featureFlags.map((item) => `<article><span><i class="${item.enabled ? "on" : ""}"></i><strong>${esc(item.key)}</strong><small>${esc(item.description || "Feature flag runtime")}</small></span><div><b>${item.enabled ? "Bật" : "Tắt"} · ${Number(item.rollout || 0)}%</b>${has("flags.manage") ? `<button type="button" data-admin-flag-toggle="${esc(item.key)}">${item.enabled ? "Kill switch" : "Bật lại"}</button>` : ""}</div></article>`).join("") || '<p class="hh-admin-empty">Chưa có feature flag.</p>';
+    const flags = featureFlags.map((item) => `<article><span><i class="${item.enabled ? "on" : ""}"></i><strong>${esc(item.key)}</strong><small>${esc(item.description || "Feature flag runtime")}</small><small>${item.enforcementState === "no_consumer" ? "Chưa có enforcement consumer" : `Consumer: ${esc(item.consumer || "server")}`}</small></span><div><b>${item.enabled ? "Bật" : "Tắt"} · ${Number(item.rollout || 0)}%</b>${has("flags.manage") ? `<button type="button" data-admin-flag-toggle="${esc(item.key)}">${item.enabled ? "Kill switch" : "Bật lại"}</button>` : ""}</div></article>`).join("") || '<p class="hh-admin-empty">Chưa có feature flag.</p>';
     const usage = (data.gatewayUsage || []).map((item) => `<article><span><strong>${esc(item.provider || "provider")}</strong><small>${esc(item.outcome || "unknown")}</small></span><b>${Number(item.requests || 0)} requests</b><em>${Number(item.units || 0).toLocaleString("vi-VN")} units</em></article>`).join("") || '<p class="hh-admin-empty">Chưa có lưu lượng gateway trong 24 giờ.</p>';
     const content = `${subnav([["platform", "Platform Health"], ["settings", "Flags & Config", "config.manage"], ["audit", "Release Audit", "audit.view"]])}
       <section class="hh-admin-release-hero">
@@ -676,7 +768,7 @@
     const cohorts = (data.cohorts || []).map((item) => `<article><b style="--value:${Math.max(4, Math.round(Number(item.users || 0) / maxCohort * 100))}%"></b><strong>${Number(item.users || 0)}</strong><small>${esc(item.date.slice(5))}</small></article>`).join("") || '<p class="hh-admin-empty">Chưa đủ dữ liệu cohort 7 ngày.</p>';
     const payments = (data.payments?.byStatus || []).map((item) => `<article><i></i><span><strong>${esc(item.status)}</strong><small>${Number(item.count || 0)} giao dịch</small></span><b>${moneyText(item.amount)}</b></article>`).join("") || '<p class="hh-admin-empty">Chưa có giao dịch trong 30 ngày.</p>';
     const aiUsage = (data.aiUsage || []).map((item) => `<article><span><strong>${esc(item.provider)}</strong><small>${Number(item.requests || 0)} requests · ${Number(item.failures || 0)} lỗi</small></span><b>${Number(item.units || 0).toLocaleString("vi-VN")} units</b></article>`).join("") || '<p class="hh-admin-empty">Chưa có usage từ AI gateway.</p>';
-    const content = `${subnav([["growth", "Growth Overview"], ["community", "Realtime", "activity.view"], ["privacy", "Consent", "privacy.view"]])}
+    const content = `${subnav([["growth", "Growth Overview"], ["ai-operations", "AI Operations"], ["community", "Realtime", "activity.view"], ["privacy", "Consent", "privacy.view"], ["data-governance", "Data Governance", "privacy.view"]])}
       <section class="hh-admin-growth-metrics">${metrics}</section>
       <section class="hh-admin-growth-grid">
         <article class="hh-admin-funnel"><header><span><small>CONVERSION JOURNEY · 30D</small><strong>Funnel thực tế</strong></span><button type="button" data-admin-route="/analytics">Mở Phân tích</button></header><div>${funnel}</div></article>
@@ -696,7 +788,7 @@
     panelRef.innerHTML = shell(loading(), "Cấu hình hệ thống");
     const data = await api("settings");
     featureFlags = data.flags || [];
-    const flags = featureFlags.map((item) => `<article><span><strong>${esc(item.key)}</strong><small>${esc(item.description || "Feature flag")}</small></span><div><b class="${item.enabled ? "enabled" : ""}">${item.enabled ? "Bật" : "Tắt"} · ${Number(item.rollout || 0)}%</b><button type="button" data-admin-flag-toggle="${esc(item.key)}">${item.enabled ? "Tắt khẩn cấp" : "Bật lại"}</button></div></article>`).join("") || '<p class="hh-admin-empty">Chưa có feature flag.</p>';
+    const flags = featureFlags.map((item) => `<article><span><strong>${esc(item.key)}</strong><small>${esc(item.description || "Feature flag")}</small><small>${item.enforcementState === "no_consumer" ? "Chưa có enforcement consumer" : `Consumer: ${esc(item.consumer || "server")}`}</small></span><div><b class="${item.enabled ? "enabled" : ""}">${item.enabled ? "Bật" : "Tắt"} · ${Number(item.rollout || 0)}%</b><button type="button" data-admin-flag-toggle="${esc(item.key)}">${item.enabled ? "Tắt khẩn cấp" : "Bật lại"}</button></div></article>`).join("") || '<p class="hh-admin-empty">Chưa có feature flag.</p>';
     const keywords = (data.keywords || []).map((item) => `<span>${esc(item.value)} · ${esc(item.severity || "review")}</span>`).join("") || "Chưa có từ khóa";
     const content = `${subnav([["platform", "Platform Health", "platform.view"], ["settings", "Flags & Config"], ["audit", "Release Audit", "audit.view"]])}<section class="hh-admin-settings"><article><header><strong>Feature flags</strong><button type="button" data-admin-setting="flag">＋ Thêm</button></header><div>${flags}</div></article><article><header><strong>Từ khóa kiểm duyệt</strong><button type="button" data-admin-setting="keyword">＋ Thêm</button></header><p class="hh-admin-keywords">${keywords}</p></article>${has("templates.manage") ? '<article><header><strong>Email template</strong><button type="button" data-admin-setting="template">＋ Cập nhật</button></header><p>Mẫu email được quản lý theo khóa và có audit log.</p></article>' : ""}<article><header><strong>Cấu hình runtime</strong><div><button type="button" data-admin-setting="category">＋ Danh mục</button><button type="button" data-admin-setting="config">＋ Cấu hình</button></div></header><p>${Number(data.config?.length || 0)} cấu hình · ${Number(data.categories?.length || 0)} danh mục</p></article></section>`;
     panelRef.innerHTML = shell(content, "Cấu hình hệ thống", "Feature flags, từ khóa, danh mục và email template.");
@@ -719,6 +811,76 @@
       try { await api("action", { method: "POST", body: { action: "feature-flag:update", key: item.key, enabled: nextEnabled, rollout: Number(item.rollout || 0), description: item.description || "", reason } }); dialog.close(); dialog.remove(); notice("Kill switch đã cập nhật và ghi audit log."); await renderSettings(); }
       catch (error) { notice(error.message, "error"); }
     });
+  }
+
+  function createAuditCheckpoint() {
+    const dialog = modal("Tạo audit checkpoint", `<section class="wide hh-admin-boundary"><i>◆</i><span><strong>Database checkpoint</strong><small>Ghi hash head hiện tại vào communityAuditCheckpoints. Đây chưa phải external/WORM anchor.</small></span></section><label class="wide"><span>Lý do checkpoint</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, "Tạo checkpoint");
+    dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const reason = new FormData(event.currentTarget).get("reason"); try { await api("action", { method: "POST", body: { action: "audit:checkpoint", reason } }); dialog.close(); dialog.remove(); notice("Đã tạo audit checkpoint nội bộ."); await renderAudit(); } catch (error) { notice(error.message, "error"); } });
+  }
+
+  async function openAccessRequest() {
+    const catalog = permissionCatalog.length ? permissionCatalog : (await api("identity")).permissionCatalog || [];
+    const options = catalog.map((item) => `<option value="${esc(item.id)}">${esc(item.label || item.id)} · ${esc(item.id)}</option>`).join("");
+    const dialog = modal("Yêu cầu quyền truy cập", `<label class="wide"><span>Permission</span><select name="permission" required>${options}</select></label><label><span>Scope</span><select name="scopeType"><option value="global">Global</option><option value="workspace">Workspace</option><option value="module">Module</option><option value="account">Account</option></select></label><label><span>Workspace / resource ID</span><input name="scopeId" maxlength="180" placeholder="Bỏ trống nếu global"></label><label><span>Hết hạn</span><input name="expiresAt" type="datetime-local"></label><label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, "Gửi yêu cầu");
+    dialog.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(event.currentTarget));
+      const scope = values.scopeId ? { type: values.scopeType, [`${values.scopeType === "content-source" ? "contentSource" : values.scopeType}Ids`]: [values.scopeId] } : { type: values.scopeType };
+      try { await api("action", { method: "POST", body: { action: "access:request", permission: values.permission, scope, expiresAt: values.expiresAt ? new Date(values.expiresAt).toISOString() : null, reason: values.reason } }); dialog.close(); dialog.remove(); notice("Access request đã gửi và được ghi audit."); await renderGovernance("access-requests"); }
+      catch (error) { notice(error.message, "error"); }
+    });
+  }
+
+  function decideAccessRequest(requestId, decision) {
+    const title = decision === "approve" ? "Duyệt access request" : "Từ chối access request";
+    const dialog = modal(title, `<section class="wide hh-admin-boundary"><i>${decision === "approve" ? "✓" : "!"}</i><span><strong>${esc(requestId)}</strong><small>${decision === "approve" ? "Permission grant sẽ được tạo theo scope và thời hạn của request." : "Request sẽ bị từ chối và không tạo grant."}</small></span></section><label class="wide"><span>Lý do quyết định</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, decision === "approve" ? "Duyệt và cấp quyền" : "Từ chối");
+    dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const reason = new FormData(event.currentTarget).get("reason"); try { await api("action", { method: "POST", body: { action: `access:${decision}`, requestId, reason } }); dialog.close(); dialog.remove(); notice(decision === "approve" ? "Access request đã được duyệt và tạo grant." : "Access request đã bị từ chối."); await renderGovernance("access-requests"); } catch (error) { notice(error.message, "error"); } });
+  }
+
+  async function openAssignmentCreator() {
+    const data = await api("effective-access");
+    const definitions = (data.definitions || []).filter((item) => item.status === "active" && item.roleId.startsWith("custom:"));
+    if (!definitions.length) { notice("Chưa có custom role active để gán.", "error"); return; }
+    const options = definitions.map((item) => `<option value="${esc(item.roleId)}">${esc(item.name || item.roleId)} · v${Number(item.version || 1)}</option>`).join("");
+    const dialog = modal("Gán custom role", `<label><span>User ID</span><input name="userId" required maxlength="180" placeholder="ObjectId tài khoản đích"></label><label><span>Workspace ID</span><input name="workspaceId" maxlength="180"></label><label class="wide"><span>Custom role</span><select name="roleId" required>${options}</select></label><label><span>Scope</span><select name="scopeType"><option value="global">Global</option><option value="workspace">Workspace</option><option value="module">Module</option><option value="account">Account</option></select></label><label><span>Hết hạn</span><input name="expiresAt" type="datetime-local"></label><label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, "Gán role");
+    dialog.querySelector("form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(event.currentTarget));
+      const scopeId = values.workspaceId;
+      const scope = scopeId ? { type: values.scopeType, workspaceIds: values.scopeType === "workspace" ? [scopeId] : [], moduleIds: values.scopeType === "module" ? [scopeId] : [], accountIds: values.scopeType === "account" ? [scopeId] : [] } : { type: values.scopeType };
+      try { await api("action", { method: "POST", body: { action: "assignment:create", userId: values.userId, roleId: values.roleId, workspaceId: values.workspaceId, scope, expiresAt: values.expiresAt ? new Date(values.expiresAt).toISOString() : null, reason: values.reason } }); dialog.close(); dialog.remove(); notice("Role assignment đã tạo và có scope."); await renderGovernance("role-assignments"); }
+      catch (error) { notice(error.message, "error"); }
+    });
+  }
+
+  function revokeAssignment(assignmentId, userId) {
+    const dialog = modal("Thu hồi role assignment", `<section class="wide hh-admin-boundary"><i>!</i><span><strong>Thu hồi quyền ngay</strong><small>Assignment sẽ chuyển sang revoked và không còn được tính vào effective access.</small></span></section><label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, "Thu hồi");
+    dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const reason = new FormData(event.currentTarget).get("reason"); try { await api("action", { method: "POST", body: { action: "assignment:revoke", assignmentId, userId, reason } }); dialog.close(); dialog.remove(); notice("Assignment đã thu hồi."); await renderGovernance("role-assignments"); } catch (error) { notice(error.message, "error"); } });
+  }
+
+  function createServiceAccount() {
+    const dialog = modal("Tạo service account", `<label><span>Tên</span><input name="name" required minlength="3" maxlength="120"></label><label><span>Environment</span><select name="environment"><option value="production">production</option><option value="preview">preview</option><option value="development">development</option></select></label><label><span>Workspace ID</span><input name="workspaceId" maxlength="180"></label><label><span>Hết hạn</span><input name="expiresAt" type="datetime-local"></label><label class="wide"><span>Scopes (mỗi dòng một scope)</span><textarea name="scopes" placeholder="platform.view\ncontent.manage"></textarea></label><label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, "Tạo và hiển thị token một lần");
+    dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); try { const result = await api("action", { method: "POST", body: { action: "service-account:create", name: values.name, environment: values.environment, workspaceId: values.workspaceId, expiresAt: values.expiresAt ? new Date(values.expiresAt).toISOString() : null, scopes: String(values.scopes || "").split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean), reason: values.reason } }); dialog.close(); dialog.remove(); const tokenDialog = modal("Token hiển thị một lần", `<section class="wide hh-admin-token-reveal"><strong>${esc(result.token || "")}</strong><small>Hãy lưu token ngay. Máy chủ không thể hiển thị lại plaintext token này.</small><button type="button" data-admin-copy-token>Copy token</button></section>`, "Đã hiểu"); tokenDialog.querySelector("[data-admin-copy-token]")?.addEventListener("click", async () => { await navigator.clipboard?.writeText(result.token || ""); notice("Đã copy token vào clipboard."); }); await renderGovernance("service-accounts"); } catch (error) { notice(error.message, "error"); } });
+  }
+
+  function rotateServiceAccount(serviceAccountId, revoke = false) {
+    const title = revoke ? "Thu hồi service account" : "Xoay API token";
+    const dialog = modal(title, `<section class="wide hh-admin-boundary"><i>${revoke ? "!" : "↻"}</i><span><strong>${esc(serviceAccountId)}</strong><small>${revoke ? "Tất cả token active sẽ bị vô hiệu hóa." : "Token cũ sẽ bị thu hồi và token mới chỉ hiển thị một lần."}</small></span></section><label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, revoke ? "Thu hồi" : "Xoay token");
+    dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const reason = new FormData(event.currentTarget).get("reason"); try { const result = await api("action", { method: "POST", body: { action: revoke ? "service-account:revoke" : "service-account:rotate", serviceAccountId, reason } }); dialog.close(); dialog.remove(); if (result.token) { const reveal = modal("Token mới hiển thị một lần", `<section class="wide hh-admin-token-reveal"><strong>${esc(result.token)}</strong><small>Lưu token ngay; server không thể hiển thị lại plaintext token.</small><button type="button" data-admin-copy-token>Copy token</button></section>`, "Đã hiểu"); reveal.querySelector("[data-admin-copy-token]")?.addEventListener("click", async () => { await navigator.clipboard?.writeText(result.token); notice("Đã copy token."); }); } else notice(revoke ? "Service account đã thu hồi." : "Token đã xoay."); await renderGovernance("service-accounts"); } catch (error) { notice(error.message, "error"); } });
+  }
+
+  function revokeSession(sessionId) {
+    const dialog = modal("Thu hồi phiên đăng nhập", `<section class="wide hh-admin-boundary"><i>◈</i><span><strong>${esc(sessionId)}</strong><small>IP, token và nội dung phiên không được hiển thị.</small></span></section><label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, "Thu hồi phiên");
+    dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const reason = new FormData(event.currentTarget).get("reason"); try { await api("action", { method: "POST", body: { action: "session:revoke", sessionId, reason } }); dialog.close(); dialog.remove(); notice("Phiên đã thu hồi."); await renderGovernance("sessions"); } catch (error) { notice(error.message, "error"); } });
+  }
+
+  async function healthCheckAdapter(adapterId) {
+    try { const result = await api("action", { method: "POST", body: { action: "adapter:health-check", adapterId } }); notice(result.note || "Đã kiểm tra cấu hình adapter."); await renderGovernance("adapter-health"); } catch (error) { notice(error.message, "error"); }
+  }
+
+  function createWorkspace() {
+    const dialog = modal("Tạo workspace", `<label><span>Tên workspace</span><input name="name" required minlength="3" maxlength="160"></label><label><span>Slug</span><input name="slug" maxlength="100" placeholder="tu-dong-tao-neu-bo-trong"></label><label><span>Owner ID</span><input name="ownerId" maxlength="180"></label><label><span>AI budget</span><input name="aiBudget" type="number" min="0" value="0"></label><label><span>Storage limit (bytes)</span><input name="storageLimit" type="number" min="0" value="0"></label><label class="wide"><span>Module IDs (mỗi dòng)</span><textarea name="moduleIds"></textarea></label><label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, "Tạo workspace");
+    dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); try { await api("action", { method: "POST", body: { action: "workspace:update", ...values, aiBudget: Number(values.aiBudget || 0), storageLimit: Number(values.storageLimit || 0), moduleIds: String(values.moduleIds || "").split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean) } }); dialog.close(); dialog.remove(); notice("Workspace đã tạo và ghi audit."); await renderGovernance("workspace"); } catch (error) { notice(error.message, "error"); } });
   }
 
   function startGoogleReauthentication() {
@@ -826,6 +988,13 @@
     });
   }
 
+  function roleLifecycle(action, key, version = "") {
+    const label = action === "publish" ? "Publish phiên bản role" : action === "disable" ? "Disable custom role" : "Rollback custom role";
+    const extra = action === "rollback" ? `<label><span>Version cần rollback</span><input name="version" type="number" min="1" value="${esc(version)}" required></label>` : "";
+    const dialog = modal(label, `${extra}<section class="wide hh-admin-boundary"><i>${action === "disable" ? "!" : "↻"}</i><span><strong>custom:${esc(key)}</strong><small>Thay đổi role có thể ảnh hưởng nhiều assignment; luôn ghi audit và yêu cầu elevated session.</small></span></section><label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, action === "disable" ? "Disable role" : action === "rollback" ? "Rollback role" : "Publish role");
+    dialog.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); try { await api("action", { method: "POST", body: { action: `role:${action}`, key, version: values.version, reason: values.reason } }); dialog.close(); dialog.remove(); notice("Vòng đời custom role đã cập nhật."); await renderPower(); } catch (error) { notice(error.message, "error"); } });
+  }
+
   function decideApproval(requestId, decision) {
     const dialog = modal(decision === "approve" ? "Phê duyệt thao tác tối quan trọng" : "Từ chối yêu cầu", `<section class="wide hh-admin-kill-switch"><strong>${esc(requestId)}</strong><p>Super Admin yêu cầu và Super Admin quyết định phải là hai tài khoản khác nhau.</p><span>Quyết định được nối vào audit chain phát hiện chỉnh sửa; chỉ một tiến trình được quyền thực thi.</span></section><label class="wide"><span>Lý do quyết định</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`, decision === "approve" ? "Phê duyệt và thực thi" : "Từ chối");
     dialog.querySelector("form").addEventListener("submit", async (event) => {
@@ -931,6 +1100,7 @@
     if (view === "dashboard") return renderDashboard();
     if (view === "identity") return renderIdentity();
     if (view === "power") return renderPower();
+    if (["effective-access", "role-assignments", "role-history", "access-requests", "service-accounts", "sessions", "devices", "adapter-health", "integrations", "workspace", "ai-operations", "data-governance"].includes(view)) return renderGovernance(view);
     if (view === "security") return renderSecurity();
     if (view === "privacy") return renderPrivacy();
     if (["activity", "community"].includes(view)) return renderActivity();
@@ -987,9 +1157,21 @@
     if (event.target.closest("[data-admin-google-reauth]")) { startGoogleReauthentication(); return; }
     if (event.target.closest("[data-admin-permission-simulate]")) { await openPermissionSimulator().catch((error) => notice(error.message, "error")); return; }
     if (event.target.closest("[data-admin-custom-role]")) { await openCustomRole().catch((error) => notice(error.message, "error")); return; }
+    const roleLifecycleAction = event.target.closest("[data-admin-role-lifecycle]"); if (roleLifecycleAction) { roleLifecycle(roleLifecycleAction.dataset.adminRoleLifecycle, roleLifecycleAction.dataset.adminRoleKey, roleLifecycleAction.dataset.adminRoleVersion); return; }
+    if (event.target.closest("[data-admin-access-request]")) { await openAccessRequest().catch((error) => notice(error.message, "error")); return; }
+    const accessDecision = event.target.closest("[data-admin-access-decision]"); if (accessDecision) { decideAccessRequest(accessDecision.dataset.adminAccessRequestId, accessDecision.dataset.adminAccessDecision); return; }
+    if (event.target.closest("[data-admin-assignment-create]")) { await openAssignmentCreator().catch((error) => notice(error.message, "error")); return; }
+    const assignmentRevoke = event.target.closest("[data-admin-assignment-revoke]"); if (assignmentRevoke) { revokeAssignment(assignmentRevoke.dataset.adminAssignmentRevoke, assignmentRevoke.dataset.adminAssignmentUser); return; }
+    if (event.target.closest("[data-admin-service-account-create]")) { createServiceAccount(); return; }
+    const serviceRotate = event.target.closest("[data-admin-service-rotate]"); if (serviceRotate) { rotateServiceAccount(serviceRotate.dataset.adminServiceRotate); return; }
+    const serviceRevoke = event.target.closest("[data-admin-service-revoke]"); if (serviceRevoke) { rotateServiceAccount(serviceRevoke.dataset.adminServiceRevoke, true); return; }
+    const sessionRevoke = event.target.closest("[data-admin-session-revoke]"); if (sessionRevoke) { revokeSession(sessionRevoke.dataset.adminSessionRevoke); return; }
+    const adapterHealth = event.target.closest("[data-admin-adapter-health]"); if (adapterHealth) { await healthCheckAdapter(adapterHealth.dataset.adminAdapterHealth); return; }
+    if (event.target.closest("[data-admin-workspace-create]")) { createWorkspace(); return; }
     const control = event.target.closest("[data-admin-control]"); if (control) { controlAction(control.dataset.adminControl, control.dataset.controlTier, control.dataset.controlConnected === "true"); return; }
     const approval = event.target.closest("[data-admin-approval]"); if (approval) { decideApproval(approval.dataset.adminApproval, approval.dataset.approvalDecision); return; }
     if (event.target.closest("[data-admin-access-review]")) { completeAccessReview(); return; }
+    if (event.target.closest("[data-admin-audit-checkpoint]")) { createAuditCheckpoint(); return; }
     const open = event.target.closest("[data-admin-user-open]"); if (open) { await openUser(open.dataset.adminUserOpen).catch((error) => notice(error.message, "error")); return; }
     const action = event.target.closest("[data-admin-user-action]"); if (action) { document.querySelector("[data-community-admin-modal]")?.remove(); await userAction(action.dataset.userId, action.dataset.adminUserAction, action.dataset.userVerified === "true", String(action.dataset.userFeatures || "").split(",").filter(Boolean)).catch((error) => notice(error.message, "error")); return; }
     const page = event.target.closest("[data-admin-users-page]"); if (page) { await renderUsers({ page: page.dataset.adminUsersPage }); return; }

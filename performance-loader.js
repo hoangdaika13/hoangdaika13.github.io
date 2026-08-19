@@ -217,8 +217,8 @@
       scripts: ["insights-pro.js?v=7"]
     },
     admin: {
-      styles: ["community-admin.css?v=11"],
-      scripts: ["community-admin.js?v=13"]
+      styles: ["community-admin.css?v=12"],
+      scripts: ["community-admin.js?v=14"]
     },
     support: {
       styles: ["support-platform.css?v=10"],

@@ -1,5 +1,7 @@
 const crypto = require("crypto");
 const { clean, isOwnerUser } = require("./platform");
+const { scopeAllows, conditionsAllow } = require("./admin-control-plane");
+let auditAppendTail = Promise.resolve();
 
 const POWER_PERMISSIONS = Object.freeze([
   "permissions.simulate",
@@ -8,6 +10,7 @@ const POWER_PERMISSIONS = Object.freeze([
   "approvals.approve",
   "roles.custom.manage",
   "roles.custom.assign",
+  "identity.service-accounts.manage",
   "platform.deployments.view",
   "platform.production.promote",
   "platform.production.rollback",
@@ -79,6 +82,7 @@ const ELEVATED_PERMISSIONS = new Set([
 const PERMISSION_LABELS = Object.freeze({
   "roles.custom.manage": "Tạo và sửa vai trò tùy chỉnh",
   "roles.custom.assign": "Gán vai trò tùy chỉnh",
+  "identity.service-accounts.manage": "Quản lý service account và API token",
   "platform.production.promote": "Promote deployment production",
   "platform.production.rollback": "Rollback production",
   "platform.domains.manage": "Quản lý domain",
@@ -96,6 +100,7 @@ const allPermissionIds = [...new Set(Object.values(ROLE_PERMISSIONS).flat().filt
 const permissionGroup = (permission) => {
   const prefix = String(permission).split(".")[0];
   return ({
+    identity: "Identity",
     users: "Identity",
     sessions: "Identity",
     roles: "Identity",
@@ -190,7 +195,12 @@ function accessFor(user) {
 
 function hasPermission(user, permission) {
   const { permissions } = accessFor(user);
-  return permissions.includes("*") || permissions.includes(permission);
+  const globalGrant = (Array.isArray(user?.__adminPermissionGrants) ? user.__adminPermissionGrants : []).some((grant) => grant.status === "active" && grant.permission === permission && new Date(grant.expiresAt || "9999-12-31").getTime() > Date.now() && normalizeScopeForPermission(grant.scope));
+  return permissions.includes("*") || permissions.includes(permission) || globalGrant;
+}
+
+function normalizeScopeForPermission(scope) {
+  return !scope || scope.type === "global";
 }
 
 function requirePermission(user, permission) {
@@ -213,6 +223,24 @@ function auditSafe(value, depth = 0) {
   if (Array.isArray(value)) return value.slice(0, 100).map((item) => auditSafe(item, depth + 1));
   if (typeof value !== "object") return typeof value === "string" ? clean(value, 1000) : value;
   return Object.fromEntries(Object.entries(value).filter(([key]) => !/(password|hash|token|secret|credential|privateMessage|messageText)/i.test(key)).slice(0, 120).map(([key, item]) => [key, auditSafe(item, depth + 1)]));
+}
+
+function hasPermissionForResource(user, permission, resource = {}, context = {}) {
+  if (!user) return false;
+  const required = clean(permission, 120);
+  const access = accessFor(user);
+  if (access.permissions.includes("*")) return true;
+  const assignments = Array.isArray(user.__adminRoleAssignments) ? user.__adminRoleAssignments : [];
+  const grants = Array.isArray(user.__adminPermissionGrants) ? user.__adminPermissionGrants : [];
+  const definitions = new Map((Array.isArray(user.__adminRoleDefinitions) ? user.__adminRoleDefinitions : []).map((definition) => [definition.roleId, definition]));
+  const roleAllows = assignments.some((assignment) => assignment.status === "active" && new Date(assignment.expiresAt || "9999-12-31").getTime() > Date.now() && (definitions.get(assignment.roleId)?.permissions || []).includes(required) && scopeAllows(assignment.scope, resource) && conditionsAllow(assignment.conditions || assignment.scope?.conditions || {}, context));
+  const grantAllows = grants.some((grant) => grant.status === "active" && grant.permission === required && new Date(grant.expiresAt || "9999-12-31").getTime() > Date.now() && scopeAllows(grant.scope, resource) && conditionsAllow(grant.conditions || grant.scope?.conditions || {}, context));
+  // Built-in roles are global unless a caller explicitly asks for an assignment
+  // or grant-only permission. Legacy custom permissions remain global during the
+  // migration window and are audited as such.
+  const builtInAllows = rolesFor(user).some((role) => (ROLE_PERMISSIONS[role] || []).includes(required));
+  const legacyAllows = Array.isArray(user.adminCustomPermissions) && normalizePermissions(user.adminCustomPermissions).includes(required) && !assignments.length && !grants.length;
+  return builtInAllows || roleAllows || grantAllows || legacyAllows;
 }
 
 function maskAuditIp(value) {
@@ -242,7 +270,12 @@ function auditRecordHash(record = {}) {
 }
 
 function verifyAuditChain(records = [], options = {}) {
-  const ordered = [...records].sort((left, right) => new Date(left.createdAt || 0) - new Date(right.createdAt || 0));
+  const ordered = [...records].sort((left, right) => {
+    const leftSequence = Number(left.sequence || 0);
+    const rightSequence = Number(right.sequence || 0);
+    if (leftSequence && rightSequence && leftSequence !== rightSequence) return leftSequence - rightSequence;
+    return new Date(left.createdAt || 0) - new Date(right.createdAt || 0);
+  });
   const issues = [];
   ordered.forEach((record, index) => {
     if (!record?.recordHash || auditRecordHash(record) !== record.recordHash) issues.push({ index, type: "record-hash" });
@@ -276,34 +309,53 @@ function presentAdminAuditRecord(record = {}, options = {}) {
 }
 
 function requestMeta(req) {
+  const bearer = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  const sessionIdHash = bearer ? crypto.createHash("sha256").update(bearer).digest("hex").slice(0, 24) : "";
   return {
     ip: clean(String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "").split(",")[0], 120),
-    userAgent: clean(req.headers["user-agent"], 500)
+    userAgent: clean(req.headers["user-agent"], 500),
+    requestId: clean(req.headers["x-request-id"] || crypto.randomUUID(), 160),
+    correlationId: clean(req.headers["x-correlation-id"] || req.headers["x-request-id"] || crypto.randomUUID(), 160),
+    sessionIdHash
   };
 }
 
 async function writeAdminAudit(db, req, admin, entry = {}) {
-  const now = new Date();
-  const access = accessFor(admin);
-  const previous = await db.collection("communityAdminAuditLogs").findOne({}, { projection: { recordHash: 1 }, sort: { createdAt: -1 } });
-  const record = {
-    adminId: admin._id,
-    admin: { id: String(admin._id), name: clean(admin.name, 120), email: clean(admin.email, 180) },
-    roles: access.roles,
-    action: clean(entry.action, 100),
-    targetType: clean(entry.targetType, 80),
-    targetId: clean(entry.targetId, 160),
-    reason: clean(entry.reason, 1000),
-    before: auditSafe(entry.before),
-    after: auditSafe(entry.after),
-    previousHash: clean(previous?.recordHash || "genesis", 128),
-    integrityVersion: "sha256-chain-v2",
-    ...requestMeta(req),
-    createdAt: now
-  };
-  record.recordHash = auditRecordHash(record);
-  await db.collection("communityAdminAuditLogs").insertOne(record);
-  return record;
+  const append = auditAppendTail.then(async () => {
+    const now = new Date();
+    const access = accessFor(admin);
+    const previous = await db.collection("communityAdminAuditLogs").findOne({}, { projection: { recordHash: 1, sequence: 1 }, sort: { createdAt: -1, sequence: -1 } });
+    const record = {
+      eventId: crypto.randomUUID(),
+      adminId: admin._id,
+      admin: { id: String(admin._id), name: clean(admin.name, 120), email: clean(admin.email, 180) },
+      roles: access.roles,
+      actorRole: highestRole(admin),
+      action: clean(entry.action, 100),
+      targetType: clean(entry.targetType, 80),
+      targetId: clean(entry.targetId, 160),
+      reason: clean(entry.reason, 1000),
+      policyVersion: clean(entry.policyVersion || "admin-control-plane-v1", 80),
+      permission: clean(entry.permission, 160),
+      resourceScope: auditSafe(entry.scope || null),
+      decision: clean(entry.decision || "committed", 40),
+      outcome: clean(entry.outcome || "success", 40),
+      errorCode: clean(entry.errorCode, 100),
+      durationMs: Math.max(0, Number(entry.durationMs || 0)),
+      before: auditSafe(entry.before),
+      after: auditSafe(entry.after),
+      previousHash: clean(previous?.recordHash || "genesis", 128),
+      sequence: Number(previous?.sequence || 0) + 1,
+      integrityVersion: "sha256-chain-v2",
+      ...requestMeta(req),
+      createdAt: now
+    };
+    record.recordHash = auditRecordHash(record);
+    await db.collection("communityAdminAuditLogs").insertOne(record);
+    return record;
+  });
+  auditAppendTail = append.catch(() => undefined);
+  return append;
 }
 
 module.exports = {
@@ -318,6 +370,7 @@ module.exports = {
   auditSafe,
   canGrantRole,
   hasPermission,
+  hasPermissionForResource,
   highestRole,
   normalizePermissions,
   presentAdminAuditRecord,
