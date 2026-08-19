@@ -5907,7 +5907,7 @@ function initAppShell() {
     english: "Đang nạp bài học và tiến độ HH English...",
     japanese: "Đang nạp Từ điển, Kanji, ngữ pháp và lộ trình JLPT...",
     fortune: "Đang mở không gian Tarot, cung hoàng đạo và nhật ký suy ngẫm...",
-    draw: "Đang mở Silk Studio và chuẩn bị canvas ánh sáng đối xứng...",
+    draw: "Đang mở Chromatic Studio và chuẩn bị 16 brush engine đa sắc...",
     "chat-ai": "Đang khởi tạo HH Intelligence, lịch sử hội thoại và công cụ đa phương thức...",
     system: "Đang kiểm tra cấu hình và dịch vụ hệ thống...",
     support: "Đang mở trung tâm hỗ trợ và thanh toán an toàn..."
@@ -6217,7 +6217,7 @@ function initAppShell() {
       });
       else mountSimpleView("HH Japanese", "Đang tải Từ điển, Kanji và lộ trình JLPT...", "");
     } else if (route === "/draw" || route.startsWith("/draw/")) {
-      updatePageHeader("Vẽ · Silk Studio", "Dệt ánh sáng tương tác bằng đối xứng quay, phản chiếu, xoáy hướng tâm và bảng màu hòa trộn ngay trên trình duyệt.", route);
+      updatePageHeader("Vẽ · Chromatic Studio", "Vẽ ánh sáng đa sắc với 16 brush engine, đối xứng quay, phản chiếu và bảng màu chuyển sắc ngay trên trình duyệt.", route);
       pageActions.innerHTML = `<button type="button" data-draw-global-undo>Hoàn tác</button><button type="button" data-draw-global-fullscreen>Toàn màn hình</button><button class="app-primary-action" type="button" data-draw-global-export>Tải ảnh</button>`;
       workspace.innerHTML = '<div data-draw-studio-host></div>';
       if (window.HHDrawStudio?.mount) {
@@ -6225,7 +6225,7 @@ function initAppShell() {
         pageActions.querySelector("[data-draw-global-undo]")?.addEventListener("click", () => workspace.querySelector("[data-draw-undo]")?.click());
         pageActions.querySelector("[data-draw-global-fullscreen]")?.addEventListener("click", () => workspace.querySelector("[data-draw-fullscreen]")?.click());
         pageActions.querySelector("[data-draw-global-export]")?.addEventListener("click", () => workspace.querySelector("[data-draw-export]")?.click());
-      } else mountSimpleView("Vẽ · Silk Studio", "Đang chuẩn bị canvas và engine ánh sáng...", "");
+      } else mountSimpleView("Vẽ · Chromatic Studio", "Đang chuẩn bị canvas và brush engine đa sắc...", "");
       remember("draw");
     } else if (route === "/fortune" || route.startsWith("/fortune/")) {
       updatePageHeader("Xem bói", "Tarot nguyên bản, cung hoàng đạo, con giáp, thần số học, Kinh Dịch và nhật ký riêng tư dành cho giải trí, tự chiêm nghiệm.", route);
@@ -6662,10 +6662,10 @@ function initAppShell() {
       ...comicMotion,
       {
         type: "Sáng tạo",
-        title: "Vẽ · Silk Studio",
-        description: "Vẽ ánh sáng đối xứng theo chuyển động với phản chiếu, xoáy hướng tâm, phối màu, preset Mandala và xuất ảnh độ phân giải cao.",
+        title: "Vẽ · Chromatic Studio",
+        description: "Chromatic Studio với 16 brush engine đa sắc, đối xứng, Plasma, Electric, Nebula, Prism, Galaxy và xuất ảnh độ phân giải cao.",
         route: "/draw",
-        key: "vẽ draw silk studio weavesilk ánh sáng đối xứng symmetry mirror spiral mandala kaleidoscope aurora neon canvas png webp jpeg"
+        key: "vẽ draw chromatic silk studio ánh sáng đối xứng symmetry mirror spiral mandala kaleidoscope aurora neon plasma electric nebula prism fire galaxy comet ripple quantum rainbow ink canvas png webp jpeg"
       },
       {
         type: "Bản quyền",

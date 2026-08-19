@@ -7,8 +7,8 @@ const root = path.join(__dirname, "..");
 const draw = require(path.join(root, "draw-studio.js"));
 const read = (name) => fs.readFileSync(path.join(root, name), "utf8");
 
-test("drawing settings are bounded and keep supported export choices", () => {
-  const settings = draw.normalizeSettings({ symmetry: 99, brushSize: -2, glow: 500, flow: 0, colorA: "bad", colorB: "#ABCDEF", exportScale: 9, exportFormat: "svg" });
+test("drawing settings are bounded and keep supported mode, palette and export choices", () => {
+  const settings = draw.normalizeSettings({ symmetry: 99, brushSize: -2, glow: 500, flow: 0, brushMode: "unknown", paletteId: "unknown", colorA: "bad", colorB: "#ABCDEF", exportScale: 9, exportFormat: "svg" });
   assert.equal(settings.symmetry, 12);
   assert.equal(settings.brushSize, 0.5);
   assert.equal(settings.glow, 48);
@@ -18,6 +18,21 @@ test("drawing settings are bounded and keep supported export choices", () => {
   assert.equal(settings.exportScale, 4);
   assert.equal(settings.exportFormat, "png");
   assert.equal(settings.quality, "auto");
+  assert.equal(settings.brushMode, "silk");
+  assert.equal(settings.paletteId, "cosmic");
+});
+
+test("chromatic studio exposes real brush engines and multi-stop palettes", () => {
+  assert.equal(Object.keys(draw.PRESETS).length, 16);
+  assert.ok(draw.BRUSH_MODES.length >= 12);
+  for (const preset of Object.values(draw.PRESETS)) {
+    assert.ok(draw.BRUSH_MODES.includes(preset.brushMode));
+    assert.ok(draw.COLOR_PALETTES[preset.paletteId]);
+  }
+  for (const [id, palette] of Object.entries(draw.COLOR_PALETTES)) {
+    if (id !== "custom") assert.ok(palette.stops.length >= 3);
+  }
+  assert.match(draw.samplePalette({ paletteId: "prism", colorA: "#000000", colorB: "#ffffff" }, 0.5), /^#[0-9a-f]{6}$/);
 });
 
 test("adaptive quality selects a low-latency profile for constrained devices", () => {
@@ -65,14 +80,16 @@ test("Draw is a first-class lazy route with a real interactive tool contract", (
 
   assert.match(client, /id: "draw"[\s\S]*?label: "Vẽ"[\s\S]*?route: "\/draw"/);
   assert.match(client, /window\.HHDrawStudio\?\.mount/);
-  assert.match(client, /title: "Vẽ · Silk Studio"[\s\S]*?route: "\/draw"/);
-  assert.match(loader, /draw:\s*\{[\s\S]*?draw-studio\.css\?v=4[\s\S]*?draw-studio\.js\?v=3/);
+  assert.match(client, /title: "Vẽ · Chromatic Studio"[\s\S]*?route: "\/draw"/);
+  assert.match(loader, /draw:\s*\{[\s\S]*?draw-studio\.css\?v=5[\s\S]*?draw-studio\.js\?v=4/);
   assert.match(loader, /value\.startsWith\("\/draw"\)/);
-  assert.match(worker, /draw-studio\.css\?v=4/);
-  assert.match(worker, /draw-studio\.js\?v=3/);
+  assert.match(worker, /draw-studio\.css\?v=5/);
+  assert.match(worker, /draw-studio\.js\?v=4/);
   assert.match(html, /data-hh-galaxy-key="draw"/);
   assert.match(galaxy, /draw:\s*\{[\s\S]*?route: "#\/draw"/);
   for (const contract of ["data-draw-canvas", "data-draw-preset", "data-draw-setting=\"symmetry\"", "data-draw-setting=\"mirror\"", "data-draw-setting=\"spiral\"", "data-draw-setting=\"quality\"", "data-draw-undo", "data-draw-redo", "data-draw-export", "data-draw-project-export", "data-draw-project-import"]) assert.match(source, new RegExp(contract));
+  assert.match(source, /data-draw-palette/);
+  for (const mode of ["plasma", "electric", "nebula", "prism", "fire", "galaxy", "comet", "ripple", "quantum", "rainbow", "ink"]) assert.match(source, new RegExp(`mode === \\\"${mode}\\\"|\\[.*\\\"${mode}\\\"`));
   assert.match(source, /pointerdown/);
   assert.match(source, /getCoalescedEvents/);
   assert.match(source, /coalescedEvents\?\.length/);
@@ -87,7 +104,7 @@ test("Draw is a first-class lazy route with a real interactive tool contract", (
 });
 
 test("module inspection is safe before browser mounting", () => {
-  assert.deepEqual(draw.inspect(), { version: "1.1.0", mounted: false, strokes: 0, preset: "silk", quality: "auto" });
+  assert.deepEqual(draw.inspect(), { version: "1.2.0", mounted: false, strokes: 0, preset: "silk", brushMode: "silk", paletteId: "cosmic", quality: "auto" });
   assert.equal(typeof draw.mount, "function");
   assert.equal(typeof draw.unmount, "function");
 });

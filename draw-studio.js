@@ -5,21 +5,47 @@
 })(typeof window !== "undefined" ? window : globalThis, function createDrawStudio(globalScope) {
   "use strict";
 
-  const VERSION = "1.1.0";
+  const VERSION = "1.2.0";
   const STORAGE_SCHEMA = "hh.draw.studio.v1";
   const MAX_STROKES = 120;
   const MAX_POINTS_PER_STROKE = 1400;
   const PALETTE = ["#ff4fa3", "#ff7b47", "#ffd84e", "#63efb0", "#45d9ff", "#7581ff", "#bd65ff", "#f4f2ff"];
-  const PRESETS = Object.freeze({
-    silk: { label: "Silk Light", icon: "∞", symmetry: 6, mirror: true, spiral: false, brushSize: 1.35, glow: 22, flow: 0.7, colorA: "#45d9ff", colorB: "#bd65ff", autoHue: false },
-    mandala: { label: "Mandala", icon: "✺", symmetry: 12, mirror: true, spiral: false, brushSize: 1.05, glow: 18, flow: 0.62, colorA: "#ff4fa3", colorB: "#ffd84e", autoHue: false },
-    kaleidoscope: { label: "Kaleidoscope", icon: "◇", symmetry: 8, mirror: true, spiral: true, brushSize: 1.55, glow: 24, flow: 0.76, colorA: "#63efb0", colorB: "#7581ff", autoHue: false },
-    aurora: { label: "Aurora Flow", icon: "≈", symmetry: 4, mirror: true, spiral: true, brushSize: 2.8, glow: 32, flow: 0.5, colorA: "#4fffd1", colorB: "#a968ff", autoHue: true },
-    neon: { label: "Neon Ribbon", icon: "⌁", symmetry: 2, mirror: true, spiral: false, brushSize: 4.2, glow: 36, flow: 0.42, colorA: "#ff4fa3", colorB: "#45d9ff", autoHue: false }
+  const COLOR_PALETTES = Object.freeze({
+    cosmic: Object.freeze({ label: "Cosmic", stops: Object.freeze(["#34e7ff", "#7b61ff", "#ff4fb8", "#ffd86b"]) }),
+    aurora: Object.freeze({ label: "Aurora", stops: Object.freeze(["#43ffd4", "#39a8ff", "#9b5cff", "#ff72c6"]) }),
+    prism: Object.freeze({ label: "Prism", stops: Object.freeze(["#ff4f87", "#ffbe3f", "#55f29a", "#42d9ff", "#916cff"]) }),
+    fire: Object.freeze({ label: "Solar Fire", stops: Object.freeze(["#ff2d55", "#ff7138", "#ffd84d", "#fff3c4"]) }),
+    ocean: Object.freeze({ label: "Deep Ocean", stops: Object.freeze(["#48f4ff", "#1597ff", "#4058ff", "#8d5dff"]) }),
+    candy: Object.freeze({ label: "Candy", stops: Object.freeze(["#ff5fb7", "#ff91e0", "#8b7cff", "#52e7ff"]) }),
+    emerald: Object.freeze({ label: "Emerald", stops: Object.freeze(["#c7ff6b", "#42f5a7", "#19d7d1", "#4f83ff"]) }),
+    mono: Object.freeze({ label: "Moon Ink", stops: Object.freeze(["#6c7692", "#d4dcf3", "#ffffff"]) }),
+    custom: Object.freeze({ label: "Tùy chỉnh", stops: Object.freeze([]) })
   });
+  const PRESETS = Object.freeze({
+    silk: { label: "Silk Light", icon: "∞", brushMode: "silk", paletteId: "cosmic", symmetry: 6, mirror: true, spiral: false, brushSize: 1.35, glow: 22, flow: 0.7, colorA: "#45d9ff", colorB: "#bd65ff", autoHue: false },
+    mandala: { label: "Lotus Mandala", icon: "✺", brushMode: "lotus", paletteId: "candy", symmetry: 12, mirror: true, spiral: false, brushSize: 1.05, glow: 18, flow: 0.62, colorA: "#ff4fa3", colorB: "#ffd84e", autoHue: false },
+    kaleidoscope: { label: "Kaleidoscope", icon: "◇", brushMode: "prism", paletteId: "prism", symmetry: 8, mirror: true, spiral: true, brushSize: 1.55, glow: 24, flow: 0.76, colorA: "#63efb0", colorB: "#7581ff", autoHue: false },
+    aurora: { label: "Aurora Flow", icon: "≈", brushMode: "aurora", paletteId: "aurora", symmetry: 4, mirror: true, spiral: true, brushSize: 2.8, glow: 32, flow: 0.5, colorA: "#4fffd1", colorB: "#a968ff", autoHue: false },
+    neon: { label: "Neon Ribbon", icon: "⌁", brushMode: "neon", paletteId: "candy", symmetry: 2, mirror: true, spiral: false, brushSize: 4.2, glow: 36, flow: 0.42, colorA: "#ff4fa3", colorB: "#45d9ff", autoHue: false },
+    plasma: { label: "Plasma Bloom", icon: "✹", brushMode: "plasma", paletteId: "cosmic", symmetry: 5, mirror: true, spiral: true, brushSize: 3.4, glow: 40, flow: 0.58, colorA: "#48eaff", colorB: "#ff4fb8", autoHue: false },
+    electric: { label: "Electric Arc", icon: "ϟ", brushMode: "electric", paletteId: "ocean", symmetry: 3, mirror: true, spiral: false, brushSize: 1.3, glow: 34, flow: 0.86, colorA: "#65f5ff", colorB: "#7b6cff", autoHue: false },
+    nebula: { label: "Nebula Smoke", icon: "☁", brushMode: "nebula", paletteId: "cosmic", symmetry: 4, mirror: true, spiral: true, brushSize: 5.8, glow: 44, flow: 0.28, colorA: "#735dff", colorB: "#ff5ebd", autoHue: false },
+    prism: { label: "Crystal Prism", icon: "◈", brushMode: "prism", paletteId: "prism", symmetry: 7, mirror: true, spiral: false, brushSize: 2.1, glow: 26, flow: 0.72, colorA: "#56f5ff", colorB: "#ff5eae", autoHue: false },
+    fire: { label: "Fire Trail", icon: "♨", brushMode: "fire", paletteId: "fire", symmetry: 3, mirror: true, spiral: false, brushSize: 4.6, glow: 38, flow: 0.66, colorA: "#ff4c2f", colorB: "#ffd84d", autoHue: false },
+    galaxy: { label: "Galaxy Dust", icon: "✦", brushMode: "galaxy", paletteId: "cosmic", symmetry: 6, mirror: true, spiral: true, brushSize: 2.4, glow: 30, flow: 0.64, colorA: "#48eaff", colorB: "#bd65ff", autoHue: false },
+    comet: { label: "Comet Tail", icon: "☄", brushMode: "comet", paletteId: "ocean", symmetry: 2, mirror: true, spiral: false, brushSize: 5.2, glow: 42, flow: 0.55, colorA: "#f6ffff", colorB: "#45d9ff", autoHue: false },
+    ripple: { label: "Water Ripple", icon: "≋", brushMode: "ripple", paletteId: "ocean", symmetry: 4, mirror: true, spiral: false, brushSize: 2.2, glow: 20, flow: 0.45, colorA: "#46edff", colorB: "#5475ff", autoHue: false },
+    quantum: { label: "Quantum Threads", icon: "⌬", brushMode: "quantum", paletteId: "emerald", symmetry: 8, mirror: true, spiral: true, brushSize: 0.8, glow: 24, flow: 0.82, colorA: "#50f4c8", colorB: "#6b70ff", autoHue: false },
+    rainbow: { label: "Rainbow Ribbon", icon: "◒", brushMode: "rainbow", paletteId: "prism", symmetry: 3, mirror: true, spiral: false, brushSize: 5.6, glow: 30, flow: 0.62, colorA: "#ff4f87", colorB: "#42d9ff", autoHue: false },
+    ink: { label: "Moon Ink", icon: "◐", brushMode: "ink", paletteId: "mono", symmetry: 2, mirror: false, spiral: false, brushSize: 3.8, glow: 8, flow: 0.76, colorA: "#d4dcf3", colorB: "#ffffff", autoHue: false }
+  });
+
+  const BRUSH_MODES = Object.freeze([...new Set(Object.values(PRESETS).map((preset) => preset.brushMode))]);
 
   const DEFAULT_SETTINGS = Object.freeze({
     preset: "silk",
+    brushMode: "silk",
+    paletteId: "cosmic",
     symmetry: 6,
     mirror: true,
     spiral: false,
@@ -38,9 +64,9 @@
   });
 
   const QUALITY_PROFILES = Object.freeze({
-    quality: Object.freeze({ id: "quality", fibers: 5, linkOffsets: [5, 10, 15, 20], blur: 1 }),
-    balanced: Object.freeze({ id: "balanced", fibers: 3, linkOffsets: [7, 14], blur: 0.72 }),
-    performance: Object.freeze({ id: "performance", fibers: 1, linkOffsets: [12], blur: 0.4 })
+    quality: Object.freeze({ id: "quality", fibers: 5, linkOffsets: [5, 10, 15, 20], blur: 1, particles: 3, detail: 1 }),
+    balanced: Object.freeze({ id: "balanced", fibers: 3, linkOffsets: [7, 14], blur: 0.72, particles: 2, detail: 0.72 }),
+    performance: Object.freeze({ id: "performance", fibers: 1, linkOffsets: [12], blur: 0.4, particles: 1, detail: 0.4 })
   });
 
   let runtime = null;
@@ -76,6 +102,8 @@
     const preset = Object.hasOwn(PRESETS, input.preset) ? input.preset : DEFAULT_SETTINGS.preset;
     return {
       preset,
+      brushMode: BRUSH_MODES.includes(input.brushMode) ? input.brushMode : (PRESETS[preset]?.brushMode || DEFAULT_SETTINGS.brushMode),
+      paletteId: Object.hasOwn(COLOR_PALETTES, input.paletteId) ? input.paletteId : (PRESETS[preset]?.paletteId || DEFAULT_SETTINGS.paletteId),
       symmetry: Math.round(clamp(input.symmetry, 1, 12, DEFAULT_SETTINGS.symmetry)),
       mirror: input.mirror !== false,
       spiral: Boolean(input.spiral),
@@ -195,12 +223,19 @@
     return PALETTE.map((color) => `<button type="button" class="draw-color ${settings.colorA === color.toLowerCase() ? "is-active" : ""}" data-draw-color="${color}" style="--swatch:${color}" aria-label="Chọn màu ${color}" aria-pressed="${settings.colorA === color.toLowerCase()}"></button>`).join("");
   }
 
+  function colorPaletteMarkup(settings) {
+    return Object.entries(COLOR_PALETTES).filter(([id]) => id !== "custom").map(([id, palette]) => {
+      const gradient = `linear-gradient(90deg,${palette.stops.join(",")})`;
+      return `<button type="button" class="draw-gradient ${settings.paletteId === id ? "is-active" : ""}" data-draw-palette="${id}" aria-label="Bảng màu ${escapeHtml(palette.label)}" aria-pressed="${settings.paletteId === id}" style="--gradient:${gradient}"><i></i><span>${escapeHtml(palette.label)}</span></button>`;
+    }).join("");
+  }
+
   function markup(project) {
     const settings = project.settings;
     return `<section class="draw-studio" data-draw-studio data-background="${settings.background}">
       <div class="draw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
       <header class="draw-topbar">
-        <div class="draw-brand"><span>✦</span><div><small>HH CREATIVE LIGHT LAB</small><strong>Vẽ · Silk Studio</strong></div></div>
+        <div class="draw-brand"><span>✦</span><div><small>HH CREATIVE LIGHT LAB</small><strong>Vẽ · Chromatic Studio</strong></div></div>
         <nav aria-label="Thao tác dự án">
           <button type="button" data-draw-new><i>＋</i><span>Mới</span></button>
           <button type="button" data-draw-undo disabled><i>↶</i><span>Hoàn tác</span></button>
@@ -213,8 +248,8 @@
       <div class="draw-workspace">
         <aside class="draw-controls" aria-label="Điều khiển nét vẽ">
           <header><div><small>ĐIỀU KHIỂN</small><strong>Tạo ánh sáng của bạn</strong></div><button type="button" data-draw-panel-close aria-label="Đóng bảng điều khiển">×</button></header>
-          <section><h3>Phong cách</h3><div class="draw-preset-grid">${presetMarkup(settings)}</div></section>
-          <section><h3>Màu ánh sáng</h3><div class="draw-palette">${paletteMarkup(settings)}</div><div class="draw-color-mix"><label><span>Màu chính</span><input type="color" data-draw-color-a value="${settings.colorA}"></label><i>＋</i><label><span>Màu hòa</span><input type="color" data-draw-color-b value="${settings.colorB}"></label><b data-draw-mix-preview style="--mix:${mixHex(settings.colorA, settings.colorB)}"></b></div><label class="draw-switch"><span><strong>Tự chuyển sắc</strong><small>Màu thay đổi theo chiều dài nét</small></span><input type="checkbox" data-draw-setting="autoHue" ${settings.autoHue ? "checked" : ""}><i></i></label></section>
+          <section><h3>16 chế độ nét động</h3><div class="draw-preset-grid">${presetMarkup(settings)}</div></section>
+          <section><h3>Bảng màu đa sắc</h3><div class="draw-gradient-grid">${colorPaletteMarkup(settings)}</div><details class="draw-custom-color"><summary>Tùy chỉnh màu riêng</summary><div class="draw-palette">${paletteMarkup(settings)}</div><div class="draw-color-mix"><label><span>Màu chính</span><input type="color" data-draw-color-a value="${settings.colorA}"></label><i>＋</i><label><span>Màu hòa</span><input type="color" data-draw-color-b value="${settings.colorB}"></label><b data-draw-mix-preview style="--mix:${mixHex(settings.colorA, settings.colorB)}"></b></div></details><label class="draw-switch"><span><strong>Cầu vồng chuyển động</strong><small>Tự chạy toàn bộ phổ màu theo chiều dài nét</small></span><input type="checkbox" data-draw-setting="autoHue" ${settings.autoHue ? "checked" : ""}><i></i></label></section>
           <section><h3>Đối xứng</h3><label class="draw-range"><span><b>Đối xứng quay</b><output data-draw-output="symmetry">${settings.symmetry} nhánh</output></span><input type="range" min="1" max="12" step="1" value="${settings.symmetry}" data-draw-setting="symmetry"></label><label class="draw-switch"><span><strong>Phản chiếu qua tâm</strong><small>Nhân đôi nét qua mỗi trục</small></span><input type="checkbox" data-draw-setting="mirror" ${settings.mirror ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Xoáy vào trung tâm</strong><small>Tạo các lớp thu nhỏ hướng tâm</small></span><input type="checkbox" data-draw-setting="spiral" ${settings.spiral ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Hiện đường dẫn</strong><small>Lưới chỉ dẫn không đi vào ảnh xuất</small></span><input type="checkbox" data-draw-setting="guides" ${settings.guides ? "checked" : ""}><i></i></label></section>
           <section><h3>Nét vẽ & hiệu năng</h3><label class="draw-select-row"><span><strong>Chất lượng realtime</strong><small>Tự điều chỉnh để nét luôn bám sát con trỏ</small></span><select data-draw-setting="quality"><option value="auto"${settings.quality === "auto" ? " selected" : ""}>Tự động thông minh</option><option value="quality"${settings.quality === "quality" ? " selected" : ""}>Chất lượng cao</option><option value="balanced"${settings.quality === "balanced" ? " selected" : ""}>Cân bằng</option><option value="performance"${settings.quality === "performance" ? " selected" : ""}>Ưu tiên tốc độ</option></select></label><label class="draw-range"><span><b>Độ dày</b><output data-draw-output="brushSize">${settings.brushSize.toFixed(1)} px</output></span><input type="range" min="0.5" max="8" step="0.1" value="${settings.brushSize}" data-draw-setting="brushSize"></label><label class="draw-range"><span><b>Hào quang</b><output data-draw-output="glow">${Math.round(settings.glow)}%</output></span><input type="range" min="0" max="48" step="1" value="${settings.glow}" data-draw-setting="glow"></label><label class="draw-range"><span><b>Độ mềm</b><output data-draw-output="flow">${Math.round(settings.flow * 100)}%</output></span><input type="range" min="0.15" max="1" step="0.01" value="${settings.flow}" data-draw-setting="flow"></label></section>
           <section><h3>Xuất ảnh</h3><div class="draw-inline"><label><span>Nền</span><select data-draw-setting="background"><option value="cosmic"${settings.background === "cosmic" ? " selected" : ""}>Vũ trụ</option><option value="midnight"${settings.background === "midnight" ? " selected" : ""}>Xanh đêm</option><option value="black"${settings.background === "black" ? " selected" : ""}>Đen</option><option value="transparent"${settings.background === "transparent" ? " selected" : ""}>Trong suốt</option></select></label><label><span>Định dạng</span><select data-draw-setting="exportFormat"><option value="png"${settings.exportFormat === "png" ? " selected" : ""}>PNG</option><option value="webp"${settings.exportFormat === "webp" ? " selected" : ""}>WebP</option><option value="jpeg"${settings.exportFormat === "jpeg" ? " selected" : ""}>JPEG</option></select></label><label><span>Độ phân giải</span><select data-draw-setting="exportScale"><option value="1"${settings.exportScale === 1 ? " selected" : ""}>1×</option><option value="2"${settings.exportScale === 2 ? " selected" : ""}>2×</option><option value="4"${settings.exportScale === 4 ? " selected" : ""}>4×</option></select></label></div><button type="button" class="draw-wide" data-draw-project-export>Xuất project JSON</button><label class="draw-import"><input type="file" accept="application/json,.json" data-draw-project-import><span>Nhập project JSON</span></label></section>
@@ -222,7 +257,7 @@
         <main class="draw-canvas-stage">
           <canvas data-draw-canvas tabindex="0" aria-label="Khung vẽ ánh sáng. Giữ chuột hoặc chạm và kéo để vẽ.">Trình duyệt chưa hỗ trợ Canvas.</canvas>
           <canvas class="draw-guide-canvas" data-draw-guides aria-hidden="true"></canvas>
-          <div class="draw-empty" data-draw-empty><i>✦</i><strong>Chạm và kéo để dệt ánh sáng</strong><span>Tốc độ, hướng nét và đối xứng tạo nên hình ảnh riêng của bạn.</span></div>
+          <div class="draw-empty" data-draw-empty><i>✦</i><strong>Chạm và kéo để đánh thức sắc màu</strong><span>Chọn một brush engine, bảng màu rồi kéo nét — tác phẩm xuất hiện tức thì.</span></div>
           <button type="button" class="draw-panel-toggle" data-draw-panel-open aria-label="Mở bảng điều khiển">☰ <span>Điều khiển</span></button>
           <div class="draw-canvas-status" aria-live="polite"><span><i></i><b data-draw-status>Đã sẵn sàng</b></span><small data-draw-performance>Auto · Cân bằng</small><small data-draw-stats>${project.strokes.length} nét · tự lưu trên thiết bị</small></div>
           <div class="draw-quickbar">
@@ -248,19 +283,34 @@
     ctx.fillRect(0, 0, width, height);
   }
 
-  function segmentColor(stroke, segmentIndex) {
-    if (stroke.settings.autoHue) {
-      const hue = (segmentIndex * 2.4 + Number(stroke.id.replace(/\D/g, "").slice(-5))) % 360;
-      return `hsl(${hue} 96% 68%)`;
-    }
-    const wave = (Math.sin(segmentIndex * 0.055) + 1) / 2;
-    const bucket = Math.round(wave * 63);
-    const key = `${stroke.settings.colorA}|${stroke.settings.colorB}|${bucket}`;
+  function paletteStops(settings) {
+    const selected = COLOR_PALETTES[settings.paletteId];
+    return selected?.stops?.length ? selected.stops : [settings.colorA, settings.colorB];
+  }
+
+  function samplePalette(settings, amount = 0) {
+    const stops = paletteStops(settings);
+    if (stops.length === 1) return stops[0];
+    const normalized = ((Number(amount) || 0) % 1 + 1) % 1;
+    const scaled = normalized * (stops.length - 1);
+    const index = Math.min(stops.length - 2, Math.floor(scaled));
+    const localAmount = scaled - index;
+    const bucket = Math.round(localAmount * 48);
+    const key = `${stops[index]}|${stops[index + 1]}|${bucket}`;
     if (!colorCache.has(key)) {
-      if (colorCache.size > 512) colorCache.clear();
-      colorCache.set(key, mixHex(stroke.settings.colorA, stroke.settings.colorB, bucket / 63));
+      if (colorCache.size > 1024) colorCache.clear();
+      colorCache.set(key, mixHex(stops[index], stops[index + 1], bucket / 48));
     }
     return colorCache.get(key);
+  }
+
+  function segmentColor(stroke, segmentIndex, phase = 0) {
+    if (stroke.settings.autoHue) {
+      const hue = (segmentIndex * 2.4 + phase * 360 + Number(stroke.id.replace(/\D/g, "").slice(-5))) % 360;
+      return `hsl(${hue} 96% 68%)`;
+    }
+    const wave = (Math.sin(segmentIndex * 0.055 + phase * Math.PI * 2) + 1) / 2;
+    return samplePalette(stroke.settings, wave);
   }
 
   function profileFor(targetRuntime, settings, forceQuality = false) {
@@ -269,15 +319,8 @@
     return QUALITY_PROFILES[targetRuntime?.liveQuality] || QUALITY_PROFILES.balanced;
   }
 
-  function drawFiberSegment(ctx, previous, current, stroke, segmentIndex, width, height, scale = 1, qualityProfile = QUALITY_PROFILES.balanced) {
-    const transforms = transformsForSettings(stroke.settings);
-    const color = segmentColor(stroke, segmentIndex);
-    const speed = Math.hypot((current.x - previous.x) * width, (current.y - previous.y) * height);
-    const pressure = current.pressure || 0.5;
-    const baseWidth = stroke.settings.brushSize * (0.72 + pressure * 0.56) * scale;
-    const fiberCount = Math.min(qualityProfile.fibers + (stroke.settings.brushSize > 3 ? 1 : 0), 5);
-    const bend = Math.sin(segmentIndex * 0.32) * 2.2;
-    const geometry = transforms.map((transform) => {
+  function segmentGeometry(previous, current, transforms, width, height) {
+    return transforms.map((transform) => {
       const start = transformPoint(previous, transform);
       const end = transformPoint(current, transform);
       const sx = start.x * width;
@@ -285,44 +328,149 @@
       const ex = end.x * width;
       const ey = end.y * height;
       const length = Math.max(0.001, Math.hypot(ex - sx, ey - sy));
-      return { sx, sy, ex, ey, nx: -(ey - sy) / length, ny: (ex - sx) / length };
+      return { sx, sy, ex, ey, nx: -(ey - sy) / length, ny: (ex - sx) / length, length };
     });
+  }
+
+  function traceGeometry(ctx, geometry, offset = 0, bend = 0, angular = false) {
+    ctx.beginPath();
+    geometry.forEach(({ sx, sy, ex, ey, nx, ny }) => {
+      const startX = sx + nx * offset;
+      const startY = sy + ny * offset;
+      const endX = ex + nx * offset;
+      const endY = ey + ny * offset;
+      ctx.moveTo(startX, startY);
+      if (angular) {
+        ctx.lineTo((sx + ex) / 2 + nx * (offset + bend), (sy + ey) / 2 + ny * (offset + bend));
+        ctx.lineTo(endX, endY);
+      } else {
+        ctx.quadraticCurveTo((sx + ex) / 2 + nx * bend, (sy + ey) / 2 + ny * bend, endX, endY);
+      }
+    });
+    ctx.stroke();
+  }
+
+  function drawFiberSegment(ctx, previous, current, stroke, segmentIndex, width, height, scale = 1, qualityProfile = QUALITY_PROFILES.balanced) {
+    const transforms = transformsForSettings(stroke.settings);
+    const colors = [0, 0.18, 0.37, 0.58, 0.78].map((phase) => segmentColor(stroke, segmentIndex, phase));
+    const speed = Math.hypot((current.x - previous.x) * width, (current.y - previous.y) * height);
+    const pressure = current.pressure || 0.5;
+    const baseWidth = stroke.settings.brushSize * (0.72 + pressure * 0.56) * scale;
+    const geometry = segmentGeometry(previous, current, transforms, width, height);
+    const mode = stroke.settings.brushMode || "silk";
+    const speedFade = Math.max(0.48, 1 - speed / 90);
+    const wave = Math.sin(segmentIndex * 0.32);
     ctx.save();
-    ctx.globalCompositeOperation = "lighter";
+    ctx.globalCompositeOperation = mode === "ink" ? "source-over" : mode === "nebula" ? "screen" : "lighter";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.strokeStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = stroke.settings.glow * scale * qualityProfile.blur;
-    ctx.globalAlpha = Math.min(0.58, (0.18 + stroke.settings.flow * 0.3) * Math.max(0.55, 1 - speed / 85));
-    ctx.lineWidth = baseWidth;
-    ctx.beginPath();
-    geometry.forEach(({ sx, sy, ex, ey, nx, ny }) => { ctx.moveTo(sx, sy); ctx.quadraticCurveTo((sx + ex) / 2 + nx * bend, (sy + ey) / 2 + ny * bend, ex, ey); });
-    ctx.stroke();
-    ctx.shadowBlur = stroke.settings.glow * 0.46 * scale * qualityProfile.blur;
-    for (let fiber = 0; fiber < fiberCount; fiber += 1) {
-      ctx.globalAlpha = 0.07 + stroke.settings.flow * 0.075;
-      ctx.lineWidth = Math.max(0.25, baseWidth * (0.2 + fiber * 0.035));
-      ctx.beginPath();
-      geometry.forEach(({ sx, sy, ex, ey, nx, ny }) => {
-        const offset = (fiber - (fiberCount - 1) / 2) * (0.72 + baseWidth * 0.34) + Math.sin((segmentIndex + fiber) * 0.47) * 0.65;
-        ctx.moveTo(sx + nx * offset, sy + ny * offset); ctx.quadraticCurveTo((sx + ex) / 2 - nx * offset * 0.45, (sy + ey) / 2 - ny * offset * 0.45, ex + nx * offset, ey + ny * offset);
-      });
-      ctx.stroke();
+    const paint = (color, widthFactor, alpha, blurFactor = 0.5, offset = 0, bend = 0, angular = false) => {
+      ctx.strokeStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = stroke.settings.glow * scale * qualityProfile.blur * blurFactor;
+      ctx.globalAlpha = Math.min(0.88, alpha * speedFade);
+      ctx.lineWidth = Math.max(0.2, baseWidth * widthFactor);
+      traceGeometry(ctx, geometry, offset * scale, bend * scale, angular);
+    };
+
+    if (["silk", "lotus", "quantum", "galaxy"].includes(mode)) {
+      const lotusBend = mode === "lotus" ? wave * 8 : wave * 2.2;
+      paint(colors[0], mode === "quantum" ? 0.45 : 1, 0.18 + stroke.settings.flow * 0.3, 1, 0, lotusBend);
+      const extra = mode === "quantum" ? 2 : stroke.settings.brushSize > 3 ? 1 : 0;
+      const fiberCount = Math.min(7, qualityProfile.fibers + extra);
+      for (let fiber = 0; fiber < fiberCount; fiber += 1) {
+        const offset = (fiber - (fiberCount - 1) / 2) * (0.72 + baseWidth * (mode === "quantum" ? 0.55 : 0.34)) + Math.sin((segmentIndex + fiber) * 0.47) * 0.65;
+        paint(colors[(fiber + 1) % colors.length], mode === "quantum" ? 0.22 : 0.2 + fiber * 0.035, 0.055 + stroke.settings.flow * 0.08, 0.44, offset, -offset * 0.45);
+      }
+      if (mode === "galaxy" && segmentIndex % (qualityProfile.id === "quality" ? 2 : 4) === 0) {
+        ctx.fillStyle = colors[3];
+        ctx.shadowColor = colors[3];
+        ctx.shadowBlur = stroke.settings.glow * scale * 0.65;
+        ctx.globalAlpha = 0.34 * qualityProfile.detail;
+        ctx.beginPath();
+        geometry.forEach(({ ex, ey, nx, ny }, index) => {
+          const scatter = (2.5 + ((segmentIndex + index * 7) % 9)) * scale;
+          const direction = ((segmentIndex + index) % 2 ? -1 : 1);
+          ctx.moveTo(ex + nx * scatter * direction + 1.3 * scale, ey + ny * scatter * direction);
+          ctx.arc(ex + nx * scatter * direction, ey + ny * scatter * direction, Math.max(0.45, baseWidth * 0.22), 0, Math.PI * 2);
+        });
+        ctx.fill();
+      }
+    } else if (mode === "aurora") {
+      paint(colors[0], 5.2, 0.035 + stroke.settings.flow * 0.035, 1.2, wave * 3.5, wave * 8);
+      paint(colors[2], 2.5, 0.075 + stroke.settings.flow * 0.05, 0.8, -wave * 2.5, -wave * 5);
+      paint(colors[4], 0.48, 0.28, 0.4, 0, wave * 3);
+    } else if (mode === "neon") {
+      paint(colors[0], 3.8, 0.08 + stroke.settings.flow * 0.06, 1.25, 0, wave * 1.2);
+      paint(colors[2], 1.25, 0.34, 0.8, 0, wave * 1.2);
+      paint("#f4ffff", 0.28, 0.72, 0.22, 0, wave * 1.2);
+    } else if (mode === "plasma") {
+      paint(colors[0], 5.4, 0.045 + stroke.settings.flow * 0.04, 1.35, wave * 2.5, wave * 10);
+      paint(colors[2], 2.8, 0.11, 0.9, -wave * 2, -wave * 7);
+      paint(colors[4], 0.68, 0.4, 0.48, 0, wave * 4);
+      paint("#ffffff", 0.18, 0.55, 0.15, 0, -wave * 2);
+    } else if (mode === "electric") {
+      const jag = (Math.sin(segmentIndex * 2.73) + Math.sin(segmentIndex * 0.91)) * 3.8;
+      paint(colors[0], 3.2, 0.09, 1.2, 0, jag, true);
+      paint(colors[2], 0.82, 0.54, 0.7, 0, jag, true);
+      paint("#ffffff", 0.2, 0.78, 0.15, 0, jag, true);
+      if (qualityProfile.detail > 0.4 && segmentIndex % 5 === 0) {
+        ctx.strokeStyle = colors[3]; ctx.shadowColor = colors[3]; ctx.shadowBlur = stroke.settings.glow * 0.5 * scale; ctx.lineWidth = Math.max(0.25, baseWidth * 0.28); ctx.globalAlpha = 0.32;
+        ctx.beginPath();
+        geometry.forEach(({ sx, sy, ex, ey, nx, ny }, index) => {
+          const mx = (sx + ex) / 2; const my = (sy + ey) / 2; const length = (5 + ((segmentIndex + index) % 8)) * scale;
+          ctx.moveTo(mx, my); ctx.lineTo(mx + nx * length + (ex - sx) * 0.18, my + ny * length + (ey - sy) * 0.18);
+        });
+        ctx.stroke();
+      }
+    } else if (mode === "nebula") {
+      paint(colors[0], 7.2, 0.025 + stroke.settings.flow * 0.025, 1.45, wave * 5, wave * 12);
+      paint(colors[2], 4.1, 0.04 + stroke.settings.flow * 0.04, 1.05, -wave * 4, -wave * 8);
+      paint(colors[4], 1.1, 0.14, 0.62, 0, wave * 4);
+    } else if (mode === "prism" || mode === "rainbow") {
+      const laneCount = qualityProfile.id === "performance" ? 3 : 5;
+      for (let lane = 0; lane < laneCount; lane += 1) {
+        const offset = (lane - (laneCount - 1) / 2) * baseWidth * 0.7;
+        paint(colors[lane], mode === "rainbow" ? 0.58 : 0.4, 0.28 + stroke.settings.flow * 0.12, 0.62, offset, mode === "prism" ? wave * (lane + 2) : -offset * 0.3, mode === "prism");
+      }
+      paint("#ffffff", 0.12, 0.38, 0.14, 0, 0, mode === "prism");
+    } else if (mode === "fire") {
+      paint(colors[0], 4.8, 0.07, 1.3, wave * 2.5, wave * 7);
+      paint(colors[1], 2.6, 0.16, 0.9, -wave * 1.5, -wave * 4);
+      paint(colors[3], 0.85, 0.46, 0.48, 0, wave * 2);
+      paint("#fff8d8", 0.22, 0.72, 0.12, 0, 0);
+    } else if (mode === "comet") {
+      paint(colors[1], 5.5, 0.055, 1.4, wave * 3, wave * 5);
+      paint(colors[2], 2.2, 0.16, 0.85, 0, wave * 2);
+      paint("#ffffff", 0.38, 0.7, 0.25, 0, 0);
+      if (segmentIndex % (qualityProfile.id === "quality" ? 2 : 4) === 0) {
+        ctx.fillStyle = "#ffffff"; ctx.shadowColor = colors[0]; ctx.shadowBlur = stroke.settings.glow * scale; ctx.globalAlpha = 0.74;
+        ctx.beginPath(); geometry.forEach(({ ex, ey }) => { ctx.moveTo(ex + baseWidth * 0.55, ey); ctx.arc(ex, ey, Math.max(0.65, baseWidth * 0.55), 0, Math.PI * 2); }); ctx.fill();
+      }
+    } else if (mode === "ripple") {
+      const lanes = qualityProfile.id === "quality" ? 5 : 3;
+      for (let lane = 0; lane < lanes; lane += 1) {
+        const offset = (lane - (lanes - 1) / 2) * baseWidth * 1.25 + Math.sin(segmentIndex * 0.24 + lane) * 1.8;
+        paint(colors[lane % colors.length], 0.34, 0.2 + stroke.settings.flow * 0.08, 0.48, offset, -offset * 0.5);
+      }
+    } else if (mode === "ink") {
+      paint(colors[0], 2.4, 0.15 + stroke.settings.flow * 0.12, 0.35, wave * 1.4, wave * 3);
+      paint(colors[2], 0.55, 0.5, 0.12, 0, -wave * 1.5);
     }
     ctx.restore();
   }
 
   function drawSilkLinks(ctx, stroke, segmentIndex, width, height, scale = 1, qualityProfile = QUALITY_PROFILES.balanced) {
     const current = stroke.points[segmentIndex];
-    if (!current || segmentIndex < 5) return;
+    const mode = stroke.settings.brushMode || "silk";
+    if (!current || segmentIndex < 5 || !["silk", "lotus", "quantum", "galaxy"].includes(mode)) return;
     const color = segmentColor(stroke, segmentIndex);
     const transforms = transformsForSettings(stroke.settings);
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     ctx.strokeStyle = color;
-    ctx.lineWidth = Math.max(0.2, stroke.settings.brushSize * 0.22 * scale);
-    ctx.globalAlpha = 0.035 + stroke.settings.flow * 0.045;
+    ctx.lineWidth = Math.max(0.2, stroke.settings.brushSize * (mode === "quantum" ? 0.14 : 0.22) * scale);
+    ctx.globalAlpha = (0.035 + stroke.settings.flow * 0.045) * (mode === "quantum" ? 1.45 : 1);
     ctx.shadowColor = color;
     ctx.shadowBlur = stroke.settings.glow * 0.3 * scale * qualityProfile.blur;
     for (const offset of qualityProfile.linkOffsets) {
@@ -642,7 +790,9 @@
     if (!targetRuntime?.root) return;
     const settings = targetRuntime.project.settings;
     targetRuntime.root.dataset.background = settings.background;
+    targetRuntime.root.dataset.brushMode = settings.brushMode;
     targetRuntime.root.querySelectorAll("[data-draw-preset]").forEach((button) => { const active = button.dataset.drawPreset === settings.preset; button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); });
+    targetRuntime.root.querySelectorAll("[data-draw-palette]").forEach((button) => { const active = button.dataset.drawPalette === settings.paletteId; button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); });
     targetRuntime.root.querySelectorAll("[data-draw-color]").forEach((button) => { const active = button.dataset.drawColor.toLowerCase() === settings.colorA; button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); });
     ["symmetry", "brushSize", "glow", "flow", "quality", "background", "exportFormat", "exportScale", "colorA", "colorB"].forEach((key) => {
       const selector = key === "colorA" ? "[data-draw-color-a]" : key === "colorB" ? "[data-draw-color-b]" : `[data-draw-setting=\"${key}\"]`;
@@ -685,7 +835,16 @@
 
   function handleClick(event, targetRuntime = runtime) {
     const preset = event.target.closest("[data-draw-preset]"); if (preset) { applyPreset(preset.dataset.drawPreset, targetRuntime); return; }
-    const color = event.target.closest("[data-draw-color]"); if (color) { targetRuntime.project.settings.colorA = color.dataset.drawColor.toLowerCase(); syncControls(targetRuntime); scheduleSave(targetRuntime); return; }
+    const palette = event.target.closest("[data-draw-palette]");
+    if (palette) {
+      const id = palette.dataset.drawPalette;
+      if (COLOR_PALETTES[id]) {
+        targetRuntime.project.settings = normalizeSettings({ ...targetRuntime.project.settings, paletteId: id, autoHue: false });
+        syncControls(targetRuntime); scheduleSave(targetRuntime); announce(`Bảng màu ${COLOR_PALETTES[id].label}`, targetRuntime);
+      }
+      return;
+    }
+    const color = event.target.closest("[data-draw-color]"); if (color) { targetRuntime.project.settings = normalizeSettings({ ...targetRuntime.project.settings, colorA: color.dataset.drawColor.toLowerCase(), paletteId: "custom" }); syncControls(targetRuntime); scheduleSave(targetRuntime); return; }
     if (event.target.closest("[data-draw-new]")) { clearDrawing(targetRuntime); return; }
     if (event.target.closest("[data-draw-undo]")) { undo(targetRuntime); return; }
     if (event.target.closest("[data-draw-redo]")) { redo(targetRuntime); return; }
@@ -699,8 +858,8 @@
   }
 
   function handleChange(event, targetRuntime = runtime) {
-    if (event.target.matches("[data-draw-color-a]")) { targetRuntime.project.settings.colorA = normalizeHex(event.target.value, DEFAULT_SETTINGS.colorA); syncControls(targetRuntime); scheduleSave(targetRuntime); return; }
-    if (event.target.matches("[data-draw-color-b]")) { targetRuntime.project.settings.colorB = normalizeHex(event.target.value, DEFAULT_SETTINGS.colorB); syncControls(targetRuntime); scheduleSave(targetRuntime); return; }
+    if (event.target.matches("[data-draw-color-a]")) { targetRuntime.project.settings = normalizeSettings({ ...targetRuntime.project.settings, colorA: event.target.value, paletteId: "custom" }); syncControls(targetRuntime); scheduleSave(targetRuntime); return; }
+    if (event.target.matches("[data-draw-color-b]")) { targetRuntime.project.settings = normalizeSettings({ ...targetRuntime.project.settings, colorB: event.target.value, paletteId: "custom" }); syncControls(targetRuntime); scheduleSave(targetRuntime); return; }
     if (event.target.matches("[data-draw-setting]")) updateSetting(event.target, targetRuntime);
     if (event.target.matches("[data-draw-project-import]")) { importProject(event.target.files?.[0], targetRuntime); event.target.value = ""; }
   }
@@ -770,8 +929,8 @@
   }
 
   function inspect() {
-    return { version: VERSION, mounted: Boolean(runtime), strokes: runtime?.project.strokes.length || 0, preset: runtime?.project.settings.preset || DEFAULT_SETTINGS.preset, quality: runtime?.project.settings.quality || DEFAULT_SETTINGS.quality };
+    return { version: VERSION, mounted: Boolean(runtime), strokes: runtime?.project.strokes.length || 0, preset: runtime?.project.settings.preset || DEFAULT_SETTINGS.preset, brushMode: runtime?.project.settings.brushMode || DEFAULT_SETTINGS.brushMode, paletteId: runtime?.project.settings.paletteId || DEFAULT_SETTINGS.paletteId, quality: runtime?.project.settings.quality || DEFAULT_SETTINGS.quality };
   }
 
-  return { VERSION, STORAGE_SCHEMA, PALETTE, PRESETS, DEFAULT_SETTINGS, QUALITY_PROFILES, normalizeSettings, normalizeProject, resolveQualityProfile, buildSymmetryPoints, mixHex, mount, unmount, inspect };
+  return { VERSION, STORAGE_SCHEMA, PALETTE, COLOR_PALETTES, PRESETS, BRUSH_MODES, DEFAULT_SETTINGS, QUALITY_PROFILES, normalizeSettings, normalizeProject, resolveQualityProfile, buildSymmetryPoints, mixHex, samplePalette, mount, unmount, inspect };
 });

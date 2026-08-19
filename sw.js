@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v685";
+const CACHE = "hh-identity-portal-v686";
 // Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
@@ -74,14 +74,14 @@ const RUNTIME_ASSETS = [
   "./fortune-hub-v3.css?v=2",
   "./fortune-hub-v4.css?v=8",
   "./fortune-hub-v5.css?v=7",
-  "./draw-studio.css?v=4",
+  "./draw-studio.css?v=5",
   "./chat-ai-hub.css?v=17",
   "./account-center.css?v=2",
   "./account-center.js?v=2",
   "./settings-studio.css?v=2",
   "./settings-studio.js?v=5",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=198",
+  "./script.js?v=199",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -384,7 +384,7 @@ const RUNTIME_ASSETS = [
   "./fortune-moon-3d.js?v=1",
   "./fortune-extended-tools.js?v=2",
   "./fortune-hub.js?v=19",
-  "./draw-studio.js?v=3",
+  "./draw-studio.js?v=4",
   "./assets/fortune/lenormand/game-of-hope/spiel-der-hoffnung-36.webp",
   "./assets/fortune/moon/nasa-lro/lroc-color-2k.jpg",
   "./assets/fortune/moon/nasa-lro/lroc-height-1k.jpg",
@@ -446,12 +446,12 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=8",
-  "./performance-loader.js?v=393",
+  "./performance-loader.js?v=394",
   "./account-center.css?v=2",
   "./account-center.js?v=2",
   "./auth-platform.js?v=15",
   "./auth-neon-gateway.js?v=27",
-  "./script.js?v=198"
+  "./script.js?v=199"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {
