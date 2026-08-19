@@ -7,7 +7,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createFortuneHub(globalScope) {
   "use strict";
 
-  const VERSION = "8.0.0";
+  const VERSION = "8.1.0";
   const STORAGE_SCHEMA = "hh.fortune.hub.v1";
   const MAX_HISTORY = 80;
   const MAX_JOURNAL = 120;
@@ -1235,8 +1235,26 @@
     const scene = runtime.root.querySelector("[data-fortune-scene]"); if (scene) scene.dataset.world = visual[2]; const icon = runtime.root.querySelector("[data-fortune-world-icon]"); const label = runtime.root.querySelector("[data-fortune-world-label]"); if (icon) icon.textContent = visual[0]; if (label) label.textContent = visual[1];
     const configKey = `${settings.motion}|${settings.particleDensity}`; if (!runtime.mysticScene) initMysticScene(runtime); else if (runtime.mysticScene.configKey !== configKey) { stopMysticScene(runtime); initMysticScene(runtime); }
   }
+  function scrollFortuneTarget(runtime, selector, behavior = "smooth") {
+    if (!runtime?.root || !selector) return;
+    const target = runtime.root.querySelector(selector); if (!target) return;
+    const scroller = globalScope.document?.getElementById("appMain");
+    const reduced = reducedMotionPreferred() || runtime.state.settings.motion === "static";
+    const move = () => {
+      if (scroller && scroller.scrollHeight > scroller.clientHeight + 4) {
+        const scrollerRect = scroller.getBoundingClientRect(); const targetRect = target.getBoundingClientRect();
+        const offset = targetRect.top - scrollerRect.top - 18;
+        scroller.scrollBy?.({ top: offset, behavior: reduced ? "auto" : behavior });
+      } else target.scrollIntoView?.({ block: "start", behavior: reduced ? "auto" : behavior });
+    };
+    globalScope.requestAnimationFrame ? globalScope.requestAnimationFrame(move) : globalScope.setTimeout(move, 0);
+  }
+  function flushFortuneScroll(runtime) {
+    const pending = runtime?.pendingScrollTarget; if (!pending) return;
+    runtime.pendingScrollTarget = null; scrollFortuneTarget(runtime, pending.selector, pending.behavior || "smooth");
+  }
   function transitionToView(runtime, view) {
-    const commit = () => { runtime.state.view = view; runtime.resultTab = "overview"; runtime.flowStep = null; writeState(runtime); render(runtime, true); };
+    const commit = () => { runtime.state.view = view; runtime.resultTab = "overview"; runtime.flowStep = null; runtime.pendingScrollTarget = ["today", "profile", "history", "journal"].includes(view) ? null : { selector: ".fortune-tool-surface", behavior: "smooth" }; writeState(runtime); render(runtime, true); };
     const documentObject = globalScope.document; if (!documentObject?.startViewTransition || runtime.state.settings.motion === "static" || reducedMotionPreferred()) { commit(); return; }
     documentObject.documentElement.dataset.fortuneTransition = (VIEW_VISUALS[view] || VIEW_VISUALS.today)[2]; const transition = documentObject.startViewTransition(commit); transition?.finished?.finally?.(() => { delete documentObject.documentElement.dataset.fortuneTransition; });
   }
@@ -1270,6 +1288,7 @@
     enhanceJournalControls(runtime);
     syncMysticScene(runtime);
     if (runtime.state.view === "moon") globalScope.queueMicrotask?.(() => globalScope.HHFortuneMoon3D?.mountAll?.(runtime.root));
+    flushFortuneScroll(runtime);
   }
 
   function showToast(runtime, message, tone = "ok") {
@@ -1683,7 +1702,7 @@
     const input = automaticInsightInput(runtime, kind); if (!input) return;
     const contract = currentResultContract(runtime, kind); const cacheKey = accuracyLab()?.sha256?.({ schema: "hh.fortune.ai-cache.v1", kind, input, inputDigest: contract?.inputDigest || "", resultDigest: contract?.resultDigest || "" }) || `${kind}-${hashSeed(input).toString(16)}`;
     if (!force && runtime.aiCache?.has(cacheKey)) { runtime.session[`${kind}Ai`] = { ...runtime.aiCache.get(cacheKey), cached: true }; render(runtime, true); return; }
-    runtime.session[`${kind}Ai`] = { status: "loading", startedAt: new Date().toISOString() }; render(runtime, true);
+    runtime.session[`${kind}Ai`] = { status: "loading", startedAt: new Date().toISOString() }; runtime.pendingScrollTarget = { selector: ".fortune-result-workspace", behavior: "smooth" }; render(runtime, true);
     const previousSource = runtime.session.copilotSourceView; runtime.session.copilotSourceView = kind; const startedAt = globalScope.performance?.now?.() || Date.now();
     try {
       const action = await requestGeminiAnalysis(runtime, input, "expert", ["Tóm tắt trung lập", "Từng thành phần", "Liên kết và mâu thuẫn", "Nhiều cách diễn giải", "Điều không thể kết luận", "Câu hỏi suy ngẫm", "Ba hành động nhỏ", "Giới hạn phương pháp"], "deep");
@@ -1856,7 +1875,7 @@
     const experienceButton = event.target.closest("[data-fortune-set-experience]");
     if (experienceButton) { runtime.state.settings.experience = experienceButton.dataset.fortuneSetExperience === "advanced" ? "advanced" : "beginner"; writeState(runtime); render(runtime, true); return; }
     const flowButton = event.target.closest("[data-fortune-flow-step]");
-    if (flowButton) { runtime.flowStep = clamp(flowButton.dataset.fortuneFlowStep, 0, FLOW_STEPS.length - 1, 0); render(runtime, true); runtime.root.querySelector(".fortune-tool-surface")?.scrollIntoView?.({ behavior: runtime.state.settings.motion === "static" ? "auto" : "smooth", block: "start" }); return; }
+    if (flowButton) { runtime.flowStep = clamp(flowButton.dataset.fortuneFlowStep, 0, FLOW_STEPS.length - 1, 0); runtime.pendingScrollTarget = { selector: ".fortune-tool-surface", behavior: "smooth" }; render(runtime, true); return; }
     if (event.target.closest("[data-fortune-reflection-to-journal]")) {
       const text = String(runtime.reflectionDraft || "").trim();
       if (text.length < 3) { showToast(runtime, "Hãy viết một ghi chú trước khi lưu.", "error"); return; }
@@ -2374,7 +2393,7 @@
       target, options, ownerId: resolveOwnerId(options), storage: options.storage || globalScope.localStorage,
       state: null, profile: null, builder: createBuilderState(), journalEntries: [], journalKey: null,
        session: { tarot: [], tarotPrevious: [], tarotRevealed: new Set(), tarotFocusIndex: 0, tarotCount: 3, tarotSeed: "", tarot78: null, tarotAi: null, question: "", western: null, zodiacDate: "", zodiacAi: null, chinese: null, chineseYear: "", chineseBeforeTet: false, numerology: null, numerologyV4: null, numerologyAi: null, cycles: null, birthDate: "", targetDate: localDateKey(), nameInput: "", nameSystem: "pythagorean", nameNumerology: null, iching: null, ichingAdvanced: null, ichingAi: null, ichingSeed: "", ichingMode: "coins", ichingManual: [7, 7, 7, 7, 7, 7], ichingQuestion: "", tuvi: null, tuviDate: "", tuviTime: "", tuviGender: "male", tuviFixLeap: true, tuviPalaceIndex: 0, tuviAi: null, physiognomyValues: {}, physiognomyResult: null, physiognomyAi: null, dreamText: "", dreamEmotion: "curious", dreamResult: null, dreamsAi: null, moonDate: localDateKey(), moon: null, moonAstronomy: null, moonAi: null, skyDate: localDateKey(), sky: null, skyAi: null, easternDate: localDateKey(), eastern: null, easternAi: null, symbolType: "lenormand", symbolCount: 3, symbolSeed: "", symbolDeck: null, symbolFocusIndex: 0, symbolsAi: null, calendarSelectedDate: localDateKey(), astrologyMode: "natal", astrologyTarget: localDateKey(), astrologyAlerts: false, astrologyPlanet: "", astrologyV4: null, chartAi: null, calculationCertificate: null, accuracyReport: null, birthChart: null, birthChartErrors: [], compareA: "", compareB: "", compareBeforeA: false, compareBeforeB: false, compareContext: "relationship", compareGoal: "trao đổi rõ một vấn đề", compareCadence: "weekly", compatibility: null, compatibilityAi: null, sessionAi: null, tarotQuiz: null, academyRound: 1, academyFeedback: "", academyAnswered: false, academyHistory: [], academyTrack: "foundation", academyLessonIndex: 0, academyFlashRevealed: false, academyReview: null, copilot: null, copilotInput: "", copilotMode: "easy", copilotDepth: "detailed", copilotSourceView: "" },
-      root: null, toastTimer: 0, storageError: false, historyQuery: "", historyType: "all", journalQuery: "", journalTag: "all", methodQuery: "", toolQuery: "", reflectionDraft: "", resultTab: "overview", flowStep: null, calendarAnchor: localDateKey(), calendarMode: "month", chartPlanetIndex: 0, copilotBusy: false, aiController: null, aiCache: new Map(), deletedRecord: null, dragCardIndex: -1, ambientNodes: []
+      root: null, toastTimer: 0, storageError: false, historyQuery: "", historyType: "all", journalQuery: "", journalTag: "all", methodQuery: "", toolQuery: "", reflectionDraft: "", resultTab: "overview", flowStep: null, pendingScrollTarget: null, calendarAnchor: localDateKey(), calendarMode: "month", chartPlanetIndex: 0, copilotBusy: false, aiController: null, aiCache: new Map(), deletedRecord: null, dragCardIndex: -1, ambientNodes: []
     };
     runtime.state = readState(runtime.storage, runtime.ownerId);
     runtime.profile = runtime.state.profile ? sanitizeProfile(runtime.state.profile, true) : sanitizeProfile(null);

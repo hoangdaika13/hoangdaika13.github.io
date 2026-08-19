@@ -33,3 +33,40 @@ body.app-fortune-route #appMain{padding:0!important;overflow:hidden}
 @media(max-width:420px){.fortune-observatory-brand span{display:none}.fortune-observatory-brand{padding:0!important}.fortune-home-hero h3{font-size:30px}.fortune-home-hero>div:first-child>div{display:grid}.fortune-result-tabs button{flex-basis:132px}.fortune-result-provenance>span{font-size:8px}.fortune-result-deep>section{grid-template-columns:1fr}.fortune-result-deep>section>b{width:30px;height:30px}.fortune-home-status-grid>article{min-height:155px}}
 @media(prefers-reduced-motion:reduce){.fortune-context-inspector,.fortune-sidebar,.fortune-result-workspace,.fortune-home-oracle:before,.fortune-home-oracle:after,.fortune-home-favorites button>i{animation:none!important;transition:none!important}}
 @media(max-width:700px){.fortune-sidebar,.fortune-context-inspector{background:#0b091c!important}.fortune-context-inspector{transform:none;opacity:0;visibility:hidden;pointer-events:none}.fortune-hub.is-inspector-open .fortune-context-inspector{opacity:1;visibility:visible;pointer-events:auto}}
+
+/* HH Mystic Observatory V6 · one-scroll architecture and reachable content */
+body.app-fortune-route{overflow:hidden!important;filter:none!important}
+body.app-fortune-route .app-shell__body{min-height:0!important;overflow:hidden!important}
+body.app-fortune-route #appMain{height:100%!important;max-height:100%;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain;scrollbar-gutter:stable}
+body.app-fortune-route .app-workspace{height:auto!important;min-height:100%!important;overflow:visible!important}
+.fortune-hub{display:block!important;min-width:0;min-height:100%;height:auto!important;overflow:visible!important;overflow-clip-margin:0!important}
+.fortune-hub,.fortune-hub *{box-sizing:border-box}
+.fortune-mystic-scene,.fortune-mystic-scene canvas,.fortune-nebula,.fortune-constellations,.fortune-orbit-icons,.fortune-meteor-field,.fortune-mystic-fog,.fortune-world-stage{pointer-events:none!important}
+.fortune-observatory-topbar{position:sticky!important;top:0;z-index:40}
+.fortune-observatory-topbar{padding:8px 14px!important}.fortune-observatory-brand>i,.fortune-topbar-context>i{flex-basis:38px;width:38px;height:38px}.fortune-global-search{height:42px}.fortune-topbar-actions button{min-height:40px}
+.fortune-observatory-grid{min-height:0!important;align-items:start!important}
+.fortune-main{min-height:0!important;height:auto!important;overflow:visible!important;padding:0 0 90px!important}
+.fortune-view{height:auto!important;min-height:0!important;overflow:visible!important;padding-bottom:130px!important}
+.fortune-sidebar{position:sticky!important;top:70px;height:calc(100dvh - 150px)!important;max-height:none!important;overflow:hidden!important}
+.fortune-sidebar>nav{height:calc(100% - 110px)!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain}
+.fortune-context-inspector{overflow-y:auto!important;overscroll-behavior:contain}
+.fortune-observatory-actions{position:sticky!important;bottom:0;z-index:40;min-height:64px}
+.fortune-disclaimer{margin-bottom:0!important}
+@media (min-width:1440px){.fortune-context-inspector{position:sticky!important;top:70px;height:calc(100dvh - 150px)!important;opacity:1;visibility:visible;pointer-events:auto;transform:none!important}.fortune-hub[data-view="today"]:not(.is-inspector-open) .fortune-observatory-grid{grid-template-columns:240px minmax(650px,1fr)}.fortune-hub[data-view="today"]:not(.is-inspector-open) .fortune-context-inspector{display:none}}
+@media (max-width:1439px){
+  .fortune-observatory-grid{grid-template-columns:235px minmax(0,1fr)!important}
+  .fortune-context-inspector{position:fixed!important;inset:70px 0 70px auto;width:min(360px,92vw);height:auto;max-height:none;opacity:0;visibility:hidden;pointer-events:none;transform:none!important;transition:opacity .2s ease,visibility .2s ease;z-index:60}
+  .fortune-hub.is-inspector-open .fortune-context-inspector{opacity:1;visibility:visible;pointer-events:auto}
+}
+@media (max-width:980px){.fortune-sidebar{position:fixed!important;top:0;height:100dvh!important;max-height:none!important}.fortune-sidebar>nav{height:calc(100% - 120px)!important}}
+@media (max-width:700px){
+  .fortune-hub{display:block!important;min-height:100dvh;height:auto!important;overflow:visible!important;padding-bottom:0!important}
+  .fortune-observatory-grid{display:block!important;min-height:0!important}
+  .fortune-main{padding-bottom:145px!important}
+  .fortune-view{overflow:visible!important;padding:16px 12px 160px!important}
+  .fortune-sidebar,.fortune-context-inspector{bottom:68px;max-height:72dvh;overflow-y:auto!important}
+  .fortune-sidebar{position:fixed!important;top:auto;height:min(72dvh,680px)!important}
+  .fortune-sidebar>nav{height:calc(100% - 140px)!important}
+  .fortune-context-inspector{inset:auto 0 68px;width:100%;height:min(72dvh,650px);max-height:none;transform:none!important}
+  .fortune-observatory-actions{position:sticky!important;bottom:68px;min-height:64px}
+}
