@@ -216,6 +216,82 @@ function defaultNotifications() {
   };
 }
 
+function workspaceSettingsDefaults() {
+  return {
+    schemaVersion: 1,
+    appearance: { theme: "cosmic", accent: "#72e7ff", glow: "#b176ff", font: "modern", textZoom: 100, fontWeight: "regular", radius: "soft", glassOpacity: 72, shadow: "balanced", density: "comfortable" },
+    layout: { sidebarCollapsed: false, sidebarAutoHide: false, sidebarWidth: 248, showSidebarLabels: true, advancedMode: false, pinnedRoutes: ["/home", "/chat-ai"], breadcrumb: "standard", searchPosition: "header", fullscreenWorkspace: false },
+    motion: { level: "balanced", particles: 50, glowIntensity: 55, bloom: 40, speed: 100, autoReduce: true, pauseHidden: true },
+    accessibility: { reducedMotion: false, highContrast: false, underlineLinks: false, focusRing: true, colorVision: "default" },
+    locale: { language: "vi", timezone: "Asia/Bangkok", dateFormat: "dd/mm/yyyy", timeFormat: "24h", weekStart: "monday", voice: "vi-female" },
+    performance: { graphics: "auto", maxFps: 60, pixelRatio: 1.5, dataSaver: false, disableMobileVideo: true },
+    notifications: { email: true, browser: false, inApp: true, security: true, learning: true, publishing: true, system: true, quietEnabled: false, quietStart: "22:00", quietEnd: "07:00" },
+    data: { syncScope: "device" }
+  };
+}
+
+function normalizeWorkspaceSettings(input) {
+  const source = input && typeof input === "object" && !Array.isArray(input) ? input : {};
+  const defaults = workspaceSettingsDefaults();
+  const group = (name) => source[name] && typeof source[name] === "object" && !Array.isArray(source[name]) ? source[name] : {};
+  const appearance = group("appearance"), layout = group("layout"), motion = group("motion"), accessibility = group("accessibility"), locale = group("locale"), performance = group("performance"), notifications = group("notifications"), data = group("data");
+  const enumValue = (value, allowed, fallback) => allowed.includes(value) ? value : fallback;
+  const boolValue = (value, fallback) => typeof value === "boolean" ? value : fallback;
+  const numberValue = (value, minimum, maximum, fallback) => Number.isFinite(Number(value)) ? Math.max(minimum, Math.min(maximum, Number(value))) : fallback;
+  const colorValue = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || "")) ? String(value).toLowerCase() : fallback;
+  const timeValue = (value, fallback) => /^([01]\d|2[0-3]):[0-5]\d$/.test(String(value || "")) ? String(value) : fallback;
+  const allowedRoutes = ["/home", "/chat-ai", "/work", "/learn", "/fortune", "/music-ai", "/social-media-tools", "/settings/account/profile"];
+  return {
+    schemaVersion: 1,
+    appearance: {
+      theme: enumValue(appearance.theme, ["cosmic", "midnight", "aurora", "light"], defaults.appearance.theme),
+      accent: colorValue(appearance.accent, defaults.appearance.accent), glow: colorValue(appearance.glow, defaults.appearance.glow),
+      font: enumValue(appearance.font, ["modern", "clean", "rounded", "mono"], defaults.appearance.font),
+      textZoom: numberValue(appearance.textZoom, 90, 150, defaults.appearance.textZoom),
+      fontWeight: enumValue(appearance.fontWeight, ["regular", "medium", "bold"], defaults.appearance.fontWeight),
+      radius: enumValue(appearance.radius, ["sharp", "soft", "round"], defaults.appearance.radius),
+      glassOpacity: numberValue(appearance.glassOpacity, 35, 96, defaults.appearance.glassOpacity),
+      shadow: enumValue(appearance.shadow, ["off", "balanced", "deep"], defaults.appearance.shadow),
+      density: enumValue(appearance.density, ["comfortable", "compact", "spacious"], defaults.appearance.density)
+    },
+    layout: {
+      sidebarCollapsed: boolValue(layout.sidebarCollapsed, defaults.layout.sidebarCollapsed), sidebarAutoHide: boolValue(layout.sidebarAutoHide, defaults.layout.sidebarAutoHide),
+      sidebarWidth: numberValue(layout.sidebarWidth, 216, 320, defaults.layout.sidebarWidth), showSidebarLabels: boolValue(layout.showSidebarLabels, defaults.layout.showSidebarLabels),
+      advancedMode: boolValue(layout.advancedMode, defaults.layout.advancedMode),
+      pinnedRoutes: [...new Set((Array.isArray(layout.pinnedRoutes) ? layout.pinnedRoutes : defaults.layout.pinnedRoutes).filter((route) => allowedRoutes.includes(route)))].slice(0, 5),
+      breadcrumb: enumValue(layout.breadcrumb, ["standard", "compact", "hidden"], defaults.layout.breadcrumb),
+      searchPosition: enumValue(layout.searchPosition, ["header", "start", "compact"], defaults.layout.searchPosition),
+      fullscreenWorkspace: boolValue(layout.fullscreenWorkspace, defaults.layout.fullscreenWorkspace)
+    },
+    motion: {
+      level: enumValue(motion.level, ["static", "balanced", "cinematic"], defaults.motion.level),
+      particles: numberValue(motion.particles, 0, 100, defaults.motion.particles), glowIntensity: numberValue(motion.glowIntensity, 0, 100, defaults.motion.glowIntensity),
+      bloom: numberValue(motion.bloom, 0, 100, defaults.motion.bloom), speed: numberValue(motion.speed, 50, 150, defaults.motion.speed),
+      autoReduce: boolValue(motion.autoReduce, defaults.motion.autoReduce), pauseHidden: boolValue(motion.pauseHidden, defaults.motion.pauseHidden)
+    },
+    accessibility: {
+      reducedMotion: boolValue(accessibility.reducedMotion, defaults.accessibility.reducedMotion), highContrast: boolValue(accessibility.highContrast, defaults.accessibility.highContrast),
+      underlineLinks: boolValue(accessibility.underlineLinks, defaults.accessibility.underlineLinks), focusRing: boolValue(accessibility.focusRing, defaults.accessibility.focusRing),
+      colorVision: enumValue(accessibility.colorVision, ["default", "protanopia", "deuteranopia", "tritanopia", "monochrome"], defaults.accessibility.colorVision)
+    },
+    locale: {
+      language: enumValue(locale.language, ["vi", "en"], defaults.locale.language), timezone: enumValue(locale.timezone, ["Asia/Bangkok", "Asia/Tokyo", "Europe/London", "America/New_York", "UTC"], defaults.locale.timezone),
+      dateFormat: enumValue(locale.dateFormat, ["dd/mm/yyyy", "yyyy-mm-dd", "mm/dd/yyyy"], defaults.locale.dateFormat), timeFormat: enumValue(locale.timeFormat, ["24h", "12h"], defaults.locale.timeFormat),
+      weekStart: enumValue(locale.weekStart, ["monday", "sunday"], defaults.locale.weekStart), voice: enumValue(locale.voice, ["vi-female", "vi-male", "system"], defaults.locale.voice)
+    },
+    performance: {
+      graphics: enumValue(performance.graphics, ["auto", "low", "balanced", "high"], defaults.performance.graphics), maxFps: numberValue(performance.maxFps, 24, 120, defaults.performance.maxFps),
+      pixelRatio: numberValue(performance.pixelRatio, .75, 2, defaults.performance.pixelRatio), dataSaver: boolValue(performance.dataSaver, defaults.performance.dataSaver), disableMobileVideo: boolValue(performance.disableMobileVideo, defaults.performance.disableMobileVideo)
+    },
+    notifications: {
+      email: boolValue(notifications.email, defaults.notifications.email), browser: boolValue(notifications.browser, defaults.notifications.browser), inApp: boolValue(notifications.inApp, defaults.notifications.inApp),
+      security: boolValue(notifications.security, defaults.notifications.security), learning: boolValue(notifications.learning, defaults.notifications.learning), publishing: boolValue(notifications.publishing, defaults.notifications.publishing), system: boolValue(notifications.system, defaults.notifications.system),
+      quietEnabled: boolValue(notifications.quietEnabled, defaults.notifications.quietEnabled), quietStart: timeValue(notifications.quietStart, defaults.notifications.quietStart), quietEnd: timeValue(notifications.quietEnd, defaults.notifications.quietEnd)
+    },
+    data: { syncScope: enumValue(data.syncScope, ["device", "account"], defaults.data.syncScope) }
+  };
+}
+
 async function summary(db, auth) {
   const currentHash = tokenHash(auth.token);
   const [sessionRows, passkeyRows, loginRows, preferences, recovery, audits, profile, profileHistory] = await Promise.all([
@@ -252,6 +328,8 @@ async function summary(db, auth) {
     recovery,
     loginHistory,
     notifications: { ...defaultNotifications(), ...(preferences?.notifications || {}) },
+    workspaceSettings: preferences?.workspaceSettings ? normalizeWorkspaceSettings(preferences.workspaceSettings) : null,
+    workspaceSettingsUpdatedAt: preferences?.workspaceSettingsUpdatedAt || null,
     audit: audits.map((item) => ({ id: String(item._id), action: clean(item.action, 80), label: clean(item.detail?.label, 180), createdAt: item.createdAt })),
     undoProfile: profileHistory[0] ? { id: String(profileHistory[0]._id), expiresAt: profileHistory[0].expiresAt } : null,
     stepUp: { ...recentAuthentication(auth), expiresInSeconds: recentAuthentication(auth).valid ? Math.max(0, Math.floor((STEP_UP_TTL_MS - (Date.now() - recentAuthentication(auth).at.getTime())) / 1000)) : 0 },
@@ -373,6 +451,33 @@ async function updateNotifications(db, auth, body) {
   await db.collection("accountPreferences").updateOne({ userId: auth.user._id }, { $set: { userId: auth.user._id, ...Object.fromEntries(Object.entries(notifications).map(([key, value]) => [`notifications.${key}`, value])), updatedAt: new Date() } }, { upsert: true });
   await audit(db, auth, "notifications.updated", { fields: Object.keys(notifications), label: "Tùy chọn thông báo tài khoản" });
   return { ok: true, notifications };
+}
+
+async function updateWorkspaceSettings(db, auth, body) {
+  if (!body.settings || typeof body.settings !== "object" || Array.isArray(body.settings)) throw apiError(400, "Cấu hình workspace không hợp lệ.", "WORKSPACE_SETTINGS_INVALID");
+  const settings = normalizeWorkspaceSettings(body.settings);
+  const updatedAt = new Date();
+  await db.collection("accountPreferences").updateOne(
+    { userId: auth.user._id },
+    { $set: { userId: auth.user._id, workspaceSettings: settings, workspaceSettingsUpdatedAt: updatedAt, updatedAt } },
+    { upsert: true }
+  );
+  await audit(db, auth, "workspace.settings_updated", { label: settings.data.syncScope, schemaVersion: settings.schemaVersion });
+  return { ok: true, settings, updatedAt };
+}
+
+async function sendWorkspaceTestNotification(db, auth) {
+  await enforceRateLimit(db, `settings-notification-test:${auth.user._id}`, 3, 10 * 60 * 1000);
+  const delivery = await sendSecurityEmail({
+    to: auth.user.email,
+    subject: "HH Platform · Thông báo thử thành công",
+    html: `<div style="font-family:Arial,sans-serif;padding:24px;background:#090d1d;color:#eef4ff;border-radius:16px"><p style="color:#72e7ff;font-size:12px;font-weight:800;letter-spacing:1px">HH SETTINGS STUDIO</p><h2 style="margin:8px 0">Kênh email đang hoạt động</h2><p style="color:#b9c5df;line-height:1.6">Đây là thông báo thử bạn vừa chủ động gửi từ phần Cài đặt. Không có thay đổi bảo mật nào được thực hiện.</p></div>`,
+    text: "HH Settings Studio: Kênh thông báo email đang hoạt động. Đây là thông báo thử bạn vừa chủ động gửi.",
+    idempotencyKey: `settings-test-${auth.user._id}-${Math.floor(Date.now() / 60000)}`,
+    tags: [{ name: "category", value: "settings-test" }]
+  });
+  await audit(db, auth, "workspace.notification_tested", { label: delivery.delivered ? "email-delivered" : delivery.reason || "email-unavailable" });
+  return { ok: true, delivered: delivery.delivered === true, provider: delivery.provider, reason: delivery.reason || null };
 }
 
 async function revokeSession(db, auth, body) {
@@ -566,6 +671,8 @@ module.exports = async function handler(req, res) {
     if (action === "passkey:rename") return res.status(200).json(await renamePasskey(db, auth, body));
     if (action === "passkey:revoke") return res.status(200).json(await revokePasskey(db, auth, body));
     if (action === "notifications:update") return res.status(200).json(await updateNotifications(db, auth, body));
+    if (action === "settings:update") return res.status(200).json(await updateWorkspaceSettings(db, auth, body));
+    if (action === "settings:test-notification") return res.status(200).json(await sendWorkspaceTestNotification(db, auth));
     if (action === "session:revoke") return res.status(200).json(await revokeSession(db, auth, body));
     if (action === "session:trust") return res.status(200).json(await trustSession(db, auth, body));
     if (action === "sessions:revoke-others") return res.status(200).json(await revokeOtherSessions(db, auth));
@@ -592,5 +699,7 @@ module.exports.__test = Object.freeze({
   recentAuthentication,
   requireStepUp,
   securityScore,
-  decodeImage
+  decodeImage,
+  normalizeWorkspaceSettings,
+  workspaceSettingsDefaults
 });

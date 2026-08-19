@@ -891,10 +891,14 @@ function initPlatformLivebar() {
 
   const updateClock = () => {
     const now = new Date();
-    const time = now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-    const date = now.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
+    const locale = document.documentElement.lang === "en" ? "en-US" : "vi-VN";
+    const timeZone = document.body.dataset.hhTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Bangkok";
+    const hour12 = document.body.dataset.hhTimeFormat === "12h";
+    const dateLocale = document.body.dataset.hhDateFormat === "yyyy-mm-dd" ? "en-CA" : document.body.dataset.hhDateFormat === "mm/dd/yyyy" ? "en-US" : "vi-VN";
+    const time = now.toLocaleTimeString(locale, { timeZone, hour: "2-digit", minute: "2-digit", second: "2-digit", hour12 });
+    const date = `${now.toLocaleDateString(locale, { timeZone, weekday: "long" })}, ${now.toLocaleDateString(dateLocale, { timeZone, day: "2-digit", month: "2-digit", year: "numeric" })}`;
     if (timeNode) timeNode.textContent = time;
-    if (dateNode) dateNode.textContent = `${date} · Múi giờ ${Intl.DateTimeFormat().resolvedOptions().timeZone || "local"}`;
+    if (dateNode) dateNode.textContent = `${date} · Múi giờ ${timeZone}`;
     document.querySelectorAll("[data-command-time]").forEach((node) => { node.textContent = time; });
     document.querySelectorAll("[data-command-date]").forEach((node) => { node.textContent = date; });
     document.querySelectorAll("[data-module-now]").forEach((node) => {
@@ -911,6 +915,7 @@ function initPlatformLivebar() {
 
   updateClock();
   setInterval(updateClock, 1000);
+  addEventListener("hh:workspace-settings-applied", updateClock);
 }
 
 function initSuperPlatform() {
@@ -5684,7 +5689,11 @@ function initAppShell() {
     const route = activeRoute;
     const advancedMode = Boolean(stored().advanced);
     const visibleGroups = groups.filter((group) => !group.adminOnly || isCurrentUserAdmin());
-    navigation.innerHTML = visibleGroups.map((group) => {
+    const settingsState = (() => { try { return JSON.parse(localStorage.getItem("hh.settings-studio.v1") || "null")?.settings || {}; } catch { return {}; } })();
+    const pinnedLabels = new Map([["/home", ["⌂", "Trang chủ"]], ["/chat-ai", ["AI", "Chat AI"]], ["/work", ["W", "Công việc"]], ["/learn", ["L", "Học tập"]], ["/fortune", ["☾", "Xem bói"]], ["/music-ai", ["♫", "Làm nhạc AI"]], ["/social-media-tools", ["S", "Truyền thông"]], ["/settings/account/profile", ["♙", "Hồ sơ"]]]);
+    const pinnedRoutes = [...new Set(Array.isArray(settingsState.layout?.pinnedRoutes) ? settingsState.layout.pinnedRoutes : [])].filter((item) => pinnedLabels.has(item)).slice(0, 5);
+    const pinnedMarkup = pinnedRoutes.length ? `<section class="app-sidebar__pinned"><small>ĐÃ GHIM</small>${pinnedRoutes.map((item) => { const [icon, label] = pinnedLabels.get(item); return `<button class="app-sidebar__subitem ${route === item ? "is-active" : ""}" type="button" data-app-route="${safeText(item)}" title="${safeText(label)}"><b>${safeText(icon)}</b><span>${safeText(label)}</span></button>`; }).join("")}</section>` : "";
+    navigation.innerHTML = pinnedMarkup + visibleGroups.map((group) => {
       const routeMatches = route === group.route || route.startsWith(`${group.route}/`);
       const expanded = advancedMode ? (Object.hasOwn(sidebarGroupState, group.id) ? Boolean(sidebarGroupState[group.id]) : routeMatches) : (routeMatches && sidebarGroupState[group.id] !== false);
       const moduleEntries = group.items.map((id) => {
@@ -6048,6 +6057,7 @@ function initAppShell() {
     document.body.classList.toggle("app-fortune-route", route === "/fortune" || route.startsWith("/fortune/"));
     document.body.classList.toggle("app-chat-ai-route", route === "/chat-ai" || route.startsWith("/chat-ai/"));
     document.body.classList.toggle("app-account-center-route", route.startsWith("/settings/account") || route === "/settings/user-dashboard" || route === "/settings/security-center");
+    document.body.classList.toggle("app-settings-route", route === "/settings");
     document.body.classList.toggle("app-communication-route", route === "/communication" || route.startsWith("/communication/"));
     document.body.classList.toggle("app-work-route", route === "/work" || route.startsWith("/work/"));
     document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
@@ -6078,6 +6088,7 @@ function initAppShell() {
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
       if (route !== "/chat-ai" && !route.startsWith("/chat-ai/")) window.HHChatAI?.unmount?.();
       if (!route.startsWith("/settings/account") && route !== "/settings/user-dashboard" && route !== "/settings/security-center") window.HHAccountCenter?.unmount?.();
+    if (route !== "/settings") window.HHSettingsStudio?.unmount?.();
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
     const communicationView = route === "/communication" ? "command-center" : route.split("/").filter(Boolean)[1];
     if (!(route === "/communication" || window.HHCommunicationSuite?.supports?.(communicationView))) window.HHCommunicationSuite?.unmount?.();
@@ -6475,7 +6486,8 @@ function initAppShell() {
       mountSimpleView(label, "Mở một mục để tiếp tục công việc.", `<div class="app-item-grid">${ids.map(moduleById).filter(Boolean).map((item) => `<button type="button" data-app-route="${routeForModule(item.id)}"><span>Tool</span><strong>${item.title}</strong><p>${item.description}</p></button>`).join("") || "<div class=app-empty-state><strong>Chưa có mục nào</strong><p>Hãy đánh dấu yêu thích hoặc mở một công cụ để xem tại đây.</p><button type=button data-app-route=/tools>Mở công cụ</button></div>"}</div>`);
     } else if (route === "/settings") {
       updatePageHeader("Cài đặt", "Điều chỉnh giao diện và dữ liệu cá nhân.", route);
-      mountSimpleView("Cài đặt", "Thiết lập được áp dụng đồng bộ cho toàn bộ giao diện trên thiết bị này.", `<div class="app-settings-list"><label><span>Sidebar thu gọn</span><input type=checkbox data-shell-setting=collapsed ${document.body.classList.contains("app-sidebar-collapsed") ? "checked" : ""}></label><label><span>Chế độ nâng cao</span><input type=checkbox data-shell-setting=advanced ${stored().advanced ? "checked" : ""}></label><label><span>Ngôn ngữ</span><select data-app-preference=language><option value=vi>Tiếng Việt</option><option value=en>English</option></select></label><label><span>Font chữ</span><select data-app-preference=font><option value=modern>Modern · Be Vietnam</option><option value=clean>Clean · Segoe UI</option><option value=rounded>Rounded · Trebuchet</option><option value=mono>Mono · Consolas</option></select></label><label><span>Cỡ chữ</span><select data-app-preference=fontScale><option value=small>Nhỏ</option><option value=medium>Tiêu chuẩn</option><option value=large>Lớn</option><option value=xlarge>Rất lớn</option></select></label><label><span>Bo góc</span><select data-app-preference=radius><option value=sharp>Vuông</option><option value=soft>Mềm</option><option value=round>Tròn</option></select></label><label><span>Mật độ giao diện</span><select data-app-preference=density><option value=comfortable>Thoải mái</option><option value=compact>Gọn</option></select></label><label><span>Tương phản</span><select data-app-preference=contrast><option value=standard>Tiêu chuẩn</option><option value=high>Cao</option></select></label><label><span>Mức hiệu ứng</span><select data-app-preference=effects><option value=full>Đầy đủ</option><option value=calm>Nhẹ</option><option value=off>Tắt</option></select></label><label><span>Giảm chuyển động</span><input type=checkbox data-app-preference=reducedMotion></label><button type=button data-dashboard-theme-menu>Mở Appearance Studio</button><button type=button data-dashboard-shortcuts>Xem phím tắt</button><button type=button data-app-route=/settings/account/profile>Mở hồ sơ tài khoản</button><button type=button data-app-route=/settings/account/security>Mở bảo mật</button></div>`);
+      workspace.innerHTML = `<section class="app-route-loader" role="status"><i></i><div><strong>Đang khởi tạo HH Settings Studio</strong><p>Chuẩn bị bản xem trước và cấu hình của thiết bị.</p></div></section>`;
+      if (!window.HHSettingsStudio?.mount?.(workspace)) throw new Error("Settings Studio chưa sẵn sàng.");
     } else if (route === "/profile") {
       updatePageHeader("Profile", "Trang portfolio và thông tin liên hệ.", route);
       mountSimpleView("Profile", "Mở portfolio gốc trong trang này.", `<button class="app-primary-action" type=button data-shell-show-profile>Mở portfolio</button>`);
@@ -6946,6 +6958,8 @@ function initAppShell() {
   window.addEventListener("hh:youtube-creator-ready", renderRouteSafely);
   window.addEventListener("hh:comic-motion-ready", renderRouteSafely);
   window.addEventListener("hh:facebook-page-command-center-ready", renderRouteSafely);
+  window.addEventListener("hh:settings-studio-ready", renderRouteSafely);
+  window.addEventListener("hh:settings-saved", () => renderNavigation());
   window.addEventListener("hh:auth-change", () => {
     setShellVisibility();
     setUser();
@@ -6966,9 +6980,14 @@ function initAppShell() {
     const clock = byId("shellClock");
     const date = byId("shellDate");
     const headerClock = byId("shellHeaderClock");
-    if (clock) clock.textContent = now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-    if (date) date.textContent = now.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
-    if (headerClock) headerClock.textContent = now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    const locale = document.documentElement.lang === "en" ? "en-US" : "vi-VN";
+    const timeZone = document.body.dataset.hhTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Bangkok";
+    const hour12 = document.body.dataset.hhTimeFormat === "12h";
+    const dateLocale = document.body.dataset.hhDateFormat === "yyyy-mm-dd" ? "en-CA" : document.body.dataset.hhDateFormat === "mm/dd/yyyy" ? "en-US" : "vi-VN";
+    const time = now.toLocaleTimeString(locale, { timeZone, hour: "2-digit", minute: "2-digit", hour12 });
+    if (clock) clock.textContent = time;
+    if (date) date.textContent = `${now.toLocaleDateString(locale, { timeZone, weekday: "long" })}, ${now.toLocaleDateString(dateLocale, { timeZone, day: "2-digit", month: "2-digit", year: "numeric" })}`;
+    if (headerClock) headerClock.textContent = time;
   };
   const updateHeaderNetwork = () => {
     const status = byId("shellHeaderNetwork");
@@ -6981,6 +7000,7 @@ function initAppShell() {
   setInterval(updateClock, 60000);
   addEventListener("online", updateHeaderNetwork);
   addEventListener("offline", updateHeaderNetwork);
+  addEventListener("hh:workspace-settings-applied", updateClock);
   setShellVisibility();
 }
 

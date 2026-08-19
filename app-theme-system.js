@@ -3,7 +3,11 @@
 
   const STORAGE_KEY = "hh.command-center.theme.v1";
   const PREFERENCES_KEY = "hh.app-theme.preferences.v1";
+  const WORKSPACE_SETTINGS_KEY = "hh.settings-studio.v1";
+  const SHELL_STATE_KEY = "hh.app-shell.v1";
   const THEMES = Object.freeze({
+    cosmic: { label: "Cosmic", note: "Thiên hà tím và cyan", color: "#72e7ff" },
+    midnight: { label: "Midnight", note: "Đêm sâu tập trung", color: "#7094ff" },
     "basic-light": { label: "Basic Light", note: "SaaS sáng phổ biến", color: "#f8fafc", group: "basic" },
     "basic-dark": { label: "Basic Dark", note: "Tối tối giản", color: "#20242b", group: "basic" },
     slate: { label: "Slate", note: "Xám xanh chuyên nghiệp", color: "#64748b", group: "basic" },
@@ -29,7 +33,7 @@
   const write = (key, value) => {
     try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
   };
-  const preferences = () => ({ language: "vi", density: "comfortable", font: "modern", fontScale: "medium", radius: "soft", contrast: "standard", effects: "full", reducedMotion: false, ...read(PREFERENCES_KEY, {}) });
+  const preferences = () => ({ language: "vi", density: "comfortable", font: "modern", fontScale: "medium", textZoom: 100, radius: "soft", contrast: "standard", effects: "full", reducedMotion: false, ...read(PREFERENCES_KEY, {}) });
 
   function updateThemeControls(theme) {
     document.querySelectorAll("[data-app-theme-value],[data-theme-value]").forEach((button) => {
@@ -53,12 +57,14 @@
     return value;
   }
 
-  function applyPreferences(next = preferences()) {
+  function applyPreferences(next = preferences(), options = {}) {
+    const textZoom = Math.max(90, Math.min(150, Number(next.textZoom) || ({ small: 90, medium: 100, large: 110, xlarge: 120 }[next.fontScale]) || 100));
     const value = {
       language: ["vi", "en"].includes(next.language) ? next.language : "vi",
       density: ["comfortable", "compact"].includes(next.density) ? next.density : "comfortable",
       font: ["modern", "clean", "rounded", "mono"].includes(next.font) ? next.font : "modern",
       fontScale: ["small", "medium", "large", "xlarge"].includes(next.fontScale) ? next.fontScale : "medium",
+      textZoom,
       radius: ["sharp", "soft", "round"].includes(next.radius) ? next.radius : "soft",
       contrast: ["standard", "high"].includes(next.contrast) ? next.contrast : "standard",
       effects: ["full", "calm", "off"].includes(next.effects) ? next.effects : "full",
@@ -68,6 +74,7 @@
     document.body.classList.toggle("app-density-compact", value.density === "compact");
     document.body.dataset.appFont = value.font;
     document.body.dataset.appFontScale = value.fontScale;
+    document.body.style.setProperty("--app-font-scale", String(value.textZoom / 100));
     document.body.dataset.appRadius = value.radius;
     document.body.dataset.appContrast = value.contrast;
     document.body.dataset.appEffects = value.effects;
@@ -82,7 +89,64 @@
       if (control.type === "checkbox") control.checked = Boolean(value[key]);
       else control.value = String(value[key]);
     });
-    write(PREFERENCES_KEY, value);
+    if (options.persist !== false) write(PREFERENCES_KEY, value);
+    return value;
+  }
+
+  function applyWorkspaceSettings(source, options = {}) {
+    const value = source && typeof source === "object" ? source : {};
+    const appearance = value.appearance || {}, layout = value.layout || {}, motion = value.motion || {}, accessibility = value.accessibility || {}, locale = value.locale || {}, performance = value.performance || {};
+    const effectLevel = ["static", "balanced", "cinematic"].includes(motion.level) ? motion.level : "balanced";
+    const effects = effectLevel === "static" ? "off" : effectLevel === "balanced" ? "calm" : "full";
+    applyTheme(appearance.theme || "cosmic", { persist: options.persist });
+    applyPreferences({
+      language: locale.language || "vi", density: appearance.density === "spacious" ? "comfortable" : appearance.density,
+      font: appearance.font, fontScale: "medium", textZoom: appearance.textZoom,
+      radius: appearance.radius, contrast: accessibility.highContrast ? "high" : "standard",
+      effects, reducedMotion: accessibility.reducedMotion
+    }, { persist: options.persist });
+    const root = document.documentElement;
+    root.style.setProperty("--hh-user-accent", /^#[0-9a-f]{6}$/i.test(appearance.accent || "") ? appearance.accent : "#72e7ff");
+    root.style.setProperty("--hh-user-glow", /^#[0-9a-f]{6}$/i.test(appearance.glow || "") ? appearance.glow : "#b176ff");
+    root.style.setProperty("--hh-user-glass", String(Math.max(.35, Math.min(.96, Number(appearance.glassOpacity || 72) / 100))));
+    root.style.setProperty("--hh-user-sidebar-width", `${Math.max(216, Math.min(320, Number(layout.sidebarWidth) || 248))}px`);
+    root.style.setProperty("--hh-user-motion-speed", String(100 / Math.max(50, Math.min(150, Number(motion.speed) || 100))));
+    root.style.setProperty("--hh-user-particles", String(Math.max(0, Math.min(100, Number(motion.particles) || 0)) / 100));
+    root.style.setProperty("--hh-user-glow-intensity", String(Math.max(0, Math.min(100, Number(motion.glowIntensity) || 0)) / 100));
+    root.style.setProperty("--hh-user-bloom", String(Math.max(0, Math.min(100, Number(motion.bloom) || 0)) / 100));
+    root.style.setProperty("--hh-max-fps", String(Math.max(24, Math.min(120, Number(performance.maxFps) || 60))));
+    root.style.setProperty("--hh-max-dpr", String(Math.max(.75, Math.min(2, Number(performance.pixelRatio) || 1.5))));
+    const lowSpec = motion.autoReduce !== false && ((Number(navigator.deviceMemory) || 8) <= 4 || (Number(navigator.hardwareConcurrency) || 8) <= 4 || navigator.connection?.saveData === true);
+    document.body.dataset.hhFontWeight = appearance.fontWeight || "regular";
+    document.body.dataset.hhShadow = appearance.shadow || "balanced";
+    document.body.dataset.hhColorVision = accessibility.colorVision || "default";
+    document.body.dataset.hhGraphics = lowSpec && performance.graphics === "auto" ? "low" : performance.graphics || "auto";
+    document.body.dataset.hhSearchPosition = layout.searchPosition || "header";
+    document.body.dataset.hhTimezone = locale.timezone || "Asia/Bangkok";
+    document.body.dataset.hhDateFormat = locale.dateFormat || "dd/mm/yyyy";
+    document.body.dataset.hhTimeFormat = locale.timeFormat || "24h";
+    document.body.dataset.hhWeekStart = locale.weekStart || "monday";
+    document.body.dataset.hhVoice = locale.voice || "vi-female";
+    document.body.classList.toggle("app-sidebar-collapsed", matchMedia("(max-width: 760px)").matches || layout.sidebarCollapsed === true);
+    document.body.classList.toggle("app-sidebar-auto-hide", layout.sidebarAutoHide === true);
+    document.body.classList.toggle("app-sidebar-labels-hidden", layout.showSidebarLabels === false);
+    document.body.classList.toggle("app-advanced-mode", layout.advancedMode === true);
+    document.body.classList.toggle("app-workspace-fullscreen", layout.fullscreenWorkspace === true);
+    document.body.classList.toggle("app-breadcrumb-compact", layout.breadcrumb === "compact");
+    document.body.classList.toggle("app-breadcrumb-hidden", layout.breadcrumb === "hidden");
+    document.body.classList.toggle("app-links-underlined", accessibility.underlineLinks === true);
+    document.body.classList.toggle("app-focus-ring-disabled", accessibility.focusRing === false);
+    document.body.classList.toggle("app-density-spacious", appearance.density === "spacious");
+    document.body.classList.toggle("app-data-saver", performance.dataSaver === true);
+    document.body.classList.toggle("app-disable-mobile-video", performance.disableMobileVideo !== false);
+    document.body.classList.toggle("app-auto-effects-reduced", lowSpec);
+    document.body.classList.toggle("app-effects-paused", motion.pauseHidden !== false && document.hidden);
+    document.body.classList.add("hh-settings-applied");
+    if (options.persist) {
+      const shell = read(SHELL_STATE_KEY, {});
+      write(SHELL_STATE_KEY, { ...shell, collapsed: layout.sidebarCollapsed === true, advanced: layout.advancedMode === true });
+    }
+    globalThis.dispatchEvent(new CustomEvent("hh:workspace-settings-applied", { detail: { settings: value, lowSpec } }));
     return value;
   }
 
@@ -194,6 +258,8 @@
     ensureShortcutsDialog();
     applyTheme(read(STORAGE_KEY, "aurora"), { persist: false });
     applyPreferences();
+    const workspaceSettings = read(WORKSPACE_SETTINGS_KEY, null)?.settings;
+    if (workspaceSettings) applyWorkspaceSettings(workspaceSettings, { persist: false });
     const observer = new MutationObserver((records) => {
       const hasPreferenceControls = records.some((record) => Array.from(record.addedNodes).some((node) => node.nodeType === 1 && (node.matches?.("[data-app-preference]") || node.querySelector?.("[data-app-preference]"))));
       if (hasPreferenceControls) applyPreferences(preferences());
@@ -204,5 +270,19 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
 
-  window.HHAppTheme = Object.freeze({ apply: applyTheme, cycle: cycleTheme, preferences: applyPreferences, themes: themeIds });
+  window.HHAppTheme = Object.freeze({
+    apply: applyTheme,
+    applyPreferences,
+    applyWorkspaceSettings,
+    cycle: cycleTheme,
+    getPreferences: preferences,
+    preferences: applyPreferences,
+    themeDetails: THEMES,
+    themes: themeIds
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    const settings = read(WORKSPACE_SETTINGS_KEY, null)?.settings;
+    document.body.classList.toggle("app-effects-paused", settings?.motion?.pauseHidden !== false && document.hidden);
+  });
 })();

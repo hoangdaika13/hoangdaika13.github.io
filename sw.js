@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v670";
+const CACHE = "hh-identity-portal-v673";
 // Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
@@ -16,7 +16,7 @@ const RUNTIME_ASSETS = [
   "./",
   "./index.html",
   "./app-shell.css?v=55",
-  "./app-theme-system.css?v=6",
+  "./app-theme-system.css?v=8",
   "./dashboard-aurora.css?v=4",
   "./home-galaxy-command.css?v=11",
   "./home-live-widgets.css?v=12",
@@ -76,8 +76,10 @@ const RUNTIME_ASSETS = [
   "./chat-ai-hub.css?v=17",
   "./account-center.css?v=2",
   "./account-center.js?v=2",
+  "./settings-studio.css?v=2",
+  "./settings-studio.js?v=5",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=195",
+  "./script.js?v=197",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -272,7 +274,7 @@ const RUNTIME_ASSETS = [
   "./platform-p0.js?v=1",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./app-theme-system.js?v=5",
+  "./app-theme-system.js?v=8",
   "./system-platform.css?v=3",
   "./system-platform.js?v=7",
   "./sidebar-navigation-pro.css?v=9",
@@ -428,7 +430,7 @@ const CORE = [
   "./",
   "./index.html",
   "./app-shell.css?v=55",
-  "./app-theme-system.css?v=6",
+  "./app-theme-system.css?v=8",
   "./sidebar-navigation-pro.css?v=9",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=9",
@@ -440,13 +442,13 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./app-theme-system.js?v=5",
-  "./performance-loader.js?v=377",
+  "./app-theme-system.js?v=8",
+  "./performance-loader.js?v=382",
   "./account-center.css?v=2",
   "./account-center.js?v=2",
   "./auth-platform.js?v=15",
   "./auth-neon-gateway.js?v=26",
-  "./script.js?v=195"
+  "./script.js?v=197"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {
