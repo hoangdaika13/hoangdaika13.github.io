@@ -11,7 +11,7 @@ test("primary navigation removes Game and Character 3D while preserving Phim and
   const shell = read("script.js");
 
   assert.doesNotMatch(html, /data-hh-galaxy-key="(?:entertainment|character)"|<em>Game<\/em>|Nhân vật 3D/);
-  assert.equal((html.match(/data-hh-planet="\d+"/g) || []).length, 23, "login galaxy must expose only active destinations");
+  assert.equal((html.match(/data-hh-planet="\d+"/g) || []).length, 24, "login galaxy must expose only active destinations");
   assert.doesNotMatch(shell, /id:\s*"entertainment"[\s\S]{0,180}label:\s*"Game"|id:\s*"character-3d"/);
   assert.match(shell, /id:\s*"cinema",[\s\S]*?label:\s*"Phim"[\s\S]*?route:\s*"\/cinema"/);
   assert.match(shell, /id:\s*"music-library",[\s\S]*?label:\s*"Nhạc"[\s\S]*?route:\s*"\/music"/);

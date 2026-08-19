@@ -274,6 +274,18 @@
       detail: "Khóa truy cập được giữ phía máy chủ; lịch sử tách theo tài khoản, có chế độ riêng tư, nhánh hội thoại, giọng nói và xuất dữ liệu.",
       features: ["Smart Router", "Tìm kiếm web", "Ảnh & PDF", "Code", "Voice"]
     },
+    draw: {
+      icon: "✎",
+      title: "Vẽ",
+      kicker: "INTERACTIVE LIGHT STUDIO",
+      count: "5 PHONG CÁCH",
+      route: "#/draw",
+      accent: "#55eaff",
+      accent2: "#bd65ff",
+      description: "Dệt ánh sáng bằng chuyển động, đối xứng quay, phản chiếu và xoáy hướng tâm ngay trên trình duyệt.",
+      detail: "Canvas local-first hỗ trợ cảm ứng, bảng màu hòa trộn, Mandala, Kaleidoscope, Aurora, hoàn tác và xuất ảnh độ phân giải cao.",
+      features: ["Silk Light", "Mandala", "Kaleidoscope", "Color Blend", "HD Export"]
+    },
     support: {
       icon: "♥",
       title: "Ủng hộ HH",

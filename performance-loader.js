@@ -208,6 +208,10 @@
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=7"],
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "vendor/iztro-2.6.0.min.js?v=2.6.0", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=4", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-moon-3d.js?v=1", "fortune-extended-tools.js?v=2", "fortune-hub.js?v=19"]
     },
+    draw: {
+      styles: ["draw-studio.css?v=3"],
+      scripts: ["draw-studio.js?v=2"]
+    },
     "chat-ai": {
       styles: ["chat-ai-hub.css?v=17"],
       scripts: ["chat-ai-hub.js?v=17"]
@@ -266,6 +270,7 @@
     if (value.startsWith("/english")) return ["english"];
     if (value.startsWith("/japanese")) return ["japanese"];
     if (value.startsWith("/fortune")) return ["fortune"];
+    if (value.startsWith("/draw")) return ["draw"];
     if (value.startsWith("/chat-ai")) return ["chat-ai"];
     if (value === "/settings") return ["settings"];
     if (value.startsWith("/settings/account") || value === "/settings/user-dashboard" || value === "/settings/security-center") return ["account"];

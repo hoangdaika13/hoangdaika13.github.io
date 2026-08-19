@@ -461,6 +461,7 @@ body.home-neon.auth-locked #authGate > .hh-h-galaxy::after {
 [data-hh-planet="23"] { --planet-a:#ff8a6c;--planet-b:#7f2ad0;--planet-size:26px;--planet-tilt:-15deg; }
 [data-hh-planet="24"] { --planet-a:#d7b0ff;--planet-b:#3156b7;--planet-size:31px;--planet-tilt:14deg; }
 [data-hh-planet="25"] { --planet-a:#7af0ff;--planet-b:#5948d9;--planet-size:38px;--planet-tilt:-12deg; }
+[data-hh-planet="26"] { --planet-a:#55eaff;--planet-b:#bd65ff;--planet-size:34px;--planet-tilt:18deg; }
 
 [data-hh-planet="4"]::before,
 [data-hh-planet="5"]::before,

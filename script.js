@@ -5428,6 +5428,7 @@ function initAppShell() {
     { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/home", items: ["command-center"] },
     { id: "social-media-tools", label: "Công cụ truyền thông xã hội", icon: "SM", accent: "#63ead8", route: "/social-media-tools", items: [] },
     { id: "create", label: "Sáng tạo", icon: "✦", accent: "#ff5dc8", route: "/create", items: [], studioItems: creativeStudioItems },
+    { id: "draw", label: "Vẽ", icon: "✎", accent: "#55eaff", route: "/draw", items: [] },
     { id: "chat-ai", label: "Chat AI", icon: "AI", accent: "#7b8cff", route: "/chat-ai", items: [] },
     {
       id: "music-ai",
@@ -5690,7 +5691,7 @@ function initAppShell() {
     const advancedMode = Boolean(stored().advanced);
     const visibleGroups = groups.filter((group) => !group.adminOnly || isCurrentUserAdmin());
     const settingsState = (() => { try { return JSON.parse(localStorage.getItem("hh.settings-studio.v1") || "null")?.settings || {}; } catch { return {}; } })();
-    const pinnedLabels = new Map([["/home", ["⌂", "Trang chủ"]], ["/chat-ai", ["AI", "Chat AI"]], ["/work", ["W", "Công việc"]], ["/learn", ["L", "Học tập"]], ["/fortune", ["☾", "Xem bói"]], ["/music-ai", ["♫", "Làm nhạc AI"]], ["/social-media-tools", ["S", "Truyền thông"]], ["/settings/account/profile", ["♙", "Hồ sơ"]]]);
+    const pinnedLabels = new Map([["/home", ["⌂", "Trang chủ"]], ["/chat-ai", ["AI", "Chat AI"]], ["/draw", ["✎", "Vẽ"]], ["/work", ["W", "Công việc"]], ["/learn", ["L", "Học tập"]], ["/fortune", ["☾", "Xem bói"]], ["/music-ai", ["♫", "Làm nhạc AI"]], ["/social-media-tools", ["S", "Truyền thông"]], ["/settings/account/profile", ["♙", "Hồ sơ"]]]);
     const pinnedRoutes = [...new Set(Array.isArray(settingsState.layout?.pinnedRoutes) ? settingsState.layout.pinnedRoutes : [])].filter((item) => pinnedLabels.has(item)).slice(0, 5);
     const pinnedMarkup = pinnedRoutes.length ? `<section class="app-sidebar__pinned"><small>ĐÃ GHIM</small>${pinnedRoutes.map((item) => { const [icon, label] = pinnedLabels.get(item); return `<button class="app-sidebar__subitem ${route === item ? "is-active" : ""}" type="button" data-app-route="${safeText(item)}" title="${safeText(label)}"><b>${safeText(icon)}</b><span>${safeText(label)}</span></button>`; }).join("")}</section>` : "";
     navigation.innerHTML = pinnedMarkup + visibleGroups.map((group) => {
@@ -5861,7 +5862,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", "chat-ai": "Chat AI", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "16 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", draw: "Vẽ", "chat-ai": "Chat AI", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "16 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     crumbLabels["social-media-tools"] = "Công cụ truyền thông xã hội";
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
@@ -5906,6 +5907,7 @@ function initAppShell() {
     english: "Đang nạp bài học và tiến độ HH English...",
     japanese: "Đang nạp Từ điển, Kanji, ngữ pháp và lộ trình JLPT...",
     fortune: "Đang mở không gian Tarot, cung hoàng đạo và nhật ký suy ngẫm...",
+    draw: "Đang mở Silk Studio và chuẩn bị canvas ánh sáng đối xứng...",
     "chat-ai": "Đang khởi tạo HH Intelligence, lịch sử hội thoại và công cụ đa phương thức...",
     system: "Đang kiểm tra cấu hình và dịch vụ hệ thống...",
     support: "Đang mở trung tâm hỗ trợ và thanh toán an toàn..."
@@ -6055,6 +6057,7 @@ function initAppShell() {
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
     document.body.classList.toggle("app-japanese-route", route === "/japanese" || route.startsWith("/japanese/"));
     document.body.classList.toggle("app-fortune-route", route === "/fortune" || route.startsWith("/fortune/"));
+    document.body.classList.toggle("app-draw-route", route === "/draw" || route.startsWith("/draw/"));
     document.body.classList.toggle("app-chat-ai-route", route === "/chat-ai" || route.startsWith("/chat-ai/"));
     document.body.classList.toggle("app-account-center-route", route.startsWith("/settings/account") || route === "/settings/user-dashboard" || route === "/settings/security-center");
     document.body.classList.toggle("app-settings-route", route === "/settings");
@@ -6086,6 +6089,7 @@ function initAppShell() {
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     if (route !== "/japanese" && !route.startsWith("/japanese/")) window.HHJapanese?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
+    if (route !== "/draw" && !route.startsWith("/draw/")) window.HHDrawStudio?.unmount?.();
       if (route !== "/chat-ai" && !route.startsWith("/chat-ai/")) window.HHChatAI?.unmount?.();
       if (!route.startsWith("/settings/account") && route !== "/settings/user-dashboard" && route !== "/settings/security-center") window.HHAccountCenter?.unmount?.();
     if (route !== "/settings") window.HHSettingsStudio?.unmount?.();
@@ -6212,6 +6216,17 @@ function initAppShell() {
         runAI: (request) => creativeAIRequest("ai-center", JSON.stringify(request), request?.task || "japanese-learning", { source: "hh-japanese" })
       });
       else mountSimpleView("HH Japanese", "Đang tải Từ điển, Kanji và lộ trình JLPT...", "");
+    } else if (route === "/draw" || route.startsWith("/draw/")) {
+      updatePageHeader("Vẽ · Silk Studio", "Dệt ánh sáng tương tác bằng đối xứng quay, phản chiếu, xoáy hướng tâm và bảng màu hòa trộn ngay trên trình duyệt.", route);
+      pageActions.innerHTML = `<button type="button" data-draw-global-undo>Hoàn tác</button><button type="button" data-draw-global-fullscreen>Toàn màn hình</button><button class="app-primary-action" type="button" data-draw-global-export>Tải ảnh</button>`;
+      workspace.innerHTML = '<div data-draw-studio-host></div>';
+      if (window.HHDrawStudio?.mount) {
+        window.HHDrawStudio.mount(workspace.firstElementChild, { currentUser: readCurrentAuthUser() });
+        pageActions.querySelector("[data-draw-global-undo]")?.addEventListener("click", () => workspace.querySelector("[data-draw-undo]")?.click());
+        pageActions.querySelector("[data-draw-global-fullscreen]")?.addEventListener("click", () => workspace.querySelector("[data-draw-fullscreen]")?.click());
+        pageActions.querySelector("[data-draw-global-export]")?.addEventListener("click", () => workspace.querySelector("[data-draw-export]")?.click());
+      } else mountSimpleView("Vẽ · Silk Studio", "Đang chuẩn bị canvas và engine ánh sáng...", "");
+      remember("draw");
     } else if (route === "/fortune" || route.startsWith("/fortune/")) {
       updatePageHeader("Xem bói", "Tarot nguyên bản, cung hoàng đạo, con giáp, thần số học, Kinh Dịch và nhật ký riêng tư dành cho giải trí, tự chiêm nghiệm.", route);
       pageActions.innerHTML = `<button type="button" data-app-route="/fortune/tarot">Rút Tarot</button><button type="button" data-app-route="/fortune/journal">Nhật ký</button><button class="app-primary-action" type="button" data-app-route="/fortune/today">Hôm nay</button>`;
@@ -6645,6 +6660,13 @@ function initAppShell() {
     ];
     modules.unshift(
       ...comicMotion,
+      {
+        type: "Sáng tạo",
+        title: "Vẽ · Silk Studio",
+        description: "Vẽ ánh sáng đối xứng theo chuyển động với phản chiếu, xoáy hướng tâm, phối màu, preset Mandala và xuất ảnh độ phân giải cao.",
+        route: "/draw",
+        key: "vẽ draw silk studio weavesilk ánh sáng đối xứng symmetry mirror spiral mandala kaleidoscope aurora neon canvas png webp jpeg"
+      },
       {
         type: "Bản quyền",
         title: "Bản quyền & giấy phép",
