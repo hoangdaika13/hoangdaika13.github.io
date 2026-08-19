@@ -5,7 +5,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createDrawStudio(globalScope) {
   "use strict";
 
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.0";
   const STORAGE_SCHEMA = "hh.draw.studio.v1";
   const MAX_STROKES = 120;
   const MAX_POINTS_PER_STROKE = 1400;
@@ -27,6 +27,7 @@
     brushSize: 1.35,
     glow: 22,
     flow: 0.7,
+    quality: "auto",
     colorA: "#45d9ff",
     colorB: "#bd65ff",
     autoHue: false,
@@ -36,7 +37,15 @@
     exportFormat: "png"
   });
 
+  const QUALITY_PROFILES = Object.freeze({
+    quality: Object.freeze({ id: "quality", fibers: 5, linkOffsets: [5, 10, 15, 20], blur: 1 }),
+    balanced: Object.freeze({ id: "balanced", fibers: 3, linkOffsets: [7, 14], blur: 0.72 }),
+    performance: Object.freeze({ id: "performance", fibers: 1, linkOffsets: [12], blur: 0.4 })
+  });
+
   let runtime = null;
+  const transformCache = new Map();
+  const colorCache = new Map();
 
   function clamp(value, min, max, fallback = min) {
     const number = Number(value);
@@ -74,6 +83,7 @@
       brushSize: clamp(input.brushSize, 0.5, 8, DEFAULT_SETTINGS.brushSize),
       glow: clamp(input.glow, 0, 48, DEFAULT_SETTINGS.glow),
       flow: clamp(input.flow, 0.15, 1, DEFAULT_SETTINGS.flow),
+      quality: ["auto", "quality", "balanced", "performance"].includes(input.quality) ? input.quality : DEFAULT_SETTINGS.quality,
       colorA: normalizeHex(input.colorA, DEFAULT_SETTINGS.colorA),
       colorB: normalizeHex(input.colorB, DEFAULT_SETTINGS.colorB),
       autoHue: Boolean(input.autoHue),
@@ -82,6 +92,44 @@
       exportScale: Math.round(clamp(input.exportScale, 1, 4, DEFAULT_SETTINGS.exportScale)),
       exportFormat: ["png", "webp", "jpeg"].includes(input.exportFormat) ? input.exportFormat : DEFAULT_SETTINGS.exportFormat
     };
+  }
+
+  function resolveQualityProfile(mode = "auto", capabilities = {}) {
+    if (QUALITY_PROFILES[mode]) return QUALITY_PROFILES[mode];
+    const memory = Number(capabilities.deviceMemory);
+    const cores = Number(capabilities.hardwareConcurrency);
+    if ((Number.isFinite(memory) && memory <= 4) || (Number.isFinite(cores) && cores <= 4)) return QUALITY_PROFILES.performance;
+    return QUALITY_PROFILES.balanced;
+  }
+
+  function transformKey(settings) {
+    return `${settings.symmetry}|${settings.mirror ? 1 : 0}|${settings.spiral ? settings.spiralCopies : 1}`;
+  }
+
+  function transformsForSettings(settings) {
+    const key = transformKey(settings);
+    if (transformCache.has(key)) return transformCache.get(key);
+    const transforms = [];
+    const spiralCount = settings.spiral ? settings.spiralCopies : 1;
+    for (let spiralIndex = 0; spiralIndex < spiralCount; spiralIndex += 1) {
+      const scale = spiralIndex ? Math.pow(0.76, spiralIndex) : 1;
+      const spiralAngle = spiralIndex ? spiralIndex * 0.16 : 0;
+      for (let index = 0; index < settings.symmetry; index += 1) {
+        const angle = (Math.PI * 2 * index) / settings.symmetry + spiralAngle;
+        const cos = Math.cos(angle) * scale;
+        const sin = Math.sin(angle) * scale;
+        transforms.push({ a: cos, b: -sin, c: sin, d: cos, mirrored: false, rotation: index, spiral: spiralIndex });
+        if (settings.mirror) transforms.push({ a: -cos, b: -sin, c: -sin, d: cos, mirrored: true, rotation: index, spiral: spiralIndex });
+      }
+    }
+    transformCache.set(key, transforms);
+    return transforms;
+  }
+
+  function transformPoint(point, transform) {
+    const dx = point.x - 0.5;
+    const dy = point.y - 0.5;
+    return { x: 0.5 + dx * transform.a + dy * transform.b, y: 0.5 + dx * transform.c + dy * transform.d };
   }
 
   function normalizePoint(point) {
@@ -115,29 +163,7 @@
   function buildSymmetryPoints(point, inputSettings = DEFAULT_SETTINGS) {
     const settings = normalizeSettings(inputSettings);
     const source = normalizePoint(point);
-    const dx = source.x - 0.5;
-    const dy = source.y - 0.5;
-    const variants = [];
-    const spiralCount = settings.spiral ? settings.spiralCopies : 1;
-    for (let spiralIndex = 0; spiralIndex < spiralCount; spiralIndex += 1) {
-      const scale = spiralIndex ? Math.pow(0.76, spiralIndex) : 1;
-      const spiralAngle = spiralIndex ? spiralIndex * 0.16 : 0;
-      for (let index = 0; index < settings.symmetry; index += 1) {
-        const angle = (Math.PI * 2 * index) / settings.symmetry + spiralAngle;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        const push = (x, y, mirrored) => variants.push({
-          x: 0.5 + (x * cos - y * sin) * scale,
-          y: 0.5 + (x * sin + y * cos) * scale,
-          mirrored,
-          rotation: index,
-          spiral: spiralIndex
-        });
-        push(dx, dy, false);
-        if (settings.mirror) push(-dx, dy, true);
-      }
-    }
-    return variants;
+    return transformsForSettings(settings).map((transform) => ({ ...transformPoint(source, transform), mirrored: transform.mirrored, rotation: transform.rotation, spiral: transform.spiral }));
   }
 
   function escapeHtml(value) {
@@ -190,7 +216,7 @@
           <section><h3>Phong cách</h3><div class="draw-preset-grid">${presetMarkup(settings)}</div></section>
           <section><h3>Màu ánh sáng</h3><div class="draw-palette">${paletteMarkup(settings)}</div><div class="draw-color-mix"><label><span>Màu chính</span><input type="color" data-draw-color-a value="${settings.colorA}"></label><i>＋</i><label><span>Màu hòa</span><input type="color" data-draw-color-b value="${settings.colorB}"></label><b data-draw-mix-preview style="--mix:${mixHex(settings.colorA, settings.colorB)}"></b></div><label class="draw-switch"><span><strong>Tự chuyển sắc</strong><small>Màu thay đổi theo chiều dài nét</small></span><input type="checkbox" data-draw-setting="autoHue" ${settings.autoHue ? "checked" : ""}><i></i></label></section>
           <section><h3>Đối xứng</h3><label class="draw-range"><span><b>Đối xứng quay</b><output data-draw-output="symmetry">${settings.symmetry} nhánh</output></span><input type="range" min="1" max="12" step="1" value="${settings.symmetry}" data-draw-setting="symmetry"></label><label class="draw-switch"><span><strong>Phản chiếu qua tâm</strong><small>Nhân đôi nét qua mỗi trục</small></span><input type="checkbox" data-draw-setting="mirror" ${settings.mirror ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Xoáy vào trung tâm</strong><small>Tạo các lớp thu nhỏ hướng tâm</small></span><input type="checkbox" data-draw-setting="spiral" ${settings.spiral ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Hiện đường dẫn</strong><small>Lưới chỉ dẫn không đi vào ảnh xuất</small></span><input type="checkbox" data-draw-setting="guides" ${settings.guides ? "checked" : ""}><i></i></label></section>
-          <section><h3>Nét vẽ</h3><label class="draw-range"><span><b>Độ dày</b><output data-draw-output="brushSize">${settings.brushSize.toFixed(1)} px</output></span><input type="range" min="0.5" max="8" step="0.1" value="${settings.brushSize}" data-draw-setting="brushSize"></label><label class="draw-range"><span><b>Hào quang</b><output data-draw-output="glow">${Math.round(settings.glow)}%</output></span><input type="range" min="0" max="48" step="1" value="${settings.glow}" data-draw-setting="glow"></label><label class="draw-range"><span><b>Độ mềm</b><output data-draw-output="flow">${Math.round(settings.flow * 100)}%</output></span><input type="range" min="0.15" max="1" step="0.01" value="${settings.flow}" data-draw-setting="flow"></label></section>
+          <section><h3>Nét vẽ & hiệu năng</h3><label class="draw-select-row"><span><strong>Chất lượng realtime</strong><small>Tự điều chỉnh để nét luôn bám sát con trỏ</small></span><select data-draw-setting="quality"><option value="auto"${settings.quality === "auto" ? " selected" : ""}>Tự động thông minh</option><option value="quality"${settings.quality === "quality" ? " selected" : ""}>Chất lượng cao</option><option value="balanced"${settings.quality === "balanced" ? " selected" : ""}>Cân bằng</option><option value="performance"${settings.quality === "performance" ? " selected" : ""}>Ưu tiên tốc độ</option></select></label><label class="draw-range"><span><b>Độ dày</b><output data-draw-output="brushSize">${settings.brushSize.toFixed(1)} px</output></span><input type="range" min="0.5" max="8" step="0.1" value="${settings.brushSize}" data-draw-setting="brushSize"></label><label class="draw-range"><span><b>Hào quang</b><output data-draw-output="glow">${Math.round(settings.glow)}%</output></span><input type="range" min="0" max="48" step="1" value="${settings.glow}" data-draw-setting="glow"></label><label class="draw-range"><span><b>Độ mềm</b><output data-draw-output="flow">${Math.round(settings.flow * 100)}%</output></span><input type="range" min="0.15" max="1" step="0.01" value="${settings.flow}" data-draw-setting="flow"></label></section>
           <section><h3>Xuất ảnh</h3><div class="draw-inline"><label><span>Nền</span><select data-draw-setting="background"><option value="cosmic"${settings.background === "cosmic" ? " selected" : ""}>Vũ trụ</option><option value="midnight"${settings.background === "midnight" ? " selected" : ""}>Xanh đêm</option><option value="black"${settings.background === "black" ? " selected" : ""}>Đen</option><option value="transparent"${settings.background === "transparent" ? " selected" : ""}>Trong suốt</option></select></label><label><span>Định dạng</span><select data-draw-setting="exportFormat"><option value="png"${settings.exportFormat === "png" ? " selected" : ""}>PNG</option><option value="webp"${settings.exportFormat === "webp" ? " selected" : ""}>WebP</option><option value="jpeg"${settings.exportFormat === "jpeg" ? " selected" : ""}>JPEG</option></select></label><label><span>Độ phân giải</span><select data-draw-setting="exportScale"><option value="1"${settings.exportScale === 1 ? " selected" : ""}>1×</option><option value="2"${settings.exportScale === 2 ? " selected" : ""}>2×</option><option value="4"${settings.exportScale === 4 ? " selected" : ""}>4×</option></select></label></div><button type="button" class="draw-wide" data-draw-project-export>Xuất project JSON</button><label class="draw-import"><input type="file" accept="application/json,.json" data-draw-project-import><span>Nhập project JSON</span></label></section>
         </aside>
         <main class="draw-canvas-stage">
@@ -198,7 +224,7 @@
           <canvas class="draw-guide-canvas" data-draw-guides aria-hidden="true"></canvas>
           <div class="draw-empty" data-draw-empty><i>✦</i><strong>Chạm và kéo để dệt ánh sáng</strong><span>Tốc độ, hướng nét và đối xứng tạo nên hình ảnh riêng của bạn.</span></div>
           <button type="button" class="draw-panel-toggle" data-draw-panel-open aria-label="Mở bảng điều khiển">☰ <span>Điều khiển</span></button>
-          <div class="draw-canvas-status" aria-live="polite"><span><i></i><b data-draw-status>Đã sẵn sàng</b></span><small data-draw-stats>${project.strokes.length} nét · tự lưu trên thiết bị</small></div>
+          <div class="draw-canvas-status" aria-live="polite"><span><i></i><b data-draw-status>Đã sẵn sàng</b></span><small data-draw-performance>Auto · Cân bằng</small><small data-draw-stats>${project.strokes.length} nét · tự lưu trên thiết bị</small></div>
           <div class="draw-quickbar">
             <button type="button" data-draw-new title="Tạo bản vẽ mới">＋</button>
             <button type="button" data-draw-undo title="Hoàn tác" disabled>↶</button>
@@ -228,77 +254,93 @@
       return `hsl(${hue} 96% 68%)`;
     }
     const wave = (Math.sin(segmentIndex * 0.055) + 1) / 2;
-    return mixHex(stroke.settings.colorA, stroke.settings.colorB, wave);
+    const bucket = Math.round(wave * 63);
+    const key = `${stroke.settings.colorA}|${stroke.settings.colorB}|${bucket}`;
+    if (!colorCache.has(key)) {
+      if (colorCache.size > 512) colorCache.clear();
+      colorCache.set(key, mixHex(stroke.settings.colorA, stroke.settings.colorB, bucket / 63));
+    }
+    return colorCache.get(key);
   }
 
-  function drawFiberSegment(ctx, previous, current, stroke, segmentIndex, width, height, scale = 1) {
-    const starts = buildSymmetryPoints(previous, stroke.settings);
-    const ends = buildSymmetryPoints(current, stroke.settings);
+  function profileFor(targetRuntime, settings, forceQuality = false) {
+    if (forceQuality) return QUALITY_PROFILES.quality;
+    if (settings.quality !== "auto") return resolveQualityProfile(settings.quality);
+    return QUALITY_PROFILES[targetRuntime?.liveQuality] || QUALITY_PROFILES.balanced;
+  }
+
+  function drawFiberSegment(ctx, previous, current, stroke, segmentIndex, width, height, scale = 1, qualityProfile = QUALITY_PROFILES.balanced) {
+    const transforms = transformsForSettings(stroke.settings);
     const color = segmentColor(stroke, segmentIndex);
     const speed = Math.hypot((current.x - previous.x) * width, (current.y - previous.y) * height);
     const pressure = current.pressure || 0.5;
     const baseWidth = stroke.settings.brushSize * (0.72 + pressure * 0.56) * scale;
-    const fiberCount = stroke.settings.brushSize > 3 ? 5 : 4;
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.shadowColor = color;
-    ctx.shadowBlur = stroke.settings.glow * scale;
-    for (let index = 0; index < Math.min(starts.length, ends.length); index += 1) {
-      const start = starts[index];
-      const end = ends[index];
+    const fiberCount = Math.min(qualityProfile.fibers + (stroke.settings.brushSize > 3 ? 1 : 0), 5);
+    const bend = Math.sin(segmentIndex * 0.32) * 2.2;
+    const geometry = transforms.map((transform) => {
+      const start = transformPoint(previous, transform);
+      const end = transformPoint(current, transform);
       const sx = start.x * width;
       const sy = start.y * height;
       const ex = end.x * width;
       const ey = end.y * height;
       const length = Math.max(0.001, Math.hypot(ex - sx, ey - sy));
-      const nx = -(ey - sy) / length;
-      const ny = (ex - sx) / length;
-      ctx.strokeStyle = color;
-      ctx.globalAlpha = Math.min(0.58, (0.18 + stroke.settings.flow * 0.3) * Math.max(0.55, 1 - speed / 85));
-      ctx.lineWidth = baseWidth;
-      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo((sx + ex) / 2 + nx * Math.sin(segmentIndex * 0.32) * 2.2, (sy + ey) / 2 + ny * Math.sin(segmentIndex * 0.32) * 2.2, ex, ey); ctx.stroke();
-      ctx.shadowBlur = stroke.settings.glow * 0.46 * scale;
-      for (let fiber = 0; fiber < fiberCount; fiber += 1) {
+      return { sx, sy, ex, ey, nx: -(ey - sy) / length, ny: (ex - sx) / length };
+    });
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = stroke.settings.glow * scale * qualityProfile.blur;
+    ctx.globalAlpha = Math.min(0.58, (0.18 + stroke.settings.flow * 0.3) * Math.max(0.55, 1 - speed / 85));
+    ctx.lineWidth = baseWidth;
+    ctx.beginPath();
+    geometry.forEach(({ sx, sy, ex, ey, nx, ny }) => { ctx.moveTo(sx, sy); ctx.quadraticCurveTo((sx + ex) / 2 + nx * bend, (sy + ey) / 2 + ny * bend, ex, ey); });
+    ctx.stroke();
+    ctx.shadowBlur = stroke.settings.glow * 0.46 * scale * qualityProfile.blur;
+    for (let fiber = 0; fiber < fiberCount; fiber += 1) {
+      ctx.globalAlpha = 0.07 + stroke.settings.flow * 0.075;
+      ctx.lineWidth = Math.max(0.25, baseWidth * (0.2 + fiber * 0.035));
+      ctx.beginPath();
+      geometry.forEach(({ sx, sy, ex, ey, nx, ny }) => {
         const offset = (fiber - (fiberCount - 1) / 2) * (0.72 + baseWidth * 0.34) + Math.sin((segmentIndex + fiber) * 0.47) * 0.65;
-        ctx.globalAlpha = 0.07 + stroke.settings.flow * 0.075;
-        ctx.lineWidth = Math.max(0.25, baseWidth * (0.2 + fiber * 0.035));
-        ctx.beginPath(); ctx.moveTo(sx + nx * offset, sy + ny * offset); ctx.quadraticCurveTo((sx + ex) / 2 - nx * offset * 0.45, (sy + ey) / 2 - ny * offset * 0.45, ex + nx * offset, ey + ny * offset); ctx.stroke();
-      }
+        ctx.moveTo(sx + nx * offset, sy + ny * offset); ctx.quadraticCurveTo((sx + ex) / 2 - nx * offset * 0.45, (sy + ey) / 2 - ny * offset * 0.45, ex + nx * offset, ey + ny * offset);
+      });
+      ctx.stroke();
     }
     ctx.restore();
   }
 
-  function drawSilkLinks(ctx, stroke, segmentIndex, width, height, scale = 1) {
+  function drawSilkLinks(ctx, stroke, segmentIndex, width, height, scale = 1, qualityProfile = QUALITY_PROFILES.balanced) {
     const current = stroke.points[segmentIndex];
     if (!current || segmentIndex < 5) return;
     const color = segmentColor(stroke, segmentIndex);
+    const transforms = transformsForSettings(stroke.settings);
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     ctx.strokeStyle = color;
     ctx.lineWidth = Math.max(0.2, stroke.settings.brushSize * 0.22 * scale);
     ctx.globalAlpha = 0.035 + stroke.settings.flow * 0.045;
     ctx.shadowColor = color;
-    ctx.shadowBlur = stroke.settings.glow * 0.3 * scale;
-    for (let offset = 5; offset <= 20; offset += 5) {
+    ctx.shadowBlur = stroke.settings.glow * 0.3 * scale * qualityProfile.blur;
+    for (const offset of qualityProfile.linkOffsets) {
       const older = stroke.points[segmentIndex - offset];
       if (!older) continue;
       const distance = Math.hypot((current.x - older.x) * width, (current.y - older.y) * height);
       if (distance > Math.min(width, height) * 0.22) continue;
-      const starts = buildSymmetryPoints(older, stroke.settings);
-      const ends = buildSymmetryPoints(current, stroke.settings);
-      for (let index = 0; index < Math.min(starts.length, ends.length); index += 1) {
-        ctx.beginPath(); ctx.moveTo(starts[index].x * width, starts[index].y * height); ctx.lineTo(ends[index].x * width, ends[index].y * height); ctx.stroke();
-      }
+      ctx.beginPath();
+      transforms.forEach((transform) => { const start = transformPoint(older, transform); const end = transformPoint(current, transform); ctx.moveTo(start.x * width, start.y * height); ctx.lineTo(end.x * width, end.y * height); });
+      ctx.stroke();
     }
     ctx.restore();
   }
 
-  function renderStroke(ctx, stroke, width, height, scale = 1, startAt = 1) {
+  function renderStroke(ctx, stroke, width, height, scale = 1, qualityProfile = QUALITY_PROFILES.balanced, startAt = 1) {
     for (let index = Math.max(1, startAt); index < stroke.points.length; index += 1) {
-      drawFiberSegment(ctx, stroke.points[index - 1], stroke.points[index], stroke, index, width, height, scale);
-      drawSilkLinks(ctx, stroke, index, width, height, scale);
+      drawFiberSegment(ctx, stroke.points[index - 1], stroke.points[index], stroke, index, width, height, scale, qualityProfile);
+      drawSilkLinks(ctx, stroke, index, width, height, scale, qualityProfile);
     }
   }
 
@@ -313,7 +355,7 @@
     ctx.setTransform(targetCanvas ? 1 : targetRuntime.dpr, 0, 0, targetCanvas ? 1 : targetRuntime.dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
     if (includeBackground) backgroundFill(ctx, width, height, targetRuntime.project.settings.background);
-    targetRuntime.project.strokes.forEach((stroke) => renderStroke(ctx, stroke, width, height, scale));
+    targetRuntime.project.strokes.forEach((stroke) => renderStroke(ctx, stroke, width, height, scale, profileFor(targetRuntime, stroke.settings, Boolean(targetCanvas))));
     ctx.restore();
   }
 
@@ -347,10 +389,19 @@
     const dpr = Math.min(2, Math.max(1, globalScope.devicePixelRatio || 1));
     const width = Math.max(320, Math.round(rect.width));
     const height = Math.max(320, Math.round(rect.height));
+    const pixelWidth = Math.round(width * dpr);
+    const pixelHeight = Math.round(height * dpr);
+    if (targetRuntime.dpr === dpr && targetRuntime.canvas.width === pixelWidth && targetRuntime.canvas.height === pixelHeight) return;
     targetRuntime.dpr = dpr;
-    [targetRuntime.canvas, targetRuntime.guideCanvas].forEach((canvas) => { canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr); });
+    [targetRuntime.canvas, targetRuntime.guideCanvas].forEach((canvas) => { canvas.width = pixelWidth; canvas.height = pixelHeight; });
     renderAll(targetRuntime);
     drawGuides(targetRuntime);
+  }
+
+  function scheduleResize(targetRuntime = runtime) {
+    if (!targetRuntime) return;
+    globalScope.cancelAnimationFrame?.(targetRuntime.resizeFrame);
+    targetRuntime.resizeFrame = globalScope.requestAnimationFrame?.(() => { targetRuntime.resizeFrame = 0; resizeCanvases(targetRuntime); });
   }
 
   function updateUi(targetRuntime = runtime) {
@@ -362,6 +413,12 @@
     if (empty) empty.hidden = Boolean(strokes || targetRuntime.activeStroke);
     const stats = targetRuntime.root.querySelector("[data-draw-stats]");
     if (stats) stats.textContent = `${strokes} nét · ${targetRuntime.saved ? "đã tự lưu" : "đang lưu"} trên thiết bị`;
+    const performance = targetRuntime.root.querySelector("[data-draw-performance]");
+    if (performance) {
+      const labels = { quality: "Chất lượng cao", balanced: "Cân bằng", performance: "Ưu tiên tốc độ" };
+      const selected = targetRuntime.project.settings.quality;
+      performance.textContent = selected === "auto" ? `Auto · ${labels[targetRuntime.liveQuality] || "Cân bằng"}` : labels[selected];
+    }
   }
 
   function announce(message, targetRuntime = runtime) {
@@ -391,8 +448,8 @@
     }, 280);
   }
 
-  function pointerPoint(event, targetRuntime = runtime) {
-    const rect = targetRuntime.canvas.getBoundingClientRect();
+  function pointerPoint(event, targetRuntime = runtime, inputRect = null) {
+    const rect = inputRect || targetRuntime.drawRect || targetRuntime.canvas.getBoundingClientRect();
     return normalizePoint({
       x: (event.clientX - rect.left) / rect.width,
       y: (event.clientY - rect.top) / rect.height,
@@ -402,10 +459,12 @@
   }
 
   function beginStroke(event, targetRuntime = runtime) {
-    if (!targetRuntime || event.button > 0) return;
+    if (!targetRuntime || targetRuntime.drawing || event.button > 0) return;
     event.preventDefault();
     targetRuntime.canvas.setPointerCapture?.(event.pointerId);
-    const point = pointerPoint(event, targetRuntime);
+    targetRuntime.drawRect = targetRuntime.canvas.getBoundingClientRect();
+    targetRuntime.pointQueue.length = 0;
+    const point = pointerPoint(event, targetRuntime, targetRuntime.drawRect);
     targetRuntime.activeStroke = { id: `stroke-${Date.now()}-${Math.round(Math.random() * 1e5)}`, settings: normalizeSettings(targetRuntime.project.settings), points: [point] };
     targetRuntime.redo.length = 0;
     targetRuntime.drawing = true;
@@ -414,32 +473,75 @@
     updateUi(targetRuntime);
   }
 
+  function updateAdaptiveQuality(targetRuntime, cost) {
+    targetRuntime.paintCost = targetRuntime.paintCost ? targetRuntime.paintCost * 0.82 + cost * 0.18 : cost;
+    if (targetRuntime.project.settings.quality !== "auto") return;
+    if (targetRuntime.paintCost > 10 && targetRuntime.liveQuality !== "performance") {
+      targetRuntime.liveQuality = "performance";
+      targetRuntime.fastFrames = 0;
+      updateUi(targetRuntime);
+      return;
+    }
+    targetRuntime.fastFrames = targetRuntime.paintCost < 4.5 ? targetRuntime.fastFrames + 1 : 0;
+    if (targetRuntime.liveQuality === "performance" && targetRuntime.fastFrames > 45) {
+      targetRuntime.liveQuality = "balanced";
+      targetRuntime.fastFrames = 0;
+      updateUi(targetRuntime);
+    }
+  }
+
+  function flushPointQueue(targetRuntime = runtime) {
+    if (!targetRuntime?.drawing || !targetRuntime.activeStroke || !targetRuntime.pointQueue.length) return;
+    const startedAt = globalScope.performance?.now?.() || Date.now();
+    const points = targetRuntime.pointQueue.splice(0);
+    const stroke = targetRuntime.activeStroke;
+    const rect = targetRuntime.drawRect || targetRuntime.canvas.getBoundingClientRect();
+    const ctx = targetRuntime.canvas.getContext("2d");
+    const qualityProfile = profileFor(targetRuntime, stroke.settings);
+    ctx.setTransform(targetRuntime.dpr, 0, 0, targetRuntime.dpr, 0, 0);
+    for (const rawPoint of points) {
+      let previous = stroke.points.at(-1);
+      const distance = Math.hypot((rawPoint.x - previous.x) * rect.width, (rawPoint.y - previous.y) * rect.height);
+      if (distance < 1.2) continue;
+      const subdivisions = Math.min(3, Math.max(1, Math.ceil(distance / 10)));
+      for (let step = 1; step <= subdivisions; step += 1) {
+        if (stroke.points.length >= MAX_POINTS_PER_STROKE) break;
+        const amount = step / subdivisions;
+        const point = normalizePoint({
+          x: previous.x + (rawPoint.x - previous.x) * amount,
+          y: previous.y + (rawPoint.y - previous.y) * amount,
+          pressure: previous.pressure + (rawPoint.pressure - previous.pressure) * amount,
+          time: previous.time + (rawPoint.time - previous.time) * amount
+        });
+        stroke.points.push(point);
+        const segmentIndex = stroke.points.length - 1;
+        drawFiberSegment(ctx, stroke.points[segmentIndex - 1], point, stroke, segmentIndex, rect.width, rect.height, 1, qualityProfile);
+        drawSilkLinks(ctx, stroke, segmentIndex, rect.width, rect.height, 1, qualityProfile);
+        previous = point;
+      }
+    }
+    updateAdaptiveQuality(targetRuntime, (globalScope.performance?.now?.() || Date.now()) - startedAt);
+  }
+
   function appendPoint(event, targetRuntime = runtime) {
     if (!targetRuntime?.drawing || !targetRuntime.activeStroke) return;
     const coalescedEvents = event.getCoalescedEvents?.();
     const events = coalescedEvents?.length ? coalescedEvents : [event];
-    for (const item of events) {
-      const point = pointerPoint(item, targetRuntime);
-      const stroke = targetRuntime.activeStroke;
-      const previous = stroke.points.at(-1);
-      const rect = targetRuntime.canvas.getBoundingClientRect();
-      if (Math.hypot((point.x - previous.x) * rect.width, (point.y - previous.y) * rect.height) < 1.35) continue;
-      if (stroke.points.length >= MAX_POINTS_PER_STROKE) break;
-      stroke.points.push(point);
-      const ctx = targetRuntime.canvas.getContext("2d");
-      ctx.setTransform(targetRuntime.dpr, 0, 0, targetRuntime.dpr, 0, 0);
-      const segmentIndex = stroke.points.length - 1;
-      drawFiberSegment(ctx, previous, point, stroke, segmentIndex, rect.width, rect.height);
-      drawSilkLinks(ctx, stroke, segmentIndex, rect.width, rect.height);
-    }
+    events.forEach((item) => targetRuntime.pointQueue.push(pointerPoint(item, targetRuntime, targetRuntime.drawRect)));
+    if (targetRuntime.pointQueue.length > 192) targetRuntime.pointQueue.splice(0, targetRuntime.pointQueue.length - 192);
+    if (!targetRuntime.drawFrame) targetRuntime.drawFrame = globalScope.requestAnimationFrame?.(() => { targetRuntime.drawFrame = 0; flushPointQueue(targetRuntime); });
   }
 
   function finishStroke(event, targetRuntime = runtime) {
     if (!targetRuntime?.drawing) return;
-    targetRuntime.canvas.releasePointerCapture?.(event.pointerId);
+    globalScope.cancelAnimationFrame?.(targetRuntime.drawFrame);
+    targetRuntime.drawFrame = 0;
+    flushPointQueue(targetRuntime);
+    try { if (Number(event.pointerId) >= 0) targetRuntime.canvas.releasePointerCapture?.(event.pointerId); } catch { /* Pointer capture may already be released by the browser. */ }
     const stroke = targetRuntime.activeStroke;
     targetRuntime.drawing = false;
     targetRuntime.activeStroke = null;
+    targetRuntime.drawRect = null;
     targetRuntime.root.classList.remove("is-drawing");
     if (stroke?.points.length > 1) {
       targetRuntime.project.strokes.push(stroke);
@@ -525,6 +627,9 @@
       const project = normalizeProject(JSON.parse(await file.text()));
       targetRuntime.project = project;
       targetRuntime.redo = [];
+      targetRuntime.liveQuality = project.settings.quality === "auto" ? resolveQualityProfile("auto", { deviceMemory: globalScope.navigator?.deviceMemory, hardwareConcurrency: globalScope.navigator?.hardwareConcurrency }).id : project.settings.quality;
+      targetRuntime.paintCost = 0;
+      targetRuntime.fastFrames = 0;
       syncControls(targetRuntime);
       renderAll(targetRuntime);
       drawGuides(targetRuntime);
@@ -539,7 +644,7 @@
     targetRuntime.root.dataset.background = settings.background;
     targetRuntime.root.querySelectorAll("[data-draw-preset]").forEach((button) => { const active = button.dataset.drawPreset === settings.preset; button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); });
     targetRuntime.root.querySelectorAll("[data-draw-color]").forEach((button) => { const active = button.dataset.drawColor.toLowerCase() === settings.colorA; button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); });
-    ["symmetry", "brushSize", "glow", "flow", "background", "exportFormat", "exportScale", "colorA", "colorB"].forEach((key) => {
+    ["symmetry", "brushSize", "glow", "flow", "quality", "background", "exportFormat", "exportScale", "colorA", "colorB"].forEach((key) => {
       const selector = key === "colorA" ? "[data-draw-color-a]" : key === "colorB" ? "[data-draw-color-b]" : `[data-draw-setting=\"${key}\"]`;
       const input = targetRuntime.root.querySelector(selector); if (input) input.value = settings[key];
     });
@@ -568,6 +673,11 @@
     const numbers = new Set(["symmetry", "brushSize", "glow", "flow", "exportScale"]);
     const value = booleans.has(key) ? input.checked : numbers.has(key) ? Number(input.value) : input.value;
     targetRuntime.project.settings = normalizeSettings({ ...targetRuntime.project.settings, [key]: value, preset: targetRuntime.project.settings.preset });
+    if (key === "quality") {
+      targetRuntime.liveQuality = value === "auto" ? resolveQualityProfile("auto", { deviceMemory: globalScope.navigator?.deviceMemory, hardwareConcurrency: globalScope.navigator?.hardwareConcurrency }).id : value;
+      targetRuntime.paintCost = 0;
+      targetRuntime.fastFrames = 0;
+    }
     syncControls(targetRuntime);
     if (["symmetry", "guides", "mirror", "spiral"].includes(key)) drawGuides(targetRuntime);
     scheduleSave(targetRuntime);
@@ -614,7 +724,8 @@
     const studio = root.firstElementChild;
     const canvas = studio.querySelector("[data-draw-canvas]");
     const guideCanvas = studio.querySelector("[data-draw-guides]");
-    runtime = { host: root, root: studio, canvas, guideCanvas, project, storageKey, redo: [], activeStroke: null, drawing: false, dpr: 1, saved: true, resizeObserver: null, saveTimer: 0, toastTimer: 0 };
+    const initialQuality = project.settings.quality === "auto" ? resolveQualityProfile("auto", { deviceMemory: globalScope.navigator?.deviceMemory, hardwareConcurrency: globalScope.navigator?.hardwareConcurrency }).id : project.settings.quality;
+    runtime = { host: root, root: studio, canvas, guideCanvas, project, storageKey, redo: [], activeStroke: null, drawing: false, dpr: 1, saved: true, resizeObserver: null, resizeFrame: 0, drawFrame: 0, pointQueue: [], drawRect: null, paintCost: 0, fastFrames: 0, liveQuality: initialQuality, saveTimer: 0, toastTimer: 0 };
     runtime.onClick = (event) => handleClick(event, runtime);
     runtime.onChange = (event) => handleChange(event, runtime);
     runtime.onInput = (event) => { if (event.target.matches("input[type=range][data-draw-setting]")) updateSetting(event.target, runtime); };
@@ -632,7 +743,7 @@
     canvas.addEventListener("pointerup", runtime.onPointerUp);
     canvas.addEventListener("pointercancel", runtime.onPointerUp);
     globalScope.document.addEventListener("visibilitychange", runtime.onVisibility);
-    runtime.resizeObserver = typeof globalScope.ResizeObserver === "function" ? new globalScope.ResizeObserver(() => resizeCanvases(runtime)) : null;
+    runtime.resizeObserver = typeof globalScope.ResizeObserver === "function" ? new globalScope.ResizeObserver(() => scheduleResize(runtime)) : null;
     runtime.resizeObserver?.observe(canvas);
     globalScope.requestAnimationFrame?.(() => { resizeCanvases(runtime); syncControls(runtime); announce("Đã sẵn sàng · kéo để vẽ", runtime); });
     return true;
@@ -642,6 +753,8 @@
     if (!runtime) return;
     globalScope.clearTimeout(runtime.saveTimer);
     globalScope.clearTimeout(runtime.toastTimer);
+    globalScope.cancelAnimationFrame?.(runtime.drawFrame);
+    globalScope.cancelAnimationFrame?.(runtime.resizeFrame);
     runtime.resizeObserver?.disconnect?.();
     runtime.root?.removeEventListener("click", runtime.onClick);
     runtime.root?.removeEventListener("change", runtime.onChange);
@@ -657,8 +770,8 @@
   }
 
   function inspect() {
-    return { version: VERSION, mounted: Boolean(runtime), strokes: runtime?.project.strokes.length || 0, preset: runtime?.project.settings.preset || DEFAULT_SETTINGS.preset };
+    return { version: VERSION, mounted: Boolean(runtime), strokes: runtime?.project.strokes.length || 0, preset: runtime?.project.settings.preset || DEFAULT_SETTINGS.preset, quality: runtime?.project.settings.quality || DEFAULT_SETTINGS.quality };
   }
 
-  return { VERSION, STORAGE_SCHEMA, PALETTE, PRESETS, DEFAULT_SETTINGS, normalizeSettings, normalizeProject, buildSymmetryPoints, mixHex, mount, unmount, inspect };
+  return { VERSION, STORAGE_SCHEMA, PALETTE, PRESETS, DEFAULT_SETTINGS, QUALITY_PROFILES, normalizeSettings, normalizeProject, resolveQualityProfile, buildSymmetryPoints, mixHex, mount, unmount, inspect };
 });

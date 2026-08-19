@@ -17,6 +17,14 @@ test("drawing settings are bounded and keep supported export choices", () => {
   assert.equal(settings.colorB, "#abcdef");
   assert.equal(settings.exportScale, 4);
   assert.equal(settings.exportFormat, "png");
+  assert.equal(settings.quality, "auto");
+});
+
+test("adaptive quality selects a low-latency profile for constrained devices", () => {
+  assert.equal(draw.resolveQualityProfile("auto", { deviceMemory: 2, hardwareConcurrency: 8 }).id, "performance");
+  assert.equal(draw.resolveQualityProfile("auto", { deviceMemory: 8, hardwareConcurrency: 8 }).id, "balanced");
+  assert.equal(draw.resolveQualityProfile("quality", { deviceMemory: 2, hardwareConcurrency: 2 }).id, "quality");
+  assert.ok(draw.QUALITY_PROFILES.performance.fibers < draw.QUALITY_PROFILES.quality.fibers);
 });
 
 test("symmetry engine creates deterministic rotation, mirror and spiral variants", () => {
@@ -58,15 +66,19 @@ test("Draw is a first-class lazy route with a real interactive tool contract", (
   assert.match(client, /id: "draw"[\s\S]*?label: "Vẽ"[\s\S]*?route: "\/draw"/);
   assert.match(client, /window\.HHDrawStudio\?\.mount/);
   assert.match(client, /title: "Vẽ · Silk Studio"[\s\S]*?route: "\/draw"/);
-  assert.match(loader, /draw:\s*\{[\s\S]*?draw-studio\.css\?v=3[\s\S]*?draw-studio\.js\?v=2/);
+  assert.match(loader, /draw:\s*\{[\s\S]*?draw-studio\.css\?v=4[\s\S]*?draw-studio\.js\?v=3/);
   assert.match(loader, /value\.startsWith\("\/draw"\)/);
-  assert.match(worker, /draw-studio\.css\?v=3/);
-  assert.match(worker, /draw-studio\.js\?v=2/);
+  assert.match(worker, /draw-studio\.css\?v=4/);
+  assert.match(worker, /draw-studio\.js\?v=3/);
   assert.match(html, /data-hh-galaxy-key="draw"/);
   assert.match(galaxy, /draw:\s*\{[\s\S]*?route: "#\/draw"/);
-  for (const contract of ["data-draw-canvas", "data-draw-preset", "data-draw-setting=\"symmetry\"", "data-draw-setting=\"mirror\"", "data-draw-setting=\"spiral\"", "data-draw-undo", "data-draw-redo", "data-draw-export", "data-draw-project-export", "data-draw-project-import"]) assert.match(source, new RegExp(contract));
+  for (const contract of ["data-draw-canvas", "data-draw-preset", "data-draw-setting=\"symmetry\"", "data-draw-setting=\"mirror\"", "data-draw-setting=\"spiral\"", "data-draw-setting=\"quality\"", "data-draw-undo", "data-draw-redo", "data-draw-export", "data-draw-project-export", "data-draw-project-import"]) assert.match(source, new RegExp(contract));
   assert.match(source, /pointerdown/);
   assert.match(source, /getCoalescedEvents/);
+  assert.match(source, /coalescedEvents\?\.length/);
+  assert.match(source, /requestAnimationFrame/);
+  assert.match(source, /transformCache/);
+  assert.match(source, /updateAdaptiveQuality/);
   assert.match(source, /globalCompositeOperation = "lighter"/);
   assert.match(source, /localStorage/);
   assert.match(css, /touch-action:none/);
@@ -75,7 +87,7 @@ test("Draw is a first-class lazy route with a real interactive tool contract", (
 });
 
 test("module inspection is safe before browser mounting", () => {
-  assert.deepEqual(draw.inspect(), { version: "1.0.0", mounted: false, strokes: 0, preset: "silk" });
+  assert.deepEqual(draw.inspect(), { version: "1.1.0", mounted: false, strokes: 0, preset: "silk", quality: "auto" });
   assert.equal(typeof draw.mount, "function");
   assert.equal(typeof draw.unmount, "function");
 });
