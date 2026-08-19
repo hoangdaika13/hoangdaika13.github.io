@@ -8,7 +8,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const chat = require(path.join(root, "chat-ai-hub.js"));
 
 test("HH Intelligence exposes processing modes and owner-isolated local state", () => {
-  assert.equal(chat.VERSION, "3.2.0");
+  assert.equal(chat.VERSION, "3.3.0");
   assert.deepEqual(chat.PROCESSING_MODES.map((item) => item.id), ["auto", "fast", "deep", "economy"]);
   assert.deepEqual(chat.MODELS.map((item) => item.id), ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"]);
   assert.deepEqual(chat.MODES.map((item) => item.id), ["chat", "research", "code", "write", "study", "vision"]);
@@ -165,12 +165,12 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   assert.match(client, /id: "chat-ai"[\s\S]*?route: "\/chat-ai"/);
   assert.match(client, /window\.HHChatAI\?\.mount/);
   assert.match(client, /title: "Chat AI"[\s\S]*?smart router/);
-  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=12[\s\S]*?chat-ai-hub\.js\?v=12/);
-  assert.match(html, /performance-loader\.js\?v=371/);
-  assert.match(worker, /performance-loader\.js\?v=371/);
+  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=16[\s\S]*?chat-ai-hub\.js\?v=16/);
+  assert.match(html, /performance-loader\.js\?v=376/);
+  assert.match(worker, /performance-loader\.js\?v=376/);
   assert.match(loader, /value\.startsWith\("\/chat-ai"\)/);
-  assert.match(worker, /chat-ai-hub\.css\?v=12/);
-  assert.match(worker, /chat-ai-hub\.js\?v=12/);
+  assert.match(worker, /chat-ai-hub\.css\?v=16/);
+  assert.match(worker, /chat-ai-hub\.js\?v=16/);
   assert.match(html, /data-hh-galaxy-key="chatAI"/);
   assert.match(html, /23 LĨNH VỰC/);
   assert.match(galaxy, /chatAI:\s*\{[\s\S]*?route: "#\/chat-ai"/);
@@ -179,14 +179,14 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
 test("Chat AI layout is responsive, accessible and motion-safe", () => {
   const css = read("chat-ai-hub.css");
   assert.match(css, /body\.app-chat-ai-route/);
-  assert.match(css, /@media\(max-width:820px\)/);
+  assert.match(css, /@media\(max-width:980px\)/);
   assert.match(css, /@media\(max-width:480px\)/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /overflow:auto/);
   assert.match(css, /\.chat-ai-hub\.is-sessions-open \.chat-ai-sidebar/);
   assert.match(css, /\.chat-ai-hub\.is-inspector-open \.chat-ai-inspector/);
-  assert.match(css, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(css, /grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
   assert.match(css, /\.chat-ai-hub \.chat-ai-sidebar>footer\{/);
   assert.match(css, /\.chat-ai-hub \.chat-ai-message footer\{/);
   assert.match(css, /position:static!important/);
@@ -196,10 +196,10 @@ test("Chat AI layout is responsive, accessible and motion-safe", () => {
   assert.match(css, /\.chat-ai-stream-caret/);
   assert.match(css, /overflow-anchor:none/);
   assert.match(css, /scroll-behavior:auto!important/);
-  assert.match(css, /grid-template-columns:minmax\(175px,\.85fr\) minmax\(0,1\.45fr\) minmax\(550px,1\.25fr\)/);
-  assert.match(css, /grid-template-columns:minmax\(155px,1fr\) minmax\(90px,auto\) minmax\(100px,auto\) minmax\(105px,auto\) minmax\(72px,auto\)/);
-  assert.match(css, /grid-template-columns:minmax\(160px,\.8fr\) minmax\(0,1fr\)!important/);
-  assert.match(css, /grid-column:1\/\-1!important;grid-row:2!important/);
-  assert.match(css, /white-space:nowrap!important/);
-  assert.match(css, /\.chat-ai-top-actions>\.chat-ai-export-format/);
+  assert.match(css, /grid-template-columns:252px minmax\(0,1fr\) 320px/);
+  assert.match(css, /grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(css, /\.chat-ai-hub\.is-sessions-open \.chat-ai-sidebar,\.chat-ai-hub\.is-inspector-open \.chat-ai-inspector/);
+  assert.match(css, /body\.app-chat-ai-route \.app-main\{overflow:hidden!important\}/);
+  assert.match(css, /max-width:100%/);
+  assert.match(css, /\.chat-ai-export-format/);
 });
