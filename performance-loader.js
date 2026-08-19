@@ -213,8 +213,8 @@
       scripts: ["chat-ai-hub.js?v=17"]
     },
     account: {
-      styles: ["account-center.css?v=1"],
-      scripts: ["account-center.js?v=1"]
+      styles: ["account-center.css?v=2"],
+      scripts: ["account-center.js?v=2"]
     },
     analytics: {
       styles: ["insights-pro.css?v=3"],

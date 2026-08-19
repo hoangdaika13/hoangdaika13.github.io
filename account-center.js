@@ -97,7 +97,7 @@
       </div>
       <section class="ac-card"><header class="ac-card-head"><div><span>Security score</span><h3>Vì sao được hoặc mất điểm?</h3><p>Mỗi điểm đều gắn với trạng thái do máy chủ kiểm tra.</p></div><button type="button" data-ac-refresh>Kiểm tra lại</button></header>${checksMarkup(summary.securityScore)}</section>
       <div class="ac-metric-grid">
-        <article><span>Hoàn thiện hồ sơ</span><strong>${summary.profileCompletion}%</strong><i style="--progress:${summary.profileCompletion}%"></i><small>Đồng bộ bằng `/api/social`</small></article>
+        <article><span>Hoàn thiện hồ sơ</span><strong>${summary.profileCompletion}%</strong><i style="--progress:${summary.profileCompletion}%"></i><small>Đồng bộ bằng API hồ sơ máy chủ</small></article>
         <article><span>Phiên hoạt động</span><strong>${summary.sessions.length}</strong><small>${summary.sessions.filter((item) => item.suspicious).length ? "Có phiên cần chú ý" : "Không phát hiện phiên lạ"}</small></article>
         <article><span>Passkey</span><strong>${summary.passkeys.length}</strong><small>${summary.passkeys.length >= 2 ? "Đã có trên nhiều thiết bị" : "Nên tạo trên thiết bị thứ hai"}</small></article>
         <article><span>Mã khôi phục</span><strong>${summary.recovery.remaining}</strong><small>Mỗi mã chỉ dùng một lần</small></article>

@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
@@ -11,14 +12,51 @@ test("Account Center is a dedicated server-backed workspace", () => {
   const client = read("account-center.js");
   const loader = read("performance-loader.js");
   const router = read("script.js");
-  assert.match(loader, /account-center\.css\?v=1/);
-  assert.match(loader, /account-center\.js\?v=1/);
+  assert.match(loader, /account-center\.css\?v=2/);
+  assert.match(loader, /account-center\.js\?v=2/);
   assert.match(router, /HHAccountCenter\?\.mount/);
   assert.match(client, /\/api\/social\?view=profile/);
   assert.match(client, /profile:update/);
   assert.match(client, /privacy:update/);
   assert.doesNotMatch(client, /hh-user-dashboard/);
   assert.doesNotMatch(client, /state\.xp|\+\s*10/);
+  assert.doesNotMatch(client, /Đồng bộ bằng `\/api\/social`/, "Backticks inside the HTML template must not become division by free api/social identifiers");
+});
+
+test("overview renders with real API payloads without free runtime identifiers", async () => {
+  const client = read("account-center.js");
+  const fakeRoot = {
+    dataset: {},
+    addEventListener() {},
+    querySelectorAll() { return []; },
+    closest() { return null; }
+  };
+  const host = {
+    dataset: {},
+    html: "",
+    set innerHTML(value) { this.html = String(value); },
+    get innerHTML() { return this.html; },
+    querySelector(selector) { return selector === "[data-account-center]" ? fakeRoot : null; }
+  };
+  const summary = {
+    user: { id: "user-1", name: "HH Tester", email: "tester@example.com", avatar: "", provider: "local", emailVerifiedAt: new Date().toISOString() },
+    profileCompletion: 75,
+    securityScore: { state: "available", value: 80, checkedAt: new Date().toISOString(), checks: [] },
+    sessions: [], passkeys: [], recovery: { remaining: 0, generatedAt: null }, loginHistory: [],
+    notifications: {}, audit: [], undoProfile: null, stepUp: { valid: false, expiresInSeconds: 0 }, capabilities: {}
+  };
+  const profile = { owned: true, name: "HH Tester", username: "hh-tester", avatar: "", cover: "", bio: "", socialLinks: [], interests: [], languages: [], privacy: {}, stats: {} };
+  const context = {
+    window: { HH_API_BASE: "https://example.test", location: { origin: "https://example.test", reload() {} }, HHAuthSession: { token: () => "" }, setTimeout, clearTimeout },
+    fetch: async (url) => ({ ok: true, status: 200, json: async () => String(url).includes("/api/social") ? { profile } : summary }),
+    console, setTimeout, clearTimeout, URL, Blob
+  };
+  vm.runInNewContext(client, context, { filename: "account-center.js" });
+  const mounted = await context.window.HHAccountCenter.mount(host, { activeTab: "overview" });
+  assert.equal(mounted, fakeRoot);
+  assert.match(host.html, /Hoàn thiện hồ sơ/);
+  assert.match(host.html, /75%/);
+  assert.doesNotMatch(host.html, /Không thể mở Account Center/);
 });
 
 test("Security score uses explicit evidence and unknown states", async () => {
