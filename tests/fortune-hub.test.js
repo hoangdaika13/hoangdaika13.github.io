@@ -172,7 +172,7 @@ test("module includes working controls, privacy language and lifecycle", () => {
   assert.match(source, /calculateChineseZodiac/);
   assert.match(source, /data-fortune-contract-verify/);
   assert.match(source, /FORTUNE RESULT CONTRACT/);
-  assert.deepEqual(fortune.inspect(), { version: "9.5.1", mounted: false, view: "today", ownerId: null, historyCount: 0, journalCount: 0 });
+  assert.deepEqual(fortune.inspect(), { version: "9.6.0", mounted: false, view: "today", ownerId: null, historyCount: 0, journalCount: 0 });
 });
 
 test("fortune route is lazy loaded, searchable and represented as a major planet", () => {
@@ -184,14 +184,14 @@ test("fortune route is lazy loaded, searchable and represented as a major planet
   assert.match(client, /id: "fortune"[\s\S]*?route: "\/fortune"/);
   assert.match(client, /window\.HHFortuneHub\?\.mount/);
   assert.match(client, /title: "Xem bói"[\s\S]*?key: "xem bói tarot/);
-  assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?fortune-hub-v4\.css\?v=8[\s\S]*?fortune-hub-v5\.css\?v=18[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?iztro-2\.6\.0\.min\.js\?v=2\.6\.0[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-accuracy-lab\.js\?v=1[\s\S]*?fortune-suite-v4\.js\?v=4[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-astrology-v4\.js\?v=2[\s\S]*?fortune-moon-3d\.js\?v=1[\s\S]*?fortune-extended-tools\.js\?v=2[\s\S]*?fortune-hub\.js\?v=24/);
+  assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?fortune-hub-v4\.css\?v=8[\s\S]*?fortune-hub-v5\.css\?v=19[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?iztro-2\.6\.0\.min\.js\?v=2\.6\.0[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-accuracy-lab\.js\?v=1[\s\S]*?fortune-suite-v4\.js\?v=4[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-astrology-v4\.js\?v=2[\s\S]*?fortune-moon-3d\.js\?v=1[\s\S]*?fortune-extended-tools\.js\?v=2[\s\S]*?fortune-hub\.js\?v=25/);
   assert.match(loader, /value\.startsWith\("\/fortune"\)/);
   assert.match(html, /data-hh-galaxy-key="fortune"/);
   assert.match(html, /24 LĨNH VỰC/);
   assert.match(galaxy, /fortune:\s*\{[\s\S]*?route: "#\/fortune"/);
   assert.match(worker, /fortune-hub\.css\?v=3/);
   assert.match(worker, /fortune-hub-v4\.css\?v=8/);
-  assert.match(worker, /fortune-hub-v5\.css\?v=18/);
+  assert.match(worker, /fortune-hub-v5\.css\?v=19/);
   assert.match(worker, /fortune-iching-64\.js\?v=1/);
   assert.match(worker, /fortune-accuracy-lab\.js\?v=1/);
   assert.match(worker, /fortune-suite-v4\.js\?v=4/);
@@ -201,7 +201,7 @@ test("fortune route is lazy loaded, searchable and represented as a major planet
   assert.match(worker, /fortune-moon-3d\.js\?v=1/);
   assert.match(worker, /iztro-2\.6\.0\.min\.js\?v=2\.6\.0/);
   assert.match(worker, /fortune-extended-tools\.js\?v=2/);
-  assert.match(worker, /fortune-hub\.js\?v=24/);
+  assert.match(worker, /fortune-hub\.js\?v=25/);
 });
 
 test("Gemini fortune route enforces opt-in, safety and server-side redaction", () => {
@@ -330,14 +330,17 @@ test("zero-scroll Tool Atlas exposes every fortune workspace exactly once", () =
   for (const group of ["Bắt đầu", "Biểu tượng", "Thiên văn & lịch", "Phương Đông", "Chiêm nghiệm"]) assert.match(atlas, new RegExp(group.replace("&", "\\&")));
   assert.match(client, /data-fortune-tool-atlas/);
   assert.match(client, /title="\$\{escapeHtml\(label\)\}"/);
-  assert.match(css, /zero-scroll three-column Tool Atlas/);
-  assert.match(css, /fortune-atlas__group>div\{display:grid!important;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/);
+  assert.match(css, /single-column accordion Tool Atlas/);
+  assert.match(client, /<details class="fortune-atlas__group"/);
+  assert.match(client, /data-fortune-group-summary/);
+  assert.match(css, /fortune-atlas__group>div\{display:grid!important;grid-template-columns:1fr!important/);
   assert.match(css, /@media\(min-width:981px\)[\s\S]*?fortune-sidebar>nav[\s\S]*?overflow:visible!important/);
   assert.match(css, /z-index:1202!important/);
   assert.match(client, /preserveScroll: fromToolAtlas/);
   assert.match(client, /options\.preserveScroll \? null/);
   assert.match(css, /readable Tool Atlas and stable viewport navigation/);
-  assert.match(css, /fortune-nav__item>span\{color:#c8c3d1!important;font-size:10\.5px!important/);
+  assert.match(css, /fortune-nav__item>span\{display:block!important;overflow:hidden;color:#d4cfdb!important;font-size:14px!important/);
+  assert.match(client, /restoreFortuneScrollPosition/);
 });
 
 test("Mystic Living Observatory exposes real themes, motion controls and world scenes", () => {
