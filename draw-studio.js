@@ -5,14 +5,23 @@
 })(typeof window !== "undefined" ? window : globalThis, function createDrawStudio(globalScope) {
   "use strict";
 
-  const VERSION = "2.0.0";
+  const VERSION = "2.1.0";
   const STORAGE_SCHEMA = "hh.draw.studio.v1";
+  const BRUSH_LIBRARY_SCHEMA = "hh.draw.brush-library.v1";
   const MAX_STROKES = 120;
   const MAX_POINTS_PER_STROKE = 1400;
   const MAX_LAYERS = 16;
   const MAX_HISTORY = 48;
   const LAYER_BLEND_MODES = Object.freeze(["source-over", "screen", "lighten", "overlay", "color-dodge", "soft-light", "multiply"]);
   const LAYER_TYPES = Object.freeze(["stroke", "particle", "effect", "background"]);
+  const PATTERN_GENERATORS = Object.freeze({
+    rosette: Object.freeze({ label: "Hoa hồng cực quang", icon: "❉", description: "Đường cong rose nhiều cánh" }),
+    spirograph: Object.freeze({ label: "Quỹ đạo Spiro", icon: "◎", description: "Hypotrochoid theo seed" }),
+    aurora: Object.freeze({ label: "Sóng cực quang", icon: "≈", description: "Dải sóng giao thoa mềm" }),
+    constellation: Object.freeze({ label: "Chòm sao", icon: "✦", description: "Mạng sao có thể tái tạo" }),
+    portal: Object.freeze({ label: "Cổng thiên hà", icon: "◌", description: "Nhiều vòng quỹ đạo lệch pha" }),
+    starburst: Object.freeze({ label: "Bùng nổ ánh sáng", icon: "✺", description: "Tia sáng hướng tâm" })
+  });
   const CANVAS_PRESETS = Object.freeze({ viewport: { label: "Theo khung vẽ", width: 0, height: 0 }, instagram: { label: "Instagram 1:1", width: 1080, height: 1080 }, story: { label: "Story / TikTok 9:16", width: 1080, height: 1920 }, youtube: { label: "YouTube 16:9", width: 1920, height: 1080 }, wallpaper: { label: "Wallpaper 4K", width: 3840, height: 2160 }, custom: { label: "Tùy chỉnh", width: 1920, height: 1080 } });
   const PALETTE = ["#ff4fa3", "#ff7b47", "#ffd84e", "#63efb0", "#45d9ff", "#7581ff", "#bd65ff", "#f4f2ff"];
   const COLOR_PALETTES = Object.freeze({
@@ -106,6 +115,9 @@
     grid: false,
     snapCenter: true,
     touchDraw: true,
+    patternSeed: "HH-NEBULA",
+    patternComplexity: 7,
+    patternScale: 0.78,
     quality: "auto",
     colorA: "#45d9ff",
     colorB: "#bd65ff",
@@ -191,6 +203,90 @@
     const a = luminance(first); const b = luminance(second); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
   }
 
+  function seededRandom(seed = "HH") {
+    let state = seedNumber(seed) || 0x9e3779b9;
+    return () => {
+      state += 0x6d2b79f5;
+      let value = state;
+      value = Math.imul(value ^ value >>> 15, value | 1);
+      value ^= value + Math.imul(value ^ value >>> 7, value | 61);
+      return ((value ^ value >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function generatePatternStrokes(type, inputSettings = DEFAULT_SETTINGS) {
+    if (!Object.hasOwn(PATTERN_GENERATORS, type)) return [];
+    const settings = normalizeSettings(inputSettings);
+    const random = seededRandom(`${settings.patternSeed}:${type}`);
+    const complexity = settings.patternComplexity;
+    const radius = settings.patternScale * 0.46;
+    const strokeSettings = normalizeSettings({ ...settings, symmetry: 1, mirror: false, spiral: false });
+    const makeStroke = (points, index = 0) => normalizeStroke({
+      id: `generated-${type}-${seedNumber(settings.patternSeed)}-${index}`,
+      settings: strokeSettings,
+      points: points.map((point, pointIndex) => ({ ...point, pressure: point.pressure ?? 0.62, time: pointIndex * 8, pointerType: "mouse" })),
+      complete: true,
+      createdAt: seedNumber(`${settings.patternSeed}:${type}`) + index
+    }, index);
+    const strokes = [];
+    if (type === "rosette") {
+      const petals = complexity + (complexity % 2);
+      strokes.push(makeStroke(Array.from({ length: 360 }, (_, index) => {
+        const angle = index / 359 * Math.PI * 2;
+        const wave = Math.cos(petals * angle) * radius;
+        return { x: 0.5 + Math.cos(angle) * wave, y: 0.5 + Math.sin(angle) * wave, pressure: 0.48 + Math.abs(wave / radius) * 0.44 };
+      })));
+    } else if (type === "spirograph") {
+      const outer = 7 + complexity;
+      const inner = 2 + Math.floor(random() * Math.max(2, complexity / 2));
+      const distance = inner * (0.72 + random() * 0.9);
+      const normalizer = Math.max(1, outer - inner + distance);
+      strokes.push(makeStroke(Array.from({ length: 520 }, (_, index) => {
+        const angle = index / 519 * Math.PI * 2 * Math.max(2, inner);
+        const x = (outer - inner) * Math.cos(angle) + distance * Math.cos((outer - inner) / inner * angle);
+        const y = (outer - inner) * Math.sin(angle) - distance * Math.sin((outer - inner) / inner * angle);
+        return { x: 0.5 + x / normalizer * radius, y: 0.5 + y / normalizer * radius, pressure: 0.58 + 0.25 * Math.sin(angle * 0.5) };
+      })));
+    } else if (type === "aurora") {
+      const bands = Math.min(8, Math.max(3, Math.round(complexity / 2)));
+      for (let band = 0; band < bands; band += 1) {
+        const phase = random() * Math.PI * 2;
+        const frequency = 1.2 + random() * 2.2;
+        strokes.push(makeStroke(Array.from({ length: 220 }, (_, index) => {
+          const progress = index / 219;
+          const x = 0.5 + (progress - 0.5) * radius * 1.9;
+          const ribbon = Math.sin(progress * Math.PI * 2 * frequency + phase) * radius * 0.2 + Math.sin(progress * Math.PI * 7 + phase) * radius * 0.045;
+          return { x, y: 0.5 + ribbon + (band - (bands - 1) / 2) * radius * 0.075, pressure: 0.38 + 0.5 * Math.sin(progress * Math.PI) };
+        }), band));
+      }
+    } else if (type === "constellation") {
+      const count = Math.min(44, 10 + complexity * 2);
+      const points = Array.from({ length: count }, () => ({ x: 0.5 + (random() - 0.5) * radius * 1.8, y: 0.5 + (random() - 0.5) * radius * 1.8, pressure: 0.35 + random() * 0.65 }));
+      points.sort((a, b) => Math.atan2(a.y - 0.5, a.x - 0.5) - Math.atan2(b.y - 0.5, b.x - 0.5));
+      strokes.push(makeStroke(points));
+      points.filter((_, index) => index % 3 === 0).slice(0, 10).forEach((point, index) => {
+        const starRadius = 0.008 + random() * 0.012;
+        strokes.push(makeStroke(Array.from({ length: 17 }, (_, starIndex) => { const angle = starIndex / 16 * Math.PI * 2; return { x: point.x + Math.cos(angle) * starRadius, y: point.y + Math.sin(angle) * starRadius, pressure: 0.72 }; }), index + 1));
+      });
+    } else if (type === "portal") {
+      const rings = Math.min(12, Math.max(4, complexity));
+      for (let ring = 0; ring < rings; ring += 1) {
+        const ringRadius = radius * (0.22 + ring / rings * 0.78);
+        const squash = 0.55 + random() * 0.3;
+        const phase = random() * Math.PI;
+        strokes.push(makeStroke(Array.from({ length: 150 }, (_, index) => { const angle = index / 149 * Math.PI * 2; return { x: 0.5 + Math.cos(angle + phase) * ringRadius, y: 0.5 + Math.sin(angle + phase) * ringRadius * squash, pressure: 0.4 + ring / rings * 0.42 }; }), ring));
+      }
+    } else if (type === "starburst") {
+      const rays = Math.min(28, Math.max(8, complexity * 2));
+      for (let ray = 0; ray < rays; ray += 1) {
+        const angle = ray / rays * Math.PI * 2 + (random() - 0.5) * 0.08;
+        const endRadius = radius * (0.58 + random() * 0.42);
+        strokes.push(makeStroke(Array.from({ length: 28 }, (_, index) => { const progress = index / 27; const eased = progress * progress; return { x: 0.5 + Math.cos(angle) * endRadius * eased, y: 0.5 + Math.sin(angle) * endRadius * eased, pressure: 0.95 - progress * 0.62 }; }), ray));
+      }
+    }
+    return strokes.slice(0, MAX_STROKES);
+  }
+
   function normalizeSettings(input = {}) {
     const preset = Object.hasOwn(PRESETS, input.preset) ? input.preset : DEFAULT_SETTINGS.preset;
     return {
@@ -222,6 +318,9 @@
       grid: Boolean(input.grid),
       snapCenter: input.snapCenter !== false,
       touchDraw: input.touchDraw !== false,
+      patternSeed: String(input.patternSeed || DEFAULT_SETTINGS.patternSeed).replace(/[<>]/g, "").slice(0, 48) || DEFAULT_SETTINGS.patternSeed,
+      patternComplexity: Math.round(clamp(input.patternComplexity, 3, 16, DEFAULT_SETTINGS.patternComplexity)),
+      patternScale: clamp(input.patternScale, 0.3, 0.95, DEFAULT_SETTINGS.patternScale),
       quality: ["auto", "quality", "balanced", "performance"].includes(input.quality) ? input.quality : DEFAULT_SETTINGS.quality,
       colorA: normalizeHex(input.colorA, DEFAULT_SETTINGS.colorA),
       colorB: normalizeHex(input.colorB, DEFAULT_SETTINGS.colorB),
@@ -400,6 +499,25 @@
     return `${STORAGE_SCHEMA}:${String(owner).toLowerCase().replace(/[^a-z0-9@._-]/g, "-").slice(0, 100)}`;
   }
 
+  function brushLibraryKey(storageKey) {
+    return `${BRUSH_LIBRARY_SCHEMA}:${seedNumber(storageKey)}`;
+  }
+
+  function readBrushLibrary(storageKey) {
+    try {
+      const value = JSON.parse(globalScope.localStorage?.getItem(brushLibraryKey(storageKey)) || "{}");
+      return {
+        favorites: Array.isArray(value.favorites) ? value.favorites.filter((id) => Object.hasOwn(PRESETS, id)).slice(0, 24) : [],
+        recent: Array.isArray(value.recent) ? value.recent.filter((id) => Object.hasOwn(PRESETS, id)).slice(0, 8) : []
+      };
+    } catch { return { favorites: [], recent: [] }; }
+  }
+
+  function saveBrushLibrary(targetRuntime = runtime) {
+    if (!targetRuntime) return;
+    try { globalScope.localStorage?.setItem(brushLibraryKey(targetRuntime.storageKey), JSON.stringify({ favorites: [...targetRuntime.favoriteBrushes], recent: targetRuntime.recentBrushes })); } catch { /* Local preferences may be unavailable. */ }
+  }
+
   function storageRead(key) {
     try { return normalizeProject(JSON.parse(globalScope.localStorage?.getItem(key) || "{}")); } catch { return normalizeProject(); }
   }
@@ -469,12 +587,17 @@
     pushHistory(targetRuntime); targetRuntime.project = normalizeProject(checkpoints[0].project); clearLayerCache(targetRuntime); syncControls(targetRuntime); syncLayerPanel(targetRuntime); renderProjectSafely(targetRuntime); drawGuides(targetRuntime); scheduleSave(targetRuntime); toast(`Đã khôi phục checkpoint ${checkpoints[0].label}`, targetRuntime);
   }
 
-  function presetMarkup(settings) {
-    return Object.entries(PRESETS).map(([id, preset]) => `<button type="button" class="draw-preset ${settings.preset === id ? "is-active" : ""}" data-draw-preset="${id}" data-draw-category="${preset.category || "light"}" aria-pressed="${settings.preset === id}"><i>${preset.icon}</i><span>${escapeHtml(preset.label)}</span></button>`).join("");
+  function presetMarkup(settings, library = { favorites: [] }) {
+    const favorites = new Set(library.favorites || []);
+    return Object.entries(PRESETS).map(([id, preset]) => `<div class="draw-preset-card" data-draw-preset-card="${id}" data-draw-category="${preset.category || "light"}" data-draw-label="${escapeHtml(preset.label.toLowerCase())}"><button type="button" class="draw-preset ${settings.preset === id ? "is-active" : ""}" data-draw-preset="${id}" aria-pressed="${settings.preset === id}"><i>${preset.icon}</i><span>${escapeHtml(preset.label)}</span></button><button type="button" class="draw-preset-favorite ${favorites.has(id) ? "is-active" : ""}" data-draw-favorite="${id}" aria-pressed="${favorites.has(id)}" title="${favorites.has(id) ? "Bỏ yêu thích" : "Thêm vào yêu thích"}">☆</button></div>`).join("");
   }
 
   function modeFilterMarkup() {
-    return [["all", "Tất cả"], ["light", "Ánh sáng"], ["particle", "Hạt"], ["physics", "Vật lý"], ["geometry", "Hình học"], ["nature", "Tự nhiên"], ["art", "Nghệ thuật"], ["digital", "Digital"]].map(([id, label], index) => `<button type="button" data-draw-mode-filter="${id}" class="${index === 0 ? "is-active" : ""}" aria-pressed="${index === 0}">${label}</button>`).join("");
+    return [["all", "Tất cả"], ["favorites", "★ Yêu thích"], ["recent", "Gần đây"], ["light", "Ánh sáng"], ["particle", "Hạt"], ["physics", "Vật lý"], ["geometry", "Hình học"], ["nature", "Tự nhiên"], ["art", "Nghệ thuật"], ["digital", "Digital"]].map(([id, label], index) => `<button type="button" data-draw-mode-filter="${id}" class="${index === 0 ? "is-active" : ""}" aria-pressed="${index === 0}">${label}</button>`).join("");
+  }
+
+  function generatorMarkup(settings) {
+    return `<div class="draw-generator-grid">${Object.entries(PATTERN_GENERATORS).map(([id, generator]) => `<button type="button" data-draw-generator="${id}" title="${escapeHtml(generator.description)}"><i>${generator.icon}</i><span><strong>${escapeHtml(generator.label)}</strong><small>${escapeHtml(generator.description)}</small></span></button>`).join("")}</div><div class="draw-generator-settings"><label><span>Seed tái tạo</span><input type="text" maxlength="48" value="${escapeHtml(settings.patternSeed)}" data-draw-setting="patternSeed"></label><label class="draw-range"><span><b>Chi tiết</b><output data-draw-output="patternComplexity">${settings.patternComplexity}</output></span><input type="range" min="3" max="16" step="1" value="${settings.patternComplexity}" data-draw-setting="patternComplexity"></label><label class="draw-range"><span><b>Kích thước</b><output data-draw-output="patternScale">${Math.round(settings.patternScale * 100)}%</output></span><input type="range" min="0.3" max="0.95" step="0.01" value="${settings.patternScale}" data-draw-setting="patternScale"></label><button type="button" class="draw-wide" data-draw-generator-remix>⟳ Đổi seed và tạo biến thể</button></div>`;
   }
 
   function paletteMarkup(settings) {
@@ -517,7 +640,7 @@
       </div>`;
   }
 
-  function markup(project) {
+  function markup(project, library = { favorites: [], recent: [] }) {
     const settings = project.settings;
     const animation = project.animation;
     return `<section class="draw-studio" data-draw-studio data-background="${settings.background}">
@@ -529,6 +652,7 @@
           <button type="button" data-draw-undo disabled><i>↶</i><span>Hoàn tác</span></button>
           <button type="button" data-draw-redo disabled><i>↷</i><span>Làm lại</span></button>
           <button type="button" data-draw-copy><i>▣</i><span>Sao chép</span></button>
+          <button type="button" data-draw-zen aria-pressed="false"><i>◐</i><span>Zen Canvas</span></button>
           <button type="button" data-draw-fullscreen><i>⛶</i><span>Toàn màn hình</span></button>
           <button type="button" class="draw-primary" data-draw-export><i>↓</i><span>Tải ảnh</span></button>
         </nav>
@@ -537,7 +661,8 @@
         <aside class="draw-controls" aria-label="Điều khiển nét vẽ">
           <header><div><small>ĐIỀU KHIỂN</small><strong>Tạo ánh sáng của bạn</strong></div><button type="button" data-draw-panel-close aria-label="Đóng bảng điều khiển">×</button></header>
           <section class="draw-layer-section"><div class="draw-section-heading"><h3>Layer Studio</h3><span>${project.layers.length}/${MAX_LAYERS}</span></div><div data-draw-layer-panel>${layerPanelMarkup(project)}</div></section>
-          <section><div class="draw-section-heading"><h3>${Object.keys(PRESETS).length} chế độ nét động</h3><span data-draw-mode-count>${Object.keys(PRESETS).length}</span></div><div class="draw-mode-filters" role="toolbar" aria-label="Lọc chế độ nét">${modeFilterMarkup()}</div><div class="draw-preset-grid">${presetMarkup(settings)}</div></section>
+          <section><div class="draw-section-heading"><h3>${Object.keys(PRESETS).length} chế độ nét động</h3><span data-draw-mode-count>${Object.keys(PRESETS).length}</span></div><label class="draw-brush-search"><span>⌕</span><input type="search" data-draw-brush-search placeholder="Tìm brush, ví dụ plasma, ink…" autocomplete="off"></label><div class="draw-mode-filters" role="toolbar" aria-label="Lọc chế độ nét">${modeFilterMarkup()}</div><div class="draw-preset-grid">${presetMarkup(settings, library)}</div><p class="draw-filter-empty" data-draw-filter-empty hidden>Không có brush phù hợp. Hãy thử từ khóa hoặc nhóm khác.</p></section>
+          <section><details class="draw-advanced draw-pattern-composer" open><summary><span><strong>Pattern Composer</strong><small>6 thuật toán · seed tái tạo · undo/redo thật</small></span><i>⌄</i></summary><div class="draw-advanced-body">${generatorMarkup(settings)}</div></details></section>
           <section><details class="draw-advanced"><summary><span><strong>Brush Dynamics</strong><small>Lực bút · độ mượt · tốc độ · độ tán</small></span><i>⌄</i></summary><div class="draw-advanced-body">
             <label class="draw-range"><span><b>Stabilizer</b><output data-draw-output="stabilizer">${Math.round(settings.stabilizer)}%</output></span><input type="range" min="0" max="95" step="1" value="${settings.stabilizer}" data-draw-setting="stabilizer"></label>
             <label class="draw-switch"><span><strong>Lực bút</strong><small>Dùng pressure của bút hoặc cảm ứng</small></span><input type="checkbox" data-draw-setting="pressureEnabled" ${settings.pressureEnabled ? "checked" : ""}><i></i></label>
@@ -572,7 +697,7 @@
           <div class="draw-empty" data-draw-empty><i>✦</i><strong>Chạm và kéo để đánh thức sắc màu</strong><span>Chọn một brush engine, bảng màu rồi kéo nét — tác phẩm xuất hiện tức thì.</span></div>
           <button type="button" class="draw-panel-toggle" data-draw-panel-open aria-label="Mở bảng điều khiển">☰ <span>Điều khiển</span></button>
           <div class="draw-toolbox" role="toolbar" aria-label="Công cụ canvas"><button type="button" class="is-active" data-draw-tool="draw" title="Vẽ (B)" aria-pressed="true">✎</button><button type="button" data-draw-tool="eraser" title="Tẩy (E)" aria-pressed="false">⌫</button><button type="button" data-draw-tool="select" title="Chọn nét (V)" aria-pressed="false">◇</button><button type="button" data-draw-tool="pan" title="Di chuyển canvas (H hoặc Space)" aria-pressed="false">✥</button><i></i><button type="button" data-draw-view="zoom-out" title="Thu nhỏ">−</button><button type="button" class="draw-zoom-readout" data-draw-view="fit" title="Vừa khung"><span data-draw-zoom>100%</span></button><button type="button" data-draw-view="zoom-in" title="Phóng lớn">＋</button><button type="button" data-draw-view="rotate-left" title="Xoay trái">↶</button><button type="button" data-draw-view="rotate-right" title="Xoay phải">↷</button><button type="button" data-draw-view="reset" title="Đặt lại góc nhìn">⌂</button></div>
-          <div class="draw-canvas-status" aria-live="polite"><span><i></i><b data-draw-status>Đã sẵn sàng</b></span><small data-draw-performance>Auto · Cân bằng</small><small data-draw-stats>${projectStrokes(project).length} nét · ${project.layers.length} layer · tự lưu</small></div>
+          <div class="draw-canvas-status" aria-live="polite"><span><i></i><b data-draw-status>Đã sẵn sàng</b></span><small data-draw-performance>Auto · Cân bằng</small><small data-draw-engine>Worker · sẵn sàng</small><small data-draw-stats>${projectStrokes(project).length} nét · ${project.layers.length} layer · tự lưu</small></div>
           <div class="draw-quickbar">
             <button type="button" data-draw-new title="Tạo bản vẽ mới">＋</button>
             <button type="button" data-draw-undo title="Hoàn tác" disabled>↶</button>
@@ -581,6 +706,7 @@
             <button type="button" data-draw-checkpoint-restore title="Khôi phục checkpoint gần nhất">⟲</button>
             <button type="button" data-draw-export title="Tải ảnh">↓</button>
           </div>
+          <button type="button" class="draw-zen-exit" data-draw-zen aria-label="Thoát Zen Canvas">Thoát Zen · Z</button>
         </main>
       </div>
       <div class="draw-toast" data-draw-toast role="status" aria-live="polite"></div>
@@ -992,7 +1118,7 @@
   function ensureRenderWorker(targetRuntime = runtime) {
     if (!targetRuntime || targetRuntime.renderWorker || typeof globalScope.Worker !== "function" || typeof globalScope.OffscreenCanvas !== "function") return Boolean(targetRuntime?.renderWorker);
     try {
-      const worker = new globalScope.Worker("draw-studio-worker.js?v=4");
+      const worker = new globalScope.Worker("draw-studio-worker.js?v=5");
       worker.onmessage = (event) => {
         const message = event.data || {}; if (message.requestId !== targetRuntime.workerRequestId || runtime !== targetRuntime) { (message.layers || []).forEach((item) => item.bitmap?.close?.()); return; }
         targetRuntime.workerBusy = false;
@@ -1157,6 +1283,13 @@
       const selected = targetRuntime.project.settings.quality;
       performance.textContent = selected === "auto" ? `Auto · ${labels[targetRuntime.liveQuality] || "Cân bằng"}` : labels[selected];
     }
+    const engine = targetRuntime.root.querySelector("[data-draw-engine]");
+    if (engine) {
+      const cost = Number(targetRuntime.paintCost || 0);
+      const worker = typeof globalScope.OffscreenCanvas === "function" ? "Worker" : "Canvas";
+      engine.textContent = cost ? `${worker} · ${cost.toFixed(1)} ms · hàng đợi ${targetRuntime.pointQueue.length}` : `${worker} · sẵn sàng`;
+      engine.dataset.tone = cost > 12 ? "hot" : cost > 7 ? "warm" : "cool";
+    }
   }
 
   function announce(message, targetRuntime = runtime) {
@@ -1299,6 +1432,8 @@
 
   function updateAdaptiveQuality(targetRuntime, cost) {
     targetRuntime.paintCost = targetRuntime.paintCost ? targetRuntime.paintCost * 0.82 + cost * 0.18 : cost;
+    targetRuntime.root.style.setProperty("--draw-latency", Math.min(1, targetRuntime.paintCost / 18).toFixed(3));
+    updateUi(targetRuntime);
     if (targetRuntime.project.settings.quality !== "auto") return;
     if (targetRuntime.paintCost > 10 && targetRuntime.liveQuality !== "performance") {
       targetRuntime.liveQuality = "performance";
@@ -1919,12 +2054,12 @@
     targetRuntime.root.querySelectorAll("[data-draw-preset]").forEach((button) => { const active = button.dataset.drawPreset === settings.preset; button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); });
     targetRuntime.root.querySelectorAll("[data-draw-palette]").forEach((button) => { const active = button.dataset.drawPalette === settings.paletteId; button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); });
     targetRuntime.root.querySelectorAll("[data-draw-color]").forEach((button) => { const active = button.dataset.drawColor.toLowerCase() === settings.colorA; button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); });
-    ["symmetry", "brushSize", "glow", "flow", "stabilizer", "pressureCurve", "velocityWidth", "velocityGlow", "taperStart", "taperEnd", "spacing", "scatter", "rotation", "noise", "curvature", "elasticity", "inertia", "quality", "background", "canvasPreset", "canvasWidth", "canvasHeight", "exportFormat", "exportScale", "gradientFlow", "colorA", "colorB"].forEach((key) => {
+    ["symmetry", "brushSize", "glow", "flow", "stabilizer", "pressureCurve", "velocityWidth", "velocityGlow", "taperStart", "taperEnd", "spacing", "scatter", "rotation", "noise", "curvature", "elasticity", "inertia", "quality", "background", "canvasPreset", "canvasWidth", "canvasHeight", "exportFormat", "exportScale", "gradientFlow", "patternSeed", "patternComplexity", "patternScale", "colorA", "colorB"].forEach((key) => {
       const selector = key === "colorA" ? "[data-draw-color-a]" : key === "colorB" ? "[data-draw-color-b]" : `[data-draw-setting=\"${key}\"]`;
       const input = targetRuntime.root.querySelector(selector); if (input) input.value = settings[key];
     });
     ["mirror", "spiral", "autoHue", "guides", "pressureEnabled", "stylusEraser", "grid", "snapCenter", "touchDraw"].forEach((key) => { const input = targetRuntime.root.querySelector(`[data-draw-setting=\"${key}\"]`); if (input) input.checked = settings[key]; });
-    const labels = { symmetry: `${settings.symmetry} nhánh`, brushSize: `${settings.brushSize.toFixed(1)} px`, glow: `${Math.round(settings.glow)}%`, flow: `${Math.round(settings.flow * 100)}%`, stabilizer: `${Math.round(settings.stabilizer)}%`, pressureCurve: `${settings.pressureCurve.toFixed(2)}×`, velocityWidth: `${Math.round(settings.velocityWidth * 100)}%`, velocityGlow: `${Math.round(settings.velocityGlow * 100)}%`, spacing: `${settings.spacing.toFixed(1)} px`, scatter: `${settings.scatter.toFixed(1)} px`, rotation: `${Math.round(settings.rotation)}°`, noise: `${Math.round(settings.noise * 100)}%`, curvature: `${Math.round(settings.curvature * 100)}%`, elasticity: `${Math.round(settings.elasticity * 100)}%`, inertia: `${Math.round(settings.inertia * 100)}%` };
+    const labels = { symmetry: `${settings.symmetry} nhánh`, brushSize: `${settings.brushSize.toFixed(1)} px`, glow: `${Math.round(settings.glow)}%`, flow: `${Math.round(settings.flow * 100)}%`, stabilizer: `${Math.round(settings.stabilizer)}%`, pressureCurve: `${settings.pressureCurve.toFixed(2)}×`, velocityWidth: `${Math.round(settings.velocityWidth * 100)}%`, velocityGlow: `${Math.round(settings.velocityGlow * 100)}%`, spacing: `${settings.spacing.toFixed(1)} px`, scatter: `${settings.scatter.toFixed(1)} px`, rotation: `${Math.round(settings.rotation)}°`, noise: `${Math.round(settings.noise * 100)}%`, curvature: `${Math.round(settings.curvature * 100)}%`, elasticity: `${Math.round(settings.elasticity * 100)}%`, inertia: `${Math.round(settings.inertia * 100)}%`, patternComplexity: String(settings.patternComplexity), patternScale: `${Math.round(settings.patternScale * 100)}%` };
     Object.entries(labels).forEach(([key, label]) => { const output = targetRuntime.root.querySelector(`[data-draw-output=\"${key}\"]`); if (output) output.textContent = label; });
     const preview = targetRuntime.root.querySelector("[data-draw-mix-preview]"); if (preview) preview.style.setProperty("--mix", mixHex(settings.colorA, settings.colorB));
     targetRuntime.root.querySelector("[data-draw-guides-toggle]")?.setAttribute("aria-pressed", String(settings.guides));
@@ -1932,10 +2067,81 @@
     updateUi(targetRuntime);
   }
 
+  function applyBrushFilters(targetRuntime = runtime) {
+    if (!targetRuntime?.root) return;
+    const query = String(targetRuntime.brushSearch || "").trim().toLowerCase();
+    const filter = targetRuntime.brushFilter || "all";
+    const recent = new Set(targetRuntime.recentBrushes || []);
+    let visible = 0;
+    targetRuntime.root.querySelectorAll("[data-draw-preset-card]").forEach((card) => {
+      const id = card.dataset.drawPresetCard;
+      const category = card.dataset.drawCategory;
+      const label = card.dataset.drawLabel || "";
+      const groupMatch = filter === "all" || filter === category || (filter === "favorites" && targetRuntime.favoriteBrushes.has(id)) || (filter === "recent" && recent.has(id));
+      const searchMatch = !query || label.includes(query) || id.toLowerCase().includes(query) || category.includes(query);
+      card.hidden = !(groupMatch && searchMatch);
+      if (!card.hidden) visible += 1;
+    });
+    const count = targetRuntime.root.querySelector("[data-draw-mode-count]"); if (count) count.textContent = String(visible);
+    const empty = targetRuntime.root.querySelector("[data-draw-filter-empty]"); if (empty) empty.hidden = visible > 0;
+  }
+
+  function syncBrushLibraryUi(targetRuntime = runtime) {
+    if (!targetRuntime?.root) return;
+    targetRuntime.root.querySelectorAll("[data-draw-favorite]").forEach((button) => {
+      const active = targetRuntime.favoriteBrushes.has(button.dataset.drawFavorite);
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+      button.title = active ? "Bỏ yêu thích" : "Thêm vào yêu thích";
+      button.textContent = active ? "★" : "☆";
+    });
+    applyBrushFilters(targetRuntime);
+  }
+
+  function toggleFavorite(id, targetRuntime = runtime) {
+    if (!targetRuntime || !Object.hasOwn(PRESETS, id)) return;
+    if (targetRuntime.favoriteBrushes.has(id)) targetRuntime.favoriteBrushes.delete(id);
+    else if (targetRuntime.favoriteBrushes.size < 24) targetRuntime.favoriteBrushes.add(id);
+    else { toast("Tối đa 24 brush yêu thích", targetRuntime); return; }
+    saveBrushLibrary(targetRuntime);
+    syncBrushLibraryUi(targetRuntime);
+  }
+
+  function composePattern(type, targetRuntime = runtime) {
+    if (!targetRuntime || !Object.hasOwn(PATTERN_GENERATORS, type)) return;
+    const layer = activeLayer(targetRuntime.project);
+    if (!layer || layer.locked || !layer.visible) { toast("Hãy chọn một layer đang mở và hiển thị", targetRuntime); return; }
+    const strokes = generatePatternStrokes(type, targetRuntime.project.settings);
+    if (!strokes.length) return;
+    pushHistory(targetRuntime);
+    strokes.forEach((stroke, index) => { stroke.id = `generated-${type}-${Date.now()}-${index}`; stroke.layerId = layer.id; });
+    layer.strokes.push(...strokes);
+    if (layer.strokes.length > MAX_STROKES) layer.strokes.splice(0, layer.strokes.length - MAX_STROKES);
+    layer.revision += 1;
+    clearLayerCache(targetRuntime);
+    renderProjectSafely(targetRuntime);
+    syncLayerPanel(targetRuntime);
+    scheduleSave(targetRuntime);
+    announce(`${PATTERN_GENERATORS[type].label} · ${strokes.length} nét đã tạo`, targetRuntime);
+    targetRuntime.root.classList.remove("is-panel-open");
+  }
+
+  function remixPattern(targetRuntime = runtime) {
+    if (!targetRuntime) return;
+    const nextSeed = `${targetRuntime.project.settings.patternSeed.split("-").slice(0, 2).join("-") || "HH"}-${Math.floor((globalScope.performance?.now?.() || Date.now()) % 99999).toString(36).toUpperCase()}`;
+    targetRuntime.project.settings = normalizeSettings({ ...targetRuntime.project.settings, patternSeed: nextSeed });
+    syncControls(targetRuntime);
+    scheduleSave(targetRuntime);
+    toast(`Seed mới: ${nextSeed}`, targetRuntime);
+  }
+
   function applyPreset(id, targetRuntime = runtime) {
     const preset = PRESETS[id];
     if (!preset || !targetRuntime) return;
     targetRuntime.project.settings = normalizeSettings({ ...targetRuntime.project.settings, ...preset, preset: id });
+    targetRuntime.recentBrushes = [id, ...targetRuntime.recentBrushes.filter((item) => item !== id)].slice(0, 8);
+    saveBrushLibrary(targetRuntime);
+    syncBrushLibraryUi(targetRuntime);
     syncControls(targetRuntime);
     drawGuides(targetRuntime);
     scheduleSave(targetRuntime);
@@ -1948,7 +2154,7 @@
     const controls = targetRuntime?.root?.querySelector(".draw-controls");
     const preservedScrollTop = Number.isFinite(targetRuntime?.controlScrollAnchor) ? targetRuntime.controlScrollAnchor : controls?.scrollTop || 0;
     const booleans = new Set(["mirror", "spiral", "autoHue", "guides", "pressureEnabled", "stylusEraser", "grid", "snapCenter", "touchDraw"]);
-    const numbers = new Set(["symmetry", "brushSize", "glow", "flow", "stabilizer", "pressureCurve", "velocityWidth", "velocityGlow", "taperStart", "taperEnd", "spacing", "scatter", "rotation", "noise", "curvature", "elasticity", "inertia", "canvasWidth", "canvasHeight", "exportScale"]);
+    const numbers = new Set(["symmetry", "brushSize", "glow", "flow", "stabilizer", "pressureCurve", "velocityWidth", "velocityGlow", "taperStart", "taperEnd", "spacing", "scatter", "rotation", "noise", "curvature", "elasticity", "inertia", "patternComplexity", "patternScale", "canvasWidth", "canvasHeight", "exportScale"]);
     const value = booleans.has(key) ? input.checked : numbers.has(key) ? Number(input.value) : input.value;
     let nextSettings = normalizeSettings({ ...targetRuntime.project.settings, [key]: value, preset: targetRuntime.project.settings.preset });
     if (key === "canvasPreset" && !["viewport", "custom"].includes(value)) nextSettings = normalizeSettings({ ...nextSettings, canvasWidth: CANVAS_PRESETS[value].width, canvasHeight: CANVAS_PRESETS[value].height });
@@ -1971,6 +2177,10 @@
   }
 
   function handleClick(event, targetRuntime = runtime) {
+    const favorite = event.target.closest("[data-draw-favorite]"); if (favorite) { toggleFavorite(favorite.dataset.drawFavorite, targetRuntime); return; }
+    const generator = event.target.closest("[data-draw-generator]"); if (generator) { composePattern(generator.dataset.drawGenerator, targetRuntime); return; }
+    if (event.target.closest("[data-draw-generator-remix]")) { remixPattern(targetRuntime); return; }
+    if (event.target.closest("[data-draw-zen]")) { const active = targetRuntime.root.classList.toggle("is-zen"); targetRuntime.root.querySelectorAll("[data-draw-zen]").forEach((button) => button.setAttribute("aria-pressed", String(active))); toast(active ? "Zen Canvas · nhấn Z để thoát" : "Đã trở lại studio", targetRuntime); scheduleResize(targetRuntime); return; }
     const animationAction = event.target.closest("[data-draw-animation]"); if (animationAction) { const action = animationAction.dataset.drawAnimation; if (action === "play") playAnimation(targetRuntime); else if (action === "pause") pauseAnimation(targetRuntime); else { if (targetRuntime.exportingAnimation) targetRuntime.exportCancelled = true; stopAnimation(targetRuntime); } return; }
     const keyframe = event.target.closest("[data-draw-keyframe]"); if (keyframe) { updateKeyframe(keyframe.dataset.drawKeyframe, targetRuntime); return; }
     if (event.target.closest("[data-draw-animation-export]")) { exportAnimation(targetRuntime); return; }
@@ -1987,10 +2197,9 @@
     const modeFilter = event.target.closest("[data-draw-mode-filter]");
     if (modeFilter) {
       const id = modeFilter.dataset.drawModeFilter;
+      targetRuntime.brushFilter = id;
       targetRuntime.root.querySelectorAll("[data-draw-mode-filter]").forEach((button) => { const active = button === modeFilter; button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); });
-      let visible = 0;
-      targetRuntime.root.querySelectorAll("[data-draw-preset]").forEach((button) => { button.hidden = id !== "all" && button.dataset.drawCategory !== id; if (!button.hidden) visible += 1; });
-      const count = targetRuntime.root.querySelector("[data-draw-mode-count]"); if (count) count.textContent = String(visible);
+      applyBrushFilters(targetRuntime);
       return;
     }
     const layerAction = event.target.closest("[data-draw-layer-select],[data-draw-layer-visible],[data-draw-layer-lock],[data-draw-layer-add],[data-draw-layer-duplicate],[data-draw-layer-up],[data-draw-layer-down],[data-draw-layer-merge],[data-draw-layer-delete]");
@@ -2048,6 +2257,7 @@
     if (!typing && event.key.toLowerCase() === "v") { event.preventDefault(); setTool("select", targetRuntime); return; }
     if (!typing && event.key.toLowerCase() === "h") { event.preventDefault(); setTool("pan", targetRuntime); return; }
     if (!typing && event.key.toLowerCase() === "f") { event.preventDefault(); targetRuntime.root.requestFullscreen?.(); return; }
+    if (!typing && event.key.toLowerCase() === "z") { event.preventDefault(); const active = targetRuntime.root.classList.toggle("is-zen"); targetRuntime.root.querySelectorAll("[data-draw-zen]").forEach((button) => button.setAttribute("aria-pressed", String(active))); scheduleResize(targetRuntime); return; }
     if (event.key === "Escape" && targetRuntime.root.classList.contains("is-panel-open")) { targetRuntime.root.classList.remove("is-panel-open"); targetRuntime.root.querySelector("[data-draw-panel-open]")?.focus(); }
   }
 
@@ -2060,16 +2270,17 @@
     unmount();
     const storageKey = ownerKey(options.currentUser);
     const project = storageRead(storageKey);
-    root.innerHTML = markup(project);
+    const brushLibrary = readBrushLibrary(storageKey);
+    root.innerHTML = markup(project, brushLibrary);
     const studio = root.firstElementChild;
     const canvas = studio.querySelector("[data-draw-canvas]");
     const guideCanvas = studio.querySelector("[data-draw-guides]");
     const minimap = studio.querySelector("[data-draw-minimap]");
     const initialQuality = project.settings.quality === "auto" ? resolveQualityProfile("auto", { deviceMemory: globalScope.navigator?.deviceMemory, hardwareConcurrency: globalScope.navigator?.hardwareConcurrency }).id : project.settings.quality;
-    runtime = { host: root, root: studio, canvas, guideCanvas, minimap, project, storageKey, historyUndo: [], historyRedo: [], historyActionCount: 0, pendingHistory: "", checkpointPending: false, userChangedProject: false, controlScrollAnchor: null, layerCache: new Map(), renderWorker: null, workerBusy: false, workerRequestId: 0, activeLayerBuffer: null, activeStroke: null, drawing: false, panning: false, panStart: null, touchPointers: new Map(), gesture: null, selecting: false, selectionShape: "rect", selectionPath: [], selectionScreen: null, selectionRegion: null, selectionIds: new Set(), playbackProgress: 0, playbackFrame: 0, isPlaying: false, exportingAnimation: false, exportCancelled: false, audioLevel: 0, audioStream: null, audioContext: null, audioFrame: 0, spacePressed: false, tool: "draw", dpr: 1, saved: true, resizeObserver: null, resizeFrame: 0, drawFrame: 0, pointQueue: [], drawRect: null, paintCost: 0, fastFrames: 0, liveQuality: initialQuality, saveTimer: 0, toastTimer: 0 };
+    runtime = { host: root, root: studio, canvas, guideCanvas, minimap, project, storageKey, favoriteBrushes: new Set(brushLibrary.favorites), recentBrushes: brushLibrary.recent, brushFilter: "all", brushSearch: "", historyUndo: [], historyRedo: [], historyActionCount: 0, pendingHistory: "", checkpointPending: false, userChangedProject: false, controlScrollAnchor: null, layerCache: new Map(), renderWorker: null, workerBusy: false, workerRequestId: 0, activeLayerBuffer: null, activeStroke: null, drawing: false, panning: false, panStart: null, touchPointers: new Map(), gesture: null, selecting: false, selectionShape: "rect", selectionPath: [], selectionScreen: null, selectionRegion: null, selectionIds: new Set(), playbackProgress: 0, playbackFrame: 0, isPlaying: false, exportingAnimation: false, exportCancelled: false, audioLevel: 0, audioStream: null, audioContext: null, audioFrame: 0, spacePressed: false, tool: "draw", dpr: 1, saved: true, resizeObserver: null, resizeFrame: 0, drawFrame: 0, pointQueue: [], drawRect: null, paintCost: 0, fastFrames: 0, liveQuality: initialQuality, saveTimer: 0, toastTimer: 0 };
     runtime.onClick = (event) => handleClick(event, runtime);
     runtime.onChange = (event) => handleChange(event, runtime);
-    runtime.onInput = (event) => { if (event.target.matches("input[type=range][data-draw-setting]")) updateSetting(event.target, runtime); else if (event.target.matches('input[type=range][data-draw-animation-setting]')) updateAnimationSetting(event.target, runtime); else if (event.target.matches("[data-draw-timeline]")) { runtime.playbackProgress = clamp(event.target.value, 0, 1, 0); renderPlayback(runtime); } };
+    runtime.onInput = (event) => { if (event.target.matches("[data-draw-brush-search]")) { runtime.brushSearch = event.target.value; applyBrushFilters(runtime); } else if (event.target.matches("input[type=range][data-draw-setting]")) updateSetting(event.target, runtime); else if (event.target.matches('input[type=range][data-draw-animation-setting]')) updateAnimationSetting(event.target, runtime); else if (event.target.matches("[data-draw-timeline]")) { runtime.playbackProgress = clamp(event.target.value, 0, 1, 0); renderPlayback(runtime); } };
     runtime.onKeydown = (event) => handleKeydown(event, runtime);
     runtime.onKeyup = (event) => handleKeyup(event, runtime);
     runtime.onPointerDown = (event) => beginStroke(event, runtime);
@@ -2077,7 +2288,7 @@
     runtime.onPointerUp = (event) => finishStroke(event, runtime);
     runtime.onPointerLeave = () => runtime?.root.querySelector("[data-draw-brush-cursor]")?.classList.remove("is-visible");
     runtime.onControlPointerDown = (event) => { if (event.target.closest?.(".draw-switch")) runtime.controlScrollAnchor = runtime.root.querySelector(".draw-controls")?.scrollTop ?? null; };
-    runtime.onVisibility = () => { if (!globalScope.document.hidden || !runtime) return; if (runtime.drawing) finishStroke({ pointerId: -1 }, runtime); if (runtime.isPlaying) pauseAnimation(runtime); if (runtime.audioStream) toggleAudioReactive(runtime); };
+    runtime.onVisibility = () => { if (!runtime) return; runtime.root.classList.toggle("is-page-hidden", globalScope.document.hidden); if (!globalScope.document.hidden) return; if (runtime.drawing) finishStroke({ pointerId: -1 }, runtime); if (runtime.isPlaying) pauseAnimation(runtime); if (runtime.audioStream) toggleAudioReactive(runtime); };
     studio.addEventListener("click", runtime.onClick);
     studio.addEventListener("change", runtime.onChange);
     studio.addEventListener("input", runtime.onInput);
@@ -2094,7 +2305,7 @@
     globalScope.document.addEventListener("keyup", runtime.onKeyup);
     runtime.resizeObserver = typeof globalScope.ResizeObserver === "function" ? new globalScope.ResizeObserver(() => scheduleResize(runtime)) : null;
     runtime.resizeObserver?.observe(canvas);
-    globalScope.requestAnimationFrame?.(() => { resizeCanvases(runtime); syncControls(runtime); announce("Đã sẵn sàng · kéo để vẽ", runtime); });
+    globalScope.requestAnimationFrame?.(() => { resizeCanvases(runtime); syncControls(runtime); syncBrushLibraryUi(runtime); announce("Đã sẵn sàng · kéo để vẽ", runtime); });
     hydrateFromDatabase(runtime);
     return true;
   }
@@ -2142,5 +2353,5 @@
     return renderLayerBuffer(layer, targetRuntime, Math.max(1, pixelWidth / ratio), Math.max(1, pixelHeight / ratio), ratio, 1, false);
   }
 
-  return { VERSION, STORAGE_SCHEMA, PALETTE, COLOR_PALETTES, PRESETS, BRUSH_MODES, DEFAULT_SETTINGS, QUALITY_PROFILES, LAYER_BLEND_MODES, LAYER_TYPES, CANVAS_PRESETS, normalizeSettings, normalizeProject, normalizeLayer, projectStrokes, projectRenderCost, resolveQualityProfile, buildSymmetryPoints, mixHex, samplePalette, harmonyColors, renderLayerBitmap, mount, unmount, inspect };
+  return { VERSION, STORAGE_SCHEMA, BRUSH_LIBRARY_SCHEMA, PALETTE, COLOR_PALETTES, PRESETS, BRUSH_MODES, PATTERN_GENERATORS, DEFAULT_SETTINGS, QUALITY_PROFILES, LAYER_BLEND_MODES, LAYER_TYPES, CANVAS_PRESETS, normalizeSettings, normalizeProject, normalizeLayer, projectStrokes, projectRenderCost, resolveQualityProfile, buildSymmetryPoints, generatePatternStrokes, mixHex, samplePalette, harmonyColors, renderLayerBitmap, mount, unmount, inspect };
 });

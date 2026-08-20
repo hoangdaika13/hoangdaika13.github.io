@@ -43,6 +43,28 @@ test("chromatic studio exposes categorized brush engines and multi-stop palettes
   assert.equal(draw.harmonyColors("#ff0000", "triadic").length, 4);
 });
 
+test("Pattern Composer creates bounded deterministic geometry for every real generator", () => {
+  assert.equal(Object.keys(draw.PATTERN_GENERATORS).length, 6);
+  const settings = draw.normalizeSettings({ patternSeed: "HH-TEST", patternComplexity: 9, patternScale: 0.72, brushMode: "neon" });
+  for (const type of Object.keys(draw.PATTERN_GENERATORS)) {
+    const first = draw.generatePatternStrokes(type, settings);
+    const second = draw.generatePatternStrokes(type, settings);
+    assert.ok(first.length >= 1 && first.length <= 120, `${type} must create bounded strokes`);
+    assert.deepEqual(first, second, `${type} must be reproducible from its seed`);
+    assert.ok(first.every((stroke) => stroke.points.length >= 2 && stroke.points.length <= 1400));
+    assert.ok(first.flatMap((stroke) => stroke.points).every((point) => point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1));
+  }
+  assert.deepEqual(draw.generatePatternStrokes("unknown", settings), []);
+});
+
+test("draw settings preserve Pattern Composer controls within safe bounds", () => {
+  const settings = draw.normalizeSettings({ patternSeed: "<HH>".repeat(40), patternComplexity: 99, patternScale: 0.01 });
+  assert.equal(settings.patternComplexity, 16);
+  assert.equal(settings.patternScale, 0.3);
+  assert.ok(settings.patternSeed.length <= 48);
+  assert.doesNotMatch(settings.patternSeed, /[<>]/);
+});
+
 test("adaptive quality selects a low-latency profile for constrained devices", () => {
   assert.equal(draw.resolveQualityProfile("auto", { deviceMemory: 2, hardwareConcurrency: 8 }).id, "performance");
   assert.equal(draw.resolveQualityProfile("auto", { deviceMemory: 8, hardwareConcurrency: 8 }).id, "balanced");
@@ -118,14 +140,15 @@ test("Draw is a first-class lazy route with a real interactive tool contract", (
   assert.match(client, /id: "draw"[\s\S]*?label: "Vẽ"[\s\S]*?route: "\/draw"/);
   assert.match(client, /window\.HHDrawStudio\?\.mount/);
   assert.match(client, /title: "Vẽ · Chromatic Studio"[\s\S]*?route: "\/draw"/);
-  assert.match(loader, /draw:\s*\{[\s\S]*?draw-studio\.css\?v=7[\s\S]*?draw-studio\.js\?v=8/);
+  assert.match(loader, /draw:\s*\{[\s\S]*?draw-studio\.css\?v=8[\s\S]*?draw-studio\.js\?v=9/);
   assert.match(loader, /value\.startsWith\("\/draw"\)/);
-  assert.match(worker, /draw-studio\.css\?v=7/);
-  assert.match(worker, /draw-studio\.js\?v=8/);
-  assert.match(worker, /draw-studio-worker\.js\?v=4/);
+  assert.match(worker, /draw-studio\.css\?v=8/);
+  assert.match(worker, /draw-studio\.js\?v=9/);
+  assert.match(worker, /draw-studio-worker\.js\?v=5/);
   assert.match(html, /data-hh-galaxy-key="draw"/);
   assert.match(galaxy, /draw:\s*\{[\s\S]*?route: "#\/draw"/);
   for (const contract of ["data-draw-canvas", "data-draw-preset", "data-draw-setting=\"symmetry\"", "data-draw-setting=\"mirror\"", "data-draw-setting=\"spiral\"", "data-draw-setting=\"quality\"", "data-draw-layer-panel", "data-draw-tool=\"select\"", "data-draw-animation-export", "data-draw-export-svg", "data-draw-export-layers", "data-draw-undo", "data-draw-redo", "data-draw-export", "data-draw-project-export", "data-draw-project-import"]) assert.match(source, new RegExp(contract));
+  for (const contract of ["data-draw-brush-search", "data-draw-favorite", "data-draw-generator", "data-draw-generator-remix", "data-draw-zen", "data-draw-engine"]) assert.match(source, new RegExp(contract));
   assert.match(source, /data-draw-palette/);
   for (const mode of ["plasma", "electric", "nebula", "prism", "fire", "galaxy", "comet", "ripple", "quantum", "rainbow", "ink"]) assert.match(source, new RegExp(`mode === \\\"${mode}\\\"|\\[.*\\\"${mode}\\\"`));
   assert.match(source, /pointerdown/);
@@ -152,7 +175,7 @@ test("Draw is a first-class lazy route with a real interactive tool contract", (
 });
 
 test("module inspection is safe before browser mounting", () => {
-  assert.deepEqual(draw.inspect(), { version: "2.0.0", mounted: false, strokes: 0, layers: 0, preset: "silk", brushMode: "silk", paletteId: "cosmic", quality: "auto" });
+  assert.deepEqual(draw.inspect(), { version: "2.1.0", mounted: false, strokes: 0, layers: 0, preset: "silk", brushMode: "silk", paletteId: "cosmic", quality: "auto" });
   assert.equal(typeof draw.mount, "function");
   assert.equal(typeof draw.unmount, "function");
 });

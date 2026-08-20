@@ -1,6 +1,6 @@
 "use strict";
 
-importScripts("./draw-studio.js?v=8");
+importScripts("./draw-studio.js?v=9");
 
 self.onmessage = (event) => {
   const message = event.data || {};
