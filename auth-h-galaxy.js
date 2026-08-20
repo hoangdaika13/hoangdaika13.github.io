@@ -286,6 +286,18 @@
       detail: "Canvas local-first hỗ trợ cảm ứng, bảng màu hòa trộn, Mandala, Kaleidoscope, Aurora, hoàn tác và xuất ảnh độ phân giải cao.",
       features: ["Silk Light", "Mandala", "Kaleidoscope", "Color Blend", "HD Export"]
     },
+    remote: {
+      icon: "RM",
+      title: "Remote",
+      kicker: "QUANTUM DEVICE LINK",
+      count: "5 KHÔNG GIAN",
+      route: "#/remote",
+      accent: "#5df4ff",
+      accent2: "#a568ff",
+      description: "Chia sẻ màn hình thật giữa máy tính và điện thoại bằng WebRTC, mã phiên và PIN một lần.",
+      detail: "Chủ phiên chọn màn hình, duyệt từng thiết bị và có thể dùng chat, con trỏ, clipboard hoặc truyền tệp P2P; signaling không nhận nội dung màn hình.",
+      features: ["Screen Share", "Device Approval", "P2P Chat", "File Drop", "Manual WebRTC"]
+    },
     support: {
       icon: "♥",
       title: "Ủng hộ HH",

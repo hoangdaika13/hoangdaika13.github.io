@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v725";
+const CACHE = "hh-identity-portal-v730";
 // Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
 // Compatibility aliases are kept as documentation for clients upgrading from the
 // previous route loader. They are not fetched; RUNTIME_ASSETS below is canonical.
@@ -75,13 +75,14 @@ const RUNTIME_ASSETS = [
   "./fortune-hub-v4.css?v=8",
   "./fortune-hub-v5.css?v=26",
   "./draw-studio.css?v=8",
+  "./remote-hub.css?v=3",
   "./chat-ai-hub.css?v=17",
   "./account-center.css?v=2",
   "./account-center.js?v=2",
   "./settings-studio.css?v=2",
   "./settings-studio.js?v=5",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=203",
+  "./script.js?v=204",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -225,8 +226,8 @@ const RUNTIME_ASSETS = [
   "./assets/hh-neon-logo-v2.png?v=3",
   "./auth-platform.js?v=15",
   "./auth-experience.js?v=8",
-  "./auth-neon-gateway.js?v=27",
-  "./auth-h-galaxy.js?v=13",
+  "./auth-neon-gateway.js?v=28",
+  "./auth-h-galaxy.js?v=14",
   "./auth-living-galaxy-3d.js?v=15",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
@@ -324,12 +325,12 @@ const RUNTIME_ASSETS = [
   "./insights-pro.js?v=7",
   "./privacy-consent-center.js?v=2",
   "./creative-suite.js?v=7",
-  "./creative-os.css?v=6",
+  "./creative-os.css?v=7",
   "./creative-galaxy.css?v=3",
   "./creative-galaxy.js?v=4",
   "./creative-star-map.css?v=2",
   "./creative-star-map.js?v=3",
-  "./creative-os.js?v=12",
+  "./creative-os.js?v=13",
   "./creative-os-core.js?v=4",
   "./creative-command-center.css?v=2",
   "./creative-command-center.js?v=2",
@@ -385,6 +386,7 @@ const RUNTIME_ASSETS = [
   "./fortune-extended-tools.js?v=2",
   "./fortune-hub.js?v=28",
   "./draw-studio.js?v=9",
+  "./remote-hub.js?v=3",
   "./draw-studio-worker.js?v=5",
   "./assets/fortune/lenormand/game-of-hope/spiel-der-hoffnung-36.webp",
   "./assets/fortune/moon/nasa-lro/lroc-color-2k.jpg",
@@ -447,12 +449,12 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=8",
-  "./performance-loader.js?v=432",
+  "./performance-loader.js?v=435",
   "./account-center.css?v=2",
   "./account-center.js?v=2",
   "./auth-platform.js?v=15",
-  "./auth-neon-gateway.js?v=27",
-  "./script.js?v=203"
+  "./auth-neon-gateway.js?v=28",
+  "./script.js?v=204"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

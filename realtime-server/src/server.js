@@ -10,6 +10,7 @@ const passport = require("passport");
 const { Strategy: GoogleStrategy } = require("passport-google-oauth20");
 const { MongoClient, ObjectId } = require("mongodb");
 const { registerCommunicationV2 } = require("./communication-v2");
+const { registerRemoteSignaling } = require("./remote-signaling");
 const { Server } = require("socket.io");
 
 const app = express();
@@ -132,7 +133,9 @@ app.use((req, res, next) => {
 app.use(passport.initialize());
 
 const io = new Server(server, {
-  cors: { origin: allowedOrigins, methods: ["GET", "POST"], credentials: true }
+  cors: { origin: allowedOrigins, methods: ["GET", "POST"], credentials: true },
+  maxHttpBufferSize: 128 * 1024,
+  perMessageDeflate: false
 });
 
 let client;
@@ -762,6 +765,8 @@ registerCommunicationV2({
   hasRedis: false,
   hasObjectStorage: false
 });
+
+registerRemoteSignaling({ io, iceServers: ICE_SERVERS, allowedOrigins });
 
 app.use((error, _req, res, _next) => {
   console.error("Realtime HTTP error:", error?.message || error);

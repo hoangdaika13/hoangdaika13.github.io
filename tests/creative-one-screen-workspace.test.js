@@ -24,7 +24,7 @@ test("Creative workspace uses a fixed full-width single-column stage with only i
   assert.match(css, /\.app-main--creative-fixed \.app-workspace\.app-workspace--creative-fixed\s*\{[^}]*height:\s*100%/s);
   assert.match(css, /\.creative-os\s*\{[^}]*height:\s*100%[^}]*overflow:\s*hidden/s);
   assert.match(css, /\.creative-os__body\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/s);
-  assert.match(css, /\.creative-os__workspace\s*\{[^}]*overflow:\s*auto/s);
+  assert.match(css, /\.creative-os__workspace\s*\{[^}]*overflow-x:\s*hidden[^}]*overflow-y:\s*auto/s);
   assert.match(css, /\.creative-os__workspace > :where\([\s\S]*width:\s*100% !important[\s\S]*max-width:\s*none !important/s);
   assert.match(css, /@media \(max-width: 560px\)/);
 });

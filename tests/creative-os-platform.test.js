@@ -23,7 +23,7 @@ test("Creative OS shell is routed, versioned and cached", () => {
   const shell = read("creative-os.js");
   const worker = read("sw.js");
   const registeredAssets = `${html}\n${loader}`;
-  assert.match(registeredAssets, /creative-os\.css\?v=6/);
+  assert.match(registeredAssets, /creative-os\.css\?v=7/);
   assert.match(registeredAssets, /creative-os\.js\?v=\d+/);
   assert.match(html, /script\.js\?v=\d+/);
   assert.match(worker, /hh-identity-portal-v\d+/);
@@ -50,10 +50,10 @@ test("Creative OS keeps existing tools and adds all requested routes", () => {
 test("Creative OS provides real project actions and a motion-safe living universe", () => {
   const shell = read("creative-os.js");
   const css = read("creative-os.css");
-  for (const contract of ["importProject(file", "snapshotProject()", "exportProject()", "createProject", "capabilityAudit", "data-cos-readiness-panel", "data-cos-toast"]) {
+  for (const contract of ["importProject(file", "snapshotProject()", "exportProject()", "createProject", "capabilityAudit", "data-cos-readiness-panel", "data-cos-toast", "data-cos-journey", "data-cos-action-panel", "guideWorkspace(step)"]) {
     assert.match(shell, new RegExp(contract.replace(/[()]/g, "\\$&")));
   }
-  for (const visual of ["creative-os__cosmos", "cos-star-drift", "cos-nebula", "cos-orbit", "cos-comet", "prefers-reduced-motion"]) {
+  for (const visual of ["creative-os__cosmos", "creative-os__glyphs", "creative-os__journey", "cos-star-drift", "cos-nebula", "cos-orbit", "cos-comet", "cos-pulsar", "cos-workspace-enter", "cos-active-breathe", "prefers-reduced-motion"]) {
     assert.match(css, new RegExp(visual));
   }
 });

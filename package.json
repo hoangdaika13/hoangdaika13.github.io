@@ -16,6 +16,7 @@
     "test:english": "node --test tests/english-learning.test.js tests/english-learning-galaxy.test.js tests/english-galaxy-contract.test.js tests/english-vocabulary.test.js tests/english-for-everyone.test.js tests/english-learning-os-v3.test.js tests/english-learning-api.test.js",
     "test:japanese": "node --test tests/japanese-learning.test.js tests/japanese-dictionary-api.test.js tests/japanese-os-v3.test.js",
     "test:communication": "node --test tests/communication-*.test.js",
+    "test:remote": "node --test tests/remote-hub.test.js && npm --prefix realtime-server run test:remote",
     "test:youtube-publisher": "node --test tests/youtube-publisher-contract.test.js tests/youtube-creator-galaxy.test.js tests/youtube-security.test.js",
     "test:ai-video": "node --test tests/ai-video-remake-*.test.js",
     "test:comic-motion": "node --test tests/comic-motion-studio.test.js tests/comic-reader-hub.test.js tests/comic-otruyen-provider.test.js tests/comic-mangadex-provider.test.js tests/comic-open-books-provider.test.js",

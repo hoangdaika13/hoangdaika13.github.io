@@ -123,7 +123,7 @@ test("Creative Star Map release assets are versioned and cached", () => {
   const html = read("index.html");
   for (const asset of [
     "creative-star-map.css?v=2", "creative-star-map.js?v=3",
-    "creative-galaxy.css?v=3", "creative-galaxy.js?v=4", "creative-os.js?v=12"
+    "creative-galaxy.css?v=3", "creative-galaxy.js?v=4", "creative-os.js?v=13"
   ]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);

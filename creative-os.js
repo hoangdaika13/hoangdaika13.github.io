@@ -69,6 +69,28 @@
     "Xuất bản": ["#ff69be", "#8c76ff"],
     "Mở rộng": ["#ffe06b", "#ff7e78"]
   });
+  const GROUP_JOURNEYS = Object.freeze({
+    "Điều hành": ["Chọn dự án", "Cập nhật", "Kiểm tra", "Lưu phiên bản"],
+    "AI & Kịch bản": ["Nhập yêu cầu", "Tạo nội dung", "Tinh chỉnh", "Lưu kết quả"],
+    "Tiền kỳ": ["Nhập chiến lược", "Tạo cấu trúc", "Duyệt nội dung", "Lưu dự án"],
+    "Sản xuất nội dung": ["Chọn nguồn", "Sản xuất", "Xem trước", "Đưa vào dự án"],
+    "AI & Workflow": ["Thiết lập", "Chạy pipeline", "Kiểm tra", "Phê duyệt"],
+    "Sản xuất chuyên sâu": ["Chọn đầu vào", "Xử lý", "So sánh", "Xuất kết quả"],
+    "Cộng tác": ["Chọn nội dung", "Góp ý", "Duyệt thay đổi", "Chốt phiên bản"],
+    "Xuất bản": ["Chuẩn bị", "Kiểm tra quyền", "Xếp lịch", "Theo dõi"],
+    "Mở rộng": ["Chọn gói", "Xem quyền", "Cài đặt", "Quản lý"]
+  });
+  const GROUP_GLYPHS = Object.freeze({
+    "Điều hành": ["⌁", "◇", "↗", "◎"],
+    "AI & Kịch bản": ["AI", "✦", "⌘", "◈"],
+    "Tiền kỳ": ["◒", "✎", "△", "✦"],
+    "Sản xuất nội dung": ["▶", "◉", "♫", "✺"],
+    "AI & Workflow": ["⌘", "∞", "⇄", "✓"],
+    "Sản xuất chuyên sâu": ["◈", "✺", "⌁", "↯"],
+    "Cộng tác": ["◌", "◎", "⇄", "✓"],
+    "Xuất bản": ["↗", "◫", "✓", "◉"],
+    "Mở rộng": ["✦", "◇", "+", "◎"]
+  });
 
   const loads = new Map();
   let activeRoot = null;
@@ -84,6 +106,8 @@
   let pageMain = null;
   let pageWorkspace = null;
   let noticeTimer = 0;
+  let viewMotionTimer = 0;
+  let guideTimer = 0;
 
   const escapeHTML = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
   const normalizeView = (view) => VIEWS.some((item) => item.id === view) ? view : "overview";
@@ -223,10 +247,21 @@
     return state?.projects?.find((item) => item.id === state.activeProjectId) || state?.projects?.[0] || null;
   }
 
+  function journeyMarkup(group) {
+    const steps = GROUP_JOURNEYS[group] || GROUP_JOURNEYS["Điều hành"];
+    return steps.map((label, index) => `<button type="button" data-cos-guide-step="${index}" class="${index === 0 ? "is-active" : ""}"><i>${String(index + 1).padStart(2, "0")}</i><span>${escapeHTML(label)}</span></button>`).join("");
+  }
+
+  function glyphMarkup(group) {
+    const glyphs = GROUP_GLYPHS[group] || GROUP_GLYPHS["Điều hành"];
+    return glyphs.map((glyph) => `<i>${escapeHTML(glyph)}</i>`).join("");
+  }
+
   function shellMarkup(view) {
     const current = viewMeta(view);
     return `<section class="creative-os" data-creative-os data-view="${escapeHTML(current.id)}">
-      <div class="creative-os__cosmos" aria-hidden="true"><i></i><i></i><i></i><span></span><span></span><b></b></div>
+      <div class="creative-os__cosmos" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><span></span><span></span><span></span><b></b><em></em></div>
+      <div class="creative-os__glyphs" data-cos-glyphs aria-hidden="true">${glyphMarkup(current.group)}</div>
       <header class="creative-os__topbar">
         <div class="creative-os__brand"><i><b>HH</b><span></span></i><span><small>CREATIVE LIVING UNIVERSE</small><strong data-cos-active-project>Đang tải dự án...</strong><em data-cos-sync-time>Đã lưu local</em></span></div>
         <div class="creative-os__summary" aria-label="Dữ liệu dự án thật">
@@ -236,12 +271,14 @@
           <span><small>Lượt chạy</small><b data-cos-run-count>0</b></span>
           <span><small>Chờ xuất bản</small><b data-cos-queue-count>0</b></span>
         </div>
-        <div class="creative-os__top-actions"><button type="button" data-cos-readiness><i data-cos-engine-count>25/25</i> Engine</button><button type="button" data-cos-import-project>Nhập</button><button type="button" data-cos-snapshot>Snapshot</button><button type="button" data-cos-new-project>+ Dự án</button><button type="button" data-cos-command title="Tìm lệnh toàn hệ thống">Ctrl K</button><input type="file" hidden accept="application/json,.json,.hhcreative.json" data-cos-import-input></div>
+        <div class="creative-os__top-actions"><button type="button" data-cos-readiness title="Kiểm tra 25 engine"><i data-cos-engine-count>25/25</i> Engine</button><button type="button" data-cos-import-project title="Nhập Universal Project (Ctrl+O)">Nhập</button><button type="button" data-cos-snapshot title="Lưu phiên bản hiện tại (Ctrl+S)">Snapshot</button><button type="button" data-cos-new-project title="Tạo Universal Project (Ctrl+N)">+ Dự án</button><button type="button" class="creative-os__action-toggle" data-cos-action-menu aria-expanded="false">✦ Tác vụ</button><button type="button" data-cos-command title="Tìm lệnh toàn hệ thống">Ctrl K</button><input type="file" hidden accept="application/json,.json,.hhcreative.json" data-cos-import-input></div>
+        <aside class="creative-os__action-panel" data-cos-action-panel hidden><header><strong>Thao tác nhanh</strong><button type="button" data-cos-close-actions aria-label="Đóng">×</button></header><button type="button" data-cos-menu-readiness><i>25</i><span><b>Trạng thái engine</b><small>Kiểm tra mọi workspace</small></span></button><button type="button" data-cos-menu-import><i>⇧</i><span><b>Nhập project</b><small>Đọc tệp .hhcreative.json</small></span></button><button type="button" data-cos-menu-snapshot><i>◇</i><span><b>Tạo snapshot</b><small>Lưu phiên bản có thể khôi phục</small></span></button><button type="button" data-cos-menu-export><i>⇩</i><span><b>Xuất project</b><small>Tải toàn bộ dữ liệu dự án</small></span></button></aside>
         <aside class="creative-os__readiness" data-cos-readiness-panel hidden><header><div><small>ENGINE CONTRACT</small><strong>25 workspace đã nối chức năng thật</strong></div><button type="button" data-cos-close-readiness aria-label="Đóng">×</button></header><p>Engine chỉ được tải khi mở để giữ giao diện mượt. “Lazy” nghĩa là đã khai báo và sẵn sàng tải, không phải chức năng giả.</p><div data-cos-readiness-list></div></aside>
       </header>
       <div class="creative-os__body">
         <section class="creative-os__stage">
           <header class="creative-os__stage-head"><div><small data-cos-group-label>${escapeHTML(current.group)}</small><h2 data-cos-title>${escapeHTML(current.title)}</h2><p data-cos-description>${escapeHTML(current.description)}</p></div><div><span data-cos-engine-status><i></i>Engine có dữ liệu thật</span><button type="button" data-cos-export-project>Xuất project</button></div></header>
+          <nav class="creative-os__journey" data-cos-journey aria-label="Luồng thao tác nhanh">${journeyMarkup(current.group)}<em><i></i>Chạm từng bước để tìm đúng thao tác</em></nav>
           <main class="creative-os__workspace" data-cos-workspace aria-live="polite"><section class="creative-os__loader" role="status"><i></i><strong>Đang mở ${escapeHTML(current.title)}...</strong><span>Chỉ tải engine đang sử dụng để giữ giao diện mượt.</span></section></main>
         </section>
       </div>
@@ -266,6 +303,7 @@
     const host = activeRoot?.querySelector("[data-cos-workspace]");
     const engine = ENGINES[view];
     if (!host || !engine) return;
+    host.classList?.remove?.("is-ready");
     host.innerHTML = `<section class="creative-os__loader" role="status"><i></i><strong>Đang mở ${escapeHTML(viewMeta(view).title)}...</strong><span>Đang chuẩn bị đúng công cụ bạn chọn.</span></section>`;
     try {
       const [store] = await Promise.all([ensureStore(), prepareRoute(view)]);
@@ -303,6 +341,7 @@
       }));
       if (token !== mountToken || !activeRoot) { try { handle?.unmount?.(); } catch {} return; }
       activeEngineHandle = handle || null;
+      host.classList?.add?.("is-ready");
       syncActiveView(view);
       notifyWorkspace(view);
     } catch (error) {
@@ -326,6 +365,10 @@
       "[data-cos-description]": current.description
     };
     Object.entries(text).forEach(([selector, value]) => { const node = activeRoot.querySelector(selector); if (node) node.textContent = value; });
+    const journey = activeRoot.querySelector("[data-cos-journey]");
+    if (journey) journey.innerHTML = `${journeyMarkup(current.group)}<em><i></i>Chạm từng bước để tìm đúng thao tác</em>`;
+    const glyphs = activeRoot.querySelector("[data-cos-glyphs]");
+    if (glyphs) glyphs.innerHTML = glyphMarkup(current.group);
     const status = activeRoot.querySelector("[data-cos-engine-status]");
     if (status) status.innerHTML = `<i></i>${window[ENGINES[current.id]?.api]?.mount ? "Engine đang hoạt động" : "Engine sẵn sàng tải"}`;
     renderContext();
@@ -335,6 +378,12 @@
     const view = normalizeView(nextView);
     activeView = view;
     syncActiveView(view);
+    const shell = activeRoot?.querySelector("[data-creative-os]") || activeRoot;
+    window.clearTimeout(viewMotionTimer);
+    shell?.classList?.remove?.("is-view-entering");
+    if (shell) void shell.offsetWidth;
+    shell?.classList?.add?.("is-view-entering");
+    viewMotionTimer = window.setTimeout(() => shell?.classList?.remove?.("is-view-entering"), 820);
     if (userInitiated) options.onViewChange?.(view);
     const token = ++mountToken;
     return mountEngine(view, options, token);
@@ -376,6 +425,43 @@
     showNotice("Đã lưu snapshot để có thể khôi phục sau này.", "success");
   }
 
+  function guideWorkspace(step) {
+    const index = Math.max(0, Math.min(3, Number(step) || 0));
+    const workspace = activeRoot?.querySelector("[data-cos-workspace]");
+    if (!workspace) return;
+    activeRoot.querySelectorAll("[data-cos-guide-step]").forEach((node) => node.classList.toggle("is-active", Number(node.dataset.cosGuideStep) === index));
+    activeRoot.querySelectorAll(".is-guide-focus").forEach((node) => node.classList.remove("is-guide-focus"));
+    const selectors = [
+      "input:not([type='hidden']):not([disabled]), textarea:not([disabled]), select:not([disabled])",
+      "[data-action*='generate'], [data-action*='create'], [data-action*='run'], [data-action*='start'], button[type='submit'], .primary",
+      "[data-output], [data-result], [data-preview], [data-report], .result, .preview, .report, [aria-live='polite']",
+      ""
+    ];
+    let target = null;
+    if (index === 3) {
+      const candidates = [...activeRoot.querySelectorAll("[data-cos-snapshot], [data-cos-menu-snapshot]")];
+      target = candidates.find((node) => node.offsetParent !== null) || candidates.find((node) => node.matches?.("[data-cos-menu-snapshot]")) || candidates[0] || null;
+      if (target?.matches?.("[data-cos-menu-snapshot]")) {
+        const panel = activeRoot.querySelector("[data-cos-action-panel]");
+        if (panel) panel.hidden = false;
+        activeRoot.querySelector("[data-cos-action-menu]")?.setAttribute?.("aria-expanded", "true");
+      }
+    } else {
+      target = [...workspace.querySelectorAll(selectors[index])].find((node) => node.offsetParent !== null) || null;
+    }
+    if (!target) {
+      const messages = ["Workspace này chưa cần dữ liệu đầu vào.", "Hãy chọn hành động chính trong workspace.", "Kết quả sẽ xuất hiện sau khi bạn chạy chức năng.", "Hãy tạo dự án trước khi lưu phiên bản."];
+      showNotice(messages[index], "info");
+      return;
+    }
+    target.classList.add("is-guide-focus");
+    target.scrollIntoView?.({ behavior: "smooth", block: "center", inline: "nearest" });
+    target.focus?.({ preventScroll: true });
+    window.clearTimeout(guideTimer);
+    guideTimer = window.setTimeout(() => target?.classList?.remove?.("is-guide-focus"), 2600);
+    showNotice(["Đã đưa bạn tới phần nhập dữ liệu.", "Đây là hành động chính của công cụ.", "Đây là vùng xem trước hoặc kết quả.", "Snapshot lưu trạng thái hiện tại để khôi phục sau."][index], "success");
+  }
+
   function bind(root, options) {
     rootAbort?.abort();
     rootAbort = new AbortController();
@@ -383,17 +469,28 @@
     root.addEventListener("click", (event) => {
       const shell = root.querySelector("[data-creative-os]");
       const readiness = root.querySelector("[data-cos-readiness-panel]");
+      const actionPanel = root.querySelector("[data-cos-action-panel]");
+      const actionToggle = root.querySelector("[data-cos-action-menu]");
       if (event.target.closest("[data-cos-command]")) { document.dispatchEvent(new CustomEvent("hh:command-open")); document.querySelector("[data-command-open]")?.click(); return; }
+      if (event.target.closest("[data-cos-action-menu]")) {
+        if (actionPanel) actionPanel.hidden = !actionPanel.hidden;
+        actionToggle?.setAttribute?.("aria-expanded", String(Boolean(actionPanel && !actionPanel.hidden)));
+        return;
+      }
+      if (event.target.closest("[data-cos-close-actions]")) { if (actionPanel) actionPanel.hidden = true; actionToggle?.setAttribute?.("aria-expanded", "false"); return; }
       if (event.target.closest("[data-cos-readiness]")) {
         if (readiness) readiness.hidden = !readiness.hidden;
         return;
       }
+      if (event.target.closest("[data-cos-menu-readiness]")) { if (readiness) readiness.hidden = false; if (actionPanel) actionPanel.hidden = true; return; }
       if (event.target.closest("[data-cos-close-readiness]")) { if (readiness) readiness.hidden = true; return; }
       if (event.target.closest("[data-cos-import-project]")) { root.querySelector("[data-cos-import-input]")?.click(); return; }
+      if (event.target.closest("[data-cos-menu-import]")) { if (actionPanel) actionPanel.hidden = true; root.querySelector("[data-cos-import-input]")?.click(); return; }
       if (event.target.closest("[data-cos-snapshot]")) {
         try { snapshotProject(); } catch (error) { showNotice(error.message || error, "error"); }
         return;
       }
+      if (event.target.closest("[data-cos-menu-snapshot]")) { if (actionPanel) actionPanel.hidden = true; try { snapshotProject(); } catch (error) { showNotice(error.message || error, "error"); } return; }
       if (event.target.closest("[data-cos-new-project]")) {
         try {
           const project = activeStore?.createProject?.({ name: `Dự án sáng tạo ${new Date().toLocaleDateString("vi-VN")}` });
@@ -402,9 +499,22 @@
         return;
       }
       if (event.target.closest("[data-cos-export-project]")) { exportProject(); return; }
+      if (event.target.closest("[data-cos-menu-export]")) { if (actionPanel) actionPanel.hidden = true; exportProject(); return; }
+      const guide = event.target.closest("[data-cos-guide-step]");
+      if (guide) { guideWorkspace(guide.dataset.cosGuideStep); return; }
       if (event.target.closest("[data-cos-retry]")) activateView(activeView, options, false);
       if (readiness && !readiness.hidden && !event.target.closest("[data-cos-readiness-panel]")) readiness.hidden = true;
+      if (actionPanel && !actionPanel.hidden && !event.target.closest("[data-cos-action-panel]")) { actionPanel.hidden = true; actionToggle?.setAttribute?.("aria-expanded", "false"); }
       if (shell) shell.classList.remove("is-nav-open");
+    }, { signal });
+    root.addEventListener("keydown", (event) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      const key = String(event.key || "").toLowerCase();
+      if (!['s', 'o', 'n'].includes(key)) return;
+      event.preventDefault();
+      if (key === 's') { try { snapshotProject(); } catch (error) { showNotice(error.message || error, "error"); } }
+      if (key === 'o') root.querySelector("[data-cos-import-input]")?.click();
+      if (key === 'n') root.querySelector("[data-cos-new-project]")?.click();
     }, { signal });
     root.querySelector("[data-cos-import-input]")?.addEventListener("change", async (event) => {
       const input = event.currentTarget;
@@ -420,6 +530,8 @@
     try { unsubscribe?.(); } catch {}
     try { rootAbort?.abort(); } catch {}
     window.clearTimeout(noticeTimer);
+    window.clearTimeout(viewMotionTimer);
+    window.clearTimeout(guideTimer);
     pageMain?.classList.remove("app-main--creative-fixed");
     pageWorkspace?.classList.remove("app-workspace--creative-fixed");
     unsubscribe = null;
@@ -475,6 +587,6 @@
     normalizeView,
     stateMetrics,
     capabilityAudit,
-    version: 4
+    version: 5
   };
 })();
