@@ -7,7 +7,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createFortuneHub(globalScope) {
   "use strict";
 
-  const VERSION = "9.5.0";
+  const VERSION = "9.5.1";
   const STORAGE_SCHEMA = "hh.fortune.hub.v1";
   const MAX_HISTORY = 80;
   const MAX_JOURNAL = 120;
@@ -1337,8 +1337,8 @@
     const pending = runtime?.pendingScrollTarget; if (!pending) return;
     runtime.pendingScrollTarget = null; scrollFortuneTarget(runtime, pending.selector, pending.behavior || "smooth");
   }
-  function transitionToView(runtime, view) {
-    const commit = () => { runtime.state.view = view; runtime.resultTab = "overview"; runtime.flowStep = null; runtime.inspectorOpen = false; runtime.pendingScrollTarget = ["today", "profile", "history", "journal"].includes(view) ? null : { selector: ".fortune-tool-surface", behavior: "smooth" }; writeState(runtime); render(runtime, true); };
+  function transitionToView(runtime, view, options = {}) {
+    const commit = () => { runtime.state.view = view; runtime.resultTab = "overview"; runtime.flowStep = null; runtime.inspectorOpen = false; runtime.pendingScrollTarget = options.preserveScroll ? null : (["today", "profile", "history", "journal"].includes(view) ? null : { selector: ".fortune-tool-surface", behavior: "smooth" }); writeState(runtime); render(runtime, true); };
     const documentObject = globalScope.document; if (!documentObject?.startViewTransition || runtime.state.settings.motion === "static" || reducedMotionPreferred()) { commit(); return; }
     documentObject.documentElement.dataset.fortuneTransition = (VIEW_VISUALS[view] || VIEW_VISUALS.today)[2]; const transition = documentObject.startViewTransition(commit); transition?.finished?.finally?.(() => { delete documentObject.documentElement.dataset.fortuneTransition; });
   }
@@ -2000,7 +2000,11 @@
     const viewButton = event.target.closest("[data-fortune-view]");
     if (viewButton) {
       const view = viewButton.dataset.fortuneView;
-      if (VIEWS.has(view)) transitionToView(runtime, view);
+      if (VIEWS.has(view)) {
+        const fromToolAtlas = Boolean(viewButton.closest("[data-fortune-tool-atlas]"));
+        if (fromToolAtlas && runtime.state.view === view) runtime.root.classList.remove("is-nav-open");
+        else transitionToView(runtime, view, { preserveScroll: fromToolAtlas });
+      }
       return;
     }
     if (event.target.closest("[data-fortune-contract-verify]")) {
