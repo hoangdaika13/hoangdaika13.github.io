@@ -55,8 +55,12 @@ test("Support Galaxy live summary follows real form and PayOS state", () => {
   const client = read("support-platform.js");
   assert.match(client, /data-support-email[^\n]*addEventListener\("input", syncLiveSummary\)/);
   assert.match(client, /data-support-visibility[\s\S]*syncLiveSummary\(\)/);
-  assert.match(client, /summarySubmit\.disabled = !providerReady/);
-  assert.match(client, /if \(!payOSAvailable\) return/);
+  assert.match(client, /data-support-summary-state/);
+  assert.match(client, /data-support-summary-edit/);
+  assert.match(client, /stageMeta/);
+  assert.match(client, /summarySubmit\.disabled = stage === "details" \? !providerReady : !hasDonation/);
+  assert.match(client, /if \(flowStage === "details"\) \{ if \(!payOSAvailable\) return/);
+  assert.doesNotMatch(client, /data-support-summary-amount|data-support-summary-privacy|data-support-summary-provider/);
   assert.match(client, /document\.body\?\.classList\.remove\("app-support-route"\)/);
 });
 
@@ -87,4 +91,17 @@ test("Support Galaxy payment motion is cinematic, controllable and QR-safe", () 
   assert.match(styles, /support-page\[data-effects=static\] \.support-payos-cosmos/);
   assert.match(styles, /support-page\[data-effects=cinematic\]/);
   assert.match(styles, /@media\(prefers-reduced-motion:reduce\)/);
+});
+
+test("Support Galaxy live summary avoids duplicated payment fields and animates status safely", () => {
+  const client = read("support-platform.js");
+  const styles = read("support-platform.css");
+  for (const token of [
+    "support-summary-state", "support-summary-actions", "supportSummaryOrbit",
+    "supportSummaryMissionScan", "supportSummaryStateSweep", "data-summary-stage"
+  ]) assert.match(client + styles, new RegExp(token));
+  assert.match(styles, /support-summary-state\[data-tone=payment\]/);
+  assert.match(styles, /support-summary-secondary\[hidden\]/);
+  assert.match(styles, /support-live-summary:before/);
+  assert.match(styles, /@keyframes supportSummaryStatePulse/);
 });

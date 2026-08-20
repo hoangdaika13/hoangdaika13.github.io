@@ -60,10 +60,10 @@ test("support assets are versioned and PDF output is cached for the route", () =
   const loader = read("performance-loader.js");
   const sw = read("sw.js");
   const index = read("index.html");
-  assert.match(loader, /support-platform\.css\?v=13/);
-  assert.match(loader, /support-platform\.js\?v=20/);
-  assert.match(sw, /support-platform\.css\?v=13/);
-  assert.match(sw, /support-platform\.js\?v=20/);
+  assert.match(loader, /support-platform\.css\?v=14/);
+  assert.match(loader, /support-platform\.js\?v=21/);
+  assert.match(sw, /support-platform\.css\?v=14/);
+  assert.match(sw, /support-platform\.js\?v=21/);
   assert.match(sw, /vendor\/pdf-lib\.min\.js\?v=1\.17\.1/);
-  assert.match(index, /performance-loader\.js\?v=401/);
+  assert.match(index, /performance-loader\.js\?v=402/);
 });

@@ -274,3 +274,50 @@ body.app-support-route .support-receipt__icon{animation:supportReceiptCore 2.6s 
   body.app-support-route .support-payos-cosmos,body.app-support-route .support-receipt-stars{display:none!important}
   body.app-support-route .support-payos-direct img{animation:none!important;transform:none!important}
 }
+
+/* Support Galaxy v14: the inspector is a live action/status panel, not a second receipt card. */
+body.app-support-route .support-live-summary{position:relative;isolation:isolate;overflow:hidden}
+body.app-support-route .support-live-summary:before{position:absolute;inset:-42% -18%;z-index:-2;background:conic-gradient(from 210deg,transparent 0 26%,rgba(101,235,255,.1) 34%,transparent 43% 58%,rgba(255,104,200,.1) 68%,transparent 78% 90%,rgba(246,214,110,.08) 96%,transparent);content:"";animation:supportSummaryOrbit 19s linear infinite;pointer-events:none}
+body.app-support-route .support-live-summary>header>div{display:grid;gap:3px;min-width:0}
+body.app-support-route .support-live-summary>header small{overflow:hidden;color:#829aac;font-size:8px;font-weight:800;letter-spacing:.07em;text-overflow:ellipsis;white-space:nowrap}
+body.app-support-route .support-summary-mission{position:relative;overflow:hidden}
+body.app-support-route .support-summary-mission:after{position:absolute;top:-80%;bottom:-80%;left:-48%;width:34%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);content:"";transform:skewX(-18deg);animation:supportSummaryMissionScan 6.8s ease-in-out infinite;pointer-events:none}
+body.app-support-route .support-summary-state{position:relative;display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:9px;min-width:0;padding:10px;border:1px solid rgba(101,235,255,.2);border-radius:10px;background:linear-gradient(135deg,rgba(101,235,255,.07),rgba(141,118,255,.08));overflow:hidden}
+body.app-support-route .support-summary-state:after{position:absolute;inset:0;background:linear-gradient(110deg,transparent 20%,rgba(255,255,255,.1) 46%,transparent 72%);content:"";transform:translateX(-130%);animation:supportSummaryStateSweep 4.8s ease-in-out infinite;pointer-events:none}
+body.app-support-route .support-summary-state>i{position:relative;z-index:1;display:grid;width:31px;height:31px;place-items:center;border:1px solid rgba(101,235,255,.35);border-radius:50%;background:rgba(101,235,255,.12);box-shadow:0 0 14px rgba(101,235,255,.2);color:var(--support-cyan);font-style:normal;font-weight:950;animation:supportSummaryStatePulse 2.7s ease-in-out infinite}
+body.app-support-route .support-summary-state>div{position:relative;z-index:1;display:grid;gap:2px;min-width:0}
+body.app-support-route .support-summary-state small{color:#88a2b1;font-size:7px;font-weight:900;letter-spacing:.08em}
+body.app-support-route .support-summary-state strong{overflow:hidden;color:#f1fbff;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+body.app-support-route .support-summary-state p{margin:0;color:#96aabb;font-size:8px;line-height:1.35}
+body.app-support-route .support-summary-state[data-tone=ready]{border-color:rgba(92,224,163,.35);background:linear-gradient(135deg,rgba(92,224,163,.1),rgba(101,235,255,.06))}
+body.app-support-route .support-summary-state[data-tone=ready]>i{border-color:rgba(92,224,163,.55);background:rgba(92,224,163,.14);color:var(--support-green);box-shadow:0 0 16px rgba(92,224,163,.22)}
+body.app-support-route .support-summary-state[data-tone=payment]{border-color:rgba(246,214,110,.35);background:linear-gradient(135deg,rgba(246,214,110,.1),rgba(255,104,200,.05))}
+body.app-support-route .support-summary-state[data-tone=payment]>i{border-color:rgba(246,214,110,.55);background:rgba(246,214,110,.14);color:var(--support-gold);box-shadow:0 0 16px rgba(246,214,110,.2)}
+body.app-support-route .support-summary-state[data-tone=verify]{border-color:rgba(255,104,200,.38);background:linear-gradient(135deg,rgba(255,104,200,.1),rgba(141,118,255,.08))}
+body.app-support-route .support-summary-state[data-tone=verify]>i{border-color:rgba(255,104,200,.55);background:rgba(255,104,200,.14);color:var(--support-pink);box-shadow:0 0 16px rgba(255,104,200,.21)}
+body.app-support-route .support-summary-state[data-tone=success]{border-color:rgba(92,224,163,.45);background:linear-gradient(135deg,rgba(92,224,163,.12),rgba(101,235,255,.07))}
+body.app-support-route .support-summary-state[data-tone=success]>i{border-color:rgba(92,224,163,.64);background:rgba(92,224,163,.16);color:var(--support-green);box-shadow:0 0 18px rgba(92,224,163,.3)}
+body.app-support-route .support-live-summary dl{position:relative;z-index:1}
+body.app-support-route .support-live-summary dl>div{transition:border-color .22s ease,background .22s ease}
+body.app-support-route .support-live-summary dl>div:hover{border-bottom-color:rgba(101,235,255,.38);background:rgba(101,235,255,.025)}
+body.app-support-route .support-live-summary dd{font-size:8px}
+body.app-support-route .support-summary-actions{position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:6px;align-self:end}
+body.app-support-route .support-summary-actions button{min-width:0}
+body.app-support-route .support-summary-secondary{min-height:44px;padding:0 8px;border:1px solid rgba(132,170,199,.26);border-radius:10px;background:rgba(13,21,34,.86);color:#b7c9d5;font-size:9px;font-weight:850}
+body.app-support-route .support-summary-secondary:hover{border-color:rgba(101,235,255,.55);color:#fff;box-shadow:0 0 16px rgba(101,235,255,.12)}
+body.app-support-route .support-summary-secondary[hidden]{display:none}
+body.app-support-route .support-summary-primary{min-height:44px}
+body.app-support-route .support-page[data-summary-stage=payment] .support-live-summary:before{animation-duration:11s}
+body.app-support-route .support-page[data-summary-stage=verify] .support-live-summary:before{animation-duration:8s}
+body.app-support-route .support-page[data-summary-stage=email] .support-live-summary:before{animation-duration:15s}
+@keyframes supportSummaryOrbit{to{transform:rotate(360deg)}}
+@keyframes supportSummaryMissionScan{0%,12%{left:-48%;opacity:0}32%{opacity:1}75%,100%{left:118%;opacity:0}}
+@keyframes supportSummaryStateSweep{0%,25%{transform:translateX(-130%)}72%,100%{transform:translateX(130%)}}
+@keyframes supportSummaryStatePulse{50%{transform:scale(1.08);box-shadow:0 0 0 6px rgba(101,235,255,.06),0 0 22px rgba(101,235,255,.28)}}
+@media(max-width:760px){
+  body.app-support-route .support-summary-actions{grid-template-columns:1fr 1.35fr}
+  body.app-support-route .support-summary-secondary,body.app-support-route .support-summary-primary{min-height:42px;font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+  body.app-support-route .support-live-summary:before,body.app-support-route .support-summary-mission:after,body.app-support-route .support-summary-state:after,body.app-support-route .support-summary-state>i{animation:none!important}
+}

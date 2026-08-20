@@ -233,8 +233,8 @@
       scripts: ["community-admin.js?v=14"]
     },
     support: {
-      styles: ["support-platform.css?v=13"],
-      scripts: ["https://cdn.payos.vn/payos-checkout/v1/stable/payos-initialize.js", "support-platform.js?v=20"]
+      styles: ["support-platform.css?v=14"],
+      scripts: ["https://cdn.payos.vn/payos-checkout/v1/stable/payos-initialize.js", "support-platform.js?v=21"]
     }
   });
 

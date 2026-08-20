@@ -286,7 +286,7 @@
     const summary = document.createElement("aside");
     summary.className = "support-live-summary";
     summary.setAttribute("aria-label", "Tóm tắt ủng hộ");
-    summary.innerHTML = `<header><span>TÓM TẮT TRỰC TIẾP</span><button type="button" data-support-summary-close aria-label="Đóng tóm tắt">×</button></header><div class="support-summary-mission"><i data-support-summary-icon>◉</i><span><small>Nhiệm vụ đã chọn</small><strong data-support-summary-mission>Máy chủ & Database</strong></span></div><strong class="support-summary-amount" data-support-summary-amount>100.000 ₫</strong><dl><div><dt>Tiến độ nhiệm vụ</dt><dd data-support-summary-progress>Chưa có dữ liệu</dd></div><div><dt>Quyền hiển thị</dt><dd data-support-summary-privacy>Công khai tên</dd></div><div><dt>Email biên nhận</dt><dd data-support-summary-email>Chưa nhập</dd></div><div><dt>Kết nối</dt><dd data-support-summary-provider>Đang kiểm tra PayOS</dd></div></dl><div class="support-summary-trust"><span>✓ Webhook xác minh</span><span>✓ Không lưu tài khoản ngân hàng</span><span data-support-email-trust>✓ Email cảm ơn sau xác minh</span></div><button type="button" class="support-summary-primary" data-support-summary-submit>Ủng hộ ngay →</button>`;
+    summary.innerHTML = `<header><div><span>TÓM TẮT TRỰC TIẾP</span><small data-support-summary-stage>BƯỚC 1/4 · THÔNG TIN</small></div><button type="button" data-support-summary-close aria-label="Đóng tóm tắt">×</button></header><div class="support-summary-mission"><i data-support-summary-icon>◉</i><span><small>ĐIỂM ĐẾN ĐANG CHỌN</small><strong data-support-summary-mission>Máy chủ & Database</strong></span></div><section class="support-summary-state" data-support-summary-state-card data-tone="pending"><i data-support-summary-state-icon>✦</i><div><small data-support-summary-state-label>TRẠNG THÁI</small><strong data-support-summary-state>Đang chuẩn bị</strong><p data-support-summary-next>Chọn số tiền và nhập thông tin để bắt đầu.</p></div></section><dl><div><dt>Hành động tiếp theo</dt><dd data-support-summary-action>Kiểm tra thông tin</dd></div><div><dt>Xác minh</dt><dd data-support-summary-verification>PayOS đang kiểm tra</dd></div><div><dt>Biên nhận</dt><dd data-support-summary-receipt>Chưa nhập email</dd></div></dl><div class="support-summary-trust"><span>✓ Webhook chỉ ghi nhận khi hợp lệ</span><span>✓ Không lưu thông tin ngân hàng</span><span data-support-email-trust>○ Email cảm ơn chờ cấu hình</span></div><div class="support-summary-actions"><button type="button" class="support-summary-secondary" data-support-summary-edit>Chỉnh lựa chọn</button><button type="button" class="support-summary-primary" data-support-summary-submit>Tiếp tục tới VietQR →</button></div>`;
 
     const orbitHeader = document.createElement("header");
     orbitHeader.innerHTML = `<div><small>MISSION ORBIT</small><strong>Chọn hành tinh tiếp sức</strong></div><span data-support-mission-sync-compact>Đang đồng bộ</span>`;
@@ -412,24 +412,35 @@
       closeDrawers,
       toggleSummary: force => page.classList.toggle("is-summary-open", typeof force === "boolean" ? force : !page.classList.contains("is-summary-open")),
       focusWorkspace: () => { closeDrawers(); workspaceScroll.scrollTop = 0; },
-      syncSummary({ missionId = "infrastructure", amount = 0, visibility = "public", email = "", providerReady = false, missionData = null } = {}) {
+      syncSummary({ missionId = "infrastructure", visibility = "public", email = "", providerReady = false, stage = "details", receiptStatus = "", hasDonation = false, receiptEmailAvailable = false } = {}) {
         const mission = missionById(missionId);
-        const privacy = visibility === "anonymous" ? "Ẩn danh hoàn toàn" : visibility === "alias" ? "Chỉ hiện biệt danh" : "Công khai tên";
-        const maskedEmail = email && email.includes("@") ? `${email.slice(0, 2)}•••@${email.split("@")[1]}` : "Chưa nhập";
-        const progress = missionData ? `${Number(missionData.percent || 0).toFixed(Number(missionData.percent || 0) >= 10 ? 0 : 1)}% · ${money(missionData.verified || 0)} / ${money(missionData.goal || 0)}` : "Chưa có dữ liệu";
+        const emailReady = Boolean(email && email.includes("@"));
+        const stageMeta = {
+          details: { label: "BƯỚC 1/4 · THÔNG TIN", tone: providerReady ? "ready" : "pending", icon: providerReady ? "✦" : "○", stateLabel: providerReady ? "Sẵn sàng tạo VietQR" : "Chờ kết nối payOS", state: providerReady ? "Kiểm tra thông tin trước khi gửi" : "Kênh thanh toán tạm thời chưa sẵn sàng", next: providerReady ? "Chọn số tiền, nhập email rồi tiếp tục." : "Bấm thử lại khi payOS hoạt động.", action: providerReady ? "Tiếp tục tới VietQR" : "Thử kết nối lại", verification: providerReady ? "PayOS đã sẵn sàng" : "Đang chờ payOS", receipt: emailReady ? "Email đã được nhập" : "Chưa nhập email", cta: providerReady ? "Tiếp tục tới VietQR →" : "PayOS chưa sẵn sàng" },
+          payment: { label: "BƯỚC 2/4 · VIETQR", tone: "payment", icon: "◌", stateLabel: "Đang chờ quét mã", state: "VietQR đang mở trong workspace", next: "Quét mã bằng ứng dụng ngân hàng.", action: "Quay lại mã QR", verification: "Webhook sẽ tự đối soát", receipt: emailReady ? "Gửi sau khi xác minh" : "Chưa có email biên nhận", cta: "Quay lại mã QR →" },
+          verify: { label: "BƯỚC 3/4 · XÁC MINH", tone: "verify", icon: "◈", stateLabel: "Đang đối soát", state: "Chưa kết luận giao dịch", next: "Giữ trang mở để hệ thống kiểm tra tự động.", action: "Xem trạng thái xác minh", verification: "Chỉ backend hợp lệ mới ghi nhận", receipt: emailReady ? "Email chờ xác minh" : "Chưa có email biên nhận", cta: "Xem trạng thái →" },
+          email: { label: "BƯỚC 4/4 · HOÀN TẤT", tone: "success", icon: "✓", stateLabel: "Đã xác minh", state: receiptStatus === "sent" ? "Biên nhận đã được gửi" : "Ủng hộ đã được xác minh", next: "Mở biên nhận hoặc tải xuống để lưu lại.", action: "Mở biên nhận", verification: "Webhook đã xác minh giao dịch", receipt: receiptStatus === "sent" ? "Email cảm ơn đã gửi" : receiptStatus === "failed" ? "Email sẽ tự thử lại" : "Đang xử lý email", cta: "Mở biên nhận →" }
+        }[stage] || null;
+        const meta = stageMeta || { label: "TRẠNG THÁI", tone: "pending", icon: "○", stateLabel: "Đang chuẩn bị", state: "Chưa có dữ liệu", next: "Hãy hoàn tất thông tin.", action: "Tiếp tục", verification: "Đang kiểm tra", receipt: "Chưa có dữ liệu", cta: "Tiếp tục" };
         page.querySelector("[data-support-summary-icon]").textContent = mission.icon;
         page.querySelector("[data-support-summary-mission]").textContent = mission.label;
-        page.querySelector("[data-support-summary-amount]").textContent = money(amount || 0);
-        page.querySelector("[data-support-summary-progress]").textContent = progress;
-        page.querySelector("[data-support-summary-privacy]").textContent = privacy;
-        page.querySelector("[data-support-summary-email]").textContent = maskedEmail;
-        page.querySelector("[data-support-summary-provider]").textContent = providerReady ? "PayOS sẵn sàng" : "PayOS chưa sẵn sàng";
+        page.dataset.summaryStage = stage;
+        const stageNode = page.querySelector("[data-support-summary-stage]"); if (stageNode) stageNode.textContent = meta.label;
+        const stateCard = page.querySelector("[data-support-summary-state-card]"); if (stateCard) { stateCard.dataset.tone = meta.tone; }
+        const stateIcon = page.querySelector("[data-support-summary-state-icon]"); if (stateIcon) stateIcon.textContent = meta.icon;
+        const stateLabel = page.querySelector("[data-support-summary-state-label]"); if (stateLabel) stateLabel.textContent = meta.stateLabel;
+        const state = page.querySelector("[data-support-summary-state]"); if (state) state.textContent = meta.state;
+        const next = page.querySelector("[data-support-summary-next]"); if (next) next.textContent = meta.next;
+        const action = page.querySelector("[data-support-summary-action]"); if (action) action.textContent = meta.action;
+        const verification = page.querySelector("[data-support-summary-verification]"); if (verification) verification.textContent = meta.verification;
+        const receipt = page.querySelector("[data-support-summary-receipt]"); if (receipt) receipt.textContent = meta.receipt;
         const summarySubmit = page.querySelector("[data-support-summary-submit]");
         if (summarySubmit) {
-          summarySubmit.disabled = !providerReady;
-          summarySubmit.textContent = providerReady ? "Ủng hộ ngay →" : "PayOS chưa sẵn sàng";
-          summarySubmit.title = providerReady ? "Tiếp tục tới bước tạo VietQR" : "Hãy thử kết nối lại PayOS";
+          summarySubmit.disabled = stage === "details" ? !providerReady : !hasDonation;
+          summarySubmit.textContent = meta.cta;
+          summarySubmit.title = stage === "details" ? (providerReady ? "Tiếp tục tới bước tạo VietQR" : "Hãy thử kết nối lại PayOS") : "Mở vùng làm việc hiện tại";
         }
+        const edit = page.querySelector("[data-support-summary-edit]"); if (edit) edit.hidden = stage !== "details";
         const provider = page.querySelector("[data-support-shell-provider]");
         if (provider) { provider.classList.toggle("is-online", providerReady); provider.innerHTML = `<i></i> ${providerReady ? "PayOS sẵn sàng" : "PayOS đang kiểm tra"}`; }
       }
@@ -553,8 +564,7 @@
     };
     const selectedAmount = () => Math.round(Number(page.querySelector("[data-support-amount]").value) || 0);
     const syncLiveSummary = () => {
-      const missionData = (publicData?.missions || []).find(item => item.id === selectedMissionId) || null;
-      shell?.syncSummary({ missionId: selectedMissionId, amount: selectedAmount(), visibility: page.querySelector("[data-support-visibility]")?.value || "public", email: page.querySelector("[data-support-email]")?.value || "", providerReady: payOSAvailable, missionData });
+      shell?.syncSummary({ missionId: selectedMissionId, visibility: page.querySelector("[data-support-visibility]")?.value || "public", email: page.querySelector("[data-support-email]")?.value || "", providerReady: payOSAvailable, stage: flowStage, receiptStatus: currentDonation?.receipt?.status || "", hasDonation: Boolean(currentDonation?.id), receiptEmailAvailable: Boolean(publicData?.paymentProviders?.receiptEmail) });
     };
     const updateAmount = amount => { page.querySelector("[data-support-amount]").value = amount; page.querySelectorAll("[data-support-preset]").forEach(button => button.classList.toggle("active", Number(button.dataset.supportPreset) === Number(amount))); syncLiveSummary(); };
     const pendingKey = STORAGE_KEY;
@@ -631,6 +641,7 @@
       page.dataset.paymentStage = flowStage;
       page.querySelectorAll("[data-support-stage-panel]").forEach(panel => { panel.hidden = panel.dataset.supportStagePanel !== flowStage; });
       setJourney(flowStage);
+      syncLiveSummary();
       const activePanel = page.querySelector(`[data-support-stage-panel="${flowStage}"]`);
       if (activePanel) {
         activePanel.classList.remove("is-entering");
@@ -979,7 +990,13 @@
       if (event.target.closest("[data-support-drawer-close], [data-support-home]")) { shell?.closeDrawers(); return; }
       if (event.target.closest("[data-support-summary-toggle]")) { shell?.toggleSummary(); return; }
       if (event.target.closest("[data-support-summary-close]")) { shell?.toggleSummary(false); return; }
-      if (event.target.closest("[data-support-summary-submit]")) { if (!payOSAvailable) return; shell?.toggleSummary(false); page.querySelector("[data-support-form]")?.requestSubmit(); return; }
+      if (event.target.closest("[data-support-summary-edit]")) { if (flowStage !== "details") return; shell?.toggleSummary(false); shell?.focusWorkspace(); page.querySelector("[data-support-amount]")?.focus({ preventScroll: true }); return; }
+      if (event.target.closest("[data-support-summary-submit]")) {
+        if (flowStage === "details") { if (!payOSAvailable) return; shell?.toggleSummary(false); page.querySelector("[data-support-form]")?.requestSubmit(); return; }
+        shell?.toggleSummary(false);
+        shell?.focusWorkspace();
+        return;
+      }
       if (event.target.closest("[data-support-admin-open]")) { shell?.openDrawer("admin"); return; }
       if (event.target.closest("[data-support-retry-provider]")) { await loadPublic(); shell?.focusWorkspace(); return; }
       if (event.target.closest("[data-support-change-amount]")) { showStage("details", false); shell?.focusWorkspace(); page.querySelector("[data-support-amount]")?.focus({ preventScroll: true }); return; }
