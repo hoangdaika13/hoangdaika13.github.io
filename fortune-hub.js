@@ -7,7 +7,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createFortuneHub(globalScope) {
   "use strict";
 
-  const VERSION = "9.1.0";
+  const VERSION = "9.2.0";
   const STORAGE_SCHEMA = "hh.fortune.hub.v1";
   const MAX_HISTORY = 80;
   const MAX_JOURNAL = 120;
@@ -44,6 +44,29 @@
     { id: "symbols", label: "Hệ biểu tượng", icon: "ᚠ", items: [["symbols","✧","Lenormand & Rune"],["tarot","♢","Tarot Studio"],["academy","▣","Tarot Academy"],["dreams","☁","Giấc mơ"],["methods","⌘","Symbol Atlas"]] },
     { id: "reflection", label: "Chiêm nghiệm", icon: "✎", items: [["journal","✎","Nhật ký"],["history","◷","Lịch sử phiên"],["compatibility","∞","So sánh kết quả"],["methods","ⓘ","Trung tâm phương pháp"],["accuracy","✓","Accuracy Lab"],["profile","◉","Hồ sơ phiên"]] }
   ]);
+  const TOOL_LIBRARY_DETAILS = Object.freeze({
+    tarot: { tone: "tarot", family: "symbols", badge: "78 lá", beginner: "Rút bài và đặt câu hỏi chiêm nghiệm.", advanced: "Spread 1–10 lá, seed và Result Contract." },
+    iching: { tone: "iching", family: "eastern", badge: "64 quẻ", beginner: "Gieo ba đồng xu và đọc cấu trúc quẻ.", advanced: "Quẻ chính, hỗ, biến và sáu hào động." },
+    numerology: { tone: "numerology", family: "reflection", badge: "Chỉ số", beginner: "Khám phá các con số từ ngày sinh và tên.", advanced: "Biểu đồ, chu kỳ và trường phái tách biệt." },
+    zodiac: { tone: "astrology", family: "astronomy", badge: "12 cung", beginner: "Cung hoàng đạo và con giáp theo ngày sinh.", advanced: "Tropical, sidereal và provenance đầu vào." },
+    session: { tone: "oracle", family: "reflection", badge: "Kết hợp", beginner: "Kết hợp nhiều công cụ trong một luồng.", advanced: "Result Contract, HH AI và nhật ký liên kết." },
+    chart: { tone: "astrology", family: "astronomy", badge: "Natal", beginner: "Bản đồ sao cá nhân có kiểm tra dữ liệu.", advanced: "Nhà, hành tinh, góc hợp và nhiều hệ tính." },
+    moon: { tone: "moon", family: "astronomy", badge: "3D", beginner: "Quan sát pha Mặt Trăng hiện tại.", advanced: "Texture NASA, rise/set và timeline thiên văn." },
+    sky: { tone: "moon", family: "astronomy", badge: "Sky", beginner: "Theo dõi hành tinh và các mốc bầu trời.", advanced: "Transit, twilight, eclipse và apsis." },
+    calendar: { tone: "journal", family: "astronomy", badge: "Âm–dương", beginner: "Xem lịch, pha trăng và ghi chú theo ngày.", advanced: "Tiết khí, chu kỳ và timeline dữ liệu đã lưu." },
+    eastern: { tone: "eastern", family: "eastern", badge: "Can–Chi", beginner: "Can–Chi, ngũ hành và tiết khí.", advanced: "Chu kỳ phương Đông với nguồn và giới hạn rõ." },
+    tuvi: { tone: "eastern", family: "eastern", badge: "12 cung", beginner: "Lá số Tử Vi và cách đọc từng cung.", advanced: "Cung, sao, đại vận và dữ liệu lịch tách lớp." },
+    physiognomy: { tone: "oracle", family: "eastern", badge: "Tự nhập", beginner: "Tự mô tả đặc điểm để suy ngẫm an toàn.", advanced: "Không nhận diện ảnh; hiển thị giới hạn phương pháp." },
+    symbols: { tone: "runes", family: "symbols", badge: "36+24", beginner: "Lenormand và Rune theo trải bài có seed.", advanced: "Grand Tableau, vị trí và lớp biểu tượng." },
+    academy: { tone: "tarot", family: "symbols", badge: "Học tập", beginner: "Học Tarot bằng bài ngắn và flashcard.", advanced: "Track, quiz và lịch ôn theo mức tự tin." },
+    dreams: { tone: "journal", family: "symbols", badge: "Local", beginner: "Ghi lại giấc mơ và cảm xúc thực tế.", advanced: "Symbol Atlas và phân tích được gắn nhãn AI." },
+    compatibility: { tone: "oracle", family: "reflection", badge: "So sánh", beginner: "Đối chiếu hai kết quả theo câu hỏi mở.", advanced: "Tách dữ liệu, biểu tượng và giả định so sánh." },
+    journal: { tone: "journal", family: "reflection", badge: "Local-first", beginner: "Ghi chú và theo dõi cảm xúc trên thiết bị.", advanced: "AES-GCM, tìm kiếm và xuất dữ liệu." },
+    methods: { tone: "library", family: "reflection", badge: "Nguồn", beginner: "Hiểu công cụ đang tính gì và không tính gì.", advanced: "Engine, công thức, phiên bản và provenance." },
+    accuracy: { tone: "oracle", family: "reflection", badge: "QA", beginner: "Kiểm tra đầu vào và độ tin cậy kỹ thuật.", advanced: "Digest, SHA-256, timezone và sai số." },
+    history: { tone: "library", family: "reflection", badge: "Đã lưu", beginner: "Mở lại các phiên bạn chủ động lưu.", advanced: "Lọc, so sánh, xuất và quản lý dữ liệu." }
+  });
+  const TOOL_LIBRARY_FILTERS = Object.freeze([["all","Tất cả","✦"],["symbols","Biểu tượng","♢"],["astronomy","Thiên văn","◎"],["eastern","Phương Đông","☯"],["reflection","Chiêm nghiệm","✎"]]);
   const POPULAR_TOOL_IDS = Object.freeze(["tarot", "iching", "numerology", "moon"]);
   const RESULT_TABS = Object.freeze([
     ["overview", "Tổng quan", "✦"], ["details", "Chi tiết", "▦"], ["deep", "Luận giải sâu", "◇"],
@@ -601,10 +624,10 @@
   function observatoryToolMeta(id) {
     for (const group of OBSERVATORY_GROUPS) {
       const item = group.items.find((candidate) => candidate[0] === id);
-      if (item) return { id: item[0], icon: item[1], label: item[2], group: group.label };
+      if (item) return { id: item[0], icon: item[1], label: item[2], group: group.label, ...(TOOL_LIBRARY_DETAILS[id] || { tone: (VIEW_VISUALS[id] || VIEW_VISUALS.today)[2], family: group.id, badge: "Công cụ", beginner: "Mở không gian chiêm nghiệm.", advanced: "Xem phương pháp và provenance chi tiết." }) };
     }
     const visual = VIEW_VISUALS[id] || VIEW_VISUALS.today;
-    return { id, icon: visual[0], label: visual[1], group: "Công cụ" };
+    return { id, icon: visual[0], label: visual[1], group: "Công cụ", ...(TOOL_LIBRARY_DETAILS[id] || { tone: visual[2], family: "reflection", badge: "Công cụ", beginner: "Mở không gian chiêm nghiệm.", advanced: "Xem phương pháp và provenance chi tiết." }) };
   }
   function navToolMarkup(runtime, item, compact = false) {
     const [id, icon, label] = item; const active = runtime.state.view === id;
@@ -650,6 +673,7 @@
     const recent = runtime.state.history[0] || null; const journalCount = activeJournal(runtime).length;
     const popularTools = POPULAR_TOOL_IDS.map(observatoryToolMeta);
     const libraryIds = ["tarot","iching","numerology","zodiac","session","chart","moon","sky","calendar","eastern","tuvi","physiognomy","symbols","academy","dreams","compatibility","journal","methods","accuracy","history"];
+    const advanced = runtime.state.settings.experience === "advanced"; const activeFilter = runtime.libraryFilter || "all";
     return `${toolbarMarkup("Đại sảnh HH Mystic Observatory", "Chọn một câu hỏi, một phương pháp và đi trọn luồng từ dữ liệu đến chiêm nghiệm — không phải dự đoán tương lai.")}
       <section class="fortune-observatory-home">
         <article class="fortune-home-hero"><div><span>KHÔNG GIAN CHIÊM NGHIỆM CÓ KIỂM CHỨNG</span><h3>Bạn muốn chiêm nghiệm điều gì hôm nay?</h3><p>Mỗi kết quả luôn tách rõ dữ liệu tính toán, thiên văn/lịch, diễn giải biểu tượng và nội dung do HH AI tạo.</p><label><i>⌕</i><input type="search" data-fortune-tool-search placeholder="Tìm Tarot, Kinh Dịch, Mặt Trăng, Tử Vi…" autocomplete="off"></label><div><button class="fortune-primary" type="button" data-fortune-view="session">Bắt đầu phiên tổng hợp</button><button type="button" data-fortune-view="history">Tiếp tục phiên gần nhất</button></div></div><div class="fortune-home-oracle" style="--daily-energy:${daily.energy}%"><i>${escapeHtml(moon.symbol)}</i><b>${moon.illumination}%</b><span>${escapeHtml(moon.name)}</span><small>${escapeHtml(daily.dateKey)}</small></div></article>
@@ -659,8 +683,8 @@
           <article><header><i>◷</i><div><span>PHIÊN GẦN NHẤT</span><strong>${recent ? escapeHtml(recent.title) : "Chưa có kết quả"}</strong></div></header><p>${recent ? `${escapeHtml(recent.summary.slice(0, 130))}${recent.summary.length > 130 ? "…" : ""}` : "Kết quả chỉ được lưu khi bạn chủ động chọn Lưu."}</p><button type="button" data-fortune-view="history">Mở lịch sử</button></article>
           <article><header><i>✎</i><div><span>CHIÊM NGHIỆM</span><strong>${journalCount} ghi chú</strong></div></header><p>${runtime.state.journalVault ? "Nhật ký đang dùng kho mã hóa AES-GCM." : "Dữ liệu local-first theo tài khoản trên thiết bị."}</p><button type="button" data-fortune-view="journal">Mở nhật ký</button></article>
         </div>
-        <section class="fortune-home-favorites"><header><div><span>MỞ NHANH</span><h3>Bốn công cụ phổ biến</h3></div><small>Chọn một phương pháp để bắt đầu</small></header><div>${popularTools.map((item, index) => `<button type="button" data-fortune-view="${item.id}" style="--tool-index:${index}"><i>${item.icon}</i><span><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.group)}</small></span><b>→</b></button>`).join("")}</div></section>
-        <section class="fortune-home-library"><header><div><span>THƯ VIỆN PHƯƠNG PHÁP</span><h3>Tất cả không gian</h3></div><div class="fortune-experience-switch"><button type="button" class="${runtime.state.settings.experience === "beginner" ? "is-active" : ""}" data-fortune-set-experience="beginner">Người mới</button><button type="button" class="${runtime.state.settings.experience === "advanced" ? "is-active" : ""}" data-fortune-set-experience="advanced">Chuyên sâu</button></div></header><div>${libraryIds.map((id) => { const item = observatoryToolMeta(id); return `<button type="button" data-fortune-view="${id}" data-fortune-tool-card data-tool-search="${escapeHtml(`${item.label} ${item.group}`.toLocaleLowerCase("vi"))}"><i>${item.icon}</i><span><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.group)}</small></span><b>→</b></button>`; }).join("")}</div><p data-fortune-library-empty hidden>Không có công cụ khớp từ khóa.</p></section>
+        <section class="fortune-home-favorites"><header><div><span>MỞ NHANH</span><h3>Bốn công cụ phổ biến</h3></div><small>Chọn một phương pháp để bắt đầu</small></header><div>${popularTools.map((item, index) => `<button type="button" data-fortune-view="${item.id}" data-tool-tone="${item.tone}" style="--tool-index:${index}"><i>${item.icon}</i><span><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(advanced ? item.advanced : item.beginner)}</small></span><b>→</b></button>`).join("")}</div></section>
+        <section class="fortune-home-library" data-fortune-library><header><div><span>THƯ VIỆN PHƯƠNG PHÁP · <b data-fortune-library-count>${libraryIds.length}</b> KHÔNG GIAN</span><h3>Chọn thế giới để khám phá</h3><p>Mỗi công cụ có màu, chuyển động và phương pháp riêng; bộ lọc không thay đổi dữ liệu hay engine.</p></div><div class="fortune-experience-switch"><button type="button" class="${!advanced ? "is-active" : ""}" data-fortune-set-experience="beginner">Người mới</button><button type="button" class="${advanced ? "is-active" : ""}" data-fortune-set-experience="advanced">Chuyên sâu</button></div></header><div class="fortune-library-controls"><nav aria-label="Lọc thư viện phương pháp">${TOOL_LIBRARY_FILTERS.map(([id,label,icon])=>`<button type="button" class="${activeFilter===id?"is-active":""}" data-fortune-library-filter="${id}" aria-pressed="${activeFilter===id}"><i>${icon}</i>${label}</button>`).join("")}</nav><button type="button" data-fortune-random-tool>✦ Khám phá ngẫu nhiên</button></div><div class="fortune-library-grid">${libraryIds.map((id, index) => { const item = observatoryToolMeta(id); const description = advanced ? item.advanced : item.beginner; return `<button type="button" data-fortune-view="${id}" data-fortune-tool-card data-tool-family="${item.family}" data-tool-tone="${item.tone}" data-tool-index="${index}" data-tool-search="${escapeHtml(`${item.label} ${item.group} ${item.badge} ${description}`.toLocaleLowerCase("vi"))}" style="--tool-index:${index}"><i><span>${item.icon}</span></i><span class="fortune-tool-copy"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(description)}</small><em><b>${escapeHtml(item.group)}</b><b>${escapeHtml(item.badge)}</b></em></span><span class="fortune-tool-enter" aria-hidden="true">Mở <b>→</b></span></button>`; }).join("")}</div><p data-fortune-library-empty hidden>Không có công cụ khớp bộ lọc hoặc từ khóa hiện tại.</p></section>
         <article class="fortune-daily-reflection"><div class="fortune-orb"><span>${daily.energy}</span><small>NHỊP NGÀY</small></div><div><small>${escapeHtml(daily.focus)}</small><h3>${escapeHtml(daily.title)}</h3><p>${escapeHtml(daily.message)}</p></div><div><button type="button" data-fortune-daily-save>＋ Lưu lời nhắc</button><button type="button" data-fortune-copy="${escapeHtml(`${daily.title}. ${daily.message}`)}">Sao chép</button></div></article>
         <details class="fortune-safety-card" open><summary>Ranh giới an toàn</summary><p>Đây là nội dung giải trí và tự chiêm nghiệm, không phải khoa học dự báo. Không dùng kết quả để thay thế tư vấn y tế, pháp lý, tài chính hoặc quyết định quan trọng. Bạn luôn là người chịu trách nhiệm cho lựa chọn của mình.</p></details>
       </section>`;
@@ -1334,6 +1358,7 @@
     }
     enhanceJournalControls(runtime);
     enhanceContextTargets(runtime);
+    if (runtime.state.view === "today") filterObservatoryTools(runtime, runtime.toolQuery || "");
     syncMysticScene(runtime);
     if (runtime.state.view === "moon") globalScope.queueMicrotask?.(() => globalScope.HHFortuneMoon3D?.mountAll?.(runtime.root));
     flushFortuneScroll(runtime);
@@ -1920,6 +1945,21 @@
     if (event.target.closest("[data-fortune-inspector-close]")) { runtime.inspectorOpen = false; runtime.root.classList.remove("is-inspector-open"); runtime.root.querySelector("[data-fortune-inspector-toggle]")?.setAttribute("aria-expanded", "false"); runtime.root.querySelector("[data-fortune-inspector-toggle]")?.focus(); return; }
     const resultTab = event.target.closest("[data-fortune-result-tab]");
     if (resultTab) { runtime.resultTab = resultTab.dataset.fortuneResultTab || "overview"; render(runtime, true); return; }
+    const libraryFilter = event.target.closest("[data-fortune-library-filter]");
+    if (libraryFilter) {
+      runtime.libraryFilter = TOOL_LIBRARY_FILTERS.some(([id]) => id === libraryFilter.dataset.fortuneLibraryFilter) ? libraryFilter.dataset.fortuneLibraryFilter : "all";
+      runtime.root.querySelectorAll("[data-fortune-library-filter]").forEach((button) => { const active = button.dataset.fortuneLibraryFilter === runtime.libraryFilter; button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); });
+      filterObservatoryTools(runtime, runtime.toolQuery || "");
+      return;
+    }
+    if (event.target.closest("[data-fortune-random-tool]")) {
+      const cards = [...runtime.root.querySelectorAll("[data-fortune-tool-card]:not([hidden])")];
+      if (!cards.length) { showToast(runtime, "Không có công cụ trong bộ lọc hiện tại.", "error"); return; }
+      const index = Math.floor(createRandom(hashSeed(`${runtime.ownerId}:${Date.now()}:${cards.length}`))() * cards.length);
+      const view = cards[index]?.dataset.fortuneView;
+      if (VIEWS.has(view)) { playFortuneTone(runtime); transitionToView(runtime, view); }
+      return;
+    }
     if (event.target.closest("[data-fortune-action-note]")) { runtime.resultTab = "reflection"; runtime.flowStep = 3; runtime.pendingScrollTarget = { selector: ".fortune-result-workspace", behavior: "smooth" }; render(runtime, true); return; }
     const experienceButton = event.target.closest("[data-fortune-set-experience]");
     if (experienceButton) { runtime.state.settings.experience = experienceButton.dataset.fortuneSetExperience === "advanced" ? "advanced" : "beginner"; writeState(runtime); render(runtime, true); return; }
@@ -2369,13 +2409,14 @@
   }
 
   function filterObservatoryTools(runtime, value, source) {
-    const query = String(value || "").trim().toLocaleLowerCase("vi"); let navVisible = 0; let cardVisible = 0;
+    const query = String(value || "").trim().toLocaleLowerCase("vi"); const family = runtime.libraryFilter || "all"; let navVisible = 0; let cardVisible = 0;
     runtime.root?.querySelectorAll("[data-fortune-tool-search]").forEach((input) => { if (input !== source) input.value = value; });
     runtime.root?.querySelectorAll("[data-fortune-tool-row]").forEach((row) => { const match = !query || String(row.dataset.toolSearch || "").includes(query); row.hidden = !match; if (match) navVisible += 1; });
     runtime.root?.querySelectorAll("[data-fortune-nav-group]").forEach((group) => { const hasMatch = Boolean(group.querySelector("[data-fortune-tool-row]:not([hidden])")); group.hidden = !hasMatch; if (query && hasMatch) group.open = true; });
-    runtime.root?.querySelectorAll("[data-fortune-tool-card]").forEach((card) => { const match = !query || String(card.dataset.toolSearch || "").includes(query); card.hidden = !match; if (match) cardVisible += 1; });
+    runtime.root?.querySelectorAll("[data-fortune-tool-card]").forEach((card) => { const queryMatch = !query || String(card.dataset.toolSearch || "").includes(query); const familyMatch = family === "all" || card.dataset.toolFamily === family; const match = queryMatch && familyMatch; card.hidden = !match; if (match) cardVisible += 1; });
     const navEmpty = runtime.root?.querySelector("[data-fortune-nav-empty]"); if (navEmpty) navEmpty.hidden = navVisible > 0;
     const libraryEmpty = runtime.root?.querySelector("[data-fortune-library-empty]"); if (libraryEmpty) libraryEmpty.hidden = cardVisible > 0;
+    const libraryCount = runtime.root?.querySelector("[data-fortune-library-count]"); if (libraryCount) libraryCount.textContent = String(cardVisible);
   }
 
   function handleInput(runtime, event) {
@@ -2457,7 +2498,7 @@
       target, options, ownerId: resolveOwnerId(options), storage: options.storage || globalScope.localStorage,
       state: null, profile: null, builder: createBuilderState(), journalEntries: [], journalKey: null,
        session: { tarot: [], tarotPrevious: [], tarotRevealed: new Set(), tarotFocusIndex: 0, tarotCount: 3, tarotSeed: "", tarot78: null, tarotAi: null, question: "", western: null, zodiacDate: "", zodiacAi: null, chinese: null, chineseYear: "", chineseBeforeTet: false, numerology: null, numerologyV4: null, numerologyAi: null, cycles: null, birthDate: "", targetDate: localDateKey(), nameInput: "", nameSystem: "pythagorean", nameNumerology: null, iching: null, ichingAdvanced: null, ichingAi: null, ichingSeed: "", ichingMode: "coins", ichingManual: [7, 7, 7, 7, 7, 7], ichingQuestion: "", tuvi: null, tuviDate: "", tuviTime: "", tuviGender: "male", tuviFixLeap: true, tuviPalaceIndex: 0, tuviAi: null, physiognomyValues: {}, physiognomyResult: null, physiognomyAi: null, dreamText: "", dreamEmotion: "curious", dreamResult: null, dreamsAi: null, moonDate: localDateKey(), moon: null, moonAstronomy: null, moonAi: null, skyDate: localDateKey(), sky: null, skyAi: null, easternDate: localDateKey(), eastern: null, easternAi: null, symbolType: "lenormand", symbolCount: 3, symbolSeed: "", symbolDeck: null, symbolFocusIndex: 0, symbolsAi: null, calendarSelectedDate: localDateKey(), astrologyMode: "natal", astrologyTarget: localDateKey(), astrologyAlerts: false, astrologyPlanet: "", astrologyV4: null, chartAi: null, calculationCertificate: null, accuracyReport: null, birthChart: null, birthChartErrors: [], compareA: "", compareB: "", compareBeforeA: false, compareBeforeB: false, compareContext: "relationship", compareGoal: "trao đổi rõ một vấn đề", compareCadence: "weekly", compatibility: null, compatibilityAi: null, sessionAi: null, tarotQuiz: null, academyRound: 1, academyFeedback: "", academyAnswered: false, academyHistory: [], academyTrack: "foundation", academyLessonIndex: 0, academyFlashRevealed: false, academyReview: null, copilot: null, copilotInput: "", copilotMode: "easy", copilotDepth: "detailed", copilotSourceView: "" },
-      root: null, toastTimer: 0, storageError: false, historyQuery: "", historyType: "all", journalQuery: "", journalTag: "all", methodQuery: "", toolQuery: "", reflectionDraft: "", resultTab: "overview", flowStep: null, inspectorOpen: false, pendingScrollTarget: null, calendarAnchor: localDateKey(), calendarMode: "month", chartPlanetIndex: 0, copilotBusy: false, aiController: null, aiCache: new Map(), deletedRecord: null, dragCardIndex: -1, ambientNodes: []
+      root: null, toastTimer: 0, storageError: false, historyQuery: "", historyType: "all", journalQuery: "", journalTag: "all", methodQuery: "", toolQuery: "", libraryFilter: "all", reflectionDraft: "", resultTab: "overview", flowStep: null, inspectorOpen: false, pendingScrollTarget: null, calendarAnchor: localDateKey(), calendarMode: "month", chartPlanetIndex: 0, copilotBusy: false, aiController: null, aiCache: new Map(), deletedRecord: null, dragCardIndex: -1, ambientNodes: []
     };
     runtime.state = readState(runtime.storage, runtime.ownerId);
     runtime.profile = runtime.state.profile ? sanitizeProfile(runtime.state.profile, true) : sanitizeProfile(null);
