@@ -212,6 +212,10 @@
       styles: ["draw-studio.css?v=8"],
       scripts: ["draw-studio.js?v=9"]
     },
+    meme: {
+      styles: ["meme-hub.css?v=5"],
+      scripts: ["meme-hub.js?v=4"]
+    },
     "chat-ai": {
       styles: ["chat-ai-hub.css?v=17"],
       scripts: ["chat-ai-hub.js?v=17"]
@@ -271,6 +275,7 @@
     if (value.startsWith("/japanese")) return ["japanese"];
     if (value.startsWith("/fortune")) return ["fortune"];
     if (value.startsWith("/draw")) return ["draw"];
+    if (value.startsWith("/meme")) return ["meme"];
     if (value.startsWith("/chat-ai")) return ["chat-ai"];
     if (value === "/settings") return ["settings"];
     if (value.startsWith("/settings/account") || value === "/settings/user-dashboard" || value === "/settings/security-center") return ["account"];
