@@ -7,7 +7,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createFortuneHub(globalScope) {
   "use strict";
 
-  const VERSION = "9.4.0";
+  const VERSION = "9.5.0";
   const STORAGE_SCHEMA = "hh.fortune.hub.v1";
   const MAX_HISTORY = 80;
   const MAX_JOURNAL = 120;
@@ -43,6 +43,13 @@
     { id: "eastern", label: "Hệ phương Đông", icon: "紫", items: [["tuvi","紫","Tử Vi"],["eastern","☯","Can–Chi & ngũ hành"],["iching","☯","Kinh Dịch 64 quẻ"],["calendar","▦","Lịch phương Đông"],["physiognomy","◌","Nhân tướng học"]] },
     { id: "symbols", label: "Hệ biểu tượng", icon: "ᚠ", items: [["symbols","✧","Lenormand & Rune"],["tarot","♢","Tarot Studio"],["academy","▣","Tarot Academy"],["dreams","☁","Giấc mơ"],["methods","⌘","Symbol Atlas"]] },
     { id: "reflection", label: "Chiêm nghiệm", icon: "✎", items: [["journal","✎","Nhật ký"],["history","◷","Lịch sử phiên"],["compatibility","∞","So sánh kết quả"],["methods","ⓘ","Trung tâm phương pháp"],["accuracy","✓","Accuracy Lab"],["profile","◉","Hồ sơ phiên"]] }
+  ]);
+  const OBSERVATORY_ATLAS_GROUPS = Object.freeze([
+    { id: "start", label: "Bắt đầu", icon: "✦", items: [["today","✦","Tổng quan"],["session","➜","Xem tổng hợp"],["profile","◉","Hồ sơ phiên"],["numerology","#","Thần số học"]] },
+    { id: "symbols", label: "Biểu tượng", icon: "ᚠ", items: [["tarot","♢","Tarot 78"],["academy","▣","Tarot Academy"],["symbols","✧","Lenormand & Rune"],["dreams","☁","Giấc mơ"]] },
+    { id: "astronomy", label: "Thiên văn & lịch", icon: "◎", items: [["zodiac","☼","Cung & con giáp"],["chart","◎","Bản đồ sao"],["moon","☾","Mặt Trăng 3D"],["sky","✺","Hành tinh & góc hợp"],["calendar","▦","Lịch âm–dương"]] },
+    { id: "eastern", label: "Phương Đông", icon: "紫", items: [["iching","☯","Kinh Dịch 64"],["tuvi","紫","Tử Vi"],["eastern","☯","Can–Chi & tiết khí"],["physiognomy","◌","Nhân tướng học"]] },
+    { id: "reflection", label: "Chiêm nghiệm", icon: "✎", items: [["compatibility","∞","Tương tác"],["journal","✎","Nhật ký"],["copilot","AI","HH AI Copilot"],["methods","ⓘ","Phương pháp"],["accuracy","✓","Accuracy Lab"],["history","◷","Lịch sử"]] }
   ]);
   const TOOL_LIBRARY_DETAILS = Object.freeze({
     tarot: { tone: "tarot", family: "symbols", badge: "78 lá", beginner: "Rút bài và đặt câu hỏi chiêm nghiệm.", advanced: "Spread 1–10 lá, seed và Result Contract." },
@@ -631,10 +638,10 @@
   }
   function navToolMarkup(runtime, item, compact = false) {
     const [id, icon, label] = item; const active = runtime.state.view === id;
-    return `<div class="fortune-nav__row" data-fortune-tool-row data-tool-search="${escapeHtml(`${label} ${id}`.toLocaleLowerCase("vi"))}"><button type="button" class="fortune-nav__item${active ? " is-active" : ""}${compact ? " is-compact" : ""}" data-fortune-view="${id}" aria-current="${active ? "page" : "false"}"><i aria-hidden="true">${icon}</i><span>${escapeHtml(label)}</span>${active ? "<b aria-hidden=\"true\">●</b>" : ""}</button></div>`;
+    return `<div class="fortune-nav__row" data-fortune-tool-row data-tool-search="${escapeHtml(`${label} ${id}`.toLocaleLowerCase("vi"))}"><button type="button" class="fortune-nav__item${active ? " is-active" : ""}${compact ? " is-compact" : ""}" data-fortune-view="${id}" aria-current="${active ? "page" : "false"}" aria-label="Mở ${escapeHtml(label)}" title="${escapeHtml(label)}"><i aria-hidden="true">${icon}</i><span>${escapeHtml(label)}</span>${active ? "<b aria-hidden=\"true\">●</b>" : ""}</button></div>`;
   }
   function navMarkup(runtime) {
-    return `<div class="fortune-nav__groups">${OBSERVATORY_GROUPS.map((group, index) => `<details class="fortune-nav__group" data-fortune-nav-group="${group.id}" ${index < 2 || group.items.some((item) => item[0] === runtime.state.view) ? "open" : ""}><summary><i>${group.icon}</i><span>${escapeHtml(group.label)}</span><b>${group.items.length}</b></summary><div>${group.items.map((item) => navToolMarkup(runtime, item)).join("")}</div></details>`).join("")}</div><p class="fortune-nav__empty" data-fortune-nav-empty hidden>Không tìm thấy công cụ phù hợp.</p>`;
+    return `<div class="fortune-nav__groups fortune-atlas" data-fortune-tool-atlas>${OBSERVATORY_ATLAS_GROUPS.map((group) => `<section class="fortune-atlas__group" data-fortune-nav-group="${group.id}" style="--atlas-index:${OBSERVATORY_ATLAS_GROUPS.indexOf(group)}"><header><i>${group.icon}</i><span>${escapeHtml(group.label)}</span><b>${group.items.length}</b></header><div>${group.items.map((item) => navToolMarkup(runtime, item, true)).join("")}</div></section>`).join("")}</div><p class="fortune-nav__empty" data-fortune-nav-empty hidden>Không tìm thấy công cụ phù hợp.</p>`;
   }
 
   function toolbarMarkup(title, subtitle) {
