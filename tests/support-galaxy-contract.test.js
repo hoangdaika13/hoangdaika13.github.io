@@ -71,3 +71,20 @@ test("Support Galaxy isolates legacy footer styles and responds to workspace wid
   assert.match(styles, /body\.app-support-route \.app-sidebar,body\.app-support-route #appMain/);
   assert.match(styles, /grid-column:1!important;grid-row:1!important/);
 });
+
+test("Support Galaxy payment motion is cinematic, controllable and QR-safe", () => {
+  const client = read("support-platform.js");
+  const styles = read("support-platform.css");
+  for (const token of [
+    "MOTION_STORAGE_KEY", "support-payos-cosmos", "support-receipt-stars",
+    "--support-journey-progress", "data-payment-stage", "supportWormholeSpin",
+    "supportCosmicSpark", "supportQrSealSpin", "supportReceiptStar"
+  ]) assert.match(client + styles, new RegExp(token));
+  assert.match(client, /localStorage\.setItem\(MOTION_STORAGE_KEY/);
+  assert.match(styles, /support-payos-direct img\{[^}]*animation:none!important;transform:none!important;filter:none!important/);
+  assert.match(styles, /support-payos-direct__halo\{[^}]*animation:supportQrAura/);
+  assert.doesNotMatch(styles, /@keyframes supportQrAura\{[^}]*transform:/);
+  assert.match(styles, /support-page\[data-effects=static\] \.support-payos-cosmos/);
+  assert.match(styles, /support-page\[data-effects=cinematic\]/);
+  assert.match(styles, /@media\(prefers-reduced-motion:reduce\)/);
+});

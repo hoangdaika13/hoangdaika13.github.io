@@ -163,3 +163,114 @@ body.app-support-route .support-orbit-stage .support-core__details span{font-siz
   body.app-support-route .app-sidebar,body.app-support-route #appMain,body.app-support-route .app-main{grid-column:1!important;grid-row:1!important}
   body.app-support-route #appMain,body.app-support-route .app-main{width:100%!important;max-width:100%!important}
 }
+
+/* Support Galaxy v13: cinematic payment motion without touching the QR pixels. */
+body.app-support-route .support-shellbar__brand>i{position:relative;isolation:isolate;animation:supportBrandCore 4.6s ease-in-out infinite}
+body.app-support-route .support-shellbar__brand>i:after{position:absolute;inset:-5px;z-index:-1;border:1px solid color-mix(in srgb,var(--support-cyan) 56%,transparent);border-radius:50%;content:"";animation:supportBrandOrbit 7s linear infinite}
+body.app-support-route .support-page[data-payment-stage=payment] .support-shellbar__brand>i:after{border-color:color-mix(in srgb,var(--support-pink) 68%,transparent);animation-duration:3.6s}
+
+body.app-support-route .support-automation{position:relative;isolation:isolate;overflow:hidden}
+body.app-support-route .support-automation:before{position:absolute;inset:-80% -20%;z-index:-1;background:conic-gradient(from 90deg,transparent 0 35%,rgba(101,235,255,.14) 44%,transparent 53% 72%,rgba(255,104,200,.1) 82%,transparent 90%);content:"";animation:supportAutomationAura 13s linear infinite;pointer-events:none}
+body.app-support-route .support-automation ol{position:relative;isolation:isolate}
+body.app-support-route .support-automation ol:before,body.app-support-route .support-automation ol:after{position:absolute;top:50%;right:7%;left:7%;z-index:-1;height:1px;content:"";pointer-events:none}
+body.app-support-route .support-automation ol:before{background:rgba(110,149,180,.17)}
+body.app-support-route .support-automation ol:after{right:auto;width:var(--support-journey-progress,0%);max-width:86%;background:linear-gradient(90deg,var(--support-green),var(--support-cyan),var(--support-violet),var(--support-pink));box-shadow:0 0 12px rgba(101,235,255,.46);transition:width .55s cubic-bezier(.22,.76,.25,1)}
+body.app-support-route .support-automation li{z-index:1;overflow:hidden}
+body.app-support-route .support-automation li:after{position:absolute;inset:0;background:linear-gradient(110deg,transparent 15%,rgba(255,255,255,.11) 45%,transparent 72%);content:"";opacity:0;transform:translateX(-130%);pointer-events:none}
+body.app-support-route .support-automation li.is-current:after{opacity:1;animation:supportStepShimmer 2.7s ease-in-out infinite}
+body.app-support-route .support-automation li.is-current>b{animation:supportStepPulse 2.1s ease-in-out infinite}
+body.app-support-route .support-automation li.is-done>b{animation:supportStepDone .5s cubic-bezier(.2,.9,.25,1) both}
+
+body.app-support-route .support-payos-stage{position:relative;isolation:isolate;border-color:rgba(101,235,255,.55);box-shadow:0 18px 52px rgba(0,0,0,.28),0 0 28px rgba(101,235,255,.08)}
+body.app-support-route .support-payos-stage:before{position:absolute;inset:-75%;z-index:-2;background:conic-gradient(from 0deg,transparent 0 20%,rgba(101,235,255,.2) 27%,transparent 34% 52%,rgba(255,104,200,.16) 61%,transparent 69% 83%,rgba(246,214,110,.13) 90%,transparent 96%);content:"";animation:supportWormholeSpin 17s linear infinite;pointer-events:none}
+body.app-support-route .support-payos-stage:after{position:absolute;inset:1px;z-index:-1;border-radius:10px;background:linear-gradient(150deg,rgba(10,19,31,.98),rgba(11,13,25,.97));content:"";pointer-events:none}
+body.app-support-route .support-payos-stage>header,body.app-support-route .support-payos-stage>.support-payos-workspace,body.app-support-route .support-payos-stage>footer{position:relative;z-index:2}
+.support-payos-cosmos{position:absolute;inset:0;z-index:1;overflow:hidden;border-radius:inherit;pointer-events:none}
+.support-payos-cosmos i{position:absolute;top:calc(8% + var(--spark-index) * 6.7%);left:var(--spark-x);width:3px;height:3px;border-radius:50%;background:var(--support-cyan);box-shadow:0 0 7px var(--support-cyan),0 0 16px rgba(101,235,255,.55);opacity:0;animation:supportCosmicSpark 6.4s var(--spark-delay) ease-in-out infinite}
+.support-payos-cosmos i:nth-child(3n+2){background:var(--support-pink);box-shadow:0 0 7px var(--support-pink),0 0 16px rgba(255,104,200,.48);animation-duration:7.3s}
+.support-payos-cosmos i:nth-child(3n){background:var(--support-gold);box-shadow:0 0 7px var(--support-gold),0 0 16px rgba(246,214,110,.44);animation-duration:8.1s}
+
+body.app-support-route .support-live-badge{position:relative;overflow:hidden;animation:supportBadgeBreathe 2.7s ease-in-out infinite}
+body.app-support-route .support-live-badge:after{position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);content:"";transform:translateX(-130%);animation:supportBadgeSweep 3.2s ease-in-out infinite}
+body.app-support-route .support-live-badge i,body.app-support-route .support-payos-summary__eyebrow i,body.app-support-route .support-payos-frame__top i{position:relative;animation:supportStatusBeacon 1.8s ease-in-out infinite}
+body.app-support-route .support-payos-summary{isolation:isolate}
+body.app-support-route .support-payos-summary:before{position:absolute;top:-30%;bottom:-30%;left:-45%;z-index:-1;width:36%;background:linear-gradient(90deg,transparent,rgba(101,235,255,.12),transparent);content:"";transform:skewX(-16deg);animation:supportSummaryScan 6.2s ease-in-out infinite;pointer-events:none}
+body.app-support-route .support-payos-summary:after{animation:supportSummaryGlow 5.5s ease-in-out infinite}
+body.app-support-route .support-payos-summary__amount{background:linear-gradient(90deg,#fff,var(--support-gold),var(--support-cyan),#fff);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:supportAmountLight 5s linear infinite}
+body.app-support-route .support-payos-guide li>b{animation:supportGuidePulse 3s ease-in-out infinite}
+body.app-support-route .support-payos-guide li:nth-child(2)>b{animation-delay:.5s}
+body.app-support-route .support-payos-guide li:nth-child(3)>b{animation-delay:1s}
+body.app-support-route .support-payos-shield{overflow:hidden}
+body.app-support-route .support-payos-shield:after{position:absolute;inset:0;background:radial-gradient(circle at 12% 50%,rgba(92,224,163,.18),transparent 28%);content:"";opacity:.3;animation:supportShieldWave 3.8s ease-in-out infinite;pointer-events:none}
+body.app-support-route .support-payos-shield>b{animation:supportShieldPulse 2.8s ease-in-out infinite}
+
+body.app-support-route .support-payos-frame{position:relative;isolation:isolate;border-color:rgba(101,235,255,.35);box-shadow:0 16px 42px rgba(0,0,0,.27),0 0 0 1px rgba(255,104,200,.09)}
+body.app-support-route .support-payos-frame:before{position:absolute;inset:-1px;z-index:3;border:2px solid transparent;border-top-color:rgba(101,235,255,.8);border-right-color:rgba(255,104,200,.54);border-radius:inherit;content:"";pointer-events:none;animation:supportFrameSeal 5.8s ease-in-out infinite}
+body.app-support-route .support-payos-frame__note span{animation:supportNoteFloat 3.8s ease-in-out infinite}
+body.app-support-route .support-payos-frame__note span:nth-child(2){animation-delay:.5s}
+body.app-support-route .support-payos-frame__note span:nth-child(3){animation-delay:1s}
+
+body.app-support-route .support-payos-direct{isolation:isolate;background:radial-gradient(circle at 50% 42%,rgba(85,231,231,.16),transparent 39%),radial-gradient(circle at 18% 18%,rgba(255,104,200,.08),transparent 28%),linear-gradient(145deg,#f8fafb,#e9eef1)}
+body.app-support-route .support-payos-direct:before,body.app-support-route .support-payos-direct:after{z-index:0;width:230px;height:230px;border-width:2px;will-change:transform,opacity}
+body.app-support-route .support-payos-direct:before{animation:supportQrOrbit 12s linear infinite}
+body.app-support-route .support-payos-direct:after{animation:supportQrOrbit 16s linear infinite reverse}
+body.app-support-route .support-payos-direct__halo{z-index:2;isolation:isolate;animation:supportQrAura 4.8s ease-in-out infinite}
+body.app-support-route .support-payos-direct__halo:before{inset:-9px;border-width:3px;animation:supportQrSealSpin 6.5s linear infinite}
+body.app-support-route .support-payos-direct__halo:after{position:absolute;inset:-17px;z-index:-1;border:1px dashed rgba(8,126,136,.34);border-radius:29px;content:"";animation:supportQrSealSpin 13s linear infinite reverse;pointer-events:none}
+body.app-support-route .support-payos-direct img{position:relative;z-index:3;animation:none!important;transform:none!important;filter:none!important}
+body.app-support-route .support-payos-direct>div:nth-child(2) strong{background:linear-gradient(90deg,#14202a,#087e87,#b9338e,#14202a);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:supportAmountLight 6s linear infinite}
+
+body.app-support-route .support-verify-stage{position:relative;isolation:isolate;overflow:hidden}
+body.app-support-route .support-verify-stage:before{position:absolute;inset:-100% -20%;z-index:-1;background:conic-gradient(from 30deg,transparent,rgba(101,235,255,.18),transparent 26%,rgba(255,104,200,.12),transparent 52%);content:"";animation:supportWormholeSpin 12s linear infinite}
+body.app-support-route .support-verify-stage__pulse b{animation:supportVerifyCore 2.4s ease-in-out infinite}
+body.app-support-route .support-verify-stage>button{position:relative;overflow:hidden}
+body.app-support-route .support-verify-stage>button:after{position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);content:"";transform:translateX(-120%);animation:supportBadgeSweep 3.4s ease-in-out infinite}
+
+body.app-support-route .support-receipt{position:relative;isolation:isolate;overflow:hidden}
+body.app-support-route .support-receipt:before{position:absolute;inset:-80%;z-index:-2;background:conic-gradient(from 0deg,rgba(92,224,163,.16),transparent 22%,rgba(101,235,255,.17),transparent 45%,rgba(255,104,200,.13),transparent 68%,rgba(246,214,110,.13),transparent 88%);content:"";animation:supportWormholeSpin 18s linear infinite}
+body.app-support-route .support-receipt>*:not(.support-receipt-stars){position:relative;z-index:2}
+.support-receipt-stars{position:absolute;top:50%;left:44px;z-index:1;width:1px;height:1px;pointer-events:none}
+.support-receipt-stars i{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--support-gold);box-shadow:0 0 8px var(--support-gold);opacity:0;animation:supportReceiptStar 3.3s var(--star-delay) ease-out infinite;transform:rotate(var(--star-angle)) translateX(16px)}
+body.app-support-route .support-receipt__icon{animation:supportReceiptCore 2.6s ease-in-out infinite}
+
+.support-page[data-effects=balanced] .support-payos-cosmos i:nth-child(n+9){display:none}
+.support-page[data-effects=cinematic] .support-payos-cosmos i{width:4px;height:4px;animation-duration:4.8s}
+.support-page[data-effects=cinematic] .support-payos-stage{box-shadow:0 18px 52px rgba(0,0,0,.3),0 0 40px rgba(101,235,255,.14),0 0 70px rgba(255,104,200,.07)}
+.support-page[data-effects=static] .support-payos-cosmos,.support-page[data-effects=static] .support-receipt-stars{display:none!important}
+
+@keyframes supportBrandCore{0%,100%{filter:saturate(1);transform:scale(1)}50%{filter:saturate(1.25);transform:scale(1.045)}}
+@keyframes supportBrandOrbit{to{transform:rotate(360deg) scale(1.04)}}
+@keyframes supportAutomationAura{to{transform:rotate(360deg)}}
+@keyframes supportStepShimmer{0%,18%{transform:translateX(-130%)}65%,100%{transform:translateX(140%)}}
+@keyframes supportStepPulse{50%{box-shadow:0 0 0 5px rgba(85,231,231,.08),0 0 20px rgba(85,231,231,.35);transform:scale(1.06)}}
+@keyframes supportStepDone{0%{transform:scale(.65) rotate(-20deg)}70%{transform:scale(1.14) rotate(5deg)}100%{transform:none}}
+@keyframes supportWormholeSpin{to{transform:rotate(360deg)}}
+@keyframes supportCosmicSpark{0%,100%{opacity:0;transform:translate3d(-26px,20px,0) scale(.5)}25%{opacity:.9}70%{opacity:.35}85%{opacity:0;transform:translate3d(58px,-34px,0) scale(1.4)}}
+@keyframes supportBadgeBreathe{50%{border-color:rgba(92,224,163,.55);box-shadow:0 0 16px rgba(92,224,163,.12)}}
+@keyframes supportBadgeSweep{0%,28%{transform:translateX(-130%)}72%,100%{transform:translateX(130%)}}
+@keyframes supportStatusBeacon{50%{opacity:.55;box-shadow:0 0 0 5px rgba(92,224,163,.08),0 0 15px var(--support-green);transform:scale(.8)}}
+@keyframes supportSummaryScan{0%,15%{left:-45%;opacity:0}35%{opacity:1}75%,100%{left:120%;opacity:0}}
+@keyframes supportSummaryGlow{50%{opacity:.55;transform:scale(1.15)}}
+@keyframes supportAmountLight{to{background-position:-220% 0}}
+@keyframes supportGuidePulse{50%{border-color:rgba(85,231,231,.7);background:rgba(85,231,231,.16);box-shadow:0 0 13px rgba(85,231,231,.16);transform:translateY(-1px)}}
+@keyframes supportShieldWave{50%{opacity:.9;transform:translateX(65%) scale(1.25)}}
+@keyframes supportShieldPulse{50%{background:rgba(92,224,163,.26);box-shadow:0 0 17px rgba(92,224,163,.22);transform:scale(1.07)}}
+@keyframes supportFrameSeal{0%,100%{opacity:.45;clip-path:inset(0 75% 75% 0)}25%{opacity:.9;clip-path:inset(0 0 75% 0)}50%{clip-path:inset(0 0 0 75%)}75%{clip-path:inset(75% 0 0 0)}}
+@keyframes supportNoteFloat{50%{color:#087e87;transform:translateY(-1px)}}
+@keyframes supportQrOrbit{to{transform:rotate(360deg) scale(1.18)}}
+@keyframes supportQrAura{50%{box-shadow:0 28px 60px rgba(19,50,62,.18),0 0 0 10px rgba(255,255,255,.55)}}
+@keyframes supportQrSealSpin{to{transform:rotate(360deg)}}
+@keyframes supportVerifyCore{50%{box-shadow:0 0 0 8px rgba(101,235,255,.08),0 0 30px rgba(255,104,200,.24);transform:scale(1.06)}}
+@keyframes supportReceiptStar{0%{opacity:0;transform:rotate(var(--star-angle)) translateX(15px) scale(.4)}18%{opacity:1}62%{opacity:.45}100%{opacity:0;transform:rotate(var(--star-angle)) translateX(84px) scale(1.3)}}
+@keyframes supportReceiptCore{50%{box-shadow:0 0 0 8px rgba(92,224,163,.08),0 0 30px rgba(101,235,255,.24);transform:scale(1.06)}}
+
+@media(max-width:760px){
+  body.app-support-route .support-payos-cosmos i:nth-child(n+7){display:none}
+  body.app-support-route .support-payos-direct__halo{animation-duration:6.5s}
+  body.app-support-route .support-payos-direct:before,body.app-support-route .support-payos-direct:after{width:150px;height:150px}
+  .support-receipt-stars{top:36px;left:34px}
+}
+@media(prefers-reduced-motion:reduce){
+  body.app-support-route .support-payos-cosmos,body.app-support-route .support-receipt-stars{display:none!important}
+  body.app-support-route .support-payos-direct img{animation:none!important;transform:none!important}
+}

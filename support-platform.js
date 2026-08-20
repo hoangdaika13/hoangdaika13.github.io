@@ -11,6 +11,7 @@
   const INTEGRATION_VERSION = "support-platform.v14";
   const STORAGE_KEY = "hh.support.pending.v2";
   const LEGACY_STORAGE_KEY = "hh-payos-pending";
+  const MOTION_STORAGE_KEY = "hh.support.motion.v1";
   const DONATION_STATUSES = Object.freeze(["pending", "submitted", "verified", "refunded", "rejected", "payment_error"]);
   const MISSION_DEFINITIONS = Object.freeze([
     { id: "infrastructure", label: "Máy chủ & Database", shortLabel: "Hạ tầng", color: "#65ebff", icon: "◈", route: "#/system" },
@@ -188,6 +189,7 @@
       </div>
 
       <section class="support-payos-stage support-wormhole" data-support-payos data-support-stage-panel="payment" hidden>
+        <div class="support-payos-cosmos" aria-hidden="true">${Array.from({ length: 12 }, (_, index) => `<i style="--spark-index:${index};--spark-x:${8 + index * 7}%;--spark-delay:${(index % 6) * -.7}s"></i>`).join("")}</div>
         <header><div><span>BƯỚC 2 · VIETQR PAYOS</span><h3 data-support-payos-title>Đang tạo giao diện thanh toán</h3><p data-support-payos-status>Mã VietQR sẽ xuất hiện ngay tại đây, không mở sang website khác.</p></div><div class="support-live-badge"><i></i> Tự động đối soát</div></header>
         <div class="support-payos-workspace">
           <aside class="support-payos-summary" aria-label="Tóm tắt giao dịch">
@@ -212,6 +214,7 @@
       </section>
 
       <section class="support-receipt" data-support-receipt data-support-stage-panel="email" hidden>
+        <div class="support-receipt-stars" aria-hidden="true">${Array.from({ length: 10 }, (_, index) => `<i style="--star-angle:${index * 36}deg;--star-delay:${index * .04}s"></i>`).join("")}</div>
         <div class="support-receipt__icon support-hologram-envelope">✓</div>
         <div><span>XÁC NHẬN ỦNG HỘ</span><h3>Cảm ơn bạn đã đồng hành cùng Nhhoang</h3><p data-support-receipt-status>Đang hoàn tất thư cảm ơn.</p></div>
         <dl><div><dt>Mã xác nhận</dt><dd data-support-receipt-id>--</dd></div><div><dt>Số tiền</dt><dd data-support-receipt-amount>--</dd></div><div><dt>Email</dt><dd data-support-receipt-email>--</dd></div><div><dt>Xác nhận lúc</dt><dd data-support-receipt-time>--</dd></div></dl><small class="support-receipt__privacy">Email được che một phần trên giao diện công khai và chỉ dùng để gửi biên nhận.</small>
@@ -254,6 +257,9 @@
   function composeOneScreenWorkspace(page) {
     if (!page || page.dataset.workspaceComposed === "true") return null;
     page.dataset.workspaceComposed = "true";
+    let storedMotion = "balanced";
+    try { storedMotion = localStorage.getItem(MOTION_STORAGE_KEY) || "balanced"; } catch { /* Local preferences may be unavailable. */ }
+    page.dataset.effects = ["static", "balanced", "cinematic"].includes(storedMotion) ? storedMotion : "balanced";
     document.body.classList.add("app-support-route");
 
     const overview = page.querySelector(".support-overview");
@@ -356,6 +362,7 @@
     page.prepend(topbar);
     page.append(grid, dock, drawerHost);
     if (metrics) page.append(metrics);
+    page.querySelectorAll("[data-support-effect]").forEach(button => button.classList.toggle("active", button.dataset.supportEffect === page.dataset.effects));
 
     const closeDrawers = () => {
       page.classList.remove("is-drawer-open");
@@ -617,9 +624,11 @@
       });
       const labels = { details: "Sẵn sàng", payment: "Chờ thanh toán", verify: "Đang xác minh", email: receiptStatus === "sent" ? "Đã gửi email" : "Đang gửi email" };
       page.querySelector("[data-support-journey-label]").textContent = labels[stage] || labels.details;
+      page.style.setProperty("--support-journey-progress", `${Math.max(0, stages.indexOf(stage)) / (stages.length - 1) * 100}%`);
     };
     const showStage = (stage = "details", scroll = true) => {
       flowStage = ["details", "payment", "verify", "email"].includes(stage) ? stage : "details";
+      page.dataset.paymentStage = flowStage;
       page.querySelectorAll("[data-support-stage-panel]").forEach(panel => { panel.hidden = panel.dataset.supportStagePanel !== flowStage; });
       setJourney(flowStage);
       const activePanel = page.querySelector(`[data-support-stage-panel="${flowStage}"]`);
@@ -983,7 +992,7 @@
       const preset = event.target.closest("[data-support-preset]"); if (preset) return updateAmount(Number(preset.dataset.supportPreset));
       if (event.target.closest("[data-support-scroll-donate]")) { shell?.focusWorkspace(); return; }
       const effectButton = event.target.closest("[data-support-effect]");
-      if (effectButton) { page.dataset.effects = effectButton.dataset.supportEffect; page.querySelectorAll("[data-support-effect]").forEach(button => button.classList.toggle("active", button === effectButton)); return; }
+      if (effectButton) { page.dataset.effects = effectButton.dataset.supportEffect; page.querySelectorAll("[data-support-effect]").forEach(button => button.classList.toggle("active", button === effectButton)); try { localStorage.setItem(MOTION_STORAGE_KEY, page.dataset.effects); } catch { /* Preference remains active for this session. */ } return; }
       const missionChoice = event.target.closest("[data-support-mission-choice], [data-support-mission-map-choice]"); if (missionChoice) { chooseMission(missionChoice.dataset.supportMissionChoice || missionChoice.dataset.supportMissionMapChoice); return; }
       const channel = event.target.closest("[data-support-channel]"); if (channel) {
         if (channel.dataset.supportChannel === "recurring" && channel.dataset.supportChannelUrl) { window.open(channel.dataset.supportChannelUrl, "_blank", "noopener"); return; }
