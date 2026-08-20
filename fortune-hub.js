@@ -7,7 +7,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createFortuneHub(globalScope) {
   "use strict";
 
-  const VERSION = "9.6.1";
+  const VERSION = "9.6.2";
   const STORAGE_SCHEMA = "hh.fortune.hub.v1";
   const MAX_HISTORY = 80;
   const MAX_JOURNAL = 120;
