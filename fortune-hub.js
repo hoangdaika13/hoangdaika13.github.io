@@ -7,7 +7,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createFortuneHub(globalScope) {
   "use strict";
 
-  const VERSION = "9.6.0";
+  const VERSION = "9.6.1";
   const STORAGE_SCHEMA = "hh.fortune.hub.v1";
   const MAX_HISTORY = 80;
   const MAX_JOURNAL = 120;
@@ -636,12 +636,12 @@
     const visual = VIEW_VISUALS[id] || VIEW_VISUALS.today;
     return { id, icon: visual[0], label: visual[1], group: "Công cụ", ...(TOOL_LIBRARY_DETAILS[id] || { tone: visual[2], family: "reflection", badge: "Công cụ", beginner: "Mở không gian chiêm nghiệm.", advanced: "Xem phương pháp và provenance chi tiết." }) };
   }
-  function navToolMarkup(runtime, item, compact = false) {
+  function navToolMarkup(runtime, item, compact = false, order = 0) {
     const [id, icon, label] = item; const active = runtime.state.view === id;
-    return `<div class="fortune-nav__row" data-fortune-tool-row data-tool-search="${escapeHtml(`${label} ${id}`.toLocaleLowerCase("vi"))}"><button type="button" class="fortune-nav__item${active ? " is-active" : ""}${compact ? " is-compact" : ""}" data-fortune-view="${id}" aria-current="${active ? "page" : "false"}" aria-label="Mở ${escapeHtml(label)}" title="${escapeHtml(label)}"><i aria-hidden="true">${icon}</i><span>${escapeHtml(label)}</span>${active ? "<b aria-hidden=\"true\">●</b>" : ""}</button></div>`;
+    return `<div class="fortune-nav__row" data-fortune-tool-row data-tool-search="${escapeHtml(`${label} ${id}`.toLocaleLowerCase("vi"))}" style="--tool-order:${order}"><button type="button" class="fortune-nav__item${active ? " is-active" : ""}${compact ? " is-compact" : ""}" data-fortune-view="${id}" aria-current="${active ? "page" : "false"}" aria-label="Mở ${escapeHtml(label)}" title="${escapeHtml(label)}"><i aria-hidden="true">${icon}</i><span>${escapeHtml(label)}</span>${active ? "<b aria-hidden=\"true\">●</b>" : ""}</button></div>`;
   }
   function navMarkup(runtime) {
-    return `<div class="fortune-nav__groups fortune-atlas" data-fortune-tool-atlas>${OBSERVATORY_ATLAS_GROUPS.map((group, index) => { const active = group.items.some(([id]) => runtime.state.view === id); return `<details class="fortune-atlas__group" data-fortune-nav-group="${group.id}" data-fortune-active-group="${active}" style="--atlas-index:${index}"${active ? " open" : ""}><summary data-fortune-group-summary aria-label="Mở nhóm ${escapeHtml(group.label)}"><i>${group.icon}</i><span>${escapeHtml(group.label)}</span><b>${group.items.length}</b></summary><div>${group.items.map((item) => navToolMarkup(runtime, item, true)).join("")}</div></details>`; }).join("")}</div><p class="fortune-nav__empty" data-fortune-nav-empty hidden>Không tìm thấy công cụ phù hợp.</p>`;
+    return `<div class="fortune-nav__groups fortune-atlas" data-fortune-tool-atlas>${OBSERVATORY_ATLAS_GROUPS.map((group, index) => { const active = group.items.some(([id]) => runtime.state.view === id); return `<details class="fortune-atlas__group" data-fortune-nav-group="${group.id}" data-fortune-active-group="${active}" style="--atlas-index:${index}"${active ? " open" : ""}><summary data-fortune-group-summary aria-label="Mở nhóm ${escapeHtml(group.label)}"><i>${group.icon}</i><span>${escapeHtml(group.label)}</span><b>${group.items.length}</b></summary><div>${group.items.map((item, itemIndex) => navToolMarkup(runtime, item, true, itemIndex)).join("")}</div></details>`; }).join("")}</div><p class="fortune-nav__empty" data-fortune-nav-empty hidden>Không tìm thấy công cụ phù hợp.</p>`;
   }
 
   function toolbarMarkup(title, subtitle) {
@@ -1309,7 +1309,7 @@
       runtime.mysticFrame = motion === "static" ? 0 : globalScope.requestAnimationFrame(draw);
     };
     runtime.mysticPointer = (event) => { const rect = runtime.root.getBoundingClientRect(); scene.pointerX = clamp((event.clientX - rect.left) / Math.max(1, rect.width), 0, 1, .5); scene.pointerY = clamp((event.clientY - rect.top) / Math.max(1, rect.height), 0, 1, .5); runtime.root.style.setProperty("--mystic-pointer-x", `${(scene.pointerX * 100).toFixed(1)}%`); runtime.root.style.setProperty("--mystic-pointer-y", `${(scene.pointerY * 100).toFixed(1)}%`); };
-    runtime.mysticVisibility = () => { scene.paused = Boolean(globalScope.document.hidden); if (!scene.paused && !runtime.mysticFrame && runtime.state.settings.motion !== "static") runtime.mysticFrame = globalScope.requestAnimationFrame(draw); };
+    runtime.mysticVisibility = () => { scene.paused = Boolean(globalScope.document.hidden); runtime.root?.classList.toggle("is-tab-hidden", scene.paused); if (!scene.paused && !runtime.mysticFrame && runtime.state.settings.motion !== "static") runtime.mysticFrame = globalScope.requestAnimationFrame(draw); };
     runtime.root.addEventListener("pointermove", runtime.mysticPointer, { passive: true }); globalScope.document.addEventListener("visibilitychange", runtime.mysticVisibility); runtime.mysticResizeObserver = globalScope.ResizeObserver ? new globalScope.ResizeObserver(rebuild) : null; runtime.mysticResizeObserver?.observe(runtime.root); rebuild(); draw(0);
   }
   function syncMysticScene(runtime) {
