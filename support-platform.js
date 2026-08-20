@@ -18,6 +18,7 @@
     { id: "ai-provider", label: "AI Provider", shortLabel: "AI", color: "#ffb65c", icon: "✧", route: "#/creative/ai-center" },
     { id: "hh-english", label: "HH English", shortLabel: "English", color: "#68f1be", icon: "◇", route: "#/english" },
     { id: "graphic-design", label: "Thiết kế đồ họa", shortLabel: "Design", color: "#b77aff", icon: "⬡", route: "#/graphic-design" },
+    { id: "security", label: "Bảo mật & An toàn", shortLabel: "Bảo mật", color: "#ff6f91", icon: "✦", route: "#/account/security" },
     { id: "reserve", label: "Quỹ dự phòng", shortLabel: "Dự phòng", color: "#f3dc6b", icon: "◌", route: "#/support" }
   ]);
   const SUPPORT_TIERS = Object.freeze([
@@ -38,6 +39,7 @@
   let refreshTimer = 0;
   let paymentPollTimer = 0;
   let paymentCountdownTimer = 0;
+  let activeVisibilityHandler = null;
 
   const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const money = value => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(value) || 0);
@@ -174,13 +176,11 @@
           <header><div><span>Bước 1</span><h3>Chọn mức ủng hộ</h3></div><span class="support-secure">Bảo mật phía máy chủ</span></header>
           <form data-support-form>
             <div class="support-auto-method" data-support-auto-method><div class="support-auto-method__icon">QR</div><div><span>VIETQR TỰ ĐỘNG QUA PAYOS</span><strong>Thanh toán an toàn ngay trong HH Platform</strong><small data-support-payos-availability>Đang kiểm tra kết nối payOS…</small></div><i data-support-provider-state></i></div>
-            <div class="support-form-block"><span class="support-field-label">Nhiệm vụ muốn tiếp sức</span><div class="support-mission-picker" data-support-mission-picker><input type="hidden" data-support-mission value="infrastructure">${MISSION_DEFINITIONS.map((mission, index) => `<button type="button" class="${index === 0 ? "is-selected" : ""}" data-support-mission-choice="${mission.id}" style="--mission-color:${mission.color}"><i>${mission.icon}</i><span>${mission.shortLabel}</span></button>`).join("")}</div><small class="support-field-hint" data-support-mission-note>Máy chủ & Database · Chưa có hoạt động</small></div>
+            <div class="support-form-block support-selected-mission"><span class="support-field-label">Hành tinh đang tiếp sức</span><div class="support-mission-picker" data-support-mission-picker><input type="hidden" data-support-mission value="infrastructure"><span><i>◉</i><b data-support-mission-note>Máy chủ & Database · Chưa có hoạt động</b><small>Đổi tại Mission Orbit bên trái</small></span></div></div>
             <div class="support-presets">${presets.map((amount, index) => `<button type="button" class="${index === 2 ? "active" : ""}" data-support-preset="${amount}">${money(amount)}</button>`).join("")}</div>
             <label class="support-amount-field"><span>Số tiền tùy chỉnh</span><div><b>₫</b><input type="number" min="1000" max="1000000000" step="1000" value="100000" data-support-amount required></div><small>Tối thiểu 1.000đ</small></label>
             <div class="support-form-grid"><label><span>Tên hiển thị</span><input data-support-name maxlength="100" value="${escapeHtml(user.name || "")}" placeholder="Tên của bạn" required></label><label><span>Email nhận lời cảm ơn (không công khai)</span><input type="email" data-support-email maxlength="160" value="${escapeHtml(user.email || "")}" placeholder="you@gmail.com" autocomplete="email" required><small>Thư chỉ gửi sau khi thanh toán được xác minh.</small></label></div>
-            <label><span>Lời nhắn tới nhà phát triển</span><textarea rows="4" maxlength="500" data-support-message placeholder="Cảm ơn bạn đã xây dựng các công cụ hữu ích..."></textarea><small><b data-support-message-count>0</b>/500 ký tự</small></label>
-            <div class="support-form-grid support-visibility-grid"><label><span>Quyền hiển thị</span><select data-support-visibility><option value="public">Công khai tên hiển thị</option><option value="alias">Chỉ hiện biệt danh</option><option value="anonymous">Ẩn danh hoàn toàn</option></select></label><label data-support-alias-wrap hidden><span>Biệt danh công khai</span><input data-support-alias maxlength="60" placeholder="Supporter HH"></label></div>
-            <p class="support-privacy-note">Email chỉ dùng để gửi lời cảm ơn và mã xác nhận; không xuất hiện trên tường cộng đồng.</p>
+            <details class="support-optional-fields"><summary>Tùy chọn thêm · lời nhắn và quyền hiển thị</summary><div><label><span>Lời nhắn tới nhà phát triển</span><textarea rows="3" maxlength="500" data-support-message placeholder="Cảm ơn bạn đã xây dựng các công cụ hữu ích..."></textarea><small><b data-support-message-count>0</b>/500 ký tự</small></label><div class="support-form-grid support-visibility-grid"><label><span>Quyền hiển thị</span><select data-support-visibility><option value="public">Công khai tên hiển thị</option><option value="alias">Chỉ hiện biệt danh</option><option value="anonymous">Ẩn danh hoàn toàn</option></select></label><label data-support-alias-wrap hidden><span>Biệt danh công khai</span><input data-support-alias maxlength="60" placeholder="Supporter HH"></label></div><p class="support-privacy-note">Email chỉ dùng để gửi lời cảm ơn và mã xác nhận; không xuất hiện trên tường cộng đồng.</p></div></details>
             <button class="support-primary" type="submit" disabled>Tiếp tục tới VietQR</button>
             <p class="support-form-status" data-support-form-status>Đang kết nối kênh VietQR tự động…</p>
           </form>
@@ -251,6 +251,184 @@
     </section>`;
   }
 
+  function composeOneScreenWorkspace(page) {
+    if (!page || page.dataset.workspaceComposed === "true") return null;
+    page.dataset.workspaceComposed = "true";
+    document.body.classList.add("app-support-route");
+
+    const overview = page.querySelector(".support-overview");
+    const core = page.querySelector(".support-core");
+    const goal = page.querySelector(".support-goal");
+    const controls = page.querySelector(".support-galaxy-controls");
+    const missionMap = page.querySelector("[data-support-mission-map]");
+    const missionList = page.querySelector("[data-support-mission-list]");
+    const automation = page.querySelector("[data-support-automation]");
+    const paymentFlow = page.querySelector("[data-support-flow]");
+    const metrics = page.querySelector(".support-metrics");
+
+    const topbar = document.createElement("header");
+    topbar.className = "support-shellbar";
+    topbar.innerHTML = `<div class="support-shellbar__brand"><i>♥</i><span><small>HH SUPPORT GALAXY</small><strong>Tiếp năng lượng cho HH Platform</strong></span></div><div class="support-shellbar__signals"><span data-support-shell-provider><i></i> PayOS đang kiểm tra</span><span>Mục tiêu <b data-support-shell-progress>0%</b></span></div><nav aria-label="Hành động Support Galaxy"><button type="button" data-support-drawer-open="history">◷ Lịch sử</button><button type="button" data-support-drawer-open="help">⚙ Cài đặt</button><button type="button" data-support-admin-open hidden>◇ Quản trị</button></nav>`;
+
+    const grid = document.createElement("div");
+    grid.className = "support-one-screen-grid";
+    const orbit = document.createElement("aside");
+    orbit.className = "support-mission-orbit";
+    orbit.setAttribute("aria-label", "Mission Orbit");
+    const workspace = document.createElement("main");
+    workspace.className = "support-central-workspace";
+    const summary = document.createElement("aside");
+    summary.className = "support-live-summary";
+    summary.setAttribute("aria-label", "Tóm tắt ủng hộ");
+    summary.innerHTML = `<header><span>TÓM TẮT TRỰC TIẾP</span><button type="button" data-support-summary-close aria-label="Đóng tóm tắt">×</button></header><div class="support-summary-mission"><i data-support-summary-icon>◉</i><span><small>Nhiệm vụ đã chọn</small><strong data-support-summary-mission>Máy chủ & Database</strong></span></div><strong class="support-summary-amount" data-support-summary-amount>100.000 ₫</strong><dl><div><dt>Tiến độ nhiệm vụ</dt><dd data-support-summary-progress>Chưa có dữ liệu</dd></div><div><dt>Quyền hiển thị</dt><dd data-support-summary-privacy>Công khai tên</dd></div><div><dt>Email biên nhận</dt><dd data-support-summary-email>Chưa nhập</dd></div><div><dt>Kết nối</dt><dd data-support-summary-provider>Đang kiểm tra PayOS</dd></div></dl><div class="support-summary-trust"><span>✓ Webhook xác minh</span><span>✓ Không lưu tài khoản ngân hàng</span><span data-support-email-trust>✓ Email cảm ơn sau xác minh</span></div><button type="button" class="support-summary-primary" data-support-summary-submit>Ủng hộ ngay →</button>`;
+
+    const orbitHeader = document.createElement("header");
+    orbitHeader.innerHTML = `<div><small>MISSION ORBIT</small><strong>Chọn hành tinh tiếp sức</strong></div><span data-support-mission-sync-compact>Đang đồng bộ</span>`;
+    const orbitStage = document.createElement("div");
+    orbitStage.className = "support-orbit-stage";
+    if (core) orbitStage.append(core);
+    if (missionList) orbitStage.append(missionList);
+    orbit.append(orbitHeader, orbitStage);
+    if (goal) orbit.append(goal);
+
+    const workspaceHeader = document.createElement("header");
+    workspaceHeader.className = "support-workspace-header";
+    workspaceHeader.innerHTML = `<div><small>SUPPORT WORKSPACE</small><strong>Ủng hộ an toàn trong một luồng</strong></div><button type="button" data-support-summary-toggle>ⓘ Tóm tắt</button>`;
+    const workspaceScroll = document.createElement("div");
+    workspaceScroll.className = "support-workspace-scroll";
+    if (automation) workspaceScroll.append(automation);
+    if (paymentFlow) workspaceScroll.append(paymentFlow);
+    const recovery = document.createElement("div");
+    recovery.className = "support-recovery-actions";
+    recovery.dataset.supportRecovery = "";
+    recovery.hidden = true;
+    recovery.innerHTML = `<span>Kết nối thanh toán đang cần chú ý.</span><button type="button" data-support-retry-provider>↻ Thử lại</button><button type="button" data-support-change-amount>Đổi số tiền</button><button type="button" data-support-open-fallback>Mở phương thức dự phòng</button>`;
+    workspace.append(workspaceHeader, workspaceScroll, recovery);
+    grid.append(orbit, workspace, summary);
+
+    const drawerHost = document.createElement("div");
+    drawerHost.className = "support-drawer-host";
+    const drawerBackdrop = document.createElement("button");
+    drawerBackdrop.className = "support-drawer-backdrop";
+    drawerBackdrop.type = "button";
+    drawerBackdrop.setAttribute("data-support-drawer-close", "");
+    drawerBackdrop.setAttribute("aria-label", "Đóng bảng thông tin");
+    drawerHost.append(drawerBackdrop);
+    const createDrawer = (id, eyebrow, title) => {
+      const drawer = document.createElement("section");
+      drawer.className = "support-drawer";
+      drawer.dataset.supportDrawer = id;
+      drawer.hidden = true;
+      drawer.innerHTML = `<header><div><small>${eyebrow}</small><strong>${title}</strong></div><button type="button" data-support-drawer-close aria-label="Đóng">×</button></header><div class="support-drawer__content"></div>`;
+      drawerHost.append(drawer);
+      return drawer.querySelector(".support-drawer__content");
+    };
+    const impactDrawer = createDrawer("impact", "IMPACT LOG", "Tác động đã công bố");
+    const communityDrawer = createDrawer("community", "SUPPORTER GALAXY", "Cộng đồng đồng hành");
+    const historyDrawer = createDrawer("history", "SUPPORTER WALLET", "Lịch sử và quyền lợi");
+    const transparencyDrawer = createDrawer("transparency", "TRANSPARENCY", "Minh bạch nguồn lực");
+    const helpDrawer = createDrawer("help", "HELP & SETTINGS", "Trợ giúp và tùy chỉnh");
+    const adminDrawer = createDrawer("admin", "MISSION CONTROL", "Quản trị ủng hộ");
+
+    [page.querySelector("[data-support-impact]")].filter(Boolean).forEach(node => impactDrawer.append(node));
+    [page.querySelector(".support-community-grid"), page.querySelector("[data-support-constellation]")].filter(Boolean).forEach(node => communityDrawer.append(node));
+    [page.querySelector("[data-support-history]")].filter(Boolean).forEach(node => historyDrawer.append(node));
+    [page.querySelector("[data-support-transparency]")].filter(Boolean).forEach(node => transparencyDrawer.append(node));
+    const helpShortcuts = document.createElement("div");
+    helpShortcuts.className = "support-drawer-shortcuts";
+    helpShortcuts.innerHTML = `<button type="button" data-support-drawer-open="transparency">↗ Mở minh bạch</button><button type="button" data-support-drawer-open="impact">✦ Xem tác động</button>`;
+    helpDrawer.append(helpShortcuts);
+    [controls, page.querySelector("[data-support-channels]"), page.querySelector(".support-faq")].filter(Boolean).forEach(node => helpDrawer.append(node));
+    const admin = page.querySelector("[data-support-admin]");
+    if (admin) adminDrawer.append(admin);
+
+    const dock = document.createElement("nav");
+    dock.className = "support-dock";
+    dock.setAttribute("aria-label", "Điều hướng Support Galaxy");
+    dock.innerHTML = `<button type="button" class="is-active" data-support-home><i>♥</i><span>Ủng hộ</span></button><button type="button" data-support-drawer-open="impact"><i>✦</i><span>Tác động</span></button><button type="button" data-support-drawer-open="community"><i>☆</i><span>Cộng đồng</span></button><button type="button" data-support-drawer-open="history"><i>◷</i><span>Lịch sử</span></button><button type="button" class="support-dock-desktop" data-support-drawer-open="transparency"><i>↗</i><span>Minh bạch</span></button><button type="button" class="support-dock-desktop" data-support-drawer-open="help"><i>?</i><span>Trợ giúp</span></button><button type="button" class="support-dock-mobile" data-support-drawer-open="help"><i>•••</i><span>Thêm</span></button>`;
+
+    if (overview) overview.remove();
+    if (missionMap) missionMap.remove();
+    if (metrics) {
+      metrics.classList.add("support-data-contracts");
+      metrics.hidden = true;
+    }
+    page.prepend(topbar);
+    page.append(grid, dock, drawerHost);
+    if (metrics) page.append(metrics);
+
+    const closeDrawers = () => {
+      page.classList.remove("is-drawer-open");
+      page.querySelectorAll("[data-support-drawer]").forEach(drawer => { drawer.hidden = true; });
+      page.querySelectorAll("[data-support-drawer-open]").forEach(button => button.classList.remove("is-active"));
+      page.querySelector("[data-support-home]")?.classList.add("is-active");
+    };
+    const openDrawer = id => {
+      const drawer = page.querySelector(`[data-support-drawer="${id}"]`);
+      if (!drawer) return;
+      page.querySelectorAll("[data-support-drawer]").forEach(node => { node.hidden = node !== drawer; });
+      page.classList.add("is-drawer-open");
+      page.classList.remove("is-summary-open");
+      page.querySelectorAll("[data-support-drawer-open]").forEach(button => button.classList.toggle("is-active", button.dataset.supportDrawerOpen === id));
+      page.querySelector("[data-support-home]")?.classList.remove("is-active");
+      drawer.querySelector("[data-support-drawer-close]")?.focus({ preventScroll: true });
+    };
+    const handleShellNavigation = event => {
+      const openButton = event.target.closest("[data-support-drawer-open]");
+      if (openButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        openDrawer(openButton.dataset.supportDrawerOpen);
+        return;
+      }
+      if (event.target.closest("[data-support-drawer-close], [data-support-home]")) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeDrawers();
+      }
+    };
+    topbar.addEventListener("click", handleShellNavigation);
+    dock.addEventListener("click", handleShellNavigation);
+    drawerHost.addEventListener("click", handleShellNavigation);
+    workspaceHeader.querySelector("[data-support-summary-toggle]")?.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      page.classList.toggle("is-summary-open");
+    });
+    summary.querySelector("[data-support-summary-close]")?.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      page.classList.remove("is-summary-open");
+    });
+    return {
+      openDrawer,
+      closeDrawers,
+      toggleSummary: force => page.classList.toggle("is-summary-open", typeof force === "boolean" ? force : !page.classList.contains("is-summary-open")),
+      focusWorkspace: () => { closeDrawers(); workspaceScroll.scrollTop = 0; },
+      syncSummary({ missionId = "infrastructure", amount = 0, visibility = "public", email = "", providerReady = false, missionData = null } = {}) {
+        const mission = missionById(missionId);
+        const privacy = visibility === "anonymous" ? "Ẩn danh hoàn toàn" : visibility === "alias" ? "Chỉ hiện biệt danh" : "Công khai tên";
+        const maskedEmail = email && email.includes("@") ? `${email.slice(0, 2)}•••@${email.split("@")[1]}` : "Chưa nhập";
+        const progress = missionData ? `${Number(missionData.percent || 0).toFixed(Number(missionData.percent || 0) >= 10 ? 0 : 1)}% · ${money(missionData.verified || 0)} / ${money(missionData.goal || 0)}` : "Chưa có dữ liệu";
+        page.querySelector("[data-support-summary-icon]").textContent = mission.icon;
+        page.querySelector("[data-support-summary-mission]").textContent = mission.label;
+        page.querySelector("[data-support-summary-amount]").textContent = money(amount || 0);
+        page.querySelector("[data-support-summary-progress]").textContent = progress;
+        page.querySelector("[data-support-summary-privacy]").textContent = privacy;
+        page.querySelector("[data-support-summary-email]").textContent = maskedEmail;
+        page.querySelector("[data-support-summary-provider]").textContent = providerReady ? "PayOS sẵn sàng" : "PayOS chưa sẵn sàng";
+        const summarySubmit = page.querySelector("[data-support-summary-submit]");
+        if (summarySubmit) {
+          summarySubmit.disabled = !providerReady;
+          summarySubmit.textContent = providerReady ? "Ủng hộ ngay →" : "PayOS chưa sẵn sàng";
+          summarySubmit.title = providerReady ? "Tiếp tục tới bước tạo VietQR" : "Hãy thử kết nối lại PayOS";
+        }
+        const provider = page.querySelector("[data-support-shell-provider]");
+        if (provider) { provider.classList.toggle("is-online", providerReady); provider.innerHTML = `<i></i> ${providerReady ? "PayOS sẵn sàng" : "PayOS đang kiểm tra"}`; }
+      }
+    };
+  }
+
   async function mount(container, options = {}) {
     clearInterval(refreshTimer);
     clearInterval(paymentPollTimer);
@@ -259,6 +437,7 @@
     const user = getUser();
     container.innerHTML = markup(user);
     const page = container.querySelector("[data-support-page]");
+    const shell = composeOneScreenWorkspace(page);
     let currentDonation = null;
     let adminItems = [];
     let publicData = null;
@@ -282,7 +461,7 @@
       if (!response.ok) throw new Error(data.error || "Không thể kết nối hệ thống ủng hộ.");
       return data;
     };
-    const setFormStatus = (message, type = "") => { const node = page.querySelector("[data-support-form-status]"); node.textContent = message; node.dataset.state = type; };
+    const setFormStatus = (message, type = "") => { const node = page.querySelector("[data-support-form-status]"); node.textContent = message; node.dataset.state = type; const recovery = page.querySelector("[data-support-recovery]"); if (recovery) recovery.hidden = type !== "error"; };
     const downloadReceiptPdf = async donation => {
       if (!donation?.reference || donation.status !== "verified") return;
       await loadScriptOnce("vendor/pdf-lib.min.js?v=1.17.1", () => Boolean(window.PDFLib));
@@ -366,7 +545,11 @@
       downloadBlob(`hh-supporter-${donation.reference}.png`, blob);
     };
     const selectedAmount = () => Math.round(Number(page.querySelector("[data-support-amount]").value) || 0);
-    const updateAmount = amount => { page.querySelector("[data-support-amount]").value = amount; page.querySelectorAll("[data-support-preset]").forEach(button => button.classList.toggle("active", Number(button.dataset.supportPreset) === Number(amount))); };
+    const syncLiveSummary = () => {
+      const missionData = (publicData?.missions || []).find(item => item.id === selectedMissionId) || null;
+      shell?.syncSummary({ missionId: selectedMissionId, amount: selectedAmount(), visibility: page.querySelector("[data-support-visibility]")?.value || "public", email: page.querySelector("[data-support-email]")?.value || "", providerReady: payOSAvailable, missionData });
+    };
+    const updateAmount = amount => { page.querySelector("[data-support-amount]").value = amount; page.querySelectorAll("[data-support-preset]").forEach(button => button.classList.toggle("active", Number(button.dataset.supportPreset) === Number(amount))); syncLiveSummary(); };
     const pendingKey = STORAGE_KEY;
     const submitButton = page.querySelector("[data-support-form] button[type=submit]");
     const stopPaymentPolling = () => { clearInterval(paymentPollTimer); paymentPollTimer = 0; };
@@ -444,9 +627,8 @@
         activePanel.classList.remove("is-entering");
         requestAnimationFrame(() => activePanel.classList.add("is-entering"));
         if (scroll) {
-          activePanel.scrollIntoView({ behavior: "auto", block: "start" });
-          const scrollRoot = activePanel.closest(".app-main");
-          if (scrollRoot) scrollRoot.scrollTop = Math.max(0, scrollRoot.scrollTop - 128);
+          const scrollRoot = activePanel.closest(".support-workspace-scroll");
+          if (scrollRoot) scrollRoot.scrollTo({ top: 0, behavior: "smooth" });
         }
       }
     };
@@ -559,7 +741,10 @@
       const missions = Array.isArray(data?.missions) ? data.missions : [];
       const list = page.querySelector("[data-support-mission-list]");
       const sync = page.querySelector("[data-support-mission-sync]");
-      if (sync) sync.textContent = missions.some(item => Number(item.verified) > 0) ? `Đồng bộ lúc ${dateText(data.checkedAt)}` : "Chưa có hoạt động";
+      const syncLabel = missions.some(item => Number(item.verified) > 0) ? `Đồng bộ ${dateText(data.checkedAt)}` : "Chưa có hoạt động";
+      if (sync) sync.textContent = syncLabel;
+      const compactSync = page.querySelector("[data-support-mission-sync-compact]");
+      if (compactSync) compactSync.textContent = syncLabel;
       if (!missions.length) {
         list.innerHTML = '<p class="support-empty">Backend chưa cung cấp Funding Mission.</p>';
         return;
@@ -567,7 +752,8 @@
       list.innerHTML = missions.map((mission) => {
         const statusLabel = mission.status === "completed" ? "Đã hoàn thành" : mission.status === "paused" ? "Tạm dừng" : mission.verified || mission.used ? "Đang thực hiện" : "Chưa có hoạt động";
         const result = mission.result || "Chưa có kết quả được công bố.";
-        return `<article class="support-mission-card ${mission.id === selectedMissionId ? "is-selected" : ""}" data-support-mission-card="${escapeHtml(mission.id)}" style="--mission-color:${escapeHtml(mission.color)}"><button type="button" data-support-mission-map-choice="${escapeHtml(mission.id)}" aria-label="Chọn ${escapeHtml(mission.label)}"><i>${escapeHtml(mission.icon)}</i></button><div><header><strong>${escapeHtml(mission.label)}</strong><span>${escapeHtml(statusLabel)}</span></header><p>${escapeHtml(result)}</p><div class="support-mission-card__meter"><b style="width:${Math.min(100, Number(mission.percent) || 0)}%"></b></div><footer><small>${money(mission.verified)} đã xác minh / ${money(mission.goal)}</small><small>${Number(mission.supporters || 0)} người · đã dùng ${money(mission.used)}</small></footer></div></article>`;
+        const missionProgress = Math.min(100, Number(mission.percent) || 0);
+        return `<article class="support-mission-card ${mission.id === selectedMissionId ? "is-selected" : ""}" data-support-mission-card="${escapeHtml(mission.id)}" style="--mission-color:${escapeHtml(mission.color)};--mission-progress:${missionProgress};--mission-size:${38 + Math.round(missionProgress * .14)}px" title="${escapeHtml(mission.label)} · ${escapeHtml(statusLabel)}"><button type="button" data-support-mission-map-choice="${escapeHtml(mission.id)}" aria-label="Chọn ${escapeHtml(mission.label)}"><i>${escapeHtml(mission.icon)}</i></button><div><header><strong>${escapeHtml(mission.label)}</strong><span>${escapeHtml(statusLabel)}</span></header><p>${escapeHtml(result)}</p><div class="support-mission-card__meter"><b style="width:${missionProgress}%"></b></div><footer><small>${money(mission.verified)} đã xác minh / ${money(mission.goal)}</small><small>${Number(mission.supporters || 0)} người · đã dùng ${money(mission.used)}</small></footer></div></article>`;
       }).join("");
     };
 
@@ -658,6 +844,7 @@
       const mission = (publicData?.missions || []).find(item => item.id === selectedMissionId) || missionById(selectedMissionId);
       const note = page.querySelector("[data-support-mission-note]");
       if (note) note.textContent = `${mission.label} · ${mission.verified ? `${money(mission.verified)} đã xác minh` : "Chưa có hoạt động"}`;
+      syncLiveSummary();
     };
 
     const renderPublic = data => {
@@ -671,7 +858,10 @@
       page.querySelector("[data-support-average]").textContent = money(stats.average || 0);
       page.querySelector("[data-support-month]").textContent = money(stats.monthlyTotal || 0);
       page.querySelector("[data-support-progress]").style.width = `${percent}%`;
+      page.querySelector(".support-goal")?.style.setProperty("--goal-progress", `${percent * 3.6}deg`);
       page.querySelector("[data-support-progress-label]").textContent = `${percent.toFixed(percent >= 10 ? 0 : 1)}%`;
+      const shellProgress = page.querySelector("[data-support-shell-progress]");
+      if (shellProgress) shellProgress.textContent = `${percent.toFixed(percent >= 10 ? 0 : 1)}%`;
       page.querySelector("[data-support-checked]").textContent = `Đồng bộ lúc ${dateText(data.checkedAt)}`;
       page.querySelector("[data-support-wall]").innerHTML = data.recent?.length ? data.recent.map(item => `<article><div><span>${escapeHtml(item.name).split(/\s+/).slice(-2).map(part => part[0]).join("").toUpperCase()}</span><div><strong>${escapeHtml(item.name)}</strong><small>${dateText(item.verifiedAt || item.createdAt)}</small></div><b>${money(item.amount)}</b></div>${item.message ? `<p>${escapeHtml(item.message)}</p>` : ""}</article>`).join("") : '<p class="support-empty">Chưa có giao dịch được xác nhận.</p>';
       page.querySelector("[data-support-leaderboard]").innerHTML = data.leaderboard?.length ? data.leaderboard.map((item, index) => `<article><span>${index + 1}</span><div><strong>${escapeHtml(item.name)}</strong><small>${item.donations} lần ủng hộ</small></div><b>${money(item.amount)}</b></article>`).join("") : '<p class="support-empty">Danh sách sẽ xuất hiện sau khi đối soát.</p>';
@@ -690,6 +880,7 @@
       const emailTrust = page.querySelector("[data-support-email-trust]");
       emailTrust.textContent = receiptEmailAvailable ? "✓ Email cảm ơn tự động đang bật" : "○ Email cảm ơn chờ cấu hình";
       emailTrust.classList.toggle("is-pending", !receiptEmailAvailable);
+      syncLiveSummary();
       setFormStatus(payOSAvailable ? "Sẵn sàng. Bấm tiếp tục để mở VietQR ngay trong website." : "Không thể tạo VietQR lúc này. Vui lòng thử lại sau.", payOSAvailable ? "success" : "error");
     };
 
@@ -764,23 +955,40 @@
         adminData = data;
         adminItems = data.donations || [];
         page.querySelector("[data-support-admin]").hidden = false;
+        const adminOpen = page.querySelector("[data-support-admin-open]");
+        if (adminOpen) adminOpen.hidden = false;
         const impactForm = page.querySelector("[data-support-impact-form]");
         if (impactForm) impactForm.hidden = data.capabilities?.configure !== true;
         renderAdmin(page.querySelector("[data-support-admin-filter]").value, page.querySelector("[data-support-admin-provider-filter]").value);
       }
-      catch { page.querySelector("[data-support-admin]").hidden = true; }
+      catch { page.querySelector("[data-support-admin]").hidden = true; const adminOpen = page.querySelector("[data-support-admin-open]"); if (adminOpen) adminOpen.hidden = true; }
     };
 
     page.addEventListener("click", async event => {
+      const drawerOpen = event.target.closest("[data-support-drawer-open]");
+      if (drawerOpen) { shell?.openDrawer(drawerOpen.dataset.supportDrawerOpen); return; }
+      if (event.target.closest("[data-support-drawer-close], [data-support-home]")) { shell?.closeDrawers(); return; }
+      if (event.target.closest("[data-support-summary-toggle]")) { shell?.toggleSummary(); return; }
+      if (event.target.closest("[data-support-summary-close]")) { shell?.toggleSummary(false); return; }
+      if (event.target.closest("[data-support-summary-submit]")) { if (!payOSAvailable) return; shell?.toggleSummary(false); page.querySelector("[data-support-form]")?.requestSubmit(); return; }
+      if (event.target.closest("[data-support-admin-open]")) { shell?.openDrawer("admin"); return; }
+      if (event.target.closest("[data-support-retry-provider]")) { await loadPublic(); shell?.focusWorkspace(); return; }
+      if (event.target.closest("[data-support-change-amount]")) { showStage("details", false); shell?.focusWorkspace(); page.querySelector("[data-support-amount]")?.focus({ preventScroll: true }); return; }
+      if (event.target.closest("[data-support-open-fallback]")) {
+        const fallback = page.querySelector("[data-support-payos-fallback]");
+        if (fallback?.href && isPayOSCheckoutUrl(fallback.href)) window.open(fallback.href, "_blank", "noopener");
+        else shell?.openDrawer("help");
+        return;
+      }
       const preset = event.target.closest("[data-support-preset]"); if (preset) return updateAmount(Number(preset.dataset.supportPreset));
-      if (event.target.closest("[data-support-scroll-donate]")) { page.querySelector("[data-support-flow]")?.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+      if (event.target.closest("[data-support-scroll-donate]")) { shell?.focusWorkspace(); return; }
       const effectButton = event.target.closest("[data-support-effect]");
       if (effectButton) { page.dataset.effects = effectButton.dataset.supportEffect; page.querySelectorAll("[data-support-effect]").forEach(button => button.classList.toggle("active", button === effectButton)); return; }
       const missionChoice = event.target.closest("[data-support-mission-choice], [data-support-mission-map-choice]"); if (missionChoice) { chooseMission(missionChoice.dataset.supportMissionChoice || missionChoice.dataset.supportMissionMapChoice); return; }
       const channel = event.target.closest("[data-support-channel]"); if (channel) {
         if (channel.dataset.supportChannel === "recurring" && channel.dataset.supportChannelUrl) { window.open(channel.dataset.supportChannelUrl, "_blank", "noopener"); return; }
-        if (channel.dataset.supportChannel === "community") { page.querySelector("[data-support-contribution-form]").hidden = false; page.querySelector("[data-support-contribution-form]")?.scrollIntoView({ behavior: "smooth", block: "center" }); return; }
-        page.querySelector("[data-support-flow]")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (channel.dataset.supportChannel === "community") { page.querySelector("[data-support-contribution-form]").hidden = false; channel.closest(".support-drawer__content")?.scrollTo({ top: channel.closest(".support-drawer__content").scrollHeight, behavior: "smooth" }); return; }
+        shell?.focusWorkspace();
         return;
       }
       const star = event.target.closest("[data-support-star]"); if (star) {
@@ -918,10 +1126,12 @@
     });
 
     page.querySelector("[data-support-amount]").addEventListener("input", event => updateAmount(event.target.value));
+    page.querySelector("[data-support-email]").addEventListener("input", syncLiveSummary);
     page.querySelector("[data-support-message]").addEventListener("input", event => { page.querySelector("[data-support-message-count]").textContent = event.target.value.length; });
     page.querySelector("[data-support-visibility]").addEventListener("change", event => {
       const aliasWrap = page.querySelector("[data-support-alias-wrap]");
       if (aliasWrap) aliasWrap.hidden = event.target.value !== "alias";
+      syncLiveSummary();
     });
     page.querySelector("[data-support-theme]")?.addEventListener("change", event => { page.dataset.theme = event.target.value; });
     page.querySelector("[data-support-admin-filter]").addEventListener("change", event => renderAdmin(event.target.value, page.querySelector("[data-support-admin-provider-filter]").value));
@@ -949,7 +1159,7 @@
       } catch (error) { status.textContent = error.message; status.dataset.state = "error"; }
     });
     page.querySelector("[data-support-form]").addEventListener("submit", async event => {
-      event.preventDefault(); const button = event.submitter || submitButton; button.disabled = true; button.textContent = "Đang tạo VietQR…";
+      event.preventDefault(); const button = event.submitter || submitButton; button.disabled = true; button.textContent = "Đang tạo VietQR…"; const summarySubmit = page.querySelector("[data-support-summary-submit]"); if (summarySubmit) { summarySubmit.disabled = true; summarySubmit.textContent = "Đang tạo VietQR…"; }
       try {
         const visibility = page.querySelector("[data-support-visibility]").value;
         const data = await api("", { method: "POST", body: { action: "payos:create", amount: selectedAmount(), donorName: page.querySelector("[data-support-name]").value, donorAlias: page.querySelector("[data-support-alias]").value, email: page.querySelector("[data-support-email]").value, message: page.querySelector("[data-support-message]").value, missionId: selectedMissionId, visibility, anonymous: visibility === "anonymous" } });
@@ -975,7 +1185,7 @@
         }
         beginPaymentPolling();
       } catch (error) { showStage("details", false); setFormStatus(error.message, "error"); }
-      finally { button.disabled = !payOSAvailable; button.textContent = "Tiếp tục tới VietQR"; }
+      finally { button.disabled = !payOSAvailable; button.textContent = "Tiếp tục tới VietQR"; syncLiveSummary(); }
     });
 
     updateAmount(100000);
@@ -1009,7 +1219,17 @@
         }
         beginPaymentPolling();
       } else if (saved) forgetPending();
+      syncLiveSummary();
     } catch { forgetPending(); }
+    if (activeVisibilityHandler) document.removeEventListener("visibilitychange", activeVisibilityHandler);
+    activeVisibilityHandler = () => {
+      page.classList.toggle("is-page-hidden", document.hidden);
+      if (!document.hidden && document.contains(page)) {
+        syncLiveSummary();
+        if (flowStage !== "details") updatePaymentSummary();
+      }
+    };
+    document.addEventListener("visibilitychange", activeVisibilityHandler);
     refreshTimer = window.setInterval(() => {
       if (!document.contains(page)) return clearInterval(refreshTimer);
       if (!document.hidden) loadPublic();
@@ -1020,6 +1240,9 @@
     clearInterval(refreshTimer);
     clearInterval(paymentPollTimer);
     clearInterval(paymentCountdownTimer);
+    if (activeVisibilityHandler) document.removeEventListener("visibilitychange", activeVisibilityHandler);
+    activeVisibilityHandler = null;
+    document.body?.classList.remove("app-support-route");
   }
 
   return Object.freeze({ VERSION, INTEGRATION_VERSION, STORAGE_KEY, isPayOSCheckoutUrl, normalizePending, donationLifecycle, createPayOSCheckoutAdapter, mount, unmount });

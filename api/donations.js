@@ -19,6 +19,7 @@ const MISSION_DEFINITIONS = Object.freeze([
   { id: "ai-provider", label: "AI Provider", shortLabel: "AI", color: "#ffb65c", defaultGoal: 3500000, route: "#/creative/ai-center" },
   { id: "hh-english", label: "HH English", shortLabel: "English", color: "#68f1be", defaultGoal: 2500000, route: "#/english" },
   { id: "graphic-design", label: "Thiết kế đồ họa", shortLabel: "Design", color: "#b77aff", defaultGoal: 3000000, route: "#/graphic-design" },
+  { id: "security", label: "Bảo mật & An toàn", shortLabel: "Bảo mật", color: "#ff6f91", defaultGoal: 2200000, route: "#/account/security" },
   { id: "reserve", label: "Quỹ dự phòng", shortLabel: "Dự phòng", color: "#f3dc6b", defaultGoal: 1800000, route: "#/support" }
 ]);
 const MISSION_IDS = new Set(MISSION_DEFINITIONS.map((mission) => mission.id));
