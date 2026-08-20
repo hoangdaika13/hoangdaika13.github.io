@@ -213,8 +213,8 @@
       scripts: ["draw-studio.js?v=9"]
     },
     meme: {
-      styles: ["meme-hub.css?v=5"],
-      scripts: ["meme-hub.js?v=4"]
+      styles: ["meme-hub.css?v=6"],
+      scripts: ["meme-hub.js?v=6"]
     },
     "chat-ai": {
       styles: ["chat-ai-hub.css?v=17"],

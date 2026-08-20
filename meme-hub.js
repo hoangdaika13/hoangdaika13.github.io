@@ -5,22 +5,103 @@
 })(typeof window !== "undefined" ? window : globalThis, function createMemeHub(globalScope) {
   "use strict";
 
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.0";
   const STORAGE_KEY = "hh.meme.projects.v1";
   const MAX_PROJECTS = 18;
   const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
   const SAFE_MEDIA_HOSTS = new Set(["upload.wikimedia.org", "commons.wikimedia.org"]);
   const TABS = new Set(["images", "gif", "upload", "projects", "rights"]);
+  const STICKER_CATEGORIES = Object.freeze([
+    { id: "reaction", label: "Reaction", icon: "😂" },
+    { id: "symbol", label: "Biểu tượng", icon: "🔥" },
+    { id: "meme", label: "Meme", icon: "🗿" },
+    { id: "animal", label: "Động vật", icon: "🐱" },
+    { id: "label", label: "Chữ", icon: "LOL" },
+    { id: "shape", label: "Hình", icon: "★" }
+  ]);
   const STICKERS = Object.freeze([
-    { id: "laugh", glyph: "😂", label: "Cười" },
-    { id: "fire", glyph: "🔥", label: "Lửa" },
-    { id: "spark", glyph: "💫", label: "Lấp lánh" },
-    { id: "heart", glyph: "❤️", label: "Tim" },
-    { id: "eyes", glyph: "👀", label: "Đôi mắt" },
-    { id: "hundred", glyph: "💯", label: "Một trăm" },
-    { id: "star", glyph: "★", label: "Ngôi sao", shape: true },
-    { id: "arrow", glyph: "➜", label: "Mũi tên", shape: true },
-    { id: "bubble", glyph: "●", label: "Bong bóng", shape: true }
+    { id: "laugh", glyph: "😂", label: "Cười", category: "reaction" },
+    { id: "rofl", glyph: "🤣", label: "Cười lăn", category: "reaction" },
+    { id: "cry", glyph: "😭", label: "Khóc", category: "reaction" },
+    { id: "scream", glyph: "😱", label: "Sốc", category: "reaction" },
+    { id: "mindblown", glyph: "🤯", label: "Nổ não", category: "reaction" },
+    { id: "cool", glyph: "😎", label: "Ngầu", category: "reaction" },
+    { id: "thinking", glyph: "🤔", label: "Suy nghĩ", category: "reaction" },
+    { id: "eyeroll", glyph: "🙄", label: "Đảo mắt", category: "reaction" },
+    { id: "angry", glyph: "😡", label: "Tức giận", category: "reaction" },
+    { id: "party", glyph: "🥳", label: "Ăn mừng", category: "reaction" },
+    { id: "smirk", glyph: "😏", label: "Nhếch mép", category: "reaction" },
+    { id: "sleep", glyph: "😴", label: "Buồn ngủ", category: "reaction" },
+    { id: "fire", glyph: "🔥", label: "Lửa", category: "symbol" },
+    { id: "spark", glyph: "💫", label: "Lấp lánh", category: "symbol" },
+    { id: "heart", glyph: "❤️", label: "Tim", category: "symbol" },
+    { id: "eyes", glyph: "👀", label: "Đôi mắt", category: "symbol" },
+    { id: "hundred", glyph: "💯", label: "Một trăm", category: "symbol" },
+    { id: "check", glyph: "✅", label: "Đúng", category: "symbol" },
+    { id: "cross", glyph: "❌", label: "Sai", category: "symbol" },
+    { id: "warning", glyph: "⚠️", label: "Cảnh báo", category: "symbol" },
+    { id: "glowstar", glyph: "⭐", label: "Ngôi sao", category: "symbol" },
+    { id: "lightning", glyph: "⚡", label: "Tia chớp", category: "symbol" },
+    { id: "rocket", glyph: "🚀", label: "Tên lửa", category: "symbol" },
+    { id: "target", glyph: "🎯", label: "Mục tiêu", category: "symbol" },
+    { id: "moai", glyph: "🗿", label: "Moai", category: "meme" },
+    { id: "clown", glyph: "🤡", label: "Hề", category: "meme" },
+    { id: "skull", glyph: "💀", label: "Đầu lâu", category: "meme" },
+    { id: "alien", glyph: "👽", label: "Người ngoài hành tinh", category: "meme" },
+    { id: "ghost", glyph: "👻", label: "Ma", category: "meme" },
+    { id: "frog", glyph: "🐸", label: "Ếch", category: "meme" },
+    { id: "see-no-evil", glyph: "🙈", label: "Không nhìn", category: "meme" },
+    { id: "clap", glyph: "👏", label: "Vỗ tay", category: "meme" },
+    { id: "pray", glyph: "🙏", label: "Cầu nguyện", category: "meme" },
+    { id: "popcorn", glyph: "🍿", label: "Hóng chuyện", category: "meme" },
+    { id: "loudspeaker", glyph: "📢", label: "Thông báo", category: "meme" },
+    { id: "trophy", glyph: "🏆", label: "Chiến thắng", category: "meme" },
+    { id: "cat", glyph: "🐱", label: "Mèo", category: "animal" },
+    { id: "dog", glyph: "🐶", label: "Chó", category: "animal" },
+    { id: "monkey", glyph: "🐵", label: "Khỉ", category: "animal" },
+    { id: "panda", glyph: "🐼", label: "Gấu trúc", category: "animal" },
+    { id: "fox", glyph: "🦊", label: "Cáo", category: "animal" },
+    { id: "frog-animal", glyph: "🐸", label: "Ếch xanh", category: "animal" },
+    { id: "chicken", glyph: "🐔", label: "Gà", category: "animal" },
+    { id: "unicorn", glyph: "🦄", label: "Kỳ lân", category: "animal" },
+    { id: "penguin", glyph: "🐧", label: "Chim cánh cụt", category: "animal" },
+    { id: "hamster", glyph: "🐹", label: "Hamster", category: "animal" },
+    { id: "wolf", glyph: "🐺", label: "Sói", category: "animal" },
+    { id: "bee", glyph: "🐝", label: "Ong", category: "animal" },
+    { id: "label-lol", glyph: "LOL", label: "LOL", category: "label", shape: true, color: "#ffe46b" },
+    { id: "label-omg", glyph: "OMG", label: "OMG", category: "label", shape: true, color: "#ff68c5" },
+    { id: "label-nope", glyph: "NOPE", label: "NOPE", category: "label", shape: true, color: "#ff718f" },
+    { id: "label-gg", glyph: "GG", label: "GG", category: "label", shape: true, color: "#62efff" },
+    { id: "label-ez", glyph: "EZ", label: "EZ", category: "label", shape: true, color: "#7cf2bd" },
+    { id: "label-win", glyph: "WIN", label: "WIN", category: "label", shape: true, color: "#ffe46b" },
+    { id: "label-fail", glyph: "FAIL", label: "FAIL", category: "label", shape: true, color: "#ff718f" },
+    { id: "label-wtf", glyph: "WTF", label: "WTF", category: "label", shape: true, color: "#ff9edf" },
+    { id: "label-bruh", glyph: "BRUH", label: "BRUH", category: "label", shape: true, color: "#d5c3ff" },
+    { id: "label-sus", glyph: "SUS", label: "SUS", category: "label", shape: true, color: "#ff8d8d" },
+    { id: "label-w", glyph: "W", label: "W", category: "label", shape: true, color: "#6ef0b7" },
+    { id: "label-l", glyph: "L", label: "L", category: "label", shape: true, color: "#ff718f" },
+    { id: "star", glyph: "★", label: "Ngôi sao", category: "shape", shape: true },
+    { id: "sparkle-shape", glyph: "✦", label: "Tia sáng", category: "shape", shape: true },
+    { id: "arrow", glyph: "➜", label: "Mũi tên", category: "shape", shape: true },
+    { id: "bubble", glyph: "●", label: "Bong bóng", category: "shape", shape: true },
+    { id: "triangle", glyph: "▲", label: "Tam giác", category: "shape", shape: true },
+    { id: "square", glyph: "■", label: "Hình vuông", category: "shape", shape: true },
+    { id: "diamond", glyph: "◆", label: "Kim cương", category: "shape", shape: true },
+    { id: "heart-shape", glyph: "♥", label: "Trái tim", category: "shape", shape: true },
+    { id: "cloud", glyph: "☁", label: "Đám mây", category: "shape", shape: true },
+    { id: "bolt-shape", glyph: "ϟ", label: "Sét", category: "shape", shape: true },
+    { id: "question", glyph: "?!", label: "Hoang mang", category: "shape", shape: true },
+    { id: "tick-shape", glyph: "✔", label: "Đánh dấu", category: "shape", shape: true }
+  ]);
+  const SEARCH_PRESETS = Object.freeze([
+    { label: "Meme cổ điển", query: "internet meme" }, { label: "Reaction", query: "reaction face" },
+    { label: "Mèo", query: "funny cat" }, { label: "Chó", query: "funny dog" },
+    { label: "Động vật", query: "funny animal" }, { label: "Công sở", query: "office humor" },
+    { label: "Học tập", query: "school humor" }, { label: "Game", query: "gaming humor" },
+    { label: "Lập trình", query: "computer programming humor" }, { label: "Vũ trụ", query: "space humor" },
+    { label: "Retro", query: "vintage cartoon humor" }, { label: "Comic", query: "comic reaction" },
+    { label: "GIF vui", query: "funny", kind: "gif" }, { label: "GIF mèo", query: "cat", kind: "gif" },
+    { label: "GIF cảm xúc", query: "smiley", kind: "gif" }, { label: "GIF nhảy", query: "dance", kind: "gif" }
   ]);
 
   let runtime = null;
@@ -117,12 +198,14 @@
     if (normalized.length < 2) throw new Error("Hãy nhập ít nhất 2 ký tự để tìm kiếm.");
     const kind = options.kind === "gif" ? "gif" : "image";
     const limit = Math.round(clamp(options.limit, 8, 48, 24));
+    const offset = Math.round(clamp(options.offset, 0, 5000, 0));
     const params = new URLSearchParams({
       action: "query",
       generator: "search",
       gsrnamespace: "6",
       gsrsearch: kind === "gif" ? `${normalized} filemime:image/gif` : normalized,
-      gsrlimit: kind === "gif" ? "48" : String(Math.max(limit, 30)),
+      gsrlimit: "48",
+      gsroffset: String(offset),
       prop: "imageinfo",
       iiprop: "url|mime|size|extmetadata",
       iiurlwidth: "760",
@@ -556,6 +639,20 @@
     set("[data-meme-overlay-color]", selected.color);
   }
 
+  function renderStickerPalette() {
+    if (!runtime) return;
+    const category = STICKER_CATEGORIES.some((item) => item.id === runtime.stickerCategory) ? runtime.stickerCategory : STICKER_CATEGORIES[0].id;
+    runtime.stickerCategory = category;
+    runtime.root.querySelectorAll("[data-meme-sticker-category]").forEach((button) => {
+      const active = button.dataset.memeStickerCategory === category;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    const host = runtime.root.querySelector("[data-meme-sticker-grid]");
+    if (!host) return;
+    host.innerHTML = STICKERS.filter((item) => item.category === category).map((item) => `<button type="button" data-meme-sticker="${escapeHtml(item.id)}" data-sticker-type="${item.category === "label" ? "label" : "icon"}" title="${escapeHtml(item.label)}"><span>${escapeHtml(item.glyph)}</span><small>${escapeHtml(item.label)}</small></button>`).join("");
+  }
+
   function setTab(tab) {
     if (!runtime) return;
     const next = TABS.has(tab) ? tab : "images";
@@ -574,7 +671,7 @@
     if (searching && !runtime.resultsByTab[next]?.length) runSearch();
   }
 
-  function renderResults(items, tab = runtime?.tab) {
+  function renderResults(items, tab = runtime?.tab, hasMore = runtime?.searchHasMore?.[tab] !== false) {
     if (!runtime) return;
     runtime.resultsByTab[tab] = items;
     runtime.resultMap = new Map([...runtime.resultsByTab.images, ...runtime.resultsByTab.gif].map((item) => [item.id, item]));
@@ -591,10 +688,10 @@
       </button>
       <div><strong title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</strong><span data-license="${escapeHtml(item.licenseFamily)}">${escapeHtml(item.license)}</span><small>${escapeHtml(item.author)}</small></div>
       <a href="${escapeHtml(item.sourceUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Mở trang nguồn">↗</a>
-    </article>`).join("");
+    </article>`).join("") + (hasMore ? `<div class="meme-more"><button type="button" data-meme-load-more="${escapeHtml(tab)}"><span>＋</span><strong>Tải thêm hình ảnh</strong><small>Tiếp tục tìm trên Wikimedia Commons</small></button></div>` : "");
   }
 
-  async function runSearch() {
+  async function runSearch({ append = false } = {}) {
     if (!runtime || !["images", "gif"].includes(runtime.tab)) return;
     const query = cleanText(runtime.root.querySelector("[data-meme-search]")?.value || "");
     const license = runtime.root.querySelector("[data-meme-license]")?.value || "all";
@@ -603,17 +700,27 @@
     const controller = new AbortController();
     runtime.searchController = controller;
     const tab = runtime.tab;
+    const offset = append ? runtime.searchOffsets[tab] : 0;
     const grid = runtime.root.querySelector(`[data-meme-results="${tab}"]`);
-    if (grid) grid.innerHTML = `<div class="meme-searching"><i></i><strong>Đang tìm tài nguyên có giấy phép rõ ràng…</strong><small>HH đang kiểm tra nguồn, tác giả và điều kiện sử dụng.</small></div>`;
-    setStatus("Đang kết nối Wikimedia Commons…", "loading");
+    const moreButton = grid?.querySelector("[data-meme-load-more]");
+    if (append && moreButton) { moreButton.disabled = true; moreButton.querySelector("strong").textContent = "Đang tải thêm…"; }
+    else if (grid) grid.innerHTML = `<div class="meme-searching"><i></i><strong>Đang tìm tài nguyên có giấy phép rõ ràng…</strong><small>HH đang kiểm tra nguồn, tác giả và điều kiện sử dụng.</small></div>`;
+    setStatus(append ? "Đang mở rộng thư viện Commons…" : "Đang kết nối Wikimedia Commons…", "loading");
     try {
-      const items = await searchCommons(query, { kind: tab, license, limit: 24, signal: controller.signal });
+      const items = await searchCommons(query, { kind: tab, license, limit: 36, offset, signal: controller.signal });
       if (controller.signal.aborted || runtime.tab !== tab) return;
-      renderResults(items, tab);
-      setStatus(`${items.length} tài nguyên đã xác minh giấy phép`, "ready");
+      const existing = append ? runtime.resultsByTab[tab] : [];
+      const combined = [...new Map([...existing, ...items].map((item) => [item.id, item])).values()];
+      runtime.searchOffsets[tab] = offset + 48;
+      runtime.searchHasMore[tab] = items.length > 0;
+      renderResults(combined, tab, runtime.searchHasMore[tab]);
+      setStatus(`${combined.length} tài nguyên đã xác minh giấy phép`, "ready");
+      if (append && !items.length) toast("Đã đến cuối nhóm kết quả phù hợp với bộ lọc hiện tại.", "info");
+      else if (append && combined.length === existing.length) toast("Trang này bị trùng kết quả; bấm tải thêm để chuyển tiếp.", "warn");
     } catch (error) {
       if (error?.name === "AbortError") return;
-      if (grid) grid.innerHTML = `<div class="meme-zero is-error"><span>!</span><strong>Chưa thể tải thư viện</strong><p>${escapeHtml(error?.message || "Lỗi kết nối")}</p><button type="button" data-meme-retry>Tải lại</button></div>`;
+      if (append) renderResults(runtime.resultsByTab[tab], tab, true);
+      else if (grid) grid.innerHTML = `<div class="meme-zero is-error"><span>!</span><strong>Chưa thể tải thư viện</strong><p>${escapeHtml(error?.message || "Lỗi kết nối")}</p><button type="button" data-meme-retry>Tải lại</button></div>`;
       setStatus("Commons tạm thời không khả dụng", "error");
     }
   }
@@ -686,7 +793,7 @@
     if (!runtime) return;
     const sticker = STICKERS.find((item) => item.id === stickerId);
     if (!sticker) return;
-    const overlay = { ...sticker, id: `${sticker.id}-${Date.now().toString(36)}`, x: 50, y: 50, size: sticker.shape ? 100 : 92, rotation: 0, color: sticker.shape ? "#ffe96b" : "#ffffff" };
+    const overlay = { ...sticker, id: `${sticker.id}-${Date.now().toString(36)}`, x: 50, y: 50, size: sticker.shape ? 100 : 92, rotation: 0, color: sticker.color || (sticker.shape ? "#ffe96b" : "#ffffff") };
     runtime.project.overlays.push(overlay);
     runtime.selectedOverlayId = overlay.id;
     commitHistory();
@@ -852,6 +959,7 @@
       if (!button || !root.contains(button)) return;
       if (button.dataset.memeTab) { setTab(button.dataset.memeTab); return; }
       if (button.matches("[data-meme-search-button], [data-meme-retry]")) { runSearch(); return; }
+      if (button.dataset.memeLoadMore) { if (runtime.tab !== button.dataset.memeLoadMore) setTab(button.dataset.memeLoadMore); runSearch({ append: true }); return; }
       if (button.dataset.memePreset) {
         root.querySelector("[data-meme-search]").value = button.dataset.memePreset;
         if (button.dataset.memeKind) setTab(button.dataset.memeKind);
@@ -860,6 +968,7 @@
       if (button.dataset.memeUseResult) { const item = runtime.resultMap.get(button.dataset.memeUseResult); if (item) setSource(item); return; }
       if (button.dataset.memeCaption) { runtime.activeCaption = button.dataset.memeCaption; runtime.selectedOverlayId = ""; syncControls(); drawProject(); return; }
       if (button.dataset.memeAlign) { runtime.project.captions[runtime.activeCaption].align = button.dataset.memeAlign; syncControls(); drawProject(); commitHistory(); return; }
+      if (button.dataset.memeStickerCategory) { runtime.stickerCategory = button.dataset.memeStickerCategory; renderStickerPalette(); return; }
       if (button.dataset.memeSticker) { addSticker(button.dataset.memeSticker); return; }
       if (button.dataset.memeSelectOverlay) { runtime.selectedOverlayId = button.dataset.memeSelectOverlay; renderOverlayControls(); drawProject(); return; }
       if (button.hasAttribute("data-meme-delete-overlay")) { deleteOverlay(); return; }
@@ -927,9 +1036,9 @@
       <div class="meme-workspace">
         <aside class="meme-library">
           <div class="meme-search-shell" data-meme-search-shell>
-            <form onsubmit="return false"><label for="memeCommonsSearch">Tìm ảnh/GIF được phép tái sử dụng</label><div><input id="memeCommonsSearch" data-meme-search value="internet meme template" maxlength="120" autocomplete="off"><button type="button" data-meme-search-button aria-label="Tìm kiếm">⌕</button></div></form>
+            <form onsubmit="return false"><label for="memeCommonsSearch">Tìm ảnh/GIF được phép tái sử dụng</label><div><input id="memeCommonsSearch" data-meme-search value="funny" maxlength="120" autocomplete="off"><button type="button" data-meme-search-button aria-label="Tìm kiếm">⌕</button></div></form>
             <select data-meme-license aria-label="Lọc giấy phép"><option value="all">Mọi giấy phép được hỗ trợ</option><option value="public-domain">Public Domain</option><option value="cc0">CC0</option><option value="cc-by">CC BY</option><option value="cc-by-sa">CC BY-SA</option></select>
-            <div class="meme-preset-row"><button type="button" data-meme-preset="funny cat">Mèo</button><button type="button" data-meme-preset="funny dog">Chó</button><button type="button" data-meme-preset="reaction face">Reaction</button><button type="button" data-meme-preset="computer programming humor">Công nghệ</button><button type="button" data-meme-preset="funny" data-meme-kind="gif">GIF</button></div>
+            <div class="meme-preset-row" aria-label="Chủ đề Meme">${SEARCH_PRESETS.map((item) => `<button type="button" data-meme-preset="${escapeHtml(item.query)}" ${item.kind ? `data-meme-kind="${item.kind}"` : ""}>${escapeHtml(item.label)}</button>`).join("")}</div>
           </div>
           <section data-meme-panel="images"><header><div><strong>Ảnh trên Commons</strong><small>Chỉ hiện Public Domain, CC0, CC BY và CC BY-SA</small></div><a href="https://commons.wikimedia.org/" target="_blank" rel="noopener noreferrer">Commons ↗</a></header><div class="meme-results" data-meme-results="images"></div></section>
           <section data-meme-panel="gif" hidden><header><div><strong>GIF trên Commons</strong><small>Xem GIF động; editor hiện xuất khung tĩnh có ghi nhãn rõ</small></div><a href="https://commons.wikimedia.org/wiki/Category:Animated_GIF_files" target="_blank" rel="noopener noreferrer">Kho GIF ↗</a></header><div class="meme-results" data-meme-results="gif"></div></section>
@@ -954,7 +1063,7 @@
         <aside class="meme-inspector">
           <section><header><strong>Bố cục ảnh</strong><span>CANVAS</span></header><label>Chế độ khung<select data-meme-fit><option value="contain">Vừa khung</option><option value="cover">Lấp đầy</option><option value="stretch">Kéo giãn</option></select></label><div class="meme-dual-range"><label>Tâm ngang<input type="range" min="0" max="100" value="50" data-meme-focus-x></label><label>Tâm dọc<input type="range" min="0" max="100" value="50" data-meme-focus-y></label></div></section>
           <section><header><strong>Chữ Meme</strong><span>TEXT</span></header><div class="meme-segmented"><button type="button" class="is-active" data-meme-caption="top">Trên</button><button type="button" data-meme-caption="bottom">Dưới</button><button type="button" data-meme-caption="free">Tự do</button></div><textarea data-meme-caption-text maxlength="280" rows="3" aria-label="Nội dung chữ"></textarea><div class="meme-control-grid"><label>Font<select data-meme-font><option>Impact</option><option>Arial</option><option>Be Vietnam Pro</option><option>Georgia</option><option>Courier New</option></select></label><label>Cỡ chữ<input type="range" min="16" max="160" value="68" data-meme-font-size></label><label>Vị trí X<input type="range" min="0" max="100" value="50" data-meme-text-x></label><label>Vị trí Y<input type="range" min="0" max="100" value="11" data-meme-text-y></label><label>Màu chữ<input type="color" value="#ffffff" data-meme-text-color></label><label>Màu viền<input type="color" value="#080816" data-meme-stroke-color></label><label>Độ dày viền<input type="range" min="0" max="18" value="8" data-meme-stroke-width></label></div><div class="meme-text-row"><div><button type="button" data-meme-align="left">≡←</button><button type="button" class="is-active" data-meme-align="center">≡</button><button type="button" data-meme-align="right">→≡</button></div><label><input type="checkbox" checked data-meme-uppercase> HOA</label><label><input type="checkbox" checked data-meme-shadow> Bóng</label></div></section>
-          <section><header><strong>Sticker & hình</strong><span>LAYERS</span></header><div class="meme-stickers">${STICKERS.map((item) => `<button type="button" data-meme-sticker="${item.id}" title="${escapeHtml(item.label)}">${escapeHtml(item.glyph)}</button>`).join("")}</div><div class="meme-overlay-list" data-meme-overlay-list><small>Chưa có sticker hoặc hình.</small></div><div class="meme-overlay-controls" data-meme-overlay-controls hidden><label>X<input type="range" min="0" max="100" data-meme-overlay-x></label><label>Y<input type="range" min="0" max="100" data-meme-overlay-y></label><label>Cỡ<input type="range" min="18" max="240" data-meme-overlay-size></label><label>Xoay<input type="range" min="-180" max="180" data-meme-overlay-rotation></label><label>Màu<input type="color" data-meme-overlay-color></label><button type="button" data-meme-delete-overlay>Xóa lớp</button></div></section>
+          <section><header><strong>Sticker & icon Meme</strong><span>${STICKERS.length} ICON</span></header><div class="meme-sticker-categories" aria-label="Nhóm sticker">${STICKER_CATEGORIES.map((item, index) => `<button type="button" class="${index === 0 ? "is-active" : ""}" data-meme-sticker-category="${item.id}" aria-pressed="${index === 0 ? "true" : "false"}"><span>${escapeHtml(item.icon)}</span>${escapeHtml(item.label)}</button>`).join("")}</div><div class="meme-stickers" data-meme-sticker-grid></div><div class="meme-overlay-list" data-meme-overlay-list><small>Chưa có sticker hoặc hình.</small></div><div class="meme-overlay-controls" data-meme-overlay-controls hidden><label>X<input type="range" min="0" max="100" data-meme-overlay-x></label><label>Y<input type="range" min="0" max="100" data-meme-overlay-y></label><label>Cỡ<input type="range" min="18" max="240" data-meme-overlay-size></label><label>Xoay<input type="range" min="-180" max="180" data-meme-overlay-rotation></label><label>Màu<input type="color" data-meme-overlay-color></label><button type="button" data-meme-delete-overlay>Xóa lớp</button></div></section>
           <section class="meme-credit-control"><header><strong>Ghi công</strong><span>RIGHTS</span></header><label><input type="checkbox" checked data-meme-credit><span>Đặt dòng nguồn trên ảnh xuất</span></label><small data-meme-credit-help>Có thể bật để lưu dấu nguồn ngay trên ảnh.</small><button type="button" data-meme-copy-attribution>Sao chép ghi công</button></section>
         </aside>
       </div>
@@ -979,7 +1088,10 @@
       tab: "images",
       activeCaption: "top",
       selectedOverlayId: "",
+      stickerCategory: STICKER_CATEGORIES[0].id,
       resultsByTab: { images: [], gif: [] },
+      searchOffsets: { images: 0, gif: 0 },
+      searchHasMore: { images: true, gif: true },
       resultMap: new Map(),
       history: [cloneProject(project)],
       historyIndex: 0,
@@ -989,6 +1101,7 @@
       toastTimer: 0
     };
     bindEvents();
+    renderStickerPalette();
     syncControls();
     drawProject();
     updateHistoryButtons();
@@ -1009,5 +1122,5 @@
     return runtime ? { version: VERSION, mounted: true, tab: runtime.tab, source: runtime.project.source?.title || "", overlays: runtime.project.overlays.length, history: runtime.history.length } : { version: VERSION, mounted: false };
   }
 
-  return { VERSION, STORAGE_KEY, COMMONS_API, licenseFamily, licenseAllowed, parseWikimediaPage, searchCommons, normalizeProject, readProjects, writeProjects, mount, unmount, inspect };
+  return { VERSION, STORAGE_KEY, COMMONS_API, STICKER_CATEGORIES, STICKERS, SEARCH_PRESETS, licenseFamily, licenseAllowed, parseWikimediaPage, searchCommons, normalizeProject, readProjects, writeProjects, mount, unmount, inspect };
 });

@@ -72,6 +72,26 @@ test("Commons search uses the official API and applies the GIF and license filte
   assert.match(requested, /origin=\*/);
 });
 
+test("Commons pagination requests later result windows", async () => {
+  let requested = "";
+  const fetchImpl = async (url) => {
+    requested = url;
+    return { ok: true, json: async () => ({ query: { pages: [commonsPage()] } }) };
+  };
+  await meme.searchCommons("funny", { kind: "gif", offset: 96, fetchImpl });
+  assert.match(requested, /gsroffset=96/);
+  assert.match(requested, /gsrlimit=48/);
+});
+
+test("Meme icon studio exposes large categorized sticker and discovery libraries", () => {
+  assert.ok(meme.STICKERS.length >= 72);
+  assert.equal(new Set(meme.STICKERS.map((item) => item.id)).size, meme.STICKERS.length);
+  assert.deepEqual(new Set(meme.STICKERS.map((item) => item.category)), new Set(["reaction", "symbol", "meme", "animal", "label", "shape"]));
+  assert.equal(meme.STICKER_CATEGORIES.length, 6);
+  assert.ok(meme.SEARCH_PRESETS.length >= 16);
+  assert.ok(meme.SEARCH_PRESETS.some((item) => item.kind === "gif"));
+});
+
 test("project normalization bounds editable data and drops unsafe image URLs", () => {
   const project = meme.normalizeProject({
     width: 999999,
@@ -99,10 +119,10 @@ test("Meme is integrated as a major lazy route, galaxy planet and offline asset"
   assert.match(client, /window\.HHMemeHub\?\.mount/);
   assert.match(client, /app-meme-route/);
   assert.match(client, /title: "Meme · Creative Galaxy"/);
-  assert.match(loader, /meme:\s*\{[\s\S]*?meme-hub\.css\?v=5[\s\S]*?meme-hub\.js\?v=4/);
+  assert.match(loader, /meme:\s*\{[\s\S]*?meme-hub\.css\?v=6[\s\S]*?meme-hub\.js\?v=6/);
   assert.match(loader, /value\.startsWith\("\/meme"\)/);
-  assert.match(worker, /meme-hub\.css\?v=5/);
-  assert.match(worker, /meme-hub\.js\?v=4/);
+  assert.match(worker, /meme-hub\.css\?v=6/);
+  assert.match(worker, /meme-hub\.js\?v=6/);
   assert.match(html, /data-hh-galaxy-key="meme"/);
   assert.equal([...html.matchAll(/data-hh-planet="(\d+)"/g)].length, 25);
   assert.match(galaxy, /meme:\s*\{[\s\S]*?route: "#\/meme"/);
@@ -114,6 +134,8 @@ test("UI exposes real editor, rights and export controls without claiming animat
   assert.match(source, /Wikimedia Commons/);
   assert.match(source, /data-meme-caption-text/);
   assert.match(source, /data-meme-sticker/);
+  assert.match(source, /data-meme-sticker-category/);
+  assert.match(source, /data-meme-load-more/);
   assert.match(source, /data-meme-undo/);
   assert.match(source, /data-meme-export-image="png"/);
   assert.match(source, /data-meme-export-image="webp"/);
