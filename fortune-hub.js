@@ -7,7 +7,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createFortuneHub(globalScope) {
   "use strict";
 
-  const VERSION = "9.6.2";
+  const VERSION = "9.7.0";
   const STORAGE_SCHEMA = "hh.fortune.hub.v1";
   const MAX_HISTORY = 80;
   const MAX_JOURNAL = 120;
@@ -641,7 +641,7 @@
     return `<div class="fortune-nav__row" data-fortune-tool-row data-tool-search="${escapeHtml(`${label} ${id}`.toLocaleLowerCase("vi"))}" style="--tool-order:${order}"><button type="button" class="fortune-nav__item${active ? " is-active" : ""}${compact ? " is-compact" : ""}" data-fortune-view="${id}" aria-current="${active ? "page" : "false"}" aria-label="Mở ${escapeHtml(label)}" title="${escapeHtml(label)}"><i aria-hidden="true">${icon}</i><span>${escapeHtml(label)}</span>${active ? "<b aria-hidden=\"true\">●</b>" : ""}</button></div>`;
   }
   function navMarkup(runtime) {
-    return `<div class="fortune-nav__groups fortune-atlas" data-fortune-tool-atlas>${OBSERVATORY_ATLAS_GROUPS.map((group, index) => { const active = group.items.some(([id]) => runtime.state.view === id); return `<details class="fortune-atlas__group" data-fortune-nav-group="${group.id}" data-fortune-active-group="${active}" style="--atlas-index:${index}"${active ? " open" : ""}><summary data-fortune-group-summary aria-label="Mở nhóm ${escapeHtml(group.label)}"><i>${group.icon}</i><span>${escapeHtml(group.label)}</span><b>${group.items.length}</b></summary><div>${group.items.map((item, itemIndex) => navToolMarkup(runtime, item, true, itemIndex)).join("")}</div></details>`; }).join("")}</div><p class="fortune-nav__empty" data-fortune-nav-empty hidden>Không tìm thấy công cụ phù hợp.</p>`;
+    return `<div class="fortune-nav__groups fortune-atlas" data-fortune-tool-atlas>${OBSERVATORY_ATLAS_GROUPS.map((group, index) => { const active = group.items.some(([id]) => runtime.state.view === id); return `<details class="fortune-atlas__group" data-fortune-nav-group="${group.id}" data-fortune-active-group="${active}" style="--atlas-index:${index}" open><summary data-fortune-group-summary aria-label="Nhóm ${escapeHtml(group.label)} luôn mở" aria-expanded="true"><i>${group.icon}</i><span>${escapeHtml(group.label)}</span><b>${group.items.length}</b></summary><div>${group.items.map((item, itemIndex) => navToolMarkup(runtime, item, true, itemIndex)).join("")}</div></details>`; }).join("")}</div><p class="fortune-nav__empty" data-fortune-nav-empty hidden>Không tìm thấy công cụ phù hợp.</p>`;
   }
 
   function toolbarMarkup(title, subtitle) {
@@ -2008,8 +2008,7 @@
     const groupSummary = event.target.closest("[data-fortune-group-summary]");
     if (groupSummary) {
       event.preventDefault();
-      const selectedGroup = groupSummary.closest("[data-fortune-nav-group]");
-      runtime.root.querySelectorAll("[data-fortune-nav-group]").forEach((group) => { group.open = group === selectedGroup; });
+      runtime.root.querySelectorAll("[data-fortune-nav-group]").forEach((group) => { group.open = true; });
       return;
     }
     const viewButton = event.target.closest("[data-fortune-view]");
@@ -2452,7 +2451,7 @@
     const query = String(value || "").trim().toLocaleLowerCase("vi"); const family = runtime.libraryFilter || "all"; let navVisible = 0; const matchingCards = [];
     runtime.root?.querySelectorAll("[data-fortune-tool-search]").forEach((input) => { if (input !== source) input.value = value; });
     runtime.root?.querySelectorAll("[data-fortune-tool-row]").forEach((row) => { const match = !query || String(row.dataset.toolSearch || "").includes(query); row.hidden = !match; if (match) navVisible += 1; });
-    runtime.root?.querySelectorAll("[data-fortune-nav-group]").forEach((group) => { const hasMatch = Boolean(group.querySelector("[data-fortune-tool-row]:not([hidden])")); group.hidden = !hasMatch; if (query) group.open = hasMatch; else if (source) group.open = group.dataset.fortuneActiveGroup === "true"; });
+    runtime.root?.querySelectorAll("[data-fortune-nav-group]").forEach((group) => { const hasMatch = Boolean(group.querySelector("[data-fortune-tool-row]:not([hidden])")); group.hidden = !hasMatch; group.open = hasMatch; });
     runtime.root?.querySelectorAll("[data-fortune-tool-card]").forEach((card) => { const queryMatch = !query || String(card.dataset.toolSearch || "").includes(query); const familyMatch = family === "all" || card.dataset.toolFamily === family; if (queryMatch && familyMatch) matchingCards.push(card); else card.hidden = true; });
     const pageSize = globalScope.matchMedia?.("(max-width: 700px)")?.matches ? 5 : globalScope.matchMedia?.("(max-width: 1500px)")?.matches ? 9 : 12;
     const pageCount = Math.max(1, Math.ceil(matchingCards.length / pageSize)); runtime.libraryPage = clamp(runtime.libraryPage, 0, pageCount - 1, 0);
