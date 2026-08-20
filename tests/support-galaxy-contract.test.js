@@ -59,3 +59,15 @@ test("Support Galaxy live summary follows real form and PayOS state", () => {
   assert.match(client, /if \(!payOSAvailable\) return/);
   assert.match(client, /document\.body\?\.classList\.remove\("app-support-route"\)/);
 });
+
+test("Support Galaxy isolates legacy footer styles and responds to workspace width", () => {
+  const client = read("support-platform.js");
+  const styles = read("support-platform.css");
+  assert.match(client, /mission\.shortLabel \|\| mission\.label/);
+  assert.match(styles, /container-name:supportGalaxy;container-type:inline-size/);
+  assert.match(styles, /@container supportGalaxy \(max-width:1100px\)/);
+  assert.match(styles, /@container supportGalaxy \(max-width:820px\)/);
+  assert.match(styles, /support-mission-orbit>\.support-goal>footer\{[^}]*padding:0/);
+  assert.match(styles, /body\.app-support-route \.app-sidebar,body\.app-support-route #appMain/);
+  assert.match(styles, /grid-column:1!important;grid-row:1!important/);
+});
