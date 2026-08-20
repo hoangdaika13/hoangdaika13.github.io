@@ -132,9 +132,9 @@
       ]
     },
     creative: {
-      styles: ["creative-suite.css?v=6", "creative-os.css?v=5", "creative-galaxy.css?v=3", "creative-star-map.css?v=2", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
+      styles: ["creative-suite.css?v=6", "creative-os.css?v=6", "creative-galaxy.css?v=3", "creative-star-map.css?v=2", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
       scripts: [
-        "creative-os-core.js?v=4", "creative-galaxy.js?v=4", "creative-star-map.js?v=3", "creative-os.js?v=11", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
+        "creative-os-core.js?v=4", "creative-galaxy.js?v=4", "creative-star-map.js?v=3", "creative-os.js?v=12", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
       ]
     },
     music: {
@@ -212,10 +212,6 @@
       styles: ["draw-studio.css?v=8"],
       scripts: ["draw-studio.js?v=9"]
     },
-    meme: {
-      styles: ["meme-hub.css?v=6"],
-      scripts: ["meme-hub.js?v=6"]
-    },
     "chat-ai": {
       styles: ["chat-ai-hub.css?v=17"],
       scripts: ["chat-ai-hub.js?v=17"]
@@ -275,7 +271,6 @@
     if (value.startsWith("/japanese")) return ["japanese"];
     if (value.startsWith("/fortune")) return ["fortune"];
     if (value.startsWith("/draw")) return ["draw"];
-    if (value.startsWith("/meme")) return ["meme"];
     if (value.startsWith("/chat-ai")) return ["chat-ai"];
     if (value === "/settings") return ["settings"];
     if (value.startsWith("/settings/account") || value === "/settings/user-dashboard" || value === "/settings/security-center") return ["account"];

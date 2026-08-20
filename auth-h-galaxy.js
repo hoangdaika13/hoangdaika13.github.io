@@ -286,18 +286,6 @@
       detail: "Canvas local-first hỗ trợ cảm ứng, bảng màu hòa trộn, Mandala, Kaleidoscope, Aurora, hoàn tác và xuất ảnh độ phân giải cao.",
       features: ["Silk Light", "Mandala", "Kaleidoscope", "Color Blend", "HD Export"]
     },
-    meme: {
-      icon: "ME",
-      title: "Meme",
-      kicker: "RIGHTS-FIRST MEME STUDIO",
-      count: "5 KHÔNG GIAN",
-      route: "#/meme",
-      accent: "#ff68c5",
-      accent2: "#62efff",
-      description: "Tìm ảnh và GIF có giấy phép rõ ràng, thêm caption, sticker rồi xuất ảnh ngay trên trình duyệt.",
-      detail: "Wikimedia Commons cung cấp nguồn, tác giả và giấy phép; dự án được lưu local-first, hỗ trợ hoàn tác, JSON, PNG và WebP.",
-      features: ["Commons Images", "Commons GIF", "Canvas Editor", "Rights Center", "PNG & WebP"]
-    },
     support: {
       icon: "♥",
       title: "Ủng hộ HH",

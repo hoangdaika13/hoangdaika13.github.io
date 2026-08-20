@@ -187,7 +187,7 @@ test("fortune route is lazy loaded, searchable and represented as a major planet
   assert.match(loader, /fortune:\s*\{[\s\S]*?fortune-hub\.css\?v=3[\s\S]*?fortune-hub-v3\.css\?v=2[\s\S]*?fortune-hub-v4\.css\?v=8[\s\S]*?fortune-hub-v5\.css\?v=26[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?iztro-2\.6\.0\.min\.js\?v=2\.6\.0[\s\S]*?fortune-iching-64\.js\?v=1[\s\S]*?fortune-accuracy-lab\.js\?v=1[\s\S]*?fortune-suite-v4\.js\?v=4[\s\S]*?fortune-astrology\.js\?v=1[\s\S]*?fortune-astrology-v4\.js\?v=2[\s\S]*?fortune-moon-3d\.js\?v=1[\s\S]*?fortune-extended-tools\.js\?v=2[\s\S]*?fortune-hub\.js\?v=28/);
   assert.match(loader, /value\.startsWith\("\/fortune"\)/);
   assert.match(html, /data-hh-galaxy-key="fortune"/);
-  assert.match(html, /25 LĨNH VỰC/);
+  assert.match(html, /24 LĨNH VỰC/);
   assert.match(galaxy, /fortune:\s*\{[\s\S]*?route: "#\/fortune"/);
   assert.match(worker, /fortune-hub\.css\?v=3/);
   assert.match(worker, /fortune-hub-v4\.css\?v=8/);
