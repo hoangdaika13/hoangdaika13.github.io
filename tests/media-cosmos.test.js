@@ -7,12 +7,12 @@ const root = path.resolve(__dirname, "..");
 const cosmos = require(path.join(root, "media-cosmos.js"));
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("Media Cosmos publishes seven colored workspaces and a versioned local-first state", () => {
+test("Media Cosmos publishes eight colored workspaces and a versioned local-first state", () => {
   assert.equal(cosmos.SCHEMA, "hh.media.cosmos.v1");
   assert.equal(cosmos.STATE_KEY, "hh.media.cosmos.v1");
-  assert.equal(cosmos.PLANETS.length, 7);
+  assert.equal(cosmos.PLANETS.length, 8);
   assert.equal(cosmos.THEMES.length, 6);
-  assert.deepEqual(cosmos.PLANETS.map((planet) => planet.id), ["universal", "photo", "video", "documents", "brand", "assets", "export"]);
+  assert.deepEqual(cosmos.PLANETS.map((planet) => planet.id), ["universal", "photo", "video", "audio", "documents", "brand", "assets", "export"]);
   const values = new Map();
   const store = cosmos.createStateStore({ getItem: (key) => values.get(key), setItem: (key, value) => values.set(key, value) });
   const state = store.save({ theme: "aurora", lastTool: "video-editor", lastToolName: "<Video>" });
@@ -44,9 +44,10 @@ test("queue actions pause, resume and cancel local work without faking server re
   assert.match(running.message, /server/i);
 });
 
-test("effects only animate during preview or render and respect weak devices", () => {
+test("effects keep a bounded ambient layer and scale up only during preview or render", () => {
   const healthy = { navigator: { deviceMemory: 8, hardwareConcurrency: 8, connection: { saveData: false } }, matchMedia: () => ({ matches: false }) };
-  assert.equal(cosmos.getEffectsPolicy(healthy, "idle").particles, false);
+  assert.equal(cosmos.getEffectsPolicy(healthy, "idle").particles, true);
+  assert.equal(cosmos.getEffectsPolicy(healthy, "idle").density, 10);
   assert.equal(cosmos.getEffectsPolicy(healthy, "preview").particles, true);
   const weak = { navigator: { deviceMemory: 2, hardwareConcurrency: 2 }, matchMedia: () => ({ matches: false }) };
   assert.equal(cosmos.getEffectsPolicy(weak, "render").particles, false);
@@ -74,13 +75,15 @@ test("Media Cosmos is loaded before the Media page and remains responsive and mo
   const worker = read("sw.js");
   const page = read("media-design-page.js");
   const css = read("media-cosmos.css");
-  assert.match(loader, /media-cosmos\.css\?v=2/);
-  assert.match(loader, /media-cosmos\.js\?v=2[\s\S]*media-design-page\.js/);
-  assert.match(worker, /media-cosmos\.css\?v=2/);
-  assert.match(worker, /media-cosmos\.js\?v=2/);
+  assert.match(loader, /media-cosmos\.css\?v=3/);
+  assert.match(loader, /media-cosmos\.js\?v=3[\s\S]*media-design-page\.js/);
+  assert.match(worker, /media-cosmos\.css\?v=3/);
+  assert.match(worker, /media-cosmos\.js\?v=3/);
   assert.match(page, /HHMediaCosmos\?\.mount/);
   assert.match(page, /HHMediaCosmos\?\.recordTool/);
   assert.match(css, /@media\(max-width:520px\)/);
   assert.match(css, /prefers-reduced-motion:reduce/);
   assert.match(css, /:focus-visible/);
+  assert.match(css, /mcs-command-overlay/);
+  assert.match(css, /mcs-audio-wave/);
 });

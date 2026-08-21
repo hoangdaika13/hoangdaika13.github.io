@@ -5248,6 +5248,7 @@ function initAppShell() {
     { id: "picker", icon: "PK", title: "Color Picker", group: "Photo & Image", planet: "photo" },
     { id: "video-workspace", icon: "V+", title: "Video & Motion Pro", group: "Video & Motion", planet: "video", description: "Source/Program, three-point edit, caption, color và audio bus" },
     { id: "motion-compositor", icon: "FX", title: "Motion & Compositing", group: "Video & Motion", planet: "video", description: "Node graph, keyframe, camera 2.5D, particle audio và cache manifest" },
+    { id: "audio-workspace", icon: "AU", title: "Audio & Podcast Studio", group: "Audio & Podcast", planet: "audio", description: "Waveform, trim, fade, normalize, microphone và xuất WAV local-first" },
     { id: "document-workspace", icon: "D+", title: "Documents & Utility Pro", group: "Documents & Utility", planet: "documents", description: "Document queue, OCR, redaction, forms, PDF/A và compare" },
     { id: "pdf", icon: "PDF", title: "PDF Toolkit", group: "Documents & Utility", planet: "documents" },
     { id: "qr", icon: "QR", title: "QR Toolkit", group: "Documents & Utility", planet: "documents" },

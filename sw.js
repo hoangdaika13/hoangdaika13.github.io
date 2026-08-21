@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v746";
+const CACHE = "hh-identity-portal-v747";
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
@@ -46,8 +46,9 @@ const RUNTIME_ASSETS = [
   "./tool-workspace-pro.css?v=1",
   "./utility-lab-tools.css?v=9",
   "./media-design-pro.css?v=1",
-  "./media-design-page.css?v=11",
-  "./media-cosmos.css?v=2",
+  "./media-design-page.css?v=14",
+  "./media-cosmos.css?v=3",
+  "./media-audio-studio.css?v=1",
   "./media-professional-suite.css?v=1",
   "./media-next-suite.css?v=1",
   "./media-production-workflow.css?v=3",
@@ -375,7 +376,8 @@ const RUNTIME_ASSETS = [
   "./photo-editor-pro.js?v=3",
   "./universal-media-project.js?v=1",
   "./media-production-workflow.js?v=3",
-  "./media-cosmos.js?v=2",
+  "./media-cosmos.js?v=3",
+  "./media-audio-studio.js?v=1",
   "./media-professional-suite.js?v=3",
   "./vendor/vercel-blob-client.min.js?v=1",
   "./media-next-suite.js?v=2",
@@ -398,7 +400,7 @@ const RUNTIME_ASSETS = [
   "./assets/fortune/moon/nasa-lro/lroc-color-2k.jpg",
   "./assets/fortune/moon/nasa-lro/lroc-height-1k.jpg",
   "./chat-ai-hub.js?v=17",
-  "./media-design-page.js?v=13",
+  "./media-design-page.js?v=14",
   "./tool-manifests.js?v=1",
   "./tool-runtime.js?v=1",
   "./feature-lab.js?v=6",

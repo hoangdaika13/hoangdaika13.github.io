@@ -78,7 +78,7 @@
     },
     media: {
       styles: [
-        "media-design-pro.css?v=1", "media-design-page.css?v=11", "media-cosmos.css?v=2", "media-professional-suite.css?v=1", "media-next-suite.css?v=1", "media-production-workflow.css?v=3", "universal-media-project.css?v=1",
+        "media-design-pro.css?v=1", "media-design-page.css?v=14", "media-cosmos.css?v=3", "media-audio-studio.css?v=1", "media-professional-suite.css?v=1", "media-next-suite.css?v=1", "media-production-workflow.css?v=3", "universal-media-project.css?v=1",
         "media-design-advanced.css?v=3", "media-design-publish.css?v=1",
         "photo-editor-pro.css?v=4", "editor-workflow-pro.css?v=2"
       ],
@@ -86,7 +86,7 @@
         "media-design-studio.js?v=1", "media-design-pro.js?v=2", "media-design-advanced.js?v=3",
         "media-design-publish.js?v=1",
         "photo-editor-pro.js?v=3", "editor-workflow-pro.js?v=2", "universal-media-project.js?v=1",
-        "media-production-workflow.js?v=3", "media-cosmos.js?v=2", "media-professional-suite.js?v=3", "vendor/vercel-blob-client.min.js?v=1", "media-next-suite.js?v=2", "media-design-page.js?v=13"
+        "media-production-workflow.js?v=3", "media-cosmos.js?v=3", "media-audio-studio.js?v=1", "media-professional-suite.js?v=3", "vendor/vercel-blob-client.min.js?v=1", "media-next-suite.js?v=2", "media-design-page.js?v=14"
       ]
     },
     davinci: {

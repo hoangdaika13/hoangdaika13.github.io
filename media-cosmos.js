@@ -21,6 +21,7 @@
     { id: "universal", code: "UP", label: "Universal Project", color: "#56ecff", accent: "#27a8ff", route: "/media-design/media-core", tools: ["media-core", "universal-media", "asset-manager", "review-studio", "universal-canvas"] },
     { id: "photo", code: "PI", label: "Photo & Image", color: "#ff63d8", accent: "#9a68ff", route: "/media-design/photo-workspace", tools: ["photo-workspace", "ai-task-center", "photo-editor", "background-remover", "collage", "inspector", "compress", "convert", "image", "picker"] },
     { id: "video", code: "VM", label: "Video & Motion", color: "#a56cff", accent: "#635bff", route: "/media-design/video-workspace", tools: ["video-workspace", "motion-compositor", "video-editor"] },
+    { id: "audio", code: "AU", label: "Audio & Podcast", color: "#55efd2", accent: "#1cb8b3", route: "/media-design/audio-workspace", description: "Waveform · Podcast · Loudness · WAV", tools: ["audio-workspace"] },
     { id: "documents", code: "DU", label: "Documents & Utility", color: "#55efd2", accent: "#21bba7", route: "/media-design/document-workspace", tools: ["document-workspace", "pdf", "qr"] },
     { id: "brand", code: "BU", label: "Brand Universe", color: "#ffbd59", accent: "#ff7a4d", route: "/media-design/brand-workspace", tools: ["brand-workspace", "dev-handoff", "color", "type", "gradient", "brand-kit"] },
     { id: "assets", code: "AG", label: "Asset Galaxy", color: "#5c9dff", accent: "#36d6ff", route: "/media-design/asset-workspace", description: "Cloud · Icon · SVG · Font · LUT", tools: ["asset-workspace", "media-cloud", "icon", "svg"] },
@@ -160,9 +161,9 @@
     return {
       reducedMotion,
       lowPower,
-      particles: active && !reducedMotion && !lowPower,
-      density: reducedMotion ? 0 : lowPower ? 8 : active ? 26 : 0,
-      label: reducedMotion ? "Giảm chuyển động" : lowPower ? "Tiết kiệm hiệu ứng" : active ? "Hiệu ứng đang chạy" : "Hiệu ứng tạm nghỉ"
+      particles: !reducedMotion && !lowPower,
+      density: reducedMotion ? 0 : lowPower ? 6 : active ? 26 : 10,
+      label: reducedMotion ? "Giảm chuyển động" : lowPower ? "Tiết kiệm hiệu ứng" : active ? "Điện ảnh đang chạy" : "Ambient cân bằng"
     };
   }
 
@@ -294,6 +295,8 @@
     let professionalState = professionalStore?.load?.() || null;
     let availableFonts = [];
     let message = "";
+    let commandOpen = false;
+    let commandQuery = "";
 
     if (globalScope.document?.fonts?.values) {
       try { availableFonts = [...globalScope.document.fonts.values()].map((font) => font.family).filter(Boolean); } catch (_) { availableFonts = []; }
@@ -370,13 +373,15 @@
               <section class="mcs-panel mcs-panel--alerts"><header><div><small>PRE-FLIGHT</small><h3>Cảnh báo cần xử lý</h3></div><b>${warnings.length}</b></header><div>${warningsMarkup(warnings)}</div></section>
               <section class="mcs-panel mcs-panel--recent"><header><div><small>CONTINUE</small><h3>Tiếp tục chỉnh sửa gần nhất</h3></div></header><button type="button" data-mcs-continue><span>${escapeHtml(String(state.lastToolName).slice(0, 2).toUpperCase())}</span><div><strong>${escapeHtml(state.lastToolName)}</strong><small>${new Date(state.lastOpenedAt).toLocaleString("vi-VN")}</small></div><b>Tiếp tục →</b></button><div class="mcs-bridges"><button type="button" data-mcs-route="/create"><i>CG</i><span><b>Creative Galaxy</b><small>Brief, palette và prompt</small></span></button><button type="button" data-mcs-route="/music-ai/studio"><i>MG</i><span><b>Music Galaxy</b><small>Audio, stem và visual</small></span></button></div></section>
             </div>`;
+      const commandRows = routeTools.filter((tool) => !commandQuery || `${tool.name} ${tool.group} ${tool.description || ""}`.toLocaleLowerCase("vi").includes(commandQuery.toLocaleLowerCase("vi"))).slice(0, 16);
+      const commandPalette = commandOpen ? `<div class="mcs-command-overlay" data-mcs-command-close><section role="dialog" aria-modal="true" aria-label="Tìm công cụ Media & Design"><header><span>⌕</span><input data-mcs-command-search value="${escapeHtml(commandQuery)}" placeholder="Tìm công cụ hoặc workspace…"><kbd>ESC</kbd></header><div>${commandRows.length ? commandRows.map((tool) => `<button type="button" data-mcs-route="/media-design/${escapeHtml(tool.id)}"><i>${escapeHtml(tool.icon || tool.code || "MD")}</i><span><strong>${escapeHtml(tool.name)}</strong><small>${escapeHtml(tool.group || "Media & Design")}</small></span><b>→</b></button>`).join("") : "<p>Không tìm thấy công cụ phù hợp.</p>"}</div><footer>Ctrl K để mở · tìm kiếm local trong ${routeTools.length} công cụ</footer></section></div>` : "";
 
       host.innerHTML = `<section class="media-cosmos ${effects.particles ? "is-particle-active" : ""}" data-media-cosmos data-theme="${escapeHtml(state.theme)}">
         <div class="mcs-space" aria-hidden="true"><i></i><i></i><i></i><div class="mcs-particles">${Array.from({ length: effects.density }, (_, index) => `<span style="--p:${index}"></span>`).join("")}</div></div>
         <header class="mcs-hero">
           <div><span class="mcs-kicker"><i></i> HH MEDIA COSMOS · LOCAL-FIRST</span><h2>Biến mọi asset thành một vũ trụ sản xuất.</h2><p>Ảnh, video, motion, tài liệu, thương hiệu và xuất bản cùng quay quanh một Universal Media Project.</p></div>
           <div class="mcs-hero__controls">
-            <label>Theme<select data-mcs-theme aria-label="Chọn theme Media Cosmos">${THEMES.map((theme) => `<option value="${theme.id}" ${theme.id === state.theme ? "selected" : ""}>${theme.label}</option>`).join("")}</select></label>
+            <button type="button" data-mcs-command-open><i></i>Tìm công cụ <kbd>Ctrl K</kbd></button><label>Theme<select data-mcs-theme aria-label="Chọn theme Media Cosmos">${THEMES.map((theme) => `<option value="${theme.id}" ${theme.id === state.theme ? "selected" : ""}>${theme.label}</option>`).join("")}</select></label>
             <button type="button" data-mcs-activity="${state.activity === "idle" ? "preview" : "idle"}" aria-pressed="${state.activity !== "idle"}"><i></i>${state.activity === "idle" ? "Bật preview" : "Dừng hiệu ứng"}</button>
             <span><b>${effects.particles ? "LIVE" : "ECO"}</b>${escapeHtml(effects.label)}</span>
           </div>
@@ -393,6 +398,7 @@
         ].map(([id, label]) => `<button type="button" data-mcs-panel="${id}" aria-selected="${state.activePanel === id}">${label}</button>`).join("")}</nav>
         ${panelContent}
         ${message ? `<div class="mcs-inline-notice" role="status">${escapeHtml(message)}</div>` : ""}
+        ${commandPalette}
         <div class="mcs-toast" data-mcs-toast role="status" aria-live="polite" hidden></div>
       </section>`;
     };
@@ -408,6 +414,8 @@
     };
 
     host.addEventListener("click", async (event) => {
+      if (event.target.matches("[data-mcs-command-close]")) { commandOpen = false; commandQuery = ""; render(); return; }
+      if (event.target.closest("[data-mcs-command-open]")) { commandOpen = true; commandQuery = ""; render(); (globalScope.requestAnimationFrame || setTimeout)(() => host.querySelector("[data-mcs-command-search]")?.focus()); return; }
       const route = event.target.closest("[data-mcs-route]");
       if (route) { navigate(route.dataset.mcsRoute); return; }
       const panel = event.target.closest("[data-mcs-panel]");
@@ -454,6 +462,9 @@
         }
       }
     }, { signal: controller.signal });
+    host.addEventListener("input", (event) => { if (!event.target.matches("[data-mcs-command-search]")) return; commandQuery = event.target.value.slice(0, 120); render(); (globalScope.requestAnimationFrame || setTimeout)(() => { const input = host.querySelector("[data-mcs-command-search]"); input?.focus(); input?.setSelectionRange?.(input.value.length, input.value.length); }); }, { signal: controller.signal });
+    globalScope.addEventListener?.("keydown", (event) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); commandOpen = !commandOpen; commandQuery = ""; render(); (globalScope.requestAnimationFrame || setTimeout)(() => host.querySelector("[data-mcs-command-search]")?.focus()); } else if (event.key === "Escape" && commandOpen) { commandOpen = false; commandQuery = ""; render(); } }, { signal: controller.signal });
+    globalScope.document?.addEventListener?.("visibilitychange", () => host.querySelector("[data-media-cosmos]")?.classList.toggle("is-tab-hidden", globalScope.document.visibilityState === "hidden"), { signal: controller.signal });
     host.addEventListener("change", (event) => {
       if (!event.target.matches("[data-mcs-theme]")) return;
       state.theme = THEMES.some((theme) => theme.id === event.target.value) ? event.target.value : "cyberpunk";

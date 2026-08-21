@@ -21,11 +21,13 @@ test("Universal Media Project is reachable from the shell and cached offline", (
     "photo-editor-pro.js?v=3",
     "media-professional-suite.css?v=1",
     "media-professional-suite.js?v=3",
-    "media-design-page.css?v=11",
+    "media-design-page.css?v=14",
     "media-next-suite.css?v=1",
     "vendor/vercel-blob-client.min.js?v=1",
     "media-next-suite.js?v=2",
-    "media-design-page.js?v=13"
+    "media-design-page.js?v=14",
+    "media-audio-studio.css?v=1",
+    "media-audio-studio.js?v=1"
   ]) {
     const pattern = new RegExp(escapeRegExp(asset));
     assert.match(`${html}\n${loader}`, pattern);
@@ -35,7 +37,7 @@ test("Universal Media Project is reachable from the shell and cached offline", (
   assert.match(worker, /hh-identity-portal-v\d+/);
   assert.match(shell, /id: "universal-media"/);
   assert.match(shell, /id: "asset-manager"/);
-  assert.match(shell, /35 .*Media Cosmos.*Media Cloud/);
+  assert.match(shell, /id: "audio-workspace"/);
   assert.match(page, /HHUniversalMediaProject\?\.mount/);
   assert.match(page, /HHUniversalMediaProject\?\.unmount/);
 });
@@ -72,6 +74,11 @@ test("Media and Design exposes a connected professional production flow", () => 
   assert.match(styles, /\.mdp-production-flow/);
   assert.match(styles, /scroll-snap-type/);
   assert.match(styles, /prefers-reduced-motion/);
+  assert.match(styles, /Media Production Cockpit/);
+  assert.match(page, /STUDIO_SPACES/);
+  assert.match(page, /data-mdp-command-open/);
+  assert.match(page, /data-mdp-global-import/);
+  assert.match(page, /data-mdp-inspector-tab/);
 });
 
 test("Professional engines publish stable browser contracts", () => {
