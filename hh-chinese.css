@@ -731,6 +731,9 @@
 }
 .hhc-v7 .hhc-path-mini-node { background: transparent !important; border-color: transparent !important; box-shadow: none !important; transform: none !important; }
 .hhc-v7 .hhc-path-mini-node:hover > i { transform: scale(1.08) rotate(5deg); }
+.hhc-v7 .hhc-stroke-track { max-height: 180px; overflow: hidden; opacity: 1; transition: max-height .28s ease, opacity .28s ease, margin .28s ease; }
+.hhc-v7 .hhc-stroke-track.is-collapsed { max-height: 0; margin-block: 0; opacity: 0; }
+.hhc-v7 .hhc-stroke-track span { border-color: rgba(var(--hhc-skill-rgb),.28); background: rgba(var(--hhc-skill-rgb),.08); color: #dce3ff; font-size: 13px; }
 .hhc-v7 .hhc-bottom-nav button { background: linear-gradient(125deg, rgba(13,30,70,.96), rgba(47,14,71,.95)) !important; }
 .hhc-v7 .hhc-bottom-nav button.is-active { background: linear-gradient(125deg, rgba(var(--hhc-skill-rgb),.24), rgba(194,93,239,.23)) !important; }
 .hhc-v7 .hhc-top-actions button.is-active { background: linear-gradient(125deg, rgba(var(--hhc-skill-rgb),.25), rgba(194,93,239,.24)) !important; }

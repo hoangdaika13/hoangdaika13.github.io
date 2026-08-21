@@ -134,6 +134,10 @@ test("HH Chinese v7 gives beginners a focused route and preserves the full works
   assert.match(source, /data-hhc-stage/);
   assert.match(source, /data-hhc-detail-tab/);
   assert.match(source, /data-hhc-word-note/);
+  assert.match(source, /canvas\.dataset\.hhcPoints = String\(points\)/);
+  assert.match(source, /Hoàn tác xóa từ cá nhân/);
+  assert.match(source, /vocabLearnedToday/);
+  assert.match(source, /hhc-stroke-track is-collapsed/);
   assert.match(source, /BEGINNER_VIEWS/);
   assert.match(css, /\.hhc-today-dashboard/);
   assert.match(css, /\.hhc-onboarding-grid/);
@@ -147,4 +151,49 @@ test("HH Chinese v7 gives beginners a focused route and preserves the full works
   assert.match(css, /v9 zero-gray guarantee/);
   assert.match(css, /hhc-v9-glass-sheen/);
   assert.match(css, /font-size: clamp\(56px/);
+});
+
+test("HH Chinese interaction handlers persist real learning actions", () => {
+  const previousDocument = global.document;
+  const previousStorage = global.localStorage;
+  const previousFetch = global.fetch;
+  const storage = { data: {}, getItem(key) { return this.data[key] || null; }, setItem(key, value) { this.data[key] = value; } };
+  global.localStorage = storage;
+  global.fetch = undefined;
+  global.document = { addEventListener() {}, getElementById() { return null; }, scrollingElement: { scrollTop: 0 }, visibilityState: "visible" };
+  const camel = (name) => name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+  const makeTarget = (dataset) => ({ dataset, value: "", textContent: "", closest() { return this; }, setAttribute() {}, matches(selector) { const match = selector.match(/\[data-([\w-]+)/); return match ? Object.prototype.hasOwnProperty.call(this.dataset, camel(match[1])) : selector === "button"; } });
+  const mountScenario = (view, state, inputs = {}) => {
+    storage.data[chinese.STORAGE_KEY + ":guest"] = JSON.stringify(Object.assign({ onboardingComplete: true, uiMode: "full" }, state));
+    const listeners = {};
+    const host = { innerHTML: "", addEventListener(type, listener) { (listeners[type] ||= []).push(listener); }, querySelector(selector) { return inputs[selector] || null; }, querySelectorAll() { return []; } };
+    const api = chinese.mount(host, { view });
+    return { api, fire(type, target) { (listeners[type] || []).forEach((listener) => listener({ target, key: "" })); } };
+  };
+  try {
+    let scenario = mountScenario("pinyin", {});
+    scenario.fire("click", makeTarget({ hhcTone: "3" }));
+    assert.equal(scenario.api.state().tone, 3);
+
+    scenario = mountScenario("vocabulary", {});
+    scenario.fire("click", makeTarget({ hhcReveal: "" }));
+    assert.equal(scenario.api.state().revealed, true);
+    scenario.fire("click", makeTarget({ hhcGrade: "good" }));
+    assert.equal(scenario.api.state().vocabLearnedToday, 1);
+
+    scenario = mountScenario("grammar", {}, { "[data-hhc-grammar-answer]": { value: "我是学生。" } });
+    scenario.fire("click", makeTarget({ hhcSubmitGrammar: "" }));
+    assert.equal(scenario.api.state().grammarPracticeSubmitted, true);
+
+    scenario = mountScenario("vocabulary", { personalDeck: [{ id: "cv-00001", hanzi: "学习", traditional: "學習", pinyin: "xue2 xi2", meaning: "học tập", level: "personal", source: "personal" }] });
+    scenario.fire("click", makeTarget({ hhcRemoveWord: "cv-00001" }));
+    assert.equal(scenario.api.state().personalDeck.length, 0);
+    scenario.fire("click", makeTarget({ hhcUndoWord: "" }));
+    assert.equal(scenario.api.state().personalDeck.length, 1);
+  } finally {
+    chinese.unmount();
+    global.document = previousDocument;
+    global.localStorage = previousStorage;
+    global.fetch = previousFetch;
+  }
 });
