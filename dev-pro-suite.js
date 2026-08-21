@@ -291,6 +291,7 @@
         <span class="dev-root-live"><i></i>${connected}/${connectorRows().length} kết nối</span>
         <label><span class="sr-only">Theme DEV</span><select data-dev-theme aria-label="Theme DEV">${THEMES.map(([value, label]) => `<option value="${value}"${state.preferences.theme === value ? " selected" : ""}>${label}</option>`).join("")}</select></label>
         <label><span class="sr-only">Mức hiệu ứng</span><select data-dev-effects aria-label="Mức hiệu ứng">${EFFECTS.map(([value, label]) => `<option value="${value}"${state.preferences.effects === value ? " selected" : ""}>${label}</option>`).join("")}</select></label>
+        <button type="button" data-dev-command aria-keyshortcuts="Control+K">⌘K · Công cụ</button>
         <button type="button" data-dev-edit-project>Chỉnh dự án</button>
       </div>
     </header>`;
@@ -350,6 +351,34 @@
         <footer><button type="button" data-dev-close-project>Hủy</button><button class="is-primary" type="submit">Lưu dự án</button></footer>
       </form>
     </div>`;
+  }
+
+  function commandResultsMarkup(query = "") {
+    const needle = safeText(query, 80).toLocaleLowerCase("vi");
+    const tools = WORKSPACES.filter((tool) => `${tool.title} ${tool.description} ${tool.caps.join(" ")}`.toLocaleLowerCase("vi").includes(needle));
+    const planets = PLANETS.filter((planet) => `${planet.title} ${planet.short} ${planet.description}`.toLocaleLowerCase("vi").includes(needle));
+    const actions = [
+      { id: "health", label: "Kiểm tra hệ thống", detail: "Đọc health server; không giả lập adapter", action: "refresh-health" },
+      { id: "copy-context", label: "Sao chép project context", detail: "Chỉ copy metadata an toàn, không có secret", action: "copy-context" },
+      { id: "export-config", label: "Xuất cấu hình DEV", detail: "JSON local-first đã loại bỏ dữ liệu nhạy cảm", action: "export-config" }
+    ].filter((item) => `${item.label} ${item.detail}`.toLocaleLowerCase("vi").includes(needle));
+    const rows = [
+      ...actions.map((item) => `<button type="button" class="dev-command-row is-action" data-dev-command-action="${item.action}"><i>⌘</i><span><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.detail)}</small></span><b>↵</b></button>`),
+      ...planets.map((planet) => `<button type="button" class="dev-command-row is-planet" data-dev-command-route="/dev-tools/${planet.id}"><i style="--planet:${planet.color}">${planet.icon}</i><span><strong>${escapeHtml(planet.title)}</strong><small>${escapeHtml(planet.short)} · ${planet.tools.length} workspace</small></span><b>→</b></button>`),
+      ...tools.map((tool) => `<button type="button" class="dev-command-row" data-dev-command-route="/dev-tools/${tool.id}"><i style="--planet:${findPlanetForTool(tool.id)?.color || "#66eff7"}">${tool.icon}</i><span><strong>${escapeHtml(tool.title)}</strong><small>${escapeHtml(tool.description)}</small></span><b>→</b></button>`)
+    ];
+    return rows.length ? rows.join("") : `<div class="dev-command-empty"><strong>Không tìm thấy workspace</strong><span>Thử tên hành tinh, công cụ hoặc capability khác.</span></div>`;
+  }
+
+  function commandPaletteMarkup() {
+    return `<dialog class="dev-command-palette" data-dev-command-dialog aria-labelledby="dev-command-title">
+      <form method="dialog" class="dev-command-card" data-dev-command-form>
+        <header><div><small>HH DEVELOPER GALAXY</small><h3 id="dev-command-title">Mở workspace hoặc hành động</h3></div><button type="submit" aria-label="Đóng">×</button></header>
+        <label class="dev-command-search"><span>⌕</span><input type="search" data-dev-command-input placeholder="Tìm tool, hành tinh, API, Git, Security…" autocomplete="off" autofocus><kbd>ESC</kbd></label>
+        <div class="dev-command-results" data-dev-command-results>${commandResultsMarkup()}</div>
+        <footer><span><kbd>↑↓</kbd> chọn</span><span><kbd>Enter</kbd> mở</span><span><kbd>Ctrl K</kbd> mở nhanh</span></footer>
+      </form>
+    </dialog>`;
   }
 
   function overviewMarkup() {
@@ -438,6 +467,7 @@
         <button type="button" data-dev-route="/dev-tools/security-shield">Kiểm tra bảo mật</button>
       </footer>
       ${projectDialogMarkup(state)}
+      ${commandPaletteMarkup()}
       <div class="dev-toast" data-dev-toast role="status" aria-live="polite"></div>
     </section>`;
   }
@@ -477,6 +507,7 @@
         <i>◎</i><div><strong>Safe by design</strong><span>Hành động mạng chỉ chạy sau thao tác rõ ràng. Thay đổi code, deployment và dữ liệu cần Preview hoặc approval khi engine hỗ trợ.</span></div>
       </section>
       ${projectDialogMarkup(state)}
+      ${commandPaletteMarkup()}
       <div class="dev-toast" data-dev-toast role="status" aria-live="polite"></div>
     </section>`;
   }
@@ -489,6 +520,7 @@
       <nav class="dev-tool-breadcrumb" aria-label="Điều hướng workspace"><button type="button" data-dev-route="/dev-tools/${planet?.id || ""}">← ${escapeHtml(planet?.title || "Developer Galaxy")}</button><i>/</i><strong>${escapeHtml(tool.title)}</strong><span>${tool.caps.map(escapeHtml).join(" · ")}</span></nav>
       <div class="dev-tool-stage" data-dev-engine-host></div>
       ${projectDialogMarkup(state)}
+      ${commandPaletteMarkup()}
       <div class="dev-toast" data-dev-toast role="status" aria-live="polite"></div>
     </section>`;
   }
@@ -540,6 +572,35 @@
     if (open) dialog.querySelector("input[name=name]")?.focus();
   }
 
+  function openCommandPalette(host, open) {
+    const dialog = host.querySelector("[data-dev-command-dialog]");
+    if (!dialog) return;
+    if (open) {
+      if (typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
+      else dialog.removeAttribute("hidden");
+      const input = dialog.querySelector("[data-dev-command-input]");
+      if (input) { input.value = ""; dialog.querySelector("[data-dev-command-results]").innerHTML = commandResultsMarkup(); setTimeout(() => input.focus(), 0); }
+    } else if (typeof dialog.close === "function" && dialog.open) dialog.close();
+    else dialog.setAttribute("hidden", "");
+  }
+
+  function exportDevConfig() {
+    const state = readState();
+    const payload = { format: "hh-dev-project", version: VERSION, exportedAt: nowIso(), project: state.project, preferences: state.preferences, tasks: state.tasks, recentTools: state.recentTools, activity: state.activity };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a"); link.href = url; link.download = `${state.project.id || "hh-dev-project"}-config.json`; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function copyDevContext(host) {
+    const state = readState();
+    const context = JSON.stringify({ project: state.project, environment: state.project.environment, capabilities: browserCapabilities(), connected: connectorRows().filter((item) => item.connected).map((item) => item.id) }, null, 2);
+    const copied = window.navigator?.clipboard?.writeText?.(context);
+    if (copied?.then) copied.then(() => showToast(host, "Đã sao chép project context an toàn.")).catch(() => showToast(host, "Không thể truy cập clipboard; hãy dùng Xuất cấu hình DEV."));
+    else showToast(host, "Clipboard không khả dụng trong trình duyệt này.");
+  }
+
   function bindShell(host) {
     activeAbort?.abort();
     activeAbort = new AbortController();
@@ -562,6 +623,18 @@
       }
       if (event.target.closest("[data-dev-refresh-health]")) {
         refreshHealth(host);
+        return;
+      }
+      const commandButton = event.target.closest("[data-dev-command]");
+      if (commandButton) { openCommandPalette(host, true); return; }
+      const commandRoute = event.target.closest("[data-dev-command-route]");
+      if (commandRoute) { openCommandPalette(host, false); location.hash = `#${commandRoute.dataset.devCommandRoute}`; return; }
+      const commandAction = event.target.closest("[data-dev-command-action]");
+      if (commandAction) {
+        openCommandPalette(host, false);
+        if (commandAction.dataset.devCommandAction === "refresh-health") refreshHealth(host);
+        if (commandAction.dataset.devCommandAction === "copy-context") copyDevContext(host);
+        if (commandAction.dataset.devCommandAction === "export-config") { exportDevConfig(); showToast(host, "Đã xuất cấu hình DEV, không gồm secret."); }
         return;
       }
       const removeTask = event.target.closest("[data-dev-task-delete]");
@@ -607,6 +680,18 @@
         host.innerHTML = overviewMarkup();
       }
     }, { signal });
+
+    host.addEventListener("input", (event) => {
+      if (!event.target.matches("[data-dev-command-input]")) return;
+      const results = host.querySelector("[data-dev-command-results]");
+      if (results) results.innerHTML = commandResultsMarkup(event.target.value);
+    }, { signal });
+
+    window.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); openCommandPalette(host, true); }
+      if (event.key === "Escape") openCommandPalette(host, false);
+    }, { signal });
+    document.addEventListener("visibilitychange", () => { host.querySelectorAll("[data-dev-galaxy]").forEach((node) => node.classList.toggle("is-tab-hidden", document.visibilityState === "hidden")); }, { signal });
 
     host.addEventListener("submit", (event) => {
       if (event.target.matches("[data-dev-project-form]")) {

@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v734";
+const CACHE = "hh-identity-portal-v735";
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
 // Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
@@ -32,7 +32,7 @@ const RUNTIME_ASSETS = [
   "./home-widget-project-pulse.css?v=2",
   "./home-health-focus.css?v=2",
   "./professional-tools.css?v=3",
-  "./dev-pro-suite.css?v=2",
+  "./dev-pro-suite.css?v=3",
   "./dev-delivery-workflow.css?v=2",
   "./dev-smart-recipe.css?v=1",
   "./dev-api-studio.css?v=1",
@@ -357,7 +357,7 @@ const RUNTIME_ASSETS = [
   "./dev-regex-database.js?v=1",
   "./dev-code-git.js?v=1",
   "./dev-diagnostics-ai.js?v=1",
-  "./dev-pro-suite.js?v=3",
+  "./dev-pro-suite.js?v=4",
   "./dev-delivery-workflow.js?v=2",
   "./media-design-studio.js?v=1",
   "./media-design-pro.js?v=2",

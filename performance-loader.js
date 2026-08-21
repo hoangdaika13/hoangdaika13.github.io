@@ -66,14 +66,14 @@
     },
     dev: {
       styles: [
-        "professional-tools.css?v=3", "dev-pro-suite.css?v=2", "dev-delivery-workflow.css?v=2", "dev-smart-recipe.css?v=1", "dev-api-studio.css?v=1",
+        "professional-tools.css?v=3", "dev-pro-suite.css?v=3", "dev-delivery-workflow.css?v=2", "dev-smart-recipe.css?v=1", "dev-api-studio.css?v=1",
         "dev-data-security.css?v=1", "dev-regex-database.css?v=1", "dev-code-git.css?v=1",
         "dev-diagnostics-ai.css?v=1"
       ],
       scripts: [
         "professional-tools.js?v=4", "dev-smart-recipe.js?v=1", "dev-api-studio.js?v=1",
         "dev-data-security.js?v=1", "dev-regex-database.js?v=1", "dev-code-git.js?v=1",
-        "dev-diagnostics-ai.js?v=1", "dev-delivery-workflow.js?v=2", "dev-pro-suite.js?v=3"
+        "dev-diagnostics-ai.js?v=1", "dev-delivery-workflow.js?v=2", "dev-pro-suite.js?v=4"
       ]
     },
     media: {
