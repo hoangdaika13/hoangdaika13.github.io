@@ -130,6 +130,8 @@ test("HH Chinese v7 gives beginners a focused route and preserves the full works
   assert.match(source, /Hướng dẫn viên HH/);
   assert.match(source, /data-hhc-global-search/);
   assert.match(source, /data-hhc-script/);
+  assert.match(source, /CONSTELLATION ROADMAP/);
+  assert.match(source, /data-hhc-stage/);
   assert.match(source, /data-hhc-detail-tab/);
   assert.match(source, /data-hhc-word-note/);
   assert.match(source, /BEGINNER_VIEWS/);
@@ -139,5 +141,8 @@ test("HH Chinese v7 gives beginners a focused route and preserves the full works
   assert.match(css, /\.hhc-global-results/);
   assert.match(css, /\.hhc-v7\[data-motion="static"\]/);
   assert.match(css, /\.hhc-v7\[data-view="vocabulary"\]/);
+  assert.match(css, /hhc-v8-pitch-wave/);
+  assert.match(css, /hhc-v8-wave-ring/);
+  assert.match(css, /hhc-learning-path-mini/);
   assert.match(css, /font-size: clamp\(56px/);
 });
