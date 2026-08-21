@@ -11,7 +11,7 @@ const remote = require(path.join(root, "remote-hub.js"));
 
 test("Remote Hub exposes bounded, reproducible connection helpers", () => {
   assert.equal(remote.normalizeCode("ab-cd 2345!"), "ABCD2345");
-  assert.equal(remote.VERSION, 2);
+  assert.equal(remote.VERSION, 3);
   assert.equal(remote.MAX_FILE_BYTES, 32 * 1024 * 1024);
   assert.equal(remote.CHUNK_BYTES, 64 * 1024);
   assert.equal(remote.MAX_DATA_MESSAGE_BYTES, 48_000);
@@ -35,10 +35,10 @@ test("Remote is a first-class lazy route across shell, galaxy and offline cache"
   assert.match(script, /HHRemoteHub\.mount/);
   assert.match(script, /HHRemoteHub\?\.unmount/);
   assert.match(script, /Remote máy tính & điện thoại/);
-  assert.match(loader, /remote:\s*\{[\s\S]*?remote-hub\.css\?v=3[\s\S]*?remote-hub\.js\?v=3/);
+  assert.match(loader, /remote:\s*\{[\s\S]*?remote-hub\.css\?v=4[\s\S]*?remote-hub\.js\?v=4/);
   assert.match(loader, /startsWith\("\/remote"\)[\s\S]*?\["remote"\]/);
-  assert.match(worker, /remote-hub\.css\?v=3/);
-  assert.match(worker, /remote-hub\.js\?v=3/);
+  assert.match(worker, /remote-hub\.css\?v=4/);
+  assert.match(worker, /remote-hub\.js\?v=4/);
   assert.match(html, /data-hh-galaxy-key="remote"/);
   assert.match(html, /25 LĨNH VỰC/);
   assert.match(galaxy, /remote:\s*\{[\s\S]*?route: "#\/remote"/);
@@ -69,7 +69,10 @@ test("Remote implementation uses real WebRTC primitives and explicit permission 
     /restartIce/,
     /remote:session:lock/,
     /remote:session:revoke/,
-    /remote:session:recover/
+    /remote:session:recover/,
+    /remote:rooms:list/,
+    /remote:room:watch/,
+    /remote:room:update/
   ]) assert.match(source, contract);
   assert.match(source, /Trình duyệt không thể tự bấm chuột hay nhập bàn phím/);
   assert.match(source, /Không tuyên bố điều khiển hệ điều hành khi chưa có native agent/);
@@ -81,16 +84,19 @@ test("Remote bounds signaling, messages and file transfers", () => {
   assert.match(client, /MAX_FILE_BYTES = 32 \* 1024 \* 1024/);
   assert.match(client, /MAX_DATA_MESSAGE_BYTES = 48_000/);
   assert.match(client, /file\.slice\(offset/);
-  assert.match(client, /nextSize > incomingFile\.size/);
+  assert.match(client, /nextSize > receiving\.size/);
   assert.match(client, /file\.received !== file\.size/);
   assert.match(client, /seenMessages\.has/);
   assert.match(server, /MAX_SIGNAL_BYTES = 96_000/);
-  assert.match(server, /MAX_VIEWERS = 1/);
+  assert.match(server, /MAX_VIEWERS = 6/);
   assert.match(server, /MAX_PENDING = 8/);
   assert.match(server, /timingSafeEqual/);
   assert.match(server, /pinHash: hashSecret\(pin\)/);
   assert.match(server, /reconnectTokenHash: hashSecret\(reconnectToken\)/);
   assert.match(server, /allowedOrigins\.includes\(origin\)/);
+  assert.match(server, /visibility === "members"/);
+  assert.match(server, /visibility === "invited"/);
+  assert.match(server, /visibility === "friends"/);
   assert.doesNotMatch(server, /pin:\s*pin/);
 });
 
@@ -106,9 +112,11 @@ test("Remote UI is one-screen, colorful, responsive and motion-safe", () => {
   assert.match(css, /remote-record-pulse/);
   assert.match(css, /\.remote-permission/);
   assert.match(css, /\.remote-metrics/);
+  assert.match(css, /\.remote-live-room/);
+  assert.match(css, /\.remote-audience-editor/);
 });
 
-test("Remote v2 keeps sensitive permissions denied by default and exposes explicit modes", () => {
+test("Remote v3 keeps sensitive permissions denied by default and exposes explicit modes", () => {
   assert.equal(remote.PERMISSIONS.chat.default, true);
   assert.equal(remote.PERMISSIONS.pointer.default, true);
   for (const key of ["clipboard", "files", "screenshot", "recording"]) assert.equal(remote.PERMISSIONS[key].default, false);

@@ -350,6 +350,39 @@ body.app-remote-route [data-remote-hub-host] { height: 100%; min-height: 0; }
 .remote-participants button { min-height:27px !important; padding:0 7px !important; color:#ff9eb0; font-size:8px; }
 .remote-subhead { margin-top:14px !important; padding-top:11px; border-top:1px solid rgba(255,255,255,.06); }
 
+.remote-live-rooms { display:grid; gap:7px; margin-bottom:8px; }
+.remote-live-rooms > p { margin:0; padding:13px 9px; border:1px dashed rgba(93,244,255,.18); border-radius:9px; color:#8295aa; background:rgba(93,244,255,.025); font-size:10px; line-height:1.5; text-align:center; }
+.remote-live-room { display:grid; grid-template-columns:38px minmax(0,1fr) auto; align-items:center; gap:8px; padding:8px; overflow:hidden; border:1px solid rgba(255,95,189,.2); border-radius:10px; background:linear-gradient(100deg,rgba(255,95,189,.06),rgba(93,244,255,.035)); }
+.remote-live-room > i { display:grid; place-items:center; width:36px; height:28px; border-radius:999px; color:#fff; background:linear-gradient(135deg,#ff426d,var(--remote-pink)); box-shadow:0 0 16px rgba(255,66,109,.26); font-size:7px; font-style:normal; font-weight:1000; letter-spacing:.06em; animation:remote-live-pulse 1.8s ease-in-out infinite; }
+.remote-live-room > span { display:grid; min-width:0; gap:2px; }
+.remote-live-room strong { overflow:hidden; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+.remote-live-room small { color:#8092a7; font-size:8px; line-height:1.35; }
+.remote-live-room button { min-height:30px !important; padding:0 8px !important; font-size:8px; }
+.remote-audience-editor { display:grid; gap:8px; margin-top:12px; padding-top:11px; border-top:1px solid rgba(255,255,255,.07); }
+.remote-audience-editor > header { display:grid; gap:3px; margin:0 !important; }
+.remote-audience-editor > header small { color:var(--remote-cyan); font-size:9px; font-weight:900; letter-spacing:.1em; }
+.remote-audience-editor > header strong { font-size:14px; }
+.remote-audience-editor > label,.remote-audience-grid > label { display:grid; gap:5px; color:#9badc1; font-size:9px; font-weight:800; }
+.remote-audience-editor input[type="text"],.remote-audience-editor select { width:100%; min-width:0; height:37px; padding:0 9px; border:1px solid rgba(132,173,218,.2); border-radius:8px; outline:0; color:#eef8ff; background:#0a1524; }
+.remote-audience-editor input[type="text"]:focus,.remote-audience-editor select:focus { border-color:rgba(93,244,255,.62); box-shadow:0 0 0 3px rgba(93,244,255,.09); }
+.remote-audience-grid { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(90px,.65fr); gap:7px; }
+.remote-audience-editor > p { margin:0; color:#8294a9; font-size:9px; line-height:1.5; }
+.remote-audience-friends { display:grid; gap:5px; max-height:176px; padding:5px; overflow:auto; border:1px solid rgba(255,255,255,.06); border-radius:9px; background:rgba(2,8,15,.38); }
+.remote-audience-friends > p { margin:0; padding:9px; color:#7f91a7; font-size:9px; line-height:1.45; text-align:center; }
+.remote-audience-friends > label { display:grid; grid-template-columns:16px 28px minmax(0,1fr); align-items:center; gap:7px; padding:5px; border-radius:7px; cursor:pointer; }
+.remote-audience-friends > label:hover { background:rgba(93,244,255,.05); }
+.remote-audience-friends input { width:15px; height:15px; accent-color:var(--remote-cyan); }
+.remote-audience-friends i { display:grid; place-items:center; width:27px; height:27px; border-radius:50%; color:#071018; background:linear-gradient(135deg,var(--remote-cyan),var(--remote-pink)); font-size:9px; font-style:normal; font-weight:900; }
+.remote-audience-friends span { display:grid; min-width:0; gap:1px; }
+.remote-audience-friends strong { overflow:hidden; font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
+.remote-audience-friends small { color:#75879b; font-size:8px; }
+.remote-approval-choice { grid-template-columns:17px minmax(0,1fr) !important; align-items:center; padding:7px; border:1px solid rgba(77,224,160,.16); border-radius:9px; background:rgba(77,224,160,.035); cursor:pointer; }
+.remote-approval-choice input { width:16px; height:16px; accent-color:#4de0a0; }
+.remote-approval-choice span { display:grid; gap:2px; }
+.remote-approval-choice strong { color:#c8fce2; font-size:9px; }
+.remote-approval-choice small { color:#789887; font-size:8px; }
+.remote-broadcast-limit { padding:7px !important; border-left:2px solid var(--remote-gold); color:#a99e7d !important; background:rgba(255,215,106,.035); }
+
 .remote-context [data-remote-pane="control"],
 .remote-context [data-remote-pane="network"],
 .remote-context [data-remote-pane="devices"] { padding-bottom:10px; }
@@ -357,6 +390,7 @@ body.app-remote-route [data-remote-hub-host] { height: 100%; min-height: 0; }
 .remote-activity > header strong::after { content:" · không lưu nội dung chat/tệp"; color:#6f8196; font-size:8px; font-weight:600; }
 
 @keyframes remote-record-pulse { 50% { opacity:.64; box-shadow:0 0 30px rgba(255,62,97,.5); } }
+@keyframes remote-live-pulse { 50% { filter:brightness(1.18); box-shadow:0 0 25px rgba(255,66,109,.48); } }
 
 @media (min-width:901px) and (max-width:1280px) {
   .remote-layout { grid-template-columns:196px minmax(0,1fr) 300px; }
@@ -366,7 +400,7 @@ body.app-remote-route [data-remote-hub-host] { height: 100%; min-height: 0; }
 }
 
 @media (max-width:900px) {
-  .remote-nav nav { grid-template-columns:repeat(7,minmax(116px,1fr)); }
+  .remote-nav nav { grid-template-columns:repeat(8,minmax(116px,1fr)); }
   .remote-context { display:block; }
   .remote-hub[data-view="quick"] .remote-context { display:none; }
   .remote-screen-actions { display:flex; flex-wrap:nowrap; justify-content:flex-start; overflow-x:auto; }
@@ -374,7 +408,7 @@ body.app-remote-route [data-remote-hub-host] { height: 100%; min-height: 0; }
 }
 
 @media (max-width:560px) {
-  .remote-nav nav { grid-template-columns:repeat(7,105px); }
+  .remote-nav nav { grid-template-columns:repeat(8,105px); }
   .remote-stage { grid-template-rows:300px auto auto; }
   .remote-session-health > span { display:none; }
   .remote-connect-card > div:not(.remote-role) { align-items:stretch; }
@@ -383,4 +417,5 @@ body.app-remote-route [data-remote-hub-host] { height: 100%; min-height: 0; }
   .remote-audio-choice { min-height:42px; }
   .remote-screen-actions button { min-height:35px; }
   .remote-metrics { grid-template-columns:1fr 1fr; }
+  .remote-audience-grid { grid-template-columns:1fr; }
 }

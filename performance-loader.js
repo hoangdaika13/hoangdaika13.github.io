@@ -109,8 +109,8 @@
       scripts: ["ai-video-remake-studio.js?v=2"]
     },
     "social-media-tools": {
-      styles: ["social-media-tools-v2.css?v=8", "social-media-preview-runtime.css?v=6"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/qrcode.js?v=1", "social-media-tools-core.js?v=7", "social-media-tools-workspaces.js?v=7", "social-media-communication-engines.js?v=1", "social-media-tool-contracts.js?v=7", "social-media-local-engines.js?v=6", "social-media-pipeline.js?v=6", "social-media-tool-capabilities.js?v=7", "social-media-preview-runtime.js?v=1", "social-media-tools-v2.js?v=13"]
+      styles: ["social-media-tools-v2.css?v=9", "social-media-preview-runtime.css?v=6"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/qrcode.js?v=1", "social-media-tools-core.js?v=7", "social-media-tools-workspaces.js?v=7", "social-media-communication-engines.js?v=1", "social-media-tool-contracts.js?v=7", "social-media-local-engines.js?v=6", "social-media-pipeline.js?v=6", "social-media-tool-capabilities.js?v=7", "social-media-preview-runtime.js?v=1", "social-media-tools-v2.js?v=14"]
     },
     "comic-motion": {
       // Compatibility: comic-motion-studio.css?v=3 comic-motion-studio.css?v=4 comic-motion-studio.css?v=5 comic-motion-studio.js?v=6 comic-motion-studio.js?v=7 comic-motion-studio.js?v=8 comic-motion-studio.js?v=9
@@ -213,8 +213,8 @@
       scripts: ["draw-studio.js?v=9"]
     },
     remote: {
-      styles: ["remote-hub.css?v=3"],
-      scripts: ["remote-hub.js?v=3"]
+      styles: ["remote-hub.css?v=4"],
+      scripts: ["remote-hub.js?v=4"]
     },
     "chat-ai": {
       styles: ["chat-ai-hub.css?v=17"],

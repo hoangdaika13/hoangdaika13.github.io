@@ -766,7 +766,20 @@ registerCommunicationV2({
   hasObjectStorage: false
 });
 
-registerRemoteSignaling({ io, iceServers: ICE_SERVERS, allowedOrigins });
+registerRemoteSignaling({
+  io,
+  iceServers: ICE_SERVERS,
+  allowedOrigins,
+  audienceAccess: async ({ hostUserId, viewerUserId, visibility }) => {
+    if (visibility !== "friends" || !ObjectId.isValid(hostUserId) || !ObjectId.isValid(viewerUserId)) return false;
+    const first = new ObjectId(hostUserId);
+    const second = new ObjectId(viewerUserId);
+    return Boolean(await (await db()).collection("communityFriendships").findOne({
+      status: "accepted",
+      $or: [{ userAId: first, userBId: second }, { userAId: second, userBId: first }]
+    }, { projection: { _id: 1 } }));
+  }
+});
 
 app.use((error, _req, res, _next) => {
   console.error("Realtime HTTP error:", error?.message || error);

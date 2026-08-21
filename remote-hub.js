@@ -6,8 +6,8 @@
 })(typeof window !== "undefined" ? window : null, function (global) {
   "use strict";
 
-  const VERSION = 2;
-  const STORAGE_PREFIX = "hh.remote.v2";
+  const VERSION = 3;
+  const STORAGE_PREFIX = "hh.remote.v3";
   const MAX_FILE_BYTES = 32 * 1024 * 1024;
   const CHUNK_BYTES = 64 * 1024;
   const MAX_DATA_MESSAGE_BYTES = 48_000;
@@ -15,6 +15,7 @@
   const DEFAULT_ICE = [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }];
   const VIEWS = [
     ["quick", "⌁", "Kết nối nhanh", "Mã phiên + PIN"],
+    ["live", "◉", "Phòng đang phát", "Chọn ai được xem"],
     ["control", "◈", "Quyền điều khiển", "Cho phép theo tác vụ"],
     ["assist", "◎", "Hỗ trợ trực tiếp", "Chat và con trỏ"],
     ["files", "⇄", "Tệp P2P", "Tối đa 32 MB"],
@@ -45,10 +46,11 @@
   let activeView = "quick";
   let session = null;
   let channel = null;
+  let channels = new Map();
   let peers = new Map();
   let peerDevices = new Map();
   let pendingCandidates = new Map();
-  let incomingFile = null;
+  let incomingFiles = new Map();
   let downloadUrls = new Set();
   let seenMessages = new Set();
   let hostPermissions = {};
@@ -63,6 +65,9 @@
   let selectedQuality = "auto";
   let appliedQuality = "balanced";
   let lastStatsSample = null;
+  let liveRooms = [];
+  let audienceFriends = [];
+  let audienceState = { title: "Phòng hỗ trợ màn hình", visibility: "hidden", allowedUserIds: [], requireApproval: true, maxViewers: 1 };
 
   const clean = (value, limit = 1000) => String(value || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, limit);
   const escapeHTML = (value) => clean(value, 5000).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
@@ -70,6 +75,8 @@
   const bytesLabel = (bytes) => bytes < 1024 ? `${bytes} B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   const nowLabel = () => new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const defaultPermissions = () => Object.fromEntries(Object.entries(PERMISSIONS).map(([key, value]) => [key, value.default]));
+  const authToken = () => clean(global?.HHAuthSession?.token?.() || "", 4096);
+  const openChannels = () => [...channels.values()].filter((item) => item?.readyState === "open");
   const supported = () => ({
     webrtc: Boolean(global?.RTCPeerConnection),
     display: Boolean(global?.navigator?.mediaDevices?.getDisplayMedia),
@@ -182,6 +189,10 @@
       button.setAttribute("aria-selected", String(selected));
     });
     root?.querySelectorAll("[data-remote-pane]").forEach((pane) => { pane.hidden = pane.dataset.remotePane !== activeView; });
+    if (activeView === "live") {
+      loadAudienceFriends();
+      loadLiveRooms();
+    }
   }
 
   function setRole(role) {
@@ -236,6 +247,97 @@
     const ownName = clean(options.currentUser?.name || "Thiết bị này", 60);
     const entries = [...peerDevices.entries()];
     list.innerHTML = `<article data-current="true"><i>${activeRole === "host" ? "PC" : "ME"}</i><span><strong>${escapeHTML(ownName)}</strong><small>Thiết bị hiện tại · ${activeRole === "host" ? "Chủ phiên" : "Thiết bị hỗ trợ"}</small></span><b>Đang dùng</b></article>` + (entries.length ? entries.map(([id, peer]) => `<article><i>${activeRole === "host" ? "MB" : "PC"}</i><span><strong>${escapeHTML(peer.name || "Thiết bị đã kết nối")}</strong><small>${escapeHTML(peer.device || "Trình duyệt")} · ${peer.connected === false ? "Đang phục hồi" : "P2P online"}</small></span>${activeRole === "host" ? `<button type="button" data-remote-revoke="${escapeHTML(id)}">Thu hồi</button>` : "<b>Đã duyệt</b>"}</article>`).join("") : "<p>Chưa có thiết bị nào khác trong phiên.</p>");
+  }
+
+  function readAudienceForm() {
+    const visibility = clean(root?.querySelector("[data-remote-audience-visibility]")?.value, 20);
+    const allowedUserIds = [...(root?.querySelectorAll("[data-remote-audience-user]:checked") || [])].map((item) => clean(item.value, 120)).filter(Boolean).slice(0, 100);
+    return {
+      title: clean(root?.querySelector("[data-remote-room-title]")?.value || "Phòng hỗ trợ màn hình", 80),
+      visibility: ["hidden", "invited", "friends", "members"].includes(visibility) ? visibility : "hidden",
+      allowedUserIds,
+      requireApproval: Boolean(root?.querySelector("[data-remote-require-approval]")?.checked),
+      maxViewers: Math.max(1, Math.min(6, Number(root?.querySelector("[data-remote-max-viewers]")?.value) || 1))
+    };
+  }
+
+  function renderAudienceFriends() {
+    const list = root?.querySelector("[data-remote-audience-friends]");
+    if (!list) return;
+    if (!authToken()) list.innerHTML = '<p>Hãy đăng nhập để chọn thành viên hoặc công khai phòng cho người dùng website.</p>';
+    else if (!audienceFriends.length) list.innerHTML = '<p>Chưa có bạn bè để chọn. Bạn vẫn có thể chọn “Tất cả thành viên đã đăng nhập”.</p>';
+    else list.innerHTML = audienceFriends.map((person) => `<label><input type="checkbox" data-remote-audience-user value="${escapeHTML(person.id)}" ${audienceState.allowedUserIds.includes(person.id) ? "checked" : ""}><i>${escapeHTML((person.name || "H").slice(0, 1).toUpperCase())}</i><span><strong>${escapeHTML(person.name || "Thành viên HH")}</strong><small>${escapeHTML(person.username ? `@${person.username}` : "Bạn bè trên HH")}</small></span></label>`).join("");
+    syncAudienceEditor();
+  }
+
+  function syncAudienceEditor() {
+    const visibility = root?.querySelector("[data-remote-audience-visibility]")?.value || "hidden";
+    const picker = root?.querySelector("[data-remote-audience-friends]");
+    if (picker) picker.hidden = visibility !== "invited";
+    const note = root?.querySelector("[data-remote-audience-note]");
+    const notes = {
+      hidden: "Không xuất hiện trong danh sách phòng. Người xem cần mã phiên và PIN.",
+      invited: "Chỉ những người bạn tích chọn mới nhìn thấy thẻ phòng.",
+      friends: "Chỉ bạn bè đã được chấp nhận trên HH nhìn thấy thẻ phòng.",
+      members: "Mọi tài khoản đang đăng nhập đều nhìn thấy thẻ phòng, nhưng không nhìn thấy PIN."
+    };
+    if (note) note.textContent = notes[visibility] || notes.hidden;
+  }
+
+  async function loadAudienceFriends() {
+    if (!authToken() || audienceFriends.length) return renderAudienceFriends();
+    const base = clean(options.apiBase || global.location?.origin || "", 300).replace(/\/$/, "");
+    try {
+      const response = await global.fetch(`${base}/api/social?view=friends&limit=100`, { headers: { Authorization: `Bearer ${authToken()}` }, credentials: "include" });
+      if (!response.ok) throw new Error("Không tải được danh sách bạn bè.");
+      const data = await response.json();
+      audienceFriends = (Array.isArray(data.friends) ? data.friends : []).map((item) => ({ id: clean(item.id, 120), name: clean(item.name || item.displayName, 60), username: clean(item.username, 60) })).filter((item) => item.id).slice(0, 100);
+    } catch (error) { log(error.message || error, "error"); }
+    renderAudienceFriends();
+  }
+
+  function renderLiveRooms(message = "") {
+    const list = root?.querySelector("[data-remote-live-rooms]");
+    if (!list) return;
+    if (message) return void (list.innerHTML = `<p>${escapeHTML(message)}</p>`);
+    if (!liveRooms.length) return void (list.innerHTML = '<p>Hiện chưa có phòng phát nào dành cho bạn.</p>');
+    list.innerHTML = liveRooms.map((room) => `<article class="remote-live-room"><i>LIVE</i><span><strong>${escapeHTML(room.title)}</strong><small>${escapeHTML(room.host?.name || "Thành viên HH")} · ${Number(room.viewerCount) || 0}/${Number(room.maxViewers) || 1} người xem · ${room.requireApproval ? "Cần duyệt" : "Vào ngay"}</small></span><button type="button" data-remote-watch-room="${escapeHTML(room.id)}" ${Number(room.viewerCount) >= Number(room.maxViewers) ? "disabled" : ""}>${Number(room.viewerCount) >= Number(room.maxViewers) ? "Đã đầy" : "Yêu cầu xem"}</button></article>`).join("");
+  }
+
+  async function loadLiveRooms() {
+    if (!authToken()) return renderLiveRooms("Hãy đăng nhập để xem phòng phát dành cho bạn.");
+    try {
+      await ensureSocket();
+      const result = await emitAck("remote:rooms:list", {});
+      liveRooms = Array.isArray(result.rooms) ? result.rooms : [];
+      renderLiveRooms();
+    } catch (error) { renderLiveRooms(error.message || "Không tải được danh sách phòng."); }
+  }
+
+  async function watchLiveRoom(roomId) {
+    if (session) throw new Error("Hãy ngắt phiên hiện tại trước khi xem phòng khác.");
+    if (!authToken()) throw new Error("Hãy đăng nhập để xem phòng đang phát.");
+    setRole("viewer");
+    await ensureSocket();
+    const code = normalizeCode(roomId);
+    session = { code, role: "viewer", directory: true };
+    try {
+      const result = await emitAck("remote:room:watch", { roomId: code, device: clean(global.navigator?.userAgentData?.platform || global.navigator?.platform || "Điện thoại / máy tính", 60) });
+      session = { ...session, requestId: result.requestId, expiresAt: result.expiresAt };
+      startExpiryClock(result.expiresAt);
+      setStatus(result.pending ? "Đang chờ chủ phòng phê duyệt" : "Đang kết nối phòng phát", "busy");
+      setView("quick");
+    } catch (error) { session = null; throw error; }
+  }
+
+  async function updateRoomAudience() {
+    audienceState = readAudienceForm();
+    if (audienceState.visibility !== "hidden" && !authToken()) throw new Error("Hãy đăng nhập trước khi công bố phòng cho thành viên website.");
+    if (audienceState.visibility === "invited" && !audienceState.allowedUserIds.length) throw new Error("Hãy chọn ít nhất một người được xem phòng.");
+    if (!session?.hostToken) return toast("Phạm vi đã sẵn sàng và sẽ áp dụng khi tạo phiên.", "success");
+    const result = await emitAck("remote:room:update", { code: session.code, hostToken: session.hostToken, audience: audienceState });
+    audienceState = result.audience;
+    toast("Đã cập nhật người có thể nhìn thấy phòng.", "success");
   }
 
   function renderLockState() {
@@ -369,28 +471,26 @@
       syncActionAvailability();
       log("Đang nhận màn hình từ thiết bị chia sẻ.", "success");
     });
-    pc.addEventListener("datachannel", (event) => bindChannel(event.channel));
+    pc.addEventListener("datachannel", (event) => bindChannel(event.channel, id));
     if (role === "host") {
       localStream?.getTracks().forEach((track) => pc.addTrack(track, localStream));
-      bindChannel(pc.createDataChannel("hh-remote-assist-v2", { ordered: true }));
+      bindChannel(pc.createDataChannel("hh-remote-assist-v2", { ordered: true }), id);
     }
     return pc;
   }
 
-  function bindChannel(next) {
-    if (channel && channel !== next && channel.readyState !== "closed") {
-      try { channel.close(); } catch {}
-    }
+  function bindChannel(next, peerId = "peer") {
     channel = next;
+    channels.set(peerId, next);
     channel.binaryType = "arraybuffer";
     channel.bufferedAmountLowThreshold = 256 * 1024;
     channel.addEventListener("open", () => {
       log("Kênh hỗ trợ P2P đã sẵn sàng.", "success");
       renderChannelState(true);
-      if (activeRole === "host") sendData("permissions", { permissions: hostPermissions }, { bypass: true });
+      if (activeRole === "host") sendData("permissions", { permissions: hostPermissions }, { bypass: true, targets: [next] });
     });
-    channel.addEventListener("close", () => renderChannelState(false));
-    channel.addEventListener("message", handleChannelMessage);
+    next.addEventListener("close", () => { channels.delete(peerId); channel = openChannels()[0] || null; renderChannelState(openChannels().length > 0); });
+    next.addEventListener("message", (event) => handleChannelMessage(event, peerId));
   }
 
   function permissionFor(type) {
@@ -402,13 +502,14 @@
     return activeRole === "host" ? Boolean(hostPermissions[capability]) : Boolean(remotePermissions[capability]);
   }
 
-  function sendData(type, payload = {}, { bypass = false } = {}) {
-    if (!channel || channel.readyState !== "open") throw new Error("Kênh P2P chưa kết nối.");
+  function sendData(type, payload = {}, { bypass = false, targets } = {}) {
+    const active = Array.isArray(targets) ? targets.filter((item) => item?.readyState === "open") : openChannels();
+    if (!active.length) throw new Error("Kênh P2P chưa kết nối.");
     const capability = permissionFor(type);
     if (!bypass && capability && !permissionAllowed(capability)) throw new Error(`Chủ phiên chưa cho phép ${PERMISSIONS[capability]?.label.toLowerCase() || "tác vụ này"}.`);
     const encoded = JSON.stringify(createEnvelope(type, payload));
     if (encoded.length > MAX_DATA_MESSAGE_BYTES) throw new Error("Thông điệp P2P vượt giới hạn an toàn.");
-    channel.send(encoded);
+    active.forEach((item) => item.send(encoded));
   }
 
   function renderChannelState(open) {
@@ -418,7 +519,7 @@
   }
 
   function syncActionAvailability() {
-    const open = channel?.readyState === "open";
+    const open = openChannels().length > 0;
     root?.querySelectorAll("[data-remote-capability]").forEach((node) => {
       const capability = node.dataset.remoteCapability;
       node.disabled = !open || !permissionAllowed(capability);
@@ -443,8 +544,8 @@
     list.scrollTop = list.scrollHeight;
   }
 
-  async function handleChannelMessage(event) {
-    if (typeof event.data !== "string") return handleFileChunk(event.data);
+  async function handleChannelMessage(event, peerId = "peer") {
+    if (typeof event.data !== "string") return handleFileChunk(event.data, peerId);
     if (event.data.length > MAX_DATA_MESSAGE_BYTES) return log("Đã chặn thông điệp P2P quá lớn.", "error");
     let parsed;
     try { parsed = JSON.parse(event.data); } catch { return log("Đã bỏ qua thông điệp P2P sai định dạng.", "error"); }
@@ -458,7 +559,7 @@
     if (message.type === "permissions" && activeRole === "viewer") {
       remotePermissions = Object.fromEntries(Object.keys(PERMISSIONS).map((key) => [key, Boolean(payload.permissions?.[key])]));
       if (!remotePermissions.recording && recorder?.state === "recording") recorder.stop();
-      if (!remotePermissions.files) incomingFile = null;
+      if (!remotePermissions.files) incomingFiles.clear();
       renderPermissions();
       syncActionAvailability();
       return log("Chủ phiên đã cập nhật phạm vi quyền.", "success");
@@ -467,31 +568,35 @@
     if (message.type === "pointer") showPointer(payload.x, payload.y);
     if (message.type === "clipboard") appendMessage(`Clipboard từ thiết bị kia:\n${clean(payload.text, 10_000)}`, false, "clipboard");
     if (message.type === "stream-state" && activeRole === "viewer") renderRemotePause(Boolean(payload.paused));
-    if (message.type === "file-meta") beginIncomingFile(payload);
-    if (message.type === "file-end" && incomingFile && payload.transferId === incomingFile.id) finishIncomingFile();
+    if (message.type === "file-meta") beginIncomingFile(payload, peerId);
+    const receiving = incomingFiles.get(peerId);
+    if (message.type === "file-end" && receiving && payload.transferId === receiving.id) finishIncomingFile(peerId);
   }
 
-  async function handleFileChunk(data) {
-    if (!incomingFile || !permissionAllowed("files")) return;
+  async function handleFileChunk(data, peerId = "peer") {
+    const receiving = incomingFiles.get(peerId);
+    if (!receiving || !permissionAllowed("files")) return;
     const chunk = data instanceof ArrayBuffer ? data : await data.arrayBuffer?.();
     if (!chunk) return;
-    const nextSize = incomingFile.received + chunk.byteLength;
-    if (nextSize > incomingFile.size || nextSize > MAX_FILE_BYTES) {
+    const nextSize = receiving.received + chunk.byteLength;
+    if (nextSize > receiving.size || nextSize > MAX_FILE_BYTES) {
       log("Đã chặn tệp P2P vượt kích thước đã khai báo.", "error");
-      incomingFile = null;
+      incomingFiles.delete(peerId);
       return;
     }
-    incomingFile.chunks.push(chunk);
-    incomingFile.received = nextSize;
-    updateFileProgress(nextSize, incomingFile.size, `Đang nhận ${incomingFile.name}`);
+    receiving.chunks.push(chunk);
+    receiving.received = nextSize;
+    incomingFiles.set(peerId, receiving);
+    updateFileProgress(nextSize, receiving.size, `Đang nhận ${receiving.name}`);
   }
 
-  function beginIncomingFile(payload) {
+  function beginIncomingFile(payload, peerId = "peer") {
     const size = Number(payload.size) || 0;
     const id = clean(payload.transferId, 80);
-    if (!id || size <= 0 || size > MAX_FILE_BYTES || incomingFile) return log("Thiết bị kia gửi metadata tệp không hợp lệ hoặc đang có tệp khác.", "error");
-    incomingFile = { id, name: clean(payload.name, 160) || "remote-file", type: clean(payload.mime, 100) || "application/octet-stream", size, received: 0, chunks: [] };
-    log(`Bắt đầu nhận tệp ${incomingFile.name} (${bytesLabel(size)}).`);
+    if (!id || size <= 0 || size > MAX_FILE_BYTES || incomingFiles.has(peerId)) return log("Thiết bị kia gửi metadata tệp không hợp lệ hoặc đang có tệp khác.", "error");
+    const file = { id, name: clean(payload.name, 160) || "remote-file", type: clean(payload.mime, 100) || "application/octet-stream", size, received: 0, chunks: [] };
+    incomingFiles.set(peerId, file);
+    log(`Bắt đầu nhận tệp ${file.name} (${bytesLabel(size)}).`);
   }
 
   function showPointer(x, y) {
@@ -512,9 +617,9 @@
     node.querySelector("span").textContent = `${clean(label, 180)} · ${Math.round(ratio)}%`;
   }
 
-  function finishIncomingFile() {
-    const file = incomingFile;
-    incomingFile = null;
+  function finishIncomingFile(peerId = "peer") {
+    const file = incomingFiles.get(peerId);
+    incomingFiles.delete(peerId);
     if (!file || file.received !== file.size) return log("Tệp P2P chưa nhận đủ dữ liệu nên không được tạo file tải xuống.", "error");
     const blob = new Blob(file.chunks, { type: file.type });
     const url = URL.createObjectURL(blob);
@@ -530,12 +635,11 @@
   }
 
   async function waitForBackpressure() {
-    if (!channel || channel.bufferedAmount <= BACKPRESSURE_BYTES) return;
-    await new Promise((resolve) => {
+    await Promise.all(openChannels().filter((item) => item.bufferedAmount > BACKPRESSURE_BYTES).map((item) => new Promise((resolve) => {
       const timeout = global.setTimeout(resolve, 1800);
-      const done = () => { global.clearTimeout(timeout); channel?.removeEventListener?.("bufferedamountlow", done); resolve(); };
-      channel.addEventListener("bufferedamountlow", done, { once: true });
-    });
+      const done = () => { global.clearTimeout(timeout); item.removeEventListener?.("bufferedamountlow", done); resolve(); };
+      item.addEventListener("bufferedamountlow", done, { once: true });
+    })));
   }
 
   async function sendFile(file) {
@@ -545,10 +649,11 @@
     sendData("file-meta", { transferId, name: clean(file.name, 160), mime: clean(file.type, 100), size: file.size });
     let offset = 0;
     while (offset < file.size) {
-      if (!channel || channel.readyState !== "open") throw new Error("Kết nối bị ngắt khi đang gửi tệp.");
+      const active = openChannels();
+      if (!active.length) throw new Error("Kết nối bị ngắt khi đang gửi tệp.");
       await waitForBackpressure();
       const chunk = await file.slice(offset, Math.min(offset + CHUNK_BYTES, file.size)).arrayBuffer();
-      channel.send(chunk);
+      active.forEach((item) => item.send(chunk));
       offset += chunk.byteLength;
       updateFileProgress(offset, file.size, `Đang gửi ${file.name}`);
       await new Promise((resolve) => global.setTimeout(resolve, 0));
@@ -656,6 +761,7 @@
       if (session?.role === "host") stopSession("Signaling bị ngắt; phiên chia sẻ đã dừng an toàn.");
       else if (session) setStatus("Signaling gián đoạn · đang chờ phục hồi", "busy");
     });
+    socket.on("remote:rooms:changed", () => { if (activeView === "live") loadLiveRooms(); });
     socket.on("remote:join:requested", ({ request }) => renderJoinRequest(request));
     socket.on("remote:join:approved", async (payload) => {
       session = { ...(session || {}), code: payload.code, hostSocketId: payload.hostSocketId, reconnectToken: payload.reconnectToken || session?.reconnectToken, iceServers: payload.iceServers, expiresAt: payload.expiresAt, role: "viewer" };
@@ -734,12 +840,16 @@
     let result;
     try {
       await ensureSocket();
-      result = await emitAck("remote:session:create", { name: options.currentUser?.name || "Thiết bị của tôi", device: clean(global.navigator?.userAgentData?.platform || global.navigator?.platform || "Máy tính", 60) });
+      audienceState = readAudienceForm();
+      if (audienceState.visibility !== "hidden" && !authToken()) throw new Error("Hãy đăng nhập để công bố phòng cho người dùng website.");
+      if (audienceState.visibility === "invited" && !audienceState.allowedUserIds.length) throw new Error("Hãy chọn ít nhất một người được xem phòng.");
+      result = await emitAck("remote:session:create", { name: options.currentUser?.name || "Thiết bị của tôi", device: clean(global.navigator?.userAgentData?.platform || global.navigator?.platform || "Máy tính", 60), audience: audienceState });
     } catch (error) {
       await stopSession("Không thể tạo phiên; quyền chia sẻ màn hình đã được dừng an toàn.");
       throw error;
     }
     session = { ...result, role: "host" };
+    audienceState = result.audience || audienceState;
     sessionLocked = false;
     root.querySelector("[data-remote-code]").textContent = result.code;
     root.querySelector("[data-remote-pin]").textContent = result.pin;
@@ -796,8 +906,8 @@
     if (activeRole !== "host" || !(key in PERMISSIONS)) return;
     hostPermissions[key] = Boolean(allowed);
     if (key === "recording" && !allowed && recorder?.state === "recording") recorder.stop();
-    if (key === "files" && !allowed) incomingFile = null;
-    if (channel?.readyState === "open") sendData("permissions", { permissions: hostPermissions }, { bypass: true });
+    if (key === "files" && !allowed) incomingFiles.clear();
+    if (openChannels().length) sendData("permissions", { permissions: hostPermissions }, { bypass: true });
     syncActionAvailability();
     log(`${allowed ? "Đã cho phép" : "Đã thu hồi"} ${PERMISSIONS[key].label}.`, allowed ? "success" : "info");
   }
@@ -881,7 +991,7 @@
     isPaused = !isPaused;
     track.enabled = !isPaused;
     renderPauseState();
-    if (channel?.readyState === "open") sendData("stream-state", { paused: isPaused }, { bypass: true });
+    if (openChannels().length) sendData("stream-state", { paused: isPaused }, { bypass: true });
     log(isPaused ? "Đã tạm dừng truyền hình ảnh." : "Đã tiếp tục truyền hình ảnh.", "success");
   }
 
@@ -985,10 +1095,11 @@
       peers.clear();
       peerDevices.clear();
       pendingCandidates.clear();
-      try { channel?.close?.(); } catch {}
+      channels.forEach((item) => { try { item.close?.(); } catch {} });
+      channels.clear();
       channel = null;
       session = null;
-      incomingFile = null;
+      incomingFiles.clear();
       isPaused = false;
       sessionLocked = false;
       lastStatsSample = null;
@@ -1021,7 +1132,7 @@
     const nav = VIEWS.map(([id, icon, title, note]) => `<button type="button" role="tab" aria-selected="${id === "quick"}" data-remote-view="${id}" class="${id === "quick" ? "is-active" : ""}"><i>${icon}</i><span><b>${title}</b><small>${note}</small></span></button>`).join("");
     return `<section class="remote-hub" data-remote-hub data-role="host" data-view="quick">
       <div class="remote-cosmos" aria-hidden="true"><i></i><i></i><i></i><span></span><span></span><b></b><em></em></div>
-      <header class="remote-topbar"><div class="remote-brand"><i><b>R</b></i><span><small>HH QUANTUM REMOTE V2</small><strong>Remote máy tính & điện thoại</strong></span></div><div class="remote-link-status" data-remote-status data-tone="idle"><i></i><span>Chưa kết nối</span></div><div class="remote-session-health"><span data-remote-quality-active>Tự động · Cân bằng</span><span data-remote-channel-state data-online="false">Chưa kết nối</span><span class="remote-expiry">Hết hạn <b data-remote-expiry>15:00</b></span><button type="button" data-remote-stop>Ngắt phiên</button></div></header>
+      <header class="remote-topbar"><div class="remote-brand"><i><b>R</b></i><span><small>HH QUANTUM REMOTE V3</small><strong>Remote máy tính & điện thoại</strong></span></div><div class="remote-link-status" data-remote-status data-tone="idle"><i></i><span>Chưa kết nối</span></div><div class="remote-session-health"><span data-remote-quality-active>Tự động · Cân bằng</span><span data-remote-channel-state data-online="false">Chưa kết nối</span><span class="remote-expiry">Hết hạn <b data-remote-expiry>15:00</b></span><button type="button" data-remote-stop>Ngắt phiên</button></div></header>
       <div class="remote-layout">
         <aside class="remote-nav"><header><small>REMOTE WORKSPACE</small><strong>Trung tâm hỗ trợ</strong></header><nav role="tablist">${nav}</nav><footer><i></i><span><b>Phiên zero-trust</b><small>Chủ máy duyệt từng thiết bị và từng quyền</small></span></footer></aside>
         <main class="remote-stage">
@@ -1031,13 +1142,14 @@
         </main>
         <aside class="remote-context">
           <section data-remote-pane="quick"><header><small>QUICK CONNECT</small><strong>Yêu cầu đang chờ</strong></header><div class="remote-requests" data-remote-requests><p>Chưa có thiết bị yêu cầu kết nối.</p></div><div class="remote-steps"><span><i>1</i><b>Chọn đúng màn hình</b></span><span><i>2</i><b>Chia sẻ mã + PIN riêng</b></span><span><i>3</i><b>Kiểm tra tên thiết bị</b></span><span><i>4</i><b>Phê duyệt rồi khóa phiên</b></span></div></section>
+          <section data-remote-pane="live" hidden><header><small>HH LIVE ROOMS</small><strong>Phòng đang phát cho bạn</strong></header><div class="remote-live-rooms" data-remote-live-rooms><p>Mở mục này để tải các phòng đang hoạt động.</p></div><button type="button" data-remote-refresh-rooms>Làm mới danh sách</button><div class="remote-audience-editor"><header><small>AI ĐƯỢC THẤY PHÒNG?</small><strong>Phạm vi phát của tôi</strong></header><label>Tên phòng<input type="text" maxlength="80" value="Phòng hỗ trợ màn hình" data-remote-room-title></label><div class="remote-audience-grid"><label>Người nhìn thấy<select data-remote-audience-visibility><option value="hidden">Ẩn · chỉ mã + PIN</option><option value="invited">Chỉ người được chọn</option><option value="friends">Bạn bè trên HH</option><option value="members">Tất cả thành viên website</option></select></label><label>Số người xem<select data-remote-max-viewers><option value="1">1 người</option><option value="3">3 người</option><option value="6">6 người</option></select></label></div><p data-remote-audience-note>Không xuất hiện trong danh sách phòng. Người xem cần mã phiên và PIN.</p><div class="remote-audience-friends" data-remote-audience-friends hidden><p>Đang tải danh sách bạn bè…</p></div><label class="remote-approval-choice"><input type="checkbox" data-remote-require-approval checked><span><strong>Duyệt từng người trước khi xem</strong><small>Nên giữ bật nếu phòng có dữ liệu riêng tư.</small></span></label><button type="button" class="remote-primary" data-remote-update-audience>Áp dụng phạm vi</button><p class="remote-broadcast-limit">WebRTC P2P hỗ trợ tối đa 6 người xem trực tiếp. Phòng không gửi hình ảnh lên signaling server.</p></div></section>
           <section data-remote-pane="control" hidden><header><small>CONTROL & PERMISSIONS</small><strong>Quyền trong phiên</strong></header><p class="remote-pane-intro">Chủ phiên bật riêng từng khả năng. Hai quyền an toàn cơ bản được bật mặc định; quyền nhạy cảm mặc định tắt.</p><div class="remote-permissions" data-remote-permissions>${permissionMarkup()}</div><div class="remote-session-controls"><button type="button" data-remote-lock disabled>Khóa phiên</button><button type="button" data-remote-revoke-all>Thu hồi thiết bị khách</button></div></section>
           <section data-remote-pane="assist" hidden><header><small>REMOTE ASSIST</small><strong>Chat & con trỏ laser</strong></header><div class="remote-messages" data-remote-messages><p data-kind="system">Kết nối P2P để bắt đầu hỗ trợ.</p></div><form data-remote-chat-form><input data-remote-chat-input maxlength="2000" placeholder="Nhắn cho thiết bị kia..."><button type="submit" data-remote-capability="chat" disabled>Gửi</button></form><p>Chạm vào khung màn hình để chỉ vị trí. Trình duyệt không thể tự bấm chuột hay nhập bàn phím của hệ điều hành.</p></section>
           <section data-remote-pane="files" hidden><header><small>P2P FILE STREAM</small><strong>Truyền tệp trực tiếp</strong></header><label class="remote-file-picker">Chọn tệp tối đa 32 MB<input type="file" data-remote-file></label><button class="remote-primary" type="button" data-remote-send-file data-remote-capability="files" disabled>Gửi theo từng khối P2P</button><div class="remote-file-progress" data-remote-file-progress hidden><i></i><span>Đang chờ tệp</span></div><div class="remote-downloads" data-remote-downloads></div><p>Tệp không đi qua signaling server. Hệ thống kiểm tra kích thước khai báo, giới hạn bộ đệm và chỉ tạo file khi nhận đủ dữ liệu.</p></section>
           <section data-remote-pane="network" hidden><header><small>ADAPTIVE QUALITY</small><strong>Chất lượng kết nối</strong></header><label class="remote-quality-select">Chế độ truyền<select data-remote-quality><option value="auto">Tự động thông minh</option><option value="saver">Tiết kiệm · 540p 12 FPS</option><option value="balanced">Cân bằng · 720p 20 FPS</option><option value="sharp">Sắc nét · 1080p 30 FPS</option></select></label><div class="remote-network-health" data-remote-network-health data-tone="idle">Đang chờ kết nối</div><div class="remote-metrics"><span><small>Bitrate</small><b data-remote-metric="bitrate">—</b></span><span><small>Độ trễ RTT</small><b data-remote-metric="rtt">—</b></span><span><small>Mất gói</small><b data-remote-metric="loss">—</b></span><span><small>Khung hình</small><b data-remote-metric="resolution">—</b></span><span><small>Đường truyền</small><b data-remote-metric="candidate">—</b></span></div><button type="button" data-remote-restart-ice>Khôi phục kết nối ICE</button></section>
           <section data-remote-pane="devices" hidden><header><small>SESSION DEVICES</small><strong>Thiết bị trong phiên</strong></header><div class="remote-participants" data-remote-participants></div><header class="remote-subhead"><small>BROWSER CAPABILITIES</small><strong>Khả năng thật</strong></header><div class="remote-capabilities" data-remote-capabilities></div></section>
           <section data-remote-pane="security" hidden><header><small>ZERO-TRUST SESSION</small><strong>Bảo mật & nhật ký</strong></header><ul><li>Mỗi phiên dùng mã 8 ký tự, PIN một lần và phê duyệt thiết bị.</li><li>PIN và host token chỉ lưu dạng SHA-256 trên signaling server, tự hết hạn sau 15 phút.</li><li>Media và dữ liệu đi qua WebRTC mã hóa; signaling chỉ chuyển SDP/ICE đã giới hạn.</li><li>Clipboard, tệp, ảnh chụp và ghi hình mặc định bị khóa.</li><li>Không có truy cập không giám sát và không lưu PIN dùng lại.</li><li>Không tuyên bố điều khiển hệ điều hành khi chưa có native agent đã xác minh.</li></ul><div class="remote-history" data-remote-history></div><button type="button" data-remote-clear-history>Xóa nhật ký trên máy</button></section>
-          <section class="remote-activity"><header><small>SECURITY ACTIVITY</small><strong>Nhật ký metadata phiên</strong></header><div data-remote-log><p><time>${nowLabel()}</time><span>Remote Hub v2 đã sẵn sàng.</span></p></div></section>
+          <section class="remote-activity"><header><small>SECURITY ACTIVITY</small><strong>Nhật ký metadata phiên</strong></header><div data-remote-log><p><time>${nowLabel()}</time><span>Remote Hub v3 đã sẵn sàng.</span></p></div></section>
         </aside>
       </div>
       <div class="remote-toast" data-remote-toast hidden role="status" aria-live="polite"></div>
@@ -1056,6 +1168,10 @@
         if (role) return setRole(role.dataset.remoteRole);
         const revoke = event.target.closest("[data-remote-revoke]");
         if (revoke) return await revokeViewer(revoke.dataset.remoteRevoke);
+        const watchRoom = event.target.closest("[data-remote-watch-room]");
+        if (watchRoom) return await watchLiveRoom(watchRoom.dataset.remoteWatchRoom);
+        if (event.target.closest("[data-remote-refresh-rooms]")) return await loadLiveRooms();
+        if (event.target.closest("[data-remote-update-audience]")) return await updateRoomAudience();
         if (event.target.closest("[data-remote-create-session]")) return await createQuickSession();
         if (event.target.closest("[data-remote-join-session]")) return await joinQuickSession();
         if (event.target.closest("[data-remote-approve]")) return await approveRequest(event.target.closest("article"), true);
@@ -1101,6 +1217,7 @@
       try {
         const permission = event.target.closest("[data-remote-permission]");
         if (permission) return updatePermission(permission.dataset.remotePermission, permission.checked);
+        if (event.target.matches("[data-remote-audience-visibility]")) return syncAudienceEditor();
         if (event.target.matches("[data-remote-quality]")) {
           selectedQuality = event.target.value in QUALITY_PROFILES ? event.target.value : "auto";
           await applyQuality(selectedQuality === "auto" ? "balanced" : selectedQuality);
@@ -1110,7 +1227,7 @@
     }, { signal });
     root.querySelector("[data-remote-chat-form]")?.addEventListener("submit", (event) => { event.preventDefault(); try { sendChat(); } catch (error) { toast(error.message, "error"); } }, { signal });
     root.querySelector("[data-remote-screen]")?.addEventListener("pointerdown", (event) => {
-      if (!channel || channel.readyState !== "open" || activeRole !== "viewer" || !permissionAllowed("pointer")) return;
+      if (!openChannels().length || activeRole !== "viewer" || !permissionAllowed("pointer")) return;
       const rect = event.currentTarget.getBoundingClientRect();
       const x = (event.clientX - rect.left) / rect.width;
       const y = (event.clientY - rect.top) / rect.height;
@@ -1139,6 +1256,8 @@
     renderChannelState(false);
     renderLockState();
     renderPauseState();
+    renderAudienceFriends();
+    syncAudienceEditor();
     const caps = supported();
     setStatus(caps.webrtc && caps.secure ? "Sẵn sàng tạo kết nối" : "Thiết bị đang bị giới hạn", caps.webrtc && caps.secure ? "online" : "error");
     return { unmount };
@@ -1158,11 +1277,12 @@
     socket = null;
     localStream = null;
     channel = null;
+    channels = new Map();
     session = null;
     peers = new Map();
     peerDevices = new Map();
     pendingCandidates = new Map();
-    incomingFile = null;
+    incomingFiles = new Map();
     downloadUrls = new Set();
     seenMessages = new Set();
     recorder = null;
@@ -1173,6 +1293,9 @@
     selectedQuality = "auto";
     appliedQuality = "balanced";
     lastStatsSample = null;
+    liveRooms = [];
+    audienceFriends = [];
+    audienceState = { title: "Phòng hỗ trợ màn hình", visibility: "hidden", allowedUserIds: [], requireApproval: true, maxViewers: 1 };
     if (root) root.replaceChildren();
     root = null;
   }

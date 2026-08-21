@@ -6,16 +6,18 @@ const {
   registerRemoteSignaling,
   normalizeCode,
   normalizeSignal,
+  normalizeAudience,
   SESSION_TTL_MS,
   MAX_VIEWERS,
   MAX_PENDING,
   MAX_SIGNAL_BYTES,
   PENDING_TTL_MS,
-  RECOVERY_TTL_MS
+  RECOVERY_TTL_MS,
+  MAX_ALLOWED_USERS
 } = require("../src/remote-signaling");
 
 class FakeSocket {
-  constructor(id, origin = "") {
+  constructor(id, origin = "", user = null) {
     this.id = id;
     this.connected = true;
     this.data = {};
@@ -23,6 +25,7 @@ class FakeSocket {
     this.outgoing = [];
     this.rooms = new Set();
     this.handshake = { headers: { origin } };
+    this.user = user;
   }
   on(event, handler) { this.handlers.set(event, handler); }
   emit(event, payload) { this.outgoing.push({ event, payload }); }
@@ -59,7 +62,8 @@ class FakeIO {
 test("Remote signaling constants stay intentionally bounded", () => {
   assert.equal(normalizeCode("ab-cd 2345"), "ABCD2345");
   assert.equal(SESSION_TTL_MS, 15 * 60 * 1000);
-  assert.equal(MAX_VIEWERS, 1);
+  assert.equal(MAX_VIEWERS, 6);
+  assert.equal(MAX_ALLOWED_USERS, 100);
   assert.equal(MAX_PENDING, 8);
   assert.equal(MAX_SIGNAL_BYTES, 96_000);
   assert.equal(PENDING_TTL_MS, 60_000);
@@ -67,6 +71,8 @@ test("Remote signaling constants stay intentionally bounded", () => {
   assert.deepEqual(normalizeSignal({ type: "offer", description: { type: "offer", sdp: "v=0" }, secret: "drop-me" }), { type: "offer", description: { type: "offer", sdp: "v=0" } });
   assert.equal(normalizeSignal({ type: "offer", description: { type: "answer", sdp: "v=0" } }), null);
   assert.equal(normalizeSignal({ type: "candidate", candidate: null }), null);
+  assert.deepEqual(normalizeAudience({ visibility: "members", maxViewers: 99, requireApproval: false, title: " Live " }, true), { title: "Live", visibility: "members", allowedUserIds: [], requireApproval: false, maxViewers: 6 });
+  assert.equal(normalizeAudience({ visibility: "members" }, false).visibility, "hidden");
 });
 
 test("Host creates, viewer requests, host approves and only paired peers can signal", async () => {
@@ -166,6 +172,70 @@ test("Host can lock joins, revoke a viewer and viewer can recover with an epheme
   const revoked = await host.trigger("remote:session:revoke", { code: created.code, hostToken: created.hostToken, targetSocketId: recovered.id });
   assert.equal(revoked.revoked, true);
   assert.ok(recovered.outgoing.some((item) => item.event === "remote:session:revoked"));
+});
+
+test("Authenticated members discover a published room without receiving its PIN", async () => {
+  const io = new FakeIO();
+  registerRemoteSignaling({ io });
+  const host = new FakeSocket("host", "", { _id: "user-host", name: "Chủ phòng", avatar: "host.png" });
+  const member = new FakeSocket("member", "", { _id: "user-member", name: "Người xem" });
+  const guest = new FakeSocket("guest");
+  io.connect(host);
+  io.connect(member);
+  io.connect(guest);
+  const created = await host.trigger("remote:session:create", {
+    audience: { title: "Demo an toàn", visibility: "members", requireApproval: false, maxViewers: 3 }
+  });
+  assert.equal(created.audience.visibility, "members");
+  assert.equal(created.maxViewers, 3);
+  const directory = await member.trigger("remote:rooms:list");
+  assert.equal(directory.rooms.length, 1);
+  assert.equal(directory.rooms[0].title, "Demo an toàn");
+  assert.equal("pin" in directory.rooms[0], false);
+  assert.equal("hostToken" in directory.rooms[0], false);
+  assert.equal((await host.trigger("remote:rooms:list")).rooms.length, 0);
+  assert.equal((await guest.trigger("remote:rooms:list")).ok, false);
+  const watched = await member.trigger("remote:room:watch", { roomId: created.code, device: "Android" });
+  assert.equal(watched.accepted, true);
+  assert.ok(member.outgoing.some((item) => item.event === "remote:join:approved"));
+});
+
+test("Invited rooms are visible only to selected users and still support host approval", async () => {
+  const io = new FakeIO();
+  registerRemoteSignaling({ io });
+  const host = new FakeSocket("host", "", { _id: "host-id", name: "Host" });
+  const invited = new FakeSocket("invited", "", { _id: "invited-id", name: "Invited" });
+  const other = new FakeSocket("other", "", { _id: "other-id", name: "Other" });
+  io.connect(host);
+  io.connect(invited);
+  io.connect(other);
+  const created = await host.trigger("remote:session:create", {
+    audience: { visibility: "invited", allowedUserIds: ["invited-id"], requireApproval: true, maxViewers: 3 }
+  });
+  assert.equal((await invited.trigger("remote:rooms:list")).rooms.length, 1);
+  assert.equal((await other.trigger("remote:rooms:list")).rooms.length, 0);
+  assert.equal((await other.trigger("remote:room:watch", { roomId: created.code })).ok, false);
+  const request = await invited.trigger("remote:room:watch", { roomId: created.code });
+  assert.equal(request.pending, true);
+  assert.ok(io.outgoing.some((item) => item.target === host.id && item.event === "remote:join:requested"));
+});
+
+test("Friends audience delegates relationship checks and audience changes revoke excluded viewers", async () => {
+  const io = new FakeIO();
+  registerRemoteSignaling({ io, audienceAccess: async ({ hostUserId, viewerUserId }) => hostUserId === "host-id" && viewerUserId === "friend-id" });
+  const host = new FakeSocket("host", "", { _id: "host-id", name: "Host" });
+  const friend = new FakeSocket("friend", "", { _id: "friend-id", name: "Friend" });
+  io.connect(host);
+  io.connect(friend);
+  const created = await host.trigger("remote:session:create", { audience: { visibility: "friends", requireApproval: false, maxViewers: 3 } });
+  assert.equal((await friend.trigger("remote:rooms:list")).rooms.length, 1);
+  assert.equal((await friend.trigger("remote:room:watch", { roomId: created.code })).accepted, true);
+  const updated = await host.trigger("remote:room:update", {
+    code: created.code, hostToken: created.hostToken,
+    audience: { visibility: "invited", allowedUserIds: ["somebody-else"], maxViewers: 1 }
+  });
+  assert.equal(updated.ok, true);
+  assert.ok(friend.outgoing.some((item) => item.event === "remote:session:revoked"));
 });
 
 test("Remote signaling rejects browser origins outside the explicit allowlist", () => {
