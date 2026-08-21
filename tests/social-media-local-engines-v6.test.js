@@ -101,6 +101,8 @@ test("Hashtag Lab accepts list mode, removes duplicates, respects user blocks, g
   assert.deepEqual(result.duplicates, ["hh"]);
   assert.deepEqual(result.blocked, ["Video"]);
   assert.ok(result.groups.brand.includes("#OfficialHH"));
+  assert.ok(Array.isArray(result.suggestions));
+  assert.match(result.output, /GỢI Ý BỔ SUNG/);
   assert.match(result.output, /^#HH /);
   assert.match(result.csv, /duplicate/);
 

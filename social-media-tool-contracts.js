@@ -11,6 +11,9 @@
   const WORKSPACE_ENGINES = new Set(["instagram-filter","instagram-post","instagram-story","instagram-dm","x-composer","tweet-card","threads-composer","whatsapp-mockup","imessage-mockup","facebook-composer","tiktok-kit","linkedin-composer","pinterest-pin","reddit-formatter","telegram-composer","discord-announcement","mastodon-bluesky","snapchat-story","profile-picture","cover-generator","meme-studio","quote-card","product-kit","brand-kit","qr-campaign","subtitle-studio","video-resizer","export-kit","bio-link","emoji-picker","color-palette"]);
   const MIME_LIMITS = Object.freeze({ image:25*1024*1024, video:2*1024*1024*1024, document:5*1024*1024 });
   const EXPORTS = Object.freeze({ text:["txt","json"], table:["csv","json"], image:["png","webp","json"], url:["txt","json","qr"], media:["zip","json"], operations:["csv","json"], provider:["csv","json"] });
+  const TOOL_INTENTS = Object.freeze({
+    "instagram-post":"Tạo bài feed/carousel Instagram", "instagram-story":"Tạo Story Instagram 9:16", "x-composer":"Chia nội dung thành Tweet/thread X", "threads-composer":"Chia nội dung thành chuỗi Threads", "tweet-card":"Render nội dung thành Tweet Card", "tiktok-kit":"Tạo caption, cover và safe-zone TikTok", "pinterest-pin":"Tạo Pin 2:3 có liên kết", "reddit-formatter":"Định dạng Markdown Reddit", "discord-announcement":"Tạo announcement Discord", "hashtag-workspace":"Phân nhóm và gợi ý hashtag", "hashtag-cleaner":"Chuẩn hóa và loại hashtag lỗi/trùng", "open-graph":"Sinh Open Graph và JSON-LD", "link-preview-audit":"Audit khả năng hiển thị link", "calendar":"Lập lịch nội dung theo múi giờ", "approval":"Điều phối duyệt nội dung", "publishing-queue":"Quản lý hàng đợi xuất bản", "competitor-research":"Phân tích đối thủ từ nguồn được phép", "social-listening":"Theo dõi mention và tín hiệu xã hội" });
+  function intentFor(tool){return TOOL_INTENTS[tool?.id]||`${tool?.name||"Công cụ"}: xử lý dữ liệu theo input schema riêng.`;}
 
   function inputFields(tool) {
     const kind=Workspaces().definitions[tool.id]?.kind;
@@ -79,10 +82,10 @@
   function contractFor(tool, context = {}) {
     const type=outputType(tool); const spec=Workspaces().definitions[tool.id]||{};
     const communication=COMMUNICATION_ENGINES.has(tool.id)?root.HHSocialCommunicationEngines?.engineFor?.(tool.id):null;
-    const ready=readiness(tool,context); return Object.freeze({ version:CONTRACT_VERSION,id:tool.id,kind:spec.kind||"generic",mode:tool.mode,inputs:inputFields(tool),outputType:type,exports:communication?.exports||EXPORTS[type]||EXPORTS.text,applyBack:true,undoRedo:true,presets:true,upload:Boolean(spec.upload),exportImage:Boolean(spec.exportImage),readiness:ready,validator:"tool-specific",processor:communication?"communication-engine":LOCAL_ENGINES.has(tool.id)?"local-engine":WORKSPACE_ENGINES.has(tool.id)?"workspace-engine":tool.mode==="provider"?"official-provider":"not-implemented" });
+    const ready=readiness(tool,context),processor=communication?"communication-engine":LOCAL_ENGINES.has(tool.id)?"local-engine":WORKSPACE_ENGINES.has(tool.id)?"workspace-engine":tool.mode==="provider"?"official-provider":"not-implemented"; return Object.freeze({ version:CONTRACT_VERSION,id:tool.id,kind:spec.kind||"generic",mode:tool.mode,intent:intentFor(tool),renderer:`${spec.kind||"generic"}:${tool.id}`,inputs:inputFields(tool),outputType:type,exports:communication?.exports||EXPORTS[type]||EXPORTS.text,applyBack:true,undoRedo:true,presets:true,upload:Boolean(spec.upload),exportImage:Boolean(spec.exportImage),readiness:ready,validator:"tool-specific",processor });
   }
 
   function catalogContracts(catalog, context = {}) { return catalog.map((tool)=>contractFor(tool,context)); }
-  root.HHSocialToolContracts=Object.freeze({CONTRACT_VERSION,LOCAL_ENGINES,COMMUNICATION_ENGINES,WORKSPACE_ENGINES,MIME_LIMITS,EXPORTS,inputFields,outputType,readiness,validate,contractFor,catalogContracts});
+  root.HHSocialToolContracts=Object.freeze({CONTRACT_VERSION,LOCAL_ENGINES,COMMUNICATION_ENGINES,WORKSPACE_ENGINES,MIME_LIMITS,EXPORTS,TOOL_INTENTS,intentFor,inputFields,outputType,readiness,validate,contractFor,catalogContracts});
   if(typeof module!=="undefined"&&module.exports)module.exports=root.HHSocialToolContracts;
 })(typeof window!=="undefined"?window:globalThis);

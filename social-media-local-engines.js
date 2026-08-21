@@ -258,8 +258,11 @@
     const payload = { source, output, items:[...new Set(records.filter((item) => item.status !== "invalid" && item.status !== "duplicate").map((item) => item.normalized))], allowed, blocked, duplicates, invalid, overflow, groups, records, removed:raw.length - allowed.length, limit, platform:checked.normalized.socialProvider };
     return { ...payload, validation:checked, apply:{ caption:output, blockedHashtags:text(project.blockedHashtags) }, csv, exports:makeExports("hashtag-lab", payload, { txt:output, csv }) };
   }
-  function hashtagWorkspace(project = {}) { return hashtag(project); }
-  function hashtagCleaner(project = {}) { return hashtag(project); }
+  function hashtagWorkspace(project = {}) {
+    const result=hashtag(project), existing=new Set(result.allowed.map((item)=>item.toLocaleLowerCase("vi"))),seed=["hoang8","sangtao","noidung","socialmedia","creator","community","video","tips","review","daily"],suggestions=seed.filter((item)=>!existing.has(item)&&!result.blocked.some((blocked)=>blocked.toLocaleLowerCase("vi")===item)).slice(0,Math.max(0,Math.min(12,Number(project.suggestionCount)||8)));
+    return {...result,mode:"workspace",output:`${result.output}${suggestions.length?`\n\nGỢI Ý BỔ SUNG\n${suggestions.map((item)=>`#${item}`).join(" ")}`:""}`,suggestions,planner:{platform:result.platform,limit:result.limit,brand:result.groups.brand,topic:result.groups.topic,community:result.groups.community,suggested:suggestions.map((item)=>`#${item}`)}};
+  }
+  function hashtagCleaner(project = {}) { return {...hashtag(project),mode:"cleaner"}; }
 
   function validateUtm(project = {}) {
     const errors = [], warnings = [], url = httpsUrl(project.canonicalUrl);

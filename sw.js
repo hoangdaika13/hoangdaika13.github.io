@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v732";
+const CACHE = "hh-identity-portal-v734";
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
 // Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
@@ -121,14 +121,15 @@ const RUNTIME_ASSETS = [
   "./social-media-tools-v2.css?v=9",
   "./social-media-preview-runtime.css?v=6",
   "./social-media-tools-core.js?v=7",
-  "./social-media-tools-workspaces.js?v=7",
+  "./social-media-tools-workspaces.js?v=8",
   "./social-media-communication-engines.js?v=1",
   "./social-media-tool-contracts.js?v=7",
   "./social-media-local-engines.js?v=6",
   "./social-media-pipeline.js?v=6",
   "./social-media-tool-capabilities.js?v=7",
   "./social-media-preview-runtime.js?v=1",
-  "./social-media-tools-v2.js?v=14",
+  "./social-media-interactions.js?v=1",
+  "./social-media-tools-v2.js?v=15",
   "./music-ai-studio.css?v=6",
   "./music-autopilot.css?v=2",
   "./music-ai-apps.css?v=2",
@@ -451,7 +452,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=8",
-  "./performance-loader.js?v=437",
+  "./performance-loader.js?v=439",
   "./account-center.css?v=2",
   "./account-center.js?v=2",
   "./auth-platform.js?v=15",
