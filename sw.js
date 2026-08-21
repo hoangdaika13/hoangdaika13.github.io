@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v747";
+const CACHE = "hh-identity-portal-v753";
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
@@ -46,9 +46,10 @@ const RUNTIME_ASSETS = [
   "./tool-workspace-pro.css?v=1",
   "./utility-lab-tools.css?v=9",
   "./media-design-pro.css?v=1",
-  "./media-design-page.css?v=14",
+  "./media-design-page.css?v=19",
   "./media-cosmos.css?v=3",
   "./media-audio-studio.css?v=1",
+  "./media-tool-experience.css?v=2",
   "./media-professional-suite.css?v=1",
   "./media-next-suite.css?v=1",
   "./media-production-workflow.css?v=3",
@@ -363,7 +364,7 @@ const RUNTIME_ASSETS = [
   "./dev-diagnostics-ai.js?v=1",
   "./dev-pro-suite.js?v=4",
   "./dev-delivery-workflow.js?v=2",
-  "./media-design-studio.js?v=1",
+  "./media-design-studio.js?v=2",
   "./media-design-pro.js?v=2",
   "./media-design-advanced.js?v=3",
   "./media-design-publish.js?v=1",
@@ -381,6 +382,7 @@ const RUNTIME_ASSETS = [
   "./media-professional-suite.js?v=3",
   "./vendor/vercel-blob-client.min.js?v=1",
   "./media-next-suite.js?v=2",
+  "./media-tool-experience.js?v=2",
   "./editor-workflow-pro.js?v=2",
   "./support-platform.js?v=21",
   "./vendor/astronomy-engine-2.1.19.min.js?v=1",
@@ -400,7 +402,7 @@ const RUNTIME_ASSETS = [
   "./assets/fortune/moon/nasa-lro/lroc-color-2k.jpg",
   "./assets/fortune/moon/nasa-lro/lroc-height-1k.jpg",
   "./chat-ai-hub.js?v=17",
-  "./media-design-page.js?v=14",
+  "./media-design-page.js?v=16",
   "./tool-manifests.js?v=1",
   "./tool-runtime.js?v=1",
   "./feature-lab.js?v=6",

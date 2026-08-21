@@ -21,11 +21,11 @@ test("Universal Media Project is reachable from the shell and cached offline", (
     "photo-editor-pro.js?v=3",
     "media-professional-suite.css?v=1",
     "media-professional-suite.js?v=3",
-    "media-design-page.css?v=14",
+    "media-design-page.css?v=19",
     "media-next-suite.css?v=1",
     "vendor/vercel-blob-client.min.js?v=1",
     "media-next-suite.js?v=2",
-    "media-design-page.js?v=14",
+    "media-design-page.js?v=16",
     "media-audio-studio.css?v=1",
     "media-audio-studio.js?v=1"
   ]) {

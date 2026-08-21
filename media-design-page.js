@@ -142,6 +142,11 @@
     const active = spaceForTool(tool);
     return `<aside class="mdp-cockpit-sidebar"><header><button type="button" data-mdp-route="/media-design/cosmos" aria-label="Mở Media Cosmos"><i>◈</i><span><strong>Media Cosmos</strong><small>Bản đồ tổng quan</small></span></button></header><nav aria-label="Không gian Media & Design">${STUDIO_SPACES.map((space) => `<button type="button" class="${space.id === active.id ? "is-active" : ""}" data-mdp-route="${space.route}" style="--space:${space.color}"><i>${space.icon}</i><span><strong>${space.label}</strong><small>${space.tools.length} công cụ</small></span><b>›</b></button>`).join("")}</nav><footer><button type="button" data-mdp-command-open><kbd>Ctrl K</kbd><span>Tất cả ${TOOLS.length} công cụ</span></button></footer></aside>`;
   };
+  const toolRailMarkup = (tool) => {
+    const space = spaceForTool(tool);
+    const items = space.tools.map(toolById).filter(Boolean);
+    return `<span><i style="--space:${space.color}">${space.icon}</i><b>${escapeHtml(space.label)}</b></span><div>${items.map((item) => `<button type="button" class="${item.id === tool.id ? "is-active" : ""}" data-mdp-route="/media-design/${item.id}" aria-current="${item.id === tool.id ? "page" : "false"}"><i>${item.icon}</i><span>${escapeHtml(item.name)}</span></button>`).join("")}</div><button type="button" data-mdp-command-open aria-label="Mở toàn bộ công cụ">＋</button>`;
+  };
   const inspectorMarkup = (tool) => {
     const tabs = [["properties", "Thuộc tính"], ["metadata", "Metadata"], ["rights", "Quyền"], ["history", "Lịch sử"]];
     const panels = {
@@ -194,8 +199,17 @@
   };
   const renderContext = (root, tool) => {
     root.querySelector("[data-mdp-context]").innerHTML = contextMarkup(tool);
+    const rail = root.querySelector("[data-mdp-tool-rail]");
+    if (rail) rail.innerHTML = toolRailMarkup(tool);
+    root.querySelectorAll(".mdp-cockpit-sidebar nav > button").forEach((button, index) => button.classList.toggle("is-active", STUDIO_SPACES[index]?.id === spaceForTool(tool).id));
     const usage = root.querySelector("[data-mdp-usage]");
     if (usage) usage.textContent = `${pageState.usage[tool.name] || 1} phiên`;
+  };
+  const resetCockpitScroll = (root, work) => {
+    if (root) { root.scrollTop = 0; root.scrollLeft = 0; }
+    if (work) { work.scrollTop = 0; work.scrollLeft = 0; }
+    const appMain = root?.closest("#appMain") || document.querySelector("#appMain");
+    if (appMain) { appMain.scrollTop = 0; appMain.scrollLeft = 0; }
   };
   const selectTool = (root, name, focus = false, recordHistory = true) => {
     const tool = toolByName(name);
@@ -206,6 +220,7 @@
     window.HHMediaProfessionalSuite?.unmount?.();
     window.HHMediaNextSuite?.unmount?.();
     window.HHMediaAudioStudio?.unmount?.();
+    window.HHMediaToolExperience?.clear?.(root.querySelector("[data-mdp-work]"));
     pageState.active = tool.name;
     pageState.recent = [tool.name, ...pageState.recent.filter((item) => item !== tool.name)].slice(0, 12);
     pageState.usage[tool.name] = (pageState.usage[tool.name] || 0) + 1;
@@ -232,6 +247,9 @@
       window.HHUniversalMediaProject.mount(work, { view: tool.name === "Asset Manager" ? "assets" : "project" });
     } else if (window.HHMediaDesign?.supports?.(tool.name)) window.HHMediaDesign.render(work, tool.name);
     else work.innerHTML = '<div class="mdp-engine-error"><strong>Engine chưa sẵn sàng</strong><p>Hãy tải lại trang để khởi động Media Engine.</p><button type="button" data-mdp-retry>Thử lại</button></div>';
+    window.HHMediaToolExperience?.decorate?.(work, tool);
+    resetCockpitScroll(root, work);
+    setTimeout(() => { if (pageState.active === tool.name) { window.HHMediaToolExperience?.decorate?.(work, tool); resetCockpitScroll(root, work); } }, 0);
     root.querySelector("[data-mdp-current]").textContent = tool.name;
     root.querySelector("[data-mdp-last-used]").textContent = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
     root.querySelector("[data-mdp-undo]")?.toggleAttribute("disabled", pageState.navIndex <= 0);
@@ -298,11 +316,12 @@
     const initialTool = toolByName(pageState.active);
     host.innerHTML = `<section class="media-design-page mdp-cockpit ${requestedTool ? "is-tool-view" : ""} ${pageState.inspectorOpen ? "is-inspector-open" : ""}" data-media-design-page data-space="${spaceForTool(initialTool).id}">
       <header class="mdp-cockpit-topbar"><button type="button" class="mdp-spaces-button" data-mdp-spaces-toggle aria-label="Mở không gian Media">☰</button><button type="button" class="mdp-cockpit-brand" data-mdp-route="/media-design"><i>◈</i><span><strong>HH Media Studio</strong><small>Universal Media Project</small></span></button><button type="button" class="mdp-project-switcher" data-mdp-route="/media-design/media-core"><span><i></i> Dự án hiện tại</span><strong>Universal Media Project</strong></button><button type="button" class="mdp-command-trigger" data-mdp-command-open><span>⌕ Tìm công cụ hoặc hành động</span><kbd>Ctrl K</kbd></button><div class="mdp-history-controls"><button type="button" data-mdp-undo title="Quay lại workspace trước" ${pageState.navIndex <= 0 ? "disabled" : ""}>↶</button><button type="button" data-mdp-redo title="Tiến tới workspace sau" ${pageState.navIndex >= pageState.navHistory.length - 1 ? "disabled" : ""}>↷</button></div><button type="button" data-mdp-workflow-toggle>Quy trình</button><button type="button" class="is-primary" data-mdp-route="/media-design/export-workspace">Xuất bản</button><button type="button" class="mdp-inspector-button" data-mdp-inspector-toggle>ⓘ</button></header>
-      <div class="mdp-cockpit-grid">${spaceNavigationMarkup(initialTool)}<main class="mdp-main"><header class="mdp-context" data-mdp-context>${contextMarkup(initialTool)}</header><div class="mdp-session"><span><i></i> Local-first</span><span>Đang mở: <b data-mdp-current>${escapeHtml(pageState.active)}</b></span><span>Cập nhật <b data-mdp-last-used>${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</b></span><label class="mdp-mobile-switcher">Công cụ<select data-mdp-mobile-select>${TOOLS.map((tool) => `<option value="${tool.id}" ${tool.name === pageState.active ? "selected" : ""}>${escapeHtml(tool.name)}</option>`).join("")}</select></label><span class="mdp-session__shortcut"><kbd>Alt</kbd><kbd>↑ ↓</kbd> đổi tool</span><div class="mdp-session__config"><button type="button" data-mdp-export>Xuất cấu hình</button><label>Nhập<input type="file" accept="application/json" data-mdp-import></label></div></div><div class="feature-lab__work media-design-page__work" data-mdp-work></div><footer class="mdp-actionbar"><label>＋ Import<input type="file" multiple data-mdp-global-import accept="image/*,video/*,audio/*,.pdf,.svg,.json,.hhmedia"></label><button type="button" data-mdp-route="/media-design/review-studio">◎ Review</button><button type="button" data-mdp-route="/media-design/universal-media">◇ Version</button><button type="button" data-mdp-ai-toggle>✦ AI Task</button><button type="button" data-mdp-route="/media-design/production-workflow">◉ Render</button><button type="button" class="is-primary" data-mdp-route="/media-design/export-workspace">⇧ Publish</button></footer></main>${inspectorMarkup(initialTool)}</div>
+      <div class="mdp-cockpit-grid">${spaceNavigationMarkup(initialTool)}<main class="mdp-main"><header class="mdp-context" data-mdp-context>${contextMarkup(initialTool)}</header><nav class="mdp-tool-rail" data-mdp-tool-rail aria-label="Công cụ trong ${escapeHtml(spaceForTool(initialTool).label)}">${toolRailMarkup(initialTool)}</nav><div class="mdp-session"><span><i></i> Local-first</span><span>Đang mở: <b data-mdp-current>${escapeHtml(pageState.active)}</b></span><span>Cập nhật <b data-mdp-last-used>${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</b></span><label class="mdp-mobile-switcher">Công cụ<select data-mdp-mobile-select>${TOOLS.map((tool) => `<option value="${tool.id}" ${tool.name === pageState.active ? "selected" : ""}>${escapeHtml(tool.name)}</option>`).join("")}</select></label><span class="mdp-session__shortcut"><kbd>Alt</kbd><kbd>↑ ↓</kbd> đổi tool</span><div class="mdp-session__config"><button type="button" data-mdp-export>Xuất cấu hình</button><label>Nhập<input type="file" accept="application/json" data-mdp-import></label></div></div><div class="feature-lab__work media-design-page__work" data-mdp-work></div><footer class="mdp-actionbar"><label>＋ Import<input type="file" multiple data-mdp-global-import accept="image/*,video/*,audio/*,.pdf,.svg,.json,.hhmedia"></label><button type="button" data-mdp-route="/media-design/review-studio">◎ Review</button><button type="button" data-mdp-route="/media-design/universal-media">◇ Version</button><button type="button" data-mdp-ai-toggle>✦ AI Task</button><button type="button" data-mdp-route="/media-design/production-workflow">◉ Render</button><button type="button" class="is-primary" data-mdp-route="/media-design/export-workspace">⇧ Publish</button></footer></main>${inspectorMarkup(initialTool)}</div>
       <div class="mdp-drop-overlay" data-mdp-drop-overlay><i>＋</i><strong>Thả tệp vào Global Media Bin</strong><span>Ảnh · video · audio · PDF · SVG</span></div><div data-mdp-overlays></div><div class="mdp-notice" data-mdp-notice role="status" aria-live="polite" hidden></div>
     </section>`;
     const root = host.querySelector("[data-media-design-page]");
     activeRoot = root;
+    resetCockpitScroll(root, root.querySelector("[data-mdp-work]"));
     const cosmosState = window.HHMediaCosmos?.getState?.();
     if (cosmosState?.theme) root.dataset.mediaTheme = cosmosState.theme;
     if (cosmosRequested && window.HHMediaCosmos?.mount) {
@@ -415,6 +434,7 @@
       window.HHMediaProfessionalSuite?.unmount?.();
       window.HHMediaNextSuite?.unmount?.();
       window.HHMediaAudioStudio?.unmount?.();
+      window.HHMediaToolExperience?.clear?.(activeRoot?.querySelector("[data-mdp-work]"));
     }
   });
   document.addEventListener("visibilitychange", () => activeRoot?.classList.toggle("is-tab-hidden", document.visibilityState === "hidden"));

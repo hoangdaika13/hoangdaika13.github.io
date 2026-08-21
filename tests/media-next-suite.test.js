@@ -65,7 +65,7 @@ test("Next suite is routed, cached, responsive and keeps real adapters capabilit
   const css = read("media-next-suite.css");
   const source = read("media-next-suite.js");
 
-  assert.match(loader, /media-professional-suite\.js\?v=3[\s\S]*vercel-blob-client\.min\.js\?v=1[\s\S]*media-next-suite\.js\?v=2[\s\S]*media-design-page\.js\?v=14/);
+  assert.match(loader, /media-professional-suite\.js\?v=3[\s\S]*vercel-blob-client\.min\.js\?v=1[\s\S]*media-next-suite\.js\?v=2[\s\S]*media-tool-experience\.js\?v=2[\s\S]*media-design-page\.js\?v=16/);
   for (const asset of ["media-next-suite.css?v=1", "vendor/vercel-blob-client.min.js?v=1", "media-next-suite.js?v=2"]) {
     assert.match(worker, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
