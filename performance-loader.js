@@ -169,8 +169,16 @@
       ]
     },
     search: {
-      styles: ["search-watch-center.css?v=5"],
-      scripts: ["search-watch-center.js?v=9"]
+      styles: ["search-quick-overlay.css?v=1"],
+      scripts: ["search-platform-core.js?v=2", "search-quick-overlay.js?v=1"]
+    },
+    google: {
+      styles: ["search-quick-overlay.css?v=1", "google-hub.css?v=4"],
+      scripts: ["search-platform-core.js?v=2", "search-quick-overlay.js?v=1", "google-hub.js?v=1"]
+    },
+    youtube: {
+      styles: ["search-quick-overlay.css?v=1", "youtube-hub.css?v=5"],
+      scripts: ["search-platform-core.js?v=2", "search-quick-overlay.js?v=1", "youtube-hub.js?v=1"]
     },
     cinema: {
       styles: ["cinema-hub.css?v=5"],
@@ -286,7 +294,8 @@
     if (value === "/settings") return ["settings"];
     if (value.startsWith("/settings/account") || value === "/settings/user-dashboard" || value === "/settings/security-center") return ["account"];
     if (value.startsWith("/support")) return ["support"];
-    if (value === "/google" || value === "/youtube" || value === "/communication/google-youtube") return ["search"];
+    if (value === "/google" || value === "/communication/google-youtube") return ["google"];
+    if (value === "/youtube") return ["youtube"];
     if (value.startsWith("/communication")) return ["communication"];
     if (value.startsWith("/work")) return ["work"];
     if (value === "/admin" || value.startsWith("/admin/") || value === "/analytics/admin-panel") return ["analytics", "admin"];
@@ -509,6 +518,14 @@
     event.preventDefault();
     event.stopImmediatePropagation();
     ensureGroup("search").then(() => global.HHSearchWatch?.open?.(launcher.dataset.searchWatchOpen || "google"));
+  }, true);
+
+  document.addEventListener("keydown", (event) => {
+    if (!event.altKey || event.ctrlKey || event.metaKey || !["g", "y"].includes(event.key.toLowerCase()) || global.HHSearchWatch?.open) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const provider = event.key.toLowerCase() === "y" ? "youtube" : "google";
+    ensureGroup("search").then(() => global.HHSearchWatch?.open?.(provider)).catch(() => {});
   }, true);
 
   document.addEventListener("visibilitychange", () => {

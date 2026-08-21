@@ -6110,7 +6110,9 @@ function initAppShell() {
       if (route !== "/chat-ai" && !route.startsWith("/chat-ai/")) window.HHChatAI?.unmount?.();
       if (!route.startsWith("/settings/account") && route !== "/settings/user-dashboard" && route !== "/settings/security-center") window.HHAccountCenter?.unmount?.();
     if (route !== "/settings") window.HHSettingsStudio?.unmount?.();
-    if (route !== "/google" && route !== "/youtube") window.HHSearchWatch?.close?.();
+    if (route !== "/google") window.HHGoogleHub?.unmount?.();
+    if (route !== "/youtube") window.HHYouTubeHub?.unmount?.();
+    window.HHSearchWatch?.close?.();
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
     const communicationView = route === "/communication" ? "command-center" : route.split("/").filter(Boolean)[1];
     if (!(route === "/communication" || window.HHCommunicationSuite?.supports?.(communicationView))) window.HHCommunicationSuite?.unmount?.();
@@ -6159,15 +6161,17 @@ function initAppShell() {
       mountWorkOverview(workView);
     } else if (route === "/google" || route === "/youtube") {
       const isYouTube = route === "/youtube";
-      const provider = isYouTube ? "youtube" : "google";
       const title = isYouTube ? "YouTube" : "Google";
       const description = isYouTube
         ? "Tìm, xem, lưu và sắp xếp video bằng YouTube Player cùng API chính thức trong một workspace độc lập."
         : "Tìm web, hình ảnh và tài liệu bằng Google Search Element/API chính thức trong một workspace độc lập.";
       updatePageHeader(title, description, route);
-      pageActions.innerHTML = `<button type="button" data-app-route="${isYouTube ? "/google" : "/youtube"}">${isYouTube ? "Mở Google" : "Mở YouTube"}</button><button class="app-primary-action" type="button" data-search-watch-open="${provider}">Mở toàn màn hình</button>`;
-      mountSimpleView(title, description, `<section class="app-search-route-card"><span>${isYouTube ? "▶" : "G"}</span><div><strong>${isYouTube ? "YouTube Watch Center" : "Google Search Center"}</strong><p>${isYouTube ? "Thư viện gần đây, video đã lưu, hàng đợi thông minh, mini-player và Picture-in-Picture luôn sẵn sàng." : "Lịch sử tìm kiếm, trang đã lưu, bộ lọc web/hình ảnh và chế độ tìm kiếm miễn phí luôn sẵn sàng."}</p></div><button class="app-primary-action" type="button" data-search-watch-open="${provider}">Bắt đầu ${isYouTube ? "xem" : "tìm kiếm"}</button></section>`);
-      requestAnimationFrame(() => window.HHSearchWatch?.open?.(provider));
+      pageActions.innerHTML = `<button type="button" data-app-route="${isYouTube ? "/google" : "/youtube"}">${isYouTube ? "Mở Google" : "Mở YouTube"}</button><button class="app-primary-action" type="button" data-search-workspace-focus>⌕ Tìm kiếm</button>`;
+      workspace.innerHTML = isYouTube ? '<div data-youtube-hub-host></div>' : '<div data-google-hub-host></div>';
+      const searchHost = workspace.firstElementChild;
+      const mounted = isYouTube ? window.HHYouTubeHub?.mount?.(searchHost) : window.HHGoogleHub?.mount?.(searchHost);
+      if (!mounted) mountSimpleView(title, `Không thể khởi tạo ${title} Center.`, '<button type="button" data-shell-retry-route>Thử lại</button>');
+      pageActions.querySelector("[data-search-workspace-focus]")?.addEventListener("click", () => (isYouTube ? window.HHYouTubeHub : window.HHGoogleHub)?.focus?.());
     } else if (route === "/communication" || (route.startsWith("/communication/") && window.HHCommunicationSuite?.supports?.(parts[1]))) {
       const communicationRouteView = route === "/communication" ? "command-center" : parts[1];
       const communicationMeta = window.HHCommunicationSuite?.views?.[communicationRouteView];

@@ -14,7 +14,12 @@ test("Google and YouTube are top-level workspaces outside Communication", () => 
   assert.match(shell, /id: "google"[\s\S]*?route: "\/google"/);
   assert.match(shell, /id: "youtube-main"[\s\S]*?route: "\/youtube"/);
   assert.match(shell, /route === "\/google" \|\| route === "\/youtube"/);
-  assert.match(shell, /HHSearchWatch\?\.open\?\.\(provider\)/);
+  assert.match(shell, /data-google-hub-host/);
+  assert.match(shell, /data-youtube-hub-host/);
+  assert.match(shell, /HHGoogleHub\?\.mount\?\.\(searchHost\)/);
+  assert.match(shell, /HHYouTubeHub\?\.mount\?\.\(searchHost\)/);
+  const routeWorkspace = shell.slice(shell.indexOf('} else if (route === "/google" || route === "/youtube")'), shell.indexOf('} else if (route === "/communication"'));
+  assert.doesNotMatch(routeWorkspace, /HHSearchWatch\?\.open/);
   assert.doesNotMatch(overview, /Google \+ YouTube|Google Search|YouTube Player|data-search-watch-open/);
   for (const title of ["Community", "Notification Center", "User Dashboard", "Feedback & Survey", "Helpdesk \/ Ticketing", "Referral & Affiliate"]) {
     assert.match(overview, new RegExp(title.replace(/[+]/g, "\\+")));
@@ -31,16 +36,20 @@ test("Home and sign-in galaxies expose independent Google and YouTube destinatio
 });
 
 test("YouTube workspace uses official embeds and persistent player modes", () => {
-  const source = read("search-watch-center.js");
+  const source = read("youtube-hub.js");
+  const core = read("search-platform-core.js");
+  const styles = read("youtube-hub.css");
   assert.match(source, /youtube-nocookie\.com\/embed/);
   assert.match(source, /documentPictureInPicture\.requestWindow/);
   assert.match(source, /youtube-pip\.html/);
-  assert.match(source, /swh-floating-player/);
-  assert.match(source, /action: "playlist-items"/);
-  assert.match(source, /moveQueueItem/);
-  assert.match(source, /YOUTUBE WATCH CENTER/);
-  assert.match(source, /location\.hash = `#\$\{nextRoute\}`/);
+  assert.match(styles, /is-mini-player/);
+  assert.match(styles, /is-theatre/);
+  assert.match(core, /action: "playlist-items"/);
+  assert.match(core, /function reorderQueue/);
+  assert.match(source, /data-yh-player-slot/);
+  assert.match(source, /YOUTUBE WATCH GALAXY/);
   assert.doesNotMatch(source, /YOUTUBE_API_KEY\s*=/);
+  assert.doesNotMatch(core, /YOUTUBE_API_KEY\s*=/);
 });
 
 test("Search API validates advanced filters on the server", () => {
@@ -54,13 +63,13 @@ test("Search API validates advanced filters on the server", () => {
 });
 
 test("Google search falls back to the official free Search Element", () => {
-  const source = read("search-watch-center.js");
+  const source = read("google-hub.js");
+  const core = read("search-platform-core.js");
   const api = read("api/search/[provider].js");
   const config = read("config.js");
   assert.match(config, /HH_GOOGLE_CSE_ID\s*=\s*"67d13c3a6642e4d27"/);
-  assert.match(source, /cse\.google\.com\/cse\.js/);
-  assert.match(source, /searchresults-only/);
-  assert.match(source, /API_ACCESS_DENIED/);
+  assert.match(core, /cse\.google\.com\/cse\.js/);
+  assert.match(core, /searchresults-only/);
   assert.match(source, /data\.fallback && data\.source === "programmable-search-element"/);
   assert.match(api, /googleSearchElementFallback/);
   assert.match(api, /error\?\.code === "API_ACCESS_DENIED"/);
@@ -72,11 +81,13 @@ test("Google search falls back to the official free Search Element", () => {
 test("Versioned assets are available offline", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["communication-overview.css?v=1", "communication-overview.js?v=3", "search-watch-center.css?v=5", "search-watch-center.js?v=9"]) {
+  for (const asset of ["communication-overview.css?v=1", "communication-overview.js?v=3", "search-platform-core.js?v=2", "search-quick-overlay.css?v=1", "search-quick-overlay.js?v=1", "google-hub.css?v=4", "google-hub.js?v=1", "youtube-hub.css?v=5", "youtube-hub.js?v=1"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
   assert.match(worker, /youtube-pip\.html/);
+  assert.doesNotMatch(loader, /search-watch-center/);
+  assert.doesNotMatch(worker, /search-watch-center/);
 });
 
 test("Picture-in-Picture bridge preserves YouTube client identification", () => {
