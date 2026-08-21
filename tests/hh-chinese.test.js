@@ -61,3 +61,16 @@ test("Vietnamese pathway starts at zero and reaches the HSK 9 destination honest
   assert.equal(advanced.pathwayLevel, 9);
   assert.equal(advanced.due.length, 58);
 });
+
+test("HH Chinese includes active-recall practice labs without leaking answers", () => {
+  const source = read("hh-chinese.js");
+  const css = read("hh-chinese.css");
+  assert.match(source, /SENTENCE BUILDER/);
+  assert.match(source, /DICTATION ORBIT/);
+  assert.match(source, /COMPREHENSION CHECK/);
+  assert.match(source, /data-hhc-check-recall/);
+  assert.match(source, /data-hhc-submit-grammar/);
+  assert.match(source, /data-hhc-submit-dictation/);
+  assert.match(source, /data-hhc-submit-reading-check/);
+  assert.match(css, /hhc-practice-feedback/);
+});

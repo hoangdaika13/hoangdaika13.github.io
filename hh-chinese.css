@@ -156,3 +156,24 @@
 @keyframes hhc-path-breathe { 0%,100% { opacity: .45; transform: scale(.98); } 50% { opacity: .9; transform: scale(1.03); } }
 @media (max-width: 1080px) { .hhc-onboarding-hero { grid-template-columns: 1fr minmax(180px,.55fr); }.hhc-entry-grid { grid-template-columns: 1fr; }.hhc-path-detail { grid-template-columns: 1fr; }.hhc-vietnamese-bridge > div { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 760px) { .hhc-onboarding-hero { grid-template-columns: 1fr; min-height: 0; padding: 25px 18px; }.hhc-onboarding-hero h1 { font-size: 38px; }.hhc-zero-orb { width: 160px; margin-top: 28px; }.hhc-zero-orb strong { font-size: 58px; }.hhc-onboarding-footer { align-items: stretch; flex-direction: column; }.hhc-onboarding-footer button { width: 100%; }.hhc-minute-grid { grid-template-columns: 1fr 1fr; }.hhc-path-track { grid-template-columns: repeat(8, 132px); }.hhc-vietnamese-bridge > div { grid-template-columns: 1fr; }.hhc-vietnamese-bridge footer { align-items: stretch; flex-direction: column; }.hhc-vietnamese-bridge footer button { width: 100%; } }
+
+/* Active recall, sentence building, dictation and comprehension labs */
+.hhc-locked-answer input,.hhc-practice-card input,.hhc-dictation-card input { width: 100%; min-height: 42px; padding: 0 11px; border: 1px solid rgba(110,233,255,.25); border-radius: 9px; outline: 0; background: rgba(5,13,30,.6); color: var(--hhc-ink); }
+.hhc-locked-answer input:focus,.hhc-practice-card input:focus,.hhc-dictation-card input:focus { border-color: var(--hhc-cyan); box-shadow: 0 0 0 3px rgba(110,233,255,.1); }
+.hhc-locked-answer button { min-height: 32px; font-size: 10px; }
+.hhc-recall-score { color: var(--hhc-gold) !important; font-size: 10px !important; }
+.hhc-practice-card,.hhc-dictation-card,.hhc-reading-check { background: radial-gradient(circle at 92% 8%, rgba(110,233,255,.1), transparent 28%), linear-gradient(145deg, rgba(15,29,53,.94), rgba(14,16,39,.92)); }
+.hhc-practice-card > p,.hhc-dictation-card > p,.hhc-reading-check > p { color: var(--hhc-ink); font-size: 15px; line-height: 1.6; }
+.hhc-practice-card input,.hhc-dictation-card input { margin: 5px 0 3px; font-size: 15px; }
+.hhc-practice-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.hhc-practice-actions button { min-height: 35px; }
+.hhc-practice-feedback { display: grid; gap: 5px; margin-top: 12px; padding: 12px; border-left: 3px solid var(--hhc-gold); border-radius: 0 10px 10px 0; background: rgba(255,219,118,.07); }
+.hhc-practice-feedback.is-good { border-left-color: var(--hhc-green); background: rgba(127,245,189,.07); }
+.hhc-practice-feedback.is-review { border-left-color: var(--hhc-pink); background: rgba(255,115,199,.07); }
+.hhc-practice-feedback strong { color: var(--hhc-gold); font-size: 13px; }
+.hhc-practice-feedback.is-good strong { color: var(--hhc-green); }
+.hhc-practice-feedback p,.hhc-practice-feedback small { margin: 0; color: var(--hhc-muted); font-size: 10px; line-height: 1.5; }
+.hhc-dictation-play { width: max-content; }
+.hhc-reading-check { margin-top: 13px; }
+.hhc-reading-check footer { justify-content: flex-end; margin-top: 11px; }
+@media (max-width: 760px) { .hhc-practice-actions { display: grid; grid-template-columns: 1fr; }.hhc-practice-actions button,.hhc-dictation-play { width: 100%; }.hhc-practice-card > p,.hhc-dictation-card > p,.hhc-reading-check > p { font-size: 14px; } }
