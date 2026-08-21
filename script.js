@@ -5432,6 +5432,8 @@ function initAppShell() {
     { id: "draw", label: "Vẽ", icon: "✎", accent: "#55eaff", route: "/draw", items: [] },
     { id: "remote", label: "Remote", icon: "RM", accent: "#5df4ff", route: "/remote", items: [] },
     { id: "chat-ai", label: "Chat AI", icon: "AI", accent: "#7b8cff", route: "/chat-ai", items: [] },
+    { id: "google", label: "Google", icon: "G", accent: "#63d7ff", route: "/google", items: [] },
+    { id: "youtube-main", label: "YouTube", icon: "▶", accent: "#ff5c6c", route: "/youtube", items: [] },
     {
       id: "music-ai",
       label: "Làm nhạc AI",
@@ -5528,8 +5530,7 @@ function initAppShell() {
         { id: "automation", title: "Communication Automation", route: "/communication/automation" },
         { id: "hh-spaces", title: "HH Spaces", route: "/communication/hh-spaces" },
         { id: "smart-catch-up", title: "Smart Catch-up", route: "/communication/smart-catch-up" }
-      ],
-      shortcuts: [{ label: "Google + YouTube", icon: "G", tab: "google" }]
+      ]
     },
     {
       id: "cinema",
@@ -5844,7 +5845,7 @@ function initAppShell() {
       window.HHCommunicationOverview.mount(host, { apiBase: REALTIME_URL });
       return;
     }
-    mountSimpleView("Giao tiếp", "Không gian kết nối, tìm kiếm và cộng đồng của HH Platform.", '<button class="app-primary-action" type="button" data-search-watch-open="google">Mở Google + YouTube</button>');
+    mountSimpleView("Giao tiếp", "Không gian nhắn tin, cộng đồng và cộng tác realtime của HH Platform.", '<button class="app-primary-action" type="button" data-app-route="/communication/messenger">Mở Messenger</button>');
   };
   const mountWorkOverview = (view = "mission-control") => {
     workspace.innerHTML = '<div data-work-center-host></div>';
@@ -5865,7 +5866,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", draw: "Vẽ", remote: "Remote", "chat-ai": "Chat AI", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", chinese: "HH Chinese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "16 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", draw: "Vẽ", remote: "Remote", "chat-ai": "Chat AI", google: "Google", youtube: "YouTube", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", chinese: "HH Chinese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "16 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     crumbLabels["social-media-tools"] = "Công cụ truyền thông xã hội";
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
@@ -5904,6 +5905,8 @@ function initAppShell() {
     dev: "Đang nạp Developer Galaxy và môi trường công cụ...",
     work: "Đang đồng bộ dự án, nhiệm vụ và lịch làm việc...",
     communication: "Đang kết nối tin nhắn, kênh và cộng tác realtime...",
+    google: "Đang mở Google Search và khôi phục lịch sử tra cứu...",
+    "youtube-main": "Đang mở YouTube, thư viện và hàng đợi video...",
     insights: "Đang tổng hợp dữ liệu và bảng phân tích...",
     admin: "Đang xác minh quyền và tải trung tâm quản trị...",
     learn: "Đang chuẩn bị lộ trình và dữ liệu học tập...",
@@ -6033,6 +6036,10 @@ function initAppShell() {
       route = "/home";
       history.replaceState({}, document.title, `${location.pathname}${location.search}#/home`);
     }
+    if (route === "/communication/google-youtube") {
+      route = "/google";
+      history.replaceState({}, document.title, `${location.pathname}${location.search}#/google`);
+    }
     if (route === "/analytics/admin-panel" || route.endsWith("/admin-panel")) {
       route = isCurrentUserAdmin() ? "/admin" : "/analytics";
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
@@ -6069,6 +6076,7 @@ function initAppShell() {
     document.body.classList.toggle("app-account-center-route", route.startsWith("/settings/account") || route === "/settings/user-dashboard" || route === "/settings/security-center");
     document.body.classList.toggle("app-settings-route", route === "/settings");
     document.body.classList.toggle("app-communication-route", route === "/communication" || route.startsWith("/communication/"));
+    document.body.classList.toggle("app-search-route", route === "/google" || route === "/youtube");
     document.body.classList.toggle("app-work-route", route === "/work" || route.startsWith("/work/"));
     document.body.classList.toggle("app-ai-script-route", route === "/create/ai-script");
     document.body.classList.toggle("app-creative-os-route", isCreativeOSRoute(route));
@@ -6102,6 +6110,7 @@ function initAppShell() {
       if (route !== "/chat-ai" && !route.startsWith("/chat-ai/")) window.HHChatAI?.unmount?.();
       if (!route.startsWith("/settings/account") && route !== "/settings/user-dashboard" && route !== "/settings/security-center") window.HHAccountCenter?.unmount?.();
     if (route !== "/settings") window.HHSettingsStudio?.unmount?.();
+    if (route !== "/google" && route !== "/youtube") window.HHSearchWatch?.close?.();
     if (route !== "/communication") window.HHCommunicationOverview?.unmount?.();
     const communicationView = route === "/communication" ? "command-center" : route.split("/").filter(Boolean)[1];
     if (!(route === "/communication" || window.HHCommunicationSuite?.supports?.(communicationView))) window.HHCommunicationSuite?.unmount?.();
@@ -6148,6 +6157,17 @@ function initAppShell() {
       updatePageHeader(workPage.title, workPage.description, route);
       pageActions.innerHTML = `<button type="button" data-app-route="/work/portfolio-observatory">Portfolio</button><button class="app-primary-action" type="button" data-work-capture>+ Tạo công việc</button>`;
       mountWorkOverview(workView);
+    } else if (route === "/google" || route === "/youtube") {
+      const isYouTube = route === "/youtube";
+      const provider = isYouTube ? "youtube" : "google";
+      const title = isYouTube ? "YouTube" : "Google";
+      const description = isYouTube
+        ? "Tìm, xem, lưu và sắp xếp video bằng YouTube Player cùng API chính thức trong một workspace độc lập."
+        : "Tìm web, hình ảnh và tài liệu bằng Google Search Element/API chính thức trong một workspace độc lập.";
+      updatePageHeader(title, description, route);
+      pageActions.innerHTML = `<button type="button" data-app-route="${isYouTube ? "/google" : "/youtube"}">${isYouTube ? "Mở Google" : "Mở YouTube"}</button><button class="app-primary-action" type="button" data-search-watch-open="${provider}">Mở toàn màn hình</button>`;
+      mountSimpleView(title, description, `<section class="app-search-route-card"><span>${isYouTube ? "▶" : "G"}</span><div><strong>${isYouTube ? "YouTube Watch Center" : "Google Search Center"}</strong><p>${isYouTube ? "Thư viện gần đây, video đã lưu, hàng đợi thông minh, mini-player và Picture-in-Picture luôn sẵn sàng." : "Lịch sử tìm kiếm, trang đã lưu, bộ lọc web/hình ảnh và chế độ tìm kiếm miễn phí luôn sẵn sàng."}</p></div><button class="app-primary-action" type="button" data-search-watch-open="${provider}">Bắt đầu ${isYouTube ? "xem" : "tìm kiếm"}</button></section>`);
+      requestAnimationFrame(() => window.HHSearchWatch?.open?.(provider));
     } else if (route === "/communication" || (route.startsWith("/communication/") && window.HHCommunicationSuite?.supports?.(parts[1]))) {
       const communicationRouteView = route === "/communication" ? "command-center" : parts[1];
       const communicationMeta = window.HHCommunicationSuite?.views?.[communicationRouteView];

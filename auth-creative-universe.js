@@ -55,6 +55,18 @@
       capabilities: ["Cộng đồng", "Nhắn tin", "Hộp thư"]
     },
     {
+      id: "google", short: "G", label: "Google", eyebrow: "Tìm kiếm web và hình ảnh", route: "/google",
+      color: "#63d7ff", orbit: 3, angle: 20,
+      description: "Tìm web, hình ảnh và tài liệu trong Google Search Center độc lập với lịch sử và nội dung đã lưu.",
+      capabilities: ["Tìm web", "Tìm hình ảnh", "Trang đã lưu"]
+    },
+    {
+      id: "youtube", short: "▶", label: "YouTube", eyebrow: "Xem và quản lý video", route: "/youtube",
+      color: "#ff5c6c", orbit: 3, angle: 40,
+      description: "Tìm, xem, lưu video, tạo hàng đợi và dùng mini-player trong YouTube Watch Center độc lập.",
+      capabilities: ["Tìm video", "Watch Queue", "Mini-player"]
+    },
+    {
       id: "insights", short: "PT", label: "Phân tích", eyebrow: "Dữ liệu và vận hành", route: "/analytics",
       color: "#ffbd69", orbit: 3, angle: 60,
       description: "Theo dõi analytics, tìm kiếm thông minh, quản trị, API, bảo mật và tình trạng nền tảng.",

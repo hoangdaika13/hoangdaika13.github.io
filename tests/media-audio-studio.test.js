@@ -28,6 +28,20 @@ test("Audio Studio exports a valid PCM WAV container", () => {
   assert.equal(wav.byteLength, 52);
 });
 
+test("Audio Studio provides bounded podcast DSP, loudness analysis and delivery metadata", () => {
+  const state = audio.normalizeState({ pan: 500, highPass: 900, markers: [{ time: 3.2, title: "Mở đầu" }], podcast: { title: "Vũ trụ", episode: 4 } });
+  assert.equal(state.pan, 100);
+  assert.equal(state.highPass, 400);
+  assert.equal(state.markers[0].title, "Mở đầu");
+  assert.match(audio.chaptersJson(state), /"startTime": 3\.2/);
+  assert.match(audio.rssItem(state, 125), /<itunes:episode>4<\/itunes:episode>/);
+  const channels = [new Float32Array([0, .25, -.5, 1])];
+  const buffer = { numberOfChannels: 1, sampleRate: 4, length: 4, duration: 1, getChannelData: () => channels[0] };
+  const metrics = audio.estimateLoudness(buffer);
+  assert.ok(Number.isFinite(metrics.peakDbfs));
+  assert.ok(Number.isFinite(metrics.estimatedLufs));
+});
+
 test("Audio Studio is routed, cached, responsive and honest about local processing", () => {
   const shell = read("script.js"), page = read("media-design-page.js"), css = read("media-audio-studio.css"), loader = read("performance-loader.js"), worker = read("sw.js"), source = read("media-audio-studio.js");
   assert.match(shell, /id: "audio-workspace"/);
@@ -38,7 +52,9 @@ test("Audio Studio is routed, cached, responsive and honest about local processi
   assert.match(source, /Global Media Bin/);
   assert.match(css, /@media\(max-width:680px\)/);
   assert.match(css, /prefers-reduced-motion/);
-  for (const asset of ["media-audio-studio.css?v=1", "media-audio-studio.js?v=1"]) {
+  assert.match(source, /Podcast Namespace chapters JSON/);
+  assert.match(source, /findSpeechBounds/);
+  for (const asset of ["media-audio-studio.css?v=4", "media-audio-studio.js?v=2"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }

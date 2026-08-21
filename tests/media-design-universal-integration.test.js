@@ -21,13 +21,15 @@ test("Universal Media Project is reachable from the shell and cached offline", (
     "photo-editor-pro.js?v=3",
     "media-professional-suite.css?v=1",
     "media-professional-suite.js?v=3",
-    "media-design-page.css?v=19",
+    "media-design-page.css?v=21",
     "media-next-suite.css?v=1",
     "vendor/vercel-blob-client.min.js?v=1",
     "media-next-suite.js?v=2",
-    "media-design-page.js?v=16",
-    "media-audio-studio.css?v=1",
-    "media-audio-studio.js?v=1"
+    "media-design-page.js?v=21",
+    "media-audio-studio.css?v=4",
+    "media-audio-studio.js?v=2",
+    "media-production-universe.css?v=3",
+    "media-production-universe.js?v=2"
   ]) {
     const pattern = new RegExp(escapeRegExp(asset));
     assert.match(`${html}\n${loader}`, pattern);
@@ -88,6 +90,7 @@ test("Professional engines publish stable browser contracts", () => {
     ["video-editor-resolve.js", "HHVideoEditorResolveOps", /const createProject\s*=/],
     ["media-professional-suite.js", "HHMediaProfessionalSuite", /function mount\s*\(/],
     ["media-next-suite.js", "HHMediaNextSuite", /function mount\s*\(/],
+    ["media-production-universe.js", "HHMediaProductionUniverse", /function mount\s*\(/],
     ["graphic-design-adaptive.js", "HHGraphicAdaptive", /function mount\s*\(/],
     ["graphic-design-export-center.js", "HHGraphicExportCenter", /function mount\s*\(/],
     ["graphic-design-review.js", "HHGraphicReview", /function mount\s*\(/],

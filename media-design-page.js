@@ -220,6 +220,8 @@
     window.HHMediaProfessionalSuite?.unmount?.();
     window.HHMediaNextSuite?.unmount?.();
     window.HHMediaAudioStudio?.unmount?.();
+    window.HHMediaProjectPhotoStudio?.unmount?.();
+    window.HHMediaProductionUniverse?.unmount?.();
     window.HHMediaToolExperience?.clear?.(root.querySelector("[data-mdp-work]"));
     pageState.active = tool.name;
     pageState.recent = [tool.name, ...pageState.recent.filter((item) => item !== tool.name)].slice(0, 12);
@@ -235,8 +237,12 @@
     renderContext(root, tool);
     const work = root.querySelector("[data-mdp-work]");
     root.dataset.space = spaceForTool(tool).id;
-    if (tool.id === "audio-workspace" && window.HHMediaAudioStudio?.mount) {
+    if (["media-core", "photo-workspace"].includes(tool.id) && window.HHMediaProjectPhotoStudio?.mount) {
+      window.HHMediaProjectPhotoStudio.mount(work, { workspace: tool.id, professionalApi: window.HHMediaProfessionalSuite, mediaApi: window.HHUniversalMediaProject, onNavigate: (route) => { location.hash = `#${route}`; } });
+    } else if (tool.id === "audio-workspace" && window.HHMediaAudioStudio?.mount) {
       window.HHMediaAudioStudio.mount(work, { mediaApi: window.HHUniversalMediaProject });
+    } else if (window.HHMediaProductionUniverse?.WORKSPACE_BY_ID?.[tool.id] && window.HHMediaProductionUniverse?.mount) {
+      window.HHMediaProductionUniverse.mount(work, { workspace: tool.id, professionalApi: window.HHMediaProfessionalSuite, mediaApi: window.HHUniversalMediaProject, onNavigate: (route) => { location.hash = `#${route}`; } });
     } else if (window.HHMediaNextSuite?.WORKSPACE_BY_ID?.[tool.id] && window.HHMediaNextSuite?.mount) {
       window.HHMediaNextSuite.mount(work, { workspace: tool.id, onNavigate: (route) => { location.hash = `#${route}`; } });
     } else if (window.HHMediaProfessionalSuite?.WORKSPACE_BY_ID?.[tool.id] && window.HHMediaProfessionalSuite?.mount) {
@@ -310,6 +316,8 @@
     window.HHMediaProfessionalSuite?.unmount?.();
     window.HHMediaNextSuite?.unmount?.();
     window.HHMediaAudioStudio?.unmount?.();
+    window.HHMediaProjectPhotoStudio?.unmount?.();
+    window.HHMediaProductionUniverse?.unmount?.();
     const requestedId = options.toolId || host.dataset.mediaDesignTool || "", cosmosRequested = requestedId === "cosmos";
     const requestedTool = cosmosRequested ? null : toolById(requestedId || "media-core");
     if (requestedTool) pageState.active = requestedTool.name;
@@ -434,6 +442,8 @@
       window.HHMediaProfessionalSuite?.unmount?.();
       window.HHMediaNextSuite?.unmount?.();
       window.HHMediaAudioStudio?.unmount?.();
+      window.HHMediaProjectPhotoStudio?.unmount?.();
+      window.HHMediaProductionUniverse?.unmount?.();
       window.HHMediaToolExperience?.clear?.(activeRoot?.querySelector("[data-mdp-work]"));
     }
   });

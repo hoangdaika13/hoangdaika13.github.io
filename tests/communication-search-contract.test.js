@@ -6,13 +6,27 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("Communication route mounts a dedicated overview", () => {
+test("Google and YouTube are top-level workspaces outside Communication", () => {
   const shell = read("script.js");
   const overview = read("communication-overview.js");
   assert.match(shell, /route === "\/communication"/);
   assert.match(shell, /mountCommunicationOverview\(\)/);
-  for (const title of ["Google + YouTube", "Community", "Notification Center", "User Dashboard", "Feedback & Survey", "Helpdesk \/ Ticketing", "Referral & Affiliate"]) {
+  assert.match(shell, /id: "google"[\s\S]*?route: "\/google"/);
+  assert.match(shell, /id: "youtube-main"[\s\S]*?route: "\/youtube"/);
+  assert.match(shell, /route === "\/google" \|\| route === "\/youtube"/);
+  assert.match(shell, /HHSearchWatch\?\.open\?\.\(provider\)/);
+  assert.doesNotMatch(overview, /Google \+ YouTube|Google Search|YouTube Player|data-search-watch-open/);
+  for (const title of ["Community", "Notification Center", "User Dashboard", "Feedback & Survey", "Helpdesk \/ Ticketing", "Referral & Affiliate"]) {
     assert.match(overview, new RegExp(title.replace(/[+]/g, "\\+")));
+  }
+});
+
+test("Home and sign-in galaxies expose independent Google and YouTube destinations", () => {
+  const home = read("home-galaxy-command.js");
+  const auth = read("auth-creative-universe.js");
+  for (const source of [home, auth]) {
+    assert.match(source, /route: "\/google"/);
+    assert.match(source, /route: "\/youtube"/);
   }
 });
 
@@ -24,6 +38,8 @@ test("YouTube workspace uses official embeds and persistent player modes", () =>
   assert.match(source, /swh-floating-player/);
   assert.match(source, /action: "playlist-items"/);
   assert.match(source, /moveQueueItem/);
+  assert.match(source, /YOUTUBE WATCH CENTER/);
+  assert.match(source, /location\.hash = `#\$\{nextRoute\}`/);
   assert.doesNotMatch(source, /YOUTUBE_API_KEY\s*=/);
 });
 
@@ -54,10 +70,10 @@ test("Google search falls back to the official free Search Element", () => {
 });
 
 test("Versioned assets are available offline", () => {
-  const index = read("index.html");
+  const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["communication-overview.css?v=1", "communication-overview.js?v=2", "search-watch-center.css?v=5", "search-watch-center.js?v=8"]) {
-    assert.match(index, new RegExp(asset.replace(/[.?]/g, "\\$&")));
+  for (const asset of ["communication-overview.css?v=1", "communication-overview.js?v=3", "search-watch-center.css?v=5", "search-watch-center.js?v=9"]) {
+    assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
   assert.match(worker, /youtube-pip\.html/);

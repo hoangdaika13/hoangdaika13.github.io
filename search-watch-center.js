@@ -323,7 +323,7 @@
       <div class="swh-backdrop" data-swh-close></div>
       <div class="swh-window">
         <header class="swh-header">
-          <div class="swh-brand"><span>HH</span><div><small>SEARCH & WATCH CENTER</small><h2 id="searchWatchTitle">Google và YouTube trong một nơi</h2></div></div>
+          <div class="swh-brand"><span>HH</span><div><small data-swh-brand-kicker>GOOGLE SEARCH CENTER</small><h2 id="searchWatchTitle">Tìm kiếm với Google trong HH</h2></div></div>
           <div class="swh-header-actions">
             <span class="swh-api-pill" data-service="google"><i></i> Google API</span>
             <span class="swh-api-pill" data-service="youtube"><i></i> YouTube API</span>
@@ -424,6 +424,14 @@
 
   function setTab(tab) {
     state.tab = tab === "youtube" ? "youtube" : "google";
+    const brand = state.tab === "youtube"
+      ? { kicker: "YOUTUBE WATCH CENTER", title: "Xem và quản lý YouTube trong HH" }
+      : { kicker: "GOOGLE SEARCH CENTER", title: "Tìm kiếm với Google trong HH" };
+    root.dataset.provider = state.tab;
+    const kicker = root.querySelector("[data-swh-brand-kicker]");
+    const title = root.querySelector("#searchWatchTitle");
+    if (kicker) kicker.textContent = brand.kicker;
+    if (title) title.textContent = brand.title;
     root.querySelectorAll("[data-swh-tab]").forEach((button) => button.classList.toggle("active", button.dataset.swhTab === state.tab));
     root.querySelectorAll("[data-swh-panel]").forEach((panel) => panel.classList.toggle("active", panel.dataset.swhPanel === state.tab));
     setTimeout(() => root.querySelector(`[data-search-form="${state.tab}"] input`)?.focus(), 80);
@@ -1139,7 +1147,15 @@
 
   function bindHub() {
     root.querySelectorAll("[data-swh-close]").forEach((button) => button.addEventListener("click", closeHub));
-    root.querySelectorAll("[data-swh-tab]").forEach((button) => button.addEventListener("click", () => setTab(button.dataset.swhTab)));
+    root.querySelectorAll("[data-swh-tab]").forEach((button) => button.addEventListener("click", () => {
+      const nextTab = button.dataset.swhTab === "youtube" ? "youtube" : "google";
+      const currentRoute = location.hash.replace(/^#/, "").split("?")[0];
+      if (["/google", "/youtube"].includes(currentRoute)) {
+        const nextRoute = nextTab === "youtube" ? "/youtube" : "/google";
+        if (currentRoute !== nextRoute) location.hash = `#${nextRoute}`;
+      }
+      setTab(nextTab);
+    }));
     root.querySelectorAll("[data-search-form]").forEach((form) => form.addEventListener("submit", (event) => {
       event.preventDefault();
       runSearch(form.dataset.searchForm, new FormData(form).get("q"), { resetPage: true });

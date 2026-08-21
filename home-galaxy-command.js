@@ -15,7 +15,7 @@
     stars: 62,
     sound: false,
     pinned: ["home", "creative", "work", "learning", "japanese"],
-    planets: ["home", "system", "creative", "music", "media", "graphic", "dev", "work", "communication", "analytics", "learning", "english", "japanese", "support"],
+    planets: ["home", "system", "creative", "music", "media", "graphic", "dev", "work", "google", "youtube", "communication", "analytics", "learning", "english", "japanese", "support"],
     widgets: ["weather", "performance", "memory", "network", "health", "sync"]
   });
   const PLANETS = Object.freeze([
@@ -27,6 +27,8 @@
     { id: "graphic", icon: "✺", label: "Thiết kế đồ họa", route: "/graphic-design", color: "#bf93ff", description: "Vector, typography, mockup và motion design." },
     { id: "dev", icon: "⌘", label: "DEV", route: "/dev-tools", color: "#58f3ff", description: "Công cụ lập trình, API, Git, dữ liệu và bảo mật." },
     { id: "work", icon: "□", label: "Công việc", route: "/work", color: "#ff6fcf", description: "Task, dự án, tiến độ và phiên tập trung." },
+    { id: "google", icon: "G", label: "Google", route: "/google", color: "#63d7ff", description: "Tìm web, hình ảnh và tài liệu trong Google Search Center độc lập." },
+    { id: "youtube", icon: "▶", label: "YouTube", route: "/youtube", color: "#ff5c6c", description: "Tìm, xem, lưu video và quản lý hàng đợi trong YouTube Watch Center." },
     { id: "communication", icon: "◌", label: "Giao tiếp", route: "/communication", color: "#67efbd", description: "Messenger, cộng đồng, thông báo và phòng trực tiếp." },
     { id: "analytics", icon: "↗", label: "Phân tích", route: "/analytics", color: "#72cbff", description: "Website Health, hiệu suất, Web Vitals và báo cáo." },
     { id: "learning", icon: "◫", label: "Học tập", route: "/learn", color: "#f899ff", description: "Lộ trình, bài ôn, lớp học và kho kiến thức." },

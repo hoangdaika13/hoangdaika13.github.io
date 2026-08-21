@@ -14,6 +14,8 @@ const expectedRoutes = [
   "/graphic-design",
   "/dev-tools",
   "/work",
+  "/google",
+  "/youtube",
   "/communication",
   "/analytics",
   "/learn",

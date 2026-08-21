@@ -10,7 +10,7 @@
     "auth-living-background.css?v=1", "auth-living-background.js?v=1",
     "auth-spatial-aurora.css?v=1", "auth-spatial-aurora.js?v=1",
     "auth-identity-constellation.css?v=1", "auth-identity-constellation.js?v=2",
-    "auth-creative-universe.css?v=5", "auth-creative-universe.js?v=7",
+    "auth-creative-universe.css?v=5", "auth-creative-universe.js?v=8",
     "auth-universe-memory.css?v=1", "auth-universe-memory.js?v=4",
     "auth-logo-motion.css?v=1", "auth-logo-motion.js?v=1",
     "auth-emotional-logo.css?v=1", "auth-emotional-logo.js?v=1",
@@ -32,7 +32,7 @@
        * observers cannot stack up again.
        */
       styles: [],
-      scripts: ["auth-creative-universe.js?v=7"]
+      scripts: ["auth-creative-universe.js?v=8"]
     },
     home: {
       /*
@@ -49,7 +49,7 @@
       ],
       scripts: [
         "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=10", "home-galaxy-operations.js?v=5", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
-        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=12", "home-live-widgets.js?v=8", "home-cosmic-os.js?v=13"
+        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=13", "home-live-widgets.js?v=8", "home-cosmic-os.js?v=13"
       ]
     },
     platform: {
@@ -78,7 +78,7 @@
     },
     media: {
       styles: [
-        "media-design-pro.css?v=1", "media-design-page.css?v=19", "media-cosmos.css?v=3", "media-audio-studio.css?v=1", "media-tool-experience.css?v=2", "media-professional-suite.css?v=1", "media-next-suite.css?v=1", "media-production-workflow.css?v=3", "universal-media-project.css?v=1",
+        "media-design-pro.css?v=1", "media-design-page.css?v=21", "media-cosmos.css?v=3", "media-audio-studio.css?v=4", "media-tool-experience.css?v=2", "media-project-photo-studio.css?v=3", "media-production-universe.css?v=3", "media-professional-suite.css?v=1", "media-next-suite.css?v=1", "media-production-workflow.css?v=3", "universal-media-project.css?v=1",
         "media-design-advanced.css?v=3", "media-design-publish.css?v=1",
         "photo-editor-pro.css?v=4", "editor-workflow-pro.css?v=2"
       ],
@@ -86,7 +86,7 @@
         "media-design-studio.js?v=2", "media-design-pro.js?v=2", "media-design-advanced.js?v=3",
         "media-design-publish.js?v=1",
         "photo-editor-pro.js?v=3", "editor-workflow-pro.js?v=2", "universal-media-project.js?v=1",
-        "media-production-workflow.js?v=3", "media-cosmos.js?v=3", "media-audio-studio.js?v=1", "media-professional-suite.js?v=3", "vendor/vercel-blob-client.min.js?v=1", "media-next-suite.js?v=2", "media-tool-experience.js?v=2", "media-design-page.js?v=16"
+        "media-production-workflow.js?v=3", "media-cosmos.js?v=3", "media-audio-studio.js?v=2", "media-professional-suite.js?v=3", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/vercel-blob-client.min.js?v=1", "media-next-suite.js?v=2", "media-tool-experience.js?v=2", "media-project-photo-studio.js?v=2", "media-production-universe.js?v=2", "media-design-page.js?v=21"
       ]
     },
     davinci: {
@@ -162,7 +162,7 @@
         "community-social-pro.css?v=3", "community-platform-v2.css?v=10", "community-messenger-pro.css?v=1"
       ],
       scripts: [
-        "communication-overview.js?v=2", "communication-command-center.js?v=2", "communication-messenger-next.js?v=2",
+        "communication-overview.js?v=3", "communication-command-center.js?v=2", "communication-messenger-next.js?v=2",
         "communication-channels-forum.js?v=2", "communication-live-room.js?v=1",
         "communication-canvas-automation.js?v=1", "communication-intelligence.js?v=3", "communication-suite.js?v=2",
         "community-social-pro.js?v=4", "community-platform-v2.js?v=12", "community-calls.js?v=1"
@@ -170,7 +170,7 @@
     },
     search: {
       styles: ["search-watch-center.css?v=5"],
-      scripts: ["search-watch-center.js?v=7"]
+      scripts: ["search-watch-center.js?v=9"]
     },
     cinema: {
       styles: ["cinema-hub.css?v=5"],
@@ -286,7 +286,7 @@
     if (value === "/settings") return ["settings"];
     if (value.startsWith("/settings/account") || value === "/settings/user-dashboard" || value === "/settings/security-center") return ["account"];
     if (value.startsWith("/support")) return ["support"];
-    if (value === "/communication/google-youtube") return ["search"];
+    if (value === "/google" || value === "/youtube" || value === "/communication/google-youtube") return ["search"];
     if (value.startsWith("/communication")) return ["communication"];
     if (value.startsWith("/work")) return ["work"];
     if (value === "/admin" || value.startsWith("/admin/") || value === "/analytics/admin-panel") return ["analytics", "admin"];

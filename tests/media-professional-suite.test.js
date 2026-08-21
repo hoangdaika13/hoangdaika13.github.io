@@ -68,7 +68,7 @@ test("suite is loaded before the page, cached offline and responsive", () => {
   const page = read("media-design-page.js");
   const css = read("media-professional-suite.css");
   assert.match(loader, /media-professional-suite\.css\?v=1/);
-  assert.match(loader, /media-professional-suite\.js\?v=3[\s\S]*media-tool-experience\.js\?v=2[\s\S]*media-design-page\.js\?v=16/);
+  assert.match(loader, /media-professional-suite\.js\?v=3[\s\S]*media-tool-experience\.js\?v=2[\s\S]*media-project-photo-studio\.js\?v=2[\s\S]*media-production-universe\.js\?v=2[\s\S]*media-design-page\.js\?v=21/);
   assert.match(worker, /media-professional-suite\.css\?v=1/);
   assert.match(worker, /media-professional-suite\.js\?v=3/);
   assert.match(page, /HHMediaProfessionalSuite\?\.mount/);
