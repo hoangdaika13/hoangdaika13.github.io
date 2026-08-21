@@ -694,3 +694,61 @@
 @media (prefers-reduced-motion: reduce) {
   .hhc-v7 .hhc-learning-path-mini::before,.hhc-v7[data-view="pinyin"] .hhc-tone-card::before,.hhc-v7[data-view="pinyin"] .hhc-tone-curve,.hhc-v7[data-view="vocabulary"] .hhc-vocab-front strong,.hhc-v7[data-view="conversation"] .hhc-conversation-card::before,.hhc-v7[data-view="speaking"] .hhc-voice-card::before,.hhc-v7[data-view="hanzi"] .hhc-character-orb span,.hhc-v7[data-view="hanzi-observatory"] .hhc-character-orb span,.hhc-v7[data-view="reading"] .hhc-story-text p:first-child,.hhc-v7[data-view="reading-nebula"] .hhc-nebula-hanzi,.hhc-v7[data-view="writing"] .hhc-writing-canvas-wrap::after,.hhc-v7[data-view="exam"] .hhc-exam-card::before,.hhc-v7[data-view="grammar"] .hhc-grammar-card::before,.hhc-v7[data-view="translation"] .hhc-translation-card::before,.hhc-v7[data-view="vietnamese"] .hhc-vietnamese-error-grid article::before { animation: none !important; }
 }
+
+/* v9 zero-gray guarantee: override browser/theme defaults on every HH Chinese control */
+.hhc-v7 :where(.hhc-card,.hhc-nav-v7,.hhc-search,.hhc-global-results,.hhc-catalog-status,.hhc-word-detail,.hhc-detail-panel,.hhc-detail-hanzi,.hhc-vocab-answer,.hhc-locked-answer,.hhc-method-note,.hhc-empty,.hhc-practice-feedback,.hhc-ai-output,.hhc-tone-target) {
+  border-color: rgba(var(--hhc-skill-rgb), .28) !important;
+  background: linear-gradient(145deg, rgba(18,31,78,.96), rgba(45,12,70,.94)) !important;
+  color: #f3f4ff;
+}
+.hhc-v7 :where(input,textarea,select) {
+  border-color: rgba(var(--hhc-skill-rgb), .38) !important;
+  background: linear-gradient(120deg, rgba(7,24,59,.96), rgba(46,15,74,.94)) !important;
+  color: #f6f4ff !important;
+  color-scheme: dark;
+}
+.hhc-v7 button:not(.hhc-brand):not(.hhc-path-mini-node) {
+  border-color: rgba(var(--hhc-skill-rgb), .3) !important;
+  background: linear-gradient(125deg, rgba(18,33,81,.97), rgba(53,15,79,.95)) !important;
+  color: #f4f4ff !important;
+  background-size: 180% 180%;
+  transition: border-color .22s ease, background-position .6s ease, box-shadow .22s ease, transform .22s ease, color .22s ease;
+}
+.hhc-v7 button:not(.hhc-brand):not(.hhc-path-mini-node):hover,
+.hhc-v7 button:not(.hhc-brand):not(.hhc-path-mini-node):focus-visible {
+  border-color: var(--hhc-skill) !important;
+  background-position: 100% 0;
+  box-shadow: 0 0 28px rgba(var(--hhc-skill-rgb), .16), inset 0 0 18px rgba(255,120,208,.05);
+  transform: translateY(-1px);
+}
+.hhc-v7 button:not(.hhc-brand):not(.hhc-path-mini-node):disabled {
+  opacity: .52;
+  border-color: rgba(147,164,220,.22) !important;
+  background: linear-gradient(125deg, rgba(20,27,64,.9), rgba(43,18,66,.88)) !important;
+  color: #aab3da !important;
+  box-shadow: none;
+  transform: none;
+}
+.hhc-v7 .hhc-path-mini-node { background: transparent !important; border-color: transparent !important; box-shadow: none !important; transform: none !important; }
+.hhc-v7 .hhc-path-mini-node:hover > i { transform: scale(1.08) rotate(5deg); }
+.hhc-v7 .hhc-bottom-nav button { background: linear-gradient(125deg, rgba(13,30,70,.96), rgba(47,14,71,.95)) !important; }
+.hhc-v7 .hhc-bottom-nav button.is-active { background: linear-gradient(125deg, rgba(var(--hhc-skill-rgb),.24), rgba(194,93,239,.23)) !important; }
+.hhc-v7 .hhc-top-actions button.is-active { background: linear-gradient(125deg, rgba(var(--hhc-skill-rgb),.25), rgba(194,93,239,.24)) !important; }
+.hhc-v7 .hhc-vocab-filter button.is-active,.hhc-v7 .hhc-room-tabs button.is-active { background: linear-gradient(125deg, rgba(var(--hhc-skill-rgb),.26), rgba(194,93,239,.24)) !important; }
+
+/* Continuous but low-cost ambient motion: transform/opacity only, paused when hidden. */
+.hhc-v7:not(.is-focus-mode) .hhc-nav-v7::before { position: absolute; inset: 12% -55% auto; height: 1px; background: linear-gradient(90deg,transparent,var(--hhc-skill),transparent); content: ""; opacity: .35; animation: hhc-v9-sidebar-scan 8s ease-in-out infinite; pointer-events: none; }
+.hhc-v7:not(.is-focus-mode) .hhc-global-search::after { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(100deg,transparent,rgba(255,255,255,.08),transparent); content: ""; opacity: 0; animation: hhc-v9-glass-sheen 7s ease-in-out infinite; pointer-events: none; }
+.hhc-v7[data-view="pinyin"] .hhc-section-head::after { width: 92px; height: 3px; border-radius: 99px; background: linear-gradient(90deg,#70ecff,#bf8cff,#ff78c9); content: ""; animation: hhc-v9-spectrum 4.5s ease-in-out infinite; }
+.hhc-v7[data-view="vocabulary"] .hhc-vocab-card::before { position: absolute; inset: 8% auto auto 8%; width: 7px; height: 7px; border-radius: 50%; background: #ffdb76; box-shadow: 0 0 18px #ffdb76; content: ""; animation: hhc-v9-star-drift 6s ease-in-out infinite; }
+.hhc-v7[data-view="dictionary"] .hhc-dictionary::before { position: absolute; left: 0; right: 0; top: 0; height: 2px; border-radius: 99px; background: linear-gradient(90deg,transparent,#70ecff,#c695ff,#ff78c9,transparent); content: ""; animation: hhc-v9-spectrum 6s ease-in-out infinite; }
+.hhc-v7[data-view="exam"] .hhc-section-head::after { width: 80px; height: 80px; border: 1px solid rgba(255,225,129,.3); border-radius: 50%; content: ""; animation: hhc-v9-orbit 14s linear infinite; }
+.hhc-v7.is-tab-hidden .hhc-nav-v7::before,.hhc-v7.is-tab-hidden .hhc-global-search::after,.hhc-v7.is-tab-hidden .hhc-vocab-card::before,.hhc-v7.is-tab-hidden .hhc-dictionary::before,.hhc-v7.is-tab-hidden .hhc-section-head::after { animation-play-state: paused !important; }
+@keyframes hhc-v9-sidebar-scan { 0%,100% { transform: translateX(-28%); opacity: .1; } 50% { transform: translateX(28%); opacity: .65; } }
+@keyframes hhc-v9-glass-sheen { 0%,65%,100% { transform: translateX(-110%); opacity: 0; } 74% { transform: translateX(110%); opacity: .7; } }
+@keyframes hhc-v9-spectrum { 0%,100% { transform: scaleX(.55); opacity: .24; } 50% { transform: scaleX(1); opacity: .9; } }
+@keyframes hhc-v9-star-drift { 0%,100% { transform: translate(0,0) scale(.8); opacity: .35; } 50% { transform: translate(46px,22px) scale(1.25); opacity: 1; } }
+@keyframes hhc-v9-orbit { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .hhc-v7 .hhc-nav-v7::before,.hhc-v7 .hhc-global-search::after,.hhc-v7[data-view="pinyin"] .hhc-section-head::after,.hhc-v7[data-view="vocabulary"] .hhc-vocab-card::before,.hhc-v7[data-view="dictionary"] .hhc-dictionary::before,.hhc-v7[data-view="exam"] .hhc-section-head::after { animation: none !important; }
+}

@@ -144,5 +144,7 @@ test("HH Chinese v7 gives beginners a focused route and preserves the full works
   assert.match(css, /hhc-v8-pitch-wave/);
   assert.match(css, /hhc-v8-wave-ring/);
   assert.match(css, /hhc-learning-path-mini/);
+  assert.match(css, /v9 zero-gray guarantee/);
+  assert.match(css, /hhc-v9-glass-sheen/);
   assert.match(css, /font-size: clamp\(56px/);
 });
