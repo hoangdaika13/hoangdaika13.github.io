@@ -15,10 +15,22 @@
     queue: "hh.search-watch.youtube-queue",
     playlists: "hh.youtube-hub.playlists.v1",
     preferences: "hh.search-watch.preferences",
-    pending: "hh.search-platform.pending.v1"
+    pending: "hh.search-platform.pending.v1",
+    queryPresets: "hh.google-hub.query-presets.v1",
+    searchSessions: "hh.google-hub.search-sessions.v1",
+    researchProjects: "hh.search-platform.research-projects.v1",
+    playback: "hh.youtube-hub.playback.v1",
+    bookmarks: "hh.youtube-hub.bookmarks.v1",
+    creatorPlans: "hh.youtube-hub.creator-plans.v1",
+    bookshelves: "hh.google-hub.bookshelves.v1",
+    trips: "hh.google-hub.trips.v1",
+    translations: "hh.google-hub.translations.v1"
   });
-  const LIMITS = Object.freeze({ searches: 24, webSaved: 60, recent: 30, favorites: 80, queue: 80, playlists: 20 });
+  const LIMITS = Object.freeze({ searches: 40, webSaved: 300, recent: 60, favorites: 200, queue: 120, playlists: 60, queryPresets: 40, searchSessions: 60, researchProjects: 40, bookmarks: 500, creatorPlans: 120, bookshelves: 200, trips: 200, translations: 300 });
   const volatileStore = new Map();
+  const activeRequests = new Map();
+  const responseCache = new Map();
+  const requestStats = { calls: 0, cacheHits: 0, cancelled: 0, failed: 0, lastLatency: 0, lastSuccessAt: "" };
   let csePromise = null;
 
   const cleanText = (value, limit = 300) => String(value ?? "").trim().slice(0, limit);
@@ -119,7 +131,10 @@
       autoplayQueue: value.autoplayQueue === true,
       loopQueue: value.loopQueue === true,
       playerRate: [0.5, 0.75, 1, 1.25, 1.5, 2].includes(Number(value.playerRate)) ? Number(value.playerRate) : 1,
-      googleSafe: value.googleSafe !== false
+      googleSafe: value.googleSafe !== false,
+      privateGoogle: value.privateGoogle === true,
+      domainBlacklist: Array.isArray(value.domainBlacklist) ? value.domainBlacklist.map((item) => cleanText(item, 253)).filter(Boolean).slice(0, 100) : [],
+      domainWhitelist: Array.isArray(value.domainWhitelist) ? value.domainWhitelist.map((item) => cleanText(item, 253)).filter(Boolean).slice(0, 100) : []
     };
   }
 
@@ -130,6 +145,7 @@
   function rememberSearch(provider, query) {
     const cleanQuery = cleanText(query, 180);
     if (!cleanQuery) return list("searches");
+    if (provider !== "youtube" && preferences().privateGoogle) return list("searches");
     const item = { provider: provider === "youtube" ? "youtube" : "google", query: cleanQuery, at: new Date().toISOString() };
     const items = readArray(KEYS.searches).filter((entry) => !(entry?.provider === item.provider && entry?.query === item.query));
     return writeJson(KEYS.searches, [item, ...items].slice(0, LIMITS.searches), { kind: "searches" });
@@ -142,10 +158,110 @@
     const exists = items.some((entry) => entry.url === url);
     const safeItem = {
       title: cleanText(item?.title || url, 300), url, displayUrl: cleanText(item?.displayUrl, 300),
-      snippet: cleanText(item?.snippet, 800), image: cleanText(item?.image, 2000), savedAt: new Date().toISOString()
+      snippet: cleanText(item?.snippet, 800), image: cleanText(item?.image, 2000), savedAt: new Date().toISOString(),
+      folder: cleanText(item?.folder || "Chưa phân loại", 80), tags: Array.isArray(item?.tags) ? item.tags.map((tag) => cleanText(tag, 40)).filter(Boolean).slice(0, 12) : [],
+      notes: cleanText(item?.notes, 1200), read: item?.read === true, sourceText: cleanText(item?.sourceText || item?.snippet, 4000)
     };
     writeJson(KEYS.webSaved, exists ? items.filter((entry) => entry.url !== url) : [safeItem, ...items].slice(0, LIMITS.webSaved), { kind: "webSaved" });
     return !exists;
+  }
+
+  function updateWebSaved(url, patch = {}) {
+    const target = cleanText(url, 2000);
+    const items = readArray(KEYS.webSaved);
+    const index = items.findIndex((item) => item?.url === target);
+    if (index < 0) return null;
+    const current = items[index];
+    items[index] = {
+      ...current,
+      folder: cleanText(patch.folder ?? current.folder ?? "Chưa phân loại", 80),
+      tags: Array.isArray(patch.tags) ? patch.tags.map((tag) => cleanText(tag, 40)).filter(Boolean).slice(0, 12) : current.tags || [],
+      notes: cleanText(patch.notes ?? current.notes, 1200),
+      read: patch.read == null ? current.read === true : patch.read === true
+    };
+    writeJson(KEYS.webSaved, items, { kind: "webSaved" });
+    return clone(items[index]);
+  }
+
+  function saveRecord(kind, record, { idPrefix = kind, limit = LIMITS[kind] || 100 } = {}) {
+    if (!KEYS[kind]) return null;
+    const safe = { ...clone(record || {}), id: cleanText(record?.id, 120) || uid(idPrefix), updatedAt: new Date().toISOString() };
+    if (!safe.createdAt) safe.createdAt = safe.updatedAt;
+    const items = readArray(KEYS[kind]).filter((item) => item?.id !== safe.id);
+    writeJson(KEYS[kind], [safe, ...items].slice(0, limit), { kind });
+    return clone(safe);
+  }
+
+  function removeRecord(kind, id) {
+    if (!KEYS[kind]) return false;
+    const safeId = cleanText(id, 120);
+    const items = readArray(KEYS[kind]);
+    const next = items.filter((item) => item?.id !== safeId);
+    if (next.length === items.length) return false;
+    writeJson(KEYS[kind], next, { kind });
+    return true;
+  }
+
+  function saveQueryPreset(preset) {
+    return saveRecord("queryPresets", { ...preset, name: cleanText(preset?.name || preset?.query || "Truy vấn", 80), query: cleanText(preset?.query, 600), filters: clone(preset?.filters || {}) }, { idPrefix: "query" });
+  }
+
+  function saveSearchSession(searchSession) {
+    return saveRecord("searchSessions", {
+      ...searchSession, name: cleanText(searchSession?.name || searchSession?.query || "Phiên nghiên cứu", 100), query: cleanText(searchSession?.query, 600), filters: clone(searchSession?.filters || {}),
+      results: (Array.isArray(searchSession?.results) ? searchSession.results : []).slice(0, 50).map((item) => ({ title: cleanText(item?.title, 300), url: cleanText(item?.url, 2000), displayUrl: cleanText(item?.displayUrl, 300), snippet: cleanText(item?.snippet, 1000) }))
+    }, { idPrefix: "session" });
+  }
+
+  function saveResearchProject(project) {
+    return saveRecord("researchProjects", {
+      ...project, name: cleanText(project?.name || "Dự án nghiên cứu", 100),
+      sources: (Array.isArray(project?.sources) ? project.sources : []).slice(0, 200).map((source) => ({ id: cleanText(source?.id, 120) || uid("source"), type: cleanText(source?.type || "website", 30), title: cleanText(source?.title, 300), url: cleanText(source?.url, 2000), note: cleanText(source?.note, 1200), timestamp: Math.max(0, Number(source?.timestamp || 0)), addedAt: source?.addedAt || new Date().toISOString() }))
+    }, { idPrefix: "research" });
+  }
+
+  function playbackFor(videoId) {
+    const id = cleanText(videoId, 128);
+    return clone(readJson(KEYS.playback, {})[id] || { videoId: id, seconds: 0, duration: 0, updatedAt: "" });
+  }
+
+  function savePlayback(videoId, seconds, duration = 0) {
+    const id = cleanText(videoId, 128);
+    if (!/^[A-Za-z0-9_-]{6,128}$/.test(id)) return null;
+    const all = readJson(KEYS.playback, {});
+    all[id] = { videoId: id, seconds: Math.max(0, Number(seconds || 0)), duration: Math.max(0, Number(duration || 0)), updatedAt: new Date().toISOString() };
+    const entries = Object.values(all).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0, 300);
+    writeJson(KEYS.playback, Object.fromEntries(entries.map((item) => [item.videoId, item])), { kind: "playback" });
+    return clone(all[id]);
+  }
+
+  function addBookmark(videoId, bookmark = {}) {
+    const id = cleanText(videoId, 128);
+    if (!/^[A-Za-z0-9_-]{6,128}$/.test(id)) return null;
+    return saveRecord("bookmarks", { videoId: id, seconds: Math.max(0, Number(bookmark.seconds || 0)), label: cleanText(bookmark.label || "Mốc đáng nhớ", 100), note: cleanText(bookmark.note, 1200), color: cleanText(bookmark.color || "rose", 20), personalChapter: bookmark.personalChapter !== false }, { idPrefix: "mark" });
+  }
+
+  function bookmarksFor(videoId) { return list("bookmarks").filter((item) => item?.videoId === cleanText(videoId, 128)).sort((a, b) => Number(a.seconds) - Number(b.seconds)); }
+
+  function queueInsert(video, position = "later") {
+    const safeVideo = normalizeVideo(video);
+    if (!safeVideo) return [];
+    const items = readArray(KEYS.queue).filter((item) => item?.id !== safeVideo.id);
+    if (position === "next") items.unshift(safeVideo); else items.push(safeVideo);
+    return writeJson(KEYS.queue, items.slice(0, LIMITS.queue), { kind: "queue" });
+  }
+
+  function dedupeQueue() {
+    const seen = new Set();
+    return writeJson(KEYS.queue, readArray(KEYS.queue).filter((item) => item?.id && !seen.has(item.id) && seen.add(item.id)), { kind: "queue" });
+  }
+
+  function shuffleQueue(seed = Date.now()) {
+    let value = Number(seed) || Date.now();
+    const random = () => ((value = (value * 1664525 + 1013904223) >>> 0) / 4294967296);
+    const items = readArray(KEYS.queue);
+    for (let index = items.length - 1; index > 0; index -= 1) { const next = Math.floor(random() * (index + 1)); [items[index], items[next]] = [items[next], items[index]]; }
+    return writeJson(KEYS.queue, items, { kind: "queue" });
   }
 
   function isVideoIn(kind, id) {
@@ -217,20 +333,71 @@
     return true;
   }
 
-  async function request(provider, params) {
+  function updatePlaylist(playlistId, patch = {}) {
+    const items = playlists();
+    const playlist = items.find((entry) => entry.id === cleanText(playlistId, 120));
+    if (!playlist) return null;
+    if (patch.name != null) playlist.name = cleanText(patch.name, 80) || playlist.name;
+    if (patch.cover != null) playlist.cover = cleanText(patch.cover, 2000);
+    if (Array.isArray(patch.videos)) playlist.videos = patch.videos.map(normalizeVideo).filter(Boolean).slice(0, 120);
+    playlist.updatedAt = new Date().toISOString();
+    writeJson(KEYS.playlists, items, { kind: "playlists" });
+    return clone(playlist);
+  }
+
+  function deletePlaylist(playlistId) {
+    const id = cleanText(playlistId, 120);
+    const items = playlists();
+    const next = items.filter((entry) => entry.id !== id);
+    if (next.length === items.length) return false;
+    writeJson(KEYS.playlists, next, { kind: "playlists" });
+    return true;
+  }
+
+  function duplicatePlaylist(playlistId) {
+    const sourcePlaylist = playlists().find((entry) => entry.id === cleanText(playlistId, 120));
+    if (!sourcePlaylist) return null;
+    const copy = { ...sourcePlaylist, id: uid("playlist"), name: `${sourcePlaylist.name} · bản sao`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    writeJson(KEYS.playlists, [copy, ...playlists()].slice(0, LIMITS.playlists), { kind: "playlists" });
+    return clone(copy);
+  }
+
+  async function request(provider, params, options = {}) {
     if (!API_BASE) throw Object.assign(new Error("Backend chưa được khai báo trong config.js."), { code: "BACKEND_NOT_CONFIGURED" });
+    const query = params instanceof URLSearchParams ? params.toString() : String(params || "");
+    const requestKey = cleanText(options.key || `${provider}:${query}`, 1200);
+    const cacheKey = `${provider}?${query}`;
+    const cached = responseCache.get(cacheKey);
+    if (options.cache !== false && cached && Date.now() - cached.at < Math.max(0, Number(options.ttl || 45000))) { requestStats.cacheHits += 1; return clone(cached.data); }
+    if (options.cancelPrevious !== false && activeRequests.has(requestKey)) { activeRequests.get(requestKey).abort(); requestStats.cancelled += 1; }
     const controller = new AbortController();
+    activeRequests.set(requestKey, controller);
     const timer = setTimeout(() => controller.abort(), 12000);
+    const startedAt = scope?.performance?.now?.() || Date.now();
+    requestStats.calls += 1;
     try {
-      const response = await fetch(`${API_BASE}/api/search/${provider}?${params}`, { headers: { Accept: "application/json" }, cache: "no-store", signal: controller.signal });
+      const response = await fetch(`${API_BASE}/api/search/${provider}?${query}`, { headers: { Accept: "application/json" }, cache: "no-store", signal: controller.signal });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw Object.assign(new Error(cleanText(data.error || "Dịch vụ tìm kiếm chưa phản hồi.", 400)), { code: data.code || `HTTP_${response.status}` });
+      requestStats.lastLatency = Math.round((scope?.performance?.now?.() || Date.now()) - startedAt);
+      requestStats.lastSuccessAt = new Date().toISOString();
+      if (options.cache !== false) responseCache.set(cacheKey, { at: Date.now(), data: clone(data) });
       return data;
     } catch (error) {
-      if (error?.name === "AbortError") throw Object.assign(new Error("Dịch vụ phản hồi quá chậm. Hãy thử lại."), { code: "PROVIDER_TIMEOUT" });
+      requestStats.failed += error?.name === "AbortError" ? 0 : 1;
+      if (error?.name === "AbortError") throw Object.assign(new Error("Đã hủy yêu cầu hoặc dịch vụ phản hồi quá chậm."), { code: "PROVIDER_CANCELLED" });
       throw error;
-    } finally { clearTimeout(timer); }
+    } finally { clearTimeout(timer); if (activeRequests.get(requestKey) === controller) activeRequests.delete(requestKey); }
   }
+
+  function cancelRequest(key) {
+    const requestKey = cleanText(key, 1200);
+    const controller = activeRequests.get(requestKey);
+    if (!controller) return false;
+    controller.abort(); activeRequests.delete(requestKey); requestStats.cancelled += 1; return true;
+  }
+
+  function technicalStatus() { return { ...requestStats, active: activeRequests.size, cached: responseCache.size }; }
 
   async function health() {
     try { return await request("google", new URLSearchParams({ health: "1" })); }
@@ -250,7 +417,7 @@
       site: cleanText(filters.site, 253),
       safe: filters.safe === false ? "off" : "active"
     });
-    return request("google", params);
+    return request("google", params, { key: "google-search", ttl: 45000 });
   }
 
   async function searchYouTube(query, filters = {}) {
@@ -273,9 +440,21 @@
       pageToken: cleanText(filters.pageToken, 200)
     };
     Object.entries(safeFilters).forEach(([key, value]) => params.set(key, value));
-    const data = await request("youtube", params);
+    const data = await request("youtube", params, { key: "youtube-search", ttl: 60000 });
     data.items = (Array.isArray(data.items) ? data.items : []).map(normalizeVideo).filter(Boolean);
     return data;
+  }
+
+  async function searchYouTubeResource(action, params = {}) {
+    const query = new URLSearchParams({ action: cleanText(action, 40) });
+    Object.entries(params || {}).forEach(([key, value]) => { if (value != null && String(value).trim()) query.set(key, cleanText(value, 1000)); });
+    return request("youtube", query, { key: `youtube-resource:${action}`, ttl: 60000 });
+  }
+
+  async function searchGoogleResource(action, params = {}) {
+    const query = new URLSearchParams({ action: cleanText(action, 40) });
+    Object.entries(params || {}).forEach(([key, value]) => { if (value != null && String(value).trim()) query.set(key, cleanText(value, 1000)); });
+    return request("google", query, { key: `google-resource:${action}`, ttl: 120000 });
   }
 
   async function importPlaylist(value) {
@@ -350,10 +529,12 @@
   }
 
   return Object.freeze({
-    version: "1.0.0", KEYS, API_BASE, GOOGLE_CSE_ID, cleanText, formatNumber, formatDate, faviconFor,
+    version: "2.0.0", KEYS, API_BASE, GOOGLE_CSE_ID, cleanText, formatNumber, formatDate, faviconFor,
     list, clear, clearSearches, preferences, updatePreferences, rememberSearch, toggleWebSaved, isVideoIn, toggleVideo,
-    rememberVideo, reorderQueue, playlists, createPlaylist, addToPlaylist, parseYouTubeId, parsePlaylistId,
-    normalizeVideo, health, searchGoogle, searchYouTube, importPlaylist, savePending, consumePending,
-    renderGoogleCse
+    updateWebSaved, saveRecord, removeRecord, saveQueryPreset, saveSearchSession, saveResearchProject,
+    playbackFor, savePlayback, addBookmark, bookmarksFor, queueInsert, dedupeQueue, shuffleQueue,
+    rememberVideo, reorderQueue, playlists, createPlaylist, addToPlaylist, updatePlaylist, deletePlaylist, duplicatePlaylist, parseYouTubeId, parsePlaylistId,
+    normalizeVideo, health, searchGoogle, searchYouTube, searchYouTubeResource, searchGoogleResource, importPlaylist, savePending, consumePending,
+    cancelRequest, technicalStatus, renderGoogleCse
   });
 });

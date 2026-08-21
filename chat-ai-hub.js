@@ -590,6 +590,15 @@
     unmount(); if (!host) return false;
     const controller = new AbortController(); const owner = ownerId(options); const storage = options.storage || globalScope.localStorage;
     instance = { host, options, lifecycleController: controller, controller: null, owner, storage, state: readState(storage, owner), pending: [], queue: [], busy: false, incognito: false, privateSession: blankSession("Phiên riêng tư"), providerStatus: "checking", providerDetail: null, query: "", folderFilter: "", deleted: null, lastMeta: {}, contextStats: null, cooldownUntil: 0, toastTimer: 0, storageError: false, mobilePanel: "" };
+    try {
+      const handoff = JSON.parse(globalScope.sessionStorage?.getItem("hh.chat-ai.handoff.v1") || "null");
+      if (handoff?.prompt && Date.now() - Number(handoff.at || 0) < 5 * 60 * 1000) {
+        instance.state.draft = clean(handoff.prompt, 24000);
+        instance.state.mode = "research";
+        instance.state.webSearch = true;
+        globalScope.sessionStorage.removeItem("hh.chat-ai.handoff.v1");
+      }
+    } catch { /* Session storage may be unavailable. */ }
     if (options.newSession) { const session = blankSession(); instance.state.sessions.unshift(session); instance.state.sessions = instance.state.sessions.slice(0, MAX_SESSIONS); instance.state.activeId = session.id; writeState(instance); }
     host.addEventListener("click", (event) => handleClick(instance, event).catch((error) => toast(instance, error.message, "error")), { signal: controller.signal });
     host.addEventListener("change", (event) => handleChange(instance, event).catch((error) => toast(instance, error.message, "error")), { signal: controller.signal });

@@ -52,6 +52,9 @@ const ICE_SERVERS = [
 ];
 const activeCalls = new Map();
 const activeDesignRooms = new Map();
+const activeYouTubeWatchRooms = new Map();
+const MAX_YOUTUBE_WATCH_ROOMS = Math.max(5, Math.min(500, Number(process.env.MAX_YOUTUBE_WATCH_ROOMS || 100)));
+const MAX_YOUTUBE_WATCH_MEMBERS = Math.max(2, Math.min(100, Number(process.env.MAX_YOUTUBE_WATCH_MEMBERS || 30)));
 const MAX_DESIGN_ROOMS = Math.max(4, Math.min(200, Number(process.env.MAX_DESIGN_ROOMS || 40)));
 const MAX_DESIGN_MEMBERS = Math.max(2, Math.min(50, Number(process.env.MAX_DESIGN_MEMBERS || 24)));
 const MAX_DESIGN_COMMENTS = Math.max(20, Math.min(2000, Number(process.env.MAX_DESIGN_COMMENTS || 500)));
@@ -169,6 +172,21 @@ const seedProducts = [
 
 function cleanString(value, max = 2000) {
   return String(value || "").trim().slice(0, max);
+}
+
+function youtubeWatchCode(value) {
+  return cleanString(value, 10).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
+}
+
+function createYouTubeWatchCode() {
+  let code;
+  do code = Math.random().toString(36).slice(2, 8).toUpperCase();
+  while (activeYouTubeWatchRooms.has(code));
+  return code;
+}
+
+function youtubeWatchSocketRoom(code) {
+  return `youtube-watch:${code}`;
 }
 
 function realtimePasswordAccepted(value) {
@@ -802,6 +820,7 @@ io.on("connection", async (socket) => {
       };
   let activeMessengerRoom = "";
   let activeDesignRoom = "";
+  let activeYouTubeWatchRoom = "";
   const activeCallIds = new Set();
   if (socket.user) {
     socket.join(`community:user:${String(socket.user._id)}`);
@@ -822,6 +841,40 @@ io.on("connection", async (socket) => {
       members: [...room.members.values()].map((member) => publicDesignMember(member, room)),
       updatedAt: new Date().toISOString()
     });
+  };
+  const publicYouTubeWatchRoom = (room) => ({
+    code: room.code,
+    members: room.members.size,
+    videoId: room.state.videoId,
+    seconds: room.state.seconds,
+    playerState: room.state.playerState,
+    rate: room.state.rate,
+    updatedAt: room.updatedAt
+  });
+  const emitYouTubeWatchPresence = (code) => {
+    const room = activeYouTubeWatchRooms.get(code);
+    if (!room) return;
+    io.to(youtubeWatchSocketRoom(code)).emit("youtube:watch:presence", {
+      code,
+      members: room.members.size,
+      participants: [...room.members.values()].map((member) => ({ name: member.name, host: member.socketId === room.hostSocketId })),
+      updatedAt: new Date().toISOString()
+    });
+  };
+  const leaveYouTubeWatchRoom = async () => {
+    const code = activeYouTubeWatchRoom;
+    activeYouTubeWatchRoom = "";
+    if (!code) return;
+    const room = activeYouTubeWatchRooms.get(code);
+    await socket.leave(youtubeWatchSocketRoom(code));
+    if (!room) return;
+    room.members.delete(socket.id);
+    if (!room.members.size || room.hostSocketId === socket.id) {
+      io.to(youtubeWatchSocketRoom(code)).emit("youtube:watch:closed", { code, reason: room.hostSocketId === socket.id ? "host-left" : "empty" });
+      activeYouTubeWatchRooms.delete(code);
+      return;
+    }
+    emitYouTubeWatchPresence(code);
   };
   const leaveDesignRoom = async (reason = "left") => {
     const code = activeDesignRoom;
@@ -1325,6 +1378,73 @@ io.on("connection", async (socket) => {
     done({ ok: true });
   });
 
+  socket.on("youtube:watch:create", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    if (activeYouTubeWatchRooms.size >= MAX_YOUTUBE_WATCH_ROOMS) return done({ ok: false, error: "Máy chủ đã đạt giới hạn phòng xem chung." });
+    await leaveYouTubeWatchRoom();
+    const requested = youtubeWatchCode(payload.code);
+    if (requested && requested.length < 4) return done({ ok: false, error: "Mã phòng cần ít nhất 4 ký tự." });
+    if (requested && activeYouTubeWatchRooms.has(requested)) return done({ ok: false, error: "Mã phòng đã tồn tại." });
+    const code = requested || createYouTubeWatchCode();
+    const videoId = /^[A-Za-z0-9_-]{6,128}$/.test(String(payload.videoId || "")) ? String(payload.videoId) : "";
+    const room = {
+      code,
+      hostSocketId: socket.id,
+      members: new Map(),
+      state: { videoId, seconds: Math.max(0, Math.min(86400, Number(payload.seconds || 0))), playerState: new Set([-1, 0, 1, 2, 3, 5]).has(Number(payload.playerState)) ? Number(payload.playerState) : 2, rate: 1 },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    room.members.set(socket.id, { socketId: socket.id, name: cleanString(payload.name, 40) || "Chủ phòng" });
+    activeYouTubeWatchRooms.set(code, room);
+    activeYouTubeWatchRoom = code;
+    await socket.join(youtubeWatchSocketRoom(code));
+    emitYouTubeWatchPresence(code);
+    done({ ok: true, host: true, room: publicYouTubeWatchRoom(room) });
+  });
+
+  socket.on("youtube:watch:join", async (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const code = youtubeWatchCode(payload.code);
+    const room = activeYouTubeWatchRooms.get(code);
+    if (!room) return done({ ok: false, error: "Không tìm thấy phòng xem chung." });
+    if (room.members.size >= MAX_YOUTUBE_WATCH_MEMBERS && !room.members.has(socket.id)) return done({ ok: false, error: "Phòng đã đủ thành viên." });
+    await leaveYouTubeWatchRoom();
+    room.members.set(socket.id, { socketId: socket.id, name: cleanString(payload.name, 40) || `Người xem ${room.members.size + 1}` });
+    room.updatedAt = new Date().toISOString();
+    activeYouTubeWatchRoom = code;
+    await socket.join(youtubeWatchSocketRoom(code));
+    emitYouTubeWatchPresence(code);
+    socket.emit("youtube:watch:state", { code, ...room.state, updatedAt: room.updatedAt });
+    done({ ok: true, host: false, room: publicYouTubeWatchRoom(room) });
+  });
+
+  socket.on("youtube:watch:state", (payload = {}, callback) => {
+    const done = typeof callback === "function" ? callback : () => {};
+    const code = youtubeWatchCode(payload.code);
+    const room = activeYouTubeWatchRooms.get(code);
+    if (!room || activeYouTubeWatchRoom !== code || !room.members.has(socket.id)) return done({ ok: false, error: "Bạn chưa tham gia phòng." });
+    if (room.hostSocketId !== socket.id) return done({ ok: false, error: "Chỉ chủ phòng được đồng bộ trạng thái." });
+    const videoId = String(payload.videoId || "");
+    if (videoId && !/^[A-Za-z0-9_-]{6,128}$/.test(videoId)) return done({ ok: false, error: "Video ID không hợp lệ." });
+    const playerState = Number(payload.playerState);
+    const rate = Number(payload.rate);
+    room.state = {
+      videoId: videoId || room.state.videoId,
+      seconds: Math.max(0, Math.min(86400, Number(payload.seconds || 0))),
+      playerState: new Set([-1, 0, 1, 2, 3, 5]).has(playerState) ? playerState : room.state.playerState,
+      rate: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].includes(rate) ? rate : room.state.rate
+    };
+    room.updatedAt = new Date().toISOString();
+    socket.to(youtubeWatchSocketRoom(code)).volatile.emit("youtube:watch:state", { code, ...room.state, updatedAt: room.updatedAt });
+    done({ ok: true });
+  });
+
+  socket.on("youtube:watch:leave", async (_payload = {}, callback) => {
+    await leaveYouTubeWatchRoom();
+    if (typeof callback === "function") callback({ ok: true });
+  });
+
   socket.on("page:event", async (payload = {}) => {
     if (!consent && !socket.user) return;
     await (await events()).insertOne({
@@ -1340,6 +1460,7 @@ io.on("connection", async (socket) => {
   socket.on("disconnect", async () => {
     if (activeMessengerRoom) emitMessengerPresence(activeMessengerRoom).catch(() => {});
     await leaveDesignRoom("disconnected");
+    await leaveYouTubeWatchRoom();
     await Promise.all([...activeCallIds].map((callId) => leaveCall(callId, "disconnected")));
     if (consent || socket.user) {
       await (await sessions()).updateOne({ socketId: socket.id }, { $set: { endedAt: new Date(), lastSeenAt: new Date() } });

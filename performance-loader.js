@@ -170,15 +170,15 @@
     },
     search: {
       styles: ["search-quick-overlay.css?v=1"],
-      scripts: ["search-platform-core.js?v=2", "search-quick-overlay.js?v=1"]
+      scripts: ["search-platform-core.js?v=3", "search-quick-overlay.js?v=1"]
     },
     google: {
-      styles: ["search-quick-overlay.css?v=1", "google-hub.css?v=4"],
-      scripts: ["search-platform-core.js?v=2", "search-quick-overlay.js?v=1", "google-hub.js?v=1"]
+      styles: ["search-quick-overlay.css?v=1", "google-hub.css?v=4", "google-hub-pro.css?v=3"],
+      scripts: ["search-platform-core.js?v=3", "search-quick-overlay.js?v=1", "google-hub.js?v=1", "google-hub-pro.js?v=3"]
     },
     youtube: {
-      styles: ["search-quick-overlay.css?v=1", "youtube-hub.css?v=5"],
-      scripts: ["search-platform-core.js?v=2", "search-quick-overlay.js?v=1", "youtube-hub.js?v=1"]
+      styles: ["search-quick-overlay.css?v=1", "youtube-hub.css?v=5", "youtube-hub-pro.css?v=4"],
+      scripts: ["search-platform-core.js?v=3", "search-quick-overlay.js?v=1", "youtube-hub.js?v=1", "youtube-hub-pro.js?v=5"]
     },
     cinema: {
       styles: ["cinema-hub.css?v=5"],

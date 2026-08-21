@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v767";
+const CACHE = "hh-identity-portal-v768";
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
@@ -252,13 +252,17 @@ const RUNTIME_ASSETS = [
   "./auth-cosmic-prism-form.js?v=3",
   "./auth-cosmic-prism-interactions.js?v=3",
   "./auth-zoom-resilience.js?v=4",
-  "./search-platform-core.js?v=2",
+  "./search-platform-core.js?v=3",
   "./search-quick-overlay.css?v=1",
   "./search-quick-overlay.js?v=1",
   "./google-hub.css?v=4",
   "./google-hub.js?v=1",
+  "./google-hub-pro.css?v=3",
+  "./google-hub-pro.js?v=3",
   "./youtube-hub.css?v=5",
   "./youtube-hub.js?v=1",
+  "./youtube-hub-pro.css?v=4",
+  "./youtube-hub-pro.js?v=5",
   "./youtube-pip.html",
   "./communication-overview.css?v=1",
   "./communication-overview.js?v=3",
