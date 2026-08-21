@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v735";
+const CACHE = "hh-identity-portal-v736";
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
 // Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
@@ -313,6 +313,8 @@ const RUNTIME_ASSETS = [
   "./japanese-learning.css?v=8",
   "./japanese-os-v3.css?v=4",
   "./japanese-os-v4.css?v=2",
+  "./hh-chinese.css?v=1",
+  "./assets/chinese/NOTICE.md",
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
   "./community-platform-v2.css?v=10",
@@ -432,6 +434,7 @@ const RUNTIME_ASSETS = [
   "./japanese-learning.js?v=8",
   "./japanese-os-v3.js?v=2",
   "./japanese-os-v4.js?v=7",
+  "./hh-chinese.js?v=1",
   "./config.js?v=10",
   "./data/ai-super-platform-modules.json"
 ];
@@ -452,9 +455,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=8",
-  "./performance-loader.js?v=439",
-  "./account-center.css?v=2",
-  "./account-center.js?v=2",
+  "./performance-loader.js?v=440",
   "./auth-platform.js?v=15",
   "./auth-neon-gateway.js?v=28",
   "./script.js?v=204"
