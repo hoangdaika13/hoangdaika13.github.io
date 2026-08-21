@@ -17,7 +17,7 @@ const TELEMETRY_TYPES = new Set(["page_view", "action", "error", "performance", 
 const MAX_JSON_BODY = 64 * 1024;
 const CSP_REPORT_RETENTION_SECONDS = 30 * 24 * 60 * 60;
 
-function hydrateJsonBody(req) {
+function hydrateJsonBody(req, maxBytes = MAX_JSON_BODY) {
   if (req.body !== undefined || !["POST", "PUT", "PATCH", "DELETE"].includes(String(req.method || "").toUpperCase())) {
     if (req.rawBody === undefined && Buffer.isBuffer(req.body)) req.rawBody = req.body;
     return Promise.resolve();
@@ -27,7 +27,7 @@ function hydrateJsonBody(req) {
     let size = 0;
     req.on("data", (chunk) => {
       size += chunk.length;
-      if (size > MAX_JSON_BODY) {
+      if (size > maxBytes) {
         reject(Object.assign(new Error("Request body too large"), { statusCode: 413 }));
         req.destroy();
       } else chunks.push(chunk);
@@ -404,7 +404,8 @@ module.exports = async function handler(req, res) {
     return tiktokCreatorManagerHandler(req, res);
   }
   try {
-    await hydrateJsonBody(req);
+    const discordUpload = String(req.query.discordManager || "") === "1" && /\/messages\/upload$/.test(String(req.query.discordAction || req.query.action || ""));
+    await hydrateJsonBody(req, discordUpload ? 2_100_000 : MAX_JSON_BODY);
   } catch (error) {
     return res.status(error.statusCode || 400).json({ error: error.statusCode === 413 ? "Request body too large." : "Invalid JSON body." });
   }

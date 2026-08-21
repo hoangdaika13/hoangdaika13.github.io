@@ -181,8 +181,8 @@
       scripts: ["search-platform-core.js?v=3", "search-quick-overlay.js?v=1", "youtube-hub.js?v=1", "youtube-hub-pro.js?v=5"]
     },
     discord: {
-      styles: ["discord-hub.css?v=2"],
-      scripts: ["discord-hub.js?v=2"]
+      styles: ["discord-hub.css?v=4"],
+      scripts: ["discord-hub.js?v=4"]
     },
     cinema: {
       styles: ["cinema-hub.css?v=5"],
