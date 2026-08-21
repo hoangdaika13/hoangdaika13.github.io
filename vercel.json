@@ -97,6 +97,10 @@
       "destination": "/api/platform/summary?tiktokCreatorManager=1&tiktokAction=:tiktokAction"
     },
     {
+      "source": "/api/discord/:discordAction*",
+      "destination": "/api/platform/summary?discordManager=1&discordAction=:discordAction"
+    },
+    {
       "source": "/api/community-admin",
       "destination": "/api/community?adminRoute=1"
     },

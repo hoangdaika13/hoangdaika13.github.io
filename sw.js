@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v768";
+const CACHE = "hh-identity-portal-v769";
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
@@ -89,7 +89,7 @@ const RUNTIME_ASSETS = [
   "./settings-studio.css?v=2",
   "./settings-studio.js?v=5",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=206",
+  "./script.js?v=207",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -264,6 +264,8 @@ const RUNTIME_ASSETS = [
   "./youtube-hub-pro.css?v=4",
   "./youtube-hub-pro.js?v=5",
   "./youtube-pip.html",
+  "./discord-hub.css?v=2",
+  "./discord-hub.js?v=2",
   "./communication-overview.css?v=1",
   "./communication-overview.js?v=3",
   "./communication-suite.css?v=2",
@@ -473,10 +475,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=8",
-  "./performance-loader.js?v=447",
+  "./performance-loader.js?v=448",
   "./auth-platform.js?v=15",
   "./auth-neon-gateway.js?v=28",
-  "./script.js?v=206"
+  "./script.js?v=207"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

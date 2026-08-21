@@ -14,9 +14,9 @@ const worker = read("sw.js");
 test("home route loads the versioned Galaxy Command assets and mount host", () => {
   assert.match(html, /id="homeGalaxyCommandRoot"/);
   assert.match(loader, /home-galaxy-command\.css\?v=11/);
-  assert.match(loader, /home-galaxy-command\.js\?v=12/);
+  assert.match(loader, /home-galaxy-command\.js\?v=13/);
   assert.match(worker, /home-galaxy-command\.css\?v=11/);
-  assert.match(worker, /home-galaxy-command\.js\?v=12/);
+  assert.match(worker, /home-galaxy-command\.js\?v=13/);
   assert.match(source, /hh:assets-ready/);
   assert.match(source, /\[data-shell-view="home"\]/);
 });
@@ -40,11 +40,11 @@ test("one-screen status center exposes six truthful browser and site signals", (
   assert.match(source, /hgc-live-detail/);
 });
 
-test("command sun contains exactly fourteen active routed feature planets", () => {
+test("command sun contains all seventeen active routed feature planets", () => {
   const block = source.match(/const PLANETS = Object\.freeze\(\[([\s\S]*?)\]\);/);
   assert.ok(block, "planet registry is missing");
-  assert.equal((block[1].match(/\{\s*id:/g) || []).length, 14);
-  for (const id of ["home", "system", "creative", "music", "media", "graphic", "dev", "work", "communication", "analytics", "learning", "english", "japanese", "support"]) {
+  assert.equal((block[1].match(/\{\s*id:/g) || []).length, 17);
+  for (const id of ["home", "system", "creative", "music", "media", "graphic", "dev", "work", "google", "youtube", "discord", "communication", "analytics", "learning", "english", "japanese", "support"]) {
     assert.match(block[1], new RegExp(`id: "${id}"`), `missing planet ${id}`);
   }
   assert.doesNotMatch(block[1], /\/entertainment|\/character-3d/);

@@ -67,6 +67,12 @@
       capabilities: ["Tìm video", "Watch Queue", "Mini-player"]
     },
     {
+      id: "discord", short: "DC", label: "Discord", eyebrow: "Cộng đồng và server", route: "/discord",
+      color: "#7c76ff", orbit: 3, angle: 50,
+      description: "Liên kết Discord OAuth, mở server và trò chuyện qua bot HH với quyền được kiểm soát.",
+      capabilities: ["OAuth", "Server & kênh", "HH Discord Bot"]
+    },
+    {
       id: "insights", short: "PT", label: "Phân tích", eyebrow: "Dữ liệu và vận hành", route: "/analytics",
       color: "#ffbd69", orbit: 3, angle: 60,
       description: "Theo dõi analytics, tìm kiếm thông minh, quản trị, API, bảo mật và tình trạng nền tảng.",

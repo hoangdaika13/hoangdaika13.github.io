@@ -180,6 +180,10 @@
       styles: ["search-quick-overlay.css?v=1", "youtube-hub.css?v=5", "youtube-hub-pro.css?v=4"],
       scripts: ["search-platform-core.js?v=3", "search-quick-overlay.js?v=1", "youtube-hub.js?v=1", "youtube-hub-pro.js?v=5"]
     },
+    discord: {
+      styles: ["discord-hub.css?v=2"],
+      scripts: ["discord-hub.js?v=2"]
+    },
     cinema: {
       styles: ["cinema-hub.css?v=5"],
       scripts: ["utils/open-media-rights.js?v=4", "cinema-hub.js?v=6"]
@@ -296,6 +300,7 @@
     if (value.startsWith("/support")) return ["support"];
     if (value === "/google" || value === "/communication/google-youtube") return ["google"];
     if (value === "/youtube") return ["youtube"];
+    if (value === "/discord") return ["discord"];
     if (value.startsWith("/communication")) return ["communication"];
     if (value.startsWith("/work")) return ["work"];
     if (value === "/admin" || value.startsWith("/admin/") || value === "/analytics/admin-panel") return ["analytics", "admin"];

@@ -4,6 +4,7 @@ const privacyConsentHandler = require("../../utils/privacy-consent-api");
 const youtubePublisherHandler = require("../../utils/youtubePublisher");
 const facebookPageManagerHandler = require("../../utils/facebookPageManager");
 const tiktokCreatorManagerHandler = require("../../utils/tiktokCreatorManager");
+const discordManagerHandler = require("../../utils/discordManager");
 const accountCenterHandler = require("../../utils/account-center-api");
 const metaWebhookHandler = require("../../utils/metaWebhook");
 const { quotaStatus, requireRoles } = require("../../services/apiGateway");
@@ -410,6 +411,7 @@ module.exports = async function handler(req, res) {
   if (String(req.query.youtubePublisher || "") === "1") return youtubePublisherHandler(req, res);
   if (String(req.query.facebookPageManager || "") === "1") return facebookPageManagerHandler(req, res);
   if (String(req.query.tiktokCreatorManager || "") === "1") return tiktokCreatorManagerHandler(req, res);
+  if (String(req.query.discordManager || "") === "1") return discordManagerHandler(req, res);
   if (req.query.privacyRoute === "consent") return privacyConsentHandler(req, res);
   if (req.method === "GET" && req.query.view === "health") {
     setCors(req, res);

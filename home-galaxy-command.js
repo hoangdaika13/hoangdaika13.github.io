@@ -15,7 +15,7 @@
     stars: 62,
     sound: false,
     pinned: ["home", "creative", "work", "learning", "japanese"],
-    planets: ["home", "system", "creative", "music", "media", "graphic", "dev", "work", "google", "youtube", "communication", "analytics", "learning", "english", "japanese", "support"],
+    planets: ["home", "system", "creative", "music", "media", "graphic", "dev", "work", "google", "youtube", "discord", "communication", "analytics", "learning", "english", "japanese", "support"],
     widgets: ["weather", "performance", "memory", "network", "health", "sync"]
   });
   const PLANETS = Object.freeze([
@@ -29,6 +29,7 @@
     { id: "work", icon: "□", label: "Công việc", route: "/work", color: "#ff6fcf", description: "Task, dự án, tiến độ và phiên tập trung." },
     { id: "google", icon: "G", label: "Google", route: "/google", color: "#63d7ff", description: "Tìm web, hình ảnh và tài liệu trong Google Search Center độc lập." },
     { id: "youtube", icon: "▶", label: "YouTube", route: "/youtube", color: "#ff5c6c", description: "Tìm, xem, lưu video và quản lý hàng đợi trong YouTube Watch Center." },
+    { id: "discord", icon: "DC", label: "Discord", route: "/discord", color: "#7c76ff", description: "Liên kết tài khoản, server và kênh bằng Discord OAuth cùng HH Bot an toàn." },
     { id: "communication", icon: "◌", label: "Giao tiếp", route: "/communication", color: "#67efbd", description: "Messenger, cộng đồng, thông báo và phòng trực tiếp." },
     { id: "analytics", icon: "↗", label: "Phân tích", route: "/analytics", color: "#72cbff", description: "Website Health, hiệu suất, Web Vitals và báo cáo." },
     { id: "learning", icon: "◫", label: "Học tập", route: "/learn", color: "#f899ff", description: "Lộ trình, bài ôn, lớp học và kho kiến thức." },
