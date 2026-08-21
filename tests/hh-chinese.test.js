@@ -115,3 +115,29 @@ test("HH Chinese keeps personal study words bounded and adds focused learning ro
   assert.match(css, /hhc-word-detail/);
   assert.match(css, /prefers-reduced-motion/);
 });
+
+test("HH Chinese v7 gives beginners a focused route and preserves the full workspace", () => {
+  const source = read("hh-chinese.js");
+  const css = read("hh-chinese.css");
+  const beginner = chinese.normalizeState({ onboardingComplete: true, uiMode: "beginner", pathwayLevel: 0, goalLevel: "9", motionMode: "balanced" });
+  const full = chinese.normalizeState({ onboardingComplete: true, uiMode: "full", pathwayLevel: 9, motionMode: "cinematic" });
+  assert.equal(beginner.uiMode, "beginner");
+  assert.equal(beginner.goalLevel, "9");
+  assert.equal(beginner.motionMode, "balanced");
+  assert.equal(full.uiMode, "full");
+  assert.equal(full.motionMode, "cinematic");
+  assert.match(source, /CHƯƠNG TRÌNH BẢY NGÀY ĐẦU TIÊN/);
+  assert.match(source, /Hướng dẫn viên HH/);
+  assert.match(source, /data-hhc-global-search/);
+  assert.match(source, /data-hhc-script/);
+  assert.match(source, /data-hhc-detail-tab/);
+  assert.match(source, /data-hhc-word-note/);
+  assert.match(source, /BEGINNER_VIEWS/);
+  assert.match(css, /\.hhc-today-dashboard/);
+  assert.match(css, /\.hhc-onboarding-grid/);
+  assert.match(css, /\.hhc-bottom-nav/);
+  assert.match(css, /\.hhc-global-results/);
+  assert.match(css, /\.hhc-v7\[data-motion="static"\]/);
+  assert.match(css, /\.hhc-v7\[data-view="vocabulary"\]/);
+  assert.match(css, /font-size: clamp\(56px/);
+});
