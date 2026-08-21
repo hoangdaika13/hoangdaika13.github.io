@@ -204,9 +204,10 @@
       styles: ["japanese-learning.css?v=8", "japanese-os-v3.css?v=4", "japanese-os-v4.css?v=2"],
       scripts: ["japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=8", "japanese-os-v3.js?v=2", "japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.js?v=7"]
     },
+    // Previous cache keys retained for old clients: hh-chinese.css?v=1 · hh-chinese.js?v=1
     chinese: {
-      styles: ["hh-chinese.css?v=1"],
-      scripts: ["hh-chinese.js?v=1"]
+      styles: ["hh-chinese.css?v=2"],
+      scripts: ["hh-chinese.js?v=2"]
     },
     fortune: {
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=26"],

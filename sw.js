@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v736";
+const CACHE = "hh-identity-portal-v737";
+// Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
 // Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
@@ -313,7 +314,7 @@ const RUNTIME_ASSETS = [
   "./japanese-learning.css?v=8",
   "./japanese-os-v3.css?v=4",
   "./japanese-os-v4.css?v=2",
-  "./hh-chinese.css?v=1",
+  "./hh-chinese.css?v=2",
   "./assets/chinese/NOTICE.md",
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
@@ -434,7 +435,7 @@ const RUNTIME_ASSETS = [
   "./japanese-learning.js?v=8",
   "./japanese-os-v3.js?v=2",
   "./japanese-os-v4.js?v=7",
-  "./hh-chinese.js?v=1",
+  "./hh-chinese.js?v=2",
   "./config.js?v=10",
   "./data/ai-super-platform-modules.json"
 ];
