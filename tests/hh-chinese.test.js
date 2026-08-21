@@ -197,3 +197,37 @@ test("HH Chinese interaction handlers persist real learning actions", () => {
     global.fetch = previousFetch;
   }
 });
+
+test("HH Chinese v11 exposes the complete Learning Cockpit experience", () => {
+  const source = read("hh-chinese.js");
+  const css = read("hh-chinese.css");
+  const loader = read("performance-loader.js");
+  const worker = read("sw.js");
+  const state = chinese.normalizeState({ onboardingComplete: true, view: "reading", pathwayLevel: 4, navGroup: "skills", lessonStep: 5, guideMode: "full", readerMode: true });
+  assert.equal(state.navGroup, "skills");
+  assert.equal(state.lessonStep, 5);
+  assert.equal(state.guideMode, "full");
+  assert.equal(state.readerMode, true);
+  assert.match(source, /COCKPIT_GROUPS/);
+  assert.match(source, /data-hhc-command-toggle/);
+  assert.match(source, /data-hhc-command-search/);
+  assert.match(source, /data-hhc-progress-toggle/);
+  assert.match(source, /data-hhc-reader-toggle/);
+  assert.match(source, /data-hhc-quick-review/);
+  assert.match(source, /data-hhc-lesson-step/);
+  assert.match(source, /hhc-mistake-drawer/);
+  assert.match(source, /hhc-mini-player/);
+  assert.match(source, /hhc-heatmap/);
+  assert.match(source, /event\.ctrlKey \|\| event\.metaKey/);
+  assert.match(css, /v11 Learning Cockpit/);
+  assert.match(css, /\.hhc-v11\.is-reader-mode/);
+  assert.match(css, /\.hhc-progress-inspector/);
+  assert.match(css, /hhc-v11-pitch/);
+  assert.match(css, /hhc-v11-stroke/);
+  assert.match(css, /data-hsk="9"/);
+  assert.match(loader, /hh-chinese\.css\?v=11/);
+  assert.match(loader, /hh-chinese\.js\?v=11/);
+  assert.match(worker, /hh-identity-portal-v746/);
+  assert.match(worker, /hh-chinese\.css\?v=11/);
+  assert.match(worker, /hh-chinese\.js\?v=11/);
+});
