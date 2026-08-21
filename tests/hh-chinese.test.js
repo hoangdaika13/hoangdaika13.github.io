@@ -12,6 +12,8 @@ const read = (name) => fs.readFileSync(path.join(root, name), "utf8");
 test("HH Chinese exposes a local-first HSK workspace with core skills", () => {
   assert.equal(chinese.VERSION, 1);
   assert.equal(chinese.WORDS.length, 40);
+  assert.equal(chinese.LARGE_CATALOG_COUNT, 50000);
+  assert.match(chinese.LARGE_CATALOG_URL, /cvdict-50k\.json\.gz$/);
   assert.equal(chinese.VIEWS.length, 9);
   for (const view of ["pinyin", "vocabulary", "hanzi", "reading", "grammar", "speaking", "exam", "dictionary"]) {
     assert.equal(chinese.supports(view), true);
@@ -73,4 +75,26 @@ test("HH Chinese includes active-recall practice labs without leaking answers", 
   assert.match(source, /data-hhc-submit-dictation/);
   assert.match(source, /data-hhc-submit-reading-check/);
   assert.match(css, /hhc-practice-feedback/);
+});
+
+test("HH Chinese ships a provenance-labelled lazy 50k lookup catalog", () => {
+  const source = read("hh-chinese.js");
+  const css = read("hh-chinese.css");
+  const notice = read("assets/chinese/NOTICE.md");
+  const meta = JSON.parse(read("assets/chinese/cvdict-50k.meta.json"));
+  assert.equal(meta.count, 50000);
+  assert.ok(meta.compressedBytes > 1000000);
+  assert.match(meta.sha256, /^[a-f0-9]{64}$/);
+  assert.match(meta.source, /ph0ngp\/CVDICT/);
+  assert.match(meta.sourceLicense, /CC BY-SA 4\.0/);
+  assert.match(source, /cvdict-50k\.json\.gz/);
+  assert.match(source, /DecompressionStream/);
+  assert.match(source, /Không thể tải catalog mở rộng/);
+  assert.match(source, /CVDICT · Chinese–Vietnamese/);
+  assert.match(source, /largeCatalog: null/);
+  assert.match(css, /\.hhc-catalog-status/);
+  assert.match(css, /hhc-spectrum-scan/);
+  assert.match(css, /--hhc-muted: #c7c9ff/);
+  assert.match(notice, /exactly 50,000/);
+  assert.match(notice, /CC BY-SA 4\.0/);
 });

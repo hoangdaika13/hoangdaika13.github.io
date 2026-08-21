@@ -1,5 +1,24 @@
 # HH Chinese data & provenance
 
+## Lazy 50.000-entry lookup catalog
+
+HH Chinese now includes a generated, lazy-loaded lookup catalog at `cvdict-50k.json.gz`.
+It contains exactly 50,000 unique simplified-headword entries selected from **CVDICT**
+(a Chinese–Vietnamese dictionary derived from CC-CEDICT). Each record keeps simplified,
+traditional, pinyin and Vietnamese meaning fields plus a `CVDICT` provenance label.
+
+- Source repository: <https://github.com/ph0ngp/CVDICT>
+- Source licence: **CC BY-SA 4.0** (attribution and share-alike apply)
+- Generated asset: `cvdict-50k.json.gz`
+- Generated metadata/checksum: `cvdict-50k.meta.json` · SHA-256 `3d3f5953c1ede07b372423a64c425034fce3b61aea77f42ae813d01cbfe55d01`
+- Selection: first 50,000 unique, parseable simplified entries containing Chinese characters from the downloaded CVDICT source; this is a reproducible lookup subset, not an official HSK word list.
+
+The catalog is deliberately loaded only when the dictionary view is opened. It is not
+copied into localStorage and is not mixed into the 58-entry HH-authored learning deck or
+its SRS schedule. CVDICT meanings are open-source dictionary data and can contain
+translation or sense omissions; learners should verify context before promoting a word
+into a personal study deck.
+
 HH Chinese v1 ships a small, HH-authored seed deck (40 foundation entries) plus 18 extended entries for HSK 5, HSK 6 and the HSK 7–9 advanced band. The 58-entry catalog is for local-first demos and guided practice; it is not a complete official HSK vocabulary package and must not be described as an official HSK exam bank.
 
 The Vietnamese learner pathway intentionally separates “lộ trình năng lực” from “dữ liệu đã có”: HSK 7–9 is represented as the official advanced band, with an HSK 9 destination, while advanced seed words remain HH-authored until a licensed, versioned syllabus dataset is integrated.

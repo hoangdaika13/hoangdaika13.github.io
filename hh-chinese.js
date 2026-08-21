@@ -3,6 +3,8 @@
 
   const VERSION = 1;
   const STORAGE_KEY = "hh.chinese.state.v1";
+  const LARGE_CATALOG_URL = "/assets/chinese/cvdict-50k.json.gz";
+  const LARGE_CATALOG_COUNT = 50000;
   const VIEWS = [
     ["dashboard", "星图总览", "Tổng quan"],
     ["pinyin", "拼音实验室", "Pinyin Lab"],
@@ -153,6 +155,7 @@
   const ownerKey = function (options) { return text((options && options.currentUser && (options.currentUser.id || options.currentUser._id)) || "guest", 80).replace(/[^a-z0-9_-]/gi, "_") || "guest"; };
   const storageKey = function (options) { return STORAGE_KEY + ":" + ownerKey(options); };
   const levelLabel = function (level) { return level === "7-9" ? "HSK 7–9" : "HSK " + level; };
+  const sourceLabel = function (word) { return word && word.level === "catalog" ? "CVDICT · Chinese–Vietnamese" : levelLabel(word && word.level); };
   const pathLevelFromValue = function (level) { return level === "7-9" ? 9 : Math.max(1, Math.min(6, Number(level) || 1)); };
   const levelValueFromPath = function (level) { return Number(level) >= 7 ? "7-9" : String(Math.max(1, Math.min(6, Number(level) || 1))); };
   const wordForScript = function (word, script) { return script === "traditional" ? word.traditional : word.hanzi; };
@@ -248,11 +251,15 @@
     const pool = examPool(state), item = pool[state.examIndex % pool.length], selected = state.examSelection, submitted = state.examSubmitted, position = state.examIndex % pool.length;
     return "<main class=\"hhc-main hhc-exam\"><section class=\"hhc-section-head\"><div><span class=\"hhc-kicker\">HSK SIMULATOR</span><h1>HSK模拟 · Bài kiểm tra ngắn</h1><p>Ngân hàng seed local do HH biên soạn theo cấp đang chọn, không phải đề HSK chính thức.</p></div><span class=\"hhc-exam-progress\">" + (position + 1) + "/" + pool.length + "</span></section><article class=\"hhc-card hhc-exam-card\"><header><span>" + levelLabel(item.level) + " · " + item.skill + "</span><small>" + (submitted ? (selected === item.answer ? "Đúng" : "Cần xem lại") : "Chưa nộp") + "</small></header><h2>" + esc(item.prompt) + "</h2><div class=\"hhc-options\">" + item.options.map(function (option, index) { return "<button class=\"" + (submitted && index === item.answer ? "is-correct" : submitted && index === selected ? "is-wrong" : selected === index ? "is-selected" : "") + "\" data-hhc-exam-option=\"" + index + "\" " + (submitted ? "disabled" : "") + "><i>" + String.fromCharCode(65 + index) + "</i><span>" + esc(option) + "</span></button>"; }).join("") + "</div>" + (submitted ? "<div class=\"hhc-exam-feedback\"><strong>" + (selected === item.answer ? "✓ Chính xác" : "✦ Hãy xem lại") + "</strong><p>" + esc(item.explanation) + "</p></div>" : "") + "<footer>" + (submitted ? "<button class=\"is-primary\" data-hhc-next-exam>" + (position + 1 >= pool.length ? "Làm lại cấp này" : "Câu tiếp theo →") + "</button>" : "<button class=\"is-primary\" data-hhc-submit-exam " + (selected === null ? "disabled" : "") + ">Nộp câu trả lời</button>") + "</footer></article></main>";
   }
-  function dictionaryMarkup(state) {
-    const query = state.dictionaryQuery.toLocaleLowerCase("vi"), rows = (query ? CATALOG_WORDS.filter(function (word) { return (word.hanzi + " " + word.traditional + " " + word.pinyin + " " + word.meaning).toLocaleLowerCase("vi").indexOf(query) >= 0 || normalizePinyin(word.pinyin).indexOf(normalizePinyin(query)) >= 0; }) : CATALOG_WORDS).slice(0, 12);
-    return "<main class=\"hhc-main hhc-dictionary\"><section class=\"hhc-section-head\"><div><span class=\"hhc-kicker\">LOCAL STAR DICTIONARY</span><h1>星际词典 · Tra cứu tiếng Trung</h1><p>Tìm bằng giản thể, phồn thể, pinyin có/không dấu hoặc nghĩa tiếng Việt trong seed local.</p></div><span class=\"hhc-source-seal\">" + CATALOG_WORDS.length + " seed</span></section><label class=\"hhc-search\"><span>⌕</span><input type=\"search\" data-hhc-dictionary-input value=\"" + esc(state.dictionaryQuery) + "\" placeholder=\"Ví dụ: 学习 · xuexi · học…\"><kbd>/</kbd></label><section class=\"hhc-dictionary-grid\">" + (rows.length ? rows.map(function (word) { return "<article class=\"hhc-card\"><header><strong>" + esc(wordForScript(word, state.script)) + "</strong><span>" + esc(word.pinyin) + "</span></header><b>" + esc(word.meaning) + "</b><small>" + levelLabel(word.level) + " · " + esc(word.pos) + "</small><p>" + esc(word.example) + "</p><footer><button data-hhc-speak=\"" + esc(word.hanzi) + "\">▶ Nghe</button><button data-hhc-favorite=\"" + word.id + "\">" + (state.favorites.indexOf(word.id) >= 0 ? "★ Đã lưu" : "☆ Lưu") + "</button></footer></article>"; }).join("") : "<div class=\"hhc-empty\">Không tìm thấy trong seed local. Connector online sẽ hiển thị provenance khi được cấu hình.</div>") + "</section></main>";
+  function catalogEntries(session) { return CATALOG_WORDS.concat(Array.isArray(session && session.largeCatalog) ? session.largeCatalog : []); }
+  function dictionaryMarkup(state, session) {
+    const all = catalogEntries(session), query = state.dictionaryQuery.toLocaleLowerCase("vi"), normalizedQuery = normalizePinyin(query);
+    const rows = (query ? all.filter(function (word) { const searchKey = word.searchKey || (word.hanzi + " " + word.traditional + " " + word.pinyin + " " + word.meaning).toLocaleLowerCase("vi"), pinyinKey = word.pinyinKey || normalizePinyin(word.pinyin); return searchKey.indexOf(query) >= 0 || (normalizedQuery && pinyinKey.indexOf(normalizedQuery) >= 0); }) : all).slice(0, 12);
+    const catalogReady = Array.isArray(session && session.largeCatalog), status = session && session.catalogStatus || "idle";
+    const statusMarkup = status === "loading" ? "<div class=\"hhc-catalog-status is-loading\"><i></i><span>Đang mở catalog 50.000 mục… kết quả học có kiểm duyệt vẫn sẵn sàng ngay.</span></div>" : status === "error" ? "<div class=\"hhc-catalog-status is-error\"><span>Không thể tải catalog mở rộng lúc này. Bộ 58 từ HH vẫn hoạt động offline.</span><button type=\"button\" data-hhc-retry-catalog>Thử lại</button></div>" : catalogReady ? "<div class=\"hhc-catalog-status is-ready\"><span>✦ Đã mở <b>50.000 mục</b> CVDICT · tra cứu nhanh, không trộn vào lịch SRS.</span><small>CC BY-SA 4.0</small></div>" : "<div class=\"hhc-catalog-status\"><span>Catalog 50.000 mục sẽ tự tải khi mở từ điển.</span></div>";
+    return "<main class=\"hhc-main hhc-dictionary\"><section class=\"hhc-section-head\"><div><span class=\"hhc-kicker\">LOCAL + OPEN STAR DICTIONARY</span><h1>星际词典 · Tra cứu 50.000 từ</h1><p>Tìm bằng giản thể, phồn thể, pinyin có/không dấu hoặc nghĩa tiếng Việt. Bộ học HH vẫn được tuyển chọn riêng để SRS không bị nhiễu.</p></div><span class=\"hhc-source-seal\">" + (catalogReady ? "50K + 58" : "58 + lazy 50K") + "</span></section>" + statusMarkup + "<label class=\"hhc-search\"><span>⌕</span><input type=\"search\" data-hhc-dictionary-input value=\"" + esc(state.dictionaryQuery) + "\" placeholder=\"Ví dụ: 学习 · xuexi · học…\"><kbd>/</kbd></label><section class=\"hhc-dictionary-grid\">" + (rows.length ? rows.map(function (word, index) { const curated = word.level !== "catalog"; return "<article class=\"hhc-card hhc-catalog-card\" style=\"--delay:" + (index * 35) + "ms\"><header><strong>" + esc(wordForScript(word, state.script)) + "</strong><span>" + esc(word.pinyin) + "</span></header><b>" + esc(word.meaning) + "</b><small>" + sourceLabel(word) + " · " + esc(word.pos || "từ vựng") + "</small>" + (word.example ? "<p>" + esc(word.example) + "</p>" : "<p class=\"hhc-muted\">Chưa có câu ví dụ trong nguồn mở; hãy kiểm tra ngữ cảnh trước khi ghi vào bộ học.</p>") + "<footer><button data-hhc-speak=\"" + esc(word.hanzi) + "\">▶ Nghe</button>" + (curated ? "<button data-hhc-favorite=\"" + word.id + "\">" + (state.favorites.indexOf(word.id) >= 0 ? "★ Đã lưu" : "☆ Lưu") + "</button>" : "<span class=\"hhc-catalog-badge\">Tra cứu</span>") + "</footer></article>"; }).join("") : "<div class=\"hhc-empty\">Không tìm thấy trong catalog. Thử giản thể, pinyin không dấu hoặc một nghĩa tiếng Việt khác.</div>") + "</section></main>";
   }
-  function contentMarkup(state) {
+  function contentMarkup(state, session) {
     if (!state.onboardingComplete) return onboardingMarkup(state);
     if (state.view === "pinyin") { const markup = pinyinMarkup(state); return state.pathwayLevel === 0 ? markup.replace("<section class=\"hhc-tone-grid\">", vietnameseBridgeMarkup() + "<section class=\"hhc-tone-grid\">") : markup; }
     if (state.view === "vocabulary") return vocabularyMarkup(state);
@@ -261,12 +268,44 @@
     if (state.view === "grammar") return grammarMarkup(state).replace("</section></main>", grammarPracticeMarkup(state) + "</section></main>");
     if (state.view === "speaking") return speakingMarkup(state).replace("</section></main>", dictationMarkup(state) + "</section></main>");
     if (state.view === "exam") return examMarkup(state);
-    if (state.view === "dictionary") return dictionaryMarkup(state);
+    if (state.view === "dictionary") return dictionaryMarkup(state, session);
     return dashboardMarkup(state).replace("<section class=\"hhc-mission-grid\">", pathwayMarkup(state) + "<section class=\"hhc-mission-grid\">");
   }
-  function shellMarkup(state) { return "<section class=\"hh-chinese\" data-hh-chinese data-view=\"" + state.view + "\"><div class=\"hhc-stars\" aria-hidden=\"true\"><i></i><i></i><i></i><i></i><i></i><i></i></div>" + headerMarkup(state) + "<div class=\"hhc-layout\">" + navMarkup(state) + contentMarkup(state) + "</div><footer class=\"hhc-footer\"><span>HH Chinese local-first · " + new Date(state.updatedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + "</span><span>HSK 3.0 framework · HH seed data · <button data-hhc-reset>Đặt lại tiến độ</button></span></footer></section>"; }
+  function shellMarkup(state, session) { return "<section class=\"hh-chinese\" data-hh-chinese data-view=\"" + state.view + "\"><div class=\"hhc-stars\" aria-hidden=\"true\"><i></i><i></i><i></i><i></i><i></i><i></i></div>" + headerMarkup(state) + "<div class=\"hhc-layout\">" + navMarkup(state) + contentMarkup(state, session) + "</div><footer class=\"hhc-footer\"><span>HH Chinese local-first · " + new Date(state.updatedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + "</span><span>HSK 3.0 framework · HH seed + CVDICT lookup · <button data-hhc-reset>Đặt lại tiến độ</button></span></footer></section>"; }
 
-  function render(session) { session.host.innerHTML = shellMarkup(session.state); bindCanvas(session); }
+  function loadLargeCatalog(session) {
+    if (!session || session.catalogStatus === "loading" || session.catalogStatus === "ready") return session && session.catalogPromise;
+    session.catalogStatus = "loading";
+    render(session);
+    if (typeof root.fetch !== "function" || typeof root.DecompressionStream !== "function") {
+      session.catalogStatus = "error";
+      session.catalogError = "Trình duyệt chưa hỗ trợ giải nén catalog.";
+      render(session);
+      return Promise.resolve(null);
+    }
+    session.catalogPromise = root.fetch(LARGE_CATALOG_URL, { cache: "force-cache" }).then(function (response) {
+      if (!response.ok) throw new Error("Catalog HTTP " + response.status);
+      if (!response.body || typeof response.body.pipeThrough !== "function") throw new Error("Catalog stream unavailable");
+      if (typeof root.Response !== "function") throw new Error("Response API unavailable");
+      const stream = response.body.pipeThrough(new root.DecompressionStream("gzip"));
+      return new root.Response(stream).json();
+    }).then(function (payload) {
+      if (!payload || !Array.isArray(payload.entries) || payload.entries.length !== LARGE_CATALOG_COUNT) throw new Error("Catalog count mismatch");
+      session.largeCatalog = payload.entries.slice(0, LARGE_CATALOG_COUNT).map(function (word) { return Object.assign({}, word, { level: "catalog", searchKey: (word.hanzi + " " + word.traditional + " " + word.pinyin + " " + word.meaning).toLocaleLowerCase("vi"), pinyinKey: normalizePinyin(word.pinyin) }); });
+      session.catalogStatus = "ready";
+      session.catalogError = "";
+      render(session);
+      return session.largeCatalog;
+    }).catch(function (error) {
+      session.catalogStatus = "error";
+      session.catalogError = text(error && error.message, 140) || "Không thể tải catalog.";
+      render(session);
+      return null;
+    });
+    return session.catalogPromise;
+  }
+
+  function render(session) { session.host.innerHTML = shellMarkup(session.state, session); bindCanvas(session); if (session.state.view === "dictionary" && session.catalogStatus === "idle") loadLargeCatalog(session); }
   function update(session, patch, message) { session.state = saveState(Object.assign({}, session.state, patch, { lastAction: message || session.state.lastAction }), session.options); render(session); }
   function bindCanvas(session) {
     const canvas = session.host.querySelector("[data-hhc-writing-canvas]"); if (!canvas || !canvas.getContext) return;
@@ -293,6 +332,7 @@
   function nextExam(session) { const pool = examPool(session.state), restart = session.state.examIndex + 1 >= pool.length; update(session, { examIndex: restart ? 0 : session.state.examIndex + 1, examSelection: null, examSubmitted: false, examScore: restart ? 0 : session.state.examScore }, "Mở câu HSK tiếp theo"); }
   function handleClick(session, event) {
     const target = event.target.closest("button"); if (!target) return;
+    if (target.matches("[data-hhc-retry-catalog]")) { session.catalogStatus = "idle"; session.catalogError = ""; render(session); return; }
     if (target.matches("[data-hhc-export]")) { exportState(session); return; }
     if (target.matches("[data-hhc-import-trigger]")) { session.host.querySelector("[data-hhc-import]")?.click(); return; }
     if (target.matches("[data-hhc-set-goal]")) { const value = Number(root.prompt?.("Mục tiêu lượt luyện mỗi ngày (1–100)", String(session.state.dailyGoal))); if (Number.isFinite(value) && value > 0) update(session, { dailyGoal: Math.max(1, Math.min(100, Math.round(value))) }, "Cập nhật mục tiêu ngày"); return; }
@@ -338,7 +378,7 @@
   function handleChange(session, event) { if (event.target.matches("[data-hhc-import]")) { importState(session, event.target.files?.[0]); event.target.value = ""; } else if (event.target.matches("[data-hhc-level]")) update(session, { level: event.target.value, grammarLevel: event.target.value, pathwayLevel: pathLevelFromValue(event.target.value), activeWordId: "" }, "Đổi cấp HSK"); else if (event.target.matches("[data-hhc-script]")) update(session, { script: event.target.value }, "Đổi giản thể/phồn thể"); else if (event.target.matches("[data-hhc-grammar-level]")) update(session, { grammarLevel: event.target.value }, "Đổi cấp ngữ pháp"); }
   function mount(host, options) {
     if (!host || typeof host.querySelector !== "function") throw new Error("HHChinese.mount cần host DOM hợp lệ.");
-    unmount(); const controller = new AbortController(); const opts = options || {}; const loaded = loadState(opts); const session = { host: host, options: opts, signal: controller.signal, controller: controller, state: Object.assign(loaded, { view: supports(opts.view) ? opts.view : loaded.view }), searchTimer: 0 }; activeHost = host; activeAbort = controller; render(session);
+    unmount(); const controller = new AbortController(); const opts = options || {}; const loaded = loadState(opts); const session = { host: host, options: opts, signal: controller.signal, controller: controller, state: Object.assign(loaded, { view: supports(opts.view) ? opts.view : loaded.view }), searchTimer: 0, largeCatalog: null, catalogStatus: "idle", catalogPromise: null, catalogError: "" }; activeHost = host; activeAbort = controller; render(session);
     host.addEventListener("click", function (event) { handleClick(session, event); }, { signal: controller.signal });
     host.addEventListener("input", function (event) { handleInput(session, event); }, { signal: controller.signal });
     host.addEventListener("change", function (event) { handleChange(session, event); }, { signal: controller.signal });
@@ -348,6 +388,6 @@
   }
   function unmount() { recognition?.abort?.(); recognition = null; activeAbort?.abort?.(); activeAbort = null; activeHost = null; }
   const supports = function (view) { return view === "dashboard" || VIEWS.some(function (item) { return item[0] === view; }); };
-  root.HHChinese = Object.freeze({ VERSION: VERSION, STORAGE_KEY: STORAGE_KEY, WORDS: WORDS, EXTENDED_WORDS: EXTENDED_WORDS, CATALOG_WORDS: CATALOG_WORDS, GRAMMAR: GRAMMAR, GRAMMAR_PRACTICE: GRAMMAR_PRACTICE, READINGS: READINGS, READING_QUESTIONS: READING_QUESTIONS, DICTATION_ITEMS: DICTATION_ITEMS, EXAM_ITEMS: EXAM_ITEMS, TONE_QUIZ: TONE_QUIZ, HSK_PATHWAY: HSK_PATHWAY, VIETNAMESE_BRIDGES: VIETNAMESE_BRIDGES, VIEWS: VIEWS, TONE_NAMES: TONE_NAMES, normalizeState: normalizeLearnerState, normalizeDue: normalizeDue, scheduleReview: scheduleReview, transcriptMatch: transcriptMatch, answerScore: answerScore, browserSpeechStatus: speechStatus, supports: supports, mount: mount, unmount: unmount });
+  root.HHChinese = Object.freeze({ VERSION: VERSION, STORAGE_KEY: STORAGE_KEY, LARGE_CATALOG_URL: LARGE_CATALOG_URL, LARGE_CATALOG_COUNT: LARGE_CATALOG_COUNT, WORDS: WORDS, EXTENDED_WORDS: EXTENDED_WORDS, CATALOG_WORDS: CATALOG_WORDS, GRAMMAR: GRAMMAR, GRAMMAR_PRACTICE: GRAMMAR_PRACTICE, READINGS: READINGS, READING_QUESTIONS: READING_QUESTIONS, DICTATION_ITEMS: DICTATION_ITEMS, EXAM_ITEMS: EXAM_ITEMS, TONE_QUIZ: TONE_QUIZ, HSK_PATHWAY: HSK_PATHWAY, VIETNAMESE_BRIDGES: VIETNAMESE_BRIDGES, VIEWS: VIEWS, TONE_NAMES: TONE_NAMES, normalizeState: normalizeLearnerState, normalizeDue: normalizeDue, scheduleReview: scheduleReview, transcriptMatch: transcriptMatch, answerScore: answerScore, browserSpeechStatus: speechStatus, supports: supports, mount: mount, unmount: unmount });
   if (typeof module !== "undefined" && module.exports) module.exports = root.HHChinese;
 })(typeof window !== "undefined" ? window : globalThis);

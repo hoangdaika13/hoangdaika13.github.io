@@ -1,0 +1,9 @@
+{
+  "format": "hh-chinese-catalog",
+  "count": 50000,
+  "compressedBytes": 2097696,
+  "sha256": "3d3f5953c1ede07b372423a64c425034fce3b61aea77f42ae813d01cbfe55d01",
+  "source": "https://github.com/ph0ngp/CVDICT",
+  "sourceLicense": "CC BY-SA 4.0",
+  "generatedAt": "2026-08-21T04:26:30.591Z"
+}
