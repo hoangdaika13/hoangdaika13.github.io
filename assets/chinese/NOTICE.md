@@ -1,6 +1,8 @@
 # HH Chinese data & provenance
 
-HH Chinese v1 ships a small, HH-authored seed deck (40 entries) for local-first demos and practice. It is not a complete official HSK vocabulary package and must not be described as an official HSK exam bank.
+HH Chinese v1 ships a small, HH-authored seed deck (40 foundation entries) plus 18 extended entries for HSK 5, HSK 6 and the HSK 7–9 advanced band. The 58-entry catalog is for local-first demos and guided practice; it is not a complete official HSK vocabulary package and must not be described as an official HSK exam bank.
+
+The Vietnamese learner pathway intentionally separates “lộ trình năng lực” from “dữ liệu đã có”: HSK 7–9 is represented as the official advanced band, with an HSK 9 destination, while advanced seed words remain HH-authored until a licensed, versioned syllabus dataset is integrated.
 
 Reference points used for the product design:
 

@@ -47,3 +47,17 @@ test("HH Chinese protects answer flow and labels browser capabilities honestly",
   assert.match(notice, /chinesetest\.cn\/HSK/);
   assert.match(notice, /CC-CEDICT/);
 });
+
+test("Vietnamese pathway starts at zero and reaches the HSK 9 destination honestly", () => {
+  assert.equal(chinese.CATALOG_WORDS.length, 58);
+  assert.equal(chinese.EXTENDED_WORDS.length, 18);
+  assert.equal(chinese.HSK_PATHWAY[0].id, "zero");
+  assert.equal(chinese.HSK_PATHWAY.at(-1).level, 9);
+  const beginner = chinese.normalizeState({ onboardingComplete: false, entryLevel: "zero", pathwayLevel: 0 });
+  const advanced = chinese.normalizeState({ onboardingComplete: true, entryLevel: "returning", level: "7-9", pathwayLevel: 9 });
+  assert.equal(beginner.onboardingComplete, false);
+  assert.equal(beginner.targetLevel, "9");
+  assert.equal(advanced.level, "7-9");
+  assert.equal(advanced.pathwayLevel, 9);
+  assert.equal(advanced.due.length, 58);
+});
