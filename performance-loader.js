@@ -206,8 +206,8 @@
     },
     // Previous cache keys retained for old clients: hh-chinese.css?v=1 · hh-chinese.js?v=1
     chinese: {
-      styles: ["hh-chinese.css?v=5"],
-      scripts: ["hh-chinese.js?v=5"]
+      styles: ["hh-chinese.css?v=6"],
+      scripts: ["hh-chinese.js?v=6"]
     },
     fortune: {
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=26"],

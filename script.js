@@ -6226,7 +6226,7 @@ function initAppShell() {
       else mountSimpleView("HH Japanese", "Đang tải Từ điển, Kanji và lộ trình JLPT...", "");
     } else if (route === "/chinese" || route.startsWith("/chinese/")) {
       updatePageHeader("HH Chinese", "Mandarin Learning Galaxy: HSK 3.0 framework, Pinyin Lab, SRS từ vựng, Hanzi Studio, đọc hiểu, ngữ pháp, nghe–nói và HSK Simulator.", route);
-      pageActions.innerHTML = '<button type="button" data-app-route="/chinese/pinyin">Pinyin Lab</button><button type="button" data-app-route="/chinese/vocabulary">Ôn từ</button><button class="app-primary-action" type="button" data-app-route="/chinese/reading">Đọc hiểu</button>';
+      pageActions.innerHTML = '<button type="button" data-app-route="/chinese/pinyin">Pinyin + Tone Trainer</button><button type="button" data-app-route="/chinese/vocabulary">Bộ học cá nhân</button><button type="button" data-app-route="/chinese/dictionary">Tra cứu 50K</button><button type="button" data-app-route="/chinese/conversation">Hội thoại</button><button class="app-primary-action" type="button" data-app-route="/chinese/reading-nebula">Reading Nebula</button>';
       workspace.innerHTML = '<div data-hh-chinese-host></div>';
       if (window.HHChinese?.mount) window.HHChinese.mount(workspace.firstElementChild, { view: parts[1] || "dashboard", currentUser: readCurrentAuthUser() });
       else mountSimpleView("HH Chinese", "Đang tải Pinyin Lab, Hanzi Studio và lộ trình HSK...", "");

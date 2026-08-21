@@ -14,8 +14,8 @@ test("HH Chinese exposes a local-first HSK workspace with core skills", () => {
   assert.equal(chinese.WORDS.length, 40);
   assert.equal(chinese.LARGE_CATALOG_COUNT, 50000);
   assert.match(chinese.LARGE_CATALOG_URL, /cvdict-50k\.json\.gz$/);
-  assert.equal(chinese.VIEWS.length, 9);
-  for (const view of ["pinyin", "vocabulary", "hanzi", "reading", "grammar", "speaking", "exam", "dictionary"]) {
+  assert.equal(chinese.VIEWS.length, 16);
+  for (const view of ["pinyin", "vocabulary", "hanzi", "reading", "grammar", "speaking", "exam", "dictionary", "conversation", "writing", "hanzi-observatory", "reading-nebula", "translation", "idiom", "vietnamese"]) {
     assert.equal(chinese.supports(view), true);
   }
 });
@@ -97,4 +97,21 @@ test("HH Chinese ships a provenance-labelled lazy 50k lookup catalog", () => {
   assert.match(css, /--hhc-muted: #c7c9ff/);
   assert.match(notice, /exactly 50,000/);
   assert.match(notice, /CC BY-SA 4\.0/);
+});
+
+test("HH Chinese keeps personal study words bounded and adds focused learning rooms", () => {
+  const source = read("hh-chinese.js");
+  const css = read("hh-chinese.css");
+  const personal = chinese.normalizeState({ onboardingComplete: true, personalDeck: [{ id: "cv-00001", hanzi: "学习", traditional: "學習", pinyin: "xue2 xi2", meaning: "học tập", pos: "động từ" }], due: [{ id: "cv-00001", lapses: 3 }] });
+  assert.equal(personal.personalDeck.length, 1);
+  assert.equal(personal.due.some((row) => row.id === "cv-00001"), true);
+  assert.match(source, /Đưa vào bộ học/);
+  assert.match(source, /TONE_TRAINER/);
+  assert.match(source, /CONVERSATION_SCENARIOS/);
+  assert.match(source, /runLearningAI/);
+  assert.match(source, /Xuất Anki/);
+  assert.match(css, /hhc-mission-15/);
+  assert.match(css, /hhc-tone-trainer/);
+  assert.match(css, /hhc-word-detail/);
+  assert.match(css, /prefers-reduced-motion/);
 });
