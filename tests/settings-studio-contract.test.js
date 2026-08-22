@@ -94,9 +94,9 @@ test("Server normalization uses the same strict allow-list", () => {
 
 test("Service worker contains the new versioned Settings Studio assets", () => {
   const worker = read("sw.js");
-  assert.match(worker, /hh-identity-portal-v814/);
+  assert.match(worker, /hh-identity-portal-v819/);
   assert.match(worker, /settings-studio\.css\?v=7/);
   assert.match(worker, /settings-studio\.js\?v=8/);
   assert.match(worker, /app-theme-system\.js\?v=9/);
-  assert.match(worker, /script\.js\?v=229/);
+  assert.match(worker, /script\.js\?v=232/);
 });

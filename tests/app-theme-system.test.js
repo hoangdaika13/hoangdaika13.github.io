@@ -14,7 +14,7 @@ test("global theme runtime is loaded on every route and cached offline", () => {
     assert.match(index, pattern);
     assert.match(worker, pattern);
   }
-  assert.match(worker, /hh-identity-portal-v814/);
+  assert.match(worker, /hh-identity-portal-v819/);
 });
 
 test("all colorful and basic themes define complete semantic shell palettes", () => {

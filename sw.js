@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v814";
+const CACHE = "hh-identity-portal-v819";
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
@@ -18,7 +18,7 @@ const CACHE = "hh-identity-portal-v814";
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
-  "./app-shell.css?v=62",
+  "./app-shell.css?v=63",
   "./workspace-feature-explorer.css?v=2",
   "./app-theme-system.css?v=9",
   "./dashboard-aurora.css?v=4",
@@ -91,7 +91,7 @@ const RUNTIME_ASSETS = [
   "./settings-studio.css?v=7",
   "./settings-studio.js?v=8",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=229",
+  "./script.js?v=232",
   "./graphic-design-studio.css?v=9",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -333,6 +333,7 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v3.css?v=4",
   "./japanese-os-v4.css?v=2",
   "./hh-chinese.css?v=11",
+  "./phat-phap.css?v=4",
   "./assets/chinese/NOTICE.md",
   "./community-social-pro.css?v=3",
   "./community-social-pro.js?v=4",
@@ -458,13 +459,14 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v3.js?v=2",
   "./japanese-os-v4.js?v=7",
   "./hh-chinese.js?v=11",
+  "./phat-phap.js?v=2",
   "./config.js?v=10",
   "./data/ai-super-platform-modules.json"
 ];
 const CORE = [
   "./",
   "./index.html",
-  "./app-shell.css?v=62",
+  "./app-shell.css?v=63",
   "./app-theme-system.css?v=9",
   "./sidebar-navigation-pro.css?v=29",
   "./auth-experience.css?v=6",
@@ -478,10 +480,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=467",
+  "./performance-loader.js?v=471",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=229"
+  "./script.js?v=232"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

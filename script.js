@@ -5249,7 +5249,8 @@ function initAppShell() {
   const syncMobileSidebarDock = () => {
     const mobileNavigation = document.querySelector(".app-mobile-nav");
     if (mobileNavigation) {
-      if (mobileSidebarQuery.matches) mobileNavigation.style.setProperty("display", "grid", "important");
+      const workspaceOwnsMobileDock = document.body.classList.contains("app-dharma-route");
+      if (mobileSidebarQuery.matches && !workspaceOwnsMobileDock) mobileNavigation.style.setProperty("display", "grid", "important");
       else mobileNavigation.style.removeProperty("display");
     }
     syncSidebarToggleState();
@@ -5612,6 +5613,26 @@ function initAppShell() {
     { id: "english", label: "HH English", icon: "E", accent: "#60e9f2", route: "/english", items: [] },
     { id: "japanese", label: "HH Japanese", icon: "日", accent: "#e75158", route: "/japanese", items: [] },
     { id: "chinese", label: "HH Chinese", icon: "中", accent: "#ffcf68", route: "/chinese", items: [] },
+    {
+      id: "phat-phap",
+      label: "Phật Pháp",
+      icon: "☸",
+      accent: "#d4a017",
+      route: "/phat-phap",
+      items: [],
+      pages: [
+        { id: "today", title: "Hôm nay", route: "/phat-phap/today", icon: "灯" },
+        { id: "beginner", title: "Lộ trình người mới", route: "/phat-phap/beginner", icon: "路" },
+        { id: "teachings", title: "Giáo lý", route: "/phat-phap/teachings", icon: "法" },
+        { id: "scriptures", title: "Kinh điển", route: "/phat-phap/scriptures", icon: "經" },
+        { id: "practice", title: "Thiền & niệm Phật", route: "/phat-phap/practice", icon: "禪" },
+        { id: "temple", title: "Chùa online", route: "/phat-phap/temple", icon: "寺" },
+        { id: "talks", title: "Pháp thoại", route: "/phat-phap/talks", icon: "聽" },
+        { id: "request", title: "Thỉnh kinh", route: "/phat-phap/request", icon: "請" },
+        { id: "qna", title: "Hỏi đáp có nguồn", route: "/phat-phap/qna", icon: "問" },
+        { id: "journal", title: "Nhật ký tu học", route: "/phat-phap/journal", icon: "記" }
+      ]
+    },
     { id: "fortune", label: "Xem bói", icon: "☾", accent: "#a983ff", route: "/fortune", items: [] },
     {
       id: "system",
@@ -5663,7 +5684,7 @@ function initAppShell() {
       icon: "◫",
       accent: "#ffd66b",
       accentSecondary: "#a87cff",
-      groupIds: ["learn", "english", "japanese", "chinese"]
+      groupIds: ["learn", "english", "japanese", "chinese", "phat-phap"]
     },
     {
       id: "system-admin",
@@ -5700,6 +5721,7 @@ function initAppShell() {
     english: "tiếng anh english ngoại ngữ",
     japanese: "tiếng nhật japanese jlpt kanji",
     chinese: "tiếng trung chinese hsk hanzi pinyin",
+    "phat-phap": "phật pháp phat phap giáo lý kinh điển thiền niệm phật chùa pháp thoại thỉnh kinh tu học",
     admin: "quản trị admin điều hành",
     system: "hệ thống cài đặt pwa trạng thái",
     support: "ủng hộ donate nhà phát triển payos vietqr"
@@ -5739,13 +5761,14 @@ function initAppShell() {
     heart: '<path d="M20.8 5.8a5.2 5.2 0 0 0-7.4 0L12 7.2l-1.4-1.4a5.2 5.2 0 0 0-7.4 7.4L12 22l8.8-8.8a5.2 5.2 0 0 0 0-7.4Z"/>',
     english: '<rect x="3" y="4" width="18" height="16" rx="5"/><text class="sidebar-icon-label" x="12" y="15">EN</text>',
     japanese: '<rect x="3" y="4" width="18" height="16" rx="5"/><text class="sidebar-icon-label sidebar-icon-label--cjk" x="12" y="15">日</text>',
-    chinese: '<rect x="3" y="4" width="18" height="16" rx="5"/><text class="sidebar-icon-label sidebar-icon-label--cjk" x="12" y="15">中</text>'
+    chinese: '<rect x="3" y="4" width="18" height="16" rx="5"/><text class="sidebar-icon-label sidebar-icon-label--cjk" x="12" y="15">中</text>',
+    dharma: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.7"/><path d="M12 3v6m0 6v6M3 12h6m6 0h6M5.6 5.6l4.2 4.2m4.4 4.4 4.2 4.2m0-12.8-4.2 4.2m-4.4 4.4-4.2 4.2"/>'
   });
   const sidebarIconNames = Object.freeze({
     home: "home", search: "search", "ai-creative": "sparkles", "web-community": "orbit", entertainment: "play", "work-tech": "cpu", learning: "book", "system-admin": "shield",
     "chat-ai": "bot", create: "wand", draw: "brush", "music-ai": "music", "comic-motion": "panels", "media-design": "image", "graphic-design": "pen",
     google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", fortune: "moon",
-    work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", english: "english", japanese: "japanese", chinese: "chinese",
+    work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
     admin: "crown", system: "settings", support: "heart"
   });
   const sidebarIconMarkup = (id) => `<svg class="app-sidebar__svg-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">${sidebarIconPaths[sidebarIconNames[id] || "sparkles"]}</svg>`;
@@ -6543,7 +6566,7 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", draw: "Vẽ", remote: "Remote", "chat-ai": "Chat AI", google: "Google", youtube: "YouTube", discord: "Discord", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", chinese: "HH Chinese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "16 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", draw: "Vẽ", remote: "Remote", "chat-ai": "Chat AI", google: "Google", youtube: "YouTube", discord: "Discord", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "phat-phap": "Phật Pháp", beginner: "Lộ trình người mới", teachings: "Giáo lý", scriptures: "Kinh điển", practice: "Thực hành", temple: "Chùa online", request: "Thỉnh kinh", talks: "Pháp thoại", qna: "Hỏi đáp có nguồn", journal: "Nhật ký tu học", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", chinese: "HH Chinese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "16 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     crumbLabels["social-media-tools"] = "Công cụ truyền thông xã hội";
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
@@ -6592,6 +6615,7 @@ function initAppShell() {
     english: "Đang nạp bài học và tiến độ HH English...",
     japanese: "Đang nạp Từ điển, Kanji, ngữ pháp và lộ trình JLPT...",
     chinese: "Đang mở HH Chinese, Pinyin Lab, Hán tự và lộ trình HSK...",
+    "phat-phap": "Đang mở trung tâm tu học, kiểm tra nguồn và khôi phục thời khóa riêng tư...",
     fortune: "Đang mở không gian Tarot, cung hoàng đạo và nhật ký suy ngẫm...",
     draw: "Đang mở Chromatic Studio và chuẩn bị 16 brush engine đa sắc...",
     remote: "Đang thiết lập không gian Remote, WebRTC và kết nối thiết bị P2P...",
@@ -6614,15 +6638,15 @@ function initAppShell() {
       home: "home", create: "draw", draw: "draw", "music-ai": "music", "davinci-resolve": "media",
       "media-design": "media", "graphic-design": "media", dev: "dev", work: "data", insights: "data",
       communication: "network", google: "network", "youtube-main": "media", discord: "discord", remote: "network",
-      "chat-ai": "ai", learn: "learning", english: "learning", japanese: "learning", chinese: "chinese",
+      "chat-ai": "ai", learn: "learning", english: "learning", japanese: "learning", chinese: "chinese", "phat-phap": "dharma",
       fortune: "fortune", admin: "data", system: "data", support: "home"
     })[group?.id] || "home";
-    const secondary = ({ home: "#ffd166", ai: "#ff58c8", draw: "#ff5dc8", music: "#63f2b3", media: "#ff5f9e", dev: "#63f2b3", data: "#ffd166", network: "#5b8cff", discord: "#ff62c7", learning: "#9c72ff", chinese: "#ff6f78", fortune: "#ff58c8" })[kind] || "#ff63c9";
+    const secondary = ({ home: "#ffd166", ai: "#ff58c8", draw: "#ff5dc8", music: "#63f2b3", media: "#ff5f9e", dev: "#63f2b3", data: "#ffd166", network: "#5b8cff", discord: "#ff62c7", learning: "#9c72ff", chinese: "#ff6f78", fortune: "#ff58c8", dharma: "#983b22" })[kind] || "#ff63c9";
     return {
       accent: group?.accent || "#62e9f2",
       secondary,
-      eyebrow: `${group?.label || "HH Platform"} · COSMIC NAVIGATION`,
-      icon: String(icon || "H").replace(/[^\p{L}\p{N}✦♫⌂◇◈⚙♥]/gu, "").slice(0, 2) || "H",
+      eyebrow: kind === "dharma" ? "PHẬT PHÁP · TRUNG TÂM TU HỌC" : `${group?.label || "HH Platform"} · COSMIC NAVIGATION`,
+      icon: String(icon || "H").replace(/[^\p{L}\p{N}✦♫⌂◇◈⚙♥☸]/gu, "").slice(0, 2) || "H",
       kind,
       message: cosmicLoaderMessages[group?.id] || "Đang chuẩn bị giao diện và dữ liệu cần thiết...",
       title
@@ -6815,6 +6839,7 @@ function initAppShell() {
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
     document.body.classList.toggle("app-japanese-route", route === "/japanese" || route.startsWith("/japanese/"));
     document.body.classList.toggle("app-chinese-route", route === "/chinese" || route.startsWith("/chinese/"));
+    document.body.classList.toggle("app-dharma-route", route === "/phat-phap" || route.startsWith("/phat-phap/"));
     document.body.classList.toggle("app-fortune-route", route === "/fortune" || route.startsWith("/fortune/"));
     document.body.classList.toggle("app-draw-route", route === "/draw" || route.startsWith("/draw/"));
     document.body.classList.toggle("app-remote-route", route === "/remote" || route.startsWith("/remote/"));
@@ -6852,6 +6877,7 @@ function initAppShell() {
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     if (route !== "/japanese" && !route.startsWith("/japanese/")) window.HHJapanese?.unmount?.();
     if (route !== "/chinese" && !route.startsWith("/chinese/")) window.HHChinese?.unmount?.();
+    if (route !== "/phat-phap" && !route.startsWith("/phat-phap/")) window.HHPhatPhap?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
     if (route !== "/draw" && !route.startsWith("/draw/")) window.HHDrawStudio?.unmount?.();
     if (route !== "/remote" && !route.startsWith("/remote/")) window.HHRemoteHub?.unmount?.();
@@ -7020,6 +7046,15 @@ function initAppShell() {
       if (window.HHChinese?.mount) window.HHChinese.mount(workspace.firstElementChild, { view: parts[1] || "dashboard", currentUser: readCurrentAuthUser() });
       else mountSimpleView("HH Chinese", "Đang tải Pinyin Lab, Hanzi Studio và lộ trình HSK...", "");
       remember("chinese");
+    } else if (route === "/phat-phap" || route.startsWith("/phat-phap/")) {
+      const dharmaView = parts[1] || "today";
+      const dharmaPage = groups.find((item) => item.id === "phat-phap")?.pages?.find((item) => item.id === dharmaView);
+      updatePageHeader(dharmaPage?.title || "Phật Pháp", "Trung tâm tu học Phật pháp có nguồn, lộ trình người mới, kinh điển, thiền, niệm Phật, chùa online, pháp thoại, thỉnh kinh và nhật ký mã hóa.", route);
+      pageActions.innerHTML = '<button type="button" data-app-route="/phat-phap/scriptures">Kinh điển</button><button type="button" data-app-route="/phat-phap/practice">Thực hành</button><button class="app-primary-action" type="button" data-app-route="/phat-phap/today">Hôm nay</button>';
+      workspace.innerHTML = '<div data-phat-phap-host></div>';
+      if (window.HHPhatPhap?.mount) window.HHPhatPhap.mount(workspace.firstElementChild, { view: dharmaView, currentUser: readCurrentAuthUser() });
+      else mountSimpleView("Phật Pháp", "Đang tải trung tâm tu học trang trọng...", "");
+      remember("phat-phap");
     } else if (route === "/draw" || route.startsWith("/draw/")) {
       updatePageHeader("Vẽ · Chromatic Studio", "Vẽ ánh sáng đa sắc với 16 brush engine, đối xứng quay, phản chiếu và bảng màu chuyển sắc ngay trên trình duyệt.", route);
       pageActions.innerHTML = `<button type="button" data-draw-global-undo>Hoàn tác</button><button type="button" data-draw-global-fullscreen>Toàn màn hình</button><button class="app-primary-action" type="button" data-draw-global-export>Tải ảnh</button>`;
@@ -7562,6 +7597,13 @@ function initAppShell() {
         key: "vẽ draw chromatic silk studio ánh sáng đối xứng symmetry mirror spiral mandala kaleidoscope aurora neon plasma electric nebula prism fire galaxy comet ripple quantum rainbow ink canvas png webp jpeg"
       },
       {
+        type: "Học tập & thực hành",
+        title: "Phật Pháp",
+        description: "Trung tâm tu học màu vàng trang trọng với giáo lý có nguồn, kinh điển, lộ trình người mới, thiền, niệm Phật, chùa online, pháp thoại, thỉnh kinh và nhật ký mã hóa.",
+        route: "/phat-phap",
+        key: "phật pháp phat phap giáo lý kinh điển tứ diệu đế bát chánh đạo thiền niệm phật chùa online pháp thoại thỉnh kinh nhật ký tu học"
+      },
+      {
         type: "Kết nối thiết bị",
         title: "Remote máy tính & điện thoại",
         description: "Chia sẻ màn hình WebRTC, mã phiên + PIN, phê duyệt thiết bị, chat, con trỏ, clipboard và truyền tệp P2P.",
@@ -7655,6 +7697,7 @@ function initAppShell() {
       button.classList.toggle("is-active", active);
       if (active) button.setAttribute("aria-current", "page"); else button.removeAttribute("aria-current");
     });
+    syncMobileSidebarDock();
   };
 
   const executePaletteOption = (option) => {

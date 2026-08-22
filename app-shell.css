@@ -1898,6 +1898,54 @@ html.hh-page-hidden #hhBootSurface *,html.hh-page-hidden #hhBootSurface *::befor
 .app-cosmic-loader[data-transition-kind="network"] .app-cosmic-loader__motif>i,.app-cosmic-loader[data-transition-kind="discord"] .app-cosmic-loader__motif>i{width:15px;height:11px;border-radius:9px 9px 9px 3px;background:color-mix(in srgb,var(--loader-accent) 55%,#081425);animation-duration:3.2s}
 .app-cosmic-loader[data-transition-kind="learning"] .app-cosmic-loader__motif>i,.app-cosmic-loader[data-transition-kind="chinese"] .app-cosmic-loader__motif>i{width:40px;height:3px;border:0;border-radius:4px;background:linear-gradient(90deg,transparent,var(--loader-accent),var(--loader-secondary));transform:rotate(calc(var(--motif-index) * 45deg)) translateY(clamp(-174px,-17vw,-110px))}
 .app-cosmic-loader[data-transition-kind="fortune"] .app-cosmic-loader__motif>i{width:5px;height:5px;border:0;background:#fff;box-shadow:0 0 9px #fff,0 0 18px var(--loader-accent);animation-duration:8s}
+.app-cosmic-loader[data-transition-kind="dharma"]{
+  --loader-accent:#d4a017;
+  --loader-secondary:#983b22;
+  background:
+    radial-gradient(circle at 50% 44%,rgba(245,215,118,.12),transparent 32%),
+    linear-gradient(145deg,#170d07,#2a170b 58%,#170d07);
+  backdrop-filter:none;
+}
+.app-cosmic-loader[data-transition-kind="dharma"] :is(.app-cosmic-loader__space,.app-cosmic-loader__stars,.app-cosmic-loader__beams){display:none!important}
+.app-cosmic-loader[data-transition-kind="dharma"] .app-cosmic-loader__card{
+  border-color:rgba(245,215,118,.36);
+  background:linear-gradient(145deg,rgba(52,29,14,.98),rgba(29,16,9,.99));
+  box-shadow:0 30px 80px rgba(0,0,0,.5),0 0 48px rgba(212,160,23,.11),inset 0 0 34px rgba(245,215,118,.035);
+}
+.app-cosmic-loader[data-transition-kind="dharma"] .app-cosmic-loader__planet>span{
+  border-color:#f0ce6b;
+  background:radial-gradient(circle,#f9dfa0,#d29a24 56%,#8e321f);
+  box-shadow:0 0 0 6px rgba(212,160,23,.08),0 0 30px rgba(212,160,23,.25),inset 0 0 16px rgba(105,43,22,.35);
+  color:#702616;
+  font-family:Georgia,"Times New Roman",serif;
+  text-shadow:none;
+  animation:appDharmaLoaderGlow 1.8s ease-in-out infinite;
+}
+.app-cosmic-loader[data-transition-kind="dharma"] .app-cosmic-loader__planet>i{
+  inset:2px;
+  border:1px dashed rgba(245,215,118,.58);
+  transform:none;
+  animation:appDharmaLoaderWheel 9s linear infinite;
+}
+.app-cosmic-loader[data-transition-kind="dharma"] .app-cosmic-loader__planet>b{display:none}
+.app-cosmic-loader[data-transition-kind="dharma"] .app-cosmic-loader__motif>i{
+  width:38px;
+  height:58px;
+  border:1px solid rgba(245,215,118,.24);
+  border-radius:80% 20% 75% 25%;
+  background:linear-gradient(145deg,rgba(245,215,118,.16),rgba(152,59,34,.22));
+  box-shadow:none;
+  transform:rotate(calc(var(--motif-index) * 45deg)) translateY(clamp(-172px,-17vw,-106px)) rotate(42deg);
+  animation:appDharmaLoaderPetal 2.4s ease-in-out calc(var(--motif-index) * -.12s) infinite alternate;
+}
+.app-cosmic-loader[data-transition-kind="dharma"] .app-cosmic-loader__route>i,
+.app-cosmic-loader[data-transition-kind="dharma"] .app-cosmic-loader__progress>i{background:linear-gradient(90deg,#983b22,#d4a017,#f5d776);box-shadow:0 0 12px rgba(212,160,23,.38)}
+.app-cosmic-loader[data-transition-kind="dharma"].is-arriving{
+  -webkit-mask-image:none;
+  mask-image:none;
+  animation:appDharmaLoaderCurtain var(--transit-duration) ease-in forwards;
+}
+.app-cosmic-loader[data-transition-kind="dharma"].is-arriving .app-cosmic-loader__card{animation:appDharmaLoaderCardExit var(--transit-duration) ease-in forwards}
 .app-cosmic-loader[data-transition-kind="music"] .app-cosmic-loader__planet>span{border-radius:44% 56% 50% 50%;animation-duration:1.1s}.app-cosmic-loader[data-transition-kind="dev"] .app-cosmic-loader__planet>span{border-radius:14px}.app-cosmic-loader[data-transition-kind="draw"] .app-cosmic-loader__planet>span{transform:rotate(-4deg);border-radius:22px}
 @keyframes appCosmicTunnel{
   0%{opacity:0;transform:rotate(var(--ring-tilt,0deg)) scale(calc(var(--ring-scale,1) * 1.35))}
@@ -1909,6 +1957,11 @@ html.hh-page-hidden #hhBootSurface *,html.hh-page-hidden #hhBootSurface *::befor
 @keyframes appCosmicPlanetOrbit{to{transform:rotate(340deg) scaleY(.34)}}
 @keyframes appCosmicSignal{50%{opacity:.35;transform:scale(.7)}}
 @keyframes appCosmicMotifOrbit{to{rotate:1turn}}
+@keyframes appDharmaLoaderWheel{to{rotate:1turn}}
+@keyframes appDharmaLoaderGlow{50%{filter:brightness(1.1);box-shadow:0 0 0 9px rgba(212,160,23,.05),0 0 38px rgba(212,160,23,.34),inset 0 0 16px rgba(105,43,22,.35)}}
+@keyframes appDharmaLoaderPetal{to{opacity:.48;filter:brightness(1.2)}}
+@keyframes appDharmaLoaderCurtain{to{opacity:0;visibility:hidden}}
+@keyframes appDharmaLoaderCardExit{to{opacity:0;transform:translateY(-8px) scale(.98)}}
 @keyframes appCosmicBeam{0%,100%{opacity:0;scale:.08 1}48%{opacity:.5;scale:1 1}}
 @keyframes appCosmicEqualizer{to{scale:1 1.9;opacity:.5}}
 @keyframes appCosmicCardEnter{from{opacity:.72;transform:scale(.94) translateY(5px)}to{opacity:1;transform:none}}
