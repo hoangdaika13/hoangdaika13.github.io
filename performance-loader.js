@@ -48,7 +48,7 @@
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
-        "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=10", "home-galaxy-operations.js?v=5", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
+        "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=10", "home-galaxy-operations.js?v=6", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
         "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=13", "home-capability-atlas.js?v=3", "home-live-widgets.js?v=8", "home-cosmic-os.js?v=13"
       ]
     },

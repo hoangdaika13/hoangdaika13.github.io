@@ -33,14 +33,6 @@
     analytics: "/analytics",
     system: "/settings"
   });
-  const FILTERS = Object.freeze([
-    ["all", "Tất cả"],
-    ["creative", "AI"],
-    ["work", "Công việc"],
-    ["dev", "Deployment"],
-    ["communication", "Giao tiếp"],
-    ["system", "Hệ thống"]
-  ]);
   const instances = new WeakMap();
   let autoObserver = null;
 
@@ -232,72 +224,6 @@
     instance.shell.classList.toggle("hgo-has-overdue", snapshot.overdue.length > 0);
   }
 
-  function workMapData() {
-    const snapshot = projectSnapshot();
-    const projects = snapshot.projects.slice(0, 6);
-    const projectIds = new Set(projects.map((item) => String(item.id)));
-    const tasks = snapshot.tasks.filter((item) => projectIds.has(String(item.projectId || item.project))).slice(0, 20);
-    const projectPositions = new Map();
-    const taskPositions = new Map();
-    projects.forEach((project, index) => {
-      const angle = -Math.PI / 2 + index * Math.PI * 2 / Math.max(1, projects.length);
-      projectPositions.set(String(project.id), { x: 500 + Math.cos(angle) * 290, y: 300 + Math.sin(angle) * 210 });
-    });
-    projects.forEach((project) => {
-      const related = tasks.filter((task) => String(task.projectId || task.project) === String(project.id));
-      const origin = projectPositions.get(String(project.id));
-      related.forEach((task, index) => {
-        const angle = index * Math.PI * 2 / Math.max(1, related.length);
-        taskPositions.set(String(task.id), { x: origin.x + Math.cos(angle) * 72, y: origin.y + Math.sin(angle) * 58 });
-      });
-    });
-    return { ...snapshot, projects, tasks, projectPositions, taskPositions };
-  }
-
-  function mapMarkup() {
-    const data = workMapData();
-    if (!data.projects.length) {
-      return `<section class="hgo-work-map" data-hgo-map aria-labelledby="hgoMapTitle"><header><div><span>WORK GALAXY MAP</span><h2 id="hgoMapTitle">Bản đồ thiên hà công việc</h2><p>Project Center chưa có dữ liệu được lưu.</p></div><button type="button" data-hgo-route="/work/project-center">Tạo dự án đầu tiên</button></header><div class="hgo-map-empty"><i>✦</i><strong>Chưa có cụm sao dự án</strong><p>Khi bạn tạo project và dependency thật, chúng sẽ xuất hiện tại đây.</p></div></section>`;
-    }
-    const projectLines = data.tasks.map((task) => {
-      const from = data.projectPositions.get(String(task.projectId || task.project));
-      const to = data.taskPositions.get(String(task.id));
-      return from && to ? `<line class="is-project-link" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"></line>` : "";
-    }).join("");
-    const dependencyLines = data.tasks.flatMap((task) => asArray(task.dependsOn).map((dependencyId) => {
-      const from = data.taskPositions.get(String(dependencyId));
-      const to = data.taskPositions.get(String(task.id));
-      return from && to ? `<line class="is-dependency" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"></line>` : "";
-    })).join("");
-    const projectNodes = data.projects.map((project, index) => {
-      const position = data.projectPositions.get(String(project.id));
-      const progress = clamp(project.progress, 0, 100);
-      return `<button type="button" class="hgo-project-star" data-hgo-project="${esc(project.id)}" data-hgo-route="/work/project-center" style="--x:${position.x / 10}%;--y:${position.y / 6}%;--star:${esc(project.color || ["#58f3ff", "#ff59d6", "#baff62", "#a986ff"][index % 4])}" aria-label="Mở dự án ${esc(projectName(project))}">
-        <i><b>${esc(projectName(project).slice(0, 2).toUpperCase())}</b><em></em></i><strong>${esc(projectName(project))}</strong><small>${progress}% · ${esc(text(project.status || "Đang thực hiện", 40))}</small>
-      </button>`;
-    }).join("");
-    const taskNodes = data.tasks.map((task) => {
-      const position = data.taskPositions.get(String(task.id));
-      const state = taskStateClass(task);
-      return `<button type="button" class="hgo-task-star ${state}" data-hgo-task="${esc(task.id)}" data-hgo-project="${esc(task.projectId || task.project)}" data-hgo-route="/work/project-center" style="--x:${position.x / 10}%;--y:${position.y / 6}%" aria-label="${esc(text(task.title, 100))}: ${state === "is-done" ? "đã hoàn thành" : state === "is-overdue" ? "quá hạn" : state === "is-due" ? "sắp đến hạn" : "đang mở"}"><i></i><span>${esc(text(task.title, 58))}</span></button>`;
-    }).join("");
-    return `<section class="hgo-work-map" data-hgo-map aria-labelledby="hgoMapTitle">
-      <header><div><span>WORK GALAXY MAP · ${data.projects.length} PROJECT</span><h2 id="hgoMapTitle">Bản đồ thiên hà công việc</h2><p>Cụm sao, vệ tinh và dependency được dựng từ Project Center.</p></div><div class="hgo-map-legend"><span class="is-done">Hoàn thành</span><span class="is-due">Sắp đến hạn</span><span class="is-overdue">Quá hạn</span></div></header>
-      <div class="hgo-map-canvas">
-        <svg viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">${projectLines}${dependencyLines}</svg>
-        <div class="hgo-map-core" aria-hidden="true"><span>WORK</span><i></i></div>
-        ${projectNodes}${taskNodes}
-      </div>
-      <footer><span>Đường liền: task thuộc project</span><span>Đường xung: dependency thật</span><button type="button" data-hgo-route="/work/project-center">Mở Project Center →</button></footer>
-    </section>`;
-  }
-
-  function renderMap(instance) {
-    if (!instance.map?.isConnected) return;
-    instance.map.outerHTML = mapMarkup();
-    instance.map = instance.shell.querySelector("[data-hgo-map]");
-  }
-
   function ringMarkup(instance) {
     const statuses = statusSnapshot(instance);
     return `<div class="hgo-status-ring" data-hgo-status-ring aria-label="Cosmic Status Ring">${statuses.map((item, index) => `<button type="button" class="${item.active ? "is-active" : ""}" data-hgo-route="${item.route}" style="--ring:${item.tone};--ring-index:${index}" aria-label="${esc(`${item.label}: ${item.value}`)}"><span>${item.icon}</span><b>${esc(item.label)}</b><small>${esc(item.value)}</small></button>`).join("")}</div>`;
@@ -307,45 +233,6 @@
     const current = instance.shell.querySelector("[data-hgo-status-ring]");
     if (current) current.outerHTML = ringMarkup(instance);
     else instance.shell.querySelector(".hgm-solar")?.insertAdjacentHTML("beforeend", ringMarkup(instance));
-  }
-
-  function categoryForActivity(item) {
-    const planet = String(item?.planet || "");
-    const type = String(item?.type || "");
-    if (planet === "creative" || /ai/.test(type)) return "creative";
-    if (planet === "work" || /task|project|note/.test(type)) return "work";
-    if (planet === "dev" || /deploy/.test(type)) return "dev";
-    if (planet === "communication" || /message|realtime/.test(type)) return "communication";
-    return "system";
-  }
-
-  function activityTone(item) {
-    if (/failed|error|warning|offline/.test(item?.type || "")) return "error";
-    if (/completed|ready|online|success/.test(item?.type || "")) return "success";
-    if (/running|created|updated/.test(item?.type || "")) return "active";
-    return "neutral";
-  }
-
-  function timelineMarkup(instance) {
-    const all = asArray(read(KEYS.activity, []));
-    const visible = all.filter((item) => instance.timelineFilter === "all" || categoryForActivity(item) === instance.timelineFilter).slice(0, 18);
-    return `<section class="hgo-timeline" data-hgo-timeline aria-labelledby="hgoTimelineTitle">
-      <header><div><span>GALAXY TIMELINE · EVENT BUS</span><h2 id="hgoTimelineTitle">Dòng thời gian vũ trụ</h2><p>Chỉ hiển thị hoạt động đã thực sự được module ghi nhận.</p></div><nav aria-label="Lọc hoạt động">${FILTERS.map(([id, label]) => `<button type="button" data-hgo-filter="${id}" aria-pressed="${instance.timelineFilter === id}">${label}</button>`).join("")}</nav></header>
-      <div class="hgo-timeline-list">${visible.length ? visible.map((item) => {
-        const tone = activityTone(item);
-        return `<article class="is-${tone} ${item.read ? "is-read" : ""}">
-          <i><b></b></i><time datetime="${esc(item.createdAt)}">${esc(relative(item.createdAt))}</time>
-          <div><small>${esc(text(item.source || categoryForActivity(item), 70))}</small><strong>${esc(text(item.text, 160))}</strong><span>${esc(text(item.type || "event", 60))}</span></div>
-          <button type="button" data-hgo-activity="${esc(item.id)}" data-hgo-route="${esc(item.route || routeForPlanet(item.planet))}">Tiếp tục →</button>
-        </article>`;
-      }).join("") : '<div class="hgo-empty"><strong>Chưa có hoạt động phù hợp</strong><p>Timeline không tạo lịch sử giả. Hãy thực hiện một tác vụ để ghi sự kiện.</p></div>'}</div>
-    </section>`;
-  }
-
-  function renderTimeline(instance) {
-    if (!instance.timeline?.isConnected) return;
-    instance.timeline.outerHTML = timelineMarkup(instance);
-    instance.timeline = instance.shell.querySelector("[data-hgo-timeline]");
   }
 
   function recentRoute() {
@@ -631,12 +518,6 @@
     } catch { instance.shell.dataset.cosmosHealth = "warning"; }
   }
 
-  function hideLegacyRecent(instance) {
-    const candidates = [...global.document.querySelectorAll("[data-shell-view='home'] section")];
-    const target = candidates.find((node) => /Quay lại đúng nơi bạn đang làm/i.test(node.textContent || ""));
-    if (target && !target.closest("[data-hgo-timeline]")) target.dataset.hgoReplaced = "true";
-  }
-
   function saveCapture(instance, type, value) {
     const clean = text(value, type === "task" ? 180 : 500);
     if (!clean) return false;
@@ -715,12 +596,6 @@
       }
       return openWormhole(instance, "/work", "Command Center");
     }
-    const filter = target.closest("[data-hgo-filter]");
-    if (filter) {
-      instance.timelineFilter = filter.dataset.hgoFilter;
-      renderTimeline(instance);
-      return;
-    }
     const focusTab = target.closest("[data-hgo-focus-tab]");
     if (focusTab) {
       const panel = focusTab.closest("[data-hgm-focus]");
@@ -771,7 +646,6 @@
     global.addEventListener("hh:event", () => setTimeout(() => {
       detectNotification(instance);
       renderPortal(instance);
-      renderTimeline(instance);
       renderRing(instance);
     }, 40), { signal: instance.controller.signal });
     global.addEventListener("online", () => refreshCosmosState(instance, true), { signal: instance.controller.signal });
@@ -805,9 +679,6 @@
       shell,
       controller,
       portal: null,
-      map: null,
-      timeline: null,
-      timelineFilter: "all",
       captureType: "",
       lastActivityId: asArray(read(KEYS.activity, []))[0]?.id || "",
       wormholeBusy: false,
@@ -818,13 +689,9 @@
     const activity = shell.querySelector(".hgm-activity");
     activity?.insertAdjacentHTML("afterend", portalMarkup(commandSnapshot()));
     instance.portal = shell.querySelector("[data-hgo-command]");
-    const hero = shell.querySelector(".hgm-hero");
-    hero?.insertAdjacentHTML("afterend", `${mapMarkup()}${timelineMarkup(instance)}`);
-    instance.map = shell.querySelector("[data-hgo-map]");
-    instance.timeline = shell.querySelector("[data-hgo-timeline]");
+    shell.querySelectorAll("[data-hgo-map],[data-hgo-timeline]").forEach((node) => node.remove());
     shell.querySelector(".hgm-solar")?.insertAdjacentHTML("beforeend", `${ringMarkup(instance)}${navigatorMarkup()}`);
     shell.insertAdjacentHTML("beforeend", '<div class="hgo-nova" data-hgo-nova aria-hidden="true"></div>');
-    hideLegacyRecent(instance);
     bind(instance);
     enhanceFocus(instance);
     refreshCosmosState(instance, true);
@@ -836,7 +703,6 @@
       if (global.document.hidden) return;
       renderPortal(instance);
       renderRing(instance);
-      renderTimeline(instance);
       detectNotification(instance);
       refreshCosmosState(instance);
     }, 5000);
@@ -845,16 +711,10 @@
       version: VERSION,
       refresh: () => {
         renderPortal(instance);
-        renderMap(instance);
         renderRing(instance);
-        renderTimeline(instance);
         refreshCosmosState(instance, true);
       },
       command: () => JSON.parse(JSON.stringify(commandSnapshot())),
-      map: () => {
-        const data = workMapData();
-        return { projects: data.projects, tasks: data.tasks };
-      },
       navigate: (route, label) => openWormhole(instance, route, label),
       destroy: () => unmount(root)
     });
@@ -869,7 +729,7 @@
     clearInterval(instance.interval);
     instance.focusObserver?.disconnect();
     root.classList.remove("hgo-active");
-    root.querySelectorAll("[data-hgo-command],[data-hgo-map],[data-hgo-timeline],[data-hgo-status-ring],[data-hgo-navigator-open],[data-hgo-navigator],[data-hgo-nova],[data-hgo-event-comet]").forEach((node) => node.remove());
+    root.querySelectorAll("[data-hgo-command],[data-hgo-status-ring],[data-hgo-navigator-open],[data-hgo-navigator],[data-hgo-nova],[data-hgo-event-comet]").forEach((node) => node.remove());
     instances.delete(root);
     return true;
   }

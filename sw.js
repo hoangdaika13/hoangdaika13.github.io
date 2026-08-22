@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v799";
+const CACHE = "hh-identity-portal-v800";
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
@@ -205,7 +205,7 @@ const RUNTIME_ASSETS = [
   "./home-live-widgets.js?v=8",
   "./home-cosmic-os.js?v=13",
   "./home-galaxy-mission.js?v=10",
-  "./home-galaxy-operations.js?v=5",
+  "./home-galaxy-operations.js?v=6",
   "./home-galaxy-control-deck.js?v=3",
   "./command-center-pro.js?v=6",
   "./home-daily-command.js?v=6",
@@ -477,7 +477,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=457",
+  "./performance-loader.js?v=458",
   "./auth-platform.js?v=15",
   "./auth-neon-gateway.js?v=28",
   "./script.js?v=219"

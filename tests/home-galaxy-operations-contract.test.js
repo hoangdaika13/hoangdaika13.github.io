@@ -14,7 +14,7 @@ const operations = require(path.join(root, "home-galaxy-operations.js"));
 
 test("Galaxy Operations V3 is versioned on home and offline shell", () => {
   assert.equal(operations.VERSION, "3.0.0");
-  for (const asset of ["home-galaxy-operations.css?v=2", "home-galaxy-operations.js?v=5"]) {
+  for (const asset of ["home-galaxy-operations.css?v=2", "home-galaxy-operations.js?v=6"]) {
     assert.ok(loader.includes(asset), `loader missing ${asset}`);
     assert.ok(worker.includes(asset), `service worker missing ${asset}`);
   }
@@ -50,21 +50,17 @@ test("Command Center reads and writes the existing work stores without fake coun
   assert.equal(empty.activeJobs.length, 0);
 });
 
-test("work galaxy map is generated from real projects, tasks and dependencies", () => {
-  for (const contract of [
-    "planning.projects",
-    "planning.tasks",
-    "legacy.projects",
-    "legacy.tasks",
-    "dependsOn",
-    "data-hgo-project",
-    "data-hgo-task",
-    "data-hgo-route=\"/work/project-center\"",
-    "Đường xung: dependency thật"
-  ]) assert.ok(source.includes(contract), `missing work-map contract ${contract}`);
-  for (const state of [".is-done", ".is-due", ".is-overdue"]) {
-    assert.ok(styles.includes(state), `missing real task state ${state}`);
-  }
+test("retired work map and cosmic timeline are not rendered or refreshed on Home", () => {
+  for (const retired of [
+    "Bản đồ thiên hà công việc",
+    "Dòng thời gian vũ trụ",
+    "mapMarkup",
+    "timelineMarkup",
+    "renderMap",
+    "renderTimeline",
+    "timelineFilter"
+  ]) assert.ok(!source.includes(retired), `retired Home surface still active: ${retired}`);
+  assert.match(source, /querySelectorAll\("\[data-hgo-map\],\[data-hgo-timeline\]"\)/);
 });
 
 test("Cosmic Status Ring exposes six clickable live system signals", () => {
@@ -106,7 +102,7 @@ test("wormhole waits for destination assets and reverses into a retry state on f
   assert.match(styles, /data-phase="error"/);
 });
 
-test("notifications and timeline are driven by persisted event-bus activity", () => {
+test("notification comets remain driven by persisted event-bus activity", () => {
   for (const contract of [
     "hh.home.galaxy.activity.v2",
     "hh:event",
@@ -114,14 +110,8 @@ test("notifications and timeline are driven by persisted event-bus activity", ()
     "markActivityRead",
     "data-hgo-event-comet",
     "data-hgo-activity",
-    "data-hgo-filter",
-    "categoryForActivity",
     "relative(item.createdAt)"
   ]) assert.ok(source.includes(contract), `missing real activity contract ${contract}`);
-  assert.deepEqual(
-    ["AI", "Công việc", "Deployment", "Giao tiếp", "Hệ thống"].every((label) => source.includes(label)),
-    true
-  );
   assert.doesNotMatch(source, /setInterval\([^)]*(comet|nova)/i);
 });
 
@@ -159,5 +149,4 @@ test("cosmos reflects time, connectivity, health, quality and page visibility", 
   }
   assert.match(styles, /prefers-reduced-motion/);
   assert.match(styles, /max-width: 700px/);
-  assert.match(styles, /\.hgo-work-map \{\s*overflow-x: auto/);
 });
