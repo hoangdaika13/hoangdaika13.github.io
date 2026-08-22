@@ -14,9 +14,9 @@ const worker = read("sw.js");
 test("home route loads the versioned Galaxy Command assets and mount host", () => {
   assert.match(html, /id="homeGalaxyCommandRoot"/);
   assert.match(loader, /home-galaxy-command\.css\?v=13/);
-  assert.match(loader, /home-galaxy-command\.js\?v=14/);
+  assert.match(loader, /home-galaxy-command\.js\?v=15/);
   assert.match(worker, /home-galaxy-command\.css\?v=13/);
-  assert.match(worker, /home-galaxy-command\.js\?v=14/);
+  assert.match(worker, /home-galaxy-command\.js\?v=15/);
   assert.match(source, /hh:assets-ready/);
   assert.match(source, /\[data-shell-view="home"\]/);
 });

@@ -934,6 +934,13 @@
     document.body.classList.toggle("hgc-home-active", active);
   }
 
+  function publishReady() {
+    if (!root?.classList.contains("hgm-active") || !root.querySelector("[data-hgm-shell]")) return false;
+    dispatchEvent(new CustomEvent("hh:home-surface-ready", { detail: { route: "/home", surface: "galaxy-command" } }));
+    if (document.documentElement.dataset.hhRouteReady === "/home") window.HHSurfaceBoot?.release?.("home");
+    return true;
+  }
+
   function mount(home = document.querySelector('[data-shell-view="home"]'), force = false) {
     const routeActive = !location.hash || /^#\/home(?:$|[/?])/.test(location.hash);
     if (!routeActive) { syncMainState(false); return false; }
@@ -945,12 +952,14 @@
       root = missionRoot;
       home.classList.add("hgc-active");
       syncMainState(true);
+      publishReady();
       return true;
     }
     if (!force && mountedHome === home && root?.isConnected) {
       syncMainState(true);
       updateLive();
       window.HHHomeLiveWidgets?.mount?.(root);
+      publishReady();
       return true;
     }
     clearInterval(refreshTimer);
@@ -966,6 +975,7 @@
     setTimeout(() => window.HHHomeLiveWidgets?.mount?.(root, true), 0);
     observeHome();
     refreshTimer = setInterval(() => { if (!document.hidden) updateLive(); }, 2000);
+    publishReady();
     return true;
   }
 

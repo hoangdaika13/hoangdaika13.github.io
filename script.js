@@ -6710,7 +6710,11 @@ function initAppShell() {
     });
     legacyMain.hidden = true;
     renderedRoute = route;
+    document.documentElement.dataset.hhRouteReady = route;
     window.dispatchEvent(new CustomEvent("hh:route-rendered", { detail: { route } }));
+    if (route !== "/home" || document.querySelector('[data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]')) {
+      window.HHSurfaceBoot?.release?.(route === "/home" ? "home" : "app");
+    }
   };
   const renderRoute = () => {
     if (!isUnlocked()) return;
@@ -7347,6 +7351,8 @@ function initAppShell() {
     mountSimpleView("Workspace gặp lỗi", "Bạn có thể thử tải lại module hoặc trở về Command Center.", `<section class="app-runtime-error" role="alert"><span>!</span><div><strong>${escapeRouteHtml(issue.name)}</strong><p>${escapeRouteHtml(issue.message)}</p><small>Mã: ${escapeRouteHtml(issue.id)} · Không lưu nội dung riêng tư.</small></div><div><button type="button" data-shell-retry-route>Thử lại</button><button type="button" data-app-route="/home">Về Command Center</button></div></section>`);
     legacyMain.hidden = true;
     renderedRoute = activeRoute;
+    document.documentElement.dataset.hhRouteReady = activeRoute;
+    window.HHSurfaceBoot?.release?.("app-error");
     document.body.classList.remove("app-route-changing");
     routeProgress?.setAttribute("aria-hidden", "true");
     finishCosmicRouteLoader({ error: true, message: issue.message });

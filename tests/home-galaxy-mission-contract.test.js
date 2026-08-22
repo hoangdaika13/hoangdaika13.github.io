@@ -15,9 +15,9 @@ const mission = require(path.join(root, "home-galaxy-mission.js"));
 test("Galaxy Mission Control V3 is versioned on home and offline shell", () => {
   assert.equal(mission.VERSION, "3.0.0");
   assert.match(loader, /home-galaxy-mission\.css\?v=8/);
-  assert.match(loader, /home-galaxy-mission\.js\?v=10/);
+  assert.match(loader, /home-galaxy-mission\.js\?v=11/);
   assert.match(worker, /home-galaxy-mission\.css\?v=8/);
-  assert.match(worker, /home-galaxy-mission\.js\?v=10/);
+  assert.match(worker, /home-galaxy-mission\.js\?v=11/);
   assert.match(source, /hh\.home\.galaxy\.preferences\.v2/);
   assert.match(source, /newlyIntroduced/);
 });

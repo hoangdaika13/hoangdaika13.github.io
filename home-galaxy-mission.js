@@ -1997,6 +1997,10 @@
       destroy: () => unmount(root)
     });
     instance.api = api;
+    const home = root.closest?.('[data-shell-view="home"]');
+    home?.classList.add("hgc-active");
+    global.dispatchEvent?.(new CustomEvent("hh:home-surface-ready", { detail: { route: "/home", surface: "mission-control" } }));
+    if (global.document.documentElement.dataset.hhRouteReady === "/home") global.HHSurfaceBoot?.release?.("home");
     return api;
   }
 

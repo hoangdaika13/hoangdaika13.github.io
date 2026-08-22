@@ -63,3 +63,27 @@ test("authentication and Home enforce one paint owner at a time", () => {
   assert.match(loader, /"auth-effects":\s*\{[\s\S]*?styles:\s*\[\][\s\S]*?scripts:\s*\[\]/);
   assert.doesNotMatch(html, /auth-creative-universe\.(?:css|js)/);
 });
+
+test("refresh stays on an opaque boot surface until auth and the current Home are ready", () => {
+  const html = read("index.html");
+  const shell = read("app-shell.css");
+  const auth = read("auth-platform.js");
+  const loader = read("performance-loader.js");
+  const home = read("home-galaxy-command.js");
+  const router = read("script.js");
+
+  assert.match(html, /<body class="home-neon auth-resolving hh-surface-pending">/);
+  assert.ok(html.indexOf('id="hhBootSurface"') < html.indexOf('id="authGate"'));
+  assert.match(html, /body\.hh-surface-pending>\s*:not\(#hhBootSurface\)[^}]*display:none!important/);
+  assert.match(shell, /body\.hh-surface-pending #authGate[\s\S]*?display:\s*none\s*!important/);
+  assert.match(shell, /#authGate \.auth-creative-universe\s*\{\s*display:\s*none\s*!important/);
+  assert.match(auth, /const sessionResolving = gate\.dataset\.authSession === "background"/);
+  assert.match(auth, /HHSurfaceBoot = Object\.freeze/);
+  assert.match(auth, /routeReady && homeReady/);
+  assert.match(loader, /"home-critical":\s*\{[\s\S]*?home-galaxy-command\.css\?v=13[\s\S]*?home-galaxy-mission\.css\?v=8[\s\S]*?home-galaxy-command\.js\?v=15[\s\S]*?home-galaxy-mission\.js\?v=11/);
+  assert.match(loader, /if \(value === "\/home"\) return \["home-critical"\]/);
+  assert.match(home, /hh:home-surface-ready/);
+  assert.match(read("home-galaxy-mission.js"), /surface: "mission-control"/);
+  assert.match(home, /HHSurfaceBoot\?\.release\?\.\("home"\)/);
+  assert.match(router, /document\.documentElement\.dataset\.hhRouteReady = route/);
+});

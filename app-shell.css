@@ -2,6 +2,18 @@
 
 @layer legacy, tokens, base, layout, components, pages, modules, responsive, accessibility;
 
+/* A retired authentication universe must never reclaim the current gate,
+   including when an older cached runtime tries to mount it after refresh. */
+#authGate .auth-creative-universe { display: none !important; }
+
+body.hh-surface-pending #authGate,
+body.hh-surface-pending #appShell,
+body.hh-surface-pending main#top {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 @layer components {
   .app-runtime-error{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:14px;align-items:center;padding:18px;border:1px solid color-mix(in srgb,var(--route-accent,#56eaff) 42%,#ff5f85);border-radius:8px;background:linear-gradient(135deg,rgba(255,95,133,.09),rgba(86,234,255,.055));box-shadow:inset 0 1px rgba(255,255,255,.04)}
   .app-runtime-error>span{display:grid;place-items:center;width:42px;height:42px;border:1px solid #ff718f;border-radius:7px;color:#ff8ba3;font-size:1.15rem;font-weight:900}

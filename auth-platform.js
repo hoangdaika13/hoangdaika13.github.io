@@ -11,6 +11,40 @@
   let qrPoll = 0;
   let credentialedFetchInstalled = false;
   let turnstileLoader = null;
+  let bootReleaseAllowed = false;
+  const bootSurface = document.querySelector("#hhBootSurface");
+  const bootMessage = bootSurface?.querySelector("[data-hh-boot-message]");
+  const currentRoute = () => {
+    const value = location.hash.replace(/^#/, "").split("?")[0] || "/home";
+    return value.startsWith("/") ? value : `/${value}`;
+  };
+  const holdSurfaceBoot = (message = "Đang khôi phục phiên an toàn…") => {
+    document.body.classList.add("hh-surface-pending", "auth-resolving");
+    document.documentElement.dataset.hhSurface = "boot";
+    if (bootMessage) bootMessage.textContent = message;
+    if (bootSurface) {
+      bootSurface.hidden = false;
+      bootSurface.inert = false;
+      bootSurface.setAttribute("aria-hidden", "false");
+    }
+  };
+  const releaseSurfaceBoot = (surface = "app") => {
+    if (!bootReleaseAllowed) return false;
+    document.body.classList.remove("hh-surface-pending", "auth-resolving");
+    document.documentElement.dataset.hhSurface = surface;
+    document.documentElement.dataset.hhSurfaceReady = surface;
+    if (bootSurface) {
+      bootSurface.hidden = true;
+      bootSurface.inert = true;
+      bootSurface.setAttribute("aria-hidden", "true");
+    }
+    return true;
+  };
+  window.HHSurfaceBoot = Object.freeze({
+    hold: holdSurfaceBoot,
+    release: releaseSurfaceBoot,
+    pending: () => document.body.classList.contains("hh-surface-pending")
+  });
   const AUTH_ENDPOINTS = Object.freeze({
     passkeyLoginOptions: "/api/auth/passkey-login-options",
     passkeyLoginVerify: "/api/auth/passkey-login-verify",
@@ -409,14 +443,14 @@
 
     const setGateState = () => {
       const authenticated = Boolean(user);
-      document.documentElement.dataset.hhSurface = authenticated ? "app" : "auth";
+      const sessionResolving = gate.dataset.authSession === "background" && !authenticated;
       document.body.classList.toggle("auth-unlocked", authenticated);
-      document.body.classList.toggle("auth-locked", !authenticated);
+      document.body.classList.toggle("auth-locked", !authenticated && !sessionResolving);
       document.body.classList.toggle("auth-authenticated", authenticated);
       document.body.classList.toggle("auth-guest", Boolean(user?.guest));
-      gate.setAttribute("aria-hidden", String(authenticated));
-      gate.hidden = authenticated;
-      gate.inert = authenticated;
+      gate.setAttribute("aria-hidden", String(authenticated || sessionResolving));
+      gate.hidden = authenticated || sessionResolving;
+      gate.inert = authenticated || sessionResolving;
       gate.style.pointerEvents = authenticated ? "none" : "";
       if (appShell) {
         appShell.hidden = !authenticated;
@@ -431,6 +465,12 @@
         });
       }
       if (authenticated) {
+        bootReleaseAllowed = true;
+        const route = currentRoute();
+        const routeReady = document.documentElement.dataset.hhRouteReady === route;
+        const homeReady = route !== "/home" || Boolean(document.querySelector('[data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]'));
+        if (routeReady && homeReady) releaseSurfaceBoot(route === "/home" ? "home" : "app");
+        else holdSurfaceBoot(route === "/home" ? "Đang hoàn thiện Trang chủ…" : "Đang mở workspace của bạn…");
         document.body.classList.remove("auth-panel-open", "app-route-changing");
         document.querySelectorAll(".auth-transition-runtime, .hcp-portal-transition").forEach((overlay) => {
           overlay.classList.remove("is-active", "is-playing");
@@ -440,6 +480,12 @@
         window.HHAuthCreativeUniverse?.destroy?.();
         writePublicProfile(user);
         window.dispatchEvent(new CustomEvent("hh:auth-change", { detail: { user, token: token(), guest: Boolean(user.guest) } }));
+      } else if (sessionResolving) {
+        bootReleaseAllowed = false;
+        holdSurfaceBoot("Đang khôi phục phiên an toàn…");
+      } else {
+        bootReleaseAllowed = true;
+        releaseSurfaceBoot("auth");
       }
     };
 

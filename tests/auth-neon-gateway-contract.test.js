@@ -61,7 +61,7 @@ test("gateway supports state, performance fallback and reduced motion", () => {
   assert.match(css, /display:\s*flex\s*!important/);
 });
 
-test("session startup releases the login gate while home enhancements load after paint", () => {
+test("session startup holds an opaque boot surface until critical Home is ready", () => {
   const auth = read("auth-platform.js");
   const loader = read("performance-loader.js");
   assert.match(auth, /SESSION_VISUAL_TIMEOUT/);
@@ -69,7 +69,7 @@ test("session startup releases the login gate while home enhancements load after
   assert.match(auth, /api\("\/api\/auth\/me\?compact=1", \{ timeout: 5000 \}\)/);
   assert.match(auth, /\.catch\(\(error\) => \{[\s\S]*?Không thể khởi tạo phiên đăng nhập/);
   assert.match(loader, /"home-enhancements"/);
-  assert.match(loader, /if \(value === "\/home"\) return \[\]/);
+  assert.match(loader, /if \(value === "\/home"\) return \["home-critical"\]/);
   assert.match(loader, /scheduleHomeEnhancements/);
   assert.match(loader, /requestIdleCallback/);
   assert.match(loader, /reduce\([\s\S]*?loadScript/);

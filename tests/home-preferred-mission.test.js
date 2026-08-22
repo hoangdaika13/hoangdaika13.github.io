@@ -18,8 +18,8 @@ test("home keeps Mission Control as the preferred surface", () => {
   assert.match(mission, /GALAXY ACTIVITY/);
   assert.match(mission, /HH GALAXY MISSION CONTROL/);
   assert.match(command, /missionRoot\?\.querySelector\("\[data-hgm-shell\]"\)/);
-  assert.match(loader, /home-galaxy-command\.js\?v=14/);
-  assert.match(worker, /home-galaxy-command\.js\?v=14/);
+  assert.match(loader, /home-galaxy-command\.js\?v=15/);
+  assert.match(worker, /home-galaxy-command\.js\?v=15/);
   assert.match(loader, /home-galaxy-command\.css\?v=13/);
   assert.match(worker, /home-galaxy-command\.css\?v=13/);
   assert.match(styles, /body\.hgc-home-active \.app-main\.hgc-main-active\s*\{[\s\S]*?overflow:\s*hidden auto\s*!important/);

@@ -42,14 +42,18 @@
       styles: [],
       scripts: []
     },
+    "home-critical": {
+      styles: ["home-galaxy-command.css?v=13", "home-galaxy-mission.css?v=8"],
+      scripts: ["home-galaxy-command.js?v=15", "home-galaxy-mission.js?v=11"]
+    },
     "home-enhancements": {
       styles: [
-        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=13", "home-capability-atlas.css?v=1", "home-live-widgets.css?v=12", "home-cosmic-os.css?v=3", "home-galaxy-mission.css?v=8", "home-galaxy-operations.css?v=2", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-capability-atlas.css?v=1", "home-live-widgets.css?v=12", "home-cosmic-os.css?v=3", "home-galaxy-operations.css?v=2", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
-        "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=10", "home-galaxy-operations.js?v=6", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
-        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=14", "home-capability-atlas.js?v=3", "home-live-widgets.js?v=8", "home-cosmic-os.js?v=13"
+        "dashboard-aurora.js?v=5", "home-galaxy-operations.js?v=6", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
+        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-capability-atlas.js?v=3", "home-live-widgets.js?v=8", "home-cosmic-os.js?v=13"
       ]
     },
     platform: {
@@ -274,7 +278,7 @@
 
   function featureGroupsForRoute(route) {
     const value = normalizeRoute(route);
-    if (value === "/home") return [];
+    if (value === "/home") return ["home-critical"];
     if (value.startsWith("/social-media-tools")) return ["social-media-tools"];
     if (value.startsWith("/dev-tools")) return ["dev"];
     if (value === "/davinci-resolve/ai-video-remake") return ["davinci", "ai-video-remake"];
