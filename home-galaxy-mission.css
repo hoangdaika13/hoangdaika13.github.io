@@ -2790,3 +2790,219 @@
   .hgm-flares { display: none !important; }
   .dashboard-home.hgc-active :is(.dashboard-panel,.dashboard-sticky,.dashboard-quick-actions,.dashboard-category-ribbon,.dashboard-intelligence-grid) { animation: none !important; }
 }
+
+/* Mission Control V4 — search, filters and a balanced professional cockpit. */
+.hgm-hero {
+  grid-template-columns: minmax(390px, .82fr) minmax(620px, 1.18fr);
+  min-height: 680px;
+}
+
+.hgm-copy {
+  padding: 44px 12px 44px 42px;
+}
+
+.hgm-copy > p {
+  max-width: 510px;
+  color: #a9b6cc;
+  font-size: 14px;
+}
+
+.hgm-mission-tools {
+  display: grid;
+  max-width: 520px;
+  gap: 9px;
+  margin-top: 19px;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(99, 222, 255, .16);
+  border-radius: 17px;
+  background:
+    radial-gradient(circle at 100% 0, rgba(255, 75, 203, .11), transparent 43%),
+    linear-gradient(145deg, rgba(8, 18, 37, .86), rgba(4, 9, 23, .76));
+  box-shadow: inset 0 1px rgba(255, 255, 255, .045), 0 16px 40px rgba(0, 0, 0, .17);
+}
+
+.hgm-planet-search {
+  display: grid;
+  min-height: 43px;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  border: 1px solid rgba(95, 226, 255, .19);
+  border-radius: 12px;
+  background: rgba(1, 6, 16, .7);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.hgm-planet-search:focus-within {
+  border-color: rgba(94, 234, 255, .58);
+  box-shadow: 0 0 0 3px rgba(86, 225, 255, .07), 0 0 24px rgba(86, 225, 255, .08);
+}
+
+.hgm-planet-search > i {
+  color: var(--hgm-cyan);
+  font-size: 17px;
+  font-style: normal;
+}
+
+.hgm-planet-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #eef8ff;
+  background: transparent;
+  font: 600 12px/1.3 Inter, "Segoe UI", sans-serif;
+}
+
+.hgm-planet-search input::placeholder { color: #71849d; }
+.hgm-planet-search kbd { padding: 3px 7px; border: 1px solid rgba(154, 180, 218, .17); border-radius: 6px; color: #8fa2ba; background: rgba(255, 255, 255, .035); font: 800 9px/1 Inter, sans-serif; }
+
+.hgm-planet-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.hgm-planet-filters button {
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 7px;
+  overflow: hidden;
+  border: 1px solid rgba(137, 170, 217, .1);
+  border-radius: 9px;
+  color: #8799b1;
+  background: rgba(255, 255, 255, .025);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color .2s ease, border-color .2s ease, background .2s ease, transform .2s ease;
+}
+
+.hgm-planet-filters button:hover,
+.hgm-planet-filters button:focus-visible { color: #eaf8ff; border-color: rgba(107, 224, 255, .35); transform: translateY(-1px); }
+.hgm-planet-filters button[aria-pressed="true"] { color: #fff; border-color: rgba(107, 229, 255, .32); background: linear-gradient(115deg, rgba(67, 212, 255, .16), rgba(255, 72, 199, .13)); box-shadow: inset 0 0 18px rgba(81, 206, 255, .05); }
+
+.hgm-planet-shortcuts {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.hgm-planet-shortcuts::-webkit-scrollbar { display: none; }
+.hgm-planet-shortcuts button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 34px;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--shortcut) 26%, transparent);
+  border-radius: 99px;
+  color: #b8c5d9;
+  background: color-mix(in srgb, var(--shortcut) 6%, rgba(4, 9, 21, .74));
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.hgm-planet-shortcuts button i {
+  display: grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: color-mix(in srgb, var(--shortcut) 31%, #07101f);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--shortcut) 28%, transparent);
+  font-style: normal;
+  animation: hgmShortcutOrbit 4s ease-in-out infinite;
+}
+
+.hgm-planet-shortcuts button:hover { color: #fff; border-color: color-mix(in srgb, var(--shortcut) 62%, transparent); }
+.hgm-discovery-count { color: #72869f; font-size: 9px; }
+.hgm-discovery-count b { color: var(--hgm-cyan); }
+
+.hgm-summary {
+  max-width: 520px;
+  margin: 14px 0;
+  background: linear-gradient(90deg, rgba(49, 204, 232, .07), rgba(154, 89, 255, .055));
+}
+
+.hgm-solar {
+  width: min(720px, 100%);
+  height: 650px;
+}
+
+.hgm-planet {
+  width: 126px;
+}
+
+.hgm-planet > strong {
+  max-width: 122px;
+  color: #eef4ff;
+  font-size: 11px;
+}
+
+.hgm-planet > small {
+  max-width: 124px;
+  color: #8797af;
+  font-size: 8px;
+}
+
+.hgm-planet[hidden] { display: none !important; }
+.hgm-shell.has-planet-filter .hgm-planet:not([hidden]) { animation: hgmDiscoveryIn .3s cubic-bezier(.2, .8, .2, 1) both; }
+
+.hgm-focus-panel footer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@keyframes hgmShortcutOrbit { 50% { filter: brightness(1.2) saturate(1.25); transform: rotate(8deg) scale(1.05); } }
+@keyframes hgmDiscoveryIn { from { opacity: 0; filter: blur(3px); transform: scale(.75); } }
+
+@media (max-width: 1240px) {
+  .hgm-hero { grid-template-columns: minmax(340px, .78fr) minmax(560px, 1.22fr); }
+  .hgm-copy { padding-left: 30px; }
+  .hgm-solar { transform: scale(.92); }
+}
+
+@media (max-width: 920px) {
+  .hgm-hero { display: block; min-height: 1060px; }
+  .hgm-copy { padding: 30px 24px 0; }
+  .hgm-copy > p,
+  .hgm-mission-tools,
+  .hgm-summary { max-width: 100%; }
+  .hgm-solar { width: 700px; margin-top: 10px; transform: scale(.88); }
+}
+
+@media (max-width: 700px) {
+  .hgm-hero { min-height: 1000px; }
+  .hgm-copy { padding: 24px 16px 0; }
+  .hgm-copy > p { font-size: 13px; }
+  .hgm-mission-tools { margin-top: 14px; padding: 10px; }
+  .hgm-planet-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hgm-planet-shortcuts button { flex: 0 0 auto; }
+  .hgm-solar { margin-top: 4px; transform: translateX(-50%) scale(.7); }
+}
+
+@media (max-width: 430px) {
+  .hgm-hero { min-height: 940px; }
+  .hgm-copy h2 { font-size: 31px; }
+  .hgm-mission-tools { border-radius: 14px; }
+  .hgm-planet-search { min-height: 40px; }
+  .hgm-discovery-count { font-size: 8px; }
+  .hgm-solar { transform: translateX(-50%) scale(.61); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hgm-planet-shortcuts button i,
+  .hgm-shell.has-planet-filter .hgm-planet:not([hidden]) { animation: none !important; }
+}

@@ -26,7 +26,7 @@ test("heavy workspaces load by route and retain deterministic dependencies", () 
   }
   assert.match(loader, /ensureForRoute/);
   assert.match(loader, /home:\s*\{[\s\S]*?styles:\s*\[\][\s\S]*?scripts:\s*\[\]/);
-  assert.match(loader, /"home-critical":\s*\{[\s\S]*?home-galaxy-command\.js\?v=15[\s\S]*?home-galaxy-mission\.js\?v=11/);
+  assert.match(loader, /"home-critical":\s*\{[\s\S]*?home-galaxy-command\.js\?v=15[\s\S]*?home-galaxy-mission\.js\?v=12/);
   assert.match(loader, /"home-enhancements":\s*\{[\s\S]*?dashboard-aurora\.css\?v=4/);
   assert.match(loader, /"home-enhancements":\s*\{[\s\S]*?dashboard-aurora\.js\?v=5/);
   assert.match(loader, /if \(value === "\/home"\) return \["home-critical"\]/);

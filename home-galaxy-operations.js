@@ -174,19 +174,46 @@
     return "is-open";
   }
 
-  function portalMarkup(snapshot) {
+  function focusSnapshot(instance) {
+    const remaining = Math.max(0, Number(instance?.focusEndsAt || 0) - Date.now());
+    if (!remaining) return { active: false, label: "Bắt đầu 25 phút", time: "25:00" };
+    const minutes = Math.floor(remaining / 60_000);
+    const seconds = Math.floor((remaining % 60_000) / 1000);
+    return { active: true, label: "Đang tập trung", time: `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}` };
+  }
+
+  function filteredTasks(snapshot, filter = "priority") {
+    if (filter === "overdue") return snapshot.overdue;
+    if (filter === "today") return snapshot.todayTasks;
+    if (filter === "all") return snapshot.open;
+    const priority = [...snapshot.overdue, ...snapshot.todayTasks, ...snapshot.open.filter((item) => !snapshot.overdue.includes(item) && !snapshot.todayTasks.includes(item))];
+    return uniqueById(priority);
+  }
+
+  function portalMarkup(snapshot, instance = {}) {
     const lastNote = snapshot.latestNote ? text(snapshot.latestNote.text || snapshot.latestNote.title, 120) : "Chưa có ghi chú gần đây";
     const project = snapshot.activeProject ? projectName(snapshot.activeProject) : "Chưa có dự án đang thực hiện";
-    const projectProgress = snapshot.activeProject ? `${clamp(snapshot.activeProject.progress, 0, 100)}%` : "—";
+    const projectProgressValue = snapshot.activeProject ? clamp(snapshot.activeProject.progress, 0, 100) : 0;
+    const projectProgress = snapshot.activeProject ? `${projectProgressValue}%` : "—";
     const jobText = snapshot.activeJobs.length || snapshot.failedJobs.length
       ? `${snapshot.activeJobs.length} đang xử lý · ${snapshot.failedJobs.length} lỗi`
       : "Chưa có tác vụ nền";
+    const taskFilter = ["priority", "today", "overdue", "all"].includes(instance.taskFilter) ? instance.taskFilter : "priority";
+    const tasks = filteredTasks(snapshot, taskFilter).slice(0, 5);
+    const focus = focusSnapshot(instance);
+    const health = healthSnapshot();
+    const healthLabel = global.navigator?.onLine === false ? "Thiết bị offline" : health.total ? `${health.online}/${health.total} endpoint ổn` : "Mạng đang hoạt động";
     return `<section class="hgo-command${snapshot.overdue.length ? " has-overdue" : ""}" data-hgo-command aria-labelledby="hgoCommandTitle">
       <div class="hgo-command-visual" aria-hidden="true"><i></i><b></b><span>H</span><em></em></div>
       <div class="hgo-command-copy">
         <span class="hgo-eyebrow"><i></i> QUANTUM COMMAND GATE · REAL WORKSPACE</span>
         <h2 id="hgoCommandTitle">Command Center</h2>
         <p>${snapshot.overdue.length ? `${snapshot.overdue.length} task đang quá hạn và cần xử lý.` : snapshot.open.length ? `${snapshot.open.length} task đang mở trong Todo Workspace.` : "Chưa có công việc gần đây."}</p>
+        <div class="hgo-command-pulse" aria-label="Tình trạng phiên làm việc">
+          <span class="hgo-project-ring" style="--hgo-project-progress:${projectProgressValue * 3.6}deg"><i>${esc(projectProgress)}</i><b>Tiến độ</b></span>
+          <button type="button" class="${focus.active ? "is-active" : ""}" data-hgo-focus-session><i>◎</i><span><b>${esc(focus.time)}</b><small>${esc(focus.label)}</small></span></button>
+          <button type="button" data-hgo-route="/analytics"><i>↯</i><span><b>${esc(healthLabel)}</b><small>System health trực tiếp</small></span></button>
+        </div>
         <div class="hgo-command-metrics">
           <article><span>ĐANG MỞ</span><strong>${snapshot.open.length}</strong><small>${snapshot.todayTasks.length} đến hạn hôm nay</small></article>
           <article class="${snapshot.overdue.length ? "is-alert" : ""}"><span>QUÁ HẠN</span><strong>${snapshot.overdue.length}</strong><small>${snapshot.overdue.length ? "Cần ưu tiên" : "Không có cảnh báo"}</small></article>
@@ -209,8 +236,14 @@
         </form>
       </div>
       <div class="hgo-command-tasks" data-hgo-command-tasks>
-        <header><span>TASK SIGNALS</span><small>Đánh dấu hoàn thành ngay tại đây</small></header>
-        ${snapshot.open.length ? snapshot.open.slice(0, 4).map((task) => `<label class="${taskStateClass(task)}"><input type="checkbox" data-hgo-complete-task="${esc(task.id)}"><i></i><span><b>${esc(text(task.title, 110))}</b><small>${esc(taskDue(task) || "Không deadline")} · ${esc(text(task.category || task.priority || "Công việc", 40))}</small></span></label>`).join("") : '<p class="hgo-empty">Chưa có công việc gần đây.</p>'}
+        <header><span>TASK SIGNALS</span><small>${snapshot.open.length} việc đang mở</small></header>
+        <nav class="hgo-task-filters" aria-label="Lọc công việc">
+          ${[["priority", "Ưu tiên", snapshot.overdue.length + snapshot.todayTasks.length], ["today", "Hôm nay", snapshot.todayTasks.length], ["overdue", "Quá hạn", snapshot.overdue.length], ["all", "Tất cả", snapshot.open.length]].map(([id, label, count]) => `<button type="button" data-hgo-task-filter="${id}" aria-pressed="${taskFilter === id}">${label}<b>${count}</b></button>`).join("")}
+        </nav>
+        <div class="hgo-task-list" data-hgo-task-list>
+          ${tasks.length ? tasks.map((task) => `<article class="${taskStateClass(task)}"><label><input type="checkbox" data-hgo-complete-task="${esc(task.id)}"><i></i><span><b>${esc(text(task.title, 110))}</b><small>${esc(taskDue(task) || "Không deadline")} · ${esc(text(task.category || task.priority || "Công việc", 40))}</small></span></label><div><button type="button" data-hgo-snooze-task="${esc(task.id)}" title="Lùi hạn một ngày">＋1 ngày</button><button type="button" data-hgo-route="/work" data-hgo-task="${esc(task.id)}" title="Mở trong Công việc">Mở ↗</button></div></article>`).join("") : '<p class="hgo-empty">Không có công việc trong bộ lọc này.</p>'}
+        </div>
+        <footer><button type="button" data-hgo-capture="task">＋ Quick capture</button><button type="button" data-hgo-route="/work">Xem toàn bộ →</button></footer>
       </div>
     </section>`;
   }
@@ -219,7 +252,7 @@
     if (!instance.portal?.isConnected) return;
     if (instance.portal?.querySelector("[data-hgo-capture-form]:not([hidden])")) return;
     const snapshot = commandSnapshot();
-    instance.portal.outerHTML = portalMarkup(snapshot);
+    instance.portal.outerHTML = portalMarkup(snapshot, instance);
     instance.portal = instance.shell.querySelector("[data-hgo-command]");
     instance.shell.classList.toggle("hgo-has-overdue", snapshot.overdue.length > 0);
   }
@@ -554,6 +587,28 @@
     return true;
   }
 
+  function snoozeTask(instance, id) {
+    const todos = asArray(read(KEYS.todos, []));
+    const target = todos.find((item) => String(item.id) === String(id));
+    if (!target || taskDone(target)) return false;
+    const current = taskDue(target) ? new Date(`${taskDue(target)}T12:00:00`) : new Date();
+    current.setDate(current.getDate() + 1);
+    target.deadline = current.toISOString().slice(0, 10);
+    write(KEYS.todos, todos);
+    emit("task:snoozed", { title: text(target.title, 120), id: target.id, deadline: target.deadline, source: "quantum-command-gate" });
+    global.dispatchEvent?.(new CustomEvent("hh:command-center-sync"));
+    renderPortal(instance);
+    return true;
+  }
+
+  function toggleFocusSession(instance) {
+    const active = Number(instance.focusEndsAt || 0) > Date.now();
+    instance.focusEndsAt = active ? 0 : Date.now() + 25 * 60_000;
+    if (!active) emit("focus:started", { title: "Focus 25 phút", source: "quantum-command-gate" });
+    else emit("focus:stopped", { title: "Đã dừng Focus", source: "quantum-command-gate" });
+    renderPortal(instance);
+  }
+
   function storeSelection(target) {
     if (target.dataset.hgoProject) write(KEYS.selection, { type: target.dataset.hgoTask ? "task" : "project", id: target.dataset.hgoTask || target.dataset.hgoProject, projectId: target.dataset.hgoProject, source: "work-galaxy-map", at: new Date().toISOString() });
   }
@@ -586,6 +641,14 @@
     }
     const complete = target.closest("[data-hgo-complete-task]");
     if (complete) return completeTask(instance, complete.dataset.hgoCompleteTask);
+    const taskFilter = target.closest("[data-hgo-task-filter]");
+    if (taskFilter) {
+      instance.taskFilter = taskFilter.dataset.hgoTaskFilter;
+      return renderPortal(instance);
+    }
+    const snooze = target.closest("[data-hgo-snooze-task]");
+    if (snooze) return snoozeTask(instance, snooze.dataset.hgoSnoozeTask);
+    if (target.closest("[data-hgo-focus-session]")) return toggleFocusSession(instance);
     if (target.closest("[data-hgo-continue]")) {
       const route = recentRoute();
       if (route) return openWormhole(instance, route, "Công việc gần nhất");
@@ -680,6 +743,8 @@
       controller,
       portal: null,
       captureType: "",
+      taskFilter: "priority",
+      focusEndsAt: 0,
       lastActivityId: asArray(read(KEYS.activity, []))[0]?.id || "",
       wormholeBusy: false,
       healthCheckedAt: 0
@@ -687,7 +752,7 @@
     root.classList.add("hgo-active");
     shell.dataset.operations = "v3";
     const activity = shell.querySelector(".hgm-activity");
-    activity?.insertAdjacentHTML("afterend", portalMarkup(commandSnapshot()));
+    activity?.insertAdjacentHTML("afterend", portalMarkup(commandSnapshot(), instance));
     instance.portal = shell.querySelector("[data-hgo-command]");
     shell.querySelectorAll("[data-hgo-map],[data-hgo-timeline]").forEach((node) => node.remove());
     shell.querySelector(".hgm-solar")?.insertAdjacentHTML("beforeend", `${ringMarkup(instance)}${navigatorMarkup()}`);

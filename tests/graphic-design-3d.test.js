@@ -1,5 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const studio = require("../graphic-design-3d.js");
 
 test("3D Studio creates a normalized editable scene", () => {
@@ -39,4 +41,11 @@ test("3D capability report is truthful", () => {
   assert.equal(capabilities.webgpu, false);
   assert.equal(typeof capabilities.webgl2, "boolean");
   assert.match(studio.constants.THREE_MODULE_PATH, /vendor\/three\.module\.min\.js/);
+});
+
+test("3D Studio does not claim the WebGL canvas with a 2D placeholder", () => {
+  const source = fs.readFileSync(path.resolve(__dirname, "..", "graphic-design-3d.js"), "utf8");
+  assert.match(source, /else if\(!capabilities\.webgl2\)\{renderFallback\(canvas,scene,selectedId\)/);
+  assert.doesNotMatch(source, /else\{renderFallback\(canvas,scene,selectedId\);metrics\.textContent=capabilities\.webgl2/);
+  assert.match(source, /if \(item\.type !== "ambient"\)[\s\S]*?if \(light\.shadow\?\.mapSize\)/);
 });

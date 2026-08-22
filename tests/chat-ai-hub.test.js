@@ -166,8 +166,8 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   assert.match(client, /window\.HHChatAI\?\.mount/);
   assert.match(client, /title: "Chat AI"[\s\S]*?smart router/);
   assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=17[\s\S]*?chat-ai-hub\.js\?v=17/);
-  assert.match(html, /performance-loader\.js\?v=462/);
-  assert.match(worker, /performance-loader\.js\?v=462/);
+  assert.match(html, /performance-loader\.js\?v=467/);
+  assert.match(worker, /performance-loader\.js\?v=467/);
   assert.match(loader, /value\.startsWith\("\/chat-ai"\)/);
   assert.match(worker, /chat-ai-hub\.css\?v=17/);
   assert.match(worker, /chat-ai-hub\.js\?v=17/);

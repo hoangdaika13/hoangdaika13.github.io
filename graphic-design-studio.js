@@ -207,6 +207,16 @@
 
   function hero(view, state) {
     const complete = Math.round((state.checklist.filter((item) => item.done).length / Math.max(1, state.checklist.length)) * 100);
+    if (view !== "overview") {
+      const current = VIEWS.find((item) => item.id === view) || VIEWS[0];
+      return `<header class="gd-tool-context" aria-labelledby="gdToolContextTitle">
+        <button type="button" class="gd-tool-context__back" data-gd-route="overview" aria-label="Về Thiết kế đồ họa">←</button>
+        <span class="gd-tool-context__icon" aria-hidden="true">${escapeHTML(current.icon)}</span>
+        <div class="gd-tool-context__copy"><small>THIẾT KẾ ĐỒ HỌA · WORKSPACE</small><h2 id="gdToolContextTitle">${escapeHTML(current.label)}</h2><p>${escapeHTML(current.description)}</p></div>
+        <div class="gd-tool-context__status"><span><i></i> Local autosave</span><b>${state.projects.length} dự án</b><em>${complete}% checklist</em></div>
+        <div class="gd-tool-context__actions"><button type="button" data-command-open>⌕ Tìm công cụ</button><button type="button" class="gd-primary" data-gd-route="overview">Đổi workspace</button></div>
+      </header>`;
+    }
     const actions = view === "overview"
       ? `<button type="button" class="gd-primary" data-gd-action="new-project">＋ Tạo thiết kế</button>
          <button type="button" data-gd-action="import-hub">Nhập dự án</button>

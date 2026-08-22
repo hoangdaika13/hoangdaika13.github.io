@@ -80,7 +80,7 @@ test("refresh stays on an opaque boot surface until auth and the current Home ar
   assert.match(auth, /const sessionResolving = gate\.dataset\.authSession === "background"/);
   assert.match(auth, /HHSurfaceBoot = Object\.freeze/);
   assert.match(auth, /routeReady && homeReady/);
-  assert.match(loader, /"home-critical":\s*\{[\s\S]*?home-galaxy-command\.css\?v=13[\s\S]*?home-galaxy-mission\.css\?v=8[\s\S]*?home-galaxy-command\.js\?v=15[\s\S]*?home-galaxy-mission\.js\?v=11/);
+  assert.match(loader, /"home-critical":\s*\{[\s\S]*?home-galaxy-command\.css\?v=13[\s\S]*?home-galaxy-mission\.css\?v=9[\s\S]*?home-galaxy-command\.js\?v=15[\s\S]*?home-galaxy-mission\.js\?v=12/);
   assert.match(loader, /if \(value === "\/home"\) return \["home-critical"\]/);
   assert.match(home, /hh:home-surface-ready/);
   assert.match(read("home-galaxy-mission.js"), /surface: "mission-control"/);

@@ -983,8 +983,34 @@
       <div class="hgm-focus-metrics">${asArray(data?.metrics).map(([label, value]) => `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></article>`).join("")}</div>
       <p class="hgm-focus-detail">${escapeHtml(data?.detail || "Chưa có dữ liệu chi tiết.")}</p>
       <section><span>LỊCH SỬ THẬT</span>${activities.length ? activities.map((item) => `<p><i></i><b>${escapeHtml(item.text)}</b><time>${escapeHtml(relativeTime(item.createdAt))}</time></p>`).join("") : "<p>Chưa có hoạt động được ghi nhận.</p>"}</section>
-      <footer><button type="button" class="is-primary" data-hgm-open-workspace="${planet.id}">Mở workspace</button><button type="button" data-hgm-pin-planet="${planet.id}">${instance.prefs.defaultPlanet === planet.id ? "Đang mặc định" : "Đặt mặc định"}</button><button type="button" data-hgm-hide-signal="${planet.id}">Ẩn tín hiệu này</button></footer>
+      <footer><button type="button" class="is-primary" data-hgm-open-workspace="${planet.id}">Mở workspace</button><button type="button" data-hgm-toggle-favorite="${planet.id}" aria-pressed="${instance.prefs.pinnedPlanets.includes(planet.id)}">${instance.prefs.pinnedPlanets.includes(planet.id) ? "★ Đã yêu thích" : "☆ Yêu thích"}</button><button type="button" data-hgm-pin-planet="${planet.id}">${instance.prefs.defaultPlanet === planet.id ? "Đang mặc định" : "Đặt mặc định"}</button><button type="button" data-hgm-hide-signal="${planet.id}">Ẩn tín hiệu</button></footer>
     </aside>`;
+  }
+
+  function shortcutPlanetIds(instance) {
+    const recent = instance.activities.map((item) => item.planet).filter((id) => PLANETS.some((planet) => planet.id === id));
+    return [...new Set([...(instance.prefs.pinnedPlanets || []), ...recent, instance.prefs.defaultPlanet])].filter(Boolean).slice(0, 5);
+  }
+
+  function shortcutPlanetMarkup(instance) {
+    return shortcutPlanetIds(instance).map((id) => {
+      const planet = PLANETS.find((item) => item.id === id);
+      return planet ? `<button type="button" data-hgm-jump-planet="${planet.id}" style="--shortcut:${planet.color}" title="Xem nhanh ${escapeHtml(planet.label)}"><i>${planet.icon}</i><span>${escapeHtml(planet.label)}</span></button>` : "";
+    }).join("");
+  }
+
+  function missionToolsMarkup(instance) {
+    return `<section class="hgm-mission-tools" aria-label="Điều hướng hành tinh">
+      <label class="hgm-planet-search"><i>⌕</i><input type="search" data-hgm-planet-search placeholder="Tìm hành tinh hoặc workspace…" autocomplete="off"><kbd>/</kbd></label>
+      <nav class="hgm-planet-filters" aria-label="Bộ lọc hành tinh">
+        <button type="button" data-hgm-planet-filter="all" aria-pressed="true">Tất cả</button>
+        <button type="button" data-hgm-planet-filter="pinned" aria-pressed="false">★ Yêu thích</button>
+        <button type="button" data-hgm-planet-filter="signals" aria-pressed="false">● Có tín hiệu</button>
+        <button type="button" data-hgm-planet-filter="recent" aria-pressed="false">◷ Gần đây</button>
+      </nav>
+      <div class="hgm-planet-shortcuts" data-hgm-planet-shortcuts aria-label="Truy cập nhanh">${shortcutPlanetMarkup(instance)}</div>
+      <small class="hgm-discovery-count"><b data-hgm-discovery-count>${PLANETS.length}</b> hành tinh phù hợp · dùng ← → để duyệt</small>
+    </section>`;
   }
 
   function dockMarkup(instance) {
@@ -1070,6 +1096,7 @@
           <span class="hgm-kicker"><i></i> HH GALAXY MISSION CONTROL</span>
           <h2 id="hgmHeroTitle"><span>${currentPeriod.greeting}</span>, <b>${escapeHtml(userName())}</b></h2>
           <p>Mỗi hành tinh là một trung tâm chức năng thật. Chọn hành tinh để xem dữ liệu, lịch sử và hành động đúng workspace.</p>
+          ${missionToolsMarkup(instance)}
           <div class="hgm-summary"><span><i></i><b data-hgm-summary>Đang tổng hợp hệ thống</b></span><time data-hgm-clock>--:--:--</time></div>
           <div class="hgm-copy-actions"><button type="button" class="is-primary" data-hgm-open-workspace="${instance.prefs.defaultPlanet}">Mở hành tinh mặc định</button><button type="button" data-hgm-settings-open>Điều chỉnh vũ trụ</button></div>
         </div>
@@ -1160,6 +1187,8 @@
     const visible = new Set(instance.prefs.visiblePlanets || DEFAULT_PREFS.visiblePlanets);
     const order = instance.prefs.planetOrder.map((id) => PLANETS.find((planet) => planet.id === id)).filter((planet) => planet && visible.has(planet.id));
     host.innerHTML = order.map((planet, index) => planetMarkup(instance, planet, index)).join("");
+    renderPlanetShortcuts(instance);
+    applyPlanetDiscovery(instance);
     instance.shell.classList.toggle("has-ai-energy", Boolean(instance.planetData.creative?.processing));
     instance.shell.classList.toggle("has-overdue", Boolean(instance.planetData.work?.overdue));
     instance.shell.classList.toggle("has-slow-endpoint", Boolean(instance.planetData.analytics?.slow));
@@ -1172,6 +1201,37 @@
     instance.root.dataset.hgcEnergy = instance.shell.dataset.energy;
     const summary = instance.shell.querySelector("[data-hgm-summary]");
     if (summary) summary.textContent = unread ? `${unread} tín hiệu mới · chất lượng ${instance.quality}` : `Không có tín hiệu mới · chất lượng ${instance.quality}`;
+  }
+
+  function renderPlanetShortcuts(instance) {
+    const host = instance.shell?.querySelector("[data-hgm-planet-shortcuts]");
+    if (host) host.innerHTML = shortcutPlanetMarkup(instance);
+  }
+
+  function applyPlanetDiscovery(instance) {
+    if (!instance.shell) return;
+    const query = cleanText(instance.planetQuery || "", 80).toLocaleLowerCase("vi-VN");
+    const filter = ["all", "pinned", "signals", "recent"].includes(instance.planetFilter) ? instance.planetFilter : "all";
+    const recent = new Set(instance.activities.slice(0, 18).map((item) => item.planet));
+    let visibleCount = 0;
+    instance.shell.querySelectorAll("[data-hgm-planet]").forEach((button) => {
+      const id = button.dataset.hgmPlanet;
+      const planet = PLANETS.find((item) => item.id === id);
+      const data = instance.planetData?.[id];
+      const matchesText = !query || `${planet?.label || ""} ${planet?.id || ""} ${data?.status || ""}`.toLocaleLowerCase("vi-VN").includes(query);
+      const matchesFilter = filter === "all"
+        || (filter === "pinned" && instance.prefs.pinnedPlanets.includes(id))
+        || (filter === "signals" && (button.classList.contains("has-signal") || data?.alert || data?.processing))
+        || (filter === "recent" && recent.has(id));
+      const visible = matchesText && matchesFilter;
+      button.hidden = !visible;
+      button.setAttribute("aria-hidden", String(!visible));
+      if (visible) visibleCount += 1;
+    });
+    instance.shell.querySelectorAll("[data-hgm-planet-filter]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.hgmPlanetFilter === filter)));
+    const count = instance.shell.querySelector("[data-hgm-discovery-count]");
+    if (count) count.textContent = String(visibleCount);
+    instance.shell.classList.toggle("has-planet-filter", filter !== "all" || Boolean(query));
   }
 
   function renderActivity(instance) {
@@ -1638,6 +1698,14 @@
     if (target.closest("[data-hgm-focus-close]")) return closeFocus(instance);
     const planet = target.closest("[data-hgm-planet]");
     if (planet) return openFocus(instance, planet.dataset.hgmPlanet);
+    const jumpPlanet = target.closest("[data-hgm-jump-planet]");
+    if (jumpPlanet) return openFocus(instance, jumpPlanet.dataset.hgmJumpPlanet);
+    const planetFilter = target.closest("[data-hgm-planet-filter]");
+    if (planetFilter) {
+      instance.planetFilter = planetFilter.dataset.hgmPlanetFilter;
+      applyPlanetDiscovery(instance);
+      return;
+    }
     const openWorkspace = target.closest("[data-hgm-open-workspace]");
     if (openWorkspace) {
       const item = PLANETS.find((planetItem) => planetItem.id === openWorkspace.dataset.hgmOpenWorkspace);
@@ -1649,6 +1717,18 @@
       instance.prefs.defaultPlanet = pin.dataset.hgmPinPlanet;
       savePrefs(instance);
       renderPlanets(instance);
+      return;
+    }
+    const favorite = target.closest("[data-hgm-toggle-favorite]");
+    if (favorite) {
+      const id = favorite.dataset.hgmToggleFavorite;
+      const pinned = instance.prefs.pinnedPlanets.includes(id);
+      instance.prefs.pinnedPlanets = pinned
+        ? instance.prefs.pinnedPlanets.filter((planetId) => planetId !== id)
+        : [...instance.prefs.pinnedPlanets.filter((planetId) => planetId !== id), id].slice(-4);
+      savePrefs(instance);
+      renderPlanets(instance);
+      announce(instance, pinned ? "Đã bỏ khỏi hành tinh yêu thích." : "Đã ghim vào hành tinh yêu thích.", "success");
       return;
     }
     const hideSignal = target.closest("[data-hgm-hide-signal]");
@@ -1785,6 +1865,12 @@
     }
   }
 
+  function onInput(instance, event) {
+    if (!event.target.matches("[data-hgm-planet-search]")) return;
+    instance.planetQuery = event.target.value;
+    applyPlanetDiscovery(instance);
+  }
+
   function onSubmit(instance, event) {
     const form = event.target.closest("[data-hgm-quick-form]");
     if (!form) return;
@@ -1831,6 +1917,7 @@
     const shell = instance.shell;
     shell.addEventListener("click", (event) => onClick(instance, event));
     shell.addEventListener("change", (event) => onChange(instance, event));
+    shell.addEventListener("input", (event) => onInput(instance, event));
     shell.addEventListener("submit", (event) => onSubmit(instance, event));
     shell.addEventListener("dragstart", (event) => onDragStart(instance, event));
     shell.addEventListener("dragover", (event) => onDragOver(instance, event));
@@ -1847,6 +1934,14 @@
       if (event.key === "Escape") {
         closeFocus(instance);
         openSettings(instance, false);
+      }
+      if (event.key === "/" && !event.target.closest("input,textarea,select")) {
+        event.preventDefault();
+        shell.querySelector("[data-hgm-planet-search]")?.focus();
+      }
+      if (event.target.matches("[data-hgm-planet-search]") && event.key === "Enter") {
+        const first = shell.querySelector("[data-hgm-planet]:not([hidden])");
+        if (first) openFocus(instance, first.dataset.hgmPlanet);
       }
     });
     global.addEventListener("hh:event", (event) => {
@@ -1950,6 +2045,8 @@
       controller,
       destroyed: false,
       refreshing: false,
+      planetFilter: "all",
+      planetQuery: "",
       focusPlanet: "",
       signatures: null,
       syncStatus: isSignedIn() ? "Đang kiểm tra cấu hình tài khoản" : "Khách · lưu trên thiết bị",

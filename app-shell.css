@@ -1,4 +1,4 @@
-@import url("styles.css?v=35") layer(legacy);
+@import url("styles.css?v=36") layer(legacy);
 
 @layer legacy, tokens, base, layout, components, pages, modules, responsive, accessibility;
 
@@ -1880,7 +1880,7 @@ html.hh-page-hidden #hhBootSurface *,html.hh-page-hidden #hhBootSurface *::befor
 .app-cosmic-loader__route>span,.app-cosmic-loader__route>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.app-cosmic-loader__route>span{text-align:right}.app-cosmic-loader__route>b{color:color-mix(in srgb,var(--loader-accent) 72%,#fff);text-align:left}
 .app-cosmic-loader__route>i{position:relative;height:1px;background:linear-gradient(90deg,var(--loader-secondary),var(--loader-accent))}.app-cosmic-loader__route>i::after{position:absolute;right:-1px;top:50%;width:6px;height:6px;border-top:1px solid var(--loader-accent);border-right:1px solid var(--loader-accent);content:"";transform:translateY(-50%) rotate(45deg)}
 
-.app-cosmic-loader.is-departing .app-cosmic-loader__card{animation:appCosmicCardEnter .24s cubic-bezier(.2,.78,.2,1) both}
+.app-cosmic-loader.is-departing .app-cosmic-loader__card{animation:appCosmicCardEnter .16s cubic-bezier(.2,.78,.2,1) both}
 .app-cosmic-loader.is-arriving{
   -webkit-mask-image:radial-gradient(circle at 50% 50%,transparent 0 var(--cosmic-aperture),#000 calc(var(--cosmic-aperture) + 1.2%));
   mask-image:radial-gradient(circle at 50% 50%,transparent 0 var(--cosmic-aperture),#000 calc(var(--cosmic-aperture) + 1.2%));
@@ -1911,7 +1911,7 @@ html.hh-page-hidden #hhBootSurface *,html.hh-page-hidden #hhBootSurface *::befor
 @keyframes appCosmicMotifOrbit{to{rotate:1turn}}
 @keyframes appCosmicBeam{0%,100%{opacity:0;scale:.08 1}48%{opacity:.5;scale:1 1}}
 @keyframes appCosmicEqualizer{to{scale:1 1.9;opacity:.5}}
-@keyframes appCosmicCardEnter{from{opacity:0;transform:scale(.86) translateY(12px)}to{opacity:1;transform:none}}
+@keyframes appCosmicCardEnter{from{opacity:.72;transform:scale(.94) translateY(5px)}to{opacity:1;transform:none}}
 @keyframes appCosmicCardExit{0%{opacity:1;transform:none}55%{opacity:.92;transform:scale(1.035)}100%{opacity:0;transform:scale(.72)}}
 @keyframes appCosmicReveal{0%{--cosmic-aperture:0%;opacity:1}42%{--cosmic-aperture:18%;opacity:1}100%{--cosmic-aperture:150%;opacity:0}}
 @media(max-width:560px){

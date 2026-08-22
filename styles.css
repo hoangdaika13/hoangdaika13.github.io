@@ -1834,11 +1834,19 @@ footer p {
   box-shadow: 0 0 22px rgba(255, 59, 212, .45), 4px 4px 0 #05000a;
 }
 
-.home-neon.neon-boost {
+.home-neon.neon-boost,
+.home-neon.neon-soft {
+  /* A filter on body turns it into the containing block for every fixed
+     overlay. The body has no layout height while App Shell is fixed, which
+     used to collapse route/auth loaders into a thin strip at the top. */
+  filter: none;
+}
+
+.home-neon.neon-boost > :not(#hhBootSurface):not(#appCosmicLoader):not(script):not(style) {
   filter: saturate(1.28) contrast(1.08);
 }
 
-.home-neon.neon-soft {
+.home-neon.neon-soft > :not(#hhBootSurface):not(#appCosmicLoader):not(script):not(style) {
   filter: saturate(.82) brightness(.92);
 }
 

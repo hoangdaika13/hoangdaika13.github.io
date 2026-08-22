@@ -155,12 +155,14 @@ test("every route gets a shared cosmic loading state with progress and fallback"
   const html = read("index.html");
   const client = read("script.js");
   const css = read("app-shell.css");
+  const legacyCss = read("styles.css");
 
   assert.match(html, /id="appCosmicLoader"/);
   assert.match(html, /data-cosmic-loader-step/);
   assert.match(html, /app-cosmic-loader__motif/);
   assert.match(html, /appCosmicLoaderFrom/);
   assert.match(html, /appCosmicLoaderTo/);
+  assert.ok(html.indexOf('id="appCosmicLoader"') < html.indexOf('id="appShell"'), "route loader must be a body-level sibling before App Shell");
   assert.match(client, /const describeRouteFeedback =/);
   assert.match(client, /window\.HHCosmicRouteLoader/);
   assert.match(client, /hh:assets-loading/);
@@ -184,14 +186,17 @@ test("every route gets a shared cosmic loading state with progress and fallback"
   assert.match(css, /data-transition-kind="fortune"/);
   assert.match(css, /data-transition-kind="discord"/);
   assert.match(css, /data-motion="static"/);
+  assert.match(css, /@keyframes appCosmicCardEnter\{from\{opacity:\.72/);
   assert.match(css, /\.app-cosmic-loader\.is-active\s*\{[\s\S]*?pointer-events:none/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?app-cosmic-loader__space/);
+  assert.match(legacyCss, /\.home-neon\.neon-soft\s*\{[\s\S]*?filter:\s*none/);
+  assert.match(legacyCss, /:not\(#appCosmicLoader\)/);
 });
 
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=59", "script.js?v=227", "sidebar-navigation-pro.css?v=29", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=5", "english-vocabulary.css?v=1", "english-vocabulary.js?v=2", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=28", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=62", "script.js?v=229", "sidebar-navigation-pro.css?v=29", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=5", "english-vocabulary.css?v=1", "english-vocabulary.js?v=2", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=28", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);

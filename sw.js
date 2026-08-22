@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v806";
+const CACHE = "hh-identity-portal-v814";
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
@@ -18,7 +18,7 @@ const CACHE = "hh-identity-portal-v806";
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
-  "./app-shell.css?v=59",
+  "./app-shell.css?v=62",
   "./workspace-feature-explorer.css?v=2",
   "./app-theme-system.css?v=9",
   "./dashboard-aurora.css?v=4",
@@ -26,8 +26,8 @@ const RUNTIME_ASSETS = [
   "./home-capability-atlas.css?v=1",
   "./home-live-widgets.css?v=12",
   "./home-cosmic-os.css?v=3",
-  "./home-galaxy-mission.css?v=8",
-  "./home-galaxy-operations.css?v=2",
+  "./home-galaxy-mission.css?v=9",
+  "./home-galaxy-operations.css?v=3",
   "./home-galaxy-control-deck.css?v=3",
   "./command-center-pro.css?v=4",
   "./home-daily-command.css?v=4",
@@ -91,11 +91,11 @@ const RUNTIME_ASSETS = [
   "./settings-studio.css?v=7",
   "./settings-studio.js?v=8",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=227",
-  "./graphic-design-studio.css?v=6",
+  "./script.js?v=229",
+  "./graphic-design-studio.css?v=9",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
-  "./graphic-design-3d.js?v=2",
+  "./graphic-design-3d.js?v=4",
   "./graphic-design-prototype.js?v=1",
   "./graphic-design-motion.js?v=1",
   "./graphic-design-quick-motion.js?v=1",
@@ -122,7 +122,7 @@ const RUNTIME_ASSETS = [
   "./graphic-design-performance.js?v=1",
   "./graphic-design-workflow.js?v=2",
   "./graphic-design-universal.js?v=5",
-  "./graphic-design-studio.js?v=7",
+  "./graphic-design-studio.js?v=8",
   "./vendor/three.module.min.js",
   "./vendor/three.core.min.js",
   "./social-media-tools-v2.css?v=9",
@@ -205,8 +205,8 @@ const RUNTIME_ASSETS = [
   "./home-capability-atlas.js?v=3",
   "./home-live-widgets.js?v=8",
   "./home-cosmic-os.js?v=13",
-  "./home-galaxy-mission.js?v=11",
-  "./home-galaxy-operations.js?v=6",
+  "./home-galaxy-mission.js?v=12",
+  "./home-galaxy-operations.js?v=7",
   "./home-galaxy-control-deck.js?v=3",
   "./command-center-pro.js?v=6",
   "./home-daily-command.js?v=6",
@@ -464,7 +464,7 @@ const RUNTIME_ASSETS = [
 const CORE = [
   "./",
   "./index.html",
-  "./app-shell.css?v=59",
+  "./app-shell.css?v=62",
   "./app-theme-system.css?v=9",
   "./sidebar-navigation-pro.css?v=29",
   "./auth-experience.css?v=6",
@@ -478,10 +478,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=462",
+  "./performance-loader.js?v=467",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=227"
+  "./script.js?v=229"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

@@ -43,16 +43,16 @@
       scripts: []
     },
     "home-critical": {
-      styles: ["home-galaxy-command.css?v=13", "home-galaxy-mission.css?v=8"],
-      scripts: ["home-galaxy-command.js?v=15", "home-galaxy-mission.js?v=11"]
+      styles: ["home-galaxy-command.css?v=13", "home-galaxy-mission.css?v=9"],
+      scripts: ["home-galaxy-command.js?v=15", "home-galaxy-mission.js?v=12"]
     },
     "home-enhancements": {
       styles: [
-        "dashboard-aurora.css?v=4", "home-capability-atlas.css?v=1", "home-live-widgets.css?v=12", "home-cosmic-os.css?v=3", "home-galaxy-operations.css?v=2", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-capability-atlas.css?v=1", "home-live-widgets.css?v=12", "home-cosmic-os.css?v=3", "home-galaxy-operations.css?v=3", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
-        "dashboard-aurora.js?v=5", "home-galaxy-operations.js?v=6", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
+        "dashboard-aurora.js?v=5", "home-galaxy-operations.js?v=7", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
         "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-capability-atlas.js?v=3", "home-live-widgets.js?v=8", "home-cosmic-os.js?v=13"
       ]
     },
@@ -126,13 +126,13 @@
       scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-open-source-catalog.js?v=2", "services/comicLibraryBridge.js?v=1", "comic-reader-hub.js?v=20"]
     },
     graphic: {
-      styles: ["graphic-design-studio.css?v=6", "graphic-design-universal.css?v=4"],
+      styles: ["graphic-design-studio.css?v=9", "graphic-design-universal.css?v=4"],
       scripts: [
-        "graphic-design-animation.js?v=1", "graphic-design-3d.js?v=2", "graphic-design-prototype.js?v=1",
+        "graphic-design-animation.js?v=1", "graphic-design-3d.js?v=4", "graphic-design-prototype.js?v=1",
         "graphic-design-motion.js?v=1", "graphic-design-quick-motion.js?v=1", "graphic-design-mockup.js?v=1",
         "graphic-design-character.js?v=1", "graphic-design-vector-core.js?v=2", "graphic-design-state-machine.js?v=2",
         "graphic-design-adaptive.js?v=2", "graphic-design-project-store.js?v=2", "graphic-design-collaboration.js?v=2",
-        "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-workflow.js?v=2", "graphic-design-universal.js?v=5", "graphic-design-studio.js?v=7"
+        "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-workflow.js?v=2", "graphic-design-universal.js?v=5", "graphic-design-studio.js?v=8"
       ]
     },
     creative: {

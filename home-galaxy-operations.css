@@ -1997,3 +1997,323 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* Command Gate V4 — denser information hierarchy with real task controls. */
+.hgo-command {
+  grid-template-columns: minmax(190px, 230px) minmax(520px, 1fr) minmax(320px, 360px);
+  min-height: 430px;
+  gap: clamp(18px, 2vw, 32px);
+  padding: clamp(24px, 2.4vw, 38px);
+  background:
+    radial-gradient(circle at 8% 45%, rgba(255, 183, 78, .13), transparent 20%),
+    radial-gradient(circle at 48% 0, rgba(82, 230, 255, .09), transparent 32%),
+    radial-gradient(circle at 95% 78%, rgba(255, 70, 204, .09), transparent 30%),
+    linear-gradient(145deg, rgba(8, 15, 35, .98), rgba(3, 7, 20, .96));
+}
+
+.hgo-command::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 0 14%, rgba(91, 228, 255, .045) 14.1% 14.2%, transparent 14.3% 82%, rgba(255, 86, 207, .04) 82.1% 82.2%, transparent 82.3%),
+    linear-gradient(rgba(110, 156, 255, .025) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 38px;
+  content: "";
+  pointer-events: none;
+  animation: hgoCommandGrid 12s linear infinite;
+}
+
+.hgo-command-visual {
+  width: 214px;
+  height: 214px;
+  filter: saturate(1.18);
+}
+
+.hgo-command-copy h2 {
+  font-size: clamp(32px, 3.25vw, 48px);
+  letter-spacing: -.045em;
+}
+
+.hgo-command-copy > p {
+  color: #a9b6ce;
+  font-size: 13px;
+}
+
+.hgo-command-pulse {
+  display: grid;
+  grid-template-columns: 82px repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.hgo-project-ring {
+  position: relative;
+  display: grid;
+  width: 70px;
+  height: 70px;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--hgo-lime) var(--hgo-project-progress), rgba(111, 140, 178, .13) 0);
+  box-shadow: 0 0 24px rgba(186, 255, 98, .11);
+}
+
+.hgo-project-ring::before {
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: inherit;
+  background: #081020;
+  content: "";
+}
+
+.hgo-project-ring i,
+.hgo-project-ring b {
+  position: relative;
+  z-index: 1;
+  display: block;
+  font-style: normal;
+  line-height: 1;
+  text-align: center;
+}
+
+.hgo-project-ring i { color: #fff; font-size: 14px; font-weight: 900; }
+.hgo-project-ring b { margin-top: -14px; color: #7f91aa; font-size: 7px; }
+
+.hgo-command-pulse > button {
+  display: grid;
+  min-width: 0;
+  min-height: 64px;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(99, 221, 255, .14);
+  border-radius: 14px;
+  color: #d9e9fb;
+  background: linear-gradient(135deg, rgba(38, 111, 157, .1), rgba(255, 255, 255, .025));
+  cursor: pointer;
+  text-align: left;
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+
+.hgo-command-pulse > button:hover,
+.hgo-command-pulse > button:focus-visible {
+  border-color: rgba(96, 234, 255, .48);
+  box-shadow: 0 10px 30px rgba(36, 181, 255, .1);
+  transform: translateY(-2px);
+}
+
+.hgo-command-pulse > button > i {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(92, 233, 255, .27);
+  border-radius: 12px;
+  color: var(--hgo-cyan);
+  background: rgba(70, 207, 255, .07);
+  font-size: 16px;
+  font-style: normal;
+  box-shadow: 0 0 18px rgba(68, 222, 255, .1);
+}
+
+.hgo-command-pulse > button.is-active > i {
+  color: #07121a;
+  background: var(--hgo-lime);
+  box-shadow: 0 0 22px rgba(186, 255, 98, .42);
+  animation: hgoFocusPulse 1.5s ease-in-out infinite;
+}
+
+.hgo-command-pulse > button span { display: grid; min-width: 0; gap: 4px; }
+.hgo-command-pulse > button b { overflow: hidden; color: #eef8ff; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.hgo-command-pulse > button small { overflow: hidden; color: #8295ad; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+
+.hgo-command-metrics article {
+  min-height: 72px;
+  padding: 12px;
+  background: linear-gradient(145deg, rgba(6, 13, 29, .83), rgba(13, 18, 40, .62));
+  transition: transform .22s ease, border-color .22s ease, background .22s ease;
+}
+
+.hgo-command-metrics article:hover {
+  border-color: rgba(102, 226, 255, .34);
+  background: linear-gradient(145deg, rgba(15, 42, 63, .62), rgba(19, 15, 47, .68));
+  transform: translateY(-2px);
+}
+
+.hgo-command-metrics span { color: #9badc5; font-size: 8px; }
+.hgo-command-metrics strong { font-size: 23px; }
+.hgo-command-metrics small { color: #92a1b8; font-size: 8px; }
+
+.hgo-command-context b { color: #c7d2e4; font-size: 9px; }
+.hgo-command-context em { color: #8b9bb2; font-size: 8px; }
+
+.hgo-command-actions button,
+.hgo-command-tasks button {
+  font-size: 9px;
+}
+
+.hgo-command-tasks {
+  display: grid;
+  min-height: 0;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  align-self: stretch;
+  padding: 16px;
+  overflow: hidden;
+  border-color: rgba(150, 119, 255, .2);
+  background:
+    radial-gradient(circle at 100% 0, rgba(255, 79, 204, .1), transparent 40%),
+    linear-gradient(160deg, rgba(10, 13, 31, .94), rgba(5, 9, 22, .86));
+}
+
+.hgo-command-tasks header span { font-size: 10px; }
+.hgo-command-tasks header small { color: #8998ae; font-size: 8px; }
+
+.hgo-task-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 9px;
+  padding: 3px;
+  border: 1px solid rgba(126, 167, 224, .1);
+  border-radius: 10px;
+  background: rgba(1, 5, 15, .48);
+}
+
+.hgo-task-filters button {
+  min-width: 0;
+  min-height: 31px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 7px;
+  color: #8494aa;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.hgo-task-filters button b {
+  display: inline-grid;
+  min-width: 16px;
+  min-height: 16px;
+  margin-left: 4px;
+  place-items: center;
+  border-radius: 99px;
+  color: #aebbd0;
+  background: rgba(255, 255, 255, .06);
+  font-size: 7px;
+}
+
+.hgo-task-filters button[aria-pressed="true"] {
+  color: #fff;
+  background: linear-gradient(120deg, rgba(88, 224, 255, .17), rgba(255, 75, 203, .14));
+  box-shadow: inset 0 0 0 1px rgba(103, 225, 255, .18);
+}
+
+.hgo-task-list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.hgo-task-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, .065);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .025);
+  transition: border-color .2s ease, background .2s ease, transform .2s ease;
+}
+
+.hgo-task-list article:hover {
+  border-color: rgba(94, 226, 255, .28);
+  background: rgba(73, 186, 255, .055);
+  transform: translateX(-2px);
+}
+
+.hgo-task-list article.is-overdue {
+  border-color: rgba(255, 99, 64, .32);
+  background: linear-gradient(90deg, rgba(255, 69, 37, .075), rgba(255, 69, 37, .025));
+}
+
+.hgo-task-list article > label {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 19px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.hgo-task-list article > label > i { width: 18px; height: 18px; }
+.hgo-task-list article > label b { color: #e7edf8; font-size: 10px; }
+.hgo-task-list article > label small { color: #8291a8; font-size: 8px; }
+.hgo-task-list article > div { display: flex; gap: 4px; opacity: .52; transition: opacity .18s ease; }
+.hgo-task-list article:hover > div,
+.hgo-task-list article:focus-within > div { opacity: 1; }
+.hgo-task-list article > div button { min-height: 27px; padding: 0 7px; border: 1px solid rgba(113, 193, 255, .15); border-radius: 7px; color: #9fc7e9; background: rgba(6, 13, 27, .83); cursor: pointer; }
+
+.hgo-command-tasks > footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 7px;
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(255, 255, 255, .055);
+}
+
+.hgo-command-tasks > footer button {
+  min-height: 32px;
+  padding: 0 9px;
+  border: 1px solid rgba(111, 214, 255, .16);
+  border-radius: 8px;
+  color: #aedadf;
+  background: rgba(69, 174, 255, .055);
+  cursor: pointer;
+}
+
+@keyframes hgoCommandGrid { to { background-position: 0 0, 0 38px; } }
+@keyframes hgoFocusPulse { 50% { transform: scale(.9); filter: brightness(1.2); } }
+
+@media (max-width: 1280px) {
+  .hgo-command { grid-template-columns: 176px minmax(430px, 1fr) minmax(290px, 320px); gap: 16px; padding: 22px; }
+  .hgo-command-visual { width: 174px; height: 174px; }
+  .hgo-command-visual > span { font-size: 42px; }
+  .hgo-command-pulse { grid-template-columns: 70px repeat(2, minmax(0, 1fr)); }
+  .hgo-project-ring { width: 62px; height: 62px; }
+}
+
+@media (max-width: 1040px) {
+  .hgo-command { grid-template-columns: 160px minmax(0, 1fr); }
+  .hgo-command-tasks { grid-column: 1 / -1; min-height: 300px; }
+  .hgo-task-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+}
+
+@media (max-width: 700px) {
+  .hgo-command { display: grid; grid-template-columns: 1fr; gap: 14px; min-height: 0; padding: 18px 14px; }
+  .hgo-command-visual { width: 142px; height: 142px; }
+  .hgo-command-copy h2 { font-size: 34px; }
+  .hgo-command-pulse { grid-template-columns: 62px minmax(0, 1fr); }
+  .hgo-project-ring { grid-row: 1 / 3; width: 58px; height: 58px; }
+  .hgo-command-pulse > button { min-height: 52px; }
+  .hgo-command-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hgo-task-list { display: block; }
+  .hgo-command-tasks { min-height: 360px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hgo-command::after,
+  .hgo-command-pulse > button.is-active > i { animation: none !important; }
+}

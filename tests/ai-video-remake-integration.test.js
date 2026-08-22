@@ -43,8 +43,8 @@ test("the service worker caches the route assets and shell versions stay aligned
   assert.match(worker, /\.\/ai-video-remake-studio\.css\?v=3/);
   assert.match(worker, /\.\/ai-video-remake-studio\.js\?v=2/);
   assert.match(worker, /hh-identity-portal-v527/);
-  assert.match(html, /performance-loader\.js\?v=462/);
-  assert.match(worker, /\.\/performance-loader\.js\?v=462/);
+  assert.match(html, /performance-loader\.js\?v=467/);
+  assert.match(worker, /\.\/performance-loader\.js\?v=467/);
   assert.match(html, /script\.js\?v=176/);
   assert.match(worker, /\.\/script\.js\?v=176/);
 });

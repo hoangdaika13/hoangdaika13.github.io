@@ -5222,6 +5222,9 @@ function initAppShell() {
   const drawerBackdrop = document.querySelector(".app-drawer-backdrop");
   const userMenu = byId("appUserMenu");
   if (!shell || !workspace || !navigation || !platform) return;
+  // Keep the transit layer outside App Shell stacking contexts. This also
+  // prevents route-specific overflow/contain rules from clipping the loader.
+  if (cosmicRouteLoader && cosmicRouteLoader.parentElement !== document.body) document.body.append(cosmicRouteLoader);
 
   /*
    * The SPA shell replaces the former portfolio below the login gate. Keeping
@@ -5834,6 +5837,7 @@ function initAppShell() {
   let activeRoute = "";
   let renderedRoute = "";
   let routeTransition = null;
+  let routeTransitionRequest = 0;
   const moduleList = () => Array.isArray(window.HH_PLATFORM_MODULES) ? window.HH_PLATFORM_MODULES : [];
   const moduleById = (id) => moduleList().find((item) => item.id === id);
   const routeForModule = (id) => {
@@ -6696,8 +6700,14 @@ function initAppShell() {
     } else {
       setCosmicLoaderPhase(1, 54, meta.message);
     }
+    // hidden -> visible and route replacement used to happen in the same
+    // frame, so Chromium could skip painting the card and only show the dark
+    // backdrop. Force the visible state now; the router waits for the paint
+    // barrier below before replacing the workspace.
+    void cosmicRouteLoader.getBoundingClientRect();
+    cosmicRouteLoader.classList.add("is-active");
     requestAnimationFrame(() => {
-      if (run === cosmicLoaderRun) cosmicRouteLoader.classList.add("is-active");
+      if (run === cosmicLoaderRun) cosmicRouteLoader.dataset.transitionPaintedAt = String(Date.now());
     });
     cosmicLoaderPhaseTimers.push(
       // A failed CDN request must never leave a full-screen overlay trapping
@@ -6799,6 +6809,7 @@ function initAppShell() {
     document.body.classList.toggle("app-copyright-route", route === "/copyright" || route.startsWith("/copyright/"));
     document.body.classList.toggle("app-media-design-route", route === "/media-design" || route.startsWith("/media-design/"));
     document.body.classList.toggle("app-graphic-design-route", route === "/graphic-design" || route.startsWith("/graphic-design/"));
+    document.body.classList.toggle("app-graphic-design-tool-route", route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
     document.body.classList.toggle("app-learning-route", route === "/learn" || route.startsWith("/learn/"));
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
@@ -7469,6 +7480,20 @@ function initAppShell() {
     }
     rememberRuntimeIssue(event.reason, "unhandled-rejection");
   });
+  const afterCosmicLoaderPaint = (route, callback) => {
+    const request = ++routeTransitionRequest;
+    const startedAt = Number(cosmicRouteLoader?.dataset.transitionStartedAt || Date.now());
+    const motion = cosmicMotionMode();
+    const minimumDeparture = motion === "cinematic" ? 240 : motion === "balanced" ? 180 : 0;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (request !== routeTransitionRequest || routeFromHash() !== route) return;
+      const remaining = Math.max(0, minimumDeparture - (Date.now() - startedAt));
+      window.setTimeout(() => {
+        if (request !== routeTransitionRequest || routeFromHash() !== route) return;
+        callback();
+      }, remaining);
+    }));
+  };
   const renderRouteWithTransition = () => {
     if (!isUnlocked()) return;
     const nextRoute = routeFromHash();
@@ -7480,20 +7505,22 @@ function initAppShell() {
     const canTransition = Boolean(document.startViewTransition) && Boolean(renderedRoute) && nextRoute !== renderedRoute && !touchesHomeSurface && !matchMedia("(prefers-reduced-motion: reduce)").matches;
     beginRouteFeedback(nextRoute);
     routeTransition?.skipTransition?.();
-    if (!canTransition) {
-      renderRouteSafely();
-      if (!pendingAssetRoute) requestAnimationFrame(endRouteFeedback);
-      return;
-    }
-    document.documentElement.dataset.routeDirection = nextRoute.split("/").length >= renderedRoute.split("/").length ? "forward" : "back";
-    routeTransition = document.startViewTransition(() => renderRouteSafely());
-    const activeTransition = routeTransition;
-    Promise.resolve(activeTransition.updateCallbackDone || activeTransition.finished).catch(() => {}).finally(() => {
-      if (!pendingAssetRoute) endRouteFeedback();
-    });
-    Promise.resolve(activeTransition.finished).catch(() => {}).finally(() => {
-      if (routeTransition === activeTransition) routeTransition = null;
-      delete document.documentElement.dataset.routeDirection;
+    afterCosmicLoaderPaint(nextRoute, () => {
+      if (!canTransition) {
+        renderRouteSafely();
+        if (!pendingAssetRoute) requestAnimationFrame(() => requestAnimationFrame(endRouteFeedback));
+        return;
+      }
+      document.documentElement.dataset.routeDirection = nextRoute.split("/").length >= renderedRoute.split("/").length ? "forward" : "back";
+      routeTransition = document.startViewTransition(() => renderRouteSafely());
+      const activeTransition = routeTransition;
+      Promise.resolve(activeTransition.updateCallbackDone || activeTransition.finished).catch(() => {}).finally(() => {
+        if (!pendingAssetRoute) endRouteFeedback();
+      });
+      Promise.resolve(activeTransition.finished).catch(() => {}).finally(() => {
+        if (routeTransition === activeTransition) routeTransition = null;
+        delete document.documentElement.dataset.routeDirection;
+      });
     });
   };
   const searchItems = () => {
