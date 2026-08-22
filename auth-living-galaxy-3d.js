@@ -863,7 +863,6 @@
         warpBoostUntil: 0, errorPulseUntil: 0,
         projectionVector: new THREE.Vector3(), last: performance.now(), elapsed: 0, frameBudget: 0
       };
-      galaxy.classList.add("is-webgl-ready");
       galaxy.dataset.livingGalaxy = mode();
       galaxy.dataset.meteorCount = "0";
 
@@ -881,6 +880,9 @@
       resizeObserver.observe(canvas);
       resize();
       render(performance.now());
+      /* Publish the WebGL scene only after its first complete frame. This is
+         an atomic surface swap, so the CSS fallback can never show through. */
+      galaxy.classList.add("is-webgl-ready");
       return true;
     } catch (error) {
       mounted = false;

@@ -16,7 +16,7 @@
   height: 100%;
   opacity: 0;
   filter: saturate(1.08) contrast(1.04);
-  transition: opacity .6s ease, filter .35s ease;
+  transition: filter .35s ease;
 }
 
 .hh-living-meteor-layer {
@@ -78,9 +78,9 @@
 
 .hh-h-galaxy.is-webgl-ready .hh-living-galaxy-canvas { opacity: 1; }
 .hh-h-galaxy.is-webgl-ready::before,
-.hh-h-galaxy.is-webgl-ready::after,
-.hh-h-galaxy.is-webgl-ready :where(.hh-galaxy-cloud,.hh-galaxy-comet,.hh-galaxy-sun) { opacity: 0 !important; }
-.hh-h-galaxy.is-webgl-ready .hh-galaxy-orbit::before { opacity: 0; }
+.hh-h-galaxy.is-webgl-ready::after { display: none !important; }
+.hh-h-galaxy.is-webgl-ready :where(.hh-galaxy-cloud,.hh-galaxy-comet,.hh-galaxy-sun) { display: none !important; }
+.hh-h-galaxy.is-webgl-ready .hh-galaxy-orbit::before { display: none !important; }
 
 .hh-living-galaxy-depth {
   position: absolute;
@@ -242,11 +242,11 @@
   transform: scale(.15) rotate(0);
 }
 
-.hh-living-warp.is-active { visibility: visible; animation: hh-warp-shell 440ms ease-in-out both; }
+.hh-living-warp.is-active { visibility: visible; opacity: 1; }
 .hh-living-warp.is-active::before { animation: hh-warp-core 440ms cubic-bezier(.22,.8,.24,1) both; }
 .hh-living-warp.is-active::after { animation: hh-warp-lines 440ms cubic-bezier(.16,.84,.22,1) both; }
 
-@keyframes hh-warp-shell { 0%,100% { opacity: 0; } 38%,65% { opacity: .94; } }
+@keyframes hh-warp-shell { 0%,100% { opacity: 1; } }
 @keyframes hh-warp-core { 0% { transform: translate(-50%,-50%) scale(.1); } 52% { transform: translate(-50%,-50%) scale(3); } 100% { transform: translate(-50%,-50%) scale(52); opacity: 0; } }
 @keyframes hh-warp-lines { 0% { transform: scale(.1) rotate(-12deg); opacity: 0; } 40% { opacity: .9; } 100% { transform: scale(3.4) rotate(10deg); opacity: 0; } }
 

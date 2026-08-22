@@ -12,8 +12,8 @@ test("login mounts a real WebGL living galaxy without replacing authentication",
   const runtime = read("auth-living-galaxy-3d.js");
   const css = read("auth-living-galaxy-3d.css");
 
-  assert.match(html, /auth-living-galaxy-3d\.css\?v=10/);
-  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=14/);
+  assert.match(html, /auth-living-galaxy-3d\.css\?v=11/);
+  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=16/);
   assert.match(gateway, /high:\s*"Điện ảnh"/);
   assert.match(gateway, /soft:\s*"Cân bằng"/);
   assert.match(gateway, /off:\s*"Tĩnh"/);
@@ -73,16 +73,16 @@ test("login mounts a real WebGL living galaxy without replacing authentication",
   assert.match(html, /data-guest-login/);
 });
 
-test("home living galaxy exposes fifteen domains and uses real local progress", () => {
+test("home living galaxy exposes seventeen domains and uses real local progress", () => {
   const runtime = read("home-galaxy-command.js");
   const css = read("home-galaxy-command.css");
   const loader = read("performance-loader.js");
 
   const block = runtime.match(/const PLANETS = Object\.freeze\(\[([\s\S]*?)\]\);/);
   assert.ok(block);
-  assert.equal((block[1].match(/\{\s*id:/g) || []).length, 15);
+  assert.equal((block[1].match(/\{\s*id:/g) || []).length, 17);
   assert.match(runtime, /HÔM NAY/);
-  assert.match(runtime, /THIÊN HÀ 15 MỤC/);
+  assert.match(runtime, /THIÊN HÀ 17 MỤC/);
   assert.match(runtime, /TRUNG TÂM THÔNG TIN/);
   assert.match(runtime, /data-hgc-info-panel="progress"/);
   assert.match(runtime, /class="hgc-dock"/);
@@ -98,6 +98,6 @@ test("home living galaxy exposes fifteen domains and uses real local progress", 
   assert.match(css, /\.hgc-constellation/);
   assert.match(css, /\.hgc-dock/);
   assert.match(css, /scroll-snap-type:\s*x mandatory/);
-  assert.match(loader, /home-galaxy-command\.css\?v=9/);
-  assert.match(loader, /home-galaxy-command\.js\?v=8/);
+  assert.match(loader, /home-galaxy-command\.css\?v=13/);
+  assert.match(loader, /home-galaxy-command\.js\?v=14/);
 });

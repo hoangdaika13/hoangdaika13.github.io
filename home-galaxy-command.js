@@ -210,8 +210,8 @@
         </aside>
 
         <section class="hgc-galaxy-panel" aria-labelledby="hgcGalaxyTitle">
-          <header><div><small>THIÊN HÀ 15 MỤC</small><h2 id="hgcGalaxyTitle">Chọn hành tinh để bắt đầu</h2></div><div class="hgc-pinned-orbit" data-hgc-pinned-orbit aria-label="Năm hành tinh được ghim"></div></header>
-          <div class="hgc-solar" data-hgc-solar aria-label="Mười lăm hành tinh chức năng">
+          <header><div><small>THIÊN HÀ 17 MỤC</small><h2 id="hgcGalaxyTitle">Chọn hành tinh để bắt đầu</h2></div><div class="hgc-pinned-orbit" data-hgc-pinned-orbit aria-label="Năm hành tinh được ghim"></div></header>
+          <div class="hgc-solar" data-hgc-solar aria-label="Mười bảy hành tinh chức năng">
             <div class="hgc-orbit hgc-orbit--1"></div><div class="hgc-orbit hgc-orbit--2"></div><div class="hgc-orbit hgc-orbit--3"></div><div class="hgc-orbit hgc-orbit--4"></div>
             <div class="hgc-orbit-particles" aria-hidden="true">${Array.from({ length: 12 }, (_, index) => `<i style="--orbit-particle:${index};--orbit-start:${index * 30}deg;--orbit-delay:${-(index * .7)}s;--orbit-tone:${PLANETS[index % PLANETS.length].color}"></i>`).join("")}</div>
             <div class="hgc-energy-lines" aria-hidden="true"></div><div class="hgc-scanner-ring" aria-hidden="true"><i></i></div><div class="hgc-focus-beam" aria-hidden="true"><i></i></div>

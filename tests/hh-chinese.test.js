@@ -227,7 +227,7 @@ test("HH Chinese v11 exposes the complete Learning Cockpit experience", () => {
   assert.match(css, /data-hsk="9"/);
   assert.match(loader, /hh-chinese\.css\?v=11/);
   assert.match(loader, /hh-chinese\.js\?v=11/);
-  assert.match(worker, /hh-identity-portal-v746/);
+  assert.match(worker, /hh-identity-portal-v803/);
   assert.match(worker, /hh-chinese\.css\?v=11/);
   assert.match(worker, /hh-chinese\.js\?v=11/);
 });

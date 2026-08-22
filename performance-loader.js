@@ -27,12 +27,12 @@
   const groups = Object.freeze({
     "auth-effects": {
       /*
-       * Restore only the lightweight product-universe runtime. The rest of
-       * the former effect bundle remains disabled so independent canvases and
-       * observers cannot stack up again.
+       * The H Galaxy mounted by auth-neon-gateway is the only visual owner.
+       * Former product-universe effects stay registered above for offline
+       * compatibility, but are never executed on top of the live gate.
        */
       styles: [],
-      scripts: ["auth-creative-universe.js?v=8"]
+      scripts: []
     },
     home: {
       /*
@@ -44,12 +44,12 @@
     },
     "home-enhancements": {
       styles: [
-        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=12", "home-capability-atlas.css?v=1", "home-live-widgets.css?v=12", "home-cosmic-os.css?v=3", "home-galaxy-mission.css?v=8", "home-galaxy-operations.css?v=2", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-galaxy-command.css?v=13", "home-capability-atlas.css?v=1", "home-live-widgets.css?v=12", "home-cosmic-os.css?v=3", "home-galaxy-mission.css?v=8", "home-galaxy-operations.css?v=2", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
         "dashboard-aurora.js?v=5", "home-galaxy-mission.js?v=10", "home-galaxy-operations.js?v=6", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
-        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=13", "home-capability-atlas.js?v=3", "home-live-widgets.js?v=8", "home-cosmic-os.js?v=13"
+        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-galaxy-command.js?v=14", "home-capability-atlas.js?v=3", "home-live-widgets.js?v=8", "home-cosmic-os.js?v=13"
       ]
     },
     platform: {

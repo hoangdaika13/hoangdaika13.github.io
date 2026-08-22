@@ -22,27 +22,25 @@ test("Music AI is a standalone DAW route with primary workspaces and specialized
   assert.match(shell, /const musicAILegacyPageItems =/);
 });
 
-test("Music AI uses one navigation source and opens tools directly", () => {
+test("Music AI catalog uses one route source and opens specialized tools directly", () => {
   const studio = read("music-ai-studio.js");
   const apps = read("music-ai-apps.js");
   const shell = read("script.js");
   const styles = read("app-shell.css");
+  const catalogStyles = read("workspace-feature-explorer.css");
   assert.doesNotMatch(studio, /class="mai-tabs"/);
   assert.doesNotMatch(apps, /class="ma-app-dock"/);
-  assert.match(shell, /app-sidebar__subitem--music/);
-  assert.match(shell, /data-music-section/);
-  assert.match(shell, /hh\.music-ai\.sidebar-nav-version/);
-  assert.match(shell, /routeButton\.matches\("\.app-sidebar__subitem--music"\)/);
-  assert.match(shell, /const keepMusicRouteContext =/);
-  assert.match(shell, /sidebarGroupState\["music-ai"\] = true/);
-  assert.match(shell, /sidebarGroupState\[targetGroup\.id\] = true/);
-  assert.doesNotMatch(shell, /sidebarGroupState\[targetGroup\.id\] = !musicSidebarToolLink/);
-  assert.match(shell, /tabindex=-1/);
-  assert.match(styles, /app-sidebar__page-section\.is-open/);
+  assert.match(shell, /"\/music-ai": "music-ai"/);
+  assert.match(shell, /mountFeatureGroupHub\("music-ai"\)/);
+  assert.match(shell, /const entries = groupId === "music-ai"/);
+  assert.match(shell, /data-app-hub-search/);
+  assert.match(shell, /data-app-hub-filter/);
+  assert.doesNotMatch(shell, /keepMusicRouteContext/);
+  assert.match(catalogStyles, /app-capability-index-route/);
   assert.match(styles, /pointer-events:none/);
   assert.match(shell, /const musicTitle = musicPlanet/);
   assert.match(shell, /updatePageHeader\(musicTitle, musicPage\.description/);
-  assert.match(shell, /\.app-sidebar__subitem\.is-active, \.app-sidebar__studio-item\.is-active/);
+  assert.match(shell, /musicItemMatchesRoute/);
   assert.match(studio, /is-standalone-app/);
 });
 

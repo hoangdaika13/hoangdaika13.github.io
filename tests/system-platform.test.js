@@ -159,7 +159,7 @@ test("UI and backend contracts cover every real System Center domain accessibly"
   assert.match(read("performance-loader.js"), /system-platform\.css\?v=3/);
   assert.match(read("index.html"), /performance-loader\.js\?v=317/);
   assert.match(read("index.html"), /script\.js\?v=185/);
-  assert.match(read("sw.js"), /hh-identity-portal-v662/);
+  assert.match(read("sw.js"), /hh-identity-portal-v803/);
   assert.match(css, /@media \(max-width: 520px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /:focus-visible/);

@@ -101,7 +101,7 @@ test("Publisher draft and channel switching are private to the current HH accoun
 test("Versioned publisher assets are loaded and cached", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["youtube-publisher.css?v=4", "youtube-publisher.js?v=7"]) {
+  for (const asset of ["youtube-publisher.css?v=4", "youtube-publisher.js?v=9"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);

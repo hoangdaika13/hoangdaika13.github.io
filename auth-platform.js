@@ -409,6 +409,7 @@
 
     const setGateState = () => {
       const authenticated = Boolean(user);
+      document.documentElement.dataset.hhSurface = authenticated ? "app" : "auth";
       document.body.classList.toggle("auth-unlocked", authenticated);
       document.body.classList.toggle("auth-locked", !authenticated);
       document.body.classList.toggle("auth-authenticated", authenticated);
@@ -417,7 +418,18 @@
       gate.hidden = authenticated;
       gate.inert = authenticated;
       gate.style.pointerEvents = authenticated ? "none" : "";
-      if (appShell) appShell.hidden = !authenticated;
+      if (appShell) {
+        appShell.hidden = !authenticated;
+        appShell.inert = !authenticated;
+        appShell.setAttribute("aria-hidden", String(!authenticated));
+      }
+      if (!authenticated) {
+        document.querySelectorAll(".hh-living-warp, .auth-transition-runtime, .hcp-portal-transition").forEach((overlay) => {
+          overlay.classList.remove("is-active", "is-playing");
+          overlay.setAttribute("aria-hidden", "true");
+          overlay.style.pointerEvents = "none";
+        });
+      }
       if (authenticated) {
         document.body.classList.remove("auth-panel-open", "app-route-changing");
         document.querySelectorAll(".auth-transition-runtime, .hcp-portal-transition").forEach((overlay) => {

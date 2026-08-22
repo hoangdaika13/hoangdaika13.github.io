@@ -1604,8 +1604,12 @@
     overflow: hidden;
   }
 
-  .dashboard-home.hgc-active > :not(#homeGalaxyCommandRoot):not(#homeCapabilityAtlasRoot) {
+  /* Command Center is the sole active Home surface. Other historical Home
+     hosts stay mounted for state preservation, but cannot paint underneath. */
+  .dashboard-home.hgc-active > :not(#homeGalaxyCommandRoot) {
     display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
   .dashboard-home.hgc-active > #homeGalaxyCommandRoot {

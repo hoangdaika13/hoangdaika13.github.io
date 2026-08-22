@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v800";
+const CACHE = "hh-identity-portal-v803";
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
@@ -18,10 +18,11 @@ const CACHE = "hh-identity-portal-v800";
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
-  "./app-shell.css?v=55",
+  "./app-shell.css?v=56",
+  "./workspace-feature-explorer.css?v=2",
   "./app-theme-system.css?v=9",
   "./dashboard-aurora.css?v=4",
-  "./home-galaxy-command.css?v=12",
+  "./home-galaxy-command.css?v=13",
   "./home-capability-atlas.css?v=1",
   "./home-live-widgets.css?v=12",
   "./home-cosmic-os.css?v=3",
@@ -90,7 +91,7 @@ const RUNTIME_ASSETS = [
   "./settings-studio.css?v=7",
   "./settings-studio.js?v=7",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=219",
+  "./script.js?v=221",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -200,7 +201,7 @@ const RUNTIME_ASSETS = [
   "./music-ai-apps.js?v=3",
   "./music-ai-studio.js?v=9",
   "./dashboard-aurora.js?v=5",
-  "./home-galaxy-command.js?v=13",
+  "./home-galaxy-command.js?v=14",
   "./home-capability-atlas.js?v=3",
   "./home-live-widgets.js?v=8",
   "./home-cosmic-os.js?v=13",
@@ -216,7 +217,7 @@ const RUNTIME_ASSETS = [
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=9",
   "./auth-h-galaxy.css?v=12",
-  "./auth-living-galaxy-3d.css?v=10",
+  "./auth-living-galaxy-3d.css?v=11",
   "./auth-living-background.css?v=1",
   "./auth-spatial-aurora.css?v=1",
   "./auth-identity-constellation.css?v=1",
@@ -234,11 +235,11 @@ const RUNTIME_ASSETS = [
   "./auth-zoom-resilience.css?v=3",
   "./auth-typography-unified.css?v=2",
   "./assets/hh-neon-logo-v2.png?v=3",
-  "./auth-platform.js?v=15",
+  "./auth-platform.js?v=16",
   "./auth-experience.js?v=8",
-  "./auth-neon-gateway.js?v=28",
+  "./auth-neon-gateway.js?v=29",
   "./auth-h-galaxy.js?v=14",
-  "./auth-living-galaxy-3d.js?v=15",
+  "./auth-living-galaxy-3d.js?v=16",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
   "./auth-identity-constellation.js?v=2",
@@ -463,7 +464,7 @@ const RUNTIME_ASSETS = [
 const CORE = [
   "./",
   "./index.html",
-  "./app-shell.css?v=55",
+  "./app-shell.css?v=56",
   "./app-theme-system.css?v=9",
   "./sidebar-navigation-pro.css?v=29",
   "./auth-experience.css?v=6",
@@ -477,10 +478,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=458",
-  "./auth-platform.js?v=15",
-  "./auth-neon-gateway.js?v=28",
-  "./script.js?v=219"
+  "./performance-loader.js?v=460",
+  "./auth-platform.js?v=16",
+  "./auth-neon-gateway.js?v=29",
+  "./script.js?v=221"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

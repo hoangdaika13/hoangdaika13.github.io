@@ -1144,9 +1144,35 @@
 }
 
 @layer pages {
-  body.home-neon.auth-locked > :not(.auth-gate):not(.neon-grid-bg) { display: none !important; }
-  body.home-neon.auth-locked .auth-gate { display: grid !important; }
-  body.home-neon.auth-locked .neon-grid-bg { display: block !important; opacity: .24; }
+  /* Authentication and the app shell are mutually exclusive viewport owners. */
+  body.home-neon.auth-locked {
+    min-height: 100dvh;
+    background: #050713 !important;
+  }
+  body.home-neon.auth-locked > :not(#authGate):not([data-privacy-banner]):not(script):not(style) {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  body.home-neon.auth-locked #appShell,
+  body.home-neon.auth-locked #top,
+  body.home-neon.auth-locked .neon-grid-bg {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  body.home-neon.auth-locked #authGate {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 10000 !important;
+    isolation: isolate;
+    contain: paint;
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background-color: #050713 !important;
+  }
   .home-neon.auth-unlocked.auth-panel-open .auth-gate {
     opacity: 1;
     visibility: visible;
@@ -1155,6 +1181,9 @@
   }
   .home-neon.auth-unlocked:not(.auth-panel-open) .auth-gate {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
   .home-neon.auth-unlocked :is(
     #authGate,
@@ -1170,6 +1199,16 @@
   ) {
     display: none !important;
     visibility: hidden !important;
+  }
+  .home-neon.auth-unlocked.auth-panel-open #appShell {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  .home-neon.auth-unlocked.auth-panel-open #authGate {
+    isolation: isolate;
+    contain: paint;
+    background-color: #050713 !important;
   }
   .auth-gate-close {
     position: absolute;

@@ -35,7 +35,7 @@ test("Admin Panel is a top-level admin-only area guarded by server-projected acc
 
   assert.match(client, /id: "insights".*items: \["analytics", "smart-search", "api-center"/);
   assert.match(client, /id: "admin".*route: "\/admin".*adminOnly: true/);
-  assert.match(client, /groups\.filter\(\(group\) => !group\.adminOnly \|\| isCurrentUserAdmin\(\)\)/);
+  assert.match(client, /section\.groupIds\.map\(navigationGroupById\)\.filter\(\(item\) => item && \(!item\.adminOnly \|\| isCurrentUserAdmin\(\)\)\)/);
   assert.match(client, /isCurrentUserAdmin.*user\?\.access\?\.admin === true/);
   assert.match(client, /route === "\/admin".*!isCurrentUserAdmin\(\)/s);
   assert.match(client, /route === "\/analytics\/admin-panel"/);

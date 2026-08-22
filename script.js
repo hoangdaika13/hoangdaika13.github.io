@@ -617,11 +617,22 @@ function initRealtimeAuth() {
 
   const setGateState = () => {
     const authenticated = Boolean(user && token);
+    const fallbackShell = byId("appShell");
+    document.documentElement.dataset.hhSurface = authenticated ? "app" : "auth";
     document.body.classList.toggle("auth-unlocked", authenticated);
     document.body.classList.toggle("auth-locked", !authenticated);
     document.body.classList.toggle("auth-authenticated", authenticated);
     if (authenticated) document.body.classList.remove("auth-panel-open");
-    gate?.setAttribute("aria-hidden", String(authenticated));
+    if (gate) {
+      gate.setAttribute("aria-hidden", String(authenticated));
+      gate.hidden = authenticated;
+      gate.inert = authenticated;
+    }
+    if (fallbackShell) {
+      fallbackShell.hidden = !authenticated;
+      fallbackShell.inert = !authenticated;
+      fallbackShell.setAttribute("aria-hidden", String(!authenticated));
+    }
     if (authOpenButton) authOpenButton.hidden = authenticated;
   };
 
@@ -5913,8 +5924,17 @@ function initAppShell() {
     }
     if (unlocked && legacyMain) legacyMain.hidden = true;
     shell.hidden = !unlocked;
+    shell.inert = !unlocked;
+    shell.setAttribute("aria-hidden", String(!unlocked));
     document.body.classList.toggle("app-shell-enabled", unlocked);
     if (!unlocked) {
+      const gate = byId("authGate");
+      if (gate) {
+        gate.hidden = false;
+        gate.inert = false;
+        gate.setAttribute("aria-hidden", "false");
+        gate.style.pointerEvents = "";
+      }
       cancelAnimationFrame(shellRevealFrame);
       return;
     }
@@ -6336,24 +6356,124 @@ function initAppShell() {
       });
     }
   };
-  const mountModuleHub = (group = null) => {
-    const moduleEntries = (group?.items || moduleList().map((item) => item.id))
+  const featureHubMetadata = Object.freeze({
+    create: { eyebrow: "CREATIVE UNIVERSE", title: "Biến ý tưởng thành sản phẩm hoàn chỉnh", description: "Chọn đúng studio cho từng bước: lên ý tưởng, viết kịch bản, sản xuất media, cộng tác, kiểm duyệt và xuất bản.", secondary: "#9a78ff" },
+    "media-design": { eyebrow: "MEDIA PRODUCTION GALAXY", title: "Sản xuất mọi loại media trong một hệ thống", description: "Ảnh, video, podcast, tài liệu, thương hiệu, asset và xuất bản được chia thành các phòng chuyên biệt, dễ chọn theo việc cần làm.", secondary: "#62e9ff" },
+    "music-ai": { eyebrow: "MUSIC CREATION GALAXY", title: "Từ giai điệu đầu tiên đến bản phát hành", description: "Khám phá sáng tác, MIDI, phối khí, thu âm, mix, master, visualizer và quản lý quyền theo một quy trình âm nhạc rõ ràng.", secondary: "#ff62c8" },
+    "graphic-design": { eyebrow: "VISUAL DESIGN UNIVERSE", title: "Thiết kế 2D, 3D, motion và prototype", description: "Mỗi phòng giải quyết một nhiệm vụ cụ thể: vector, chữ, hiệu ứng, animation, mockup, component, cộng tác và bàn giao.", secondary: "#ff72d6" },
+    work: { eyebrow: "WORK MISSION NETWORK", title: "Chọn không gian phù hợp cho công việc", description: "Tổ chức task, dự án, kế hoạch, đội nhóm, tri thức, tự động hóa và portfolio mà không phải đi qua màn hình không liên quan.", secondary: "#55e7b2" },
+    "davinci-resolve": { eyebrow: "HH TOOL CONSTELLATION", title: "Xử lý video, ảnh chữ và xuất bản hàng loạt", description: "Chọn công cụ theo đầu ra bạn cần: dựng video, remix AI, batch media, tạo thumbnail hoặc vận hành kênh qua API chính thức.", secondary: "#7f85ff" },
+    dev: { eyebrow: "DEVELOPER GALAXY", title: "Mọi công cụ DEV, được chia đúng nhiệm vụ", description: "Từ code, API, dữ liệu và Git đến delivery, security, quan sát hệ thống và các tiện ích hằng ngày cho lập trình viên.", secondary: "#61f0b1" },
+    insights: { eyebrow: "DATA & INSIGHT OBSERVATORY", title: "Đo lường, phân tích và kiểm tra hệ thống", description: "Mở đúng trung tâm để đọc báo cáo, tìm dữ liệu, quản lý API, quan sát trạng thái hoặc kiểm tra an toàn nền tảng.", secondary: "#ff70be" }
+  });
+  const featureDescriptionFallbacks = Object.freeze({
+    "media-design:background-remover": "Tách chủ thể khỏi nền ảnh và xuất PNG trong suốt để dùng ngay.",
+    "media-design:collage": "Ghép nhiều ảnh thành bố cục có khoảng cách, nền và tỷ lệ tùy chỉnh.",
+    "media-design:inspector": "Đọc kích thước, định dạng, màu và metadata cơ bản của hình ảnh.",
+    "media-design:compress": "Giảm dung lượng ảnh với mức chất lượng có thể xem trước trước khi tải xuống.",
+    "media-design:convert": "Chuyển ảnh giữa PNG, JPEG, WebP và các định dạng trình duyệt hỗ trợ.",
+    "media-design:image": "Cắt, đổi kích thước, xoay và xử lý nhanh một hoặc nhiều ảnh.",
+    "media-design:picker": "Lấy màu từ ảnh, sao chép mã màu và tạo bảng màu dùng lại.",
+    "media-design:pdf": "Gộp, tách, sắp xếp và xuất trang PDF bằng quy trình local-first.",
+    "media-design:qr": "Tạo và kiểm tra QR cho văn bản, liên kết hoặc dữ liệu liên hệ.",
+    "media-design:icon": "Tìm, xem và chuẩn bị icon phù hợp cho giao diện hoặc thương hiệu.",
+    "media-design:svg": "Mở, chỉnh thuộc tính và xuất đồ họa SVG có thể co giãn.",
+    "media-design:social-post": "Tạo bố cục bài đăng theo tỷ lệ phổ biến của mạng xã hội.",
+    "media-design:favicon": "Chuẩn bị bộ favicon nhiều kích thước cho website và PWA.",
+    "media-design:meme": "Tạo ảnh chữ nhanh từ ảnh của bạn và xuất file hoàn chỉnh.",
+    "graphic-design:vector": "Vẽ path, shape và chuyển động vector trong một canvas không phá hủy.",
+    "graphic-design:nondestructive": "Chỉnh sửa bằng layer, mask và effect để luôn có thể quay lại bản gốc.",
+    "graphic-design:typography": "Xây hệ chữ, căn chỉnh, scale và hierarchy cho sản phẩm thiết kế.",
+    "graphic-design:effects": "Ghép hiệu ứng bằng node để thử nhiều phương án mà không làm hỏng thiết kế.",
+    "graphic-design:quick-motion": "Tạo chuyển động ngắn từ preset, keyframe và easing dễ điều chỉnh.",
+    "graphic-design:animation": "Dựng animation 2D theo timeline, layer và keyframe.",
+    "graphic-design:state-machine": "Kết nối trạng thái và dữ liệu để prototype phản hồi như sản phẩm thật.",
+    "graphic-design:3d": "Sắp xếp camera, ánh sáng, vật thể và vật liệu trong scene 3D.",
+    "graphic-design:mockup": "Đặt thiết kế lên mô hình thiết bị 3D để trình bày và kiểm duyệt.",
+    "graphic-design:character": "Tạo nhân vật, biểu cảm, màu sắc và biến thể dùng trong dự án.",
+    "graphic-design:simulation": "Thử chuyển động và tương tác vật lý trước khi đưa vào thiết kế.",
+    "graphic-design:prototype": "Nối màn hình thành luồng UI/UX có thể bấm và kiểm thử.",
+    "graphic-design:motion": "Kết hợp video, chữ và graphic thành bố cục chuyển động.",
+    "graphic-design:adaptive": "Thiết kế bố cục tự thích ứng theo màn hình và nội dung.",
+    "graphic-design:data": "Tạo biến thể thiết kế từ dữ liệu thay vì chỉnh từng bản thủ công.",
+    "graphic-design:components": "Xây component, variant và thuộc tính dùng lại nhất quán.",
+    "graphic-design:color": "Quản lý palette, profile màu, contrast và đầu ra chuyên nghiệp.",
+    "graphic-design:projects": "Lưu project, snapshot, nhánh phiên bản và khôi phục an toàn.",
+    "graphic-design:collaboration": "Cùng chỉnh sửa, theo dõi presence và trao đổi ngay trên thiết kế.",
+    "graphic-design:review": "Gửi bản duyệt, nhận comment và chốt trạng thái phê duyệt.",
+    "graphic-design:dev-ai": "Kiểm tra token, thông số và dùng AI có bước xác nhận trước khi áp dụng.",
+    "graphic-design:export": "Kiểm tra đầu ra và xuất nhiều định dạng, kích thước hoặc tỷ lệ.",
+    "graphic-design:plugins": "Quản lý plugin và điểm mở rộng dành cho workflow thiết kế.",
+    "graphic-design:performance": "Theo dõi scene nặng, cache và chất lượng render theo thiết bị.",
+    "graphic-design:composer": "Ghép asset, component, motion và dữ liệu trong một scene thống nhất.",
+    "dev:smart-input": "Nhận diện loại dữ liệu được dán vào và đề xuất công cụ xử lý phù hợp.",
+    "dev:developer-recipe": "Chạy quy trình nhiều bước cho tác vụ DEV phổ biến với kết quả kiểm tra được.",
+    "dev:api-studio": "Gửi REST, GraphQL hoặc WebSocket request và lưu môi trường làm việc.",
+    "dev:mock-api": "Tạo phản hồi API giả có kiểm soát để phát triển và kiểm thử giao diện.",
+    "dev:json-data-lab": "Định dạng, kiểm tra, biến đổi và so sánh dữ liệu JSON.",
+    "dev:security-encoding": "Mã hóa, giải mã và kiểm tra dữ liệu nhạy cảm ngay trên thiết bị.",
+    "dev:regex-studio": "Viết, thử và giải thích biểu thức chính quy trên dữ liệu mẫu.",
+    "dev:database-playground": "Thử truy vấn và cấu trúc dữ liệu trước khi áp dụng vào database thật.",
+    "dev:code-playground": "Chạy thử đoạn HTML, CSS hoặc JavaScript trong vùng preview cô lập.",
+    "dev:git-diff-studio": "So sánh thay đổi, đọc diff và chuẩn bị nội dung commit dễ hiểu.",
+    "dev:web-diagnostics": "Kiểm tra network, tài nguyên, lỗi runtime và tín hiệu hiệu suất web.",
+    "dev:ai-developer": "Nhờ AI giải thích hoặc đề xuất code nhưng luôn giữ bước xem lại của bạn."
+  });
+  const featureCategoryFor = (groupId, item) => {
+    if (item.group || item.section) return item.group || item.section;
+    const id = String(item.id || "");
+    if (groupId === "graphic-design") {
+      if (/3d|mockup|character|simulation/.test(id)) return "3D & Nhân vật";
+      if (/motion|animation|quick-motion|effects/.test(id)) return "Motion & Hiệu ứng";
+      if (/prototype|state-machine|adaptive|data|components/.test(id)) return "UI/UX & Hệ thống";
+      if (/projects|collaboration|review|export|plugins|performance|dev-ai/.test(id)) return "Vận hành & Bàn giao";
+      return "Thiết kế nền tảng";
+    }
+    if (groupId === "dev") return /json|database|sql|data|base64|timestamp/.test(id) ? "Dữ liệu" : /security|password|hash|encryption|uuid/.test(id) ? "Bảo mật" : /api|network|url/.test(id) ? "API & Mạng" : /git|code|markdown|cron/.test(id) ? "Code & Git" : "DEV Utilities";
+    return item.category || "Chức năng chuyên biệt";
+  };
+  const featureDescriptionFor = (group, item) => item.description || featureDescriptionFallbacks[`${group?.id}:${item.id}`] || `Mở ${item.title || item.label || item.id} để thực hiện tác vụ này trong một workspace chuyên biệt, có hướng dẫn và trạng thái riêng.`;
+  const mountModuleHub = (group = null, options = {}) => {
+    const moduleIds = [...(group?.items || (group ? [] : moduleList().map((item) => item.id))), ...(group?.legacyItems || [])];
+    const moduleEntries = moduleIds
       .filter((id) => id !== "admin-panel" || isCurrentUserAdmin())
       .map((id) => {
         const item = moduleById(id);
         return item ? { id: item.id, icon: "HH", title: item.title, group: group?.label || item.group || "HH Platform", description: item.description, route: routeForModule(item.id) } : null;
       }).filter(Boolean);
     const studioEntries = (group?.studioItems || []).map((item) => ({ ...item, route: `${group.route}/${item.id}` }));
-    const pageEntries = (group?.pages || []).map((item) => ({ ...item, icon: "↗", group: group.label, description: `Mở ${item.title} thành một màn hình làm việc riêng.` }));
-    const entries = [...studioEntries, ...pageEntries, ...moduleEntries];
+    const pageEntries = (group?.pages || []).map((item) => ({ ...item, icon: item.icon || "↗", group: item.group || group.label, description: item.description || "" }));
+    const suppliedEntries = Array.isArray(options.entries) ? options.entries : [...studioEntries, ...pageEntries, ...moduleEntries];
+    const seenRoutes = new Set();
+    const entries = suppliedEntries.map((item) => ({
+      ...item,
+      route: item.route || `${group?.route || "/tools"}/${item.id}`,
+      category: featureCategoryFor(group?.id, item),
+      description: featureDescriptionFor(group, item)
+    })).filter((item) => {
+      const key = String(item.route || item.id);
+      if (!key || seenRoutes.has(key)) return false;
+      seenRoutes.add(key);
+      return true;
+    });
     const label = group?.label || "Tất cả công cụ";
-    workspace.innerHTML = `<section class="app-module-hub" data-module-hub>
-      <header><div><p class="section-kicker">${group ? "KHÔNG GIAN CHỨC NĂNG" : "HH APP LIBRARY"}</p><h2>Chọn một việc trong ${label}</h2><p>Mỗi lựa chọn mở thành một trang riêng, lưu trạng thái và luôn có đường quay lại. Bạn không cần cuộn qua các module không liên quan.</p></div><span><b>${entries.length}</b> màn hình sẵn sàng</span></header>
-      <div class="app-module-hub__toolbar"><label><span>⌕</span><input type="search" data-app-hub-search placeholder="Tìm theo tên hoặc việc cần làm..." autocomplete="off"></label><button type="button" data-command-open>Ctrl K · Tìm toàn hệ thống</button></div>
-      <div class="app-module-hub__grid" data-app-hub-grid>${entries.map((item, index) => `<button type="button" data-app-route="${safeText(item.route)}" data-app-hub-item="${safeText(`${item.title} ${item.group || ""} ${item.description || ""}`.toLowerCase())}" style="--hub-index:${index};--hub-accent:${safeText(group?.accent || item.accent || "#56eaff")}"><span>${safeText(item.icon || "◇")}</span><div><small>${safeText(item.group || label)}</small><strong>${safeText(item.title)}</strong><p>${safeText(item.description || "Mở không gian thao tác đầy đủ cho chức năng này.")}</p></div><i>→</i></button>`).join("") || `<div class="app-empty-state"><strong>Chưa có màn hình trong nhóm này</strong><p>Dùng tìm kiếm toàn hệ thống để mở công cụ khác.</p><button type="button" data-command-open>Tìm công cụ</button></div>`}</div>
+    const metadata = featureHubMetadata[group?.id] || {};
+    const categories = [...new Set(entries.map((item) => item.category))];
+    workspace.innerHTML = `<section class="app-module-hub app-module-hub--cosmic" data-module-hub data-feature-hub="${safeText(group?.id || "all")}" style="--hub-secondary:${safeText(metadata.secondary || group?.accent || "#9b72ff")}">
+      <div class="app-module-hub__space" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+      <header><div><p class="section-kicker"><i></i>${safeText(metadata.eyebrow || (group ? "KHÔNG GIAN CHỨC NĂNG" : "HH APP LIBRARY"))}</p><h2>${safeText(metadata.title || `Chọn một việc trong ${label}`)}</h2><p>${safeText(metadata.description || "Mỗi lựa chọn mở thành một trang riêng, lưu trạng thái và luôn có đường quay lại. Bạn không cần cuộn qua các module không liên quan.")}</p></div><span><b>${entries.length}</b><small>CHỨC NĂNG</small><em>${categories.length} nhóm nhiệm vụ</em></span></header>
+      <ol class="app-module-hub__guide" aria-label="Cách bắt đầu"><li><b>1</b><span><strong>Chọn nhóm</strong><small>Lọc theo việc cần làm</small></span></li><li><b>2</b><span><strong>Đọc tóm tắt</strong><small>Biết công cụ dùng để làm gì</small></span></li><li><b>3</b><span><strong>Mở workspace</strong><small>Thao tác trong màn hình riêng</small></span></li><li><b>4</b><span><strong>Lưu kết quả</strong><small>Giữ project và lịch sử</small></span></li></ol>
+      <div class="app-module-hub__toolbar"><label><span>⌕</span><input type="search" data-app-hub-search placeholder="Tìm theo tên, đầu ra hoặc việc cần làm..." autocomplete="off"><kbd>Ctrl K</kbd></label><button type="button" data-command-open>⌕ Tìm toàn hệ thống</button></div>
+      <nav class="app-module-hub__filters" aria-label="Lọc nhóm chức năng"><button type="button" data-app-hub-filter="all" aria-pressed="true"><span>✦</span>Tất cả <b>${entries.length}</b></button>${categories.map((category) => `<button type="button" data-app-hub-filter="${safeText(normalizeSidebarSearch(category))}" aria-pressed="false"><span>◉</span>${safeText(category)} <b>${entries.filter((item) => item.category === category).length}</b></button>`).join("")}</nav>
+      <div class="app-module-hub__grid" data-app-hub-grid>${entries.map((item, index) => `<button type="button" data-app-route="${safeText(item.route)}" data-app-hub-item="${safeText(normalizeSidebarSearch(`${item.title} ${item.category} ${item.group || ""} ${item.description || ""}`))}" data-app-hub-category="${safeText(normalizeSidebarSearch(item.category))}" style="--hub-index:${index};--hub-accent:${safeText(item.color || item.accent || group?.accent || "#56eaff")}"><span class="app-module-hub__icon"><b>${safeText(item.icon || "◇")}</b><i></i></span><div><small>${safeText(item.category)}</small><strong>${safeText(item.title)}</strong><p>${safeText(item.description)}</p><em>Phù hợp cho người mới · Có workspace riêng</em></div><i>Khám phá <b>→</b></i></button>`).join("") || `<div class="app-empty-state"><strong>Chưa có màn hình trong nhóm này</strong><p>Dùng tìm kiếm toàn hệ thống để mở công cụ khác.</p><button type="button" data-command-open>Tìm công cụ</button></div>`}</div>
       <p class="app-module-hub__empty" data-app-hub-empty hidden>Không tìm thấy chức năng phù hợp. Hãy thử từ khóa ngắn hơn hoặc nhấn Ctrl K.</p>
+      <footer><span><i></i>Chọn card để mở đúng chức năng; dữ liệu đã nhập trong các workspace khác không bị xóa.</span><button type="button" data-app-route="/home">⌂ Về Trang chủ</button></footer>
     </section>`;
-    requestAnimationFrame(() => workspace.querySelector("[data-app-hub-search]")?.focus({ preventScroll: true }));
+    requestAnimationFrame(() => {
+      const main = workspace.closest(".app-main");
+      if (main) main.scrollTop = 0;
+      workspace.querySelector("[data-app-hub-search]")?.focus({ preventScroll: true });
+    });
   };
   const mountSimpleView = (title, description, content) => {
     workspace.innerHTML = `<section class="app-simple-view"><div class="app-simple-view__intro"><p class="section-kicker">HH Platform</p><h2>${title}</h2><p>${description}</p></div>${content}</section>`;
@@ -6384,6 +6504,28 @@ function initAppShell() {
       return;
     }
     mountSimpleView("Công việc", "Không gian dự án, tài liệu, tệp và tự động hóa của HH Platform.", '<button class="app-primary-action" type="button" data-app-route="/work/project-center">Mở Project Center</button>');
+  };
+  const featureHubRootRoutes = Object.freeze({
+    "/create": "create",
+    "/media-design": "media-design",
+    "/music-ai": "music-ai",
+    "/graphic-design": "graphic-design",
+    "/work": "work",
+    "/davinci-resolve": "davinci-resolve",
+    "/dev-tools": "dev",
+    "/analytics": "insights"
+  });
+  const mountFeatureGroupHub = (groupId) => {
+    const group = navigationGroupById(groupId);
+    if (!group) return mountModuleHub();
+    const entries = groupId === "music-ai"
+      ? musicAIAllPageItems
+      : groupId === "dev"
+        ? developerAllToolItems
+        : null;
+    mountModuleHub(group, entries ? { entries } : {});
+    pageActions.innerHTML = `<button type="button" data-command-open>⌕ Tìm nhanh</button><button type="button" data-app-route="/favorites">☆ Yêu thích</button><button class="app-primary-action" type="button" data-app-hub-focus-search>Khám phá ${safeText(group.label)}</button>`;
+    pageActions.querySelector("[data-app-hub-focus-search]")?.addEventListener("click", () => workspace.querySelector("[data-app-hub-search]")?.focus({ preventScroll: false }));
   };
   const remember = (moduleId) => {
     if (!moduleId) return;
@@ -6559,6 +6701,17 @@ function initAppShell() {
     finishCosmicRouteLoader();
     if (routeAnnouncer) routeAnnouncer.textContent = `${pageHeader.querySelector("h1")?.textContent || "Trang"} đã sẵn sàng`;
   };
+  const finalizeRouteRender = (route) => {
+    document.title = `${pageHeader.querySelector("h1").textContent} | HH Platform`;
+    workspace.scrollTop = 0;
+    requestAnimationFrame(() => {
+      document.querySelector(".app-main")?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+    legacyMain.hidden = true;
+    renderedRoute = route;
+    window.dispatchEvent(new CustomEvent("hh:route-rendered", { detail: { route } }));
+  };
   const renderRoute = () => {
     if (!isUnlocked()) return;
     const hash = location.hash.replace(/^#/, "") || "/home";
@@ -6616,6 +6769,7 @@ function initAppShell() {
     document.body.classList.toggle("app-creative-route", route === "/create" || route.startsWith("/create/"));
     document.body.classList.toggle("app-music-ai-route", route === "/music-ai" || route.startsWith("/music-ai/"));
     document.body.classList.toggle("app-social-media-tools-route", route === "/social-media-tools" || route.startsWith("/social-media-tools/"));
+    document.body.classList.toggle("app-capability-index-route", Boolean(featureHubRootRoutes[route]));
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) {
       window.HHDeveloperTools?.cleanup?.();
       window.HHDevProSuite?.cleanup?.();
@@ -6688,6 +6842,13 @@ function initAppShell() {
       else mountSimpleView("Công cụ truyền thông xã hội", "Đang tải Social Creator OS…", "");
       remember("social-media-tools");
     } else if (route === "/work" || workGalaxyPageItems.some((item) => item.route === route)) {
+      if (route === "/work") {
+        updatePageHeader("Công việc", "Khám phá toàn bộ không gian quản lý task, dự án, kế hoạch, đội nhóm, tri thức, tự động hóa và portfolio.", route);
+        mountFeatureGroupHub("work");
+        remember("work");
+        finalizeRouteRender(route);
+        return;
+      }
       const workView = route === "/work" ? "mission-control" : parts[1];
       const workPage = workGalaxyPageItems.find((item) => item.id === workView) || workGalaxyPageItems[0];
       updatePageHeader(workPage.title, workPage.description, route);
@@ -6844,6 +7005,13 @@ function initAppShell() {
       else mountSimpleView("HH Intelligence", "Đang kết nối dịch vụ AI và lịch sử hội thoại...", "");
       remember("chat-ai");
     } else if (route === "/music-ai" || route.startsWith("/music-ai/")) {
+      if (route === "/music-ai") {
+        updatePageHeader("Làm nhạc AI", "Khám phá toàn bộ phòng sáng tác, MIDI, phối khí, thu âm, mix, master, visual và phát hành âm nhạc.", route);
+        mountFeatureGroupHub("music-ai");
+        remember("music-ai");
+        finalizeRouteRender(route);
+        return;
+      }
       const musicView = parts[1] || "autopilot";
       const musicPage = musicAIAllPageItems.find((item) => item.id === musicView) || musicAIPageItems[0];
       const musicPlanet = musicAIPlanetItems.find((item) => musicItemMatchesRoute(item, route));
@@ -6862,7 +7030,6 @@ function initAppShell() {
           view: musicView,
           onNavigate: (nextView) => {
             const nextMusicRoute = `/music-ai/${nextView}`;
-            keepMusicRouteContext(nextMusicRoute);
             location.hash = `#${nextMusicRoute}`;
           }
         });
@@ -6873,6 +7040,13 @@ function initAppShell() {
       }
       else mountSimpleView("Làm nhạc AI", "Đang tải xưởng sản xuất âm nhạc...", "");
     } else if (isCreativeOSRoute(route)) {
+      if (route === "/create") {
+        updatePageHeader("Sáng tạo", "Khám phá toàn bộ studio từ ý tưởng, kịch bản và media đến cộng tác, kiểm duyệt, phân tích và xuất bản.", route);
+        mountFeatureGroupHub("create");
+        remember("create");
+        finalizeRouteRender(route);
+        return;
+      }
       const creativeView = route === "/create" ? "overview" : parts[1];
       const creativePage = creativeStudioItems.find((item) => item.id === creativeView) || creativeStudioItems[0];
       updatePageHeader(creativePage.title, creativePage.description, route);
@@ -6933,6 +7107,13 @@ function initAppShell() {
       else mountSimpleView("HH Comics", "Đang tải kho truyện online...", "");
       remember("comic-reader");
     } else if (route === "/davinci-resolve" || route.startsWith("/davinci-resolve/")) {
+      if (route === "/davinci-resolve") {
+        updatePageHeader("Tool", "Khám phá toàn bộ công cụ video, batch media, ảnh chữ, AI remake và trung tâm xuất bản mạng xã hội.", route);
+        mountFeatureGroupHub("davinci-resolve");
+        remember("davinci-resolve");
+        finalizeRouteRender(route);
+        return;
+      }
       const resolveView = parts[1] || "davinci";
       const resolvePage = davinciResolvePages.find((item) => item.id === resolveView) || davinciResolvePages[0];
       updatePageHeader(
@@ -6967,12 +7148,26 @@ function initAppShell() {
       else window.HHDavinciResolveHub?.mount(resolveHost, { view: resolveView });
       remember(`davinci-resolve-${resolveView}`);
     } else if (route === "/media-design" || route.startsWith("/media-design/")) {
+      if (route === "/media-design") {
+        updatePageHeader("Media & Design", "Khám phá đầy đủ Project Core, Photo & Image, Video & Motion, Audio, Documents, Brand, Asset và Delivery Center.", route);
+        mountFeatureGroupHub("media-design");
+        remember("media-design");
+        finalizeRouteRender(route);
+        return;
+      }
       updatePageHeader("Media & Design", "Universal Media Project kết nối ảnh, video, âm thanh, motion, review và xuất bản trong một quy trình.", route);
       workspace.innerHTML = '<div data-media-design-page-host></div>';
       const mediaHost = workspace.firstElementChild;
       mediaHost.dataset.mediaDesignTool = parts[1] || "";
       window.HHMediaDesignPage?.mount(mediaHost, { toolId: parts[1] || "" });
     } else if (route === "/graphic-design" || route.startsWith("/graphic-design/")) {
+      if (route === "/graphic-design") {
+        updatePageHeader("Thiết kế đồ họa", "Khám phá toàn bộ không gian vector, typography, motion, 3D, prototype, component, cộng tác và bàn giao.", route);
+        mountFeatureGroupHub("graphic-design");
+        remember("graphic-design");
+        finalizeRouteRender(route);
+        return;
+      }
       const graphicView = parts[1] || "overview";
       const graphicTitle = ({ vector: "Vector & Motion Core", nondestructive: "Non-destructive Editing", typography: "Typography Studio Pro", effects: "Node Effects Composer", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 3.0", simulation: "Simulation Lab", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", data: "Data-driven Design", components: "Component & Variant System", color: "Professional Color Pipeline", projects: "Project & Version Vault", collaboration: "Live Collaboration", review: "Review & Approval", "dev-ai": "Dev Mode & Controlled AI", export: "Export Center Pro", plugins: "Plugin & Extension SDK", performance: "Performance Workspace", composer: "Universal Scene Composer" })[graphicView] || "Thiết kế đồ họa";
       updatePageHeader(graphicTitle, "Thiết kế nhanh, animation tương tác, 3D, mockup, prototype UI/UX, motion video và nhân vật trong một studio thống nhất.", route);
@@ -6980,6 +7175,13 @@ function initAppShell() {
       if (window.HHGraphicDesign?.mount) window.HHGraphicDesign.mount(workspace.firstElementChild, { view: graphicView, apiBase: REALTIME_URL, socketUrl: SOCKET_URL });
       else mountSimpleView("Thiết kế đồ họa", "Đang tải Graphic Design Studio...", "");
     } else if (route === "/dev-tools" || route.startsWith("/dev-tools/")) {
+      if (route === "/dev-tools") {
+        updatePageHeader("DEV", "Khám phá toàn bộ công cụ code, API, dữ liệu, Git, delivery, bảo mật, chẩn đoán và tiện ích lập trình.", route);
+        mountFeatureGroupHub("dev");
+        remember("dev");
+        finalizeRouteRender(route);
+        return;
+      }
       const devToolId = parts[1] || "overview";
       const devTool = developerAllToolItems.find((item) => item.id === devToolId);
       updatePageHeader(devTool?.title || "Developer Galaxy", "Universal Dev Project kết nối code, API, dữ liệu, Git, delivery, bảo mật và quan sát trong tám hành tinh chuyên sâu.", route);
@@ -6993,8 +7195,8 @@ function initAppShell() {
       }
     } else if (route === "/analytics") {
       updatePageHeader("Phân tích", "Đo lường hiệu suất, hành vi sử dụng, vận hành API và an toàn hệ thống trong một trung tâm thống nhất.", route);
-      workspace.innerHTML = '<div data-insights-overview-host></div>';
-      window.HHInsights?.mountOverview?.(workspace.firstElementChild, { admin: isCurrentUserAdmin(), user: readCurrentAuthUser() });
+      mountFeatureGroupHub("insights");
+      remember("insights");
     } else if (route === "/analytics/analytics") {
       updatePageHeader("Analytics", "Báo cáo hoạt động, hiệu suất trình duyệt, hành trình module và dữ liệu có thể xuất.", route, module);
       workspace.innerHTML = '<div data-insights-analytics-host></div>';
@@ -7117,15 +7319,7 @@ function initAppShell() {
       updatePageHeader("Không tìm thấy trang", "Route này chưa có workspace tương ứng.", route);
       mountSimpleView("Không tìm thấy trang", "Hãy quay lại dashboard hoặc dùng tìm kiếm toàn hệ thống.", `<button type=button data-app-route=/home>Về trang chủ</button>`);
     }
-    document.title = `${pageHeader.querySelector("h1").textContent} | HH Platform`;
-    workspace.scrollTop = 0;
-    requestAnimationFrame(() => {
-      document.querySelector(".app-main")?.scrollTo({ top: 0, left: 0, behavior: "auto" });
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    });
-    legacyMain.hidden = true;
-    renderedRoute = route;
-    window.dispatchEvent(new CustomEvent("hh:route-rendered", { detail: { route } }));
+    finalizeRouteRender(route);
   };
   const runtimeIssueKey = "hh.runtime.issues.v1";
   const readRuntimeIssues = () => {
@@ -7220,7 +7414,8 @@ function initAppShell() {
   const renderRouteWithTransition = () => {
     if (!isUnlocked()) return;
     const nextRoute = routeFromHash();
-    const canTransition = Boolean(document.startViewTransition) && Boolean(renderedRoute) && nextRoute !== renderedRoute && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const touchesHomeSurface = nextRoute === "/home" || renderedRoute === "/home";
+    const canTransition = Boolean(document.startViewTransition) && Boolean(renderedRoute) && nextRoute !== renderedRoute && !touchesHomeSurface && !matchMedia("(prefers-reduced-motion: reduce)").matches;
     beginRouteFeedback(nextRoute);
     routeTransition?.skipTransition?.();
     if (!canTransition) {
@@ -7404,6 +7599,14 @@ function initAppShell() {
   });
 
   document.addEventListener("click", (event) => {
+    const hubFilter = event.target.closest("[data-app-hub-filter]");
+    if (hubFilter) {
+      const hub = hubFilter.closest("[data-module-hub]");
+      hub?.querySelectorAll("[data-app-hub-filter]").forEach((button) => button.setAttribute("aria-pressed", String(button === hubFilter)));
+      const search = hub?.querySelector("[data-app-hub-search]");
+      search?.dispatchEvent(new Event("input", { bubbles: true }));
+      return;
+    }
     if (event.target.closest("[data-sidebar-dismiss]")) {
       document.body.classList.add("app-sidebar-collapsed");
       syncMobileSidebarDock();
@@ -7560,11 +7763,14 @@ function initAppShell() {
   });
   document.addEventListener("input", (event) => {
     if (!event.target.matches("[data-app-hub-search]")) return;
-    const query = event.target.value.trim().toLowerCase();
+    const query = normalizeSidebarSearch(event.target.value);
     const hub = event.target.closest("[data-module-hub]");
+    const activeCategory = hub?.querySelector("[data-app-hub-filter][aria-pressed='true']")?.dataset.appHubFilter || "all";
     let visible = 0;
     hub?.querySelectorAll("[data-app-hub-item]").forEach((item) => {
-      item.hidden = Boolean(query) && !item.dataset.appHubItem.includes(query);
+      const matchesQuery = !query || item.dataset.appHubItem.includes(query);
+      const matchesCategory = activeCategory === "all" || item.dataset.appHubCategory === activeCategory;
+      item.hidden = !(matchesQuery && matchesCategory);
       visible += item.hidden ? 0 : 1;
     });
     const empty = hub?.querySelector("[data-app-hub-empty]");

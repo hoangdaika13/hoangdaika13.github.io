@@ -113,7 +113,8 @@ test("Main Creative Galaxy keeps a fixed constellation view and preserves wormho
   assert.match(shell, /prepareRoute/);
   assert.match(shell, /dataset\.hhRuntimeAsset === "script"/);
   assert.match(read("creative-star-map.js"), /prepareRoute[\s\S]*pointerover/);
-  assert.match(script, /HHCreativeStarMap\.markup/);
+  assert.match(script, /mountFeatureGroupHub\("create"\)/);
+  assert.match(script, /HHCreativeOS\?\.mount/);
   assert.match(script, /hh:route-rendered/);
 });
 
