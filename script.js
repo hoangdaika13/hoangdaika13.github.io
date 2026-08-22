@@ -5830,6 +5830,58 @@ function initAppShell() {
     const group = groups.find((item) => item.items.includes(id) || item.legacyItems?.includes(id) || item.studioItems?.some((tool) => tool.id === id));
     return `${group?.route || "/tools"}/${id}`;
   };
+  const homeNavigationCatalog = () => orderedNavigationSections().map((section) => ({
+    id: section.id,
+    label: section.label,
+    icon: section.icon,
+    accent: section.accent,
+    accentSecondary: section.accentSecondary,
+    items: section.items.map((group) => ({
+      id: group.id,
+      label: group.label,
+      icon: group.icon,
+      accent: group.accent,
+      route: group.route,
+      keywords: sidebarSearchAliases[group.id] || "",
+      features: [
+        ...(group.pages || []).map((item) => ({
+          id: item.id,
+          title: item.title || item.label || item.id,
+          description: item.description || "",
+          category: item.group || item.section || "Trong workspace",
+          route: item.route || `${group.route}/${item.id}`
+        })),
+        ...(group.studioItems || []).map((item) => ({
+          id: item.id,
+          title: item.title || item.label || item.id,
+          description: item.description || "",
+          category: item.group || item.section || "Trong workspace",
+          route: item.route || `${group.route}/${item.id}`
+        })),
+        ...(group.items || []).map((id) => {
+          const item = moduleById(id);
+          return {
+            id,
+            title: item?.title || item?.name || String(id).replaceAll("-", " "),
+            description: item?.description || "",
+            category: item?.category || item?.group || "Công cụ tích hợp",
+            route: routeForModule(id)
+          };
+        }),
+        ...(group.legacyItems || []).map((id) => {
+          const item = moduleById(id);
+          return {
+            id,
+            title: item?.title || item?.name || String(id).replaceAll("-", " "),
+            description: item?.description || "",
+            category: item?.category || item?.group || "Công cụ tích hợp",
+            route: routeForModule(id)
+          };
+        })
+      ]
+    }))
+  }));
+  window.HHNavigationCatalog = Object.freeze({ version: 1, getSections: homeNavigationCatalog });
   const userName = () => {
     try { return JSON.parse(localStorage.getItem("hh-auth-user") || "{}").name || "Tài khoản"; } catch { return "Tài khoản"; }
   };

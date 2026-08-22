@@ -1604,7 +1604,7 @@
     overflow: hidden;
   }
 
-  .dashboard-home.hgc-active > :not(#homeGalaxyCommandRoot) {
+  .dashboard-home.hgc-active > :not(#homeGalaxyCommandRoot):not(#homeCapabilityAtlasRoot) {
     display: none !important;
   }
 
@@ -2103,7 +2103,8 @@ body.hgc-home-active .app-main.hgc-main-active {
 
 body.hgc-home-active .app-main.hgc-main-active .app-workspace,
 body.hgc-home-active .dashboard-home.hgc-active,
-body.hgc-home-active .dashboard-home.hgc-active > #homeGalaxyCommandRoot {
+body.hgc-home-active .dashboard-home.hgc-active > #homeGalaxyCommandRoot,
+body.hgc-home-active .dashboard-home.hgc-active > #homeCapabilityAtlasRoot {
   height: auto !important;
   min-height: 100% !important;
   overflow: visible !important;
@@ -2113,5 +2114,11 @@ body.hgc-home-active .dashboard-home.hgc-active > #homeGalaxyCommandRoot,
 body.hgc-home-active .dashboard-home.hgc-active > #homeGalaxyCommandRoot > .hgc.hgm-active {
   max-width: 100%;
   overflow-x: clip !important;
+}
+
+body.hgc-home-active .dashboard-home.hgc-active > #homeCapabilityAtlasRoot {
+  min-height: 0 !important;
+  margin-top: 14px;
+  padding-bottom: 10px;
 }
 }

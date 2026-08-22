@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v796";
+const CACHE = "hh-identity-portal-v799";
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
@@ -21,7 +21,8 @@ const RUNTIME_ASSETS = [
   "./app-shell.css?v=55",
   "./app-theme-system.css?v=9",
   "./dashboard-aurora.css?v=4",
-  "./home-galaxy-command.css?v=11",
+  "./home-galaxy-command.css?v=12",
+  "./home-capability-atlas.css?v=1",
   "./home-live-widgets.css?v=12",
   "./home-cosmic-os.css?v=3",
   "./home-galaxy-mission.css?v=8",
@@ -89,7 +90,7 @@ const RUNTIME_ASSETS = [
   "./settings-studio.css?v=7",
   "./settings-studio.js?v=7",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=218",
+  "./script.js?v=219",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -200,6 +201,7 @@ const RUNTIME_ASSETS = [
   "./music-ai-studio.js?v=9",
   "./dashboard-aurora.js?v=5",
   "./home-galaxy-command.js?v=13",
+  "./home-capability-atlas.js?v=3",
   "./home-live-widgets.js?v=8",
   "./home-cosmic-os.js?v=13",
   "./home-galaxy-mission.js?v=10",
@@ -475,10 +477,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=454",
+  "./performance-loader.js?v=457",
   "./auth-platform.js?v=15",
   "./auth-neon-gateway.js?v=28",
-  "./script.js?v=218"
+  "./script.js?v=219"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {
