@@ -92,6 +92,7 @@ test("category navigation supports search, pins, reordering and restrained cosmi
   assert.match(client, /data-sidebar-menu-action="new-tab"/);
   assert.match(client, /data-sidebar-menu-action="hide"/);
   assert.match(client, /saveSidebarItemOrder/);
+  assert.match(client, /data-tool-motion/);
   assert.match(client, /data-nav-section/);
   assert.match(client, /dragstart/);
   assert.match(client, /Alt\+ArrowUp Alt\+ArrowDown/);
@@ -107,6 +108,15 @@ test("category navigation supports search, pins, reordering and restrained cosmi
   assert.match(css, /\.app-sidebar-pin-flight/);
   assert.match(css, /body\.app-shell-enabled \.app-mobile-nav\{display:grid!important/);
   assert.match(css, /@media\(max-width:390px\)\{\.app-sidebar\{height:min\(82dvh,720px\)!important/);
+  assert.match(css, /-webkit-line-clamp:2/);
+  assert.match(css, /hh-sidebar-ai-stars/);
+  assert.match(css, /hh-sidebar-web-signal/);
+  assert.match(css, /hh-sidebar-solar-flare/);
+  assert.match(css, /hh-sidebar-data-grid/);
+  assert.match(css, /hh-sidebar-constellation/);
+  assert.match(css, /hh-sidebar-radar/);
+  assert.match(css, /hh-sidebar-home-beacon/);
+  assert.match(css, /hh-sidebar-footer-energy/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
 });
 
@@ -129,7 +139,7 @@ test("every route gets a shared cosmic loading state with progress and fallback"
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=55", "script.js?v=214", "sidebar-navigation-pro.css?v=18", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=5", "english-vocabulary.css?v=1", "english-vocabulary.js?v=2", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=28", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=55", "script.js?v=215", "sidebar-navigation-pro.css?v=23", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=5", "english-vocabulary.css?v=1", "english-vocabulary.js?v=2", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=28", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);

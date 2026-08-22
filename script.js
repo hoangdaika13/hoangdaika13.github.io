@@ -5857,9 +5857,14 @@ function initAppShell() {
       const isActive = navigationItemMatchesRoute(item, route);
       const isPinned = pinnedRoutes.includes(item.route);
       const isFavorite = favoriteRoutes.includes(item.route);
+      const ownerSection = validSections.find((section) => section.id === sectionId) || navigationSectionForRoute(item.route);
+      const motionModes = ["orbit", "pulse", "wave", "comet"];
+      const motionSeed = [...String(item.id || item.route)].reduce((total, char) => total + char.charCodeAt(0), 0);
+      const motionMode = motionModes[motionSeed % motionModes.length];
+      const compactAccent = compact && ownerSection ? ` style="--nav-accent:${safeText(ownerSection.accent)};--nav-accent-secondary:${safeText(ownerSection.accentSecondary)}"` : "";
       const searchable = `${item.label} ${item.route} ${sidebarSearchAliases[item.id] || ""}`.toLowerCase();
       const draggable = !compact && !flyout;
-      return `<div class="app-sidebar__tool-row ${isActive ? "is-active" : ""} ${pinned ? "is-pinned" : ""} ${compact ? "is-compact" : ""}" data-nav-search-text="${safeText(searchable)}" data-sidebar-tool-route="${safeText(item.route)}" data-sidebar-tool-label="${safeText(item.label)}" data-sidebar-section-id="${safeText(sectionId)}" ${pinned ? `data-pinned-route="${safeText(item.route)}"` : ""} ${draggable ? `draggable="true" data-nav-item-route="${safeText(item.route)}"` : ""}>
+      return `<div class="app-sidebar__tool-row ${isActive ? "is-active" : ""} ${pinned ? "is-pinned" : ""} ${compact ? "is-compact" : ""}" data-tool-motion="${motionMode}" data-nav-search-text="${safeText(searchable)}" data-sidebar-tool-route="${safeText(item.route)}" data-sidebar-tool-label="${safeText(item.label)}" data-sidebar-section-id="${safeText(sectionId)}"${compactAccent} ${pinned ? `data-pinned-route="${safeText(item.route)}"` : ""} ${draggable ? `draggable="true" data-nav-item-route="${safeText(item.route)}"` : ""}>
         ${pinned ? `<span class="app-sidebar__drag" aria-hidden="true" title="Kéo để sắp xếp">⠿</span>` : ""}
         <button class="app-sidebar__subitem ${isActive ? "is-active" : ""}" type="button" data-app-route="${safeText(item.route)}" title="${safeText(item.label)}" aria-keyshortcuts="Shift+F10" ${isActive ? "aria-current=page" : ""}>
           <span class="app-sidebar__tool-icon" aria-hidden="true">${safeText(item.icon)}</span><b>${safeText(item.label)}</b><i class="app-sidebar__active-dot" aria-hidden="true"></i>
