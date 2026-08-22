@@ -60,7 +60,7 @@ test("HH English exposes the cosmic vocabulary galaxy and all practice modes", (
   assert.match(css, /prefers-reduced-motion/);
 });
 
-test("primary navigation is grouped into focused categories with one open section", () => {
+test("primary navigation is grouped into focused categories with user-controlled expansion", () => {
   const client = read("script.js");
   const css = read("sidebar-navigation-pro.css");
 
@@ -68,7 +68,8 @@ test("primary navigation is grouped into focused categories with one open sectio
   for (const label of ["AI & Sáng tạo", "Web & Cộng đồng", "Giải trí & Nội dung", "Công việc & Công nghệ", "Học tập & Ngôn ngữ", "Quản trị & Hệ thống"]) {
     assert.match(client, new RegExp(label.replace(/[&]/g, "\\&")));
   }
-  assert.match(client, /saveOpenNavigationSection\(openNavigationSection === sectionId \? "" : sectionId\)/);
+  assert.match(client, /expandedNavigationSections/);
+  assert.match(client, /saveExpandedNavigationSections/);
   assert.match(client, /navigationSectionForRoute\(route\)/);
   assert.match(css, /\.app-sidebar__category\.is-expanded>\.app-sidebar__submenu\{max-height:380px/);
   assert.match(css, /\.app-sidebar__primary[\s\S]*?overflow-y:auto/);
@@ -96,6 +97,15 @@ test("category navigation supports search, pins, reordering and restrained cosmi
   assert.doesNotMatch(client, /const recentMarkup/);
   assert.match(client, /const cardByRoute = new Map\(\)/);
   assert.match(client, /contextBar\.hidden = route === "\/home" \|\| route === "\/favorites" \|\| route === "\/recent"/);
+  assert.match(client, /data-smart-chevron/);
+  assert.match(client, /saveExpandedNavigationSections/);
+  assert.match(client, /focusAndRevealNavigationSection/);
+  assert.match(client, /Shift\+bấm mũi tên/);
+  assert.match(client, /sidebarIconPaths/);
+  assert.match(client, /sidebarIconNames/);
+  assert.match(client, /sidebarIconMarkup/);
+  assert.doesNotMatch(client, /if \(routeSection\) saveOpenNavigationSection/);
+  assert.doesNotMatch(client, /if \(targetSection\) saveOpenNavigationSection/);
   assert.match(client, /data-nav-section/);
   assert.match(client, /dragstart/);
   assert.match(client, /Alt\+ArrowUp Alt\+ArrowDown/);
@@ -122,6 +132,14 @@ test("category navigation supports search, pins, reordering and restrained cosmi
   assert.match(css, /hh-sidebar-footer-energy/);
   assert.match(css, /hh-sidebar-tool-ambient-scan/);
   assert.match(css, /hh-sidebar-footer-float/);
+  assert.match(css, /scrollbar-gutter:stable/);
+  assert.match(css, /hh-sidebar-chevron-breathe/);
+  assert.match(css, /hh-sidebar-chevron-dot/);
+  assert.match(css, /\.app-sidebar__svg-icon/);
+  assert.match(css, /hh-sidebar-svg-core/);
+  assert.match(css, /hh-sidebar-svg-glint/);
+  assert.match(css, /body\.hh-settings-applied:not\(\.app-sidebar-collapsed\) \.app-shell__body\{grid-template-columns:minmax\(0,1fr\)!important/);
+  assert.match(css, /clamp\(268px,var\(--hh-user-sidebar-width,284px\),284px\)/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
 });
 
@@ -144,7 +162,7 @@ test("every route gets a shared cosmic loading state with progress and fallback"
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=55", "script.js?v=216", "sidebar-navigation-pro.css?v=24", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=5", "english-vocabulary.css?v=1", "english-vocabulary.js?v=2", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=28", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=55", "script.js?v=218", "sidebar-navigation-pro.css?v=28", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=5", "english-vocabulary.css?v=1", "english-vocabulary.js?v=2", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=28", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);

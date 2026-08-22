@@ -5688,6 +5688,51 @@ function initAppShell() {
     system: "hệ thống cài đặt pwa trạng thái",
     support: "ủng hộ donate nhà phát triển payos vietqr"
   });
+  const sidebarIconPaths = Object.freeze({
+    home: '<path d="M3.5 11.2 12 4l8.5 7.2"/><path d="M5.5 10.2V20h13v-9.8M9.5 20v-5.5h5V20"/>',
+    sparkles: '<path d="m12 2 1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2Z"/><path d="m19 14 .8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14ZM5 13l.7 2.3L8 16l-2.3.7L5 19l-.7-2.3L2 16l2.3-.7L5 13Z"/>',
+    orbit: '<circle cx="12" cy="12" r="3.2"/><ellipse cx="12" cy="12" rx="10" ry="5.2"/><path d="M7.2 3.8c4.8 1.1 8.9 5.2 10 10M6.8 20.2c-1.8-3.1-1.2-7.8 1.5-11"/><circle class="sidebar-icon-fill" cx="20.5" cy="11" r="1.3"/>',
+    play: '<circle cx="12" cy="12" r="9.5"/><path class="sidebar-icon-fill" d="m10 8 6 4-6 4V8Z"/>',
+    cpu: '<rect x="6" y="6" width="12" height="12" rx="3"/><rect x="9.3" y="9.3" width="5.4" height="5.4" rx="1"/><path d="M9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4"/>',
+    book: '<path d="M3.5 5.5c3.2-.8 5.8-.2 8.5 1.7v12c-2.7-1.9-5.3-2.5-8.5-1.7v-12Z"/><path d="M20.5 5.5c-3.2-.8-5.8-.2-8.5 1.7v12c2.7-1.9 5.3-2.5 8.5-1.7v-12Z"/>',
+    shield: '<path d="M12 2.5 20 6v5.4c0 5.1-3.2 8.7-8 10.1-4.8-1.4-8-5-8-10.1V6l8-3.5Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
+    bot: '<rect x="4" y="7" width="16" height="12" rx="4"/><path d="M12 3v4M8 13h.01M16 13h.01M8 17h8"/><circle class="sidebar-icon-fill" cx="12" cy="3" r="1.3"/>',
+    wand: '<path d="m4 20 10.8-10.8M12.8 7.2l4 4M18.5 2l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7.7-2.3ZM7 3l.5 1.5L9 5l-1.5.5L7 7l-.5-1.5L5 5l1.5-.5L7 3Z"/>',
+    brush: '<path d="M14.5 4.2 19.8 9.5 11 18.3 5.7 13l8.8-8.8Z"/><path d="M5.7 13c-2.7.5-3.8 2.4-3.5 5.5 2.9.3 4.9-.8 5.5-3.5"/>',
+    music: '<path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/><path d="M9 9l10-2"/>',
+    panels: '<rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="m15.5 15.5 3 1.8-3 1.7v-3.5Z"/>',
+    image: '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m4.5 17 5-5 3.5 3 2.3-2.3 4.2 4.3"/>',
+    pen: '<path d="m4 20 4.5-1 10-10-3.5-3.5-10 10L4 20Z"/><path d="m13.8 6.7 3.5 3.5M4.8 15.7l3.5 3.5M17 3.5l3.5 3.5"/>',
+    search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/>',
+    video: '<rect x="3" y="5" width="18" height="14" rx="4"/><path class="sidebar-icon-fill" d="m10 9 5 3-5 3V9Z"/>',
+    messages: '<path d="M4 4.5h12a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H9l-5 4v-15Z"/><path d="M8 9h7M8 12h4"/>',
+    send: '<path d="m3 11 18-8-7.5 18-2.2-7.8L3 11Z"/><path d="m11.3 13.2 5.3-5.3"/>',
+    monitor: '<rect x="2.5" y="4" width="19" height="13" rx="2.5"/><path d="M8 21h8M12 17v4M7 10h10m-3-3 3 3-3 3"/>',
+    reader: '<path d="M4 4.5h7a3 3 0 0 1 3 3V20a3 3 0 0 0-3-3H4V4.5Z"/><path d="M20 4.5h-3a3 3 0 0 0-3 3V20a3 3 0 0 1 3-3h3V4.5Z"/>',
+    clapper: '<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 8h18l-2-5H5L3 8Zm4-5 2 5m4-5 2 5"/><path class="sidebar-icon-fill" d="m10 12 5 2.5-5 2.5v-5Z"/>',
+    headphones: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="13" width="4" height="7" rx="2"/><rect x="17" y="13" width="4" height="7" rx="2"/>',
+    moon: '<path d="M19.5 15.5A8.5 8.5 0 1 1 8.5 4.2a7 7 0 0 0 11 11.3Z"/><path d="m18 4 .5 1.5L20 6l-1.5.5L18 8l-.5-1.5L16 6l1.5-.5L18 4Z"/>',
+    briefcase: '<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8 7V4h8v3M3 12h18M10 12v2h4v-2"/>',
+    sliders: '<path d="M4 6h10M18 6h2M4 12h3m4 0h9M4 18h8m4 0h4"/><circle cx="16" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="14" cy="18" r="2"/>',
+    code: '<path d="m8 8-4 4 4 4m8-8 4 4-4 4m-2-11-4 14"/>',
+    chart: '<path d="M4 20V10m6 10V4m6 16v-7m4 7H2"/><path d="m4 8 6-5 6 7 4-4"/>',
+    copyright: '<circle cx="12" cy="12" r="9.5"/><path d="M15.5 9.2a4.2 4.2 0 1 0 0 5.6"/>',
+    graduation: '<path d="m2.5 9 9.5-5 9.5 5-9.5 5-9.5-5Z"/><path d="M6 11.2V16c3.5 2.8 8.5 2.8 12 0v-4.8M21.5 9v6"/>',
+    crown: '<path d="m3 7 4.5 4L12 4l4.5 7L21 7l-2 12H5L3 7Z"/><path d="M6 16h12"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.8 1.8 0 0 0 .4 2l.1.1-2.8 2.8-.1-.1a1.8 1.8 0 0 0-2-.4 1.8 1.8 0 0 0-1.1 1.7V21h-4v-.1A1.8 1.8 0 0 0 8.8 19a1.8 1.8 0 0 0-2 .4l-.1.1-2.8-2.8.1-.1a1.8 1.8 0 0 0 .4-2A1.8 1.8 0 0 0 2.7 13H2.5V9h.2a1.8 1.8 0 0 0 1.7-1.1 1.8 1.8 0 0 0-.4-2l-.1-.1L6.7 3l.1.1a1.8 1.8 0 0 0 2 .4A1.8 1.8 0 0 0 9.9 2H14a1.8 1.8 0 0 0 1.1 1.5 1.8 1.8 0 0 0 2-.4l.1-.1L20 5.8l-.1.1a1.8 1.8 0 0 0-.4 2A1.8 1.8 0 0 0 21.2 9h.3v4h-.3a1.8 1.8 0 0 0-1.8 2Z"/>',
+    heart: '<path d="M20.8 5.8a5.2 5.2 0 0 0-7.4 0L12 7.2l-1.4-1.4a5.2 5.2 0 0 0-7.4 7.4L12 22l8.8-8.8a5.2 5.2 0 0 0 0-7.4Z"/>',
+    english: '<rect x="3" y="4" width="18" height="16" rx="5"/><text class="sidebar-icon-label" x="12" y="15">EN</text>',
+    japanese: '<rect x="3" y="4" width="18" height="16" rx="5"/><text class="sidebar-icon-label sidebar-icon-label--cjk" x="12" y="15">日</text>',
+    chinese: '<rect x="3" y="4" width="18" height="16" rx="5"/><text class="sidebar-icon-label sidebar-icon-label--cjk" x="12" y="15">中</text>'
+  });
+  const sidebarIconNames = Object.freeze({
+    home: "home", search: "search", "ai-creative": "sparkles", "web-community": "orbit", entertainment: "play", "work-tech": "cpu", learning: "book", "system-admin": "shield",
+    "chat-ai": "bot", create: "wand", draw: "brush", "music-ai": "music", "comic-motion": "panels", "media-design": "image", "graphic-design": "pen",
+    google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", fortune: "moon",
+    work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", english: "english", japanese: "japanese", chinese: "chinese",
+    admin: "crown", system: "settings", support: "heart"
+  });
+  const sidebarIconMarkup = (id) => `<svg class="app-sidebar__svg-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">${sidebarIconPaths[sidebarIconNames[id] || "sparkles"]}</svg>`;
   const normalizeSidebarSearch = (value = "") => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
   const navigationGroupById = (id) => groups.find((group) => group.id === id);
   const navigationItemMatchesRoute = (item, route) => Boolean(item && (route === item.route || route.startsWith(`${item.route}/`)));
@@ -5758,12 +5803,20 @@ function initAppShell() {
     return [...sections].sort((left, right) => order.indexOf(left.id) - order.indexOf(right.id));
   };
   let openNavigationSection = localStorage.getItem(sidebarStorageKey("open-section.v2")) || "ai-creative";
+  const readExpandedNavigationSections = () => readStoredArray(sidebarStorageKey("expanded-sections.v1")).filter((id) => navigationSections.some((section) => section.id === id));
+  let expandedNavigationSections = new Set(readExpandedNavigationSections());
+  if (!expandedNavigationSections.size && openNavigationSection) expandedNavigationSections.add(openNavigationSection);
   let navigationRouteSnapshot = "";
-  const saveOpenNavigationSection = (sectionId) => {
-    openNavigationSection = sectionId || "";
+  const saveExpandedNavigationSections = (sectionIds, primarySectionId = "") => {
+    const visibleIds = new Set(visibleNavigationSections().map((section) => section.id));
+    const validIds = [...new Set(sectionIds)].filter((id) => visibleIds.has(id));
+    expandedNavigationSections = new Set(validIds);
+    openNavigationSection = validIds.includes(primarySectionId) ? primarySectionId : validIds[0] || "";
+    localStorage.setItem(sidebarStorageKey("expanded-sections.v1"), JSON.stringify(validIds));
     if (openNavigationSection) localStorage.setItem(sidebarStorageKey("open-section.v2"), openNavigationSection);
     else localStorage.removeItem(sidebarStorageKey("open-section.v2"));
   };
+  const saveOpenNavigationSection = (sectionId) => saveExpandedNavigationSections(sectionId ? [sectionId] : [], sectionId);
   const graphicDesignPages = groups.find((group) => group.id === "graphic-design")?.pages || [];
   let activeRoute = "";
   let renderedRoute = "";
@@ -5840,17 +5893,15 @@ function initAppShell() {
   };
   const renderNavigation = () => {
     const route = activeRoute || routeFromHash();
-    const routeSection = navigationSectionForRoute(route);
     if (route !== navigationRouteSnapshot) {
       navigationRouteSnapshot = route;
-      if (routeSection) saveOpenNavigationSection(routeSection.id);
     }
     const hiddenRoutes = readHiddenSidebarRoutes();
     const validSections = orderedNavigationSections().map((section) => ({
       ...section,
       items: orderedSidebarItems(section).filter((item) => !hiddenRoutes.includes(item.route) || navigationItemMatchesRoute(item, route))
     }));
-    if (!validSections.some((section) => section.id === openNavigationSection)) saveOpenNavigationSection(validSections[0]?.id || "");
+    if (openNavigationSection && !validSections.some((section) => section.id === openNavigationSection)) saveOpenNavigationSection(validSections[0]?.id || "");
     const pinnedRoutes = readSidebarPins().filter((itemRoute) => !hiddenRoutes.includes(itemRoute));
     const favoriteRoutes = readSidebarFavorites();
     const itemMarkup = (item, { pinned = false, compact = false, flyout = false, sectionId = "" } = {}) => {
@@ -5867,7 +5918,7 @@ function initAppShell() {
       return `<div class="app-sidebar__tool-row ${isActive ? "is-active" : ""} ${pinned ? "is-pinned" : ""} ${compact ? "is-compact" : ""}" data-tool-motion="${motionMode}" data-nav-search-text="${safeText(searchable)}" data-sidebar-tool-route="${safeText(item.route)}" data-sidebar-tool-label="${safeText(item.label)}" data-sidebar-section-id="${safeText(sectionId)}"${compactAccent} ${pinned ? `data-pinned-route="${safeText(item.route)}"` : ""} ${draggable ? `draggable="true" data-nav-item-route="${safeText(item.route)}"` : ""}>
         ${pinned ? `<span class="app-sidebar__drag" aria-hidden="true" title="Kéo để sắp xếp">⠿</span>` : ""}
         <button class="app-sidebar__subitem ${isActive ? "is-active" : ""}" type="button" data-app-route="${safeText(item.route)}" title="${safeText(item.label)}" aria-keyshortcuts="Shift+F10" ${isActive ? "aria-current=page" : ""}>
-          <span class="app-sidebar__tool-icon" aria-hidden="true">${safeText(item.icon)}</span><b>${safeText(item.label)}</b><i class="app-sidebar__active-dot" aria-hidden="true"></i>
+          <span class="app-sidebar__tool-icon" aria-hidden="true">${sidebarIconMarkup(item.id)}</span><b>${safeText(item.label)}</b><i class="app-sidebar__active-dot" aria-hidden="true"></i>
         </button>
         ${compact ? "" : `<button class="app-sidebar__pin ${isPinned ? "is-pinned" : ""}" type="button" data-sidebar-pin="${safeText(item.route)}" aria-label="${isPinned ? "Bỏ ghim" : "Ghim"} ${safeText(item.label)}" title="${isPinned ? "Bỏ ghim" : "Ghim lên đầu sidebar"}">${isPinned ? "★" : (isFavorite ? "✦" : "☆")}</button>`}
       </div>`;
@@ -5878,21 +5929,21 @@ function initAppShell() {
       <div class="app-sidebar__pinned-list" data-sidebar-pinned-list>${pinnedItems.map((item) => itemMarkup(item, { pinned: true })).join("")}</div>
     </section>` : "";
     const sectionsMarkup = validSections.map((section) => {
-      const isExpanded = section.id === openNavigationSection;
+      const isExpanded = expandedNavigationSections.has(section.id);
       const isActive = section.items.some((item) => navigationItemMatchesRoute(item, route));
       return `<section class="app-sidebar__group app-sidebar__category ${isExpanded ? "is-expanded" : ""} ${isActive ? "has-active-route" : ""}" data-nav-section="${safeText(section.id)}" data-nav-search-label="${safeText(section.label.toLowerCase())}" draggable="true" style="--nav-accent:${safeText(section.accent)};--nav-accent-secondary:${safeText(section.accentSecondary)}">
-        <button class="app-sidebar__item app-sidebar__section-toggle ${isActive ? "is-active" : ""}" type="button" data-sidebar-section-toggle="${safeText(section.id)}" data-nav-label="${safeText(section.label)}" aria-expanded="${isExpanded}" aria-controls="sidebar-section-${safeText(section.id)}" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" title="${safeText(section.label)} · kéo để sắp xếp nhóm">
-          <span class="app-sidebar__section-orb" aria-hidden="true">${safeText(section.icon)}</span><b>${safeText(section.label)}</b><small class="app-sidebar__count" aria-label="${section.items.length} chức năng">${section.items.length}</small><i class="app-sidebar__chevron" aria-hidden="true">›</i>
+        <button class="app-sidebar__item app-sidebar__section-toggle ${isActive ? "is-active" : ""}" type="button" data-sidebar-section-toggle="${safeText(section.id)}" data-nav-label="${safeText(section.label)}" aria-label="${isExpanded ? "Thu gọn" : "Mở"} nhóm ${safeText(section.label)}, ${section.items.length} chức năng" aria-expanded="${isExpanded}" aria-controls="sidebar-section-${safeText(section.id)}" aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home End Alt+ArrowUp Alt+ArrowDown" title="${safeText(section.label)} · bấm hàng để mở riêng · bấm mũi tên để mở thêm · Shift+bấm mũi tên để mở/thu tất cả">
+          <span class="app-sidebar__section-orb" aria-hidden="true">${sidebarIconMarkup(section.id)}</span><b>${safeText(section.label)}</b><small class="app-sidebar__count" aria-label="${section.items.length} chức năng">${section.items.length}</small><i class="app-sidebar__chevron" data-smart-chevron title="Bấm: mở thêm nhóm · Shift+bấm: mở hoặc thu tất cả" aria-hidden="true">›</i>
         </button>
         <div class="app-sidebar__submenu" id="sidebar-section-${safeText(section.id)}" aria-hidden="${!isExpanded}">${section.items.map((item) => itemMarkup(item, { sectionId: section.id })).join("")}</div>
-        <aside class="app-sidebar__flyout" aria-label="${safeText(section.label)}"><header><span class="app-sidebar__section-orb" aria-hidden="true">${safeText(section.icon)}</span><div><small>NHÓM CÔNG CỤ</small><strong>${safeText(section.label)}</strong></div><b>${section.items.length}</b></header><div>${section.items.map((item) => itemMarkup(item, { flyout: true, sectionId: section.id })).join("")}</div></aside>
+        <aside class="app-sidebar__flyout" aria-label="${safeText(section.label)}"><header><span class="app-sidebar__section-orb" aria-hidden="true">${sidebarIconMarkup(section.id)}</span><div><small>NHÓM CÔNG CỤ</small><strong>${safeText(section.label)}</strong></div><b>${section.items.length}</b></header><div>${section.items.map((item) => itemMarkup(item, { flyout: true, sectionId: section.id })).join("")}</div></aside>
       </section>`;
     }).join("");
     navigation.innerHTML = `<div class="app-sidebar__fixed-head"><div class="app-sidebar__mobile-title"><span>HH Navigation</span><button type="button" data-sidebar-dismiss aria-label="Đóng danh mục">×</button></div><section class="app-sidebar__search-panel">
-        <label><span aria-hidden="true">⌕</span><input type="search" data-sidebar-search placeholder="Tìm chức năng…" autocomplete="off" aria-label="Tìm chức năng trong sidebar"><kbd>Ctrl K</kbd></label>
+        <label><span aria-hidden="true">${sidebarIconMarkup("search")}</span><input type="search" data-sidebar-search placeholder="Tìm chức năng…" autocomplete="off" aria-label="Tìm chức năng trong sidebar"><kbd>Ctrl K</kbd></label>
         <div><small data-sidebar-search-status aria-live="polite">${validSections.reduce((total, section) => total + section.items.length, 0)} chức năng</small>${hiddenRoutes.length ? `<button type="button" data-sidebar-restore-hidden>Khôi phục ${hiddenRoutes.length} mục ẩn</button>` : ""}</div>
       </section>
-      <button class="app-sidebar__home ${route === "/home" ? "is-active" : ""}" type="button" data-app-route="/home" title="Trang chủ" ${route === "/home" ? "aria-current=page" : ""}><span aria-hidden="true">⌂</span><b>Trang chủ</b><i aria-hidden="true">→</i></button></div>
+      <button class="app-sidebar__home ${route === "/home" ? "is-active" : ""}" type="button" data-app-route="/home" title="Trang chủ" ${route === "/home" ? "aria-current=page" : ""}><span aria-hidden="true">${sidebarIconMarkup("home")}</span><b>Trang chủ</b><i aria-hidden="true">→</i></button></div>
       <div class="app-sidebar__scroll-region" data-sidebar-scroll-region>${pinnedMarkup}<div class="app-sidebar__categories" data-sidebar-categories>${sectionsMarkup}</div><section class="app-sidebar__search-empty" data-sidebar-search-empty hidden><span>⌕</span><strong>Chưa tìm thấy chức năng</strong><p>Thử tên ngắn hơn hoặc tìm trên toàn hệ thống.</p><button type="button" data-command-open>Mở Ctrl K</button></section></div>`;
     document.querySelectorAll(".app-sidebar__footer [data-app-route]").forEach((button) => {
       const target = button.dataset.appRoute;
@@ -5926,7 +5977,7 @@ function initAppShell() {
         row.hidden = !visible;
         if (visible && query) sectionMatches += 1;
       });
-      const expanded = query ? sectionMatches > 0 : section.dataset.navSection === openNavigationSection;
+      const expanded = query ? sectionMatches > 0 : expandedNavigationSections.has(section.dataset.navSection);
       section.hidden = Boolean(query) && sectionMatches === 0;
       section.classList.toggle("is-expanded", expanded);
       section.querySelector(":scope > [data-sidebar-section-toggle]")?.setAttribute("aria-expanded", String(expanded));
@@ -5958,6 +6009,19 @@ function initAppShell() {
     const hidden = readHiddenSidebarRoutes();
     return visibleNavigationSections().reduce((total, section) => total + section.items.filter((item) => !hidden.includes(item.route)).length, 0);
   };
+  const focusAndRevealNavigationSection = (sectionId, { focus = true } = {}) => {
+    const toggle = navigation.querySelector(`[data-sidebar-section-toggle="${sectionId}"]`);
+    const scrollRegion = navigation.querySelector("[data-sidebar-scroll-region]");
+    const section = toggle?.closest("[data-nav-section]");
+    if (!toggle || !scrollRegion || !section) return;
+    if (focus) toggle.focus({ preventScroll: true });
+    const regionRect = scrollRegion.getBoundingClientRect();
+    const sectionRect = section.getBoundingClientRect();
+    let delta = 0;
+    if (sectionRect.top < regionRect.top + 6) delta = sectionRect.top - regionRect.top - 8;
+    else if (sectionRect.bottom > regionRect.bottom - 6) delta = sectionRect.bottom - regionRect.bottom + 8;
+    if (delta) scrollRegion.scrollTo({ top: scrollRegion.scrollTop + delta, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  };
   navigation.addEventListener("input", (event) => {
     if (event.target.matches("[data-sidebar-search]")) {
       applySidebarSearch(event.target.value);
@@ -5972,19 +6036,41 @@ function initAppShell() {
       return;
     }
     const sectionToggle = event.target.closest("[data-sidebar-section-toggle]");
-    if (!sectionToggle || !event.altKey || !["ArrowUp", "ArrowDown"].includes(event.key)) return;
-    event.preventDefault();
-    const order = readSidebarSectionOrder();
+    if (!sectionToggle) return;
     const sectionId = sectionToggle.dataset.sidebarSectionToggle;
-    const currentIndex = order.indexOf(sectionId);
-    const nextIndex = Math.max(0, Math.min(order.length - 1, currentIndex + (event.key === "ArrowUp" ? -1 : 1)));
-    if (currentIndex < 0 || currentIndex === nextIndex) return;
-    order.splice(currentIndex, 1);
-    order.splice(nextIndex, 0, sectionId);
-    saveSidebarSectionOrder(order);
+    if (event.altKey && ["ArrowUp", "ArrowDown"].includes(event.key)) {
+      event.preventDefault();
+      const order = readSidebarSectionOrder();
+      const currentIndex = order.indexOf(sectionId);
+      const nextIndex = Math.max(0, Math.min(order.length - 1, currentIndex + (event.key === "ArrowUp" ? -1 : 1)));
+      if (currentIndex < 0 || currentIndex === nextIndex) return;
+      order.splice(currentIndex, 1);
+      order.splice(nextIndex, 0, sectionId);
+      saveSidebarSectionOrder(order);
+      renderNavigation();
+      requestAnimationFrame(() => focusAndRevealNavigationSection(sectionId));
+      setSidebarStatus(`Đã chuyển nhóm ${sectionToggle.dataset.navLabel || "điều hướng"}`);
+      return;
+    }
+    if (event.altKey) return;
+    const toggles = [...navigation.querySelectorAll("[data-sidebar-section-toggle]")].filter((button) => !button.closest("[data-nav-section]")?.hidden);
+    const currentIndex = toggles.indexOf(sectionToggle);
+    if (["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) {
+      event.preventDefault();
+      const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? toggles.length - 1 : Math.max(0, Math.min(toggles.length - 1, currentIndex + (event.key === "ArrowUp" ? -1 : 1)));
+      const nextSectionId = toggles[nextIndex]?.dataset.sidebarSectionToggle;
+      if (nextSectionId) focusAndRevealNavigationSection(nextSectionId);
+      return;
+    }
+    if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+    event.preventDefault();
+    const nextExpanded = new Set(expandedNavigationSections);
+    if (event.key === "ArrowRight") nextExpanded.add(sectionId);
+    else nextExpanded.delete(sectionId);
+    saveExpandedNavigationSections([...nextExpanded], event.key === "ArrowRight" ? sectionId : [...nextExpanded].at(-1) || "");
     renderNavigation();
-    requestAnimationFrame(() => navigation.querySelector(`[data-sidebar-section-toggle="${sectionId}"]`)?.focus({ preventScroll: true }));
-    setSidebarStatus(`Đã chuyển nhóm ${sectionToggle.dataset.navLabel || "điều hướng"}`);
+    requestAnimationFrame(() => focusAndRevealNavigationSection(sectionId));
+    setSidebarStatus(event.key === "ArrowRight" ? `Đã mở nhóm ${sectionToggle.dataset.navLabel}` : `Đã thu gọn nhóm ${sectionToggle.dataset.navLabel}`);
   });
   let sidebarDrag = null;
   navigation.addEventListener("dragstart", (event) => {
@@ -7323,9 +7409,22 @@ function initAppShell() {
     if (sidebarSectionToggle) {
       event.preventDefault();
       const sectionId = sidebarSectionToggle.dataset.sidebarSectionToggle;
-      saveOpenNavigationSection(openNavigationSection === sectionId ? "" : sectionId);
+      const smartChevron = event.target.closest("[data-smart-chevron]");
+      if (smartChevron && event.shiftKey) {
+        const visibleIds = orderedNavigationSections().map((section) => section.id);
+        const allExpanded = visibleIds.every((id) => expandedNavigationSections.has(id));
+        saveExpandedNavigationSections(allExpanded ? [] : visibleIds, allExpanded ? "" : sectionId);
+        setSidebarStatus(allExpanded ? "Đã thu gọn tất cả nhóm." : "Đã mở tất cả nhóm để xem tối đa chức năng.");
+      } else if (smartChevron) {
+        const nextExpanded = new Set(expandedNavigationSections);
+        if (nextExpanded.has(sectionId)) nextExpanded.delete(sectionId); else nextExpanded.add(sectionId);
+        saveExpandedNavigationSections([...nextExpanded], nextExpanded.has(sectionId) ? sectionId : [...nextExpanded].at(-1) || "");
+        setSidebarStatus(nextExpanded.has(sectionId) ? `Đã mở thêm nhóm ${sidebarSectionToggle.dataset.navLabel}.` : `Đã thu gọn nhóm ${sidebarSectionToggle.dataset.navLabel}.`);
+      } else {
+        saveOpenNavigationSection(expandedNavigationSections.size === 1 && expandedNavigationSections.has(sectionId) ? "" : sectionId);
+      }
       renderNavigation();
-      requestAnimationFrame(() => navigation.querySelector(`[data-sidebar-section-toggle="${sectionId}"]`)?.focus({ preventScroll: true }));
+      requestAnimationFrame(() => focusAndRevealNavigationSection(sectionId));
       return;
     }
     const workCapture = event.target.closest("[data-work-capture]");
@@ -7353,8 +7452,6 @@ function initAppShell() {
       const route = routeButton.dataset.appRoute;
       if (route) {
         routeButton.closest(".app-sidebar__tool-row")?.classList.add("is-launching");
-        const targetSection = navigationSectionForRoute(route);
-        if (targetSection) saveOpenNavigationSection(targetSection.id);
         const nextHash = `#${route}`;
         beginRouteFeedback(route);
         if (location.hash === nextHash) renderRouteWithTransition(); else location.hash = nextHash;
@@ -7481,6 +7578,8 @@ function initAppShell() {
   window.addEventListener("hh:settings-saved", () => renderNavigation());
   window.addEventListener("hh:auth-change", () => {
     openNavigationSection = localStorage.getItem(sidebarStorageKey("open-section.v2")) || "ai-creative";
+    expandedNavigationSections = new Set(readExpandedNavigationSections());
+    if (!expandedNavigationSections.size && openNavigationSection) expandedNavigationSections.add(openNavigationSection);
     navigationRouteSnapshot = "";
     setShellVisibility();
     setUser();

@@ -146,7 +146,7 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
 /* Navigation usability and cosmic interaction v11 */
 .app-sidebar__primary{display:flex;flex-direction:column;padding:0;overflow:hidden}
 .app-sidebar__fixed-head{position:relative;z-index:9;display:grid;flex:none;gap:7px;padding:10px 9px 7px;border-bottom:1px solid rgba(96,218,255,.08);background:linear-gradient(180deg,rgba(5,9,19,.98),rgba(6,12,22,.94));box-shadow:0 10px 24px rgba(0,0,0,.1)}
-.app-sidebar__scroll-region{min-width:0;min-height:0;flex:1;padding:7px 9px 16px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(91,220,255,.38) transparent}
+.app-sidebar__scroll-region{min-width:0;min-height:0;flex:1;padding:7px 13px 16px 9px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:rgba(91,220,255,.38) transparent}
 .app-sidebar__scroll-region::-webkit-scrollbar{width:6px}.app-sidebar__scroll-region::-webkit-scrollbar-thumb{border-radius:999px;background:linear-gradient(#55eaff,#a87cff)}
 .app-sidebar__search-panel{position:relative;top:auto;margin:0;padding:0;background:transparent;backdrop-filter:none}
 .app-sidebar__search-panel>div{display:flex;min-height:17px;align-items:center;justify-content:space-between;gap:8px;padding:0 6px}
@@ -167,10 +167,13 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
 .app-sidebar__pinned-toggle>span{font-size:10px;font-weight:850;letter-spacing:.04em}.app-sidebar__pinned-toggle>small{color:#827c70;font-size:9px}.app-sidebar__pinned-toggle>i{font-size:15px;font-style:normal;transition:transform .2s ease}
 .app-sidebar__pinned:not(.is-collapsed) .app-sidebar__pinned-toggle>i{transform:rotate(90deg)}.app-sidebar__pinned.is-collapsed .app-sidebar__pinned-list{display:none}
 
-.app-sidebar__section-toggle{min-height:56px;grid-template-columns:36px minmax(0,1fr) 27px 18px;gap:5px;padding:5px 6px}
+.app-sidebar__section-toggle{min-height:58px;grid-template-columns:36px minmax(0,1fr) 27px 30px;gap:5px;padding:5px 6px}
 .app-sidebar__section-toggle>b{display:-webkit-box;min-width:0;overflow:hidden;font-size:14px;line-height:1.16;text-overflow:clip;white-space:normal;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 .app-sidebar__count{width:27px;min-width:27px;padding:0}
-.app-sidebar__chevron{width:18px}
+.app-sidebar__chevron{position:relative;display:grid;width:30px;height:34px;place-items:center;border:1px solid color-mix(in srgb,var(--nav-accent) 35%,rgba(255,255,255,.1));border-radius:10px;background:linear-gradient(145deg,color-mix(in srgb,var(--nav-accent) 13%,#101b28),rgba(8,14,24,.9));color:color-mix(in srgb,var(--nav-accent) 72%,#bdcada);font-size:20px;box-shadow:inset 0 0 13px color-mix(in srgb,var(--nav-accent) 6%,transparent),0 0 12px color-mix(in srgb,var(--nav-accent) 10%,transparent);cursor:pointer;animation:hh-sidebar-chevron-breathe 3.2s ease-in-out infinite;transition:transform .22s ease,border-color .2s ease,background .2s ease,color .2s ease}
+.app-sidebar__chevron::before{position:absolute;top:4px;right:4px;width:4px;height:4px;border-radius:50%;background:var(--nav-accent);content:"";opacity:.42;box-shadow:0 0 7px var(--nav-accent);animation:hh-sidebar-chevron-dot 2.2s ease-in-out infinite}
+.app-sidebar__section-toggle:hover .app-sidebar__chevron,.app-sidebar__section-toggle:focus-visible .app-sidebar__chevron{border-color:color-mix(in srgb,var(--nav-accent) 70%,#fff);color:#fff;background:linear-gradient(145deg,color-mix(in srgb,var(--nav-accent) 23%,#162132),rgba(8,14,24,.96));box-shadow:0 0 18px color-mix(in srgb,var(--nav-accent) 26%,transparent),inset 0 0 14px color-mix(in srgb,var(--nav-accent) 9%,transparent)}
+.app-sidebar__category.is-expanded .app-sidebar__chevron{border-color:color-mix(in srgb,var(--nav-accent) 72%,#fff);color:#fff;background:color-mix(in srgb,var(--nav-accent) 18%,#0d1724);box-shadow:0 0 20px color-mix(in srgb,var(--nav-accent) 30%,transparent),inset 0 0 13px color-mix(in srgb,var(--nav-accent) 10%,transparent);transform:rotate(90deg)}
 .app-sidebar__section-toggle::after{position:absolute;z-index:-1;inset:0;border-radius:inherit;content:"";opacity:.18;pointer-events:none;transition:opacity .2s ease}
 .app-sidebar__category[data-nav-section="ai-creative"]>.app-sidebar__section-toggle::after{background-image:radial-gradient(circle at 18% 24%,#ff82df 0 1px,transparent 1.8px),radial-gradient(circle at 73% 68%,#a77cff 0 1px,transparent 1.8px);background-size:39px 31px,51px 43px}
 .app-sidebar__category[data-nav-section="web-community"]>.app-sidebar__section-toggle::after{background-image:repeating-linear-gradient(100deg,transparent 0 16px,rgba(83,230,255,.22) 17px,transparent 18px)}
@@ -199,6 +202,14 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
 .app-sidebar__subitem>b{display:-webkit-box;min-width:0;overflow:hidden;font-size:14.5px!important;line-height:1.26;text-overflow:clip;white-space:normal;overflow-wrap:anywhere;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 .app-sidebar__tool-icon{position:relative;width:32px;height:32px;overflow:hidden;font-size:12px;transition:transform .28s cubic-bezier(.2,.8,.2,1),filter .25s ease,box-shadow .25s ease}
 .app-sidebar__tool-icon::before{position:absolute;inset:-45%;border-radius:inherit;background:conic-gradient(transparent 0 38%,color-mix(in srgb,var(--nav-accent) 58%,#fff) 48%,transparent 60%);content:"";opacity:.22;pointer-events:none}
+.app-sidebar__svg-icon{display:block;width:18px;height:18px;overflow:visible;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 4px color-mix(in srgb,currentColor 34%,transparent))}
+.app-sidebar__svg-icon>:nth-child(even):not(.sidebar-icon-fill):not(.sidebar-icon-label){stroke:var(--nav-accent-secondary,currentColor)}
+.app-sidebar__svg-icon .sidebar-icon-fill{fill:var(--nav-accent-secondary,currentColor);stroke:none;opacity:.88}
+.app-sidebar__svg-icon .sidebar-icon-label{fill:currentColor;stroke:none;font-size:6.4px;font-weight:900;text-anchor:middle;letter-spacing:-.25px}.app-sidebar__svg-icon .sidebar-icon-label--cjk{font-size:9px}
+.app-sidebar__section-orb>.app-sidebar__svg-icon{width:19px;height:19px;animation:hh-sidebar-svg-core 5.2s ease-in-out infinite}
+.app-sidebar__tool-icon>.app-sidebar__svg-icon{width:17px;height:17px;animation:hh-sidebar-svg-glint 4.6s ease-in-out infinite}
+.app-sidebar__tool-row[data-tool-motion="pulse"] .app-sidebar__svg-icon{animation-delay:-1.1s}.app-sidebar__tool-row[data-tool-motion="wave"] .app-sidebar__svg-icon{animation-delay:-2.2s}.app-sidebar__tool-row[data-tool-motion="comet"] .app-sidebar__svg-icon{animation-delay:-3.3s}
+.app-sidebar__search-panel .app-sidebar__svg-icon{width:15px;height:15px}.app-sidebar__footer .app-sidebar__svg-icon{width:17px;height:17px}
 .app-sidebar__category.is-expanded>.app-sidebar__submenu .app-sidebar__tool-icon::before{animation:hh-sidebar-icon-arrive .7s ease-out both}
 .app-sidebar__tool-row[data-tool-motion="orbit"]:is(:hover,:focus-within) .app-sidebar__tool-icon{animation:hh-sidebar-icon-orbit .72s ease both}
 .app-sidebar__tool-row[data-tool-motion="pulse"]:is(:hover,:focus-within) .app-sidebar__tool-icon{animation:hh-sidebar-icon-pulse .68s ease both}
@@ -232,6 +243,7 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
 .app-sidebar-pin-flight{position:fixed;z-index:300;color:#ffd96d;font-size:20px;pointer-events:none;text-shadow:0 0 10px #ffd86a,0 0 24px #ff73d2;animation:hh-sidebar-pin-flight .58s cubic-bezier(.2,.8,.2,1) both}.app-sidebar-pin-flight.is-removing{animation-name:hh-sidebar-pin-remove}
 
 @media(min-width:761px){
+  body.hh-settings-applied:not(.app-sidebar-collapsed) .app-shell__body{grid-template-columns:clamp(268px,var(--hh-user-sidebar-width,284px),284px) minmax(0,1fr)!important}
   body.app-sidebar-collapsed .app-sidebar__fixed-head{padding:9px;background:transparent;border:0;box-shadow:none}
   body.app-sidebar-collapsed .app-sidebar__scroll-region{padding:0 9px;overflow:visible}
   body.app-sidebar-collapsed .app-sidebar__recent,body.app-sidebar-collapsed .app-sidebar__pinned{display:none!important}
@@ -251,6 +263,7 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
 
 @media(max-width:760px){
   .app-sidebar{transform:translateY(calc(105% + var(--sheet-drag-y,0px)))}
+  body.hh-settings-applied:not(.app-sidebar-collapsed) .app-shell__body{grid-template-columns:minmax(0,1fr)!important}
   body:not(.app-sidebar-collapsed) .app-sidebar{transform:translateY(var(--sheet-drag-y,0px))}
   .app-sidebar.is-sheet-dragging{transition:none;user-select:none}
   .app-sidebar::before{display:none}
@@ -259,7 +272,7 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
   .app-sidebar__mobile-title{display:flex;min-height:28px;align-items:center;justify-content:space-between;padding-left:calc(50% - 26px);color:#94a8ba;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;touch-action:none}
   .app-sidebar__mobile-title::before{width:48px;height:4px;border-radius:999px;background:linear-gradient(90deg,#54e8ff,#aa7bff);content:"";box-shadow:0 0 13px rgba(90,226,255,.42)}
   .app-sidebar__mobile-title>span{position:absolute;left:14px}.app-sidebar__mobile-title>button{display:grid;width:30px;height:30px;place-items:center;border:0;border-radius:9px;background:rgba(255,255,255,.05);color:#a9bdca;font-size:20px}
-  .app-sidebar__scroll-region{padding:7px 10px calc(20px + env(safe-area-inset-bottom))}
+  .app-sidebar__scroll-region{padding:7px 13px calc(20px + env(safe-area-inset-bottom)) 10px}
   .app-sidebar__section-toggle{min-height:56px}.app-sidebar__tool-row{min-height:48px}.app-sidebar__subitem{min-height:48px!important}
   .app-sidebar__flyout{display:none!important}
   body:not(.app-sidebar-collapsed) .app-main{overflow:hidden!important;overscroll-behavior:none;touch-action:none}
@@ -268,7 +281,9 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
 
 @media(max-width:320px){
   .app-sidebar__scroll-region{padding-inline:7px}
-  .app-sidebar__section-toggle{grid-template-columns:38px minmax(0,1fr) 25px 20px;gap:5px;min-height:60px;padding-inline:5px}
+  .app-sidebar__scroll-region{padding-inline:7px 11px}
+  .app-sidebar__section-toggle{grid-template-columns:36px minmax(0,1fr) 25px 26px;gap:4px;min-height:62px;padding-inline:4px}
+  .app-sidebar__chevron{width:26px;height:32px}
   .app-sidebar__section-toggle>b{font-size:13.5px;line-height:1.14}
   .app-sidebar__submenu{margin-left:6px;padding-left:7px}
   .app-sidebar__tool-row{grid-template-columns:minmax(0,1fr) 28px}
@@ -307,6 +322,10 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
 @keyframes hh-sidebar-footer-energy{0%,100%{filter:brightness(.9);transform:scaleX(.78)}50%{filter:brightness(1.45);transform:scaleX(1)}}
 @keyframes hh-sidebar-tool-ambient-scan{0%,64%,100%{opacity:0;transform:translateX(-110%)}72%{opacity:.34}88%{opacity:.12;transform:translateX(118%)}}
 @keyframes hh-sidebar-footer-float{0%,100%{transform:translateY(0) scale(1);filter:brightness(.92)}50%{transform:translateY(-2px) scale(1.08);filter:brightness(1.28)}}
+@keyframes hh-sidebar-chevron-breathe{0%,100%{filter:brightness(.88) saturate(.95);box-shadow:inset 0 0 11px color-mix(in srgb,var(--nav-accent) 5%,transparent),0 0 8px color-mix(in srgb,var(--nav-accent) 8%,transparent)}50%{filter:brightness(1.18) saturate(1.2);box-shadow:inset 0 0 16px color-mix(in srgb,var(--nav-accent) 11%,transparent),0 0 17px color-mix(in srgb,var(--nav-accent) 24%,transparent)}}
+@keyframes hh-sidebar-chevron-dot{0%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1.35)}}
+@keyframes hh-sidebar-svg-core{0%,100%{filter:brightness(.9) saturate(.95) drop-shadow(0 0 3px currentColor)}50%{filter:brightness(1.35) saturate(1.28) drop-shadow(0 0 7px currentColor)}}
+@keyframes hh-sidebar-svg-glint{0%,100%{filter:brightness(.88) saturate(.94) drop-shadow(0 0 2px currentColor)}45%{filter:brightness(1.38) saturate(1.3) drop-shadow(0 0 7px currentColor)}70%{filter:brightness(1.02) saturate(1.05) drop-shadow(0 0 4px currentColor)}}
 .app-sidebar__category[data-nav-section="ai-creative"] .app-sidebar__section-orb{animation:hh-sidebar-orb-pulse 4.2s ease-in-out -.8s infinite}
 .app-sidebar__category[data-nav-section="web-community"] .app-sidebar__section-orb{animation:hh-sidebar-orb-pulse 5.1s ease-in-out -2.1s infinite}
 .app-sidebar__category[data-nav-section="entertainment"] .app-sidebar__section-orb{animation:hh-sidebar-orb-pulse 3.6s ease-in-out -1.4s infinite}

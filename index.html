@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="auth-experience.css?v=6">
   <link rel="stylesheet" href="auth-zoom-resilience.css?v=3">
   <link rel="stylesheet" href="auth-typography-unified.css?v=2">
-  <link rel="stylesheet" href="sidebar-navigation-pro.css?v=24">
+  <link rel="stylesheet" href="sidebar-navigation-pro.css?v=28">
   <link rel="stylesheet" href="app-theme-system.css?v=8">
   <link rel="stylesheet" href="privacy-consent-center.css?v=3">
   <link rel="stylesheet" href="motion-comfort.css?v=1">
@@ -312,9 +312,9 @@
       <nav class="app-sidebar" aria-label="Điều hướng ứng dụng">
         <div class="app-sidebar__primary" data-app-navigation></div>
         <div class="app-sidebar__footer">
-          <button class="app-sidebar__item" type="button" data-app-route="/favorites"><span>☆</span><b>Yêu thích</b></button>
-          <button class="app-sidebar__item" type="button" data-app-route="/recent"><span>◷</span><b>Gần đây</b></button>
-          <button class="app-sidebar__item" type="button" data-app-route="/settings"><span>⚙</span><b>Cài đặt</b></button>
+          <button class="app-sidebar__item" type="button" data-app-route="/favorites"><span><svg class="app-sidebar__svg-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/></svg></span><b>Yêu thích</b></button>
+          <button class="app-sidebar__item" type="button" data-app-route="/recent"><span><svg class="app-sidebar__svg-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2M4.8 5.5 2.5 7.8"/></svg></span><b>Gần đây</b></button>
+          <button class="app-sidebar__item" type="button" data-app-route="/settings"><span><svg class="app-sidebar__svg-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 13.5a1.7 1.7 0 0 0 .3 1.9l.2.2-2.9 2.9-.2-.2a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.4h-4v-.4a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.2.2-2.9-2.9.2-.2a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H2v-4h.4A1.7 1.7 0 0 0 4 7.5a1.7 1.7 0 0 0-.3-1.9l-.2-.2 2.9-2.9.2.2a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V1h4v.4a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.2-.2 2.9 2.9-.2.2a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.4v4h-.4a1.7 1.7 0 0 0-1.6 1Z"/></svg></span><b>Cài đặt</b></button>
         </div>
       </nav>
 
@@ -1080,7 +1080,7 @@
   </footer>
   <!-- Feature scripts are route-lazy and versioned in performance-loader.js; script.js remains the application router. -->
   <script src="auth-platform.js?v=15" defer></script>
-<script src="script.js?v=216" data-compat-src="script.js?v=215 script.js?v=214 script.js?v=213 script.js?v=212 script.js?v=211 script.js?v=210 script.js?v=209 script.js?v=208 script.js?v=207 script.js?v=206 script.js?v=205 script.js?v=203 script.js?v=202 script.js?v=201 script.js?v=200 script.js?v=199 script.js?v=198 script.js?v=197 script.js?v=196 script.js?v=195 script.js?v=194 script.js?v=193 script.js?v=192 script.js?v=191 script.js?v=190 script.js?v=189 script.js?v=188 script.js?v=187 script.js?v=186 script.js?v=185 script.js?v=184 script.js?v=183 script.js?v=182 script.js?v=181 script.js?v=180 script.js?v=179 script.js?v=178 script.js?v=177 script.js?v=176" defer></script>
+<script src="script.js?v=218" data-compat-src="script.js?v=217 script.js?v=216 script.js?v=215 script.js?v=214 script.js?v=213 script.js?v=212 script.js?v=211 script.js?v=210 script.js?v=209 script.js?v=208 script.js?v=207 script.js?v=206 script.js?v=205 script.js?v=203 script.js?v=202 script.js?v=201 script.js?v=200 script.js?v=199 script.js?v=198 script.js?v=197 script.js?v=196 script.js?v=195 script.js?v=194 script.js?v=193 script.js?v=192 script.js?v=191 script.js?v=190 script.js?v=189 script.js?v=188 script.js?v=187 script.js?v=186 script.js?v=185 script.js?v=184 script.js?v=183 script.js?v=182 script.js?v=181 script.js?v=180 script.js?v=179 script.js?v=178 script.js?v=177 script.js?v=176" defer></script>
   <!-- Test/offline contract aliases only; these files are not loaded twice:
        performance-loader.js?v=53 auth-platform.js?v=12 script.js?v=144 -->
   <script src="auth-experience.js?v=8" defer></script>
