@@ -179,12 +179,12 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
 .app-sidebar__category[data-nav-section="learning"]>.app-sidebar__section-toggle::after{background-image:radial-gradient(circle at 75% 28%,rgba(255,223,112,.7) 0 1px,transparent 1.8px),radial-gradient(circle at 84% 68%,rgba(168,124,255,.6) 0 1px,transparent 1.8px);background-size:35px 29px,49px 41px}
 .app-sidebar__category[data-nav-section="system-admin"]>.app-sidebar__section-toggle::after{background:repeating-radial-gradient(circle at 86% 50%,transparent 0 8px,rgba(202,255,246,.22) 9px,transparent 10px)}
 .app-sidebar__category.is-expanded>.app-sidebar__section-toggle::after{opacity:.44}
-.app-sidebar__category[data-nav-section="ai-creative"].is-expanded>.app-sidebar__section-toggle::after{animation:hh-sidebar-ai-stars 3.8s ease-in-out infinite}
-.app-sidebar__category[data-nav-section="web-community"].is-expanded>.app-sidebar__section-toggle::after{animation:hh-sidebar-web-signal 2.8s linear infinite}
-.app-sidebar__category[data-nav-section="entertainment"].is-expanded>.app-sidebar__section-toggle::after{animation:hh-sidebar-solar-flare 4.2s ease-in-out infinite}
-.app-sidebar__category[data-nav-section="work-tech"].is-expanded>.app-sidebar__section-toggle::after{animation:hh-sidebar-data-grid 4.8s linear infinite}
-.app-sidebar__category[data-nav-section="learning"].is-expanded>.app-sidebar__section-toggle::after{animation:hh-sidebar-constellation 4s ease-in-out infinite}
-.app-sidebar__category[data-nav-section="system-admin"].is-expanded>.app-sidebar__section-toggle::after{animation:hh-sidebar-radar 5.6s linear infinite}
+.app-sidebar__category[data-nav-section="ai-creative"]>.app-sidebar__section-toggle::after{animation:hh-sidebar-ai-stars 3.8s ease-in-out infinite}
+.app-sidebar__category[data-nav-section="web-community"]>.app-sidebar__section-toggle::after{animation:hh-sidebar-web-signal 2.8s linear infinite}
+.app-sidebar__category[data-nav-section="entertainment"]>.app-sidebar__section-toggle::after{animation:hh-sidebar-solar-flare 4.2s ease-in-out infinite}
+.app-sidebar__category[data-nav-section="work-tech"]>.app-sidebar__section-toggle::after{animation:hh-sidebar-data-grid 4.8s linear infinite}
+.app-sidebar__category[data-nav-section="learning"]>.app-sidebar__section-toggle::after{animation:hh-sidebar-constellation 4s ease-in-out infinite}
+.app-sidebar__category[data-nav-section="system-admin"]>.app-sidebar__section-toggle::after{animation:hh-sidebar-radar 5.6s linear infinite}
 
 .app-sidebar__category.is-expanded>.app-sidebar__submenu{max-height:430px;gap:4px;animation:hh-sidebar-accordion-in .22s ease both}
 .app-sidebar__submenu{position:relative}
@@ -212,7 +212,7 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
 .app-sidebar__tool-row.is-drag-target{box-shadow:inset 0 3px #7aeaff,0 -8px 20px rgba(77,228,255,.08)}
 .app-sidebar__pin{width:30px;height:40px}.app-sidebar__tool-row:focus-within .app-sidebar__pin{opacity:1}
 
-.app-sidebar__home.is-active>span{animation:hh-sidebar-home-beacon 3.6s ease-in-out infinite}
+.app-sidebar__home>span{animation:hh-sidebar-home-beacon 3.6s ease-in-out infinite}
 .app-sidebar__footer>.app-sidebar__item{--footer-accent:#72e7ff;position:relative;overflow:hidden;color:color-mix(in srgb,var(--footer-accent) 32%,#c8d7e6)}
 .app-sidebar__footer>.app-sidebar__item:nth-child(1){--footer-accent:#ffd86f}
 .app-sidebar__footer>.app-sidebar__item:nth-child(2){--footer-accent:#8e9cff}
@@ -247,7 +247,6 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
   body.app-sidebar-collapsed .app-sidebar__flyout .app-sidebar__tool-row{display:grid;--nav-accent:inherit}
 }
 
-@media(min-width:1121px){.app-sidebar__section-toggle>b{display:block;white-space:nowrap;-webkit-line-clamp:unset}}
 @media(max-width:1120px) and (min-width:761px){.app-sidebar__section-toggle>b{font-size:13.5px}.app-sidebar__subitem>b{font-size:14px!important}}
 
 @media(max-width:760px){
@@ -306,4 +305,18 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
 @keyframes hh-sidebar-icon-comet{0%{transform:translateX(0) scale(1)}40%{transform:translateX(5px) scale(1.08);filter:brightness(1.4) drop-shadow(-8px 0 6px var(--nav-accent))}100%{transform:translateX(0) scale(1)}}
 @keyframes hh-sidebar-home-beacon{0%,100%{transform:translateY(0);box-shadow:0 0 14px rgba(85,234,255,.12)}50%{transform:translateY(-2px);box-shadow:0 0 24px rgba(85,234,255,.34),inset 0 0 12px rgba(85,234,255,.12)}}
 @keyframes hh-sidebar-footer-energy{0%,100%{filter:brightness(.9);transform:scaleX(.78)}50%{filter:brightness(1.45);transform:scaleX(1)}}
+@keyframes hh-sidebar-tool-ambient-scan{0%,64%,100%{opacity:0;transform:translateX(-110%)}72%{opacity:.34}88%{opacity:.12;transform:translateX(118%)}}
+@keyframes hh-sidebar-footer-float{0%,100%{transform:translateY(0) scale(1);filter:brightness(.92)}50%{transform:translateY(-2px) scale(1.08);filter:brightness(1.28)}}
+.app-sidebar__category[data-nav-section="ai-creative"] .app-sidebar__section-orb{animation:hh-sidebar-orb-pulse 4.2s ease-in-out -.8s infinite}
+.app-sidebar__category[data-nav-section="web-community"] .app-sidebar__section-orb{animation:hh-sidebar-orb-pulse 5.1s ease-in-out -2.1s infinite}
+.app-sidebar__category[data-nav-section="entertainment"] .app-sidebar__section-orb{animation:hh-sidebar-orb-pulse 3.6s ease-in-out -1.4s infinite}
+.app-sidebar__category[data-nav-section="work-tech"] .app-sidebar__section-orb{animation:hh-sidebar-orb-pulse 4.8s ease-in-out -3.2s infinite}
+.app-sidebar__category[data-nav-section="learning"] .app-sidebar__section-orb{animation:hh-sidebar-orb-pulse 5.4s ease-in-out -2.7s infinite}
+.app-sidebar__category[data-nav-section="system-admin"] .app-sidebar__section-orb{animation:hh-sidebar-orb-pulse 4.5s ease-in-out -1.9s infinite}
+.app-sidebar__tool-row[data-tool-motion="orbit"] .app-sidebar__tool-icon{animation:hh-sidebar-icon-orbit 4.8s ease-in-out -.9s infinite}
+.app-sidebar__tool-row[data-tool-motion="pulse"] .app-sidebar__tool-icon{animation:hh-sidebar-icon-pulse 3.9s ease-in-out -1.7s infinite}
+.app-sidebar__tool-row[data-tool-motion="wave"] .app-sidebar__tool-icon{animation:hh-sidebar-icon-wave 4.4s ease-in-out -2.4s infinite}
+.app-sidebar__tool-row[data-tool-motion="comet"] .app-sidebar__tool-icon{animation:hh-sidebar-icon-comet 5.2s ease-in-out -3.1s infinite}
+.app-sidebar__category.is-expanded>.app-sidebar__submenu>.app-sidebar__tool-row::before,.app-sidebar__pinned .app-sidebar__tool-row::before{animation:hh-sidebar-tool-ambient-scan 6.8s ease-in-out infinite;animation-delay:calc(var(--tool-index,0) * .34s)}
+.app-sidebar__footer>.app-sidebar__item>span{animation:hh-sidebar-footer-float 3.8s ease-in-out infinite}.app-sidebar__footer>.app-sidebar__item:nth-child(2)>span{animation-delay:-1.25s}.app-sidebar__footer>.app-sidebar__item:nth-child(3)>span{animation-delay:-2.5s}
 @media(prefers-reduced-motion:reduce){.app-sidebar *,.app-sidebar-backdrop{animation:none!important;scroll-behavior:auto!important;transition:none!important}}

@@ -5877,8 +5877,6 @@ function initAppShell() {
       <button class="app-sidebar__pinned-toggle" type="button" data-sidebar-pins-toggle aria-expanded="${!pinnedSectionCollapsed}"><span>☆ Truy cập nhanh</span><small>${pinnedItems.length}/5</small><i aria-hidden="true">›</i></button>
       <div class="app-sidebar__pinned-list" data-sidebar-pinned-list>${pinnedItems.map((item) => itemMarkup(item, { pinned: true })).join("")}</div>
     </section>` : "";
-    const recentItems = readSidebarRecent().filter((itemRoute) => !hiddenRoutes.includes(itemRoute)).slice(0, 3).map(navigationItemForRoute).filter(Boolean);
-    const recentMarkup = recentItems.length ? `<section class="app-sidebar__recent"><header><span>◷ Gần đây</span><button type="button" data-app-route="/recent">Tất cả</button></header><div>${recentItems.map((item) => itemMarkup(item, { compact: true })).join("")}</div></section>` : "";
     const sectionsMarkup = validSections.map((section) => {
       const isExpanded = section.id === openNavigationSection;
       const isActive = section.items.some((item) => navigationItemMatchesRoute(item, route));
@@ -5895,7 +5893,7 @@ function initAppShell() {
         <div><small data-sidebar-search-status aria-live="polite">${validSections.reduce((total, section) => total + section.items.length, 0)} chức năng</small>${hiddenRoutes.length ? `<button type="button" data-sidebar-restore-hidden>Khôi phục ${hiddenRoutes.length} mục ẩn</button>` : ""}</div>
       </section>
       <button class="app-sidebar__home ${route === "/home" ? "is-active" : ""}" type="button" data-app-route="/home" title="Trang chủ" ${route === "/home" ? "aria-current=page" : ""}><span aria-hidden="true">⌂</span><b>Trang chủ</b><i aria-hidden="true">→</i></button></div>
-      <div class="app-sidebar__scroll-region" data-sidebar-scroll-region>${recentMarkup}${pinnedMarkup}<div class="app-sidebar__categories" data-sidebar-categories>${sectionsMarkup}</div><section class="app-sidebar__search-empty" data-sidebar-search-empty hidden><span>⌕</span><strong>Chưa tìm thấy chức năng</strong><p>Thử tên ngắn hơn hoặc tìm trên toàn hệ thống.</p><button type="button" data-command-open>Mở Ctrl K</button></section></div>`;
+      <div class="app-sidebar__scroll-region" data-sidebar-scroll-region>${pinnedMarkup}<div class="app-sidebar__categories" data-sidebar-categories>${sectionsMarkup}</div><section class="app-sidebar__search-empty" data-sidebar-search-empty hidden><span>⌕</span><strong>Chưa tìm thấy chức năng</strong><p>Thử tên ngắn hơn hoặc tìm trên toàn hệ thống.</p><button type="button" data-command-open>Mở Ctrl K</button></section></div>`;
     document.querySelectorAll(".app-sidebar__footer [data-app-route]").forEach((button) => {
       const target = button.dataset.appRoute;
       const isActive = route === target;
@@ -6275,7 +6273,7 @@ function initAppShell() {
       const group = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
       const navigationSection = navigationSectionForRoute(route);
       pageHeader.querySelector(".app-page-header__eyebrow").textContent = navigationSection?.label || group?.label || "HH Platform";
-      contextBar.hidden = route === "/home";
+      contextBar.hidden = route === "/home" || route === "/favorites" || route === "/recent";
       if (contextGroup) contextGroup.textContent = (navigationSection?.label || group?.label || "HH Platform").toUpperCase();
       if (contextLabel) contextLabel.textContent = title;
     }
@@ -6961,10 +6959,15 @@ function initAppShell() {
       const label = route === "/favorites" ? "Yêu thích" : "Gần đây";
       const navigationRoutes = route === "/favorites" ? readSidebarFavorites() : readSidebarRecent();
       const navigationEntries = navigationRoutes.map(navigationItemForRoute).filter(Boolean);
-      const navigationCards = navigationEntries.map((item) => `<button type="button" data-app-route="${safeText(item.route)}"><span>Workspace</span><strong>${safeText(item.label)}</strong><p>Mở lại không gian ${safeText(item.label)} trong HH Platform.</p></button>`).join("");
-      const moduleCards = ids.map(moduleById).filter(Boolean).map((item) => `<button type="button" data-app-route="${routeForModule(item.id)}"><span>Tool</span><strong>${item.title}</strong><p>${item.description}</p></button>`).join("");
+      const cardByRoute = new Map();
+      navigationEntries.forEach((item) => cardByRoute.set(item.route, { route: item.route, type: "Workspace", title: item.label, description: `Mở lại không gian ${item.label} trong HH Platform.` }));
+      ids.map(moduleById).filter(Boolean).forEach((item) => {
+        const itemRoute = routeForModule(item.id);
+        if (!cardByRoute.has(itemRoute)) cardByRoute.set(itemRoute, { route: itemRoute, type: "Công cụ", title: item.title, description: item.description });
+      });
+      const collectionCards = [...cardByRoute.values()].map((item) => `<button type="button" data-app-route="${safeText(item.route)}"><span>${safeText(item.type)}</span><strong>${safeText(item.title)}</strong><p>${safeText(item.description)}</p></button>`).join("");
       updatePageHeader(label, `Các công cụ ${route === "/favorites" ? "đã lưu" : "vừa sử dụng"} của bạn.`, route);
-      mountSimpleView(label, "Mở một mục để tiếp tục công việc.", `<div class="app-item-grid">${navigationCards}${moduleCards}${navigationCards || moduleCards ? "" : "<div class=app-empty-state><strong>Chưa có mục nào</strong><p>Hãy đánh dấu yêu thích hoặc mở một công cụ để xem tại đây.</p><button type=button data-app-route=/tools>Mở công cụ</button></div>"}</div>`);
+      workspace.innerHTML = `<section class="app-simple-view app-simple-view--collection"><div class="app-item-grid">${collectionCards || "<div class=app-empty-state><strong>Chưa có mục nào</strong><p>Hãy đánh dấu yêu thích hoặc mở một công cụ để xem tại đây.</p><button type=button data-app-route=/tools>Mở công cụ</button></div>"}</div></section>`;
     } else if (route === "/settings") {
       updatePageHeader("Cài đặt", "Điều chỉnh giao diện và dữ liệu cá nhân.", route);
       workspace.innerHTML = `<section class="app-route-loader" role="status"><i></i><div><strong>Đang khởi tạo HH Settings Studio</strong><p>Chuẩn bị bản xem trước và cấu hình của thiết bị.</p></div></section>`;
