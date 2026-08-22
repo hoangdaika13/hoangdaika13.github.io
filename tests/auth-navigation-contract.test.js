@@ -33,10 +33,12 @@ test("sidebar uses one shared visual system for every primary group", () => {
   assert.match(client, /app-sidebar__chevron/);
   assert.doesNotMatch(creativeClient, /classList\.add\("is-creative-group"\)/);
   assert.doesNotMatch(creativeCss, /\.is-creative-group/);
-  assert.match(sidebarCss, /Unified navigation system/);
-  assert.match(sidebarCss, /\.app-sidebar__group>\.app-sidebar__item,/);
-  assert.match(sidebarCss, /\.app-sidebar__subitem,\s*\.app-sidebar__studio-item/);
-  assert.match(sidebarCss, /--item-accent/);
+  assert.match(sidebarCss, /HH Platform category navigation/);
+  assert.match(sidebarCss, /\.app-sidebar__section-toggle/);
+  assert.match(sidebarCss, /\.app-sidebar__tool-row/);
+  assert.match(sidebarCss, /\.app-sidebar__subitem/);
+  assert.match(sidebarCss, /--nav-accent/);
+  assert.match(sidebarCss, /hh-sidebar-group-live/);
   assert.match(creativeClient, /"ai-script":[\s\S]*color: "#ff62c8"/);
   assert.match(creativeCss, /Kịch bản AI shares the same visual language/);
   assert.match(creativeCss, /\.creative-ai-script-stage \.neon-tabs \.mini-tab\.active/);

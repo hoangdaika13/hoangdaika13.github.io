@@ -6,7 +6,7 @@
   const THEME_KEY = "hh.command-center.theme.v1";
   const THEME_PREFERENCES_KEY = "hh.app-theme.preferences.v1";
   const SHELL_KEY = "hh.app-shell.v1";
-  const SCHEMA_VERSION = 1;
+  const SCHEMA_VERSION = 2;
   const MAX_HISTORY = 12;
   const THEME_IDS = ["cosmic", "midnight", "aurora", "light"];
   const instances = new WeakMap();
@@ -44,6 +44,7 @@
       email: true, browser: false, inApp: true, security: true, learning: true,
       publishing: true, system: true, quietEnabled: false, quietStart: "22:00", quietEnd: "07:00"
     },
+    security: { autoLockMinutes: 0, privacyShield: false },
     data: { syncScope: "device" }
   });
 
@@ -56,6 +57,7 @@
     ["locale", "Ngôn ngữ", "文", "Khu vực, thời gian và giọng đọc"],
     ["performance", "Hiệu năng", "↯", "Đồ họa và dữ liệu"],
     ["notifications", "Thông báo", "◇", "Kênh và giờ yên tĩnh"],
+    ["security", "Bảo mật", "◆", "Phiên, quyền riêng tư và chẩn đoán"],
     ["data", "Dữ liệu", "⇄", "Đồng bộ, nhập và xuất"]
   ]);
 
@@ -82,7 +84,8 @@
     weekStart: [["monday", "Thứ Hai"], ["sunday", "Chủ nhật"]],
     voice: [["vi-female", "Nữ Việt Nam · mặc định"], ["vi-male", "Nam Việt Nam"], ["system", "Theo thiết bị"]],
     graphics: [["auto", "Tự động"], ["low", "Tiết kiệm"], ["balanced", "Cân bằng"], ["high", "Chất lượng cao"]],
-    syncScope: [["device", "Chỉ thiết bị này"], ["account", "Đồng bộ tài khoản"]]
+    syncScope: [["device", "Chỉ thiết bị này"], ["account", "Đồng bộ tài khoản"]],
+    autoLockMinutes: [["0", "Không tự khóa"], ["15", "Sau 15 phút"], ["30", "Sau 30 phút"], ["60", "Sau 60 phút"]]
   });
 
   const FIELDS = Object.freeze({
@@ -151,6 +154,10 @@
       { path: "notifications.quietEnabled", label: "Không làm phiền", description: "Tạm giữ thông báo không khẩn cấp trong khung giờ đã chọn.", type: "switch" },
       { path: "notifications.quietStart", label: "Bắt đầu giờ yên tĩnh", description: "Giờ địa phương trên thiết bị.", type: "time" },
       { path: "notifications.quietEnd", label: "Kết thúc giờ yên tĩnh", description: "Thông báo tiếp tục sau thời điểm này.", type: "time" }
+    ],
+    security: [
+      { path: "security.autoLockMinutes", label: "Tự khóa phiên khi không hoạt động", description: "Đăng xuất phiên phía máy chủ sau khoảng thời gian không có thao tác.", type: "select", options: "autoLockMinutes" },
+      { path: "security.privacyShield", label: "Màn che riêng tư", description: "Che nội dung website khi cửa sổ mất focus; bấm để mở lại khi quay về.", type: "switch" }
     ],
     data: [
       { path: "data.syncScope", label: "Phạm vi lưu", description: "Lưu riêng trên máy hoặc đồng bộ theo tài khoản.", type: "select", options: "syncScope" }
@@ -226,6 +233,8 @@
     ["email", "browser", "inApp", "security", "learning", "publishing", "system", "quietEnabled"].forEach((key) => { value.notifications[key] = bool(value.notifications[key], DEFAULTS.notifications[key]); });
     value.notifications.quietStart = validTime(value.notifications.quietStart, DEFAULTS.notifications.quietStart);
     value.notifications.quietEnd = validTime(value.notifications.quietEnd, DEFAULTS.notifications.quietEnd);
+    value.security.autoLockMinutes = enumValue(Number(value.security.autoLockMinutes), [0, 15, 30, 60], DEFAULTS.security.autoLockMinutes);
+    value.security.privacyShield = bool(value.security.privacyShield, DEFAULTS.security.privacyShield);
     value.data.syncScope = enumValue(value.data.syncScope, ["device", "account"], "device");
     return value;
   }
@@ -253,7 +262,7 @@
     return stored?.settings ? { settings: normalize(stored.settings), savedAt: stored.savedAt || null } : { settings: fromLegacy(), savedAt: null };
   }
 
-  function token() { return String(window.HHAuthSession?.token?.() || localStorage.getItem("hh-auth-token") || "").trim(); }
+  function token() { return String(window.HHAuthSession?.token?.() || "").trim(); }
   async function accountRequest(method = "GET", body) {
     const response = await fetch("/api/account-center", {
       method, credentials: "include", cache: "no-store",
@@ -292,9 +301,11 @@
     const fieldList = FIELDS[section] || [];
     let extras = "";
     if (section === "overview") extras = `<div class="hhs-overview-grid"><article><i>✦</i><span><small>Theme hiện tại</small><strong data-hhs-overview-theme>Cosmic</strong></span></article><article><i>◫</i><span><small>Thiết bị</small><strong data-hhs-device>Đang nhận diện</strong></span></article><article><i>◎</i><span><small>Đã tùy chỉnh</small><strong data-hhs-custom-count>0 mục</strong></span></article><article><i>⇄</i><span><small>Lưu dữ liệu</small><strong data-hhs-overview-sync>Thiết bị này</strong></span></article></div><section class="hhs-quick-actions"><button type="button" data-hhs-section="appearance"><i>✦</i><span><strong>Đổi giao diện</strong><small>Màu, chữ và kính</small></span></button><button type="button" data-hhs-section="accessibility"><i>◐</i><span><strong>Kiểm tra trợ năng</strong><small>Tương phản và chuyển động</small></span></button><button type="button" data-app-route="/settings/account/security"><i>⌁</i><span><strong>Bảo mật tài khoản</strong><small>Mở Account Center</small></span></button></section><section class="hhs-health"><header><span><small>CONFIGURATION HEALTH</small><strong>Cấu hình đang hoạt động</strong></span><b data-hhs-health>100%</b></header><div><i></i></div><p data-hhs-health-note>Mọi giá trị đều hợp lệ và có thể khôi phục.</p></section>`;
+    if (section === "overview") extras += `<section class="hhs-overview-command"><article class="hhs-security-summary"><header><span><small>SECURITY POSTURE</small><strong>Bảo vệ website và phiên đăng nhập</strong></span><b data-hhs-security-score>Đang kiểm tra</b></header><div data-hhs-security-checks></div><footer><button type="button" data-hhs-security-audit>Kiểm tra lại</button><button type="button" data-hhs-section="security">Mở bảo mật</button></footer></article><article class="hhs-capability-summary"><header><span><small>DEVICE CAPABILITY</small><strong>Khả năng thiết bị hiện tại</strong></span><i>◫</i></header><div><span><b data-hhs-capability="graphics">Đang đo</b><small>Đồ họa</small></span><span><b data-hhs-capability="storage">Đang đo</b><small>Lưu trữ</small></span><span><b data-hhs-capability="notifications">Đang đo</b><small>Thông báo</small></span><span><b data-hhs-capability="speech">Đang đo</b><small>Giọng đọc</small></span></div><button type="button" data-hhs-section="performance">Tối ưu thiết bị</button></article></section>`;
     if (section === "locale") extras += `<div class="hhs-panel-actions"><button type="button" data-hhs-voice-test>▶ Nghe thử giọng Việt</button></div>`;
-    if (section === "performance") extras += `<section class="hhs-storage-card"><header><span><small>LOCAL STORAGE</small><strong>Dung lượng trên thiết bị</strong></span><b data-hhs-storage-size>Đang tính…</b></header><div><i data-hhs-storage-bar></i></div><p data-hhs-storage-note>Chỉ đo dữ liệu website được trình duyệt cung cấp.</p><button type="button" data-hhs-clear-cache>Xóa cache giao diện an toàn</button></section>`;
+    if (section === "performance") extras += `<section class="hhs-storage-card"><header><span><small>LOCAL STORAGE</small><strong>Dung lượng trên thiết bị</strong></span><b data-hhs-storage-size>Đang tính…</b></header><div><i data-hhs-storage-bar></i></div><p data-hhs-storage-note>Chỉ đo dữ liệu website được trình duyệt cung cấp.</p><footer><button type="button" data-hhs-storage-persist>Giữ dữ liệu học và project offline</button><button type="button" data-hhs-clear-cache>Xóa cache giao diện an toàn</button></footer></section>`;
     if (section === "notifications") extras += `<section class="hhs-notification-test"><span><strong>Kiểm tra kênh đã bật</strong><small>Gửi thông báo thật tới trình duyệt, ứng dụng và email khi khả dụng.</small></span><button type="button" data-hhs-test-notification>Gửi thông báo thử</button><p data-hhs-notification-status aria-live="polite"></p></section>`;
+    if (section === "security") extras += `<section class="hhs-security-command"><article class="hhs-security-score-card"><span><small>CLIENT SECURITY AUDIT</small><strong data-hhs-security-score>Đang kiểm tra</strong><p>Chỉ kiểm tra trạng thái kỹ thuật; không đọc mật khẩu, cookie HttpOnly, token hay nội dung riêng tư.</p></span><button type="button" data-hhs-security-audit>Chạy kiểm tra</button></article><div class="hhs-security-check-list" data-hhs-security-checks></div><div class="hhs-security-actions"><button type="button" data-app-route="/settings/account/security"><i>◆</i><span><strong>Đăng nhập & Passkey</strong><small>Mở trung tâm bảo mật phía máy chủ</small></span></button><button type="button" data-app-route="/settings/account/sessions"><i>▣</i><span><strong>Phiên và thiết bị</strong><small>Thu hồi thiết bị lạ hoặc phiên cũ</small></span></button><button type="button" data-hhs-security-report><i>↓</i><span><strong>Tải báo cáo đã khử danh tính</strong><small>Không gồm email, IP, token hay nội dung</small></span></button><button type="button" data-hhs-clear-legacy-auth><i>⌁</i><span><strong>Dọn thông tin xác thực cũ</strong><small>Xóa token legacy khỏi localStorage nếu còn</small></span></button></div><aside class="hhs-security-boundary"><i>✓</i><span><strong>Ranh giới bảo mật</strong><small>Token phiên mới chỉ ở bộ nhớ hoặc cookie HttpOnly; thao tác nhạy cảm được chuyển sang Account Center và kiểm tra quyền ở server.</small></span></aside></section>`;
     if (section === "data") extras += `<section class="hhs-data-actions"><button type="button" data-hhs-export><i>↓</i><span><strong>Xuất cấu hình</strong><small>JSON có phiên bản schema</small></span></button><button type="button" data-hhs-import-trigger><i>↑</i><span><strong>Nhập cấu hình</strong><small>Kiểm tra trước khi áp dụng</small></span></button><button type="button" data-hhs-clear-local><i>×</i><span><strong>Xóa tùy chỉnh local</strong><small>Không xóa hồ sơ tài khoản</small></span></button><input type="file" accept="application/json,.json" data-hhs-import hidden></section><section class="hhs-history-card"><header><span><small>VERSION HISTORY</small><strong>Phiên bản gần đây</strong></span><b data-hhs-history-count>0 bản</b></header><div data-hhs-history></div></section>`;
     return `<section class="hhs-panel" data-hhs-panel="${section}" ${section === "overview" ? "" : "hidden"}><header class="hhs-panel-head"><span><i>${details?.[2] || "◈"}</i><div><small>HH SETTINGS · ${esc(section.toUpperCase())}</small><h2>${esc(details?.[1] || section)}</h2><p>${esc(details?.[3] || "")}</p></div></span><button type="button" data-hhs-reset-section="${section}" ${section === "overview" ? "data-hhs-reset-all" : ""}>${section === "overview" ? "Khôi phục tất cả" : "Đặt lại mục này"}</button></header>${extras}<div class="hhs-setting-grid">${fieldList.map(controlMarkup).join("")}</div></section>`;
   }
@@ -430,6 +441,65 @@
     return date && Number.isFinite(date.getTime()) ? date.toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" }) : "Chưa đồng bộ";
   }
 
+  function securitySnapshot(headers = {}) {
+    const host = String(location.hostname || "");
+    const transportSafe = globalThis.isSecureContext === true && (location.protocol === "https:" || ["localhost", "127.0.0.1"].includes(host));
+    const metaCsp = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content || "";
+    const referrerPolicy = document.querySelector('meta[name="referrer"]')?.content || headers.referrer || "";
+    const checks = [
+      { id: "transport", label: "Kết nối an toàn", ok: transportSafe, detail: transportSafe ? "Secure Context đang hoạt động." : "Hãy dùng HTTPS trên môi trường production." },
+      { id: "credential", label: "Không lưu token trong localStorage", ok: !localStorage.getItem("hh-auth-token"), detail: "Phiên mới dùng bộ nhớ và cookie HttpOnly phía máy chủ." },
+      { id: "csp", label: "Content Security Policy", ok: /default-src\s+'self'|default-src\s+'none'/.test(headers.csp || metaCsp), detail: "Giới hạn nguồn script, frame và nội dung được phép tải." },
+      { id: "referrer", label: "Không gửi referrer ra ngoài", ok: referrerPolicy.toLowerCase() === "no-referrer", detail: "Đường dẫn website không đi kèm liên kết ngoài." },
+      { id: "crypto", label: "Web Crypto khả dụng", ok: Boolean(globalThis.crypto?.subtle), detail: "Trình duyệt có primitive mật mã chuẩn cho Passkey và tác vụ an toàn." }
+    ];
+    const passed = checks.filter((item) => item.ok).length;
+    return { generatedAt: new Date().toISOString(), score: Math.round(passed / checks.length * 100), checks };
+  }
+
+  function renderSecurityAudit(instance) {
+    const audit = instance.securityAudit || securitySnapshot();
+    instance.root.querySelectorAll("[data-hhs-security-score]").forEach((node) => { node.textContent = `${audit.score}%`; node.dataset.state = audit.score === 100 ? "safe" : audit.score >= 80 ? "attention" : "risk"; });
+    instance.root.querySelectorAll("[data-hhs-security-checks]").forEach((list) => {
+      list.innerHTML = audit.checks.map((item) => `<article data-state="${item.ok ? "safe" : "attention"}"><i>${item.ok ? "✓" : "!"}</i><span><strong>${esc(item.label)}</strong><small>${esc(item.detail)}</small></span></article>`).join("");
+    });
+  }
+
+  async function runSecurityAudit(instance, { announce = false } = {}) {
+    let headers = {};
+    try {
+      const response = await fetch("/api/health", { method: "GET", credentials: "include", cache: "no-store", headers: { Accept: "application/json" } });
+      headers = {
+        csp: response.headers.get("content-security-policy") || "",
+        referrer: response.headers.get("referrer-policy") || "",
+        hsts: response.headers.get("strict-transport-security") || ""
+      };
+    } catch {}
+    instance.securityAudit = securitySnapshot(headers);
+    renderSecurityAudit(instance);
+    if (announce) showToast(instance, instance.securityAudit.score === 100 ? "Kiểm tra bảo mật phía trình duyệt đạt 100%." : `Kiểm tra hoàn tất: ${instance.securityAudit.score}%. Mở từng mục để xem điều cần chú ý.`, instance.securityAudit.score === 100 ? "success" : "warning");
+    return instance.securityAudit;
+  }
+
+  function updateCapabilities(instance) {
+    const values = {
+      graphics: navigator.gpu ? "WebGPU + fallback" : "Canvas/WebGL",
+      storage: navigator.storage?.estimate ? "Đo được" : "Giới hạn",
+      notifications: "Notification" in window ? Notification.permission === "granted" ? "Đã cho phép" : "Sẵn sàng" : "Không hỗ trợ",
+      speech: "speechSynthesis" in window ? "Sẵn sàng" : "Không hỗ trợ"
+    };
+    Object.entries(values).forEach(([key, value]) => instance.root.querySelectorAll(`[data-hhs-capability="${key}"]`).forEach((node) => { node.textContent = value; }));
+  }
+
+  async function requestPersistentStorage(instance) {
+    if (!navigator.storage?.persist) return showToast(instance, "Trình duyệt này chưa hỗ trợ yêu cầu lưu trữ bền vững.", "warning");
+    try {
+      const granted = await navigator.storage.persist();
+      showToast(instance, granted ? "Đã yêu cầu trình duyệt giữ dữ liệu offline và project cục bộ." : "Trình duyệt chưa cấp lưu trữ bền vững. Dữ liệu hiện tại vẫn được giữ theo hạn mức thông thường.", granted ? "success" : "warning");
+      storageEstimate(instance);
+    } catch (error) { showToast(instance, `Không thể cập nhật lưu trữ: ${error.message}`, "warning"); }
+  }
+
   function updateDynamic(instance) {
     const dirty = !settingsEqual(instance.draft, instance.saved);
     instance.dirty = dirty;
@@ -461,6 +531,8 @@
     if (historyCount) historyCount.textContent = `${history.length} bản`;
     const historyList = instance.root.querySelector("[data-hhs-history]");
     if (historyList) historyList.innerHTML = history.length ? history.map((item, index) => `<article><span><strong>${esc(item.label || "Cấu hình đã lưu")}</strong><small>${esc(formatDate(item.savedAt))}</small></span><button type="button" data-hhs-restore-history="${index}">Khôi phục</button></article>`).join("") : `<p>Chưa có phiên bản trước. Mỗi lần lưu sẽ tạo một checkpoint cục bộ.</p>`;
+    renderSecurityAudit(instance);
+    updateCapabilities(instance);
   }
 
   function setDraft(instance, next, { record = true } = {}) {
@@ -489,7 +561,7 @@
     if (results) results.hidden = true;
     const search = instance.root.querySelector("[data-hhs-search]");
     if (search) search.value = "";
-    instance.root.closest(".app-main")?.scrollTo({ top: 0, behavior: "smooth" });
+    instance.root.querySelector(".hhs-content")?.scrollTo({ top: 0, behavior: "auto" });
     if (focusPath) requestAnimationFrame(() => instance.root.querySelector(`[data-hhs-field-card="${CSS.escape(focusPath)}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
   }
 
@@ -713,7 +785,20 @@
         return showToast(instance, "Đã xuất tệp cấu hình JSON.");
       }
       if (event.target.closest("[data-hhs-import-trigger]")) return instance.root.querySelector("[data-hhs-import]")?.click();
+      if (event.target.closest("[data-hhs-storage-persist]")) return requestPersistentStorage(instance);
       if (event.target.closest("[data-hhs-clear-cache]")) return clearSafeCaches(instance);
+      if (event.target.closest("[data-hhs-security-audit]")) return runSecurityAudit(instance, { announce: true });
+      if (event.target.closest("[data-hhs-security-report]")) {
+        const audit = instance.securityAudit || securitySnapshot();
+        download(`hh-security-check-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify({ schemaVersion: 1, product: "HH Platform", generatedAt: audit.generatedAt, privacy: "Không gồm email, IP, token, cookie, user-agent hoặc nội dung người dùng.", score: audit.score, checks: audit.checks.map(({ id, label, ok, detail }) => ({ id, label, ok, detail })) }, null, 2));
+        return showToast(instance, "Đã tải báo cáo bảo mật đã khử danh tính.");
+      }
+      if (event.target.closest("[data-hhs-clear-legacy-auth]")) {
+        const existed = Boolean(localStorage.getItem("hh-auth-token"));
+        localStorage.removeItem("hh-auth-token");
+        await runSecurityAudit(instance);
+        return showToast(instance, existed ? "Đã xóa token legacy khỏi localStorage. Phiên HttpOnly hiện tại không bị ảnh hưởng." : "Không tìm thấy token legacy trong localStorage.");
+      }
       if (event.target.closest("[data-hhs-clear-local]")) {
         if (!confirm("Xóa toàn bộ tùy chỉnh giao diện trên thiết bị này? Hồ sơ và dữ liệu tài khoản không bị xóa.")) return;
         [STORAGE_KEY, HISTORY_KEY, THEME_KEY, THEME_PREFERENCES_KEY].forEach((key) => localStorage.removeItem(key));
@@ -760,16 +845,18 @@
     if (instances.has(root)) unmount(root);
     const stored = readStored();
     root.innerHTML = studioMarkup();
+    root.closest(".app-main")?.scrollTo({ top: 0, behavior: "auto" });
     const instance = {
       root, saved: clone(stored.settings), draft: clone(stored.settings), savedAt: stored.savedAt,
       undo: [], redo: [], activeSection: "overview", previewDevice: "desktop", syncState: "device",
-      syncedAt: null, saving: false, dirty: false, toastTimer: 0
+      syncedAt: null, saving: false, dirty: false, toastTimer: 0, securityAudit: securitySnapshot()
     };
     instances.set(root, instance); activeInstance = instance;
     bind(instance);
     applySettings(instance.draft, { persist: false });
     syncControls(instance);
     storageEstimate(instance);
+    runSecurityAudit(instance);
     loadRemote(instance);
     return true;
   }

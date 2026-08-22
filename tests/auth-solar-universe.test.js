@@ -16,6 +16,7 @@ const expectedRoutes = [
   "/work",
   "/google",
   "/youtube",
+  "/discord",
   "/communication",
   "/analytics",
   "/learn",

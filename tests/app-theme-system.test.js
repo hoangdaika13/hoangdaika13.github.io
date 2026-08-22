@@ -9,12 +9,12 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 test("global theme runtime is loaded on every route and cached offline", () => {
   const index = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-theme-system.css?v=6", "app-theme-system.js?v=5"]) {
+  for (const asset of ["app-theme-system.css?v=9", "app-theme-system.js?v=9"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(index, pattern);
     assert.match(worker, pattern);
   }
-  assert.match(worker, /hh-identity-portal-v370/);
+  assert.match(worker, /hh-identity-portal-v796/);
 });
 
 test("all colorful and basic themes define complete semantic shell palettes", () => {
@@ -32,7 +32,7 @@ test("all colorful and basic themes define complete semantic shell palettes", ()
 
 test("theme, language, density, motion and shortcuts controls are functional", () => {
   const runtime = read("app-theme-system.js");
-  const shell = read("script.js");
+  const settings = read("settings-studio.js");
   const command = read("command-center-pro.js");
   assert.match(runtime, /document\.documentElement\.dataset\.appTheme = value/);
   assert.match(runtime, /document\.body\.dataset\.dashboardTheme = value/);
@@ -46,12 +46,13 @@ test("theme, language, density, motion and shortcuts controls are functional", (
   assert.match(runtime, /hh:theme-change/);
   assert.match(runtime, /basic-light/);
   assert.match(runtime, /basic-dark/);
-  assert.match(shell, /data-app-preference=language/);
-  assert.match(shell, /data-app-preference=density/);
-  assert.match(shell, /data-app-preference=reducedMotion/);
-  assert.match(shell, /data-app-preference=fontScale/);
-  assert.match(shell, /data-app-preference=radius/);
-  assert.match(shell, /data-app-preference=contrast/);
-  assert.match(shell, /data-app-preference=effects/);
+  assert.match(runtime, /configureSecurity/);
+  assert.match(runtime, /autoLockMinutes/);
+  assert.match(runtime, /data-app-privacy-unlock/);
+  assert.match(runtime, /\/api\/auth\/logout/);
+  assert.match(read("app-theme-system.css"), /\.app-privacy-shield/);
+  for (const path of ["locale.language", "appearance.density", "accessibility.reducedMotion", "appearance.textZoom", "appearance.radius", "accessibility.highContrast", "motion.level"]) {
+    assert.match(settings, new RegExp(path.replace(".", "\\.")));
+  }
   assert.match(command, /window\.HHAppTheme\.apply/);
 });

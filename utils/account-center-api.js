@@ -218,7 +218,7 @@ function defaultNotifications() {
 
 function workspaceSettingsDefaults() {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     appearance: { theme: "cosmic", accent: "#72e7ff", glow: "#b176ff", font: "modern", textZoom: 100, fontWeight: "regular", radius: "soft", glassOpacity: 72, shadow: "balanced", density: "comfortable" },
     layout: { sidebarCollapsed: false, sidebarAutoHide: false, sidebarWidth: 248, showSidebarLabels: true, advancedMode: false, pinnedRoutes: ["/home", "/chat-ai"], breadcrumb: "standard", searchPosition: "header", fullscreenWorkspace: false },
     motion: { level: "balanced", particles: 50, glowIntensity: 55, bloom: 40, speed: 100, autoReduce: true, pauseHidden: true },
@@ -226,6 +226,7 @@ function workspaceSettingsDefaults() {
     locale: { language: "vi", timezone: "Asia/Bangkok", dateFormat: "dd/mm/yyyy", timeFormat: "24h", weekStart: "monday", voice: "vi-female" },
     performance: { graphics: "auto", maxFps: 60, pixelRatio: 1.5, dataSaver: false, disableMobileVideo: true },
     notifications: { email: true, browser: false, inApp: true, security: true, learning: true, publishing: true, system: true, quietEnabled: false, quietStart: "22:00", quietEnd: "07:00" },
+    security: { autoLockMinutes: 0, privacyShield: false },
     data: { syncScope: "device" }
   };
 }
@@ -234,7 +235,7 @@ function normalizeWorkspaceSettings(input) {
   const source = input && typeof input === "object" && !Array.isArray(input) ? input : {};
   const defaults = workspaceSettingsDefaults();
   const group = (name) => source[name] && typeof source[name] === "object" && !Array.isArray(source[name]) ? source[name] : {};
-  const appearance = group("appearance"), layout = group("layout"), motion = group("motion"), accessibility = group("accessibility"), locale = group("locale"), performance = group("performance"), notifications = group("notifications"), data = group("data");
+  const appearance = group("appearance"), layout = group("layout"), motion = group("motion"), accessibility = group("accessibility"), locale = group("locale"), performance = group("performance"), notifications = group("notifications"), security = group("security"), data = group("data");
   const enumValue = (value, allowed, fallback) => allowed.includes(value) ? value : fallback;
   const boolValue = (value, fallback) => typeof value === "boolean" ? value : fallback;
   const numberValue = (value, minimum, maximum, fallback) => Number.isFinite(Number(value)) ? Math.max(minimum, Math.min(maximum, Number(value))) : fallback;
@@ -242,7 +243,7 @@ function normalizeWorkspaceSettings(input) {
   const timeValue = (value, fallback) => /^([01]\d|2[0-3]):[0-5]\d$/.test(String(value || "")) ? String(value) : fallback;
   const allowedRoutes = ["/home", "/chat-ai", "/work", "/learn", "/fortune", "/music-ai", "/social-media-tools", "/settings/account/profile"];
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     appearance: {
       theme: enumValue(appearance.theme, ["cosmic", "midnight", "aurora", "light"], defaults.appearance.theme),
       accent: colorValue(appearance.accent, defaults.appearance.accent), glow: colorValue(appearance.glow, defaults.appearance.glow),
@@ -287,6 +288,10 @@ function normalizeWorkspaceSettings(input) {
       email: boolValue(notifications.email, defaults.notifications.email), browser: boolValue(notifications.browser, defaults.notifications.browser), inApp: boolValue(notifications.inApp, defaults.notifications.inApp),
       security: boolValue(notifications.security, defaults.notifications.security), learning: boolValue(notifications.learning, defaults.notifications.learning), publishing: boolValue(notifications.publishing, defaults.notifications.publishing), system: boolValue(notifications.system, defaults.notifications.system),
       quietEnabled: boolValue(notifications.quietEnabled, defaults.notifications.quietEnabled), quietStart: timeValue(notifications.quietStart, defaults.notifications.quietStart), quietEnd: timeValue(notifications.quietEnd, defaults.notifications.quietEnd)
+    },
+    security: {
+      autoLockMinutes: enumValue(Number(security.autoLockMinutes), [0, 15, 30, 60], defaults.security.autoLockMinutes),
+      privacyShield: boolValue(security.privacyShield, defaults.security.privacyShield)
     },
     data: { syncScope: enumValue(data.syncScope, ["device", "account"], defaults.data.syncScope) }
   };

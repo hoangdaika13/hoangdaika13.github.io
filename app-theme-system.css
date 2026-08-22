@@ -119,3 +119,11 @@ body.app-effects-paused *{animation-play-state:paused!important}body.app-data-sa
 @keyframes appThemeEnter{from{opacity:0;transform:translateY(-7px) scale(.985)}}
 @media(max-width:600px){.app-theme-panel{top:auto;right:8px;bottom:72px;left:8px;width:auto;max-height:calc(100dvh - 88px);overflow:auto}.app-theme-panel__grid,.app-theme-advanced>div{grid-template-columns:1fr 1fr}.app-shortcuts-dialog>div{grid-template-columns:1fr}.app-shortcuts-dialog p{grid-template-columns:100px 1fr}}
 @media(prefers-reduced-motion:reduce){.app-theme-panel.is-open{animation:none}}
+
+/* Privacy shield is enabled only by the explicit Settings Studio preference. */
+.app-privacy-shield{position:fixed;z-index:10000;inset:0;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 36%,rgba(107,91,255,.28),transparent 34%),rgba(2,5,13,.96);color:#f5f8ff;opacity:0;visibility:hidden;pointer-events:none;backdrop-filter:blur(28px) saturate(120%);transition:opacity .18s ease,visibility .18s ease}
+body.app-privacy-shield-active .app-privacy-shield{opacity:1;visibility:visible;pointer-events:auto}
+.app-privacy-shield>div{display:grid;width:min(430px,100%);justify-items:center;gap:10px;padding:30px;border:1px solid rgba(113,231,255,.28);border-radius:22px;background:linear-gradient(145deg,rgba(13,22,43,.98),rgba(16,10,35,.98));box-shadow:0 28px 90px rgba(0,0,0,.66),0 0 44px rgba(112,109,255,.16);text-align:center}
+.app-privacy-shield i{display:grid;width:58px;height:58px;place-items:center;border:1px solid rgba(121,234,255,.42);border-radius:18px;background:linear-gradient(145deg,rgba(86,223,255,.18),rgba(181,105,255,.2));color:#7eeeff;font-style:normal;font-size:25px;box-shadow:0 0 28px rgba(99,226,255,.2)}
+.app-privacy-shield small{color:#78e9ff;font-size:11px;font-weight:850;letter-spacing:.12em}.app-privacy-shield strong{font-size:25px}.app-privacy-shield p{max-width:330px;margin:0;color:#a9b7d1;font-size:14px;line-height:1.6}
+.app-privacy-shield button{min-height:46px;margin-top:6px;padding:0 18px;border:1px solid rgba(116,230,255,.42);border-radius:12px;background:linear-gradient(105deg,rgba(67,213,255,.2),rgba(156,91,255,.2));color:#f6fbff;font:inherit;font-size:14px;font-weight:750;cursor:pointer}

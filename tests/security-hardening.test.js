@@ -50,6 +50,9 @@ test("security-sensitive storage and responses avoid raw identifiers and errors"
   assert.match(auth, /HttpOnly; Secure; SameSite=\$\{sameSite\}; Priority=High/);
   assert.match(vercel, /X-Robots-Tag/);
   assert.match(vercel, /default-src 'none'; base-uri 'none'/);
+  assert.match(vercel, /"Referrer-Policy", "value": "no-referrer"/);
+  assert.match(vercel, /publickey-credentials-get=\(self\)/);
+  assert.match(read("index.html"), /<meta name="referrer" content="no-referrer">/);
 });
 
 test("active document formats are downloaded instead of rendered inline", () => {

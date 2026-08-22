@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v790";
+const CACHE = "hh-identity-portal-v796";
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
@@ -19,7 +19,7 @@ const RUNTIME_ASSETS = [
   "./",
   "./index.html",
   "./app-shell.css?v=55",
-  "./app-theme-system.css?v=8",
+  "./app-theme-system.css?v=9",
   "./dashboard-aurora.css?v=4",
   "./home-galaxy-command.css?v=11",
   "./home-live-widgets.css?v=12",
@@ -86,8 +86,8 @@ const RUNTIME_ASSETS = [
   "./chat-ai-hub.css?v=17",
   "./account-center.css?v=2",
   "./account-center.js?v=2",
-  "./settings-studio.css?v=2",
-  "./settings-studio.js?v=5",
+  "./settings-studio.css?v=7",
+  "./settings-studio.js?v=7",
   "./vendor/pdf-lib.min.js?v=1.17.1",
   "./script.js?v=218",
   "./graphic-design-studio.css?v=6",
@@ -296,10 +296,10 @@ const RUNTIME_ASSETS = [
   "./platform-p0.js?v=1",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./app-theme-system.js?v=8",
+  "./app-theme-system.js?v=9",
   "./system-platform.css?v=3",
   "./system-platform.js?v=7",
-  "./sidebar-navigation-pro.css?v=28",
+  "./sidebar-navigation-pro.css?v=29",
   "./vendor/three.webgpu.min.js",
   "./vendor/addons/loaders/GLTFLoader.js",
   "./vendor/addons/loaders/DRACOLoader.js",
@@ -462,8 +462,8 @@ const CORE = [
   "./",
   "./index.html",
   "./app-shell.css?v=55",
-  "./app-theme-system.css?v=8",
-  "./sidebar-navigation-pro.css?v=28",
+  "./app-theme-system.css?v=9",
+  "./sidebar-navigation-pro.css?v=29",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=9",
   "./auth-zoom-resilience.css?v=3",
@@ -474,8 +474,8 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./app-theme-system.js?v=8",
-  "./performance-loader.js?v=448",
+  "./app-theme-system.js?v=9",
+  "./performance-loader.js?v=454",
   "./auth-platform.js?v=15",
   "./auth-neon-gateway.js?v=28",
   "./script.js?v=218"

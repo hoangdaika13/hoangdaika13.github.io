@@ -5,6 +5,8 @@
   const PREFERENCES_KEY = "hh.app-theme.preferences.v1";
   const WORKSPACE_SETTINGS_KEY = "hh.settings-studio.v1";
   const SHELL_STATE_KEY = "hh.app-shell.v1";
+  let autoLockTimer = 0;
+  let securityRuntime = { autoLockMinutes: 0, privacyShield: false };
   const THEMES = Object.freeze({
     cosmic: { label: "Cosmic", note: "Thiên hà tím và cyan", color: "#72e7ff" },
     midnight: { label: "Midnight", note: "Đêm sâu tập trung", color: "#7094ff" },
@@ -93,9 +95,57 @@
     return value;
   }
 
+  function ensurePrivacyShield() {
+    let shield = document.getElementById("appPrivacyShield");
+    if (shield || !document.body) return shield;
+    shield = document.createElement("section");
+    shield.id = "appPrivacyShield";
+    shield.className = "app-privacy-shield";
+    shield.setAttribute("role", "dialog");
+    shield.setAttribute("aria-modal", "true");
+    shield.setAttribute("aria-label", "Màn che riêng tư");
+    shield.innerHTML = `<div><i>◆</i><small>HH PRIVACY SHIELD</small><strong>Nội dung đang được che</strong><p>Website mất focus nên dữ liệu trên màn hình đã được ẩn.</p><button type="button" data-app-privacy-unlock>Mở lại workspace</button></div>`;
+    document.body.append(shield);
+    return shield;
+  }
+
+  function setPrivacyShield(active) {
+    ensurePrivacyShield();
+    document.body.classList.toggle("app-privacy-shield-active", Boolean(active && securityRuntime.privacyShield));
+  }
+
+  async function lockIdleSession() {
+    const hasSession = Boolean(window.HHAuthSession?.token?.() || localStorage.getItem("hh-auth-user"));
+    if (!hasSession || securityRuntime.autoLockMinutes <= 0) return;
+    try { await fetch("/api/auth/logout", { method: "POST", credentials: "include", cache: "no-store", headers: { "Content-Type": "application/json" }, body: "{}" }); } catch {}
+    window.HHAuthSession?.setToken?.("");
+    localStorage.removeItem("hh-auth-user");
+    localStorage.removeItem("hh-auth-token");
+    sessionStorage.setItem("hh.session.auto-locked", new Date().toISOString());
+    window.dispatchEvent(new CustomEvent("hh:session-auto-locked"));
+    location.hash = "#/home";
+    location.reload();
+  }
+
+  function scheduleAutoLock() {
+    clearTimeout(autoLockTimer);
+    if (securityRuntime.autoLockMinutes <= 0) return;
+    autoLockTimer = window.setTimeout(lockIdleSession, securityRuntime.autoLockMinutes * 60 * 1000);
+  }
+
+  function configureSecurity(source = {}) {
+    securityRuntime = {
+      autoLockMinutes: [0, 15, 30, 60].includes(Number(source.autoLockMinutes)) ? Number(source.autoLockMinutes) : 0,
+      privacyShield: source.privacyShield === true
+    };
+    document.body.dataset.hhAutoLock = String(securityRuntime.autoLockMinutes);
+    if (!securityRuntime.privacyShield) setPrivacyShield(false);
+    scheduleAutoLock();
+  }
+
   function applyWorkspaceSettings(source, options = {}) {
     const value = source && typeof source === "object" ? source : {};
-    const appearance = value.appearance || {}, layout = value.layout || {}, motion = value.motion || {}, accessibility = value.accessibility || {}, locale = value.locale || {}, performance = value.performance || {};
+    const appearance = value.appearance || {}, layout = value.layout || {}, motion = value.motion || {}, accessibility = value.accessibility || {}, locale = value.locale || {}, performance = value.performance || {}, security = value.security || {};
     const effectLevel = ["static", "balanced", "cinematic"].includes(motion.level) ? motion.level : "balanced";
     const effects = effectLevel === "static" ? "off" : effectLevel === "balanced" ? "calm" : "full";
     applyTheme(appearance.theme || "cosmic", { persist: options.persist });
@@ -142,6 +192,7 @@
     document.body.classList.toggle("app-auto-effects-reduced", lowSpec);
     document.body.classList.toggle("app-effects-paused", motion.pauseHidden !== false && document.hidden);
     document.body.classList.add("hh-settings-applied");
+    configureSecurity(security);
     if (options.persist) {
       const shell = read(SHELL_STATE_KEY, {});
       write(SHELL_STATE_KEY, { ...shell, collapsed: layout.sidebarCollapsed === true, advanced: layout.advancedMode === true });
@@ -199,6 +250,11 @@
   }
 
   document.addEventListener("click", (event) => {
+    if (event.target.closest("[data-app-privacy-unlock]")) {
+      setPrivacyShield(false);
+      scheduleAutoLock();
+      return;
+    }
     const themeValue = event.target.closest("[data-app-theme-value]");
     if (themeValue) {
       event.preventDefault();
@@ -265,6 +321,8 @@
       if (hasPreferenceControls) applyPreferences(preferences());
     });
     observer.observe(document.body, { childList: true, subtree: true });
+    ["pointerdown", "keydown", "touchstart"].forEach((type) => window.addEventListener(type, scheduleAutoLock, { capture: true, passive: true }));
+    window.addEventListener("blur", () => setPrivacyShield(true));
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });

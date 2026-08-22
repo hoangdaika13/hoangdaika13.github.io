@@ -131,6 +131,13 @@ test("category navigation supports search, pins, reordering and restrained cosmi
   assert.match(css, /hh-sidebar-home-beacon/);
   assert.match(css, /hh-sidebar-footer-energy/);
   assert.match(css, /hh-sidebar-tool-ambient-scan/);
+  assert.match(css, /hh-sidebar-group-live/);
+  assert.match(css, /hh-sidebar-tool-card-flow/);
+  assert.match(css, /hh-sidebar-icon-halo/);
+  assert.match(css, /Every visible navigation surface stays alive without hover or route changes/);
+  assert.match(css, /\.app-sidebar__category>\.app-sidebar__section-toggle\{animation:hh-sidebar-group-live[^}]*infinite!important/);
+  assert.match(css, /\.app-sidebar__tool-row::before\{animation:hh-sidebar-tool-ambient-scan[^}]*infinite!important/);
+  assert.match(css, /\.app-sidebar__tool-row\[data-tool-motion="orbit"\] \.app-sidebar__tool-icon\{animation:hh-sidebar-icon-orbit 3\.05s[^}]*infinite!important/);
   assert.match(css, /hh-sidebar-footer-float/);
   assert.match(css, /scrollbar-gutter:stable/);
   assert.match(css, /hh-sidebar-chevron-breathe/);
@@ -141,6 +148,7 @@ test("category navigation supports search, pins, reordering and restrained cosmi
   assert.match(css, /body\.hh-settings-applied:not\(\.app-sidebar-collapsed\) \.app-shell__body\{grid-template-columns:minmax\(0,1fr\)!important/);
   assert.match(css, /clamp\(268px,var\(--hh-user-sidebar-width,284px\),284px\)/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)\{\.app-sidebar\.app-sidebar\.app-sidebar \*/);
 });
 
 test("every route gets a shared cosmic loading state with progress and fallback", () => {
@@ -162,7 +170,7 @@ test("every route gets a shared cosmic loading state with progress and fallback"
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=55", "script.js?v=218", "sidebar-navigation-pro.css?v=28", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=5", "english-vocabulary.css?v=1", "english-vocabulary.js?v=2", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=28", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=55", "script.js?v=218", "sidebar-navigation-pro.css?v=29", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=5", "english-vocabulary.css?v=1", "english-vocabulary.js?v=2", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=28", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);

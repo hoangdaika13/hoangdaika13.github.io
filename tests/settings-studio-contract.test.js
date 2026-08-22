@@ -9,9 +9,11 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 test("Settings Studio is lazy-loaded only for the workspace settings route", () => {
   const loader = read("performance-loader.js");
+  const html = read("index.html");
   const shell = read("script.js");
-  assert.match(loader, /settings:\s*\{[\s\S]*settings-studio\.css\?v=2[\s\S]*settings-studio\.js\?v=5/);
+  assert.match(loader, /settings:\s*\{[\s\S]*settings-studio\.css\?v=7[\s\S]*settings-studio\.js\?v=7/);
   assert.match(loader, /if \(value === "\/settings"\) return \["settings"\]/);
+  assert.match(html, /performance-loader\.js\?v=454/);
   assert.match(shell, /HHSettingsStudio\?\.mount\?\.\(workspace\)/);
   assert.match(shell, /app-settings-route/);
   assert.doesNotMatch(shell, /Mở Appearance Studio<\/button><button type=button data-dashboard-shortcuts/);
@@ -25,9 +27,11 @@ test("Settings Studio exposes every requested functional area", () => {
     "data-hhs-preview", "data-hhs-undo", "data-hhs-redo", "data-hhs-save",
     "data-hhs-export", "data-hhs-import", "data-hhs-clear-cache",
     "data-hhs-test-notification", "data-hhs-voice-test", "data-hhs-search",
-    "settings:update", "settings:test-notification", "beforeunload", "MAX_HISTORY"
+    "settings:update", "settings:test-notification", "beforeunload", "MAX_HISTORY",
+    "data-hhs-security-audit", "data-hhs-security-report", "data-hhs-storage-persist",
+    "Không lưu token trong localStorage", "hh-auth-token"
   ]) assert.match(client, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-  for (const section of ["appearance", "layout", "motion", "accessibility", "locale", "performance", "notifications", "data"])
+  for (const section of ["appearance", "layout", "motion", "accessibility", "locale", "performance", "notifications", "security", "data"])
     assert.match(client, new RegExp(`\\["${section}"`));
   assert.match(themeSystem, /applyWorkspaceSettings/);
   assert.match(themeSystem, /hh\.settings-studio\.v1/);
@@ -50,6 +54,7 @@ test("Client normalization rejects unknown values and clamps numeric settings", 
     appearance: { theme: "remote-code", accent: "javascript:alert(1)", textZoom: 999 },
     layout: { sidebarWidth: 1, pinnedRoutes: ["/home", "https://evil.invalid", "/home"] },
     notifications: { quietStart: "99:99" },
+    security: { autoLockMinutes: 999, privacyShield: "yes" },
     data: { syncScope: "unknown" }
   });
   assert.equal(value.appearance.theme, "cosmic");
@@ -58,6 +63,8 @@ test("Client normalization rejects unknown values and clamps numeric settings", 
   assert.equal(value.layout.sidebarWidth, 216);
   assert.deepEqual([...value.layout.pinnedRoutes], ["/home"]);
   assert.equal(value.notifications.quietStart, "22:00");
+  assert.equal(value.security.autoLockMinutes, 0);
+  assert.equal(value.security.privacyShield, false);
   assert.equal(value.data.syncScope, "device");
 });
 
@@ -67,6 +74,7 @@ test("Server normalization uses the same strict allow-list", () => {
     appearance: { theme: "bad", glow: "#ABCDEF", glassOpacity: -4 },
     performance: { pixelRatio: 20, maxFps: 2 },
     layout: { pinnedRoutes: Array(8).fill("/chat-ai") },
+    security: { autoLockMinutes: 30, privacyShield: true },
     data: { syncScope: "account" }
   });
   assert.equal(value.appearance.theme, "cosmic");
@@ -75,14 +83,16 @@ test("Server normalization uses the same strict allow-list", () => {
   assert.equal(value.performance.pixelRatio, 2);
   assert.equal(value.performance.maxFps, 24);
   assert.deepEqual(value.layout.pinnedRoutes, ["/chat-ai"]);
+  assert.equal(value.security.autoLockMinutes, 30);
+  assert.equal(value.security.privacyShield, true);
   assert.equal(value.data.syncScope, "account");
 });
 
 test("Service worker contains the new versioned Settings Studio assets", () => {
   const worker = read("sw.js");
-  assert.match(worker, /hh-identity-portal-v673/);
-  assert.match(worker, /settings-studio\.css\?v=2/);
-  assert.match(worker, /settings-studio\.js\?v=5/);
-  assert.match(worker, /app-theme-system\.js\?v=8/);
-  assert.match(worker, /script\.js\?v=197/);
+  assert.match(worker, /hh-identity-portal-v796/);
+  assert.match(worker, /settings-studio\.css\?v=7/);
+  assert.match(worker, /settings-studio\.js\?v=7/);
+  assert.match(worker, /app-theme-system\.js\?v=9/);
+  assert.match(worker, /script\.js\?v=218/);
 });

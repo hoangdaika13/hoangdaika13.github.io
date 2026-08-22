@@ -238,8 +238,8 @@
       scripts: ["chat-ai-hub.js?v=17"]
     },
     settings: {
-      styles: ["settings-studio.css?v=2"],
-      scripts: ["settings-studio.js?v=5"]
+      styles: ["settings-studio.css?v=7"],
+      scripts: ["settings-studio.js?v=7"]
     },
     account: {
       styles: ["account-center.css?v=2"],
