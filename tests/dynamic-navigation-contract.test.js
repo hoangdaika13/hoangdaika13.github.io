@@ -16,7 +16,8 @@ test("application shell uses guided hubs and real route transitions", () => {
   assert.match(client, /document\.startViewTransition/);
   assert.match(client, /const mountModuleHub/);
   assert.match(client, /data-app-hub-search/);
-  assert.match(client, /const submenu = expanded \? fullSubmenu : ""/);
+  assert.match(client, /const renderNavigation = \(\) =>/);
+  assert.match(client, /const navigationSections =/);
   assert.match(client, /--route-accent/);
   assert.match(client, /data-nav-label/);
   assert.match(client, /crumbRoute \+=/);
@@ -59,26 +60,38 @@ test("HH English exposes the cosmic vocabulary galaxy and all practice modes", (
   assert.match(css, /prefers-reduced-motion/);
 });
 
-test("expanded major sections expose every nested module without clipping", () => {
+test("primary navigation is grouped into focused categories with one open section", () => {
+  const client = read("script.js");
   const css = read("sidebar-navigation-pro.css");
 
-  assert.match(css, /Sidebar overflow recovery v3/);
-  assert.match(css, /\.app-sidebar__group\.is-expanded>\.app-sidebar__submenu[\s\S]*?max-height:none!important/);
-  assert.match(css, /\.app-sidebar__group\.is-expanded>\.app-sidebar__submenu[\s\S]*?overflow:visible!important/);
-  assert.match(css, /\.app-sidebar__group\.is-expanded \.app-sidebar__studio>div[\s\S]*?max-height:none!important/);
-  assert.match(css, /\.app-sidebar__page-section\.is-open>\.app-sidebar__page-section-items[\s\S]*?overflow:visible!important/);
-  assert.match(css, /padding-bottom:max\(32px,env\(safe-area-inset-bottom\)\)!important/);
+  assert.match(client, /const navigationSections =/);
+  for (const label of ["AI & Sáng tạo", "Web & Cộng đồng", "Giải trí & Nội dung", "Công việc & Công nghệ", "Học tập & Ngôn ngữ", "Quản trị & Hệ thống"]) {
+    assert.match(client, new RegExp(label.replace(/[&]/g, "\\&")));
+  }
+  assert.match(client, /saveOpenNavigationSection\(openNavigationSection === sectionId \? "" : sectionId\)/);
+  assert.match(client, /navigationSectionForRoute\(route\)/);
+  assert.match(css, /\.app-sidebar__category\.is-expanded>\.app-sidebar__submenu\{max-height:380px/);
+  assert.match(css, /\.app-sidebar__primary[\s\S]*?overflow-y:auto/);
+  assert.match(css, /@media\(max-width:760px\)[\s\S]*?translateY\(105%\)/);
 });
 
-test("major navigation groups use the shared cosmic planet treatment", () => {
+test("category navigation supports search, pins, reordering and restrained cosmic motion", () => {
+  const client = read("script.js");
   const css = read("sidebar-navigation-pro.css");
 
-  assert.match(css, /Cosmic primary navigation v1/);
+  assert.match(client, /data-sidebar-search/);
+  assert.match(client, /data-sidebar-pin/);
+  assert.match(client, /slice\(0, 5\)/);
+  assert.match(client, /data-pinned-route/);
+  assert.match(client, /data-nav-section/);
+  assert.match(client, /dragstart/);
+  assert.match(client, /Alt\+ArrowUp Alt\+ArrowDown/);
   assert.match(css, /\.app-sidebar::after[\s\S]*?background-image:/);
-  assert.match(css, /\.app-sidebar__group>\.app-sidebar__item>span:first-child::before[\s\S]*?border-radius:50%/);
-  assert.match(css, /\.app-sidebar__group>\.app-sidebar__item>span:first-child::after[\s\S]*?display:none[\s\S]*?content:none/);
-  assert.match(css, /\.app-sidebar__subitem:not\(\.app-sidebar__subitem--search\)/);
-  assert.match(css, /\.app-sidebar__studio-item>span::after[\s\S]*?scaleY\(\.38\)/);
+  assert.match(css, /\.app-sidebar__section-orb[\s\S]*?border-radius:50%/);
+  assert.match(css, /\.app-sidebar__category\.is-expanded \.app-sidebar__section-orb\{animation:/);
+  assert.doesNotMatch(css, /^\.app-sidebar__section-orb\{[^}]*animation:/m);
+  assert.match(css, /--sidebar-collapsed-width:72px/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
 });
 
 test("every route gets a shared cosmic loading state with progress and fallback", () => {
@@ -100,7 +113,7 @@ test("every route gets a shared cosmic loading state with progress and fallback"
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=55", "script.js?v=179", "sidebar-navigation-pro.css?v=9", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=5", "english-vocabulary.css?v=1", "english-vocabulary.js?v=2", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=28", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=55", "script.js?v=208", "sidebar-navigation-pro.css?v=12", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=5", "english-vocabulary.css?v=1", "english-vocabulary.js?v=2", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=28", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);

@@ -5594,33 +5594,107 @@ function initAppShell() {
     },
     { id: "support", label: "Ủng hộ nhà phát triển", icon: "♥", accent: "#ff6fae", route: "/support", items: [] }
   ];
+  const navigationSections = [
+    {
+      id: "ai-creative",
+      label: "AI & Sáng tạo",
+      icon: "✦",
+      accent: "#ff66d9",
+      accentSecondary: "#9a78ff",
+      groupIds: ["chat-ai", "create", "draw", "music-ai", "comic-motion", "media-design", "graphic-design"]
+    },
+    {
+      id: "web-community",
+      label: "Web & Cộng đồng",
+      icon: "◎",
+      accent: "#55eaff",
+      accentSecondary: "#4988ff",
+      groupIds: ["google", "youtube-main", "discord", "communication", "remote"]
+    },
+    {
+      id: "entertainment",
+      label: "Giải trí & Nội dung",
+      icon: "▶",
+      accent: "#ff6f82",
+      accentSecondary: "#ffc65c",
+      groupIds: ["comic-reader", "cinema", "music-library", "fortune"]
+    },
+    {
+      id: "work-tech",
+      label: "Công việc & Công nghệ",
+      icon: "⌘",
+      accent: "#54e7ad",
+      accentSecondary: "#4fddff",
+      groupIds: ["work", "davinci-resolve", "dev", "insights", "copyright"]
+    },
+    {
+      id: "learning",
+      label: "Học tập & Ngôn ngữ",
+      icon: "◫",
+      accent: "#ffd66b",
+      accentSecondary: "#a87cff",
+      groupIds: ["learn", "english", "japanese", "chinese"]
+    },
+    {
+      id: "system-admin",
+      label: "Quản trị & Hệ thống",
+      icon: "⚙",
+      accent: "#c8f7ff",
+      accentSecondary: "#5ce2bd",
+      groupIds: ["admin", "system", "support"]
+    }
+  ];
+  const navigationGroupById = (id) => groups.find((group) => group.id === id);
+  const navigationItemMatchesRoute = (item, route) => Boolean(item && (route === item.route || route.startsWith(`${item.route}/`)));
+  const visibleNavigationSections = () => navigationSections.map((section) => ({
+    ...section,
+    items: section.groupIds.map(navigationGroupById).filter((item) => item && (!item.adminOnly || isCurrentUserAdmin()))
+  })).filter((section) => section.items.length);
+  const navigationSectionForRoute = (route) => visibleNavigationSections().find((section) => section.items.some((item) => navigationItemMatchesRoute(item, route)))
+    || ((route === "/settings" || route.startsWith("/settings/")) ? visibleNavigationSections().find((section) => section.id === "system-admin") : null);
+  const navigationItemForRoute = (route) => visibleNavigationSections().flatMap((section) => section.items).find((item) => item.route === route);
+  const sidebarAccountScope = () => {
+    const user = readCurrentAuthUser?.() || {};
+    return String(user.id || user._id || user.email || "guest").toLowerCase().replace(/[^a-z0-9@._-]/g, "-").slice(0, 96) || "guest";
+  };
+  const sidebarStorageKey = (name) => `hh.sidebar.${name}:${sidebarAccountScope()}`;
+  const readStoredArray = (key) => {
+    try { const value = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(value) ? value : []; } catch { return []; }
+  };
+  const readSidebarPins = () => {
+    const key = sidebarStorageKey("pins.v2");
+    let pins = readStoredArray(key);
+    if (!pins.length && !localStorage.getItem(key)) {
+      try {
+        const legacySettings = JSON.parse(localStorage.getItem("hh.settings-studio.v1") || "null")?.settings || {};
+        pins = Array.isArray(legacySettings.layout?.pinnedRoutes) ? legacySettings.layout.pinnedRoutes : [];
+      } catch {}
+    }
+    return [...new Set(pins)].filter((route) => navigationItemForRoute(route)).slice(0, 5);
+  };
+  const saveSidebarPins = (pins) => localStorage.setItem(sidebarStorageKey("pins.v2"), JSON.stringify([...new Set(pins)].filter((route) => navigationItemForRoute(route)).slice(0, 5)));
+  const readSidebarSectionOrder = () => {
+    const validIds = navigationSections.map((section) => section.id);
+    const storedOrder = readStoredArray(sidebarStorageKey("section-order.v1")).filter((id) => validIds.includes(id));
+    return [...storedOrder, ...validIds.filter((id) => !storedOrder.includes(id))];
+  };
+  const saveSidebarSectionOrder = (order) => localStorage.setItem(sidebarStorageKey("section-order.v1"), JSON.stringify(order));
+  const orderedNavigationSections = () => {
+    const sections = visibleNavigationSections();
+    const order = readSidebarSectionOrder();
+    return [...sections].sort((left, right) => order.indexOf(left.id) - order.indexOf(right.id));
+  };
+  let openNavigationSection = localStorage.getItem(sidebarStorageKey("open-section.v2")) || "ai-creative";
+  let navigationRouteSnapshot = "";
+  const saveOpenNavigationSection = (sectionId) => {
+    openNavigationSection = sectionId || "";
+    if (openNavigationSection) localStorage.setItem(sidebarStorageKey("open-section.v2"), openNavigationSection);
+    else localStorage.removeItem(sidebarStorageKey("open-section.v2"));
+  };
   const graphicDesignPages = groups.find((group) => group.id === "graphic-design")?.pages || [];
   let activeRoute = "";
   let renderedRoute = "";
   let routeTransition = null;
-  const sidebarGroupState = (() => {
-    try { return JSON.parse(localStorage.getItem("hh.sidebar.groups.v1") || "{}"); } catch { return {}; }
-  })();
-  const saveSidebarGroups = () => localStorage.setItem("hh.sidebar.groups.v1", JSON.stringify(sidebarGroupState));
-  const musicSidebarSectionKey = "hh.music-ai.sidebar-section.v3";
-  let musicSidebarSection = localStorage.getItem(musicSidebarSectionKey) || "";
-  const saveMusicSidebarSection = (section) => {
-    musicSidebarSection = section;
-    localStorage.setItem(musicSidebarSectionKey, section);
-  };
-  const keepMusicRouteContext = (route) => {
-    if (route !== "/music-ai" && !String(route || "").startsWith("/music-ai/")) return;
-    sidebarGroupState["music-ai"] = true;
-    const selectedMusicPage = musicAIPlanetItems.find((item) => musicItemMatchesRoute(item, route)) || musicAIPlanetItems[0];
-    if (selectedMusicPage) saveMusicSidebarSection(selectedMusicPage.section);
-    saveSidebarGroups();
-  };
-  if (localStorage.getItem("hh.music-ai.sidebar-nav-version") !== "3") {
-    sidebarGroupState["music-ai"] = false;
-    saveSidebarGroups();
-    localStorage.setItem("hh.music-ai.sidebar-nav-version", "3");
-  }
-
   const moduleList = () => Array.isArray(window.HH_PLATFORM_MODULES) ? window.HH_PLATFORM_MODULES : [];
   const moduleById = (id) => moduleList().find((item) => item.id === id);
   const routeForModule = (id) => {
@@ -5692,63 +5766,152 @@ function initAppShell() {
     });
   };
   const renderNavigation = () => {
-    const route = activeRoute;
-    const advancedMode = Boolean(stored().advanced);
-    const visibleGroups = groups.filter((group) => !group.adminOnly || isCurrentUserAdmin());
-    const settingsState = (() => { try { return JSON.parse(localStorage.getItem("hh.settings-studio.v1") || "null")?.settings || {}; } catch { return {}; } })();
-    const pinnedLabels = new Map([["/home", ["⌂", "Trang chủ"]], ["/chat-ai", ["AI", "Chat AI"]], ["/draw", ["✎", "Vẽ"]], ["/remote", ["RM", "Remote"]], ["/work", ["W", "Công việc"]], ["/learn", ["L", "Học tập"]], ["/fortune", ["☾", "Xem bói"]], ["/music-ai", ["♫", "Làm nhạc AI"]], ["/social-media-tools", ["S", "Truyền thông"]], ["/settings/account/profile", ["♙", "Hồ sơ"]]]);
-    const pinnedRoutes = [...new Set(Array.isArray(settingsState.layout?.pinnedRoutes) ? settingsState.layout.pinnedRoutes : [])].filter((item) => pinnedLabels.has(item)).slice(0, 5);
-    const pinnedMarkup = pinnedRoutes.length ? `<section class="app-sidebar__pinned"><small>ĐÃ GHIM</small>${pinnedRoutes.map((item) => { const [icon, label] = pinnedLabels.get(item); return `<button class="app-sidebar__subitem ${route === item ? "is-active" : ""}" type="button" data-app-route="${safeText(item)}" title="${safeText(label)}"><b>${safeText(icon)}</b><span>${safeText(label)}</span></button>`; }).join("")}</section>` : "";
-    navigation.innerHTML = pinnedMarkup + visibleGroups.map((group) => {
-      const routeMatches = route === group.route || route.startsWith(`${group.route}/`);
-      const expanded = advancedMode ? (Object.hasOwn(sidebarGroupState, group.id) ? Boolean(sidebarGroupState[group.id]) : routeMatches) : (routeMatches && sidebarGroupState[group.id] !== false);
-      const moduleEntries = group.items.map((id) => {
-        const module = moduleById(id);
-        if (!module) return "";
-        const moduleRoute = routeForModule(id);
-        return `<button class="app-sidebar__subitem ${route === moduleRoute ? "is-active" : ""}" type="button" data-app-route="${moduleRoute}" ${route === moduleRoute ? "aria-current=page" : ""}><span>${module.title}</span></button>`;
-      }).filter(Boolean);
-      const moduleItems = moduleEntries.join("");
-      const shortcuts = (group.shortcuts || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--search" type="button" data-search-watch-open="${item.tab}" title="${item.label}"><b>${item.icon}</b><span>${item.label}</span><i>↗</i></button>`).join("");
-      const pageItems = group.id === "music-ai"
-        ? (() => {
-            const activePage = group.pages.find((item) => musicItemMatchesRoute(item, route));
-            const openSection = musicSidebarSection === "__none__" ? "" : (musicSidebarSection || activePage?.section || "Music Galaxy");
-            return [...new Set(group.pages.map((item) => item.section))].map((section) => {
-              const sectionItems = group.pages.filter((item) => item.section === section);
-              const sectionOpen = section === openSection;
-              return `<section class="app-sidebar__page-section ${sectionOpen ? "is-open" : ""}">
-                <button class="app-sidebar__page-section-toggle" type="button" data-music-section="${safeText(section)}" aria-expanded="${sectionOpen}">
-                  <span>${safeText(section)}</span><b>${sectionItems.length}</b><i aria-hidden="true">›</i>
-                </button>
-                <div class="app-sidebar__page-section-items" aria-hidden="${!sectionOpen}">${sectionItems.map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--music ${musicItemMatchesRoute(item, route) ? "is-active" : ""}" type="button" data-app-route="${item.route}" data-music-planet="${safeText(item.identity || item.id)}" style="--music-planet:${safeText(item.color || group.accent)};--music-planet-accent:${safeText(item.accent || item.color || group.accent)}" title="${safeText(item.description)}" ${sectionOpen ? "" : "tabindex=-1"} ${musicItemMatchesRoute(item, route) ? "aria-current=page" : ""}><b>${safeText(item.icon)}</b><span>${safeText(item.title)}</span><i>›</i></button>`).join("")}</div>
-              </section>`;
-            }).join("");
-          })()
-        : group.id === "work"
-          ? (group.pages || []).map((item) => `<button class="app-sidebar__subitem app-sidebar__subitem--work ${route === item.route || (item.id === "mission-control" && route === "/work") ? "is-active" : ""}" type="button" data-app-route="${item.route}" style="--work-nav-color:${safeText(item.color || group.accent)}" title="${safeText(item.description || item.title)}" ${route === item.route || (item.id === "mission-control" && route === "/work") ? "aria-current=page" : ""}><b>${safeText(item.icon || "W")}</b><span>${safeText(item.title)}</span><i>›</i></button>`).join("")
-          : (group.pages || []).map((item) => `<button class="app-sidebar__subitem ${route === item.route ? "is-active" : ""}" type="button" data-app-route="${item.route}" ${route === item.route ? "aria-current=page" : ""}><span>${item.title}</span></button>`).join("");
-      const studioMenu = group.studioItems
-        ? (group.id === "create" && window.HHCreativeStarMap?.markup
-          ? window.HHCreativeStarMap.markup({ items: group.studioItems, route })
-          : `<div class="app-sidebar__studio" data-studio-kind="${group.id}"><label><span>⌕</span><input type="search" data-media-sidebar-search placeholder="Tìm công cụ..."></label><div data-media-sidebar-list>${[...new Set(group.studioItems.map((item) => item.group))].map((studioGroup, groupIndex) => { const groupItems = group.studioItems.filter((item) => item.group === studioGroup); const planet = groupItems[0]?.planet || ""; return `<section data-media-sidebar-group data-studio-category="${groupIndex}" ${planet ? `data-media-planet="${safeText(planet)}"` : ""}><small>${studioGroup}<b>${groupItems.length}</b></small>${groupItems.map((item) => { const itemRoute = `${group.route}/${item.id}`; return `<button class="app-sidebar__studio-item ${route === itemRoute ? "is-active" : ""}" type="button" data-app-route="${itemRoute}" data-media-sidebar-item="${item.title.toLowerCase()}" data-studio-tool="${item.id}" ${item.planet ? `data-media-planet="${safeText(item.planet)}"` : ""}><span aria-hidden="true">${item.icon}</span><b>${item.title}</b></button>`; }).join("")}</section>`; }).join("")}</div></div>`)
-        : "";
-      const fullSubmenu = `${shortcuts}${pageItems}${studioMenu}${moduleItems}`;
-      const submenuCount = (group.shortcuts?.length || 0) + (group.pages?.length || 0) + (group.studioItems?.length || 0) + moduleEntries.length;
-      const submenu = expanded ? fullSubmenu : "";
-      const hasSubmenu = submenuCount > 0;
-      const countBadge = hasSubmenu ? `<small class="app-sidebar__count" aria-label="${submenuCount} chức năng">${submenuCount}</small>` : "";
-      return `<section class="app-sidebar__group ${expanded ? "is-expanded" : ""}" data-nav-group="${group.id}" style="--nav-accent:${group.accent || "#56eaff"}">
-        <button class="app-sidebar__item ${routeMatches ? "is-active" : ""}" type="button" data-app-route="${group.landingRoute || group.route}" data-nav-label="${safeText(group.label)}" ${routeMatches ? "aria-current=page" : ""} ${hasSubmenu ? `aria-expanded="${expanded}"` : ""} title="Mở ${group.label}${hasSubmenu ? " và hiển thị chức năng" : ""}"><span>${group.icon}</span><b>${group.label}</b>${countBadge}<i class="app-sidebar__chevron" ${hasSubmenu ? `data-sidebar-toggle title="Mở hoặc thu gọn ${group.label}"` : ""} aria-hidden="true">${hasSubmenu ? "›" : ""}</i></button>
-        ${hasSubmenu ? `<div class="app-sidebar__submenu">${submenu}</div>` : ""}
+    const route = activeRoute || routeFromHash();
+    const routeSection = navigationSectionForRoute(route);
+    if (route !== navigationRouteSnapshot) {
+      navigationRouteSnapshot = route;
+      if (routeSection) saveOpenNavigationSection(routeSection.id);
+    }
+    const validSections = orderedNavigationSections();
+    if (!validSections.some((section) => section.id === openNavigationSection)) saveOpenNavigationSection(validSections[0]?.id || "");
+    const pinnedRoutes = readSidebarPins();
+    const itemMarkup = (item, { pinned = false } = {}) => {
+      const isActive = navigationItemMatchesRoute(item, route);
+      const isPinned = pinnedRoutes.includes(item.route);
+      const searchable = `${item.label} ${item.route}`.toLowerCase();
+      return `<div class="app-sidebar__tool-row ${isActive ? "is-active" : ""} ${pinned ? "is-pinned" : ""}" data-nav-search-text="${safeText(searchable)}" ${pinned ? `data-pinned-route="${safeText(item.route)}" draggable="true"` : ""}>
+        ${pinned ? `<span class="app-sidebar__drag" aria-hidden="true" title="Kéo để sắp xếp">⠿</span>` : ""}
+        <button class="app-sidebar__subitem ${isActive ? "is-active" : ""}" type="button" data-app-route="${safeText(item.route)}" title="${safeText(item.label)}" ${isActive ? "aria-current=page" : ""}>
+          <span class="app-sidebar__tool-icon" aria-hidden="true">${safeText(item.icon)}</span><b>${safeText(item.label)}</b>
+        </button>
+        <button class="app-sidebar__pin ${isPinned ? "is-pinned" : ""}" type="button" data-sidebar-pin="${safeText(item.route)}" aria-label="${isPinned ? "Bỏ ghim" : "Ghim"} ${safeText(item.label)}" title="${isPinned ? "Bỏ ghim" : "Ghim lên đầu sidebar"}">${isPinned ? "★" : "☆"}</button>
+      </div>`;
+    };
+    const pinnedItems = pinnedRoutes.map(navigationItemForRoute).filter(Boolean);
+    const pinnedMarkup = pinnedItems.length ? `<section class="app-sidebar__pinned" data-sidebar-pinned-section>
+      <header><span>☆ Truy cập nhanh</span><small>${pinnedItems.length}/5</small></header>
+      <div class="app-sidebar__pinned-list" data-sidebar-pinned-list>${pinnedItems.map((item) => itemMarkup(item, { pinned: true })).join("")}</div>
+    </section>` : "";
+    const sectionsMarkup = validSections.map((section) => {
+      const isExpanded = section.id === openNavigationSection;
+      const isActive = section.items.some((item) => navigationItemMatchesRoute(item, route));
+      return `<section class="app-sidebar__group app-sidebar__category ${isExpanded ? "is-expanded" : ""} ${isActive ? "has-active-route" : ""}" data-nav-section="${safeText(section.id)}" data-nav-search-label="${safeText(section.label.toLowerCase())}" draggable="true" style="--nav-accent:${safeText(section.accent)};--nav-accent-secondary:${safeText(section.accentSecondary)}">
+        <button class="app-sidebar__item app-sidebar__section-toggle ${isActive ? "is-active" : ""}" type="button" data-sidebar-section-toggle="${safeText(section.id)}" data-nav-label="${safeText(section.label)}" aria-expanded="${isExpanded}" aria-controls="sidebar-section-${safeText(section.id)}" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" title="${safeText(section.label)} · kéo để sắp xếp nhóm">
+          <span class="app-sidebar__section-orb" aria-hidden="true">${safeText(section.icon)}</span><b>${safeText(section.label)}</b><small class="app-sidebar__count" aria-label="${section.items.length} chức năng">${section.items.length}</small><i class="app-sidebar__chevron" aria-hidden="true">›</i>
+        </button>
+        <div class="app-sidebar__submenu" id="sidebar-section-${safeText(section.id)}" aria-hidden="${!isExpanded}">${section.items.map((item) => itemMarkup(item)).join("")}</div>
       </section>`;
     }).join("");
+    navigation.innerHTML = `<section class="app-sidebar__search-panel">
+      <label><span aria-hidden="true">⌕</span><input type="search" data-sidebar-search placeholder="Tìm chức năng…" autocomplete="off" aria-label="Tìm chức năng trong sidebar"><kbd>Ctrl K</kbd></label>
+      <small data-sidebar-search-status aria-live="polite">${validSections.reduce((total, section) => total + section.items.length, 0)} chức năng</small>
+    </section>
+    <button class="app-sidebar__home ${route === "/home" ? "is-active" : ""}" type="button" data-app-route="/home" title="Trang chủ" ${route === "/home" ? "aria-current=page" : ""}><span aria-hidden="true">⌂</span><b>Trang chủ</b><i aria-hidden="true">→</i></button>
+    ${pinnedMarkup}<div class="app-sidebar__categories" data-sidebar-categories>${sectionsMarkup}</div>`;
   };
+  const setSidebarStatus = (message) => {
+    const status = navigation.querySelector("[data-sidebar-search-status]");
+    if (status) status.textContent = message;
+    if (routeAnnouncer) routeAnnouncer.textContent = message;
+  };
+  const applySidebarSearch = (value = "") => {
+    const query = value.trim().toLowerCase();
+    let matches = 0;
+    navigation.classList.toggle("is-searching", Boolean(query));
+    navigation.querySelectorAll("[data-nav-section]").forEach((section) => {
+      const sectionMatch = Boolean(query) && section.dataset.navSearchLabel?.includes(query);
+      let sectionMatches = 0;
+      section.querySelectorAll(":scope > .app-sidebar__submenu > [data-nav-search-text]").forEach((row) => {
+        const visible = !query || sectionMatch || row.dataset.navSearchText.includes(query);
+        row.hidden = !visible;
+        if (visible && query) sectionMatches += 1;
+      });
+      const expanded = query ? sectionMatches > 0 : section.dataset.navSection === openNavigationSection;
+      section.hidden = Boolean(query) && sectionMatches === 0;
+      section.classList.toggle("is-expanded", expanded);
+      section.querySelector(":scope > [data-sidebar-section-toggle]")?.setAttribute("aria-expanded", String(expanded));
+      const submenu = section.querySelector(":scope > .app-sidebar__submenu");
+      submenu?.setAttribute("aria-hidden", String(!expanded));
+      matches += sectionMatches;
+    });
+    const home = navigation.querySelector(".app-sidebar__home");
+    if (home) home.hidden = Boolean(query) && !"trang chủ home tổng quan".includes(query);
+    const pinnedSection = navigation.querySelector("[data-sidebar-pinned-section]");
+    if (pinnedSection) {
+      let pinnedMatches = 0;
+      pinnedSection.querySelectorAll("[data-nav-search-text]").forEach((row) => {
+        const visible = !query || row.dataset.navSearchText.includes(query);
+        row.hidden = !visible;
+        if (visible) pinnedMatches += 1;
+      });
+      pinnedSection.hidden = Boolean(query) && pinnedMatches === 0;
+    }
+    setSidebarStatus(query ? `${matches} kết quả trong danh mục` : `${validNavigationItemCount()} chức năng`);
+  };
+  const validNavigationItemCount = () => visibleNavigationSections().reduce((total, section) => total + section.items.length, 0);
   navigation.addEventListener("input", (event) => {
-    if (!event.target.matches("[data-media-sidebar-search]")) return;
-    const query = event.target.value.trim().toLowerCase(), studio = event.target.closest(".app-sidebar__studio");
-    studio?.querySelectorAll("[data-media-sidebar-item]").forEach((item) => { item.hidden = Boolean(query) && !item.dataset.mediaSidebarItem.includes(query); });
-    studio?.querySelectorAll("[data-media-sidebar-group]").forEach((group) => { group.hidden = !group.querySelector("[data-media-sidebar-item]:not([hidden])"); });
+    if (event.target.matches("[data-sidebar-search]")) {
+      applySidebarSearch(event.target.value);
+      return;
+    }
+  });
+  navigation.addEventListener("keydown", (event) => {
+    const sectionToggle = event.target.closest("[data-sidebar-section-toggle]");
+    if (!sectionToggle || !event.altKey || !["ArrowUp", "ArrowDown"].includes(event.key)) return;
+    event.preventDefault();
+    const order = readSidebarSectionOrder();
+    const sectionId = sectionToggle.dataset.sidebarSectionToggle;
+    const currentIndex = order.indexOf(sectionId);
+    const nextIndex = Math.max(0, Math.min(order.length - 1, currentIndex + (event.key === "ArrowUp" ? -1 : 1)));
+    if (currentIndex < 0 || currentIndex === nextIndex) return;
+    order.splice(currentIndex, 1);
+    order.splice(nextIndex, 0, sectionId);
+    saveSidebarSectionOrder(order);
+    renderNavigation();
+    requestAnimationFrame(() => navigation.querySelector(`[data-sidebar-section-toggle="${sectionId}"]`)?.focus({ preventScroll: true }));
+    setSidebarStatus(`Đã chuyển nhóm ${sectionToggle.dataset.navLabel || "điều hướng"}`);
+  });
+  let sidebarDrag = null;
+  navigation.addEventListener("dragstart", (event) => {
+    const pinned = event.target.closest("[data-pinned-route]");
+    const section = event.target.closest("[data-nav-section]");
+    if (pinned) sidebarDrag = { type: "pin", id: pinned.dataset.pinnedRoute };
+    else if (section) sidebarDrag = { type: "section", id: section.dataset.navSection };
+    else return;
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", sidebarDrag.id);
+    requestAnimationFrame(() => (pinned || section).classList.add("is-dragging"));
+  });
+  navigation.addEventListener("dragover", (event) => {
+    if (!sidebarDrag) return;
+    const target = sidebarDrag.type === "pin" ? event.target.closest("[data-pinned-route]") : event.target.closest("[data-nav-section]");
+    if (!target) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    navigation.querySelectorAll(".is-drag-target").forEach((node) => node.classList.remove("is-drag-target"));
+    target.classList.add("is-drag-target");
+  });
+  navigation.addEventListener("drop", (event) => {
+    if (!sidebarDrag) return;
+    const target = sidebarDrag.type === "pin" ? event.target.closest("[data-pinned-route]") : event.target.closest("[data-nav-section]");
+    if (!target) return;
+    event.preventDefault();
+    const targetId = sidebarDrag.type === "pin" ? target.dataset.pinnedRoute : target.dataset.navSection;
+    const order = sidebarDrag.type === "pin" ? readSidebarPins() : readSidebarSectionOrder();
+    const fromIndex = order.indexOf(sidebarDrag.id);
+    const targetIndex = order.indexOf(targetId);
+    if (fromIndex >= 0 && targetIndex >= 0 && fromIndex !== targetIndex) {
+      order.splice(fromIndex, 1);
+      order.splice(targetIndex, 0, sidebarDrag.id);
+      if (sidebarDrag.type === "pin") saveSidebarPins(order); else saveSidebarSectionOrder(order);
+    }
+    sidebarDrag = null;
+    renderNavigation();
+    setSidebarStatus("Đã lưu thứ tự điều hướng");
+  });
+  navigation.addEventListener("dragend", () => {
+    sidebarDrag = null;
+    navigation.querySelectorAll(".is-dragging,.is-drag-target").forEach((node) => node.classList.remove("is-dragging", "is-drag-target"));
   });
   const updateDashboard = () => {
     const modules = moduleList();
@@ -5881,9 +6044,10 @@ function initAppShell() {
     pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
     if (contextBar) {
       const group = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
-      pageHeader.querySelector(".app-page-header__eyebrow").textContent = group?.label || "HH Platform";
+      const navigationSection = navigationSectionForRoute(route);
+      pageHeader.querySelector(".app-page-header__eyebrow").textContent = navigationSection?.label || group?.label || "HH Platform";
       contextBar.hidden = route === "/home";
-      if (contextGroup) contextGroup.textContent = (group?.label || "HH Platform").toUpperCase();
+      if (contextGroup) contextGroup.textContent = (navigationSection?.label || group?.label || "HH Platform").toUpperCase();
       if (contextLabel) contextLabel.textContent = title;
     }
   };
@@ -6050,10 +6214,10 @@ function initAppShell() {
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
     }
     activeRoute = route;
-    keepMusicRouteContext(route);
     const activeGroup = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
-    shell.style.setProperty("--route-accent", activeGroup?.accent || "#56eaff");
-    shell.dataset.activeSection = activeGroup?.id || "home";
+    const activeNavigationSection = navigationSectionForRoute(route);
+    shell.style.setProperty("--route-accent", activeNavigationSection?.accent || activeGroup?.accent || "#56eaff");
+    shell.dataset.activeSection = activeNavigationSection?.id || activeGroup?.id || "home";
     document.body.classList.toggle("app-davinci-resolve-route", route === "/davinci-resolve" || route.startsWith("/davinci-resolve/"));
     document.body.classList.toggle("app-ai-video-remake-route", route === "/davinci-resolve/ai-video-remake");
     document.body.classList.toggle("app-image-text-route", route === "/davinci-resolve/image-text");
@@ -6862,6 +7026,11 @@ function initAppShell() {
   });
 
   document.addEventListener("click", (event) => {
+    if (event.target.closest("[data-sidebar-dismiss]")) {
+      document.body.classList.add("app-sidebar-collapsed");
+      document.querySelectorAll("[data-shell-toggle]").forEach((button) => button.setAttribute("aria-expanded", "false"));
+      return;
+    }
     if (event.target.closest("[data-copyright-email]")) {
       window.location.href = "mailto:nhhoang130803@gmail.com?subject=Khi%E1%BA%BFu%20n%E1%BA%A1i%20b%E1%BA%A3n%20quy%E1%BB%81n%20tr%C3%AAn%20hoang8.com";
       return;
@@ -6879,6 +7048,31 @@ function initAppShell() {
     const commandAction = event.target.closest("[data-command-action]");
     if (commandAction) {
       executePaletteOption(commandAction);
+      return;
+    }
+    const sidebarPin = event.target.closest("[data-sidebar-pin]");
+    if (sidebarPin) {
+      event.preventDefault();
+      event.stopPropagation();
+      const route = sidebarPin.dataset.sidebarPin;
+      const pins = readSidebarPins();
+      const removing = pins.includes(route);
+      if (!removing && pins.length >= 5) {
+        setSidebarStatus("Bạn chỉ có thể ghim tối đa 5 công cụ.");
+        return;
+      }
+      saveSidebarPins(removing ? pins.filter((item) => item !== route) : [...pins, route]);
+      renderNavigation();
+      setSidebarStatus(removing ? "Đã bỏ ghim công cụ." : "Đã ghim công cụ lên đầu sidebar.");
+      return;
+    }
+    const sidebarSectionToggle = event.target.closest("[data-sidebar-section-toggle]");
+    if (sidebarSectionToggle) {
+      event.preventDefault();
+      const sectionId = sidebarSectionToggle.dataset.sidebarSectionToggle;
+      saveOpenNavigationSection(openNavigationSection === sectionId ? "" : sectionId);
+      renderNavigation();
+      requestAnimationFrame(() => navigation.querySelector(`[data-sidebar-section-toggle="${sectionId}"]`)?.focus({ preventScroll: true }));
       return;
     }
     const workCapture = event.target.closest("[data-work-capture]");
@@ -6900,43 +7094,13 @@ function initAppShell() {
       else renderRouteSafely();
       return;
     }
-    const musicSectionToggle = event.target.closest("[data-music-section]");
-    if (musicSectionToggle) {
-      const section = musicSectionToggle.dataset.musicSection;
-      saveMusicSidebarSection(musicSectionToggle.getAttribute("aria-expanded") === "true" ? "__none__" : section);
-      renderNavigation();
-      return;
-    }
     const routeButton = event.target.closest("[data-app-route]");
     if (routeButton) {
       event.preventDefault();
       const route = routeButton.dataset.appRoute;
-      const sidebarGroup = routeButton.parentElement?.classList.contains("app-sidebar__group") ? routeButton.parentElement : null;
-      if (sidebarGroup?.querySelector(":scope > .app-sidebar__submenu") && event.target.closest("[data-sidebar-toggle]")) {
-        const group = groups.find((item) => item.id === sidebarGroup.dataset.navGroup);
-        if (group) {
-          const opening = !sidebarGroup.classList.contains("is-expanded");
-          sidebarGroupState[group.id] = opening;
-          if (opening && group.id === "music-ai") {
-            const activeMusicPage = musicAIPlanetItems.find((item) => musicItemMatchesRoute(item, activeRoute)) || musicAIPlanetItems[0];
-            saveMusicSidebarSection(activeMusicPage.section);
-          }
-          saveSidebarGroups();
-          renderNavigation();
-          return;
-        }
-      }
       if (route) {
-        const targetGroup = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
-        if (targetGroup) {
-          const musicSidebarToolLink = targetGroup.id === "music-ai" && routeButton.matches(".app-sidebar__subitem--music");
-          sidebarGroupState[targetGroup.id] = true;
-          if (musicSidebarToolLink) {
-            const selectedMusicPage = musicAIPlanetItems.find((item) => musicItemMatchesRoute(item, route)) || musicAIPlanetItems[0];
-            saveMusicSidebarSection(selectedMusicPage.section);
-          }
-          saveSidebarGroups();
-        }
+        const targetSection = navigationSectionForRoute(route);
+        if (targetSection) saveOpenNavigationSection(targetSection.id);
         const nextHash = `#${route}`;
         beginRouteFeedback(route);
         if (location.hash === nextHash) renderRouteWithTransition(); else location.hash = nextHash;
@@ -7058,8 +7222,11 @@ function initAppShell() {
   window.addEventListener("hh:settings-studio-ready", renderRouteSafely);
   window.addEventListener("hh:settings-saved", () => renderNavigation());
   window.addEventListener("hh:auth-change", () => {
+    openNavigationSection = localStorage.getItem(sidebarStorageKey("open-section.v2")) || "ai-creative";
+    navigationRouteSnapshot = "";
     setShellVisibility();
     setUser();
+    renderNavigation();
     requestAnimationFrame(releaseAuthInteractionLocks);
     window.setTimeout(releaseAuthInteractionLocks, 600);
   });
