@@ -243,7 +243,7 @@
     },
     settings: {
       styles: ["settings-studio.css?v=7"],
-      scripts: ["settings-studio.js?v=7"]
+      scripts: ["settings-studio.js?v=8"]
     },
     account: {
       styles: ["account-center.css?v=2"],
@@ -443,9 +443,21 @@
   function ensureForRoute(route) {
     const value = normalizeRoute(route);
     const names = groupsForRoute(value);
+    global.HHSurfaceBoot?.update?.({
+      route: value,
+      phase: "interface",
+      message: "Đang tải giao diện…",
+      detail: `${names.length} nhóm tài nguyên cần thiết cho workspace hiện tại`
+    });
     document.body?.classList.add("hh-assets-loading");
     global.dispatchEvent(new CustomEvent("hh:assets-loading", { detail: { route: value, groups: names } }));
     return Promise.all(names.map(ensureGroup)).then(() => {
+      global.HHSurfaceBoot?.update?.({
+        route: value,
+        phase: "restore",
+        message: "Đang khôi phục workspace…",
+        detail: "Tài nguyên đã sẵn sàng · Đang dựng giao diện cuối"
+      });
       document.body?.classList.remove("hh-assets-loading");
       global.dispatchEvent(new CustomEvent("hh:assets-ready", { detail: { route: value, groups: names } }));
       if (value === "/home") scheduleHomeEnhancements();

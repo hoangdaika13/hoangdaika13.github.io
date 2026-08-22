@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v804";
+const CACHE = "hh-identity-portal-v805";
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
@@ -18,7 +18,7 @@ const CACHE = "hh-identity-portal-v804";
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
-  "./app-shell.css?v=57",
+  "./app-shell.css?v=58",
   "./workspace-feature-explorer.css?v=2",
   "./app-theme-system.css?v=9",
   "./dashboard-aurora.css?v=4",
@@ -89,9 +89,9 @@ const RUNTIME_ASSETS = [
   "./account-center.css?v=2",
   "./account-center.js?v=2",
   "./settings-studio.css?v=7",
-  "./settings-studio.js?v=7",
+  "./settings-studio.js?v=8",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=222",
+  "./script.js?v=223",
   "./graphic-design-studio.css?v=6",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -235,7 +235,7 @@ const RUNTIME_ASSETS = [
   "./auth-zoom-resilience.css?v=3",
   "./auth-typography-unified.css?v=2",
   "./assets/hh-neon-logo-v2.png?v=3",
-  "./auth-platform.js?v=17",
+  "./auth-platform.js?v=18",
   "./auth-experience.js?v=8",
   "./auth-neon-gateway.js?v=29",
   "./auth-h-galaxy.js?v=14",
@@ -464,7 +464,7 @@ const RUNTIME_ASSETS = [
 const CORE = [
   "./",
   "./index.html",
-  "./app-shell.css?v=57",
+  "./app-shell.css?v=58",
   "./app-theme-system.css?v=9",
   "./sidebar-navigation-pro.css?v=29",
   "./auth-experience.css?v=6",
@@ -478,10 +478,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=461",
-  "./auth-platform.js?v=17",
+  "./performance-loader.js?v=462",
+  "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=222"
+  "./script.js?v=223"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

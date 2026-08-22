@@ -6564,7 +6564,6 @@ function initAppShell() {
     return route === "/entertainment" || route.startsWith("/entertainment/") || route === "/character-3d" || route.startsWith("/character-3d/") ? "/home" : route;
   };
   let cosmicLoaderRoute = "";
-  let cosmicLoaderShownAt = 0;
   let cosmicLoaderHideTimer = 0;
   let cosmicLoaderPhaseTimers = [];
   const cosmicLoaderMessages = {
@@ -6653,7 +6652,6 @@ function initAppShell() {
     if (cosmicLoaderEyebrow) cosmicLoaderEyebrow.textContent = meta.eyebrow;
     if (cosmicLoaderTitle) cosmicLoaderTitle.textContent = meta.title;
     if (!continuing) {
-      cosmicLoaderShownAt = performance.now();
       setCosmicLoaderPhase(0, 16, meta.message);
     } else {
       setCosmicLoaderPhase(1, 54, meta.message);
@@ -6674,15 +6672,10 @@ function initAppShell() {
   const finishCosmicRouteLoader = ({ error = false, message = "" } = {}) => {
     if (!cosmicRouteLoader || cosmicRouteLoader.hidden || !cosmicRouteLoader.classList.contains("is-active")) return;
     clearCosmicLoaderTimers();
-    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const minimumVisible = reducedMotion ? 100 : 560;
-    const wait = Math.max(0, minimumVisible - (performance.now() - cosmicLoaderShownAt));
     setCosmicLoaderPhase(2, 100, error ? (message || "Workspace chưa thể khởi tạo.") : "Workspace đã sẵn sàng.");
-    cosmicLoaderHideTimer = setTimeout(() => {
-      cosmicRouteLoader.classList.toggle("is-error", error);
-      if (!error) cosmicRouteLoader.classList.add("is-complete");
-      cosmicLoaderHideTimer = setTimeout(hideCosmicRouteLoaderImmediately, error ? 1100 : 260);
-    }, wait);
+    cosmicRouteLoader.classList.toggle("is-error", error);
+    if (!error) cosmicRouteLoader.classList.add("is-complete");
+    hideCosmicRouteLoaderImmediately();
   };
   window.HHCosmicRouteLoader = Object.freeze({
     start: (route) => showCosmicRouteLoader(route),
@@ -6713,7 +6706,7 @@ function initAppShell() {
     document.documentElement.dataset.hhRouteReady = route;
     window.dispatchEvent(new CustomEvent("hh:route-rendered", { detail: { route } }));
     if (route !== "/home" || document.querySelector('[data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]')) {
-      window.HHSurfaceBoot?.release?.(route === "/home" ? "home" : "app");
+      window.HHSurfaceBoot?.release?.(route === "/home" ? "home" : "app", { route });
     }
   };
   const renderRoute = () => {
@@ -7352,7 +7345,7 @@ function initAppShell() {
     legacyMain.hidden = true;
     renderedRoute = activeRoute;
     document.documentElement.dataset.hhRouteReady = activeRoute;
-    window.HHSurfaceBoot?.release?.("app-error");
+    window.HHSurfaceBoot?.fail?.(error, { route: activeRoute, surface: "app-error", detail: `Mã lỗi: ${issue.id}` });
     document.body.classList.remove("app-route-changing");
     routeProgress?.setAttribute("aria-hidden", "true");
     finishCosmicRouteLoader({ error: true, message: issue.message });
@@ -7361,6 +7354,12 @@ function initAppShell() {
   const routeAssetRetries = new Map();
   const renderRouteLoading = (route) => {
     activeRoute = route;
+    window.HHSurfaceBoot?.hold?.({
+      route,
+      phase: "interface",
+      message: "Đang tải giao diện…",
+      detail: "Chỉ tải engine và dữ liệu cần cho workspace đã chọn"
+    });
     showCosmicRouteLoader(route);
     setCosmicLoaderPhase(1, 42, "Đang tải tài nguyên chuyên dụng cho workspace...");
     updatePageHeader("Đang mở workspace", "HH chỉ tải tài nguyên cần cho màn hình này để trang luôn nhẹ và mượt.", route);

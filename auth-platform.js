@@ -12,39 +12,220 @@
   let credentialedFetchInstalled = false;
   let turnstileLoader = null;
   let bootReleaseAllowed = false;
+  let bootReleaseTimer = 0;
+  let bootSoundEnabled = false;
   const bootSurface = document.querySelector("#hhBootSurface");
   const bootMessage = bootSurface?.querySelector("[data-hh-boot-message]");
+  const bootTitle = bootSurface?.querySelector("[data-hh-boot-title]");
+  const bootDetail = bootSurface?.querySelector("[data-hh-boot-detail]");
+  const bootRouteLabel = bootSurface?.querySelector("[data-hh-boot-route]");
+  const bootRouteSymbol = bootSurface?.querySelector("[data-hh-boot-symbol]");
+  const BOOT_MOTION_KEY = "hh.boot.motion-mode";
+  const BOOT_SOUND_KEY = "hh.boot.sound-enabled";
+  const BOOT_ROUTES = Object.freeze([
+    { prefix: "/chat-ai", visual: "chat", label: "Chat AI", symbol: "AI" },
+    { prefix: "/draw", visual: "draw", label: "Vẽ", symbol: "∿" },
+    { prefix: "/music-ai", visual: "music", label: "Làm nhạc AI", symbol: "♫" },
+    { prefix: "/media-design", visual: "media", label: "Media & Design", symbol: "◈" },
+    { prefix: "/dev-tools", visual: "dev", label: "DEV", symbol: "</>" },
+    { prefix: "/chinese", visual: "chinese", label: "HH Chinese", symbol: "中" },
+    { prefix: "/fortune", visual: "fortune", label: "Xem bói", symbol: "✦" },
+    { prefix: "/discord", visual: "discord", label: "Discord", symbol: "◌" },
+    { prefix: "/home", visual: "home", label: "Trang chủ", symbol: "⌂" }
+  ]);
+  const BOOT_PHASES = Object.freeze({
+    verify: { progress: "16.67%", message: "Đang xác minh phiên an toàn…", detail: "Phiên được kiểm tra riêng tư trên thiết bị" },
+    interface: { progress: "50%", message: "Đang tải giao diện…", detail: "Chỉ tải tài nguyên của workspace hiện tại" },
+    restore: { progress: "50%", message: "Đang khôi phục workspace…", detail: "Đang đồng bộ bố cục và tùy chọn đã lưu" },
+    complete: { progress: "100%", message: "Workspace đã sẵn sàng.", detail: "Hoàn tất · Mở cổng an toàn" },
+    error: { progress: "100%", message: "Không thể mở workspace.", detail: "Bạn có thể thử lại mà không mất dữ liệu" }
+  });
   const currentRoute = () => {
     const value = location.hash.replace(/^#/, "").split("?")[0] || "/home";
     return value.startsWith("/") ? value : `/${value}`;
   };
-  const holdSurfaceBoot = (message = "Đang khôi phục phiên an toàn…") => {
-    document.body.classList.add("hh-surface-pending", "auth-resolving");
-    document.documentElement.dataset.hhSurface = "boot";
-    if (bootMessage) bootMessage.textContent = message;
+  const routeVisual = (route = currentRoute()) => {
+    const value = String(route || "/home").split("?")[0];
+    return BOOT_ROUTES.find((item) => value === item.prefix || value.startsWith(`${item.prefix}/`)) || BOOT_ROUTES.at(-1);
+  };
+  const readBootStorage = (key) => {
+    try { return localStorage.getItem(key); }
+    catch { return null; }
+  };
+  const preferredBootMotion = () => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return "static";
+    const saved = readBootStorage(BOOT_MOTION_KEY);
+    if (["static", "balanced", "cinematic"].includes(saved)) return saved;
+    try {
+      const workspaceSettings = JSON.parse(readBootStorage("hh.settings-studio.v1") || "{}");
+      const workspaceMode = workspaceSettings?.settings?.motion?.level;
+      if (["static", "balanced", "cinematic"].includes(workspaceMode)) return workspaceMode;
+    } catch {}
+    const authMode = document.body?.dataset.authMotionMode || readBootStorage("hh.auth.motion-mode");
+    if (["off", "static"].includes(authMode)) return "static";
+    if (["high", "vivid", "cinematic"].includes(authMode)) return "cinematic";
+    try {
+      const preferences = JSON.parse(readBootStorage("hh.app-theme.preferences.v1") || "{}");
+      if (preferences.reducedMotion || preferences.effects === "off") return "static";
+    } catch {}
+    return "balanced";
+  };
+  const setBootMotion = (mode = "balanced", persist = true) => {
+    const requested = ["static", "balanced", "cinematic"].includes(mode) ? mode : "balanced";
+    const effective = matchMedia("(prefers-reduced-motion: reduce)").matches ? "static" : requested;
+    if (bootSurface) bootSurface.dataset.motionMode = effective;
+    if (persist) {
+      try { localStorage.setItem(BOOT_MOTION_KEY, requested); } catch {}
+    }
+    return effective;
+  };
+  const updateSurfaceBoot = (options = {}) => {
+    const input = typeof options === "string" ? { message: options } : options;
+    const route = input.route || currentRoute();
+    const phaseName = BOOT_PHASES[input.phase] ? input.phase : (bootSurface?.dataset.bootPhase || "verify");
+    const phase = BOOT_PHASES[phaseName];
+    const visual = routeVisual(route);
     if (bootSurface) {
+      bootSurface.dataset.bootRoute = visual.visual;
+      bootSurface.dataset.bootPhase = input.error ? "error" : phaseName;
+      bootSurface.style.setProperty("--boot-progress", phase.progress);
+      bootSurface.setAttribute("aria-label", input.error ? "HH Platform gặp lỗi khi khởi tạo" : `${visual.label} đang khởi tạo`);
+    }
+    if (bootRouteLabel) bootRouteLabel.textContent = visual.label;
+    if (bootRouteSymbol) bootRouteSymbol.textContent = visual.symbol;
+    if (bootTitle) bootTitle.textContent = input.title || `Đang mở ${visual.label === "Trang chủ" ? "HH Platform" : visual.label}`;
+    if (bootMessage) bootMessage.textContent = input.message || phase.message;
+    if (bootDetail) bootDetail.textContent = input.detail || phase.detail;
+    const phaseOrder = { verify: 0, interface: 1, restore: 1, complete: 2 };
+    const activeIndex = phaseOrder[phaseName] ?? 1;
+    bootSurface?.querySelectorAll("[data-hh-boot-step]").forEach((step, index) => {
+      const state = input.error && index === activeIndex ? "error" : index < activeIndex || phaseName === "complete" ? "done" : index === activeIndex ? "active" : "pending";
+      step.dataset.state = state;
+    });
+    return { route: visual.visual, phase: phaseName };
+  };
+  const holdSurfaceBoot = (options = {}) => {
+    const input = typeof options === "string" ? { message: options } : options;
+    clearTimeout(bootReleaseTimer);
+    document.body.classList.add("hh-surface-pending", "auth-resolving");
+    document.body.classList.remove("hh-surface-releasing");
+    document.documentElement.dataset.hhSurface = "boot";
+    if (bootSurface) {
+      bootSurface.classList.remove("is-completing");
       bootSurface.hidden = false;
       bootSurface.inert = false;
       bootSurface.setAttribute("aria-hidden", "false");
     }
+    setBootMotion(input.mode || preferredBootMotion(), false);
+    updateSurfaceBoot({ route: input.route, phase: input.phase || "verify", message: input.message, detail: input.detail, title: input.title });
+    return true;
   };
-  const releaseSurfaceBoot = (surface = "app") => {
+  const playBootCompletionTone = () => {
+    if (!bootSoundEnabled || !navigator.userActivation?.hasBeenActive) return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    try {
+      const context = new AudioContextClass();
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(0.0001, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.035, context.currentTime + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.24);
+      gain.connect(context.destination);
+      [523.25, 783.99].forEach((frequency, index) => {
+        const oscillator = context.createOscillator();
+        oscillator.type = "sine";
+        oscillator.frequency.value = frequency;
+        oscillator.connect(gain);
+        oscillator.start(context.currentTime + index * 0.045);
+        oscillator.stop(context.currentTime + 0.25);
+      });
+      window.setTimeout(() => context.close().catch(() => {}), 320);
+    } catch {}
+  };
+  const releaseSurfaceBoot = (surface = "app", options = {}) => {
     if (!bootReleaseAllowed) return false;
+    const input = typeof options === "string" ? { message: options } : options;
+    const route = input.route || currentRoute();
+    const wasVisible = Boolean(bootSurface && !bootSurface.hidden && document.body.classList.contains("hh-surface-pending"));
+    clearTimeout(bootReleaseTimer);
+    if (input.error) {
+      updateSurfaceBoot({ route, phase: "error", error: true, message: input.message, detail: input.detail });
+    } else {
+      updateSurfaceBoot({ route, phase: "complete", message: input.message || (route === "/home" ? "Trang chủ đã sẵn sàng." : `${routeVisual(route).label} đã sẵn sàng.`) });
+    }
+    const mode = setBootMotion(preferredBootMotion(), false);
     document.body.classList.remove("hh-surface-pending", "auth-resolving");
     document.documentElement.dataset.hhSurface = surface;
     document.documentElement.dataset.hhSurfaceReady = surface;
-    if (bootSurface) {
-      bootSurface.hidden = true;
-      bootSurface.inert = true;
-      bootSurface.setAttribute("aria-hidden", "true");
+    if (!wasVisible) {
+      document.body.classList.remove("hh-surface-releasing");
+      if (bootSurface) {
+        bootSurface.hidden = true;
+        bootSurface.inert = true;
+        bootSurface.classList.remove("is-completing");
+        bootSurface.setAttribute("aria-hidden", "true");
+      }
+      return true;
     }
+    document.body.classList.add("hh-surface-releasing");
+    if (bootSurface) {
+      bootSurface.classList.add("is-completing");
+      bootSurface.inert = true;
+    }
+    playBootCompletionTone();
+    const releaseDuration = mode === "cinematic" ? 320 : mode === "balanced" ? 220 : 1;
+    bootReleaseTimer = window.setTimeout(() => {
+      document.body.classList.remove("hh-surface-releasing");
+      if (bootSurface) {
+        bootSurface.hidden = true;
+        bootSurface.classList.remove("is-completing");
+        bootSurface.setAttribute("aria-hidden", "true");
+      }
+    }, releaseDuration);
     return true;
   };
+  const failSurfaceBoot = (error, options = {}) => {
+    const message = typeof error === "string" ? error : String(error?.message || "Không thể mở workspace.");
+    updateSurfaceBoot({ route: options.route || currentRoute(), phase: "error", error: true, message, detail: options.detail });
+    return releaseSurfaceBoot(options.surface || "app-error", { route: options.route || currentRoute(), message, detail: options.detail, error: true });
+  };
+  const setBootSound = (enabled, persist = true) => {
+    bootSoundEnabled = Boolean(enabled);
+    if (persist) {
+      try { localStorage.setItem(BOOT_SOUND_KEY, bootSoundEnabled ? "1" : "0"); } catch {}
+    }
+    return bootSoundEnabled;
+  };
+  const storedBootSound = readBootStorage(BOOT_SOUND_KEY);
+  if (storedBootSound == null) {
+    try {
+      const workspaceSettings = JSON.parse(readBootStorage("hh.settings-studio.v1") || "{}");
+      bootSoundEnabled = workspaceSettings?.settings?.motion?.portalSound === true;
+    } catch { bootSoundEnabled = false; }
+  } else bootSoundEnabled = storedBootSound === "1";
+  setBootMotion(preferredBootMotion(), false);
   window.HHSurfaceBoot = Object.freeze({
     hold: holdSurfaceBoot,
+    update: updateSurfaceBoot,
     release: releaseSurfaceBoot,
+    fail: failSurfaceBoot,
+    setMode: setBootMotion,
+    setSound: setBootSound,
     pending: () => document.body.classList.contains("hh-surface-pending")
   });
+  window.addEventListener("hh:auth-motion-mode-change", (event) => {
+    const mode = event.detail?.mode === "vivid" ? "cinematic" : event.detail?.mode === "static" ? "static" : "balanced";
+    setBootMotion(mode, false);
+  });
+  const syncBootSettings = (event) => {
+    const settings = event.detail?.settings;
+    if (!settings) return;
+    setBootMotion(settings.accessibility?.reducedMotion ? "static" : settings.motion?.level, false);
+    setBootSound(settings.motion?.portalSound === true, false);
+  };
+  window.addEventListener("hh:workspace-settings-applied", syncBootSettings);
+  window.addEventListener("hh:settings-applied", syncBootSettings);
+  window.addEventListener("hh:settings-preview", syncBootSettings);
   const AUTH_ENDPOINTS = Object.freeze({
     passkeyLoginOptions: "/api/auth/passkey-login-options",
     passkeyLoginVerify: "/api/auth/passkey-login-verify",
@@ -469,8 +650,8 @@
         const route = currentRoute();
         const routeReady = document.documentElement.dataset.hhRouteReady === route;
         const homeReady = route !== "/home" || Boolean(document.querySelector('[data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]'));
-        if (routeReady && homeReady) releaseSurfaceBoot(route === "/home" ? "home" : "app");
-        else holdSurfaceBoot(route === "/home" ? "Đang hoàn thiện Trang chủ…" : "Đang mở workspace của bạn…");
+        if (routeReady && homeReady) releaseSurfaceBoot(route === "/home" ? "home" : "app", { route });
+        else holdSurfaceBoot({ route, phase: "restore", message: route === "/home" ? "Đang hoàn thiện Trang chủ…" : "Đang mở workspace của bạn…" });
         document.body.classList.remove("auth-panel-open", "app-route-changing");
         document.querySelectorAll(".auth-transition-runtime, .hcp-portal-transition").forEach((overlay) => {
           overlay.classList.remove("is-active", "is-playing");
@@ -482,7 +663,7 @@
         window.dispatchEvent(new CustomEvent("hh:auth-change", { detail: { user, token: token(), guest: Boolean(user.guest) } }));
       } else if (sessionResolving) {
         bootReleaseAllowed = false;
-        holdSurfaceBoot("Đang khôi phục phiên an toàn…");
+        holdSurfaceBoot({ route: currentRoute(), phase: "verify", message: "Đang khôi phục phiên an toàn…" });
       } else {
         bootReleaseAllowed = true;
         releaseSurfaceBoot("auth");

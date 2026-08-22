@@ -26,7 +26,7 @@
     },
     motion: {
       level: "balanced", particles: 50, glowIntensity: 55, bloom: 40, speed: 100,
-      autoReduce: true, pauseHidden: true
+      autoReduce: true, pauseHidden: true, portalSound: false
     },
     accessibility: {
       reducedMotion: false, highContrast: false, underlineLinks: false,
@@ -119,7 +119,8 @@
       { path: "motion.bloom", label: "Cường độ bloom", description: "Ánh sáng khuếch tán của hiệu ứng 3D.", type: "range", min: 0, max: 100, step: 5, suffix: "%" },
       { path: "motion.speed", label: "Tốc độ chuyển động", description: "Điều chỉnh animation từ 50% đến 150%.", type: "range", min: 50, max: 150, step: 5, suffix: "%" },
       { path: "motion.autoReduce", label: "Tự giảm trên máy yếu", description: "Dựa trên bộ nhớ, CPU và chế độ tiết kiệm dữ liệu.", type: "switch" },
-      { path: "motion.pauseHidden", label: "Dừng khi tab bị ẩn", description: "Tiết kiệm pin và tài nguyên nền.", type: "switch" }
+      { path: "motion.pauseHidden", label: "Dừng khi tab bị ẩn", description: "Tiết kiệm pin và tài nguyên nền.", type: "switch" },
+      { path: "motion.portalSound", label: "Âm thanh Singularity Gate", description: "Phát một hợp âm ngắn khi cổng tải hoàn tất; mặc định tắt và chỉ chạy sau tương tác.", type: "switch" }
     ],
     accessibility: [
       { path: "accessibility.reducedMotion", label: "Giảm chuyển động", description: "Loại bỏ các chuyển cảnh mạnh và parallax.", type: "switch" },
@@ -217,6 +218,7 @@
     value.motion.speed = clamp(value.motion.speed, 50, 150);
     value.motion.autoReduce = bool(value.motion.autoReduce, true);
     value.motion.pauseHidden = bool(value.motion.pauseHidden, true);
+    value.motion.portalSound = bool(value.motion.portalSound, false);
     ["reducedMotion", "highContrast", "underlineLinks", "focusRing"].forEach((key) => { value.accessibility[key] = bool(value.accessibility[key], DEFAULTS.accessibility[key]); });
     value.accessibility.colorVision = enumValue(value.accessibility.colorVision, OPTIONS.colorVision.map(([id]) => id), DEFAULTS.accessibility.colorVision);
     value.locale.language = enumValue(value.locale.language, ["vi", "en"], "vi");

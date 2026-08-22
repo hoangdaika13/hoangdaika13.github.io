@@ -221,7 +221,7 @@ function workspaceSettingsDefaults() {
     schemaVersion: 2,
     appearance: { theme: "cosmic", accent: "#72e7ff", glow: "#b176ff", font: "modern", textZoom: 100, fontWeight: "regular", radius: "soft", glassOpacity: 72, shadow: "balanced", density: "comfortable" },
     layout: { sidebarCollapsed: false, sidebarAutoHide: false, sidebarWidth: 248, showSidebarLabels: true, advancedMode: false, pinnedRoutes: ["/home", "/chat-ai"], breadcrumb: "standard", searchPosition: "header", fullscreenWorkspace: false },
-    motion: { level: "balanced", particles: 50, glowIntensity: 55, bloom: 40, speed: 100, autoReduce: true, pauseHidden: true },
+    motion: { level: "balanced", particles: 50, glowIntensity: 55, bloom: 40, speed: 100, autoReduce: true, pauseHidden: true, portalSound: false },
     accessibility: { reducedMotion: false, highContrast: false, underlineLinks: false, focusRing: true, colorVision: "default" },
     locale: { language: "vi", timezone: "Asia/Bangkok", dateFormat: "dd/mm/yyyy", timeFormat: "24h", weekStart: "monday", voice: "vi-female" },
     performance: { graphics: "auto", maxFps: 60, pixelRatio: 1.5, dataSaver: false, disableMobileVideo: true },
@@ -268,7 +268,8 @@ function normalizeWorkspaceSettings(input) {
       level: enumValue(motion.level, ["static", "balanced", "cinematic"], defaults.motion.level),
       particles: numberValue(motion.particles, 0, 100, defaults.motion.particles), glowIntensity: numberValue(motion.glowIntensity, 0, 100, defaults.motion.glowIntensity),
       bloom: numberValue(motion.bloom, 0, 100, defaults.motion.bloom), speed: numberValue(motion.speed, 50, 150, defaults.motion.speed),
-      autoReduce: boolValue(motion.autoReduce, defaults.motion.autoReduce), pauseHidden: boolValue(motion.pauseHidden, defaults.motion.pauseHidden)
+      autoReduce: boolValue(motion.autoReduce, defaults.motion.autoReduce), pauseHidden: boolValue(motion.pauseHidden, defaults.motion.pauseHidden),
+      portalSound: boolValue(motion.portalSound, defaults.motion.portalSound)
     },
     accessibility: {
       reducedMotion: boolValue(accessibility.reducedMotion, defaults.accessibility.reducedMotion), highContrast: boolValue(accessibility.highContrast, defaults.accessibility.highContrast),

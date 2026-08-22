@@ -87,3 +87,39 @@ test("refresh stays on an opaque boot surface until auth and the current Home ar
   assert.match(home, /HHSurfaceBoot\?\.release\?\.\("home"\)/);
   assert.match(router, /document\.documentElement\.dataset\.hhRouteReady = route/);
 });
+
+test("HH Singularity Gate exposes real staged, route-aware and accessible loading", () => {
+  const html = read("index.html");
+  const shell = read("app-shell.css");
+  const auth = read("auth-platform.js");
+  const loader = read("performance-loader.js");
+  const router = read("script.js");
+  const bootStart = html.indexOf('id="hhBootSurface"');
+  const bootEnd = html.indexOf('<div class="scroll-meter"', bootStart);
+  const boot = html.slice(bootStart, bootEnd);
+  const particles = boot.match(/<div class="hh-boot-particles"[\s\S]*?<\/div>/)?.[0] || "";
+  const beams = boot.match(/<div class="hh-boot-beams"[\s\S]*?<\/div>/)?.[0] || "";
+
+  assert.equal((particles.match(/<i\b/g) || []).length, 18);
+  assert.equal((beams.match(/<i\b/g) || []).length, 3);
+  assert.equal((boot.match(/data-hh-boot-step=/g) || []).length, 3);
+  assert.doesNotMatch(boot, /<canvas\b|webgl/i);
+  assert.doesNotMatch(boot, />\s*\d+%/);
+
+  for (const visual of ["chat", "draw", "music", "media", "dev", "chinese", "fortune", "discord"]) {
+    assert.match(shell, new RegExp(`data-boot-route="${visual}"`));
+    assert.match(auth, new RegExp(`visual:\\s*"${visual}"`));
+  }
+  for (const api of ["update", "fail", "setMode", "setSound"]) {
+    assert.match(auth, new RegExp(`${api}:`));
+  }
+  assert.match(auth, /navigator\.userActivation\?\.hasBeenActive/);
+  assert.match(auth, /prefers-reduced-motion: reduce/);
+  assert.match(shell, /hhBootPortalOpen/);
+  assert.match(shell, /data-motion-mode="static"/);
+  assert.match(shell, /data-motion-mode="cinematic"/);
+  assert.match(loader, /phase:\s*"interface"[\s\S]*phase:\s*"restore"/);
+  assert.match(router, /HHSurfaceBoot\?\.hold\?\.\(\{/);
+  assert.match(router, /HHSurfaceBoot\?\.fail\?\./);
+  assert.doesNotMatch(router, /minimumVisible/);
+});
