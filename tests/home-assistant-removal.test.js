@@ -38,5 +38,5 @@ test("Home waits only for the critical current surface before rendering", () => 
   assert.doesNotMatch(router, /if \(normalized === "\/home"\) \{\s*hideCosmicRouteLoaderImmediately\(\);\s*return;/);
   assert.match(router, /shellRevealFrame = requestAnimationFrame\(renderRouteWithTransition\)/);
   assert.match(router, /const showCosmicRouteLoader = \(route = routeFromHash\(\)\)/);
-  assert.match(router, /setTimeout\(\(\) => \{\s*hideCosmicRouteLoaderImmediately\(\);[\s\S]*?\}, 8000\)/);
+  assert.match(router, /setTimeout\(\(\) => \{[\s\S]*?hideCosmicRouteLoaderImmediately\("timeout"\);[\s\S]*?\}, 8000\)/);
 });

@@ -5205,6 +5205,8 @@ function initAppShell() {
   const cosmicLoaderEyebrow = byId("appCosmicLoaderEyebrow");
   const cosmicLoaderTitle = byId("appCosmicLoaderTitle");
   const cosmicLoaderStatus = byId("appCosmicLoaderStatus");
+  const cosmicLoaderFrom = byId("appCosmicLoaderFrom");
+  const cosmicLoaderTo = byId("appCosmicLoaderTo");
   const contextBar = byId("appContextBar");
   const contextGroup = byId("appContextGroup");
   const contextLabel = byId("appContextLabel");
@@ -6566,6 +6568,7 @@ function initAppShell() {
   let cosmicLoaderRoute = "";
   let cosmicLoaderHideTimer = 0;
   let cosmicLoaderPhaseTimers = [];
+  let cosmicLoaderRun = 0;
   const cosmicLoaderMessages = {
     home: "Đang đồng bộ Command Center và trạng thái hệ thống...",
     create: "Đang kết nối Universal Project và Creative Core...",
@@ -6603,13 +6606,27 @@ function initAppShell() {
     const moduleItem = moduleById(parts.at(-1));
     const title = routePage?.title || studioItem?.title || moduleItem?.title || group?.label || "HH Platform";
     const icon = routePage?.icon || studioItem?.icon || group?.icon || "H";
+    const kind = ({
+      home: "home", create: "draw", draw: "draw", "music-ai": "music", "davinci-resolve": "media",
+      "media-design": "media", "graphic-design": "media", dev: "dev", work: "data", insights: "data",
+      communication: "network", google: "network", "youtube-main": "media", discord: "discord", remote: "network",
+      "chat-ai": "ai", learn: "learning", english: "learning", japanese: "learning", chinese: "chinese",
+      fortune: "fortune", admin: "data", system: "data", support: "home"
+    })[group?.id] || "home";
+    const secondary = ({ home: "#ffd166", ai: "#ff58c8", draw: "#ff5dc8", music: "#63f2b3", media: "#ff5f9e", dev: "#63f2b3", data: "#ffd166", network: "#5b8cff", discord: "#ff62c7", learning: "#9c72ff", chinese: "#ff6f78", fortune: "#ff58c8" })[kind] || "#ff63c9";
     return {
       accent: group?.accent || "#62e9f2",
+      secondary,
       eyebrow: `${group?.label || "HH Platform"} · COSMIC NAVIGATION`,
       icon: String(icon || "H").replace(/[^\p{L}\p{N}✦♫⌂◇◈⚙♥]/gu, "").slice(0, 2) || "H",
+      kind,
       message: cosmicLoaderMessages[group?.id] || "Đang chuẩn bị giao diện và dữ liệu cần thiết...",
       title
     };
+  };
+  const cosmicMotionMode = () => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || document.body.classList.contains("app-reduce-motion") || document.body.dataset.appEffects === "off") return "static";
+    return document.body.dataset.appEffects === "full" ? "cinematic" : "balanced";
   };
   const clearCosmicLoaderTimers = () => {
     cosmicLoaderPhaseTimers.forEach((timer) => clearTimeout(timer));
@@ -6625,10 +6642,20 @@ function initAppShell() {
       step.classList.toggle("is-active", index === phase);
     });
   };
-  const hideCosmicRouteLoaderImmediately = () => {
+  const hideCosmicRouteLoaderImmediately = (outcome = "cancelled") => {
     if (!cosmicRouteLoader) return;
+    const startedAt = Number(cosmicRouteLoader.dataset.transitionStartedAt || 0);
+    if (startedAt) {
+      cosmicRouteLoader.dataset.lastTransitionDuration = String(Math.max(0, Date.now() - startedAt));
+      cosmicRouteLoader.dataset.lastTransitionKind = cosmicRouteLoader.dataset.transitionKind || "home";
+      cosmicRouteLoader.dataset.lastTransitionOutcome = outcome;
+      delete cosmicRouteLoader.dataset.transitionStartedAt;
+      window.dispatchEvent(new CustomEvent(outcome === "complete" ? "hh:route-transition-complete" : "hh:route-transition-cancel", { detail: { route: cosmicLoaderRoute, kind: cosmicRouteLoader.dataset.lastTransitionKind, outcome } }));
+    }
+    cosmicRouteLoader.dataset.transitionState = "idle";
+    cosmicLoaderRun += 1;
     clearCosmicLoaderTimers();
-    cosmicRouteLoader.classList.remove("is-active", "is-complete", "is-error");
+    cosmicRouteLoader.classList.remove("is-active", "is-departing", "is-arriving", "is-complete", "is-error");
     cosmicRouteLoader.hidden = true;
     cosmicRouteLoader.setAttribute("aria-hidden", "true");
     cosmicLoaderRoute = "";
@@ -6636,34 +6663,48 @@ function initAppShell() {
   const showCosmicRouteLoader = (route = routeFromHash()) => {
     if (!cosmicRouteLoader) return;
     const normalized = String(route || "/home").split("?")[0];
-    if (document.querySelector("[data-cg-wormhole].is-active")) {
-      hideCosmicRouteLoaderImmediately();
+    if (document.body.classList.contains("hh-surface-pending") || document.body.classList.contains("hh-surface-releasing")) {
+      hideCosmicRouteLoaderImmediately("superseded");
       return;
     }
     const continuing = cosmicRouteLoader.classList.contains("is-active") && cosmicLoaderRoute === normalized;
     const meta = describeRouteFeedback(normalized);
+    const run = ++cosmicLoaderRun;
+    const motion = cosmicMotionMode();
+    const previousTitle = pageHeader.querySelector("h1")?.textContent?.trim() || "HH Platform";
     clearCosmicLoaderTimers();
     cosmicLoaderRoute = normalized;
     cosmicRouteLoader.hidden = false;
     cosmicRouteLoader.setAttribute("aria-hidden", "false");
-    cosmicRouteLoader.classList.remove("is-complete", "is-error");
+    cosmicRouteLoader.classList.remove("is-arriving", "is-complete", "is-error");
+    cosmicRouteLoader.classList.add("is-departing");
+    cosmicRouteLoader.dataset.transitionKind = meta.kind;
+    cosmicRouteLoader.dataset.motion = motion;
+    cosmicRouteLoader.dataset.transitionState = "departing";
+    cosmicRouteLoader.dataset.transitionStartedAt = String(Date.now());
     cosmicRouteLoader.style.setProperty("--loader-accent", meta.accent);
+    cosmicRouteLoader.style.setProperty("--loader-secondary", meta.secondary);
+    cosmicRouteLoader.style.setProperty("--transit-duration", motion === "cinematic" ? "520ms" : motion === "balanced" ? "340ms" : "40ms");
     if (cosmicLoaderIcon) cosmicLoaderIcon.textContent = meta.icon;
     if (cosmicLoaderEyebrow) cosmicLoaderEyebrow.textContent = meta.eyebrow;
     if (cosmicLoaderTitle) cosmicLoaderTitle.textContent = meta.title;
+    if (cosmicLoaderFrom) cosmicLoaderFrom.textContent = continuing ? cosmicLoaderFrom.textContent : previousTitle;
+    if (cosmicLoaderTo) cosmicLoaderTo.textContent = meta.title;
+    window.dispatchEvent(new CustomEvent("hh:route-transition-start", { detail: { route: normalized, kind: meta.kind, motion } }));
     if (!continuing) {
       setCosmicLoaderPhase(0, 16, meta.message);
     } else {
       setCosmicLoaderPhase(1, 54, meta.message);
     }
-    requestAnimationFrame(() => cosmicRouteLoader.classList.add("is-active"));
+    requestAnimationFrame(() => {
+      if (run === cosmicLoaderRun) cosmicRouteLoader.classList.add("is-active");
+    });
     cosmicLoaderPhaseTimers.push(
-      setTimeout(() => setCosmicLoaderPhase(1, 46, "Đang nạp giao diện và các engine cần thiết..."), 170),
-      setTimeout(() => setCosmicLoaderPhase(2, 78, "Đang khôi phục dữ liệu và trạng thái làm việc..."), 360),
       // A failed CDN request must never leave a full-screen overlay trapping
       // the user. The route placeholder/error remains available underneath.
       setTimeout(() => {
-        hideCosmicRouteLoaderImmediately();
+        if (run !== cosmicLoaderRun) return;
+        hideCosmicRouteLoaderImmediately("timeout");
         document.body.classList.remove("app-route-changing");
         routeProgress?.setAttribute("aria-hidden", "true");
       }, 8000)
@@ -6671,11 +6712,23 @@ function initAppShell() {
   };
   const finishCosmicRouteLoader = ({ error = false, message = "" } = {}) => {
     if (!cosmicRouteLoader || cosmicRouteLoader.hidden || !cosmicRouteLoader.classList.contains("is-active")) return;
+    if (document.body.classList.contains("hh-surface-pending") || document.body.classList.contains("hh-surface-releasing")) {
+      hideCosmicRouteLoaderImmediately("singularity");
+      return;
+    }
+    const run = cosmicLoaderRun;
+    const motion = cosmicRouteLoader.dataset.motion || "balanced";
     clearCosmicLoaderTimers();
     setCosmicLoaderPhase(2, 100, error ? (message || "Workspace chưa thể khởi tạo.") : "Workspace đã sẵn sàng.");
     cosmicRouteLoader.classList.toggle("is-error", error);
+    cosmicRouteLoader.classList.remove("is-departing");
+    cosmicRouteLoader.classList.add("is-arriving");
+    cosmicRouteLoader.dataset.transitionState = "arriving";
     if (!error) cosmicRouteLoader.classList.add("is-complete");
-    hideCosmicRouteLoaderImmediately();
+    const duration = motion === "cinematic" ? 540 : motion === "balanced" ? 360 : 50;
+    cosmicLoaderHideTimer = window.setTimeout(() => {
+      if (run === cosmicLoaderRun) hideCosmicRouteLoaderImmediately(error ? "error" : "complete");
+    }, duration);
   };
   window.HHCosmicRouteLoader = Object.freeze({
     start: (route) => showCosmicRouteLoader(route),
@@ -7419,6 +7472,10 @@ function initAppShell() {
   const renderRouteWithTransition = () => {
     if (!isUnlocked()) return;
     const nextRoute = routeFromHash();
+    if (renderedRoute && nextRoute === renderedRoute && !pendingAssetRoute) {
+      renderRouteSafely();
+      return;
+    }
     const touchesHomeSurface = nextRoute === "/home" || renderedRoute === "/home";
     const canTransition = Boolean(document.startViewTransition) && Boolean(renderedRoute) && nextRoute !== renderedRoute && !touchesHomeSurface && !matchMedia("(prefers-reduced-motion: reduce)").matches;
     beginRouteFeedback(nextRoute);
@@ -7430,10 +7487,13 @@ function initAppShell() {
     }
     document.documentElement.dataset.routeDirection = nextRoute.split("/").length >= renderedRoute.split("/").length ? "forward" : "back";
     routeTransition = document.startViewTransition(() => renderRouteSafely());
-    Promise.resolve(routeTransition.finished).catch(() => {}).finally(() => {
-      routeTransition = null;
-      delete document.documentElement.dataset.routeDirection;
+    const activeTransition = routeTransition;
+    Promise.resolve(activeTransition.updateCallbackDone || activeTransition.finished).catch(() => {}).finally(() => {
       if (!pendingAssetRoute) endRouteFeedback();
+    });
+    Promise.resolve(activeTransition.finished).catch(() => {}).finally(() => {
+      if (routeTransition === activeTransition) routeTransition = null;
+      delete document.documentElement.dataset.routeDirection;
     });
   };
   const searchItems = () => {
@@ -7584,8 +7644,11 @@ function initAppShell() {
       }
     } else if (route) {
       const nextHash = `#${route}`;
-      beginRouteFeedback(route);
-      if (location.hash === nextHash) renderRouteWithTransition(); else location.hash = nextHash;
+      if (location.hash === nextHash) renderRouteWithTransition();
+      else {
+        beginRouteFeedback(route);
+        location.hash = nextHash;
+      }
       if (mobileSidebarQuery.matches) {
         document.body.classList.add("app-sidebar-collapsed");
         syncMobileSidebarDock();
@@ -7713,8 +7776,11 @@ function initAppShell() {
       if (route) {
         routeButton.closest(".app-sidebar__tool-row")?.classList.add("is-launching");
         const nextHash = `#${route}`;
-        beginRouteFeedback(route);
-        if (location.hash === nextHash) renderRouteWithTransition(); else location.hash = nextHash;
+        if (location.hash === nextHash) renderRouteWithTransition();
+        else {
+          beginRouteFeedback(route);
+          location.hash = nextHash;
+        }
         if (mobileSidebarQuery.matches) {
           document.body.classList.add("app-sidebar-collapsed");
           syncMobileSidebarDock();

@@ -158,19 +158,40 @@ test("every route gets a shared cosmic loading state with progress and fallback"
 
   assert.match(html, /id="appCosmicLoader"/);
   assert.match(html, /data-cosmic-loader-step/);
+  assert.match(html, /app-cosmic-loader__motif/);
+  assert.match(html, /appCosmicLoaderFrom/);
+  assert.match(html, /appCosmicLoaderTo/);
   assert.match(client, /const describeRouteFeedback =/);
   assert.match(client, /window\.HHCosmicRouteLoader/);
   assert.match(client, /hh:assets-loading/);
   assert.match(client, /finishCosmicRouteLoader\(\{ error: true/);
+  assert.match(client, /dataset\.transitionKind = meta\.kind/);
+  assert.match(client, /classList\.add\("is-departing"\)/);
+  assert.match(client, /classList\.add\("is-arriving"\)/);
+  assert.match(client, /activeTransition\.updateCallbackDone/);
+  assert.match(client, /hh:route-transition-start/);
+  assert.match(client, /hh:route-transition-complete/);
+  assert.match(client, /lastTransitionDuration/);
+  assert.match(client, /lastTransitionOutcome/);
+  assert.doesNotMatch(client, /setTimeout\(\(\) => setCosmicLoaderPhase/);
   assert.match(css, /\.app-cosmic-loader\.is-active/);
   assert.match(css, /@keyframes appCosmicTunnel/);
+  assert.match(css, /@keyframes appCosmicReveal/);
+  assert.match(css, /data-transition-kind="draw"/);
+  assert.match(css, /data-transition-kind="music"/);
+  assert.match(css, /data-transition-kind="dev"/);
+  assert.match(css, /data-transition-kind="chinese"/);
+  assert.match(css, /data-transition-kind="fortune"/);
+  assert.match(css, /data-transition-kind="discord"/);
+  assert.match(css, /data-motion="static"/);
+  assert.match(css, /\.app-cosmic-loader\.is-active\s*\{[\s\S]*?pointer-events:none/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?app-cosmic-loader__space/);
 });
 
 test("new dynamic assets are cache-busted and available offline", () => {
   const html = read("index.html");
   const worker = read("sw.js");
-  for (const asset of ["app-shell.css?v=58", "script.js?v=223", "sidebar-navigation-pro.css?v=29", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=5", "english-vocabulary.css?v=1", "english-vocabulary.js?v=2", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=28", "motion-comfort.css?v=1"]) {
+  for (const asset of ["app-shell.css?v=59", "script.js?v=227", "sidebar-navigation-pro.css?v=29", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-galaxy.js?v=2", "english-learning-galaxy.css?v=6", "english-learning-galaxy.js?v=5", "english-vocabulary.css?v=1", "english-vocabulary.js?v=2", "english-for-everyone.css?v=1", "english-for-everyone.js?v=2", "english-learning.js?v=28", "motion-comfort.css?v=1"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(html, pattern);
     assert.match(worker, pattern);
