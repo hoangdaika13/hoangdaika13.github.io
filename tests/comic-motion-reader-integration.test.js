@@ -62,7 +62,7 @@ test("cache loader executes the shared bridge before each consumer", () => {
   const worker = read("sw.js");
   assert.match(loader, /services\/comicLibraryBridge\.js\?v=1["],\s*[" ]*comic-motion-studio\.js\?v=11/);
   assert.match(loader, /services\/comicLibraryBridge\.js\?v=1["],\s*[" ]*comic-reader-hub\.js\?v=20/);
-  assert.match(worker, /hh-identity-portal-v819/);
+  assert.match(worker, /hh-identity-portal-v822/);
   assert.match(worker, /comic-motion-studio\.css\?v=7/);
   assert.match(worker, /comic-reader-hub\.css\?v=14/);
 });

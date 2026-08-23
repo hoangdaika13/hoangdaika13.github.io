@@ -137,7 +137,7 @@ test("Comic Motion Studio is registered in route, sidebar, search, lazy loader a
   assert.match(loader, /SCRIPT_TIMEOUT_MS\s*=\s*20000/);
   assert.match(loader, /assetPromises\.delete\(key\)/);
   assert.match(loader, /retryForRoute/);
-  assert.match(worker, /hh-identity-portal-v819/);
+  assert.match(worker, /hh-identity-portal-v822/);
   assert.match(worker, /pdf\.worker\.min\.mjs/);
   assert.match(worker, /vie\.traineddata\.gz/);
 

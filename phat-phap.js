@@ -91,8 +91,14 @@
   const DEFAULT_STATE = Object.freeze({
     completedLessons: [], bookmarks: [], lessonNotes: {}, practiceHistory: [], chantCount: 0,
     savedTalks: [], savedSources: [], studySchedule: { program: 7, minutes: 15, time: "20:00" },
-    recentScripture: "", routineProgress: {}, printRequests: [], events: []
+    recentScripture: "", routineProgress: {}, printRequests: [], events: [], visual: { aura: "radiant" }
   });
+
+  const AURA_MODES = Object.freeze([
+    { id: "gentle", label: "Dịu", icon: "◐" },
+    { id: "radiant", label: "Tỏa sáng", icon: "☀" },
+    { id: "ceremonial", label: "Đại quang", icon: "✺" }
+  ]);
 
   let root = null;
   let state = null;
@@ -127,7 +133,10 @@
   function readState() {
     try {
       const stored = JSON.parse(localStorage.getItem(storageKey()) || "null");
-      return { ...structuredClone(DEFAULT_STATE), ...(stored && typeof stored === "object" ? stored : {}) };
+      const next = { ...structuredClone(DEFAULT_STATE), ...(stored && typeof stored === "object" ? stored : {}) };
+      next.visual = { ...DEFAULT_STATE.visual, ...(stored?.visual && typeof stored.visual === "object" ? stored.visual : {}) };
+      if (!AURA_MODES.some((mode) => mode.id === next.visual.aura)) next.visual.aura = "radiant";
+      return next;
     } catch {
       return structuredClone(DEFAULT_STATE);
     }
@@ -183,12 +192,15 @@
 
   function shellMarkup() {
     const current = NAV.find((item) => item.id === activeView) || NAV[0];
-    return `<section class="dharma-hub" data-dharma-hub data-view="${activeView}">
+    const aura = AURA_MODES.find((mode) => mode.id === state.visual.aura) || AURA_MODES[1];
+    return `<section class="dharma-hub" data-dharma-hub data-view="${activeView}" data-aura="${aura.id}">
+      <div class="dharma-aura-field" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><b></b>${Array.from({ length: 10 }, (_, index) => `<i style="--aura-particle:${index}"></i>`).join("")}</div>
       <div class="dharma-ornament" aria-hidden="true"><i></i><i></i><i></i><span class="dharma-incense"></span><span class="dharma-lamp"></span></div>
       <header class="dharma-topbar">
         <button class="dharma-brand" type="button" data-dharma-nav="today"><span class="dharma-wheel" aria-hidden="true">☸</span><span><small>TRUNG TÂM TU HỌC</small><strong>Phật Pháp</strong></span></button>
         <nav aria-label="Điều hướng nhanh"><button type="button" data-dharma-nav="today">Hôm nay</button><button type="button" data-dharma-nav="scriptures">Tra cứu</button><button type="button" data-dharma-schedule>Lịch tu học</button></nav>
         <label class="dharma-search"><span>⌕</span><input type="search" data-dharma-search placeholder="Tìm giáo lý, kinh điển…" autocomplete="off"><kbd>Ctrl K</kbd></label>
+        <button class="dharma-aura-control" type="button" data-dharma-aura title="Đổi cường độ hào quang"><i>${aura.icon}</i><span>Hào quang</span><b data-dharma-aura-label>${aura.label}</b></button>
         <button class="dharma-topbar__progress" type="button" data-dharma-toggle-progress aria-expanded="true"><span>Hành trình</span><b data-dharma-progress-percent>0%</b></button>
       </header>
       <div class="dharma-layout">
@@ -216,6 +228,23 @@
       <section class="dharma-privacy-note"><span>⌾</span><p><strong>Dữ liệu thuộc về bạn</strong><small>Tiến độ lưu trên thiết bị. Nhật ký chỉ mở sau khi nhập PIN riêng.</small></p></section>`;
   }
 
+  function cycleAuraMode() {
+    const currentIndex = Math.max(0, AURA_MODES.findIndex((mode) => mode.id === state.visual.aura));
+    const next = AURA_MODES[(currentIndex + 1) % AURA_MODES.length];
+    state.visual = { ...state.visual, aura: next.id };
+    saveState();
+    const hub = root?.querySelector("[data-dharma-hub]");
+    if (hub) hub.dataset.aura = next.id;
+    const control = root?.querySelector("[data-dharma-aura]");
+    if (control) {
+      const icon = control.querySelector("i");
+      if (icon) icon.textContent = next.icon;
+      const label = control.querySelector("[data-dharma-aura-label]");
+      if (label) label.textContent = next.label;
+    }
+    toast(`Hào quang: ${next.label}.`);
+  }
+
   function sourceBadge(sourceId) {
     const source = sourceById(sourceId);
     return `<span class="dharma-source-badge" title="${safe(source.note)}"><i>✓</i>${safe(source.organization)}</span>`;
@@ -230,7 +259,7 @@
       { id: "practice", label: "Ngồi yên và theo dõi hơi thở", minutes: 5 },
       { id: "kindness", label: "Một hành động thiện lành kín đáo", minutes: 2 }
     ];
-    return `<section class="dharma-hero dharma-paper-card"><div><p class="dharma-kicker"><i></i>THỜI KHÓA HÔM NAY · ${safe(new Intl.DateTimeFormat("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" }).format(new Date()))}</p><h2>Mỗi ngày một bước tỉnh thức</h2><p>Học vừa đủ, thực hành thật và ghi nhận bằng sự thành thật. Không chạy theo thành tích hay so sánh với người khác.</p><div class="dharma-hero__meta"><span><b>${state.studySchedule.minutes}</b> phút dự kiến</span><span><b>${Object.values(daily).filter(Boolean).length}/4</b> việc đã làm</span><span><b>${state.studySchedule.time}</b> giờ nhắc</span></div><button class="dharma-primary" type="button" data-open-lesson="${next.id}">Bắt đầu bài hôm nay →</button></div><div class="dharma-lotus-mark" aria-hidden="true"><i></i><i></i><i></i><b>ॐ</b></div></section>
+    return `<section class="dharma-hero dharma-paper-card"><div class="dharma-hero__copy"><p class="dharma-kicker"><i></i>THỜI KHÓA HÔM NAY · ${safe(new Intl.DateTimeFormat("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" }).format(new Date()))}</p><h2>Mỗi ngày một bước tỉnh thức</h2><p>Học vừa đủ, thực hành thật và ghi nhận bằng sự thành thật. Không chạy theo thành tích hay so sánh với người khác.</p><div class="dharma-hero__meta"><span><b>${state.studySchedule.minutes}</b> phút dự kiến</span><span><b>${Object.values(daily).filter(Boolean).length}/4</b> việc đã làm</span><span><b>${state.studySchedule.time}</b> giờ nhắc</span></div><button class="dharma-primary" type="button" data-open-lesson="${next.id}">Bắt đầu bài hôm nay →</button></div><figure class="dharma-buddha-portrait"><span aria-hidden="true"></span><img src="assets/phat-phap/duc-phat-hao-quang-v1.webp" width="1536" height="1024" loading="eager" decoding="async" alt="Tranh minh họa Đức Phật Thích Ca tọa thiền trên tòa sen trong hào quang vàng"><figcaption>Hình minh họa nguyên bản · Không đại diện một pho tượng cụ thể</figcaption></figure></section>
       <div class="dharma-section-title"><div><small>15 PHÚT TĨNH TÂM</small><h2>Thời khóa rõ ràng, không quá tải</h2></div><button type="button" data-dharma-schedule>Chỉnh thời khóa</button></div>
       <section class="dharma-routine">${routine.map((item, index) => `<button type="button" data-routine="${item.id}" class="${daily[item.id] ? "is-done" : ""}"><i>${daily[item.id] ? "✓" : index + 1}</i><span><strong>${safe(item.label)}</strong><small>${item.minutes} phút</small></span><b>${daily[item.id] ? "Đã ghi nhận" : "Bắt đầu"}</b></button>`).join("")}</section>
       <section class="dharma-split"><article class="dharma-paper-card dharma-daily-reading"><header><span>經</span><div><small>TÓM LƯỢC KINH ĐIỂN</small><h3>${SCRIPTURES[0].title}</h3></div>${sourceBadge(SCRIPTURES[0].sourceId)}</header><p>${SCRIPTURES[0].summary}</p><footer><button type="button" data-open-scripture="${SCRIPTURES[0].id}">Đọc trong thư viện</button><a href="${SCRIPTURES[0].sourceUrl}" target="_blank" rel="noopener noreferrer">Mở nguồn gốc ↗</a></footer></article>
@@ -516,6 +545,7 @@
   function handleClick(event) {
     const nav = event.target.closest("[data-dharma-nav]");
     if (nav) return navigate(nav.dataset.dharmaNav);
+    if (event.target.closest("[data-dharma-aura]")) return cycleAuraMode();
     if (event.target.closest("[data-dharma-toggle-progress]")) {
       const hub = root.querySelector("[data-dharma-hub]");
       hub.classList.toggle("is-progress-closed");

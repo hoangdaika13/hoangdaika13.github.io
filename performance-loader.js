@@ -226,8 +226,8 @@
       scripts: ["hh-chinese.js?v=11"]
     },
     dharma: {
-      styles: ["phat-phap.css?v=4"],
-      scripts: ["phat-phap.js?v=2"]
+      styles: ["phat-phap.css?v=7"],
+      scripts: ["phat-phap.js?v=3"]
     },
     fortune: {
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=26"],
