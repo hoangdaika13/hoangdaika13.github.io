@@ -1,7 +1,7 @@
 (function initHHPhatPhap(global) {
   "use strict";
 
-  const VERSION = "5.0.0";
+  const VERSION = "6.0.0";
   const STATE_PREFIX = "hh.phat-phap.study.v1";
   const JOURNAL_PREFIX = "hh.phat-phap.journal.v1";
   const JOURNAL_ITERATIONS = 180000;
@@ -38,9 +38,44 @@
       title: "84000 · Translating the Words of the Buddha",
       organization: "84000",
       url: "https://84000.co/reading-room",
-      licenseUrl: "https://84000.co/about/terms-of-use",
-      note: "Thư viện dịch thuật Kanjur và Tengyur. Chỉ liên kết tới phòng đọc; quyền sử dụng phải được kiểm tra trên từng ấn phẩm.",
+      licenseUrl: "https://www.84000.co/documents/terms-of-use",
+      note: "Thư viện dịch thuật Kanjur và Tengyur. Bản dịch, metadata/glossary và API có điều kiện khác nhau; API đối tác cần thỏa thuận bằng văn bản.",
       status: "Thư viện dịch thuật"
+    },
+    {
+      id: "bdrc",
+      title: "Buddhist Digital Resource Center",
+      organization: "BDRC · BUDA",
+      url: "https://library.bdrc.io/",
+      licenseUrl: "https://www.bdrc.io/access-policies/",
+      note: "Thư viện số đa ngôn ngữ với hồ sơ Work–Version, e-text và ảnh scan. Quyền truy cập thay đổi theo từng tài liệu và hạn chế văn hóa.",
+      status: "Kho lưu trữ nghiên cứu"
+    },
+    {
+      id: "cbeta",
+      title: "CBETA Online Reader",
+      organization: "CBETA",
+      url: "https://cbetaonline.cn/en/",
+      licenseUrl: "https://www.cbeta.org/copyright.php",
+      note: "Đại Tạng Hán văn số hóa, tìm toàn văn và metadata. HH chỉ liên kết, lưu mã tham chiếu và dữ liệu được phép sử dụng.",
+      status: "Phật điển Hán văn"
+    },
+    {
+      id: "plum-village",
+      title: "Plum Village App",
+      organization: "Plum Village",
+      url: "https://plumvillage.app/",
+      note: "Nguồn thực hành, thiền hướng dẫn và thư giãn sâu của cộng đồng Làng Mai. Âm thanh chỉ mở tại nguồn nếu chưa có quyền phân phối riêng.",
+      status: "Nguồn thực hành"
+    },
+    {
+      id: "dharma-seed",
+      title: "Dharma Seed",
+      organization: "Dharma Seed",
+      url: "https://dharmaseed.org/",
+      licenseUrl: "https://dharmaseed.org/about/faq/",
+      note: "Kho pháp thoại và thiền Vipassanā theo giảng sư, trung tâm và khóa tu. Nội dung công bố theo điều kiện ghi công, phi thương mại và không phái sinh.",
+      status: "Kho pháp thoại"
     }
   ]);
 
@@ -178,8 +213,8 @@
   ]);
 
   const TEMPLE_DIRECTORY = Object.freeze([
-    { id: "ghpgvn-directory", province: "Toàn quốc", tradition: "Nhiều truyền thống", access: "Tra cứu tại nguồn", title: "Danh bạ Giáo hội Phật giáo Việt Nam", organization: "GHPGVN", url: "https://ghpgvn.vn/", verified: true, verifiedAt: "2026-08-23", note: "Dùng cổng chính thức để tìm Ban Trị sự và thông tin địa phương. HH không lưu số điện thoại hay tài khoản cúng dường." },
-    { id: "phatsu-events", province: "Toàn quốc", tradition: "Phật giáo Việt Nam", access: "Livestream và tin tức", title: "Lịch Phật sự công khai", organization: "Phật Sự Online", url: "https://www.phatsuonline.vn/", verified: true, verifiedAt: "2026-08-23", note: "Theo dõi thông báo, chương trình và truyền hình trực tiếp tại trang của đơn vị cung cấp." }
+    { id: "ghpgvn-directory", province: "Toàn quốc", tradition: "Nhiều truyền thống", access: "Tra cứu tại nguồn", programs: ["retreat", "ceremony", "beginner", "family", "youth"], audience: "Người mới · Gia đình · Thanh thiếu niên", title: "Danh bạ Giáo hội Phật giáo Việt Nam", organization: "GHPGVN", url: "https://ghpgvn.vn/", verified: true, verifiedAt: "2026-08-23", note: "Dùng cổng chính thức để tìm Ban Trị sự và thông tin địa phương. HH không lưu số điện thoại hay tài khoản cúng dường." },
+    { id: "phatsu-events", province: "Toàn quốc", tradition: "Phật giáo Việt Nam", access: "Livestream và tin tức", programs: ["ceremony", "livestream", "retreat"], audience: "Công chúng · Người tham dự trực tuyến", title: "Lịch Phật sự công khai", organization: "Phật Sự Online", url: "https://www.phatsuonline.vn/", verified: true, verifiedAt: "2026-08-23", note: "Theo dõi thông báo, chương trình và truyền hình trực tiếp tại trang của đơn vị cung cấp." }
   ]);
 
   const SOURCE_HISTORY = Object.freeze([
@@ -366,33 +401,50 @@
     }
   ]);
 
+  const DHARMA_EDITORIAL_COLLECTIONS = Object.freeze([
+    { id: "intro", label: "Nhập môn", icon: "初", target: 12, published: 4, planned: ["Cuộc đời Đức Phật qua lịch sử và truyền thống", "Bốn hội chúng trong Phật giáo", "Cách đọc một bài kinh lần đầu", "Niềm tin có hiểu biết", "Tự do đặt câu hỏi khi học đạo", "Cách nhận diện thông tin Phật học đáng tin", "Phật giáo là tôn giáo, triết học hay con đường sống?", "Xây nền tu học không cực đoan"] },
+    { id: "foundation", label: "Giáo lý nền tảng", icon: "法", target: 24, published: 4, planned: ["Trung đạo", "Ba dấu ấn", "Mười hai nhân duyên", "Sáu căn, sáu trần và sáu thức", "Bảy giác chi", "Năm triền cái", "Năm căn và năm lực", "Tứ niệm xứ", "Tứ chánh cần", "Tứ như ý túc", "Ba mươi bảy phẩm trợ đạo", "Tham, sân và si", "Hỷ, lạc và xả", "Tâm và các trạng thái tâm", "Chấp thủ và cách nhận diện", "Niết-bàn trong các lớp diễn giải", "Từ bi và trí tuệ", "Bố thí, trì giới và thiền", "Ba-la-mật trong các truyền thống", "Khái niệm Phật tính trong Đại thừa"] },
+    { id: "ethics", label: "Đạo đức và đời sống", icon: "戒", target: 12, published: 4, planned: ["Đạo đức khi sử dụng mạng xã hội", "Tiêu dùng và môi trường", "Chăm sóc người bệnh và người cao tuổi", "Nuôi dạy con không dùng sợ hãi", "Tình bạn và thiện hữu", "Giải quyết mâu thuẫn", "Trách nhiệm với cộng đồng", "Đối diện thành công và thất bại"] },
+    { id: "practice", label: "Thiền và thực hành", icon: "禪", target: 16, published: 4, planned: ["Bắt đầu thiền trong ba phút", "Thiền nằm và thư giãn sâu", "Ăn trong chánh niệm", "Lắng nghe sâu", "Thực tập im lặng", "Quán niệm về vô thường", "Quán niệm về lòng biết ơn", "Thực hành khi đang làm việc", "Chuông chánh niệm", "Chuẩn bị cho một ngày tu học", "Hồi hướng và ý nghĩa thực hành", "Khi nào cần dừng thiền"] },
+    { id: "canon", label: "Kinh điển và lịch sử truyền thừa", icon: "經", target: 16, published: 4, planned: ["Lịch sử kết tập kinh điển", "Pāli Canon và các truyền bản", "Hán tạng và hệ thống mã T", "Tạng tạng và hệ thống Toh", "Văn bản Sanskrit Phật giáo", "Luật tạng giữa các bộ phái", "A-tì-đàm và các hệ thống luận", "Lịch sử dịch kinh sang Hán văn", "Lịch sử dịch kinh sang tiếng Việt", "Cách dùng chú giải", "Phương pháp đối chiếu bản song song", "Đạo đức khi trích dẫn kinh điển"] },
+    { id: "vietnam", label: "Phật giáo Việt Nam", icon: "越", target: 12, published: 0, planned: ["Phật giáo Việt Nam qua các thời kỳ", "Thiền phái Tỳ-ni-đa-lưu-chi", "Thiền phái Vô Ngôn Thông", "Thiền phái Trúc Lâm", "Tịnh độ trong đời sống Việt Nam", "Khất sĩ Việt Nam", "Nam tông Kinh tại Việt Nam", "Nam tông Khmer", "Gia đình Phật tử", "Nghi lễ và văn hóa vùng miền", "Giáo hội Phật giáo Việt Nam", "Phật giáo Việt Nam trong đời sống hiện đại"] },
+    { id: "temple", label: "Nghi lễ và đi chùa", icon: "寺", target: 8, published: 4, planned: ["Bài trí không gian thờ Phật tại gia", "Nghi thức thọ trai và ăn chay", "Lễ Hằng thuận và ý nghĩa", "Tang lễ Phật giáo và sự nâng đỡ người sống"] },
+    { id: "reference", label: "Thuật ngữ, hiểu lầm và hỏi đáp", icon: "問", target: 8, published: 4, planned: ["Từ điển các danh xưng Phật giáo", "Cách phiên âm Pāli và Sanskrit", "Hán–Việt Phật học cho người mới", "Một trăm câu hỏi thường gặp"] }
+  ]);
+
   const TALKS = Object.freeze([
-    { id: "phatsu-live", title: "Truyền hình trực tiếp Phật sự", provider: "Phật Sự Online", type: "Trực tiếp", url: "https://www.phatsuonline.vn/tin/truyen-hinh-truc-tiep", note: "Mở lịch phát và chương trình trực tiếp tại nguồn chính thức." },
-    { id: "phatsu-youtube", title: "Phật Sự Online TV", provider: "Phật Sự Online", type: "Video", url: "https://www.youtube.com/PhatsuonlineTV", note: "Kênh YouTube của Phật Sự Online; nội dung và quyền phát thuộc đơn vị cung cấp." },
-    { id: "ghpgvn-news", title: "Tin và hoạt động Giáo hội", provider: "GHPGVN", type: "Thông tin", url: "https://ghpgvn.vn/", note: "Tra cứu thông báo và hoạt động từ cổng Giáo hội Phật giáo Việt Nam." },
-    { id: "suttacentral-guide", title: "Tra cứu kinh điển đa ngôn ngữ", provider: "SuttaCentral", type: "Thư viện", url: "https://suttacentral.net/", note: "Đọc metadata, nguyên bản và các bản dịch với giấy phép hiển thị trên từng trang." }
+    { id: "phatsu-live", title: "Truyền hình trực tiếp Phật sự", provider: "Phật Sự Online", sourceId: "phatsuonline", teacher: "Theo chương trình", center: "Phật Sự Online", retreat: "Phật sự Việt Nam", date: "", duration: 0, language: "Tiếng Việt", subtitles: "Theo từng chương trình", tradition: "Phật giáo Việt Nam", topic: "Tin tức và đại lễ", type: "Trực tiếp", rights: "Mở tại nguồn · không sao chép", audioAvailable: false, url: "https://www.phatsuonline.vn/tin/truyen-hinh-truc-tiep", note: "Mở lịch phát và chương trình trực tiếp tại nguồn chính thức." },
+    { id: "phatsu-youtube", title: "Phật Sự Online TV", provider: "Phật Sự Online", sourceId: "phatsuonline", teacher: "Nhiều giảng sư", center: "Phật Sự Online", retreat: "Kênh công khai", date: "", duration: 0, language: "Tiếng Việt", subtitles: "Theo từng video", tradition: "Phật giáo Việt Nam", topic: "Pháp thoại và Phật sự", type: "Video", rights: "Quyền thuộc đơn vị đăng", audioAvailable: false, url: "https://www.youtube.com/PhatsuonlineTV", note: "Kênh công khai; người nghe kiểm tra người giảng và đơn vị đăng trên từng video." },
+    { id: "ghpgvn-hoang-phap", title: "Thông tin hoằng pháp và khóa tu", provider: "GHPGVN", sourceId: "ghpgvn", teacher: "Theo thông báo chính thức", center: "Giáo hội Phật giáo Việt Nam", retreat: "Khóa tu và hoạt động", date: "", duration: 0, language: "Tiếng Việt", subtitles: "Không áp dụng", tradition: "Phật giáo Việt Nam", topic: "Hoằng pháp", type: "Thông tin", rights: "Liên kết chính thức", audioAvailable: false, url: "https://ghpgvn.vn/", note: "Tra cứu thông báo và hoạt động từ cổng Giáo hội Phật giáo Việt Nam." },
+    { id: "suttacentral-guide", title: "Hướng dẫn đọc kinh điển đa ngôn ngữ", provider: "SuttaCentral", sourceId: "suttacentral", teacher: "SuttaCentral Editorial", center: "SuttaCentral", retreat: "Tự học kinh điển", date: "", duration: 0, language: "Nhiều ngôn ngữ", subtitles: "Không áp dụng", tradition: "Phật giáo sơ kỳ", topic: "Kinh điển", type: "Thư viện", rights: "Theo từng tài liệu", audioAvailable: false, url: "https://suttacentral.net/introduction", note: "Đọc metadata, nguyên bản, bản dịch và quan hệ song song tại nguồn." },
+    { id: "plum-start", title: "Start Here · thực hành cho người mới", provider: "Plum Village App", sourceId: "plum-village", teacher: "Cộng đồng Làng Mai", center: "Plum Village", retreat: "Online Monastery", date: "", duration: 0, language: "Nhiều ngôn ngữ", subtitles: "Theo nội dung", tradition: "Làng Mai", topic: "Thiền hướng dẫn", type: "Thiền", rights: "Mở tại ứng dụng nguồn", audioAvailable: true, url: "https://plumvillage.app/", note: "Thiền hướng dẫn và thư giãn sâu; HH chưa lưu hoặc phát lại tệp âm thanh." },
+    { id: "dharma-seed-catalog", title: "Kho pháp thoại theo giảng sư và khóa tu", provider: "Dharma Seed", sourceId: "dharma-seed", teacher: "Giảng sư đã được nguồn lập hồ sơ", center: "Nhiều trung tâm", retreat: "Nhiều khóa tu", date: "", duration: 0, language: "English · Español · ไทย", subtitles: "Theo từng bài", tradition: "Vipassanā", topic: "Pháp thoại và thiền", type: "Podcast", rights: "CC BY-NC-ND theo nguồn", audioAvailable: true, url: "https://dharmaseed.org/talks/", note: "Tìm theo giảng sư, trung tâm, khóa tu, ngày và thời lượng tại nguồn." },
+    { id: "84000-audio", title: "Selected Audio Books", provider: "84000", sourceId: "84000", teacher: "84000 narrators", center: "84000", retreat: "Reading Room", date: "", duration: 0, language: "English", subtitles: "Bản dịch tại nguồn", tradition: "Phật giáo Tây Tạng", topic: "Kanjur và Tengyur", type: "Audiobook", rights: "Theo điều khoản 84000", audioAvailable: true, url: "https://www.84000.co/reading-room", note: "Audiobook và bản dịch mở tại Reading Room; không sao chép hoặc biến đổi trong HH." },
+    { id: "cbeta-reader", title: "CBETA Online Reader", provider: "CBETA", sourceId: "cbeta", teacher: "CBETA Editorial", center: "CBETA", retreat: "Nghiên cứu Hán tạng", date: "", duration: 0, language: "Hán văn", subtitles: "Không áp dụng", tradition: "Phật giáo Đông Á", topic: "Đại Tạng Hán văn", type: "Thư viện", rights: "Theo tuyên bố bản quyền CBETA", audioAvailable: false, url: "https://cbetaonline.cn/en/", note: "Tìm toàn văn, mã T/X và lịch sử đọc tại nguồn." }
   ]);
 
   const NAV = Object.freeze([
-    { id: "today", label: "Hôm nay", icon: "灯", group: "Bắt đầu" },
-    { id: "beginner", label: "Lộ trình tu học", icon: "路", group: "Bắt đầu" },
-    { id: "situations", label: "Pháp học đời sống", icon: "心", group: "Bắt đầu" },
-    { id: "encyclopedia", label: "Phật Pháp Toàn Thư", icon: "藏", group: "Học Pháp" },
-    { id: "teachings", label: "Giáo lý", icon: "法", group: "Học Pháp" },
-    { id: "scriptures", label: "Scripture Study Lab", icon: "經", group: "Học Pháp" },
-    { id: "glossary", label: "Từ điển Phật học", icon: "字", group: "Học Pháp" },
-    { id: "map", label: "Bản đồ giáo pháp", icon: "圖", group: "Học Pháp" },
-    { id: "provenance", label: "Kiểm chứng nguồn", icon: "證", group: "Học Pháp" },
-    { id: "qna", label: "Hỏi đáp có nguồn", icon: "問", group: "Học Pháp" },
-    { id: "review", label: "Ôn giáo lý", icon: "習", group: "Học Pháp" },
+    { id: "today", label: "Học hôm nay", icon: "灯", group: "Hôm nay" },
+    { id: "beginner", label: "Lộ trình tu học", icon: "路", group: "Hôm nay" },
+    { id: "situations", label: "Pháp học đời sống", icon: "心", group: "Hôm nay" },
+    { id: "encyclopedia", label: "Đọc Toàn Thư", icon: "藏", group: "Phật Pháp Toàn Thư" },
+    { id: "teachings", label: "Giáo lý theo chủ đề", icon: "法", group: "Phật Pháp Toàn Thư" },
+    { id: "glossary", label: "Từ điển Phật học", icon: "字", group: "Phật Pháp Toàn Thư" },
+    { id: "map", label: "Bản đồ giáo pháp", icon: "圖", group: "Phật Pháp Toàn Thư" },
+    { id: "scriptures", label: "Canonical Reader", icon: "經", group: "Kinh điển" },
+    { id: "research", label: "Tìm kiếm học thuật", icon: "索", group: "Kinh điển" },
+    { id: "scholar", label: "Scholar & OCR Lab", icon: "學", group: "Kinh điển" },
+    { id: "provenance", label: "Editorial & Trust Center", icon: "證", group: "Kinh điển" },
+    { id: "review", label: "Ôn giáo lý", icon: "習", group: "Kinh điển" },
     { id: "practice", label: "Thiền đường số", icon: "禪", group: "Thực hành" },
     { id: "chanting", label: "Phòng tụng niệm", icon: "誦", group: "Thực hành" },
     { id: "audio", label: "Thư viện nghe", icon: "聽", group: "Thực hành" },
-    { id: "schedule", label: "Lịch tu học", icon: "曆", group: "Thực hành" },
-    { id: "temple", label: "Chùa online", icon: "寺", group: "Kết nối" },
-    { id: "talks", label: "Pháp thoại", icon: "聽", group: "Kết nối" },
-    { id: "request", label: "Thỉnh kinh", icon: "請", group: "Kết nối" },
-    { id: "circles", label: "Nhóm đọc riêng tư", icon: "眾", group: "Kết nối" },
+    { id: "talks", label: "Pháp thoại Observatory", icon: "聽", group: "Pháp thoại" },
+    { id: "qna", label: "HH Phật học có nguồn", icon: "問", group: "Pháp thoại" },
+    { id: "temple", label: "Trung tâm Phật sự Việt Nam", icon: "寺", group: "Chùa & Lịch" },
+    { id: "schedule", label: "Lịch tu học", icon: "曆", group: "Chùa & Lịch" },
+    { id: "request", label: "Thỉnh kinh", icon: "請", group: "Chùa & Lịch" },
+    { id: "circles", label: "Nhóm đọc riêng tư", icon: "眾", group: "Cộng đồng" },
     { id: "journal", label: "Nhật ký mã hóa", icon: "記", group: "Cá nhân" },
     { id: "accessibility", label: "Trợ năng", icon: "輔", group: "Cá nhân" },
     { id: "data-control", label: "Tủ dữ liệu", icon: "庫", group: "Cá nhân" }
@@ -403,10 +455,12 @@
     savedTalks: [], savedSources: [], studySchedule: { program: 7, minutes: 15, time: "20:00" },
     recentScripture: "", routineProgress: {}, printRequests: [], events: [],
     learningTier: "intro", lifePathProgress: {}, scriptureNotes: {}, scriptureSegmentNotes: {}, scriptureHighlights: [], scriptureHighlightColors: {}, readingPosition: {}, offlinePacks: [], readingPath: [], readingProgram: 21, sourceReports: [], metadataDrafts: [],
-    meditation: { type: "breath", bellInterval: 0, silent: false, locked: false, presets: [], courseDays: [], checkIn: "steady" }, chant: { selected: "refuge", pace: "normal", repeat: false, showTransliteration: true, showMeaning: true, fontSize: 18, lineHeight: 1.7, sleepMinutes: 0 },
+    meditation: { type: "breath", bellInterval: 0, silent: false, locked: false, presets: [], courseDays: [], checkIn: "steady", playlist: "custom" }, chant: { selected: "refuge", pace: "normal", repeat: false, showTransliteration: true, showMeaning: true, fontSize: 18, lineHeight: 1.7, sleepMinutes: 0 },
     calendar: { view: "week", template: "balanced", paused: false, missedSessions: 0 }, circles: [], circlePrivateNotes: {}, glossaryDeck: [],
     reviewSchedule: {}, reviewHistory: [], audio: { queue: [], rate: .88 }, exportHistory: [],
     encyclopediaPosition: { volume: "nhap-mon", chapter: "duc-phat-lich-su" }, encyclopediaBookmarks: [], encyclopediaCompleted: [], encyclopediaNotes: {}, encyclopediaReader: { mode: "paper", outline: true },
+    canonical: { layout: "columns", language: "source-summary", showSegmentIds: true }, researchHistory: [],
+    talkQueue: [], talkNotes: {}, talkBookmarks: {}, talkSpeed: 1, editorialReviews: [], sourceHealth: {}, editorialSnapshots: [], facsimileNotes: {},
     accessibility: { contrast: "normal", senior: false, readerSize: 20, audioDescriptions: false },
     visual: { aura: "radiant" }
   });
@@ -437,11 +491,30 @@
   let scriptureSavedOnly = false;
   let scriptureShelf = "all";
   let activeScriptureTab = "study";
+  let researchQuery = "";
+  let researchType = "all";
+  let researchTradition = "all";
+  let researchLanguage = "all";
+  let researchStatus = "all";
+  let talkQuery = "";
+  let talkProvider = "all";
+  let talkType = "all";
+  let talkLanguage = "all";
+  let selectedTalk = "";
+  let qnaLevel = "beginner";
+  let qnaTask = "explain";
+  let facsimileUrl = "";
+  let facsimileFile = null;
+  let facsimileName = "";
+  let facsimileText = "";
+  let facsimileBusy = false;
+  let facsimileSettings = { brightness: 100, contrast: 100, invert: 0, rotation: 0 };
   let selectedGlossary = "dhamma";
   let selectedMapNode = "four-truths";
   let templeProvince = "all";
   let templeTradition = "all";
   let templeAccess = "all";
+  let templeProgram = "all";
   let activeCircle = "";
   let glossaryReviewIndex = 0;
   let glossaryReveal = false;
@@ -453,7 +526,7 @@
   let chantSelectedLine = -1;
   let currentUser = {};
   let canEditSources = false;
-  let openNavGroup = "Bắt đầu";
+  let openNavGroup = "Hôm nay";
   let inspectorMode = "progress";
   let inspectorItem = "";
   let timerId = 0;
@@ -494,9 +567,10 @@
       next.audio = { ...DEFAULT_STATE.audio, ...(stored?.audio && typeof stored.audio === "object" ? stored.audio : {}) };
       next.calendar = { ...DEFAULT_STATE.calendar, ...(stored?.calendar && typeof stored.calendar === "object" ? stored.calendar : {}) };
       next.accessibility = { ...DEFAULT_STATE.accessibility, ...(stored?.accessibility && typeof stored.accessibility === "object" ? stored.accessibility : {}) };
-      for (const key of ["completedLessons", "bookmarks", "practiceHistory", "offlinePacks", "readingPath", "scriptureHighlights", "sourceReports", "metadataDrafts", "circles", "glossaryDeck", "reviewHistory", "exportHistory", "encyclopediaBookmarks", "encyclopediaCompleted"]) if (!Array.isArray(next[key])) next[key] = [];
+      next.canonical = { ...DEFAULT_STATE.canonical, ...(stored?.canonical && typeof stored.canonical === "object" ? stored.canonical : {}) };
+      for (const key of ["completedLessons", "bookmarks", "practiceHistory", "offlinePacks", "readingPath", "scriptureHighlights", "sourceReports", "metadataDrafts", "circles", "glossaryDeck", "reviewHistory", "exportHistory", "encyclopediaBookmarks", "encyclopediaCompleted", "researchHistory", "talkQueue", "editorialReviews", "editorialSnapshots"]) if (!Array.isArray(next[key])) next[key] = [];
       if (!Array.isArray(next.audio.queue)) next.audio.queue = [];
-      for (const key of ["lessonNotes", "scriptureNotes", "scriptureSegmentNotes", "scriptureHighlightColors", "readingPosition", "lifePathProgress", "routineProgress", "circlePrivateNotes", "reviewSchedule", "encyclopediaNotes"]) if (!next[key] || typeof next[key] !== "object" || Array.isArray(next[key])) next[key] = {};
+      for (const key of ["lessonNotes", "scriptureNotes", "scriptureSegmentNotes", "scriptureHighlightColors", "readingPosition", "lifePathProgress", "routineProgress", "circlePrivateNotes", "reviewSchedule", "encyclopediaNotes", "talkNotes", "talkBookmarks", "sourceHealth", "facsimileNotes"]) if (!next[key] || typeof next[key] !== "object" || Array.isArray(next[key])) next[key] = {};
       next.encyclopediaPosition = { ...DEFAULT_STATE.encyclopediaPosition, ...(stored?.encyclopediaPosition && typeof stored.encyclopediaPosition === "object" ? stored.encyclopediaPosition : {}) };
       next.encyclopediaReader = { ...DEFAULT_STATE.encyclopediaReader, ...(stored?.encyclopediaReader && typeof stored.encyclopediaReader === "object" ? stored.encyclopediaReader : {}) };
       if (!Array.isArray(next.meditation.presets)) next.meditation.presets = [];
@@ -506,6 +580,9 @@
       next.audio.rate = Math.max(.65, Math.min(1.1, Number(next.audio.rate) || .88));
       if (!AURA_MODES.some((mode) => mode.id === next.visual.aura)) next.visual.aura = "radiant";
       if (!["intro", "practice", "deep"].includes(next.learningTier)) next.learningTier = "intro";
+      if (!["columns", "stacked", "summary"].includes(next.canonical.layout)) next.canonical.layout = "columns";
+      next.talkSpeed = Math.max(.75, Math.min(2, Number(next.talkSpeed) || 1));
+      next.talkQueue = unique(next.talkQueue.filter((id) => TALKS.some((talk) => talk.id === id))).slice(-50);
       return next;
     } catch {
       return structuredClone(DEFAULT_STATE);
@@ -585,7 +662,7 @@
         <aside class="dharma-progress" data-dharma-progress-panel aria-hidden="true"><header><span><small data-inspector-kicker>THÔNG TIN THEO NGỮ CẢNH</small><strong data-inspector-title>Hành trình tu học</strong></span><button type="button" data-dharma-toggle-progress aria-label="Đóng bảng thông tin">×</button></header><div data-dharma-progress-content></div></aside>
       </div>
       <footer class="dharma-actionbar"><ol aria-label="Luồng học"><li class="is-active"><i>1</i>Nghe</li><li><i>2</i>Đọc</li><li><i>3</i>Suy ngẫm</li><li><i>4</i>Thực hành</li><li><i>5</i>Ghi nhận</li></ol><nav aria-label="Thao tác nhanh"><button type="button" data-action-note title="Mở ghi chú">記 <span>Ghi chú</span></button><button type="button" data-action-mark title="Đánh dấu tài liệu đang đọc">☆ <span>Đánh dấu</span></button><button type="button" data-action-static title="Chuyển về chế độ tĩnh">◐ <span>Tĩnh tâm</span></button></nav><button type="button" data-dharma-primary>${activeView === "practice" ? "Bắt đầu thực hành" : "Tiếp tục hành trình"} →</button></footer>
-      <nav class="dharma-mobile-nav" aria-label="Điều hướng Phật Pháp trên điện thoại"><button data-dharma-nav="today"><i>灯</i>Hôm nay</button><button data-dharma-nav="encyclopedia"><i>藏</i>Toàn thư</button><button data-dharma-nav="practice"><i>禪</i>Thiền</button><button data-dharma-nav="temple"><i>寺</i>Chùa</button><button data-dharma-mobile-menu><i>☰</i>Thêm</button></nav>
+      <nav class="dharma-mobile-nav" aria-label="Điều hướng Phật Pháp trên điện thoại"><button data-dharma-nav="today"><i>灯</i>Hôm nay</button><button data-dharma-nav="encyclopedia"><i>藏</i>Đọc</button><button data-dharma-nav="practice"><i>禪</i>Thiền</button><button data-dharma-nav="talks"><i>聽</i>Nghe</button><button data-dharma-mobile-menu><i>☰</i>Thêm</button></nav>
       <div class="dharma-mobile-sheet" data-dharma-mobile-sheet hidden><button type="button" data-dharma-mobile-menu aria-label="Đóng"></button><div><i></i><header><strong>Toàn bộ chức năng</strong><button type="button" data-dharma-mobile-menu>×</button></header>${navMarkup()}</div></div>
     </section>`;
   }
@@ -663,6 +740,98 @@
     return DHARMA_ENCYCLOPEDIA.flatMap((volume) => volume.chapters.map((chapter) => ({ ...chapter, volumeId: volume.id, volumeTitle: volume.title, volumeIcon: volume.icon })));
   }
 
+  function editorialCatalogStats() {
+    return DHARMA_EDITORIAL_COLLECTIONS.reduce((stats, collection) => ({ target: stats.target + collection.target, published: stats.published + collection.published, planned: stats.planned + collection.planned.length }), { target: 0, published: 0, planned: 0 });
+  }
+
+  function canonicalWorkRecord(item) {
+    const source = sourceById(item.sourceId);
+    const segments = SCRIPTURE_SEGMENTS[item.id] || [];
+    return {
+      workId: `work:${item.id}`,
+      title: item.canonicalTitle,
+      displayTitle: item.title,
+      classification: `${item.collection} · ${item.tradition}`,
+      versions: [
+        { id: `version:${item.id}:source`, label: "Nguồn / nguyên ngữ", language: item.sourceLanguage, holder: source.organization, license: item.license, url: item.sourceUrl, availability: "Mở tại nguồn" },
+        { id: `version:${item.id}:hh-summary`, label: "HH tóm lược", language: "Tiếng Việt", holder: "HH Editorial", license: "Nội dung gốc HH · không phải bản dịch", url: `#/phat-phap/scriptures?work=${item.id}`, availability: "Đọc trực tiếp" },
+        { id: `version:${item.id}:translation`, label: "Bản dịch bên thứ ba", language: "Theo nguồn", holder: item.translator, license: item.license, url: item.sourceUrl, availability: "Chỉ dựng khi giấy phép cho phép" }
+      ],
+      segments: segments.map((segment) => ({ id: segment.id, reference: segment.reference, label: segment.label, summary: segment.summary, termIds: segment.terms || [] }))
+    };
+  }
+
+  function parseResearchQuery(value) {
+    const operators = {};
+    const raw = String(value || "");
+    const free = raw.replace(/\b(in|code|tradition|language|teacher|before|duration):(?:"([^"]+)"|(\S+))/gi, (_, key, quoted, plain) => { operators[key.toLowerCase()] = quoted || plain || ""; return " "; }).replace(/\s+/g, " ").trim();
+    return { free: normalize(free), operators };
+  }
+
+  function researchCatalog() {
+    const published = encyclopediaChapters().map((item) => ({ kind: "Toàn Thư", type: "chapter", id: item.id, title: item.title, detail: item.volumeTitle, text: `${item.title} ${item.intro} ${item.sections.map((section) => `${section.title} ${section.body}`).join(" ")} ${item.terms.join(" ")}`, tradition: "Đối chiếu có nhãn", language: "Tiếng Việt", status: state.encyclopediaCompleted.includes(item.id) ? "Đã đọc" : state.encyclopediaBookmarks.includes(item.id) ? "Đã đánh dấu" : "Đã xuất bản", action: "encyclopedia", duration: item.minutes }));
+    const planned = DHARMA_EDITORIAL_COLLECTIONS.flatMap((collection) => collection.planned.map((title, index) => ({ kind: "Lộ trình biên tập", type: "planned", id: `${collection.id}:${index}`, title, detail: `${collection.label} · chờ đối chiếu nguồn`, text: `${title} ${collection.label}`, tradition: "Chưa gắn truyền thống", language: "Tiếng Việt", status: "Chờ biên tập", action: "", duration: 0 })));
+    const scriptures = SCRIPTURES.map((item) => ({ kind: "Kinh điển", type: "scripture", id: item.id, title: item.title, detail: `${item.code} · ${item.collection}`, text: `${item.title} ${item.canonicalTitle} ${item.code} ${item.collection} ${item.summary} ${item.keywords}`, code: item.code, tradition: item.tradition, language: item.sourceLanguage, status: item.verified ? "Đã kiểm chứng metadata" : "Chờ kiểm chứng", action: "scripture", duration: 0 }));
+    const terms = GLOSSARY.map((item) => ({ kind: "Thuật ngữ", type: "glossary", id: item.id, title: `${item.hanViet} · ${item.pali}`, detail: `${item.han} · ${item.sanskrit}`, text: `${item.hanViet} ${item.pali} ${item.sanskrit} ${item.han} ${item.vietnamese} ${item.note}`, tradition: "Đa truyền thống", language: "Pāli · Sanskrit · Hán · Việt", status: "HH giải thích", action: "glossary", duration: 0 }));
+    const talks = TALKS.map((item) => ({ kind: "Pháp thoại", type: "talk", id: item.id, title: item.title, detail: `${item.provider} · ${item.type}`, text: `${item.title} ${item.provider} ${item.teacher} ${item.center} ${item.retreat} ${item.topic} ${item.note}`, tradition: item.tradition, language: item.language, status: item.rights, action: "talk", teacher: item.teacher, date: item.date, duration: item.duration }));
+    const practices = [
+      { id: "breath", title: "Thiền hơi thở", text: "hơi thở ngồi yên niệm", duration: 5 }, { id: "body", title: "Quán thân", text: "thân điểm tiếp xúc", duration: 10 }, { id: "feeling", title: "Quán cảm thọ", text: "thọ dễ chịu khó chịu trung tính", duration: 10 }, { id: "kindness", title: "Thiền tâm từ", text: "từ bi nguyện lành", duration: 15 }, { id: "walking", title: "Thiền đi", text: "đi bộ chánh niệm", duration: 10 }, { id: "relaxation", title: "Thư giãn sâu", text: "nằm thư giãn thân nghỉ ngơi", duration: 30 }
+    ].map((item) => ({ kind: "Thực hành", type: "practice", ...item, detail: `${item.duration} phút · hướng dẫn cục bộ`, tradition: "Thực hành nền tảng", language: "Tiếng Việt", status: "Có kiểm tra an toàn", action: "practice" }));
+    const temples = TEMPLE_DIRECTORY.map((item) => ({ kind: "Phật sự Việt Nam", type: "temple", id: item.id, title: item.title, detail: `${item.province} · ${item.organization}`, text: `${item.title} ${item.province} ${item.tradition} ${item.access} ${item.note}`, tradition: item.tradition, language: "Tiếng Việt", status: item.verified ? "Nguồn chính thức" : "Chưa kiểm chứng", action: "temple", duration: 0 }));
+    const personal = [
+      ...Object.entries(state.encyclopediaNotes).filter(([, note]) => note).map(([id, note]) => ({ kind: "Ghi chú cá nhân", type: "note", id, title: encyclopediaChapterById(id).title, detail: "Chỉ trên thiết bị", text: note, tradition: "Cá nhân", language: "Tiếng Việt", status: "Riêng tư", action: "encyclopedia", duration: 0 })),
+      ...state.events.map((item) => ({ kind: "Lịch cá nhân", type: "event", id: item.id, title: item.title, detail: formatDate(item.at), text: `${item.title} ${item.type}`, tradition: "Cá nhân", language: "Tiếng Việt", status: "Riêng tư", action: "schedule", date: item.at, duration: 0 })),
+      ...state.sourceReports.map((item) => ({ kind: "Lỗi nguồn", type: "report", id: item.id, title: item.type || "Phản hồi nguồn", detail: item.status || "Chờ biên tập", text: `${item.type} ${item.detail}`, tradition: "Biên tập", language: "Tiếng Việt", status: item.status || "Chờ biên tập", action: "provenance", duration: 0 }))
+    ];
+    return [...published, ...scriptures, ...terms, ...talks, ...practices, ...temples, ...personal, ...planned];
+  }
+
+  function researchResults() {
+    const { free, operators } = parseResearchQuery(researchQuery);
+    const kindNeedle = normalize(operators.in || "");
+    const maxDuration = Number(operators.duration || 0);
+    return researchCatalog().filter((item) => {
+      if (free && !normalize(item.text).includes(free) && !normalize(`${item.title} ${item.detail}`).includes(free)) return false;
+      if (researchType !== "all" && item.type !== researchType) return false;
+      if (researchTradition !== "all" && !normalize(item.tradition).includes(normalize(researchTradition))) return false;
+      if (researchLanguage !== "all" && !normalize(item.language).includes(normalize(researchLanguage))) return false;
+      if (researchStatus !== "all" && !normalize(item.status).includes(normalize(researchStatus))) return false;
+      if (kindNeedle && !normalize(`${item.kind} ${item.type}`).includes(kindNeedle)) return false;
+      if (operators.code && !normalize(item.code).includes(normalize(operators.code))) return false;
+      if (operators.tradition && !normalize(item.tradition).includes(normalize(operators.tradition))) return false;
+      if (operators.language && !normalize(item.language).includes(normalize(operators.language))) return false;
+      if (operators.teacher && !normalize(item.teacher).includes(normalize(operators.teacher))) return false;
+      if (operators.before && (!item.date || new Date(item.date) >= new Date(operators.before))) return false;
+      if (maxDuration && (!item.duration || item.duration > maxDuration)) return false;
+      return true;
+    }).slice(0, 80);
+  }
+
+  function researchMarkup() {
+    const results = researchResults();
+    const parsed = parseResearchQuery(researchQuery);
+    const traditions = unique(researchCatalog().map((item) => item.tradition).filter(Boolean)).slice(0, 24);
+    const languages = unique(researchCatalog().map((item) => item.language).filter(Boolean)).slice(0, 24);
+    return `<section class="dharma-research-hero dharma-paper-card"><div><small>TÌM KIẾM PHẬT HỌC TOÀN CỤC</small><h2>Một truy vấn cho Toàn Thư, kinh, thuật ngữ, pháp thoại và dữ liệu riêng</h2><p>Tìm kiếm chạy cục bộ trong catalog có nhãn nguồn. Nội dung chưa biên tập vẫn xuất hiện để minh bạch lộ trình nhưng không được trình bày như tài liệu đã xuất bản.</p></div><span>索</span></section>
+      <section class="dharma-research-console"><form data-research-form><label><span>⌕</span><input type="search" name="query" data-research-query value="${safe(researchQuery)}" maxlength="300" placeholder='Ví dụ: từ bi in:kinh tradition:"Đại thừa"'></label><button class="dharma-primary" type="submit">Tìm kiếm</button></form><div class="dharma-research-operators" aria-label="Toán tử tìm kiếm">${["in:","code:","tradition:","language:","teacher:","before:","duration:"].map((item) => `<button type="button" data-research-operator="${item}">${item}</button>`).join("")}</div><div class="dharma-research-filters"><select data-research-type aria-label="Loại nội dung"><option value="all">Mọi loại nội dung</option>${[["chapter","Chương đã xuất bản"],["planned","Đề cương chờ biên tập"],["scripture","Kinh điển"],["glossary","Thuật ngữ"],["talk","Pháp thoại"],["practice","Thực hành"],["temple","Phật sự Việt Nam"],["note","Ghi chú riêng"],["event","Lịch riêng"],["report","Lỗi nguồn"]].map(([id,label]) => `<option value="${id}" ${researchType === id ? "selected" : ""}>${label}</option>`).join("")}</select><select data-research-tradition aria-label="Truyền thống"><option value="all">Mọi truyền thống</option>${traditions.map((item) => `<option value="${safe(item)}" ${researchTradition === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><select data-research-language aria-label="Ngôn ngữ"><option value="all">Mọi ngôn ngữ</option>${languages.map((item) => `<option value="${safe(item)}" ${researchLanguage === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><select data-research-status aria-label="Trạng thái"><option value="all">Mọi trạng thái</option>${["Đã xuất bản","Chờ biên tập","Đã kiểm chứng","Riêng tư","Nguồn chính thức"].map((item) => `<option value="${item}" ${researchStatus === item ? "selected" : ""}>${item}</option>`).join("")}</select></div></section>
+      <section class="dharma-research-summary"><p><strong>${results.length}</strong><span>kết quả trong phiên</span></p><p><strong>${Object.keys(parsed.operators).length}</strong><span>toán tử đang dùng</span></p><p><strong>${state.researchHistory.length}</strong><span>tìm kiếm gần đây</span></p><button type="button" data-research-clear-history ${state.researchHistory.length ? "" : "disabled"}>Xóa lịch sử cục bộ</button></section>
+      <section class="dharma-research-results">${results.map((item) => `<article class="${item.type === "planned" ? "is-planned" : ""}"><header><span>${safe(item.kind)}</span><em>${safe(item.status)}</em></header><h3>${safe(item.title)}</h3><p>${safe(item.detail)}</p><footer><small>${safe(item.tradition)} · ${safe(item.language)}${item.duration ? ` · ${item.duration} phút` : ""}</small>${item.action ? `<button type="button" data-research-open="${safe(item.action)}" data-research-id="${safe(item.id)}">Mở nội dung →</button>` : '<b>Chưa được phép mở</b>'}</footer></article>`).join("") || '<div class="dharma-empty"><span>索</span><strong>Không tìm thấy kết quả</strong><p>Thử bỏ một bộ lọc hoặc dùng cú pháp như <code>code:SN56.11</code>, <code>teacher:</code> hay <code>duration:30</code>.</p></div>'}</section>
+      ${state.researchHistory.length ? `<aside class="dharma-research-history"><small>TÌM GẦN ĐÂY · CHỈ TRÊN THIẾT BỊ</small><div>${state.researchHistory.slice(-8).reverse().map((item) => `<button type="button" data-research-history="${safe(item.query)}"><strong>${safe(item.query || "Tất cả nội dung")}</strong><span>${safe(formatDate(item.at))}</span></button>`).join("")}</div></aside>` : ""}`;
+  }
+
+  function facsimileMarkup() {
+    const filter = `brightness(${facsimileSettings.brightness}%) contrast(${facsimileSettings.contrast}%) invert(${facsimileSettings.invert}%)`;
+    const rotate = `rotate(${facsimileSettings.rotation}deg)`;
+    return `<section class="dharma-facsimile-lab"><aside><small>ẢNH SCAN CỤC BỘ</small><h3>Facsimile & OCR Viewer</h3><p>Ảnh chỉ tồn tại trong phiên trình duyệt và không được tải lên HH. OCR dùng TextDetector của trình duyệt; nếu không hỗ trợ, hệ thống dừng rõ ràng.</p><label class="dharma-file-picker"><input type="file" data-facsimile-file accept="image/png,image/jpeg,image/webp,image/bmp"><span>Chọn ảnh scan từ thiết bị</span></label><div class="dharma-facsimile-controls"><label>Sáng <input type="range" data-facsimile-setting="brightness" min="40" max="180" value="${facsimileSettings.brightness}"></label><label>Tương phản <input type="range" data-facsimile-setting="contrast" min="40" max="220" value="${facsimileSettings.contrast}"></label><label>Đảo màu <input type="range" data-facsimile-setting="invert" min="0" max="100" value="${facsimileSettings.invert}"></label><button type="button" data-facsimile-rotate>Xoay 90°</button><button type="button" data-facsimile-reset>Đặt lại ảnh</button></div></aside><div class="dharma-facsimile-stage">${facsimileUrl ? `<figure><img src="${safe(facsimileUrl)}" alt="Ảnh scan cục bộ ${safe(facsimileName)}" style="filter:${filter};transform:${rotate}"><figcaption>${safe(facsimileName)} · chưa gửi ra mạng</figcaption></figure>` : '<div class="dharma-empty"><span>頁</span><strong>Chưa chọn ảnh scan</strong><p>Hỗ trợ PNG, JPEG, WebP hoặc BMP trên thiết bị.</p></div>'}</div><article class="dharma-ocr-output"><header><div><small>OCR CỤC BỘ</small><h3>${facsimileBusy ? "Đang nhận dạng…" : facsimileText ? "Văn bản đã nhận dạng" : "Chưa có văn bản"}</h3></div><div><button type="button" data-facsimile-ocr ${facsimileUrl && !facsimileBusy ? "" : "disabled"}>Nhận dạng chữ</button><button type="button" data-facsimile-export ${facsimileText ? "" : "disabled"}>Xuất TXT + JSON</button></div></header><textarea data-facsimile-text maxlength="100000" placeholder="Kết quả OCR hoặc bản chép tay cục bộ…">${safe(facsimileText)}</textarea><p>${"TextDetector" in global ? "TextDetector có sẵn. Kết quả OCR vẫn cần người đọc đối chiếu ảnh gốc." : "Trình duyệt này chưa có TextDetector. HH không tạo kết quả OCR giả; bạn vẫn có thể nhập bản chép tay."}</p></article></section>`;
+  }
+
+  function scholarMarkup() {
+    const item = SCRIPTURES.find((entry) => entry.id === selectedScripture) || SCRIPTURES[0];
+    selectedScripture = item.id;
+    const work = canonicalWorkRecord(item);
+    return `<section class="dharma-scholar-head dharma-paper-card"><div><small>SCHOLAR & OCR LAB</small><h2>Work → Version → Segment</h2><p>Hồ sơ nghiên cứu phân biệt tác phẩm khái niệm, từng phiên bản và từng đoạn. Không tự đồng nhất tóm lược HH với nguyên văn hoặc bản dịch.</p></div><span>學</span></section><section class="dharma-scholar-browser"><aside><label>Tác phẩm<select data-scholar-work>${SCRIPTURES.map((entry) => `<option value="${entry.id}" ${entry.id === item.id ? "selected" : ""}>${safe(entry.code)} · ${safe(entry.title)}</option>`).join("")}</select></label><dl><div><dt>Work ID</dt><dd>${safe(work.workId)}</dd></div><div><dt>Phân loại</dt><dd>${safe(work.classification)}</dd></div><div><dt>Kiểm chứng</dt><dd>${safe(item.verifiedAt)}</dd></div></dl><div>${work.versions.map((version) => `<article><small>${safe(version.id)}</small><strong>${safe(version.label)}</strong><p>${safe(version.language)} · ${safe(version.holder)}</p><em>${safe(version.availability)}</em><a href="${safe(version.url)}" ${version.url.startsWith("http") ? 'target="_blank" rel="noopener noreferrer"' : ""}>Mở phiên bản ↗</a></article>`).join("")}</div></aside><main><header><div><small>SEGMENT BROWSER</small><h3>${safe(item.title)}</h3></div><button type="button" data-scholar-open-reader="${item.id}">Mở Canonical Reader</button></header>${work.segments.map((segment) => `<article id="scholar-${safe(segment.id)}"><span>${safe(segment.reference)}</span><div><strong>${safe(segment.label)}</strong><p>${safe(segment.summary)}</p><small>${segment.termIds.length ? `Thuật ngữ: ${safe(segment.termIds.join(", "))}` : "Chưa gắn thuật ngữ"}</small></div><button type="button" data-scholar-copy-segment="${safe(segment.id)}">Sao chép permalink</button></article>`).join("")}</main></section>${facsimileMarkup()}<section class="dharma-scholar-sources"><article><strong>BDRC / BUDA</strong><p>Tra Work, Version, e-text và ảnh scan tại nguồn nghiên cứu.</p><a href="https://library.bdrc.io/" target="_blank" rel="noopener noreferrer">Mở BDRC ↗</a></article><article><strong>CBETA</strong><p>Tra Đại Tạng Hán văn theo mã T/X và toàn văn tại nguồn.</p><a href="https://cbetaonline.cn/en/" target="_blank" rel="noopener noreferrer">Mở CBETA ↗</a></article><article><strong>84000</strong><p>Đọc Kanjur–Tengyur, glossary và audio theo điều khoản nguồn.</p><a href="https://www.84000.co/reading-room" target="_blank" rel="noopener noreferrer">Mở Reading Room ↗</a></article></section>`;
+  }
+
   function encyclopediaChapterById(id) {
     return encyclopediaChapters().find((chapter) => chapter.id === id) || encyclopediaChapters()[0];
   }
@@ -671,15 +840,18 @@
     const all = encyclopediaChapters();
     const completed = state.encyclopediaCompleted.length;
     const current = encyclopediaChapterById(selectedEncyclopediaChapter || state.encyclopediaPosition.chapter);
-    return `<section class="dharma-encyclopedia-cover dharma-paper-card"><div><small>PHẬT PHÁP TOÀN THƯ · 佛法入門</small><h2>Đọc trọn nội dung ngay tại đây</h2><p>Bảy quyển, ${all.length} chương được HH biên soạn bằng tiếng Việt rõ ràng. Mỗi chương phân biệt nội dung tóm lược, ứng dụng, ghi chú cá nhân và tài liệu kiểm chứng; không yêu cầu mở một thư viện khác để hiểu bài.</p><div><span><b>7</b> quyển chủ đề</span><span><b>${all.length}</b> chương trực tiếp</span><span><b>${completed}</b> chương đã đọc</span></div><button class="dharma-primary" type="button" data-encyclopedia-open="${safe(current.id)}">Đọc tiếp: ${safe(current.title)} →</button></div><aside aria-label="Cam kết biên tập"><i>藏</i><strong>Nội dung có ranh giới rõ</strong><p>HH biên soạn không phải nguyên văn kinh. Nguồn và giấy phép được đặt cuối mỗi chương để kiểm chứng khi cần.</p></aside></section>
+    const catalog = editorialCatalogStats();
+    return `<section class="dharma-encyclopedia-cover dharma-paper-card"><div><small>PHẬT PHÁP TOÀN THƯ · 佛法入門</small><h2>Đọc nội dung đã biên tập ngay tại đây</h2><p>Toàn Thư có lộ trình 108 chương. ${all.length} chương hiện đã xuất bản bằng tiếng Việt rõ ràng; ${catalog.planned} đề cương còn lại được công khai đúng trạng thái và không thể mở như nội dung đã duyệt.</p><div><span><b>${catalog.target}</b> chương mục tiêu</span><span><b>${catalog.published}</b> chương đã xuất bản</span><span><b>${catalog.planned}</b> chờ biên tập</span></div><button class="dharma-primary" type="button" data-encyclopedia-open="${safe(current.id)}">Đọc tiếp: ${safe(current.title)} →</button></div><aside aria-label="Cam kết biên tập"><i>藏</i><strong>Không xuất bản hàng loạt bằng AI</strong><p>Mỗi chương đi qua Bản nháp → Đối chiếu → Biên tập → Xuất bản. HH biên soạn không phải nguyên văn kinh.</p></aside></section>
       <section class="dharma-encyclopedia-principles" aria-label="Nguyên tắc Toàn Thư"><article><i>讀</i><span><strong>Đọc tại chỗ</strong><small>Nội dung cốt lõi luôn hiển thị đầy đủ</small></span></article><article><i>證</i><span><strong>Có nguồn</strong><small>Không tự tạo mã kinh hoặc lời Phật dạy</small></span></article><article><i>記</i><span><strong>Ghi chú riêng</strong><small>Lưu cục bộ theo tài khoản trên thiết bị</small></span></article><article><i>安</i><span><strong>An toàn</strong><small>Không phán nghiệp, chữa bệnh hay định số phận</small></span></article></section>
-      <div class="dharma-section-title"><div><small>ĐẠI TẠNG HƯỚNG DẪN</small><h2>Mục lục đầy đủ</h2></div><label class="dharma-encyclopedia-search"><span>⌕</span><input type="search" data-encyclopedia-search value="${safe(encyclopediaQuery)}" placeholder="Tìm trong 28 chương…" aria-label="Tìm trong Phật Pháp Toàn Thư"></label></div>
+      <section class="dharma-editorial-roadmap" aria-label="Lộ trình 108 chương"><header><div><small>LỘ TRÌNH BIÊN TẬP CÔNG KHAI</small><h2>Tám bộ · 108 chương</h2></div><span>${catalog.published}/${catalog.target} đã xuất bản</span></header><div>${DHARMA_EDITORIAL_COLLECTIONS.map((collection) => `<article style="--collection-progress:${Math.round(collection.published / collection.target * 100)}%"><span>${safe(collection.icon)}</span><div><strong>${safe(collection.label)}</strong><small>${collection.published} xuất bản · ${collection.planned.length} chờ biên tập</small><i><b></b></i></div></article>`).join("")}</div></section>
+      <div class="dharma-section-title"><div><small>ĐẠI TẠNG HƯỚNG DẪN</small><h2>${catalog.published} chương đã xuất bản</h2></div><label class="dharma-encyclopedia-search"><span>⌕</span><input type="search" data-encyclopedia-search value="${safe(encyclopediaQuery)}" placeholder="Tìm trong 108 đề mục…" aria-label="Tìm trong Phật Pháp Toàn Thư"></label></div>
       <section class="dharma-encyclopedia-volumes">${DHARMA_ENCYCLOPEDIA.map((volume, volumeIndex) => {
         const chapters = volume.chapters.filter((chapter) => !encyclopediaQuery || normalize(`${chapter.title} ${chapter.intro} ${chapter.sections.map((section) => `${section.title} ${section.body}`).join(" ")} ${chapter.terms.join(" ")}`).includes(normalize(encyclopediaQuery)));
         if (!chapters.length) return "";
         const done = volume.chapters.filter((chapter) => state.encyclopediaCompleted.includes(chapter.id)).length;
         return `<article class="dharma-encyclopedia-volume"><header><span>${safe(volume.icon)}</span><div><small>QUYỂN ${String(volumeIndex + 1).padStart(2, "0")} · ${done}/${volume.chapters.length} ĐÃ ĐỌC</small><h3>${safe(volume.title.replace(/^Quyển [^·]+ · /, ""))}</h3><p>${safe(volume.description)}</p></div></header><ol>${chapters.map((chapter) => `<li><button type="button" data-encyclopedia-open="${safe(chapter.id)}" class="${state.encyclopediaCompleted.includes(chapter.id) ? "is-complete" : ""}"><i>${state.encyclopediaCompleted.includes(chapter.id) ? "✓" : String(volume.chapters.indexOf(chapter) + 1).padStart(2, "0")}</i><span><strong>${safe(chapter.title)}</strong><small>${chapter.minutes} phút · ${safe(chapter.intro)}</small></span><b>Đọc →</b></button></li>`).join("")}</ol></article>`;
-      }).join("") || '<div class="dharma-empty"><span>⌕</span><strong>Chưa tìm thấy chương phù hợp</strong><p>Thử tìm “chánh niệm”, “đi chùa”, “nghiệp”, “gia đình” hoặc “kinh điển”.</p></div>'}</section>`;
+      }).join("") || '<div class="dharma-empty"><span>⌕</span><strong>Chưa tìm thấy chương đã xuất bản phù hợp</strong><p>Hãy xem hàng chờ biên tập bên dưới hoặc thử một từ khóa rộng hơn.</p></div>'}</section>
+      <section class="dharma-planned-catalog"><header><div><small>ĐỀ CƯƠNG CHƯA XUẤT BẢN</small><h2>${catalog.planned} chương chờ biên tập</h2></div><span>Không thể mở Reader</span></header>${DHARMA_EDITORIAL_COLLECTIONS.map((collection) => { const planned = collection.planned.filter((title) => !encyclopediaQuery || normalize(`${title} ${collection.label}`).includes(normalize(encyclopediaQuery))); return planned.length ? `<details><summary><span>${safe(collection.icon)}</span><strong>${safe(collection.label)}</strong><small>${planned.length} đề cương</small><b>⌄</b></summary><div>${planned.map((title) => `<article><i>稿</i><span><strong>${safe(title)}</strong><small>Bản nháp → Đối chiếu → Biên tập → Xuất bản</small></span><em>Chờ biên tập</em></article>`).join("")}</div></details>` : ""; }).join("") || '<p class="dharma-empty-line">Không có đề cương chờ biên tập khớp từ khóa.</p>'}</section>`;
   }
 
   function encyclopediaReaderMarkup(chapter) {
@@ -800,6 +972,7 @@
 
   function scriptureDetailMarkup(item) {
     const source = sourceById(item.sourceId);
+    const work = canonicalWorkRecord(item);
     const offline = state.offlinePacks.includes(item.id);
     const inPath = state.readingPath.includes(item.id);
     const related = [...TEACHINGS.filter((entry) => item.parallelIds?.includes(entry.id)), ...SCRIPTURES.filter((entry) => entry.id !== item.id && entry.topic === item.topic)].slice(0, 4);
@@ -808,11 +981,13 @@
     const panels = {
       study: `<section class="dharma-segment-reader"><aside><small>MỤC LỤC TỰ ĐỘNG</small>${segments.map((segment, index) => `<button type="button" data-scripture-segment="${segment.id}" class="${resumeId === segment.id ? "is-active" : ""}"><i>${index + 1}</i><span><strong>${safe(segment.label)}</strong><small>${safe(segment.reference)}</small></span></button>`).join("")}<a href="${safe(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">Mở toàn văn tại nguồn ↗</a></aside><div><header><span><small>ĐANG TIẾP TỤC</small><strong>${safe(segments.find((entry) => entry.id === resumeId)?.label || segments[0].label)}</strong></span><div class="dharma-highlight-palette" aria-label="Chọn màu đánh dấu">${[["gold","Vàng"],["green","Xanh"],["rose","Hồng"],["blue","Lam"]].map(([id,label]) => `<button type="button" data-highlight-color="${id}" class="${scriptureHighlightColor === id ? "is-active" : ""}" title="${label}"></button>`).join("")}</div></header>${segments.map((segment) => { const color = state.scriptureHighlightColors[segment.id] || ""; const glossary = segment.terms.map((id) => GLOSSARY.find((term) => term.id === id)).filter(Boolean); return `<article id="segment-${segment.id}" data-segment-id="${segment.id}" data-highlight="${safe(color)}" class="${resumeId === segment.id ? "is-current" : ""}"><small>${safe(segment.reference)} · HH TÓM LƯỢC</small><h3>${safe(segment.label)}</h3><p>${safe(segment.summary)}</p>${glossary.length ? `<div class="dharma-inline-terms">${glossary.map((term) => `<button type="button" data-open-glossary="${term.id}"><b>${term.han}</b>${safe(term.pali)} · ${safe(term.hanViet)}</button>`).join("")}</div>` : ""}<footer><button type="button" data-segment-highlight="${segment.id}">${color ? `Đổi màu · ${safe(color)}` : "Tô sáng đoạn"}</button><button type="button" data-segment-note="${segment.id}">Ghi chú cạnh đoạn</button></footer></article>`; }).join("")}</div></section>`,
       compare: `<section class="dharma-translation-compare"><article><header><span>NGUYÊN NGỮ</span><b>THAM CHIẾU</b></header><h3>${safe(item.canonicalTitle)}</h3><p>${safe(item.sourceLanguage)} · ${safe(item.code)}</p><small>HH chỉ hiển thị metadata và mã đoạn; mở nguồn để đọc văn bản đầy đủ.</small><a href="${safe(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">Mở nguyên ngữ ↗</a></article><article><header><span>HH DIỄN GIẢI</span><b>NỘI DUNG GỐC HH</b></header><h3>${safe(item.title)}</h3><p>${safe(item.summary)}</p><small>Không phải nguyên văn hoặc bản dịch kinh.</small></article><article><header><span>BẢN DỊCH ĐƯỢC CẤP PHÉP</span><b>MỞ TẠI NGUỒN</b></header><h3>Chọn dịch giả tại ${safe(source.organization)}</h3><p>${safe(item.translator)}</p><small>${safe(item.license)}. HH không sao chép văn bản khi chưa xác nhận quyền theo từng bản dịch.</small><a href="${safe(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">Chọn bản dịch ↗</a></article></section><aside class="dharma-comparison-note"><strong>Vì sao không hiện ba bản dịch trực tiếp?</strong><p>Quyền sử dụng thuộc từng dịch giả. Study Lab chỉ dựng nội dung vào cột so sánh khi giấy phép cụ thể cho phép; hiện tại các cột chưa đủ quyền được giữ ở dạng liên kết minh bạch.</p></aside>`,
-      provenance: `<section class="dharma-provenance-table"><header><span>✓</span><div><small>THẺ MINH BẠCH</small><h3>Nguồn, dịch giả và giấy phép</h3></div></header><dl><div><dt>Tên kinh</dt><dd>${safe(item.title)}</dd></div><div><dt>Tên nguyên ngữ</dt><dd>${safe(item.canonicalTitle)}</dd></div><div><dt>Mã tham chiếu</dt><dd>${safe(item.code)}</dd></div><div><dt>Truyền thống</dt><dd>${safe(item.tradition)}</dd></div><div><dt>Dịch giả</dt><dd>${safe(item.translator)}</dd></div><div><dt>Giấy phép</dt><dd>${safe(item.license)}</dd></div><div><dt>Ngày kiểm chứng</dt><dd>${safe(item.verifiedAt)}</dd></div></dl><div class="dharma-citation-builder"><small>TRÍCH DẪN TỪ METADATA · KHÔNG TỰ ĐIỀN DỊCH GIẢ</small><p>${safe(citationText(item, "academic"))}</p><div><button type="button" data-copy-citation="${item.id}" data-citation-style="academic">Sao chép trích dẫn</button><button type="button" data-export-citation="${item.id}">Xuất BibTeX</button><button type="button" data-open-provenance="${item.id}">Mở trong Inspector</button></div></div></section>`,
-      relations: `<section class="dharma-related-study"><header><small>LIÊN HỆ & BẢN SONG SONG</small><h3>Học trong mạng lưới giáo pháp</h3><p>Đây là liên hệ biên tập nội bộ để hỗ trợ học tập, không khẳng định các văn bản là bản song song học thuật.</p></header>${related.map((entry) => `<button type="button" ${entry.collection ? `data-open-scripture="${entry.id}"` : `data-open-teaching="${entry.id}"`}><i>${entry.collection ? "經" : "法"}</i><span><strong>${safe(entry.title)}</strong><small>${safe(entry.collection || entry.tradition)}</small></span><b>›</b></button>`).join("") || '<p class="dharma-empty-line">Chưa có liên hệ đã biên tập.</p>'}</section>`,
+      scholar: `<section class="dharma-canonical-profile"><header><span>作</span><div><small>WORK–VERSION PROFILE</small><h3>${safe(work.title)}</h3><p>${safe(work.workId)} · ${safe(work.classification)}</p></div></header><div>${work.versions.map((version) => `<article><small>${safe(version.id)}</small><strong>${safe(version.label)}</strong><p>${safe(version.language)} · ${safe(version.holder)}</p><em>${safe(version.license)}</em><a href="${safe(version.url)}" ${version.url.startsWith("http") ? 'target="_blank" rel="noopener noreferrer"' : ""}>${safe(version.availability)} ↗</a></article>`).join("")}</div><footer><button type="button" data-open-scholar="${item.id}">Mở Scholar Mode</button><button type="button" data-report-source="${item.id}">Báo lỗi metadata</button></footer></section>`,
+      facsimile: facsimileMarkup(),
+      provenance: `<section class="dharma-provenance-table"><header><span>✓</span><div><small>THẺ MINH BẠCH</small><h3>Nguồn, dịch giả và giấy phép</h3></div></header><dl><div><dt>Tên kinh</dt><dd>${safe(item.title)}</dd></div><div><dt>Tên nguyên ngữ</dt><dd>${safe(item.canonicalTitle)}</dd></div><div><dt>Mã tham chiếu</dt><dd>${safe(item.code)}</dd></div><div><dt>Truyền thống</dt><dd>${safe(item.tradition)}</dd></div><div><dt>Dịch giả</dt><dd>${safe(item.translator)}</dd></div><div><dt>Giấy phép</dt><dd>${safe(item.license)}</dd></div><div><dt>Ngày kiểm chứng</dt><dd>${safe(item.verifiedAt)}</dd></div></dl><div class="dharma-citation-builder"><small>TRÍCH DẪN TỪ METADATA · KHÔNG TỰ ĐIỀN DỊCH GIẢ</small><p>${safe(citationText(item, "apa"))}</p><div>${["apa","mla","chicago"].map((style) => `<button type="button" data-copy-citation="${item.id}" data-citation-style="${style}">${style.toUpperCase()}</button>`).join("")}<button type="button" data-export-citation="${item.id}">BibTeX</button><button type="button" data-open-provenance="${item.id}">Inspector</button></div></div></section>`,
+      relations: `<section class="dharma-related-study dharma-parallel-graph"><header><small>PARALLEL GRAPH · LIÊN HỆ BIÊN TẬP</small><h3>Quan hệ giữa kinh, giáo lý và thuật ngữ</h3><p>Đường nối này hỗ trợ khám phá, không khẳng định các văn bản là bản song song học thuật khi chưa có đối chiếu chuyên môn.</p></header><div class="dharma-parallel-graph__core"><span>經</span><strong>${safe(item.code)}</strong></div>${related.map((entry, index) => `<button type="button" style="--relation:${index}" ${entry.collection ? `data-open-scripture="${entry.id}"` : `data-open-teaching="${entry.id}"`}><i>${entry.collection ? "經" : "法"}</i><span><strong>${safe(entry.title)}</strong><small>${safe(entry.collection || entry.tradition)}</small></span><b>›</b></button>`).join("") || '<p class="dharma-empty-line">Chưa có liên hệ đã biên tập.</p>'}</section>`,
       notes: `<section class="dharma-study-notes"><label>Ghi chú toàn bài<textarea data-scripture-note="${item.id}" maxlength="4000" placeholder="Điều bạn hiểu, câu hỏi cần hỏi vị thầy…">${safe(state.scriptureNotes[item.id] || "")}</textarea><small>Lưu trên thiết bị. Không được xem là chú giải kinh điển.</small></label><div class="dharma-segment-note-list">${segments.map((segment) => `<label><span>${safe(segment.reference)} · ${safe(segment.label)}</span><textarea data-scripture-segment-note="${segment.id}" maxlength="2000" placeholder="Ghi chú cạnh đoạn…">${safe(state.scriptureSegmentNotes[segment.id] || "")}</textarea></label>`).join("")}</div><footer><button type="button" data-open-inspector-note="${item.id}">Viết trong Inspector</button><button type="button" data-export-scripture-notes="${item.id}">Xuất Markdown</button><button type="button" data-print-scripture-notes="${item.id}">In / lưu PDF</button></footer></section>`
     };
-    return `<button class="dharma-back" type="button" data-back-list="scriptures">← Trở lại thư viện</button><article class="dharma-scripture-reader dharma-paper-card"><header><div><small>${safe(item.code)} · ${safe(item.collection)} · ${safe(item.tradition)}</small><h2>${safe(item.title)}</h2><p>${sourceBadge(item.sourceId)} <span class="dharma-original-label">HH TÓM LƯỢC · KHÔNG PHẢI BẢN DỊCH</span></p></div><div><button type="button" data-speak-scripture="${item.id}">▷ Nghe tóm lược</button><button type="button" data-reader-mode>Chế độ tập trung</button></div></header><nav class="dharma-study-tabs" role="tablist">${[["study","Đọc theo đoạn"],["compare","So sánh"],["provenance","Nguồn"],["relations","Liên hệ"],["notes","Ghi chú"]].map(([id,label]) => `<button type="button" data-scripture-tab="${id}" aria-selected="${activeScriptureTab === id}">${label}</button>`).join("")}</nav><div class="dharma-study-panel">${panels[activeScriptureTab] || panels.study}</div><aside><strong>Ranh giới nội dung</strong><p>HH chỉ giải thích và tóm lược để hỗ trợ học. Với giáo pháp chuyên sâu hoặc khác biệt truyền thống, hãy tham khảo vị thầy đủ phẩm hạnh trong truyền thống liên quan.</p></aside><footer><button type="button" data-bookmark-scripture="${item.id}">${state.bookmarks.includes(item.id) ? "★ Đã lưu" : "☆ Lưu thư viện"}</button><button type="button" data-reading-path="${item.id}">${inPath ? "✓ Trong đường đọc" : "+ Đường đọc"}</button><button type="button" data-offline-scripture="${item.id}">${offline ? "✓ Đã lưu offline" : "↓ Lưu offline"}</button><a class="dharma-primary" href="${safe(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">Mở nguồn ↗</a></footer></article>`;
+    return `<button class="dharma-back" type="button" data-back-list="scriptures">← Trở lại thư viện</button><article class="dharma-scripture-reader dharma-paper-card" data-canonical-layout="${safe(state.canonical.layout)}"><header><div><small>${safe(item.code)} · ${safe(item.collection)} · ${safe(item.tradition)}</small><h2>${safe(item.title)}</h2><p>${sourceBadge(item.sourceId)} <span class="dharma-original-label">HH TÓM LƯỢC · KHÔNG PHẢI BẢN DỊCH</span></p></div><div><button type="button" data-speak-scripture="${item.id}">▷ Nghe tóm lược</button><button type="button" data-reader-mode>Chế độ tập trung</button></div></header><section class="dharma-canonical-controls" aria-label="Bố cục Canonical Reader"><div>${[["columns","Hai cột"],["stacked","Trên–dưới"],["summary","Chỉ tóm lược"]].map(([id,label]) => `<button type="button" data-canonical-layout="${id}" aria-pressed="${state.canonical.layout === id}">${label}</button>`).join("")}</div><p><strong>${safe(work.workId)}</strong><span>${work.versions.length} phiên bản · ${work.segments.length} đoạn</span></p></section><nav class="dharma-study-tabs" role="tablist">${[["study","Đọc theo đoạn"],["compare","So sánh"],["scholar","Scholar"],["facsimile","Ảnh/OCR"],["provenance","Nguồn"],["relations","Parallel Graph"],["notes","Ghi chú"]].map(([id,label]) => `<button type="button" data-scripture-tab="${id}" aria-selected="${activeScriptureTab === id}">${label}</button>`).join("")}</nav><div class="dharma-study-panel">${panels[activeScriptureTab] || panels.study}</div><aside><strong>Ranh giới nội dung</strong><p>HH chỉ giải thích và tóm lược để hỗ trợ học. Với giáo pháp chuyên sâu hoặc khác biệt truyền thống, hãy tham khảo vị thầy đủ phẩm hạnh trong truyền thống liên quan.</p></aside><footer><button type="button" data-bookmark-scripture="${item.id}">${state.bookmarks.includes(item.id) ? "★ Đã lưu" : "☆ Lưu thư viện"}</button><button type="button" data-reading-path="${item.id}">${inPath ? "✓ Trong đường đọc" : "+ Đường đọc"}</button><button type="button" data-offline-scripture="${item.id}">${offline ? "✓ Đã lưu offline" : "↓ Lưu offline"}</button><a class="dharma-primary" href="${safe(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">Mở nguồn ↗</a></footer></article>`;
   }
 
   function practiceMarkup() {
@@ -822,7 +997,8 @@
       { id: "body", label: "Quán thân", icon: "身", guidance: "Nhẹ nhàng nhận biết điểm tiếp xúc và cảm giác toàn thân." },
       { id: "feeling", label: "Cảm thọ", icon: "受", guidance: "Nhận biết dễ chịu, khó chịu hoặc trung tính mà không vội phản ứng." },
       { id: "kindness", label: "Tâm từ", icon: "慈", guidance: "Khởi đầu bằng lời nguyện lành thực tế, rồi mở rộng dần." },
-      { id: "walking", label: "Thiền đi bộ", icon: "行", guidance: "Đi chậm trong nơi an toàn, biết rõ nhấc chân, đưa chân và đặt chân." }
+      { id: "walking", label: "Thiền đi bộ", icon: "行", guidance: "Đi chậm trong nơi an toàn, biết rõ nhấc chân, đưa chân và đặt chân." },
+      { id: "relaxation", label: "Thư giãn sâu", icon: "休", guidance: "Nằm hoặc ngồi được nâng đỡ, thả lỏng từng vùng thân và luôn có thể dừng." }
     ];
     const current = practices.find((item) => item.id === state.meditation.type) || practices[0];
     const now = Date.now();
@@ -831,7 +1007,7 @@
     const completedCourse = state.meditation.courseDays || [];
     const checkIns = [{ id: "steady", icon: "安", label: "Đủ ổn để bắt đầu", note: "Thực hành nhẹ và vẫn để ý giới hạn." }, { id: "uneasy", icon: "息", label: "Đang khó chịu nhẹ", note: "Chọn 5 phút, mở mắt nếu cần." }, { id: "overwhelmed", icon: "!", label: "Đang bất an mạnh", note: "Ưu tiên ổn định và hỗ trợ phù hợp." }];
     const lock = state.meditation.locked ? `<section class="dharma-focus-lock" role="dialog" aria-modal="true"><div class="dharma-focus-lock__breath"><i></i><strong data-timer-display>${formatTimer(timerRemaining)}</strong><small>${safe(current.label)} · Không gian tĩnh tâm đang khóa</small></div><p>Thả lỏng vai, biết rõ thân và giữ hơi thở tự nhiên.</p><div><button type="button" data-grounding> Dừng và ổn định lại</button><button type="button" data-meditation-unlock>Mở khóa thao tác</button></div></section>` : "";
-    return `${lock}<section class="dharma-meditation-course dharma-paper-card"><header><div><small>7 NGÀY THIỀN CHO NGƯỜI MỚI</small><h2>Mỗi ngày một thực hành vừa sức</h2></div><span>${completedCourse.length}/7 ngày</span></header><div>${MEDITATION_COURSE.map((day) => `<button type="button" data-course-day="${day.day}" class="${completedCourse.includes(day.day) ? "is-complete" : ""}"><i>${completedCourse.includes(day.day) ? "✓" : day.day}</i><span><strong>${safe(day.title)}</strong><small>${day.minutes} phút · ${safe(practices.find((item) => item.id === day.type)?.label || day.type)}</small></span></button>`).join("")}</div></section><section class="dharma-practice-chooser">${practices.map((item) => `<button type="button" data-meditation-type="${item.id}" class="${current.id === item.id ? "is-active" : ""}"><i>${item.icon}</i><span><strong>${item.label}</strong><small>${item.guidance}</small></span></button>`).join("")}</section><section class="dharma-meditation-checkin dharma-paper-card"><header><div><small>KIỂM TRA AN TOÀN TRƯỚC BUỔI THIỀN</small><h2>Lúc này bạn cảm thấy thế nào?</h2></div><span>Không chẩn đoán</span></header><div>${checkIns.map((item) => `<button type="button" data-meditation-checkin="${item.id}" class="${state.meditation.checkIn === item.id ? "is-active" : ""}"><i>${item.icon}</i><span><strong>${item.label}</strong><small>${item.note}</small></span></button>`).join("")}</div>${state.meditation.checkIn === "overwhelmed" ? '<aside><strong>Hãy ổn định trước khi bắt đầu</strong><p>HH tạm không khởi chạy timer. Mở mắt, quan sát môi trường và tìm một người an toàn hoặc hỗ trợ chuyên môn khi cần.</p><button type="button" data-grounding>Mở hướng dẫn ổn định</button></aside>' : ""}</section><section class="dharma-practice-stage"><article class="dharma-meditation dharma-paper-card"><header><div><small>THIỀN ĐƯỜNG SỐ · ${safe(current.label.toUpperCase())}</small><h2>Ngồi yên, biết rõ, không ép buộc</h2></div><span class="dharma-bell" aria-hidden="true">♩</span></header><div class="dharma-timer"><i></i><strong data-timer-display>${formatTimer(timerRemaining)}</strong><small>${timerRunning ? "Đang thực hành" : state.meditation.checkIn === "overwhelmed" ? "Đang tạm dừng vì an toàn" : "Sẵn sàng"}</small></div><div class="dharma-presets">${[5,10,15,30,45,60].map((minutes) => `<button type="button" data-timer-preset="${minutes}" class="${timerInitial === minutes * 60 ? "is-active" : ""}">${minutes}′</button>`).join("")}</div>${state.meditation.presets.length ? `<div class="dharma-saved-presets">${state.meditation.presets.map((preset) => `<button type="button" data-use-meditation-preset="${preset.id}"><strong>${safe(preset.label)}</strong><small>${preset.minutes}′ · ${preset.bellInterval ? `chuông ${preset.bellInterval}′` : "không chuông"}</small></button>`).join("")}</div>` : ""}<div class="dharma-meditation-options"><label>Chuông giữa buổi<select data-bell-interval><option value="0" ${state.meditation.bellInterval === 0 ? "selected" : ""}>Không dùng</option>${[5,10,15].map((value) => `<option value="${value}" ${state.meditation.bellInterval === value ? "selected" : ""}>Mỗi ${value} phút</option>`).join("")}</select></label><label class="dharma-check"><input type="checkbox" data-meditation-silent ${state.meditation.silent ? "checked" : ""}><span>Im lặng hoàn toàn</span></label></div><div class="dharma-timer-actions"><button type="button" data-save-meditation-preset>Lưu preset</button><button type="button" data-timer-reset>Đặt lại</button><button type="button" data-meditation-lock ${timerRunning ? "" : "disabled"}>Khóa tĩnh tâm</button><button class="dharma-primary" type="button" data-timer-toggle ${state.meditation.checkIn === "overwhelmed" ? "disabled" : ""}>${timerRunning ? "Tạm dừng" : "Bắt đầu"}</button></div><button class="dharma-grounding" type="button" data-grounding>! Dừng và ổn định lại</button><p>${safe(current.guidance)} Nếu thấy hoảng sợ, khó thở hoặc bất ổn, hãy dừng lại, mở mắt và tìm hỗ trợ phù hợp.</p></article><article class="dharma-chant dharma-paper-card"><header><div><small>NIỆM PHẬT</small><h2>Bộ đếm riêng tư</h2></div><span>念</span></header><p>Đếm để duy trì thời khóa, không quy đổi thành công đức và không xếp hạng.</p><div><button type="button" data-chant-minus aria-label="Giảm một">−</button><strong data-chant-count>${state.chantCount}</strong><button type="button" data-chant-plus aria-label="Tăng một">+</button></div><footer><button type="button" data-chant-add="10">+10</button><button type="button" data-chant-add="108">+108</button><button type="button" data-dharma-nav="chanting">Mở phòng tụng</button></footer></article></section><section class="dharma-practice-stats"><article><small>7 NGÀY</small><strong>${weekMinutes} phút</strong><p>Theo dõi thói quen, không tạo chuỗi thành tích.</p></article><article><small>30 NGÀY</small><strong>${monthMinutes} phút</strong><p>Không so sánh với người học khác.</p></article><article><small>PHIÊN ĐÃ LƯU</small><strong>${state.practiceHistory.length}</strong><p>Dữ liệu riêng trên thiết bị.</p></article></section><section class="dharma-history dharma-paper-card"><header><div><small>LỊCH SỬ RIÊNG TƯ</small><h2>Các lần thực hành gần đây</h2></div><div><button type="button" data-dharma-nav="journal">Ghi cảm nhận</button><button type="button" data-clear-practice ${recent.length ? "" : "disabled"}>Xóa lịch sử</button></div></header><div>${recent.map((item) => `<p><i>禪</i><span><strong>${item.minutes} phút · ${safe(item.type || "Hơi thở")}</strong><small>${safe(formatDate(item.at))}</small></span><b>Đã hoàn thành</b></p>`).join("") || "<p class=\"dharma-empty-line\">Chưa có lần thực hành nào được lưu.</p>"}</div></section>`;
+    return `${lock}<section class="dharma-meditation-course dharma-paper-card"><header><div><small>BẮT ĐẦU TẠI ĐÂY · 7 NGÀY</small><h2>Mỗi ngày một thực hành vừa sức</h2></div><span>${completedCourse.length}/7 ngày</span></header><div>${MEDITATION_COURSE.map((day) => `<button type="button" data-course-day="${day.day}" class="${completedCourse.includes(day.day) ? "is-complete" : ""}"><i>${completedCourse.includes(day.day) ? "✓" : day.day}</i><span><strong>${safe(day.title)}</strong><small>${day.minutes} phút · ${safe(practices.find((item) => item.id === day.type)?.label || day.type)}</small></span></button>`).join("")}</div></section><section class="dharma-practice-chooser">${practices.map((item) => `<button type="button" data-meditation-type="${item.id}" class="${current.id === item.id ? "is-active" : ""}"><i>${item.icon}</i><span><strong>${item.label}</strong><small>${item.guidance}</small></span></button>`).join("")}</section><section class="dharma-practice-playlists dharma-paper-card"><header><div><small>PLAYLIST THỰC HÀNH</small><h2>Chọn một nhịp cho thời điểm hiện tại</h2></div><button type="button" data-export-practice-pack>Xuất gói offline JSON</button></header><div>${[["morning","Sáng","Hơi thở · 10 phút"],["noon","Trưa","Thiền đi · 5 phút"],["evening","Tối","Thư giãn sâu · 30 phút"],["custom","Tự chọn","Giữ thiết lập hiện tại"]].map(([id,label,note]) => `<button type="button" data-meditation-playlist="${id}" class="${state.meditation.playlist === id ? "is-active" : ""}"><i>${id === "morning" ? "日" : id === "noon" ? "行" : id === "evening" ? "月" : "定"}</i><span><strong>${label}</strong><small>${note}</small></span></button>`).join("")}</div></section><section class="dharma-meditation-checkin dharma-paper-card"><header><div><small>KIỂM TRA AN TOÀN TRƯỚC BUỔI THIỀN</small><h2>Lúc này bạn cảm thấy thế nào?</h2></div><span>Không chẩn đoán</span></header><div>${checkIns.map((item) => `<button type="button" data-meditation-checkin="${item.id}" class="${state.meditation.checkIn === item.id ? "is-active" : ""}"><i>${item.icon}</i><span><strong>${item.label}</strong><small>${item.note}</small></span></button>`).join("")}</div>${state.meditation.checkIn === "overwhelmed" ? '<aside><strong>Hãy ổn định trước khi bắt đầu</strong><p>HH tạm không khởi chạy timer. Mở mắt, quan sát môi trường và tìm một người an toàn hoặc hỗ trợ chuyên môn khi cần.</p><button type="button" data-grounding>Mở hướng dẫn ổn định</button></aside>' : ""}</section><section class="dharma-practice-stage"><article class="dharma-meditation dharma-paper-card"><header><div><small>THIỀN ĐƯỜNG SỐ · ${safe(current.label.toUpperCase())}</small><h2>Ngồi yên, biết rõ, không ép buộc</h2></div><span class="dharma-bell" aria-hidden="true">♩</span></header><div class="dharma-timer"><i></i><strong data-timer-display>${formatTimer(timerRemaining)}</strong><small>${timerRunning ? "Đang thực hành" : state.meditation.checkIn === "overwhelmed" ? "Đang tạm dừng vì an toàn" : "Sẵn sàng"}</small></div><div class="dharma-presets">${[3,5,10,15,30,45].map((minutes) => `<button type="button" data-timer-preset="${minutes}" class="${timerInitial === minutes * 60 ? "is-active" : ""}">${minutes}′</button>`).join("")}</div>${state.meditation.presets.length ? `<div class="dharma-saved-presets">${state.meditation.presets.map((preset) => `<button type="button" data-use-meditation-preset="${preset.id}"><strong>${safe(preset.label)}</strong><small>${preset.minutes}′ · ${preset.bellInterval ? `chuông ${preset.bellInterval}′` : "không chuông"}</small></button>`).join("")}</div>` : ""}<div class="dharma-meditation-options"><label>Chuông giữa buổi<select data-bell-interval><option value="0" ${state.meditation.bellInterval === 0 ? "selected" : ""}>Không dùng</option>${[5,10,15].map((value) => `<option value="${value}" ${state.meditation.bellInterval === value ? "selected" : ""}>Mỗi ${value} phút</option>`).join("")}</select></label><label class="dharma-check"><input type="checkbox" data-meditation-silent ${state.meditation.silent ? "checked" : ""}><span>Im lặng hoàn toàn</span></label></div><div class="dharma-timer-actions"><button type="button" data-save-meditation-preset>Lưu preset</button><button type="button" data-timer-reset>Đặt lại</button><button type="button" data-meditation-lock ${timerRunning ? "" : "disabled"}>Khóa tĩnh tâm</button><button class="dharma-primary" type="button" data-timer-toggle ${state.meditation.checkIn === "overwhelmed" ? "disabled" : ""}>${timerRunning ? "Tạm dừng" : "Bắt đầu"}</button></div><button class="dharma-grounding" type="button" data-grounding>! Dừng khẩn cấp và ổn định lại</button><p>${safe(current.guidance)} Nếu thấy hoảng sợ, khó thở hoặc bất ổn, hãy dừng lại, mở mắt và tìm hỗ trợ phù hợp.</p></article><article class="dharma-chant dharma-paper-card"><header><div><small>NIỆM PHẬT</small><h2>Bộ đếm riêng tư</h2></div><span>念</span></header><p>Đếm để duy trì thời khóa, không quy đổi thành công đức và không xếp hạng.</p><div><button type="button" data-chant-minus aria-label="Giảm một">−</button><strong data-chant-count>${state.chantCount}</strong><button type="button" data-chant-plus aria-label="Tăng một">+</button></div><footer><button type="button" data-chant-add="10">+10</button><button type="button" data-chant-add="108">+108</button><button type="button" data-dharma-nav="chanting">Mở phòng tụng</button></footer></article></section>${timerRunning ? `<aside class="dharma-meditation-mini"><span>禪</span><div><strong>${safe(current.label)}</strong><small data-timer-display>${formatTimer(timerRemaining)} · ${safe(state.meditation.playlist)}</small></div><button type="button" data-timer-toggle>Tạm dừng</button><button type="button" data-grounding>Dừng</button></aside>` : ""}<section class="dharma-practice-stats"><article><small>7 NGÀY</small><strong>${weekMinutes} phút</strong><p>Theo dõi thói quen, không tạo chuỗi thành tích.</p></article><article><small>30 NGÀY</small><strong>${monthMinutes} phút</strong><p>Không so sánh với người học khác.</p></article><article><small>PHIÊN ĐÃ LƯU</small><strong>${state.practiceHistory.length}</strong><p>Dữ liệu riêng trên thiết bị.</p></article></section><section class="dharma-history dharma-paper-card"><header><div><small>LỊCH SỬ RIÊNG TƯ</small><h2>Các lần thực hành gần đây</h2></div><div><button type="button" data-dharma-nav="journal">Ghi cảm nhận</button><button type="button" data-clear-practice ${recent.length ? "" : "disabled"}>Xóa lịch sử</button></div></header><div>${recent.map((item) => `<p><i>禪</i><span><strong>${item.minutes} phút · ${safe(item.type || "Hơi thở")}</strong><small>${safe(formatDate(item.at))}</small></span><b>Đã hoàn thành</b></p>`).join("") || "<p class=\"dharma-empty-line\">Chưa có lần thực hành nào được lưu.</p>"}</div></section>`;
   }
 
   function chantingMarkup() {
@@ -913,16 +1089,31 @@
     return `<section class="dharma-route-intro dharma-paper-card"><div><small>TRUNG TÂM KIỂM CHỨNG NGUỒN</small><h2>Mọi nội dung đều có xuất xứ và trạng thái</h2><p>Theo dõi liên kết, dịch giả, giấy phép, lịch sử biên tập và phản hồi. Tóm lược HH luôn tách khỏi nguyên văn và bản dịch.</p></div><span class="dharma-seal">證</span></section><section class="dharma-source-dashboard"><article><i>✓</i><span><strong>${SCRIPTURES.filter((item) => item.verified).length}/${SCRIPTURES.length}</strong><small>Tài liệu có metadata nguồn</small></span></article><article><i>↗</i><span><strong>${SOURCES.length}</strong><small>Thư viện và tổ chức tham chiếu</small></span></article><article><i>!</i><span><strong>${reports.filter((item) => item.status === "Chờ biên tập").length}</strong><small>Phản hồi đang chờ</small></span></article><article><i>稿</i><span><strong>${drafts.length}</strong><small>Bản nháp metadata cục bộ</small></span></article></section><section class="dharma-source-ledger dharma-paper-card"><header><div><small>SỔ NGUỒN</small><h2>Tài liệu đang công bố</h2></div><span>Kiểm tra gần nhất · 23/08/2026</span></header><div>${SCRIPTURES.map((item) => `<button type="button" data-open-provenance="${item.id}"><i>${item.verified ? "✓" : "!"}</i><span><small>${safe(item.code)} · ${safe(item.sourceLanguage)}</small><strong>${safe(item.title)}</strong></span><em>${safe(item.license)}</em><b>›</b></button>`).join("")}</div></section><section class="dharma-provenance-columns"><article class="dharma-paper-card"><header><small>LỊCH SỬ CHỈNH SỬA</small><h2>Ai đã thay đổi điều gì</h2></header>${SOURCE_HISTORY.map((entry) => `<p><i>◉</i><span><strong>${safe(entry.action)}</strong><small>${safe(entry.at)} · ${safe(entry.editor)}</small></span><b>${safe(entry.status)}</b></p>`).join("")}</article><article class="dharma-paper-card"><header><small>SO SÁNH PHIÊN BẢN</small><h2>Trước và sau</h2></header><div class="dharma-version-diff"><section><small>TRƯỚC</small><p>“Tóm lược kinh điển” — chưa nêu rõ loại nội dung.</p></section><section><small>HIỆN TẠI</small><p><mark>“HH tóm lược · không phải bản dịch”</mark> cùng mã kinh, nguồn, ngôn ngữ và giấy phép.</p></section></div></article></section><section class="dharma-editorial-console dharma-paper-card"><header><div><small>BIÊN TẬP NGUỒN</small><h2>${canEditSources ? "Tạo bản nháp metadata" : "Quyền biên tập được bảo vệ"}</h2></div><span>${canEditSources ? "Quản trị viên / Biên tập viên" : "Chỉ người có quyền"}</span></header>${canEditSources ? `<form data-metadata-draft><label>Tài liệu<select name="scripture">${SCRIPTURES.map((item) => `<option value="${item.id}">${safe(item.code)} · ${safe(item.title)}</option>`).join("")}</select></label><label>Trường cần sửa<select name="field"><option value="translator">Dịch giả</option><option value="license">Giấy phép</option><option value="code">Mã tham chiếu</option><option value="sourceUrl">Liên kết nguồn</option></select></label><label>Giá trị đề xuất<input name="value" required maxlength="500" placeholder="Giá trị mới đã kiểm chứng"></label><label>Bằng chứng URL<input name="evidence" type="url" required maxlength="500" placeholder="https://nguon-chinh-thuc…"></label><button class="dharma-primary" type="submit">Lưu bản nháp chờ duyệt</button></form>` : '<p>Giao diện công khai chỉ được xem sổ nguồn và gửi báo lỗi. Quyền sửa metadata được kiểm tra từ vai trò tài khoản khi mount workspace, không dựa vào nút ẩn trên giao diện.</p>'}<div class="dharma-editorial-queue">${[...drafts.map((item) => ({ ...item, label: "Bản nháp" })), ...reports.map((item) => ({ ...item, label: "Phản hồi" }))].slice(0, 12).map((item) => `<article><span>${safe(item.label)}</span><div><strong>${safe(item.type || item.field || "Kiểm tra metadata")}</strong><small>${safe(item.status || "Chờ duyệt")} · ${safe(formatDate(item.createdAt))}</small></div><p>${safe(item.detail || item.value || "")}</p>${canEditSources ? `<button type="button" data-delete-editorial="${safe(item.id)}">Xóa khỏi hàng chờ</button>` : ""}</article>`).join("") || '<p class="dharma-empty-line">Chưa có phản hồi hoặc bản nháp đang chờ.</p>'}</div></section>`;
   }
 
+  function provenanceMarkupV6() {
+    const reports = Array.isArray(state.sourceReports) ? state.sourceReports.slice().reverse() : [];
+    const drafts = Array.isArray(state.metadataDrafts) ? state.metadataDrafts.slice().reverse() : [];
+    const stats = editorialCatalogStats();
+    const reviewed = new Set(state.editorialReviews.map((item) => `${item.target}:${item.reviewer}`));
+    return `<section class="dharma-route-intro dharma-paper-card"><div><small>EDITORIAL & TRUST CENTER</small><h2>Xuất bản chậm, kiểm chứng rõ, hoàn tác được</h2><p>Dashboard này phân biệt bản nháp cục bộ với nội dung công bố trên máy chủ. Thay đổi nhạy cảm cần hai người duyệt khác nhau; bản dịch chưa rõ quyền luôn bị giữ lại.</p></div><span class="dharma-seal">證</span></section><section class="dharma-trust-dashboard"><article><i>章</i><span><strong>${stats.published}/${stats.target}</strong><small>Chương đã xuất bản</small></span></article><article><i>稿</i><span><strong>${stats.planned}</strong><small>Đề cương chờ biên tập</small></span></article><article><i>✓</i><span><strong>${SCRIPTURES.filter((item) => item.verified).length}/${SCRIPTURES.length}</strong><small>Hồ sơ kinh có metadata</small></span></article><article><i>!</i><span><strong>${reports.length}</strong><small>Báo lỗi trong hàng chờ</small></span></article></section><section class="dharma-editorial-roadmap is-trust"><header><div><small>QUY TRÌNH 108 CHƯƠNG</small><h2>Trạng thái theo từng bộ</h2></div><button type="button" data-editorial-snapshot>Tạo snapshot + SHA-256</button></header><div>${DHARMA_EDITORIAL_COLLECTIONS.map((collection) => `<article style="--collection-progress:${Math.round(collection.published / collection.target * 100)}%"><span>${safe(collection.icon)}</span><div><strong>${safe(collection.label)}</strong><small>${collection.published} xuất bản · ${collection.planned.length} chờ</small><i><b></b></i></div></article>`).join("")}</div></section><section class="dharma-source-health dharma-paper-card"><header><div><small>BỘ KIỂM TRA LIÊN KẾT</small><h2>Tình trạng nguồn trong phiên</h2></div><button type="button" data-source-health-check>Kiểm tra liên kết</button></header><p class="dharma-license-warning">Cảnh báo giấy phép: kiểm tra lại điều khoản từng bản dịch, audio và API trước khi phân phối. Link truy cập được không đồng nghĩa có quyền sao chép.</p><div>${SOURCES.map((source) => { const health = state.sourceHealth[source.id]; return `<article><i>${health?.ok === true ? "✓" : health?.ok === false ? "!" : "○"}</i><span><strong>${safe(source.organization)}</strong><small>${safe(health?.label || "Chưa kiểm tra trong phiên")} · ${safe(source.status)}</small></span><a href="${safe(source.url)}" target="_blank" rel="noopener noreferrer">Mở nguồn ↗</a></article>`; }).join("")}</div></section><section class="dharma-review-gate dharma-paper-card"><header><div><small>REVIEW HAI NGƯỜI</small><h2>Thay đổi nhạy cảm chưa được tự xuất bản</h2></div><span>${state.editorialReviews.length} lượt duyệt cục bộ</span></header>${drafts.map((draft) => { const reviewers = unique(state.editorialReviews.filter((item) => item.target === draft.id).map((item) => item.reviewer)); const approved = reviewers.length >= 2; return `<article><span>${approved ? "✓" : reviewers.length + "/2"}</span><div><strong>${safe(draft.field)} · ${safe(SCRIPTURES.find((item) => item.id === draft.scriptureId)?.title || draft.scriptureId)}</strong><p>${safe(draft.value)}</p><small>${approved ? "Đủ hai người duyệt cục bộ · vẫn chưa phải xuất bản máy chủ" : "Cần hai tài khoản biên tập khác nhau"}</small></div>${canEditSources && !reviewed.has(`${draft.id}:${accountKey}`) ? `<button type="button" data-editorial-review="${safe(draft.id)}">Duyệt với tài khoản này</button>` : ""}</article>`; }).join("") || '<p class="dharma-empty-line">Chưa có bản nháp metadata nhạy cảm.</p>'}</section><section class="dharma-editorial-console dharma-paper-card"><header><div><small>BẢN NHÁP CỤC BỘ</small><h2>${canEditSources ? "Đề xuất chỉnh metadata" : "Quyền biên tập được bảo vệ"}</h2></div><span>${canEditSources ? "Không tự công bố" : "Chỉ xem công khai"}</span></header>${canEditSources ? `<form data-metadata-draft><label>Tài liệu<select name="scripture">${SCRIPTURES.map((item) => `<option value="${item.id}">${safe(item.code)} · ${safe(item.title)}</option>`).join("")}</select></label><label>Trường cần sửa<select name="field"><option value="translator">Dịch giả</option><option value="license">Giấy phép</option><option value="code">Mã tham chiếu</option><option value="sourceUrl">Liên kết nguồn</option></select></label><label>Giá trị đề xuất<input name="value" required maxlength="500"></label><label>Bằng chứng URL<input name="evidence" type="url" required maxlength="500"></label><button class="dharma-primary" type="submit">Lưu bản nháp chờ duyệt</button></form>` : '<p>Vai trò được kiểm tra khi mount workspace. Ẩn nút không được xem là kiểm soát quyền.</p>'}<div class="dharma-editorial-queue">${[...drafts.map((item) => ({ ...item, label: "Bản nháp" })), ...reports.map((item) => ({ ...item, label: "Phản hồi" }))].slice(0, 16).map((item) => `<article><span>${safe(item.label)}</span><div><strong>${safe(item.type || item.field || "Kiểm tra metadata")}</strong><small>${safe(item.status || "Chờ duyệt")} · ${safe(formatDate(item.createdAt))}</small></div><p>${safe(item.detail || item.value || "")}</p>${canEditSources ? `<button type="button" data-delete-editorial="${safe(item.id)}">Xóa bản cục bộ</button>` : ""}</article>`).join("") || '<p class="dharma-empty-line">Hàng chờ đang trống.</p>'}</div></section><section class="dharma-snapshot-list dharma-paper-card"><header><small>SNAPSHOT CỤC BỘ · KHÔNG PHẢI BẢN CÔNG BỐ MÁY CHỦ</small><h2>Gói kiểm chứng gần đây</h2></header>${state.editorialSnapshots.slice(-6).reverse().map((item) => `<article><i>#</i><span><strong>${safe(item.checksum)}</strong><small>${safe(formatDate(item.at))} · ${item.published} chương</small></span><button type="button" data-export-editorial-snapshot="${safe(item.id)}">Xuất JSON</button></article>`).join("") || '<p class="dharma-empty-line">Chưa tạo snapshot.</p>'}</section>`;
+  }
+
   function templeMarkup() {
     const provinces = unique(TEMPLE_DIRECTORY.map((item) => item.province));
     const traditions = unique(TEMPLE_DIRECTORY.map((item) => item.tradition));
     const accessModes = unique(TEMPLE_DIRECTORY.map((item) => item.access));
-    const filtered = TEMPLE_DIRECTORY.filter((item) => (templeProvince === "all" || item.province === templeProvince) && (templeTradition === "all" || item.tradition === templeTradition) && (templeAccess === "all" || item.access === templeAccess));
-    return `<section class="dharma-route-intro dharma-paper-card dharma-temple-gate"><div><small>CHÙA ONLINE</small><h2>Kết nối đúng nguồn, giữ sự trang nghiêm</h2><p>Danh bạ chỉ đưa người dùng tới cổng chính thức. HH không nhúng livestream, không thu quyên góp và không lưu số tài khoản cúng dường.</p></div><span class="dharma-temple-mark">寺</span></section><section class="dharma-temple-filters"><select data-temple-province aria-label="Tỉnh thành"><option value="all">Mọi tỉnh thành</option>${provinces.map((item) => `<option value="${safe(item)}" ${templeProvince === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><select data-temple-tradition aria-label="Truyền thống"><option value="all">Mọi truyền thống</option>${traditions.map((item) => `<option value="${safe(item)}" ${templeTradition === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><select data-temple-access aria-label="Khả năng tiếp cận"><option value="all">Mọi hình thức tiếp cận</option>${accessModes.map((item) => `<option value="${safe(item)}" ${templeAccess === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select></section><section class="dharma-temple-directory">${filtered.map((item) => `<article class="dharma-paper-card"><header><span>寺</span><div><small>${safe(item.province)} · ${safe(item.tradition)}</small><h3>${safe(item.title)}</h3></div><b>${item.verified ? "✓ NGUỒN ĐÃ KIỂM TRA" : "CHƯA KIỂM CHỨNG"}</b></header><p>${safe(item.note)}</p><dl><div><dt>Đơn vị</dt><dd>${safe(item.organization)}</dd></div><div><dt>Tiếp cận</dt><dd>${safe(item.access)}</dd></div><div><dt>Kiểm tra</dt><dd>${safe(item.verifiedAt)}</dd></div></dl><footer><button type="button" data-report-temple="${item.id}">Báo liên kết giả mạo</button><a href="${safe(item.url)}" target="_blank" rel="noopener noreferrer">Mở nguồn chính thức ↗</a></footer></article>`).join("") || '<p class="dharma-empty-line">Chưa có nguồn phù hợp bộ lọc. HH không tự điền chùa chưa được kiểm chứng.</p>'}</section><section class="dharma-temple-etiquette"><article><i>衣</i><strong>Trang phục & không gian</strong><p>Ăn mặc lịch sự, giữ yên lặng và tôn trọng khu vực không quay phim.</p></article><article><i>問</i><strong>Hỏi trước khi tham dự</strong><p>Kiểm tra lịch, nội quy, đăng ký và hỗ trợ tiếp cận tại trang chính thức.</p></article><article><i>心</i><strong>Cúng dường tự nguyện</strong><p>Không chuyển tiền qua liên kết hoặc tài khoản chưa xác minh.</p></article></section><section class="dharma-event-planner dharma-paper-card"><header><div><small>LỊCH CÁ NHÂN</small><h2>Lưu một buổi lễ hoặc pháp thoại</h2></div><span>Không gửi dữ liệu ra ngoài</span></header><form data-event-form><label>Tên sự kiện<input name="title" required maxlength="120" placeholder="Ví dụ: Pháp thoại tối Chủ nhật"></label><label>Thời gian<input name="at" type="datetime-local" required></label><input type="hidden" name="type" value="Phật sự"><button class="dharma-primary" type="submit">Lưu vào lịch</button></form><div>${state.events.slice().sort((a,b) => a.at.localeCompare(b.at)).map((item) => `<p><i>灯</i><span><strong>${safe(item.title)}</strong><small>${safe(formatDate(item.at))}</small></span><button type="button" data-delete-event="${safe(item.id)}">Xóa</button></p>`).join("") || '<p class="dharma-empty-line">Chưa có lịch cá nhân.</p>'}</div></section>`;
+    const programs = [["all","Tất cả"],["retreat","Khóa tu"],["ceremony","Đại lễ"],["livestream","Livestream"],["beginner","Người mới"],["family","Gia đình"],["youth","Thanh thiếu niên"]];
+    const filtered = TEMPLE_DIRECTORY.filter((item) => (templeProvince === "all" || item.province === templeProvince) && (templeTradition === "all" || item.tradition === templeTradition) && (templeAccess === "all" || item.access === templeAccess) && (templeProgram === "all" || item.programs?.includes(templeProgram)));
+    return `<section class="dharma-route-intro dharma-paper-card dharma-temple-gate"><div><small>TRUNG TÂM PHẬT SỰ VIỆT NAM</small><h2>Danh bạ, lịch và livestream từ nguồn đã kiểm tra</h2><p>HH chỉ dẫn tới cổng chính thức, không thu vị trí cá nhân, không nhúng tài khoản cúng dường và không gọi nguồn chưa kiểm chứng là “chùa chính thức”.</p></div><span class="dharma-temple-mark">寺</span></section><nav class="dharma-temple-programs" aria-label="Loại Phật sự">${programs.map(([id,label]) => `<button type="button" data-temple-program="${id}" aria-pressed="${templeProgram === id}">${label}</button>`).join("")}</nav><section class="dharma-temple-filters"><select data-temple-province aria-label="Tỉnh thành"><option value="all">Mọi tỉnh thành</option>${provinces.map((item) => `<option value="${safe(item)}" ${templeProvince === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><select data-temple-tradition aria-label="Truyền thống"><option value="all">Mọi truyền thống</option>${traditions.map((item) => `<option value="${safe(item)}" ${templeTradition === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><select data-temple-access aria-label="Khả năng tiếp cận"><option value="all">Mọi hình thức tiếp cận</option>${accessModes.map((item) => `<option value="${safe(item)}" ${templeAccess === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select></section><section class="dharma-temple-directory">${filtered.map((item) => `<article class="dharma-paper-card"><header><span>寺</span><div><small>${safe(item.province)} · ${safe(item.tradition)}</small><h3>${safe(item.title)}</h3></div><b>${item.verified ? "✓ NGUỒN CHÍNH THỨC" : "CHƯA KIỂM CHỨNG"}</b></header><p>${safe(item.note)}</p><dl><div><dt>Đơn vị phụ trách</dt><dd>${safe(item.organization)}</dd></div><div><dt>Tiếp cận</dt><dd>${safe(item.access)}</dd></div><div><dt>Đối tượng</dt><dd>${safe(item.audience)}</dd></div><div><dt>Kiểm tra</dt><dd>${safe(item.verifiedAt)}</dd></div></dl><footer><button type="button" data-report-temple="${item.id}">Báo giả mạo / tài khoản đáng ngờ</button><a href="${safe(item.url)}" target="_blank" rel="noopener noreferrer">Mở nguồn chính thức ↗</a></footer></article>`).join("") || '<p class="dharma-empty-line">Chưa có nguồn đã kiểm tra phù hợp bộ lọc. HH không tự điền chùa hoặc sự kiện chưa xác minh.</p>'}</section><section class="dharma-temple-etiquette"><article><i>衣</i><strong>Trang phục & tiếp cận</strong><p>Kiểm tra nội quy, khả năng tiếp cận và khu vực không quay phim trước khi đến.</p></article><article><i>問</i><strong>Xác minh thông báo</strong><p>Đối chiếu lịch, đơn vị phụ trách và link chính thức trước khi đăng ký.</p></article><article><i>心</i><strong>Cúng dường tự nguyện</strong><p>Không chuyển tiền qua tài khoản hoặc QR chưa được cơ sở xác nhận.</p></article></section><section class="dharma-event-planner dharma-paper-card"><header><div><small>LỊCH CÁ NHÂN</small><h2>Lưu một khóa tu, đại lễ hoặc pháp thoại</h2></div><span>Không gửi dữ liệu ra ngoài</span></header><form data-event-form><label>Tên sự kiện<input name="title" required maxlength="120" placeholder="Ví dụ: Pháp thoại tối Chủ nhật"></label><label>Thời gian<input name="at" type="datetime-local" required></label><input type="hidden" name="type" value="Phật sự"><button class="dharma-primary" type="submit">Lưu vào lịch</button></form><div>${state.events.slice().sort((a,b) => a.at.localeCompare(b.at)).map((item) => `<p><i>灯</i><span><strong>${safe(item.title)}</strong><small>${safe(formatDate(item.at))}</small></span><button type="button" data-delete-event="${safe(item.id)}">Xóa</button></p>`).join("") || '<p class="dharma-empty-line">Chưa có lịch cá nhân.</p>'}</div></section>`;
   }
 
   function talksMarkup() {
-    return `<section class="dharma-route-intro dharma-paper-card"><div><small>PHÁP THOẠI & NGUỒN HỌC</small><h2>Nghe từ kênh công khai, lưu lại để học sau</h2><p>Nội dung mở trong trang gốc để giữ đầy đủ thông tin người giảng, đơn vị đăng và quyền sử dụng.</p></div><span class="dharma-seal">聽</span></section><section class="dharma-talk-grid">${TALKS.map((talk) => `<article><header><span>${talk.type === "Video" ? "▷" : talk.type === "Trực tiếp" ? "●" : "☸"}</span><div><small>${safe(talk.type)} · ${safe(talk.provider)}</small><h3>${safe(talk.title)}</h3></div></header><p>${safe(talk.note)}</p><footer><button type="button" data-save-talk="${talk.id}">${state.savedTalks.includes(talk.id) ? "★ Đã lưu" : "☆ Lưu để xem sau"}</button><a href="${safe(talk.url)}" target="_blank" rel="noopener noreferrer">Mở nguồn ↗</a></footer></article>`).join("")}</section>`;
+    const providers = unique(TALKS.map((talk) => talk.provider));
+    const types = unique(TALKS.map((talk) => talk.type));
+    const languages = unique(TALKS.map((talk) => talk.language));
+    const filtered = TALKS.filter((talk) => (talkProvider === "all" || talk.provider === talkProvider) && (talkType === "all" || talk.type === talkType) && (talkLanguage === "all" || talk.language === talkLanguage) && normalize(`${talk.title} ${talk.teacher} ${talk.center} ${talk.retreat} ${talk.topic} ${talk.note}`).includes(normalize(talkQuery)));
+    const selected = TALKS.find((talk) => talk.id === selectedTalk);
+    const queue = state.talkQueue.map((id) => TALKS.find((talk) => talk.id === id)).filter(Boolean);
+    return `<section class="dharma-route-intro dharma-paper-card"><div><small>PHÁP THOẠI OBSERVATORY</small><h2>Tìm đúng người giảng, đơn vị, khóa tu và quyền phát</h2><p>HH quản lý metadata, hàng đợi, bookmark và ghi chú cục bộ. Audio/video luôn mở tại nguồn chính thức nếu chưa có quyền phát trực tiếp riêng.</p></div><span class="dharma-seal">聽</span></section><section class="dharma-talk-observatory"><aside class="dharma-talk-library"><label><span>⌕</span><input type="search" data-talk-query value="${safe(talkQuery)}" placeholder="Giảng sư, chủ đề, khóa tu…"></label><div class="dharma-talk-filters"><select data-talk-provider><option value="all">Mọi nguồn</option>${providers.map((item) => `<option value="${safe(item)}" ${talkProvider === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><select data-talk-type><option value="all">Mọi loại</option>${types.map((item) => `<option value="${safe(item)}" ${talkType === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><select data-talk-language><option value="all">Mọi ngôn ngữ</option>${languages.map((item) => `<option value="${safe(item)}" ${talkLanguage === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select></div><div>${filtered.map((talk) => `<button type="button" data-open-talk="${talk.id}" class="${selected?.id === talk.id ? "is-active" : ""}"><i>${talk.type === "Video" ? "▷" : talk.type === "Trực tiếp" ? "●" : talk.audioAvailable ? "♫" : "讀"}</i><span><small>${safe(talk.provider)} · ${safe(talk.type)}</small><strong>${safe(talk.title)}</strong><em>${safe(talk.teacher)}</em></span><b>›</b></button>`).join("") || '<p class="dharma-empty-line">Không có hồ sơ phù hợp bộ lọc.</p>'}</div></aside><main class="dharma-talk-detail">${selected ? `<article class="dharma-paper-card"><header><span>${selected.audioAvailable ? "♫" : "聽"}</span><div><small>${safe(selected.type)} · ${safe(selected.provider)}</small><h2>${safe(selected.title)}</h2><p>${safe(selected.teacher)} · ${safe(selected.center)}</p></div></header><div class="dharma-talk-rights"><strong>${selected.audioAvailable ? "Có audio tại nguồn" : "Không có tệp phát trực tiếp trong HH"}</strong><span>${safe(selected.rights)}</span></div><dl><div><dt>Khóa tu / bộ sưu tập</dt><dd>${safe(selected.retreat)}</dd></div><div><dt>Truyền thống</dt><dd>${safe(selected.tradition)}</dd></div><div><dt>Chủ đề</dt><dd>${safe(selected.topic)}</dd></div><div><dt>Ngôn ngữ</dt><dd>${safe(selected.language)}</dd></div><div><dt>Phụ đề</dt><dd>${safe(selected.subtitles)}</dd></div></dl><p>${safe(selected.note)}</p><section class="dharma-talk-controls"><label>Tốc độ ghi nhớ<select data-talk-speed>${[.75,1,1.25,1.5,1.75,2].map((rate) => `<option value="${rate}" ${Number(state.talkSpeed) === rate ? "selected" : ""}>${rate}×</option>`).join("")}</select></label><button type="button" data-talk-queue="${selected.id}">${state.talkQueue.includes(selected.id) ? "✓ Trong hàng đợi" : "+ Thêm hàng đợi"}</button><button type="button" data-save-talk="${selected.id}">${state.savedTalks.includes(selected.id) ? "★ Đã lưu" : "☆ Yêu thích"}</button><a class="dharma-primary" href="${safe(selected.url)}" target="_blank" rel="noopener noreferrer">Mở tại nguồn ↗</a></section><section class="dharma-talk-bookmark"><form data-talk-bookmark="${selected.id}"><label>Mốc thời gian<input name="timestamp" type="text" inputmode="numeric" maxlength="12" placeholder="12:30"></label><label>Nhãn<input name="label" maxlength="100" placeholder="Đoạn cần nghe lại"></label><button type="submit">Thêm bookmark</button></form>${(state.talkBookmarks[selected.id] || []).map((mark, index) => `<p><strong>${safe(mark.timestamp)}</strong><span>${safe(mark.label || "Mốc nghe")}</span><button type="button" data-talk-remove-bookmark="${selected.id}" data-talk-bookmark-index="${index}">×</button></p>`).join("")}</section><label class="dharma-talk-note">Ghi chú cạnh pháp thoại<textarea data-talk-note="${selected.id}" maxlength="5000" placeholder="Ghi chú riêng, không gửi tới nguồn…">${safe(state.talkNotes[selected.id] || "")}</textarea></label></article>` : '<div class="dharma-empty"><span>聽</span><strong>Chọn một hồ sơ pháp thoại</strong><p>Thông tin giảng sư, trung tâm, quyền phát và nguồn sẽ hiện tại đây.</p></div>'}</main><aside class="dharma-talk-queue"><header><small>HÀNG ĐỢI CỤC BỘ</small><strong>${queue.length} mục</strong></header>${queue.map((talk, index) => `<article><i>${index + 1}</i><span><strong>${safe(talk.title)}</strong><small>${safe(talk.provider)}</small></span><button type="button" data-open-talk="${talk.id}">Mở</button><button type="button" data-talk-queue="${talk.id}" aria-label="Bỏ khỏi hàng đợi">×</button></article>`).join("") || '<p class="dharma-empty-line">Hàng đợi đang trống.</p>'}<p>HH chỉ lưu thứ tự, tốc độ và ghi chú; không tải lại audio của bên thứ ba.</p></aside></section>`;
   }
 
   function circleInviteCode(circle) {
@@ -958,7 +1149,7 @@
   }
 
   function qnaMarkup() {
-    return `<section class="dharma-qna dharma-paper-card"><header><span>問</span><div><small>TRỢ LÝ HỌC PHÁP CÓ GIỚI HẠN</small><h2>Tra cứu trước, suy ngẫm sau</h2><p>Kết quả được tìm trong thư viện nội bộ đã biên soạn; không gọi AI bên ngoài khi bạn chỉ điều hướng và không tự tạo “lời Phật dạy”.</p></div></header><form data-qna-form><label><textarea name="question" required maxlength="500" placeholder="Ví dụ: Tứ Diệu Đế có phải là cách nhìn bi quan không?"></textarea><button class="dharma-primary" type="submit">Tìm trong giáo lý</button></label></form><div data-qna-answer><p class="dharma-empty-line">Nhập câu hỏi để tìm chủ đề phù hợp trong giáo lý và tóm lược kinh.</p></div></section><section class="dharma-ai-boundaries"><article><header><span>✓</span><h3>HH được phép hỗ trợ</h3></header><ul><li>Giải thích thuật ngữ bằng tiếng Việt dễ hiểu.</li><li>Gợi ý bài đã duyệt và tạo câu hỏi tự kiểm tra.</li><li>Tóm tắt ghi chú cá nhân ngay trên thiết bị.</li><li>Phát hiện metadata hoặc trích dẫn đang thiếu nguồn.</li></ul></article><article><header><span>×</span><h3>HH tuyệt đối không làm</h3></header><ul><li>Giả danh tăng ni hoặc đưa phán quyết tâm linh.</li><li>Phán nghiệp, hứa chữa bệnh hay đổi số phận.</li><li>Tự tạo lời Phật dạy hoặc bịa mã kinh, dịch giả.</li><li>Trộn các truyền thống thành một kết luận duy nhất.</li></ul></article></section><section class="dharma-safety-grid"><article><span>✓</span><h3>Luôn dẫn nguồn</h3><p>Cho biết đây là tóm lược HH và mở được tài liệu tham khảo.</p></article><article><span>!</span><h3>Biết giới hạn</h3><p>Không thay thế tăng ni đủ phẩm hạnh, bác sĩ, chuyên gia tâm lý hoặc tư vấn pháp lý.</p></article><article><span>⌾</span><h3>Không phán nghiệp</h3><p>Không dùng giáo lý để đổ lỗi, gieo sợ hãi hoặc hứa hẹn kết quả siêu nhiên.</p></article></section><section class="dharma-teacher-referral dharma-paper-card"><header><div><small>HỎI NGƯỜI HƯỚNG DẪN</small><h2>HH không mô phỏng một vị thầy</h2></div><span>☸</span></header><p>Khi câu hỏi liên quan nghi lễ, giới luật, pháp môn chuyên biệt hoặc khó khăn trong thực hành, hãy liên hệ cơ sở Phật giáo chính thức và tự kiểm tra danh tính người hướng dẫn.</p><div><a href="https://ghpgvn.vn/" target="_blank" rel="noopener noreferrer"><strong>Giáo hội Phật giáo Việt Nam</strong><small>Tra cứu tổ chức và thông tin liên hệ chính thức ↗</small></a><a href="https://www.phatsuonline.vn/" target="_blank" rel="noopener noreferrer"><strong>Phật Sự Online</strong><small>Theo dõi lịch, pháp sự và kênh công khai ↗</small></a></div></section>`;
+    return `<section class="dharma-qna dharma-paper-card"><header><span>問</span><div><small>HH PHẬT HỌC CÓ NGUỒN</small><h2>Tra cứu trong kho đã duyệt, không sáng tác giáo lý</h2><p>Chọn mức giải thích và tác vụ. Kết quả chỉ lấy từ chương đã xuất bản, metadata kinh, thuật ngữ và nguồn đã kiểm tra; không gọi AI bên ngoài khi điều hướng.</p></div></header><div class="dharma-qna-options"><fieldset><legend>Mức giải thích</legend>${[["beginner","Người mới"],["general","Phổ thông"],["research","Nghiên cứu"]].map(([id,label]) => `<button type="button" data-qna-level="${id}" aria-pressed="${qnaLevel === id}">${label}</button>`).join("")}</fieldset><fieldset><legend>Tác vụ</legend>${[["explain","Giải thích"],["citation","Kiểm tra trích dẫn"],["compare","So sánh thuật ngữ"],["path","Đề xuất lộ trình"]].map(([id,label]) => `<button type="button" data-qna-task="${id}" aria-pressed="${qnaTask === id}">${label}</button>`).join("")}</fieldset></div><form data-qna-form><label><textarea name="question" required maxlength="500" placeholder="Ví dụ: Tứ Diệu Đế có phải là cách nhìn bi quan không?"></textarea><button class="dharma-primary" type="submit">Tra trong nội dung đã duyệt</button></label></form><div data-qna-answer><p class="dharma-empty-line">Nhập câu hỏi để tìm chương, đoạn, thuật ngữ hoặc metadata phù hợp.</p></div></section><section class="dharma-ai-boundaries"><article><header><span>✓</span><h3>HH được phép hỗ trợ</h3></header><ul><li>Giải thích nội dung đã duyệt ở ba mức.</li><li>Tìm đoạn, metadata và chương liên quan.</li><li>So sánh cách dùng thuật ngữ với nhãn nguồn.</li><li>Tạo câu hỏi ôn tập từ nội dung đã xuất bản.</li></ul></article><article><header><span>×</span><h3>HH tuyệt đối không làm</h3></header><ul><li>Giả danh tăng ni hoặc đưa phán quyết tâm linh.</li><li>Phán nghiệp, hứa chữa bệnh hay đổi số phận.</li><li>Tự tạo lời Phật dạy hoặc bịa mã kinh, dịch giả.</li><li>Trộn các truyền thống thành một kết luận duy nhất.</li></ul></article></section><section class="dharma-safety-grid"><article><span>✓</span><h3>Dẫn tới hồ sơ nguồn</h3><p>Mỗi kết quả có loại nội dung, trạng thái và đường mở tương ứng.</p></article><article><span>!</span><h3>Biết giới hạn</h3><p>Không thay thế tăng ni đủ phẩm hạnh, bác sĩ, chuyên gia tâm lý hoặc tư vấn pháp lý.</p></article><article><span>⌾</span><h3>Không phán nghiệp</h3><p>Không dùng giáo lý để đổ lỗi, gieo sợ hãi hoặc hứa hẹn kết quả siêu nhiên.</p></article></section><section class="dharma-teacher-referral dharma-paper-card"><header><div><small>HỎI NGƯỜI HƯỚNG DẪN</small><h2>HH không mô phỏng một vị thầy</h2></div><span>☸</span></header><p>Khi câu hỏi liên quan nghi lễ, giới luật, pháp môn chuyên biệt hoặc khó khăn trong thực hành, hãy liên hệ cơ sở Phật giáo chính thức và tự kiểm tra danh tính người hướng dẫn.</p><div><a href="https://ghpgvn.vn/" target="_blank" rel="noopener noreferrer"><strong>Giáo hội Phật giáo Việt Nam</strong><small>Tra cứu tổ chức và thông tin liên hệ chính thức ↗</small></a><a href="https://www.phatsuonline.vn/" target="_blank" rel="noopener noreferrer"><strong>Phật Sự Online</strong><small>Theo dõi lịch, pháp sự và kênh công khai ↗</small></a></div></section>`;
   }
 
   function journalMarkup() {
@@ -976,9 +1167,11 @@
     if (activeView === "situations") return situationsMarkup();
     if (activeView === "teachings") return teachingsMarkup();
     if (activeView === "scriptures") return scripturesMarkup();
+    if (activeView === "research") return researchMarkup();
+    if (activeView === "scholar") return scholarMarkup();
     if (activeView === "glossary") return glossaryMarkup();
     if (activeView === "map") return mapMarkup();
-    if (activeView === "provenance") return provenanceMarkup();
+    if (activeView === "provenance") return provenanceMarkupV6();
     if (activeView === "review") return reviewMarkup();
     if (activeView === "practice") return practiceMarkup();
     if (activeView === "chanting") return chantingMarkup();
@@ -1026,7 +1219,7 @@
     const primary = root.querySelector("[data-dharma-primary]");
     if (primary) {
       const groundingNeeded = activeView === "practice" && state.meditation.checkIn === "overwhelmed" && !timerRunning;
-      primary.innerHTML = groundingNeeded ? "Mở hướng dẫn ổn định →" : activeView === "practice" ? `${timerRunning ? "Tạm dừng" : "Bắt đầu thiền"} →` : activeView === "encyclopedia" ? "Đọc chương tiếp theo →" : activeView === "scriptures" ? "Tiếp tục đọc →" : activeView === "chanting" ? "Bắt đầu tụng đọc →" : activeView === "audio" ? `${audioStudyPlaying ? "Tạm dừng" : "Bắt đầu nghe"} →` : activeView === "review" ? "Ôn nội dung tiếp theo →" : activeView === "data-control" ? "Sao lưu dữ liệu →" : "Tiếp tục hành trình →";
+      primary.innerHTML = groundingNeeded ? "Mở hướng dẫn ổn định →" : activeView === "practice" ? `${timerRunning ? "Tạm dừng" : "Bắt đầu thiền"} →` : activeView === "encyclopedia" ? "Đọc chương tiếp theo →" : activeView === "scriptures" ? "Tiếp tục đọc →" : activeView === "research" ? "Mở Canonical Reader →" : activeView === "scholar" ? "Đọc tác phẩm đang chọn →" : activeView === "talks" ? "Xem hàng đợi nghe →" : activeView === "provenance" ? "Tạo snapshot kiểm chứng →" : activeView === "qna" ? "Đặt câu hỏi có nguồn →" : activeView === "temple" ? "Mở lịch tu học →" : activeView === "chanting" ? "Bắt đầu tụng đọc →" : activeView === "audio" ? `${audioStudyPlaying ? "Tạm dừng" : "Bắt đầu nghe"} →` : activeView === "review" ? "Ôn nội dung tiếp theo →" : activeView === "data-control" ? "Sao lưu dữ liệu →" : "Tiếp tục hành trình →";
       primary.toggleAttribute("data-grounding", groundingNeeded);
     }
     updateProgressPanel();
@@ -1104,7 +1297,7 @@
       stopTimer();
       if (!state.meditation.silent) playBell();
       const minutes = Math.max(1, Math.round(timerInitial / 60));
-      const practiceLabels = { breath: "Hơi thở", body: "Quán thân", feeling: "Cảm thọ", kindness: "Tâm từ", walking: "Thiền đi bộ" };
+      const practiceLabels = { breath: "Hơi thở", body: "Quán thân", feeling: "Cảm thọ", kindness: "Tâm từ", walking: "Thiền đi bộ", relaxation: "Thư giãn sâu" };
       state.practiceHistory = [...state.practiceHistory, { id: global.crypto?.randomUUID?.() || `${Date.now()}`, minutes, type: practiceLabels[state.meditation.type] || "Hơi thở", at: new Date().toISOString() }].slice(-100);
       if (state.meditation.activeCourseDay) state.meditation = { ...state.meditation, courseDays: unique([...state.meditation.courseDays, Number(state.meditation.activeCourseDay)]), activeCourseDay: 0, locked: false };
       saveState();
@@ -1391,11 +1584,16 @@
 
   function citationText(item, style = "academic") {
     const source = sourceById(item.sourceId);
+    const accessed = new Intl.DateTimeFormat("vi-VN").format(new Date());
+    const title = item.canonicalTitle || item.title;
     if (style === "bibtex") {
       const key = `HH${item.id.replace(/[^a-z0-9]/gi, "")}${new Date().getFullYear()}`;
       return `@misc{${key},\n  title = {${item.canonicalTitle || item.title}},\n  note = {${item.title}; ${item.code}; ${item.collection}; metadata accessed via ${source.organization}},\n  howpublished = {\\url{${item.sourceUrl}}},\n  year = {${new Date().getFullYear()}}\n}`;
     }
-    return `${item.canonicalTitle || item.title} [${item.title}]. ${item.code}, ${item.collection}. ${source.organization}. ${item.sourceUrl} (truy cập ${new Intl.DateTimeFormat("vi-VN").format(new Date())}). Dịch giả và giấy phép: ${item.translator}; ${item.license}.`;
+    if (style === "apa") return `${source.organization}. (${new Date().getFullYear()}). ${title} [${item.title}; ${item.code}]. ${item.sourceUrl} (truy cập ${accessed}). Metadata dịch giả/quyền: ${item.translator}; ${item.license}.`;
+    if (style === "mla") return `“${title}.” ${item.collection}, ${item.code}, ${source.organization}, ${item.sourceUrl}. Truy cập ${accessed}. Metadata dịch giả/quyền: ${item.translator}; ${item.license}.`;
+    if (style === "chicago") return `${source.organization}. “${title} (${item.title}).” ${item.collection}, ${item.code}. Truy cập ${accessed}. ${item.sourceUrl}. Metadata dịch giả/quyền: ${item.translator}; ${item.license}.`;
+    return `${title} [${item.title}]. ${item.code}, ${item.collection}. ${source.organization}. ${item.sourceUrl} (truy cập ${accessed}). Dịch giả và giấy phép: ${item.translator}; ${item.license}.`;
   }
 
   function copyCitation(id, style = "academic") {
@@ -1443,6 +1641,55 @@
     const url = URL.createObjectURL(new Blob([content], { type }));
     const link = document.createElement("a"); link.href = url; link.download = filename; link.click();
     global.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function runFacsimileOcr() {
+    if (!facsimileFile) return toast("Hãy chọn một ảnh scan từ thiết bị.", "warning");
+    if (!("TextDetector" in global)) return toast("Trình duyệt chưa hỗ trợ TextDetector; HH không tạo kết quả OCR giả.", "warning");
+    facsimileBusy = true; renderView({ preserveScroll: true });
+    try {
+      const bitmap = await createImageBitmap(facsimileFile);
+      const blocks = await new global.TextDetector().detect(bitmap);
+      bitmap.close?.();
+      facsimileText = blocks.map((block) => String(block.rawValue || "").trim()).filter(Boolean).join("\n");
+      state.facsimileNotes = { ...state.facsimileNotes, [facsimileName]: { text: facsimileText, updatedAt: new Date().toISOString(), localOnly: true } };
+      saveState();
+      toast(facsimileText ? "Đã nhận dạng cục bộ; hãy đối chiếu lại ảnh gốc." : "TextDetector không tìm thấy chữ trong ảnh.", facsimileText ? "success" : "warning");
+    } catch (error) { toast(`OCR không hoàn tất: ${error?.message || "trình duyệt từ chối ảnh"}.`, "warning"); }
+    finally { facsimileBusy = false; renderView({ preserveScroll: true }); }
+  }
+
+  function exportFacsimile() {
+    if (!facsimileText) return toast("Chưa có văn bản OCR để xuất.", "warning");
+    const base = (facsimileName || "facsimile").replace(/\.[^.]+$/, "").replace(/[^a-z0-9_-]+/gi, "-").slice(0, 64) || "facsimile";
+    downloadBlob(facsimileText, `${base}-ocr.txt`, "text/plain;charset=utf-8");
+    downloadBlob(JSON.stringify({ kind: "hh-dharma-local-ocr", version: 1, sourceFile: facsimileName, createdAt: new Date().toISOString(), settings: facsimileSettings, text: facsimileText, warning: "OCR cục bộ chưa được biên tập; phải đối chiếu ảnh gốc." }, null, 2), `${base}-ocr.json`, "application/json;charset=utf-8");
+    toast("Đã xuất TXT và JSON metadata cục bộ.");
+  }
+
+  function exportPracticePack() {
+    const payload = { kind: "hh-dharma-practice-pack", version: 1, exportedAt: new Date().toISOString(), playlist: state.meditation.playlist, meditation: { type: state.meditation.type, bellInterval: state.meditation.bellInterval, silent: state.meditation.silent }, presets: state.meditation.presets, course: MEDITATION_COURSE, guidance: "Gói cấu hình và hướng dẫn HH; không chứa audio bên thứ ba và không thay thế hỗ trợ chuyên môn." };
+    downloadBlob(JSON.stringify(payload, null, 2), `thuc-hanh-${todayKey()}.json`, "application/json;charset=utf-8");
+    toast("Đã xuất gói thực hành offline; không kèm audio chưa có quyền.");
+  }
+
+  async function createEditorialSnapshot() {
+    const stats = editorialCatalogStats();
+    const payload = { kind: "hh-dharma-editorial-snapshot", version: 1, generatedAt: new Date().toISOString(), target: stats.target, published: stats.published, planned: stats.planned, scriptureMetadata: SCRIPTURES.map((item) => ({ id: item.id, code: item.code, sourceId: item.sourceId, verifiedAt: item.verifiedAt, license: item.license })), collections: DHARMA_EDITORIAL_COLLECTIONS.map((item) => ({ id: item.id, target: item.target, published: item.published, planned: item.planned.length })), warning: "Snapshot cục bộ phục vụ kiểm chứng; không phải trạng thái xuất bản có thẩm quyền trên máy chủ." };
+    const checksum = await sha256Text(JSON.stringify(payload));
+    const snapshot = { id: global.crypto?.randomUUID?.() || `${Date.now()}`, at: payload.generatedAt, checksum, published: stats.published, payload };
+    state.editorialSnapshots = [...state.editorialSnapshots, snapshot].slice(-20); saveState(); renderView({ preserveScroll: true }); toast("Đã tạo snapshot với checksum SHA-256.");
+  }
+
+  async function checkSourceHealth() {
+    const checkedAt = new Date().toISOString();
+    const results = await Promise.all(SOURCES.map(async (source) => {
+      try {
+        await fetch(source.url, { mode: "no-cors", cache: "no-store", redirect: "follow" });
+        return [source.id, { ok: true, at: checkedAt, label: "Có phản hồi mạng · cần mở nguồn để kiểm tra HTTP" }];
+      } catch { return [source.id, { ok: false, at: checkedAt, label: "Không kết nối được trong phiên" }]; }
+    }));
+    state.sourceHealth = { ...state.sourceHealth, ...Object.fromEntries(results) }; saveState(); renderView({ preserveScroll: true }); toast("Đã kiểm tra khả năng kết nối; CORS có thể giới hạn việc đọc mã HTTP.");
   }
 
   async function sha256Text(value) {
@@ -1532,6 +1779,58 @@
     }
     const nav = event.target.closest("[data-dharma-nav]");
     if (nav) return navigate(nav.dataset.dharmaNav);
+    const researchOperator = event.target.closest("[data-research-operator]");
+    if (researchOperator) { const input = root.querySelector("[data-research-query]"); if (input) { input.value = `${input.value.trim()} ${researchOperator.dataset.researchOperator}`.trimStart(); input.focus(); input.setSelectionRange(input.value.length, input.value.length); } return; }
+    if (event.target.closest("[data-research-clear-history]")) { state.researchHistory = []; saveState(); renderView({ preserveScroll: true }); return; }
+    const researchHistory = event.target.closest("[data-research-history]");
+    if (researchHistory) { researchQuery = researchHistory.dataset.researchHistory; renderView({ preserveScroll: true }); return; }
+    const researchOpen = event.target.closest("[data-research-open]");
+    if (researchOpen) {
+      const action = researchOpen.dataset.researchOpen; const id = researchOpen.dataset.researchId;
+      if (action === "encyclopedia") { const chapter = encyclopediaChapterById(id); selectedEncyclopediaChapter = chapter.id; encyclopediaCatalogOpen = false; }
+      if (action === "scripture") selectedScripture = id;
+      if (action === "glossary") selectedGlossary = id;
+      if (action === "talk") selectedTalk = id;
+      if (action === "practice") { state.meditation = { ...state.meditation, type: id }; saveState(); }
+      return navigate(({ scripture: "scriptures", talk: "talks" })[action] || action);
+    }
+    const canonicalLayout = event.target.closest("button[data-canonical-layout]");
+    if (canonicalLayout) { state.canonical = { ...state.canonical, layout: canonicalLayout.dataset.canonicalLayout }; saveState(); renderView({ preserveScroll: true }); return; }
+    const scholarReader = event.target.closest("[data-scholar-open-reader]");
+    if (scholarReader) { selectedScripture = scholarReader.dataset.scholarOpenReader; activeScriptureTab = "study"; return navigate("scriptures"); }
+    const openScholar = event.target.closest("[data-open-scholar]");
+    if (openScholar) { selectedScripture = openScholar.dataset.openScholar; return navigate("scholar"); }
+    const scholarSegment = event.target.closest("[data-scholar-copy-segment]");
+    if (scholarSegment) { const url = `${location.origin}${location.pathname}#/phat-phap/scriptures?work=${encodeURIComponent(selectedScripture)}&segment=${encodeURIComponent(scholarSegment.dataset.scholarCopySegment)}`; navigator.clipboard?.writeText(url).then(() => toast("Đã sao chép permalink đoạn.")).catch(() => global.prompt("Sao chép permalink:", url)); return; }
+    const openTalk = event.target.closest("[data-open-talk]");
+    if (openTalk) { selectedTalk = openTalk.dataset.openTalk; renderView({ preserveScroll: true }); return; }
+    const talkQueue = event.target.closest("[data-talk-queue]");
+    if (talkQueue) { const id = talkQueue.dataset.talkQueue; state.talkQueue = state.talkQueue.includes(id) ? state.talkQueue.filter((item) => item !== id) : [...state.talkQueue, id].slice(-50); saveState(); renderView({ preserveScroll: true }); return; }
+    const removeTalkBookmark = event.target.closest("[data-talk-remove-bookmark]");
+    if (removeTalkBookmark) { const id = removeTalkBookmark.dataset.talkRemoveBookmark; const index = Number(removeTalkBookmark.dataset.talkBookmarkIndex); state.talkBookmarks = { ...state.talkBookmarks, [id]: (state.talkBookmarks[id] || []).filter((_, itemIndex) => itemIndex !== index) }; saveState(); renderView({ preserveScroll: true }); return; }
+    const templeProgramButton = event.target.closest("[data-temple-program]");
+    if (templeProgramButton) { templeProgram = templeProgramButton.dataset.templeProgram; renderView({ preserveScroll: true }); return; }
+    const qnaLevelButton = event.target.closest("[data-qna-level]");
+    if (qnaLevelButton) { qnaLevel = qnaLevelButton.dataset.qnaLevel; renderView({ preserveScroll: true }); return; }
+    const qnaTaskButton = event.target.closest("[data-qna-task]");
+    if (qnaTaskButton) { qnaTask = qnaTaskButton.dataset.qnaTask; renderView({ preserveScroll: true }); return; }
+    const meditationPlaylist = event.target.closest("[data-meditation-playlist]");
+    if (meditationPlaylist) {
+      const id = meditationPlaylist.dataset.meditationPlaylist; const preset = { morning: ["breath", 10], noon: ["walking", 5], evening: ["relaxation", 30] }[id];
+      stopTimer(); if (preset) { state.meditation = { ...state.meditation, playlist: id, type: preset[0] }; timerInitial = preset[1] * 60; timerRemaining = timerInitial; } else state.meditation = { ...state.meditation, playlist: id };
+      saveState(); renderView({ preserveScroll: true }); return;
+    }
+    if (event.target.closest("[data-export-practice-pack]")) return exportPracticePack();
+    if (event.target.closest("[data-facsimile-rotate]")) { facsimileSettings = { ...facsimileSettings, rotation: (facsimileSettings.rotation + 90) % 360 }; renderView({ preserveScroll: true }); return; }
+    if (event.target.closest("[data-facsimile-reset]")) { facsimileSettings = { brightness: 100, contrast: 100, invert: 0, rotation: 0 }; renderView({ preserveScroll: true }); return; }
+    if (event.target.closest("[data-facsimile-ocr]")) return runFacsimileOcr();
+    if (event.target.closest("[data-facsimile-export]")) return exportFacsimile();
+    if (event.target.closest("[data-source-health-check]")) return checkSourceHealth();
+    if (event.target.closest("[data-editorial-snapshot]")) return createEditorialSnapshot();
+    const exportSnapshot = event.target.closest("[data-export-editorial-snapshot]");
+    if (exportSnapshot) { const snapshot = state.editorialSnapshots.find((item) => item.id === exportSnapshot.dataset.exportEditorialSnapshot); if (snapshot) downloadBlob(JSON.stringify(snapshot, null, 2), `dharma-snapshot-${snapshot.at.slice(0,10)}.json`, "application/json;charset=utf-8"); return; }
+    const editorialReview = event.target.closest("[data-editorial-review]");
+    if (editorialReview) { if (!canEditSources) return toast("Tài khoản không có quyền biên tập nguồn.", "warning"); const target = editorialReview.dataset.editorialReview; if (!state.editorialReviews.some((item) => item.target === target && item.reviewer === accountKey)) state.editorialReviews = [...state.editorialReviews, { id: global.crypto?.randomUUID?.() || `${Date.now()}`, target, reviewer: accountKey, at: new Date().toISOString(), status: "Duyệt bản nháp cục bộ" }].slice(-200); saveState(); renderView({ preserveScroll: true }); return; }
     const encyclopediaOpen = event.target.closest("[data-encyclopedia-open]");
     if (encyclopediaOpen && encyclopediaOpen.dataset.encyclopediaOpen) {
       const chapter = encyclopediaChapterById(encyclopediaOpen.dataset.encyclopediaOpen);
@@ -1757,7 +2056,7 @@
       stopTimer(); timerInitial = course.minutes * 60; timerRemaining = timerInitial; state.meditation = { ...state.meditation, type: course.type, activeCourseDay: course.day }; saveState(); renderView({ preserveScroll: true }); toast(`Đã chuẩn bị ngày ${course.day}: ${course.title}.`); return;
     }
     if (event.target.closest("[data-save-meditation-preset]")) {
-      const preset = { id: global.crypto?.randomUUID?.() || `${Date.now()}`, label: `${({ breath: "Hơi thở", body: "Quán thân", feeling: "Cảm thọ", kindness: "Tâm từ", walking: "Thiền đi bộ" })[state.meditation.type] || "Thiền"} ${Math.round(timerInitial / 60)}′`, type: state.meditation.type, minutes: Math.round(timerInitial / 60), bellInterval: state.meditation.bellInterval, silent: state.meditation.silent };
+      const preset = { id: global.crypto?.randomUUID?.() || `${Date.now()}`, label: `${({ breath: "Hơi thở", body: "Quán thân", feeling: "Cảm thọ", kindness: "Tâm từ", walking: "Thiền đi bộ", relaxation: "Thư giãn sâu" })[state.meditation.type] || "Thiền"} ${Math.round(timerInitial / 60)}′`, type: state.meditation.type, minutes: Math.round(timerInitial / 60), bellInterval: state.meditation.bellInterval, silent: state.meditation.silent };
       state.meditation = { ...state.meditation, presets: [...state.meditation.presets, preset].slice(-8) }; saveState(); renderView({ preserveScroll: true }); toast("Đã lưu preset thiền."); return;
     }
     const usePreset = event.target.closest("[data-use-meditation-preset]");
@@ -1884,6 +2183,12 @@
       if (activeView === "audio") return toggleAudioStudy();
       if (activeView === "review") { studyReviewReveal = true; renderView({ preserveScroll: true }); return; }
       if (activeView === "data-control") return exportStudyBackup().catch((error) => toast(error?.message || "Không thể tạo gói sao lưu.", "warning"));
+      if (activeView === "research") return navigate("scriptures");
+      if (activeView === "scholar") { activeScriptureTab = "study"; return navigate("scriptures"); }
+      if (activeView === "talks") { root.querySelector(".dharma-talk-queue")?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" }); return; }
+      if (activeView === "provenance") return createEditorialSnapshot();
+      if (activeView === "qna") { root.querySelector("[data-qna-form] textarea")?.focus(); return; }
+      if (activeView === "temple") return navigate("schedule");
       if (activeView === "encyclopedia") {
         const all = encyclopediaChapters(); const index = all.findIndex((item) => item.id === selectedEncyclopediaChapter); const next = all[Math.min(all.length - 1, index + 1)];
         selectedEncyclopediaChapter = next.id; state.encyclopediaPosition = { volume: next.volumeId, chapter: next.id, updatedAt: new Date().toISOString() }; saveState(); renderView(); return;
@@ -1895,6 +2200,10 @@
 
   function handleInput(event) {
     if (event.target.matches("[data-dharma-search]")) return showSearchResults(event.target);
+    if (event.target.matches("[data-research-query]")) { researchQuery = event.target.value; }
+    if (event.target.matches("[data-talk-query]")) { talkQuery = event.target.value; renderView({ preserveScroll: true }); const input = root.querySelector("[data-talk-query]"); input?.focus({ preventScroll: true }); if (input) input.setSelectionRange(input.value.length, input.value.length); return; }
+    if (event.target.matches("[data-facsimile-setting]")) { facsimileSettings = { ...facsimileSettings, [event.target.dataset.facsimileSetting]: Number(event.target.value) }; const image = root.querySelector(".dharma-facsimile-stage img"); if (image) { image.style.filter = `brightness(${facsimileSettings.brightness}%) contrast(${facsimileSettings.contrast}%) invert(${facsimileSettings.invert}%)`; image.style.transform = `rotate(${facsimileSettings.rotation}deg)`; } return; }
+    if (event.target.matches("[data-facsimile-text]")) facsimileText = event.target.value;
     if (event.target.matches("[data-encyclopedia-search]")) { encyclopediaQuery = event.target.value; encyclopediaCatalogOpen = true; renderView({ preserveScroll: true }); const input = root.querySelector("[data-encyclopedia-search]"); input?.focus({ preventScroll: true }); if (input) input.setSelectionRange(input.value.length, input.value.length); return; }
     if (event.target.matches("[data-scripture-search]")) { scriptureQuery = event.target.value; renderView({ preserveScroll: true }); root.querySelector("[data-scripture-search]")?.focus({ preventScroll: true }); }
     if (event.target.matches("[data-glossary-search]")) {
@@ -1911,6 +2220,22 @@
   }
 
   async function handleChange(event) {
+    if (event.target.matches("[data-research-type]")) { researchType = event.target.value; renderView({ preserveScroll: true }); }
+    if (event.target.matches("[data-research-tradition]")) { researchTradition = event.target.value; renderView({ preserveScroll: true }); }
+    if (event.target.matches("[data-research-language]")) { researchLanguage = event.target.value; renderView({ preserveScroll: true }); }
+    if (event.target.matches("[data-research-status]")) { researchStatus = event.target.value; renderView({ preserveScroll: true }); }
+    if (event.target.matches("[data-talk-provider]")) { talkProvider = event.target.value; renderView({ preserveScroll: true }); }
+    if (event.target.matches("[data-talk-type]")) { talkType = event.target.value; renderView({ preserveScroll: true }); }
+    if (event.target.matches("[data-talk-language]")) { talkLanguage = event.target.value; renderView({ preserveScroll: true }); }
+    if (event.target.matches("[data-talk-speed]")) { state.talkSpeed = Number(event.target.value); saveState(); }
+    if (event.target.matches("[data-scholar-work]")) { selectedScripture = event.target.value; renderView({ preserveScroll: true }); }
+    if (event.target.matches("[data-facsimile-file]")) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      if (!/^image\/(png|jpeg|webp|bmp)$/i.test(file.type) || file.size > 20_000_000) { event.target.value = ""; return toast("Ảnh phải là PNG, JPEG, WebP hoặc BMP và không vượt 20 MB.", "warning"); }
+      if (facsimileUrl) URL.revokeObjectURL(facsimileUrl);
+      facsimileFile = file; facsimileUrl = URL.createObjectURL(file); facsimileName = file.name.slice(0, 180); facsimileText = state.facsimileNotes[facsimileName]?.text || ""; facsimileSettings = { brightness: 100, contrast: 100, invert: 0, rotation: 0 }; renderView({ preserveScroll: true }); return;
+    }
     if (event.target.matches("[data-scripture-tradition]")) { scriptureTradition = event.target.value; renderView({ preserveScroll: true }); }
     if (event.target.matches("[data-scripture-topic]")) { scriptureTopic = event.target.value; renderView({ preserveScroll: true }); }
     if (event.target.matches("[data-scripture-difficulty]")) { scriptureDifficulty = event.target.value; renderView({ preserveScroll: true }); }
@@ -1944,6 +2269,10 @@
     if (encyclopediaNote) { state.encyclopediaNotes = { ...state.encyclopediaNotes, [encyclopediaNote.dataset.encyclopediaNote]: encyclopediaNote.value }; saveState(); toast("Đã lưu ghi chú chương trên thiết bị."); }
     const circlePrivateNote = event.target.closest("[data-circle-private-note]");
     if (circlePrivateNote) { state.circlePrivateNotes = { ...state.circlePrivateNotes, [circlePrivateNote.dataset.circlePrivateNote]: circlePrivateNote.value }; saveState(); toast("Đã lưu ghi chú riêng; nội dung không đi vào lời mời."); }
+    const talkNote = event.target.closest("[data-talk-note]");
+    if (talkNote) { state.talkNotes = { ...state.talkNotes, [talkNote.dataset.talkNote]: talkNote.value }; saveState(); toast("Đã lưu ghi chú pháp thoại trên thiết bị."); }
+    const facsimileTextArea = event.target.closest("[data-facsimile-text]");
+    if (facsimileTextArea && facsimileName) { facsimileText = facsimileTextArea.value; state.facsimileNotes = { ...state.facsimileNotes, [facsimileName]: { text: facsimileText, updatedAt: new Date().toISOString(), localOnly: true } }; saveState(); toast("Đã lưu bản chép cục bộ."); }
     const importInput = event.target.closest("[data-import-backup]");
     if (importInput?.files?.[0]) {
       try { await prepareImport(importInput.files[0], importInput.dataset.importBackup); renderView({ preserveScroll: true }); toast("Tệp hợp lệ. Hãy xem trước rồi xác nhận khôi phục."); }
@@ -1958,6 +2287,15 @@
     if (form.matches("[data-schedule-form]")) {
       const data = new FormData(form); state.studySchedule = { minutes: Number(data.get("minutes")), time: String(data.get("time") || "20:00"), program: Number(data.get("program")) };
       saveState(); form.closest("[data-dharma-dialog]")?.remove(); renderView({ preserveScroll: true }); toast("Đã lưu thời khóa."); return;
+    }
+    if (form.matches("[data-research-form]")) {
+      researchQuery = String(new FormData(form).get("query") || "").trim();
+      state.researchHistory = [...state.researchHistory.filter((item) => item.query !== researchQuery), { query: researchQuery, at: new Date().toISOString() }].slice(-20); saveState(); renderView({ preserveScroll: true }); return;
+    }
+    if (form.matches("[data-talk-bookmark]")) {
+      const id = form.dataset.talkBookmark; const data = new FormData(form); const timestamp = String(data.get("timestamp") || "").trim(); const label = String(data.get("label") || "").trim();
+      if (!/^(?:\d{1,3}:)?[0-5]?\d:[0-5]\d$/.test(timestamp)) return toast("Mốc thời gian cần dạng mm:ss hoặc hh:mm:ss.", "warning");
+      state.talkBookmarks = { ...state.talkBookmarks, [id]: [...(state.talkBookmarks[id] || []), { timestamp, label, createdAt: new Date().toISOString() }].slice(-100) }; saveState(); renderView({ preserveScroll: true }); toast("Đã thêm bookmark thời gian."); return;
     }
     if (form.matches("[data-event-form]")) {
       const data = new FormData(form); state.events = [...state.events, { id: global.crypto?.randomUUID?.() || `${Date.now()}`, title: String(data.get("title")).trim(), at: String(data.get("at")), type: String(data.get("type") || "Tu học"), completed: false }];
@@ -2005,10 +2343,11 @@
     }
     if (form.matches("[data-qna-form]")) {
       const question = String(new FormData(form).get("question") || ""); const terms = normalize(question).split(/\s+/).filter((term) => term.length > 2);
-      const candidates = [...TEACHINGS.map((item) => ({ ...item, kind: "Giáo lý", text: `${item.title} ${item.intro} ${item.deep} ${item.application}` })), ...SCRIPTURES.map((item) => ({ ...item, kind: "Kinh điển", intro: item.summary, application: "Mở nguồn gốc để đọc đầy đủ trong bối cảnh.", text: `${item.title} ${item.summary} ${item.keywords}` }))];
-      const ranked = candidates.map((item) => ({ item, score: terms.reduce((sum, term) => sum + (normalize(item.text).includes(term) ? 1 : 0), 0) })).filter((entry) => entry.score).sort((a,b) => b.score - a.score).slice(0, 3);
+      const candidates = researchCatalog().filter((item) => !["planned", "note", "event", "report"].includes(item.type) && !/chờ biên tập/i.test(item.status));
+      const ranked = candidates.map((item) => ({ item, score: terms.reduce((sum, term) => sum + (normalize(`${item.title} ${item.detail} ${item.text}`).includes(term) ? 1 : 0), 0) + (qnaTask === "citation" && item.type === "scripture" ? 2 : 0) + (qnaTask === "compare" && item.type === "glossary" ? 2 : 0) })).filter((entry) => entry.score).sort((a,b) => b.score - a.score).slice(0, qnaLevel === "research" ? 8 : qnaLevel === "general" ? 5 : 3);
       const answer = root.querySelector("[data-qna-answer]");
-      answer.innerHTML = ranked.length ? `<small>KẾT QUẢ TỪ THƯ VIỆN NỘI BỘ</small>${ranked.map(({ item }) => `<article><header><span>${safe(item.kind)}</span>${sourceBadge(item.sourceId)}</header><h3>${safe(item.title)}</h3><p>${safe(item.intro || item.summary)}</p><p><strong>Gợi ý thực hành:</strong> ${safe(item.application || "Đọc nguồn trong bối cảnh và ghi lại điều bạn hiểu.")}</p></article>`).join("")}` : '<p class="dharma-empty-line">Chưa tìm thấy chủ đề đủ gần. Hãy thử “Tứ Diệu Đế”, “hơi thở”, “từ bi” hoặc mở nguồn chính thức.</p>';
+      const taskLabel = ({ explain: "Giải thích theo hồ sơ đã duyệt", citation: "Kiểm tra trích dẫn và metadata", compare: "So sánh thuật ngữ theo nguồn", path: "Lộ trình đọc đề xuất" })[qnaTask];
+      answer.innerHTML = ranked.length ? `<small>${safe(taskLabel)} · ${qnaLevel === "research" ? "NGHIÊN CỨU" : qnaLevel === "general" ? "PHỔ THÔNG" : "NGƯỜI MỚI"}</small><p class="dharma-qna-disclosure">Đây là kết quả truy hồi có xếp hạng từ dữ liệu nội bộ, không phải lời Phật dạy hoặc câu trả lời do một vị thầy đưa ra.</p>${ranked.map(({ item }, index) => `<article><header><span>${safe(item.kind)}</span><em>${safe(item.status)}</em></header><h3>${index + 1}. ${safe(item.title)}</h3><p>${safe(item.detail)}</p><p><strong>Vì sao được gợi ý:</strong> khớp thuật ngữ trong câu hỏi và có trạng thái ${safe(item.status)}.</p>${item.action ? `<button type="button" data-research-open="${safe(item.action)}" data-research-id="${safe(item.id)}">Mở hồ sơ nguồn →</button>` : ""}</article>`).join("")}` : '<p class="dharma-empty-line">Chưa tìm thấy nội dung đã duyệt đủ gần. Hãy thử “Tứ Diệu Đế”, “hơi thở”, “từ bi” hoặc dùng Tìm kiếm học thuật.</p>';
       answer.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" }); return;
     }
     if (form.matches("[data-journal-setup]")) {
@@ -2044,12 +2383,17 @@
     canEditSources = Boolean(currentUser.isAdmin || roles.some((role) => ["admin", "owner", "editor", "dharma-editor"].includes(role)));
     state = readState();
     activeView = NAV.some((item) => item.id === options.view) ? options.view : "today";
-    const chapterParam = new URLSearchParams((location.hash.split("?")[1] || "").split("#")[0]).get("chapter");
+    const routeParams = new URLSearchParams((location.hash.split("?")[1] || "").split("#")[0]);
+    const chapterParam = routeParams.get("chapter");
     const requestedChapter = encyclopediaChapters().find((item) => item.id === chapterParam);
     selectedEncyclopediaChapter = requestedChapter?.id || state.encyclopediaPosition.chapter || encyclopediaChapters()[0].id;
+    const requestedWork = SCRIPTURES.find((item) => item.id === routeParams.get("work"));
+    if (requestedWork) selectedScripture = requestedWork.id;
+    const requestedSegment = routeParams.get("segment");
+    if (requestedSegment && Object.values(SCRIPTURE_SEGMENTS).flat().some((segment) => segment.id === requestedSegment)) selectedScriptureSegment = requestedSegment;
     encyclopediaCatalogOpen = false;
     encyclopediaQuery = "";
-    openNavGroup = NAV.find((item) => item.id === activeView)?.group || "Bắt đầu";
+    openNavGroup = NAV.find((item) => item.id === activeView)?.group || "Hôm nay";
     root.innerHTML = shellMarkup();
     if (global.matchMedia("(max-width: 1260px)").matches) root.querySelector("[data-dharma-hub]")?.classList.add("is-progress-closed");
     renderView();
@@ -2075,9 +2419,11 @@
     global.speechSynthesis?.cancel?.();
     listeners.splice(0).forEach((remove) => remove());
     lockJournal();
+    if (facsimileUrl) URL.revokeObjectURL(facsimileUrl);
+    facsimileUrl = ""; facsimileFile = null; facsimileName = ""; facsimileText = "";
     if (root) root.replaceChildren();
     root = null;
   }
 
-  global.HHPhatPhap = Object.freeze({ VERSION, mount, unmount, lessons: LESSONS, teachings: TEACHINGS, scriptures: SCRIPTURES, encyclopedia: DHARMA_ENCYCLOPEDIA, sources: SOURCES });
+  global.HHPhatPhap = Object.freeze({ VERSION, mount, unmount, lessons: LESSONS, teachings: TEACHINGS, scriptures: SCRIPTURES, encyclopedia: DHARMA_ENCYCLOPEDIA, editorialCollections: DHARMA_EDITORIAL_COLLECTIONS, talks: TALKS, sources: SOURCES });
 })(window);

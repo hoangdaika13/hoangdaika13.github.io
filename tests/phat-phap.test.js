@@ -17,13 +17,13 @@ test("Phật Pháp is a first-class routed workspace", () => {
   assert.match(router, /window\.HHPhatPhap\?\.mount/);
   assert.match(router, /app-dharma-route/);
   assert.match(loader, /dharma:\s*\{/);
-  assert.match(loader, /phat-phap\.css\?v=17/);
-  assert.match(loader, /phat-phap\.js\?v=14/);
-  assert.match(index, /performance-loader\.js\?v=486/);
-  assert.match(index, /script\.js\?v=239/);
-  assert.match(sw, /hh-identity-portal-v834/);
-  assert.match(sw, /phat-phap\.css\?v=17/);
-  assert.match(sw, /phat-phap\.js\?v=14/);
+  assert.match(loader, /phat-phap\.css\?v=18/);
+  assert.match(loader, /phat-phap\.js\?v=15/);
+  assert.match(index, /performance-loader\.js\?v=487/);
+  assert.match(index, /script\.js\?v=240/);
+  assert.match(sw, /hh-identity-portal-v835/);
+  assert.match(sw, /phat-phap\.css\?v=18/);
+  assert.match(sw, /phat-phap\.js\?v=15/);
   assert.match(sw, /assets\/phat-phap\/duc-phat-hao-quang-v1\.webp/);
 });
 
@@ -48,8 +48,8 @@ test("workspace uses a solemn Dharma palette and a single content scroller", () 
 test("learning and practice features are real local-first capabilities", () => {
   const source = read("phat-phap.js");
   for (const contract of [
-    "Lộ trình tu học", "Giáo lý", "Scripture Study Lab", "Thiền đường số", "Phòng tụng niệm", "Chùa online",
-    "Pháp thoại", "Thỉnh kinh", "Hỏi đáp có nguồn", "Nhật ký mã hóa", "Từ điển Phật học", "Bản đồ giáo pháp"
+    "Lộ trình tu học", "Giáo lý", "Canonical Reader", "Thiền đường số", "Phòng tụng niệm", "Trung tâm Phật sự Việt Nam",
+    "Pháp thoại", "Thỉnh kinh", "HH Phật học có nguồn", "Nhật ký mã hóa", "Từ điển Phật học", "Bản đồ giáo pháp"
   ]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(source, /hh\.phat-phap\.study\.v1/);
   assert.match(source, /hh\.phat-phap\.journal\.v1/);
@@ -167,9 +167,9 @@ test("all new Dharma subroutes are discoverable from the application router", ()
   }
 });
 
-test("Dharma v5 keeps source-based review without gamification", () => {
+test("Dharma v6 keeps source-based review without gamification", () => {
   const source = read("phat-phap.js");
-  assert.match(source, /VERSION\s*=\s*"5\.0\.0"/);
+  assert.match(source, /VERSION\s*=\s*"6\.0\.0"/);
   for (const contract of ["reviewCatalog", "reviewSchedule", "reviewHistory", "data-rate-study-review", "Cần xem lại ngày mai", "Tạm hiểu · sau 7 ngày"]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(source, /không tạo điểm số/i);
   assert.match(source, /không phải chứng nhận hay cấp bậc tâm linh/i);
@@ -218,9 +218,9 @@ test("Phật Pháp Toàn Thư reads core content directly with solemn long-form 
   const css = read("phat-phap.css");
   assert.match(source, /DHARMA_ENCYCLOPEDIA/);
   assert.match(source, /Phật Pháp Toàn Thư/);
-  assert.match(source, /<b>7<\/b> quyển chủ đề/);
-  assert.match(source, /Tìm trong 28 chương/);
-  assert.match(source, /Đọc trọn nội dung ngay tại đây/);
+  assert.match(source, /\$\{catalog\.target\}<\/b> chương mục tiêu/);
+  assert.match(source, /Tìm trong 108 đề mục/);
+  assert.match(source, /Đọc nội dung đã biên tập ngay tại đây/);
   assert.match(source, /HH BIÊN SOẠN · KHÔNG PHẢI NGUYÊN VĂN KINH/);
   assert.match(source, /NGUỒN & GIẤY PHÉP/);
   assert.match(source, /data-encyclopedia-note/);
@@ -238,4 +238,27 @@ test("Phật Pháp Toàn Thư reads core content directly with solemn long-form 
   assert.match(css, /dharmaPageOpen/);
   assert.match(css, /font:400 var\(--dharma-reader-size,20px\)\/1\.88/);
   assert.doesNotMatch(css, /nebula|starfield|galaxy|planet|wormhole/i);
+});
+
+test("Dharma v6 provides a complete research and trust cockpit without pretending unpublished content is ready", () => {
+  const source = read("phat-phap.js");
+  const css = read("phat-phap.css");
+  const router = read("script.js");
+  for (const route of ["research", "scholar"]) assert.match(router, new RegExp(`route:\\s*"/phat-phap/${route}"`));
+  for (const contract of [
+    "DHARMA_EDITORIAL_COLLECTIONS", "target: 24", "Chờ biên tập", "parseResearchQuery", "researchMarkup",
+    "in|code|tradition|language|teacher|before|duration", "canonicalWorkRecord", "Work → Version → Segment",
+    "TextDetector", "HH không tạo kết quả OCR giả", "Pháp thoại Observatory", "Review hai người",
+    "createEditorialSnapshot", "checksum", "data-source-health-check", "CC BY-NC-ND"
+  ]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+  assert.match(source, /\$\{catalog\.published\}.*chương đã xuất bản/);
+  assert.match(source, /\$\{catalog\.planned\}.*chờ biên tập/);
+  assert.match(source, /\[3,5,10,15,30,45\]/);
+  assert.match(source, /relaxation/);
+  assert.match(source, /data-talk-queue/);
+  assert.match(source, /data-qna-level/);
+  assert.match(source, /data-canonical-layout/);
+  assert.match(source, /closest\("button\[data-canonical-layout\]"\)/);
+  for (const selector of ["dharma-research-console", "dharma-scholar-browser", "dharma-facsimile-lab", "dharma-talk-observatory", "dharma-trust-dashboard", "dharma-editorial-roadmap"]) assert.match(css, new RegExp(selector));
+  assert.match(source, /Không tự tạo mã kinh hoặc lời Phật dạy/i);
 });
