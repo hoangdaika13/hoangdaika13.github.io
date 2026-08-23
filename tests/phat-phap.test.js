@@ -17,13 +17,13 @@ test("Phật Pháp is a first-class routed workspace", () => {
   assert.match(router, /window\.HHPhatPhap\?\.mount/);
   assert.match(router, /app-dharma-route/);
   assert.match(loader, /dharma:\s*\{/);
-  assert.match(loader, /phat-phap\.css\?v=13/);
-  assert.match(loader, /phat-phap\.js\?v=10/);
-  assert.match(index, /performance-loader\.js\?v=481/);
-  assert.match(index, /script\.js\?v=237/);
+  assert.match(loader, /phat-phap\.css\?v=15/);
+  assert.match(loader, /phat-phap\.js\?v=13/);
+  assert.match(index, /performance-loader\.js\?v=484/);
+  assert.match(index, /script\.js\?v=238/);
   assert.match(sw, /hh-identity-portal-v822/);
-  assert.match(sw, /phat-phap\.css\?v=13/);
-  assert.match(sw, /phat-phap\.js\?v=10/);
+  assert.match(sw, /phat-phap\.css\?v=15/);
+  assert.match(sw, /phat-phap\.js\?v=13/);
   assert.match(sw, /assets\/phat-phap\/duc-phat-hao-quang-v1\.webp/);
 });
 
@@ -162,7 +162,53 @@ test("glossary, accessibility and assistant boundaries are explicit and operable
 
 test("all new Dharma subroutes are discoverable from the application router", () => {
   const router = read("script.js");
-  for (const route of ["situations", "provenance", "schedule", "circles", "accessibility"]) {
+  for (const route of ["situations", "provenance", "schedule", "circles", "accessibility", "review", "audio", "data-control"]) {
     assert.match(router, new RegExp(`route:\\s*"/phat-phap/${route}"`));
   }
+});
+
+test("Dharma v4 adds source-based review without gamification", () => {
+  const source = read("phat-phap.js");
+  assert.match(source, /VERSION\s*=\s*"4\.0\.0"/);
+  for (const contract of ["reviewCatalog", "reviewSchedule", "reviewHistory", "data-rate-study-review", "Cần xem lại ngày mai", "Tạm hiểu · sau 7 ngày"]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(source, /không tạo điểm số/i);
+  assert.match(source, /không phải chứng nhận hay cấp bậc tâm linh/i);
+  assert.doesNotMatch(source, /leaderboard/i);
+});
+
+test("citation builder and listening library label every generated surface honestly", () => {
+  const source = read("phat-phap.js");
+  for (const contract of ["citationText", "data-copy-citation", "data-export-citation", "audioStudyCatalog", "data-audio-queue", "data-audio-play", "SpeechSynthesisUtterance"]) assert.match(source, new RegExp(contract));
+  assert.match(source, /TRÍCH DẪN TỪ METADATA · KHÔNG TỰ ĐIỀN DỊCH GIẢ/i);
+  assert.match(source, /Đây không phải giọng tăng ni/i);
+  assert.match(source, /Tệp pháp thoại hoặc tụng niệm của bên thứ ba chỉ được thêm khi có giấy phép âm thanh riêng/i);
+});
+
+test("meditation checks immediate wellbeing before starting a timer", () => {
+  const source = read("phat-phap.js");
+  for (const state of ["steady", "uneasy", "overwhelmed"]) assert.match(source, new RegExp(`id: "${state}"`));
+  assert.match(source, /data-meditation-checkin/);
+  assert.match(source, /if \(state\.meditation\.checkIn === "overwhelmed"\)/);
+  assert.match(source, /Timer đang tạm dừng để ưu tiên ổn định/);
+  assert.match(source, /Không chẩn đoán/i);
+});
+
+test("local data vault verifies backups and separates encrypted journal material", () => {
+  const source = read("phat-phap.js");
+  for (const contract of ["hh-dharma-study", "hh-dharma-journal-encrypted", "sha256Text", "data-import-backup", "data-confirm-import", "sanitizeBackupValue", "allowlistedStudyState", "validJournalCipher"]) assert.match(source, new RegExp(contract));
+  assert.match(source, /AES-GCM · PBKDF2-SHA256 · không có PIN/);
+  assert.match(source, /Checksum không khớp/);
+  assert.match(source, /\["__proto__", "prototype", "constructor"\]/);
+  assert.match(source, /scope: "account-local"/);
+  assert.doesNotMatch(source, /scope:\s*accountKey/);
+  assert.match(source, /class="dharma-file-picker"/);
+  assert.match(source, /Chọn gói <code>\.hhphap<\/code>/);
+  assert.doesNotMatch(source, new RegExp("Chọn gói `\\.hh"));
+});
+
+test("Dharma v4 responsive styling covers review, audio and data vault", () => {
+  const css = read("phat-phap.css");
+  for (const selector of ["dharma-review-workspace", "dharma-meditation-checkin", "dharma-audio-library", "dharma-data-vault", "dharma-import-preview"]) assert.match(css, new RegExp(selector));
+  assert.match(css, /dharmaAudioPulse/);
+  assert.match(css, /prefers-reduced-motion:reduce/);
 });
