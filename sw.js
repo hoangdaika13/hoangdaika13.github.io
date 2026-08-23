@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v835";
+const CACHE = "hh-identity-portal-v842";
 // Shell compatibility assertions for modules released against the stable cache:
 // hh-identity-portal-v822 ./performance-loader.js?v=474 ./script.js?v=232
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
@@ -93,7 +93,7 @@ const RUNTIME_ASSETS = [
   "./settings-studio.css?v=7",
   "./settings-studio.js?v=8",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=240",
+  "./script.js?v=241",
   "./graphic-design-studio.css?v=9",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -336,6 +336,7 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v4.css?v=2",
   "./hh-chinese.css?v=11",
   "./phat-phap.css?v=18",
+  "./hh-play.css?v=5",
   "./assets/phat-phap/duc-phat-hao-quang-v1.webp",
   "./assets/chinese/NOTICE.md",
   "./community-social-pro.css?v=3",
@@ -463,6 +464,7 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v4.js?v=7",
   "./hh-chinese.js?v=11",
   "./phat-phap.js?v=15",
+  "./hh-play.js?v=4",
   "./config.js?v=10",
   "./data/ai-super-platform-modules.json"
 ];
@@ -483,10 +485,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=487",
+  "./performance-loader.js?v=494",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=240"
+  "./script.js?v=241"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

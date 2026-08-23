@@ -229,6 +229,10 @@
       styles: ["phat-phap.css?v=18"],
       scripts: ["phat-phap.js?v=15"]
     },
+    play: {
+      styles: ["hh-play.css?v=5"],
+      scripts: ["hh-play.js?v=4"]
+    },
     fortune: {
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=26"],
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "vendor/iztro-2.6.0.min.js?v=2.6.0", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=4", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-moon-3d.js?v=1", "fortune-extended-tools.js?v=2", "fortune-hub.js?v=28"]
@@ -300,6 +304,7 @@
     if (value.startsWith("/japanese")) return ["japanese"];
     if (value.startsWith("/chinese")) return ["chinese"];
     if (value.startsWith("/phat-phap")) return ["dharma"];
+    if (value.startsWith("/play")) return ["play"];
     if (value.startsWith("/fortune")) return ["fortune"];
     if (value.startsWith("/draw")) return ["draw"];
     if (value.startsWith("/remote")) return ["remote"];

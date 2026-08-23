@@ -19,9 +19,9 @@ test("Phật Pháp is a first-class routed workspace", () => {
   assert.match(loader, /dharma:\s*\{/);
   assert.match(loader, /phat-phap\.css\?v=18/);
   assert.match(loader, /phat-phap\.js\?v=15/);
-  assert.match(index, /performance-loader\.js\?v=487/);
-  assert.match(index, /script\.js\?v=240/);
-  assert.match(sw, /hh-identity-portal-v835/);
+  assert.match(index, /performance-loader\.js\?v=494/);
+  assert.match(index, /script\.js\?v=241/);
+  assert.match(sw, /hh-identity-portal-v842/);
   assert.match(sw, /phat-phap\.css\?v=18/);
   assert.match(sw, /phat-phap\.js\?v=15/);
   assert.match(sw, /assets\/phat-phap\/duc-phat-hao-quang-v1\.webp/);
