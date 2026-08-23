@@ -734,6 +734,13 @@
   }
 }
 
+/* The legacy landing page has an unscoped footer rule. Keep every Dharma card
+   footer inside the route's own paper/wood treatment. */
+.dharma-hub footer:not(.dharma-actionbar) { padding:0; background:transparent; color:inherit; }
+.dharma-hub .dharma-sidebar > footer { padding:11px; background:rgba(12,7,4,.32); }
+.dharma-hub :is(.dharma-lesson,.dharma-scripture-reader) > footer { padding:16px 28px; background:rgba(234,217,184,.4); }
+.dharma-hub .dharma-chant-room article > footer { padding-top:14px; }
+
 /* The global mobile dock is forced with !important in the shell. Keep this
    route-level override unlayered so the two navigation bars can never overlap. */
 body.app-dharma-route .app-mobile-nav { display: none !important; }
@@ -742,5 +749,296 @@ body.app-dharma-route .app-mobile-nav { display: none !important; }
     visibility: hidden !important;
     pointer-events: none !important;
     transform: translateY(110%) !important;
+  }
+}
+
+/* Dharma Learning Cockpit v2 -------------------------------------------------
+   These overrides intentionally stay in the existing Dharma layers so the
+   route remains isolated from the cosmic application chrome. */
+@layer dharma-layout {
+  .dharma-sidebar { display: grid; grid-template-rows: minmax(0,1fr) auto; overflow: hidden; }
+  .dharma-nav-groups { min-height: 0; overflow: hidden; }
+  .dharma-sidebar section + section { margin-top: 5px; }
+  .dharma-sidebar .dharma-nav-group {
+    display: grid;
+    grid-template-columns: 34px minmax(0,1fr) auto 18px;
+    align-items: center;
+    width: 100%;
+    min-height: 48px;
+    gap: 8px;
+    padding: 5px 8px;
+    border: 1px solid rgba(245,215,118,.1);
+    border-radius: 11px;
+    background: rgba(255,255,255,.025);
+    color: #e8d8b7;
+    text-align: left;
+  }
+  .dharma-sidebar .dharma-nav-group > i { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 9px; background: linear-gradient(145deg,rgba(152,59,34,.5),rgba(212,160,23,.16)); color: #f7d876; font: 700 17px Georgia,serif; }
+  .dharma-sidebar .dharma-nav-group > span { overflow: hidden; font-size: 13px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+  .dharma-sidebar .dharma-nav-group > small { display: grid; min-width: 23px; height: 23px; margin: 0; place-items: center; border-radius: 99px; background: rgba(245,215,118,.08); color: #cfb474; font-size: 9px; letter-spacing: 0; }
+  .dharma-sidebar .dharma-nav-group > b { color: #d4ae50; font-size: 16px; }
+  .dharma-sidebar section.is-open > .dharma-nav-group { border-color: rgba(245,215,118,.32); background: linear-gradient(90deg,rgba(152,59,34,.38),rgba(212,160,23,.1)); color: #fff4d4; }
+  .dharma-nav-items { display: grid; gap: 2px; padding: 4px 0 1px 12px; }
+  .dharma-nav-items[hidden] { display: none !important; }
+  .dharma-sidebar .dharma-nav-items > button { position: relative; display: grid; grid-template-columns: 32px minmax(0,1fr) auto; align-items: center; width: 100%; min-height: 42px; gap: 8px; padding: 4px 8px; overflow: hidden; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #d8c7a7; text-align: left; }
+  .dharma-sidebar .dharma-nav-items > button::before { position: absolute; inset: 7px auto 7px 0; width: 3px; border-radius: 0 4px 4px 0; background: transparent; content: ""; }
+  .dharma-sidebar .dharma-nav-items > button > i { display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid rgba(245,215,118,.14); border-radius: 8px; background: rgba(245,215,118,.04); color: #d1af58; font: 700 15px Georgia,serif; }
+  .dharma-sidebar .dharma-nav-items > button > span { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 650; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+  .dharma-sidebar .dharma-nav-items > button > b { color: #8f7955; }
+  .dharma-sidebar .dharma-nav-items > button:hover { background: rgba(245,215,118,.055); color: #fff7dc; }
+  .dharma-sidebar .dharma-nav-items > button.is-active { border-color: rgba(245,215,118,.26); background: linear-gradient(90deg,rgba(152,59,34,.34),rgba(212,160,23,.08)); color: #fff9e9; }
+  .dharma-sidebar .dharma-nav-items > button.is-active::before { background: #f5d776; box-shadow: 0 0 11px rgba(245,215,118,.55); }
+  .dharma-sidebar .dharma-nav-items > button.is-active > i { border-color: rgba(245,215,118,.48); background: rgba(152,59,34,.38); color: #ffe59a; }
+  .dharma-progress { overscroll-behavior: contain; }
+  .dharma-hub.is-practicing { --dharma-aura-opacity:.14; --dharma-aura-card:.05; }
+  .dharma-hub.is-practicing .dharma-aura-field > :is(span,i),
+  .dharma-hub.is-practicing .dharma-ornament { display:none; }
+  .dharma-hub.is-reading { --dharma-aura-opacity:.12; --dharma-aura-card:.04; }
+  .dharma-hub.is-reading .dharma-aura-field > :is(span,i),
+  .dharma-hub.is-reading .dharma-ornament { display:none; }
+  .dharma-hub[data-aura="gentle"] :is(.dharma-aura-field,.dharma-ornament) * { animation:none!important; }
+  .dharma-actionbar { grid-template-columns:minmax(0,1fr) auto auto; }
+  .dharma-actionbar > nav { display:flex; gap:5px; }
+  .dharma-actionbar > nav button { min-height:37px; padding:0 9px; border:1px solid rgba(245,215,118,.14); border-radius:8px; background:rgba(255,255,255,.025); color:#d7c49d; font-size:10px; }
+  .dharma-actionbar > nav button:hover { border-color:rgba(245,215,118,.4); color:#fff0c5; }
+}
+
+@layer dharma-components {
+  .dharma-tier-picker { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:13px; }
+  .dharma-tier-picker > button { display:grid; grid-template-columns:46px minmax(0,1fr); align-items:center; gap:11px; min-height:112px; padding:14px; border:1px solid var(--dharma-line); border-radius:15px; background:rgba(255,255,255,.46); color:#49331f; text-align:left; }
+  .dharma-tier-picker > button > i { display:grid; width:44px; height:44px; place-items:center; border-radius:50%; background:#f0d9a8; color:#8f351f; font:700 20px Georgia,serif; }
+  .dharma-tier-picker > button > span { display:grid; gap:5px; }
+  .dharma-tier-picker strong { font:700 18px Georgia,serif; }
+  .dharma-tier-picker small { color:#7d684d; font-size:11px; line-height:1.5; }
+  .dharma-tier-picker > button > b { grid-column:2; color:#9a6725; font-size:9px; text-transform:uppercase; }
+  .dharma-tier-picker > button.is-active { border-color:#b97922; background:linear-gradient(145deg,#fff4d5,#e9c989); box-shadow:0 12px 30px rgba(126,76,20,.12),inset 0 0 24px rgba(212,160,23,.1); }
+
+  .dharma-lesson-flow { display:grid; gap:0; margin:0; padding:10px clamp(20px,4vw,46px) 25px; list-style:none; }
+  .dharma-lesson-flow > li { position:relative; display:grid; grid-template-columns:42px minmax(0,1fr); gap:13px; padding:18px 0; border-bottom:1px solid rgba(125,83,32,.12); }
+  .dharma-lesson-flow > li:last-child { border-bottom:0; }
+  .dharma-lesson-flow > li > i { display:grid; width:36px; height:36px; place-items:center; border:1px solid #c18a31; border-radius:50%; background:#f7e8c6; color:#8f351f; font-style:normal; font-weight:850; }
+  .dharma-lesson-flow > li:not(:last-child)::before { position:absolute; top:54px; bottom:-9px; left:17px; width:1px; background:linear-gradient(#d4a017,transparent); content:""; }
+  .dharma-lesson-flow small { color:#986425; font-size:10px; font-weight:850; letter-spacing:.12em; }
+  .dharma-lesson-flow p { margin:6px 0 0; color:#533f2b; font-size:16px; line-height:1.75; }
+  .dharma-lesson-flow button { width:fit-content; min-height:34px; margin-top:9px; padding:0 10px; border:1px solid var(--dharma-line); border-radius:8px; background:rgba(255,255,255,.5); color:#8b591e; font-size:11px; font-weight:750; }
+
+  .dharma-library-toolbar--advanced { grid-template-columns:minmax(220px,1.5fr) repeat(3,minmax(128px,.6fr)) auto; }
+  .dharma-library-toolbar--advanced > button { min-height:42px; padding:0 11px; border:1px solid var(--dharma-line); border-radius:9px; background:rgba(255,255,255,.58); color:#85571f; font-size:10px; font-weight:750; }
+  .dharma-reading-shelf { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin:10px 0; }
+  .dharma-reading-shelf article { display:grid; grid-template-columns:40px minmax(0,1fr) auto; align-items:center; gap:10px; padding:11px 13px; border:1px solid var(--dharma-line); border-radius:12px; background:rgba(255,255,255,.42); }
+  .dharma-reading-shelf i { display:grid; width:38px; height:38px; place-items:center; border-radius:10px; background:#92361f; color:#f6d574; font-style:normal; }
+  .dharma-reading-shelf span { display:grid; gap:2px; }
+  .dharma-reading-shelf strong { color:#49321f; font-size:13px; }
+  .dharma-reading-shelf small { color:#876f52; font-size:9px; }
+  .dharma-reading-shelf button { min-height:34px; padding:0 10px; border:1px solid var(--dharma-line); border-radius:8px; background:transparent; color:#8d5b20; font-size:10px; font-weight:750; }
+  .dharma-scripture-grid header em { display:block; margin-top:2px; color:#8e7656; font-family:Georgia,serif; font-size:10px; font-weight:400; }
+  .dharma-scripture-tags { display:flex; flex-wrap:wrap; gap:5px; }
+  .dharma-scripture-tags span { padding:4px 7px; border-radius:99px; background:#f0dfbc; color:#78552d; font-size:8px; font-weight:750; }
+  .dharma-study-tabs { display:flex; gap:4px; padding:5px 22px; overflow-x:auto; border-top:1px solid var(--dharma-line); border-bottom:1px solid var(--dharma-line); background:rgba(234,217,184,.35); }
+  .dharma-study-tabs button { min-height:38px; padding:0 13px; border:0; border-radius:8px; background:transparent; color:#826541; font-size:11px; font-weight:750; white-space:nowrap; }
+  .dharma-study-tabs button[aria-selected="true"] { background:#92361f; color:#ffecb2; box-shadow:0 6px 16px rgba(116,45,24,.15); }
+  .dharma-study-panel { min-height:330px; }
+  .dharma-parallel-reader { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1px; background:var(--dharma-line); }
+  .dharma-parallel-reader > article { min-height:330px; padding:clamp(25px,4vw,46px); background:rgba(255,250,240,.96); }
+  .dharma-parallel-reader > article.is-highlighted { background:linear-gradient(145deg,#fff9e7,#f5dca6); box-shadow:inset 4px 0 #d4a017; }
+  .dharma-parallel-reader small,.dharma-provenance-table small,.dharma-related-study small { color:#956126; font-size:9px; font-weight:850; letter-spacing:.12em; }
+  .dharma-parallel-reader h3 { margin:8px 0 18px; color:#382417; font:700 25px Georgia,serif; }
+  .dharma-parallel-reader p { color:#4d3a29; font:400 16px/1.8 Georgia,serif; }
+  .dharma-parallel-reader dl,.dharma-provenance-card dl,.dharma-provenance-table dl { display:grid; gap:0; margin:0 0 16px; }
+  .dharma-parallel-reader dl div,.dharma-provenance-card dl div,.dharma-provenance-table dl div { display:grid; grid-template-columns:minmax(105px,.45fr) minmax(0,1fr); gap:10px; padding:7px 0; border-bottom:1px solid rgba(125,83,32,.1); }
+  .dharma-parallel-reader dt,.dharma-provenance-card dt,.dharma-provenance-table dt { color:#8a7254; font-size:10px; }
+  .dharma-parallel-reader dd,.dharma-provenance-card dd,.dharma-provenance-table dd { margin:0; color:#4d3520; font-size:11px; font-weight:700; }
+  .dharma-parallel-reader :is(a,button),.dharma-provenance-table > button,.dharma-study-notes > button { display:inline-grid; min-height:36px; place-items:center; padding:0 11px; border:1px solid var(--dharma-line); border-radius:8px; background:transparent; color:#89571c; font-size:10px; font-weight:750; text-decoration:none; }
+  .dharma-provenance-table,.dharma-related-study,.dharma-study-notes { padding:clamp(24px,4vw,44px); }
+  .dharma-provenance-table > header { display:flex; align-items:center; gap:11px; margin-bottom:18px; }
+  .dharma-provenance-table header > span { display:grid; width:42px; height:42px; place-items:center; border-radius:50%; background:#718b4e; color:white; }
+  .dharma-provenance-table h3,.dharma-related-study h3 { margin:4px 0 0; color:#3c2819; font:700 22px Georgia,serif; }
+  .dharma-related-study > header p { color:#796246; font-size:12px; line-height:1.6; }
+  .dharma-related-study > button { display:grid; grid-template-columns:36px minmax(0,1fr) auto; align-items:center; width:100%; gap:10px; min-height:55px; margin-top:7px; padding:7px 10px; border:1px solid var(--dharma-line); border-radius:10px; background:rgba(255,255,255,.44); color:#49321f; text-align:left; }
+  .dharma-related-study > button i { display:grid; width:34px; height:34px; place-items:center; border-radius:9px; background:#f0d9a9; color:#92361f; font-style:normal; }
+  .dharma-related-study > button span { display:grid; gap:2px; }
+  .dharma-related-study > button small { letter-spacing:0; }
+  .dharma-study-notes { display:grid; gap:12px; }
+  .dharma-study-notes textarea,.dharma-inspector-note textarea { min-height:210px; font-size:15px; }
+  .dharma-study-notes label small { color:#8a7457; font-size:10px; }
+  .dharma-provenance-card,.dharma-inspector-note { display:grid; gap:11px; padding-top:16px; }
+  .dharma-provenance-card h3 { margin:0; color:#fff0c8; font:700 20px Georgia,serif; }
+  .dharma-provenance-card dt { color:#aa956f; }
+  .dharma-provenance-card dd { color:#f2dfb8; }
+  .dharma-provenance-card p,.dharma-inspector-note p { color:#aa9674; font-size:10px; line-height:1.6; }
+  .dharma-provenance-card :is(a,button) { min-height:36px; padding:0 9px; border:1px solid rgba(245,215,118,.18); border-radius:8px; background:rgba(255,255,255,.025); color:#f2ce70; font-size:10px; font-weight:750; line-height:36px; text-align:center; text-decoration:none; }
+  .dharma-source-state { width:fit-content; padding:5px 8px; border-radius:99px; background:rgba(113,139,78,.18); color:#bcd391; font-size:9px; font-weight:800; }
+  .dharma-inspector-note small { color:#cfaf68; font-size:10px; }
+  .dharma-inspector-note label { color:#ead8b7; }
+  .dharma-inspector-note textarea { background:rgba(255,250,240,.94); }
+
+  .dharma-practice-chooser { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:10px; }
+  .dharma-practice-chooser button { display:grid; grid-template-columns:38px minmax(0,1fr); align-items:center; gap:9px; min-height:78px; padding:10px; border:1px solid var(--dharma-line); border-radius:12px; background:rgba(255,255,255,.44); color:#49321f; text-align:left; }
+  .dharma-practice-chooser i { display:grid; width:36px; height:36px; place-items:center; border-radius:50%; background:#f0d8a7; color:#92361f; font:700 16px Georgia,serif; }
+  .dharma-practice-chooser span { display:grid; gap:2px; }
+  .dharma-practice-chooser strong { font-size:12px; }
+  .dharma-practice-chooser small { display:-webkit-box; overflow:hidden; color:#806b4e; font-size:9px; line-height:1.4; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+  .dharma-practice-chooser button.is-active { border-color:#b97d28; background:linear-gradient(145deg,#fff4d6,#ebd09a); }
+  .dharma-presets { grid-template-columns:repeat(6,1fr); }
+  .dharma-meditation-options { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:9px; margin-top:11px; }
+  .dharma-check { display:flex!important; align-items:center; gap:7px; min-height:42px; }
+  .dharma-check input { width:18px!important; min-height:18px!important; accent-color:#983b22; }
+  .dharma-history > header > div:last-child { display:flex; gap:6px; }
+  .dharma-practice-warning { margin-top:10px; padding:14px 16px; border-left:3px solid #bd842e; background:rgba(255,255,255,.42); color:#745d42; }
+  .dharma-practice-warning strong { color:#5a3a20; font-size:12px; }
+  .dharma-practice-warning p { margin:4px 0 0; font-size:11px; line-height:1.6; }
+
+  .dharma-chant-room { display:grid; grid-template-columns:260px minmax(0,1fr); gap:11px; margin-top:12px; }
+  .dharma-chant-room > aside { display:grid; align-content:start; gap:7px; }
+  .dharma-chant-room > aside button { display:grid; grid-template-columns:38px minmax(0,1fr); align-items:center; gap:9px; min-height:67px; padding:9px; border:1px solid var(--dharma-line); border-radius:11px; background:rgba(255,255,255,.42); color:#49321f; text-align:left; }
+  .dharma-chant-room > aside button i { display:grid; width:36px; height:36px; place-items:center; border-radius:9px; background:#f0d9aa; color:#94371f; font-style:normal; }
+  .dharma-chant-room > aside button span { display:grid; gap:2px; }
+  .dharma-chant-room > aside strong { font-size:11px; }
+  .dharma-chant-room > aside small { color:#826c50; font-size:8px; line-height:1.35; }
+  .dharma-chant-room > aside button.is-active { border-color:#b87a24; background:#f5e1b6; }
+  .dharma-chant-room > article { padding:clamp(20px,3vw,32px); }
+  .dharma-chant-room article > header { display:flex; align-items:center; justify-content:space-between; }
+  .dharma-chant-room h2 { margin:4px 0 0; color:#382417; font:700 25px Georgia,serif; }
+  .dharma-chant-room ol { display:grid; gap:8px; margin:22px 0; padding:0; list-style:none; }
+  .dharma-chant-room li { display:grid; grid-template-columns:34px minmax(0,1fr); align-items:center; gap:11px; min-height:60px; padding:10px 12px; border:1px solid rgba(125,83,32,.12); border-radius:10px; color:#493626; font:400 17px/1.65 Georgia,serif; transition:background .22s ease,transform .22s ease; }
+  .dharma-chant-room li i { display:grid; width:31px; height:31px; place-items:center; border-radius:50%; background:#f1dfbb; color:#8d351f; font:700 11px system-ui; }
+  .dharma-chant-room li.is-speaking { border-color:#c28a30; background:linear-gradient(90deg,#fff0c9,#f4d795); box-shadow:0 0 24px rgba(212,160,23,.15); transform:translateX(4px); }
+  .dharma-chant-room article > footer { display:flex; align-items:end; gap:9px; padding-top:14px; border-top:1px solid var(--dharma-line); }
+  .dharma-chant-room article > footer > label:first-child { width:150px; }
+  .dharma-chant-room article > footer > button { min-height:42px; padding:0 13px; border:1px solid var(--dharma-line); border-radius:9px; background:transparent; color:#85571f; font-size:11px; font-weight:750; }
+  .dharma-chant-room article > footer > .dharma-primary { margin-left:auto; color:#fff9e8; }
+
+  .dharma-glossary { display:grid; grid-template-columns:300px minmax(0,1fr); gap:11px; margin-top:12px; }
+  .dharma-glossary > aside { display:grid; align-content:start; gap:7px; }
+  .dharma-glossary > aside > label { display:grid; grid-template-columns:24px minmax(0,1fr); align-items:center; padding-left:8px; border:1px solid var(--dharma-line); border-radius:10px; background:rgba(255,255,255,.54); color:#9b6a27; }
+  .dharma-glossary > aside input { border:0; background:transparent; box-shadow:none!important; }
+  .dharma-glossary > aside > div { display:grid; gap:5px; }
+  .dharma-glossary [data-glossary] { display:grid; grid-template-columns:42px minmax(0,1fr); align-items:center; gap:9px; min-height:58px; padding:7px 9px; border:1px solid var(--dharma-line); border-radius:10px; background:rgba(255,255,255,.43); color:#49321f; text-align:left; }
+  .dharma-glossary [data-glossary] > i { display:grid; width:39px; height:39px; place-items:center; border-radius:9px; background:#f0d8a9; color:#92361f; font:700 19px Georgia,serif; }
+  .dharma-glossary [data-glossary] > span { display:grid; gap:2px; }
+  .dharma-glossary [data-glossary] strong { font-size:12px; }
+  .dharma-glossary [data-glossary] small { color:#826c4f; font-size:9px; }
+  .dharma-glossary [data-glossary].is-active { border-color:#b87b25; background:#f5e0b4; }
+  .dharma-glossary > article { min-height:430px; padding:clamp(24px,4vw,44px); }
+  .dharma-glossary article > header { display:flex; align-items:center; gap:13px; }
+  .dharma-glossary article > header > span { display:grid; width:64px; height:64px; place-items:center; border-radius:14px; background:#92361f; color:#f8d777; font:700 32px Georgia,serif; }
+  .dharma-glossary h2 { margin:4px 0 0; color:#382417; font:700 30px Georgia,serif; }
+  .dharma-glossary article > section { margin-top:24px; padding-top:18px; border-top:1px solid var(--dharma-line); }
+  .dharma-glossary article > section small { color:#966225; font-size:9px; font-weight:850; letter-spacing:.12em; }
+  .dharma-glossary article > section p { color:#4c3827; font:400 17px/1.8 Georgia,serif; }
+  .dharma-glossary article > footer { display:flex; flex-wrap:wrap; gap:6px; margin-top:20px; }
+  .dharma-glossary article > footer span { padding:6px 9px; border-radius:99px; background:#f0dfbc; color:#76532e; font-size:10px; }
+
+  .dharma-map-stage { display:grid; grid-template-columns:minmax(420px,1fr) minmax(270px,.55fr); align-items:center; gap:18px; min-height:560px; margin-top:12px; padding:22px; overflow:hidden; border:1px solid var(--dharma-line); border-radius:18px; background:radial-gradient(circle at 35% 50%,rgba(212,160,23,.2),transparent 34%),linear-gradient(145deg,#2b170b,#160c07); }
+  .dharma-map-wheel { position:relative; width:min(100%,520px); aspect-ratio:1; margin:auto; border:1px solid rgba(245,215,118,.14); border-radius:50%; }
+  .dharma-map-wheel::before,.dharma-map-wheel::after { position:absolute; inset:16%; border:1px solid rgba(245,215,118,.12); border-radius:50%; content:""; }
+  .dharma-map-wheel::after { inset:33%; }
+  .dharma-map-wheel > strong { position:absolute; inset:50% auto auto 50%; display:grid; width:86px; height:86px; place-items:center; border:1px solid #d7a637; border-radius:50%; background:radial-gradient(circle,#fff0a6,#9b3b22 68%); box-shadow:0 0 45px rgba(212,160,23,.4); color:#5d2115; font:700 34px Georgia,serif; transform:translate(-50%,-50%); }
+  .dharma-map-wheel > button { --angle:calc(var(--node) * 51.428deg - 90deg); position:absolute; top:50%; left:50%; display:grid; width:112px; min-height:68px; place-content:center; gap:2px; padding:7px; border:1px solid rgba(245,215,118,.15); border-radius:12px; background:#351d0e; color:#c8b38a; transform:translate(-50%,-50%) rotate(var(--angle)) translateX(min(19vw,205px)) rotate(calc(var(--angle) * -1)); }
+  .dharma-map-wheel > button i { color:#d6a83e; font:700 18px Georgia,serif; }
+  .dharma-map-wheel > button span { font-size:10px; font-weight:750; }
+  .dharma-map-wheel > button.is-related { border-color:rgba(245,215,118,.5); color:#fff0c5; box-shadow:0 0 20px rgba(212,160,23,.16); }
+  .dharma-map-wheel > button.is-active { background:linear-gradient(145deg,#9a3a21,#c18425); color:#fff7da; transform:translate(-50%,-50%) rotate(var(--angle)) translateX(min(19vw,205px)) rotate(calc(var(--angle) * -1)) scale(1.07); }
+  .dharma-map-stage > article { padding:28px; }
+  .dharma-map-stage article > small { color:#976326; font-size:9px; font-weight:850; letter-spacing:.12em; }
+  .dharma-map-stage article h2 { margin:7px 0; color:#3a2719; font:700 27px Georgia,serif; }
+  .dharma-map-stage article p { color:#68533b; font-size:14px; line-height:1.72; }
+  .dharma-map-stage article > div { display:flex; flex-wrap:wrap; gap:6px; margin:15px 0; }
+  .dharma-map-stage article > div button { min-height:33px; padding:0 9px; border:1px solid var(--dharma-line); border-radius:8px; background:transparent; color:#86571e; font-size:10px; }
+  .dharma-temple-etiquette { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin-top:10px; }
+  .dharma-temple-etiquette article { padding:15px; border:1px solid var(--dharma-line); border-radius:12px; background:rgba(255,255,255,.42); }
+  .dharma-temple-etiquette i { display:grid; width:34px; height:34px; place-items:center; border-radius:50%; background:#f0d8a7; color:#91351f; font:700 16px Georgia,serif; }
+  .dharma-temple-etiquette strong { display:block; margin-top:9px; color:#49321f; font-size:12px; }
+  .dharma-temple-etiquette p { margin:4px 0 0; color:#796348; font-size:10px; line-height:1.55; }
+  .dharma-teacher-referral { margin-top:11px; padding:22px; }
+  .dharma-teacher-referral > header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .dharma-teacher-referral h2 { margin:3px 0 0; color:#3b281a; font:700 23px Georgia,serif; }
+  .dharma-teacher-referral header > span { display:grid; width:46px; height:46px; place-items:center; border-radius:50%; background:#92361f; color:#f7d676; font-size:22px; }
+  .dharma-teacher-referral > p { color:#725d43; font-size:13px; line-height:1.7; }
+  .dharma-teacher-referral > div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .dharma-teacher-referral a { display:grid; gap:3px; padding:13px; border:1px solid var(--dharma-line); border-radius:10px; background:rgba(255,255,255,.42); text-decoration:none; }
+  .dharma-teacher-referral a strong { color:#714417; font-size:12px; }
+  .dharma-teacher-referral a small { color:#816c50; font-size:9px; }
+  .dharma-journal-editor > article header > div:last-child { display:flex; gap:6px; }
+}
+
+@layer dharma-motion {
+  .dharma-sidebar section.is-open > .dharma-nav-group > i { animation:dharmaGroupSeal 4.8s ease-in-out infinite; }
+  .dharma-nav-items:not([hidden]) { animation:dharmaAccordionReveal .22s ease-out both; }
+  .dharma-parallel-reader > article.is-highlighted { animation:dharmaStudyHighlight .48s ease-out both; }
+  .dharma-map-wheel > button.is-related { animation:dharmaMapPulse 3.8s ease-in-out infinite; }
+  .dharma-map-wheel > button.is-active { animation:dharmaMapActive 3.4s ease-in-out infinite; }
+  @keyframes dharmaGroupSeal { 50% { box-shadow:0 0 18px rgba(245,215,118,.24); filter:brightness(1.12); } }
+  @keyframes dharmaAccordionReveal { from { opacity:0; transform:translateY(-5px); } }
+  @keyframes dharmaStudyHighlight { from { box-shadow:inset 0 0 #d4a017; } }
+  @keyframes dharmaMapPulse { 50% { box-shadow:0 0 28px rgba(212,160,23,.26); } }
+  @keyframes dharmaMapActive { 50% { filter:brightness(1.12); } }
+}
+
+@layer dharma-responsive {
+  @media (max-height:760px) and (min-width:701px) {
+    .dharma-sidebar { padding-block:9px; }
+    .dharma-sidebar > footer { display:none; }
+    .dharma-sidebar .dharma-nav-group { min-height:43px; }
+    .dharma-sidebar .dharma-nav-items > button { min-height:37px; }
+  }
+  @media (max-width:1100px) {
+    .dharma-library-toolbar--advanced { grid-template-columns:minmax(210px,1.5fr) repeat(2,minmax(130px,.7fr)); }
+    .dharma-library-toolbar--advanced > :nth-child(4) { grid-column:auto; }
+    .dharma-tier-picker { grid-template-columns:1fr; }
+    .dharma-tier-picker > button { min-height:82px; }
+    .dharma-map-stage { grid-template-columns:1fr; }
+  }
+  @media (max-width:900px) {
+    .dharma-actionbar > nav button span { display:none; }
+    .dharma-practice-chooser { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .dharma-parallel-reader { grid-template-columns:1fr; }
+    .dharma-glossary { grid-template-columns:240px minmax(0,1fr); }
+    .dharma-chant-room { grid-template-columns:220px minmax(0,1fr); }
+    .dharma-map-wheel > button { transform:translate(-50%,-50%) rotate(var(--angle)) translateX(180px) rotate(calc(var(--angle) * -1)); }
+    .dharma-map-wheel > button.is-active { transform:translate(-50%,-50%) rotate(var(--angle)) translateX(180px) rotate(calc(var(--angle) * -1)) scale(1.05); }
+  }
+  @media (max-width:700px) {
+    .dharma-actionbar > nav { display:none; }
+    .dharma-topbar { grid-template-columns:minmax(132px,1fr) minmax(82px,.72fr) 38px 38px; }
+    .dharma-brand strong { font-size:16px; letter-spacing:-.01em; }
+    .dharma-wheel { flex-basis:32px; width:32px; height:32px; font-size:17px; }
+    .dharma-daily-reading header { display:grid; grid-template-columns:40px minmax(0,1fr); }
+    .dharma-daily-reading header .dharma-source-badge { grid-column:2; max-width:100%; white-space:normal; }
+    .dharma-mobile-sheet .dharma-nav-groups { overflow:visible; }
+    .dharma-mobile-sheet .dharma-nav-group { display:grid; grid-template-columns:38px minmax(0,1fr) auto 20px; align-items:center; width:100%; min-height:50px; gap:8px; padding:5px 9px; border:1px solid rgba(245,215,118,.12); border-radius:11px; background:rgba(255,255,255,.025); color:#eadbbd; text-align:left; }
+    .dharma-mobile-sheet .dharma-nav-group i { display:grid; width:35px; height:35px; place-items:center; border-radius:9px; background:rgba(152,59,34,.35); color:#f1ce6a; font:700 17px Georgia,serif; }
+    .dharma-mobile-sheet .dharma-nav-group span { font-size:13px; font-weight:800; }
+    .dharma-mobile-sheet .dharma-nav-group small { color:#c7aa6c; font-size:9px; }
+    .dharma-mobile-sheet .dharma-nav-items { padding:4px 0 2px 13px; }
+    .dharma-mobile-sheet .dharma-nav-items > button { display:grid; grid-template-columns:36px minmax(0,1fr) auto; align-items:center; width:100%; min-height:48px; gap:8px; margin:3px 0; padding:5px 9px; border:1px solid rgba(245,215,118,.08); border-radius:10px; background:rgba(255,255,255,.025); color:#e5d7bb; text-align:left; }
+    .dharma-mobile-sheet .dharma-nav-items > button i { display:grid; width:33px; height:33px; place-items:center; border-radius:9px; background:rgba(152,59,34,.3); color:#efcb68; font:700 16px Georgia,serif; }
+    .dharma-mobile-sheet .dharma-nav-items > button span { font-size:13px; }
+    .dharma-tier-picker,.dharma-reading-shelf,.dharma-practice-chooser,.dharma-temple-etiquette { grid-template-columns:1fr; }
+    .dharma-library-toolbar--advanced { grid-template-columns:1fr 1fr; }
+    .dharma-library-toolbar--advanced > label { grid-column:1/-1; }
+    .dharma-reading-shelf article { grid-template-columns:38px minmax(0,1fr); }
+    .dharma-reading-shelf button { grid-column:2; width:fit-content; }
+    .dharma-parallel-reader > article { min-height:0; padding:24px 18px; }
+    .dharma-study-tabs { padding-inline:10px; }
+    .dharma-scripture-reader > footer { display:grid; grid-template-columns:1fr 1fr; }
+    .dharma-scripture-reader > footer a { grid-column:1/-1; }
+    .dharma-presets { grid-template-columns:repeat(3,1fr); }
+    .dharma-meditation-options { grid-template-columns:1fr; }
+    .dharma-chant-room,.dharma-glossary { grid-template-columns:1fr; }
+    .dharma-chant-room > aside { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; }
+    .dharma-chant-room > aside button { flex:0 0 230px; scroll-snap-align:start; }
+    .dharma-chant-room article > footer { align-items:stretch; flex-direction:column; }
+    .dharma-chant-room article > footer > label:first-child { width:100%; }
+    .dharma-chant-room article > footer > .dharma-primary { width:100%; margin-left:0; }
+    .dharma-glossary > aside > div { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; }
+    .dharma-glossary [data-glossary] { flex:0 0 190px; scroll-snap-align:start; }
+    .dharma-map-stage { min-height:0; padding:14px; }
+    .dharma-map-wheel { width:100%; overflow:visible; border:0; border-radius:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; aspect-ratio:auto; }
+    .dharma-map-wheel::before,.dharma-map-wheel::after,.dharma-map-wheel > strong { display:none; }
+    .dharma-map-wheel > button,.dharma-map-wheel > button.is-active { position:static; width:auto; min-height:58px; transform:none; }
+    .dharma-map-stage > article { padding:21px 17px; }
+    .dharma-lesson-flow { padding-inline:14px; }
+    .dharma-lesson-flow > li { grid-template-columns:36px minmax(0,1fr); gap:9px; }
   }
 }

@@ -17,13 +17,13 @@ test("Phật Pháp is a first-class routed workspace", () => {
   assert.match(router, /window\.HHPhatPhap\?\.mount/);
   assert.match(router, /app-dharma-route/);
   assert.match(loader, /dharma:\s*\{/);
-  assert.match(loader, /phat-phap\.css\?v=7/);
-  assert.match(loader, /phat-phap\.js\?v=3/);
-  assert.match(index, /performance-loader\.js\?v=474/);
-  assert.match(index, /script\.js\?v=232/);
+  assert.match(loader, /phat-phap\.css\?v=10/);
+  assert.match(loader, /phat-phap\.js\?v=7/);
+  assert.match(index, /performance-loader\.js\?v=478/);
+  assert.match(index, /script\.js\?v=234/);
   assert.match(sw, /hh-identity-portal-v822/);
-  assert.match(sw, /phat-phap\.css\?v=7/);
-  assert.match(sw, /phat-phap\.js\?v=3/);
+  assert.match(sw, /phat-phap\.css\?v=10/);
+  assert.match(sw, /phat-phap\.js\?v=7/);
   assert.match(sw, /assets\/phat-phap\/duc-phat-hao-quang-v1\.webp/);
 });
 
@@ -48,8 +48,8 @@ test("workspace uses a solemn Dharma palette and a single content scroller", () 
 test("learning and practice features are real local-first capabilities", () => {
   const source = read("phat-phap.js");
   for (const contract of [
-    "Lộ trình người mới", "Giáo lý", "Kinh điển", "Thiền & niệm Phật", "Chùa online",
-    "Pháp thoại", "Thỉnh kinh", "Hỏi đáp có nguồn", "Nhật ký tu học"
+    "Lộ trình tu học", "Giáo lý", "Scripture Study Lab", "Thiền đường số", "Phòng tụng niệm", "Chùa online",
+    "Pháp thoại", "Thỉnh kinh", "Hỏi đáp có nguồn", "Nhật ký mã hóa", "Từ điển Phật học", "Bản đồ giáo pháp"
   ]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(source, /hh\.phat-phap\.study\.v1/);
   assert.match(source, /hh\.phat-phap\.journal\.v1/);
@@ -65,6 +65,27 @@ test("learning and practice features are real local-first capabilities", () => {
   assert.match(source, /Phật Sự Online/);
   assert.match(source, /không quy đổi thành công đức/i);
   assert.match(source, /không phải bản dịch kinh/i);
+  assert.match(source, /LEARNING_TIERS/);
+  assert.match(source, /scriptureNotes/);
+  assert.match(source, /offlinePacks/);
+  assert.match(source, /readingPath/);
+  assert.match(source, /data-open-provenance/);
+  assert.match(source, /data-bell-interval/);
+  assert.match(source, /data-chant-play/);
+  assert.match(source, /84000/);
+});
+
+test("Study Lab exposes provenance, contextual filters, offline packs and an accordion cockpit", () => {
+  const source = read("phat-phap.js");
+  const css = read("phat-phap.css");
+  for (const field of ["canonicalTitle", "sourceLanguage", "translator", "license", "verifiedAt", "difficulty", "topic"]) assert.match(source, new RegExp(field));
+  assert.match(source, /data-scripture-topic/);
+  assert.match(source, /data-scripture-difficulty/);
+  assert.match(source, /data-toggle-nav-group/);
+  assert.match(source, /is-progress-closed/);
+  assert.match(css, /dharma-parallel-reader/);
+  assert.match(css, /dharma-nav-groups/);
+  assert.match(css, /dharma-hub\.is-practicing/);
 });
 
 test("Dharma route gets a non-cosmic gold transition treatment", () => {
