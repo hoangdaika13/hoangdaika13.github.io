@@ -156,6 +156,13 @@ titles in its manifest and keeps direct TASL attribution. Run
 only after separately confirming that the pinned source and rights evidence
 remain valid.
 
+The runtime also loads the separately versioned expansion manifests
+`curated-music-expansion-v1.json` and `curated-films-expansion-v1.json`. They are
+merged with the base catalogs only after the same rights gate succeeds; an
+unavailable expansion never hides the base catalog. Rebuild a reviewed batch
+with `node scripts/generate-open-media-expansion.mjs`, inspect the generated
+evidence, then run the full media test suite before publishing.
+
 ## Production checklist
 
 - Rights registry validation passes.

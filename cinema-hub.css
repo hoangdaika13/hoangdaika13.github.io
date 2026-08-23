@@ -845,3 +845,22 @@ body.app-cinema-route .cinema-hub {
 .cinema-card__copy em,
 .cinema-card__copy span { font-size: 9px; }
 .cinema-rights-table { font-size: 11px; }
+
+/* Expansion catalog marker */
+.cinema-card__copy mark {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 5px;
+  padding: 3px 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 184, 96, .28);
+  border-radius: 999px;
+  color: #ffd59d;
+  background: rgba(255, 184, 96, .08);
+  font-size: 9px;
+  font-weight: 800;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

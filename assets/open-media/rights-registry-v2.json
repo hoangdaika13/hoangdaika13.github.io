@@ -12,7 +12,16 @@
     "sourceManifests": [
       "/assets/open-media/curated-films-v1.json",
       "/assets/open-media/curated-music-v1.json"
-    ]
+    ],
+    "expansionManifests": [
+      "/assets/open-media/curated-films-expansion-v1.json",
+      "/assets/open-media/curated-music-expansion-v1.json"
+    ],
+    "expansionSnapshot": {
+      "films": 6,
+      "tracks": 5,
+      "total": 11
+    }
   },
   "policy": {
     "defaultDecision": "deny-until-cleared",

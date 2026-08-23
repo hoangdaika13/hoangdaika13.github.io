@@ -1,10 +1,12 @@
 const registry = require("../../assets/open-media/rights-registry-v2.json");
 const films = require("../../assets/open-media/curated-films-v1.json");
 const music = require("../../assets/open-media/curated-music-v1.json");
+const filmExpansion = require("../../assets/open-media/curated-films-expansion-v1.json");
+const musicExpansion = require("../../assets/open-media/curated-music-expansion-v1.json");
 const rightsEngine = require("../open-media-rights");
 const { clean, withApi } = require("../platform");
 
-const catalog = Object.freeze([...(films.items || []), ...(music.items || [])]);
+const catalog = Object.freeze([...(films.items || []), ...(filmExpansion.items || []), ...(music.items || []), ...(musicExpansion.items || [])]);
 const quarantined = new Map((registry.quarantineItems || []).map((item) => [String(item.id), item]));
 const PUBLICATION_TERRITORY = "WORLDWIDE";
 

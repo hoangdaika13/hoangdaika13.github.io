@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v842";
+const CACHE = "hh-identity-portal-v843";
 // Shell compatibility assertions for modules released against the stable cache:
 // hh-identity-portal-v822 ./performance-loader.js?v=474 ./script.js?v=232
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
@@ -165,6 +165,8 @@ const RUNTIME_ASSETS = [
   "./open-media-governance.js?v=2",
   "./assets/open-media/curated-films-v1.json",
   "./assets/open-media/curated-music-v1.json",
+  "./assets/open-media/curated-films-expansion-v1.json",
+  "./assets/open-media/curated-music-expansion-v1.json",
   "./assets/open-media/rights-registry-v2.json",
   "./vendor/jszip.min.js?v=3.10.1",
   "./vendor/tesseract.min.js?v=6.0.1",

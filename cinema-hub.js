@@ -9,6 +9,7 @@
 
   const VERSION = "2.3.0";
   const MANIFEST_URL = "/assets/open-media/curated-films-v1.json";
+  const EXPANSION_MANIFEST_URL = "/assets/open-media/curated-films-expansion-v1.json";
   const RIGHTS_STATUS_URL = "/api/open-media/rights";
   const STORAGE_SCHEMA = "hh.cinema.hub.v1";
   const DEFAULT_TERRITORY = "WORLDWIDE";
@@ -270,13 +271,29 @@
     const fetcher = options.fetch || globalScope.fetch;
     if (typeof fetcher !== "function") return { items: [], quarantineItems: [], source: "fail-closed", error: "Không thể tải hồ sơ quyền. Trình phát đã được khóa an toàn." };
     try {
-      const response = await fetcher(options.manifestUrl || MANIFEST_URL, { signal, credentials: "same-origin", cache: "no-cache" });
+      const manifestUrl = options.manifestUrl || MANIFEST_URL;
+      const expansionUrl = options.expansionManifestUrl || (manifestUrl === MANIFEST_URL ? EXPANSION_MANIFEST_URL : "");
+      const response = await fetcher(manifestUrl, { signal, credentials: "same-origin", cache: "no-cache" });
       if (!response?.ok) throw new Error(`HTTP ${response?.status || 0}`);
       const payload = await response.json();
+      let expansionPayload = { items: [], quarantineItems: [] };
+      if (expansionUrl) {
+        try {
+          const expansionResponse = await fetcher(expansionUrl, { signal, credentials: "same-origin", cache: "no-cache" });
+          if (expansionResponse?.ok) {
+            const candidate = await expansionResponse.json();
+            if (candidate && Array.isArray(candidate.items)) expansionPayload = candidate;
+          }
+        } catch (error) {
+          if (error?.name === "AbortError") throw error;
+          // The base catalog remains usable when an optional expansion is unavailable.
+        }
+      }
       const emergencyPayload = await fetchEmergencyRights(fetcher, options, signal);
       const territory = emergencyPayload ? emergencyTerritory(emergencyPayload) : DEFAULT_TERRITORY;
-      const locallyApproved = normalizeCatalog(payload?.items, { ...options, territory });
-      const quarantineItems = normalizeQuarantine(payload?.quarantineItems);
+      const sourceItems = [...(Array.isArray(payload?.items) ? payload.items : []), ...(Array.isArray(expansionPayload?.items) ? expansionPayload.items : [])];
+      const locallyApproved = normalizeCatalog(sourceItems, { ...options, territory });
+      const quarantineItems = normalizeQuarantine([...(payload?.quarantineItems || []), ...(expansionPayload?.quarantineItems || [])]);
       if (!locallyApproved.length) throw new Error("Danh mục không có nội dung vượt qua kiểm tra giấy phép");
       const emergency = emergencyPayload ? applyEmergencySuspensions(locallyApproved, emergencyPayload) : { items: locallyApproved, suspendedIds: [] };
       return {
@@ -284,8 +301,8 @@
         quarantineItems,
         emergencySuspendedCount: emergency.suspendedIds.length,
         territory,
-        territoriallyUnavailableCount: Math.max(0, (Array.isArray(payload?.items) ? payload.items.length : 0) - locallyApproved.length),
-        source: "manifest",
+        territoriallyUnavailableCount: Math.max(0, sourceItems.length - locallyApproved.length),
+        source: expansionPayload.items.length ? "manifest+expansion" : "manifest",
         error: ""
       };
     } catch (error) {
@@ -444,7 +461,7 @@
     return `<article class="cinema-card ${selected ? "is-selected" : ""}" data-cinema-card="${escapeHtml(item.id)}">
       <button type="button" class="cinema-card__open" data-cinema-select="${escapeHtml(item.id)}" aria-label="Mở ${escapeHtml(item.title)}">
         <span class="cinema-card__poster"><img src="${escapeHtml(safeUrl(item.poster))}" alt="" loading="lazy" referrerpolicy="no-referrer"><i>${escapeHtml(licenseLabel(item.rights.licenseCode))}</i>${item.sensitiveContent ? `<u class="cinema-card__rating">${escapeHtml(item.ageRating)}</u>` : ""}${ratio > 0 ? `<b style="--progress:${Math.round(ratio * 100)}%"></b>` : ""}</span>
-        <span class="cinema-card__copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(String(item.year))} · ${escapeHtml(formatDuration(item.durationSeconds))}</small><em>${escapeHtml(item.genres.slice(0, 2).join(" · "))}</em>${isContinuable(runtime, item) ? `<span>Tiếp tục từ ${escapeHtml(formatClock(progress.position))}</span>` : ""}</span>
+        <span class="cinema-card__copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(String(item.year))} · ${escapeHtml(formatDuration(item.durationSeconds))}</small><em>${escapeHtml(item.genres.slice(0, 2).join(" · "))}</em>${item.collection ? `<mark>${escapeHtml(item.collection)}</mark>` : ""}${isContinuable(runtime, item) ? `<span>Tiếp tục từ ${escapeHtml(formatClock(progress.position))}</span>` : ""}</span>
       </button>
       <span class="cinema-card__actions">
         <button type="button" class="cinema-card__watchlist ${watchlisted ? "is-active" : ""}" data-cinema-watchlist="${escapeHtml(item.id)}" aria-label="${watchlisted ? "Bỏ khỏi" : "Thêm vào"} danh sách xem sau" aria-pressed="${watchlisted}">${watchlisted ? "✓" : "+"}</button>
@@ -953,6 +970,7 @@
   return Object.freeze({
     VERSION,
     MANIFEST_URL,
+    EXPANSION_MANIFEST_URL,
     RIGHTS_STATUS_URL,
     STORAGE_SCHEMA,
     ALLOWED_LICENSES,

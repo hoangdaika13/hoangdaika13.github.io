@@ -1,0 +1,688 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "hh.open-media.films.expansion.v1",
+  "updatedAt": "2026-08-23T00:00:00.000Z",
+  "servingTerritory": "WORLDWIDE",
+  "policy": {
+    "mode": "fail-closed",
+    "requiredTerritory": "WORLDWIDE",
+    "publishedStatuses": [
+      "published"
+    ],
+    "publishedLicenses": [
+      "CC-BY-3.0",
+      "CC-BY-4.0",
+      "CC-BY-SA-3.0",
+      "CC-BY-SA-4.0"
+    ]
+  },
+  "items": [
+    {
+      "id": "commons-hands-short-film",
+      "title": "Hands",
+      "creator": "Ramin Mazur",
+      "year": 2009,
+      "file": "Hands short film.webm",
+      "licenseCode": "CC-BY-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "genres": [
+        "Phim ngắn",
+        "Tâm lý"
+      ],
+      "countries": [
+        "Moldova"
+      ],
+      "regions": [
+        "Châu Âu"
+      ],
+      "languages": [
+        "Không lời"
+      ],
+      "description": "Một trải nghiệm điện ảnh ngắn, tối giản và giàu chất quan sát về đôi bàn tay.",
+      "contentType": "Phim ngắn thử nghiệm",
+      "ageRating": "Mọi lứa tuổi",
+      "kind": "film",
+      "collection": "HH Expansion · 2026",
+      "durationSeconds": 310.056,
+      "sensitiveContent": false,
+      "contentWarnings": [],
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Hands_short_film.webm/500px--Hands_short_film.webm.jpg",
+      "source": {
+        "provider": "Wikimedia Commons",
+        "itemId": "File:Hands short film.webm",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Hands%20short%20film.webm",
+        "rightsEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Hands%20short%20film.webm",
+        "playbackMirror": "Wikimedia Commons"
+      },
+      "rights": {
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "licenseCode": "CC-BY-3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+        "attributionText": "Hands — Ramin Mazur, CC-BY-3.0; nguồn Wikimedia Commons.",
+        "verifiedAt": "2026-08-23",
+        "jurisdiction": "Creative Commons CC-BY-3.0",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "commercialAllowed": true,
+        "derivativesAllowed": true,
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "shareAlike": false,
+        "changesMade": false,
+        "changesDescription": "Không chỉnh sửa nội dung; phát trực tiếp bản chuyển mã do Wikimedia Commons cung cấp.",
+        "evidence": {
+          "sourceRevision": "https://commons.wikimedia.org/wiki/File:Hands%20short%20film.webm#oldid:931456236",
+          "checkedAt": "2026-08-23",
+          "metadataRecord": "id=commons-hands-short-film\ntitle=Hands\ncreator=Ramin Mazur\nsource=https://commons.wikimedia.org/wiki/File:Hands%20short%20film.webm\nsha1=7d5c501a5c29577e81c96a52475870d0f62ba630\nlicense=CC-BY-3.0\ncheckedAt=2026-08-23",
+          "metadataChecksum": "sha256:bc613a78ffb166a62c4f80d2e68ad17b85bc0ab84e0e2770ec0271834d795ddf",
+          "metadataChecksumAlgorithm": "SHA-256",
+          "metadataChecksumScope": "embedded-evidence-record",
+          "mediaChecksum": "sha1:7d5c501a5c29577e81c96a52475870d0f62ba630",
+          "mediaChecksumStatus": "verified-upstream",
+          "mediaChecksumAlgorithm": "sha1",
+          "mediaChecksumSource": "Wikimedia Commons structured data",
+          "checksumScope": "original-file"
+        },
+        "layers": {
+          "master": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Hands — Ramin Mazur, CC-BY-3.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Hands%20short%20film.webm"
+          },
+          "soundtrack": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Hands — Ramin Mazur, CC-BY-3.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Hands%20short%20film.webm"
+          },
+          "poster": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Hands — Ramin Mazur, CC-BY-3.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Hands%20short%20film.webm"
+          },
+          "subtitles": {
+            "status": "not-applicable",
+            "reason": "Không lưu trữ hoặc cung cấp tệp phụ đề riêng."
+          },
+          "privacyPublicity": {
+            "status": "not-applicable",
+            "reason": "Không sử dụng hình ảnh quảng cáo riêng ngoài tác phẩm được cấp phép."
+          }
+        }
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/c/c9/Hands_short_film.webm",
+        "mimeType": "video/webm",
+        "delivery": "remote-direct"
+      }
+    },
+    {
+      "id": "commons-afternoon-class",
+      "title": "Afternoon Class",
+      "creator": "Osro",
+      "year": 2014,
+      "file": "Afternoon Class - Animation Short Film (2014).webm",
+      "licenseCode": "CC-BY-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "genres": [
+        "Hoạt hình",
+        "Hài"
+      ],
+      "countries": [
+        "Hàn Quốc"
+      ],
+      "regions": [
+        "Châu Á"
+      ],
+      "languages": [
+        "Không lời"
+      ],
+      "description": "Một học sinh cố chống lại cơn buồn ngủ trong tiết học buổi chiều.",
+      "contentType": "Phim ngắn hoạt hình",
+      "ageRating": "Mọi lứa tuổi",
+      "kind": "film",
+      "collection": "HH Expansion · 2026",
+      "durationSeconds": 230.028,
+      "sensitiveContent": false,
+      "contentWarnings": [],
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Afternoon_Class_-_Animation_Short_Film_%282014%29.webm/960px--Afternoon_Class_-_Animation_Short_Film_%282014%29.webm.jpg",
+      "source": {
+        "provider": "Wikimedia Commons",
+        "itemId": "File:Afternoon Class - Animation Short Film (2014).webm",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Afternoon%20Class%20-%20Animation%20Short%20Film%20(2014).webm",
+        "rightsEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Afternoon%20Class%20-%20Animation%20Short%20Film%20(2014).webm",
+        "playbackMirror": "Wikimedia Commons"
+      },
+      "rights": {
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "licenseCode": "CC-BY-3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+        "attributionText": "Afternoon Class — Osro, CC-BY-3.0; nguồn Wikimedia Commons.",
+        "verifiedAt": "2026-08-23",
+        "jurisdiction": "Creative Commons CC-BY-3.0",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "commercialAllowed": true,
+        "derivativesAllowed": true,
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "shareAlike": false,
+        "changesMade": false,
+        "changesDescription": "Không chỉnh sửa nội dung; phát trực tiếp bản chuyển mã do Wikimedia Commons cung cấp.",
+        "evidence": {
+          "sourceRevision": "https://commons.wikimedia.org/wiki/File:Afternoon%20Class%20-%20Animation%20Short%20Film%20(2014).webm#oldid:1259412970",
+          "checkedAt": "2026-08-23",
+          "metadataRecord": "id=commons-afternoon-class\ntitle=Afternoon Class\ncreator=Osro\nsource=https://commons.wikimedia.org/wiki/File:Afternoon%20Class%20-%20Animation%20Short%20Film%20(2014).webm\nsha1=c37643709854947694fe52ee45a302ccc6129c03\nlicense=CC-BY-3.0\ncheckedAt=2026-08-23",
+          "metadataChecksum": "sha256:660b577d8d9f4ae82d68626514915bda20ffa825292b2e85f2c132a98c393a62",
+          "metadataChecksumAlgorithm": "SHA-256",
+          "metadataChecksumScope": "embedded-evidence-record",
+          "mediaChecksum": "sha1:c37643709854947694fe52ee45a302ccc6129c03",
+          "mediaChecksumStatus": "verified-upstream",
+          "mediaChecksumAlgorithm": "sha1",
+          "mediaChecksumSource": "Wikimedia Commons structured data",
+          "checksumScope": "original-file"
+        },
+        "layers": {
+          "master": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Afternoon Class — Osro, CC-BY-3.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Afternoon%20Class%20-%20Animation%20Short%20Film%20(2014).webm"
+          },
+          "soundtrack": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Afternoon Class — Osro, CC-BY-3.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Afternoon%20Class%20-%20Animation%20Short%20Film%20(2014).webm"
+          },
+          "poster": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "Afternoon Class — Osro, CC-BY-3.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Afternoon%20Class%20-%20Animation%20Short%20Film%20(2014).webm"
+          },
+          "subtitles": {
+            "status": "not-applicable",
+            "reason": "Không lưu trữ hoặc cung cấp tệp phụ đề riêng."
+          },
+          "privacyPublicity": {
+            "status": "not-applicable",
+            "reason": "Không sử dụng hình ảnh quảng cáo riêng ngoài tác phẩm được cấp phép."
+          }
+        }
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/0/08/Afternoon_Class_-_Animation_Short_Film_%282014%29.webm",
+        "mimeType": "video/webm",
+        "delivery": "remote-direct"
+      }
+    },
+    {
+      "id": "commons-zombie-claymation",
+      "title": "A Zombie Claymation",
+      "creator": "WillandWill",
+      "year": 2017,
+      "file": "A Zombie claymation (short stop motion film).webm",
+      "licenseCode": "CC-BY-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "genres": [
+        "Hoạt hình",
+        "Phiêu lưu"
+      ],
+      "countries": [
+        "Hoa Kỳ"
+      ],
+      "regions": [
+        "Bắc Mỹ"
+      ],
+      "languages": [
+        "Tiếng Anh"
+      ],
+      "description": "Phim stop-motion ngắn về cuộc đối đầu kỳ ảo giữa hai cha con và lũ zombie.",
+      "contentType": "Phim ngắn stop-motion",
+      "ageRating": "13+",
+      "kind": "film",
+      "collection": "HH Expansion · 2026",
+      "durationSeconds": 154.144,
+      "sensitiveContent": false,
+      "contentWarnings": [],
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/A_Zombie_claymation_%28short_stop_motion_film%29.webm/960px--A_Zombie_claymation_%28short_stop_motion_film%29.webm.jpg",
+      "source": {
+        "provider": "Wikimedia Commons",
+        "itemId": "File:A Zombie claymation (short stop motion film).webm",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:A%20Zombie%20claymation%20(short%20stop%20motion%20film).webm",
+        "rightsEvidenceUrl": "https://commons.wikimedia.org/wiki/File:A%20Zombie%20claymation%20(short%20stop%20motion%20film).webm",
+        "playbackMirror": "Wikimedia Commons"
+      },
+      "rights": {
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "licenseCode": "CC-BY-3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+        "attributionText": "A Zombie Claymation — WillandWill, CC-BY-3.0; nguồn Wikimedia Commons.",
+        "verifiedAt": "2026-08-23",
+        "jurisdiction": "Creative Commons CC-BY-3.0",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "commercialAllowed": true,
+        "derivativesAllowed": true,
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "shareAlike": false,
+        "changesMade": false,
+        "changesDescription": "Không chỉnh sửa nội dung; phát trực tiếp bản chuyển mã do Wikimedia Commons cung cấp.",
+        "evidence": {
+          "sourceRevision": "https://commons.wikimedia.org/wiki/File:A%20Zombie%20claymation%20(short%20stop%20motion%20film).webm#oldid:1033814576",
+          "checkedAt": "2026-08-23",
+          "metadataRecord": "id=commons-zombie-claymation\ntitle=A Zombie Claymation\ncreator=WillandWill\nsource=https://commons.wikimedia.org/wiki/File:A%20Zombie%20claymation%20(short%20stop%20motion%20film).webm\nsha1=9456873ac00e1346d382b512221383c453cd8e07\nlicense=CC-BY-3.0\ncheckedAt=2026-08-23",
+          "metadataChecksum": "sha256:e609245e9a82e833ef12ab307230bc9d67a3a7697097513cf6c3413be4aead7a",
+          "metadataChecksumAlgorithm": "SHA-256",
+          "metadataChecksumScope": "embedded-evidence-record",
+          "mediaChecksum": "sha1:9456873ac00e1346d382b512221383c453cd8e07",
+          "mediaChecksumStatus": "verified-upstream",
+          "mediaChecksumAlgorithm": "sha1",
+          "mediaChecksumSource": "Wikimedia Commons structured data",
+          "checksumScope": "original-file"
+        },
+        "layers": {
+          "master": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "A Zombie Claymation — WillandWill, CC-BY-3.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:A%20Zombie%20claymation%20(short%20stop%20motion%20film).webm"
+          },
+          "soundtrack": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "A Zombie Claymation — WillandWill, CC-BY-3.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:A%20Zombie%20claymation%20(short%20stop%20motion%20film).webm"
+          },
+          "poster": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+            "attributionText": "A Zombie Claymation — WillandWill, CC-BY-3.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:A%20Zombie%20claymation%20(short%20stop%20motion%20film).webm"
+          },
+          "subtitles": {
+            "status": "not-applicable",
+            "reason": "Không lưu trữ hoặc cung cấp tệp phụ đề riêng."
+          },
+          "privacyPublicity": {
+            "status": "not-applicable",
+            "reason": "Không sử dụng hình ảnh quảng cáo riêng ngoài tác phẩm được cấp phép."
+          }
+        }
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/2/2d/A_Zombie_claymation_%28short_stop_motion_film%29.webm",
+        "mimeType": "video/webm",
+        "delivery": "remote-direct"
+      }
+    },
+    {
+      "id": "commons-drama-film-pendek",
+      "title": "Drama Film Pendek",
+      "creator": "Ahmad Rizaldi",
+      "year": 2018,
+      "file": "Drama Film Pendek (2018).webm",
+      "licenseCode": "CC-BY-SA-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "genres": [
+        "Chính kịch",
+        "Phim ngắn"
+      ],
+      "countries": [
+        "Indonesia"
+      ],
+      "regions": [
+        "Đông Nam Á"
+      ],
+      "languages": [
+        "Tiếng Indonesia"
+      ],
+      "description": "Một phim ngắn độc lập bằng tiếng Indonesia, được phát hành với giấy phép chia sẻ tương tự.",
+      "contentType": "Phim ngắn độc lập",
+      "ageRating": "Mọi lứa tuổi",
+      "kind": "film",
+      "collection": "HH Expansion · 2026",
+      "durationSeconds": 92.887,
+      "sensitiveContent": false,
+      "contentWarnings": [],
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Drama_Film_Pendek_%282018%29.webm/960px--Drama_Film_Pendek_%282018%29.webm.jpg",
+      "source": {
+        "provider": "Wikimedia Commons",
+        "itemId": "File:Drama Film Pendek (2018).webm",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Drama%20Film%20Pendek%20(2018).webm",
+        "rightsEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Drama%20Film%20Pendek%20(2018).webm",
+        "playbackMirror": "Wikimedia Commons"
+      },
+      "rights": {
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "licenseCode": "CC-BY-SA-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "attributionText": "Drama Film Pendek — Ahmad Rizaldi, CC-BY-SA-4.0; nguồn Wikimedia Commons.",
+        "verifiedAt": "2026-08-23",
+        "jurisdiction": "Creative Commons CC-BY-SA-4.0",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "commercialAllowed": true,
+        "derivativesAllowed": true,
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "shareAlike": true,
+        "changesMade": false,
+        "changesDescription": "Không chỉnh sửa nội dung; phát trực tiếp bản chuyển mã do Wikimedia Commons cung cấp.",
+        "evidence": {
+          "sourceRevision": "https://commons.wikimedia.org/wiki/File:Drama%20Film%20Pendek%20(2018).webm#oldid:1212511514",
+          "checkedAt": "2026-08-23",
+          "metadataRecord": "id=commons-drama-film-pendek\ntitle=Drama Film Pendek\ncreator=Ahmad Rizaldi\nsource=https://commons.wikimedia.org/wiki/File:Drama%20Film%20Pendek%20(2018).webm\nsha1=690e42fbbbb0467f3357f610260fa63f1edafc90\nlicense=CC-BY-SA-4.0\ncheckedAt=2026-08-23",
+          "metadataChecksum": "sha256:8e953a231d272f6e7d5b6c8e4164d2daeefeefc553d024406ef5a7a1cea7a996",
+          "metadataChecksumAlgorithm": "SHA-256",
+          "metadataChecksumScope": "embedded-evidence-record",
+          "mediaChecksum": "sha1:690e42fbbbb0467f3357f610260fa63f1edafc90",
+          "mediaChecksumStatus": "verified-upstream",
+          "mediaChecksumAlgorithm": "sha1",
+          "mediaChecksumSource": "Wikimedia Commons structured data",
+          "checksumScope": "original-file"
+        },
+        "layers": {
+          "master": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-SA-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "attributionText": "Drama Film Pendek — Ahmad Rizaldi, CC-BY-SA-4.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Drama%20Film%20Pendek%20(2018).webm"
+          },
+          "soundtrack": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-SA-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "attributionText": "Drama Film Pendek — Ahmad Rizaldi, CC-BY-SA-4.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Drama%20Film%20Pendek%20(2018).webm"
+          },
+          "poster": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-SA-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "attributionText": "Drama Film Pendek — Ahmad Rizaldi, CC-BY-SA-4.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Drama%20Film%20Pendek%20(2018).webm"
+          },
+          "subtitles": {
+            "status": "not-applicable",
+            "reason": "Không lưu trữ hoặc cung cấp tệp phụ đề riêng."
+          },
+          "privacyPublicity": {
+            "status": "not-applicable",
+            "reason": "Không sử dụng hình ảnh quảng cáo riêng ngoài tác phẩm được cấp phép."
+          }
+        }
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/4/45/Drama_Film_Pendek_%282018%29.webm",
+        "mimeType": "video/webm",
+        "delivery": "remote-direct"
+      }
+    },
+    {
+      "id": "commons-raya-film-pendek",
+      "title": "Raya",
+      "creator": "Abno Creative",
+      "year": 2025,
+      "file": "Raya - Film Pendek Lebaran (2025).webm",
+      "licenseCode": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "genres": [
+        "Chính kịch",
+        "Gia đình"
+      ],
+      "countries": [
+        "Indonesia"
+      ],
+      "regions": [
+        "Đông Nam Á"
+      ],
+      "languages": [
+        "Tiếng Indonesia"
+      ],
+      "description": "Câu chuyện gia đình về lòng biết ơn, sự bền bỉ và niềm vui giản dị trong dịp Lebaran.",
+      "contentType": "Phim ngắn gia đình",
+      "ageRating": "Mọi lứa tuổi",
+      "kind": "film",
+      "collection": "HH Expansion · 2026",
+      "durationSeconds": 595.646,
+      "sensitiveContent": false,
+      "contentWarnings": [],
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Raya_-_Film_Pendek_Lebaran_%282025%29.webm/500px--Raya_-_Film_Pendek_Lebaran_%282025%29.webm.jpg",
+      "source": {
+        "provider": "Wikimedia Commons",
+        "itemId": "File:Raya - Film Pendek Lebaran (2025).webm",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Raya%20-%20Film%20Pendek%20Lebaran%20(2025).webm",
+        "rightsEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Raya%20-%20Film%20Pendek%20Lebaran%20(2025).webm",
+        "playbackMirror": "Wikimedia Commons"
+      },
+      "rights": {
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "licenseCode": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attributionText": "Raya — Abno Creative, CC-BY-4.0; nguồn Wikimedia Commons.",
+        "verifiedAt": "2026-08-23",
+        "jurisdiction": "Creative Commons CC-BY-4.0",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "commercialAllowed": true,
+        "derivativesAllowed": true,
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "shareAlike": false,
+        "changesMade": false,
+        "changesDescription": "Không chỉnh sửa nội dung; phát trực tiếp bản chuyển mã do Wikimedia Commons cung cấp.",
+        "evidence": {
+          "sourceRevision": "https://commons.wikimedia.org/wiki/File:Raya%20-%20Film%20Pendek%20Lebaran%20(2025).webm#oldid:1239747025",
+          "checkedAt": "2026-08-23",
+          "metadataRecord": "id=commons-raya-film-pendek\ntitle=Raya\ncreator=Abno Creative\nsource=https://commons.wikimedia.org/wiki/File:Raya%20-%20Film%20Pendek%20Lebaran%20(2025).webm\nsha1=1c6de2b4b798d6174b4424f03cca789749b9b4f0\nlicense=CC-BY-4.0\ncheckedAt=2026-08-23",
+          "metadataChecksum": "sha256:a1df391709a956ce7af9331066759f701f49ba47767a10dc09a67ec92b54d428",
+          "metadataChecksumAlgorithm": "SHA-256",
+          "metadataChecksumScope": "embedded-evidence-record",
+          "mediaChecksum": "sha1:1c6de2b4b798d6174b4424f03cca789749b9b4f0",
+          "mediaChecksumStatus": "verified-upstream",
+          "mediaChecksumAlgorithm": "sha1",
+          "mediaChecksumSource": "Wikimedia Commons structured data",
+          "checksumScope": "original-file"
+        },
+        "layers": {
+          "master": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Raya — Abno Creative, CC-BY-4.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Raya%20-%20Film%20Pendek%20Lebaran%20(2025).webm"
+          },
+          "soundtrack": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Raya — Abno Creative, CC-BY-4.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Raya%20-%20Film%20Pendek%20Lebaran%20(2025).webm"
+          },
+          "poster": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Raya — Abno Creative, CC-BY-4.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Raya%20-%20Film%20Pendek%20Lebaran%20(2025).webm"
+          },
+          "subtitles": {
+            "status": "not-applicable",
+            "reason": "Không lưu trữ hoặc cung cấp tệp phụ đề riêng."
+          },
+          "privacyPublicity": {
+            "status": "not-applicable",
+            "reason": "Không sử dụng hình ảnh quảng cáo riêng ngoài tác phẩm được cấp phép."
+          }
+        }
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Raya_-_Film_Pendek_Lebaran_%282025%29.webm",
+        "mimeType": "video/webm",
+        "delivery": "remote-direct"
+      }
+    },
+    {
+      "id": "commons-knowledge-for-everyone",
+      "title": "Knowledge for Everyone",
+      "creator": "Wikimedia Foundation",
+      "year": 2011,
+      "file": "Knowledge for Everyone (short cut).webm",
+      "licenseCode": "CC-BY-SA-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "genres": [
+        "Tài liệu",
+        "Giáo dục"
+      ],
+      "countries": [
+        "Nam Phi"
+      ],
+      "regions": [
+        "Châu Phi"
+      ],
+      "languages": [
+        "Tiếng Anh"
+      ],
+      "description": "Phim tài liệu ngắn về quyền tiếp cận tri thức và Wikipedia cho cộng đồng.",
+      "contentType": "Phim tài liệu",
+      "ageRating": "Mọi lứa tuổi",
+      "kind": "film",
+      "collection": "HH Expansion · 2026",
+      "durationSeconds": 762.371,
+      "sensitiveContent": false,
+      "contentWarnings": [],
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Knowledge_for_Everyone_%28short_cut%29.webm/960px--Knowledge_for_Everyone_%28short_cut%29.webm.jpg",
+      "source": {
+        "provider": "Wikimedia Commons",
+        "itemId": "File:Knowledge for Everyone (short cut).webm",
+        "landingUrl": "https://commons.wikimedia.org/wiki/File:Knowledge%20for%20Everyone%20(short%20cut).webm",
+        "rightsEvidenceUrl": "https://commons.wikimedia.org/wiki/File:Knowledge%20for%20Everyone%20(short%20cut).webm",
+        "playbackMirror": "Wikimedia Commons"
+      },
+      "rights": {
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "licenseCode": "CC-BY-SA-3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "attributionText": "Knowledge for Everyone — Wikimedia Foundation, CC-BY-SA-3.0; nguồn Wikimedia Commons.",
+        "verifiedAt": "2026-08-23",
+        "jurisdiction": "Creative Commons CC-BY-SA-3.0",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "commercialAllowed": true,
+        "derivativesAllowed": true,
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "shareAlike": true,
+        "changesMade": false,
+        "changesDescription": "Không chỉnh sửa nội dung; phát trực tiếp bản chuyển mã do Wikimedia Commons cung cấp.",
+        "evidence": {
+          "sourceRevision": "https://commons.wikimedia.org/wiki/File:Knowledge%20for%20Everyone%20(short%20cut).webm#oldid:692727092",
+          "checkedAt": "2026-08-23",
+          "metadataRecord": "id=commons-knowledge-for-everyone\ntitle=Knowledge for Everyone\ncreator=Wikimedia Foundation\nsource=https://commons.wikimedia.org/wiki/File:Knowledge%20for%20Everyone%20(short%20cut).webm\nsha1=91c7eedc5ae3c269d2a716fd905dae5a88e0712e\nlicense=CC-BY-SA-3.0\ncheckedAt=2026-08-23",
+          "metadataChecksum": "sha256:95015008bb7c6627980a49c79b5ef5b751825512a4244afa42d64f2fce308c66",
+          "metadataChecksumAlgorithm": "SHA-256",
+          "metadataChecksumScope": "embedded-evidence-record",
+          "mediaChecksum": "sha1:91c7eedc5ae3c269d2a716fd905dae5a88e0712e",
+          "mediaChecksumStatus": "verified-upstream",
+          "mediaChecksumAlgorithm": "sha1",
+          "mediaChecksumSource": "Wikimedia Commons structured data",
+          "checksumScope": "original-file"
+        },
+        "layers": {
+          "master": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-SA-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+            "attributionText": "Knowledge for Everyone — Wikimedia Foundation, CC-BY-SA-3.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Knowledge%20for%20Everyone%20(short%20cut).webm"
+          },
+          "soundtrack": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-SA-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+            "attributionText": "Knowledge for Everyone — Wikimedia Foundation, CC-BY-SA-3.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Knowledge%20for%20Everyone%20(short%20cut).webm"
+          },
+          "poster": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-SA-3.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+            "attributionText": "Knowledge for Everyone — Wikimedia Foundation, CC-BY-SA-3.0; nguồn Wikimedia Commons.",
+            "evidenceRef": "https://commons.wikimedia.org/wiki/File:Knowledge%20for%20Everyone%20(short%20cut).webm"
+          },
+          "subtitles": {
+            "status": "not-applicable",
+            "reason": "Không lưu trữ hoặc cung cấp tệp phụ đề riêng."
+          },
+          "privacyPublicity": {
+            "status": "not-applicable",
+            "reason": "Không sử dụng hình ảnh quảng cáo riêng ngoài tác phẩm được cấp phép."
+          }
+        }
+      },
+      "playback": {
+        "type": "video",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/6/60/Knowledge_for_Everyone_%28short_cut%29.webm",
+        "mimeType": "video/webm",
+        "delivery": "remote-direct"
+      }
+    }
+  ],
+  "quarantineItems": []
+}

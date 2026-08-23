@@ -1,0 +1,673 @@
+{
+  "manifestVersion": 1,
+  "title": "HH Open Music — Expansion Pack",
+  "description": "Bổ sung các bản nguyên bản đã ghim revision và kiểm tra quyền.",
+  "verifiedAt": "2026-08-23",
+  "sourcePolicy": "Pinned official repository records only.",
+  "governance": {
+    "defaultDeny": true,
+    "requiredLayers": [
+      "composition",
+      "performance",
+      "masterRecording",
+      "artwork"
+    ]
+  },
+  "items": [
+    {
+      "id": "github-tanner-clowns",
+      "kind": "track",
+      "collection": "HH Expansion · 2026",
+      "title": "Clowns",
+      "creator": "Tanner Helland",
+      "album": "Free Original Music for Games and Film",
+      "genres": [
+        "Cinematic",
+        "Playful"
+      ],
+      "moods": [
+        "Vui tươi",
+        "Tinh nghịch"
+      ],
+      "region": "Bắc Mỹ",
+      "countryCode": "US",
+      "culturalContext": "Nhạc nền nguyên bản cho phim và trò chơi; không đại diện cho âm nhạc truyền thống của một quốc gia.",
+      "instrumental": true,
+      "durationSeconds": 144.586,
+      "featured": false,
+      "colors": [
+        "#ff74c8",
+        "#8b7bff",
+        "#63eaff"
+      ],
+      "source": {
+        "provider": "GitHub - Tanner Helland Free Music",
+        "landingUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Clowns.mp3",
+        "itemId": "mp3/Clowns.mp3",
+        "primaryRightsRecord": true,
+        "rightsEvidenceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+        "repositoryUrl": "https://github.com/tannerhelland/free-music",
+        "repositoryCommit": "f6bfe16f49feab2181075ab86b13b24740592aa6"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attributionText": "Clowns — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+        "verifiedAt": "2026-08-23",
+        "commercialAllowed": true,
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Clowns — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Clowns — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Clowns — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH tạo bìa màu cục bộ; không sao chép artwork từ kho nguồn."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-23",
+          "sourceRevision": "github:tannerhelland/free-music@f6bfe16f49feab2181075ab86b13b24740592aa6:mp3/Clowns.mp3",
+          "sourceAuthority": "official-project-page",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "mp3/Clowns.mp3",
+            "sourceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Clowns.mp3",
+            "repositoryUrl": "https://github.com/tannerhelland/free-music",
+            "repositoryCommit": "f6bfe16f49feab2181075ab86b13b24740592aa6",
+            "gitBlobSha1": "5ce14c08e91e094a845a1a699cf6787a42dd1b4c",
+            "licenseEvidenceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "creator": "Tanner Helland",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Clowns — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "verifiedAt": "2026-08-23",
+            "playbackUrl": "https://github.com/tannerhelland/free-music/raw/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Clowns.mp3"
+          },
+          "metadataChecksum": "sha256:a99db6127d53dfa4505096c6e26be3aa817a0dd2f606cecc80610b8ae29fa980",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "verified",
+          "mediaChecksum": "sha256:5654468d39fb6d4d70b6205659dd46982315b30c3424c34f37762071a4db1568",
+          "mediaChecksumAlgorithm": "sha256",
+          "mediaChecksumSource": "Downloaded pinned GitHub raw bytes at f6bfe16f49feab2181075ab86b13b24740592aa6; Clowns.mp3",
+          "checksumScope": "remote-media-bytes"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": true,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false,
+          "repositoryLicenseAppliesToTrack": true
+        }
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://github.com/tannerhelland/free-music/raw/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Clowns.mp3",
+        "fallbackUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Clowns.mp3"
+      }
+    },
+    {
+      "id": "github-tanner-cyarons-gate",
+      "kind": "track",
+      "collection": "HH Expansion · 2026",
+      "title": "Cyaron's Gate",
+      "creator": "Tanner Helland",
+      "album": "Free Original Music for Games and Film",
+      "genres": [
+        "Cinematic",
+        "Fantasy"
+      ],
+      "moods": [
+        "Hùng tráng",
+        "Phiêu lưu"
+      ],
+      "region": "Bắc Mỹ",
+      "countryCode": "US",
+      "culturalContext": "Nhạc nền nguyên bản cho phim và trò chơi; không đại diện cho âm nhạc truyền thống của một quốc gia.",
+      "instrumental": true,
+      "durationSeconds": 147.395,
+      "featured": false,
+      "colors": [
+        "#63eaff",
+        "#746bff",
+        "#ffcc70"
+      ],
+      "source": {
+        "provider": "GitHub - Tanner Helland Free Music",
+        "landingUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Cyaron's%20Gate.mp3",
+        "itemId": "mp3/Cyaron's Gate.mp3",
+        "primaryRightsRecord": true,
+        "rightsEvidenceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+        "repositoryUrl": "https://github.com/tannerhelland/free-music",
+        "repositoryCommit": "f6bfe16f49feab2181075ab86b13b24740592aa6"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attributionText": "Cyaron's Gate — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+        "verifiedAt": "2026-08-23",
+        "commercialAllowed": true,
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Cyaron's Gate — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Cyaron's Gate — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Cyaron's Gate — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH tạo bìa màu cục bộ; không sao chép artwork từ kho nguồn."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-23",
+          "sourceRevision": "github:tannerhelland/free-music@f6bfe16f49feab2181075ab86b13b24740592aa6:mp3/Cyaron's Gate.mp3",
+          "sourceAuthority": "official-project-page",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "mp3/Cyaron's Gate.mp3",
+            "sourceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Cyaron's%20Gate.mp3",
+            "repositoryUrl": "https://github.com/tannerhelland/free-music",
+            "repositoryCommit": "f6bfe16f49feab2181075ab86b13b24740592aa6",
+            "gitBlobSha1": "722029df1d1505f7f1becdb74f6a5ee48bc2f229",
+            "licenseEvidenceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "creator": "Tanner Helland",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Cyaron's Gate — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "verifiedAt": "2026-08-23",
+            "playbackUrl": "https://github.com/tannerhelland/free-music/raw/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Cyaron's%20Gate.mp3"
+          },
+          "metadataChecksum": "sha256:7a4b8c05dedae77bd1677c48ce0efc9bd4856f486692b125612142f9fcaed54f",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "verified",
+          "mediaChecksum": "sha256:90ee1ef3ddee3298bb7958361c2bf7f896b86c542de50e45844b8f3cf9380af3",
+          "mediaChecksumAlgorithm": "sha256",
+          "mediaChecksumSource": "Downloaded pinned GitHub raw bytes at f6bfe16f49feab2181075ab86b13b24740592aa6; Cyaron's Gate.mp3",
+          "checksumScope": "remote-media-bytes"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": true,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false,
+          "repositoryLicenseAppliesToTrack": true
+        }
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://github.com/tannerhelland/free-music/raw/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Cyaron's%20Gate.mp3",
+        "fallbackUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Cyaron's%20Gate.mp3"
+      }
+    },
+    {
+      "id": "github-tanner-dark-knight",
+      "kind": "track",
+      "collection": "HH Expansion · 2026",
+      "title": "Dark Knight",
+      "creator": "Tanner Helland",
+      "album": "Free Original Music for Games and Film",
+      "genres": [
+        "Cinematic",
+        "Dark Ambient"
+      ],
+      "moods": [
+        "Bí ẩn",
+        "Kịch tính"
+      ],
+      "region": "Bắc Mỹ",
+      "countryCode": "US",
+      "culturalContext": "Nhạc nền nguyên bản cho phim và trò chơi; không đại diện cho âm nhạc truyền thống của một quốc gia.",
+      "instrumental": true,
+      "durationSeconds": 184.816,
+      "featured": false,
+      "colors": [
+        "#6d78ff",
+        "#2ee7d4",
+        "#ff5e9c"
+      ],
+      "source": {
+        "provider": "GitHub - Tanner Helland Free Music",
+        "landingUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Dark%20Knight.mp3",
+        "itemId": "mp3/Dark Knight.mp3",
+        "primaryRightsRecord": true,
+        "rightsEvidenceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+        "repositoryUrl": "https://github.com/tannerhelland/free-music",
+        "repositoryCommit": "f6bfe16f49feab2181075ab86b13b24740592aa6"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attributionText": "Dark Knight — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+        "verifiedAt": "2026-08-23",
+        "commercialAllowed": true,
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Dark Knight — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Dark Knight — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Dark Knight — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH tạo bìa màu cục bộ; không sao chép artwork từ kho nguồn."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-23",
+          "sourceRevision": "github:tannerhelland/free-music@f6bfe16f49feab2181075ab86b13b24740592aa6:mp3/Dark Knight.mp3",
+          "sourceAuthority": "official-project-page",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "mp3/Dark Knight.mp3",
+            "sourceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Dark%20Knight.mp3",
+            "repositoryUrl": "https://github.com/tannerhelland/free-music",
+            "repositoryCommit": "f6bfe16f49feab2181075ab86b13b24740592aa6",
+            "gitBlobSha1": "0ac4089cb8e30628f33b409657daa384eaf2e479",
+            "licenseEvidenceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "creator": "Tanner Helland",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Dark Knight — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "verifiedAt": "2026-08-23",
+            "playbackUrl": "https://github.com/tannerhelland/free-music/raw/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Dark%20Knight.mp3"
+          },
+          "metadataChecksum": "sha256:ebfb43ed457921b87193448039a192a691f6d8f685c1ec68b4545ff9e298726b",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "verified",
+          "mediaChecksum": "sha256:5a82a877e4d33ca2508e29092e38422bfb713d9f1aa105a6d07169bcbc740750",
+          "mediaChecksumAlgorithm": "sha256",
+          "mediaChecksumSource": "Downloaded pinned GitHub raw bytes at f6bfe16f49feab2181075ab86b13b24740592aa6; Dark Knight.mp3",
+          "checksumScope": "remote-media-bytes"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": true,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false,
+          "repositoryLicenseAppliesToTrack": true
+        }
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://github.com/tannerhelland/free-music/raw/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Dark%20Knight.mp3",
+        "fallbackUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Dark%20Knight.mp3"
+      }
+    },
+    {
+      "id": "github-tanner-destiny",
+      "kind": "track",
+      "collection": "HH Expansion · 2026",
+      "title": "Destiny",
+      "creator": "Tanner Helland",
+      "album": "Free Original Music for Games and Film",
+      "genres": [
+        "Cinematic",
+        "Orchestral"
+      ],
+      "moods": [
+        "Hy vọng",
+        "Truyền cảm"
+      ],
+      "region": "Bắc Mỹ",
+      "countryCode": "US",
+      "culturalContext": "Nhạc nền nguyên bản cho phim và trò chơi; không đại diện cho âm nhạc truyền thống của một quốc gia.",
+      "instrumental": true,
+      "durationSeconds": 211.209,
+      "featured": false,
+      "colors": [
+        "#ffcc70",
+        "#ff77b7",
+        "#6df3d0"
+      ],
+      "source": {
+        "provider": "GitHub - Tanner Helland Free Music",
+        "landingUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Destiny.mp3",
+        "itemId": "mp3/Destiny.mp3",
+        "primaryRightsRecord": true,
+        "rightsEvidenceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+        "repositoryUrl": "https://github.com/tannerhelland/free-music",
+        "repositoryCommit": "f6bfe16f49feab2181075ab86b13b24740592aa6"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attributionText": "Destiny — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+        "verifiedAt": "2026-08-23",
+        "commercialAllowed": true,
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Destiny — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Destiny — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Destiny — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH tạo bìa màu cục bộ; không sao chép artwork từ kho nguồn."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-23",
+          "sourceRevision": "github:tannerhelland/free-music@f6bfe16f49feab2181075ab86b13b24740592aa6:mp3/Destiny.mp3",
+          "sourceAuthority": "official-project-page",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "mp3/Destiny.mp3",
+            "sourceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Destiny.mp3",
+            "repositoryUrl": "https://github.com/tannerhelland/free-music",
+            "repositoryCommit": "f6bfe16f49feab2181075ab86b13b24740592aa6",
+            "gitBlobSha1": "576b5c409068440a7fd82cc77711cd29f4c6c77b",
+            "licenseEvidenceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "creator": "Tanner Helland",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Destiny — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "verifiedAt": "2026-08-23",
+            "playbackUrl": "https://github.com/tannerhelland/free-music/raw/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Destiny.mp3"
+          },
+          "metadataChecksum": "sha256:be6418236c797fa3d35a2ae8dd6bebddb99bd82573c16c983e1fa9f80e122722",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "verified",
+          "mediaChecksum": "sha256:a06306d08cf51b58c2eeaf98328f30f6598f5ac7e5d26eda08b369139eaf437f",
+          "mediaChecksumAlgorithm": "sha256",
+          "mediaChecksumSource": "Downloaded pinned GitHub raw bytes at f6bfe16f49feab2181075ab86b13b24740592aa6; Destiny.mp3",
+          "checksumScope": "remote-media-bytes"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": true,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false,
+          "repositoryLicenseAppliesToTrack": true
+        }
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://github.com/tannerhelland/free-music/raw/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Destiny.mp3",
+        "fallbackUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Destiny.mp3"
+      }
+    },
+    {
+      "id": "github-tanner-fate",
+      "kind": "track",
+      "collection": "HH Expansion · 2026",
+      "title": "Fate",
+      "creator": "Tanner Helland",
+      "album": "Free Original Music for Games and Film",
+      "genres": [
+        "Cinematic",
+        "Piano"
+      ],
+      "moods": [
+        "Suy tư",
+        "Điện ảnh"
+      ],
+      "region": "Bắc Mỹ",
+      "countryCode": "US",
+      "culturalContext": "Nhạc nền nguyên bản cho phim và trò chơi; không đại diện cho âm nhạc truyền thống của một quốc gia.",
+      "instrumental": true,
+      "durationSeconds": 110.712,
+      "featured": false,
+      "colors": [
+        "#7ed8ff",
+        "#9575ff",
+        "#ff82b5"
+      ],
+      "source": {
+        "provider": "GitHub - Tanner Helland Free Music",
+        "landingUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Fate.mp3",
+        "itemId": "mp3/Fate.mp3",
+        "primaryRightsRecord": true,
+        "rightsEvidenceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+        "repositoryUrl": "https://github.com/tannerhelland/free-music",
+        "repositoryCommit": "f6bfe16f49feab2181075ab86b13b24740592aa6"
+      },
+      "rights": {
+        "licenseCode": "CC-BY-4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attributionText": "Fate — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+        "verifiedAt": "2026-08-23",
+        "commercialAllowed": true,
+        "derivativesAllowed": true,
+        "reviewStatus": "published",
+        "rightsBasis": "cc-license",
+        "jurisdiction": "WORLDWIDE",
+        "territories": [
+          "WORLDWIDE"
+        ],
+        "streamAllowed": true,
+        "rehostAllowed": false,
+        "downloadAllowed": false,
+        "syncAllowed": true,
+        "shareAlike": false,
+        "layers": {
+          "composition": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Fate — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "performance": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Fate — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "masterRecording": {
+            "status": "cleared",
+            "rightsBasis": "cc-license",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Fate — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "evidenceRef": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "scope": "repository-wide-original-music-license"
+          },
+          "artwork": {
+            "status": "not-applicable",
+            "reason": "HH tạo bìa màu cục bộ; không sao chép artwork từ kho nguồn."
+          }
+        },
+        "evidence": {
+          "checkedAt": "2026-08-23",
+          "sourceRevision": "github:tannerhelland/free-music@f6bfe16f49feab2181075ab86b13b24740592aa6:mp3/Fate.mp3",
+          "sourceAuthority": "official-project-page",
+          "sourceMetadataSnapshot": {
+            "sourceItemId": "mp3/Fate.mp3",
+            "sourceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Fate.mp3",
+            "repositoryUrl": "https://github.com/tannerhelland/free-music",
+            "repositoryCommit": "f6bfe16f49feab2181075ab86b13b24740592aa6",
+            "gitBlobSha1": "1bef14fd04dd7ddc725f6bf50f1ba237093624b2",
+            "licenseEvidenceUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/LICENSE.md",
+            "creator": "Tanner Helland",
+            "licenseCode": "CC-BY-4.0",
+            "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+            "attributionText": "Fate — Tanner Helland, CC BY 4.0. Source: https://github.com/tannerhelland/free-music.",
+            "verifiedAt": "2026-08-23",
+            "playbackUrl": "https://github.com/tannerhelland/free-music/raw/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Fate.mp3"
+          },
+          "metadataChecksum": "sha256:e8c1bc9520307258f6551d6cccef1064078a35cd31c3a98ead9d95cfbd224eae",
+          "metadataChecksumAlgorithm": "sha256",
+          "metadataChecksumSource": "inline-source-metadata-snapshot",
+          "mediaChecksumStatus": "verified",
+          "mediaChecksum": "sha256:bbec1f9ed85a6b80a249a7b36422469e23771769a7b9ccd02ede3a32b711901d",
+          "mediaChecksumAlgorithm": "sha256",
+          "mediaChecksumSource": "Downloaded pinned GitHub raw bytes at f6bfe16f49feab2181075ab86b13b24740592aa6; Fate.mp3",
+          "checksumScope": "remote-media-bytes"
+        },
+        "flags": {
+          "sourceLicenseDeclared": true,
+          "primaryRightsRecord": true,
+          "metadataSnapshotStored": true,
+          "mediaChecksumAvailable": true,
+          "independentRightsAudit": false,
+          "contentIdRisk": "possible",
+          "userUpload": false,
+          "lyricsPresent": false,
+          "repositoryLicenseAppliesToTrack": true
+        }
+      },
+      "playback": {
+        "type": "audio",
+        "url": "https://github.com/tannerhelland/free-music/raw/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Fate.mp3",
+        "fallbackUrl": "https://github.com/tannerhelland/free-music/blob/f6bfe16f49feab2181075ab86b13b24740592aa6/mp3/Fate.mp3"
+      }
+    }
+  ]
+}

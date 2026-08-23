@@ -3,6 +3,7 @@
 
   const VERSION = "2.1.0";
   const MANIFEST_URL = "/assets/open-media/curated-music-v1.json";
+  const EXPANSION_MANIFEST_URL = "/assets/open-media/curated-music-expansion-v1.json";
   const STORAGE_PREFIX = "hh.open-music-hub.v1";
   const ALLOWED_LICENSE_URLS = Object.freeze({
     "CC0-1.0": "https://creativecommons.org/publicdomain/zero/1.0/",
@@ -323,6 +324,7 @@
     return {
       id: String(item.id),
       kind: "track",
+      collection: String(item.collection || ""),
       title: String(item.title || "Bản nhạc chưa đặt tên"),
       creator: String(item.creator || "Nghệ sĩ chưa rõ"),
       album: String(item.album || "Open Music"),
@@ -477,7 +479,7 @@
         ${progressPercent > 0 ? `<i class="omh-card-progress" style="--progress:${progressPercent}%"></i>` : ""}
       </button>
       <div class="omh-card-copy">
-        <div class="omh-card-heading"><span class="omh-license-badge" data-license="${escapeHtml(track.rights.licenseCode)}">${escapeHtml(licenseLabel(track.rights.licenseCode))}</span><time>${formatTime(track.durationSeconds)}</time></div>
+        <div class="omh-card-heading"><span class="omh-license-badge" data-license="${escapeHtml(track.rights.licenseCode)}">${escapeHtml(licenseLabel(track.rights.licenseCode))}</span>${track.collection ? `<span class="omh-pack-badge">${escapeHtml(track.collection)}</span>` : ""}<time>${formatTime(track.durationSeconds)}</time></div>
         <h3 title="${escapeHtml(track.title)}">${escapeHtml(track.title)}</h3>
         <p title="${escapeHtml(track.creator)}">${escapeHtml(track.creator)}</p>
         <div class="omh-card-tags">${track.genres.slice(0, 2).map((genre) => `<span>${escapeHtml(genre)}</span>`).join("")}</div>
@@ -1332,10 +1334,33 @@
     state.error = "";
     renderLibrary();
     try {
-      const response = await global.fetch(MANIFEST_URL, { headers: { Accept: "application/json" }, cache: "no-cache", signal: abortController.signal });
-      if (!response.ok) throw new Error(`Máy chủ phản hồi HTTP ${response.status}.`);
-      const manifest = await response.json();
-      if (!manifest || !Array.isArray(manifest.items)) throw new Error("Manifest không đúng định dạng.");
+      const fetchManifest = async (url, required = true) => {
+        try {
+          const response = await global.fetch(url, { headers: { Accept: "application/json" }, cache: "no-cache", signal: abortController.signal });
+          if (!response.ok) {
+            if (!required) return { items: [], unavailable: true };
+            throw new Error(`Máy chủ phản hồi HTTP ${response.status}.`);
+          }
+          const payload = await response.json();
+          if (!payload || !Array.isArray(payload.items)) {
+            if (!required) return { items: [], unavailable: true };
+            throw new Error("Manifest không đúng định dạng.");
+          }
+          return payload;
+        } catch (error) {
+          if (error?.name === "AbortError" || required) throw error;
+          return { items: [], unavailable: true };
+        }
+      };
+      const [baseManifest, expansionManifest] = await Promise.all([
+        fetchManifest(MANIFEST_URL, true),
+        fetchManifest(EXPANSION_MANIFEST_URL, false)
+      ]);
+      const manifest = {
+        ...baseManifest,
+        items: [...baseManifest.items, ...expansionManifest.items],
+        expansion: { url: EXPANSION_MANIFEST_URL, loaded: expansionManifest.items.length > 0 }
+      };
       const registry = await loadRightsOverrides();
       const accepted = [];
       const rejected = [];
@@ -1498,6 +1523,7 @@
       version: VERSION,
       mounted: Boolean(root?.isConnected),
       manifestUrl: MANIFEST_URL,
+      expansionManifestUrl: EXPANSION_MANIFEST_URL,
       ownerScope,
       storageKey,
       trackCount: state.tracks.length,

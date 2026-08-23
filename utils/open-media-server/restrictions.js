@@ -1,9 +1,11 @@
 const films = require("../../assets/open-media/curated-films-v1.json");
 const music = require("../../assets/open-media/curated-music-v1.json");
+const filmExpansion = require("../../assets/open-media/curated-films-expansion-v1.json");
+const musicExpansion = require("../../assets/open-media/curated-music-expansion-v1.json");
 const { clean, currentUser, isAdminUser, withApi } = require("../platform");
 const { assertSameOrigin } = require("./notices").__test;
 
-const CATALOG_IDS = new Set([...(films.items || []), ...(music.items || [])].map((item) => String(item.id)));
+const CATALOG_IDS = new Set([...(films.items || []), ...(filmExpansion.items || []), ...(music.items || []), ...(musicExpansion.items || [])].map((item) => String(item.id)));
 let indexReady = false;
 
 async function ensureIndex(collection) {
