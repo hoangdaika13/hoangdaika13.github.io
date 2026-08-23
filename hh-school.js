@@ -42,12 +42,14 @@
     if (!root.HHSchoolCurriculum || !root.HHSchoolCore) throw new Error("HH School curriculum/core chưa được tải.");
   }
 
-  function normalizeView(view) {
+  function resolveView(view) {
     const aliases = { home: "today", dashboard: "today", "learning-center": "today", lesson: "lesson", assessment: "assessments", review: "practice", paths: "paths", mastery: "progress", classroom: "teacher", coach: "practice", mistakes: "progress", passport: "progress" };
-    const resolved = aliases[String(view || "today").toLowerCase()] || String(view || "today").toLowerCase();
-    return VIEWS[resolved] ? resolved : "today";
+    const input = String(view || "today").toLowerCase();
+    const resolved = aliases[input] || input;
+    return VIEWS[resolved] ? resolved : "";
   }
-  const supports = (view) => Boolean(VIEWS[normalizeView(view)]);
+  const normalizeView = (view) => resolveView(view) || "today";
+  const supports = (view) => Boolean(resolveView(view));
 
   function resolveRoleViews(state) {
     const core = root.HHSchoolCore;
@@ -86,7 +88,7 @@
         <div class="hhs-today-list">
           <button type="button" data-school-view="practice"><span>Ôn lại</span><strong>${plan.review ? escape(plan.review.skillId) : "Chưa có thẻ đến hạn"}</strong><small>${state.reviews.length} thẻ trong lịch SRS</small></button>
           <button type="button" data-school-view="progress"><span>Lỗi cần sửa</span><strong>${plan.mistake ? escape(plan.mistake.prompt) : "Chưa ghi nhận lỗi lặp"}</strong><small>${plan.mistake ? `${plan.mistake.occurrences} lần gặp` : "Làm bài để nhận phân tích"}</small></button>
-          <button type="button" data-school-view="teacher"><span>Bài được giao</span><strong>${plan.assignment ? escape(plan.assignment.title) : "Không có bài đến hạn"}</strong><small>${plan.assignment?.dueAt ? new Date(plan.assignment.dueAt).toLocaleString("vi-VN") : "Lịch học đang trống"}</small></button>
+          <button type="button" data-school-view="${root.HHSchoolCore.can(state.role, "create-class") ? "teacher" : "practice"}"><span>Bài được giao</span><strong>${plan.assignment ? escape(plan.assignment.title) : "Không có bài đến hạn"}</strong><small>${plan.assignment?.dueAt ? new Date(plan.assignment.dueAt).toLocaleString("vi-VN") : "Lịch học đang trống"}</small></button>
           <button type="button" data-school-view="subjects"><span>Chương trình</span><strong>${pack.grade.subjects.length} môn và hoạt động</strong><small>${pack.lessons.length} bài mẫu có thật trong gói hiện tại</small></button>
         </div>
         <aside class="hhs-brief"><header><span>Bản tin học tập</span><b>${pack.checksum}</b></header><dl><div><dt>Lớp</dt><dd>${state.profile.grade}</dd></div><div><dt>Môn đang chọn</dt><dd>${escape(root.HHSchoolCurriculum.subjectBy(state.activeSubjectId)?.name || "Toán")}</dd></div><div><dt>Đến hạn ôn</dt><dd>${state.reviews.filter((item) => new Date(item.dueAt) <= new Date()).length}</dd></div><div><dt>Kỹ năng có bằng chứng</dt><dd>${Object.keys(state.mastery).length}</dd></div></dl><p>Điểm trong ứng dụng không phải điểm chính thức của nhà trường.</p><button type="button" data-school-view="paths">Xem lộ trình đầy đủ</button></aside>
@@ -111,6 +113,7 @@
     const electives = new Set(state.profile.electiveSubjectIds || []);
     const visible = pack.grade.subjects.filter((item) => !item.optional || state.profile.grade < 10 || electives.has(item.id));
     const active = visible.find((item) => item.id === state.activeSubjectId) || visible[0];
+    if (!active) return `<section class="hhs-view"><article class="hhs-empty"><strong>Chưa có môn học khả dụng</strong><p>Hồ sơ hiện tại chưa có môn bắt buộc hoặc môn tự chọn hợp lệ. Hãy quay lại Lộ trình để chọn lại.</p><button type="button" data-school-view="paths">Mở Lộ trình</button></article></section>`;
     const lessons = pack.lessons.filter((lesson) => lesson.subjectId === active.id);
     return `<section class="hhs-view"><header class="hhs-view-head"><div><small>${escape(pack.grade.name)} · ${escape(pack.grade.stage)}</small><h1>Môn học</h1><p>Chọn một môn để xem yêu cầu cần đạt, bài học, luyện tập và nguồn.</p></div><label class="hhs-inline-search">Lọc môn<input type="search" data-subject-filter placeholder="Nhập tên môn..."></label></header>
       <div class="hhs-subject-layout"><aside class="hhs-subject-list">${visible.map((item) => `<button type="button" data-school-subject="${item.id}" ${item.id === active.id ? 'aria-current="page"' : ""}><i>${escape(item.icon)}</i><span><strong>${escape(item.name)}</strong><small>${item.strands?.length ? escape(item.strands.join(" · ")) : item.optional ? "Tự chọn" : "Bắt buộc"}</small></span></button>`).join("")}</aside>
@@ -135,7 +138,9 @@
 
   function lessonView(state) {
     const pack = root.HHSchoolCurriculum.packForGrade(state.profile.grade);
-    const lesson = pack.lessons.find((item) => item.lessonId === state.activeLessonId) || pack.lessons[0];
+    const lessons = Array.isArray(pack?.lessons) ? pack.lessons : [];
+    const lesson = lessons.find((item) => item.lessonId === state.activeLessonId) || lessons[0];
+    if (!lesson || !Array.isArray(lesson.steps) || !lesson.steps.length) return `<section class="hhs-view"><article class="hhs-empty"><strong>Bài học chưa sẵn sàng</strong><p>Gói nội dung hiện tại không có bước học hợp lệ. Hãy quay lại danh sách môn và chọn bài khác.</p><button type="button" data-school-view="subjects">Về Môn học</button></article></section>`;
     const progress = state.progress[lesson.lessonId] || { step: 0, status: "learning" };
     const stepIndex = Math.min(lesson.steps.length - 1, Number(progress.step) || 0);
     const step = lesson.steps[stepIndex];
@@ -166,9 +171,13 @@
 
   function practiceView(state, assessment = false) {
     const pack = root.HHSchoolCurriculum.packForGrade(state.profile.grade);
-    const questions = pack.lessons.flatMap((lesson) => lesson.questions.map((question) => ({ ...question, lessonId: lesson.lessonId }))).slice(0, assessment ? 6 : 4);
+    const lessons = Array.isArray(pack?.lessons) ? pack.lessons : [];
+    const questions = lessons.flatMap((lesson) => (Array.isArray(lesson.questions) ? lesson.questions : []).map((question) => ({ ...question, lessonId: lesson.lessonId })));
+    const mistakeIds = new Set(state.mistakes.map((item) => item.questionId)); const dueSkills = new Set(state.reviews.filter((item) => new Date(item.dueAt) <= new Date()).map((item) => item.skillId));
+    questions.sort((left, right) => Number(right.lessonId === state.activeLessonId) - Number(left.lessonId === state.activeLessonId) || Number(mistakeIds.has(right.id)) - Number(mistakeIds.has(left.id)) || Number(dueSkills.has(right.skillId)) - Number(dueSkills.has(left.skillId)) || (state.mastery[left.skillId]?.score || 0) - (state.mastery[right.skillId]?.score || 0) || left.id.localeCompare(right.id));
     const variant = Number(state.practiceVariant || 0);
-    const ordered = questions.length ? questions.map((_, index) => questions[(index + variant) % questions.length]) : questions;
+    const count = assessment ? 6 : 4; const offset = questions.length ? variant * count % questions.length : 0;
+    const ordered = questions.length ? Array.from({ length: Math.min(count, questions.length) }, (_, index) => questions[(index + offset) % questions.length]) : questions;
     return `<section class="hhs-view"><header class="hhs-view-head"><div><small>${assessment ? "ĐÁNH GIÁ TRONG ỨNG DỤNG" : "LUYỆN TẬP THÍCH ỨNG"}</small><h1>${assessment ? "Kiểm tra ngắn" : "Luyện theo lỗi thật"}</h1><p>${assessment ? "Kết quả này không phải điểm chính thức của nhà trường." : "Mỗi câu cập nhật bằng chứng kỹ năng, SRS và Mistake Notebook."}</p></div><button type="button" data-school-generate-practice>Tạo bộ tương đương</button></header><div class="hhs-practice-grid">${ordered.map((item, index) => questionMarkup(item, item.lessonId, index)).join("")}</div><aside class="hhs-integrity"><strong>Nguyên tắc đánh giá</strong><span>Nhận biết</span><span>Thông hiểu</span><span>Vận dụng</span><p>Không đánh dấu thành thạo sau một câu đúng; hệ thống cần nhiều lần nhớ lại sau khoảng cách thời gian.</p></aside></section>`;
   }
 
@@ -185,12 +194,12 @@
 
   function teacherView(state) {
     if (!root.HHSchoolCore.can(state.role, "create-class") && !root.HHSchoolCore.can(state.role, "platform-admin")) return forbidden("Teacher Mode", "Tài khoản này chưa được phân công vai trò giáo viên.");
-    return `<section class="hhs-view"><header class="hhs-view-head"><div><small>TEACHER MODE V2</small><h1>Lớp học và bài giao</h1><p>Dữ liệu lớp chỉ mở cho giáo viên được phân công; mã mời có hạn và chỉ hiển thị ngay khi tạo hoặc đổi mã.</p></div><button type="button" data-teacher-create-class>Tạo lớp</button></header><div class="hhs-teacher-grid"><section><h2>Lớp của tôi</h2>${state.classes.map((item) => `<article><strong>${escape(item.name)}</strong><span>${item.studentCount || 0} học sinh</span><small>${item.inviteCode ? `Mã mời: ${escape(item.inviteCode)}` : item.inviteActive ? "Mã mời đang hoạt động" : "Mã mời đã tắt"}</small><div><button type="button" data-class-invite="${attr(item.id)}">Đổi mã mời</button><button type="button" data-class-disable="${attr(item.id)}">Tắt mã</button></div></article>`).join("") || `<div class="hhs-empty"><p>Chưa tạo lớp.</p></div>`}</section><form data-teacher-assignment><h2>Giao bài mới</h2><label>Tiêu đề<input name="title" required maxlength="120"></label><label>Lớp<select name="classId" required>${state.classes.map((item) => `<option value="${attr(item.id)}">${escape(item.name)}</option>`).join("")}</select></label><label>Hạn nộp<input type="datetime-local" name="dueAt" required></label><label><input type="checkbox" name="lockAnswers" checked> Khóa đáp án đến hạn</label><button type="submit" ${state.classes.length ? "" : "disabled"}>Giao bài</button></form></div><section class="hhs-assignment-list"><h2>Bài đã giao</h2>${state.assignments.map((item) => `<article><strong>${escape(item.title)}</strong><span>${escape(item.status || "assigned")}</span><small>${item.dueAt ? new Date(item.dueAt).toLocaleString("vi-VN") : "Không có hạn"}</small></article>`).join("") || "<p>Chưa có bài giao.</p>"}</section></section>`;
+    return `<section class="hhs-view"><header class="hhs-view-head"><div><small>TEACHER MODE V2</small><h1>Lớp học và bài giao</h1><p>Dữ liệu lớp chỉ mở cho giáo viên được phân công; mã mời có hạn và chỉ hiện một lần ngay sau khi tạo hoặc đổi mã.</p></div><button type="button" data-teacher-create-class>Tạo lớp</button></header><div class="hhs-teacher-grid"><section><h2>Lớp của tôi</h2>${state.classes.map((item) => `<article><strong>${escape(item.name)}</strong><span>${item.studentCount || 0} học sinh</span><small>${item.inviteActive ? "Mã mời đang hoạt động" : "Mã mời đã tắt"}</small><div><button type="button" data-class-invite="${attr(item.id)}">Đổi mã mời</button><button type="button" data-class-disable="${attr(item.id)}">Tắt mã</button></div></article>`).join("") || `<div class="hhs-empty"><p>Chưa tạo lớp.</p></div>`}</section><form data-teacher-assignment><h2>Giao bài mới</h2><label>Tiêu đề<input name="title" required maxlength="120"></label><label>Lớp<select name="classId" required>${state.classes.map((item) => `<option value="${attr(item.id)}">${escape(item.name)}</option>`).join("")}</select></label><label>Hạn nộp<input type="datetime-local" name="dueAt" required></label><label><input type="checkbox" name="lockAnswers" checked> Ẩn phần giải thích đến hạn <small>Đây không phải khóa bảo mật cho bài luyện cục bộ.</small></label><button type="submit" ${state.classes.length ? "" : "disabled"}>Giao bài</button></form></div><section class="hhs-assignment-list"><h2>Bài đã giao</h2>${state.assignments.map((item) => `<article><strong>${escape(item.title)}</strong><span>${escape(item.status || "assigned")}</span><small>${item.dueAt ? new Date(item.dueAt).toLocaleString("vi-VN") : "Không có hạn"}</small></article>`).join("") || "<p>Chưa có bài giao.</p>"}</section></section>`;
   }
 
   function familyView(state) {
     if (!root.HHSchoolCore.can(state.role, "view-linked") && !root.HHSchoolCore.can(state.role, "platform-admin")) return forbidden("Family Mode", "Tài khoản này chưa liên kết hồ sơ trẻ.");
-    return `<section class="hhs-view"><header class="hhs-view-head"><div><small>FAMILY MODE V2</small><h1>Đồng hành không gây áp lực</h1><p>Không có bảng xếp hạng công khai, không dùng thông báo làm trẻ lo lắng về điểm.</p></div><button type="button" data-family-add>Tạo hồ sơ con</button></header><form class="hhs-join-form" data-family-accept><label>Liên kết bằng lời mời 48 giờ<input name="token" required autocomplete="off" placeholder="Dán mã lời mời"></label><button type="submit">Liên kết hồ sơ</button></form><div class="hhs-family-grid">${state.familyProfiles.map((profile) => { const report = state.familyReports?.[profile.id]; return `<article><div><b>${escape(profile.name)}</b><span>Lớp ${profile.grade || "—"}</span></div><label>Giới hạn học mỗi ngày<input type="number" min="10" max="120" value="${state.preferences.dailyMinutes}" data-family-limit="${attr(profile.id)}"> phút</label><label><input type="checkbox" data-family-pressure ${state.preferences.pressureNotifications === false ? "" : "checked"}> Tắt thông báo gây áp lực</label>${report ? `<small>${report.attempts} lượt luyện · ${report.mistakes} lỗi cần ôn · ${report.due} bài đến hạn</small>` : ""}<div><button type="button" data-family-open="${attr(profile.id)}">Xem báo cáo</button>${profile.ownerId === state.ownerId ? `<button type="button" data-family-invite="${attr(profile.id)}">Tạo lời mời</button>` : ""}</div></article>`; }).join("")}</div><article class="hhs-note"><strong>Báo cáo tuần</strong><p>Chỉ hiển thị hồ sơ do tài khoản sở hữu hoặc đã liên kết bằng lời mời còn hiệu lực. Đây là dữ liệu hỗ trợ, không phải xếp loại chính thức.</p></article></section>`;
+    return `<section class="hhs-view"><header class="hhs-view-head"><div><small>FAMILY MODE V2</small><h1>Đồng hành không gây áp lực</h1><p>Không có bảng xếp hạng công khai, không dùng thông báo làm trẻ lo lắng về điểm.</p></div><button type="button" data-family-add>Tạo hồ sơ con</button></header><form class="hhs-join-form" data-family-accept><label>Liên kết bằng lời mời 48 giờ<input name="token" required autocomplete="off" placeholder="Dán mã lời mời"></label><button type="submit">Liên kết hồ sơ</button></form><div class="hhs-family-grid">${state.familyProfiles.map((profile) => { const accessKey = profile.accessKey || profile.id; const report = state.familyReports?.[accessKey]; const dailyMinutes = state.preferences.familyDailyMinutes?.[accessKey] || state.preferences.dailyMinutes; return `<article><div><b>${escape(profile.name)}</b><span>Lớp ${profile.grade || "—"}</span></div><label>Giới hạn học mỗi ngày<input type="number" min="10" max="120" value="${dailyMinutes}" data-family-limit="${attr(accessKey)}"> phút</label><label><input type="checkbox" data-family-pressure ${state.preferences.pressureNotifications === false ? "" : "checked"}> Tắt thông báo gây áp lực</label>${report ? `<small>${report.attempts} lượt luyện · ${report.mistakes} lỗi cần ôn · ${report.due} bài đến hạn</small>` : ""}<div><button type="button" data-family-open="${attr(accessKey)}">Xem báo cáo</button>${profile.accessScope !== "linked" ? `<button type="button" data-family-invite="${attr(accessKey)}">Tạo lời mời</button>` : ""}</div></article>`; }).join("")}</div><article class="hhs-note"><strong>Báo cáo tuần</strong><p>Chỉ hiển thị số liệu tổng hợp của hồ sơ do tài khoản sở hữu hoặc đã liên kết bằng lời mời còn hiệu lực. Câu trả lời và dữ liệu riêng không được gửi sang Family Mode.</p></article></section>`;
   }
 
   function adminView(state) {
@@ -205,9 +214,16 @@
     const state = instance.store.get();
     const view = instance.view;
     const host = instance.host.querySelector("[data-school-workspace]");
+    const scrollHost = instance.host.closest(".app-main"); const mainScroll = scrollHost?.scrollTop || 0; const workspaceScroll = host.scrollTop;
+    const active = instance.host.ownerDocument.activeElement; const focusName = active && instance.host.contains(active) ? active.getAttribute("name") : "";
     const renderer = { today: todayView, paths: pathsView, subjects: subjectsView, practice: (s) => practiceView(s, false), assessments: (s) => practiceView(s, true), library: libraryView, progress: progressView, lesson: lessonView, teacher: teacherView, family: familyView, admin: adminView }[view] || todayView;
     host.innerHTML = renderer(state);
     instance.host.querySelectorAll("[data-school-view]").forEach((button) => button.toggleAttribute("aria-current", button.dataset.schoolView === view));
+    (root.requestAnimationFrame || ((callback) => setTimeout(callback, 0)))(() => {
+      if (!mounted || mounted !== instance) return;
+      if (scrollHost) scrollHost.scrollTop = mainScroll; host.scrollTop = workspaceScroll;
+      if (focusName) host.querySelector(`[name="${attr(focusName)}"]`)?.focus?.({ preventScroll: true });
+    });
   }
 
   function toast(instance, message, type = "info") {
@@ -215,12 +231,37 @@
     instance.host.querySelector("[data-school-toasts]")?.append(item); setTimeout(() => item.remove(), 4200);
   }
 
-  function findLesson(state, lessonId) { return root.HHSchoolCurriculum.packForGrade(state.profile.grade).lessons.find((item) => item.lessonId === lessonId); }
-  function questionById(state, id) { return root.HHSchoolCurriculum.packForGrade(state.profile.grade).lessons.flatMap((item) => item.questions).find((item) => item.id === id); }
+  function findLesson(state, lessonId) { const pack = root.HHSchoolCurriculum.packForGrade(state.profile.grade); return pack?.lessons?.find((item) => item.lessonId === lessonId) || null; }
+  function resolveLesson(state, lessonId) {
+    const pack = root.HHSchoolCurriculum.packForGrade(state.profile.grade);
+    const lessons = Array.isArray(pack?.lessons) ? pack.lessons : [];
+    return lessons.find((item) => item.lessonId === lessonId) || lessons[0] || null;
+  }
+  function questionById(state, id) { const pack = root.HHSchoolCurriculum.packForGrade(state.profile.grade); return (pack?.lessons || []).flatMap((item) => Array.isArray(item.questions) ? item.questions : []).find((item) => item.id === id); }
 
-  function download(filename, content, type = "application/json;charset=utf-8") { const url = URL.createObjectURL(new Blob([content], { type })); const link = Object.assign(document.createElement("a"), { href: url, download: filename }); link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+  function download(filename, content, type = "application/json;charset=utf-8") { if (typeof Blob !== "function" || !root.URL?.createObjectURL || !root.document?.createElement) return false; const url = root.URL.createObjectURL(new Blob([content], { type })); const link = Object.assign(root.document.createElement("a"), { href: url, download: filename }); link.click(); setTimeout(() => root.URL.revokeObjectURL?.(url), 1000); return true; }
 
-  function dialog(instance, html) { const element = instance.host.querySelector("[data-school-dialog]"); element.innerHTML = html; element.showModal(); return element; }
+  function dialog(instance, html) {
+    const element = instance.host.querySelector("[data-school-dialog]");
+    if (!element) throw new Error("HH School dialog chưa sẵn sàng.");
+    const alreadyOpen = element.open || element.hasAttribute("open");
+    if (!alreadyOpen) instance.dialogOpener = instance.host.ownerDocument?.activeElement || null;
+    if (!instance.dialogCloseHandler) {
+      instance.dialogCloseHandler = () => {
+        const opener = instance.dialogOpener;
+        instance.dialogOpener = null;
+        if (mounted === instance && opener?.isConnected) opener.focus?.({ preventScroll: true });
+      };
+      element.addEventListener("close", instance.dialogCloseHandler);
+    }
+    element.innerHTML = html;
+    if (!alreadyOpen) {
+      if (typeof element.showModal === "function") element.showModal();
+      else element.setAttribute("open", "");
+    }
+    element.querySelector("input,select,textarea,button")?.focus?.({ preventScroll: true });
+    return element;
+  }
 
   function bind(instance) {
     const host = instance.host;
@@ -229,14 +270,20 @@
       if (button.dataset.schoolView) return routeTo(button.dataset.schoolView);
       if (button.dataset.schoolGrade) {
         const grade = Number(button.dataset.schoolGrade);
-        instance.store.update((state) => { if (state.profile.managed && state.role === "student") return state; state.profile.grade = grade; state.profile.ageMode = root.HHSchoolCore.learnerProfile(state.profile, state.ownerId).ageMode; state.profile.electiveSubjectIds = grade >= 10 ? state.profile.electiveSubjectIds.slice(0, 4) : []; state.activeSubjectId = "math"; state.activeLessonId = `g${grade}-math-core-01`; return state; }, "profile:grade-change");
+        if (instance.store.get().profile.managed && instance.store.get().role === "student") return toast(instance, "Hồ sơ được quản lý không thể tự đổi lớp.", "warning");
+        instance.store.update((state) => { state.profile.grade = grade; state.profile.ageMode = root.HHSchoolCore.learnerProfile(state.profile, state.ownerId).ageMode; state.profile.electiveSubjectIds = grade >= 10 ? state.profile.electiveSubjectIds.slice(0, 4) : []; state.activeSubjectId = "math"; state.activeLessonId = `g${grade}-math-core-01`; return state; }, "profile:grade-change");
         renderView(instance); return toast(instance, `Đã chuyển sang lớp ${grade}.`, "success");
       }
       if (button.dataset.schoolSubject) { instance.store.update((state) => { state.activeSubjectId = button.dataset.schoolSubject; return state; }, "subject:open"); renderView(instance); return; }
-      if (button.dataset.schoolOpenLesson) { instance.store.update((state) => { state.activeLessonId = button.dataset.schoolOpenLesson; return state; }, "lesson:open"); return routeTo("lesson"); }
-      if (button.dataset.schoolPracticeLesson) { instance.store.update((state) => { state.activeLessonId = button.dataset.schoolPracticeLesson; return state; }, "practice:lesson-select"); return routeTo("practice"); }
+      if (button.dataset.schoolOpenLesson || button.dataset.schoolPracticeLesson) {
+        const lessonId = button.dataset.schoolOpenLesson || button.dataset.schoolPracticeLesson; const record = instance.searchRecords.find((item) => item.lessonId === lessonId); const targetGrade = Number(record?.gradeId?.replace("grade-", ""));
+        if (!record) return toast(instance, "Bài học không tồn tại hoặc đã được thay đổi. Hãy chọn lại từ danh sách môn.", "warning");
+        const state = instance.store.get(); if (targetGrade && targetGrade !== state.profile.grade && state.profile.managed && state.role === "student") return toast(instance, `Bài này thuộc lớp ${targetGrade}; hồ sơ được quản lý chưa được phép đổi lớp.`, "warning");
+        instance.store.update((draft) => { if (targetGrade && targetGrade !== draft.profile.grade) { draft.profile.grade = targetGrade; draft.profile.ageMode = root.HHSchoolCore.learnerProfile(draft.profile, draft.ownerId).ageMode; draft.profile.electiveSubjectIds = targetGrade >= 10 ? draft.profile.electiveSubjectIds.slice(0, 4) : []; } draft.activeLessonId = lessonId; draft.activeSubjectId = record?.subjectId || draft.activeSubjectId; return draft; }, button.dataset.schoolOpenLesson ? "lesson:open" : "practice:lesson-select");
+        return routeTo(button.dataset.schoolOpenLesson ? "lesson" : "practice");
+      }
       if (button.hasAttribute("data-lesson-prev") || button.hasAttribute("data-lesson-next")) {
-        const state = instance.store.get(); const lesson = findLesson(state, state.activeLessonId); const entry = state.progress[lesson.lessonId] || { step: 0, status: "learning" };
+        const state = instance.store.get(); const lesson = resolveLesson(state, state.activeLessonId); if (!lesson) return toast(instance, "Bài học hiện chưa có dữ liệu khả dụng.", "warning"); const entry = state.progress[lesson.lessonId] || { step: 0, status: "learning" };
         const delta = button.hasAttribute("data-lesson-next") ? 1 : -1;
         if (delta > 0 && Number(entry.step || 0) >= lesson.steps.length - 1) {
           instance.store.update((draft) => { const current = draft.progress[lesson.lessonId] || {}; draft.progress[lesson.lessonId] = { ...current, step: lesson.steps.length - 1, status: "completed", completedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; return draft; }, "lesson:complete");
@@ -245,8 +292,9 @@
         instance.store.update((draft) => { const current = draft.progress[lesson.lessonId] || { step: 0, status: "learning", startedAt: new Date().toISOString() }; const nextStep = Math.max(0, Math.min(lesson.steps.length - 1, current.step + delta)); draft.progress[lesson.lessonId] = { ...current, step: nextStep, status: current.step === lesson.steps.length - 1 && delta > 0 ? "completed" : "learning", updatedAt: new Date().toISOString() }; return draft; }, "lesson:step");
         return renderView(instance);
       }
-      if (button.dataset.lessonStep) { instance.store.update((state) => { const lesson = findLesson(state, state.activeLessonId); const current = state.progress[lesson.lessonId] || { step: 0, status: "learning" }; const requested = Number(button.dataset.lessonStep); if (requested <= current.step + 1) current.step = requested; state.progress[lesson.lessonId] = current; return state; }, "lesson:step-jump"); return renderView(instance); }
-      if (button.hasAttribute("data-reveal-answer")) { const answer = button.parentElement.querySelector("[data-guided-answer]"); answer.hidden = !answer.hidden; button.textContent = answer.hidden ? "Hiện đáp án có hướng dẫn" : "Ẩn đáp án"; return; }
+      if (button.dataset.lessonStep) { instance.store.update((state) => { const lesson = resolveLesson(state, state.activeLessonId); if (!lesson) return state; const current = state.progress[lesson.lessonId] || { step: 0, status: "learning" }; const requested = Number(button.dataset.lessonStep); if (requested <= current.step + 1) current.step = requested; state.activeLessonId = lesson.lessonId; state.progress[lesson.lessonId] = current; return state; }, "lesson:step-jump"); return renderView(instance); }
+      if (button.hasAttribute("data-reveal-answer")) { const answer = button.parentElement?.querySelector("[data-guided-answer]"); if (!answer) return toast(instance, "Nội dung hướng dẫn không còn ở bước hiện tại.", "warning"); answer.hidden = !answer.hidden; button.textContent = answer.hidden ? "Hiện đáp án có hướng dẫn" : "Ẩn đáp án"; return; }
+      if (button.dataset.questionExplanation) { const state = instance.store.get(); const question = questionById(state, button.dataset.questionExplanation); const output = button.closest("[data-school-question]")?.querySelector("[data-question-result]"); if (question && output) { const detail = document.createElement("span"); detail.textContent = question.explanation || "Hãy xem lại từng bước trong bài học."; output.append(detail); button.remove(); } return; }
       if (button.dataset.tutorAction) return tutor(instance, button.dataset.tutorAction);
       if (button.hasAttribute("data-tutor-speak")) { const text = instance.host.querySelector("[data-tutor-output]")?.textContent?.trim(); if (!text || !root.speechSynthesis || !root.SpeechSynthesisUtterance) return toast(instance, "Trình duyệt chưa hỗ trợ giọng đọc tiếng Việt.", "warning"); root.speechSynthesis.cancel(); const utterance = new root.SpeechSynthesisUtterance(text); utterance.lang = "vi-VN"; utterance.rate = instance.store.get().profile.grade <= 5 ? .9 : 1; root.speechSynthesis.speak(utterance); return; }
       if (button.hasAttribute("data-school-settings")) return settingsDialog(instance);
@@ -255,26 +303,27 @@
       if (button.hasAttribute("data-school-grade-open")) return routeTo("paths");
       if (button.dataset.schoolExport) return exportData(instance, button.dataset.schoolExport);
       if (button.hasAttribute("data-school-generate-practice")) {
-        instance.store.update((state) => { state.practiceVariant = (Number(state.practiceVariant || 0) + 1) % 4; return state; }, "practice:generate-equivalent");
+        instance.store.update((state) => { const pool = root.HHSchoolCurriculum.packForGrade(state.profile.grade).lessons.flatMap((lesson) => lesson.questions); const pageSize = instance.view === "assessments" ? 6 : 4; state.practiceVariant = (Number(state.practiceVariant || 0) + 1) % Math.max(1, Math.ceil(pool.length / pageSize)); return state; }, "practice:generate-equivalent");
         renderView(instance); return toast(instance, "Đã tạo bộ tương đương từ câu hỏi đã kiểm tra; không thay đổi mức độ kỹ năng.", "success");
       }
       if (button.hasAttribute("data-tutor-report")) {
-        const state = instance.store.get(); const lesson = findLesson(state, state.activeLessonId);
+        const state = instance.store.get(); const lesson = resolveLesson(state, state.activeLessonId);
+        if (!lesson) return toast(instance, "Không tìm thấy bài học để báo cáo.", "warning");
         try { await instance.sync.reportTutor({ learnerProfileId: state.learnerProfileId, grade: state.profile.grade, lessonId: lesson.lessonId, reason: "Phản hồi không đúng hoặc không phù hợp" });
           instance.store.update((draft) => { draft.aiSessions.push({ id: `ai-report-${Date.now()}`, lessonId: lesson.lessonId, action: "report", status: "reported-server", createdAt: new Date().toISOString() }); return draft; }, "ai:response-reported");
           button.disabled = true; button.textContent = "Đã báo cáo"; return toast(instance, "Phản hồi đã được gửi đến nhật ký kiểm tra phía máy chủ.", "success");
         } catch (error) { return toast(instance, `Chưa thể gửi báo cáo: ${error.message}`, "warning"); }
       }
-      if (button.hasAttribute("data-teacher-create-class")) return createClassDialog(instance);
-      if (button.dataset.classInvite) { try { const response = await instance.sync.updateClass({ classId: button.dataset.classInvite, action: "rotate-invite" }); instance.store.update((state) => { const item = state.classes.find((entry) => entry.id === button.dataset.classInvite); if (item) Object.assign(item, { inviteCode: response.inviteCode, inviteActive: true, inviteExpiresAt: response.inviteExpiresAt }); return state; }, "class:invite-rotate"); renderView(instance); return toast(instance, "Đã đổi mã mời; mã cũ không còn hiệu lực.", "success"); } catch (error) { return toast(instance, error.message, "warning"); } }
+      if (button.hasAttribute("data-teacher-create-class")) { if (!root.HHSchoolCore.can(instance.store.get().role, "create-class") && !root.HHSchoolCore.can(instance.store.get().role, "platform-admin")) return toast(instance, "Tài khoản không có quyền tạo lớp.", "warning"); return createClassDialog(instance); }
+      if (button.dataset.classInvite) { try { const response = await instance.sync.updateClass({ classId: button.dataset.classInvite, action: "rotate-invite" }); instance.store.update((state) => { const item = state.classes.find((entry) => entry.id === button.dataset.classInvite); if (item) Object.assign(item, { inviteActive: true, inviteExpiresAt: response.inviteExpiresAt }); return state; }, "class:invite-rotate"); renderView(instance); return toast(instance, `Mã mời mới: ${response.inviteCode} · hãy sao chép ngay, mã cũ đã hết hiệu lực.`, "success"); } catch (error) { return toast(instance, error.message, "warning"); } }
       if (button.dataset.classDisable) { try { await instance.sync.updateClass({ classId: button.dataset.classDisable, action: "disable-invite" }); instance.store.update((state) => { const item = state.classes.find((entry) => entry.id === button.dataset.classDisable); if (item) Object.assign(item, { inviteCode: "", inviteActive: false }); return state; }, "class:invite-disable"); renderView(instance); return toast(instance, "Đã vô hiệu hóa mã mời.", "success"); } catch (error) { return toast(instance, error.message, "warning"); } }
       if (button.hasAttribute("data-family-add")) return familyDialog(instance);
       if (button.dataset.familyOpen) {
-        const target = instance.store.get().familyProfiles.find((profile) => profile.id === button.dataset.familyOpen);
+        const target = instance.store.get().familyProfiles.find((profile) => (profile.accessKey || profile.id) === button.dataset.familyOpen);
         if (!target) return toast(instance, "Không tìm thấy hồ sơ đã liên kết.", "warning");
-        try { const response = target.ownerId === instance.store.get().ownerId ? { state: instance.store.get() } : await instance.sync.load(target.id, "linked"); const linked = response.state || {}; instance.store.update((state) => { state.activeFamilyProfileId = target.id; state.familyReports ||= {}; state.familyReports[target.id] = { attempts: linked.attempts?.length || 0, mistakes: linked.mistakes?.length || 0, due: linked.reviews?.filter((item) => new Date(item.dueAt) <= new Date()).length || 0, updatedAt: response.updatedAt || new Date().toISOString() }; return state; }, "family:profile-open"); renderView(instance); return toast(instance, `Đã tải báo cáo hồ sơ ${target.name}.`, "success"); } catch (error) { return toast(instance, `Không thể xem hồ sơ chưa được liên kết: ${error.message}`, "warning"); }
+        try { const own = target.accessScope !== "linked"; const accessKey = target.accessKey || target.id; const ownState = own ? target.id === instance.store.get().learnerProfileId ? instance.store.get() : root.HHSchoolCore.createStore({ currentUser: instance.options.currentUser, profile: target }).get() : null; const response = own ? { report: { attempts: ownState.attempts.length, mistakes: ownState.mistakes.length, due: ownState.reviews.filter((item) => new Date(item.dueAt) <= new Date()).length, completedLessons: Object.values(ownState.progress).filter((item) => item.status === "completed").length, skills: Object.keys(ownState.mastery).length }, updatedAt: ownState.updatedAt } : await instance.sync.load(target.id, "linked", target.linkId); const report = response.report || {}; instance.store.update((state) => { state.activeFamilyProfileId = accessKey; state.familyReports ||= {}; state.familyReports[accessKey] = { attempts: Number(report.attempts || 0), mistakes: Number(report.mistakes || 0), due: Number(report.due || 0), completedLessons: Number(report.completedLessons || 0), skills: Number(report.skills || 0), updatedAt: response.updatedAt || report.updatedAt || new Date().toISOString() }; return state; }, "family:profile-open"); renderView(instance); return toast(instance, `Đã tải báo cáo tổng hợp của ${target.name}.`, "success"); } catch (error) { return toast(instance, `Không thể xem hồ sơ chưa được liên kết: ${error.message}`, "warning"); }
       }
-      if (button.dataset.familyInvite) { const state = instance.store.get(); const target = state.familyProfiles.find((profile) => profile.id === button.dataset.familyInvite); try { const response = await instance.sync.family({ action: "create-invite", learnerProfileId: target.id, learnerName: target.name }); return toast(instance, `Lời mời: ${response.token} · hết hạn ${new Date(response.expiresAt).toLocaleString("vi-VN")}`, "success"); } catch (error) { return toast(instance, error.message, "warning"); } }
+      if (button.dataset.familyInvite) { const state = instance.store.get(); const target = state.familyProfiles.find((profile) => (profile.accessKey || profile.id) === button.dataset.familyInvite); if (!target || target.accessScope === "linked") return toast(instance, "Không thể tạo lời mời cho hồ sơ không thuộc tài khoản.", "warning"); try { let targetState = target.id === state.learnerProfileId ? state : root.HHSchoolCore.createStore({ currentUser: instance.options.currentUser, profile: target }).get(); const remote = await instance.sync.load(target.id); if (remote.state) targetState = root.HHSchoolCore.mergeStates(targetState, remote.state, { currentUser: instance.options.currentUser, profile: target }); await instance.sync.save(target.id, targetState, Number(remote.revision || 0)); const response = await instance.sync.family({ action: "create-invite", learnerProfileId: target.id, learnerName: target.name }); return toast(instance, `Lời mời: ${response.token} · hết hạn ${new Date(response.expiresAt).toLocaleString("vi-VN")}`, "success"); } catch (error) { return toast(instance, error.message, "warning"); } }
       if (button.hasAttribute("data-code-stop")) { instance.codeWorker?.terminate?.(); instance.codeWorker = null; const output = instance.host.querySelector("[data-code-output]"); if (output) output.textContent = "Đã dừng sandbox."; return; }
       if (button.dataset.adminReview) { instance.store.update((state) => { state.reviewQueue.push({ id: `review-${Date.now()}`, lessonId: button.dataset.adminReview, status: "proposed", createdAt: new Date().toISOString() }); return state; }, "content:review-proposed"); renderView(instance); return toast(instance, "Đã đưa bài vào hàng đề xuất chỉnh sửa.", "success"); }
       if (button.hasAttribute("data-admin-new-draft")) { try { const response = await instance.sync.createDraft({ kind: "lesson", title: "Bản nháp bài học mới", payload: { steps: [], questions: [] }, licenseCode: "HH-ORIGINAL" }); instance.store.update((state) => { state.contentDrafts.push({ ...response.item, id: response.item.id || response.item.contentId }); return state; }, "content:draft-create"); renderView(instance); return toast(instance, "Đã tạo bản nháp trên máy chủ; trạng thái machine_generated, chưa xuất bản.", "success"); } catch (error) { return toast(instance, `Không thể tạo bản nháp: ${error.message}`, "warning"); } }
@@ -283,16 +332,16 @@
       if (event.target.matches("[data-school-elective]")) {
         instance.store.update((state) => { const selected = new Set(state.profile.electiveSubjectIds || []); event.target.checked ? selected.add(event.target.value) : selected.delete(event.target.value); if (selected.size <= 4) state.profile.electiveSubjectIds = [...selected]; return state; }, "profile:electives"); renderView(instance);
       }
-      if (event.target.matches("[data-family-limit]")) instance.store.update((state) => { state.preferences.dailyMinutes = Math.max(10, Math.min(120, Number(event.target.value) || 20)); return state; }, "family:limit");
+      if (event.target.matches("[data-family-limit]")) instance.store.update((state) => { state.preferences.familyDailyMinutes ||= {}; state.preferences.familyDailyMinutes[event.target.dataset.familyLimit] = Math.max(10, Math.min(120, Number(event.target.value) || 20)); return state; }, "family:limit");
       if (event.target.matches("[data-family-pressure]")) instance.store.update((state) => { state.preferences.pressureNotifications = !event.target.checked; return state; }, "family:pressure-notifications");
     };
     instance.submit = async (event) => {
       const questionForm = event.target.closest("[data-school-question]");
       if (questionForm) { event.preventDefault(); return submitQuestion(instance, questionForm); }
       const assignment = event.target.closest("[data-teacher-assignment]");
-      if (assignment) { event.preventDefault(); const form = new FormData(assignment); const item = { id: `assignment-${Date.now()}`, title: root.HHSchoolCore.clean(form.get("title"), 120), classId: root.HHSchoolCore.safeId(form.get("classId")), dueAt: new Date(form.get("dueAt")).toISOString(), lockAnswers: form.get("lockAnswers") === "on", status: "assigned", createdAt: new Date().toISOString(), syncStatus: "syncing" }; instance.store.update((state) => { state.assignments.push(item); return state; }, "assignment:create"); try { const response = await instance.sync.createAssignment(item); instance.store.update((state) => { const saved = state.assignments.find((entry) => entry.id === item.id); if (saved) Object.assign(saved, response.item || {}, { syncStatus: "synced" }); return state; }, "assignment:sync-success"); renderView(instance); return toast(instance, "Đã giao bài trên máy chủ.", "success"); } catch (error) { instance.store.update((state) => { const saved = state.assignments.find((entry) => entry.id === item.id); if (saved) Object.assign(saved, { syncStatus: "local-only", syncError: error.message }); return state; }, "assignment:sync-failed"); renderView(instance); return toast(instance, `Bài mới chỉ lưu trên thiết bị: ${error.message}`, "warning"); } }
+       if (assignment) { event.preventDefault(); if (assignment.dataset.submitting === "true") return; assignment.dataset.submitting = "true"; if (!root.HHSchoolCore.can(instance.store.get().role, "assign") && !root.HHSchoolCore.can(instance.store.get().role, "platform-admin")) { assignment.dataset.submitting = "false"; return toast(instance, "Tài khoản không có quyền giao bài.", "warning"); } const form = new FormData(assignment); const title = root.HHSchoolCore.clean(form.get("title"), 120); const classId = root.HHSchoolCore.safeId(form.get("classId")); const dueDate = new Date(form.get("dueAt")); if (!title || !classId || !Number.isFinite(dueDate.getTime())) { assignment.dataset.submitting = "false"; return toast(instance, "Hãy nhập tiêu đề, lớp và hạn nộp hợp lệ.", "warning"); } const item = { id: `assignment-${Date.now()}`, title, classId, dueAt: dueDate.toISOString(), lockAnswers: form.get("lockAnswers") === "on", status: "assigned", createdAt: new Date().toISOString(), syncStatus: "syncing" }; instance.store.update((state) => { state.assignments.push(item); return state; }, "assignment:create"); try { const response = await instance.sync.createAssignment(item); instance.store.update((state) => { const saved = state.assignments.find((entry) => entry.id === item.id); if (saved) Object.assign(saved, response.item || {}, { syncStatus: "synced" }); return state; }, "assignment:sync-success"); assignment.dataset.submitting = "false"; renderView(instance); return toast(instance, "Đã giao bài trên máy chủ.", "success"); } catch (error) { instance.store.update((state) => { const saved = state.assignments.find((entry) => entry.id === item.id); if (saved) Object.assign(saved, { syncStatus: "local-only", syncError: error.message }); return state; }, "assignment:sync-failed"); assignment.dataset.submitting = "false"; renderView(instance); return toast(instance, `Bài mới chỉ lưu trên thiết bị: ${error.message}`, "warning"); } }
       const familyAccept = event.target.closest("[data-family-accept]");
-      if (familyAccept) { event.preventDefault(); const token = new FormData(familyAccept).get("token"); try { const response = await instance.sync.family({ action: "accept-invite", token }); toast(instance, `Đã liên kết hồ sơ ${response.learnerProfileId}.`, "success"); familyAccept.reset(); } catch (error) { toast(instance, error.message, "warning"); } }
+      if (familyAccept) { event.preventDefault(); const token = new FormData(familyAccept).get("token"); try { const response = await instance.sync.family({ action: "accept-invite", token }); toast(instance, `Đã liên kết hồ sơ ${response.learnerProfileId}.`, "success"); familyAccept.reset(); await hydrate(instance); } catch (error) { toast(instance, error.message, "warning"); } }
       const classJoin = event.target.closest("[data-class-join]");
       if (classJoin) { event.preventDefault(); const state = instance.store.get(); const inviteCode = new FormData(classJoin).get("inviteCode"); try { const response = await instance.sync.joinClass(inviteCode, state.learnerProfileId); toast(instance, `Đã tham gia lớp ${response.className}.`, "success"); classJoin.reset(); await hydrate(instance); } catch (error) { toast(instance, error.message, "warning"); } }
       const math = event.target.closest("[data-math-plot]"); if (math) { event.preventDefault(); const data = new FormData(math); const a = Number(data.get("a")); const b = Number(data.get("b")); const rows = [-2,-1,0,1,2].map((x) => `${x} → ${Number((a*x+b).toFixed(3))}`); instance.host.querySelector("[data-math-output]").textContent = `y = ${a}x + ${b} · ${rows.join(" | ")}`; }
@@ -310,45 +359,61 @@
   }
 
   async function submitQuestion(instance, form) {
-    const state = instance.store.get(); const question = questionById(state, form.dataset.questionId); if (!question) return;
+    if (form.dataset.submitted === "true") return toast(instance, "Câu này đã được ghi nhận. Hãy tạo bộ tương đương để luyện lại.", "info");
+    if (form.dataset.submitting === "true") return;
+    form.dataset.submitting = "true";
+    const state = instance.store.get(); const question = questionById(state, form.dataset.questionId); if (!question) { form.dataset.submitting = "false"; return toast(instance, "Câu hỏi không còn trong gói nội dung hiện tại.", "warning"); }
     let answer;
     if (question.type === "multiple") answer = [...form.querySelectorAll("input:checked")].map((input) => input.value);
     else if (question.type === "order") answer = [...form.querySelectorAll('select[name^="order-"]')].map((select) => select.value);
     else if (question.type === "matching") answer = Object.fromEntries([...form.querySelectorAll('[name^="match-"]')].map((input) => [input.name.slice(6), input.value]));
-    else if (question.type === "upload") { const file = form.querySelector('input[type="file"]')?.files?.[0]; if (!file) return toast(instance, "Hãy chọn ảnh hoặc PDF.", "warning"); try { answer = await root.HHSchoolOffline.saveSubmissionFile(state.ownerId, state.learnerProfileId, file); } catch (error) { return toast(instance, error.message, "warning"); } }
-    else { const control = form.querySelector("input:checked") || form.querySelector("input[type=text]") || form.querySelector("textarea"); if (!control || !control.value.trim()) return toast(instance, "Hãy chọn hoặc nhập câu trả lời.", "warning"); answer = control.value; }
+    else if (question.type === "upload") { const file = form.querySelector('input[type="file"]')?.files?.[0]; if (!file) { form.dataset.submitting = "false"; return toast(instance, "Hãy chọn ảnh hoặc PDF.", "warning"); } try { answer = await root.HHSchoolOffline.saveSubmissionFile(state.ownerId, state.learnerProfileId, file); } catch (error) { form.dataset.submitting = "false"; return toast(instance, error.message, "warning"); } }
+    else { const control = form.querySelector("input:checked") || form.querySelector("input[type=text]") || form.querySelector("textarea"); if (!control || !control.value.trim()) { form.dataset.submitting = "false"; return toast(instance, "Hãy chọn hoặc nhập câu trả lời.", "warning"); } answer = control.value; }
     const responseMs = Math.max(0, Date.now() - Number(form.dataset.startedAt || Date.now()));
     const outcome = root.HHSchoolCore.recordAttempt(state, { lessonId: form.dataset.lessonId, question, answer, responseMs, helpLevel: 0, source: instance.view === "assessments" ? "in-app-assessment" : "in-app-practice" });
-    instance.store.replace(outcome.state); const output = form.querySelector("[data-question-result]"); const pending = outcome.result.gradingStatus === "pending-review"; output.className = pending ? "is-pending" : outcome.result.correct ? "is-correct" : "is-wrong"; output.innerHTML = `<strong>${pending ? "Đã nộp" : outcome.result.correct ? "Chính xác" : "Chưa đúng"}</strong><span>${escape(outcome.result.explanation)}</span><small>Kỹ năng: ${escape(outcome.result.skillId)} · ${pending ? "chờ giáo viên nhận xét" : `trạng thái ${escape(outcome.mastery.state)} · độ chắc chắn ${number(outcome.mastery.certainty)}%`}</small>`;
+    instance.store.replace(outcome.state); form.dataset.submitting = "false"; form.dataset.submitted = "true"; form.querySelectorAll("input,textarea,select,button[type=submit]").forEach((control) => { control.disabled = true; });
+    const output = form.querySelector("[data-question-result]"); if (!output) return toast(instance, "Không tìm thấy vùng kết quả của câu hỏi. Hãy mở lại bài luyện.", "warning"); const pending = outcome.result.gradingStatus === "pending-review"; output.className = pending ? "is-pending" : outcome.result.correct ? "is-correct" : "is-wrong";
+    const feedback = pending ? "Bài gốc đã được lưu và đang chờ giáo viên nhận xét theo rubric." : outcome.result.correct ? outcome.result.explanation : "Đáp án chưa được mở. Hãy thử giải thích lại cách làm hoặc luyện một câu tương đương trước khi xem hướng dẫn.";
+    output.innerHTML = `<strong>${pending ? "Đã nộp" : outcome.result.correct ? "Chính xác" : "Chưa đúng"}</strong><span>${escape(feedback)}</span><small>Kỹ năng: ${escape(outcome.result.skillId)} · ${pending ? "chờ giáo viên nhận xét" : `trạng thái ${escape(outcome.mastery.state)} · độ chắc chắn ${number(outcome.mastery.certainty)}%`}</small>${!pending && !outcome.result.correct ? `<button type="button" data-question-explanation="${attr(question.id)}">Tự mở hướng dẫn</button>` : ""}`;
   }
 
   async function tutor(instance, action) {
-    const state = instance.store.get(); const lesson = findLesson(state, state.activeLessonId); const output = instance.host.querySelector("[data-tutor-output]");
+    const state = instance.store.get(); const lesson = resolveLesson(state, state.activeLessonId); const output = instance.host.querySelector("[data-tutor-output]");
+    if (!lesson || !output) return toast(instance, "Bài học hiện chưa có dữ liệu hướng dẫn.", "warning");
     const local = { hint: `Hãy bắt đầu từ bước: ${lesson.workedExample.method[0]}.`, simplify: `Nói ngắn gọn: ${lesson.outcome}`, similar: `Hãy đổi dữ kiện của “${lesson.workedExample.prompt}” nhưng giữ nguyên cách làm.`, summarize: `Tóm tắt mục tiêu: ${lesson.outcome}`, flashcards: `Thẻ ghi nhớ: ${lesson.title} — ${lesson.outcome}`, socratic: "Em đã biết dữ kiện nào và cần tìm điều gì?", "exam-review": `Ôn lại từng bước của ${lesson.title} trước khi làm một câu tương đương.`, rubric: "Bản gốc đã được giữ; hãy tự đối chiếu từng tiêu chí rubric." }[action] || "Hãy xem lại mục tiêu và bước đầu tiên của bài.";
     output.textContent = "Đang chuẩn bị hướng dẫn an toàn...";
     try {
       const response = await instance.sync.aiTutor({ learnerProfileId: state.learnerProfileId, grade: state.profile.grade, lessonId: lesson.lessonId, action, originalWork: "", lessonContext: { title: lesson.title, outcome: lesson.outcome, method: lesson.workedExample.method } });
-      output.textContent = response.answer; instance.host.querySelector("[data-tutor-report]").hidden = false;
-    } catch (error) { output.textContent = `${local} (AI trực tuyến chưa sẵn sàng: ${error.message})`; }
+      if (!mounted || mounted !== instance || !output.isConnected) return;
+      output.textContent = response.answer;
+      const report = instance.host.querySelector("[data-tutor-report]");
+      if (report) report.hidden = false;
+    } catch (error) {
+      if (!mounted || mounted !== instance || !output.isConnected) return;
+      output.textContent = `${local} (AI trực tuyến chưa sẵn sàng: ${error.message})`;
+    }
   }
 
   function runCodeSandbox(instance, code) {
     const output = instance.host.querySelector("[data-code-output]"); instance.codeWorker?.terminate?.();
+    if (!output) return toast(instance, "Sandbox chưa sẵn sàng trong bài học này.", "warning");
     if (!root.Worker) { output.textContent = "Trình duyệt không hỗ trợ Web Worker; sandbox không được mở."; return; }
-    const worker = new root.Worker("hh-school-code-worker.js?v=2"); instance.codeWorker = worker; const id = `code-${Date.now()}`; output.textContent = "Đang chạy trong sandbox...";
+    let worker; try { worker = new root.Worker("hh-school-code-worker.js?v=2"); } catch (_) { output.textContent = "Không thể khởi tạo sandbox trên thiết bị này."; return; }
+    instance.codeWorker = worker; const id = `code-${Date.now()}`; output.textContent = "Đang chạy trong sandbox...";
     const timer = setTimeout(() => { worker.terminate(); if (instance.codeWorker === worker) instance.codeWorker = null; output.textContent = "Đã dừng: vượt giới hạn 1,5 giây."; }, 1500);
     worker.onmessage = (event) => { if (event.data?.id !== id) return; clearTimeout(timer); worker.terminate(); instance.codeWorker = null; output.textContent = event.data.ok ? event.data.output : `Lỗi: ${event.data.error}`; };
     worker.onerror = () => { clearTimeout(timer); worker.terminate(); instance.codeWorker = null; output.textContent = "Sandbox không thể chạy đoạn mã này."; };
-    worker.postMessage({ id, code });
+    try { worker.postMessage({ id, code }); } catch (_) { clearTimeout(timer); worker.terminate(); instance.codeWorker = null; output.textContent = "Không thể gửi mã vào sandbox."; }
   }
 
   function settingsDialog(instance) {
     const state = instance.store.get(); const element = dialog(instance, `<form method="dialog" data-school-preferences><header><h2>Hiển thị dễ học</h2><button value="cancel" aria-label="Đóng">×</button></header><label><input type="checkbox" name="largeText" ${state.preferences.largeText ? "checked" : ""}> Chữ lớn</label><label><input type="checkbox" name="highContrast" ${state.preferences.highContrast ? "checked" : ""}> Tương phản cao</label><label><input type="checkbox" name="dyslexia" ${state.preferences.dyslexia ? "checked" : ""}> Font dễ đọc</label><label><input type="checkbox" name="reducedMotion" ${state.preferences.reducedMotion ? "checked" : ""}> Giảm chuyển động</label><button class="hhs-primary" value="default">Lưu</button></form>`);
-    element.querySelector("form").addEventListener("submit", (event) => { const data = new FormData(event.currentTarget); instance.store.update((next) => { for (const key of ["largeText", "highContrast", "dyslexia", "reducedMotion"]) next.preferences[key] = data.get(key) === "on"; return next; }, "preferences:update"); mount(instance.rootHost, { ...instance.options, view: instance.view, store: instance.store }); });
+    element.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); const data = new FormData(event.currentTarget); const state = instance.store.update((next) => { for (const key of ["largeText", "highContrast", "dyslexia", "reducedMotion"]) next.preferences[key] = data.get(key) === "on"; return next; }, "preferences:update"); instance.host.classList.toggle("is-large", state.preferences.largeText); instance.host.classList.toggle("is-contrast", state.preferences.highContrast); instance.host.classList.toggle("is-dyslexia", state.preferences.dyslexia); instance.host.classList.toggle("is-reduced-motion", state.preferences.reducedMotion); element.close(); });
   }
 
   async function syncNow(instance) {
     const state = instance.store.get();
+    if (!instance.options.currentUser?.id) return toast(instance, "Tiến độ đã lưu trên thiết bị. Hãy đăng nhập để đồng bộ đa thiết bị.", "info");
     try { const response = await instance.sync.save(state.learnerProfileId, state, Number(state.serverRevision || 0)); instance.store.update((next) => { next.syncStatus = "synced"; next.serverRevision = response.revision; next.syncConflict = null; next.lastSyncedAt = response.updatedAt || new Date().toISOString(); return next; }, "sync:success"); toast(instance, "Tiến độ đã đồng bộ theo tài khoản và hồ sơ học sinh.", "success"); }
     catch (error) {
       if (error.status === 409) { instance.store.update((next) => { next.syncStatus = "conflict"; next.syncConflict = error.data?.conflict || null; return next; }, "sync:conflict"); return syncConflictDialog(instance, error.data?.conflict); }
@@ -357,8 +422,9 @@
   }
 
   function syncConflictDialog(instance, conflict = {}) {
+    if (instance.host.querySelector("[data-sync-conflict]")) return;
     const element = dialog(instance, `<form method="dialog" data-sync-conflict><header><h2>Xung đột tiến độ</h2><button value="cancel" aria-label="Đóng">×</button></header><p>Bản máy chủ đã mới hơn. HH School không tự ghi đè.</p><button type="submit" name="choice" value="local">Giữ bản local</button><button type="submit" name="choice" value="server">Dùng bản server</button><button class="hhs-primary" type="submit" name="choice" value="merge">Hợp nhất bằng chứng</button></form>`);
-    element.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const choice = event.submitter?.value; const local = instance.store.get(); if (choice === "server" && conflict.serverState) instance.store.replace(conflict.serverState); else if (choice === "merge" && conflict.serverState) instance.store.replace(root.HHSchoolCore.mergeStates(local, conflict.serverState, { currentUser: instance.options.currentUser })); else instance.store.update((state) => { state.serverRevision = conflict.serverRevision || 0; return state; }, "sync:keep-local"); element.close(); renderView(instance); if (choice !== "server") await syncNow(instance); });
+    element.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const choice = event.submitter?.value; if (!choice || choice === "cancel") return element.close(); const local = instance.store.get(); if (choice === "server" && conflict.serverState) instance.store.replace(conflict.serverState); else if (choice === "merge" && conflict.serverState) instance.store.replace(root.HHSchoolCore.mergeStates(local, conflict.serverState, { currentUser: instance.options.currentUser })); else instance.store.update((state) => { state.serverRevision = conflict.serverRevision || 0; return state; }, "sync:keep-local"); await root.HHSchoolOffline?.clearConflicts?.(local.ownerId, local.learnerProfileId).catch(() => {}); element.close(); renderView(instance); if (choice !== "server") await syncNow(instance); });
   }
 
   function exportData(instance, format) {
@@ -370,7 +436,7 @@
 
   function createClassDialog(instance) {
     const element = dialog(instance, `<form method="dialog" data-class-create><header><h2>Tạo lớp mới</h2><button value="cancel">×</button></header><label>Tên lớp<input name="name" required maxlength="80" placeholder="Ví dụ: 8A Toán"></label><label>Khối<input type="number" name="grade" min="1" max="12" value="${instance.store.get().profile.grade}" required></label><button class="hhs-primary" value="default">Tạo lớp</button></form>`);
-    element.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const data = new FormData(event.currentTarget); const item = { id: `class-${Date.now()}`, name: root.HHSchoolCore.clean(data.get("name"), 80), grade: Number(data.get("grade")), studentCount: 0, createdAt: new Date().toISOString(), syncStatus: "syncing" }; instance.store.update((state) => { state.classes.push(item); return state; }, "class:create"); let syncError = ""; try { const response = await instance.sync.createClass(item); instance.store.update((state) => { const saved = state.classes.find((entry) => entry.id === item.id); if (saved && response.item) Object.assign(saved, response.item, { syncStatus: "synced" }); return state; }, "class:sync-success"); } catch (error) { syncError = error.message; instance.store.update((state) => { const saved = state.classes.find((entry) => entry.id === item.id); if (saved) Object.assign(saved, { syncStatus: "local-only", syncError }); return state; }, "class:sync-failed"); } element.close(); renderView(instance); toast(instance, syncError ? `Lớp chỉ lưu local: ${syncError}` : "Đã tạo lớp và mã mời an toàn.", syncError ? "warning" : "success"); });
+    element.querySelector("form").addEventListener("submit", async (event) => { event.preventDefault(); const data = new FormData(event.currentTarget); const item = { id: `class-${Date.now()}`, name: root.HHSchoolCore.clean(data.get("name"), 80), grade: Number(data.get("grade")), studentCount: 0, createdAt: new Date().toISOString(), syncStatus: "syncing" }; instance.store.update((state) => { state.classes.push(item); return state; }, "class:create"); let syncError = ""; let inviteCode = ""; try { const response = await instance.sync.createClass(item); inviteCode = response.item?.inviteCode || ""; instance.store.update((state) => { const saved = state.classes.find((entry) => entry.id === item.id); if (saved && response.item) Object.assign(saved, response.item, { inviteCode: undefined, syncStatus: "synced" }); return state; }, "class:sync-success"); } catch (error) { syncError = error.message; instance.store.update((state) => { const saved = state.classes.find((entry) => entry.id === item.id); if (saved) Object.assign(saved, { syncStatus: "local-only", syncError }); return state; }, "class:sync-failed"); } element.close(); renderView(instance); toast(instance, syncError ? `Lớp chỉ lưu local: ${syncError}` : `Đã tạo lớp. Mã mời: ${inviteCode} · hãy sao chép ngay.`, syncError ? "warning" : "success"); });
   }
 
   function familyDialog(instance) {
@@ -395,7 +461,11 @@
   }
 
   async function hydrate(instance) {
-    const initial = instance.store.get();
+    let initial = instance.store.get();
+    const offline = await root.HHSchoolOffline?.loadProfile?.(initial.ownerId, initial.learnerProfileId).catch(() => null);
+    if (offline?.state && mounted === instance && new Date(offline.updatedAt || offline.state.updatedAt || 0) > new Date(initial.updatedAt || 0)) {
+      instance.store.replace(root.HHSchoolCore.mergeStates(initial, offline.state, { currentUser: instance.options.currentUser })); renderView(instance); initial = instance.store.get();
+    }
     if (!instance.options.currentUser?.id) return;
     const tasks = [instance.sync.load(initial.learnerProfileId), instance.sync.assignments(initial.learnerProfileId)];
     if (["teacher", "school-admin", "platform-admin"].includes(initial.role)) tasks.push(instance.sync.classes());
@@ -409,7 +479,14 @@
       if (progress?.state) { const merged = root.HHSchoolCore.mergeStates(state, progress.state, { currentUser: instance.options.currentUser }); Object.assign(state, merged); state.serverRevision = progress.revision || 0; state.syncStatus = "synced"; }
       if (assignmentData?.items) state.assignments = assignmentData.items;
       if (classData?.items) state.classes = classData.items;
-      if (familyData?.items) { state.familyLinks = familyData.items; if (initial.role === "parent") state.familyProfiles = familyData.items.map((item) => ({ id: item.learnerProfileId, name: item.learnerName || "Hồ sơ đã liên kết", grade: null, ownerId: `linked:${item.id}`, managed: true, relationship: item.relationship })); }
+      if (familyData?.items) {
+        state.familyLinks = familyData.items;
+        if (initial.role === "parent") {
+          const own = state.familyProfiles.filter((profile) => profile.accessScope !== "linked");
+          const linked = familyData.items.filter((item) => item.status === "active" && item.accessScope === "linked").map((item) => ({ id: item.learnerProfileId, linkId: item.id, name: item.learnerName || "Hồ sơ đã liên kết", grade: null, accessScope: "linked", managed: true, relationship: item.relationship }));
+          state.familyProfiles = [...own, ...linked].slice(0, 12);
+        }
+      }
       return state;
     }, "backend:hydrate");
     renderView(instance);
@@ -424,11 +501,21 @@
     const persistOffline = (state) => root.HHSchoolOffline?.saveProfile?.(state.ownerId, state.learnerProfileId, state).catch(() => {});
     persistOffline(store.get());
     root.HHSchoolOffline?.savePack?.(root.HHSchoolCurriculum.packForGrade(store.get().profile.grade)).catch(() => {});
-    instance.unsubscribe = store.subscribe((state) => persistOffline(state)); return { unmount, store, view };
+    instance.unsubscribe = store.subscribe((state) => persistOffline(state));
+    instance.serviceWorkerMessage = (event) => {
+      if (event.data?.type !== "HH_SCHOOL_SYNC_RESULT" || mounted !== instance) return;
+      const conflictResult = event.data.results?.find?.((item) => item.conflict);
+      if (!conflictResult) return;
+      const conflict = conflictResult.conflictData || null;
+      instance.store.update((state) => { state.syncStatus = "conflict"; state.syncConflict = conflict; return state; }, "sync:background-conflict");
+      if (conflict) syncConflictDialog(instance, conflict); else toast(instance, "Đồng bộ nền phát hiện xung đột. Bấm Đồng bộ để chọn phiên bản.", "warning");
+    };
+    root.navigator?.serviceWorker?.addEventListener?.("message", instance.serviceWorkerMessage);
+    return { unmount, store, view };
   }
 
   function unmount() {
-    if (!mounted) return; mounted.unsubscribe?.(); mounted.searchWorker?.terminate?.(); mounted.codeWorker?.terminate?.(); mounted.host?.removeEventListener("click", mounted.click); mounted.host?.removeEventListener("change", mounted.change); mounted.host?.removeEventListener("submit", mounted.submit); mounted.host?.removeEventListener("input", mounted.input); document.removeEventListener("keydown", mounted.keydown); mounted.rootHost?.replaceChildren(); mounted = null;
+    if (!mounted) return; mounted.unsubscribe?.(); mounted.searchWorker?.terminate?.(); mounted.codeWorker?.terminate?.(); root.navigator?.serviceWorker?.removeEventListener?.("message", mounted.serviceWorkerMessage); mounted.host?.removeEventListener("click", mounted.click); mounted.host?.removeEventListener("change", mounted.change); mounted.host?.removeEventListener("submit", mounted.submit); mounted.host?.removeEventListener("input", mounted.input); document.removeEventListener("keydown", mounted.keydown); mounted.rootHost?.replaceChildren(); mounted = null;
   }
 
   const api = Object.freeze({ mount, unmount, supports, views: VIEWS, normalizeView });

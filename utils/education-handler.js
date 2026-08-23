@@ -2,6 +2,7 @@ const { ObjectId } = require("mongodb");
 const { createHash, randomBytes } = require("crypto");
 const { clean, currentUser, enforceRateLimit, isOwnerUser, withApi } = require("./platform");
 const { parseOpenAIKeys, runOpenAIResponse } = require("./openai-provider");
+const curriculum = require("../hh-school-curriculum");
 
 const ALLOWED_ROLES = new Set(["student", "parent", "teacher", "content-reviewer", "school-admin", "platform-admin"]);
 const AI_ACTIONS = new Set(["hint", "simplify", "similar", "summarize", "socratic", "exam-review", "flashcards", "rubric", "report"]);
@@ -23,22 +24,32 @@ function resourceOf(req) {
   if (direct) return clean(direct, 60).toLowerCase();
   return clean(String(req.url || "").split("?")[0].split("/").filter(Boolean).slice(-1)[0], 60).toLowerCase();
 }
+const indexName = (collection, keys) => `hh_school_${collection}_${Object.keys(keys).join("_")}`.slice(0, 120);
+const sameKeys = (left, right) => JSON.stringify(Object.entries(left || {})) === JSON.stringify(Object.entries(right || {}));
+async function ensureIndex(db, collectionName, keys, options = {}) {
+  const collection = db.collection(collectionName);
+  const existing = await collection.listIndexes().toArray().catch((error) => error?.codeName === "NamespaceNotFound" || error?.code === 26 ? [] : Promise.reject(error));
+  if (existing.some((item) => sameKeys(item.key, keys) && Boolean(item.unique) === Boolean(options.unique) && Boolean(item.sparse) === Boolean(options.sparse))) return;
+  await collection.createIndex(keys, { ...options, name: indexName(collectionName, keys) });
+}
 async function indexes(db) {
   if (indexReady) return;
+  // V1 từng tạo unique index trên trường `code` không tồn tại trong class doc,
+  // khiến bản ghi thiếu code cùng mang giá trị null và chặn tạo lớp thứ hai.
+  await db.collection("education_classes").dropIndex("education_classes_code").catch((error) => { if (error?.codeName !== "IndexNotFound" && error?.code !== 27 && error?.code !== 26) throw error; });
   await Promise.all([
-    db.collection("education_progress").createIndex({ ownerId: 1, learnerProfileId: 1 }, { unique: true, name: "education_progress_owner_profile" }),
-    db.collection("education_classes").createIndex({ teacherId: 1, updatedAt: -1 }, { name: "education_classes_teacher" }),
-    db.collection("education_classes").createIndex({ code: 1 }, { unique: true, name: "education_classes_code" }),
-    db.collection("education_enrollments").createIndex({ learnerOwnerId: 1, learnerProfileId: 1, classId: 1 }, { unique: true, name: "education_enrollment_unique" }),
-    db.collection("education_assignments").createIndex({ classId: 1, dueAt: 1 }, { name: "education_assignments_class_due" }),
-    db.collection("education_ai_sessions").createIndex({ ownerId: 1, learnerProfileId: 1, createdAt: -1 }, { name: "education_ai_owner_profile" }),
-    db.collection("education_audit_logs").createIndex({ actorId: 1, createdAt: -1 }, { name: "education_audit_actor" }),
-    db.collection("education_reviews").createIndex({ status: 1, createdAt: 1 }, { name: "education_review_status" })
-    ,db.collection("education_family_links").createIndex({ tokenHash: 1 }, { unique: true, sparse: true, name: "education_family_token" })
-    ,db.collection("education_family_links").createIndex({ parentId: 1, status: 1 }, { name: "education_family_parent" })
-    ,db.collection("education_submissions").createIndex({ assignmentId: 1, learnerOwnerId: 1, learnerProfileId: 1 }, { unique: true, name: "education_submission_unique" })
-    ,db.collection("education_content_versions").createIndex({ contentId: 1, version: -1 }, { unique: true, name: "education_content_version" })
-    ,db.collection("education_content_versions").createIndex({ checksum: 1, status: 1 }, { name: "education_content_duplicate" })
+    ensureIndex(db, "education_progress", { ownerId: 1, learnerProfileId: 1 }, { unique: true }),
+    ensureIndex(db, "education_classes", { teacherId: 1, updatedAt: -1 }),
+    ensureIndex(db, "education_enrollments", { learnerOwnerId: 1, learnerProfileId: 1, classId: 1 }, { unique: true }),
+    ensureIndex(db, "education_assignments", { classId: 1, dueAt: 1 }),
+    ensureIndex(db, "education_ai_sessions", { ownerId: 1, learnerProfileId: 1, createdAt: -1 }),
+    ensureIndex(db, "education_audit_logs", { actorId: 1, createdAt: -1 }),
+    ensureIndex(db, "education_reviews", { status: 1, createdAt: 1 }),
+    ensureIndex(db, "education_family_links", { tokenHash: 1 }, { unique: true, sparse: true }),
+    ensureIndex(db, "education_family_links", { parentId: 1, status: 1 }),
+    ensureIndex(db, "education_submissions", { assignmentId: 1, learnerOwnerId: 1, learnerProfileId: 1 }, { unique: true }),
+    ensureIndex(db, "education_content_versions", { contentId: 1, version: -1 }, { unique: true }),
+    ensureIndex(db, "education_content_versions", { checksum: 1, status: 1 })
   ]);
   indexReady = true;
 }
@@ -51,27 +62,28 @@ function sanitizeState(input, user, profileId) {
   clone.schemaVersion = 2;
   clone.ownerId = String(user._id);
   clone.learnerProfileId = profileId;
+  clone.role = roleOf(user);
   clone.updatedAt = new Date().toISOString();
   delete clone.roles;
   delete clone.access;
   return clone;
 }
-async function canAccessLearner(db, user, learnerProfileId, mode = "read-own") {
+async function canAccessLearner(db, user, learnerProfileId, mode = "read-own", accessId = "") {
   const role = roleOf(user);
   if (role === "platform-admin") return { allowed: true, scope: "platform-admin" };
   // A profile id is namespaced by the signed-in owner. Reading a missing own
   // profile is valid and returns an empty state, while never selecting another
   // owner's document from only a guessable learnerProfileId.
   if (mode === "read-own" || mode === "create-own") return { allowed: true, scope: "owner" };
-  const own = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }, { projection: { _id: 1 } });
-  if (own) return { allowed: true, scope: "owner" };
   if (role === "parent") {
-    const linked = await db.collection("education_family_links").findOne({ learnerProfileId, parentId: user._id, status: "active" }, { projection: { _id: 1, learnerOwnerId: 1 } });
-    if (linked) return { allowed: true, scope: "parent", learnerOwnerId: linked.learnerOwnerId };
+    if (!ObjectId.isValid(String(accessId || ""))) return { allowed: false };
+    const linked = await db.collection("education_family_links").findOne({ _id: new ObjectId(String(accessId)), parentId: user._id, status: "active" }, { projection: { _id: 1, learnerOwnerId: 1, learnerProfileId: 1 } });
+    if (linked) return { allowed: true, scope: "parent", learnerOwnerId: linked.learnerOwnerId, learnerProfileId: linked.learnerProfileId };
   }
   if (role === "teacher") {
-    const linked = await db.collection("education_enrollments").findOne({ learnerProfileId, teacherIds: user._id, status: "active" }, { projection: { _id: 1, learnerOwnerId: 1 } });
-    if (linked) return { allowed: true, scope: "teacher", learnerOwnerId: linked.learnerOwnerId };
+    if (!ObjectId.isValid(String(accessId || ""))) return { allowed: false };
+    const linked = await db.collection("education_enrollments").findOne({ _id: new ObjectId(String(accessId)), teacherIds: user._id, status: "active" }, { projection: { _id: 1, learnerOwnerId: 1, learnerProfileId: 1 } });
+    if (linked) return { allowed: true, scope: "teacher", learnerOwnerId: linked.learnerOwnerId, learnerProfileId: linked.learnerProfileId };
   }
   return { allowed: false };
 }
@@ -80,24 +92,47 @@ async function audit(db, user, event, detail = {}) {
 }
 
 async function progress(req, res, db, user, body) {
-  const learnerProfileId = id(req.query.learnerProfileId || body.learnerProfileId, "learner-1");
+  let learnerProfileId = id(req.query.learnerProfileId || body.learnerProfileId, "learner-1");
   if (req.method === "GET") {
-    const access = await canAccessLearner(db, user, learnerProfileId, req.query.scope === "linked" ? "read-linked" : "read-own");
+    const linkedScope = req.query.scope === "linked";
+    const access = await canAccessLearner(db, user, learnerProfileId, linkedScope ? "read-linked" : "read-own", req.query.accessId || req.query.linkId || req.query.enrollmentId);
     if (!access.allowed) return res.status(404).json({ error: "Không tìm thấy hồ sơ học sinh hoặc bạn không có quyền.", code: "LEARNER_NOT_FOUND" });
     const ownerId = access.learnerOwnerId || user._id;
+    learnerProfileId = access.learnerProfileId || learnerProfileId;
     const item = await db.collection("education_progress").findOne({ ownerId, learnerProfileId }, { projection: { state: 1, revision: 1, updatedAt: 1, schemaVersion: 1 } });
-    return res.status(200).json({ learnerProfileId, state: item?.state || null, revision: Number(item?.revision || 0), updatedAt: item?.updatedAt || null, schemaVersion: item?.schemaVersion || 2 });
+    if (linkedScope) {
+      const state = item?.state || {};
+      const due = Array.isArray(state.reviews) ? state.reviews.filter((entry) => Number.isFinite(new Date(entry?.dueAt).getTime()) && new Date(entry.dueAt) <= new Date()).length : 0;
+      return res.status(200).json({ learnerProfileId, report: { attempts: Array.isArray(state.attempts) ? state.attempts.length : 0, mistakes: Array.isArray(state.mistakes) ? state.mistakes.length : 0, due, completedLessons: Object.values(state.progress && typeof state.progress === "object" ? state.progress : {}).filter((entry) => entry?.status === "completed").length, skills: Object.keys(state.mastery && typeof state.mastery === "object" ? state.mastery : {}).length, updatedAt: item?.updatedAt || null }, revision: Number(item?.revision || 0), updatedAt: item?.updatedAt || null, schemaVersion: item?.schemaVersion || 3 });
+    }
+    return res.status(200).json({ learnerProfileId, state: item?.state || null, revision: Number(item?.revision || 0), updatedAt: item?.updatedAt || null, schemaVersion: item?.schemaVersion || 3 });
   }
   if (req.method !== "PUT") return res.status(405).json({ error: "Method not allowed" });
   const access = await canAccessLearner(db, user, learnerProfileId, "create-own");
   if (!access.allowed || !["owner", "platform-admin"].includes(access.scope)) return res.status(403).json({ error: "Chỉ chủ hồ sơ được đồng bộ trạng thái học tập.", code: "PROGRESS_WRITE_FORBIDDEN" });
   const existing = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }, { projection: { revision: 1, state: 1, updatedAt: 1 } });
-  const baseRevision = Math.max(0, Number(body.baseRevision ?? body.state?.serverRevision ?? 0));
+  const parsedBaseRevision = Number(body.baseRevision ?? body.state?.serverRevision ?? 0);
+  if (!Number.isSafeInteger(parsedBaseRevision) || parsedBaseRevision < 0) return res.status(400).json({ error: "Phiên bản đồng bộ không hợp lệ.", code: "PROGRESS_REVISION_INVALID" });
+  const baseRevision = parsedBaseRevision;
   const serverRevision = Number(existing?.revision || 0);
   if (existing && baseRevision !== serverRevision) return res.status(409).json({ error: "Tiến độ trên máy chủ đã mới hơn. Hãy chọn giữ bản local, bản server hoặc hợp nhất.", code: "PROGRESS_CONFLICT", conflict: { serverState: existing.state, serverRevision, serverUpdatedAt: existing.updatedAt } });
+  if (!existing && baseRevision !== 0) return res.status(409).json({ error: "Tiến độ local dựa trên phiên bản không còn tồn tại.", code: "PROGRESS_CONFLICT", conflict: { serverState: null, serverRevision: 0, serverUpdatedAt: null } });
   const state = sanitizeState(body.state, user, learnerProfileId); const revision = serverRevision + 1; state.serverRevision = revision;
   const now = new Date();
-  await db.collection("education_progress").updateOne({ ownerId: user._id, learnerProfileId }, { $set: { state, revision, updatedAt: now, schemaVersion: 2 }, $setOnInsert: { createdAt: now } }, { upsert: true });
+  if (existing) {
+    const result = await db.collection("education_progress").updateOne({ ownerId: user._id, learnerProfileId, revision: baseRevision }, { $set: { state, revision, updatedAt: now, schemaVersion: 3 } });
+    if (!result.matchedCount) {
+      const latest = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }, { projection: { revision: 1, state: 1, updatedAt: 1 } });
+      return res.status(409).json({ error: "Tiến độ trên máy chủ đã thay đổi trong lúc đồng bộ.", code: "PROGRESS_CONFLICT", conflict: { serverState: latest?.state || null, serverRevision: Number(latest?.revision || 0), serverUpdatedAt: latest?.updatedAt || null } });
+    }
+  } else {
+    try { await db.collection("education_progress").insertOne({ ownerId: user._id, learnerProfileId, state, revision, updatedAt: now, createdAt: now, schemaVersion: 3 }); }
+    catch (error) {
+      if (error?.code !== 11000) throw error;
+      const latest = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }, { projection: { revision: 1, state: 1, updatedAt: 1 } });
+      return res.status(409).json({ error: "Một thiết bị khác vừa tạo tiến độ trước yêu cầu này.", code: "PROGRESS_CONFLICT", conflict: { serverState: latest?.state || null, serverRevision: Number(latest?.revision || 0), serverUpdatedAt: latest?.updatedAt || null } });
+    }
+  }
   await audit(db, user, "education:progress:sync", { learnerProfileId, revision });
   return res.status(200).json({ ok: true, learnerProfileId, revision, updatedAt: now.toISOString() });
 }
@@ -113,7 +148,8 @@ async function classes(req, res, db, user, body) {
   if (!["teacher", "school-admin", "platform-admin"].includes(role)) return res.status(403).json({ error: "Teacher Mode yêu cầu vai trò giáo viên hoặc quản trị trường.", code: "TEACHER_ROLE_REQUIRED" });
   const collection = db.collection("education_classes");
   if (req.method === "GET") {
-    const filter = role === "platform-admin" ? {} : role === "school-admin" ? { $or: [{ adminIds: user._id }, { teacherId: user._id }] } : { teacherId: user._id };
+    const roleFilter = role === "platform-admin" ? {} : role === "school-admin" ? { $or: [{ adminIds: user._id }, { teacherId: user._id }] } : { teacherId: user._id };
+    const filter = { ...roleFilter, status: "active" };
     const items = await collection.find(filter).sort({ updatedAt: -1 }).limit(100).toArray();
     return res.status(200).json({ items: items.map((item) => ({ id: publicId(item), name: item.name, grade: item.grade, studentCount: item.studentCount || 0, inviteActive: Boolean(item.inviteCodeHash && item.inviteExpiresAt > new Date()), inviteExpiresAt: item.inviteExpiresAt || null, updatedAt: item.updatedAt })) });
   }
@@ -125,15 +161,27 @@ async function classes(req, res, db, user, body) {
     return res.status(200).json({ ok: true, item: { id: String(result.insertedId), name, grade, inviteCode, inviteExpiresAt, studentCount: 0 } });
   }
   if (req.method === "PATCH") {
-    const doc = await teacherClass(db, user, body.classId, role); if (!doc) return res.status(403).json({ error: "Bạn không được sửa lớp này." });
+    const doc = await teacherClass(db, user, body.classId, role); if (!doc || doc.status !== "active") return res.status(403).json({ error: "Bạn không được sửa lớp này." });
     const action = clean(body.action, 40); const update = { updatedAt: new Date() }; let inviteCode = null;
     if (action === "rotate-invite") { inviteCode = invitationToken(9); update.inviteCodeHash = tokenHash(inviteCode); update.inviteExpiresAt = new Date(Date.now() + Math.min(30, Math.max(1, Number(body.days) || 7)) * 86400000); update.inviteVersion = Number(doc.inviteVersion || 0) + 1; }
     else if (action === "disable-invite") { update.inviteCodeHash = null; update.inviteExpiresAt = new Date(0); }
-    else { if (body.name) update.name = clean(body.name, 80); if (body.grade) update.grade = Math.max(1, Math.min(12, Number(body.grade))); }
+    else {
+      if (body.name !== undefined) { update.name = clean(body.name, 80); if (!update.name) return res.status(400).json({ error: "Tên lớp không được để trống." }); }
+      if (body.grade !== undefined) { const grade = Number(body.grade); if (!Number.isInteger(grade) || grade < 1 || grade > 12) return res.status(400).json({ error: "Khối lớp phải là số nguyên từ 1 đến 12." }); update.grade = grade; }
+    }
     await collection.updateOne({ _id: doc._id }, { $set: update }); await audit(db, user, `education:class:${action || "update"}`, { classId: String(doc._id) });
     return res.status(200).json({ ok: true, inviteCode, inviteExpiresAt: update.inviteExpiresAt || doc.inviteExpiresAt });
   }
-  if (req.method === "DELETE") { const doc = await teacherClass(db, user, req.query.classId || body.classId, role); if (!doc) return res.status(403).json({ error: "Bạn không được lưu trữ lớp này." }); await collection.updateOne({ _id: doc._id }, { $set: { status: "archived", inviteCodeHash: null, inviteExpiresAt: new Date(0), updatedAt: new Date() } }); await audit(db, user, "education:class:archive", { classId: String(doc._id) }); return res.status(200).json({ ok: true }); }
+  if (req.method === "DELETE") {
+    const doc = await teacherClass(db, user, req.query.classId || body.classId, role); if (!doc) return res.status(403).json({ error: "Bạn không được lưu trữ lớp này." });
+    const now = new Date();
+    await Promise.all([
+      collection.updateOne({ _id: doc._id }, { $set: { status: "archived", inviteCodeHash: null, inviteExpiresAt: new Date(0), updatedAt: now } }),
+      db.collection("education_enrollments").updateMany({ classId: doc._id, status: "active" }, { $set: { status: "archived", updatedAt: now } }),
+      db.collection("education_assignments").updateMany({ classId: doc._id, status: "assigned" }, { $set: { status: "archived", updatedAt: now } })
+    ]);
+    await audit(db, user, "education:class:archive", { classId: String(doc._id) }); return res.status(200).json({ ok: true });
+  }
   return res.status(405).json({ error: "Method not allowed" });
 }
 
@@ -142,7 +190,8 @@ async function enrollments(req, res, db, user, body) {
   if (req.method === "GET") { const items = await collection.find({ learnerOwnerId: user._id, learnerProfileId, status: "active" }).sort({ createdAt: -1 }).limit(100).toArray(); return res.status(200).json({ items: items.map((item) => ({ id: publicId(item), classId: String(item.classId), joinedAt: item.createdAt })) }); }
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   await enforceRateLimit(db, `education-join:${user._id}`, 10, 15 * 60 * 1000);
-  const classDoc = await db.collection("education_classes").findOne({ inviteCodeHash: tokenHash(clean(body.inviteCode, 100)), inviteExpiresAt: { $gt: new Date() }, status: "active" });
+  const inviteCode = clean(body.inviteCode, 100); if (!inviteCode) return res.status(400).json({ error: "Mã mời không được để trống." });
+  const classDoc = await db.collection("education_classes").findOne({ inviteCodeHash: tokenHash(inviteCode), inviteExpiresAt: { $gt: new Date() }, status: "active" });
   if (!classDoc) return res.status(400).json({ error: "Mã mời không hợp lệ hoặc đã hết hạn.", code: "CLASS_INVITE_INVALID" });
   const now = new Date(); const result = await collection.updateOne({ learnerOwnerId: user._id, learnerProfileId, classId: classDoc._id }, { $set: { status: "active", teacherIds: [classDoc.teacherId], updatedAt: now, schemaVersion: 2 }, $setOnInsert: { createdAt: now } }, { upsert: true });
   if (result.upsertedCount) await db.collection("education_classes").updateOne({ _id: classDoc._id }, { $inc: { studentCount: 1 }, $set: { updatedAt: now } });
@@ -157,22 +206,24 @@ async function assignments(req, res, db, user, body) {
       if (!ObjectId.isValid(String(req.query.classId))) return res.status(400).json({ error: "Lớp không hợp lệ." });
       const classId = new ObjectId(String(req.query.classId)); const classDoc = await db.collection("education_classes").findOne({ _id: classId, ...(role === "platform-admin" ? {} : { $or: [{ teacherId: user._id }, { adminIds: user._id }] }) });
       if (!classDoc) return res.status(403).json({ error: "Bạn không được xem lớp này." });
-      return res.status(200).json({ items: await collection.find({ classId }).sort({ dueAt: 1 }).limit(200).toArray() });
+      return res.status(200).json({ items: await collection.find({ classId, status: "assigned" }).sort({ dueAt: 1 }).limit(200).toArray() });
     }
     const enrollment = await db.collection("education_enrollments").find({ learnerOwnerId: user._id, learnerProfileId, status: "active" }, { projection: { classId: 1 } }).toArray();
     const classIds = enrollment.map((item) => item.classId);
-    const items = classIds.length ? await collection.find({ classId: { $in: classIds } }).sort({ dueAt: 1 }).limit(200).toArray() : [];
+    const items = classIds.length ? await collection.find({ classId: { $in: classIds }, status: "assigned", $or: [{ targetLearnerProfileIds: { $exists: false } }, { targetLearnerProfileIds: { $size: 0 } }, { targetLearnerProfileIds: learnerProfileId }] }).sort({ dueAt: 1 }).limit(200).toArray() : [];
     return res.status(200).json({ items });
   }
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   if (!["teacher", "school-admin", "platform-admin"].includes(role)) return res.status(403).json({ error: "Chỉ giáo viên được giao bài." });
   if (!ObjectId.isValid(String(body.classId || ""))) return res.status(400).json({ error: "Lớp không hợp lệ." });
   const classId = new ObjectId(String(body.classId));
-  const classDoc = await db.collection("education_classes").findOne({ _id: classId, ...(role === "platform-admin" ? {} : { $or: [{ teacherId: user._id }, { adminIds: user._id }] }) });
+  const classDoc = await db.collection("education_classes").findOne({ _id: classId, status: "active", ...(role === "platform-admin" ? {} : { $or: [{ teacherId: user._id }, { adminIds: user._id }] }) });
   if (!classDoc) return res.status(403).json({ error: "Bạn không được giao bài cho lớp này." });
   const title = clean(body.title, 120); if (!title) return res.status(400).json({ error: "Tiêu đề bài giao là bắt buộc." });
   const dueAt = new Date(body.dueAt); if (!Number.isFinite(dueAt.getTime())) return res.status(400).json({ error: "Hạn nộp không hợp lệ." });
-  const now = new Date(); const doc = { classId, teacherId: user._id, title, lessonIds: (body.lessonIds || []).map((item) => id(item)).filter(Boolean).slice(0, 50), targetLearnerProfileIds: (body.targetLearnerProfileIds || []).map((item) => id(item)).filter(Boolean).slice(0, 100), dueAt, lockAnswers: body.lockAnswers !== false, status: "assigned", createdAt: now, updatedAt: now, schemaVersion: 2 };
+  if (body.lessonIds !== undefined && !Array.isArray(body.lessonIds)) return res.status(400).json({ error: "Danh sách bài học không hợp lệ." });
+  if (body.targetLearnerProfileIds !== undefined && !Array.isArray(body.targetLearnerProfileIds)) return res.status(400).json({ error: "Danh sách học sinh nhận bài không hợp lệ." });
+  const now = new Date(); const doc = { classId, teacherId: user._id, title, lessonIds: (body.lessonIds || []).map((item) => id(item)).filter(Boolean).slice(0, 50), targetLearnerProfileIds: (body.targetLearnerProfileIds || []).map((item) => id(item)).filter(Boolean).slice(0, 100), dueAt, answerExplanationHiddenUntilDue: body.lockAnswers !== false, status: "assigned", createdAt: now, updatedAt: now, schemaVersion: 3 };
   const result = await collection.insertOne(doc); await audit(db, user, "education:assignment:create", { assignmentId: String(result.insertedId), classId: String(classId) });
   return res.status(200).json({ ok: true, item: { ...doc, id: String(result.insertedId) } });
 }
@@ -190,56 +241,72 @@ async function submissions(req, res, db, user, body) {
   if (req.method === "POST") {
     const assignmentId = objectId(body.assignmentId, "Bài giao không hợp lệ."); const learnerProfileId = id(body.learnerProfileId, "learner-1");
     const assignment = await db.collection("education_assignments").findOne({ _id: assignmentId, status: "assigned" }); if (!assignment) return res.status(404).json({ error: "Không tìm thấy bài giao." });
+    if (Array.isArray(assignment.targetLearnerProfileIds) && assignment.targetLearnerProfileIds.length && !assignment.targetLearnerProfileIds.includes(learnerProfileId)) return res.status(403).json({ error: "Bài giao này không dành cho hồ sơ học sinh hiện tại." });
     const enrolled = await db.collection("education_enrollments").findOne({ learnerOwnerId: user._id, learnerProfileId, classId: assignment.classId, status: "active" }); if (!enrolled) return res.status(403).json({ error: "Bạn không thuộc lớp nhận bài này." });
     const answer = clean(body.answer, 12000); if (!answer) return res.status(400).json({ error: "Bài làm đang trống." }); const now = new Date(); const status = now > assignment.dueAt ? "submitted-late" : "submitted";
-    await collection.updateOne({ assignmentId, learnerOwnerId: user._id, learnerProfileId }, { $set: { answer, status, submittedAt: now, updatedAt: now, schemaVersion: 2 }, $setOnInsert: { createdAt: now } }, { upsert: true }); await audit(db, user, "education:submission:submit", { assignmentId: String(assignmentId), learnerProfileId, status }); return res.status(200).json({ ok: true, status });
+    await collection.updateOne({ assignmentId, learnerOwnerId: user._id, learnerProfileId }, { $set: { answer, status, submittedAt: now, updatedAt: now, schemaVersion: 3 }, $unset: { score: "", feedback: "", rubricScores: "", gradedBy: "", gradedAt: "" }, $setOnInsert: { createdAt: now } }, { upsert: true }); await audit(db, user, "education:submission:submit", { assignmentId: String(assignmentId), learnerProfileId, status }); return res.status(200).json({ ok: true, status });
   }
   if (req.method === "PATCH") {
     if (!["teacher", "school-admin", "platform-admin"].includes(role)) return res.status(403).json({ error: "Chỉ giáo viên được chấm bài." });
     const submission = await collection.findOne({ _id: objectId(body.submissionId, "Bài nộp không hợp lệ.") }); if (!submission) return res.status(404).json({ error: "Không tìm thấy bài nộp." });
     const assignment = await db.collection("education_assignments").findOne({ _id: submission.assignmentId }); const classDoc = assignment && await teacherClass(db, user, assignment.classId, role); if (!classDoc) return res.status(403).json({ error: "Bạn không được chấm bài này." });
-    const score = Math.max(0, Math.min(100, Number(body.score))); const feedback = clean(body.feedback, 3000); const status = body.requireRedo ? "redo-required" : "returned"; const now = new Date();
-    await collection.updateOne({ _id: submission._id }, { $set: { score, feedback, rubricScores: Array.isArray(body.rubricScores) ? body.rubricScores.slice(0, 20) : [], status, gradedBy: user._id, gradedAt: now, updatedAt: now } }); await audit(db, user, "education:submission:grade", { submissionId: String(submission._id), score, status }); return res.status(200).json({ ok: true, status, score });
+    const numericScore = Number(body.score); if (!Number.isFinite(numericScore) || numericScore < 0 || numericScore > 100) return res.status(400).json({ error: "Điểm phải là số từ 0 đến 100." });
+    if (body.rubricScores !== undefined && !Array.isArray(body.rubricScores)) return res.status(400).json({ error: "Điểm rubric không hợp lệ." });
+    const score = Math.round(numericScore * 100) / 100; const feedback = clean(body.feedback, 3000); const rubricScores = (body.rubricScores || []).slice(0, 20).map((item) => ({ criterion: clean(item?.criterion, 120), score: Math.max(0, Math.min(100, Number.isFinite(Number(item?.score)) ? Number(item.score) : 0)), note: clean(item?.note, 500) })); const status = body.requireRedo ? "redo-required" : "returned"; const now = new Date();
+    await collection.updateOne({ _id: submission._id }, { $set: { score, feedback, rubricScores, status, gradedBy: user._id, gradedAt: now, updatedAt: now } }); await audit(db, user, "education:submission:grade", { submissionId: String(submission._id), score, status }); return res.status(200).json({ ok: true, status, score });
   }
   return res.status(405).json({ error: "Method not allowed" });
 }
 
 async function family(req, res, db, user, body) {
   const role = roleOf(user); const collection = db.collection("education_family_links");
-  if (req.method === "GET") { const filter = role === "parent" ? { parentId: user._id, status: "active" } : { learnerOwnerId: user._id, status: "active" }; const items = await collection.find(filter).sort({ updatedAt: -1 }).limit(50).toArray(); return res.status(200).json({ items: items.map((item) => ({ id: publicId(item), learnerProfileId: item.learnerProfileId, learnerName: item.learnerName, relationship: item.relationship, expiresAt: item.expiresAt, status: item.status })) }); }
+  if (req.method === "GET") { const filter = { $or: [{ parentId: user._id, status: "active" }, { learnerOwnerId: user._id, status: { $in: ["pending", "active"] } }] }; const items = await collection.find(filter).sort({ updatedAt: -1 }).limit(50).toArray(); return res.status(200).json({ items: items.map((item) => ({ id: publicId(item), learnerProfileId: item.learnerProfileId, learnerName: item.learnerName, relationship: item.relationship, expiresAt: item.expiresAt, status: item.status, accessScope: item.parentId && String(item.parentId) === String(user._id) ? "linked" : "own" })) }); }
   if (req.method === "POST") {
     const action = clean(body.action, 40); const now = new Date();
-    if (action === "create-invite") { const learnerProfileId = id(body.learnerProfileId, "learner-1"); const progressDoc = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }); if (!progressDoc) return res.status(404).json({ error: "Hãy đồng bộ hồ sơ học sinh trước khi tạo lời mời." }); const token = invitationToken(); const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000); await collection.insertOne({ tokenHash: tokenHash(token), learnerOwnerId: user._id, learnerProfileId, learnerName: clean(body.learnerName, 80), relationship: clean(body.relationship || "parent", 40), status: "pending", expiresAt, createdAt: now, updatedAt: now, schemaVersion: 2 }); await audit(db, user, "education:family:invite-create", { learnerProfileId, expiresAt }); return res.status(200).json({ ok: true, token, expiresAt }); }
-    if (action === "accept-invite") { if (role !== "parent" && role !== "platform-admin") return res.status(403).json({ error: "Tài khoản cần vai trò phụ huynh để liên kết hồ sơ." }); const link = await collection.findOne({ tokenHash: tokenHash(clean(body.token, 200)), status: "pending", expiresAt: { $gt: now } }); if (!link) return res.status(400).json({ error: "Lời mời không hợp lệ hoặc đã hết hạn." }); await collection.updateOne({ _id: link._id }, { $set: { parentId: user._id, status: "active", acceptedAt: now, updatedAt: now }, $unset: { tokenHash: "" } }); await db.collection("education_enrollments").updateMany({ learnerOwnerId: link.learnerOwnerId, learnerProfileId: link.learnerProfileId, status: "active" }, { $addToSet: { parentIds: user._id } }); await audit(db, user, "education:family:invite-accept", { learnerProfileId: link.learnerProfileId }); return res.status(200).json({ ok: true, learnerProfileId: link.learnerProfileId }); }
+    if (action === "create-invite") { await enforceRateLimit(db, `education-family-invite:${user._id}`, 12, 60 * 60 * 1000); const learnerProfileId = id(body.learnerProfileId, "learner-1"); const progressDoc = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }); if (!progressDoc) return res.status(404).json({ error: "Hãy đồng bộ hồ sơ học sinh trước khi tạo lời mời." }); const token = invitationToken(); const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000); await collection.insertOne({ tokenHash: tokenHash(token), learnerOwnerId: user._id, learnerProfileId, learnerName: clean(body.learnerName, 80), relationship: clean(body.relationship || "parent", 40), status: "pending", expiresAt, createdAt: now, updatedAt: now, schemaVersion: 3 }); await audit(db, user, "education:family:invite-create", { learnerProfileId, expiresAt }); return res.status(200).json({ ok: true, token, expiresAt }); }
+    if (action === "accept-invite") {
+      if (role !== "parent" && role !== "platform-admin") return res.status(403).json({ error: "Tài khoản cần vai trò phụ huynh để liên kết hồ sơ." });
+      await enforceRateLimit(db, `education-family-accept:${user._id}`, 12, 15 * 60 * 1000);
+      const token = clean(body.token, 200); if (!token) return res.status(400).json({ error: "Lời mời không được để trống." });
+      const result = await collection.findOneAndUpdate({ tokenHash: tokenHash(token), status: "pending", expiresAt: { $gt: now } }, { $set: { parentId: user._id, status: "active", acceptedAt: now, updatedAt: now }, $unset: { tokenHash: "" } }, { returnDocument: "after" });
+      const link = result?.value || result;
+      if (!link?._id) return res.status(400).json({ error: "Lời mời không hợp lệ, đã được sử dụng hoặc đã hết hạn." });
+      await db.collection("education_enrollments").updateMany({ learnerOwnerId: link.learnerOwnerId, learnerProfileId: link.learnerProfileId, status: "active" }, { $addToSet: { parentIds: user._id } }); await audit(db, user, "education:family:invite-accept", { learnerProfileId: link.learnerProfileId }); return res.status(200).json({ ok: true, learnerProfileId: link.learnerProfileId, linkId: String(link._id) });
+    }
     return res.status(400).json({ error: "Hành động Family Mode không hợp lệ." });
   }
-  if (req.method === "DELETE") { const linkId = objectId(req.query.id || body.id, "Liên kết không hợp lệ."); const query = role === "parent" ? { _id: linkId, parentId: user._id } : { _id: linkId, learnerOwnerId: user._id }; const result = await collection.updateOne(query, { $set: { status: "revoked", revokedAt: new Date(), updatedAt: new Date() } }); if (!result.matchedCount) return res.status(404).json({ error: "Không tìm thấy liên kết được phép thu hồi." }); await audit(db, user, "education:family:revoke", { linkId: String(linkId) }); return res.status(200).json({ ok: true }); }
+  if (req.method === "DELETE") { const linkId = objectId(req.query.id || body.id, "Liên kết không hợp lệ."); const query = { _id: linkId, $or: [{ parentId: user._id }, { learnerOwnerId: user._id }] }; const result = await collection.updateOne(query, { $set: { status: "revoked", revokedAt: new Date(), updatedAt: new Date() }, $unset: { tokenHash: "" } }); if (!result.matchedCount) return res.status(404).json({ error: "Không tìm thấy liên kết được phép thu hồi." }); await audit(db, user, "education:family:revoke", { linkId: String(linkId) }); return res.status(200).json({ ok: true }); }
   return res.status(405).json({ error: "Method not allowed" });
 }
 
 async function aiTutor(req, res, db, user, body) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   await enforceRateLimit(db, `education-ai:${user._id}`, 25, 15 * 60 * 1000);
-  const grade = Math.max(1, Math.min(12, Number(body.grade) || 1)); const action = clean(body.action, 40);
+  const learnerProfileId = id(body.learnerProfileId, "learner-1");
+  const progressDoc = await db.collection("education_progress").findOne({ ownerId: user._id, learnerProfileId }, { projection: { "state.profile.grade": 1 } });
+  const storedGrade = Number(progressDoc?.state?.profile?.grade);
+  // Nếu hồ sơ chưa đồng bộ, giữ chính sách an toàn của lớp nhỏ nhất thay vì tin grade từ client.
+  const grade = Number.isInteger(storedGrade) && storedGrade >= 1 && storedGrade <= 12 ? storedGrade : 1; const action = clean(body.action, 40);
   if (!AI_ACTIONS.has(action)) return res.status(400).json({ error: "Hoạt động AI Tutor không hợp lệ." });
   if (action === "report") { const now = new Date(); await db.collection("education_ai_sessions").insertOne({ ownerId: user._id, learnerProfileId: id(body.learnerProfileId, "learner-1"), lessonId: id(body.lessonId), action, reportReason: clean(body.reason, 500), status: "reported", createdAt: now, schemaVersion: 2 }); await audit(db, user, "education:ai-report", { lessonId: id(body.lessonId) }); return res.status(200).json({ ok: true, reportedAt: now.toISOString() }); }
   if (grade <= 5 && !["hint", "simplify", "similar", "summarize", "flashcards"].includes(action)) return res.status(403).json({ error: "Học sinh lớp 1–5 chỉ dùng hoạt động AI có hướng dẫn." });
-  const context = body.lessonContext && typeof body.lessonContext === "object" ? body.lessonContext : {};
-  const title = clean(context.title, 160); const outcome = clean(context.outcome, 500); const method = (Array.isArray(context.method) ? context.method : []).map((item) => clean(item, 240)).filter(Boolean).slice(0, 8);
-  if (!title || !outcome || !method.length) return res.status(400).json({ error: "AI Tutor cần ngữ cảnh bài học đã được phê duyệt." });
+  const lessonId = id(body.lessonId);
+  const lesson = curriculum.packForGrade(grade).lessons.find((item) => item.lessonId === lessonId);
+  if (!lesson) return res.status(400).json({ error: "AI Tutor chỉ nhận bài học có trong gói nội dung HH School hiện tại." });
+  const title = clean(lesson.title, 160); const outcome = clean(lesson.outcome, 500); const method = lesson.workedExample.method.map((item) => clean(item, 240)).filter(Boolean).slice(0, 8);
   const keys = parseOpenAIKeys(); if (!keys.length) return res.status(503).json({ error: "AI Tutor chưa được cấu hình trên máy chủ; bài học cục bộ vẫn dùng bình thường.", code: "AI_TUTOR_NOT_CONFIGURED" });
   const instruction = `Bạn là AI Tutor HH School an toàn cho học sinh lớp ${grade}. Chỉ dùng ngữ cảnh bài học được cung cấp. Hỏi gợi mở trước khi nêu đáp án; không bịa nguồn, tác giả, công thức hay dữ kiện. Không chẩn đoán y tế/tâm lý, không yêu cầu dữ liệu cá nhân. Trả lời tiếng Việt ngắn, phù hợp tuổi. Với action hint chỉ nêu một bước tiếp theo. Với similar tạo một bài tương đương và không giải ngay. Luôn nhắc đây là hỗ trợ học tập, không phải điểm chính thức.`;
   const prompt = JSON.stringify({ action, lesson: { title, outcome, method }, originalWorkSummary: clean(body.originalWork, 1200), rubric: Array.isArray(body.rubric) ? body.rubric.slice(0, 12).map((item) => clean(item, 200)) : [] });
   let result;
-  try { result = await runOpenAIResponse({ apiKey: keys[0], model: process.env.OPENAI_EDUCATION_MODEL, prompt, instruction, history: [], attachments: [], reasoningEffort: "low", useWebSearch: false, safetyIdentifier: `education-${user._id}` }); }
-  catch (error) { return res.status(Number(error.status || 502)).json({ error: clean(error.message, 300), code: clean(error.code, 80) || "AI_TUTOR_FAILED" }); }
-  const now = new Date(); await db.collection("education_ai_sessions").insertOne({ ownerId: user._id, learnerProfileId: id(body.learnerProfileId, "learner-1"), lessonId: id(body.lessonId), grade, action, model: result.model, interactionId: result.interactionId, createdAt: now, schemaVersion: 1 });
+  try { result = await runOpenAIResponse({ apiKey: keys[0], model: process.env.OPENAI_EDUCATION_MODEL, prompt, instruction, history: [], attachments: [], reasoningEffort: "low", useWebSearch: false, safetyIdentifier: `education-${tokenHash(`${user._id}:${process.env.AUTH_SECRET || process.env.JWT_SECRET || "hh-school"}`).slice(0, 32)}` }); }
+  catch (error) { return res.status(Number(error.status || 502)).json({ error: "AI Tutor tạm thời chưa thể trả lời. Hãy dùng gợi ý cục bộ và thử lại sau.", code: clean(error.code, 80) || "AI_TUTOR_FAILED" }); }
+  const now = new Date(); await db.collection("education_ai_sessions").insertOne({ ownerId: user._id, learnerProfileId, lessonId: id(body.lessonId), grade, action, model: result.model, interactionId: result.interactionId, createdAt: now, schemaVersion: 3 });
   await audit(db, user, "education:ai-tutor", { lessonId: id(body.lessonId), grade, action });
   return res.status(200).json({ answer: result.output, disclaimer: "Phản hồi AI chỉ hỗ trợ học tập, không phải điểm chính thức.", sources: [{ title: `Bài học: ${title}`, lessonId: id(body.lessonId), type: "approved-lesson-context" }], model: result.model, canReport: true });
 }
 
 async function admin(req, res, db, user, body) {
-  const role = roleOf(user); if (!["content-reviewer", "school-admin", "platform-admin"].includes(role)) return res.status(403).json({ error: "Bạn không có quyền kiểm duyệt nội dung." });
+  const role = roleOf(user); if (!["content-reviewer", "platform-admin"].includes(role)) return res.status(403).json({ error: "Bạn không có quyền kiểm duyệt nội dung toàn nền tảng." });
   const collection = db.collection("education_reviews");
   if (req.method === "GET") {
     const view = clean(req.query.view, 40);
@@ -257,7 +324,7 @@ async function admin(req, res, db, user, body) {
       const now = new Date(); const version = Number(latest.version || 0) + 1; const doc = { ...latest, _id: undefined, version, title: clean(body.title || latest.title, 160), payload, checksum: tokenHash(serialized), status: "draft", contentStatus: "machine_generated", updatedBy: user._id, updatedAt: now, createdAt: now };
       const result = await db.collection("education_content_versions").insertOne(doc); await audit(db, user, "education:content:update-draft", { contentId, version }); return res.status(200).json({ ok: true, item: { ...doc, id: String(result.insertedId) } });
     }
-    if (!["school-admin", "platform-admin"].includes(role)) return res.status(403).json({ error: "Reviewer chỉ được đề xuất, không được xuất bản." });
+    if (role !== "platform-admin") return res.status(403).json({ error: "Reviewer chỉ được đề xuất, không được xuất bản." });
     const reviewId = objectId(body.reviewId, "Phiếu duyệt không hợp lệ."); const action = clean(body.action, 30); const allowed = new Set(["reviewed", "approved", "unpublished", "rolled-back"]); if (!allowed.has(action)) return res.status(400).json({ error: "Trạng thái xuất bản không hợp lệ." });
     const now = new Date(); const result = await collection.updateOne({ _id: reviewId }, { $set: { status: action, reviewerId: user._id, reviewedAt: now, updatedAt: now } }); if (!result.matchedCount) return res.status(404).json({ error: "Không tìm thấy phiếu duyệt." }); await audit(db, user, `education:review:${action}`, { reviewId: String(reviewId) }); return res.status(200).json({ ok: true, status: action });
   }
@@ -289,5 +356,5 @@ async function handler(req, res) {
     return res.status(404).json({ error: "HH School API resource không tồn tại." });
   });
 }
-handler.__test = { roleOf, tokenHash, sanitizeState, canAccessLearner };
+handler.__test = { roleOf, tokenHash, sanitizeState, canAccessLearner, progress };
 module.exports = handler;

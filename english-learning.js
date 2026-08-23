@@ -6,7 +6,19 @@
   const STORAGE_PREFIX = "hh.english.state.v3";
   const ACTIVE_PROFILE_PREFIX = "hh.english.active-profile.v3";
   const APP_VERSION = 1;
-  const todayKey = (now = Date.now()) => new Date(now).toISOString().slice(0, 10);
+  // Calendar days must follow the learner's device timezone.  Using UTC here
+  // made a session around midnight appear on the wrong day (and could break
+  // streaks, daily goals and the activity heatmap for users in Việt Nam).
+  const todayKey = (now = Date.now()) => {
+    const date = new Date(now);
+    if (!Number.isFinite(date.getTime())) return "";
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  };
+  const previousDayKey = (now = Date.now()) => {
+    const date = new Date(now);
+    date.setDate(date.getDate() - 1);
+    return todayKey(date.getTime());
+  };
   const escapeHtml = (value = "") => String(value).replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]);
   const normalize = (value = "") => String(value).trim().toLowerCase().replace(/[.!?,;:]/g, "").replace(/\s+/g, " ");
   const cleanScopeId = (value, fallback) => String(value || fallback || "").trim().replace(/[^a-zA-Z0-9@._-]/g, "_").slice(0, 120) || fallback;
@@ -319,8 +331,9 @@
       wordMastery: { ...(stored.wordMastery || {}) },
       modeStats: { ...(stored.modeStats || {}) },
       galaxySession: { ...fallback.galaxySession, ...(stored.galaxySession || {}) },
-      mistakeNotebook: Array.isArray(stored.mistakeNotebook) ? stored.mistakeNotebook : [],
-      writingDrafts: { ...(stored.writingDrafts || {}) },
+    mistakeNotebook: Array.isArray(stored.mistakeNotebook) ? stored.mistakeNotebook.slice(0, 200) : [],
+      reviewEvents: Array.isArray(stored.reviewEvents) ? [...new Set(stored.reviewEvents.map((item) => String(item).slice(0, 180)))].slice(-500) : [],
+      writingDrafts: Object.fromEntries(Object.entries(stored.writingDrafts && typeof stored.writingDrafts === "object" ? stored.writingDrafts : {}).slice(0, 12).map(([key, value]) => [String(key).slice(0, 20), String(value || "").slice(0, 12000)])),
       onboarding: { ...fallback.onboarding, ...(stored.onboarding || {}) },
       learnerProfile: { ...fallback.learnerProfile, ...(stored.learnerProfile || {}) },
       careerProfile: { ...fallback.careerProfile, ...(stored.careerProfile || {}) },
@@ -329,7 +342,7 @@
         ...fallback.vocabularyStudio,
         ...(stored.vocabularyStudio || {}),
         filters: { ...fallback.vocabularyStudio.filters, ...(stored.vocabularyStudio?.filters || {}) },
-        notes: { ...(stored.vocabularyStudio?.notes || {}) },
+        notes: Object.fromEntries(Object.entries(stored.vocabularyStudio?.notes && typeof stored.vocabularyStudio.notes === "object" ? stored.vocabularyStudio.notes : {}).slice(0, 1000).map(([key, value]) => [String(key).slice(0, 120), String(value || "").slice(0, 1000)])),
         personalDictionary: Array.isArray(stored.vocabularyStudio?.personalDictionary) ? stored.vocabularyStudio.personalDictionary.slice(0, 1000) : []
       }
     };
@@ -347,10 +360,10 @@
     normalized.learnerProfileId = scope.learnerProfileId;
     if (normalized.learningOS) normalized.learningOS.localUpdatedAt = new Date().toISOString();
     const serialized = JSON.stringify({ ...normalized, version: APP_VERSION });
-    localStorage.setItem(scopedStorageKey(scope), serialized);
+    try { localStorage.setItem(scopedStorageKey(scope), serialized); } catch (_) { /* private mode/quota: continue in memory */ }
     // Compatibility snapshot for the home dashboard and Hikari. It is replaced
     // whenever the active account opens HH English and never used as server identity.
-    localStorage.setItem(STORAGE_KEY, serialized);
+    try { localStorage.setItem(STORAGE_KEY, serialized); } catch (_) { /* compatibility snapshot is best-effort */ }
     return normalized;
   };
   const readState = () => {
@@ -627,10 +640,11 @@
       reason: dueWords.length ? `${dueWords.length} từ đang đến hạn ôn; HH ưu tiên chúng trước.` : `Bước tiếp theo phù hợp với cấp ${levelId} và trọng tâm ${skillLabels[weakSkill] || "giao tiếp"}.`
     };
   };
-  const updateStreak = (state) => {
-    const today = todayKey();
+  const updateStreak = (state, now = Date.now()) => {
+    const today = todayKey(now);
+    if (!today) return;
     if (state.streak.lastDate === today) return;
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const yesterday = previousDayKey(now);
     state.streak.current = state.streak.lastDate === yesterday ? state.streak.current + 1 : 1;
     state.streak.longest = Math.max(state.streak.longest, state.streak.current);
     state.streak.lastDate = today;
@@ -645,7 +659,11 @@
     }
     current.easeFactor = Math.max(1.3, current.easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)));
     current.lastReviewedAt = new Date(now).toISOString();
-    current.dueAt = new Date(now + current.interval * 86400000).toISOString();
+    const due = new Date(now);
+    // Add calendar days in local time, then serialize the instant.  This
+    // avoids a DST boundary shortening/lengthening a review interval.
+    due.setDate(due.getDate() + current.interval);
+    current.dueAt = due.toISOString();
     return current;
   };
   const scoreAnswers = (questions, answers) => questions.reduce((score, question, index) => score + (Number(answers[index]) === question[3] ? 1 : 0), 0);
@@ -1129,17 +1147,18 @@
 
   const focusCurrentView = (options = {}) => root.requestAnimationFrame?.(() => {
     const scrollContainers = [
-      host?.closest?.(".app-main"),
-      host?.closest?.(".app-workspace"),
       host?.querySelector?.(".hhe-view-stage"),
-      root.document?.scrollingElement
+      host?.querySelector?.("[data-hhe-internal-scroll]"),
+      host?.closest?.(".app-workspace")
     ].filter((node, index, list) => node && list.indexOf(node) === index);
     if (options.resetScroll !== false) {
       scrollContainers.forEach((node) => {
         node.scrollTop = 0;
         node.scrollLeft = 0;
       });
-      root.scrollTo?.({ top: 0, left: 0, behavior: "auto" });
+      // The App Shell owns the page scroll.  Do not reset document/app-main
+      // here: changing a learning tool must not jump the user to the top.
+      if (options.resetPage === true) root.scrollTo?.({ top: 0, left: 0, behavior: "auto" });
     }
     const heading = host?.querySelector(".hhe-main h2, .hhe-main h3");
     heading?.setAttribute?.("tabindex", "-1");
@@ -1371,9 +1390,12 @@
     if (galaxyRate) {
       const state = readState(); const word = galaxyRate.dataset.hheGalaxyWord || ""; const rating = galaxyRate.dataset.hheGalaxyRate || "good";
       const previous = state.wordMastery[word] || { score: 0, attempts: 0, correct: 0 };
+      const mutationKey = `review:${word}:${Number(previous.attempts || 0)}:${rating}`;
+      if (state.reviewEvents?.includes(mutationKey)) return;
       const quality = { again: -18, hard: 6, good: 16, easy: 24 }[rating] || 6;
       state.wordMastery[word] = { ...previous, score: Math.max(0, Math.min(100, Number(previous.score || 0) + quality)), attempts: Number(previous.attempts || 0) + 1, correct: Number(previous.correct || 0) + (rating === "again" ? 0 : 1), lastRating: rating, updatedAt: new Date().toISOString() };
       state.reviewQueue[word] = scheduleReview(state.reviewQueue[word], rating);
+      state.reviewEvents = [...(state.reviewEvents || []), mutationKey].slice(-500);
       state.galaxyCursor = (Number(state.galaxyCursor) || 0) + 1; writeState(state); render(); toast("Đã ghi nhận mức nhớ và lên lịch ôn thích nghi.");
       return;
     }
@@ -1474,7 +1496,14 @@
     const speakButton = event.target.closest("[data-hhe-speak]");
     if (speakButton) { const state = readState(); if (!speak(speakButton.dataset.hheSpeak, state.settings, { rate: Number(speakButton.dataset.hheSpeakRate) || undefined })) toast("Thiết bị này chưa hỗ trợ giọng đọc.", "error"); return; }
     const saveWord = event.target.closest("[data-hhe-save-word]");
-    if (saveWord) { const state = readState(); const raw = JSON.parse(decodeURIComponent(saveWord.dataset.hheWordJson)); const word = raw[0]; const lesson = saveWord.closest("[data-hhe-lesson]") ? lessonForState(state, saveWord.closest("[data-hhe-lesson]").dataset.hheLesson) : null; if (state.savedWords[word]) delete state.savedWords[word]; else state.savedWords[word] = { word, ipa: raw[1], meaning: raw[2], example: raw[3], metadata: raw[4] || {}, level: lesson?.level || selectedLevelId(state), trackId: lesson?.trackId || selectedCareerId(state), savedAt: new Date().toISOString() }; writeState(state); render(); toast(state.savedWords[word] ? "Đã lưu vào sổ từ." : "Đã bỏ từ khỏi sổ."); return; }
+    if (saveWord) {
+      let raw;
+      try { raw = JSON.parse(decodeURIComponent(saveWord.dataset.hheWordJson || "")); } catch (_) { return toast("Từ vựng này không còn hợp lệ. Hãy tải lại bài học.", "error"); }
+      if (!Array.isArray(raw) || !raw[0]) return toast("Từ vựng này không còn hợp lệ. Hãy tải lại bài học.", "error");
+      const state = readState(); const word = String(raw[0]).slice(0, 160); const lesson = saveWord.closest("[data-hhe-lesson]") ? lessonForState(state, saveWord.closest("[data-hhe-lesson]").dataset.hheLesson) : null;
+      if (state.savedWords[word]) delete state.savedWords[word]; else state.savedWords[word] = { word, ipa: String(raw[1] || "").slice(0, 160), meaning: String(raw[2] || "").slice(0, 500), example: String(raw[3] || "").slice(0, 500), metadata: raw[4] && typeof raw[4] === "object" ? raw[4] : {}, level: lesson?.level || selectedLevelId(state), trackId: lesson?.trackId || selectedCareerId(state), savedAt: new Date().toISOString() };
+      writeState(state); render(); toast(state.savedWords[word] ? "Đã lưu vào sổ từ." : "Đã bỏ từ khỏi sổ."); return;
+    }
     if (event.target.closest("[data-hhe-save-career-pack]")) {
       const button = event.target.closest("[data-hhe-save-career-pack]");
       const state = readState(); const lesson = personalizeCareerLesson(state, nextCareerLesson(state));
@@ -1489,18 +1518,28 @@
     }
     const removeWord = event.target.closest("[data-hhe-remove-word]");
     if (removeWord) { const state = readState(); delete state.savedWords[removeWord.dataset.hheRemoveWord]; delete state.reviewQueue[removeWord.dataset.hheRemoveWord]; writeState(state); render(); return; }
-    if (event.target.closest("[data-hhe-reveal]")) { host.querySelector("[data-hhe-review-answer]").hidden = false; host.querySelector("[data-hhe-review] footer").hidden = false; event.target.hidden = true; return; }
+    if (event.target.closest("[data-hhe-reveal]")) { const answer = host.querySelector("[data-hhe-review-answer]"), footer = host.querySelector("[data-hhe-review] footer"); if (!answer || !footer) return toast("Thẻ ôn đã thay đổi. Hãy mở lại Quick Review.", "error"); answer.hidden = false; footer.hidden = false; event.target.hidden = true; return; }
     const rating = event.target.closest("[data-hhe-rate]");
-    if (rating) { const state = readState(); state.reviewQueue[rating.dataset.word] = scheduleReview(state.reviewQueue[rating.dataset.word], rating.dataset.hheRate); state.xp += 2; writeState(state); render(); toast("Đã lên lịch ôn tiếp theo."); return; }
+    if (rating) {
+      if (rating.dataset.submitting === "true") return;
+      const word = String(rating.dataset.word || "").slice(0, 160); const grade = rating.dataset.hheRate;
+      if (!word || !["again", "hard", "good", "easy"].includes(grade)) return;
+      rating.dataset.submitting = "true";
+      const state = readState(); const card = state.reviewQueue[word];
+      if (!card) { rating.dataset.submitting = "false"; return toast("Thẻ ôn không còn trong hồ sơ hiện tại.", "error"); }
+      const mutationKey = `legacy-review:${word}:${Number(card.repetitions || 0)}:${grade}`;
+      if (state.reviewEvents?.includes(mutationKey)) { rating.dataset.submitting = "false"; return; }
+      state.reviewQueue[word] = scheduleReview(card, grade); state.reviewEvents = [...(state.reviewEvents || []), mutationKey].slice(-500); state.xp += 2; writeState(state); render(); toast("Đã lên lịch ôn tiếp theo."); return;
+    }
     if (event.target.closest("[data-hhe-theme]")) { const state = readState(); state.settings.theme = state.settings.theme === "day" ? "night" : "day"; writeState(state); render(); return; }
     const studyDay = event.target.closest("[data-hhe-day]");
     if (studyDay) { const state = readState(); const day = Number(studyDay.dataset.hheDay); state.studyDays = state.studyDays.includes(day) ? state.studyDays.filter((item) => item !== day) : [...state.studyDays, day]; writeState(state); render(); toast(state.studyDays.includes(day) ? "Đã thêm ngày học." : "Đã chuyển thành ngày nghỉ."); return; }
     if (event.target.closest("[data-hhe-focus-start]")) { toggleFocusTimer(); return; }
     if (event.target.closest("[data-hhe-focus-reset]")) { resetFocusTimer(); return; }
     if (event.target.closest("[data-hhe-export]")) { downloadJson(readState()); return; }
-    if (event.target.closest("[data-hhe-submit-writing]")) { const state = readState(); const levelId = selectedLevelId(state); const body = writingDraftFor(state, levelId).trim(); if (!body) return toast("Hãy viết ít nhất một câu.", "error"); const words = body.split(/\s+/).length; state.writingHistory.unshift({ id: Date.now(), level: levelId, prompt: levelById(levelId).writing.title, body, words, status: "pending", createdAt: new Date().toISOString() }); state.xp += Math.min(30, words); updateStreak(state); state.minutesByDay[todayKey()] = (state.minutesByDay[todayKey()] || 0) + 5; writeState(state); render(); toast(`Đã lưu bài viết ${levelId} trên thiết bị.`); return; }
+    if (event.target.closest("[data-hhe-submit-writing]")) { const state = readState(); const levelId = selectedLevelId(state); const body = writingDraftFor(state, levelId).trim(); if (!body) return toast("Hãy viết ít nhất một câu.", "error"); const duplicate = (state.writingHistory || []).some((item) => item.level === levelId && item.body === body); if (duplicate) return toast("Bản nháp này đã được lưu trước đó; sửa nội dung rồi hãy lưu lại.", "info"); const words = body.split(/\s+/).length; state.writingHistory.unshift({ id: Date.now(), level: levelId, prompt: levelById(levelId).writing.title, body, words, status: "pending", createdAt: new Date().toISOString() }); state.writingHistory = state.writingHistory.slice(0, 100); state.xp += Math.min(30, words); updateStreak(state); state.minutesByDay[todayKey()] = (state.minutesByDay[todayKey()] || 0) + 5; writeState(state); render(); toast(`Đã lưu bài viết ${levelId} trên thiết bị.`); return; }
     if (event.target.closest("[data-hhe-clear-writing]")) { const state = readState(); const levelId = selectedLevelId(state); state.writingDrafts[levelId] = ""; if (levelId === "A0") state.writingDraft = ""; writeState(state); render(); return; }
-    if (event.target.closest("[data-hhe-reset]")) { if (!confirm("Xóa toàn bộ tiến độ HH English của hồ sơ hiện tại trên thiết bị này?")) return; const scope = currentLearningScope(); localStorage.removeItem(scopedStorageKey(scope)); const legacy = readStoredJson(STORAGE_KEY); if (!legacy?.ownerId || (legacy.ownerId === scope.ownerId && (legacy.learnerProfileId || "default") === scope.learnerProfileId)) localStorage.removeItem(STORAGE_KEY); render(); return; }
+    if (event.target.closest("[data-hhe-reset]")) { if (!confirm("Xóa toàn bộ tiến độ HH English của hồ sơ hiện tại trên thiết bị này?")) return; const scope = currentLearningScope(); try { localStorage.removeItem(scopedStorageKey(scope)); const legacy = readStoredJson(STORAGE_KEY); if (!legacy?.ownerId || (legacy.ownerId === scope.ownerId && (legacy.learnerProfileId || "default") === scope.learnerProfileId)) localStorage.removeItem(STORAGE_KEY); } catch (_) { /* storage may be disabled; keep the running workspace alive */ } render(); return; }
     if (event.target.closest("[data-hhe-recognize]")) { const button = event.target.closest("[data-hhe-recognize]"); startRecognition(button.dataset.hheTarget || host.querySelector("[data-hhe-speaking-phrase]")?.textContent || ""); return; }
     if (event.target.closest("[data-hhe-record]")) { await startRecording(); return; }
     if (event.target.closest("[data-hhe-stop]")) { mediaRecorder?.stop(); return; }
@@ -1514,18 +1553,24 @@
     if (galaxyForm) {
       event.preventDefault();
       const state = readState();
+      if (galaxyForm.dataset.submitting === "true") return;
+      galaxyForm.dataset.submitting = "true";
       const answer = String(new FormData(galaxyForm).get("galaxyAnswer") || "").trim();
       const selected = String(new FormData(galaxyForm).get("galaxyAnswer") || "").trim();
       const mode = state.galaxyMode || "flashcards";
       const challenge = galaxyData?.buildChallenge?.(mode, galaxyFilteredWords(state), state.galaxyCursor) || {};
       const expected = String(challenge.answer || "").trim();
+      if (!expected) { galaxyForm.dataset.submitting = "false"; return toast("Bài luyện hiện chưa có đáp án hợp lệ. Hãy đổi chế độ hoặc tải lại.", "error"); }
       const correct = mode === "role-play" ? normalize(answer).includes(normalize(expected)) : normalize(selected) === normalize(expected);
       const word = galaxyForm.dataset.word || expected;
       const previous = state.wordMastery[word] || { score: 0, attempts: 0, correct: 0 };
+      const mutationKey = `challenge:${mode}:${word}:${Number(state.galaxyCursor || 0)}`;
+      if (state.reviewEvents?.includes(mutationKey)) { galaxyForm.dataset.submitting = "false"; return; }
       const rating = correct ? "good" : "again";
       const quality = correct ? 16 : -18;
       state.wordMastery[word] = { ...previous, score: Math.max(0, Math.min(100, Number(previous.score || 0) + quality)), attempts: Number(previous.attempts || 0) + 1, correct: Number(previous.correct || 0) + (correct ? 1 : 0), lastRating: rating, updatedAt: new Date().toISOString() };
       state.reviewQueue[word] = scheduleReview(state.reviewQueue[word], rating);
+      state.reviewEvents = [...(state.reviewEvents || []), mutationKey].slice(-500);
       state.galaxySession = { ...state.galaxySession, attempts: Number(state.galaxySession?.attempts || 0) + 1, correct: Number(state.galaxySession?.correct || 0) + (correct ? 1 : 0), startedAt: state.galaxySession?.startedAt || new Date().toISOString() };
       state.modeStats[mode] = { attempts: Number(state.modeStats?.[mode]?.attempts || 0) + 1, correct: Number(state.modeStats?.[mode]?.correct || 0) + (correct ? 1 : 0), lastAt: new Date().toISOString() };
       if (!correct) state.mistakeNotebook = [{ word, mode, expected, answer, createdAt: new Date().toISOString() }, ...(state.mistakeNotebook || [])].slice(0, 100);
@@ -1539,33 +1584,42 @@
     const roleplayForm = event.target.closest("[data-hhe-roleplay]");
     if (roleplayForm) {
       event.preventDefault();
+      if (roleplayForm.dataset.submitting === "true") return;
+      roleplayForm.dataset.submitting = "true";
       const reply = String(new FormData(roleplayForm).get("reply") || "").trim();
       const state = readState();
       const career = careerTrackById(selectedCareerId(state));
       const brief = buildRoleplayBrief(roleplayForm.dataset.scenario, career, state.careerProfile);
       const output = roleplayForm.querySelector("[data-hhe-roleplay-feedback]");
-      if (!reply) { output.textContent = "Hãy viết ít nhất một câu trả lời."; toast("Roleplay cần một câu trả lời trước khi lưu.", "error"); return; }
+      if (!output) { roleplayForm.dataset.submitting = "false"; return toast("Không tìm thấy vùng phản hồi roleplay. Hãy tải lại bài học.", "error"); }
+      if (!reply) { roleplayForm.dataset.submitting = "false"; output.textContent = "Hãy viết ít nhất một câu trả lời."; toast("Roleplay cần một câu trả lời trước khi lưu.", "error"); return; }
       const result = evaluateRoleplayReply(reply, brief);
       output.innerHTML = `<strong>${result.score}% checklist cục bộ</strong><span>${result.missing.length ? `Thử thêm: ${escapeHtml(result.missing.join(" · "))}` : "Đã dùng đủ tín hiệu giao tiếp."}</span><small>${escapeHtml(result.disclaimer)}</small>`;
       state.speakingRoleplays = Array.isArray(state.speakingRoleplays) ? state.speakingRoleplays : [];
       state.speakingRoleplays.unshift({ scenario: brief.scenarioId, careerId: career.id, role: brief.learner, reply, score: result.score, method: result.method, createdAt: new Date().toISOString() });
       state.speakingRoleplays = state.speakingRoleplays.slice(0, 30);
-      writeState(state);
-      toast(result.score >= 70 ? "Đã hoàn tất lượt roleplay nghề nghiệp." : "Đã lưu lượt roleplay; hãy thử thêm các tín hiệu còn thiếu.", result.score >= 70 ? "success" : "error");
+       writeState(state);
+       roleplayForm.dataset.submitting = "false";
+       toast(result.score >= 70 ? "Đã hoàn tất lượt roleplay nghề nghiệp." : "Đã lưu lượt roleplay; hãy thử thêm các tín hiệu còn thiếu.", result.score >= 70 ? "success" : "error");
       return;
     }
     const dictationForm = event.target.closest("[data-hhe-dictation]");
     if (dictationForm) {
       event.preventDefault();
+      if (dictationForm.dataset.submitting === "true") return;
+      dictationForm.dataset.submitting = "true";
       const answer = String(new FormData(dictationForm).get("dictation") || "");
       const state = readState();
       const speakingScenario = speakingScenarios.find((item) => item.id === state.speakingScenario) || speakingScenarios[0];
       const target = String(state.galaxy?.shadowingTarget || speakingScenario?.phrase || levelById(selectedLevelId(state)).speaking?.phrase || "");
+      if (!target) { dictationForm.dataset.submitting = "false"; return toast("Chưa có câu nghe hợp lệ cho cấp hiện tại.", "error"); }
       const result = compareTranscript(answer, target);
       const output = dictationForm.querySelector("[data-hhe-dictation-feedback]");
+      if (!output) { dictationForm.dataset.submitting = "false"; return toast("Không tìm thấy vùng phản hồi chính tả. Hãy tải lại bài học.", "error"); }
       output.className = result.score >= 80 ? "correct" : "wrong";
       output.innerHTML = `<strong>${result.score}% từ khớp</strong><span>${result.missed.length ? `Cần nghe lại: ${escapeHtml(result.missed.join(" · "))}` : "Bạn đã nghe đúng toàn bộ câu."}</span><small>Đáp án: ${escapeHtml(target)}</small>`;
-      toast(result.score >= 80 ? "Bài chép chính tả rất tốt." : "Hãy nghe chậm rồi thử lại từng cụm.", result.score >= 80 ? "success" : "error");
+       dictationForm.dataset.submitting = "false";
+       toast(result.score >= 80 ? "Bài chép chính tả rất tốt." : "Hãy nghe chậm rồi thử lại từng cụm.", result.score >= 80 ? "success" : "error");
       return;
     }
     const onboardingForm = event.target.closest("[data-hhe-onboarding]");
@@ -1646,12 +1700,12 @@
       writeState(state); render(); toast("Đã tạo lại bài và bộ từ theo hồ sơ của bạn."); return;
     }
     const exerciseForm = event.target.closest("[data-hhe-exercises]");
-    if (exerciseForm) { event.preventDefault(); const state = readState(); const lesson = lessonForState(state, exerciseForm.closest("[data-hhe-lesson]").dataset.hheLesson); let correct = 0; state.attempts[lesson.id] = state.attempts[lesson.id] || {};
+    if (exerciseForm) { event.preventDefault(); if (exerciseForm.dataset.submitting === "true") return; exerciseForm.dataset.submitting = "true"; const state = readState(); const lessonNode = exerciseForm.closest("[data-hhe-lesson]"); const lesson = lessonNode ? lessonForState(state, lessonNode.dataset.hheLesson) : null; if (!lesson || !Array.isArray(lesson.exercises)) { exerciseForm.dataset.submitting = "false"; return toast("Bài học hiện không còn dữ liệu bài tập.", "error"); } let correct = 0; state.attempts[lesson.id] = state.attempts[lesson.id] || {};
       lesson.exercises.forEach((question) => { const field = exerciseForm.querySelector(`[data-question="${question.id}"]`); const input = exerciseForm.elements[question.id]; const value = input instanceof RadioNodeList ? input.value : input?.value || ""; state.attempts[lesson.id][question.id] = value; const ok = normalize(value) === normalize(question.answer); correct += ok ? 1 : 0; field.classList.toggle("correct", ok); field.classList.toggle("wrong", !ok); const feedback = field.querySelector("[data-feedback]"); feedback.hidden = false; feedback.innerHTML = `<strong>${ok ? "Chính xác" : `Đáp án: ${escapeHtml(question.answer)}`}</strong><span>${escapeHtml(question.explanation)}</span>`; });
       if (correct >= 4 && !state.completed[lesson.id]) { state.completed[lesson.id] = true; state.xp += lesson.xp; updateStreak(state); state.minutesByDay[todayKey()] = (state.minutesByDay[todayKey()] || 0) + lesson.minutes; const status = host.querySelector(".hhe-lesson>header>span"); if (status) { status.textContent = "Đã hoàn thành"; status.classList.add("done"); } const progress = host.querySelector("[data-hhe-lesson-progress]"); if (progress) progress.textContent = "100%"; host.querySelector("[data-hhe-lesson-progress-bar]")?.style.setProperty("--p", "100%"); const xp = host.querySelector("[data-hhe-xp]"); if (xp) xp.textContent = state.xp; toast(`Hoàn thành ${correct}/5 · +${lesson.xp} XP`); }
-      else toast(correct >= 4 ? `Bạn đã hoàn thành trước đó · ${correct}/5` : `${correct}/5 đúng. Đọc giải thích rồi thử lại.`, correct >= 4 ? "success" : "error"); writeState(state); return; }
+       else toast(correct >= 4 ? `Bạn đã hoàn thành trước đó · ${correct}/5` : `${correct}/5 đúng. Đọc giải thích rồi thử lại.`, correct >= 4 ? "success" : "error"); writeState(state); exerciseForm.dataset.submitting = "false"; return; }
     const practiceForm = event.target.closest("[data-hhe-practice]");
-    if (practiceForm) { event.preventDefault(); const skill = practiceForm.dataset.hhePractice; const answer = new FormData(practiceForm).get("answer") || ""; const state = readState(); const task = practiceTasksFor(state).find((item) => item.id === skill); const correct = normalize(answer) === normalize(task?.answer || ""); const feedback = practiceForm.querySelector("[data-hhe-practice-feedback]"); feedback.className = correct ? "correct" : "wrong"; feedback.innerHTML = `<strong>${correct ? "Chính xác" : `Đáp án đúng: ${escapeHtml(task?.answer || "")}`}</strong><span>${escapeHtml(task?.explanation || "Hãy đối chiếu lại nội dung và thử thêm một lần.")}</span>`; const levelId = selectedLevelId(state); const current = levelPractice(state, levelId); if (correct && current[skill] < 100) { current[skill] = 100; state.practiceByLevel[levelId] = current; if (levelId === "A0") state.practice = { ...current }; state.xp += 10; state.minutesByDay[todayKey()] = (state.minutesByDay[todayKey()] || 0) + 3; updateStreak(state); writeState(state); const xp = host.querySelector("[data-hhe-xp]"); if (xp) xp.textContent = state.xp; toast(`Hoàn thành bài luyện ${levelId} · +10 XP`); } else toast(correct ? "Bạn đã hoàn thành bài luyện này." : "Chưa đúng. Hãy đọc giải thích rồi thử lại.", correct ? "success" : "error"); return; }
+    if (practiceForm) { event.preventDefault(); if (practiceForm.dataset.submitting === "true") return; practiceForm.dataset.submitting = "true"; const skill = practiceForm.dataset.hhePractice; const answer = new FormData(practiceForm).get("answer") || ""; const state = readState(); const task = practiceTasksFor(state).find((item) => item.id === skill); const feedback = practiceForm.querySelector("[data-hhe-practice-feedback]"); if (!task || !feedback) { practiceForm.dataset.submitting = "false"; return toast("Bài luyện hiện không còn dữ liệu.", "error"); } const correct = normalize(answer) === normalize(task.answer || ""); feedback.className = correct ? "correct" : "wrong"; feedback.innerHTML = `<strong>${correct ? "Chính xác" : `Đáp án đúng: ${escapeHtml(task.answer || "")}`}</strong><span>${escapeHtml(task.explanation || "Hãy đối chiếu lại nội dung và thử thêm một lần.")}</span>`; const levelId = selectedLevelId(state); const current = levelPractice(state, levelId); if (correct && current[skill] < 100) { current[skill] = 100; state.practiceByLevel[levelId] = current; if (levelId === "A0") state.practice = { ...current }; state.xp += 10; state.minutesByDay[todayKey()] = (state.minutesByDay[todayKey()] || 0) + 3; updateStreak(state); writeState(state); const xp = host.querySelector("[data-hhe-xp]"); if (xp) xp.textContent = state.xp; toast(`Hoàn thành bài luyện ${levelId} · +10 XP`); } else toast(correct ? "Bạn đã hoàn thành bài luyện này." : "Chưa đúng. Hãy đọc giải thích rồi thử lại.", correct ? "success" : "error"); practiceForm.dataset.submitting = "false"; return; }
     const careerSurveyForm = event.target.closest("[data-hhe-career-survey]");
     if (careerSurveyForm) {
       event.preventDefault(); const data = new FormData(careerSurveyForm); const categories = data.getAll("categories");
@@ -1686,7 +1740,7 @@
       writeState(state); render({ focusView: true }); toast("Đã tạo lộ trình. Bài học đầu tiên đã sẵn sàng ở đầu trang · +15 XP"); return;
     }
     const placementForm = event.target.closest("[data-hhe-placement]");
-    if (placementForm) { event.preventDefault(); const answers = placementQuestions.map((_, index) => placementForm.elements[`placement-${index}`]?.value); const answered = answers.filter((value) => value !== "").length; if (answered < 12) return toast("Hãy trả lời ít nhất 12 câu để nhận gợi ý đáng tin cậy hơn.", "error"); const score = scoreAnswers(placementQuestions, answers); const groups = {}; placementQuestions.forEach((question, index) => { const key = question[0]; groups[key] = groups[key] || { label: { Vocabulary: "từ vựng", Grammar: "ngữ pháp", Reading: "đọc hiểu", Listening: "nghe hiểu", "Use of English": "cách dùng ngôn ngữ" }[key] || key, score: 0, total: 0 }; groups[key].score += Number(answers[index]) === question[3] ? 1 : 0; groups[key].total += 1; }); const skillScores = Object.values(groups); const strongest = [...skillScores].sort((a, b) => b.score / b.total - a.score / a.total)[0]; const weakest = [...skillScores].sort((a, b) => a.score / a.total - b.score / b.total)[0]; const state = readState(); const suggestedLevel = levelFromScore(score / placementQuestions.length * 100); state.placement = { score, answered, total: placementQuestions.length, level: suggestedLevel, strength: strongest.label, improve: weakest.label, takenAt: new Date().toISOString() }; state.selectedLevel = suggestedLevel; if (!state.placementRewarded) { state.xp += 25; state.placementRewarded = true; } writeState(state); render(); toast(`Đã hoàn tất bài kiểm tra · gợi ý ${suggestedLevel}.`); return; }
+    if (placementForm) { event.preventDefault(); if (placementForm.dataset.submitting === "true") return; placementForm.dataset.submitting = "true"; const answers = placementQuestions.map((_, index) => placementForm.elements[`placement-${index}`]?.value); const answered = answers.filter((value) => value !== "").length; if (answered < 12) { placementForm.dataset.submitting = "false"; return toast("Hãy trả lời ít nhất 12 câu để nhận gợi ý đáng tin cậy hơn.", "error"); } const score = scoreAnswers(placementQuestions, answers); const groups = {}; placementQuestions.forEach((question, index) => { const key = question[0]; groups[key] = groups[key] || { label: { Vocabulary: "từ vựng", Grammar: "ngữ pháp", Reading: "đọc hiểu", Listening: "nghe hiểu", "Use of English": "cách dùng ngôn ngữ" }[key] || key, score: 0, total: 0 }; groups[key].score += Number(answers[index]) === question[3] ? 1 : 0; groups[key].total += 1; }); const skillScores = Object.values(groups); const strongest = [...skillScores].sort((a, b) => b.score / b.total - a.score / a.total)[0]; const weakest = [...skillScores].sort((a, b) => a.score / a.total - b.score / b.total)[0]; const state = readState(); const suggestedLevel = levelFromScore(score / placementQuestions.length * 100); state.placement = { score, answered, total: placementQuestions.length, level: suggestedLevel, strength: strongest.label, improve: weakest.label, takenAt: new Date().toISOString() }; state.selectedLevel = suggestedLevel; if (!state.placementRewarded) { state.xp += 25; state.placementRewarded = true; } writeState(state); render(); toast(`Đã hoàn tất bài kiểm tra · gợi ý ${suggestedLevel}.`); return; }
     const settingsForm = event.target.closest("[data-hhe-settings]");
     if (settingsForm) {
       event.preventDefault(); const state = readState();
@@ -1798,6 +1852,6 @@
   const handleVoicesChanged = () => { if (host?.querySelector(".hhe-voice-studio")) render(); };
   const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.document?.removeEventListener("visibilitychange", handleVisibility); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); root.HHEnglishLearningGalaxy?.unmount?.(host); root.HHEnglishVocabulary?.unmount?.(host); root.HHEnglishForEveryone?.unmount?.(host); if (focusTimer) clearInterval(focusTimer); if (syncTimer) root.clearTimeout?.(syncTimer); focusTimer = null; syncTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
 
-  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit, galaxyData, currentLearningScope, scopedStorageKey, syncStateToServer };
+  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit, galaxyData, todayKey, previousDayKey, currentLearningScope, scopedStorageKey, syncStateToServer };
   if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit, galaxyData };
 })();

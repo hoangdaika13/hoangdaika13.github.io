@@ -28,6 +28,11 @@ test("HH Japanese OS V5 exposes the complete one-page active-learning workspace"
   assert.equal(os.conversations.length, 10);
   assert.equal(os.writingTasks.length, 8);
   assert.equal(os.immersion.length, 9);
+  assert.equal("answer" in os.missions[0], false, "public mission metadata must not expose its model answer");
+  assert.equal("expected" in os.conversations[0], false, "public conversation metadata must not expose its model answer");
+  assert.equal("ok" in os.conversations[0].options[0], false, "public choices must not expose the grading key");
+  assert.equal("sample" in os.writingTasks[0], false, "public writing metadata must not expose its sample answer");
+  assert.equal("answer" in os.particleLabs[0].questions[0], false, "public particle metadata must not expose its answer");
 });
 
 test("the open dictionary pack stays honest and deduplicated", () => {
@@ -85,12 +90,193 @@ test("V5 implements active vocabulary, sequential lessons, reader, shadowing and
   assert.match(source, /publicRanking:false/);
 });
 
+test("V5 cockpit routes real next steps while keeping mission answers locked", () => {
+  const source = read("japanese-os-v4.js");
+  const css = read("japanese-os-v4.css");
+  for (const marker of [
+    "data-hhj6-next-step", "data-hhj6-vocab-level", "data-hhj6-vocab-topic",
+    "data-hhj6-vocab-pos", "data-hhj6-open-word", "data-hhj6-next-mission",
+    "data-hhj6-clear-vocab-filters", "followNextStep", "recordActivity",
+    'levelFilter:"all"', 'topicFilter:"all"', 'posFilter:"all"'
+  ]) assert.ok(source.includes(marker), `missing cockpit contract: ${marker}`);
+
+  const pathStart = source.indexOf("function pathsView");
+  const pathEnd = source.indexOf("function practiceView", pathStart);
+  const pathView = source.slice(pathStart, pathEnd);
+  assert.match(pathView, /<strong hidden aria-live="polite"><\/strong>/);
+  assert.doesNotMatch(pathView, /selected\.answer/);
+  assert.match(source, /answer\.textContent=mission\.answer/);
+  assert.match(source, /listen\.dataset\.hhj4Speak=mission\.answer/);
+  assert.match(source, /save\.dataset\.hhj4SaveSentence=mission\.answer/);
+  assert.match(source, /recordActivity\("mission"/);
+  assert.match(source, /recordActivity\("lesson"/);
+  assert.match(source, /recordActivity\("mistake"/);
+  assert.match(source, /row\.resolvedAt=new Date\(\)\.toISOString\(\)/);
+
+  for (const className of [
+    "hhj6-cockpit", "hhj6-flight-grid", "hhj6-operation-deck", "hhj6-quick-lane",
+    "hhj6-vocab-radar", "hhj6-next-dock", "hhj6-dictionary-filters"
+  ]) assert.match(css, new RegExp(`\\.${className}\\b`));
+});
+
+test("V5 normalizes damaged local state and consumes mission or lesson completion once", () => {
+  const os = globalThis.HHJapaneseOSV5;
+  const japanese = globalThis.HHJapanese;
+  const storageKey = "hh.japanese.os.v5:guest:default";
+  const validWord = os.words[0];
+  const sentenceId = os.sentences[0].id;
+  const missionId = os.missions[0].id;
+  const now = new Date().toISOString();
+  const store = new Map([[storageKey, JSON.stringify({
+    activeTab: "broken-tab",
+    path: "broken-path",
+    family: null,
+    cards: [null, {type:"word", ref:"stale-word"}, {type:"sentence", ref:sentenceId, payload:{correct:"例"}}],
+    lesson: {wordIds:["stale-word"], index:999, step:999, curationVersion:1},
+    missionProgress: {[missionId]:true, stale:{at:now}},
+    reviewOverrides: {[validWord.id]:{word:"</h2><img src=x>", meaning:"Nghĩa an toàn", related:"not-an-array"}},
+    reviewQueue: [{id:'"><img-src-x>', wordId:validWord.id, meaning:"x", status:"pending"}],
+    offlinePacks: {"vi-core":{}},
+    packHistory: [{}]
+  })]]);
+  const localStorage = {
+    getItem: (key) => store.get(key) ?? null,
+    setItem: (key, value) => store.set(key, String(value)),
+    removeItem: (key) => store.delete(key)
+  };
+  const previous = {
+    localStorage: globalThis.localStorage,
+    location: globalThis.location,
+    addEventListener: globalThis.addEventListener
+  };
+  const makeHost = () => {
+    const listeners = {};
+    return {listeners, innerHTML:"", addEventListener:(type,handler)=>{listeners[type]=handler;}, querySelector:()=>null};
+  };
+  const makeButton = (dataset) => {
+    const button = {dataset, disabled:false, matches:()=>false, querySelector:()=>null};
+    button.closest = (selector) => selector === "button" ? button : null;
+    return button;
+  };
+
+  try {
+    globalThis.localStorage = localStorage;
+    globalThis.location = {hash:"#/japanese/today", href:"https://example.test/"};
+    globalThis.addEventListener = () => {};
+    const host = makeHost();
+    japanese.mount(host);
+    const sanitized = JSON.parse(store.get(storageKey));
+    assert.equal(sanitized.activeTab, "today");
+    assert.equal(sanitized.path, "jf");
+    assert.equal(sanitized.family.publicRanking, false);
+    assert.ok(sanitized.cards.some((card) => card.type === "sentence" && card.ref === String(sentenceId)));
+    assert.ok(!sanitized.cards.some((card) => card.ref === "stale-word"));
+    assert.deepEqual(sanitized.missionProgress, {});
+    assert.equal(sanitized.reviewOverrides[validWord.id].meaning, "Nghĩa an toàn");
+    assert.equal("word" in sanitized.reviewOverrides[validWord.id], false);
+    assert.deepEqual(sanitized.reviewOverrides[validWord.id].related, []);
+    assert.deepEqual(sanitized.reviewQueue, []);
+    assert.deepEqual(sanitized.packHistory, []);
+    assert.doesNotMatch(host.innerHTML, /<img src=x>/);
+
+    const missionButton = makeButton({hhj4MissionComplete:missionId});
+    host.listeners.click({target:missionButton});
+    const missionOnce = JSON.parse(store.get(storageKey));
+    host.listeners.click({target:missionButton});
+    const missionTwice = JSON.parse(store.get(storageKey));
+    assert.equal(missionTwice.xp, missionOnce.xp);
+    assert.equal(missionTwice.activityLog.filter((row) => row.type === "mission").length, 1);
+
+    const lessonIds = os.words.slice(0,12).map((row) => row.id);
+    missionTwice.lesson = {wordIds:lessonIds,index:11,step:7,answers:{},curationVersion:1};
+    store.set(storageKey, JSON.stringify(missionTwice));
+    const lessonHost = makeHost();
+    japanese.mount(lessonHost);
+    const lessonButton = makeButton({hhj5LessonStep:"next"});
+    lessonHost.listeners.click({target:lessonButton});
+    const lessonOnce = JSON.parse(store.get(storageKey));
+    lessonHost.listeners.click({target:lessonButton});
+    const lessonTwice = JSON.parse(store.get(storageKey));
+    assert.equal(lessonTwice.xp, lessonOnce.xp);
+    assert.equal(lessonTwice.activityLog.filter((row) => row.type === "lesson").length, 1);
+
+    lessonTwice.activeTab = "practice";
+    lessonTwice.practiceTool = "writing";
+    lessonTwice.writingHistory = [];
+    store.set(storageKey, JSON.stringify(lessonTwice));
+    const writingHost = makeHost();
+    japanese.mount(writingHost);
+    const writingForm = {
+      dataset: {task:"diary"},
+      elements: {text:{value:"今日は日本語を勉強しました。"}},
+      matches: (selector) => selector === "[data-hhj4-writing-form]",
+      querySelector: () => null
+    };
+    const submitEvent = {target:writingForm, preventDefault:()=>{}};
+    writingHost.listeners.submit(submitEvent);
+    const writingOnce = JSON.parse(store.get(storageKey));
+    writingHost.listeners.submit(submitEvent);
+    const writingTwice = JSON.parse(store.get(storageKey));
+    assert.equal(writingTwice.xp, writingOnce.xp);
+    assert.equal(writingTwice.writingHistory.length, 1);
+  } finally {
+    japanese.unmount();
+    if (previous.localStorage === undefined) delete globalThis.localStorage; else globalThis.localStorage = previous.localStorage;
+    if (previous.location === undefined) delete globalThis.location; else globalThis.location = previous.location;
+    if (previous.addEventListener === undefined) delete globalThis.addEventListener; else globalThis.addEventListener = previous.addEventListener;
+  }
+});
+
+test("V5 aborts active speech recognition and omits locked conversation actions before answering", async () => {
+  const japanese = globalThis.HHJapanese;
+  const storageKey = "hh.japanese.os.v5:guest:default";
+  const store = new Map([[storageKey, JSON.stringify({activeTab:"practice", practiceTool:"conversation"})]]);
+  const listeners = {};
+  const host = {innerHTML:"", addEventListener:(type,handler)=>{listeners[type]=handler;}, querySelector:()=>null};
+  const previous = {
+    localStorage: globalThis.localStorage,
+    location: globalThis.location,
+    addEventListener: globalThis.addEventListener,
+    SpeechRecognition: globalThis.SpeechRecognition,
+    webkitSpeechRecognition: globalThis.webkitSpeechRecognition
+  };
+  let started = 0;
+  let aborted = 0;
+  class PendingRecognition {
+    start() { started += 1; }
+    abort() { aborted += 1; this.onerror?.({error:"aborted"}); }
+  }
+  const button = {dataset:{hhj4Record:"restaurant"}, disabled:false, textContent:"2. Nói lại", matches:()=>false, closest:(selector)=>selector === "button" ? button : null};
+
+  try {
+    globalThis.localStorage = {getItem:(key)=>store.get(key)??null,setItem:(key,value)=>store.set(key,String(value))};
+    globalThis.location = {hash:"#/japanese/practice", href:"https://example.test/"};
+    globalThis.addEventListener = () => {};
+    globalThis.SpeechRecognition = PendingRecognition;
+    delete globalThis.webkitSpeechRecognition;
+    japanese.mount(host);
+    assert.doesNotMatch(host.innerHTML, /data-hhj4-speak=/, "locked conversation audio must not carry the model answer in DOM");
+    const pending = listeners.click({target:button});
+    assert.equal(started, 1);
+    japanese.unmount();
+    await pending;
+    assert.equal(aborted, 1);
+  } finally {
+    japanese.unmount();
+    if (previous.localStorage === undefined) delete globalThis.localStorage; else globalThis.localStorage = previous.localStorage;
+    if (previous.location === undefined) delete globalThis.location; else globalThis.location = previous.location;
+    if (previous.addEventListener === undefined) delete globalThis.addEventListener; else globalThis.addEventListener = previous.addEventListener;
+    if (previous.SpeechRecognition === undefined) delete globalThis.SpeechRecognition; else globalThis.SpeechRecognition = previous.SpeechRecognition;
+    if (previous.webkitSpeechRecognition === undefined) delete globalThis.webkitSpeechRecognition; else globalThis.webkitSpeechRecognition = previous.webkitSpeechRecognition;
+  }
+});
+
 test("V5 data provenance and browser assets are versioned and cached", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
   const index = read("index.html");
   const css = read("japanese-os-v4.css");
-  for (const asset of ["japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.css?v=2", "japanese-os-v4.js?v=7"]) {
+  for (const asset of ["japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.css?v=3", "japanese-os-v4.js?v=9"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
     assert.match(worker, pattern);

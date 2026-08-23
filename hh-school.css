@@ -6,3 +6,14 @@
 @media(prefers-reduced-motion:reduce){.hh-school *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 .hhs-tutor>div.hhs-tutor-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0;border:0;background:transparent}.hhs-tutor button{min-height:42px}
 @media(max-width:760px){.hhs-lab form,.hhs-join-form{grid-template-columns:1fr}.hhs-lab header{flex-direction:column}.hhs-tutor>div.hhs-tutor-actions{grid-template-columns:1fr}.hh-school button{min-height:44px}.hhs-source-table{max-width:100%}}
+
+/* HH School reliability: the app main is the only vertical scroll surface. */
+body.app-learning-route .app-main{overflow-y:auto!important;overscroll-behavior:contain}
+body.app-learning-route .app-workspace{min-height:0;overflow:visible}
+.hh-school,.hhs-workspace,.hhs-view{min-width:0;overflow:visible}
+.hhs-subject-list{max-height:none;overflow:visible}
+.hhs-lesson-stage{min-height:0}
+.hhs-lesson-stage>footer{position:static;margin-top:28px}
+.hhs-question output button{justify-self:start;margin-top:4px;padding:8px 10px;border:1px solid #486c80;border-radius:8px;background:#102939;color:#fff;cursor:pointer}
+.hh-school.is-reduced-motion *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+@media(max-width:760px){.hhs-subject-list{max-height:none;overflow-x:auto;overflow-y:visible}.hhs-lesson-stage{min-height:0}.hhs-view-head p,.hhs-lesson-stage>p,.hhs-note p{font-size:16px;line-height:1.65}}

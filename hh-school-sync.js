@@ -10,7 +10,7 @@
       if (!response.ok) throw Object.assign(new Error(data.error || `Đồng bộ lỗi HTTP ${response.status}.`), { code: data.code || "SYNC_FAILED", status: response.status, data });
       return data;
     }
-    load(profileId, scope = "own") { return this.request(`/progress?learnerProfileId=${encodeURIComponent(profileId)}${scope === "linked" ? "&scope=linked" : ""}`); }
+    load(profileId, scope = "own", accessId = "") { return this.request(`/progress?learnerProfileId=${encodeURIComponent(profileId)}${scope === "linked" ? `&scope=linked&accessId=${encodeURIComponent(accessId)}` : ""}`); }
     save(profileId, state, baseRevision = Number(state?.serverRevision || 0)) { return this.request("/progress", { method: "PUT", body: JSON.stringify({ learnerProfileId: profileId, state, baseRevision }) }); }
     assignments(profileId) { return this.request(`/assignments?learnerProfileId=${encodeURIComponent(profileId)}`); }
     createAssignment(payload) { return this.request("/assignments", { method: "POST", body: JSON.stringify(payload) }); }

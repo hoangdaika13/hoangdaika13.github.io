@@ -205,10 +205,10 @@
       scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=5"]
     },
     learning: {
-      styles: ["hh-school.css?v=3"],
+      styles: ["hh-school.css?v=4"],
       scripts: [
-        "hh-school-curriculum.js?v=3", "hh-school-core.js?v=3", "hh-school-offline.js?v=3",
-        "hh-school-sync.js?v=3", "hh-school.js?v=4"
+        "hh-school-curriculum.js?v=3", "hh-school-core.js?v=4", "hh-school-offline.js?v=4",
+        "hh-school-sync.js?v=4", "hh-school.js?v=5"
       ]
     },
     // Compatibility asset markers: english-learning-os.css?v=3 · english-learning-os.js?v=7 · english-learning.js?v=28 · english-vocabulary.css?v=1 · english-vocabulary.js?v=2
@@ -216,10 +216,10 @@
       styles: ["language-learning-cockpit.css?v=1", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=6", "english-vocabulary.css?v=2", "english-for-everyone.css?v=1", "english-skill-graph.css?v=1", "english-learning-os.css?v=4"],
       scripts: ["language-learning-cockpit.js?v=1", "english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=2", "english-learning-galaxy.js?v=5", "english-for-everyone.js?v=2", "english-vocabulary.js?v=3", "english-skill-graph.js?v=1", "english-learning-os.js?v=8", "english-learning.js?v=29"]
     },
-    // Compatibility: japanese-os-v4.js?v=7 remains valid for existing tabs.
+    // Compatibility: japanese-os-v4.js?v=7 and v8 remain valid for existing tabs.
     japanese: {
-      styles: ["language-learning-cockpit.css?v=1", "japanese-learning.css?v=8", "japanese-os-v3.css?v=4", "japanese-os-v4.css?v=2"],
-      scripts: ["language-learning-cockpit.js?v=1", "japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=8", "japanese-os-v3.js?v=2", "japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.js?v=8"]
+      styles: ["language-learning-cockpit.css?v=1", "japanese-learning.css?v=8", "japanese-os-v3.css?v=4", "japanese-os-v4.css?v=3"],
+      scripts: ["language-learning-cockpit.js?v=1", "japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=8", "japanese-os-v3.js?v=2", "japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.js?v=9"]
     },
     // Previous cache keys retained for old clients: hh-chinese.css?v=1 · hh-chinese.js?v=1 · hh-chinese.css?v=11 · hh-chinese.js?v=11
     chinese: {

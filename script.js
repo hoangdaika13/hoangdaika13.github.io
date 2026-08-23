@@ -5624,10 +5624,7 @@ function initAppShell() {
         { id: "practice", title: "Luyện tập", route: "/learn/practice" },
         { id: "assessments", title: "Kiểm tra", route: "/learn/assessments" },
         { id: "library", title: "Thư viện", route: "/learn/library" },
-        { id: "progress", title: "Tiến độ", route: "/learn/progress" },
-        { id: "teacher", title: "Teacher Mode", route: "/learn/teacher" },
-        { id: "family", title: "Family Mode", route: "/learn/family" },
-        { id: "admin", title: "Education Admin", route: "/learn/admin" }
+        { id: "progress", title: "Tiến độ", route: "/learn/progress" }
       ]
     },
     { id: "english", label: "HH English", icon: "E", accent: "#60e9f2", route: "/english", items: [] },

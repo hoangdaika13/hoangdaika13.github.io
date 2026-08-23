@@ -92,3 +92,51 @@ test("portable export/import and daily plan preserve real evidence", () => {
   assert.ok(core.dailyPlan(store.get(), curriculum).nextLesson.lessonId);
   assert.throws(() => store.import('{"format":"other"}'), /định dạng/i);
 });
+
+test("local state cannot elevate role and storage quota failure does not break learning", () => {
+  const forged = core.defaultState({ currentUser: { id: "student-1", educationRole: "student" } });
+  forged.role = "platform-admin";
+  assert.equal(core.normalizeState(forged, { currentUser: { id: "student-1", educationRole: "student" } }).role, "student");
+  const storage = { getItem: () => null, setItem: () => { throw new Error("quota"); } };
+  const store = core.createStore({ storage, currentUser: { id: "student-1" } });
+  assert.doesNotThrow(() => store.update((state) => { state.profile.name = "An"; return state; }));
+  assert.equal(store.get().profile.name, "An");
+});
+
+test("learning streak follows the device calendar day instead of UTC", () => {
+  const late = new Date(2026, 7, 23, 23, 59).getTime();
+  const nextMorning = new Date(2026, 7, 24, 0, 1).getTime();
+  const first = core.nextActivity({}, late);
+  assert.equal(first.streak, 1);
+  assert.equal(core.nextActivity(first, late + 30_000).streak, 1);
+  const second = core.nextActivity(first, nextMorning);
+  assert.equal(second.streak, 2);
+  assert.notEqual(first.lastActiveDay, second.lastActiveDay);
+});
+
+test("mastery needs recall on separate local days and more than one question type", () => {
+  const start = new Date(2026, 7, 20, 12).getTime();
+  let evidence = {};
+  for (let day = 0; day < 4; day += 1) evidence = core.nextMastery(evidence, { correct: true, responseMs: 2000, questionType: "single" }, start + day * 86400000);
+  assert.notEqual(evidence.state, "mastered");
+  evidence = core.nextMastery(evidence, { correct: true, responseMs: 2000, questionType: "short" }, start + 4 * 86400000);
+  assert.equal(evidence.retrievalDays, 5);
+  assert.equal(evidence.state, "mastered");
+});
+
+test("pending human-reviewed work preserves multiline original without storing an answer key", () => {
+  const state = core.defaultState({ currentUser: { id: "writer" }, profile: { grade: 8 } });
+  const question = { id: "essay-private", type: "essay", skillId: "writing", answer: "Bản mẫu riêng", prompt: "Viết đoạn văn", rubric: ["bằng chứng"] };
+  const result = core.recordAttempt(state, { lessonId: "lesson", question, answer: "Dòng một\nDòng hai", responseMs: 1000 });
+  const attempt = result.state.attempts.at(-1);
+  assert.equal(attempt.answer, "Dòng một\nDòng hai");
+  assert.equal(attempt.expectedAnswer, "");
+});
+
+test("linked learners with the same profile id keep distinct access keys", () => {
+  const first = core.learnerProfile({ id: "learner-1", accessScope: "linked", linkId: "link-a", grade: null }, "parent");
+  const second = core.learnerProfile({ id: "learner-1", accessScope: "linked", linkId: "link-b", grade: null }, "parent");
+  assert.equal(first.id, second.id);
+  assert.notEqual(first.accessKey, second.accessKey);
+  assert.equal(first.grade, null);
+});

@@ -4,10 +4,18 @@ const fs = require("node:fs");
 const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const school = require("../hh-school.js");
+
+test("HH School accepts only declared route views", () => {
+  assert.equal(school.supports("today"), true);
+  assert.equal(school.supports("assessment"), true);
+  assert.equal(school.supports("unknown-private-view"), false);
+  assert.equal(school.normalizeView("unknown-private-view"), "today");
+});
 
 test("/learn lazy-loads only HH School and keeps language routes independent", () => {
   const loader = read("performance-loader.js"); const router = read("script.js"); const worker = read("sw.js");
-  for (const asset of ["hh-school.css?v=3", "hh-school-curriculum.js?v=3", "hh-school-core.js?v=3", "hh-school-offline.js?v=3", "hh-school-sync.js?v=3", "hh-school.js?v=4"]) {
+  for (const asset of ["hh-school.css?v=4", "hh-school-curriculum.js?v=3", "hh-school-core.js?v=4", "hh-school-offline.js?v=4", "hh-school-sync.js?v=4", "hh-school.js?v=5"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
@@ -93,4 +101,17 @@ test("Lesson Player commits the tenth step before returning to Today", () => {
   assert.match(client, /entry\.step \|\| 0\) >= lesson\.steps\.length - 1/);
   assert.match(client, /status: "completed", completedAt:/);
   assert.match(client, /return routeTo\("today"\)/);
+});
+
+test("HH School routes, linked reports and offline conflicts fail closed", () => {
+  const client = read("hh-school.js"); const sync = read("hh-school-sync.js"); const backend = read("utils/education-handler.js"); const worker = read("sw.js");
+  assert.match(client, /const supports = \(view\) => Boolean\(resolveView\(view\)\)/);
+  assert.match(client, /target\.linkId/);
+  assert.match(sync, /accessId=\$\{encodeURIComponent\(accessId\)\}/);
+  assert.match(backend, /report: \{ attempts:/);
+  assert.match(backend, /revision: baseRevision/);
+  assert.match(backend, /targetLearnerProfileIds: learnerProfileId/);
+  assert.match(backend, /dropIndex\("education_classes_code"\)/);
+  assert.match(worker, /syncStatus === "needs-resolution"/);
+  assert.match(worker, /response\.status === 409/);
 });

@@ -32,14 +32,21 @@ const definitions = [
   ["education_audit_logs", { actorId: 1, createdAt: -1 }],
   ["education_progress", { ownerId: 1, learnerProfileId: 1 }, { unique: true }]
 ];
+const sameKeys = (left, right) => JSON.stringify(Object.entries(left || {})) === JSON.stringify(Object.entries(right || {}));
 
 async function migrate() {
   const client = new MongoClient(uri);
   await client.connect();
   try {
     const db = client.db(databaseName);
+    await db.collection("education_classes").dropIndex("education_classes_code").catch((error) => {
+      if (error?.codeName !== "IndexNotFound" && error?.code !== 27 && error?.code !== 26) throw error;
+    });
     for (const [collectionName, keys, options = {}] of definitions) {
-      await db.collection(collectionName).createIndex(keys, { ...options, name: `hh_school_${collectionName}_${Object.keys(keys).join("_")}`.slice(0, 120) });
+      const collection = db.collection(collectionName);
+      const existing = await collection.listIndexes().toArray().catch((error) => error?.codeName === "NamespaceNotFound" || error?.code === 26 ? [] : Promise.reject(error));
+      if (existing.some((item) => sameKeys(item.key, keys) && Boolean(item.unique) === Boolean(options.unique) && Boolean(item.sparse) === Boolean(options.sparse))) continue;
+      await collection.createIndex(keys, { ...options, name: `hh_school_${collectionName}_${Object.keys(keys).join("_")}`.slice(0, 120) });
     }
     process.stdout.write(`HH School indexes ready: ${definitions.length}\n`);
   } finally {

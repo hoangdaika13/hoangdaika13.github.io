@@ -1,7 +1,7 @@
 (function initHHSchoolCore(root) {
   "use strict";
 
-  const SCHEMA_VERSION = 2;
+  const SCHEMA_VERSION = 3;
   const BASE_KEY = "hh.school.v2";
   const DAY = 86_400_000;
   const ROLES = Object.freeze(["student", "parent", "teacher", "content-reviewer", "school-admin", "platform-admin"]);
@@ -9,6 +9,7 @@
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const safeId = (value, fallback = "default") => String(value || fallback).replace(/[^a-zA-Z0-9._-]/g, "").slice(0, 100) || fallback;
   const clean = (value, max = 400) => String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+  const cleanMultiline = (value, max = 12000) => String(value ?? "").replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, " ").replace(/[ \t]+\n/g, "\n").trim().slice(0, max);
   const nowIso = (now = Date.now()) => new Date(now).toISOString();
   const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value) || 0));
   const uid = (prefix) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -21,15 +22,46 @@
   };
   const storageKey = (ownerId, profileId) => `${BASE_KEY}:${safeId(ownerId, "guest")}:${safeId(profileId, "learner-1")}`;
 
+  function localDayKey(now = Date.now()) {
+    const date = new Date(now);
+    if (!Number.isFinite(date.getTime())) return "";
+    const pad = (value) => String(value).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  }
+
+  function localDayOrdinal(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ""));
+    return match ? Math.floor(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])) / DAY) : NaN;
+  }
+
+  function nextActivity(previous = {}, now = Date.now()) {
+    const day = localDayKey(now);
+    const last = /^\d{4}-\d{2}-\d{2}$/.test(String(previous.lastActiveDay || "")) ? previous.lastActiveDay : "";
+    const distance = last ? localDayOrdinal(day) - localDayOrdinal(last) : NaN;
+    const streak = day === last ? clamp(previous.streak, 1, 100000) : distance === 1 ? clamp(previous.streak, 0, 99999) + 1 : 1;
+    const learningDays = [...new Set([...(Array.isArray(previous.learningDays) ? previous.learningDays : []), day].filter(Boolean))].slice(-366);
+    return { learningDays, streak, lastActiveDay: day, updatedAt: nowIso(now) };
+  }
+
+  function addLocalDays(now, days) {
+    const date = new Date(now);
+    date.setDate(date.getDate() + Number(days || 0));
+    return date.getTime();
+  }
+
   function learnerProfile(input = {}, ownerId = "guest") {
-    const grade = clamp(input.grade || 1, 1, 12);
+    const linkedWithoutGrade = input.accessScope === "linked" && (input.grade === null || input.grade === undefined || input.grade === "");
+    const grade = linkedWithoutGrade ? null : Math.round(clamp(input.grade || 1, 1, 12));
+    const profileId = safeId(input.id || "learner-1", "learner-1"); const linked = input.accessScope === "linked"; const linkId = linked ? safeId(input.linkId || input.relationship || "linked", "linked") : "";
     return {
-      id: safeId(input.id || "learner-1", "learner-1"), ownerId: safeId(ownerId, "guest"),
+      id: profileId, accessKey: linked ? `linked-${linkId}` : profileId, ownerId: safeId(ownerId, "guest"),
       name: clean(input.name || "Học sinh HH", 80), grade,
       managed: Boolean(input.managed), managerIds: Array.isArray(input.managerIds) ? input.managerIds.map((id) => safeId(id)).slice(0, 20) : [],
+      accessScope: linked ? "linked" : "own", linkId,
+      relationship: clean(input.relationship, 40),
       electiveSubjectIds: grade >= 10 ? [...new Set((input.electiveSubjectIds || []).map((id) => safeId(id)).filter(Boolean))].slice(0, 4) : [],
       specialistClusters: grade >= 10 ? [...new Set((input.specialistClusters || []).map((id) => safeId(id)).filter(Boolean))].slice(0, 3) : [],
-      ageMode: grade <= 2 ? "little" : grade <= 5 ? "primary" : grade <= 9 ? "secondary" : "career"
+      ageMode: grade === null ? "unknown" : grade <= 2 ? "little" : grade <= 5 ? "primary" : grade <= 9 ? "secondary" : "career"
     };
   }
 
@@ -39,8 +71,8 @@
     return {
       schemaVersion: SCHEMA_VERSION, ownerId, learnerProfileId: profile.id,
       createdAt: nowIso(now), updatedAt: nowIso(now), revision: 0, lastSyncedAt: null, syncStatus: "local-only", syncConflict: null,
-      role: roleFor(context.currentUser), profile, activeView: "today", activeSubjectId: "math", activeLessonId: `g${profile.grade}-math-core-01`,
-      progress: {}, mastery: {}, attempts: [], reviews: [], mistakes: [], assignments: [], classes: [], familyProfiles: [profile],
+      role: roleFor(context.currentUser), profile, activeView: "today", activeSubjectId: "math", activeLessonId: `g${profile.grade || 1}-math-core-01`,
+      progress: {}, mastery: {}, attempts: [], reviews: [], mistakes: [], assignments: [], classes: [], familyProfiles: [profile], activity: { learningDays: [], streak: 0, lastActiveDay: "", updatedAt: null },
       schedules: [], aiSessions: [], notifications: [], submissions: [], contentDrafts: [], reviewQueue: [], auditLogs: [], preferences: {
         highContrast: false, dyslexia: false, largeText: profile.grade <= 2, reducedMotion: false, dailyMinutes: profile.grade <= 5 ? 20 : 35
       }
@@ -54,16 +86,34 @@
     if (state.ownerId && safeId(state.ownerId) !== ownerId) return fallback;
     const profile = learnerProfile(state.profile || fallback.profile, ownerId);
     const bounded = (value, max) => Array.isArray(value) ? value.slice(-max) : [];
+    const boundedRecord = (value, max = 1000) => Object.fromEntries(Object.entries(value && typeof value === "object" && !Array.isArray(value) ? value : {}).slice(-max));
+    const preferences = state.preferences && typeof state.preferences === "object" && !Array.isArray(state.preferences) ? state.preferences : {};
+    const familyDailyMinutes = Object.fromEntries(Object.entries(preferences.familyDailyMinutes && typeof preferences.familyDailyMinutes === "object" ? preferences.familyDailyMinutes : {}).slice(-12).map(([id, minutes]) => [safeId(id), clamp(minutes, 10, 120)]));
+    const activity = state.activity && typeof state.activity === "object" ? state.activity : {};
+    const normalizedFamilyProfiles = bounded(state.familyProfiles, 12).map((item) => learnerProfile(item, ownerId));
+    if (!normalizedFamilyProfiles.some((item) => item.accessKey === profile.accessKey)) normalizedFamilyProfiles.unshift(profile);
     return {
       ...fallback, ...state, schemaVersion: SCHEMA_VERSION, ownerId, learnerProfileId: profile.id, profile,
-      role: ROLES.includes(state.role) ? state.role : fallback.role,
-      progress: state.progress && typeof state.progress === "object" ? state.progress : {},
-      mastery: state.mastery && typeof state.mastery === "object" ? state.mastery : {},
+      // Quyền luôn đến từ phiên đã xác thực, không bao giờ tin role trong import/localStorage.
+      role: fallback.role,
+      progress: boundedRecord(state.progress),
+      mastery: boundedRecord(state.mastery),
       attempts: bounded(state.attempts, 1000), reviews: bounded(state.reviews, 1000), mistakes: bounded(state.mistakes, 500),
-      assignments: bounded(state.assignments, 500), classes: bounded(state.classes, 100), familyProfiles: bounded(state.familyProfiles, 12).map((item) => learnerProfile(item, ownerId)),
+      assignments: bounded(state.assignments, 500),
+      classes: bounded(state.classes, 100).map((item) => ({ ...item, inviteCode: undefined, inviteCodeHash: undefined })),
+      familyProfiles: normalizedFamilyProfiles.slice(0, 12),
       schedules: bounded(state.schedules, 200), aiSessions: bounded(state.aiSessions, 100), notifications: bounded(state.notifications, 200), submissions: bounded(state.submissions, 500),
       contentDrafts: bounded(state.contentDrafts, 500), reviewQueue: bounded(state.reviewQueue, 500), auditLogs: bounded(state.auditLogs, 1000),
-      preferences: { ...fallback.preferences, ...(state.preferences || {}) }, updatedAt: clean(state.updatedAt || fallback.updatedAt, 40)
+      activity: {
+        learningDays: [...new Set(bounded(activity.learningDays, 366).filter((day) => /^\d{4}-\d{2}-\d{2}$/.test(String(day))))],
+        streak: clamp(activity.streak, 0, 100000), lastActiveDay: /^\d{4}-\d{2}-\d{2}$/.test(String(activity.lastActiveDay || "")) ? activity.lastActiveDay : "", updatedAt: clean(activity.updatedAt, 40) || null
+      },
+      preferences: {
+        ...fallback.preferences,
+        highContrast: Boolean(preferences.highContrast), dyslexia: Boolean(preferences.dyslexia), largeText: preferences.largeText === undefined ? fallback.preferences.largeText : Boolean(preferences.largeText),
+        reducedMotion: Boolean(preferences.reducedMotion), dailyMinutes: clamp(preferences.dailyMinutes || fallback.preferences.dailyMinutes, 10, 120),
+        pressureNotifications: preferences.pressureNotifications !== false, familyDailyMinutes
+      }, updatedAt: clean(state.updatedAt || fallback.updatedAt, 40)
     };
   }
 
@@ -73,13 +123,15 @@
     let state = defaultState(context);
     const listeners = new Set();
     const read = (profileId = state.learnerProfileId) => {
-      try { state = normalizeState(JSON.parse(storage?.getItem?.(storageKey(state.ownerId, profileId)) || "null"), context); }
-      catch { state = defaultState(context); }
+      const normalizedProfileId = safeId(profileId, state.learnerProfileId || "learner-1");
+      const readContext = { ...context, profile: { ...(context.profile || state.profile || {}), id: normalizedProfileId } };
+      try { state = normalizeState(JSON.parse(storage?.getItem?.(storageKey(state.ownerId, normalizedProfileId)) || "null"), readContext); }
+      catch { state = defaultState(readContext); }
       return clone(state);
     };
     const persist = () => {
       state.updatedAt = nowIso(); state.revision = Math.max(0, Number(state.revision) || 0) + 1;
-      storage?.setItem?.(storageKey(state.ownerId, state.learnerProfileId), JSON.stringify(state));
+      try { storage?.setItem?.(storageKey(state.ownerId, state.learnerProfileId), JSON.stringify(state)); } catch {}
       listeners.forEach((listener) => listener(clone(state)));
       return clone(state);
     };
@@ -129,14 +181,16 @@
     const helpPenalty = clamp(result.helpLevel || 0, 0, 3) * 8;
     const score = clamp(Math.round((previous.score || 0) * 0.72 + (result.correct ? 100 : 20) * 0.28 - helpPenalty), 0, 100);
     const repetitions = clamp((previous.repetitions || 0) + (result.correct ? 1 : 0), 0, 1000);
-    const state = attempts < 2 ? "learning" : score >= 80 && repetitions >= 3 ? "mastered" : result.correct ? "practice" : "review-due";
-    const intervalDays = result.correct ? Math.min(45, Math.max(1, Math.round((previous.intervalDays || 0.5) * (score >= 80 ? 2.2 : 1.4)))) : 0;
-    const dueAt = nowIso(now + (intervalDays ? intervalDays * DAY : 10 * 60 * 1000));
-    const elapsedDays = previous.lastAttemptAt ? Math.max(0, (now - new Date(previous.lastAttemptAt).getTime()) / DAY) : 0;
-    const forgettingRisk = clamp(Math.round((elapsedDays / Math.max(1, previous.intervalDays || 1)) * 100), 0, 100);
+    const evidence = [...(previous.evidence || []).slice(-19), { correct: Boolean(result.correct), responseMs: clamp(result.responseMs, 0, 600000), helpLevel: clamp(result.helpLevel, 0, 3), questionType: clean(result.questionType || "short", 40), at: nowIso(now), localDay: localDayKey(now) }];
+    const retrievalDays = new Set(evidence.filter((item) => item.correct).map((item) => item.localDay || localDayKey(item.at)).filter(Boolean)).size;
     const questionTypes = [...new Set([...(previous.questionTypes || []), clean(result.questionType || "short", 40)])].slice(-16);
+    const state = attempts < 2 ? "learning" : score >= 80 && repetitions >= 3 && retrievalDays >= 3 && questionTypes.length >= 2 ? "mastered" : result.correct ? "practice" : "review-due";
+    const intervalDays = result.correct ? Math.min(45, Math.max(1, Math.round((previous.intervalDays || 0.5) * (score >= 80 ? 2.2 : 1.4)))) : 0;
+    const dueAt = nowIso(intervalDays ? addLocalDays(now, intervalDays) : now + 10 * 60 * 1000);
+    const elapsedDays = previous.lastAttemptAt ? Math.max(0, (now - new Date(previous.lastAttemptAt).getTime()) / DAY) : 0;
+    const forgettingRisk = result.correct ? 0 : clamp(Math.round((elapsedDays / Math.max(1, previous.intervalDays || 1)) * 100), 0, 100);
     const certainty = clamp(Math.round(Math.min(1, attempts / 6) * (accuracy / 100) * (questionTypes.length >= 2 ? 1 : .75) * 100), 0, 100);
-    return { attempts, correct, accuracy, score, state: state === "mastered" && forgettingRisk >= 70 ? "forgetting" : state, repetitions, intervalDays, lastAttemptAt: nowIso(now), dueAt, forgettingRisk, certainty, questionTypes, averageResponseMs: Math.round(((previous.averageResponseMs || 0) * (attempts - 1) + clamp(result.responseMs, 0, 600000)) / attempts), helpUses: (previous.helpUses || 0) + (result.helpLevel ? 1 : 0), evidence: [...(previous.evidence || []).slice(-19), { correct: Boolean(result.correct), responseMs: clamp(result.responseMs, 0, 600000), helpLevel: clamp(result.helpLevel, 0, 3), questionType: clean(result.questionType || "short", 40), at: nowIso(now) }] };
+    return { attempts, correct, accuracy, score, state, repetitions, retrievalDays, intervalDays, lastAttemptAt: nowIso(now), dueAt, forgettingRisk, certainty, questionTypes, averageResponseMs: Math.round(((previous.averageResponseMs || 0) * (attempts - 1) + clamp(result.responseMs, 0, 600000)) / attempts), helpUses: (previous.helpUses || 0) + (result.helpLevel ? 1 : 0), evidence };
   }
 
   function recordAttempt(state, payload, now = Date.now()) {
@@ -146,14 +200,17 @@
     const attemptId = uid("attempt");
     const evidence = result.gradingStatus === "graded" ? nextMastery(next.mastery[skillId], { ...result, responseMs: payload.responseMs, helpLevel: payload.helpLevel, questionType: payload.question?.type }, now) : (next.mastery[skillId] || { state: "learning", attempts: 0, score: 0, certainty: 0 });
     next.mastery[skillId] = evidence;
-    next.attempts.push({ id: attemptId, attemptId, ownerId: next.ownerId, learnerProfileId: next.learnerProfileId, gradeId: safeId(payload.question?.gradeId || next.profile?.grade, `grade-${next.profile?.grade || 1}`), subjectId: safeId(payload.question?.subjectId || "general"), lessonId: safeId(payload.lessonId), questionId: safeId(payload.question?.id), skillId, questionType: clean(payload.question?.type || "short", 40), cognitiveLevel: clean(payload.question?.cognitiveLevel, 40), difficulty: clamp(payload.question?.difficulty, 1, 5), answer: clean(Array.isArray(payload.answer) ? payload.answer.join(",") : typeof payload.answer === "object" ? JSON.stringify(payload.answer) : payload.answer, 1200), expectedAnswer: clean(Array.isArray(payload.question?.answer) ? payload.question.answer.join(",") : typeof payload.question?.answer === "object" ? JSON.stringify(payload.question.answer) : payload.question?.answer, 1200), explanation: clean(payload.question?.explanation, 1000), distractorRationale: payload.question?.distractorRationale && typeof payload.question.distractorRationale === "object" ? clone(payload.question.distractorRationale) : {}, correct: result.correct, score: result.score, gradingStatus: result.gradingStatus, responseMs: clamp(payload.responseMs, 0, 600000), helpLevel: clamp(payload.helpLevel, 0, 3), source: payload.question?.source || payload.source || "in-app", contentStatus: clean(payload.question?.contentStatus || "machine_generated", 40), createdAt: nowIso(now), updatedAt: nowIso(now), schemaVersion: SCHEMA_VERSION });
+    const answerText = Array.isArray(payload.answer) ? payload.answer.join(",") : typeof payload.answer === "object" ? JSON.stringify(payload.answer) : payload.answer;
+    const expectedText = Array.isArray(payload.question?.answer) ? payload.question.answer.join(",") : typeof payload.question?.answer === "object" ? JSON.stringify(payload.question.answer) : payload.question?.answer;
+    next.attempts.push({ id: attemptId, attemptId, ownerId: next.ownerId, learnerProfileId: next.learnerProfileId, gradeId: safeId(payload.question?.gradeId || next.profile?.grade, `grade-${next.profile?.grade || 1}`), subjectId: safeId(payload.question?.subjectId || "general"), lessonId: safeId(payload.lessonId), questionId: safeId(payload.question?.id), skillId, questionType: clean(payload.question?.type || "short", 40), cognitiveLevel: clean(payload.question?.cognitiveLevel, 40), difficulty: clamp(payload.question?.difficulty, 1, 5), answer: cleanMultiline(answerText, 12000), expectedAnswer: result.gradingStatus === "pending-review" ? "" : cleanMultiline(expectedText, 4000), explanation: clean(payload.question?.explanation, 1000), distractorRationale: payload.question?.distractorRationale && typeof payload.question.distractorRationale === "object" ? clone(payload.question.distractorRationale) : clean(payload.question?.distractorRationale, 1000), correct: result.correct, score: result.score, gradingStatus: result.gradingStatus, responseMs: clamp(payload.responseMs, 0, 600000), helpLevel: clamp(payload.helpLevel, 0, 3), source: payload.question?.source || payload.source || "in-app", contentStatus: clean(payload.question?.contentStatus || "machine_generated", 40), createdAt: nowIso(now), updatedAt: nowIso(now), schemaVersion: SCHEMA_VERSION });
     if (result.gradingStatus === "pending-review") next.submissions.push({ id: uid("submission"), attemptId, lessonId: safeId(payload.lessonId), questionId: safeId(payload.question?.id), status: "submitted", rubric: payload.question?.rubric || [], createdAt: nowIso(now) });
     if (result.gradingStatus === "graded") next.reviews = next.reviews.filter((item) => item.skillId !== skillId).concat({ id: `review-${skillId}`, skillId, lessonId: safeId(payload.lessonId), dueAt: evidence.dueAt, state: evidence.state, reason: result.correct ? "Ôn cách quãng để giữ trí nhớ" : "Câu trả lời chưa đạt; cần luyện biến thể khác", lastQuestionId: safeId(payload.question?.id) });
     if (result.correct === false) {
       const existing = next.mistakes.find((item) => item.questionId === payload.question?.id);
-      if (existing) { existing.occurrences += 1; existing.lastAt = nowIso(now); existing.userAnswer = clean(payload.answer, 400); }
-      else next.mistakes.push({ id: uid("mistake"), questionId: safeId(payload.question?.id), lessonId: safeId(payload.lessonId), skillId, prompt: clean(payload.question?.prompt, 600), expected: clean(payload.question?.answer, 400), userAnswer: clean(payload.answer, 400), explanation: result.explanation, occurrences: 1, lastAt: nowIso(now) });
+      if (existing) { existing.occurrences += 1; existing.lastAt = nowIso(now); existing.userAnswer = cleanMultiline(answerText, 1200); }
+      else next.mistakes.push({ id: uid("mistake"), questionId: safeId(payload.question?.id), lessonId: safeId(payload.lessonId), skillId, prompt: clean(payload.question?.prompt, 600), expected: cleanMultiline(expectedText, 1200), userAnswer: cleanMultiline(answerText, 1200), explanation: result.explanation, occurrences: 1, lastAt: nowIso(now) });
     }
+    next.activity = nextActivity(next.activity, now);
     return { state: normalizeState(next, { currentUser: { id: next.ownerId, roles: [next.role] } }), result: { ...result, attemptId }, mastery: evidence };
   }
 
@@ -172,7 +229,8 @@
     const nextLesson = pack.lessons.find((lesson) => state.progress[lesson.lessonId]?.status !== "completed") || pack.lessons[0];
     const due = state.reviews.filter((item) => new Date(item.dueAt).getTime() <= now);
     const weak = Object.entries(state.mastery).sort((a, b) => (a[1].score || 0) - (b[1].score || 0))[0];
-    return { nextLesson, nextReason: weak ? `Bài này củng cố kỹ năng ${weak[0]} đang có ít bằng chứng nhất.` : "Bài tiếp theo trong lộ trình lớp hiện tại.", assignment: state.assignments.find((item) => item.status !== "completed") || null, review: due[0] || null, mistake: state.mistakes.slice().sort((a, b) => b.occurrences - a.occurrences)[0] || null, schedule: state.schedules.slice().sort((a, b) => new Date(a.at) - new Date(b.at))[0] || null, weakSkill: weak ? { id: weak[0], ...weak[1] } : null };
+    const schedule = state.schedules.filter((item) => item.status !== "completed" && Number.isFinite(new Date(item.at).getTime()) && new Date(item.at).getTime() >= now).sort((a, b) => new Date(a.at) - new Date(b.at))[0] || null;
+    return { nextLesson, nextReason: weak ? `Bài này củng cố kỹ năng ${weak[0]} đang có ít bằng chứng nhất.` : "Bài tiếp theo trong lộ trình lớp hiện tại.", assignment: state.assignments.find((item) => item.status !== "completed") || null, review: due[0] || null, mistake: state.mistakes.slice().sort((a, b) => b.occurrences - a.occurrences)[0] || null, schedule, weakSkill: weak ? { id: weak[0], ...weak[1] } : null };
   }
 
   function mergeStates(localInput, serverInput, context = {}) {
@@ -190,7 +248,7 @@
     return normalizeState({ ...server, profile: local.profile, progress: newerProgress, mastery, attempts: unique(server.attempts, local.attempts), reviews: unique(server.reviews, local.reviews, "skillId"), mistakes: unique(server.mistakes, local.mistakes, "questionId", 500), assignments: unique(server.assignments, local.assignments, "id", 500), submissions: unique(server.submissions, local.submissions, "id", 500), schedules: unique(server.schedules, local.schedules, "id", 200), syncConflict: null, serverRevision: Math.max(Number(local.serverRevision || 0), Number(server.serverRevision || 0)), updatedAt: nowIso() }, context);
   }
 
-  const api = Object.freeze({ SCHEMA_VERSION, BASE_KEY, ROLES, MASTERY_STATES, clean, safeId, ownerIdFor, roleFor, storageKey, learnerProfile, defaultState, normalizeState, createStore, gradeQuestion, nextMastery, recordAttempt, dailyPlan, mergeStates, can });
+  const api = Object.freeze({ SCHEMA_VERSION, BASE_KEY, ROLES, MASTERY_STATES, clean, cleanMultiline, safeId, ownerIdFor, roleFor, storageKey, learnerProfile, localDayKey, nextActivity, defaultState, normalizeState, createStore, gradeQuestion, nextMastery, recordAttempt, dailyPlan, mergeStates, can });
   root.HHSchoolCore = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

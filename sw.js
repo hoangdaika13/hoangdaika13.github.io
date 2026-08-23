@@ -1,8 +1,8 @@
-const CACHE = "hh-identity-portal-v844";
+const CACHE = "hh-identity-portal-v845";
 // Compatibility marker retained for Dharma v6 clients: hh-identity-portal-v842.
 // Shell compatibility assertions for modules released against the stable cache:
 // hh-identity-portal-v822 ./performance-loader.js?v=474 ./script.js?v=232 ./script.js?v=241 ./app-shell.css?v=64
-// Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1 ./hh-chinese.css?v=11 ./hh-chinese.js?v=11 ./japanese-os-v4.js?v=7
+// Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1 ./hh-chinese.css?v=11 ./hh-chinese.js?v=11 ./japanese-os-v4.css?v=2 ./japanese-os-v4.js?v=7 ./japanese-os-v4.js?v=8
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
 // Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
@@ -94,7 +94,7 @@ const RUNTIME_ASSETS = [
   "./settings-studio.css?v=7",
   "./settings-studio.js?v=8",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=242",
+  "./script.js?v=243",
   "./graphic-design-studio.css?v=9",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -325,7 +325,7 @@ const RUNTIME_ASSETS = [
   "./vendor/addons/utils/WorkerPool.js",
   "./vendor/addons/utils/BufferGeometryUtils.js",
   "./vendor/addons/utils/SkeletonUtils.js",
-  "./hh-school.css?v=3",
+  "./hh-school.css?v=4",
   "./english-learning.css?v=17",
   "./language-learning-cockpit.css?v=1",
   "./english-skill-graph.css?v=1",
@@ -337,7 +337,7 @@ const RUNTIME_ASSETS = [
   "./english-voice-coach.css?v=4",
   "./japanese-learning.css?v=8",
   "./japanese-os-v3.css?v=4",
-  "./japanese-os-v4.css?v=2",
+  "./japanese-os-v4.css?v=3",
   "./hh-chinese.css?v=12",
   "./phat-phap.css?v=18",
   "./hh-play.css?v=5&build=2",
@@ -439,12 +439,12 @@ const RUNTIME_ASSETS = [
   "./utility-lab-tools.js?v=9",
   "./feature-engines.js?v=2",
   "./hh-school-curriculum.js?v=3",
-  "./hh-school-core.js?v=3",
-  "./hh-school-offline.js?v=3",
-  "./hh-school-sync.js?v=3",
+  "./hh-school-core.js?v=4",
+  "./hh-school-offline.js?v=4",
+  "./hh-school-sync.js?v=4",
   "./hh-school-search-worker.js?v=3",
   "./hh-school-code-worker.js?v=2",
-  "./hh-school.js?v=4",
+  "./hh-school.js?v=5",
   "./english-curriculum.js?v=1",
   "./language-learning-cockpit.js?v=1",
   "./english-career-expansion.js?v=1",
@@ -467,7 +467,7 @@ const RUNTIME_ASSETS = [
   "./japanese-search-worker.js?v=1",
   "./japanese-learning.js?v=8",
   "./japanese-os-v3.js?v=2",
-  "./japanese-os-v4.js?v=8",
+  "./japanese-os-v4.js?v=9",
   "./hh-chinese.js?v=12",
   "./phat-phap.js?v=15",
   "./hh-play.js?v=4&build=2",
@@ -491,10 +491,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=495",
+  "./performance-loader.js?v=496",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=242"
+  "./script.js?v=243"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {
@@ -529,12 +529,12 @@ function idbRequest(request) {
     request.onerror = () => reject(request.error);
   });
 }
-async function updateHHSchoolQueue(db, item, remove = false) {
+async function updateHHSchoolQueue(db, item, options = {}) {
   await new Promise((resolve, reject) => {
     const tx = db.transaction(HH_SCHOOL_QUEUE, "readwrite");
     const store = tx.objectStore(HH_SCHOOL_QUEUE);
-    if (remove) store.delete(item.id);
-    else store.put({ ...item, attempts: Number(item.attempts || 0) + 1, lastAttemptAt: Date.now() });
+    if (options.remove) store.delete(item.id);
+    else store.put({ ...item, attempts: options.conflict ? Number(item.attempts || 0) : Number(item.attempts || 0) + 1, syncStatus: options.conflict ? "needs-resolution" : "queued", conflict: options.conflictData || item.conflict || null, lastError: options.error || item.lastError || "", lastAttemptAt: Date.now() });
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error || new Error("HH School queue transaction aborted"));
@@ -546,6 +546,7 @@ async function flushHHSchoolQueue() {
   try {
     const items = await idbRequest(db.transaction(HH_SCHOOL_QUEUE).objectStore(HH_SCHOOL_QUEUE).getAll());
     for (const item of items) {
+      if (item.syncStatus === "needs-resolution") { results.push({ id: item.id, ok: false, conflict: true, conflictData: item.conflict || null, error: item.lastError || "Conflict needs resolution" }); continue; }
       try {
         if (Number(item.attempts || 0) >= Number(item.maxAttempts || 5)) { results.push({ id: item.id, ok: false, terminal: true, error: "Retry limit reached" }); continue; }
         const queued = item.request || {};
@@ -558,11 +559,17 @@ async function flushHHSchoolQueue() {
           headers: { "Content-Type": "application/json" },
           body: typeof queued.body === "string" ? queued.body : JSON.stringify(queued.body || {})
         });
+        if (response.status === 409) {
+          const data = await response.json().catch(() => ({}));
+          await updateHHSchoolQueue(db, item, { conflict: true, conflictData: data.conflict || null, error: data.error || "HTTP 409" });
+          results.push({ id: item.id, ok: false, conflict: true, conflictData: data.conflict || null, error: data.error || "HTTP 409" });
+          continue;
+        }
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        await updateHHSchoolQueue(db, item, true);
+        await updateHHSchoolQueue(db, item, { remove: true });
         results.push({ id: item.id, ok: true });
       } catch (error) {
-        await updateHHSchoolQueue(db, item, false);
+        await updateHHSchoolQueue(db, item, { error: String(error?.message || error) });
         results.push({ id: item.id, ok: false, error: String(error?.message || error) });
       }
     }
