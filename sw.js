@@ -1,7 +1,8 @@
-const CACHE = "hh-identity-portal-v843";
+const CACHE = "hh-identity-portal-v844";
+// Compatibility marker retained for Dharma v6 clients: hh-identity-portal-v842.
 // Shell compatibility assertions for modules released against the stable cache:
-// hh-identity-portal-v822 ./performance-loader.js?v=474 ./script.js?v=232
-// Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1
+// hh-identity-portal-v822 ./performance-loader.js?v=474 ./script.js?v=232 ./script.js?v=241 ./app-shell.css?v=64
+// Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1 ./hh-chinese.css?v=11 ./hh-chinese.js?v=11 ./japanese-os-v4.js?v=7
 // Social Media loader compatibility: social-media-tools-v2.js?v=13 remains an
 // upgrade marker for older tabs; v14 below is the canonical current asset.
 // Compatibility from the previous worker: hh-identity-portal-v625 hh-identity-portal-v626 hh-identity-portal-v627 hh-identity-portal-v628 hh-identity-portal-v629 hh-identity-portal-v630 hh-identity-portal-v631 hh-identity-portal-v632 hh-identity-portal-v633.
@@ -16,11 +17,11 @@ const CACHE = "hh-identity-portal-v843";
 // YouTube Batch compatibility: ./script.js?v=179 ./performance-loader.js?v=272 ./youtube-creator-galaxy.css?v=20 ./youtube-creator-galaxy.js?v=24 ./home-galaxy-command.css?v=9
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
 // HH School v1 replaces the former Learning OS bundle; legacy caches are removed during activation.
-// HH English compatibility: english-learning.js?v=22 english-learning.js?v=24; v27 loads Learning OS v3.
+// HH English compatibility: english-learning.js?v=22 english-learning.js?v=24 english-learning.js?v=28 english-learning-os.js?v=7 english-learning-os.css?v=3 english-vocabulary.css?v=1 english-vocabulary.js?v=2; current language cockpit loads the versioned Learning OS bundle below.
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
-  "./app-shell.css?v=64",
+  "./app-shell.css?v=65",
   "./workspace-feature-explorer.css?v=2",
   "./app-theme-system.css?v=9",
   "./dashboard-aurora.css?v=4",
@@ -93,7 +94,7 @@ const RUNTIME_ASSETS = [
   "./settings-studio.css?v=7",
   "./settings-studio.js?v=8",
   "./vendor/pdf-lib.min.js?v=1.17.1",
-  "./script.js?v=241",
+  "./script.js?v=242",
   "./graphic-design-studio.css?v=9",
   "./graphic-design-universal.css?v=4",
   "./graphic-design-animation.js?v=1",
@@ -326,17 +327,18 @@ const RUNTIME_ASSETS = [
   "./vendor/addons/utils/SkeletonUtils.js",
   "./hh-school.css?v=3",
   "./english-learning.css?v=17",
+  "./language-learning-cockpit.css?v=1",
   "./english-skill-graph.css?v=1",
-  "./english-learning-os.css?v=3",
+  "./english-learning-os.css?v=4",
   "./english-galaxy.css?v=1",
   "./english-learning-galaxy.css?v=6",
-  "./english-vocabulary.css?v=1",
+  "./english-vocabulary.css?v=2",
   "./english-for-everyone.css?v=1",
   "./english-voice-coach.css?v=4",
   "./japanese-learning.css?v=8",
   "./japanese-os-v3.css?v=4",
   "./japanese-os-v4.css?v=2",
-  "./hh-chinese.css?v=11",
+  "./hh-chinese.css?v=12",
   "./phat-phap.css?v=18",
   "./hh-play.css?v=5&build=2",
   "./hh-play-audio-worklet.js?build=2",
@@ -444,17 +446,18 @@ const RUNTIME_ASSETS = [
   "./hh-school-code-worker.js?v=2",
   "./hh-school.js?v=4",
   "./english-curriculum.js?v=1",
+  "./language-learning-cockpit.js?v=1",
   "./english-career-expansion.js?v=1",
   "./english-career-curriculum.js?v=2",
   "./english-galaxy.js?v=2",
   "./english-learning-galaxy.js?v=5",
-  "./english-vocabulary.js?v=2",
+  "./english-vocabulary.js?v=3",
   "./english-vocabulary-worker.js?v=1",
   "./english-for-everyone.js?v=2",
   "./assets/english-vocabulary/manifest.json",
   "./english-skill-graph.js?v=1",
-  "./english-learning-os.js?v=7",
-  "./english-learning.js?v=28",
+  "./english-learning-os.js?v=8",
+  "./english-learning.js?v=29",
   "./japanese-vocabulary-packs.js?v=1",
   "./japanese-vocabulary-10k.js?v=1",
   "./japanese-vietnamese-pack.js?v=1",
@@ -464,8 +467,8 @@ const RUNTIME_ASSETS = [
   "./japanese-search-worker.js?v=1",
   "./japanese-learning.js?v=8",
   "./japanese-os-v3.js?v=2",
-  "./japanese-os-v4.js?v=7",
-  "./hh-chinese.js?v=11",
+  "./japanese-os-v4.js?v=8",
+  "./hh-chinese.js?v=12",
   "./phat-phap.js?v=15",
   "./hh-play.js?v=4&build=2",
   "./config.js?v=10",
@@ -474,7 +477,7 @@ const RUNTIME_ASSETS = [
 const CORE = [
   "./",
   "./index.html",
-  "./app-shell.css?v=64",
+  "./app-shell.css?v=65",
   "./app-theme-system.css?v=9",
   "./sidebar-navigation-pro.css?v=29",
   "./auth-experience.css?v=6",
@@ -488,10 +491,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=494",
+  "./performance-loader.js?v=495",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=241"
+  "./script.js?v=242"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

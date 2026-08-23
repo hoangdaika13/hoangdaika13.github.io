@@ -6676,10 +6676,10 @@ function initAppShell() {
       home: "home", create: "draw", draw: "draw", "music-ai": "music", "davinci-resolve": "media",
       "media-design": "media", "graphic-design": "media", dev: "dev", work: "data", insights: "data",
       communication: "network", google: "network", "youtube-main": "media", discord: "discord", remote: "network",
-      "chat-ai": "ai", learn: "learning", english: "learning", japanese: "learning", chinese: "chinese", "phat-phap": "dharma",
+      "chat-ai": "ai", learn: "learning", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
       fortune: "fortune", "play-center": "play", admin: "data", system: "data", support: "home"
     })[group?.id] || "home";
-    const secondary = ({ home: "#ffd166", ai: "#ff58c8", draw: "#ff5dc8", music: "#63f2b3", media: "#ff5f9e", dev: "#63f2b3", data: "#ffd166", network: "#5b8cff", discord: "#ff62c7", learning: "#9c72ff", chinese: "#ff6f78", fortune: "#ff58c8", play: "#ff68c7", dharma: "#983b22" })[kind] || "#ff63c9";
+    const secondary = ({ home: "#ffd166", ai: "#ff58c8", draw: "#ff5dc8", music: "#63f2b3", media: "#ff5f9e", dev: "#63f2b3", data: "#ffd166", network: "#5b8cff", discord: "#ff62c7", learning: "#9c72ff", english: "#a673ff", japanese: "#ffca69", chinese: "#ff6f78", fortune: "#ff58c8", play: "#ff68c7", dharma: "#983b22" })[kind] || "#ff63c9";
     return {
       accent: group?.accent || "#62e9f2",
       secondary,

@@ -661,6 +661,7 @@
   let navigatorOpen = false;
   let activeUtterance = null;
   let focusAfterRender = false;
+  const handleVisibility = () => host?.querySelector?.("[data-hhe-app]")?.setAttribute?.("data-tab-hidden", String(Boolean(root.document?.hidden)));
 
   const updateSpeechNow = (status, text = "", voice = null) => {
     const node = host?.querySelector("[data-hhe-speaking-now]");
@@ -811,7 +812,7 @@
     const ageLabel = root.HHEnglishForEveryone?.modeById?.(universal.ageMode)?.label || "Adults";
     return `<section class="hhe-app ${navCollapsed ? "is-nav-collapsed" : ""}" data-hhe-app data-view="${state.activeView}" data-theme="${state.settings.theme}" data-age-mode="${escapeHtml(universal.ageMode)}" data-large-text="${Boolean(universal.support.largeText)}" data-dyslexia="${Boolean(universal.support.dyslexia)}" data-hearing-support="${Boolean(universal.support.hearingSupport)}">
     <header class="hhe-topbar"><div class="hhe-brand"><span>HH</span><div><small>HỌC TIẾNG ANH MIỄN PHÍ</small><strong>HH English</strong></div></div><div class="hhe-top-stats"><button type="button" data-hhe-view="learn"><i>CEFR</i><b>${levelId}</b> ${escapeHtml(level.name)}</button><span><i>◆</i><b>${state.streak.current}</b> ngày</span><span><i>◷</i><b>${state.dailyGoal}</b> phút</span></div><div class="hhe-top-actions"><button type="button" data-hhe-view="everyone" aria-label="Chế độ người học">${escapeHtml(ageLabel)}</button><button type="button" data-hheg-action="mode-${state.galaxy?.workspaceMode === "advanced" ? "basic" : "advanced"}">${state.galaxy?.workspaceMode === "advanced" ? "Advanced" : "Basic"}</button><button type="button" data-hhe-view="settings" aria-label="Cài đặt HH English">⚙ Cài đặt</button></div></header>
-    <div class="hhe-layout"><aside class="hhe-nav hhe-nav--focused hhe-nav--os" aria-label="Điều hướng chính HH English"><header><strong>HH ENGLISH OS</strong><button type="button" data-hhe-nav-toggle aria-label="${navCollapsed ? "Mở rộng" : "Thu gọn"} menu">${navCollapsed ? "›" : "‹"}</button></header>${compactNavButton("dashboard", "☉", "Hôm nay")}${compactNavButton("pathways", "⌁", "Lộ trình")}${compactNavButton("practice-hub", "✦", "Luyện tập")}${compactNavButton("explore", "⌕", "Khám phá")}${compactNavButton("progress", "↗", "Tiến độ")}<details class="hhe-nav-learning" ${learningViews.has(state.activeView) ? "open" : ""}><summary class="${learningViews.has(state.activeView) ? "active" : ""}"><i>▦</i><span>Công cụ</span><b>⌄</b></summary><div>${compactNavButton("listening", "◖", "Luyện nghe")}${compactNavButton("reading", "Aa", "Đọc hiểu")}${compactNavButton("galaxy", "⌕", "Tra cứu")}${compactNavButton("vocabulary", "◇", "Ôn tập")}${compactNavButton("mistakes", "!", "Sổ lỗi")}${compactNavButton("speaking", "◉", "Phát âm")}${compactNavButton("writing", "✎", "Viết")}${compactNavButton("learn", "A0", "CEFR")}${compactNavButton("skill-graph", "◎", "Skill Graph")}${compactNavButton("everyone", "◎", "Hồ sơ")}<button type="button" data-hhe-open-lesson="${next.id}" title="${escapeHtml(next.title)}"><i>→</i><span>Học tiếp</span></button></div></details><section><small>Bạn đang học</small><strong>${levelId}</strong><span>${done}/${total} bài</span></section></aside><main class="hhe-main"><div class="hhe-view-stage">${content}</div><nav class="hhe-route-dock" aria-label="Bước học tiếp theo"><button type="button" data-hhe-view="dashboard">← Hôm nay</button><div><small>MÀN HÌNH HIỆN TẠI</small><strong>${escapeHtml(currentLabel)}</strong></div><span><i></i> Đã tự lưu</span><button class="primary" type="button" data-hhe-open-lesson="${next.id}">${state.activeView === "lesson" ? "Tiếp tục bài" : "Học bài tiếp theo"} →</button></nav></main></div>
+    <div class="hhe-layout"><aside class="hhe-nav hhe-nav--focused hhe-nav--os" aria-label="Điều hướng chính HH English"><header><strong>HH ENGLISH OS</strong><button type="button" data-hhe-nav-toggle aria-label="${navCollapsed ? "Mở rộng" : "Thu gọn"} menu">${navCollapsed ? "›" : "‹"}</button></header>${compactNavButton("dashboard", "☉", "Hôm nay")}${compactNavButton("pathways", "⌁", "Lộ trình")}${compactNavButton("practice-hub", "✦", "Luyện tập")}${compactNavButton("explore", "⌕", "Khám phá")}${compactNavButton("progress", "↗", "Tiến độ")}<details class="hhe-nav-learning" ${learningViews.has(state.activeView) ? "open" : ""}><summary class="${learningViews.has(state.activeView) ? "active" : ""}"><i>▦</i><span>Công cụ</span><b>⌄</b></summary><div>${compactNavButton("listening", "◖", "Luyện nghe")}${compactNavButton("reading", "Aa", "Đọc hiểu")}${compactNavButton("galaxy", "⌕", "Tra cứu")}${compactNavButton("vocabulary", "◇", "Ôn tập")}${compactNavButton("mistakes", "!", "Sổ lỗi")}${compactNavButton("speaking", "◉", "Phát âm")}${compactNavButton("writing", "✎", "Viết")}${compactNavButton("learn", "A0", "CEFR")}${compactNavButton("skill-graph", "◎", "Skill Graph")}${compactNavButton("everyone", "◎", "Hồ sơ")}<button type="button" data-hhe-open-lesson="${next.id}" title="${escapeHtml(next.title)}"><i>→</i><span>Học tiếp</span></button></div></details><section><small>Bạn đang học</small><strong>${levelId}</strong><span>${done}/${total} bài</span></section></aside><main class="hhe-main"><div class="hhe-view-stage" data-hhe-layer="${escapeHtml(state.activeView)}"><div class="hhe-route-atmosphere" aria-hidden="true"><i></i><i></i><i></i><span>EN</span></div>${content}</div><nav class="hhe-route-dock" aria-label="Bước học tiếp theo"><button type="button" data-hhe-view="dashboard">← Hôm nay</button><div><small>MÀN HÌNH HIỆN TẠI</small><strong>${escapeHtml(currentLabel)}</strong></div><span><i></i> Đã tự lưu</span><button class="primary" type="button" data-hhe-open-lesson="${next.id}">${state.activeView === "lesson" ? "Tiếp tục bài" : "Học bài tiếp theo"} →</button></nav></main></div>
     <div class="hhe-toast" data-hhe-toast role="status" aria-live="polite"></div>
     ${navigatorMarkup(state)}
     ${shouldShowOnboarding(state) ? onboardingMarkup(state) : ""}
@@ -1126,18 +1127,20 @@
     </section>`;
   };
 
-  const focusCurrentView = () => root.requestAnimationFrame?.(() => {
+  const focusCurrentView = (options = {}) => root.requestAnimationFrame?.(() => {
     const scrollContainers = [
       host?.closest?.(".app-main"),
       host?.closest?.(".app-workspace"),
       host?.querySelector?.(".hhe-view-stage"),
       root.document?.scrollingElement
     ].filter((node, index, list) => node && list.indexOf(node) === index);
-    scrollContainers.forEach((node) => {
-      node.scrollTop = 0;
-      node.scrollLeft = 0;
-    });
-    root.scrollTo?.({ top: 0, left: 0, behavior: "auto" });
+    if (options.resetScroll !== false) {
+      scrollContainers.forEach((node) => {
+        node.scrollTop = 0;
+        node.scrollLeft = 0;
+      });
+      root.scrollTo?.({ top: 0, left: 0, behavior: "auto" });
+    }
     const heading = host?.querySelector(".hhe-main h2, .hhe-main h3");
     heading?.setAttribute?.("tabindex", "-1");
     heading?.focus?.({ preventScroll: true });
@@ -1147,6 +1150,9 @@
     const shouldFocus = options === true || Boolean(options.focusView) || focusAfterRender;
     focusAfterRender = false;
     const state = readState(); let content = "";
+    const previousView = host.querySelector?.("[data-hhe-app]")?.dataset?.view || "";
+    const continuityNodes = [host.closest?.(".app-main"), host.closest?.(".app-workspace"), root.document?.scrollingElement].filter((node, index, rows) => node && rows.indexOf(node) === index);
+    const continuity = continuityNodes.map((node) => ({ node, top: node.scrollTop || 0, left: node.scrollLeft || 0 }));
     const learningContext = {
       courseLevels, careerTracks, allLessons, levelOrder, selectedLevelId, selectedCareerId,
       completedCount, levelProgress, levelPractice, nextLessonFor, speechAdapterStatus,
@@ -1176,6 +1182,7 @@
     else content = dashboardView(state);
     host.innerHTML = shell(state, content);
     host.querySelector("[data-hhe-app]")?.setAttribute("data-reduced-motion", String(Boolean(state.settings.reducedMotion)));
+    handleVisibility();
     host.querySelector("[data-hhe-writing]")?.addEventListener("input", onWritingInput);
     host.querySelector("[data-hhe-search]")?.addEventListener("input", onLessonSearch);
     host.querySelector("[data-hhe-career-search]")?.addEventListener("input", filterCareerTracks);
@@ -1193,7 +1200,9 @@
     root.HHEnglishVocabulary?.mount?.({ host, state, readState, writeState, render, toast, speak, selectedLevelId, scheduleReview });
     root.HHEnglishForEveryone?.mount?.({ host, state, readState, writeState, render, toast, speak, selectedLevelId });
     updateFocusClock();
-    if (shouldFocus) focusCurrentView();
+    const preserveScroll = Boolean(options?.preserveScroll && previousView === state.activeView);
+    if (preserveScroll) root.requestAnimationFrame?.(() => continuity.forEach(({ node, top, left }) => { node.scrollTop = top; node.scrollLeft = left; }));
+    if (shouldFocus) focusCurrentView({ resetScroll: !preserveScroll });
   };
   const learningOSRuntime = () => ({
     host, readState, writeState, render, toast, speak, selectedLevelId, todayKey,
@@ -1779,13 +1788,15 @@
     }
     host = target; host.removeEventListener("click", handleClick); host.removeEventListener("submit", handleSubmit); host.removeEventListener("change", handleChange);
     root.document?.removeEventListener("keydown", handleKeydown);
+    root.document?.removeEventListener("visibilitychange", handleVisibility);
     host.addEventListener("click", handleClick); host.addEventListener("submit", handleSubmit); host.addEventListener("change", handleChange); root.document?.addEventListener("keydown", handleKeydown);
+    root.document?.addEventListener("visibilitychange", handleVisibility);
     root.speechSynthesis?.addEventListener?.("voiceschanged", handleVoicesChanged);
     render();
     hydrateFromServer();
   };
   const handleVoicesChanged = () => { if (host?.querySelector(".hhe-voice-studio")) render(); };
-  const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); root.HHEnglishLearningGalaxy?.unmount?.(host); root.HHEnglishVocabulary?.unmount?.(host); root.HHEnglishForEveryone?.unmount?.(host); if (focusTimer) clearInterval(focusTimer); if (syncTimer) root.clearTimeout?.(syncTimer); focusTimer = null; syncTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
+  const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.document?.removeEventListener("visibilitychange", handleVisibility); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); root.HHEnglishLearningGalaxy?.unmount?.(host); root.HHEnglishVocabulary?.unmount?.(host); root.HHEnglishForEveryone?.unmount?.(host); if (focusTimer) clearInterval(focusTimer); if (syncTimer) root.clearTimeout?.(syncTimer); focusTimer = null; syncTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
 
   root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit, galaxyData, currentLearningScope, scopedStorageKey, syncStateToServer };
   if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit, galaxyData };

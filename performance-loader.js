@@ -211,19 +211,20 @@
         "hh-school-sync.js?v=3", "hh-school.js?v=4"
       ]
     },
-    // Compatibility asset marker for clients upgrading from English v24: english-learning.js?v=24
+    // Compatibility asset markers: english-learning-os.css?v=3 · english-learning-os.js?v=7 · english-learning.js?v=28 · english-vocabulary.css?v=1 · english-vocabulary.js?v=2
     english: {
-      styles: ["english-learning.css?v=17", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=6", "english-vocabulary.css?v=1", "english-for-everyone.css?v=1", "english-skill-graph.css?v=1", "english-learning-os.css?v=3"],
-      scripts: ["english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=2", "english-learning-galaxy.js?v=5", "english-for-everyone.js?v=2", "english-vocabulary.js?v=2", "english-skill-graph.js?v=1", "english-learning-os.js?v=7", "english-learning.js?v=28"]
+      styles: ["language-learning-cockpit.css?v=1", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=6", "english-vocabulary.css?v=2", "english-for-everyone.css?v=1", "english-skill-graph.css?v=1", "english-learning-os.css?v=4"],
+      scripts: ["language-learning-cockpit.js?v=1", "english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=2", "english-learning-galaxy.js?v=5", "english-for-everyone.js?v=2", "english-vocabulary.js?v=3", "english-skill-graph.js?v=1", "english-learning-os.js?v=8", "english-learning.js?v=29"]
     },
+    // Compatibility: japanese-os-v4.js?v=7 remains valid for existing tabs.
     japanese: {
-      styles: ["japanese-learning.css?v=8", "japanese-os-v3.css?v=4", "japanese-os-v4.css?v=2"],
-      scripts: ["japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=8", "japanese-os-v3.js?v=2", "japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.js?v=7"]
+      styles: ["language-learning-cockpit.css?v=1", "japanese-learning.css?v=8", "japanese-os-v3.css?v=4", "japanese-os-v4.css?v=2"],
+      scripts: ["language-learning-cockpit.js?v=1", "japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=8", "japanese-os-v3.js?v=2", "japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.js?v=8"]
     },
-    // Previous cache keys retained for old clients: hh-chinese.css?v=1 · hh-chinese.js?v=1
+    // Previous cache keys retained for old clients: hh-chinese.css?v=1 · hh-chinese.js?v=1 · hh-chinese.css?v=11 · hh-chinese.js?v=11
     chinese: {
-      styles: ["hh-chinese.css?v=11"],
-      scripts: ["hh-chinese.js?v=11"]
+      styles: ["language-learning-cockpit.css?v=1", "hh-chinese.css?v=12"],
+      scripts: ["language-learning-cockpit.js?v=1", "hh-chinese.js?v=12"]
     },
     dharma: {
       styles: ["phat-phap.css?v=18"],

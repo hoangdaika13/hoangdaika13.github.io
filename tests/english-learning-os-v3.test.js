@@ -79,6 +79,25 @@ test("guided player has twelve sequential steps and never marks skip as complete
   assert.match(html, /data-hheo-step-skip/);
 });
 
+test("learning cockpit groups the guided player into six purposeful visual layers", () => {
+  assert.deepEqual(os.learningPhases.map((item) => item.id), ["input", "decode", "recall", "speak", "create", "master"]);
+  assert.equal(os.phaseForStep("context").id, "input");
+  assert.equal(os.phaseForStep("shadow").id, "speak");
+  assert.equal(os.phaseForStep("summary").id, "master");
+  const lesson = { id: "layered-lesson", title: "Layered practice", canDo: "Đi từng lớp", level: "A1", dialogue: "Hello there.", vocabulary: [["hello", "", "xin chào", "Hello there."]], exercises: [{ prompt: "Chọn nghĩa", answer: "xin chào", options: ["xin chào", "tạm biệt"] }] };
+  const html = os.renderView(os.normalizeState({ activeView: "lesson", activeLesson: lesson.id }), { getLesson: () => lesson, allLessons: [lesson] });
+  assert.match(html, /hheo-phase-rail/);
+  assert.match(html, /hheo-player-atmosphere/);
+  assert.match(html, /TIẾP THEO ·/);
+  assert.match(html, /Checkpoint tự lưu/);
+});
+
+test("wrong production feedback keeps the expected answer out of the rendered response", () => {
+  const source = fs.readFileSync(path.join(root, "english-learning-os.js"), "utf8");
+  assert.match(source, /Đáp án vẫn được khóa/);
+  assert.doesNotMatch(source, /Phương án: \$\{esc\(expected\)\}/);
+});
+
 test("checkpoint mutation survives normalization and moves to the next step", () => {
   const state = os.normalizeState({ activeView: "lesson", activeLesson: "lesson-1" });
   os.completeCurrentStep(state, "lesson-1");

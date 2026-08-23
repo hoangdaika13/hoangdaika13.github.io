@@ -1897,6 +1897,8 @@ html.hh-page-hidden #hhBootSurface *,html.hh-page-hidden #hhBootSurface *::befor
 .app-cosmic-loader[data-transition-kind="dev"] .app-cosmic-loader__motif>i,.app-cosmic-loader[data-transition-kind="data"] .app-cosmic-loader__motif>i{width:16px;height:11px;border-radius:2px;background:repeating-linear-gradient(0deg,var(--loader-accent) 0 1px,transparent 1px 3px);animation-duration:4.2s}
 .app-cosmic-loader[data-transition-kind="network"] .app-cosmic-loader__motif>i,.app-cosmic-loader[data-transition-kind="discord"] .app-cosmic-loader__motif>i{width:15px;height:11px;border-radius:9px 9px 9px 3px;background:color-mix(in srgb,var(--loader-accent) 55%,#081425);animation-duration:3.2s}
 .app-cosmic-loader[data-transition-kind="learning"] .app-cosmic-loader__motif>i,.app-cosmic-loader[data-transition-kind="chinese"] .app-cosmic-loader__motif>i{width:40px;height:3px;border:0;border-radius:4px;background:linear-gradient(90deg,transparent,var(--loader-accent),var(--loader-secondary));transform:rotate(calc(var(--motif-index) * 45deg)) translateY(clamp(-174px,-17vw,-110px))}
+.app-cosmic-loader[data-transition-kind="english"] .app-cosmic-loader__motif>i{width:30px;height:5px;border:0;border-radius:99px;background:linear-gradient(90deg,transparent,var(--loader-accent),#fff,var(--loader-secondary),transparent);transform:rotate(calc(var(--motif-index) * 45deg)) translateY(clamp(-174px,-17vw,-110px));animation:appEnglishWave .95s ease-in-out calc(var(--motif-index) * -.1s) infinite alternate}
+.app-cosmic-loader[data-transition-kind="japanese"] .app-cosmic-loader__motif>i{width:8px;height:34px;border:1px solid color-mix(in srgb,var(--loader-accent) 62%,#fff);border-radius:8px 3px 8px 3px;background:linear-gradient(180deg,var(--loader-secondary),var(--loader-accent));transform:rotate(calc(var(--motif-index) * 45deg)) translateY(clamp(-174px,-17vw,-110px)) rotate(-18deg);animation:appJapaneseStroke 1.45s ease-in-out calc(var(--motif-index) * -.12s) infinite alternate}
 .app-cosmic-loader[data-transition-kind="fortune"] .app-cosmic-loader__motif>i{width:5px;height:5px;border:0;background:#fff;box-shadow:0 0 9px #fff,0 0 18px var(--loader-accent);animation-duration:8s}
 .app-cosmic-loader[data-transition-kind="dharma"]{
   --loader-accent:#d4a017;
@@ -1963,6 +1965,8 @@ html.hh-page-hidden #hhBootSurface *,html.hh-page-hidden #hhBootSurface *::befor
 @keyframes appDharmaLoaderCurtain{to{opacity:0;visibility:hidden}}
 @keyframes appDharmaLoaderCardExit{to{opacity:0;transform:translateY(-8px) scale(.98)}}
 @keyframes appCosmicBeam{0%,100%{opacity:0;scale:.08 1}48%{opacity:.5;scale:1 1}}
+@keyframes appEnglishWave{0%{opacity:.35;scale:.55 .8}100%{opacity:1;scale:1.22 1.12}}
+@keyframes appJapaneseStroke{0%{opacity:.38;filter:saturate(.8);transform:rotate(calc(var(--motif-index) * 45deg)) translateY(clamp(-174px,-17vw,-110px)) rotate(-25deg) scaleY(.72)}100%{opacity:1;filter:saturate(1.2);transform:rotate(calc(var(--motif-index) * 45deg)) translateY(clamp(-174px,-17vw,-110px)) rotate(19deg) scaleY(1.12)}}
 @keyframes appCosmicEqualizer{to{scale:1 1.9;opacity:.5}}
 @keyframes appCosmicCardEnter{from{opacity:.72;transform:scale(.94) translateY(5px)}to{opacity:1;transform:none}}
 @keyframes appCosmicCardExit{0%{opacity:1;transform:none}55%{opacity:.92;transform:scale(1.035)}100%{opacity:0;transform:scale(.72)}}

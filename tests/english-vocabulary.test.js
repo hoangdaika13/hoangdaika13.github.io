@@ -60,6 +60,34 @@ test("Lesson Player creates fifteen sequential words and adapts down to ten afte
   assert.equal(vocabulary.lessonSteps.length, 7);
 });
 
+test("personal deck policy uses local days, a bounded goal and explicit lesson sources", () => {
+  const now = new Date(2026, 7, 23, 12, 0, 0).getTime();
+  const words = [
+    { term: "hello", meaning: "xin chào", level: "A0", reviewed: true },
+    { term: "deadline", meaning: "hạn chót", level: "A2", reviewed: true },
+    { term: "journey", meaning: "hành trình", level: "A1", reviewed: true }
+  ];
+  const state = {
+    vocabularyStudio: { dailyGoal: 5, deckLimit: 100 },
+    savedWords: {
+      hello: { word: "hello", savedAt: new Date(now - 1000).toISOString() },
+      deadline: { word: "deadline", savedAt: new Date(now - 2000).toISOString() }
+    },
+    reviewQueue: {
+      hello: { dueAt: new Date(now - 1000).toISOString() },
+      deadline: { dueAt: new Date(now + 86400000).toISOString() }
+    },
+    wordMastery: {}, mistakeNotebook: [], galaxySession: { attempts: 0 }
+  };
+  const policy = vocabulary.deckPolicy(state, now);
+  assert.equal(policy.dailyGoal, 5);
+  assert.equal(policy.addedToday, 2);
+  assert.equal(policy.due, 1);
+  assert.equal(policy.remaining, 3);
+  assert.equal(vocabulary.buildDeckLesson(words, state, "deck", 5).words.length, 2);
+  assert.deepEqual(vocabulary.buildDeckLesson(words, state, "due", 5).words.map((item) => item.term), ["hello"]);
+});
+
 test("personal dictionary import export and reading coverage stay local and deterministic", () => {
   const csv = '"decision","quyết định","We made a decision."\n"deadline","hạn chót","Meet the deadline."';
   const rows = vocabulary.parseImport(csv, "csv");
