@@ -5,12 +5,26 @@
 })(typeof window !== "undefined" ? window : globalThis, () => {
   "use strict";
 
-  const LIMITS = Object.freeze({ tracks: 24, clips: 500, subtitles: 300, keyframes: 500, nodes: 80, queue: 30, history: 60 });
+  const LIMITS = Object.freeze({ tracks: 24, clips: 500, subtitles: 300, keyframes: 500, nodes: 80, queue: 30, history: 60, nested: 80, automation: 200 });
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const number = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const clamp = (value, min, max) => Math.min(max, Math.max(min, number(value)));
   const cleanText = (value, max = 120) => String(value ?? "").replace(/[<>\u0000-\u001f]/g, " ").trim().slice(0, max);
   const makeId = (prefix, seed = Date.now()) => `${prefix}-${String(seed).replace(/[^a-z0-9-]/gi, "").slice(-24) || "local"}`;
+  const list = (value) => Array.isArray(value) ? value : [];
+  const record = (value) => value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  function uniqueId(value, fallback, used) {
+    const base = cleanText(value || fallback, 80) || fallback;
+    let id = base, suffix = 2;
+    while (used.has(id)) { id = `${base.slice(0, 70)}-${suffix}`; suffix += 1; }
+    used.add(id); return id;
+  }
+  function normalizeFrameSize(value) {
+    const match = /^(\d{2,5})x(\d{2,5})$/i.exec(String(value || ""));
+    if (!match) return "1920x1080";
+    const width = Math.round(clamp(match[1], 160, 7680)), height = Math.round(clamp(match[2], 90, 4320));
+    return `${width}x${height}`;
+  }
   const defaultTracks = () => [
     { id: "V2", type: "video", name: "Video 2", locked: false, muted: false },
     { id: "V1", type: "video", name: "Video 1", locked: false, muted: false },
@@ -35,7 +49,8 @@
     exportQueue: []
   });
 
-  function normalizeClip(raw = {}, index = 0, trackIds = ["V1"]) {
+  function normalizeClip(input = {}, index = 0, trackIds = ["V1"]) {
+    const raw = record(input);
     const track = trackIds.includes(raw.track) ? raw.track : trackIds[0] || "V1";
     const duration = clamp(raw.duration, 1 / 120, 21600);
     const sourceDuration = clamp(raw.sourceDuration || duration, duration, 43200);
@@ -52,44 +67,48 @@
     };
   }
 
-  function normalizeProject(raw = {}) {
-    const base = createProject();
-    const tracks = (Array.isArray(raw.tracks) ? raw.tracks : base.tracks).slice(0, LIMITS.tracks).map((track, index) => ({
-      id: cleanText(track.id || `V${index + 1}`, 24),
-      type: track.type === "audio" ? "audio" : "video",
-      name: cleanText(track.name || track.id || `Rãnh ${index + 1}`, 80),
-      locked: Boolean(track.locked), muted: Boolean(track.muted)
-    }));
-    if (!tracks.length) tracks.push(...defaultTracks());
-    const trackIds = tracks.map((track) => track.id);
-    const clips = (Array.isArray(raw.clips) ? raw.clips : []).slice(0, LIMITS.clips).map((clip, index) => normalizeClip(clip, index, trackIds));
-    const subtitles = (Array.isArray(raw.subtitles) ? raw.subtitles : []).slice(0, LIMITS.subtitles).map((item, index) => ({
-      id: cleanText(item.id || makeId("subtitle", index), 80), start: clamp(item.start, 0, 86400), duration: clamp(item.duration || 2, .1, 3600), text: cleanText(item.text || "Phụ đề mới", 500), language: cleanText(item.language || "vi", 12)
-    }));
-    const keyframes = (Array.isArray(raw.keyframes) ? raw.keyframes : []).slice(-LIMITS.keyframes).map((item, index) => ({ id: cleanText(item.id || makeId("kf", index), 80), property: cleanText(item.property || "position", 40), time: clamp(item.time, 0, 86400), value: number(item.value), easing: ["linear", "ease-in", "ease-out", "ease-in-out"].includes(item.easing) ? item.easing : "ease-in-out" }));
-    const queue = (Array.isArray(raw.exportQueue) ? raw.exportQueue : []).slice(-LIMITS.queue).map((job, index) => ({ id: cleanText(job.id || makeId("export", index), 80), name: cleanText(job.name || "HH Export", 120), mime: cleanText(job.mime || "video/webm", 100), size: cleanText(job.size || "1920x1080", 24), status: ["queued", "processing", "completed", "failed", "cancelled", "unsupported", "provider-not-configured"].includes(job.status) ? job.status : "queued", notice: cleanText(job.notice || "Chưa bắt đầu kết xuất.", 240), createdAt: number(job.createdAt, Date.now()) }));
+  function normalizeProject(input = {}) {
+    const raw = record(input), base = createProject(), trackIdsUsed = new Set();
+    const tracks = (list(raw.tracks).length ? list(raw.tracks) : base.tracks).slice(0, LIMITS.tracks).map((value, index) => {
+      const track = record(value), fallback = `${track.type === "audio" ? "A" : "V"}${index + 1}`;
+      return { id: uniqueId(track.id, fallback, trackIdsUsed), type: track.type === "audio" ? "audio" : "video", name: cleanText(track.name || track.id || `Rãnh ${index + 1}`, 80), locked: Boolean(track.locked), muted: Boolean(track.muted) };
+    });
+    const trackIds = tracks.map((track) => track.id), clipIds = new Set(), subtitleIds = new Set(), keyframeIds = new Set(), queueIds = new Set(), nestedIds = new Set(), nodeIds = new Set(), audioIds = new Set();
+    const clips = list(raw.clips).slice(0, LIMITS.clips).map((value, index) => { const clip = normalizeClip(value, index, trackIds); clip.id = uniqueId(clip.id, makeId("clip", index), clipIds); return clip; });
+    const subtitles = list(raw.subtitles).slice(0, LIMITS.subtitles).map((value, index) => { const item = record(value); return { id: uniqueId(item.id, makeId("subtitle", index), subtitleIds), start: clamp(item.start, 0, 86400), duration: clamp(item.duration || 2, .1, 3600), text: cleanText(item.text || "Phụ đề mới", 500), language: cleanText(item.language || "vi", 12) || "vi" }; });
+    const keyframes = list(raw.keyframes).slice(-LIMITS.keyframes).map((value, index) => { const item = record(value); return { id: uniqueId(item.id, makeId("kf", index), keyframeIds), property: cleanText(item.property || "position", 40), time: clamp(item.time, 0, 86400), value: clamp(item.value, -1000000, 1000000), easing: ["linear", "ease-in", "ease-out", "ease-in-out"].includes(item.easing) ? item.easing : "ease-in-out" }; });
+    const exportQueue = list(raw.exportQueue).slice(-LIMITS.queue).map((value, index) => {
+      const job = record(value), status = ["queued", "processing", "completed", "failed", "cancelled", "unsupported", "provider-not-configured"].includes(job.status) ? job.status : "queued";
+      return { id: uniqueId(job.id, makeId("export", index), queueIds), idempotencyKey: cleanText(job.idempotencyKey || "", 120), name: cleanText(job.name || "HH Export", 120), mime: cleanText(job.mime || "video/webm", 100), size: normalizeFrameSize(job.size), bitrate: Math.round(clamp(job.bitrate || 8000000, 250000, 80000000)), includeAudio: job.includeAudio !== false, status, progress: clamp(job.progress, 0, 100), notice: cleanText(job.notice || "Chưa bắt đầu kết xuất.", 240), createdAt: clamp(job.createdAt || Date.now(), 0, 4102444800000) };
+    });
+    const nestedSequences = list(raw.nestedSequences).slice(-LIMITS.nested).map((value, sequenceIndex) => {
+      const sequence = record(value), sequenceClipIds = new Set(), sequenceClips = list(sequence.clips).slice(0, 120).map((clip, clipIndex) => { const normalized = normalizeClip(clip, clipIndex, trackIds); normalized.id = uniqueId(normalized.id, makeId("nested-clip", clipIndex), sequenceClipIds); return normalized; });
+      const measuredDuration = sequenceClips.reduce((maximum, clip) => Math.max(maximum, clip.start + clip.duration), 0);
+      return { id: uniqueId(sequence.id, makeId("nested", sequenceIndex), nestedIds), name: cleanText(sequence.name || `Sequence ${sequenceIndex + 1}`, 100), duration: clamp(sequence.duration || measuredDuration, 1 / 120, 86400), clips: sequenceClips };
+    });
+    const snap = record(raw.snap), proxy = record(raw.proxyPlan), multicam = record(raw.multicam), motion = record(raw.motion), tracking = record(motion.tracking), stabilization = record(motion.stabilization), speedRamp = record(motion.speedRamp), color = record(raw.color), wheels = record(color.wheels), audio = record(raw.audio);
+    const angles = list(multicam.angles).slice(0, 16).map((value, index) => { const angle = record(value); return { id: cleanText(angle.id || `cam-${index + 1}`, 80), name: cleanText(angle.name || `CAM ${index + 1}`, 80), clipId: cleanText(angle.clipId || "", 80) }; });
+    const colorNodes = (list(color.nodes).length ? list(color.nodes) : base.color.nodes).slice(-LIMITS.nodes).map((value, index) => { const node = record(value); return { id: uniqueId(node.id, makeId("color-node", index), nodeIds), type: cleanText(node.type || "corrector", 40), enabled: node.enabled !== false }; });
+    const channels = (list(audio.channels).length ? list(audio.channels) : base.audio.channels).slice(0, LIMITS.tracks).map((value, index) => {
+      const channel = record(value), eq = record(channel.eq), compressor = record(channel.compressor), noiseReduction = record(channel.noiseReduction);
+      return { id: uniqueId(channel.id, `A${index + 1}`, audioIds), gain: clamp(channel.gain ?? 1, 0, 1.5), pan: clamp(channel.pan, -1, 1), muted: Boolean(channel.muted), solo: Boolean(channel.solo), eq: { low: clamp(eq.low, -18, 18), mid: clamp(eq.mid, -18, 18), high: clamp(eq.high, -18, 18) }, compressor: { enabled: Boolean(compressor.enabled), threshold: clamp(compressor.threshold ?? -24, -60, 0), ratio: clamp(compressor.ratio ?? 3, 1, 20) }, noiseReduction: { enabled: Boolean(noiseReduction.enabled), amount: clamp(noiseReduction.amount, 0, 1) }, automation: list(channel.automation).slice(-LIMITS.automation).map((value) => { const point = record(value); return { time: clamp(point.time, 0, 86400), value: clamp(point.value, 0, 1.5) }; }).sort((a, b) => a.time - b.time) };
+    });
+    if (!channels.some((channel) => channel.id === "A1")) { if (channels.length >= LIMITS.tracks) channels.pop(); channels.unshift({ ...base.audio.channels[0], eq: { ...base.audio.channels[0].eq }, compressor: { ...base.audio.channels[0].compressor }, noiseReduction: { ...base.audio.channels[0].noiseReduction }, automation: [] }); }
     return {
-      ...base, ...raw,
-      version: 2, revision: Math.max(0, Math.floor(number(raw.revision))),
+      version: 2,
+      revision: Math.max(0, Math.floor(number(raw.revision))),
       workspace: ["media", "cut", "edit", "fusion", "color", "audio", "deliver"].includes(raw.workspace) ? raw.workspace : "edit",
-      fps: clamp(raw.fps || 30, 1, 120), tracks, clips, subtitles, keyframes,
-      nestedSequences: (Array.isArray(raw.nestedSequences) ? raw.nestedSequences : []).slice(-80).map((sequence, sequenceIndex) => ({
-        id: cleanText(sequence.id || makeId("nested", sequenceIndex), 80), name: cleanText(sequence.name || `Sequence ${sequenceIndex + 1}`, 100), duration: clamp(sequence.duration, 1 / 120, 86400),
-        clips: (Array.isArray(sequence.clips) ? sequence.clips : []).slice(0, 120).map((clip, clipIndex) => normalizeClip(clip, clipIndex, trackIds))
-      })),
-      exportQueue: queue,
-      snap: { ...base.snap, ...(raw.snap || {}), enabled: raw.snap?.enabled !== false, thresholdFrames: clamp(raw.snap?.thresholdFrames ?? 5, 1, 30) },
-      proxyPlan: { ...base.proxyPlan, ...(raw.proxyPlan || {}) },
-      multicam: { ...base.multicam, ...(raw.multicam || {}), angles: (raw.multicam?.angles || []).slice(0, 16) },
-      motion: { tracking: { ...base.motion.tracking, ...(raw.motion?.tracking || {}), points: (raw.motion?.tracking?.points || []).slice(-300) }, stabilization: { ...base.motion.stabilization, ...(raw.motion?.stabilization || {}) }, speedRamp: { ...base.motion.speedRamp, ...(raw.motion?.speedRamp || {}), points: (raw.motion?.speedRamp?.points || base.motion.speedRamp.points).slice(-80) } },
-      color: { ...base.color, ...(raw.color || {}), lut: cleanText(raw.color?.lut || base.color.lut, 80), wheels: { ...base.color.wheels, ...(raw.color?.wheels || {}) }, curves: (raw.color?.curves || base.color.curves).slice(-40).map((point) => ({ x: clamp(point.x, 0, 1), y: clamp(point.y, 0, 1) })), nodes: (raw.color?.nodes || base.color.nodes).slice(-LIMITS.nodes).map((node, index) => ({ id: cleanText(node.id || makeId("color-node", index), 80), type: cleanText(node.type || "corrector", 40), enabled: node.enabled !== false })) },
-      audio: { channels: (Array.isArray(raw.audio?.channels) && raw.audio.channels.length ? raw.audio.channels : base.audio.channels).slice(0, LIMITS.tracks).map((channel, index) => ({
-        id: cleanText(channel.id || `A${index + 1}`, 24), gain: clamp(channel.gain ?? 1, 0, 1.5), pan: clamp(channel.pan, -1, 1), muted: Boolean(channel.muted), solo: Boolean(channel.solo),
-        eq: { low: clamp(channel.eq?.low, -18, 18), mid: clamp(channel.eq?.mid, -18, 18), high: clamp(channel.eq?.high, -18, 18) },
-        compressor: { enabled: Boolean(channel.compressor?.enabled), threshold: clamp(channel.compressor?.threshold ?? -24, -60, 0), ratio: clamp(channel.compressor?.ratio ?? 3, 1, 20) },
-        noiseReduction: { enabled: Boolean(channel.noiseReduction?.enabled), amount: clamp(channel.noiseReduction?.amount, 0, 1) },
-        automation: (Array.isArray(channel.automation) ? channel.automation : []).slice(-200).map((point) => ({ time: clamp(point.time, 0, 86400), value: clamp(point.value, 0, 1.5) }))
-      })) }
+      fps: clamp(raw.fps || 30, 1, 120), tracks, clips, subtitles, nestedSequences, keyframes, exportQueue,
+      snap: { enabled: snap.enabled !== false, thresholdFrames: clamp(snap.thresholdFrames ?? 5, 1, 30) },
+      proxyPlan: { enabled: Boolean(proxy.enabled), scale: clamp(proxy.scale ?? .5, .1, 1), estimatedBytes: Math.max(0, Math.floor(number(proxy.estimatedBytes))), status: ["source", "planned", "ready", "failed", "provider-not-configured"].includes(proxy.status) ? proxy.status : "source", notice: cleanText(proxy.notice || base.proxyPlan.notice, 240) },
+      multicam: { enabled: Boolean(multicam.enabled) && angles.length > 1, activeAngle: clamp(multicam.activeAngle || 1, 1, Math.max(1, angles.length)), angles },
+      motion: {
+        tracking: { status: ["idle", "processing", "local-transform", "completed", "failed", "provider-not-configured"].includes(tracking.status) ? tracking.status : "idle", points: list(tracking.points).slice(-300).map((value) => { const point = record(value); return { time: clamp(point.time, 0, 86400), x: clamp(point.x, -100000, 100000), y: clamp(point.y, -100000, 100000) }; }) },
+        stabilization: { enabled: Boolean(stabilization.enabled), strength: clamp(stabilization.strength, 0, 1), status: ["idle", "processing", "local-transform", "completed", "failed", "provider-not-configured"].includes(stabilization.status) ? stabilization.status : "idle" },
+        speedRamp: { enabled: Boolean(speedRamp.enabled), points: (list(speedRamp.points).length ? list(speedRamp.points) : base.motion.speedRamp.points).slice(-80).map((value) => { const point = record(value); return { time: clamp(point.time, 0, 86400), speed: clamp(point.speed || 1, .05, 8) }; }).sort((a, b) => a.time - b.time) }
+      },
+      color: { lut: cleanText(color.lut || base.color.lut, 80), wheels: { lift: clamp(wheels.lift, -100, 100), gamma: clamp(wheels.gamma, -100, 100), gain: clamp(wheels.gain, -100, 100), offset: clamp(wheels.offset, -100, 100) }, curves: (list(color.curves).length ? list(color.curves) : base.color.curves).slice(-40).map((value) => { const point = record(value); return { x: clamp(point.x, 0, 1), y: clamp(point.y, 0, 1) }; }).sort((a, b) => a.x - b.x), nodes: colorNodes },
+      audio: { channels }
     };
   }
 
@@ -115,28 +134,53 @@
     const type = operation.type;
     return commit(project, (next) => {
       const clip = next.clips.find((item) => item.id === operation.clipId);
+      const clipTrack = clip ? next.tracks.find((track) => track.id === clip.track) : null;
+      const editableClip = clip && !clipTrack?.locked ? clip : null;
       if (type === "toggle-snap") next.snap.enabled = operation.enabled == null ? !next.snap.enabled : Boolean(operation.enabled);
+      else if (type === "set-track") {
+        const track = next.tracks.find((item) => item.id === operation.trackId);
+        if (track) { if (operation.locked != null) track.locked = Boolean(operation.locked); if (operation.muted != null) track.muted = Boolean(operation.muted); if (operation.name != null) track.name = cleanText(operation.name, 80) || track.name; }
+      }
       else if (type === "add-track" && next.tracks.length < LIMITS.tracks) {
         const id = cleanText(operation.id || `${operation.trackType === "audio" ? "A" : "V"}${next.tracks.length + 1}`, 24);
-        if (!next.tracks.some((track) => track.id === id)) next.tracks.push({ id, type: operation.trackType === "audio" ? "audio" : "video", name: cleanText(operation.name || id, 80), locked: false, muted: false });
-      } else if (type === "add-clip" && next.clips.length < LIMITS.clips) next.clips.push(normalizeClip(operation.clip, next.clips.length, next.tracks.map((track) => track.id)));
-      else if (type === "blade" && clip) {
-        const at = clamp(operation.at, clip.start + 1 / next.fps, clip.start + clip.duration - 1 / next.fps);
-        if (at > clip.start && at < clip.start + clip.duration && next.clips.length < LIMITS.clips) {
-          const leftDuration = at - clip.start, rightDuration = clip.duration - leftDuration;
-          clip.duration = leftDuration;
-          next.clips.push({ ...clip, id: cleanText(operation.newId || makeId("clip", `${clip.id}-${next.revision}`), 80), name: `${clip.name} B`, start: at, duration: rightDuration, sourceIn: clip.sourceIn + leftDuration });
+        if (id && !next.tracks.some((track) => track.id === id)) {
+          const trackType = operation.trackType === "audio" ? "audio" : "video";
+          next.tracks.push({ id, type: trackType, name: cleanText(operation.name || id, 80), locked: false, muted: false });
+          if (trackType === "audio" && !next.audio.channels.some((channel) => channel.id === id)) next.audio.channels.push({ id, gain: 1, pan: 0, muted: false, solo: false, eq: { low: 0, mid: 0, high: 0 }, compressor: { enabled: false, threshold: -24, ratio: 3 }, noiseReduction: { enabled: false, amount: 0 }, automation: [] });
         }
-      } else if (type === "ripple-delete" && clip) {
-        const end = clip.start + clip.duration, track = clip.track, amount = clip.duration;
-        next.clips = next.clips.filter((item) => item.id !== clip.id).map((item) => item.track === track && item.start >= end ? { ...item, start: Math.max(0, item.start - amount) } : item);
-      } else if (type === "slip" && clip) clip.sourceIn = clamp(clip.sourceIn + number(operation.delta), 0, Math.max(0, clip.sourceDuration - clip.duration));
-      else if (type === "slide" && clip) {
-        const rows = clipsOnTrack(next, clip.track), index = rows.findIndex((item) => item.id === clip.id), previous = rows[index - 1], following = rows[index + 1];
-        const minDelta = previous ? -Math.max(0, previous.duration - 1 / next.fps) : -clip.start;
-        const maxDelta = following ? Math.max(0, following.duration - 1 / next.fps) : 86400 - clip.start - clip.duration;
+      } else if (type === "add-clip" && next.clips.length < LIMITS.clips) {
+        const candidate = normalizeClip(operation.clip, next.clips.length, next.tracks.map((track) => track.id)), targetTrack = next.tracks.find((track) => track.id === candidate.track);
+        if (!targetTrack?.locked && !next.clips.some((item) => item.id === candidate.id)) next.clips.push(candidate);
+      } else if (type === "duplicate" && editableClip && next.clips.length < LIMITS.clips) {
+        const id = cleanText(operation.newId || makeId("clip", `${editableClip.id}-${next.revision}`), 80);
+        if (!next.clips.some((item) => item.id === id)) next.clips.push({ ...editableClip, id, name: cleanText(`${editableClip.name} Copy`, 160), start: snapTime({ ...next, clips: next.clips.filter((item) => item.id !== editableClip.id) }, operation.at ?? editableClip.start + editableClip.duration) });
+      } else if (type === "move" && editableClip) {
+        const targetTrack = operation.track ? next.tracks.find((track) => track.id === operation.track) : clipTrack;
+        if (targetTrack && !targetTrack.locked) { editableClip.track = targetTrack.id; editableClip.start = snapTime({ ...next, clips: next.clips.filter((item) => item.id !== editableClip.id) }, operation.at ?? editableClip.start + number(operation.delta)); }
+      } else if (type === "trim-start" && editableClip) {
+        const originalEnd = editableClip.start + editableClip.duration, at = clamp(operation.at ?? editableClip.start + number(operation.delta), editableClip.start, originalEnd - 1 / next.fps), amount = at - editableClip.start;
+        editableClip.start = at; editableClip.duration = originalEnd - at; editableClip.sourceIn = clamp(editableClip.sourceIn + amount, 0, Math.max(0, editableClip.sourceDuration - editableClip.duration));
+      } else if (type === "trim-end" && editableClip) {
+        const end = clamp(operation.at ?? editableClip.start + editableClip.duration + number(operation.delta), editableClip.start + 1 / next.fps, editableClip.start + editableClip.sourceDuration - editableClip.sourceIn);
+        editableClip.duration = end - editableClip.start;
+      } else if (type === "blade" && editableClip) {
+        const at = clamp(operation.at, editableClip.start + 1 / next.fps, editableClip.start + editableClip.duration - 1 / next.fps);
+        if (at > editableClip.start && at < editableClip.start + editableClip.duration && next.clips.length < LIMITS.clips) {
+          const leftDuration = at - editableClip.start, rightDuration = editableClip.duration - leftDuration, id = cleanText(operation.newId || makeId("clip", `${editableClip.id}-${next.revision}`), 80);
+          if (next.clips.some((item) => item.id === id)) return;
+          editableClip.duration = leftDuration;
+          next.clips.push({ ...editableClip, id, name: cleanText(`${editableClip.name} B`, 160), start: at, duration: rightDuration, sourceIn: editableClip.sourceIn + leftDuration });
+        }
+      } else if (type === "ripple-delete" && editableClip) {
+        const end = editableClip.start + editableClip.duration, track = editableClip.track, amount = editableClip.duration;
+        next.clips = next.clips.filter((item) => item.id !== editableClip.id).map((item) => item.track === track && item.start >= end ? { ...item, start: Math.max(0, item.start - amount) } : item);
+      } else if (type === "slip" && editableClip) editableClip.sourceIn = clamp(editableClip.sourceIn + number(operation.delta), 0, Math.max(0, editableClip.sourceDuration - editableClip.duration));
+      else if (type === "slide" && editableClip) {
+        const rows = clipsOnTrack(next, editableClip.track), index = rows.findIndex((item) => item.id === editableClip.id), previous = rows[index - 1], following = rows[index + 1];
+        const minDelta = previous ? -Math.max(0, previous.duration - 1 / next.fps) : -editableClip.start;
+        const maxDelta = following ? Math.max(0, following.duration - 1 / next.fps) : 86400 - editableClip.start - editableClip.duration;
         const delta = clamp(operation.delta, minDelta, maxDelta);
-        clip.start += delta;
+        editableClip.start += delta;
         if (previous) previous.duration += delta;
         if (following) { following.start += delta; following.duration -= delta; following.sourceIn += delta; }
       }
@@ -146,14 +190,16 @@
   function addSubtitle(project, subtitle = {}) {
     return commit(project, (next) => {
       if (next.subtitles.length >= LIMITS.subtitles) return;
-      next.subtitles.push({ id: cleanText(subtitle.id || makeId("subtitle", `${next.revision}-${next.subtitles.length}`), 80), start: clamp(subtitle.start, 0, 86400), duration: clamp(subtitle.duration || 2, .1, 3600), text: cleanText(subtitle.text || "Phụ đề mới", 500), language: cleanText(subtitle.language || "vi", 12) });
+      const data = record(subtitle), id = cleanText(data.id || makeId("subtitle", `${next.revision}-${next.subtitles.length}`), 80);
+      if (!id || next.subtitles.some((item) => item.id === id)) return;
+      next.subtitles.push({ id, start: clamp(data.start, 0, 86400), duration: clamp(data.duration || 2, .1, 3600), text: cleanText(data.text || "Phụ đề mới", 500), language: cleanText(data.language || "vi", 12) });
     });
   }
 
   function createNestedSequence(project, clipIds = [], name = "Sequence lồng") {
     return commit(project, (next) => {
-      const selected = next.clips.filter((clip) => clipIds.includes(clip.id));
-      if (!selected.length) return;
+      const ids = new Set(list(clipIds).map((id) => cleanText(id, 80))), selected = next.clips.filter((clip) => ids.has(clip.id));
+      if (!selected.length || selected.some((clip) => next.tracks.find((track) => track.id === clip.track)?.locked)) return;
       const start = Math.min(...selected.map((clip) => clip.start)), end = Math.max(...selected.map((clip) => clip.start + clip.duration));
       const nested = { id: makeId("nested", `${next.revision}-${selected.length}`), name: cleanText(name, 100), clips: clone(selected), duration: end - start };
       next.nestedSequences.push(nested);
@@ -163,76 +209,90 @@
   }
 
   function planProxy(asset = {}, scale = .5) {
-    const sourceSize = Math.max(0, number(asset.size));
-    return { assetId: cleanText(asset.id || "media", 80), enabled: true, scale: clamp(scale, .1, 1), estimatedBytes: Math.round(sourceSize * clamp(scale, .1, 1) ** 2), status: "planned", notice: "Đây là kế hoạch proxy. Trình duyệt chưa tạo hoặc thay thế codec của tệp nguồn." };
+    const source = record(asset), sourceSize = Math.max(0, number(source.size));
+    return { assetId: cleanText(source.id || "media", 80), enabled: true, scale: clamp(scale, .1, 1), estimatedBytes: Math.round(sourceSize * clamp(scale, .1, 1) ** 2), status: "planned", notice: "Đây là kế hoạch proxy. Trình duyệt chưa tạo hoặc thay thế codec của tệp nguồn." };
   }
 
   function createWaveformEnvelope(samples, buckets = 64) {
-    const values = Array.from(samples || [], (value) => clamp(value, -1, 1));
+    const values = samples && Number.isFinite(Number(samples.length)) ? samples : [];
     const count = Math.max(1, Math.min(512, Math.floor(number(buckets, 64))));
     if (!values.length) return Array.from({ length: count }, () => ({ min: 0, max: 0, rms: 0 }));
     return Array.from({ length: count }, (_, index) => {
       const from = Math.floor(index * values.length / count), to = Math.max(from + 1, Math.floor((index + 1) * values.length / count));
-      const slice = values.slice(from, to), squares = slice.reduce((sum, value) => sum + value * value, 0);
-      return { min: Math.min(...slice), max: Math.max(...slice), rms: Math.sqrt(squares / slice.length) };
+      const stride = Math.max(1, Math.ceil((to - from) / 8192)); let minimum = 1, maximum = -1, squares = 0, measured = 0;
+      for (let offset = from; offset < to; offset += stride) { const value = clamp(values[offset], -1, 1); minimum = Math.min(minimum, value); maximum = Math.max(maximum, value); squares += value * value; measured += 1; }
+      return { min: minimum, max: maximum, rms: Math.sqrt(squares / Math.max(1, measured)) };
     });
   }
 
   function addKeyframe(project, keyframe = {}) {
+    const data = record(keyframe);
     return commit(project, (next) => {
-      next.keyframes.push({ id: cleanText(keyframe.id || makeId("kf", `${next.revision}-${next.keyframes.length}`), 80), property: cleanText(keyframe.property || "position", 40), time: clamp(keyframe.time, 0, 86400), value: number(keyframe.value), easing: ["linear", "ease-in", "ease-out", "ease-in-out"].includes(keyframe.easing) ? keyframe.easing : "ease-in-out" });
+      const id = cleanText(data.id || makeId("kf", `${next.revision}-${next.keyframes.length}`), 80);
+      if (next.keyframes.some((item) => item.id === id)) return;
+      next.keyframes.push({ id, property: cleanText(data.property || "position", 40), time: clamp(data.time, 0, 86400), value: clamp(data.value, -1000000, 1000000), easing: ["linear", "ease-in", "ease-out", "ease-in-out"].includes(data.easing) ? data.easing : "ease-in-out" });
       next.keyframes = next.keyframes.slice(-LIMITS.keyframes);
     });
   }
 
   function setMulticam(project, angles = [], activeAngle = 1) {
     return commit(project, (next) => {
+      const safeAngles = list(angles);
       next.multicam = {
-        enabled: angles.length > 1,
-        activeAngle: clamp(activeAngle, 1, Math.max(1, Math.min(16, angles.length))),
-        angles: angles.slice(0, 16).map((angle, index) => ({ id: cleanText(angle.id || `cam-${index + 1}`, 80), name: cleanText(angle.name || `CAM ${index + 1}`, 80), clipId: cleanText(angle.clipId || "", 80) }))
+        enabled: safeAngles.length > 1,
+        activeAngle: clamp(activeAngle, 1, Math.max(1, Math.min(16, safeAngles.length))),
+        angles: safeAngles.slice(0, 16).map((value, index) => { const angle = record(value); return { id: cleanText(angle.id || `cam-${index + 1}`, 80), name: cleanText(angle.name || `CAM ${index + 1}`, 80), clipId: cleanText(angle.clipId || "", 80) }; })
       };
     });
   }
 
   function setMotionModel(project, kind, patch = {}) {
+    const update = record(patch);
     return commit(project, (next) => {
-      if (kind === "tracking") next.motion.tracking = { ...next.motion.tracking, ...patch, points: (patch.points || next.motion.tracking.points).slice(-300) };
-      if (kind === "stabilization") next.motion.stabilization = { ...next.motion.stabilization, ...patch, strength: clamp(patch.strength ?? next.motion.stabilization.strength, 0, 1) };
-      if (kind === "speedRamp") next.motion.speedRamp = { ...next.motion.speedRamp, ...patch, points: (patch.points || next.motion.speedRamp.points).slice(-80).map((point) => ({ time: clamp(point.time, 0, 86400), speed: clamp(point.speed, .05, 8) })) };
+      if (kind === "tracking") next.motion.tracking = { ...next.motion.tracking, ...update, points: (Array.isArray(update.points) ? update.points : next.motion.tracking.points).slice(-300) };
+      if (kind === "stabilization") next.motion.stabilization = { ...next.motion.stabilization, ...update, strength: clamp(update.strength ?? next.motion.stabilization.strength, 0, 1) };
+      if (kind === "speedRamp") next.motion.speedRamp = { ...next.motion.speedRamp, ...update, points: (Array.isArray(update.points) ? update.points : next.motion.speedRamp.points).slice(-80).map((value) => { const point = record(value); return { time: clamp(point.time, 0, 86400), speed: clamp(point.speed, .05, 8) }; }) };
     });
   }
 
   function updateColor(project, patch = {}) {
+    const update = record(patch);
     return commit(project, (next) => {
-      if (patch.lut != null) next.color.lut = cleanText(patch.lut, 80);
-      if (patch.wheels) Object.entries(patch.wheels).forEach(([key, value]) => { if (key in next.color.wheels) next.color.wheels[key] = clamp(value, -100, 100); });
-      if (patch.curves) next.color.curves = patch.curves.slice(0, 40).map((point) => ({ x: clamp(point.x, 0, 1), y: clamp(point.y, 0, 1) }));
-      if (patch.addNode && next.color.nodes.length < LIMITS.nodes) next.color.nodes.push({ id: cleanText(patch.addNode.id || makeId("color-node", next.revision), 80), type: cleanText(patch.addNode.type || "corrector", 40), enabled: patch.addNode.enabled !== false });
+      if (update.lut != null) next.color.lut = cleanText(update.lut, 80);
+      if (record(update.wheels) === update.wheels) Object.entries(update.wheels).forEach(([key, value]) => { if (key in next.color.wheels) next.color.wheels[key] = clamp(value, -100, 100); });
+      if (Array.isArray(update.curves)) next.color.curves = update.curves.slice(0, 40).map((value) => { const point = record(value); return { x: clamp(point.x, 0, 1), y: clamp(point.y, 0, 1) }; });
+      const node = record(update.addNode);
+      if (Object.keys(node).length && next.color.nodes.length < LIMITS.nodes) { const id = cleanText(node.id || makeId("color-node", next.revision), 80); if (!next.color.nodes.some((item) => item.id === id)) next.color.nodes.push({ id, type: cleanText(node.type || "corrector", 40), enabled: node.enabled !== false }); }
     });
   }
 
   function updateAudioChannel(project, channelId, patch = {}) {
+    const update = record(patch);
     return commit(project, (next) => {
       const channel = next.audio.channels.find((item) => item.id === channelId);
       if (!channel) return;
-      if (patch.gain != null) channel.gain = clamp(patch.gain, 0, 1.5);
-      if (patch.pan != null) channel.pan = clamp(patch.pan, -1, 1);
-      if (patch.muted != null) channel.muted = Boolean(patch.muted);
-      if (patch.solo != null) channel.solo = Boolean(patch.solo);
-      if (patch.eq) channel.eq = { low: clamp(patch.eq.low ?? channel.eq.low, -18, 18), mid: clamp(patch.eq.mid ?? channel.eq.mid, -18, 18), high: clamp(patch.eq.high ?? channel.eq.high, -18, 18) };
-      if (patch.compressor) channel.compressor = { ...channel.compressor, ...patch.compressor, threshold: clamp(patch.compressor.threshold ?? channel.compressor.threshold, -60, 0), ratio: clamp(patch.compressor.ratio ?? channel.compressor.ratio, 1, 20) };
-      if (patch.noiseReduction) channel.noiseReduction = { enabled: Boolean(patch.noiseReduction.enabled), amount: clamp(patch.noiseReduction.amount, 0, 1) };
-      if (patch.automation) channel.automation = patch.automation.slice(-200).map((point) => ({ time: clamp(point.time, 0, 86400), value: clamp(point.value, 0, 1.5) }));
+      if (update.gain != null) channel.gain = clamp(update.gain, 0, 1.5);
+      if (update.pan != null) channel.pan = clamp(update.pan, -1, 1);
+      if (update.muted != null) channel.muted = Boolean(update.muted);
+      if (update.solo != null) channel.solo = Boolean(update.solo);
+      const eq = record(update.eq); if (Object.keys(eq).length) channel.eq = { low: clamp(eq.low ?? channel.eq.low, -18, 18), mid: clamp(eq.mid ?? channel.eq.mid, -18, 18), high: clamp(eq.high ?? channel.eq.high, -18, 18) };
+      const compressor = record(update.compressor); if (Object.keys(compressor).length) channel.compressor = { ...channel.compressor, ...compressor, enabled: compressor.enabled == null ? channel.compressor.enabled : Boolean(compressor.enabled), threshold: clamp(compressor.threshold ?? channel.compressor.threshold, -60, 0), ratio: clamp(compressor.ratio ?? channel.compressor.ratio, 1, 20) };
+      const noiseReduction = record(update.noiseReduction); if (Object.keys(noiseReduction).length) channel.noiseReduction = { enabled: Boolean(noiseReduction.enabled), amount: clamp(noiseReduction.amount, 0, 1) };
+      if (Array.isArray(update.automation)) channel.automation = update.automation.slice(-LIMITS.automation).map((value) => { const point = record(value); return { time: clamp(point.time, 0, 86400), value: clamp(point.value, 0, 1.5) }; }).sort((a, b) => a.time - b.time);
     });
   }
 
   function enqueueExport(project, job = {}, capabilities = {}) {
-    return commit(project, (next) => {
+    const current = normalizeProject(project), data = record(job), support = record(capabilities), idempotencyKey = cleanText(data.idempotencyKey || data.id || "", 120);
+    if (idempotencyKey && current.exportQueue.some((item) => item.idempotencyKey === idempotencyKey || item.id === idempotencyKey)) return current;
+    return commit(current, (next) => {
       if (next.exportQueue.length >= LIMITS.queue) return;
-      const mime = cleanText(job.mime || "video/webm;codecs=vp9,opus", 100);
+      const mime = cleanText(data.mime || "video/webm;codecs=vp9,opus", 100);
       const mp4Requested = /^video\/mp4/i.test(mime);
-      const supported = Boolean(capabilities.mediaRecorder && capabilities.canvasCapture && (!capabilities.isTypeSupported || capabilities.isTypeSupported(mime)));
+      const recognized = /^video\/(?:mp4|webm)(?:;|$)/i.test(mime);
+      let codecSupported = false;
+      try { codecSupported = !support.isTypeSupported || Boolean(support.isTypeSupported(mime)); } catch (_) { codecSupported = false; }
+      const supported = Boolean(recognized && support.mediaRecorder && support.canvasCapture && codecSupported);
       const status = supported ? "queued" : "unsupported";
       const notice = status === "queued"
         ? mp4Requested
@@ -241,8 +301,24 @@
         : mp4Requested
           ? "Trình duyệt chưa cung cấp bộ mã hóa MP4 H.264/AAC qua MediaRecorder."
           : "Trình duyệt chưa hỗ trợ tổ hợp MediaRecorder, Canvas capture hoặc codec đã chọn.";
-      next.exportQueue.push({ id: cleanText(job.id || makeId("export", `${next.revision}-${next.exportQueue.length}`), 80), name: cleanText(job.name || "HH Export", 120), mime, size: cleanText(job.size || "1920x1080", 24), status, notice, createdAt: Date.now() });
+      next.exportQueue.push({ id: cleanText(data.id || makeId("export", `${next.revision}-${next.exportQueue.length}`), 80), idempotencyKey, name: cleanText(data.name || "HH Export", 120), mime, size: normalizeFrameSize(data.size), bitrate: Math.round(clamp(data.bitrate || 8000000, 250000, 80000000)), includeAudio: data.includeAudio !== false, status, progress: 0, notice, createdAt: Date.now() });
     });
+  }
+
+  function updateExportStatus(project, jobId, status, detail = {}) {
+    const allowed = ["queued", "processing", "completed", "failed", "cancelled", "unsupported", "provider-not-configured"];
+    if (!allowed.includes(status)) return normalizeProject(project);
+    const info = record(detail);
+    return commit(project, (next) => {
+      const job = next.exportQueue.find((item) => item.id === jobId); if (!job) return;
+      job.status = status; job.progress = status === "completed" ? 100 : clamp(info.progress ?? job.progress, 0, 100);
+      if (info.notice != null) job.notice = cleanText(info.notice, 240);
+    });
+  }
+  function recoverInterruptedExports(project) {
+    const normalized = normalizeProject(project);
+    if (!normalized.exportQueue.some((job) => job.status === "processing")) return normalized;
+    return commit(normalized, (next) => { next.exportQueue.forEach((job) => { if (job.status === "processing") { job.status = "failed"; job.notice = "Phiên kết xuất trước đã bị gián đoạn. Kiểm tra codec rồi bấm Thử lại."; job.progress = 0; } }); });
   }
 
   function createHistory(project) { return { past: [], present: normalizeProject(project), future: [] }; }
@@ -250,7 +326,7 @@
   function undo(history) { if (!history.past.length) return history; return { past: history.past.slice(0, -1), present: normalizeProject(history.past.at(-1)), future: [clone(history.present), ...history.future].slice(0, LIMITS.history) }; }
   function redo(history) { if (!history.future.length) return history; return { past: [...history.past, clone(history.present)].slice(-LIMITS.history), present: normalizeProject(history.future[0]), future: history.future.slice(1) }; }
 
-  return Object.freeze({ LIMITS, createProject, normalizeProject, snapTime, applyTimelineOperation, addSubtitle, createNestedSequence, planProxy, createWaveformEnvelope, addKeyframe, setMulticam, setMotionModel, updateColor, updateAudioChannel, enqueueExport, createHistory, commitHistory, undo, redo });
+  return Object.freeze({ LIMITS, createProject, normalizeProject, snapTime, applyTimelineOperation, addSubtitle, createNestedSequence, planProxy, createWaveformEnvelope, addKeyframe, setMulticam, setMotionModel, updateColor, updateAudioChannel, enqueueExport, updateExportStatus, recoverInterruptedExports, createHistory, commitHistory, undo, redo });
 });
 
 (() => {
@@ -266,6 +342,7 @@
   const $$ = (root, selector) => [...(root?.querySelectorAll(selector) || [])];
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  const clean = (value, max = 120) => String(value ?? "").replace(/[<>\u0000-\u001f]/g, " ").trim().slice(0, max);
   const uid = (prefix) => `${prefix}-${crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
   const icon = (name) => `<i data-lucide="${name}"></i>`;
   const pages = [
@@ -305,6 +382,7 @@
     data: structuredClone(defaults),
     observers: [],
     scopeFrame: 0,
+    restoreFrame: 0,
     meterFrame: 0,
     audio: null,
     micRecorder: null,
@@ -312,22 +390,39 @@
     micChunks: [],
     proHistory: resolveOps.createHistory(defaults.pro),
     timer: 0,
-    exportListener: null
+    scopeTimer: 0,
+    exportListener: null,
+    keyListener: null,
+    lifecycle: 0,
+    micRequest: 0,
+    micPending: false,
+    exportJobId: "",
+    stillBusy: false,
+    lastQueueAt: 0,
+    pageScroll: {},
+    urls: new Set(),
+    urlTimers: new Set()
   };
 
   function load() {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+      const parsed = JSON.parse(localStorage.getItem(STORE_KEY) || "{}"), saved = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      const grade = {}, gradeBounds = { exposure: [-100, 100], contrast: [0, 260], saturation: [0, 300], temperature: [-100, 100], tint: [-100, 100], lift: [-100, 100], gamma: [-100, 100], gain: [-100, 100], highlights: [-100, 100], shadows: [-100, 100], blur: [0, 12], sharpen: [0, 100] };
+      Object.entries(defaults.grade).forEach(([key, fallback]) => { grade[key] = clamp(saved.grade?.[key] ?? fallback, ...gradeBounds[key]); });
+      const audio = { master: clamp(saved.audio?.master ?? 100, 0, 150), pan: clamp(saved.audio?.pan, -100, 100), low: clamp(saved.audio?.low, -18, 18), mid: clamp(saved.audio?.mid, -18, 18), high: clamp(saved.audio?.high, -18, 18), threshold: clamp(saved.audio?.threshold ?? -24, -60, 0), muted: Boolean(saved.audio?.muted), solo: Boolean(saved.audio?.solo), armed: false };
+      const nodeIds = new Set(), nodes = (Array.isArray(saved.nodes) ? saved.nodes : defaults.nodes).slice(0, resolveOps.LIMITS.nodes).map((value, index) => { const node = value && typeof value === "object" ? value : {}, baseId = clean(node.id || `node-${index + 1}`, 80) || `node-${index + 1}`; let id = baseId, suffix = 2; while (nodeIds.has(id)) { id = `${baseId}-${suffix}`; suffix += 1; } nodeIds.add(id); return { id, name: clean(node.name || `Node ${index + 1}`, 100), type: clean(node.type || "effect", 40), enabled: node.enabled !== false }; });
+      if (!nodes.length) nodes.push(...structuredClone(defaults.nodes));
+      const pro = resolveOps.recoverInterruptedExports(saved.pro || defaults.pro);
       state.data = {
-        ...structuredClone(defaults),
-        ...saved,
-        grade: { ...defaults.grade, ...(saved.grade || {}) },
-        audio: { ...defaults.audio, ...(saved.audio || {}) },
-        nodes: Array.isArray(saved.nodes) && saved.nodes.length ? saved.nodes : structuredClone(defaults.nodes),
-        queue: Array.isArray(saved.queue) ? saved.queue : [],
+        page: pages.some(([id]) => id === saved.page) ? saved.page : "edit",
+        proxy: Boolean(saved.proxy), grade, audio, nodes,
+        selectedNode: nodes.some((node) => node.id === saved.selectedNode) ? saved.selectedNode : nodes.find((node) => !["input", "output"].includes(node.type))?.id || nodes[0].id,
+        multicam: pro.multicam.enabled,
+        keyframes: (Array.isArray(saved.keyframes) ? saved.keyframes : []).slice(-80).map((item, index) => ({ id: clean(item?.id || `keyframe-${index + 1}`, 80), timecode: clean(item?.timecode || "00:00:00:00", 16), time: clamp(item?.time, 0, 86400), x: clamp(item?.x, -100000, 100000), y: clamp(item?.y, -100000, 100000), scale: clamp(item?.scale ?? 100, 0, 10000), rotation: clamp(item?.rotation, -36000, 36000), opacity: clamp(item?.opacity ?? 100, 0, 100), volume: clamp(item?.volume ?? 100, 0, 150), speed: clamp(item?.speed ?? 100, 5, 800) })),
+        queue: [],
         bins: [...defaults.bins],
         selectedBin: defaults.bins.includes(saved.selectedBin) ? saved.selectedBin : defaults.selectedBin,
-        pro: resolveOps.normalizeProject(saved.pro || defaults.pro)
+        pro
       };
       state.page = saved.page === "fairlight" ? "audio" : pages.some(([id]) => id === saved.page) ? saved.page : "edit";
       state.proHistory = resolveOps.createHistory(state.data.pro);
@@ -342,18 +437,23 @@
     state.data.page = state.page;
     state.data.pro = resolveOps.normalizeProject(state.data.pro);
     if (state.proHistory) state.proHistory.present = state.data.pro;
-    localStorage.setItem(STORE_KEY, JSON.stringify(state.data));
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state.data)); return true; }
+    catch (_) { const node = $(state.root, ".vr-project-state small"); if (node) { node.textContent = "Không thể tự động lưu"; node.dataset.state = "error"; } return false; }
   }
 
   function commitPro(next, message = "Đã cập nhật timeline chuyên nghiệp.") {
+    const before = JSON.stringify(state.proHistory.present), after = JSON.stringify(resolveOps.normalizeProject(next));
+    if (before === after) { status("Không có thay đổi hợp lệ để áp dụng.", "info"); return false; }
     state.proHistory = resolveOps.commitHistory(state.proHistory, next);
     state.data.pro = state.proHistory.present;
     save();
     renderProSummary();
     status(message, "success");
+    return true;
   }
 
   function undoPro(direction) {
+    if (direction === "redo" ? !state.proHistory.future.length : !state.proHistory.past.length) return status(direction === "redo" ? "Không có thao tác để làm lại." : "Không có thao tác để hoàn tác.", "info");
     state.proHistory = direction === "redo" ? resolveOps.redo(state.proHistory) : resolveOps.undo(state.proHistory);
     state.data.pro = state.proHistory.present;
     save();
@@ -373,7 +473,8 @@
     toast.dataset.kind = kind;
     toast.hidden = false;
     clearTimeout(state.timer);
-    state.timer = setTimeout(() => { toast.hidden = true; }, 2600);
+    const lifecycle = state.lifecycle;
+    state.timer = setTimeout(() => { if (state.lifecycle === lifecycle && toast.isConnected) toast.hidden = true; }, 2600);
   }
 
   function clickBase(selector) {
@@ -511,6 +612,10 @@
         <button type="button" data-vr-action="timeline-slip-forward" title="Trượt nội dung nguồn tiến một giây">${icon("step-forward")}<span>Slip +1s</span></button>
         <button type="button" data-vr-action="timeline-slide-back" title="Trượt clip và điều chỉnh hai clip kề">${icon("move-left")}<span>Slide -1s</span></button>
         <button type="button" data-vr-action="timeline-slide-forward" title="Trượt clip và điều chỉnh hai clip kề">${icon("move-right")}<span>Slide +1s</span></button>
+        <button type="button" data-vr-action="timeline-trim-start" title="Cắt đầu clip tới đầu phát">${icon("panel-left-close")}<span>Trim In</span></button>
+        <button type="button" data-vr-action="timeline-trim-end" title="Cắt cuối clip tới đầu phát">${icon("panel-right-close")}<span>Trim Out</span></button>
+        <button type="button" data-vr-action="timeline-duplicate" title="Nhân đôi clip đang chọn">${icon("copy-plus")}<span>Nhân đôi</span></button>
+        <button type="button" data-vr-action="timeline-track-lock" title="Khóa hoặc mở khóa rãnh đang chọn">${icon("lock-keyhole")}<span>Khóa rãnh</span></button>
         <button type="button" data-vr-action="timeline-snap" title="Bật hoặc tắt bám dính">${icon("magnet")}<span data-vr-summary="snap">Bám dính bật</span><kbd>N</kbd></button>
       </div>
       <div class="vr-edit-ribbon__group"><strong>Cấu trúc</strong>
@@ -659,22 +764,44 @@
 
   function deliverPage() {
     const labels = { queued: "Đã xếp hàng", processing: "Đang xử lý", completed: "Hoàn tất", failed: "Thất bại", cancelled: "Đã hủy", unsupported: "Không hỗ trợ", "provider-not-configured": "Chưa cấu hình" };
-    const queue = state.data.pro.exportQueue.map((job) => `<article data-vr-job="${job.id}"><span class="${job.status}"></span><div><strong>${esc(job.name)}</strong><small>${esc(job.mime)} · ${esc(job.size)}<br>${esc(job.notice)}</small></div><b>${labels[job.status] || "Chờ"}</b><button data-vr-action="queue-remove" data-job-id="${job.id}">${icon("x")}</button></article>`).join("") || `<div class="vr-queue-empty">${icon("list-video")}<strong>Hàng đợi đang trống</strong><span>Chỉ MediaRecorder + Canvas capture được hỗ trợ thật trên trình duyệt.</span></div>`;
+    const queue = state.data.pro.exportQueue.map((job) => `<article data-vr-job="${job.id}"><span class="${job.status}" style="--progress:${job.progress || 0}%"></span><div><strong>${esc(job.name)}</strong><small>${esc(job.mime)} · ${esc(job.size)} · ${Math.round((job.bitrate || 0) / 1000000)} Mbps<br>${esc(job.notice)}</small></div><b>${labels[job.status] || "Chờ"}${job.status === "processing" ? ` · ${Math.round(job.progress || 0)}%` : ""}</b><div class="vr-job-actions">${["failed", "cancelled"].includes(job.status) ? `<button data-vr-action="queue-retry" data-job-id="${job.id}" title="Thử lại">${icon("rotate-cw")}</button>` : ""}${job.status === "processing" ? `<button data-vr-action="queue-cancel" data-job-id="${job.id}" title="Hủy kết xuất">${icon("square")}</button>` : `<button data-vr-action="queue-remove" data-job-id="${job.id}" title="Xóa khỏi hàng đợi">${icon("x")}</button>`}</div></article>`).join("") || `<div class="vr-queue-empty">${icon("list-video")}<strong>Hàng đợi đang trống</strong><span>Chỉ MediaRecorder + Canvas capture được hỗ trợ thật trên trình duyệt.</span></div>`;
     return `<div class="vr-deliver-layout">
       <section class="vr-deliver-settings"><header><strong>Cài đặt kết xuất</strong><span>Web Export</span></header>
         <div class="vr-render-presets"><button data-vr-preset="youtube">${icon("youtube")} YouTube 1080p</button><button data-vr-preset="vertical">${icon("smartphone")} TikTok / Reels</button><button data-vr-preset="archive">${icon("archive")} Master chất lượng cao</button></div>
         <label>Tên tệp<input data-vr-render-name value="hh-resolve-project"></label><label>Định dạng<select data-vr-render-format><option value="video/mp4;codecs=&quot;avc1.424028,mp4a.40.2&quot;">MP4 H.264 + AAC · trên thiết bị nếu hỗ trợ</option><option value="video/webm;codecs=vp9,opus">WebM VP9 + Opus · trên thiết bị</option><option value="video/webm;codecs=vp8,opus">WebM VP8 + Opus · trên thiết bị</option></select></label>
         <div class="vr-render-grid"><label>Độ phân giải<select data-vr-render-size><option value="1920x1080">1920 × 1080</option><option value="1280x720">1280 × 720</option><option value="1080x1920">1080 × 1920</option><option value="1080x1080">1080 × 1080</option></select></label><label>Bitrate<select data-vr-render-bitrate><option value="4000000">4 Mbps</option><option value="8000000" selected>8 Mbps</option><option value="12000000">12 Mbps</option></select></label></div>
-        <label class="vr-check"><input type="checkbox" checked> Xuất âm thanh</label><label class="vr-check"><input type="checkbox" checked> Tối ưu phát trực tuyến</label><button class="is-primary" data-vr-action="queue-add">${icon("list-plus")} Thêm vào hàng đợi</button>
+        <label class="vr-check"><input type="checkbox" checked data-vr-render-audio> Xuất âm thanh</label><label class="vr-check"><input type="checkbox" checked data-vr-render-stream> Tối ưu phát trực tuyến</label><button class="is-primary" data-vr-action="queue-add">${icon("list-plus")} Thêm vào hàng đợi</button>
       </section>
       <div class="vr-slot vr-slot--monitor" data-vr-slot="monitor"></div>
       <aside class="vr-render-queue"><header><div><strong>Hàng đợi kết xuất</strong><span>${state.data.pro.exportQueue.length} tác vụ</span></div><button data-vr-action="queue-clear">Xóa hết</button></header><div data-vr-queue>${queue}</div><footer><p>MP4 H.264/AAC và WebM chỉ được xếp hàng khi MediaRecorder xác nhận codec thật trên thiết bị.</p><button class="is-primary" data-vr-action="queue-start">${icon("play")} Xuất tác vụ khả dụng</button></footer></aside>
     </div>`;
   }
 
+  function capturePageView() {
+    if (!state.stage || state.stage.hidden) return null;
+    state.pageScroll[state.page] = { top: state.stage.scrollTop, left: state.stage.scrollLeft };
+    const active = document.activeElement;
+    if (!active || !state.stage.contains(active)) return null;
+    for (const name of ["data-vr-action", "data-vr-preset", "data-look", "data-vr-bin", "data-job-id"]) if (active.hasAttribute?.(name)) return { name, value: active.getAttribute(name) };
+    return null;
+  }
+
+  function restorePageView(page, focus) {
+    cancelAnimationFrame(state.restoreFrame);
+    const lifecycle = state.lifecycle;
+    state.restoreFrame = requestAnimationFrame(() => {
+      if (state.lifecycle !== lifecycle || !state.stage?.isConnected) return;
+      const scroll = state.pageScroll[page] || { top: 0, left: 0 }; state.stage.scrollTop = scroll.top; state.stage.scrollLeft = scroll.left;
+      if (focus) { const value = window.CSS?.escape ? window.CSS.escape(focus.value) : String(focus.value).replace(/[^a-z0-9_-]/gi, ""); $(state.stage, `[${focus.name}="${value}"]`)?.focus({ preventScroll: true }); }
+    });
+  }
+
   function renderPage(page) {
     if (!state.root) return;
+    const previousPage = state.page, focus = capturePageView();
     state.page = pages.some(([id]) => id === page) ? page : "edit";
+    if (previousPage === "audio" && state.page !== "audio" && state.micRecorder?.state === "recording") { try { state.micRecorder.stop(); } catch (_) {} status("Đã dừng microphone khi rời trang Âm thanh.", "info"); }
+    if (previousPage === "audio" && state.page !== "audio" && state.audio?.context?.state === "running") state.audio.context.suspend?.().catch?.(() => {});
     restorePanels();
     state.root.dataset.vrPage = state.page;
     $$(state.root, "[data-vr-page]").forEach((button) => button.classList.toggle("is-active", button.dataset.vrPage === state.page));
@@ -682,7 +809,7 @@
     $(state.root, "[data-vr-page-title]").textContent = config?.[2] || "Biên tập";
     const help = { media: "Nhập, phân loại, tìm kiếm và lập kế hoạch proxy", cut: "Source Tape, blade, ripple, slip, slide và snapping", edit: "Timeline đa rãnh, sequence lồng, multicam và keyframe", fusion: "Compositing theo nút, motion graphics và hiệu ứng", color: "Color wheels, curves, scopes, LUT và node effects", audio: "Mixer, EQ, compressor, giảm nhiễu và automation", deliver: "Preset, kiểm tra khả năng và hàng đợi xuất trung thực" };
     $(state.root, "[data-vr-page-help]").textContent = help[state.page];
-    cancelAnimationFrame(state.scopeFrame);
+    cancelAnimationFrame(state.scopeFrame); clearTimeout(state.scopeTimer);
     cancelAnimationFrame(state.meterFrame);
     if (state.page === "edit") {
       state.workspace.hidden = false;
@@ -709,6 +836,7 @@
     renderProSummary();
     window.lucide?.createIcons?.({ attrs: { width: 15, height: 15, "stroke-width": 1.7 } });
     save();
+    restorePageView(state.page, previousPage === state.page ? focus : null);
   }
 
   function updateProxy() {
@@ -782,6 +910,7 @@
   }
 
   async function saveStill() {
+    if (state.stillBusy) return status("Khung hình đang được tạo, vui lòng chờ.", "info");
     const video = $(state.root, "[data-ve-video]");
     const image = $(state.root, "[data-ve-image]");
     const source = !image?.hidden && image?.complete && image.naturalWidth ? image : video?.readyState >= 2 && video.videoWidth ? video : null;
@@ -798,23 +927,24 @@
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-    const context = canvas.getContext("2d");
-    context.fillStyle = "#000";
-    context.fillRect(0, 0, width, height);
-    context.filter = gradeFilter();
-    context.drawImage(source, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-    if (!blob?.size) return status("Trình duyệt không thể tạo tệp PNG từ khung hình này.", "error");
-    const anchor = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    anchor.href = url;
-    anchor.download = `hh-still-${new Date().toISOString().replace(/[:.]/g, "-")}.png`;
-    anchor.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
-    const stills = JSON.parse(localStorage.getItem(`${STORE_KEY}.stills`) || "[]");
-    stills.unshift({ at: Date.now(), width, height, size: blob.size, grade: { ...state.data.grade } });
-    localStorage.setItem(`${STORE_KEY}.stills`, JSON.stringify(stills.slice(0, 12)));
-    status(`Đã tạo PNG ${width}×${height} · ${Math.round(blob.size / 1024)} KB.`, "success");
+    const context = canvas.getContext("2d"); if (!context) return status("Canvas 2D không khả dụng trên thiết bị này.", "error");
+    state.stillBusy = true; const lifecycle = state.lifecycle;
+    try {
+      context.fillStyle = "#000";
+      context.fillRect(0, 0, width, height);
+      context.filter = gradeFilter();
+      context.drawImage(source, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (state.lifecycle !== lifecycle || !state.root?.isConnected) return;
+      if (!blob?.size) return status("Trình duyệt không thể tạo tệp PNG từ khung hình này.", "error");
+      const anchor = document.createElement("a"), url = URL.createObjectURL(blob); state.urls.add(url);
+      anchor.href = url; anchor.download = `hh-still-${new Date().toISOString().replace(/[:.]/g, "-")}.png`; anchor.rel = "noopener"; anchor.click();
+      const timer = setTimeout(() => { URL.revokeObjectURL(url); state.urls.delete(url); state.urlTimers.delete(timer); }, 1500); state.urlTimers.add(timer);
+      let stills = []; try { const parsed = JSON.parse(localStorage.getItem(`${STORE_KEY}.stills`) || "[]"); if (Array.isArray(parsed)) stills = parsed.slice(0, 11); } catch (_) {}
+      stills.unshift({ at: Date.now(), width, height, size: blob.size, grade: { ...state.data.grade } });
+      try { localStorage.setItem(`${STORE_KEY}.stills`, JSON.stringify(stills.slice(0, 12))); } catch (_) {}
+      status(`Đã tạo PNG ${width}×${height} · ${Math.round(blob.size / 1024)} KB.`, "success");
+    } finally { if (state.lifecycle === lifecycle) state.stillBusy = false; }
   }
 
   async function copyGrade() {
@@ -860,7 +990,8 @@
         });
       }
     } catch {}
-    state.scopeFrame = requestAnimationFrame(() => setTimeout(drawScopes, 220));
+    const lifecycle = state.lifecycle;
+    state.scopeFrame = requestAnimationFrame(() => { state.scopeTimer = setTimeout(() => { if (state.lifecycle === lifecycle) drawScopes(); }, 220); });
   }
 
   function renderNodes() {
@@ -875,6 +1006,7 @@
 
   function addNode(type) {
     const names = { blur: "GaussianBlur", color: "ColorCorrector", transform: "Transform", text: "TextPlus", glow: "SoftGlow", mask: "PolygonMask", merge: "Merge", keyer: "DeltaKeyer" };
+    if (state.data.nodes.length >= resolveOps.LIMITS.nodes) return status(`Dự án đã đạt giới hạn ${resolveOps.LIMITS.nodes} nút để bảo vệ hiệu năng.`, "error");
     if (["mask", "merge", "keyer"].includes(type)) {
       status("Compositor mask/merge/keyer cần renderer pixel nhiều lớp; chức năng này chưa được bật thay vì tạo kết quả giả.", "error");
       return;
@@ -912,34 +1044,39 @@
       state.micRecorder.stop();
       return;
     }
+    if (state.micPending) return status("Trình duyệt đang xử lý yêu cầu microphone.", "info");
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return status("Trình duyệt này chưa hỗ trợ thu âm.", "error");
+    const lifecycle = state.lifecycle, request = ++state.micRequest; let stream = null;
     try {
-      state.data.audio.armed = true;
-      save();
-      state.micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
-      const mime = ["audio/webm;codecs=opus", "audio/webm"].find((type) => MediaRecorder.isTypeSupported(type)) || "";
-      state.micChunks = [];
-      state.micRecorder = new MediaRecorder(state.micStream, mime ? { mimeType: mime } : undefined);
-      state.micRecorder.ondataavailable = (event) => { if (event.data.size) state.micChunks.push(event.data); };
-      state.micRecorder.onstop = () => {
-        const blob = new Blob(state.micChunks, { type: state.micRecorder.mimeType || "audio/webm" });
-        const file = new File([blob], `ban-thu-${new Date().toISOString().replace(/[:.]/g, "-")}.webm`, { type: blob.type });
-        const transfer = new DataTransfer(); transfer.items.add(file);
+      state.micPending = true; state.data.audio.armed = true; save();
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false } });
+      if (state.lifecycle !== lifecycle || request !== state.micRequest || !state.root?.isConnected) { stream.getTracks().forEach((track) => track.stop()); return; }
+      const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find((type) => !MediaRecorder.isTypeSupported || MediaRecorder.isTypeSupported(type)) || "";
+      const chunks = [], recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      state.micStream = stream; state.micChunks = chunks; state.micRecorder = recorder;
+      recorder.ondataavailable = (event) => { if (event.data?.size) chunks.push(event.data); };
+      recorder.onerror = () => status("Ghi âm bị gián đoạn. Hãy kiểm tra microphone.", "error");
+      recorder.onstop = () => {
+        stream.getTracks().forEach((track) => track.stop());
+        if (state.micStream === stream) state.micStream = null; if (state.micRecorder === recorder) state.micRecorder = null; state.micChunks = [];
+        state.data.audio.armed = false; save();
+        if (state.lifecycle !== lifecycle || !state.root?.isConnected) return;
+        const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+        if (!blob.size) return status("Bản thu rỗng nên không được thêm vào dự án.", "error");
+        const extension = /mp4/i.test(blob.type) ? "m4a" : "webm", file = new File([blob], `ban-thu-${new Date().toISOString().replace(/[:.]/g, "-")}.${extension}`, { type: blob.type });
         const input = $(state.root, "[data-ve-file]");
-        if (input) { input.files = transfer.files; input.dispatchEvent(new Event("change", { bubbles: true })); }
-        state.micStream?.getTracks().forEach((track) => track.stop());
-        state.micStream = null; state.micRecorder = null; state.micChunks = [];
-        state.data.audio.armed = false;
-        save();
-        status("Đã lưu bản thu vào Media Pool và timeline.", "success");
+        if (!input || typeof DataTransfer !== "function") return status("Bản thu đã dừng nhưng trình duyệt không hỗ trợ chuyển tệp vào Media Pool.", "error");
+        const transfer = new DataTransfer(); transfer.items.add(file); input.files = transfer.files; input.dispatchEvent(new Event("change", { bubbles: true }));
+        status("Đã chuyển bản thu thật vào luồng nhập Media Pool.", "success");
       };
-      state.micRecorder.start(250);
+      recorder.start(250);
       status("Đang thu âm · bấm Thu âm lần nữa để dừng.", "success");
     } catch {
+      stream?.getTracks?.().forEach((track) => track.stop());
       state.data.audio.armed = false;
       save();
       status("Không thể truy cập micro. Hãy kiểm tra quyền của trình duyệt.", "error");
-    }
+    } finally { if (state.lifecycle === lifecycle && request === state.micRequest) state.micPending = false; }
   }
 
   function applyAudio() {
@@ -962,7 +1099,7 @@
     const loop = () => {
       if (state.page !== "audio" || !canvas.isConnected) return;
       if (graph) graph.analyser.getByteFrequencyData(data);
-      const level = graph ? data.reduce((sum, value) => sum + value, 0) / data.length / 255 : .08;
+      const level = graph ? data.reduce((sum, value) => sum + value, 0) / data.length / 255 : 0;
       ctx.fillStyle = "#080b0d"; ctx.fillRect(0, 0, canvas.width, canvas.height);
       const gradient = ctx.createLinearGradient(0, canvas.height, 0, 0); gradient.addColorStop(0, "#53df91"); gradient.addColorStop(.7, "#f5d158"); gradient.addColorStop(1, "#ef6471");
       ctx.fillStyle = gradient; const height = Math.max(4, level * canvas.height); ctx.fillRect(8, canvas.height - height, 9, height); ctx.fillRect(22, canvas.height - height * .92, 9, height * .92);
@@ -971,17 +1108,25 @@
     loop();
   }
 
-  function addQueueJob() {
-    const name = $(state.root, "[data-vr-render-name]")?.value.trim() || "hh-resolve-project";
-    const mime = $(state.root, "[data-vr-render-format]")?.value || "video/webm";
-    const size = $(state.root, "[data-vr-render-size]")?.value || "1920x1080";
-    const capabilities = {
+  function exportCapabilities() {
+    return {
       mediaRecorder: Boolean(window.MediaRecorder),
       canvasCapture: Boolean(window.HTMLCanvasElement?.prototype?.captureStream),
       isTypeSupported: (type) => Boolean(window.HHVideoExport?.resolveRecorderMime?.(type)
         || (!window.MediaRecorder?.isTypeSupported || window.MediaRecorder.isTypeSupported(type)))
     };
-    const next = resolveOps.enqueueExport(state.data.pro, { id: uid("render"), name, mime, size }, capabilities);
+  }
+  function canExportMime(mime) { const capabilities = exportCapabilities(); try { return Boolean(capabilities.mediaRecorder && capabilities.canvasCapture && capabilities.isTypeSupported(mime)); } catch (_) { return false; } }
+
+  function addQueueJob() {
+    const now = Date.now();
+    if (now - state.lastQueueAt < 650) return status("Tác vụ vừa được thêm; thao tác lặp đã được bỏ qua.", "info");
+    const name = $(state.root, "[data-vr-render-name]")?.value.trim() || "hh-resolve-project";
+    const mime = $(state.root, "[data-vr-render-format]")?.value || "video/webm";
+    const size = $(state.root, "[data-vr-render-size]")?.value || "1920x1080";
+    const bitrate = Number($(state.root, "[data-vr-render-bitrate]")?.value) || 8000000, includeAudio = $(state.root, "[data-vr-render-audio]")?.checked !== false, id = uid("render");
+    state.lastQueueAt = now;
+    const next = resolveOps.enqueueExport(state.data.pro, { id, idempotencyKey: id, name, mime, size, bitrate, includeAudio }, exportCapabilities());
     const queued = next.exportQueue.at(-1);
     commitPro(next, queued?.status === "unsupported"
       ? "Codec đã chọn chưa được MediaRecorder trên thiết bị này hỗ trợ."
@@ -1035,6 +1180,22 @@
       if (!nudgeBaseProperty("start", delta)) return status("Không thể slide: hãy mở Thanh tra của clip.", "error");
       next = resolveOps.applyTimelineOperation(next, { type, clipId: clip.id, delta });
       commitPro(next, `Đã slide clip ${delta > 0 ? "sang phải" : "sang trái"} ${Math.abs(delta)} giây.`);
+    } else if (type === "trim-start" || type === "trim-end") {
+      const at = timecodeSeconds(), from = clip.start, to = clip.start + clip.duration;
+      if (at <= from || at >= to) return status("Đầu phát phải nằm bên trong clip để trim.", "error");
+      clickBase(`[data-ve-action="${type}"]`);
+      next = resolveOps.applyTimelineOperation(next, { type, clipId: clip.id, at });
+      commitPro(next, type === "trim-start" ? "Đã cắt đầu clip tới đầu phát." : "Đã cắt cuối clip tới đầu phát.");
+    } else if (type === "duplicate") {
+      const originalId = clip.id;
+      if (!clickBase('[data-ve-action="duplicate"]')) return status("Engine timeline chưa thể nhân đôi clip.", "error");
+      const duplicate = selectedModelClip();
+      if (!duplicate || duplicate.id === originalId) return status("Không thể xác nhận clip nhân đôi trên timeline.", "error");
+      renderProSummary(); status("Đã nhân đôi clip và đồng bộ mô hình timeline.", "success");
+    } else if (type === "track-lock") {
+      const track = state.data.pro.tracks.find((item) => item.id === clip.track); if (!track) return;
+      clickBase(`[data-ve-track-lock="${track.id}"]`);
+      commitPro(resolveOps.applyTimelineOperation(next, { type: "set-track", trackId: track.id, locked: !track.locked }), `Rãnh ${track.name} đã ${track.locked ? "mở khóa" : "khóa"}.`);
     }
   }
 
@@ -1082,7 +1243,7 @@
     }
     else if (action === "pro-close") toggleProDrawer(false);
     else if (action === "pro-keyframe-add") addKeyframe();
-    else if (action === "pro-keyframe-delete") { state.root.dispatchEvent(new CustomEvent("hh:video-keyframe-delete")); state.data.keyframes.pop(); state.data.pro.keyframes.pop(); state.data.pro = resolveOps.normalizeProject(state.data.pro); save(); renderKeyframes(); renderProSummary(); status("Đã xóa keyframe cuối khỏi clip và mô hình chuyển động.", "success"); }
+    else if (action === "pro-keyframe-delete") { if (!state.data.pro.keyframes.length) return status("Chưa có keyframe để xóa.", "info"); state.root.dispatchEvent(new CustomEvent("hh:video-keyframe-delete")); state.data.keyframes.pop(); commitPro(resolveOps.normalizeProject({ ...state.data.pro, keyframes: state.data.pro.keyframes.slice(0, -1) }), "Đã xóa keyframe cuối; có thể hoàn tác bằng Undo Pro."); renderKeyframes(); }
     else if (action === "pro-caption" || action === "subtitle-add") { clickBase('[data-ve-action="caption"]'); commitPro(resolveOps.addSubtitle(state.data.pro, { start: timecodeSeconds(), duration: 3, text: "Phụ đề mới", language: "vi" }), "Đã thêm phụ đề vào timeline và mô hình phụ đề."); }
     else if (action === "pro-speed" || action === "motion-ramp") {
       const clip = selectedModelClip(); if (!clip) return status("Hãy chọn một clip trước khi tạo Speed Ramp.", "error");
@@ -1097,6 +1258,10 @@
     else if (action === "timeline-slip-forward") runTimelineOperation("slip", 1);
     else if (action === "timeline-slide-back") runTimelineOperation("slide", -1);
     else if (action === "timeline-slide-forward") runTimelineOperation("slide", 1);
+    else if (action === "timeline-trim-start") runTimelineOperation("trim-start");
+    else if (action === "timeline-trim-end") runTimelineOperation("trim-end");
+    else if (action === "timeline-duplicate") runTimelineOperation("duplicate");
+    else if (action === "timeline-track-lock") runTimelineOperation("track-lock");
     else if (action === "timeline-snap") { const next = resolveOps.applyTimelineOperation(state.data.pro, { type: "toggle-snap" }); const checkbox = $(state.root, "[data-ve-snap]"); if (checkbox) { checkbox.checked = next.snap.enabled; checkbox.dispatchEvent(new Event("change", { bubbles: true })); } commitPro(next, `Bám dính đã ${next.snap.enabled ? "bật" : "tắt"}.`); }
     else if (action === "nested-create") { const clip = selectedModelClip(); if (!clip) return status("Hãy chọn clip để tạo sequence lồng.", "error"); commitPro(resolveOps.createNestedSequence(state.data.pro, [clip.id], `Nested ${state.data.pro.nestedSequences.length + 1}`), "Đã lưu sequence lồng vào project."); status("Sequence lồng đã được lưu nhưng renderer playback lồng chưa hỗ trợ; timeline gốc không bị thay đổi giả.", "info"); }
     else if (action === "pro-undo") undoPro("undo");
@@ -1114,7 +1279,7 @@
     else if (action === "smart-reframe") { const sequence = $(state.root, "[data-ve-sequence]"); if (sequence) { sequence.value = "1080x1920"; sequence.dispatchEvent(new Event("change", { bubbles: true })); } status("Đã chuyển timeline sang khung dọc 9:16.", "success"); }
     else if (action === "add-node") addNode(event.target.closest("[data-node-type]").dataset.nodeType);
     else if (action === "node-delete") { const index = state.data.nodes.findIndex((item) => item.id === state.data.selectedNode); if (index > 0 && index < state.data.nodes.length - 1) { state.data.nodes.splice(index, 1); state.data.selectedNode = state.data.nodes[Math.max(0, index - 1)].id; save(); renderNodes(); } else status("Không thể xóa nút đầu vào hoặc đầu ra.", "error"); }
-    else if (action === "node-duplicate") { const selected = state.data.nodes.find((item) => item.id === state.data.selectedNode); if (selected && !["input", "output"].includes(selected.type)) { const copy = { ...selected, id: uid("node"), name: `${selected.name} Copy` }; state.data.nodes.splice(state.data.nodes.indexOf(selected) + 1, 0, copy); state.data.selectedNode = copy.id; save(); renderNodes(); } }
+    else if (action === "node-duplicate") { const selected = state.data.nodes.find((item) => item.id === state.data.selectedNode); if (state.data.nodes.length >= resolveOps.LIMITS.nodes) return status(`Đã đạt giới hạn ${resolveOps.LIMITS.nodes} nút.`, "error"); if (selected && !["input", "output"].includes(selected.type)) { const copy = { ...selected, id: uid("node"), name: clean(`${selected.name} Copy`, 100) }; state.data.nodes.splice(state.data.nodes.indexOf(selected) + 1, 0, copy); state.data.selectedNode = copy.id; save(); renderNodes(); } }
     else if (action === "node-toggle") { const selected = state.data.nodes.find((item) => item.id === state.data.selectedNode); if (selected) { selected.enabled = selected.enabled === false; const effectMap = { blur: "blur", color: "cinema", glow: "vivid" }; clickBase(`[data-ve-effect="${selected.enabled === false ? "none" : effectMap[selected.type] || "none"}"]`); save(); renderNodes(); status(`${selected.name} đã ${selected.enabled === false ? "bỏ qua" : "bật"}.`, "success"); } }
     else if (action === "node-organize") { const rank = (node) => node.type === "input" ? 0 : node.type === "output" ? 2 : 1; state.data.nodes = state.data.nodes.map((node, index) => ({ node, index })).sort((a, b) => rank(a.node) - rank(b.node) || a.index - b.index).map((row) => row.node); save(); renderNodes(); status("Đã sắp xếp và lưu lại thứ tự đồ thị nút.", "success"); }
     else if (action === "grade-reset") { state.data.grade = { ...defaults.grade }; commitPro(resolveOps.updateColor(state.data.pro, { lut: "none", wheels: { lift: 0, gamma: 0, gain: 0, offset: 0 }, curves: [{ x: 0, y: 0 }, { x: 1, y: 1 }] }), "Đã đặt lại toàn bộ hiệu chỉnh màu cục bộ."); renderPage("color"); }
@@ -1138,14 +1303,18 @@
     else if (action === "audio-automation") { state.data.pro = resolveOps.updateAudioChannel(state.data.pro, "A1", { automation: [...(state.data.pro.audio.channels[0]?.automation || []), { time: timecodeSeconds(), value: state.data.audio.master / 100 }] }); save(); renderPage("audio"); status("Đã thêm điểm automation tại đầu phát.", "success"); }
     else if (action === "eq-reset") { Object.assign(state.data.audio, { low: 0, mid: 0, high: 0, threshold: -24, reverb: 0 }); applyAudio(); state.data.pro = resolveOps.updateAudioChannel(state.data.pro, "A1", { eq: { low: 0, mid: 0, high: 0 }, compressor: { enabled: false, threshold: -24, ratio: 3 }, noiseReduction: { enabled: false, amount: 0 } }); save(); renderPage("audio"); }
     else if (action === "queue-add") addQueueJob();
-    else if (action === "queue-remove") { const id = event.target.closest("[data-job-id]").dataset.jobId; state.data.pro.exportQueue = state.data.pro.exportQueue.filter((job) => job.id !== id); state.data.pro = resolveOps.normalizeProject(state.data.pro); save(); renderPage("deliver"); }
-    else if (action === "queue-clear") { state.data.pro.exportQueue = []; state.data.pro = resolveOps.normalizeProject(state.data.pro); save(); renderPage("deliver"); }
+    else if (action === "queue-remove") { const id = event.target.closest("[data-job-id]").dataset.jobId, job = state.data.pro.exportQueue.find((item) => item.id === id); if (job?.status === "processing") return status("Hãy hủy kết xuất trước khi xóa tác vụ.", "error"); state.data.pro.exportQueue = state.data.pro.exportQueue.filter((item) => item.id !== id); state.data.pro = resolveOps.normalizeProject(state.data.pro); save(); renderPage("deliver"); }
+    else if (action === "queue-clear") { const activeJobs = state.data.pro.exportQueue.filter((job) => job.status === "processing"); state.data.pro.exportQueue = activeJobs; state.data.pro = resolveOps.normalizeProject(state.data.pro); save(); renderPage("deliver"); if (activeJobs.length) status("Đã giữ lại tác vụ đang kết xuất. Hãy hủy trước nếu muốn xóa.", "info"); }
+    else if (action === "queue-retry") { const id = event.target.closest("[data-job-id]").dataset.jobId, job = state.data.pro.exportQueue.find((item) => item.id === id); if (!job || !["failed", "cancelled"].includes(job.status)) return; if (!canExportMime(job.mime)) { job.status = "unsupported"; job.notice = "MediaRecorder, Canvas capture hoặc codec không còn khả dụng trên thiết bị này."; } else { job.status = "queued"; job.progress = 0; job.notice = "Đã kiểm tra lại codec và đưa tác vụ về hàng chờ."; } state.data.pro = resolveOps.normalizeProject(state.data.pro); save(); renderPage("deliver"); }
+    else if (action === "queue-cancel") { const id = event.target.closest("[data-job-id]").dataset.jobId; if (state.exportJobId && id !== state.exportJobId) return status("Tác vụ này không phải phiên kết xuất đang hoạt động.", "error"); clickBase('[data-ve-action="render-cancel"]'); state.data.pro = resolveOps.updateExportStatus(state.data.pro, id, "cancelled", { notice: "Người dùng đã yêu cầu hủy tác vụ kết xuất." }); state.exportJobId = ""; save(); renderPage("deliver"); status("Đã gửi yêu cầu hủy kết xuất.", "info"); }
     else if (action === "queue-start") {
+      if (state.exportJobId || state.data.pro.exportQueue.some((item) => item.status === "processing")) return status("Một tác vụ đang kết xuất. Hãy chờ hoặc hủy trước.", "info");
       const job = state.data.pro.exportQueue.find((item) => item.status === "queued" && /^video\/(?:mp4|webm)/i.test(item.mime));
       if (!job) return status(state.data.pro.exportQueue.length ? "Không có tác vụ nào được trình duyệt xác nhận hỗ trợ." : "Hãy thêm ít nhất một tác vụ vào hàng đợi.", "error");
-      configureExport(job); job.status = "processing"; job.notice = `MediaRecorder đang kết xuất ${job.mime.startsWith("video/mp4") ? "MP4" : "WebM"} thật trên thiết bị.`; state.data.pro = resolveOps.normalizeProject(state.data.pro); save();
-      clickBase('[data-ve-action="render"]');
-      clickBase('[data-ve-action="render-confirm"]');
+      if (!canExportMime(job.mime)) { state.data.pro = resolveOps.updateExportStatus(state.data.pro, job.id, "unsupported", { notice: "MediaRecorder, Canvas capture hoặc codec đã chọn không còn khả dụng." }); save(); renderPage("deliver"); return status("Engine hoặc codec đã chọn không còn khả dụng trên thiết bị.", "error"); }
+      configureExport(job); state.exportJobId = job.id; state.data.pro = resolveOps.updateExportStatus(state.data.pro, job.id, "processing", { progress: 0, notice: `MediaRecorder đang kết xuất ${job.mime.startsWith("video/mp4") ? "MP4" : "WebM"} thật trên thiết bị.` }); save();
+      const opened = clickBase('[data-ve-action="render"]'), confirmed = opened && clickBase('[data-ve-action="render-confirm"]');
+      if (!confirmed) { state.data.pro = resolveOps.updateExportStatus(state.data.pro, job.id, "failed", { notice: "Không mở được engine kết xuất của Video Editor." }); state.exportJobId = ""; save(); renderPage("deliver"); return status("Không thể khởi động engine kết xuất.", "error"); }
       renderPage("deliver");
       status(`Đã bắt đầu kết xuất ${job.mime.startsWith("video/mp4") ? "MP4 H.264/AAC" : "WebM"} trên thiết bị.`, "success");
     }
@@ -1154,8 +1323,8 @@
 
   function handleResolveInput(event) {
     if (event.target.matches("[data-vr-grade]")) {
-      const key = event.target.dataset.vrGrade; state.data.grade[key] = Number(event.target.value);
-      const value = $(state.root, `[data-vr-grade-value="${key}"]`); if (value) value.textContent = `${event.target.value}${key === "blur" ? "px" : ""}`;
+      const key = event.target.dataset.vrGrade, bounds = { exposure: [-100, 100], contrast: [0, 260], saturation: [0, 300], temperature: [-100, 100], tint: [-100, 100], lift: [-100, 100], gamma: [-100, 100], gain: [-100, 100], highlights: [-100, 100], shadows: [-100, 100], blur: [0, 12], sharpen: [0, 100] }[key] || [-100, 100]; state.data.grade[key] = clamp(event.target.value, ...bounds);
+      event.target.value = String(state.data.grade[key]); const value = $(state.root, `[data-vr-grade-value="${key}"]`); if (value) value.textContent = `${state.data.grade[key]}${key === "blur" ? "px" : ""}`;
       const wheelKey = key === "exposure" ? "offset" : ["lift", "gamma", "gain"].includes(key) ? key : null;
       if (wheelKey) state.data.pro = resolveOps.updateColor(state.data.pro, { wheels: { [wheelKey]: Number(event.target.value) } });
       applyGrade(); return true;
@@ -1166,8 +1335,8 @@
       return true;
     }
     if (event.target.matches("[data-vr-audio]")) {
-      const key = event.target.dataset.vrAudio; state.data.audio[key] = Number(event.target.value);
-      const value = $(state.root, `[data-vr-audio-value="${key}"]`); if (value) value.textContent = event.target.value;
+      const key = event.target.dataset.vrAudio, bounds = { master: [0, 150], pan: [-100, 100], low: [-18, 18], mid: [-18, 18], high: [-18, 18], threshold: [-60, 0] }[key] || [-100, 100]; state.data.audio[key] = clamp(event.target.value, ...bounds);
+      event.target.value = String(state.data.audio[key]); const value = $(state.root, `[data-vr-audio-value="${key}"]`); if (value) value.textContent = event.target.value;
       const patch = key === "master" ? { gain: Number(event.target.value) / 100 } : key === "pan" ? { pan: Number(event.target.value) / 100 } : ["low", "mid", "high"].includes(key) ? { eq: { ...state.data.pro.audio.channels[0]?.eq, [key]: Number(event.target.value) } } : key === "threshold" ? { compressor: { ...state.data.pro.audio.channels[0]?.compressor, enabled: true, threshold: Number(event.target.value) } } : {};
       state.data.pro = resolveOps.updateAudioChannel(state.data.pro, "A1", patch);
       ensureAudio().then(applyAudio); return true;
@@ -1176,7 +1345,7 @@
       state.data.pro = resolveOps.applyTimelineOperation(state.data.pro, { type: "toggle-snap", enabled: event.target.checked }); save(); renderProSummary(); return false;
     }
     if (event.target.matches("[data-vr-node-name]")) {
-      const selected = state.data.nodes.find((node) => node.id === state.data.selectedNode); if (selected) { selected.name = event.target.value; save(); }
+      const selected = state.data.nodes.find((node) => node.id === state.data.selectedNode); if (selected) { selected.name = clean(event.target.value, 100); save(); }
       return true;
     }
     return false;
@@ -1185,25 +1354,29 @@
   function handleExportStatus(event) {
     if (!state.root?.isConnected) return;
     const detail = event.detail || {};
-    const job = state.data.pro.exportQueue.find((item) => item.status === "processing")
-      || state.data.pro.exportQueue.find((item) => item.status === "queued" && /^video\/(?:mp4|webm)/i.test(item.mime));
+    const job = state.data.pro.exportQueue.find((item) => item.id === state.exportJobId && item.status === "processing")
+      || (!state.exportJobId ? state.data.pro.exportQueue.find((item) => item.status === "processing") : null);
     if (!job) return;
     const statusMap = { processing: "processing", completed: "completed", failed: "failed", cancelled: "cancelled" };
-    job.status = statusMap[detail.status] || job.status;
-    if (detail.status === "processing") job.notice = `Đang kết xuất trên thiết bị · ${Math.round(detail.progress || 0)}%.`;
-    if (detail.status === "completed") job.notice = `Đã tạo tệp ${detail.name || job.name} · ${Math.round((detail.size || 0) / 1024)} KB.`;
-    if (detail.status === "failed") job.notice = `Kết xuất thất bại · ${detail.message || "Không xác định"}.`;
-    if (detail.status === "cancelled") job.notice = "Người dùng đã hủy tác vụ kết xuất.";
-    state.data.pro = resolveOps.normalizeProject(state.data.pro);
+    const nextStatus = statusMap[detail.status]; if (!nextStatus) return;
+    let notice = job.notice;
+    if (detail.status === "processing") notice = `Đang kết xuất trên thiết bị · ${Math.round(clamp(detail.progress, 0, 100))}%.`;
+    if (detail.status === "completed") notice = `Đã tạo tệp ${clean(detail.name || job.name, 100)} · ${Math.round(clamp(detail.size, 0, 10737418240) / 1024)} KB.`;
+    if (detail.status === "failed") notice = `Kết xuất thất bại · ${clean(detail.message || "Không xác định", 160)}.`;
+    if (detail.status === "cancelled") notice = "Người dùng đã hủy tác vụ kết xuất.";
+    state.data.pro = resolveOps.updateExportStatus(state.data.pro, job.id, nextStatus, { progress: detail.progress, notice });
+    const updatedJob = state.data.pro.exportQueue.find((item) => item.id === job.id);
+    if (["completed", "failed", "cancelled"].includes(nextStatus)) state.exportJobId = "";
     save();
-    const article = $(state.root, `[data-vr-job="${job.id}"]`);
+    if (["completed", "failed", "cancelled"].includes(nextStatus) && state.page === "deliver") { renderPage("deliver"); return; }
+    const id = window.CSS?.escape ? window.CSS.escape(job.id) : job.id.replace(/[^a-z0-9_-]/gi, ""), article = $(state.root, `[data-vr-job="${id}"]`);
     if (article) {
       const dot = article.querySelector(":scope>span");
-      if (dot) dot.className = job.status;
+      if (dot) { dot.className = updatedJob.status; dot.style.setProperty("--progress", `${updatedJob.progress || 0}%`); }
       const notice = article.querySelector("small");
-      if (notice) notice.innerHTML = `${esc(job.mime)} · ${esc(job.size)}<br>${esc(job.notice)}`;
+      if (notice) notice.innerHTML = `${esc(updatedJob.mime)} · ${esc(updatedJob.size)}<br>${esc(updatedJob.notice)}`;
       const label = article.querySelector(":scope>b");
-      if (label) label.textContent = ({ processing: "Đang xử lý", completed: "Hoàn tất", failed: "Thất bại", cancelled: "Đã hủy" })[job.status] || job.status;
+      if (label) label.textContent = ({ processing: "Đang xử lý", completed: "Hoàn tất", failed: "Thất bại", cancelled: "Đã hủy" })[updatedJob.status] || updatedJob.status;
     }
   }
 
@@ -1215,6 +1388,15 @@
       });
       observer.observe(video, { attributes: true, attributeFilter: ["style", "src"] }); state.observers.push(observer);
     }
+  }
+
+  function handleGlobalKeydown(event) {
+    if (!state.root?.isConnected || !location.hash.includes("/davinci-resolve")) return;
+    const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "") || document.activeElement?.isContentEditable;
+    if (event.shiftKey && /^[1-7]$/.test(event.key) && !typing) { event.preventDefault(); renderPage(pages[Number(event.key) - 1][0]); }
+    if (!typing && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "b") { event.preventDefault(); runTimelineOperation("blade"); }
+    if (!typing && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "n") { event.preventDefault(); $(state.root, '[data-vr-action="timeline-snap"]')?.click(); }
+    if (!typing && event.key === "F9") { event.preventDefault(); $(state.root, '[data-ve-asset] [data-ve-action="asset-add"]')?.click(); }
   }
 
   function decorate(outer) {
@@ -1235,29 +1417,27 @@
     observeCore(); applyGrade(); updateProxy(); renderPage(state.page);
     state.exportListener = handleExportStatus;
     window.addEventListener("hh:video-export-status", state.exportListener);
+    state.keyListener = handleGlobalKeydown;
+    window.addEventListener("keydown", state.keyListener);
     state.root.classList.toggle("is-vr-multicam", state.data.multicam);
     window.lucide?.createIcons?.({ attrs: { width: 15, height: 15, "stroke-width": 1.7 } });
   }
 
   function cleanupOwn() {
-    clearTimeout(state.timer); cancelAnimationFrame(state.scopeFrame); cancelAnimationFrame(state.meterFrame);
+    state.lifecycle += 1; state.micRequest += 1;
+    clearTimeout(state.timer); clearTimeout(state.scopeTimer); cancelAnimationFrame(state.scopeFrame); cancelAnimationFrame(state.meterFrame); cancelAnimationFrame(state.restoreFrame);
     state.observers.splice(0).forEach((observer) => observer.disconnect());
     if (state.exportListener) window.removeEventListener("hh:video-export-status", state.exportListener);
-    if (state.micRecorder?.state === "recording") state.micRecorder.stop();
+    if (state.keyListener) window.removeEventListener("keydown", state.keyListener);
+    const recorder = state.micRecorder;
+    if (recorder) { recorder.ondataavailable = null; recorder.onstop = null; recorder.onerror = null; try { if (recorder.state !== "inactive") recorder.stop(); } catch (_) {} }
     state.micStream?.getTracks().forEach((track) => track.stop());
+    state.urlTimers.forEach((timer) => clearTimeout(timer)); state.urlTimers.clear(); state.urls.forEach((url) => URL.revokeObjectURL(url)); state.urls.clear();
     if (state.audio?.video) delete state.audio.video.__hhProcessedAudioStream;
+    [state.audio?.source, state.audio?.low, state.audio?.mid, state.audio?.high, state.audio?.compressor, state.audio?.panner, state.audio?.gain, state.audio?.analyser, state.audio?.exportDestination].forEach((node) => { try { node?.disconnect?.(); } catch (_) {} });
     if (state.audio?.context && state.audio.context.state !== "closed") state.audio.context.close().catch(() => {});
-    Object.assign(state, { root: null, outer: null, workspace: null, stage: null, panels: {}, audio: null, micRecorder: null, micStream: null, micChunks: [], scopeFrame: 0, meterFrame: 0, exportListener: null });
+    Object.assign(state, { root: null, outer: null, workspace: null, stage: null, panels: {}, audio: null, micRecorder: null, micStream: null, micChunks: [], micPending: false, scopeFrame: 0, scopeTimer: 0, meterFrame: 0, restoreFrame: 0, exportListener: null, keyListener: null, exportJobId: "", stillBusy: false });
   }
-
-  addEventListener("keydown", (event) => {
-    if (!state.root?.isConnected || !location.hash.includes("/davinci-resolve")) return;
-    const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "") || document.activeElement?.isContentEditable;
-    if (event.shiftKey && /^[1-7]$/.test(event.key) && !typing) { event.preventDefault(); renderPage(pages[Number(event.key) - 1][0]); }
-    if (!typing && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "b") { event.preventDefault(); runTimelineOperation("blade"); }
-    if (!typing && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "n") { event.preventDefault(); $(state.root, '[data-vr-action="timeline-snap"]')?.click(); }
-    if (event.key === "F9") { event.preventDefault(); $(state.root, '[data-ve-asset] [data-ve-action="asset-add"]')?.click(); }
-  });
 
   window.HHMediaDesign = {
     supports: (name) => name === TOOL || base.supports(name),

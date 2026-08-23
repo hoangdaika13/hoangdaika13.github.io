@@ -14,6 +14,7 @@ test("exposes the versioned UMD API and truthful storage limits", async () => {
   assert.equal(media.SCHEMA, "hh.universal-media.v1");
   assert.equal(media.FORMAT, "hhmedia-package");
   assert.equal(media.VERSION, 1);
+  assert.equal(media.RECORD_VERSION, 2);
   assert.deepEqual(media.STORE_NAMES, ["projects", "assets", "snapshots"]);
   assert.equal(globalThis.HHUniversalMediaProject, media);
   assert.match(source, /globalScope\.HHUniversalMediaProject = api/);
@@ -23,7 +24,61 @@ test("exposes the versioned UMD API and truthful storage limits", async () => {
 
   const store = media.createStore({ indexedDB: null });
   assert.deepEqual(await store.ready(), { backend: "memory", schema: media.SCHEMA });
+  assert.deepEqual(await store.storageStatus(), { backend: "memory", persistent: false, fallbackReason: "indexeddb-unavailable", schema: media.SCHEMA, recordVersion: media.RECORD_VERSION });
   await store.close();
+});
+
+test("migrates legacy records and normalizes rights without unsafe URLs", () => {
+  const project = media.migrateProjectRecord({ id: "legacy-project", version: 1, name: "Legacy", assets: ["ignored"], assetIds: ["a", "a"] });
+  const asset = media.migrateAssetRecord({
+    id: "a", projectId: project.id, name: "licensed.svg", type: "image/svg+xml", license: "CC BY 4.0",
+    sourceUrl: "javascript:alert(1)", metadata: { GPS: { latitude: 10 }, camera: "HH" }
+  });
+  assert.equal(project.recordVersion, media.RECORD_VERSION);
+  assert.deepEqual(project.assetIds, ["a"]);
+  assert.equal(asset.recordVersion, media.RECORD_VERSION);
+  assert.equal(asset.rights.license, "CC BY 4.0");
+  assert.equal(asset.rights.sourceUrl, "");
+  assert.equal(media.hasSensitiveMetadata(asset.metadata), true);
+  assert.deepEqual(media.stripSensitiveMetadata(asset.metadata), { camera: "HH" });
+});
+
+test("bounded command history executes, undoes and redoes without overlapping mutations", async () => {
+  let value = 0;
+  const changes = [];
+  const history = media.createCommandHistory({ limit: 2, onChange: (state) => changes.push(state) });
+  const command = (next) => ({ label: `Set ${next}`, redo: () => { value = next; }, undo: () => { value = next - 1; } });
+  await history.execute(command(1));
+  await history.execute(command(2));
+  await history.execute(command(3));
+  assert.equal(value, 3);
+  assert.equal(await history.undo(), true);
+  assert.equal(value, 2);
+  assert.equal(await history.undo(), true);
+  assert.equal(value, 1);
+  assert.equal(await history.undo(), false);
+  assert.equal(await history.redo(), true);
+  assert.equal(value, 2);
+  assert.ok(changes.some((state) => state.canUndo));
+});
+
+test("pending async mount is cancelled cleanly before it can repaint an unmounted route", async () => {
+  let resolveReady;
+  const ready = new Promise((resolve) => { resolveReady = resolve; });
+  const classes = new Set();
+  const rootNode = {
+    innerHTML: "", ownerDocument: {},
+    classList: { add: (name) => classes.add(name), remove: (name) => classes.delete(name) },
+    querySelector() { return null; }
+  };
+  const store = { ready: () => ready, close: async () => {} };
+  const mounting = media.mount(rootNode, { store });
+  await new Promise((resolve) => setImmediate(resolve));
+  await media.unmount(rootNode);
+  resolveReady({ backend: "memory", schema: media.SCHEMA });
+  assert.equal(await mounting, null);
+  assert.equal(rootNode.innerHTML, "");
+  assert.equal(classes.has("hhump"), false);
 });
 
 test("classifies every required Media Bin type", () => {
@@ -41,13 +96,14 @@ test("pure search and Smart Collections support folder, tag, favorite, recent an
   const assets = [
     media.normalizeAsset({ id: "a", projectId: "p", folderId: "social", name: "Hero Neon.png", type: "image/png", tags: ["campaign"], favorite: true, lastOpenedAt: "2026-07-20T10:00:00.000Z", blob: new Blob(["a"]) }),
     media.normalizeAsset({ id: "b", projectId: "p", name: "Master.mov", type: "video/quicktime", size: 120 * 1024 * 1024, lastOpenedAt: "2026-06-01T10:00:00.000Z", blob: new Blob(["b"]) }),
-    media.normalizeAsset({ id: "c", projectId: "p", name: "Inter.woff2", type: "font/woff2", metadata: { fontFamily: "Inter" }, availability: "offline", createdAt: "2026-05-01T10:00:00.000Z", lastOpenedAt: "2026-05-01T10:00:00.000Z" })
+    media.normalizeAsset({ id: "c", projectId: "p", name: "Inter.woff2", type: "font/woff2", metadata: { fontFamily: "Inter" }, rights: { license: "Commercial", verified: false }, availability: "offline", createdAt: "2026-05-01T10:00:00.000Z", lastOpenedAt: "2026-05-01T10:00:00.000Z" })
   ];
   assert.deepEqual(media.searchAssets(assets, "neon", { folderId: "social", tag: "campaign" }).map((asset) => asset.id), ["a"]);
   assert.deepEqual(media.applySmartCollection(assets, "favorites", { nowMs: current }).map((asset) => asset.id), ["a"]);
   assert.deepEqual(media.applySmartCollection(assets, "recent", { nowMs: current }).map((asset) => asset.id), ["a"]);
   assert.deepEqual(media.applySmartCollection(assets, "large-video").map((asset) => asset.id), ["b"]);
   assert.deepEqual(media.applySmartCollection(assets, "offline").map((asset) => asset.id), ["c"]);
+  assert.deepEqual(media.applySmartCollection(assets, "rights-review").map((asset) => asset.id), ["c"]);
   assert.deepEqual(media.applySmartCollection(assets, "missing-fonts", { availableFonts: [] }).map((asset) => asset.id), ["c"]);
 });
 
@@ -102,6 +158,37 @@ test("replaceAsset preserves stable identity, references, effects, tags and fold
   assert.deepEqual(replaced.references, ["timeline-clip-1", "poster-frame"]);
   assert.deepEqual(replaced.effects, [{ id: "fx-1", type: "blur", radius: 8 }]);
   assert.equal(await replaced.blob.text(), "new-binary");
+  assert.equal(replaced.versions.length, 1);
+  assert.equal(replaced.versions[0].binaryRetained, true);
+  const restored = await store.restoreAssetVersion(replaced.id, replaced.versions[0].id);
+  assert.equal(restored.id, original.id);
+  assert.equal(restored.name, "source.png");
+  assert.equal(await restored.blob.text(), "old");
+  assert.ok(restored.versions.some((version) => version.name === "source-v2.webp"));
+});
+
+test("relink verifies content identity, preserves stable ID and duplicate links repair after delete", async () => {
+  const store = media.createStore({ indexedDB: null });
+  const project = await store.saveProject({ name: "Relink lab" });
+  const original = await store.saveAsset({ projectId: project.id, name: "voice.wav", type: "audio/wav", blob: new Blob([Uint8Array.from([1, 2, 3])]) });
+  const duplicate = await store.saveAsset({ projectId: project.id, name: "voice-copy.wav", type: "audio/wav", blob: new Blob([Uint8Array.from([1, 2, 3])]) });
+  await store.updateAsset(original.id, { availability: "offline" });
+  await assert.rejects(() => store.relinkAsset(original.id, { name: "wrong.wav", type: "audio/wav", blob: new Blob([Uint8Array.from([9])]) }), /không khớp checksum/);
+  const relinked = await store.relinkAsset(original.id, { name: "voice-restored.wav", type: "audio/wav", blob: new Blob([Uint8Array.from([1, 2, 3])]) });
+  assert.equal(relinked.id, original.id);
+  await store.removeAsset(original.id);
+  const repaired = await store.getAsset(duplicate.id);
+  assert.equal(repaired.duplicateOf, null);
+  assert.equal(repaired.duplicateConfidence, "none");
+});
+
+test("asset validation rejects active SVG and labels sampled hashes honestly", async () => {
+  await assert.rejects(() => media.inspectAssetBlob(new Blob(['<svg onload="alert(1)"></svg>'], { type: "image/svg+xml" }), { name: "unsafe.svg", type: "image/svg+xml" }), /không an toàn/);
+  await assert.rejects(() => media.inspectAssetBlob(new Blob(['<svg><image href="https://tracker.invalid/x.png"/></svg>'], { type: "image/svg+xml" }), { name: "external.svg", type: "image/svg+xml" }), /không an toàn/);
+  const safe = await media.inspectAssetBlob(new Blob(["<svg></svg>"], { type: "image/svg+xml" }), { name: "safe.svg", type: "image/svg+xml" });
+  assert.equal(safe.status, "verified");
+  const large = new Blob([new Uint8Array(media.LIMITS.HASH_FULL_MAX_BYTES + 1)]);
+  assert.match(await media.computeContentHash(large, {}), /^sampled-fnv1a-/);
 });
 
 test("warning and proxy helpers report missing/offline/font states truthfully", () => {
@@ -138,6 +225,32 @@ test("autosave, snapshots and restore preserve versioned metadata", async () => 
   await autosave.dispose();
 });
 
+test("snapshot recovery hides later assets without destroying their relinkable binary", async () => {
+  const store = media.createStore({ indexedDB: null });
+  const project = await store.saveProject({ name: "Recovery" });
+  const first = await store.saveAsset({ projectId: project.id, name: "first.svg", type: "image/svg+xml", blob: new Blob(["<svg></svg>"]) });
+  const snapshot = await store.createSnapshot(project.id, "Before second asset");
+  const later = await store.saveAsset({ projectId: project.id, name: "later.svg", type: "image/svg+xml", blob: new Blob(["<svg><path/></svg>"]) });
+  await store.restoreSnapshot(snapshot.id);
+  assert.deepEqual((await store.listAssets(project.id)).map((asset) => asset.id), [first.id]);
+  const recovery = await store.recoveryStatus(project.id);
+  assert.deepEqual(recovery.orphanAssetIds, [later.id]);
+  assert.equal(await (await store.getAsset(later.id)).blob.text(), "<svg><path/></svg>");
+});
+
+test("autosave can create bounded real checkpoints without failing a successful save", async () => {
+  const store = media.createStore({ indexedDB: null });
+  const project = await store.saveProject({ name: "Autosave checkpoints" });
+  const checkpoints = [];
+  const autosave = store.createAutosave(project.id, { delay: 5000, checkpointEvery: 1, onCheckpoint: (snapshot) => checkpoints.push(snapshot.id) });
+  autosave.schedule({ ...project, name: "Autosaved" });
+  const saved = await autosave.flush();
+  assert.equal(saved.name, "Autosaved");
+  assert.equal(checkpoints.length, 1);
+  assert.equal((await store.listSnapshots(project.id)).length, 1);
+  await autosave.dispose();
+});
+
 test("bounded .hhmedia package round-trips small binary and marks large asset for relink", async () => {
   const sourceStore = media.createStore({ indexedDB: null });
   let project = await sourceStore.saveProject({ name: "Portable project", references: { activeAsset: "small" } });
@@ -154,6 +267,7 @@ test("bounded .hhmedia package round-trips small binary and marks large asset fo
   assert.equal(payload.assets.find((asset) => asset.id === small.id).binary.encoding, "base64");
   assert.equal(payload.assets.find((asset) => asset.id === "large").binary, null);
   assert.ok(payload.warnings.some((item) => item.code === "binary-omitted" && item.assetId === "large"));
+  assert.ok(payload.assets.every((asset) => (asset.versions || []).every((version) => version.binaryRetained === false && version.blob == null)));
   assert.ok(Buffer.byteLength(text, "utf8") <= media.LIMITS.MAX_PACKAGE_TEXT_BYTES);
 
   const targetStore = media.createStore({ indexedDB: null });
@@ -182,6 +296,14 @@ test("package importer rejects malformed, oversized and corrupt binary manifests
     snapshots: []
   };
   await assert.rejects(() => store.importPackage(JSON.stringify(invalid)), /Base64/);
+  const corrupt = {
+    format: media.FORMAT, schema: media.SCHEMA, version: media.VERSION,
+    project: { id: "source", name: "Corrupt" },
+    assets: [{ id: "asset-a", name: "a.bin", type: "application/octet-stream", checksum: `sha256-${"0".repeat(64)}`, binary: { encoding: "base64", bytes: 3, type: "application/octet-stream", data: Buffer.from([1, 2, 3]).toString("base64") } }],
+    snapshots: []
+  };
+  await assert.rejects(() => store.importPackage(JSON.stringify(corrupt)), /Checksum binary không khớp/);
+  assert.equal((await store.listProjects()).length, 0);
   const oversized = "x".repeat(media.LIMITS.MAX_PACKAGE_TEXT_BYTES + 1);
   await assert.rejects(() => store.importPackage(oversized), /vượt giới hạn an toàn/);
 });

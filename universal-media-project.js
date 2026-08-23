@@ -9,6 +9,7 @@
   const SCHEMA = "hh.universal-media.v1";
   const FORMAT = "hhmedia-package";
   const VERSION = 1;
+  const RECORD_VERSION = 2;
   const DB_NAME = "hh-universal-media";
   const DB_VERSION = 1;
   const STORE_NAMES = Object.freeze(["projects", "assets", "snapshots"]);
@@ -20,7 +21,16 @@
   const MAX_INLINE_ASSET_BYTES = 1024 * 1024;
   const MAX_PACKAGE_TEXT_BYTES = 12 * 1024 * 1024;
   const MAX_PROJECT_JSON_BYTES = 1024 * 1024;
+  const MAX_ASSET_BYTES = 4 * 1024 * 1024 * 1024;
+  const MAX_ASSET_VERSIONS = 24;
+  const MAX_VERSION_BINARY_BYTES = 8 * 1024 * 1024;
+  const MAX_VERSION_BINARY_TOTAL_BYTES = 32 * 1024 * 1024;
+  const MAX_COMMAND_HISTORY = 100;
+  const HASH_FULL_MAX_BYTES = 32 * 1024 * 1024;
+  const MAX_SVG_BYTES = 5 * 1024 * 1024;
+  const MAX_RIGHTS_USES = 20;
   const activeInstances = new Set();
+  const pendingMounts = new Map();
 
   const TYPE_LABELS = Object.freeze({
     image: "Hình ảnh",
@@ -38,6 +48,7 @@
     { id: "favorites", label: "Yêu thích", icon: "★" },
     { id: "duplicates", label: "Tệp trùng", icon: "⧉" },
     { id: "offline", label: "Đang ngoại tuyến", icon: "!" },
+    { id: "rights-review", label: "Cần kiểm tra quyền", icon: "©" },
     { id: "missing-fonts", label: "Font bị thiếu", icon: "T" },
     { id: "large-video", label: "Video cần proxy", icon: "▶" }
   ]);
@@ -47,6 +58,7 @@
   }
 
   function uid(prefix) {
+    if (globalScope.crypto?.randomUUID) return `${prefix}-${globalScope.crypto.randomUUID()}`;
     return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   }
 
@@ -74,6 +86,105 @@
     return [...new Set((Array.isArray(values) ? values : []).map((value) => boundedText(value, maxLength || 60)).filter(Boolean))].slice(0, max);
   }
 
+  function safeExternalUrl(value) {
+    const text = boundedText(value, 1000);
+    if (!text || !/^https?:\/\//i.test(text)) return "";
+    try {
+      const parsed = new URL(text, "https://hh.local/");
+      return ["http:", "https:"].includes(parsed.protocol) ? text : "";
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function safeIsoDate(value) {
+    if (!value) return "";
+    const timestamp = Date.parse(value);
+    return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : "";
+  }
+
+  function normalizeRights(input) {
+    const source = input && typeof input === "object" ? input : {};
+    return {
+      author: boundedText(source.author, 180),
+      sourceUrl: safeExternalUrl(source.sourceUrl || source.source),
+      license: boundedText(source.license || source.licenseId, 100),
+      licenseUrl: safeExternalUrl(source.licenseUrl),
+      attributionRequired: Boolean(source.attributionRequired),
+      attribution: boundedText(source.attribution, 500),
+      allowedUses: uniqueStrings(source.allowedUses, MAX_RIGHTS_USES, 80),
+      territories: uniqueStrings(source.territories, 40, 80),
+      expiresAt: safeIsoDate(source.expiresAt),
+      verified: Boolean(source.verified),
+      notes: boundedText(source.notes, 1000)
+    };
+  }
+
+  function normalizeProvenance(input, fallbackName) {
+    const source = input && typeof input === "object" ? input : {};
+    return {
+      sourceType: ["local-file", "package", "generated", "provider", "unknown"].includes(source.sourceType) ? source.sourceType : "unknown",
+      sourceId: boundedText(source.sourceId, 180),
+      sourceUrl: safeExternalUrl(source.sourceUrl),
+      originalName: boundedText(source.originalName, 240, fallbackName || "asset.bin"),
+      importedAt: safeIsoDate(source.importedAt) || now(),
+      attribution: boundedText(source.attribution, 500)
+    };
+  }
+
+  function normalizeAssetVersion(input) {
+    const source = input && typeof input === "object" ? input : {};
+    const blob = source.blob instanceof Blob && source.blob.size <= MAX_VERSION_BINARY_BYTES ? source.blob : null;
+    return {
+      id: boundedText(source.id, 100, uid("asset-version")),
+      createdAt: safeIsoDate(source.createdAt) || now(),
+      reason: boundedText(source.reason, 180, "Thay thế tệp nguồn"),
+      name: boundedText(source.name, 240, "asset.bin"),
+      type: boundedText(source.type, 160, "application/octet-stream"),
+      size: Math.max(0, Math.min(MAX_ASSET_BYTES, Number(source.size) || 0)),
+      checksum: boundedText(source.checksum, 180),
+      checksumMode: ["full", "sampled", "unavailable"].includes(source.checksumMode) ? source.checksumMode : "unavailable",
+      metadata: safeJsonValue(source.metadata || {}, 0),
+      rights: normalizeRights(source.rights),
+      binaryRetained: Boolean(blob),
+      blob
+    };
+  }
+
+  function normalizeAssetVersions(input) {
+    const versions = (Array.isArray(input) ? input : []).slice(-MAX_ASSET_VERSIONS).map(normalizeAssetVersion);
+    let retainedBytes = 0;
+    for (let index = versions.length - 1; index >= 0; index -= 1) {
+      const version = versions[index];
+      if (!version.blob || retainedBytes + version.blob.size > MAX_VERSION_BINARY_TOTAL_BYTES) { version.blob = null; version.binaryRetained = false; }
+      else retainedBytes += version.blob.size;
+    }
+    return versions;
+  }
+
+  function stripSensitiveMetadata(input) {
+    const blocked = /^(gps|location|latitude|longitude|serialnumber|deviceid|ownername|creatorcontact)$/i;
+    const walk = (value, depth) => {
+      if (depth > 8 || value == null || typeof value !== "object") return safeJsonValue(value, depth);
+      if (Array.isArray(value)) return value.slice(0, 1000).map((item) => walk(item, depth + 1));
+      const output = {};
+      Object.entries(value).slice(0, 1000).forEach(([key, item]) => {
+        if (!["__proto__", "prototype", "constructor"].includes(key) && !blocked.test(key.replace(/[\s_-]/g, ""))) output[boundedText(key, 120, "field")] = walk(item, depth + 1);
+      });
+      return output;
+    };
+    return walk(input && typeof input === "object" ? input : {}, 0) || {};
+  }
+
+  function hasSensitiveMetadata(input) {
+    const blocked = /^(gps|location|latitude|longitude|serialnumber|deviceid|ownername|creatorcontact)$/i;
+    const inspect = (value, depth) => {
+      if (depth > 8 || value == null || typeof value !== "object") return false;
+      return Object.entries(value).some(([key, item]) => blocked.test(key.replace(/[\s_-]/g, "")) || inspect(item, depth + 1));
+    };
+    return inspect(input, 0);
+  }
+
   function safeJsonValue(value, depth, budget) {
     const level = Number(depth) || 0;
     const state = budget || { keys: 0 };
@@ -85,6 +196,7 @@
     if (typeof value === "object" && !(value instanceof Blob)) {
       const output = {};
       Object.entries(value).slice(0, 1000).forEach(([key, item]) => {
+        if (["__proto__", "prototype", "constructor"].includes(key)) return;
         state.keys += 1;
         output[boundedText(key, 120, "field")] = safeJsonValue(item, level + 1, state);
       });
@@ -119,27 +231,37 @@
       name: boundedText(source.name, 100, id === ROOT_FOLDER_ID ? "Media Bin" : "Thư mục mới"),
       parentId: id === ROOT_FOLDER_ID ? null : boundedText(source.parentId, 100, ROOT_FOLDER_ID),
       color: /^#[0-9a-f]{6}$/i.test(String(source.color || "")) ? source.color : "#62d7e7",
-      createdAt: source.createdAt || now()
+      createdAt: safeIsoDate(source.createdAt) || now()
     };
   }
 
   function normalizeProject(input) {
     const source = input && typeof input === "object" ? input : {};
-    const folders = (Array.isArray(source.folders) ? source.folders : []).slice(0, MAX_FOLDERS).map(normalizeFolder);
+    const folderIds = new Set();
+    const folders = (Array.isArray(source.folders) ? source.folders : []).slice(0, MAX_FOLDERS).map(normalizeFolder).filter((folder) => {
+      if (folderIds.has(folder.id)) return false;
+      folderIds.add(folder.id); return true;
+    });
     if (!folders.some((folder) => folder.id === ROOT_FOLDER_ID)) folders.unshift(normalizeFolder({ id: ROOT_FOLDER_ID }, 0));
-    const createdAt = source.createdAt || now();
+    const createdAt = safeIsoDate(source.createdAt) || now();
     return {
       schema: SCHEMA,
+      recordVersion: RECORD_VERSION,
       id: boundedText(source.id, 100, uid("media-project")),
       name: boundedText(source.name, 160, "Dự án media mới"),
       description: boundedText(source.description, 1200),
       createdAt,
-      updatedAt: now(),
+      updatedAt: safeIsoDate(source.updatedAt) || now(),
+      lastOpenedAt: safeIsoDate(source.lastOpenedAt) || createdAt,
       folders: folders.slice(0, MAX_FOLDERS),
       requiredFonts: uniqueStrings(source.requiredFonts, 100, 120),
       assetIds: uniqueStrings(source.assetIds, MAX_ASSETS, 100),
       settings: safeJsonValue(source.settings || {}, 0),
       references: safeJsonValue(source.references || {}, 0),
+      canvas: safeJsonValue(source.canvas || {}, 0),
+      timeline: safeJsonValue(source.timeline || {}, 0),
+      document: safeJsonValue(source.document || {}, 0),
+      exportJobs: (Array.isArray(source.exportJobs) ? source.exportJobs : []).slice(-100).map((job) => safeJsonValue(job, 0)),
       revision: Math.max(1, Number(source.revision) || 1)
     };
   }
@@ -149,29 +271,42 @@
     const blob = source.blob instanceof Blob ? source.blob : null;
     const thumbnailBlob = source.thumbnailBlob instanceof Blob ? source.thumbnailBlob : null;
     const type = boundedText(source.type || blob?.type, 160, "application/octet-stream");
-    const createdAt = source.createdAt || now();
+    const createdAt = safeIsoDate(source.createdAt) || now();
+    const id = boundedText(source.id, 100, uid("asset"));
     return {
       schema: SCHEMA,
-      id: boundedText(source.id, 100, uid("asset")),
+      recordVersion: RECORD_VERSION,
+      id,
+      originId: boundedText(source.originId || source.id || id, 100),
       projectId: boundedText(source.projectId, 100),
       folderId: boundedText(source.folderId, 100, ROOT_FOLDER_ID),
       name: boundedText(source.name, 240, "asset.bin"),
       type,
       kind: TYPE_LABELS[source.kind] ? source.kind : classifyAsset(type, source.name),
-      size: Math.max(0, Number(source.size ?? blob?.size) || 0),
+      size: Math.max(0, Math.min(MAX_ASSET_BYTES, Number(source.size ?? blob?.size) || 0)),
       lastModified: Math.max(0, Number(source.lastModified) || 0),
       checksum: boundedText(source.checksum, 160),
+      checksumMode: ["full", "sampled", "unavailable"].includes(source.checksumMode) ? source.checksumMode : (String(source.checksum || "").startsWith("sampled-") ? "sampled" : source.checksum ? "full" : "unavailable"),
       duplicateOf: boundedText(source.duplicateOf, 100) || null,
+      duplicateConfidence: source.duplicateConfidence === "probable" ? "probable" : source.duplicateOf ? "exact" : "none",
       favorite: Boolean(source.favorite),
       tags: uniqueStrings(source.tags, MAX_TAGS, 60),
       availability: ["ready", "offline", "missing"].includes(source.availability) ? source.availability : (blob ? "ready" : "offline"),
       createdAt,
-      updatedAt: now(),
-      lastOpenedAt: source.lastOpenedAt || createdAt,
+      updatedAt: safeIsoDate(source.updatedAt) || now(),
+      lastOpenedAt: safeIsoDate(source.lastOpenedAt) || createdAt,
       metadata: safeJsonValue(source.metadata || {}, 0),
       thumbnail: safeJsonValue(source.thumbnail || { status: thumbnailBlob ? "generated" : "unavailable" }, 0),
       references: safeJsonValue(source.references || [], 0),
       effects: safeJsonValue(source.effects || [], 0),
+      versions: normalizeAssetVersions(source.versions),
+      rights: normalizeRights(source.rights || {
+        author: source.author,
+        sourceUrl: source.sourceUrl,
+        license: source.license,
+        licenseUrl: source.licenseUrl
+      }),
+      provenance: normalizeProvenance(source.provenance, source.name),
       blob,
       thumbnailBlob
     };
@@ -181,19 +316,52 @@
     const source = input && typeof input === "object" ? input : {};
     return {
       schema: SCHEMA,
+      recordVersion: RECORD_VERSION,
       id: boundedText(source.id, 100, uid("snapshot")),
       projectId: boundedText(source.projectId, 100),
       label: boundedText(source.label, 120, "Snapshot"),
       note: boundedText(source.note, 500),
-      createdAt: source.createdAt || now(),
+      createdAt: safeIsoDate(source.createdAt) || now(),
       project: normalizeProject(source.project || {}),
       assets: (Array.isArray(source.assets) ? source.assets : []).slice(0, MAX_ASSETS).map((asset) => {
         const normalized = normalizeAsset(asset);
         normalized.blob = null;
         normalized.thumbnailBlob = null;
+        normalized.versions = normalized.versions.map((version) => ({ ...version, blob: null, binaryRetained: false }));
         return normalized;
       })
     };
+  }
+
+  function migrateProjectRecord(input) {
+    const source = input && typeof input === "object" ? input : {};
+    const migrated = normalizeProject(source);
+    migrated.createdAt = safeIsoDate(source.createdAt) || migrated.createdAt;
+    migrated.updatedAt = safeIsoDate(source.updatedAt) || migrated.updatedAt;
+    return migrated;
+  }
+
+  function migrateAssetRecord(input) {
+    const source = input && typeof input === "object" ? input : {};
+    const migrated = normalizeAsset(source);
+    migrated.createdAt = safeIsoDate(source.createdAt) || migrated.createdAt;
+    migrated.updatedAt = safeIsoDate(source.updatedAt) || migrated.updatedAt;
+    return migrated;
+  }
+
+  function migrateSnapshotRecord(input) {
+    return normalizeSnapshot(input);
+  }
+
+  function remapIds(value, idMap, depth) {
+    const level = Number(depth) || 0;
+    if (level > 8 || value == null) return value;
+    if (typeof value === "string") return idMap.get(value) || value;
+    if (Array.isArray(value)) return value.slice(0, 1000).map((item) => remapIds(item, idMap, level + 1));
+    if (typeof value === "object" && !(value instanceof Blob)) {
+      return Object.fromEntries(Object.entries(value).slice(0, 1000).filter(([key]) => !["__proto__", "prototype", "constructor"].includes(key)).map(([key, item]) => [key, remapIds(item, idMap, level + 1)]));
+    }
+    return value;
   }
 
   function searchAssets(assets, query, options) {
@@ -204,7 +372,7 @@
       if (settings.kind && settings.kind !== "all" && asset.kind !== settings.kind) return false;
       if (settings.tag && !asset.tags?.includes(settings.tag)) return false;
       if (!term) return true;
-      const haystack = [asset.name, asset.kind, asset.type, ...(asset.tags || []), asset.metadata?.title, asset.metadata?.artist]
+      const haystack = [asset.name, asset.kind, asset.type, ...(asset.tags || []), asset.metadata?.title, asset.metadata?.artist, asset.rights?.author, asset.rights?.license, asset.provenance?.originalName]
         .filter(Boolean).join(" ").toLocaleLowerCase("vi");
       return haystack.includes(term);
     });
@@ -218,6 +386,7 @@
     if (collectionId === "favorites") return list.filter((asset) => asset.favorite);
     if (collectionId === "duplicates") return list.filter((asset) => Boolean(asset.duplicateOf));
     if (collectionId === "offline") return list.filter((asset) => asset.availability !== "ready" || !asset.blob);
+    if (collectionId === "rights-review") return list.filter((asset) => Boolean(asset.rights?.expiresAt && Date.parse(asset.rights.expiresAt) < nowMs) || Boolean((asset.rights?.license || asset.rights?.sourceUrl) && !asset.rights?.verified) || Boolean(asset.rights?.attributionRequired && !asset.rights?.attribution));
     if (collectionId === "missing-fonts") {
       const availableFonts = new Set((context?.availableFonts || []).map((font) => String(font).toLowerCase()));
       return list.filter((asset) => asset.kind === "font" && asset.metadata?.fontFamily && !availableFonts.has(String(asset.metadata.fontFamily).toLowerCase()));
@@ -238,6 +407,10 @@
       if (asset.availability === "missing") warnings.push({ code: "missing-file", level: "error", assetId: asset.id, message: `${asset.name} đã mất liên kết nguồn.` });
       else if (asset.availability === "offline" || !asset.blob) warnings.push({ code: "offline", level: "warning", assetId: asset.id, message: `${asset.name} chỉ còn metadata trên thiết bị này.` });
       if (asset.duplicateOf) warnings.push({ code: "duplicate", level: "info", assetId: asset.id, message: `${asset.name} trùng nội dung với asset khác.` });
+      if (asset.rights?.expiresAt && Date.parse(asset.rights.expiresAt) < Date.now()) warnings.push({ code: "rights-expired", level: "error", assetId: asset.id, message: `Quyền sử dụng ${asset.name} đã hết hạn.` });
+      else if ((asset.rights?.license || asset.rights?.sourceUrl) && !asset.rights?.verified) warnings.push({ code: "rights-unverified", level: "warning", assetId: asset.id, message: `Nguồn hoặc giấy phép của ${asset.name} chưa được xác minh.` });
+      if (asset.rights?.attributionRequired && !asset.rights?.attribution) warnings.push({ code: "attribution-missing", level: "warning", assetId: asset.id, message: `${asset.name} yêu cầu ghi công nhưng chưa có nội dung ghi công.` });
+      if (hasSensitiveMetadata(asset.metadata)) warnings.push({ code: "sensitive-metadata", level: "warning", assetId: asset.id, message: `${asset.name} còn metadata vị trí hoặc thiết bị nhạy cảm.` });
     });
     (project?.requiredFonts || []).forEach((font) => {
       if (!availableFonts.has(String(font).toLowerCase())) warnings.push({ code: "missing-font", level: "warning", font, message: `Thiếu font ${font}.` });
@@ -276,21 +449,100 @@
 
   async function computeContentHash(input, cryptoScope) {
     let bytes;
-    if (input instanceof Blob) bytes = new Uint8Array(await input.arrayBuffer());
+    let sampled = false;
+    if (input instanceof Blob && input.size > HASH_FULL_MAX_BYTES) {
+      const sampleBytes = 1024 * 1024;
+      const head = new Uint8Array(await input.slice(0, sampleBytes).arrayBuffer());
+      const tail = new Uint8Array(await input.slice(Math.max(0, input.size - sampleBytes)).arrayBuffer());
+      const size = new TextEncoder().encode(`:${input.size}:`);
+      bytes = new Uint8Array(head.length + size.length + tail.length);
+      bytes.set(head, 0); bytes.set(size, head.length); bytes.set(tail, head.length + size.length);
+      sampled = true;
+    } else if (input instanceof Blob) bytes = new Uint8Array(await input.arrayBuffer());
     else if (input instanceof ArrayBuffer) bytes = new Uint8Array(input);
     else if (ArrayBuffer.isView(input)) bytes = new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
     else bytes = new TextEncoder().encode(String(input || ""));
     const cryptoApi = cryptoScope || globalScope.crypto;
     if (cryptoApi?.subtle?.digest) {
       const digest = await cryptoApi.subtle.digest("SHA-256", bytes);
-      return `sha256-${[...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("")}`;
+      return `${sampled ? "sampled-" : ""}sha256-${[...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("")}${sampled ? `-${input.size}` : ""}`;
     }
     let hash = 2166136261;
     for (let index = 0; index < bytes.length; index += 1) {
       hash ^= bytes[index];
       hash = Math.imul(hash, 16777619);
     }
-    return `fnv1a-${(hash >>> 0).toString(16).padStart(8, "0")}-${bytes.length}`;
+    return `${sampled ? "sampled-" : ""}fnv1a-${(hash >>> 0).toString(16).padStart(8, "0")}-${sampled ? input.size : bytes.length}`;
+  }
+
+  async function inspectAssetBlob(blob, input) {
+    if (!(blob instanceof Blob)) return { status: "metadata-only", detectedType: "", safeToPreview: false };
+    if (blob.size > MAX_ASSET_BYTES) throw new Error("Asset vượt giới hạn an toàn 4 GB.");
+    const name = boundedText(input?.name, 240, "asset.bin");
+    const claimedType = boundedText(input?.type || blob.type, 160, "application/octet-stream").toLowerCase();
+    const kind = classifyAsset(claimedType, name);
+    const bytes = new Uint8Array(await blob.slice(0, 32).arrayBuffer());
+    const ascii = String.fromCharCode(...bytes);
+    let detectedType = "";
+    if (bytes[0] === 0x89 && ascii.slice(1, 4) === "PNG") detectedType = "image/png";
+    else if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) detectedType = "image/jpeg";
+    else if (["GIF87a", "GIF89a"].includes(ascii.slice(0, 6))) detectedType = "image/gif";
+    else if (ascii.slice(0, 4) === "RIFF" && ascii.slice(8, 12) === "WEBP") detectedType = "image/webp";
+    else if (ascii.slice(4, 8) === "ftyp") detectedType = kind === "audio" ? "audio/mp4" : "video/mp4";
+    else if (ascii.slice(0, 4) === "OggS") detectedType = kind === "audio" ? "audio/ogg" : "video/ogg";
+    else if (ascii.slice(0, 4) === "%PDF") detectedType = "application/pdf";
+    else if (ascii.slice(0, 4) === "wOFF") detectedType = "font/woff";
+    else if (ascii.slice(0, 4) === "wOF2") detectedType = "font/woff2";
+    if (kind === "svg") {
+      if (blob.size > MAX_SVG_BYTES) throw new Error("SVG vượt giới hạn kiểm tra an toàn 5 MB.");
+      const markup = await blob.text();
+      if (/<script\b|\bon[a-z]+\s*=|javascript\s*:|<!ENTITY\b|<foreignObject\b|@import\b|(?:href|xlink:href)\s*=\s*["']\s*(?:https?:|\/\/)|url\s*\(\s*["']?\s*(?:https?:|\/\/)/i.test(markup)) throw new Error("SVG chứa nội dung chủ động hoặc tham chiếu ngoài không an toàn.");
+      if (!/<svg\b/i.test(markup)) return { status: "signature-mismatch", detectedType: "", safeToPreview: false };
+      detectedType = "image/svg+xml";
+    }
+    const exact = !detectedType || claimedType === "application/octet-stream" || claimedType === detectedType || (claimedType.startsWith("audio/") && detectedType.startsWith("audio/")) || (claimedType.startsWith("video/") && detectedType.startsWith("video/"));
+    return {
+      status: detectedType ? (exact ? "verified" : "signature-mismatch") : "unverified",
+      detectedType,
+      claimedType,
+      safeToPreview: Boolean(detectedType && exact && ["image", "svg"].includes(kind))
+    };
+  }
+
+  function createCommandHistory(options) {
+    const limit = Math.max(1, Math.min(MAX_COMMAND_HISTORY, Number(options?.limit) || MAX_COMMAND_HISTORY));
+    const undoStack = [];
+    const redoStack = [];
+    let busy = false;
+    const notify = () => options?.onChange?.({ canUndo: undoStack.length > 0, canRedo: redoStack.length > 0, undoLabel: undoStack.at(-1)?.label || "", redoLabel: redoStack.at(-1)?.label || "" });
+    const validate = (command) => {
+      if (!command || typeof command.undo !== "function" || typeof command.redo !== "function") throw new TypeError("Lệnh cần hàm undo và redo.");
+      return { label: boundedText(command.label, 120, "Thay đổi"), undo: command.undo, redo: command.redo };
+    };
+    return Object.freeze({
+      async execute(command) {
+        if (busy) throw new Error("Một thao tác lịch sử đang chạy.");
+        const entry = validate(command); busy = true;
+        try { const result = await entry.redo(); undoStack.push(entry); if (undoStack.length > limit) undoStack.shift(); redoStack.length = 0; notify(); return result; }
+        finally { busy = false; }
+      },
+      async undo() {
+        if (busy || !undoStack.length) return false;
+        busy = true; const entry = undoStack.pop();
+        try { await entry.undo(); redoStack.push(entry); notify(); return true; }
+        catch (error) { undoStack.push(entry); notify(); throw error; }
+        finally { busy = false; }
+      },
+      async redo() {
+        if (busy || !redoStack.length) return false;
+        busy = true; const entry = redoStack.pop();
+        try { await entry.redo(); undoStack.push(entry); notify(); return true; }
+        catch (error) { redoStack.push(entry); notify(); throw error; }
+        finally { busy = false; }
+      },
+      clear() { if (!busy) { undoStack.length = 0; redoStack.length = 0; notify(); } },
+      get state() { return { canUndo: undoStack.length > 0, canRedo: redoStack.length > 0, undoLabel: undoStack.at(-1)?.label || "", redoLabel: redoStack.at(-1)?.label || "", busy }; }
+    });
   }
 
   async function extractMetadata(file, env) {
@@ -342,10 +594,12 @@
     return metadata;
   }
 
-  function createMemoryBackend() {
+  function createMemoryBackend(fallbackReason) {
     const stores = Object.fromEntries(STORE_NAMES.map((name) => [name, new Map()]));
     return {
       type: "memory",
+      persistent: false,
+      fallbackReason: boundedText(fallbackReason, 180, "indexeddb-unavailable"),
       async get(store, key) { return clone(stores[store].get(key)); },
       async put(store, value) { stores[store].set(value.id, clone(value)); return clone(value); },
       async delete(store, key) { stores[store].delete(key); return true; },
@@ -376,6 +630,8 @@
     }
     return {
       type: "indexeddb",
+      persistent: true,
+      fallbackReason: "",
       get: (store, key) => requestPromise(objectStore(store, "readonly").get(key)),
       put: (store, value) => requestPromise(objectStore(store, "readwrite").put(value)).then(() => clone(value)),
       delete: (store, key) => requestPromise(objectStore(store, "readwrite").delete(key)).then(() => true),
@@ -388,11 +644,11 @@
   async function createBackend(options) {
     if (options?.backend) return options.backend;
     const indexedDB = Object.prototype.hasOwnProperty.call(options || {}, "indexedDB") ? options.indexedDB : globalScope.indexedDB;
-    if (!indexedDB?.open) return createMemoryBackend();
+    if (!indexedDB?.open) return createMemoryBackend("indexeddb-unavailable");
     try {
       return await createIndexedDbBackend(indexedDB, options?.dbName || DB_NAME);
-    } catch (_) {
-      return createMemoryBackend();
+    } catch (error) {
+      return createMemoryBackend(`indexeddb-open-failed:${boundedText(error?.name || "unknown", 80)}`);
     }
   }
 
@@ -416,21 +672,28 @@
     const backendPromise = createBackend(options || {});
     const withBackend = async (callback) => callback(await backendPromise);
 
+    async function migrateStoredRecord(storeName, raw, normalizer) {
+      if (!raw) return null;
+      const migrated = normalizer(raw);
+      if (raw.schema !== SCHEMA || Number(raw.recordVersion) !== RECORD_VERSION) await withBackend((backend) => backend.put(storeName, migrated));
+      return migrated;
+    }
+
     async function saveProject(input) {
       const existing = input?.id ? await withBackend((backend) => backend.get("projects", input.id)) : null;
-      const project = normalizeProject({ ...existing, ...input, createdAt: existing?.createdAt || input?.createdAt, revision: existing ? Math.max(existing.revision + 1, Number(input.revision) || 0) : input?.revision });
+      const project = normalizeProject({ ...existing, ...input, createdAt: existing?.createdAt || input?.createdAt, updatedAt: now(), revision: existing ? Math.max(existing.revision + 1, Number(input.revision) || 0) : input?.revision });
       if (JSON.stringify(project).length > MAX_PROJECT_JSON_BYTES) throw new Error("Dự án vượt giới hạn metadata 1 MB.");
       await withBackend((backend) => backend.put("projects", project));
       return clone(project);
     }
 
     async function getProject(id) {
-      return withBackend((backend) => backend.get("projects", id));
+      return migrateStoredRecord("projects", await withBackend((backend) => backend.get("projects", id)), migrateProjectRecord);
     }
 
     async function listProjects() {
       const projects = await withBackend((backend) => backend.all("projects"));
-      return projects.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+      return Promise.all(projects.map((project) => migrateStoredRecord("projects", project, migrateProjectRecord))).then((rows) => rows.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))));
     }
 
     async function createFolder(projectId, input) {
@@ -438,6 +701,8 @@
       if (!project) throw new Error("Không tìm thấy dự án.");
       if (project.folders.length >= MAX_FOLDERS) throw new Error(`Mỗi dự án tối đa ${MAX_FOLDERS} thư mục.`);
       const folder = normalizeFolder({ ...input, id: input?.id || uid("folder") }, project.folders.length);
+      if (project.folders.some((item) => item.id === folder.id)) throw new Error("ID thư mục đã tồn tại.");
+      if (!project.folders.some((item) => item.id === folder.parentId)) folder.parentId = ROOT_FOLDER_ID;
       await saveProject({ ...project, folders: [...project.folders, folder] });
       return clone(folder);
     }
@@ -448,18 +713,26 @@
       if (!project) throw new Error("Không tìm thấy dự án.");
       const assets = await listAssets(projectId);
       await Promise.all(assets.filter((asset) => asset.folderId === folderId).map((asset) => updateAsset(asset.id, { folderId: ROOT_FOLDER_ID })));
-      await saveProject({ ...project, folders: project.folders.filter((folder) => folder.id !== folderId) });
+      await saveProject({ ...project, folders: project.folders.filter((folder) => folder.id !== folderId).map((folder) => folder.parentId === folderId ? { ...folder, parentId: ROOT_FOLDER_ID } : folder) });
       return true;
     }
 
-    async function listAssets(projectId, query) {
+    async function listAllProjectAssets(projectId) {
       const assets = await withBackend((backend) => backend.all("assets"));
-      const projectAssets = assets.filter((asset) => !projectId || asset.projectId === projectId);
+      const rows = assets.filter((asset) => !projectId || asset.projectId === projectId);
+      return Promise.all(rows.map((asset) => migrateStoredRecord("assets", asset, migrateAssetRecord)));
+    }
+
+    async function listAssets(projectId, query) {
+      const assets = await listAllProjectAssets(projectId);
+      const project = projectId ? await getProject(projectId) : null;
+      const activeIds = project ? new Set(project.assetIds) : null;
+      const projectAssets = assets.filter((asset) => !activeIds || activeIds.has(asset.id));
       return searchAssets(projectAssets, query?.text, query).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
     }
 
     async function getAsset(id) {
-      return withBackend((backend) => backend.get("assets", id));
+      return migrateStoredRecord("assets", await withBackend((backend) => backend.get("assets", id)), migrateAssetRecord);
     }
 
     async function findDuplicate(projectId, checksum, exceptId) {
@@ -468,14 +741,52 @@
       return assets.find((asset) => asset.id !== exceptId && asset.checksum === checksum) || null;
     }
 
+    async function repairDuplicateLinks(projectId) {
+      const assets = await listAssets(projectId);
+      const leaders = new Map();
+      for (const asset of assets.slice().sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))) {
+        if (!asset.checksum) continue;
+        const leader = leaders.get(asset.checksum);
+        const duplicateOf = leader?.id || null;
+        const duplicateConfidence = duplicateOf ? (asset.checksumMode === "sampled" ? "probable" : "exact") : "none";
+        if (asset.duplicateOf !== duplicateOf || asset.duplicateConfidence !== duplicateConfidence) {
+          await withBackend((backend) => backend.put("assets", normalizeAsset({ ...asset, duplicateOf, duplicateConfidence, updatedAt: now() })));
+        }
+        if (!leader) leaders.set(asset.checksum, asset);
+      }
+    }
+
     async function saveAsset(input) {
       if (!input?.projectId) throw new Error("Asset cần projectId.");
       const project = await getProject(input.projectId);
       if (!project) throw new Error("Không tìm thấy dự án chứa asset.");
-      if (!input.id && project.assetIds.length >= MAX_ASSETS) throw new Error(`Mỗi dự án tối đa ${MAX_ASSETS} asset.`);
+      const existing = input.id ? await getAsset(input.id) : null;
+      if (existing && existing.projectId !== project.id) throw new Error("ID asset đã thuộc một dự án khác.");
+      if (!existing && project.assetIds.length >= MAX_ASSETS) throw new Error(`Mỗi dự án tối đa ${MAX_ASSETS} asset.`);
+      if (input.blob instanceof Blob && input.blob.size > MAX_ASSET_BYTES) throw new Error("Asset vượt giới hạn an toàn 4 GB.");
+      const folderId = project.folders.some((folder) => folder.id === input.folderId) ? input.folderId : ROOT_FOLDER_ID;
+      const validation = input.blob instanceof Blob ? await inspectAssetBlob(input.blob, input) : { status: "metadata-only", detectedType: "", safeToPreview: false };
       const checksum = input.checksum || (input.blob instanceof Blob ? await computeContentHash(input.blob, options?.crypto) : "");
       const duplicate = await findDuplicate(input.projectId, checksum, input.id);
-      const asset = normalizeAsset({ ...input, checksum, duplicateOf: input.duplicateOf || duplicate?.id || null });
+      const checksumMode = String(checksum).startsWith("sampled-") ? "sampled" : checksum ? "full" : "unavailable";
+      const asset = normalizeAsset({
+        ...existing,
+        ...input,
+        id: existing?.id || input.id,
+        projectId: project.id,
+        folderId,
+        createdAt: existing?.createdAt || input.createdAt,
+        updatedAt: now(),
+        size: input.blob instanceof Blob ? input.blob.size : input.size,
+        metadata: { ...safeJsonValue(input.metadata || existing?.metadata || {}, 0), validation },
+        checksum,
+        checksumMode,
+        duplicateOf: duplicate?.id || null,
+        duplicateConfidence: duplicate ? (checksumMode === "sampled" ? "probable" : "exact") : "none",
+        provenance: input.provenance || existing?.provenance || { sourceType: input.blob ? "local-file" : "unknown", originalName: input.name },
+        blob: input.blob instanceof Blob ? input.blob : existing?.blob || null,
+        thumbnailBlob: input.thumbnailBlob instanceof Blob ? input.thumbnailBlob : existing?.thumbnailBlob || null
+      });
       await withBackend((backend) => backend.put("assets", asset));
       if (!project.assetIds.includes(asset.id)) await saveProject({ ...project, assetIds: [...project.assetIds, asset.id] });
       return clone(asset);
@@ -485,7 +796,10 @@
       const existing = await getAsset(id);
       if (!existing) throw new Error("Không tìm thấy asset.");
       const immutable = { id: existing.id, projectId: existing.projectId, createdAt: existing.createdAt };
-      const asset = normalizeAsset({ ...existing, ...safeJsonValue(patch || {}, 0), ...immutable, blob: patch?.blob instanceof Blob ? patch.blob : existing.blob, thumbnailBlob: patch?.thumbnailBlob instanceof Blob ? patch.thumbnailBlob : existing.thumbnailBlob });
+      const project = await getProject(existing.projectId);
+      const cleanPatch = safeJsonValue(patch || {}, 0);
+      if (cleanPatch.folderId && !project?.folders?.some((folder) => folder.id === cleanPatch.folderId)) cleanPatch.folderId = ROOT_FOLDER_ID;
+      const asset = normalizeAsset({ ...existing, ...cleanPatch, ...immutable, updatedAt: now(), blob: patch?.blob instanceof Blob ? patch.blob : existing.blob, thumbnailBlob: patch?.thumbnailBlob instanceof Blob ? patch.thumbnailBlob : existing.thumbnailBlob });
       await withBackend((backend) => backend.put("assets", asset));
       return clone(asset);
     }
@@ -495,23 +809,31 @@
       if (!existing) throw new Error("Không tìm thấy asset cần thay thế.");
       const blob = replacement?.blob instanceof Blob ? replacement.blob : null;
       if (!blob) throw new Error("Tệp thay thế không hợp lệ.");
+      const validation = await inspectAssetBlob(blob, replacement);
       const checksum = await computeContentHash(blob, options?.crypto);
       const duplicate = await findDuplicate(existing.projectId, checksum, id);
+      const previousVersion = normalizeAssetVersion({ ...existing, reason: replacement.reason || "Thay thế tệp nguồn", checksumMode: existing.checksumMode, blob: existing.blob?.size <= MAX_VERSION_BINARY_BYTES ? existing.blob : null });
+      const checksumMode = checksum.startsWith("sampled-") ? "sampled" : "full";
       const replaced = normalizeAsset({
         ...existing,
         name: replacement.name || existing.name,
         type: replacement.type || blob.type || existing.type,
         size: blob.size,
         lastModified: replacement.lastModified || 0,
-        metadata: replacement.metadata || {},
+        metadata: { ...safeJsonValue(replacement.metadata || {}, 0), validation },
         checksum,
+        checksumMode,
         duplicateOf: duplicate?.id || null,
+        duplicateConfidence: duplicate ? (checksumMode === "sampled" ? "probable" : "exact") : "none",
         availability: "ready",
         blob,
         thumbnailBlob: replacement.thumbnailBlob || null,
         thumbnail: replacement.thumbnail || { status: "pending", reason: "Asset vừa được thay thế" },
         references: existing.references,
         effects: existing.effects,
+        versions: normalizeAssetVersions([...existing.versions, previousVersion]),
+        rights: replacement.rights || existing.rights,
+        provenance: replacement.provenance || { ...existing.provenance, originalName: replacement.name || existing.name },
         id: existing.id,
         projectId: existing.projectId,
         folderId: existing.folderId,
@@ -520,7 +842,60 @@
         createdAt: existing.createdAt
       });
       await withBackend((backend) => backend.put("assets", replaced));
+      await repairDuplicateLinks(existing.projectId);
       return clone(replaced);
+    }
+
+    async function relinkAsset(id, replacement, relinkOptions) {
+      const existing = await getAsset(id);
+      if (!existing) throw new Error("Không tìm thấy asset cần relink.");
+      const blob = replacement?.blob instanceof Blob ? replacement.blob : null;
+      if (!blob) throw new Error("Tệp relink không hợp lệ.");
+      const checksum = await computeContentHash(blob, options?.crypto);
+      const sameAlgorithm = existing.checksum && existing.checksum.split("-")[0] === checksum.split("-")[0];
+      if (existing.checksum && sameAlgorithm && existing.checksum !== checksum && relinkOptions?.acceptChangedContent !== true) {
+        throw new Error("Tệp relink không khớp checksum. Hãy dùng Thay tệp nếu đây là phiên bản nội dung mới.");
+      }
+      if (existing.checksum && existing.checksum !== checksum && relinkOptions?.acceptChangedContent !== true) {
+        throw new Error("Không thể xác minh checksum bằng cùng thuật toán. Hãy xác nhận thay đổi nội dung để tiếp tục.");
+      }
+      return replaceAsset(id, { ...replacement, reason: existing.availability === "ready" ? "Relink nguồn" : "Khôi phục liên kết nguồn" });
+    }
+
+    async function restoreAssetVersion(id, versionId) {
+      const existing = await getAsset(id);
+      if (!existing) throw new Error("Không tìm thấy asset.");
+      const version = existing.versions.find((item) => item.id === versionId);
+      if (!version) throw new Error("Không tìm thấy phiên bản asset.");
+      if (!(version.blob instanceof Blob)) throw new Error("Phiên bản này chỉ giữ metadata/checksum và cần relink binary nguồn.");
+      const remaining = existing.versions.filter((item) => item.id !== version.id);
+      const currentVersion = normalizeAssetVersion({ ...existing, reason: `Trước khi khôi phục ${version.name}`, blob: existing.blob?.size <= MAX_VERSION_BINARY_BYTES ? existing.blob : null });
+      const restored = normalizeAsset({
+        ...existing,
+        name: version.name,
+        type: version.type,
+        size: version.blob.size,
+        checksum: version.checksum,
+        checksumMode: version.checksumMode,
+        metadata: version.metadata,
+        rights: version.rights,
+        availability: "ready",
+        blob: version.blob,
+        versions: normalizeAssetVersions([...remaining, currentVersion])
+      });
+      await withBackend((backend) => backend.put("assets", restored));
+      await repairDuplicateLinks(existing.projectId);
+      return getAsset(id);
+    }
+
+    async function restoreAssetRecord(record) {
+      const clean = migrateAssetRecord(record);
+      const project = await getProject(clean.projectId);
+      if (!project) throw new Error("Không tìm thấy dự án để khôi phục asset.");
+      await withBackend((backend) => backend.put("assets", normalizeAsset({ ...clean, updatedAt: now() })));
+      if (!project.assetIds.includes(clean.id)) await saveProject({ ...project, assetIds: [...project.assetIds, clean.id] });
+      await repairDuplicateLinks(clean.projectId);
+      return getAsset(clean.id);
     }
 
     async function removeAsset(id) {
@@ -529,6 +904,7 @@
       await withBackend((backend) => backend.delete("assets", id));
       const project = await getProject(asset.projectId);
       if (project) await saveProject({ ...project, assetIds: project.assetIds.filter((assetId) => assetId !== id) });
+      await repairDuplicateLinks(asset.projectId);
       return true;
     }
 
@@ -549,32 +925,64 @@
 
     async function listSnapshots(projectId) {
       const snapshots = await withBackend((backend) => backend.all("snapshots"));
-      return snapshots.filter((snapshot) => !projectId || snapshot.projectId === projectId).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+      const rows = snapshots.filter((snapshot) => !projectId || snapshot.projectId === projectId);
+      return Promise.all(rows.map((snapshot) => migrateStoredRecord("snapshots", snapshot, migrateSnapshotRecord))).then((items) => items.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))));
     }
 
     async function restoreSnapshot(snapshotId) {
-      const snapshot = await withBackend((backend) => backend.get("snapshots", snapshotId));
-      if (!snapshot) throw new Error("Không tìm thấy snapshot.");
-      const currentAssets = new Map((await listAssets(snapshot.projectId)).map((asset) => [asset.id, asset]));
+      const rawSnapshot = await withBackend((backend) => backend.get("snapshots", snapshotId));
+      if (!rawSnapshot) throw new Error("Không tìm thấy snapshot.");
+      const snapshot = migrateSnapshotRecord(rawSnapshot);
+      const currentAssets = new Map((await listAllProjectAssets(snapshot.projectId)).map((asset) => [asset.id, asset]));
       const project = await saveProject({ ...snapshot.project, id: snapshot.projectId });
       for (const metadata of snapshot.assets) {
         const current = currentAssets.get(metadata.id);
         await withBackend((backend) => backend.put("assets", normalizeAsset({ ...metadata, blob: current?.blob || null, thumbnailBlob: current?.thumbnailBlob || null, availability: current?.blob ? metadata.availability : "offline" })));
       }
+      await repairDuplicateLinks(snapshot.projectId);
       return clone(project);
+    }
+
+    async function recoveryStatus(projectId) {
+      const project = await getProject(projectId);
+      if (!project) throw new Error("Không tìm thấy dự án.");
+      const snapshots = await listSnapshots(projectId);
+      const allAssets = await listAllProjectAssets(projectId);
+      const activeIds = new Set(project.assetIds);
+      const orphanAssetIds = allAssets.filter((asset) => !activeIds.has(asset.id)).map((asset) => asset.id);
+      const latest = snapshots[0] || null;
+      return {
+        projectId,
+        latestSnapshotId: latest?.id || null,
+        latestSnapshotAt: latest?.createdAt || null,
+        hasRecoveryPoint: Boolean(latest),
+        changedSinceSnapshot: Boolean(latest && Date.parse(project.updatedAt) > Date.parse(latest.createdAt)),
+        orphanAssetIds
+      };
     }
 
     function createAutosave(projectId, autosaveOptions) {
       const delay = Math.max(50, Number(autosaveOptions?.delay) || 900);
+      const checkpointEvery = Math.max(0, Math.min(100, Number(autosaveOptions?.checkpointEvery) || 0));
       let timer = 0;
       let pending = null;
       let closed = false;
+      let saveCount = 0;
       async function flush() {
         if (!pending || closed) return null;
         clearTimeout(timer);
         const next = pending;
         pending = null;
-        const saved = await saveProject({ ...next, id: projectId });
+        let saved;
+        try { saved = await saveProject({ ...next, id: projectId }); }
+        catch (error) { pending = next; throw error; }
+        saveCount += 1;
+        if (checkpointEvery && saveCount % checkpointEvery === 0) {
+          try {
+            const checkpoint = await createSnapshot(projectId, `Tự động · ${new Date().toLocaleString("vi-VN")}`, "Checkpoint autosave");
+            autosaveOptions?.onCheckpoint?.(clone(checkpoint));
+          } catch (error) { autosaveOptions?.onError?.(error); }
+        }
         autosaveOptions?.onSaved?.(clone(saved));
         return saved;
       }
@@ -602,7 +1010,7 @@
       const packagedAssets = [];
       for (const source of assets.slice(0, MAX_ASSETS)) {
         const asset = normalizeAsset(source);
-        const record = { ...asset, blob: undefined, thumbnailBlob: undefined, binary: null };
+        const record = { ...asset, blob: undefined, thumbnailBlob: undefined, versions: asset.versions.map((version) => ({ ...version, blob: undefined, binaryRetained: false })), binary: null };
         if (asset.blob && asset.size <= MAX_INLINE_ASSET_BYTES && embeddedBytes + asset.size <= MAX_PACKAGE_TEXT_BYTES / 2) {
           record.binary = { encoding: "base64", type: asset.type, data: await blobToBase64(asset.blob), bytes: asset.size };
           embeddedBytes += asset.size;
@@ -615,8 +1023,10 @@
         format: FORMAT,
         schema: SCHEMA,
         version: VERSION,
+        recordVersion: RECORD_VERSION,
         exportedAt: now(),
         limits: { maxAssets: MAX_ASSETS, maxInlineAssetBytes: MAX_INLINE_ASSET_BYTES },
+        contract: { stableAssetIds: true, binaryOptional: true, missingBinaryRequiresRelink: true, assetVersionBinariesOmittedFromPackage: true },
         project: safeJsonValue(project, 0),
         assets: packagedAssets.map((asset) => {
           const metadata = safeJsonValue({ ...asset, binary: undefined }, 0);
@@ -631,6 +1041,7 @@
     }
 
     async function importPackage(input) {
+      if (input instanceof Blob && input.size > MAX_PACKAGE_TEXT_BYTES) throw new Error("Gói .hhmedia vượt giới hạn an toàn 12 MB.");
       const text = typeof input === "string" ? input : await input?.text?.();
       if (typeof text !== "string") throw new Error("Gói .hhmedia không hợp lệ.");
       if (new TextEncoder().encode(text).byteLength > MAX_PACKAGE_TEXT_BYTES) throw new Error("Gói .hhmedia vượt giới hạn an toàn 12 MB.");
@@ -641,12 +1052,11 @@
       const oldProjectId = boundedText(payload.project.id, 100);
       const projectId = uid("media-project");
       const idMap = new Map();
-      payload.assets.forEach((asset) => idMap.set(boundedText(asset.id, 100), uid("asset")));
-      let project = normalizeProject({ ...safeJsonValue(payload.project, 0), id: projectId, name: `${boundedText(payload.project.name, 140, "Dự án nhập")} · nhập`, assetIds: [] });
-      project = await saveProject(project);
-      let importedAssets = 0;
-      let relinkRequired = 0;
+      const prepared = [];
       for (const raw of payload.assets) {
+        const sourceId = boundedText(raw?.id, 100);
+        if (!sourceId || idMap.has(sourceId)) throw new Error("Manifest chứa ID asset trống hoặc trùng lặp.");
+        idMap.set(sourceId, uid("asset"));
         const clean = safeJsonValue({ ...raw, binary: undefined }, 0);
         let blob = null;
         if (raw.binary) {
@@ -655,29 +1065,82 @@
           if (binary.data.length > Math.ceil(MAX_INLINE_ASSET_BYTES * 4 / 3) + 8) throw new Error("Binary Base64 vượt giới hạn an toàn.");
           blob = base64ToBlob(binary.data, binary.type);
           if (blob.size !== Number(binary.bytes)) throw new Error("Kích thước binary asset không khớp manifest.");
-        } else relinkRequired += 1;
-        const asset = await saveAsset({
-          ...clean,
-          binary: undefined,
-          id: idMap.get(boundedText(clean.id, 100)),
-          projectId,
-          references: Array.isArray(clean.references) ? clean.references.map((id) => idMap.get(id) || id) : clean.references,
-          availability: blob ? "ready" : "offline",
-          blob
-        });
-        importedAssets += 1;
-        project.assetIds.push(asset.id);
+          const expected = boundedText(clean.checksum, 160);
+          if (expected) {
+            const actual = await computeContentHash(blob, options?.crypto);
+            const expectedFamily = expected.replace(/^sampled-/, "").split("-")[0];
+            const actualFamily = actual.replace(/^sampled-/, "").split("-")[0];
+            if (expectedFamily === actualFamily && expected !== actual) throw new Error(`Checksum binary không khớp với asset ${sourceId}.`);
+          }
+          await inspectAssetBlob(blob, clean);
+        }
+        prepared.push({ sourceId, clean, blob });
       }
-      await saveProject({ ...project, assetIds: project.assetIds });
       for (const rawSnapshot of (Array.isArray(payload.snapshots) ? payload.snapshots : []).slice(0, MAX_SNAPSHOTS)) {
-        const snapshot = normalizeSnapshot({ ...safeJsonValue(rawSnapshot, 0), id: uid("snapshot"), projectId, project: { ...rawSnapshot.project, id: projectId } });
-        await withBackend((backend) => backend.put("snapshots", snapshot));
+        for (const snapshotAsset of (Array.isArray(rawSnapshot?.assets) ? rawSnapshot.assets : []).slice(0, MAX_ASSETS)) {
+          const sourceId = boundedText(snapshotAsset?.id, 100);
+          if (sourceId && !idMap.has(sourceId)) idMap.set(sourceId, uid("asset"));
+        }
+      }
+      let project = normalizeProject({
+        ...safeJsonValue(payload.project, 0),
+        id: projectId,
+        name: `${boundedText(payload.project.name, 140, "Dự án nhập")} · nhập`,
+        assetIds: [],
+        references: remapIds(payload.project.references || {}, idMap)
+      });
+      let importedAssets = 0;
+      let relinkRequired = prepared.filter((item) => !item.blob).length;
+      try {
+        project = await saveProject(project);
+        const importedIds = [];
+        for (const item of prepared) {
+          const asset = await saveAsset({
+            ...item.clean,
+            binary: undefined,
+            id: idMap.get(item.sourceId),
+            originId: item.sourceId,
+            projectId,
+            duplicateOf: idMap.get(item.clean.duplicateOf) || null,
+            references: remapIds(item.clean.references || [], idMap),
+            effects: remapIds(item.clean.effects || [], idMap),
+            provenance: { ...item.clean.provenance, sourceType: "package", sourceId: item.sourceId },
+            availability: item.blob ? "ready" : "offline",
+            blob: item.blob
+          });
+          importedIds.push(asset.id);
+          importedAssets += 1;
+        }
+        project = await saveProject({ ...project, assetIds: importedIds });
+        for (const rawSnapshot of (Array.isArray(payload.snapshots) ? payload.snapshots : []).slice(0, MAX_SNAPSHOTS)) {
+          const snapshotSource = safeJsonValue(rawSnapshot, 0);
+          const snapshotAssets = (Array.isArray(snapshotSource.assets) ? snapshotSource.assets : []).map((asset) => ({
+            ...asset,
+            id: idMap.get(asset.id) || uid("asset"),
+            originId: asset.id,
+            projectId,
+            duplicateOf: idMap.get(asset.duplicateOf) || null,
+            references: remapIds(asset.references || [], idMap),
+            effects: remapIds(asset.effects || [], idMap)
+          }));
+          const snapshot = normalizeSnapshot({
+            ...snapshotSource,
+            id: uid("snapshot"),
+            projectId,
+            project: { ...snapshotSource.project, id: projectId, assetIds: snapshotAssets.map((asset) => asset.id), references: remapIds(snapshotSource.project?.references || {}, idMap) },
+            assets: snapshotAssets
+          });
+          await withBackend((backend) => backend.put("snapshots", snapshot));
+        }
+      } catch (error) {
+        await deleteProject(projectId).catch(() => {});
+        throw error;
       }
       return { project: await getProject(projectId), importedAssets, relinkRequired, sourceProjectId: oldProjectId };
     }
 
     async function deleteProject(id) {
-      const assets = await listAssets(id);
+      const assets = await listAllProjectAssets(id);
       const snapshots = await listSnapshots(id);
       await Promise.all([
         withBackend((backend) => backend.delete("projects", id)),
@@ -689,10 +1152,11 @@
 
     return Object.freeze({
       async ready() { const backend = await backendPromise; return { backend: backend.type, schema: SCHEMA }; },
+      async storageStatus() { const backend = await backendPromise; return { backend: backend.type, persistent: backend.persistent === true || backend.type === "indexeddb", fallbackReason: backend.fallbackReason || "", schema: SCHEMA, recordVersion: RECORD_VERSION }; },
       saveProject, getProject, listProjects, deleteProject,
       createFolder, deleteFolder,
-      saveAsset, getAsset, listAssets, updateAsset, replaceAsset, removeAsset, touchAsset, findDuplicate,
-      createSnapshot, listSnapshots, restoreSnapshot, createAutosave,
+      saveAsset, getAsset, listAssets, updateAsset, replaceAsset, relinkAsset, restoreAssetVersion, restoreAssetRecord, removeAsset, touchAsset, findDuplicate, repairDuplicateLinks,
+      createSnapshot, listSnapshots, restoreSnapshot, recoveryStatus, createAutosave,
       exportPackage, importPackage,
       async close() { (await backendPromise).close(); }
     });
@@ -723,6 +1187,8 @@
         <div class="hhump-brand"><span class="hhump-logo" aria-hidden="true">UM</span><span><small>MEDIA & DESIGN</small><strong>Universal Media Project</strong></span></div>
         <div class="hhump-top-actions">
           <span class="hhump-persistence" data-ump-persistence>Đang mở kho local...</span>
+          <button class="hhump-button" type="button" data-ump-undo disabled aria-label="Hoàn tác">↶ Hoàn tác</button>
+          <button class="hhump-button" type="button" data-ump-redo disabled aria-label="Làm lại">↷ Làm lại</button>
           <button class="hhump-button" type="button" data-ump-snapshot>Chụp phiên bản</button>
           <button class="hhump-button" type="button" data-ump-import>Mở .hhmedia</button>
           <button class="hhump-button primary" type="button" data-ump-export>Đóng gói .hhmedia</button>
@@ -767,14 +1233,19 @@
 
   async function mount(root, options) {
     if (!root || typeof root.querySelector !== "function") throw new TypeError("HHUniversalMediaProject.mount cần root DOM hợp lệ.");
-    unmount(root);
+    await unmount(root);
+    const controller = new AbortController();
+    const signal = controller.signal;
+    pendingMounts.set(root, controller);
     renderShell(root);
     const documentScope = root.ownerDocument;
-    const controller = new AbortController();
     const store = options?.store || createStore(options);
     const ready = await store.ready();
+    if (signal.aborted || pendingMounts.get(root) !== controller) { if (!options?.store) await store.close().catch(() => {}); return null; }
+    const persistence = await store.storageStatus?.() || { backend: ready.backend, persistent: ready.backend === "indexeddb", fallbackReason: "" };
     let project = options?.projectId ? await store.getProject(options.projectId) : null;
     if (!project) project = (await store.listProjects())[0] || await store.saveProject({ name: options?.name || "Universal Media Project" });
+    if (signal.aborted || pendingMounts.get(root) !== controller) { if (!options?.store) await store.close().catch(() => {}); return null; }
     let assets = [];
     let snapshots = [];
     let selectedId = null;
@@ -783,12 +1254,23 @@
     let kind = "all";
     let search = "";
     const objectUrls = new Set();
-    const autosave = store.createAutosave(project.id, { delay: 700, onSaved: (saved) => { project = saved; notice("Đã tự lưu dự án trên thiết bị."); } });
-    const instance = { root, controller, store, autosave, objectUrls, ownedStore: !options?.store };
+    const updateHistoryControls = (state) => {
+      const undo = root.querySelector("[data-ump-undo]");
+      const redo = root.querySelector("[data-ump-redo]");
+      if (undo) { undo.disabled = !state.canUndo; undo.title = state.undoLabel ? `Hoàn tác: ${state.undoLabel}` : "Không có thao tác để hoàn tác"; }
+      if (redo) { redo.disabled = !state.canRedo; redo.title = state.redoLabel ? `Làm lại: ${state.redoLabel}` : "Không có thao tác để làm lại"; }
+    };
+    const commandHistory = createCommandHistory({ limit: MAX_COMMAND_HISTORY, onChange: updateHistoryControls });
+    const createProjectAutosave = (projectId) => store.createAutosave(projectId, { delay: 700, checkpointEvery: 10, onSaved: (saved) => { project = saved; notice("Đã tự lưu dự án trên thiết bị."); } });
+    let autosave = createProjectAutosave(project.id);
+    const instance = { root, controller, store, autosave, commandHistory, objectUrls, ownedStore: !options?.store };
     activeInstances.add(instance);
+    pendingMounts.delete(root);
 
-    const signal = controller.signal;
-    const listen = (target, type, handler) => target?.addEventListener(type, handler, { signal });
+    const listen = (target, type, handler) => target?.addEventListener(type, (event) => {
+      try { Promise.resolve(handler(event)).catch((error) => notice(error?.message || "Không thể hoàn tất thao tác.", "error")); }
+      catch (error) { notice(error?.message || "Không thể hoàn tất thao tác.", "error"); }
+    }, { signal });
     const notice = (message, tone) => {
       const element = root.querySelector("[data-ump-notice]");
       if (element) { element.textContent = message; element.dataset.tone = tone || "info"; }
@@ -796,7 +1278,9 @@
 
     function mediaPreview(asset) {
       const blob = asset.thumbnailBlob || (asset.kind === "image" || asset.kind === "svg" ? asset.blob : null);
-      if (!blob || !globalScope.URL?.createObjectURL) return `<span class="hhump-file-icon">${({ image: "IMG", video: "VID", audio: "AUD", font: "Aa", lut: "LUT", svg: "SVG" })[asset.kind] || "FILE"}</span>`;
+      const validation = asset.metadata?.validation;
+      const blockedPreview = validation?.safeToPreview === false || (asset.kind === "svg" && validation?.status !== "verified");
+      if (!blob || blockedPreview || !globalScope.URL?.createObjectURL) return `<span class="hhump-file-icon">${({ image: "IMG", video: "VID", audio: "AUD", font: "Aa", lut: "LUT", svg: "SVG" })[asset.kind] || "FILE"}</span>`;
       const url = globalScope.URL.createObjectURL(blob);
       objectUrls.add(url);
       return `<img src="${escapeHtml(url)}" alt="" loading="lazy">`;
@@ -843,7 +1327,29 @@
         return;
       }
       const plan = proxyPlan(asset, globalScope);
-      host.innerHTML = `<section class="hhump-inspector-card"><div class="hhump-kind-badge">${escapeHtml(TYPE_LABELS[asset.kind] || "Tệp")}</div><h3>${escapeHtml(asset.name)}</h3><dl><div><dt>Dung lượng</dt><dd>${formatBytes(asset.size)}</dd></div><div><dt>Checksum</dt><dd title="${escapeHtml(asset.checksum)}">${escapeHtml(asset.checksum ? asset.checksum.slice(0, 18) : "Chưa có")}</dd></div><div><dt>Trạng thái</dt><dd>${asset.availability === "ready" ? "Sẵn sàng" : "Cần relink"}</dd></div><div><dt>Tham chiếu</dt><dd>${Array.isArray(asset.references) ? asset.references.length : 0}</dd></div><div><dt>Hiệu ứng</dt><dd>${Array.isArray(asset.effects) ? asset.effects.length : 0}</dd></div></dl><label>Tag<input data-ump-tags="${escapeHtml(asset.id)}" value="${escapeHtml((asset.tags || []).join(", "))}" placeholder="thumbnail, social"></label><div class="hhump-inspector-actions"><button class="hhump-button" type="button" data-ump-replace="${escapeHtml(asset.id)}">Thay tệp</button><button class="hhump-button" type="button" data-ump-open="${escapeHtml(asset.id)}">Đánh dấu đã mở</button><button class="hhump-button danger" type="button" data-ump-remove="${escapeHtml(asset.id)}">Xóa</button></div><input class="hhump-hidden" type="file" data-ump-replace-file="${escapeHtml(asset.id)}"></section><section class="hhump-proxy-plan ${plan.recommended ? "recommended" : ""}"><small>PROXY PLAN</small><strong>${plan.recommended ? "Nên tạo proxy" : "Không cần proxy"}</strong><p>${escapeHtml(plan.reason)} ${escapeHtml(plan.message)}</p></section>`;
+      const rights = asset.rights || normalizeRights();
+      const versions = (asset.versions || []).slice(-3).reverse();
+      host.innerHTML = `<section class="hhump-inspector-card">
+        <div class="hhump-kind-badge">${escapeHtml(TYPE_LABELS[asset.kind] || "Tệp")}</div><h3>${escapeHtml(asset.name)}</h3>
+        <dl><div><dt>Dung lượng</dt><dd>${formatBytes(asset.size)}</dd></div><div><dt>Checksum</dt><dd title="${escapeHtml(asset.checksum)}">${escapeHtml(asset.checksum ? asset.checksum.slice(0, 18) : "Chưa có")}</dd></div><div><dt>Độ tin cậy hash</dt><dd>${asset.checksumMode === "sampled" ? "Mẫu · tệp lớn" : asset.checksum ? "Toàn tệp" : "Chưa có"}</dd></div><div><dt>Trạng thái</dt><dd>${asset.availability === "ready" ? "Sẵn sàng" : "Cần relink"}</dd></div><div><dt>Tham chiếu</dt><dd>${Array.isArray(asset.references) ? asset.references.length : 0}</dd></div><div><dt>Phiên bản</dt><dd>${asset.versions?.length || 0}</dd></div></dl>
+        <label>Tag<input data-ump-tags="${escapeHtml(asset.id)}" value="${escapeHtml((asset.tags || []).join(", "))}" placeholder="thumbnail, social"></label>
+        <div class="hhump-inspector-actions"><button class="hhump-button" type="button" data-ump-replace="${escapeHtml(asset.id)}">Thay tệp</button>${asset.availability !== "ready" ? `<button class="hhump-button" type="button" data-ump-relink="${escapeHtml(asset.id)}">Relink đúng nguồn</button>` : `<button class="hhump-button" type="button" data-ump-open="${escapeHtml(asset.id)}">Đánh dấu đã mở</button>`}<button class="hhump-button danger" type="button" data-ump-remove="${escapeHtml(asset.id)}">Xóa · có hoàn tác</button></div>
+        ${hasSensitiveMetadata(asset.metadata) ? `<button class="hhump-button hhump-clean-metadata" type="button" data-ump-clean-metadata="${escapeHtml(asset.id)}">Xóa metadata vị trí/thiết bị</button>` : ""}
+        <input class="hhump-hidden" type="file" data-ump-replace-file="${escapeHtml(asset.id)}"><input class="hhump-hidden" type="file" data-ump-relink-file="${escapeHtml(asset.id)}">
+      </section>
+      <form class="hhump-rights-card" data-ump-rights-form="${escapeHtml(asset.id)}">
+        <header><small>RIGHTS & PROVENANCE</small><span data-state="${rights.verified ? "verified" : "unverified"}">${rights.verified ? "Đã xác minh" : "Chưa xác minh"}</span></header>
+        <label>Tác giả<input name="author" maxlength="180" value="${escapeHtml(rights.author)}" placeholder="Tên tác giả/chủ sở hữu"></label>
+        <label>Nguồn<input name="sourceUrl" type="url" maxlength="1000" value="${escapeHtml(rights.sourceUrl)}" placeholder="https://..."></label>
+        <div><label>Giấy phép<input name="license" maxlength="100" value="${escapeHtml(rights.license)}" placeholder="CC BY 4.0, Commercial..."></label><label>Hết hạn<input name="expiresAt" type="date" value="${escapeHtml(rights.expiresAt ? rights.expiresAt.slice(0, 10) : "")}"></label></div>
+        <label>Mục đích được phép<input name="allowedUses" maxlength="600" value="${escapeHtml((rights.allowedUses || []).join(", "))}" placeholder="web, social, print"></label>
+        <label class="hhump-check"><input name="attributionRequired" type="checkbox" ${rights.attributionRequired ? "checked" : ""}> Cần ghi công</label>
+        <label>Nội dung ghi công<input name="attribution" maxlength="500" value="${escapeHtml(rights.attribution)}"></label>
+        <label class="hhump-check"><input name="verified" type="checkbox" ${rights.verified ? "checked" : ""}> Tôi đã kiểm tra nguồn và giấy phép</label>
+        <button class="hhump-button" type="submit">Lưu quyền sử dụng</button>
+      </form>
+      <section class="hhump-version-lineage"><small>VERSION LINEAGE</small>${versions.length ? versions.map((version) => `<article><strong>${escapeHtml(version.name)}</strong><span>${new Date(version.createdAt).toLocaleString("vi-VN")}</span><em>${escapeHtml(version.checksum ? version.checksum.slice(0, 16) : "Không có hash")}</em><button type="button" data-ump-restore-asset-version="${escapeHtml(asset.id)}" data-version-id="${escapeHtml(version.id)}" ${version.binaryRetained ? "" : "disabled"}>${version.binaryRetained ? "Khôi phục" : "Cần relink"}</button></article>`).join("") : `<p>Chưa thay tệp. Binary cũ chỉ được giữ cục bộ khi không vượt giới hạn an toàn.</p>`}</section>
+      <section class="hhump-proxy-plan ${plan.recommended ? "recommended" : ""}"><small>PROXY PLAN</small><strong>${plan.recommended ? "Nên tạo proxy" : "Không cần proxy"}</strong><p>${escapeHtml(plan.reason)} ${escapeHtml(plan.message)}</p></section>`;
     }
 
     function renderSnapshots() {
@@ -854,43 +1360,70 @@
     function renderStatus() {
       const warnings = assessWarnings(project, assets, { availableFonts: options?.availableFonts || [] });
       root.querySelector("[data-ump-project-name]").value = project.name;
-      root.querySelector("[data-ump-persistence]").textContent = ready.backend === "indexeddb" ? "IndexedDB · local-first" : "Bộ nhớ tạm · chưa bền vững";
+      root.querySelector("[data-ump-persistence]").textContent = persistence.persistent ? "IndexedDB · local-first" : `Bộ nhớ tạm · ${persistence.fallbackReason === "indexeddb-unavailable" ? "trình duyệt không hỗ trợ" : "không thể mở kho bền vững"}`;
       root.querySelector("[data-ump-health]").textContent = `${warnings.length} cảnh báo`;
       root.querySelector("[data-ump-health]").classList.toggle("has-warning", warnings.length > 0);
       root.querySelector("[data-ump-metrics]").innerHTML = `<span><b>${assets.length}</b> asset</span><span><b>${formatBytes(assets.reduce((sum, asset) => sum + asset.size, 0))}</b> local</span><span><b>${snapshots.length}</b> phiên bản</span><span><b>${warnings.length}</b> cảnh báo</span>`;
+      updateHistoryControls(commandHistory.state);
     }
 
     function render() {
+      const scrollers = [".hhump-sidebar", ".hhump-main", ".hhump-inspector"].map((selector) => {
+        const node = root.querySelector(selector); return { selector, top: node?.scrollTop || 0, left: node?.scrollLeft || 0 };
+      });
+      const active = documentScope.activeElement;
+      const focusAttributes = ["data-ump-asset", "data-ump-favorite", "data-ump-folder", "data-ump-collection", "data-ump-restore", "data-ump-replace", "data-ump-relink"];
+      const focusAttribute = focusAttributes.find((attribute) => active?.hasAttribute?.(attribute));
+      const focusValue = focusAttribute ? active.getAttribute(focusAttribute) : "";
+      const focusName = active?.name || "";
+      const focusForm = active?.closest?.("[data-ump-rights-form]")?.dataset?.umpRightsForm || "";
+      const focusProjectName = Boolean(active?.matches?.("[data-ump-project-name]"));
       renderCollections();
       renderFolders();
       renderAssets();
       renderInspector();
       renderSnapshots();
       renderStatus();
+      scrollers.forEach(({ selector, top, left }) => { const node = root.querySelector(selector); if (node) { node.scrollTop = top; node.scrollLeft = left; } });
+      let focusTarget = focusProjectName ? root.querySelector("[data-ump-project-name]") : null;
+      if (!focusTarget && focusAttribute) focusTarget = [...root.querySelectorAll(`[${focusAttribute}]`)].find((node) => node.getAttribute(focusAttribute) === focusValue);
+      if (!focusTarget && focusForm && focusName) focusTarget = [...root.querySelectorAll("[data-ump-rights-form]")].find((form) => form.dataset.umpRightsForm === focusForm)?.elements?.namedItem?.(focusName);
+      focusTarget?.focus?.({ preventScroll: true });
     }
 
     async function refresh() {
+      if (signal.aborted) return;
       project = await store.getProject(project.id);
+      if (signal.aborted || !project) return;
       assets = await store.listAssets(project.id);
       snapshots = await store.listSnapshots(project.id);
+      if (signal.aborted) return;
       render();
     }
 
     async function addFiles(fileList) {
-      const files = [...(fileList || [])].slice(0, MAX_ASSETS);
+      const files = [...(fileList || [])].filter((file) => file instanceof Blob && file.size > 0).slice(0, Math.max(0, MAX_ASSETS - assets.length));
       if (!files.length) return;
       notice(`Đang phân tích ${files.length} tệp...`);
       let duplicates = 0;
+      let imported = 0;
+      const errors = [];
       for (const file of files) {
-        const metadata = await extractMetadata(file, globalScope);
-        const asset = await store.saveAsset({ projectId: project.id, folderId: folderId === "all" ? ROOT_FOLDER_ID : folderId, name: file.name, type: file.type, size: file.size, lastModified: file.lastModified, metadata, blob: file });
-        if (asset.duplicateOf) duplicates += 1;
+        if (signal.aborted) break;
+        try {
+          const metadata = await extractMetadata(file, globalScope);
+          const asset = await store.saveAsset({ projectId: project.id, folderId: folderId === "all" ? ROOT_FOLDER_ID : folderId, name: file.name, type: file.type, size: file.size, lastModified: file.lastModified, metadata, provenance: { sourceType: "local-file", originalName: file.name }, blob: file });
+          if (asset.duplicateOf) duplicates += 1;
+          imported += 1;
+        } catch (error) { errors.push(`${boundedText(file.name, 80, "Tệp")}: ${boundedText(error?.message, 180, "Không thể nhập")}`); }
       }
       await refresh();
-      notice(`Đã thêm ${files.length} tệp${duplicates ? `, phát hiện ${duplicates} tệp trùng` : ""}.`, duplicates ? "warning" : "success");
+      notice(`Đã thêm ${imported}/${files.length} tệp${duplicates ? `, phát hiện ${duplicates} tệp trùng` : ""}${errors.length ? ` · ${errors[0]}` : ""}.`, errors.length || duplicates ? "warning" : "success");
     }
 
     listen(root, "click", async (event) => {
+      if (event.target.closest("[data-ump-undo]")) { if (await commandHistory.undo()) { await refresh(); notice("Đã hoàn tác thao tác gần nhất.", "success"); } return; }
+      if (event.target.closest("[data-ump-redo]")) { if (await commandHistory.redo()) { await refresh(); notice("Đã làm lại thao tác.", "success"); } return; }
       const upload = event.target.closest("[data-ump-upload]");
       if (upload) { root.querySelector("[data-ump-file]").click(); return; }
       const packageImport = event.target.closest("[data-ump-import]");
@@ -900,7 +1433,11 @@
       const folderButton = event.target.closest("[data-ump-folder]");
       if (folderButton) { folderId = folderButton.dataset.umpFolder; collection = "all"; render(); return; }
       const favoriteButton = event.target.closest("[data-ump-favorite]");
-      if (favoriteButton) { event.stopPropagation(); const asset = await store.getAsset(favoriteButton.dataset.umpFavorite); await store.updateAsset(asset.id, { favorite: !asset.favorite }); await refresh(); return; }
+      if (favoriteButton) {
+        event.stopPropagation(); const asset = await store.getAsset(favoriteButton.dataset.umpFavorite); const next = !asset.favorite;
+        await commandHistory.execute({ label: next ? "Thêm yêu thích" : "Bỏ yêu thích", redo: () => store.updateAsset(asset.id, { favorite: next }), undo: () => store.updateAsset(asset.id, { favorite: asset.favorite }) });
+        await refresh(); return;
+      }
       const assetCard = event.target.closest("[data-ump-asset]");
       if (assetCard) { selectedId = assetCard.dataset.umpAsset; renderAssets(); renderInspector(); return; }
       if (event.target.closest("[data-ump-new-folder]")) {
@@ -912,13 +1449,35 @@
         await store.createSnapshot(project.id, `Phiên bản ${snapshots.length + 1}`, "Snapshot thủ công"); await refresh(); notice("Đã chụp phiên bản metadata.", "success"); return;
       }
       const restore = event.target.closest("[data-ump-restore]");
-      if (restore) { await store.restoreSnapshot(restore.dataset.umpRestore); await refresh(); notice("Đã khôi phục phiên bản; binary hiện có được giữ nguyên.", "success"); return; }
+      if (restore) {
+        const before = await store.createSnapshot(project.id, "Tự động · trước khôi phục", "Điểm hoàn tác trước khi khôi phục snapshot");
+        await commandHistory.execute({ label: "Khôi phục snapshot", redo: () => store.restoreSnapshot(restore.dataset.umpRestore), undo: () => store.restoreSnapshot(before.id) });
+        await refresh(); notice("Đã khôi phục phiên bản; binary hiện có được giữ nguyên và có thể hoàn tác.", "success"); return;
+      }
       const replace = event.target.closest("[data-ump-replace]");
       if (replace) { root.querySelector(`[data-ump-replace-file="${replace.dataset.umpReplace}"]`)?.click(); return; }
+      const relink = event.target.closest("[data-ump-relink]");
+      if (relink) { root.querySelector(`[data-ump-relink-file="${relink.dataset.umpRelink}"]`)?.click(); return; }
       const open = event.target.closest("[data-ump-open]");
       if (open) { await store.touchAsset(open.dataset.umpOpen); await refresh(); notice("Đã cập nhật hoạt động gần đây."); return; }
       const remove = event.target.closest("[data-ump-remove]");
-      if (remove) { await store.removeAsset(remove.dataset.umpRemove); selectedId = null; await refresh(); notice("Đã xóa asset khỏi Media Bin.", "success"); return; }
+      if (remove) {
+        const removedAsset = await store.getAsset(remove.dataset.umpRemove);
+        await commandHistory.execute({ label: `Xóa ${removedAsset.name}`, redo: () => store.removeAsset(removedAsset.id), undo: () => store.restoreAssetRecord(removedAsset) });
+        selectedId = null; await refresh(); notice("Đã xóa asset khỏi Media Bin. Có thể hoàn tác.", "success"); return;
+      }
+      const cleanMetadata = event.target.closest("[data-ump-clean-metadata]");
+      if (cleanMetadata) {
+        const asset = await store.getAsset(cleanMetadata.dataset.umpCleanMetadata); const cleaned = stripSensitiveMetadata(asset.metadata);
+        await commandHistory.execute({ label: "Xóa metadata nhạy cảm", redo: () => store.updateAsset(asset.id, { metadata: cleaned }), undo: () => store.updateAsset(asset.id, { metadata: asset.metadata }) });
+        await refresh(); notice("Đã xóa metadata vị trí, thiết bị và chủ sở hữu khỏi bản ghi.", "success"); return;
+      }
+      const restoreVersion = event.target.closest("[data-ump-restore-asset-version]");
+      if (restoreVersion) {
+        const before = await store.getAsset(restoreVersion.dataset.umpRestoreAssetVersion); let after = null;
+        await commandHistory.execute({ label: "Khôi phục phiên bản asset", redo: async () => { after = after || await store.restoreAssetVersion(before.id, restoreVersion.dataset.versionId); return store.restoreAssetRecord(after); }, undo: () => store.restoreAssetRecord(before) });
+        await refresh(); notice("Đã khôi phục binary của phiên bản cũ và giữ nguyên ID asset.", "success"); return;
+      }
       if (event.target.closest("[data-ump-export]")) {
         try { const text = await store.exportPackage(project.id); downloadText(documentScope, text, `${project.name.replace(/[^a-z0-9_-]+/gi, "-") || "hh-media"}.hhmedia`); notice("Đã tạo gói .hhmedia. Kiểm tra cảnh báo relink trong manifest nếu có.", "success"); }
         catch (error) { notice(error.message, "error"); }
@@ -930,24 +1489,65 @@
       if (event.target.matches("[data-ump-package-file]")) {
         const file = event.target.files?.[0];
         if (!file) return;
-        try { const imported = await store.importPackage(file); project = imported.project; selectedId = null; await refresh(); notice(`Đã nhập ${imported.importedAssets} asset; ${imported.relinkRequired} asset cần relink.`, imported.relinkRequired ? "warning" : "success"); }
+        try {
+          const imported = await store.importPackage(file);
+          if (signal.aborted) return;
+          await autosave.dispose({ flush: false }); project = imported.project; autosave = createProjectAutosave(project.id); instance.autosave = autosave; commandHistory.clear(); selectedId = null;
+          await refresh(); notice(`Đã nhập ${imported.importedAssets} asset; ${imported.relinkRequired} asset cần relink.`, imported.relinkRequired ? "warning" : "success");
+        }
         catch (error) { notice(error.message, "error"); }
         event.target.value = "";
         return;
       }
       if (event.target.matches("[data-ump-kind]")) { kind = event.target.value; renderAssets(); return; }
-      if (event.target.matches("[data-ump-tags]")) { await store.updateAsset(event.target.dataset.umpTags, { tags: event.target.value.split(",").map((tag) => tag.trim()) }); await refresh(); return; }
+      if (event.target.matches("[data-ump-tags]")) {
+        const asset = await store.getAsset(event.target.dataset.umpTags); const nextTags = uniqueStrings(event.target.value.split(","), MAX_TAGS, 60);
+        await commandHistory.execute({ label: "Cập nhật tag", redo: () => store.updateAsset(asset.id, { tags: nextTags }), undo: () => store.updateAsset(asset.id, { tags: asset.tags }) });
+        await refresh(); return;
+      }
       if (event.target.matches("[data-ump-replace-file]")) {
         const file = event.target.files?.[0];
         if (!file) return;
         const metadata = await extractMetadata(file, globalScope);
-        await store.replaceAsset(event.target.dataset.umpReplaceFile, { name: file.name, type: file.type, blob: file, lastModified: file.lastModified, metadata });
+        const before = await store.getAsset(event.target.dataset.umpReplaceFile); let after = null;
+        await commandHistory.execute({ label: `Thay tệp ${before.name}`, redo: async () => { after = after || await store.replaceAsset(before.id, { name: file.name, type: file.type, blob: file, lastModified: file.lastModified, metadata }); return store.restoreAssetRecord(after); }, undo: () => store.restoreAssetRecord(before) });
         await refresh(); notice("Đã thay asset và giữ nguyên ID, reference, effect.", "success");
+        event.target.value = ""; return;
       }
+      if (event.target.matches("[data-ump-relink-file]")) {
+        const file = event.target.files?.[0]; if (!file) return;
+        const before = await store.getAsset(event.target.dataset.umpRelinkFile); const metadata = await extractMetadata(file, globalScope); let after = null;
+        try {
+          await commandHistory.execute({ label: `Relink ${before.name}`, redo: async () => { after = after || await store.relinkAsset(before.id, { name: file.name, type: file.type, blob: file, lastModified: file.lastModified, metadata }); return store.restoreAssetRecord(after); }, undo: () => store.restoreAssetRecord(before) });
+          await refresh(); notice("Đã relink đúng checksum và giữ nguyên ID.", "success");
+        } catch (error) { notice(error.message, "error"); }
+        event.target.value = "";
+      }
+    });
+
+    listen(root, "submit", async (event) => {
+      const form = event.target.closest("[data-ump-rights-form]");
+      if (!form) return;
+      event.preventDefault();
+      const asset = await store.getAsset(form.dataset.umpRightsForm);
+      const data = new FormData(form);
+      const rights = normalizeRights({
+        author: data.get("author"), sourceUrl: data.get("sourceUrl"), license: data.get("license"), expiresAt: data.get("expiresAt"),
+        allowedUses: String(data.get("allowedUses") || "").split(","), attributionRequired: data.get("attributionRequired") === "on",
+        attribution: data.get("attribution"), verified: data.get("verified") === "on"
+      });
+      await commandHistory.execute({ label: "Cập nhật quyền sử dụng", redo: () => store.updateAsset(asset.id, { rights }), undo: () => store.updateAsset(asset.id, { rights: asset.rights }) });
+      await refresh(); notice("Đã lưu nguồn, giấy phép và phạm vi sử dụng.", rights.verified ? "success" : "warning");
     });
 
     listen(root.querySelector("[data-ump-search]"), "input", (event) => { search = event.target.value; renderAssets(); });
     listen(root.querySelector("[data-ump-project-name]"), "input", (event) => { project = { ...project, name: boundedText(event.target.value, 160, "Dự án media") }; autosave.schedule(project); });
+    listen(root, "keydown", (event) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      const key = event.key.toLowerCase();
+      if (key === "z" && !event.shiftKey) { event.preventDefault(); commandHistory.undo().then((changed) => changed && refresh()).catch((error) => notice(error.message, "error")); }
+      else if (key === "y" || (key === "z" && event.shiftKey)) { event.preventDefault(); commandHistory.redo().then((changed) => changed && refresh()).catch((error) => notice(error.message, "error")); }
+    });
     const dropzone = root.querySelector("[data-ump-drop]");
     listen(dropzone, "dragover", (event) => { event.preventDefault(); dropzone.classList.add("dragging"); });
     listen(dropzone, "dragleave", () => dropzone.classList.remove("dragging"));
@@ -955,10 +1555,14 @@
     listen(dropzone, "keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); root.querySelector("[data-ump-file]").click(); } });
 
     await refresh();
-    notice(ready.backend === "indexeddb" ? "Kho IndexedDB đã sẵn sàng trên thiết bị." : "IndexedDB không khả dụng; dữ liệu chỉ tồn tại trong phiên này.", ready.backend === "indexeddb" ? "success" : "warning");
+    if (signal.aborted) return null;
+    notice(persistence.persistent ? "Kho IndexedDB đã sẵn sàng trên thiết bị." : "IndexedDB không khả dụng; dữ liệu chỉ tồn tại trong phiên này.", persistence.persistent ? "success" : "warning");
     return Object.freeze({
       getProject: () => clone(project),
       getAssets: () => clone(assets),
+      getHistoryState: () => ({ ...commandHistory.state }),
+      undo: async () => { const changed = await commandHistory.undo(); if (changed) await refresh(); return changed; },
+      redo: async () => { const changed = await commandHistory.redo(); if (changed) await refresh(); return changed; },
       refresh,
       selectAsset(id) { selectedId = id; render(); },
       async unmount() { await unmount(root); }
@@ -966,10 +1570,15 @@
   }
 
   async function unmount(root) {
+    const pendingTargets = [...pendingMounts.entries()].filter(([node]) => !root || node === root);
+    pendingTargets.forEach(([node, controller]) => {
+      controller.abort(); pendingMounts.delete(node); node.classList?.remove?.("hhump"); node.innerHTML = "";
+    });
     const targets = [...activeInstances].filter((instance) => !root || instance.root === root);
     for (const instance of targets) {
       instance.controller.abort();
       await instance.autosave.dispose().catch(() => {});
+      instance.commandHistory?.clear?.();
       instance.objectUrls.forEach((url) => globalScope.URL?.revokeObjectURL?.(url));
       if (instance.ownedStore) await instance.store.close().catch(() => {});
       instance.root.classList.remove("hhump");
@@ -979,11 +1588,12 @@
   }
 
   const api = Object.freeze({
-    SCHEMA, FORMAT, VERSION, DB_NAME, STORE_NAMES, ROOT_FOLDER_ID,
-    LIMITS: Object.freeze({ MAX_ASSETS, MAX_FOLDERS, MAX_TAGS, MAX_SNAPSHOTS, MAX_INLINE_ASSET_BYTES, MAX_PACKAGE_TEXT_BYTES }),
+    SCHEMA, FORMAT, VERSION, RECORD_VERSION, DB_NAME, STORE_NAMES, ROOT_FOLDER_ID,
+    LIMITS: Object.freeze({ MAX_ASSETS, MAX_FOLDERS, MAX_TAGS, MAX_SNAPSHOTS, MAX_INLINE_ASSET_BYTES, MAX_PACKAGE_TEXT_BYTES, MAX_ASSET_BYTES, MAX_ASSET_VERSIONS, MAX_VERSION_BINARY_BYTES, MAX_VERSION_BINARY_TOTAL_BYTES, MAX_COMMAND_HISTORY, HASH_FULL_MAX_BYTES, MAX_SVG_BYTES }),
     TYPE_LABELS, SMART_COLLECTIONS,
-    classifyAsset, normalizeProject, normalizeAsset, searchAssets, applySmartCollection, assessWarnings,
-    proxyPlan, metadataCapability, computeContentHash, extractMetadata,
+    classifyAsset, normalizeProject, normalizeAsset, normalizeRights, normalizeProvenance, migrateProjectRecord, migrateAssetRecord, migrateSnapshotRecord,
+    searchAssets, applySmartCollection, assessWarnings, stripSensitiveMetadata, hasSensitiveMetadata,
+    proxyPlan, metadataCapability, computeContentHash, inspectAssetBlob, extractMetadata, createCommandHistory,
     createMemoryBackend, createStore, mount, unmount
   });
 

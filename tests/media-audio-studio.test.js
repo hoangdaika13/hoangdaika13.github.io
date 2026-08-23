@@ -42,6 +42,39 @@ test("Audio Studio provides bounded podcast DSP, loudness analysis and delivery 
   assert.ok(Number.isFinite(metrics.estimatedLufs));
 });
 
+test("Audio Studio keeps a bounded immutable multitrack mixer model", () => {
+  const buffer = { length: 8000, duration: 1, sampleRate: 8000, numberOfChannels: 1, getChannelData: () => new Float32Array(8000) };
+  const original = [{ id: "voice", name: "<Voice>", gain: 99, pan: -999, file: { name: "voice.wav" }, buffer }];
+  const normalized = audio.updateTrackList(original, { type: "update", id: "voice", patch: { solo: true } });
+  assert.equal(original[0].solo, undefined);
+  assert.equal(normalized[0].name, "Voice");
+  assert.equal(normalized[0].gain, 12);
+  assert.equal(normalized[0].pan, -100);
+  assert.equal(normalized[0].solo, true);
+  const duplicated = audio.updateTrackList(normalized, { type: "duplicate", id: "voice", newId: "voice-copy" });
+  assert.equal(duplicated.length, 2);
+  assert.equal(duplicated[1].buffer, buffer);
+  const moved = audio.updateTrackList(duplicated, { type: "move", id: "voice-copy", delta: -1 });
+  assert.equal(moved[0].id, "voice-copy");
+  const estimate = audio.renderEstimate(moved, { start: 0, end: 1 });
+  assert.deepEqual({ frames: estimate.frames, channels: estimate.channels, allowed: estimate.allowed }, { frames: 8000, channels: 1, allowed: true });
+});
+
+test("Audio Studio asynchronously encodes WAV without changing its PCM contract", async () => {
+  const channels = [new Float32Array([0, .25, -.5, 1])];
+  const buffer = { numberOfChannels: 1, sampleRate: 48000, length: 4, getChannelData: () => channels[0] };
+  const sync = Buffer.from(audio.encodeWav(buffer));
+  const asyncWav = Buffer.from(await audio.encodeWavAsync(buffer));
+  assert.deepEqual(asyncWav, sync);
+});
+
+test("Audio Studio silence analysis is truthful and cancellable-friendly", async () => {
+  const silent = new Float32Array(8000);
+  const buffer = { numberOfChannels: 1, sampleRate: 8000, length: silent.length, duration: 1, getChannelData: () => silent };
+  assert.deepEqual(audio.findSpeechBounds(buffer), { start: 0, end: 0 });
+  assert.deepEqual(await audio.findSpeechBoundsAsync(buffer), { start: 0, end: 0 });
+});
+
 test("Audio Studio is routed, cached, responsive and honest about local processing", () => {
   const shell = read("script.js"), page = read("media-design-page.js"), css = read("media-audio-studio.css"), loader = read("performance-loader.js"), worker = read("sw.js"), source = read("media-audio-studio.js");
   assert.match(shell, /id: "audio-workspace"/);
@@ -54,7 +87,11 @@ test("Audio Studio is routed, cached, responsive and honest about local processi
   assert.match(css, /prefers-reduced-motion/);
   assert.match(source, /Podcast Namespace chapters JSON/);
   assert.match(source, /findSpeechBounds/);
-  for (const asset of ["media-audio-studio.css?v=4", "media-audio-studio.js?v=2"]) {
+  assert.match(source, /renderMixAsync/);
+  assert.match(source, /data-mas-track-action="duplicate"/);
+  assert.match(source, /session\.renderController\?\.abort/);
+  assert.match(css, /\.mas-track-mixer/);
+  for (const asset of ["media-audio-studio.css?v=5", "media-audio-studio.js?v=3"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }

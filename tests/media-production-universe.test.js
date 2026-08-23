@@ -56,12 +56,59 @@ test("Delivery preflight blocks broken rights and reports real asset verificatio
   assert.ok(result.warnings >= 1);
 });
 
+test("production state bounds hostile persisted data and brand exports cannot inject CSS or prototypes", () => {
+  const state = universe.ensureProductionState({
+    brand: { activeKitId: "unsafe", activeMode: "Missing", kits: [{ id: "unsafe", name: "Unsafe", modes: ["Default"], tokens: [
+      { id: "x", name: "__proto__.polluted", value: "red; } body { display:none", type: "color" },
+      { id: "y", name: "color.brand.primary", value: "#55e6ff", type: "color" }
+    ] }] },
+    export: { selectedProfile: "unknown", jobs: [{ status: "pretend-complete", progress: 999 }] },
+    documents: { watermark: "x".repeat(500), watermarkOpacity: 999 }
+  }, professional);
+  assert.equal(state.documents.watermark.length, 80);
+  assert.equal(state.documents.watermarkOpacity, 70);
+  assert.equal(state.export.selectedProfile, "youtube");
+  assert.equal(state.export.jobs[0].status, "planned");
+  const css = universe.buildCssTokens(state.brand.kits[0]);
+  assert.doesNotMatch(css, /body\s*\{/i);
+  const dtcg = universe.buildDtcgTokens(state.brand.kits[0]);
+  assert.equal({}.polluted, undefined);
+  assert.equal(dtgcPath(dtgcSafe(dtcg), ["token-__proto__", "polluted", "$value"]), "#000000");
+});
+
+function dtgcSafe(value) { return JSON.parse(JSON.stringify(value)); }
+function dtgcPath(value, pathParts) { return pathParts.reduce((cursor, key) => cursor?.[key], value); }
+
+test("Delivery Center deduplicates identical jobs and emits a redacted release manifest", () => {
+  const asset = { id: "asset-1", name: "source.png", type: "image/png", size: 120, checksum: "sha256", license: "Owned", availability: "ready", blob: Buffer.from("secret"), signedUrl: "https://private.invalid/token" };
+  const first = universe.createDeliveryJob(universe.ensureProductionState({}, professional), universe.DELIVERY_PROFILES[0], [asset], () => "stable-key", "2026-08-23T00:00:00.000Z");
+  const second = universe.createDeliveryJob(first.state, universe.DELIVERY_PROFILES[0], [asset], () => "stable-key", "2026-08-23T00:00:01.000Z");
+  assert.equal(first.duplicate, false);
+  assert.equal(second.duplicate, true);
+  assert.equal(second.state.export.jobs.length, 1);
+  const manifest = universe.buildReleaseManifest(second.state, [asset], universe.DELIVERY_PROFILES[0]);
+  assert.equal(manifest.schema, "hh.release.manifest.v2");
+  assert.equal(manifest.assets[0].checksum, "sha256");
+  assert.equal("blob" in manifest.assets[0], false);
+  assert.equal("signedUrl" in manifest.assets[0], false);
+});
+
+test("workspace actions use accessible in-app dialogs and preserve focused scroll surfaces", () => {
+  const source = read("media-production-universe.js"), css = read("media-production-universe.css"), page = read("media-design-page.js");
+  assert.doesNotMatch(source, /\b(?:prompt|confirm|alert)\s*\(/);
+  assert.match(source, /data-mpu-dialog-form/);
+  assert.match(source, /VIEW_SCROLL_SELECTORS/);
+  assert.match(css, /\.mpu-dialog-backdrop/);
+  assert.match(page, /rememberToolScroll/);
+  assert.match(page, /restoreToolScroll/);
+});
+
 test("Production Universe is loaded before Media page, cached and motion-safe", () => {
   const loader = read("performance-loader.js"), worker = read("sw.js"), page = read("media-design-page.js"), css = read("media-production-universe.css"), source = read("media-production-universe.js");
-  for (const asset of ["media-production-universe.css?v=3", "media-production-universe.js?v=2", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/pdf.min.mjs?v=4.10.38", "vendor/pdf.worker.min.mjs?v=4.10.38"]) {
+  for (const asset of ["media-production-universe.css?v=4", "media-production-universe.js?v=3", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/pdf.min.mjs?v=4.10.38", "vendor/pdf.worker.min.mjs?v=4.10.38"]) {
     assert.match(`${loader}\n${worker}`, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
-  assert.match(loader, /media-production-universe\.js\?v=2[\s\S]*media-design-page\.js\?v=21/);
+  assert.match(loader, /media-production-universe\.js\?v=3[\s\S]*media-design-page\.js\?v=22/);
   assert.match(page, /HHMediaProductionUniverse\?\.mount/);
   assert.match(source, /canvas\.captureStream/);
   assert.match(source, /PDFDocument\.load/);

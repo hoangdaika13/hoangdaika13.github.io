@@ -25,13 +25,29 @@ test("exports pure Resolve operations and declares seven Vietnamese workspaces",
   for (const name of [
     "createProject", "normalizeProject", "snapTime", "applyTimelineOperation", "addSubtitle", "createNestedSequence",
     "planProxy", "createWaveformEnvelope", "addKeyframe", "setMulticam", "setMotionModel", "updateColor",
-    "updateAudioChannel", "enqueueExport", "createHistory", "commitHistory", "undo", "redo"
+    "updateAudioChannel", "enqueueExport", "updateExportStatus", "recoverInterruptedExports", "createHistory", "commitHistory", "undo", "redo"
   ]) assert.equal(typeof ops[name], "function", `missing operation ${name}`);
   for (const marker of [
     '["media", "Media", "Kho media"', '["cut", "Cut", "Cắt nhanh"', '["edit", "Edit", "Biên tập"',
     '["fusion", "Fusion", "Hiệu ứng"', '["color", "Color", "Màu sắc"', '["audio", "Audio", "Âm thanh"',
     '["deliver", "Deliver", "Xuất bản"'
   ]) assert.ok(source.includes(marker), `missing workspace ${marker}`);
+});
+
+test("normalizer rejects malformed nested state and de-duplicates stable identifiers", () => {
+  assert.doesNotThrow(() => ops.normalizeProject(null));
+  const project = ops.normalizeProject({
+    tracks: [{ id: "V1" }, { id: "V1" }],
+    clips: [{ id: "same", track: "V1", duration: 1 }, { id: "same", track: "V1", duration: 1 }],
+    multicam: { angles: "not-an-array" }, motion: { tracking: { points: "bad" } },
+    color: { curves: "bad", nodes: "bad" }, audio: { channels: [{ id: "A1", automation: "bad" }] }
+  });
+  assert.equal(new Set(project.tracks.map((track) => track.id)).size, project.tracks.length);
+  assert.equal(new Set(project.clips.map((clip) => clip.id)).size, project.clips.length);
+  assert.deepEqual(project.multicam.angles, []);
+  assert.deepEqual(project.motion.tracking.points, []);
+  assert.ok(Array.isArray(project.color.curves));
+  assert.deepEqual(project.audio.channels[0].automation, []);
 });
 
 test("normalizer bounds project collections and sanitizes persisted labels", () => {
@@ -80,6 +96,21 @@ test("slip, slide and snapping model professional timeline behavior", () => {
   assert.equal(ops.snapTime(original, 5.04), 5);
   const snapOff = ops.applyTimelineOperation(original, { type: "toggle-snap", enabled: false });
   assert.equal(ops.snapTime(snapOff, 5.04), 5.04);
+});
+
+test("move, trim, duplicate and locked-track operations preserve source bounds", () => {
+  const original = timelineProject();
+  const trimmedIn = ops.applyTimelineOperation(original, { type: "trim-start", clipId: "b", at: 6 });
+  assert.deepEqual({ start: trimmedIn.clips[1].start, duration: trimmedIn.clips[1].duration, sourceIn: trimmedIn.clips[1].sourceIn }, { start: 6, duration: 4, sourceIn: 1 });
+  const trimmedOut = ops.applyTimelineOperation(original, { type: "trim-end", clipId: "b", at: 8 });
+  assert.equal(trimmedOut.clips.find((clip) => clip.id === "b").duration, 3);
+  const duplicated = ops.applyTimelineOperation(original, { type: "duplicate", clipId: "b", newId: "b-copy", at: 15 });
+  assert.equal(duplicated.clips.find((clip) => clip.id === "b-copy").start, 15);
+  const moved = ops.applyTimelineOperation(original, { type: "move", clipId: "b", at: 7 });
+  assert.equal(moved.clips.find((clip) => clip.id === "b").start, 7);
+  const locked = ops.applyTimelineOperation(original, { type: "set-track", trackId: "V1", locked: true });
+  const rejected = ops.applyTimelineOperation(locked, { type: "ripple-delete", clipId: "b" });
+  assert.equal(rejected.clips.some((clip) => clip.id === "b"), true);
 });
 
 test("subtitle, nested sequence and multicam models retain source data", () => {
@@ -141,6 +172,21 @@ test("export queue never claims rendering or completion without browser capabili
   assert.equal(project.exportQueue.length, 0);
 });
 
+test("export queue is idempotent and interrupted jobs recover as failed", () => {
+  const capabilities = { mediaRecorder: true, canvasCapture: true, isTypeSupported: () => true };
+  let project = ops.enqueueExport(timelineProject(), { id: "stable", idempotencyKey: "once", mime: "video/webm", size: "99999x22" }, capabilities);
+  project = ops.enqueueExport(project, { id: "stable-2", idempotencyKey: "once", mime: "video/webm" }, capabilities);
+  assert.equal(project.exportQueue.length, 1);
+  assert.equal(project.exportQueue[0].size, "7680x90");
+  project = ops.updateExportStatus(project, "stable", "processing", { progress: 48, notice: "Đang chạy" });
+  assert.equal(project.exportQueue[0].progress, 48);
+  const recovered = ops.recoverInterruptedExports(project);
+  assert.equal(recovered.exportQueue[0].status, "failed");
+  assert.match(recovered.exportQueue[0].notice, /gián đoạn/i);
+  const thrown = ops.enqueueExport(timelineProject(), { id: "bad", mime: "video/webm" }, { mediaRecorder: true, canvasCapture: true, isTypeSupported: () => { throw new Error("codec"); } });
+  assert.equal(thrown.exportQueue[0].status, "unsupported");
+});
+
 test("bounded undo and redo restore normalized project snapshots", () => {
   const original = timelineProject();
   let history = ops.createHistory(original);
@@ -162,6 +208,8 @@ test("UI contract exposes professional controls, truthful notices and accessibil
     "data-vr-scope=\"waveform\"", "data-vr-scope=\"histogram\"", "data-vr-lut", "curve-contrast", "audio-automation",
     "Noise Reduction", "Compressor", "Hàng đợi kết xuất", "provider-not-configured", "MediaRecorder", "captureStream",
     "video/mp4", "HHVideoExport", "resolveRecorderMime", "MP4 H.264/AAC",
+    "timeline-trim-start", "timeline-trim-end", "timeline-duplicate", "timeline-track-lock",
+    "micRequest", "state.scopeTimer", "state.urls", "queue-retry", "queue-cancel",
     "Shift+1", "Shift+7", "event.key.toLowerCase() === \"b\"", "event.key.toLowerCase() === \"n\""
   ]) assert.ok(source.includes(marker), `missing UI contract ${marker}`);
   assert.doesNotMatch(source, /AIza|sk-[A-Za-z0-9]|mongodb(?:\+srv)?:\/\//i);
@@ -171,6 +219,7 @@ test("CSS supports focus, internal mobile scrolling and reduced motion at 375px"
   for (const marker of [
     ".vr-edit-ribbon", ".vr-proxy-plan", ".vr-curve-model", ".vr-automation-lane", ".vr-render-queue article>span.unsupported",
     ":focus-visible", "@media(max-width:560px)", ".ve-resolve{min-width:0;width:100%}", "overflow-x:auto",
+    ".vr-job-actions", "scrollbar-gutter:stable",
     "@media(prefers-reduced-motion:reduce)", "transition:none!important"
   ]) assert.ok(css.includes(marker), `missing CSS contract ${marker}`);
   assert.doesNotMatch(css, /font-size:\s*clamp\([^;]*vw[^;]*\)/i);

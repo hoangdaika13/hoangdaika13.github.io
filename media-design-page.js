@@ -83,6 +83,7 @@
     { code: "DV", label: "Dev Handoff", tool: "dev-handoff", description: "Inspect, token và code handoff" }
   ];
   const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  const cssEscape = (value) => window.CSS?.escape ? window.CSS.escape(String(value)) : String(value).replace(/[^a-z0-9_-]/gi, (char) => `\\${char}`);
   const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const loadState = () => {
     try {
@@ -92,15 +93,16 @@
         active: availableNames.has(saved.active) ? saved.active : "Universal Media Project",
         favorites: Array.isArray(saved.favorites) ? saved.favorites.filter((name) => availableNames.has(name)) : [],
         recent: Array.isArray(saved.recent) ? saved.recent.filter((name) => availableNames.has(name)).slice(0, 12) : [],
-        usage: Object.fromEntries(Object.entries(saved.usage || {}).filter(([name]) => availableNames.has(name))),
+        usage: Object.fromEntries(Object.entries(saved.usage || {}).filter(([name, count]) => availableNames.has(name) && Number.isFinite(Number(count))).map(([name, count]) => [name, Math.max(0, Math.min(100000, Number(count)))])),
         inspectorOpen: saved.inspectorOpen === true,
         inspectorTab: ["properties", "metadata", "rights", "history"].includes(saved.inspectorTab) ? saved.inspectorTab : "properties",
         navHistory: Array.isArray(saved.navHistory) ? saved.navHistory.filter((name) => availableNames.has(name)).slice(-30) : [],
         navIndex: Number.isInteger(saved.navIndex) ? saved.navIndex : -1,
-        aiDraft: saved.aiDraft && typeof saved.aiDraft === "object" ? saved.aiDraft : { task: "remove-background", prompt: "", seed: "" }
+        aiDraft: saved.aiDraft && typeof saved.aiDraft === "object" ? { task: String(saved.aiDraft.task || "remove-background").slice(0, 80), prompt: String(saved.aiDraft.prompt || "").slice(0, 4000), seed: String(saved.aiDraft.seed || "").slice(0, 80) } : { task: "remove-background", prompt: "", seed: "" },
+        toolScroll: Object.fromEntries(Object.entries(saved.toolScroll || {}).filter(([name, point]) => availableNames.has(name) && point && typeof point === "object").slice(0, TOOLS.length).map(([name, point]) => [name, { top: Math.max(0, Math.min(1000000, Number(point.top) || 0)), left: Math.max(0, Math.min(1000000, Number(point.left) || 0)) }]))
       };
     } catch {
-      return { active: "Universal Media Project", favorites: [], recent: [], usage: {}, inspectorOpen: false, inspectorTab: "properties", navHistory: [], navIndex: -1, aiDraft: { task: "remove-background", prompt: "", seed: "" } };
+      return { active: "Universal Media Project", favorites: [], recent: [], usage: {}, inspectorOpen: false, inspectorTab: "properties", navHistory: [], navIndex: -1, aiDraft: { task: "remove-background", prompt: "", seed: "" }, toolScroll: {} };
     }
   };
   let pageState = loadState();
@@ -111,8 +113,13 @@
   let workflowOpen = false;
   let aiDrawerOpen = false;
   let dragDepth = 0;
+  let scrollSaveTimer = 0;
+  let activeEngine = null;
 
-  const saveState = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(pageState));
+  const saveState = () => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(pageState)); return true; }
+    catch (_) { return false; }
+  };
   const toolByName = (name) => TOOLS.find((tool) => tool.name === name) || TOOLS.find((tool) => tool.id === "universal-media") || TOOLS[0];
   const toolById = (id) => TOOLS.find((tool) => tool.id === id);
   const visibleTools = (query = "") => {
@@ -185,6 +192,7 @@
       showNotice(root, `Đã nhập ${list.length} tệp vào Global Media Bin.`, "success");
     } catch (error) { showNotice(root, `Không thể nhập Media Bin: ${error.message}`, "error"); }
     finally { await store.close?.().catch?.(() => {}); }
+    try { await activeEngine?.refresh?.(); } catch (_) { /* The open tool may not expose a refresh adapter. */ }
   };
 
   const renderCatalog = (root) => {
@@ -211,8 +219,25 @@
     const appMain = root?.closest("#appMain") || document.querySelector("#appMain");
     if (appMain) { appMain.scrollTop = 0; appMain.scrollLeft = 0; }
   };
+  const rememberToolScroll = (work, toolName) => {
+    if (!work?.childElementCount || !toolName) return;
+    pageState.toolScroll ||= {};
+    pageState.toolScroll[toolName] = {
+      top: Math.max(0, Math.min(1000000, Number(work.scrollTop) || 0)),
+      left: Math.max(0, Math.min(1000000, Number(work.scrollLeft) || 0))
+    };
+  };
+  const restoreToolScroll = (root, work, toolName) => {
+    if (root) { root.scrollTop = 0; root.scrollLeft = 0; }
+    const appMain = root?.closest("#appMain") || document.querySelector("#appMain");
+    if (appMain) { appMain.scrollTop = 0; appMain.scrollLeft = 0; }
+    const point = pageState.toolScroll?.[toolName] || { top: 0, left: 0 };
+    if (work) { work.scrollTop = point.top; work.scrollLeft = point.left; }
+  };
   const selectTool = (root, name, focus = false, recordHistory = true) => {
     const tool = toolByName(name);
+    const previousWork = root.querySelector("[data-mdp-work]");
+    rememberToolScroll(previousWork, pageState.active);
     window.HHMediaCosmos?.recordTool?.(tool.id, tool.name);
     window.HHMediaDesign?.cleanup?.();
     window.HHUniversalMediaProject?.unmount?.();
@@ -222,6 +247,7 @@
     window.HHMediaAudioStudio?.unmount?.();
     window.HHMediaProjectPhotoStudio?.unmount?.();
     window.HHMediaProductionUniverse?.unmount?.();
+    activeEngine = null;
     window.HHMediaToolExperience?.clear?.(root.querySelector("[data-mdp-work]"));
     pageState.active = tool.name;
     pageState.recent = [tool.name, ...pageState.recent.filter((item) => item !== tool.name)].slice(0, 12);
@@ -238,29 +264,29 @@
     const work = root.querySelector("[data-mdp-work]");
     root.dataset.space = spaceForTool(tool).id;
     if (["media-core", "photo-workspace"].includes(tool.id) && window.HHMediaProjectPhotoStudio?.mount) {
-      window.HHMediaProjectPhotoStudio.mount(work, { workspace: tool.id, professionalApi: window.HHMediaProfessionalSuite, mediaApi: window.HHUniversalMediaProject, onNavigate: (route) => { location.hash = `#${route}`; } });
+      activeEngine = window.HHMediaProjectPhotoStudio.mount(work, { workspace: tool.id, professionalApi: window.HHMediaProfessionalSuite, mediaApi: window.HHUniversalMediaProject, onNavigate: (route) => { location.hash = `#${route}`; } });
     } else if (tool.id === "audio-workspace" && window.HHMediaAudioStudio?.mount) {
-      window.HHMediaAudioStudio.mount(work, { mediaApi: window.HHUniversalMediaProject });
+      activeEngine = window.HHMediaAudioStudio.mount(work, { mediaApi: window.HHUniversalMediaProject });
     } else if (window.HHMediaProductionUniverse?.WORKSPACE_BY_ID?.[tool.id] && window.HHMediaProductionUniverse?.mount) {
-      window.HHMediaProductionUniverse.mount(work, { workspace: tool.id, professionalApi: window.HHMediaProfessionalSuite, mediaApi: window.HHUniversalMediaProject, onNavigate: (route) => { location.hash = `#${route}`; } });
+      activeEngine = window.HHMediaProductionUniverse.mount(work, { workspace: tool.id, professionalApi: window.HHMediaProfessionalSuite, mediaApi: window.HHUniversalMediaProject, onNavigate: (route) => { location.hash = `#${route}`; } });
     } else if (window.HHMediaNextSuite?.WORKSPACE_BY_ID?.[tool.id] && window.HHMediaNextSuite?.mount) {
-      window.HHMediaNextSuite.mount(work, { workspace: tool.id, onNavigate: (route) => { location.hash = `#${route}`; } });
+      activeEngine = window.HHMediaNextSuite.mount(work, { workspace: tool.id, onNavigate: (route) => { location.hash = `#${route}`; } });
     } else if (window.HHMediaProfessionalSuite?.WORKSPACE_BY_ID?.[tool.id] && window.HHMediaProfessionalSuite?.mount) {
-      window.HHMediaProfessionalSuite.mount(work, { workspace: tool.id, onNavigate: (route) => { location.hash = `#${route}`; } });
+      activeEngine = window.HHMediaProfessionalSuite.mount(work, { workspace: tool.id, onNavigate: (route) => { location.hash = `#${route}`; } });
     } else if (tool.name === "Production Workflow" && window.HHMediaProductionWorkflow?.mount) {
       window.HHMediaProductionWorkflow.mount(work).catch?.(() => showNotice(root, "Không khởi động được Production Workflow.", "error"));
     } else if (["Universal Media Project", "Asset Manager"].includes(tool.name) && window.HHUniversalMediaProject?.mount) {
-      window.HHUniversalMediaProject.mount(work, { view: tool.name === "Asset Manager" ? "assets" : "project" });
+      activeEngine = window.HHUniversalMediaProject.mount(work, { view: tool.name === "Asset Manager" ? "assets" : "project" });
     } else if (window.HHMediaDesign?.supports?.(tool.name)) window.HHMediaDesign.render(work, tool.name);
     else work.innerHTML = '<div class="mdp-engine-error"><strong>Engine chưa sẵn sàng</strong><p>Hãy tải lại trang để khởi động Media Engine.</p><button type="button" data-mdp-retry>Thử lại</button></div>';
     window.HHMediaToolExperience?.decorate?.(work, tool);
-    resetCockpitScroll(root, work);
-    setTimeout(() => { if (pageState.active === tool.name) { window.HHMediaToolExperience?.decorate?.(work, tool); resetCockpitScroll(root, work); } }, 0);
+    restoreToolScroll(root, work, tool.name);
+    setTimeout(() => { if (pageState.active === tool.name) { window.HHMediaToolExperience?.decorate?.(work, tool); restoreToolScroll(root, work, tool.name); } }, 0);
     root.querySelector("[data-mdp-current]").textContent = tool.name;
     root.querySelector("[data-mdp-last-used]").textContent = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
     root.querySelector("[data-mdp-undo]")?.toggleAttribute("disabled", pageState.navIndex <= 0);
     root.querySelector("[data-mdp-redo]")?.toggleAttribute("disabled", pageState.navIndex >= pageState.navHistory.length - 1);
-    if (focus) root.querySelector(`[data-mdp-tool="${CSS.escape(tool.name)}"]`)?.focus();
+    if (focus) root.querySelector(`[data-mdp-tool="${cssEscape(tool.name)}"]`)?.focus();
   };
   const downloadPreferences = () => {
     const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), ...pageState }, null, 2)], { type: "application/json" });
@@ -281,17 +307,19 @@
     showNotice.timer = setTimeout(() => { notice.hidden = true; }, 3200);
   };
   const importPreferences = async (file, root) => {
+    if (!(file instanceof Blob) || file.size > 1024 * 1024) throw new Error("Tệp cấu hình phải nhỏ hơn 1 MB.");
     const value = JSON.parse(await file.text());
     pageState = {
       active: toolByName(value.active).name,
       favorites: Array.isArray(value.favorites) ? value.favorites.filter((name) => TOOLS.some((tool) => tool.name === name)) : [],
       recent: Array.isArray(value.recent) ? value.recent.filter((name) => TOOLS.some((tool) => tool.name === name)).slice(0, 12) : [],
-      usage: value.usage && typeof value.usage === "object" ? value.usage : {},
+      usage: value.usage && typeof value.usage === "object" ? Object.fromEntries(Object.entries(value.usage).filter(([name, count]) => TOOLS.some((tool) => tool.name === name) && Number.isFinite(Number(count))).map(([name, count]) => [name, Math.max(0, Math.min(100000, Number(count)))])) : {},
       inspectorOpen: value.inspectorOpen === true,
       inspectorTab: ["properties", "metadata", "rights", "history"].includes(value.inspectorTab) ? value.inspectorTab : "properties",
       navHistory: Array.isArray(value.navHistory) ? value.navHistory.filter((name) => TOOLS.some((tool) => tool.name === name)).slice(-30) : [],
       navIndex: Number.isInteger(value.navIndex) ? value.navIndex : -1,
-      aiDraft: value.aiDraft && typeof value.aiDraft === "object" ? value.aiDraft : { task: "remove-background", prompt: "", seed: "" }
+      aiDraft: value.aiDraft && typeof value.aiDraft === "object" ? { task: String(value.aiDraft.task || "remove-background").slice(0, 80), prompt: String(value.aiDraft.prompt || "").slice(0, 4000), seed: String(value.aiDraft.seed || "").slice(0, 80) } : { task: "remove-background", prompt: "", seed: "" },
+      toolScroll: {}
     };
     saveState();
     selectTool(root, pageState.active);
@@ -330,6 +358,11 @@
     const root = host.querySelector("[data-media-design-page]");
     activeRoot = root;
     resetCockpitScroll(root, root.querySelector("[data-mdp-work]"));
+    root.querySelector("[data-mdp-work]")?.addEventListener("scroll", (event) => {
+      rememberToolScroll(event.currentTarget, pageState.active);
+      clearTimeout(scrollSaveTimer);
+      scrollSaveTimer = setTimeout(saveState, 180);
+    }, { passive: true });
     const cosmosState = window.HHMediaCosmos?.getState?.();
     if (cosmosState?.theme) root.dataset.mediaTheme = cosmosState.theme;
     if (cosmosRequested && window.HHMediaCosmos?.mount) {

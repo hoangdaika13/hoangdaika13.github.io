@@ -6,10 +6,13 @@
 })((scope) => {
   "use strict";
 
-  const VERSION = 1;
+  const VERSION = 2;
   const WORKSPACE_IDS = Object.freeze(["video-workspace", "document-workspace", "brand-workspace", "asset-workspace", "export-workspace"]);
   const WORKSPACE_BY_ID = Object.freeze(Object.fromEntries(WORKSPACE_IDS.map((id) => [id, true])));
   const activeInstances = new Map();
+  const LIMITS = Object.freeze({ library: 200, timeline: 400, captions: 500, keyframes: 500, documents: 300, brandKits: 40, tokens: 800, modes: 30, collections: 100, jobs: 300 });
+  const TOKEN_TYPES = new Set(["color", "dimension", "fontFamily", "number", "string"]);
+  const JOB_STATUSES = new Set(["planned", "paused", "processing", "completed", "failed", "canceled"]);
   const DELIVERY_PROFILES = Object.freeze([
     { id: "youtube", label: "YouTube Master", kind: "video", width: 1920, height: 1080, fps: 30, bitrate: 12_000_000, mime: "video/webm;codecs=vp9,opus" },
     { id: "vertical", label: "Shorts · Reels", kind: "video", width: 1080, height: 1920, fps: 30, bitrate: 8_000_000, mime: "video/webm;codecs=vp9,opus" },
@@ -22,6 +25,27 @@
   const uid = (prefix) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value) || 0));
   const text = (value, max = 240, fallback = "") => String(value == null ? "" : value).trim().slice(0, max) || fallback;
+  const safeId = (value, prefix = "item") => text(value, 100, uid(prefix)).replace(/[^a-z0-9._:-]+/gi, "-").replace(/^-+|-+$/g, "") || uid(prefix);
+  const normalizeTokenName = (value) => text(value, 120, "token.value").split(".").map((part) => {
+    const clean = part.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-+|-+$/g, "") || "value";
+    return ["__proto__", "prototype", "constructor"].includes(clean.toLowerCase()) ? `token-${clean}` : clean;
+  }).join(".");
+  const normalizeTokenValue = (value) => text(value, 180).replace(/[{};\r\n\u0000-\u001f]+/g, " ").trim();
+  const normalizeBrandToken = (token, index = 0) => {
+    const type = TOKEN_TYPES.has(token?.type) ? token.type : "string";
+    const rawValue = normalizeTokenValue(token?.value);
+    return {
+      id: safeId(token?.id, `token-${index}`), name: normalizeTokenName(token?.name),
+      value: type === "color" && !/^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(rawValue) ? "#000000" : rawValue,
+      type, description: text(token?.description, 300)
+    };
+  };
+  const stableHash = (value) => {
+    let hash = 2166136261;
+    const input = String(value || "");
+    for (let index = 0; index < input.length; index += 1) { hash ^= input.charCodeAt(index); hash = Math.imul(hash, 16777619); }
+    return (hash >>> 0).toString(16).padStart(8, "0");
+  };
   const clone = (value) => {
     if (value == null) return value;
     if (typeof structuredClone === "function") return structuredClone(value);
@@ -79,12 +103,41 @@
       transform: { x: 0, y: 0, scale: 100, rotation: 0, opacity: 100 }, keyframes: [],
       ...(state.video || {})
     };
-    state.video.library = Array.isArray(state.video.library) ? state.video.library.slice(-200) : [];
-    state.video.timeline = Array.isArray(state.video.timeline) ? state.video.timeline.slice(-400) : [];
-    state.video.captions = Array.isArray(state.video.captions) ? state.video.captions.slice(-500) : [];
-    state.video.keyframes = Array.isArray(state.video.keyframes) ? state.video.keyframes.slice(-500) : [];
+    state.video.activeAssetId = safeId(state.video.activeAssetId || "none", "asset");
+    state.video.marks = { in: clamp(state.video.marks?.in, 0, 24 * 60 * 60), out: clamp(state.video.marks?.out, 0, 24 * 60 * 60) };
+    state.video.color = { exposure: clamp(state.video.color?.exposure, -2, 2), contrast: clamp(state.video.color?.contrast || 100, 50, 180), saturation: clamp(state.video.color?.saturation ?? 100, 0, 200), temperature: clamp(state.video.color?.temperature, -100, 100) };
+    state.video.transform = { x: clamp(state.video.transform?.x, -10000, 10000), y: clamp(state.video.transform?.y, -10000, 10000), scale: clamp(state.video.transform?.scale || 100, 1, 1000), rotation: clamp(state.video.transform?.rotation, -3600, 3600), opacity: clamp(state.video.transform?.opacity ?? 100, 0, 100) };
+    state.video.library = (Array.isArray(state.video.library) ? state.video.library : []).slice(-LIMITS.library).map((item, index) => ({
+      id: safeId(item?.id, `source-${index}`), assetId: safeId(item?.assetId, `asset-${index}`), name: text(item?.name, 180, `Nguồn ${index + 1}`),
+      kind: ["video", "audio", "image"].includes(item?.kind) ? item.kind : "video", size: clamp(item?.size, 0, 20 * 1024 ** 3),
+      checksum: text(item?.checksum, 160), duration: clamp(item?.duration, 0, 24 * 60 * 60), createdAt: text(item?.createdAt, 40, now())
+    }));
+    state.video.timeline = (Array.isArray(state.video.timeline) ? state.video.timeline : []).slice(-LIMITS.timeline).map((item, index) => ({
+      id: safeId(item?.id, `clip-${index}`), assetId: safeId(item?.assetId, `asset-${index}`), name: text(item?.name, 180, `Clip ${index + 1}`),
+      kind: ["video", "audio", "image"].includes(item?.kind) ? item.kind : "video", checksum: text(item?.checksum, 160),
+      in: clamp(item?.in, 0, 24 * 60 * 60), out: clamp(item?.out, 0, 24 * 60 * 60), duration: clamp(item?.duration, 0, 24 * 60 * 60), createdAt: text(item?.createdAt, 40, now())
+    })).map((item) => ({ ...item, out: Math.max(item.in, item.out || item.duration) }));
+    state.video.captions = (Array.isArray(state.video.captions) ? state.video.captions : []).slice(-LIMITS.captions).map((item, index) => ({
+      id: safeId(item?.id, `caption-${index}`), start: clamp(item?.start, 0, 24 * 60 * 60), end: clamp(item?.end, 0, 24 * 60 * 60), text: text(item?.text, 300)
+    })).filter((item) => item.text).map((item) => ({ ...item, end: Math.max(item.start + .05, item.end) }));
+    state.video.keyframes = (Array.isArray(state.video.keyframes) ? state.video.keyframes : []).slice(-LIMITS.keyframes).map((item, index) => ({
+      id: safeId(item?.id, `keyframe-${index}`), time: clamp(item?.time, 0, 24 * 60 * 60), createdAt: text(item?.createdAt, 40, now()),
+      transform: { x: clamp(item?.transform?.x, -10000, 10000), y: clamp(item?.transform?.y, -10000, 10000), scale: clamp(item?.transform?.scale || 100, 1, 1000), rotation: clamp(item?.transform?.rotation, -3600, 3600), opacity: clamp(item?.transform?.opacity ?? 100, 0, 100) }
+    }));
+    if (!state.video.library.some((item) => item.assetId === state.video.activeAssetId)) state.video.activeAssetId = state.video.library.at(-1)?.assetId || "";
     state.documents = { jobs: [], activeId: "", page: 1, watermark: "", ...(state.documents || {}) };
-    state.documents.jobs = Array.isArray(state.documents.jobs) ? state.documents.jobs.slice(-300) : [];
+    state.documents.watermark = text(state.documents.watermark, 80);
+    state.documents.watermarkOpacity = clamp(state.documents.watermarkOpacity || 20, 5, 70);
+    state.documents.jobs = (Array.isArray(state.documents.jobs) ? state.documents.jobs : []).slice(-LIMITS.documents).map((item, index) => ({
+      id: safeId(item?.id, `document-${index}`), assetId: safeId(item?.assetId, `asset-${index}`), name: text(item?.name, 180, `Tài liệu ${index + 1}`),
+      kind: ["pdf", "image", "text"].includes(item?.kind) ? item.kind : "pdf", type: text(item?.type, 120), size: clamp(item?.size, 0, 2 * 1024 ** 3),
+      pages: clamp(item?.pages || 1, 1, 10000), status: ["ready", "loading", "error"].includes(item?.status) ? item.status : "ready",
+      rotations: Object.fromEntries(Object.entries(item?.rotations || {}).slice(0, 10000).map(([page, angle]) => [String(clamp(page, 1, 10000)), ((Number(angle) % 360) + 360) % 360])),
+      deletedPages: [...new Set((Array.isArray(item?.deletedPages) ? item.deletedPages : []).map((page) => clamp(page, 1, 10000)))].slice(0, 10000), createdAt: text(item?.createdAt, 40, now())
+    }));
+    if (!state.documents.jobs.some((item) => item.id === state.documents.activeId)) state.documents.activeId = state.documents.jobs.at(-1)?.id || "";
+    const activeDocument = state.documents.jobs.find((item) => item.id === state.documents.activeId);
+    state.documents.page = clamp(state.documents.page || 1, 1, activeDocument?.pages || 1);
     state.brand ||= { activeKitId: "kit-default", kits: [] };
     state.brand.activeMode ||= "Default";
     state.brand.kits = Array.isArray(state.brand.kits) && state.brand.kits.length ? state.brand.kits : [{
@@ -96,10 +149,27 @@
         { id: "radius", name: "radius.card", value: "20px", type: "dimension" }
       ], components: [], templateLocks: []
     }];
+    state.brand.kits = state.brand.kits.slice(0, LIMITS.brandKits).map((kit, kitIndex) => ({
+      id: safeId(kit?.id, `kit-${kitIndex}`), name: text(kit?.name, 100, `Brand ${kitIndex + 1}`),
+      modes: [...new Set((Array.isArray(kit?.modes) ? kit.modes : ["Default"]).map((mode) => text(mode, 60)).filter(Boolean))].slice(0, LIMITS.modes),
+      tokens: (Array.isArray(kit?.tokens) ? kit.tokens : []).slice(0, LIMITS.tokens).map(normalizeBrandToken),
+      components: (Array.isArray(kit?.components) ? kit.components : []).slice(0, 300), templateLocks: (Array.isArray(kit?.templateLocks) ? kit.templateLocks : []).slice(0, 300)
+    }));
+    if (!state.brand.kits.some((kit) => kit.id === state.brand.activeKitId)) state.brand.activeKitId = state.brand.kits[0]?.id || "";
+    const activeKit = state.brand.kits.find((kit) => kit.id === state.brand.activeKitId) || state.brand.kits[0];
+    if (!activeKit?.modes?.includes(state.brand.activeMode)) state.brand.activeMode = activeKit?.modes?.[0] || "Default";
     state.assets = { items: [], collections: [], cloud: { status: "needs-adapter" }, ...(state.assets || {}) };
-    state.assets.collections = Array.isArray(state.assets.collections) ? state.assets.collections.slice(-100) : [];
+    state.assets.collections = (Array.isArray(state.assets.collections) ? state.assets.collections : []).slice(-LIMITS.collections).map((item, index) => ({
+      id: safeId(item?.id, `collection-${index}`), name: text(item?.name, 100, `Bộ sưu tập ${index + 1}`), query: text(item?.query, 200),
+      kind: ["all", "image", "video", "audio", "pdf", "text"].includes(item?.kind) ? item.kind : "all", createdAt: text(item?.createdAt, 40, now())
+    }));
     state.export = { jobs: [], lastPreflight: null, selectedProfile: "youtube", worker: { status: "needs-adapter" }, ...(state.export || {}) };
-    state.export.jobs = Array.isArray(state.export.jobs) ? state.export.jobs.slice(-300) : [];
+    state.export.selectedProfile = DELIVERY_PROFILES.some((profile) => profile.id === state.export.selectedProfile) ? state.export.selectedProfile : DELIVERY_PROFILES[0].id;
+    state.export.jobs = (Array.isArray(state.export.jobs) ? state.export.jobs : []).slice(-LIMITS.jobs).map((job, index) => ({
+      id: safeId(job?.id, `delivery-${index}`), name: text(job?.name, 180, `Delivery ${index + 1}`), profile: text(job?.profile, 60),
+      kind: ["video", "audio", "image"].includes(job?.kind) ? job.kind : "video", status: JOB_STATUSES.has(job?.status) ? job.status : "planned",
+      progress: clamp(job?.progress, 0, 100), idempotencyKey: text(job?.idempotencyKey, 160), recipe: job?.recipe && typeof job.recipe === "object" ? clone(job.recipe) : {}, createdAt: text(job?.createdAt, 40, now())
+    }));
     return state;
   }
 
@@ -142,8 +212,8 @@
 
   function buildDtcgTokens(kit) {
     const output = { $description: `HH Brand Universe · ${text(kit?.name, 120, "Brand Kit")}` };
-    (kit?.tokens || []).forEach((token) => {
-      const parts = String(token.name || "token").split(".").filter(Boolean);
+    (kit?.tokens || []).slice(0, LIMITS.tokens).map(normalizeBrandToken).forEach((token) => {
+      const parts = normalizeTokenName(token.name).split(".").filter(Boolean);
       let cursor = output;
       parts.slice(0, -1).forEach((part) => { cursor[part] ||= {}; cursor = cursor[part]; });
       cursor[parts.at(-1) || "token"] = { $type: token.type === "dimension" ? "dimension" : token.type || "string", $value: token.value, $description: token.description || "" };
@@ -151,7 +221,7 @@
     return { $schema: "https://www.designtokens.org/tr/2025.10/format/", ...output };
   }
   function buildCssTokens(kit) {
-    return `:root {\n${(kit?.tokens || []).map((token) => `  --${String(token.name).replace(/[^a-z0-9_-]+/gi, "-")}: ${token.value};`).join("\n")}\n}\n`;
+    return `:root {\n${(kit?.tokens || []).slice(0, LIMITS.tokens).map(normalizeBrandToken).map((token) => `  --${normalizeTokenName(token.name).replace(/\./g, "-")}: ${normalizeTokenValue(token.value)};`).join("\n")}\n}\n`;
   }
 
   function buildOtioTimeline(video, projectName = "HH Timeline") {
@@ -180,8 +250,8 @@
     const splitTotal = (state.rights?.splits || []).reduce((sum, item) => sum + Number(item.percent || 0), 0);
     const checks = [
       { id: "project", label: "Tên và ID dự án", status: state.project?.name && state.project?.id ? "pass" : "block", detail: state.project?.name || "Thiếu tên dự án" },
-      { id: "assets", label: "Asset khả dụng", status: assets.some((asset) => asset.availability === "offline") ? "block" : "pass", detail: `${assets.length} asset · ${assets.filter((asset) => asset.availability === "offline").length} offline` },
-      { id: "checksum", label: "Checksum", status: assets.some((asset) => !asset.checksum) ? "warn" : "pass", detail: `${assets.filter((asset) => asset.checksum).length}/${assets.length} đã xác minh` },
+      { id: "assets", label: "Asset khả dụng", status: !assets.length || assets.some((asset) => asset.availability === "offline") ? "block" : "pass", detail: `${assets.length} asset · ${assets.filter((asset) => asset.availability === "offline").length} offline` },
+      { id: "checksum", label: "Checksum", status: !assets.length || assets.some((asset) => !asset.checksum) ? "warn" : "pass", detail: `${assets.filter((asset) => asset.checksum).length}/${assets.length} đã xác minh` },
       { id: "rights", label: "Tác quyền bằng 100%", status: Math.abs(splitTotal - 100) < .001 ? "pass" : "block", detail: `${splitTotal}%` },
       { id: "license", label: "License và consent", status: assets.some((asset) => !asset.license) ? "warn" : "pass", detail: `${assets.filter((asset) => asset.license).length}/${assets.length} có license` },
       { id: "review", label: "Review đã xử lý", status: (state.review?.comments || []).some((item) => item.status !== "resolved") ? "warn" : "pass", detail: `${(state.review?.comments || []).filter((item) => item.status !== "resolved").length} comment mở` }
@@ -189,13 +259,45 @@
     return { checks, blockers: checks.filter((item) => item.status === "block").length, warnings: checks.filter((item) => item.status === "warn").length, status: checks.some((item) => item.status === "block") ? "blocked" : checks.some((item) => item.status === "warn") ? "attention" : "ready", createdAt: now() };
   }
 
-  function flattenDtcgTokens(value, path = [], result = []) {
-    if (!value || typeof value !== "object") return result;
+  function createDeliveryJob(input, profileInput, assets = [], hash = stableHash, createdAt = now()) {
+    const state = ensureProductionState(clone(input || {}));
+    const profile = DELIVERY_PROFILES.find((item) => item.id === profileInput?.id) || DELIVERY_PROFILES.find((item) => item.id === state.export.selectedProfile) || DELIVERY_PROFILES[0];
+    const assetBasis = assets.slice(0, 1000).map((asset, index) => `${safeId(asset?.id || `missing-${index}`, "asset")}:${text(asset?.checksum, 160)}:${Number(asset?.size) || 0}`).sort();
+    const preflight = preflightDelivery(state, assets);
+    const idempotencyKey = hash(JSON.stringify({ project: state.project?.id, profile: profile.id, assets: assetBasis, checks: preflight.checks.map((item) => [item.id, item.status]) }));
+    const duplicate = state.export.jobs.find((job) => job.idempotencyKey === idempotencyKey && !["failed", "canceled"].includes(job.status));
+    if (duplicate) return { state, job: duplicate, duplicate: true, preflight };
+    const job = {
+      id: uid("delivery"), name: `${text(state.project?.name, 120, "HH Project")} · ${profile.label}`, profile: profile.id, kind: profile.kind,
+      status: "planned", progress: 0, idempotencyKey, recipe: clone(profile), createdAt: text(createdAt, 40, now())
+    };
+    state.export.jobs = [...state.export.jobs, job].slice(-LIMITS.jobs);
+    state.export.lastPreflight = preflight;
+    return { state, job, duplicate: false, preflight };
+  }
+
+  function buildReleaseManifest(input, assets = [], profileInput) {
+    const state = ensureProductionState(clone(input || {}));
+    const profile = DELIVERY_PROFILES.find((item) => item.id === profileInput?.id) || DELIVERY_PROFILES.find((item) => item.id === state.export.selectedProfile) || DELIVERY_PROFILES[0];
+    return {
+      schema: "hh.release.manifest.v2", generatedAt: now(),
+      project: { id: safeId(state.project?.id, "project"), name: text(state.project?.name, 180, "HH Project") },
+      preflight: preflightDelivery(state, assets), profile: clone(profile),
+      assets: assets.slice(0, 5000).map((asset, index) => ({ entityReference: `hhasset://${safeId(asset?.id || `missing-${index}`, "asset")}`, name: text(asset?.name, 180, "asset"), type: text(asset?.type, 120, "application/octet-stream"), size: clamp(asset?.size, 0, 20 * 1024 ** 3), checksum: text(asset?.checksum, 160), license: text(asset?.license, 160, "unverified") })),
+      jobs: state.export.jobs.map((job) => ({ id: job.id, name: job.name, profile: job.profile, kind: job.kind, status: job.status, progress: job.progress, idempotencyKey: job.idempotencyKey, recipe: clone(job.recipe), createdAt: job.createdAt }))
+    };
+  }
+
+  function flattenDtcgTokens(value, path = [], result = [], seen = new WeakSet()) {
+    if (!value || typeof value !== "object" || path.length > 12 || result.length >= LIMITS.tokens || seen.has(value)) return result;
+    seen.add(value);
     if (Object.prototype.hasOwnProperty.call(value, "$value")) {
-      result.push({ id: uid("token"), name: path.join("."), value: typeof value.$value === "string" ? value.$value : JSON.stringify(value.$value), type: value.$type || "string", description: value.$description || "" });
+      result.push(normalizeBrandToken({ id: uid("token"), name: path.join("."), value: typeof value.$value === "string" ? value.$value : JSON.stringify(value.$value), type: value.$type || "string", description: value.$description || "" }, result.length));
       return result;
     }
-    Object.entries(value).forEach(([key, child]) => { if (!key.startsWith("$")) flattenDtcgTokens(child, [...path, key], result); });
+    Object.entries(value).slice(0, LIMITS.tokens).forEach(([key, child]) => {
+      if (!key.startsWith("$") && !["__proto__", "prototype", "constructor"].includes(key.toLowerCase())) flattenDtcgTokens(child, [...path, normalizeTokenName(key)], result, seen);
+    });
     return result;
   }
 
@@ -207,12 +309,28 @@
     "export-workspace": { code: "DC", eyebrow: "DELIVERY CENTER", title: "Release Mission Control", summary: "Preflight, codec capability, job spec, manifest và gói dự án.", accent: "#ffe36d" }
   })[id];
 
+  function dialogMarkup(session) {
+    const dialog = session.dialog;
+    if (!dialog) return "";
+    const isConfirm = dialog.kind === "asset-delete";
+    return `<div class="mpu-dialog-backdrop" data-mpu-dialog-close><form class="mpu-dialog" data-mpu-dialog-form role="dialog" aria-modal="true" aria-labelledby="mpu-dialog-title">
+      <header><div><small>${isConfirm ? "THAO TÁC CÓ ẢNH HƯỞNG" : "NHẬP THÔNG TIN"}</small><h3 id="mpu-dialog-title">${escapeHtml(dialog.title)}</h3></div><button type="button" data-mpu-dialog-close aria-label="Đóng">×</button></header>
+      <p>${escapeHtml(dialog.description || "")}</p>
+      ${isConfirm ? `<div class="mpu-dialog-warning"><b>!</b><span>File sẽ bị xóa khỏi Media Bin cục bộ. Project tham chiếu tới file này có thể yêu cầu relink.</span></div>` : `<label>${escapeHtml(dialog.label || "Tên")}<input name="value" required maxlength="${Number(dialog.maxLength) || 120}" value="${escapeHtml(dialog.value || "")}" autocomplete="off" data-mpu-dialog-input></label>`}
+      <footer><button type="button" data-mpu-dialog-close>Hủy</button><button type="submit" class="${isConfirm ? "is-danger" : "is-primary"}">${isConfirm ? "Xóa khỏi Media Bin" : "Lưu"}</button></footer>
+    </form></div>`;
+  }
+  function openDialog(session, dialog) {
+    session.dialog = { ...dialog };
+    render(session);
+  }
+
   function shellMarkup(session, body) {
     const meta = workspaceMeta(session.workspace);
     return `<section class="mpu" data-mpu data-workspace="${session.workspace}" style="--mpu-accent:${meta.accent}">
       <div class="mpu-cosmos" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
       <header class="mpu-topbar"><div class="mpu-brand"><span>${meta.code}</span><div><small>${meta.eyebrow} · UNIVERSAL MEDIA PROJECT</small><h2>${meta.title}</h2><p>${meta.summary}</p></div></div><div class="mpu-top-actions"><span class="mpu-autosave"><i></i> Tự lưu cục bộ</span><button type="button" data-mpu-checkpoint>◇ Checkpoint</button><button type="button" data-mpu-route="/media-design/media-core">Project Core</button></div></header>
-      ${body}<div class="mpu-toast" data-mpu-toast role="status" aria-live="polite" hidden></div>
+      ${body}${dialogMarkup(session)}<div class="mpu-toast" data-mpu-toast role="status" aria-live="polite" hidden></div>
     </section>`;
   }
 
@@ -240,7 +358,7 @@
     const brand = session.state.brand;
     const kit = brand.kits.find((item) => item.id === brand.activeKitId) || brand.kits[0];
     const lint = lintBrandKit(kit);
-    const colors = (kit.tokens || []).filter((token) => token.type === "color");
+    const colors = (kit.tokens || []).filter((token) => token.type === "color" && hexToRgb(token.value));
     const surface = colors.find((token) => /surface|background/.test(token.name))?.value || "#071225";
     const primary = colors.find((token) => /brand.primary|primary/.test(token.name))?.value || "#56ecff";
     const accent = colors.find((token) => /accent/.test(token.name))?.value || "#ff63d8";
@@ -258,11 +376,14 @@
   }
   function assetsMarkup(session) {
     const query = session.assetQuery.toLowerCase();
-    const items = session.assets.filter((asset) => (!query || `${asset.name} ${(asset.tags || []).join(" ")} ${asset.license || ""}`.toLowerCase().includes(query)) && (session.assetKind === "all" || fileKind(asset.type, asset.name) === session.assetKind));
+    const items = session.assets.filter((asset) => (!query || `${asset.name} ${(asset.tags || []).join(" ")} ${asset.license || ""}`.toLowerCase().includes(query)) && (session.assetKind === "all" || fileKind(asset.type, asset.name) === session.assetKind)).slice();
+    if (session.assetSort === "name") items.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "vi"));
+    else if (session.assetSort === "size") items.sort((a, b) => Number(b.size || 0) - Number(a.size || 0));
+    else items.sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
     const selected = session.assets.find((item) => item.id === session.selectedAssetId) || items[0];
     if (selected) session.selectedAssetId = selected.id;
     const selectedUrl = selected ? session.objectUrls.get(selected.id) : "";
-    return shellMarkup(session, `<div class="mpu-asset-layout"><aside class="mpu-panel mpu-collections"><header><small>GALAXY INDEX</small><strong>${session.assets.length} asset</strong></header><button type="button" class="${session.assetKind === "all" ? "is-active" : ""}" data-mpu-asset-kind="all"><i>✦</i>Tất cả <b>${session.assets.length}</b></button>${["image","video","audio","pdf","text"].map((kind) => `<button type="button" class="${session.assetKind === kind ? "is-active" : ""}" data-mpu-asset-kind="${kind}"><i>${{image:"▧",video:"▶",audio:"♫",pdf:"P",text:"T"}[kind]}</i>${{image:"Hình ảnh",video:"Video",audio:"Audio",pdf:"PDF",text:"Văn bản"}[kind]} <b>${session.assets.filter((asset) => fileKind(asset.type, asset.name) === kind).length}</b></button>`).join("")}<section><small>SMART COLLECTIONS</small>${(session.state.assets.collections || []).map((collection) => `<button type="button" data-mpu-collection="${collection.id}"><i>◇</i>${escapeHtml(collection.name)}<b>${escapeHtml(collection.query || "")}</b></button>`).join("")}<button type="button" data-mpu-collection-new>＋ Lưu bộ lọc hiện tại</button></section><footer><button type="button" data-mpu-route="/media-design/media-cloud">Private Cloud</button></footer></aside><main class="mpu-asset-main"><header><div class="mpu-asset-search"><span>⌕</span><input type="search" value="${escapeHtml(session.assetQuery)}" placeholder="Tìm tên, tag, license…" data-mpu-asset-search></div><select data-mpu-asset-sort><option value="recent">Mới nhất</option><option value="name">Tên A–Z</option><option value="size">Dung lượng</option></select><label class="is-primary">＋ Ingest<input type="file" multiple data-mpu-asset-import></label></header><div class="mpu-asset-grid">${items.map((asset) => { const kind = fileKind(asset.type, asset.name), url = session.objectUrls.get(asset.id); return `<button type="button" class="${asset.id === selected?.id ? "is-active" : ""}" data-mpu-asset-select="${asset.id}"><div>${kind === "image" && url ? `<img src="${url}" alt="">` : `<span>${kind === "video" ? "▶" : kind === "audio" ? "♫" : kind === "pdf" ? "PDF" : kind.toUpperCase()}</span>`}<i data-status="${asset.duplicateOf ? "duplicate" : asset.availability || "ready"}"></i></div><strong>${escapeHtml(asset.name)}</strong><small>${formatBytes(asset.size)} · ${(asset.tags || []).slice(0,2).join(" · ") || "chưa có tag"}</small></button>`; }).join("") || `<div class="mpu-empty"><i>AG</i><strong>Không tìm thấy asset</strong><p>Thay bộ lọc hoặc ingest file mới.</p></div>`}</div></main><aside class="mpu-asset-inspector"><div class="mpu-asset-preview">${assetPreview(selected, selectedUrl)}</div>${selected ? `<header><div><small>ENTITY REFERENCE</small><strong>${escapeHtml(selected.name)}</strong></div><span data-status="${selected.duplicateOf ? "duplicate" : "ready"}">${selected.duplicateOf ? "Trùng" : "Verified"}</span></header><section class="mpu-asset-meta"><label>Tags<input value="${escapeHtml((selected.tags || []).join(", "))}" data-mpu-asset-field="tags"></label><label>License<input value="${escapeHtml(selected.license || "")}" placeholder="Owned / CC BY…" data-mpu-asset-field="license"></label><label>Rating<input type="range" min="0" max="5" value="${selected.rating || 0}" data-mpu-asset-field="rating"></label><p><span>SHA-256</span><code>${escapeHtml(selected.checksum || "đang tính")}</code></p><p><span>MIME</span><b>${escapeHtml(selected.type || "unknown")}</b></p><p><span>Kích thước</span><b>${formatBytes(selected.size)}</b></p><p><span>Entity ID</span><code>${escapeHtml(selected.id)}</code></p></section><footer><button type="button" data-mpu-asset-download>Tải file</button><label>Thay thế<input type="file" data-mpu-asset-replace></label><button type="button" data-mpu-asset-manifest>Manifest</button><button type="button" class="is-danger" data-mpu-asset-delete>Xóa</button></footer>` : ""}</aside></div>`);
+    return shellMarkup(session, `<div class="mpu-asset-layout"><aside class="mpu-panel mpu-collections"><header><small>GALAXY INDEX</small><strong>${session.assets.length} asset</strong></header><button type="button" class="${session.assetKind === "all" ? "is-active" : ""}" data-mpu-asset-kind="all"><i>✦</i>Tất cả <b>${session.assets.length}</b></button>${["image","video","audio","pdf","text"].map((kind) => `<button type="button" class="${session.assetKind === kind ? "is-active" : ""}" data-mpu-asset-kind="${kind}"><i>${{image:"▧",video:"▶",audio:"♫",pdf:"P",text:"T"}[kind]}</i>${{image:"Hình ảnh",video:"Video",audio:"Audio",pdf:"PDF",text:"Văn bản"}[kind]} <b>${session.assets.filter((asset) => fileKind(asset.type, asset.name) === kind).length}</b></button>`).join("")}<section><small>SMART COLLECTIONS</small>${(session.state.assets.collections || []).map((collection) => `<button type="button" data-mpu-collection="${collection.id}"><i>◇</i>${escapeHtml(collection.name)}<b>${escapeHtml(collection.query || "")}</b></button>`).join("")}<button type="button" data-mpu-collection-new>＋ Lưu bộ lọc hiện tại</button></section><footer><button type="button" data-mpu-route="/media-design/media-cloud">Private Cloud</button></footer></aside><main class="mpu-asset-main"><header><div class="mpu-asset-search"><span>⌕</span><input type="search" value="${escapeHtml(session.assetQuery)}" placeholder="Tìm tên, tag, license…" data-mpu-asset-search></div><select data-mpu-asset-sort aria-label="Sắp xếp asset"><option value="recent" ${session.assetSort === "recent" ? "selected" : ""}>Mới nhất</option><option value="name" ${session.assetSort === "name" ? "selected" : ""}>Tên A–Z</option><option value="size" ${session.assetSort === "size" ? "selected" : ""}>Dung lượng</option></select><label class="is-primary">＋ Ingest<input type="file" multiple data-mpu-asset-import></label></header><div class="mpu-asset-grid">${items.map((asset) => { const kind = fileKind(asset.type, asset.name), url = session.objectUrls.get(asset.id); return `<button type="button" class="${asset.id === selected?.id ? "is-active" : ""}" data-mpu-asset-select="${asset.id}"><div>${kind === "image" && url ? `<img src="${url}" alt="">` : `<span>${kind === "video" ? "▶" : kind === "audio" ? "♫" : kind === "pdf" ? "PDF" : kind.toUpperCase()}</span>`}<i data-status="${asset.duplicateOf ? "duplicate" : asset.availability || "ready"}"></i></div><strong>${escapeHtml(asset.name)}</strong><small>${formatBytes(asset.size)} · ${escapeHtml((asset.tags || []).slice(0,2).join(" · ") || "chưa có tag")}</small></button>`; }).join("") || `<div class="mpu-empty"><i>AG</i><strong>Không tìm thấy asset</strong><p>Thay bộ lọc hoặc ingest file mới.</p></div>`}</div></main><aside class="mpu-asset-inspector"><div class="mpu-asset-preview">${assetPreview(selected, selectedUrl)}</div>${selected ? `<header><div><small>ENTITY REFERENCE</small><strong>${escapeHtml(selected.name)}</strong></div><span data-status="${selected.duplicateOf ? "duplicate" : "ready"}">${selected.duplicateOf ? "Trùng" : "Verified"}</span></header><section class="mpu-asset-meta"><label>Tags<input value="${escapeHtml((selected.tags || []).join(", "))}" data-mpu-asset-field="tags"></label><label>License<input value="${escapeHtml(selected.license || "")}" placeholder="Owned / CC BY…" data-mpu-asset-field="license"></label><label>Rating<input type="range" min="0" max="5" value="${selected.rating || 0}" data-mpu-asset-field="rating"></label><p><span>SHA-256</span><code>${escapeHtml(selected.checksum || "đang tính")}</code></p><p><span>MIME</span><b>${escapeHtml(selected.type || "unknown")}</b></p><p><span>Kích thước</span><b>${formatBytes(selected.size)}</b></p><p><span>Entity ID</span><code>${escapeHtml(selected.id)}</code></p></section><footer><button type="button" data-mpu-asset-download>Tải file</button><label>Thay thế<input type="file" data-mpu-asset-replace></label><button type="button" data-mpu-asset-manifest>Manifest</button><button type="button" class="is-danger" data-mpu-asset-delete>Xóa</button></footer>` : ""}</aside></div>`);
   }
 
   function deliveryMarkup(session) {
@@ -272,13 +393,52 @@
     return shellMarkup(session, `<div class="mpu-delivery-layout"><aside class="mpu-panel mpu-delivery-targets"><header><small>DELIVERY TARGETS</small><strong>${DELIVERY_PROFILES.length} recipe</strong></header>${DELIVERY_PROFILES.map((item) => `<button type="button" class="${item.id === profile.id ? "is-active" : ""}" data-mpu-delivery-profile="${item.id}"><i>${item.kind === "video" ? "▶" : item.kind === "audio" ? "♫" : "▧"}</i><span><strong>${item.label}</strong><small>${item.width ? `${item.width}×${item.height} · ` : `${item.sampleRate || ""} Hz · `}${escapeHtml(item.mime)}</small></span></button>`).join("")}<section><small>PACKAGE</small><button type="button" data-mpu-delivery-package>◇ Xuất .hhmedia</button><button type="button" data-mpu-delivery-manifest>▤ Release manifest</button></section></aside><main class="mpu-delivery-main"><header><div><small>RELEASE PREFLIGHT</small><h3>${delivery.status === "ready" ? "Sẵn sàng phát hành" : delivery.status === "blocked" ? "Đang bị khóa" : "Cần kiểm tra"}</h3><p>${delivery.blockers} blocker · ${delivery.warnings} cảnh báo · ${session.assets.length} asset</p></div><div class="mpu-readiness" style="--ready:${Math.max(0, 100 - delivery.blockers * 25 - delivery.warnings * 8)}"><strong>${Math.max(0, 100 - delivery.blockers * 25 - delivery.warnings * 8)}</strong><span>/100</span></div></header><section class="mpu-preflight-grid">${delivery.checks.map((check) => `<article data-status="${check.status}"><span>${check.status === "pass" ? "✓" : check.status === "block" ? "!" : "◇"}</span><div><strong>${check.label}</strong><small>${escapeHtml(check.detail)}</small></div><b>${check.status}</b></article>`).join("")}</section><section class="mpu-codec-card"><header><div><small>DEVICE CAPABILITY</small><strong>${profile.label}</strong></div><button type="button" data-mpu-delivery-check>Kiểm tra codec</button></header><div data-mpu-capability-result><p>Chạy kiểm tra để hỏi MediaCapabilities về support, smoothness và power efficiency thật trên thiết bị này.</p></div></section><section class="mpu-job-queue"><header><div><small>DELIVERY QUEUE</small><strong>${session.state.export.jobs.length} job spec</strong></div><button type="button" class="is-primary" data-mpu-delivery-job ${delivery.blockers ? "disabled" : ""}>＋ Tạo job từ recipe</button></header>${session.state.export.jobs.slice().reverse().map((job) => `<article data-status="${job.status}"><span>${job.kind === "audio" ? "♫" : job.kind === "image" ? "▧" : "▶"}</span><div><strong>${escapeHtml(job.name)}</strong><small>${escapeHtml(job.profile)} · ${escapeHtml(job.idempotencyKey || "")}</small></div><b>${escapeHtml(job.status)}</b><div><button type="button" data-mpu-job="spec" data-job-id="${job.id}">Spec</button>${["planned","paused"].includes(job.status) ? `<button type="button" data-mpu-job="${job.status === "paused" ? "resume" : "pause"}" data-job-id="${job.id}">${job.status === "paused" ? "Resume" : "Pause"}</button><button type="button" data-mpu-job="cancel" data-job-id="${job.id}">Cancel</button>` : ""}</div></article>`).join("") || `<div class="mpu-empty"><i>DC</i><strong>Queue đang trống</strong><p>Preflight xong rồi tạo job spec; encode dài hạn vẫn cần external worker.</p></div>`}</section></main><aside class="mpu-delivery-summary"><header><small>RELEASE SUMMARY</small><strong>${profile.label}</strong></header><section><p><span>Container</span><b>${profile.mime.split(";")[0]}</b></p><p><span>Khung hình</span><b>${profile.width ? `${profile.width}×${profile.height}` : "Audio only"}</b></p><p><span>Bitrate</span><b>${profile.bitrate ? `${(profile.bitrate / 1e6).toFixed(1)} Mbps` : "Theo nguồn"}</b></p><p><span>Worker</span><b>${session.state.export.worker?.status === "ready" ? "Connected" : "Chưa kết nối"}</b></p></section><section class="mpu-release-orbit"><i></i><i></i><i></i><b>DC</b><span>Preflight</span><span>Package</span><span>Publish</span></section><section class="mpu-capability"><small>TRUST & PROVENANCE</small><p><i class="is-ready"></i> SHA-256 manifest</p><p><i></i> C2PA cần signer backend</p><p><i class="is-ready"></i> Audit cục bộ</p></section><footer><button type="button" data-mpu-route="/media-design/production-workflow">External Worker</button><button type="button" data-mpu-route="/media-design/review-studio">Review Center</button></footer></aside></div>`);
   }
 
+  const VIEW_SCROLL_SELECTORS = [".mpu-bin-list", ".mpu-timeline", ".mpu-document-stage", ".mpu-token-table", ".mpu-asset-main", ".mpu-asset-grid", ".mpu-delivery-main", ".mpu-job-queue"];
+  function captureViewState(session) {
+    session.viewScroll ||= {};
+    VIEW_SCROLL_SELECTORS.forEach((selector) => {
+      const node = session.host.querySelector(selector);
+      if (node) session.viewScroll[selector] = { top: node.scrollTop, left: node.scrollLeft };
+    });
+    const active = scope.document?.activeElement;
+    session.focusState = null;
+    if (!active || !session.host.contains(active)) return;
+    let selector = "";
+    if (active.matches?.("[data-mpu-asset-search]")) selector = "[data-mpu-asset-search]";
+    else if (active.matches?.("[data-mpu-asset-sort]")) selector = "[data-mpu-asset-sort]";
+    else if (active.matches?.("[data-mpu-document-watermark]")) selector = "[data-mpu-document-watermark]";
+    else if (active.matches?.("[data-mpu-brand-name]")) selector = "[data-mpu-brand-name]";
+    else if (active.matches?.("[data-mpu-dialog-input]")) selector = "[data-mpu-dialog-input]";
+    else if (active.matches?.("[data-mpu-token-field]")) {
+      const rowId = active.closest("[data-token-id]")?.dataset.tokenId, field = active.dataset.mpuTokenField;
+      if (rowId && field) selector = `[data-token-id="${rowId.replace(/["\\]/g, "")}"] [data-mpu-token-field="${field.replace(/["\\]/g, "")}"]`;
+    } else if (active.name && active.closest?.("[data-mpu-token-form]")) selector = `[data-mpu-token-form] [name="${String(active.name).replace(/["\\]/g, "")}"]`;
+    if (selector) session.focusState = { selector, start: active.selectionStart, end: active.selectionEnd };
+  }
+  function restoreViewState(session) {
+    VIEW_SCROLL_SELECTORS.forEach((selector) => {
+      const node = session.host.querySelector(selector), point = session.viewScroll?.[selector];
+      if (node && point) { node.scrollTop = point.top; node.scrollLeft = point.left; }
+    });
+    const preferred = session.dialog ? "[data-mpu-dialog-input], [data-mpu-dialog-form] button[type=submit]" : session.restoreSelector || session.focusState?.selector;
+    session.restoreSelector = "";
+    const target = preferred ? session.host.querySelector(preferred) : null;
+    if (target) {
+      target.focus?.({ preventScroll: true });
+      if (session.focusState && preferred === session.focusState.selector && typeof target.setSelectionRange === "function") {
+        try { target.setSelectionRange(session.focusState.start, session.focusState.end); } catch (_) {}
+      }
+    }
+  }
   function render(session) {
+    captureViewState(session);
     if (session.workspace === "video-workspace") session.host.innerHTML = videoMarkup(session);
     else if (session.workspace === "document-workspace") session.host.innerHTML = documentsMarkup(session);
     else if (session.workspace === "brand-workspace") session.host.innerHTML = brandMarkup(session);
     else if (session.workspace === "asset-workspace") session.host.innerHTML = assetsMarkup(session);
     else session.host.innerHTML = deliveryMarkup(session);
     afterRender(session);
+    restoreViewState(session);
   }
 
   function notify(session, message, tone = "success") {
@@ -372,8 +532,12 @@
   }
   function startVideoLoop(session) {
     cancelAnimationFrame(session.videoRaf);
-    const tick = () => { if (!scope.document?.hidden) drawVideoFrame(session); session.videoRaf = requestAnimationFrame(tick); };
-    session.videoRaf = requestAnimationFrame(tick);
+    const tick = () => {
+      if (session.disposed || !session.videoPlayer || session.videoPlayer.paused || session.videoPlayer.ended) { session.videoRaf = 0; return; }
+      if (!scope.document?.hidden) drawVideoFrame(session);
+      session.videoRaf = requestAnimationFrame(tick);
+    };
+    if (session.videoPlayer && !session.videoPlayer.paused) session.videoRaf = requestAnimationFrame(tick);
   }
   function bindVideo(session) {
     const clip = activeVideoClip(session), player = session.host.querySelector("[data-mpu-video-player]");
@@ -388,8 +552,9 @@
       const scrub = session.host.querySelector("[data-mpu-video-scrub]"); if (scrub) scrub.max = String(clip.duration || 1);
       drawVideoFrame(session); save(session);
     }, { once: true });
-    player.addEventListener("ended", () => { session.host.querySelector("[data-mpu-video-play]").textContent = "▶"; });
-    startVideoLoop(session);
+    player.addEventListener("play", () => startVideoLoop(session));
+    player.addEventListener("pause", () => { cancelAnimationFrame(session.videoRaf); session.videoRaf = 0; drawVideoFrame(session); });
+    player.addEventListener("ended", () => { cancelAnimationFrame(session.videoRaf); session.videoRaf = 0; const button = session.host.querySelector("[data-mpu-video-play]"); if (button) button.textContent = "▶"; });
   }
   async function renderVideoRange(session) {
     const player = session.videoPlayer, canvas = session.host.querySelector("[data-mpu-video-canvas]");
@@ -403,9 +568,21 @@
     const recorder = new scope.MediaRecorder(canvasStream, mime ? { mimeType: mime, videoBitsPerSecond: 8_000_000 } : undefined), chunks = [];
     recorder.ondataavailable = (event) => { if (event.data?.size) chunks.push(event.data); };
     const completed = new Promise((resolve, reject) => { recorder.onerror = (event) => reject(event.error || new Error("MediaRecorder thất bại.")); recorder.onstop = resolve; });
-    recorder.start(250); await player.play();
-    await new Promise((resolve) => { const timer = setInterval(() => { if (player.currentTime >= end || player.ended) { clearInterval(timer); resolve(); } }, 40); });
-    player.pause(); recorder.stop(); await completed; canvasStream.getTracks().forEach((track) => track.stop());
+    let rangeTimer = 0, abortHandler = null, rangeError = null;
+    try {
+      recorder.start(250); await player.play();
+      await new Promise((resolve, reject) => {
+        const finish = (error) => { clearInterval(rangeTimer); session.controller.signal.removeEventListener("abort", abortHandler); error ? reject(error) : resolve(); };
+        abortHandler = () => finish(new DOMException("Render đã bị hủy khi rời workspace.", "AbortError"));
+        session.controller.signal.addEventListener("abort", abortHandler, { once: true });
+        rangeTimer = setInterval(() => { if (player.currentTime >= end || player.ended) finish(); }, 40);
+      });
+    } catch (error) { rangeError = error; } finally {
+      clearInterval(rangeTimer); if (abortHandler) session.controller.signal.removeEventListener("abort", abortHandler);
+      player.pause(); if (recorder.state !== "inactive") recorder.stop();
+    }
+    try { await completed; } finally { canvasStream.getTracks().forEach((track) => track.stop()); }
+    if (rangeError) throw rangeError;
     const clip = activeVideoClip(session), blob = new Blob(chunks, { type: mime || "video/webm" });
     downloadBlob(blob, `${safeFileName(clip?.name, "hh-video")}-selection.webm`);
     return blob;
@@ -429,14 +606,15 @@
     session.documents.set(item.id, record); return record;
   }
   async function renderDocumentPreview(session) {
+    const renderId = ++session.documentRenderId;
     const docs = session.state.documents, item = docs.jobs.find((value) => value.id === docs.activeId) || docs.jobs.at(-1), stage = session.host.querySelector("[data-mpu-document-canvas]"), status = session.host.querySelector("[data-mpu-document-status]");
     if (!item || !stage) return;
     try {
-      const record = await getDocumentRecord(session, item); if (!record) throw new Error("File gốc không còn trong Media Bin.");
+      const record = await getDocumentRecord(session, item); if (session.disposed || renderId !== session.documentRenderId) return; if (!record) throw new Error("File gốc không còn trong Media Bin.");
       stage.innerHTML = "";
       if (item.kind === "pdf") {
         const pageNumber = clamp(docs.page || 1, 1, record.pdf.numPages), page = await record.pdf.getPage(pageNumber), viewport = page.getViewport({ scale: session.documentZoom / 100 * 1.25, rotation: Number(item.rotations?.[pageNumber] || 0) });
-        const canvas = document.createElement("canvas"), context = canvas.getContext("2d"); canvas.width = viewport.width; canvas.height = viewport.height; canvas.setAttribute("aria-label", `Trang ${pageNumber} của ${item.name}`); stage.append(canvas); await page.render({ canvasContext: context, viewport }).promise;
+        const canvas = document.createElement("canvas"), context = canvas.getContext("2d"); canvas.width = viewport.width; canvas.height = viewport.height; canvas.setAttribute("aria-label", `Trang ${pageNumber} của ${item.name}`); stage.append(canvas); await page.render({ canvasContext: context, viewport }).promise; if (session.disposed || renderId !== session.documentRenderId) return;
         item.pages = record.pdf.numPages; status.textContent = `PDF.js · ${record.pdf.numPages} trang · trang ${pageNumber}${(item.deletedPages || []).includes(pageNumber) ? " · sẽ bỏ khỏi bản xuất" : ""}`;
       } else if (item.kind === "image") {
         const asset = session.assets.find((value) => value.id === item.assetId), image = document.createElement("img"); image.src = session.objectUrls.get(asset.id); image.alt = item.name; stage.append(image); status.textContent = "Ảnh nguồn · có thể xuất thành PDF";
@@ -444,18 +622,38 @@
         const pre = document.createElement("pre"); pre.textContent = await record.blob.text(); stage.append(pre); status.textContent = "Văn bản local · UTF-8";
       }
       save(session);
-    } catch (error) { if (status) status.textContent = error.message; notify(session, error.message, "error"); }
+    } catch (error) { if (session.disposed || renderId !== session.documentRenderId) return; if (status) status.textContent = error.message; notify(session, error.message, "error"); }
   }
   async function exportProcessedDocuments(session, all = false) {
     if (!scope.PDFLib?.PDFDocument) throw new Error("pdf-lib chưa được tải.");
     const output = await scope.PDFLib.PDFDocument.create(), items = all ? session.state.documents.jobs.filter((item) => item.kind === "pdf") : [session.state.documents.jobs.find((item) => item.id === session.state.documents.activeId)].filter(Boolean);
-    if (!items.length) throw new Error("Không có PDF để xuất.");
+    if (!items.length) throw new Error("Không có tài liệu để xuất.");
+    if (!all && items[0].kind === "text") {
+      const record = await getDocumentRecord(session, items[0]); if (!record?.blob) throw new Error("File văn bản gốc không còn trong Media Bin.");
+      downloadBlob(record.blob, `${safeFileName(items[0].name).replace(/\.[a-z0-9]{1,8}$/i, "")}.txt`); return new Uint8Array(await record.blob.arrayBuffer());
+    }
     for (const item of items) {
       const record = await getDocumentRecord(session, item); if (!record) continue;
-      const sourcePdf = await scope.PDFLib.PDFDocument.load(record.bytes.slice()), kept = sourcePdf.getPageIndices().filter((index) => !(item.deletedPages || []).includes(index + 1)), copied = await output.copyPages(sourcePdf, kept);
-      copied.forEach((page, index) => {
-        const originalPage = kept[index] + 1, rotation = Number(item.rotations?.[originalPage] || 0); if (rotation) page.setRotation(scope.PDFLib.degrees(rotation)); output.addPage(page);
-      });
+      if (item.kind === "pdf") {
+        const sourcePdf = await scope.PDFLib.PDFDocument.load(record.bytes.slice()), kept = sourcePdf.getPageIndices().filter((index) => !(item.deletedPages || []).includes(index + 1)), copied = await output.copyPages(sourcePdf, kept);
+        copied.forEach((page, index) => {
+          const originalPage = kept[index] + 1, rotation = Number(item.rotations?.[originalPage] || 0); if (rotation) page.setRotation(scope.PDFLib.degrees(rotation)); output.addPage(page);
+        });
+      } else if (item.kind === "image") {
+        let bytes = record.bytes.slice(), mime = String(record.blob?.type || item.type || "").toLowerCase(), width = 0, height = 0, bitmap = null;
+        if (!/image\/(?:png|jpeg)/.test(mime)) {
+          if (typeof scope.createImageBitmap !== "function" || !scope.document) throw new Error("Trình duyệt chưa thể chuyển ảnh này sang PNG để tạo PDF.");
+          bitmap = await scope.createImageBitmap(record.blob); width = bitmap.width; height = bitmap.height;
+          if (width * height > 80_000_000) { bitmap.close?.(); throw new Error("Ảnh vượt giới hạn 80 megapixel cho chuyển đổi PDF local."); }
+          const canvas = scope.document.createElement("canvas"); canvas.width = width; canvas.height = height; canvas.getContext("2d", { alpha: true }).drawImage(bitmap, 0, 0); bitmap.close?.();
+          const png = await new Promise((resolve) => canvas.toBlob(resolve, "image/png")); if (!png) throw new Error("Không thể chuyển ảnh sang PNG.");
+          bytes = new Uint8Array(await png.arrayBuffer()); mime = "image/png";
+        }
+        const embedded = mime === "image/png" ? await output.embedPng(bytes) : await output.embedJpg(bytes);
+        width ||= embedded.width; height ||= embedded.height;
+        const scale = Math.min(1, 1440 / Math.max(width, height)), pageWidth = Math.max(72, width * scale), pageHeight = Math.max(72, height * scale);
+        output.addPage([pageWidth, pageHeight]).drawImage(embedded, { x: 0, y: 0, width: pageWidth, height: pageHeight });
+      }
     }
     if (!output.getPageCount()) throw new Error("Recipe đã loại toàn bộ trang.");
     const watermark = text(session.state.documents.watermark, 80), opacity = clamp(session.state.documents.watermarkOpacity || 20, 5, 70) / 100;
@@ -471,8 +669,22 @@
   }
 
   function afterRender(session) {
-    if (session.workspace === "video-workspace") bindVideo(session);
-    if (session.workspace === "document-workspace") renderDocumentPreview(session);
+    if (session.workspace === "video-workspace") {
+      const tabs = [...session.host.querySelectorAll(".mpu-video-inspector>nav button")], panels = [...session.host.querySelectorAll(".mpu-video-inspector>section")], definitions = [["motion", "Motion"], ["color", "Color"], ["engine", "Engine"]];
+      tabs.forEach((button, index) => { const definition = definitions[index]; if (!definition) return; button.textContent = definition[1]; button.dataset.mpuVideoPanel = definition[0]; button.classList.toggle("is-active", session.videoInspectorTab === definition[0]); });
+      panels.forEach((panel, index) => { panel.hidden = definitions[index]?.[0] !== session.videoInspectorTab; });
+      bindVideo(session);
+    }
+    if (session.workspace === "brand-workspace") {
+      session.host.querySelector(".mpu-preview-frame")?.classList.toggle("is-mobile", session.previewDevice === "mobile");
+      session.host.querySelectorAll("[data-mpu-preview-device]").forEach((button) => button.classList.toggle("is-active", button.dataset.mpuPreviewDevice === session.previewDevice));
+      session.host.querySelectorAll(".mpu-preview-frame button").forEach((button) => { button.disabled = true; button.tabIndex = -1; button.title = "Thành phần trong bản xem trước thương hiệu"; });
+    }
+    if (session.workspace === "document-workspace") {
+      const grid = session.host.querySelector(".mpu-tool-grid"), active = session.state.documents.jobs.find((item) => item.id === session.state.documents.activeId), index = session.state.documents.jobs.indexOf(active);
+      if (grid && active) grid.insertAdjacentHTML("beforeend", `<button type="button" data-mpu-document-move="up" ${index > 0 ? "" : "disabled"}>↑<span>Lên trước</span></button><button type="button" data-mpu-document-move="down" ${index >= 0 && index < session.state.documents.jobs.length - 1 ? "" : "disabled"}>↓<span>Xuống sau</span></button>`);
+      renderDocumentPreview(session);
+    }
   }
 
   async function checkMediaCapability(profile) {
@@ -493,17 +705,29 @@
 
   function bindEvents(session) {
     const signal = session.controller.signal;
+    session.host.addEventListener("keydown", (event) => {
+      if (!session.dialog) return;
+      if (event.key === "Escape") { event.preventDefault(); session.restoreSelector = session.dialog.returnSelector || ""; session.dialog = null; render(session); return; }
+      if (event.key !== "Tab") return;
+      const dialog = session.host.querySelector("[data-mpu-dialog-form]"), focusable = [...(dialog?.querySelectorAll("button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled)") || [])];
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable.at(-1);
+      if (event.shiftKey && scope.document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && scope.document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }, { signal });
     session.host.addEventListener("click", async (event) => {
+      if (event.target.matches("[data-mpu-dialog-close]")) { session.restoreSelector = session.dialog?.returnSelector || ""; session.dialog = null; render(session); return; }
       const route = event.target.closest("[data-mpu-route]"); if (route) { session.options.onNavigate?.(route.dataset.mpuRoute); return; }
       if (event.target.closest("[data-mpu-checkpoint]")) { session.state = session.professionalApi.createCheckpoint(session.state, `${workspaceMeta(session.workspace).title} · ${new Date().toLocaleTimeString("vi-VN")}`); save(session); render(session); notify(session, "Đã tạo checkpoint và recovery point."); return; }
 
       const sourceButton = event.target.closest("[data-mpu-video-source]"); if (sourceButton) { session.state.video.activeAssetId = sourceButton.dataset.mpuVideoSource; const clip = activeVideoClip(session); session.state.video.marks = { in: 0, out: clip?.duration || 0 }; save(session); render(session); return; }
+      const videoPanel = event.target.closest("[data-mpu-video-panel]"); if (videoPanel) { session.videoInspectorTab = ["motion", "color", "engine"].includes(videoPanel.dataset.mpuVideoPanel) ? videoPanel.dataset.mpuVideoPanel : "motion"; session.host.querySelectorAll(".mpu-video-inspector>nav button").forEach((button) => button.classList.toggle("is-active", button.dataset.mpuVideoPanel === session.videoInspectorTab)); session.host.querySelectorAll(".mpu-video-inspector>section").forEach((panel, index) => { panel.hidden = ["motion", "color", "engine"][index] !== session.videoInspectorTab; }); return; }
       if (event.target.closest("[data-mpu-video-play]")) { const player = session.videoPlayer; if (!player) return; if (player.paused) { if (player.currentTime < session.state.video.marks.in || player.currentTime >= session.state.video.marks.out) player.currentTime = session.state.video.marks.in || 0; await player.play(); event.target.closest("button").textContent = "Ⅱ"; } else { player.pause(); event.target.closest("button").textContent = "▶"; } return; }
       const mark = event.target.closest("[data-mpu-video-mark]"); if (mark && session.videoPlayer) { const key = mark.dataset.mpuVideoMark; session.state.video.marks[key] = session.videoPlayer.currentTime; if (session.state.video.marks.out <= session.state.video.marks.in) session.state.video.marks.out = Math.min(session.videoPlayer.duration, session.state.video.marks.in + 1); save(session); render(session); notify(session, `Đã đặt Mark ${key.toUpperCase()}.`); return; }
       if (event.target.closest("[data-mpu-video-insert]")) { const clip = activeVideoClip(session); if (!clip) return; session.state.video.timeline.push({ id: uid("clip"), assetId: clip.assetId, name: clip.name, kind: clip.kind, checksum: clip.checksum, in: session.state.video.marks.in || 0, out: session.state.video.marks.out || clip.duration, duration: clip.duration, createdAt: now() }); save(session, "video.clip.inserted", clip.name); render(session); notify(session, "Đã insert vùng chọn vào V1."); return; }
       const removeClip = event.target.closest("[data-mpu-remove-clip]"); if (removeClip) { session.state.video.timeline = session.state.video.timeline.filter((item) => item.id !== removeClip.dataset.mpuRemoveClip); save(session, "video.clip.removed", removeClip.dataset.mpuRemoveClip); render(session); return; }
       if (event.target.closest("[data-mpu-video-keyframe]") && session.videoPlayer) { session.state.video.keyframes.push({ id: uid("keyframe"), time: session.videoPlayer.currentTime, transform: clone(session.state.video.transform), createdAt: now() }); save(session, "video.keyframe.created", formatTime(session.videoPlayer.currentTime)); render(session); notify(session, "Đã thêm motion keyframe."); return; }
-      if (event.target.closest("[data-mpu-video-caption]") && session.videoPlayer) { const value = prompt("Nội dung caption:", ""); if (!value) return; const start = session.videoPlayer.currentTime; session.state.video.captions.push({ id: uid("caption"), start, end: Math.min(session.videoPlayer.duration, start + 3), text: text(value, 300) }); save(session, "video.caption.created", value); render(session); return; }
+      if (event.target.closest("[data-mpu-video-caption]") && session.videoPlayer) { openDialog(session, { kind: "video-caption", title: "Thêm caption vào playhead", description: `Bắt đầu tại ${formatTime(session.videoPlayer.currentTime)} và kéo dài ba giây.`, label: "Nội dung caption", maxLength: 300, value: "", returnSelector: "[data-mpu-video-caption]" }); return; }
       if (event.target.closest("[data-mpu-video-frame]")) { drawVideoFrame(session); const canvas = session.host.querySelector("[data-mpu-video-canvas]"); canvas.toBlob((blob) => { if (blob) downloadBlob(blob, `${safeFileName(activeVideoClip(session)?.name)}-${formatTime(session.videoPlayer?.currentTime).replace(/:/g, "-")}.png`); }, "image/png"); return; }
       if (event.target.closest("[data-mpu-video-render]")) { try { notify(session, "Đang render vùng chọn theo thời gian thực…", "info"); const blob = await renderVideoRange(session); save(session, "video.selection.rendered", `${blob.size} bytes`); notify(session, `Đã xuất WebM ${formatBytes(blob.size)}.`); } catch (error) { notify(session, error.message, "error"); } return; }
       if (event.target.closest("[data-mpu-video-otio]")) { downloadText(JSON.stringify(buildOtioTimeline(session.state.video, session.state.project.name), null, 2), `${safeFileName(session.state.project.name)}.otio.json`); notify(session, "Đã xuất timeline interchange JSON."); return; }
@@ -513,37 +737,85 @@
       const pageButton = event.target.closest("[data-mpu-document-page]"); if (pageButton) { const item = session.state.documents.jobs.find((value) => value.id === session.state.documents.activeId), max = item?.pages || 1; session.state.documents.page = clamp(Number(session.state.documents.page || 1) + (pageButton.dataset.mpuDocumentPage === "next" ? 1 : -1), 1, max); save(session); render(session); return; }
       const zoom = event.target.closest("[data-mpu-document-zoom]"); if (zoom) { session.documentZoom = clamp(session.documentZoom + (zoom.dataset.mpuDocumentZoom === "in" ? 10 : -10), 50, 200); render(session); return; }
       const docOp = event.target.closest("[data-mpu-document-op]"); if (docOp) { const item = session.state.documents.jobs.find((value) => value.id === session.state.documents.activeId), page = Number(session.state.documents.page || 1); if (!item) return; item.rotations ||= {}; item.deletedPages ||= []; if (docOp.dataset.mpuDocumentOp === "rotate-left") item.rotations[page] = ((Number(item.rotations[page] || 0) - 90) % 360 + 360) % 360; if (docOp.dataset.mpuDocumentOp === "rotate-right") item.rotations[page] = (Number(item.rotations[page] || 0) + 90) % 360; if (docOp.dataset.mpuDocumentOp === "delete" && !item.deletedPages.includes(page)) item.deletedPages.push(page); if (docOp.dataset.mpuDocumentOp === "restore") { delete item.rotations[page]; item.deletedPages = item.deletedPages.filter((value) => value !== page); } save(session, `document.page.${docOp.dataset.mpuDocumentOp}`, `${item.name} · ${page}`); render(session); return; }
-      if (event.target.closest("[data-mpu-document-export]")) { try { await exportProcessedDocuments(session, false); save(session, "document.exported", session.state.documents.activeId); notify(session, "Đã xuất PDF xử lý thật."); } catch (error) { notify(session, error.message, "error"); } return; }
+      const docMove = event.target.closest("[data-mpu-document-move]"); if (docMove) { const index = session.state.documents.jobs.findIndex((item) => item.id === session.state.documents.activeId), nextIndex = docMove.dataset.mpuDocumentMove === "up" ? index - 1 : index + 1; if (index < 0 || nextIndex < 0 || nextIndex >= session.state.documents.jobs.length) return; const [item] = session.state.documents.jobs.splice(index, 1); session.state.documents.jobs.splice(nextIndex, 0, item); save(session, "document.order.changed", `${item.id}:${nextIndex}`); render(session); notify(session, "Đã thay đổi thứ tự tài liệu trong bản gộp."); return; }
+      if (event.target.closest("[data-mpu-document-export]")) { try { const activeDocument = session.state.documents.jobs.find((item) => item.id === session.state.documents.activeId); await exportProcessedDocuments(session, false); save(session, "document.exported", session.state.documents.activeId); notify(session, activeDocument?.kind === "text" ? "Đã xuất văn bản gốc trên thiết bị." : activeDocument?.kind === "image" ? "Đã chuyển ảnh thành PDF thật." : "Đã xuất PDF xử lý thật."); } catch (error) { notify(session, error.message, "error"); } return; }
       if (event.target.closest("[data-mpu-document-merge]")) { try { await exportProcessedDocuments(session, true); save(session, "documents.merged", "all"); notify(session, "Đã gộp PDF theo thứ tự Inbox."); } catch (error) { notify(session, error.message, "error"); } return; }
       if (event.target.closest("[data-mpu-document-text]")) { try { await extractPdfText(session); notify(session, "Đã trích text layer của toàn bộ PDF."); } catch (error) { notify(session, error.message, "error"); } return; }
 
       const kitButton = event.target.closest("[data-mpu-brand-kit]"); if (kitButton) { session.state.brand.activeKitId = kitButton.dataset.mpuBrandKit; save(session); render(session); return; }
       const modeButton = event.target.closest("[data-mpu-brand-mode]"); if (modeButton) { session.state.brand.activeMode = modeButton.dataset.mpuBrandMode; save(session); render(session); return; }
-      if (event.target.closest("[data-mpu-brand-new]")) { const name = prompt("Tên brand kit mới:", `Brand ${session.state.brand.kits.length + 1}`); if (!name) return; const base = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId) || session.state.brand.kits[0], kit = { id: uid("kit"), name: text(name, 100), modes: ["Default"], tokens: clone(base.tokens || []), components: [], templateLocks: [] }; kit.tokens.forEach((token) => { token.id = uid("token"); }); session.state.brand.kits.push(kit); session.state.brand.activeKitId = kit.id; session.state.brand.activeMode = "Default"; save(session, "brand.kit.created", kit.name); render(session); return; }
-      if (event.target.closest("[data-mpu-brand-add-mode]")) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId), name = prompt("Tên mode:", `Mode ${kit.modes.length + 1}`); if (!name || kit.modes.includes(name)) return; kit.modes.push(text(name, 60)); session.state.brand.activeMode = text(name, 60); save(session, "brand.mode.created", name); render(session); return; }
+      if (event.target.closest("[data-mpu-brand-new]")) { openDialog(session, { kind: "brand-kit", title: "Tạo Brand Kit", description: "Kit mới kế thừa token hiện tại để bạn chỉnh tiếp mà không làm thay đổi bản gốc.", label: "Tên Brand Kit", maxLength: 100, value: `Brand ${session.state.brand.kits.length + 1}`, returnSelector: "[data-mpu-brand-new]" }); return; }
+      if (event.target.closest("[data-mpu-brand-add-mode]")) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); openDialog(session, { kind: "brand-mode", title: "Thêm chế độ thương hiệu", description: "Dùng mode cho Light, Dark, Campaign hoặc từng thị trường.", label: "Tên mode", maxLength: 60, value: `Mode ${(kit?.modes?.length || 0) + 1}`, returnSelector: "[data-mpu-brand-add-mode]" }); return; }
       const removeToken = event.target.closest("[data-mpu-token-remove]"); if (removeToken) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); kit.tokens = kit.tokens.filter((token) => token.id !== removeToken.dataset.mpuTokenRemove); save(session, "brand.token.removed", removeToken.dataset.mpuTokenRemove); render(session); return; }
       const brandExport = event.target.closest("[data-mpu-brand-export]"); if (brandExport) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); if (brandExport.dataset.mpuBrandExport === "json") downloadText(JSON.stringify(buildDtcgTokens(kit), null, 2), `${safeFileName(kit.name)}.tokens.json`); else downloadText(buildCssTokens(kit), `${safeFileName(kit.name)}.tokens.css`, "text/css"); save(session, "brand.tokens.exported", brandExport.dataset.mpuBrandExport); notify(session, "Đã xuất design tokens từ dữ liệu thật."); return; }
       if (event.target.closest("[data-mpu-brand-import]")) { session.host.querySelector("[data-mpu-brand-import-file]")?.click(); return; }
-      const device = event.target.closest("[data-mpu-preview-device]"); if (device) { session.host.querySelector(".mpu-preview-frame")?.classList.toggle("is-mobile", device.dataset.mpuPreviewDevice === "mobile"); session.host.querySelectorAll("[data-mpu-preview-device]").forEach((button) => button.classList.toggle("is-active", button === device)); return; }
+      const device = event.target.closest("[data-mpu-preview-device]"); if (device) { session.previewDevice = device.dataset.mpuPreviewDevice === "mobile" ? "mobile" : "desktop"; session.host.querySelector(".mpu-preview-frame")?.classList.toggle("is-mobile", session.previewDevice === "mobile"); session.host.querySelectorAll("[data-mpu-preview-device]").forEach((button) => button.classList.toggle("is-active", button === device)); return; }
 
       const kind = event.target.closest("[data-mpu-asset-kind]"); if (kind) { session.assetKind = kind.dataset.mpuAssetKind; render(session); return; }
       const assetButton = event.target.closest("[data-mpu-asset-select]"); if (assetButton) { session.selectedAssetId = assetButton.dataset.mpuAssetSelect; render(session); return; }
       const collection = event.target.closest("[data-mpu-collection]"); if (collection) { const value = session.state.assets.collections.find((item) => item.id === collection.dataset.mpuCollection); session.assetQuery = value?.query || ""; session.assetKind = value?.kind || "all"; render(session); return; }
-      if (event.target.closest("[data-mpu-collection-new]")) { const name = prompt("Tên Smart Collection:", "Bộ sưu tập mới"); if (!name) return; session.state.assets.collections.push({ id: uid("collection"), name: text(name, 100), query: session.assetQuery, kind: session.assetKind, createdAt: now() }); save(session, "asset.collection.created", name); render(session); return; }
+      if (event.target.closest("[data-mpu-collection-new]")) { openDialog(session, { kind: "asset-collection", title: "Lưu Smart Collection", description: `Bộ lọc hiện tại: “${session.assetQuery || "tất cả"}” · ${session.assetKind}.`, label: "Tên bộ sưu tập", maxLength: 100, value: "Bộ sưu tập mới", returnSelector: "[data-mpu-collection-new]" }); return; }
       if (event.target.closest("[data-mpu-asset-download]")) { const asset = session.assets.find((item) => item.id === session.selectedAssetId); if (asset?.blob) downloadBlob(asset.blob, asset.name); else notify(session, "File gốc đang offline.", "error"); return; }
       if (event.target.closest("[data-mpu-asset-manifest]")) { const asset = session.assets.find((item) => item.id === session.selectedAssetId); if (asset) downloadText(JSON.stringify({ schema: "hh.asset.manifest.v1", entityReference: `hhasset://${asset.id}`, exportedAt: now(), asset: { ...asset, blob: undefined, thumbnailBlob: undefined } }, null, 2), `${safeFileName(asset.name)}.manifest.json`); return; }
-      if (event.target.closest("[data-mpu-asset-delete]")) { const asset = session.assets.find((item) => item.id === session.selectedAssetId); if (!asset || !confirm(`Xóa “${asset.name}” khỏi Global Media Bin?`)) return; await session.mediaStore.removeAsset(asset.id); const url = session.objectUrls.get(asset.id); if (url) URL.revokeObjectURL(url); session.objectUrls.delete(asset.id); session.selectedAssetId = ""; save(session, "asset.removed", asset.name); await refreshAssets(session); notify(session, "Đã xóa asset khỏi kho cục bộ."); return; }
+      if (event.target.closest("[data-mpu-asset-delete]")) { const asset = session.assets.find((item) => item.id === session.selectedAssetId); if (!asset) return; openDialog(session, { kind: "asset-delete", assetId: asset.id, title: `Xóa “${asset.name}”?`, description: "Thao tác này chỉ xóa bản local trong Media Bin và không giả vờ có thể hoàn tác.", returnSelector: "[data-mpu-asset-delete]" }); return; }
 
       const profileButton = event.target.closest("[data-mpu-delivery-profile]"); if (profileButton) { session.state.export.selectedProfile = profileButton.dataset.mpuDeliveryProfile; save(session); render(session); return; }
       if (event.target.closest("[data-mpu-delivery-check]")) { const profile = DELIVERY_PROFILES.find((item) => item.id === session.state.export.selectedProfile) || DELIVERY_PROFILES[0], resultNode = session.host.querySelector("[data-mpu-capability-result]"); resultNode.innerHTML = "<p>Đang kiểm tra phần cứng và trình duyệt…</p>"; const result = await checkMediaCapability(profile); resultNode.innerHTML = `<div class="mpu-capability-result" data-status="${result.supported ? "pass" : "block"}"><span>${result.supported ? "✓" : "!"}</span><p><strong>${result.supported ? "Codec được hỗ trợ" : "Codec chưa được hỗ trợ"}</strong><small>Smooth: ${result.smooth ? "Có" : "Chưa xác nhận"} · Power efficient: ${result.powerEfficient ? "Có" : "Chưa xác nhận"}${result.reason ? ` · ${escapeHtml(result.reason)}` : ""}</small></p></div>`; return; }
-      if (event.target.closest("[data-mpu-delivery-job]")) { const profile = DELIVERY_PROFILES.find((item) => item.id === session.state.export.selectedProfile) || DELIVERY_PROFILES[0], id = uid("delivery"), spec = { id, name: `${session.state.project.name} · ${profile.label}`, profile: profile.id, kind: profile.kind, status: "planned", progress: 0, idempotencyKey: session.professionalApi.stableHash?.(`${session.state.project.id}:${profile.id}:${now()}`) || id, recipe: clone(profile), createdAt: now() }; session.state.export.jobs.push(spec); save(session, "delivery.job.created", spec.name); render(session); notify(session, "Đã tạo job spec; chưa phát sinh encode hoặc chi phí."); return; }
+      if (event.target.closest("[data-mpu-delivery-job]")) { const profile = DELIVERY_PROFILES.find((item) => item.id === session.state.export.selectedProfile) || DELIVERY_PROFILES[0], result = createDeliveryJob(session.state, profile, session.assets, session.professionalApi?.stableHash || stableHash); session.state = result.state; save(session, result.duplicate ? "delivery.job.deduplicated" : "delivery.job.created", result.job.name); render(session); notify(session, result.duplicate ? "Job cùng project, profile và asset đã tồn tại; không tạo bản trùng." : "Đã tạo job spec; chưa phát sinh encode hoặc chi phí."); return; }
       const jobButton = event.target.closest("[data-mpu-job]"); if (jobButton) { const job = session.state.export.jobs.find((item) => item.id === jobButton.dataset.jobId), action = jobButton.dataset.mpuJob; if (!job) return; if (action === "spec") { downloadText(JSON.stringify({ schema: "hh.delivery.job.v1", projectId: session.state.project.id, ...job }, null, 2), `${safeFileName(job.name)}.job.json`); return; } if (action === "pause" && job.status === "planned") job.status = "paused"; if (action === "resume" && job.status === "paused") job.status = "planned"; if (action === "cancel") job.status = "canceled"; save(session, `delivery.job.${action}`, job.id); render(session); return; }
-      if (event.target.closest("[data-mpu-delivery-package]")) { try { const payload = await session.mediaStore.exportPackage(session.mediaProject.id); downloadText(payload, `${safeFileName(session.state.project.name)}.hhmedia`, "application/vnd.hh.media+json"); save(session, "delivery.package.exported", session.mediaProject.id); notify(session, "Đã đóng gói project và asset nhỏ vào .hhmedia."); } catch (error) { notify(session, error.message, "error"); } return; }
-      if (event.target.closest("[data-mpu-delivery-manifest]")) { const manifest = { schema: "hh.release.manifest.v1", project: { id: session.state.project.id, name: session.state.project.name }, generatedAt: now(), preflight: session.delivery, profile: DELIVERY_PROFILES.find((item) => item.id === session.state.export.selectedProfile), assets: session.assets.map((asset) => ({ entityReference: `hhasset://${asset.id}`, name: asset.name, type: asset.type, size: asset.size, checksum: asset.checksum, license: asset.license || "unverified" })), jobs: session.state.export.jobs }; downloadText(JSON.stringify(manifest, null, 2), `${safeFileName(session.state.project.name)}.release.json`); save(session, "delivery.manifest.exported", manifest.assets.length); notify(session, "Đã xuất release manifest với checksum thật."); }
+      if (event.target.closest("[data-mpu-delivery-package]")) { try { const store = await ensureMediaStore(session); if (!store || !session.mediaProject) throw new Error("Media Bin chưa sẵn sàng để đóng gói."); const payload = await store.exportPackage(session.mediaProject.id); downloadText(payload, `${safeFileName(session.state.project.name)}.hhmedia`, "application/vnd.hh.media+json"); save(session, "delivery.package.exported", session.mediaProject.id); notify(session, "Đã đóng gói project và asset nhỏ vào .hhmedia."); } catch (error) { notify(session, error.message, "error"); } return; }
+      if (event.target.closest("[data-mpu-delivery-manifest]")) { const manifest = buildReleaseManifest(session.state, session.assets, DELIVERY_PROFILES.find((item) => item.id === session.state.export.selectedProfile)); downloadText(JSON.stringify(manifest, null, 2), `${safeFileName(session.state.project.name)}.release.json`); save(session, "delivery.manifest.exported", manifest.assets.length); notify(session, "Đã xuất release manifest với checksum thật."); }
     }, { signal });
 
-    session.host.addEventListener("submit", (event) => {
-      if (event.target.matches("[data-mpu-token-form]")) { event.preventDefault(); const data = new FormData(event.target), kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); kit.tokens.push({ id: uid("token"), name: text(data.get("name"), 120), value: text(data.get("value"), 180), type: text(data.get("type"), 40, "string") }); save(session, "brand.token.created", data.get("name")); render(session); notify(session, "Đã thêm token và cập nhật live preview."); }
+    session.host.addEventListener("submit", async (event) => {
+      if (event.target.matches("[data-mpu-dialog-form]")) {
+        event.preventDefault();
+        if (event.target.dataset.submitting === "true" || !session.dialog) return;
+        event.target.dataset.submitting = "true";
+        const dialog = session.dialog, value = text(new FormData(event.target).get("value"), Number(dialog.maxLength) || 120);
+        let successMessage = "Đã lưu thay đổi.";
+        try {
+          if (dialog.kind === "video-caption") {
+            if (!value || !session.videoPlayer) throw new Error("Caption không được để trống.");
+            const start = clamp(session.videoPlayer.currentTime, 0, session.videoPlayer.duration || 24 * 60 * 60);
+            session.state.video.captions.push({ id: uid("caption"), start, end: Math.min(session.videoPlayer.duration || start + 3, start + 3), text: value });
+            save(session, "video.caption.created", value); successMessage = "Đã thêm caption vào timeline.";
+          } else if (dialog.kind === "brand-kit") {
+            if (!value) throw new Error("Tên Brand Kit không được để trống.");
+            const base = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId) || session.state.brand.kits[0];
+            const kit = { id: uid("kit"), name: value, modes: ["Default"], tokens: clone(base?.tokens || []).map((token, index) => normalizeBrandToken({ ...token, id: uid(`token-${index}`) }, index)), components: [], templateLocks: [] };
+            session.state.brand.kits.push(kit); session.state.brand.activeKitId = kit.id; session.state.brand.activeMode = "Default"; save(session, "brand.kit.created", kit.name); successMessage = "Đã tạo Brand Kit không phá hủy bản gốc.";
+          } else if (dialog.kind === "brand-mode") {
+            const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId);
+            if (!kit || !value) throw new Error("Tên mode không hợp lệ.");
+            if (kit.modes.some((mode) => mode.toLowerCase() === value.toLowerCase())) throw new Error("Mode này đã tồn tại.");
+            kit.modes.push(value); session.state.brand.activeMode = value; save(session, "brand.mode.created", value); successMessage = "Đã thêm mode thương hiệu.";
+          } else if (dialog.kind === "asset-collection") {
+            if (!value) throw new Error("Tên bộ sưu tập không được để trống.");
+            session.state.assets.collections.push({ id: uid("collection"), name: value, query: text(session.assetQuery, 200), kind: session.assetKind, createdAt: now() });
+            save(session, "asset.collection.created", value); successMessage = "Đã lưu Smart Collection từ bộ lọc hiện tại.";
+          } else if (dialog.kind === "asset-delete") {
+            const asset = session.assets.find((item) => item.id === dialog.assetId);
+            if (!asset) throw new Error("Asset không còn tồn tại.");
+            const store = await ensureMediaStore(session); if (!store) throw new Error("Media Bin chưa khả dụng.");
+            await store.removeAsset(asset.id); const url = session.objectUrls.get(asset.id); if (url) URL.revokeObjectURL(url);
+            session.objectUrls.delete(asset.id); session.selectedAssetId = ""; save(session, "asset.removed", asset.name); await refreshAssets(session, false); successMessage = "Đã xóa asset khỏi kho cục bộ.";
+          }
+          session.restoreSelector = dialog.returnSelector || ""; session.dialog = null; render(session); notify(session, successMessage);
+        } catch (error) {
+          event.target.dataset.submitting = "false"; notify(session, error.message, "error");
+        }
+        return;
+      }
+      if (event.target.matches("[data-mpu-token-form]")) {
+        event.preventDefault();
+        const data = new FormData(event.target), kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId);
+        const token = normalizeBrandToken({ id: uid("token"), name: data.get("name"), value: data.get("value"), type: data.get("type") }, kit?.tokens?.length || 0);
+        if (!kit || !token.name || !token.value) { notify(session, "Tên và giá trị token không được để trống.", "error"); return; }
+        if (kit.tokens.length >= LIMITS.tokens) { notify(session, `Mỗi kit tối đa ${LIMITS.tokens} token.`, "error"); return; }
+        if (kit.tokens.some((item) => item.name.toLowerCase() === token.name.toLowerCase())) { notify(session, "Token này đã tồn tại; hãy chỉnh trực tiếp trong bảng.", "error"); return; }
+        kit.tokens.push(token); save(session, "brand.token.created", token.name); render(session); notify(session, "Đã thêm token và cập nhật live preview.");
+      }
     }, { signal });
 
     session.host.addEventListener("input", (event) => {
@@ -557,11 +829,12 @@
     session.host.addEventListener("pointerup", () => { session.scrubbing = false; }, { signal });
 
     session.host.addEventListener("change", async (event) => {
+      if (event.target.matches("[data-mpu-asset-sort]")) { session.assetSort = ["recent", "name", "size"].includes(event.target.value) ? event.target.value : "recent"; render(session); return; }
       if (event.target.matches("[data-mpu-video-import]")) { try { const records = await ingestFiles(session, event.target.files, "video-workspace"); for (const { asset, file } of records) { const kind = fileKind(file.type, file.name); if (!["video","audio","image"].includes(kind)) continue; const clip = { id: uid("source"), assetId: asset.id, name: file.name, kind, size: file.size, checksum: asset.checksum, duration: 0, createdAt: now() }; if (kind === "video" || kind === "audio") { const media = document.createElement(kind === "video" ? "video" : "audio"); media.preload = "metadata"; media.src = session.objectUrls.get(asset.id); await new Promise((resolve) => { media.onloadedmetadata = resolve; media.onerror = resolve; }); clip.duration = Number(media.duration || 0); } session.state.video.library.push(clip); session.state.video.activeAssetId = asset.id; session.state.video.marks = { in: 0, out: clip.duration }; } save(session, "video.sources.imported", records.length); render(session); notify(session, `Đã import ${records.length} nguồn vào Media Bin.`); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
       if (event.target.matches("[data-mpu-document-import]")) { try { const records = await ingestFiles(session, event.target.files, "document-workspace"); for (const { asset, file } of records) { const kind = fileKind(file.type, file.name); if (!["pdf","image","text"].includes(kind)) continue; const job = { id: uid("document"), assetId: asset.id, name: file.name, kind, type: file.type, size: file.size, pages: 1, status: "ready", rotations: {}, deletedPages: [], createdAt: now() }; session.state.documents.jobs.push(job); session.state.documents.activeId = job.id; if (kind === "pdf") { const record = await getDocumentRecord(session, job); if (record?.pdf) job.pages = record.pdf.numPages; } } save(session, "documents.imported", records.length); render(session); notify(session, `Đã đăng ký ${records.length} tài liệu.`); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
       if (event.target.matches("[data-mpu-brand-name]")) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); kit.name = text(event.target.value, 100, "Brand Kit"); save(session, "brand.kit.renamed", kit.name); render(session); return; }
-      const tokenField = event.target.dataset.mpuTokenField; if (tokenField) { const row = event.target.closest("[data-token-id]"), kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId), token = kit.tokens.find((item) => item.id === row?.dataset.tokenId); if (token) { token[tokenField] = text(event.target.value, 180); save(session, "brand.token.updated", token.name); render(session); } return; }
-      if (event.target.matches("[data-mpu-brand-import-file]")) { try { const value = JSON.parse(await event.target.files?.[0]?.text()), tokens = flattenDtcgTokens(value); if (!tokens.length) throw new Error("Không tìm thấy token DTCG ($value)."); const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); kit.tokens = tokens; save(session, "brand.tokens.imported", tokens.length); render(session); notify(session, `Đã nhập ${tokens.length} token DTCG.`); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
+      const tokenField = event.target.dataset.mpuTokenField; if (tokenField) { const row = event.target.closest("[data-token-id]"), kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId), token = kit.tokens.find((item) => item.id === row?.dataset.tokenId); if (token) { if (tokenField === "name") token.name = normalizeTokenName(event.target.value); else if (tokenField === "value") { const nextValue = normalizeTokenValue(event.target.value); if (token.type === "color" && !hexToRgb(nextValue)) { render(session); notify(session, "Token màu phải dùng HEX 3 hoặc 6 ký tự.", "error"); return; } token.value = nextValue; } else if (tokenField === "type") { token.type = TOKEN_TYPES.has(event.target.value) ? event.target.value : "string"; if (token.type === "color" && !hexToRgb(token.value)) token.value = "#000000"; } save(session, "brand.token.updated", token.name); render(session); } return; }
+      if (event.target.matches("[data-mpu-brand-import-file]")) { try { const file = event.target.files?.[0]; if (!file || file.size > 2 * 1024 * 1024) throw new Error("Tệp DTCG phải nhỏ hơn 2 MB."); const value = JSON.parse(await file.text()), tokens = flattenDtcgTokens(value); if (!tokens.length) throw new Error("Không tìm thấy token DTCG ($value)."); const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); kit.tokens = tokens; save(session, "brand.tokens.imported", tokens.length); render(session); notify(session, `Đã nhập ${tokens.length} token DTCG.`); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
       if (event.target.matches("[data-mpu-asset-import]")) { try { const records = await ingestFiles(session, event.target.files, "asset-galaxy"); await refreshAssets(session); notify(session, `Đã ingest ${records.length} asset với SHA-256.`); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
       if (event.target.matches("[data-mpu-asset-replace]")) { const file = event.target.files?.[0], asset = session.assets.find((item) => item.id === session.selectedAssetId); if (!file || !asset) return; try { const metadata = await session.mediaApi.extractMetadata(file, scope); await session.mediaStore.replaceAsset(asset.id, { name: file.name, type: file.type, blob: file, lastModified: file.lastModified, metadata }); const oldUrl = session.objectUrls.get(asset.id); if (oldUrl) URL.revokeObjectURL(oldUrl); session.objectUrls.set(asset.id, URL.createObjectURL(file)); save(session, "asset.replaced", asset.id); await refreshAssets(session); notify(session, "Đã thay file nhưng giữ nguyên Entity ID."); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
       const assetField = event.target.dataset.mpuAssetField; if (assetField) { const asset = session.assets.find((item) => item.id === session.selectedAssetId); if (!asset) return; const patch = assetField === "tags" ? { tags: event.target.value.split(",").map((item) => text(item, 40)).filter(Boolean).slice(0, 30) } : { [assetField]: assetField === "rating" ? Number(event.target.value) : text(event.target.value, 160) }; try { await session.mediaStore.updateAsset(asset.id, patch); save(session, "asset.metadata.updated", `${asset.id}:${assetField}`); await refreshAssets(session); notify(session, "Đã cập nhật metadata asset."); } catch (error) { notify(session, error.message, "error"); } }
@@ -585,8 +858,8 @@
     const session = {
       host, options, workspace, professionalApi, mediaApi: options.mediaApi || scope.HHUniversalMediaProject, store,
       state: ensureProductionState(store.load(), professionalApi), controller: new AbortController(), mediaStore: null, mediaProject: null,
-      assets: [], objectUrls: new Map(), documents: new Map(), selectedAssetId: "", assetQuery: "", assetKind: "all", documentZoom: 90,
-      videoPlayer: null, videoRaf: 0, scrubbing: false, toastTimer: 0, searchTimer: 0
+      assets: [], objectUrls: new Map(), documents: new Map(), selectedAssetId: "", assetQuery: "", assetKind: "all", assetSort: "recent", documentZoom: 90,
+      videoPlayer: null, videoRaf: 0, scrubbing: false, toastTimer: 0, searchTimer: 0, documentRenderId: 0, disposed: false, dialog: null, viewScroll: {}, previewDevice: "desktop", videoInspectorTab: "motion"
     };
     session.state.lastWorkspace = workspace; session.state = store.save(session.state);
     activeInstances.set(host, session); bindEvents(session); render(session);
@@ -601,7 +874,7 @@
     const entries = host ? [[host, activeInstances.get(host)]] : [...activeInstances.entries()];
     entries.forEach(([node, session]) => {
       if (!session) return;
-      session.controller.abort(); cancelAnimationFrame(session.videoRaf); clearTimeout(session.toastTimer); clearTimeout(session.searchTimer);
+      session.disposed = true; session.documentRenderId += 1; session.controller.abort(); cancelAnimationFrame(session.videoRaf); clearTimeout(session.toastTimer); clearTimeout(session.searchTimer);
       try { session.videoPlayer?.pause?.(); } catch (_) {}
       session.objectUrls.forEach((url) => { try { URL.revokeObjectURL(url); } catch (_) {} });
       session.mediaStore?.close?.().catch?.(() => {}); node.innerHTML = ""; activeInstances.delete(node);
@@ -610,8 +883,8 @@
 
   return Object.freeze({
     VERSION, WORKSPACE_IDS, WORKSPACE_BY_ID, DELIVERY_PROFILES,
-    escapeHtml, formatTime, formatBytes, fileKind, contrastRatio, lintBrandKit,
+    escapeHtml, formatTime, formatBytes, fileKind, contrastRatio, lintBrandKit, normalizeBrandToken,
     buildDtcgTokens, buildCssTokens, buildOtioTimeline, buildWebVtt, preflightDelivery,
-    flattenDtcgTokens, ensureProductionState, checkMediaCapability, mount, unmount
+    flattenDtcgTokens, ensureProductionState, createDeliveryJob, buildReleaseManifest, checkMediaCapability, mount, unmount
   });
 });
