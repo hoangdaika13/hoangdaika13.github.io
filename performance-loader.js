@@ -230,8 +230,8 @@
       scripts: ["phat-phap.js?v=15"]
     },
     play: {
-      styles: ["hh-play.css?v=5"],
-      scripts: ["hh-play.js?v=4"]
+      styles: ["hh-play.css?v=5&build=2"],
+      scripts: ["hh-play.js?v=4&build=2"]
     },
     fortune: {
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=26"],

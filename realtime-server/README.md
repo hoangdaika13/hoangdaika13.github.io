@@ -5,6 +5,7 @@ Backend rieng cho:
 - Socket.io theo doi nguoi dang online theo consent.
 - Messenger HH realtime: phong rieng, nhom, hien dien, dang nhap va dong bo thay doi.
 - WebRTC signaling cho goi thoai, goi video, goi nhom va chia se man hinh.
+- HH Play authenticated rooms: presence, host-only state, bounded events va Watch Party sync.
 - Dang ky/dang nhap bang email + password.
 - Dang nhap Google OAuth khi co Client ID/Secret.
 - Luu user/session/event vao MongoDB.
@@ -25,6 +26,7 @@ Quan trong:
 - `STUN_URLS`: danh sach STUN, mac dinh dung Google STUN.
 - `TURN_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL`: TURN production de cuoc goi hoat dong qua NAT/firewall.
 - `MAX_CALL_PARTICIPANTS`: gioi han cuoc goi nhom, mac dinh 8.
+- `MAX_PLAY_ROOMS`, `MAX_PLAY_MEMBERS`: gioi han phong HH Play (memory-only, fail-closed neu chua co adapter persistence).
 
 ## Chay local
 

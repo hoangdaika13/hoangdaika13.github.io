@@ -336,7 +336,8 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v4.css?v=2",
   "./hh-chinese.css?v=11",
   "./phat-phap.css?v=18",
-  "./hh-play.css?v=5",
+  "./hh-play.css?v=5&build=2",
+  "./hh-play-audio-worklet.js?build=2",
   "./assets/phat-phap/duc-phat-hao-quang-v1.webp",
   "./assets/chinese/NOTICE.md",
   "./community-social-pro.css?v=3",
@@ -464,7 +465,7 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v4.js?v=7",
   "./hh-chinese.js?v=11",
   "./phat-phap.js?v=15",
-  "./hh-play.js?v=4",
+  "./hh-play.js?v=4&build=2",
   "./config.js?v=10",
   "./data/ai-super-platform-modules.json"
 ];

@@ -11,6 +11,7 @@ const { Strategy: GoogleStrategy } = require("passport-google-oauth20");
 const { MongoClient, ObjectId } = require("mongodb");
 const { registerCommunicationV2 } = require("./communication-v2");
 const { registerRemoteSignaling } = require("./remote-signaling");
+const { registerPlayRealtime } = require("./play-realtime");
 const { Server } = require("socket.io");
 
 const app = express();
@@ -797,6 +798,12 @@ registerRemoteSignaling({
       $or: [{ userAId: first, userBId: second }, { userAId: second, userBId: first }]
     }, { projection: { _id: 1 } }));
   }
+});
+
+registerPlayRealtime({
+  io,
+  maxRooms: Number(process.env.MAX_PLAY_ROOMS || 200),
+  maxMembers: Number(process.env.MAX_PLAY_MEMBERS || 12)
 });
 
 app.use((error, _req, res, _next) => {
