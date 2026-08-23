@@ -17,13 +17,13 @@ test("Phật Pháp is a first-class routed workspace", () => {
   assert.match(router, /window\.HHPhatPhap\?\.mount/);
   assert.match(router, /app-dharma-route/);
   assert.match(loader, /dharma:\s*\{/);
-  assert.match(loader, /phat-phap\.css\?v=10/);
-  assert.match(loader, /phat-phap\.js\?v=7/);
-  assert.match(index, /performance-loader\.js\?v=478/);
-  assert.match(index, /script\.js\?v=234/);
+  assert.match(loader, /phat-phap\.css\?v=13/);
+  assert.match(loader, /phat-phap\.js\?v=10/);
+  assert.match(index, /performance-loader\.js\?v=481/);
+  assert.match(index, /script\.js\?v=237/);
   assert.match(sw, /hh-identity-portal-v822/);
-  assert.match(sw, /phat-phap\.css\?v=10/);
-  assert.match(sw, /phat-phap\.js\?v=7/);
+  assert.match(sw, /phat-phap\.css\?v=13/);
+  assert.match(sw, /phat-phap\.js\?v=10/);
   assert.match(sw, /assets\/phat-phap\/duc-phat-hao-quang-v1\.webp/);
 });
 
@@ -107,4 +107,62 @@ test("original Buddha hero artwork is optimized and aura modes stay local-first"
   for (const mode of ["gentle", "radiant", "ceremonial"]) assert.match(source, new RegExp(`id: "${mode}"`));
   assert.match(source, /visual:\s*\{ aura: "radiant" \}/);
   assert.match(source, /state\.visual = \{ \.\.\.state\.visual, aura: next\.id \}/);
+});
+
+test("advanced Dharma learning journeys and reader tools preserve provenance boundaries", () => {
+  const source = read("phat-phap.js");
+  for (const contract of [
+    "Pháp học theo đời sống", "Khi căng thẳng, mất ngủ hoặc bất an", "Không thay thế hỗ trợ chuyên môn",
+    "MỤC LỤC TỰ ĐỘNG", "HH TÓM LƯỢC", "BẢN DỊCH ĐƯỢC CẤP PHÉP", "TRUNG TÂM KIỂM CHỨNG NGUỒN"
+  ]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+  assert.match(source, /SCRIPTURE_SEGMENTS/);
+  assert.match(source, /data-segment-highlight/);
+  assert.match(source, /data-scripture-segment-note/);
+  assert.match(source, /data-export-scripture-notes/);
+  assert.match(source, /data-print-scripture-notes/);
+  assert.match(source, /canEditSources/);
+  assert.match(source, /Tài khoản không có quyền biên tập nguồn/);
+});
+
+test("practice, schedule and chanting controls are functional without spiritual scoring", () => {
+  const source = read("phat-phap.js");
+  for (const contract of ["MEDITATION_COURSE", "data-course-day", "data-meditation-lock", "data-grounding", "data-chant-sleep", "data-calendar-view", "data-calendar-template", "data-export-calendar"]) assert.match(source, new RegExp(contract));
+  assert.match(source, /BEGIN:VCALENDAR/);
+  assert.match(source, /METHOD:PUBLISH/);
+  assert.match(source, /applyCalendarTemplate/);
+  assert.match(source, /localDayKey/);
+  assert.match(source, /filter\(\(item\) => !item\.template\)/);
+  assert.match(source, /không tạo chuỗi thành tích/i);
+  assert.match(source, /không quy đổi thành công đức/i);
+  assert.doesNotMatch(source, /điểm công đức|xếp hạng tâm linh|spiritual score/i);
+});
+
+test("temple directory and private reading circles fail closed around trust and privacy", () => {
+  const source = read("phat-phap.js");
+  for (const contract of ["TEMPLE_DIRECTORY", "data-temple-province", "data-temple-tradition", "data-report-temple", "HHC1.", "data-circle-create", "data-circle-join", "data-circle-private-note", "data-circle-shared-note", "manual-local"]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(source, /không lưu số điện thoại hay tài khoản cúng dường/i);
+  assert.match(source, /Không chia sẻ nhật ký, thời lượng thiền, tiến độ bài học/i);
+  assert.match(source, /Đây chưa phải đồng bộ máy chủ/i);
+  assert.match(source, /Lợi dụng tài chính/);
+});
+
+test("glossary, accessibility and assistant boundaries are explicit and operable", () => {
+  const source = read("phat-phap.js");
+  const css = read("phat-phap.css");
+  for (const contract of ["GLOSSARY_DETAILS", "data-speak-glossary", "data-glossary-deck", "data-access-reader-size", "data-access-contrast", "data-access-senior", "data-access-audio-description"]) assert.match(source, new RegExp(contract));
+  assert.match(source, /HH tuyệt đối không làm/i);
+  assert.match(source, /Giả danh tăng ni/);
+  assert.match(source, /Phán nghiệp, hứa chữa bệnh hay đổi số phận/);
+  assert.match(css, /data-contrast="high"/);
+  assert.match(css, /data-senior="true"/);
+  assert.match(css, /--dharma-reader-size/);
+  assert.match(css, /dharmaTempleDoor/);
+  assert.match(css, /dharmaReadingLight/);
+});
+
+test("all new Dharma subroutes are discoverable from the application router", () => {
+  const router = read("script.js");
+  for (const route of ["situations", "provenance", "schedule", "circles", "accessibility"]) {
+    assert.match(router, new RegExp(`route:\\s*"/phat-phap/${route}"`));
+  }
 });
