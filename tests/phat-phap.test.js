@@ -17,13 +17,13 @@ test("Phật Pháp is a first-class routed workspace", () => {
   assert.match(router, /window\.HHPhatPhap\?\.mount/);
   assert.match(router, /app-dharma-route/);
   assert.match(loader, /dharma:\s*\{/);
-  assert.match(loader, /phat-phap\.css\?v=15/);
-  assert.match(loader, /phat-phap\.js\?v=13/);
-  assert.match(index, /performance-loader\.js\?v=484/);
-  assert.match(index, /script\.js\?v=238/);
-  assert.match(sw, /hh-identity-portal-v822/);
-  assert.match(sw, /phat-phap\.css\?v=15/);
-  assert.match(sw, /phat-phap\.js\?v=13/);
+  assert.match(loader, /phat-phap\.css\?v=17/);
+  assert.match(loader, /phat-phap\.js\?v=14/);
+  assert.match(index, /performance-loader\.js\?v=486/);
+  assert.match(index, /script\.js\?v=239/);
+  assert.match(sw, /hh-identity-portal-v834/);
+  assert.match(sw, /phat-phap\.css\?v=17/);
+  assert.match(sw, /phat-phap\.js\?v=14/);
   assert.match(sw, /assets\/phat-phap\/duc-phat-hao-quang-v1\.webp/);
 });
 
@@ -162,14 +162,14 @@ test("glossary, accessibility and assistant boundaries are explicit and operable
 
 test("all new Dharma subroutes are discoverable from the application router", () => {
   const router = read("script.js");
-  for (const route of ["situations", "provenance", "schedule", "circles", "accessibility", "review", "audio", "data-control"]) {
+  for (const route of ["encyclopedia", "situations", "provenance", "schedule", "circles", "accessibility", "review", "audio", "data-control"]) {
     assert.match(router, new RegExp(`route:\\s*"/phat-phap/${route}"`));
   }
 });
 
-test("Dharma v4 adds source-based review without gamification", () => {
+test("Dharma v5 keeps source-based review without gamification", () => {
   const source = read("phat-phap.js");
-  assert.match(source, /VERSION\s*=\s*"4\.0\.0"/);
+  assert.match(source, /VERSION\s*=\s*"5\.0\.0"/);
   for (const contract of ["reviewCatalog", "reviewSchedule", "reviewHistory", "data-rate-study-review", "Cần xem lại ngày mai", "Tạm hiểu · sau 7 ngày"]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(source, /không tạo điểm số/i);
   assert.match(source, /không phải chứng nhận hay cấp bậc tâm linh/i);
@@ -211,4 +211,31 @@ test("Dharma v4 responsive styling covers review, audio and data vault", () => {
   for (const selector of ["dharma-review-workspace", "dharma-meditation-checkin", "dharma-audio-library", "dharma-data-vault", "dharma-import-preview"]) assert.match(css, new RegExp(selector));
   assert.match(css, /dharmaAudioPulse/);
   assert.match(css, /prefers-reduced-motion:reduce/);
+});
+
+test("Phật Pháp Toàn Thư reads core content directly with solemn long-form controls", () => {
+  const source = read("phat-phap.js");
+  const css = read("phat-phap.css");
+  assert.match(source, /DHARMA_ENCYCLOPEDIA/);
+  assert.match(source, /Phật Pháp Toàn Thư/);
+  assert.match(source, /<b>7<\/b> quyển chủ đề/);
+  assert.match(source, /Tìm trong 28 chương/);
+  assert.match(source, /Đọc trọn nội dung ngay tại đây/);
+  assert.match(source, /HH BIÊN SOẠN · KHÔNG PHẢI NGUYÊN VĂN KINH/);
+  assert.match(source, /NGUỒN & GIẤY PHÉP/);
+  assert.match(source, /data-encyclopedia-note/);
+  assert.match(source, /data-encyclopedia-bookmark/);
+  assert.match(source, /data-encyclopedia-complete/);
+  assert.match(source, /data-encyclopedia-search/);
+  assert.match(source, /encyclopediaPosition/);
+  assert.match(source, /encyclopediaBookmarks/);
+  assert.match(source, /encyclopediaCompleted/);
+  assert.match(source, /không sao chép bản dịch chưa rõ quyền/i);
+  assert.match(css, /dharma-encyclopedia-reader__grid/);
+  assert.match(css, /dharma-encyclopedia-toc/);
+  assert.match(css, /dharma-encyclopedia-page/);
+  assert.match(css, /dharmaManuscriptOpen/);
+  assert.match(css, /dharmaPageOpen/);
+  assert.match(css, /font:400 var\(--dharma-reader-size,20px\)\/1\.88/);
+  assert.doesNotMatch(css, /nebula|starfield|galaxy|planet|wormhole/i);
 });

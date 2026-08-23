@@ -1,7 +1,7 @@
 (function initHHPhatPhap(global) {
   "use strict";
 
-  const VERSION = "4.0.0";
+  const VERSION = "5.0.0";
   const STATE_PREFIX = "hh.phat-phap.study.v1";
   const JOURNAL_PREFIX = "hh.phat-phap.journal.v1";
   const JOURNAL_ITERATIONS = 180000;
@@ -188,6 +188,184 @@
     { id: "source-2026-08-21", at: "2026-08-21", editor: "HH Editorial", action: "Tách tóm lược HH khỏi nhãn bản dịch và nguyên văn.", status: "Đã xuất bản" }
   ]);
 
+  const DHARMA_ENCYCLOPEDIA = Object.freeze([
+    {
+      id: "nhap-mon", icon: "初", title: "Quyển I · Nhập môn Phật học", subtitle: "Bắt đầu đúng hướng, học bằng hiểu biết và kiểm nghiệm", description: "Giới thiệu Đức Phật lịch sử, Tam Bảo, cách học Pháp và cách tìm môi trường tu học đáng tin cậy.",
+      chapters: [
+        { id: "duc-phat-lich-su", title: "Đức Phật lịch sử và câu hỏi về khổ", minutes: 12, intro: "Đức Phật được tiếp cận trước hết như một con người lịch sử đã tìm con đường hiểu và chuyển hóa khổ đau, không phải nhân vật để người học giao phó mọi trách nhiệm đời mình.", sections: [
+          { title: "Bối cảnh để bắt đầu", body: "Các truyền thống kể cuộc đời Đức Phật bằng nhiều lớp lịch sử, ký ức cộng đồng và biểu tượng tôn giáo. Người mới nên phân biệt điều có ý nghĩa thực hành với chi tiết cần nghiên cứu thêm, đồng thời tôn trọng cách trình bày của từng truyền thống." },
+          { title: "Trọng tâm của lời dạy", body: "Câu hỏi xuyên suốt là: khổ được nhận diện thế nào, những điều kiện nào nuôi khổ, liệu khổ có thể lắng dịu và con đường nào cần được thực hành. Học Phật vì vậy không dừng ở việc biết tiểu sử, nghi lễ hoặc thuật ngữ." },
+          { title: "Cách đọc có trách nhiệm", body: "Không lấy một câu rời bối cảnh làm lời giải cho mọi hoàn cảnh. Hãy đối chiếu mã kinh, bản dịch, chú giải và kinh nghiệm sống; với vấn đề y tế, pháp lý hay an toàn, vẫn cần người có chuyên môn phù hợp." }
+        ], practice: "Viết một câu ngắn: điều gì khiến bạn muốn học Phật lúc này, và bạn mong thay đổi điều gì bằng một hành động lành mạnh?", reflection: "Mình đang tìm hiểu để sống sáng suốt hơn hay đang mong một lời hứa thay mình giải quyết mọi việc?", terms: ["Phật", "Giác ngộ", "Khổ"], sourceIds: ["suttacentral", "ghpgvn"] },
+        { id: "tam-bao-quy-y", title: "Tam Bảo và ý nghĩa quy y", minutes: 11, intro: "Phật, Pháp và Tăng là ba nơi nương tựa định hướng đời sống. Quy y được hiểu như sự quay về với giác ngộ, lời dạy có thể thực hành và cộng đồng chân chính.", sections: [
+          { title: "Phật", body: "Nương tựa Phật là kính trọng bậc chỉ đường và nuôi lớn khả năng tỉnh thức, từ bi, không gây hại nơi chính mình. Điều này không đồng nghĩa tin rằng mọi mong cầu cá nhân sẽ được đáp ứng bằng phép màu." },
+          { title: "Pháp", body: "Nương tựa Pháp là học lời dạy trong bối cảnh, thực hành từng bước và quan sát hệ quả. Một cách hiểu khiến tham, sân, si tăng lên hoặc dẫn tới gây hại cần được xem xét lại, dù được trình bày bằng ngôn ngữ tôn giáo." },
+          { title: "Tăng", body: "Nương tựa Tăng là trân trọng cộng đồng tu học có giới hạnh và trách nhiệm. Không vì kính trọng mà bỏ qua quyền đặt câu hỏi, kiểm tra thông tin, bảo vệ trẻ em, tài chính và ranh giới cá nhân." }
+        ], practice: "Chọn một phẩm chất của Phật, một nguyên tắc của Pháp và một cách nâng đỡ cộng đồng để thực hành trong tuần.", reflection: "Ba nơi nương tựa này giúp mình chủ động sống có trách nhiệm hơn như thế nào?", terms: ["Tam Bảo", "Quy y", "Tăng đoàn"], sourceIds: ["suttacentral", "ghpgvn"] },
+        { id: "hoc-hanh-kiem-nghiem", title: "Học Pháp, hành Pháp và tự kiểm nghiệm", minutes: 14, intro: "Một lộ trình lành mạnh đi từ nghe đọc, suy xét, thực hành đến nhận biết kết quả; không đồng nhất ghi nhớ nhiều với chuyển hóa sâu.", sections: [
+          { title: "Văn · Tư · Tu", body: "Nghe và đọc tạo nền thông tin; suy xét giúp thấy mối liên hệ và giới hạn; thực hành đưa hiểu biết vào thân, lời nói, hành động. Bỏ bất kỳ phần nào cũng dễ dẫn đến học thuộc, suy diễn hoặc thực hành thiếu định hướng." },
+          { title: "Điều có thể quan sát", body: "Người học có thể theo dõi xem lời nói có bớt gây tổn thương, phản ứng có chậm lại, ý định có rõ hơn và khả năng nhận lỗi có tăng hay không. Đây là quan sát đời thường, không phải bảng điểm tâm linh." },
+          { title: "Khi có khác biệt", body: "Các truyền thống có thể dùng thuật ngữ, thứ tự và phương pháp khác nhau. Hãy ghi rõ nguồn, hỏi người hướng dẫn trong chính truyền thống đó và tránh ghép các mảnh khác nhau thành một kết luận tuyệt đối." }
+        ], practice: "Chọn một đoạn đang học và ghi ba cột: nội dung nguồn, điều mình hiểu, điều sẽ thử trong đời sống.", reflection: "Mình đã kiểm nghiệm điều vừa học bằng hành vi cụ thể hay mới chỉ đồng ý về mặt ý tưởng?", terms: ["Văn", "Tư", "Tu"], sourceIds: ["suttacentral"] },
+        { id: "tai-gia-xuat-gia-thay-lanh", title: "Người tại gia, xuất gia và người hướng dẫn", minutes: 13, intro: "Đời sống tại gia và xuất gia có giới luật, trách nhiệm và điều kiện khác nhau. Một người hướng dẫn đáng tin không chiếm quyền quyết định đời tư của người học.", sections: [
+          { title: "Hai đời sống, cùng hướng thiện", body: "Người xuất gia sống theo giới luật và cộng đồng tu viện; người tại gia chăm lo gia đình, nghề nghiệp và xã hội. Không nên áp một khuôn sinh hoạt cho mọi người, cũng không xem đời sống tại gia là lý do để bỏ đạo đức." },
+          { title: "Dấu hiệu đáng tin", body: "Người hướng dẫn tốt minh bạch về vai trò, nguồn học, tài chính và giới hạn chuyên môn; khuyến khích đặt câu hỏi; không đòi bí mật, cô lập học viên hoặc hứa chữa bệnh, đổi nghiệp và bảo đảm kết quả siêu nhiên." },
+          { title: "Quyền được dừng", body: "Bạn có quyền dừng một buổi thực hành gây bất ổn, từ chối cung cấp dữ liệu riêng tư và tìm ý kiến thứ hai. Kính trọng không loại bỏ sự tỉnh táo, pháp luật và các nguyên tắc bảo vệ người dễ tổn thương." }
+        ], practice: "Lập danh sách ba tiêu chí bạn cần ở một cộng đồng tu học và ba ranh giới không chấp nhận bị vượt qua.", reflection: "Môi trường đang học có giúp mình tự chủ, tử tế và có trách nhiệm hơn không?", terms: ["Tại gia", "Xuất gia", "Thiện hữu tri thức"], sourceIds: ["suttacentral", "ghpgvn"] }
+      ]
+    },
+    {
+      id: "nen-tang", icon: "法", title: "Quyển II · Giáo lý nền tảng", subtitle: "Khung hiểu biết cốt lõi để định hướng thực hành", description: "Tứ Diệu Đế, Bát Chánh Đạo, Tam học, Ngũ uẩn, vô thường, vô ngã, duyên khởi và nghiệp.",
+      chapters: [
+        { id: "toan-thu-tu-dieu-de", title: "Tứ Diệu Đế: bốn việc cần thực hiện", minutes: 18, intro: "Bốn sự thật cao quý không chỉ là bốn mệnh đề để ghi nhớ mà gắn với bốn nhiệm vụ: hiểu khổ, nhận diện nguyên nhân, biết khả năng chấm dứt và tu tập con đường.", sections: [
+          { title: "Khổ cần được hiểu", body: "Khổ bao gồm đau đớn rõ rệt và sự bất toại nguyện khi những gì vô thường bị nắm giữ như cố định. Nhận diện khổ không phải bi quan; đó là nhìn thẳng điều đang xảy ra để không phản ứng mù quáng." },
+          { title: "Tập và Diệt", body: "Sự bám chấp, khát ái và vô minh góp phần duy trì khổ trong nhiều bối cảnh. Việc thấy khả năng lắng dịu không phải phủ nhận khó khăn xã hội hay thể chất, mà mở ra khoảng tự do trong cách hiểu và hành động." },
+          { title: "Đạo cần được tu", body: "Con đường tám yếu tố kết nối hiểu biết, đạo đức và rèn luyện tâm. Không nên lấy thiền thay cho lời nói và hành động đúng, cũng không dùng đạo đức như công cụ phán xét mà thiếu tự quan sát." }
+        ], practice: "Áp dụng bốn câu hỏi vào một khó khăn nhỏ hôm nay: chuyện gì, điều kiện nào, trạng thái lành mạnh hơn là gì, bước tiếp theo nào phù hợp?", reflection: "Mình đang cố xóa cảm giác khó chịu ngay hay đang học cách hiểu trọn vẹn những điều kiện tạo nên nó?", terms: ["Khổ", "Tập", "Diệt", "Đạo"], sourceIds: ["suttacentral", "ghpgvn"] },
+        { id: "toan-thu-bat-chanh-dao", title: "Bát Chánh Đạo trong một đời sống", minutes: 20, intro: "Tám yếu tố được nuôi dưỡng cùng nhau: chánh kiến, chánh tư duy, chánh ngữ, chánh nghiệp, chánh mạng, chánh tinh tấn, chánh niệm và chánh định.", sections: [
+          { title: "Tuệ: thấy và hướng tâm", body: "Chánh kiến giúp nhận ra hành động có hệ quả và hiểu khung Tứ Diệu Đế; chánh tư duy hướng tâm về buông bớt chiếm hữu, không ác ý và không gây hại. Đây là định hướng được làm mới qua kinh nghiệm." },
+          { title: "Giới: lời nói, hành động, sinh kế", body: "Ba yếu tố đạo đức đưa việc học ra khỏi phạm vi suy nghĩ. Một quyết định đúng cần xem cả sự thật, thời điểm, ảnh hưởng tới người khác, tính hợp pháp và khả năng duy trì đời sống mà không khai thác hay làm hại." },
+          { title: "Định: nỗ lực, niệm và định", body: "Nỗ lực đúng không phải ép buộc; chánh niệm không chỉ là tập trung; chánh định không tách khỏi nền đạo đức. Ba yếu tố này hỗ trợ nhận biết trạng thái tâm và nuôi dưỡng điều lành một cách bền vững." }
+        ], practice: "Trong bảy ngày, mỗi ngày chọn một tình huống thật và ghi tám yếu tố đã nâng đỡ hoặc bị bỏ quên.", reflection: "Yếu tố nào mình thường tách khỏi các yếu tố còn lại, và hậu quả của việc tách đó là gì?", terms: ["Chánh kiến", "Chánh ngữ", "Chánh niệm", "Chánh định"], sourceIds: ["suttacentral"] },
+        { id: "tam-hoc-ngu-uan", title: "Tam học và Ngũ uẩn", minutes: 19, intro: "Tam học mô tả ba lĩnh vực rèn luyện; Ngũ uẩn là một cách phân tích kinh nghiệm thành sắc, thọ, tưởng, hành và thức để giảm sự đồng nhất cứng nhắc.", sections: [
+          { title: "Giới · Định · Tuệ", body: "Giới tạo điều kiện ít hối hận và ít gây hại; định giúp tâm ổn định; tuệ giúp thấy hiện tượng theo điều kiện. Ba phần nâng đỡ nhau, vì hiểu biết không đi cùng đạo đức có thể trở thành biện minh tinh vi." },
+          { title: "Năm nhóm kinh nghiệm", body: "Sắc liên quan thân và vật chất; thọ là sắc thái dễ chịu, khó chịu hoặc trung tính; tưởng nhận diện; hành gồm nhiều tạo tác tâm; thức là nhận biết theo giác quan. Đây là khung khảo sát, không phải năm linh hồn nhỏ." },
+          { title: "Ứng dụng khi cảm xúc mạnh", body: "Thay vì nói “tôi chính là cơn giận”, có thể nhận biết thân nóng, cảm thọ khó chịu, câu chuyện đang được gắn nhãn, xung lực muốn phản ứng và sự biết các yếu tố ấy. Khoảng phân biệt này giúp chọn hành động an toàn hơn." }
+        ], practice: "Khi một cảm xúc xuất hiện, ghi lần lượt thân, cảm thọ, cách nhận diện, xung lực và điều đang biết.", reflection: "Việc phân tích trải nghiệm giúp mình chịu trách nhiệm hơn hay đang được dùng để né cảm xúc?", terms: ["Tam học", "Ngũ uẩn", "Thọ", "Hành"], sourceIds: ["suttacentral"] },
+        { id: "vo-thuong-duyen-khoi-nghiep", title: "Vô thường, vô ngã, duyên khởi và nghiệp", minutes: 22, intro: "Bốn chủ đề liên hệ chặt chẽ nhưng không nên giản lược thành khẩu hiệu. Chúng giúp khảo sát sự thay đổi, tính điều kiện và vai trò của hành động có chủ ý.", sections: [
+          { title: "Vô thường và vô ngã", body: "Hiện tượng sinh diệt và thay đổi; không tìm thấy một cái tôi độc lập, bất biến điều khiển mọi thứ. Điều này không xóa trách nhiệm hay nhân phẩm, mà làm mềm sự bám chấp vào hình ảnh cố định về mình và người." },
+          { title: "Duyên khởi", body: "Một sự việc thường hình thành từ nhiều điều kiện thân thể, tâm lý, quan hệ và xã hội. Thấy duyên khởi giúp tránh hai cực đoan: quy mọi thứ cho một nguyên nhân duy nhất hoặc cho rằng không gì có quan hệ nhân quả." },
+          { title: "Nghiệp và giới hạn diễn giải", body: "Nghiệp nhấn mạnh hành động có chủ ý và khuynh hướng được vun bồi. Không có cơ sở để dùng nghiệp đoán số phận, đổ lỗi cho nạn nhân, từ chối điều trị hoặc khẳng định chắc chắn nguyên nhân của một tai nạn cụ thể." }
+        ], practice: "Chọn một thói quen và vẽ chuỗi điều kiện trước–trong–sau; đánh dấu một điều kiện có thể thay đổi mà không gây hại.", reflection: "Mình có đang dùng từ “nghiệp” để đóng câu hỏi thay vì tìm hiểu đầy đủ hoàn cảnh không?", terms: ["Vô thường", "Vô ngã", "Duyên khởi", "Nghiệp"], sourceIds: ["suttacentral"] }
+      ]
+    },
+    {
+      id: "dao-duc", icon: "戒", title: "Quyển III · Đạo đức và đời sống", subtitle: "Đưa giáo lý vào quan hệ, công việc và trách nhiệm", description: "Ngũ giới, lời nói, sinh kế, gia đình, mất mát, giận dữ và những giới hạn bảo vệ con người.",
+      chapters: [
+        { id: "ngu-gioi-bao-ho", title: "Ngũ giới như năm nguyên tắc bảo hộ", minutes: 17, intro: "Ngũ giới là cam kết tự nguyện nhằm giảm gây hại cho sự sống, tài sản, quan hệ, sự thật và khả năng tỉnh táo; không phải thước đo để sỉ nhục người khác.", sections: [
+          { title: "Bảo hộ sự sống và tài sản", body: "Không sát hại nuôi dưỡng sự tôn trọng sự sống; không lấy của không cho bảo vệ quyền sở hữu và niềm tin. Trong đời hiện đại, cần xét cả bạo lực gián tiếp, lừa đảo số, xâm phạm dữ liệu và khai thác người yếu thế." },
+          { title: "Bảo hộ quan hệ và lời nói", body: "Đạo đức tình dục đòi hỏi đồng thuận, trung thực, trách nhiệm và không lợi dụng chênh lệch quyền lực. Không nói dối còn mở rộng tới tin giả, mạo danh, che giấu xung đột lợi ích và thao túng cảm xúc." },
+          { title: "Bảo hộ sự tỉnh táo", body: "Tránh chất và hành vi làm mất tự chủ cần được hiểu trong bối cảnh sức khỏe, nghiện và hỗ trợ chuyên môn. Không nên biến giới thành lý do kỳ thị người đang cần điều trị và nâng đỡ." }
+        ], practice: "Chọn một giới và xác định một rủi ro thực tế trong đời sống số hoặc đời sống trực tiếp mà bạn có thể giảm ngay.", reflection: "Mình đang dùng giới để bảo hộ hay để cảm thấy cao hơn người khác?", terms: ["Ngũ giới", "Không gây hại", "Đồng thuận"], sourceIds: ["suttacentral", "ghpgvn"] },
+        { id: "chanh-ngu-chanh-mang", title: "Chánh ngữ và chánh mạng", minutes: 16, intro: "Lời nói và nghề nghiệp là nơi thực hành diễn ra mỗi ngày. Đúng không chỉ là nội dung chính xác mà còn liên quan ý định, thời điểm, cách nói và hệ quả.", sections: [
+          { title: "Bốn câu hỏi trước khi nói", body: "Thông tin có thật không, có ích không, có đúng lúc không và có thể nói bằng cách ít gây hại hơn không? Im lặng đôi khi cần thiết, nhưng im lặng trước bạo hành hoặc gian dối cũng có thể duy trì tổn hại." },
+          { title: "Giao tiếp trên mạng", body: "Chậm lại trước khi chia sẻ, kiểm tra nguồn, không công khai dữ liệu riêng, không dùng ảnh cắt ghép để nhục mạ. Khi sửa sai, cần nói rõ điều cũ không đúng và hạn chế tiếp tục lan truyền." },
+          { title: "Sinh kế có trách nhiệm", body: "Đánh giá nghề nghiệp qua sản phẩm, cách kiếm lợi, điều kiện lao động, ảnh hưởng môi trường và mức trung thực. Một lựa chọn hoàn hảo có thể không có; điều quan trọng là thấy rõ, giảm hại và thay đổi trong khả năng thực tế." }
+        ], practice: "Trước một email hoặc bình luận quan trọng, đọc lại theo bốn câu hỏi và sửa một câu để rõ, thật và ít gây hại hơn.", reflection: "Công việc của mình đang tạo lợi ích và chi phí cho những ai mà mình ít khi nhìn thấy?", terms: ["Chánh ngữ", "Chánh mạng", "Ý định"], sourceIds: ["suttacentral"] },
+        { id: "gia-dinh-trach-nhiem", title: "Gia đình và trách nhiệm hai chiều", minutes: 18, intro: "Một gia đình lành mạnh không chỉ yêu cầu người trẻ vâng lời hay một phía hy sinh; trách nhiệm và sự tôn trọng cần đi theo cả hai chiều.", sections: [
+          { title: "Cha mẹ, con cái và người chăm sóc", body: "Biết ơn không xóa quyền an toàn; chăm sóc không đồng nghĩa kiểm soát. Trách nhiệm gồm nuôi dưỡng, giáo dục, tôn trọng khả năng trưởng thành, hỗ trợ người già và tìm giải pháp thực tế khi nguồn lực hạn chế." },
+          { title: "Vợ chồng và người thân", body: "Quan hệ cần đồng thuận, trung thực tài chính, chia sẻ việc chăm sóc và quyền được nói không. Không dùng nghiệp, hiếu hay danh dự gia đình để buộc một người ở lại trong bạo hành." },
+          { title: "Khi xung đột", body: "Tạm dừng để hạ nhiệt, mô tả hành vi cụ thể, nói nhu cầu và thống nhất bước tiếp theo. Nếu có đe dọa, kiểm soát hoặc bạo lực, ưu tiên kế hoạch an toàn và dịch vụ chuyên môn hơn hòa giải tôn giáo." }
+        ], practice: "Thực hiện một cuộc trò chuyện mười phút: mỗi người nói hai phút, người kia nhắc lại điều đã nghe trước khi phản hồi.", reflection: "Giới hạn nào đang bảo vệ sự tôn trọng chung thay vì dùng để trừng phạt?", terms: ["Trách nhiệm hai chiều", "Hiếu", "Giới hạn"], sourceIds: ["suttacentral", "ghpgvn"] },
+        { id: "kho-khan-doi-song", title: "Giận dữ, mất mát, bệnh tật và tài chính", minutes: 20, intro: "Giáo lý có thể hỗ trợ cách nhìn và cách đáp ứng, nhưng không thay thế chăm sóc y tế, tâm lý, pháp lý hay tài chính khi cần.", sections: [
+          { title: "Không phủ nhận cảm xúc", body: "Vô thường không yêu cầu người đau buồn phải bình an ngay; tâm từ không buộc tha thứ khi chưa an toàn; chánh niệm không có nghĩa chịu đựng mọi thứ. Trước hết hãy nhận diện điều đang có và nhu cầu thiết thực." },
+          { title: "Một bước nhỏ phù hợp", body: "Khi giận, trì hoãn phản hồi và rời tình huống nguy hiểm; khi mất mát, tìm người có thể hiện diện; khi bệnh, theo kế hoạch chăm sóc; khi khó khăn tiền bạc, phân loại việc khẩn cấp và tìm tư vấn đáng tin." },
+          { title: "Dấu hiệu cần hỗ trợ", body: "Ý nghĩ tự hại, bạo lực, mất định hướng, khó thở, đau ngực, mất ngủ kéo dài hoặc không thể chăm sóc bản thân là lý do để dừng thực hành một mình và liên hệ dịch vụ khẩn cấp hay chuyên gia tại nơi sống." }
+        ], practice: "Viết ba dòng: điều đang xảy ra, người hoặc dịch vụ có thể hỗ trợ, một việc an toàn làm trong 24 giờ tới.", reflection: "Mình có đang dùng một khái niệm Phật học để trì hoãn sự trợ giúp cần thiết không?", terms: ["Khổ", "Tâm từ", "Hỗ trợ chuyên môn"], sourceIds: ["suttacentral", "ghpgvn"] }
+      ]
+    },
+    {
+      id: "thuc-hanh", icon: "禪", title: "Quyển IV · Thực hành hằng ngày", subtitle: "Thiền, tụng niệm và thời khóa vừa sức", description: "Hướng dẫn nền tảng cho hơi thở, thân–thọ–tâm, tâm từ, thiền đi, niệm Phật và an toàn thực hành.",
+      chapters: [
+        { id: "thien-hoi-tho-than", title: "Thiền hơi thở và quán thân", minutes: 18, intro: "Người mới bắt đầu bằng tư thế ổn định, hơi thở tự nhiên và khoảng thời gian ngắn. Mục tiêu không phải ép tâm trống rỗng hoặc tạo trạng thái đặc biệt.", sections: [
+          { title: "Chuẩn bị", body: "Chọn nơi an toàn, ngồi ghế hoặc đệm sao cho thân được nâng đỡ, mắt mở hoặc khép nhẹ. Biết một vùng hơi thở dễ nhận ra; không điều khiển nhịp thở và không nín thở để đạt cảm giác lạ." },
+          { title: "Khi tâm đi xa", body: "Nhận biết mình đang suy nghĩ, nghe hoặc cảm rồi nhẹ nhàng trở lại. Việc trở lại chính là một phần thực hành, không phải thất bại. Có thể mở rộng chú ý tới bàn chân, điểm tiếp xúc và toàn thân." },
+          { title: "Điều chỉnh an toàn", body: "Nếu choáng, tê, hoảng sợ hoặc ký ức tràn về, hãy mở mắt, nhìn quanh, cảm nhận chân và dừng timer. Không cố ngồi tiếp để chứng minh ý chí; tìm người hướng dẫn có năng lực hoặc chuyên gia khi phản ứng lặp lại." }
+        ], practice: "Thực hành năm phút: một phút ổn định thân, ba phút biết hơi thở tự nhiên, một phút biết toàn thân.", reflection: "Mình có thể nhận biết sự xao động mà không biến nó thành phán xét bản thân không?", terms: ["Niệm hơi thở", "Quán thân", "Tỉnh giác"], sourceIds: ["suttacentral"] },
+        { id: "quan-tho-tam-tu-thien-di", title: "Quán thọ, tâm từ và thiền đi", minutes: 19, intro: "Các thực hành mở rộng giúp nhận biết sắc thái cảm thọ, nuôi ý nguyện không gây hại và đưa chánh niệm vào chuyển động.", sections: [
+          { title: "Biết cảm thọ", body: "Gọi tên dễ chịu, khó chịu hoặc trung tính mà chưa vội chạy theo hay xua đuổi. Cảm thọ không đồng nghĩa phán đoán đạo đức; điều quan trọng là biết phản ứng nào đang hình thành sau đó." },
+          { title: "Tâm từ có giới hạn", body: "Bắt đầu bằng lời nguyện thực tế cho chính mình, người dễ thương rồi mở rộng dần. Tâm từ không buộc tiếp xúc với người gây hại và không thay thế ranh giới, công lý hay kế hoạch an toàn." },
+          { title: "Thiền đi", body: "Chọn đoạn đường bằng phẳng, đi tốc độ tự nhiên hoặc chậm vừa phải, biết sự chuyển trọng lượng và tiếp xúc bàn chân. Không nhắm mắt, không đi ở nơi giao thông và không biến từng bước thành nghi thức căng thẳng." }
+        ], practice: "Đi bộ an toàn trong bảy phút, thỉnh thoảng ghi nhận cảm thọ và kết bằng một lời nguyện không gây hại.", reflection: "Lòng từ của mình có đi cùng trí tuệ và ranh giới hay đang trở thành chịu đựng quá mức?", terms: ["Thọ", "Tâm từ", "Thiền đi"], sourceIds: ["suttacentral"] },
+        { id: "niem-phat-tung-niem", title: "Niệm Phật và tụng niệm có tỉnh thức", minutes: 17, intro: "Niệm và tụng có thể thu nhiếp tâm, nhắc lại nguyện lành và kết nối truyền thống. Số lần không được quy đổi thành công đức hoặc vị trí tâm linh.", sections: [
+          { title: "Hiểu nội dung", body: "Trước khi tụng, biết bài thuộc truyền thống nào, ngôn ngữ gì, bản dịch hoặc lời diễn đạt do ai biên soạn. Không gắn nhãn “lời Phật dạy” cho văn bản hiện đại chỉ vì có âm điệu trang nghiêm." },
+          { title: "Cách thực hành", body: "Giữ âm lượng vừa phải, thở tự nhiên, nghe rõ tiếng và để ý ý nghĩa. Có thể niệm thầm khi hoàn cảnh không phù hợp; không cần chạy theo tốc độ, số lượng hoặc âm thanh giống một người khác." },
+          { title: "Tôn trọng khác biệt", body: "Danh hiệu, nghi thức và cách phát âm khác nhau theo truyền thống và cộng đồng. Ghi nhãn rõ, học với nguồn của chính truyền thống và không phán quyết phương pháp khác bằng tiêu chuẩn riêng của mình." }
+        ], practice: "Chọn một đoạn ngắn đã rõ nguồn, đọc nghĩa trước rồi tụng chậm ba lần trong tư thế thư giãn.", reflection: "Sau khi tụng, lời nói và hành động của mình có bớt gây hại hơn không?", terms: ["Niệm Phật", "Tụng niệm", "Tín–nguyện–hạnh"], sourceIds: ["ghpgvn", "suttacentral"] },
+        { id: "thoi-khoa-an-toan", title: "Thời khóa sáng tối và an toàn thực hành", minutes: 16, intro: "Một thời khóa bền vững ngắn, rõ và điều chỉnh được. Đều đặn quan trọng hơn kéo dài, nhưng nghỉ ngơi đúng lúc cũng là trách nhiệm.", sections: [
+          { title: "Mẫu mười lăm phút", body: "Có thể dành ba phút đọc một đoạn tóm lược, năm phút ngồi yên, ba phút suy ngẫm và bốn phút chuẩn bị một hành động lành. Thời khóa sáng hướng ngày mới; thời khóa tối nhìn lại mà không tự kết án." },
+          { title: "Điều chỉnh theo sức khỏe", body: "Người đau lưng có thể ngồi ghế hoặc nằm; người dễ hoảng loạn có thể mở mắt và thực hành ngắn; người đang điều trị nên trao đổi với chuyên gia. Không tự ý bỏ thuốc hoặc kế hoạch chăm sóc vì lời khuyên trên mạng." },
+          { title: "Đánh giá không thành tích", body: "Ghi nhận điều đã làm, khó khăn và điều chỉnh tiếp theo, không tạo chuỗi bắt buộc. Một ngày nghỉ không xóa tiến trình; dấu hiệu tốt là sự chân thật, bớt gây hại và biết tìm hỗ trợ khi cần." }
+        ], practice: "Thiết kế thời khóa 10–20 phút cho bảy ngày, kèm một phương án rút gọn hai phút khi quá bận hoặc mệt.", reflection: "Thời khóa đang nâng đỡ đời sống hay trở thành một nghĩa vụ khiến mình che giấu sức khỏe thật?", terms: ["Thời khóa", "Tinh tấn", "Trung đạo"], sourceIds: ["suttacentral", "ghpgvn"] }
+      ]
+    },
+    {
+      id: "kinh-dien", icon: "經", title: "Quyển V · Kinh điển và truyền thống", subtitle: "Biết mình đang đọc loại văn bản nào", description: "Tam Tạng, Nikāya–Āgama, các hệ kinh Đại thừa, Kanjur–Tengyur và Phật giáo Việt Nam.",
+      chapters: [
+        { id: "tam-tang-van-ban", title: "Tam Tạng và các lớp văn bản", minutes: 21, intro: "Kinh điển Phật giáo là một hệ sinh thái văn bản rộng, được bảo tồn bằng nhiều ngôn ngữ và truyền thống. Không nên gọi mọi sách Phật học là kinh.", sections: [
+          { title: "Kinh, Luật và Luận", body: "Kinh ghi lại các bài giảng trong những bộ sưu tập; Luật liên quan đời sống và quy tắc của cộng đồng xuất gia; Luận gồm các hệ thống phân tích và chú giải. Cấu trúc cụ thể khác nhau giữa các truyền thống." },
+          { title: "Nguyên văn, bản dịch, chú giải", body: "Một trang đọc tốt phải nói rõ ngôn ngữ nguồn, dịch giả, phiên bản, giấy phép và ngày kiểm chứng. Chú giải giải thích văn bản; tóm lược HH là nội dung học tập hiện đại, không được trình bày như nguyên văn." },
+          { title: "Mã tham chiếu", body: "Mã như DN, MN, SN hay T giúp tìm cùng một văn bản ở nguồn học thuật. Mã không tự chứng minh một câu trích; vẫn cần kiểm tra đoạn, bản dịch và bối cảnh trước sau." }
+        ], practice: "Chọn một tài liệu đang đọc và xác định rõ: loại văn bản, mã, ngôn ngữ nguồn, người dịch, giấy phép và phần nào là chú giải.", reflection: "Mình có đang truyền lại một câu vì nghe quen hay vì đã kiểm tra được nguồn và bối cảnh?", terms: ["Kinh", "Luật", "Luận", "Tam Tạng"], sourceIds: ["suttacentral", "84000"] },
+        { id: "nikaya-agama", title: "Nikāya và Āgama", minutes: 20, intro: "Các bộ Nikāya bằng Pāli và Āgama được bảo tồn trong các truyền thống ngôn ngữ khác nhau, tạo cơ hội đối chiếu lịch sử văn bản và cách trình bày giáo lý sớm.", sections: [
+          { title: "Các bộ sưu tập", body: "Trường, Trung, Tương Ưng và Tăng Chi là những cách tổ chức quen thuộc; Tiểu Bộ có cấu trúc riêng. Các truyền bản song song có thể giống về cốt truyện và giáo lý nhưng khác chi tiết, thứ tự hoặc thuật ngữ." },
+          { title: "Đọc song song", body: "Đối chiếu không nhằm chọn bên thắng mà giúp nhận ra phần ổn định và phần biến đổi trong quá trình truyền thừa. Người mới nên bắt đầu bằng một bản dịch rõ ràng rồi xem song song khi có câu hỏi cụ thể." },
+          { title: "Giới hạn của bản dịch", body: "Một thuật ngữ có thể cần nhiều cách dịch tùy ngữ cảnh. Hãy xem chú thích dịch giả, nguyên ngữ và cách dùng trong nhiều đoạn, thay vì xây kết luận lớn từ một lựa chọn từ vựng." }
+        ], practice: "Dùng mã kinh để mở hai bản hoặc hai ngôn ngữ tại nguồn, ghi một điểm giống, một điểm khác và một câu hỏi còn lại.", reflection: "Việc đối chiếu đang giúp hiểu sâu hơn hay chỉ làm mình gom thêm thông tin không có câu hỏi rõ?", terms: ["Nikāya", "Āgama", "Kinh song song"], sourceIds: ["suttacentral"] },
+        { id: "dai-thua-he-kinh", title: "Đại thừa và các hệ kinh", minutes: 22, intro: "Phật giáo Đại thừa có nhiều hệ kinh, luận và con đường thực hành. Không thể gói toàn bộ vào một khẩu hiệu duy nhất về tính không, Bồ-tát hay Tịnh độ.", sections: [
+          { title: "Đọc theo hệ thống", body: "Kinh Bát Nhã, Pháp Hoa, Hoa Nghiêm, Tịnh độ và nhiều hệ khác có bối cảnh, thuật ngữ, lịch sử tiếp nhận riêng. Nên học cùng chú giải thuộc truyền thống và biết rõ phần nào là học thuật hiện đại." },
+          { title: "Trí tuệ và từ bi", body: "Lý tưởng Bồ-tát thường kết nối trí tuệ với lợi ích của chúng sinh. Không dùng ngôn ngữ hy sinh để ép người yếu thế chịu bạo hành; lòng bi cần đi cùng phương tiện, giới hạn và trách nhiệm." },
+          { title: "Tính không không phải hư vô", body: "Các trình bày về tính không cần được đọc trong quan hệ với duyên khởi và quy ước. Hiểu rằng sự vật không độc lập, cố định không có nghĩa hành vi không có hậu quả hay sự đau khổ là không đáng quan tâm." }
+        ], practice: "Khi đọc một bản kinh Đại thừa, ghi tên hệ kinh, truyền thống chú giải và ba thuật ngữ cần tra cứu trước khi diễn giải.", reflection: "Cách hiểu của mình có giữ được cả trí tuệ về duyên khởi và trách nhiệm không gây hại không?", terms: ["Đại thừa", "Bồ-tát", "Tính không", "Phương tiện"], sourceIds: ["84000", "suttacentral"] },
+        { id: "tay-tang-viet-nam", title: "Kanjur, Tengyur và Phật giáo Việt Nam", minutes: 20, intro: "Các truyền thống Tây Tạng và Việt Nam cho thấy kinh điển luôn sống trong ngôn ngữ, nghi lễ, tổ chức và lịch sử địa phương cụ thể.", sections: [
+          { title: "Kanjur và Tengyur", body: "Kanjur thường chỉ các bản dịch lời Phật, Tengyur tập hợp luận giải và trước tác liên hệ trong truyền thống Tây Tạng. Thư viện 84000 cung cấp phòng đọc và metadata; giấy phép phải xem theo từng ấn phẩm." },
+          { title: "Phật giáo Việt Nam", body: "Đời sống Phật giáo Việt Nam gồm nhiều tông phái, truyền thống tu học, nghi lễ và tổ chức. Thông tin về cơ sở, nhân sự, sự kiện và cúng dường nên kiểm tra qua Giáo hội hoặc đơn vị công khai chịu trách nhiệm." },
+          { title: "Không trộn thành một kết luận", body: "Một thuật ngữ giống nhau có thể được dùng khác trong Thiền, Tịnh độ, Phật giáo sơ kỳ hay truyền thống Tây Tạng. Nội dung HH phải gắn nhãn truyền thống, nguồn và mức độ diễn giải thay vì hòa mọi khác biệt." }
+        ], practice: "Chọn một chủ đề và lập bảng ba cột: truyền thống, thuật ngữ dùng, nguồn đang tham khảo.", reflection: "Mình có đang tôn trọng khác biệt hay chỉ chọn những phần hợp ý rồi gọi đó là toàn bộ Phật giáo?", terms: ["Kanjur", "Tengyur", "Phật giáo Việt Nam"], sourceIds: ["84000", "ghpgvn"] }
+      ]
+    },
+    {
+      id: "nghi-le-chua", icon: "寺", title: "Quyển VI · Nghi lễ và đi chùa", subtitle: "Trang nghiêm, hiểu nghĩa và bảo vệ sự minh bạch", description: "Cách đi chùa, lễ Phật, cúng dường, ngày lễ, pháp thoại, khóa tu và nhận diện giả mạo.",
+      chapters: [
+        { id: "di-chua-trang-nghiem", title: "Đi chùa và ứng xử trang nghiêm", minutes: 14, intro: "Đi chùa là cơ hội học, thực hành và tham dự cộng đồng. Sự trang nghiêm thể hiện qua tôn trọng không gian, con người, nội quy và quyền riêng tư.", sections: [
+          { title: "Trước khi đi", body: "Kiểm tra giờ mở cửa, sự kiện, quy định trang phục, chụp ảnh và khu vực hạn chế. Chuẩn bị trang phục lịch sự, tắt âm thông báo và không mang kỳ vọng mọi chùa đều có nghi thức giống nhau." },
+          { title: "Trong khuôn viên", body: "Nói vừa đủ nghe, xếp hàng, không chạm tượng hoặc pháp khí khi chưa được phép, không quay người đang lễ hay trẻ em. Khi chưa biết nghi thức, có thể đứng quan sát và hỏi người phụ trách một cách lịch sự." },
+          { title: "Lễ Phật và dâng hương", body: "Lễ là biểu hiện kính trọng và nhắc tâm, không phải giao dịch để đổi lấy kết quả. Tuân thủ quy định phòng cháy, không cắm quá nhiều hương và không phán xét người có cách thể hiện khác." }
+        ], practice: "Tạo checklist đi chùa gồm giờ, trang phục, quyền chụp ảnh, câu hỏi muốn học và cách di chuyển an toàn.", reflection: "Chuyến đi giúp mình học và sống tốt hơn hay chỉ đang tìm một trải nghiệm để chụp và chia sẻ?", terms: ["Lễ Phật", "Dâng hương", "Trang nghiêm"], sourceIds: ["ghpgvn"] },
+        { id: "cung-duong-minh-bach", title: "Cúng dường và minh bạch tài chính", minutes: 15, intro: "Cúng dường là tự nguyện, trong khả năng và có hiểu biết. Không ai nên gây sợ hãi, hứa đổi nghiệp hoặc buộc công khai danh tính để lấy tiền.", sections: [
+          { title: "Quyết định tự nguyện", body: "Xem rõ đơn vị nhận, mục đích, phương thức chính thức và bằng chứng giao dịch. Không vay nợ để cúng, không chuyển tiền vì bị thúc ép và không tin tài khoản cá nhân chỉ dựa trên ảnh đại diện hay tin nhắn." },
+          { title: "Kiểm tra kênh chính thức", body: "Đối chiếu website, thông báo của tổ chức, tên pháp nhân hoặc người chịu trách nhiệm. Với chiến dịch cứu trợ, xem kế hoạch sử dụng, cập nhật kết quả và chính sách dữ liệu của người đóng góp." },
+          { title: "Báo cáo dấu hiệu lừa đảo", body: "Lưu bằng chứng, không tiếp tục tranh luận với tài khoản đáng ngờ và báo nền tảng, ngân hàng hoặc cơ quan phù hợp. HH không lưu số tài khoản cúng dường của bên thứ ba và không xác nhận phép màu hay công đức." }
+        ], practice: "Trước một khoản hỗ trợ, kiểm tra bốn điểm: chủ thể, mục đích, kênh chính thức và khả năng tài chính của chính mình.", reflection: "Quyết định này đến từ lòng rộng rãi sáng suốt hay từ sợ hãi và áp lực?", terms: ["Cúng dường", "Minh bạch", "Tự nguyện"], sourceIds: ["ghpgvn"] },
+        { id: "ngay-le-nghi-thuc", title: "Ngày lễ và nghi thức Phật giáo", minutes: 16, intro: "Ngày lễ giúp cộng đồng tưởng niệm, học Pháp và thực hành. Tên gọi, lịch và nghi thức có thể khác giữa truyền thống, quốc gia và từng tự viện.", sections: [
+          { title: "Ý nghĩa trước hình thức", body: "Tìm hiểu ngày lễ đang tưởng niệm điều gì, hoạt động nào thuộc nghi thức địa phương và nội dung nào là giáo dục cộng đồng. Không đánh giá mức độ tu học qua mâm lễ, số hương hay hình thức trang trí." },
+          { title: "Lịch và thông báo", body: "Ngày âm dương và lịch tổ chức thực tế có thể khác. Hãy xem thông báo mới từ cơ sở hoặc Giáo hội, đặc biệt khi cần đăng ký, di chuyển xa, tham dự trực tuyến hay có giới hạn số người." },
+          { title: "Tham dự trực tuyến", body: "Chọn nguồn phát hợp pháp, không ghi lại hoặc phát lại khi chưa được phép, bảo vệ dữ liệu người tham dự. Tắt thông báo, chuẩn bị không gian yên và nhớ rằng xem trực tuyến không thay thế mọi khía cạnh của cộng đồng trực tiếp." }
+        ], practice: "Chọn một ngày lễ sắp tới, đọc thông báo chính thức và ghi một ý nghĩa học tập cùng một việc thiện phù hợp.", reflection: "Mình hiểu điều đang tưởng niệm hay chỉ đang lặp lại hình thức quen thuộc?", terms: ["Phật đản", "Vu lan", "Nghi thức"], sourceIds: ["ghpgvn", "phatsuonline"] },
+        { id: "phap-thoai-khoa-tu-an-toan", title: "Pháp thoại, khóa tu và cảnh báo giả mạo", minutes: 18, intro: "Một chương trình tốt công khai đơn vị tổ chức, người hướng dẫn, lịch, chi phí, nội quy và cơ chế phản hồi; không yêu cầu người học từ bỏ quyền tự chủ.", sections: [
+          { title: "Trước khi đăng ký", body: "Kiểm tra danh tính tổ chức, địa điểm, người phụ trách, nội dung, điều kiện sức khỏe, chỗ ở và chính sách hoàn tiền. Với trẻ em hoặc người dễ tổn thương, cần cơ chế bảo vệ và người giám hộ rõ ràng." },
+          { title: "Trong khóa tu", body: "Bạn có quyền báo vấn đề sức khỏe, rời thực hành không phù hợp và từ chối tiếp xúc riêng tư. Im lặng tu tập không được dùng để ngăn báo cáo bạo hành, quấy rối, tai nạn hay vi phạm pháp luật." },
+          { title: "Dấu hiệu giả mạo", body: "Cẩn trọng với tài khoản mạo danh tăng ni, lời hứa chữa bệnh, đổi vận, giải nghiệp theo giá, yêu cầu chuyển tiền gấp hoặc giữ bí mật. Xác minh qua kênh tổ chức và báo cáo khi có bằng chứng." }
+        ], practice: "Dùng checklist sáu mục để kiểm tra một pháp thoại hoặc khóa tu trước khi lưu hay đăng ký.", reflection: "Thông tin nào còn thiếu khiến mình chưa thể đưa ra quyết định có hiểu biết?", terms: ["Pháp thoại", "Khóa tu", "Bảo vệ người tham dự"], sourceIds: ["ghpgvn", "phatsuonline"] }
+      ]
+    },
+    {
+      id: "tra-cuu", icon: "問", title: "Quyển VII · Thuật ngữ và hỏi đáp", subtitle: "Giải nghĩa rõ ràng, sửa hiểu lầm phổ biến", description: "Thuật ngữ căn bản, những hiểu sai thường gặp, câu hỏi của người mới và kế hoạch tự học lâu dài.",
+      chapters: [
+        { id: "thuat-ngu-can-ban", title: "Thuật ngữ căn bản: Pháp, niệm, từ, bi, nghiệp", minutes: 18, intro: "Thuật ngữ Pāli, Sanskrit, Hán và Hán–Việt không luôn tương ứng một–một. Nghĩa phải được xác định theo câu, bộ văn bản và truyền thống.", sections: [
+          { title: "Pháp và chánh niệm", body: "Dhamma có thể chỉ lời dạy, hiện tượng hoặc phẩm chất tùy ngữ cảnh. Sati liên quan nhớ biết và không quên đối tượng thực hành; chánh niệm thường đi cùng tỉnh giác, nỗ lực đúng và nền đạo đức." },
+          { title: "Từ và bi", body: "Từ là ý nguyện an lành, bi là nhận ra khổ cùng mong muốn làm vơi khổ. Cả hai không đồng nghĩa nuông chiều, thương hại, cứu giúp quá khả năng hoặc chấp nhận hành vi gây hại." },
+          { title: "Nghiệp", body: "Kamma hay karma mang nghĩa hành động, trong giáo lý nhấn mạnh chủ ý và khuynh hướng. Không được dùng từ này như nhãn chẩn đoán, lời nguyền, công thức dự báo hay cách giải thích toàn bộ bất công xã hội." }
+        ], practice: "Chọn một thuật ngữ, tìm ba lần xuất hiện ở nguồn và ghi nghĩa trong từng ngữ cảnh thay vì chỉ chép một định nghĩa.", reflection: "Mình đang dùng thuật ngữ để làm sáng vấn đề hay để khiến lời nói có vẻ uyên thâm?", terms: ["Dhamma", "Sati", "Mettā", "Karuṇā", "Kamma"], sourceIds: ["suttacentral"] },
+        { id: "hieu-lam-thuong-gap", title: "Những hiểu lầm thường gặp", minutes: 17, intro: "Một số khẩu hiệu phổ biến làm giáo lý mất bối cảnh hoặc gây hại. Sửa hiểu lầm cần thái độ khiêm tốn và nguồn rõ ràng, không chế giễu niềm tin của người khác.", sections: [
+          { title: "Buông bỏ không phải bỏ mặc", body: "Buông bám chấp vào cách mọi thứ phải diễn ra không có nghĩa trốn nghĩa vụ, bỏ con nhỏ, không trả nợ hoặc ngừng điều trị. Trách nhiệm thực tế cần được hoàn thành bằng cách ít gây hại." },
+          { title: "Chánh niệm không phải luôn bình tĩnh", body: "Chánh niệm là biết rõ điều đang có và nhớ hướng thực hành; đôi khi điều đúng là nhận ra giận, rời nơi nguy hiểm hoặc lên tiếng. Ép vẻ bình thản có thể che giấu sợ hãi và tổn thương." },
+          { title: "Tính không không xóa hậu quả", body: "Không có bản chất độc lập không đồng nghĩa mọi lựa chọn như nhau. Chính vì sự vật nương điều kiện mà lời nói, luật pháp, chăm sóc và hành động tập thể có thể tạo thay đổi." }
+        ], practice: "Chọn một câu Phật học thường nghe, viết cách hiểu gây hại có thể có và cách diễn đạt đầy đủ hơn.", reflection: "Câu nói này giúp người nghe thấy rõ điều kiện và trách nhiệm hay đóng lại cuộc đối thoại?", terms: ["Buông bỏ", "Chánh niệm", "Tính không"], sourceIds: ["suttacentral", "84000"] },
+        { id: "cau-hoi-nguoi-moi", title: "Câu hỏi dành cho người mới", minutes: 16, intro: "Không cần biết nghi lễ, chữ Hán hay ngồi thiền lâu mới có thể bắt đầu. Người mới nên luôn biết mình đang học gì, nguồn ở đâu và bước nhỏ tiếp theo là gì.", sections: [
+          { title: "Có cần theo một tông phái ngay?", body: "Không. Có thể học nền tảng, tham dự nhiều buổi công khai và quan sát cách cộng đồng giữ giới, minh bạch, giải thích nguồn. Khi chọn học sâu, nên hiểu phương pháp trong hệ thống của chính truyền thống ấy." },
+          { title: "Không ngồi xếp bằng được thì sao?", body: "Có thể ngồi ghế, đứng, đi hoặc nằm nếu phù hợp sức khỏe. Tư thế phục vụ sự ổn định và tỉnh táo; đau đớn không phải thành tích. Điều chỉnh hoặc dừng khi có dấu hiệu bất thường." },
+          { title: "Có thể học hoàn toàn trực tuyến?", body: "Trực tuyến hữu ích cho đọc, nghe và lập thời khóa, nhưng cần kiểm tra nguồn và bảo vệ dữ liệu. Những vấn đề về giới luật, sức khỏe thực hành hay xung đột cộng đồng có thể cần người đủ năng lực và gặp trực tiếp." }
+        ], practice: "Viết ba câu hỏi thật của bạn, dùng tìm kiếm Toàn Thư để tìm chương liên quan rồi ghi điều vẫn cần hỏi người có chuyên môn.", reflection: "Sau khi đọc, mình đã có một bước cụ thể hay vẫn đang chờ hiểu hết mọi thứ mới bắt đầu?", terms: ["Người mới", "Tông phái", "Thực hành trực tuyến"], sourceIds: ["suttacentral", "ghpgvn"] },
+        { id: "ke-hoach-tu-hoc", title: "Xây kế hoạch tự học 7, 21 và 49 ngày", minutes: 15, intro: "Kế hoạch tu học nên vừa sức, có đọc, suy ngẫm, thực hành và nhìn lại. Không dùng chuỗi ngày, điểm số hoặc huy hiệu để đánh giá phẩm chất tâm linh.", sections: [
+          { title: "Bảy ngày làm quen", body: "Mỗi ngày đọc một phần nhập môn trong mười phút, thực hành năm phút và ghi một câu. Mục tiêu là biết cách dùng nguồn, nhận ra giới hạn và hình thành nhịp học thực tế." },
+          { title: "Hai mươi mốt ngày xây nền", body: "Luân phiên giáo lý, đạo đức và thực hành; mỗi tuần dành một buổi đọc kinh có metadata. Cuối tuần xem lại thay đổi trong lời nói, thói quen và khả năng nhận lỗi, không tự chấm cấp bậc." },
+          { title: "Bốn mươi chín ngày học sâu", body: "Chọn một chủ đề, đọc nhiều lớp nguồn, trao đổi với cộng đồng đáng tin và thử ứng dụng có giới hạn. Ghi cả điều chưa chắc chắn, quan điểm khác và dấu hiệu cần người hướng dẫn." }
+        ], practice: "Chọn nhịp 7, 21 hoặc 49 ngày, đặt thời lượng tối thiểu có thể duy trì và một ngày xem lại mỗi tuần.", reflection: "Kế hoạch có chừa chỗ cho nghỉ ngơi, sửa sai và thay đổi khi hoàn cảnh khác đi không?", terms: ["Lộ trình", "Tự học", "Kiểm nghiệm"], sourceIds: ["suttacentral", "ghpgvn"] }
+      ]
+    }
+  ]);
+
   const TALKS = Object.freeze([
     { id: "phatsu-live", title: "Truyền hình trực tiếp Phật sự", provider: "Phật Sự Online", type: "Trực tiếp", url: "https://www.phatsuonline.vn/tin/truyen-hinh-truc-tiep", note: "Mở lịch phát và chương trình trực tiếp tại nguồn chính thức." },
     { id: "phatsu-youtube", title: "Phật Sự Online TV", provider: "Phật Sự Online", type: "Video", url: "https://www.youtube.com/PhatsuonlineTV", note: "Kênh YouTube của Phật Sự Online; nội dung và quyền phát thuộc đơn vị cung cấp." },
@@ -199,6 +377,7 @@
     { id: "today", label: "Hôm nay", icon: "灯", group: "Bắt đầu" },
     { id: "beginner", label: "Lộ trình tu học", icon: "路", group: "Bắt đầu" },
     { id: "situations", label: "Pháp học đời sống", icon: "心", group: "Bắt đầu" },
+    { id: "encyclopedia", label: "Phật Pháp Toàn Thư", icon: "藏", group: "Học Pháp" },
     { id: "teachings", label: "Giáo lý", icon: "法", group: "Học Pháp" },
     { id: "scriptures", label: "Scripture Study Lab", icon: "經", group: "Học Pháp" },
     { id: "glossary", label: "Từ điển Phật học", icon: "字", group: "Học Pháp" },
@@ -227,6 +406,7 @@
     meditation: { type: "breath", bellInterval: 0, silent: false, locked: false, presets: [], courseDays: [], checkIn: "steady" }, chant: { selected: "refuge", pace: "normal", repeat: false, showTransliteration: true, showMeaning: true, fontSize: 18, lineHeight: 1.7, sleepMinutes: 0 },
     calendar: { view: "week", template: "balanced", paused: false, missedSessions: 0 }, circles: [], circlePrivateNotes: {}, glossaryDeck: [],
     reviewSchedule: {}, reviewHistory: [], audio: { queue: [], rate: .88 }, exportHistory: [],
+    encyclopediaPosition: { volume: "nhap-mon", chapter: "duc-phat-lich-su" }, encyclopediaBookmarks: [], encyclopediaCompleted: [], encyclopediaNotes: {}, encyclopediaReader: { mode: "paper", outline: true },
     accessibility: { contrast: "normal", senior: false, readerSize: 20, audioDescriptions: false },
     visual: { aura: "radiant" }
   });
@@ -243,6 +423,9 @@
   let activeView = "today";
   let selectedLesson = "";
   let selectedLifePath = "";
+  let selectedEncyclopediaChapter = "";
+  let encyclopediaCatalogOpen = false;
+  let encyclopediaQuery = "";
   let selectedTeaching = "";
   let selectedScripture = "";
   let selectedScriptureSegment = "";
@@ -311,9 +494,11 @@
       next.audio = { ...DEFAULT_STATE.audio, ...(stored?.audio && typeof stored.audio === "object" ? stored.audio : {}) };
       next.calendar = { ...DEFAULT_STATE.calendar, ...(stored?.calendar && typeof stored.calendar === "object" ? stored.calendar : {}) };
       next.accessibility = { ...DEFAULT_STATE.accessibility, ...(stored?.accessibility && typeof stored.accessibility === "object" ? stored.accessibility : {}) };
-      for (const key of ["completedLessons", "bookmarks", "practiceHistory", "offlinePacks", "readingPath", "scriptureHighlights", "sourceReports", "metadataDrafts", "circles", "glossaryDeck", "reviewHistory", "exportHistory"]) if (!Array.isArray(next[key])) next[key] = [];
+      for (const key of ["completedLessons", "bookmarks", "practiceHistory", "offlinePacks", "readingPath", "scriptureHighlights", "sourceReports", "metadataDrafts", "circles", "glossaryDeck", "reviewHistory", "exportHistory", "encyclopediaBookmarks", "encyclopediaCompleted"]) if (!Array.isArray(next[key])) next[key] = [];
       if (!Array.isArray(next.audio.queue)) next.audio.queue = [];
-      for (const key of ["lessonNotes", "scriptureNotes", "scriptureSegmentNotes", "scriptureHighlightColors", "readingPosition", "lifePathProgress", "routineProgress", "circlePrivateNotes", "reviewSchedule"]) if (!next[key] || typeof next[key] !== "object" || Array.isArray(next[key])) next[key] = {};
+      for (const key of ["lessonNotes", "scriptureNotes", "scriptureSegmentNotes", "scriptureHighlightColors", "readingPosition", "lifePathProgress", "routineProgress", "circlePrivateNotes", "reviewSchedule", "encyclopediaNotes"]) if (!next[key] || typeof next[key] !== "object" || Array.isArray(next[key])) next[key] = {};
+      next.encyclopediaPosition = { ...DEFAULT_STATE.encyclopediaPosition, ...(stored?.encyclopediaPosition && typeof stored.encyclopediaPosition === "object" ? stored.encyclopediaPosition : {}) };
+      next.encyclopediaReader = { ...DEFAULT_STATE.encyclopediaReader, ...(stored?.encyclopediaReader && typeof stored.encyclopediaReader === "object" ? stored.encyclopediaReader : {}) };
       if (!Array.isArray(next.meditation.presets)) next.meditation.presets = [];
       if (!Array.isArray(next.meditation.courseDays)) next.meditation.courseDays = [];
       if (!["steady", "uneasy", "overwhelmed"].includes(next.meditation.checkIn)) next.meditation.checkIn = "steady";
@@ -389,7 +574,7 @@
       <div class="dharma-ornament" aria-hidden="true"><i></i><i></i><i></i><span class="dharma-incense"></span><span class="dharma-lamp"></span></div>
       <header class="dharma-topbar">
         <button class="dharma-brand" type="button" data-dharma-nav="today"><span class="dharma-wheel" aria-hidden="true">☸</span><span><small>TRUNG TÂM TU HỌC</small><strong>Phật Pháp</strong></span></button>
-        <nav aria-label="Điều hướng nhanh"><button type="button" data-dharma-nav="today">Hôm nay</button><button type="button" data-dharma-nav="scriptures">Tra cứu</button><button type="button" data-dharma-nav="schedule">Lịch tu học</button><button type="button" data-dharma-nav="accessibility" aria-label="Mở trợ năng">Trợ năng</button></nav>
+        <nav aria-label="Điều hướng nhanh"><button type="button" data-dharma-nav="today">Hôm nay</button><button type="button" data-dharma-nav="encyclopedia">Toàn thư</button><button type="button" data-dharma-nav="schedule">Lịch tu học</button><button type="button" data-dharma-nav="accessibility" aria-label="Mở trợ năng">Trợ năng</button></nav>
         <label class="dharma-search"><span>⌕</span><input type="search" data-dharma-search aria-label="Tìm giáo lý, kinh điển và thuật ngữ" placeholder="Tìm…" autocomplete="off"><kbd>Ctrl K</kbd></label>
         <button class="dharma-aura-control" type="button" data-dharma-aura title="Đổi chế độ hiệu ứng trang nghiêm"><i>${aura.icon}</i><span>Hiệu ứng</span><b data-dharma-aura-label>${aura.label}</b></button>
         <button class="dharma-topbar__progress" type="button" data-dharma-toggle-progress aria-expanded="false"><span>Hành trình</span><b data-dharma-progress-percent>0%</b></button>
@@ -400,7 +585,7 @@
         <aside class="dharma-progress" data-dharma-progress-panel aria-hidden="true"><header><span><small data-inspector-kicker>THÔNG TIN THEO NGỮ CẢNH</small><strong data-inspector-title>Hành trình tu học</strong></span><button type="button" data-dharma-toggle-progress aria-label="Đóng bảng thông tin">×</button></header><div data-dharma-progress-content></div></aside>
       </div>
       <footer class="dharma-actionbar"><ol aria-label="Luồng học"><li class="is-active"><i>1</i>Nghe</li><li><i>2</i>Đọc</li><li><i>3</i>Suy ngẫm</li><li><i>4</i>Thực hành</li><li><i>5</i>Ghi nhận</li></ol><nav aria-label="Thao tác nhanh"><button type="button" data-action-note title="Mở ghi chú">記 <span>Ghi chú</span></button><button type="button" data-action-mark title="Đánh dấu tài liệu đang đọc">☆ <span>Đánh dấu</span></button><button type="button" data-action-static title="Chuyển về chế độ tĩnh">◐ <span>Tĩnh tâm</span></button></nav><button type="button" data-dharma-primary>${activeView === "practice" ? "Bắt đầu thực hành" : "Tiếp tục hành trình"} →</button></footer>
-      <nav class="dharma-mobile-nav" aria-label="Điều hướng Phật Pháp trên điện thoại"><button data-dharma-nav="today"><i>灯</i>Hôm nay</button><button data-dharma-nav="scriptures"><i>經</i>Kinh</button><button data-dharma-nav="practice"><i>禪</i>Thiền</button><button data-dharma-nav="temple"><i>寺</i>Chùa</button><button data-dharma-mobile-menu><i>☰</i>Thêm</button></nav>
+      <nav class="dharma-mobile-nav" aria-label="Điều hướng Phật Pháp trên điện thoại"><button data-dharma-nav="today"><i>灯</i>Hôm nay</button><button data-dharma-nav="encyclopedia"><i>藏</i>Toàn thư</button><button data-dharma-nav="practice"><i>禪</i>Thiền</button><button data-dharma-nav="temple"><i>寺</i>Chùa</button><button data-dharma-mobile-menu><i>☰</i>Thêm</button></nav>
       <div class="dharma-mobile-sheet" data-dharma-mobile-sheet hidden><button type="button" data-dharma-mobile-menu aria-label="Đóng"></button><div><i></i><header><strong>Toàn bộ chức năng</strong><button type="button" data-dharma-mobile-menu>×</button></header>${navMarkup()}</div></div>
     </section>`;
   }
@@ -435,7 +620,7 @@
     if (kicker) kicker.textContent = "TIẾN ĐỘ RIÊNG TƯ";
     const nextLesson = LESSONS.find((item) => !state.completedLessons.includes(item.id));
     panel.innerHTML = `<section class="dharma-progress-ring" style="--progress:${percent * 3.6}deg"><div><strong>${percent}%</strong><small>${stats.lessons}/${LESSONS.length} bài nền tảng</small></div></section>
-      <section class="dharma-stat-list"><p><i>讀</i><span><strong>${stats.bookmarks}</strong><small>Kinh/bài đã lưu</small></span></p><p><i>禪</i><span><strong>${stats.practice}</strong><small>Phút thực hành</small></span></p><p><i>念</i><span><strong>${state.chantCount}</strong><small>Lần niệm đã ghi nhận</small></span></p></section>
+      <section class="dharma-stat-list"><p><i>藏</i><span><strong>${state.encyclopediaCompleted.length}/${encyclopediaChapters().length}</strong><small>Chương Toàn Thư đã đọc</small></span></p><p><i>讀</i><span><strong>${stats.bookmarks + state.encyclopediaBookmarks.length}</strong><small>Kinh/chương đã lưu</small></span></p><p><i>禪</i><span><strong>${stats.practice}</strong><small>Phút thực hành</small></span></p><p><i>念</i><span><strong>${state.chantCount}</strong><small>Lần niệm đã ghi nhận</small></span></p></section>
       <section class="dharma-next"><small>Gợi ý tiếp theo</small><strong>${safe(nextLesson?.title || "Duy trì thời khóa nhẹ nhàng")}</strong><p>${nextLesson ? `${nextLesson.duration} phút · ${nextLesson.tradition}` : "Bạn đã hoàn thành lộ trình nền tảng."}</p><button type="button" data-dharma-next-lesson="${nextLesson?.id || ""}">${nextLesson ? "Mở bài tiếp theo" : "Mở thực hành"} →</button></section>
       <section class="dharma-privacy-note"><span>⌾</span><p><strong>Dữ liệu thuộc về bạn</strong><small>Tiến độ lưu trên thiết bị. Nhật ký chỉ mở sau khi nhập PIN riêng.</small></p></section>`;
   }
@@ -474,6 +659,64 @@
     return `<span class="dharma-source-badge" title="${safe(source.note)}"><i>✓</i>${safe(source.organization)}</span>`;
   }
 
+  function encyclopediaChapters() {
+    return DHARMA_ENCYCLOPEDIA.flatMap((volume) => volume.chapters.map((chapter) => ({ ...chapter, volumeId: volume.id, volumeTitle: volume.title, volumeIcon: volume.icon })));
+  }
+
+  function encyclopediaChapterById(id) {
+    return encyclopediaChapters().find((chapter) => chapter.id === id) || encyclopediaChapters()[0];
+  }
+
+  function encyclopediaCatalogMarkup() {
+    const all = encyclopediaChapters();
+    const completed = state.encyclopediaCompleted.length;
+    const current = encyclopediaChapterById(selectedEncyclopediaChapter || state.encyclopediaPosition.chapter);
+    return `<section class="dharma-encyclopedia-cover dharma-paper-card"><div><small>PHẬT PHÁP TOÀN THƯ · 佛法入門</small><h2>Đọc trọn nội dung ngay tại đây</h2><p>Bảy quyển, ${all.length} chương được HH biên soạn bằng tiếng Việt rõ ràng. Mỗi chương phân biệt nội dung tóm lược, ứng dụng, ghi chú cá nhân và tài liệu kiểm chứng; không yêu cầu mở một thư viện khác để hiểu bài.</p><div><span><b>7</b> quyển chủ đề</span><span><b>${all.length}</b> chương trực tiếp</span><span><b>${completed}</b> chương đã đọc</span></div><button class="dharma-primary" type="button" data-encyclopedia-open="${safe(current.id)}">Đọc tiếp: ${safe(current.title)} →</button></div><aside aria-label="Cam kết biên tập"><i>藏</i><strong>Nội dung có ranh giới rõ</strong><p>HH biên soạn không phải nguyên văn kinh. Nguồn và giấy phép được đặt cuối mỗi chương để kiểm chứng khi cần.</p></aside></section>
+      <section class="dharma-encyclopedia-principles" aria-label="Nguyên tắc Toàn Thư"><article><i>讀</i><span><strong>Đọc tại chỗ</strong><small>Nội dung cốt lõi luôn hiển thị đầy đủ</small></span></article><article><i>證</i><span><strong>Có nguồn</strong><small>Không tự tạo mã kinh hoặc lời Phật dạy</small></span></article><article><i>記</i><span><strong>Ghi chú riêng</strong><small>Lưu cục bộ theo tài khoản trên thiết bị</small></span></article><article><i>安</i><span><strong>An toàn</strong><small>Không phán nghiệp, chữa bệnh hay định số phận</small></span></article></section>
+      <div class="dharma-section-title"><div><small>ĐẠI TẠNG HƯỚNG DẪN</small><h2>Mục lục đầy đủ</h2></div><label class="dharma-encyclopedia-search"><span>⌕</span><input type="search" data-encyclopedia-search value="${safe(encyclopediaQuery)}" placeholder="Tìm trong 28 chương…" aria-label="Tìm trong Phật Pháp Toàn Thư"></label></div>
+      <section class="dharma-encyclopedia-volumes">${DHARMA_ENCYCLOPEDIA.map((volume, volumeIndex) => {
+        const chapters = volume.chapters.filter((chapter) => !encyclopediaQuery || normalize(`${chapter.title} ${chapter.intro} ${chapter.sections.map((section) => `${section.title} ${section.body}`).join(" ")} ${chapter.terms.join(" ")}`).includes(normalize(encyclopediaQuery)));
+        if (!chapters.length) return "";
+        const done = volume.chapters.filter((chapter) => state.encyclopediaCompleted.includes(chapter.id)).length;
+        return `<article class="dharma-encyclopedia-volume"><header><span>${safe(volume.icon)}</span><div><small>QUYỂN ${String(volumeIndex + 1).padStart(2, "0")} · ${done}/${volume.chapters.length} ĐÃ ĐỌC</small><h3>${safe(volume.title.replace(/^Quyển [^·]+ · /, ""))}</h3><p>${safe(volume.description)}</p></div></header><ol>${chapters.map((chapter) => `<li><button type="button" data-encyclopedia-open="${safe(chapter.id)}" class="${state.encyclopediaCompleted.includes(chapter.id) ? "is-complete" : ""}"><i>${state.encyclopediaCompleted.includes(chapter.id) ? "✓" : String(volume.chapters.indexOf(chapter) + 1).padStart(2, "0")}</i><span><strong>${safe(chapter.title)}</strong><small>${chapter.minutes} phút · ${safe(chapter.intro)}</small></span><b>Đọc →</b></button></li>`).join("")}</ol></article>`;
+      }).join("") || '<div class="dharma-empty"><span>⌕</span><strong>Chưa tìm thấy chương phù hợp</strong><p>Thử tìm “chánh niệm”, “đi chùa”, “nghiệp”, “gia đình” hoặc “kinh điển”.</p></div>'}</section>`;
+  }
+
+  function encyclopediaReaderMarkup(chapter) {
+    const all = encyclopediaChapters();
+    const index = all.findIndex((item) => item.id === chapter.id);
+    const previous = all[index - 1];
+    const next = all[index + 1];
+    const volume = DHARMA_ENCYCLOPEDIA.find((item) => item.id === chapter.volumeId) || DHARMA_ENCYCLOPEDIA[0];
+    const isBookmarked = state.encyclopediaBookmarks.includes(chapter.id);
+    const isComplete = state.encyclopediaCompleted.includes(chapter.id);
+    const note = state.encyclopediaNotes[chapter.id] || "";
+    const sourceCards = chapter.sourceIds.map((sourceId) => sourceById(sourceId));
+    return `<section class="dharma-encyclopedia-reader" data-reader-mode="${safe(state.encyclopediaReader.mode)}">
+      <header class="dharma-encyclopedia-toolbar"><button type="button" data-encyclopedia-catalog>☰ <span>Tất cả quyển</span></button><div><small>${safe(volume.title)}</small><strong>${index + 1}/${all.length} chương</strong></div><nav aria-label="Tùy chọn đọc"><button type="button" data-encyclopedia-font="down" aria-label="Giảm cỡ chữ">A−</button><button type="button" data-encyclopedia-font="up" aria-label="Tăng cỡ chữ">A+</button><button type="button" data-encyclopedia-mode>${state.encyclopediaReader.mode === "focus" ? "Giấy ngà" : "Tập trung"}</button></nav></header>
+      <div class="dharma-encyclopedia-reader__grid">
+        <aside class="dharma-encyclopedia-toc" aria-label="Mục lục Toàn Thư"><small>MỤC LỤC TOÀN THƯ</small>${DHARMA_ENCYCLOPEDIA.map((book) => `<details ${book.id === chapter.volumeId ? "open" : ""}><summary><i>${safe(book.icon)}</i><span>${safe(book.title)}</span><b>${book.chapters.filter((item) => state.encyclopediaCompleted.includes(item.id)).length}/${book.chapters.length}</b></summary><div>${book.chapters.map((item) => `<button type="button" data-encyclopedia-open="${safe(item.id)}" class="${item.id === chapter.id ? "is-active" : ""}"><i>${state.encyclopediaCompleted.includes(item.id) ? "✓" : "·"}</i><span>${safe(item.title)}</span></button>`).join("")}</div></details>`).join("")}</aside>
+        <article class="dharma-encyclopedia-page dharma-paper-card">
+          <header><span class="dharma-manuscript-label">HH BIÊN SOẠN · KHÔNG PHẢI NGUYÊN VĂN KINH</span><small>${safe(volume.subtitle)} · ${chapter.minutes} phút đọc</small><h2>${safe(chapter.title)}</h2><p class="dharma-encyclopedia-lead">${safe(chapter.intro)}</p><div><button type="button" data-encyclopedia-bookmark="${safe(chapter.id)}">${isBookmarked ? "★ Đã đánh dấu" : "☆ Đánh dấu"}</button><button type="button" data-encyclopedia-copy-link="${safe(chapter.id)}">Sao chép liên kết chương</button></div></header>
+          <nav class="dharma-chapter-inline-toc" aria-label="Trong chương"><strong>Trong chương</strong>${chapter.sections.map((section, sectionIndex) => `<button type="button" data-encyclopedia-anchor="chapter-${safe(chapter.id)}-${sectionIndex}"><i>${sectionIndex + 1}</i>${safe(section.title)}</button>`).join("")}</nav>
+          ${chapter.sections.map((section, sectionIndex) => `<section id="chapter-${safe(chapter.id)}-${sectionIndex}" class="dharma-encyclopedia-section"><small>PHẦN ${String(sectionIndex + 1).padStart(2, "0")}</small><h3>${safe(section.title)}</h3><p>${safe(section.body)}</p></section>`).join("")}
+          <section class="dharma-encyclopedia-application"><span>行</span><div><small>ĐƯA VÀO ĐỜI SỐNG</small><h3>Một thực hành vừa sức</h3><p>${safe(chapter.practice)}</p></div></section>
+          <section class="dharma-encyclopedia-reflection"><span>心</span><div><small>CÂU HỎI SUY NGẪM</small><p>${safe(chapter.reflection)}</p></div></section>
+          <section class="dharma-encyclopedia-note"><header><div><small>GHI CHÚ CÁ NHÂN</small><h3>Điều tôi hiểu và muốn kiểm nghiệm</h3></div><span>Lưu trên thiết bị</span></header><textarea data-encyclopedia-note="${safe(chapter.id)}" maxlength="6000" placeholder="Viết bằng lời của bạn; đây không phải chú giải kinh điển…">${safe(note)}</textarea><p>Ghi chú này thuộc về bạn và không được trộn vào phần HH biên soạn.</p></section>
+          <footer class="dharma-encyclopedia-sources"><header><small>NGUỒN & GIẤY PHÉP</small><h3>Kiểm chứng sau khi đã đọc nội dung chính</h3><p>Liên kết nguồn nằm ở cuối để không cắt mạch đọc. Mỗi bản dịch bên thứ ba có thể có giấy phép riêng; HH không sao chép bản dịch chưa rõ quyền.</p></header>${sourceCards.map((source) => `<article><span>證</span><div><strong>${safe(source.organization)}</strong><small>${safe(source.status)} · ${safe(source.note)}</small></div><a href="${safe(source.url)}" target="_blank" rel="noopener noreferrer">Xem nguồn ↗</a></article>`).join("")}</footer>
+          <nav class="dharma-encyclopedia-pagination" aria-label="Chuyển chương"><button type="button" data-encyclopedia-open="${safe(previous?.id || "")}" ${previous ? "" : "disabled"}>← <span><small>Chương trước</small><strong>${safe(previous?.title || "Đây là chương đầu")}</strong></span></button><button class="is-complete" type="button" data-encyclopedia-complete="${safe(chapter.id)}">${isComplete ? "✓ Đã đọc xong" : "Đánh dấu đã đọc"}</button><button type="button" data-encyclopedia-open="${safe(next?.id || "")}" ${next ? "" : "disabled"}><span><small>Chương tiếp</small><strong>${safe(next?.title || "Đây là chương cuối")}</strong></span> →</button></nav>
+        </article>
+        <aside class="dharma-encyclopedia-outline" aria-label="Thông tin chương"><section><small>TRONG CHƯƠNG</small>${chapter.sections.map((section, sectionIndex) => `<button type="button" data-encyclopedia-anchor="chapter-${safe(chapter.id)}-${sectionIndex}"><i>${sectionIndex + 1}</i><span>${safe(section.title)}</span></button>`).join("")}</section><section><small>THUẬT NGỮ</small><div>${chapter.terms.map((term) => `<button type="button" data-encyclopedia-term="${safe(term)}">${safe(term)}</button>`).join("")}</div></section><section class="dharma-reading-boundary"><small>RANH GIỚI NỘI DUNG</small><p><b>HH biên soạn:</b> phần giải thích đang đọc.</p><p><b>Nguồn:</b> tài liệu đối chiếu ở cuối chương.</p><p><b>Cá nhân:</b> ghi chú chỉ lưu trên thiết bị.</p></section></aside>
+      </div></section>`;
+  }
+
+  function encyclopediaMarkup() {
+    if (encyclopediaCatalogOpen) return encyclopediaCatalogMarkup();
+    const chapter = encyclopediaChapterById(selectedEncyclopediaChapter || state.encyclopediaPosition.chapter);
+    selectedEncyclopediaChapter = chapter.id;
+    return encyclopediaReaderMarkup(chapter);
+  }
+
   function todayMarkup() {
     const next = LESSONS.find((item) => !state.completedLessons.includes(item.id)) || LESSONS[0];
     const daily = state.routineProgress[todayKey()] || {};
@@ -486,7 +729,7 @@
     return `<section class="dharma-hero dharma-paper-card"><div class="dharma-hero__copy"><p class="dharma-kicker"><i></i>THỜI KHÓA HÔM NAY · ${safe(new Intl.DateTimeFormat("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" }).format(new Date()))}</p><h2>Mỗi ngày một bước tỉnh thức</h2><p>Học vừa đủ, thực hành thật và ghi nhận bằng sự thành thật. Không chạy theo thành tích hay so sánh với người khác.</p><div class="dharma-hero__meta"><span><b>${state.studySchedule.minutes}</b> phút dự kiến</span><span><b>${Object.values(daily).filter(Boolean).length}/4</b> việc đã làm</span><span><b>${state.studySchedule.time}</b> giờ nhắc</span></div><button class="dharma-primary" type="button" data-open-lesson="${next.id}">Bắt đầu bài hôm nay →</button></div><figure class="dharma-buddha-portrait"><span aria-hidden="true"></span><img src="assets/phat-phap/duc-phat-hao-quang-v1.webp" width="1536" height="1024" loading="eager" decoding="async" alt="Tranh minh họa Đức Phật Thích Ca tọa thiền trên tòa sen trong hào quang vàng"><figcaption>Hình minh họa nguyên bản · Không đại diện một pho tượng cụ thể</figcaption></figure></section>
       <div class="dharma-section-title"><div><small>15 PHÚT TĨNH TÂM</small><h2>Thời khóa rõ ràng, không quá tải</h2></div><button type="button" data-dharma-schedule>Chỉnh thời khóa</button></div>
       <section class="dharma-routine">${routine.map((item, index) => `<button type="button" data-routine="${item.id}" class="${daily[item.id] ? "is-done" : ""}"><i>${daily[item.id] ? "✓" : index + 1}</i><span><strong>${safe(item.label)}</strong><small>${item.minutes} phút</small></span><b>${daily[item.id] ? "Đã ghi nhận" : "Bắt đầu"}</b></button>`).join("")}</section>
-      <section class="dharma-split"><article class="dharma-paper-card dharma-daily-reading"><header><span>經</span><div><small>TÓM LƯỢC KINH ĐIỂN</small><h3>${SCRIPTURES[0].title}</h3></div>${sourceBadge(SCRIPTURES[0].sourceId)}</header><p>${SCRIPTURES[0].summary}</p><footer><button type="button" data-open-scripture="${SCRIPTURES[0].id}">Đọc trong thư viện</button><a href="${SCRIPTURES[0].sourceUrl}" target="_blank" rel="noopener noreferrer">Mở nguồn gốc ↗</a></footer></article>
+      <section class="dharma-split"><article class="dharma-paper-card dharma-daily-reading"><header><span>藏</span><div><small>ĐỌC TRỰC TIẾP TRONG TOÀN THƯ</small><h3>Tứ Diệu Đế: bốn việc cần thực hiện</h3></div>${sourceBadge(SCRIPTURES[0].sourceId)}</header><p>Nội dung tiếng Việt đầy đủ gồm phần giải thích, ứng dụng đời sống, câu hỏi suy ngẫm và nguồn ở cuối chương. Bạn không cần mở một thư viện khác để hiểu bài.</p><footer><button type="button" data-encyclopedia-open="toan-thu-tu-dieu-de">Đọc đầy đủ tại đây</button><button type="button" data-dharma-nav="encyclopedia">Xem 7 quyển · 28 chương</button></footer></article>
       <article class="dharma-paper-card dharma-kindness"><span class="dharma-lamp-icon">灯</span><small>VIỆC THIỆN GỢI Ý</small><h3>Lắng nghe mà không vội phán xét</h3><p>Dành một cuộc trò chuyện hôm nay để nghe hết câu, hỏi lại điều chưa rõ và không biến việc tốt thành thành tích công khai.</p><button type="button" data-routine="kindness">${daily.kindness ? "✓ Đã ghi nhận" : "Ghi nhận sau khi thực hiện"}</button></article></section>`;
   }
 
@@ -506,6 +749,7 @@
     const source = sourceById(lesson.sourceId);
     const complete = state.completedLessons.includes(lesson.id);
     const relatedScripture = SCRIPTURES.find((item) => item.parallelIds?.includes(lesson.id)) || SCRIPTURES.find((item) => normalize(`${item.summary} ${item.keywords}`).includes(normalize(lesson.title.split(" ")[0])));
+    const relatedEncyclopediaId = ({ "duc-phat": "duc-phat-lich-su", "tam-bao": "tam-bao-quy-y", "tu-dieu-de": "toan-thu-tu-dieu-de", "bat-chanh-dao": "toan-thu-bat-chanh-dao", "ngu-gioi": "ngu-gioi-bao-ho", "nhan-qua": "vo-thuong-duyen-khoi-nghiep", "thien-hoi-tho": "thien-hoi-tho-than", "niem-phat": "niem-phat-tung-niem", "di-chua": "di-chua-trang-nghiem", "thoi-khoa": "thoi-khoa-an-toan" })[lesson.id] || "hoc-hanh-kiem-nghiem";
     return `<button class="dharma-back" type="button" data-back-list="beginner">← Trở lại lộ trình</button><article class="dharma-lesson dharma-paper-card"><header><span>${String(lesson.order).padStart(2, "0")}</span><div><small>${safe(lesson.tradition)} · ${lesson.duration} PHÚT</small><h2>${safe(lesson.title)}</h2></div>${sourceBadge(lesson.sourceId)}</header><ol class="dharma-lesson-flow"><li><i>1</i><span><small>Ý NGHĨA DỄ HIỂU</small><p>${safe(lesson.summary)}</p></span></li><li><i>2</i><span><small>ĐOẠN KINH LIÊN QUAN</small><p>${relatedScripture ? `${safe(relatedScripture.title)} · ${safe(relatedScripture.code)}. HH chỉ dẫn tới tài liệu nguồn, không chép bản dịch chưa rõ quyền.` : "Chưa ghép một tài liệu nguồn đủ phù hợp; hãy dùng Tra cứu để kiểm tra thêm."}</p>${relatedScripture ? `<button type="button" data-open-scripture="${relatedScripture.id}">Mở trong Study Lab →</button>` : ""}</span></li><li><i>3</i><span><small>BỐI CẢNH & NGUỒN</small><p>${safe(source.note)}</p><button type="button" data-open-provenance="${relatedScripture?.id || ""}" ${relatedScripture ? "" : "disabled"}>Xem thẻ minh bạch</button></span></li><li><i>4</i><span><small>ĐƯA VÀO ĐỜI SỐNG</small><p>${safe(lesson.practice)}</p><button type="button" data-dharma-nav="practice">Mở thiền đường</button></span></li><li><i>5</i><span><small>TỰ SUY NGẪM</small><p>Điều gì trong bài này có thể được kiểm nghiệm bằng một thay đổi nhỏ, lành mạnh và không gây hại trong hôm nay?</p></span></li><li><i>6</i><label class="dharma-note"><span>GHI CHÚ CÁ NHÂN</span><textarea data-lesson-note="${lesson.id}" maxlength="2000" placeholder="Viết điều bạn hiểu hoặc muốn áp dụng…">${safe(note)}</textarea><small>Ghi chú học tập lưu trên thiết bị này.</small></label></li></ol><footer><a href="${safe(source.url)}" target="_blank" rel="noopener noreferrer">Kiểm tra nguồn · ${safe(source.organization)} ↗</a><button class="dharma-primary" type="button" data-complete-lesson="${lesson.id}">${complete ? "✓ Đã hoàn thành" : "Hoàn thành bài học"}</button></footer></article>`;
   }
 
@@ -727,6 +971,7 @@
   }
 
   function viewMarkup() {
+    if (activeView === "encyclopedia") return encyclopediaMarkup();
     if (activeView === "beginner") return beginnerMarkup();
     if (activeView === "situations") return situationsMarkup();
     if (activeView === "teachings") return teachingsMarkup();
@@ -781,7 +1026,7 @@
     const primary = root.querySelector("[data-dharma-primary]");
     if (primary) {
       const groundingNeeded = activeView === "practice" && state.meditation.checkIn === "overwhelmed" && !timerRunning;
-      primary.innerHTML = groundingNeeded ? "Mở hướng dẫn ổn định →" : activeView === "practice" ? `${timerRunning ? "Tạm dừng" : "Bắt đầu thiền"} →` : activeView === "scriptures" ? "Tiếp tục đọc →" : activeView === "chanting" ? "Bắt đầu tụng đọc →" : activeView === "audio" ? `${audioStudyPlaying ? "Tạm dừng" : "Bắt đầu nghe"} →` : activeView === "review" ? "Ôn nội dung tiếp theo →" : activeView === "data-control" ? "Sao lưu dữ liệu →" : "Tiếp tục hành trình →";
+      primary.innerHTML = groundingNeeded ? "Mở hướng dẫn ổn định →" : activeView === "practice" ? `${timerRunning ? "Tạm dừng" : "Bắt đầu thiền"} →` : activeView === "encyclopedia" ? "Đọc chương tiếp theo →" : activeView === "scriptures" ? "Tiếp tục đọc →" : activeView === "chanting" ? "Bắt đầu tụng đọc →" : activeView === "audio" ? `${audioStudyPlaying ? "Tạm dừng" : "Bắt đầu nghe"} →` : activeView === "review" ? "Ôn nội dung tiếp theo →" : activeView === "data-control" ? "Sao lưu dữ liệu →" : "Tiếp tục hành trình →";
       primary.toggleAttribute("data-grounding", groundingNeeded);
     }
     updateProgressPanel();
@@ -876,7 +1121,8 @@
     const scriptureMatches = SCRIPTURES.filter((item) => normalize(`${item.title} ${item.summary} ${item.keywords}`).includes(term)).map((item) => ({ type: "Kinh điển", title: item.title, detail: item.collection, action: "scripture", id: item.id }));
     const glossaryMatches = GLOSSARY.filter((item) => normalize(`${item.pali} ${item.sanskrit} ${item.han} ${item.hanViet} ${item.vietnamese}`).includes(term)).map((item) => ({ type: "Thuật ngữ", title: item.hanViet, detail: `${item.pali} · ${item.han}`, action: "glossary", id: item.id }));
     const journeyMatches = LIFE_JOURNEYS.filter((item) => normalize(`${item.title} ${item.recognize} ${item.practice}`).includes(term)).map((item) => ({ type: "Đời sống", title: item.title, detail: "Hành trình thực hành", action: "situation", id: item.id }));
-    return [...lessonMatches, ...teachingMatches, ...scriptureMatches, ...glossaryMatches, ...journeyMatches].slice(0, 10);
+    const encyclopediaMatches = encyclopediaChapters().filter((item) => normalize(`${item.title} ${item.intro} ${item.sections.map((section) => `${section.title} ${section.body}`).join(" ")} ${item.terms.join(" ")}`).includes(term)).map((item) => ({ type: "Phật Pháp Toàn Thư", title: item.title, detail: item.volumeTitle, action: "encyclopedia", id: item.id }));
+    return [...encyclopediaMatches, ...lessonMatches, ...teachingMatches, ...scriptureMatches, ...glossaryMatches, ...journeyMatches].slice(0, 10);
   }
 
   function showSearchResults(input) {
@@ -1286,6 +1532,56 @@
     }
     const nav = event.target.closest("[data-dharma-nav]");
     if (nav) return navigate(nav.dataset.dharmaNav);
+    const encyclopediaOpen = event.target.closest("[data-encyclopedia-open]");
+    if (encyclopediaOpen && encyclopediaOpen.dataset.encyclopediaOpen) {
+      const chapter = encyclopediaChapterById(encyclopediaOpen.dataset.encyclopediaOpen);
+      selectedEncyclopediaChapter = chapter.id;
+      encyclopediaCatalogOpen = false;
+      state.encyclopediaPosition = { volume: chapter.volumeId, chapter: chapter.id, updatedAt: new Date().toISOString() };
+      saveState();
+      activeView = "encyclopedia";
+      renderView();
+      return;
+    }
+    if (event.target.closest("[data-encyclopedia-catalog]")) { encyclopediaCatalogOpen = true; renderView(); return; }
+    const encyclopediaBookmark = event.target.closest("[data-encyclopedia-bookmark]");
+    if (encyclopediaBookmark) {
+      const id = encyclopediaBookmark.dataset.encyclopediaBookmark;
+      const existed = state.encyclopediaBookmarks.includes(id);
+      state.encyclopediaBookmarks = existed ? state.encyclopediaBookmarks.filter((item) => item !== id) : unique([...state.encyclopediaBookmarks, id]);
+      saveState(); renderView({ preserveScroll: true }); toast(existed ? "Đã bỏ đánh dấu chương." : "Đã đánh dấu chương trong Toàn Thư."); return;
+    }
+    const encyclopediaComplete = event.target.closest("[data-encyclopedia-complete]");
+    if (encyclopediaComplete) {
+      const id = encyclopediaComplete.dataset.encyclopediaComplete;
+      const existed = state.encyclopediaCompleted.includes(id);
+      state.encyclopediaCompleted = existed ? state.encyclopediaCompleted.filter((item) => item !== id) : unique([...state.encyclopediaCompleted, id]);
+      saveState(); renderView({ preserveScroll: true }); toast(existed ? "Đã bỏ trạng thái đọc xong." : "Đã ghi nhận chương đã đọc; không tạo điểm tâm linh."); return;
+    }
+    const encyclopediaAnchor = event.target.closest("[data-encyclopedia-anchor]");
+    if (encyclopediaAnchor) { root.querySelector(`#${CSS.escape(encyclopediaAnchor.dataset.encyclopediaAnchor)}`)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); return; }
+    const encyclopediaTerm = event.target.closest("[data-encyclopedia-term]");
+    if (encyclopediaTerm) {
+      const match = GLOSSARY.find((item) => normalize(`${item.pali} ${item.sanskrit} ${item.hanViet} ${item.vietnamese}`).includes(normalize(encyclopediaTerm.dataset.encyclopediaTerm)));
+      if (match) { selectedGlossary = match.id; navigate("glossary"); }
+      else toast(`“${encyclopediaTerm.dataset.encyclopediaTerm}” đang được giải thích trong chính chương này; từ điển chi tiết sẽ tiếp tục được biên tập.`);
+      return;
+    }
+    const encyclopediaFont = event.target.closest("[data-encyclopedia-font]");
+    if (encyclopediaFont) {
+      const delta = encyclopediaFont.dataset.encyclopediaFont === "up" ? 1 : -1;
+      state.accessibility = { ...state.accessibility, readerSize: Math.max(18, Math.min(24, Number(state.accessibility.readerSize) + delta)) };
+      saveState(); renderView({ preserveScroll: true }); return;
+    }
+    if (event.target.closest("[data-encyclopedia-mode]")) {
+      state.encyclopediaReader = { ...state.encyclopediaReader, mode: state.encyclopediaReader.mode === "focus" ? "paper" : "focus" };
+      saveState(); renderView({ preserveScroll: true }); return;
+    }
+    const copyEncyclopedia = event.target.closest("[data-encyclopedia-copy-link]");
+    if (copyEncyclopedia) {
+      const url = `${location.origin}${location.pathname}#/phat-phap/encyclopedia?chapter=${encodeURIComponent(copyEncyclopedia.dataset.encyclopediaCopyLink)}`;
+      navigator.clipboard?.writeText(url).then(() => toast("Đã sao chép liên kết chương.")).catch(() => toast("Trình duyệt chưa cho phép sao chép.", "warning")); return;
+    }
     if (event.target.closest("[data-dharma-aura]")) return cycleAuraMode();
     if (event.target.closest("[data-dharma-toggle-progress]")) {
       const hub = root.querySelector("[data-dharma-hub]");
@@ -1305,8 +1601,16 @@
     }
     if (event.target.closest("[data-dharma-schedule]")) return scheduleDialog();
     if (event.target.closest("[data-dialog-close]")) return event.target.closest("[data-dharma-dialog]")?.remove();
-    if (event.target.closest("[data-action-note]")) return selectedScripture ? openInspector("notes", selectedScripture) : navigate("journal");
+    if (event.target.closest("[data-action-note]")) {
+      if (activeView === "encyclopedia") { root.querySelector("[data-encyclopedia-note]")?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" }); return; }
+      return selectedScripture ? openInspector("notes", selectedScripture) : navigate("journal");
+    }
     if (event.target.closest("[data-action-mark]")) {
+      if (activeView === "encyclopedia") {
+        const id = selectedEncyclopediaChapter || state.encyclopediaPosition.chapter; const existed = state.encyclopediaBookmarks.includes(id);
+        state.encyclopediaBookmarks = existed ? state.encyclopediaBookmarks.filter((item) => item !== id) : unique([...state.encyclopediaBookmarks, id]);
+        saveState(); renderView({ preserveScroll: true }); toast(existed ? "Đã bỏ đánh dấu chương." : "Đã đánh dấu chương trong Toàn Thư."); return;
+      }
       if (!selectedScripture) return toast("Hãy mở một tài liệu trong Study Lab để đánh dấu.", "warning");
       const existed = state.bookmarks.includes(selectedScripture);
       state.bookmarks = existed ? state.bookmarks.filter((item) => item !== selectedScripture) : unique([...state.bookmarks, selectedScripture]);
@@ -1571,6 +1875,7 @@
       if (searchResult.dataset.searchAction === "scripture") { selectedScripture = searchResult.dataset.searchId; activeView = "scriptures"; }
       if (searchResult.dataset.searchAction === "glossary") { selectedGlossary = searchResult.dataset.searchId; activeView = "glossary"; }
       if (searchResult.dataset.searchAction === "situation") { selectedLifePath = searchResult.dataset.searchId; activeView = "situations"; }
+      if (searchResult.dataset.searchAction === "encyclopedia") { const chapter = encyclopediaChapterById(searchResult.dataset.searchId); selectedEncyclopediaChapter = chapter.id; encyclopediaCatalogOpen = false; state.encyclopediaPosition = { volume: chapter.volumeId, chapter: chapter.id, updatedAt: new Date().toISOString() }; saveState(); activeView = "encyclopedia"; }
       root.querySelector("[data-dharma-search-results]")?.remove(); renderView(); return;
     }
     if (event.target.closest("[data-dharma-primary]")) {
@@ -1579,6 +1884,10 @@
       if (activeView === "audio") return toggleAudioStudy();
       if (activeView === "review") { studyReviewReveal = true; renderView({ preserveScroll: true }); return; }
       if (activeView === "data-control") return exportStudyBackup().catch((error) => toast(error?.message || "Không thể tạo gói sao lưu.", "warning"));
+      if (activeView === "encyclopedia") {
+        const all = encyclopediaChapters(); const index = all.findIndex((item) => item.id === selectedEncyclopediaChapter); const next = all[Math.min(all.length - 1, index + 1)];
+        selectedEncyclopediaChapter = next.id; state.encyclopediaPosition = { volume: next.volumeId, chapter: next.id, updatedAt: new Date().toISOString() }; saveState(); renderView(); return;
+      }
       if (activeView === "scriptures") return selectedScripture ? readerMode(SCRIPTURES.find((item) => item.id === selectedScripture)) : (state.recentScripture ? (selectedScripture = state.recentScripture, renderView()) : null);
       return navigate("beginner");
     }
@@ -1586,6 +1895,7 @@
 
   function handleInput(event) {
     if (event.target.matches("[data-dharma-search]")) return showSearchResults(event.target);
+    if (event.target.matches("[data-encyclopedia-search]")) { encyclopediaQuery = event.target.value; encyclopediaCatalogOpen = true; renderView({ preserveScroll: true }); const input = root.querySelector("[data-encyclopedia-search]"); input?.focus({ preventScroll: true }); if (input) input.setSelectionRange(input.value.length, input.value.length); return; }
     if (event.target.matches("[data-scripture-search]")) { scriptureQuery = event.target.value; renderView({ preserveScroll: true }); root.querySelector("[data-scripture-search]")?.focus({ preventScroll: true }); }
     if (event.target.matches("[data-glossary-search]")) {
       const term = normalize(event.target.value);
@@ -1630,6 +1940,8 @@
     if (segmentNote) { state.scriptureSegmentNotes = { ...state.scriptureSegmentNotes, [segmentNote.dataset.scriptureSegmentNote]: segmentNote.value }; saveState(); toast("Đã lưu ghi chú cạnh đoạn."); }
     const lifeNote = event.target.closest("[data-life-note]");
     if (lifeNote) { const previous = state.lifePathProgress[lifeNote.dataset.lifeNote] || {}; state.lifePathProgress = { ...state.lifePathProgress, [lifeNote.dataset.lifeNote]: { ...previous, note: lifeNote.value, updatedAt: new Date().toISOString() } }; saveState(); toast("Đã lưu suy ngẫm trên thiết bị."); }
+    const encyclopediaNote = event.target.closest("[data-encyclopedia-note]");
+    if (encyclopediaNote) { state.encyclopediaNotes = { ...state.encyclopediaNotes, [encyclopediaNote.dataset.encyclopediaNote]: encyclopediaNote.value }; saveState(); toast("Đã lưu ghi chú chương trên thiết bị."); }
     const circlePrivateNote = event.target.closest("[data-circle-private-note]");
     if (circlePrivateNote) { state.circlePrivateNotes = { ...state.circlePrivateNotes, [circlePrivateNote.dataset.circlePrivateNote]: circlePrivateNote.value }; saveState(); toast("Đã lưu ghi chú riêng; nội dung không đi vào lời mời."); }
     const importInput = event.target.closest("[data-import-backup]");
@@ -1732,6 +2044,11 @@
     canEditSources = Boolean(currentUser.isAdmin || roles.some((role) => ["admin", "owner", "editor", "dharma-editor"].includes(role)));
     state = readState();
     activeView = NAV.some((item) => item.id === options.view) ? options.view : "today";
+    const chapterParam = new URLSearchParams((location.hash.split("?")[1] || "").split("#")[0]).get("chapter");
+    const requestedChapter = encyclopediaChapters().find((item) => item.id === chapterParam);
+    selectedEncyclopediaChapter = requestedChapter?.id || state.encyclopediaPosition.chapter || encyclopediaChapters()[0].id;
+    encyclopediaCatalogOpen = false;
+    encyclopediaQuery = "";
     openNavGroup = NAV.find((item) => item.id === activeView)?.group || "Bắt đầu";
     root.innerHTML = shellMarkup();
     if (global.matchMedia("(max-width: 1260px)").matches) root.querySelector("[data-dharma-hub]")?.classList.add("is-progress-closed");
@@ -1762,5 +2079,5 @@
     root = null;
   }
 
-  global.HHPhatPhap = Object.freeze({ VERSION, mount, unmount, lessons: LESSONS, teachings: TEACHINGS, scriptures: SCRIPTURES, sources: SOURCES });
+  global.HHPhatPhap = Object.freeze({ VERSION, mount, unmount, lessons: LESSONS, teachings: TEACHINGS, scriptures: SCRIPTURES, encyclopedia: DHARMA_ENCYCLOPEDIA, sources: SOURCES });
 })(window);

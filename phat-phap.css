@@ -1175,3 +1175,197 @@ body.app-dharma-route .app-mobile-nav { display: none !important; }
 @layer dharma-components {
   .dharma-data-vault .dharma-file-picker{position:relative;display:grid;gap:5px;margin-top:11px;color:#69492f;font-size:10px;font-weight:800;cursor:pointer}.dharma-data-vault .dharma-file-picker input{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}.dharma-data-vault .dharma-file-picker>span{display:grid;min-height:45px;place-items:center;padding:7px;border:1px dashed #bd9550;border-radius:8px;background:#f8ebd1;color:#684329;font-size:11px}.dharma-data-vault .dharma-file-picker:focus-within>span{outline:3px solid rgba(152,59,34,.25);outline-offset:2px}.dharma-data-vault .dharma-file-picker code{color:#8c351f;font-weight:900}
 }
+
+/* Phật Pháp Toàn Thư v5 · nội dung đọc trực tiếp, không phụ thuộc thư viện */
+@layer dharma-components {
+  .dharma-hub[data-view="encyclopedia"] .dharma-content { width:min(100%,1480px); padding-inline:clamp(14px,1.8vw,28px); }
+  .dharma-encyclopedia-cover { position:relative; display:grid; grid-template-columns:minmax(0,1.5fr) minmax(260px,.55fr); gap:clamp(22px,4vw,58px); min-height:330px; overflow:hidden; padding:clamp(28px,4vw,54px); border:1px solid #b57b20; border-radius:3px; background:linear-gradient(135deg,rgba(255,252,238,.98),rgba(244,224,181,.96)); box-shadow:inset 0 0 0 5px #f6e5bd,inset 0 0 0 7px rgba(141,77,25,.34),0 22px 48px rgba(83,43,11,.13); }
+  .dharma-encyclopedia-cover::before,.dharma-encyclopedia-cover::after { content:""; position:absolute; pointer-events:none; }
+  .dharma-encyclopedia-cover::before { inset:13px; border:1px solid rgba(142,72,22,.28); }
+  .dharma-encyclopedia-cover::after { top:0; left:8%; width:84%; height:3px; background:linear-gradient(90deg,transparent,#9b361f 17%,#f2ce68 50%,#9b361f 83%,transparent); }
+  .dharma-encyclopedia-cover > div { position:relative; z-index:1; align-self:center; min-width:0; }
+  .dharma-encyclopedia-cover > div > small,.dharma-encyclopedia-volume header small { color:#8d4a18; font-size:11px; font-weight:900; letter-spacing:.14em; }
+  .dharma-encyclopedia-cover h2 { max-width:760px; margin:10px 0 12px; color:#3a2112; font:700 clamp(34px,4.3vw,58px)/1.08 Georgia,"Times New Roman",serif; letter-spacing:-.035em; text-wrap:balance; }
+  .dharma-encyclopedia-cover > div > p { max-width:770px; margin:0; color:#65472f; font:400 clamp(17px,1.3vw,20px)/1.8 "Times New Roman",Georgia,serif; }
+  .dharma-encyclopedia-cover > div > div { display:flex; flex-wrap:wrap; gap:9px; margin:23px 0; }
+  .dharma-encyclopedia-cover > div > div span { display:flex; align-items:baseline; gap:7px; min-height:40px; padding:8px 12px; border:1px solid rgba(142,78,24,.25); background:rgba(255,250,232,.72); color:#75553a; font-size:12px; }
+  .dharma-encyclopedia-cover > div > div b { color:#8e351f; font:700 20px Georgia,serif; }
+  .dharma-encyclopedia-cover .dharma-primary { min-height:50px; padding:0 21px; font-size:14px; }
+  .dharma-encyclopedia-cover > aside { position:relative; z-index:1; align-self:center; display:grid; justify-items:center; padding:27px 22px; border:1px solid rgba(139,70,20,.34); background:rgba(116,44,20,.055); color:#53341f; text-align:center; }
+  .dharma-encyclopedia-cover > aside::before { content:""; position:absolute; inset:7px; border:1px solid rgba(180,126,37,.22); }
+  .dharma-encyclopedia-cover > aside i { display:grid; width:84px; height:84px; place-items:center; border:2px solid #ab6f20; border-radius:50%; background:radial-gradient(circle,#fff2b5 0 18%,#c48624 66%,#8d341f); box-shadow:0 0 0 7px rgba(212,160,23,.09),0 0 34px rgba(212,160,23,.24); color:#fff0a8; font:700 38px Georgia,serif; font-style:normal; }
+  .dharma-encyclopedia-cover > aside strong { margin-top:17px; color:#4b2c19; font:700 20px Georgia,serif; }
+  .dharma-encyclopedia-cover > aside p { margin:8px 0 0; color:#775d43; font-size:13px; line-height:1.65; }
+  .dharma-encyclopedia-principles { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; margin:11px 0 24px; }
+  .dharma-encyclopedia-principles article { display:grid; grid-template-columns:44px minmax(0,1fr); align-items:center; gap:10px; min-height:82px; padding:12px; border:1px solid #cfad6b; border-radius:2px; background:linear-gradient(145deg,#fffaf0,#edd9af); box-shadow:0 8px 20px rgba(92,55,17,.06); }
+  .dharma-encyclopedia-principles i { display:grid; width:42px; height:42px; place-items:center; border-radius:50%; background:#92361f; color:#f4d777; font:700 18px Georgia,serif; font-style:normal; }
+  .dharma-encyclopedia-principles span { min-width:0; }
+  .dharma-encyclopedia-principles strong { display:block; color:#49301d; font:700 15px Georgia,serif; }
+  .dharma-encyclopedia-principles small { display:block; margin-top:3px; color:#80684a; font-size:11px; line-height:1.45; }
+  .dharma-encyclopedia-search { display:grid; grid-template-columns:20px minmax(190px,310px); align-items:center; gap:6px; min-height:44px; padding:0 12px; border:1px solid #bc8935; border-radius:3px; background:#fff9e8; color:#8e3e20; }
+  .dharma-encyclopedia-search input { width:100%; min-width:0; border:0; outline:0; background:transparent; color:#3e291a; font-size:14px; }
+  .dharma-encyclopedia-volumes { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
+  .dharma-encyclopedia-volume { min-width:0; overflow:hidden; border:1px solid #c49a52; border-radius:3px; background:linear-gradient(145deg,#fffaf0,#f0ddb9); box-shadow:0 12px 30px rgba(87,48,13,.08); }
+  .dharma-encyclopedia-volume > header { display:grid; grid-template-columns:58px minmax(0,1fr); gap:14px; padding:21px; border-bottom:3px double rgba(135,72,25,.27); background:linear-gradient(90deg,rgba(151,57,31,.07),rgba(218,166,54,.08)); }
+  .dharma-encyclopedia-volume > header > span { display:grid; width:56px; height:56px; place-items:center; border:1px solid #b57924; border-radius:50%; background:#943820; color:#f6d778; font:700 25px Georgia,serif; }
+  .dharma-encyclopedia-volume h3 { margin:5px 0; color:#402817; font:700 24px/1.2 Georgia,serif; }
+  .dharma-encyclopedia-volume header p { margin:0; color:#72583b; font-size:13px; line-height:1.55; }
+  .dharma-encyclopedia-volume ol { display:grid; gap:0; margin:0; padding:0; list-style:none; }
+  .dharma-encyclopedia-volume li + li { border-top:1px solid rgba(132,79,31,.14); }
+  .dharma-encyclopedia-volume li button { display:grid; grid-template-columns:36px minmax(0,1fr) auto; align-items:center; width:100%; min-height:92px; gap:11px; padding:13px 17px; border:0; background:rgba(255,253,245,.53); color:#4b301d; text-align:left; }
+  .dharma-encyclopedia-volume li button:hover { background:#fff8e6; }
+  .dharma-encyclopedia-volume li button > i { display:grid; width:34px; height:34px; place-items:center; border:1px solid #c79a44; border-radius:50%; background:#f5e4bf; color:#88371f; font:800 11px sans-serif; font-style:normal; }
+  .dharma-encyclopedia-volume li button.is-complete > i { background:#8e351f; color:#f7dc84; }
+  .dharma-encyclopedia-volume li button span { min-width:0; }
+  .dharma-encyclopedia-volume li button strong { display:block; color:#432918; font:700 16px/1.35 Georgia,serif; }
+  .dharma-encyclopedia-volume li button small { display:-webkit-box; margin-top:4px; overflow:hidden; color:#826b4e; font-size:11px; line-height:1.45; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+  .dharma-encyclopedia-volume li button > b { color:#92391f; font-size:11px; white-space:nowrap; }
+
+  .dharma-encyclopedia-reader { min-width:0; }
+  .dharma-encyclopedia-toolbar { position:sticky; z-index:8; top:65px; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:13px; min-height:58px; margin:-1px 0 10px; padding:7px 10px; border:1px solid #b87f2d; border-radius:3px; background:rgba(80,39,17,.96); box-shadow:0 10px 24px rgba(55,27,9,.16); color:#f7e4b4; backdrop-filter:blur(12px); }
+  .dharma-encyclopedia-toolbar > button,.dharma-encyclopedia-toolbar nav button { min-height:39px; padding:0 11px; border:1px solid rgba(247,215,119,.28); border-radius:2px; background:rgba(255,255,255,.045); color:#f4d67a; font-size:12px; font-weight:800; }
+  .dharma-encyclopedia-toolbar > div { display:grid; min-width:0; }
+  .dharma-encyclopedia-toolbar > div small { overflow:hidden; color:#d6bd8d; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+  .dharma-encyclopedia-toolbar > div strong { color:#fff3cc; font:700 15px Georgia,serif; }
+  .dharma-encyclopedia-toolbar nav { display:flex; gap:5px; }
+  .dharma-encyclopedia-reader__grid { display:grid; grid-template-columns:minmax(180px,210px) minmax(0,1fr) minmax(170px,195px); align-items:start; gap:11px; min-width:0; }
+  .dharma-encyclopedia-toc,.dharma-encyclopedia-outline { position:sticky; top:133px; align-self:start; min-width:0; padding:13px; border:1px solid #c29951; border-radius:2px; background:linear-gradient(160deg,#efe0bf,#e3c896); box-shadow:0 9px 24px rgba(75,41,13,.08); }
+  .dharma-encyclopedia-toc > small,.dharma-encyclopedia-outline section > small { display:block; padding:3px 4px 10px; color:#873b1d; font-size:10px; font-weight:900; letter-spacing:.13em; }
+  .dharma-encyclopedia-toc details { border-top:1px solid rgba(113,64,23,.17); }
+  .dharma-encyclopedia-toc summary { display:grid; grid-template-columns:30px minmax(0,1fr) auto; align-items:center; min-height:48px; gap:7px; color:#50341f; cursor:pointer; list-style:none; }
+  .dharma-encyclopedia-toc summary::-webkit-details-marker { display:none; }
+  .dharma-encyclopedia-toc summary i { display:grid; width:28px; height:28px; place-items:center; border-radius:50%; background:#91351f; color:#f4d477; font:700 13px Georgia,serif; font-style:normal; }
+  .dharma-encyclopedia-toc summary span { font:700 12px/1.35 Georgia,serif; }
+  .dharma-encyclopedia-toc summary b { color:#856a47; font-size:9px; }
+  .dharma-encyclopedia-toc details > div { display:grid; gap:3px; padding:0 0 8px 14px; }
+  .dharma-encyclopedia-toc details button { display:grid; grid-template-columns:18px minmax(0,1fr); align-items:start; gap:5px; min-height:40px; padding:6px; border:1px solid transparent; border-radius:2px; background:transparent; color:#74583a; text-align:left; }
+  .dharma-encyclopedia-toc details button i { color:#9a5125; font-style:normal; }
+  .dharma-encyclopedia-toc details button span { font-size:10px; line-height:1.4; }
+  .dharma-encyclopedia-toc details button.is-active { border-color:#b37b29; background:#fff4d6; color:#552d19; box-shadow:inset 3px 0 #92371f; }
+  .dharma-encyclopedia-page { position:relative; min-width:0; padding:clamp(24px,4.2vw,58px); border:1px solid #b8812e; border-radius:2px; background:linear-gradient(90deg,rgba(112,56,15,.035),transparent 8% 92%,rgba(112,56,15,.035)),linear-gradient(180deg,#fffdf5,#f8edda); box-shadow:inset 0 0 0 6px rgba(239,215,169,.48),0 18px 42px rgba(81,45,13,.12); }
+  .dharma-encyclopedia-page::before { content:""; position:absolute; inset:14px; border:1px solid rgba(139,80,28,.15); pointer-events:none; }
+  .dharma-encyclopedia-page > header { position:relative; padding-bottom:29px; border-bottom:3px double rgba(129,69,23,.28); text-align:center; }
+  .dharma-manuscript-label { display:inline-flex; min-height:27px; align-items:center; padding:4px 9px; border:1px solid #a24b27; background:#92381f; color:#ffe8a1; font-size:9px; font-weight:900; letter-spacing:.12em; }
+  .dharma-encyclopedia-page > header > small { display:block; margin-top:17px; color:#8e591e; font-size:11px; font-weight:850; letter-spacing:.08em; }
+  .dharma-encyclopedia-page h2 { max-width:850px; margin:12px auto 15px; color:#331e12; font:700 clamp(34px,4vw,54px)/1.13 Georgia,"Times New Roman",serif; letter-spacing:-.035em; text-wrap:balance; }
+  .dharma-encyclopedia-lead { max-width:820px; margin:0 auto; color:#624630; font:400 clamp(19px,1.7vw,22px)/1.82 "Times New Roman",Georgia,serif; }
+  .dharma-encyclopedia-page > header > div { display:flex; flex-wrap:wrap; justify-content:center; gap:7px; margin-top:20px; }
+  .dharma-encyclopedia-page > header button { min-height:40px; padding:0 12px; border:1px solid #bd8935; border-radius:2px; background:#fff5d9; color:#75351d; font-size:11px; font-weight:850; }
+  .dharma-chapter-inline-toc { display:grid; grid-template-columns:1fr; gap:5px; margin:26px 0; padding:18px; border:1px solid #c9a45e; background:#f3e2c1; }
+  .dharma-chapter-inline-toc > strong { margin-bottom:4px; color:#713719; font:700 16px Georgia,serif; }
+  .dharma-chapter-inline-toc button { display:grid; grid-template-columns:25px minmax(0,1fr); align-items:center; gap:8px; min-height:35px; border:0; background:transparent; color:#67472d; text-align:left; font-size:13px; }
+  .dharma-chapter-inline-toc button i,.dharma-encyclopedia-outline section > button i { display:grid; width:23px; height:23px; place-items:center; border-radius:50%; background:#963a20; color:#f5d87d; font-size:9px; font-style:normal; }
+  .dharma-encyclopedia-section { position:relative; scroll-margin-top:145px; padding:clamp(22px,3vw,35px) 0; }
+  .dharma-encyclopedia-section + .dharma-encyclopedia-section { border-top:1px solid rgba(129,73,28,.2); }
+  .dharma-encyclopedia-section > small,.dharma-encyclopedia-application small,.dharma-encyclopedia-reflection small,.dharma-encyclopedia-note small,.dharma-encyclopedia-sources header > small { color:#97451e; font-size:10px; font-weight:900; letter-spacing:.15em; }
+  .dharma-encyclopedia-section h3 { margin:8px 0 12px; color:#3c2516; font:700 clamp(25px,2.2vw,33px)/1.24 Georgia,serif; }
+  .dharma-encyclopedia-section p,.dharma-encyclopedia-application p,.dharma-encyclopedia-reflection p { margin:0; color:#473323; font:400 var(--dharma-reader-size,20px)/1.88 "Times New Roman",Georgia,serif; text-wrap:pretty; }
+  .dharma-encyclopedia-section p::first-letter { float:left; margin:7px 8px 0 0; color:#91351f; font:700 50px/.72 Georgia,serif; }
+  .dharma-encyclopedia-application,.dharma-encyclopedia-reflection { display:grid; grid-template-columns:52px minmax(0,1fr); gap:15px; margin:19px 0; padding:22px; border:1px solid #bf8d3c; background:linear-gradient(145deg,#fff3cf,#ecd098); }
+  .dharma-encyclopedia-reflection { border-color:#ad6550; background:linear-gradient(145deg,#fff1df,#efd0b5); }
+  .dharma-encyclopedia-application > span,.dharma-encyclopedia-reflection > span { display:grid; width:50px; height:50px; place-items:center; border-radius:50%; background:#91351f; color:#f5d778; font:700 23px Georgia,serif; }
+  .dharma-encyclopedia-application h3 { margin:5px 0 7px; color:#4a2d19; font:700 20px Georgia,serif; }
+  .dharma-encyclopedia-note { margin:27px 0; padding:22px; border:1px solid #b98537; background:#f2dfba; }
+  .dharma-encyclopedia-note header { display:flex; align-items:start; justify-content:space-between; gap:12px; }
+  .dharma-encyclopedia-note h3 { margin:5px 0; color:#432918; font:700 20px Georgia,serif; }
+  .dharma-encyclopedia-note header > span { padding:5px 8px; border:1px solid #c69747; color:#81531e; font-size:9px; font-weight:800; }
+  .dharma-encyclopedia-note textarea { width:100%; min-height:150px; margin-top:11px; resize:vertical; padding:15px; border:1px solid #bb8b3c; border-radius:2px; outline:0; background:#fffaf0; color:#382518; font:400 17px/1.72 "Times New Roman",Georgia,serif; }
+  .dharma-encyclopedia-note textarea:focus { border-color:#8e351f; box-shadow:0 0 0 3px rgba(152,59,34,.11); }
+  .dharma-encyclopedia-note > p { margin:7px 0 0; color:#816749; font-size:10px; }
+  .dharma-encyclopedia-sources { display:grid!important; gap:7px; margin-top:35px; padding-top:30px; border-top:3px double rgba(126,68,25,.32); }
+  .dharma-encyclopedia-sources > header { margin-bottom:7px; }
+  .dharma-encyclopedia-sources h3 { margin:6px 0; color:#432918; font:700 23px Georgia,serif; }
+  .dharma-encyclopedia-sources header p { color:#765d42; font-size:12px; line-height:1.6; }
+  .dharma-encyclopedia-sources article { display:grid; grid-template-columns:38px minmax(0,1fr) auto; align-items:center; gap:10px; padding:12px; border:1px solid #cfac69; background:#f5e6c8; }
+  .dharma-encyclopedia-sources article > span { display:grid; width:36px; height:36px; place-items:center; border-radius:50%; background:#91351f; color:#f5d778; font:700 15px Georgia,serif; }
+  .dharma-encyclopedia-sources article > div { display:grid; min-width:0; }
+  .dharma-encyclopedia-sources article strong { color:#4b301e; font-size:13px; }
+  .dharma-encyclopedia-sources article small { color:#806748; font-size:10px; line-height:1.45; }
+  .dharma-encyclopedia-sources article a { color:#8b371f; font-size:11px; font-weight:850; text-decoration:none; white-space:nowrap; }
+  .dharma-encyclopedia-pagination { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:stretch; gap:7px; margin-top:29px; }
+  .dharma-encyclopedia-pagination > button { display:flex; align-items:center; gap:8px; min-height:62px; padding:9px 12px; border:1px solid #bd8a39; border-radius:2px; background:#fff5d9; color:#70361e; text-align:left; }
+  .dharma-encyclopedia-pagination > button:last-child { justify-content:flex-end; text-align:right; }
+  .dharma-encyclopedia-pagination button span { display:grid; min-width:0; }
+  .dharma-encyclopedia-pagination button small { color:#98704a; font-size:9px; }
+  .dharma-encyclopedia-pagination button strong { overflow:hidden; font:700 11px/1.35 Georgia,serif; text-overflow:ellipsis; white-space:nowrap; }
+  .dharma-encyclopedia-pagination > button.is-complete { justify-content:center; background:#92371f; color:#f8dc84; font-weight:850; text-align:center; }
+  .dharma-encyclopedia-pagination > button:disabled { opacity:.45; cursor:not-allowed; }
+  .dharma-encyclopedia-outline { display:grid; gap:10px; }
+  .dharma-encyclopedia-outline section { padding:11px; border:1px solid rgba(123,69,24,.18); background:rgba(255,250,232,.5); }
+  .dharma-encyclopedia-outline section > button { display:grid; grid-template-columns:24px minmax(0,1fr); align-items:center; width:100%; min-height:39px; gap:6px; border:0; border-top:1px solid rgba(123,69,24,.13); background:transparent; color:#62432c; text-align:left; }
+  .dharma-encyclopedia-outline section > button span { font-size:10px; line-height:1.35; }
+  .dharma-encyclopedia-outline section > div { display:flex; flex-wrap:wrap; gap:5px; }
+  .dharma-encyclopedia-outline section > div button { min-height:29px; padding:4px 7px; border:1px solid #bc8b3d; border-radius:99px; background:#fff2cf; color:#77381e; font-size:9px; }
+  .dharma-reading-boundary p { margin:6px 0; color:#71573b; font-size:10px; line-height:1.5; }
+  .dharma-encyclopedia-reader[data-reader-mode="focus"] .dharma-encyclopedia-reader__grid { grid-template-columns:minmax(0,860px); justify-content:center; }
+  .dharma-encyclopedia-reader[data-reader-mode="focus"] :is(.dharma-encyclopedia-toc,.dharma-encyclopedia-outline) { display:none; }
+}
+
+@layer dharma-motion {
+  .dharma-encyclopedia-cover { animation:dharmaManuscriptOpen .55s cubic-bezier(.2,.72,.2,1) both; }
+  .dharma-encyclopedia-cover::after { animation:dharmaTitleGold 2.8s ease-in-out infinite; }
+  .dharma-encyclopedia-volume { animation:dharmaInkSettle .42s ease-out both; }
+  .dharma-encyclopedia-volume:nth-child(2n) { animation-delay:.07s; }
+  .dharma-encyclopedia-page { animation:dharmaPageOpen .46s cubic-bezier(.2,.75,.25,1) both; transform-origin:0 50%; }
+  .dharma-encyclopedia-section { animation:dharmaInkSettle .42s ease-out both; animation-delay:calc(var(--section-index,0) * 50ms); }
+  .dharma-encyclopedia-page > header button:first-child:active { animation:dharmaBookmarkDrop .32s ease-out; }
+  @keyframes dharmaManuscriptOpen { from { opacity:0; transform:translateY(8px) scale(.992); } }
+  @keyframes dharmaPageOpen { from { opacity:.2; transform:perspective(900px) rotateY(-2.5deg) translateX(-5px); } }
+  @keyframes dharmaInkSettle { from { opacity:0; transform:translateY(5px); } }
+  @keyframes dharmaTitleGold { 0%,100% { filter:brightness(.85); transform:scaleX(.94); } 50% { filter:brightness(1.25); transform:scaleX(1); } }
+  @keyframes dharmaBookmarkDrop { 50% { transform:translateY(4px); } }
+}
+
+@layer dharma-responsive {
+  @container (max-width:1120px) {
+    .dharma-encyclopedia-reader__grid { grid-template-columns:minmax(180px,205px) minmax(0,1fr); }
+    .dharma-encyclopedia-outline { display:none; }
+  }
+  @container (max-width:780px) {
+    .dharma-encyclopedia-cover { grid-template-columns:1fr; }
+    .dharma-encyclopedia-cover > aside { display:none; }
+    .dharma-encyclopedia-principles,.dharma-encyclopedia-volumes { grid-template-columns:1fr 1fr; }
+    .dharma-encyclopedia-reader__grid { grid-template-columns:1fr; }
+    .dharma-encyclopedia-toc { position:static; display:none; }
+  }
+  @media (max-width:700px) {
+    .dharma-hub[data-view="encyclopedia"] .dharma-content { padding:10px 9px 100px; }
+    .dharma-encyclopedia-cover { min-height:0; padding:27px 20px; border-radius:2px; }
+    .dharma-encyclopedia-cover h2 { font-size:36px; }
+    .dharma-encyclopedia-cover > div > p { font-size:17px; line-height:1.72; }
+    .dharma-encyclopedia-cover > div > div { display:grid; grid-template-columns:1fr; margin:17px 0; }
+    .dharma-encyclopedia-principles,.dharma-encyclopedia-volumes { grid-template-columns:1fr; }
+    .dharma-encyclopedia-principles { margin-bottom:18px; }
+    .dharma-section-title:has(.dharma-encyclopedia-search) { align-items:stretch; flex-direction:column; }
+    .dharma-encyclopedia-search { grid-template-columns:20px minmax(0,1fr); width:100%; }
+    .dharma-encyclopedia-volume > header { grid-template-columns:48px minmax(0,1fr); padding:17px 14px; }
+    .dharma-encyclopedia-volume > header > span { width:46px; height:46px; font-size:21px; }
+    .dharma-encyclopedia-volume h3 { font-size:21px; }
+    .dharma-encyclopedia-volume li button { grid-template-columns:34px minmax(0,1fr); min-height:98px; padding:12px; }
+    .dharma-encyclopedia-volume li button > b { grid-column:2; }
+    .dharma-encyclopedia-toolbar { top:56px; grid-template-columns:auto minmax(0,1fr); min-height:54px; }
+    .dharma-encyclopedia-toolbar > button span { display:none; }
+    .dharma-encyclopedia-toolbar nav { grid-column:1/-1; display:grid; grid-template-columns:1fr 1fr 1.7fr; }
+    .dharma-encyclopedia-toolbar nav button { min-height:36px; }
+    .dharma-encyclopedia-page { padding:31px 19px; }
+    .dharma-encyclopedia-page::before { inset:7px; }
+    .dharma-encyclopedia-page h2 { font-size:36px; }
+    .dharma-encyclopedia-lead { font-size:19px; line-height:1.75; }
+    .dharma-encyclopedia-section { scroll-margin-top:165px; padding:26px 0; }
+    .dharma-encyclopedia-section h3 { font-size:27px; }
+    .dharma-encyclopedia-section p,.dharma-encyclopedia-application p,.dharma-encyclopedia-reflection p { font-size:max(18px,var(--dharma-reader-size,20px)); line-height:1.8; }
+    .dharma-encyclopedia-application,.dharma-encyclopedia-reflection { grid-template-columns:40px minmax(0,1fr); gap:10px; padding:17px 14px; }
+    .dharma-encyclopedia-application > span,.dharma-encyclopedia-reflection > span { width:38px; height:38px; font-size:18px; }
+    .dharma-encyclopedia-note { padding:17px 14px; }
+    .dharma-encyclopedia-note header { display:grid; }
+    .dharma-encyclopedia-note header > span { justify-self:start; }
+    .dharma-encyclopedia-sources article { grid-template-columns:36px minmax(0,1fr); }
+    .dharma-encyclopedia-sources article a { grid-column:2; }
+    .dharma-encyclopedia-pagination { grid-template-columns:1fr 1fr; }
+    .dharma-encyclopedia-pagination > button.is-complete { grid-column:1/-1; grid-row:1; }
+    .dharma-encyclopedia-pagination button strong { white-space:normal; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .dharma-encyclopedia-cover,.dharma-encyclopedia-cover::after,.dharma-encyclopedia-volume,.dharma-encyclopedia-page,.dharma-encyclopedia-section,.dharma-encyclopedia-page > header button:first-child:active { animation:none!important; }
+  }
+}

@@ -5624,6 +5624,7 @@ function initAppShell() {
         { id: "today", title: "Hôm nay", route: "/phat-phap/today", icon: "灯" },
         { id: "beginner", title: "Lộ trình tu học", route: "/phat-phap/beginner", icon: "路" },
         { id: "situations", title: "Pháp học đời sống", route: "/phat-phap/situations", icon: "心" },
+        { id: "encyclopedia", title: "Phật Pháp Toàn Thư", route: "/phat-phap/encyclopedia", icon: "藏" },
         { id: "teachings", title: "Giáo lý", route: "/phat-phap/teachings", icon: "法" },
         { id: "scriptures", title: "Scripture Study Lab", route: "/phat-phap/scriptures", icon: "經" },
         { id: "glossary", title: "Từ điển Phật học", route: "/phat-phap/glossary", icon: "字" },
@@ -7061,7 +7062,7 @@ function initAppShell() {
       const dharmaView = parts[1] || "today";
       const dharmaPage = groups.find((item) => item.id === "phat-phap")?.pages?.find((item) => item.id === dharmaView);
       updatePageHeader(dharmaPage?.title || "Phật Pháp", "Trung tâm tu học Phật pháp có nguồn, lộ trình người mới, kinh điển, thiền, niệm Phật, chùa online, pháp thoại, thỉnh kinh và nhật ký mã hóa.", route);
-      pageActions.innerHTML = '<button type="button" data-app-route="/phat-phap/scriptures">Kinh điển</button><button type="button" data-app-route="/phat-phap/practice">Thực hành</button><button class="app-primary-action" type="button" data-app-route="/phat-phap/today">Hôm nay</button>';
+      pageActions.innerHTML = '<button type="button" data-app-route="/phat-phap/encyclopedia">Phật Pháp Toàn Thư</button><button type="button" data-app-route="/phat-phap/practice">Thực hành</button><button class="app-primary-action" type="button" data-app-route="/phat-phap/today">Hôm nay</button>';
       workspace.innerHTML = '<div data-phat-phap-host></div>';
       if (window.HHPhatPhap?.mount) window.HHPhatPhap.mount(workspace.firstElementChild, { view: dharmaView, currentUser: readCurrentAuthUser() });
       else mountSimpleView("Phật Pháp", "Đang tải trung tâm tu học trang trọng...", "");
