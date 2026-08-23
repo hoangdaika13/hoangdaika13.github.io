@@ -8,6 +8,7 @@
 
   const SCHEMA = "hh.universal-media.v1";
   const FORMAT = "hhmedia-package";
+  const ASSET_MANIFEST_FORMAT = "hhasset-manifest";
   const VERSION = 1;
   const RECORD_VERSION = 2;
   const DB_NAME = "hh-universal-media";
@@ -20,6 +21,7 @@
   const MAX_SNAPSHOTS = 50;
   const MAX_INLINE_ASSET_BYTES = 1024 * 1024;
   const MAX_PACKAGE_TEXT_BYTES = 12 * 1024 * 1024;
+  const MAX_ASSET_MANIFEST_BYTES = 2 * 1024 * 1024;
   const MAX_PROJECT_JSON_BYTES = 1024 * 1024;
   const MAX_ASSET_BYTES = 4 * 1024 * 1024 * 1024;
   const MAX_ASSET_VERSIONS = 24;
@@ -29,6 +31,10 @@
   const HASH_FULL_MAX_BYTES = 32 * 1024 * 1024;
   const MAX_SVG_BYTES = 5 * 1024 * 1024;
   const MAX_RIGHTS_USES = 20;
+  const MAX_PROJECTS = 120;
+  const MAX_PROJECT_PRESETS = 40;
+  const MAX_INGEST_JOBS = 100;
+  const MAX_SHARED_ENTITIES = 500;
   const activeInstances = new Set();
   const pendingMounts = new Map();
 
@@ -84,6 +90,88 @@
 
   function uniqueStrings(values, max, maxLength) {
     return [...new Set((Array.isArray(values) ? values : []).map((value) => boundedText(value, maxLength || 60)).filter(Boolean))].slice(0, max);
+  }
+
+  function normalizeSharedEntity(input, index, prefix) {
+    const source = input && typeof input === "object" ? input : {};
+    const clean = safeJsonValue(source, 0) || {};
+    return {
+      ...clean,
+      id: boundedText(source.id, 100, `${prefix}-${index + 1}`),
+      name: boundedText(source.name || source.label, 160, `${prefix} ${index + 1}`),
+      assetId: boundedText(source.assetId, 100) || null,
+      parentId: boundedText(source.parentId, 100) || null,
+      order: Math.max(0, Math.min(MAX_SHARED_ENTITIES - 1, Number(source.order) || index))
+    };
+  }
+
+  function normalizeSharedWorkspace(input) {
+    const source = input && typeof input === "object" ? input : {};
+    const list = (name, prefix) => {
+      const seen = new Set();
+      return (Array.isArray(source[name]) ? source[name] : []).slice(0, MAX_SHARED_ENTITIES).map((item, index) => normalizeSharedEntity(item, index, prefix)).filter((item) => {
+        if (seen.has(item.id)) return false;
+        seen.add(item.id); return true;
+      });
+    };
+    return {
+      layers: list("layers", "layer"), tracks: list("tracks", "track"), clips: list("clips", "clip"),
+      pages: list("pages", "page"), scenes: list("scenes", "scene"), effects: list("effects", "effect"),
+      keyframes: list("keyframes", "keyframe"), colorTokens: list("colorTokens", "color")
+    };
+  }
+
+  function normalizeProjectPreset(input, index) {
+    const source = input && typeof input === "object" ? input : {};
+    const section = ["settings", "canvas", "timeline", "document", "workspace"].includes(source.section) ? source.section : "settings";
+    return {
+      id: boundedText(source.id, 100, `preset-${index + 1}`),
+      name: boundedText(source.name, 120, `Preset ${index + 1}`),
+      section,
+      payload: section === "workspace" ? normalizeSharedWorkspace(source.payload) : safeJsonValue(source.payload || {}, 0),
+      createdAt: safeIsoDate(source.createdAt) || now(),
+      updatedAt: safeIsoDate(source.updatedAt) || now()
+    };
+  }
+
+  function ingestFingerprint(input) {
+    const source = input && typeof input === "object" ? input : {};
+    return [boundedText(source.name, 240, "asset.bin"), Math.max(0, Number(source.size) || 0), Math.max(0, Number(source.lastModified) || 0), boundedText(source.type, 160)].join("::");
+  }
+
+  function normalizeIngestJob(input, index) {
+    const source = input && typeof input === "object" ? input : {};
+    const status = ["awaiting-file", "failed", "complete", "cancelled"].includes(source.status) ? source.status : "awaiting-file";
+    const file = {
+      name: boundedText(source.file?.name || source.name, 240, "asset.bin"),
+      type: boundedText(source.file?.type || source.type, 160, "application/octet-stream"),
+      size: Math.max(0, Math.min(MAX_ASSET_BYTES, Number(source.file?.size ?? source.size) || 0)),
+      lastModified: Math.max(0, Number(source.file?.lastModified ?? source.lastModified) || 0)
+    };
+    return {
+      id: boundedText(source.id, 100, `ingest-${index + 1}`),
+      fingerprint: ingestFingerprint(file), file,
+      folderId: boundedText(source.folderId, 100, ROOT_FOLDER_ID),
+      status,
+      assetId: boundedText(source.assetId, 100) || null,
+      error: status === "failed" ? boundedText(source.error, 300, "Nhập tệp thất bại") : "",
+      attempts: Math.max(0, Math.min(20, Number(source.attempts) || 0)),
+      createdAt: safeIsoDate(source.createdAt) || now(),
+      updatedAt: safeIsoDate(source.updatedAt) || now()
+    };
+  }
+
+  function normalizeRecovery(input) {
+    const source = input && typeof input === "object" ? input : {};
+    return {
+      sessionId: boundedText(source.sessionId, 120),
+      sessionStartedAt: safeIsoDate(source.sessionStartedAt),
+      lastCleanCloseAt: safeIsoDate(source.lastCleanCloseAt),
+      cleanlyClosed: source.cleanlyClosed !== false,
+      previousSessionUnclean: Boolean(source.previousSessionUnclean),
+      lastAutosaveAt: safeIsoDate(source.lastAutosaveAt),
+      lastAutosaveError: boundedText(source.lastAutosaveError, 300)
+    };
   }
 
   function safeExternalUrl(value) {
@@ -244,12 +332,18 @@
     });
     if (!folders.some((folder) => folder.id === ROOT_FOLDER_ID)) folders.unshift(normalizeFolder({ id: ROOT_FOLDER_ID }, 0));
     const createdAt = safeIsoDate(source.createdAt) || now();
+    const projectKind = source.projectKind === "template" ? "template" : "project";
+    const lifecycle = source.lifecycle === "archived" ? "archived" : "active";
     return {
       schema: SCHEMA,
       recordVersion: RECORD_VERSION,
       id: boundedText(source.id, 100, uid("media-project")),
       name: boundedText(source.name, 160, "Dự án media mới"),
       description: boundedText(source.description, 1200),
+      projectKind,
+      lifecycle,
+      archivedAt: lifecycle === "archived" ? (safeIsoDate(source.archivedAt) || now()) : "",
+      templateSourceId: boundedText(source.templateSourceId, 100) || null,
       createdAt,
       updatedAt: safeIsoDate(source.updatedAt) || now(),
       lastOpenedAt: safeIsoDate(source.lastOpenedAt) || createdAt,
@@ -261,6 +355,10 @@
       canvas: safeJsonValue(source.canvas || {}, 0),
       timeline: safeJsonValue(source.timeline || {}, 0),
       document: safeJsonValue(source.document || {}, 0),
+      workspace: normalizeSharedWorkspace(source.workspace || source.graph || {}),
+      presets: (Array.isArray(source.presets) ? source.presets : []).slice(0, MAX_PROJECT_PRESETS).map(normalizeProjectPreset),
+      ingestJobs: (Array.isArray(source.ingestJobs) ? source.ingestJobs : []).slice(-MAX_INGEST_JOBS).map(normalizeIngestJob),
+      recovery: normalizeRecovery(source.recovery),
       exportJobs: (Array.isArray(source.exportJobs) ? source.exportJobs : []).slice(-100).map((job) => safeJsonValue(job, 0)),
       revision: Math.max(1, Number(source.revision) || 1)
     };
@@ -364,6 +462,43 @@
     return value;
   }
 
+  function scrubAssetReferences(value, assetIds, depth) {
+    const level = Number(depth) || 0;
+    if (level > 8 || value == null) return value;
+    if (typeof value === "string") return assetIds.has(value) ? null : value;
+    if (Array.isArray(value)) return value.slice(0, 1000).map((item) => scrubAssetReferences(item, assetIds, level + 1)).filter((item) => item != null);
+    if (typeof value === "object" && !(value instanceof Blob)) {
+      return Object.fromEntries(Object.entries(value).slice(0, 1000).filter(([key]) => !["__proto__", "prototype", "constructor"].includes(key)).map(([key, item]) => [key, scrubAssetReferences(item, assetIds, level + 1)]));
+    }
+    return value;
+  }
+
+  function classifyStorageError(error) {
+    const name = boundedText(error?.name, 100);
+    const message = boundedText(error?.message, 300, "Không thể lưu dữ liệu.");
+    if (name === "QuotaExceededError" || /quota|disk full|storage full/i.test(message)) return { code: "quota-exceeded", message: "Kho lưu trữ đã đầy. Hãy xuất project hoặc xóa asset không cần thiết." };
+    if (name === "SecurityError" || name === "NotAllowedError") return { code: "storage-denied", message: "Trình duyệt không cho phép ghi vào kho local." };
+    if (name === "AbortError") return { code: "storage-aborted", message: "Giao dịch lưu trữ đã bị hủy." };
+    return { code: "storage-failed", message };
+  }
+
+  async function inspectStorageCapabilities(env) {
+    const scope = env || globalScope;
+    const storage = scope?.navigator?.storage;
+    let estimate = null;
+    let persisted = null;
+    try { estimate = typeof storage?.estimate === "function" ? await storage.estimate() : null; } catch (_) {}
+    try { persisted = typeof storage?.persisted === "function" ? await storage.persisted() : null; } catch (_) {}
+    const usage = Math.max(0, Number(estimate?.usage) || 0);
+    const quota = Math.max(0, Number(estimate?.quota) || 0);
+    const ratio = quota ? Math.min(1, usage / quota) : null;
+    return {
+      quota: { supported: Boolean(estimate), usage, quota, remaining: quota ? Math.max(0, quota - usage) : null, ratio, pressure: ratio == null ? "unknown" : ratio >= .95 ? "critical" : ratio >= .8 ? "warning" : "healthy" },
+      persistence: { supported: typeof storage?.persisted === "function", granted: persisted === true },
+      opfs: { available: typeof storage?.getDirectory === "function", used: false, reason: typeof storage?.getDirectory === "function" ? "Có adapter OPFS nhưng Project Core hiện lưu binary trong IndexedDB." : "Trình duyệt không cung cấp OPFS." }
+    };
+  }
+
   function searchAssets(assets, query, options) {
     const settings = options || {};
     const term = String(query || "").trim().toLocaleLowerCase("vi");
@@ -371,6 +506,17 @@
       if (settings.folderId && settings.folderId !== "all" && asset.folderId !== settings.folderId) return false;
       if (settings.kind && settings.kind !== "all" && asset.kind !== settings.kind) return false;
       if (settings.tag && !asset.tags?.includes(settings.tag)) return false;
+      if (Number.isFinite(Number(settings.minSize)) && asset.size < Number(settings.minSize)) return false;
+      if (Number.isFinite(Number(settings.maxSize)) && Number(settings.maxSize) >= 0 && asset.size > Number(settings.maxSize)) return false;
+      if (settings.dateFrom && Date.parse(asset.updatedAt || asset.createdAt) < Date.parse(settings.dateFrom)) return false;
+      if (settings.dateTo && Date.parse(asset.updatedAt || asset.createdAt) > Date.parse(settings.dateTo)) return false;
+      if (settings.rights === "verified" && !asset.rights?.verified) return false;
+      if (settings.rights === "review" && asset.rights?.verified) return false;
+      if (settings.color) {
+        const requested = String(settings.color).toLowerCase();
+        const colors = [asset.metadata?.dominantColor, ...(Array.isArray(asset.metadata?.colors) ? asset.metadata.colors : [])].filter(Boolean).map((color) => String(color).toLowerCase());
+        if (!colors.includes(requested)) return false;
+      }
       if (!term) return true;
       const haystack = [asset.name, asset.kind, asset.type, ...(asset.tags || []), asset.metadata?.title, asset.metadata?.artist, asset.rights?.author, asset.rights?.license, asset.provenance?.originalName]
         .filter(Boolean).join(" ").toLocaleLowerCase("vi");
@@ -411,6 +557,12 @@
       else if ((asset.rights?.license || asset.rights?.sourceUrl) && !asset.rights?.verified) warnings.push({ code: "rights-unverified", level: "warning", assetId: asset.id, message: `Nguồn hoặc giấy phép của ${asset.name} chưa được xác minh.` });
       if (asset.rights?.attributionRequired && !asset.rights?.attribution) warnings.push({ code: "attribution-missing", level: "warning", assetId: asset.id, message: `${asset.name} yêu cầu ghi công nhưng chưa có nội dung ghi công.` });
       if (hasSensitiveMetadata(asset.metadata)) warnings.push({ code: "sensitive-metadata", level: "warning", assetId: asset.id, message: `${asset.name} còn metadata vị trí hoặc thiết bị nhạy cảm.` });
+    });
+    Object.entries(project?.workspace || {}).forEach(([collection, entities]) => {
+      if (!Array.isArray(entities)) return;
+      entities.forEach((entity) => {
+        if (entity?.assetId && !byId.has(entity.assetId)) warnings.push({ code: "broken-workspace-reference", level: "error", assetId: entity.assetId, entityId: entity.id, collection, message: `${entity.name || entity.id} đang trỏ tới asset không còn trong project.` });
+      });
     });
     (project?.requiredFonts || []).forEach((font) => {
       if (!availableFonts.has(String(font).toLowerCase())) warnings.push({ code: "missing-font", level: "warning", font, message: `Thiếu font ${font}.` });
@@ -473,6 +625,18 @@
       hash = Math.imul(hash, 16777619);
     }
     return `${sampled ? "sampled-" : ""}fnv1a-${(hash >>> 0).toString(16).padStart(8, "0")}-${sampled ? input.size : bytes.length}`;
+  }
+
+  async function verifyContentHash(input, expected, cryptoScope) {
+    const checksum = boundedText(expected, 180);
+    if (!checksum) return { verified: false, reason: "missing-checksum", actual: "" };
+    const isSha = /^(?:sampled-)?sha256-[0-9a-f]{64}(?:-\d+)?$/i.test(checksum);
+    const isFnv = /^(?:sampled-)?fnv1a-[0-9a-f]{8}-\d+$/i.test(checksum);
+    if (!isSha && !isFnv) return { verified: false, reason: "unsupported-checksum", actual: "" };
+    const cryptoApi = cryptoScope || globalScope.crypto;
+    if (isSha && !cryptoApi?.subtle?.digest) return { verified: false, reason: "sha256-unavailable", actual: "" };
+    const actual = await computeContentHash(input, isFnv ? {} : cryptoApi);
+    return { verified: actual === checksum, reason: actual === checksum ? "match" : "mismatch", actual };
   }
 
   async function inspectAssetBlob(blob, input) {
@@ -681,6 +845,10 @@
 
     async function saveProject(input) {
       const existing = input?.id ? await withBackend((backend) => backend.get("projects", input.id)) : null;
+      if (!existing) {
+        const count = (await withBackend((backend) => backend.all("projects"))).length;
+        if (count >= MAX_PROJECTS) throw new Error(`Kho local chỉ giữ tối đa ${MAX_PROJECTS} project và template.`);
+      }
       const project = normalizeProject({ ...existing, ...input, createdAt: existing?.createdAt || input?.createdAt, updatedAt: now(), revision: existing ? Math.max(existing.revision + 1, Number(input.revision) || 0) : input?.revision });
       if (JSON.stringify(project).length > MAX_PROJECT_JSON_BYTES) throw new Error("Dự án vượt giới hạn metadata 1 MB.");
       await withBackend((backend) => backend.put("projects", project));
@@ -691,9 +859,150 @@
       return migrateStoredRecord("projects", await withBackend((backend) => backend.get("projects", id)), migrateProjectRecord);
     }
 
-    async function listProjects() {
+    async function listProjects(query) {
       const projects = await withBackend((backend) => backend.all("projects"));
-      return Promise.all(projects.map((project) => migrateStoredRecord("projects", project, migrateProjectRecord))).then((rows) => rows.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))));
+      return Promise.all(projects.map((project) => migrateStoredRecord("projects", project, migrateProjectRecord))).then((rows) => rows.filter((project) => {
+        if (!query?.includeTemplates && project.projectKind === "template") return false;
+        if (!query?.includeArchived && project.lifecycle === "archived") return false;
+        if (query?.kind && project.projectKind !== query.kind) return false;
+        return true;
+      }).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))));
+    }
+
+    async function createProject(input) {
+      return saveProject({ ...(input || {}), id: input?.id || uid("media-project"), projectKind: "project", lifecycle: "active", archivedAt: "", recovery: normalizeRecovery() });
+    }
+
+    async function archiveProject(projectId, archived) {
+      const project = await getProject(projectId);
+      if (!project || project.projectKind !== "project") throw new Error("Không tìm thấy project để lưu trữ.");
+      const shouldArchive = archived !== false;
+      return saveProject({ ...project, lifecycle: shouldArchive ? "archived" : "active", archivedAt: shouldArchive ? now() : "" });
+    }
+
+    async function duplicateProject(projectId, duplicateOptions) {
+      const source = await getProject(projectId);
+      if (!source || source.projectKind !== "project") throw new Error("Không tìm thấy project cần nhân bản.");
+      const includeAssets = duplicateOptions?.includeAssets !== false;
+      const sourceAssets = includeAssets ? await listAssets(projectId) : [];
+      const idMap = new Map(sourceAssets.map((asset) => [asset.id, uid("asset")]));
+      let duplicate = normalizeProject({
+        ...source,
+        id: uid("media-project"), name: boundedText(duplicateOptions?.name, 160, `${source.name} · bản sao`),
+        projectKind: "project", lifecycle: "active", archivedAt: "", templateSourceId: null,
+        createdAt: now(), updatedAt: now(), assetIds: [], snapshots: [],
+        references: remapIds(source.references, idMap), canvas: remapIds(source.canvas, idMap), timeline: remapIds(source.timeline, idMap),
+        document: remapIds(source.document, idMap), workspace: remapIds(source.workspace, idMap),
+        ingestJobs: [], recovery: normalizeRecovery(), exportJobs: [], revision: 1
+      });
+      try {
+        duplicate = await saveProject(duplicate);
+        const importedIds = [];
+        for (const sourceAsset of sourceAssets) {
+          const copied = await saveAsset({
+            ...sourceAsset, id: idMap.get(sourceAsset.id), originId: sourceAsset.originId || sourceAsset.id, projectId: duplicate.id,
+            duplicateOf: idMap.get(sourceAsset.duplicateOf) || null, references: remapIds(sourceAsset.references, idMap), effects: remapIds(sourceAsset.effects, idMap),
+            versions: [], provenance: { ...sourceAsset.provenance, sourceId: sourceAsset.id }, blob: sourceAsset.blob, thumbnailBlob: sourceAsset.thumbnailBlob
+          });
+          importedIds.push(copied.id);
+        }
+        return saveProject({ ...duplicate, assetIds: importedIds });
+      } catch (error) {
+        await deleteProject(duplicate.id).catch(() => {});
+        throw error;
+      }
+    }
+
+    async function createTemplateFromProject(projectId, templateInput) {
+      const source = await getProject(projectId);
+      if (!source || source.projectKind !== "project") throw new Error("Không tìm thấy project nguồn cho template.");
+      const assetIds = new Set(source.assetIds);
+      return saveProject({
+        ...source, id: uid("media-template"), name: boundedText(templateInput?.name, 160, `${source.name} · template`),
+        description: boundedText(templateInput?.description, 1200, source.description), projectKind: "template", lifecycle: "active", archivedAt: "",
+        templateSourceId: source.id, createdAt: now(), updatedAt: now(), assetIds: [], folders: [normalizeFolder({ id: ROOT_FOLDER_ID }, 0)],
+        references: scrubAssetReferences(source.references, assetIds), canvas: scrubAssetReferences(source.canvas, assetIds),
+        timeline: scrubAssetReferences(source.timeline, assetIds), document: scrubAssetReferences(source.document, assetIds),
+        workspace: scrubAssetReferences(source.workspace, assetIds), presets: source.presets.map((preset) => ({ ...preset, payload: scrubAssetReferences(preset.payload, assetIds) })),
+        ingestJobs: [], recovery: normalizeRecovery(), exportJobs: [], revision: 1
+      });
+    }
+
+    async function instantiateTemplate(templateId, projectInput) {
+      const template = await getProject(templateId);
+      if (!template || template.projectKind !== "template") throw new Error("Không tìm thấy template.");
+      return createProject({
+        ...template, id: uid("media-project"), name: boundedText(projectInput?.name, 160, template.name.replace(/\s*·\s*template$/i, "") || "Project từ template"),
+        description: boundedText(projectInput?.description, 1200, template.description), templateSourceId: template.id,
+        createdAt: now(), updatedAt: now(), assetIds: [], ingestJobs: [], recovery: normalizeRecovery(), exportJobs: [], revision: 1
+      });
+    }
+
+    async function listTemplates() {
+      return listProjects({ includeTemplates: true, kind: "template" });
+    }
+
+    async function saveProjectPreset(projectId, presetInput) {
+      const project = await getProject(projectId);
+      if (!project) throw new Error("Không tìm thấy project.");
+      const existingIndex = project.presets.findIndex((preset) => preset.id === presetInput?.id);
+      const preset = normalizeProjectPreset({ ...presetInput, id: presetInput?.id || uid("preset"), createdAt: existingIndex >= 0 ? project.presets[existingIndex].createdAt : now(), updatedAt: now() }, Math.max(0, existingIndex));
+      const presets = project.presets.slice();
+      if (existingIndex >= 0) presets[existingIndex] = preset;
+      else {
+        if (presets.length >= MAX_PROJECT_PRESETS) throw new Error(`Mỗi project tối đa ${MAX_PROJECT_PRESETS} preset.`);
+        presets.push(preset);
+      }
+      await saveProject({ ...project, presets });
+      return clone(preset);
+    }
+
+    async function applyProjectPreset(projectId, presetId) {
+      const project = await getProject(projectId);
+      const preset = project?.presets?.find((item) => item.id === presetId);
+      if (!project || !preset) throw new Error("Không tìm thấy preset.");
+      const patch = preset.section === "workspace" ? { workspace: normalizeSharedWorkspace(preset.payload) } : { [preset.section]: safeJsonValue(preset.payload, 0) };
+      return saveProject({ ...project, ...patch });
+    }
+
+    async function deleteProjectPreset(projectId, presetId) {
+      const project = await getProject(projectId);
+      if (!project) throw new Error("Không tìm thấy project.");
+      if (!project.presets.some((preset) => preset.id === presetId)) return false;
+      await saveProject({ ...project, presets: project.presets.filter((preset) => preset.id !== presetId) });
+      return true;
+    }
+
+    async function linkAssetToWorkspace(projectId, assetId, collection, input) {
+      const allowed = ["layers", "tracks", "clips", "pages", "scenes"];
+      if (!allowed.includes(collection)) throw new Error("Vùng đích của asset không được hỗ trợ.");
+      const project = await getProject(projectId);
+      const asset = await getAsset(assetId);
+      if (!project || !asset || asset.projectId !== projectId || !project.assetIds.includes(assetId)) throw new Error("Asset không thuộc project hiện tại.");
+      const current = normalizeSharedWorkspace(project.workspace);
+      if (current[collection].length >= MAX_SHARED_ENTITIES) throw new Error(`Vùng ${collection} đã đạt giới hạn ${MAX_SHARED_ENTITIES} mục.`);
+      const entity = normalizeSharedEntity({ ...input, id: input?.id || uid(collection.slice(0, -1)), name: input?.name || asset.name, assetId }, current[collection].length, collection.slice(0, -1));
+      if (current[collection].some((item) => item.id === entity.id)) throw new Error("ID liên kết workspace đã tồn tại.");
+      const workspace = { ...current, [collection]: [...current[collection], entity] };
+      await saveProject({ ...project, workspace });
+      await updateAsset(assetId, { references: [...(Array.isArray(asset.references) ? asset.references : []), entity.id] });
+      return clone(entity);
+    }
+
+    async function unlinkAssetFromWorkspace(projectId, collection, entityId) {
+      const allowed = ["layers", "tracks", "clips", "pages", "scenes"];
+      if (!allowed.includes(collection)) throw new Error("Vùng đích của asset không được hỗ trợ.");
+      const project = await getProject(projectId);
+      if (!project) throw new Error("Không tìm thấy project.");
+      const current = normalizeSharedWorkspace(project.workspace);
+      const entity = current[collection].find((item) => item.id === entityId);
+      if (!entity) return false;
+      await saveProject({ ...project, workspace: { ...current, [collection]: current[collection].filter((item) => item.id !== entityId) } });
+      if (entity.assetId) {
+        const asset = await getAsset(entity.assetId);
+        if (asset) await updateAsset(asset.id, { references: (Array.isArray(asset.references) ? asset.references : []).filter((reference) => reference !== entityId) });
+      }
+      return true;
     }
 
     async function createFolder(projectId, input) {
@@ -912,6 +1221,71 @@
       return updateAsset(id, { lastOpenedAt: now() });
     }
 
+    async function registerIngestJob(projectId, fileInfo, ingestOptions) {
+      const project = await getProject(projectId);
+      if (!project) throw new Error("Không tìm thấy project.");
+      const fingerprint = ingestFingerprint(fileInfo);
+      const existing = project.ingestJobs.find((job) => job.fingerprint === fingerprint && !["complete", "cancelled"].includes(job.status));
+      if (existing) return clone(existing);
+      const job = normalizeIngestJob({ id: uid("ingest"), file: fileInfo, folderId: ingestOptions?.folderId, status: "awaiting-file", createdAt: now(), updatedAt: now() }, project.ingestJobs.length);
+      await saveProject({ ...project, ingestJobs: [...project.ingestJobs, job].slice(-MAX_INGEST_JOBS) });
+      return clone(job);
+    }
+
+    async function listIngestJobs(projectId, query) {
+      const project = await getProject(projectId);
+      if (!project) throw new Error("Không tìm thấy project.");
+      return project.ingestJobs.filter((job) => !query?.status || job.status === query.status).map(clone);
+    }
+
+    async function resumeIngestJob(projectId, jobId, file, ingestOptions) {
+      let project = await getProject(projectId);
+      const job = project?.ingestJobs?.find((item) => item.id === jobId);
+      if (!project || !job) throw new Error("Không tìm thấy checkpoint nhập tệp.");
+      if (job.status === "cancelled") throw new Error("Checkpoint đã bị hủy.");
+      if (!(file instanceof Blob) || ingestFingerprint(file) !== job.fingerprint) throw new Error("Tệp được chọn không khớp tên, kích thước và thời gian của checkpoint.");
+      const existingAsset = (await listAssets(projectId)).find((asset) => asset.provenance?.sourceId === job.id);
+      try {
+        const metadata = ingestOptions?.metadata || await extractMetadata(file, ingestOptions?.env || globalScope);
+        const asset = existingAsset || await saveAsset({
+          projectId, folderId: project.folders.some((folder) => folder.id === job.folderId) ? job.folderId : ROOT_FOLDER_ID,
+          name: file.name || job.file.name, type: file.type || job.file.type, size: file.size, lastModified: file.lastModified || job.file.lastModified,
+          metadata: { ...safeJsonValue(metadata, 0), ingestJobId: job.id }, provenance: { sourceType: "local-file", sourceId: job.id, originalName: file.name || job.file.name }, blob: file
+        });
+        project = await getProject(projectId);
+        await saveProject({ ...project, ingestJobs: project.ingestJobs.map((item) => item.id === job.id ? normalizeIngestJob({ ...item, status: "complete", assetId: asset.id, error: "", attempts: item.attempts + 1, updatedAt: now() }) : item) });
+        return clone(asset);
+      } catch (error) {
+        const failure = classifyStorageError(error);
+        project = await getProject(projectId);
+        await saveProject({ ...project, ingestJobs: project.ingestJobs.map((item) => item.id === job.id ? normalizeIngestJob({ ...item, status: "failed", error: failure.code === "storage-failed" ? boundedText(error?.message, 300, failure.message) : failure.message, attempts: item.attempts + 1, updatedAt: now() }) : item) }).catch(() => {});
+        throw error;
+      }
+    }
+
+    async function cancelIngestJob(projectId, jobId) {
+      const project = await getProject(projectId);
+      const job = project?.ingestJobs?.find((item) => item.id === jobId);
+      if (!project || !job) return false;
+      if (job.status === "complete") throw new Error("Asset đã nhập xong; hãy xóa asset nếu không còn cần.");
+      await saveProject({ ...project, ingestJobs: project.ingestJobs.map((item) => item.id === jobId ? normalizeIngestJob({ ...item, status: "cancelled", error: "", updatedAt: now() }) : item) });
+      return true;
+    }
+
+    async function startProjectSession(projectId, sessionId) {
+      const project = await getProject(projectId);
+      if (!project) throw new Error("Không tìm thấy project.");
+      const previousSessionUnclean = project.recovery.cleanlyClosed === false;
+      return saveProject({ ...project, lastOpenedAt: now(), recovery: { ...project.recovery, sessionId: boundedText(sessionId, 120, uid("session")), sessionStartedAt: now(), cleanlyClosed: false, previousSessionUnclean, lastAutosaveError: "" } });
+    }
+
+    async function finishProjectSession(projectId, sessionId) {
+      const project = await getProject(projectId);
+      if (!project) return null;
+      if (sessionId && project.recovery.sessionId && project.recovery.sessionId !== sessionId) return project;
+      return saveProject({ ...project, recovery: { ...project.recovery, cleanlyClosed: true, previousSessionUnclean: false, lastCleanCloseAt: now(), lastAutosaveError: "" } });
+    }
+
     async function createSnapshot(projectId, label, note) {
       const project = await getProject(projectId);
       if (!project) throw new Error("Không tìm thấy dự án.");
@@ -957,7 +1331,11 @@
         latestSnapshotAt: latest?.createdAt || null,
         hasRecoveryPoint: Boolean(latest),
         changedSinceSnapshot: Boolean(latest && Date.parse(project.updatedAt) > Date.parse(latest.createdAt)),
-        orphanAssetIds
+        orphanAssetIds,
+        uncleanSession: project.recovery.cleanlyClosed === false || project.recovery.previousSessionUnclean === true,
+        sessionStartedAt: project.recovery.sessionStartedAt || null,
+        lastAutosaveAt: project.recovery.lastAutosaveAt || null,
+        lastAutosaveError: project.recovery.lastAutosaveError || ""
       };
     }
 
@@ -968,14 +1346,26 @@
       let pending = null;
       let closed = false;
       let saveCount = 0;
+      let status = { phase: "idle", pending: false, savedAt: null, error: null };
+      const updateStatus = (phase, extra) => {
+        status = { ...status, ...extra, phase, pending: Boolean(pending) };
+        autosaveOptions?.onState?.(clone(status));
+      };
       async function flush() {
         if (!pending || closed) return null;
         clearTimeout(timer);
         const next = pending;
         pending = null;
+        updateStatus("saving", { error: null });
         let saved;
-        try { saved = await saveProject({ ...next, id: projectId }); }
-        catch (error) { pending = next; throw error; }
+        try {
+          saved = await saveProject({ ...next, id: projectId, recovery: { ...next.recovery, lastAutosaveAt: now(), lastAutosaveError: "" } });
+        } catch (error) {
+          pending = next;
+          const failure = classifyStorageError(error);
+          updateStatus("error", { error: failure, savedAt: status.savedAt });
+          throw error;
+        }
         saveCount += 1;
         if (checkpointEvery && saveCount % checkpointEvery === 0) {
           try {
@@ -983,6 +1373,7 @@
             autosaveOptions?.onCheckpoint?.(clone(checkpoint));
           } catch (error) { autosaveOptions?.onError?.(error); }
         }
+        updateStatus("saved", { savedAt: saved.updatedAt, error: null });
         autosaveOptions?.onSaved?.(clone(saved));
         return saved;
       }
@@ -991,12 +1382,19 @@
           if (closed) return false;
           pending = clone(project);
           clearTimeout(timer);
+          updateStatus("scheduled", { error: null });
           timer = setTimeout(() => { flush().catch(autosaveOptions?.onError || (() => {})); }, delay);
           return true;
         },
         flush,
-        async dispose(settings) { if (settings?.flush !== false) await flush(); closed = true; clearTimeout(timer); },
-        get pending() { return Boolean(pending); }
+        async dispose(settings) {
+          let failure = null;
+          try { if (settings?.flush !== false) await flush(); } catch (error) { failure = error; }
+          finally { closed = true; clearTimeout(timer); updateStatus("closed", { pending: false }); }
+          if (failure) throw failure;
+        },
+        get pending() { return Boolean(pending); },
+        get status() { return clone(status); }
       };
     }
 
@@ -1067,10 +1465,9 @@
           if (blob.size !== Number(binary.bytes)) throw new Error("Kích thước binary asset không khớp manifest.");
           const expected = boundedText(clean.checksum, 160);
           if (expected) {
-            const actual = await computeContentHash(blob, options?.crypto);
-            const expectedFamily = expected.replace(/^sampled-/, "").split("-")[0];
-            const actualFamily = actual.replace(/^sampled-/, "").split("-")[0];
-            if (expectedFamily === actualFamily && expected !== actual) throw new Error(`Checksum binary không khớp với asset ${sourceId}.`);
+            const verification = await verifyContentHash(blob, expected, options?.crypto);
+            if (verification.reason === "sha256-unavailable") throw new Error(`Không thể xác minh SHA-256 của asset ${sourceId} trên trình duyệt này.`);
+            if (!verification.verified) throw new Error(`Checksum binary không khớp hoặc không được hỗ trợ với asset ${sourceId}.`);
           }
           await inspectAssetBlob(blob, clean);
         }
@@ -1086,6 +1483,7 @@
         ...safeJsonValue(payload.project, 0),
         id: projectId,
         name: `${boundedText(payload.project.name, 140, "Dự án nhập")} · nhập`,
+        projectKind: "project", lifecycle: "active", archivedAt: "", ingestJobs: [], recovery: normalizeRecovery(),
         assetIds: [],
         references: remapIds(payload.project.references || {}, idMap)
       });
@@ -1139,6 +1537,61 @@
       return { project: await getProject(projectId), importedAssets, relinkRequired, sourceProjectId: oldProjectId };
     }
 
+    async function exportAssetManifest(projectId) {
+      const project = await getProject(projectId);
+      if (!project) throw new Error("Không tìm thấy project.");
+      const assets = await listAssets(projectId);
+      const payload = {
+        format: ASSET_MANIFEST_FORMAT, schema: SCHEMA, version: VERSION, recordVersion: RECORD_VERSION, exportedAt: now(),
+        project: { id: project.id, name: project.name },
+        contract: { metadataOnly: true, stableOriginId: true, binaryRequiresRelink: true },
+        assets: assets.map((source) => {
+          const asset = normalizeAsset(source);
+          return safeJsonValue({ ...asset, blob: undefined, thumbnailBlob: undefined, availability: "offline", versions: asset.versions.map((version) => ({ ...version, blob: undefined, binaryRetained: false })) }, 0);
+        })
+      };
+      const text = JSON.stringify(payload);
+      if (new TextEncoder().encode(text).byteLength > MAX_ASSET_MANIFEST_BYTES) throw new Error("Asset manifest vượt giới hạn an toàn 2 MB.");
+      return text;
+    }
+
+    async function importAssetManifest(input, projectId) {
+      if (input instanceof Blob && input.size > MAX_ASSET_MANIFEST_BYTES) throw new Error("Asset manifest vượt giới hạn an toàn 2 MB.");
+      const text = typeof input === "string" ? input : await input?.text?.();
+      if (typeof text !== "string" || new TextEncoder().encode(text).byteLength > MAX_ASSET_MANIFEST_BYTES) throw new Error("Asset manifest không hợp lệ hoặc vượt giới hạn 2 MB.");
+      let payload;
+      try { payload = JSON.parse(text); } catch (_) { throw new Error("Không đọc được JSON asset manifest."); }
+      if (payload?.format !== ASSET_MANIFEST_FORMAT || payload?.schema !== SCHEMA || Number(payload?.version) !== VERSION) throw new Error("Phiên bản asset manifest không được hỗ trợ.");
+      if (!Array.isArray(payload.assets) || payload.assets.length > MAX_ASSETS) throw new Error("Asset manifest vượt giới hạn.");
+      const project = await getProject(projectId);
+      if (!project) throw new Error("Không tìm thấy project nhận manifest.");
+      if (project.assetIds.length + payload.assets.length > MAX_ASSETS) throw new Error(`Mỗi project tối đa ${MAX_ASSETS} asset.`);
+      const idMap = new Map();
+      const prepared = payload.assets.map((raw) => {
+        if (raw?.binary || raw?.blob || raw?.thumbnailBlob) throw new Error("Asset manifest chỉ được chứa metadata.");
+        const sourceId = boundedText(raw?.id, 100);
+        if (!sourceId || idMap.has(sourceId)) throw new Error("Asset manifest chứa ID trống hoặc trùng lặp.");
+        idMap.set(sourceId, uid("asset"));
+        return { sourceId, clean: safeJsonValue(raw, 0) };
+      });
+      const importedIds = [];
+      try {
+        for (const item of prepared) {
+          const asset = await saveAsset({
+            ...item.clean, id: idMap.get(item.sourceId), originId: item.clean.originId || item.sourceId, projectId,
+            folderId: project.folders.some((folder) => folder.id === item.clean.folderId) ? item.clean.folderId : ROOT_FOLDER_ID,
+            duplicateOf: idMap.get(item.clean.duplicateOf) || null, references: remapIds(item.clean.references || [], idMap), effects: remapIds(item.clean.effects || [], idMap),
+            availability: "offline", blob: null, thumbnailBlob: null, provenance: { ...item.clean.provenance, sourceType: "package", sourceId: item.sourceId }
+          });
+          importedIds.push(asset.id);
+        }
+      } catch (error) {
+        for (const id of importedIds) await removeAsset(id).catch(() => {});
+        throw error;
+      }
+      return { importedAssets: importedIds.length, relinkRequired: importedIds.length, assetIds: importedIds };
+    }
+
     async function deleteProject(id) {
       const assets = await listAllProjectAssets(id);
       const snapshots = await listSnapshots(id);
@@ -1152,12 +1605,19 @@
 
     return Object.freeze({
       async ready() { const backend = await backendPromise; return { backend: backend.type, schema: SCHEMA }; },
-      async storageStatus() { const backend = await backendPromise; return { backend: backend.type, persistent: backend.persistent === true || backend.type === "indexeddb", fallbackReason: backend.fallbackReason || "", schema: SCHEMA, recordVersion: RECORD_VERSION }; },
-      saveProject, getProject, listProjects, deleteProject,
+      async storageStatus() {
+        const backend = await backendPromise;
+        const capabilities = await inspectStorageCapabilities(options?.env || globalScope);
+        return { backend: backend.type, persistent: backend.persistent === true || backend.type === "indexeddb", fallbackReason: backend.fallbackReason || "", schema: SCHEMA, recordVersion: RECORD_VERSION, ...capabilities };
+      },
+      saveProject, createProject, getProject, listProjects, archiveProject, duplicateProject, deleteProject,
+      createTemplateFromProject, instantiateTemplate, listTemplates,
+      saveProjectPreset, applyProjectPreset, deleteProjectPreset, linkAssetToWorkspace, unlinkAssetFromWorkspace,
       createFolder, deleteFolder,
       saveAsset, getAsset, listAssets, updateAsset, replaceAsset, relinkAsset, restoreAssetVersion, restoreAssetRecord, removeAsset, touchAsset, findDuplicate, repairDuplicateLinks,
-      createSnapshot, listSnapshots, restoreSnapshot, recoveryStatus, createAutosave,
-      exportPackage, importPackage,
+      registerIngestJob, listIngestJobs, resumeIngestJob, cancelIngestJob,
+      createSnapshot, listSnapshots, restoreSnapshot, recoveryStatus, startProjectSession, finishProjectSession, createAutosave,
+      exportPackage, importPackage, exportAssetManifest, importAssetManifest,
       async close() { (await backendPromise).close(); }
     });
   }
@@ -1187,6 +1647,7 @@
         <div class="hhump-brand"><span class="hhump-logo" aria-hidden="true">UM</span><span><small>MEDIA & DESIGN</small><strong>Universal Media Project</strong></span></div>
         <div class="hhump-top-actions">
           <span class="hhump-persistence" data-ump-persistence>Đang mở kho local...</span>
+          <span class="hhump-autosave" data-ump-autosave data-phase="idle">Autosave · sẵn sàng</span>
           <button class="hhump-button" type="button" data-ump-undo disabled aria-label="Hoàn tác">↶ Hoàn tác</button>
           <button class="hhump-button" type="button" data-ump-redo disabled aria-label="Làm lại">↷ Làm lại</button>
           <button class="hhump-button" type="button" data-ump-snapshot>Chụp phiên bản</button>
@@ -1196,6 +1657,21 @@
         <input class="hhump-hidden" type="file" accept=".hhmedia,application/json" data-ump-package-file aria-label="Chọn gói HH Media">
       </header>
       <section class="hhump-projectbar" aria-label="Thông tin dự án">
+        <div class="hhump-project-switcher">
+          <label><span>Project đang mở</span><select data-ump-project-select aria-label="Chuyển project"></select></label>
+          <button class="hhump-button" type="button" data-ump-new-project>＋ Mới</button>
+          <details class="hhump-project-menu"><summary>Quản lý ▾</summary><div>
+            <button type="button" data-ump-duplicate-project>Nhân bản project</button>
+            <button type="button" data-ump-archive-project>Lưu trữ project</button>
+            <button type="button" data-ump-create-template>Lưu thành template</button>
+            <label>Template<select data-ump-template-select><option value="">Chưa có template</option></select></label><button type="button" data-ump-use-template>Tạo từ template</button>
+            <label>Đã lưu trữ<select data-ump-archived-select><option value="">Chưa có project</option></select></label><button type="button" data-ump-restore-project>Khôi phục project</button>
+            <label>Preset<select data-ump-preset-select><option value="">Chưa có preset</option></select></label><button type="button" data-ump-apply-preset>Áp dụng preset</button>
+            <button type="button" data-ump-save-preset>Lưu cấu hình thành preset</button>
+            <button type="button" data-ump-delete-preset>Xóa preset chọn</button>
+            <button class="danger" type="button" data-ump-delete-project>Xóa vĩnh viễn…</button>
+          </div></details>
+        </div>
         <label><span>Tên dự án</span><input data-ump-project-name maxlength="160" autocomplete="off"></label>
         <div class="hhump-project-metrics" data-ump-metrics></div>
       </section>
@@ -1212,13 +1688,18 @@
           <section class="hhump-commandbar" aria-label="Điều khiển Media Bin">
             <div><strong data-ump-view-title>Tất cả tài sản</strong><small data-ump-view-note>Kho media dùng chung cho toàn bộ editor.</small></div>
             <label>Loại<select data-ump-kind><option value="all">Tất cả</option>${Object.entries(TYPE_LABELS).map(([id, label]) => `<option value="${id}">${label}</option>`).join("")}</select></label>
+            <label>Quyền<select data-ump-rights-filter><option value="all">Tất cả</option><option value="verified">Đã xác minh</option><option value="review">Cần kiểm tra</option></select></label>
+            <button class="hhump-button" type="button" data-ump-export-assets>Manifest asset</button>
+            <button class="hhump-button" type="button" data-ump-import-assets>Mở manifest</button>
             <button class="hhump-button" type="button" data-ump-upload>+ Thêm media</button>
             <input class="hhump-hidden" type="file" multiple accept="image/*,video/*,audio/*,.svg,.ttf,.otf,.woff,.woff2,.cube,.3dl,.look,.lut" data-ump-file aria-label="Chọn media từ thiết bị">
+            <input class="hhump-hidden" type="file" accept=".hhassets,application/json" data-ump-asset-manifest-file aria-label="Chọn asset manifest">
           </section>
           <section class="hhump-dropzone" data-ump-drop tabindex="0" role="button" aria-label="Kéo thả hoặc chọn media">
             <span aria-hidden="true">＋</span><div><strong>Thả ảnh, video, âm thanh, font, LUT hoặc SVG</strong><small>Binary lưu trong IndexedDB trên thiết bị, không đưa vào localStorage.</small></div><button class="hhump-button primary" type="button" data-ump-upload>Chọn tệp</button>
           </section>
           <div class="hhump-notice" data-ump-notice role="status" aria-live="polite">Sẵn sàng.</div>
+          <section class="hhump-ingest-list" data-ump-ingest-list aria-label="Checkpoint nhập tệp"></section>
           <section class="hhump-grid" data-ump-assets aria-label="Danh sách asset"></section>
         </main>
         <aside class="hhump-inspector" aria-label="Chi tiết asset và phiên bản">
@@ -1240,19 +1721,37 @@
     renderShell(root);
     const documentScope = root.ownerDocument;
     const store = options?.store || createStore(options);
-    const ready = await store.ready();
-    if (signal.aborted || pendingMounts.get(root) !== controller) { if (!options?.store) await store.close().catch(() => {}); return null; }
-    const persistence = await store.storageStatus?.() || { backend: ready.backend, persistent: ready.backend === "indexeddb", fallbackReason: "" };
-    let project = options?.projectId ? await store.getProject(options.projectId) : null;
-    if (!project) project = (await store.listProjects())[0] || await store.saveProject({ name: options?.name || "Universal Media Project" });
-    if (signal.aborted || pendingMounts.get(root) !== controller) { if (!options?.store) await store.close().catch(() => {}); return null; }
+    let ready;
+    let persistence;
+    let project;
+    try {
+      ready = await store.ready();
+      if (signal.aborted || pendingMounts.get(root) !== controller) { if (!options?.store) await store.close().catch(() => {}); return null; }
+      persistence = await store.storageStatus?.() || { backend: ready.backend, persistent: ready.backend === "indexeddb", fallbackReason: "" };
+      project = options?.projectId ? await store.getProject(options.projectId) : null;
+      if (!project || project.projectKind === "template" || project.lifecycle === "archived") project = (await store.listProjects())[0] || await (store.createProject?.({ name: options?.name || "Universal Media Project" }) || store.saveProject({ name: options?.name || "Universal Media Project" }));
+      if (signal.aborted || pendingMounts.get(root) !== controller) { if (!options?.store) await store.close().catch(() => {}); return null; }
+    } catch (error) {
+      pendingMounts.delete(root); controller.abort(); root.classList.remove("hhump"); root.innerHTML = "";
+      if (!options?.store) await store.close().catch(() => {});
+      throw error;
+    }
+    let projects = [];
+    let archivedProjects = [];
+    let templates = [];
+    let ingestJobs = [];
+    let recovery = await store.recoveryStatus?.(project.id) || { uncleanSession: false };
+    let currentSessionId = uid("media-session");
+    project = await store.startProjectSession?.(project.id, currentSessionId) || project;
     let assets = [];
     let snapshots = [];
     let selectedId = null;
     let collection = "all";
     let folderId = "all";
     let kind = "all";
+    let rightsFilter = "all";
     let search = "";
+    let autosaveState = { phase: "idle", pending: false, savedAt: null, error: null };
     const objectUrls = new Set();
     const updateHistoryControls = (state) => {
       const undo = root.querySelector("[data-ump-undo]");
@@ -1261,9 +1760,14 @@
       if (redo) { redo.disabled = !state.canRedo; redo.title = state.redoLabel ? `Làm lại: ${state.redoLabel}` : "Không có thao tác để làm lại"; }
     };
     const commandHistory = createCommandHistory({ limit: MAX_COMMAND_HISTORY, onChange: updateHistoryControls });
-    const createProjectAutosave = (projectId) => store.createAutosave(projectId, { delay: 700, checkpointEvery: 10, onSaved: (saved) => { project = saved; notice("Đã tự lưu dự án trên thiết bị."); } });
+    const createProjectAutosave = (projectId) => store.createAutosave(projectId, {
+      delay: 700, checkpointEvery: 10,
+      onState: (state) => { autosaveState = state; renderAutosaveState(); },
+      onSaved: (saved) => { project = saved; notice("Đã tự lưu dự án trên thiết bị."); },
+      onError: (error) => notice(classifyStorageError(error).message, "error")
+    });
     let autosave = createProjectAutosave(project.id);
-    const instance = { root, controller, store, autosave, commandHistory, objectUrls, ownedStore: !options?.store };
+    const instance = { root, controller, store, autosave, commandHistory, objectUrls, ownedStore: !options?.store, finishSession: async () => store.finishProjectSession?.(project.id, currentSessionId) };
     activeInstances.add(instance);
     pendingMounts.delete(root);
 
@@ -1287,8 +1791,36 @@
     }
 
     function filteredAssets() {
-      const searched = searchAssets(assets, search, { folderId, kind });
+      const searched = searchAssets(assets, search, { folderId, kind, rights: rightsFilter });
       return applySmartCollection(searched, collection, { availableFonts: options?.availableFonts || [] });
+    }
+
+    function renderAutosaveState() {
+      const node = root.querySelector("[data-ump-autosave]");
+      if (!node) return;
+      const labels = { idle: "Autosave · sẵn sàng", scheduled: "Autosave · đang chờ", saving: "Autosave · đang lưu…", saved: "Autosave · đã lưu", error: "Autosave · lỗi", closed: "Autosave · đã đóng" };
+      node.dataset.phase = autosaveState.phase || "idle";
+      node.textContent = labels[autosaveState.phase] || labels.idle;
+      node.title = autosaveState.error?.message || (autosaveState.savedAt ? `Lần lưu cuối ${new Date(autosaveState.savedAt).toLocaleString("vi-VN")}` : "");
+    }
+
+    function renderProjectControls() {
+      const select = root.querySelector("[data-ump-project-select]");
+      if (select) select.innerHTML = projects.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === project.id ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("");
+      const templateSelect = root.querySelector("[data-ump-template-select]");
+      if (templateSelect) templateSelect.innerHTML = `<option value="">${templates.length ? "Chọn template…" : "Chưa có template"}</option>` + templates.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("");
+      const archivedSelect = root.querySelector("[data-ump-archived-select]");
+      if (archivedSelect) archivedSelect.innerHTML = `<option value="">${archivedProjects.length ? "Chọn project…" : "Chưa có project"}</option>` + archivedProjects.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("");
+      const presetSelect = root.querySelector("[data-ump-preset-select]");
+      if (presetSelect) presetSelect.innerHTML = `<option value="">${project.presets.length ? "Chọn preset…" : "Chưa có preset"}</option>` + project.presets.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)} · ${escapeHtml(item.section)}</option>`).join("");
+    }
+
+    function renderIngestJobs() {
+      const host = root.querySelector("[data-ump-ingest-list]");
+      if (!host) return;
+      const pendingJobs = ingestJobs.filter((job) => ["awaiting-file", "failed"].includes(job.status)).slice(-5).reverse();
+      host.hidden = !pendingJobs.length;
+      host.innerHTML = pendingJobs.map((job) => `<article data-state="${job.status}"><div><strong>${escapeHtml(job.file.name)}</strong><small>${job.status === "failed" ? escapeHtml(job.error) : "Chọn lại đúng tệp để tiếp tục checkpoint"}</small></div><label>Tiếp tục<input type="file" data-ump-resume-ingest="${escapeHtml(job.id)}"></label><button type="button" data-ump-cancel-ingest="${escapeHtml(job.id)}">Hủy</button></article>`).join("");
     }
 
     function renderCollections() {
@@ -1333,6 +1865,7 @@
         <div class="hhump-kind-badge">${escapeHtml(TYPE_LABELS[asset.kind] || "Tệp")}</div><h3>${escapeHtml(asset.name)}</h3>
         <dl><div><dt>Dung lượng</dt><dd>${formatBytes(asset.size)}</dd></div><div><dt>Checksum</dt><dd title="${escapeHtml(asset.checksum)}">${escapeHtml(asset.checksum ? asset.checksum.slice(0, 18) : "Chưa có")}</dd></div><div><dt>Độ tin cậy hash</dt><dd>${asset.checksumMode === "sampled" ? "Mẫu · tệp lớn" : asset.checksum ? "Toàn tệp" : "Chưa có"}</dd></div><div><dt>Trạng thái</dt><dd>${asset.availability === "ready" ? "Sẵn sàng" : "Cần relink"}</dd></div><div><dt>Tham chiếu</dt><dd>${Array.isArray(asset.references) ? asset.references.length : 0}</dd></div><div><dt>Phiên bản</dt><dd>${asset.versions?.length || 0}</dd></div></dl>
         <label>Tag<input data-ump-tags="${escapeHtml(asset.id)}" value="${escapeHtml((asset.tags || []).join(", "))}" placeholder="thumbnail, social"></label>
+        <div class="hhump-workspace-link"><select data-ump-link-target aria-label="Gắn asset vào workspace"><option value="layers">Layer ảnh/brand</option><option value="tracks">Track video/audio</option><option value="clips">Clip timeline</option><option value="pages">Trang tài liệu</option><option value="scenes">Scene motion</option></select><button class="hhump-button" type="button" data-ump-link-asset="${escapeHtml(asset.id)}">Gắn asset</button></div>
         <div class="hhump-inspector-actions"><button class="hhump-button" type="button" data-ump-replace="${escapeHtml(asset.id)}">Thay tệp</button>${asset.availability !== "ready" ? `<button class="hhump-button" type="button" data-ump-relink="${escapeHtml(asset.id)}">Relink đúng nguồn</button>` : `<button class="hhump-button" type="button" data-ump-open="${escapeHtml(asset.id)}">Đánh dấu đã mở</button>`}<button class="hhump-button danger" type="button" data-ump-remove="${escapeHtml(asset.id)}">Xóa · có hoàn tác</button></div>
         ${hasSensitiveMetadata(asset.metadata) ? `<button class="hhump-button hhump-clean-metadata" type="button" data-ump-clean-metadata="${escapeHtml(asset.id)}">Xóa metadata vị trí/thiết bị</button>` : ""}
         <input class="hhump-hidden" type="file" data-ump-replace-file="${escapeHtml(asset.id)}"><input class="hhump-hidden" type="file" data-ump-relink-file="${escapeHtml(asset.id)}">
@@ -1360,10 +1893,16 @@
     function renderStatus() {
       const warnings = assessWarnings(project, assets, { availableFonts: options?.availableFonts || [] });
       root.querySelector("[data-ump-project-name]").value = project.name;
-      root.querySelector("[data-ump-persistence]").textContent = persistence.persistent ? "IndexedDB · local-first" : `Bộ nhớ tạm · ${persistence.fallbackReason === "indexeddb-unavailable" ? "trình duyệt không hỗ trợ" : "không thể mở kho bền vững"}`;
+      const persistenceNode = root.querySelector("[data-ump-persistence]");
+      const quotaLabel = persistence.quota?.ratio == null ? "quota chưa xác minh" : `${Math.round(persistence.quota.ratio * 100)}% đã dùng`;
+      persistenceNode.textContent = persistence.persistent ? `IndexedDB · ${quotaLabel}` : `Bộ nhớ tạm · ${persistence.fallbackReason === "indexeddb-unavailable" ? "trình duyệt không hỗ trợ" : "không thể mở kho bền vững"}`;
+      persistenceNode.dataset.pressure = persistence.quota?.pressure || "unknown";
+      persistenceNode.title = `${persistence.opfs?.reason || "OPFS chưa kiểm tra"} Không tự nhận đang dùng OPFS.`;
       root.querySelector("[data-ump-health]").textContent = `${warnings.length} cảnh báo`;
       root.querySelector("[data-ump-health]").classList.toggle("has-warning", warnings.length > 0);
       root.querySelector("[data-ump-metrics]").innerHTML = `<span><b>${assets.length}</b> asset</span><span><b>${formatBytes(assets.reduce((sum, asset) => sum + asset.size, 0))}</b> local</span><span><b>${snapshots.length}</b> phiên bản</span><span><b>${warnings.length}</b> cảnh báo</span>`;
+      renderProjectControls();
+      renderAutosaveState();
       updateHistoryControls(commandHistory.state);
     }
 
@@ -1383,6 +1922,7 @@
       renderAssets();
       renderInspector();
       renderSnapshots();
+      renderIngestJobs();
       renderStatus();
       scrollers.forEach(({ selector, top, left }) => { const node = root.querySelector(selector); if (node) { node.scrollTop = top; node.scrollLeft = left; } });
       let focusTarget = focusProjectName ? root.querySelector("[data-ump-project-name]") : null;
@@ -1393,12 +1933,32 @@
 
     async function refresh() {
       if (signal.aborted) return;
+      const pendingName = autosave?.pending ? project.name : "";
       project = await store.getProject(project.id);
+      if (project && pendingName) project = { ...project, name: pendingName };
       if (signal.aborted || !project) return;
       assets = await store.listAssets(project.id);
       snapshots = await store.listSnapshots(project.id);
+      projects = await store.listProjects();
+      archivedProjects = (await store.listProjects({ includeArchived: true })).filter((item) => item.lifecycle === "archived");
+      templates = await store.listTemplates?.() || [];
+      ingestJobs = await store.listIngestJobs?.(project.id) || [];
       if (signal.aborted) return;
       render();
+    }
+
+    async function switchProject(nextProject) {
+      if (!nextProject || nextProject.id === project.id) return;
+      await autosave.dispose().catch(() => {});
+      await store.finishProjectSession?.(project.id, currentSessionId);
+      recovery = await store.recoveryStatus?.(nextProject.id) || { uncleanSession: false };
+      currentSessionId = uid("media-session");
+      project = await store.startProjectSession?.(nextProject.id, currentSessionId) || nextProject;
+      autosaveState = { phase: "idle", pending: false, savedAt: null, error: null };
+      autosave = createProjectAutosave(project.id); instance.autosave = autosave;
+      commandHistory.clear(); selectedId = null; collection = "all"; folderId = "all"; kind = "all"; rightsFilter = "all"; search = "";
+      await refresh();
+      notice(recovery.uncleanSession ? "Đã mở bản autosave sau một phiên chưa đóng sạch. Hãy kiểm tra Lịch sử phiên bản." : `Đã mở ${project.name}.`, recovery.uncleanSession ? "warning" : "success");
     }
 
     async function addFiles(fileList) {
@@ -1412,7 +1972,11 @@
         if (signal.aborted) break;
         try {
           const metadata = await extractMetadata(file, globalScope);
-          const asset = await store.saveAsset({ projectId: project.id, folderId: folderId === "all" ? ROOT_FOLDER_ID : folderId, name: file.name, type: file.type, size: file.size, lastModified: file.lastModified, metadata, provenance: { sourceType: "local-file", originalName: file.name }, blob: file });
+          let asset;
+          if (store.registerIngestJob && store.resumeIngestJob) {
+            const job = await store.registerIngestJob(project.id, file, { folderId: folderId === "all" ? ROOT_FOLDER_ID : folderId });
+            asset = await store.resumeIngestJob(project.id, job.id, file, { metadata, env: globalScope });
+          } else asset = await store.saveAsset({ projectId: project.id, folderId: folderId === "all" ? ROOT_FOLDER_ID : folderId, name: file.name, type: file.type, size: file.size, lastModified: file.lastModified, metadata, provenance: { sourceType: "local-file", originalName: file.name }, blob: file });
           if (asset.duplicateOf) duplicates += 1;
           imported += 1;
         } catch (error) { errors.push(`${boundedText(file.name, 80, "Tệp")}: ${boundedText(error?.message, 180, "Không thể nhập")}`); }
@@ -1424,10 +1988,74 @@
     listen(root, "click", async (event) => {
       if (event.target.closest("[data-ump-undo]")) { if (await commandHistory.undo()) { await refresh(); notice("Đã hoàn tác thao tác gần nhất.", "success"); } return; }
       if (event.target.closest("[data-ump-redo]")) { if (await commandHistory.redo()) { await refresh(); notice("Đã làm lại thao tác.", "success"); } return; }
+      if (event.target.closest("[data-ump-new-project]")) {
+        const name = boundedText(globalScope.prompt?.("Tên project mới:", "Project media mới"), 160);
+        if (name) await switchProject(await store.createProject({ name }));
+        return;
+      }
+      if (event.target.closest("[data-ump-duplicate-project]")) {
+        await autosave.flush();
+        notice("Đang nhân bản project và binary local…");
+        await switchProject(await store.duplicateProject(project.id));
+        return;
+      }
+      if (event.target.closest("[data-ump-archive-project]")) {
+        await autosave.dispose();
+        project = await store.archiveProject(project.id, true);
+        const next = (await store.listProjects()).find((item) => item.id !== project.id) || await store.createProject({ name: "Project media mới" });
+        await switchProject(next); notice("Đã lưu trữ project cũ. Binary vẫn nằm trong kho local.", "success"); return;
+      }
+      if (event.target.closest("[data-ump-create-template]")) {
+        const name = boundedText(globalScope.prompt?.("Tên template:", `${project.name} · template`), 160);
+        if (name) { await autosave.flush(); await store.createTemplateFromProject(project.id, { name }); await refresh(); notice("Đã tạo template metadata; asset riêng tư không bị sao chép.", "success"); }
+        return;
+      }
+      if (event.target.closest("[data-ump-use-template]")) {
+        const templateId = root.querySelector("[data-ump-template-select]")?.value;
+        if (!templateId) { notice("Hãy chọn một template.", "warning"); return; }
+        const template = templates.find((item) => item.id === templateId);
+        const name = boundedText(globalScope.prompt?.("Tên project từ template:", template?.name?.replace(/\s*·\s*template$/i, "") || "Project từ template"), 160);
+        if (name) await switchProject(await store.instantiateTemplate(templateId, { name }));
+        return;
+      }
+      if (event.target.closest("[data-ump-restore-project]")) {
+        const archivedId = root.querySelector("[data-ump-archived-select]")?.value;
+        if (!archivedId) { notice("Hãy chọn project đã lưu trữ.", "warning"); return; }
+        const restored = await store.archiveProject(archivedId, false); await refresh(); notice(`Đã khôi phục ${restored.name}.`, "success"); return;
+      }
+      if (event.target.closest("[data-ump-save-preset]")) {
+        const name = boundedText(globalScope.prompt?.("Tên preset cấu hình:", "Preset mới"), 120);
+        if (name) { await autosave.flush(); await store.saveProjectPreset(project.id, { name, section: "settings", payload: project.settings }); await refresh(); notice("Đã lưu preset cấu hình trong project.", "success"); }
+        return;
+      }
+      if (event.target.closest("[data-ump-apply-preset]")) {
+        const presetId = root.querySelector("[data-ump-preset-select]")?.value;
+        if (!presetId) { notice("Hãy chọn một preset.", "warning"); return; }
+        await autosave.flush(); project = await store.applyProjectPreset(project.id, presetId); await refresh(); notice("Đã áp dụng preset.", "success"); return;
+      }
+      if (event.target.closest("[data-ump-delete-preset]")) {
+        const presetId = root.querySelector("[data-ump-preset-select]")?.value;
+        if (!presetId) { notice("Hãy chọn preset cần xóa.", "warning"); return; }
+        await autosave.flush(); await store.deleteProjectPreset(project.id, presetId); await refresh(); notice("Đã xóa preset.", "success"); return;
+      }
+      if (event.target.closest("[data-ump-delete-project]")) {
+        const confirmation = boundedText(globalScope.prompt?.(`Nhập chính xác “${project.name}” để xóa vĩnh viễn project và binary:`, ""), 160);
+        if (confirmation !== project.name) { notice("Đã hủy xóa project.", "warning"); return; }
+        const deletedId = project.id;
+        await autosave.dispose({ flush: false }); await store.finishProjectSession?.(deletedId, currentSessionId); await store.deleteProject(deletedId);
+        const next = (await store.listProjects())[0] || await store.createProject({ name: "Project media mới" });
+        await switchProject(next); notice("Đã xóa vĩnh viễn project, snapshot và binary liên quan.", "success"); return;
+      }
       const upload = event.target.closest("[data-ump-upload]");
       if (upload) { root.querySelector("[data-ump-file]").click(); return; }
       const packageImport = event.target.closest("[data-ump-import]");
       if (packageImport) { root.querySelector("[data-ump-package-file]").click(); return; }
+      if (event.target.closest("[data-ump-export-assets]")) {
+        const text = await store.exportAssetManifest(project.id); downloadText(documentScope, text, `${project.name.replace(/[^a-z0-9_-]+/gi, "-") || "hh-assets"}.hhassets`); notice("Đã xuất asset manifest metadata; binary không được nhúng.", "success"); return;
+      }
+      if (event.target.closest("[data-ump-import-assets]")) { root.querySelector("[data-ump-asset-manifest-file]")?.click(); return; }
+      const cancelIngest = event.target.closest("[data-ump-cancel-ingest]");
+      if (cancelIngest) { await store.cancelIngestJob(project.id, cancelIngest.dataset.umpCancelIngest); await refresh(); notice("Đã hủy checkpoint nhập tệp.", "success"); return; }
       const collectionButton = event.target.closest("[data-ump-collection]");
       if (collectionButton) { collection = collectionButton.dataset.umpCollection; folderId = "all"; render(); return; }
       const folderButton = event.target.closest("[data-ump-folder]");
@@ -1440,6 +2068,12 @@
       }
       const assetCard = event.target.closest("[data-ump-asset]");
       if (assetCard) { selectedId = assetCard.dataset.umpAsset; renderAssets(); renderInspector(); return; }
+      const linkAsset = event.target.closest("[data-ump-link-asset]");
+      if (linkAsset) {
+        const target = root.querySelector("[data-ump-link-target]")?.value;
+        const entity = await store.linkAssetToWorkspace(project.id, linkAsset.dataset.umpLinkAsset, target, { role: "asset-placement" });
+        await refresh(); notice(`Đã gắn asset vào ${target} bằng ID ${entity.id}.`, "success"); return;
+      }
       if (event.target.closest("[data-ump-new-folder]")) {
         const name = boundedText(globalScope.prompt?.("Tên thư mục mới:", "Tài sản dự án"), 100);
         if (name) { const folder = await store.createFolder(project.id, { name }); folderId = folder.id; await refresh(); notice("Đã tạo thư mục.", "success"); }
@@ -1485,6 +2119,11 @@
     });
 
     listen(root, "change", async (event) => {
+      if (event.target.matches("[data-ump-project-select]")) {
+        const next = projects.find((item) => item.id === event.target.value);
+        if (next) await switchProject(next);
+        return;
+      }
       if (event.target.matches("[data-ump-file]")) { await addFiles(event.target.files); event.target.value = ""; return; }
       if (event.target.matches("[data-ump-package-file]")) {
         const file = event.target.files?.[0];
@@ -1492,14 +2131,27 @@
         try {
           const imported = await store.importPackage(file);
           if (signal.aborted) return;
-          await autosave.dispose({ flush: false }); project = imported.project; autosave = createProjectAutosave(project.id); instance.autosave = autosave; commandHistory.clear(); selectedId = null;
-          await refresh(); notice(`Đã nhập ${imported.importedAssets} asset; ${imported.relinkRequired} asset cần relink.`, imported.relinkRequired ? "warning" : "success");
+          await switchProject(imported.project); notice(`Đã nhập ${imported.importedAssets} asset; ${imported.relinkRequired} asset cần relink.`, imported.relinkRequired ? "warning" : "success");
         }
         catch (error) { notice(error.message, "error"); }
         event.target.value = "";
         return;
       }
+      if (event.target.matches("[data-ump-asset-manifest-file]")) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try { const imported = await store.importAssetManifest(file, project.id); await refresh(); notice(`Đã nhập ${imported.importedAssets} metadata asset; cần relink toàn bộ binary.`, "warning"); }
+        catch (error) { notice(error.message, "error"); }
+        event.target.value = ""; return;
+      }
+      if (event.target.matches("[data-ump-resume-ingest]")) {
+        const file = event.target.files?.[0]; if (!file) return;
+        try { await store.resumeIngestJob(project.id, event.target.dataset.umpResumeIngest, file, { env: globalScope }); await refresh(); notice("Đã tiếp tục và hoàn tất checkpoint nhập tệp.", "success"); }
+        catch (error) { await refresh(); notice(error.message, "error"); }
+        event.target.value = ""; return;
+      }
       if (event.target.matches("[data-ump-kind]")) { kind = event.target.value; renderAssets(); return; }
+      if (event.target.matches("[data-ump-rights-filter]")) { rightsFilter = event.target.value; renderAssets(); return; }
       if (event.target.matches("[data-ump-tags]")) {
         const asset = await store.getAsset(event.target.dataset.umpTags); const nextTags = uniqueStrings(event.target.value.split(","), MAX_TAGS, 60);
         await commandHistory.execute({ label: "Cập nhật tag", redo: () => store.updateAsset(asset.id, { tags: nextTags }), undo: () => store.updateAsset(asset.id, { tags: asset.tags }) });
@@ -1556,7 +2208,8 @@
 
     await refresh();
     if (signal.aborted) return null;
-    notice(persistence.persistent ? "Kho IndexedDB đã sẵn sàng trên thiết bị." : "IndexedDB không khả dụng; dữ liệu chỉ tồn tại trong phiên này.", persistence.persistent ? "success" : "warning");
+    if (recovery.uncleanSession) notice("Đã khôi phục bản autosave của phiên trước chưa đóng sạch. Bạn có thể đối chiếu snapshot trong Lịch sử phiên bản.", "warning");
+    else notice(persistence.persistent ? "Kho IndexedDB đã sẵn sàng trên thiết bị." : "IndexedDB không khả dụng; dữ liệu chỉ tồn tại trong phiên này.", persistence.persistent ? "success" : "warning");
     return Object.freeze({
       getProject: () => clone(project),
       getAssets: () => clone(assets),
@@ -1578,6 +2231,7 @@
     for (const instance of targets) {
       instance.controller.abort();
       await instance.autosave.dispose().catch(() => {});
+      await instance.finishSession?.().catch(() => {});
       instance.commandHistory?.clear?.();
       instance.objectUrls.forEach((url) => globalScope.URL?.revokeObjectURL?.(url));
       if (instance.ownedStore) await instance.store.close().catch(() => {});
@@ -1588,12 +2242,12 @@
   }
 
   const api = Object.freeze({
-    SCHEMA, FORMAT, VERSION, RECORD_VERSION, DB_NAME, STORE_NAMES, ROOT_FOLDER_ID,
-    LIMITS: Object.freeze({ MAX_ASSETS, MAX_FOLDERS, MAX_TAGS, MAX_SNAPSHOTS, MAX_INLINE_ASSET_BYTES, MAX_PACKAGE_TEXT_BYTES, MAX_ASSET_BYTES, MAX_ASSET_VERSIONS, MAX_VERSION_BINARY_BYTES, MAX_VERSION_BINARY_TOTAL_BYTES, MAX_COMMAND_HISTORY, HASH_FULL_MAX_BYTES, MAX_SVG_BYTES }),
+    SCHEMA, FORMAT, ASSET_MANIFEST_FORMAT, VERSION, RECORD_VERSION, DB_NAME, STORE_NAMES, ROOT_FOLDER_ID,
+    LIMITS: Object.freeze({ MAX_ASSETS, MAX_FOLDERS, MAX_TAGS, MAX_SNAPSHOTS, MAX_INLINE_ASSET_BYTES, MAX_PACKAGE_TEXT_BYTES, MAX_ASSET_MANIFEST_BYTES, MAX_ASSET_BYTES, MAX_ASSET_VERSIONS, MAX_VERSION_BINARY_BYTES, MAX_VERSION_BINARY_TOTAL_BYTES, MAX_COMMAND_HISTORY, HASH_FULL_MAX_BYTES, MAX_SVG_BYTES, MAX_PROJECTS, MAX_PROJECT_PRESETS, MAX_INGEST_JOBS, MAX_SHARED_ENTITIES }),
     TYPE_LABELS, SMART_COLLECTIONS,
-    classifyAsset, normalizeProject, normalizeAsset, normalizeRights, normalizeProvenance, migrateProjectRecord, migrateAssetRecord, migrateSnapshotRecord,
+    classifyAsset, normalizeProject, normalizeAsset, normalizeRights, normalizeProvenance, normalizeSharedWorkspace, normalizeProjectPreset, normalizeIngestJob, ingestFingerprint, migrateProjectRecord, migrateAssetRecord, migrateSnapshotRecord,
     searchAssets, applySmartCollection, assessWarnings, stripSensitiveMetadata, hasSensitiveMetadata,
-    proxyPlan, metadataCapability, computeContentHash, inspectAssetBlob, extractMetadata, createCommandHistory,
+    proxyPlan, metadataCapability, computeContentHash, verifyContentHash, inspectAssetBlob, extractMetadata, classifyStorageError, inspectStorageCapabilities, createCommandHistory,
     createMemoryBackend, createStore, mount, unmount
   });
 

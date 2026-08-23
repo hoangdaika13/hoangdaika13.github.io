@@ -44,10 +44,10 @@ test("new studios are colorful, responsive, motion-safe and offline cached", () 
   assert.match(css, /mpp-photo-develop/);
   assert.match(css, /@media\(max-width:760px\)/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(loader, /media-project-photo-studio\.css\?v=4/);
-  assert.match(loader, /media-project-photo-studio\.js\?v=3/);
-  assert.match(worker, /media-project-photo-studio\.css\?v=4/);
-  assert.match(worker, /media-project-photo-studio\.js\?v=3/);
+  assert.match(loader, /media-project-photo-studio\.css\?v=5/);
+  assert.match(loader, /media-project-photo-studio\.js\?v=4/);
+  assert.match(worker, /media-project-photo-studio\.css\?v=5/);
+  assert.match(worker, /media-project-photo-studio\.js\?v=4/);
 });
 
 test("Layer Studio performs bounded CRUD, reorder, lock, blend and exact undo redo", () => {
@@ -149,6 +149,7 @@ test("canvas composition honors real layer order, opacity, blend and visibility"
     translate() {}
     rotate() {}
     scale() {}
+    fillRect() {}
     drawImage(source) { this.draws.push({ source, alpha: this.globalAlpha, blend: this.globalCompositeOperation }); }
     getImageData() { return { data: new Uint8ClampedArray(4) }; }
   }
@@ -166,9 +167,9 @@ test("canvas composition honors real layer order, opacity, blend and visibility"
     const surface = new FakeCanvas();
     const output = studio.drawComposite(surface, new Map([["a", sourceA], ["b", sourceB]]), layers, studio.defaultRecipe(), 1600);
     assert.equal(output.renderedLayers, 1);
-    const layerDraw = contexts.flatMap((context) => context.draws).find((draw) => draw.source === sourceA);
-    assert.equal(layerDraw.alpha, 0.5);
-    assert.equal(layerDraw.blend, "screen");
+    assert.ok(contexts.flatMap((context) => context.draws).some((draw) => draw.source === sourceA));
+    const compositeDraw = contexts.flatMap((context) => context.draws).find((draw) => draw.alpha === 0.5 && draw.blend === "screen");
+    assert.ok(compositeDraw, "opacity and blend are applied when the isolated layer surface is composited");
 
     const transparent = studio.drawComposite(new FakeCanvas(), new Map([["a", sourceA]]), [{ ...layers[0], visible: false }], studio.defaultRecipe(), 1600);
     assert.equal(transparent.renderedLayers, 0);
@@ -187,4 +188,151 @@ test("photo workspace exposes native layer controls, selection, cleanup and one 
   assert.match(css, /mpp-layer-studio/);
   assert.match(css, /media-project-photo-studio\.is-photo>main\{[^}]*overflow:auto/);
   assert.match(css, /@media\(max-width:760px\)[\s\S]*mpp-layer-list/);
+});
+
+test("crop and straighten stay normalized, aspect-aware and restorable by history", () => {
+  assert.equal(studio.selectionHasArea({ type: "rectangle", x: 1, y: 1, width: 0, height: 20 }), false);
+  assert.equal(studio.selectionHasArea({ type: "lasso", points: [[1, 1], [2, 2], [3, 1]] }), true);
+  assert.deepEqual(studio.normalizeCrop({ enabled: true, x: 90, y: 95, width: 50, height: 90, aspect: "hack" }), { enabled: true, x: 90, y: 95, width: 10, height: 5, aspect: "free" });
+  const square = studio.applyCropAspect({ enabled: true, x: 0, y: 0, width: 80, height: 70 }, "1:1", 2);
+  assert.equal(square.aspect, "1:1");
+  assert.equal(square.width / square.height, 0.5);
+  assert.deepEqual(studio.cropRect(1000, 500, { enabled: true, x: 10, y: 20, width: 50, height: 40 }), { x: 100, y: 100, width: 500, height: 200 });
+  assert.deepEqual(studio.mapSelectionToCrop({ type: "rectangle", x: 20, y: 30, width: 20, height: 20 }, { enabled: true, x: 10, y: 20, width: 50, height: 40 }), { type: "rectangle", x: 20, y: 25, width: 40, height: 50, points: [] });
+
+  let state = studio.normalizeState({});
+  state = studio.mutatePhotoState(state, "Crop", (draft) => { draft.crop = { enabled: true, x: 10, y: 15, width: 70, height: 60, aspect: "free" }; draft.straighten = 99; });
+  assert.equal(state.crop.enabled, true);
+  assert.equal(state.straighten, 15);
+  state = studio.undoPhotoState(state);
+  assert.equal(state.crop.enabled, false);
+  assert.equal(state.straighten, 0);
+});
+
+test("effect stack is bounded, ordered, independently enabled and undoable", () => {
+  let state = studio.normalizeState({ effects: Array.from({ length: 40 }, (_, index) => ({ id: `effect-${index}`, type: "grain", amount: 999 })) });
+  assert.equal(state.effects.length, studio.MAX_EFFECTS);
+  assert.ok(state.effects.every((effect) => effect.amount === 100));
+  state = studio.normalizeState({});
+  state = studio.addEffect(state, "vignette");
+  const vignetteId = state.effects[0].id;
+  state = studio.addEffect(state, "warmth");
+  const warmthId = state.effects[1].id;
+  state = studio.updateEffect(state, vignetteId, { amount: 75, enabled: false });
+  assert.deepEqual(state.effects.map((effect) => [effect.type, effect.enabled, effect.amount]), [["vignette", false, 75], ["warmth", true, 30]]);
+  state = studio.reorderEffect(state, warmthId, 0);
+  assert.deepEqual(state.effects.map((effect) => effect.type), ["warmth", "vignette"]);
+  state = studio.deleteEffect(state, vignetteId);
+  assert.deepEqual(state.effects.map((effect) => effect.type), ["warmth"]);
+  state = studio.undoPhotoState(state);
+  assert.equal(state.effects.length, 2);
+});
+
+test("mask, clipping and brush metadata are bounded and carried by Layer Studio history", () => {
+  const hostileStroke = { mode: "paint", brush: { size: 999, opacity: -5, color: "url(js)" }, points: Array.from({ length: 800 }, () => [-10, 500, 7]) };
+  let state = studio.addLayer(studio.normalizeState({}), { id: "paint", kind: "paint", strokes: [hostileStroke] });
+  let paint = state.layers[0];
+  assert.equal(paint.strokes[0].points.length, 512);
+  assert.deepEqual(paint.strokes[0].points[0], [0, 100, 1]);
+  assert.equal(paint.strokes[0].brush.size, 240);
+  assert.equal(paint.strokes[0].brush.opacity, 1);
+  assert.equal(paint.strokes[0].brush.color, "#ff6bce");
+  state = studio.updateLayer(state, "paint", { clippingToBelow: true, mask: { type: "selection", enabled: true, inverted: true, feather: 999, selection: { type: "ellipse", x: 10, y: 10, width: 50, height: 50 } } }, "Mask layer");
+  paint = state.layers[0];
+  assert.equal(paint.clippingToBelow, true);
+  assert.equal(paint.mask.type, "selection");
+  assert.equal(paint.mask.feather, 100);
+  assert.equal(paint.mask.selection.type, "ellipse");
+  state = studio.undoPhotoState(state);
+  assert.equal(state.layers[0].mask.type, "none");
+  assert.equal(state.layers[0].clippingToBelow, false);
+});
+
+test("magic selection is capability-gated and batch plans never claim unsupported work", () => {
+  assert.equal(studio.photoCapabilities({ document: { createElement() {} } }).magicSelect, "unavailable");
+  assert.equal(studio.photoCapabilities({ document: { createElement() {} } }, { magicSelect() {} }).magicSelect, "adapter-ready");
+  const photos = [
+    { id: "a", name: "alpha.png", size: 100, width: 1200, height: 800 },
+    { id: "b", name: "beta.png", size: 100, width: 40000, height: 10 }
+  ];
+  let plan = studio.createBatchExportPlan(photos, [], { format: "image/webp" }, { formats: { "image/webp": "verify-on-export" } });
+  assert.equal(plan.valid, false);
+  assert.match(plan.blockers[0], /Chưa chọn/);
+  plan = studio.createBatchExportPlan(photos, ["a"], { format: "image/jpeg" }, { formats: { "image/jpeg": "verify-on-export" } });
+  assert.equal(plan.valid, true);
+  assert.match(plan.warnings[0], /alpha/);
+  plan = studio.createBatchExportPlan(photos, ["a"], { format: "image/webp" }, { formats: { "image/webp": "unavailable" } });
+  assert.equal(plan.valid, false);
+  assert.match(plan.blockers.join(" "), /không có bộ mã hóa/);
+  plan = studio.createBatchExportPlan(photos, ["b"], { format: "image/png" }, { formats: { "image/png": "required" } });
+  assert.equal(plan.valid, false);
+  assert.match(plan.blockers.join(" "), /kích thước/);
+  plan = studio.createBatchExportPlan(photos, ["a", "stale-id"], { format: "image/png" }, { formats: { "image/png": "required" } });
+  assert.equal(plan.valid, false);
+  assert.match(plan.blockers.join(" "), /không còn/);
+});
+
+test("Photo v3 exposes real crop, brush, masks, effects, before-after and batch UI", () => {
+  ["data-mpp-crop-aspect", "data-mpp-straighten", "data-mpp-brush", "data-mpp-layer-clipping", "data-mpp-mask-from-selection", "data-mpp-mask-feather", "data-mpp-add-effect", "data-mpp-effect-amount", "data-mpp-compare-mode", "data-mpp-batch-photo", "data-mpp-batch-export"].forEach((token) => assert.match(source, new RegExp(token)));
+  assert.match(source, /Magic Select chưa được cấu hình/);
+  assert.match(source, /drawBeforeAfter/);
+  assert.match(source, /pointercancel/);
+  assert.match(css, /Photo & Image v3/);
+  assert.match(css, /mpp-crop-overlay/);
+  assert.match(css, /mpp-effect-stack/);
+  assert.match(css, /mpp-mask-controls/);
+  assert.match(css, /mpp-batch-warning/);
+});
+
+test("renderer applies crop, paint strokes, selection mask and effects to real canvas operations", () => {
+  const previous = globalThis.OffscreenCanvas, operations = [];
+  class Context {
+    constructor() { this.globalAlpha = 1; this.globalCompositeOperation = "source-over"; this.filter = "none"; }
+    clearRect() { operations.push("clear"); }
+    save() {}
+    restore() {}
+    translate() {}
+    rotate() {}
+    scale() {}
+    beginPath() { operations.push("beginPath"); }
+    rect() { operations.push("rect"); }
+    ellipse() { operations.push("ellipse"); }
+    moveTo() {}
+    lineTo() { operations.push("lineTo"); }
+    closePath() {}
+    arc() { operations.push("arc"); }
+    clip() { operations.push("clip"); }
+    fill() { operations.push("fill"); }
+    stroke() { operations.push("stroke"); }
+    fillRect() { operations.push(`fillRect:${this.globalCompositeOperation}`); }
+    drawImage() { operations.push(`draw:${this.globalCompositeOperation}`); }
+    getImageData() { return { data: new Uint8ClampedArray(4) }; }
+    createRadialGradient() { return { addColorStop() {} }; }
+  }
+  class Canvas {
+    constructor(width = 1, height = 1) { this.width = width; this.height = height; this.context = new Context(); }
+    getContext() { return this.context; }
+  }
+  globalThis.OffscreenCanvas = Canvas;
+  try {
+    const image = { width: 200, height: 100 };
+    const layers = [
+      { id: "image", sourcePhotoId: "image", mask: { type: "selection", enabled: true, selection: { type: "ellipse", x: 10, y: 10, width: 80, height: 80 } } },
+      { id: "paint", kind: "paint", strokes: [{ mode: "paint", brush: { size: 10, color: "#ff0000" }, points: [[10, 10, 1], [90, 90, 1]] }] }
+    ];
+    const surface = new Canvas();
+    const result = studio.drawComposite(surface, new Map([["image", image]]), layers, studio.defaultRecipe(), 1600, {
+      crop: { enabled: true, x: 0, y: 0, width: 50, height: 50 }, effects: [{ type: "warmth", amount: 40 }]
+    });
+    assert.equal(result.width, 100);
+    assert.equal(result.height, 50);
+    assert.equal(result.renderedLayers, 2);
+    assert.ok(operations.includes("ellipse"));
+    assert.ok(operations.includes("stroke"));
+    assert.ok(operations.some((operation) => operation === "fillRect:soft-light"));
+    assert.ok(operations.some((operation) => operation === "draw:destination-in"));
+  } finally {
+    if (previous === undefined) delete globalThis.OffscreenCanvas;
+    else globalThis.OffscreenCanvas = previous;
+  }
 });

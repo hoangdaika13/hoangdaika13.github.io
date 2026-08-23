@@ -23,8 +23,8 @@ function timelineProject() {
 
 test("exports pure Resolve operations and declares seven Vietnamese workspaces", () => {
   for (const name of [
-    "createProject", "normalizeProject", "snapTime", "applyTimelineOperation", "addSubtitle", "createNestedSequence",
-    "planProxy", "createWaveformEnvelope", "addKeyframe", "setMulticam", "setMotionModel", "updateColor",
+    "createProject", "normalizeProject", "snapTime", "applyTimelineOperation", "addSubtitle", "updateSubtitle", "removeSubtitle", "parseSubtitleText", "exportWebVtt", "createNestedSequence",
+    "planProxy", "createWaveformEnvelope", "addKeyframe", "updateKeyframe", "removeKeyframe", "setMulticam", "setMotionModel", "updateColor",
     "updateAudioChannel", "enqueueExport", "updateExportStatus", "recoverInterruptedExports", "createHistory", "commitHistory", "undo", "redo"
   ]) assert.equal(typeof ops[name], "function", `missing operation ${name}`);
   for (const marker of [
@@ -127,6 +127,25 @@ test("subtitle, nested sequence and multicam models retain source data", () => {
   assert.equal(multicam.multicam.angles.length, 2);
 });
 
+test("subtitle manager parses, edits, removes and exports bounded WebVTT truthfully", () => {
+  const source = `WEBVTT\n\nintro\n00:00:01.000 --> 00:00:03.250 align:start\n<i>Xin chào</i>\nViệt Nam\n\n00:04,000 --> 00:05,500\nCâu thứ hai`;
+  const parsed = ops.parseSubtitleText(source, { language: "vi-VN", idPrefix: "lesson" });
+  assert.equal(parsed.length, 2);
+  assert.deepEqual(parsed[0], { id: "lesson-intro", start: 1, duration: 2.25, text: "Xin chào\nViệt Nam", language: "vi-VN" });
+  let project = ops.normalizeProject({ subtitles: parsed });
+  project = ops.updateSubtitle(project, parsed[0].id, { start: -5, duration: 0, text: "Đã <sửa>", language: "zh-Hans-extra-long" });
+  assert.deepEqual(project.subtitles[0], { id: "lesson-intro", start: 0, duration: .1, text: "Đã  sửa", language: "zh-Hans-extr" });
+  const vtt = ops.exportWebVtt(project);
+  assert.match(vtt, /^WEBVTT\n\n/);
+  assert.match(vtt, /00:00:00\.000 --> 00:00:00\.100/);
+  assert.match(vtt, /00:00:04\.000 --> 00:00:05\.500/);
+  const removed = ops.removeSubtitle(project, "lesson-intro");
+  assert.equal(removed.subtitles.length, 1);
+  assert.equal(project.subtitles.length, 2);
+  const huge = Array.from({ length: 400 }, (_, index) => `${index + 1}\n00:00:${String(index % 60).padStart(2, "0")},000 --> 00:00:${String(index % 60).padStart(2, "0")},500\nCue ${index}`).join("\n\n");
+  assert.equal(ops.parseSubtitleText(huge).length, ops.LIMITS.subtitles);
+});
+
 test("proxy planning and waveform envelopes are local and truthful", () => {
   const plan = ops.planProxy({ id: "asset-1", size: 100000000 }, .5);
   assert.equal(plan.status, "planned");
@@ -141,12 +160,13 @@ test("proxy planning and waveform envelopes are local and truthful", () => {
 
 test("keyframe, motion, color and audio models remain bounded and non-destructive", () => {
   const original = timelineProject();
-  const keyed = ops.addKeyframe(original, { id: "kf-1", property: "scale", time: 2, value: 120, easing: "ease-out" });
+  const keyed = ops.addKeyframe(original, { id: "kf-1", clipId: "b", property: "scale", time: 2, value: 120, easing: "ease-out" });
   const motion = ops.setMotionModel(keyed, "speedRamp", { enabled: true, points: [{ time: 0, speed: 1 }, { time: 2, speed: 2.5 }] });
   const stabilized = ops.setMotionModel(motion, "stabilization", { enabled: true, strength: 4, status: "local-transform" });
   const colored = ops.updateColor(stabilized, { lut: "cinema", curves: [{ x: 0, y: 0 }, { x: .5, y: .7 }, { x: 1, y: 1 }], addNode: { id: "node-2", type: "glow" } });
   const mixed = ops.updateAudioChannel(colored, "A1", { gain: 2, pan: -2, eq: { low: -40, mid: 4, high: 40 }, compressor: { enabled: true, threshold: -8, ratio: 30 }, noiseReduction: { enabled: true, amount: .4 }, automation: [{ time: 1, value: .7 }] });
   assert.equal(original.keyframes.length, 0);
+  assert.equal(keyed.keyframes[0].clipId, "b");
   assert.equal(keyed.keyframes[0].easing, "ease-out");
   assert.equal(stabilized.motion.stabilization.strength, 1);
   assert.equal(colored.color.lut, "cinema");
@@ -155,6 +175,26 @@ test("keyframe, motion, color and audio models remain bounded and non-destructiv
   assert.equal(mixed.audio.channels[0].gain, 1.5);
   assert.equal(mixed.audio.channels[0].pan, -1);
   assert.equal(mixed.audio.channels[0].compressor.ratio, 20);
+});
+
+test("keyframes update and delete the selected clip property without touching neighbors", () => {
+  let project = ops.addKeyframe(timelineProject(), { id: "kf-a", clipId: "a", property: "opacity", time: 1, value: 80, easing: "linear" });
+  project = ops.addKeyframe(project, { id: "kf-b", clipId: "b", property: "speed", time: 5, value: 150, easing: "ease-in" });
+  const updated = ops.updateKeyframe(project, "kf-a", { clipId: "c", property: "rotation", time: -10, value: 45, easing: "ease-out" });
+  assert.deepEqual(updated.keyframes.find((item) => item.id === "kf-a"), { id: "kf-a", clipId: "c", property: "rotation", time: 0, value: 45, easing: "ease-out" });
+  assert.deepEqual(updated.keyframes.find((item) => item.id === "kf-b"), project.keyframes.find((item) => item.id === "kf-b"));
+  const removed = ops.removeKeyframe(updated, "kf-a");
+  assert.deepEqual(removed.keyframes.map((item) => item.id), ["kf-b"]);
+  assert.equal(updated.keyframes.length, 2);
+});
+
+test("track removal is safe only for empty tracks", () => {
+  const project = timelineProject();
+  const occupied = ops.applyTimelineOperation(project, { type: "remove-track", trackId: "V1" });
+  assert.equal(occupied.tracks.some((track) => track.id === "V1"), true);
+  const withEmpty = ops.applyTimelineOperation(project, { type: "add-track", id: "V3", name: "B-roll" });
+  const removed = ops.applyTimelineOperation(withEmpty, { type: "remove-track", trackId: "V3" });
+  assert.equal(removed.tracks.some((track) => track.id === "V3"), false);
 });
 
 test("export queue never claims rendering or completion without browser capability", () => {
@@ -204,13 +244,13 @@ test("bounded undo and redo restore normalized project snapshots", () => {
 test("UI contract exposes professional controls, truthful notices and accessibility", () => {
   for (const marker of [
     "data-vr-edit-ribbon", "timeline-blade", "timeline-ripple", "timeline-slip-back", "timeline-slide-forward", "timeline-snap",
-    "subtitle-add", "nested-create", "pro-multicam", "motion-track", "motion-stabilize", "motion-ramp", "pro-keyframes",
+    "subtitle-add", "subtitle-create", "data-vr-subtitle-file", "subtitle-export", "data-vr-subtitle-field", "nested-create", "pro-multicam", "motion-track", "motion-stabilize", "motion-ramp", "pro-keyframes",
     "data-vr-scope=\"waveform\"", "data-vr-scope=\"histogram\"", "data-vr-lut", "curve-contrast", "audio-automation",
     "Noise Reduction", "Compressor", "Hàng đợi kết xuất", "provider-not-configured", "MediaRecorder", "captureStream",
     "video/mp4", "HHVideoExport", "resolveRecorderMime", "MP4 H.264/AAC",
     "timeline-trim-start", "timeline-trim-end", "timeline-duplicate", "timeline-track-lock",
     "micRequest", "state.scopeTimer", "state.urls", "queue-retry", "queue-cancel",
-    "Shift+1", "Shift+7", "event.key.toLowerCase() === \"b\"", "event.key.toLowerCase() === \"n\""
+    "data-vr-keyframe-new", "data-vr-keyframe-field", "keyframe-select", "Shift+1", "Shift+7", "event.key.toLowerCase() === \"b\"", "event.key.toLowerCase() === \"n\""
   ]) assert.ok(source.includes(marker), `missing UI contract ${marker}`);
   assert.doesNotMatch(source, /AIza|sk-[A-Za-z0-9]|mongodb(?:\+srv)?:\/\//i);
 });
@@ -219,7 +259,7 @@ test("CSS supports focus, internal mobile scrolling and reduced motion at 375px"
   for (const marker of [
     ".vr-edit-ribbon", ".vr-proxy-plan", ".vr-curve-model", ".vr-automation-lane", ".vr-render-queue article>span.unsupported",
     ":focus-visible", "@media(max-width:560px)", ".ve-resolve{min-width:0;width:100%}", "overflow-x:auto",
-    ".vr-job-actions", "scrollbar-gutter:stable",
+    ".vr-job-actions", ".vr-subtitle-drawer", ".vr-subtitle-list", ".vr-keyframe-editor", "scrollbar-gutter:stable",
     "@media(prefers-reduced-motion:reduce)", "transition:none!important"
   ]) assert.ok(css.includes(marker), `missing CSS contract ${marker}`);
   assert.doesNotMatch(css, /font-size:\s*clamp\([^;]*vw[^;]*\)/i);

@@ -1,6 +1,6 @@
 # HH Media & Design — third-party notices and research log
 
-Updated: 2026-08-23
+Updated: 2026-08-24
 
 This document separates code that is actually shipped from projects that were
 reviewed only as architectural references. HH Media & Design does not copy a
@@ -32,11 +32,19 @@ the repository does not mean every browser can run its associated workflow.
 | Uppy | Resumable upload and crash-recovery patterns | MIT; https://github.com/transloadit/uppy |
 | Google Fonts Developer API | Font-family metadata, variants and subsets | Google API terms apply; https://developers.google.com/fonts/docs/developer_api |
 | Remotion | Programmatic video composition concepts | Special/commercial terms may apply; https://github.com/remotion-dev/remotion |
+| Design Tokens Community Group format 2025.10 | Stable token interchange schema and terminology | W3C Community Group specification; https://github.com/design-tokens/community-group |
+| Uppy 5.2.4 | Resumable upload, restrictions, retry and recovery architecture | MIT; evaluated only, not bundled; https://github.com/transloadit/uppy |
+| Origin private file system | Large local project storage and worker-side synchronous access patterns | Web platform API; feature-detected, HTTPS-only; https://developer.mozilla.org/docs/Web/API/File_System_API/Origin_private_file_system |
 
 Before any evaluated reference is added as a dependency, maintainers must pin a
 version, review the exact license and transitive dependencies, record bundle and
 worker impact, and update this file. Google API keys must be restricted or kept
 behind an authenticated server gateway; Google Search scraping is not allowed.
+
+The Brand Universe exporter currently identifies the DTCG `2025.10` schema.
+Google Fonts metadata is not fetched unless a separately configured gateway or
+domain-restricted key is available. The application does not bundle Uppy or
+claim resumable provider uploads when its authenticated adapter is absent.
 
 ## Media and data policy
 

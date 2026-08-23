@@ -6,11 +6,11 @@
 })((scope) => {
   "use strict";
 
-  const VERSION = 2;
+  const VERSION = 3;
   const WORKSPACE_IDS = Object.freeze(["video-workspace", "document-workspace", "brand-workspace", "asset-workspace", "export-workspace"]);
   const WORKSPACE_BY_ID = Object.freeze(Object.fromEntries(WORKSPACE_IDS.map((id) => [id, true])));
   const activeInstances = new Map();
-  const LIMITS = Object.freeze({ library: 200, timeline: 400, captions: 500, keyframes: 500, documents: 300, brandKits: 40, tokens: 800, modes: 30, collections: 100, jobs: 300 });
+  const LIMITS = Object.freeze({ library: 200, timeline: 400, captions: 500, keyframes: 500, documents: 300, documentMarks: 1200, brandKits: 40, tokens: 800, modes: 30, brandAssets: 80, brandVersions: 80, approvals: 120, collections: 100, jobs: 300 });
   const TOKEN_TYPES = new Set(["color", "dimension", "fontFamily", "number", "string"]);
   const JOB_STATUSES = new Set(["planned", "paused", "processing", "completed", "failed", "canceled"]);
   const DELIVERY_PROFILES = Object.freeze([
@@ -92,6 +92,54 @@
     return "file";
   };
 
+  const DOCUMENT_MARK_TYPES = new Set(["highlight", "comment", "stamp", "redaction"]);
+  function normalizeDocumentMark(mark, index = 0) {
+    const type = DOCUMENT_MARK_TYPES.has(mark?.type) ? mark.type : "highlight";
+    return {
+      id: safeId(mark?.id, `mark-${index}`), type, page: clamp(mark?.page || 1, 1, 10000),
+      x: clamp(mark?.x ?? .2, 0, .98), y: clamp(mark?.y ?? .2, 0, .98),
+      width: clamp(mark?.width ?? .42, .02, 1), height: clamp(mark?.height ?? .08, .02, 1),
+      text: text(mark?.text, 500, type === "stamp" ? "ĐÃ DUYỆT" : ""),
+      color: /^#[\da-f]{6}$/i.test(String(mark?.color || "")) ? String(mark.color) : type === "highlight" ? "#ffe36d" : type === "comment" ? "#55e6ff" : type === "stamp" ? "#63f2b3" : "#111111",
+      createdAt: text(mark?.createdAt, 40, now())
+    };
+  }
+
+  function compareDocumentText(left, right) {
+    const tokenize = (value) => String(value || "").normalize("NFKC").toLowerCase().match(/[\p{L}\p{N}]+/gu)?.slice(0, 50000) || [];
+    const leftTokens = tokenize(left), rightTokens = tokenize(right), counts = new Map();
+    leftTokens.forEach((token) => counts.set(token, (counts.get(token) || 0) + 1));
+    let common = 0;
+    rightTokens.forEach((token) => { const remaining = counts.get(token) || 0; if (remaining > 0) { common += 1; counts.set(token, remaining - 1); } });
+    const added = Math.max(0, rightTokens.length - common), removed = Math.max(0, leftTokens.length - common);
+    return {
+      leftWords: leftTokens.length, rightWords: rightTokens.length, common, added, removed,
+      similarity: leftTokens.length + rightTokens.length ? Math.round(common * 20000 / (leftTokens.length + rightTokens.length)) / 100 : 100
+    };
+  }
+
+  function createBrandVersion(kit, label = "Checkpoint", createdAt = now()) {
+    const snapshot = {
+      name: text(kit?.name, 100, "Brand Kit"), status: ["draft", "review", "approved"].includes(kit?.status) ? kit.status : "draft",
+      profile: { tagline: text(kit?.profile?.tagline, 180), audience: text(kit?.profile?.audience, 300), voice: text(kit?.profile?.voice, 500), usedWords: text(kit?.profile?.usedWords, 500), avoidedWords: text(kit?.profile?.avoidedWords, 500) },
+      tokens: (kit?.tokens || []).slice(0, LIMITS.tokens).map(normalizeBrandToken),
+      assets: (kit?.assets || []).slice(0, LIMITS.brandAssets).map((asset, index) => ({ id: safeId(asset?.id, `brand-asset-${index}`), assetId: safeId(asset?.assetId, `asset-${index}`), name: text(asset?.name, 180, `Asset ${index + 1}`), role: text(asset?.role, 60, "reference"), source: text(asset?.source, 300), license: text(asset?.license, 160, "unverified") }))
+    };
+    return { id: uid("brand-version"), label: text(label, 100, "Checkpoint"), fingerprint: stableHash(JSON.stringify(snapshot)), createdAt: text(createdAt, 40, now()), snapshot };
+  }
+
+  function buildBrandManifest(kit) {
+    const safeKit = kit || {};
+    return {
+      schema: "hh.brand.manifest.v1", generatedAt: now(),
+      brand: { id: safeId(safeKit.id, "brand"), name: text(safeKit.name, 100, "Brand Kit"), status: ["draft", "review", "approved"].includes(safeKit.status) ? safeKit.status : "draft", profile: clone(safeKit.profile || {}) },
+      tokens: buildDtcgTokens(safeKit),
+      assets: (safeKit.assets || []).slice(0, LIMITS.brandAssets).map((asset, index) => ({ id: safeId(asset?.id, `brand-asset-${index}`), entityReference: `hhasset://${safeId(asset?.assetId, `asset-${index}`)}`, name: text(asset?.name, 180, "asset"), role: text(asset?.role, 60, "reference"), source: text(asset?.source, 300), license: text(asset?.license, 160, "unverified") })),
+      versions: (safeKit.versions || []).slice(-LIMITS.brandVersions).map((version) => ({ id: safeId(version?.id, "brand-version"), label: text(version?.label, 100), fingerprint: text(version?.fingerprint, 80), createdAt: text(version?.createdAt, 40) })),
+      approvals: (safeKit.approvals || []).slice(-LIMITS.approvals).map((approval) => ({ id: safeId(approval?.id, "approval"), status: ["review", "approved", "changes-requested"].includes(approval?.status) ? approval.status : "review", note: text(approval?.note, 300), createdAt: text(approval?.createdAt, 40) }))
+    };
+  }
+
   function ensureProductionState(input, professionalApi) {
     const state = professionalApi?.normalizeState ? professionalApi.normalizeState(input) : clone(input || {});
     state.project ||= { id: uid("project"), name: "Universal Media Project", checkpoints: [], branches: [], graph: { nodes: [], edges: [] } };
@@ -125,7 +173,7 @@
       transform: { x: clamp(item?.transform?.x, -10000, 10000), y: clamp(item?.transform?.y, -10000, 10000), scale: clamp(item?.transform?.scale || 100, 1, 1000), rotation: clamp(item?.transform?.rotation, -3600, 3600), opacity: clamp(item?.transform?.opacity ?? 100, 0, 100) }
     }));
     if (!state.video.library.some((item) => item.assetId === state.video.activeAssetId)) state.video.activeAssetId = state.video.library.at(-1)?.assetId || "";
-    state.documents = { jobs: [], activeId: "", page: 1, watermark: "", ...(state.documents || {}) };
+    state.documents = { jobs: [], activeId: "", page: 1, watermark: "", compareIds: [], ...(state.documents || {}) };
     state.documents.watermark = text(state.documents.watermark, 80);
     state.documents.watermarkOpacity = clamp(state.documents.watermarkOpacity || 20, 5, 70);
     state.documents.jobs = (Array.isArray(state.documents.jobs) ? state.documents.jobs : []).slice(-LIMITS.documents).map((item, index) => ({
@@ -133,11 +181,16 @@
       kind: ["pdf", "image", "text"].includes(item?.kind) ? item.kind : "pdf", type: text(item?.type, 120), size: clamp(item?.size, 0, 2 * 1024 ** 3),
       pages: clamp(item?.pages || 1, 1, 10000), status: ["ready", "loading", "error"].includes(item?.status) ? item.status : "ready",
       rotations: Object.fromEntries(Object.entries(item?.rotations || {}).slice(0, 10000).map(([page, angle]) => [String(clamp(page, 1, 10000)), ((Number(angle) % 360) + 360) % 360])),
-      deletedPages: [...new Set((Array.isArray(item?.deletedPages) ? item.deletedPages : []).map((page) => clamp(page, 1, 10000)))].slice(0, 10000), createdAt: text(item?.createdAt, 40, now())
+      deletedPages: [...new Set((Array.isArray(item?.deletedPages) ? item.deletedPages : []).map((page) => clamp(page, 1, 10000)))].slice(0, 10000),
+      marks: (Array.isArray(item?.marks) ? item.marks : []).slice(-LIMITS.documentMarks).map(normalizeDocumentMark),
+      formValues: Object.fromEntries(Object.entries(item?.formValues || {}).slice(0, 500).map(([name, value]) => [text(name, 180), text(value, 2000)]).filter(([name]) => name && !["__proto__", "prototype", "constructor"].includes(name.toLowerCase()))),
+      createdAt: text(item?.createdAt, 40, now())
     }));
     if (!state.documents.jobs.some((item) => item.id === state.documents.activeId)) state.documents.activeId = state.documents.jobs.at(-1)?.id || "";
     const activeDocument = state.documents.jobs.find((item) => item.id === state.documents.activeId);
     state.documents.page = clamp(state.documents.page || 1, 1, activeDocument?.pages || 1);
+    const documentIds = new Set(state.documents.jobs.map((item) => item.id));
+    state.documents.compareIds = [...new Set((Array.isArray(state.documents.compareIds) ? state.documents.compareIds : []).filter((id) => documentIds.has(id)))].slice(0, 2);
     state.brand ||= { activeKitId: "kit-default", kits: [] };
     state.brand.activeMode ||= "Default";
     state.brand.kits = Array.isArray(state.brand.kits) && state.brand.kits.length ? state.brand.kits : [{
@@ -153,6 +206,21 @@
       id: safeId(kit?.id, `kit-${kitIndex}`), name: text(kit?.name, 100, `Brand ${kitIndex + 1}`),
       modes: [...new Set((Array.isArray(kit?.modes) ? kit.modes : ["Default"]).map((mode) => text(mode, 60)).filter(Boolean))].slice(0, LIMITS.modes),
       tokens: (Array.isArray(kit?.tokens) ? kit.tokens : []).slice(0, LIMITS.tokens).map(normalizeBrandToken),
+      status: ["draft", "review", "approved"].includes(kit?.status) ? kit.status : "draft",
+      profile: {
+        tagline: text(kit?.profile?.tagline, 180), audience: text(kit?.profile?.audience, 300), voice: text(kit?.profile?.voice, 500),
+        usedWords: text(kit?.profile?.usedWords, 500), avoidedWords: text(kit?.profile?.avoidedWords, 500)
+      },
+      assets: (Array.isArray(kit?.assets) ? kit.assets : []).slice(0, LIMITS.brandAssets).map((asset, assetIndex) => ({
+        id: safeId(asset?.id, `brand-asset-${assetIndex}`), assetId: safeId(asset?.assetId, `asset-${assetIndex}`), name: text(asset?.name, 180, `Asset ${assetIndex + 1}`),
+        role: text(asset?.role, 60, "reference"), source: text(asset?.source, 300), license: text(asset?.license, 160, "unverified")
+      })),
+      versions: (Array.isArray(kit?.versions) ? kit.versions : []).slice(-LIMITS.brandVersions).map((version, versionIndex) => ({
+        id: safeId(version?.id, `brand-version-${versionIndex}`), label: text(version?.label, 100, `Version ${versionIndex + 1}`), fingerprint: text(version?.fingerprint, 80), createdAt: text(version?.createdAt, 40, now()), snapshot: version?.snapshot && typeof version.snapshot === "object" ? clone(version.snapshot) : null
+      })),
+      approvals: (Array.isArray(kit?.approvals) ? kit.approvals : []).slice(-LIMITS.approvals).map((approval, approvalIndex) => ({
+        id: safeId(approval?.id, `approval-${approvalIndex}`), status: ["review", "approved", "changes-requested"].includes(approval?.status) ? approval.status : "review", note: text(approval?.note, 300), createdAt: text(approval?.createdAt, 40, now())
+      })),
       components: (Array.isArray(kit?.components) ? kit.components : []).slice(0, 300), templateLocks: (Array.isArray(kit?.templateLocks) ? kit.templateLocks : []).slice(0, 300)
     }));
     if (!state.brand.kits.some((kit) => kit.id === state.brand.activeKitId)) state.brand.activeKitId = state.brand.kits[0]?.id || "";
@@ -354,6 +422,34 @@
     return shellMarkup(session, `<div class="mpu-document-layout"><aside class="mpu-panel mpu-document-inbox"><header><div><small>DOCUMENT INBOX</small><strong>${docs.jobs.length} tài liệu</strong></div><label>＋ Mở file<input type="file" accept=".pdf,.txt,.md,.csv,.json,image/*" multiple data-mpu-document-import></label></header><div>${docs.jobs.map((item) => `<button type="button" class="${item.id === active?.id ? "is-active" : ""}" data-mpu-document-open="${item.id}"><i>${item.kind === "pdf" ? "PDF" : item.kind === "image" ? "IMG" : "TXT"}</i><span><strong>${escapeHtml(item.name)}</strong><small>${item.pages || 1} trang · ${formatBytes(item.size)}</small></span><b>${item.status === "ready" ? "✓" : "…"}</b></button>`).join("") || `<div class="mpu-empty"><i>DU</i><strong>Hộp tài liệu trống</strong><p>PDF.js dùng để render và trích text; pdf-lib xử lý trang ngay trên thiết bị.</p></div>`}</div><footer><button type="button" data-mpu-document-merge ${docs.jobs.length ? "" : "disabled"}>Gộp tất cả PDF</button><button type="button" data-mpu-document-text ${active?.kind === "pdf" ? "" : "disabled"}>Trích text</button></footer></aside><main class="mpu-document-stage"><header><div><small>DOCUMENT VIEWER</small><strong>${escapeHtml(active?.name || "Chưa chọn tài liệu")}</strong></div><div><button type="button" data-mpu-document-page="prev" ${page <= 1 ? "disabled" : ""}>←</button><span>Trang ${page} / ${pages}</span><button type="button" data-mpu-document-page="next" ${page >= pages ? "disabled" : ""}>→</button><button type="button" data-mpu-document-zoom="out">−</button><b data-mpu-document-zoom-label>${session.documentZoom}%</b><button type="button" data-mpu-document-zoom="in">＋</button></div></header><div class="mpu-document-canvas" data-mpu-document-canvas><div class="mpu-monitor-placeholder" ${active ? "hidden" : ""}><span>PDF</span><strong>Mở PDF, ảnh hoặc văn bản</strong><small>Không tải nội dung tài liệu lên máy chủ.</small></div></div><footer><span data-mpu-document-status>${active ? "Đang chuẩn bị bản xem trước…" : "Sẵn sàng"}</span><button type="button" class="is-primary" data-mpu-document-export ${active ? "" : "disabled"}>Xuất bản xử lý →</button></footer></main><aside class="mpu-panel mpu-document-tools"><header><small>PAGE OPERATIONS</small><strong>Không phá hủy</strong></header><div class="mpu-tool-grid"><button type="button" data-mpu-document-op="rotate-left" ${active?.kind === "pdf" ? "" : "disabled"}>↶<span>Xoay trái</span></button><button type="button" data-mpu-document-op="rotate-right" ${active?.kind === "pdf" ? "" : "disabled"}>↷<span>Xoay phải</span></button><button type="button" data-mpu-document-op="delete" ${active?.kind === "pdf" ? "" : "disabled"}>⌫<span>Bỏ trang</span></button><button type="button" data-mpu-document-op="restore" ${active?.kind === "pdf" ? "" : "disabled"}>◇<span>Khôi phục</span></button></div><section><small>WATERMARK</small><label>Nội dung<input value="${escapeHtml(docs.watermark || "")}" maxlength="80" placeholder="HH Studio" data-mpu-document-watermark></label><label>Độ mờ<input type="range" min="5" max="70" value="${docs.watermarkOpacity || 20}" data-mpu-document-opacity></label></section><section class="mpu-document-queue"><small>OPERATION RECIPE</small>${active ? `<p><i></i>${Object.keys(active.rotations || {}).length} trang xoay</p><p><i></i>${(active.deletedPages || []).length} trang loại khỏi bản xuất</p><p><i></i>${docs.watermark ? "Có watermark" : "Không watermark"}</p>` : "<p>Chưa có recipe.</p>"}</section><section class="mpu-capability"><small>ENGINE</small><p><i class="is-ready"></i> PDF.js viewer</p><p><i class="${scope.PDFLib ? "is-ready" : ""}"></i> pdf-lib editor</p></section></aside></div>`);
   }
 
+  function documentsMarkupV3(session) {
+    const docs = session.state.documents;
+    const active = docs.jobs.find((item) => item.id === docs.activeId) || docs.jobs.at(-1);
+    const pages = Math.max(1, Number(active?.pages || 1));
+    const page = clamp(docs.page || 1, 1, pages);
+    const pageMarks = (active?.marks || []).filter((mark) => mark.page === page);
+    const compare = session.documentCompare;
+    const markNames = { highlight: "Highlight", comment: "Ghi chú", stamp: "Đóng dấu", redaction: "Che vĩnh viễn" };
+    const inbox = docs.jobs.map((item) => `<button type="button" class="${item.id === active?.id ? "is-active" : ""}" data-mpu-document-open="${item.id}"><i>${item.kind === "pdf" ? "PDF" : item.kind === "image" ? "IMG" : "TXT"}</i><span><strong>${escapeHtml(item.name)}</strong><small>${item.pages || 1} trang · ${formatBytes(item.size)}</small></span><b>${item.status === "ready" ? "✓" : "…"}</b></button>`).join("") || `<div class="mpu-empty"><i>DU</i><strong>Hộp tài liệu trống</strong><p>PDF.js render và trích text; pdf-lib xử lý trang ngay trên thiết bị.</p></div>`;
+    const marks = pageMarks.map((mark) => `<article data-mark-id="${mark.id}" data-kind="${mark.type}"><header><b>${markNames[mark.type]}</b><button type="button" data-mpu-mark-remove="${mark.id}" aria-label="Xóa vùng">×</button></header>${mark.text ? `<p>${escapeHtml(mark.text)}</p>` : ""}<div>${[["x", "X"], ["y", "Y"], ["width", "W"], ["height", "H"]].map(([field, label]) => `<label>${label}<input type="number" min="0" max="100" step="1" value="${Math.round(mark[field] * 100)}" data-mpu-mark-field="${field}"></label>`).join("")}</div></article>`).join("") || "<p>Chưa có chú thích trên trang này.</p>";
+    const compareMarkup = compare ? `<dl><div><dt>Tương đồng</dt><dd>${compare.similarity}%</dd></div><div><dt>Thêm</dt><dd>+${compare.added}</dd></div><div><dt>Bớt</dt><dd>−${compare.removed}</dd></div></dl>` : "<p>Cần ít nhất hai PDF có text layer.</p>";
+    const formFields = session.documentFormFields && session.documentFormFields.documentId === active?.id ? session.documentFormFields.fields : [];
+    const formMarkup = formFields.length ? formFields.map((field) => `<label><span>${escapeHtml(field.name)}<b>${escapeHtml(field.type.replace(/^PDF/, ""))}</b></span><input value="${escapeHtml(active?.formValues?.[field.name] ?? field.value)}" maxlength="2000" data-mpu-document-form-field="${escapeHtml(field.name)}"></label>`).join("") : "<p>Đọc AcroForm để xem và điền các trường được PDF hỗ trợ.</p>";
+    return shellMarkup(session, `<div class="mpu-document-layout">
+      <aside class="mpu-panel mpu-document-inbox"><header><div><small>DOCUMENT INBOX</small><strong>${docs.jobs.length} tài liệu</strong></div><label>＋ Mở file<input type="file" accept=".pdf,.txt,.md,.csv,.json,image/*" multiple data-mpu-document-import></label></header><div>${inbox}</div><footer><button type="button" data-mpu-document-merge ${docs.jobs.length ? "" : "disabled"}>Gộp tất cả PDF</button><button type="button" data-mpu-document-text ${active?.kind === "pdf" ? "" : "disabled"}>Trích text</button></footer></aside>
+      <main class="mpu-document-stage"><header><div><small>DOCUMENT VIEWER</small><strong>${escapeHtml(active?.name || "Chưa chọn tài liệu")}</strong></div><div><button type="button" data-mpu-document-page="prev" ${page <= 1 ? "disabled" : ""}>←</button><span>Trang ${page} / ${pages}</span><button type="button" data-mpu-document-page="next" ${page >= pages ? "disabled" : ""}>→</button><button type="button" data-mpu-document-zoom="out">−</button><b data-mpu-document-zoom-label>${session.documentZoom}%</b><button type="button" data-mpu-document-zoom="in">＋</button></div></header>
+        <nav class="mpu-document-markbar" aria-label="Chú thích và che dữ liệu"><button type="button" data-mpu-document-mark="highlight" ${active?.kind === "pdf" ? "" : "disabled"}>▰ Highlight</button><button type="button" data-mpu-document-mark="comment" ${active?.kind === "pdf" ? "" : "disabled"}>◌ Ghi chú</button><button type="button" data-mpu-document-mark="stamp" ${active?.kind === "pdf" ? "" : "disabled"}>✓ Đóng dấu</button><button type="button" class="is-danger" data-mpu-document-mark="redaction" ${active?.kind === "pdf" ? "" : "disabled"}>▮ Che vĩnh viễn</button><span>${pageMarks.length} vùng trên trang</span></nav>
+        <div class="mpu-document-canvas" data-mpu-document-canvas><div class="mpu-monitor-placeholder" ${active ? "hidden" : ""}><span>PDF</span><strong>Mở PDF, ảnh hoặc văn bản</strong><small>Không tải nội dung tài liệu lên máy chủ.</small></div></div><footer><span data-mpu-document-status>${active ? "Đang chuẩn bị bản xem trước…" : "Sẵn sàng"}</span><button type="button" class="is-primary" data-mpu-document-export ${active ? "" : "disabled"}>Xuất bản xử lý →</button></footer></main>
+      <aside class="mpu-panel mpu-document-tools"><header><small>PAGE OPERATIONS</small><strong>Không phá hủy</strong></header><div class="mpu-tool-grid"><button type="button" data-mpu-document-op="rotate-left" ${active?.kind === "pdf" ? "" : "disabled"}>↶<span>Xoay trái</span></button><button type="button" data-mpu-document-op="rotate-right" ${active?.kind === "pdf" ? "" : "disabled"}>↷<span>Xoay phải</span></button><button type="button" data-mpu-document-op="delete" ${active?.kind === "pdf" ? "" : "disabled"}>⌫<span>Bỏ trang</span></button><button type="button" data-mpu-document-op="restore" ${active?.kind === "pdf" ? "" : "disabled"}>◇<span>Khôi phục</span></button></div>
+        <section class="mpu-document-marks"><small>ANNOTATION · TRANG ${page}</small>${marks}</section>
+        <section><small>WATERMARK</small><label>Nội dung<input value="${escapeHtml(docs.watermark || "")}" maxlength="80" placeholder="HH Studio" data-mpu-document-watermark></label><label>Độ mờ<input type="range" min="5" max="70" value="${docs.watermarkOpacity || 20}" data-mpu-document-opacity></label></section>
+        <section class="mpu-document-compare"><small>VERSION COMPARE</small><button type="button" data-mpu-document-compare ${docs.jobs.filter((item) => item.kind === "pdf").length >= 2 ? "" : "disabled"}>So sánh hai PDF đầu tiên</button>${compareMarkup}</section>
+        <section class="mpu-document-forms"><small>ACROFORM</small><button type="button" data-mpu-document-forms ${active?.kind === "pdf" ? "" : "disabled"}>Đọc trường biểu mẫu</button>${formMarkup}</section>
+        <section class="mpu-document-queue"><small>OPERATION RECIPE</small>${active ? `<p><i></i>${Object.keys(active.rotations || {}).length} trang xoay</p><p><i></i>${(active.deletedPages || []).length} trang loại khỏi bản xuất</p><p><i></i>${(active.marks || []).filter((mark) => mark.type === "redaction").length} vùng che bằng raster an toàn</p><p><i></i>${docs.watermark ? "Có watermark" : "Không watermark"}</p>` : "<p>Chưa có recipe.</p>"}</section>
+        <section class="mpu-capability"><small>ENGINE</small><p><i class="is-ready"></i> PDF.js viewer và text compare</p><p><i class="${scope.PDFLib ? "is-ready" : ""}"></i> pdf-lib editor</p><p><i class="is-ready"></i> Redaction rasterized output</p></section></aside>
+    </div>`);
+  }
+
   function brandMarkup(session) {
     const brand = session.state.brand;
     const kit = brand.kits.find((item) => item.id === brand.activeKitId) || brand.kits[0];
@@ -364,6 +460,19 @@
     const accent = colors.find((token) => /accent/.test(token.name))?.value || "#ff63d8";
     const foreground = colors.find((token) => /text.primary|foreground/.test(token.name))?.value || "#f3f8ff";
     return shellMarkup(session, `<div class="mpu-brand-layout"><aside class="mpu-panel mpu-brand-kits"><header><div><small>BRAND SYSTEMS</small><strong>${brand.kits.length} kit</strong></div><button type="button" data-mpu-brand-new>＋</button></header><div>${brand.kits.map((item) => `<button type="button" class="${item.id === kit.id ? "is-active" : ""}" data-mpu-brand-kit="${item.id}"><i style="--kit:${item.tokens?.find((token) => token.type === "color")?.value || "#56ecff"}"></i><span><strong>${escapeHtml(item.name)}</strong><small>${item.tokens?.length || 0} token · ${item.modes?.length || 1} mode</small></span></button>`).join("")}</div><section><small>MODES</small><div class="mpu-brand-modes">${(kit.modes || ["Default"]).map((mode) => `<button type="button" class="${mode === brand.activeMode ? "is-active" : ""}" data-mpu-brand-mode="${escapeHtml(mode)}">${escapeHtml(mode)}</button>`).join("")}<button type="button" data-mpu-brand-add-mode>＋ Mode</button></div></section><footer><button type="button" data-mpu-brand-import>Nhập DTCG</button><input type="file" accept="application/json,.json" data-mpu-brand-import-file hidden><button type="button" data-mpu-route="/media-design/brand-kit">Logo Board</button></footer></aside><main class="mpu-brand-main"><header><div><small>DESIGN TOKEN REGISTRY</small><input value="${escapeHtml(kit.name)}" maxlength="100" data-mpu-brand-name aria-label="Tên brand kit"></div><div><button type="button" data-mpu-brand-export="json">DTCG JSON</button><button type="button" class="is-primary" data-mpu-brand-export="css">CSS Variables</button></div></header><form class="mpu-token-form" data-mpu-token-form><input name="name" required placeholder="color.brand.secondary"><input name="value" required placeholder="#8b74ff"><select name="type"><option value="color">Color</option><option value="dimension">Dimension</option><option value="fontFamily">Font family</option><option value="number">Number</option><option value="string">String</option></select><button type="submit">＋ Token</button></form><div class="mpu-token-table"><header><span>Token</span><span>Value</span><span>Type</span><span></span></header>${(kit.tokens || []).map((token) => `<article data-token-id="${token.id}"><label><i style="--token:${token.type === "color" ? token.value : primary}"></i><input value="${escapeHtml(token.name)}" data-mpu-token-field="name" aria-label="Tên token"></label><input value="${escapeHtml(token.value)}" data-mpu-token-field="value" aria-label="Giá trị token"><select data-mpu-token-field="type"><option value="color" ${token.type === "color" ? "selected" : ""}>Color</option><option value="dimension" ${token.type === "dimension" ? "selected" : ""}>Dimension</option><option value="fontFamily" ${token.type === "fontFamily" ? "selected" : ""}>Font</option><option value="number" ${token.type === "number" ? "selected" : ""}>Number</option><option value="string" ${token.type === "string" ? "selected" : ""}>String</option></select><button type="button" data-mpu-token-remove="${token.id}" aria-label="Xóa token">×</button></article>`).join("")}</div></main><aside class="mpu-brand-preview"><header><small>LIVE BRAND PREVIEW</small><div><button type="button" data-mpu-preview-device="desktop" class="is-active">Desktop</button><button type="button" data-mpu-preview-device="mobile">Mobile</button></div></header><div class="mpu-preview-frame" style="--preview-surface:${surface};--preview-primary:${primary};--preview-accent:${accent};--preview-text:${foreground}"><nav><b>HH</b><span>Universe</span><button>Khám phá</button></nav><main><small>CREATIVE SYSTEM</small><h3>Biến ý tưởng thành một vũ trụ nhất quán.</h3><p>Live preview dùng trực tiếp token đang chỉnh.</p><button>Bắt đầu sáng tạo</button><i></i></main></div><section class="mpu-lint" data-status="${lint.status}"><header><div><small>BRAND LINT</small><strong>${lint.issues.length ? `${lint.issues.length} vấn đề` : "Đạt kiểm tra"}</strong></div><b>${lint.ratio ? `${lint.ratio.toFixed(2)}:1` : "N/A"}</b></header>${lint.issues.map((issue) => `<p><i></i>${escapeHtml(issue.message)}</p>`).join("") || "<p><i></i>Tên token, màu và tương phản cơ bản đều hợp lệ.</p>"}</section></aside></div>`);
+  }
+
+  function brandMarkupV3(session) {
+    const brand = session.state.brand;
+    const kit = brand.kits.find((item) => item.id === brand.activeKitId) || brand.kits[0];
+    if (!kit) return brandMarkup(session);
+    const profile = kit.profile || {};
+    const profilePanel = `<section class="mpu-brand-profile"><header><div><small>BRAND PROFILE</small><strong>Giọng nói, đối tượng và tài sản</strong></div><label>＋ Logo<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" data-mpu-brand-asset></label></header><div><label>Tagline<input value="${escapeHtml(profile.tagline || "")}" maxlength="180" data-mpu-brand-profile="tagline" placeholder="Thông điệp cốt lõi"></label><label>Đối tượng<textarea rows="2" maxlength="300" data-mpu-brand-profile="audience" placeholder="Ai sẽ sử dụng thương hiệu này?">${escapeHtml(profile.audience || "")}</textarea></label><label>Giọng điệu<textarea rows="2" maxlength="500" data-mpu-brand-profile="voice" placeholder="Trang trọng, gần gũi, rõ ràng…">${escapeHtml(profile.voice || "")}</textarea></label><label>Từ nên dùng<input value="${escapeHtml(profile.usedWords || "")}" maxlength="500" data-mpu-brand-profile="usedWords"></label><label>Từ cần tránh<input value="${escapeHtml(profile.avoidedWords || "")}" maxlength="500" data-mpu-brand-profile="avoidedWords"></label></div><footer>${(kit.assets || []).map((asset) => `<span><i>◇</i><b>${escapeHtml(asset.role)}</b>${escapeHtml(asset.name)}<em>${escapeHtml(asset.license || "unverified")}</em></span>`).join("") || "<p>Chưa gắn logo hoặc tài sản tham chiếu. File sẽ được lưu vào Asset Galaxy bằng Entity ID.</p>"}</footer></section>`;
+    const statusLabel = { draft: "Bản nháp", review: "Đang duyệt", approved: "Đã duyệt cục bộ" }[kit.status] || "Bản nháp";
+    const governance = `<section class="mpu-brand-governance" data-status="${kit.status}"><header><div><small>VERSION & APPROVAL</small><strong>${statusLabel}</strong></div><b>${kit.versions.length} phiên bản</b></header><p>Phê duyệt tại đây là trạng thái cục bộ có audit; không giả chữ ký số hoặc danh tính máy chủ.</p><div><button type="button" data-mpu-brand-version>◇ Tạo phiên bản</button><button type="button" data-mpu-brand-review>${kit.status === "review" ? "Đang chờ duyệt" : "Gửi duyệt"}</button><button type="button" data-mpu-brand-approve ${kit.status !== "review" ? "disabled" : ""}>✓ Duyệt cục bộ</button><button type="button" data-mpu-brand-manifest>Manifest</button></div>${kit.versions.slice(-3).reverse().map((version) => `<span><b>${escapeHtml(version.label)}</b><code>${escapeHtml(version.fingerprint)}</code></span>`).join("")}</section>`;
+    return brandMarkup(session)
+      .replace('<div class="mpu-token-table">', `${profilePanel}<div class="mpu-token-table">`)
+      .replace('<section class="mpu-lint"', `${governance}<section class="mpu-lint"`);
   }
 
   function assetPreview(asset, url) {
@@ -433,8 +542,8 @@
   function render(session) {
     captureViewState(session);
     if (session.workspace === "video-workspace") session.host.innerHTML = videoMarkup(session);
-    else if (session.workspace === "document-workspace") session.host.innerHTML = documentsMarkup(session);
-    else if (session.workspace === "brand-workspace") session.host.innerHTML = brandMarkup(session);
+    else if (session.workspace === "document-workspace") session.host.innerHTML = documentsMarkupV3(session);
+    else if (session.workspace === "brand-workspace") session.host.innerHTML = brandMarkupV3(session);
     else if (session.workspace === "asset-workspace") session.host.innerHTML = assetsMarkup(session);
     else session.host.innerHTML = deliveryMarkup(session);
     afterRender(session);
@@ -605,6 +714,50 @@
     }
     session.documents.set(item.id, record); return record;
   }
+  async function inspectPdfFormFields(session, item) {
+    if (!scope.PDFLib?.PDFDocument) throw new Error("pdf-lib chưa được tải.");
+    const record = await getDocumentRecord(session, item); if (!record || item?.kind !== "pdf") throw new Error("Tài liệu hiện tại không phải PDF.");
+    const pdf = await scope.PDFLib.PDFDocument.load(record.bytes.slice()), form = pdf.getForm();
+    return form.getFields().slice(0, 500).map((field) => {
+      const type = text(field?.constructor?.name, 80, "PDFField"), name = text(field.getName?.(), 180, "field");
+      let value = "";
+      try { if (typeof field.getText === "function") value = field.getText() || ""; else if (typeof field.isChecked === "function") value = field.isChecked() ? "true" : "false"; else if (typeof field.getSelected === "function") value = (field.getSelected() || []).join(", "); } catch (_) {}
+      return { name, type, value: text(item.formValues?.[name] ?? value, 2000) };
+    });
+  }
+  function applyPdfFormValues(pdf, values = {}) {
+    const entries = Object.entries(values).slice(0, 500); if (!entries.length) return 0;
+    const form = pdf.getForm();
+    if (form.getFields().some((field) => field?.constructor?.name === "PDFSignature")) throw new Error("PDF có trường chữ ký số; chỉnh hoặc flatten biểu mẫu có thể làm mất hiệu lực chữ ký");
+    let applied = 0;
+    entries.forEach(([name, value]) => {
+      try {
+        const field = form.getField(name), stringValue = text(value, 2000);
+        if (typeof field.setText === "function") field.setText(stringValue);
+        else if (typeof field.check === "function" && typeof field.uncheck === "function") /^true|1|yes|on$/i.test(stringValue) ? field.check() : field.uncheck();
+        else if (typeof field.select === "function") field.select(stringValue.split(",").map((item) => item.trim()).filter(Boolean));
+        else return;
+        applied += 1;
+      } catch (_) { /* Unknown or unsupported field types remain unchanged. */ }
+    });
+    if (applied) form.flatten();
+    return applied;
+  }
+  function appendDocumentMarkLayer(wrapper, item, pageNumber) {
+    const layer = document.createElement("div");
+    layer.className = "mpu-document-mark-layer";
+    (item.marks || []).filter((mark) => mark.page === pageNumber).forEach((mark) => {
+      const node = document.createElement("span");
+      node.dataset.kind = mark.type;
+      node.style.left = `${mark.x * 100}%`; node.style.top = `${mark.y * 100}%`;
+      node.style.width = `${Math.min(mark.width, 1 - mark.x) * 100}%`; node.style.height = `${Math.min(mark.height, 1 - mark.y) * 100}%`;
+      node.style.setProperty("--mark", mark.color);
+      node.textContent = mark.type === "redaction" ? "CHE VĨNH VIỄN" : mark.text || (mark.type === "highlight" ? "" : mark.type.toUpperCase());
+      node.title = mark.type === "redaction" ? "Khi xuất, trang này được raster hóa và vùng che được ghi đè lên pixel." : mark.text || mark.type;
+      layer.append(node);
+    });
+    wrapper.append(layer);
+  }
   async function renderDocumentPreview(session) {
     const renderId = ++session.documentRenderId;
     const docs = session.state.documents, item = docs.jobs.find((value) => value.id === docs.activeId) || docs.jobs.at(-1), stage = session.host.querySelector("[data-mpu-document-canvas]"), status = session.host.querySelector("[data-mpu-document-status]");
@@ -614,7 +767,10 @@
       stage.innerHTML = "";
       if (item.kind === "pdf") {
         const pageNumber = clamp(docs.page || 1, 1, record.pdf.numPages), page = await record.pdf.getPage(pageNumber), viewport = page.getViewport({ scale: session.documentZoom / 100 * 1.25, rotation: Number(item.rotations?.[pageNumber] || 0) });
-        const canvas = document.createElement("canvas"), context = canvas.getContext("2d"); canvas.width = viewport.width; canvas.height = viewport.height; canvas.setAttribute("aria-label", `Trang ${pageNumber} của ${item.name}`); stage.append(canvas); await page.render({ canvasContext: context, viewport }).promise; if (session.disposed || renderId !== session.documentRenderId) return;
+        const canvas = document.createElement("canvas"), context = canvas.getContext("2d"), wrapper = document.createElement("div");
+        canvas.width = viewport.width; canvas.height = viewport.height; canvas.setAttribute("aria-label", `Trang ${pageNumber} của ${item.name}`); wrapper.className = "mpu-document-page"; wrapper.append(canvas); stage.append(wrapper);
+        await page.render({ canvasContext: context, viewport }).promise; if (session.disposed || renderId !== session.documentRenderId) return;
+        appendDocumentMarkLayer(wrapper, item, pageNumber);
         item.pages = record.pdf.numPages; status.textContent = `PDF.js · ${record.pdf.numPages} trang · trang ${pageNumber}${(item.deletedPages || []).includes(pageNumber) ? " · sẽ bỏ khỏi bản xuất" : ""}`;
       } else if (item.kind === "image") {
         const asset = session.assets.find((value) => value.id === item.assetId), image = document.createElement("img"); image.src = session.objectUrls.get(asset.id); image.alt = item.name; stage.append(image); status.textContent = "Ảnh nguồn · có thể xuất thành PDF";
@@ -623,6 +779,34 @@
       }
       save(session);
     } catch (error) { if (session.disposed || renderId !== session.documentRenderId) return; if (status) status.textContent = error.message; notify(session, error.message, "error"); }
+  }
+  async function rasterizeMarkedPdfPage(session, item, record, pageNumber) {
+    if (!scope.document) throw new Error("Trình duyệt không hỗ trợ raster redaction.");
+    const sourcePage = await record.pdf.getPage(pageNumber), rotation = Number(item.rotations?.[pageNumber] || 0);
+    const baseViewport = sourcePage.getViewport({ scale: 1, rotation });
+    const scale = Math.max(1, Math.min(2, 2400 / Math.max(baseViewport.width, baseViewport.height)));
+    const viewport = sourcePage.getViewport({ scale, rotation }), canvas = document.createElement("canvas"), context = canvas.getContext("2d", { alpha: false });
+    canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+    await sourcePage.render({ canvasContext: context, viewport }).promise;
+    const marks = (item.marks || []).filter((mark) => mark.page === pageNumber);
+    for (const mark of marks) {
+      const x = mark.x * canvas.width, y = mark.y * canvas.height, width = Math.min(mark.width, 1 - mark.x) * canvas.width, height = Math.min(mark.height, 1 - mark.y) * canvas.height;
+      context.save();
+      if (mark.type === "redaction") {
+        context.globalAlpha = 1; context.fillStyle = "#050505"; context.fillRect(x, y, width, height);
+      } else if (mark.type === "highlight") {
+        context.globalAlpha = .34; context.fillStyle = mark.color; context.fillRect(x, y, width, height);
+      } else {
+        context.globalAlpha = .94; context.fillStyle = mark.type === "stamp" ? "rgba(8,74,58,.92)" : "rgba(4,39,67,.94)"; context.fillRect(x, y, width, height);
+        context.globalAlpha = 1; context.strokeStyle = mark.color; context.lineWidth = Math.max(2, canvas.width / 700); context.strokeRect(x, y, width, height);
+        context.fillStyle = "#ffffff"; context.font = `600 ${Math.max(12, Math.min(height * .42, canvas.width / 38))}px system-ui`; context.textBaseline = "middle";
+        const label = text(mark.text, 120, mark.type === "stamp" ? "ĐÃ DUYỆT" : "GHI CHÚ"); context.fillText(label, x + 8, y + height / 2, Math.max(0, width - 16));
+      }
+      context.restore();
+    }
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Không thể tạo trang raster an toàn.");
+    return { bytes: new Uint8Array(await blob.arrayBuffer()), width: baseViewport.width, height: baseViewport.height };
   }
   async function exportProcessedDocuments(session, all = false) {
     if (!scope.PDFLib?.PDFDocument) throw new Error("pdf-lib chưa được tải.");
@@ -635,10 +819,19 @@
     for (const item of items) {
       const record = await getDocumentRecord(session, item); if (!record) continue;
       if (item.kind === "pdf") {
-        const sourcePdf = await scope.PDFLib.PDFDocument.load(record.bytes.slice()), kept = sourcePdf.getPageIndices().filter((index) => !(item.deletedPages || []).includes(index + 1)), copied = await output.copyPages(sourcePdf, kept);
-        copied.forEach((page, index) => {
-          const originalPage = kept[index] + 1, rotation = Number(item.rotations?.[originalPage] || 0); if (rotation) page.setRotation(scope.PDFLib.degrees(rotation)); output.addPage(page);
-        });
+        const sourcePdf = await scope.PDFLib.PDFDocument.load(record.bytes.slice()); let formApplied = 0, renderRecord = record;
+        try { formApplied = applyPdfFormValues(sourcePdf, item.formValues); } catch (error) { throw new Error(`Không thể cập nhật AcroForm: ${error.message}. Hãy dùng font Latin hoặc giữ nguyên biểu mẫu.`); }
+        if (formApplied && (item.marks || []).length) { const pdfjs = await loadPdfJs(session), modifiedBytes = new Uint8Array(await sourcePdf.save()); renderRecord = { ...record, bytes: modifiedBytes, pdf: await pdfjs.getDocument({ data: modifiedBytes.slice() }).promise }; }
+        const kept = sourcePdf.getPageIndices().filter((index) => !(item.deletedPages || []).includes(index + 1));
+        for (const sourceIndex of kept) {
+          const originalPage = sourceIndex + 1, marks = (item.marks || []).filter((mark) => mark.page === originalPage);
+          if (marks.length) {
+            const raster = await rasterizeMarkedPdfPage(session, item, renderRecord, originalPage), embedded = await output.embedPng(raster.bytes), page = output.addPage([raster.width, raster.height]);
+            page.drawImage(embedded, { x: 0, y: 0, width: raster.width, height: raster.height });
+          } else {
+            const [page] = await output.copyPages(sourcePdf, [sourceIndex]), rotation = Number(item.rotations?.[originalPage] || 0); if (rotation) page.setRotation(scope.PDFLib.degrees(rotation)); output.addPage(page);
+          }
+        }
       } else if (item.kind === "image") {
         let bytes = record.bytes.slice(), mime = String(record.blob?.type || item.type || "").toLowerCase(), width = 0, height = 0, bitmap = null;
         if (!/image\/(?:png|jpeg)/.test(mime)) {
@@ -661,11 +854,15 @@
     output.setProducer("HH Document Observatory"); output.setModificationDate(new Date());
     const bytes = await output.save(); downloadBlob(new Blob([bytes], { type: "application/pdf" }), `${safeFileName(session.state.project.name)}-${all ? "merged" : "processed"}.pdf`); return bytes;
   }
-  async function extractPdfText(session) {
-    const item = session.state.documents.jobs.find((value) => value.id === session.state.documents.activeId), record = await getDocumentRecord(session, item); if (!record?.pdf) throw new Error("Tài liệu hiện tại không phải PDF.");
+  async function extractPdfTextValue(session, item) {
+    const record = await getDocumentRecord(session, item); if (!record?.pdf) throw new Error("Tài liệu hiện tại không phải PDF.");
     const pages = [];
     for (let index = 1; index <= record.pdf.numPages; index += 1) { const page = await record.pdf.getPage(index), content = await page.getTextContent(); pages.push(`--- Trang ${index} ---\n${content.items.map((entry) => entry.str).join(" ")}`); }
-    const value = pages.join("\n\n"); downloadText(value, `${safeFileName(item.name)}.txt`, "text/plain;charset=utf-8"); return value;
+    return pages.join("\n\n");
+  }
+  async function extractPdfText(session) {
+    const item = session.state.documents.jobs.find((value) => value.id === session.state.documents.activeId);
+    const value = await extractPdfTextValue(session, item); downloadText(value, `${safeFileName(item.name)}.txt`, "text/plain;charset=utf-8"); return value;
   }
 
   function afterRender(session) {
@@ -741,13 +938,27 @@
       if (event.target.closest("[data-mpu-document-export]")) { try { const activeDocument = session.state.documents.jobs.find((item) => item.id === session.state.documents.activeId); await exportProcessedDocuments(session, false); save(session, "document.exported", session.state.documents.activeId); notify(session, activeDocument?.kind === "text" ? "Đã xuất văn bản gốc trên thiết bị." : activeDocument?.kind === "image" ? "Đã chuyển ảnh thành PDF thật." : "Đã xuất PDF xử lý thật."); } catch (error) { notify(session, error.message, "error"); } return; }
       if (event.target.closest("[data-mpu-document-merge]")) { try { await exportProcessedDocuments(session, true); save(session, "documents.merged", "all"); notify(session, "Đã gộp PDF theo thứ tự Inbox."); } catch (error) { notify(session, error.message, "error"); } return; }
       if (event.target.closest("[data-mpu-document-text]")) { try { await extractPdfText(session); notify(session, "Đã trích text layer của toàn bộ PDF."); } catch (error) { notify(session, error.message, "error"); } return; }
+      const markButton = event.target.closest("[data-mpu-document-mark]"); if (markButton) {
+        const item = session.state.documents.jobs.find((value) => value.id === session.state.documents.activeId), type = markButton.dataset.mpuDocumentMark;
+        if (!item || item.kind !== "pdf" || !DOCUMENT_MARK_TYPES.has(type)) return;
+        if (["comment", "stamp"].includes(type)) { openDialog(session, { kind: "document-mark", markType: type, title: type === "stamp" ? "Đóng dấu lên trang" : "Thêm ghi chú", description: "Vùng mới nằm giữa trang; có thể chỉnh X, Y, W và H trong Inspector.", label: type === "stamp" ? "Nội dung dấu" : "Nội dung ghi chú", maxLength: 500, value: type === "stamp" ? "ĐÃ DUYỆT" : "", returnSelector: `[data-mpu-document-mark="${type}"]` }); return; }
+        item.marks ||= []; item.marks.push(normalizeDocumentMark({ type, page: session.state.documents.page, x: .22, y: type === "redaction" ? .46 : .24, width: .5, height: type === "redaction" ? .09 : .07 }));
+        save(session, `document.mark.${type}.created`, `${item.id}:${session.state.documents.page}`); render(session); notify(session, type === "redaction" ? "Đã thêm vùng che. Trang sẽ được raster hóa khi xuất để xóa nội dung bên dưới." : "Đã thêm vùng highlight."); return;
+      }
+      const removeMark = event.target.closest("[data-mpu-mark-remove]"); if (removeMark) { const item = session.state.documents.jobs.find((value) => value.id === session.state.documents.activeId); if (!item) return; item.marks = (item.marks || []).filter((mark) => mark.id !== removeMark.dataset.mpuMarkRemove); save(session, "document.mark.removed", removeMark.dataset.mpuMarkRemove); render(session); return; }
+      if (event.target.closest("[data-mpu-document-compare]")) { try { const pdfs = session.state.documents.jobs.filter((item) => item.kind === "pdf").slice(0, 2); if (pdfs.length < 2) throw new Error("Cần ít nhất hai PDF để so sánh."); notify(session, "Đang trích text của hai phiên bản…", "info"); const [left, right] = await Promise.all(pdfs.map((item) => extractPdfTextValue(session, item))); session.documentCompare = { ...compareDocumentText(left, right), leftName: pdfs[0].name, rightName: pdfs[1].name }; session.state.documents.compareIds = pdfs.map((item) => item.id); save(session, "documents.compared", `${pdfs[0].id}:${pdfs[1].id}`); render(session); notify(session, `Đã so sánh “${pdfs[0].name}” và “${pdfs[1].name}”.`); } catch (error) { notify(session, error.message, "error"); } return; }
+      if (event.target.closest("[data-mpu-document-forms]")) { try { const item = session.state.documents.jobs.find((value) => value.id === session.state.documents.activeId); const fields = await inspectPdfFormFields(session, item); session.documentFormFields = { documentId: item.id, fields }; render(session); notify(session, fields.length ? `Đã đọc ${fields.length} trường AcroForm.` : "PDF này không có AcroForm được hỗ trợ.", fields.length ? "success" : "info"); } catch (error) { notify(session, error.message, "error"); } return; }
 
       const kitButton = event.target.closest("[data-mpu-brand-kit]"); if (kitButton) { session.state.brand.activeKitId = kitButton.dataset.mpuBrandKit; save(session); render(session); return; }
       const modeButton = event.target.closest("[data-mpu-brand-mode]"); if (modeButton) { session.state.brand.activeMode = modeButton.dataset.mpuBrandMode; save(session); render(session); return; }
       if (event.target.closest("[data-mpu-brand-new]")) { openDialog(session, { kind: "brand-kit", title: "Tạo Brand Kit", description: "Kit mới kế thừa token hiện tại để bạn chỉnh tiếp mà không làm thay đổi bản gốc.", label: "Tên Brand Kit", maxLength: 100, value: `Brand ${session.state.brand.kits.length + 1}`, returnSelector: "[data-mpu-brand-new]" }); return; }
       if (event.target.closest("[data-mpu-brand-add-mode]")) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); openDialog(session, { kind: "brand-mode", title: "Thêm chế độ thương hiệu", description: "Dùng mode cho Light, Dark, Campaign hoặc từng thị trường.", label: "Tên mode", maxLength: 60, value: `Mode ${(kit?.modes?.length || 0) + 1}`, returnSelector: "[data-mpu-brand-add-mode]" }); return; }
-      const removeToken = event.target.closest("[data-mpu-token-remove]"); if (removeToken) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); kit.tokens = kit.tokens.filter((token) => token.id !== removeToken.dataset.mpuTokenRemove); save(session, "brand.token.removed", removeToken.dataset.mpuTokenRemove); render(session); return; }
+      const removeToken = event.target.closest("[data-mpu-token-remove]"); if (removeToken) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); kit.tokens = kit.tokens.filter((token) => token.id !== removeToken.dataset.mpuTokenRemove); kit.status = "draft"; save(session, "brand.token.removed", removeToken.dataset.mpuTokenRemove); render(session); return; }
       const brandExport = event.target.closest("[data-mpu-brand-export]"); if (brandExport) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); if (brandExport.dataset.mpuBrandExport === "json") downloadText(JSON.stringify(buildDtcgTokens(kit), null, 2), `${safeFileName(kit.name)}.tokens.json`); else downloadText(buildCssTokens(kit), `${safeFileName(kit.name)}.tokens.css`, "text/css"); save(session, "brand.tokens.exported", brandExport.dataset.mpuBrandExport); notify(session, "Đã xuất design tokens từ dữ liệu thật."); return; }
+      if (event.target.closest("[data-mpu-brand-version]")) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); if (!kit) return; kit.versions.push(createBrandVersion(kit, `Version ${kit.versions.length + 1}`)); kit.versions = kit.versions.slice(-LIMITS.brandVersions); save(session, "brand.version.created", kit.versions.at(-1).fingerprint); render(session); notify(session, "Đã tạo phiên bản bất biến của Brand Kit."); return; }
+      if (event.target.closest("[data-mpu-brand-review]")) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); if (!kit) return; kit.status = "review"; kit.approvals.push({ id: uid("approval"), status: "review", note: "Gửi duyệt trên thiết bị", createdAt: now() }); save(session, "brand.review.requested", kit.id); render(session); notify(session, "Đã chuyển Brand Kit sang trạng thái chờ duyệt cục bộ."); return; }
+      if (event.target.closest("[data-mpu-brand-approve]")) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); if (!kit || kit.status !== "review") return; kit.status = "approved"; kit.approvals.push({ id: uid("approval"), status: "approved", note: "Duyệt cục bộ; không phải chữ ký số", createdAt: now() }); kit.versions.push(createBrandVersion(kit, `Approved ${kit.versions.length + 1}`)); save(session, "brand.approved.local", kit.id); render(session); notify(session, "Đã duyệt cục bộ và tạo snapshot. Trạng thái này không thay thế chữ ký máy chủ."); return; }
+      if (event.target.closest("[data-mpu-brand-manifest]")) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); if (!kit) return; downloadText(JSON.stringify(buildBrandManifest(kit), null, 2), `${safeFileName(kit.name)}.brand.json`); save(session, "brand.manifest.exported", kit.id); notify(session, "Đã xuất Brand Manifest không chứa binary hoặc URL bí mật."); return; }
       if (event.target.closest("[data-mpu-brand-import]")) { session.host.querySelector("[data-mpu-brand-import-file]")?.click(); return; }
       const device = event.target.closest("[data-mpu-preview-device]"); if (device) { session.previewDevice = device.dataset.mpuPreviewDevice === "mobile" ? "mobile" : "desktop"; session.host.querySelector(".mpu-preview-frame")?.classList.toggle("is-mobile", session.previewDevice === "mobile"); session.host.querySelectorAll("[data-mpu-preview-device]").forEach((button) => button.classList.toggle("is-active", button === device)); return; }
 
@@ -780,16 +991,21 @@
             const start = clamp(session.videoPlayer.currentTime, 0, session.videoPlayer.duration || 24 * 60 * 60);
             session.state.video.captions.push({ id: uid("caption"), start, end: Math.min(session.videoPlayer.duration || start + 3, start + 3), text: value });
             save(session, "video.caption.created", value); successMessage = "Đã thêm caption vào timeline.";
+          } else if (dialog.kind === "document-mark") {
+            const item = session.state.documents.jobs.find((entry) => entry.id === session.state.documents.activeId), type = dialog.markType;
+            if (!item || item.kind !== "pdf" || !DOCUMENT_MARK_TYPES.has(type) || !value) throw new Error("Không thể tạo chú thích cho tài liệu này.");
+            item.marks ||= []; item.marks.push(normalizeDocumentMark({ type, page: session.state.documents.page, x: .2, y: .3, width: .55, height: .1, text: value }));
+            save(session, `document.mark.${type}.created`, value); successMessage = type === "stamp" ? "Đã thêm dấu vào recipe xuất." : "Đã thêm ghi chú vào trang.";
           } else if (dialog.kind === "brand-kit") {
             if (!value) throw new Error("Tên Brand Kit không được để trống.");
             const base = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId) || session.state.brand.kits[0];
-            const kit = { id: uid("kit"), name: value, modes: ["Default"], tokens: clone(base?.tokens || []).map((token, index) => normalizeBrandToken({ ...token, id: uid(`token-${index}`) }, index)), components: [], templateLocks: [] };
+            const kit = { id: uid("kit"), name: value, modes: ["Default"], tokens: clone(base?.tokens || []).map((token, index) => normalizeBrandToken({ ...token, id: uid(`token-${index}`) }, index)), status: "draft", profile: clone(base?.profile || {}), assets: [], versions: [], approvals: [], components: [], templateLocks: [] };
             session.state.brand.kits.push(kit); session.state.brand.activeKitId = kit.id; session.state.brand.activeMode = "Default"; save(session, "brand.kit.created", kit.name); successMessage = "Đã tạo Brand Kit không phá hủy bản gốc.";
           } else if (dialog.kind === "brand-mode") {
             const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId);
             if (!kit || !value) throw new Error("Tên mode không hợp lệ.");
             if (kit.modes.some((mode) => mode.toLowerCase() === value.toLowerCase())) throw new Error("Mode này đã tồn tại.");
-            kit.modes.push(value); session.state.brand.activeMode = value; save(session, "brand.mode.created", value); successMessage = "Đã thêm mode thương hiệu.";
+            kit.modes.push(value); kit.status = "draft"; session.state.brand.activeMode = value; save(session, "brand.mode.created", value); successMessage = "Đã thêm mode thương hiệu.";
           } else if (dialog.kind === "asset-collection") {
             if (!value) throw new Error("Tên bộ sưu tập không được để trống.");
             session.state.assets.collections.push({ id: uid("collection"), name: value, query: text(session.assetQuery, 200), kind: session.assetKind, createdAt: now() });
@@ -814,7 +1030,7 @@
         if (!kit || !token.name || !token.value) { notify(session, "Tên và giá trị token không được để trống.", "error"); return; }
         if (kit.tokens.length >= LIMITS.tokens) { notify(session, `Mỗi kit tối đa ${LIMITS.tokens} token.`, "error"); return; }
         if (kit.tokens.some((item) => item.name.toLowerCase() === token.name.toLowerCase())) { notify(session, "Token này đã tồn tại; hãy chỉnh trực tiếp trong bảng.", "error"); return; }
-        kit.tokens.push(token); save(session, "brand.token.created", token.name); render(session); notify(session, "Đã thêm token và cập nhật live preview.");
+        kit.tokens.push(token); kit.status = "draft"; save(session, "brand.token.created", token.name); render(session); notify(session, "Đã thêm token và cập nhật live preview.");
       }
     }, { signal });
 
@@ -824,17 +1040,21 @@
       const color = event.target.dataset.mpuVideoColor; if (color) { session.state.video.color[color] = Number(event.target.value); const label = session.host.querySelector(`[data-mpu-value="${color}"]`); if (label) label.textContent = `${event.target.value}${color === "exposure" ? " EV" : ["contrast","saturation"].includes(color) ? "%" : ""}`; drawVideoFrame(session); save(session); return; }
       if (event.target.matches("[data-mpu-document-watermark]")) { session.state.documents.watermark = text(event.target.value, 80); save(session); return; }
       if (event.target.matches("[data-mpu-document-opacity]")) { session.state.documents.watermarkOpacity = Number(event.target.value); save(session); return; }
+      const brandProfileField = event.target.dataset.mpuBrandProfile; if (brandProfileField) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); if (!kit || !["tagline", "audience", "voice", "usedWords", "avoidedWords"].includes(brandProfileField)) return; kit.profile[brandProfileField] = text(event.target.value, brandProfileField === "tagline" ? 180 : 500); if (kit.status === "approved") kit.status = "draft"; save(session, "brand.profile.updated", brandProfileField); return; }
       if (event.target.matches("[data-mpu-asset-search]")) { session.assetQuery = event.target.value; clearTimeout(session.searchTimer); session.searchTimer = setTimeout(() => render(session), 120); }
     }, { signal });
     session.host.addEventListener("pointerup", () => { session.scrubbing = false; }, { signal });
 
     session.host.addEventListener("change", async (event) => {
+      const markField = event.target.dataset.mpuMarkField; if (markField) { const row = event.target.closest("[data-mark-id]"), item = session.state.documents.jobs.find((value) => value.id === session.state.documents.activeId), mark = item?.marks?.find((value) => value.id === row?.dataset.markId); if (!mark || !["x", "y", "width", "height"].includes(markField)) return; const minimum = ["width", "height"].includes(markField) ? .02 : 0; mark[markField] = clamp(Number(event.target.value) / 100, minimum, 1); if (mark.x + mark.width > 1) mark.width = Math.max(.02, 1 - mark.x); if (mark.y + mark.height > 1) mark.height = Math.max(.02, 1 - mark.y); save(session, "document.mark.geometry", `${mark.id}:${markField}`); render(session); return; }
+      const documentFormField = event.target.dataset.mpuDocumentFormField; if (documentFormField) { const item = session.state.documents.jobs.find((value) => value.id === session.state.documents.activeId); if (!item || ["__proto__", "prototype", "constructor"].includes(documentFormField.toLowerCase())) return; item.formValues ||= {}; item.formValues[documentFormField] = text(event.target.value, 2000); save(session, "document.form.updated", documentFormField); notify(session, "Đã lưu giá trị biểu mẫu vào recipe cục bộ."); return; }
       if (event.target.matches("[data-mpu-asset-sort]")) { session.assetSort = ["recent", "name", "size"].includes(event.target.value) ? event.target.value : "recent"; render(session); return; }
       if (event.target.matches("[data-mpu-video-import]")) { try { const records = await ingestFiles(session, event.target.files, "video-workspace"); for (const { asset, file } of records) { const kind = fileKind(file.type, file.name); if (!["video","audio","image"].includes(kind)) continue; const clip = { id: uid("source"), assetId: asset.id, name: file.name, kind, size: file.size, checksum: asset.checksum, duration: 0, createdAt: now() }; if (kind === "video" || kind === "audio") { const media = document.createElement(kind === "video" ? "video" : "audio"); media.preload = "metadata"; media.src = session.objectUrls.get(asset.id); await new Promise((resolve) => { media.onloadedmetadata = resolve; media.onerror = resolve; }); clip.duration = Number(media.duration || 0); } session.state.video.library.push(clip); session.state.video.activeAssetId = asset.id; session.state.video.marks = { in: 0, out: clip.duration }; } save(session, "video.sources.imported", records.length); render(session); notify(session, `Đã import ${records.length} nguồn vào Media Bin.`); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
       if (event.target.matches("[data-mpu-document-import]")) { try { const records = await ingestFiles(session, event.target.files, "document-workspace"); for (const { asset, file } of records) { const kind = fileKind(file.type, file.name); if (!["pdf","image","text"].includes(kind)) continue; const job = { id: uid("document"), assetId: asset.id, name: file.name, kind, type: file.type, size: file.size, pages: 1, status: "ready", rotations: {}, deletedPages: [], createdAt: now() }; session.state.documents.jobs.push(job); session.state.documents.activeId = job.id; if (kind === "pdf") { const record = await getDocumentRecord(session, job); if (record?.pdf) job.pages = record.pdf.numPages; } } save(session, "documents.imported", records.length); render(session); notify(session, `Đã đăng ký ${records.length} tài liệu.`); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
-      if (event.target.matches("[data-mpu-brand-name]")) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); kit.name = text(event.target.value, 100, "Brand Kit"); save(session, "brand.kit.renamed", kit.name); render(session); return; }
-      const tokenField = event.target.dataset.mpuTokenField; if (tokenField) { const row = event.target.closest("[data-token-id]"), kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId), token = kit.tokens.find((item) => item.id === row?.dataset.tokenId); if (token) { if (tokenField === "name") token.name = normalizeTokenName(event.target.value); else if (tokenField === "value") { const nextValue = normalizeTokenValue(event.target.value); if (token.type === "color" && !hexToRgb(nextValue)) { render(session); notify(session, "Token màu phải dùng HEX 3 hoặc 6 ký tự.", "error"); return; } token.value = nextValue; } else if (tokenField === "type") { token.type = TOKEN_TYPES.has(event.target.value) ? event.target.value : "string"; if (token.type === "color" && !hexToRgb(token.value)) token.value = "#000000"; } save(session, "brand.token.updated", token.name); render(session); } return; }
-      if (event.target.matches("[data-mpu-brand-import-file]")) { try { const file = event.target.files?.[0]; if (!file || file.size > 2 * 1024 * 1024) throw new Error("Tệp DTCG phải nhỏ hơn 2 MB."); const value = JSON.parse(await file.text()), tokens = flattenDtcgTokens(value); if (!tokens.length) throw new Error("Không tìm thấy token DTCG ($value)."); const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); kit.tokens = tokens; save(session, "brand.tokens.imported", tokens.length); render(session); notify(session, `Đã nhập ${tokens.length} token DTCG.`); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
+      if (event.target.matches("[data-mpu-brand-name]")) { const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); kit.name = text(event.target.value, 100, "Brand Kit"); kit.status = "draft"; save(session, "brand.kit.renamed", kit.name); render(session); return; }
+      const tokenField = event.target.dataset.mpuTokenField; if (tokenField) { const row = event.target.closest("[data-token-id]"), kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId), token = kit.tokens.find((item) => item.id === row?.dataset.tokenId); if (token) { if (tokenField === "name") token.name = normalizeTokenName(event.target.value); else if (tokenField === "value") { const nextValue = normalizeTokenValue(event.target.value); if (token.type === "color" && !hexToRgb(nextValue)) { render(session); notify(session, "Token màu phải dùng HEX 3 hoặc 6 ký tự.", "error"); return; } token.value = nextValue; } else if (tokenField === "type") { token.type = TOKEN_TYPES.has(event.target.value) ? event.target.value : "string"; if (token.type === "color" && !hexToRgb(token.value)) token.value = "#000000"; } kit.status = "draft"; save(session, "brand.token.updated", token.name); render(session); } return; }
+      if (event.target.matches("[data-mpu-brand-import-file]")) { try { const file = event.target.files?.[0]; if (!file || file.size > 2 * 1024 * 1024) throw new Error("Tệp DTCG phải nhỏ hơn 2 MB."); const value = JSON.parse(await file.text()), tokens = flattenDtcgTokens(value); if (!tokens.length) throw new Error("Không tìm thấy token DTCG ($value)."); const kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); kit.tokens = tokens; kit.status = "draft"; save(session, "brand.tokens.imported", tokens.length); render(session); notify(session, `Đã nhập ${tokens.length} token DTCG.`); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
+      if (event.target.matches("[data-mpu-brand-asset]")) { const file = event.target.files?.[0], kit = session.state.brand.kits.find((item) => item.id === session.state.brand.activeKitId); try { if (!file || !kit) throw new Error("Chưa chọn tài sản thương hiệu."); if (!/^image\/(?:png|jpeg|webp|svg\+xml)$/i.test(file.type || "")) throw new Error("Logo chỉ nhận PNG, JPEG, WebP hoặc SVG an toàn."); const [record] = await ingestFiles(session, [file], "brand-workspace"); if (!record?.asset) throw new Error("Không thể lưu logo vào Asset Galaxy."); kit.assets.push({ id: uid("brand-asset"), assetId: record.asset.id, name: file.name, role: kit.assets.length ? "secondary-logo" : "primary-logo", source: "user-upload", license: "unverified" }); kit.assets = kit.assets.slice(-LIMITS.brandAssets); kit.status = "draft"; save(session, "brand.asset.linked", record.asset.id); render(session); notify(session, "Đã lưu logo vào Asset Galaxy và gắn bằng Entity ID. Hãy xác minh license trước khi phát hành."); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
       if (event.target.matches("[data-mpu-asset-import]")) { try { const records = await ingestFiles(session, event.target.files, "asset-galaxy"); await refreshAssets(session); notify(session, `Đã ingest ${records.length} asset với SHA-256.`); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
       if (event.target.matches("[data-mpu-asset-replace]")) { const file = event.target.files?.[0], asset = session.assets.find((item) => item.id === session.selectedAssetId); if (!file || !asset) return; try { const metadata = await session.mediaApi.extractMetadata(file, scope); await session.mediaStore.replaceAsset(asset.id, { name: file.name, type: file.type, blob: file, lastModified: file.lastModified, metadata }); const oldUrl = session.objectUrls.get(asset.id); if (oldUrl) URL.revokeObjectURL(oldUrl); session.objectUrls.set(asset.id, URL.createObjectURL(file)); save(session, "asset.replaced", asset.id); await refreshAssets(session); notify(session, "Đã thay file nhưng giữ nguyên Entity ID."); } catch (error) { notify(session, error.message, "error"); } event.target.value = ""; return; }
       const assetField = event.target.dataset.mpuAssetField; if (assetField) { const asset = session.assets.find((item) => item.id === session.selectedAssetId); if (!asset) return; const patch = assetField === "tags" ? { tags: event.target.value.split(",").map((item) => text(item, 40)).filter(Boolean).slice(0, 30) } : { [assetField]: assetField === "rating" ? Number(event.target.value) : text(event.target.value, 160) }; try { await session.mediaStore.updateAsset(asset.id, patch); save(session, "asset.metadata.updated", `${asset.id}:${assetField}`); await refreshAssets(session); notify(session, "Đã cập nhật metadata asset."); } catch (error) { notify(session, error.message, "error"); } }
@@ -883,8 +1103,8 @@
 
   return Object.freeze({
     VERSION, WORKSPACE_IDS, WORKSPACE_BY_ID, DELIVERY_PROFILES,
-    escapeHtml, formatTime, formatBytes, fileKind, contrastRatio, lintBrandKit, normalizeBrandToken,
+    escapeHtml, formatTime, formatBytes, fileKind, contrastRatio, lintBrandKit, normalizeBrandToken, normalizeDocumentMark, compareDocumentText,
     buildDtcgTokens, buildCssTokens, buildOtioTimeline, buildWebVtt, preflightDelivery,
-    flattenDtcgTokens, ensureProductionState, createDeliveryJob, buildReleaseManifest, checkMediaCapability, mount, unmount
+    flattenDtcgTokens, createBrandVersion, buildBrandManifest, ensureProductionState, createDeliveryJob, buildReleaseManifest, checkMediaCapability, mount, unmount
   });
 });

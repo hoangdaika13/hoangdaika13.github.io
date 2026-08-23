@@ -15,21 +15,21 @@ test("Universal Media Project is reachable from the shell and cached offline", (
   const worker = read("sw.js");
 
   for (const asset of [
-    "universal-media-project.css?v=2",
-    "universal-media-project.js?v=2",
+    "universal-media-project.css?v=3",
+    "universal-media-project.js?v=3",
     "photo-editor-pro.css?v=4",
     "photo-editor-pro.js?v=3",
     "media-professional-suite.css?v=1",
     "media-professional-suite.js?v=3",
-    "media-design-page.css?v=21",
+    "media-design-page.css?v=22",
     "media-next-suite.css?v=1",
     "vendor/vercel-blob-client.min.js?v=1",
     "media-next-suite.js?v=2",
-    "media-design-page.js?v=22",
-    "media-audio-studio.css?v=5",
-    "media-audio-studio.js?v=3",
-    "media-production-universe.css?v=4",
-    "media-production-universe.js?v=3"
+    "media-design-page.js?v=23",
+    "media-audio-studio.css?v=6",
+    "media-audio-studio.js?v=4",
+    "media-production-universe.css?v=5",
+    "media-production-universe.js?v=4"
   ]) {
     const pattern = new RegExp(escapeRegExp(asset));
     assert.match(`${html}\n${loader}`, pattern);
@@ -71,7 +71,7 @@ test("Media and Design exposes a connected professional production flow", () => 
   const davinciBundle = loader.match(/davinci:\s*\{[\s\S]*?\r?\n\s*\},\r?\n\s*graphic:/)?.[0] || "";
   assert.doesNotMatch(mediaBundle, /video-editor-(?:studio|resolve)\.(?:css|js)/);
   assert.match(davinciBundle, /video-editor-studio\.js\?v=5/);
-  assert.match(davinciBundle, /video-editor-resolve\.js\?v=11/);
+  assert.match(davinciBundle, /video-editor-resolve\.js\?v=12/);
   assert.doesNotMatch(`${page}\n${read("script.js")}\n${read("home-command-search.js")}\n${read("home-daily-command.js")}`, /\/media-design\/video-editor/);
   assert.match(styles, /\.mdp-production-flow/);
   assert.match(styles, /scroll-snap-type/);
@@ -81,6 +81,11 @@ test("Media and Design exposes a connected professional production flow", () => 
   assert.match(page, /data-mdp-command-open/);
   assert.match(page, /data-mdp-global-import/);
   assert.match(page, /data-mdp-inspector-tab/);
+  assert.match(page, /TOOL_WORKFLOW_MATRIX/);
+  assert.match(page, /INPUT → ENGINE → OUTPUT/);
+  assert.match(page, /provider-gated/);
+  assert.match(page, /workflows:\s*TOOL_WORKFLOW_MATRIX/);
+  assert.match(styles, /\.mdp-workflow-matrix/);
 });
 
 test("Professional engines publish stable browser contracts", () => {

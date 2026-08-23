@@ -46,6 +46,37 @@ test("Brand Universe exports interoperable DTCG JSON, CSS and honest lint", () =
   assert.equal(universe.flattenDtcgTokens(dtcg).length, 3);
 });
 
+test("Document Observatory bounds annotations and compares extracted text deterministically", () => {
+  const state = universe.ensureProductionState({ documents: { jobs: [{ id: "doc", assetId: "asset", name: "Contract.pdf", kind: "pdf", pages: 2, marks: [
+    { id: "redact", type: "redaction", page: 1, x: -4, y: 2, width: 8, height: 0, text: "secret" },
+    { id: "note", type: "comment", page: 2, x: .2, y: .3, width: .4, height: .1, text: "Kiểm tra điều khoản" }
+  ], formValues: { constructor: "blocked", Name: "HH" } }] } }, professional);
+  const document = state.documents.jobs[0];
+  assert.equal(document.marks.length, 2);
+  assert.equal(document.marks[0].type, "redaction");
+  assert.equal(document.marks[0].x, 0);
+  assert.equal(document.marks[0].y, .98);
+  assert.equal(document.marks[0].width, 1);
+  assert.equal(document.marks[0].height, .02);
+  assert.equal(Object.hasOwn(document.formValues, "constructor"), false);
+  const comparison = universe.compareDocumentText("một hai ba", "một hai bốn năm");
+  assert.deepEqual({ added: comparison.added, removed: comparison.removed, common: comparison.common }, { added: 2, removed: 1, common: 2 });
+  assert.equal(comparison.similarity, 57.14);
+});
+
+test("Brand Universe versions profile, provenance and approval without serializing binary", () => {
+  const state = universe.ensureProductionState({ brand: { activeKitId: "kit", kits: [{ id: "kit", name: "HH", status: "review", profile: { tagline: "Sáng tạo có trách nhiệm" }, tokens: [{ id: "color", name: "color.brand.primary", value: "#55e6ff", type: "color" }], assets: [{ id: "logo", assetId: "asset-logo", name: "logo.png", role: "primary-logo", source: "user-upload", license: "Owned", blob: Buffer.from("private") }], approvals: [{ id: "approval", status: "review", note: "Review" }] }] } }, professional);
+  const kit = state.brand.kits[0], version = universe.createBrandVersion(kit, "V1", "2026-08-24T00:00:00.000Z");
+  kit.versions.push(version);
+  const manifest = universe.buildBrandManifest(kit);
+  assert.equal(version.label, "V1");
+  assert.match(version.fingerprint, /^[a-f0-9]{8}$/);
+  assert.equal(manifest.brand.profile.tagline, "Sáng tạo có trách nhiệm");
+  assert.equal(manifest.assets[0].entityReference, "hhasset://asset-logo");
+  assert.equal(manifest.assets[0].license, "Owned");
+  assert.doesNotMatch(JSON.stringify(manifest), /private/);
+});
+
 test("Delivery preflight blocks broken rights and reports real asset verification", () => {
   const state = universe.ensureProductionState({}, professional);
   state.rights.splits = [{ owner: "A", percent: 70 }];
@@ -101,14 +132,19 @@ test("workspace actions use accessible in-app dialogs and preserve focused scrol
   assert.match(css, /\.mpu-dialog-backdrop/);
   assert.match(page, /rememberToolScroll/);
   assert.match(page, /restoreToolScroll/);
+  assert.match(source, /rasterizeMarkedPdfPage/);
+  assert.match(source, /applyPdfFormValues/);
+  assert.match(source, /PDFSignature/);
+  assert.match(source, /data-mpu-document-forms/);
+  assert.match(source, /data-mpu-brand-version/);
 });
 
 test("Production Universe is loaded before Media page, cached and motion-safe", () => {
   const loader = read("performance-loader.js"), worker = read("sw.js"), page = read("media-design-page.js"), css = read("media-production-universe.css"), source = read("media-production-universe.js");
-  for (const asset of ["media-production-universe.css?v=4", "media-production-universe.js?v=3", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/pdf.min.mjs?v=4.10.38", "vendor/pdf.worker.min.mjs?v=4.10.38"]) {
+  for (const asset of ["media-production-universe.css?v=5", "media-production-universe.js?v=4", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/pdf.min.mjs?v=4.10.38", "vendor/pdf.worker.min.mjs?v=4.10.38"]) {
     assert.match(`${loader}\n${worker}`, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
-  assert.match(loader, /media-production-universe\.js\?v=3[\s\S]*media-design-page\.js\?v=22/);
+  assert.match(loader, /media-production-universe\.js\?v=4[\s\S]*media-design-page\.js\?v=23/);
   assert.match(page, /HHMediaProductionUniverse\?\.mount/);
   assert.match(source, /canvas\.captureStream/);
   assert.match(source, /PDFDocument\.load/);

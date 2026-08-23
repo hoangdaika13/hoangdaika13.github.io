@@ -60,6 +60,65 @@ test("Audio Studio keeps a bounded immutable multitrack mixer model", () => {
   assert.deepEqual({ frames: estimate.frames, channels: estimate.channels, allowed: estimate.allowed }, { frames: 8000, channels: 1, allowed: true });
 });
 
+test("Audio Studio split and trim preserve source ranges, offsets and loop duration", () => {
+  const source = [{ id: "dialogue", name: "Dialogue", sourceDuration: 10, sourceIn: 2, sourceOut: 8, offset: 3 }];
+  const split = audio.updateTrackList(source, { type: "split", id: "dialogue", at: 5, newId: "dialogue-b" });
+  assert.equal(split.length, 2);
+  assert.deepEqual(split.map(({ id, offset, sourceIn, sourceOut }) => ({ id, offset, sourceIn, sourceOut })), [
+    { id: "dialogue", offset: 3, sourceIn: 2, sourceOut: 4 },
+    { id: "dialogue-b", offset: 5, sourceIn: 4, sourceOut: 8 }
+  ]);
+  const trimmed = audio.updateTrackList(source, { type: "trim", id: "dialogue", start: 4, end: 7 });
+  assert.deepEqual({ offset: trimmed[0].offset, sourceIn: trimmed[0].sourceIn, sourceOut: trimmed[0].sourceOut }, { offset: 4, sourceIn: 3, sourceOut: 6 });
+  assert.equal(audio.trackSegmentDuration(trimmed[0]), 3);
+  assert.equal(audio.trackTimelineDuration({ ...trimmed[0], loop: true, loopCount: 4 }), 12);
+});
+
+test("Audio Studio automation and regions stay sorted, bounded and immutable", () => {
+  const points = [{ time: 10, value: 2 }, { time: 0, value: -.5 }];
+  assert.equal(audio.automationValue(points, 5), .75);
+  assert.deepEqual(points, [{ time: 10, value: 2 }, { time: 0, value: -.5 }]);
+  let regions = audio.updateRegions([], { type: "add", region: { id: "later", start: 8, end: 10, title: "<Sau>" } });
+  regions = audio.updateRegions(regions, { type: "add", region: { id: "first", start: 1, end: 4, title: "Đầu" } });
+  assert.deepEqual(regions.map((region) => region.id), ["first", "later"]);
+  assert.equal(regions[1].title, "Sau");
+  assert.deepEqual(audio.updateRegions(regions, { type: "update", id: "first", patch: { start: -5, end: 2 } })[0], { id: "first", start: 0, end: 2, title: "Đầu" });
+  assert.equal(audio.updateRegions(regions, { type: "remove", id: "later" }).length, 1);
+  const bounded = Array.from({ length: audio.LIMITS.regions + 20 }, (_, index) => ({ id: `r${index}`, start: index, end: index + 1 }));
+  assert.equal(audio.updateRegions(bounded).length, audio.LIMITS.regions);
+});
+
+test("Audio Studio sidechain ducking lowers music while voice is active", async () => {
+  const sampleRate = 1000, length = 1000;
+  const makeBuffer = (sample) => ({ length, duration: 1, sampleRate, numberOfChannels: 1, getChannelData: () => new Float32Array(length).fill(sample) });
+  const context = { createBuffer: (channels, frames, rate) => { const data = Array.from({ length: channels }, () => new Float32Array(frames)); return { numberOfChannels: channels, length: frames, duration: frames / rate, sampleRate: rate, getChannelData: (channel) => data[channel] }; } };
+  const tracks = [
+    { id: "voice", role: "voice", buffer: makeBuffer(.35), sourceDuration: 1, sourceOut: 1 },
+    { id: "music", role: "music", buffer: makeBuffer(.35), sourceDuration: 1, sourceOut: 1 }
+  ];
+  const base = { normalize: false, compressor: false, gain: 0, gate: -80, limiter: 0, highPass: 0, fadeIn: 0, fadeOut: 0, start: 0, end: 1 };
+  const plain = await audio.renderMixAsync(context, tracks, { ...base, ducking: { enabled: false } });
+  const ducked = await audio.renderMixAsync(context, tracks, { ...base, ducking: { enabled: true, amountDb: 18, thresholdDb: -40, attack: .005, release: .2 } });
+  const average = (buffer) => buffer.getChannelData(0).slice(500).reduce((sum, value) => sum + Math.abs(value), 0) / 500;
+  assert.ok(average(ducked) < average(plain) * .75, `${average(ducked)} should be lower than ${average(plain)}`);
+});
+
+test("Audio Studio podcast delivery preserves validated metadata and full project structure", () => {
+  const state = audio.normalizeState({
+    podcast: { title: "Tập 01", show: "HH Show", author: "Hoàng", description: "Mô tả", episode: 8, language: "vi-VN", category: "Education", explicit: true },
+    markers: [{ id: "chapter-1", time: 2, title: "Mở đầu" }], regions: [{ id: "region-1", start: 1, end: 4, title: "Intro" }]
+  });
+  const rss = audio.rssItem(state, 65.4);
+  assert.match(rss, /<dc:language>vi-VN<\/dc:language>/);
+  assert.match(rss, /<itunes:category text="Education" \/>/);
+  assert.match(rss, /<itunes:explicit>true<\/itunes:explicit>/);
+  const manifest = JSON.parse(audio.podcastManifest(state, [{ id: "voice", name: "Voice", role: "voice", sourceDuration: 5, sourceOut: 5, automation: [{ time: 1, value: .8 }] }], 5));
+  assert.equal(manifest.schema, "hh.podcast-manifest.v1");
+  assert.equal(manifest.chapters.length, 1);
+  assert.equal(manifest.regions.length, 1);
+  assert.deepEqual(manifest.tracks[0].automation, [{ time: 1, value: .8 }]);
+});
+
 test("Audio Studio asynchronously encodes WAV without changing its PCM contract", async () => {
   const channels = [new Float32Array([0, .25, -.5, 1])];
   const buffer = { numberOfChannels: 1, sampleRate: 48000, length: 4, getChannelData: () => channels[0] };
@@ -91,7 +150,8 @@ test("Audio Studio is routed, cached, responsive and honest about local processi
   assert.match(source, /data-mas-track-action="duplicate"/);
   assert.match(source, /session\.renderController\?\.abort/);
   assert.match(css, /\.mas-track-mixer/);
-  for (const asset of ["media-audio-studio.css?v=5", "media-audio-studio.js?v=3"]) {
+  assert.match(css, /@media\(max-width:980px\)[\s\S]*\.mdp-cockpit:has\(\.mas-studio\) \.media-design-page__work\{overflow:auto!important\}/);
+  for (const asset of ["media-audio-studio.css?v=6", "media-audio-studio.js?v=4"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }

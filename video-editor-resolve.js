@@ -10,6 +10,9 @@
   const number = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const clamp = (value, min, max) => Math.min(max, Math.max(min, number(value)));
   const cleanText = (value, max = 120) => String(value ?? "").replace(/[<>\u0000-\u001f]/g, " ").trim().slice(0, max);
+  const cleanCaptionText = (value, max = 500) => String(value ?? "").replace(/[<>\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, " ").replace(/\n{3,}/g, "\n\n").trim().slice(0, max);
+  const KEYFRAME_PROPERTIES = Object.freeze(["position", "scale", "rotation", "opacity", "speed", "volume"]);
+  const KEYFRAME_EASINGS = Object.freeze(["linear", "ease-in", "ease-out", "ease-in-out"]);
   const makeId = (prefix, seed = Date.now()) => `${prefix}-${String(seed).replace(/[^a-z0-9-]/gi, "").slice(-24) || "local"}`;
   const list = (value) => Array.isArray(value) ? value : [];
   const record = (value) => value && typeof value === "object" && !Array.isArray(value) ? value : {};
@@ -75,8 +78,8 @@
     });
     const trackIds = tracks.map((track) => track.id), clipIds = new Set(), subtitleIds = new Set(), keyframeIds = new Set(), queueIds = new Set(), nestedIds = new Set(), nodeIds = new Set(), audioIds = new Set();
     const clips = list(raw.clips).slice(0, LIMITS.clips).map((value, index) => { const clip = normalizeClip(value, index, trackIds); clip.id = uniqueId(clip.id, makeId("clip", index), clipIds); return clip; });
-    const subtitles = list(raw.subtitles).slice(0, LIMITS.subtitles).map((value, index) => { const item = record(value); return { id: uniqueId(item.id, makeId("subtitle", index), subtitleIds), start: clamp(item.start, 0, 86400), duration: clamp(item.duration || 2, .1, 3600), text: cleanText(item.text || "Phụ đề mới", 500), language: cleanText(item.language || "vi", 12) || "vi" }; });
-    const keyframes = list(raw.keyframes).slice(-LIMITS.keyframes).map((value, index) => { const item = record(value); return { id: uniqueId(item.id, makeId("kf", index), keyframeIds), property: cleanText(item.property || "position", 40), time: clamp(item.time, 0, 86400), value: clamp(item.value, -1000000, 1000000), easing: ["linear", "ease-in", "ease-out", "ease-in-out"].includes(item.easing) ? item.easing : "ease-in-out" }; });
+    const subtitles = list(raw.subtitles).slice(0, LIMITS.subtitles).map((value, index) => { const item = record(value); return { id: uniqueId(item.id, makeId("subtitle", index), subtitleIds), start: clamp(item.start, 0, 86400), duration: clamp(item.duration || 2, .1, 3600), text: cleanCaptionText(item.text || "Phụ đề mới", 500), language: cleanText(item.language || "vi", 12) || "vi" }; });
+    const keyframes = list(raw.keyframes).slice(-LIMITS.keyframes).map((value, index) => { const item = record(value), property = KEYFRAME_PROPERTIES.includes(item.property) ? item.property : "position"; return { id: uniqueId(item.id, makeId("kf", index), keyframeIds), clipId: clipIds.has(item.clipId) ? item.clipId : "", property, time: clamp(item.time, 0, 86400), value: clamp(item.value, -1000000, 1000000), easing: KEYFRAME_EASINGS.includes(item.easing) ? item.easing : "ease-in-out" }; });
     const exportQueue = list(raw.exportQueue).slice(-LIMITS.queue).map((value, index) => {
       const job = record(value), status = ["queued", "processing", "completed", "failed", "cancelled", "unsupported", "provider-not-configured"].includes(job.status) ? job.status : "queued";
       return { id: uniqueId(job.id, makeId("export", index), queueIds), idempotencyKey: cleanText(job.idempotencyKey || "", 120), name: cleanText(job.name || "HH Export", 120), mime: cleanText(job.mime || "video/webm", 100), size: normalizeFrameSize(job.size), bitrate: Math.round(clamp(job.bitrate || 8000000, 250000, 80000000)), includeAudio: job.includeAudio !== false, status, progress: clamp(job.progress, 0, 100), notice: cleanText(job.notice || "Chưa bắt đầu kết xuất.", 240), createdAt: clamp(job.createdAt || Date.now(), 0, 4102444800000) };
@@ -148,6 +151,12 @@
           next.tracks.push({ id, type: trackType, name: cleanText(operation.name || id, 80), locked: false, muted: false });
           if (trackType === "audio" && !next.audio.channels.some((channel) => channel.id === id)) next.audio.channels.push({ id, gain: 1, pan: 0, muted: false, solo: false, eq: { low: 0, mid: 0, high: 0 }, compressor: { enabled: false, threshold: -24, ratio: 3 }, noiseReduction: { enabled: false, amount: 0 }, automation: [] });
         }
+      } else if (type === "remove-track") {
+        const track = next.tracks.find((item) => item.id === operation.trackId);
+        if (track && next.tracks.length > 1 && !next.clips.some((item) => item.track === track.id)) {
+          next.tracks = next.tracks.filter((item) => item.id !== track.id);
+          if (track.type === "audio") next.audio.channels = next.audio.channels.filter((channel) => channel.id !== track.id);
+        }
       } else if (type === "add-clip" && next.clips.length < LIMITS.clips) {
         const candidate = normalizeClip(operation.clip, next.clips.length, next.tracks.map((track) => track.id)), targetTrack = next.tracks.find((track) => track.id === candidate.track);
         if (!targetTrack?.locked && !next.clips.some((item) => item.id === candidate.id)) next.clips.push(candidate);
@@ -192,8 +201,60 @@
       if (next.subtitles.length >= LIMITS.subtitles) return;
       const data = record(subtitle), id = cleanText(data.id || makeId("subtitle", `${next.revision}-${next.subtitles.length}`), 80);
       if (!id || next.subtitles.some((item) => item.id === id)) return;
-      next.subtitles.push({ id, start: clamp(data.start, 0, 86400), duration: clamp(data.duration || 2, .1, 3600), text: cleanText(data.text || "Phụ đề mới", 500), language: cleanText(data.language || "vi", 12) });
+      next.subtitles.push({ id, start: clamp(data.start, 0, 86400), duration: clamp(data.duration || 2, .1, 3600), text: cleanCaptionText(data.text || "Phụ đề mới", 500), language: cleanText(data.language || "vi", 12) || "vi" });
     });
+  }
+
+  function updateSubtitle(project, subtitleId, patch = {}) {
+    const data = record(patch), id = cleanText(subtitleId, 80);
+    return commit(project, (next) => {
+      const subtitle = next.subtitles.find((item) => item.id === id); if (!subtitle) return;
+      if (data.start != null) subtitle.start = clamp(data.start, 0, 86400);
+      if (data.duration != null) subtitle.duration = clamp(data.duration, .1, 3600);
+      if (data.text != null) subtitle.text = cleanCaptionText(data.text, 500) || "Phụ đề mới";
+      if (data.language != null) subtitle.language = cleanText(data.language, 12) || "vi";
+    });
+  }
+
+  function removeSubtitle(project, subtitleId) {
+    const id = cleanText(subtitleId, 80);
+    return commit(project, (next) => { next.subtitles = next.subtitles.filter((item) => item.id !== id); });
+  }
+
+  function subtitleSeconds(value) {
+    const match = /^(?:(\d{1,3}):)?(\d{1,2}):(\d{2})[.,](\d{3})$/.exec(String(value || "").trim());
+    if (!match) return NaN;
+    const hours = number(match[1]), minutes = number(match[2]), seconds = number(match[3]), millis = number(match[4]);
+    if (minutes > 59 || seconds > 59) return NaN;
+    return clamp(hours * 3600 + minutes * 60 + seconds + millis / 1000, 0, 86400);
+  }
+
+  function parseSubtitleText(input, options = {}) {
+    const source = String(input ?? "").slice(0, 2_000_000).replace(/^\uFEFF/, "").replace(/\r/g, ""), language = cleanText(options.language || "vi", 12) || "vi", prefix = cleanText(options.idPrefix || "caption", 40) || "caption";
+    const rows = [];
+    for (const block of source.split(/\n{2,}/)) {
+      if (rows.length >= LIMITS.subtitles) break;
+      const lines = block.split("\n").map((line) => line.trimEnd());
+      if (!lines.length || /^(?:WEBVTT|NOTE|STYLE|REGION)(?:\s|$)/i.test(lines[0].trim())) continue;
+      const timingIndex = lines.findIndex((line) => line.includes("-->")); if (timingIndex < 0) continue;
+      const timing = lines[timingIndex].split("-->"), start = subtitleSeconds(timing[0]?.trim().split(/\s+/)[0]), end = subtitleSeconds(timing[1]?.trim().split(/\s+/)[0]);
+      const text = cleanCaptionText(lines.slice(timingIndex + 1).join("\n").replace(/<[^>]*>/g, ""), 500);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || !text) continue;
+      const cue = timingIndex > 0 ? cleanText(lines[timingIndex - 1], 40) : "", suffix = cue || String(rows.length + 1);
+      rows.push({ id: `${prefix}-${suffix.replace(/[^a-z0-9-]/gi, "").slice(0, 32) || rows.length + 1}`, start, duration: end - start, text, language });
+    }
+    return rows;
+  }
+
+  function subtitleStamp(value) {
+    const millis = Math.max(0, Math.round(clamp(value, 0, 86400) * 1000)), hours = Math.floor(millis / 3600000), minutes = Math.floor(millis % 3600000 / 60000), seconds = Math.floor(millis % 60000 / 1000), remainder = millis % 1000;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${String(remainder).padStart(3, "0")}`;
+  }
+
+  function exportWebVtt(projectOrRows) {
+    const rows = Array.isArray(projectOrRows) ? normalizeProject({ subtitles: projectOrRows }).subtitles : normalizeProject(projectOrRows).subtitles;
+    const body = rows.slice().sort((a, b) => a.start - b.start).map((item) => `${subtitleStamp(item.start)} --> ${subtitleStamp(item.start + item.duration)}\n${cleanCaptionText(item.text, 500)}`).join("\n\n");
+    return `WEBVTT\n\n${body}${body ? "\n" : ""}`;
   }
 
   function createNestedSequence(project, clipIds = [], name = "Sequence lồng") {
@@ -230,9 +291,26 @@
     return commit(project, (next) => {
       const id = cleanText(data.id || makeId("kf", `${next.revision}-${next.keyframes.length}`), 80);
       if (next.keyframes.some((item) => item.id === id)) return;
-      next.keyframes.push({ id, property: cleanText(data.property || "position", 40), time: clamp(data.time, 0, 86400), value: clamp(data.value, -1000000, 1000000), easing: ["linear", "ease-in", "ease-out", "ease-in-out"].includes(data.easing) ? data.easing : "ease-in-out" });
+      next.keyframes.push({ id, clipId: next.clips.some((clip) => clip.id === data.clipId) ? data.clipId : "", property: KEYFRAME_PROPERTIES.includes(data.property) ? data.property : "position", time: clamp(data.time, 0, 86400), value: clamp(data.value, -1000000, 1000000), easing: KEYFRAME_EASINGS.includes(data.easing) ? data.easing : "ease-in-out" });
       next.keyframes = next.keyframes.slice(-LIMITS.keyframes);
     });
+  }
+
+  function updateKeyframe(project, keyframeId, patch = {}) {
+    const id = cleanText(keyframeId, 80), data = record(patch);
+    return commit(project, (next) => {
+      const keyframe = next.keyframes.find((item) => item.id === id); if (!keyframe) return;
+      if (data.clipId != null) keyframe.clipId = next.clips.some((clip) => clip.id === data.clipId) ? data.clipId : "";
+      if (data.property != null && KEYFRAME_PROPERTIES.includes(data.property)) keyframe.property = data.property;
+      if (data.time != null) keyframe.time = clamp(data.time, 0, 86400);
+      if (data.value != null) keyframe.value = clamp(data.value, -1000000, 1000000);
+      if (data.easing != null && KEYFRAME_EASINGS.includes(data.easing)) keyframe.easing = data.easing;
+    });
+  }
+
+  function removeKeyframe(project, keyframeId) {
+    const id = cleanText(keyframeId, 80);
+    return commit(project, (next) => { next.keyframes = next.keyframes.filter((item) => item.id !== id); });
   }
 
   function setMulticam(project, angles = [], activeAngle = 1) {
@@ -326,7 +404,7 @@
   function undo(history) { if (!history.past.length) return history; return { past: history.past.slice(0, -1), present: normalizeProject(history.past.at(-1)), future: [clone(history.present), ...history.future].slice(0, LIMITS.history) }; }
   function redo(history) { if (!history.future.length) return history; return { past: [...history.past, clone(history.present)].slice(-LIMITS.history), present: normalizeProject(history.future[0]), future: history.future.slice(1) }; }
 
-  return Object.freeze({ LIMITS, createProject, normalizeProject, snapTime, applyTimelineOperation, addSubtitle, createNestedSequence, planProxy, createWaveformEnvelope, addKeyframe, setMulticam, setMotionModel, updateColor, updateAudioChannel, enqueueExport, updateExportStatus, recoverInterruptedExports, createHistory, commitHistory, undo, redo });
+  return Object.freeze({ LIMITS, KEYFRAME_PROPERTIES, KEYFRAME_EASINGS, createProject, normalizeProject, snapTime, applyTimelineOperation, addSubtitle, updateSubtitle, removeSubtitle, parseSubtitleText, exportWebVtt, createNestedSequence, planProxy, createWaveformEnvelope, addKeyframe, updateKeyframe, removeKeyframe, setMulticam, setMotionModel, updateColor, updateAudioChannel, enqueueExport, updateExportStatus, recoverInterruptedExports, createHistory, commitHistory, undo, redo });
 });
 
 (() => {
@@ -397,6 +475,7 @@
     micRequest: 0,
     micPending: false,
     exportJobId: "",
+    selectedKeyframeId: "",
     stillBusy: false,
     lastQueueAt: 0,
     pageScroll: {},
@@ -458,6 +537,8 @@
     state.data.pro = state.proHistory.present;
     save();
     renderProSummary();
+    const keyframeDrawer = $(state.root, "[data-vr-pro-drawer]"); if (keyframeDrawer && !keyframeDrawer.hidden) renderKeyframes();
+    const subtitleDrawer = $(state.root, "[data-vr-subtitle-drawer]"); if (subtitleDrawer && !subtitleDrawer.hidden) renderSubtitles();
     status(direction === "redo" ? "Đã làm lại thao tác Pro." : "Đã hoàn tác thao tác Pro.", "success");
   }
 
@@ -475,6 +556,12 @@
     clearTimeout(state.timer);
     const lifecycle = state.lifecycle;
     state.timer = setTimeout(() => { if (state.lifecycle === lifecycle && toast.isConnected) toast.hidden = true; }, 2600);
+  }
+
+  function downloadLocalBlob(blob, name) {
+    const url = URL.createObjectURL(blob); state.urls.add(url);
+    const anchor = document.createElement("a"); anchor.href = url; anchor.download = clean(name, 140) || "hh-export"; anchor.rel = "noopener"; anchor.click();
+    const timer = setTimeout(() => { URL.revokeObjectURL(url); state.urls.delete(url); state.urlTimers.delete(timer); }, 1500); state.urlTimers.add(timer);
   }
 
   function clickBase(selector) {
@@ -642,7 +729,7 @@
         <details class="vr-pro-menu"><summary>${icon("wrench")}<span>Công cụ Pro</span></summary><div>
           <button type="button" data-vr-action="pro-multicam">${icon("layout-grid")} Multicam Viewer</button>
           <button type="button" data-vr-action="pro-keyframes">${icon("diameter")} Keyframe Editor</button>
-          <button type="button" data-vr-action="pro-caption">${icon("subtitles")} Thêm phụ đề</button>
+          <button type="button" data-vr-action="pro-caption">${icon("subtitles")} Quản lý phụ đề</button>
           <button type="button" data-vr-action="pro-speed">${icon("gauge")} Speed Ramp 150%</button>
           <button type="button" data-vr-action="pro-stabilize">${icon("focus")} Ổn định hình</button>
           <button type="button" data-vr-action="pro-scopes">${icon("chart-no-axes-combined")} Video Scopes</button>
@@ -655,7 +742,8 @@
       </div>
     </div>${editRibbonMarkup()}
     <section class="vr-stage" data-vr-stage hidden></section>
-    <aside class="vr-pro-drawer" data-vr-pro-drawer hidden><header><div>${icon("diameter")}<span><strong>Keyframe Editor</strong><small>Transform · Opacity · Speed</small></span></div><button data-vr-action="pro-close">${icon("x")}</button></header><div class="vr-keyframe-toolbar"><button data-vr-action="pro-keyframe-add">${icon("diamond-plus")} Thêm keyframe</button><button data-vr-action="pro-keyframe-delete">${icon("trash-2")} Xóa cuối</button><span>Đầu phát hiện tại: <b data-vr-keyframe-time>00:00:00:00</b></span></div><div class="vr-keyframe-track" data-vr-keyframes></div></aside>
+    <aside class="vr-pro-drawer" data-vr-pro-drawer hidden><header><div>${icon("diameter")}<span><strong>Keyframe Editor</strong><small>Theo clip · thuộc tính · easing</small></span></div><button type="button" data-vr-action="pro-close" aria-label="Đóng Keyframe Editor">${icon("x")}</button></header><div class="vr-keyframe-toolbar"><label>Thuộc tính<select data-vr-keyframe-new="property"><option value="position">Vị trí</option><option value="scale">Tỷ lệ</option><option value="rotation">Xoay</option><option value="opacity">Opacity</option><option value="speed">Tốc độ</option><option value="volume">Âm lượng</option></select></label><label>Giá trị<input type="number" step=".1" value="0" data-vr-keyframe-new="value"></label><label>Easing<select data-vr-keyframe-new="easing"><option value="ease-in-out">Ease in/out</option><option value="linear">Linear</option><option value="ease-in">Ease in</option><option value="ease-out">Ease out</option></select></label><button type="button" data-vr-action="pro-keyframe-add">${icon("diamond-plus")} Thêm</button><button type="button" data-vr-action="pro-keyframe-delete">${icon("trash-2")} Xóa chọn</button><span>Đầu phát: <b data-vr-keyframe-time>00:00:00:00</b></span></div><div class="vr-keyframe-track" data-vr-keyframes></div><div class="vr-keyframe-editor" data-vr-keyframe-editor></div></aside>
+    <aside class="vr-subtitle-drawer" data-vr-subtitle-drawer hidden><header><div>${icon("subtitles")}<span><strong>Subtitle Manager</strong><small>SRT / WebVTT · chỉnh sửa không phá hủy</small></span></div><button type="button" data-vr-action="subtitle-close" aria-label="Đóng Subtitle Manager">${icon("x")}</button></header><div class="vr-subtitle-toolbar"><button type="button" data-vr-action="subtitle-create">${icon("plus")} Thêm tại đầu phát</button><label>${icon("file-input")} Nhập SRT / VTT<input type="file" accept=".srt,.vtt,text/vtt,application/x-subrip,text/plain" data-vr-subtitle-file></label><button type="button" data-vr-action="subtitle-export">${icon("file-down")} Xuất WebVTT</button><span data-vr-subtitle-count>0 câu</span></div><div class="vr-subtitle-list" data-vr-subtitles></div></aside>
     <nav class="vr-page-dock" aria-label="Các trang biên tập">
       ${pages.map(([id, english, vietnamese, iconName, shortcut]) => `<button type="button" data-vr-page="${id}" title="${vietnamese} (${shortcut})">${icon(iconName)}<span>${english}</span><small>${vietnamese}</small></button>`).join("")}
     </nav>
@@ -849,33 +937,64 @@
     renderProSummary();
   }
 
-  function renderKeyframes() {
+  function renderKeyframes(focus = null) {
     const list = $(state.root, "[data-vr-keyframes]");
     if (!list) return;
-    const durationText = $(state.root, "[data-ve-duration]")?.textContent || "00:00:05:00";
-    const durationParts = durationText.split(":").map(Number), duration = Math.max(5, (durationParts[0] || 0) * 3600 + (durationParts[1] || 0) * 60 + (durationParts[2] || 0) + (durationParts[3] || 0) / 30);
-    list.innerHTML = `<div class="vr-keyframe-ruler">${[0,25,50,75,100].map((value) => `<span style="left:${value}%">${Math.round(duration * value / 100)}s</span>`).join("")}</div>${["Vị trí","Tỷ lệ","Xoay","Opacity","Tốc độ"].map((label,index) => `<div class="vr-keyframe-row"><b>${label}</b><i></i>${state.data.keyframes.map((keyframe) => `<button style="left:${Math.min(100,keyframe.time / duration * 100)}%" title="${keyframe.timecode} · ${label}" data-vr-keyframe="${keyframe.id}">${icon("diamond")}</button>`).join("")}</div>`).join("")}`;
+    const durationText = $(state.root, "[data-ve-duration]")?.textContent || "00:00:05:00", durationParts = durationText.split(":").map(Number);
+    const modelDuration = state.data.pro.clips.reduce((maximum, clip) => Math.max(maximum, clip.start + clip.duration), 0), duration = Math.max(5, modelDuration, (durationParts[0] || 0) * 3600 + (durationParts[1] || 0) * 60 + (durationParts[2] || 0) + (durationParts[3] || 0) / (state.data.pro.fps || 30));
+    const labels = { position: "Vị trí", scale: "Tỷ lệ", rotation: "Xoay", opacity: "Opacity", speed: "Tốc độ", volume: "Âm lượng" };
+    const keyframes = state.data.pro.keyframes;
+    if (state.selectedKeyframeId && !keyframes.some((item) => item.id === state.selectedKeyframeId)) state.selectedKeyframeId = "";
+    list.innerHTML = `<div class="vr-keyframe-ruler">${[0,25,50,75,100].map((value) => `<span style="left:${value}%">${Math.round(duration * value / 100)}s</span>`).join("")}</div>${resolveOps.KEYFRAME_PROPERTIES.map((property) => `<div class="vr-keyframe-row" data-property="${property}"><b>${labels[property]}</b><i></i>${keyframes.filter((keyframe) => keyframe.property === property).map((keyframe) => { const clip = state.data.pro.clips.find((item) => item.id === keyframe.clipId); return `<button type="button" class="${keyframe.id === state.selectedKeyframeId ? "is-selected" : ""}" style="left:${Math.min(100, keyframe.time / duration * 100)}%" title="${esc(clip?.name || "Không gắn clip")} · ${keyframe.time.toFixed(2)}s · ${keyframe.easing}" data-vr-action="keyframe-select" data-vr-keyframe="${esc(keyframe.id)}">${icon("diamond")}</button>`; }).join("")}</div>`).join("")}`;
     const current = $(state.root, "[data-ve-timecode]")?.textContent || "00:00:00:00";
     const output = $(state.root, "[data-vr-keyframe-time]"); if (output) output.textContent = current;
+    const editor = $(state.root, "[data-vr-keyframe-editor]"), selected = keyframes.find((item) => item.id === state.selectedKeyframeId);
+    if (editor) editor.innerHTML = selected ? `<div><strong>${esc(state.data.pro.clips.find((clip) => clip.id === selected.clipId)?.name || "Keyframe không gắn clip")}</strong><small>${labels[selected.property]} · ${selected.time.toFixed(3)} giây</small></div><label>Thuộc tính<select data-vr-keyframe-field="property" data-keyframe-id="${esc(selected.id)}">${resolveOps.KEYFRAME_PROPERTIES.map((property) => `<option value="${property}" ${property === selected.property ? "selected" : ""}>${labels[property]}</option>`).join("")}</select></label><label>Thời gian<input type="number" min="0" max="86400" step=".001" value="${selected.time}" data-vr-keyframe-field="time" data-keyframe-id="${esc(selected.id)}"></label><label>Giá trị<input type="number" min="-1000000" max="1000000" step=".1" value="${selected.value}" data-vr-keyframe-field="value" data-keyframe-id="${esc(selected.id)}"></label><label>Easing<select data-vr-keyframe-field="easing" data-keyframe-id="${esc(selected.id)}">${resolveOps.KEYFRAME_EASINGS.map((easing) => `<option value="${easing}" ${easing === selected.easing ? "selected" : ""}>${easing}</option>`).join("")}</select></label>` : `<p>Chọn một điểm hình thoi để sửa thuộc tính, thời gian, giá trị và easing.</p>`;
     window.lucide?.createIcons?.({ attrs: { width: 11, height: 11 } });
+    if (focus) requestAnimationFrame(() => { const id = window.CSS?.escape ? window.CSS.escape(focus.id) : focus.id.replace(/[^a-z0-9_-]/gi, ""); $(state.root, `[data-vr-keyframe-field="${focus.field}"][data-keyframe-id="${id}"]`)?.focus({ preventScroll: true }); });
   }
 
   function toggleProDrawer(force) {
     const drawer = $(state.root, "[data-vr-pro-drawer]"); if (!drawer) return;
     drawer.hidden = force == null ? !drawer.hidden : !force;
-    if (!drawer.hidden) renderKeyframes();
+    if (!drawer.hidden) { const subtitles = $(state.root, "[data-vr-subtitle-drawer]"); if (subtitles) subtitles.hidden = true; renderKeyframes(); }
   }
 
   function addKeyframe() {
-    const timecode = $(state.root, "[data-ve-timecode]")?.textContent || "00:00:00:00", parts = timecode.split(":").map(Number);
-    const value = (key, fallback = 0) => Number($(state.root, `[data-ve-prop="${key}"]`)?.value ?? fallback);
-    const values = { x: value("x"), y: value("y"), scale: value("scale",100), rotation: value("rotation"), opacity: value("opacity",100), volume: value("volume",100) };
-    state.root.dispatchEvent(new CustomEvent("hh:video-keyframe-add", { detail: { values } }));
-    state.data.keyframes.push({ id: uid("keyframe"), timecode, time: (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0) + (parts[3] || 0) / 30, ...values, speed: value("speed",100) });
-    state.data.keyframes = state.data.keyframes.slice(-80);
-    const next = resolveOps.addKeyframe(state.data.pro, { id: state.data.keyframes.at(-1).id, property: "transform", time: timecodeSeconds(), value: value("scale", 100), easing: "ease-in-out" });
+    if (state.data.pro.keyframes.length >= resolveOps.LIMITS.keyframes) return status(`Dự án đã đạt giới hạn ${resolveOps.LIMITS.keyframes} keyframe.`, "error");
+    const clip = selectedModelClip(); if (!clip) return status("Hãy chọn một clip trước khi thêm keyframe.", "error");
+    const property = $(state.root, '[data-vr-keyframe-new="property"]')?.value || "position", easing = $(state.root, '[data-vr-keyframe-new="easing"]')?.value || "ease-in-out", rawValue = Number($(state.root, '[data-vr-keyframe-new="value"]')?.value), id = uid("keyframe"), time = timecodeSeconds(), value = Number.isFinite(rawValue) ? rawValue : 0;
+    state.root.dispatchEvent(new CustomEvent("hh:video-keyframe-add", { detail: { id, clipId: clip.id, property, time, value, easing } }));
+    const next = resolveOps.addKeyframe(state.data.pro, { id, clipId: clip.id, property, time, value, easing });
+    state.selectedKeyframeId = id;
     commitPro(next, "Đã lưu keyframe vào graph chuyển động.");
     renderKeyframes();
+  }
+
+  function renderSubtitles(focus = null) {
+    const list = $(state.root, "[data-vr-subtitles]"); if (!list) return;
+    const scrollTop = list.scrollTop, rows = state.data.pro.subtitles.slice().sort((a, b) => a.start - b.start), count = $(state.root, "[data-vr-subtitle-count]"); if (count) count.textContent = `${rows.length} câu`;
+    list.innerHTML = rows.length ? rows.map((subtitle, index) => `<article data-vr-subtitle="${esc(subtitle.id)}"><span>${String(index + 1).padStart(2, "0")}</span><label>Nội dung<textarea rows="2" maxlength="500" data-vr-subtitle-field="text" data-subtitle-id="${esc(subtitle.id)}">${esc(subtitle.text)}</textarea></label><label>Bắt đầu<input type="number" min="0" max="86400" step=".001" value="${subtitle.start}" data-vr-subtitle-field="start" data-subtitle-id="${esc(subtitle.id)}"></label><label>Thời lượng<input type="number" min=".1" max="3600" step=".001" value="${subtitle.duration}" data-vr-subtitle-field="duration" data-subtitle-id="${esc(subtitle.id)}"></label><label>Ngôn ngữ<input maxlength="12" value="${esc(subtitle.language)}" data-vr-subtitle-field="language" data-subtitle-id="${esc(subtitle.id)}"></label><button type="button" data-vr-action="subtitle-remove" data-subtitle-id="${esc(subtitle.id)}" aria-label="Xóa câu phụ đề ${index + 1}">${icon("trash-2")}</button></article>`).join("") : `<div class="vr-subtitle-empty">${icon("captions")}<strong>Chưa có phụ đề</strong><span>Thêm tại đầu phát hoặc nhập tệp SRT / WebVTT từ thiết bị.</span></div>`;
+    list.scrollTop = scrollTop;
+    if (focus) requestAnimationFrame(() => { list.scrollTop = scrollTop; const id = window.CSS?.escape ? window.CSS.escape(focus.id) : focus.id.replace(/[^a-z0-9_-]/gi, ""), field = $(list, `[data-vr-subtitle-field="${focus.field}"][data-subtitle-id="${id}"]`); field?.focus({ preventScroll: true }); });
+    window.lucide?.createIcons?.({ attrs: { width: 15, height: 15 } });
+  }
+
+  function toggleSubtitleDrawer(force) {
+    const drawer = $(state.root, "[data-vr-subtitle-drawer]"); if (!drawer) return;
+    drawer.hidden = force == null ? !drawer.hidden : !force;
+    if (!drawer.hidden) { const keyframes = $(state.root, "[data-vr-pro-drawer]"); if (keyframes) keyframes.hidden = true; renderSubtitles(); }
+  }
+
+  async function importSubtitleFile(file) {
+    if (!file || file.size > 2_000_000) return status("Tệp phụ đề phải nhỏ hơn 2 MB.", "error");
+    const rows = resolveOps.parseSubtitleText(await file.text(), { language: "vi", idPrefix: "import" });
+    if (!rows.length) return status("Không tìm thấy cue SRT / WebVTT hợp lệ trong tệp.", "error");
+    const room = Math.max(0, resolveOps.LIMITS.subtitles - state.data.pro.subtitles.length), imported = rows.slice(0, room).map((row) => ({ ...row, id: uid("subtitle") }));
+    if (!imported.length) return status(`Dự án đã đạt giới hạn ${resolveOps.LIMITS.subtitles} câu phụ đề.`, "error");
+    const next = resolveOps.normalizeProject({ ...state.data.pro, revision: state.data.pro.revision + 1, subtitles: [...state.data.pro.subtitles, ...imported] });
+    state.root.dispatchEvent(new CustomEvent("hh:video-subtitle-import", { detail: { subtitles: imported } }));
+    commitPro(next, `Đã nhập ${imported.length} câu phụ đề vào project.`); renderSubtitles();
   }
 
   function gradeFilter() {
@@ -1236,6 +1355,7 @@
       if (grid) { grid.innerHTML = next.multicam.angles.map((camera, index) => `<button type="button" data-vr-action="multicam-angle" data-angle="${index + 1}"><b>${esc(camera.name)}</b><small>${index === 0 ? "PROGRAM" : "ANGLE"}</small></button>`).join(""); grid.hidden = !next.multicam.enabled; }
     }
     else if (action === "pro-keyframes") toggleProDrawer();
+    else if (action === "keyframe-select") { state.selectedKeyframeId = event.target.closest("[data-vr-keyframe]")?.dataset.vrKeyframe || ""; renderKeyframes(); }
     else if (action === "multicam-angle") {
       const angle = Number(event.target.closest("[data-angle]")?.dataset.angle || 1);
       const next = resolveOps.setMulticam(state.data.pro, state.data.pro.multicam.angles, angle); commitPro(next, `Đã chọn góc máy ${angle} trong Multicam Viewer.`);
@@ -1243,8 +1363,12 @@
     }
     else if (action === "pro-close") toggleProDrawer(false);
     else if (action === "pro-keyframe-add") addKeyframe();
-    else if (action === "pro-keyframe-delete") { if (!state.data.pro.keyframes.length) return status("Chưa có keyframe để xóa.", "info"); state.root.dispatchEvent(new CustomEvent("hh:video-keyframe-delete")); state.data.keyframes.pop(); commitPro(resolveOps.normalizeProject({ ...state.data.pro, keyframes: state.data.pro.keyframes.slice(0, -1) }), "Đã xóa keyframe cuối; có thể hoàn tác bằng Undo Pro."); renderKeyframes(); }
-    else if (action === "pro-caption" || action === "subtitle-add") { clickBase('[data-ve-action="caption"]'); commitPro(resolveOps.addSubtitle(state.data.pro, { start: timecodeSeconds(), duration: 3, text: "Phụ đề mới", language: "vi" }), "Đã thêm phụ đề vào timeline và mô hình phụ đề."); }
+    else if (action === "pro-keyframe-delete") { const id = state.selectedKeyframeId; if (!id || !state.data.pro.keyframes.some((item) => item.id === id)) return status("Hãy chọn keyframe cần xóa.", "info"); state.root.dispatchEvent(new CustomEvent("hh:video-keyframe-delete", { detail: { id } })); commitPro(resolveOps.removeKeyframe(state.data.pro, id), "Đã xóa keyframe đã chọn; có thể hoàn tác bằng Undo Pro."); state.selectedKeyframeId = ""; renderKeyframes(); }
+    else if (action === "pro-caption" || action === "subtitle-add") toggleSubtitleDrawer();
+    else if (action === "subtitle-close") toggleSubtitleDrawer(false);
+    else if (action === "subtitle-create") { if (state.data.pro.subtitles.length >= resolveOps.LIMITS.subtitles) return status(`Dự án đã đạt giới hạn ${resolveOps.LIMITS.subtitles} câu phụ đề.`, "error"); const id = uid("subtitle"), subtitle = { id, start: timecodeSeconds(), duration: 3, text: "Phụ đề mới", language: "vi" }; state.root.dispatchEvent(new CustomEvent("hh:video-subtitle-add", { detail: { subtitle } })); commitPro(resolveOps.addSubtitle(state.data.pro, subtitle), "Đã thêm câu phụ đề vào project tại đầu phát."); renderSubtitles({ id, field: "text" }); }
+    else if (action === "subtitle-remove") { const id = event.target.closest("[data-subtitle-id]")?.dataset.subtitleId; if (!id) return; const rows = state.data.pro.subtitles, index = rows.findIndex((item) => item.id === id); state.root.dispatchEvent(new CustomEvent("hh:video-subtitle-remove", { detail: { id } })); commitPro(resolveOps.removeSubtitle(state.data.pro, id), "Đã xóa câu phụ đề đã chọn."); const next = state.data.pro.subtitles[Math.min(index, state.data.pro.subtitles.length - 1)]; renderSubtitles(next ? { id: next.id, field: "text" } : null); }
+    else if (action === "subtitle-export") { if (!state.data.pro.subtitles.length) return status("Chưa có phụ đề để xuất.", "error"); downloadLocalBlob(new Blob([resolveOps.exportWebVtt(state.data.pro)], { type: "text/vtt;charset=utf-8" }), "hh-resolve-subtitles.vtt"); status(`Đã xuất ${state.data.pro.subtitles.length} câu WebVTT từ project.`, "success"); }
     else if (action === "pro-speed" || action === "motion-ramp") {
       const clip = selectedModelClip(); if (!clip) return status("Hãy chọn một clip trước khi tạo Speed Ramp.", "error");
       const speed = $(state.root, '[data-ve-prop="speed"]'); if (speed) { speed.value = "150"; speed.dispatchEvent(new Event("input", { bubbles: true })); speed.dispatchEvent(new Event("change", { bubbles: true })); }
@@ -1322,6 +1446,27 @@
   }
 
   function handleResolveInput(event) {
+    if (event.target.matches("[data-vr-subtitle-file]")) {
+      if (event.type === "change") { const file = event.target.files?.[0]; event.target.value = ""; if (file) importSubtitleFile(file).catch((error) => status(`Không thể nhập phụ đề: ${clean(error?.message || error, 180)}`, "error")); }
+      return true;
+    }
+    if (event.target.matches("[data-vr-subtitle-field]")) {
+      if (event.type !== "change") return true;
+      const field = event.target.dataset.vrSubtitleField, id = event.target.dataset.subtitleId, value = ["start", "duration"].includes(field) ? Number(event.target.value) : event.target.value;
+      const next = resolveOps.updateSubtitle(state.data.pro, id, { [field]: value });
+      if (commitPro(next, "Đã cập nhật câu phụ đề.")) {
+        const subtitle = state.data.pro.subtitles.find((item) => item.id === id); if (subtitle) event.target.value = subtitle[field];
+        state.root.dispatchEvent(new CustomEvent("hh:video-subtitle-update", { detail: { id, patch: { [field]: subtitle?.[field] } } }));
+      }
+      return true;
+    }
+    if (event.target.matches("[data-vr-keyframe-field]")) {
+      if (event.type !== "change") return true;
+      const field = event.target.dataset.vrKeyframeField, id = event.target.dataset.keyframeId, value = ["time", "value"].includes(field) ? Number(event.target.value) : event.target.value;
+      const next = resolveOps.updateKeyframe(state.data.pro, id, { [field]: value });
+      if (commitPro(next, "Đã cập nhật keyframe đã chọn.")) { state.selectedKeyframeId = id; renderKeyframes({ id, field }); }
+      return true;
+    }
     if (event.target.matches("[data-vr-grade]")) {
       const key = event.target.dataset.vrGrade, bounds = { exposure: [-100, 100], contrast: [0, 260], saturation: [0, 300], temperature: [-100, 100], tint: [-100, 100], lift: [-100, 100], gamma: [-100, 100], gain: [-100, 100], highlights: [-100, 100], shadows: [-100, 100], blur: [0, 12], sharpen: [0, 100] }[key] || [-100, 100]; state.data.grade[key] = clamp(event.target.value, ...bounds);
       event.target.value = String(state.data.grade[key]); const value = $(state.root, `[data-vr-grade-value="${key}"]`); if (value) value.textContent = `${state.data.grade[key]}${key === "blur" ? "px" : ""}`;
@@ -1436,7 +1581,7 @@
     if (state.audio?.video) delete state.audio.video.__hhProcessedAudioStream;
     [state.audio?.source, state.audio?.low, state.audio?.mid, state.audio?.high, state.audio?.compressor, state.audio?.panner, state.audio?.gain, state.audio?.analyser, state.audio?.exportDestination].forEach((node) => { try { node?.disconnect?.(); } catch (_) {} });
     if (state.audio?.context && state.audio.context.state !== "closed") state.audio.context.close().catch(() => {});
-    Object.assign(state, { root: null, outer: null, workspace: null, stage: null, panels: {}, audio: null, micRecorder: null, micStream: null, micChunks: [], micPending: false, scopeFrame: 0, scopeTimer: 0, meterFrame: 0, restoreFrame: 0, exportListener: null, keyListener: null, exportJobId: "", stillBusy: false });
+    Object.assign(state, { root: null, outer: null, workspace: null, stage: null, panels: {}, audio: null, micRecorder: null, micStream: null, micChunks: [], micPending: false, scopeFrame: 0, scopeTimer: 0, meterFrame: 0, restoreFrame: 0, exportListener: null, keyListener: null, exportJobId: "", selectedKeyframeId: "", stillBusy: false });
   }
 
   window.HHMediaDesign = {

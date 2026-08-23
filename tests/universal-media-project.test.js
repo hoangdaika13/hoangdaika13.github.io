@@ -9,6 +9,12 @@ const cssPath = path.join(root, "universal-media-project.css");
 const source = fs.readFileSync(modulePath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
 const media = require(modulePath);
+const makeFile = (content, name, options = {}) => {
+  if (typeof File === "function") return new File([content], name, options);
+  const blob = new Blob([content], { type: options.type });
+  Object.defineProperties(blob, { name: { value: name }, lastModified: { value: options.lastModified || 0 } });
+  return blob;
+};
 
 test("exposes the versioned UMD API and truthful storage limits", async () => {
   assert.equal(media.SCHEMA, "hh.universal-media.v1");
@@ -24,8 +30,25 @@ test("exposes the versioned UMD API and truthful storage limits", async () => {
 
   const store = media.createStore({ indexedDB: null });
   assert.deepEqual(await store.ready(), { backend: "memory", schema: media.SCHEMA });
-  assert.deepEqual(await store.storageStatus(), { backend: "memory", persistent: false, fallbackReason: "indexeddb-unavailable", schema: media.SCHEMA, recordVersion: media.RECORD_VERSION });
+  const status = await store.storageStatus();
+  assert.equal(status.backend, "memory");
+  assert.equal(status.persistent, false);
+  assert.equal(status.fallbackReason, "indexeddb-unavailable");
+  assert.equal(status.quota.pressure, "unknown");
+  assert.deepEqual(status.opfs, { available: false, used: false, reason: "Trình duyệt không cung cấp OPFS." });
   await store.close();
+});
+
+test("storage capability audit reports quota, persistence and OPFS without claiming OPFS usage", async () => {
+  const status = await media.inspectStorageCapabilities({ navigator: { storage: {
+    estimate: async () => ({ usage: 90, quota: 100 }), persisted: async () => true, getDirectory() {}
+  } } });
+  assert.deepEqual(status.quota, { supported: true, usage: 90, quota: 100, remaining: 10, ratio: .9, pressure: "warning" });
+  assert.deepEqual(status.persistence, { supported: true, granted: true });
+  assert.equal(status.opfs.available, true);
+  assert.equal(status.opfs.used, false);
+  assert.match(status.opfs.reason, /hiện lưu binary trong IndexedDB/);
+  assert.deepEqual(media.classifyStorageError(Object.assign(new Error("full"), { name: "QuotaExceededError" })).code, "quota-exceeded");
 });
 
 test("migrates legacy records and normalizes rights without unsafe URLs", () => {
@@ -41,6 +64,21 @@ test("migrates legacy records and normalizes rights without unsafe URLs", () => 
   assert.equal(asset.rights.sourceUrl, "");
   assert.equal(media.hasSensitiveMetadata(asset.metadata), true);
   assert.deepEqual(media.stripSensitiveMetadata(asset.metadata), { camera: "HH" });
+});
+
+test("shared project schema bounds layers, tracks, clips, pages, scenes, effects and presets", () => {
+  const project = media.normalizeProject({
+    id: "shared", projectKind: "template", lifecycle: "archived",
+    workspace: { layers: [{ id: "same", name: "Layer A", assetId: "asset-a" }, { id: "same", name: "Duplicate" }], tracks: [{ id: "t1" }], clips: [{ id: "c1", assetId: "asset-a" }], pages: [{ id: "p1" }], scenes: [{ id: "s1" }], effects: [{ id: "fx1" }], keyframes: [{ id: "k1" }], colorTokens: [{ id: "brand", value: "#fff" }] },
+    presets: [{ id: "preset", name: "Social", section: "canvas", payload: { width: 1080, height: 1080 } }],
+    ingestJobs: [{ id: "job", name: "hero.png", size: 12, status: "uploading" }]
+  });
+  assert.equal(project.projectKind, "template");
+  assert.equal(project.lifecycle, "archived");
+  assert.equal(project.workspace.layers.length, 1);
+  for (const key of ["tracks", "clips", "pages", "scenes", "effects", "keyframes", "colorTokens"]) assert.equal(project.workspace[key].length, 1);
+  assert.equal(project.presets[0].section, "canvas");
+  assert.equal(project.ingestJobs[0].status, "awaiting-file");
 });
 
 test("bounded command history executes, undoes and redoes without overlapping mutations", async () => {
@@ -120,6 +158,51 @@ test("memory store manages projects, folders and immutable asset records", async
   await store.deleteFolder(project.id, folder.id);
   assert.equal((await store.getAsset(asset.id)).folderId, media.ROOT_FOLDER_ID);
   await store.close();
+});
+
+test("project lifecycle supports duplicate, archive, template, instantiate and personal presets", async () => {
+  const store = media.createStore({ indexedDB: null });
+  let project = await store.createProject({ name: "Campaign", settings: { fps: 30 }, references: { hero: "asset-hero" }, workspace: { layers: [{ id: "layer-1", assetId: "asset-hero" }] } });
+  const asset = await store.saveAsset({ id: "asset-hero", projectId: project.id, name: "hero.svg", type: "image/svg+xml", rights: { license: "CC BY 4.0", verified: true }, blob: new Blob(["<svg></svg>"]) });
+  project = await store.getProject(project.id);
+
+  const duplicate = await store.duplicateProject(project.id);
+  assert.notEqual(duplicate.id, project.id);
+  assert.equal((await store.listAssets(duplicate.id)).length, 1);
+  const duplicateAsset = (await store.listAssets(duplicate.id))[0];
+  assert.notEqual(duplicateAsset.id, asset.id);
+  assert.equal(await duplicateAsset.blob.text(), "<svg></svg>");
+  assert.equal(duplicate.references.hero, duplicateAsset.id);
+
+  const template = await store.createTemplateFromProject(project.id, { name: "Clean campaign" });
+  assert.equal(template.projectKind, "template");
+  assert.deepEqual(template.assetIds, []);
+  assert.equal(template.references.hero, null);
+  assert.equal(template.workspace.layers[0].assetId, null);
+  assert.deepEqual((await store.listTemplates()).map((item) => item.id), [template.id]);
+  const fromTemplate = await store.instantiateTemplate(template.id, { name: "Campaign B" });
+  assert.equal(fromTemplate.projectKind, "project");
+  assert.equal(fromTemplate.templateSourceId, template.id);
+  assert.deepEqual(fromTemplate.assetIds, []);
+
+  const preset = await store.saveProjectPreset(project.id, { name: "60 fps", section: "settings", payload: { fps: 60 } });
+  const applied = await store.applyProjectPreset(project.id, preset.id);
+  assert.equal(applied.settings.fps, 60);
+  assert.equal(await store.deleteProjectPreset(project.id, preset.id), true);
+
+  const placement = await store.linkAssetToWorkspace(project.id, asset.id, "layers", { name: "Hero placement", role: "photo" });
+  let linkedProject = await store.getProject(project.id);
+  assert.equal(linkedProject.workspace.layers.at(-1).assetId, asset.id);
+  assert.ok((await store.getAsset(asset.id)).references.includes(placement.id));
+  assert.equal(await store.unlinkAssetFromWorkspace(project.id, "layers", placement.id), true);
+  linkedProject = await store.getProject(project.id);
+  assert.ok(!linkedProject.workspace.layers.some((item) => item.id === placement.id));
+  assert.ok(!(await store.getAsset(asset.id)).references.includes(placement.id));
+
+  await store.archiveProject(project.id, true);
+  assert.ok(!(await store.listProjects()).some((item) => item.id === project.id));
+  assert.ok((await store.listProjects({ includeArchived: true })).some((item) => item.id === project.id && item.lifecycle === "archived"));
+  assert.equal((await store.archiveProject(project.id, false)).lifecycle, "active");
 });
 
 test("content hashing detects duplicates without pretending files are identical by name", async () => {
@@ -251,6 +334,61 @@ test("autosave can create bounded real checkpoints without failing a successful 
   await autosave.dispose();
 });
 
+test("autosave exposes scheduled, saving, saved and quota-error states", async () => {
+  const states = [];
+  const store = media.createStore({ indexedDB: null });
+  const project = await store.createProject({ name: "Observable autosave" });
+  const autosave = store.createAutosave(project.id, { delay: 5000, onState: (state) => states.push(state) });
+  autosave.schedule({ ...project, name: "Saved" });
+  assert.equal(autosave.status.phase, "scheduled");
+  await autosave.flush();
+  assert.equal(autosave.status.phase, "saved");
+  assert.ok(states.some((state) => state.phase === "saving"));
+  await autosave.dispose();
+
+  const quotaError = Object.assign(new Error("disk full"), { name: "QuotaExceededError" });
+  const failingBackend = media.createMemoryBackend();
+  const originalPut = failingBackend.put;
+  failingBackend.put = async (table, value) => { if (table === "projects" && value.name === "Fail") throw quotaError; return originalPut(table, value); };
+  const failingStore = media.createStore({ backend: failingBackend });
+  const seed = await failingStore.createProject({ name: "Seed" });
+  const failingAutosave = failingStore.createAutosave(seed.id, { delay: 5000 });
+  failingAutosave.schedule({ ...seed, name: "Fail" });
+  await assert.rejects(() => failingAutosave.flush(), /disk full/);
+  assert.equal(failingAutosave.status.phase, "error");
+  assert.equal(failingAutosave.status.error.code, "quota-exceeded");
+  assert.equal(failingAutosave.pending, true);
+  await failingAutosave.dispose({ flush: false });
+});
+
+test("session recovery detects unclean close and resets after a clean finish", async () => {
+  const store = media.createStore({ indexedDB: null });
+  const project = await store.createProject({ name: "Recovery session" });
+  await store.startProjectSession(project.id, "session-a");
+  await store.startProjectSession(project.id, "session-b");
+  let recovery = await store.recoveryStatus(project.id);
+  assert.equal(recovery.uncleanSession, true);
+  assert.ok(recovery.sessionStartedAt);
+  await store.finishProjectSession(project.id, "session-b");
+  recovery = await store.recoveryStatus(project.id);
+  assert.equal(recovery.uncleanSession, false);
+});
+
+test("ingest checkpoints resume only with the exact local file identity", async () => {
+  const store = media.createStore({ indexedDB: null });
+  const project = await store.createProject({ name: "Resumable ingest" });
+  const file = makeFile("hello", "voice.wav", { type: "audio/wav", lastModified: 123 });
+  const job = await store.registerIngestJob(project.id, file);
+  assert.equal(job.status, "awaiting-file");
+  assert.equal((await store.listIngestJobs(project.id)).length, 1);
+  const wrong = makeFile("wrong!", "voice.wav", { type: "audio/wav", lastModified: 123 });
+  await assert.rejects(() => store.resumeIngestJob(project.id, job.id, wrong), /không khớp/);
+  const asset = await store.resumeIngestJob(project.id, job.id, file);
+  assert.equal(asset.provenance.sourceId, job.id);
+  assert.equal((await store.listIngestJobs(project.id, { status: "complete" })).length, 1);
+  assert.equal(await (await store.getAsset(asset.id)).blob.text(), "hello");
+});
+
 test("bounded .hhmedia package round-trips small binary and marks large asset for relink", async () => {
   const sourceStore = media.createStore({ indexedDB: null });
   let project = await sourceStore.saveProject({ name: "Portable project", references: { activeAsset: "small" } });
@@ -283,6 +421,40 @@ test("bounded .hhmedia package round-trips small binary and marks large asset fo
   assert.equal((await targetStore.listSnapshots(imported.project.id)).length, 1);
 });
 
+test("asset manifest is metadata-only, preserves origin lineage and imports as relink-required", async () => {
+  const store = media.createStore({ indexedDB: null });
+  const project = await store.createProject({ name: "Manifest source" });
+  const asset = await store.saveAsset({ projectId: project.id, name: "licensed.svg", type: "image/svg+xml", tags: ["brand"], rights: { author: "HH", license: "CC BY 4.0", verified: true }, blob: new Blob(["<svg></svg>"]) });
+  const text = await store.exportAssetManifest(project.id);
+  const manifest = JSON.parse(text);
+  assert.equal(manifest.format, media.ASSET_MANIFEST_FORMAT);
+  assert.equal(manifest.contract.metadataOnly, true);
+  assert.equal(manifest.assets[0].blob, undefined);
+  assert.equal(manifest.assets[0].availability, "offline");
+
+  const target = await store.createProject({ name: "Manifest target" });
+  const imported = await store.importAssetManifest(text, target.id);
+  assert.equal(imported.importedAssets, 1);
+  assert.equal(imported.relinkRequired, 1);
+  const importedAsset = await store.getAsset(imported.assetIds[0]);
+  assert.notEqual(importedAsset.id, asset.id);
+  assert.equal(importedAsset.originId, asset.originId);
+  assert.equal(importedAsset.availability, "offline");
+  assert.equal(importedAsset.blob, null);
+  assert.equal(importedAsset.rights.license, "CC BY 4.0");
+});
+
+test("hash verification fails closed when SHA-256 capability is unavailable", async () => {
+  const blob = new Blob(["HH"]);
+  const checksum = await media.computeContentHash(blob);
+  assert.deepEqual(await media.verifyContentHash(blob, checksum), { verified: true, reason: "match", actual: checksum });
+  const unavailable = await media.verifyContentHash(blob, `sha256-${"0".repeat(64)}`, {});
+  assert.equal(unavailable.verified, false);
+  assert.equal(unavailable.reason, "sha256-unavailable");
+  const unsupported = await media.verifyContentHash(blob, "custom-123", {});
+  assert.equal(unsupported.reason, "unsupported-checksum");
+});
+
 test("package importer rejects malformed, oversized and corrupt binary manifests", async () => {
   const store = media.createStore({ indexedDB: null });
   await assert.rejects(() => store.importPackage("not-json"), /Không đọc được JSON/);
@@ -312,6 +484,8 @@ test("UI contract is Vietnamese, semantic, responsive and never persists large U
   for (const token of [
     "Universal Media Project", "Media Bin", "Bộ sưu tập thông minh", "Chụp phiên bản", "Đóng gói .hhmedia",
     "data-ump-drop", "data-ump-search", "data-ump-favorite", "data-ump-replace", "data-ump-restore",
+    "data-ump-project-select", "data-ump-new-project", "data-ump-duplicate-project", "data-ump-archive-project", "data-ump-create-template",
+    "data-ump-autosave", "data-ump-ingest-list", "data-ump-export-assets", "data-ump-import-assets",
     "role=\"status\"", "aria-live=\"polite\"", "aria-label=\"Kéo thả hoặc chọn media\"",
     "Binary lưu trong IndexedDB", "Không tạo proxy giả lập"
   ]) assert.ok(source.includes(token), `missing ${token}`);

@@ -82,28 +82,28 @@
     },
     media: {
       styles: [
-        "media-design-pro.css?v=1", "media-design-page.css?v=21", "media-cosmos.css?v=3", "media-audio-studio.css?v=5", "media-tool-experience.css?v=2", "media-project-photo-studio.css?v=4", "media-production-universe.css?v=4", "media-professional-suite.css?v=1", "media-next-suite.css?v=1", "media-production-workflow.css?v=3", "universal-media-project.css?v=2",
+        "media-design-pro.css?v=1", "media-design-page.css?v=22", "media-cosmos.css?v=3", "media-audio-studio.css?v=6", "media-tool-experience.css?v=2", "media-project-photo-studio.css?v=5", "media-production-universe.css?v=5", "media-professional-suite.css?v=1", "media-next-suite.css?v=1", "media-production-workflow.css?v=3", "universal-media-project.css?v=3",
         "media-design-advanced.css?v=3", "media-design-publish.css?v=1",
         "photo-editor-pro.css?v=4", "editor-workflow-pro.css?v=2"
       ],
       scripts: [
         "media-design-studio.js?v=2", "media-design-pro.js?v=2", "media-design-advanced.js?v=3",
         "media-design-publish.js?v=1",
-        "photo-editor-pro.js?v=3", "editor-workflow-pro.js?v=2", "universal-media-project.js?v=2",
-        "media-production-workflow.js?v=3", "media-cosmos.js?v=3", "media-audio-studio.js?v=3", "media-professional-suite.js?v=3", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/vercel-blob-client.min.js?v=1", "media-next-suite.js?v=2", "media-tool-experience.js?v=2", "media-project-photo-studio.js?v=3", "media-production-universe.js?v=3", "media-design-page.js?v=22"
+        "photo-editor-pro.js?v=3", "editor-workflow-pro.js?v=2", "universal-media-project.js?v=3",
+        "media-production-workflow.js?v=3", "media-cosmos.js?v=3", "media-audio-studio.js?v=4", "media-professional-suite.js?v=3", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/vercel-blob-client.min.js?v=1", "media-next-suite.js?v=2", "media-tool-experience.js?v=2", "media-project-photo-studio.js?v=4", "media-production-universe.js?v=4", "media-design-page.js?v=23"
       ]
     },
     davinci: {
       // Image Text Studio cache compatibility: image-text-studio.css?v=11 image-text-studio.js?v=11
       // YouTube Creator compatibility: youtube-creator-galaxy.css?v=20 youtube-creator-galaxy.js?v=24
       styles: [
-        "video-editor-studio.css?v=4", "video-editor-resolve.css?v=9",
+        "video-editor-studio.css?v=4", "video-editor-resolve.css?v=10",
         "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=4", "video-editor-auto.css?v=1", "h-cosmic-web-studio.css?v=2",
         "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=22", "image-text-studio.css?v=12", "facebook-page-command-center.css?v=4", "tiktok-creator-galaxy.css?v=2"
       ],
       scripts: [
         "media-design-studio.js?v=1", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
-        "video-editor-resolve.js?v=11", "editor-workflow-pro.js?v=2",
+        "video-editor-resolve.js?v=12", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1", "h-cosmic-web-studio.js?v=3",
         "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=27", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=12", "facebook-page-command-center.js?v=4", "services/tiktokCreatorCore.js?v=2", "services/tiktokCreatorConnections.js?v=2", "services/tiktokCreatorPublishing.js?v=2", "services/tiktokCreatorAnalytics.js?v=2", "tiktok-creator-galaxy.js?v=2"
       ]

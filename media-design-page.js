@@ -68,6 +68,22 @@
     { id: "assets", icon: "AG", label: "Asset Galaxy", color: "#5c9dff", route: "/media-design/asset-workspace", tools: ["asset-workspace", "media-cloud", "icon", "svg"] },
     { id: "delivery", icon: "EP", label: "Delivery Center", color: "#ffe36d", route: "/media-design/export-workspace", tools: ["export-workspace", "production-workflow", "social-post", "favicon", "meme"] }
   ]);
+  const WORKFLOW_BY_SPACE = Object.freeze({
+    project: { input: "Project, asset hoặc package .hhmedia", engine: "Universal Project Core · command history", output: "Project graph, checkpoint và version", storage: "IndexedDB · OPFS khi hỗ trợ", export: ".hhmedia · JSON manifest", steps: ["Chọn hoặc tạo project", "Ingest asset", "Chỉnh trong studio", "Checkpoint và xuất"] },
+    photo: { input: "Ảnh đã xác minh MIME và kích thước", engine: "Canvas layer · selection · non-destructive recipe", output: "Composite và cấu trúc layer", storage: "IndexedDB Media Bin", export: "PNG · JPEG · WebP · project manifest", steps: ["Import ảnh", "Chọn layer hoặc vùng", "Chỉnh recipe", "So sánh và xuất"] },
+    video: { input: "Video, audio, ảnh và caption", engine: "Timeline · Canvas preview · WebCodecs capability", output: "Timeline, keyframe và bản render", storage: "IndexedDB · proxy reference", export: "WebM khi hỗ trợ · OTIO · VTT", steps: ["Import footage", "Dựng timeline", "Chỉnh motion/color", "Preflight codec và render"] },
+    audio: { input: "Audio hoặc microphone được cấp quyền", engine: "Web Audio multitrack mixer", output: "Mix, waveform và chapter", storage: "IndexedDB · object URL tạm thời", export: "WAV · WebM/Opus theo trình duyệt", steps: ["Import hoặc thu âm", "Cắt và sắp track", "Mix và effect", "Kết xuất có tiến độ"] },
+    documents: { input: "PDF, ảnh hoặc văn bản", engine: "PDF.js · pdf-lib · raster redaction", output: "Tài liệu, annotation và text compare", storage: "IndexedDB Media Bin", export: "PDF · TXT · annotation recipe", steps: ["Mở tài liệu", "Sắp trang hoặc chú thích", "Preflight vùng che", "Xuất bản xử lý"] },
+    brand: { input: "Logo, font metadata và design token", engine: "DTCG token registry · contrast lint", output: "Brand profile, version và approval", storage: "Project state + Asset Entity ID", export: "DTCG JSON · CSS · Brand Manifest", steps: ["Khai báo hồ sơ", "Gắn asset có license", "Chỉnh token và kiểm tra", "Tạo version rồi duyệt"] },
+    assets: { input: "File, thư mục hoặc nguồn đã cấp quyền", engine: "SHA-256 · metadata · provenance", output: "Asset Entity và Smart Collection", storage: "IndexedDB · private provider tùy chọn", export: "File gốc · asset manifest", steps: ["Ingest file", "Xác minh checksum", "Gắn quyền và tag", "Dùng lại qua Entity ID"] },
+    delivery: { input: "Project, asset và preset đích", engine: "Preflight · idempotent job queue", output: "Variant, package và release manifest", storage: "Job spec cục bộ · worker tùy chọn", export: "Package · checksum manifest · media hỗ trợ", steps: ["Chọn preset", "Chạy preflight", "Kiểm tra codec/quyền", "Tạo job hoặc package"] }
+  });
+  const PROVIDER_GATED_TOOLS = new Set(["ai-task-center", "media-cloud", "production-workflow"]);
+  const TOOL_WORKFLOW_MATRIX = Object.freeze(Object.fromEntries(TOOLS.map((tool) => {
+    const space = STUDIO_SPACES.find((item) => item.tools.includes(tool.id)) || STUDIO_SPACES[0], base = WORKFLOW_BY_SPACE[space.id];
+    const status = PROVIDER_GATED_TOOLS.has(tool.id) ? "provider-gated" : ["video-workspace", "export-workspace"].includes(tool.id) ? "capability-gated" : "local-ready";
+    return [tool.id, Object.freeze({ toolId: tool.id, name: tool.name, ...base, status })];
+  })));
   const PRODUCTION_FLOW = [
     { code: "MC", label: "Media Core Pro", tool: "media-core", description: "Graph, branch, review và rights" },
     { code: "PW", label: "Production Workflow", tool: "production-workflow", description: "Proxy, subtitle, review và render thật" },
@@ -95,7 +111,7 @@
         recent: Array.isArray(saved.recent) ? saved.recent.filter((name) => availableNames.has(name)).slice(0, 12) : [],
         usage: Object.fromEntries(Object.entries(saved.usage || {}).filter(([name, count]) => availableNames.has(name) && Number.isFinite(Number(count))).map(([name, count]) => [name, Math.max(0, Math.min(100000, Number(count)))])),
         inspectorOpen: saved.inspectorOpen === true,
-        inspectorTab: ["properties", "metadata", "rights", "history"].includes(saved.inspectorTab) ? saved.inspectorTab : "properties",
+        inspectorTab: ["properties", "workflow", "metadata", "rights", "history"].includes(saved.inspectorTab) ? saved.inspectorTab : "properties",
         navHistory: Array.isArray(saved.navHistory) ? saved.navHistory.filter((name) => availableNames.has(name)).slice(-30) : [],
         navIndex: Number.isInteger(saved.navIndex) ? saved.navIndex : -1,
         aiDraft: saved.aiDraft && typeof saved.aiDraft === "object" ? { task: String(saved.aiDraft.task || "remove-background").slice(0, 80), prompt: String(saved.aiDraft.prompt || "").slice(0, 4000), seed: String(saved.aiDraft.seed || "").slice(0, 80) } : { task: "remove-background", prompt: "", seed: "" },
@@ -126,7 +142,8 @@
     const term = normalize(query);
     return TOOLS.filter((tool) => {
       const matchesFilter = activeFilter === "favorites" ? pageState.favorites.includes(tool.name) : activeFilter === "recent" ? pageState.recent.includes(tool.name) : true;
-      return matchesFilter && (!term || normalize(`${tool.name} ${tool.group} ${tool.description} ${tool.caps.join(" ")}`).includes(term));
+      const workflow = TOOL_WORKFLOW_MATRIX[tool.id];
+      return matchesFilter && (!term || normalize(`${tool.name} ${tool.group} ${tool.description} ${tool.caps.join(" ")} ${workflow.input} ${workflow.engine} ${workflow.output} ${workflow.export}`).includes(term));
     });
   };
   const toolItem = (tool) => `<div class="mdp-tool-row ${pageState.active === tool.name ? "is-active" : ""}" data-mdp-tool-row="${escapeHtml(tool.name)}">
@@ -155,9 +172,12 @@
     return `<span><i style="--space:${space.color}">${space.icon}</i><b>${escapeHtml(space.label)}</b></span><div>${items.map((item) => `<button type="button" class="${item.id === tool.id ? "is-active" : ""}" data-mdp-route="/media-design/${item.id}" aria-current="${item.id === tool.id ? "page" : "false"}"><i>${item.icon}</i><span>${escapeHtml(item.name)}</span></button>`).join("")}</div><button type="button" data-mdp-command-open aria-label="Mở toàn bộ công cụ">＋</button>`;
   };
   const inspectorMarkup = (tool) => {
-    const tabs = [["properties", "Thuộc tính"], ["metadata", "Metadata"], ["rights", "Quyền"], ["history", "Lịch sử"]];
+    const tabs = [["properties", "Thuộc tính"], ["workflow", "Luồng"], ["metadata", "Metadata"], ["rights", "Quyền"], ["history", "Lịch sử"]];
+    const workflow = TOOL_WORKFLOW_MATRIX[tool.id];
+    const workflowStatus = { "local-ready": "Sẵn sàng cục bộ", "provider-gated": "Cần provider đã xác thực", "capability-gated": "Phụ thuộc codec thiết bị" }[workflow.status];
     const panels = {
       properties: `<section><small>WORKSPACE</small><h3>${escapeHtml(tool.name)}</h3><p>${escapeHtml(tool.description)}</p><div class="mdp-inspector-caps">${tool.caps.map((cap) => `<span>✓ ${escapeHtml(cap)}</span>`).join("")}</div></section>`,
+      workflow: `<section class="mdp-workflow-matrix" data-status="${workflow.status}"><small>INPUT → ENGINE → OUTPUT</small><h3>${escapeHtml(workflowStatus)}</h3><dl><div><dt>Input</dt><dd>${escapeHtml(workflow.input)}</dd></div><div><dt>Engine</dt><dd>${escapeHtml(workflow.engine)}</dd></div><div><dt>Output</dt><dd>${escapeHtml(workflow.output)}</dd></div><div><dt>Lưu trữ</dt><dd>${escapeHtml(workflow.storage)}</dd></div><div><dt>Export</dt><dd>${escapeHtml(workflow.export)}</dd></div></dl><ol>${workflow.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol><p>${workflow.status === "provider-gated" ? "Công cụ chỉ chạy tác vụ từ xa sau khi backend xác nhận quyền và capability; không sinh kết quả giả." : workflow.status === "capability-gated" ? "Workspace kiểm tra codec và API trên thiết bị trước khi cho phép xuất." : "Workflow chính chạy trên thiết bị và lưu bằng kho project dùng chung."}</p></section>`,
       metadata: `<section><small>PHIÊN CỤC BỘ</small><dl><div><dt>Mã công cụ</dt><dd>${escapeHtml(tool.code)}</dd></div><div><dt>Nhóm</dt><dd>${escapeHtml(tool.group)}</dd></div><div><dt>Số lần mở</dt><dd>${pageState.usage[tool.name] || 1}</dd></div><div><dt>Cập nhật</dt><dd>${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</dd></div></dl></section>`,
       rights: `<section><small>RIGHTS GATE</small><div class="mdp-inspector-unknown"><i>?</i><strong>Chưa kiểm tra asset</strong><p>Chọn một asset trong Media Bin để kiểm tra license, consent và provenance. Không tự suy đoán quyền sử dụng.</p></div><button type="button" data-mdp-route="/media-design/asset-workspace">Mở Asset Galaxy</button></section>`,
       history: `<section><small>RECENT WORKSPACES</small><div class="mdp-inspector-history">${pageState.recent.length ? pageState.recent.slice(0, 10).map((name, index) => `<button type="button" data-mdp-tool="${escapeHtml(name)}"><i>${index + 1}</i><span>${escapeHtml(name)}</span></button>`).join("") : "<p>Chưa có lịch sử công cụ trên thiết bị.</p>"}</div></section>`
@@ -167,7 +187,7 @@
   const commandPaletteMarkup = () => {
     if (!commandOpen) return "";
     const term = normalize(commandQuery);
-    const rows = TOOLS.filter((tool) => !term || normalize(`${tool.name} ${tool.group} ${tool.description} ${tool.caps.join(" ")}`).includes(term)).slice(0, 14);
+    const rows = TOOLS.filter((tool) => { const workflow = TOOL_WORKFLOW_MATRIX[tool.id]; return !term || normalize(`${tool.name} ${tool.group} ${tool.description} ${tool.caps.join(" ")} ${workflow.input} ${workflow.engine} ${workflow.output} ${workflow.export}`).includes(term); }).slice(0, 14);
     return `<div class="mdp-overlay" data-mdp-overlay-close><section class="mdp-command" role="dialog" aria-modal="true" aria-label="Command Palette Media & Design"><header><span>⌕</span><input type="search" data-mdp-command-search value="${escapeHtml(commandQuery)}" placeholder="Tìm 36 công cụ, workspace hoặc hành động…" autocomplete="off"><kbd>ESC</kbd></header><div class="mdp-command-actions"><button type="button" data-mdp-quick-action="import">＋ Import</button><button type="button" data-mdp-route="/media-design/review-studio">◎ Review</button><button type="button" data-mdp-ai-toggle>✦ AI Task</button><button type="button" data-mdp-route="/media-design/export-workspace">⇧ Export</button></div><section><small>CÔNG CỤ VÀ WORKSPACE</small>${rows.length ? rows.map((tool) => `<button type="button" data-mdp-command-tool="${tool.id}"><i>${tool.icon}</i><span><strong>${escapeHtml(tool.name)}</strong><small>${escapeHtml(tool.group)} · ${escapeHtml(tool.description)}</small></span><b>${tool.code}</b></button>`).join("") : "<p>Không tìm thấy công cụ phù hợp.</p>"}</section><footer>Ctrl K để mở · Esc để đóng · tìm kiếm chạy hoàn toàn trên thiết bị</footer></section></div>`;
   };
   const workflowDrawerMarkup = () => workflowOpen ? `<div class="mdp-overlay mdp-drawer-overlay" data-mdp-overlay-close><aside class="mdp-drawer"><header><div><small>PRODUCTION FLOW</small><h2>Sáu giai đoạn thống nhất</h2></div><button type="button" data-mdp-workflow-toggle>×</button></header><div class="mdp-flow-steps">${PRODUCTION_FLOW.map((item, index) => `<button type="button" ${item.tool ? `data-mdp-flow-tool="${item.tool}"` : `data-mdp-flow-route="${item.route}"`}><i>${String(index + 1).padStart(2, "0")}</i><span><strong>${item.label}</strong><small>${item.description}</small></span><b>→</b></button>`).join("")}</div></aside></div>` : "";
@@ -315,7 +335,7 @@
       recent: Array.isArray(value.recent) ? value.recent.filter((name) => TOOLS.some((tool) => tool.name === name)).slice(0, 12) : [],
       usage: value.usage && typeof value.usage === "object" ? Object.fromEntries(Object.entries(value.usage).filter(([name, count]) => TOOLS.some((tool) => tool.name === name) && Number.isFinite(Number(count))).map(([name, count]) => [name, Math.max(0, Math.min(100000, Number(count)))])) : {},
       inspectorOpen: value.inspectorOpen === true,
-      inspectorTab: ["properties", "metadata", "rights", "history"].includes(value.inspectorTab) ? value.inspectorTab : "properties",
+      inspectorTab: ["properties", "workflow", "metadata", "rights", "history"].includes(value.inspectorTab) ? value.inspectorTab : "properties",
       navHistory: Array.isArray(value.navHistory) ? value.navHistory.filter((name) => TOOLS.some((tool) => tool.name === name)).slice(-30) : [],
       navIndex: Number.isInteger(value.navIndex) ? value.navIndex : -1,
       aiDraft: value.aiDraft && typeof value.aiDraft === "object" ? { task: String(value.aiDraft.task || "remove-background").slice(0, 80), prompt: String(value.aiDraft.prompt || "").slice(0, 4000), seed: String(value.aiDraft.seed || "").slice(0, 80) } : { task: "remove-background", prompt: "", seed: "" },
@@ -482,7 +502,7 @@
   });
   document.addEventListener("visibilitychange", () => activeRoot?.classList.toggle("is-tab-hidden", document.visibilityState === "hidden"));
 
-  window.HHMediaDesignPage = { mount, tools: TOOLS, spaces: STUDIO_SPACES };
+  window.HHMediaDesignPage = { mount, tools: TOOLS, spaces: STUDIO_SPACES, workflows: TOOL_WORKFLOW_MATRIX };
   const pendingHost = document.querySelector("[data-media-design-page-host]");
   if (pendingHost) mount(pendingHost, { toolId: pendingHost.dataset.mediaDesignTool || "" });
 })();
