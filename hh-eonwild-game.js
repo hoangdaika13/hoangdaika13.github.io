@@ -6,11 +6,14 @@
 })(typeof window !== "undefined" ? window : globalThis, function createEonWild(global) {
   "use strict";
 
-  const VERSION = "1.0.0";
-  const STORAGE_KEY = "hh.game.eonwild.v1";
-  const SCHEMA_VERSION = 1;
+  const VERSION = "2.0.0";
+  const STORAGE_KEY = "hh.game.eonwild.v2";
+  const LEGACY_STORAGE_KEY = "hh.game.eonwild.v1";
+  const SCHEMA_VERSION = 2;
   const WORLD_SIZE = 4096;
-  const VIEW_IDS = Object.freeze(["world", "species", "ecosystem", "timeline", "expeditions", "settings"]);
+  const VIEW_IDS = Object.freeze(["world", "species", "ecosystem", "timeline", "expeditions", "lineage", "observer", "network", "settings"]);
+  const CONTENT = global.HHEonWildContentV2 || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-content-v2.js"); } catch { return null; } })() : null);
+  const SIMULATION = global.HHEonWildSimulationV2 || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-simulation-v2.js"); } catch { return null; } })() : null);
   const ERA_META = Object.freeze({
     paleozoic: { label: "Đại Cổ sinh", range: "541–252 triệu năm", color: "#58e6d2" },
     mesozoic: { label: "Đại Trung sinh", range: "252–66 triệu năm", color: "#ffb65f" },
@@ -80,6 +83,52 @@
   ]);
   const SPECIES = Object.freeze(SPECIES_ROWS.map(([id, name, vietnamese, era, period, diet, locomotion, habitat, mass, speed, color, ability]) => Object.freeze({ id, name, vietnamese, era, period, diet, locomotion, habitat, mass, speed, color, ability })));
   const SPECIES_BY_ID = new Map(SPECIES.map((species) => [species.id, species]));
+  const FALLBACK_REALMS = Object.freeze({
+    paleozoic: Object.freeze({ id: "paleozoic", label: "Cambri–Permi", subtitle: "541–252 triệu năm", color: "#58e6d2", era: "paleozoic", biomes: ["ocean", "reef", "wetland", "forest", "volcanic"] }),
+    mesozoic: Object.freeze({ id: "mesozoic", label: "Đại Trung sinh", subtitle: "252–66 triệu năm", color: "#ffb65f", era: "mesozoic", biomes: ["ocean", "reef", "wetland", "forest", "grassland", "desert", "volcanic"] }),
+    "ice-age": Object.freeze({ id: "ice-age", label: "Kỷ băng hà", subtitle: "2,58 triệu–11.700 năm", color: "#d8f7ff", era: "cenozoic", periods: ["Pleistocene"], biomes: ["tundra", "grassland", "forest", "wetland"] }),
+    modern: Object.freeze({ id: "modern", label: "Trái Đất hiện đại", subtitle: "Hiện tại", color: "#72ef9d", era: "modern", biomes: ["ocean", "reef", "wetland", "forest", "grassland", "desert", "tundra"] })
+  });
+  const rawRealms = CONTENT?.REALMS || CONTENT?.ERA_REALMS || FALLBACK_REALMS;
+  const REALMS = Object.freeze(Array.isArray(rawRealms)
+    ? Object.fromEntries(rawRealms.filter((realm) => realm?.id).map((realm) => {
+      const fallback = FALLBACK_REALMS[realm.id] || {};
+      const range = Array.isArray(realm.rangeMya) ? `${realm.rangeMya[0]}–${realm.rangeMya[1]} triệu năm` : fallback.subtitle;
+      return [realm.id, Object.freeze({ ...fallback, ...realm, label: fallback.label || realm.label, subtitle: fallback.subtitle || range, color: fallback.color || "#72ef9d" })];
+    }))
+    : Object.fromEntries(Object.entries(rawRealms).map(([id, realm]) => [id, Object.freeze({ ...(FALLBACK_REALMS[id] || {}), id, ...realm })])));
+  const REALM_IDS = Object.freeze(Object.keys(REALMS));
+  const FLAGSHIP_IDS = Object.freeze(["tyrannosaurus", "triceratops", "argentavis", "orca", "giant-octopus", "spinosaurus", "mammuthus", "wolf", "honeybee", "electric-eel", "ankylosaurus", "blue-whale"]);
+  const fallbackFlagships = Object.freeze(Object.fromEntries(FLAGSHIP_IDS.map((id) => [id, Object.freeze({
+    id, tier: "flagship", active: "R", sense: SPECIES_BY_ID.get(id)?.ability || "Giác quan chuyên biệt", locomotion: SPECIES_BY_ID.get(id)?.locomotion || "walk",
+    defense: id === "triceratops" ? "Vòng phòng thủ đàn" : id === "ankylosaurus" ? "Chùy đuôi phá giáp" : id === "giant-octopus" ? "Ngụy trang sắc tố" : "Khả năng sinh tồn riêng",
+    reproduction: ["orca", "wolf", "blue-whale", "mammuthus"].includes(id) ? "Sinh con và chăm con" : "Tạo tổ và bảo vệ con non"
+  })])));
+  const FLAGSHIPS = Object.freeze(CONTENT?.FLAGSHIPS || CONTENT?.FLAGSHIP_SPECIES || fallbackFlagships);
+  const rawCommunicationCalls = CONTENT?.COMMUNICATION_CALL_LIST || CONTENT?.COMMUNICATION_CALLS;
+  const COMMUNICATION_CALLS = Object.freeze((Array.isArray(rawCommunicationCalls) ? rawCommunicationCalls : Object.values(rawCommunicationCalls || {})).length ? (Array.isArray(rawCommunicationCalls) ? rawCommunicationCalls : Object.values(rawCommunicationCalls || {})) : [
+    { id: "contact", label: "Gọi liên lạc", icon: "◉", influence: "gather" },
+    { id: "warning", label: "Cảnh báo", icon: "!", influence: "flee" },
+    { id: "territory", label: "Đánh dấu lãnh thổ", icon: "◇", influence: "avoid" },
+    { id: "courtship", label: "Tín hiệu kết đôi", icon: "♥", influence: "mate" },
+    { id: "pheromone", label: "Để lại pheromone", icon: "⌁", influence: "trail" },
+    { id: "quiet", label: "Im lặng", icon: "○", influence: "hide" }
+  ]);
+  const realmForSpecies = (species) => {
+    if (!species) return "modern";
+    if (species.era === "paleozoic") return "paleozoic";
+    if (species.era === "mesozoic") return "mesozoic";
+    if (species.era === "modern") return "modern";
+    if (species.period === "Pleistocene") return "ice-age";
+    return "convergence-only";
+  };
+  const speciesAllowedInRealm = (species, realmId, convergence = false) => {
+    if (!species || !REALM_IDS.includes(realmId)) return false;
+    if (typeof CONTENT?.isSpeciesAllowedInRealm === "function") {
+      try { return CONTENT.isSpeciesAllowedInRealm(realmId, species.id, { convergence }); } catch {}
+    }
+    return Boolean(convergence || realmForSpecies(species) === realmId);
+  };
   const EXPEDITIONS = Object.freeze([
     { id: "first-water", title: "Mạch nước đầu tiên", detail: "Tìm một hồ nước và uống trước khi khát xuống 35%.", reward: "Mở dấu chân nước", target: "water" },
     { id: "food-web", title: "Một mắt xích trong lưới sống", detail: "Tìm đúng thức ăn của loài đang chơi.", reward: "+12 tăng trưởng", target: "food" },
@@ -110,129 +159,286 @@
     if (nx > .56 && ny > .68) return "volcanic";
     return wave > .55 ? "forest" : "grassland";
   };
+  const terrainForRealm = (terrain, realmId, x = 0, y = 0) => {
+    if (realmId === "paleozoic") return ({ tundra: "ocean", desert: "volcanic", grassland: (Math.floor((x + y) / 320) % 2 ? "wetland" : "forest") })[terrain] || terrain;
+    if (realmId === "mesozoic") return terrain === "tundra" ? "forest" : terrain;
+    if (realmId === "ice-age") return ({ ocean: "wetland", reef: "wetland", desert: "grassland", volcanic: "tundra" })[terrain] || terrain;
+    return terrain;
+  };
+
+  const normalizeGenes = (value, seed = 1) => {
+    const external = CONTENT?.normalizeGenes || CONTENT?.normalizeGeneProfile;
+    if (typeof external === "function") {
+      try {
+        const source = value && typeof value === "object" ? value : {};
+        const migrated = Object.hasOwn(source, "bodyScale") ? source : {
+          bodyScale: .8 + clamp(source.size ?? 50, 0, 100) * .004,
+          endurance: .7 + clamp(source.endurance ?? 50, 0, 100) * .006,
+          thermalTolerance: 1,
+          oxygenEfficiency: 1,
+          sensoryAcuity: .75 + clamp(source.sense ?? 50, 0, 100) * .0055,
+          diseaseResistance: .7 + clamp(source.immunity ?? 50, 0, 100) * .006,
+          metabolism: 1,
+          pigment: clamp(source.pigmentation ?? 50, 0, 100) / 100,
+          sociability: .5,
+          parentalCare: .5
+        };
+        return external(migrated, { seed });
+      } catch {}
+    }
+    const genes = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    return Object.freeze({
+      pigmentation: clamp(genes.pigmentation ?? 50, 0, 100), size: clamp(genes.size ?? 50, 0, 100),
+      endurance: clamp(genes.endurance ?? 50, 0, 100), sense: clamp(genes.sense ?? 50, 0, 100),
+      immunity: clamp(genes.immunity ?? 50, 0, 100), agility: clamp(genes.agility ?? 50, 0, 100), seed: Math.abs(Number(genes.seed ?? seed) || 1) % 1000000
+    });
+  };
+  const normalizeInjuries = (value = {}) => {
+    const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    return { bleeding: clamp(source.bleeding, 0, 100), fracture: clamp(source.fracture, 0, 100), infection: clamp(source.infection, 0, 100), disease: clamp(source.disease, 0, 100) };
+  };
 
   function normalizeState(value = {}) {
     const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
     const player = source.player && typeof source.player === "object" ? source.player : {};
     const settings = source.settings && typeof source.settings === "object" ? source.settings : {};
+    const speciesId = SPECIES_BY_ID.has(source.speciesId) ? source.speciesId : "triceratops";
+    const derivedRealm = realmForSpecies(SPECIES_BY_ID.get(speciesId));
     return {
       schemaVersion: SCHEMA_VERSION,
-      speciesId: SPECIES_BY_ID.has(source.speciesId) ? source.speciesId : "triceratops",
+      speciesId,
+      realmId: REALM_IDS.includes(source.realmId) ? source.realmId : derivedRealm === "convergence-only" ? "ice-age" : derivedRealm,
       player: {
         x: clamp(player.x || WORLD_SIZE * .48, 80, WORLD_SIZE - 80),
         y: clamp(player.y || WORLD_SIZE * .48, 80, WORLD_SIZE - 80),
         health: clamp(player.health ?? 100, 0, 100), hunger: clamp(player.hunger ?? 82, 0, 100),
         thirst: clamp(player.thirst ?? 78, 0, 100), stamina: clamp(player.stamina ?? 100, 0, 100),
-        growth: clamp(player.growth ?? 18, 0, 100), lineage: clamp(player.lineage || 0, 0, 9999)
+        growth: clamp(player.growth ?? 18, 0, 100), lineage: clamp(player.lineage || 0, 0, 9999),
+        temperature: clamp(player.temperature ?? 50, 0, 100), oxygen: clamp(player.oxygen ?? 100, 0, 100),
+        nutrition: clamp(player.nutrition ?? 72, 0, 100), dietQuality: clamp(player.dietQuality ?? 64, 0, 100),
+        immunity: clamp(player.immunity ?? 82, 0, 100), injuries: normalizeInjuries(player.injuries),
+        genes: normalizeGenes(player.genes, hashSeed(speciesId)), generation: clamp(player.generation || 1, 1, 9999), spawnPending: player.spawnPending !== false
       },
       settings: {
         difficulty: ["sanctuary", "balanced", "wild"].includes(settings.difficulty) ? settings.difficulty : "balanced",
         motion: ["static", "balanced", "cinematic"].includes(settings.motion) ? settings.motion : "balanced",
         density: ["low", "balanced", "high"].includes(settings.density) ? settings.density : "balanced",
         sound: settings.sound === true,
-        convergence: settings.convergence !== false,
+        convergence: settings.convergence === true,
+        worker: settings.worker !== false,
+        adaptiveQuality: settings.adaptiveQuality !== false,
+        photoUi: settings.photoUi !== false,
         seed: String(settings.seed || "EON-541").replace(/[^a-z0-9-]/gi, "").slice(0, 24) || "EON-541"
       },
       discoveries: Array.isArray(source.discoveries) ? [...new Set(source.discoveries.filter((id) => SPECIES_BY_ID.has(id)))].slice(0, 500) : [],
       completed: Array.isArray(source.completed) ? [...new Set(source.completed.filter((id) => EXPEDITIONS.some((mission) => mission.id === id)))].slice(0, 50) : [],
       activeExpedition: EXPEDITIONS.some((mission) => mission.id === source.activeExpedition) ? source.activeExpedition : "first-water",
+      lineage: Array.isArray(source.lineage) ? source.lineage.filter((record) => record && typeof record === "object").slice(-24).map((record, index) => ({
+        id: String(record.id || `generation-${index + 1}`).replace(/[^a-z0-9-]/gi, "").slice(0, 48), generation: clamp(record.generation || index + 1, 1, 9999),
+        speciesId: SPECIES_BY_ID.has(record.speciesId) ? record.speciesId : "triceratops", genes: normalizeGenes(record.genes, index + 1),
+        bornAt: clamp(record.bornAt || Date.now(), 0, Number.MAX_SAFE_INTEGER), survived: clamp(record.survived, 0, 100)
+      })) : [],
+      replay: Array.isArray(source.replay) ? source.replay.filter((sample) => sample && typeof sample === "object").slice(-240).map((sample) => ({
+        x: clamp(sample.x, 0, WORLD_SIZE), y: clamp(sample.y, 0, WORLD_SIZE), t: clamp(sample.t, 0, Number.MAX_SAFE_INTEGER), health: clamp(sample.health, 0, 100), event: String(sample.event || "move").slice(0, 32)
+      })) : [],
+      heatmap: Array.isArray(source.heatmap) ? source.heatmap.filter((cell) => cell && typeof cell === "object").slice(0, 256).map((cell) => ({
+        x: clamp(cell.x, 0, 4096), y: clamp(cell.y, 0, 4096), value: clamp(cell.value, 0, 1000000),
+        types: Object.fromEntries(Object.entries(cell.types && typeof cell.types === "object" ? cell.types : {}).slice(0, 8).map(([key, value]) => [String(key).replace(/[^a-z0-9-]/gi, "").slice(0, 24), clamp(value, 0, 1000000)]).filter(([key]) => key))
+      })) : [],
+      heatmapCellSize: clamp(source.heatmapCellSize || 64, 16, 512),
+      ecologySnapshot: source.ecologySnapshot && typeof source.ecologySnapshot === "object" ? {
+        season: clamp(source.ecologySnapshot.season || 0, 0, 9999), updatedAt: clamp(source.ecologySnapshot.updatedAt || 0, 0, Number.MAX_SAFE_INTEGER),
+        title: String(source.ecologySnapshot.title || "Chưa mô phỏng").slice(0, 80), copy: String(source.ecologySnapshot.copy || "Chạy một mùa để tạo dữ liệu local.").slice(0, 220),
+        producer: clamp(source.ecologySnapshot.producer, 0, 100), prey: clamp(source.ecologySnapshot.prey, 0, 100), predator: clamp(source.ecologySnapshot.predator, 0, 100),
+        apex: clamp(source.ecologySnapshot.apex, 0, 512), population: clamp(source.ecologySnapshot.population, 0, 512), chunks: clamp(source.ecologySnapshot.chunks, 0, 256),
+        actions: Object.fromEntries(["hunt", "flee", "drink", "feed", "rest", "migrate", "mate", "guardNest"].map((key) => [key, clamp(source.ecologySnapshot.actions?.[key], 0, 512)]))
+      } : null,
+      eventJournal: Array.isArray(source.eventJournal) ? source.eventJournal.filter((row) => row && typeof row === "object").slice(-40).map((row) => ({ id: String(row.id || "event").slice(0, 32), label: String(row.label || "Biến động tự nhiên").slice(0, 80), at: clamp(row.at || Date.now(), 0, Number.MAX_SAFE_INTEGER) })) : [],
       updatedAt: Date.now()
     };
   }
 
-  function stepVitals(player, seconds, difficulty = "balanced", moving = false, sprinting = false) {
+  function stepVitals(player, seconds, difficulty = "balanced", moving = false, sprinting = false, environment = {}) {
     const factor = difficulty === "wild" ? 1.45 : difficulty === "sanctuary" ? .55 : 1;
     const next = { ...player };
     next.hunger = clamp(next.hunger - seconds * .12 * factor, 0, 100);
     next.thirst = clamp(next.thirst - seconds * .17 * factor, 0, 100);
     next.stamina = clamp(next.stamina + seconds * (sprinting ? -8.5 : moving ? -1.4 : 7), 0, 100);
     next.growth = clamp(next.growth + seconds * .035 * (next.hunger > 35 && next.thirst > 35 ? 1 : .2), 0, 100);
+    next.temperature = clamp((next.temperature ?? 50) + ((environment.temperature ?? 50) - (next.temperature ?? 50)) * seconds * .025, 0, 100);
+    next.oxygen = clamp((next.oxygen ?? 100) + seconds * (environment.oxygenDrain ? -environment.oxygenDrain : 7), 0, 100);
+    next.nutrition = clamp((next.nutrition ?? 72) - seconds * .055 * factor, 0, 100);
+    next.dietQuality = clamp((next.dietQuality ?? 64) - seconds * .018 * factor, 0, 100);
+    next.immunity = clamp((next.immunity ?? 82) + seconds * ((next.dietQuality ?? 0) > 55 ? .025 : -.08), 0, 100);
+    next.injuries = normalizeInjuries(next.injuries);
+    next.injuries.bleeding = clamp(next.injuries.bleeding - seconds * .18, 0, 100);
+    next.injuries.fracture = clamp(next.injuries.fracture - seconds * .025, 0, 100);
+    next.injuries.infection = clamp(next.injuries.infection + seconds * (next.injuries.bleeding > 20 ? .035 : -.018), 0, 100);
+    next.injuries.disease = clamp(next.injuries.disease + seconds * ((next.immunity ?? 0) < 35 ? .025 : -.02), 0, 100);
+    const conditionDamage = (next.injuries.bleeding * .018 + next.injuries.infection * .009 + next.injuries.disease * .006) * seconds;
     if (!next.hunger || !next.thirst) next.health = clamp(next.health - seconds * 2.2 * factor, 0, 100);
     else if (next.hunger > 70 && next.thirst > 70) next.health = clamp(next.health + seconds * .35, 0, 100);
+    if (!next.oxygen || next.temperature < 12 || next.temperature > 88) next.health = clamp(next.health - seconds * 2.8 * factor, 0, 100);
+    next.health = clamp(next.health - conditionDamage, 0, 100);
     return next;
   }
 
-  function createWorld(seedValue = "EON-541", density = "balanced") {
+  function createWorld(seedValue = "EON-541", density = "balanced", realmId = "mesozoic") {
     const seed = hashSeed(seedValue);
     const random = seededRandom(seed);
+    const activeRealm = REALM_IDS.includes(realmId) ? realmId : "mesozoic";
     const resourceCount = density === "high" ? 96 : density === "low" ? 52 : 72;
     const resources = [];
     for (let index = 0; index < resourceCount; index += 1) {
       const x = 90 + random() * (WORLD_SIZE - 180);
       const y = 90 + random() * (WORLD_SIZE - 180);
-      const terrain = terrainAt(x, y, seed);
+      const terrain = terrainForRealm(terrainAt(x, y, seed), activeRealm, x, y);
       const type = ["ocean", "reef", "wetland"].includes(terrain) && index % 3 === 0 ? "water" : index % 9 === 0 ? "shelter" : index % 5 === 0 ? "carcass" : "plant";
       resources.push({ id: `resource-${index}`, x, y, type, amount: 100, terrain });
     }
     return {
-      seed, resources,
+      seed, realmId: activeRealm, resources,
       migration: { x: WORLD_SIZE * (.3 + random() * .4), y: WORLD_SIZE * (.25 + random() * .5), radius: 190 },
       weather: { type: random() > .7 ? "storm" : random() > .45 ? "mist" : "clear", phase: random() * Math.PI * 2 },
-      day: random() * 24
+      day: random() * 24, tide: random(), event: { id: "calm", type: "calm", label: "Sinh quyển ổn định", intensity: 0, remaining: 0 }, eventSequence: 0, loadedChunks: []
     };
   }
 
-  const readState = () => { try { return normalizeState(JSON.parse(global.localStorage?.getItem?.(STORAGE_KEY) || "{}")); } catch { return normalizeState(); } };
+  const readState = () => {
+    try {
+      const current = global.localStorage?.getItem?.(STORAGE_KEY);
+      const legacy = global.localStorage?.getItem?.(LEGACY_STORAGE_KEY);
+      const state = normalizeState(JSON.parse(current || legacy || "{}"));
+      if (!current && legacy) global.localStorage?.setItem?.(STORAGE_KEY, JSON.stringify(state));
+      return state;
+    } catch { return normalizeState(); }
+  };
   const saveState = (instance) => { instance.state.updatedAt = Date.now(); try { global.localStorage?.setItem?.(STORAGE_KEY, JSON.stringify(instance.state)); return true; } catch { return false; } };
   const stageLabel = (growth) => growth < 25 ? "Con non" : growth < 60 ? "Thiếu niên" : growth < 92 ? "Trưởng thành" : "Cá thể đầu đàn";
   const formatMass = (mass) => mass >= 1000 ? `${Math.round(mass / 100) / 10} tấn` : mass >= 1 ? `${mass} kg` : `${Math.round(mass * 1000)} g`;
   const dietLabel = (diet) => ({ meat: "Ăn thịt", plant: "Ăn thực vật", omnivore: "Ăn tạp", filter: "Lọc thức ăn", nectar: "Ăn mật" }[diet] || diet);
+  const flagshipFor = (speciesId) => FLAGSHIPS?.[speciesId] || (Array.isArray(FLAGSHIPS) ? FLAGSHIPS.find((item) => item.id === speciesId) : null);
+  const mechanicLabel = (value, fallback) => typeof value === "string" ? value : value?.label || value?.name || value?.title || value?.special?.label || value?.special || value?.mode || value?.care || fallback;
+  const tierForSpecies = (species) => {
+    if (!species) return "codex";
+    if (typeof CONTENT?.getCatalogTier === "function") {
+      try { return CONTENT.getCatalogTier(species.id) || "codex"; } catch {}
+    }
+    return flagshipFor(species.id) ? "flagship" : species.era === "modern" || species.period === "Pleistocene" ? "simulated" : "codex";
+  };
+  const tierLabel = (tier) => ({ flagship: "FLAGSHIP", simulated: "WILDLIFE AI", codex: "CODEX" }[tier] || "CODEX");
+  const geneLabel = (key) => CONTENT?.GENE_SCHEMA?.[key]?.label || ({ pigmentation: "Sắc tố", size: "Kích thước", endurance: "Sức bền", sense: "Giác quan", immunity: "Miễn dịch", agility: "Nhanh nhẹn" })[key] || key;
+  const genePercent = (key, value) => {
+    const schema = CONTENT?.GENE_SCHEMA?.[key];
+    if (!schema) return clamp(value, 0, 100);
+    return clamp((Number(value) - schema.min) / Math.max(.0001, schema.max - schema.min) * 100, 0, 100);
+  };
+  const realmSelectorMarkup = (state) => `<section class="hwe-realm-selector" aria-label="Chọn Era Realm"><span><small>ERA REALM</small><strong>${escapeHtml(REALMS[state.realmId]?.label || "Realm")}</strong></span><div>${Object.values(REALMS).map((realm) => `<button type="button" data-hwe-realm="${escapeHtml(realm.id)}" aria-pressed="${state.realmId === realm.id}" style="--realm:${escapeHtml(realm.color || "#72ef9d")}"><i></i><span>${escapeHtml(realm.label)}</span><small>${escapeHtml(realm.subtitle || realm.range || "")}</small></button>`).join("")}</div><label><input type="checkbox" data-hwe-setting="convergence" ${state.settings.convergence ? "checked" : ""}> Eon Convergence <small>${state.settings.convergence ? "Hư cấu · đang bật" : "Tắt · đúng niên đại"}</small></label></section>`;
 
   function navMarkup(view) {
     return `<nav class="hwe-nav" aria-label="Điều hướng HH EonWild">${[
       ["world", "Thế giới sống", "◉"], ["species", "Eon Codex", "DNA"], ["ecosystem", "Lưới sinh thái", "⌁"],
-      ["timeline", "Eon Atlas", "◷"], ["expeditions", "Thám hiểm", "◇"], ["settings", "Cài đặt", "⚙"]
+      ["timeline", "Eon Atlas", "◷"], ["expeditions", "Thám hiểm", "◇"], ["lineage", "Dòng gene", "∞"],
+      ["observer", "Observer", "◎"], ["network", "Multiplayer", "⌘"], ["settings", "Cài đặt", "⚙"]
     ].map(([id, label, icon]) => `<button type="button" data-hwe-route="/game/${id}" aria-current="${view === id ? "page" : "false"}"><i>${icon}</i><span>${label}</span></button>`).join("")}</nav>`;
   }
 
   function speciesCardsMarkup(state, compact = false) {
-    return SPECIES.map((species) => `<button type="button" class="hwe-species-card${state.speciesId === species.id ? " is-selected" : ""}" data-hwe-species="${species.id}" data-era="${species.era}" data-diet="${species.diet}" data-search="${escapeHtml(`${species.name} ${species.vietnamese} ${species.period}`.toLowerCase())}" style="--species:${species.color}">
-      <i aria-hidden="true">${species.locomotion === "fly" ? "⌁" : species.locomotion === "swim" ? "≈" : species.locomotion === "crawl" ? "〰" : "◆"}</i><span><strong>${escapeHtml(species.vietnamese)}</strong>${compact ? "" : `<small>${escapeHtml(species.name)} · ${escapeHtml(species.period)}</small>`}</span></button>`).join("");
+    return SPECIES.map((species) => {
+      const tier = tierForSpecies(species);
+      const realm = realmForSpecies(species);
+      const unavailable = !speciesAllowedInRealm(species, state.realmId, state.settings.convergence);
+      if (compact && (unavailable || tier !== "flagship")) return "";
+      return `<button type="button" class="hwe-species-card${state.speciesId === species.id ? " is-selected" : ""}${unavailable ? " is-other-realm" : ""}" data-hwe-species="${species.id}" data-era="${species.era}" data-realm="${realm}" data-tier="${tier}" data-diet="${species.diet}" data-search="${escapeHtml(`${species.name} ${species.vietnamese} ${species.period} ${tier}`.toLowerCase())}" style="--species:${species.color}">
+      <i aria-hidden="true">${species.locomotion === "fly" ? "⌁" : species.locomotion === "swim" ? "≈" : species.locomotion === "crawl" ? "〰" : "◆"}</i><span><strong>${escapeHtml(species.vietnamese)}</strong>${compact ? `<small>${tierLabel(tier)}</small>` : `<small>${escapeHtml(species.name)} · ${escapeHtml(species.period)}</small><em>${tierLabel(tier)}${unavailable ? " · REALM KHÁC" : ""}</em>`}</span></button>`;
+    }).join("");
   }
 
   function worldMarkup(state) {
     const selected = SPECIES_BY_ID.get(state.speciesId);
-    return `<div class="hwe-world-layout">
-      <aside class="hwe-species-dock" aria-label="Chọn loài"><header><span><small>PLAYABLE REGISTRY</small><strong>${SPECIES.length} loài khởi đầu</strong></span><button type="button" data-hwe-open-codex>Mở Codex</button></header><label class="hwe-search"><span>⌕</span><input type="search" data-hwe-species-search placeholder="Tìm loài hoặc kỷ…" aria-label="Tìm loài"></label><div class="hwe-species-list">${speciesCardsMarkup(state, true)}</div></aside>
+    const flagship = flagshipFor(selected.id);
+    const activeAbility = mechanicLabel(flagship?.defense?.special || flagship?.locomotion?.special || flagship?.activeAbility || flagship?.active || flagship?.ability, selected.ability);
+    return `${realmSelectorMarkup(state)}<div class="hwe-world-layout">
+      <aside class="hwe-species-dock" aria-label="Chọn loài"><header><span><small>PLAYABLE REGISTRY</small><strong>${SPECIES.filter((species) => tierForSpecies(species) === "flagship" && speciesAllowedInRealm(species, state.realmId, state.settings.convergence)).length} Flagship trong realm</strong></span><button type="button" data-hwe-open-codex>Mở Codex</button></header><label class="hwe-search"><span>⌕</span><input type="search" data-hwe-species-search placeholder="Tìm Flagship…" aria-label="Tìm loài Flagship"></label><div class="hwe-species-list">${speciesCardsMarkup(state, true)}</div></aside>
       <section class="hwe-viewport" data-hwe-viewport aria-label="Thế giới EonWild đang chơi">
         <canvas data-hwe-canvas tabindex="0" aria-label="Bản đồ sinh tồn. Dùng WASD hoặc phím mũi tên để di chuyển."></canvas>
         <div class="hwe-atmosphere" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-        <div class="hwe-hud hwe-hud--top"><span><small>Biome</small><strong data-hwe-biome>Đang dựng thế giới</strong></span><span><small>Thời gian</small><strong data-hwe-time>--:--</strong></span><span><small>Thời tiết</small><strong data-hwe-weather>Ổn định</strong></span><button type="button" data-hwe-fullscreen aria-label="Toàn màn hình">⛶</button></div>
+        <div class="hwe-hud hwe-hud--top"><span><small>Realm</small><strong data-hwe-realm-label>${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</strong></span><span><small>Biome</small><strong data-hwe-biome>Đang dựng thế giới</strong></span><span><small>Thời gian</small><strong data-hwe-time>--:--</strong></span><span><small>Sự kiện</small><strong data-hwe-weather>Ổn định</strong></span><button type="button" data-hwe-photo aria-label="Photo Mode">◉</button><button type="button" data-hwe-fullscreen aria-label="Toàn màn hình">⛶</button></div>
         <div class="hwe-minimap"><canvas data-hwe-minimap width="180" height="180" aria-label="Bản đồ thu nhỏ"></canvas><span>MIGRATION</span></div>
+        <div class="hwe-event-banner" data-hwe-event-banner hidden><small>WORLD EVENT</small><strong data-hwe-event-title>Biến động tự nhiên</strong><progress data-hwe-event-progress max="100" value="0"></progress></div>
         <div class="hwe-sense" data-hwe-sense hidden><span>Q · ECO SENSE</span><strong>Đang đọc dấu vết tự nhiên…</strong></div>
-        <div class="hwe-start-panel" data-hwe-start-panel><small>LOCAL VERTICAL SLICE · KHÔNG CÓ CON NGƯỜI</small><h2>Trở thành ${escapeHtml(selected.vietnamese)}</h2><p>Sinh tồn trong thế giới hợp lưu nhiều kỷ. Kiếm nước, ăn đúng khẩu phần, trưởng thành và đi theo nhịp hệ sinh thái.</p><div><button type="button" data-hwe-difficulty="sanctuary" class="${state.settings.difficulty === "sanctuary" ? "is-active" : ""}">Sanctuary</button><button type="button" data-hwe-difficulty="balanced" class="${state.settings.difficulty === "balanced" ? "is-active" : ""}">Cân bằng</button><button type="button" data-hwe-difficulty="wild" class="${state.settings.difficulty === "wild" ? "is-active" : ""}">Wild</button></div><button type="button" class="is-primary" data-hwe-start>▶ Bắt đầu vòng đời</button></div>
+        <div class="hwe-ability-bar"><button type="button" data-hwe-action="sense"><kbd>Q</kbd><span><small>Giác quan</small><strong>${escapeHtml(mechanicLabel(flagship?.sense, selected.ability))}</strong></span></button><button type="button" data-hwe-action="ability"><kbd>R</kbd><span><small>${flagship ? "FLAGSHIP ACTIVE" : "SPECIAL ACTION"}</small><strong>${escapeHtml(activeAbility)}</strong></span></button><button type="button" data-hwe-communication-open aria-expanded="false"><kbd>C</kbd><span><small>Giao tiếp động vật</small><strong>Tín hiệu không lời</strong></span></button></div>
+        <div class="hwe-communication-wheel" data-hwe-communication-wheel hidden role="dialog" aria-modal="false" aria-label="Animal Communication Wheel"><header><span><small>ANIMAL COMMUNICATION</small><strong>Không chat toàn cục</strong></span><button type="button" data-hwe-communication-close aria-label="Đóng vòng giao tiếp">×</button></header><div>${COMMUNICATION_CALLS.map((call, index) => { const allowed = !flagship || typeof CONTENT?.isCommunicationCallAllowed !== "function" || CONTENT.isCommunicationCallAllowed(selected.id, call.id); return `<button type="button" data-hwe-call="${escapeHtml(call.id)}" style="--i:${index}" ${allowed ? "" : "disabled"} title="${escapeHtml(call.intent || call.label)}"><i>${escapeHtml(call.icon || (["alarm","distress"].includes(call.id) ? "!" : "◉"))}</i><span>${escapeHtml(call.label)}</span></button>`; }).join("")}</div></div>
+        <div class="hwe-start-panel" data-hwe-start-panel><small>ERA REALM · LOCAL ECOLOGY 2.0 · KHÔNG CÓ CON NGƯỜI</small><h2>Trở thành ${escapeHtml(selected.vietnamese)}</h2><p>${state.settings.convergence ? "Eon Convergence đang bật: đây là sandbox hư cấu có trộn thời đại." : `Realm ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)} chỉ sinh loài đúng cửa sổ địa chất.`} Tìm nước, cân bằng khẩu phần, tránh thương tích và tiếp nối dòng gene.</p><div><button type="button" data-hwe-difficulty="sanctuary" class="${state.settings.difficulty === "sanctuary" ? "is-active" : ""}">Sanctuary</button><button type="button" data-hwe-difficulty="balanced" class="${state.settings.difficulty === "balanced" ? "is-active" : ""}">Cân bằng</button><button type="button" data-hwe-difficulty="wild" class="${state.settings.difficulty === "wild" ? "is-active" : ""}">Wild</button></div><button type="button" class="is-primary" data-hwe-start>▶ Bắt đầu vòng đời</button></div>
         <div class="hwe-death-panel" data-hwe-death hidden><small>VÒNG TUẦN HOÀN TIẾP DIỄN</small><h2>Dòng sống đã kết thúc</h2><p>Chất dinh dưỡng trở lại hệ sinh thái. Dữ liệu Codex và dòng gene vẫn được giữ.</p><button type="button" data-hwe-respawn>Nở lại</button></div>
-        <div class="hwe-touch-controls" aria-label="Điều khiển cảm ứng"><button type="button" data-hwe-touch="ArrowUp">▲</button><button type="button" data-hwe-touch="ArrowLeft">◀</button><button type="button" data-hwe-touch="ArrowDown">▼</button><button type="button" data-hwe-touch="ArrowRight">▶</button><button type="button" data-hwe-action="interact">E</button><button type="button" data-hwe-action="sense">Q</button></div>
+        <div class="hwe-photo-overlay" data-hwe-photo-overlay hidden><span>${escapeHtml(selected.vietnamese)} · ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</span><button type="button" data-hwe-photo-capture>Chụp PNG</button><button type="button" data-hwe-photo-close>Thoát Photo Mode</button></div>
+        <div class="hwe-touch-controls" aria-label="Điều khiển cảm ứng"><button type="button" data-hwe-touch="ArrowUp">▲</button><button type="button" data-hwe-touch="ArrowLeft">◀</button><button type="button" data-hwe-touch="ArrowDown">▼</button><button type="button" data-hwe-touch="ArrowRight">▶</button><button type="button" data-hwe-action="interact">E</button><button type="button" data-hwe-action="sense">Q</button><button type="button" data-hwe-action="ability">R</button><button type="button" data-hwe-communication-open>C</button></div>
       </section>
       <aside class="hwe-telemetry"><header><span class="hwe-avatar" style="--species:${selected.color}">◆</span><span><small>${escapeHtml(selected.name)}</small><strong>${escapeHtml(selected.vietnamese)}</strong></span><button type="button" data-hwe-pause aria-pressed="false">Ⅱ</button></header>
-        <section class="hwe-vitals"><label>Máu <progress data-hwe-vital="health" max="100" value="${state.player.health}"></progress><b data-hwe-value="health">${Math.round(state.player.health)}</b></label><label>Đói <progress data-hwe-vital="hunger" max="100" value="${state.player.hunger}"></progress><b data-hwe-value="hunger">${Math.round(state.player.hunger)}</b></label><label>Khát <progress data-hwe-vital="thirst" max="100" value="${state.player.thirst}"></progress><b data-hwe-value="thirst">${Math.round(state.player.thirst)}</b></label><label>Thể lực <progress data-hwe-vital="stamina" max="100" value="${state.player.stamina}"></progress><b data-hwe-value="stamina">${Math.round(state.player.stamina)}</b></label><label>Trưởng thành <progress data-hwe-vital="growth" max="100" value="${state.player.growth}"></progress><b data-hwe-value="growth">${Math.round(state.player.growth)}</b></label></section>
+        <section class="hwe-vitals">${[["health","Máu"],["hunger","Đói"],["thirst","Khát"],["stamina","Thể lực"],["growth","Trưởng thành"],["oxygen","Oxy"],["nutrition","Dinh dưỡng"],["dietQuality","Khẩu phần"]].map(([key,label]) => `<label>${label} <progress data-hwe-vital="${key}" max="100" value="${state.player[key]}"></progress><b data-hwe-value="${key}">${Math.round(state.player[key])}</b></label>`).join("")}</section>
+        <section class="hwe-condition-panel"><small>INJURY & CONDITION</small><div>${[["temperature","Nhiệt"],["bleeding","Chảy máu"],["fracture","Gãy xương"],["infection","Nhiễm trùng"],["disease","Bệnh"]].map(([key,label]) => { const value = key === "temperature" ? state.player.temperature : state.player.injuries[key]; return `<span data-hwe-condition="${key}"><i style="--condition:${value}"></i><b>${label}</b><em data-hwe-condition-value="${key}">${Math.round(value)}</em></span>`; }).join("")}</div></section>
         <section class="hwe-species-facts"><small>ĐẶC TÍNH LOÀI</small><p><b>${escapeHtml(dietLabel(selected.diet))}</b><span>${escapeHtml(selected.period)} · ${escapeHtml(formatMass(selected.mass))}</span></p><p><b>Giác quan</b><span>${escapeHtml(selected.ability)}</span></p><p><b>Giai đoạn</b><span data-hwe-stage>${stageLabel(state.player.growth)}</span></p></section>
         <section class="hwe-mission"><small>NHIỆM VỤ SINH THÁI</small><strong data-hwe-mission-title>${escapeHtml(EXPEDITIONS.find((row) => row.id === state.activeExpedition)?.title || EXPEDITIONS[0].title)}</strong><p data-hwe-mission-copy>${escapeHtml(EXPEDITIONS.find((row) => row.id === state.activeExpedition)?.detail || EXPEDITIONS[0].detail)}</p><progress data-hwe-mission-progress max="100" value="0"></progress></section>
+        <section class="hwe-engine-telemetry"><small>ECOLOGY ENGINE</small><dl><div><dt>AI utility</dt><dd data-hwe-ai-mode>Local fallback</dd></div><div><dt>Chunks</dt><dd data-hwe-chunk-count>0</dd></div><div><dt>Apex budget</dt><dd data-hwe-apex-budget>Đang tính</dd></div><div><dt>Trail signals</dt><dd data-hwe-trail-count>0</dd></div></dl></section>
         <section class="hwe-log"><small>FIELD SIGNALS</small><div data-hwe-log aria-live="polite"><p>Thế giới đang chờ bạn bắt đầu.</p></div></section>
       </aside>
     </div>`;
   }
 
+  function codexDetailMarkup(species, state) {
+    const tier = tierForSpecies(species);
+    const flagship = flagshipFor(species.id);
+    const realmId = realmForSpecies(species);
+    const playableHere = speciesAllowedInRealm(species, state.realmId, state.settings.convergence);
+    const action = tier === "flagship"
+      ? `<button type="button" data-hwe-play-species="${species.id}">${playableHere ? "Chơi Flagship này →" : "Chuyển realm và chơi →"}</button>`
+      : tier === "simulated"
+        ? `<button type="button" data-hwe-route="/game/ecosystem">Quan sát trong hệ sinh thái →</button>`
+        : `<button type="button" disabled>Chỉ tra cứu trong Eon Codex</button>`;
+    return `<span class="hwe-creature-sigil" style="--species:${species.color}">◆</span><small>${escapeHtml(ERA_META[species.era].label)} · ${escapeHtml(species.period)}</small><span class="hwe-tier-badge" data-tier="${tier}">${tierLabel(tier)}</span><h3>${escapeHtml(species.vietnamese)}</h3><em>${escapeHtml(species.name)}</em><dl><div><dt>Realm</dt><dd>${realmId === "convergence-only" ? "Codex / Convergence" : escapeHtml(REALMS[realmId]?.label || realmId)}</dd></div><div><dt>Khối lượng</dt><dd>${escapeHtml(formatMass(species.mass))}</dd></div><div><dt>Khẩu phần</dt><dd>${escapeHtml(dietLabel(species.diet))}</dd></div><div><dt>Vận động</dt><dd>${escapeHtml(mechanicLabel(flagship?.locomotion, species.locomotion))}</dd></div><div><dt>Giác quan</dt><dd>${escapeHtml(mechanicLabel(flagship?.sense, species.ability))}</dd></div><div><dt>Phòng vệ</dt><dd>${escapeHtml(mechanicLabel(flagship?.defense, "Archetype dùng chung"))}</dd></div><div><dt>Sinh sản</dt><dd>${escapeHtml(mechanicLabel(flagship?.reproduction, "Vòng đời archetype"))}</dd></div></dl>${tier === "flagship" ? `<p class="hwe-flagship-note">Có cơ chế Flagship riêng trong vertical slice v2.</p>` : `<p class="hwe-tier-note">${tier === "simulated" ? "Tham gia Utility AI và Biomass Ledger; được quan sát nhưng không giả là playable." : "Catalog tra cứu; không tự nhận là playable hoàn chỉnh."}</p>`}${action}`;
+  }
+
   function codexMarkup(state) {
     const selected = SPECIES_BY_ID.get(state.speciesId);
-    return `<section class="hwe-library"><header class="hwe-view-hero"><div><small>EON CODEX · DATAPACK READY</small><h2>Bách khoa sự sống xuyên thời đại</h2><p>${SPECIES.length} loài đại diện đang hoạt động. Kiến trúc tách catalog, wildlife AI và playable flagship để mở rộng có kiểm chứng.</p></div><div class="hwe-stat-orbit"><b>${SPECIES.length}</b><span>loài khởi đầu</span></div></header><div class="hwe-filterbar"><label><span>⌕</span><input type="search" data-hwe-species-search placeholder="Tên Việt, Latin hoặc kỷ địa chất…"></label>${Object.entries(ERA_META).map(([id, meta]) => `<button type="button" data-hwe-era-filter="${id}" aria-pressed="false" style="--era:${meta.color}">${meta.label}</button>`).join("")}<button type="button" data-hwe-era-filter="all" aria-pressed="true">Tất cả</button></div><div class="hwe-codex-layout"><div class="hwe-codex-grid">${speciesCardsMarkup(state)}</div><aside class="hwe-codex-detail" data-hwe-codex-detail><span class="hwe-creature-sigil" style="--species:${selected.color}">◆</span><small>${escapeHtml(ERA_META[selected.era].label)} · ${escapeHtml(selected.period)}</small><h3>${escapeHtml(selected.vietnamese)}</h3><em>${escapeHtml(selected.name)}</em><dl><div><dt>Khối lượng</dt><dd>${escapeHtml(formatMass(selected.mass))}</dd></div><div><dt>Khẩu phần</dt><dd>${escapeHtml(dietLabel(selected.diet))}</dd></div><div><dt>Vận động</dt><dd>${escapeHtml(selected.locomotion)}</dd></div><div><dt>Khả năng</dt><dd>${escapeHtml(selected.ability)}</dd></div></dl><button type="button" data-hwe-play-species="${selected.id}">Chơi loài này →</button></aside></div></section>`;
+    return `<section class="hwe-library"><header class="hwe-view-hero"><div><small>EON CODEX · 3 TẦNG TAXONOMY</small><h2>Bách khoa sự sống xuyên thời đại</h2><p>${SPECIES.length} loài đại diện được tách rõ Playable Flagship, Simulated Wildlife và Codex-only. Có dữ liệu không đồng nghĩa đã chơi được ở chất lượng hoàn chỉnh.</p></div><div class="hwe-stat-orbit"><b>${SPECIES.length}</b><span>mục đã kiểm thử</span></div></header><div class="hwe-catalog-tiers">${[["flagship","12","Playable Flagship","Cơ chế và ability riêng"],["simulated",String(SPECIES.filter((species)=>tierForSpecies(species)==="simulated").length),"Simulated Wildlife","Tham gia lưới sinh thái"],["codex",String(SPECIES.filter((species)=>tierForSpecies(species)==="codex").length),"Eon Codex","Tra cứu, chưa tự nhận là playable"]].map(([id,count,title,copy]) => `<button type="button" data-hwe-tier-filter="${id}" aria-pressed="false"><b>${count}</b><span><strong>${title}</strong><small>${copy}</small></span></button>`).join("")}</div><div class="hwe-filterbar"><label><span>⌕</span><input type="search" data-hwe-species-search placeholder="Tên Việt, Latin hoặc kỷ địa chất…"></label>${Object.values(REALMS).map((realm) => `<button type="button" data-hwe-realm-filter="${realm.id}" aria-pressed="false" style="--era:${realm.color}">${escapeHtml(realm.label)}</button>`).join("")}<button type="button" data-hwe-realm-filter="all" aria-pressed="true">Tất cả</button></div><div class="hwe-codex-layout"><div class="hwe-codex-grid">${speciesCardsMarkup(state)}</div><aside class="hwe-codex-detail" data-hwe-codex-detail>${codexDetailMarkup(selected, state)}</aside></div></section>`;
   }
 
   function ecosystemMarkup(state) {
-    const counts = Object.keys(ERA_META).map((era) => [era, SPECIES.filter((species) => species.era === era).length]);
-    return `<section class="hwe-ecosystem"><header class="hwe-view-hero"><div><small>LIVING FOOD WEB · SEASON SIMULATOR</small><h2>Hệ sinh thái tự cân bằng</h2><p>Biomass Ledger giữ số lượng thú săn mồi tương ứng với con mồi, thực vật và nguồn nước; AI chỉ lấp niche còn thiếu.</p></div><button type="button" data-hwe-simulate-season>Chạy một mùa →</button></header><div class="hwe-eco-grid"><article class="hwe-food-web"><span class="is-source">Nắng · Nước</span><i></i><span class="is-plant">Thực vật</span><i></i><span class="is-prey">Ăn cỏ</span><i></i><span class="is-predator">Săn mồi</span><i></i><span class="is-cycle">Phân hủy</span></article><article class="hwe-population"><small>QUẦN THỂ THEO ĐẠI</small>${counts.map(([era, count]) => `<label><span>${ERA_META[era].label}</span><progress max="20" value="${count}"></progress><b>${count}</b></label>`).join("")}</article><article class="hwe-director"><small>ECOLOGY DIRECTOR</small><h3 data-hwe-season-title>Mùa nước dâng</h3><p data-hwe-season-copy>Đầm lầy mở rộng, đàn ăn cỏ dịch chuyển và thú săn mồi đi theo dấu mùi.</p><div><span>Hạn hán</span><span>Bão</span><span>Cháy tự nhiên</span><span>Mùa sinh sản</span><span>Tảo nở</span><span>Băng tan</span></div></article><article class="hwe-senses"><small>GIÁC QUAN KHÔNG PHẢI CON NGƯỜI</small>${["Mùi theo gió", "Rung động đất", "Định vị âm", "Nhiệt", "Điện trường", "Phân cực ánh sáng", "Từ trường", "Pheromone"].map((sense, index) => `<span style="--i:${index}">${sense}</span>`).join("")}</article></div></section>`;
+    const counts = Object.values(REALMS).map((realm) => [realm, SPECIES.filter((species) => speciesAllowedInRealm(species, realm.id, false)).length]);
+    const snapshot = state.ecologySnapshot;
+    const actions = snapshot?.actions || {};
+    return `<section class="hwe-ecosystem"><header class="hwe-view-hero"><div><small>UTILITY AI · BIOMASS LEDGER · CHUNK STREAMING</small><h2>Ecology Director 2.0</h2><p>Mỗi lần chạy tạo một simulation local có seed, chunk, wildlife, hazard và Utility AI thật; kết quả được lưu giới hạn trên thiết bị.</p></div><button type="button" data-hwe-simulate-season>Chạy mùa ${Number(snapshot?.season || 0) + 1} →</button></header><div class="hwe-eco-grid"><article class="hwe-food-web"><span class="is-source">Nắng · Nước</span><i></i><span class="is-plant">Thực vật</span><i></i><span class="is-prey">Ăn cỏ</span><i></i><span class="is-predator">Săn mồi</span><i></i><span class="is-cycle">Phân hủy</span></article><article class="hwe-population"><small>CATALOG THEO REALM</small>${counts.map(([realm, count]) => `<label><span>${escapeHtml(realm.label)}</span><progress max="${SPECIES.length}" value="${count}"></progress><b>${count}</b></label>`).join("")}</article><article class="hwe-biomass-ledger"><small>BIOMASS LEDGER · ${snapshot ? `${snapshot.population} CÁ THỂ / ${snapshot.chunks} CHUNK` : "CHƯA CÓ SNAPSHOT"}</small><dl><div><dt>Producer budget</dt><dd data-hwe-ledger="producer">${snapshot ? Math.round(snapshot.producer) + "%" : "—"}</dd></div><div><dt>Prey biomass</dt><dd data-hwe-ledger="prey">${snapshot ? Math.round(snapshot.prey) + "%" : "—"}</dd></div><div><dt>Predator biomass</dt><dd data-hwe-ledger="predator">${snapshot ? Math.round(snapshot.predator) + "%" : "—"}</dd></div><div><dt>Apex active</dt><dd data-hwe-ledger="apex">${snapshot ? snapshot.apex : "—"}</dd></div></dl><p>Số liệu chỉ đến từ lần mô phỏng local gần nhất; không tạo population hay online status giả.</p></article><article class="hwe-director"><small>ECOLOGY DIRECTOR</small><h3 data-hwe-season-title>${escapeHtml(snapshot?.title || "Chưa có mùa đã mô phỏng")}</h3><p data-hwe-season-copy>${escapeHtml(snapshot?.copy || "Nhấn “Chạy một mùa” để sinh chunk, phân bổ wildlife theo cap và chạy fixed-step.")}</p><div><span>Thủy triều</span><span>Lũ</span><span>Cháy tự nhiên</span><span>Núi lửa</span><span>Mùa sinh sản</span><span>Băng tan</span></div></article><article class="hwe-utility-actions"><small>UTILITY ACTIONS · SNAPSHOT THẬT</small>${["hunt","flee","drink","feed","rest","migrate","mate","guardNest"].map((action,index)=>`<span style="--i:${index}"><i></i>${action}<b>${Math.round(actions[action] || 0)}</b></span>`).join("")}</article><article class="hwe-senses"><small>GIÁC QUAN KHÔNG PHẢI CON NGƯỜI</small>${["Mùi theo gió", "Vết chân phân rã", "Định vị âm", "Nhiệt", "Điện trường", "Phân cực ánh sáng", "Từ trường", "Pheromone"].map((sense, index) => `<span style="--i:${index}">${sense}</span>`).join("")}</article></div></section>`;
   }
 
   function timelineMarkup() {
-    return `<section class="hwe-atlas"><header class="hwe-view-hero"><div><small>EON ATLAS · 541 TRIỆU NĂM</small><h2>Trái Đất Muôn Thời</h2><p>Era Realm giữ hệ sinh thái đúng niên đại; Eon Convergence là sandbox giả tưởng riêng để các thời đại gặp nhau.</p></div></header><div class="hwe-timeline">${Object.entries(ERA_META).map(([id, meta], index) => `<article style="--era:${meta.color};--i:${index}"><i></i><small>${meta.range}</small><h3>${meta.label}</h3><p>${id === "paleozoic" ? "Biển Cambri, rừng Carbon và những bước đầu lên cạn." : id === "mesozoic" ? "Bò sát thống trị đất, biển và bầu trời." : id === "cenozoic" ? "Thú có vú, chim khổng lồ và kỷ băng hà." : "Đa dạng hiện đại, biến động khí hậu và bảo tồn."}</p><b>${SPECIES.filter((species) => species.era === id).length} loài trong vertical slice</b></article>`).join("")}</div><div class="hwe-realm-note"><strong>Hai luật thế giới</strong><span><b>Era Realm</b> Không trộn loài sai niên đại.</span><span><b>Eon Convergence</b> Sandbox hợp lưu, bật/tắt trong Cài đặt.</span></div></section>`;
+    return `<section class="hwe-atlas"><header class="hwe-view-hero"><div><small>FOUR ERA REALMS · NO SILENT MIXING</small><h2>Trái Đất Muôn Thời</h2><p>Mỗi realm có allowlist loài, biome và biến động riêng. Những loài Tân sinh ngoài Kỷ băng hà nằm trong Codex hoặc Convergence cho đến khi có realm khoa học phù hợp.</p></div></header><div class="hwe-timeline">${Object.values(REALMS).map((realm, index) => `<article data-realm-card="${realm.id}" style="--era:${realm.color};--i:${index}"><i></i><small>${escapeHtml(realm.subtitle || realm.range || "")}</small><h3>${escapeHtml(realm.label)}</h3><p>${realm.id === "paleozoic" ? "Đại dương Cambri, rừng Carbon và bước chuyển đầu tiên lên cạn." : realm.id === "mesozoic" ? "Chuỗi thức ăn đất–biển–trời trong Trias, Jura và Phấn Trắng." : realm.id === "ice-age" ? "Tundra, đồng cỏ lạnh và megafauna Pleistocene." : "Đất–biển–trời hiện đại với sinh thái theo habitat."}</p><b>${SPECIES.filter((species) => speciesAllowedInRealm(species, realm.id, false)).length} loài được phép</b><button type="button" data-hwe-realm="${realm.id}">Chọn realm này →</button></article>`).join("")}</div><div class="hwe-realm-note"><strong>Hai luật thế giới</strong><span><b>Era Realm</b> Không trộn loài sai niên đại.</span><span><b>Eon Convergence</b> Sandbox hư cấu chỉ bật sau lựa chọn rõ ràng.</span></div></section>`;
   }
 
   function expeditionsMarkup(state) {
     return `<section class="hwe-expeditions"><header class="hwe-view-hero"><div><small>30-MINUTE EXPEDITIONS</small><h2>Nhiệm vụ do tự nhiên tạo ra</h2><p>Không NPC, không công trình và không nhiệm vụ kiểu con người. Mọi mục tiêu đều đến từ nhu cầu sinh tồn và biến động sinh thái.</p></div></header><div class="hwe-mission-grid">${EXPEDITIONS.map((mission, index) => `<article class="${state.completed.includes(mission.id) ? "is-complete" : state.activeExpedition === mission.id ? "is-active" : ""}" style="--i:${index}"><span>${state.completed.includes(mission.id) ? "✓" : String(index + 1).padStart(2, "0")}</span><small>${escapeHtml(mission.reward)}</small><h3>${escapeHtml(mission.title)}</h3><p>${escapeHtml(mission.detail)}</p><button type="button" data-hwe-expedition="${mission.id}">${state.activeExpedition === mission.id ? "Đang theo dõi" : "Theo dõi và chơi"}</button></article>`).join("")}</div></section>`;
   }
 
+  function lineageMarkup(state) {
+    const genes = state.player.genes;
+    const records = state.lineage.length ? state.lineage : [{ id: "origin", generation: state.player.generation, speciesId: state.speciesId, genes, bornAt: state.updatedAt, survived: state.player.growth }];
+    return `<section class="hwe-lineage"><header class="hwe-view-hero"><div><small>LINEAGE VAULT · LOCAL-ONLY</small><h2>Dòng gene nhiều thế hệ</h2><p>Cá thể có thể chết, nhưng Codex, khám phá và đặc tính di truyền đã ghi nhận vẫn còn. Không có pay-to-win hoặc hồi sinh trả phí.</p></div><button type="button" data-hwe-lineage-export>Xuất lineage JSON</button></header><div class="hwe-gene-dashboard"><article class="hwe-gene-orb"><span><b>${state.player.generation}</b><small>THẾ HỆ</small></span><h3>${escapeHtml(SPECIES_BY_ID.get(state.speciesId)?.vietnamese || state.speciesId)}</h3><p>${state.player.lineage} tổ/checkpoint đã tạo</p><button type="button" data-hwe-gene-preview>Mô phỏng thế hệ kế</button></article><article class="hwe-gene-bars"><small>GENE PROFILE</small>${Object.entries(genes).filter(([,value]) => Number.isFinite(value)).map(([key,value]) => `<label><span>${escapeHtml(geneLabel(key))}</span><progress max="100" value="${genePercent(key,value)}"></progress><b>${Math.round(genePercent(key,value))}%</b></label>`).join("")}</article><article class="hwe-gene-preview" data-hwe-gene-preview-panel><small>NEST FORECAST</small><h3>Chưa mô phỏng</h3><p>Biến thể chỉ được ghi vào lineage khi tạo tổ thật trong Thế giới sống.</p></article></div><div class="hwe-lineage-track">${records.map((record,index) => `<article style="--i:${index}"><span>${record.generation}</span><small>${new Date(record.bornAt).toLocaleDateString("vi-VN")}</small><h3>${escapeHtml(SPECIES_BY_ID.get(record.speciesId)?.vietnamese || record.speciesId)}</h3><p>Trưởng thành đạt ${Math.round(record.survived)}%</p><div>${Object.entries(record.genes).filter(([,value]) => Number.isFinite(value)).slice(0,4).map(([key,value])=>`<i title="${escapeHtml(geneLabel(key))}" style="--gene:${genePercent(key,value)}"></i>`).join("")}</div></article>`).join("")}</div></section>`;
+  }
+
+  function observerMarkup(state) {
+    const events = state.eventJournal.slice().reverse();
+    return `<section class="hwe-observer"><header class="hwe-view-hero"><div><small>OBSERVER · REPLAY · HEATMAP</small><h2>Quan sát mà không trở thành nhân vật</h2><p>Observer nằm ngoài lore. Heatmap và timeline chỉ đọc dữ liệu vòng chơi local thật, không hiển thị quần thể hoặc người chơi giả.</p></div><div><button type="button" data-hwe-replay-play>▶ Phát lại</button><button type="button" data-hwe-replay-clear>Xóa replay local</button></div></header><div class="hwe-observer-grid"><article class="hwe-replay-stage"><canvas width="900" height="520" data-hwe-observer-canvas aria-label="Heatmap và đường phát lại vòng đời"></canvas><div><span>0.25×</span><input type="range" min="0" max="${Math.max(1,state.replay.length - 1)}" value="0" data-hwe-replay-scrubber aria-label="Vị trí replay"><span data-hwe-replay-position>0/${state.replay.length}</span></div></article><aside class="hwe-observer-stats"><small>LOCAL TELEMETRY</small><dl><div><dt>Mẫu replay</dt><dd>${state.replay.length}/240</dd></div><div><dt>Heatmap cells</dt><dd>${state.heatmap.length}/256</dd></div><div><dt>World events</dt><dd>${state.eventJournal.length}/40</dd></div><div><dt>Realm</dt><dd>${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</dd></div><div><dt>Thế hệ</dt><dd>${state.player.generation}</dd></div></dl><h3>Nhật ký biến động</h3>${events.length ? events.map((row)=>`<p><b>${escapeHtml(row.label)}</b><small>${new Date(row.at).toLocaleTimeString("vi-VN")}</small></p>`).join("") : "<p>Chưa có biến động nào được ghi.</p>"}</aside></div></section>`;
+  }
+
+  function networkMarkup() {
+    const checks = [
+      ["auth","Đăng nhập và token phòng ngắn hạn",false],["authority","Server-authoritative simulation",false],["reconnect","Reconnect và resync snapshot",false],
+      ["moderation","Kick, block, report và audit",false],["anticheat","Rate limit, anti-replay và chống client tampering",false],["privacy","Invite-only và không lộ danh sách phòng riêng",false]
+    ];
+    return `<section class="hwe-network"><header class="hwe-view-hero"><div><small>MULTIPLAYER · FAIL CLOSED</small><h2>Realtime chưa được bật</h2><p>Vertical slice hiện là local single-player. Không có room code, người online, leaderboard hoặc máy chủ giả.</p></div><span class="hwe-capability-lock">🔒 BACKEND REQUIRED</span></header><div class="hwe-network-grid"><article><small>READINESS GATES</small>${checks.map(([id,label,ready])=>`<p data-hwe-network-check="${id}" class="${ready?"is-ready":"is-locked"}"><i>${ready?"✓":"○"}</i><span>${label}</span><b>${ready?"Sẵn sàng":"Chưa cấu hình"}</b></p>`).join("")}<button type="button" data-hwe-network-audit>Chạy kiểm tra capability</button></article><article><small>KIẾN TRÚC MỤC TIÊU</small><h3>20–32 người mỗi shard trước</h3><ol><li>Realm server theo thời đại.</li><li>Interest management theo chunk.</li><li>Client prediction + server reconciliation.</li><li>Snapshot delta có sequence number.</li><li>Score và sinh khối chỉ do server quyết định.</li></ol><p>WebGPU và WebRTC không phải điều kiện để mở multiplayer. Backend authoritative mới là điều kiện bắt buộc.</p></article></div><div class="hwe-network-result" data-hwe-network-result role="status" aria-live="polite">Chưa chạy kiểm tra. Game tiếp tục hoạt động an toàn ở chế độ local.</div></section>`;
+  }
+
   function settingsMarkup(state) {
-    return `<section class="hwe-settings"><header class="hwe-view-hero"><div><small>ACCESSIBILITY · PERFORMANCE · SAVE</small><h2>Cấu hình thế giới</h2><p>Mọi cài đặt và save của vertical slice chỉ nằm trên thiết bị. Multiplayer chưa được giả lập.</p></div><button type="button" data-hwe-reset>Khôi phục save mới…</button></header><div class="hwe-settings-grid"><article><small>ĐỘ KHÓ</small><h3>Nhịp sinh tồn</h3><label>Chế độ<select data-hwe-setting="difficulty"><option value="sanctuary" ${state.settings.difficulty === "sanctuary" ? "selected" : ""}>Sanctuary</option><option value="balanced" ${state.settings.difficulty === "balanced" ? "selected" : ""}>Cân bằng</option><option value="wild" ${state.settings.difficulty === "wild" ? "selected" : ""}>Wild Survival</option></select></label><label><input type="checkbox" data-hwe-setting="convergence" ${state.settings.convergence ? "checked" : ""}> Cho phép Eon Convergence</label></article><article><small>HIỆU ỨNG</small><h3>Motion budget</h3><label>Chuyển động<select data-hwe-setting="motion"><option value="static" ${state.settings.motion === "static" ? "selected" : ""}>Tĩnh</option><option value="balanced" ${state.settings.motion === "balanced" ? "selected" : ""}>Cân bằng</option><option value="cinematic" ${state.settings.motion === "cinematic" ? "selected" : ""}>Điện ảnh</option></select></label><label>Mật độ wildlife<select data-hwe-setting="density"><option value="low" ${state.settings.density === "low" ? "selected" : ""}>Thấp</option><option value="balanced" ${state.settings.density === "balanced" ? "selected" : ""}>Cân bằng</option><option value="high" ${state.settings.density === "high" ? "selected" : ""}>Cao</option></select></label></article><article><small>ÂM THANH & TRỢ NĂNG</small><h3>Tín hiệu rõ ràng</h3><label><input type="checkbox" data-hwe-setting="sound" ${state.settings.sound ? "checked" : ""}> Âm thanh tổng hợp sau tương tác</label><p>Hỗ trợ bàn phím, touch D-pad, gamepad, focus hiển thị, màu trạng thái kèm chữ và prefers-reduced-motion.</p></article><article><small>THẾ GIỚI</small><h3>Seed tái tạo được</h3><label>Seed<input type="text" maxlength="24" data-hwe-setting="seed" value="${escapeHtml(state.settings.seed)}"></label><p>World generation dùng seed cục bộ; không chứa ID tài khoản hoặc dữ liệu riêng tư.</p></article></div></section>`;
+    return `<section class="hwe-settings"><header class="hwe-view-hero"><div><small>ACCESSIBILITY · PERFORMANCE · SAVE V2</small><h2>Cấu hình thế giới</h2><p>Save schema v2 được migrate từ v1; vertical slice chỉ nằm trên thiết bị. Multiplayer chưa được giả lập.</p></div><button type="button" data-hwe-reset>Khôi phục save mới…</button></header><div class="hwe-settings-grid"><article><small>REALM & ĐỘ KHÓ</small><h3>Luật thế giới</h3><label>Era Realm<select data-hwe-setting="realmId">${Object.values(REALMS).map((realm)=>`<option value="${realm.id}" ${state.realmId===realm.id?"selected":""}>${escapeHtml(realm.label)}</option>`).join("")}</select></label><label>Chế độ<select data-hwe-setting="difficulty"><option value="sanctuary" ${state.settings.difficulty === "sanctuary" ? "selected" : ""}>Sanctuary</option><option value="balanced" ${state.settings.difficulty === "balanced" ? "selected" : ""}>Cân bằng</option><option value="wild" ${state.settings.difficulty === "wild" ? "selected" : ""}>Wild Survival</option></select></label><label><input type="checkbox" data-hwe-setting="convergence" ${state.settings.convergence ? "checked" : ""}> Cho phép Eon Convergence hư cấu</label></article><article><small>HIỆU ỨNG & MẬT ĐỘ</small><h3>Motion và wildlife budget</h3><label>Chuyển động<select data-hwe-setting="motion"><option value="static" ${state.settings.motion === "static" ? "selected":""}>Tĩnh</option><option value="balanced" ${state.settings.motion === "balanced" ? "selected":""}>Cân bằng</option><option value="cinematic" ${state.settings.motion === "cinematic" ? "selected":""}>Điện ảnh</option></select></label><label>Mật độ wildlife<select data-hwe-setting="density"><option value="low" ${state.settings.density === "low" ? "selected":""}>Thấp</option><option value="balanced" ${state.settings.density === "balanced" ? "selected":""}>Cân bằng</option><option value="high" ${state.settings.density === "high" ? "selected":""}>Cao</option></select></label><label><input type="checkbox" data-hwe-setting="adaptiveQuality" ${state.settings.adaptiveQuality ? "checked":""}> Tự giảm DPR và mật độ wildlife hiển thị khi frame time tăng</label></article><article><small>ENGINE</small><h3>Worker assist có fallback</h3><label><input type="checkbox" data-hwe-setting="worker" ${state.settings.worker ? "checked":""}> Dùng worker cho tác vụ hỗ trợ tương thích</label><p>Utility AI và chunk streaming chạy fixed-step có giới hạn. Worker chỉ nhận tác vụ đã hỗ trợ; nếu Worker hoặc OffscreenCanvas không có, engine dùng local fallback và báo đúng trạng thái.</p></article><article><small>ÂM THANH & TRỢ NĂNG</small><h3>Tín hiệu rõ ràng</h3><label><input type="checkbox" data-hwe-setting="sound" ${state.settings.sound ? "checked":""}> Âm thanh tổng hợp sau tương tác</label><label><input type="checkbox" data-hwe-setting="photoUi" ${state.settings.photoUi ? "checked":""}> Hiện nhãn trong Photo Mode</label><p>Bàn phím, touch, gamepad, focus rõ, chữ trạng thái và prefers-reduced-motion.</p></article><article><small>THẾ GIỚI</small><h3>Seed tái tạo được</h3><label>Seed<input type="text" maxlength="24" data-hwe-setting="seed" value="${escapeHtml(state.settings.seed)}"></label><p>World generation dùng seed cục bộ; không chứa ID tài khoản, vị trí thật hoặc dữ liệu thiết bị.</p></article><article><small>DỮ LIỆU</small><h3>Schema ${SCHEMA_VERSION}</h3><p>${state.replay.length}/240 mẫu replay · ${state.heatmap.length}/256 ô heatmap · ${state.lineage.length}/24 thế hệ · ${state.eventJournal.length}/40 sự kiện.</p><button type="button" data-hwe-lineage-export>Xuất dữ liệu lineage</button></article></div></section>`;
   }
 
   function viewMarkup(view, state) {
@@ -240,13 +446,16 @@
     if (view === "ecosystem") return ecosystemMarkup(state);
     if (view === "timeline") return timelineMarkup();
     if (view === "expeditions") return expeditionsMarkup(state);
+    if (view === "lineage") return lineageMarkup(state);
+    if (view === "observer") return observerMarkup(state);
+    if (view === "network") return networkMarkup();
     if (view === "settings") return settingsMarkup(state);
     return worldMarkup(state);
   }
 
   function shellMarkup(instance) {
     const view = instance.view;
-    return `<section class="hwe-root" data-hwe-root data-view="${view}" data-motion="${instance.state.settings.motion}" aria-label="HH EonWild"><header class="hwe-header"><div class="hwe-brand"><span aria-hidden="true"><i></i><b>EW</b></span><div><small>HH GAME · ORIGINAL ECO-SURVIVAL</small><h1>HH EonWild</h1><p>Trái Đất Muôn Thời · Không có con người</p></div></div><div class="hwe-header-status"><span><i></i> Local single-player</span><span>${SPECIES.length} loài đại diện</span><button type="button" data-hwe-quick-play>Chơi tiếp →</button></div></header>${navMarkup(view)}<main class="hwe-main" data-hwe-main>${viewMarkup(view, instance.state)}</main><footer class="hwe-controls"><span><kbd>WASD</kbd> Di chuyển</span><span><kbd>Shift</kbd> Chạy</span><span><kbd>E</kbd> Ăn/Uống</span><span><kbd>Q</kbd> Giác quan</span><span><kbd>F</kbd> Phòng vệ</span><span><kbd>N</kbd> Làm tổ</span><b data-hwe-fps>Engine nghỉ</b></footer><div class="hwe-toast" data-hwe-toast role="status" aria-live="polite"></div></section>`;
+    return `<section class="hwe-root" data-hwe-root data-view="${view}" data-realm="${instance.state.realmId}" data-motion="${instance.state.settings.motion}" aria-label="HH EonWild"><header class="hwe-header"><div class="hwe-brand"><span aria-hidden="true"><i></i><b>EW</b></span><div><small>HH GAME · ECOLOGY 2.0 · ORIGINAL</small><h1>HH EonWild</h1><p>${escapeHtml(REALMS[instance.state.realmId]?.label || "Trái Đất Muôn Thời")} · Không có con người</p></div></div><div class="hwe-header-status"><span><i></i> Local single-player</span><span>12 Flagship · ${SPECIES.length} catalog</span><button type="button" data-hwe-quick-play>Chơi tiếp →</button></div></header>${navMarkup(view)}<main class="hwe-main" data-hwe-main>${viewMarkup(view, instance.state)}</main><footer class="hwe-controls"><span><kbd>WASD</kbd> Di chuyển</span><span><kbd>Shift</kbd> Chạy</span><span><kbd>E</kbd> Ăn/Uống</span><span><kbd>Q</kbd> Giác quan</span><span><kbd>R</kbd> Ability</span><span><kbd>C</kbd> Giao tiếp</span><span><kbd>P</kbd> Photo</span><span><kbd>N</kbd> Làm tổ</span><b data-hwe-fps>Engine nghỉ</b></footer><div class="hwe-toast" data-hwe-toast role="status" aria-live="polite"></div></section>`;
   }
 
   function setToast(instance, message) {
@@ -270,9 +479,11 @@
       const oscillator = context.createOscillator();
       const gain = context.createGain();
       const now = context.currentTime;
-      oscillator.type = type === "complete" ? "sine" : "triangle";
-      oscillator.frequency.setValueAtTime(type === "complete" ? 520 : 240, now);
-      oscillator.frequency.exponentialRampToValueAtTime(type === "complete" ? 880 : 360, now + .16);
+      const speciesId = instance.state.speciesId;
+      const base = ({ tyrannosaurus: 72, triceratops: 108, argentavis: 420, orca: 620, "giant-octopus": 190, spinosaurus: 92, mammuthus: 58, wolf: 260, honeybee: 780, "electric-eel": 330, ankylosaurus: 86, "blue-whale": 48 })[speciesId] || 240;
+      oscillator.type = ["honeybee", "electric-eel"].includes(speciesId) ? "sawtooth" : type === "complete" || ["orca", "blue-whale"].includes(speciesId) ? "sine" : "triangle";
+      oscillator.frequency.setValueAtTime(type === "complete" ? Math.max(220, base) : base, now);
+      oscillator.frequency.exponentialRampToValueAtTime(type === "complete" ? Math.max(440, base * 1.45) : Math.max(55, base * 1.35), now + .16);
       gain.gain.setValueAtTime(.0001, now);
       gain.gain.exponentialRampToValueAtTime(.045, now + .02);
       gain.gain.exponentialRampToValueAtTime(.0001, now + .2);
@@ -284,14 +495,16 @@
   function updateCodexDetail(instance, species) {
     const panel = instance.root.querySelector("[data-hwe-codex-detail]");
     if (!panel || !species) return;
-    panel.innerHTML = `<span class="hwe-creature-sigil" style="--species:${species.color}">◆</span><small>${escapeHtml(ERA_META[species.era].label)} · ${escapeHtml(species.period)}</small><h3>${escapeHtml(species.vietnamese)}</h3><em>${escapeHtml(species.name)}</em><dl><div><dt>Khối lượng</dt><dd>${escapeHtml(formatMass(species.mass))}</dd></div><div><dt>Khẩu phần</dt><dd>${escapeHtml(dietLabel(species.diet))}</dd></div><div><dt>Vận động</dt><dd>${escapeHtml(species.locomotion)}</dd></div><div><dt>Khả năng</dt><dd>${escapeHtml(species.ability)}</dd></div></dl><button type="button" data-hwe-play-species="${species.id}">Chơi loài này →</button>`;
+    panel.innerHTML = codexDetailMarkup(species, instance.state);
   }
 
   function filterSpecies(instance) {
     const query = String(instance.root.querySelector("[data-hwe-species-search]")?.value || "").toLowerCase().trim();
     const activeEra = instance.eraFilter || "all";
+    const realmFilter = instance.realmFilter || "all";
+    const tierFilter = instance.tierFilter || "all";
     instance.root.querySelectorAll("[data-hwe-species]").forEach((card) => {
-      card.hidden = Boolean((query && !card.dataset.search.includes(query)) || (activeEra !== "all" && card.dataset.era !== activeEra));
+      card.hidden = Boolean((query && !card.dataset.search.includes(query)) || (activeEra !== "all" && card.dataset.era !== activeEra) || (realmFilter !== "all" && card.dataset.realm !== realmFilter) || (tierFilter !== "all" && card.dataset.tier !== tierFilter));
     });
   }
 
@@ -300,17 +513,135 @@
     const base = instance.state.settings.density === "high" ? 54 : instance.state.settings.density === "low" ? 24 : 38;
     const mobile = global.matchMedia?.("(max-width: 760px)")?.matches;
     const count = mobile ? Math.min(26, base) : base;
+    const allowed = SPECIES.filter((species) => tierForSpecies(species) !== "codex" && speciesAllowedInRealm(species, instance.state.realmId, instance.state.settings.convergence));
+    const registry = allowed.length ? allowed : SPECIES.filter((species) => tierForSpecies(species) === "flagship");
     return Array.from({ length: count }, (_, index) => {
-      const species = SPECIES[Math.floor(random() * SPECIES.length)];
-      return { id: `wild-${index}`, species, x: 100 + random() * (WORLD_SIZE - 200), y: 100 + random() * (WORLD_SIZE - 200), vx: (random() - .5) * 20, vy: (random() - .5) * 20, health: 100, phase: random() * Math.PI * 2, alive: true };
+      const species = registry[Math.floor(random() * registry.length)];
+      let x = 100 + random() * (WORLD_SIZE - 200); let y = 100 + random() * (WORLD_SIZE - 200);
+      if (Math.hypot(x - instance.state.player.x, y - instance.state.player.y) < 420) { x = clamp(x + 620, 80, WORLD_SIZE - 80); y = clamp(y + 410, 80, WORLD_SIZE - 80); }
+      return { id: `wild-${index}`, species, x, y, vx: (random() - .5) * 20, vy: (random() - .5) * 20, health: 100, phase: random() * Math.PI * 2, action: "rest", alive: true };
     });
+  }
+
+  function initSimulationKernel(instance) {
+    instance.engineMode = "Local bounded AI";
+    instance.world.loadedChunks = [];
+    if (typeof SIMULATION?.createSimulation !== "function") return false;
+    try {
+      instance.simulation = SIMULATION.createSimulation({
+        seed: instance.state.settings.seed,
+        realm: instance.state.settings.convergence ? "convergence" : instance.state.realmId,
+        viewRadius: global.matchMedia?.("(max-width: 760px)")?.matches ? 1 : 2,
+        maxChunks: 49,
+        maxEntities: Math.min(96, instance.population.length + 12),
+        apexCap: 3,
+        trails: { maxFootprints: 420, maxScents: 420, footprintHalfLife: 26, scentHalfLife: 16 }
+      });
+      instance.workerAdapter = instance.simulation.createWorkerAdapter?.({ forceLocal: !instance.state.settings.worker }) || SIMULATION.createWorkerAdapter?.({ forceLocal: !instance.state.settings.worker });
+      instance.engineMode = instance.workerAdapter?.mode === "worker" ? "Worker assist · fixed-step" : "Local fixed-step fallback";
+      const accepted = [];
+      instance.population.forEach((creature) => {
+        const registered = instance.simulation.addEntity({
+          id: creature.id,
+          speciesId: creature.species.id,
+          name: creature.species.name,
+          diet: creature.species.diet,
+          realm: instance.state.realmId,
+          biomes: [creature.species.habitat, terrainForRealm(terrainAt(creature.x, creature.y, instance.world.seed), instance.state.realmId, creature.x, creature.y)].filter((value) => Object.hasOwn(BIOMES, value)),
+          mass: creature.species.mass,
+          speed: Math.max(.5, creature.species.speed),
+          apex: ["tyrannosaurus", "spinosaurus", "orca"].includes(creature.species.id),
+          x: creature.x,
+          y: creature.y,
+          health: creature.health,
+          hunger: 55,
+          thirst: 58,
+          stamina: 80,
+          sex: hashSeed(creature.id) % 2 ? "female" : "male",
+          maturity: .78 + (hashSeed(`${creature.id}:maturity`) % 22) / 100,
+          nest: hashSeed(`${creature.id}:nest`) % 5 === 0 ? { x: creature.x, y: creature.y } : null
+        });
+        if (registered) accepted.push(Object.assign(creature, registered));
+      });
+      instance.population = accepted;
+      instance.world.loadedChunks = instance.simulation.streamChunks({ x: instance.state.player.x, y: instance.state.player.y, world: true });
+      instance.workerAdapter?.run?.("ping", { realm: instance.state.realmId }).catch?.(() => { instance.engineMode = "Local fixed-step fallback"; });
+      return true;
+    } catch {
+      instance.simulation?.dispose?.();
+      instance.workerAdapter?.close?.();
+      instance.simulation = null;
+      instance.workerAdapter = null;
+      instance.engineMode = "Local bounded AI";
+      return false;
+    }
+  }
+
+  function triggerWorldEvent(instance, requestedType) {
+    if (!instance.simulation?.hazards) return null;
+    const types = instance.state.realmId === "paleozoic" ? ["flood", "volcano"] : instance.state.realmId === "ice-age" ? ["flood"] : instance.state.realmId === "modern" ? ["flood", "wildfire"] : ["flood", "wildfire", "volcano"];
+    const type = types.includes(requestedType) ? requestedType : types[instance.world.eventSequence % types.length];
+    instance.world.eventSequence += 1;
+    const labels = { flood: "Lũ theo mùa", wildfire: "Cháy rừng tự nhiên", volcano: "Tro núi lửa" };
+    const event = instance.simulation.hazards.trigger(type, {
+      x: clamp(instance.state.player.x + ((instance.world.eventSequence % 2 ? 1 : -1) * 180), 0, WORLD_SIZE),
+      y: clamp(instance.state.player.y + ((instance.world.eventSequence % 3 - 1) * 140), 0, WORLD_SIZE),
+      radius: type === "volcano" ? 330 : 240,
+      intensity: .62 + (instance.world.eventSequence % 3) * .08,
+      duration: 24
+    });
+    if (!event) return null;
+    const label = labels[type] || "Biến động tự nhiên";
+    instance.world.event = { id: event.id, type, label, intensity: event.intensity, remaining: event.remaining };
+    instance.state.eventJournal = [...instance.state.eventJournal, { id: type, label, at: Date.now() }].slice(-40);
+    saveState(instance);
+    logSignal(instance, `${label}: dấu vết, đường di cư và Utility AI đã thay đổi.`);
+    setToast(instance, `⚠ ${label}`);
+    return event;
+  }
+
+  function syncSimulation(instance, seconds) {
+    if (!instance.simulation) return false;
+    const advance = instance.simulation.tick(seconds);
+    instance.chunkClock += seconds;
+    if (instance.chunkClock >= .5) {
+      instance.chunkClock = 0;
+      instance.world.loadedChunks = instance.simulation.streamChunks({ x: instance.state.player.x, y: instance.state.player.y, world: true });
+    }
+    if (!advance.steps) return true;
+    const entities = new Map(instance.simulation.getEntities().map((entity) => [entity.id, entity]));
+    instance.population.forEach((creature) => {
+      const entity = entities.get(creature.id);
+      if (!entity) { creature.alive = false; return; }
+      creature.vx = (entity.x - creature.x) / Math.max(seconds, .001);
+      creature.vy = (entity.y - creature.y) / Math.max(seconds, .001);
+      creature.x = entity.x;
+      creature.y = entity.y;
+      creature.health = entity.health;
+      creature.action = entity.action;
+      creature.alive = entity.alive !== false;
+    });
+    const knownPopulation = new Set(instance.population.map((creature) => creature.id));
+    entities.forEach((entity) => {
+      if (knownPopulation.has(entity.id) || instance.population.length >= 96) return;
+      const species = SPECIES_BY_ID.get(entity.speciesId);
+      if (!species) return;
+      instance.population.push({ id: entity.id, species, x: entity.x, y: entity.y, vx: 0, vy: 0, health: entity.health, phase: 0, action: entity.action, alive: entity.alive !== false });
+    });
+    const active = instance.simulation.hazards.activeEvents();
+    const current = active[0];
+    if (current) instance.world.event = { id: current.id, type: current.type, label: ({ flood: "Lũ theo mùa", wildfire: "Cháy rừng tự nhiên", volcano: "Tro núi lửa" })[current.type] || current.type, intensity: current.intensity, remaining: current.remaining };
+    else instance.world.event = { id: "calm", type: "calm", label: "Sinh quyển ổn định", intensity: 0, remaining: 0 };
+    instance.world.tide = instance.simulation.hazards.getTide().level;
+    return true;
   }
 
   function resizeCanvas(instance) {
     const canvas = instance.canvas;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const dpr = Math.min(global.devicePixelRatio || 1, global.matchMedia?.("(max-width: 760px)")?.matches ? 1.2 : 1.6);
+    const defaultCap = global.matchMedia?.("(max-width: 760px)")?.matches ? 1.2 : 1.6;
+    const dpr = Math.min(global.devicePixelRatio || 1, instance.dprCap || defaultCap);
     const width = Math.max(320, Math.floor(rect.width * dpr));
     const height = Math.max(240, Math.floor(rect.height * dpr));
     if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
@@ -325,10 +656,55 @@
     return water ? .15 : 1;
   }
 
+  function findHabitatSpawn(species, worldSeed, realmId) {
+    const fallback = { x: WORLD_SIZE * .48, y: WORLD_SIZE * .48 };
+    if (!species || species.locomotion === "fly" || species.locomotion === "amphibious") return fallback;
+    const random = seededRandom(hashSeed(`${worldSeed}:${realmId}:${species.id}:spawn`));
+    for (let index = 0; index < 320; index += 1) {
+      const x = 96 + random() * (WORLD_SIZE - 192); const y = 96 + random() * (WORLD_SIZE - 192);
+      const terrain = terrainForRealm(terrainAt(x, y, worldSeed), realmId, x, y);
+      if (habitatPenalty(species, terrain) >= .9) return { x, y };
+    }
+    return fallback;
+  }
+
+  function placePlayerAtHabitat(instance) {
+    const species = SPECIES_BY_ID.get(instance.state.speciesId);
+    if (!species || !instance.world) return false;
+    const point = findHabitatSpawn(species, instance.world.seed, instance.state.realmId);
+    instance.state.player.x = point.x; instance.state.player.y = point.y; instance.state.player.spawnPending = false;
+    return true;
+  }
+
   function gamepadInput(instance) {
     const pad = global.navigator?.getGamepads?.()?.find(Boolean);
     if (!pad) return { x: 0, y: 0, sprint: false };
     return { x: Math.abs(pad.axes?.[0] || 0) > .18 ? pad.axes?.[0] : 0, y: Math.abs(pad.axes?.[1] || 0) > .18 ? pad.axes?.[1] : 0, sprint: Boolean(pad.buttons?.[0]?.pressed || pad.buttons?.[7]?.pressed) };
+  }
+
+  function injurePlayer(instance, type, severity = .2) {
+    const player = instance.state.player;
+    const proxy = {
+      health: player.health,
+      condition: {
+        bleeding: player.injuries.bleeding,
+        fractures: player.injuries.fracture,
+        infection: player.injuries.infection,
+        disease: player.injuries.disease,
+        oxygen: player.oxygen / 100,
+        nutritionQuality: player.dietQuality / 100
+      }
+    };
+    if (typeof SIMULATION?.applyInjury === "function") SIMULATION.applyInjury(proxy, { type, severity });
+    else if (String(type).includes("fract")) proxy.condition.fractures = clamp(proxy.condition.fractures + severity * 100, 0, 100);
+    else proxy.condition.bleeding = clamp(proxy.condition.bleeding + severity * 100, 0, 100);
+    player.health = clamp(proxy.health, 0, 100);
+    player.injuries = normalizeInjuries({
+      bleeding: proxy.condition.bleeding,
+      fracture: proxy.condition.fractures,
+      infection: proxy.condition.infection,
+      disease: proxy.condition.disease
+    });
   }
 
   function updateWorld(instance, seconds) {
@@ -342,31 +718,36 @@
     dx /= length; dy /= length;
     const moving = Math.abs(dx) + Math.abs(dy) > .05;
     const sprinting = moving && (instance.keys.has("ShiftLeft") || instance.keys.has("ShiftRight") || pad.sprint) && player.stamina > 5;
-    const terrain = terrainAt(player.x, player.y, instance.world.seed);
-    const speed = (30 + Math.min(80, species.speed * 2.2)) * (sprinting ? 1.7 : 1) * habitatPenalty(species, terrain);
+    const terrain = terrainForRealm(terrainAt(player.x, player.y, instance.world.seed), instance.state.realmId, player.x, player.y);
+    const injurySpeed = 1 - player.injuries.fracture / 150;
+    const geneEndurance = CONTENT?.GENE_SCHEMA?.endurance ? clamp(player.genes.endurance, .7, 1.3) : 1;
+    const speed = (30 + Math.min(80, species.speed * 2.2)) * (sprinting ? 1.7 : 1) * habitatPenalty(species, terrain) * injurySpeed * geneEndurance;
     player.x = clamp(player.x + dx * speed * seconds, 20, WORLD_SIZE - 20);
     player.y = clamp(player.y + dy * speed * seconds, 20, WORLD_SIZE - 20);
-    Object.assign(player, stepVitals(player, seconds, instance.state.settings.difficulty, moving, sprinting));
-    if (!player.health) { instance.dead = true; instance.running = false; instance.root.querySelector("[data-hwe-death]").hidden = false; instance.state.player.lineage += 1; saveState(instance); }
+    if (moving) instance.heading = Math.atan2(dy, dx);
+    if (moving && instance.simulation?.trails && instance.trailClock >= .18) {
+      instance.trailClock = 0;
+      instance.simulation.trails.leaveFootprint({ sourceId: "player", speciesId: species.id, x: player.x, y: player.y, intensity: sprinting ? 1 : .58, direction: instance.heading });
+      instance.simulation.trails.addScent({ sourceId: "player", speciesId: species.id, x: player.x, y: player.y, intensity: .62, kind: "player" });
+    }
+    instance.trailClock += seconds;
+    syncSimulation(instance, seconds);
+    const effects = instance.simulation?.hazards?.effectsAt?.(player.x, player.y) || { danger: 0, flood: 0, wildfire: 0, volcano: 0 };
+    const waterTerrain = ["ocean", "reef"].includes(terrain);
+    const ambientTemperature = terrain === "tundra" ? 14 : terrain === "volcanic" ? 94 : terrain === "desert" ? 78 : terrain === "ocean" ? 38 : 52;
+    const oxygenDrain = species.habitat === "water" ? (waterTerrain ? (species.id === "orca" || species.id === "blue-whale" ? 1.2 : 0) : 9) : (waterTerrain && species.locomotion !== "amphibious" ? 11 : 0);
+    Object.assign(player, stepVitals(player, seconds, instance.state.settings.difficulty, moving, sprinting, { temperature: ambientTemperature + effects.wildfire * 35 + effects.volcano * 28, oxygenDrain }));
+    player.health = clamp(player.health - seconds * (effects.wildfire * 5 + effects.volcano * 7 + effects.flood * .7), 0, 100);
+    if ((effects.wildfire > .32 || effects.volcano > .32) && instance.injuryClock > 3) { instance.injuryClock = 0; injurePlayer(instance, "burn", .08 + effects.danger * .12); }
+    instance.injuryClock += seconds;
+    if (!player.health) { instance.dead = true; instance.running = false; instance.root.classList.remove("is-running"); instance.root.querySelector("[data-hwe-death]").hidden = false; instance.state.player.lineage += 1; saveState(instance); }
     instance.world.day = (instance.world.day + seconds * .08) % 24;
     instance.world.weather.phase += seconds * .1;
-    instance.population.forEach((creature, index) => {
+    if (!instance.simulation) instance.population.forEach((creature, index) => {
       if (!creature.alive) return;
       creature.phase += seconds * (.4 + (index % 5) * .05);
-      const distance = Math.hypot(player.x - creature.x, player.y - creature.y);
-      const predator = creature.species.diet === "meat";
-      const playerPrey = species.diet !== "meat" || species.mass < creature.species.mass * .7;
-      if (distance < 260 && predator && playerPrey) {
-        creature.vx += (player.x - creature.x) / Math.max(1, distance) * seconds * 24;
-        creature.vy += (player.y - creature.y) / Math.max(1, distance) * seconds * 24;
-        if (distance < 30) player.health = clamp(player.health - seconds * 6, 0, 100);
-      } else if (distance < 170 && !predator && species.diet === "meat") {
-        creature.vx -= (player.x - creature.x) / Math.max(1, distance) * seconds * 30;
-        creature.vy -= (player.y - creature.y) / Math.max(1, distance) * seconds * 30;
-      } else {
-        creature.vx += Math.cos(creature.phase) * seconds * 3;
-        creature.vy += Math.sin(creature.phase * .83) * seconds * 3;
-      }
+      creature.vx += Math.cos(creature.phase) * seconds * 3;
+      creature.vy += Math.sin(creature.phase * .83) * seconds * 3;
       const maxSpeed = 18 + creature.species.speed;
       const velocity = Math.hypot(creature.vx, creature.vy) || 1;
       if (velocity > maxSpeed) { creature.vx = creature.vx / velocity * maxSpeed; creature.vy = creature.vy / velocity * maxSpeed; }
@@ -374,10 +755,52 @@
       creature.y = clamp(creature.y + creature.vy * seconds, 30, WORLD_SIZE - 30);
       creature.vx *= .985; creature.vy *= .985;
     });
+    const nearestPredator = instance.population.filter((creature) => creature.alive && creature.species.diet === "meat" && creature.species.mass > species.mass * .7).sort((a, b) => Math.hypot(player.x - a.x, player.y - a.y) - Math.hypot(player.x - b.x, player.y - b.y))[0];
+    if (nearestPredator && Math.hypot(player.x - nearestPredator.x, player.y - nearestPredator.y) < 30 && performance.now() > (instance.camouflageUntil || 0) && performance.now() > (instance.spawnGraceUntil || 0)) {
+      player.health = clamp(player.health - seconds * 2.2, 0, 100);
+      if (instance.injuryClock > 6) { instance.injuryClock = 0; injurePlayer(instance, (Math.floor(instance.world.day * 10) + instance.world.eventSequence) % 4 === 0 ? "fracture" : "bleeding", .08); }
+    }
     const migrationDistance = Math.hypot(player.x - instance.world.migration.x, player.y - instance.world.migration.y);
     if (migrationDistance < instance.world.migration.radius && instance.state.activeExpedition === "migration") completeExpedition(instance, "migration");
+    instance.eventClock += seconds;
+    if (instance.eventClock > 32) { instance.eventClock = 0; triggerWorldEvent(instance); }
+    instance.replayClock += seconds;
+    if (instance.replayClock >= 1) {
+      instance.replayClock = 0;
+      instance.state.replay = [...instance.state.replay, { x: player.x, y: player.y, t: Date.now(), health: player.health, event: instance.world.event?.type || "move" }].slice(-240);
+      instance.simulation?.heatmap?.add?.(player.x, player.y, 3, "player");
+      const heatmap = instance.simulation?.getHeatmap?.();
+      if (heatmap?.cells) {
+        instance.state.heatmap = heatmap.cells.slice(0, 256);
+        instance.state.heatmapCellSize = heatmap.cellSize || 64;
+      }
+    }
     instance.autosave += seconds;
     if (instance.autosave > 8) { instance.autosave = 0; saveState(instance); }
+  }
+
+  function drawSpeciesBody(ctx, species, size, highlighted = false, action = "rest") {
+    ctx.fillStyle = species.color;
+    ctx.strokeStyle = highlighted ? "#ffffff" : "rgba(255,255,255,.48)";
+    ctx.lineWidth = highlighted ? 2 : 1;
+    const longBody = ["orca", "blue-whale", "electric-eel"].includes(species.id) ? 1.75 : 1.35;
+    ctx.beginPath(); ctx.ellipse(0, 0, size * longBody, size * .72, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = highlighted ? "#f5ffff" : species.color;
+    if (["argentavis", "honeybee"].includes(species.id) || species.locomotion === "fly") {
+      ctx.globalAlpha = .72; ctx.beginPath(); ctx.ellipse(-size * .2, -size * .72, size * 1.25, size * .35, -.35, 0, Math.PI * 2); ctx.ellipse(-size * .2, size * .72, size * 1.25, size * .35, .35, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+    }
+    if (species.id === "triceratops") { ctx.beginPath(); ctx.moveTo(size * 1.15, -size * .35); ctx.lineTo(size * 2.05, -size * .7); ctx.lineTo(size * 1.55, 0); ctx.lineTo(size * 2.05, size * .7); ctx.lineTo(size * 1.15, size * .35); ctx.fill(); }
+    else if (species.id === "ankylosaurus") { for (let index = -2; index <= 2; index += 1) { ctx.beginPath(); ctx.arc(index * size * .42, -size * .62, size * .18, 0, Math.PI * 2); ctx.fill(); } ctx.beginPath(); ctx.arc(-size * 1.95, 0, size * .42, 0, Math.PI * 2); ctx.fill(); }
+    else if (species.id === "spinosaurus") { ctx.beginPath(); ctx.moveTo(-size, -size * .5); ctx.quadraticCurveTo(0, -size * 1.75, size, -size * .5); ctx.closePath(); ctx.fill(); }
+    else if (species.id === "mammuthus") { ctx.beginPath(); ctx.moveTo(size * 1.2, 0); ctx.quadraticCurveTo(size * 2.15, size * .4, size * 1.65, size * 1.05); ctx.stroke(); ctx.beginPath(); ctx.arc(size * .95, -size * .42, size * .24, 0, Math.PI * 2); ctx.fill(); }
+    else if (species.id === "giant-octopus") { for (let index = -3; index <= 3; index += 1) { ctx.beginPath(); ctx.moveTo(-size * .65, index * size * .16); ctx.quadraticCurveTo(-size * 1.5, index * size * .28, -size * 2, index * size * .48); ctx.stroke(); } }
+    else if (species.id === "electric-eel") { ctx.beginPath(); ctx.moveTo(-size * 1.5, 0); ctx.bezierCurveTo(-size * 2.1, -size, -size * 2.4, size, -size * 2.9, 0); ctx.stroke(); }
+    else if (species.id === "honeybee") { ctx.strokeStyle = "#24190b"; for (let index = -1; index <= 1; index += 1) { ctx.beginPath(); ctx.moveTo(index * size * .42, -size * .62); ctx.lineTo(index * size * .42, size * .62); ctx.stroke(); } }
+    else if (["orca", "blue-whale"].includes(species.id)) { ctx.beginPath(); ctx.moveTo(-size * 1.5, 0); ctx.lineTo(-size * 2.25, -size * .78); ctx.lineTo(-size * 2.05, 0); ctx.lineTo(-size * 2.25, size * .78); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-size * .35, -size); ctx.lineTo(size * .35, 0); ctx.closePath(); ctx.fill(); }
+    else if (species.id === "wolf") { ctx.beginPath(); ctx.moveTo(size * .65, -size * .55); ctx.lineTo(size * .9, -size * 1.1); ctx.lineTo(size * 1.1, -size * .4); ctx.fill(); ctx.beginPath(); ctx.moveTo(-size * 1.1, 0); ctx.lineTo(-size * 2, -size * .45); ctx.lineTo(-size * 1.5, size * .25); ctx.fill(); }
+    else if (species.id === "tyrannosaurus") { ctx.beginPath(); ctx.moveTo(size * .9, -size * .45); ctx.lineTo(size * 2.05, -size * .28); ctx.lineTo(size * 2.1, size * .24); ctx.lineTo(size * .95, size * .38); ctx.closePath(); ctx.fill(); }
+    else { ctx.beginPath(); ctx.moveTo(size, 0); ctx.lineTo(size + 7, -4); ctx.lineTo(size + 7, 4); ctx.closePath(); ctx.fill(); }
+    if (action !== "rest") { ctx.globalAlpha = .7; ctx.strokeStyle = action === "flee" ? "#ff8a72" : action === "hunt" ? "#ffda75" : "#72efd2"; ctx.beginPath(); ctx.arc(0, 0, size * 1.95, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1; }
   }
 
   function drawWorld(instance) {
@@ -397,7 +820,7 @@
       for (let sy = -tile; sy < height + tile; sy += tile) {
         const wx = cameraX + sx;
         const wy = cameraY + sy;
-        const terrain = terrainAt(wx, wy, instance.world.seed);
+        const terrain = terrainForRealm(terrainAt(wx, wy, instance.world.seed), instance.state.realmId, wx, wy);
         ctx.fillStyle = BIOMES[terrain].color;
         ctx.fillRect(sx, sy, tile + 1, tile + 1);
         ctx.globalAlpha = .16;
@@ -409,6 +832,39 @@
     const migration = instance.world.migration;
     ctx.strokeStyle = "rgba(255,211,103,.72)"; ctx.lineWidth = 3; ctx.setLineDash([8, 10]);
     ctx.beginPath(); ctx.arc(migration.x - cameraX, migration.y - cameraY, migration.radius, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    (instance.world.loadedChunks || []).forEach((chunk) => {
+      const chunkSize = chunk.size || 256;
+      const x = (chunk.cx * chunkSize) - cameraX;
+      const y = (chunk.cy * chunkSize) - cameraY;
+      if (x > width || y > height || x + chunkSize < 0 || y + chunkSize < 0) return;
+      ctx.strokeStyle = "rgba(112,239,205,.09)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, chunkSize, chunkSize);
+    });
+    const trails = instance.simulation?.trails;
+    (trails?.footprints || []).slice(-180).forEach((trail) => {
+      const x = trail.x - cameraX; const y = trail.y - cameraY;
+      if (x < -8 || y < -8 || x > width + 8 || y > height + 8) return;
+      ctx.globalAlpha = .08 + trail.intensity * .3;
+      ctx.fillStyle = "#ddf6d0";
+      ctx.beginPath(); ctx.ellipse(x, y, 2.5, 5, trail.direction || 0, 0, Math.PI * 2); ctx.fill();
+    });
+    if (instance.senseUntil > performance.now()) (trails?.scents || []).slice(-160).forEach((trail) => {
+      const x = trail.x - cameraX; const y = trail.y - cameraY;
+      if (x < -16 || y < -16 || x > width + 16 || y > height + 16) return;
+      ctx.globalAlpha = .08 + trail.intensity * .32;
+      ctx.fillStyle = trail.kind === "pheromone" ? "#ff77ce" : "#78efd2";
+      ctx.beginPath(); ctx.arc(x, y, 5 + trail.intensity * 10, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    instance.simulation?.hazards?.activeEvents?.().forEach((event) => {
+      const x = event.x - cameraX; const y = event.y - cameraY;
+      const color = event.type === "flood" ? "87,206,255" : event.type === "wildfire" ? "255,111,72" : "255,190,92";
+      ctx.fillStyle = `rgba(${color},${.08 + event.intensity * .12})`;
+      ctx.strokeStyle = `rgba(${color},${.42 + event.intensity * .3})`;
+      ctx.lineWidth = 3; ctx.setLineDash([10, 8]);
+      ctx.beginPath(); ctx.arc(x, y, event.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+    });
     instance.world.resources.forEach((resource) => {
       const x = resource.x - cameraX; const y = resource.y - cameraY;
       if (x < -30 || y < -30 || x > width + 30 || y > height + 30 || resource.amount <= 0) return;
@@ -416,22 +872,20 @@
       ctx.globalAlpha = instance.senseUntil > performance.now() ? .95 : .62;
       ctx.beginPath(); ctx.arc(x, y, resource.type === "shelter" ? 9 : 5, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
     });
-    instance.population.forEach((creature) => {
+    instance.population.forEach((creature, creatureIndex) => {
       if (!creature.alive) return;
+      const renderStride = instance.renderBudget >= .99 ? 1 : instance.renderBudget >= .66 ? 2 : 3;
+      if (creatureIndex % renderStride) return;
       const x = creature.x - cameraX; const y = creature.y - cameraY;
       if (x < -40 || y < -40 || x > width + 40 || y > height + 40) return;
       ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(creature.vy, creature.vx));
-      ctx.fillStyle = creature.species.color; ctx.strokeStyle = "rgba(255,255,255,.48)";
       const size = clamp(5 + Math.log10(creature.species.mass + 1) * 2.2, 5, 16);
-      ctx.beginPath(); ctx.ellipse(0, 0, size * 1.35, size * .72, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(size, 0); ctx.lineTo(size + 7, -4); ctx.lineTo(size + 7, 4); ctx.closePath(); ctx.fill(); ctx.restore();
+      drawSpeciesBody(ctx, creature.species, size, false, creature.action); ctx.restore();
     });
     const selected = SPECIES_BY_ID.get(instance.state.speciesId);
     ctx.save(); ctx.translate(width / 2, height / 2); ctx.rotate(instance.heading || 0);
     const playerSize = clamp(11 + Math.log10(selected.mass + 1) * 2.5, 11, 25);
-    ctx.shadowColor = selected.color; ctx.shadowBlur = 18; ctx.fillStyle = selected.color; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.ellipse(0, 0, playerSize * 1.35, playerSize * .72, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(playerSize, 0); ctx.lineTo(playerSize + 10, -6); ctx.lineTo(playerSize + 10, 6); ctx.closePath(); ctx.fill(); ctx.restore();
+    ctx.shadowColor = selected.color; ctx.shadowBlur = 18; drawSpeciesBody(ctx, selected, playerSize, true, instance.camouflageUntil > performance.now() ? "camouflage" : "rest"); ctx.restore();
     if (instance.senseUntil > performance.now()) {
       const pulse = ((performance.now() / 900) % 1) * 170;
       ctx.strokeStyle = `rgba(96,239,205,${1 - pulse / 180})`; ctx.lineWidth = 3;
@@ -441,41 +895,73 @@
   }
 
   function drawMinimap(instance) {
+    const now = performance.now();
+    if (now < (instance.minimapAt || 0)) return;
+    instance.minimapAt = now + 180;
     const canvas = instance.root.querySelector("[data-hwe-minimap]");
     const ctx = canvas?.getContext?.("2d");
     if (!ctx) return;
     const size = canvas.width;
     ctx.clearRect(0, 0, size, size); ctx.fillStyle = "#071522"; ctx.fillRect(0, 0, size, size);
-    for (let x = 0; x < size; x += 12) for (let y = 0; y < size; y += 12) { const terrain = terrainAt(x / size * WORLD_SIZE, y / size * WORLD_SIZE, instance.world.seed); ctx.fillStyle = BIOMES[terrain].color; ctx.fillRect(x, y, 12, 12); }
+    for (let x = 0; x < size; x += 12) for (let y = 0; y < size; y += 12) { const wx = x / size * WORLD_SIZE; const wy = y / size * WORLD_SIZE; const terrain = terrainForRealm(terrainAt(wx, wy, instance.world.seed), instance.state.realmId, wx, wy); ctx.fillStyle = BIOMES[terrain].color; ctx.fillRect(x, y, 12, 12); }
     ctx.strokeStyle = "#ffd367"; ctx.beginPath(); ctx.arc(instance.world.migration.x / WORLD_SIZE * size, instance.world.migration.y / WORLD_SIZE * size, instance.world.migration.radius / WORLD_SIZE * size, 0, Math.PI * 2); ctx.stroke();
     ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(instance.state.player.x / WORLD_SIZE * size, instance.state.player.y / WORLD_SIZE * size, 4, 0, Math.PI * 2); ctx.fill();
   }
 
   function updateHud(instance) {
     const player = instance.state.player;
-    ["health", "hunger", "thirst", "stamina", "growth"].forEach((key) => {
+    ["health", "hunger", "thirst", "stamina", "growth", "oxygen", "nutrition", "dietQuality"].forEach((key) => {
       const progress = instance.root.querySelector(`[data-hwe-vital="${key}"]`);
       const value = instance.root.querySelector(`[data-hwe-value="${key}"]`);
       if (progress) progress.value = player[key];
       if (value) value.textContent = Math.round(player[key]);
     });
-    const terrain = terrainAt(player.x, player.y, instance.world.seed);
+    [["temperature", player.temperature], ["bleeding", player.injuries.bleeding], ["fracture", player.injuries.fracture], ["infection", player.injuries.infection], ["disease", player.injuries.disease]].forEach(([key, current]) => {
+      const node = instance.root.querySelector(`[data-hwe-condition="${key}"]`);
+      const value = instance.root.querySelector(`[data-hwe-condition-value="${key}"]`);
+      node?.style?.setProperty?.("--condition", String(clamp(current, 0, 100)));
+      if (value) value.textContent = Math.round(current);
+    });
+    const terrain = terrainForRealm(terrainAt(player.x, player.y, instance.world.seed), instance.state.realmId, player.x, player.y);
     const biome = instance.root.querySelector("[data-hwe-biome]"); if (biome) biome.textContent = BIOMES[terrain].label;
     const time = instance.root.querySelector("[data-hwe-time]"); if (time) time.textContent = `${String(Math.floor(instance.world.day)).padStart(2, "0")}:${String(Math.floor(instance.world.day % 1 * 60)).padStart(2, "0")}`;
-    const weather = instance.root.querySelector("[data-hwe-weather]"); if (weather) weather.textContent = ({ clear: "Trời quang", mist: "Sương sinh học", storm: "Bão di cư" }[instance.world.weather.type]);
+    const weather = instance.root.querySelector("[data-hwe-weather]"); if (weather) weather.textContent = instance.world.event?.type !== "calm" ? instance.world.event.label : ({ clear: "Trời quang", mist: "Sương sinh học", storm: "Bão di cư" }[instance.world.weather.type]);
     const stage = instance.root.querySelector("[data-hwe-stage]"); if (stage) stage.textContent = stageLabel(player.growth);
     const mission = EXPEDITIONS.find((row) => row.id === instance.state.activeExpedition);
     const missionProgress = instance.root.querySelector("[data-hwe-mission-progress]");
     if (missionProgress) missionProgress.value = mission?.target === "migration" ? clamp(100 - Math.hypot(player.x - instance.world.migration.x, player.y - instance.world.migration.y) / 20, 0, 100) : mission?.target === "nest" ? player.growth : mission?.target === "water" ? player.thirst : mission?.target === "food" ? player.hunger : instance.senseCount * 34;
+    const eventBanner = instance.root.querySelector("[data-hwe-event-banner]");
+    if (eventBanner) {
+      const active = instance.world.event?.type && instance.world.event.type !== "calm";
+      eventBanner.hidden = !active;
+      const title = eventBanner.querySelector("[data-hwe-event-title]"); if (title) title.textContent = instance.world.event?.label || "Biến động tự nhiên";
+      const progress = eventBanner.querySelector("[data-hwe-event-progress]"); if (progress) progress.value = clamp((instance.world.event?.remaining || 0) / 24 * 100, 0, 100);
+    }
+    const aiMode = instance.root.querySelector("[data-hwe-ai-mode]"); if (aiMode) aiMode.textContent = instance.engineMode || "Local bounded AI";
+    const chunkCount = instance.root.querySelector("[data-hwe-chunk-count]"); if (chunkCount) chunkCount.textContent = String(instance.world.loadedChunks?.length || 0);
+    const ledger = instance.simulation?.ledger?.snapshot?.();
+    const apexCount = Object.values(ledger?.apex || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+    const apexBudget = instance.root.querySelector("[data-hwe-apex-budget]"); if (apexBudget) apexBudget.textContent = `${apexCount} active · cap 3/chunk`;
+    const trailCount = (instance.simulation?.trails?.footprints?.length || 0) + (instance.simulation?.trails?.scents?.length || 0);
+    const trailNode = instance.root.querySelector("[data-hwe-trail-count]"); if (trailNode) trailNode.textContent = String(trailCount);
   }
 
   function loop(instance, now) {
     if (instance.destroyed) return;
     const seconds = Math.min(.05, Math.max(0, (now - instance.lastFrame) / 1000 || 0));
     instance.lastFrame = now;
-    if (!global.document?.hidden) { updateWorld(instance, seconds); drawWorld(instance); updateHud(instance); }
+    if (!global.document?.hidden) { updateWorld(instance, seconds); drawWorld(instance); if (now >= (instance.hudAt || 0)) { instance.hudAt = now + 100; updateHud(instance); } }
     instance.frameCount += 1;
-    if (now - instance.fpsAt > 1000) { const node = instance.root.querySelector("[data-hwe-fps]"); if (node) node.textContent = `${instance.frameCount} FPS · ${instance.population.filter((row) => row.alive).length} wildlife`; instance.frameCount = 0; instance.fpsAt = now; }
+    if (now - instance.fpsAt > 1000) {
+      const fps = instance.frameCount;
+      const node = instance.root.querySelector("[data-hwe-fps]"); if (node) node.textContent = `${fps} FPS · ${instance.population.filter((row) => row.alive).length} wildlife`;
+      if (instance.state.settings.adaptiveQuality && fps < 28) {
+        instance.renderBudget = Math.max(.45, (instance.renderBudget || 1) - .18);
+        if ((instance.dpr || 1) > 1) { instance.dprCap = Math.max(1, (instance.dpr || 1) - .2); resizeCanvas(instance); }
+        logSignal(instance, "Adaptive quality đã giảm DPR và mật độ wildlife hiển thị; simulation vẫn giữ nguyên.");
+      } else if (instance.state.settings.adaptiveQuality && fps > 48 && (instance.renderBudget || 1) < 1) instance.renderBudget = Math.min(1, instance.renderBudget + .08);
+      instance.frameCount = 0; instance.fpsAt = now;
+    }
     instance.raf = global.requestAnimationFrame?.((time) => loop(instance, time));
   }
 
@@ -493,14 +979,32 @@
     logSignal(instance, `Hoàn thành: ${mission.title}. ${mission.reward}.`); setToast(instance, `✓ ${mission.title}`); return true;
   }
 
+  function applyMeal(instance, resourceType) {
+    const player = instance.state.player;
+    const species = SPECIES_BY_ID.get(instance.state.speciesId);
+    const flagship = flagshipFor(species.id);
+    const profileId = flagship?.diet?.profileId || ({ meat: "carnivore", plant: "herbivore", omnivore: "omnivore", filter: "filter-feeder", nectar: "nectar-pollen" })[species.diet] || "omnivore";
+    const intake = resourceType === "plant"
+      ? { protein: 42, fat: 28, carbohydrate: 88, minerals: 76, hydration: 68, fiber: 92, toxins: species.diet === "meat" ? 42 : 4, spoilage: 2 }
+      : { protein: 92, fat: 78, carbohydrate: 16, minerals: 72, hydration: 58, fiber: 8, toxins: species.diet === "plant" ? 38 : 3, spoilage: resourceType === "carcass" ? 16 : 3 };
+    let score = species.diet === "omnivore" ? 78 : 70;
+    if (typeof CONTENT?.evaluateDietQuality === "function") {
+      try { score = CONTENT.evaluateDietQuality(profileId, intake).score; } catch {}
+    }
+    player.dietQuality = clamp(player.dietQuality * .55 + score * .45, 0, 100);
+    player.nutrition = clamp(player.nutrition + 18 + score * .13, 0, 100);
+    player.immunity = clamp(player.immunity + (score - 55) * .04, 0, 100);
+    return Math.round(score);
+  }
+
   function interact(instance) {
     if (!instance.world || !instance.running) return;
     const player = instance.state.player; const species = SPECIES_BY_ID.get(instance.state.speciesId);
     const resource = instance.world.resources.filter((row) => row.amount > 0).sort((a, b) => Math.hypot(player.x - a.x, player.y - a.y) - Math.hypot(player.x - b.x, player.y - b.y))[0];
     if (!resource || Math.hypot(player.x - resource.x, player.y - resource.y) > 95) { logSignal(instance, "Không có tài nguyên phù hợp trong tầm tương tác."); return; }
     if (resource.type === "water") { player.thirst = clamp(player.thirst + 38, 0, 100); resource.amount -= 8; logSignal(instance, "Đã uống nước. Hãy quan sát dấu chân quanh bờ."); completeExpedition(instance, "water"); }
-    else if (resource.type === "plant" && ["plant", "omnivore", "nectar", "filter"].includes(species.diet)) { player.hunger = clamp(player.hunger + 32, 0, 100); resource.amount -= 12; logSignal(instance, "Đã ăn đúng nguồn thực vật của khẩu phần."); completeExpedition(instance, "food"); }
-    else if (resource.type === "carcass" && ["meat", "omnivore"].includes(species.diet)) { player.hunger = clamp(player.hunger + 35, 0, 100); resource.amount -= 14; logSignal(instance, "Đã hấp thụ dinh dưỡng từ xác tự nhiên."); completeExpedition(instance, "food"); }
+    else if (resource.type === "plant" && ["plant", "omnivore", "nectar", "filter"].includes(species.diet)) { player.hunger = clamp(player.hunger + 32, 0, 100); resource.amount -= 12; const score = applyMeal(instance, "plant"); logSignal(instance, `Khẩu phần thực vật đạt chất lượng ${score}/100.`); completeExpedition(instance, "food"); }
+    else if (resource.type === "carcass" && ["meat", "omnivore"].includes(species.diet)) { player.hunger = clamp(player.hunger + 35, 0, 100); resource.amount -= 14; const score = applyMeal(instance, "carcass"); logSignal(instance, `Nguồn đạm đạt chất lượng ${score}/100; xác cũ tăng rủi ro nhiễm trùng.`); completeExpedition(instance, "food"); }
     else if (resource.type === "shelter") logSignal(instance, player.growth > 60 ? "Nơi trú ẩn phù hợp. Nhấn N để tạo tổ." : "Bạn cần trưởng thành trên 60% để tạo tổ.");
     else logSignal(instance, "Nguồn này không phù hợp khẩu phần của loài đang chơi.");
   }
@@ -513,15 +1017,77 @@
     if (instance.senseCount >= 3) completeExpedition(instance, "scent");
   }
 
-  function defend(instance) {
+  function defend(instance, power = 1) {
     if (!instance.world || !instance.running || instance.state.player.stamina < 12) return;
-    instance.state.player.stamina -= 12;
+    instance.state.player.stamina = clamp(instance.state.player.stamina - 12 * Math.max(1, power * .72), 0, 100);
     const player = instance.state.player;
     const target = instance.population.filter((row) => row.alive).sort((a, b) => Math.hypot(player.x - a.x, player.y - a.y) - Math.hypot(player.x - b.x, player.y - b.y))[0];
     if (!target || Math.hypot(player.x - target.x, player.y - target.y) > 58) { logSignal(instance, "Đòn phòng vệ không chạm mục tiêu."); return; }
-    target.health -= 38;
-    if (target.health <= 0) { target.alive = false; instance.world.resources.push({ id: `carcass-${Date.now()}`, x: target.x, y: target.y, type: "carcass", amount: 100, terrain: terrainAt(target.x, target.y, instance.world.seed) }); logSignal(instance, "Một mắt xích đã trở thành dinh dưỡng cho lưới sống."); }
+    target.health -= 38 * power;
+    const simulationTarget = instance.simulation?.damageEntity?.(target.id, 38 * power, { type: power > 1.35 ? "fracture" : "bleeding", severity: clamp(.14 * power, .05, .45) });
+    if (simulationTarget) target.health = simulationTarget.health;
+    if (target.health <= 0) { target.alive = false; instance.world.resources.push({ id: `carcass-${Date.now()}`, x: target.x, y: target.y, type: "carcass", amount: 100, terrain: terrainForRealm(terrainAt(target.x, target.y, instance.world.seed), instance.state.realmId, target.x, target.y) }); logSignal(instance, "Một mắt xích đã trở thành dinh dưỡng cho lưới sống."); }
     else logSignal(instance, `${target.species.vietnamese} lùi khỏi vùng nguy hiểm.`);
+  }
+
+  function useFlagshipAbility(instance) {
+    if (!instance.world || !instance.running) return false;
+    const species = SPECIES_BY_ID.get(instance.state.speciesId);
+    const flagship = flagshipFor(species.id);
+    if (!flagship) { defend(instance); return true; }
+    const now = performance.now();
+    const cooldown = clamp(flagship.defense?.cooldownSeconds ?? flagship.locomotion?.special?.cooldownSeconds ?? 6, 1, 30) * 1000;
+    if (now < (instance.abilityReadyAt || 0)) { setToast(instance, `Ability hồi sau ${Math.ceil((instance.abilityReadyAt - now) / 1000)} giây`); return false; }
+    const cost = clamp(flagship.defense?.staminaCost ?? flagship.locomotion?.special?.cost ?? 12, 2, 45);
+    if (instance.state.player.stamina < cost) { setToast(instance, "Không đủ thể lực cho Flagship ability"); return false; }
+    instance.state.player.stamina -= cost;
+    instance.abilityReadyAt = now + cooldown;
+    const player = instance.state.player;
+    const messages = {
+      tyrannosaurus: "Luồng mùi theo gió được khuếch đại; dấu cũ sáng lâu hơn.",
+      triceratops: "Tư thế phòng thủ đàn chuyển thành cú xung phong bằng sừng.",
+      argentavis: "Cột khí nâng cơ thể, hoàn lại thể lực và chỉ hướng di cư.",
+      orca: "Xung dội âm quét địa hình nước và mục tiêu gần.",
+      "giant-octopus": "Sắc tố ngụy trang đổi màu và giảm khả năng bị phát hiện.",
+      spinosaurus: "Cảm nhận áp suất nước khóa mục tiêu trong vùng đầm lầy.",
+      mammuthus: "Đàn hình thành lá chắn nhiệt quanh cá thể non.",
+      wolf: "Tín hiệu bầy săn chia sẻ vệt mùi và nhịp truy đuổi.",
+      honeybee: "Điệu nhảy định hướng đánh dấu tuyến hoa hiệu quả nhất.",
+      "electric-eel": "Xung điện làm choáng sinh vật gần mà không tạo vũ khí nhân tạo.",
+      ankylosaurus: "Trụ thấp, xoay giáp và quét chùy đuôi theo vùng.",
+      "blue-whale": "Lướt sâu tiết kiệm oxy rồi phát tiếng gọi đại dương."
+    };
+    if (["triceratops", "ankylosaurus", "spinosaurus"].includes(species.id)) defend(instance, species.id === "ankylosaurus" ? 1.75 : 1.45);
+    if (["tyrannosaurus", "orca", "spinosaurus"].includes(species.id)) { instance.senseUntil = now + 6800; instance.senseCount += 1; }
+    if (species.id === "argentavis") { player.stamina = clamp(player.stamina + 34, 0, 100); instance.world.migration.radius = clamp(instance.world.migration.radius + 35, 120, 320); }
+    if (species.id === "giant-octopus") instance.camouflageUntil = now + 7200;
+    if (species.id === "mammuthus") { player.temperature = clamp(player.temperature + (50 - player.temperature) * .75, 0, 100); player.health = clamp(player.health + 6, 0, 100); }
+    if (species.id === "wolf") instance.population.filter((row) => row.species.id === "wolf").forEach((row) => { row.action = "hunt"; });
+    if (species.id === "honeybee") { instance.world.migration.x = player.x; instance.world.migration.y = player.y; instance.world.resources.filter((row) => row.type === "plant").slice(0, 8).forEach((row) => { row.amount = clamp(row.amount + 12, 0, 100); }); }
+    if (species.id === "electric-eel") defend(instance, 1.25);
+    if (species.id === "blue-whale" || species.id === "orca") { player.oxygen = 100; player.stamina = clamp(player.stamina + 18, 0, 100); }
+    logSignal(instance, messages[species.id] || mechanicLabel(flagship.defense?.special, species.ability));
+    setToast(instance, `R · ${mechanicLabel(flagship.defense?.special, flagship.locomotion?.special?.label || species.ability)}`);
+    return true;
+  }
+
+  function emitCommunication(instance, callId) {
+    if (!instance.running) return false;
+    const call = COMMUNICATION_CALLS.find((item) => item.id === callId);
+    if (!call) return false;
+    const speciesId = instance.state.speciesId;
+    const flagship = flagshipFor(speciesId);
+    const allowed = !flagship || typeof CONTENT?.isCommunicationCallAllowed !== "function" || CONTENT.isCommunicationCallAllowed(speciesId, call.id);
+    if (!allowed) { setToast(instance, "Loài này không dùng tín hiệu đó"); return false; }
+    const cost = clamp(call.energyCost ?? 5, 0, 30);
+    if (instance.state.player.stamina < cost) { setToast(instance, "Không đủ thể lực để phát tín hiệu"); return false; }
+    instance.state.player.stamina -= cost;
+    if (["territorial", "alarm", "distress"].includes(call.id)) instance.population.filter((row) => Math.hypot(row.x - instance.state.player.x, row.y - instance.state.player.y) < 260).forEach((row) => { row.action = "flee"; });
+    if (["navigation", "migration", "colony-task"].includes(call.id)) { instance.world.migration.x = instance.state.player.x; instance.world.migration.y = instance.state.player.y; }
+    if (instance.simulation?.trails && ["territorial", "courtship", "colony-task"].includes(call.id)) instance.simulation.trails.addScent({ sourceId: "player", speciesId, x: instance.state.player.x, y: instance.state.player.y, intensity: .95, kind: "pheromone", halfLife: 28 });
+    logSignal(instance, `${call.label}: ${call.intent || "tín hiệu sinh học đã lan trong phạm vi gần"}.`);
+    setToast(instance, `${call.label} · ${Math.round(call.radiusMeters || 0)} m`);
+    return true;
   }
 
   function createNest(instance) {
@@ -530,19 +1096,45 @@
     const shelter = instance.world.resources.filter((row) => row.type === "shelter").sort((a, b) => Math.hypot(player.x - a.x, player.y - a.y) - Math.hypot(player.x - b.x, player.y - b.y))[0];
     if (player.growth < 60) { logSignal(instance, "Chưa đủ trưởng thành để tạo tổ."); return; }
     if (!shelter || Math.hypot(player.x - shelter.x, player.y - shelter.y) > 110) { logSignal(instance, "Hãy tìm vòng sáng nơi trú ẩn trước khi tạo tổ."); return; }
-    instance.state.player.lineage += 1; instance.state.discoveries = [...new Set([...instance.state.discoveries, instance.state.speciesId])]; saveState(instance); completeExpedition(instance, "nest"); logSignal(instance, "Tổ đã được tạo. Dòng gene mới được lưu cục bộ.");
+    const seed = `${instance.state.settings.seed}:${instance.state.speciesId}:${player.generation}:${instance.state.lineage.length}`;
+    let offspringGenes = normalizeGenes(player.genes, hashSeed(seed));
+    if (typeof CONTENT?.inheritGenes === "function") {
+      try { offspringGenes = CONTENT.inheritGenes(player.genes, player.genes, { seed, mutationRate: .08, mutationStrength: .22 }); } catch {}
+    }
+    const record = {
+      id: `generation-${player.generation + 1}-${Date.now()}`,
+      generation: player.generation + 1,
+      speciesId: instance.state.speciesId,
+      genes: offspringGenes,
+      bornAt: Date.now(),
+      survived: player.growth
+    };
+    instance.state.player.lineage += 1;
+    instance.state.lineage = [...instance.state.lineage, record].slice(-24);
+    instance.state.discoveries = [...new Set([...instance.state.discoveries, instance.state.speciesId])];
+    saveState(instance); completeExpedition(instance, "nest"); logSignal(instance, `Tổ đã được tạo. Gene thế hệ ${record.generation} được lưu cục bộ.`);
   }
 
   function respawn(instance) {
-    instance.state.player = normalizeState({ speciesId: instance.state.speciesId }).player;
-    instance.dead = false; instance.running = true; instance.root.querySelector("[data-hwe-death]").hidden = true; saveState(instance); logSignal(instance, "Một vòng đời mới bắt đầu.");
+    const previousLineageCount = instance.state.player.lineage;
+    const nextGeneration = instance.state.lineage.at(-1);
+    instance.state.player = normalizeState({ speciesId: instance.state.speciesId, player: { genes: nextGeneration?.genes, generation: nextGeneration?.generation || instance.state.player.generation, lineage: previousLineageCount } }).player;
+    placePlayerAtHabitat(instance);
+    instance.dead = false; instance.running = true; instance.spawnGraceUntil = performance.now() + 15000; instance.root.classList.add("is-running"); instance.root.querySelector("[data-hwe-death]").hidden = true; saveState(instance); logSignal(instance, "Một vòng đời mới bắt đầu.");
   }
 
   function startGame(instance) {
     if (!instance.canvas) return;
-    instance.running = true; instance.paused = false; instance.dead = false;
+    if (!instance.state.player.health) {
+      const previous = instance.state.player;
+      instance.state.player = normalizeState({ speciesId: instance.state.speciesId, player: { genes: previous.genes, generation: previous.generation, lineage: previous.lineage } }).player;
+      placePlayerAtHabitat(instance);
+    }
+    instance.running = true; instance.paused = false; instance.dead = false; instance.spawnGraceUntil = performance.now() + 15000;
     instance.root.querySelector("[data-hwe-start-panel]").hidden = true;
+    instance.root.classList.add("is-running");
     instance.root.querySelector("[data-hwe-pause]")?.setAttribute("aria-pressed", "false");
+    saveState(instance);
     instance.canvas.focus({ preventScroll: true }); logSignal(instance, "Vòng đời bắt đầu. Nước và thức ăn đang phát tín hiệu nhẹ.");
   }
 
@@ -550,12 +1142,242 @@
     instance.canvas = instance.root.querySelector("[data-hwe-canvas]");
     if (!instance.canvas) return;
     instance.ctx = instance.canvas.getContext("2d", { alpha: false });
-    instance.world = createWorld(instance.state.settings.seed, instance.state.settings.density);
-    instance.population = createPopulation(instance); instance.keys = new Set(); instance.running = false; instance.paused = false; instance.dead = false; instance.senseUntil = 0; instance.senseCount = 0; instance.autosave = 0; instance.heading = 0; instance.lastFrame = performance.now(); instance.fpsAt = performance.now(); instance.frameCount = 0;
+    instance.world = createWorld(instance.state.settings.seed, instance.state.settings.density, instance.state.realmId);
+    if (instance.state.player.spawnPending) { placePlayerAtHabitat(instance); saveState(instance); }
+    instance.population = createPopulation(instance);
+    instance.keys = new Set(); instance.running = false; instance.paused = false; instance.dead = false; instance.senseUntil = 0; instance.senseCount = 0; instance.autosave = 0; instance.heading = 0; instance.lastFrame = performance.now(); instance.fpsAt = performance.now(); instance.frameCount = 0;
+    instance.chunkClock = 0; instance.trailClock = 0; instance.replayClock = 0; instance.eventClock = 0; instance.injuryClock = 0; instance.abilityReadyAt = 0; instance.camouflageUntil = 0; instance.hudAt = 0; instance.minimapAt = 0; instance.dprCap = 0; instance.renderBudget = 1;
+    initSimulationKernel(instance);
     resizeCanvas(instance);
     instance.resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(() => resizeCanvas(instance)) : null;
     instance.resizeObserver?.observe(instance.canvas);
     instance.raf = global.requestAnimationFrame?.((time) => loop(instance, time));
+  }
+
+  function switchRealm(instance, realmId, navigateToWorld = false) {
+    if (!REALM_IDS.includes(realmId)) return false;
+    instance.state.realmId = realmId;
+    const selected = SPECIES_BY_ID.get(instance.state.speciesId);
+    let fallback = selected;
+    if (!selected || tierForSpecies(selected) !== "flagship" || !speciesAllowedInRealm(selected, realmId, instance.state.settings.convergence)) {
+      fallback = SPECIES.find((species) => tierForSpecies(species) === "flagship" && speciesAllowedInRealm(species, realmId, instance.state.settings.convergence));
+      if (fallback) { instance.state.speciesId = fallback.id; instance.state.player = normalizeState({ speciesId: fallback.id, player: { lineage: instance.state.player.lineage } }).player; }
+    }
+    saveState(instance);
+    if ((navigateToWorld || instance.view === "timeline") && !fallback) global.location.hash = "#/game/ecosystem";
+    else if (navigateToWorld || instance.view === "timeline") global.location.hash = "#/game/world";
+    else mount(instance.host, { view: instance.view });
+    return true;
+  }
+
+  function selectPlayableSpecies(instance, species, navigate = false) {
+    if (!species) return false;
+    const tier = tierForSpecies(species);
+    if (tier !== "flagship") { setToast(instance, tier === "simulated" ? "Loài này là Wildlife AI để quan sát, không giả là playable" : "Mục này chỉ thuộc Eon Codex"); return false; }
+    const targetRealm = CONTENT?.getSpeciesCatalogEntry?.(species.id)?.realmIds?.[0] || realmForSpecies(species);
+    if (!speciesAllowedInRealm(species, instance.state.realmId, instance.state.settings.convergence)) {
+      if (tier !== "flagship" || !REALM_IDS.includes(targetRealm)) { setToast(instance, "Loài này không thể spawn trong Era Realm hiện tại"); return false; }
+      instance.state.realmId = targetRealm;
+    }
+    const lineageCount = instance.state.player.lineage;
+    instance.state.speciesId = species.id;
+    instance.state.player = normalizeState({ speciesId: species.id, player: { lineage: lineageCount } }).player;
+    saveState(instance);
+    if (navigate || instance.view !== "world") global.location.hash = "#/game/world";
+    else mount(instance.host, { view: "world" });
+    return true;
+  }
+
+  function downloadLocalFile(instance, filename, payload, type = "application/json") {
+    try {
+      const blob = payload instanceof Blob ? payload : new Blob([String(payload)], { type });
+      const url = global.URL.createObjectURL(blob);
+      const anchor = global.document.createElement("a");
+      anchor.href = url; anchor.download = filename; anchor.hidden = true;
+      global.document.body.append(anchor); anchor.click(); anchor.remove();
+      setTimeout(() => global.URL.revokeObjectURL(url), 0);
+      return true;
+    } catch { setToast(instance, "Trình duyệt chưa cho phép xuất tệp"); return false; }
+  }
+
+  function exportLineage(instance) {
+    const payload = {
+      format: "hh-eonwild-lineage-v2",
+      version: VERSION,
+      exportedAt: new Date().toISOString(),
+      speciesId: instance.state.speciesId,
+      realmId: instance.state.realmId,
+      currentGenes: instance.state.player.genes,
+      lineage: instance.state.lineage
+    };
+    if (downloadLocalFile(instance, `hh-eonwild-lineage-${Date.now()}.json`, JSON.stringify(payload, null, 2))) setToast(instance, "Đã xuất lineage JSON cục bộ");
+  }
+
+  function previewGenes(instance) {
+    const panel = instance.root.querySelector("[data-hwe-gene-preview-panel]");
+    if (!panel) return;
+    const seed = `${instance.state.settings.seed}:preview:${instance.state.player.generation}:${instance.state.lineage.length}`;
+    let genes = normalizeGenes(instance.state.player.genes, hashSeed(seed));
+    if (typeof CONTENT?.inheritGenes === "function") {
+      try { genes = CONTENT.inheritGenes(instance.state.player.genes, instance.state.player.genes, { seed, mutationRate: .08, mutationStrength: .22 }); } catch {}
+    }
+    panel.innerHTML = `<small>NEST FORECAST · KHÔNG GHI SAVE</small><h3>Thế hệ ${instance.state.player.generation + 1}</h3><p>Biến thể xác định theo seed; chỉ lưu khi tạo tổ thật.</p><div>${Object.entries(genes).slice(0, 6).map(([key, value]) => `<span><i style="--gene:${genePercent(key, value)}"></i><b>${escapeHtml(geneLabel(key))}</b><em>${Math.round(genePercent(key, value))}%</em></span>`).join("")}</div>`;
+  }
+
+  function setCommunicationWheel(instance, open) {
+    const wheel = instance.root.querySelector("[data-hwe-communication-wheel]");
+    if (!wheel) return false;
+    wheel.hidden = !open;
+    instance.root.querySelectorAll("[data-hwe-communication-open]").forEach((button) => button.setAttribute("aria-expanded", String(open)));
+    if (open) wheel.querySelector("button:not([disabled])")?.focus?.({ preventScroll: true });
+    else instance.canvas?.focus?.({ preventScroll: true });
+    return true;
+  }
+
+  function setPhotoMode(instance, open) {
+    const overlay = instance.root.querySelector("[data-hwe-photo-overlay]");
+    if (!overlay) return false;
+    overlay.hidden = !open;
+    instance.root.classList.toggle("is-photo-mode", open);
+    instance.photoMode = open;
+    if (open) { instance.pausedBeforePhoto = instance.paused; instance.paused = true; overlay.querySelector("button")?.focus?.({ preventScroll: true }); }
+    else { instance.paused = Boolean(instance.pausedBeforePhoto); instance.canvas?.focus?.({ preventScroll: true }); }
+    return true;
+  }
+
+  function capturePhoto(instance) {
+    if (!instance.canvas) return false;
+    const filename = `hh-eonwild-${instance.state.speciesId}-${Date.now()}.png`;
+    if (typeof instance.canvas.toBlob === "function") {
+      instance.canvas.toBlob((blob) => {
+        if (blob && downloadLocalFile(instance, filename, blob, "image/png")) setToast(instance, "Đã chụp PNG từ vòng chơi thật");
+      }, "image/png");
+      return true;
+    }
+    try {
+      const anchor = global.document.createElement("a"); anchor.download = filename; anchor.href = instance.canvas.toDataURL("image/png"); anchor.click(); setToast(instance, "Đã chụp PNG"); return true;
+    } catch { setToast(instance, "Thiết bị không hỗ trợ chụp canvas"); return false; }
+  }
+
+  function drawObserver(instance, requestedIndex = 0) {
+    const canvas = instance.root.querySelector("[data-hwe-observer-canvas]");
+    const ctx = canvas?.getContext?.("2d");
+    if (!ctx) return false;
+    const replay = instance.state.replay;
+    const index = clamp(requestedIndex, 0, Math.max(0, replay.length - 1));
+    const width = canvas.width; const height = canvas.height;
+    ctx.clearRect(0, 0, width, height);
+    const gradient = ctx.createLinearGradient(0, 0, width, height); gradient.addColorStop(0, "#071828"); gradient.addColorStop(.52, "#102a35"); gradient.addColorStop(1, "#241733"); ctx.fillStyle = gradient; ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = "rgba(115,239,205,.12)"; ctx.lineWidth = 1;
+    for (let x = 0; x <= width; x += 72) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+    for (let y = 0; y <= height; y += 65) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
+    const heatmap = instance.state.heatmap || [];
+    const heatMax = Math.max(1, ...heatmap.map((cell) => Number(cell.value) || 0));
+    const heatCellSize = instance.state.heatmapCellSize || 64;
+    heatmap.forEach((cell) => {
+      const worldX = (Number(cell.x) + .5) * heatCellSize;
+      const worldY = (Number(cell.y) + .5) * heatCellSize;
+      const x = worldX / WORLD_SIZE * width; const y = worldY / WORLD_SIZE * height;
+      const intensity = clamp(Number(cell.value) / heatMax, 0, 1);
+      const radius = 10 + intensity * 34;
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      glow.addColorStop(0, `rgba(255,93,188,${.18 + intensity * .42})`);
+      glow.addColorStop(.58, `rgba(255,194,91,${.08 + intensity * .18})`);
+      glow.addColorStop(1, "rgba(85,230,255,0)");
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill();
+    });
+    if (replay.length) {
+      const visible = replay.slice(0, index + 1);
+      const points = visible.map((sample) => ({ x: sample.x / WORLD_SIZE * width, y: sample.y / WORLD_SIZE * height, health: sample.health }));
+      points.forEach((point, pointIndex) => { ctx.fillStyle = `rgba(255,91,184,${.03 + pointIndex / Math.max(1, points.length) * .11})`; ctx.beginPath(); ctx.arc(point.x, point.y, 12 + pointIndex % 5 * 3, 0, Math.PI * 2); ctx.fill(); });
+      ctx.strokeStyle = "#6cf0d2"; ctx.lineWidth = 3; ctx.beginPath(); points.forEach((point, pointIndex) => pointIndex ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y)); ctx.stroke();
+      const current = points.at(-1); ctx.fillStyle = "#ffe57d"; ctx.shadowColor = "#ffe57d"; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(current.x, current.y, 7, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    } else { ctx.fillStyle = "#d9f5ef"; ctx.font = "600 20px system-ui"; ctx.textAlign = "center"; ctx.fillText(heatmap.length ? "Heatmap local đã có · chưa đủ điểm để phát replay" : "Hãy chơi một vòng đời để tạo replay và heatmap thật", width / 2, height / 2); }
+    const position = instance.root.querySelector("[data-hwe-replay-position]"); if (position) position.textContent = replay.length ? `${Math.round(index) + 1}/${replay.length}` : "0/0";
+    return true;
+  }
+
+  function initObserver(instance) {
+    const scrubber = instance.root.querySelector("[data-hwe-replay-scrubber]");
+    if (scrubber) scrubber.max = String(Math.max(0, instance.state.replay.length - 1));
+    drawObserver(instance, Number(scrubber?.value || 0));
+  }
+
+  function toggleObserverPlayback(instance, button) {
+    if (instance.state.replay.length < 2) { setToast(instance, "Chưa đủ dữ liệu replay"); return false; }
+    if (instance.observerTimer) { clearInterval(instance.observerTimer); instance.observerTimer = 0; button.textContent = "▶ Phát lại"; return true; }
+    const scrubber = instance.root.querySelector("[data-hwe-replay-scrubber]");
+    button.textContent = "Ⅱ Tạm dừng";
+    instance.observerTimer = setInterval(() => {
+      let next = Number(scrubber.value || 0) + 1;
+      if (next >= instance.state.replay.length) next = 0;
+      scrubber.value = String(next); drawObserver(instance, next);
+    }, 240);
+    return true;
+  }
+
+  function ecologySummary(simulation, season, title, copy) {
+    const state = simulation?.getState?.();
+    const populations = state?.ledger?.populations || [];
+    let preyBiomass = 0; let predatorBiomass = 0;
+    populations.forEach((row) => {
+      const speciesId = String(row.key || "").split("|").at(-1);
+      const species = SPECIES_BY_ID.get(speciesId);
+      if (species?.diet === "meat") predatorBiomass += Number(row.biomass || 0);
+      else preyBiomass += Number(row.biomass || 0);
+    });
+    const producerBiomass = (state?.chunks || []).flatMap((chunk) => chunk.resources || []).filter((resource) => resource.type === "plant").reduce((sum, resource) => sum + Number(resource.amount || 0), 0);
+    const totalBiomass = Math.max(1, producerBiomass + preyBiomass + predatorBiomass);
+    const entities = state?.entities || [];
+    const actions = Object.fromEntries(["hunt", "flee", "drink", "feed", "rest", "migrate", "mate", "guardNest"].map((action) => [action, entities.filter((entity) => entity.action === action).length]));
+    return {
+      season: clamp(season, 0, 9999), updatedAt: Date.now(), title: String(title || "Mùa local").slice(0, 80), copy: String(copy || "Simulation fixed-step hoàn tất.").slice(0, 220),
+      producer: producerBiomass / totalBiomass * 100, prey: preyBiomass / totalBiomass * 100, predator: predatorBiomass / totalBiomass * 100,
+      apex: Object.values(state?.ledger?.apex || {}).reduce((sum, value) => sum + Number(value || 0), 0), population: entities.length, chunks: state?.chunks?.length || 0, actions
+    };
+  }
+
+  function simulateEcologySeason(instance, button) {
+    if (typeof SIMULATION?.createSimulation !== "function" || button.disabled) { setToast(instance, "Simulation core chưa sẵn sàng"); return false; }
+    button.disabled = true; button.textContent = "Đang chạy fixed-step…";
+    const schedule = global.setTimeout || setTimeout;
+    schedule(() => {
+      if (instance.destroyed || instance.controller.signal.aborted) return;
+      let simulation;
+      try {
+        const season = Number(instance.state.ecologySnapshot?.season || 0) + 1;
+        const realm = instance.state.settings.convergence ? "convergence" : instance.state.realmId;
+        simulation = SIMULATION.createSimulation({ seed: `${instance.state.settings.seed}:season:${season}`, realm, allowCrossRealm: instance.state.settings.convergence, maxChunks: 25, maxEntities: 36, apexCap: 3, viewRadius: 2 });
+        const chunks = simulation.streamChunks({ x: WORLD_SIZE / 2, y: WORLD_SIZE / 2, world: true });
+        const random = seededRandom(hashSeed(`${instance.state.settings.seed}:${realm}:${season}`));
+        const registry = SPECIES.filter((species) => tierForSpecies(species) !== "codex" && speciesAllowedInRealm(species, instance.state.realmId, instance.state.settings.convergence));
+        for (let index = 0; index < 32 && registry.length; index += 1) {
+          const species = registry[Math.floor(random() * registry.length) % registry.length];
+          simulation.addEntity({
+            id: `season-${season}-${index}`, speciesId: species.id, name: species.name, diet: species.diet, realm: instance.state.realmId,
+            biomes: Object.hasOwn(BIOMES, species.habitat) ? [species.habitat] : (REALMS[instance.state.realmId]?.biomes || ["grassland"]),
+            mass: species.mass, speed: Math.max(.5, species.speed), apex: ["tyrannosaurus", "spinosaurus", "orca"].includes(species.id),
+            x: 320 + random() * (WORLD_SIZE - 640), y: 320 + random() * (WORLD_SIZE - 640), sex: index % 2 ? "female" : "male",
+            maturity: .82 + random() * .18, age: .55 + random() * .35, nest: index % 5 === 0 ? { x: 1700 + random() * 700, y: 1700 + random() * 700 } : null
+          });
+        }
+        const hazardType = instance.state.realmId === "paleozoic" ? "volcano" : instance.state.realmId === "ice-age" ? "flood" : instance.state.realmId === "modern" ? "wildfire" : season % 2 ? "flood" : "volcano";
+        simulation.hazards?.trigger?.(hazardType, { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2, radius: 280, intensity: .56 + season % 3 * .08, duration: 18 });
+        simulation.runSteps(360);
+        const labels = { flood: "Mùa lũ theo chu kỳ", wildfire: "Mùa cháy tái sinh", volcano: "Mùa tro núi lửa" };
+        const summary = ecologySummary(simulation, season, labels[hazardType], `${chunks.length} chunk đã stream đúng tọa độ thế giới; ${simulation.getEntities().length} cá thể qua 360 bước AI có Biomass Ledger và apex cap.`);
+        instance.state.ecologySnapshot = summary;
+        instance.state.eventJournal = [...instance.state.eventJournal, { id: `season-${season}`, label: summary.title, at: summary.updatedAt }].slice(-40);
+        saveState(instance);
+        simulation.dispose?.(); simulation = null;
+        mount(instance.host, { view: "ecosystem" });
+      } catch {
+        simulation?.dispose?.();
+        button.disabled = false; button.textContent = "Thử chạy lại →";
+        setToast(instance, "Không thể hoàn tất mùa; save hiện tại không bị thay đổi");
+      }
+    }, 16);
+    return true;
   }
 
   function bind(instance) {
@@ -565,29 +1387,48 @@
       if (target.dataset.hweRoute) { global.location.hash = `#${target.dataset.hweRoute}`; return; }
       if (target.matches("[data-hwe-quick-play]")) { if (instance.view === "world") { if (!instance.running) startGame(instance); else instance.canvas?.focus?.({ preventScroll: true }); } else global.location.hash = "#/game/world"; return; }
       if (target.matches("[data-hwe-open-codex]")) { global.location.hash = "#/game/species"; return; }
-      if (target.dataset.hweSpecies) { const species = SPECIES_BY_ID.get(target.dataset.hweSpecies); if (!species) return; instance.state.speciesId = species.id; saveState(instance); if (instance.view === "world") { mount(instance.host, { view: "world" }); return; } root.querySelectorAll("[data-hwe-species]").forEach((card) => card.classList.toggle("is-selected", card === target)); updateCodexDetail(instance, species); setToast(instance, `Đã chọn ${species.vietnamese}`); return; }
-      if (target.dataset.hwePlaySpecies) { instance.state.speciesId = target.dataset.hwePlaySpecies; saveState(instance); global.location.hash = "#/game/world"; return; }
+      if (target.dataset.hweRealm) { switchRealm(instance, target.dataset.hweRealm, instance.view === "timeline"); return; }
+      if (target.dataset.hweSpecies) { const species = SPECIES_BY_ID.get(target.dataset.hweSpecies); if (!species) return; if (instance.view === "world") { selectPlayableSpecies(instance, species); return; } root.querySelectorAll("[data-hwe-species]").forEach((card) => card.classList.toggle("is-selected", card === target)); updateCodexDetail(instance, species); setToast(instance, `${species.vietnamese} · ${tierLabel(tierForSpecies(species))}`); return; }
+      if (target.dataset.hwePlaySpecies) { selectPlayableSpecies(instance, SPECIES_BY_ID.get(target.dataset.hwePlaySpecies), true); return; }
       if (target.dataset.hweEraFilter) { instance.eraFilter = target.dataset.hweEraFilter; root.querySelectorAll("[data-hwe-era-filter]").forEach((button) => button.setAttribute("aria-pressed", String(button === target))); filterSpecies(instance); return; }
+      if (target.dataset.hweTierFilter) { instance.tierFilter = instance.tierFilter === target.dataset.hweTierFilter ? "all" : target.dataset.hweTierFilter; root.querySelectorAll("[data-hwe-tier-filter]").forEach((button) => button.setAttribute("aria-pressed", String(instance.tierFilter === button.dataset.hweTierFilter))); filterSpecies(instance); return; }
+      if (target.dataset.hweRealmFilter) { instance.realmFilter = target.dataset.hweRealmFilter; root.querySelectorAll("[data-hwe-realm-filter]").forEach((button) => button.setAttribute("aria-pressed", String(button === target))); filterSpecies(instance); return; }
       if (target.dataset.hweDifficulty) { instance.state.settings.difficulty = target.dataset.hweDifficulty; root.querySelectorAll("[data-hwe-difficulty]").forEach((button) => button.classList.toggle("is-active", button === target)); saveState(instance); return; }
       if (target.matches("[data-hwe-start]")) { startGame(instance); return; }
       if (target.matches("[data-hwe-respawn]")) { respawn(instance); return; }
       if (target.matches("[data-hwe-pause]")) { instance.paused = !instance.paused; target.setAttribute("aria-pressed", String(instance.paused)); target.textContent = instance.paused ? "▶" : "Ⅱ"; setToast(instance, instance.paused ? "Đã tạm dừng" : "Tiếp tục vòng đời"); return; }
       if (target.matches("[data-hwe-fullscreen]")) { instance.root.requestFullscreen?.().catch?.(() => setToast(instance, "Trình duyệt chưa cho phép toàn màn hình.")); return; }
-      if (target.dataset.hweAction === "interact") interact(instance);
-      if (target.dataset.hweAction === "sense") sense(instance);
-      if (target.dataset.hweExpedition) { instance.state.activeExpedition = target.dataset.hweExpedition; saveState(instance); global.location.hash = "#/game/world"; }
-      if (target.matches("[data-hwe-simulate-season]")) { const titles = [["Mùa khô kéo dài", "Nguồn nước co lại; thú ăn cỏ gom đàn gần lưu vực."], ["Mùa sinh sản", "Nơi trú ẩn sáng lên và áp lực săn mồi giảm quanh tổ."], ["Bão đại dương", "Dòng hải lưu đổi hướng, sinh vật biển di cư vào rạn nông."], ["Băng tan theo mùa", "Biên tundra lùi về phía bắc, đường di cư mới xuất hiện."]]; const row = titles[Math.floor(Math.random() * titles.length)]; root.querySelector("[data-hwe-season-title]").textContent = row[0]; root.querySelector("[data-hwe-season-copy]").textContent = row[1]; setToast(instance, "Ecology Director đã tạo mùa mới"); }
-      if (target.matches("[data-hwe-reset]")) { if (target.dataset.confirm === "true") { global.localStorage?.removeItem?.(STORAGE_KEY); instance.state = normalizeState(); global.location.hash = "#/game/world"; } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa save"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Khôi phục save mới…"; } }, 4000); } }
+      if (target.matches("[data-hwe-photo]")) { setPhotoMode(instance, true); return; }
+      if (target.matches("[data-hwe-photo-close]")) { setPhotoMode(instance, false); return; }
+      if (target.matches("[data-hwe-photo-capture]")) { capturePhoto(instance); return; }
+      if (target.matches("[data-hwe-communication-open]")) { setCommunicationWheel(instance, instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden !== false); return; }
+      if (target.matches("[data-hwe-communication-close]")) { setCommunicationWheel(instance, false); return; }
+      if (target.dataset.hweCall) { emitCommunication(instance, target.dataset.hweCall); setCommunicationWheel(instance, false); return; }
+      if (target.dataset.hweAction === "interact") { interact(instance); return; }
+      if (target.dataset.hweAction === "sense") { sense(instance); return; }
+      if (target.dataset.hweAction === "ability") { useFlagshipAbility(instance); return; }
+      if (target.dataset.hweExpedition) { instance.state.activeExpedition = target.dataset.hweExpedition; saveState(instance); global.location.hash = "#/game/world"; return; }
+      if (target.matches("[data-hwe-lineage-export]")) { exportLineage(instance); return; }
+      if (target.matches("[data-hwe-gene-preview]")) { previewGenes(instance); return; }
+      if (target.matches("[data-hwe-replay-play]")) { toggleObserverPlayback(instance, target); return; }
+      if (target.matches("[data-hwe-replay-clear]")) { if (target.dataset.confirm === "true") { clearInterval(instance.observerTimer); instance.observerTimer = 0; instance.state.replay = []; saveState(instance); mount(instance.host, { view: "observer" }); } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa replay"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Xóa replay local"; } }, 4000); } return; }
+      if (target.matches("[data-hwe-network-audit]")) { const result = root.querySelector("[data-hwe-network-result]"); if (result) result.textContent = `${global.isSecureContext ? "HTTPS ✓" : "HTTPS chưa đạt"} · Backend authoritative, token phòng, moderation và anti-cheat chưa cấu hình. Multiplayer tiếp tục bị khóa an toàn.`; target.textContent = "Đã kiểm tra · vẫn khóa"; setToast(instance, "Capability audit hoàn tất, không tạo phòng giả"); return; }
+      if (target.matches("[data-hwe-simulate-season]")) { simulateEcologySeason(instance, target); return; }
+      if (target.matches("[data-hwe-reset]")) { if (target.dataset.confirm === "true") { global.localStorage?.removeItem?.(STORAGE_KEY); global.localStorage?.removeItem?.(LEGACY_STORAGE_KEY); instance.state = normalizeState(); mount(instance.host, { view: "world" }); } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa save v1 + v2"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Khôi phục save mới…"; } }, 4000); } }
     }, { signal: controller.signal });
-    root.addEventListener("input", (event) => { if (event.target.matches("[data-hwe-species-search]")) filterSpecies(instance); }, { signal: controller.signal });
+    root.addEventListener("input", (event) => { if (event.target.matches("[data-hwe-species-search]")) filterSpecies(instance); if (event.target.matches("[data-hwe-replay-scrubber]")) drawObserver(instance, Number(event.target.value)); }, { signal: controller.signal });
     root.addEventListener("change", (event) => {
-      const key = event.target.dataset.hweSetting; if (!key || !Object.hasOwn(instance.state.settings, key)) return;
+      const key = event.target.dataset.hweSetting; if (!key) return;
+      if (key === "realmId") { switchRealm(instance, String(event.target.value)); return; }
+      if (!Object.hasOwn(instance.state.settings, key)) return;
       instance.state.settings[key] = event.target.type === "checkbox" ? event.target.checked : String(event.target.value).slice(0, 24);
-      instance.state = normalizeState(instance.state); root.dataset.motion = instance.state.settings.motion; saveState(instance); setToast(instance, "Đã lưu cấu hình cục bộ");
+      instance.state = normalizeState(instance.state); root.dataset.motion = instance.state.settings.motion; saveState(instance);
+      if (instance.view === "world" && ["convergence", "density", "seed", "worker"].includes(key)) mount(instance.host, { view: "world" });
+      else setToast(instance, "Đã lưu cấu hình cục bộ");
     }, { signal: controller.signal });
     root.addEventListener("pointerdown", (event) => { const key = event.target.closest?.("[data-hwe-touch]")?.dataset.hweTouch; if (key) { instance.keys?.add(key); event.target.setPointerCapture?.(event.pointerId); } }, { signal: controller.signal });
     ["pointerup", "pointercancel", "pointerleave"].forEach((name) => root.addEventListener(name, (event) => { const key = event.target.closest?.("[data-hwe-touch]")?.dataset.hweTouch; if (key) instance.keys?.delete(key); }, { signal: controller.signal }));
-    global.addEventListener?.("keydown", (event) => { if (!instance.canvas || !root.contains(global.document.activeElement)) return; instance.keys.add(event.code); if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault(); if (event.code === "KeyE") interact(instance); if (event.code === "KeyQ") sense(instance); if (event.code === "KeyF" || event.code === "Space") defend(instance); if (event.code === "KeyN") createNest(instance); }, { signal: controller.signal });
+    global.addEventListener?.("keydown", (event) => { if (!instance.canvas || !root.contains(global.document.activeElement)) return; if (event.code === "Escape") { if (instance.photoMode) setPhotoMode(instance, false); else setCommunicationWheel(instance, false); return; } instance.keys.add(event.code); if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault(); if (event.code === "KeyE") interact(instance); if (event.code === "KeyQ") sense(instance); if (event.code === "KeyR") useFlagshipAbility(instance); if (event.code === "KeyC") setCommunicationWheel(instance, instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden !== false); if (event.code === "KeyP") setPhotoMode(instance, !instance.photoMode); if (event.code === "KeyF" || event.code === "Space") defend(instance); if (event.code === "KeyN") createNest(instance); }, { signal: controller.signal });
     global.addEventListener?.("keyup", (event) => instance.keys?.delete(event.code), { signal: controller.signal });
     global.document?.addEventListener?.("visibilitychange", () => { if (global.document.hidden) { instance.pausedByVisibility = !instance.paused; instance.paused = true; } else if (instance.pausedByVisibility) { instance.paused = false; instance.pausedByVisibility = false; instance.lastFrame = performance.now(); } }, { signal: controller.signal });
   }
@@ -595,11 +1436,20 @@
   function mount(host, options = {}) {
     if (!host) return false;
     unmount(host);
-    const instance = { host, root: null, view: safeView(options.view), state: readState(), controller: new AbortController(), destroyed: false, raf: 0, resizeObserver: null, toastTimer: 0, audioContext: null, eraFilter: "all" };
+    const instance = { host, root: null, view: safeView(options.view), state: readState(), controller: new AbortController(), destroyed: false, raf: 0, resizeObserver: null, toastTimer: 0, audioContext: null, eraFilter: "all", realmFilter: "all", tierFilter: "all", observerTimer: 0 };
+    if (instance.view === "world") {
+      const current = SPECIES_BY_ID.get(instance.state.speciesId);
+      if (!current || tierForSpecies(current) !== "flagship" || !speciesAllowedInRealm(current, instance.state.realmId, instance.state.settings.convergence)) {
+        const fallback = SPECIES.find((species) => tierForSpecies(species) === "flagship" && speciesAllowedInRealm(species, instance.state.realmId, instance.state.settings.convergence));
+        if (fallback) { instance.state.speciesId = fallback.id; instance.state.player = normalizeState({ speciesId: fallback.id }).player; saveState(instance); }
+        else instance.view = "ecosystem";
+      }
+    }
     host.innerHTML = shellMarkup(instance);
     instance.root = host.querySelector("[data-hwe-root]");
     instances.set(host, instance); activeHosts.add(host); bind(instance);
     if (instance.view === "world") initWorld(instance);
+    if (instance.view === "observer") initObserver(instance);
     return Object.freeze({ version: VERSION, state: () => JSON.parse(JSON.stringify(instance.state)), pause: () => { instance.paused = true; }, resume: () => { instance.paused = false; }, destroy: () => unmount(host) });
   }
 
@@ -611,8 +1461,8 @@
     }
     const instance = instances.get(host);
     if (!instance) { activeHosts.delete(host); if (host) host.replaceChildren(); return false; }
-    instance.destroyed = true; instance.controller.abort(); clearTimeout(instance.toastTimer); instance.resizeObserver?.disconnect?.(); global.cancelAnimationFrame?.(instance.raf); instance.audioContext?.close?.().catch?.(() => {}); saveState(instance); host.replaceChildren(); instances.delete(host); activeHosts.delete(host); return true;
+    instance.destroyed = true; instance.controller.abort(); clearTimeout(instance.toastTimer); clearInterval(instance.observerTimer); instance.resizeObserver?.disconnect?.(); global.cancelAnimationFrame?.(instance.raf); instance.workerAdapter?.close?.(); instance.simulation?.dispose?.(); instance.audioContext?.close?.().catch?.(() => {}); saveState(instance); host.replaceChildren(); instances.delete(host); activeHosts.delete(host); return true;
   }
 
-  return Object.freeze({ VERSION, version: VERSION, STORAGE_KEY, SCHEMA_VERSION, WORLD_SIZE, ERA_META, BIOMES, SPECIES, EXPEDITIONS, normalizeState, stepVitals, terrainAt, createWorld, mount, unmount });
+  return Object.freeze({ VERSION, version: VERSION, STORAGE_KEY, SCHEMA_VERSION, WORLD_SIZE, ERA_META, REALMS, BIOMES, FLAGSHIP_IDS, SPECIES, EXPEDITIONS, normalizeState, stepVitals, terrainAt, terrainForRealm, createWorld, findHabitatSpawn, mount, unmount });
 });

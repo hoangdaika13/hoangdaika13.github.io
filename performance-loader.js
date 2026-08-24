@@ -237,8 +237,8 @@
       scripts: ["hh-play.js?v=4&build=2"]
     },
     game: {
-      styles: ["hh-eonwild-game.css?v=2"],
-      scripts: ["hh-eonwild-game.js?v=2"]
+      styles: ["hh-eonwild-game.css?v=8"],
+      scripts: ["hh-eonwild-content-v2.js?v=2", "hh-eonwild-simulation-v2.js?v=3", "hh-eonwild-game.js?v=8"]
     },
     fortune: {
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=26"],

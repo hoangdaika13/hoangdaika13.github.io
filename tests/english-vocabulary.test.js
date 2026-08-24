@@ -75,7 +75,7 @@ test("personal deck policy uses local days, a bounded goal and explicit lesson s
     },
     reviewQueue: {
       hello: { dueAt: new Date(now - 1000).toISOString() },
-      deadline: { dueAt: new Date(now + 86400000).toISOString() }
+      deadline: { dueAt: new Date("2999-01-01T00:00:00.000Z").toISOString() }
     },
     wordMastery: {}, mistakeNotebook: [], galaxySession: { attempts: 0 }
   };

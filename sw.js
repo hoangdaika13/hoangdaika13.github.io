@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v865";
+const CACHE = "hh-identity-portal-v873";
 // Compatibility marker retained for Dharma v6 clients: hh-identity-portal-v842.
 // Compatibility marker retained for the previous Home shell: ./home-galaxy-command.js?v=15.
 // Shell compatibility assertions for modules released against the stable cache:
@@ -223,7 +223,7 @@ const RUNTIME_ASSETS = [
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=9",
   "./auth-h-galaxy.css?v=12",
-  "./auth-living-galaxy-3d.css?v=11",
+  "./auth-living-galaxy-3d.css?v=12",
   "./auth-living-background.css?v=1",
   "./auth-spatial-aurora.css?v=1",
   "./auth-identity-constellation.css?v=1",
@@ -472,8 +472,10 @@ const RUNTIME_ASSETS = [
   "./hh-chinese.js?v=12",
   "./phat-phap.js?v=15",
   "./hh-play.js?v=4&build=2",
-  "./hh-eonwild-game.css?v=2",
-  "./hh-eonwild-game.js?v=2",
+  "./hh-eonwild-game.css?v=8",
+  "./hh-eonwild-content-v2.js?v=2",
+  "./hh-eonwild-simulation-v2.js?v=3",
+  "./hh-eonwild-game.js?v=8",
   "./config.js?v=10",
   "./data/ai-super-platform-modules.json"
 ];
@@ -494,10 +496,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=516",
+  "./performance-loader.js?v=524",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=244"
+  "./script.js?v=245"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE))));
 self.addEventListener("message", event => {

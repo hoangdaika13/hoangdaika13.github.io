@@ -48,22 +48,50 @@ Một nền tảng lớn cần phân biệt “có trong dữ liệu” với �
 
 Chỉ thăng một mục từ Codex lên Simulated Wildlife hoặc Playable Flagship khi có provenance dữ liệu, budget hiệu năng, asset hợp lệ và bộ test hành vi.
 
-## 5. Vertical slice hiện tại
+## 5. Vertical slice v2 đã triển khai
 
-Phiên bản web `1.0.0` là một vertical slice local-first, không phải MMO hoàn chỉnh:
+Phiên bản web `2.0.0` là vertical slice local-first có simulation core thật, nhưng vẫn **không phải MMO, game 3D hay tuyên bố mọi loài đều chơi được**. Bundle được tải theo đúng thứ tự:
 
-- 49 loài đại diện trải trên bốn nhóm thời đại: Cổ sinh, Trung sinh, Tân sinh và hiện đại.
-- Tám biome procedural: đại dương, rạn biển, đầm lầy, rừng, đồng cỏ, hoang mạc, tundra và núi lửa.
-- Sáu workspace trực tiếp: Thế giới sống, Eon Codex, Lưới sinh thái, Eon Atlas, Thám hiểm và Cài đặt.
-- Canvas 2D top-down với seed tái tạo, chu kỳ ngày/đêm, thời tiết, vùng di cư, tài nguyên và quần thể predator/prey đơn giản.
-- Vòng sinh tồn thật gồm máu, đói, khát, stamina, trưởng thành, ăn/uống, giác quan, phòng vệ, tạo tổ, respawn và năm expedition.
-- Điều khiển bằng WASD/phím mũi tên, Shift, E, Q, F, N, touch D-pad và gamepad.
-- Save schema `hh.game.eonwild.v1` được chuẩn hóa và giới hạn trước khi sử dụng.
-- Animation/game loop tạm dừng khi tab ẩn; unmount hủy RAF, listener và ResizeObserver.
+1. `hh-eonwild-content-v2.js` — dữ liệu, luật realm, taxonomy tier, gene, diet, injury và giao tiếp.
+2. `hh-eonwild-simulation-v2.js` — chunk, spatial hash, Biomass Ledger, Utility AI, fixed timestep, trail, hazard, replay và worker adapter.
+3. `hh-eonwild-game.js` — state schema v2, Canvas 2D, input, renderer và chín workspace.
 
-Các loài trong slice hiện là avatar có thể chọn trên cùng một mô hình gameplay hệ thống. Điều đó **không có nghĩa 49 loài đã có behavior/animation bespoke ở chất lượng Playable Flagship**. Dữ liệu khối lượng, tốc độ, niên đại và mô tả hiện chỉ phục vụ prototype; phải được biên tập khoa học trước khi dùng như nội dung giáo dục chính thức.
+### Content v2
 
-`Eon Convergence` là sandbox giả tưởng cho việc gặp loài khác thời đại. Chế độ khoa học mặc định trong bản trưởng thành phải tách Era Realm theo niên đại và ghi rõ mọi ngoại lệ.
+- Bốn Era Realm tách biệt: `paleozoic`, `mesozoic`, `ice-age`, `modern`.
+- 49 mục catalog được chia rõ: 12 Playable Flagship, 31 Simulated Wildlife và 6 Codex-only.
+- 12 Flagship cố định: Tyrannosaurus, Triceratops, Argentavis, Orca, Giant Octopus, Spinosaurus, Mammuthus, Wolf, Honeybee, Electric Eel, Ankylosaurus và Blue Whale.
+- Mỗi Flagship có signature và locomotion special riêng; content validator chặn ID trùng, signature trùng và cơ chế locomotion trùng.
+- 24 biome, 17 biến động tự nhiên, 6 profile khẩu phần, 7 dạng chấn thương, 10 gene có biên min/max và 12 tín hiệu giao tiếp.
+- `Era Realm` là mặc định. Loài khác thời đại chỉ được chấp nhận khi bật `Eon Convergence`; Codex-only không bao giờ được spawn kể cả trong Convergence.
+- Catalog có validator chạy ngay khi module khởi tạo; build test yêu cầu `CONTENT_VALIDATION.valid === true`.
+
+### Simulation v2
+
+- Chunk 256 đơn vị tái tạo theo `seed + realm + tọa độ`, giới hạn 256 chunk, 512 entity, 32 tài nguyên và 24 wildlife mỗi chunk.
+- Wildlife sinh từ chunk chỉ lấy Playable Flagship hoặc Simulated Wildlife đúng realm; Codex-only không được spawn. Realm Cổ sinh hiện dùng sáu loài Simulated Wildlife và chưa có avatar Flagship riêng cho người chơi.
+- Spatial Hash hỗ trợ truy vấn lân cận thay vì quét toàn bộ entity.
+- Biomass Ledger có carrying capacity theo biome, tổng population cap và apex cap theo location; spawn vượt budget bị từ chối.
+- Utility AI chấm đúng tám hành động: `hunt`, `flee`, `drink`, `feed`, `rest`, `migrate`, `mate`, `guardNest`. Hunt chỉ hồi đói khi tiếp cận và gây sát thương con mồi thật; mate cần cá thể tương thích và capacity còn chỗ để tạo offspring; guardNest chỉ tác động khi có tổ và mối đe dọa gần.
+- Fixed timestep mặc định 30 Hz, giới hạn delta và số bước catch-up để tránh tab quay lại làm nghẽn main thread.
+- Footprint/Scent Trail có giới hạn bộ nhớ, phân rã theo thời gian và scent trôi theo gió.
+- Hazard System có thủy triều, lũ, cháy tự nhiên và núi lửa; cường độ, bán kính, thời gian và số event đều bị clamp.
+- Replay dùng ring buffer tối đa 900 frame; Heatmap tối đa 4.096 cell. Game adapter chỉ giữ tối đa 240 replay sample và 256 heatmap cell trong save local để Observer mở lại được mà không phình dữ liệu.
+- Worker adapter chỉ chạy command hỗ trợ. Nếu Worker không tồn tại hoặc khởi tạo thất bại, nó chuyển sang local command set giới hạn; không màn đen và không giả WebGPU.
+
+### Game workspace v2
+
+- Chín route trực tiếp: Thế giới sống, Eon Codex, Lưới sinh thái, Eon Atlas, Thám hiểm, Dòng gene, Observer & Replay, Multiplayer Readiness và Cài đặt.
+- Canvas 2D top-down có seed, bốn realm, thời tiết, ngày/đêm, vùng di cư, tài nguyên, quần thể, minimap và adaptive quality. Ecology Director tạo một simulation local giới hạn theo seed, stream chunk bằng tọa độ thế giới, chạy fixed-step và hiển thị snapshot Biomass Ledger/Utility AI thật thay cho phần trăm minh họa.
+- Vòng sinh tồn gồm máu, đói, khát, stamina, trưởng thành, nhiệt độ, oxy, dinh dưỡng, chất lượng khẩu phần, miễn dịch, chấn thương, ăn/uống, giác quan, phòng vệ, làm tổ và respawn.
+- Vòng đời mới tìm điểm spawn theo locomotion/habitat bằng seed: loài trên cạn không còn xuất hiện giữa đại dương, loài nước bắt đầu ở ocean/reef và save đã chết được dựng lại an toàn khi người chơi chủ động bắt đầu vòng đời mới.
+- Flagship có ability riêng trên phím R; communication wheel trên C; Photo Mode trên P; điều khiển còn lại dùng WASD/phím mũi tên, Shift, E, Q, F, N, touch D-pad và gamepad.
+- Lineage lưu tối đa 24 thế hệ, game replay tối đa 240 mẫu và event journal tối đa 40 mục; mọi trường được normalize trước khi render/lưu.
+- Save `hh.game.eonwild.v2` tự đọc và migrate dữ liệu từ `hh.game.eonwild.v1`, nhưng vẫn chỉ nằm trên thiết bị.
+- Game loop tạm dừng khi tab ẩn. Unmount hủy RAF, observer timer, event listener, ResizeObserver, worker adapter, simulation và AudioContext.
+- Multiplayer Readiness fail closed: không có room code, người online, leaderboard hoặc máy chủ giả; capability audit chỉ nói điều kiện còn thiếu.
+
+49 mục catalog không đồng nghĩa 49 implementation bespoke hoàn chỉnh. V2 định nghĩa sâu 12 Flagship ở content layer, còn renderer top-down vẫn dùng chung nhiều primitive. Mỗi Flagship chỉ được quảng bá là production-ready sau khi animation, sound, collision, AI, cân bằng và provenance của riêng loài đó qua QA.
 
 ## 6. Trụ cột trải nghiệm dài hạn
 
@@ -91,76 +119,101 @@ Sandbox tùy chọn, được dán nhãn hư cấu, cho phép các thời đại
 
 Camera quan sát lưới thức ăn, sinh khối, di cư, sinh sản và tuyệt chủng cục bộ mà không tạo một “con người vô hình” trong lore.
 
-## 7. Lộ trình P0–P3
+## 7. Lộ trình P0–P3 sau v2
 
-### P0 — Hoàn thiện vertical slice
+Trạng thái dưới đây phân biệt rõ phần đã có trong code với phần còn là kế hoạch.
 
-- Hoàn tất route, lazy loader, cache và layout một viewport trên desktop/mobile.
-- Tách realm theo era; chỉ bật mixed-era khi người chơi chủ động chọn Convergence.
-- Chuẩn hóa save migration, giới hạn dữ liệu, export/import và phục hồi bản trước.
-- Spatial hash cho AI/tài nguyên thay cho sắp xếp toàn bộ entity mỗi tương tác.
-- Fixed timestep cho simulation; render có interpolation và giới hạn delta khi tab quay lại.
-- Trạng thái pause/resume rõ, focus không mất, touch target tối thiểu 44 px và reduced motion.
-- Bộ test taxonomy no-human, seed deterministic, vitals bounded, lifecycle cleanup và không có network giả.
+### P0 — Đã hoàn thành trong v2
 
-### P1 — Chiều sâu sinh thái
+- Route, breadcrumb, lazy loader, Service Worker cache và layout một viewport cho chín workspace.
+- Bốn Era Realm, rule isolation mặc định và Convergence opt-in có nhãn hư cấu.
+- Content schema v2, validation tự chạy, ba taxonomy tier và đúng 12 Flagship.
+- Save schema v2, migration từ v1, clamp dữ liệu và giới hạn lineage/replay/event journal.
+- Chunk deterministic, Spatial Hash, Biomass Ledger, Utility AI tám hành động và fixed timestep 30 Hz.
+- Trail, hazard, replay ring, heatmap, adaptive quality và bounded worker fallback.
+- Input bàn phím/touch/gamepad, focus rõ, target 44 px, reduced motion và forced colors.
+- Test no-human, realm isolation, gene bounds, apex cap, deterministic seed, cleanup và fail-closed multiplayer.
 
-- Chọn 8–12 Playable Flagship đất–biển–trời, mỗi loài có locomotion và giác quan riêng.
-- `Biomass Ledger` theo dõi năng lượng từ thực vật → con mồi → thú săn mồi → xác hữu cơ.
-- AI theo state machine/utility AI: kiếm ăn, trốn, săn, nghỉ, giao phối, bảo vệ tổ và di cư.
-- Mùa, cháy tự nhiên, lũ, hạn, bão, nhiệt độ và bệnh ảnh hưởng khác nhau theo biome.
-- Tổ, gene, con non, đàn, lãnh thổ, pheromone và tín hiệu âm thanh không lời.
-- Pipeline taxonomy có nguồn từ Catalogue of Life/GBIF, provenance từng field và hàng chờ biên tập.
-- Chuyển save/project lớn sang IndexedDB; localStorage chỉ giữ preference nhỏ.
+### P1 — Hoàn thiện chất lượng Flagship
 
-### P2 — Thế giới lớn và công cụ sáng tạo
+- Chuyển 12 profile content thành 12 bộ animation/collision/audio/locomotion thực sự khác nhau; hiện renderer còn chia sẻ primitive top-down.
+- Thêm flagship Cổ sinh để Realm Cổ sinh có avatar flagship chơi được thay vì chỉ Simulated/Codex.
+- Nâng hành vi tổ, con non, đàn, lãnh thổ, pheromone và call response thành state có tác động dài hạn.
+- Gắn diet, injury, gene và communication data v2 sâu hơn vào từng bước simulation thay vì chủ yếu hiển thị/truyền qua game state.
+- Tạo editor provenance cho taxonomy, niên đại, habitat và nguồn; kiểm duyệt trước khi nâng tier.
+- Thêm export/import save v2 có checksum, preview và rollback; không ghi đè âm thầm.
+- Bổ sung test soak hàng giờ, replay regression và visual regression ở 375/768/desktop.
 
-- World streaming theo chunk, level-of-detail, pooled entity, navigation theo tầng đất/biển/trời.
-- OffscreenCanvas trong Worker cho terrain, minimap hoặc simulation phù hợp; main thread ưu tiên input và UI.
-- Era Realm, Sanctuary, Observer, Expedition, replay/ghost và photo mode hoàn chỉnh.
-- Content pack có version cho biome, species, season và expedition; ký manifest, kiểm tra schema và license.
-- PWA offline cho Codex, save và Expedition local; đồng bộ tùy chọn chỉ khi người dùng bật.
-- Công cụ nội bộ để xem food web, budget AI, đường di cư, provenance và regression replay.
+### P2 — Streaming, lưu trữ và công cụ sản xuất
 
-### P3 — Realtime tùy chọn và quy mô lớn
+- Chuyển save/replay lớn sang IndexedDB; localStorage chỉ giữ preference và con trỏ phiên nhỏ.
+- Worker hóa simulation/chunk thật với protocol schema + sequence; hiện worker assist chỉ xử lý command giới hạn và phần còn lại dùng local fallback.
+- OffscreenCanvas tùy chọn cho terrain/minimap; main thread ưu tiên input và accessibility UI.
+- Chunk level-of-detail, entity pooling, AI tick thưa ngoài vùng quan tâm và navigation riêng cho đất/biển/trời.
+- Observer nâng thành timeline có scrub, filter species, food-web overlay, export replay và ghost local.
+- Content pack có version, manifest, hash, license, migration và giới hạn giải nén.
+- PWA offline cho Codex, save và Expedition; đồng bộ tài khoản là opt-in riêng.
 
-- Multiplayer chỉ phát hành khi có signaling/auth thật, server-authoritative simulation và reconnect/resync.
-- Phòng invite-only, bạn bè hoặc public; vai trò host không được quyền sửa score/sinh khối trực tiếp.
-- Interest management theo chunk, snapshot delta, prediction có reconciliation và giới hạn tần suất message.
-- Moderation, report, block, rate limit, audit event, chống replay và chống client tampering.
-- WebGPU chỉ là accelerator tùy chọn cho compute/render nặng sau feature detection; Canvas 2D/WebGL fallback vẫn bắt buộc.
-- Kiểm thử tải, chaos/reconnect, bảo mật và chi phí vận hành trước khi gọi là persistent world hay MMO.
+### P3 — Realtime tùy chọn, chưa triển khai
 
-## 8. Kiến trúc đề xuất
+- Chỉ mở multiplayer sau khi có auth/signaling thật, token phòng ngắn hạn, server-authoritative simulation và reconnect/resync.
+- Bắt đầu bằng shard 20–32 người; room invite-only/bạn bè/public có quyền host, player, observer rõ ràng.
+- Interest management theo chunk, snapshot delta có sequence, client prediction và server reconciliation.
+- Moderation, report, block, rate limit, audit event, anti-replay và chống client tampering.
+- Không chia sẻ location, account ID, save hoặc telemetry ngoài scope phòng đã consent.
+- WebGPU chỉ là accelerator tùy chọn sau feature detection; Canvas 2D/WebGL fallback vẫn bắt buộc.
+- Chỉ gọi sản phẩm là persistent world/MMO sau load test, chaos/reconnect test, security review và kiểm soát chi phí vận hành.
+
+## 8. Kiến trúc v2 thực tế
 
 ```text
-App Shell / route
+App Shell / #/game/*
         |
-EonWild workspace UI
+Performance Loader
+  ├─ hh-eonwild-content-v2.js
+  ├─ hh-eonwild-simulation-v2.js
+  └─ hh-eonwild-game.js + CSS
         |
-Input adapter ── keyboard / touch / gamepad
+Game workspace / state schema v2
+  ├─ keyboard + touch + gamepad
+  ├─ Canvas 2D + minimap + observer
+  └─ localStorage v2 + migration v1
         |
-Deterministic simulation core
-  ├─ vitals + lifecycle
-  ├─ ecology + biomass
-  ├─ terrain + climate
-  └─ AI + migration
+Simulation v2 (pure/bounded core)
+  ├─ deterministic chunks + Spatial Hash
+  ├─ Biomass Ledger + Utility AI
+  ├─ fixed 30 Hz + conditions + hazards
+  └─ trails + heatmap + replay ring
         |
-Render adapter ── Canvas 2D fallback / optional GPU path
-        |
-Versioned persistence ── preferences / IndexedDB saves / replay
+Worker adapter
+  ├─ supported command → dedicated Worker when available
+  └─ unsupported/unavailable → bounded local fallback
 ```
 
-Các hàm core như `normalizeState`, `stepVitals`, `terrainAt` và `createWorld` phải giữ pure/deterministic để test và replay cùng seed. DOM, audio, persistence và network nằm ở adapter riêng. Worker nhận message có schema, sequence number và giới hạn kích thước; không nhận code hoặc object tùy ý để thực thi.
+### Biên module
 
-Performance budget ban đầu:
+- `hh-eonwild-content-v2.js` không cần DOM và xuất object đã freeze. Các hàm realm/gene/diet/injury/communication là pure, nên có thể dùng trong test, worker hoặc công cụ biên tập.
+- `hh-eonwild-simulation-v2.js` không mount giao diện và không gọi network. Seed, chunk, utility score và fixed-step có thể tái tạo độc lập.
+- `hh-eonwild-game.js` là adapter trình duyệt: đọc content/simulation globals, chuẩn hóa save, gắn input, render và dọn tài nguyên khi unmount.
+- `performance-loader.js` bắt buộc tải content → simulation → game theo thứ tự. `sw.js` cache cả bốn asset EonWild đã version hóa.
 
-- 60 FPS mục tiêu desktop, 30–60 FPS thích nghi mobile; gameplay không phụ thuộc frame rate.
-- Giới hạn DPR, blur, particle và wildlife theo thiết bị.
-- Chỉ update entity trong vùng quan tâm; AI xa dùng tick thưa hoặc thống kê quần thể.
-- Không sort toàn bộ quần thể/tài nguyên mỗi frame; dùng spatial index và nearest-neighbor có giới hạn.
-- Dừng RAF/audio/worker khi tab ẩn; giải phóng observer, timer và listener khi đổi route.
-- Đo long task, memory, frame time và entity budget bằng công cụ dev nội bộ, không gửi dữ liệu riêng tư mặc định.
+### Budget đang được áp dụng
+
+- Simulation: 30 fixed steps/giây, delta tối đa 0,25 giây và tối đa 8 bước catch-up mỗi tick.
+- Streaming: chunk 256 đơn vị; tối đa 256 chunk và 512 entity trong một simulation.
+- Mỗi chunk: tối đa 32 resource và 24 wildlife.
+- Dấu vết: tối đa 4.096 footprint và 4.096 scent trong core; từng UI/session có thể đặt cap thấp hơn.
+- Replay core: 900 frame; game save: 240 mẫu; heatmap: 4.096 cell.
+- Canvas giới hạn DPR theo mobile/desktop; adaptive quality giảm DPR và số wildlife được vẽ mỗi frame khi FPS thấp, nhưng không xóa entity khỏi simulation.
+- Khi tab ẩn, gameplay update dừng. Khi đổi route, controller, RAF, timer, ResizeObserver, Worker, simulation và audio đều được đóng.
+
+### Giới hạn cần nói đúng
+
+- Persistence hiện là localStorage schema v2, chưa phải IndexedDB hay cloud sync.
+- Worker adapter là worker assist với command allowlist, chưa chuyển toàn bộ simulation sang Worker/OffscreenCanvas.
+- Renderer hiện là Canvas 2D top-down, không có WebGPU/3D.
+- Observer dùng replay local, không quan sát máy chủ hoặc người chơi khác.
+- Network workspace chỉ là readiness gate; không có backend multiplayer, room hoặc online presence.
 
 ## 9. An toàn, bảo mật và riêng tư
 

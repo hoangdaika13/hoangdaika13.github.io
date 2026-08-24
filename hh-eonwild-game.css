@@ -67,6 +67,9 @@ body:has(.hwe-root) .app-workspace {
 
 .hwe-root {
   --hwe-era-active: var(--hwe-emerald);
+  --hwe-realm-accent: var(--hwe-emerald);
+  --hwe-realm-accent-soft: rgba(105, 240, 174, 0.16);
+  --hwe-realm-surface: rgba(11, 43, 35, 0.82);
   position: relative;
   isolation: isolate;
   display: grid;
@@ -90,6 +93,42 @@ body:has(.hwe-root) .app-workspace {
   font-size: 16px;
   line-height: 1.55;
   text-rendering: optimizeLegibility;
+}
+
+.hwe-root[data-realm="paleozoic"] {
+  --hwe-realm-accent: #58e6d2;
+  --hwe-realm-accent-soft: rgba(88, 230, 210, 0.16);
+  --hwe-realm-surface: rgba(7, 50, 52, 0.84);
+  background:
+    radial-gradient(circle at 11% -14%, rgba(45, 209, 197, 0.22), transparent 36%),
+    radial-gradient(circle at 92% 8%, rgba(64, 168, 220, 0.16), transparent 31%),
+    linear-gradient(145deg, #052124 0%, #031313 54%, #062329 100%);
+}
+
+.hwe-root[data-realm="mesozoic"] {
+  --hwe-realm-accent: #ffb65f;
+  --hwe-realm-accent-soft: rgba(255, 182, 95, 0.16);
+  --hwe-realm-surface: rgba(56, 35, 20, 0.84);
+  background:
+    radial-gradient(circle at 12% -14%, rgba(255, 182, 95, 0.2), transparent 36%),
+    radial-gradient(circle at 92% 8%, rgba(208, 102, 72, 0.13), transparent 31%),
+    linear-gradient(145deg, #21170d 0%, #11120d 54%, #252015 100%);
+}
+
+.hwe-root[data-realm="ice-age"] {
+  --hwe-realm-accent: #d8f7ff;
+  --hwe-realm-accent-soft: rgba(216, 247, 255, 0.16);
+  --hwe-realm-surface: rgba(24, 48, 61, 0.86);
+  background:
+    radial-gradient(circle at 11% -14%, rgba(216, 247, 255, 0.2), transparent 36%),
+    radial-gradient(circle at 92% 8%, rgba(113, 178, 220, 0.17), transparent 31%),
+    linear-gradient(145deg, #10242c 0%, #071419 54%, #152832 100%);
+}
+
+.hwe-root[data-realm="modern"] {
+  --hwe-realm-accent: #72ef9d;
+  --hwe-realm-accent-soft: rgba(114, 239, 157, 0.16);
+  --hwe-realm-surface: rgba(12, 53, 37, 0.84);
 }
 
 .hwe-root::before,
@@ -183,6 +222,10 @@ body:has(.hwe-root) .app-workspace {
   font-size: 1rem;
 }
 
+.hwe-root :where(p, li, dd, dt, strong, small, em, span) {
+  overflow-wrap: anywhere;
+}
+
 .hwe-root small {
   font-size: 0.875rem;
   line-height: 1.4;
@@ -193,6 +236,10 @@ body:has(.hwe-root) .app-workspace {
   border: 1px solid rgba(133, 234, 187, 0.25);
   border-radius: 11px;
   background: rgba(3, 21, 17, 0.86);
+}
+
+.hwe-root label:has(input[type="checkbox"]) {
+  min-height: 44px;
 }
 
 .hwe-root input::placeholder {
@@ -225,17 +272,17 @@ body:has(.hwe-root) .app-workspace {
   background: linear-gradient(90deg, var(--hwe-ocean), var(--hwe-emerald), var(--hwe-amber));
 }
 
-.hwe-root :where(.hwe-species-list, .hwe-codex-grid, .hwe-library, .hwe-ecosystem, .hwe-atlas, .hwe-expeditions, .hwe-settings, .hwe-telemetry) {
+.hwe-root :where(.hwe-species-list, .hwe-codex-grid, .hwe-library, .hwe-ecosystem, .hwe-atlas, .hwe-expeditions, .hwe-lineage, .hwe-observer, .hwe-network, .hwe-settings, .hwe-telemetry, .hwe-communication-wheel > div) {
   scrollbar-width: thin;
   scrollbar-color: rgba(105, 240, 174, 0.52) transparent;
 }
 
-.hwe-root :where(.hwe-species-list, .hwe-codex-grid, .hwe-library, .hwe-ecosystem, .hwe-atlas, .hwe-expeditions, .hwe-settings, .hwe-telemetry)::-webkit-scrollbar {
+.hwe-root :where(.hwe-species-list, .hwe-codex-grid, .hwe-library, .hwe-ecosystem, .hwe-atlas, .hwe-expeditions, .hwe-lineage, .hwe-observer, .hwe-network, .hwe-settings, .hwe-telemetry, .hwe-communication-wheel > div)::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
-.hwe-root :where(.hwe-species-list, .hwe-codex-grid, .hwe-library, .hwe-ecosystem, .hwe-atlas, .hwe-expeditions, .hwe-settings, .hwe-telemetry)::-webkit-scrollbar-thumb {
+.hwe-root :where(.hwe-species-list, .hwe-codex-grid, .hwe-library, .hwe-ecosystem, .hwe-atlas, .hwe-expeditions, .hwe-lineage, .hwe-observer, .hwe-network, .hwe-settings, .hwe-telemetry, .hwe-communication-wheel > div)::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
   border-radius: 999px;
   background: rgba(105, 240, 174, 0.52) padding-box;
@@ -399,7 +446,7 @@ body:has(.hwe-root) .app-workspace {
   position: relative;
   z-index: 9;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   gap: 7px;
   min-width: 0;
   padding: 7px 10px;
@@ -478,7 +525,130 @@ body:has(.hwe-root) .app-workspace {
 }
 
 .hwe-root[data-view="world"] .hwe-main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
+}
+
+/* Realm selection stays inside the fixed centre workspace. */
+.hwe-realm-selector {
+  display: grid;
+  grid-template-columns: minmax(128px, 0.58fr) minmax(480px, 2.5fr) minmax(190px, 0.78fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 8px 0;
+}
+
+.hwe-realm-selector > span {
+  display: grid;
+  min-width: 0;
+  padding-inline: 6px;
+}
+
+.hwe-realm-selector > span small,
+.hwe-realm-selector > div button small,
+.hwe-realm-selector > label small {
+  color: var(--hwe-muted);
+  font-size: 0.75rem;
+}
+
+.hwe-realm-selector > span small {
+  color: var(--hwe-realm-accent);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.hwe-realm-selector > span strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hwe-realm-selector > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+}
+
+.hwe-realm-selector > div button {
+  position: relative;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0 7px;
+  min-height: 50px;
+  padding: 5px 8px;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--realm) 30%, transparent);
+  background: color-mix(in srgb, var(--realm) 8%, #071e19);
+  text-align: left;
+}
+
+.hwe-realm-selector > div button > i {
+  grid-row: 1 / -1;
+  width: 8px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--realm);
+  box-shadow: 0 0 13px color-mix(in srgb, var(--realm) 65%, transparent);
+  opacity: 0.58;
+}
+
+.hwe-realm-selector > div button > span,
+.hwe-realm-selector > div button > small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hwe-realm-selector > div button > span {
+  align-self: end;
+  font-size: 0.8125rem;
+  font-weight: 850;
+}
+
+.hwe-realm-selector > div button > small {
+  align-self: start;
+  font-size: 0.6875rem;
+}
+
+.hwe-realm-selector > div button[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--realm) 76%, white 8%);
+  background: color-mix(in srgb, var(--realm) 18%, #071e19);
+  box-shadow: inset 0 0 20px color-mix(in srgb, var(--realm) 8%, transparent);
+}
+
+.hwe-realm-selector > div button[aria-pressed="true"] > i {
+  opacity: 1;
+}
+
+.hwe-realm-selector > label {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 0 8px;
+  min-height: 50px;
+  padding: 5px 9px;
+  border: 1px solid rgba(212, 154, 255, 0.28);
+  border-radius: 12px;
+  background: rgba(212, 154, 255, 0.07);
+  cursor: pointer;
+}
+
+.hwe-realm-selector > label input {
+  grid-row: 1 / 3;
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  accent-color: var(--hwe-violet);
+}
+
+.hwe-realm-selector > label small {
+  grid-column: 2;
 }
 
 /* Living world: three-column cockpit */
@@ -641,7 +811,8 @@ body:has(.hwe-root) .app-workspace {
 }
 
 .hwe-species-card strong,
-.hwe-species-card small {
+.hwe-species-card small,
+.hwe-species-card em {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -654,6 +825,23 @@ body:has(.hwe-root) .app-workspace {
 
 .hwe-species-card small {
   color: #a9cdbb;
+}
+
+.hwe-species-card em {
+  color: color-mix(in srgb, var(--species) 72%, white);
+  font-size: 0.6875rem;
+  font-style: normal;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+}
+
+.hwe-species-card.is-other-realm {
+  opacity: 0.58;
+}
+
+.hwe-species-card.is-other-realm:hover,
+.hwe-species-card.is-other-realm:focus-visible {
+  opacity: 0.9;
 }
 
 .hwe-species-card:hover,
@@ -865,6 +1053,39 @@ body:has(.hwe-root) .app-workspace {
   text-shadow: 0 2px 5px #000;
 }
 
+.hwe-event-banner {
+  position: absolute;
+  z-index: 8;
+  top: 72px;
+  left: 50%;
+  display: grid;
+  width: min(360px, calc(100% - 240px));
+  min-width: 220px;
+  padding: 9px 13px;
+  border: 1px solid color-mix(in srgb, var(--hwe-realm-accent) 58%, var(--hwe-amber));
+  border-radius: 13px;
+  background: rgba(4, 22, 19, 0.91);
+  box-shadow: 0 14px 34px rgba(0, 8, 6, 0.34), 0 0 22px var(--hwe-realm-accent-soft);
+  text-align: center;
+  transform: translateX(-50%);
+  backdrop-filter: blur(10px);
+  animation: hweEventSignal 2.8s ease-in-out infinite;
+}
+
+.hwe-event-banner small {
+  color: var(--hwe-realm-accent);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.hwe-event-banner strong {
+  margin-block: 1px 6px;
+}
+
+.hwe-event-banner progress {
+  width: 100%;
+}
+
 .hwe-sense {
   position: absolute;
   z-index: 8;
@@ -887,6 +1108,208 @@ body:has(.hwe-root) .app-workspace {
   font-size: 0.875rem;
   font-weight: 900;
   letter-spacing: 0.08em;
+}
+
+.hwe-ability-bar {
+  position: absolute;
+  z-index: 7;
+  bottom: 10px;
+  left: 50%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  width: min(700px, calc(100% - 176px));
+  min-width: 0;
+  transform: translateX(-50%);
+}
+
+.hwe-ability-bar button {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 6px 10px;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--hwe-realm-accent) 38%, transparent);
+  background: rgba(3, 20, 17, 0.84);
+  text-align: left;
+  backdrop-filter: blur(9px);
+}
+
+.hwe-ability-bar button:hover,
+.hwe-ability-bar button[aria-expanded="true"] {
+  border-color: var(--hwe-realm-accent);
+  background: color-mix(in srgb, var(--hwe-realm-accent) 13%, #071d19);
+}
+
+.hwe-ability-bar kbd {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--hwe-realm-accent) 55%, transparent);
+  border-radius: 10px;
+  background: var(--hwe-realm-accent-soft);
+  color: #fff;
+  font: 900 0.8125rem/1 ui-monospace, "Cascadia Code", monospace;
+}
+
+.hwe-ability-bar button > span {
+  display: grid;
+  min-width: 0;
+}
+
+.hwe-ability-bar small,
+.hwe-ability-bar strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hwe-ability-bar small {
+  color: var(--hwe-muted);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+}
+
+.hwe-ability-bar strong {
+  font-size: 0.8125rem;
+}
+
+.hwe-communication-wheel {
+  position: absolute;
+  z-index: 12;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(520px, calc(100% - 28px));
+  max-height: calc(100% - 28px);
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--hwe-realm-accent) 64%, white 8%);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 50%, var(--hwe-realm-accent-soft), transparent 58%),
+    rgba(2, 17, 15, 0.96);
+  box-shadow: 0 30px 80px rgba(0, 5, 4, 0.7), 0 0 34px var(--hwe-realm-accent-soft);
+  transform: translate(-50%, -50%);
+  backdrop-filter: blur(16px);
+  animation: hweWheelOpen 260ms var(--hwe-ease) both;
+}
+
+.hwe-communication-wheel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 2px 10px;
+}
+
+.hwe-communication-wheel > header > span {
+  display: grid;
+  min-width: 0;
+}
+
+.hwe-communication-wheel > header small {
+  color: var(--hwe-realm-accent);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.hwe-communication-wheel > header button {
+  width: 44px;
+  flex: 0 0 44px;
+  padding: 0;
+  font-size: 1.35rem;
+}
+
+.hwe-communication-wheel > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 0;
+  padding: 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.hwe-communication-wheel > div button {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  min-height: 92px;
+  padding: 8px;
+  border-color: color-mix(in srgb, var(--hwe-realm-accent) 28%, transparent);
+  border-radius: 50% 44% 52% 46%;
+  background: color-mix(in srgb, var(--hwe-realm-accent) 7%, #09231d);
+  text-align: center;
+  animation: hweCallArrive 340ms var(--hwe-ease) calc(var(--i) * 28ms) both;
+}
+
+.hwe-communication-wheel > div button:hover {
+  border-color: var(--hwe-realm-accent);
+  box-shadow: 0 0 22px var(--hwe-realm-accent-soft);
+}
+
+.hwe-communication-wheel > div button i {
+  color: var(--hwe-realm-accent);
+  font-size: 1.15rem;
+  font-style: normal;
+}
+
+.hwe-communication-wheel > div button span {
+  font-size: 0.8125rem;
+  font-weight: 780;
+  line-height: 1.25;
+}
+
+.hwe-photo-overlay {
+  position: absolute;
+  z-index: 14;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background: linear-gradient(to bottom, transparent 64%, rgba(0, 8, 7, 0.58));
+  pointer-events: none;
+}
+
+.hwe-photo-overlay > span,
+.hwe-photo-overlay > button {
+  min-height: 48px;
+  border: 1px solid rgba(229, 255, 242, 0.3);
+  border-radius: 12px;
+  background: rgba(3, 18, 16, 0.82);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+}
+
+.hwe-photo-overlay > span {
+  display: flex;
+  align-items: center;
+  max-width: min(420px, 45%);
+  padding-inline: 14px;
+  font-weight: 800;
+}
+
+.hwe-photo-overlay > button {
+  padding-inline: 14px;
+}
+
+.hwe-photo-overlay > button:first-of-type {
+  border-color: var(--hwe-realm-accent);
+  color: #fff;
+}
+
+.hwe-root.is-photo-mode :where(.hwe-hud, .hwe-minimap, .hwe-event-banner, .hwe-sense, .hwe-ability-bar, .hwe-touch-controls) {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .hwe-start-panel,
@@ -996,6 +1419,9 @@ body:has(.hwe-root) .app-workspace {
 .hwe-touch-controls button:nth-child(5) { grid-column: 1; grid-row: 1; color: var(--hwe-amber); }
 .hwe-touch-controls button:nth-child(6) { grid-column: 3; grid-row: 1; color: var(--hwe-ocean); }
 
+.hwe-touch-controls button:nth-child(7) { color: var(--hwe-coral); }
+.hwe-touch-controls button:nth-child(8) { color: var(--hwe-violet); }
+
 .hwe-telemetry {
   display: grid;
   align-content: start;
@@ -1042,8 +1468,10 @@ body:has(.hwe-root) .app-workspace {
 }
 
 .hwe-vitals,
+.hwe-condition-panel,
 .hwe-species-facts,
 .hwe-mission,
+.hwe-engine-telemetry,
 .hwe-log {
   display: grid;
   gap: 9px;
@@ -1052,6 +1480,105 @@ body:has(.hwe-root) .app-workspace {
   border: 1px solid rgba(124, 234, 188, 0.15);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.025);
+}
+
+.hwe-condition-panel,
+.hwe-engine-telemetry {
+  display: grid;
+  gap: 8px;
+}
+
+.hwe-condition-panel > small,
+.hwe-engine-telemetry > small,
+.hwe-biomass-ledger > small,
+.hwe-utility-actions > small,
+.hwe-gene-bars > small,
+.hwe-gene-preview > small,
+.hwe-observer-stats > small,
+.hwe-network-grid article > small {
+  color: var(--hwe-realm-accent);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.hwe-condition-panel > div {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.hwe-condition-panel span {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 6px 2px;
+  border: 1px solid rgba(255, 119, 134, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 119, 134, 0.035);
+}
+
+.hwe-condition-panel i {
+  width: 18px;
+  height: 4px;
+  margin-bottom: 4px;
+  border-radius: 999px;
+  background: var(--hwe-danger);
+  box-shadow: 0 0 9px rgba(255, 119, 134, 0.38);
+  opacity: clamp(0.28, calc(var(--condition, 0) / 50), 1);
+}
+
+.hwe-condition-panel b,
+.hwe-condition-panel em {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.6875rem;
+  font-style: normal;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hwe-condition-panel b {
+  color: var(--hwe-muted);
+  font-weight: 650;
+}
+
+.hwe-condition-panel em {
+  color: #fff;
+  font-weight: 850;
+}
+
+.hwe-engine-telemetry dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+
+.hwe-engine-telemetry dl > div {
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid rgba(89, 217, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(89, 217, 255, 0.035);
+}
+
+.hwe-engine-telemetry dt,
+.hwe-engine-telemetry dd {
+  overflow: hidden;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hwe-engine-telemetry dt {
+  color: var(--hwe-muted);
+}
+
+.hwe-engine-telemetry dd {
+  margin: 2px 0 0;
+  color: var(--hwe-ocean);
+  font-weight: 800;
 }
 
 .hwe-vitals label {
@@ -1121,6 +1648,9 @@ body:has(.hwe-root) .app-workspace {
 .hwe-ecosystem,
 .hwe-atlas,
 .hwe-expeditions,
+.hwe-lineage,
+.hwe-observer,
+.hwe-network,
 .hwe-settings {
   width: 100%;
   height: 100%;
@@ -1245,12 +1775,68 @@ body:has(.hwe-root) .app-workspace {
 /* Eon Codex */
 .hwe-library {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   overflow: hidden;
 }
 
 .hwe-library .hwe-view-hero {
   margin-bottom: 10px;
+}
+
+.hwe-catalog-tiers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: min(1280px, 100%);
+  min-width: 0;
+  margin: 0 auto 10px;
+}
+
+.hwe-catalog-tiers button {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 7px 11px;
+  text-align: left;
+}
+
+.hwe-catalog-tiers button > b {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgba(105, 240, 174, 0.26);
+  border-radius: 50% 44% 52% 46%;
+  color: var(--hwe-realm-accent);
+}
+
+.hwe-catalog-tiers button > span {
+  display: grid;
+  min-width: 0;
+}
+
+.hwe-catalog-tiers button strong,
+.hwe-catalog-tiers button small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hwe-catalog-tiers button strong {
+  font-size: 0.875rem;
+}
+
+.hwe-catalog-tiers button small {
+  color: var(--hwe-muted);
+  font-size: 0.75rem;
+}
+
+.hwe-catalog-tiers button[aria-pressed="true"] {
+  border-color: var(--hwe-realm-accent);
+  background: var(--hwe-realm-accent-soft);
+  box-shadow: inset 3px 0 var(--hwe-realm-accent);
 }
 
 .hwe-filterbar {
@@ -1351,6 +1937,31 @@ body:has(.hwe-root) .app-workspace {
   text-align: center;
 }
 
+.hwe-tier-badge {
+  justify-self: center;
+  margin-top: 7px;
+  padding: 4px 9px;
+  border: 1px solid var(--hwe-ocean);
+  border-radius: 999px;
+  background: rgba(89, 217, 255, 0.08);
+  color: var(--hwe-ocean);
+  font-size: 0.6875rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.hwe-tier-badge[data-tier="flagship"] {
+  border-color: var(--hwe-amber);
+  background: rgba(255, 208, 110, 0.09);
+  color: var(--hwe-amber);
+}
+
+.hwe-tier-badge[data-tier="simulated"] {
+  border-color: var(--hwe-emerald);
+  background: rgba(105, 240, 174, 0.08);
+  color: var(--hwe-emerald);
+}
+
 .hwe-codex-detail h3 {
   margin: 5px 0 0;
   font-size: 1.75rem;
@@ -1393,6 +2004,32 @@ body:has(.hwe-root) .app-workspace {
   border-color: color-mix(in srgb, var(--species, var(--hwe-emerald)) 68%, white 8%);
   background: color-mix(in srgb, var(--species, var(--hwe-emerald)) 17%, #0b392c);
   font-weight: 900;
+}
+
+.hwe-flagship-note,
+.hwe-tier-note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--hwe-ocean);
+  border-radius: 0 10px 10px 0;
+  background: rgba(89, 217, 255, 0.06);
+  color: #c4dfd2;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.hwe-flagship-note {
+  border-left-color: var(--hwe-amber);
+  background: rgba(255, 208, 110, 0.07);
+  color: #fff0c2;
+}
+
+.hwe-codex-detail button:disabled,
+.hwe-species-card:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.45);
+  opacity: 0.58;
+  transform: none;
 }
 
 /* Ecology Director */
@@ -1447,7 +2084,9 @@ body:has(.hwe-root) .app-workspace {
 }
 
 .hwe-population,
+.hwe-biomass-ledger,
 .hwe-director,
+.hwe-utility-actions,
 .hwe-senses {
   display: grid;
   align-content: start;
@@ -1466,6 +2105,43 @@ body:has(.hwe-root) .app-workspace {
   font-size: 0.875rem;
 }
 
+.hwe-biomass-ledger dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin: 0;
+}
+
+.hwe-biomass-ledger dl > div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(105, 240, 174, 0.14);
+  border-radius: 12px;
+  background: rgba(105, 240, 174, 0.035);
+}
+
+.hwe-biomass-ledger dt,
+.hwe-biomass-ledger dd {
+  font-size: 0.8125rem;
+}
+
+.hwe-biomass-ledger dt {
+  color: var(--hwe-muted);
+}
+
+.hwe-biomass-ledger dd {
+  margin: 3px 0 0;
+  color: var(--hwe-amber);
+  font-weight: 850;
+}
+
+.hwe-biomass-ledger p {
+  margin: 0;
+  color: #bcd8ca;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
 .hwe-director h3 {
   margin: 0;
   color: #fff3ca;
@@ -1479,13 +2155,54 @@ body:has(.hwe-root) .app-workspace {
 }
 
 .hwe-director > div,
-.hwe-senses {
+.hwe-senses,
+.hwe-utility-actions {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .hwe-director > div {
   display: grid;
   gap: 7px;
+}
+
+.hwe-utility-actions > small {
+  grid-column: 1 / -1;
+}
+
+.hwe-utility-actions span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 48px;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(89, 217, 255, 0.15);
+  border-radius: 12px;
+  background: rgba(89, 217, 255, 0.035);
+  color: #cbe8dc;
+  font: 760 0.8125rem/1.25 ui-monospace, "Cascadia Code", monospace;
+}
+
+.hwe-utility-actions span i {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: var(--hwe-realm-accent);
+  box-shadow: 0 0 10px var(--hwe-realm-accent);
+  animation: hweUtilityTick 3.2s ease-in-out calc(var(--i) * -0.31s) infinite;
+}
+
+.hwe-utility-actions span b {
+  min-width: 24px;
+  margin-left: auto;
+  padding: 2px 6px;
+  border: 1px solid color-mix(in srgb, var(--hwe-realm-accent) 40%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--hwe-realm-accent) 12%, transparent);
+  color: #f4fff8;
+  text-align: center;
+  font-size: 0.75rem;
 }
 
 .hwe-director > div span,
@@ -1700,6 +2417,484 @@ body:has(.hwe-root) .app-workspace {
   color: var(--hwe-emerald);
 }
 
+/* Lineage Vault */
+.hwe-gene-dashboard {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.82fr) minmax(320px, 1.45fr) minmax(240px, 0.92fr);
+  gap: 12px;
+  width: min(1280px, 100%);
+  min-width: 0;
+  margin: 0 auto 12px;
+}
+
+.hwe-gene-dashboard article,
+.hwe-lineage-track article,
+.hwe-observer-grid > article,
+.hwe-observer-grid > aside,
+.hwe-network-grid article,
+.hwe-network-result {
+  min-width: 0;
+  border: 1px solid var(--hwe-line);
+  border-radius: 18px;
+  background: linear-gradient(150deg, rgba(14, 49, 38, 0.87), rgba(5, 25, 22, 0.94));
+}
+
+.hwe-gene-dashboard article {
+  padding: 18px;
+}
+
+.hwe-gene-orb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  overflow: hidden;
+  text-align: center;
+}
+
+.hwe-gene-orb::before,
+.hwe-gene-orb::after {
+  content: "";
+  position: absolute;
+  width: 156px;
+  height: 156px;
+  border: 1px dashed rgba(105, 240, 174, 0.28);
+  border-radius: 50% 44% 53% 47%;
+  pointer-events: none;
+  animation: hweGeneTurn 18s linear infinite;
+}
+
+.hwe-gene-orb::after {
+  width: 124px;
+  height: 124px;
+  border-color: rgba(212, 154, 255, 0.25);
+  animation-direction: reverse;
+  animation-duration: 14s;
+}
+
+.hwe-gene-orb > span {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 94px;
+  height: 94px;
+  place-items: center;
+  align-content: center;
+  margin-bottom: 12px;
+  border: 1px solid rgba(212, 154, 255, 0.46);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 154, 255, 0.2), rgba(105, 240, 174, 0.05));
+  box-shadow: 0 0 28px rgba(212, 154, 255, 0.13);
+}
+
+.hwe-gene-orb > span b {
+  color: #f2d9ff;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.hwe-gene-orb > span small {
+  color: var(--hwe-muted);
+  font-size: 0.6875rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.hwe-gene-orb h3,
+.hwe-gene-preview h3,
+.hwe-observer-stats h3,
+.hwe-network-grid h3 {
+  margin: 0;
+}
+
+.hwe-gene-orb p,
+.hwe-gene-preview p {
+  margin: 5px 0 12px;
+  color: var(--hwe-muted);
+  font-size: 0.875rem;
+}
+
+.hwe-gene-orb button {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.hwe-gene-bars {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+}
+
+.hwe-gene-bars label {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.8fr) minmax(100px, 1.2fr) 30px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #cde7db;
+  font-size: 0.875rem;
+}
+
+.hwe-gene-bars label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hwe-gene-bars label b {
+  color: var(--hwe-violet);
+  font-size: 0.8125rem;
+  text-align: right;
+}
+
+.hwe-gene-preview {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  background:
+    radial-gradient(circle at 85% 15%, rgba(212, 154, 255, 0.13), transparent 34%),
+    linear-gradient(150deg, rgba(41, 29, 54, 0.76), rgba(5, 25, 22, 0.94)) !important;
+}
+
+.hwe-gene-preview h3 {
+  color: #f2d9ff;
+  font-size: 1.3rem;
+}
+
+.hwe-gene-preview > div {
+  display: grid;
+  gap: 7px;
+}
+
+.hwe-gene-preview > div span {
+  display: grid;
+  grid-template-columns: minmax(56px, 1fr) minmax(92px, 1.6fr) 38px;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.hwe-gene-preview > div span i {
+  position: relative;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.hwe-gene-preview > div span i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--hwe-ocean), var(--hwe-violet));
+  opacity: clamp(0.25, calc(var(--gene, 50) / 100), 1);
+}
+
+.hwe-gene-preview > div span b,
+.hwe-gene-preview > div span em {
+  overflow: hidden;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hwe-gene-preview > div span b {
+  color: #dcefe6;
+}
+
+.hwe-gene-preview > div span em {
+  color: var(--hwe-violet);
+  font-style: normal;
+  font-weight: 850;
+  text-align: right;
+}
+
+.hwe-lineage-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 10px;
+  width: min(1280px, 100%);
+  min-width: 0;
+  margin: auto;
+}
+
+.hwe-lineage-track article {
+  position: relative;
+  display: grid;
+  align-content: start;
+  min-height: 180px;
+  padding: 16px;
+  overflow: hidden;
+  animation: hweLineageLand 440ms var(--hwe-ease) calc(var(--i) * 45ms) both;
+}
+
+.hwe-lineage-track article > span {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgba(212, 154, 255, 0.42);
+  border-radius: 50%;
+  color: var(--hwe-violet);
+  font-weight: 900;
+}
+
+.hwe-lineage-track article > small {
+  position: absolute;
+  top: 18px;
+  right: 16px;
+  color: var(--hwe-muted);
+}
+
+.hwe-lineage-track h3 {
+  margin: 12px 0 2px;
+  font-size: 1.05rem;
+}
+
+.hwe-lineage-track p {
+  margin: 0 0 12px;
+  color: var(--hwe-muted);
+  font-size: 0.875rem;
+}
+
+.hwe-lineage-track article > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: auto;
+}
+
+.hwe-lineage-track article > div i {
+  height: 7px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--hwe-ocean), var(--hwe-violet), var(--hwe-emerald));
+  box-shadow: 0 0 9px rgba(212, 154, 255, 0.12);
+}
+
+/* Local observer and replay */
+.hwe-observer .hwe-view-hero > div:last-child {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.hwe-observer .hwe-view-hero > div:last-child button {
+  min-height: 48px;
+  padding-inline: 13px;
+}
+
+.hwe-observer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 330px);
+  gap: 12px;
+  width: min(1280px, 100%);
+  min-width: 0;
+  margin: auto;
+}
+
+.hwe-replay-stage {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.hwe-replay-stage canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(55dvh, 560px);
+  aspect-ratio: 900 / 520;
+  border: 1px solid rgba(89, 217, 255, 0.2);
+  border-radius: 13px;
+  background: #071b1c;
+  object-fit: contain;
+}
+
+.hwe-replay-stage > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px 4px 1px;
+}
+
+.hwe-replay-stage > div span {
+  color: var(--hwe-muted);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.hwe-replay-stage input[type="range"] {
+  width: 100%;
+  min-height: 44px;
+  accent-color: var(--hwe-realm-accent);
+}
+
+.hwe-observer-stats {
+  align-self: start;
+  padding: 18px;
+}
+
+.hwe-observer-stats dl {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 18px;
+}
+
+.hwe-observer-stats dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(105, 240, 174, 0.12);
+}
+
+.hwe-observer-stats dt {
+  color: var(--hwe-muted);
+}
+
+.hwe-observer-stats dd {
+  margin: 0;
+  color: var(--hwe-ocean);
+  font-weight: 800;
+  text-align: right;
+}
+
+.hwe-observer-stats > p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 7px 0 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 208, 110, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 208, 110, 0.035);
+}
+
+.hwe-observer-stats > p b,
+.hwe-observer-stats > p small {
+  font-size: 0.8125rem;
+}
+
+.hwe-observer-stats > p small {
+  color: var(--hwe-muted);
+  white-space: nowrap;
+}
+
+/* Multiplayer capability gate */
+.hwe-capability-lock {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 119, 134, 0.42);
+  border-radius: 999px;
+  background: rgba(255, 119, 134, 0.08);
+  color: #ffd4d9;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.hwe-network-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: min(1120px, 100%);
+  min-width: 0;
+  margin: 0 auto 12px;
+}
+
+.hwe-network-grid article {
+  padding: 20px;
+}
+
+.hwe-network-grid article > p[data-hwe-network-check] {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  margin: 7px 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 119, 134, 0.14);
+  border-radius: 11px;
+  background: rgba(255, 119, 134, 0.035);
+}
+
+.hwe-network-grid article > p[data-hwe-network-check] i {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  color: var(--hwe-danger);
+  font-style: normal;
+}
+
+.hwe-network-grid article > p[data-hwe-network-check] span {
+  min-width: 0;
+  color: #d6eee2;
+}
+
+.hwe-network-grid article > p[data-hwe-network-check] b {
+  color: #ffc0c8;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.hwe-network-grid article > p.is-ready {
+  border-color: rgba(105, 240, 174, 0.22);
+  background: rgba(105, 240, 174, 0.045);
+}
+
+.hwe-network-grid article > p.is-ready i,
+.hwe-network-grid article > p.is-ready b {
+  color: var(--hwe-emerald);
+}
+
+.hwe-network-grid article > button {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.hwe-network-grid ol {
+  margin: 14px 0;
+  padding-left: 22px;
+  color: #c9e2d6;
+}
+
+.hwe-network-grid li {
+  margin-block: 7px;
+}
+
+.hwe-network-grid article > p:not([data-hwe-network-check]) {
+  color: var(--hwe-muted);
+  line-height: 1.65;
+}
+
+.hwe-network-result {
+  width: min(1120px, 100%);
+  min-height: 52px;
+  margin: auto;
+  padding: 13px 16px;
+  border-color: rgba(89, 217, 255, 0.24);
+  background: rgba(89, 217, 255, 0.05);
+  color: #cceefa;
+}
+
 /* Settings */
 .hwe-settings-grid {
   display: grid;
@@ -1829,6 +3024,18 @@ body:has(.hwe-root) .app-workspace {
 
 /* Medium screens retain the cockpit while reducing peripheral density. */
 @media (max-width: 1260px) {
+  .hwe-realm-selector {
+    grid-template-columns: minmax(110px, 0.48fr) minmax(420px, 2.4fr) minmax(170px, 0.72fr);
+  }
+
+  .hwe-realm-selector > div button > small {
+    display: none;
+  }
+
+  .hwe-realm-selector > div button {
+    grid-template-rows: 1fr;
+  }
+
   .hwe-world-layout {
     grid-template-columns: minmax(190px, 220px) minmax(360px, 1fr) minmax(225px, 250px);
   }
@@ -1853,6 +3060,14 @@ body:has(.hwe-root) .app-workspace {
   .hwe-food-web i {
     display: none;
   }
+
+  .hwe-gene-dashboard {
+    grid-template-columns: minmax(230px, 0.8fr) minmax(340px, 1.4fr);
+  }
+
+  .hwe-gene-preview {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 1000px) {
@@ -1869,6 +3084,22 @@ body:has(.hwe-root) .app-workspace {
     grid-template-columns: 30px minmax(0, auto);
     gap: 5px;
     padding-inline: 5px;
+  }
+
+  .hwe-nav button span {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hwe-realm-selector {
+    grid-template-columns: minmax(0, 1fr) minmax(160px, 0.55fr);
+  }
+
+  .hwe-realm-selector > span {
+    display: none;
   }
 
   .hwe-world-layout {
@@ -1905,6 +3136,40 @@ body:has(.hwe-root) .app-workspace {
   .hwe-realm-note {
     grid-template-columns: 1fr;
   }
+
+  .hwe-observer-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(230px, 280px);
+  }
+}
+
+@media (max-height: 800px) and (min-width: 761px) {
+  .hwe-start-panel,
+  .hwe-death-panel {
+    max-height: calc(100% - 16px);
+    padding: 13px 17px;
+  }
+
+  .hwe-start-panel h2,
+  .hwe-death-panel h2 {
+    margin: 4px 0 6px;
+    font-size: clamp(1.35rem, 2.35vw, 1.8rem);
+  }
+
+  .hwe-start-panel p,
+  .hwe-death-panel p {
+    margin-bottom: 8px;
+    font-size: 0.86rem;
+    line-height: 1.4;
+  }
+
+  .hwe-start-panel > div {
+    margin-bottom: 7px;
+  }
+
+  .hwe-start-panel > div button,
+  .hwe-start-panel .is-primary {
+    min-height: 44px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1922,7 +3187,7 @@ body:has(.hwe-root) .app-workspace {
   }
 
   .hwe-root {
-    grid-template-rows: 64px 55px minmax(0, 1fr);
+    grid-template-rows: 64px 62px minmax(0, 1fr);
     border-radius: 16px;
   }
 
@@ -1963,12 +3228,11 @@ body:has(.hwe-root) .app-workspace {
 
   .hwe-nav {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     padding: 5px 7px;
     overflow-x: auto;
-    overscroll-behavior-x: contain;
+    overflow-y: hidden;
     scroll-snap-type: x proximity;
-    scrollbar-width: none;
   }
 
   .hwe-nav::-webkit-scrollbar {
@@ -1976,26 +3240,75 @@ body:has(.hwe-root) .app-workspace {
   }
 
   .hwe-nav button {
-    grid-template-columns: 28px auto;
-    min-width: max-content;
-    flex: 0 0 auto;
-    padding: 4px 10px;
+    grid-template-columns: 26px minmax(0, 1fr);
+    min-width: 112px;
+    flex: 0 0 112px;
+    padding: 2px 4px;
     scroll-snap-align: start;
   }
 
   .hwe-nav button i {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .hwe-nav button span {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .hwe-main,
   .hwe-root[data-view="world"] .hwe-main {
+    display: block;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
     scrollbar-color: rgba(105, 240, 174, 0.5) transparent;
   }
+
+  .hwe-realm-selector {
+    grid-template-columns: minmax(0, 1fr) minmax(140px, 0.78fr);
+    gap: 6px;
+    padding: 6px;
+    border-bottom: 1px solid var(--hwe-line);
+    background: rgba(3, 20, 17, 0.78);
+  }
+
+  .hwe-realm-selector > span {
+    display: none;
+  }
+
+  .hwe-realm-selector > div {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .hwe-realm-selector > div::-webkit-scrollbar { display: none; }
+
+  .hwe-realm-selector > div button {
+    grid-template-rows: 1fr;
+    min-height: 48px;
+    min-width: 148px;
+    flex: 0 0 148px;
+    scroll-snap-align: start;
+  }
+
+  .hwe-realm-selector > label {
+    min-height: 48px;
+    padding: 5px 8px;
+    font-size: 0.78rem;
+  }
+
+  .hwe-realm-selector > label small { font-size: 0.63rem; }
 
   .hwe-world-layout {
     display: flex;
@@ -2075,9 +3388,82 @@ body:has(.hwe-root) .app-workspace {
     width: 102px;
   }
 
-  .hwe-touch-controls {
-    display: grid;
+  .hwe-event-banner {
+    top: 66px;
+    left: 7px;
+    width: min(330px, calc(100% - 122px));
+    min-width: 0;
+    transform: none;
   }
+
+  .hwe-ability-bar {
+    right: 7px;
+    bottom: 108px;
+    left: 7px;
+    width: auto;
+    transform: none;
+  }
+
+  .hwe-ability-bar button {
+    grid-template-columns: 34px minmax(0, 1fr);
+    min-height: 52px;
+    padding: 5px 7px;
+  }
+
+  .hwe-ability-bar kbd {
+    width: 32px;
+    height: 32px;
+  }
+
+  .hwe-communication-wheel {
+    width: calc(100% - 18px);
+    max-height: calc(100% - 18px);
+    padding: 9px;
+    border-radius: 18px;
+  }
+
+  .hwe-communication-wheel > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hwe-communication-wheel > div button {
+    min-height: 76px;
+    border-radius: 14px;
+  }
+
+  .hwe-photo-overlay {
+    flex-wrap: wrap;
+    padding: 10px;
+  }
+
+  .hwe-photo-overlay > span {
+    max-width: 100%;
+  }
+
+  .hwe-touch-controls {
+    display: none;
+    grid-template-columns: repeat(4, 44px);
+    grid-template-rows: repeat(2, 44px);
+    gap: 4px;
+    right: 7px;
+    bottom: 7px;
+  }
+
+  .hwe-root.is-running .hwe-touch-controls { display: grid; }
+
+  .hwe-touch-controls button {
+    width: 44px;
+    min-height: 44px;
+  }
+
+  .hwe-touch-controls button:nth-child(1) { grid-column: 2; grid-row: 1; }
+  .hwe-touch-controls button:nth-child(2) { grid-column: 1; grid-row: 2; }
+  .hwe-touch-controls button:nth-child(3) { grid-column: 2; grid-row: 2; }
+  .hwe-touch-controls button:nth-child(4) { grid-column: 3; grid-row: 2; }
+  .hwe-touch-controls button:nth-child(5) { grid-column: 1; grid-row: 1; }
+  .hwe-touch-controls button:nth-child(6) { grid-column: 3; grid-row: 1; }
+  .hwe-touch-controls button:nth-child(7) { grid-column: 4; grid-row: 1; }
+  .hwe-touch-controls button:nth-child(8) { grid-column: 4; grid-row: 2; }
 
   .hwe-start-panel,
   .hwe-death-panel {
@@ -2104,6 +3490,9 @@ body:has(.hwe-root) .app-workspace {
   .hwe-ecosystem,
   .hwe-atlas,
   .hwe-expeditions,
+  .hwe-lineage,
+  .hwe-observer,
+  .hwe-network,
   .hwe-settings {
     height: auto;
     min-height: 100%;
@@ -2169,10 +3558,31 @@ body:has(.hwe-root) .app-workspace {
   }
 
   .hwe-eco-grid,
+  .hwe-gene-dashboard,
+  .hwe-observer-grid,
+  .hwe-network-grid,
   .hwe-settings-grid,
   .hwe-timeline,
   .hwe-mission-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hwe-gene-preview {
+    grid-column: auto;
+  }
+
+  .hwe-observer .hwe-view-hero > div:last-child {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .hwe-observer-stats {
+    padding: 15px;
+  }
+
+  .hwe-biomass-ledger dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .hwe-food-web {
@@ -2186,7 +3596,8 @@ body:has(.hwe-root) .app-workspace {
   }
 
   .hwe-director > div,
-  .hwe-senses {
+  .hwe-senses,
+  .hwe-utility-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -2233,6 +3644,32 @@ body:has(.hwe-root) .app-workspace {
     max-width: 154px;
   }
 
+  .hwe-nav button {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .hwe-nav button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .hwe-realm-selector > div button > small {
+    display: none;
+  }
+
+  .hwe-catalog-tiers {
+    grid-template-columns: 1fr;
+  }
+
+  .hwe-catalog-tiers button {
+    min-height: 56px;
+  }
+
   .hwe-species-list,
   .hwe-codex-grid {
     grid-template-columns: 1fr;
@@ -2248,8 +3685,65 @@ body:has(.hwe-root) .app-workspace {
   }
 
   .hwe-director > div,
-  .hwe-senses {
+  .hwe-senses,
+  .hwe-utility-actions {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .hwe-photo-overlay > span {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hwe-photo-overlay > button {
+    width: calc(50% - 4px);
+    padding-inline: 7px;
+    font-size: 0.8125rem;
+  }
+
+  .hwe-ability-bar button {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 5px;
+    padding-inline: 5px;
+  }
+
+  .hwe-ability-bar small {
+    display: none;
+  }
+
+  .hwe-ability-bar strong {
+    font-size: 0.6875rem;
+  }
+
+  .hwe-network-grid article {
+    padding: 14px;
+  }
+
+  .hwe-network-grid article > p[data-hwe-network-check] {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .hwe-network-grid article > p[data-hwe-network-check] b {
+    grid-column: 2;
+    white-space: normal;
+  }
+
+  .hwe-capability-lock {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .hwe-replay-stage > div {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .hwe-replay-stage > div > span:first-child {
+    display: none;
+  }
+
+  .hwe-gene-bars label {
+    grid-template-columns: minmax(84px, 0.8fr) minmax(82px, 1.2fr) 26px;
+    gap: 5px;
   }
 
   .hwe-start-panel > div {
@@ -2259,6 +3753,27 @@ body:has(.hwe-root) .app-workspace {
   .hwe-start-panel > div button {
     font-size: 0.875rem;
   }
+}
+
+/* Each realm gets one compositor-friendly ambient cue. */
+.hwe-root[data-realm="paleozoic"] .hwe-atmosphere i:nth-child(1) {
+  animation-name: hwePaleozoicTide;
+}
+
+.hwe-root[data-realm="mesozoic"] .hwe-atmosphere i:nth-child(4) {
+  animation-name: hweMesozoicHeat;
+}
+
+.hwe-root[data-realm="ice-age"] .hwe-atmosphere i:nth-child(3) {
+  animation-name: hweIceAgeVeil;
+}
+
+.hwe-root[data-realm="modern"] .hwe-atmosphere i:nth-child(2) {
+  animation-name: hweModernCanopy;
+}
+
+.hwe-root[data-realm] .hwe-viewport {
+  border-color: color-mix(in srgb, var(--hwe-realm-accent) 38%, transparent);
 }
 
 /* Explicit motion budget. */
@@ -2272,7 +3787,8 @@ body:has(.hwe-root) .app-workspace {
 .hwe-root[data-motion="static"] *,
 .hwe-root[data-motion="static"] *::before,
 .hwe-root[data-motion="static"] *::after {
-  animation-play-state: paused !important;
+  animation: none !important;
+  transition: none !important;
 }
 
 .hwe-root[data-motion="cinematic"] {
@@ -2307,7 +3823,13 @@ body:has(.hwe-root) .app-workspace {
 
 @media (forced-colors: active) {
   .hwe-root,
-  .hwe-root :where(button, input, select, article, aside, section, nav, header, footer) {
+  .hwe-root :where(button, input, select, textarea, article, aside, section, nav, header, footer),
+  .hwe-event-banner,
+  .hwe-communication-wheel,
+  .hwe-photo-overlay > span,
+  .hwe-tier-badge,
+  .hwe-capability-lock,
+  .hwe-network-result {
     border-color: CanvasText;
     background: Canvas;
     color: CanvasText;
@@ -2315,17 +3837,22 @@ body:has(.hwe-root) .app-workspace {
     forced-color-adjust: auto;
   }
 
-  .hwe-root :where(button, input, select, canvas[tabindex]):focus-visible {
+  .hwe-root :where(button, input, select, textarea, canvas[tabindex]):focus-visible {
     outline-color: Highlight;
   }
 
   .hwe-species-card.is-selected,
-  .hwe-nav button[aria-current="page"] {
+  .hwe-nav button[aria-current="page"],
+  .hwe-realm-selector button[aria-pressed="true"],
+  .hwe-catalog-tiers button[aria-pressed="true"],
+  .hwe-filterbar button[aria-pressed="true"] {
     outline: 2px solid Highlight;
     outline-offset: -3px;
   }
 
   .hwe-atmosphere,
+  .hwe-gene-orb::before,
+  .hwe-gene-orb::after,
   .hwe-root::before,
   .hwe-root::after {
     display: none;
@@ -2457,4 +3984,47 @@ body:has(.hwe-root) .app-workspace {
 
 @keyframes hweMissionLand {
   from { opacity: 0; transform: translateY(12px) scale(0.985); }
+}
+
+@keyframes hweEventSignal {
+  50% { border-color: var(--hwe-realm-accent); box-shadow: 0 14px 34px rgba(0, 8, 6, 0.34), 0 0 28px var(--hwe-realm-accent-soft); }
+}
+
+@keyframes hweWheelOpen {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+}
+
+@keyframes hweCallArrive {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+}
+
+@keyframes hweUtilityTick {
+  50% { opacity: 0.42; transform: scale(0.72); }
+}
+
+@keyframes hweGeneTurn {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes hweLineageLand {
+  from { opacity: 0; transform: translateY(9px); }
+}
+
+@keyframes hwePaleozoicTide {
+  0% { opacity: 0; transform: translateX(0) scaleX(0.68); }
+  46% { opacity: 0.72; }
+  100% { opacity: 0; transform: translateX(460%) scaleX(1.16); }
+}
+
+@keyframes hweMesozoicHeat {
+  50% { opacity: 0.82; transform: translateY(-4px) scaleX(1.08); }
+}
+
+@keyframes hweIceAgeVeil {
+  to { opacity: 0.64; transform: translate3d(-36%, -3px, 0); }
+}
+
+@keyframes hweModernCanopy {
+  0%, 100% { opacity: 0.38; transform: translate3d(0, 0, 0); }
+  50% { opacity: 0.96; transform: translate3d(-12px, 18px, 0); }
 }
