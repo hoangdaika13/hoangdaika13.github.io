@@ -12,7 +12,7 @@
 })(typeof window !== "undefined" ? window : typeof self !== "undefined" ? self : typeof globalThis !== "undefined" ? globalThis : this, function createHomeCosmicOS(global) {
   "use strict";
 
-  const VERSION = "2.0.0";
+  const VERSION = "2.1.0";
   const STORAGE_PREFIX = "hh.home.cosmic-os.v1";
   const schemaVersion = 2;
   const MAX_IMPORT_BYTES = 512 * 1024;
@@ -87,8 +87,15 @@
     "/davinci-resolve/facebook": "Facebook Center", "/comic-reader": "Đọc truyện",
     "/music-ai": "Music AI", "/create/ai-center": "AI Center", "/analytics": "Website Health", "/settings": "Hệ thống"
   });
+  const MODULE_IDS = Object.freeze(TABS.map((item) => item[0]));
+  const THEME_IDS = Object.freeze(["deep-space", "nebula", "aurora", "solar"]);
+  const FOCUS_PRESETS = Object.freeze([15, 25, 50]);
+  const MAX_WORKSPACE_SNAPSHOTS = 8;
+  const MAX_UNDO_ENTRIES = 10;
   const instances = new WeakMap();
   let observer = null;
+  let autoController = null;
+  const autoTimers = new Set();
   let mountedRoot = null;
   let anonymousOwnerId = "";
 
@@ -121,7 +128,7 @@
     catch { return fallback; }
   };
   const writeJson = (key, value) => {
-    try { global.localStorage?.setItem?.(key, JSON.stringify(value)); return true; }
+    try { if (!global.localStorage?.setItem) return false; global.localStorage.setItem(key, JSON.stringify(value)); return true; }
     catch { return false; }
   };
   const unique = (items, key = (item) => item?.id) => {
@@ -231,7 +238,8 @@
   function missionStatus(check = {}) {
     if (check.supported === false) return { state: "unsupported", label: "Không được hỗ trợ", verified: false };
     if (check.pending === true || check.state === "checking") return { state: "checking", label: "Đang kiểm tra", verified: false };
-    if (check.ok === true && (check.verified === true || check.responded === true || Number.isFinite(Number(check.latency)))) {
+    const hasMeasuredLatency = check.latency !== null && check.latency !== undefined && check.latency !== "" && Number.isFinite(Number(check.latency));
+    if (check.ok === true && (check.verified === true || check.responded === true || hasMeasuredLatency)) {
       return { state: "online", label: "Hoạt động", verified: true };
     }
     if (check.ok === false || /offline|failed|error/i.test(String(check.state || ""))) return { state: "offline", label: "Gián đoạn", verified: true };
@@ -248,9 +256,17 @@
     return { state: "unknown", available: false, label: "Chưa xác minh" };
   }
 
-  const sensitiveExportKey = (key) => /(?:owner(?:id)?|learnerprofileid|e-?mail|password|passphrase|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|authorization|cookie|credential|sessionid)/i.test(String(key || ""));
+  const sensitiveExportKey = (key) => /(?:^__proto__$|^prototype$|^constructor$|owner(?:id)?|learnerprofileid|e-?mail|password|passphrase|secret|api[_-]?key|access[_-]?token|refresh[_-]?token|authorization|cookie|credential|sessionid)/i.test(String(key || ""));
+  const sensitiveTextValue = (value) => isSensitiveClipboard(value)
+    || /\bauthorization\s*:\s*(?:bearer|basic)\s+\S+/i.test(String(value || ""))
+    || /\bbearer\s+[A-Za-z0-9._~+/=-]{16,}\b/i.test(String(value || ""))
+    || /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/.test(String(value || ""))
+    || /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/.test(String(value || ""))
+    || /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/i.test(String(value || ""))
+    || /\b(?:sk-(?:proj-)?|ghp_|github_pat_|AIza)[-_A-Za-z0-9]{12,}\b/i.test(String(value || ""));
 
   function containsSensitiveKey(value, depth = 0) {
+    if (typeof value === "string") return sensitiveTextValue(value);
     if (!value || typeof value !== "object" || depth > 12) return false;
     if (Array.isArray(value)) return value.some((item) => containsSensitiveKey(item, depth + 1));
     return Object.entries(value).some(([key, child]) => sensitiveExportKey(key) || containsSensitiveKey(child, depth + 1));
@@ -258,7 +274,10 @@
 
   function redactForExport(value, depth = 0) {
     if (depth > 12) return null;
-    if (value == null || ["string", "number", "boolean"].includes(typeof value)) return typeof value === "string" ? clean(value, 20_000) : value;
+    if (value == null || ["string", "number", "boolean"].includes(typeof value)) {
+      if (typeof value === "string") return sensitiveTextValue(value) ? "[redacted]" : clean(value, 20_000);
+      return value;
+    }
     if (Array.isArray(value)) return value.slice(0, 2_000).map((item) => redactForExport(item, depth + 1));
     if (typeof value !== "object") return null;
     return Object.fromEntries(Object.entries(value)
@@ -271,12 +290,182 @@
     return redactForExport(input) || {};
   }
 
+  function stableLocalId(...parts) {
+    const text = parts.map((part) => clean(part, 240)).join("|") || "record";
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) hash = Math.imul(hash ^ text.charCodeAt(index), 16777619);
+    return Math.abs(hash >>> 0).toString(36);
+  }
+
+  function normalizeModuleOrder(value) {
+    const selected = asArray(value).map((id) => clean(id, 40)).filter((id, index, rows) => MODULE_IDS.includes(id) && rows.indexOf(id) === index);
+    return [...selected, ...MODULE_IDS.filter((id) => !selected.includes(id))];
+  }
+
+  function workspaceSnapshotData(source = {}) {
+    const pipeline = Object.fromEntries(PIPELINE.map(([id]) => [id, ["todo", "doing", "done"].includes(source.pipeline?.[id]) ? source.pipeline[id] : "todo"]));
+    const settings = source.settings && typeof source.settings === "object" ? source.settings : {};
+    return safeExportPayload({
+      activeTab: MODULE_IDS.includes(source.activeTab) ? source.activeTab : "brief",
+      profile: PROFILES.some((item) => item[0] === source.profile) ? source.profile : "auto",
+      pipeline,
+      moduleOrder: normalizeModuleOrder(source.moduleOrder),
+      pinnedModules: asArray(source.pinnedModules).map((id) => clean(id, 40)).filter((id, index, rows) => MODULE_IDS.includes(id) && rows.indexOf(id) === index).slice(0, 5),
+      sidebarCollapsed: source.sidebarCollapsed === true,
+      inspectorOpen: source.inspectorOpen !== false,
+      settings: {
+        theme: THEME_IDS.includes(settings.theme) ? settings.theme : "deep-space",
+        motion: ["static", "balanced", "cinematic"].includes(settings.motion) ? settings.motion : "balanced",
+        fontScale: clamp(settings.fontScale || 1, .9, 1.3),
+        contrast: settings.contrast === "high" ? "high" : "normal",
+        density: ["compact", "comfortable", "spacious"].includes(settings.density) ? settings.density : "comfortable",
+        language: settings.language === "en" ? "en" : "vi",
+        notifications: settings.notifications !== false,
+        offline: settings.offline !== false,
+        reducedEffectsWhileTyping: settings.reducedEffectsWhileTyping !== false
+      }
+    });
+  }
+
+  function createWorkspaceSnapshot(source = {}, options = {}) {
+    const createdAt = timestamp(typeof options.now === "function" ? options.now() : options.now) || Date.now();
+    return Object.freeze({
+      id: clean(options.id, 100) || `snapshot-${createdAt}-${stableLocalId(options.label || source.activeTab, createdAt)}`,
+      label: clean(options.label, 100) || `Checkpoint ${new Date(createdAt).toLocaleString("vi-VN")}`,
+      createdAt: new Date(createdAt).toISOString(),
+      data: workspaceSnapshotData(source)
+    });
+  }
+
+  function normalizeWorkspaceSnapshot(value) {
+    if (!value || typeof value !== "object" || !value.data || typeof value.data !== "object") return null;
+    const createdAt = timestamp(value.createdAt) || Date.now();
+    return createWorkspaceSnapshot(value.data, { id: clean(value.id, 100) || `snapshot-${createdAt}`, label: clean(value.label, 100) || "Checkpoint", now: createdAt });
+  }
+
+  function restoreWorkspaceSnapshot(current = {}, snapshot = {}) {
+    const valid = normalizeWorkspaceSnapshot(snapshot);
+    if (!valid) return { ok: false, state: normalizeState(current), undo: null, reason: "Checkpoint không hợp lệ." };
+    const undo = createWorkspaceSnapshot(current, { label: "Trước khi khôi phục", now: Date.now() });
+    const state = normalizeState({ ...current, ...valid.data, workspaceSnapshots: current.workspaceSnapshots, lastSnapshot: current.lastSnapshot, restoreUndo: undo });
+    return { ok: true, state, undo, restoredId: valid.id };
+  }
+
+  function undoWorkspaceRestore(current = {}, undoSnapshot = current.restoreUndo) {
+    const valid = normalizeWorkspaceSnapshot(undoSnapshot);
+    if (!valid) return { ok: false, state: normalizeState(current), reason: "Không có phiên khôi phục để hoàn tác." };
+    return { ok: true, state: normalizeState({ ...current, ...valid.data, workspaceSnapshots: current.workspaceSnapshots, lastSnapshot: current.lastSnapshot, restoreUndo: null }) };
+  }
+
+  function reorderModules(order, moduleId, direction) {
+    const rows = normalizeModuleOrder(order);
+    const id = clean(moduleId, 40);
+    const index = rows.indexOf(id);
+    const delta = direction === "up" || Number(direction) < 0 ? -1 : direction === "down" || Number(direction) > 0 ? 1 : 0;
+    const target = index + delta;
+    if (index < 0 || !delta || target < 0 || target >= rows.length) return rows;
+    [rows[index], rows[target]] = [rows[target], rows[index]];
+    return rows;
+  }
+
+  function togglePinnedModule(pinned, moduleId, limit = 5) {
+    const id = clean(moduleId, 40);
+    const rows = asArray(pinned).map((item) => clean(item, 40)).filter((item, index, all) => MODULE_IDS.includes(item) && all.indexOf(item) === index);
+    if (!MODULE_IDS.includes(id)) return rows.slice(0, limit);
+    if (rows.includes(id)) return rows.filter((item) => item !== id);
+    return [...rows, id].slice(-Math.max(1, Number(limit) || 5));
+  }
+
+  function orderedModuleIds(state = {}) {
+    const order = normalizeModuleOrder(state.moduleOrder);
+    const pinned = asArray(state.pinnedModules).map((id) => clean(id, 40)).filter((id, index, rows) => order.includes(id) && rows.indexOf(id) === index);
+    return [...pinned, ...order.filter((id) => !pinned.includes(id))];
+  }
+
+  function buildNotificationDigest(items, options = {}) {
+    const now = timestamp(typeof options.now === "function" ? options.now() : options.now) || Date.now();
+    const groups = new Map();
+    let unread = 0;
+    let urgent = 0;
+    let snoozed = 0;
+    asArray(items).forEach((item) => {
+      if (!item || typeof item !== "object") return;
+      const source = clean(item.origin || item.source || item.type, 60).toLowerCase() || "other";
+      const isUnread = item.read !== true;
+      const isSnoozed = timestamp(item.snoozedUntil) > now;
+      const isUrgent = item.urgent === true || /urgent|critical|high|error|failed|overdue/i.test(String(item.priority || item.severity || item.state || item.type || ""));
+      const group = groups.get(source) || { source, total: 0, unread: 0, urgent: 0, snoozed: 0 };
+      group.total += 1;
+      if (isUnread) { group.unread += 1; unread += 1; }
+      if (isUrgent) { group.urgent += 1; urgent += 1; }
+      if (isSnoozed) { group.snoozed += 1; snoozed += 1; }
+      groups.set(source, group);
+    });
+    return {
+      generatedAt: new Date(now).toISOString(),
+      total: asArray(items).filter((item) => item && typeof item === "object").length,
+      unread,
+      urgent,
+      snoozed,
+      groups: [...groups.values()].sort((a, b) => b.urgent - a.urgent || b.unread - a.unread || b.total - a.total || a.source.localeCompare(b.source))
+    };
+  }
+
+  function automationDryRun(sceneInput, context = {}) {
+    const scene = typeof sceneInput === "string" ? SCENES.find((item) => item.id === sceneInput) : sceneInput;
+    if (!scene || !Array.isArray(scene.steps)) return { ok: false, mode: "dry-run", reason: "Không tìm thấy automation scene.", steps: [], confirmations: [] };
+    const confirmations = [];
+    const steps = scene.steps.slice(0, 30).map((step, index) => {
+      const label = clean(Array.isArray(step) ? step[0] : step?.label, 140) || `Bước ${index + 1}`;
+      const candidateRoute = Array.isArray(step) ? step[1] : step?.route;
+      const route = /^\/[a-z0-9/_-]+(?:\?[a-z0-9_=&-]+)?$/i.test(String(candidateRoute || "")) ? String(candidateRoute) : "/home";
+      const needsConfirmation = /đăng|publish|upload|send|gửi|xóa|delete|backup|đồng bộ|sync/i.test(label);
+      if (needsConfirmation) confirmations.push({ step: index + 1, label, reason: "Hành động có thể thay đổi dữ liệu hoặc gửi nội dung nên luôn cần xác nhận." });
+      return { index: index + 1, label, route, action: "navigate-local", needsConfirmation, executed: false };
+    });
+    return {
+      ok: true,
+      mode: "dry-run",
+      sceneId: clean(scene.id, 80),
+      label: clean(scene.label, 140) || "Automation",
+      generatedAt: new Date(timestamp(context.now) || Date.now()).toISOString(),
+      steps,
+      confirmations,
+      requiresConfirmation: confirmations.length > 0,
+      executable: false,
+      evidence: "Chỉ mô phỏng điều hướng local; chưa gọi provider, chưa gửi, chưa xóa và chưa publish."
+    };
+  }
+
+  function normalizeUndoEntry(value) {
+    if (!value || typeof value !== "object") return null;
+    const kind = ["state-patch", "task-create"].includes(value.kind) ? value.kind : "";
+    if (!kind) return null;
+    const createdAt = timestamp(value.createdAt) || Date.now();
+    const patch = safeExportPayload(value.patch || {});
+    if (kind === "state-patch" && (!patch || typeof patch !== "object" || Array.isArray(patch))) return null;
+    return {
+      id: clean(value.id, 100) || `undo-${createdAt}-${stableLocalId(value.label, createdAt)}`,
+      kind,
+      label: clean(value.label, 140) || "Hoàn tác thay đổi",
+      createdAt: new Date(createdAt).toISOString(),
+      patch,
+      taskId: clean(value.taskId, 120)
+    };
+  }
+
+  function normalizeDryRun(value) {
+    if (!value || typeof value !== "object") return null;
+    const source = automationDryRun(clean(value.sceneId, 80), { now: timestamp(value.generatedAt) || Date.now() });
+    return source.ok ? source : null;
+  }
+
   function validateImportPayload(payload) {
     let size = Infinity;
     try { size = new TextEncoder().encode(JSON.stringify(payload)).byteLength; } catch {}
     if (!payload || typeof payload !== "object" || size > MAX_IMPORT_BYTES) return { ok: false, valid: false, reason: "Tệp không hợp lệ hoặc vượt quá 512 KB." };
     if (payload.schema !== "hh-home-cosmic-os" || ![1, schemaVersion].includes(Number(payload.version))) return { ok: false, valid: false, reason: "Schema hoặc phiên bản không được hỗ trợ." };
-    if (!payload.data || typeof payload.data !== "object" || containsSensitiveKey(payload.data)) return { ok: false, valid: false, reason: "Dữ liệu chứa trường nhạy cảm hoặc sai cấu trúc." };
+    if (!payload.data || typeof payload.data !== "object" || Array.isArray(payload.data) || containsSensitiveKey(payload.data)) return { ok: false, valid: false, reason: "Dữ liệu chứa trường nhạy cảm hoặc sai cấu trúc." };
     return { ok: true, valid: true, data: normalizeState(payload.data) };
   }
 
@@ -317,25 +506,62 @@
     const profileIds = new Set(PROFILES.map((item) => item[0]));
     const tabIds = new Set(TABS.map((item) => item[0]));
     const pipeline = Object.fromEntries(PIPELINE.map(([id]) => [id, ["todo", "doing", "done"].includes(source.pipeline?.[id]) ? source.pipeline[id] : "todo"]));
+    const moduleOrder = normalizeModuleOrder(source.moduleOrder);
+    const pinnedModules = asArray(source.pinnedModules).map((id) => clean(id, 40)).filter((id, index, rows) => moduleOrder.includes(id) && rows.indexOf(id) === index).slice(0, 5);
+    const legacySnapshot = normalizeWorkspaceSnapshot(source.lastSnapshot);
+    const workspaceSnapshots = unique(asArray(source.workspaceSnapshots).map(normalizeWorkspaceSnapshot).filter(Boolean), (item) => item.id);
+    if (legacySnapshot && !workspaceSnapshots.some((item) => item.id === legacySnapshot.id)) workspaceSnapshots.unshift(legacySnapshot);
+    const focusMinutes = FOCUS_PRESETS.includes(Number(source.focus?.presetMinutes)) ? Number(source.focus.presetMinutes) : FOCUS_PRESETS.includes(Math.round(Number(source.focus?.duration) / 60)) ? Math.round(Number(source.focus.duration) / 60) : 25;
+    const focusHistory = asArray(source.focus?.history).map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const startedAt = timestamp(item.startedAt);
+      const endedAt = timestamp(item.endedAt);
+      if (!startedAt || !endedAt || endedAt < startedAt) return null;
+      return { id: clean(item.id, 100) || `focus-${startedAt}`, startedAt: new Date(startedAt).toISOString(), endedAt: new Date(endedAt).toISOString(), elapsedSeconds: clamp(item.elapsedSeconds || (endedAt - startedAt) / 1000, 0, 2 * 60 * 60), outcome: ["completed", "expired", "stopped"].includes(item.outcome) ? item.outcome : "stopped" };
+    }).filter(Boolean).slice(0, 60);
+    const inboxRead = Object.fromEntries(Object.entries(source.inboxRead && typeof source.inboxRead === "object" ? source.inboxRead : {}).slice(0, 300).map(([id, value]) => [clean(id, 120), Boolean(value)]).filter(([id]) => id));
+    const inboxSnoozed = Object.fromEntries(Object.entries(source.inboxSnoozed && typeof source.inboxSnoozed === "object" ? source.inboxSnoozed : {}).slice(0, 300).map(([id, value]) => [clean(id, 120), timestamp(value)]).filter(([id, value]) => id && value));
+    const sanitizedCaptures = safeExportPayload(asArray(source.captures));
+    const sanitizedClipboard = safeExportPayload(asArray(source.clipboard));
+    const sanitizedAutomations = safeExportPayload(asArray(source.automations));
+    const counterSource = source.lastCounters && typeof source.lastCounters === "object" ? source.lastCounters : !legacySnapshot && source.lastSnapshot && typeof source.lastSnapshot === "object" ? source.lastSnapshot : {};
+    const lastCounters = Object.fromEntries(Object.entries(counterSource).slice(0, 20).map(([key, value]) => [clean(key, 50), clamp(value, 0, Number.MAX_SAFE_INTEGER)]));
     return {
       schema: "hh-home-cosmic-os",
       version: schemaVersion,
       activeTab: tabIds.has(source.activeTab) ? source.activeTab : "brief",
       profile: profileIds.has(source.profile) ? source.profile : "auto",
-      inboxRead: source.inboxRead && typeof source.inboxRead === "object" ? source.inboxRead : {},
+      inboxRead,
       inboxPinned: asArray(source.inboxPinned).map((id) => clean(id, 120)).slice(0, 100),
-      inboxSnoozed: source.inboxSnoozed && typeof source.inboxSnoozed === "object" ? source.inboxSnoozed : {},
-      captures: asArray(source.captures).slice(0, 80),
-      clipboard: asArray(source.clipboard).filter((item) => item && !isSensitiveClipboard(item.text)).slice(0, 30),
-      automations: asArray(source.automations).slice(0, 30),
+      inboxSnoozed,
+      notificationOrbit: {
+        lastDigestAt: timestamp(source.notificationOrbit?.lastDigestAt),
+        digestWindowHours: clamp(source.notificationOrbit?.digestWindowHours || 24, 1, 168),
+        lastAction: clean(source.notificationOrbit?.lastAction, 80)
+      },
+      captures: asArray(sanitizedCaptures).slice(0, 80),
+      clipboard: asArray(sanitizedClipboard).filter((item) => item && !isSensitiveClipboard(item.text)).slice(0, 30),
+      automations: asArray(sanitizedAutomations).slice(0, 30),
+      automationDryRuns: asArray(source.automationDryRuns).map(normalizeDryRun).filter(Boolean).slice(0, 20),
       pipeline,
+      moduleOrder,
+      pinnedModules,
       focus: {
-        duration: clamp(source.focus?.duration || 25 * 60, 5 * 60, 120 * 60),
+        duration: clamp(source.focus?.duration || focusMinutes * 60, 1, 120 * 60),
+        presetMinutes: focusMinutes,
         endAt: timestamp(source.focus?.endAt), running: source.focus?.running === true,
-        taskId: clean(source.focus?.taskId, 120), completed: Number(source.focus?.completed || 0)
+        startedAt: timestamp(source.focus?.startedAt),
+        totalSeconds: clamp(source.focus?.totalSeconds, 0, 10 * 365 * 24 * 60 * 60),
+        notificationShield: source.focus?.notificationShield === true,
+        taskId: clean(source.focus?.taskId, 120), completed: clamp(source.focus?.completed, 0, Number.MAX_SAFE_INTEGER),
+        history: focusHistory
       },
       restorePreviewId: clean(source.restorePreviewId, 140),
-      lastSnapshot: source.lastSnapshot && typeof source.lastSnapshot === "object" ? source.lastSnapshot : {},
+      workspaceSnapshots: workspaceSnapshots.slice(0, MAX_WORKSPACE_SNAPSHOTS),
+      restoreUndo: normalizeWorkspaceSnapshot(source.restoreUndo),
+      undoStack: asArray(source.undoStack).map(normalizeUndoEntry).filter(Boolean).slice(0, MAX_UNDO_ENTRIES),
+      lastSnapshot: legacySnapshot || safeExportPayload(source.lastSnapshot && typeof source.lastSnapshot === "object" ? source.lastSnapshot : {}),
+      lastCounters,
       lastVisitAt: timestamp(source.lastVisitAt),
       ambient: source.ambient !== false,
       screensaver: source.screensaver !== false,
@@ -344,6 +570,7 @@
       inspectorOpen: source.inspectorOpen !== false,
       sidebarCollapsed: source.sidebarCollapsed === true,
       settings: {
+        theme: THEME_IDS.includes(source.settings?.theme) ? source.settings.theme : "deep-space",
         motion: ["static", "balanced", "cinematic"].includes(source.settings?.motion) ? source.settings.motion : "balanced",
         fontScale: clamp(source.settings?.fontScale || 1, .9, 1.3),
         contrast: ["normal", "high"].includes(source.settings?.contrast) ? source.settings.contrast : "normal",
@@ -510,27 +737,28 @@
   function buildInbox(snapshot, count, state) {
     const rows = [];
     count.unread.forEach((item) => rows.push({
-      id: `notice:${clean(item.id, 100) || uid("notice")}`, type: "notification", icon: "◇", title: itemTitle(item, "Thông báo mới"),
-      meta: clean(item.message || item.description, 180), route: item.route || "/communication/notifications", at: item.createdAt || item.at
+      id: `notice:${clean(item.id, 100) || stableLocalId(itemTitle(item), item.createdAt || item.at, item.message)}`, type: "notification", origin: clean(item.origin || item.source || item.provider, 60).toLowerCase() || "communication", icon: "◇", title: itemTitle(item, "Thông báo mới"),
+      meta: clean(item.message || item.description, 180), route: item.route || "/communication/notifications", at: item.createdAt || item.at,
+      urgent: /urgent|critical|high/i.test(String(item.priority || item.severity || ""))
     }));
     count.failedJobs.forEach((item) => rows.push({
-      id: `failed:${clean(item.id, 100) || itemTitle(item)}`, type: "queue", icon: "!", title: `Tác vụ lỗi: ${itemTitle(item)}`,
-      meta: clean(item.error || item.message, 180) || "Có thể thử lại từ hàng đợi.", route: item.route || "/work", at: item.updatedAt || item.createdAt
+      id: `failed:${clean(item.id, 100) || stableLocalId(itemTitle(item), item.updatedAt || item.createdAt)}`, type: "queue", origin: clean(item.source || item.kind, 60).toLowerCase() || "queue", icon: "!", title: `Tác vụ lỗi: ${itemTitle(item)}`,
+      meta: clean(item.error || item.message, 180) || "Có thể thử lại từ hàng đợi.", route: item.route || "/work", at: item.updatedAt || item.createdAt, urgent: true
     }));
     count.openTasks.filter((item) => taskDue(item) && taskDue(item) < Date.now()).forEach((item) => rows.push({
-      id: `overdue:${clean(item.id, 100) || itemTitle(item)}`, type: "task", icon: "□", title: itemTitle(item),
-      meta: `Đã quá hạn · ${new Date(taskDue(item)).toLocaleString("vi-VN")}`, route: "/work", at: item.updatedAt || item.createdAt
+      id: `overdue:${clean(item.id, 100) || stableLocalId(itemTitle(item), taskDue(item))}`, type: "task", origin: "work", icon: "□", title: itemTitle(item),
+      meta: `Đã quá hạn · ${new Date(taskDue(item)).toLocaleString("vi-VN")}`, route: "/work", at: item.updatedAt || item.createdAt, urgent: true
     }));
     count.dueLearning.slice(0, 5).forEach((item) => rows.push({
-      id: `review:${clean(item.id || item.term || item.word, 100)}`, type: "learning", icon: "◫", title: itemTitle(item, "Mục học đến hạn"),
+      id: `review:${clean(item.id || item.term || item.word, 100) || stableLocalId(itemTitle(item), item.dueAt || item.nextReview)}`, type: "learning", origin: "learning", icon: "◫", title: itemTitle(item, "Mục học đến hạn"),
       meta: "Đang chờ ôn tập", route: "/learn/review", at: item.dueAt || item.nextReview
     }));
-    count.comicUpdates.forEach((item) => rows.push({ id: `comic:${clean(item.id, 100) || itemTitle(item)}`, type: "comic", icon: "CR", title: itemTitle(item), meta: "Có cập nhật truyện mới", route: "/comic-reader", at: item.updatedAt || item.createdAt }));
-    count.siteIssues.slice(0, 5).forEach((item) => rows.push({ id: `issue:${clean(item.id, 100) || itemTitle(item)}`, type: "system", icon: "⌁", title: itemTitle(item, "Cảnh báo hệ thống"), meta: clean(item.message || item.detail, 180), route: "/analytics", at: item.createdAt || item.at }));
+    count.comicUpdates.forEach((item) => rows.push({ id: `comic:${clean(item.id, 100) || stableLocalId(itemTitle(item), item.updatedAt || item.createdAt)}`, type: "comic", origin: "comic", icon: "CR", title: itemTitle(item), meta: "Có cập nhật truyện mới", route: "/comic-reader", at: item.updatedAt || item.createdAt }));
+    count.siteIssues.slice(0, 5).forEach((item) => rows.push({ id: `issue:${clean(item.id, 100) || stableLocalId(itemTitle(item), item.createdAt || item.at)}`, type: "system", origin: "system", icon: "⌁", title: itemTitle(item, "Cảnh báo hệ thống"), meta: clean(item.message || item.detail, 180), route: "/analytics", at: item.createdAt || item.at, urgent: /critical|high|error/i.test(String(item.severity || item.status || "")) }));
     return unique(rows, (item) => item.id).map((item) => ({
       ...item, read: Boolean(state.inboxRead[item.id]), pinned: state.inboxPinned.includes(item.id),
       snoozedUntil: timestamp(state.inboxSnoozed[item.id])
-    })).filter((item) => item.snoozedUntil <= Date.now()).sort((a, b) => Number(b.pinned) - Number(a.pinned) || timestamp(b.at) - timestamp(a.at));
+    })).sort((a, b) => Number(b.pinned) - Number(a.pinned) || Number(b.urgent) - Number(a.urgent) || timestamp(b.at) - timestamp(a.at));
   }
 
   function buildCalendar(snapshot, count) {
@@ -601,12 +829,14 @@
     const count = counters(source);
     const priorities = buildPriorities(source, count);
     const continueStack = buildContinueStack(source, count);
-    const inbox = buildInbox(source, count, state);
+    const inboxAll = buildInbox(source, count, state);
+    const inbox = inboxAll.filter((item) => item.snoozedUntil <= Date.now());
+    const notificationDigest = buildNotificationDigest(inboxAll);
     const currentCounters = snapshotCounters(count);
-    const changed = state.lastVisitAt ? whatChanged(state.lastSnapshot, currentCounters) : [];
+    const changed = state.lastVisitAt ? whatChanged(state.lastCounters, currentCounters) : [];
     const calendar = buildCalendar(source, count);
     const mission = buildMission();
-    return { source, count, priorities, continueStack, inbox, currentCounters, changed, calendar, mission, project: activeProject(source) };
+    return { source, count, priorities, continueStack, inbox, inboxAll, notificationDigest, currentCounters, changed, calendar, mission, project: activeProject(source) };
   }
 
   /* Public queue transition contract. It never invents completion: only a
@@ -780,9 +1010,12 @@
   }
 
   function renderInbox(model, state) {
-    const origins = ["system", "youtube", "facebook", "work", "learning", "website", "download", "render", "comic"];
+    const digest = model.notificationDigest || buildNotificationDigest(model.inboxAll || model.inbox);
+    const origins = digest.groups.map((group) => group.source);
     const unread = model.inbox.filter((item) => !item.read).length;
-    return `<div class="hco-inbox" data-hco-inbox><header class="hco-panel-hero"><div><small>UNIVERSAL INBOX · ${unread} CHƯA ĐỌC</small><h3>Một hộp thư cho toàn hệ thống</h3><p>Thông báo được gom từ các module hiện có và vẫn giữ nguồn gốc để bạn kiểm tra.</p></div><button type="button" data-hco-inbox-refresh>↻ Làm mới</button></header><nav class="hco-filter-row" aria-label="Nguồn thông báo">${origins.map((origin) => `<button type="button" data-hco-inbox-filter="${origin}">${origin}</button>`).join("")}<button type="button" data-hco-inbox-filter="all" aria-pressed="true">Tất cả</button></nav><div class="hco-inbox-list">${model.inbox.slice(0, 12).map((item) => `<article class="hco-inbox-item${item.read ? " is-read" : ""}${item.pinned ? " is-pinned" : ""}" data-hco-inbox-item="${escapeHtml(item.id)}" data-hco-origin="${escapeHtml(item.origin || item.type)}"><i>${escapeHtml(item.icon)}</i><div><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.meta || "Không có mô tả")}</p><time>${escapeHtml(relative(item.at))}</time></div><div class="hco-item-actions"><button type="button" data-hco-inbox-action="mark-read">${item.read ? "Chưa đọc" : "Đã đọc"}</button><button type="button" data-hco-inbox-action="snooze">Hoãn 1 giờ</button><button type="button" data-hco-inbox-action="pin">${item.pinned ? "Bỏ ghim" : "Ghim"}</button><button type="button" data-hco-inbox-action="to-task">→ Task</button></div></article>`).join("") || `<p class="hco-empty">Hộp thư đang trống. Khi có dữ liệu thật, mục mới sẽ xuất hiện ở đây.</p>`}</div></div>`;
+    return `<div class="hco-inbox" data-hco-inbox><header class="hco-panel-hero"><div><small>UNIVERSAL INBOX · ${unread} CHƯA ĐỌC</small><h3>Một hộp thư cho toàn hệ thống</h3><p>Thông báo được gom từ các module hiện có và vẫn giữ nguồn gốc để bạn kiểm tra.</p></div><button type="button" data-hco-inbox-refresh>↻ Làm mới</button></header>
+      <section class="hco-notification-orbit" data-hco-notification-orbit><header><div><small>NOTIFICATION ORBIT · DIGEST LOCAL</small><h3>Tóm tắt từ dữ liệu đang có</h3></div><time>${state.notificationOrbit.lastDigestAt ? `Cập nhật ${escapeHtml(relative(state.notificationOrbit.lastDigestAt))}` : "Chưa lưu mốc digest"}</time></header><div class="hco-orbit-metrics"><span><b>${digest.unread}</b><small>Chưa đọc</small></span><span><b>${digest.urgent}</b><small>Cần chú ý</small></span><span><b>${digest.snoozed}</b><small>Đang hoãn</small></span><span><b>${digest.groups.length}</b><small>Nguồn thật</small></span></div><div class="hco-orbit-sources">${digest.groups.map((group) => `<span data-hco-digest-source="${escapeHtml(group.source)}"><strong>${escapeHtml(group.source)}</strong><small>${group.unread} mới · ${group.urgent} gấp</small></span>`).join("") || `<p class="hco-empty">Chưa có thông báo để tổng hợp.</p>`}</div><footer><button type="button" data-hco-inbox-bulk="digest">Lưu digest hiện tại</button><button type="button" data-hco-inbox-bulk="mark-visible-read" ${digest.unread ? "" : "disabled"}>Đánh dấu mục đang hiện đã đọc</button><button type="button" data-hco-inbox-bulk="snooze-nonurgent" ${model.inbox.some((item) => !item.urgent) ? "" : "disabled"}>Hoãn mục không gấp</button></footer></section>
+      <nav class="hco-filter-row" aria-label="Nguồn thông báo"><button type="button" data-hco-inbox-filter="all" aria-pressed="true">Tất cả</button>${origins.map((origin) => `<button type="button" data-hco-inbox-filter="${escapeHtml(origin)}" aria-pressed="false">${escapeHtml(origin)}</button>`).join("")}</nav><div class="hco-inbox-list">${model.inbox.slice(0, 40).map((item) => `<article class="hco-inbox-item${item.read ? " is-read" : ""}${item.pinned ? " is-pinned" : ""}${item.urgent ? " is-urgent" : ""}" data-hco-inbox-item="${escapeHtml(item.id)}" data-hco-origin="${escapeHtml(item.origin || item.type)}"><i>${escapeHtml(item.icon)}</i><div><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.meta || "Không có mô tả")}</p><time>${escapeHtml(relative(item.at))}${item.urgent ? " · Cần chú ý" : ""}</time></div><div class="hco-item-actions"><button type="button" data-hco-inbox-action="open">Mở nguồn</button><button type="button" data-hco-inbox-action="mark-read">${item.read ? "Đánh dấu chưa đọc" : "Đánh dấu đã đọc"}</button><button type="button" data-hco-inbox-action="snooze">Hoãn 1 giờ</button><button type="button" data-hco-inbox-action="pin">${item.pinned ? "Bỏ ghim" : "Ghim"}</button><button type="button" data-hco-inbox-action="to-task">→ Task</button></div></article>`).join("") || `<p class="hco-empty">Hộp thư đang trống. Khi có dữ liệu thật, mục mới sẽ xuất hiện ở đây.</p>`}</div></div>`;
   }
 
   function renderQueue(model) {
@@ -803,7 +1036,7 @@
       ["comic-notes", "Đọc truyện + Ghi chú", "comic", "notes", "/comic-reader"],
       ["upload-channel", "Upload + Kênh", "upload", "channel", "/davinci-resolve/youtube"]
     ];
-    return `<div class="hco-workspace" data-hco-workspace><section class="hco-focus-cockpit" data-hco-focus-cockpit data-hco-focus-center><header><div><small>FOCUS ORBIT · ${focus.running ? "ĐANG TẬP TRUNG" : "SẴN SÀNG"}</small><h3>Một nhiệm vụ, một phiên hoàn chỉnh</h3></div><button type="button" data-hco-focus-mode ${focus.running ? "data-hco-focus-pause" : "data-hco-focus-start"}>${focus.running ? "Tạm dừng" : "Bắt đầu Focus"}</button><button type="button" data-hco-focus-resume ${focus.running ? "hidden" : ""}>Tiếp tục</button></header><div class="hco-focus-grid"><strong data-hco-focus-time>${String(Math.floor(focusRemaining / 60)).padStart(2, "0")}:${String(focusRemaining % 60).padStart(2, "0")}</strong><div><p data-hco-focus-task>${escapeHtml(model.priorities[0]?.title || "Chọn một việc để bắt đầu")}</p><small data-hco-focus-progress data-hco-focus-stats>${focus.completed || 0} phiên hoàn thành · ${focus.duration / 60} phút</small></div><button type="button" data-hco-focus-action="complete-focus">Hoàn thành</button><button type="button" data-hco-focus-action="switch-focus">Chuyển việc</button></div><div class="hco-focus-tools"><button type="button" data-hco-focus-file>＋ File liên quan</button><button type="button" data-hco-focus-notification-shield aria-pressed="false">◇ Chặn nhắc nội bộ</button><button type="button" data-hco-open-mini="music">♫ Nhạc tập trung</button><button type="button" data-hco-open-mini="notes">N Ghi chú nhanh</button><span>Tiến độ phiên: ${focus.running ? "đang chạy" : "chưa bắt đầu"}</span></div></section><section class="hco-split-workspace" data-hco-split-workspace><header><div><small>SPLIT WORKSPACE · KHÔNG MỞ CỬA SỔ MỚI</small><h3>Mở hai ngữ cảnh ngay tại trang chủ</h3></div><span>Snap</span></header><div class="hco-split-grid">${splitPresets.map(([id, label, left, right, route]) => `<button type="button" data-hco-split-preset="${id}" data-hco-route="${route}"><i>${left === "calendar" ? "◷" : left === "thumbnail" ? "TX" : left === "youtube" ? "YT" : left === "english" ? "E" : left === "comic" ? "CR" : "↥"}</i><strong>${label}</strong><small>${left} + ${right}</small></button>`).join("")}</div><div class="hco-split-preview" data-hco-split-preview hidden></div></section><section class="hco-project-pulse" data-hco-project-pulse><header><div><small>PROJECT PULSE</small><h3>${escapeHtml(project ? itemTitle(project) : "Chưa có dự án hiện tại")}</h3></div><button type="button" data-hco-route="/work/project-center">Mở Project Center</button></header><div class="hco-pulse-metrics"><span><b>${project ? `${clamp(project.progress, 0, 100)}%` : "—"}</b><small>Tiến độ</small></span><span><b>${model.count.openTasks.length}</b><small>Task mở</small></span><span><b>${model.count.siteIssues.length}</b><small>Bị chặn/cảnh báo</small></span><span><b>${project?.members?.length || 0}</b><small>Thành viên</small></span></div><p>File gần đây: ${escapeHtml(itemTitle(project?.recentFile || {}, "Chưa có file mới"))} · Công cụ liên quan: ${escapeHtml(project?.tool || "Project Center")}</p></section><section class="hco-content-pipeline" data-hco-content-pipeline><header><div><small>CONTENT PIPELINE</small><h3>Ý tưởng → Kịch bản → Voice → Ảnh → Thumbnail → Render → Kiểm tra → Đăng</h3></div><button type="button" data-hco-pipeline-reset>Đặt lại</button></header><div class="hco-pipeline-track">${PIPELINE.map(([id, label, route]) => `<button type="button" class="is-${state.pipeline[id]}" data-hco-pipeline-step="${id}" data-hco-route="${route}"><i>${state.pipeline[id] === "done" ? "✓" : state.pipeline[id] === "doing" ? "●" : "○"}</i><strong>${label}</strong></button>`).join("")}</div></section><section class="hco-learning-pulse" data-hco-learning-pulse><header><div><small>LEARNING PULSE</small><h3>Học tập không gây áp lực</h3></div><span>${model.count.dueLearning.length} mục đến hạn</span></header><div class="hco-learning-grid"><span><b>${Number(model.source.english.progress || 0)}%</b><small>HH English</small></span><span><b>${Number(model.source.japanese.progress || model.source.japaneseOs.progress || 0)}%</b><small>HH Japanese</small></span><span><b>${model.count.dueLearning.length}</b><small>Reviews due</small></span><span><b>${escapeHtml(itemTitle(model.source.learning.weakSkill || {}, "Chưa có dữ liệu"))}</b><small>Kỹ năng cần luyện</small></span></div><div class="hco-quick-study"><button type="button" data-hco-route="/learn/review" data-hco-quick-study="5">5 phút</button><button type="button" data-hco-route="/learn/review" data-hco-quick-study="10">10 phút</button><button type="button" data-hco-route="/learn/review" data-hco-quick-study="15">15 phút</button></div></section></div>`;
+    return `<div class="hco-workspace" data-hco-workspace><section class="hco-focus-cockpit" data-hco-focus-cockpit data-hco-focus-center><header><div><small>FOCUS ORBIT · ${focus.running ? "ĐANG TẬP TRUNG" : "SẴN SÀNG"}</small><h3>Một nhiệm vụ, một phiên hoàn chỉnh</h3></div><button type="button" data-hco-focus-mode ${focus.running ? "data-hco-focus-pause" : "data-hco-focus-start"}>${focus.running ? "Tạm dừng" : "Bắt đầu Focus"}</button><button type="button" data-hco-focus-resume ${focus.running || !focus.startedAt ? "hidden" : ""}>Tiếp tục</button></header><div class="hco-focus-presets" aria-label="Thời lượng Focus">${FOCUS_PRESETS.map((minutes) => `<button type="button" data-hco-focus-preset="${minutes}" aria-pressed="${focus.presetMinutes === minutes}" ${focus.running ? "disabled" : ""}>${minutes} phút</button>`).join("")}</div><div class="hco-focus-grid"><strong data-hco-focus-time>${String(Math.floor(focusRemaining / 60)).padStart(2, "0")}:${String(focusRemaining % 60).padStart(2, "0")}</strong><div><p data-hco-focus-task>${escapeHtml(model.priorities.find((item) => item.id === focus.taskId)?.title || model.priorities[0]?.title || "Chọn một việc để bắt đầu")}</p><small data-hco-focus-progress data-hco-focus-stats>${focus.completed || 0} phiên · ${Math.round(focus.totalSeconds / 60)} phút thực tế</small></div><button type="button" data-hco-focus-action="complete-focus">Kết thúc phiên</button><button type="button" data-hco-focus-action="switch-focus">Chuyển việc</button></div><div class="hco-focus-tools"><button type="button" data-hco-focus-file>＋ File liên quan</button><button type="button" data-hco-focus-notification-shield aria-pressed="${focus.notificationShield}">${focus.notificationShield ? "◆ Đang chặn nhắc nội bộ" : "◇ Chặn nhắc nội bộ"}</button><button type="button" data-hco-open-mini="music">♫ Nhạc tập trung</button><button type="button" data-hco-open-mini="notes">N Ghi chú nhanh</button><span>Hết giờ chỉ kết thúc phiên, không tự hoàn thành task.</span></div></section><section class="hco-split-workspace" data-hco-split-workspace><header><div><small>SPLIT WORKSPACE · KHÔNG MỞ CỬA SỔ MỚI</small><h3>Mở hai ngữ cảnh ngay tại trang chủ</h3></div><span>Snap</span></header><div class="hco-split-grid">${splitPresets.map(([id, label, left, right, route]) => `<button type="button" data-hco-split-preset="${id}" data-hco-route="${route}"><i>${left === "calendar" ? "◷" : left === "thumbnail" ? "TX" : left === "youtube" ? "YT" : left === "english" ? "E" : left === "comic" ? "CR" : "↥"}</i><strong>${label}</strong><small>${left} + ${right}</small></button>`).join("")}</div><div class="hco-split-preview" data-hco-split-preview hidden></div></section><section class="hco-project-pulse" data-hco-project-pulse><header><div><small>PROJECT PULSE</small><h3>${escapeHtml(project ? itemTitle(project) : "Chưa có dự án hiện tại")}</h3></div><button type="button" data-hco-route="/work/project-center">Mở Project Center</button></header><div class="hco-pulse-metrics"><span><b>${project ? `${clamp(project.progress, 0, 100)}%` : "—"}</b><small>Tiến độ</small></span><span><b>${model.count.openTasks.length}</b><small>Task mở</small></span><span><b>${model.count.siteIssues.length}</b><small>Bị chặn/cảnh báo</small></span><span><b>${project?.members?.length || 0}</b><small>Thành viên</small></span></div><p>File gần đây: ${escapeHtml(itemTitle(project?.recentFile || {}, "Chưa có file mới"))} · Công cụ liên quan: ${escapeHtml(project?.tool || "Project Center")}</p></section><section class="hco-content-pipeline" data-hco-content-pipeline><header><div><small>CONTENT PIPELINE</small><h3>Ý tưởng → Kịch bản → Voice → Ảnh → Thumbnail → Render → Kiểm tra → Đăng</h3></div><button type="button" data-hco-pipeline-reset>Đặt lại</button></header><div class="hco-pipeline-track">${PIPELINE.map(([id, label, route]) => `<button type="button" class="is-${state.pipeline[id]}" data-hco-pipeline-step="${id}" data-hco-route="${route}"><i>${state.pipeline[id] === "done" ? "✓" : state.pipeline[id] === "doing" ? "●" : "○"}</i><strong>${label}</strong></button>`).join("")}</div></section><section class="hco-learning-pulse" data-hco-learning-pulse><header><div><small>LEARNING PULSE</small><h3>Học tập không gây áp lực</h3></div><span>${model.count.dueLearning.length} mục đến hạn</span></header><div class="hco-learning-grid"><span><b>${Number(model.source.english.progress || 0)}%</b><small>HH English</small></span><span><b>${Number(model.source.japanese.progress || model.source.japaneseOs.progress || 0)}%</b><small>HH Japanese</small></span><span><b>${model.count.dueLearning.length}</b><small>Reviews due</small></span><span><b>${escapeHtml(itemTitle(model.source.learning.weakSkill || {}, "Chưa có dữ liệu"))}</b><small>Kỹ năng cần luyện</small></span></div><div class="hco-quick-study"><button type="button" data-hco-route="/learn/review" data-hco-quick-study="5">5 phút</button><button type="button" data-hco-route="/learn/review" data-hco-quick-study="10">10 phút</button><button type="button" data-hco-route="/learn/review" data-hco-quick-study="15">15 phút</button></div></section></div>`;
   }
 
   function renderAutomation(model, state) {
@@ -816,7 +1049,10 @@
     }));
     const jobRows = model.source.jobs.map((job) => ({ title: itemTitle(job), state: jobState(job), retryFrom: job.failedStep ?? job.currentStep, at: job.updatedAt || job.createdAt }));
     const radarRows = [...sceneRows, ...jobRows].sort((a, b) => timestamp(b.at) - timestamp(a.at)).slice(0, 8);
-    return `<div class="hco-automation" data-hco-automation><section data-hco-automation-scenes><header class="hco-panel-hero"><div><small>AUTOMATION SCENES</small><h3>Chuỗi thao tác có checkpoint</h3><p>Chạy từng bước, cần xác nhận trước hành động gửi, xóa hoặc publish.</p></div></header><div class="hco-scene-grid">${SCENES.map((scene) => { const run = sceneState(scene); const currentStep = scene.steps[Math.min(run.step || 0, scene.steps.length - 1)]?.[0]; return `<button type="button" data-hco-scene="${scene.id}" class="is-${escapeHtml(run.state)}"><i>${scene.icon}</i><strong>${scene.label}</strong><small>${run.state === "running" ? `${escapeHtml(currentStep)} · bước ${run.step + 1}/${scene.steps.length}` : run.state === "completed" ? "Đã hoàn tất · bấm để chạy lại" : "Bấm để bắt đầu và kiểm tra từng bước"}</small></button>`; }).join("")}</div></section><section class="hco-automation-radar" data-hco-automation-radar><header><div><small>AUTOMATION RADAR</small><h3>Quy trình đang chạy</h3></div><button type="button" data-hco-automation-refresh>↻</button></header><div>${radarRows.map((row) => `<p class="is-${escapeHtml(row.state)}"><i></i><span>${escapeHtml(row.title)}<small>${escapeHtml(row.state)}${row.retryFrom != null ? ` · retryFrom ${row.retryFrom}` : ""}</small></span></p>`).join("") || `<p class="hco-empty">Chưa có running, queued, failed hoặc needs-confirmation.</p>`}</div><footer><span>Trạng thái: running · queued · failed · needs-confirmation · completed</span><b data-hco-automation-log>${state.automations.length} scene đã lưu</b></footer></section><section class="hco-smart-calendar" data-hco-smart-calendar data-hco-calendar-sources="${AUTOMATION_CALENDAR_SOURCES.join(" ")}"><header><div><small>SMART CALENDAR</small><h3>Lịch hợp nhất</h3></div><div class="hco-calendar-tabs"><button type="button" data-hco-calendar-view="day" aria-pressed="true">Ngày</button><button type="button" data-hco-calendar-view="week">Tuần</button><button type="button" data-hco-calendar-view="timeline">24h</button></div></header><div class="hco-calendar-day" data-hco-calendar-view-panel="day">${model.calendar.slice(0, 8).map((item) => `<button type="button" data-hco-route="${escapeHtml(item.route)}"><time>${escapeHtml(itemDate(item.at))}</time><span>${escapeHtml(item.title)}</span><small>${escapeHtml(item.type)}</small></button>`).join("") || `<p class="hco-empty">Chưa có deadline, lịch YouTube/Facebook, lịch học, render, truyện hoặc sự kiện website.</p>`}</div><div class="hco-calendar-week" data-hco-calendar-view-panel="week" hidden><p>Tuần này có <strong>${model.calendar.length}</strong> mốc được lấy từ dữ liệu hiện có.</p></div><div class="hco-calendar-timeline" data-hco-calendar-view-panel="timeline" hidden><p>Timeline 24 giờ sẽ ưu tiên mốc gần nhất: <strong>${model.calendar[0] ? escapeHtml(model.calendar[0].title) : "chưa có"}</strong>.</p></div></section></div>`;
+    const latestDryRun = state.automationDryRuns[0] || null;
+    return `<div class="hco-automation" data-hco-automation><section data-hco-automation-scenes><header class="hco-panel-hero"><div><small>AUTOMATION SCENES</small><h3>Chuỗi thao tác có checkpoint</h3><p>Chạy từng bước, cần xác nhận trước hành động gửi, xóa hoặc publish.</p></div></header><div class="hco-scene-grid">${SCENES.map((scene) => { const run = sceneState(scene); const currentStep = scene.steps[Math.min(run.step || 0, scene.steps.length - 1)]?.[0]; return `<button type="button" data-hco-scene="${scene.id}" class="is-${escapeHtml(run.state)}"><i>${scene.icon}</i><strong>${scene.label}</strong><small>${run.state === "running" ? `${escapeHtml(currentStep)} · bước ${run.step + 1}/${scene.steps.length}` : run.state === "completed" ? "Đã hoàn tất · bấm để chạy lại" : "Bấm để bắt đầu và kiểm tra từng bước"}</small></button>`; }).join("")}</div></section>
+      <section class="hco-automation-dry-run" data-hco-automation-dry-run><header><div><small>DRY-RUN · KHÔNG THỰC THI</small><h3>Xem trước quyền và từng bước</h3></div><button type="button" data-hco-automation-dry-run-start>Mô phỏng</button></header><label>Scene<select data-hco-automation-dry-run-scene>${SCENES.map((scene) => `<option value="${scene.id}" ${latestDryRun?.sceneId === scene.id ? "selected" : ""}>${escapeHtml(scene.label)}</option>`).join("")}</select></label><div data-hco-automation-dry-run-output aria-live="polite">${latestDryRun ? `<strong>${escapeHtml(latestDryRun.label)}</strong><p>${escapeHtml(latestDryRun.evidence)}</p><ol>${latestDryRun.steps.map((step) => `<li><span>${step.index}. ${escapeHtml(step.label)}</span><small>${escapeHtml(step.route)}${step.needsConfirmation ? " · cần xác nhận" : " · chỉ điều hướng local"}</small></li>`).join("")}</ol>` : `<p>Chọn scene rồi bấm Mô phỏng. Cosmic OS không gọi provider và không tự publish.</p>`}</div></section>
+      <section class="hco-automation-radar" data-hco-automation-radar><header><div><small>AUTOMATION RADAR</small><h3>Quy trình đang chạy</h3></div><button type="button" data-hco-automation-refresh aria-label="Làm mới Automation Radar" title="Làm mới Automation Radar">↻</button></header><div>${radarRows.map((row) => `<p class="is-${escapeHtml(row.state)}"><i></i><span>${escapeHtml(row.title)}<small>${escapeHtml(row.state)}${row.retryFrom != null ? ` · retryFrom ${row.retryFrom}` : ""}</small></span></p>`).join("") || `<p class="hco-empty">Chưa có running, queued, failed hoặc needs-confirmation.</p>`}</div><footer><span>Trạng thái: running · queued · failed · needs-confirmation · completed</span><b data-hco-automation-log>${state.automations.length} scene đã lưu</b></footer></section><section class="hco-smart-calendar" data-hco-smart-calendar data-hco-calendar-sources="${AUTOMATION_CALENDAR_SOURCES.join(" ")}"><header><div><small>SMART CALENDAR</small><h3>Lịch hợp nhất</h3></div><div class="hco-calendar-tabs"><button type="button" data-hco-calendar-view="day" aria-pressed="true">Ngày</button><button type="button" data-hco-calendar-view="week">Tuần</button><button type="button" data-hco-calendar-view="timeline">24h</button></div></header><div class="hco-calendar-day" data-hco-calendar-view-panel="day">${model.calendar.slice(0, 8).map((item) => `<button type="button" data-hco-route="${escapeHtml(item.route)}"><time>${escapeHtml(itemDate(item.at))}</time><span>${escapeHtml(item.title)}</span><small>${escapeHtml(item.type)}</small></button>`).join("") || `<p class="hco-empty">Chưa có deadline, lịch YouTube/Facebook, lịch học, render, truyện hoặc sự kiện website.</p>`}</div><div class="hco-calendar-week" data-hco-calendar-view-panel="week" hidden><p>Tuần này có <strong>${model.calendar.length}</strong> mốc được lấy từ dữ liệu hiện có.</p></div><div class="hco-calendar-timeline" data-hco-calendar-view-panel="timeline" hidden><p>Timeline 24 giờ sẽ ưu tiên mốc gần nhất: <strong>${model.calendar[0] ? escapeHtml(model.calendar[0].title) : "chưa có"}</strong>.</p></div></section></div>`;
   }
 
   function activityIdentity(item, index = 0) {
@@ -829,17 +1065,24 @@
     return `<div class="hco-tools" data-hco-tools><section class="hco-capture-panel" data-hco-quick-capture><header><div><small>QUICK CAPTURE · LOCAL FIRST</small><h3>Ghi nhanh một ý tưởng</h3></div><button type="button" data-hco-capture-open>＋ Capture</button></header><p>Nhập task, note, idea, link, file, image, recording, event hoặc vocabulary. Hệ thống chỉ lưu sau khi bạn xác nhận.</p><button type="button" class="hco-drop-zone" data-hco-global-drop-zone><span>⇩</span><strong>Global Drop Zone</strong><small>Kéo file vào đây rồi chọn thumbnail, OCR, convert, upload-video, add-project, audio-analysis, backup hoặc device-vault.</small></button><div class="hco-drop-choices" data-hco-drop-choices hidden>${[["thumbnail", "Mở Thumbnail"], ["ocr", "Chạy OCR"], ["convert", "Chuyển đổi file"], ["upload-video", "Upload video"], ["add-project", "Thêm vào dự án"], ["audio-analysis", "Phân tích âm thanh"], ["backup", "Backup"], ["device-vault", "Device Vault"]].map(([id, label]) => `<button type="button" data-hco-drop-choice="${id}">${label}</button>`).join("")}</div></section><section class="hco-smart-clipboard" data-hco-smart-clipboard><header><div><small>SMART CLIPBOARD · LOCAL ONLY</small><h3>Lịch sử clipboard</h3></div><button type="button" data-hco-clipboard-read>Đọc clipboard</button></header><p class="hco-privacy-copy">Chỉ đọc sau thao tác chủ động. Secret, password, token và private key sẽ bị loại bỏ.</p><div class="hco-clipboard-list">${clipboard.map((item) => `<article data-hco-clipboard-item="${escapeHtml(item.id)}"><span>${escapeHtml(item.text)}</span><small>${escapeHtml(relative(item.createdAt))}</small><button type="button" data-hco-clipboard-pin="${escapeHtml(item.id)}">${item.pinned ? "★" : "☆"}</button><button type="button" data-hco-clipboard-delete="${escapeHtml(item.id)}">×</button></article>`).join("") || `<p class="hco-empty">Chưa có nội dung clipboard an toàn.</p>`}</div></section><section class="hco-mini-launcher" data-hco-mini-launcher><header><div><small>COSMIC MINI WINDOWS</small><h3>Mở tiện ích tại chỗ</h3></div><span>Minimize · Pin · Resize · Snap</span></header><div>${[["calculator", "Máy tính", "＋"], ["notes", "Sticky Notes", "N"], ["music", "Nhạc", "♫"], ["calendar", "Lịch", "◷"], ["timer", "Timer", "◉"], ["image-viewer", "Trình xem ảnh", "▣"], ["download-queue", "Download queue", "⇣"], ["api-monitor", "API monitor", "⌁"]].map(([id, label, icon]) => `<button type="button" data-hco-open-mini="${id}"><i>${icon}</i><span>${label}</span></button>`).join("")}</div></section><section class="hco-handoff-panel" data-hco-cross-device-handoff><header><div><small>CROSS-DEVICE HANDOFF</small><h3>Tiếp tục trên điện thoại</h3></div><button type="button" data-hco-handoff-create>⌁ Tạo QR</button></header><p>QR chỉ chứa handoffId vô nghĩa, không chứa token hoặc mật khẩu. Cần đăng nhập cùng tài khoản trên thiết bị đích.</p><div data-hco-handoff-output><span>Chưa tạo handoff.</span></div></section><section class="hco-time-machine" data-hco-activity-time-machine><header><div><small>ACTIVITY TIME MACHINE</small><h3>Lịch sử hoạt động có thể xem lại</h3></div><button type="button" data-hco-time-filter="all">Tất cả</button></header><div>${timeline.map((item) => `<article data-hco-history-kind="${escapeHtml(item.type || "opened")}"><i>${escapeHtml(item.icon || "◷")}</i><span><strong>${escapeHtml(item.text || itemTitle(item))}</strong><small>${escapeHtml(item.source || "Activity Bus")} · ${escapeHtml(relative(item.createdAt || item.at))}</small></span><button type="button" data-hco-restore-preview="${escapeHtml(item.id || "")}">Xem trước</button></article>`).join("") || `<p class="hco-empty">Chưa có opened, file-edited, setting-changed, task-completed, error hoặc ai-created trong lịch sử.</p>`}</div><p class="hco-restore-note">Restore chỉ mở preview và cần xác nhận; không tự phục hồi dữ liệu.</p></section></div>`;
   }
 
-  function renderMission(model) {
+  function renderMission(model, instance) {
     const constellation = constellationProgress(model);
-    return `<div class="hco-mission" data-hco-website-mission-control><section class="hco-mission-grid"><header class="hco-panel-hero"><div><small>WEBSITE MISSION CONTROL · REAL PROBES</small><h3>Trạng thái hệ thống</h3><p>Frontend, backend, database, OAuth và Web Vitals chỉ được đánh dấu hoạt động sau phản hồi xác minh.</p></div><button type="button" data-hco-mission-refresh>↻ Kiểm tra lại</button></header><div class="hco-service-grid">${model.mission.map((item) => `<article class="is-${escapeHtml(item.state)}" data-hco-service="${escapeHtml(item.id)}"><i></i><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.detail)}</small></div><b>${escapeHtml(item.label === "Service Worker/PWA" ? "service-worker" : item.state)}</b></article>`).join("")}</div></section><section class="hco-security-beacon" data-hco-security-beacon><header><div><small>PRIVACY &amp; SECURITY BEACON</small><h3>Bảo mật theo tài khoản</h3></div><span class="is-safe">LOCAL / OWNER SCOPED</span></header><ul><li><i>◉</i><span>Phiên đăng nhập<small>${global.HHAuthSession?.token?.() ? "Đã xác thực trong phiên" : "Khách hoặc chưa có token"}</small></span></li><li><i>◇</i><span>Thiết bị mới<small>Kiểm tra trong Security Center khi có phiên khác</small></span></li><li><i>⌁</i><span>Microphone / geolocation<small>Chỉ xin quyền sau thao tác chủ động</small></span></li><li><i>↻</i><span>OAuth expiry<small>Không đọc token ở frontend</small></span></li><li><i>▣</i><span>Last backup<small>${escapeHtml(relative(readJson(STORES.backup, {})?.updatedAt))}</small></span></li><li><i>□</i><span>Local-only<small>Clipboard và file metadata không tự gửi lên server</small></span></li></ul></section><section class="hco-constellation-progress" data-hco-constellation-progress><header><div><small>CONSTELLATION PROGRESS</small><h3>Chòm sao tiến độ thật</h3></div><span>Không áp lực streak</span></header><div class="hco-progress-stars">${[["work", "Công việc", constellation.percentages.work, constellation.tasksCompleted], ["learning", "Học tập", constellation.percentages.learning, constellation.vocabularyLearned], ["creative", "Sáng tạo", constellation.percentages.creative, constellation.contentPublished]].map(([id, label, percent, value]) => `<article data-hco-star="${id}"><i style="--progress:${percent}%"></i><strong>${label}</strong><b>${percent}%</b><small>${value} hoạt động ghi nhận</small></article>`).join("")}</div></section></div>`;
+    const health = instance?.localHealth;
+    const healthRows = asArray(health?.checks);
+    return `<div class="hco-mission" data-hco-website-mission-control><section class="hco-mission-grid"><header class="hco-panel-hero"><div><small>WEBSITE MISSION CONTROL · REAL PROBES</small><h3>Trạng thái hệ thống</h3><p>Frontend, backend, database, OAuth và Web Vitals chỉ được đánh dấu hoạt động sau phản hồi xác minh.</p></div><button type="button" data-hco-mission-refresh aria-label="Kiểm tra lại trạng thái hệ thống" title="Kiểm tra lại trạng thái hệ thống">↻ Kiểm tra lại</button></header><div class="hco-service-grid">${model.mission.map((item) => `<article class="is-${escapeHtml(item.state)}" data-hco-service="${escapeHtml(item.id)}"><i></i><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.detail)}</small></div><b>${escapeHtml(item.label === "Service Worker/PWA" ? "service-worker" : item.state)}</b></article>`).join("")}</div></section>
+      <section class="hco-local-health" data-hco-local-health><header><div><small>SESSION &amp; STORAGE HEALTH · BẰNG CHỨNG TRÌNH DUYỆT</small><h3>Chẩn đoán local an toàn</h3></div><button type="button" data-hco-local-health-audit>Chạy chẩn đoán</button></header>${healthRows.length ? `<div class="hco-service-grid">${healthRows.map((item) => `<article class="is-${escapeHtml(item.state)}"><i></i><div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.detail)}</small></div><b>${escapeHtml(item.state)}</b></article>`).join("")}</div><footer><time>Kiểm tra ${escapeHtml(relative(health.checkedAt))}</time><button type="button" data-hco-health-copy>Copy báo cáo đã làm sạch</button></footer>` : `<p>Chưa chẩn đoán. Cosmic OS sẽ chỉ dùng API trình duyệt và không đọc ID, token hay nội dung riêng tư.</p>`}</section>
+      <section class="hco-security-beacon" data-hco-security-beacon><header><div><small>PRIVACY &amp; SECURITY BEACON</small><h3>Bảo mật theo tài khoản</h3></div><span class="is-safe">LOCAL / OWNER SCOPED</span></header><ul><li><i>◉</i><span>Phiên đăng nhập<small>${hasAuthenticatedOwner() ? "Đã có phiên tài khoản; không hiển thị định danh" : "Đang dùng vùng local dành cho khách"}</small></span></li><li><i>◇</i><span>Thiết bị mới<small>Kiểm tra trong Security Center khi có phiên khác</small></span></li><li><i>⌁</i><span>Microphone / geolocation<small>Chỉ xin quyền sau thao tác chủ động</small></span></li><li><i>↻</i><span>OAuth expiry<small>Không đọc token ở frontend</small></span></li><li><i>▣</i><span>Last backup<small>${escapeHtml(relative(readJson(STORES.backup, {})?.updatedAt))}</small></span></li><li><i>□</i><span>Local-only<small>Clipboard và file metadata không tự gửi lên server</small></span></li></ul></section><section class="hco-constellation-progress" data-hco-constellation-progress><header><div><small>CONSTELLATION PROGRESS</small><h3>Chòm sao tiến độ thật</h3></div><span>Không áp lực streak</span></header><div class="hco-progress-stars">${[["work", "Công việc", constellation.percentages.work, constellation.tasksCompleted], ["learning", "Học tập", constellation.percentages.learning, constellation.vocabularyLearned], ["creative", "Sáng tạo", constellation.percentages.creative, constellation.contentPublished]].map(([id, label, percent, value]) => `<article data-hco-star="${id}"><i style="--progress:${percent}%"></i><strong>${label}</strong><b>${percent}%</b><small>${value} hoạt động ghi nhận</small></article>`).join("")}</div></section></div>`;
   }
 
   function renderProfiles(state) {
     const setting = state.settings;
+    const modules = normalizeModuleOrder(state.moduleOrder).map((id) => TABS.find((item) => item[0] === id)).filter(Boolean);
+    const snapshots = state.workspaceSnapshots.slice(0, MAX_WORKSPACE_SNAPSHOTS);
     return `<div class="hco-profiles" data-hco-home-profiles data-hco-settings>
       <section class="hco-profile-picker"><header><div><small>HOME PROFILES · PHẠM VI TÀI KHOẢN</small><h3>Chọn không gian làm việc</h3></div><span>Không mất tiến độ</span></header><div>${PROFILES.map(([id, label, description]) => `<button type="button" class="${state.profile === id ? "is-active" : ""}" data-hco-profile="${id}"><i>${id === "work" ? "□" : id === "learning" ? "◫" : id === "creative" ? "✦" : id === "website" ? "⌁" : id === "family" ? "♥" : "H"}</i><span><strong>${label}</strong><small>${description}</small></span></button>`).join("")}</div></section>
+      <section class="hco-module-organizer" data-hco-module-organizer><header><div><small>CUSTOM DASHBOARD · BÀN PHÍM DÙNG ĐƯỢC</small><h3>Ghim và sắp xếp module</h3></div><span>${state.pinnedModules.length}/5 đã ghim</span></header><p>Module ghim xuất hiện trước, nhưng thứ tự gốc vẫn được giữ để hoàn tác an toàn.</p><div>${modules.map(([id, label, icon], index) => `<article data-hco-module-row="${id}"><i aria-hidden="true">${icon}</i><span><strong>${escapeHtml(label)}</strong><small>${state.pinnedModules.includes(id) ? "Đã ghim lên đầu điều hướng" : `Vị trí ${index + 1}`}</small></span><button type="button" data-hco-module-action="pin" data-hco-module-id="${id}" aria-label="${state.pinnedModules.includes(id) ? "Bỏ ghim" : "Ghim"} ${escapeHtml(label)}">${state.pinnedModules.includes(id) ? "★" : "☆"}</button><button type="button" data-hco-module-action="up" data-hco-module-id="${id}" aria-label="Đưa ${escapeHtml(label)} lên" ${index === 0 ? "disabled" : ""}>↑</button><button type="button" data-hco-module-action="down" data-hco-module-id="${id}" aria-label="Đưa ${escapeHtml(label)} xuống" ${index === modules.length - 1 ? "disabled" : ""}>↓</button></article>`).join("")}</div></section>
       <section class="hco-settings-grid" aria-label="Cấu hình Cosmic OS">
-        <article data-hco-settings-appearance><small>GIAO DIỆN</small><h3>Khả năng đọc</h3><label>Mật độ<select data-hco-setting="density"><option value="compact" ${setting.density === "compact" ? "selected" : ""}>Gọn</option><option value="comfortable" ${setting.density === "comfortable" ? "selected" : ""}>Cân bằng</option><option value="spacious" ${setting.density === "spacious" ? "selected" : ""}>Rộng</option></select></label><label>Cỡ chữ<input type="range" min="0.9" max="1.3" step="0.05" value="${setting.fontScale}" data-hco-setting="fontScale"><output>${Math.round(setting.fontScale * 100)}%</output></label><label>Tương phản<select data-hco-setting="contrast"><option value="normal" ${setting.contrast === "normal" ? "selected" : ""}>Tiêu chuẩn</option><option value="high" ${setting.contrast === "high" ? "selected" : ""}>Cao</option></select></label></article>
+        <article data-hco-settings-appearance><small>GIAO DIỆN</small><h3>Khả năng đọc</h3><label>Theme<select data-hco-setting="theme"><option value="deep-space" ${setting.theme === "deep-space" ? "selected" : ""}>Deep Space</option><option value="nebula" ${setting.theme === "nebula" ? "selected" : ""}>Nebula</option><option value="aurora" ${setting.theme === "aurora" ? "selected" : ""}>Aurora</option><option value="solar" ${setting.theme === "solar" ? "selected" : ""}>Solar</option></select></label><label>Mật độ<select data-hco-setting="density"><option value="compact" ${setting.density === "compact" ? "selected" : ""}>Gọn</option><option value="comfortable" ${setting.density === "comfortable" ? "selected" : ""}>Cân bằng</option><option value="spacious" ${setting.density === "spacious" ? "selected" : ""}>Rộng</option></select></label><label>Cỡ chữ<input type="range" min="0.9" max="1.3" step="0.05" value="${setting.fontScale}" data-hco-setting="fontScale"><output>${Math.round(setting.fontScale * 100)}%</output></label><label>Tương phản<select data-hco-setting="contrast"><option value="normal" ${setting.contrast === "normal" ? "selected" : ""}>Tiêu chuẩn</option><option value="high" ${setting.contrast === "high" ? "selected" : ""}>Cao</option></select></label></article>
         <article data-hco-settings-motion><small>CHUYỂN ĐỘNG</small><h3>Hiệu ứng có kiểm soát</h3><label>Chế độ<select data-hco-setting="motion"><option value="static" ${setting.motion === "static" ? "selected" : ""}>Tĩnh</option><option value="balanced" ${setting.motion === "balanced" ? "selected" : ""}>Cân bằng</option><option value="cinematic" ${setting.motion === "cinematic" ? "selected" : ""}>Điện ảnh</option></select></label><label><input type="checkbox" data-hco-setting="reducedEffectsWhileTyping" ${setting.reducedEffectsWhileTyping ? "checked" : ""}> Giảm glow khi nhập liệu</label></article>
         <article data-hco-settings-language><small>NGÔN NGỮ &amp; THỜI GIAN</small><h3>Hiển thị địa phương</h3><label>Ngôn ngữ<select data-hco-setting="language"><option value="vi" ${setting.language === "vi" ? "selected" : ""}>Tiếng Việt</option><option value="en" ${setting.language === "en" ? "selected" : ""}>English</option></select></label><p>Múi giờ được lấy từ thiết bị: ${escapeHtml(Intl.DateTimeFormat().resolvedOptions().timeZone || "Thiết bị")}</p></article>
         <article data-hco-settings-notifications><small>THÔNG BÁO</small><h3>Chỉ báo trong HH Platform</h3><label><input type="checkbox" data-hco-setting="notifications" ${setting.notifications ? "checked" : ""}> Cho phép nhắc việc nội bộ</label><p>Trình duyệt chỉ được hỏi quyền sau thao tác chủ động.</p></article>
@@ -848,7 +1091,7 @@
         <article data-hco-settings-shortcuts><small>PHÍM TẮT</small><h3>Điều hướng nhanh</h3><p><kbd>Ctrl/⌘ K</kbd> tìm toàn hệ thống · <kbd>Esc</kbd> đóng sheet · phím mũi tên đổi module.</p></article>
         <article data-hco-settings-accessibility><small>TRỢ NĂNG</small><h3>Điều khiển rõ ràng</h3><p>Hỗ trợ bàn phím, focus hiển thị, đọc trạng thái và prefers-reduced-motion.</p></article>
       </section>
-      <section class="hco-data-center" data-hco-settings-data><header><div><small>DATA &amp; RECOVERY CENTER</small><h3>Sao lưu cấu hình an toàn</h3></div><span>Schema v${schemaVersion}</span></header><p>Dữ liệu đồng bộ: profile, tab, pipeline và tùy chọn hiển thị. Clipboard, file, secret và thông tin định danh không được xuất hoặc đồng bộ.</p><div><button type="button" data-hco-export>Xuất JSON</button><button type="button" data-hco-import>Nhập JSON</button><button type="button" data-hco-checkpoint>Tạo checkpoint</button><button type="button" data-hco-delete-data data-hco-confirmation="required">Xóa dữ liệu…</button></div><input type="file" accept="application/json,.json" data-hco-import-input hidden></section>
+      <section class="hco-data-center" data-hco-settings-data><header><div><small>DATA &amp; RECOVERY CENTER</small><h3>Sao lưu cấu hình an toàn</h3></div><span>Schema v${schemaVersion}</span></header><p>Dữ liệu đồng bộ: profile, tab, pipeline, bố cục và tùy chọn hiển thị. Clipboard, file, secret và thông tin định danh không được xuất hoặc đồng bộ.</p><div><button type="button" data-hco-export>Xuất JSON</button><button type="button" data-hco-import>Nhập JSON</button><button type="button" data-hco-checkpoint>Tạo checkpoint</button><button type="button" data-hco-restore-undo ${state.restoreUndo ? "" : "disabled"}>Hoàn tác khôi phục</button><button type="button" data-hco-delete-data data-hco-confirmation="required">Xóa dữ liệu…</button></div><div class="hco-snapshot-list" data-hco-snapshot-list>${snapshots.map((snapshot) => `<article data-hco-snapshot="${escapeHtml(snapshot.id)}"><span><strong>${escapeHtml(snapshot.label)}</strong><small>${escapeHtml(relative(snapshot.createdAt))} · ${escapeHtml(TABS.find((item) => item[0] === snapshot.data.activeTab)?.[1] || snapshot.data.activeTab)}</small></span><button type="button" data-hco-snapshot-preview="${escapeHtml(snapshot.id)}">Xem trước</button><button type="button" data-hco-snapshot-restore="${escapeHtml(snapshot.id)}" disabled>Khôi phục</button></article>`).join("") || `<p class="hco-empty">Chưa có checkpoint bố cục.</p>`}</div><div data-hco-snapshot-preview-output aria-live="polite"></div><input type="file" accept="application/json,.json" data-hco-import-input hidden></section>
       <section class="hco-context-panel" data-hco-context-aware><header><div><small>CONTEXT-AWARE HOMEPAGE</small><h3>Đang thích ứng theo tín hiệu</h3></div><button type="button" data-hco-ambient-toggle>${state.ambient ? "Ambient: Bật" : "Ambient: Tắt"}</button></header><p data-hco-context-copy>Buổi sáng · ưu tiên lịch và việc quan trọng. Khi có active-upload, website-incident hoặc near-deadline, hệ thống sẽ đẩy tín hiệu liên quan lên trước.</p><div class="hco-context-signals"><span>morning</span><span>work-hours</span><span>evening</span><span>active-upload</span><span>website-incident</span><span>near-deadline</span></div></section>
       <section class="hco-screensaver-settings" data-hco-cosmic-screensaver><header><div><small>COSMIC SCREENSAVER</small><h3>Màn hình chờ thiên hà</h3></div><button type="button" data-hco-screensaver-toggle>${state.screensaver ? "Đang bật" : "Đang tắt"}</button></header><p>Tự xuất hiện sau ${Math.round(state.screensaverDelay / 60)} phút không thao tác, dừng khi tab bị ẩn và thoát bằng chuột hoặc bàn phím.</p></section>
     </div>`;
@@ -862,7 +1105,7 @@
     if (tab === "workspace") return renderWorkspace(model, instance.state);
     if (tab === "automation") return renderAutomation(model, instance.state);
     if (tab === "tools") return renderTools(model, instance.state);
-    if (tab === "mission") return renderMission(model);
+    if (tab === "mission") return renderMission(model, instance);
     return renderProfiles(instance.state);
   }
 
@@ -870,21 +1113,53 @@
   function inspectorMarkup(instance, model) {
     const active = TABS.find((item) => item[0] === instance.state.activeTab) || TABS[0];
     const permissionKinds = [["microphone", "Microphone"], ["camera", "Camera"], ["clipboard-read", "Clipboard"], ["notifications", "Thông báo"]];
+    const latestSnapshot = instance.state.workspaceSnapshots[0] || null;
+    const undo = instance.state.undoStack[0] || null;
+    const contextual = instance.state.activeTab === "inbox"
+      ? [["mark-inbox-read", "Đọc hết mục đang hiện"], ["snooze-nonurgent", "Hoãn mục không gấp"]]
+      : instance.state.activeTab === "workspace"
+        ? [["focus-15", "Focus 15 phút"], ["checkpoint", "Checkpoint nhanh"]]
+        : instance.state.activeTab === "automation"
+          ? [["dry-run", "Dry-run scene đầu tiên"], ["checkpoint", "Checkpoint nhanh"]]
+          : instance.state.activeTab === "mission"
+            ? [["health-audit", "Chẩn đoán local"], ["checkpoint", "Checkpoint nhanh"]]
+            : [["pin-current", instance.state.pinnedModules.includes(active[0]) ? "Bỏ ghim module này" : "Ghim module này"], ["checkpoint", "Checkpoint nhanh"]];
     return `<div class="hco-inspector-content">
       <header><small>NGỮ CẢNH HIỆN TẠI</small><h3>${escapeHtml(active[1])}</h3><button type="button" data-hco-inspector-close aria-label="Đóng bảng ngữ cảnh" title="Đóng bảng ngữ cảnh">×</button></header>
       <section aria-label="route tool project setting command" data-hco-universal-search><label>Tìm xuyên HH Platform<input type="search" data-hco-universal-search-input placeholder="Công cụ, dự án, cài đặt…" autocomplete="off"></label><div data-hco-universal-search-results aria-live="polite"></div></section>
-      <section data-hco-context-actions><small>HÀNH ĐỘNG PHÙ HỢP</small><button type="button" data-hco-capture-open>＋ Ghi nhanh</button><button type="button" data-hco-command-open>Mở Command Palette</button><button type="button" data-hco-dashboard-customize>Tùy chỉnh dashboard</button><button type="button" data-hco-dashboard-reset>Khôi phục mặc định</button></section>
+      <section data-hco-context-actions><small>HÀNH ĐỘNG PHÙ HỢP · ${escapeHtml(active[1])}</small><button type="button" data-hco-capture-open>＋ Ghi nhanh</button>${contextual.map(([id, label]) => `<button type="button" data-hco-quick-action="${id}">${escapeHtml(label)}</button>`).join("")}<button type="button" data-hco-command-open>Mở Command Palette</button><button type="button" data-hco-dashboard-customize>Tùy chỉnh dashboard</button><button type="button" data-hco-quick-undo ${undo ? "" : "disabled"}>${undo ? `Hoàn tác: ${escapeHtml(undo.label)}` : "Chưa có thao tác để hoàn tác"}</button></section>
       <section data-hco-smart-priority><small>SMART PRIORITY</small><strong>${escapeHtml(model.priorities[0]?.title || "Không có việc khẩn cấp")}</strong><p data-hco-priority-reason>${escapeHtml(model.priorities[0]?.priorityReason || "Chưa có dữ liệu đủ để xếp hạng.")}</p></section>
       <section data-hco-permission-center><small>PERMISSION OBSERVATORY</small><h3>Quyền của trình duyệt</h3>${permissionKinds.map(([id, label]) => `<article data-hco-permission="${id}"><span><strong>${label}</strong><small data-hco-permission-state>Chưa kiểm tra</small></span><button type="button" data-hco-permission-check="${id}">Kiểm tra</button><button type="button" data-hco-permission-help="${id}">Cách thu hồi</button></article>`).join("")}</section>
-      <section data-hco-recovery-center><small>RECOVERY CENTER</small><h3>Khôi phục có xem trước</h3><p>Checkpoint cục bộ gần nhất: ${escapeHtml(relative(instance.state.lastSnapshot?.createdAt))}</p><button type="button" data-hco-recovery-checkpoint>Tạo checkpoint</button><button type="button" data-hco-recovery-preview>Xem trước checkpoint</button><button type="button" data-hco-recovery-confirm data-hco-recovery-candidate="checkpoint" disabled>Khôi phục sau preview</button></section>
-      <section data-hco-activity-center><small>ACTIVITY TIMELINE</small><h3>Thao tác gần đây</h3><label>Lọc<select data-hco-activity-filter><option value="all">Tất cả</option><option value="error">Lỗi</option><option value="task-completed">Hoàn thành</option></select></label><button type="button" data-hco-activity-undo data-hco-undoable="false" disabled>Hoàn tác khi an toàn</button></section>
+      <section data-hco-recovery-center><small>RECOVERY CENTER</small><h3>Khôi phục có xem trước</h3><p>Checkpoint cục bộ gần nhất: ${escapeHtml(relative(latestSnapshot?.createdAt))}</p><button type="button" data-hco-recovery-checkpoint>Tạo checkpoint</button><button type="button" data-hco-recovery-preview ${latestSnapshot ? "" : "disabled"}>Xem trước checkpoint</button><button type="button" data-hco-recovery-confirm data-hco-recovery-candidate="checkpoint" disabled>Khôi phục sau preview</button><button type="button" data-hco-restore-undo ${instance.state.restoreUndo ? "" : "disabled"}>Hoàn tác khôi phục</button><p data-hco-recovery-preview-output aria-live="polite"></p></section>
+      <section data-hco-activity-center><small>ACTIVITY TIMELINE</small><h3>Thao tác gần đây</h3><label>Lọc<select data-hco-activity-filter><option value="all">Tất cả</option><option value="error">Lỗi</option><option value="task-completed">Hoàn thành</option></select></label><button type="button" data-hco-activity-undo data-hco-undoable="${Boolean(undo)}" ${undo ? "" : "disabled"}>${undo ? `Hoàn tác ${escapeHtml(undo.label)}` : "Hoàn tác khi an toàn"}</button></section>
       <section data-hco-security-center><small>SECURITY CENTER</small><h3>Bảo mật phiên</h3><p>Không đưa thông tin đăng nhập vào HTML, URL hoặc bản xuất. Phiên và quyền nhạy cảm do trình duyệt kiểm soát.</p><button type="button" data-hco-route="/settings/security-center">Mở trung tâm bảo mật</button></section>
     </div>`;
   }
 
+  function navigationButtonsMarkup(state, model) {
+    return orderedModuleIds(state).map((id) => TABS.find((item) => item[0] === id)).filter(Boolean).map(([id, label, icon]) => `<button type="button" data-hco-nav-item data-hco-tab="${id}" aria-current="${state.activeTab === id ? "page" : "false"}" aria-selected="${state.activeTab === id}" title="${escapeHtml(label)}"><i aria-hidden="true">${icon}</i><span>${escapeHtml(label)}</span>${state.pinnedModules.includes(id) ? `<em aria-label="Đã ghim">★</em>` : ""}<b>${id === "inbox" ? model.notificationDigest?.unread || "" : id === "queue" ? model.count.activeJobs.length || "" : ""}</b></button>`).join("");
+  }
+
+  function refreshNavigation(instance, model = modelFor(instance)) {
+    const markup = navigationButtonsMarkup(instance.state, model);
+    instance.root.querySelectorAll("[data-hco-nav-list]").forEach((list) => { list.innerHTML = markup; });
+    return markup;
+  }
+
+  function sheetSurfacesMarkup(instance, model, tabs) {
+    return `<aside class="hco-mobile-sidebar-sheet" id="hcoMobileModules" data-hco-mobile-sidebar-sheet hidden role="dialog" aria-modal="true" aria-label="Danh mục Cosmic OS"><header><strong>Danh mục</strong><button type="button" data-hco-sheet-close aria-label="Đóng danh mục">×</button></header><div data-hco-nav-list>${tabs}</div></aside>
+      <aside class="hco-inspector-sheet" data-hco-inspector-sheet hidden role="dialog" aria-modal="true" aria-label="Ngữ cảnh Cosmic OS trên điện thoại"><header><strong>Ngữ cảnh</strong><button type="button" data-hco-sheet-close aria-label="Đóng bảng ngữ cảnh">×</button></header>${inspectorMarkup(instance, model)}</aside>`;
+  }
+
+  function transientSurfacesMarkup() {
+    return `<aside class="hco-concierge hco-cosmic-concierge" data-hco-concierge data-hco-cosmic-concierge hidden role="dialog" aria-modal="true" aria-label="Command Palette Cosmic OS"><header><div><small>COSMIC CONCIERGE · LOCAL ROUTER</small><h3>H có thể giúp gì?</h3></div><button type="button" data-hco-concierge-close aria-label="Đóng Command Palette">×</button></header><form data-hco-command-form><input data-hco-command-input placeholder="Ví dụ: kiểm tra backend" autocomplete="off"><button type="submit">Control</button></form><div data-hco-command-preview role="status">Nhập lệnh để xem preview trước khi mở.</div><div class="hco-concierge-actions"><button type="button" data-hco-concierge-action="summarize-day">Tóm tắt ngày</button><button type="button" data-hco-concierge-action="find-tool">Tìm công cụ</button><button type="button" data-hco-concierge-action="explain-warning">Giải thích cảnh báo</button><button type="button" data-hco-concierge-action="next-step">Đề xuất bước tiếp</button><button type="button" data-hco-concierge-action="create-plan">Tạo kế hoạch</button><button type="button" data-hco-concierge-action="draft-content">Soạn nội dung</button></div></aside>
+      <aside class="hco-screensaver" data-hco-screensaver-overlay hidden aria-label="Cosmic Screensaver"><div><span>H</span><small>COSMIC SCREENSAVER</small><strong data-hco-screen-clock>--:--</strong><p data-hco-screen-next>Không có sự kiện tiếp theo</p><button type="button" data-hco-screensaver-exit>Tiếp tục</button></div></aside>
+      <aside class="hco-capture-dialog" data-hco-capture-dialog hidden role="dialog" aria-modal="true" aria-label="Quick Capture"><header><div><small>QUICK CAPTURE · CẦN XÁC NHẬN</small><h3>Lưu nhanh vào HH Platform</h3></div><button type="button" data-hco-capture-close aria-label="Đóng Quick Capture">×</button></header><form data-hco-capture-form><label>Loại nội dung<select data-hco-capture-type><option value="task">task</option><option value="note">note</option><option value="idea">idea</option><option value="link">link</option><option value="file">file</option><option value="image">image</option><option value="recording">recording</option><option value="event">event</option><option value="vocabulary">vocabulary</option></select></label><label>Nội dung<textarea data-hco-capture-input maxlength="1000" required placeholder="Viết nội dung…"></textarea></label><label class="hco-capture-file">File tùy chọn<input type="file" data-hco-capture-file></label><p data-hco-capture-suggestion>Hệ thống sẽ đề xuất nơi lưu sau khi bạn nhập.</p><footer><button type="button" data-hco-capture-close>Hủy</button><button type="submit" class="is-primary" data-hco-capture-confirm>Xác nhận và lưu</button></footer></form></aside>`;
+  }
+
   function shellMarkup(instance, model) {
-    const tabs = TABS.map(([id, label, icon]) => `<button type="button" data-hco-nav-item data-hco-tab="${id}" aria-current="${instance.state.activeTab === id ? "page" : "false"}" aria-selected="${instance.state.activeTab === id}"><i aria-hidden="true">${icon}</i><span>${label}</span><b>${id === "inbox" ? model.count.unread.length || "" : id === "queue" ? model.count.activeJobs.length || "" : ""}</b></button>`).join("");
-    return `<div class="hco-root" data-hco-root data-context-aware data-hco-profile="${escapeHtml(instance.state.profile)}" data-hco-motion="${escapeHtml(instance.state.settings.motion)}" data-hco-density="${escapeHtml(instance.state.settings.density)}" data-hco-contrast="${escapeHtml(instance.state.settings.contrast)}" style="--hco-font-scale:${instance.state.settings.fontScale}">
+    const tabs = navigationButtonsMarkup(instance.state, model);
+    return `<div class="hco-root" data-hco-root data-context-aware data-hco-profile="${escapeHtml(instance.state.profile)}" data-hco-theme="${escapeHtml(instance.state.settings.theme)}" data-hco-motion="${escapeHtml(instance.state.settings.motion)}" data-hco-motion-paused="${Boolean(global.document?.hidden)}" data-hco-density="${escapeHtml(instance.state.settings.density)}" data-hco-contrast="${escapeHtml(instance.state.settings.contrast)}" style="--hco-font-scale:${instance.state.settings.fontScale}">
       <section class="hco-command-deck ${instance.state.sidebarCollapsed ? "is-sidebar-collapsed" : ""} ${instance.state.inspectorOpen ? "is-inspector-open" : ""}" data-hco-command-deck aria-labelledby="hcoTitle">
         <header class="hco-command-header"><div><small>HH COSMIC OS V2 · MISSION CONTROL</small><h2 id="hcoTitle">Trung tâm điều khiển cá nhân</h2><p data-hco-status aria-live="polite">Đã tổng hợp dữ liệu cục bộ hiện có.</p></div><div class="hco-command-actions">
           <button type="button" data-hco-command-open aria-label="Mở tìm kiếm toàn hệ thống" title="Tìm kiếm · Ctrl K">⌕</button>
@@ -894,20 +1169,19 @@
           <button type="button" data-hco-refresh aria-label="Làm mới dữ liệu Cosmic OS" title="Làm mới dữ liệu">↻</button>
           <button type="button" data-hco-inspector-toggle aria-label="Bật hoặc tắt bảng ngữ cảnh" title="Bảng ngữ cảnh" aria-expanded="${instance.state.inspectorOpen}" aria-controls="hcoInspector">◫</button>
         </div></header>
+        <span class="hco-sr-live" data-hco-mobile-status role="status" aria-live="polite" aria-atomic="true"></span>
         <div class="hco-deck-body">
-          <nav class="hco-sidebar" aria-label="Điều hướng Cosmic OS" data-hco-sidebar><header><strong>Điều hướng</strong><button type="button" data-hco-sidebar-collapse aria-label="Thu gọn điều hướng" title="Thu gọn điều hướng">⇤</button></header><div>${tabs}</div><footer><button type="button" data-hco-capture-open>＋ Quick Capture</button><small>Local-first · dữ liệu lớn dùng IndexedDB</small></footer></nav>
+          <nav class="hco-sidebar" aria-label="Điều hướng Cosmic OS" data-hco-sidebar><header><strong>Điều hướng</strong><button type="button" data-hco-sidebar-collapse aria-label="Thu gọn điều hướng" title="Thu gọn điều hướng">⇤</button></header><div data-hco-nav-list>${tabs}</div><footer><button type="button" data-hco-capture-open>＋ Quick Capture</button><small>Local-first · dữ liệu lớn dùng IndexedDB</small></footer></nav>
           <main class="hco-workspace-scroll" data-hco-workspace-scroll data-hco-panel role="main" aria-label="Workspace Cosmic OS" tabindex="-1">${tabMarkup(instance, model)}</main>
           <aside class="hco-inspector" id="hcoInspector" data-hco-inspector aria-label="Ngữ cảnh và hành động" ${instance.state.inspectorOpen ? "" : "hidden"}>${inspectorMarkup(instance, model)}</aside>
         </div>
         <footer class="hco-status-bar" data-hco-status-bar><span data-hco-footer-status aria-live="polite">Local-first</span><span>Offline: ${instance.state.settings.offline ? "sẵn sàng" : "tắt"}</span><span>Tác vụ nền: ${model.count.activeJobs.length}</span><span data-hco-storage-status>Dung lượng: chưa kiểm tra</span><span>Bảo mật ✓</span><button type="button" data-hco-sync>Đồng bộ cấu hình</button></footer>
-        <nav class="hco-mobile-nav" data-hco-mobile-nav aria-label="Điều hướng Cosmic OS trên điện thoại"><button type="button" data-hco-mobile-destination="brief">☀<span>Hôm nay</span></button><button type="button" data-hco-mobile-destination="inbox">◇<span>Hộp thư</span></button><button type="button" data-hco-mobile-destination="workspace">▦<span>Workspace</span></button><button type="button" data-hco-mobile-destination="search">⌕<span>Tìm kiếm</span></button><button type="button" data-hco-mobile-destination="more">•••<span>Thêm</span></button></nav>
-        <aside class="hco-mobile-sidebar-sheet" data-hco-mobile-sidebar-sheet hidden aria-label="Danh mục Cosmic OS"><header><strong>Danh mục</strong><button type="button" data-hco-sheet-close aria-label="Đóng danh mục">×</button></header>${tabs}</aside>
-        <aside class="hco-inspector-sheet" data-hco-inspector-sheet hidden aria-label="Ngữ cảnh Cosmic OS trên điện thoại"><header><strong>Ngữ cảnh</strong><button type="button" data-hco-sheet-close aria-label="Đóng bảng ngữ cảnh">×</button></header>${inspectorMarkup(instance, model)}</aside>
+        <nav class="hco-mobile-nav" data-hco-mobile-nav aria-label="Điều hướng Cosmic OS trên điện thoại"><button type="button" data-hco-mobile-destination="brief">☀<span>Hôm nay</span></button><button type="button" data-hco-mobile-destination="inbox">◇<span>Hộp thư</span></button><button type="button" data-hco-mobile-destination="workspace">▦<span>Workspace</span></button><button type="button" data-hco-mobile-destination="search">⌕<span>Tìm kiếm</span></button><button type="button" data-hco-mobile-destination="more" aria-controls="hcoMobileModules" aria-expanded="false">•••<span>Thêm</span></button></nav>
+        <div class="hco-sheet-backdrop" data-hco-sheet-backdrop hidden aria-hidden="true"></div>
+        ${sheetSurfacesMarkup(instance, model, tabs)}
         <span class="hco-tooltip" data-hco-tooltip-role="tooltip" role="tooltip" hidden></span>
       </section>
-      <aside class="hco-concierge hco-cosmic-concierge" data-hco-concierge data-hco-cosmic-concierge hidden><header><div><small>COSMIC CONCIERGE · LOCAL ROUTER</small><h3>H có thể giúp gì?</h3></div><button type="button" data-hco-concierge-close aria-label="Đóng Command Palette">×</button></header><form data-hco-command-form><input data-hco-command-input placeholder="Ví dụ: kiểm tra backend" autocomplete="off"><button type="submit">Control</button></form><div data-hco-command-preview role="status">Nhập lệnh để xem preview trước khi mở.</div><div class="hco-concierge-actions"><button type="button" data-hco-concierge-action="summarize-day">Tóm tắt ngày</button><button type="button" data-hco-concierge-action="find-tool">Tìm công cụ</button><button type="button" data-hco-concierge-action="explain-warning">Giải thích cảnh báo</button><button type="button" data-hco-concierge-action="next-step">Đề xuất bước tiếp</button><button type="button" data-hco-concierge-action="create-plan">Tạo kế hoạch</button><button type="button" data-hco-concierge-action="draft-content">Soạn nội dung</button></div></aside>
-      <aside class="hco-screensaver" data-hco-screensaver-overlay hidden aria-label="Cosmic Screensaver"><div><span>H</span><small>COSMIC SCREENSAVER</small><strong data-hco-screen-clock>--:--</strong><p data-hco-screen-next>Không có sự kiện tiếp theo</p><button type="button" data-hco-screensaver-exit>Tiếp tục</button></div></aside>
-      <aside class="hco-capture-dialog" data-hco-capture-dialog hidden aria-label="Quick Capture"><header><div><small>QUICK CAPTURE · CẦN XÁC NHẬN</small><h3>Lưu nhanh vào HH Platform</h3></div><button type="button" data-hco-capture-close aria-label="Đóng Quick Capture">×</button></header><form data-hco-capture-form><label>Loại nội dung<select data-hco-capture-type><option value="task">task</option><option value="note">note</option><option value="idea">idea</option><option value="link">link</option><option value="file">file</option><option value="image">image</option><option value="recording">recording</option><option value="event">event</option><option value="vocabulary">vocabulary</option></select></label><label>Nội dung<textarea data-hco-capture-input maxlength="1000" required placeholder="Viết nội dung…"></textarea></label><label class="hco-capture-file">File tùy chọn<input type="file" data-hco-capture-file></label><p data-hco-capture-suggestion>Hệ thống sẽ đề xuất nơi lưu sau khi bạn nhập.</p><footer><button type="button" data-hco-capture-close>Hủy</button><button type="submit" class="is-primary" data-hco-capture-confirm>Xác nhận và lưu</button></footer></form></aside>
+      ${transientSurfacesMarkup()}
       <input type="file" data-hco-drop-input hidden multiple><div class="hco-mini-windows" data-hco-mini-windows></div>
     </div>`;
   }
@@ -919,9 +1193,218 @@
     global.dispatchEvent?.(new CustomEvent("hh:home-data-change", { detail: { source: "cosmic-os", scope: "current-account", timestamp: Date.now() } }));
   }
 
+  function pushUndo(instance, label, patch = {}, options = {}) {
+    const entry = normalizeUndoEntry({ id: uid("undo"), kind: options.kind || "state-patch", label, createdAt: nowIso(), patch, taskId: options.taskId });
+    if (!entry) return null;
+    instance.state.undoStack = [entry, ...instance.state.undoStack.filter((item) => item.id !== entry.id)].slice(0, MAX_UNDO_ENTRIES);
+    return entry;
+  }
+
+  function applyUndo(instance) {
+    const entry = instance.state.undoStack[0];
+    if (!entry) { setStatus(instance, "Không có thao tác an toàn để hoàn tác.", "warning"); return false; }
+    let changed = false;
+    if (entry.kind === "task-create" && entry.taskId) {
+      const todos = asArray(readJson(STORES.todos, []));
+      const next = todos.filter((task) => !(String(task?.id) === entry.taskId && belongsToOwner(task)));
+      changed = next.length !== todos.length;
+      if (changed) writeJson(STORES.todos, next);
+    } else if (entry.kind === "state-patch") {
+      const allowed = new Set(["inboxRead", "inboxPinned", "inboxSnoozed", "notificationOrbit", "moduleOrder", "pinnedModules", "pipeline", "focus", "settings", "captures", "clipboard"]);
+      Object.entries(entry.patch || {}).forEach(([key, value]) => {
+        if (!allowed.has(key)) return;
+        instance.state[key] = clone(value);
+        changed = true;
+      });
+    }
+    instance.state.undoStack = instance.state.undoStack.slice(1);
+    saveState(instance, { silent: true });
+    applyPresentationSettings(instance);
+    refreshNavigation(instance);
+    refreshPanel(instance, { message: changed ? `Đã hoàn tác: ${entry.label}.` : `Không còn dữ liệu phù hợp để hoàn tác: ${entry.label}.`, tone: changed ? "success" : "warning" });
+    return changed;
+  }
+
+  function handleInboxAction(instance, itemNode, action) {
+    const id = clean(itemNode?.dataset?.hcoInboxItem, 120);
+    const item = modelFor(instance).inboxAll.find((entry) => entry.id === id);
+    if (!item) { setStatus(instance, "Thông báo không còn tồn tại trong nguồn dữ liệu.", "warning"); return; }
+    if (action === "open") { if (item.route !== "/home") { closeOS(instance); navigate(item.route); } return; }
+    if (action === "to-task") {
+      const todos = asArray(readJson(STORES.todos, []));
+      const taskId = `inbox-task-${stableLocalId(item.id, ownerScope())}`;
+      if (todos.some((task) => String(task?.id) === taskId && belongsToOwner(task))) { setStatus(instance, "Thông báo này đã được đưa vào Công việc.", "warning"); return; }
+      todos.unshift({ id: taskId, title: item.title, description: item.meta, status: "open", completed: false, createdAt: nowIso(), ownerId: ownerScope(), source: "cosmic-inbox", sourceId: item.id });
+      if (!writeJson(STORES.todos, todos.slice(0, 500))) { setStatus(instance, "Không thể lưu task vào bộ nhớ của trình duyệt.", "warning"); return; }
+      pushUndo(instance, `tạo task “${item.title}”`, {}, { kind: "task-create", taskId });
+      saveState(instance, { silent: true });
+      refreshPanel(instance, { message: "Đã tạo task thật từ thông báo. Có thể hoàn tác ngay.", tone: "success" });
+      return;
+    }
+    pushUndo(instance, `cập nhật thông báo “${item.title}”`, { inboxRead: instance.state.inboxRead, inboxPinned: instance.state.inboxPinned, inboxSnoozed: instance.state.inboxSnoozed });
+    if (action === "mark-read") instance.state.inboxRead[id] = !item.read;
+    else if (action === "pin") instance.state.inboxPinned = item.pinned ? instance.state.inboxPinned.filter((entry) => entry !== id) : [id, ...instance.state.inboxPinned.filter((entry) => entry !== id)].slice(0, 100);
+    else if (action === "snooze") instance.state.inboxSnoozed[id] = Date.now() + 60 * 60 * 1000;
+    else { instance.state.undoStack.shift(); setStatus(instance, "Hành động thông báo không được hỗ trợ.", "warning"); return; }
+    saveState(instance, { silent: true });
+    refreshPanel(instance, { message: action === "snooze" ? "Đã hoãn thông báo trong 1 giờ." : action === "pin" ? "Đã cập nhật trạng thái ghim." : "Đã cập nhật trạng thái đọc.", tone: "success" });
+  }
+
+  function visibleInboxItems(instance) {
+    const visibleIds = [...instance.root.querySelectorAll("[data-hco-inbox-item]")].filter((node) => !node.hidden).map((node) => node.dataset.hcoInboxItem);
+    const rows = modelFor(instance).inbox;
+    return visibleIds.length ? rows.filter((item) => visibleIds.includes(item.id)) : rows;
+  }
+
+  function handleInboxBulk(instance, action) {
+    const rows = visibleInboxItems(instance);
+    if (action === "digest") {
+      pushUndo(instance, "lưu mốc Notification Orbit", { notificationOrbit: instance.state.notificationOrbit });
+      instance.state.notificationOrbit.lastDigestAt = Date.now();
+      instance.state.notificationOrbit.lastAction = "digest";
+    } else if (action === "mark-visible-read") {
+      pushUndo(instance, "đánh dấu hộp thư đã đọc", { inboxRead: instance.state.inboxRead });
+      rows.forEach((item) => { instance.state.inboxRead[item.id] = true; });
+      instance.state.notificationOrbit.lastAction = "mark-visible-read";
+    } else if (action === "snooze-nonurgent") {
+      pushUndo(instance, "hoãn thông báo không gấp", { inboxSnoozed: instance.state.inboxSnoozed });
+      rows.filter((item) => !item.urgent).forEach((item) => { instance.state.inboxSnoozed[item.id] = Date.now() + 60 * 60 * 1000; });
+      instance.state.notificationOrbit.lastAction = "snooze-nonurgent";
+    } else return;
+    saveState(instance, { silent: true });
+    refreshPanel(instance, { message: action === "digest" ? "Đã lưu mốc digest từ dữ liệu thật hiện tại." : action === "mark-visible-read" ? "Đã đánh dấu các mục đang hiển thị là đã đọc." : "Đã hoãn các mục không gấp trong 1 giờ.", tone: "success" });
+  }
+
+  function handleModuleAction(instance, moduleId, action) {
+    const id = clean(moduleId, 40);
+    if (!MODULE_IDS.includes(id)) return;
+    pushUndo(instance, `sắp xếp module ${TABS.find((item) => item[0] === id)?.[1] || id}`, { moduleOrder: instance.state.moduleOrder, pinnedModules: instance.state.pinnedModules });
+    if (action === "pin") instance.state.pinnedModules = togglePinnedModule(instance.state.pinnedModules, id);
+    else if (action === "up" || action === "down") instance.state.moduleOrder = reorderModules(instance.state.moduleOrder, id, action);
+    else { instance.state.undoStack.shift(); return; }
+    saveState(instance, { silent: true });
+    refreshNavigation(instance);
+    refreshPanel(instance, { message: "Đã cập nhật điều hướng. Có thể hoàn tác trong Activity Timeline.", tone: "success" });
+  }
+
+  function runAutomationDryPreview(instance, sceneId) {
+    const result = automationDryRun(sceneId || SCENES[0]?.id);
+    if (!result.ok) { setStatus(instance, result.reason, "warning"); return result; }
+    instance.state.automationDryRuns = [result, ...instance.state.automationDryRuns.filter((item) => item.sceneId !== result.sceneId)].slice(0, 20);
+    saveState(instance, { silent: true });
+    refreshPanel(instance, { message: `Dry-run “${result.label}” hoàn tất; chưa có hành động nào được thực thi.`, tone: "success" });
+    return result;
+  }
+
+  function previewWorkspaceSnapshot(instance, snapshotId) {
+    const snapshot = instance.state.workspaceSnapshots.find((item) => item.id === snapshotId) || instance.state.workspaceSnapshots[0];
+    if (!snapshot) { setStatus(instance, "Chưa có checkpoint để xem trước.", "warning"); return null; }
+    instance.pendingSnapshotId = snapshot.id;
+    const detail = `${snapshot.label} · ${TABS.find((item) => item[0] === snapshot.data.activeTab)?.[1] || snapshot.data.activeTab} · theme ${snapshot.data.settings?.theme || "deep-space"}`;
+    instance.root.querySelectorAll("[data-hco-snapshot-restore]").forEach((button) => { button.disabled = button.dataset.hcoSnapshotRestore !== snapshot.id; });
+    instance.root.querySelectorAll("[data-hco-snapshot-preview-output],[data-hco-recovery-preview-output]").forEach((node) => { node.textContent = `Xem trước: ${detail}. Chưa thay đổi dữ liệu.`; });
+    instance.root.querySelectorAll("[data-hco-recovery-confirm]").forEach((button) => { button.disabled = false; });
+    setStatus(instance, "Đã tạo preview checkpoint; cần xác nhận riêng để khôi phục.", "warning");
+    return snapshot;
+  }
+
+  function restoreSelectedSnapshot(instance, snapshotId = instance.pendingSnapshotId) {
+    const snapshot = instance.state.workspaceSnapshots.find((item) => item.id === snapshotId);
+    if (!snapshot || instance.pendingSnapshotId !== snapshot.id) { setStatus(instance, "Hãy xem trước đúng checkpoint trước khi khôi phục.", "warning"); return false; }
+    const result = restoreWorkspaceSnapshot(instance.state, snapshot);
+    if (!result.ok) { setStatus(instance, result.reason, "warning"); return false; }
+    instance.state = result.state;
+    instance.pendingSnapshotId = "";
+    saveState(instance, { silent: true });
+    applyPresentationSettings(instance);
+    refreshNavigation(instance);
+    refreshPanel(instance, { message: `Đã khôi phục “${snapshot.label}”. Có thể hoàn tác.`, tone: "success" });
+    return true;
+  }
+
+  function undoSnapshotRestore(instance) {
+    const result = undoWorkspaceRestore(instance.state);
+    if (!result.ok) { setStatus(instance, result.reason, "warning"); return false; }
+    instance.state = result.state;
+    saveState(instance, { silent: true });
+    applyPresentationSettings(instance);
+    refreshNavigation(instance);
+    refreshPanel(instance, { message: "Đã hoàn tác lần khôi phục workspace gần nhất.", tone: "success" });
+    return true;
+  }
+
+  function storageWriteEvidence(storage, label) {
+    const key = `${STORAGE_PREFIX}:probe:${stableLocalId(label, Date.now())}`;
+    try {
+      storage?.setItem?.(key, "1");
+      const ok = storage?.getItem?.(key) === "1";
+      storage?.removeItem?.(key);
+      return ok;
+    } catch { try { storage?.removeItem?.(key); } catch {} return false; }
+  }
+
+  async function runLocalHealthAudit(instance) {
+    const checks = [];
+    const online = global.navigator?.onLine !== false;
+    checks.push({ id: "session", label: "Phiên", state: "local", detail: hasAuthenticatedOwner() ? "Đã có phiên tài khoản; định danh được ẩn" : "Vùng khách local riêng biệt" });
+    checks.push({ id: "network", label: "Kết nối mạng", state: online ? "online" : "offline", detail: online ? "navigator.onLine báo đang kết nối" : "navigator.onLine báo ngoại tuyến" });
+    const swSupported = Boolean(global.navigator?.serviceWorker);
+    checks.push({ id: "service-worker", label: "Service Worker", state: !swSupported ? "unsupported" : global.navigator.serviceWorker.controller ? "online" : "unknown", detail: !swSupported ? "Trình duyệt không hỗ trợ" : global.navigator.serviceWorker.controller ? "Trang hiện do Service Worker kiểm soát" : "Có API nhưng trang hiện chưa được kiểm soát" });
+    let indexedDbReady = false;
+    let databaseCount = null;
+    if (global.indexedDB) {
+      try {
+        if (typeof global.indexedDB.databases === "function") databaseCount = (await global.indexedDB.databases()).length;
+        const db = await openCosmicDb();
+        indexedDbReady = Boolean(db);
+        db?.close?.();
+      } catch {}
+    }
+    checks.push({ id: "indexeddb", label: "IndexedDB", state: !global.indexedDB ? "unsupported" : indexedDbReady ? "online" : "offline", detail: !global.indexedDB ? "Trình duyệt không hỗ trợ" : indexedDbReady ? `Đọc/khởi tạo được${databaseCount == null ? "" : ` · ${databaseCount} database được trình duyệt báo cáo`}` : "Không mở được database local" });
+    let cacheCount = null;
+    try { if (global.caches?.keys) cacheCount = (await global.caches.keys()).length; } catch {}
+    checks.push({ id: "cache", label: "Cache API", state: !global.caches ? "unsupported" : cacheCount == null ? "unknown" : "online", detail: !global.caches ? "Trình duyệt không hỗ trợ" : cacheCount == null ? "Không đọc được danh sách cache" : `${cacheCount} cache được trình duyệt báo cáo` });
+    let storageDetail = "Trình duyệt chưa cung cấp estimate";
+    let storageState = global.navigator?.storage?.estimate ? "unknown" : "unsupported";
+    try {
+      const estimate = await global.navigator?.storage?.estimate?.();
+      if (estimate) {
+        const used = Math.round(Number(estimate.usage || 0) / 1048576);
+        const quota = Math.round(Number(estimate.quota || 0) / 1048576);
+        storageDetail = `${used} MB đã dùng / ${quota || "?"} MB quota`;
+        storageState = "online";
+      }
+    } catch {}
+    checks.push({ id: "quota", label: "Storage quota", state: storageState, detail: storageDetail });
+    const localReady = storageWriteEvidence(global.localStorage, "local");
+    const sessionReady = storageWriteEvidence(global.sessionStorage, "session");
+    checks.push({ id: "storage-write", label: "Ghi cấu hình", state: localReady && sessionReady ? "online" : "offline", detail: `localStorage ${localReady ? "ghi được" : "bị chặn"} · sessionStorage ${sessionReady ? "ghi được" : "bị chặn"}` });
+    checks.push({ id: "background", label: "Tác vụ nền", state: "local", detail: `${modelFor(instance).count.activeJobs.length} tác vụ từ dữ liệu hiện có` });
+    if (instance.destroyed) return null;
+    instance.localHealth = { checkedAt: nowIso(), checks };
+    refreshPanel(instance, { message: "Đã hoàn tất chẩn đoán local bằng bằng chứng trình duyệt.", tone: checks.some((item) => item.state === "offline") ? "warning" : "success" });
+    return clone(instance.localHealth);
+  }
+
+  function handleQuickAction(instance, action) {
+    if (action === "mark-inbox-read") { handleInboxBulk(instance, "mark-visible-read"); return; }
+    if (action === "snooze-nonurgent") { handleInboxBulk(instance, "snooze-nonurgent"); return; }
+    if (action === "focus-15") {
+      pushUndo(instance, "bắt đầu Focus 15 phút", { focus: instance.state.focus });
+      setFocusPreset(instance, 15);
+      startFocus(instance);
+      return;
+    }
+    if (action === "checkpoint") { createCheckpoint(instance); return; }
+    if (action === "dry-run") { runAutomationDryPreview(instance, SCENES[0]?.id); return; }
+    if (action === "health-audit") { runLocalHealthAudit(instance); return; }
+    if (action === "pin-current") { handleModuleAction(instance, instance.state.activeTab, "pin"); }
+  }
+
   function setStatus(instance, message, tone = "") {
     const text = clean(message, 220);
     instance.root?.querySelector("[data-hco-status]")?.replaceChildren(global.document.createTextNode(text));
+    instance.root?.querySelector("[data-hco-mobile-status]")?.replaceChildren(global.document.createTextNode(text));
     const footer = instance.root?.querySelector("[data-hco-footer-status]");
     if (footer) { footer.textContent = text; footer.dataset.tone = tone; }
   }
@@ -952,12 +1435,31 @@
     else nav.style.removeProperty("display");
   }
 
+  function focusDescriptor(root) {
+    const element = global.document?.activeElement;
+    if (!element || !root?.contains?.(element)) return null;
+    const attributes = ["data-hco-setting", "data-hco-universal-search-input", "data-hco-automation-dry-run-scene", "data-hco-tab", "data-hco-profile", "data-hco-module-id"];
+    const attribute = attributes.find((name) => element.hasAttribute?.(name));
+    const selector = element.id ? `#${escapeSelectorValue(element.id)}` : attribute ? `[${attribute}${element.getAttribute(attribute) ? `="${escapeSelectorValue(element.getAttribute(attribute))}"` : ""}]` : "";
+    if (!selector) return null;
+    return { selector, value: "value" in element ? element.value : null, start: Number.isInteger(element.selectionStart) ? element.selectionStart : null, end: Number.isInteger(element.selectionEnd) ? element.selectionEnd : null };
+  }
+
+  function restoreFocus(root, descriptor) {
+    if (!descriptor?.selector) return;
+    const element = root.querySelector(descriptor.selector);
+    if (!element) return;
+    if (descriptor.value != null && "value" in element) element.value = descriptor.value;
+    element.focus?.({ preventScroll: true });
+    if (descriptor.start != null && element.setSelectionRange) { try { element.setSelectionRange(descriptor.start, descriptor.end); } catch {} }
+  }
+
   function refreshPanel(instance, options = {}) {
     if (!instance.root?.isConnected) return;
     const model = modelFor(instance);
     const panel = instance.root.querySelector("[data-hco-panel]");
     const scrollTop = panel?.scrollTop || 0;
-    const focusToken = global.document.activeElement?.getAttribute?.("data-hco-setting") || global.document.activeElement?.getAttribute?.("data-hco-universal-search-input");
+    const activeFocus = focusDescriptor(instance.root);
     if (panel) {
       panel.innerHTML = tabMarkup(instance, model);
       panel.scrollTop = scrollTop;
@@ -966,12 +1468,60 @@
       if (inspector.matches("[data-hco-inspector]")) inspector.innerHTML = inspectorMarkup(instance, model);
       else inspector.innerHTML = `<header><strong>Ngữ cảnh</strong><button type="button" data-hco-sheet-close aria-label="Đóng bảng ngữ cảnh">×</button></header>${inspectorMarkup(instance, model)}`;
     });
-    if (focusToken) instance.root.querySelector(`[data-hco-setting="${escapeSelectorValue(focusToken)}"],[data-hco-universal-search-input]`)?.focus?.({ preventScroll: true });
+    restoreFocus(instance.root, activeFocus);
+    if (activeFocus?.selector === "[data-hco-universal-search-input]" && activeFocus.value) searchCosmic(instance, activeFocus.value);
     const badge = instance.root.querySelector("[data-hco-badge]");
     if (badge) badge.textContent = model.count.unread.length + model.count.activeJobs.length || "";
+    instance.root.querySelectorAll('[data-hco-tab="inbox"] b').forEach((node) => { node.textContent = model.notificationDigest.unread || ""; });
+    instance.root.querySelectorAll('[data-hco-tab="queue"] b').forEach((node) => { node.textContent = model.count.activeJobs.length || ""; });
     applyContext(instance, model);
     applySignals(instance, model);
     if (options.message) setStatus(instance, options.message, options.tone || "");
+  }
+
+  function restoreModalBackgroundNode(node) {
+    if (!node?.hasAttribute?.("data-hco-modal-inert")) return;
+    node.removeAttribute("inert");
+    node.inert = false;
+    if (node.dataset.hcoModalAriaHidden === "present") node.setAttribute("aria-hidden", node.dataset.hcoModalAriaValue || "true");
+    else node.removeAttribute("aria-hidden");
+    delete node.dataset.hcoModalInert;
+    delete node.dataset.hcoModalAriaHidden;
+    delete node.dataset.hcoModalAriaValue;
+  }
+
+  function setModalSurface(instance, surface = null) {
+    const root = instance.root;
+    if (!root) return;
+    if (surface) {
+      root.querySelectorAll("[data-hco-mobile-sidebar-sheet],[data-hco-inspector-sheet],[data-hco-concierge],[data-hco-capture-dialog]").forEach((node) => {
+        if (node !== surface) node.hidden = true;
+      });
+    }
+    const selectors = [
+      ".hco-command-header", ".hco-deck-body", ".hco-status-bar", ".hco-mobile-nav",
+      "[data-hco-mini-windows]", "[data-hco-concierge]", "[data-hco-capture-dialog]",
+      "[data-hco-mobile-sidebar-sheet]", "[data-hco-inspector-sheet]"
+    ].join(",");
+    root.querySelectorAll(selectors).forEach((node) => {
+      if (!surface || node === surface || node.contains(surface)) {
+        restoreModalBackgroundNode(node);
+        return;
+      }
+      if (!node.hasAttribute("data-hco-modal-inert")) {
+        node.dataset.hcoModalInert = "true";
+        node.dataset.hcoModalAriaHidden = node.hasAttribute("aria-hidden") ? "present" : "missing";
+        node.dataset.hcoModalAriaValue = node.getAttribute("aria-hidden") || "";
+      }
+      node.setAttribute("inert", "");
+      node.inert = true;
+      node.setAttribute("aria-hidden", "true");
+    });
+    const backdrop = root.querySelector("[data-hco-sheet-backdrop]");
+    if (backdrop) backdrop.hidden = !surface;
+    root.classList.toggle("is-sheet-open", Boolean(surface));
+    root.querySelector('[data-hco-mobile-destination="more"]')?.setAttribute("aria-expanded", String(Boolean(surface?.matches?.("[data-hco-mobile-sidebar-sheet]"))));
+    instance.activeModalSurface = surface || null;
   }
 
   function openOS(instance, tab = instance.state.activeTab || "brief") {
@@ -989,7 +1539,8 @@
 
   function closeOS(instance) {
     instance.root.querySelectorAll("[data-hco-mobile-sidebar-sheet],[data-hco-inspector-sheet]").forEach((node) => { node.hidden = true; });
-    instance.root.classList.remove("is-sheet-open");
+    setModalSurface(instance, null);
+    instance.root.querySelector('[data-hco-mobile-destination="more"]')?.setAttribute("aria-expanded", "false");
     instance.root.dataset.hcoOverlayOpen = "true";
     instance.lastFocus?.focus?.();
   }
@@ -997,15 +1548,17 @@
   function openConcierge(instance) {
     const node = instance.root.querySelector("[data-hco-concierge]");
     if (!node) return;
+    instance.dialogFocus = global.document?.activeElement;
     node.hidden = false;
+    setModalSurface(instance, node);
     node.querySelector("[data-hco-command-input]")?.focus();
   }
 
-  function closeConcierge(instance) { instance.root.querySelector("[data-hco-concierge]")?.setAttribute("hidden", ""); }
+  function closeConcierge(instance) { instance.root.querySelector("[data-hco-concierge]")?.setAttribute("hidden", ""); setModalSurface(instance, null); instance.dialogFocus?.focus?.({ preventScroll: true }); instance.dialogFocus = null; }
 
   function markVisit(instance) {
     const model = modelFor(instance);
-    instance.state.lastSnapshot = model.currentCounters;
+    instance.state.lastCounters = model.currentCounters;
     instance.state.lastVisitAt = Date.now();
     saveState(instance, { silent: true });
     refreshPanel(instance, { message: "Đã đánh dấu các thay đổi là đã xem.", tone: "success" });
@@ -1023,7 +1576,7 @@
     set("calendar", brief["next-event"] ? itemTitle(brief["next-event"]) : "Chưa có lịch gần", brief["next-event"] ? itemDate(brief["next-event"].at) : "Các mốc có ngày sẽ xuất hiện ở đây");
     set("learning", `${model.count.dueLearning.length} bài đến hạn`, model.count.dueLearning.length ? "Mở hàng ôn tập để tiếp tục" : "Không có bài ôn đang chờ");
     set("continue", model.continueStack[0]?.title || "Chưa có phiên gần đây", model.continueStack[0]?.meta || "Mở một công cụ để lưu hành trình");
-    set("notifications", `${model.count.unread.length} thông báo mới`, model.count.unread.length ? "Có mục cần bạn xem" : "Hộp thư đã được xử lý");
+    set("notifications", `${model.notificationDigest.unread} thông báo mới`, model.notificationDigest.unread ? "Có mục cần bạn xem" : "Hộp thư đã được xử lý");
     const button = root.querySelector("[data-hgc-continue-main]");
     if (button && model.continueStack[0]) button.dataset.hgcRoute = model.continueStack[0].route;
   }
@@ -1095,53 +1648,84 @@
     refreshPanel(instance, { message: action === "retry" ? `Đã retry từ bước ${result.item.retryFrom || 0}.` : `Đã chuyển tác vụ sang ${result.item.state}.`, tone: "success" });
   }
 
-  function startFocus(instance) {
-    const model = modelFor(instance);
-    const task = model.priorities[0];
-    instance.state.focus = { ...instance.state.focus, running: true, taskId: task?.id || "", endAt: Date.now() + instance.state.focus.duration * 1000 };
+  function setFocusPreset(instance, minutes) {
+    const value = FOCUS_PRESETS.includes(Number(minutes)) ? Number(minutes) : 25;
+    if (instance.state.focus.running) { setStatus(instance, "Hãy tạm dừng phiên trước khi đổi thời lượng.", "warning"); return false; }
+    instance.state.focus = { ...instance.state.focus, presetMinutes: value, duration: value * 60, endAt: 0, startedAt: 0 };
     saveState(instance, { silent: true });
+    refreshPanel(instance, { message: `Đã chọn Focus ${value} phút.`, tone: "success" });
+    return true;
+  }
+
+  function recordFocusSegment(focus, outcome, endedAt = Date.now()) {
+    const startedAt = timestamp(focus.startedAt);
+    if (!startedAt || endedAt < startedAt) return focus;
+    const elapsedSeconds = clamp(Math.round((endedAt - startedAt) / 1000), 0, 2 * 60 * 60);
+    const row = { id: `focus-${startedAt}-${endedAt}`, startedAt: new Date(startedAt).toISOString(), endedAt: new Date(endedAt).toISOString(), elapsedSeconds, outcome };
+    return { ...focus, totalSeconds: clamp(Number(focus.totalSeconds || 0) + elapsedSeconds, 0, 10 * 365 * 24 * 60 * 60), history: [row, ...asArray(focus.history)].slice(0, 60), startedAt: 0 };
+  }
+
+  function startFocus(instance) {
+    if (instance.state.focus.running) { setStatus(instance, "Phiên Focus đang chạy.", "warning"); return false; }
+    const model = modelFor(instance);
+    const task = model.priorities.find((item) => item.id === instance.state.focus.taskId) || model.priorities[0];
+    const startedAt = Date.now();
+    instance.state.focus = { ...instance.state.focus, running: true, taskId: task?.id || "", startedAt, endAt: startedAt + instance.state.focus.duration * 1000 };
+    saveState(instance, { silent: true });
+    applyPresentationSettings(instance);
     emit("hh:focus-mode-change", { active: true, duration: instance.state.focus.duration, taskId: instance.state.focus.taskId });
     refreshPanel(instance, { message: `Focus bắt đầu trong ${Math.round(instance.state.focus.duration / 60)} phút.`, tone: "success" });
+    return true;
   }
 
   function pauseFocus(instance) {
-    const remaining = instance.state.focus.running ? Math.max(60, Math.ceil((instance.state.focus.endAt - Date.now()) / 1000)) : instance.state.focus.duration;
-    instance.state.focus = { ...instance.state.focus, running: false, duration: remaining, endAt: 0 };
+    const endedAt = Date.now();
+    const remaining = instance.state.focus.running ? Math.max(1, Math.ceil((instance.state.focus.endAt - endedAt) / 1000)) : instance.state.focus.duration;
+    instance.state.focus = { ...recordFocusSegment(instance.state.focus, "stopped", endedAt), running: false, duration: remaining, endAt: 0 };
     saveState(instance, { silent: true });
+    applyPresentationSettings(instance);
     emit("hh:focus-mode-change", { active: false, paused: true });
     refreshPanel(instance, { message: "Focus đã tạm dừng; thời gian còn lại được lưu.", tone: "success" });
   }
 
-  function completeFocus(instance) {
-    instance.state.focus = { ...instance.state.focus, running: false, endAt: 0, completed: (instance.state.focus.completed || 0) + 1, duration: 25 * 60 };
-    if (instance.state.focus.taskId) {
-      const todos = asArray(readJson(STORES.todos, []));
-      const task = todos.find((item) => String(item.id) === String(instance.state.focus.taskId));
-      if (task) { task.completed = true; task.status = "completed"; task.completedAt = nowIso(); writeJson(STORES.todos, todos); }
-    }
-    saveState(instance, { message: "Đã hoàn thành phiên Focus và lưu tiến độ.", tone: "success" });
-    emit("hh:focus-mode-change", { active: false, completed: true });
+  function completeFocus(instance, outcome = "completed") {
+    if (!instance.state.focus.running || !instance.state.focus.startedAt) { setStatus(instance, "Chưa có phiên Focus đang chạy để kết thúc.", "warning"); return false; }
+    const recorded = recordFocusSegment(instance.state.focus, outcome, Date.now());
+    instance.state.focus = { ...recorded, running: false, endAt: 0, completed: (recorded.completed || 0) + 1, duration: recorded.presetMinutes * 60 };
+    saveState(instance, { message: outcome === "expired" ? "Phiên Focus đã hết giờ và được ghi lại; task chưa bị đánh dấu hoàn thành." : "Đã kết thúc phiên Focus và lưu thời gian thực tế; task vẫn giữ nguyên.", tone: "success" });
+    applyPresentationSettings(instance);
+    emit("hh:focus-mode-change", { active: false, completed: true, outcome, taskCompleted: false });
+    refreshPanel(instance);
+    return true;
   }
 
   function switchFocus(instance) {
     const model = modelFor(instance);
     const next = model.priorities.find((item) => item.id !== instance.state.focus.taskId) || model.priorities[0];
-    instance.state.focus.taskId = next?.id || "";
-    instance.state.focus.running = false;
-    instance.state.focus.endAt = 0;
+    instance.state.focus = { ...recordFocusSegment(instance.state.focus, "stopped", Date.now()), taskId: next?.id || "", running: false, endAt: 0 };
     saveState(instance, { message: next ? `Đã chuyển sang ${next.title}.` : "Chưa có task khác để chuyển.", tone: next ? "success" : "warning" });
   }
 
   function captureOpen(instance, defaults = {}) {
     const dialog = instance.root.querySelector("[data-hco-capture-dialog]");
     if (!dialog) return;
+    instance.dialogFocus = global.document?.activeElement;
     dialog.hidden = false;
+    setModalSurface(instance, dialog);
     const type = dialog.querySelector("[data-hco-capture-type]");
     const input = dialog.querySelector("[data-hco-capture-input]");
     if (defaults.type) type.value = defaults.type;
     if (defaults.text != null) input.value = defaults.text;
     updateCaptureSuggestion(instance);
     input.focus();
+  }
+
+  function closeCapture(instance) {
+    const dialog = instance.root.querySelector("[data-hco-capture-dialog]");
+    if (dialog) dialog.hidden = true;
+    setModalSurface(instance, null);
+    instance.dialogFocus?.focus?.({ preventScroll: true });
+    instance.dialogFocus = null;
   }
 
   function updateCaptureSuggestion(instance) {
@@ -1165,6 +1749,7 @@
       const todos = asArray(readJson(STORES.todos, []));
       todos.unshift({ id: record.id, title: record.text, status: "open", completed: false, createdAt: record.createdAt, ownerId: ownerScope(), source: "cosmic-capture" });
       writeJson(STORES.todos, todos.slice(0, 500));
+      pushUndo(instance, `tạo task “${record.text}”`, {}, { kind: "task-create", taskId: record.id });
     } else if (type === "note" || type === "idea") {
       const notes = asArray(readJson(STORES.notes, []));
       notes.unshift({ id: record.id, title: type === "idea" ? "Ý tưởng mới" : "Ghi chú mới", text: record.text, createdAt: record.createdAt, updatedAt: record.createdAt, ownerId: ownerScope(), source: "cosmic-capture" });
@@ -1172,11 +1757,12 @@
     } else if (type === "event") {
       writeJson(`hh.home.live-widgets.v1.calendar:${ownerScope()}`, { title: record.text, at: record.createdAt, source: "cosmic-capture" });
     } else {
+      pushUndo(instance, `lưu ${type}`, { captures: instance.state.captures });
       instance.state.captures.unshift(record);
       instance.state.captures = instance.state.captures.slice(0, 80);
     }
     saveState(instance, { silent: true });
-    dialog.hidden = true;
+    closeCapture(instance);
     emit("hh:home-data-change", { type: "capture", capture: { id: record.id, type, hasFile: Boolean(file) } });
     refreshPanel(instance, { message: `Đã lưu ${type} vào ${suggestCaptureDestination(type, record.text).label}.`, tone: "success" });
   }
@@ -1187,6 +1773,7 @@
       const value = await global.navigator.clipboard.readText();
       if (!value.trim()) throw new Error("Clipboard đang trống.");
       if (isSensitiveClipboard(value)) { setStatus(instance, "Đã bỏ qua nội dung nhạy cảm trong clipboard.", "warning"); return; }
+      pushUndo(instance, "thêm mục clipboard local", { clipboard: instance.state.clipboard });
       instance.state.clipboard.unshift({ id: uid("clip"), text: clean(value, 600), createdAt: nowIso(), expiresAt: Date.now() + 7 * 86_400_000, pinned: false });
       instance.state.clipboard = instance.state.clipboard.slice(0, 30);
       saveState(instance, { message: "Đã lưu một mục clipboard an toàn trên thiết bị.", tone: "success" });
@@ -1245,6 +1832,25 @@
     bindMini(instance, host.querySelector(selector));
   }
 
+  function cleanupMini(node) {
+    if (!node) return;
+    clearInterval(node._hcoTimer);
+    asArray(node._hcoObjectUrls).forEach((url) => { try { URL.revokeObjectURL(url); } catch {} });
+    node._hcoObjectUrls = [];
+  }
+
+  function miniObjectUrl(node, file) {
+    cleanupMiniObjectUrls(node);
+    const url = URL.createObjectURL(file);
+    node._hcoObjectUrls = [url];
+    return url;
+  }
+
+  function cleanupMiniObjectUrls(node) {
+    asArray(node?._hcoObjectUrls).forEach((url) => { try { URL.revokeObjectURL(url); } catch {} });
+    if (node) node._hcoObjectUrls = [];
+  }
+
   function bindMini(instance, node) {
     if (!node || node.dataset.hcoBound === "true") return;
     node.dataset.hcoBound = "true";
@@ -1263,12 +1869,12 @@
     });
     node.querySelector("[data-hco-mini-audio]")?.addEventListener("change", (event) => {
       const file = event.target.files?.[0]; if (!file) return;
-      const player = node.querySelector("[data-hco-mini-audio-player]"); player.src = URL.createObjectURL(file); player.hidden = false;
-      player.addEventListener("ended", () => URL.revokeObjectURL(player.src), { once: true });
+      const player = node.querySelector("[data-hco-mini-audio-player]"); player.src = miniObjectUrl(node, file); player.hidden = false;
+      player.addEventListener("ended", () => cleanupMiniObjectUrls(node), { once: true });
     });
     node.querySelector("[data-hco-image-file]")?.addEventListener("change", (event) => {
       const file = event.target.files?.[0]; if (!file) return;
-      const image = node.querySelector("[data-hco-image-preview]"); image.src = URL.createObjectURL(file); image.hidden = false;
+      const image = node.querySelector("[data-hco-image-preview]"); image.src = miniObjectUrl(node, file); image.hidden = false;
     });
     node.querySelectorAll("[data-hco-timer]").forEach((button) => button.addEventListener("click", () => {
       if (button.dataset.hcoTimer === "start") {
@@ -1363,8 +1969,9 @@
       const data = response?.ok ? await response.json().catch(() => ({})) : {};
       instance.healthData = { ...data, responseOk: Boolean(response?.ok), verifiedAt };
       global.HHHomeLiveWidgets?.refresh?.();
-      refreshPanel(instance, { message: response?.ok ? "Đã nhận phản hồi kiểm tra website." : "Website Health chưa phản hồi; trạng thái được giữ là chưa xác minh.", tone: response?.ok ? "success" : "warning" });
-    } catch (error) { setStatus(instance, `Không thể kiểm tra website: ${clean(error?.message || "lỗi kết nối", 120)}`, "warning"); }
+      await runLocalHealthAudit(instance);
+      refreshPanel(instance, { message: response?.ok ? "Đã nhận phản hồi kiểm tra website và kiểm tra local." : "Website Health chưa phản hồi; trạng thái remote được giữ là chưa xác minh.", tone: response?.ok ? "success" : "warning" });
+    } catch (error) { await runLocalHealthAudit(instance).catch(() => null); setStatus(instance, `Không thể kiểm tra website: ${clean(error?.message || "lỗi kết nối", 120)}. Chẩn đoán local vẫn được giữ.`, "warning"); }
   }
 
   function showDropChoices(instance, files) {
@@ -1428,13 +2035,15 @@
     if (!node) return;
     const seconds = instance.state.focus.running ? Math.max(0, Math.ceil((instance.state.focus.endAt - Date.now()) / 1000)) : instance.state.focus.duration;
     node.textContent = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-    if (instance.state.focus.running && seconds <= 0) completeFocus(instance);
+    if (instance.state.focus.running && seconds <= 0) completeFocus(instance, "expired");
   }
 
   function resetIdle(instance) {
     clearTimeout(instance.idleTimeout);
+    instance.idleTimeout = 0;
+    if (instance.destroyed || global.document?.hidden) return;
     instance.idleTimeout = setTimeout(() => {
-      if (!instance.state.screensaver || global.document?.hidden) return resetIdle(instance);
+      if (!instance.state.screensaver || global.document?.hidden || instance.destroyed) return;
       const overlay = instance.root.querySelector("[data-hco-screensaver-overlay]");
       if (!overlay) return;
       overlay.hidden = false;
@@ -1493,10 +2102,20 @@
   function applyPresentationSettings(instance) {
     const node = instance.hcoRoot;
     if (!node) return;
+    node.dataset.hcoTheme = instance.state.settings.theme;
     node.dataset.hcoMotion = instance.state.settings.motion;
+    node.dataset.hcoMotionPaused = String(Boolean(global.document?.hidden));
+    node.dataset.hcoNotificationShield = String(Boolean(instance.state.focus.running && instance.state.focus.notificationShield));
     node.dataset.hcoDensity = instance.state.settings.density;
     node.dataset.hcoContrast = instance.state.settings.contrast;
     node.style.setProperty("--hco-font-scale", instance.state.settings.fontScale);
+  }
+
+  function setTypingMotionState(instance, active) {
+    if (!instance.hcoRoot) return;
+    const typing = Boolean(active && instance.state.settings.reducedEffectsWhileTyping);
+    instance.hcoRoot.dataset.hcoTyping = String(typing);
+    instance.hcoRoot.classList.toggle("is-typing", typing);
   }
 
   function exportCosmicState(instance) {
@@ -1505,11 +2124,9 @@
       version: schemaVersion,
       exportedAt: nowIso(),
       data: safeExportPayload({
-        activeTab: instance.state.activeTab,
-        profile: instance.state.profile,
-        pipeline: instance.state.pipeline,
-        settings: instance.state.settings,
-        lastSnapshot: instance.state.lastSnapshot
+        ...workspaceSnapshotData(instance.state),
+        workspaceSnapshots: instance.state.workspaceSnapshots,
+        lastSnapshot: instance.state.workspaceSnapshots[0] || {}
       })
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -1537,10 +2154,9 @@
   }
 
   function createCheckpoint(instance) {
-    instance.state.lastSnapshot = {
-      createdAt: nowIso(),
-      data: safeExportPayload({ activeTab: instance.state.activeTab, profile: instance.state.profile, pipeline: instance.state.pipeline, settings: instance.state.settings })
-    };
+    const snapshot = createWorkspaceSnapshot(instance.state, { label: `Checkpoint ${TABS.find((item) => item[0] === instance.state.activeTab)?.[1] || "Cosmic OS"}` });
+    instance.state.workspaceSnapshots = [snapshot, ...instance.state.workspaceSnapshots.filter((item) => item.id !== snapshot.id)].slice(0, MAX_WORKSPACE_SNAPSHOTS);
+    instance.state.lastSnapshot = snapshot;
     saveState(instance, { message: "Đã tạo checkpoint cục bộ.", tone: "success" });
     refreshPanel(instance);
   }
@@ -1607,7 +2223,7 @@
       if (target.closest("[data-hco-inspector-toggle]")) {
         if (global.matchMedia?.("(max-width: 768px)")?.matches) {
           const sheet = root.querySelector("[data-hco-inspector-sheet]");
-          if (sheet) { instance.lastFocus = target.closest("[data-hco-inspector-toggle]"); sheet.hidden = false; root.classList.add("is-sheet-open"); sheet.querySelector("button")?.focus(); }
+          if (sheet) { instance.lastFocus = target.closest("[data-hco-inspector-toggle]"); sheet.hidden = false; setModalSurface(instance, sheet); sheet.querySelector("button")?.focus(); }
           return;
         }
         instance.state.inspectorOpen = !instance.state.inspectorOpen;
@@ -1630,10 +2246,11 @@
         const destination = mobileDestination.dataset.hcoMobileDestination;
         if (["brief", "inbox", "workspace"].includes(destination)) openOS(instance, destination);
         else if (destination === "search") openConcierge(instance);
-        else { const sheet = root.querySelector("[data-hco-mobile-sidebar-sheet]"); if (sheet) { instance.lastFocus = mobileDestination; sheet.hidden = false; root.classList.add("is-sheet-open"); sheet.querySelector("button")?.focus(); } }
+        else { const sheet = root.querySelector("[data-hco-mobile-sidebar-sheet]"); if (sheet) { instance.lastFocus = mobileDestination; sheet.hidden = false; setModalSurface(instance, sheet); mobileDestination.setAttribute("aria-expanded", "true"); sheet.querySelector("button")?.focus(); } }
         return;
       }
-      if (target.closest("[data-hco-sheet-close]")) { const sheet = target.closest("[data-hco-mobile-sidebar-sheet],[data-hco-inspector-sheet]"); if (sheet) sheet.hidden = true; root.classList.remove("is-sheet-open"); instance.lastFocus?.focus?.(); return; }
+      if (target.closest("[data-hco-sheet-close]")) { const sheet = target.closest("[data-hco-mobile-sidebar-sheet],[data-hco-inspector-sheet]"); if (sheet) sheet.hidden = true; setModalSurface(instance, null); root.querySelector('[data-hco-mobile-destination="more"]')?.setAttribute("aria-expanded", "false"); instance.lastFocus?.focus?.(); return; }
+      if (target.closest("[data-hco-sheet-backdrop]")) { closeConcierge(instance); closeCapture(instance); closeOS(instance); return; }
       if (target.closest("button[data-hco-open]")) { openOS(instance, instance.state.activeTab); return; }
       const openTab = target.closest("[data-hco-open-tab]");
       if (openTab) { openOS(instance, openTab.dataset.hcoOpenTab); return; }
@@ -1645,6 +2262,8 @@
       if (continueNode) { closeOS(instance); navigate(continueNode.dataset.hcoRoute || "/home"); return; }
       const inboxAction = target.closest("[data-hco-inbox-action]");
       if (inboxAction) { handleInboxAction(instance, inboxAction.closest("[data-hco-inbox-item]"), inboxAction.dataset.hcoInboxAction); return; }
+      const inboxBulk = target.closest("[data-hco-inbox-bulk]");
+      if (inboxBulk) { handleInboxBulk(instance, inboxBulk.dataset.hcoInboxBulk); return; }
       if (target.closest("[data-hco-inbox-refresh]")) { refreshPanel(instance, { message: "Đã quét lại Universal Inbox.", tone: "success" }); return; }
       const inboxFilter = target.closest("[data-hco-inbox-filter]");
       if (inboxFilter) { root.querySelectorAll("[data-hco-inbox-filter]").forEach((button) => button.setAttribute("aria-pressed", String(button === inboxFilter))); root.querySelectorAll("[data-hco-inbox-item]").forEach((item) => { item.hidden = inboxFilter.dataset.hcoInboxFilter !== "all" && item.dataset.hcoOrigin !== inboxFilter.dataset.hcoInboxFilter; }); return; }
@@ -1654,8 +2273,10 @@
       if (target.closest("[data-hco-focus-mode]")) { instance.state.focus.running ? pauseFocus(instance) : startFocus(instance); return; }
       if (target.closest("[data-hco-focus-start],[data-hco-focus-resume]")) { startFocus(instance); return; }
       if (target.closest("[data-hco-focus-pause]")) { pauseFocus(instance); return; }
+      const focusPreset = target.closest("[data-hco-focus-preset]");
+      if (focusPreset) { setFocusPreset(instance, Number(focusPreset.dataset.hcoFocusPreset)); return; }
       const shield = target.closest("[data-hco-focus-notification-shield]");
-      if (shield) { const active = shield.getAttribute("aria-pressed") !== "true"; shield.setAttribute("aria-pressed", String(active)); shield.textContent = active ? "◆ Đang chặn nhắc nội bộ" : "◇ Chặn nhắc nội bộ"; setStatus(instance, active ? "Đã tạm ẩn thông báo nội bộ trong phiên Focus." : "Đã bật lại thông báo nội bộ.", "success"); return; }
+      if (shield) { instance.state.focus.notificationShield = !instance.state.focus.notificationShield; saveState(instance, { silent: true }); applyPresentationSettings(instance); emit("hh:focus-mode-change", { active: instance.state.focus.running, notificationShield: instance.state.focus.notificationShield }); refreshPanel(instance, { message: instance.state.focus.notificationShield ? "Đã tạm ẩn thông báo nội bộ trong phiên Focus." : "Đã bật lại thông báo nội bộ.", tone: "success" }); return; }
       const focusAction = target.closest("[data-hco-focus-action]");
       if (focusAction) { focusAction.dataset.hcoFocusAction === "complete-focus" ? completeFocus(instance) : switchFocus(instance); return; }
       const split = target.closest("[data-hco-split-preset]");
@@ -1665,23 +2286,24 @@
       if (target.closest("[data-hco-pipeline-reset]")) { instance.state.pipeline = Object.fromEntries(PIPELINE.map(([id]) => [id, "todo"])); saveState(instance, { silent: true }); refreshPanel(instance, { message: "Đã đặt lại Content Pipeline.", tone: "success" }); return; }
       const scene = target.closest("[data-hco-scene]");
       if (scene) { runScene(instance, scene.dataset.hcoScene); return; }
+      if (target.closest("[data-hco-automation-dry-run-start]")) { runAutomationDryPreview(instance, root.querySelector("[data-hco-automation-dry-run-scene]")?.value); return; }
       if (target.closest("[data-hco-automation-refresh]")) { refreshPanel(instance, { message: "Đã làm mới Automation Radar.", tone: "success" }); return; }
       const calendarView = target.closest("[data-hco-calendar-view]");
       if (calendarView) { root.querySelectorAll("[data-hco-calendar-view]").forEach((button) => button.setAttribute("aria-pressed", String(button === calendarView))); root.querySelectorAll("[data-hco-calendar-view-panel]").forEach((panel) => { panel.hidden = panel.dataset.hcoCalendarViewPanel !== calendarView.dataset.hcoCalendarView; }); return; }
       if (target.closest("[data-hco-capture-open]")) { captureOpen(instance); return; }
-      if (target.closest("[data-hco-capture-close]")) { root.querySelector("[data-hco-capture-dialog]").hidden = true; return; }
+      if (target.closest("[data-hco-capture-close]")) { closeCapture(instance); return; }
       if (target.closest("[data-hco-clipboard-read]")) { readClipboard(instance); return; }
       const clipPin = target.closest("[data-hco-clipboard-pin]");
-      if (clipPin) { const item = instance.state.clipboard.find((entry) => entry.id === clipPin.dataset.hcoClipboardPin); if (item) item.pinned = !item.pinned; saveState(instance, { silent: true }); refreshPanel(instance); return; }
+      if (clipPin) { const item = instance.state.clipboard.find((entry) => entry.id === clipPin.dataset.hcoClipboardPin); if (item) { pushUndo(instance, "đổi trạng thái ghim clipboard", { clipboard: instance.state.clipboard }); item.pinned = !item.pinned; } saveState(instance, { silent: true }); refreshPanel(instance); return; }
       const clipDelete = target.closest("[data-hco-clipboard-delete]");
-      if (clipDelete) { instance.state.clipboard = instance.state.clipboard.filter((entry) => entry.id !== clipDelete.dataset.hcoClipboardDelete); saveState(instance, { message: "Đã xóa mục clipboard local.", tone: "success" }); refreshPanel(instance); return; }
+      if (clipDelete) { pushUndo(instance, "xóa mục clipboard local", { clipboard: instance.state.clipboard }); instance.state.clipboard = instance.state.clipboard.filter((entry) => entry.id !== clipDelete.dataset.hcoClipboardDelete); saveState(instance, { message: "Đã xóa mục clipboard local.", tone: "success" }); refreshPanel(instance); return; }
       if (target.closest("[data-hco-global-drop-zone]")) { root.querySelector("[data-hco-drop-input]")?.click(); return; }
       const dropChoice = target.closest("[data-hco-drop-choice]");
       if (dropChoice) { chooseDropAction(instance, dropChoice.dataset.hcoDropChoice); return; }
       const miniOpen = target.closest("[data-hco-open-mini]");
       if (miniOpen) { renderMini(instance, miniOpen.dataset.hcoOpenMini); return; }
       const miniClose = target.closest("[data-hco-mini-close]");
-      if (miniClose) { const node = root.querySelector(`[data-hco-mini-window="${escapeSelectorValue(miniClose.dataset.hcoMiniClose)}"]`); node?.remove(); return; }
+      if (miniClose) { const node = root.querySelector(`[data-hco-mini-window="${escapeSelectorValue(miniClose.dataset.hcoMiniClose)}"]`); cleanupMini(node); node?.remove(); return; }
       const miniMin = target.closest("[data-hco-mini-minimize]");
       if (miniMin) { const node = root.querySelector(`[data-hco-mini-window="${escapeSelectorValue(miniMin.dataset.hcoMiniMinimize)}"]`); if (node) { node.dataset.hcoMiniState = node.dataset.hcoMiniState === "minimized" ? "normal" : "minimized"; } return; }
       const miniPin = target.closest("[data-hco-mini-pin]");
@@ -1691,9 +2313,14 @@
       const miniSnap = target.closest("[data-hco-mini-snap]");
       if (miniSnap) { const node = root.querySelector(`[data-hco-mini-window="${escapeSelectorValue(miniSnap.dataset.hcoMiniSnap)}"]`); node?.classList.toggle("is-snapped"); return; }
       if (target.closest("[data-hco-handoff-create]")) { createHandoff(instance); return; }
-      if (target.closest("[data-hco-copy-handoff]")) { const code = target.closest("[data-hco-qr]")?.querySelector("code")?.textContent || ""; global.navigator?.clipboard?.writeText?.(code).then(() => setStatus(instance, "Đã copy link handoff.", "success")).catch(() => setStatus(instance, "Không thể copy tự động; hãy chọn link.", "warning")); return; }
+      if (target.closest("[data-hco-copy-handoff]")) { const code = target.closest("[data-hco-qr]")?.querySelector("code")?.textContent || ""; const writing = global.navigator?.clipboard?.writeText?.(code); if (writing?.then) writing.then(() => setStatus(instance, "Đã copy link handoff.", "success")).catch(() => setStatus(instance, "Không thể copy tự động; hãy chọn link.", "warning")); else setStatus(instance, "Clipboard API chưa sẵn sàng; hãy chọn link để copy.", "warning"); return; }
       const searchCommand = target.closest("[data-hco-search-command]");
       if (searchCommand) { handleCommand(instance, searchCommand.dataset.hcoSearchCommand); return; }
+      const moduleAction = target.closest("[data-hco-module-action]");
+      if (moduleAction) { handleModuleAction(instance, moduleAction.dataset.hcoModuleId, moduleAction.dataset.hcoModuleAction); return; }
+      const quickAction = target.closest("[data-hco-quick-action]");
+      if (quickAction) { handleQuickAction(instance, quickAction.dataset.hcoQuickAction); return; }
+      if (target.closest("[data-hco-quick-undo],[data-hco-activity-undo]")) { applyUndo(instance); return; }
       const permissionCheck = target.closest("[data-hco-permission-check]");
       if (permissionCheck) { inspectPermission(instance, permissionCheck.dataset.hcoPermissionCheck); return; }
       const permissionHelp = target.closest("[data-hco-permission-help]");
@@ -1702,33 +2329,44 @@
       if (target.closest("[data-hco-export]")) { exportCosmicState(instance); return; }
       if (target.closest("[data-hco-import]")) { root.querySelector("[data-hco-import-input]")?.click(); return; }
       if (target.closest("[data-hco-checkpoint],[data-hco-recovery-checkpoint]")) { createCheckpoint(instance); return; }
+      const snapshotPreview = target.closest("[data-hco-snapshot-preview]");
+      if (snapshotPreview) { previewWorkspaceSnapshot(instance, snapshotPreview.dataset.hcoSnapshotPreview); return; }
+      const snapshotRestore = target.closest("[data-hco-snapshot-restore]");
+      if (snapshotRestore) { restoreSelectedSnapshot(instance, snapshotRestore.dataset.hcoSnapshotRestore); return; }
+      if (target.closest("[data-hco-restore-undo]")) { undoSnapshotRestore(instance); return; }
       if (target.closest("[data-hco-recovery-preview]")) {
-        const button = root.querySelector("[data-hco-recovery-confirm]");
-        if (button && instance.state.lastSnapshot?.data) button.disabled = false;
-        setStatus(instance, instance.state.lastSnapshot?.data ? "Đã xem trước checkpoint; bấm Khôi phục để áp dụng." : "Chưa có checkpoint để xem trước.", "warning"); return;
+        previewWorkspaceSnapshot(instance, instance.state.workspaceSnapshots[0]?.id); return;
       }
       if (target.closest("[data-hco-recovery-confirm]")) {
-        if (!instance.state.lastSnapshot?.data) { setStatus(instance, "Chưa có checkpoint hợp lệ.", "warning"); return; }
-        instance.state = normalizeState({ ...instance.state, ...instance.state.lastSnapshot.data, lastSnapshot: instance.state.lastSnapshot });
-        saveState(instance, { silent: true }); applyPresentationSettings(instance); refreshPanel(instance, { message: "Đã khôi phục checkpoint sau bước xem trước.", tone: "success" }); return;
+        restoreSelectedSnapshot(instance); return;
       }
       if (target.closest("[data-hco-cache-audit]")) {
         global.navigator?.storage?.estimate?.().then((estimate) => { const used = Math.round(Number(estimate.usage || 0) / 1048576); const quota = Math.round(Number(estimate.quota || 0) / 1048576); root.querySelectorAll("[data-hco-storage-status]").forEach((node) => { node.textContent = `Dung lượng: ${used}/${quota || "?"} MB`; }); setStatus(instance, `Đang dùng ${used} MB trên ${quota || "chưa rõ"} MB quota trình duyệt.`, "success"); }).catch(() => setStatus(instance, "Trình duyệt chưa cung cấp ước tính dung lượng.", "warning")); return;
       }
       const deleteData = target.closest("[data-hco-delete-data]");
       if (deleteData) {
-        if (deleteData.dataset.hcoAwaiting !== "true") { deleteData.dataset.hcoAwaiting = "true"; deleteData.textContent = "Bấm lần nữa để xác nhận"; setStatus(instance, "Xác nhận lần hai để xóa cấu hình Cosmic OS trên thiết bị.", "warning"); setTimeout(() => { delete deleteData.dataset.hcoAwaiting; deleteData.textContent = "Xóa dữ liệu…"; }, 5_000); return; }
+        if (deleteData.dataset.hcoAwaiting !== "true") { deleteData.dataset.hcoAwaiting = "true"; deleteData.textContent = "Bấm lần nữa để xác nhận"; setStatus(instance, "Xác nhận lần hai để xóa cấu hình Cosmic OS trên thiết bị.", "warning"); clearTimeout(instance.deleteConfirmTimer); instance.deleteConfirmTimer = setTimeout(() => { if (!instance.destroyed && deleteData.isConnected) { delete deleteData.dataset.hcoAwaiting; deleteData.textContent = "Xóa dữ liệu…"; } }, 5_000); return; }
+        clearTimeout(instance.deleteConfirmTimer);
+        instance.deleteConfirmTimer = 0;
         try { global.localStorage?.removeItem?.(instance.storageKey); } catch {}
         instance.state = normalizeState({}); saveState(instance, { silent: true }); applyPresentationSettings(instance); refreshPanel(instance, { message: "Đã xóa và khôi phục cấu hình Cosmic OS mặc định.", tone: "success" }); return;
       }
       if (target.closest("[data-hco-dashboard-customize]")) { openOS(instance, "profiles"); setStatus(instance, "Chọn mật độ, cỡ chữ và bố cục trong Cấu hình.", "success"); return; }
-      if (target.closest("[data-hco-dashboard-reset]")) { instance.state.sidebarCollapsed = false; instance.state.inspectorOpen = true; instance.state.settings = normalizeState({}).settings; saveState(instance, { silent: true }); applyPresentationSettings(instance); refreshPanel(instance, { message: "Đã khôi phục bố cục mặc định.", tone: "success" }); return; }
+      if (target.closest("[data-hco-dashboard-reset]")) { pushUndo(instance, "khôi phục dashboard mặc định", { moduleOrder: instance.state.moduleOrder, pinnedModules: instance.state.pinnedModules, settings: instance.state.settings }); instance.state.sidebarCollapsed = false; instance.state.inspectorOpen = true; instance.state.moduleOrder = [...MODULE_IDS]; instance.state.pinnedModules = []; instance.state.settings = normalizeState({}).settings; saveState(instance, { silent: true }); applyPresentationSettings(instance); refreshNavigation(instance); refreshPanel(instance, { message: "Đã khôi phục bố cục mặc định. Có thể hoàn tác phần sắp xếp và giao diện.", tone: "success" }); return; }
       const profile = target.closest("button[data-hco-profile]");
       if (profile) { instance.state.profile = profile.dataset.hcoProfile; saveState(instance, { silent: true }); if (instance.hcoRoot) instance.hcoRoot.dataset.hcoProfile = instance.state.profile; refreshPanel(instance, { message: `Đã chuyển Home Profile: ${profile.textContent.trim()}.`, tone: "success" }); return; }
       if (target.closest("[data-hco-ambient-toggle]")) { instance.state.ambient = !instance.state.ambient; saveState(instance, { silent: true }); refreshPanel(instance); return; }
       if (target.closest("[data-hco-screensaver-toggle]")) { instance.state.screensaver = !instance.state.screensaver; saveState(instance, { silent: true }); resetIdle(instance); refreshPanel(instance); return; }
       if (target.closest("[data-hco-screensaver-exit]")) { closeScreensaver(instance); return; }
       if (target.closest("[data-hco-mission-refresh]")) { refreshMission(instance); return; }
+      if (target.closest("[data-hco-local-health-audit]")) { runLocalHealthAudit(instance); return; }
+      if (target.closest("[data-hco-health-copy]")) {
+        const report = safeExportPayload(instance.localHealth || {});
+        const writing = global.navigator?.clipboard?.writeText?.(JSON.stringify(report, null, 2));
+        if (writing?.then) writing.then(() => setStatus(instance, "Đã copy báo cáo health đã loại bỏ dữ liệu nhạy cảm.", "success")).catch(() => setStatus(instance, "Không thể copy báo cáo tự động.", "warning"));
+        else setStatus(instance, "Clipboard API chưa sẵn sàng để copy báo cáo.", "warning");
+        return;
+      }
       if (target.closest("[data-hco-sync]")) { syncState(instance); return; }
       if (target.closest("[data-hco-concierge-close]")) { closeConcierge(instance); return; }
       const conciergeAction = target.closest("[data-hco-concierge-action]");
@@ -1748,6 +2386,7 @@
       if (target.closest("[data-hco-command-form]")) { event.preventDefault(); handleCommand(instance, target.querySelector("[data-hco-command-input]")?.value || ""); }
     });
     root.addEventListener("input", (event) => {
+      if (event.target.matches?.("input,textarea,[contenteditable='true']")) { clearTimeout(instance.typingTimer); setTypingMotionState(instance, true); instance.typingTimer = setTimeout(() => setTypingMotionState(instance, false), 700); }
       if (event.target.matches?.("[data-hco-capture-input],[data-hco-capture-type]")) updateCaptureSuggestion(instance);
       if (event.target.matches?.("[data-hco-command-input]")) updateCommandPreview(instance, event.target.value);
       if (event.target.matches?.("[data-hco-universal-search-input]")) searchCosmic(instance, event.target.value);
@@ -1757,6 +2396,8 @@
         applyPresentationSettings(instance);
       }
     });
+    root.addEventListener("focusin", (event) => { if (event.target.matches?.("input,textarea,[contenteditable='true']")) setTypingMotionState(instance, true); });
+    root.addEventListener("focusout", (event) => { if (event.target.matches?.("input,textarea,[contenteditable='true']")) { clearTimeout(instance.typingTimer); instance.typingTimer = setTimeout(() => setTypingMotionState(instance, false), 120); } });
     root.addEventListener("change", (event) => {
       if (event.target.matches?.("[data-hco-drop-input]")) { const files = [...(event.target.files || [])]; if (files.length) showDropChoices(instance, files); event.target.value = ""; }
       if (event.target.matches?.("[data-hco-import-input]")) { const file = event.target.files?.[0]; if (file) importCosmicFile(instance, file); event.target.value = ""; return; }
@@ -1775,7 +2416,7 @@
       const activeSurface = [...root.querySelectorAll("[data-hco-mobile-sidebar-sheet],[data-hco-inspector-sheet],[data-hco-concierge],[data-hco-capture-dialog]")].find((node) => !node.hidden);
       if (trapFocus(activeSurface, event)) return;
       if (COMMAND_SHORTCUT === "Control+KeyK" && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); openConcierge(instance); }
-      if (event.key === "Escape") { closeScreensaver(instance); closeConcierge(instance); const capture = root.querySelector("[data-hco-capture-dialog]"); if (capture) capture.hidden = true; closeOS(instance); }
+      if (event.key === "Escape") { closeScreensaver(instance); closeConcierge(instance); closeCapture(instance); closeOS(instance); }
       if (event.target.matches?.("[data-hco-tab]") && ["ArrowLeft", "ArrowRight"].includes(event.key)) {
         event.preventDefault();
         const current = TABS.findIndex((item) => item[0] === event.target.dataset.hcoTab);
@@ -1789,7 +2430,12 @@
         nextTab?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
       }
     });
-    global.document?.addEventListener?.("visibilitychange", () => { if (!global.document.hidden) { resetIdle(instance); refreshPanel(instance); } }, { signal: instance.controller.signal });
+    global.document?.addEventListener?.("visibilitychange", () => {
+      const hidden = Boolean(global.document.hidden);
+      if (instance.hcoRoot) instance.hcoRoot.dataset.hcoMotionPaused = String(hidden);
+      if (hidden) { clearTimeout(instance.idleTimeout); instance.idleTimeout = 0; }
+      else { resetIdle(instance); refreshPanel(instance); }
+    }, { signal: instance.controller.signal });
     global.addEventListener?.("resize", () => syncOuterMobileNavigation(instance), { signal: instance.controller.signal, passive: true });
     ["hh:event", "hh:home-data-change", "hh:orchestrator:change", "hh:command-center-sync", "hh:focus-mode-change", "hh:communication:notification", "storage"].forEach((name) => global.addEventListener?.(name, () => { if (!global.document?.hidden) { updateTodayCards(instance); if (instance.root.dataset.hcoOverlayOpen === "true") refreshPanel(instance); } }, { signal: instance.controller.signal }));
     global.addEventListener?.("hh:auth-change", () => {
@@ -1825,13 +2471,30 @@
     const storedState = readJson(activeStorageKey, {});
     const state = normalizeState(storedState);
     if (!Object.hasOwn(storedState || {}, "inspectorOpen") && global.matchMedia?.("(max-width: 1499px)")?.matches) state.inspectorOpen = false;
-    const instance = { root, state, storageKey: activeStorageKey, model: null, controller: new AbortController(), idleTimeout: 0, focusTimer: 0, lastFocus: null, healthData: null, healthCheckedAt: "", pendingDrop: [], destroyed: false };
+    const instance = { root, state, storageKey: activeStorageKey, model: null, controller: new AbortController(), idleTimeout: 0, focusTimer: 0, typingTimer: 0, deleteConfirmTimer: 0, lastFocus: null, dialogFocus: null, localHealth: null, healthData: null, healthCheckedAt: "", pendingDrop: [], pendingSnapshotId: "", destroyed: false };
     instance.model = deriveModel(state);
     root.insertAdjacentHTML("beforeend", shellMarkup(instance, instance.model));
     instance.hcoRoot = root.querySelector("[data-hco-root]");
     instance.root.dataset.hcoOverlayOpen = "true";
     root.classList.add("hco-command-host");
-    root.closest?.(".app-main")?.classList.add("hco-command-active");
+    const appMain = root.closest?.(".app-main");
+    if (appMain) {
+      instance.appMainScroll = {
+        node: appMain,
+        overflowX: appMain.style.getPropertyValue("overflow-x"),
+        overflowXPriority: appMain.style.getPropertyPriority("overflow-x"),
+        overflowY: appMain.style.getPropertyValue("overflow-y"),
+        overflowYPriority: appMain.style.getPropertyPriority("overflow-y"),
+        overscrollY: appMain.style.getPropertyValue("overscroll-behavior-y"),
+        overscrollYPriority: appMain.style.getPropertyPriority("overscroll-behavior-y")
+      };
+      appMain.classList.add("hco-command-active");
+      appMain.style.setProperty("overflow-x", "clip", "important");
+      appMain.style.setProperty("overflow-y", "clip", "important");
+      appMain.style.setProperty("overscroll-behavior-y", "none", "important");
+      appMain.scrollTop = 0;
+      appMain.scrollLeft = 0;
+    }
     applyPresentationSettings(instance);
     syncOuterMobileNavigation(instance);
     instance.launcher = instance.hcoRoot?.querySelector("button[data-hco-open]") || null;
@@ -1868,8 +2531,10 @@
     instance.destroyed = true;
     instance.controller.abort();
     clearTimeout(instance.idleTimeout);
+    clearTimeout(instance.typingTimer);
+    clearTimeout(instance.deleteConfirmTimer);
     clearInterval(instance.focusTimer);
-    instance.hcoRoot?.querySelectorAll("[data-hco-mini-window]").forEach((node) => { clearInterval(node._hcoTimer); });
+    instance.hcoRoot?.querySelectorAll("[data-hco-mini-window]").forEach(cleanupMini);
     instance.launcher?.remove();
     instance.hcoRoot?.remove();
     if (instance.appMobileNav?.node) {
@@ -1877,7 +2542,14 @@
       else instance.appMobileNav.node.style.removeProperty("display");
     }
     root.classList.remove("hco-command-host");
-    root.closest?.(".app-main")?.classList.remove("hco-command-active");
+    const appMain = instance.appMainScroll?.node || root.closest?.(".app-main");
+    if (appMain) {
+      appMain.classList.remove("hco-command-active");
+      const restoreProperty = (name, value, priority) => value ? appMain.style.setProperty(name, value, priority) : appMain.style.removeProperty(name);
+      restoreProperty("overflow-x", instance.appMainScroll?.overflowX, instance.appMainScroll?.overflowXPriority);
+      restoreProperty("overflow-y", instance.appMainScroll?.overflowY, instance.appMainScroll?.overflowYPriority);
+      restoreProperty("overscroll-behavior-y", instance.appMainScroll?.overscrollY, instance.appMainScroll?.overscrollYPriority);
+    }
     instances.delete(root);
     if (mountedRoot === root) mountedRoot = null;
     return true;
@@ -1890,6 +2562,11 @@
   function autoMount() {
     const attach = () => { const root = findActiveRoot(); if (root) mount(root); return Boolean(root); };
     observer?.disconnect?.();
+    autoController?.abort?.();
+    autoController = new AbortController();
+    autoTimers.forEach((timer) => clearTimeout(timer));
+    autoTimers.clear();
+    const scheduleAttach = (delay) => { const timer = setTimeout(() => { autoTimers.delete(timer); attach(); }, delay); autoTimers.add(timer); };
     observer = typeof global.MutationObserver === "function" ? new global.MutationObserver(() => { attach(); }) : null;
     if (observer) {
       observer.observe(global.document.documentElement, { childList: true, subtree: true });
@@ -1899,12 +2576,12 @@
       observer.takeRecords?.();
     }
     attach();
-    global.addEventListener?.("hh:assets-ready", (event) => { if (event.detail?.route === "/home") setTimeout(attach, 120); });
-    global.addEventListener?.("hh:asset-group-ready", (event) => { if (event.detail?.group === "home-enhancements") setTimeout(attach, 180); });
+    global.addEventListener?.("hh:assets-ready", (event) => { if (event.detail?.route === "/home") scheduleAttach(120); }, { signal: autoController.signal });
+    global.addEventListener?.("hh:asset-group-ready", (event) => { if (event.detail?.group === "home-enhancements") scheduleAttach(180); }, { signal: autoController.signal });
     global.addEventListener?.("hashchange", () => {
-      if (/^#\/home(?:$|[/?])/.test(global.location.hash) || !global.location.hash) setTimeout(attach, 100);
+      if (/^#\/home(?:$|[/?])/.test(global.location.hash) || !global.location.hash) scheduleAttach(100);
       else if (mountedRoot) unmount(mountedRoot);
-    });
+    }, { signal: autoController.signal });
     return true;
   }
 
@@ -1932,6 +2609,15 @@
     createSafeExportPayload: safeExportPayload,
     safeHandoffPayload,
     isSensitiveClipboard,
+    stableLocalId,
+    createWorkspaceSnapshot,
+    restoreWorkspaceSnapshot,
+    undoWorkspaceRestore,
+    reorderModules,
+    togglePinnedModule,
+    orderedModuleIds,
+    buildNotificationDigest,
+    automationDryRun,
     transitionQueueItem,
     collectMorningBrief,
     collectContinueStack,

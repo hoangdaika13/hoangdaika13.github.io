@@ -45,8 +45,8 @@
     "home-critical": {
       // Compatibility ordering marker for older first-paint contracts:
       // home-galaxy-command.css?v=13 home-galaxy-mission.css?v=9 home-galaxy-command.js?v=15 home-galaxy-mission.js?v=12
-      styles: ["home-galaxy-command.css?v=13", "home-galaxy-mission.css?v=9", "home-cosmic-os.css?v=8"],
-      scripts: ["home-galaxy-command.js?v=16", "home-galaxy-mission.js?v=12", "home-cosmic-os.js?v=19"]
+      styles: ["home-galaxy-command.css?v=13", "home-galaxy-mission.css?v=9", "home-cosmic-os.css?v=9"],
+      scripts: ["home-galaxy-command.js?v=17", "home-galaxy-mission.js?v=12", "home-cosmic-os.js?v=20"]
     },
     "home-enhancements": {
       styles: [

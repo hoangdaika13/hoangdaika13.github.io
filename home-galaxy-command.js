@@ -922,9 +922,15 @@
     main?.classList.toggle("hgc-main-active", active);
     if (main) {
       if (active) {
+        const commandActive = main.classList.contains("hco-command-active");
         main.style.setProperty("overflow-x", "hidden", "important");
         main.style.setProperty("overflow-y", "auto", "important");
         main.style.setProperty("overscroll-behavior-y", "auto", "important");
+        if (commandActive) {
+          main.style.setProperty("overflow-x", "clip", "important");
+          main.style.setProperty("overflow-y", "clip", "important");
+          main.style.setProperty("overscroll-behavior-y", "none", "important");
+        }
       } else {
         main.style.removeProperty("overflow-x");
         main.style.removeProperty("overflow-y");
@@ -996,6 +1002,7 @@
   addEventListener("hh:auth-change", scheduleMount);
   addEventListener("hh:workspace-open", scheduleMount);
   addEventListener("hh:assets-ready", (event) => { if (event.detail?.route === "/home") scheduleMount(); });
+  addEventListener("hh:route-rendered", (event) => { if (event.detail?.route === "/home") scheduleMount(); });
   addEventListener("hh:asset-group-ready", (event) => {
     if (event.detail?.group === "home-enhancements") setTimeout(() => mount(undefined, true), 140);
   });

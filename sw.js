@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v861";
+const CACHE = "hh-identity-portal-v863";
 // Compatibility marker retained for Dharma v6 clients: hh-identity-portal-v842.
 // Compatibility marker retained for the previous Home shell: ./home-galaxy-command.js?v=15.
 // Shell compatibility assertions for modules released against the stable cache:
@@ -29,7 +29,7 @@ const RUNTIME_ASSETS = [
   "./home-galaxy-command.css?v=13",
   "./home-capability-atlas.css?v=1",
   "./home-live-widgets.css?v=12",
-  "./home-cosmic-os.css?v=8",
+  "./home-cosmic-os.css?v=9",
   "./home-galaxy-mission.css?v=9",
   "./home-galaxy-operations.css?v=3",
   "./home-galaxy-control-deck.css?v=3",
@@ -207,10 +207,10 @@ const RUNTIME_ASSETS = [
   "./music-ai-apps.js?v=3",
   "./music-ai-studio.js?v=9",
   "./dashboard-aurora.js?v=5",
-  "./home-galaxy-command.js?v=16",
+  "./home-galaxy-command.js?v=17",
   "./home-capability-atlas.js?v=3",
   "./home-live-widgets.js?v=8",
-  "./home-cosmic-os.js?v=19",
+  "./home-cosmic-os.js?v=20",
   "./home-galaxy-mission.js?v=12",
   "./home-galaxy-operations.js?v=7",
   "./home-galaxy-control-deck.js?v=3",
@@ -492,7 +492,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=512",
+  "./performance-loader.js?v=514",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=243"
