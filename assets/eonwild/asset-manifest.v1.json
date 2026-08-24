@@ -1,0 +1,55 @@
+{
+  "format": "hh-eonwild-asset-manifest",
+  "version": 1,
+  "updatedAt": "2026-08-24",
+  "policy": {
+    "humanContentAllowed": false,
+    "unknownLicenseAllowed": false,
+    "externalRuntimeAssetsAllowed": false,
+    "scientificClaimsRequireSource": true,
+    "reconstructionMustDeclareConfidence": true
+  },
+  "runtime": {
+    "renderer": "Babylon.js",
+    "rendererVersion": "9.22.1",
+    "rendererLicense": "Apache-2.0",
+    "rendererPath": "../../vendor/babylon-9.22.1.js",
+    "rendererLicensePath": "../../vendor/BABYLON-LICENSE.md",
+    "rendererSha256": "f2b78fad3ed927cb1035c846c5bc787a6b1bce35baebf12a087531c62cfb7d60",
+    "rendererLicenseSha256": "66506fb29d543e11e1fcf8f74ba24c78c21c122412436f8377e6a7f1ea4d94a5"
+  },
+  "verticalSlice": {
+    "logicalSizeMeters": 4096,
+    "chunkSizeMeters": 256,
+    "productionModelsReady": false,
+    "visualRepresentation": "procedural-prototype",
+    "supportedSpecies": [
+      "tyrannosaurus",
+      "triceratops",
+      "spinosaurus",
+      "pteranodon"
+    ]
+  },
+  "assets": [],
+  "requiredAssetFields": [
+    "id",
+    "sourceUrl",
+    "author",
+    "license",
+    "scientificSource",
+    "era",
+    "timeSlice",
+    "realScaleMeters",
+    "modelVersion",
+    "lodLevels",
+    "textureBudget",
+    "sha256",
+    "modificationHistory",
+    "reconstructionConfidence"
+  ],
+  "notes": [
+    "The current 3D vertical slice uses original procedural primitives and does not claim production-quality animal models.",
+    "Google Images may be used for research only; no image, model or audio is ingested without a compatible license record.",
+    "Catalogue entries do not become playable entities automatically."
+  ]
+}

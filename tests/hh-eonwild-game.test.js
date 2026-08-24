@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
@@ -9,6 +10,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const gameSource = read("hh-eonwild-game.js");
 const contentSource = read("hh-eonwild-content-v2.js");
 const simulationSource = read("hh-eonwild-simulation-v2.js");
+const core3dSource = read("hh-eonwild-3d-core.js");
+const renderer3dSource = read("hh-eonwild-renderer-3d.js");
 const css = read("hh-eonwild-game.css");
 const router = read("script.js");
 const loader = read("performance-loader.js");
@@ -18,10 +21,13 @@ const html = read("index.html");
 const game = require(path.join(root, "hh-eonwild-game.js"));
 const content = require(path.join(root, "hh-eonwild-content-v2.js"));
 const simulation = require(path.join(root, "hh-eonwild-simulation-v2.js"));
+const core3d = require(path.join(root, "hh-eonwild-3d-core.js"));
+const renderer3d = require(path.join(root, "hh-eonwild-renderer-3d.js"));
+const assetManifest = JSON.parse(read("assets/eonwild/asset-manifest.v1.json"));
 
 const FLAGSHIP_IDS = [
   "tyrannosaurus", "triceratops", "argentavis", "orca", "giant-octopus", "spinosaurus",
-  "mammuthus", "wolf", "honeybee", "electric-eel", "ankylosaurus", "blue-whale"
+  "mammuthus", "wolf", "honeybee", "electric-eel", "ankylosaurus", "blue-whale", "pteranodon"
 ];
 const ERA_REALMS = ["paleozoic", "mesozoic", "ice-age", "modern"];
 const UTILITY_ACTIONS = ["hunt", "flee", "drink", "feed", "rest", "migrate", "mate", "guardNest"];
@@ -50,11 +56,12 @@ const assertGeneBounds = (genes) => {
   assert.equal(content.validateGenes(genes).valid, true);
 };
 
-test("EonWild v2 modules expose independent versioned APIs", () => {
-  assert.equal(game.VERSION, "2.0.0");
+test("EonWild v3 game composes versioned ecology and 3D APIs", () => {
+  assert.equal(game.VERSION, "3.0.0");
   assert.equal(game.version, game.VERSION);
-  assert.equal(game.SCHEMA_VERSION, 2);
-  assert.equal(game.STORAGE_KEY, "hh.game.eonwild.v2");
+  assert.equal(game.SCHEMA_VERSION, 3);
+  assert.equal(game.STORAGE_KEY, "hh.game.eonwild.v3");
+  assert.equal(game.LEGACY_STORAGE_KEY, "hh.game.eonwild.v2");
   assert.equal(game.WORLD_SIZE, 4096);
 
   assert.equal(content.VERSION, "2.0.0");
@@ -65,12 +72,16 @@ test("EonWild v2 modules expose independent versioned APIs", () => {
   assert.equal(simulation.VERSION, "2.0.0");
   assert.equal(simulation.SCHEMA_VERSION, 2);
   assert.equal(simulation.FIXED_STEP, 1 / 30);
+  assert.equal(core3d.VERSION, "3.0.0");
+  assert.equal(renderer3d.VERSION, "1.0.0");
+  assert.equal(core3d.BABYLON_VERSION, "9.22.1");
+  assert.equal(renderer3d.BABYLON_VERSION, "9.22.1");
   for (const name of ["normalizeState", "stepVitals", "terrainAt", "createWorld", "mount", "unmount"]) {
     assert.equal(typeof game[name], "function", `${name} must remain public and testable`);
   }
 });
 
-test("content v2 defines four isolated realms and exactly twelve expected flagship animals", () => {
+test("content v2 defines four isolated realms and exactly thirteen expected flagship animals", () => {
   assert.deepEqual(Array.from(content.REALM_IDS), ERA_REALMS);
   assert.equal(content.REALMS.length, 4);
   assert.equal(content.LIMITS.realms, 4);
@@ -83,16 +94,25 @@ test("content v2 defines four isolated realms and exactly twelve expected flagsh
   }
 
   assert.deepEqual(Array.from(content.FLAGSHIP_IDS), FLAGSHIP_IDS);
-  assert.equal(content.LIMITS.flagshipSpecies, 12);
+  assert.equal(content.LIMITS.flagshipSpecies, 13);
   assert.deepEqual(content.FLAGSHIPS.map((species) => species.id), FLAGSHIP_IDS);
   assert.deepEqual(simulation.FLAGSHIP_SPECIES.map((species) => species.id).sort(), FLAGSHIP_IDS.slice().sort());
-  assert.equal(new Set(content.FLAGSHIPS.map((species) => species.signature)).size, 12);
-  assert.equal(new Set(content.FLAGSHIPS.map((species) => species.locomotion.special.id)).size, 12);
+  assert.equal(new Set(content.FLAGSHIPS.map((species) => species.signature)).size, 13);
+  assert.equal(new Set(content.FLAGSHIPS.map((species) => species.locomotion.special.id)).size, 13);
 
-  assert.equal(content.CATALOG_TIERS.flagship.length, 12);
-  assert.equal(content.CATALOG_TIERS.simulated.length, 31);
+  assert.equal(content.CATALOG_TIERS.flagship.length, 13);
+  assert.equal(content.CATALOG_TIERS.simulated.length, 30);
   assert.equal(content.CATALOG_TIERS.codex.length, 6);
   assert.equal(content.SPECIES_CATALOG.length, 49);
+
+  const pteranodon = content.getFlagshipMechanic("pteranodon");
+  assert.equal(content.getCatalogTier("pteranodon"), "flagship");
+  assert.equal(content.CATALOG_TIERS.simulated.includes("pteranodon"), false);
+  assert.equal(content.validateFlagship(pteranodon).valid, true);
+  assert.equal(pteranodon.realmId, "mesozoic");
+  assert.equal(pteranodon.locomotion.mode, "cliff-launch-thermal-soar");
+  assert.deepEqual(Array.from(pteranodon.reproduction.nestBiomeIds), ["mesozoic-coastal-wetland", "mesozoic-volcanic-upland"]);
+  assert.ok(pteranodon.audio.callIds.includes("navigation"));
 });
 
 test("era realm isolation is the default and convergence is an explicit fictional opt-in", () => {
@@ -170,7 +190,7 @@ test("v2 gene normalization, mutation and inheritance are deterministic and boun
   assert.equal(content.validateGeneProfile({ bodyScale: 9 }).valid, false);
 });
 
-test("game save v2 migrates and bounds vitals, lineage, replay and event data", () => {
+test("game save v3 migrates old state and bounds world address, renderer, vitals and history", () => {
   const records = Array.from({ length: 40 }, (_, index) => ({
     id: `generation<>-${index}`,
     generation: index + 1,
@@ -220,7 +240,7 @@ test("game save v2 migrates and bounds vitals, lineage, replay and event data", 
     eventJournal: Array.from({ length: 60 }, (_, index) => ({ id: `event-${index}`, label: "y".repeat(120), at: index }))
   });
 
-  assert.equal(normalized.schemaVersion, 2);
+  assert.equal(normalized.schemaVersion, 3);
   assert.equal(normalized.speciesId, "mammuthus");
   assert.equal(normalized.realmId, "ice-age");
   assert.equal(normalized.player.x, 80);
@@ -241,12 +261,43 @@ test("game save v2 migrates and bounds vitals, lineage, replay and event data", 
   assert.equal(normalized.settings.difficulty, "balanced");
   assert.equal(normalized.settings.motion, "cinematic");
   assert.equal(normalized.settings.density, "high");
+  assert.equal(normalized.settings.renderer, "auto");
+  assert.equal(normalized.settings.quality, "balanced");
   assert.equal(normalized.settings.sound, false);
   assert.equal(normalized.settings.convergence, false);
   assert.equal(normalized.settings.worker, false);
   assert.equal(normalized.settings.adaptiveQuality, false);
   assert.equal(normalized.settings.photoUi, false);
   assert.match(normalized.settings.seed, /^[a-z0-9-]{1,24}$/i);
+  assert.equal(normalized.worldAddress.realmId, "ice-age");
+  assert.ok(core3d.TIME_SLICES.some((slice) => slice.id === normalized.worldAddress.timeSliceId));
+  assert.equal(normalized.mode, "one-life");
+});
+
+test("save normalization keeps Time Slice authoritative unless Convergence is explicit", () => {
+  const incompatible = {
+    realmId: "mesozoic",
+    timeSliceId: "cretaceous-north-africa",
+    regionId: "kem-kem-wetland",
+    seed: "SLICE-GUARD"
+  };
+  const isolated = game.normalizeState({
+    speciesId: "tyrannosaurus",
+    realmId: "mesozoic",
+    worldAddress: incompatible,
+    settings: { seed: "SLICE-GUARD", convergence: false }
+  });
+  assert.equal(core3d.isSpeciesAllowedAtAddress("tyrannosaurus", isolated.worldAddress, false), true);
+  assert.equal(isolated.worldAddress.timeSliceId, "cretaceous-laramidia");
+
+  const convergence = game.normalizeState({
+    speciesId: "tyrannosaurus",
+    realmId: "mesozoic",
+    worldAddress: incompatible,
+    settings: { seed: "SLICE-GUARD", convergence: true }
+  });
+  assert.equal(convergence.worldAddress.timeSliceId, "cretaceous-north-africa");
+  assert.equal(convergence.worldAddress.regionId, "kem-kem-wetland");
 });
 
 test("v2 vitals update is pure, difficulty-aware and bounds conditions", () => {
@@ -498,7 +549,104 @@ test("worker adapter fails closed to a bounded local command set", async () => {
   assert.equal(adapter.close(), true);
 });
 
-test("Game is a first-class Entertainment route with all nine v2 workspaces", () => {
+test("3D world addresses separate time slices and convergence remains explicit", () => {
+  assert.ok(core3d.TIME_SLICES.length >= 14);
+  assert.ok(core3d.REGIONS.length >= 20);
+  assert.ok(Object.keys(core3d.SPECIES_CARTRIDGES).length >= 24);
+  const tyrannosaurus = core3d.addressForSpecies("tyrannosaurus", "SLICE-1");
+  const spinosaurus = core3d.addressForSpecies("spinosaurus", "SLICE-1");
+  assert.equal(tyrannosaurus.realmId, "mesozoic");
+  assert.notEqual(tyrannosaurus.timeSliceId, spinosaurus.timeSliceId);
+  assert.equal(core3d.isSpeciesAllowedAtAddress("tyrannosaurus", tyrannosaurus, false), true);
+  assert.equal(core3d.isSpeciesAllowedAtAddress("spinosaurus", tyrannosaurus, false), false);
+  assert.equal(core3d.isSpeciesAllowedAtAddress("spinosaurus", tyrannosaurus, true), true);
+  assert.deepEqual(
+    Object.values(core3d.SPECIES_CARTRIDGES).filter((row) => row.stage === "vertical-slice").map((row) => row.id).sort(),
+    ["pteranodon", "spinosaurus", "triceratops", "tyrannosaurus"]
+  );
+  for (const speciesId of content.FLAGSHIP_IDS) {
+    assert.ok(core3d.SPECIES_CARTRIDGES[speciesId], `${speciesId} needs a 3D cartridge`);
+    const address = core3d.addressForSpecies(speciesId, "FLAGSHIP-ADDRESS");
+    assert.equal(core3d.isSpeciesAllowedAtAddress(speciesId, address, false), true, `${speciesId} needs a valid non-convergence address`);
+  }
+  const electricEel = core3d.addressForSpecies("electric-eel", "FRESH-WATER");
+  assert.equal(electricEel.timeSliceId, "modern-land");
+  assert.equal(electricEel.regionId, "wetland");
+  assert.ok(core3d.GAME_MODES.some((mode) => mode.id === "convergence" && mode.fictional === true));
+});
+
+test("3D chunk streaming and adaptive quality are deterministic and bounded", () => {
+  assert.equal(renderer3d.CHUNK_SIZE, core3d.WORLD_CONFIG.chunkSizeMeters);
+  assert.equal(renderer3d.CHUNK_SIZE, assetManifest.verticalSlice.chunkSizeMeters);
+  const address = core3d.addressForSpecies("triceratops", "CHUNK-42");
+  const planA = core3d.planChunkStreaming({ x: 2048, z: 2048 }, { quality: "balanced", address });
+  const planB = core3d.planChunkStreaming({ x: 2048, z: 2048 }, { quality: "balanced", address });
+  assert.deepEqual(planA, planB);
+  assert.ok(planA.length > 0 && planA.length <= core3d.WORLD_CONFIG.maximumResidentChunks);
+  assert.equal(new Set(planA.map((chunk) => chunk.key)).size, planA.length);
+  assert.ok(planA.every((chunk) => chunk.lod >= 0 && chunk.lod <= 3));
+  assert.ok(planA.every((chunk) => chunk.x >= 0 && chunk.z >= 0 && chunk.x < 16 && chunk.z < 16));
+  const governor = core3d.createAdaptiveGovernor({ quality: "balanced" });
+  governor.sample(1);
+  const degraded = governor.sample(1);
+  assert.equal(degraded.changed, true);
+  assert.equal(degraded.quality, "light");
+});
+
+test("3D renderer is same-origin, optional, truthful and keeps Lite fallback", () => {
+  assert.match(renderer3dSource, /root\.HHEonWildRenderer3D\s*=\s*api/);
+  assert.doesNotMatch(renderer3dSource, /root\.HHEonWild3D\s*=\s*api/);
+  assert.equal(renderer3d.DEFAULT_REMOTE_BABYLON_URL, null);
+  assert.match(renderer3d.DEFAULT_LOCAL_BABYLON_URL, /^\.\/vendor\/babylon-9\.22\.1\.js/);
+  assert.deepEqual(Array.from(renderer3d.FLAGSHIP_IDS).sort(), ["pteranodon", "spinosaurus", "triceratops", "tyrannosaurus"]);
+  assert.match(core3dSource, /source\.origin\s*!==\s*currentOrigin/);
+  assert.doesNotMatch(core3dSource + renderer3dSource, /https:\/\/cdn\.babylonjs\.com/);
+  assert.match(gameSource, /data-hwe-canvas-3d/);
+  assert.match(gameSource, /async function enable3D/);
+  assert.match(gameSource, /function disable3D/);
+  assert.match(gameSource, /RENDERER_3D\?\.worldToChunk\?\.\(instance\.state\.player\.x, instance\.state\.player\.y\)/);
+  assert.match(renderer3dSource, /CreateScreenshotUsingRenderTargetAsync/);
+  assert.match(gameSource, /Canvas 2D Lite/);
+  assert.match(css, /\.hwe-render-loading\s*\{/);
+  assert.match(css, /\.hwe-render-surface--3d\s*\{/);
+});
+
+test("optional 3D adapter fails closed without a browser DOM", async () => {
+  await assert.rejects(
+    renderer3d.loadBabylon({ urls: ["https://example.invalid/babylon.js"] }),
+    (error) => error?.code === "BABYLON_LOAD_FAILED" && error?.failures?.length === 0,
+    "cross-origin renderer URLs must be denied unless explicitly enabled"
+  );
+  const adapter = renderer3d.createRenderer({ allowRemoteBabylon: false });
+  const started = await adapter.start();
+  assert.equal(started.ok, false);
+  assert.equal(started.status, "failed");
+  assert.equal(started.reason.code, "DOM_UNAVAILABLE");
+  assert.equal(started.reason.fallback, "canvas2d");
+  assert.equal(started.reason.recoverable, true);
+  assert.equal(adapter.dispose().ok, true);
+});
+
+test("vendored renderer and asset provenance manifest are explicit", () => {
+  const babylonPath = path.join(root, "vendor", "babylon-9.22.1.js");
+  assert.ok(fs.statSync(babylonPath).size > 8_000_000);
+  const runtimeSha256 = crypto.createHash("sha256").update(fs.readFileSync(babylonPath)).digest("hex");
+  const canonicalLicense = read("vendor/BABYLON-LICENSE.md").replace(/\r\n?/g, "\n");
+  const licenseSha256 = crypto.createHash("sha256").update(canonicalLicense, "utf8").digest("hex");
+  assert.match(read("vendor/BABYLON-LICENSE.md"), /Apache License[\s\S]*Version 2\.0/);
+  assert.equal(assetManifest.runtime.rendererVersion, "9.22.1");
+  assert.equal(assetManifest.runtime.rendererSha256, runtimeSha256);
+  assert.equal(assetManifest.runtime.rendererLicenseSha256, licenseSha256);
+  assert.equal(assetManifest.policy.humanContentAllowed, false);
+  assert.equal(assetManifest.policy.unknownLicenseAllowed, false);
+  assert.equal(assetManifest.verticalSlice.productionModelsReady, false);
+  assert.deepEqual(assetManifest.verticalSlice.supportedSpecies.slice().sort(), ["pteranodon", "spinosaurus", "triceratops", "tyrannosaurus"]);
+  for (const field of ["sourceUrl", "license", "scientificSource", "lodLevels", "sha256", "reconstructionConfidence"]) {
+    assert.ok(assetManifest.requiredAssetFields.includes(field), `missing provenance field ${field}`);
+  }
+});
+
+test("Game is a first-class Entertainment route with all nine v3 workspaces", () => {
   assert.match(router, /id:\s*"eonwild-game"[\s\S]*?label:\s*"Game\s*·\s*EonWild"[\s\S]*?route:\s*"\/game"/);
   const routes = ["world", "species", "ecosystem", "timeline", "expeditions", "lineage", "observer", "network", "settings"];
   for (const route of routes) assert.match(router, new RegExp(`route:\\s*"/game/${route}"`), `missing /game/${route}`);
@@ -517,16 +665,32 @@ test("only Flagship species are offered as playable while other tiers stay truth
   assert.match(gameSource, /compact\s*&&\s*\(unavailable\s*\|\|\s*tier\s*!==\s*"flagship"\)/);
 });
 
-test("lazy loader and service worker cache the complete ordered v2 bundle", () => {
-  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=8"\][\s\S]*?scripts:\s*\["hh-eonwild-content-v2\.js\?v=2",\s*"hh-eonwild-simulation-v2\.js\?v=3",\s*"hh-eonwild-game\.js\?v=8"\]/);
+test("lazy loader and service worker cache the complete ordered v3 bundle", () => {
+  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=10"\][\s\S]*?scripts:\s*\["hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=2",\s*"hh-eonwild-renderer-3d\.js\?v=3",\s*"hh-eonwild-game\.js\?v=11"\]/);
   assert.match(loader, /value === "\/game" \|\| value\.startsWith\("\/game\/"\)\) return \["game"\]/);
+  const runtimeAssetsSource = worker.slice(
+    worker.indexOf("const RUNTIME_ASSETS"),
+    worker.indexOf("const CORE")
+  );
+  const coreAssetsSource = worker.slice(worker.indexOf("const CORE"));
   for (const asset of [
-    "./hh-eonwild-game.css?v=8",
-    "./hh-eonwild-content-v2.js?v=2",
-    "./hh-eonwild-simulation-v2.js?v=3",
-    "./hh-eonwild-game.js?v=8"
+    "./hh-eonwild-game.css?v=10",
+    "./hh-eonwild-content-v2.js?v=3",
+    "./hh-eonwild-simulation-v2.js?v=4",
+    "./hh-eonwild-3d-core.js?v=2",
+    "./hh-eonwild-renderer-3d.js?v=3",
+    "./hh-eonwild-game.js?v=11"
   ]) assert.ok(worker.includes(`"${asset}"`), `service worker must cache ${asset}`);
-  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v\d+"/);
+  for (const asset of [
+    "./vendor/babylon-9.22.1.js?v=9.22.1",
+    "./assets/eonwild/asset-manifest.v1.json",
+    "./vendor/EONWILD_THIRD_PARTY_NOTICES.md",
+    "./vendor/BABYLON-LICENSE.md"
+  ]) {
+    assert.ok(runtimeAssetsSource.includes(`"${asset}"`), `${asset} must be a runtime asset`);
+    assert.ok(!coreAssetsSource.includes(`"${asset}"`), `${asset} must not be a core asset`);
+  }
+  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v877"/);
 
   for (const asset of ["performance-loader.js", "script.js"]) {
     const escaped = asset.replaceAll(".", "\\.");
@@ -550,14 +714,30 @@ test("keyboard, touch and gamepad controls are real and route-local", () => {
   assert.match(gameSource, /data-hwe-communication-open/);
 });
 
-test("visibility and unmount clean every EonWild v2 runtime resource", () => {
+test("runtime fallback, Time Slice filtering and motion/resize controls fail closed", () => {
+  assert.match(gameSource, /function scheduleLiteFallback/);
+  assert.match(gameSource, /onFailure:\s*\(\)\s*=>\s*\{\s*scheduleLiteFallback/);
+  assert.match(gameSource, /const allowed = SPECIES\.filter\(\(species\) => tierForSpecies\(species\) !== "codex" && speciesAllowedAtAddress/);
+  assert.match(gameSource, /Observer only/);
+  assert.match(gameSource, /role="group" aria-label="Chọn renderer"/);
+  assert.match(gameSource, /RENDERER_ADAPTER\.FLAGSHIP_IDS\.forEach[\s\S]*?visible:\s*false/);
+  assert.match(gameSource, /instance\.resizeObserver\?\.observe\(viewport\)/);
+  assert.match(gameSource, /reduced3DPreference/);
+  assert.match(gameSource, /instance\.motionObserver\?\.disconnect/);
+  assert.match(css, /\.hwe-root\s*\{[^}]*overflow:\s*clip/);
+  assert.match(css, /data-renderer="webgl"/);
+});
+
+test("visibility and unmount clean every EonWild v3 runtime resource", () => {
   assert.match(gameSource, /visibilitychange[\s\S]*?global\.document\.hidden[\s\S]*?instance\.paused\s*=\s*true/);
   assert.match(gameSource, /if\s*\(!global\.document\?\.hidden\)\s*\{\s*updateWorld/);
   assert.match(gameSource, /new AbortController\(\)/);
   assert.match(gameSource, /instance\.controller\.abort\(\)/);
   assert.match(gameSource, /clearInterval\(instance\.observerTimer\)/);
   assert.match(gameSource, /instance\.resizeObserver\?\.disconnect\?\.\(\)/);
+  assert.match(gameSource, /instance\.motionObserver\?\.disconnect\?\.\(\)/);
   assert.match(gameSource, /global\.cancelAnimationFrame\?\.\(instance\.raf\)/);
+  assert.match(gameSource, /instance\.renderer3d\?\.dispose\?\.\(\)/);
   assert.match(gameSource, /instance\.workerAdapter\?\.close\?\.\(\)/);
   assert.match(gameSource, /instance\.simulation\?\.dispose\?\.\(\)/);
   assert.match(gameSource, /instance\.audioContext\?\.close\?\.\(\)/);
@@ -565,8 +745,8 @@ test("visibility and unmount clean every EonWild v2 runtime resource", () => {
 
 test("multiplayer UI is truthful, local-first and contains no fake network implementation", () => {
   assert.match(gameSource, /Local single-player/);
-  assert.match(gameSource, /vertical slice chỉ nằm trên thiết bị/i);
-  assert.match(gameSource, /Multiplayer chưa được giả lập/i);
+  assert.match(gameSource, /Save v1\/v2 được migrate an toàn sang schema v3/i);
+  assert.match(gameSource, /Realtime chưa được bật/i);
   assert.match(gameSource, /Không có room code, người online, leaderboard hoặc máy chủ giả/i);
   assert.match(gameSource, /Backend authoritative mới là điều kiện bắt buộc/i);
   for (const source of [gameSource, contentSource, simulationSource]) {

@@ -11,7 +11,7 @@
   const SCHEMA_VERSION = 2;
   const LIMITS = Object.freeze({
     realms: 4,
-    flagshipSpecies: 12,
+    flagshipSpecies: 13,
     catalogSpecies: 64,
     speciesPerRealm: 48,
     biomesPerRealm: 16,
@@ -434,7 +434,8 @@
     "honeybee",
     "electric-eel",
     "ankylosaurus",
-    "blue-whale"
+    "blue-whale",
+    "pteranodon"
   ]);
 
   const SIMULATED_SPECIES_IDS = deepFreeze([
@@ -449,7 +450,6 @@
     "brachiosaurus",
     "archaeopteryx",
     "velociraptor",
-    "pteranodon",
     "mosasaurus",
     "ichthyosaurus",
     "phorusrhacos",
@@ -1755,6 +1755,64 @@
         { id: "lunge-efficiency", label: "Hiệu suất lọc lao", value: 94 },
         { id: "ocean-navigation", label: "Định hướng đại dương", value: 97 }
       ]
+    },
+    {
+      id: "pteranodon",
+      scientificName: "Pteranodon longiceps",
+      realmId: "mesozoic",
+      signature: "coastal-thermal-wave-skimmer",
+      locomotion: {
+        mode: "cliff-launch-thermal-soar",
+        habitats: ["air", "land"],
+        cruiseSpeed: 67,
+        burstSpeed: 91,
+        staminaCost: 9,
+        special: {
+          id: "wave-lift-skimming",
+          label: "Lướt sóng tích lực nâng",
+          cooldownSeconds: 4,
+          cost: 5
+        }
+      },
+      sense: {
+        mode: "long-range-coastal-vision",
+        rangeMeters: 7600,
+        coneDegrees: 210,
+        special: "Đọc đàn cá, mặt sóng và cột khí ven biển từ độ cao lớn"
+      },
+      defense: {
+        mode: "beak-feint-wing-burst",
+        power: 54,
+        cooldownSeconds: 7,
+        staminaCost: 19,
+        special: "Đánh mỏ giả hướng rồi bung cánh thoát lên luồng khí biển"
+      },
+      diet: {
+        profileId: "piscivore",
+        foodTags: ["fish", "cephalopod", "coastal-carcass"],
+        feedingMode: "surface-fish-skim",
+        qualityBonus: "fresh-shoaling-fish"
+      },
+      reproduction: {
+        mode: "egg",
+        offspring: [1, 2],
+        maturityCycles: 11,
+        care: "coastal-cliff-colony",
+        nestBiomeIds: ["mesozoic-coastal-wetland", "mesozoic-volcanic-upland"]
+      },
+      audio: {
+        voice: "procedural-beak-clatter-wing-rush",
+        channels: ["acoustic", "vibration", "posture"],
+        callIds: ["contact", "alarm", "courtship", "navigation", "parent-young"],
+        rangeMeters: 2300,
+        procedural: true
+      },
+      traits: [
+        { id: "coastal-soaring", label: "Lượn dọc bờ biển", value: 97 },
+        { id: "fish-spotting", label: "Phát hiện đàn cá", value: 94 },
+        { id: "cliff-launch", label: "Cất cánh từ vách đá", value: 92 },
+        { id: "ground-mobility", label: "Cơ động trên mặt đất", value: 41 }
+      ]
     }
   ]);
   const FLAGSHIP_MECHANICS = deepFreeze(indexById(FLAGSHIPS));
@@ -2324,7 +2382,7 @@
     const errors = [];
     if (REALMS.length !== LIMITS.realms) errors.push("Content must define exactly four realms");
     if (FLAGSHIPS.length !== LIMITS.flagshipSpecies) {
-      errors.push("Content must define exactly twelve flagship species");
+      errors.push("Content must define exactly thirteen flagship species");
     }
     if (hasDuplicates(REALMS.map(function (realm) { return realm.id; }))) {
       errors.push("Realm ids must be unique");

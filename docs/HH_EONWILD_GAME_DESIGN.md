@@ -48,19 +48,33 @@ Một nền tảng lớn cần phân biệt “có trong dữ liệu” với �
 
 Chỉ thăng một mục từ Codex lên Simulated Wildlife hoặc Playable Flagship khi có provenance dữ liệu, budget hiệu năng, asset hợp lệ và bộ test hành vi.
 
-## 5. Vertical slice v2 đã triển khai
+## 5. Vertical slice v2 + nền tảng 3D v3 đã triển khai
 
-Phiên bản web `2.0.0` là vertical slice local-first có simulation core thật, nhưng vẫn **không phải MMO, game 3D hay tuyên bố mọi loài đều chơi được**. Bundle được tải theo đúng thứ tự:
+Content và simulation `2.0.0` vẫn là lõi sinh thái local-first. Game shell `3.0.0` bổ sung renderer 3D tùy chọn nhưng vẫn **không phải MMO, không có model động vật production và không tuyên bố mọi loài đều chơi được**. Bundle được tải theo đúng thứ tự:
 
 1. `hh-eonwild-content-v2.js` — dữ liệu, luật realm, taxonomy tier, gene, diet, injury và giao tiếp.
 2. `hh-eonwild-simulation-v2.js` — chunk, spatial hash, Biomass Ledger, Utility AI, fixed timestep, trail, hazard, replay và worker adapter.
-3. `hh-eonwild-game.js` — state schema v2, Canvas 2D, input, renderer và chín workspace.
+3. `hh-eonwild-3d-core.js` — Time Slice, địa chỉ world/chunk, Species Cartridge và renderer Babylon chung.
+4. `hh-eonwild-renderer-3d.js` — adapter lifecycle/LOD và bốn proxy 3D chuyên biệt của vertical slice.
+5. `hh-eonwild-game.js` — state schema v3, điều phối Babylon/Canvas Lite, input và chín workspace.
+
+### Snapshot triển khai v3 — đọc theo trạng thái, không theo tham vọng
+
+| Hạng mục | Đã có trong repository | Chưa được tuyên bố hoàn tất |
+|---|---|---|
+| Renderer | Babylon.js `9.22.1` được vendored và tải lazy cùng origin. Engine thử WebGPU trước, nếu khởi tạo thất bại thì tạo WebGL2/WebGL1; Canvas 2D Lite vẫn là đường lui cuối. | WebGPU không phải điều kiện gameplay và không được dùng để suy diễn thiết bị “mạnh”. Không có renderer độc quyền WebGPU. |
+| Vertical slice 3D | Bốn proxy procedural chuyên biệt: Tyrannosaurus, Triceratops, Spinosaurus và Pteranodon; terrain, nước, camera góc nhìn thứ ba, ngày/đêm, fog và weather hook đều dùng primitive do dự án tạo. | Chưa có animal GLB production, bộ texture/animation/audio/collision hoàn chỉnh hoặc chất lượng hình ảnh dùng để quảng bá final. |
+| Species Cartridge | Có đúng **25 cartridge metadata**: 4 `vertical-slice`, 9 `content-ready` và 12 `roadmap`. Cartridge lưu Time Slice, region, locomotion rig, giác quan, scale, signature, animation-state target và hit-zone target. | `content-ready` hoặc `roadmap` không đồng nghĩa có model, animation hay avatar chơi được. Chỉ bốn cartridge `vertical-slice` có proxy chuyên biệt ở foundation hiện tại. |
+| Streaming và chất lượng | World logic rộng 4.096 m; core, adapter và manifest cùng dùng chunk 256 m, giới hạn tối đa 96 resident chunk/tile, có LOD/skirt và queue dựng hữu hạn. Core có preset `static` → `cinematic`; adapter có governor p95 theo cửa sổ 2 giây và hysteresis. | Chunk ID production vẫn cần migration version trước khi physics/navigation và asset pipeline phụ thuộc lâu dài. Adaptive quality chỉ thay render proxy/DPR/LOD, không được xóa ecology entity. |
+| Save | Schema `hh.game.eonwild.v3` migrate v1/v2, normalize giới hạn, lưu world address/renderer/quality/game mode; export có checksum và import tạo rollback local trước khi thay save. | Chưa có IndexedDB cho replay lớn, cloud sync hoặc account persistence. |
+| Asset provenance | `assets/eonwild/asset-manifest.v1.json` khai báo policy no-human, license/scientific-source/hash/LOD/confidence bắt buộc; Babylon có Apache-2.0 license và third-party notices trong repository. | Manifest hiện có `assets: []` và `productionModelsReady: false`; vì vậy provenance pipeline đã có contract nhưng chưa có animal asset production nào được duyệt. |
+| Physics, navigation, network | Proxy hiện di chuyển kinematic từ simulation snapshot; Multiplayer Readiness chỉ hiển thị capability/gate còn thiếu. | **Rapier, Recast, navmesh, authoritative multiplayer server, room/presence và reconciliation vẫn là roadmap**; không module nào được tuyên bố đã tích hợp. |
 
 ### Content v2
 
 - Bốn Era Realm tách biệt: `paleozoic`, `mesozoic`, `ice-age`, `modern`.
-- 49 mục catalog được chia rõ: 12 Playable Flagship, 31 Simulated Wildlife và 6 Codex-only.
-- 12 Flagship cố định: Tyrannosaurus, Triceratops, Argentavis, Orca, Giant Octopus, Spinosaurus, Mammuthus, Wolf, Honeybee, Electric Eel, Ankylosaurus và Blue Whale.
+- 49 mục catalog được chia rõ: 13 Playable Flagship, 30 Simulated Wildlife và 6 Codex-only.
+- 13 Flagship cố định: Tyrannosaurus, Triceratops, Argentavis, Orca, Giant Octopus, Spinosaurus, Mammuthus, Wolf, Honeybee, Electric Eel, Ankylosaurus, Blue Whale và Pteranodon.
 - Mỗi Flagship có signature và locomotion special riêng; content validator chặn ID trùng, signature trùng và cơ chế locomotion trùng.
 - 24 biome, 17 biến động tự nhiên, 6 profile khẩu phần, 7 dạng chấn thương, 10 gene có biên min/max và 12 tín hiệu giao tiếp.
 - `Era Realm` là mặc định. Loài khác thời đại chỉ được chấp nhận khi bật `Eon Convergence`; Codex-only không bao giờ được spawn kể cả trong Convergence.
@@ -79,19 +93,22 @@ Phiên bản web `2.0.0` là vertical slice local-first có simulation core th�
 - Replay dùng ring buffer tối đa 900 frame; Heatmap tối đa 4.096 cell. Game adapter chỉ giữ tối đa 240 replay sample và 256 heatmap cell trong save local để Observer mở lại được mà không phình dữ liệu.
 - Worker adapter chỉ chạy command hỗ trợ. Nếu Worker không tồn tại hoặc khởi tạo thất bại, nó chuyển sang local command set giới hạn; không màn đen và không giả WebGPU.
 
-### Game workspace v2
+### Game workspace v3
 
 - Chín route trực tiếp: Thế giới sống, Eon Codex, Lưới sinh thái, Eon Atlas, Thám hiểm, Dòng gene, Observer & Replay, Multiplayer Readiness và Cài đặt.
-- Canvas 2D top-down có seed, bốn realm, thời tiết, ngày/đêm, vùng di cư, tài nguyên, quần thể, minimap và adaptive quality. Ecology Director tạo một simulation local giới hạn theo seed, stream chunk bằng tọa độ thế giới, chạy fixed-step và hiển thị snapshot Biomass Ledger/Utility AI thật thay cho phần trăm minh họa.
+- Renderer mặc định `auto`: chỉ tải Babylon `9.22.1` cùng origin khi bắt đầu hoặc bật 3D. Engine khởi tạo theo thứ tự WebGPU → WebGL2/WebGL1; lỗi khởi tạo quay về Canvas 2D Lite. Canvas Lite vẫn có seed, bốn realm, thời tiết, ngày/đêm, vùng di cư, tài nguyên, quần thể, minimap và adaptive quality. Fallback sau context/device loss ở runtime vẫn cần được harden thành một nhánh idempotent duy nhất trước khi gọi là production-resilient.
+- 3D foundation stream terrain theo chunk/LOD và đồng bộ player cùng wildlife từ simulation hiện hữu; nó không tạo một ecology thứ hai. Bốn proxy Tyrannosaurus, Triceratops, Spinosaurus và Pteranodon có hình khối riêng; các cartridge còn lại chỉ có primitive/prototype chung hoặc metadata roadmap và được dán nhãn đúng mức hoàn thiện.
+- Mỗi world address gồm Realm → Time Slice → region → chunk → seed. Metadata và hàm validation Time Slice đã có; lọc toàn bộ population/proxy theo address vẫn đang được hoàn thiện, nên v3 foundation chưa tuyên bố isolation địa tầng end-to-end. Eon Convergence vẫn là opt-in hư cấu duy nhất cho phép trộn thời đại.
+- Ecology Director tạo một simulation local giới hạn theo seed, stream chunk bằng tọa độ thế giới, chạy fixed-step và hiển thị snapshot Biomass Ledger/Utility AI thật thay cho phần trăm minh họa.
 - Vòng sinh tồn gồm máu, đói, khát, stamina, trưởng thành, nhiệt độ, oxy, dinh dưỡng, chất lượng khẩu phần, miễn dịch, chấn thương, ăn/uống, giác quan, phòng vệ, làm tổ và respawn.
 - Vòng đời mới tìm điểm spawn theo locomotion/habitat bằng seed: loài trên cạn không còn xuất hiện giữa đại dương, loài nước bắt đầu ở ocean/reef và save đã chết được dựng lại an toàn khi người chơi chủ động bắt đầu vòng đời mới.
 - Flagship có ability riêng trên phím R; communication wheel trên C; Photo Mode trên P; điều khiển còn lại dùng WASD/phím mũi tên, Shift, E, Q, F, N, touch D-pad và gamepad.
 - Lineage lưu tối đa 24 thế hệ, game replay tối đa 240 mẫu và event journal tối đa 40 mục; mọi trường được normalize trước khi render/lưu.
-- Save `hh.game.eonwild.v2` tự đọc và migrate dữ liệu từ `hh.game.eonwild.v1`, nhưng vẫn chỉ nằm trên thiết bị.
+- Save `hh.game.eonwild.v3` tự đọc và migrate v1/v2, thêm world address, renderer/quality và game mode. Export có checksum; import lưu một bản rollback trước khi thay đổi và vẫn chỉ nằm trên thiết bị.
 - Game loop tạm dừng khi tab ẩn. Unmount hủy RAF, observer timer, event listener, ResizeObserver, worker adapter, simulation và AudioContext.
 - Multiplayer Readiness fail closed: không có room code, người online, leaderboard hoặc máy chủ giả; capability audit chỉ nói điều kiện còn thiếu.
 
-49 mục catalog không đồng nghĩa 49 implementation bespoke hoàn chỉnh. V2 định nghĩa sâu 12 Flagship ở content layer, còn renderer top-down vẫn dùng chung nhiều primitive. Mỗi Flagship chỉ được quảng bá là production-ready sau khi animation, sound, collision, AI, cân bằng và provenance của riêng loài đó qua QA.
+49 mục catalog không đồng nghĩa 49 implementation bespoke hoàn chỉnh. Content định nghĩa sâu 13 Flagship, nhưng 3D hiện chỉ là procedural prototype và mới có bốn proxy chuyên biệt. 25 Species Cartridge gồm 4 vertical-slice, 9 content-ready và 12 roadmap; đó là metadata sản xuất, **không phải 25 model hoàn thiện**. Mỗi Flagship chỉ được quảng bá là production-ready sau khi GLB, animation, sound, collision, AI, cân bằng và provenance của riêng loài đó qua QA.
 
 ## 6. Trụ cột trải nghiệm dài hạn
 
@@ -123,25 +140,25 @@ Camera quan sát lưới thức ăn, sinh khối, di cư, sinh sản và tuyệt
 
 Trạng thái dưới đây phân biệt rõ phần đã có trong code với phần còn là kế hoạch.
 
-### P0 — Đã hoàn thành trong v2
+### P0 — Đã hoàn thành trong v2/v3 foundation
 
 - Route, breadcrumb, lazy loader, Service Worker cache và layout một viewport cho chín workspace.
 - Bốn Era Realm, rule isolation mặc định và Convergence opt-in có nhãn hư cấu.
-- Content schema v2, validation tự chạy, ba taxonomy tier và đúng 12 Flagship.
-- Save schema v2, migration từ v1, clamp dữ liệu và giới hạn lineage/replay/event journal.
+- Content schema v2, validation tự chạy, ba taxonomy tier và đúng 13 Flagship.
+- Save schema v3, migration từ v1/v2, checksum/rollback import, clamp dữ liệu và giới hạn lineage/replay/event journal.
 - Chunk deterministic, Spatial Hash, Biomass Ledger, Utility AI tám hành động và fixed timestep 30 Hz.
 - Trail, hazard, replay ring, heatmap, adaptive quality và bounded worker fallback.
 - Input bàn phím/touch/gamepad, focus rõ, target 44 px, reduced motion và forced colors.
 - Test no-human, realm isolation, gene bounds, apex cap, deterministic seed, cleanup và fail-closed multiplayer.
+- Renderer Babylon 9.22.1 same-origin tùy chọn, WebGPU → WebGL fallback, Canvas Lite, Time Slice/world-address metadata, chunk LOD, adaptive quality, Photo capture render-target và save v3 rollback.
 
 ### P1 — Hoàn thiện chất lượng Flagship
 
-- Chuyển 12 profile content thành 12 bộ animation/collision/audio/locomotion thực sự khác nhau; hiện renderer còn chia sẻ primitive top-down.
+- Chuyển 13 profile Flagship thành 13 bộ **GLB production** có LOD, texture, animation, collision, audio và locomotion thực sự khác nhau; hiện 3D mới có bốn proxy procedural chuyên biệt và các cartridge còn lại dùng primitive/metadata.
 - Thêm flagship Cổ sinh để Realm Cổ sinh có avatar flagship chơi được thay vì chỉ Simulated/Codex.
 - Nâng hành vi tổ, con non, đàn, lãnh thổ, pheromone và call response thành state có tác động dài hạn.
 - Gắn diet, injury, gene và communication data v2 sâu hơn vào từng bước simulation thay vì chủ yếu hiển thị/truyền qua game state.
 - Tạo editor provenance cho taxonomy, niên đại, habitat và nguồn; kiểm duyệt trước khi nâng tier.
-- Thêm export/import save v2 có checksum, preview và rollback; không ghi đè âm thầm.
 - Bổ sung test soak hàng giờ, replay regression và visual regression ở 375/768/desktop.
 
 ### P2 — Streaming, lưu trữ và công cụ sản xuất
@@ -149,14 +166,16 @@ Trạng thái dưới đây phân biệt rõ phần đã có trong code với ph
 - Chuyển save/replay lớn sang IndexedDB; localStorage chỉ giữ preference và con trỏ phiên nhỏ.
 - Worker hóa simulation/chunk thật với protocol schema + sequence; hiện worker assist chỉ xử lý command giới hạn và phần còn lại dùng local fallback.
 - OffscreenCanvas tùy chọn cho terrain/minimap; main thread ưu tiên input và accessibility UI.
+- Version hóa world/chunk contract 256 m và thêm migration rõ ràng trước khi physics, navigation hoặc save production phụ thuộc vào chunk ID.
 - Chunk level-of-detail, entity pooling, AI tick thưa ngoài vùng quan tâm và navigation riêng cho đất/biển/trời.
+- Đánh giá rồi mới tích hợp Rapier cho physics bubble và Recast cho navigation mesh theo capability/budget. Hiện không bundle Rapier, không bundle Recast và không có navmesh runtime.
 - Observer nâng thành timeline có scrub, filter species, food-web overlay, export replay và ghost local.
 - Content pack có version, manifest, hash, license, migration và giới hạn giải nén.
 - PWA offline cho Codex, save và Expedition; đồng bộ tài khoản là opt-in riêng.
 
-### P3 — Realtime tùy chọn, chưa triển khai
+### P3 — Realtime authoritative tùy chọn, chưa triển khai
 
-- Chỉ mở multiplayer sau khi có auth/signaling thật, token phòng ngắn hạn, server-authoritative simulation và reconnect/resync.
+- Chỉ mở multiplayer sau khi có auth/signaling thật, token phòng ngắn hạn, **server-authoritative simulation** và reconnect/resync; client v3 hiện không có authority server để xác nhận state.
 - Bắt đầu bằng shard 20–32 người; room invite-only/bạn bè/public có quyền host, player, observer rõ ràng.
 - Interest management theo chunk, snapshot delta có sequence, client prediction và server reconciliation.
 - Moderation, report, block, rate limit, audit event, anti-replay và chống client tampering.
@@ -164,7 +183,7 @@ Trạng thái dưới đây phân biệt rõ phần đã có trong code với ph
 - WebGPU chỉ là accelerator tùy chọn sau feature detection; Canvas 2D/WebGL fallback vẫn bắt buộc.
 - Chỉ gọi sản phẩm là persistent world/MMO sau load test, chaos/reconnect test, security review và kiểm soát chi phí vận hành.
 
-## 8. Kiến trúc v2 thực tế
+## 8. Kiến trúc v3 thực tế
 
 ```text
 App Shell / #/game/*
@@ -172,12 +191,18 @@ App Shell / #/game/*
 Performance Loader
   ├─ hh-eonwild-content-v2.js
   ├─ hh-eonwild-simulation-v2.js
+  ├─ hh-eonwild-3d-core.js
+  ├─ hh-eonwild-renderer-3d.js
   └─ hh-eonwild-game.js + CSS
         |
-Game workspace / state schema v2
+Vendored runtime + provenance
+  ├─ vendor/babylon-9.22.1.js + Apache-2.0 notices
+  └─ assets/eonwild/asset-manifest.v1.json
+        |
+Game workspace / state schema v3
   ├─ keyboard + touch + gamepad
-  ├─ Canvas 2D + minimap + observer
-  └─ localStorage v2 + migration v1
+  ├─ Babylon 3D optional + Canvas 2D Lite + minimap + observer
+  └─ localStorage v3 + migration v1/v2 + checksum/rollback
         |
 Simulation v2 (pure/bounded core)
   ├─ deterministic chunks + Spatial Hash
@@ -194,26 +219,31 @@ Worker adapter
 
 - `hh-eonwild-content-v2.js` không cần DOM và xuất object đã freeze. Các hàm realm/gene/diet/injury/communication là pure, nên có thể dùng trong test, worker hoặc công cụ biên tập.
 - `hh-eonwild-simulation-v2.js` không mount giao diện và không gọi network. Seed, chunk, utility score và fixed-step có thể tái tạo độc lập.
-- `hh-eonwild-game.js` là adapter trình duyệt: đọc content/simulation globals, chuẩn hóa save, gắn input, render và dọn tài nguyên khi unmount.
-- `performance-loader.js` bắt buộc tải content → simulation → game theo thứ tự. `sw.js` cache cả bốn asset EonWild đã version hóa.
+- `hh-eonwild-3d-core.js` chứa metadata Time Slice/Species Cartridge và runtime Babylon dùng chung; `hh-eonwild-renderer-3d.js` tăng độ sâu cho bốn proxy nhưng không thay simulation.
+- `assets/eonwild/asset-manifest.v1.json` là cổng provenance cho asset production. Trạng thái `assets: []` và `productionModelsReady: false` là chủ đích trung thực, không phải dữ liệu bị thiếu được phép bỏ qua.
+- `hh-eonwild-game.js` là adapter trình duyệt: đọc content/simulation/renderer globals, chuẩn hóa save, gắn input, render và dọn tài nguyên khi unmount.
+- `performance-loader.js` bắt buộc tải content → simulation → 3D core → 3D adapter → game theo thứ tự. `sw.js` version hóa các module; runtime Babylon lớn chỉ được request/cache sau lần người chơi thực sự bật 3D.
 
 ### Budget đang được áp dụng
 
 - Simulation: 30 fixed steps/giây, delta tối đa 0,25 giây và tối đa 8 bước catch-up mỗi tick.
-- Streaming: chunk 256 đơn vị; tối đa 256 chunk và 512 entity trong một simulation.
+- Simulation streaming: chunk 256 m; tối đa 256 chunk và 512 entity trong một simulation.
+- Babylon core, adapter và asset manifest cùng dùng chunk 256 m; tối đa 96 resident chunk/tile và queue pending tối đa 128.
 - Mỗi chunk: tối đa 32 resource và 24 wildlife.
 - Dấu vết: tối đa 4.096 footprint và 4.096 scent trong core; từng UI/session có thể đặt cap thấp hơn.
-- Replay core: 900 frame; game save: 240 mẫu; heatmap: 4.096 cell.
+- Replay core: 900 frame; game save: 240 mẫu. Heatmap core tối đa 4.096 cell, còn save/UI giữ tối đa 256 cell.
 - Canvas giới hạn DPR theo mobile/desktop; adaptive quality giảm DPR và số wildlife được vẽ mỗi frame khi FPS thấp, nhưng không xóa entity khỏi simulation.
 - Khi tab ẩn, gameplay update dừng. Khi đổi route, controller, RAF, timer, ResizeObserver, Worker, simulation và audio đều được đóng.
 
 ### Giới hạn cần nói đúng
 
-- Persistence hiện là localStorage schema v2, chưa phải IndexedDB hay cloud sync.
+- Persistence hiện là localStorage schema v3 có migration v1/v2, checksum import và một rollback slot; chưa phải IndexedDB hay cloud sync.
 - Worker adapter là worker assist với command allowlist, chưa chuyển toàn bộ simulation sang Worker/OffscreenCanvas.
-- Renderer hiện là Canvas 2D top-down, không có WebGPU/3D.
+- Renderer 3D hiện chỉ dùng terrain/proxy procedural. Không có animal GLB/texture/animation production; không tích hợp Rapier, Recast hoặc navmesh. WebGPU là tùy chọn; WebGL và Canvas Lite vẫn là fallback.
+- 25 Species Cartridge chỉ là các mức metadata `vertical-slice`/`content-ready`/`roadmap`; chỉ bốn loài có proxy procedural chuyên biệt và không loài nào có manifest asset production đã duyệt.
+- World address/Time Slice đã có schema và validation, nhưng lọc population/proxy end-to-end theo address vẫn cần hoàn thiện trước khi tuyên bố cách ly địa tầng hoàn toàn.
 - Observer dùng replay local, không quan sát máy chủ hoặc người chơi khác.
-- Network workspace chỉ là readiness gate; không có backend multiplayer, room hoặc online presence.
+- Network workspace chỉ là readiness gate; không có authoritative multiplayer backend, room, online presence, prediction/reconciliation hoặc server persistence.
 
 ## 9. An toàn, bảo mật và riêng tư
 
@@ -230,7 +260,25 @@ Worker adapter
 ## 10. Dữ liệu, bản quyền và giấy phép
 
 - Dữ liệu taxonomy lấy từ nguồn chính thức phải lưu `source`, `sourceId`, `license`, `retrievedAt`, `editorStatus` và version.
-- Catalogue of Life và GBIF có điều khoản/giấy phép theo dataset. Không giả định mọi ảnh hoặc occurrence có cùng license; kiểm tra ở cấp record/dataset trước khi phân phối.
+- Catalogue of Life Base Release nên là backbone taxonomy; Extended Release chỉ dùng tìm ứng viên vì ưu tiên độ phủ. Pin release key/DOI, accepted ID, synonym và source dataset.
+- Paleobiology Database cung cấp bằng chứng occurrence theo thời gian/không gian, collection, địa tầng và môi trường; occurrence không được suy diễn thẳng thành mật độ, tốc độ, hành vi, màu hoặc quan hệ săn mồi.
+- GBIF dùng để resolve taxonomy/phân bố hiện đại. Licence thuộc từng dataset và media có licence riêng; không giả định mọi ảnh hoặc occurrence có cùng licence.
+- Pipeline sản xuất là snapshot → normalize ID → provenance/licence theo trường → confidence gate → review → datapack versioned. Game không gọi các API khoa học ở runtime.
+
+Trạng thái provenance trong repository v3:
+
+- Manifest `hh-eonwild-asset-manifest` version 1 đặt `humanContentAllowed: false`, `unknownLicenseAllowed: false`, `externalRuntimeAssetsAllowed: false` và yêu cầu nguồn khoa học cùng mức tin cậy reconstruction.
+- Babylon.js `9.22.1` được vendored với Apache-2.0 license và third-party notices riêng; loader production mặc định dùng URL cùng origin.
+- Mỗi asset tương lai phải có ít nhất ID, source URL, tác giả, license, nguồn khoa học, era/Time Slice, scale thật, model version, LOD, texture budget, SHA-256, lịch sử chỉnh sửa và reconstruction confidence.
+- Mảng `assets` hiện rỗng và `productionModelsReady` là `false`. Bốn animal proxy procedural không được ghi thành GLB production hoặc dùng để chứng minh pipeline asset đã hoàn tất.
+
+| Nguồn | Vai trò trong datapack | Xử lý licence/attribution | Không được suy diễn |
+|---|---|---|---|
+| Catalogue of Life Base Release | Backbone accepted taxon, synonym và stable ID | Pin release key + DOI; giữ citation và licence nguồn thành phần | Không coi catalog là hoàn chỉnh hoặc tự động nâng loài thành playable |
+| Paleobiology Database v1.2 | Occurrence hóa thạch, địa tầng, niên đại, vị trí và môi trường | Lưu reference, provenance và licence của snapshot/bản ghi; không nhầm licence mã API với dữ liệu | Không suy ra mật độ quần thể, tốc độ, hành vi, màu hoặc quan hệ săn mồi từ occurrence |
+| GBIF Species/Occurrence | Resolve tên hiện đại và hỗ trợ phân bố/habitat | Giữ `datasetKey`, licence CC0/CC BY/CC BY-NC và attribution; media có licence riêng | Không dùng search result biến đổi theo thời gian như một snapshot có DOI |
+
+Budget mở rộng hợp lý là 16–24 Playable Flagship qua nhiều release, 150–300 Simulated Wildlife trước khi tăng tới 500–1.000, và 10.000–50.000 taxon Codex index offline theo release. Chỉ tier Flagship mới hứa locomotion, animation, âm thanh, sinh sản, diet, injury và giác quan bespoke; catalog không tự spawn.
 - Tên khoa học và dữ kiện không cho phép sao chép nguyên bộ mô tả, ảnh minh họa hoặc cấu trúc database có bảo hộ/điều khoản riêng.
 - Asset chỉ được nhận nếu do HH tự tạo, commissioned với chuyển giao quyền, public domain, hoặc có license thương mại tương thích và attribution đầy đủ.
 - Không lấy ảnh từ Google Images, video YouTube, mod, wiki hoặc game khác chỉ vì chúng có thể tải được.
@@ -249,8 +297,10 @@ Truy cập và kiểm tra ngày 24-08-2026; đường dẫn hoặc nội dung s�
 - [U.S. Copyright Office — Games](https://www.copyright.gov/register/tx-games.html)
 - [U.S. Copyright Office — Circular 61: Copyright Registration of Computer Programs](https://www.copyright.gov/circs/circ61.pdf)
 - [Catalogue of Life — data download](https://www.catalogueoflife.org/data/download)
-- [GBIF — Species API](https://www.gbif.org/developer/species)
+- [Paleobiology Database — Data Service v1.2](https://paleobiodb.org/data1.2/)
+- [GBIF — Species API](https://techdocs.gbif.org/en/openapi/v1/species)
 - [GBIF — data use agreement](https://www.gbif.org/terms/data-user)
+- [Babylon.js — package và giấy phép](https://www.npmjs.com/package/babylonjs)
 - [W3C — WebGPU specification](https://www.w3.org/TR/webgpu/)
 - [MDN — OffscreenCanvas](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas)
 - [MDN — WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)

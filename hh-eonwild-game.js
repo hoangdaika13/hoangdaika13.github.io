@@ -6,14 +6,18 @@
 })(typeof window !== "undefined" ? window : globalThis, function createEonWild(global) {
   "use strict";
 
-  const VERSION = "2.0.0";
-  const STORAGE_KEY = "hh.game.eonwild.v2";
-  const LEGACY_STORAGE_KEY = "hh.game.eonwild.v1";
-  const SCHEMA_VERSION = 2;
+  const VERSION = "3.0.0";
+  const STORAGE_KEY = "hh.game.eonwild.v3";
+  const LEGACY_STORAGE_KEY = "hh.game.eonwild.v2";
+  const OLDER_STORAGE_KEY = "hh.game.eonwild.v1";
+  const ROLLBACK_STORAGE_KEY = "hh.game.eonwild.rollback.v3";
+  const SCHEMA_VERSION = 3;
   const WORLD_SIZE = 4096;
   const VIEW_IDS = Object.freeze(["world", "species", "ecosystem", "timeline", "expeditions", "lineage", "observer", "network", "settings"]);
   const CONTENT = global.HHEonWildContentV2 || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-content-v2.js"); } catch { return null; } })() : null);
   const SIMULATION = global.HHEonWildSimulationV2 || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-simulation-v2.js"); } catch { return null; } })() : null);
+  const RENDERER_3D = global.HHEonWild3D || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-3d-core.js"); } catch { return null; } })() : null);
+  const RENDERER_ADAPTER = global.HHEonWildRenderer3D || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-renderer-3d.js"); } catch { return null; } })() : null);
   const ERA_META = Object.freeze({
     paleozoic: { label: "Đại Cổ sinh", range: "541–252 triệu năm", color: "#58e6d2" },
     mesozoic: { label: "Đại Trung sinh", range: "252–66 triệu năm", color: "#ffb65f" },
@@ -98,7 +102,7 @@
     }))
     : Object.fromEntries(Object.entries(rawRealms).map(([id, realm]) => [id, Object.freeze({ ...(FALLBACK_REALMS[id] || {}), id, ...realm })])));
   const REALM_IDS = Object.freeze(Object.keys(REALMS));
-  const FLAGSHIP_IDS = Object.freeze(["tyrannosaurus", "triceratops", "argentavis", "orca", "giant-octopus", "spinosaurus", "mammuthus", "wolf", "honeybee", "electric-eel", "ankylosaurus", "blue-whale"]);
+  const FLAGSHIP_IDS = Object.freeze(["tyrannosaurus", "triceratops", "argentavis", "orca", "giant-octopus", "spinosaurus", "mammuthus", "wolf", "honeybee", "electric-eel", "ankylosaurus", "blue-whale", "pteranodon"]);
   const fallbackFlagships = Object.freeze(Object.fromEntries(FLAGSHIP_IDS.map((id) => [id, Object.freeze({
     id, tier: "flagship", active: "R", sense: SPECIES_BY_ID.get(id)?.ability || "Giác quan chuyên biệt", locomotion: SPECIES_BY_ID.get(id)?.locomotion || "walk",
     defense: id === "triceratops" ? "Vòng phòng thủ đàn" : id === "ankylosaurus" ? "Chùy đuôi phá giáp" : id === "giant-octopus" ? "Ngụy trang sắc tố" : "Khả năng sinh tồn riêng",
@@ -204,10 +208,26 @@
     const settings = source.settings && typeof source.settings === "object" ? source.settings : {};
     const speciesId = SPECIES_BY_ID.has(source.speciesId) ? source.speciesId : "triceratops";
     const derivedRealm = realmForSpecies(SPECIES_BY_ID.get(speciesId));
+    const realmId = REALM_IDS.includes(source.realmId) ? source.realmId : derivedRealm === "convergence-only" ? "ice-age" : derivedRealm;
+    const seed = String(settings.seed || source.worldAddress?.seed || "EON-541").replace(/[^a-z0-9-]/gi, "").slice(0, 24) || "EON-541";
+    const convergence = settings.convergence === true;
+    const cartridgeAddress = RENDERER_3D?.SPECIES_CARTRIDGES?.[speciesId]
+      ? RENDERER_3D.addressForSpecies?.(speciesId, seed)
+      : RENDERER_3D?.createWorldAddress?.({ realmId, seed });
+    const requestedAddress = source.worldAddress && typeof source.worldAddress === "object" ? source.worldAddress : cartridgeAddress;
+    let worldAddress = RENDERER_3D?.createWorldAddress
+      ? RENDERER_3D.createWorldAddress({ ...(requestedAddress || {}), realmId, seed })
+      : { realmId, timeSliceId: "legacy-realm", regionId: "legacy-region", biomeId: "grassland", chunkX: 0, chunkZ: 0, seed };
+    if (!convergence && cartridgeAddress && RENDERER_3D?.isSpeciesAllowedAtAddress &&
+        !RENDERER_3D.isSpeciesAllowedAtAddress(speciesId, worldAddress, false)) {
+      worldAddress = RENDERER_3D.createWorldAddress({ ...cartridgeAddress, realmId, seed });
+    }
     return {
       schemaVersion: SCHEMA_VERSION,
       speciesId,
-      realmId: REALM_IDS.includes(source.realmId) ? source.realmId : derivedRealm === "convergence-only" ? "ice-age" : derivedRealm,
+      realmId,
+      worldAddress,
+      mode: RENDERER_3D?.GAME_MODES?.some?.((mode) => mode.id === source.mode && mode.available) ? source.mode : "one-life",
       player: {
         x: clamp(player.x || WORLD_SIZE * .48, 80, WORLD_SIZE - 80),
         y: clamp(player.y || WORLD_SIZE * .48, 80, WORLD_SIZE - 80),
@@ -223,12 +243,14 @@
         difficulty: ["sanctuary", "balanced", "wild"].includes(settings.difficulty) ? settings.difficulty : "balanced",
         motion: ["static", "balanced", "cinematic"].includes(settings.motion) ? settings.motion : "balanced",
         density: ["low", "balanced", "high"].includes(settings.density) ? settings.density : "balanced",
+        renderer: ["auto", "3d", "lite"].includes(settings.renderer) ? settings.renderer : "auto",
+        quality: ["static", "light", "balanced", "high", "cinematic"].includes(settings.quality) ? settings.quality : "balanced",
         sound: settings.sound === true,
-        convergence: settings.convergence === true,
+        convergence,
         worker: settings.worker !== false,
         adaptiveQuality: settings.adaptiveQuality !== false,
         photoUi: settings.photoUi !== false,
-        seed: String(settings.seed || "EON-541").replace(/[^a-z0-9-]/gi, "").slice(0, 24) || "EON-541"
+        seed
       },
       discoveries: Array.isArray(source.discoveries) ? [...new Set(source.discoveries.filter((id) => SPECIES_BY_ID.has(id)))].slice(0, 500) : [],
       completed: Array.isArray(source.completed) ? [...new Set(source.completed.filter((id) => EXPEDITIONS.some((mission) => mission.id === id)))].slice(0, 50) : [],
@@ -308,8 +330,9 @@
     try {
       const current = global.localStorage?.getItem?.(STORAGE_KEY);
       const legacy = global.localStorage?.getItem?.(LEGACY_STORAGE_KEY);
-      const state = normalizeState(JSON.parse(current || legacy || "{}"));
-      if (!current && legacy) global.localStorage?.setItem?.(STORAGE_KEY, JSON.stringify(state));
+      const older = global.localStorage?.getItem?.(OLDER_STORAGE_KEY);
+      const state = normalizeState(JSON.parse(current || legacy || older || "{}"));
+      if (!current && (legacy || older)) global.localStorage?.setItem?.(STORAGE_KEY, JSON.stringify(state));
       return state;
     } catch { return normalizeState(); }
   };
@@ -333,7 +356,28 @@
     if (!schema) return clamp(value, 0, 100);
     return clamp((Number(value) - schema.min) / Math.max(.0001, schema.max - schema.min) * 100, 0, 100);
   };
-  const realmSelectorMarkup = (state) => `<section class="hwe-realm-selector" aria-label="Chọn Era Realm"><span><small>ERA REALM</small><strong>${escapeHtml(REALMS[state.realmId]?.label || "Realm")}</strong></span><div>${Object.values(REALMS).map((realm) => `<button type="button" data-hwe-realm="${escapeHtml(realm.id)}" aria-pressed="${state.realmId === realm.id}" style="--realm:${escapeHtml(realm.color || "#72ef9d")}"><i></i><span>${escapeHtml(realm.label)}</span><small>${escapeHtml(realm.subtitle || realm.range || "")}</small></button>`).join("")}</div><label><input type="checkbox" data-hwe-setting="convergence" ${state.settings.convergence ? "checked" : ""}> Eon Convergence <small>${state.settings.convergence ? "Hư cấu · đang bật" : "Tắt · đúng niên đại"}</small></label></section>`;
+  const speciesAllowedAtAddress = (species, state, address = state?.worldAddress) => {
+    if (!species || !state) return false;
+    if (state.settings?.convergence) return tierForSpecies(species) !== "codex";
+    if (typeof RENDERER_3D?.isSpeciesAllowedAtAddress === "function") {
+      return RENDERER_3D.isSpeciesAllowedAtAddress(species.id, address, false);
+    }
+    return speciesAllowedInRealm(species, state.realmId, false);
+  };
+  const playableSpeciesAtAddress = (state, address = state?.worldAddress) => SPECIES.filter((species) =>
+    tierForSpecies(species) === "flagship" && speciesAllowedAtAddress(species, state, address));
+  const addressForSlice = (state, slice) => RENDERER_3D?.createWorldAddress?.({
+    realmId: state.realmId,
+    timeSliceId: slice.id,
+    regionId: slice.regionIds[0],
+    seed: state.settings.seed
+  });
+  function realmSelectorMarkup(state) {
+    const slices = RENDERER_3D?.listTimeSlices?.(state.realmId) || [];
+    const selectedSlice = slices.find((slice) => slice.id === state.worldAddress?.timeSliceId) || slices[0];
+    const selectedRegion = RENDERER_3D?.REGIONS?.find?.((region) => region.id === state.worldAddress?.regionId);
+    return `<section class="hwe-realm-selector" aria-label="Chọn Era Realm"><span><small>ERA REALM</small><strong>${escapeHtml(REALMS[state.realmId]?.label || "Realm")}</strong></span><div>${Object.values(REALMS).map((realm) => `<button type="button" data-hwe-realm="${escapeHtml(realm.id)}" aria-pressed="${state.realmId === realm.id}" style="--realm:${escapeHtml(realm.color || "#72ef9d")}"><i></i><span>${escapeHtml(realm.label)}</span><small>${escapeHtml(realm.subtitle || realm.range || "")}</small></button>`).join("")}</div><label><input type="checkbox" data-hwe-setting="convergence" ${state.settings.convergence ? "checked" : ""}> Eon Convergence <small>${state.settings.convergence ? "Hư cấu · đang bật" : "Tắt · đúng niên đại"}</small></label>${slices.length ? `<label class="hwe-world-address"><span><small>TIME SLICE · REGION</small><strong>${escapeHtml(selectedRegion?.label || selectedSlice?.label || "World sector")}</strong></span><select data-hwe-time-slice aria-label="Chọn lát cắt địa chất">${slices.map((slice) => { const playable = state.settings.convergence || playableSpeciesAtAddress(state, addressForSlice(state, slice)).length > 0; return `<option value="${escapeHtml(slice.id)}" ${slice.id === selectedSlice?.id ? "selected" : ""} ${playable ? "" : "disabled"}>${escapeHtml(slice.label)} · ${escapeHtml(slice.range)}${playable ? "" : " · Observer only"}</option>`; }).join("")}</select></label>` : ""}</section>`;
+  }
 
   function navMarkup(view) {
     return `<nav class="hwe-nav" aria-label="Điều hướng HH EonWild">${[
@@ -347,7 +391,9 @@
     return SPECIES.map((species) => {
       const tier = tierForSpecies(species);
       const realm = realmForSpecies(species);
-      const unavailable = !speciesAllowedInRealm(species, state.realmId, state.settings.convergence);
+      const unavailable = compact
+        ? !speciesAllowedAtAddress(species, state)
+        : !speciesAllowedInRealm(species, state.realmId, state.settings.convergence);
       if (compact && (unavailable || tier !== "flagship")) return "";
       return `<button type="button" class="hwe-species-card${state.speciesId === species.id ? " is-selected" : ""}${unavailable ? " is-other-realm" : ""}" data-hwe-species="${species.id}" data-era="${species.era}" data-realm="${realm}" data-tier="${tier}" data-diet="${species.diet}" data-search="${escapeHtml(`${species.name} ${species.vietnamese} ${species.period} ${tier}`.toLowerCase())}" style="--species:${species.color}">
       <i aria-hidden="true">${species.locomotion === "fly" ? "⌁" : species.locomotion === "swim" ? "≈" : species.locomotion === "crawl" ? "〰" : "◆"}</i><span><strong>${escapeHtml(species.vietnamese)}</strong>${compact ? `<small>${tierLabel(tier)}</small>` : `<small>${escapeHtml(species.name)} · ${escapeHtml(species.period)}</small><em>${tierLabel(tier)}${unavailable ? " · REALM KHÁC" : ""}</em>`}</span></button>`;
@@ -359,17 +405,19 @@
     const flagship = flagshipFor(selected.id);
     const activeAbility = mechanicLabel(flagship?.defense?.special || flagship?.locomotion?.special || flagship?.activeAbility || flagship?.active || flagship?.ability, selected.ability);
     return `${realmSelectorMarkup(state)}<div class="hwe-world-layout">
-      <aside class="hwe-species-dock" aria-label="Chọn loài"><header><span><small>PLAYABLE REGISTRY</small><strong>${SPECIES.filter((species) => tierForSpecies(species) === "flagship" && speciesAllowedInRealm(species, state.realmId, state.settings.convergence)).length} Flagship trong realm</strong></span><button type="button" data-hwe-open-codex>Mở Codex</button></header><label class="hwe-search"><span>⌕</span><input type="search" data-hwe-species-search placeholder="Tìm Flagship…" aria-label="Tìm loài Flagship"></label><div class="hwe-species-list">${speciesCardsMarkup(state, true)}</div></aside>
+      <aside class="hwe-species-dock" aria-label="Chọn loài"><header><span><small>PLAYABLE REGISTRY</small><strong>${playableSpeciesAtAddress(state).length} Flagship trong Time Slice</strong></span><button type="button" data-hwe-open-codex>Mở Codex</button></header><label class="hwe-search"><span>⌕</span><input type="search" data-hwe-species-search placeholder="Tìm Flagship…" aria-label="Tìm loài Flagship"></label><div class="hwe-species-list">${speciesCardsMarkup(state, true)}</div></aside>
       <section class="hwe-viewport" data-hwe-viewport aria-label="Thế giới EonWild đang chơi">
-        <canvas data-hwe-canvas tabindex="0" aria-label="Bản đồ sinh tồn. Dùng WASD hoặc phím mũi tên để di chuyển."></canvas>
+        <canvas class="hwe-render-surface hwe-render-surface--lite" data-hwe-canvas tabindex="0" aria-label="Bản đồ sinh tồn Lite. Dùng WASD hoặc phím mũi tên để di chuyển."></canvas>
+        <canvas class="hwe-render-surface hwe-render-surface--3d" data-hwe-canvas-3d tabindex="0" aria-label="Thế giới sinh tồn 3D. Kéo để xoay camera, cuộn để zoom, dùng WASD để di chuyển." hidden></canvas>
+        <div class="hwe-render-loading" data-hwe-render-loading hidden role="status" aria-live="polite"><span><i></i><b>3D</b></span><strong>Đang khởi tạo EonWild 3D…</strong><small data-hwe-render-loading-copy>Đang kiểm tra WebGPU và WebGL2</small></div>
         <div class="hwe-atmosphere" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-        <div class="hwe-hud hwe-hud--top"><span><small>Realm</small><strong data-hwe-realm-label>${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</strong></span><span><small>Biome</small><strong data-hwe-biome>Đang dựng thế giới</strong></span><span><small>Thời gian</small><strong data-hwe-time>--:--</strong></span><span><small>Sự kiện</small><strong data-hwe-weather>Ổn định</strong></span><button type="button" data-hwe-photo aria-label="Photo Mode">◉</button><button type="button" data-hwe-fullscreen aria-label="Toàn màn hình">⛶</button></div>
+        <div class="hwe-hud hwe-hud--top"><span><small>Realm</small><strong data-hwe-realm-label>${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</strong></span><span><small>Biome</small><strong data-hwe-biome>Đang dựng thế giới</strong></span><span><small>Thời gian</small><strong data-hwe-time>--:--</strong></span><span><small>Sự kiện</small><strong data-hwe-weather>Ổn định</strong></span><button type="button" class="hwe-render-toggle" data-hwe-renderer="3d" aria-pressed="false"><i></i><span data-hwe-render-label>3D</span></button><button type="button" data-hwe-photo aria-label="Photo Mode">◉</button><button type="button" data-hwe-fullscreen aria-label="Toàn màn hình">⛶</button></div>
         <div class="hwe-minimap"><canvas data-hwe-minimap width="180" height="180" aria-label="Bản đồ thu nhỏ"></canvas><span>MIGRATION</span></div>
         <div class="hwe-event-banner" data-hwe-event-banner hidden><small>WORLD EVENT</small><strong data-hwe-event-title>Biến động tự nhiên</strong><progress data-hwe-event-progress max="100" value="0"></progress></div>
         <div class="hwe-sense" data-hwe-sense hidden><span>Q · ECO SENSE</span><strong>Đang đọc dấu vết tự nhiên…</strong></div>
         <div class="hwe-ability-bar"><button type="button" data-hwe-action="sense"><kbd>Q</kbd><span><small>Giác quan</small><strong>${escapeHtml(mechanicLabel(flagship?.sense, selected.ability))}</strong></span></button><button type="button" data-hwe-action="ability"><kbd>R</kbd><span><small>${flagship ? "FLAGSHIP ACTIVE" : "SPECIAL ACTION"}</small><strong>${escapeHtml(activeAbility)}</strong></span></button><button type="button" data-hwe-communication-open aria-expanded="false"><kbd>C</kbd><span><small>Giao tiếp động vật</small><strong>Tín hiệu không lời</strong></span></button></div>
         <div class="hwe-communication-wheel" data-hwe-communication-wheel hidden role="dialog" aria-modal="false" aria-label="Animal Communication Wheel"><header><span><small>ANIMAL COMMUNICATION</small><strong>Không chat toàn cục</strong></span><button type="button" data-hwe-communication-close aria-label="Đóng vòng giao tiếp">×</button></header><div>${COMMUNICATION_CALLS.map((call, index) => { const allowed = !flagship || typeof CONTENT?.isCommunicationCallAllowed !== "function" || CONTENT.isCommunicationCallAllowed(selected.id, call.id); return `<button type="button" data-hwe-call="${escapeHtml(call.id)}" style="--i:${index}" ${allowed ? "" : "disabled"} title="${escapeHtml(call.intent || call.label)}"><i>${escapeHtml(call.icon || (["alarm","distress"].includes(call.id) ? "!" : "◉"))}</i><span>${escapeHtml(call.label)}</span></button>`; }).join("")}</div></div>
-        <div class="hwe-start-panel" data-hwe-start-panel><small>ERA REALM · LOCAL ECOLOGY 2.0 · KHÔNG CÓ CON NGƯỜI</small><h2>Trở thành ${escapeHtml(selected.vietnamese)}</h2><p>${state.settings.convergence ? "Eon Convergence đang bật: đây là sandbox hư cấu có trộn thời đại." : `Realm ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)} chỉ sinh loài đúng cửa sổ địa chất.`} Tìm nước, cân bằng khẩu phần, tránh thương tích và tiếp nối dòng gene.</p><div><button type="button" data-hwe-difficulty="sanctuary" class="${state.settings.difficulty === "sanctuary" ? "is-active" : ""}">Sanctuary</button><button type="button" data-hwe-difficulty="balanced" class="${state.settings.difficulty === "balanced" ? "is-active" : ""}">Cân bằng</button><button type="button" data-hwe-difficulty="wild" class="${state.settings.difficulty === "wild" ? "is-active" : ""}">Wild</button></div><button type="button" class="is-primary" data-hwe-start>▶ Bắt đầu vòng đời</button></div>
+        <div class="hwe-start-panel" data-hwe-start-panel><small>ERA REALM · 3D FOUNDATION · KHÔNG CÓ CON NGƯỜI</small><h2>Trở thành ${escapeHtml(selected.vietnamese)}</h2><p>${state.settings.convergence ? "Eon Convergence đang bật: đây là sandbox hư cấu có trộn thời đại." : `Realm ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)} dùng Time Slice để không trộn niên đại ngoài ý muốn.`} Tìm nước, cân bằng khẩu phần, tránh thương tích và tiếp nối dòng gene.</p><div class="hwe-render-choice" role="group" aria-label="Chọn renderer"><button type="button" data-hwe-renderer="3d" class="${state.settings.renderer !== "lite" ? "is-active" : ""}" aria-pressed="${state.settings.renderer !== "lite"}"><b>3D</b><span>Babylon · WebGPU/WebGL</span></button><button type="button" data-hwe-renderer="lite" class="${state.settings.renderer === "lite" ? "is-active" : ""}" aria-pressed="${state.settings.renderer === "lite"}"><b>Lite</b><span>Canvas 2D tiết kiệm pin</span></button></div><p class="hwe-prototype-notice"><b>Vertical Slice:</b> mô hình 3D hiện dùng hình khối nguyên bản để kiểm thử gameplay, không giả là asset động vật hoàn thiện.</p><div><button type="button" data-hwe-difficulty="sanctuary" class="${state.settings.difficulty === "sanctuary" ? "is-active" : ""}">Sanctuary</button><button type="button" data-hwe-difficulty="balanced" class="${state.settings.difficulty === "balanced" ? "is-active" : ""}">Cân bằng</button><button type="button" data-hwe-difficulty="wild" class="${state.settings.difficulty === "wild" ? "is-active" : ""}">Wild</button></div><button type="button" class="is-primary" data-hwe-start>▶ Bắt đầu vòng đời</button></div>
         <div class="hwe-death-panel" data-hwe-death hidden><small>VÒNG TUẦN HOÀN TIẾP DIỄN</small><h2>Dòng sống đã kết thúc</h2><p>Chất dinh dưỡng trở lại hệ sinh thái. Dữ liệu Codex và dòng gene vẫn được giữ.</p><button type="button" data-hwe-respawn>Nở lại</button></div>
         <div class="hwe-photo-overlay" data-hwe-photo-overlay hidden><span>${escapeHtml(selected.vietnamese)} · ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</span><button type="button" data-hwe-photo-capture>Chụp PNG</button><button type="button" data-hwe-photo-close>Thoát Photo Mode</button></div>
         <div class="hwe-touch-controls" aria-label="Điều khiển cảm ứng"><button type="button" data-hwe-touch="ArrowUp">▲</button><button type="button" data-hwe-touch="ArrowLeft">◀</button><button type="button" data-hwe-touch="ArrowDown">▼</button><button type="button" data-hwe-touch="ArrowRight">▶</button><button type="button" data-hwe-action="interact">E</button><button type="button" data-hwe-action="sense">Q</button><button type="button" data-hwe-action="ability">R</button><button type="button" data-hwe-communication-open>C</button></div>
@@ -379,7 +427,7 @@
         <section class="hwe-condition-panel"><small>INJURY & CONDITION</small><div>${[["temperature","Nhiệt"],["bleeding","Chảy máu"],["fracture","Gãy xương"],["infection","Nhiễm trùng"],["disease","Bệnh"]].map(([key,label]) => { const value = key === "temperature" ? state.player.temperature : state.player.injuries[key]; return `<span data-hwe-condition="${key}"><i style="--condition:${value}"></i><b>${label}</b><em data-hwe-condition-value="${key}">${Math.round(value)}</em></span>`; }).join("")}</div></section>
         <section class="hwe-species-facts"><small>ĐẶC TÍNH LOÀI</small><p><b>${escapeHtml(dietLabel(selected.diet))}</b><span>${escapeHtml(selected.period)} · ${escapeHtml(formatMass(selected.mass))}</span></p><p><b>Giác quan</b><span>${escapeHtml(selected.ability)}</span></p><p><b>Giai đoạn</b><span data-hwe-stage>${stageLabel(state.player.growth)}</span></p></section>
         <section class="hwe-mission"><small>NHIỆM VỤ SINH THÁI</small><strong data-hwe-mission-title>${escapeHtml(EXPEDITIONS.find((row) => row.id === state.activeExpedition)?.title || EXPEDITIONS[0].title)}</strong><p data-hwe-mission-copy>${escapeHtml(EXPEDITIONS.find((row) => row.id === state.activeExpedition)?.detail || EXPEDITIONS[0].detail)}</p><progress data-hwe-mission-progress max="100" value="0"></progress></section>
-        <section class="hwe-engine-telemetry"><small>ECOLOGY ENGINE</small><dl><div><dt>AI utility</dt><dd data-hwe-ai-mode>Local fallback</dd></div><div><dt>Chunks</dt><dd data-hwe-chunk-count>0</dd></div><div><dt>Apex budget</dt><dd data-hwe-apex-budget>Đang tính</dd></div><div><dt>Trail signals</dt><dd data-hwe-trail-count>0</dd></div></dl></section>
+        <section class="hwe-engine-telemetry"><small>ECOLOGY · RENDER ENGINE</small><dl><div><dt>Renderer</dt><dd data-hwe-render-status>Canvas 2D Lite</dd></div><div><dt>AI utility</dt><dd data-hwe-ai-mode>Local fallback</dd></div><div><dt>Chunks</dt><dd data-hwe-chunk-count>0</dd></div><div><dt>Apex budget</dt><dd data-hwe-apex-budget>Đang tính</dd></div><div><dt>Trail signals</dt><dd data-hwe-trail-count>0</dd></div></dl></section>
         <section class="hwe-log"><small>FIELD SIGNALS</small><div data-hwe-log aria-live="polite"><p>Thế giới đang chờ bạn bắt đầu.</p></div></section>
       </aside>
     </div>`;
@@ -395,7 +443,7 @@
       : tier === "simulated"
         ? `<button type="button" data-hwe-route="/game/ecosystem">Quan sát trong hệ sinh thái →</button>`
         : `<button type="button" disabled>Chỉ tra cứu trong Eon Codex</button>`;
-    return `<span class="hwe-creature-sigil" style="--species:${species.color}">◆</span><small>${escapeHtml(ERA_META[species.era].label)} · ${escapeHtml(species.period)}</small><span class="hwe-tier-badge" data-tier="${tier}">${tierLabel(tier)}</span><h3>${escapeHtml(species.vietnamese)}</h3><em>${escapeHtml(species.name)}</em><dl><div><dt>Realm</dt><dd>${realmId === "convergence-only" ? "Codex / Convergence" : escapeHtml(REALMS[realmId]?.label || realmId)}</dd></div><div><dt>Khối lượng</dt><dd>${escapeHtml(formatMass(species.mass))}</dd></div><div><dt>Khẩu phần</dt><dd>${escapeHtml(dietLabel(species.diet))}</dd></div><div><dt>Vận động</dt><dd>${escapeHtml(mechanicLabel(flagship?.locomotion, species.locomotion))}</dd></div><div><dt>Giác quan</dt><dd>${escapeHtml(mechanicLabel(flagship?.sense, species.ability))}</dd></div><div><dt>Phòng vệ</dt><dd>${escapeHtml(mechanicLabel(flagship?.defense, "Archetype dùng chung"))}</dd></div><div><dt>Sinh sản</dt><dd>${escapeHtml(mechanicLabel(flagship?.reproduction, "Vòng đời archetype"))}</dd></div></dl>${tier === "flagship" ? `<p class="hwe-flagship-note">Có cơ chế Flagship riêng trong vertical slice v2.</p>` : `<p class="hwe-tier-note">${tier === "simulated" ? "Tham gia Utility AI và Biomass Ledger; được quan sát nhưng không giả là playable." : "Catalog tra cứu; không tự nhận là playable hoàn chỉnh."}</p>`}${action}`;
+    return `<span class="hwe-creature-sigil" style="--species:${species.color}">◆</span><small>${escapeHtml(ERA_META[species.era].label)} · ${escapeHtml(species.period)}</small><span class="hwe-tier-badge" data-tier="${tier}">${tierLabel(tier)}</span><h3>${escapeHtml(species.vietnamese)}</h3><em>${escapeHtml(species.name)}</em><dl><div><dt>Realm</dt><dd>${realmId === "convergence-only" ? "Codex / Convergence" : escapeHtml(REALMS[realmId]?.label || realmId)}</dd></div><div><dt>Khối lượng</dt><dd>${escapeHtml(formatMass(species.mass))}</dd></div><div><dt>Khẩu phần</dt><dd>${escapeHtml(dietLabel(species.diet))}</dd></div><div><dt>Vận động</dt><dd>${escapeHtml(mechanicLabel(flagship?.locomotion, species.locomotion))}</dd></div><div><dt>Giác quan</dt><dd>${escapeHtml(mechanicLabel(flagship?.sense, species.ability))}</dd></div><div><dt>Phòng vệ</dt><dd>${escapeHtml(mechanicLabel(flagship?.defense, "Archetype dùng chung"))}</dd></div><div><dt>Sinh sản</dt><dd>${escapeHtml(mechanicLabel(flagship?.reproduction, "Vòng đời archetype"))}</dd></div></dl>${tier === "flagship" ? `<p class="hwe-flagship-note">Có profile Flagship riêng; mức hoàn thiện 3D phụ thuộc Species Cartridge v3.</p>` : `<p class="hwe-tier-note">${tier === "simulated" ? "Tham gia Utility AI và Biomass Ledger; được quan sát nhưng không giả là playable." : "Catalog tra cứu; không tự nhận là playable hoàn chỉnh."}</p>`}${action}`;
   }
 
   function codexMarkup(state) {
@@ -438,7 +486,19 @@
   }
 
   function settingsMarkup(state) {
-    return `<section class="hwe-settings"><header class="hwe-view-hero"><div><small>ACCESSIBILITY · PERFORMANCE · SAVE V2</small><h2>Cấu hình thế giới</h2><p>Save schema v2 được migrate từ v1; vertical slice chỉ nằm trên thiết bị. Multiplayer chưa được giả lập.</p></div><button type="button" data-hwe-reset>Khôi phục save mới…</button></header><div class="hwe-settings-grid"><article><small>REALM & ĐỘ KHÓ</small><h3>Luật thế giới</h3><label>Era Realm<select data-hwe-setting="realmId">${Object.values(REALMS).map((realm)=>`<option value="${realm.id}" ${state.realmId===realm.id?"selected":""}>${escapeHtml(realm.label)}</option>`).join("")}</select></label><label>Chế độ<select data-hwe-setting="difficulty"><option value="sanctuary" ${state.settings.difficulty === "sanctuary" ? "selected" : ""}>Sanctuary</option><option value="balanced" ${state.settings.difficulty === "balanced" ? "selected" : ""}>Cân bằng</option><option value="wild" ${state.settings.difficulty === "wild" ? "selected" : ""}>Wild Survival</option></select></label><label><input type="checkbox" data-hwe-setting="convergence" ${state.settings.convergence ? "checked" : ""}> Cho phép Eon Convergence hư cấu</label></article><article><small>HIỆU ỨNG & MẬT ĐỘ</small><h3>Motion và wildlife budget</h3><label>Chuyển động<select data-hwe-setting="motion"><option value="static" ${state.settings.motion === "static" ? "selected":""}>Tĩnh</option><option value="balanced" ${state.settings.motion === "balanced" ? "selected":""}>Cân bằng</option><option value="cinematic" ${state.settings.motion === "cinematic" ? "selected":""}>Điện ảnh</option></select></label><label>Mật độ wildlife<select data-hwe-setting="density"><option value="low" ${state.settings.density === "low" ? "selected":""}>Thấp</option><option value="balanced" ${state.settings.density === "balanced" ? "selected":""}>Cân bằng</option><option value="high" ${state.settings.density === "high" ? "selected":""}>Cao</option></select></label><label><input type="checkbox" data-hwe-setting="adaptiveQuality" ${state.settings.adaptiveQuality ? "checked":""}> Tự giảm DPR và mật độ wildlife hiển thị khi frame time tăng</label></article><article><small>ENGINE</small><h3>Worker assist có fallback</h3><label><input type="checkbox" data-hwe-setting="worker" ${state.settings.worker ? "checked":""}> Dùng worker cho tác vụ hỗ trợ tương thích</label><p>Utility AI và chunk streaming chạy fixed-step có giới hạn. Worker chỉ nhận tác vụ đã hỗ trợ; nếu Worker hoặc OffscreenCanvas không có, engine dùng local fallback và báo đúng trạng thái.</p></article><article><small>ÂM THANH & TRỢ NĂNG</small><h3>Tín hiệu rõ ràng</h3><label><input type="checkbox" data-hwe-setting="sound" ${state.settings.sound ? "checked":""}> Âm thanh tổng hợp sau tương tác</label><label><input type="checkbox" data-hwe-setting="photoUi" ${state.settings.photoUi ? "checked":""}> Hiện nhãn trong Photo Mode</label><p>Bàn phím, touch, gamepad, focus rõ, chữ trạng thái và prefers-reduced-motion.</p></article><article><small>THẾ GIỚI</small><h3>Seed tái tạo được</h3><label>Seed<input type="text" maxlength="24" data-hwe-setting="seed" value="${escapeHtml(state.settings.seed)}"></label><p>World generation dùng seed cục bộ; không chứa ID tài khoản, vị trí thật hoặc dữ liệu thiết bị.</p></article><article><small>DỮ LIỆU</small><h3>Schema ${SCHEMA_VERSION}</h3><p>${state.replay.length}/240 mẫu replay · ${state.heatmap.length}/256 ô heatmap · ${state.lineage.length}/24 thế hệ · ${state.eventJournal.length}/40 sự kiện.</p><button type="button" data-hwe-lineage-export>Xuất dữ liệu lineage</button></article></div></section>`;
+    const capabilities = RENDERER_3D?.detectCapabilities?.() || { recommendedBackend: "lite", webgpu: false, webgl2: false };
+    const slices = RENDERER_3D?.listTimeSlices?.(state.realmId) || [];
+    const modes = RENDERER_3D?.GAME_MODES || [];
+    return `<section class="hwe-settings"><header class="hwe-view-hero"><div><small>3D ENGINE · ACCESSIBILITY · SAVE V3</small><h2>Cấu hình thế giới</h2><p>Save v1/v2 được migrate an toàn sang schema v3. Babylon 3D chỉ tải khi dùng và Canvas Lite luôn là fallback.</p></div><button type="button" data-hwe-reset>Khôi phục save mới…</button></header><div class="hwe-settings-grid">
+      <article><small>REALM · TIME SLICE</small><h3>Luật niên đại</h3><label>Era Realm<select data-hwe-setting="realmId">${Object.values(REALMS).map((realm)=>`<option value="${realm.id}" ${state.realmId===realm.id?"selected":""}>${escapeHtml(realm.label)}</option>`).join("")}</select></label>${slices.length ? `<label>Lát cắt địa chất<select data-hwe-time-slice>${slices.map((slice)=>{ const playable = state.settings.convergence || playableSpeciesAtAddress(state, addressForSlice(state, slice)).length > 0; return `<option value="${escapeHtml(slice.id)}" ${slice.id===state.worldAddress?.timeSliceId?"selected":""} ${playable?"":"disabled"}>${escapeHtml(slice.label)} · ${escapeHtml(slice.range)}${playable?"":" · Observer only"}</option>`; }).join("")}</select></label>` : ""}<label><input type="checkbox" data-hwe-setting="convergence" ${state.settings.convergence ? "checked" : ""}> Cho phép Eon Convergence hư cấu</label></article>
+      <article><small>GAMEPLAY</small><h3>Vòng đời và độ khó</h3><label>Chế độ<select data-hwe-mode>${modes.map((mode)=>`<option value="${escapeHtml(mode.id)}" ${state.mode===mode.id?"selected":""} ${mode.available?"":"disabled"}>${escapeHtml(mode.label)}${mode.available?"":" · lộ trình"}</option>`).join("")}</select></label><label>Độ khó<select data-hwe-setting="difficulty"><option value="sanctuary" ${state.settings.difficulty === "sanctuary" ? "selected" : ""}>Sanctuary</option><option value="balanced" ${state.settings.difficulty === "balanced" ? "selected" : ""}>Cân bằng</option><option value="wild" ${state.settings.difficulty === "wild" ? "selected" : ""}>Wild Survival</option></select></label></article>
+      <article><small>3D RENDERER</small><h3>${capabilities.recommendedBackend === "lite" ? "Lite Mode được khuyến nghị" : `${escapeHtml(capabilities.recommendedBackend.toUpperCase())} sẵn sàng`}</h3><label>Renderer<select data-hwe-setting="renderer"><option value="auto" ${state.settings.renderer === "auto" ? "selected":""}>Tự chọn 3D → Lite</option><option value="3d" ${state.settings.renderer === "3d" ? "selected":""}>Ưu tiên Babylon 3D</option><option value="lite" ${state.settings.renderer === "lite" ? "selected":""}>Canvas 2D Lite</option></select></label><label>Chất lượng<select data-hwe-setting="quality">${Object.values(RENDERER_3D?.QUALITY_PROFILES || {}).map((profile)=>`<option value="${profile.id}" ${state.settings.quality===profile.id?"selected":""}>${escapeHtml(profile.label)} · ${profile.targetFps} FPS mục tiêu</option>`).join("")}</select></label><p>WebGPU ${capabilities.webgpu?"✓":"—"} · WebGL2 ${capabilities.webgl2?"✓":"—"}. Không báo 3D sẵn sàng nếu engine chưa khởi tạo.</p></article>
+      <article><small>HIỆU NĂNG</small><h3>Motion và wildlife budget</h3><label>Chuyển động<select data-hwe-setting="motion"><option value="static" ${state.settings.motion === "static" ? "selected":""}>Tĩnh</option><option value="balanced" ${state.settings.motion === "balanced" ? "selected":""}>Cân bằng</option><option value="cinematic" ${state.settings.motion === "cinematic" ? "selected":""}>Điện ảnh</option></select></label><label>Mật độ wildlife<select data-hwe-setting="density"><option value="low" ${state.settings.density === "low" ? "selected":""}>Thấp</option><option value="balanced" ${state.settings.density === "balanced" ? "selected":""}>Cân bằng</option><option value="high" ${state.settings.density === "high" ? "selected":""}>Cao</option></select></label><label><input type="checkbox" data-hwe-setting="adaptiveQuality" ${state.settings.adaptiveQuality ? "checked":""}> Tự hạ LOD, DPR và proxy hiển thị khi frame time tăng</label></article>
+      <article><small>SIMULATION</small><h3>Worker có fallback</h3><label><input type="checkbox" data-hwe-setting="worker" ${state.settings.worker ? "checked":""}> Dùng worker cho tác vụ tương thích</label><p>AI fixed-step vẫn giữ toàn bộ quần thể khi renderer hạ LOD. Far ring chỉ đổi cách biểu diễn, không xóa ecology.</p></article>
+      <article><small>ÂM THANH · TRỢ NĂNG</small><h3>Tín hiệu rõ ràng</h3><label><input type="checkbox" data-hwe-setting="sound" ${state.settings.sound ? "checked":""}> Âm thanh tổng hợp sau tương tác</label><label><input type="checkbox" data-hwe-setting="photoUi" ${state.settings.photoUi ? "checked":""}> Hiện nhãn trong Photo Mode</label><p>Bàn phím, touch, gamepad, focus rõ và prefers-reduced-motion được giữ ở cả 3D lẫn Lite.</p></article>
+      <article><small>WORLD SEED</small><h3>Địa chỉ tái tạo được</h3><label>Seed<input type="text" maxlength="24" data-hwe-setting="seed" value="${escapeHtml(state.settings.seed)}"></label><p>${escapeHtml(state.worldAddress?.realmId || state.realmId)} › ${escapeHtml(state.worldAddress?.timeSliceId || "realm")} › ${escapeHtml(state.worldAddress?.regionId || "region")} › chunk ${state.worldAddress?.chunkX || 0}:${state.worldAddress?.chunkZ || 0}</p></article>
+      <article><small>DỮ LIỆU CỤC BỘ</small><h3>Schema ${SCHEMA_VERSION}</h3><p>${state.replay.length}/240 replay · ${state.heatmap.length}/256 heatmap · ${state.lineage.length}/24 thế hệ · ${state.eventJournal.length}/40 sự kiện.</p><div class="hwe-data-actions"><button type="button" data-hwe-save-export>Xuất save JSON</button><button type="button" data-hwe-save-import>Nhập save…</button><button type="button" data-hwe-save-rollback>Khôi phục bản trước</button><button type="button" data-hwe-lineage-export>Xuất lineage</button></div><input type="file" accept="application/json,.json" data-hwe-save-file hidden></article>
+    </div></section>`;
   }
 
   function viewMarkup(view, state) {
@@ -455,7 +515,7 @@
 
   function shellMarkup(instance) {
     const view = instance.view;
-    return `<section class="hwe-root" data-hwe-root data-view="${view}" data-realm="${instance.state.realmId}" data-motion="${instance.state.settings.motion}" aria-label="HH EonWild"><header class="hwe-header"><div class="hwe-brand"><span aria-hidden="true"><i></i><b>EW</b></span><div><small>HH GAME · ECOLOGY 2.0 · ORIGINAL</small><h1>HH EonWild</h1><p>${escapeHtml(REALMS[instance.state.realmId]?.label || "Trái Đất Muôn Thời")} · Không có con người</p></div></div><div class="hwe-header-status"><span><i></i> Local single-player</span><span>12 Flagship · ${SPECIES.length} catalog</span><button type="button" data-hwe-quick-play>Chơi tiếp →</button></div></header>${navMarkup(view)}<main class="hwe-main" data-hwe-main>${viewMarkup(view, instance.state)}</main><footer class="hwe-controls"><span><kbd>WASD</kbd> Di chuyển</span><span><kbd>Shift</kbd> Chạy</span><span><kbd>E</kbd> Ăn/Uống</span><span><kbd>Q</kbd> Giác quan</span><span><kbd>R</kbd> Ability</span><span><kbd>C</kbd> Giao tiếp</span><span><kbd>P</kbd> Photo</span><span><kbd>N</kbd> Làm tổ</span><b data-hwe-fps>Engine nghỉ</b></footer><div class="hwe-toast" data-hwe-toast role="status" aria-live="polite"></div></section>`;
+  return `<section class="hwe-root" data-hwe-root data-view="${view}" data-realm="${instance.state.realmId}" data-motion="${instance.state.settings.motion}" data-renderer="lite" aria-label="HH EonWild"><header class="hwe-header"><div class="hwe-brand"><span aria-hidden="true"><i></i><b>EW</b></span><div><small>HH GAME · LIVING EARTH 3.0 · ORIGINAL</small><h1>HH EonWild</h1><p>${escapeHtml(REALMS[instance.state.realmId]?.label || "Trái Đất Muôn Thời")} · Không có con người</p></div></div><div class="hwe-header-status"><span><i></i> Local single-player</span><span>${CONTENT?.FLAGSHIP_IDS?.length || 13} Flagship · ${Object.keys(RENDERER_3D?.SPECIES_CARTRIDGES || {}).length} Species Cartridge · ${SPECIES.length} catalog</span><button type="button" data-hwe-quick-play>Chơi tiếp →</button></div></header>${navMarkup(view)}<main class="hwe-main" data-hwe-main>${viewMarkup(view, instance.state)}</main><footer class="hwe-controls"><span><kbd>WASD</kbd> Di chuyển</span><span><kbd>Shift</kbd> Chạy</span><span><kbd>E</kbd> Ăn/Uống</span><span><kbd>Q</kbd> Giác quan</span><span><kbd>R</kbd> Ability</span><span><kbd>C</kbd> Giao tiếp</span><span><kbd>P</kbd> Photo</span><span><kbd>N</kbd> Làm tổ</span><b data-hwe-fps>Engine nghỉ</b></footer><div class="hwe-toast" data-hwe-toast role="status" aria-live="polite"></div></section>`;
   }
 
   function setToast(instance, message) {
@@ -480,7 +540,7 @@
       const gain = context.createGain();
       const now = context.currentTime;
       const speciesId = instance.state.speciesId;
-      const base = ({ tyrannosaurus: 72, triceratops: 108, argentavis: 420, orca: 620, "giant-octopus": 190, spinosaurus: 92, mammuthus: 58, wolf: 260, honeybee: 780, "electric-eel": 330, ankylosaurus: 86, "blue-whale": 48 })[speciesId] || 240;
+      const base = ({ tyrannosaurus: 72, triceratops: 108, argentavis: 420, orca: 620, "giant-octopus": 190, spinosaurus: 92, mammuthus: 58, wolf: 260, honeybee: 780, "electric-eel": 330, ankylosaurus: 86, "blue-whale": 48, pteranodon: 460 })[speciesId] || 240;
       oscillator.type = ["honeybee", "electric-eel"].includes(speciesId) ? "sawtooth" : type === "complete" || ["orca", "blue-whale"].includes(speciesId) ? "sine" : "triangle";
       oscillator.frequency.setValueAtTime(type === "complete" ? Math.max(220, base) : base, now);
       oscillator.frequency.exponentialRampToValueAtTime(type === "complete" ? Math.max(440, base * 1.45) : Math.max(55, base * 1.35), now + .16);
@@ -513,8 +573,10 @@
     const base = instance.state.settings.density === "high" ? 54 : instance.state.settings.density === "low" ? 24 : 38;
     const mobile = global.matchMedia?.("(max-width: 760px)")?.matches;
     const count = mobile ? Math.min(26, base) : base;
-    const allowed = SPECIES.filter((species) => tierForSpecies(species) !== "codex" && speciesAllowedInRealm(species, instance.state.realmId, instance.state.settings.convergence));
-    const registry = allowed.length ? allowed : SPECIES.filter((species) => tierForSpecies(species) === "flagship");
+    const allowed = SPECIES.filter((species) => tierForSpecies(species) !== "codex" && speciesAllowedAtAddress(species, instance.state));
+    const selected = SPECIES_BY_ID.get(instance.state.speciesId);
+    const registry = allowed.length ? allowed : (selected && speciesAllowedAtAddress(selected, instance.state) ? [selected] : []);
+    if (!registry.length) return [];
     return Array.from({ length: count }, (_, index) => {
       const species = registry[Math.floor(random() * registry.length)];
       let x = 100 + random() * (WORLD_SIZE - 200); let y = 100 + random() * (WORLD_SIZE - 200);
@@ -607,6 +669,17 @@
     if (instance.chunkClock >= .5) {
       instance.chunkClock = 0;
       instance.world.loadedChunks = instance.simulation.streamChunks({ x: instance.state.player.x, y: instance.state.player.y, world: true });
+      const renderedChunk = RENDERER_3D?.worldToChunk?.(instance.state.player.x, instance.state.player.y);
+      if (renderedChunk && RENDERER_3D?.createWorldAddress &&
+          (renderedChunk.x !== instance.state.worldAddress?.chunkX || renderedChunk.z !== instance.state.worldAddress?.chunkZ)) {
+        instance.state.worldAddress = RENDERER_3D.createWorldAddress({
+          ...instance.state.worldAddress,
+          realmId: instance.state.realmId,
+          seed: instance.state.settings.seed,
+          chunkX: renderedChunk.x,
+          chunkZ: renderedChunk.z
+        });
+      }
     }
     if (!advance.steps) return true;
     const entities = new Map(instance.simulation.getEntities().map((entity) => [entity.id, entity]));
@@ -625,7 +698,7 @@
     entities.forEach((entity) => {
       if (knownPopulation.has(entity.id) || instance.population.length >= 96) return;
       const species = SPECIES_BY_ID.get(entity.speciesId);
-      if (!species) return;
+      if (!species || !speciesAllowedAtAddress(species, instance.state)) return;
       instance.population.push({ id: entity.id, species, x: entity.x, y: entity.y, vx: 0, vy: 0, health: entity.health, phase: 0, action: entity.action, alive: entity.alive !== false });
     });
     const active = instance.simulation.hazards.activeEvents();
@@ -646,6 +719,15 @@
     const height = Math.max(240, Math.floor(rect.height * dpr));
     if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
     instance.dpr = dpr;
+    if (instance.renderer3d && instance.canvas3d && !instance.canvas3d.hidden) {
+      const viewportWidth = Math.max(1, Math.round(instance.canvas3d.clientWidth));
+      const viewportHeight = Math.max(1, Math.round(instance.canvas3d.clientHeight));
+      const previous = instance.rendererViewportSize;
+      if (!previous || previous.width !== viewportWidth || previous.height !== viewportHeight) {
+        instance.rendererViewportSize = { width: viewportWidth, height: viewportHeight };
+        instance.renderer3d.resize?.();
+      }
+    }
   }
 
   function habitatPenalty(species, terrain) {
@@ -938,7 +1020,9 @@
       const progress = eventBanner.querySelector("[data-hwe-event-progress]"); if (progress) progress.value = clamp((instance.world.event?.remaining || 0) / 24 * 100, 0, 100);
     }
     const aiMode = instance.root.querySelector("[data-hwe-ai-mode]"); if (aiMode) aiMode.textContent = instance.engineMode || "Local bounded AI";
-    const chunkCount = instance.root.querySelector("[data-hwe-chunk-count]"); if (chunkCount) chunkCount.textContent = String(instance.world.loadedChunks?.length || 0);
+    const renderInfo = instance.renderer3d?.getStatus?.();
+    const renderStatus = instance.root.querySelector("[data-hwe-render-status]"); if (renderStatus) renderStatus.textContent = renderInfo ? `${renderInfo.backend.toUpperCase()} · ${RENDERER_3D?.QUALITY_PROFILES?.[renderInfo.quality]?.label || renderInfo.quality}` : "Canvas 2D Lite";
+    const chunkCount = instance.root.querySelector("[data-hwe-chunk-count]"); if (chunkCount) chunkCount.textContent = renderInfo ? `${instance.world.loadedChunks?.length || 0} sim · ${renderInfo.chunks} render` : String(instance.world.loadedChunks?.length || 0);
     const ledger = instance.simulation?.ledger?.snapshot?.();
     const apexCount = Object.values(ledger?.apex || {}).reduce((sum, value) => sum + Number(value || 0), 0);
     const apexBudget = instance.root.querySelector("[data-hwe-apex-budget]"); if (apexBudget) apexBudget.textContent = `${apexCount} active · cap 3/chunk`;
@@ -950,16 +1034,35 @@
     if (instance.destroyed) return;
     const seconds = Math.min(.05, Math.max(0, (now - instance.lastFrame) / 1000 || 0));
     instance.lastFrame = now;
-    if (!global.document?.hidden) { updateWorld(instance, seconds); drawWorld(instance); if (now >= (instance.hudAt || 0)) { instance.hudAt = now + 100; updateHud(instance); } }
+    if (!global.document?.hidden) {
+      updateWorld(instance, seconds);
+      if (instance.renderer3d) {
+        const species = SPECIES_BY_ID.get(instance.state.speciesId);
+        instance.renderer3d.sync({
+          player: instance.state.player,
+          population: instance.population,
+          world: instance.world,
+          speciesId: species.id,
+          speciesColor: species.color,
+          heading: instance.heading,
+          senseActive: instance.senseUntil > now,
+          paused: instance.paused || instance.photoMode,
+          address: instance.state.worldAddress
+        });
+        drawMinimap(instance);
+      } else drawWorld(instance);
+      if (now >= (instance.hudAt || 0)) { instance.hudAt = now + 100; updateHud(instance); }
+    }
     instance.frameCount += 1;
     if (now - instance.fpsAt > 1000) {
-      const fps = instance.frameCount;
-      const node = instance.root.querySelector("[data-hwe-fps]"); if (node) node.textContent = `${fps} FPS · ${instance.population.filter((row) => row.alive).length} wildlife`;
-      if (instance.state.settings.adaptiveQuality && fps < 28) {
+      const rendererStatus = instance.renderer3d?.getStatus?.();
+      const fps = rendererStatus?.fps || instance.frameCount;
+      const node = instance.root.querySelector("[data-hwe-fps]"); if (node) node.textContent = `${fps} FPS · ${instance.population.filter((row) => row.alive).length} wildlife · ${rendererStatus?.backend?.toUpperCase?.() || "LITE"}`;
+      if (!instance.renderer3d && instance.state.settings.adaptiveQuality && fps < 28) {
         instance.renderBudget = Math.max(.45, (instance.renderBudget || 1) - .18);
         if ((instance.dpr || 1) > 1) { instance.dprCap = Math.max(1, (instance.dpr || 1) - .2); resizeCanvas(instance); }
         logSignal(instance, "Adaptive quality đã giảm DPR và mật độ wildlife hiển thị; simulation vẫn giữ nguyên.");
-      } else if (instance.state.settings.adaptiveQuality && fps > 48 && (instance.renderBudget || 1) < 1) instance.renderBudget = Math.min(1, instance.renderBudget + .08);
+      } else if (!instance.renderer3d && instance.state.settings.adaptiveQuality && fps > 48 && (instance.renderBudget || 1) < 1) instance.renderBudget = Math.min(1, instance.renderBudget + .08);
       instance.frameCount = 0; instance.fpsAt = now;
     }
     instance.raf = global.requestAnimationFrame?.((time) => loop(instance, time));
@@ -1135,11 +1238,13 @@
     instance.root.classList.add("is-running");
     instance.root.querySelector("[data-hwe-pause]")?.setAttribute("aria-pressed", "false");
     saveState(instance);
-    instance.canvas.focus({ preventScroll: true }); logSignal(instance, "Vòng đời bắt đầu. Nước và thức ăn đang phát tín hiệu nhẹ.");
+    if (instance.state.settings.renderer !== "lite" && !instance.renderer3d) enable3D(instance, instance.state.settings.renderer === "3d");
+    focusSurface(instance); logSignal(instance, "Vòng đời bắt đầu. Nước và thức ăn đang phát tín hiệu nhẹ.");
   }
 
   function initWorld(instance) {
     instance.canvas = instance.root.querySelector("[data-hwe-canvas]");
+    instance.canvas3d = instance.root.querySelector("[data-hwe-canvas-3d]");
     if (!instance.canvas) return;
     instance.ctx = instance.canvas.getContext("2d", { alpha: false });
     instance.world = createWorld(instance.state.settings.seed, instance.state.settings.density, instance.state.realmId);
@@ -1151,7 +1256,10 @@
     resizeCanvas(instance);
     instance.resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(() => resizeCanvas(instance)) : null;
     instance.resizeObserver?.observe(instance.canvas);
+    const viewport = instance.root.querySelector("[data-hwe-viewport]");
+    if (viewport && viewport !== instance.canvas) instance.resizeObserver?.observe(viewport);
     instance.raf = global.requestAnimationFrame?.((time) => loop(instance, time));
+    if (instance.state.settings.renderer === "3d") enable3D(instance, false);
   }
 
   function switchRealm(instance, realmId, navigateToWorld = false) {
@@ -1163,6 +1271,8 @@
       fallback = SPECIES.find((species) => tierForSpecies(species) === "flagship" && speciesAllowedInRealm(species, realmId, instance.state.settings.convergence));
       if (fallback) { instance.state.speciesId = fallback.id; instance.state.player = normalizeState({ speciesId: fallback.id, player: { lineage: instance.state.player.lineage } }).player; }
     }
+    instance.state.worldAddress = RENDERER_3D?.createWorldAddress?.({ realmId, seed: instance.state.settings.seed }) || instance.state.worldAddress;
+    if (fallback) syncAddressForSpecies(instance, fallback.id);
     saveState(instance);
     if ((navigateToWorld || instance.view === "timeline") && !fallback) global.location.hash = "#/game/ecosystem";
     else if (navigateToWorld || instance.view === "timeline") global.location.hash = "#/game/world";
@@ -1182,6 +1292,7 @@
     const lineageCount = instance.state.player.lineage;
     instance.state.speciesId = species.id;
     instance.state.player = normalizeState({ speciesId: species.id, player: { lineage: lineageCount } }).player;
+    syncAddressForSpecies(instance, species.id);
     saveState(instance);
     if (navigate || instance.view !== "world") global.location.hash = "#/game/world";
     else mount(instance.host, { view: "world" });
@@ -1202,7 +1313,7 @@
 
   function exportLineage(instance) {
     const payload = {
-      format: "hh-eonwild-lineage-v2",
+      format: "hh-eonwild-lineage-v3",
       version: VERSION,
       exportedAt: new Date().toISOString(),
       speciesId: instance.state.speciesId,
@@ -1211,6 +1322,221 @@
       lineage: instance.state.lineage
     };
     if (downloadLocalFile(instance, `hh-eonwild-lineage-${Date.now()}.json`, JSON.stringify(payload, null, 2))) setToast(instance, "Đã xuất lineage JSON cục bộ");
+  }
+
+  function exportSave(instance) {
+    const state = normalizeState(instance.state);
+    const checksumState = { ...state, updatedAt: 0 };
+    const payload = {
+      format: "hh-eonwild-save-v3",
+      schemaVersion: SCHEMA_VERSION,
+      appVersion: VERSION,
+      exportedAt: new Date().toISOString(),
+      checksum: hashSeed(JSON.stringify(checksumState)).toString(16).padStart(8, "0"),
+      state
+    };
+    if (downloadLocalFile(instance, `hh-eonwild-save-${Date.now()}.json`, JSON.stringify(payload, null, 2))) setToast(instance, "Đã xuất save v3 có checksum");
+  }
+
+  async function importSave(instance, file) {
+    if (!file || file.size > 2 * 1024 * 1024) { setToast(instance, "Tệp save không hợp lệ hoặc lớn hơn 2 MB"); return false; }
+    try {
+      const payload = JSON.parse(await file.text());
+      if (payload?.format !== "hh-eonwild-save-v3" || !payload.state || typeof payload.state !== "object") throw new Error("Sai định dạng save");
+      const normalizedImport = normalizeState(payload.state);
+      const checksum = hashSeed(JSON.stringify({ ...normalizedImport, updatedAt: 0 })).toString(16).padStart(8, "0");
+      if (payload.checksum && payload.checksum !== checksum) throw new Error("Checksum không khớp");
+      global.localStorage?.setItem?.(ROLLBACK_STORAGE_KEY, JSON.stringify(normalizeState(instance.state)));
+      instance.state = normalizedImport;
+      saveState(instance);
+      mount(instance.host, { view: "settings" });
+      return true;
+    } catch (error) { setToast(instance, `Không thể nhập save: ${String(error?.message || "dữ liệu lỗi").slice(0, 80)}`); return false; }
+  }
+
+  function restoreRollback(instance) {
+    try {
+      const previous = global.localStorage?.getItem?.(ROLLBACK_STORAGE_KEY);
+      if (!previous) { setToast(instance, "Chưa có phiên bản trước để khôi phục"); return false; }
+      const current = normalizeState(instance.state);
+      instance.state = normalizeState(JSON.parse(previous));
+      global.localStorage?.setItem?.(ROLLBACK_STORAGE_KEY, JSON.stringify(current));
+      saveState(instance); mount(instance.host, { view: "settings" }); return true;
+    } catch { setToast(instance, "Phiên bản trước không thể đọc được"); return false; }
+  }
+
+  const activeSurface = (instance) => instance.renderer3d ? instance.canvas3d : instance.canvas;
+  const focusSurface = (instance) => activeSurface(instance)?.focus?.({ preventScroll: true });
+
+  function setRendererStatus(instance, label, loadingCopy) {
+    const status = instance.root?.querySelector?.("[data-hwe-render-status]");
+    const toggleLabel = instance.root?.querySelector?.("[data-hwe-render-label]");
+    const loading = instance.root?.querySelector?.("[data-hwe-render-loading]");
+    const loadingText = instance.root?.querySelector?.("[data-hwe-render-loading-copy]");
+    if (status) status.textContent = String(label || "Canvas 2D Lite").slice(0, 64);
+    if (toggleLabel) toggleLabel.textContent = instance.renderer3d ? "Lite" : "3D";
+    if (loadingText && loadingCopy) loadingText.textContent = String(loadingCopy).slice(0, 96);
+    if (loading) loading.hidden = !loadingCopy;
+    instance.root?.classList?.toggle?.("is-render-loading", Boolean(loadingCopy));
+  }
+
+  function syncAddressForSpecies(instance, speciesId = instance.state.speciesId) {
+    if (!RENDERER_3D?.createWorldAddress) return instance.state.worldAddress;
+    const current = RENDERER_3D.createWorldAddress({
+      ...(instance.state.worldAddress || {}),
+      realmId: instance.state.realmId,
+      seed: instance.state.settings.seed
+    });
+    if (instance.state.settings.convergence || RENDERER_3D.isSpeciesAllowedAtAddress?.(speciesId, current, false)) {
+      instance.state.worldAddress = current;
+      return current;
+    }
+    const cartridge = RENDERER_3D.SPECIES_CARTRIDGES?.[speciesId];
+    const desired = cartridge
+      ? RENDERER_3D.addressForSpecies(speciesId, instance.state.settings.seed)
+      : RENDERER_3D.createWorldAddress({ realmId: instance.state.realmId, seed: instance.state.settings.seed });
+    instance.state.worldAddress = RENDERER_3D.createWorldAddress({
+      ...desired,
+      realmId: instance.state.realmId,
+      seed: instance.state.settings.seed,
+      chunkX: current.chunkX,
+      chunkZ: current.chunkZ
+    });
+    return instance.state.worldAddress;
+  }
+
+  const reduced3DPreference = (instance) => instance.state.settings.motion === "static" ||
+    Boolean(global.document?.documentElement?.classList?.contains?.("app-reduce-motion") || global.document?.body?.classList?.contains?.("app-reduce-motion"));
+
+  function syncRendererControls(instance, mode) {
+    const is3D = mode === "3d";
+    instance.root?.querySelectorAll?.("[data-hwe-renderer]").forEach((button) => {
+      const active = button.dataset.hweRenderer === (is3D ? "3d" : "lite");
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+  }
+
+  function scheduleLiteFallback(instance, message) {
+    if (!instance || instance.destroyed || instance.liteFallbackPending) return;
+    instance.liteFallbackPending = true;
+    (global.setTimeout || setTimeout)(() => {
+      instance.liteFallbackPending = false;
+      if (instance.destroyed) return;
+      disable3D(instance, true);
+      setToast(instance, message || "Renderer 3D đã dừng an toàn; Canvas 2D Lite đang hoạt động");
+    }, 0);
+  }
+
+  async function createRendererRuntime(instance, species) {
+    const qualityToAdapter = { static: "low", light: "low", balanced: "balanced", high: "high", cinematic: "ultra" };
+    const renderSeed = `${instance.state.settings.seed}:${instance.state.worldAddress?.timeSliceId || instance.state.realmId}:${instance.state.worldAddress?.regionId || "region"}`;
+    if (RENDERER_ADAPTER?.FLAGSHIP_IDS?.includes?.(species.id) && typeof RENDERER_ADAPTER.createRenderer === "function") {
+      let lastEnvironment = "";
+      const adapter = RENDERER_ADAPTER.createRenderer({
+        canvas: instance.canvas3d,
+        container: instance.root.querySelector("[data-hwe-viewport]"),
+        speciesId: species.id,
+        playerX: instance.state.player.x,
+        playerZ: instance.state.player.y,
+        seed: renderSeed,
+        qualityPreset: qualityToAdapter[instance.state.settings.quality] || "balanced",
+        adaptiveQuality: instance.state.settings.adaptiveQuality,
+        reducedMotion: reduced3DPreference(instance) ? true : "auto",
+        allowRemoteBabylon: false,
+        localBabylonUrl: RENDERER_3D?.BABYLON_URL,
+        onStatus: (detail) => { if (detail?.status === "failed") scheduleLiteFallback(instance, "Renderer 3D gặp lỗi; đã chuyển sang Lite Mode"); }
+      });
+      const started = await adapter.start({ canvas: instance.canvas3d, allowRemoteBabylon: false });
+      if (!started?.ok) { adapter.dispose(); throw new Error(started?.reason?.message || "Babylon adapter could not start"); }
+      return Object.freeze({
+        backend: started.backend,
+        sync(snapshot = {}) {
+          adapter.setPlayerState({ speciesId: snapshot.speciesId, x: snapshot.player?.x, z: snapshot.player?.y, heading: -(snapshot.heading || 0), elevation: snapshot.speciesId === "pteranodon" ? 12 : 0 });
+          const occupied = new Set([snapshot.speciesId]);
+          (snapshot.population || []).forEach((creature) => {
+            const id = creature.species?.id || creature.speciesId;
+            if (!RENDERER_ADAPTER.FLAGSHIP_IDS.includes(id) || occupied.has(id)) return;
+            occupied.add(id); adapter.updateFlagship(id, { x: creature.x, z: creature.y, heading: -Math.atan2(creature.vy || 0, creature.vx || 0), visible: creature.alive !== false });
+          });
+          RENDERER_ADAPTER.FLAGSHIP_IDS.forEach((id) => {
+            if (!occupied.has(id)) adapter.updateFlagship(id, { visible: false });
+          });
+          const environmentKey = `${Math.floor(snapshot.world?.day || 0)}:${snapshot.world?.weather?.type || "clear"}`;
+          if (environmentKey !== lastEnvironment) { lastEnvironment = environmentKey; adapter.setEnvironment({ hour: snapshot.world?.day || 12, weather: snapshot.world?.weather?.type || "clear", fog: true }); }
+          if (snapshot.paused) adapter.pause("host"); else if (adapter.status === "paused") adapter.resume("host");
+          return true;
+        },
+        resize() { adapter.engine?.resize?.(); },
+        setPaused(value) { return value ? adapter.pause("host") : adapter.resume("host"); },
+        setQuality(value) { adapter.setQualityPreset(qualityToAdapter[value] || "balanced"); return value; },
+        setMotion(value) { adapter.setReducedMotion(value === "static" || reduced3DPreference(instance) ? true : "auto"); return value; },
+        getStatus() { const telemetry = adapter.getTelemetry(); return { backend: adapter.backend, quality: ({ low: "light", balanced: "balanced", high: "high", ultra: "cinematic" })[telemetry.qualityPreset] || "balanced", fps: telemetry.fps, chunks: telemetry.activeChunks, wildlife: telemetry.proxySpecies?.length || 0, address: instance.state.worldAddress }; },
+        capture() { return adapter.capture("image/png"); },
+        dispose() { return adapter.dispose()?.ok !== false; }
+      });
+    }
+    return RENDERER_3D.createRuntime(instance.canvas3d, {
+      speciesId: species.id,
+      speciesColor: species.color,
+      seed: instance.state.settings.seed,
+      quality: reduced3DPreference(instance) ? "static" : instance.state.settings.quality,
+      address: instance.state.worldAddress,
+      onTelemetry: (event) => { if (event?.type === "webgpu-init-failed") setRendererStatus(instance, "Đang chuyển sang WebGL2…", "WebGPU không khởi tạo được; đang dùng fallback WebGL"); },
+      onQualityChange: (sample) => {
+        instance.state.settings.quality = sample.quality;
+        setRendererStatus(instance, `${instance.renderer3d?.backend?.toUpperCase?.() || "3D"} · ${sample.profile.label}`);
+      },
+      onFailure: () => { scheduleLiteFallback(instance, "3D gặp lỗi render; đã tự chuyển sang Lite Mode"); }
+    });
+  }
+
+  async function enable3D(instance, persist = true) {
+    if (!instance?.canvas3d || instance.renderer3d || instance.rendererBooting) return Boolean(instance?.renderer3d);
+    if (typeof RENDERER_3D?.createRuntime !== "function") { setToast(instance, "3D core chưa được tải; Lite Mode vẫn hoạt động"); return false; }
+    instance.rendererBooting = true;
+    instance.canvas3d.hidden = false;
+    setRendererStatus(instance, "Đang khởi tạo 3D…", "Đang tải Babylon.js cùng website và kiểm tra GPU");
+    try {
+      const species = SPECIES_BY_ID.get(instance.state.speciesId);
+      syncAddressForSpecies(instance);
+      const runtime = await createRendererRuntime(instance, species);
+      if (instance.destroyed) { runtime.dispose(); return false; }
+      instance.renderer3d = runtime;
+      instance.root.dataset.renderer = runtime.backend;
+      instance.canvas.hidden = true;
+      instance.canvas3d.hidden = false;
+      instance.rendererViewportSize = { width: instance.canvas3d.clientWidth, height: instance.canvas3d.clientHeight };
+      syncRendererControls(instance, "3d");
+      if (persist) { instance.state.settings.renderer = "3d"; saveState(instance); }
+      setRendererStatus(instance, `${runtime.backend.toUpperCase()} · ${RENDERER_3D.QUALITY_PROFILES?.[instance.state.settings.quality]?.label || "Cân bằng"}`);
+      // The renderer already owns responsive sizing. A second resize here can
+      // invalidate Chromium's first WebGPU swap-buffer while it is submitted.
+      focusSurface(instance);
+      setToast(instance, `EonWild 3D đã sẵn sàng bằng ${runtime.backend.toUpperCase()}`);
+      return true;
+    } catch (error) {
+      instance.canvas3d.hidden = true;
+      instance.canvas.hidden = false;
+      instance.root.dataset.renderer = "lite";
+      syncRendererControls(instance, "lite");
+      setRendererStatus(instance, "Canvas 2D Lite");
+      setToast(instance, `3D không khởi tạo: ${String(error?.message || "GPU không tương thích").slice(0, 92)}. Đã dùng Lite Mode.`);
+      return false;
+    } finally { instance.rendererBooting = false; setRendererStatus(instance, instance.renderer3d ? `${instance.renderer3d.backend.toUpperCase()} · 3D` : "Canvas 2D Lite"); }
+  }
+
+  function disable3D(instance, persist = true) {
+    instance.renderer3d?.dispose?.();
+    instance.renderer3d = null;
+    if (instance.canvas3d) instance.canvas3d.hidden = true;
+    if (instance.canvas) instance.canvas.hidden = false;
+    instance.root.dataset.renderer = "lite";
+    instance.rendererViewportSize = null;
+    syncRendererControls(instance, "lite");
+    if (persist) { instance.state.settings.renderer = "lite"; saveState(instance); }
+    setRendererStatus(instance, "Canvas 2D Lite");
+    resizeCanvas(instance); focusSurface(instance); return true;
   }
 
   function previewGenes(instance) {
@@ -1230,7 +1556,7 @@
     wheel.hidden = !open;
     instance.root.querySelectorAll("[data-hwe-communication-open]").forEach((button) => button.setAttribute("aria-expanded", String(open)));
     if (open) wheel.querySelector("button:not([disabled])")?.focus?.({ preventScroll: true });
-    else instance.canvas?.focus?.({ preventScroll: true });
+    else focusSurface(instance);
     return true;
   }
 
@@ -1241,21 +1567,28 @@
     instance.root.classList.toggle("is-photo-mode", open);
     instance.photoMode = open;
     if (open) { instance.pausedBeforePhoto = instance.paused; instance.paused = true; overlay.querySelector("button")?.focus?.({ preventScroll: true }); }
-    else { instance.paused = Boolean(instance.pausedBeforePhoto); instance.canvas?.focus?.({ preventScroll: true }); }
+    else { instance.paused = Boolean(instance.pausedBeforePhoto); focusSurface(instance); }
     return true;
   }
 
   function capturePhoto(instance) {
-    if (!instance.canvas) return false;
+    const surface = activeSurface(instance);
+    if (!surface) return false;
     const filename = `hh-eonwild-${instance.state.speciesId}-${Date.now()}.png`;
-    if (typeof instance.canvas.toBlob === "function") {
-      instance.canvas.toBlob((blob) => {
+    if (instance.renderer3d?.capture) {
+      instance.renderer3d.capture().then((blob) => {
+        if (blob && downloadLocalFile(instance, filename, blob, "image/png")) setToast(instance, "Đã chụp PNG từ renderer 3D thật");
+      }).catch(() => setToast(instance, "Không thể chụp frame 3D trên thiết bị này"));
+      return true;
+    }
+    if (typeof surface.toBlob === "function") {
+      surface.toBlob((blob) => {
         if (blob && downloadLocalFile(instance, filename, blob, "image/png")) setToast(instance, "Đã chụp PNG từ vòng chơi thật");
       }, "image/png");
       return true;
     }
     try {
-      const anchor = global.document.createElement("a"); anchor.download = filename; anchor.href = instance.canvas.toDataURL("image/png"); anchor.click(); setToast(instance, "Đã chụp PNG"); return true;
+      const anchor = global.document.createElement("a"); anchor.download = filename; anchor.href = surface.toDataURL("image/png"); anchor.click(); setToast(instance, "Đã chụp PNG"); return true;
     } catch { setToast(instance, "Thiết bị không hỗ trợ chụp canvas"); return false; }
   }
 
@@ -1382,10 +1715,28 @@
 
   function bind(instance) {
     const { root, controller } = instance;
+    // `overflow:hidden` elements can still be scrolled programmatically when a
+    // focusable canvas is brought into view, especially on mobile Chromium.
+    // Keep the shell pinned; only .hwe-main owns scrolling.
+    root.addEventListener("scroll", () => {
+      if (root.scrollTop) root.scrollTop = 0;
+      if (root.scrollLeft) root.scrollLeft = 0;
+    }, { signal: controller.signal, passive: true });
+    if (typeof global.MutationObserver === "function") {
+      instance.motionObserver = new global.MutationObserver(() => {
+        if (!instance.renderer3d) return;
+        instance.renderer3d.setMotion?.(instance.state.settings.motion);
+        instance.renderer3d.setQuality?.(reduced3DPreference(instance) ? "static" : instance.state.settings.quality);
+      });
+      if (global.document?.documentElement) instance.motionObserver.observe(global.document.documentElement, { attributes: true, attributeFilter: ["class"] });
+      if (global.document?.body) instance.motionObserver.observe(global.document.body, { attributes: true, attributeFilter: ["class"] });
+    }
     root.addEventListener("click", (event) => {
       const target = event.target.closest?.("button"); if (!target) return;
       if (target.dataset.hweRoute) { global.location.hash = `#${target.dataset.hweRoute}`; return; }
-      if (target.matches("[data-hwe-quick-play]")) { if (instance.view === "world") { if (!instance.running) startGame(instance); else instance.canvas?.focus?.({ preventScroll: true }); } else global.location.hash = "#/game/world"; return; }
+      if (target.matches("[data-hwe-quick-play]")) { if (instance.view === "world") { if (!instance.running) startGame(instance); else focusSurface(instance); } else global.location.hash = "#/game/world"; return; }
+      if (target.matches(".hwe-render-toggle")) { if (instance.renderer3d) disable3D(instance); else enable3D(instance); return; }
+      if (target.dataset.hweRenderer) { if (target.dataset.hweRenderer === "lite") disable3D(instance); else enable3D(instance); return; }
       if (target.matches("[data-hwe-open-codex]")) { global.location.hash = "#/game/species"; return; }
       if (target.dataset.hweRealm) { switchRealm(instance, target.dataset.hweRealm, instance.view === "timeline"); return; }
       if (target.dataset.hweSpecies) { const species = SPECIES_BY_ID.get(target.dataset.hweSpecies); if (!species) return; if (instance.view === "world") { selectPlayableSpecies(instance, species); return; } root.querySelectorAll("[data-hwe-species]").forEach((card) => card.classList.toggle("is-selected", card === target)); updateCodexDetail(instance, species); setToast(instance, `${species.vietnamese} · ${tierLabel(tierForSpecies(species))}`); return; }
@@ -1396,7 +1747,7 @@
       if (target.dataset.hweDifficulty) { instance.state.settings.difficulty = target.dataset.hweDifficulty; root.querySelectorAll("[data-hwe-difficulty]").forEach((button) => button.classList.toggle("is-active", button === target)); saveState(instance); return; }
       if (target.matches("[data-hwe-start]")) { startGame(instance); return; }
       if (target.matches("[data-hwe-respawn]")) { respawn(instance); return; }
-      if (target.matches("[data-hwe-pause]")) { instance.paused = !instance.paused; target.setAttribute("aria-pressed", String(instance.paused)); target.textContent = instance.paused ? "▶" : "Ⅱ"; setToast(instance, instance.paused ? "Đã tạm dừng" : "Tiếp tục vòng đời"); return; }
+      if (target.matches("[data-hwe-pause]")) { instance.paused = !instance.paused; instance.renderer3d?.setPaused?.(instance.paused); target.setAttribute("aria-pressed", String(instance.paused)); target.textContent = instance.paused ? "▶" : "Ⅱ"; setToast(instance, instance.paused ? "Đã tạm dừng" : "Tiếp tục vòng đời"); return; }
       if (target.matches("[data-hwe-fullscreen]")) { instance.root.requestFullscreen?.().catch?.(() => setToast(instance, "Trình duyệt chưa cho phép toàn màn hình.")); return; }
       if (target.matches("[data-hwe-photo]")) { setPhotoMode(instance, true); return; }
       if (target.matches("[data-hwe-photo-close]")) { setPhotoMode(instance, false); return; }
@@ -1409,39 +1760,83 @@
       if (target.dataset.hweAction === "ability") { useFlagshipAbility(instance); return; }
       if (target.dataset.hweExpedition) { instance.state.activeExpedition = target.dataset.hweExpedition; saveState(instance); global.location.hash = "#/game/world"; return; }
       if (target.matches("[data-hwe-lineage-export]")) { exportLineage(instance); return; }
+      if (target.matches("[data-hwe-save-export]")) { exportSave(instance); return; }
+      if (target.matches("[data-hwe-save-import]")) { root.querySelector("[data-hwe-save-file]")?.click?.(); return; }
+      if (target.matches("[data-hwe-save-rollback]")) { restoreRollback(instance); return; }
       if (target.matches("[data-hwe-gene-preview]")) { previewGenes(instance); return; }
       if (target.matches("[data-hwe-replay-play]")) { toggleObserverPlayback(instance, target); return; }
       if (target.matches("[data-hwe-replay-clear]")) { if (target.dataset.confirm === "true") { clearInterval(instance.observerTimer); instance.observerTimer = 0; instance.state.replay = []; saveState(instance); mount(instance.host, { view: "observer" }); } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa replay"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Xóa replay local"; } }, 4000); } return; }
       if (target.matches("[data-hwe-network-audit]")) { const result = root.querySelector("[data-hwe-network-result]"); if (result) result.textContent = `${global.isSecureContext ? "HTTPS ✓" : "HTTPS chưa đạt"} · Backend authoritative, token phòng, moderation và anti-cheat chưa cấu hình. Multiplayer tiếp tục bị khóa an toàn.`; target.textContent = "Đã kiểm tra · vẫn khóa"; setToast(instance, "Capability audit hoàn tất, không tạo phòng giả"); return; }
       if (target.matches("[data-hwe-simulate-season]")) { simulateEcologySeason(instance, target); return; }
-      if (target.matches("[data-hwe-reset]")) { if (target.dataset.confirm === "true") { global.localStorage?.removeItem?.(STORAGE_KEY); global.localStorage?.removeItem?.(LEGACY_STORAGE_KEY); instance.state = normalizeState(); mount(instance.host, { view: "world" }); } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa save v1 + v2"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Khôi phục save mới…"; } }, 4000); } }
+      if (target.matches("[data-hwe-reset]")) { if (target.dataset.confirm === "true") { global.localStorage?.removeItem?.(STORAGE_KEY); global.localStorage?.removeItem?.(LEGACY_STORAGE_KEY); global.localStorage?.removeItem?.(OLDER_STORAGE_KEY); global.localStorage?.removeItem?.(ROLLBACK_STORAGE_KEY); instance.state = normalizeState(); mount(instance.host, { view: "world" }); } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa save v1 + v2 + v3"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Khôi phục save mới…"; } }, 4000); } }
     }, { signal: controller.signal });
     root.addEventListener("input", (event) => { if (event.target.matches("[data-hwe-species-search]")) filterSpecies(instance); if (event.target.matches("[data-hwe-replay-scrubber]")) drawObserver(instance, Number(event.target.value)); }, { signal: controller.signal });
     root.addEventListener("change", (event) => {
+      if (event.target.matches("[data-hwe-save-file]")) { importSave(instance, event.target.files?.[0]); event.target.value = ""; return; }
+      if (event.target.matches("[data-hwe-mode]")) { if (RENDERER_3D?.GAME_MODES?.some?.((mode) => mode.id === event.target.value && mode.available)) { instance.state.mode = event.target.value; saveState(instance); setToast(instance, "Đã lưu chế độ vòng đời"); } return; }
+      if (event.target.matches("[data-hwe-time-slice]")) {
+        const slice = RENDERER_3D?.TIME_SLICES?.find?.((row) => row.id === event.target.value && row.realmId === instance.state.realmId);
+        if (!slice) return;
+        const nextAddress = addressForSlice(instance.state, slice);
+        const compatible = instance.state.settings.convergence
+          ? SPECIES_BY_ID.get(instance.state.speciesId)
+          : playableSpeciesAtAddress(instance.state, nextAddress)[0];
+        if (!compatible) {
+          event.target.value = instance.state.worldAddress?.timeSliceId || "";
+          setToast(instance, "Time Slice này hiện chỉ dành cho Observer; chưa có Flagship chơi được");
+          return;
+        }
+        instance.state.worldAddress = nextAddress;
+        if (!instance.state.settings.convergence && compatible.id !== instance.state.speciesId) {
+          const lineage = instance.state.player.lineage;
+          instance.state.speciesId = compatible.id;
+          instance.state.player = normalizeState({ speciesId: compatible.id, realmId: instance.state.realmId, worldAddress: nextAddress, player: { lineage } }).player;
+        }
+        saveState(instance); mount(instance.host, { view: instance.view }); return;
+      }
       const key = event.target.dataset.hweSetting; if (!key) return;
       if (key === "realmId") { switchRealm(instance, String(event.target.value)); return; }
       if (!Object.hasOwn(instance.state.settings, key)) return;
       instance.state.settings[key] = event.target.type === "checkbox" ? event.target.checked : String(event.target.value).slice(0, 24);
       instance.state = normalizeState(instance.state); root.dataset.motion = instance.state.settings.motion; saveState(instance);
-      if (instance.view === "world" && ["convergence", "density", "seed", "worker"].includes(key)) mount(instance.host, { view: "world" });
+      if (key === "quality" && instance.renderer3d) instance.renderer3d.setQuality?.(instance.state.settings.quality);
+      if (key === "motion" && instance.renderer3d) {
+        instance.renderer3d.setMotion?.(instance.state.settings.motion);
+        instance.renderer3d.setQuality?.(instance.state.settings.motion === "static" ? "static" : instance.state.settings.quality);
+      }
+      if (key === "convergence") mount(instance.host, { view: instance.view });
+      else if (instance.view === "world" && ["density", "seed", "worker"].includes(key)) mount(instance.host, { view: "world" });
       else setToast(instance, "Đã lưu cấu hình cục bộ");
     }, { signal: controller.signal });
     root.addEventListener("pointerdown", (event) => { const key = event.target.closest?.("[data-hwe-touch]")?.dataset.hweTouch; if (key) { instance.keys?.add(key); event.target.setPointerCapture?.(event.pointerId); } }, { signal: controller.signal });
     ["pointerup", "pointercancel", "pointerleave"].forEach((name) => root.addEventListener(name, (event) => { const key = event.target.closest?.("[data-hwe-touch]")?.dataset.hweTouch; if (key) instance.keys?.delete(key); }, { signal: controller.signal }));
-    global.addEventListener?.("keydown", (event) => { if (!instance.canvas || !root.contains(global.document.activeElement)) return; if (event.code === "Escape") { if (instance.photoMode) setPhotoMode(instance, false); else setCommunicationWheel(instance, false); return; } instance.keys.add(event.code); if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault(); if (event.code === "KeyE") interact(instance); if (event.code === "KeyQ") sense(instance); if (event.code === "KeyR") useFlagshipAbility(instance); if (event.code === "KeyC") setCommunicationWheel(instance, instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden !== false); if (event.code === "KeyP") setPhotoMode(instance, !instance.photoMode); if (event.code === "KeyF" || event.code === "Space") defend(instance); if (event.code === "KeyN") createNest(instance); }, { signal: controller.signal });
+    global.addEventListener?.("keydown", (event) => { if (!activeSurface(instance) || !root.contains(global.document.activeElement)) return; if (event.code === "Escape") { if (instance.photoMode) setPhotoMode(instance, false); else setCommunicationWheel(instance, false); return; } instance.keys.add(event.code); if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault(); if (event.code === "KeyE") interact(instance); if (event.code === "KeyQ") sense(instance); if (event.code === "KeyR") useFlagshipAbility(instance); if (event.code === "KeyC") setCommunicationWheel(instance, instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden !== false); if (event.code === "KeyP") setPhotoMode(instance, !instance.photoMode); if (event.code === "KeyF" || event.code === "Space") defend(instance); if (event.code === "KeyN") createNest(instance); }, { signal: controller.signal });
     global.addEventListener?.("keyup", (event) => instance.keys?.delete(event.code), { signal: controller.signal });
-    global.document?.addEventListener?.("visibilitychange", () => { if (global.document.hidden) { instance.pausedByVisibility = !instance.paused; instance.paused = true; } else if (instance.pausedByVisibility) { instance.paused = false; instance.pausedByVisibility = false; instance.lastFrame = performance.now(); } }, { signal: controller.signal });
+    global.addEventListener?.("pagehide", () => {
+      instance.pausedByPageHide = !instance.paused;
+      instance.renderer3d?.setPaused?.(true);
+    }, { signal: controller.signal });
+    global.addEventListener?.("pageshow", () => {
+      if (instance.pausedByPageHide && !instance.paused && !global.document?.hidden) instance.renderer3d?.setPaused?.(false);
+      instance.pausedByPageHide = false;
+    }, { signal: controller.signal });
+    global.document?.addEventListener?.("visibilitychange", () => { if (global.document.hidden) { instance.pausedByVisibility = !instance.paused; instance.paused = true; instance.renderer3d?.setPaused?.(true); } else if (instance.pausedByVisibility) { instance.paused = false; instance.pausedByVisibility = false; instance.renderer3d?.setPaused?.(false); instance.lastFrame = performance.now(); } }, { signal: controller.signal });
   }
 
   function mount(host, options = {}) {
     if (!host) return false;
     unmount(host);
-    const instance = { host, root: null, view: safeView(options.view), state: readState(), controller: new AbortController(), destroyed: false, raf: 0, resizeObserver: null, toastTimer: 0, audioContext: null, eraFilter: "all", realmFilter: "all", tierFilter: "all", observerTimer: 0 };
+    const instance = { host, root: null, view: safeView(options.view), state: readState(), controller: new AbortController(), destroyed: false, raf: 0, resizeObserver: null, motionObserver: null, toastTimer: 0, audioContext: null, eraFilter: "all", realmFilter: "all", tierFilter: "all", observerTimer: 0 };
     if (instance.view === "world") {
       const current = SPECIES_BY_ID.get(instance.state.speciesId);
       if (!current || tierForSpecies(current) !== "flagship" || !speciesAllowedInRealm(current, instance.state.realmId, instance.state.settings.convergence)) {
         const fallback = SPECIES.find((species) => tierForSpecies(species) === "flagship" && speciesAllowedInRealm(species, instance.state.realmId, instance.state.settings.convergence));
-        if (fallback) { instance.state.speciesId = fallback.id; instance.state.player = normalizeState({ speciesId: fallback.id }).player; saveState(instance); }
+        if (fallback) {
+          instance.state.speciesId = fallback.id;
+          instance.state.player = normalizeState({ speciesId: fallback.id, realmId: instance.state.realmId, player: { lineage: instance.state.player.lineage } }).player;
+          syncAddressForSpecies(instance, fallback.id);
+          saveState(instance);
+        }
         else instance.view = "ecosystem";
       }
     }
@@ -1450,7 +1845,13 @@
     instances.set(host, instance); activeHosts.add(host); bind(instance);
     if (instance.view === "world") initWorld(instance);
     if (instance.view === "observer") initObserver(instance);
-    return Object.freeze({ version: VERSION, state: () => JSON.parse(JSON.stringify(instance.state)), pause: () => { instance.paused = true; }, resume: () => { instance.paused = false; }, destroy: () => unmount(host) });
+    return Object.freeze({
+      version: VERSION,
+      state: () => JSON.parse(JSON.stringify(instance.state)),
+      pause: () => { instance.paused = true; instance.renderer3d?.setPaused?.(true); return true; },
+      resume: () => { instance.paused = false; instance.renderer3d?.setPaused?.(false); instance.lastFrame = performance.now(); return true; },
+      destroy: () => unmount(host)
+    });
   }
 
   function unmount(host) {
@@ -1461,8 +1862,8 @@
     }
     const instance = instances.get(host);
     if (!instance) { activeHosts.delete(host); if (host) host.replaceChildren(); return false; }
-    instance.destroyed = true; instance.controller.abort(); clearTimeout(instance.toastTimer); clearInterval(instance.observerTimer); instance.resizeObserver?.disconnect?.(); global.cancelAnimationFrame?.(instance.raf); instance.workerAdapter?.close?.(); instance.simulation?.dispose?.(); instance.audioContext?.close?.().catch?.(() => {}); saveState(instance); host.replaceChildren(); instances.delete(host); activeHosts.delete(host); return true;
+    instance.destroyed = true; instance.controller.abort(); clearTimeout(instance.toastTimer); clearInterval(instance.observerTimer); instance.resizeObserver?.disconnect?.(); instance.motionObserver?.disconnect?.(); global.cancelAnimationFrame?.(instance.raf); instance.renderer3d?.dispose?.(); instance.renderer3d = null; instance.workerAdapter?.close?.(); instance.simulation?.dispose?.(); instance.audioContext?.close?.().catch?.(() => {}); saveState(instance); host.replaceChildren(); instances.delete(host); activeHosts.delete(host); return true;
   }
 
-  return Object.freeze({ VERSION, version: VERSION, STORAGE_KEY, SCHEMA_VERSION, WORLD_SIZE, ERA_META, REALMS, BIOMES, FLAGSHIP_IDS, SPECIES, EXPEDITIONS, normalizeState, stepVitals, terrainAt, terrainForRealm, createWorld, findHabitatSpawn, mount, unmount });
+  return Object.freeze({ VERSION, version: VERSION, STORAGE_KEY, LEGACY_STORAGE_KEY, SCHEMA_VERSION, WORLD_SIZE, ERA_META, REALMS, BIOMES, FLAGSHIP_IDS, SPECIES, EXPEDITIONS, normalizeState, stepVitals, terrainAt, terrainForRealm, createWorld, findHabitatSpawn, mount, unmount });
 });

@@ -63,6 +63,7 @@ body:has(.hwe-root) .app-workspace {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  overflow: clip;
 }
 
 .hwe-root {
@@ -79,6 +80,7 @@ body:has(.hwe-root) .app-workspace {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  overflow: clip;
   border: 1px solid var(--hwe-line);
   border-radius: 22px;
   color: var(--hwe-text);
@@ -3857,6 +3859,226 @@ body:has(.hwe-root) .app-workspace {
   .hwe-root::after {
     display: none;
   }
+}
+
+/* EonWild 3D foundation --------------------------------------------------- */
+.hwe-realm-selector > .hwe-world-address {
+  grid-column: 2 / -1;
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(260px, 1.3fr);
+  min-height: 44px;
+  padding: 5px 8px;
+  border-color: rgba(85, 230, 255, 0.3);
+  background: linear-gradient(100deg, rgba(85, 230, 255, 0.08), rgba(156, 114, 255, 0.08));
+  cursor: default;
+}
+
+.hwe-world-address > span {
+  display: grid;
+  min-width: 0;
+}
+
+.hwe-world-address > span strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hwe-world-address select {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  padding: 4px 34px 4px 10px;
+  border-color: rgba(85, 230, 255, 0.26);
+  background: rgba(3, 18, 26, 0.82);
+  color: #e9fbff;
+}
+
+.hwe-render-surface {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 300px;
+  outline: none;
+  touch-action: none;
+}
+
+.hwe-render-surface:focus-visible {
+  box-shadow: inset 0 0 0 3px #55e6ff, inset 0 0 34px rgba(85, 230, 255, 0.18);
+}
+
+.hwe-render-surface--3d {
+  background: #02080d;
+}
+
+.hwe-root[data-renderer="webgpu"] .hwe-viewport,
+.hwe-root[data-renderer="webgl2"] .hwe-viewport,
+.hwe-root[data-renderer="webgl1"] .hwe-viewport,
+.hwe-root[data-renderer="webgl"] .hwe-viewport {
+  border-color: rgba(85, 230, 255, 0.58);
+  box-shadow: inset 0 0 48px rgba(0, 0, 0, 0.28), 0 0 30px rgba(85, 230, 255, 0.12), 0 12px 30px rgba(0, 8, 16, 0.3);
+}
+
+.hwe-render-loading {
+  position: absolute;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(85, 230, 255, 0.18), transparent 24%),
+    radial-gradient(circle at 54% 45%, rgba(156, 114, 255, 0.16), transparent 38%),
+    #020913;
+  color: #edfaff;
+  text-align: center;
+}
+
+.hwe-render-loading > span {
+  position: relative;
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  border: 1px solid rgba(85, 230, 255, 0.52);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(85, 230, 255, 0.22), rgba(15, 22, 50, 0.9));
+  box-shadow: 0 0 34px rgba(85, 230, 255, 0.28), inset 0 0 22px rgba(156, 114, 255, 0.22);
+}
+
+.hwe-render-loading > span::before,
+.hwe-render-loading > span::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border: 2px solid transparent;
+  border-top-color: #55e6ff;
+  border-right-color: #9c72ff;
+  border-radius: 50%;
+  animation: hwe3dBootOrbit 1.2s linear infinite;
+}
+
+.hwe-render-loading > span::after {
+  inset: -18px;
+  border-top-color: #ff58c8;
+  border-right-color: transparent;
+  animation-duration: 2.1s;
+  animation-direction: reverse;
+}
+
+.hwe-render-loading > span i {
+  position: absolute;
+  inset: -28px;
+  border-radius: 50%;
+  background: conic-gradient(from 90deg, transparent, rgba(85, 230, 255, 0.42), transparent 28%, rgba(255, 88, 200, 0.35), transparent 58%);
+  filter: blur(6px);
+  opacity: 0.72;
+  animation: hwe3dBootPulse 1.8s ease-in-out infinite;
+}
+
+.hwe-render-loading > span b {
+  position: relative;
+  z-index: 2;
+  font-size: 1.15rem;
+}
+
+.hwe-render-loading > strong { font-size: clamp(1.05rem, 2vw, 1.35rem); }
+.hwe-render-loading > small { color: #a8ccda; font-size: 0.84rem; }
+
+.hwe-hud--top .hwe-render-toggle {
+  display: inline-flex;
+  width: auto;
+  min-width: 62px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-color: rgba(85, 230, 255, 0.44);
+  color: #eafcff;
+}
+
+.hwe-render-toggle > i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #55e6ff;
+  box-shadow: 0 0 12px #55e6ff;
+  animation: hweStatusPulse 2.2s ease-in-out infinite;
+}
+
+.hwe-render-choice {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.hwe-render-choice button {
+  display: grid;
+  min-height: 60px;
+  align-content: center;
+  gap: 3px;
+  border-color: rgba(85, 230, 255, 0.25);
+  background: linear-gradient(135deg, rgba(85, 230, 255, 0.06), rgba(156, 114, 255, 0.08));
+}
+
+.hwe-render-choice button b { font-size: 1rem; }
+.hwe-render-choice button span { color: #a9c8d4; font-size: 0.72rem; }
+.hwe-render-choice button.is-active { border-color: #55e6ff; box-shadow: inset 0 0 20px rgba(85, 230, 255, 0.11), 0 0 18px rgba(85, 230, 255, 0.08); }
+
+.hwe-start-panel .hwe-prototype-notice {
+  margin: -2px auto 12px;
+  padding: 8px 11px;
+  border: 1px solid rgba(255, 208, 110, 0.2);
+  border-radius: 10px;
+  background: rgba(255, 208, 110, 0.05);
+  color: #d9d5bc;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.hwe-data-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hwe-data-actions button {
+  min-height: 42px;
+  padding-inline: 10px;
+}
+
+@media (max-width: 1180px) {
+  .hwe-realm-selector > .hwe-world-address { grid-column: 1 / -1; }
+}
+
+@media (max-width: 760px) {
+  .hwe-realm-selector > .hwe-world-address {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hwe-world-address select { min-height: 44px; }
+  .hwe-hud--top .hwe-render-toggle { min-width: 52px; padding-inline: 7px; }
+  .hwe-render-loading { padding-bottom: 92px; }
+  .hwe-data-actions { grid-template-columns: minmax(0, 1fr); }
+}
+
+@keyframes hwe3dBootOrbit { to { transform: rotate(360deg); } }
+@keyframes hwe3dBootPulse { 50% { opacity: 1; transform: scale(1.08); } }
+
+.hwe-root[data-motion="static"] :where(.hwe-render-loading > span::before, .hwe-render-loading > span::after, .hwe-render-loading > span i, .hwe-render-toggle > i) {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hwe-render-loading > span::before,
+  .hwe-render-loading > span::after,
+  .hwe-render-loading > span i,
+  .hwe-render-toggle > i { animation: none !important; }
 }
 
 /* Visibility is authoritative, including panels that have their own display. */

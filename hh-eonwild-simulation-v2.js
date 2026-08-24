@@ -146,7 +146,8 @@
     ["wolf", "Canis lupus", "meat", "modern", ["forest", "grassland", "tundra"], 45, 1.5, 3, 30, ["scent", "vocal"]],
     ["honeybee", "Apis mellifera", "nectar", "modern", ["grassland", "forest"], 0.0001, 2.8, 1, 14, ["polarized", "pheromone"]],
     ["electric-eel", "Electrophorus electricus", "meat", "modern", ["wetland", "reef"], 20, 1.4, 3, 8, ["electric", "pressure"]],
-    ["blue-whale", "Balaenoptera musculus", "filter", "modern", ["ocean"], 120000, 1.8, 2, 20, ["infrasound", "pressure"]]
+    ["blue-whale", "Balaenoptera musculus", "filter", "modern", ["ocean"], 120000, 1.8, 2, 20, ["infrasound", "pressure"]],
+    ["pteranodon", "Pteranodon longiceps", "meat", "mesozoic", ["ocean", "reef"], 35, 3.4, 3, 40, ["vision", "thermal"]]
   ];
   const SPECIES_TRAITS = Object.freeze({
     tyrannosaurus: ["run", ["scent-track", "heavy-run", "bite"], "territorial-roar", "egg-nest"],
@@ -160,7 +161,8 @@
     wolf: ["run", ["scent-track", "pack-run", "bite"], "pack-howl", "live-birth"],
     honeybee: ["fly", ["hover", "waggle-dance", "pollen-route"], "wing-vibration", "colony-egg"],
     "electric-eel": ["swim", ["electric-scan", "surface-breathe", "stun-pulse"], "electric-pulse", "foam-nest"],
-    "blue-whale": ["swim", ["ocean-cruise", "deep-dive", "lunge-filter"], "ocean-song", "live-birth"]
+    "blue-whale": ["swim", ["ocean-cruise", "deep-dive", "lunge-filter"], "ocean-song", "live-birth"],
+    pteranodon: ["fly", ["cliff-launch", "coastal-soar", "surface-skim"], "beak-clatter", "cliff-colony-egg"]
   });
   const FLAGSHIP_SPECIES = Object.freeze(SPECIES_ROWS.map((row) => Object.freeze({
     id: row[0], name: row[1], diet: row[2], realm: row[3], biomes: Object.freeze(row[4].slice()),
@@ -183,7 +185,6 @@
     ["brachiosaurus", "Brachiosaurus", "plant", "mesozoic", ["forest", "grassland"], 35000, 0.7, 2, 7, ["vision", "infrasound"]],
     ["archaeopteryx", "Archaeopteryx", "omnivore", "mesozoic", ["forest", "wetland"], 1, 2.1, 2, 19, ["vision", "vibration"]],
     ["velociraptor", "Velociraptor", "meat", "mesozoic", ["grassland", "forest"], 15, 2.8, 3, 28, ["scent", "vision"]],
-    ["pteranodon", "Pteranodon", "meat", "mesozoic", ["ocean", "reef"], 35, 3.4, 3, 40, ["vision", "thermal"]],
     ["mosasaurus", "Mosasaurus", "meat", "mesozoic", ["ocean", "reef"], 14000, 2.2, 4, 26, ["pressure", "scent"]],
     ["ichthyosaurus", "Ichthyosaurus", "meat", "mesozoic", ["ocean", "reef"], 90, 2.0, 3, 22, ["pressure", "vibration"]],
     ["phorusrhacos", "Phorusrhacos", "meat", "ice-age", ["grassland", "forest"], 130, 2.2, 3, 28, ["vision", "scent"]]
