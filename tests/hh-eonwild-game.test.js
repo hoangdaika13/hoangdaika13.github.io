@@ -56,13 +56,13 @@ const assertGeneBounds = (genes) => {
   assert.equal(content.validateGenes(genes).valid, true);
 };
 
-test("EonWild v3 game composes versioned ecology and 3D APIs", () => {
-  assert.equal(game.VERSION, "3.0.0");
+test("EonWild v4 game composes versioned ecology and cinematic 3D APIs", () => {
+  assert.equal(game.VERSION, "4.0.0");
   assert.equal(game.version, game.VERSION);
-  assert.equal(game.SCHEMA_VERSION, 3);
-  assert.equal(game.STORAGE_KEY, "hh.game.eonwild.v3");
-  assert.equal(game.LEGACY_STORAGE_KEY, "hh.game.eonwild.v2");
-  assert.equal(game.WORLD_SIZE, 4096);
+  assert.equal(game.SCHEMA_VERSION, 4);
+  assert.equal(game.STORAGE_KEY, "hh.game.eonwild.v4");
+  assert.equal(game.LEGACY_STORAGE_KEY, "hh.game.eonwild.v3");
+  assert.equal(game.WORLD_SIZE, 16384);
 
   assert.equal(content.VERSION, "2.0.0");
   assert.equal(content.SCHEMA_VERSION, 2);
@@ -72,8 +72,8 @@ test("EonWild v3 game composes versioned ecology and 3D APIs", () => {
   assert.equal(simulation.VERSION, "2.0.0");
   assert.equal(simulation.SCHEMA_VERSION, 2);
   assert.equal(simulation.FIXED_STEP, 1 / 30);
-  assert.equal(core3d.VERSION, "3.0.0");
-  assert.equal(renderer3d.VERSION, "1.2.0");
+  assert.equal(core3d.VERSION, "3.1.0");
+  assert.equal(renderer3d.VERSION, "1.3.0");
   assert.equal(core3d.BABYLON_VERSION, "9.22.1");
   assert.equal(renderer3d.BABYLON_VERSION, "9.22.1");
   for (const name of ["normalizeState", "stepVitals", "terrainAt", "createWorld", "mount", "unmount"]) {
@@ -190,7 +190,7 @@ test("v2 gene normalization, mutation and inheritance are deterministic and boun
   assert.equal(content.validateGeneProfile({ bodyScale: 9 }).valid, false);
 });
 
-test("game save v3 migrates old state and bounds world address, renderer, vitals and history", () => {
+test("game save v4 migrates old coordinates once and bounds world address, renderer, vitals and history", () => {
   const records = Array.from({ length: 40 }, (_, index) => ({
     id: `generation<>-${index}`,
     generation: index + 1,
@@ -241,7 +241,7 @@ test("game save v3 migrates old state and bounds world address, renderer, vitals
     eventJournal: Array.from({ length: 60 }, (_, index) => ({ id: `event-${index}`, label: "y".repeat(120), at: index }))
   });
 
-  assert.equal(normalized.schemaVersion, 3);
+  assert.equal(normalized.schemaVersion, 4);
   assert.equal(normalized.speciesId, "mammuthus");
   assert.equal(normalized.realmId, "ice-age");
   assert.equal(normalized.player.x, 80);
@@ -276,6 +276,28 @@ test("game save v3 migrates old state and bounds world address, renderer, vitals
   assert.equal(normalized.worldAddress.realmId, "ice-age");
   assert.ok(core3d.TIME_SLICES.some((slice) => slice.id === normalized.worldAddress.timeSliceId));
   assert.equal(normalized.mode, "one-life");
+
+  const migrated = game.normalizeState({
+    schemaVersion: 3,
+    speciesId: "triceratops",
+    realmId: "mesozoic",
+    worldAddress: { realmId: "mesozoic", timeSliceId: "cretaceous-laramidia", regionId: "late-cretaceous-floodplain", biomeId: "forest", chunkX: 8, chunkZ: 12, seed: "legacy" },
+    player: { x: 1024, y: 2048, spawnPending: false },
+    replay: [{ x: 512, y: 768, t: 1, health: 90 }],
+    heatmap: [{ x: 256, y: 320, value: 2 }],
+    heatmapCellSize: 64
+  });
+  assert.equal(migrated.player.x, 4096);
+  assert.equal(migrated.player.y, 8192);
+  assert.equal(migrated.replay[0].x, 2048);
+  assert.equal(migrated.heatmap[0].y, 1280);
+  assert.equal(migrated.heatmapCellSize, 64);
+  assert.equal(migrated.worldAddress.chunkX, 32);
+  assert.equal(migrated.worldAddress.chunkZ, 48);
+  const normalizedAgain = game.normalizeState(migrated);
+  assert.equal(normalizedAgain.player.x, migrated.player.x, "schema v4 coordinates must not be scaled twice");
+  assert.equal(normalizedAgain.replay[0].x, migrated.replay[0].x, "replay coordinates must not be scaled twice");
+  assert.equal(normalizedAgain.worldAddress.chunkX, migrated.worldAddress.chunkX, "world address must not be scaled twice");
 });
 
 test("save normalization keeps Time Slice authoritative unless Convergence is explicit", () => {
@@ -710,8 +732,8 @@ test("only Flagship species are offered as playable while other tiers stay truth
   assert.match(gameSource, /compact\s*&&\s*\(unavailable\s*\|\|\s*tier\s*!==\s*"flagship"\)/);
 });
 
-test("lazy loader and service worker cache the complete ordered v3 bundle", () => {
-  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=11"\][\s\S]*?scripts:\s*\["hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=4",\s*"hh-eonwild-renderer-3d\.js\?v=6",\s*"hh-eonwild-game\.js\?v=14"\]/);
+test("lazy loader and service worker cache the complete ordered v4 bundle", () => {
+  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=12"\][\s\S]*?scripts:\s*\["hh-eonwild-cinematic-pack\.js\?v=1",\s*"hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=5",\s*"hh-eonwild-renderer-3d\.js\?v=9",\s*"hh-eonwild-game\.js\?v=15"\]/);
   assert.match(loader, /value === "\/game" \|\| value\.startsWith\("\/game\/"\)\) return \["game"\]/);
   const runtimeAssetsSource = worker.slice(
     worker.indexOf("const RUNTIME_ASSETS"),
@@ -719,12 +741,14 @@ test("lazy loader and service worker cache the complete ordered v3 bundle", () =
   );
   const coreAssetsSource = worker.slice(worker.indexOf("const CORE"));
   for (const asset of [
-    "./hh-eonwild-game.css?v=11",
+    "./hh-eonwild-cinematic-pack.js?v=1",
+    "./hh-eonwild-cinematic-pack-worker.js?v=1",
+    "./hh-eonwild-game.css?v=12",
     "./hh-eonwild-content-v2.js?v=3",
     "./hh-eonwild-simulation-v2.js?v=4",
-    "./hh-eonwild-3d-core.js?v=4",
-    "./hh-eonwild-renderer-3d.js?v=6",
-    "./hh-eonwild-game.js?v=14"
+    "./hh-eonwild-3d-core.js?v=5",
+    "./hh-eonwild-renderer-3d.js?v=9",
+    "./hh-eonwild-game.js?v=15"
   ]) assert.ok(worker.includes(`"${asset}"`), `service worker must cache ${asset}`);
   for (const asset of [
     "./vendor/babylon-9.22.1.js?v=9.22.1",
@@ -737,7 +761,7 @@ test("lazy loader and service worker cache the complete ordered v3 bundle", () =
     assert.ok(runtimeAssetsSource.includes(`"${asset}"`), `${asset} must be a runtime asset`);
     assert.ok(!coreAssetsSource.includes(`"${asset}"`), `${asset} must not be a core asset`);
   }
-  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v881"/);
+  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v884"/);
 
   for (const asset of ["performance-loader.js", "script.js"]) {
     const escaped = asset.replaceAll(".", "\\.");
@@ -771,7 +795,8 @@ test("runtime fallback, Time Slice filtering and motion/resize controls fail clo
   assert.match(gameSource, /instance\.resizeObserver\?\.observe\(viewport\)/);
   assert.match(gameSource, /reduced3DPreference/);
   assert.match(gameSource, /matchMedia\?\.\("\(prefers-reduced-motion: reduce\)"\)/);
-  assert.match(gameSource, /adaptiveQuality:\s*instance\.state\.settings\.adaptiveQuality/);
+  assert.match(gameSource, /const adaptiveQuality = instance\.state\.settings\.quality !== "personal" && instance\.state\.settings\.adaptiveQuality/);
+  assert.match(gameSource, /adaptiveQuality:\s*adaptiveQuality/);
   assert.match(gameSource, /bootToken\s*!==\s*instance\.rendererBootToken/);
   assert.doesNotMatch(gameSource, /bootToken\s*!==\s*instance\.rendererBootToken\s*\|\|\s*instance\.state\.settings\.renderer\s*===\s*"lite"/);
   assert.match(gameSource, /instance\.rendererBootToken\s*=\s*\(instance\.rendererBootToken\s*\|\|\s*0\)\s*\+\s*1/);
@@ -809,7 +834,7 @@ test("visibility and unmount clean every EonWild v3 runtime resource", () => {
 
 test("multiplayer UI is truthful, local-first and contains no fake network implementation", () => {
   assert.match(gameSource, /Local single-player/);
-  assert.match(gameSource, /Save v1\/v2 được migrate an toàn sang schema v3/i);
+  assert.match(gameSource, /Save v1–v3 được migrate đúng một lần sang schema v4/i);
   assert.match(gameSource, /Realtime chưa được bật/i);
   assert.match(gameSource, /Không có room code, người online, leaderboard hoặc máy chủ giả/i);
   assert.match(gameSource, /Backend authoritative mới là điều kiện bắt buộc/i);

@@ -6,18 +6,30 @@
 })(typeof window !== "undefined" ? window : globalThis, function createEonWild(global) {
   "use strict";
 
-  const VERSION = "3.0.0";
-  const STORAGE_KEY = "hh.game.eonwild.v3";
-  const LEGACY_STORAGE_KEY = "hh.game.eonwild.v2";
+  const VERSION = "4.0.0";
+  const STORAGE_KEY = "hh.game.eonwild.v4";
+  const LEGACY_STORAGE_KEY = "hh.game.eonwild.v3";
+  const V2_STORAGE_KEY = "hh.game.eonwild.v2";
   const OLDER_STORAGE_KEY = "hh.game.eonwild.v1";
-  const ROLLBACK_STORAGE_KEY = "hh.game.eonwild.rollback.v3";
-  const SCHEMA_VERSION = 3;
-  const WORLD_SIZE = 4096;
+  const ROLLBACK_STORAGE_KEY = "hh.game.eonwild.rollback.v4";
+  const LEGACY_ROLLBACK_STORAGE_KEY = "hh.game.eonwild.rollback.v3";
+  const SCHEMA_VERSION = 4;
+  const WORLD_SIZE = 16384;
+  const LEGACY_WORLD_SCALE = 4;
   const VIEW_IDS = Object.freeze(["world", "species", "ecosystem", "timeline", "expeditions", "lineage", "observer", "network", "settings"]);
   const CONTENT = global.HHEonWildContentV2 || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-content-v2.js"); } catch { return null; } })() : null);
   const SIMULATION = global.HHEonWildSimulationV2 || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-simulation-v2.js"); } catch { return null; } })() : null);
   const RENDERER_3D = global.HHEonWild3D || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-3d-core.js"); } catch { return null; } })() : null);
   const RENDERER_ADAPTER = global.HHEonWildRenderer3D || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-renderer-3d.js"); } catch { return null; } })() : null);
+  const PERSONAL_QUALITY_PROFILE = Object.freeze({ id: "personal", label: "Cinematic Personal", targetFps: 30 });
+  const CINEMATIC_PACK_FALLBACK = Object.freeze([
+    { id: "creature-ultra", label: "Creature Ultra Pack", description: "Model đúng loài, rig, animation, PBR và bốn LOD.", accent: "#ff9b70" },
+    { id: "forest-vegetation", label: "Forest & Vegetation Pack", description: "Cây, cỏ, dương xỉ và vật liệu tán lá độ phân giải cao.", accent: "#65f0a5" },
+    { id: "terrain-rock", label: "Terrain & Rock Pack", description: "Heightmap, splat material, đá quét và displacement.", accent: "#e7bb78" },
+    { id: "ocean", label: "Ocean Pack", description: "Sóng, foam, caustics, bờ biển và môi trường dưới nước.", accent: "#55d9ff" },
+    { id: "weather-atmosphere", label: "Weather & Atmosphere Pack", description: "Mây, mưa, sương, bão, tuyết, tro và LUT điện ảnh.", accent: "#9d8cff" },
+    { id: "cinematic-audio", label: "Cinematic Audio Pack", description: "Ambience và âm thanh động vật có giấy phép rõ ràng.", accent: "#ff70c8" }
+  ].map(Object.freeze));
   const ERA_META = Object.freeze({
     paleozoic: { label: "Đại Cổ sinh", range: "541–252 triệu năm", color: "#58e6d2" },
     mesozoic: { label: "Đại Trung sinh", range: "252–66 triệu năm", color: "#ffb65f" },
@@ -204,6 +216,13 @@
 
   function normalizeState(value = {}) {
     const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    // A state without an explicit schema is treated as newly-created v4 data.
+    // Persisted v1-v3 payloads always receive a schema in readState/importSave,
+    // so their coordinates are scaled exactly once and the normalized result
+    // is immediately stamped v4.
+    const sourceSchema = Number.isInteger(Number(source.schemaVersion)) ? Number(source.schemaVersion) : SCHEMA_VERSION;
+    const coordinateScale = sourceSchema >= 1 && sourceSchema < SCHEMA_VERSION ? LEGACY_WORLD_SCALE : 1;
+    const scaledCoordinate = (coordinate, fallback) => coordinate == null ? fallback : Number(coordinate) * coordinateScale;
     const player = source.player && typeof source.player === "object" ? source.player : {};
     const settings = source.settings && typeof source.settings === "object" ? source.settings : {};
     const speciesId = SPECIES_BY_ID.has(source.speciesId) ? source.speciesId : "triceratops";
@@ -214,7 +233,10 @@
     const cartridgeAddress = RENDERER_3D?.SPECIES_CARTRIDGES?.[speciesId]
       ? RENDERER_3D.addressForSpecies?.(speciesId, seed)
       : RENDERER_3D?.createWorldAddress?.({ realmId, seed });
-    const requestedAddress = source.worldAddress && typeof source.worldAddress === "object" ? source.worldAddress : cartridgeAddress;
+    const sourceAddress = source.worldAddress && typeof source.worldAddress === "object" ? source.worldAddress : null;
+    const requestedAddress = sourceAddress && coordinateScale > 1
+      ? { ...sourceAddress, chunkX: Number(sourceAddress.chunkX || 0) * coordinateScale, chunkZ: Number(sourceAddress.chunkZ || 0) * coordinateScale }
+      : sourceAddress || cartridgeAddress;
     let worldAddress = RENDERER_3D?.createWorldAddress
       ? RENDERER_3D.createWorldAddress({ ...(requestedAddress || {}), realmId, seed })
       : { realmId, timeSliceId: "legacy-realm", regionId: "legacy-region", biomeId: "grassland", chunkX: 0, chunkZ: 0, seed };
@@ -229,8 +251,8 @@
       worldAddress,
       mode: RENDERER_3D?.GAME_MODES?.some?.((mode) => mode.id === source.mode && mode.available) ? source.mode : "one-life",
       player: {
-        x: clamp(player.x || WORLD_SIZE * .48, 80, WORLD_SIZE - 80),
-        y: clamp(player.y || WORLD_SIZE * .48, 80, WORLD_SIZE - 80),
+        x: clamp(scaledCoordinate(player.x, WORLD_SIZE * .48), 80, WORLD_SIZE - 80),
+        y: clamp(scaledCoordinate(player.y, WORLD_SIZE * .48), 80, WORLD_SIZE - 80),
         health: clamp(player.health ?? 100, 0, 100), hunger: clamp(player.hunger ?? 82, 0, 100),
         thirst: clamp(player.thirst ?? 78, 0, 100), stamina: clamp(player.stamina ?? 100, 0, 100),
         growth: clamp(player.growth ?? 18, 0, 100), lineage: clamp(player.lineage || 0, 0, 9999),
@@ -244,7 +266,7 @@
         motion: ["static", "balanced", "cinematic"].includes(settings.motion) ? settings.motion : "balanced",
         density: ["low", "balanced", "high"].includes(settings.density) ? settings.density : "balanced",
         renderer: ["auto", "3d", "lite"].includes(settings.renderer) ? settings.renderer : "auto",
-        quality: ["static", "light", "balanced", "high", "cinematic"].includes(settings.quality) ? settings.quality : "balanced",
+        quality: ["static", "light", "balanced", "high", "cinematic", "personal"].includes(settings.quality) ? settings.quality : "balanced",
         sound: settings.sound === true,
         soundVolume: clamp(settings.soundVolume ?? 70, 0, 100),
         convergence,
@@ -253,6 +275,16 @@
         photoUi: settings.photoUi !== false,
         photoFov: clamp(settings.photoFov ?? 62, 35, 100),
         photoExposure: clamp(settings.photoExposure ?? 100, 50, 160),
+        photoFocalLength: clamp(settings.photoFocalLength ?? 50, 18, 200),
+        photoAperture: clamp(settings.photoAperture ?? 4, 1.4, 16),
+        photoShutter: clamp(settings.photoShutter ?? 250, 15, 8000),
+        photoIso: clamp(settings.photoIso ?? 100, 50, 6400),
+        photoExposureComp: clamp(settings.photoExposureComp ?? 0, -5, 5),
+        photoFocusDistance: clamp(settings.photoFocusDistance ?? 8, .3, 500),
+        photoAutofocus: settings.photoAutofocus !== false,
+        photoComposition: ["off", "thirds"].includes(settings.photoComposition) ? settings.photoComposition : "thirds",
+        photoCrop: ["native", "2.39", "1.85", "1.0"].includes(settings.photoCrop) ? settings.photoCrop : "native",
+        photoShake: clamp(settings.photoShake ?? 18, 0, 100),
         seed
       },
       discoveries: Array.isArray(source.discoveries) ? [...new Set(source.discoveries.filter((id) => SPECIES_BY_ID.has(id)))].slice(0, 500) : [],
@@ -264,13 +296,15 @@
         bornAt: clamp(record.bornAt || Date.now(), 0, Number.MAX_SAFE_INTEGER), survived: clamp(record.survived, 0, 100)
       })) : [],
       replay: Array.isArray(source.replay) ? source.replay.filter((sample) => sample && typeof sample === "object").slice(-240).map((sample) => ({
-        x: clamp(sample.x, 0, WORLD_SIZE), y: clamp(sample.y, 0, WORLD_SIZE), t: clamp(sample.t, 0, Number.MAX_SAFE_INTEGER), health: clamp(sample.health, 0, 100), event: String(sample.event || "move").slice(0, 32)
+        x: clamp(Number(sample.x) * coordinateScale, 0, WORLD_SIZE), y: clamp(Number(sample.y) * coordinateScale, 0, WORLD_SIZE), t: clamp(sample.t, 0, Number.MAX_SAFE_INTEGER), health: clamp(sample.health, 0, 100), event: String(sample.event || "move").slice(0, 32)
       })) : [],
       heatmap: Array.isArray(source.heatmap) ? source.heatmap.filter((cell) => cell && typeof cell === "object").slice(0, 256).map((cell) => ({
-        x: clamp(cell.x, 0, 4096), y: clamp(cell.y, 0, 4096), value: clamp(cell.value, 0, 1000000),
+        x: clamp(Number(cell.x) * coordinateScale, 0, WORLD_SIZE), y: clamp(Number(cell.y) * coordinateScale, 0, WORLD_SIZE), value: clamp(cell.value, 0, 1000000),
         types: Object.fromEntries(Object.entries(cell.types && typeof cell.types === "object" ? cell.types : {}).slice(0, 8).map(([key, value]) => [String(key).replace(/[^a-z0-9-]/gi, "").slice(0, 24), clamp(value, 0, 1000000)]).filter(([key]) => key))
       })) : [],
-      heatmapCellSize: clamp(source.heatmapCellSize || 64, 16, 512),
+      // Heatmap x/y are cell indices, not metres. Scaling both the indices and
+      // cell size would move legacy hotspots 16× instead of the intended 4×.
+      heatmapCellSize: clamp(source.heatmapCellSize ?? 64, 16, 512),
       ecologySnapshot: source.ecologySnapshot && typeof source.ecologySnapshot === "object" ? {
         season: clamp(source.ecologySnapshot.season || 0, 0, 9999), updatedAt: clamp(source.ecologySnapshot.updatedAt || 0, 0, Number.MAX_SAFE_INTEGER),
         title: String(source.ecologySnapshot.title || "Chưa mô phỏng").slice(0, 80), copy: String(source.ecologySnapshot.copy || "Chạy một mùa để tạo dữ liệu local.").slice(0, 220),
@@ -333,9 +367,12 @@
     try {
       const current = global.localStorage?.getItem?.(STORAGE_KEY);
       const legacy = global.localStorage?.getItem?.(LEGACY_STORAGE_KEY);
+      const v2 = global.localStorage?.getItem?.(V2_STORAGE_KEY);
       const older = global.localStorage?.getItem?.(OLDER_STORAGE_KEY);
-      const state = normalizeState(JSON.parse(current || legacy || older || "{}"));
-      if (!current && (legacy || older)) global.localStorage?.setItem?.(STORAGE_KEY, JSON.stringify(state));
+      const raw = JSON.parse(current || legacy || v2 || older || "{}");
+      const inferredSchema = current ? SCHEMA_VERSION : legacy ? 3 : v2 ? 2 : older ? 1 : SCHEMA_VERSION;
+      const state = normalizeState({ ...raw, schemaVersion: Number(raw?.schemaVersion) || inferredSchema });
+      if (!current && (legacy || v2 || older)) global.localStorage?.setItem?.(STORAGE_KEY, JSON.stringify(state));
       return state;
     } catch { return normalizeState(); }
   };
@@ -412,7 +449,8 @@
       <section class="hwe-viewport" data-hwe-viewport aria-label="Thế giới EonWild đang chơi">
         <canvas class="hwe-render-surface hwe-render-surface--lite" data-hwe-canvas tabindex="0" aria-label="Bản đồ sinh tồn Lite. Dùng WASD hoặc phím mũi tên để di chuyển."></canvas>
         <canvas class="hwe-render-surface hwe-render-surface--3d" data-hwe-canvas-3d tabindex="0" aria-label="Thế giới sinh tồn 3D. Kéo để xoay camera, cuộn để zoom, dùng WASD để di chuyển." hidden></canvas>
-        <div class="hwe-render-loading" data-hwe-render-loading hidden role="status" aria-live="polite"><span><i></i><b>3D</b></span><strong>Đang khởi tạo EonWild 3D…</strong><small data-hwe-render-loading-copy>Đang kiểm tra WebGPU và WebGL2</small><button type="button" data-hwe-render-cancel>Dùng Canvas Lite ngay</button></div>
+        <div class="hwe-render-loading" data-hwe-render-loading hidden role="status" aria-live="polite"><span><i></i><b>EW</b></span><strong>Đang mở thế giới điện ảnh…</strong><small data-hwe-render-loading-copy>Đang kiểm tra GPU và giữ Canvas Lite ở phía sau</small><div class="hwe-render-stage" aria-hidden="true"><i class="is-complete"></i><i class="is-active"></i><i></i><i></i></div><p data-hwe-render-detail>Không có phần trăm giả · giao diện sẽ mở ngay khi frame 3D đầu tiên sẵn sàng</p><button type="button" data-hwe-render-cancel>Dùng Canvas Lite ngay</button></div>
+        <aside class="hwe-render-fallback" data-hwe-render-fallback hidden role="status" aria-live="polite"><i aria-hidden="true">◇</i><div><small>SAFE FALLBACK · KHÔNG MÀN HÌNH ĐEN</small><strong data-hwe-render-fallback-title>Canvas Lite đang tiếp tục vòng đời</strong><p data-hwe-render-fallback-copy>Asset hoặc GPU 3D chưa sẵn sàng. Model thay thế nhẹ được dùng mà không làm mất save.</p></div><button type="button" data-hwe-render-retry>Thử lại 3D</button><button type="button" data-hwe-fallback-dismiss aria-label="Đóng thông báo fallback">×</button></aside>
         <div class="hwe-atmosphere" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
         <div class="hwe-hud hwe-hud--top"><span><small>Realm</small><strong data-hwe-realm-label>${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</strong></span><span><small>Biome</small><strong data-hwe-biome>Đang dựng thế giới</strong></span><span><small>Thời gian</small><strong data-hwe-time>--:--</strong></span><span><small>Sự kiện</small><strong data-hwe-weather>Ổn định</strong></span><button type="button" class="hwe-render-toggle" data-hwe-renderer="3d" aria-pressed="false"><i></i><span data-hwe-render-label>3D</span></button><button type="button" data-hwe-photo aria-label="Photo Mode">◉</button><button type="button" data-hwe-fullscreen aria-label="Toàn màn hình">⛶</button></div>
         <div class="hwe-minimap"><canvas data-hwe-minimap width="180" height="180" aria-label="Bản đồ thu nhỏ"></canvas><span>MIGRATION</span></div>
@@ -422,7 +460,13 @@
         <div class="hwe-communication-wheel" data-hwe-communication-wheel hidden role="dialog" aria-modal="false" aria-label="Animal Communication Wheel"><header><span><small>ANIMAL COMMUNICATION</small><strong>Không chat toàn cục</strong></span><button type="button" data-hwe-communication-close aria-label="Đóng vòng giao tiếp">×</button></header><div>${COMMUNICATION_CALLS.map((call, index) => { const allowed = !flagship || typeof CONTENT?.isCommunicationCallAllowed !== "function" || CONTENT.isCommunicationCallAllowed(selected.id, call.id); return `<button type="button" data-hwe-call="${escapeHtml(call.id)}" style="--i:${index}" ${allowed ? "" : "disabled"} title="${escapeHtml(call.intent || call.label)}"><i>${escapeHtml(call.icon || (["alarm","distress"].includes(call.id) ? "!" : "◉"))}</i><span>${escapeHtml(call.label)}</span></button>`; }).join("")}</div></div>
         <div class="hwe-start-panel" data-hwe-start-panel><small>ERA REALM · 3D FOUNDATION · KHÔNG CÓ CON NGƯỜI</small><h2>Trở thành ${escapeHtml(selected.vietnamese)}</h2><p>${state.settings.convergence ? "Eon Convergence đang bật: đây là sandbox hư cấu có trộn thời đại." : `Realm ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)} dùng Time Slice để không trộn niên đại ngoài ý muốn.`} Tìm nước, cân bằng khẩu phần, tránh thương tích và tiếp nối dòng gene.</p><div class="hwe-render-choice" role="group" aria-label="Chọn renderer"><button type="button" data-hwe-renderer="3d" class="${state.settings.renderer !== "lite" ? "is-active" : ""}" aria-pressed="${state.settings.renderer !== "lite"}"><b>3D</b><span>Babylon · WebGPU/WebGL</span></button><button type="button" data-hwe-renderer="lite" class="${state.settings.renderer === "lite" ? "is-active" : ""}" aria-pressed="${state.settings.renderer === "lite"}"><b>Lite</b><span>Canvas 2D tiết kiệm pin</span></button></div><p class="hwe-prototype-notice"><b>Vertical Slice:</b> T‑Rex và Triceratops dùng model CC0 có animation ở mức prototype; các loài chưa có asset phù hợp vẫn dùng hình khối procedural. Chưa model nào được mô tả là chất lượng điện ảnh.</p><div><button type="button" data-hwe-difficulty="sanctuary" class="${state.settings.difficulty === "sanctuary" ? "is-active" : ""}">Sanctuary</button><button type="button" data-hwe-difficulty="balanced" class="${state.settings.difficulty === "balanced" ? "is-active" : ""}">Cân bằng</button><button type="button" data-hwe-difficulty="wild" class="${state.settings.difficulty === "wild" ? "is-active" : ""}">Wild</button></div><button type="button" class="is-primary" data-hwe-start>▶ Bắt đầu vòng đời</button></div>
         <div class="hwe-death-panel" data-hwe-death hidden><small>VÒNG TUẦN HOÀN TIẾP DIỄN</small><h2>Dòng sống đã kết thúc</h2><p>Chất dinh dưỡng trở lại hệ sinh thái. Dữ liệu Codex và dòng gene vẫn được giữ.</p><button type="button" data-hwe-respawn>Nở lại</button></div>
-        <div class="hwe-photo-overlay" data-hwe-photo-overlay hidden><span>${escapeHtml(selected.vietnamese)} · ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</span><div class="hwe-photo-controls"><label>FOV <output>${Math.round(state.settings.photoFov)}°</output><input type="range" min="35" max="100" step="1" value="${Math.round(state.settings.photoFov)}" data-hwe-photo-setting="photoFov"></label><label>Phơi sáng <output>${Math.round(state.settings.photoExposure)}%</output><input type="range" min="50" max="160" step="1" value="${Math.round(state.settings.photoExposure)}" data-hwe-photo-setting="photoExposure"></label></div><button type="button" data-hwe-photo-capture>Chụp PNG</button><button type="button" data-hwe-photo-close>Thoát Photo Mode</button></div>
+        <div class="hwe-photo-composition" data-hwe-photo-composition aria-hidden="true" hidden><i></i><i></i><i></i><i></i></div>
+        <div class="hwe-photo-crop" data-hwe-photo-crop aria-hidden="true" hidden><i></i><i></i></div>
+        <div class="hwe-photo-overlay" data-hwe-photo-overlay hidden role="dialog" aria-modal="false" aria-label="Photo Mode vật lý"><header><span><small>PHYSICAL CAMERA · PAUSED</small><strong>${escapeHtml(selected.vietnamese)} · ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</strong></span><button type="button" data-hwe-photo-close aria-label="Thoát Photo Mode">×</button></header><div class="hwe-photo-controls">
+          <fieldset><legend>Ống kính & phơi sáng</legend><label>Tiêu cự <output>${Math.round(state.settings.photoFocalLength)} mm</output><input type="range" min="18" max="200" step="1" value="${state.settings.photoFocalLength}" data-hwe-photo-setting="photoFocalLength"></label><label>Khẩu độ <output>f/${Number(state.settings.photoAperture).toFixed(1)}</output><input type="range" min="1.4" max="16" step="0.1" value="${state.settings.photoAperture}" data-hwe-photo-setting="photoAperture"></label><label>Tốc độ màn trập<select data-hwe-photo-setting="photoShutter">${[15,30,60,125,250,500,1000,2000,4000,8000].map((value)=>`<option value="${value}" ${Math.round(state.settings.photoShutter)===value?"selected":""}>1/${value} giây</option>`).join("")}</select></label><label>ISO <output>${Math.round(state.settings.photoIso)}</output><input type="range" min="50" max="6400" step="50" value="${state.settings.photoIso}" data-hwe-photo-setting="photoIso"></label><label>Bù sáng <output>${state.settings.photoExposureComp > 0 ? "+" : ""}${Number(state.settings.photoExposureComp).toFixed(1)} EV</output><input type="range" min="-5" max="5" step="0.1" value="${state.settings.photoExposureComp}" data-hwe-photo-setting="photoExposureComp"></label></fieldset>
+          <fieldset><legend>Focus & bố cục</legend><label class="hwe-photo-check"><input type="checkbox" data-hwe-photo-setting="photoAutofocus" ${state.settings.photoAutofocus?"checked":""}> Autofocus theo sinh vật</label><label>Khoảng focus <output>${Number(state.settings.photoFocusDistance).toFixed(1)} m</output><input type="range" min="0.3" max="500" step="0.1" value="${state.settings.photoFocusDistance}" data-hwe-photo-setting="photoFocusDistance"></label><label>Lưới bố cục<select data-hwe-photo-setting="photoComposition"><option value="thirds" ${state.settings.photoComposition==="thirds"?"selected":""}>Rule of thirds</option><option value="off" ${state.settings.photoComposition==="off"?"selected":""}>Tắt lưới</option></select></label><label>Tỷ lệ khung<select data-hwe-photo-setting="photoCrop"><option value="native" ${state.settings.photoCrop==="native"?"selected":""}>Theo viewport</option><option value="2.39" ${state.settings.photoCrop==="2.39"?"selected":""}>CinemaScope 2.39:1</option><option value="1.85" ${state.settings.photoCrop==="1.85"?"selected":""}>Cinema 1.85:1</option><option value="1.0" ${state.settings.photoCrop==="1.0"?"selected":""}>Vuông 1:1</option></select></label><label>Rung camera <output>${Math.round(state.settings.photoShake)}%</output><input type="range" min="0" max="100" step="1" value="${state.settings.photoShake}" data-hwe-photo-setting="photoShake"></label></fieldset>
+          <input type="hidden" value="${Math.round(state.settings.photoFov)}" data-hwe-photo-setting="photoFov"><input type="hidden" value="${Math.round(state.settings.photoExposure)}" data-hwe-photo-setting="photoExposure">
+        </div><footer><p><b>PNG thật từ renderer hiện tại.</b> Chế độ Lite vẫn chụp được canvas; DOF vật lý chỉ bật khi pipeline 3D hỗ trợ.</p><button type="button" class="is-primary" data-hwe-photo-capture>Chụp PNG</button><button type="button" data-hwe-photo-close>Thoát Photo Mode</button></footer></div>
         <div class="hwe-touch-controls" aria-label="Điều khiển cảm ứng"><button type="button" data-hwe-touch="ArrowUp">▲</button><button type="button" data-hwe-touch="ArrowLeft">◀</button><button type="button" data-hwe-touch="ArrowDown">▼</button><button type="button" data-hwe-touch="ArrowRight">▶</button><button type="button" data-hwe-action="interact">E</button><button type="button" data-hwe-action="sense">Q</button><button type="button" data-hwe-action="ability">R</button><button type="button" data-hwe-communication-open>C</button></div>
       </section>
       <aside class="hwe-telemetry"><header><span class="hwe-avatar" style="--species:${selected.color}">◆</span><span><small>${escapeHtml(selected.name)}</small><strong>${escapeHtml(selected.vietnamese)}</strong></span><button type="button" data-hwe-pause aria-pressed="false">Ⅱ</button></header>
@@ -488,20 +532,43 @@
     return `<section class="hwe-network"><header class="hwe-view-hero"><div><small>MULTIPLAYER · FAIL CLOSED</small><h2>Realtime chưa được bật</h2><p>Vertical slice hiện là local single-player. Không có room code, người online, leaderboard hoặc máy chủ giả.</p></div><span class="hwe-capability-lock">🔒 BACKEND REQUIRED</span></header><div class="hwe-network-grid"><article><small>READINESS GATES</small>${checks.map(([id,label,ready])=>`<p data-hwe-network-check="${id}" class="${ready?"is-ready":"is-locked"}"><i>${ready?"✓":"○"}</i><span>${label}</span><b>${ready?"Sẵn sàng":"Chưa cấu hình"}</b></p>`).join("")}<button type="button" data-hwe-network-audit>Chạy kiểm tra capability</button></article><article><small>KIẾN TRÚC MỤC TIÊU</small><h3>20–32 người mỗi shard trước</h3><ol><li>Realm server theo thời đại.</li><li>Interest management theo chunk.</li><li>Client prediction + server reconciliation.</li><li>Snapshot delta có sequence number.</li><li>Score và sinh khối chỉ do server quyết định.</li></ol><p>WebGPU và WebRTC không phải điều kiện để mở multiplayer. Backend authoritative mới là điều kiện bắt buộc.</p></article></div><div class="hwe-network-result" data-hwe-network-result role="status" aria-live="polite">Chưa chạy kiểm tra. Game tiếp tục hoạt động an toàn ở chế độ local.</div></section>`;
   }
 
+  function qualityProfiles() {
+    const profiles = Object.values(RENDERER_3D?.QUALITY_PROFILES || {}).filter((profile) => profile?.id && profile.id !== "personal");
+    return [...profiles, PERSONAL_QUALITY_PROFILE];
+  }
+
+  function cinematicPackMarkup() {
+    const packApi = global.HHEonWildCinematicPacks;
+    const available = typeof packApi?.createManager === "function";
+    const packs = Array.isArray(packApi?.PACK_CATALOG) ? packApi.PACK_CATALOG : CINEMATIC_PACK_FALLBACK;
+    return `<section class="hwe-cinematic-packs" data-hwe-pack-console aria-labelledby="hwe-pack-title">
+      <header><div><small>PERSONAL CINEMATIC ASSET PACKS · OPFS / CACHE STORAGE</small><h3 id="hwe-pack-title">Thư viện hình ảnh cục bộ đã xác minh</h3><p>Chỉ dùng asset sau khi đúng byte và SHA-256. Gói lỗi tự giữ model nhẹ; không lưu tệp lớn trong localStorage.</p></div><span data-hwe-pack-storage>${available ? "Đang đọc dung lượng thiết bị…" : "Module asset pack chưa được tải · game nhẹ vẫn hoạt động"}</span></header>
+      <div class="hwe-pack-global-actions" role="group" aria-label="Tác vụ toàn bộ Cinematic Pack"><button type="button" data-hwe-pack-persist ${available ? "" : "disabled"}>Giữ dữ liệu bền vững</button><button type="button" data-hwe-pack-verify-all ${available ? "" : "disabled"}>Kiểm tra toàn bộ</button><button type="button" data-hwe-pack-remove-all ${available ? "" : "disabled"}>Xóa toàn bộ cache Ultra</button></div>
+      <div class="hwe-pack-grid">${packs.map((pack) => `<article class="hwe-pack-card" data-hwe-pack="${escapeHtml(pack.id)}" data-status="not-installed" style="--pack-accent:${escapeHtml(pack.accent || "#55e6ff")}">
+        <div class="hwe-pack-orb" aria-hidden="true"><i></i><b>◇</b></div><div class="hwe-pack-copy"><small data-hwe-pack-status>CHƯA CÀI</small><h4>${escapeHtml(pack.label)}</h4><p>${escapeHtml(pack.description)}</p><strong data-hwe-pack-file>Chưa nạp manifest bất biến</strong></div>
+        <div class="hwe-pack-progress"><span><b data-hwe-pack-progress-label>0 B / chưa xác định</b><em data-hwe-pack-asset>Chờ manifest có provenance</em></span><progress max="1" value="0" data-hwe-pack-progress></progress></div>
+        <div class="hwe-pack-actions"><button type="button" data-hwe-pack-manifest="${escapeHtml(pack.id)}" ${available ? "" : "disabled"}>Manifest…</button><button type="button" data-hwe-pack-local="${escapeHtml(pack.id)}" ${available ? "" : "disabled"}>Thư mục local…</button><button type="button" class="is-primary" data-hwe-pack-install="${escapeHtml(pack.id)}" disabled>Cài / tiếp tục</button><button type="button" data-hwe-pack-pause="${escapeHtml(pack.id)}" disabled>Tạm dừng</button><button type="button" data-hwe-pack-verify="${escapeHtml(pack.id)}" disabled>Kiểm tra SHA-256</button><button type="button" data-hwe-pack-remove="${escapeHtml(pack.id)}" disabled>Xóa gói</button></div>
+      </article>`).join("")}</div>
+      <p class="hwe-pack-truth"><b>Không phải asset production:</b> model low-poly hiện có vẫn được ghi rõ là prototype. Chọn Cinematic Personal chỉ bật pipeline nặng; chất lượng model chỉ tăng sau khi pack hợp pháp đã xác minh.</p>
+      <input type="file" accept="application/json,.json" data-hwe-pack-manifest-file hidden>
+      <input type="file" multiple webkitdirectory directory data-hwe-pack-local-files hidden>
+    </section>`;
+  }
+
   function settingsMarkup(state) {
     const capabilities = RENDERER_3D?.detectCapabilities?.() || { recommendedBackend: "lite", webgpu: false, webgl2: false };
     const slices = RENDERER_3D?.listTimeSlices?.(state.realmId) || [];
     const modes = RENDERER_3D?.GAME_MODES || [];
-    return `<section class="hwe-settings"><header class="hwe-view-hero"><div><small>3D ENGINE · ACCESSIBILITY · SAVE V3</small><h2>Cấu hình thế giới</h2><p>Save v1/v2 được migrate an toàn sang schema v3. Babylon 3D chỉ tải khi dùng và Canvas Lite luôn là fallback.</p></div><button type="button" data-hwe-reset>Khôi phục save mới…</button></header><div class="hwe-settings-grid">
+    return `<section class="hwe-settings"><header class="hwe-view-hero"><div><small>3D ENGINE · ACCESSIBILITY · SAVE V4</small><h2>Cấu hình thế giới 16 × 16 km</h2><p>Save v1–v3 được migrate đúng một lần sang schema v4. Babylon 3D chỉ tải khi dùng và Canvas Lite luôn là fallback.</p></div><button type="button" data-hwe-reset>Khôi phục save mới…</button></header><div class="hwe-settings-grid">
       <article><small>REALM · TIME SLICE</small><h3>Luật niên đại</h3><label>Era Realm<select data-hwe-setting="realmId">${Object.values(REALMS).map((realm)=>`<option value="${realm.id}" ${state.realmId===realm.id?"selected":""}>${escapeHtml(realm.label)}</option>`).join("")}</select></label>${slices.length ? `<label>Lát cắt địa chất<select data-hwe-time-slice>${slices.map((slice)=>{ const playable = state.settings.convergence || playableSpeciesAtAddress(state, addressForSlice(state, slice)).length > 0; return `<option value="${escapeHtml(slice.id)}" ${slice.id===state.worldAddress?.timeSliceId?"selected":""} ${playable?"":"disabled"}>${escapeHtml(slice.label)} · ${escapeHtml(slice.range)}${playable?"":" · Observer only"}</option>`; }).join("")}</select></label>` : ""}<label><input type="checkbox" data-hwe-setting="convergence" ${state.settings.convergence ? "checked" : ""}> Cho phép Eon Convergence hư cấu</label></article>
       <article><small>GAMEPLAY</small><h3>Vòng đời và độ khó</h3><label>Chế độ<select data-hwe-mode>${modes.map((mode)=>`<option value="${escapeHtml(mode.id)}" ${state.mode===mode.id?"selected":""} ${mode.available?"":"disabled"}>${escapeHtml(mode.label)}${mode.available?"":" · lộ trình"}</option>`).join("")}</select></label><label>Độ khó<select data-hwe-setting="difficulty"><option value="sanctuary" ${state.settings.difficulty === "sanctuary" ? "selected" : ""}>Sanctuary</option><option value="balanced" ${state.settings.difficulty === "balanced" ? "selected" : ""}>Cân bằng</option><option value="wild" ${state.settings.difficulty === "wild" ? "selected" : ""}>Wild Survival</option></select></label></article>
-      <article><small>3D RENDERER</small><h3>${capabilities.recommendedBackend === "lite" ? "Lite Mode được khuyến nghị" : `${escapeHtml(capabilities.recommendedBackend.toUpperCase())} sẵn sàng`}</h3><label>Renderer<select data-hwe-setting="renderer"><option value="auto" ${state.settings.renderer === "auto" ? "selected":""}>Tự chọn 3D → Lite</option><option value="3d" ${state.settings.renderer === "3d" ? "selected":""}>Ưu tiên Babylon 3D</option><option value="lite" ${state.settings.renderer === "lite" ? "selected":""}>Canvas 2D Lite</option></select></label><label>Chất lượng<select data-hwe-setting="quality">${Object.values(RENDERER_3D?.QUALITY_PROFILES || {}).map((profile)=>`<option value="${profile.id}" ${state.settings.quality===profile.id?"selected":""}>${escapeHtml(profile.label)} · ${profile.targetFps} FPS mục tiêu</option>`).join("")}</select></label><p>WebGPU ${capabilities.webgpu?"✓":"—"} · WebGL2 ${capabilities.webgl2?"✓":"—"}. Không báo 3D sẵn sàng nếu engine chưa khởi tạo.</p></article>
+      <article class="${state.settings.quality === "personal" ? "is-personal-quality" : ""}"><small>3D RENDERER</small><h3>${capabilities.recommendedBackend === "lite" ? "Lite Mode được khuyến nghị" : `${escapeHtml(capabilities.recommendedBackend.toUpperCase())} sẵn sàng`}</h3><label>Renderer<select data-hwe-setting="renderer"><option value="auto" ${state.settings.renderer === "auto" ? "selected":""}>Tự chọn 3D → Lite</option><option value="3d" ${state.settings.renderer === "3d" ? "selected":""}>Ưu tiên Babylon 3D</option><option value="lite" ${state.settings.renderer === "lite" ? "selected":""}>Canvas 2D Lite</option></select></label><label>Chất lượng<select data-hwe-setting="quality">${qualityProfiles().map((profile)=>`<option value="${profile.id}" ${state.settings.quality===profile.id?"selected":""}>${escapeHtml(profile.label)} · ${profile.id === "personal" ? "ưu tiên hình ảnh / không adaptive" : `${profile.targetFps} FPS mục tiêu`}</option>`).join("")}</select></label><p>WebGPU ${capabilities.webgpu?"✓":"—"} · WebGL2 ${capabilities.webgl2?"✓":"—"}. Personal là lựa chọn thủ công của chủ máy, không bao giờ được adaptive governor tự nâng lên.</p></article>
       <article><small>HIỆU NĂNG</small><h3>Motion và wildlife budget</h3><label>Chuyển động<select data-hwe-setting="motion"><option value="static" ${state.settings.motion === "static" ? "selected":""}>Tĩnh</option><option value="balanced" ${state.settings.motion === "balanced" ? "selected":""}>Cân bằng</option><option value="cinematic" ${state.settings.motion === "cinematic" ? "selected":""}>Điện ảnh</option></select></label><label>Mật độ wildlife<select data-hwe-setting="density"><option value="low" ${state.settings.density === "low" ? "selected":""}>Thấp</option><option value="balanced" ${state.settings.density === "balanced" ? "selected":""}>Cân bằng</option><option value="high" ${state.settings.density === "high" ? "selected":""}>Cao</option></select></label><label><input type="checkbox" data-hwe-setting="adaptiveQuality" ${state.settings.adaptiveQuality ? "checked":""}> Tự hạ LOD, DPR và proxy hiển thị khi frame time tăng</label></article>
       <article><small>SIMULATION</small><h3>Worker có fallback</h3><label><input type="checkbox" data-hwe-setting="worker" ${state.settings.worker ? "checked":""}> Dùng worker cho tác vụ tương thích</label><p>AI fixed-step vẫn giữ toàn bộ quần thể khi renderer hạ LOD. Far ring chỉ đổi cách biểu diễn, không xóa ecology.</p></article>
-      <article><small>ÂM THANH · TRỢ NĂNG</small><h3>Tín hiệu rõ ràng</h3><label><input type="checkbox" data-hwe-setting="sound" ${state.settings.sound ? "checked":""}> Âm thanh tổng hợp sau tương tác</label><label>Âm lượng tín hiệu <output>${Math.round(state.settings.soundVolume)}%</output><input type="range" min="0" max="100" step="1" data-hwe-setting="soundVolume" value="${Math.round(state.settings.soundVolume)}"></label><label><input type="checkbox" data-hwe-setting="photoUi" ${state.settings.photoUi ? "checked":""}> Hiện nhãn trong Photo Mode</label><p>Bàn phím, touch, gamepad, focus rõ và prefers-reduced-motion được giữ ở cả 3D lẫn Lite. Ambience và creature audio production vẫn bị khóa cho tới khi có asset hợp pháp.</p></article>
+      <article><small>ÂM THANH · TRỢ NĂNG</small><h3>Tín hiệu rõ ràng</h3><label><input type="checkbox" data-hwe-setting="sound" ${state.settings.sound ? "checked":""}> Âm thanh tương tác và ambience đã xác minh</label><label>Âm lượng tín hiệu <output>${Math.round(state.settings.soundVolume)}%</output><input type="range" min="0" max="100" step="1" data-hwe-setting="soundVolume" value="${Math.round(state.settings.soundVolume)}"></label><label><input type="checkbox" data-hwe-setting="photoUi" ${state.settings.photoUi ? "checked":""}> Hiện nhãn trong Photo Mode</label><p>Bàn phím, touch, gamepad, focus rõ và prefers-reduced-motion được giữ ở cả 3D lẫn Lite. Cinematic Audio Pack chỉ phát asset đã đúng SHA-256, dừng cùng renderer và không tự nhận là production.</p></article>
       <article><small>WORLD SEED</small><h3>Địa chỉ tái tạo được</h3><label>Seed<input type="text" maxlength="24" data-hwe-setting="seed" value="${escapeHtml(state.settings.seed)}"></label><p>${escapeHtml(state.worldAddress?.realmId || state.realmId)} › ${escapeHtml(state.worldAddress?.timeSliceId || "realm")} › ${escapeHtml(state.worldAddress?.regionId || "region")} › chunk ${state.worldAddress?.chunkX || 0}:${state.worldAddress?.chunkZ || 0}</p></article>
       <article><small>DỮ LIỆU CỤC BỘ</small><h3>Schema ${SCHEMA_VERSION}</h3><p>${state.replay.length}/240 replay · ${state.heatmap.length}/256 heatmap · ${state.lineage.length}/24 thế hệ · ${state.eventJournal.length}/40 sự kiện.</p><div class="hwe-data-actions"><button type="button" data-hwe-save-export>Xuất save JSON</button><button type="button" data-hwe-save-import>Nhập save…</button><button type="button" data-hwe-save-rollback>Khôi phục bản trước</button><button type="button" data-hwe-lineage-export>Xuất lineage</button></div><input type="file" accept="application/json,.json" data-hwe-save-file hidden></article>
-    </div></section>`;
+    </div>${cinematicPackMarkup()}</section>`;
   }
 
   function viewMarkup(view, state) {
@@ -518,7 +585,7 @@
 
   function shellMarkup(instance) {
     const view = instance.view;
-  return `<section class="hwe-root" data-hwe-root data-view="${view}" data-realm="${instance.state.realmId}" data-motion="${instance.state.settings.motion}" data-renderer="lite" aria-label="HH EonWild"><header class="hwe-header"><div class="hwe-brand"><span aria-hidden="true"><i></i><b>EW</b></span><div><small>HH GAME · LIVING EARTH 3.0 · ORIGINAL</small><h1>HH EonWild</h1><p>${escapeHtml(REALMS[instance.state.realmId]?.label || "Trái Đất Muôn Thời")} · Không có con người</p></div></div><div class="hwe-header-status"><span><i></i> Local single-player</span><span>${CONTENT?.FLAGSHIP_IDS?.length || 13} Flagship · ${Object.keys(RENDERER_3D?.SPECIES_CARTRIDGES || {}).length} Species Cartridge · ${SPECIES.length} catalog</span><button type="button" data-hwe-quick-play>Chơi tiếp →</button></div></header>${navMarkup(view)}<main class="hwe-main" data-hwe-main>${viewMarkup(view, instance.state)}</main><footer class="hwe-controls"><span><kbd>WASD</kbd> Di chuyển</span><span><kbd>Shift</kbd> Chạy</span><span><kbd>E</kbd> Ăn/Uống</span><span><kbd>Q</kbd> Giác quan</span><span><kbd>R</kbd> Ability</span><span><kbd>C</kbd> Giao tiếp</span><span><kbd>P</kbd> Photo</span><span><kbd>N</kbd> Làm tổ</span><b data-hwe-fps>Engine nghỉ</b></footer><div class="hwe-toast" data-hwe-toast role="status" aria-live="polite"></div></section>`;
+  return `<section class="hwe-root" data-hwe-root data-view="${view}" data-realm="${instance.state.realmId}" data-motion="${instance.state.settings.motion}" data-quality="${instance.state.settings.quality}" data-renderer="lite" aria-label="HH EonWild"><header class="hwe-header"><div class="hwe-brand"><span aria-hidden="true"><i></i><b>EW</b></span><div><small>HH GAME · LIVING EARTH 4.0 · ORIGINAL</small><h1>HH EonWild</h1><p>${escapeHtml(REALMS[instance.state.realmId]?.label || "Trái Đất Muôn Thời")} · 16 × 16 km · Không có con người</p></div></div><div class="hwe-header-status"><span><i></i> Local single-player</span><span>${CONTENT?.FLAGSHIP_IDS?.length || 13} Flagship · ${Object.keys(RENDERER_3D?.SPECIES_CARTRIDGES || {}).length} Species Cartridge · ${SPECIES.length} catalog</span><button type="button" data-hwe-quick-play>Chơi tiếp →</button></div></header>${navMarkup(view)}<main class="hwe-main" data-hwe-main>${viewMarkup(view, instance.state)}</main><footer class="hwe-controls"><span><kbd>WASD</kbd> Di chuyển</span><span><kbd>Shift</kbd> Chạy</span><span><kbd>E</kbd> Ăn/Uống</span><span><kbd>Q</kbd> Giác quan</span><span><kbd>R</kbd> Ability</span><span><kbd>C</kbd> Giao tiếp</span><span><kbd>P</kbd> Photo</span><span><kbd>N</kbd> Làm tổ</span><b data-hwe-fps>Engine nghỉ</b></footer><div class="hwe-toast" data-hwe-toast role="status" aria-live="polite"></div></section>`;
   }
 
   function setToast(instance, message) {
@@ -1051,7 +1118,9 @@
           speciesColor: species.color,
           heading: instance.heading,
           senseActive: instance.senseUntil > now,
-          paused: instance.paused || instance.photoMode,
+          // Photo Mode freezes simulation but keeps the renderer alive so
+          // lens, exposure and focus adjustments remain visible immediately.
+          paused: instance.paused && !instance.photoMode,
           address: instance.state.worldAddress
         });
         drawMinimap(instance);
@@ -1062,7 +1131,13 @@
     if (now - instance.fpsAt > 1000) {
       const rendererStatus = instance.renderer3d?.getStatus?.();
       const fps = rendererStatus?.fps || instance.frameCount;
-      const node = instance.root.querySelector("[data-hwe-fps]"); if (node) node.textContent = `${fps} FPS · ${instance.population.filter((row) => row.alive).length} wildlife · ${rendererStatus?.backend?.toUpperCase?.() || "LITE"}`;
+      const node = instance.root.querySelector("[data-hwe-fps]");
+      if (node) {
+        const cinematicTelemetry = rendererStatus?.drawCalls != null
+          ? ` · ${rendererStatus.drawCalls} draw · ${Math.round((rendererStatus.triangles || 0) / 1000)}K tri · ~${rendererStatus.estimatedVramMiB || 0} MiB VRAM${rendererStatus.vramWarning ? " ⚠" : ""}`
+          : "";
+        node.textContent = `${fps} FPS · ${instance.population.filter((row) => row.alive).length} wildlife · ${rendererStatus?.backend?.toUpperCase?.() || "LITE"}${cinematicTelemetry}`;
+      }
       if (!instance.renderer3d && instance.state.settings.adaptiveQuality && fps < 28) {
         instance.renderBudget = Math.max(.45, (instance.renderBudget || 1) - .18);
         if ((instance.dpr || 1) > 1) { instance.dprCap = Math.max(1, (instance.dpr || 1) - .2); resizeCanvas(instance); }
@@ -1318,7 +1393,7 @@
 
   function exportLineage(instance) {
     const payload = {
-      format: "hh-eonwild-lineage-v3",
+      format: "hh-eonwild-lineage-v4",
       version: VERSION,
       exportedAt: new Date().toISOString(),
       speciesId: instance.state.speciesId,
@@ -1333,24 +1408,29 @@
     const state = normalizeState(instance.state);
     const checksumState = { ...state, updatedAt: 0 };
     const payload = {
-      format: "hh-eonwild-save-v3",
+      format: "hh-eonwild-save-v4",
       schemaVersion: SCHEMA_VERSION,
       appVersion: VERSION,
       exportedAt: new Date().toISOString(),
       checksum: hashSeed(JSON.stringify(checksumState)).toString(16).padStart(8, "0"),
       state
     };
-    if (downloadLocalFile(instance, `hh-eonwild-save-${Date.now()}.json`, JSON.stringify(payload, null, 2))) setToast(instance, "Đã xuất save v3 có checksum");
+    if (downloadLocalFile(instance, `hh-eonwild-save-${Date.now()}.json`, JSON.stringify(payload, null, 2))) setToast(instance, "Đã xuất save v4 có checksum");
   }
 
   async function importSave(instance, file) {
     if (!file || file.size > 2 * 1024 * 1024) { setToast(instance, "Tệp save không hợp lệ hoặc lớn hơn 2 MB"); return false; }
     try {
       const payload = JSON.parse(await file.text());
-      if (payload?.format !== "hh-eonwild-save-v3" || !payload.state || typeof payload.state !== "object") throw new Error("Sai định dạng save");
-      const normalizedImport = normalizeState(payload.state);
-      const checksum = hashSeed(JSON.stringify({ ...normalizedImport, updatedAt: 0 })).toString(16).padStart(8, "0");
+      const formatMatch = /^hh-eonwild-save-v([1-4])$/.exec(String(payload?.format || ""));
+      if (!formatMatch || !payload.state || typeof payload.state !== "object") throw new Error("Sai định dạng save");
+      const importedSchema = clamp(payload.schemaVersion || payload.state.schemaVersion || Number(formatMatch[1]), 1, SCHEMA_VERSION);
+      const checksumSource = importedSchema < SCHEMA_VERSION
+        ? { ...payload.state, updatedAt: 0 }
+        : { ...normalizeState({ ...payload.state, schemaVersion: importedSchema }), updatedAt: 0 };
+      const checksum = hashSeed(JSON.stringify(checksumSource)).toString(16).padStart(8, "0");
       if (payload.checksum && payload.checksum !== checksum) throw new Error("Checksum không khớp");
+      const normalizedImport = normalizeState({ ...payload.state, schemaVersion: importedSchema });
       global.localStorage?.setItem?.(ROLLBACK_STORAGE_KEY, JSON.stringify(normalizeState(instance.state)));
       instance.state = normalizedImport;
       saveState(instance);
@@ -1361,10 +1441,13 @@
 
   function restoreRollback(instance) {
     try {
-      const previous = global.localStorage?.getItem?.(ROLLBACK_STORAGE_KEY);
+      const currentRollback = global.localStorage?.getItem?.(ROLLBACK_STORAGE_KEY);
+      const legacyRollback = global.localStorage?.getItem?.(LEGACY_ROLLBACK_STORAGE_KEY);
+      const previous = currentRollback || legacyRollback;
       if (!previous) { setToast(instance, "Chưa có phiên bản trước để khôi phục"); return false; }
       const current = normalizeState(instance.state);
-      instance.state = normalizeState(JSON.parse(previous));
+      const parsed = JSON.parse(previous);
+      instance.state = normalizeState({ ...parsed, schemaVersion: Number(parsed?.schemaVersion) || (currentRollback ? SCHEMA_VERSION : 3) });
       global.localStorage?.setItem?.(ROLLBACK_STORAGE_KEY, JSON.stringify(current));
       saveState(instance); mount(instance.host, { view: "settings" }); return true;
     } catch { setToast(instance, "Phiên bản trước không thể đọc được"); return false; }
@@ -1372,6 +1455,53 @@
 
   const activeSurface = (instance) => instance.renderer3d ? instance.canvas3d : instance.canvas;
   const focusSurface = (instance) => activeSurface(instance)?.focus?.({ preventScroll: true });
+
+  const qualityLabel = (quality) => quality === "personal"
+    ? PERSONAL_QUALITY_PROFILE.label
+    : RENDERER_3D?.QUALITY_PROFILES?.[quality]?.label || quality || "Cân bằng";
+  const qualityForCore = (quality) => RENDERER_3D?.QUALITY_PROFILES?.[quality]
+    ? quality
+    : quality === "personal" ? "cinematic" : quality;
+  const focalLengthToFov = (millimeters) => 2 * Math.atan(24 / (2 * clamp(millimeters, 18, 200))) * 180 / Math.PI;
+  function photoRendererSettings(settings) {
+    const focalLength = clamp(settings.photoFocalLength, 18, 200);
+    const exposureCompensation = clamp(settings.photoExposureComp, -5, 5);
+    return {
+      focalLength,
+      fovDegrees: focalLengthToFov(focalLength),
+      aperture: clamp(settings.photoAperture, 1.4, 16),
+      shutterSeconds: 1 / clamp(settings.photoShutter, 15, 8000),
+      shutterSpeed: clamp(settings.photoShutter, 15, 8000),
+      iso: clamp(settings.photoIso, 50, 6400),
+      exposureCompensation,
+      depthOfField: true,
+      autofocus: settings.photoAutofocus,
+      focusDistance: clamp(settings.photoFocusDistance, .3, 500),
+      composition: settings.photoComposition,
+      crop: settings.photoCrop,
+      cameraShake: clamp(settings.photoShake, 0, 100) / 100
+    };
+  }
+
+  function syncPhotoComposition(instance) {
+    if (!instance?.root) return;
+    const settings = instance.state.settings;
+    instance.root.dataset.photoComposition = settings.photoComposition;
+    instance.root.dataset.photoCrop = settings.photoCrop;
+    const grid = instance.root.querySelector("[data-hwe-photo-composition]");
+    const crop = instance.root.querySelector("[data-hwe-photo-crop]");
+    if (grid) grid.hidden = !instance.photoMode || settings.photoComposition === "off";
+    if (crop) crop.hidden = !instance.photoMode || settings.photoCrop === "native";
+  }
+
+  function showRendererFallback(instance, message) {
+    const panel = instance.root?.querySelector?.("[data-hwe-render-fallback]");
+    const copy = panel?.querySelector?.("[data-hwe-render-fallback-copy]");
+    if (!panel) return false;
+    if (copy && message) copy.textContent = String(message).slice(0, 180);
+    panel.hidden = false;
+    return true;
+  }
 
   function setRendererStatus(instance, label, loadingCopy) {
     const status = instance.root?.querySelector?.("[data-hwe-render-status]");
@@ -1440,15 +1570,25 @@
       instance.liteFallbackPending = false;
       if (instance.destroyed || (bootToken != null && bootToken !== instance.rendererBootToken)) return;
       disable3D(instance, true);
+      showRendererFallback(instance, message || "Asset hoặc GPU 3D không sẵn sàng. Canvas Lite và model thay thế đang tiếp tục vòng đời.");
       setToast(instance, message || "Renderer 3D đã dừng an toàn; Canvas 2D Lite đang hoạt động");
     }, 0);
   }
 
   async function createRendererRuntime(instance, species, bootToken) {
-    const qualityToAdapter = { static: "low", light: "low", balanced: "balanced", high: "high", cinematic: "ultra" };
+    const qualityToAdapter = { static: "low", light: "low", balanced: "balanced", high: "high", cinematic: "ultra", personal: "cinematic" };
+    const adaptiveQuality = instance.state.settings.quality !== "personal" && instance.state.settings.adaptiveQuality;
     const renderSeed = `${instance.state.settings.seed}:${instance.state.worldAddress?.timeSliceId || instance.state.realmId}:${instance.state.worldAddress?.regionId || "region"}`;
     if (RENDERER_ADAPTER?.FLAGSHIP_IDS?.includes?.(species.id) && typeof RENDERER_ADAPTER.createRenderer === "function") {
       let lastEnvironment = "";
+      let lastTelemetry = null;
+      const cinematicRuntimeAssets = await prepareCinematicRuntimeAssets(instance);
+      let cinematicUrlsReleased = false;
+      const releaseCinematicUrls = () => {
+        if (cinematicUrlsReleased) return;
+        cinematicUrlsReleased = true;
+        for (const url of cinematicRuntimeAssets.urls) instance.cinematicPackManager?.releaseAssetUrl?.(url);
+      };
       const adapter = RENDERER_ADAPTER.createRenderer({
         canvas: instance.canvas3d,
         container: instance.root.querySelector("[data-hwe-viewport]"),
@@ -1456,14 +1596,20 @@
         playerX: instance.state.player.x,
         playerZ: instance.state.player.y,
         seed: renderSeed,
-        // Babylon WebGPU remains available in the reusable adapter, but the
-        // public vertical slice defaults to stable WebGL2. Some Chromium/D3D
-        // drivers report WebGPU support and then invalidate the first shared
-        // swap-buffer, causing a black frame or severe throttling.
-        backend: "webgl",
+        // Prefer WebGPU, then let the guarded adapter rebuild a clean canvas
+        // and fall back to WebGL2 before Canvas Lite if a driver rejects it.
+        backend: "auto",
         qualityPreset: qualityToAdapter[instance.state.settings.quality] || "balanced",
-        adaptiveQuality: instance.state.settings.adaptiveQuality,
+        adaptiveQuality: adaptiveQuality,
         reducedMotion: reduced3DPreference(instance) ? true : "auto",
+        cinematicCreatureAssets: cinematicRuntimeAssets.creatures,
+        cinematicEnvironmentAssets: cinematicRuntimeAssets.environment,
+        cinematicTerrainAssets: cinematicRuntimeAssets.terrain,
+        cinematicOceanAssets: cinematicRuntimeAssets.ocean,
+        cinematicWeatherAssets: cinematicRuntimeAssets.weather,
+        cinematicAudioAssets: cinematicRuntimeAssets.audio,
+        ambientAudioEnabled: instance.state.settings.sound,
+        ambientAudioVolume: clamp(instance.state.settings.soundVolume, 0, 100) / 100,
         isCancelled: () => instance.destroyed || bootToken !== instance.rendererBootToken,
         allowRemoteBabylon: false,
         replaceCanvasOnFallback: true,
@@ -1479,7 +1625,8 @@
         onStatus: (detail) => {
           const canRetrySceneInWebGL = detail?.reason?.stage === "scene" && detail?.reason?.details?.failedBackend === "webgpu";
           if (detail?.status === "failed" && !canRetrySceneInWebGL) scheduleLiteFallback(instance, "Renderer 3D gặp lỗi; đã chuyển sang Lite Mode", bootToken);
-        }
+        },
+        onTelemetry: (telemetry) => { lastTelemetry = telemetry; }
       });
       instance.rendererStartingAdapter = adapter;
       let started;
@@ -1495,12 +1642,14 @@
       }
       if (instance.destroyed || bootToken !== instance.rendererBootToken) {
         adapter.dispose();
+        releaseCinematicUrls();
         throw Object.assign(new Error("Renderer startup was cancelled"), { code: "RENDERER_START_CANCELLED" });
       }
-      if (!started?.ok) { adapter.dispose(); throw new Error(started?.reason?.message || "Babylon adapter could not start"); }
+      if (!started?.ok) { adapter.dispose(); releaseCinematicUrls(); throw new Error(started?.reason?.message || "Babylon adapter could not start"); }
       if (adapter.canvas) instance.canvas3d = adapter.canvas;
       return Object.freeze({
         backend: started.backend,
+        personalQualityAlias: true,
         sync(snapshot = {}) {
           adapter.setPlayerState({ speciesId: snapshot.speciesId, x: snapshot.player?.x, z: snapshot.player?.y, heading: -(snapshot.heading || 0), elevation: snapshot.speciesId === "pteranodon" ? 12 : 0 });
           const occupied = new Set([snapshot.speciesId]);
@@ -1521,10 +1670,11 @@
         setPaused(value) { return value ? adapter.pause("host") : adapter.resume("host"); },
         setQuality(value) { adapter.setQualityPreset(qualityToAdapter[value] || "balanced"); return value; },
         setMotion(value) { adapter.setReducedMotion(value === "static" || reduced3DPreference(instance) ? true : "auto"); return value; },
-        getStatus() { const telemetry = adapter.getTelemetry(); return { backend: adapter.backend, quality: ({ low: "light", balanced: "balanced", high: "high", ultra: "cinematic" })[telemetry.qualityPreset] || "balanced", fps: telemetry.fps, chunks: telemetry.activeChunks, wildlife: telemetry.proxySpecies?.length || 0, address: instance.state.worldAddress }; },
-        capture() { return adapter.capture("image/png"); },
+        setAudio(enabled, volume) { return adapter.setAmbientAudio?.(enabled, clamp(volume, 0, 1)); },
+        getStatus() { const telemetry = lastTelemetry || adapter.getTelemetry(); const observedQuality = ({ low: "light", balanced: "balanced", high: "high", ultra: "cinematic", cinematic: "personal" })[telemetry.qualityPreset] || "balanced"; return { backend: adapter.backend, quality: instance.state.settings.quality === "personal" ? "personal" : observedQuality, fps: telemetry.fps, chunks: telemetry.activeChunks, wildlife: telemetry.proxySpecies?.length || 0, address: instance.state.worldAddress, drawCalls: telemetry.drawCalls, triangles: telemetry.triangles, estimatedVramMiB: telemetry.estimatedVramMiB, vramWarning: telemetry.estimatedVramMiB >= 6144 }; },
+        capture(options = {}) { return adapter.capture("image/png", options); },
         setPhotoSettings(value) { return adapter.setPhotoSettings?.(value); },
-        dispose() { return adapter.dispose()?.ok !== false; }
+        dispose() { const result = adapter.dispose()?.ok !== false; releaseCinematicUrls(); return result; }
       });
     }
     return RENDERER_3D.createRuntime(instance.canvas3d, {
@@ -1532,15 +1682,16 @@
       speciesId: species.id,
       speciesColor: species.color,
       seed: instance.state.settings.seed,
-      quality: reduced3DPreference(instance) ? "static" : instance.state.settings.quality,
+      quality: reduced3DPreference(instance) ? "static" : qualityForCore(instance.state.settings.quality),
       reducedMotion: reduced3DPreference(instance),
-      adaptiveQuality: instance.state.settings.adaptiveQuality,
+      adaptiveQuality: adaptiveQuality,
       isCancelled: () => instance.destroyed || bootToken !== instance.rendererBootToken,
       timeoutMs: 12000,
       address: instance.state.worldAddress,
       onTelemetry: (event) => { if (event?.type === "webgpu-init-failed") setRendererStatus(instance, "Đang chuyển sang WebGL2…", "WebGPU không khởi tạo được; đang dùng fallback WebGL"); },
       onQualityChange: (sample) => {
-        instance.state.settings.quality = sample.quality;
+        if (sample.quality === "personal" && instance.state.settings.quality !== "personal") return;
+        if (instance.state.settings.quality !== "personal") instance.state.settings.quality = sample.quality;
         setRendererStatus(instance, `${instance.renderer3d?.backend?.toUpperCase?.() || "3D"} · ${sample.profile.label}`);
       },
       onFailure: () => { scheduleLiteFallback(instance, "3D gặp lỗi render; đã tự chuyển sang Lite Mode", bootToken); }
@@ -1565,12 +1716,14 @@
       if (instance.destroyed || bootToken !== instance.rendererBootToken) { runtime.dispose(); return false; }
       instance.renderer3d = runtime;
       instance.root.dataset.renderer = runtime.backend;
+      const fallbackPanel = instance.root.querySelector("[data-hwe-render-fallback]");
+      if (fallbackPanel) fallbackPanel.hidden = true;
       instance.canvas.hidden = true;
       instance.canvas3d.hidden = false;
       instance.rendererViewportSize = { width: instance.canvas3d.clientWidth, height: instance.canvas3d.clientHeight };
       syncRendererControls(instance, "3d");
       if (persist) { instance.state.settings.renderer = "3d"; saveState(instance); }
-      setRendererStatus(instance, `${runtime.backend.toUpperCase()} · ${RENDERER_3D.QUALITY_PROFILES?.[instance.state.settings.quality]?.label || "Cân bằng"}`);
+      setRendererStatus(instance, `${runtime.backend.toUpperCase()} · ${qualityLabel(instance.state.settings.quality)}`);
       // The renderer already owns responsive sizing. A second resize here can
       // invalidate Chromium's first WebGPU swap-buffer while it is submitted.
       focusSurface(instance);
@@ -1585,14 +1738,22 @@
       instance.state.settings.renderer = "lite";
       saveState(instance);
       setRendererStatus(instance, "Canvas 2D Lite");
+      showRendererFallback(instance, `Không thể dựng 3D (${String(error?.message || "GPU không tương thích").slice(0, 96)}). Canvas Lite đang dùng model thay thế và save vẫn an toàn.`);
       setToast(instance, `3D không khởi tạo: ${String(error?.message || "GPU không tương thích").slice(0, 92)}. Đã dùng Lite Mode.`);
       return false;
     } finally {
       if (bootToken === instance.rendererBootToken) {
         instance.rendererBooting = false;
-        setRendererStatus(instance, instance.renderer3d ? `${instance.renderer3d.backend.toUpperCase()} · 3D` : "Canvas 2D Lite");
+        setRendererStatus(instance, instance.renderer3d ? `${instance.renderer3d.backend.toUpperCase()} · ${qualityLabel(instance.state.settings.quality)}` : "Canvas 2D Lite");
       }
     }
+  }
+
+  function setRuntimeQuality(instance, quality) {
+    if (!instance?.renderer3d?.setQuality) return false;
+    const value = instance.renderer3d.personalQualityAlias ? quality : qualityForCore(quality);
+    instance.renderer3d.setQuality(value);
+    return true;
   }
 
   function disable3D(instance, persist = true) {
@@ -1642,10 +1803,12 @@
     if (open) {
       instance.pausedBeforePhoto = instance.paused;
       instance.paused = true;
-      instance.renderer3d?.setPhotoSettings?.({ fovDegrees: instance.state.settings.photoFov, exposure: instance.state.settings.photoExposure / 100 });
-      overlay.querySelector("button")?.focus?.({ preventScroll: true });
+      instance.renderer3d?.setPaused?.(false);
+      instance.renderer3d?.setPhotoSettings?.(photoRendererSettings(instance.state.settings));
+      syncPhotoComposition(instance);
+      overlay.querySelector("[data-hwe-photo-close]")?.focus?.({ preventScroll: true });
     }
-    else { instance.paused = Boolean(instance.pausedBeforePhoto); focusSurface(instance); }
+    else { instance.paused = Boolean(instance.pausedBeforePhoto); syncPhotoComposition(instance); instance.renderer3d?.setPaused?.(instance.paused); focusSurface(instance); }
     return true;
   }
 
@@ -1654,8 +1817,8 @@
     if (!surface) return false;
     const filename = `hh-eonwild-${instance.state.speciesId}-${Date.now()}.png`;
     if (instance.renderer3d?.capture) {
-      instance.renderer3d.capture().then((blob) => {
-        if (blob && downloadLocalFile(instance, filename, blob, "image/png")) setToast(instance, "Đã chụp PNG từ renderer 3D thật");
+      instance.renderer3d.capture({ width: 3840, height: 2160 }).then((blob) => {
+        if (blob && downloadLocalFile(instance, filename, blob, "image/png")) setToast(instance, "Đã chụp PNG 4K từ renderer 3D thật");
       }).catch(() => setToast(instance, "Không thể chụp frame 3D trên thiết bị này"));
       return true;
     }
@@ -1791,6 +1954,196 @@
     return true;
   }
 
+  const packStatusLabel = (status) => ({
+    "not-installed": "CHƯA CÀI", installing: "ĐANG CÀI", paused: "ĐÃ TẠM DỪNG", ready: "ĐÃ XÁC MINH", failed: "GÓI LỖI"
+  }[status] || "CHƯA CÀI");
+
+  function formatPackBytes(value) {
+    const formatter = global.HHEonWildCinematicPacks?.formatBytes;
+    if (typeof formatter === "function") return formatter(value);
+    const bytes = Math.max(0, Number(value) || 0);
+    if (bytes < 1024) return `${Math.round(bytes)} B`;
+    if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KiB`;
+    if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} MiB`;
+    return `${(bytes / 1024 ** 3).toFixed(2)} GiB`;
+  }
+
+  function updatePackCard(instance, pack = {}) {
+    const id = String(pack.packId || pack.id || "");
+    const card = instance.root?.querySelector?.(`[data-hwe-pack="${id}"]`);
+    if (!card) return false;
+    const previous = instance.packStates?.get(id) || {};
+    const state = { ...previous, ...(pack.state && typeof pack.state === "object" ? pack.state : {}), ...pack, id };
+    instance.packStates?.set(id, state);
+    const status = String(state.status || (state.type === "progress" ? "installing" : "not-installed"));
+    const loaded = Math.max(0, Number(state.loadedBytes || 0));
+    const total = Math.max(0, Number(state.totalBytes || 0));
+    const statusNode = card.querySelector("[data-hwe-pack-status]");
+    const progress = card.querySelector("[data-hwe-pack-progress]");
+    const progressLabel = card.querySelector("[data-hwe-pack-progress-label]");
+    const asset = card.querySelector("[data-hwe-pack-asset]");
+    const file = card.querySelector("[data-hwe-pack-file]");
+    card.dataset.status = status;
+    card.setAttribute("aria-busy", String(status === "installing"));
+    if (statusNode) statusNode.textContent = packStatusLabel(status);
+    if (progress) { progress.max = Math.max(1, total); progress.value = Math.min(loaded, Math.max(1, total)); }
+    if (progressLabel) progressLabel.textContent = `${formatPackBytes(loaded)} / ${total ? formatPackBytes(total) : "chưa xác định"}`;
+    if (asset) asset.textContent = String(state.label || state.error || (status === "ready" ? `SHA-256 đạt · ${state.storage || "local"}` : "Chờ thao tác")).slice(0, 120);
+    if (file && instance.packManifests?.has(id)) {
+      const manifest = instance.packManifests.get(id);
+      file.textContent = `${manifest.build || "build"} · ${manifest.assets?.length || 0} asset · ${formatPackBytes(manifest.totalBytes)}`;
+    }
+    const active = status === "installing";
+    const install = card.querySelector("[data-hwe-pack-install]");
+    const pause = card.querySelector("[data-hwe-pack-pause]");
+    const verify = card.querySelector("[data-hwe-pack-verify]");
+    const remove = card.querySelector("[data-hwe-pack-remove]");
+    if (install) install.disabled = active || !instance.packManifests?.has(id);
+    if (pause) pause.disabled = !active;
+    if (verify) verify.disabled = active || status !== "ready";
+    if (remove) remove.disabled = active || status === "not-installed";
+    return true;
+  }
+
+  async function refreshPackStorage(instance) {
+    const node = instance.root?.querySelector?.("[data-hwe-pack-storage]");
+    if (!node || !instance.cinematicPackManager) return;
+    try {
+      const estimate = await instance.cinematicPackManager.storageEstimate();
+      if (instance.destroyed) return;
+      node.textContent = `${estimate.opfs ? "OPFS" : "Cache fallback"} · ${formatPackBytes(estimate.usage)} / ${estimate.quota ? formatPackBytes(estimate.quota) : "quota chưa báo"}${estimate.persisted ? " · lưu bền vững ✓" : ""}`;
+    } catch { node.textContent = "Không đọc được dung lượng · game nhẹ vẫn an toàn"; }
+  }
+
+  async function ensureCinematicPackManager(instance) {
+    const packApi = global.HHEonWildCinematicPacks;
+    if (typeof packApi?.createManager !== "function") return null;
+    if (instance.cinematicPackManager) return instance.cinematicPackManager;
+    instance.cinematicPackManager = packApi.createManager({ baseUrl: global.location?.href });
+    instance.packUnsubscribe = instance.cinematicPackManager.subscribe((event) => {
+      if (instance.destroyed) return;
+      if (event.packId) updatePackCard(instance, event);
+    });
+    await instance.cinematicPackManager.initialize();
+    return instance.cinematicPackManager;
+  }
+
+  async function initializeCinematicPacks(instance) {
+    if (instance.view !== "settings") return false;
+    try {
+      const manager = await ensureCinematicPackManager(instance);
+      if (!manager) return false;
+      const packs = manager.list();
+      if (instance.destroyed) return false;
+      packs.forEach((pack) => updatePackCard(instance, pack));
+      refreshPackStorage(instance);
+      return true;
+    } catch (error) {
+      const node = instance.root?.querySelector?.("[data-hwe-pack-storage]");
+      if (node) node.textContent = `Asset pack không khởi tạo: ${String(error?.message || error).slice(0, 90)}`;
+      return false;
+    }
+  }
+
+  const CINEMATIC_RUNTIME_RULES = Object.freeze({
+    "creature-ultra": Object.freeze({ group: "creatures", role: /^creature:([a-z0-9-]+):lod([0-3])$/, content: /^model\/gltf-binary$/ }),
+    "forest-vegetation": Object.freeze({ group: "environment", role: /^vegetation:(fern|rock|quiver)$/, content: /^model\/gltf-binary$/ }),
+    "terrain-rock": Object.freeze({ group: "terrain", role: /^terrain:(albedo|normal|roughness|ao)$/, content: /^image\// }),
+    ocean: Object.freeze({ group: "ocean", role: /^ocean:(normal|foam)$/, content: /^image\// }),
+    "weather-atmosphere": Object.freeze({ group: "weather", role: /^weather:(hdri)$/, content: /^image\/vnd\.radiance$/ }),
+    "cinematic-audio": Object.freeze({ group: "audio", role: /^audio:(ambience|forest|ocean|rain|wind)$/, content: /^audio\// })
+  });
+
+  async function prepareCinematicRuntimeAssets(instance) {
+    const empty = () => ({ creatures: [], environment: [], terrain: [], ocean: [], weather: [], audio: [], urls: [] });
+    if (instance.state.settings.quality !== "personal") return empty();
+    const manager = await ensureCinematicPackManager(instance).catch(() => null);
+    if (!manager || instance.destroyed) return empty();
+    const result = empty();
+    const rendererSpecies = new Set(Array.isArray(RENDERER_ADAPTER?.FLAGSHIP_IDS) ? RENDERER_ADAPTER.FLAGSHIP_IDS : []);
+    const limits = Object.freeze({ creatures: Math.max(0, rendererSpecies.size * 4), environment: 3, terrain: 4, ocean: 2, weather: 1, audio: 1 });
+    for (const [packId, rule] of Object.entries(CINEMATIC_RUNTIME_RULES)) {
+      const manifest = await manager.getManifest?.(packId);
+      if (!manifest || instance.destroyed) continue;
+      for (const asset of manifest.assets || []) {
+        const role = String(asset.role || "");
+        const match = rule.role.exec(role);
+        if (!match || !rule.content.test(String(asset.contentType || ""))) continue;
+        if (packId === "creature-ultra" && (!SPECIES_BY_ID.has(match[1]) || !rendererSpecies.has(match[1]))) continue;
+        if (result[rule.group].length >= limits[rule.group]) continue;
+        const url = await manager.assetUrl(packId, asset.path);
+        if (!url || instance.destroyed) {
+          if (url) manager.releaseAssetUrl(url);
+          continue;
+        }
+        result.urls.push(url);
+        const common = {
+          id: match[1], file: url, role, channel: match[1], contentType: asset.contentType,
+          trustedObjectUrl: true, source: asset.sourceUrl || manifest.licenseReportUrl,
+          packId, productionApproved: false
+        };
+        if (packId === "creature-ultra") result.creatures.push(Object.freeze({ ...common, id: match[1], lod: Number(match[2]), scale: 1, rotationY: 0 }));
+        else if (packId === "forest-vegetation") result.environment.push(Object.freeze({ ...common, id: match[1], scale: 1, wind: match[1] === "rock" ? 0 : 0.025 }));
+        else result[rule.group].push(Object.freeze(common));
+        if (result.urls.length >= 48) break;
+      }
+      if (result.urls.length >= 48) break;
+    }
+    result.creatures.sort((left, right) => left.id.localeCompare(right.id) || left.lod - right.lod);
+    return result;
+  }
+
+  async function readPackManifest(instance, file, expectedId) {
+    if (!file || file.size > 2 * 1024 * 1024) throw new Error("Manifest phải là JSON nhỏ hơn 2 MiB");
+    const manifest = JSON.parse(await file.text());
+    if (String(manifest?.id || "") !== String(expectedId || "")) throw new Error("Manifest không khớp gói đã chọn");
+    const validation = global.HHEonWildCinematicPacks?.validateManifest?.(manifest, { baseUrl: global.location?.href });
+    if (!validation?.valid) throw new Error(validation?.errors?.[0] || "Manifest không hợp lệ");
+    instance.packManifests.set(expectedId, validation.manifest);
+    updatePackCard(instance, { id: expectedId, ...(instance.packStates.get(expectedId) || {}) });
+    return validation.manifest;
+  }
+
+  async function installCinematicPack(instance, packId, files = null, licenseReportFile = null) {
+    const manager = instance.cinematicPackManager;
+    const manifest = instance.packManifests.get(packId);
+    if (!manager || !manifest) { setToast(instance, "Hãy nạp manifest bất biến hợp lệ trước"); return false; }
+    try {
+      updatePackCard(instance, { id: packId, status: "installing", totalBytes: manifest.totalBytes, loadedBytes: 0, label: "Đang chuẩn bị vùng lưu an toàn" });
+      const options = { licenseReportFile, onProgress: (progress) => updatePackCard(instance, { ...progress, status: "installing" }) };
+      const state = files ? await manager.installFromFiles(manifest, files, options) : await manager.install(manifest, options);
+      updatePackCard(instance, state);
+      refreshPackStorage(instance);
+      setToast(instance, state.status === "ready" ? "Gói đã cài và vượt kiểm tra SHA-256" : "Đã tạm dừng; byte đã tải được giữ để tiếp tục");
+      return state.status === "ready";
+    } catch (error) {
+      updatePackCard(instance, { id: packId, status: "failed", totalBytes: manifest.totalBytes, error: String(error?.message || error).slice(0, 120) });
+      setToast(instance, "Gói không hợp lệ; EonWild tiếp tục dùng asset nhẹ");
+      return false;
+    }
+  }
+
+  async function installCinematicPackFromFiles(instance, packId, selectedFiles) {
+    const maximumFiles = Math.max(1, Number(global.HHEonWildCinematicPacks?.MAX_ASSETS || 256)) + 2;
+    if (!selectedFiles || Number(selectedFiles.length || 0) > maximumFiles) throw new Error(`Bộ tệp local chỉ được tối đa ${maximumFiles} mục`);
+    const files = [...(selectedFiles || [])];
+    const manifestFile = files.find((file) => /(?:manifest|pack).*\.json$/i.test(file.name)) || files.find((file) => /\.json$/i.test(file.name));
+    if (!manifestFile) throw new Error("Bộ tệp local phải có manifest JSON");
+    const manifest = await readPackManifest(instance, manifestFile, packId);
+    const licenseReportFile = files.find((file) => file !== manifestFile && /(?:license|licence|provenance)[-_ .]?(?:report|receipt)?/i.test(String(file.name || "")));
+    if (!licenseReportFile) throw new Error("Bộ tệp local thiếu báo cáo giấy phép/provenance đã khai báo SHA-256");
+    const assetFiles = new Map();
+    for (const asset of manifest.assets) {
+      const matches = files.filter((file) => {
+        const relative = String(file.webkitRelativePath || file.name).replaceAll("\\", "/");
+        return relative === asset.path || relative.endsWith(`/${asset.path}`) || (!asset.path.includes("/") && file.name === asset.path);
+      });
+      if (matches.length !== 1) throw new Error(`Thiếu hoặc trùng tệp local: ${asset.path}`);
+      assetFiles.set(asset.path, matches[0]);
+    }
+    return installCinematicPack(instance, packId, assetFiles, licenseReportFile);
+  }
+
   function bind(instance) {
     const { root, controller } = instance;
     // `overflow:hidden` elements can still be scrolled programmatically when a
@@ -1804,7 +2157,7 @@
       instance.motionObserver = new global.MutationObserver(() => {
         if (!instance.renderer3d) return;
         instance.renderer3d.setMotion?.(instance.state.settings.motion);
-        instance.renderer3d.setQuality?.(reduced3DPreference(instance) ? "static" : instance.state.settings.quality);
+        setRuntimeQuality(instance, reduced3DPreference(instance) ? "static" : instance.state.settings.quality);
       });
       if (global.document?.documentElement) instance.motionObserver.observe(global.document.documentElement, { attributes: true, attributeFilter: ["class"] });
       if (global.document?.body) instance.motionObserver.observe(global.document.body, { attributes: true, attributeFilter: ["class"] });
@@ -1814,6 +2167,8 @@
       if (target.dataset.hweRoute) { global.location.hash = `#${target.dataset.hweRoute}`; return; }
       if (target.matches("[data-hwe-quick-play]")) { if (instance.view === "world") { if (!instance.running) startGame(instance); else focusSurface(instance); } else global.location.hash = "#/game/world"; return; }
       if (target.matches("[data-hwe-render-cancel]")) { disable3D(instance); setToast(instance, "Đã hủy tải 3D và giữ Canvas Lite"); return; }
+      if (target.matches("[data-hwe-render-retry]")) { const panel = target.closest("[data-hwe-render-fallback]"); if (panel) panel.hidden = true; enable3D(instance); return; }
+      if (target.matches("[data-hwe-fallback-dismiss]")) { const panel = target.closest("[data-hwe-render-fallback]"); if (panel) panel.hidden = true; focusSurface(instance); return; }
       if (target.matches(".hwe-render-toggle")) { if (instance.renderer3d || instance.rendererBooting) disable3D(instance); else enable3D(instance); return; }
       if (target.dataset.hweRenderer) { if (target.dataset.hweRenderer === "lite") disable3D(instance); else enable3D(instance); return; }
       if (target.matches("[data-hwe-open-codex]")) { global.location.hash = "#/game/species"; return; }
@@ -1847,7 +2202,45 @@
       if (target.matches("[data-hwe-replay-clear]")) { if (target.dataset.confirm === "true") { clearInterval(instance.observerTimer); instance.observerTimer = 0; instance.state.replay = []; saveState(instance); mount(instance.host, { view: "observer" }); } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa replay"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Xóa replay local"; } }, 4000); } return; }
       if (target.matches("[data-hwe-network-audit]")) { const result = root.querySelector("[data-hwe-network-result]"); if (result) result.textContent = `${global.isSecureContext ? "HTTPS ✓" : "HTTPS chưa đạt"} · Backend authoritative, token phòng, moderation và anti-cheat chưa cấu hình. Multiplayer tiếp tục bị khóa an toàn.`; target.textContent = "Đã kiểm tra · vẫn khóa"; setToast(instance, "Capability audit hoàn tất, không tạo phòng giả"); return; }
       if (target.matches("[data-hwe-simulate-season]")) { simulateEcologySeason(instance, target); return; }
-      if (target.matches("[data-hwe-reset]")) { if (target.dataset.confirm === "true") { global.localStorage?.removeItem?.(STORAGE_KEY); global.localStorage?.removeItem?.(LEGACY_STORAGE_KEY); global.localStorage?.removeItem?.(OLDER_STORAGE_KEY); global.localStorage?.removeItem?.(ROLLBACK_STORAGE_KEY); instance.state = normalizeState(); mount(instance.host, { view: "world" }); } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa save v1 + v2 + v3"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Khôi phục save mới…"; } }, 4000); } }
+      if (target.matches("[data-hwe-pack-persist]")) {
+        target.disabled = true;
+        instance.cinematicPackManager?.requestPersistence().then((granted) => { setToast(instance, granted ? "Trình duyệt đã cấp lưu trữ bền vững" : "Trình duyệt chưa cấp lưu trữ bền vững; dữ liệu vẫn nằm trong quota thường"); refreshPackStorage(instance); }).finally(() => { if (target.isConnected) target.disabled = false; });
+        return;
+      }
+      if (target.matches("[data-hwe-pack-verify-all]")) {
+        target.disabled = true; target.textContent = "Đang kiểm tra byte thật…";
+        instance.cinematicPackManager?.verifyAll({ onProgress: (progress) => updatePackCard(instance, { ...progress, status: "installing" }) }).then((results) => {
+          results.forEach((result) => updatePackCard(instance, result.ok ? result.state : { id: result.id, status: "failed", error: result.error }));
+          const failed = results.filter((result) => !result.ok).length;
+          setToast(instance, results.length ? failed ? `${failed}/${results.length} gói lỗi; asset nhẹ tiếp tục được dùng` : `${results.length} gói đều vượt kiểm tra SHA-256` : "Chưa có gói sẵn sàng để kiểm tra");
+        }).catch(() => setToast(instance, "Không thể hoàn tất kiểm tra toàn bộ; asset nhẹ vẫn an toàn")).finally(() => { if (target.isConnected) { target.disabled = false; target.textContent = "Kiểm tra toàn bộ"; } });
+        return;
+      }
+      if (target.matches("[data-hwe-pack-remove-all]")) {
+        if (target.dataset.confirm !== "true") { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa mọi gói"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Xóa toàn bộ cache Ultra"; } }, 4000); return; }
+        target.disabled = true;
+        instance.cinematicPackManager?.removeAll().then(() => { instance.packStates.clear(); instance.root.querySelectorAll("[data-hwe-pack]").forEach((card) => updatePackCard(instance, { id: card.dataset.hwePack, status: "not-installed", loadedBytes: 0, totalBytes: instance.packManifests.get(card.dataset.hwePack)?.totalBytes || 0, label: "Đã xóa dữ liệu cục bộ" })); refreshPackStorage(instance); setToast(instance, "Đã xóa toàn bộ cache Ultra khỏi thiết bị"); }).catch(() => setToast(instance, "Không thể xóa hết cache; hãy thử lại")).finally(() => { if (target.isConnected) { target.disabled = false; delete target.dataset.confirm; target.textContent = "Xóa toàn bộ cache Ultra"; } });
+        return;
+      }
+      if (target.dataset.hwePackManifest) { instance.pendingPackId = target.dataset.hwePackManifest; root.querySelector("[data-hwe-pack-manifest-file]")?.click?.(); return; }
+      if (target.dataset.hwePackLocal) { instance.pendingLocalPackId = target.dataset.hwePackLocal; root.querySelector("[data-hwe-pack-local-files]")?.click?.(); return; }
+      if (target.dataset.hwePackInstall) { installCinematicPack(instance, target.dataset.hwePackInstall); return; }
+      if (target.dataset.hwePackPause) { if (instance.cinematicPackManager?.pause(target.dataset.hwePackPause)) setToast(instance, "Đang tạm dừng an toàn sau chunk hiện tại"); return; }
+      if (target.dataset.hwePackVerify) {
+        const packId = target.dataset.hwePackVerify;
+        target.disabled = true;
+        instance.cinematicPackManager?.verify(packId, { onProgress: (progress) => updatePackCard(instance, { ...progress, status: "installing" }) })
+          .then((state) => { updatePackCard(instance, state); setToast(instance, "Toàn bộ byte và SHA-256 của gói đều hợp lệ"); })
+          .catch((error) => { updatePackCard(instance, { id: packId, status: "failed", error: String(error?.message || error).slice(0, 120) }); setToast(instance, "Kiểm tra thất bại; renderer sẽ dùng asset nhẹ"); });
+        return;
+      }
+      if (target.dataset.hwePackRemove) {
+        const packId = target.dataset.hwePackRemove;
+        if (target.dataset.confirm !== "true") { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa gói"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Xóa gói"; } }, 4000); return; }
+        instance.cinematicPackManager?.remove(packId).then(() => { updatePackCard(instance, { id: packId, status: "not-installed", loadedBytes: 0, totalBytes: instance.packManifests.get(packId)?.totalBytes || 0, label: "Đã xóa dữ liệu cục bộ" }); refreshPackStorage(instance); setToast(instance, "Đã xóa gói Cinematic khỏi thiết bị"); });
+        return;
+      }
+      if (target.matches("[data-hwe-reset]")) { if (target.dataset.confirm === "true") { global.localStorage?.removeItem?.(STORAGE_KEY); global.localStorage?.removeItem?.(LEGACY_STORAGE_KEY); global.localStorage?.removeItem?.(V2_STORAGE_KEY); global.localStorage?.removeItem?.(OLDER_STORAGE_KEY); global.localStorage?.removeItem?.(ROLLBACK_STORAGE_KEY); global.localStorage?.removeItem?.(LEGACY_ROLLBACK_STORAGE_KEY); instance.state = normalizeState(); mount(instance.host, { view: "world" }); } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa save v1 + v2 + v3 + v4"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Khôi phục save mới…"; } }, 4000); } }
     }, { signal: controller.signal });
     root.addEventListener("input", (event) => {
       if (event.target.matches("[data-hwe-species-search]")) filterSpecies(instance);
@@ -1858,15 +2251,37 @@
       }
       if (event.target.dataset.hwePhotoSetting) {
         const key = event.target.dataset.hwePhotoSetting;
-        const value = key === "photoFov" ? clamp(event.target.value, 35, 100) : clamp(event.target.value, 50, 160);
+        const ranges = {
+          photoFov: [35, 100], photoExposure: [50, 160], photoFocalLength: [18, 200], photoAperture: [1.4, 16],
+          photoShutter: [15, 8000], photoIso: [50, 6400], photoExposureComp: [-5, 5], photoFocusDistance: [.3, 500], photoShake: [0, 100]
+        };
+        const value = event.target.type === "checkbox" ? event.target.checked
+          : Object.hasOwn(ranges, key) ? clamp(event.target.value, ranges[key][0], ranges[key][1])
+          : String(event.target.value).slice(0, 16);
         instance.state.settings[key] = value;
+        if (key === "photoFocalLength") instance.state.settings.photoFov = clamp(focalLengthToFov(value), 35, 100);
         const output = event.target.closest("label")?.querySelector?.("output");
-        if (output) output.textContent = key === "photoFov" ? `${Math.round(value)}°` : `${Math.round(value)}%`;
-        instance.renderer3d?.setPhotoSettings?.({ fovDegrees: instance.state.settings.photoFov, exposure: instance.state.settings.photoExposure / 100 });
+        if (output) output.textContent = key === "photoFocalLength" ? `${Math.round(value)} mm`
+          : key === "photoAperture" ? `f/${Number(value).toFixed(1)}`
+          : key === "photoIso" ? `${Math.round(value)}`
+          : key === "photoExposureComp" ? `${value > 0 ? "+" : ""}${Number(value).toFixed(1)} EV`
+          : key === "photoFocusDistance" ? `${Number(value).toFixed(1)} m`
+          : key === "photoFov" ? `${Math.round(value)}°`
+          : `${Math.round(value)}%`;
+        syncPhotoComposition(instance);
+        instance.renderer3d?.setPhotoSettings?.(photoRendererSettings(instance.state.settings));
       }
     }, { signal: controller.signal });
     root.addEventListener("change", (event) => {
-      if (event.target.dataset.hwePhotoSetting) { instance.state = normalizeState(instance.state); saveState(instance); return; }
+      if (event.target.dataset.hwePhotoSetting) { instance.state = normalizeState(instance.state); syncPhotoComposition(instance); saveState(instance); return; }
+      if (event.target.matches("[data-hwe-pack-manifest-file]")) {
+        const packId = instance.pendingPackId; const file = event.target.files?.[0]; event.target.value = ""; instance.pendingPackId = "";
+        readPackManifest(instance, file, packId).then(() => setToast(instance, "Manifest hợp lệ; sẵn sàng cài hoặc tiếp tục")).catch((error) => setToast(instance, `Manifest bị từ chối: ${String(error?.message || error).slice(0, 86)}`)); return;
+      }
+      if (event.target.matches("[data-hwe-pack-local-files]")) {
+        const packId = instance.pendingLocalPackId; const files = event.target.files; event.target.value = ""; instance.pendingLocalPackId = "";
+        installCinematicPackFromFiles(instance, packId, files).catch((error) => { updatePackCard(instance, { id: packId, status: "failed", error: String(error?.message || error).slice(0, 120) }); setToast(instance, `Không thể cài tệp local: ${String(error?.message || error).slice(0, 80)}`); }); return;
+      }
       if (event.target.matches("[data-hwe-save-file]")) { importSave(instance, event.target.files?.[0]); event.target.value = ""; return; }
       if (event.target.matches("[data-hwe-mode]")) { if (RENDERER_3D?.GAME_MODES?.some?.((mode) => mode.id === event.target.value && mode.available)) { instance.state.mode = event.target.value; saveState(instance); setToast(instance, "Đã lưu chế độ vòng đời"); } return; }
       if (event.target.matches("[data-hwe-time-slice]")) {
@@ -1893,11 +2308,14 @@
       if (key === "realmId") { switchRealm(instance, String(event.target.value)); return; }
       if (!Object.hasOwn(instance.state.settings, key)) return;
       instance.state.settings[key] = event.target.type === "checkbox" ? event.target.checked : String(event.target.value).slice(0, 24);
-      instance.state = normalizeState(instance.state); root.dataset.motion = instance.state.settings.motion; saveState(instance);
-      if (key === "quality" && instance.renderer3d) instance.renderer3d.setQuality?.(instance.state.settings.quality);
+      instance.state = normalizeState(instance.state); root.dataset.motion = instance.state.settings.motion; root.dataset.quality = instance.state.settings.quality; saveState(instance);
+      if (key === "quality" && instance.renderer3d) setRuntimeQuality(instance, instance.state.settings.quality);
       if (key === "motion" && instance.renderer3d) {
         instance.renderer3d.setMotion?.(instance.state.settings.motion);
-        instance.renderer3d.setQuality?.(instance.state.settings.motion === "static" ? "static" : instance.state.settings.quality);
+        setRuntimeQuality(instance, instance.state.settings.motion === "static" ? "static" : instance.state.settings.quality);
+      }
+      if ((key === "sound" || key === "soundVolume") && instance.renderer3d) {
+        instance.renderer3d.setAudio?.(instance.state.settings.sound, clamp(instance.state.settings.soundVolume, 0, 100) / 100);
       }
       if (key === "convergence") mount(instance.host, { view: instance.view });
       else if (instance.view === "world" && ["density", "seed", "worker"].includes(key)) mount(instance.host, { view: "world" });
@@ -1921,7 +2339,7 @@
   function mount(host, options = {}) {
     if (!host) return false;
     unmount(host);
-    const instance = { host, root: null, view: safeView(options.view), state: readState(), controller: new AbortController(), destroyed: false, raf: 0, resizeObserver: null, motionObserver: null, toastTimer: 0, audioContext: null, eraFilter: "all", realmFilter: "all", tierFilter: "all", observerTimer: 0 };
+    const instance = { host, root: null, view: safeView(options.view), state: readState(), controller: new AbortController(), destroyed: false, raf: 0, resizeObserver: null, motionObserver: null, toastTimer: 0, audioContext: null, eraFilter: "all", realmFilter: "all", tierFilter: "all", observerTimer: 0, cinematicPackManager: null, packUnsubscribe: null, packManifests: new Map(), packStates: new Map(), pendingPackId: "", pendingLocalPackId: "" };
     if (instance.view === "world") {
       const current = SPECIES_BY_ID.get(instance.state.speciesId);
       if (!current || tierForSpecies(current) !== "flagship" || !speciesAllowedInRealm(current, instance.state.realmId, instance.state.settings.convergence)) {
@@ -1940,6 +2358,7 @@
     instances.set(host, instance); activeHosts.add(host); bind(instance);
     if (instance.view === "world") initWorld(instance);
     if (instance.view === "observer") initObserver(instance);
+    if (instance.view === "settings") initializeCinematicPacks(instance);
     return Object.freeze({
       version: VERSION,
       state: () => JSON.parse(JSON.stringify(instance.state)),
@@ -1957,8 +2376,8 @@
     }
     const instance = instances.get(host);
     if (!instance) { activeHosts.delete(host); if (host) host.replaceChildren(); return false; }
-    instance.destroyed = true; instance.rendererBootToken = (instance.rendererBootToken || 0) + 1; instance.controller.abort(); clearTimeout(instance.toastTimer); clearInterval(instance.observerTimer); instance.resizeObserver?.disconnect?.(); instance.motionObserver?.disconnect?.(); global.cancelAnimationFrame?.(instance.raf); instance.rendererStartingAdapter?.dispose?.(); instance.rendererStartingAdapter = null; instance.renderer3d?.dispose?.(); instance.renderer3d = null; instance.workerAdapter?.close?.(); instance.simulation?.dispose?.(); instance.audioContext?.close?.().catch?.(() => {}); saveState(instance); host.replaceChildren(); instances.delete(host); activeHosts.delete(host); return true;
+    instance.destroyed = true; instance.rendererBootToken = (instance.rendererBootToken || 0) + 1; instance.controller.abort(); clearTimeout(instance.toastTimer); clearInterval(instance.observerTimer); instance.resizeObserver?.disconnect?.(); instance.motionObserver?.disconnect?.(); global.cancelAnimationFrame?.(instance.raf); instance.rendererStartingAdapter?.dispose?.(); instance.rendererStartingAdapter = null; instance.renderer3d?.dispose?.(); instance.renderer3d = null; instance.packUnsubscribe?.(); instance.cinematicPackManager?.dispose?.(); instance.workerAdapter?.close?.(); instance.simulation?.dispose?.(); instance.audioContext?.close?.().catch?.(() => {}); saveState(instance); host.replaceChildren(); instances.delete(host); activeHosts.delete(host); return true;
   }
 
-  return Object.freeze({ VERSION, version: VERSION, STORAGE_KEY, LEGACY_STORAGE_KEY, SCHEMA_VERSION, WORLD_SIZE, ERA_META, REALMS, BIOMES, FLAGSHIP_IDS, SPECIES, EXPEDITIONS, normalizeState, stepVitals, terrainAt, terrainForRealm, createWorld, findHabitatSpawn, mount, unmount });
+  return Object.freeze({ VERSION, version: VERSION, STORAGE_KEY, LEGACY_STORAGE_KEY, V2_STORAGE_KEY, OLDER_STORAGE_KEY, SCHEMA_VERSION, WORLD_SIZE, ERA_META, REALMS, BIOMES, FLAGSHIP_IDS, SPECIES, EXPEDITIONS, normalizeState, stepVitals, terrainAt, terrainForRealm, createWorld, findHabitatSpawn, mount, unmount });
 });

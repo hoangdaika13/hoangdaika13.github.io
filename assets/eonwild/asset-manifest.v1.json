@@ -28,7 +28,8 @@
     "licenseChecksumNormalization": "utf8-lf"
   },
   "verticalSlice": {
-    "logicalSizeMeters": 4096,
+    "logicalSizeMeters": 16384,
+    "streamingExtensionSizeMeters": 32768,
     "chunkSizeMeters": 256,
     "productionModelsReady": false,
     "visualRepresentation": "hybrid-cc0-environment-and-creature-prototypes",
@@ -57,7 +58,8 @@
       "Apache-2.0",
       "original-proprietary"
     ],
-    "maximumTextureEdge": 4096,
+    "maximumTextureEdge": 8192,
+    "defaultTextureEdge": 4096,
     "maximumNearCreatureTriangles": 180000
   },
   "environmentPipeline": {

@@ -7,18 +7,18 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createEonWild3D(global) {
   "use strict";
 
-  const VERSION = "3.0.0";
+  const VERSION = "3.1.0";
   const BABYLON_VERSION = "9.22.1";
   const SCRIPT_BASE_URL = (() => {
     try { return global.document?.currentScript?.src ? new URL("./", global.document.currentScript.src).href : ""; } catch { return ""; }
   })();
   const BABYLON_URL = SCRIPT_BASE_URL ? new URL(`vendor/babylon-${BABYLON_VERSION}.js?v=${BABYLON_VERSION}`, SCRIPT_BASE_URL).href : `./vendor/babylon-${BABYLON_VERSION}.js?v=${BABYLON_VERSION}`;
   const WORLD_CONFIG = Object.freeze({
-    logicalSizeMeters: 4096,
+    logicalSizeMeters: 16384,
     chunkSizeMeters: 256,
     highDetailMeters: 300,
     mediumDetailMeters: 1200,
-    farDetailMeters: 4000,
+    farDetailMeters: 16000,
     desktopChunkRadius: 4,
     mobileChunkRadius: 2,
     maximumResidentChunks: 96,
@@ -30,7 +30,8 @@
     light: Object.freeze({ id: "light", label: "Nhẹ", targetFps: 30, dpr: 1.1, chunkRadius: 2, terrainSubdivisions: [24, 12, 6, 2], wildlife: 12, shadows: false, fog: true, particles: 8 }),
     balanced: Object.freeze({ id: "balanced", label: "Cân bằng", targetFps: 45, dpr: 1.35, chunkRadius: 3, terrainSubdivisions: [32, 16, 8, 3], wildlife: 18, shadows: true, fog: true, particles: 14 }),
     high: Object.freeze({ id: "high", label: "Cao", targetFps: 60, dpr: 1.6, chunkRadius: 4, terrainSubdivisions: [48, 24, 10, 4], wildlife: 24, shadows: true, fog: true, particles: 18 }),
-    cinematic: Object.freeze({ id: "cinematic", label: "Điện ảnh", targetFps: 60, dpr: 1.8, chunkRadius: 5, terrainSubdivisions: [64, 32, 12, 4], wildlife: 32, shadows: true, fog: true, particles: 24 })
+    cinematic: Object.freeze({ id: "cinematic", label: "Ultra", targetFps: 45, dpr: 1.8, chunkRadius: 5, terrainSubdivisions: [64, 32, 12, 4], wildlife: 32, shadows: true, fog: true, particles: 24 }),
+    personal: Object.freeze({ id: "personal", label: "Cinematic Personal", targetFps: 30, dpr: 2, chunkRadius: 6, terrainSubdivisions: [96, 48, 16, 6], wildlife: 40, shadows: true, fog: true, particles: 32, ownerOnly: true })
   });
 
   const GAME_MODES = Object.freeze([
@@ -247,7 +248,7 @@
     let qualityId = QUALITY_PROFILES[options.quality] ? options.quality : "balanced";
     let badWindows = 0;
     let goodWindows = 0;
-    const order = ["static", "light", "balanced", "high", "cinematic"];
+    const order = ["static", "light", "balanced", "high", "cinematic", "personal"];
     return Object.freeze({
       get quality() { return qualityId; },
       sample(fps) {
@@ -259,7 +260,9 @@
         let changed = false;
         const index = order.indexOf(qualityId);
         if (badWindows >= 2 && index > 0) { qualityId = order[index - 1]; badWindows = 0; changed = true; }
-        else if (goodWindows >= 15 && options.allowUpgrade === true && index < order.length - 1) { qualityId = order[index + 1]; goodWindows = 0; changed = true; }
+        // Personal is deliberately opt-in: adaptive quality may leave it when
+        // performance is poor, but never enters it on the owner's behalf.
+        else if (goodWindows >= 15 && options.allowUpgrade === true && index >= 0 && index < order.indexOf("cinematic")) { qualityId = order[index + 1]; goodWindows = 0; changed = true; }
         return Object.freeze({ changed, quality: qualityId, fps: measured, profile: QUALITY_PROFILES[qualityId] });
       },
       setQuality(next) {

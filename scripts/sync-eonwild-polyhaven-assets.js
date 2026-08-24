@@ -31,7 +31,7 @@ function hashFile(algorithm, filePath) {
 
 function trustedUrl(rawUrl, expectedOrigin) {
   const url = new URL(String(rawUrl || ""));
-  if (url.protocol !== "https:" || url.origin !== expectedOrigin || url.username || url.password) {
+  if (url.protocol !== "https:" || url.origin !== expectedOrigin || url.username || url.password || url.search || url.hash) {
     throw new Error(`Untrusted Poly Haven URL: ${url.href}`);
   }
   return url;

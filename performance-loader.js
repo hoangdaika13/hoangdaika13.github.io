@@ -237,8 +237,8 @@
       scripts: ["hh-play.js?v=4&build=2"]
     },
     game: {
-      styles: ["hh-eonwild-game.css?v=11"],
-      scripts: ["hh-eonwild-content-v2.js?v=3", "hh-eonwild-simulation-v2.js?v=4", "hh-eonwild-3d-core.js?v=4", "hh-eonwild-renderer-3d.js?v=6", "hh-eonwild-game.js?v=14"]
+      styles: ["hh-eonwild-game.css?v=12"],
+      scripts: ["hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3", "hh-eonwild-simulation-v2.js?v=4", "hh-eonwild-3d-core.js?v=5", "hh-eonwild-renderer-3d.js?v=9", "hh-eonwild-game.js?v=15"]
     },
     fortune: {
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=26"],

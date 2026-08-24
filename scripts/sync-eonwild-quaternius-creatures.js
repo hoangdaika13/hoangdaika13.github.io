@@ -49,7 +49,7 @@ function normalizedAnimations(document) {
 
 function trustedUrl(rawUrl, expectedOrigin) {
   const url = new URL(String(rawUrl || ""));
-  if (url.protocol !== "https:" || url.origin !== expectedOrigin || url.username || url.password) throw new Error(`Untrusted asset URL: ${url.href}`);
+  if (url.protocol !== "https:" || url.origin !== expectedOrigin || url.username || url.password || url.search || url.hash) throw new Error(`Untrusted asset URL: ${url.href}`);
   return url;
 }
 

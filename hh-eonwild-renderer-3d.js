@@ -18,8 +18,11 @@
    * Canvas2D fallback contract.
    */
 
-  const VERSION = "1.2.0";
-  const WORLD_SIZE = 4096;
+  const VERSION = "1.3.0";
+  // Four 8.192 km half-axes provide a true 16.384 x 16.384 km streamed realm.
+  // Only nearby 256 m chunks are materialized, so the larger address space
+  // does not multiply active geometry or main-thread work.
+  const WORLD_SIZE = 16384;
   const WORLD_HALF = WORLD_SIZE / 2;
   const CHUNK_SIZE = 256;
   const CHUNKS_PER_AXIS = WORLD_SIZE / CHUNK_SIZE;
@@ -44,7 +47,8 @@
     low: Object.freeze({ fern: 6, rock: 1, quiver: 0, rainParticles: 48, hdrCubeSize: 64, placementRadius: 2 }),
     balanced: Object.freeze({ fern: 12, rock: 2, quiver: 1, rainParticles: 96, hdrCubeSize: 128, placementRadius: 2 }),
     high: Object.freeze({ fern: 18, rock: 3, quiver: 1, rainParticles: 160, hdrCubeSize: 128, placementRadius: 3 }),
-    ultra: Object.freeze({ fern: 26, rock: 4, quiver: 2, rainParticles: 240, hdrCubeSize: 256, placementRadius: 3 })
+    ultra: Object.freeze({ fern: 26, rock: 4, quiver: 2, rainParticles: 240, hdrCubeSize: 256, placementRadius: 3 }),
+    cinematic: Object.freeze({ fern: 32, rock: 8, quiver: 4, rainParticles: 420, hdrCubeSize: 512, placementRadius: 4 })
   });
   const DEFAULT_ENVIRONMENT_HDR_FILE = "kloofendal-partly-cloudy-puresky-1k.hdr";
   const CREATURE_PROTOTYPE_ASSETS = Object.freeze([
@@ -64,9 +68,26 @@
     low: Object.freeze({ id: "low", targetFps: 30, renderScale: 0.62, streamRadius: 2, maxChunks: 21, terrainSegments: 12, chunkBuildsPerFrame: 1, farClip: 520 }),
     balanced: Object.freeze({ id: "balanced", targetFps: 45, renderScale: 0.78, streamRadius: 3, maxChunks: 37, terrainSegments: 20, chunkBuildsPerFrame: 1, farClip: 700 }),
     high: Object.freeze({ id: "high", targetFps: 60, renderScale: 0.9, streamRadius: 4, maxChunks: 61, terrainSegments: 28, chunkBuildsPerFrame: 2, farClip: 900 }),
-    ultra: Object.freeze({ id: "ultra", targetFps: 60, renderScale: 1, streamRadius: 5, maxChunks: 89, terrainSegments: 36, chunkBuildsPerFrame: 2, farClip: 1100 })
+    ultra: Object.freeze({ id: "ultra", targetFps: 60, renderScale: 1, streamRadius: 5, maxChunks: 89, terrainSegments: 36, chunkBuildsPerFrame: 2, farClip: 1100 }),
+    cinematic: Object.freeze({ id: "cinematic", targetFps: 60, renderScale: 1, streamRadius: 6, maxChunks: 96, terrainSegments: 48, chunkBuildsPerFrame: 2, farClip: 1600 })
   });
-  const QUALITY_ORDER = Object.freeze(["low", "balanced", "high", "ultra"]);
+  const QUALITY_ORDER = Object.freeze(["low", "balanced", "high", "ultra", "cinematic"]);
+  const ADAPTIVE_MAX_PRESET = "ultra";
+  const CINEMATIC_PRESET = "cinematic";
+  const QUALITY_ALIASES = Object.freeze({ personal: CINEMATIC_PRESET, "cinematic-personal": CINEMATIC_PRESET });
+  const DEFAULT_PHOTO_SETTINGS = Object.freeze({
+    sensorHeightMm: 24,
+    focalLengthMm: 35,
+    apertureFStop: 4,
+    shutterSeconds: 1 / 125,
+    iso: 100,
+    focusDistanceM: 18,
+    exposureCompensationEv: 0,
+    exposure: 1.02,
+    depthOfField: false,
+    autofocus: true,
+    cameraShake: 0
+  });
 
   const TERRAIN_COLORS = Object.freeze({
     waterbed: Object.freeze([0.16, 0.25, 0.2]),
@@ -91,7 +112,11 @@
   const now = () => runtime.performance && typeof runtime.performance.now === "function" ? runtime.performance.now() : Date.now();
   const lerp = (a, b, amount) => a + (b - a) * amount;
   const smooth = (value) => value * value * (3 - 2 * value);
-  const normalizePreset = (value, fallback = "balanced") => Object.prototype.hasOwnProperty.call(QUALITY_PRESETS, value) ? value : fallback;
+  const normalizePreset = (value, fallback = "balanced") => {
+    const normalized = String(value || "").trim().toLowerCase();
+    const aliased = QUALITY_ALIASES[normalized] || normalized;
+    return Object.prototype.hasOwnProperty.call(QUALITY_PRESETS, aliased) ? aliased : fallback;
+  };
   const compactError = (error) => ({
     name: String(error && error.name || "Error").slice(0, 80),
     message: String(error && error.message || error || "Unknown error").slice(0, 360)
@@ -290,6 +315,30 @@
       if (base.protocol === "file:") return parsed.protocol === "file:";
       return ["http:", "https:"].includes(base.protocol) && parsed.protocol === base.protocol && parsed.origin === base.origin;
     } catch { return false; }
+  }
+
+  function trustedBlobAssetUrl(definition, documentRef) {
+    if (definition?.trustedObjectUrl !== true) return "";
+    try {
+      const base = new URL(documentRef?.baseURI || runtime.location?.href);
+      const parsed = new URL(String(definition.file || ""));
+      return parsed.protocol === "blob:" && parsed.origin === base.origin ? parsed.href : "";
+    } catch { return ""; }
+  }
+
+  function createRuntimeTexture(B, scene, definition, documentRef, options = {}) {
+    const url = trustedBlobAssetUrl(definition, documentRef);
+    if (!url || !/^image\//i.test(String(definition?.contentType || "")) || typeof B.Texture !== "function") return null;
+    try {
+      const texture = new B.Texture(url, scene, options.noMipmap === true, false, B.Texture.TRILINEAR_SAMPLINGMODE);
+      texture.name = "hwe3d-personal-" + String(definition.role || definition.channel || "texture").replace(/[^a-z0-9-]+/gi, "-");
+      texture.wrapU = B.Texture.WRAP_ADDRESSMODE;
+      texture.wrapV = B.Texture.WRAP_ADDRESSMODE;
+      texture.uScale = finite(options.uScale, 1);
+      texture.vScale = finite(options.vScale, 1);
+      if ("anisotropicFilteringLevel" in texture) texture.anisotropicFilteringLevel = Math.round(clamp(options.anisotropy || 8, 1, 16));
+      return texture;
+    } catch { return null; }
   }
 
   function resolveBabylonUrls(options, documentRef) {
@@ -685,24 +734,45 @@
     return new B.Color3(rgb[0], rgb[1], rgb[2]);
   }
 
-  function createTerrainMaterial(B, scene) {
+  function createTerrainMaterial(B, scene, options = {}) {
     const material = typeof B.PBRMaterial === "function"
       ? new B.PBRMaterial("hwe3d-terrain-pbr-material", scene)
       : new B.StandardMaterial("hwe3d-terrain-material", scene);
+    const documentRef = options.document || runtime.document;
+    const descriptors = Array.isArray(options.cinematicTerrainAssets) ? options.cinematicTerrainAssets : [];
+    const textureByChannel = new Map();
+    for (const descriptor of descriptors) {
+      const channel = String(descriptor?.channel || "").toLowerCase();
+      if (!["albedo", "normal", "roughness", "ao"].includes(channel) || textureByChannel.has(channel)) continue;
+      const texture = createRuntimeTexture(B, scene, descriptor, documentRef, { uScale: 14, vScale: 14, anisotropy: 12 });
+      if (texture) textureByChannel.set(channel, texture);
+    }
     if ("albedoColor" in material) {
       material.albedoColor = new B.Color3(1, 1, 1);
       material.metallic = 0;
       material.roughness = 0.96;
       material.environmentIntensity = 0.62;
+      if (textureByChannel.has("albedo")) material.albedoTexture = textureByChannel.get("albedo");
+      if (textureByChannel.has("normal")) material.bumpTexture = textureByChannel.get("normal");
+      if (textureByChannel.has("ao")) material.ambientTexture = textureByChannel.get("ao");
+      if (textureByChannel.has("roughness")) {
+        material.metallicTexture = textureByChannel.get("roughness");
+        material.useRoughnessFromMetallicTextureAlpha = false;
+        material.useRoughnessFromMetallicTextureGreen = true;
+        material.useMetallnessFromMetallicTextureBlue = false;
+      }
     } else {
       material.diffuseColor = new B.Color3(1, 1, 1);
       material.ambientColor = new B.Color3(0.3, 0.34, 0.28);
       material.specularColor = new B.Color3(0.025, 0.03, 0.025);
       material.roughness = 1;
+      if (textureByChannel.has("albedo")) material.diffuseTexture = textureByChannel.get("albedo");
+      if (textureByChannel.has("normal")) material.bumpTexture = textureByChannel.get("normal");
+      if (textureByChannel.has("ao")) material.ambientTexture = textureByChannel.get("ao");
     }
     material.backFaceCulling = false;
     if (typeof material.freeze === "function") material.freeze();
-    return material;
+    return { material, textures: [...textureByChannel.values()] };
   }
 
   function appendSkirt(positions, colors, indices, edge, depth, color) {
@@ -791,7 +861,9 @@
       this.B = B;
       this.scene = scene;
       this.seed = hashSeed(options.seed);
-      this.material = createTerrainMaterial(B, scene);
+      const terrainMaterial = createTerrainMaterial(B, scene, options);
+      this.material = terrainMaterial.material;
+      this.textures = terrainMaterial.textures;
       this.active = new Map();
       this.wanted = new Map();
       this.queue = [];
@@ -896,6 +968,8 @@
       for (const entry of this.active.values()) safeDispose(entry.mesh);
       this.active.clear();
       safeDispose(this.material);
+      for (const texture of this.textures) safeDispose(texture);
+      this.textures.length = 0;
     }
   }
 
@@ -1001,6 +1075,19 @@
       this.documentRef = options.document || runtime.document;
       this.qualityPreset = normalizePreset(options.qualityPreset || options.quality, "balanced");
       this.seed = hashSeed(options.seed || "eonwild-mesozoic");
+      const personalDefinitions = new Map((Array.isArray(options.cinematicEnvironmentAssets) ? options.cinematicEnvironmentAssets : [])
+        .filter((definition) => ENVIRONMENT_ASSETS.some((base) => base.id === String(definition?.id || ""))
+          && definition?.trustedObjectUrl === true
+          && /^model\/gltf-binary$/i.test(String(definition?.contentType || ""))
+          && new RegExp("^vegetation:" + String(definition.id) + "$").test(String(definition?.role || "")))
+        .map((definition) => [String(definition.id), definition]));
+      this.definitions = ENVIRONMENT_ASSETS.map((base) => {
+        const personal = personalDefinitions.get(base.id);
+        return personal ? freezeRecord({ ...base, ...personal, scale: clamp(personal.scale || 1, 0.001, 100), wind: clamp(personal.wind ?? base.wind, 0, 0.2), personal: true }) : base;
+      });
+      this.baseDefinitions = ENVIRONMENT_ASSETS;
+      this.hdrDefinition = (Array.isArray(options.cinematicWeatherAssets) ? options.cinematicWeatherAssets : [])
+        .find((definition) => definition?.trustedObjectUrl === true && definition?.channel === "hdri" && /^image\//i.test(String(definition?.contentType || ""))) || null;
       this.entries = new Map();
       this.hdrTexture = null;
       this.skybox = null;
@@ -1019,7 +1106,9 @@
       if (!this.disposed) this.adapter._emitStatus({ change, environmentAssets: detail });
     }
 
-    _resolveUrl(file) {
+    _resolveUrl(file, definition = null) {
+      const trusted = definition ? trustedBlobAssetUrl(definition, this.documentRef) : "";
+      if (trusted) return trusted;
       const base = normalizeUrl(this.options.environmentAssetBase || DEFAULT_ENVIRONMENT_ASSET_BASE, this.documentRef);
       let resolved = "";
       try { resolved = String(new URL(String(file || ""), base)); }
@@ -1039,7 +1128,14 @@
       this.status = "loading";
       this._emit();
       try {
-        await this._loadHdr().catch((error) => this._recordFailure("hdr", error));
+        try { await this._loadHdr(); }
+        catch (error) {
+          this._recordFailure(this.hdrDefinition ? "personal-hdr" : "hdr", error);
+          if (this.hdrDefinition && !this.disposed) {
+            this.hdrDefinition = null;
+            await this._loadHdr().catch((fallbackError) => this._recordFailure("hdr-fallback", fallbackError));
+          }
+        }
         if (this.disposed) return this.getStatus();
         await loadBabylonGltfLoader(this.B, this.options, this.documentRef);
         if (this.disposed) return this.getStatus();
@@ -1060,12 +1156,14 @@
 
     _recordFailure(assetId, error) {
       this.failures.push(freezeRecord({ assetId: String(assetId), error: compactError(error) }));
-      if (this.failures.length > ENVIRONMENT_ASSETS.length + 2) this.failures.shift();
+      if (this.failures.length > this.definitions.length + 2) this.failures.shift();
     }
 
     async _loadHdr() {
       if (this.options.environmentHdr === false || typeof this.B.HDRCubeTexture !== "function") return;
-      const url = this._resolveUrl(this.options.environmentHdrFile || DEFAULT_ENVIRONMENT_HDR_FILE);
+      const url = this.hdrDefinition
+        ? this._resolveUrl(this.hdrDefinition.file, this.hdrDefinition)
+        : this._resolveUrl(this.options.environmentHdrFile || DEFAULT_ENVIRONMENT_HDR_FILE);
       const size = ENVIRONMENT_BUDGETS[this.qualityPreset].hdrCubeSize;
       let texture = null;
       const pending = new Promise((resolve, reject) => {
@@ -1077,7 +1175,7 @@
       catch (error) { safeDispose(texture); throw error; }
       if (this.disposed) { safeDispose(texture); return; }
       this.hdrTexture = texture;
-      this.hdrTexture.name = "hwe3d-polyhaven-sky-ibl";
+      this.hdrTexture.name = this.hdrDefinition ? "hwe3d-personal-weather-ibl" : "hwe3d-polyhaven-sky-ibl";
       this.scene.environmentTexture = texture;
       this.scene.environmentIntensity = 0.72;
       if (typeof this.scene.createDefaultSkybox === "function") {
@@ -1086,30 +1184,43 @@
           if (this.skybox) {
             this.skybox.name = "hwe3d-polyhaven-skybox";
             this.skybox.isPickable = false;
-            this.skybox.metadata = { eonwild: true, kind: "cc0-hdri-sky", source: "Poly Haven" };
+            this.skybox.metadata = {
+              eonwild: true,
+              kind: this.hdrDefinition ? "verified-personal-hdri-candidate" : "cc0-hdri-sky",
+              source: this.hdrDefinition?.source || "Poly Haven",
+              productionApproved: false
+            };
           }
         } catch { this.skybox = null; }
       }
     }
 
     async _ensureRequestedDefinitions() {
-      for (const definition of ENVIRONMENT_ASSETS) {
+      for (const definition of this.definitions) {
         if (this.disposed) return;
         if ((ENVIRONMENT_BUDGETS[this.qualityPreset][definition.id] || 0) <= 0 || this.entries.has(definition.id)) continue;
         try { await this._loadDefinition(definition); }
-        catch (error) { this._recordFailure(definition.id, error); }
+        catch (error) {
+          this._recordFailure(definition.id, error);
+          const fallback = definition.personal ? this.baseDefinitions.find((candidate) => candidate.id === definition.id) : null;
+          if (fallback && !this.disposed && !this.entries.has(definition.id)) {
+            try { await this._loadDefinition(fallback); }
+            catch (fallbackError) { this._recordFailure(definition.id + "-fallback", fallbackError); }
+          }
+        }
       }
     }
 
     async _loadDefinition(definition) {
-      const absolute = this._resolveUrl(definition.file);
+      const absolute = this._resolveUrl(definition.file, definition);
+      const isObjectUrl = /^blob:/i.test(absolute);
       const parsed = new URL(absolute, this.documentRef?.baseURI);
       const slash = parsed.pathname.lastIndexOf("/");
       parsed.pathname = parsed.pathname.slice(0, slash + 1);
       parsed.search = "";
       parsed.hash = "";
-      const rootUrl = parsed.href;
-      const filename = absolute.slice(absolute.lastIndexOf("/") + 1).split(/[?#]/)[0];
+      const rootUrl = isObjectUrl ? "" : parsed.href;
+      const filename = isObjectUrl ? absolute : absolute.slice(absolute.lastIndexOf("/") + 1).split(/[?#]/)[0];
       let lateContainer = null;
       const task = this.B.SceneLoader.LoadAssetContainerAsync(rootUrl, filename, this.scene, undefined, ".glb").then((container) => {
         lateContainer = container;
@@ -1147,7 +1258,13 @@
       const wrapper = new this.B.TransformNode(`hwe3d-${entry.definition.id}-instance-${index}`, this.scene);
       for (const rootNode of result.rootNodes || []) rootNode.parent = wrapper;
       wrapper.setEnabled(false);
-      wrapper.metadata = { eonwild: true, kind: "cc0-environment-instance", assetId: entry.definition.id, source: "Poly Haven" };
+      wrapper.metadata = {
+        eonwild: true,
+        kind: entry.definition.personal ? "verified-personal-environment-candidate" : "cc0-environment-instance",
+        assetId: entry.definition.id,
+        source: entry.definition.source || "Poly Haven",
+        productionApproved: false
+      };
       if (this.adapter._lights?.shadow && typeof this.adapter._lights.shadow.addShadowCaster === "function") {
         const childMeshes = typeof wrapper.getChildMeshes === "function" ? wrapper.getChildMeshes(false) : [];
         for (const mesh of childMeshes) {
@@ -1211,7 +1328,7 @@
       if (!force && chunkKey === this.centerChunkKey) return;
       this.centerChunkKey = chunkKey;
       const placements = planEnvironmentPlacements(worldX, worldZ, { seed: this.seed, qualityPreset: this.qualityPreset });
-      for (const definition of ENVIRONMENT_ASSETS) {
+      for (const definition of this.definitions) {
         try { this._syncInstancesFor(definition.id, placements.filter((placement) => placement.assetId === definition.id)); }
         catch (error) { this._recordFailure(`${definition.id}-instance`, error); }
       }
@@ -1301,12 +1418,34 @@
       this.options = options;
       this.documentRef = options.document || runtime.document;
       this.entries = new Map();
+      this.lodEntries = new Map();
+      this.activeLods = new Map();
       this.lastPose = new Map();
       this.failures = [];
       this.started = false;
       this.loading = false;
       this.disposed = false;
       this.reducedMotion = Boolean(adapter._reducedMotion);
+      this.cinematicDefinitions = (Array.isArray(options.cinematicCreatureAssets) ? options.cinematicCreatureAssets : [])
+        .map((definition) => {
+          const id = String(definition?.id || "");
+          const roleMatch = new RegExp("^creature:" + id + ":lod([0-3])$").exec(String(definition?.role || ""));
+          const lod = roleMatch ? Number(roleMatch[1]) : -1;
+          return { definition, id, lod };
+        })
+        .filter(({ definition, id, lod }) => FLAGSHIP_IDS.includes(id)
+          && lod >= 0
+          && definition?.trustedObjectUrl === true
+          && /^blob:/i.test(String(definition?.file || ""))
+          && /^model\/gltf-binary$/i.test(String(definition?.contentType || "")))
+        .slice(0, FLAGSHIP_IDS.length * 4)
+        .map(({ definition, lod }) => freezeRecord({
+          ...definition,
+          lod,
+          scale: clamp(definition.scale || 1, 0.001, 100),
+          rotationY: finite(definition.rotationY, 0),
+          productionApproved: false
+        }));
       this.status = options.creaturePrototypeAssets === false ? "disabled" : "idle";
     }
 
@@ -1316,7 +1455,15 @@
       if (!this.disposed) this.adapter._emitStatus({ change, creatureAssets: detail });
     }
 
-    _resolveUrl(file) {
+    _resolveUrl(definition) {
+      const file = definition?.file;
+      if (definition?.trustedObjectUrl === true) {
+        try {
+          const base = new URL(this.documentRef?.baseURI || runtime.location?.href);
+          const parsed = new URL(String(file || ""));
+          if (parsed.protocol === "blob:" && parsed.origin === base.origin) return parsed.href;
+        } catch { /* Fall through to the same-origin rejection below. */ }
+      }
       const base = normalizeUrl(this.options.creatureAssetBase || DEFAULT_CREATURE_ASSET_BASE, this.documentRef);
       let resolved = "";
       try { resolved = String(new URL(String(file || ""), base)); }
@@ -1331,7 +1478,7 @@
 
     _recordFailure(speciesId, error) {
       this.failures.push(freezeRecord({ speciesId: String(speciesId), error: compactError(error) }));
-      if (this.failures.length > CREATURE_PROTOTYPE_ASSETS.length + 1) this.failures.shift();
+      if (this.failures.length > CREATURE_PROTOTYPE_ASSETS.length + this.cinematicDefinitions.length + 1) this.failures.shift();
     }
 
     async start() {
@@ -1342,17 +1489,36 @@
       this._emit();
       try {
         await loadBabylonGltfLoader(this.B, this.options, this.documentRef);
-        for (const definition of CREATURE_PROTOTYPE_ASSETS) {
+        for (const speciesId of FLAGSHIP_IDS) {
           if (this.disposed) break;
-          try { await this._loadDefinition(definition); }
-          catch (error) { this._recordFailure(definition.id, error); }
+          const cinematic = this.cinematicDefinitions
+            .filter((definition) => definition.id === speciesId)
+            .sort((left, right) => left.lod - right.lod);
+          const lod0 = cinematic.find((definition) => definition.lod === 0);
+          if (lod0) {
+            try { await this._loadDefinition(lod0); }
+            catch (error) { this._recordFailure(speciesId + ":lod0", error); }
+          }
+          if (this.entries.has(speciesId)) {
+            for (const definition of cinematic.filter((candidate) => candidate.lod > 0)) {
+              if (this.disposed) break;
+              try { await this._loadDefinition(definition); }
+              catch (error) { this._recordFailure(speciesId + ":lod" + definition.lod, error); }
+            }
+            continue;
+          }
+          const prototype = CREATURE_PROTOTYPE_ASSETS.find((definition) => definition.id === speciesId);
+          if (!prototype) continue;
+          try { await this._loadDefinition({ ...prototype, lod: 0 }); }
+          catch (error) { this._recordFailure(speciesId, error); }
         }
       } catch (error) {
         this._recordFailure("gltf-loader", error);
       } finally {
         if (!this.disposed) {
           this.loading = false;
-          this.status = this.entries.size ? "prototype-ready" : "procedural-fallback";
+          const cinematicReady = [...this.lodEntries.values()].some((lods) => [...lods.values()].some((entry) => entry.definition.trustedObjectUrl === true));
+          this.status = cinematicReady ? "cinematic-candidate-ready" : this.entries.size ? "prototype-ready" : "procedural-fallback";
           this._emit();
         }
       }
@@ -1362,14 +1528,19 @@
     async _loadDefinition(definition) {
       const proxy = this.adapter._proxies.get(definition.id);
       if (!proxy) throw Object.assign(new Error(`No procedural fallback exists for ${definition.id}.`), { code: "CREATURE_PROXY_MISSING" });
-      const absolute = this._resolveUrl(definition.file);
+      const cinematic = definition.trustedObjectUrl === true;
+      const lod = cinematic ? Math.round(clamp(definition.lod, 0, 3)) : 0;
+      const existingLods = this.lodEntries.get(definition.id);
+      if (existingLods?.has(lod)) return existingLods.get(lod);
+      const absolute = this._resolveUrl(definition);
+      const isObjectUrl = /^blob:/i.test(absolute);
       const parsed = new URL(absolute, this.documentRef?.baseURI);
       const slash = parsed.pathname.lastIndexOf("/");
       parsed.pathname = parsed.pathname.slice(0, slash + 1);
       parsed.search = "";
       parsed.hash = "";
-      const rootUrl = parsed.href;
-      const filename = absolute.slice(absolute.lastIndexOf("/") + 1).split(/[?#]/)[0];
+      const rootUrl = isObjectUrl ? "" : parsed.href;
+      const filename = isObjectUrl ? absolute : absolute.slice(absolute.lastIndexOf("/") + 1).split(/[?#]/)[0];
       let lateContainer = null;
       const task = this.B.SceneLoader.LoadAssetContainerAsync(rootUrl, filename, this.scene, undefined, ".glb").then((container) => {
         lateContainer = container;
@@ -1382,7 +1553,7 @@
       const clipMap = new Map();
       for (const group of groups) {
         const normalized = String(group?.name || "").toLowerCase();
-        for (const clip of ["idle", "walk", "run", "attack", "jump", "death"]) if (normalized.endsWith(`_${clip}`)) clipMap.set(clip, group);
+        for (const clip of ["idle", "walk", "run", "attack", "jump", "death"]) if (normalized === clip || normalized.endsWith(`_${clip}`) || normalized.endsWith(`-${clip}`) || normalized.endsWith(`/${clip}`)) clipMap.set(clip, group);
       }
       if (!container || typeof container.addAllToScene !== "function" || !clipMap.has("idle") || !clipMap.has("walk") || !clipMap.has("run")) {
         safeDispose(container);
@@ -1392,31 +1563,42 @@
       }
 
       container.addAllToScene();
-      const wrapper = new this.B.TransformNode(`hwe3d-${definition.id}-cc0-prototype`, this.scene);
+      const wrapper = new this.B.TransformNode(`hwe3d-${definition.id}-${cinematic ? `personal-cinematic-lod${lod}` : "cc0-prototype"}`, this.scene);
       wrapper.parent = proxy.root;
       wrapper.rotation.y = definition.rotationY;
       wrapper.scaling.set(definition.scale, definition.scale, definition.scale);
-      wrapper.metadata = { eonwild: true, kind: "animated-creature-prototype", speciesId: definition.id, source: definition.source, productionApproved: false };
+      wrapper.metadata = { eonwild: true, kind: cinematic ? "verified-cinematic-creature-candidate" : "animated-creature-prototype", speciesId: definition.id, lod, source: definition.source, packId: definition.packId || "", productionApproved: false };
       for (const rootNode of container.rootNodes || []) rootNode.parent = wrapper;
       const childMeshes = typeof wrapper.getChildMeshes === "function" ? wrapper.getChildMeshes(false) : [];
       for (const mesh of childMeshes) {
         mesh.isPickable = false;
         mesh.checkCollisions = false;
         mesh.receiveShadows = true;
-        mesh.metadata = { ...(mesh.metadata || {}), eonwild: true, kind: "animated-creature-prototype-part", speciesId: definition.id, productionApproved: false };
+        mesh.metadata = { ...(mesh.metadata || {}), eonwild: true, kind: cinematic ? "verified-cinematic-creature-candidate-part" : "animated-creature-prototype-part", speciesId: definition.id, lod, productionApproved: false };
         if (this.adapter._lights?.shadow && typeof this.adapter._lights.shadow.addShadowCaster === "function") this.adapter._lights.shadow.addShadowCaster(mesh, true);
       }
-      for (const material of container.materials || []) {
+      if (!cinematic) for (const material of container.materials || []) {
         if ("roughness" in material) material.roughness = Math.max(0.78, finite(material.roughness, 0.9));
         if ("metallic" in material) material.metallic = 0;
       }
       for (const group of groups) { try { group.stop(); } catch { /* Clip selection starts only after the model is attached. */ } }
-      proxy.parts.forEach((part) => { try { part.setEnabled(false); } catch { part.isVisible = false; } });
-      const entry = { definition, container, wrapper, groups, clipMap, activeClip: "", proxy };
-      this.entries.set(definition.id, entry);
-      this._applyClip(entry, this.reducedMotion ? "" : "idle");
+      const entry = { definition: { ...definition, lod }, lod, container, wrapper, groups, clipMap, activeClip: "", proxy };
+      const lods = existingLods || new Map();
+      lods.set(lod, entry);
+      this.lodEntries.set(definition.id, lods);
+      const becomesPrimary = lod === 0 && !this.entries.has(definition.id);
+      if (becomesPrimary) {
+        this.entries.set(definition.id, entry);
+        this.activeLods.set(definition.id, 0);
+        proxy.parts.forEach((part) => { try { part.setEnabled(false); } catch { part.isVisible = false; } });
+        try { wrapper.setEnabled(true); } catch {}
+      } else {
+        try { wrapper.setEnabled(false); } catch { wrapper.isVisible = false; }
+      }
+      this._applyClip(entry, becomesPrimary && !this.reducedMotion ? "idle" : "");
       const pose = this.lastPose.get(definition.id);
-      if (pose?.motion && !this.reducedMotion) this._applyClip(entry, pose.motion);
+      if (becomesPrimary && pose?.motion && !this.reducedMotion) this._applyClip(entry, pose.motion);
+      return entry;
     }
 
     _applyClip(entry, clip) {
@@ -1434,9 +1616,37 @@
       }
     }
 
+    _selectLod(speciesId, worldX, worldZ, motion) {
+      const lods = this.lodEntries.get(speciesId);
+      if (!lods?.size) return null;
+      const camera = this.adapter._camera;
+      const cameraX = finite(camera?.position?.x, worldX - WORLD_HALF);
+      const cameraZ = finite(camera?.position?.z, worldZ - WORLD_HALF);
+      const distance = Math.hypot(cameraX - (finite(worldX) - WORLD_HALF), cameraZ - (finite(worldZ) - WORLD_HALF));
+      const wanted = distance < 42 ? 0 : distance < 105 ? 1 : distance < 230 ? 2 : 3;
+      const available = [...lods.keys()].sort((left, right) => left - right);
+      const selected = available.find((lod) => lod >= wanted) ?? available[available.length - 1];
+      const current = this.activeLods.get(speciesId);
+      if (current !== selected) {
+        const previous = lods.get(current);
+        if (previous) {
+          this._applyClip(previous, "");
+          try { previous.wrapper.setEnabled(false); } catch { previous.wrapper.isVisible = false; }
+        }
+        const next = lods.get(selected);
+        if (next) {
+          try { next.wrapper.setEnabled(true); } catch { next.wrapper.isVisible = true; }
+          this.activeLods.set(speciesId, selected);
+        }
+      }
+      const active = lods.get(this.activeLods.get(speciesId));
+      if (active) this._applyClip(active, this.reducedMotion ? "" : motion);
+      return active || null;
+    }
+
     syncPose(speciesId, worldX, worldZ) {
       const id = String(speciesId || "").toLowerCase();
-      if (!CREATURE_PROTOTYPE_ASSETS.some((definition) => definition.id === id)) return;
+      if (!CREATURE_PROTOTYPE_ASSETS.some((definition) => definition.id === id) && !this.entries.has(id)) return;
       const timestamp = now();
       const previous = this.lastPose.get(id);
       let motion = "idle";
@@ -1447,15 +1657,14 @@
         else if (speed > 0.35) motion = "walk";
       }
       this.lastPose.set(id, { x: finite(worldX), z: finite(worldZ), at: timestamp, motion });
-      const entry = this.entries.get(id);
-      if (entry && !this.reducedMotion) this._applyClip(entry, motion);
+      this._selectLod(id, worldX, worldZ, motion);
     }
 
     setReducedMotion(value) {
       this.reducedMotion = Boolean(value);
-      for (const [speciesId, entry] of this.entries) {
+      for (const [speciesId, lods] of this.lodEntries) {
         const motion = this.lastPose.get(speciesId)?.motion || "idle";
-        this._applyClip(entry, this.reducedMotion ? "" : motion);
+        for (const [lod, entry] of lods) this._applyClip(entry, !this.reducedMotion && lod === this.activeLods.get(speciesId) ? motion : "");
       }
     }
 
@@ -1463,8 +1672,16 @@
       return freezeRecord({
         status: this.status,
         loadedSpecies: Array.from(this.entries.keys()),
-        activeClips: freezeRecord(Object.fromEntries(Array.from(this.entries, ([id, entry]) => [id, entry.activeClip || "static"]))),
+        activeClips: freezeRecord(Object.fromEntries(Array.from(this.lodEntries, ([id, lods]) => {
+          const entry = lods.get(this.activeLods.get(id));
+          return [id, entry?.activeClip || "static"];
+        }))),
+        activeLods: freezeRecord(Object.fromEntries(this.activeLods)),
+        availableLods: freezeRecord(Object.fromEntries(Array.from(this.lodEntries, ([id, lods]) => [id, [...lods.keys()].sort()]))),
         productionApproved: false,
+        cinematicSpecies: Array.from(this.lodEntries)
+          .filter(([, lods]) => [...lods.values()].some((entry) => entry.definition.trustedObjectUrl === true))
+          .map(([id]) => id),
         failures: this.failures.slice()
       });
     }
@@ -1472,13 +1689,18 @@
     dispose() {
       if (this.disposed) return;
       this.disposed = true;
-      for (const entry of this.entries.values()) {
-        for (const group of entry.groups) safeDispose(group);
-        safeDispose(entry.container);
-        safeDispose(entry.wrapper);
-        entry.proxy.parts.forEach((part) => { try { part.setEnabled(true); } catch { part.isVisible = true; } });
+      for (const [speciesId, lods] of this.lodEntries) {
+        for (const entry of lods.values()) {
+          for (const group of entry.groups) safeDispose(group);
+          safeDispose(entry.container);
+          safeDispose(entry.wrapper);
+        }
+        const proxy = this.adapter._proxies.get(speciesId);
+        proxy?.parts?.forEach((part) => { try { part.setEnabled(true); } catch { part.isVisible = true; } });
       }
       this.entries.clear();
+      this.lodEntries.clear();
+      this.activeLods.clear();
       this.lastPose.clear();
       this.status = "disposed";
     }
@@ -1700,6 +1922,92 @@
     }
   }
 
+  class CinematicAudioManager {
+    constructor(options = {}, documentRef = runtime.document) {
+      this.options = options;
+      this.documentRef = documentRef;
+      this.definition = (Array.isArray(options.cinematicAudioAssets) ? options.cinematicAudioAssets : [])
+        .find((asset) => asset?.trustedObjectUrl === true
+          && /^audio\//i.test(String(asset?.contentType || ""))
+          && ["ambience", "forest", "ocean", "rain", "wind"].includes(String(asset?.channel || ""))) || null;
+      this.enabled = options.ambientAudioEnabled === true;
+      this.volume = clamp(options.ambientAudioVolume ?? 0.7, 0, 1);
+      this.audio = null;
+      this.status = this.definition ? "idle" : "fallback";
+      this.playBlocked = false;
+    }
+
+    start() {
+      if (!this.definition || this.audio) return this.getStatus();
+      const url = trustedBlobAssetUrl(this.definition, this.documentRef);
+      const AudioCtor = this.options.Audio || runtime.Audio;
+      if (!url || typeof AudioCtor !== "function") {
+        this.status = "fallback";
+        return this.getStatus();
+      }
+      try {
+        const audio = new AudioCtor(url);
+        audio.loop = true;
+        audio.preload = "auto";
+        audio.volume = this.volume;
+        this.audio = audio;
+        this.status = "ready";
+        if (this.enabled) this.resume();
+      } catch {
+        this.status = "fallback";
+      }
+      return this.getStatus();
+    }
+
+    set(enabled, volume = this.volume) {
+      this.enabled = Boolean(enabled);
+      this.volume = clamp(volume, 0, 1);
+      if (!this.audio) this.start();
+      if (this.audio) this.audio.volume = this.volume;
+      if (!this.enabled || this.volume <= 0) this.pause();
+      else this.resume();
+      return this.getStatus();
+    }
+
+    pause() {
+      try { this.audio?.pause?.(); } catch {}
+      return this.getStatus();
+    }
+
+    resume() {
+      if (!this.enabled || this.volume <= 0 || !this.audio || this.documentRef?.hidden) return this.getStatus();
+      try {
+        const pending = this.audio.play?.();
+        if (pending?.catch) pending.catch(() => { this.playBlocked = true; });
+        this.playBlocked = false;
+      } catch { this.playBlocked = true; }
+      return this.getStatus();
+    }
+
+    getStatus() {
+      return freezeRecord({
+        status: this.status,
+        enabled: this.enabled,
+        channel: this.definition?.channel || "",
+        playing: Boolean(this.audio && !this.audio.paused),
+        playBlocked: this.playBlocked,
+        productionApproved: false
+      });
+    }
+
+    dispose() {
+      try {
+        if (this.audio) {
+          this.audio.pause?.();
+          this.audio.removeAttribute?.("src");
+          this.audio.load?.();
+        }
+      } catch {}
+      this.audio = null;
+      this.status = "disposed";
+    }
+  }
+
   class EonWild3DAdapter {
     constructor(options = {}) {
       this._options = options && typeof options === "object" ? { ...options } : {};
@@ -1724,9 +2032,14 @@
       this._fogBaseDensity = 0.00055;
       this._environmentAssets = null;
       this._creatureAssets = null;
+      this._cinematicAudio = null;
       this._environmentLoadHandle = null;
       this._environmentLoadHandleType = null;
       this._lights = null;
+      this._postProcessing = null;
+      this._renderFeaturePreset = null;
+      this._postProcessingFailureHistory = [];
+      this._photoSettings = { ...DEFAULT_PHOTO_SETTINGS };
       this._proxies = new Map();
       this._visibleWildlifeSpecies = new Set();
       this._playerSpeciesId = FLAGSHIP_IDS.includes(this._options.speciesId) ? this._options.speciesId : "tyrannosaurus";
@@ -1755,6 +2068,12 @@
       this._renderFrame = this._renderFrame.bind(this);
       this._lastFrameAt = 0;
       this._lastTelemetryAt = 0;
+      this._lastFrameDrawCalls = 0;
+      this._drawCallsMeasured = false;
+      this._webgpuDevice = null;
+      this._webgpuErrorHandler = null;
+      this._webgpuErrorCount = 0;
+      this._webgpuErrorWindowStartedAt = 0;
       this._elapsed = 0;
       this._governor = new AdaptiveQualityGovernor(this, this._options.adaptiveQuality !== false);
       this._capabilities = detectCapabilities({ babylon: this._options.babylon, document: this._options.document });
@@ -1908,6 +2227,7 @@
         this._engine = created.engine;
         this._backend = created.backend;
         this._attempts = created.attempts.slice();
+        this._installWebGpuDiagnostics();
         this._buildScene(options);
         // Configure the swap-chain size before the first submitted frame. In
         // Chromium/D3D, resizing immediately after scene.render() can destroy
@@ -1972,6 +2292,271 @@
       }
     }
 
+    _focalLengthFromFov(fovRadians, sensorHeightMm) {
+      const sensor = clamp(sensorHeightMm, 8, 70);
+      const fov = clamp(fovRadians, 0.08, Math.PI - 0.08);
+      return clamp(sensor / (2 * Math.tan(fov / 2)), 8, 600);
+    }
+
+    _fovFromFocalLength(focalLengthMm, sensorHeightMm) {
+      const focalLength = clamp(focalLengthMm, 8, 600);
+      const sensor = clamp(sensorHeightMm, 8, 70);
+      return clamp(2 * Math.atan(sensor / (2 * focalLength)), 0.08, Math.PI - 0.08);
+    }
+
+    _recordRenderingFeatureFailure(feature, error) {
+      const failure = freezeRecord({ feature: String(feature || "unknown"), error: compactError(error) });
+      this._postProcessingFailureHistory.push(failure);
+      if (this._postProcessingFailureHistory.length > 12) this._postProcessingFailureHistory.shift();
+      if (this._postProcessing && Array.isArray(this._postProcessing.failures)) this._postProcessing.failures.push(failure);
+      return failure;
+    }
+
+    _disposePostProcessing() {
+      const pipelines = this._postProcessing;
+      if (!pipelines) return;
+      // Reverse construction order. TAA was created first and is disposed last
+      // so dependent pre-pass/render-target resources cannot outlive it.
+      for (const key of ["ssr", "ssao", "defaultPipeline", "taa"]) {
+        const pipeline = pipelines[key];
+        if (!pipeline) continue;
+        safeDispose(pipeline);
+        pipelines[key] = null;
+      }
+      this._postProcessing = null;
+    }
+
+    _registerShadowCasters(shadow) {
+      if (!shadow || typeof shadow.addShadowCaster !== "function") return;
+      const seen = new Set();
+      const add = (mesh) => {
+        if (!mesh || seen.has(mesh)) return;
+        seen.add(mesh);
+        try { shadow.addShadowCaster(mesh, false); } catch { /* An optional mesh must not invalidate the shadow map. */ }
+      };
+      for (const proxy of this._proxies.values()) for (const part of proxy.parts || []) add(part);
+      for (const mesh of this._scene?.meshes || []) {
+        const kind = String(mesh?.metadata?.kind || "");
+        if (["terrain-chunk", "water-proxy", "cc0-hdri-sky"].includes(kind)) continue;
+        // Imported GLB child meshes may not carry metadata, whereas their
+        // wrapper does. They are safe bounded assets and should cast shadows.
+        add(mesh);
+      }
+    }
+
+    _createShadowGenerator(presetId) {
+      if (!this._lights?.sun || !this._Babylon) return null;
+      safeDispose(this._lights.shadow);
+      this._lights.shadow = null;
+      this._lights.shadowKind = "none";
+      const B = this._Babylon;
+      const cinematic = presetId === CINEMATIC_PRESET && !this._reducedMotion;
+      let shadow = null;
+      if (cinematic && this._backend !== "webgl1" && typeof B.CascadedShadowGenerator === "function") {
+        try {
+          const supported = B.CascadedShadowGenerator.IsSupported !== false;
+          if (supported) {
+            shadow = new B.CascadedShadowGenerator(2048, this._lights.sun);
+            shadow.numCascades = 4;
+            shadow.lambda = 0.76;
+            shadow.cascadeBlendPercentage = 0.12;
+            shadow.stabilizeCascades = true;
+            shadow.autoCalcDepthBounds = true;
+            shadow.shadowMaxZ = Math.min(1200, QUALITY_PRESETS[presetId].farClip);
+            shadow.bias = 0.00045;
+            shadow.normalBias = 0.018;
+            if (B.ShadowGenerator?.QUALITY_HIGH !== undefined) shadow.filteringQuality = B.ShadowGenerator.QUALITY_HIGH;
+            this._lights.shadowKind = "cascaded-pcf";
+          }
+        } catch (error) {
+          safeDispose(shadow);
+          shadow = null;
+          this._recordRenderingFeatureFailure("cascaded-shadows", error);
+        }
+      }
+      if (!shadow && typeof B.ShadowGenerator === "function") {
+        try {
+          const shadowSize = cinematic ? 2048 : ["high", "ultra"].includes(presetId) ? 1024 : 512;
+          shadow = new B.ShadowGenerator(shadowSize, this._lights.sun);
+          shadow.useBlurExponentialShadowMap = true;
+          shadow.blurKernel = cinematic ? 32 : presetId === "ultra" ? 24 : 12;
+          shadow.bias = cinematic ? 0.0005 : 0.0008;
+          shadow.normalBias = cinematic ? 0.018 : 0.025;
+          this._lights.shadowKind = cinematic ? "blurred-fallback" : "blurred";
+        } catch (error) {
+          safeDispose(shadow);
+          shadow = null;
+          this._recordRenderingFeatureFailure("standard-shadows", error);
+        }
+      }
+      this._lights.shadow = shadow;
+      this._registerShadowCasters(shadow);
+      return shadow;
+    }
+
+    _buildCinematicPostProcessing(presetId) {
+      this._disposePostProcessing();
+      const state = {
+        preset: presetId,
+        requested: presetId === CINEMATIC_PRESET,
+        supportedBackend: this._backend === "webgpu" || this._backend === "webgl2",
+        taa: null,
+        defaultPipeline: null,
+        ssao: null,
+        ssr: null,
+        active: [],
+        failures: []
+      };
+      this._postProcessing = state;
+      if (!state.requested || !state.supportedBackend || this._reducedMotion || !this._scene || !this._camera) return state;
+      const B = this._Babylon;
+      const cameras = [this._camera];
+
+      // TAA must be constructed before DefaultRenderingPipeline, SSAO2 and
+      // SSR. Do not reorder these guarded blocks.
+      if (typeof B.TAARenderingPipeline === "function") {
+        try {
+          const taa = new B.TAARenderingPipeline("hwe3d-cinematic-taa", this._scene, cameras);
+          if (taa.isSupported === false) throw new Error("Babylon TAA is unsupported by the active graphics backend.");
+          taa.samples = 16;
+          taa.msaaSamples = 1;
+          taa.factor = 0.06;
+          taa.disableOnCameraMove = true;
+          taa.isEnabled = true;
+          state.taa = taa;
+          state.active.push("taa");
+        } catch (error) {
+          safeDispose(state.taa);
+          state.taa = null;
+          this._recordRenderingFeatureFailure("taa", error);
+        }
+      }
+
+      if (typeof B.DefaultRenderingPipeline === "function") {
+        let pipeline = null;
+        try {
+          pipeline = new B.DefaultRenderingPipeline("hwe3d-cinematic-default", true, this._scene, cameras, false);
+          pipeline.samples = 1;
+          pipeline.fxaaEnabled = !state.taa;
+          pipeline.sharpenEnabled = true;
+          pipeline.bloomEnabled = true;
+          pipeline.bloomThreshold = 0.92;
+          pipeline.bloomWeight = 0.12;
+          pipeline.bloomKernel = 48;
+          pipeline.bloomScale = 0.5;
+          pipeline.grainEnabled = true;
+          pipeline.chromaticAberrationEnabled = false;
+          pipeline.depthOfFieldEnabled = false;
+          if (typeof pipeline.prepare === "function") pipeline.prepare();
+          if (pipeline.sharpen) {
+            pipeline.sharpen.edgeAmount = 0.18;
+            pipeline.sharpen.colorAmount = 1;
+          }
+          if (pipeline.grain) {
+            pipeline.grain.intensity = 5;
+            pipeline.grain.animated = false;
+          }
+          state.defaultPipeline = pipeline;
+          state.active.push("aces-bloom-sharpen-grain");
+        } catch (error) {
+          safeDispose(pipeline);
+          state.defaultPipeline = null;
+          this._recordRenderingFeatureFailure("default-post-processing", error);
+        }
+      }
+
+      if (typeof B.SSAO2RenderingPipeline === "function") {
+        let ssao = null;
+        try {
+          ssao = new B.SSAO2RenderingPipeline("hwe3d-cinematic-ssao2", this._scene, { ssaoRatio: 0.5, blurRatio: 0.5 }, cameras);
+          if (ssao.isSupported === false) throw new Error("Babylon SSAO2 is unsupported by the active graphics backend.");
+          ssao.totalStrength = 0.72;
+          ssao.base = 0.08;
+          ssao.radius = 1.8;
+          ssao.maxZ = Math.min(300, this._camera.maxZ);
+          ssao.samples = 16;
+          ssao.textureSamples = 1;
+          ssao.expensiveBlur = true;
+          state.ssao = ssao;
+          state.active.push("ssao2");
+        } catch (error) {
+          safeDispose(ssao);
+          state.ssao = null;
+          this._recordRenderingFeatureFailure("ssao2", error);
+        }
+      }
+
+      if (typeof B.SSRRenderingPipeline === "function") {
+        let ssr = null;
+        try {
+          ssr = new B.SSRRenderingPipeline("hwe3d-cinematic-ssr", this._scene, cameras);
+          if (ssr.isSupported === false) throw new Error("Babylon SSR is unsupported by the active graphics backend.");
+          ssr.maxDistance = 140;
+          ssr.step = 1;
+          ssr.thickness = 0.45;
+          ssr.strength = 0.42;
+          ssr.maxSteps = 72;
+          ssr.roughnessFactor = 0.22;
+          ssr.reflectivityThreshold = 0.055;
+          ssr.reflectionSpecularFalloffExponent = 2.2;
+          ssr.enableSmoothReflections = true;
+          ssr.attenuateScreenBorders = true;
+          ssr.attenuateIntersectionDistance = true;
+          ssr.samples = 1;
+          state.ssr = ssr;
+          state.active.push("ssr");
+        } catch (error) {
+          safeDispose(ssr);
+          state.ssr = null;
+          this._recordRenderingFeatureFailure("ssr", error);
+        }
+      }
+      this._applyPhysicalDepthOfField();
+      return state;
+    }
+
+    _rebuildRenderingFeatures(presetId, force = false) {
+      if (!this._scene || !this._Babylon || !this._lights) return;
+      if (!force && this._renderFeaturePreset === presetId) return;
+      this._renderFeaturePreset = presetId;
+      this._createShadowGenerator(presetId);
+      this._buildCinematicPostProcessing(presetId);
+    }
+
+    _effectiveFocusDistanceM() {
+      if (!this._photoSettings.autofocus) return this._photoSettings.focusDistanceM;
+      const proxy = this._proxies.get(this._playerSpeciesId);
+      const cameraPosition = this._camera?.position;
+      const subjectPosition = proxy?.root?.position;
+      if (!cameraPosition || !subjectPosition) return this._photoSettings.focusDistanceM;
+      const dx = finite(cameraPosition.x) - finite(subjectPosition.x);
+      const dy = finite(cameraPosition.y) - finite(subjectPosition.y);
+      const dz = finite(cameraPosition.z) - finite(subjectPosition.z);
+      return clamp(Math.hypot(dx, dy, dz), 0.25, 10000);
+    }
+
+    _applyPhysicalDepthOfField() {
+      const pipeline = this._postProcessing?.defaultPipeline;
+      if (!pipeline) return false;
+      const enabled = Boolean(this._photoSettings.depthOfField && this._qualityPreset === CINEMATIC_PRESET && !this._reducedMotion);
+      try {
+        if (this._Babylon?.DepthOfFieldEffectBlurLevel?.Medium !== undefined) pipeline.depthOfFieldBlurLevel = this._Babylon.DepthOfFieldEffectBlurLevel.Medium;
+        pipeline.depthOfFieldEnabled = enabled;
+        if (enabled && pipeline.depthOfField) {
+          pipeline.depthOfField.focalLength = this._photoSettings.focalLengthMm;
+          pipeline.depthOfField.fStop = this._photoSettings.apertureFStop;
+          // Babylon's physical DOF values are millimetres; EonWild exposes
+          // focus distance in world metres for a photographer-friendly API.
+          pipeline.depthOfField.focusDistance = this._effectiveFocusDistanceM() * 1000;
+        }
+        return enabled;
+      } catch (error) {
+        try { pipeline.depthOfFieldEnabled = false; } catch { /* Keep the rest of the pipeline alive. */ }
+        this._recordRenderingFeatureFailure("depth-of-field", error);
+        return false;
+      }
+    }
+
     _buildScene(options) {
       const B = this._Babylon;
       const scene = new B.Scene(this._engine);
@@ -1993,16 +2578,7 @@
       const sun = new B.DirectionalLight("hwe3d-sun", new B.Vector3(-0.45, -0.78, 0.35), scene);
       sun.intensity = 1.05;
       sun.position = new B.Vector3(180, 280, -120);
-      let shadow = null;
-      if (typeof B.ShadowGenerator === "function") {
-        const shadowSize = ["high", "ultra"].includes(this._qualityPreset) ? 1024 : 512;
-        shadow = new B.ShadowGenerator(shadowSize, sun);
-        shadow.useBlurExponentialShadowMap = true;
-        shadow.blurKernel = this._qualityPreset === "ultra" ? 24 : 12;
-        shadow.bias = 0.0008;
-        shadow.normalBias = 0.025;
-      }
-      this._lights = { ambient, sun, shadow };
+      this._lights = { ambient, sun, shadow: null, shadowKind: "none" };
 
       const target = new B.Vector3(this._player.x - WORLD_HALF, terrainHeightNumeric(this._player.x, this._player.z, hashSeed(options.seed)) + 3, this._player.z - WORLD_HALF);
       const camera = new B.ArcRotateCamera("hwe3d-third-person-camera", -Math.PI / 2.2, 1.08, 27, target, scene);
@@ -2018,11 +2594,26 @@
       if (options.controls !== false && typeof camera.attachControl === "function") camera.attachControl(this._canvas, true);
       scene.activeCamera = camera;
       this._camera = camera;
+      this._photoSettings = {
+        ...DEFAULT_PHOTO_SETTINGS,
+        focalLengthMm: this._focalLengthFromFov(camera.fov, DEFAULT_PHOTO_SETTINGS.sensorHeightMm),
+        focusDistanceM: finite(camera.radius, DEFAULT_PHOTO_SETTINGS.focusDistanceM)
+      };
+      // Babylon's TAA pipeline must be attached before every other
+      // post-process pipeline. The feature builder preserves that order and
+      // treats every cinematic effect as optional so WebGL2 can fail open.
+      this._rebuildRenderingFeatures(this._qualityPreset, true);
+      const shadow = this._lights.shadow;
 
       const waterMaterial = typeof B.PBRMaterial === "function"
         ? new B.PBRMaterial("hwe3d-water-pbr-material", scene)
         : new B.StandardMaterial("hwe3d-water-material", scene);
-      const waterNormalTexture = createWaterNormalTexture(B, scene);
+      const oceanAssets = Array.isArray(options.cinematicOceanAssets) ? options.cinematicOceanAssets : [];
+      const personalOceanNormal = oceanAssets.find((asset) => asset?.channel === "normal");
+      const personalOceanFoam = oceanAssets.find((asset) => asset?.channel === "foam");
+      const waterNormalTexture = createRuntimeTexture(B, scene, personalOceanNormal, options.document || runtime.document, { uScale: 68, vScale: 68, anisotropy: 12 })
+        || createWaterNormalTexture(B, scene);
+      const waterFoamTexture = createRuntimeTexture(B, scene, personalOceanFoam, options.document || runtime.document, { uScale: 18, vScale: 18, anisotropy: 8 });
       if ("albedoColor" in waterMaterial) {
         waterMaterial.albedoColor = new B.Color3(0.028, 0.21, 0.285);
         waterMaterial.emissiveColor = new B.Color3(0.004, 0.025, 0.035);
@@ -2048,6 +2639,10 @@
         }
       }
       if (waterNormalTexture) waterMaterial.bumpTexture = waterNormalTexture;
+      if (waterFoamTexture && "emissiveTexture" in waterMaterial) {
+        waterFoamTexture.level = 0.1;
+        waterMaterial.emissiveTexture = waterFoamTexture;
+      }
       waterMaterial.alpha = 0.72;
       waterMaterial.backFaceCulling = false;
       const water = B.MeshBuilder.CreateGround("hwe3d-water", { width: WORLD_SIZE, height: WORLD_SIZE, subdivisions: 1 }, scene);
@@ -2056,12 +2651,14 @@
       water.isPickable = false;
       water.metadata = { eonwild: true, kind: "water-proxy", procedural: true };
       if (typeof water.freezeWorldMatrix === "function") water.freezeWorldMatrix();
-      this._water = { mesh: water, material: waterMaterial, normalTexture: waterNormalTexture };
+      this._water = { mesh: water, material: waterMaterial, normalTexture: waterNormalTexture, foamTexture: waterFoamTexture };
       this._weatherFx = createWeatherEffects(B, scene);
 
-      this._streamer = new TerrainStreamer(B, scene, { seed: options.seed || "eonwild-mesozoic", qualityPreset: this._qualityPreset });
+      this._streamer = new TerrainStreamer(B, scene, { ...options, document: options.document || runtime.document, seed: options.seed || "eonwild-mesozoic", qualityPreset: this._qualityPreset });
       this._environmentAssets = new EnvironmentAssetManager(this, B, scene, { ...options, document: options.document || runtime.document, qualityPreset: this._qualityPreset });
       this._creatureAssets = new CreaturePrototypeManager(this, B, scene, { ...options, document: options.document || runtime.document });
+      this._cinematicAudio = new CinematicAudioManager(options, options.document || runtime.document);
+      this._cinematicAudio.start();
       const placements = [
         [this._player.x, this._player.z],
         [this._player.x + 34, this._player.z + 22],
@@ -2214,6 +2811,53 @@
       }
     }
 
+    _installWebGpuDiagnostics() {
+      this._removeWebGpuDiagnostics();
+      if (this._backend !== "webgpu" || !this._engine) return false;
+      const device = this._engine._device;
+      if (!device || typeof device.addEventListener !== "function") return false;
+      // Babylon normally logs every uncaptured GPU validation error. EonWild
+      // records the same signal in bounded telemetry and fails open after a
+      // short burst, so the console is not flooded while a broken device keeps
+      // submitting frames. A single resize-related warning remains recoverable.
+      try { this._engine.numMaxUncapturedErrors = -1; } catch { /* Optional Babylon diagnostic control. */ }
+      this._webgpuDevice = device;
+      this._webgpuErrorHandler = (event) => {
+        const timestamp = now();
+        if (!this._webgpuErrorWindowStartedAt || timestamp - this._webgpuErrorWindowStartedAt > 5000) {
+          this._webgpuErrorWindowStartedAt = timestamp;
+          this._webgpuErrorCount = 0;
+        }
+        this._webgpuErrorCount += 1;
+        const error = event?.error || new Error("WebGPU validation error");
+        this._recordRenderingFeatureFailure("webgpu-validation", error);
+        if (this._webgpuErrorCount < 3) return;
+        const fail = () => {
+          if (!["starting", "running", "paused"].includes(this._state)) return;
+          this._handleRuntimeFailure(makeReason(
+            "WEBGPU_RUNTIME_VALIDATION_FAILED",
+            "WebGPU reported repeated validation errors; Canvas Lite remains available.",
+            "runtime",
+            { backend: this._backend, errors: this._webgpuErrorCount },
+            true
+          ));
+        };
+        try { (runtime.setTimeout || setTimeout)(fail, 0); } catch { fail(); }
+      };
+      device.addEventListener("uncapturederror", this._webgpuErrorHandler);
+      return true;
+    }
+
+    _removeWebGpuDiagnostics() {
+      if (this._webgpuDevice && this._webgpuErrorHandler && typeof this._webgpuDevice.removeEventListener === "function") {
+        try { this._webgpuDevice.removeEventListener("uncapturederror", this._webgpuErrorHandler); } catch { /* Cleanup only. */ }
+      }
+      this._webgpuDevice = null;
+      this._webgpuErrorHandler = null;
+      this._webgpuErrorCount = 0;
+      this._webgpuErrorWindowStartedAt = 0;
+    }
+
     _removeRuntimeListeners() {
       if (this._resizeObserver) {
         try { this._resizeObserver.disconnect(); } catch { /* Cleanup only. */ }
@@ -2364,11 +3008,62 @@
 
     setPhotoSettings(value = {}) {
       if (!value || typeof value !== "object" || !this._camera || !this._scene) return makeResult(false, { reason: makeReason("PHOTO_SETTINGS_UNAVAILABLE", "Photo controls require a running 3D scene.", "photo", {}, true) });
-      const fovDegrees = clamp(value.fovDegrees === undefined ? this._camera.fov * 180 / Math.PI : value.fovDegrees, 35, 100);
-      const exposure = clamp(value.exposure === undefined ? this._scene.imageProcessingConfiguration?.exposure || 1 : value.exposure, 0.5, 1.6);
-      this._camera.fov = fovDegrees * Math.PI / 180;
-      if (this._scene.imageProcessingConfiguration) this._scene.imageProcessingConfiguration.exposure = exposure;
-      return makeResult(true, { fovDegrees, exposure });
+      const next = { ...this._photoSettings };
+      if (value.sensorHeightMm !== undefined) next.sensorHeightMm = clamp(value.sensorHeightMm, 8, 70);
+      if (value.focalLengthMm !== undefined || value.focalLength !== undefined) {
+        next.focalLengthMm = clamp(value.focalLengthMm === undefined ? value.focalLength : value.focalLengthMm, 8, 600);
+        this._camera.fov = this._fovFromFocalLength(next.focalLengthMm, next.sensorHeightMm);
+      } else if (value.fovDegrees !== undefined) {
+        const fovDegrees = clamp(value.fovDegrees, 5, 120);
+        this._camera.fov = fovDegrees * Math.PI / 180;
+        next.focalLengthMm = this._focalLengthFromFov(this._camera.fov, next.sensorHeightMm);
+      } else if (value.sensorHeightMm !== undefined) {
+        this._camera.fov = this._fovFromFocalLength(next.focalLengthMm, next.sensorHeightMm);
+      }
+
+      const apertureInput = value.apertureFStop === undefined ? value.aperture : value.apertureFStop;
+      const isoInput = value.iso === undefined ? value.ISO : value.iso;
+      const focusInput = value.focusDistanceM === undefined ? value.focusDistance : value.focusDistanceM;
+      const compensationInput = value.exposureCompensationEv === undefined ? value.exposureCompensation : value.exposureCompensationEv;
+      const physicalExposureChanged = apertureInput !== undefined || value.shutterSeconds !== undefined || value.shutterSpeed !== undefined || isoInput !== undefined || compensationInput !== undefined;
+      if (apertureInput !== undefined) next.apertureFStop = clamp(apertureInput, 1.2, 32);
+      if (value.shutterSeconds !== undefined) next.shutterSeconds = clamp(value.shutterSeconds, 1 / 8000, 30);
+      else if (value.shutterSpeed !== undefined) {
+        const speed = Math.max(1 / 30, finite(value.shutterSpeed, 125));
+        next.shutterSeconds = clamp(speed >= 1 ? 1 / speed : speed, 1 / 8000, 30);
+      }
+      if (isoInput !== undefined) next.iso = Math.round(clamp(isoInput, 25, 51200));
+      if (focusInput !== undefined) next.focusDistanceM = clamp(focusInput, 0.25, 10000);
+      if (compensationInput !== undefined) next.exposureCompensationEv = clamp(compensationInput, -5, 5);
+      if (value.depthOfField !== undefined || value.dofEnabled !== undefined) next.depthOfField = Boolean(value.depthOfField === undefined ? value.dofEnabled : value.depthOfField);
+      if (value.autofocus !== undefined) next.autofocus = Boolean(value.autofocus);
+      if (value.cameraShake !== undefined) next.cameraShake = clamp(value.cameraShake, 0, 1);
+
+      if (value.exposure !== undefined) next.exposure = clamp(value.exposure, 0.25, 4);
+      else if (physicalExposureChanged) {
+        const relativeExposure = (next.iso / DEFAULT_PHOTO_SETTINGS.iso)
+          * (next.shutterSeconds / DEFAULT_PHOTO_SETTINGS.shutterSeconds)
+          * Math.pow(DEFAULT_PHOTO_SETTINGS.apertureFStop / next.apertureFStop, 2)
+          * Math.pow(2, next.exposureCompensationEv);
+        next.exposure = clamp(DEFAULT_PHOTO_SETTINGS.exposure * relativeExposure, 0.25, 4);
+      } else next.exposure = clamp(this._scene.imageProcessingConfiguration?.exposure || next.exposure, 0.25, 4);
+
+      this._photoSettings = next;
+      if (this._scene.imageProcessingConfiguration) this._scene.imageProcessingConfiguration.exposure = next.exposure;
+      const depthOfFieldActive = this._applyPhysicalDepthOfField();
+      return makeResult(true, { ...this.getPhotoSettings(), depthOfFieldActive });
+    }
+
+    getPhotoSettings() {
+      const fovDegrees = this._camera ? this._camera.fov * 180 / Math.PI : this._fovFromFocalLength(this._photoSettings.focalLengthMm, this._photoSettings.sensorHeightMm) * 180 / Math.PI;
+      return freezeRecord({
+        ...this._photoSettings,
+        effectiveFocusDistanceM: Math.round(this._effectiveFocusDistanceM() * 100) / 100,
+        fovDegrees: Math.round(fovDegrees * 10) / 10,
+        shutterSpeed: Math.round((1 / this._photoSettings.shutterSeconds) * 10) / 10,
+        depthOfFieldAvailable: Boolean(this._postProcessing?.defaultPipeline && this._qualityPreset === CINEMATIC_PRESET && !this._reducedMotion),
+        depthOfFieldActive: Boolean(this._postProcessing?.defaultPipeline?.depthOfFieldEnabled)
+      });
     }
 
     _applyEnvironment(announce = true) {
@@ -2469,6 +3164,7 @@
         if (!Number.isFinite(currentScale) || Math.abs(currentScale - targetScale) > 0.001) this._engine.setHardwareScalingLevel(targetScale);
       }
       if (this._camera) this._camera.maxZ = preset.farClip;
+      if (changed && this._scene) this._rebuildRenderingFeatures(presetId, true);
       if (this._streamer) {
         this._streamer.configure(preset);
         this._streamer.update(this._player.x, this._player.z, true);
@@ -2486,7 +3182,12 @@
     _shiftAdaptiveQuality(direction, reason) {
       const currentIndex = QUALITY_ORDER.indexOf(this._qualityPreset);
       const requestedIndex = QUALITY_ORDER.indexOf(this._qualityRequested);
-      let targetIndex = clamp(currentIndex + Math.sign(direction), 0, requestedIndex);
+      const adaptiveMaxIndex = QUALITY_ORDER.indexOf(ADAPTIVE_MAX_PRESET);
+      // Cinematic Personal is an explicit owner-controlled profile. The
+      // governor may step down from it to protect responsiveness, but it must
+      // never spend the user's GPU/VRAM budget by enabling it automatically.
+      if (Math.sign(direction) > 0 && currentIndex >= adaptiveMaxIndex) return;
+      let targetIndex = Math.max(0, Math.min(currentIndex + Math.sign(direction), requestedIndex, adaptiveMaxIndex));
       if (this._reducedMotion) targetIndex = Math.min(targetIndex, QUALITY_ORDER.indexOf("low"));
       if (targetIndex !== currentIndex) this._applyQuality(QUALITY_ORDER[targetIndex], reason, true);
     }
@@ -2509,7 +3210,13 @@
       if (!this._camera || !this._Babylon) return;
       const proxy = this._proxies.get(this._playerSpeciesId);
       if (!proxy) return;
-      const target = new this._Babylon.Vector3(proxy.root.position.x, proxy.root.position.y + (proxy.id === "pteranodon" ? 0.6 : 2.4), proxy.root.position.z);
+      const massFactor = proxy.id === "pteranodon" ? 0.34 : proxy.id === "triceratops" ? 0.92 : 1;
+      const shake = this._reducedMotion ? 0 : clamp(this._photoSettings.cameraShake, 0, 1) * massFactor * 0.08;
+      const target = new this._Babylon.Vector3(
+        proxy.root.position.x + Math.sin(this._elapsed * 7.1) * shake,
+        proxy.root.position.y + (proxy.id === "pteranodon" ? 0.6 : 2.4) + Math.sin(this._elapsed * 11.3) * shake * 0.65,
+        proxy.root.position.z + Math.cos(this._elapsed * 6.4) * shake
+      );
       if (this._reducedMotion || !this._camera.target) this._camera.setTarget(target);
       else {
         const amount = 1 - Math.exp(-clamp(deltaSeconds, 0, 0.1) * 8);
@@ -2538,7 +3245,20 @@
         this._environmentAssets?.update(this._player.x, this._player.z);
         this._animateProxies(deltaSeconds);
         this._followPlayer(deltaSeconds);
+        let drawCallsBefore = NaN;
+        try { drawCallsBefore = Number(this._engine?._drawCalls?.current); }
+        catch { /* Babylon draw-call telemetry is optional. */ }
         this._scene.render();
+        try {
+          const drawCallsAfter = Number(this._engine?._drawCalls?.current);
+          if (Number.isFinite(drawCallsAfter)) {
+            const perFrame = Number.isFinite(drawCallsBefore) && drawCallsAfter >= drawCallsBefore
+              ? drawCallsAfter - drawCallsBefore
+              : drawCallsAfter;
+            this._lastFrameDrawCalls = Math.max(0, Math.floor(perFrame));
+            this._drawCallsMeasured = true;
+          }
+        } catch { /* Keep the mesh-derived estimate when the backend has no counter. */ }
         const finishedAt = now();
         this._governor.record(Math.max(finishedAt - startedAt, rawDelta * 1000), finishedAt);
         if (finishedAt - this._lastTelemetryAt >= 1000) {
@@ -2550,11 +3270,108 @@
       }
     }
 
+    _getRenderingFeatureStatus() {
+      const pipelines = this._postProcessing;
+      return freezeRecord({
+        preset: this._renderFeaturePreset || this._qualityPreset,
+        cinematicRequested: this._qualityPreset === CINEMATIC_PRESET,
+        supportedBackend: Boolean(pipelines?.supportedBackend),
+        shadow: this._lights?.shadow ? String(this._lights.shadowKind || "standard") : "disabled",
+        taa: Boolean(pipelines?.taa),
+        defaultPipeline: Boolean(pipelines?.defaultPipeline),
+        ssao2: Boolean(pipelines?.ssao),
+        ssr: Boolean(pipelines?.ssr),
+        active: Array.isArray(pipelines?.active) ? pipelines.active.slice() : [],
+        failures: this._postProcessingFailureHistory.slice(-8)
+      });
+    }
+
+    _collectRenderTelemetry() {
+      const scene = this._scene;
+      const engine = this._engine;
+      if (!scene || !engine) return freezeRecord({ drawCalls: 0, triangles: 0, vertices: 0, visibleMeshes: 0, textures: 0, estimatedVramBytes: 0, estimatedVramMiB: 0, drawCallsMeasured: false });
+      let activeMeshes = [];
+      try {
+        const active = typeof scene.getActiveMeshes === "function" ? scene.getActiveMeshes() : null;
+        if (Array.isArray(active)) activeMeshes = active;
+        else if (active?.data && Number.isFinite(active.length)) activeMeshes = active.data.slice(0, active.length);
+      } catch { /* Scene counters remain best effort. */ }
+      if (!activeMeshes.length) {
+        activeMeshes = Array.from(scene.meshes || []).filter((mesh) => {
+          try { return mesh && mesh.isVisible !== false && (typeof mesh.isEnabled !== "function" || mesh.isEnabled()); }
+          catch { return false; }
+        });
+      }
+
+      let estimatedDrawCalls = 0;
+      let triangles = 0;
+      let vertices = 0;
+      for (const mesh of activeMeshes) {
+        estimatedDrawCalls += Math.max(1, Array.isArray(mesh?.subMeshes) ? mesh.subMeshes.length : 1);
+        try {
+          const indices = finite(typeof mesh.getTotalIndices === "function" ? mesh.getTotalIndices() : 0, 0);
+          triangles += Math.max(0, Math.floor(indices / 3));
+        } catch { /* Optional imported mesh. */ }
+        try { vertices += Math.max(0, Math.floor(finite(typeof mesh.getTotalVertices === "function" ? mesh.getTotalVertices() : 0, 0))); }
+        catch { /* Optional imported mesh. */ }
+      }
+      try {
+        const activeIndices = finite(typeof scene.getActiveIndices === "function" ? scene.getActiveIndices() : 0, 0);
+        if (activeIndices > 0) triangles = Math.floor(activeIndices / 3);
+      } catch { /* Keep the mesh-derived estimate. */ }
+
+      const measuredDrawCalls = this._drawCallsMeasured ? this._lastFrameDrawCalls : 0;
+      const drawCalls = this._drawCallsMeasured ? measuredDrawCalls : estimatedDrawCalls;
+
+      let textureList = [];
+      let usesInternalTextureCache = false;
+      try {
+        if (typeof engine.getLoadedTexturesCache === "function") {
+          textureList = Array.from(engine.getLoadedTexturesCache() || []);
+          usesInternalTextureCache = textureList.length > 0;
+        }
+      } catch { /* Fall through to public scene textures. */ }
+      if (!textureList.length) textureList = Array.from(scene.textures || []);
+      const uniqueTextures = Array.from(new Set(textureList.filter(Boolean)));
+      let textureBytes = 0;
+      for (const texture of uniqueTextures) {
+        try {
+          const size = typeof texture.getSize === "function" ? texture.getSize() : texture;
+          const width = clamp(size?.width || texture.width || texture.baseWidth || 1, 1, 32768);
+          const height = clamp(size?.height || texture.height || texture.baseHeight || 1, 1, 32768);
+          const depth = clamp(size?.depth || texture.depth || 1, 1, 2048);
+          const faces = texture.isCube ? 6 : 1;
+          const bytesPerPixel = texture.type === 1 ? 16 : texture.type === 2 ? 8 : 4;
+          const mipFactor = texture.generateMipMaps || texture._generateMipMaps ? 4 / 3 : 1;
+          textureBytes += width * height * depth * faces * bytesPerPixel * mipFactor;
+        } catch { /* Texture memory is an estimate, never a render dependency. */ }
+      }
+      const renderWidth = clamp(typeof engine.getRenderWidth === "function" ? engine.getRenderWidth() : this._canvas?.width || 1, 1, 32768);
+      const renderHeight = clamp(typeof engine.getRenderHeight === "function" ? engine.getRenderHeight() : this._canvas?.height || 1, 1, 32768);
+      const activeEffects = this._postProcessing?.active?.length || 0;
+      const backAndDepthBuffers = renderWidth * renderHeight * 12;
+      const untrackedRenderTargets = usesInternalTextureCache ? 0 : renderWidth * renderHeight * 8 * (activeEffects * 2 + (this._postProcessing?.taa ? 2 : 0));
+      const meshBytes = vertices * 48 + triangles * 3 * 4;
+      const estimatedVramBytes = Math.max(0, Math.round(textureBytes + backAndDepthBuffers + untrackedRenderTargets + meshBytes));
+      return freezeRecord({
+        drawCalls,
+        triangles,
+        vertices,
+        visibleMeshes: activeMeshes.length,
+        textures: uniqueTextures.length,
+        estimatedVramBytes,
+        estimatedVramMiB: Math.round(estimatedVramBytes / 104857.6) / 10,
+        drawCallsMeasured: this._drawCallsMeasured
+      });
+    }
+
     getTelemetry() {
       const streaming = this._streamer ? this._streamer.getStats() : freezeRecord({ activeChunks: 0, queuedChunks: 0, maxChunks: 0, chunkSize: CHUNK_SIZE });
       const environmentAssets = this._environmentAssets ? this._environmentAssets.getStatus() : freezeRecord({ status: "procedural", loadedAssets: [], loadedInstances: 0, visibleInstances: 0, hdr: false, failures: [] });
       const creatureAssets = this._creatureAssets ? this._creatureAssets.getStatus() : freezeRecord({ status: "procedural", loadedSpecies: [], activeClips: freezeRecord({}), productionApproved: false, failures: [] });
+      const cinematicAudio = this._cinematicAudio ? this._cinematicAudio.getStatus() : freezeRecord({ status: "fallback", enabled: false, channel: "", playing: false, playBlocked: false, productionApproved: false });
       const average = this._governor.average;
+      const render = this._collectRenderTelemetry();
       return freezeRecord({
         status: this._state,
         backend: this._backend,
@@ -2564,6 +3381,16 @@
         fps: average > 0 ? Math.round(1000 / average) : 0,
         frameTimeAverageMs: Math.round(average * 10) / 10,
         frameTimeP95Ms: Math.round(this._governor.p95 * 10) / 10,
+        drawCalls: render.drawCalls,
+        drawCallsMeasured: render.drawCallsMeasured,
+        triangles: render.triangles,
+        triangleCount: render.triangles,
+        vertices: render.vertices,
+        visibleMeshes: render.visibleMeshes,
+        textureCount: render.textures,
+        estimatedVramBytes: render.estimatedVramBytes,
+        estimatedVramMiB: render.estimatedVramMiB,
+        estimatedVRAMMiB: render.estimatedVramMiB,
         activeChunks: streaming.activeChunks,
         queuedChunks: streaming.queuedChunks,
         maxChunks: streaming.maxChunks,
@@ -2573,19 +3400,22 @@
         proxySpecies: FLAGSHIP_IDS.slice(),
         environmentAssets,
         creatureAssets,
+        cinematicAudio,
+        renderingFeatures: this._getRenderingFeatureStatus(),
+        photoCamera: this.getPhotoSettings(),
         rainParticleBudget: ENVIRONMENT_BUDGETS[this._qualityPreset].rainParticles,
         physics: "kinematic-proxy-only"
       });
     }
 
-    async capture(mimeType = "image/png") {
+    async capture(mimeType = "image/png", dimensions = {}) {
       if (!this._engine || !this._camera || !this._canvas) throw new Error("The 3D renderer is not ready for capture.");
       const type = /^image\/(?:png|jpeg|webp)$/i.test(String(mimeType || "")) ? String(mimeType) : "image/png";
       const screenshot = this._Babylon?.Tools?.CreateScreenshotUsingRenderTargetAsync;
       if (typeof screenshot === "function") {
         const dataUrl = await screenshot(this._engine, this._camera, {
-          width: Math.max(1, Math.trunc(this._canvas.width || this._canvas.clientWidth || 1)),
-          height: Math.max(1, Math.trunc(this._canvas.height || this._canvas.clientHeight || 1))
+          width: Math.trunc(clamp(dimensions.width || this._canvas.width || this._canvas.clientWidth || 1, 1, 7680)),
+          height: Math.trunc(clamp(dimensions.height || this._canvas.height || this._canvas.clientHeight || 1, 1, 4320))
         }, type);
         const encoded = String(dataUrl || "").split(",")[1];
         if (!encoded || typeof runtime.atob !== "function" || typeof runtime.Blob !== "function") throw new Error("The captured frame could not be encoded.");
@@ -2608,6 +3438,7 @@
       }
       if (this._state !== "running") return makeResult(this._state === "paused", { status: this._state, cause });
       try { this._engine && this._engine.stopRenderLoop(this._renderFrame); } catch { /* Pausing must remain safe. */ }
+      this._cinematicAudio?.pause();
       this._state = "paused";
       this._emitStatus({ cause: String(cause) });
       return makeResult(true, { status: this._state, cause });
@@ -2626,9 +3457,15 @@
       this._state = "running";
       this._lastFrameAt = now();
       this._engine.runRenderLoop(this._renderFrame);
+      this._cinematicAudio?.resume();
       this._scheduleEnvironmentAssetLoad(this._generation);
       this._emitStatus({ cause: String(cause) });
       return makeResult(true, { status: this._state, cause });
+    }
+
+    setAmbientAudio(enabled, volume = 0.7) {
+      if (!this._cinematicAudio) return makeResult(false, { status: "fallback" });
+      return makeResult(true, { audio: this._cinematicAudio.set(enabled, volume) });
     }
 
     _releaseOwnedCanvas() {
@@ -2658,16 +3495,26 @@
     _teardownGraphics() {
       this._cancelEnvironmentAssetSchedule();
       this._removeRuntimeListeners();
+      this._removeWebGpuDiagnostics();
       try { this._engine && this._engine.stopRenderLoop(this._renderFrame); } catch { /* Cleanup only. */ }
       if (this._camera && typeof this._camera.detachControl === "function") {
         try { this._camera.detachControl(); } catch { /* Cleanup only. */ }
       }
+      this._disposePostProcessing();
+      safeDispose(this._lights?.shadow);
+      if (this._lights) {
+        this._lights.shadow = null;
+        this._lights.shadowKind = "none";
+      }
+      this._renderFeaturePreset = null;
       if (this._streamer) this._streamer.dispose();
       this._streamer = null;
       this._environmentAssets?.dispose();
       this._environmentAssets = null;
       this._creatureAssets?.dispose();
       this._creatureAssets = null;
+      this._cinematicAudio?.dispose();
+      this._cinematicAudio = null;
       for (const proxy of this._proxies.values()) {
         safeDispose(proxy.root);
         for (const material of proxy.materials) safeDispose(material);
@@ -2678,6 +3525,7 @@
         safeDispose(this._water.mesh);
         safeDispose(this._water.material);
         safeDispose(this._water.normalTexture);
+        safeDispose(this._water.foamTexture);
       }
       this._water = null;
       if (this._weatherFx) {
@@ -2692,6 +3540,9 @@
       this._engine = null;
       this._camera = null;
       this._lights = null;
+      this._postProcessingFailureHistory.length = 0;
+      this._lastFrameDrawCalls = 0;
+      this._drawCallsMeasured = false;
       this._Babylon = null;
       this._backend = null;
       this._governor.reset();
@@ -2753,6 +3604,9 @@
     FLAGSHIP_SPECIES,
     FLAGSHIP_IDS,
     QUALITY_PRESETS,
+    QUALITY_ORDER,
+    CINEMATIC_PRESET,
+    DEFAULT_PHOTO_SETTINGS,
     detectCapabilities,
     loadBabylon,
     loadBabylonGltfLoader,

@@ -1,5 +1,6 @@
-const CACHE = "hh-identity-portal-v881";
-// EonWild CC0 asset integration: ./performance-loader.js?v=528 ./hh-eonwild-game.js?v=14.
+const CACHE = "hh-identity-portal-v884";
+const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
+// EonWild cinematic integration: ./performance-loader.js?v=531 ./hh-eonwild-cinematic-pack.js?v=1 ./hh-eonwild-cinematic-pack-worker.js?v=1 ./hh-eonwild-game.js?v=15.
 // Compatibility marker retained for the pre-photogrammetry EonWild renderer: hh-identity-portal-v879 ./hh-eonwild-renderer-3d.js?v=5.
 // Compatibility marker retained for Dharma v6 clients: hh-identity-portal-v842.
 // Compatibility marker retained for the previous Home shell: ./home-galaxy-command.js?v=15.
@@ -474,12 +475,14 @@ const RUNTIME_ASSETS = [
   "./hh-chinese.js?v=12",
   "./phat-phap.js?v=15",
   "./hh-play.js?v=4&build=2",
-  "./hh-eonwild-game.css?v=11",
+  "./hh-eonwild-cinematic-pack.js?v=1",
+  "./hh-eonwild-cinematic-pack-worker.js?v=1",
+  "./hh-eonwild-game.css?v=12",
   "./hh-eonwild-content-v2.js?v=3",
   "./hh-eonwild-simulation-v2.js?v=4",
-  "./hh-eonwild-3d-core.js?v=4",
-  "./hh-eonwild-renderer-3d.js?v=6",
-  "./hh-eonwild-game.js?v=14",
+  "./hh-eonwild-3d-core.js?v=5",
+  "./hh-eonwild-renderer-3d.js?v=9",
+  "./hh-eonwild-game.js?v=15",
   "./vendor/babylon-9.22.1.js?v=9.22.1",
   "./vendor/babylonjs-loaders-9.22.1.min.js?v=9.22.1",
   "./assets/eonwild/asset-manifest.v1.json",
@@ -506,7 +509,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=528",
+  "./performance-loader.js?v=531",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=245"
@@ -515,7 +518,7 @@ self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).the
 self.addEventListener("message", event => {
   if (event.data?.type === "HH_APPLY_UPDATE") self.skipWaiting();
 });
-self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
+self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE && key !== EONWILD_CINEMATIC_CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
 
 const HH_SCHOOL_DB = "hh-school-offline-v1";
 const HH_SCHOOL_QUEUE = "syncQueue";
@@ -604,7 +607,12 @@ self.addEventListener("fetch", event => {
 
   const url = new URL(request.url);
   const isPrivateRequest = url.pathname.startsWith("/api/") || request.headers.has("authorization");
-  if (url.origin !== self.location.origin || isPrivateRequest) {
+  // Cinematic packs deliberately use no-store and resumable Range requests.
+  // Let those bytes flow straight to the dedicated OPFS/pack cache pipeline:
+  // mirroring a multi-GB response into the App Shell cache can double storage,
+  // break Content-Range semantics and make pause/resume appear to hang.
+  const bypassShellCache = request.cache === "no-store" || request.headers.has("range");
+  if (url.origin !== self.location.origin || isPrivateRequest || bypassShellCache) {
     event.respondWith(fetch(request));
     return;
   }

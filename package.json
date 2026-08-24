@@ -16,7 +16,7 @@
     "validate:eonwild-assets": "node scripts/validate-eonwild-assets.js",
     "sync:eonwild-environment": "node scripts/sync-eonwild-polyhaven-assets.js",
     "sync:eonwild-creatures": "node scripts/sync-eonwild-quaternius-creatures.js",
-    "test:eonwild": "node --test tests/hh-eonwild-assets.test.js tests/hh-eonwild-renderer-assets.test.js tests/hh-eonwild-game.test.js",
+    "test:eonwild": "node --test tests/hh-eonwild-assets.test.js tests/hh-eonwild-renderer-assets.test.js tests/hh-eonwild-cinematic-renderer.test.js tests/hh-eonwild-cinematic-pack.test.js tests/hh-eonwild-cinematic-ui.test.js tests/hh-eonwild-game.test.js",
     "test:english": "node --test tests/english-learning.test.js tests/english-learning-galaxy.test.js tests/english-galaxy-contract.test.js tests/english-vocabulary.test.js tests/english-for-everyone.test.js tests/english-learning-os-v3.test.js tests/english-learning-api.test.js",
     "test:japanese": "node --test tests/japanese-learning.test.js tests/japanese-dictionary-api.test.js tests/japanese-os-v3.test.js",
     "test:communication": "node --test tests/communication-*.test.js",
