@@ -979,8 +979,16 @@
     return true;
   }
 
-  function scheduleMount() {
-    requestAnimationFrame(() => requestAnimationFrame(() => mount()));
+  let mountRetryTimer = 0;
+  function scheduleMount(attempt = 0) {
+    clearTimeout(mountRetryTimer);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const mounted = mount();
+      const routeActive = !location.hash || /^#\/home(?:$|[/?])/.test(location.hash);
+      if (!mounted && routeActive && attempt < 12) {
+        mountRetryTimer = setTimeout(() => scheduleMount(attempt + 1), Math.min(420, 70 + attempt * 30));
+      }
+    }));
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", scheduleMount);

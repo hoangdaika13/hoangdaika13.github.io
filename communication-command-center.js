@@ -376,8 +376,46 @@
 
   function render(runtime, focusId) {
     if (!runtime || !runtime.host) return;
+    const activeElement = runtime.scope?.document?.activeElement || globalScope.document?.activeElement;
+    const focusMemory = runtime.host.contains?.(activeElement) ? focusTarget(activeElement) : null;
+    const scrollMemory = [
+      ["host", runtime.host],
+      ["list", runtime.host.querySelector?.("[data-hcc-list]")],
+      ["inbox", runtime.host.querySelector?.(".hcc-inbox-list")],
+      ["detail", runtime.host.querySelector?.(".hcc-inbox-detail")]
+    ].filter(([, node]) => node).map(([key, node]) => [key, Number(node.scrollTop || 0), Number(node.scrollLeft || 0)]);
     runtime.host.innerHTML = runtime.view === "unified-inbox" ? inboxView(runtime.state) : commandView(runtime.state);
-    if (focusId) runtime.host.querySelector && runtime.host.querySelector(`[data-hcc-row="${cssEscape(focusId)}"]`)?.focus();
+    if (runtime.renderFrame) (runtime.scope?.cancelAnimationFrame || globalScope.cancelAnimationFrame || globalScope.clearTimeout || (() => {}))(runtime.renderFrame);
+    const schedule = runtime.scope?.requestAnimationFrame || globalScope.requestAnimationFrame || globalScope.setTimeout || ((callback) => { callback(); return 0; });
+    runtime.renderFrame = schedule(() => {
+      runtime.renderFrame = 0;
+      if (runtime.destroyed || active !== runtime || !runtime.host?.isConnected) return;
+      scrollMemory.forEach(([key, top, left]) => {
+        const node = key === "host" ? runtime.host : key === "list" ? runtime.host.querySelector?.("[data-hcc-list]") : runtime.host.querySelector?.(key === "inbox" ? ".hcc-inbox-list" : ".hcc-inbox-detail");
+        if (node) { node.scrollTop = top; node.scrollLeft = left; }
+      });
+      const requested = focusId ? runtime.host.querySelector?.(`[data-hcc-row="${cssEscape(focusId)}"]`) : null;
+      const restored = requested || (focusMemory?.selector ? runtime.host.querySelector?.(focusMemory.selector) : null);
+      restored?.focus?.({ preventScroll: true });
+      if (restored && focusMemory?.selection && typeof restored.setSelectionRange === "function") {
+        try { restored.setSelectionRange(focusMemory.selection[0], focusMemory.selection[1]); } catch {}
+      }
+    });
+  }
+
+  function focusTarget(node) {
+    if (!node) return null;
+    const attributes = ["data-hcc-row", "data-hcc-search", "data-hcc-reply-draft", "data-hcc-filter", "data-hcc-item-action", "data-hcc-bulk"];
+    for (const attribute of attributes) {
+      if (!node.hasAttribute?.(attribute)) continue;
+      const value = safeText(node.getAttribute(attribute), 100);
+      return {
+        selector: value ? `[${attribute}="${cssEscape(value)}"]` : `[${attribute}]`,
+        selection: Number.isInteger(node.selectionStart) ? [node.selectionStart, node.selectionEnd] : null
+      };
+    }
+    const id = safeText(node.id, 100);
+    return id && /^[a-z][a-z0-9_-]*$/i.test(id) ? { selector: `#${id}`, selection: null } : null;
   }
 
   function cssEscape(value) {
@@ -394,6 +432,7 @@
   function requestAdapterData(runtime) {
     let responded = false;
     const respond = (payload) => {
+      if (runtime.destroyed || active !== runtime) return;
       responded = true;
       runtime.state = mergeAdapterData(runtime.state, payload);
       persistAndRender(runtime, isConfirmedAdapterPayload(payload)
@@ -401,7 +440,7 @@
         : "Đã nhận dữ liệu nhưng adapter chưa xác nhận kết nối; presence vẫn ngoại tuyến.");
     };
     emit("hh:communication:request-data", { version: VERSION, source: "command-center", views: VIEWS.slice(), respond }, runtime.scope);
-    if (!responded) {
+    if (!responded && !runtime.destroyed && active === runtime) {
       runtime.state.lastAction = "Đã gửi yêu cầu đồng bộ; chưa có adapter realtime phản hồi.";
       render(runtime);
     }
@@ -613,7 +652,7 @@
     unmount();
     const scope = options.scope || globalScope;
     const view = supports(options.view) ? options.view : "command-center";
-    const runtime = { host, options: { ...options, view }, view, scope, state: loadState(scope), listeners: [] };
+    const runtime = { host, options: { ...options, view }, view, scope, state: loadState(scope), listeners: [], renderFrame: 0, destroyed: false };
     const on = (target, type, handler) => {
       if (!target || typeof target.addEventListener !== "function") return;
       target.addEventListener(type, handler);
@@ -628,15 +667,18 @@
     active = runtime;
     render(runtime);
     requestAdapterData(runtime);
-    return { view, refresh: () => requestAdapterData(runtime), getState: () => normalizeState(runtime.state) };
+    return { view, refresh: () => requestAdapterData(runtime), getState: () => normalizeState(runtime.state), unmount: () => unmount(host) };
   }
 
-  function unmount() {
-    if (!active) return false;
-    active.listeners.forEach(([target, type, handler]) => {
+  function unmount(host = null) {
+    if (!active || (host && active.host !== host)) return false;
+    const runtime = active;
+    runtime.destroyed = true;
+    if (runtime.renderFrame) (runtime.scope?.cancelAnimationFrame || globalScope.cancelAnimationFrame || globalScope.clearTimeout || (() => {}))(runtime.renderFrame);
+    runtime.listeners.forEach(([target, type, handler]) => {
       if (target && typeof target.removeEventListener === "function") target.removeEventListener(type, handler);
     });
-    if (active.host) active.host.innerHTML = "";
+    if (runtime.host) runtime.host.innerHTML = "";
     active = null;
     return true;
   }

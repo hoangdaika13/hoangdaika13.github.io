@@ -4,28 +4,498 @@ body.app-communication-route #appContextBar {
   display: none;
 }
 
+body.app-communication-route {
+  overflow: hidden;
+}
+
 body.app-communication-route #appWorkspace {
-  padding-top: 12px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 12px;
+  overflow: hidden;
+}
+
+body.app-communication-route #appWorkspace > [data-communication-suite-host] {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 body.app-communication-route .communication-suite {
-  min-height: calc(100vh - 88px);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
 }
 
-@media (max-width: 720px) {
+body.app-communication-route .app-main {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #050a14;
+}
+
+body.app-communication-route .comms-engine-host {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Readable type across every communication cartridge. Older engines used
+   6-11px metadata; the cockpit establishes a consistent accessible floor. */
+body.app-communication-route .comms-engine-host :where(button, input, textarea, select, label, summary, p, li, small, time, output, code) {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+body.app-communication-route .comms-engine-host :where(strong, b) {
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+body.app-communication-route .comms-engine-host :where(em) {
+  font-size: 14px;
+}
+
+body.app-communication-route .comms-engine-host :where(h1, h2) {
+  text-wrap: balance;
+}
+
+body.app-communication-route .comms-engine-host :where(h3, h4) {
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+body.app-communication-route .comms-engine-host :where(button, [role="button"], input, select, summary) {
+  min-height: 40px;
+}
+
+body.app-communication-route .comms-engine-host :where(input, textarea, select) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.app-communication-route .comms-engine-host :where(p, small, strong, span, label, time) {
+  overflow-wrap: anywhere;
+}
+
+body.app-communication-route .comms-engine-host :where(.hcc-muted, .hcf-muted, .hcca-muted, .hci-muted, .hmn-muted, .live-muted) {
+  color: #b4c5d5;
+}
+
+/* Distinct, truthful visual identities. These layers are decorative only and
+   never imply realtime/provider availability. */
+body.app-communication-route .comms-engine-host :where(.hcc, .hmn-shell, .hcf-app, .communication-live-room, .hh-communication-ca, .hci-shell) {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  isolation: isolate;
+}
+
+body.app-communication-route .comms-engine-host :where(.hcc, .hmn-shell, .hcf-app, .communication-live-room, .hh-communication-ca, .hci-shell) > * {
+  position: relative;
+  z-index: 1;
+}
+
+body.app-communication-route .hcc {
+  --hcc-muted: #adbdcd;
+  min-height: 100%;
+  animation: comms-command-arrive .36s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+body.app-communication-route .hcc::after {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 4%;
+  width: min(360px, 42vw);
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #65dbe5, #f15eb5, transparent);
+  box-shadow: 0 0 20px rgba(101, 219, 229, .4);
+  content: "";
+  pointer-events: none;
+  animation: comms-command-scan 5.8s ease-in-out infinite;
+}
+
+body.app-communication-route .hmn-shell {
+  --hmn-muted: #b6c5d7;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  animation: comms-message-arrive .3s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+body.app-communication-route .hmn-shell::after {
+  position: absolute;
+  z-index: 0;
+  top: 16px;
+  right: 18%;
+  width: 92px;
+  height: 32px;
+  background:
+    radial-gradient(circle at 8px 16px, #62d7e7 0 3px, transparent 4px),
+    radial-gradient(circle at 46px 7px, #f05caf 0 3px, transparent 4px),
+    radial-gradient(circle at 82px 22px, #b8e66e 0 3px, transparent 4px),
+    linear-gradient(166deg, transparent 14px, rgba(98, 215, 231, .42) 15px 16px, transparent 17px);
+  content: "";
+  opacity: .75;
+  pointer-events: none;
+  animation: comms-message-network 3.8s ease-in-out infinite;
+}
+
+body.app-communication-route .hmn-topbar {
+  min-height: 68px;
+  height: auto;
+}
+
+body.app-communication-route .hmn-workspace {
+  grid-template-columns: minmax(240px, 280px) minmax(360px, 1fr) minmax(260px, 300px);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.app-communication-route .hmn-rooms,
+body.app-communication-route .hmn-details,
+body.app-communication-route .hmn-conversation,
+body.app-communication-route .hmn-message-list {
+  min-height: 0;
+}
+
+body.app-communication-route .hmn-rooms,
+body.app-communication-route .hmn-details,
+body.app-communication-route .hmn-message-list {
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(98, 215, 231, .36) transparent;
+}
+
+body.app-communication-route .hmn-conversation {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+body.app-communication-route .hmn-bubble > footer {
+  opacity: 1;
+}
+
+body.app-communication-route .hcf-app {
+  --hcf-muted: #b0c2d3;
+  min-height: 100%;
+  overflow-x: hidden;
+  animation: comms-channel-arrive .36s ease both;
+}
+
+body.app-communication-route .hcf-app::after {
+  position: absolute;
+  z-index: 0;
+  top: 92px;
+  right: clamp(18px, 5vw, 70px);
+  width: 150px;
+  height: 150px;
+  border: 1px dashed rgba(101, 217, 232, .28);
+  border-radius: 50%;
+  box-shadow: inset 0 0 35px rgba(240, 108, 184, .08), 0 0 35px rgba(101, 217, 232, .08);
+  content: "";
+  pointer-events: none;
+  animation: comms-channel-orbit 14s linear infinite;
+}
+
+body.app-communication-route .hcf-workspace {
+  min-height: 0;
+}
+
+body.app-communication-route .communication-live-room {
+  --live-muted: #b1c3d1;
+  min-height: 100%;
+  animation: comms-live-arrive .34s ease both;
+}
+
+body.app-communication-route .communication-live-room::before {
+  position: absolute;
+  inset: 0;
+}
+
+body.app-communication-route .communication-live-room::after {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 4%;
+  width: min(420px, 58%);
+  height: 44px;
+  background: repeating-linear-gradient(90deg, transparent 0 10px, rgba(242, 106, 183, .55) 10px 12px, transparent 12px 20px, rgba(102, 228, 233, .55) 20px 23px, transparent 23px 32px);
+  clip-path: polygon(0 48%, 5% 44%, 10% 52%, 15% 30%, 20% 70%, 25% 38%, 30% 55%, 35% 45%, 40% 51%, 45% 22%, 50% 76%, 55% 35%, 60% 57%, 65% 43%, 70% 51%, 75% 34%, 80% 63%, 85% 45%, 90% 52%, 95% 46%, 100% 49%, 100% 54%, 0 54%);
+  content: "";
+  opacity: .64;
+  pointer-events: none;
+  animation: comms-live-wave 3.6s ease-in-out infinite;
+}
+
+body.app-communication-route .live-shell {
+  min-width: 0;
+}
+
+body.app-communication-route .hh-communication-ca {
+  --hcca-muted: #b1c2d2;
+  min-height: 100%;
+  animation: comms-canvas-arrive .34s ease both;
+}
+
+body.app-communication-route .hh-communication-ca::before {
+  position: absolute;
+  z-index: 0;
+  top: 22px;
+  right: 4%;
+  width: 180px;
+  height: 90px;
+  background:
+    linear-gradient(135deg, transparent 48%, rgba(98, 215, 231, .34) 49% 51%, transparent 52%),
+    linear-gradient(35deg, transparent 48%, rgba(240, 92, 175, .3) 49% 51%, transparent 52%),
+    radial-gradient(circle at 14% 72%, #f6d365 0 4px, transparent 5px),
+    radial-gradient(circle at 52% 20%, #62d7e7 0 4px, transparent 5px),
+    radial-gradient(circle at 88% 66%, #f05caf 0 4px, transparent 5px);
+  content: "";
+  opacity: .62;
+  pointer-events: none;
+  animation: comms-canvas-flow 5.4s ease-in-out infinite;
+}
+
+body.app-communication-route .hci-shell {
+  --hci-muted: #b4c3d3;
+  min-height: 100%;
+  overflow-x: hidden;
+  animation: comms-intelligence-arrive .34s ease both;
+}
+
+body.app-communication-route .hci-shell::before {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  bottom: 0;
+  left: -30%;
+  width: 26%;
+  background: linear-gradient(90deg, transparent, rgba(98, 217, 227, .07), rgba(184, 230, 110, .06), transparent);
+  content: "";
+  pointer-events: none;
+  transform: skewX(-12deg);
+  animation: comms-intelligence-sweep 8s ease-in-out infinite;
+}
+
+/* Preserve hierarchy after applying the readable type floor. */
+body.app-communication-route .comms-engine-host :where(
+  .comm-hero__pulse strong,
+  .comm-metrics strong,
+  .hcc-metrics strong,
+  .hcc-radar strong,
+  .hcf-hero-stats strong,
+  .hcf-safety-metrics strong,
+  .hci-index-health b,
+  .live-participant__avatar,
+  .hcca-metrics strong
+) {
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+@keyframes comms-command-arrive {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes comms-command-scan {
+  0%, 100% { opacity: .32; transform: translateX(-34%) scaleX(.65); }
+  50% { opacity: .92; transform: translateX(8%) scaleX(1); }
+}
+
+@keyframes comms-message-arrive {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes comms-message-network {
+  0%, 100% { opacity: .42; transform: translateY(2px) scale(.97); }
+  50% { opacity: .86; transform: translateY(-2px) scale(1.03); }
+}
+
+@keyframes comms-channel-arrive {
+  from { opacity: 0; transform: scale(.994); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes comms-channel-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes comms-live-arrive {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes comms-live-wave {
+  0%, 100% { opacity: .36; transform: scaleY(.72); }
+  50% { opacity: .78; transform: scaleY(1.08); }
+}
+
+@keyframes comms-canvas-arrive {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes comms-canvas-flow {
+  0%, 100% { opacity: .4; transform: translateX(-4px); }
+  50% { opacity: .8; transform: translateX(5px); }
+}
+
+@keyframes comms-intelligence-arrive {
+  from { opacity: 0; filter: saturate(.7); }
+  to { opacity: 1; filter: none; }
+}
+
+@keyframes comms-intelligence-sweep {
+  0%, 12% { left: -30%; opacity: 0; }
+  35% { opacity: 1; }
+  70%, 100% { left: 115%; opacity: 0; }
+}
+
+@media (max-width: 1180px) {
+  body.app-communication-route .hmn-workspace {
+    grid-template-columns: minmax(230px, 260px) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 980px) {
+  body.app-communication-route .app-mobile-nav {
+    display: none !important;
+  }
+
+  body.app-communication-route.app-sidebar-collapsed .app-sidebar {
+    transform: translateY(calc(100% + 76px)) !important;
+    pointer-events: none;
+  }
+
   body.app-communication-route #appWorkspace {
-    padding: 8px 8px 76px;
+    height: 100%;
+    padding: 0;
+  }
+
+  body.app-communication-route .hcc-hero {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body.app-communication-route .hcc-hero__copy {
+    width: 100%;
+    max-width: none;
+  }
+
+  body.app-communication-route .hcc-radar {
+    min-height: 260px;
   }
 
   body.app-communication-route .communication-suite {
-    min-height: calc(100dvh - 66px);
-    gap: 8px;
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    gap: 0;
   }
 
   body.app-communication-route .comms-suite-head {
-    position: sticky;
-    top: 0;
-    z-index: 8;
+    position: relative;
     border-color: #325064;
+  }
+
+  body.app-communication-route .comms-engine-host :where(button, input, textarea, select, label, summary, p, li, small, time, output, code) {
+    font-size: 14px;
+  }
+
+  body.app-communication-route .hmn-shell {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  body.app-communication-route .hmn-topbar {
+    min-height: 62px;
+  }
+
+  body.app-communication-route .hmn-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
+    min-height: 0;
+  }
+
+  body.app-communication-route .hmn-rooms {
+    max-height: 148px;
+    overflow: hidden;
+    border-bottom: 1px solid var(--hmn-line);
+  }
+
+  body.app-communication-route .hmn-room-list {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+  }
+
+  body.app-communication-route .hmn-conversation {
+    height: auto;
+    min-height: 0;
+  }
+
+  body.app-communication-route .hmn-message-list {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  body.app-communication-route .hcf-app::after,
+  body.app-communication-route .hh-communication-ca::before,
+  body.app-communication-route .communication-live-room::after {
+    opacity: .34;
+    transform: scale(.72);
+    transform-origin: top right;
+  }
+
+  body.app-communication-route .live-hero,
+  body.app-communication-route .hcca-hero,
+  body.app-communication-route .hci-hero,
+  body.app-communication-route .hcf-hero,
+  body.app-communication-route .hcc-hero {
+    padding: 20px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.app-communication-route .communication-suite *,
+  body.app-communication-route .communication-suite *::before,
+  body.app-communication-route .communication-suite *::after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  body.app-communication-route .app-main,
+  body.app-communication-route .communication-suite,
+  body.app-communication-route .comms-engine-host :where(.hcc, .hmn-shell, .hcf-app, .communication-live-room, .hh-communication-ca, .hci-shell) {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  body.app-communication-route .comms-engine-host :where(.hcc, .hmn-shell, .hcf-app, .communication-live-room, .hh-communication-ca, .hci-shell)::after,
+  body.app-communication-route .comms-engine-host :where(.hh-communication-ca, .hci-shell)::before {
+    display: none;
+  }
+
+  body.app-communication-route .comms-engine-host :where(button, input, textarea, select, article, section) {
+    border-color: CanvasText;
+    box-shadow: none;
   }
 }

@@ -1,5 +1,6 @@
-const CACHE = "hh-identity-portal-v847";
+const CACHE = "hh-identity-portal-v861";
 // Compatibility marker retained for Dharma v6 clients: hh-identity-portal-v842.
+// Compatibility marker retained for the previous Home shell: ./home-galaxy-command.js?v=15.
 // Shell compatibility assertions for modules released against the stable cache:
 // hh-identity-portal-v822 ./performance-loader.js?v=474 ./script.js?v=232 ./script.js?v=241 ./app-shell.css?v=64
 // Compatibility URLs retained for clients upgrading from the first HH Chinese release: ./hh-chinese.css?v=1 ./hh-chinese.js?v=1 ./hh-chinese.css?v=11 ./hh-chinese.js?v=11 ./japanese-os-v4.css?v=2 ./japanese-os-v4.js?v=7 ./japanese-os-v4.js?v=8
@@ -28,7 +29,7 @@ const RUNTIME_ASSETS = [
   "./home-galaxy-command.css?v=13",
   "./home-capability-atlas.css?v=1",
   "./home-live-widgets.css?v=12",
-  "./home-cosmic-os.css?v=3",
+  "./home-cosmic-os.css?v=8",
   "./home-galaxy-mission.css?v=9",
   "./home-galaxy-operations.css?v=3",
   "./home-galaxy-control-deck.css?v=3",
@@ -206,10 +207,10 @@ const RUNTIME_ASSETS = [
   "./music-ai-apps.js?v=3",
   "./music-ai-studio.js?v=9",
   "./dashboard-aurora.js?v=5",
-  "./home-galaxy-command.js?v=15",
+  "./home-galaxy-command.js?v=16",
   "./home-capability-atlas.js?v=3",
   "./home-live-widgets.js?v=8",
-  "./home-cosmic-os.js?v=13",
+  "./home-cosmic-os.js?v=19",
   "./home-galaxy-mission.js?v=12",
   "./home-galaxy-operations.js?v=7",
   "./home-galaxy-control-deck.js?v=3",
@@ -276,11 +277,11 @@ const RUNTIME_ASSETS = [
   "./discord-hub.js?v=2",
   "./communication-overview.css?v=1",
   "./communication-overview.js?v=3",
-  "./communication-suite.css?v=2",
-  "./communication-workspace-fix.css?v=1",
-  "./communication-suite.js?v=2",
+  "./communication-suite.css?v=7",
+  "./communication-workspace-fix.css?v=7",
+  "./communication-suite.js?v=7",
   "./communication-command-center.css?v=1",
-  "./communication-command-center.js?v=2",
+  "./communication-command-center.js?v=3",
   "./communication-messenger-next.css?v=2",
   "./communication-messenger-next.js?v=2",
   "./communication-channels-forum.css?v=1",
@@ -491,7 +492,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=498",
+  "./performance-loader.js?v=512",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=243"

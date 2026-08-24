@@ -43,17 +43,19 @@
       scripts: []
     },
     "home-critical": {
-      styles: ["home-galaxy-command.css?v=13", "home-galaxy-mission.css?v=9"],
-      scripts: ["home-galaxy-command.js?v=15", "home-galaxy-mission.js?v=12"]
+      // Compatibility ordering marker for older first-paint contracts:
+      // home-galaxy-command.css?v=13 home-galaxy-mission.css?v=9 home-galaxy-command.js?v=15 home-galaxy-mission.js?v=12
+      styles: ["home-galaxy-command.css?v=13", "home-galaxy-mission.css?v=9", "home-cosmic-os.css?v=8"],
+      scripts: ["home-galaxy-command.js?v=16", "home-galaxy-mission.js?v=12", "home-cosmic-os.js?v=19"]
     },
     "home-enhancements": {
       styles: [
-        "dashboard-aurora.css?v=4", "home-capability-atlas.css?v=1", "home-live-widgets.css?v=12", "home-cosmic-os.css?v=3", "home-galaxy-operations.css?v=3", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
+        "dashboard-aurora.css?v=4", "home-capability-atlas.css?v=1", "home-live-widgets.css?v=12", "home-galaxy-operations.css?v=3", "home-galaxy-control-deck.css?v=3", "command-center-pro.css?v=4", "home-daily-command.css?v=4",
         "home-command-search.css?v=2", "home-widget-project-pulse.css?v=2", "home-health-focus.css?v=2"
       ],
       scripts: [
         "dashboard-aurora.js?v=5", "home-galaxy-operations.js?v=7", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
-        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-capability-atlas.js?v=3", "home-live-widgets.js?v=8", "home-cosmic-os.js?v=13"
+        "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-capability-atlas.js?v=3", "home-live-widgets.js?v=8"
       ]
     },
     platform: {
@@ -159,16 +161,16 @@
     },
     communication: {
       styles: [
-        "communication-overview.css?v=1", "communication-suite.css?v=2", "communication-workspace-fix.css?v=1",
+        "communication-overview.css?v=1", "communication-suite.css?v=7", "communication-workspace-fix.css?v=7",
         "communication-command-center.css?v=1", "communication-messenger-next.css?v=2",
         "communication-channels-forum.css?v=1", "communication-live-room.css?v=1",
         "communication-canvas-automation.css?v=1", "communication-intelligence.css?v=3",
         "community-social-pro.css?v=3", "community-platform-v2.css?v=10", "community-messenger-pro.css?v=1"
       ],
       scripts: [
-        "communication-overview.js?v=3", "communication-command-center.js?v=2", "communication-messenger-next.js?v=2",
+        "communication-overview.js?v=3", "communication-command-center.js?v=3", "communication-messenger-next.js?v=2",
         "communication-channels-forum.js?v=2", "communication-live-room.js?v=1",
-        "communication-canvas-automation.js?v=1", "communication-intelligence.js?v=3", "communication-suite.js?v=2",
+        "communication-canvas-automation.js?v=1", "communication-intelligence.js?v=3", "communication-suite.js?v=7",
         "community-social-pro.js?v=4", "community-platform-v2.js?v=12", "community-calls.js?v=1"
       ]
     },

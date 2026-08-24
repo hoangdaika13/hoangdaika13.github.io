@@ -132,7 +132,10 @@ function registerRemoteSignaling({ io, iceServers = [], allowedOrigins = [], aud
 
   io.on("connection", (socket) => {
     const origin = String(socket.handshake?.headers?.origin || "").trim();
-    if (allowedOrigins.length && (!origin || !allowedOrigins.includes(origin))) {
+    // Browsers always send Origin; reject an explicit untrusted browser origin.
+    // Non-browser Socket.IO clients may omit Origin and still need to use other
+    // registered protocols (Communication, Design, HH Play) on this shared IO.
+    if (allowedOrigins.length && origin && !allowedOrigins.includes(origin)) {
       socket.emit("remote:error", { code: "REMOTE_ORIGIN_REJECTED", message: "Nguồn kết nối Remote không được phép." });
       socket.disconnect?.(true);
       return;
