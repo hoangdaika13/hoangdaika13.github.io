@@ -5601,6 +5601,22 @@ function initAppShell() {
       ]
     },
     {
+      id: "eonwild-game",
+      label: "Game · EonWild",
+      icon: "EW",
+      accent: "#76ed9c",
+      route: "/game",
+      items: [],
+      pages: [
+        { id: "world", title: "Thế giới sống", route: "/game/world", description: "Nhập vai một loài, tìm nước và thức ăn, trưởng thành, di cư, phòng vệ và tạo tổ." },
+        { id: "species", title: "Eon Codex", route: "/game/species", description: "Tra cứu và chọn 49 loài đại diện từ Cổ sinh đến động vật hiện đại." },
+        { id: "ecosystem", title: "Lưới sinh thái", route: "/game/ecosystem", description: "Mô phỏng mùa, sinh khối và quan hệ giữa tài nguyên, con mồi, thú săn mồi và phân hủy." },
+        { id: "timeline", title: "Eon Atlas", route: "/game/timeline", description: "Khám phá các kỷ địa chất và phân biệt Era Realm khoa học với sandbox Eon Convergence." },
+        { id: "expeditions", title: "Thám hiểm", route: "/game/expeditions", description: "Theo dõi các nhiệm vụ sinh tồn ngắn do biến động tự nhiên tạo ra." },
+        { id: "settings", title: "Cài đặt EonWild", route: "/game/settings", description: "Chọn độ khó, seed, mật độ wildlife, âm thanh, chuyển động và chế độ hợp lưu thời đại." }
+      ]
+    },
+    {
       id: "copyright",
       label: "Bản quyền",
       icon: "©",
@@ -5699,7 +5715,7 @@ function initAppShell() {
       icon: "▶",
       accent: "#ff6f82",
       accentSecondary: "#ffc65c",
-      groupIds: ["play-center", "comic-reader", "cinema", "music-library", "fortune"]
+      groupIds: ["play-center", "eonwild-game", "comic-reader", "cinema", "music-library", "fortune"]
     },
     {
       id: "work-tech",
@@ -5743,6 +5759,7 @@ function initAppShell() {
     cinema: "phim điện ảnh movie video",
     "music-library": "nhạc nghe audio playlist",
     "play-center": "hh play game arcade trò chơi party room watch party truyện tương tác escape rhythm karaoke pet chill quiz giải trí nhiều người",
+    "eonwild-game": "game eonwild động vật muôn loài khủng long sinh tồn thế giới mở cổ sinh trung sinh tân sinh hiện đại không con người ecology survival",
     fortune: "xem bói tarot tử vi chiêm tinh kinh dịch",
     work: "công việc dự án task ghi chú lịch",
     "davinci-resolve": "tool công cụ video media batch youtube facebook tiktok",
@@ -5783,6 +5800,7 @@ function initAppShell() {
     headphones: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="13" width="4" height="7" rx="2"/><rect x="17" y="13" width="4" height="7" rx="2"/>',
     moon: '<path d="M19.5 15.5A8.5 8.5 0 1 1 8.5 4.2a7 7 0 0 0 11 11.3Z"/><path d="m18 4 .5 1.5L20 6l-1.5.5L18 8l-.5-1.5L16 6l1.5-.5L18 4Z"/>',
     gamepad: '<path d="M7.2 8h9.6a4.5 4.5 0 0 1 4.2 6.1l-1.5 4a2.4 2.4 0 0 1-3.9.9l-2-2h-3.2l-2 2a2.4 2.4 0 0 1-3.9-.9l-1.5-4A4.5 4.5 0 0 1 7.2 8Z"/><path d="M8 11v4m-2-2h4m5.5-1.5h.01M18 14h.01"/><path d="M9 8V5h6v3"/>',
+    paw: '<ellipse cx="12" cy="15.7" rx="5.2" ry="4.2"/><circle cx="5.8" cy="11.3" r="2.1"/><circle cx="9.2" cy="6.9" r="2.1"/><circle cx="14.8" cy="6.9" r="2.1"/><circle cx="18.2" cy="11.3" r="2.1"/>',
     briefcase: '<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8 7V4h8v3M3 12h18M10 12v2h4v-2"/>',
     sliders: '<path d="M4 6h10M18 6h2M4 12h3m4 0h9M4 18h8m4 0h4"/><circle cx="16" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="14" cy="18" r="2"/>',
     code: '<path d="m8 8-4 4 4 4m8-8 4 4-4 4m-2-11-4 14"/>',
@@ -5800,7 +5818,7 @@ function initAppShell() {
   const sidebarIconNames = Object.freeze({
     home: "home", search: "search", "ai-creative": "sparkles", "web-community": "orbit", entertainment: "play", "work-tech": "cpu", learning: "book", "system-admin": "shield",
     "chat-ai": "bot", create: "wand", draw: "brush", "music-ai": "music", "comic-motion": "panels", "media-design": "image", "graphic-design": "pen",
-    google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "play-center": "gamepad", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", fortune: "moon",
+    google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "play-center": "gamepad", "eonwild-game": "paw", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", fortune: "moon",
     work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
     admin: "crown", system: "settings", support: "heart"
   });
@@ -6600,7 +6618,7 @@ function initAppShell() {
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
     const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", draw: "Vẽ", remote: "Remote", "chat-ai": "Chat AI", google: "Google", youtube: "YouTube", discord: "Discord", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "phat-phap": "Phật Pháp", beginner: "Lộ trình tu học", situations: "Pháp học đời sống", teachings: "Giáo lý", scriptures: "Canonical Reader", research: "Tìm kiếm học thuật", scholar: "Scholar & OCR Lab", glossary: "Từ điển Phật học", map: "Bản đồ giáo pháp", provenance: "Editorial & Trust Center", practice: "Thiền đường số", chanting: "Phòng tụng niệm", audio: "Thư viện nghe", schedule: "Lịch tu học", temple: "Trung tâm Phật sự Việt Nam", request: "Thỉnh kinh", talks: "Pháp thoại Observatory", circles: "Nhóm đọc riêng tư", qna: "HH Phật học có nguồn", journal: "Nhật ký mã hóa", accessibility: "Trợ năng", "data-control": "Tủ dữ liệu", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", chinese: "HH Chinese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "16 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
-    Object.assign(crumbLabels, { play: "HH Play", arcade: "Arcade Galaxy", party: "Party Room", watch: "Watch Party", story: "Story Universe", escape: "Escape Room", rhythm: "Rhythm Arena", pet: "HH Virtual Pet", chill: "Chill Rooms", quiz: "Quiz Arena" });
+    Object.assign(crumbLabels, { play: "HH Play", arcade: "Arcade Galaxy", party: "Party Room", watch: "Watch Party", story: "Story Universe", escape: "Escape Room", rhythm: "Rhythm Arena", pet: "HH Virtual Pet", chill: "Chill Rooms", quiz: "Quiz Arena", game: "Game · EonWild", world: "Thế giới sống", species: "Eon Codex", ecosystem: "Lưới sinh thái", timeline: "Eon Atlas", expeditions: "Thám hiểm" });
     crumbLabels["social-media-tools"] = "Công cụ truyền thông xã hội";
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
@@ -6652,6 +6670,7 @@ function initAppShell() {
     "phat-phap": "Đang mở trung tâm tu học, kiểm tra nguồn và khôi phục thời khóa riêng tư...",
     fortune: "Đang mở không gian Tarot, cung hoàng đạo và nhật ký suy ngẫm...",
     "play-center": "Đang mở HH Play, khôi phục điểm số và chuẩn bị trải nghiệm giải trí cục bộ...",
+    "eonwild-game": "Đang tái tạo Trái Đất Muôn Thời, lưới sinh thái và vòng đời động vật...",
     draw: "Đang mở Chromatic Studio và chuẩn bị 16 brush engine đa sắc...",
     remote: "Đang thiết lập không gian Remote, WebRTC và kết nối thiết bị P2P...",
     "chat-ai": "Đang khởi tạo HH Intelligence, lịch sử hội thoại và công cụ đa phương thức...",
@@ -6674,7 +6693,7 @@ function initAppShell() {
       "media-design": "media", "graphic-design": "media", dev: "dev", work: "data", insights: "data",
       communication: "network", google: "network", "youtube-main": "media", discord: "discord", remote: "network",
       "chat-ai": "ai", learn: "learning", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
-      fortune: "fortune", "play-center": "play", admin: "data", system: "data", support: "home"
+      fortune: "fortune", "play-center": "play", "eonwild-game": "play", admin: "data", system: "data", support: "home"
     })[group?.id] || "home";
     const secondary = ({ home: "#ffd166", ai: "#ff58c8", draw: "#ff5dc8", music: "#63f2b3", media: "#ff5f9e", dev: "#63f2b3", data: "#ffd166", network: "#5b8cff", discord: "#ff62c7", learning: "#9c72ff", english: "#a673ff", japanese: "#ffca69", chinese: "#ff6f78", fortune: "#ff58c8", play: "#ff68c7", dharma: "#983b22" })[kind] || "#ff63c9";
     return {
@@ -6877,6 +6896,7 @@ function initAppShell() {
     document.body.classList.toggle("app-dharma-route", route === "/phat-phap" || route.startsWith("/phat-phap/"));
     document.body.classList.toggle("app-fortune-route", route === "/fortune" || route.startsWith("/fortune/"));
     document.body.classList.toggle("app-play-route", route === "/play" || route.startsWith("/play/"));
+    document.body.classList.toggle("app-eonwild-route", route === "/game" || route.startsWith("/game/"));
     document.body.classList.toggle("app-draw-route", route === "/draw" || route.startsWith("/draw/"));
     document.body.classList.toggle("app-remote-route", route === "/remote" || route.startsWith("/remote/"));
     document.body.classList.toggle("app-chat-ai-route", route === "/chat-ai" || route.startsWith("/chat-ai/"));
@@ -6916,6 +6936,7 @@ function initAppShell() {
     if (route !== "/phat-phap" && !route.startsWith("/phat-phap/")) window.HHPhatPhap?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
     if (route !== "/play" && !route.startsWith("/play/")) window.HHPlay?.unmount?.();
+    window.HHEonWild?.unmount?.();
     if (route !== "/draw" && !route.startsWith("/draw/")) window.HHDrawStudio?.unmount?.();
     if (route !== "/remote" && !route.startsWith("/remote/")) window.HHRemoteHub?.unmount?.();
       if (route !== "/chat-ai" && !route.startsWith("/chat-ai/")) window.HHChatAI?.unmount?.();
@@ -7128,6 +7149,18 @@ function initAppShell() {
       if (window.HHPlay?.mount) window.HHPlay.mount(workspace.firstElementChild, { view: playView, currentUser: readCurrentAuthUser() });
       else mountSimpleView("HH Play", "Đang tải Entertainment OS và tiến trình cục bộ...", "");
       remember("play-center");
+    } else if (route === "/game" || route.startsWith("/game/")) {
+      const gameView = parts[1] || "world";
+      const gamePage = groups.find((item) => item.id === "eonwild-game")?.pages?.find((item) => item.id === gameView);
+      updatePageHeader(gamePage?.title || "HH EonWild", "Game sinh tồn động vật nguyên bản xuyên các kỷ địa chất: chơi local, khám phá muôn loài và vận hành hệ sinh thái không có con người.", route);
+      pageActions.innerHTML = '<button type="button" data-app-route="/game/species">Eon Codex</button><button type="button" data-app-route="/game/expeditions">Thám hiểm</button><button class="app-primary-action" type="button" data-app-route="/game/world">Chơi tiếp</button>';
+      workspace.innerHTML = '<div data-hh-eonwild-host></div>';
+      if (window.HHEonWild?.mount) window.HHEonWild.mount(workspace.firstElementChild, {
+        view: gameView,
+        currentUser: readCurrentAuthUser()
+      });
+      else mountSimpleView("HH EonWild", "Đang tái tạo thế giới động vật và lưới sinh thái...", "");
+      remember("eonwild-game");
     } else if (route === "/fortune" || route.startsWith("/fortune/")) {
       updatePageHeader("Xem bói", "Tarot nguyên bản, cung hoàng đạo, con giáp, thần số học, Kinh Dịch và nhật ký riêng tư dành cho giải trí, tự chiêm nghiệm.", route);
       pageActions.innerHTML = `<button type="button" data-app-route="/fortune/tarot">Rút Tarot</button><button type="button" data-app-route="/fortune/journal">Nhật ký</button><button class="app-primary-action" type="button" data-app-route="/fortune/today">Hôm nay</button>`;

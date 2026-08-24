@@ -15,7 +15,7 @@ const html = read("index.html");
 
 test("HH Play is a first-class lazy route in Entertainment", () => {
   assert.match(router, /id:\s*"play-center"[\s\S]*?label:\s*"HH Play"[\s\S]*?route:\s*"\/play"/);
-  assert.match(router, /groupIds:\s*\["play-center",\s*"comic-reader",\s*"cinema",\s*"music-library",\s*"fortune"\]/);
+  assert.match(router, /groupIds:\s*\["play-center",\s*"eonwild-game",\s*"comic-reader",\s*"cinema",\s*"music-library",\s*"fortune"\]/);
   assert.match(router, /window\.HHPlay\?\.mount/);
   assert.match(router, /window\.HHPlay\?\.unmount/);
   assert.match(router, /app-play-route/);
@@ -23,8 +23,12 @@ test("HH Play is a first-class lazy route in Entertainment", () => {
   assert.match(loader, /value\.startsWith\("\/play"\)[^\n]*\["play"\]/);
   assert.match(worker, /\.\/hh-play\.css\?v=5/);
   assert.match(worker, /\.\/hh-play\.js\?v=4/);
-  assert.match(html, /performance-loader\.js\?v=494/);
-  assert.match(html, /script\.js\?v=241/);
+  for (const asset of ["performance-loader.js", "script.js"]) {
+    const escaped = asset.replaceAll(".", "\\.");
+    const match = html.match(new RegExp(`<script src="${escaped}\\?v=(\\d+)"`));
+    assert.ok(match, `${asset} must have a numeric primary version in index.html`);
+    assert.ok(worker.includes(`./${asset}?v=${match[1]}`), `${asset}?v=${match[1]} must be cached by sw.js`);
+  }
 });
 
 test("Entertainment OS exposes ten distinct workspaces and real local activities", () => {
