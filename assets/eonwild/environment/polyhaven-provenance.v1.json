@@ -1,0 +1,219 @@
+{
+  "format": "hh-eonwild-polyhaven-provenance",
+  "version": 1,
+  "generatedAt": "2026-08-24T13:24:44.485Z",
+  "provider": "Poly Haven",
+  "providerApi": "https://api.polyhaven.com",
+  "providerLicenseUrl": "https://polyhaven.com/license",
+  "apiUserAgent": "HH-EonWild-AssetPipeline/1.0 (+https://hoang8.com)",
+  "toolchain": {
+    "gltfTransform": "4.4.2",
+    "generatedTangents": "MikkTSpace"
+  },
+  "resolution": "1k",
+  "runtimeBudgetBytes": 12582912,
+  "runtimeBytes": 10471123,
+  "assets": [
+    {
+      "id": "fern_02",
+      "kind": "model",
+      "output": "assets/eonwild/environment/fern-02-1k.glb",
+      "outputByteSize": 1216404,
+      "outputSha256": "e804a4afb4b5f2a0d512a69eada3312276c219796a4ff3878d1ae3d047dcf479",
+      "sourceFilesHash": "36e2a53d7f23f422640ad368c1f27745de2fef82",
+      "sourceInfo": {
+        "name": "Fern 02",
+        "authors": [
+          "Rob Tuytel",
+          "Rico Cilliers"
+        ],
+        "publishedAtUnix": 1653609600,
+        "maxResolution": [
+          8192,
+          8192
+        ],
+        "polygonCount": 6232,
+        "dimensionsMillimeters": [
+          1972.5302457809448,
+          1724.0281701087952,
+          427.6947118341923
+        ]
+      },
+      "sourceFiles": [
+        {
+          "path": "fern_02_1k.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/fern_02/fern_02_1k.gltf",
+          "byteSize": 6899,
+          "md5": "cf276874d37bfb73c299504a6b355b77"
+        },
+        {
+          "path": "textures/fern_02_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fern_02/fern_02_arm_1k.jpg",
+          "byteSize": 280359,
+          "md5": "1bbb2b22951f450720d28e17d93a2987"
+        },
+        {
+          "path": "textures/fern_02_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fern_02/fern_02_diff_1k.jpg",
+          "byteSize": 315705,
+          "md5": "82c18a6cfd5ae91c37c0e078f591181c"
+        },
+        {
+          "path": "textures/fern_02_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fern_02/fern_02_nor_gl_1k.jpg",
+          "byteSize": 367222,
+          "md5": "43aed63dff79554f6064627515afd9d7"
+        },
+        {
+          "path": "fern_02.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/fern_02/fern_02.bin",
+          "byteSize": 176176,
+          "md5": "c061e9255f7d36ae9ce0e92ef3e100b2"
+        }
+      ]
+    },
+    {
+      "id": "rock_moss_set_01",
+      "kind": "model",
+      "output": "assets/eonwild/environment/rock-moss-set-01-1k.glb",
+      "outputByteSize": 2487672,
+      "outputSha256": "3006908622dc15994d49a254810a4ff4724b2d089fe23c4a902bc30c90aa3275",
+      "sourceFilesHash": "3d61828e10ef81512a639c8064c9a51a75165b5a",
+      "sourceInfo": {
+        "name": "Rock Moss Set 01",
+        "authors": [
+          "Kless Gyzen"
+        ],
+        "publishedAtUnix": 1625069057,
+        "maxResolution": [
+          8192,
+          8192
+        ],
+        "polygonCount": 63127,
+        "dimensionsMillimeters": [
+          8004.603862762451,
+          6948.764801025391,
+          1768.319845199585
+        ]
+      },
+      "sourceFiles": [
+        {
+          "path": "rock_moss_set_01_1k.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/rock_moss_set_01/rock_moss_set_01_1k.gltf",
+          "byteSize": 9987,
+          "md5": "75113cc1c21806cca5d8badad4737af7"
+        },
+        {
+          "path": "textures/rock_moss_set_01_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rock_moss_set_01/rock_moss_set_01_nor_gl_1k.jpg",
+          "byteSize": 209975,
+          "md5": "eb7ebd31ad08e78d0497900652ff1568"
+        },
+        {
+          "path": "rock_moss_set_01.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/rock_moss_set_01/rock_moss_set_01.bin",
+          "byteSize": 1466380,
+          "md5": "207a51c9f56d34732e9814bbf9cc07b1"
+        },
+        {
+          "path": "textures/rock_moss_set_01_rough_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rock_moss_set_01/rock_moss_set_01_rough_1k.jpg",
+          "byteSize": 82624,
+          "md5": "ed9d8a2c863262f76f881346e8047c6a"
+        },
+        {
+          "path": "textures/rock_moss_set_01_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rock_moss_set_01/rock_moss_set_01_diff_1k.jpg",
+          "byteSize": 168099,
+          "md5": "b8742301e6b4bc5683d2de712e83f772"
+        }
+      ]
+    },
+    {
+      "id": "quiver_tree_02",
+      "kind": "model",
+      "output": "assets/eonwild/environment/quiver-tree-02-1k.glb",
+      "outputByteSize": 5331928,
+      "outputSha256": "d7cc54763fdf69e97e25cace7f1fa0fa82b8e67d6078471988ff9f798f290c33",
+      "sourceFilesHash": "0587f20a8675f71008bafe89b42256c1ffda2cf7",
+      "sourceInfo": {
+        "name": "Quiver Tree 02",
+        "authors": [
+          "Dario Barresi",
+          "Rico Cilliers"
+        ],
+        "publishedAtUnix": 1728345600,
+        "maxResolution": [
+          8192,
+          8192
+        ],
+        "polygonCount": 153887,
+        "dimensionsMillimeters": [
+          872.0614314079285,
+          880.8198273181915,
+          1468.88018399477
+        ]
+      },
+      "sourceFiles": [
+        {
+          "path": "quiver_tree_02_1k.gltf",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/quiver_tree_02/quiver_tree_02_1k.gltf",
+          "byteSize": 2809,
+          "md5": "1002e67d6921204df06b9a97f4f30cff"
+        },
+        {
+          "path": "quiver_tree_02.bin",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/quiver_tree_02/quiver_tree_02.bin",
+          "byteSize": 2060604,
+          "md5": "63635d61c58151eb4fb0b2caaf6b373c"
+        },
+        {
+          "path": "textures/quiver_tree_02_arm_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/quiver_tree_02/quiver_tree_02_arm_1k.jpg",
+          "byteSize": 759729,
+          "md5": "36d19d0ef3d38ed92c557d9eb2203302"
+        },
+        {
+          "path": "textures/quiver_tree_02_nor_gl_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/quiver_tree_02/quiver_tree_02_nor_gl_1k.jpg",
+          "byteSize": 988408,
+          "md5": "5ddb37eb256e324a0929e465d429f5a7"
+        },
+        {
+          "path": "textures/quiver_tree_02_diff_1k.jpg",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/quiver_tree_02/quiver_tree_02_diff_1k.jpg",
+          "byteSize": 736321,
+          "md5": "7f14325c48fc30112476b851d7e05232"
+        }
+      ]
+    },
+    {
+      "id": "kloofendal_48d_partly_cloudy_puresky",
+      "kind": "hdri",
+      "output": "assets/eonwild/environment/kloofendal-partly-cloudy-puresky-1k.hdr",
+      "outputByteSize": 1435119,
+      "outputSha256": "fd94c84997b8a3c353b62c2125a9b44e19509956986a126e472684432a02d798",
+      "sourceFilesHash": "4cce3bc9b9588036541551fe5ae8077af6b37e45",
+      "sourceInfo": {
+        "name": "Kloofendal 48d Partly Cloudy (Pure Sky)",
+        "authors": [
+          "Greg Zaal",
+          "Jarod Guest"
+        ],
+        "publishedAtUnix": 1668816000,
+        "maxResolution": [
+          16384,
+          8192
+        ]
+      },
+      "sourceFiles": [
+        {
+          "path": "kloofendal_48d_partly_cloudy_puresky_1k.hdr",
+          "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/kloofendal_48d_partly_cloudy_puresky_1k.hdr",
+          "byteSize": 1435119,
+          "md5": "c69498687e876bf68d2a8b8a62234eb9"
+        }
+      ]
+    }
+  ]
+}

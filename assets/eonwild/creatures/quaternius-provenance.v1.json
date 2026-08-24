@@ -1,0 +1,73 @@
+{
+  "format": "hh-eonwild-creature-provenance",
+  "version": 1,
+  "recordedAt": "2026-08-24T13:21:13.411Z",
+  "provider": "Poly Pizza",
+  "originalAuthor": "Quaternius",
+  "originalPackUrl": "https://quaternius.itch.io/animated-lowpoly-dinosaurs",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "runtimeRole": "animated-low-poly-prototype",
+  "productionApproved": false,
+  "notes": [
+    "These GLBs are the public Poly Pizza conversions of the official Quaternius CC0 Animated Dinosaur Pack.",
+    "They contain skeletal animation but no photographic textures, production LOD chain, wetness mask or scientifically reviewed reconstruction.",
+    "They are allowed only as bounded runtime prototypes and must not cause the production creature contracts to be marked ready."
+  ],
+  "assets": [
+    {
+      "speciesId": "tyrannosaurus",
+      "title": "T-Rex",
+      "modelPage": "https://poly.pizza/m/UYtneO5FpF",
+      "downloadUrl": "https://static.poly.pizza/34eed102-48f0-43dd-bc6f-ef7a6dfddfbb.glb",
+      "resourceId": "34eed102-48f0-43dd-bc6f-ef7a6dfddfbb",
+      "filePath": "assets/eonwild/creatures/quaternius-tyrannosaurus-prototype.glb",
+      "byteSize": 336568,
+      "sha256": "e1c9862deef89f096c7d85dacf62aa9ce48089e5867d2bf632ed1e1733013349",
+      "triangles": 1820,
+      "skins": 1,
+      "animations": [
+        "attack",
+        "death",
+        "idle",
+        "jump",
+        "run",
+        "walk"
+      ],
+      "validation": {
+        "errors": 0,
+        "warnings": [
+          "NODE_SKINNED_MESH_NON_ROOT",
+          "NODE_SKINNED_MESH_LOCAL_TRANSFORMS"
+        ]
+      }
+    },
+    {
+      "speciesId": "triceratops",
+      "title": "Triceratops",
+      "modelPage": "https://poly.pizza/m/IGvrUqGrRM",
+      "downloadUrl": "https://static.poly.pizza/6aa1f3ff-b9b3-4bb5-9d85-b2ffa514f0cc.glb",
+      "resourceId": "6aa1f3ff-b9b3-4bb5-9d85-b2ffa514f0cc",
+      "filePath": "assets/eonwild/creatures/quaternius-triceratops-prototype.glb",
+      "byteSize": 309684,
+      "sha256": "79ade346de5e778a58ce8c253c7e6dbd505499176a616583d1a29fa4624f498c",
+      "triangles": 1280,
+      "skins": 1,
+      "animations": [
+        "attack",
+        "death",
+        "idle",
+        "jump",
+        "run",
+        "walk"
+      ],
+      "validation": {
+        "errors": 0,
+        "warnings": [
+          "NODE_SKINNED_MESH_NON_ROOT",
+          "NODE_SKINNED_MESH_LOCAL_TRANSFORMS"
+        ]
+      }
+    }
+  ]
+}

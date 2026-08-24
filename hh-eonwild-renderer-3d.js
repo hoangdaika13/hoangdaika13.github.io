@@ -12,11 +12,13 @@
    * This adapter is deliberately optional. It owns a separate canvas, loads
    * Babylon lazily, and only exposes that canvas after a scene has rendered once.
    * A failed start therefore never invalidates the existing Canvas2D experience.
-   * Terrain and animal stand-ins are procedural; no model, texture, physics, or
-   * navigation dependency is implied by this file.
+   * Terrain and unsupported animal stand-ins remain procedural. Optional
+   * same-origin CC0 creature prototypes, environment props and HDR lighting are
+   * streamed only after the first frame; their failure never changes the
+   * Canvas2D fallback contract.
    */
 
-  const VERSION = "1.0.0";
+  const VERSION = "1.2.0";
   const WORLD_SIZE = 4096;
   const WORLD_HALF = WORLD_SIZE / 2;
   const CHUNK_SIZE = 256;
@@ -28,7 +30,27 @@
   const MAX_LOADER_URLS = 4;
   const BABYLON_VERSION = "9.22.1";
   const DEFAULT_LOCAL_BABYLON_URL = `./vendor/babylon-${BABYLON_VERSION}.js?v=${BABYLON_VERSION}`;
+  const DEFAULT_LOCAL_GLTF_LOADER_URL = `./vendor/babylonjs-loaders-${BABYLON_VERSION}.min.js?v=${BABYLON_VERSION}`;
   const DEFAULT_REMOTE_BABYLON_URL = null;
+  const DEFAULT_ENVIRONMENT_ASSET_BASE = "./assets/eonwild/environment/";
+  const DEFAULT_CREATURE_ASSET_BASE = "./assets/eonwild/creatures/";
+
+  const ENVIRONMENT_ASSETS = Object.freeze([
+    Object.freeze({ id: "fern", file: "fern-02-1k.glb", kind: "vegetation", scale: 2.15, wind: 0.035, salt: 0x4645524e }),
+    Object.freeze({ id: "rock", file: "rock-moss-set-01-1k.glb", kind: "rock", scale: 0.78, wind: 0, salt: 0x524f434b }),
+    Object.freeze({ id: "quiver", file: "quiver-tree-02-1k.glb", kind: "vegetation", scale: 5.2, wind: 0.018, salt: 0x54524545 })
+  ]);
+  const ENVIRONMENT_BUDGETS = Object.freeze({
+    low: Object.freeze({ fern: 6, rock: 1, quiver: 0, rainParticles: 48, hdrCubeSize: 64, placementRadius: 2 }),
+    balanced: Object.freeze({ fern: 12, rock: 2, quiver: 1, rainParticles: 96, hdrCubeSize: 128, placementRadius: 2 }),
+    high: Object.freeze({ fern: 18, rock: 3, quiver: 1, rainParticles: 160, hdrCubeSize: 128, placementRadius: 3 }),
+    ultra: Object.freeze({ fern: 26, rock: 4, quiver: 2, rainParticles: 240, hdrCubeSize: 256, placementRadius: 3 })
+  });
+  const DEFAULT_ENVIRONMENT_HDR_FILE = "kloofendal-partly-cloudy-puresky-1k.hdr";
+  const CREATURE_PROTOTYPE_ASSETS = Object.freeze([
+    Object.freeze({ id: "tyrannosaurus", file: "quaternius-tyrannosaurus-prototype.glb", scale: 0.4, rotationY: -Math.PI / 2, source: "Quaternius CC0 via Poly Pizza" }),
+    Object.freeze({ id: "triceratops", file: "quaternius-triceratops-prototype.glb", scale: 0.44, rotationY: -Math.PI / 2, source: "Quaternius CC0 via Poly Pizza" })
+  ]);
 
   const FLAGSHIP_SPECIES = Object.freeze([
     Object.freeze({ id: "tyrannosaurus", label: "Tyrannosaurus rex", locomotion: "run", color: "#b96d43" }),
@@ -57,6 +79,7 @@
   });
 
   const loaderPromises = new Map();
+  const gltfLoaderPromises = new Map();
   const clamp = (value, min, max) => {
     const number = Number(value);
     return Math.min(max, Math.max(min, Number.isFinite(number) ? number : min));
@@ -258,6 +281,17 @@
     }
   }
 
+  function isSameOriginAssetUrl(url, documentRef) {
+    try {
+      const baseValue = documentRef?.baseURI || runtime.location?.href;
+      if (!baseValue) return false;
+      const base = new URL(baseValue);
+      const parsed = new URL(String(url || ""), base);
+      if (base.protocol === "file:") return parsed.protocol === "file:";
+      return ["http:", "https:"].includes(base.protocol) && parsed.protocol === base.protocol && parsed.origin === base.origin;
+    } catch { return false; }
+  }
+
   function resolveBabylonUrls(options, documentRef) {
     const allowRemote = options.allowRemoteBabylon === true;
     const explicit = Array.isArray(options.babylonUrls) ? options.babylonUrls : (Array.isArray(options.urls) ? options.urls : []);
@@ -409,6 +443,92 @@
     error.code = "BABYLON_LOAD_FAILED";
     error.failures = failures;
     throw error;
+  }
+
+  function hasGltfLoader(B) {
+    return Boolean(B && typeof B.GLTFFileLoader === "function" && B.SceneLoader && typeof B.SceneLoader.LoadAssetContainerAsync === "function");
+  }
+
+  function loadBabylonGltfLoader(B, options = {}, documentRef) {
+    if (hasGltfLoader(B)) return Promise.resolve(B);
+    const normalized = normalizeUrl(options.localGltfLoaderUrl || options.gltfLoaderUrl || DEFAULT_LOCAL_GLTF_LOADER_URL, documentRef);
+    if (!normalized || !isSameOriginAssetUrl(normalized, documentRef)) {
+      const error = new Error("The Babylon glTF loader must be served from the current origin.");
+      error.code = "GLTF_LOADER_ORIGIN_DENIED";
+      return Promise.reject(error);
+    }
+    if (gltfLoaderPromises.has(normalized)) return gltfLoaderPromises.get(normalized);
+    const timeoutMs = clamp(options.assetLoadTimeoutMs || options.loadTimeoutMs || 12000, 1000, 30000);
+    const promise = new Promise((resolve, reject) => {
+      if (!documentRef || typeof documentRef.createElement !== "function") {
+        const error = new Error("A DOM is required to load the Babylon glTF plugin.");
+        error.code = "DOM_UNAVAILABLE";
+        reject(error);
+        return;
+      }
+      let settled = false;
+      let owned = false;
+      const scripts = documentRef.scripts ? Array.from(documentRef.scripts) : [];
+      let script = scripts.find((candidate) => normalizeUrl(candidate.src, documentRef) === normalized && candidate.dataset?.hweGltfState !== "failed") || null;
+      if (!script) {
+        script = documentRef.createElement("script");
+        owned = true;
+        script.async = true;
+        script.src = normalized;
+        script.dataset.hweGltfLoader = VERSION;
+        script.dataset.hweGltfState = "loading";
+        script.referrerPolicy = "no-referrer";
+        if (options.nonce) script.nonce = String(options.nonce);
+      }
+      const cleanup = () => {
+        (runtime.clearTimeout || clearTimeout)(timer);
+        if (script && typeof script.removeEventListener === "function") {
+          script.removeEventListener("load", onLoad);
+          script.removeEventListener("error", onError);
+        }
+      };
+      const finish = (callback, value) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        callback(value);
+      };
+      const fail = (code, message) => {
+        if (script?.dataset) script.dataset.hweGltfState = "failed";
+        if ((owned || script?.dataset?.hweGltfLoader) && typeof script?.remove === "function") script.remove();
+        const error = new Error(message);
+        error.code = code;
+        finish(reject, error);
+      };
+      const onLoad = () => {
+        if (!hasGltfLoader(B)) {
+          fail("GLTF_LOADER_API_MISSING", "The glTF loader script did not register Babylon's .glb plugin.");
+          return;
+        }
+        if (script?.dataset) script.dataset.hweGltfState = "ready";
+        finish(resolve, B);
+      };
+      const onError = () => fail("GLTF_LOADER_SCRIPT_ERROR", "The same-origin Babylon glTF loader could not be loaded.");
+      const timer = (runtime.setTimeout || setTimeout)(() => fail("GLTF_LOADER_TIMEOUT", `Timed out loading the Babylon glTF plugin after ${timeoutMs} ms.`), timeoutMs);
+      if (typeof script.addEventListener === "function") {
+        script.addEventListener("load", onLoad);
+        script.addEventListener("error", onError);
+      } else {
+        script.onload = onLoad;
+        script.onerror = onError;
+      }
+      if (hasGltfLoader(B)) finish(resolve, B);
+      else if (owned) {
+        const parent = documentRef.head || documentRef.body || documentRef.documentElement;
+        if (!parent || typeof parent.appendChild !== "function") fail("SCRIPT_HOST_MISSING", "No document node can host the Babylon glTF loader.");
+        else parent.appendChild(script);
+      }
+    }).catch((error) => {
+      gltfLoaderPromises.delete(normalized);
+      throw error;
+    });
+    gltfLoaderPromises.set(normalized, promise);
+    return promise;
   }
 
   function withDeadline(task, timeoutMs, code, onLateSettle) {
@@ -779,6 +899,667 @@
     }
   }
 
+  function environmentPlacementAllowed(definition, sample, slope) {
+    if (!definition || !sample || sample.height <= WATER_LEVEL + 0.75 || slope > (definition.id === "rock" ? 10 : 5.5)) return false;
+    if (definition.id === "fern") return sample.moisture >= 0.34 && !["badland", "rock"].includes(sample.biome);
+    if (definition.id === "quiver") return sample.moisture < 0.62 && ["upland", "badland", "fern"].includes(sample.biome);
+    return sample.biome !== "waterbed";
+  }
+
+  function planEnvironmentPlacements(worldX, worldZ, options = {}) {
+    const presetId = normalizePreset(options.qualityPreset || options.quality, "balanced");
+    const budget = ENVIRONMENT_BUDGETS[presetId];
+    const seed = typeof options.seed === "number" ? options.seed >>> 0 : hashSeed(options.seed || "eonwild-mesozoic");
+    const centerChunkX = clamp(Math.floor(clamp(worldX, 0, WORLD_SIZE - 0.001) / CHUNK_SIZE), 0, CHUNKS_PER_AXIS - 1);
+    const centerChunkZ = clamp(Math.floor(clamp(worldZ, 0, WORLD_SIZE - 0.001) / CHUNK_SIZE), 0, CHUNKS_PER_AXIS - 1);
+    const placements = [];
+    for (const definition of ENVIRONMENT_ASSETS) {
+      const limit = Math.round(clamp(budget[definition.id] || 0, 0, 32));
+      if (!limit) continue;
+      const candidates = [];
+      // A stable 52 m micro-grid guarantees camera-scale foreground detail
+      // without attaching props to the player. Returning to the same area
+      // therefore produces the same plants and rocks from the world seed.
+      const fineCellSize = 52;
+      const fineCenterX = Math.floor(worldX / fineCellSize);
+      const fineCenterZ = Math.floor(worldZ / fineCellSize);
+      for (let fineDz = -2; fineDz <= 2; fineDz += 1) {
+        for (let fineDx = -2; fineDx <= 2; fineDx += 1) {
+          const cellX = fineCenterX + fineDx;
+          const cellZ = fineCenterZ + fineDz;
+          const cellSeed = seed ^ definition.salt ^ Math.imul(cellX + 257, 0x9e3779b1) ^ Math.imul(cellZ + 263, 0x85ebca6b);
+          const x = cellX * fineCellSize + 7 + hash2D(cellX, cellZ, cellSeed) * (fineCellSize - 14);
+          const z = cellZ * fineCellSize + 7 + hash2D(cellX + 17, cellZ - 19, cellSeed ^ 0x27d4eb2f) * (fineCellSize - 14);
+          if (x < 4 || z < 4 || x > WORLD_SIZE - 4 || z > WORLD_SIZE - 4) continue;
+          const sample = terrainSampleNumeric(x, z, seed);
+          const slope = Math.max(
+            Math.abs(sample.height - terrainHeightNumeric(x + 3, z, seed)),
+            Math.abs(sample.height - terrainHeightNumeric(x, z + 3, seed))
+          );
+          const distance = Math.hypot(x - worldX, z - worldZ);
+          if (distance < 16 || !environmentPlacementAllowed(definition, sample, slope)) continue;
+          const randomScale = 0.88 + hash2D(cellX - 23, cellZ + 29, cellSeed ^ 0x165667b1) * 0.28;
+          candidates.push({
+            id: `${definition.id}:fine:${cellX}:${cellZ}`,
+            assetId: definition.id,
+            x,
+            y: sample.height,
+            z,
+            rotationY: hash2D(cellX + 31, cellZ - 37, cellSeed ^ 0xd3a2646c) * Math.PI * 2,
+            scale: definition.scale * randomScale,
+            phase: hash2D(cellX - 41, cellZ + 43, cellSeed ^ 0xfd7046c5) * Math.PI * 2,
+            distance
+          });
+        }
+      }
+      for (let dz = -budget.placementRadius; dz <= budget.placementRadius; dz += 1) {
+        for (let dx = -budget.placementRadius; dx <= budget.placementRadius; dx += 1) {
+          const chunkX = centerChunkX + dx;
+          const chunkZ = centerChunkZ + dz;
+          if (chunkX < 0 || chunkZ < 0 || chunkX >= CHUNKS_PER_AXIS || chunkZ >= CHUNKS_PER_AXIS) continue;
+          for (let slot = 0; slot < 24; slot += 1) {
+            const slotSeed = seed ^ definition.salt ^ Math.imul(slot + 1, 0x9e3779b1);
+            const offsetX = 12 + hash2D(chunkX * 17 + slot, chunkZ * 31 - slot, slotSeed) * (CHUNK_SIZE - 24);
+            const offsetZ = 12 + hash2D(chunkX * 29 - slot, chunkZ * 19 + slot, slotSeed ^ 0x85ebca6b) * (CHUNK_SIZE - 24);
+            const x = chunkX * CHUNK_SIZE + offsetX;
+            const z = chunkZ * CHUNK_SIZE + offsetZ;
+            const sample = terrainSampleNumeric(x, z, seed);
+            const slope = Math.max(
+              Math.abs(sample.height - terrainHeightNumeric(x + 3, z, seed)),
+              Math.abs(sample.height - terrainHeightNumeric(x, z + 3, seed))
+            );
+            if (!environmentPlacementAllowed(definition, sample, slope)) continue;
+            const distance = Math.hypot(x - worldX, z - worldZ);
+            if (distance < 16) continue;
+            const randomScale = 0.88 + hash2D(chunkX + slot * 7, chunkZ - slot * 11, slotSeed ^ 0x27d4eb2f) * 0.28;
+            candidates.push({
+              id: `${definition.id}:${chunkX}:${chunkZ}:${slot}`,
+              assetId: definition.id,
+              x,
+              y: sample.height,
+              z,
+              rotationY: hash2D(chunkX - slot * 13, chunkZ + slot * 5, slotSeed ^ 0x165667b1) * Math.PI * 2,
+              scale: definition.scale * randomScale,
+              phase: hash2D(chunkX + slot * 3, chunkZ - slot * 17, slotSeed ^ 0xd3a2646c) * Math.PI * 2,
+              distance
+            });
+          }
+        }
+      }
+      candidates.sort((left, right) => left.distance - right.distance || left.id.localeCompare(right.id));
+      placements.push(...candidates.slice(0, limit));
+    }
+    return Object.freeze(placements.map((placement) => freezeRecord(placement)));
+  }
+
+  class EnvironmentAssetManager {
+    constructor(adapter, B, scene, options) {
+      this.adapter = adapter;
+      this.B = B;
+      this.scene = scene;
+      this.options = options;
+      this.documentRef = options.document || runtime.document;
+      this.qualityPreset = normalizePreset(options.qualityPreset || options.quality, "balanced");
+      this.seed = hashSeed(options.seed || "eonwild-mesozoic");
+      this.entries = new Map();
+      this.hdrTexture = null;
+      this.skybox = null;
+      this.started = false;
+      this.loading = false;
+      this.disposed = false;
+      this.status = options.environmentAssets === false ? "disabled" : "idle";
+      this.failures = [];
+      this.centerChunkKey = "";
+      this.loadedInstances = 0;
+    }
+
+    _emit(change = "environment-assets") {
+      const detail = this.getStatus();
+      safeCall(this.options.onEnvironmentAssetStatus, detail);
+      if (!this.disposed) this.adapter._emitStatus({ change, environmentAssets: detail });
+    }
+
+    _resolveUrl(file) {
+      const base = normalizeUrl(this.options.environmentAssetBase || DEFAULT_ENVIRONMENT_ASSET_BASE, this.documentRef);
+      let resolved = "";
+      try { resolved = String(new URL(String(file || ""), base)); }
+      catch { resolved = normalizeUrl(`${base}${String(file || "")}`, this.documentRef); }
+      if (!resolved || !isSameOriginAssetUrl(resolved, this.documentRef)) {
+        const error = new Error("EonWild environment assets must be served from the current origin.");
+        error.code = "ENVIRONMENT_ASSET_ORIGIN_DENIED";
+        throw error;
+      }
+      return resolved;
+    }
+
+    async start() {
+      if (this.started || this.loading || this.disposed || this.status === "disabled") return this.getStatus();
+      this.started = true;
+      this.loading = true;
+      this.status = "loading";
+      this._emit();
+      try {
+        await this._loadHdr().catch((error) => this._recordFailure("hdr", error));
+        if (this.disposed) return this.getStatus();
+        await loadBabylonGltfLoader(this.B, this.options, this.documentRef);
+        if (this.disposed) return this.getStatus();
+        await this._ensureRequestedDefinitions();
+      } catch (error) {
+        this._recordFailure("gltf-loader", error);
+      } finally {
+        if (!this.disposed) {
+          this.loading = false;
+          this.status = this.entries.size ? "ready" : "procedural-fallback";
+          this.update(this.adapter._player.x, this.adapter._player.z, true);
+          this.syncEnvironment(this.adapter._environment.hour, this.adapter._environment.weather);
+          this._emit();
+        }
+      }
+      return this.getStatus();
+    }
+
+    _recordFailure(assetId, error) {
+      this.failures.push(freezeRecord({ assetId: String(assetId), error: compactError(error) }));
+      if (this.failures.length > ENVIRONMENT_ASSETS.length + 2) this.failures.shift();
+    }
+
+    async _loadHdr() {
+      if (this.options.environmentHdr === false || typeof this.B.HDRCubeTexture !== "function") return;
+      const url = this._resolveUrl(this.options.environmentHdrFile || DEFAULT_ENVIRONMENT_HDR_FILE);
+      const size = ENVIRONMENT_BUDGETS[this.qualityPreset].hdrCubeSize;
+      let texture = null;
+      const pending = new Promise((resolve, reject) => {
+        const onLoad = () => resolve(texture);
+        const onError = (message, exception) => reject(exception || new Error(String(message || "The HDR environment could not be decoded.")));
+        texture = new this.B.HDRCubeTexture(url, this.scene, size, false, true, false, true, onLoad, onError);
+      });
+      try { await withDeadline(pending, this.options.assetLoadTimeoutMs || 12000, "ENVIRONMENT_HDR_TIMEOUT", () => safeDispose(texture)); }
+      catch (error) { safeDispose(texture); throw error; }
+      if (this.disposed) { safeDispose(texture); return; }
+      this.hdrTexture = texture;
+      this.hdrTexture.name = "hwe3d-polyhaven-sky-ibl";
+      this.scene.environmentTexture = texture;
+      this.scene.environmentIntensity = 0.72;
+      if (typeof this.scene.createDefaultSkybox === "function") {
+        try {
+          this.skybox = this.scene.createDefaultSkybox(texture, true, QUALITY_PRESETS[this.qualityPreset].farClip * 1.45, 0.22);
+          if (this.skybox) {
+            this.skybox.name = "hwe3d-polyhaven-skybox";
+            this.skybox.isPickable = false;
+            this.skybox.metadata = { eonwild: true, kind: "cc0-hdri-sky", source: "Poly Haven" };
+          }
+        } catch { this.skybox = null; }
+      }
+    }
+
+    async _ensureRequestedDefinitions() {
+      for (const definition of ENVIRONMENT_ASSETS) {
+        if (this.disposed) return;
+        if ((ENVIRONMENT_BUDGETS[this.qualityPreset][definition.id] || 0) <= 0 || this.entries.has(definition.id)) continue;
+        try { await this._loadDefinition(definition); }
+        catch (error) { this._recordFailure(definition.id, error); }
+      }
+    }
+
+    async _loadDefinition(definition) {
+      const absolute = this._resolveUrl(definition.file);
+      const parsed = new URL(absolute, this.documentRef?.baseURI);
+      const slash = parsed.pathname.lastIndexOf("/");
+      parsed.pathname = parsed.pathname.slice(0, slash + 1);
+      parsed.search = "";
+      parsed.hash = "";
+      const rootUrl = parsed.href;
+      const filename = absolute.slice(absolute.lastIndexOf("/") + 1).split(/[?#]/)[0];
+      let lateContainer = null;
+      const task = this.B.SceneLoader.LoadAssetContainerAsync(rootUrl, filename, this.scene, undefined, ".glb").then((container) => {
+        lateContainer = container;
+        if (this.disposed) safeDispose(container);
+        return container;
+      });
+      const container = await withDeadline(task, this.options.assetLoadTimeoutMs || 12000, "ENVIRONMENT_GLB_TIMEOUT", () => safeDispose(lateContainer));
+      if (this.disposed) { safeDispose(container); return; }
+      if (!container || typeof container.instantiateModelsToScene !== "function") {
+        safeDispose(container);
+        const error = new Error(`The ${definition.id} GLB did not produce a reusable Babylon AssetContainer.`);
+        error.code = "ENVIRONMENT_GLB_INVALID";
+        throw error;
+      }
+      for (const material of container.materials || []) {
+        if ("environmentIntensity" in material) material.environmentIntensity = 0.72;
+        if ("maxSimultaneousLights" in material) material.maxSimultaneousLights = 2;
+      }
+      for (const texture of container.textures || []) {
+        if ("anisotropicFilteringLevel" in texture) texture.anisotropicFilteringLevel = this.qualityPreset === "low" ? 2 : 4;
+      }
+      this.entries.set(definition.id, { definition, container, instances: [] });
+      this._syncInstancesFor(definition.id, []);
+    }
+
+    _createInstance(entry, index) {
+      const result = entry.container.instantiateModelsToScene((name) => `hwe3d-${entry.definition.id}-${index}-${name}`, false, { doNotInstantiate: false });
+      if (!result || !Array.isArray(result.rootNodes) || !result.rootNodes.length) {
+        for (const group of result?.animationGroups || []) safeDispose(group);
+        for (const skeleton of result?.skeletons || []) safeDispose(skeleton);
+        const error = new Error(`The ${entry.definition.id} asset could not create a visible instance.`);
+        error.code = "ENVIRONMENT_INSTANCE_INVALID";
+        throw error;
+      }
+      const wrapper = new this.B.TransformNode(`hwe3d-${entry.definition.id}-instance-${index}`, this.scene);
+      for (const rootNode of result.rootNodes || []) rootNode.parent = wrapper;
+      wrapper.setEnabled(false);
+      wrapper.metadata = { eonwild: true, kind: "cc0-environment-instance", assetId: entry.definition.id, source: "Poly Haven" };
+      if (this.adapter._lights?.shadow && typeof this.adapter._lights.shadow.addShadowCaster === "function") {
+        const childMeshes = typeof wrapper.getChildMeshes === "function" ? wrapper.getChildMeshes(false) : [];
+        for (const mesh of childMeshes) {
+          mesh.isPickable = false;
+          mesh.checkCollisions = false;
+          this.adapter._lights.shadow.addShadowCaster(mesh, true);
+        }
+      }
+      for (const group of result.animationGroups || []) { try { group.stop(); } catch { /* Static CC0 environment prop. */ } }
+      const instance = { wrapper, result, placement: null, baseRotationX: 0, baseRotationZ: 0, phase: 0 };
+      entry.instances.push(instance);
+      this.loadedInstances += 1;
+      return instance;
+    }
+
+    _applyPlacement(instance, placement) {
+      if (!placement) {
+        instance.placement = null;
+        instance.wrapper.setEnabled(false);
+        return;
+      }
+      instance.placement = placement;
+      instance.phase = placement.phase;
+      instance.baseRotationX = 0;
+      instance.baseRotationZ = 0;
+      instance.wrapper.position.x = placement.x - WORLD_HALF;
+      instance.wrapper.position.y = placement.y;
+      instance.wrapper.position.z = placement.z - WORLD_HALF;
+      instance.wrapper.rotation.x = 0;
+      instance.wrapper.rotation.y = placement.rotationY;
+      instance.wrapper.rotation.z = 0;
+      instance.wrapper.scaling.x = placement.scale;
+      instance.wrapper.scaling.y = placement.scale;
+      instance.wrapper.scaling.z = placement.scale;
+      instance.wrapper.setEnabled(true);
+    }
+
+    _syncInstancesFor(assetId, placements) {
+      const entry = this.entries.get(assetId);
+      if (!entry) return;
+      const wanted = new Map(placements.map((placement) => [placement.id, placement]));
+      const assignments = new Map();
+      for (const instance of entry.instances) {
+        const placementId = instance.placement?.id;
+        if (!placementId || !wanted.has(placementId)) continue;
+        assignments.set(instance, wanted.get(placementId));
+        wanted.delete(placementId);
+      }
+      const available = entry.instances.filter((instance) => !assignments.has(instance));
+      for (const placement of wanted.values()) {
+        const instance = available.shift() || this._createInstance(entry, entry.instances.length);
+        assignments.set(instance, placement);
+      }
+      for (const instance of entry.instances) this._applyPlacement(instance, assignments.get(instance) || null);
+    }
+
+    update(worldX, worldZ, force = false) {
+      if (this.disposed || !this.started) return;
+      const placementCellSize = 52;
+      const chunkKey = `${Math.floor(clamp(worldX, 0, WORLD_SIZE - 0.001) / placementCellSize)}:${Math.floor(clamp(worldZ, 0, WORLD_SIZE - 0.001) / placementCellSize)}:${this.qualityPreset}`;
+      if (!force && chunkKey === this.centerChunkKey) return;
+      this.centerChunkKey = chunkKey;
+      const placements = planEnvironmentPlacements(worldX, worldZ, { seed: this.seed, qualityPreset: this.qualityPreset });
+      for (const definition of ENVIRONMENT_ASSETS) {
+        try { this._syncInstancesFor(definition.id, placements.filter((placement) => placement.assetId === definition.id)); }
+        catch (error) { this._recordFailure(`${definition.id}-instance`, error); }
+      }
+    }
+
+    configure(qualityPreset) {
+      const next = normalizePreset(qualityPreset, this.qualityPreset);
+      if (next === this.qualityPreset) return;
+      this.qualityPreset = next;
+      this.centerChunkKey = "";
+      if (this.started && !this.loading && !this.disposed) {
+        this.loading = true;
+        this._ensureRequestedDefinitions().catch((error) => this._recordFailure("quality-upgrade", error)).finally(() => {
+          if (this.disposed) return;
+          this.loading = false;
+          this.status = this.entries.size ? "ready" : "procedural-fallback";
+          this.update(this.adapter._player.x, this.adapter._player.z, true);
+          this._emit("environment-quality");
+        });
+      } else this.update(this.adapter._player.x, this.adapter._player.z, true);
+    }
+
+    animate(elapsed, weather, reducedMotion) {
+      if (this.disposed) return;
+      const windMultiplier = weather === "storm" ? 2.8 : weather === "rain" ? 1.65 : weather === "mist" ? 0.65 : 1;
+      for (const entry of this.entries.values()) {
+        const amplitude = entry.definition.wind;
+        if (!amplitude) continue;
+        for (const instance of entry.instances) {
+          if (!instance.placement) continue;
+          if (reducedMotion) {
+            instance.wrapper.rotation.x = instance.baseRotationX;
+            instance.wrapper.rotation.z = instance.baseRotationZ;
+          } else {
+            const sway = Math.sin(elapsed * 0.72 + instance.phase) * amplitude * windMultiplier;
+            instance.wrapper.rotation.x = instance.baseRotationX + sway * 0.4;
+            instance.wrapper.rotation.z = instance.baseRotationZ + sway;
+          }
+        }
+      }
+    }
+
+    syncEnvironment(hour, weather) {
+      if (!this.skybox || typeof this.skybox.setEnabled !== "function") return;
+      const daylightSky = hour >= 6.25 && hour <= 18.75 && !["storm", "ash"].includes(weather);
+      this.skybox.setEnabled(daylightSky);
+    }
+
+    getStatus() {
+      return freezeRecord({
+        status: this.status,
+        loadedAssets: Array.from(this.entries.keys()),
+        loadedInstances: this.loadedInstances,
+        visibleInstances: Array.from(this.entries.values()).reduce((sum, entry) => sum + entry.instances.filter((instance) => Boolean(instance.placement)).length, 0),
+        hdr: Boolean(this.hdrTexture),
+        failures: this.failures.slice()
+      });
+    }
+
+    dispose() {
+      if (this.disposed) return;
+      this.disposed = true;
+      for (const entry of this.entries.values()) {
+        for (const instance of entry.instances) {
+          for (const group of instance.result.animationGroups || []) safeDispose(group);
+          for (const skeleton of instance.result.skeletons || []) safeDispose(skeleton);
+          safeDispose(instance.wrapper);
+        }
+        safeDispose(entry.container);
+      }
+      this.entries.clear();
+      safeDispose(this.skybox);
+      if (this.scene && this.scene.environmentTexture === this.hdrTexture) this.scene.environmentTexture = null;
+      safeDispose(this.hdrTexture);
+      this.skybox = null;
+      this.hdrTexture = null;
+      this.loadedInstances = 0;
+      this.status = "disposed";
+    }
+  }
+
+  class CreaturePrototypeManager {
+    constructor(adapter, B, scene, options) {
+      this.adapter = adapter;
+      this.B = B;
+      this.scene = scene;
+      this.options = options;
+      this.documentRef = options.document || runtime.document;
+      this.entries = new Map();
+      this.lastPose = new Map();
+      this.failures = [];
+      this.started = false;
+      this.loading = false;
+      this.disposed = false;
+      this.reducedMotion = Boolean(adapter._reducedMotion);
+      this.status = options.creaturePrototypeAssets === false ? "disabled" : "idle";
+    }
+
+    _emit(change = "creature-prototypes") {
+      const detail = this.getStatus();
+      safeCall(this.options.onCreatureAssetStatus, detail);
+      if (!this.disposed) this.adapter._emitStatus({ change, creatureAssets: detail });
+    }
+
+    _resolveUrl(file) {
+      const base = normalizeUrl(this.options.creatureAssetBase || DEFAULT_CREATURE_ASSET_BASE, this.documentRef);
+      let resolved = "";
+      try { resolved = String(new URL(String(file || ""), base)); }
+      catch { resolved = normalizeUrl(`${base}${String(file || "")}`, this.documentRef); }
+      if (!resolved || !isSameOriginAssetUrl(resolved, this.documentRef)) {
+        const error = new Error("EonWild creature prototypes must be served from the current origin.");
+        error.code = "CREATURE_ASSET_ORIGIN_DENIED";
+        throw error;
+      }
+      return resolved;
+    }
+
+    _recordFailure(speciesId, error) {
+      this.failures.push(freezeRecord({ speciesId: String(speciesId), error: compactError(error) }));
+      if (this.failures.length > CREATURE_PROTOTYPE_ASSETS.length + 1) this.failures.shift();
+    }
+
+    async start() {
+      if (this.started || this.loading || this.disposed || this.status === "disabled") return this.getStatus();
+      this.started = true;
+      this.loading = true;
+      this.status = "loading";
+      this._emit();
+      try {
+        await loadBabylonGltfLoader(this.B, this.options, this.documentRef);
+        for (const definition of CREATURE_PROTOTYPE_ASSETS) {
+          if (this.disposed) break;
+          try { await this._loadDefinition(definition); }
+          catch (error) { this._recordFailure(definition.id, error); }
+        }
+      } catch (error) {
+        this._recordFailure("gltf-loader", error);
+      } finally {
+        if (!this.disposed) {
+          this.loading = false;
+          this.status = this.entries.size ? "prototype-ready" : "procedural-fallback";
+          this._emit();
+        }
+      }
+      return this.getStatus();
+    }
+
+    async _loadDefinition(definition) {
+      const proxy = this.adapter._proxies.get(definition.id);
+      if (!proxy) throw Object.assign(new Error(`No procedural fallback exists for ${definition.id}.`), { code: "CREATURE_PROXY_MISSING" });
+      const absolute = this._resolveUrl(definition.file);
+      const parsed = new URL(absolute, this.documentRef?.baseURI);
+      const slash = parsed.pathname.lastIndexOf("/");
+      parsed.pathname = parsed.pathname.slice(0, slash + 1);
+      parsed.search = "";
+      parsed.hash = "";
+      const rootUrl = parsed.href;
+      const filename = absolute.slice(absolute.lastIndexOf("/") + 1).split(/[?#]/)[0];
+      let lateContainer = null;
+      const task = this.B.SceneLoader.LoadAssetContainerAsync(rootUrl, filename, this.scene, undefined, ".glb").then((container) => {
+        lateContainer = container;
+        if (this.disposed) safeDispose(container);
+        return container;
+      });
+      const container = await withDeadline(task, this.options.assetLoadTimeoutMs || 12000, "CREATURE_GLB_TIMEOUT", () => safeDispose(lateContainer));
+      if (this.disposed) { safeDispose(container); return; }
+      const groups = Array.from(container?.animationGroups || []);
+      const clipMap = new Map();
+      for (const group of groups) {
+        const normalized = String(group?.name || "").toLowerCase();
+        for (const clip of ["idle", "walk", "run", "attack", "jump", "death"]) if (normalized.endsWith(`_${clip}`)) clipMap.set(clip, group);
+      }
+      if (!container || typeof container.addAllToScene !== "function" || !clipMap.has("idle") || !clipMap.has("walk") || !clipMap.has("run")) {
+        safeDispose(container);
+        const error = new Error(`The ${definition.id} prototype is missing its reusable skin or locomotion clips.`);
+        error.code = "CREATURE_GLB_INVALID";
+        throw error;
+      }
+
+      container.addAllToScene();
+      const wrapper = new this.B.TransformNode(`hwe3d-${definition.id}-cc0-prototype`, this.scene);
+      wrapper.parent = proxy.root;
+      wrapper.rotation.y = definition.rotationY;
+      wrapper.scaling.set(definition.scale, definition.scale, definition.scale);
+      wrapper.metadata = { eonwild: true, kind: "animated-creature-prototype", speciesId: definition.id, source: definition.source, productionApproved: false };
+      for (const rootNode of container.rootNodes || []) rootNode.parent = wrapper;
+      const childMeshes = typeof wrapper.getChildMeshes === "function" ? wrapper.getChildMeshes(false) : [];
+      for (const mesh of childMeshes) {
+        mesh.isPickable = false;
+        mesh.checkCollisions = false;
+        mesh.receiveShadows = true;
+        mesh.metadata = { ...(mesh.metadata || {}), eonwild: true, kind: "animated-creature-prototype-part", speciesId: definition.id, productionApproved: false };
+        if (this.adapter._lights?.shadow && typeof this.adapter._lights.shadow.addShadowCaster === "function") this.adapter._lights.shadow.addShadowCaster(mesh, true);
+      }
+      for (const material of container.materials || []) {
+        if ("roughness" in material) material.roughness = Math.max(0.78, finite(material.roughness, 0.9));
+        if ("metallic" in material) material.metallic = 0;
+      }
+      for (const group of groups) { try { group.stop(); } catch { /* Clip selection starts only after the model is attached. */ } }
+      proxy.parts.forEach((part) => { try { part.setEnabled(false); } catch { part.isVisible = false; } });
+      const entry = { definition, container, wrapper, groups, clipMap, activeClip: "", proxy };
+      this.entries.set(definition.id, entry);
+      this._applyClip(entry, this.reducedMotion ? "" : "idle");
+      const pose = this.lastPose.get(definition.id);
+      if (pose?.motion && !this.reducedMotion) this._applyClip(entry, pose.motion);
+    }
+
+    _applyClip(entry, clip) {
+      const next = clip && entry.clipMap.has(clip) ? clip : "";
+      if (entry.activeClip === next) return;
+      for (const group of entry.groups) { try { group.stop(); } catch { /* A broken optional clip must not break gameplay. */ } }
+      entry.activeClip = next;
+      if (!next) return;
+      const group = entry.clipMap.get(next);
+      try {
+        group.speedRatio = next === "run" ? 1.05 : 1;
+        group.start(true);
+      } catch {
+        entry.activeClip = "";
+      }
+    }
+
+    syncPose(speciesId, worldX, worldZ) {
+      const id = String(speciesId || "").toLowerCase();
+      if (!CREATURE_PROTOTYPE_ASSETS.some((definition) => definition.id === id)) return;
+      const timestamp = now();
+      const previous = this.lastPose.get(id);
+      let motion = "idle";
+      if (previous) {
+        const seconds = Math.max(1 / 120, (timestamp - previous.at) / 1000);
+        const speed = Math.hypot(finite(worldX) - previous.x, finite(worldZ) - previous.z) / seconds;
+        if (speed > 5.5) motion = "run";
+        else if (speed > 0.35) motion = "walk";
+      }
+      this.lastPose.set(id, { x: finite(worldX), z: finite(worldZ), at: timestamp, motion });
+      const entry = this.entries.get(id);
+      if (entry && !this.reducedMotion) this._applyClip(entry, motion);
+    }
+
+    setReducedMotion(value) {
+      this.reducedMotion = Boolean(value);
+      for (const [speciesId, entry] of this.entries) {
+        const motion = this.lastPose.get(speciesId)?.motion || "idle";
+        this._applyClip(entry, this.reducedMotion ? "" : motion);
+      }
+    }
+
+    getStatus() {
+      return freezeRecord({
+        status: this.status,
+        loadedSpecies: Array.from(this.entries.keys()),
+        activeClips: freezeRecord(Object.fromEntries(Array.from(this.entries, ([id, entry]) => [id, entry.activeClip || "static"]))),
+        productionApproved: false,
+        failures: this.failures.slice()
+      });
+    }
+
+    dispose() {
+      if (this.disposed) return;
+      this.disposed = true;
+      for (const entry of this.entries.values()) {
+        for (const group of entry.groups) safeDispose(group);
+        safeDispose(entry.container);
+        safeDispose(entry.wrapper);
+        entry.proxy.parts.forEach((part) => { try { part.setEnabled(true); } catch { part.isVisible = true; } });
+      }
+      this.entries.clear();
+      this.lastPose.clear();
+      this.status = "disposed";
+    }
+  }
+
+  function createWaterNormalTexture(B, scene) {
+    if (typeof B.DynamicTexture !== "function") return null;
+    try {
+      const size = 96;
+      const texture = new B.DynamicTexture("hwe3d-water-normal-map", { width: size, height: size }, scene, false);
+      const context = texture.getContext();
+      const image = context.createImageData(size, size);
+      for (let y = 0; y < size; y += 1) {
+        for (let x = 0; x < size; x += 1) {
+          const phaseA = Math.sin((x + y * 0.68) * 0.31);
+          const phaseB = Math.cos((x * 0.42 - y) * 0.19);
+          const offset = (y * size + x) * 4;
+          image.data[offset] = Math.round(128 + phaseA * 22);
+          image.data[offset + 1] = Math.round(128 + phaseB * 22);
+          image.data[offset + 2] = 244;
+          image.data[offset + 3] = 255;
+        }
+      }
+      context.putImageData(image, 0, 0);
+      texture.update(false);
+      texture.wrapU = B.Texture?.WRAP_ADDRESSMODE ?? 1;
+      texture.wrapV = B.Texture?.WRAP_ADDRESSMODE ?? 1;
+      texture.uScale = 72;
+      texture.vScale = 72;
+      texture.level = 0.22;
+      return texture;
+    } catch { return null; }
+  }
+
+  function createWeatherEffects(B, scene) {
+    if (typeof B.ParticleSystem !== "function" || typeof B.DynamicTexture !== "function") return null;
+    let texture = null;
+    let rain = null;
+    try {
+      texture = new B.DynamicTexture("hwe3d-rain-drop-texture", { width: 8, height: 32 }, scene, false);
+      const context = texture.getContext();
+      context.clearRect(0, 0, 8, 32);
+      const gradient = context.createLinearGradient(0, 0, 0, 32);
+      gradient.addColorStop(0, "rgba(210,235,255,0)");
+      gradient.addColorStop(0.28, "rgba(210,235,255,.86)");
+      gradient.addColorStop(1, "rgba(175,220,255,0)");
+      context.fillStyle = gradient;
+      context.fillRect(3, 0, 2, 32);
+      texture.hasAlpha = true;
+      texture.update(false);
+      rain = new B.ParticleSystem("hwe3d-bounded-rain", ENVIRONMENT_BUDGETS.ultra.rainParticles, scene);
+      rain.particleTexture = texture;
+      rain.emitter = new B.Vector3(0, 26, 0);
+      rain.minEmitBox = new B.Vector3(-30, 0, -30);
+      rain.maxEmitBox = new B.Vector3(30, 8, 30);
+      rain.color1 = new B.Color4(0.72, 0.86, 1, 0.62);
+      rain.color2 = new B.Color4(0.58, 0.76, 0.94, 0.42);
+      rain.colorDead = new B.Color4(0.42, 0.62, 0.8, 0);
+      rain.direction1 = new B.Vector3(-2.2, -48, 0.8);
+      rain.direction2 = new B.Vector3(1.2, -62, 2.5);
+      rain.gravity = new B.Vector3(0, -28, 0);
+      rain.minLifeTime = 0.45;
+      rain.maxLifeTime = 0.8;
+      rain.minSize = 0.1;
+      rain.maxSize = 0.22;
+      rain.minScaleX = 0.16;
+      rain.maxScaleX = 0.3;
+      rain.minScaleY = 3.5;
+      rain.maxScaleY = 7;
+      rain.minEmitPower = 8;
+      rain.maxEmitPower = 15;
+      rain.emitRate = 0;
+      rain.updateSpeed = 0.012;
+      return { rain, texture, active: false };
+    } catch {
+      safeDispose(rain);
+      safeDispose(texture);
+      return null;
+    }
+  }
+
   function createProxyMaterial(B, scene, name, hex, accent = false) {
     const material = new B.StandardMaterial(`hwe3d-proxy-${name}-${accent ? "accent" : "body"}`, scene);
     let color;
@@ -939,6 +1720,12 @@
       this._Babylon = null;
       this._streamer = null;
       this._water = null;
+      this._weatherFx = null;
+      this._fogBaseDensity = 0.00055;
+      this._environmentAssets = null;
+      this._creatureAssets = null;
+      this._environmentLoadHandle = null;
+      this._environmentLoadHandleType = null;
       this._lights = null;
       this._proxies = new Map();
       this._visibleWildlifeSpecies = new Set();
@@ -1150,6 +1937,7 @@
         this._lastFrameAt = now();
         if (this._state === "running") this._engine.runRenderLoop(this._renderFrame);
         this._emitStatus({ attempts: this._attempts.slice() });
+        if (this._state === "running") this._scheduleEnvironmentAssetLoad(generation);
         return makeResult(true, {
           status: this._state,
           backend: this._backend,
@@ -1234,19 +2022,33 @@
       const waterMaterial = typeof B.PBRMaterial === "function"
         ? new B.PBRMaterial("hwe3d-water-pbr-material", scene)
         : new B.StandardMaterial("hwe3d-water-material", scene);
+      const waterNormalTexture = createWaterNormalTexture(B, scene);
       if ("albedoColor" in waterMaterial) {
-        waterMaterial.albedoColor = new B.Color3(0.055, 0.3, 0.39);
-        waterMaterial.emissiveColor = new B.Color3(0.01, 0.045, 0.06);
+        waterMaterial.albedoColor = new B.Color3(0.028, 0.21, 0.285);
+        waterMaterial.emissiveColor = new B.Color3(0.004, 0.025, 0.035);
         waterMaterial.metallic = 0.03;
-        waterMaterial.roughness = 0.16;
-        waterMaterial.environmentIntensity = 0.92;
+        waterMaterial.roughness = 0.11;
+        waterMaterial.environmentIntensity = 1.08;
         waterMaterial.indexOfRefraction = 1.333;
+        if (waterMaterial.clearCoat) {
+          waterMaterial.clearCoat.isEnabled = true;
+          waterMaterial.clearCoat.intensity = 0.52;
+          waterMaterial.clearCoat.roughness = 0.08;
+        }
       } else {
         waterMaterial.diffuseColor = new B.Color3(0.08, 0.35, 0.43);
         waterMaterial.emissiveColor = new B.Color3(0.015, 0.07, 0.085);
         waterMaterial.specularColor = new B.Color3(0.38, 0.55, 0.58);
+        if (typeof B.FresnelParameters === "function") {
+          waterMaterial.opacityFresnelParameters = new B.FresnelParameters();
+          waterMaterial.opacityFresnelParameters.leftColor = new B.Color3(0.25, 0.38, 0.42);
+          waterMaterial.opacityFresnelParameters.rightColor = new B.Color3(0.8, 0.92, 1);
+          waterMaterial.opacityFresnelParameters.bias = 0.18;
+          waterMaterial.opacityFresnelParameters.power = 2.4;
+        }
       }
-      waterMaterial.alpha = 0.68;
+      if (waterNormalTexture) waterMaterial.bumpTexture = waterNormalTexture;
+      waterMaterial.alpha = 0.72;
       waterMaterial.backFaceCulling = false;
       const water = B.MeshBuilder.CreateGround("hwe3d-water", { width: WORLD_SIZE, height: WORLD_SIZE, subdivisions: 1 }, scene);
       water.position.y = WATER_LEVEL;
@@ -1254,9 +2056,12 @@
       water.isPickable = false;
       water.metadata = { eonwild: true, kind: "water-proxy", procedural: true };
       if (typeof water.freezeWorldMatrix === "function") water.freezeWorldMatrix();
-      this._water = { mesh: water, material: waterMaterial };
+      this._water = { mesh: water, material: waterMaterial, normalTexture: waterNormalTexture };
+      this._weatherFx = createWeatherEffects(B, scene);
 
       this._streamer = new TerrainStreamer(B, scene, { seed: options.seed || "eonwild-mesozoic", qualityPreset: this._qualityPreset });
+      this._environmentAssets = new EnvironmentAssetManager(this, B, scene, { ...options, document: options.document || runtime.document, qualityPreset: this._qualityPreset });
+      this._creatureAssets = new CreaturePrototypeManager(this, B, scene, { ...options, document: options.document || runtime.document });
       const placements = [
         [this._player.x, this._player.z],
         [this._player.x + 34, this._player.z + 22],
@@ -1298,6 +2103,51 @@
         engine: freezeRecord(engineCaps),
         integrations: freezeRecord({ physics: "kinematic-proxy-only", rapier: false, recast: false, navmesh: false })
       });
+    }
+
+    _cancelEnvironmentAssetSchedule() {
+      if (this._environmentLoadHandle === null) return;
+      if (this._environmentLoadHandleType === "idle" && typeof runtime.cancelIdleCallback === "function") {
+        try { runtime.cancelIdleCallback(this._environmentLoadHandle); } catch { /* Best-effort delayed-load cleanup. */ }
+      } else {
+        try { (runtime.clearTimeout || clearTimeout)(this._environmentLoadHandle); } catch { /* Best-effort delayed-load cleanup. */ }
+      }
+      this._environmentLoadHandle = null;
+      this._environmentLoadHandleType = null;
+    }
+
+    _scheduleEnvironmentAssetLoad(generation = this._generation) {
+      const environmentPending = Boolean(this._environmentAssets && !this._environmentAssets.started && !this._environmentAssets.loading && this._environmentAssets.status !== "disabled");
+      const creaturesPending = Boolean(this._creatureAssets && !this._creatureAssets.started && !this._creatureAssets.loading && this._creatureAssets.status !== "disabled");
+      if ((!environmentPending && !creaturesPending) || this._environmentLoadHandle !== null) return;
+      const begin = async () => {
+        this._environmentLoadHandle = null;
+        this._environmentLoadHandleType = null;
+        if (generation !== this._generation || this._state !== "running") return;
+        // Decode the small animated prototypes first, then the larger scans.
+        // Serial work avoids overlapping HDR prefiltering, skin upload and
+        // photogrammetry texture upload on memory-constrained devices.
+        if (creaturesPending && !this._creatureAssets?.disposed) {
+          await this._creatureAssets.start().catch((error) => {
+            if (generation !== this._generation || this._state === "disposed") return;
+            safeCall(this._options.onCreatureAssetStatus, freezeRecord({ status: "procedural-fallback", error: compactError(error) }));
+          });
+        }
+        if (generation !== this._generation || this._state !== "running") return;
+        if (environmentPending && !this._environmentAssets?.disposed) {
+          await this._environmentAssets.start().catch((error) => {
+            if (generation !== this._generation || this._state === "disposed") return;
+            safeCall(this._options.onEnvironmentAssetStatus, freezeRecord({ status: "procedural-fallback", error: compactError(error) }));
+          });
+        }
+      };
+      if (typeof runtime.requestIdleCallback === "function") {
+        this._environmentLoadHandleType = "idle";
+        this._environmentLoadHandle = runtime.requestIdleCallback(begin, { timeout: 900 });
+      } else {
+        this._environmentLoadHandleType = "timeout";
+        this._environmentLoadHandle = (runtime.setTimeout || setTimeout)(begin, 0);
+      }
     }
 
     _installRuntimeListeners(documentRef) {
@@ -1386,9 +2236,11 @@
       if (this._reducedMotion === next) return;
       this._reducedMotion = next;
       if (this._camera) this._camera.inertia = next ? 0 : 0.72;
-      if (next && this._water && this._water.material) this._water.material.alpha = 0.68;
+      if (next && this._water && this._water.material) this._water.material.alpha = 0.72;
       if (next && QUALITY_ORDER.indexOf(this._qualityPreset) > QUALITY_ORDER.indexOf("low")) this._applyQuality("low", "reduced-motion", true);
       else if (!next && QUALITY_ORDER.indexOf(this._qualityPreset) < QUALITY_ORDER.indexOf(this._qualityRequested)) this._applyQuality(this._qualityRequested, "reduced-motion-ended", true);
+      this._creatureAssets?.setReducedMotion(next);
+      this._syncWeatherEffects();
       this._emitStatus({ change: "reduced-motion" });
     }
 
@@ -1417,6 +2269,7 @@
       proxy.root.position.y = proxy.baseY;
       proxy.root.position.z = this._player.z - WORLD_HALF;
       proxy.root.rotation.y = this._player.heading;
+      this._creatureAssets?.syncPose(this._playerSpeciesId, this._player.x, this._player.z);
       if (this._streamer) this._streamer.update(this._player.x, this._player.z);
     }
 
@@ -1459,6 +2312,7 @@
       proxy.root.position.y = proxy.baseY;
       proxy.root.position.z = worldZ - WORLD_HALF;
       if (state.heading !== undefined) proxy.root.rotation.y = finite(state.heading, proxy.root.rotation.y);
+      this._creatureAssets?.syncPose(proxy.id, worldX, worldZ);
       if (state.visible !== undefined) {
         if (state.visible) this._visibleWildlifeSpecies.add(proxy.id);
         else this._visibleWildlifeSpecies.delete(proxy.id);
@@ -1545,10 +2399,53 @@
       const override = this._environment.fog;
       const fogEnabled = !override || override.enabled !== false;
       this._scene.fogMode = fogEnabled ? B.Scene.FOGMODE_EXP2 : B.Scene.FOGMODE_NONE;
-      this._scene.fogDensity = override && override.density !== undefined ? override.density : weather.fog;
+      this._fogBaseDensity = override && override.density !== undefined ? override.density : weather.fog;
+      this._scene.fogDensity = this._fogBaseDensity;
       const fogColor = override && override.color || sky.map((channel) => channel * 0.82);
       this._scene.fogColor = makeColor3(B, fogColor);
+      this._syncWeatherEffects();
+      this._environmentAssets?.syncEnvironment(hour, this._environment.weather);
       if (announce) safeCall(this._options.onEnvironmentChange, this.getEnvironment());
+    }
+
+    _syncWeatherEffects() {
+      const effect = this._weatherFx;
+      if (!effect?.rain) return;
+      const rainy = this._environment.weather === "rain" || this._environment.weather === "storm";
+      const budget = ENVIRONMENT_BUDGETS[this._qualityPreset].rainParticles;
+      effect.rain.emitRate = rainy ? Math.round(budget * (this._environment.weather === "storm" ? 2.2 : 1.35) * (this._reducedMotion ? 0.45 : 1)) : 0;
+      effect.rain.direction1.x = this._environment.weather === "storm" ? -9 : -2.2;
+      effect.rain.direction2.x = this._environment.weather === "storm" ? -4 : 1.2;
+      if (rainy && !effect.active) {
+        try { effect.rain.start(); effect.active = true; } catch { effect.active = false; }
+      } else if (!rainy && effect.active) {
+        try { effect.rain.stop(); } catch { /* Weather fallback remains visual-only. */ }
+        effect.active = false;
+      }
+    }
+
+    _animateAtmosphere() {
+      const reduced = this._reducedMotion;
+      if (this._water?.material) {
+        this._water.material.alpha = reduced ? 0.72 : 0.7 + Math.sin(this._elapsed * 0.45) * 0.018;
+        const texture = this._water.normalTexture;
+        if (texture && !reduced) {
+          texture.uOffset = (this._elapsed * 0.0045) % 1;
+          texture.vOffset = (this._elapsed * -0.0032) % 1;
+        }
+      }
+      const targetY = finite(this._camera?.target?.y, WATER_LEVEL);
+      if (this._scene && this._Babylon && this._scene.fogMode !== this._Babylon.Scene.FOGMODE_NONE) {
+        const valleyFactor = clamp(1.42 - Math.max(0, targetY - WATER_LEVEL) / 88, 0.38, 1.42);
+        const breathing = reduced ? 1 : 1 + Math.sin(this._elapsed * 0.13) * 0.035;
+        this._scene.fogDensity = clamp(this._fogBaseDensity * valleyFactor * breathing, 0, 0.02);
+      }
+      if (this._weatherFx?.rain) {
+        this._weatherFx.rain.emitter.x = this._player.x - WORLD_HALF;
+        this._weatherFx.rain.emitter.y = targetY + 28;
+        this._weatherFx.rain.emitter.z = this._player.z - WORLD_HALF;
+      }
+      this._environmentAssets?.animate(this._elapsed, this._environment.weather, reduced);
     }
 
     setQualityPreset(value, options = {}) {
@@ -1576,6 +2473,8 @@
         this._streamer.configure(preset);
         this._streamer.update(this._player.x, this._player.z, true);
       }
+      this._environmentAssets?.configure(presetId);
+      this._syncWeatherEffects();
       if (this._canvas) this._canvas.setAttribute("data-hwe-3d-quality", presetId);
       if (changed && announce) {
         const detail = freezeRecord({ qualityPreset: presetId, requestedPreset: this._qualityRequested, reason: String(reason || "unknown") });
@@ -1593,16 +2492,17 @@
     }
 
     _animateProxies(deltaSeconds) {
-      if (this._reducedMotion) return;
       this._elapsed += deltaSeconds;
-      let index = 0;
-      for (const proxy of this._proxies.values()) {
-        const phase = this._elapsed * (proxy.id === "pteranodon" ? 1.9 : 1.15) + index * 0.9;
-        proxy.root.position.y = proxy.baseY + Math.sin(phase) * (proxy.id === "pteranodon" ? 0.45 : 0.075);
-        for (const wing of proxy.wings) wing.mesh.rotation.x = wing.baseRotation + Math.sin(phase * 2.2) * (wing.side === "left" ? 0.22 : -0.22);
-        index += 1;
+      if (!this._reducedMotion) {
+        let index = 0;
+        for (const proxy of this._proxies.values()) {
+          const phase = this._elapsed * (proxy.id === "pteranodon" ? 1.9 : 1.15) + index * 0.9;
+          proxy.root.position.y = proxy.baseY + Math.sin(phase) * (proxy.id === "pteranodon" ? 0.45 : 0.075);
+          for (const wing of proxy.wings) wing.mesh.rotation.x = wing.baseRotation + Math.sin(phase * 2.2) * (wing.side === "left" ? 0.22 : -0.22);
+          index += 1;
+        }
       }
-      if (this._water && this._water.material) this._water.material.alpha = 0.65 + Math.sin(this._elapsed * 0.45) * 0.025;
+      this._animateAtmosphere();
     }
 
     _followPlayer(deltaSeconds) {
@@ -1635,6 +2535,7 @@
         }
         this._streamer.update(this._player.x, this._player.z);
         this._streamer.process(this._reducedMotion ? 1 : undefined);
+        this._environmentAssets?.update(this._player.x, this._player.z);
         this._animateProxies(deltaSeconds);
         this._followPlayer(deltaSeconds);
         this._scene.render();
@@ -1651,6 +2552,8 @@
 
     getTelemetry() {
       const streaming = this._streamer ? this._streamer.getStats() : freezeRecord({ activeChunks: 0, queuedChunks: 0, maxChunks: 0, chunkSize: CHUNK_SIZE });
+      const environmentAssets = this._environmentAssets ? this._environmentAssets.getStatus() : freezeRecord({ status: "procedural", loadedAssets: [], loadedInstances: 0, visibleInstances: 0, hdr: false, failures: [] });
+      const creatureAssets = this._creatureAssets ? this._creatureAssets.getStatus() : freezeRecord({ status: "procedural", loadedSpecies: [], activeClips: freezeRecord({}), productionApproved: false, failures: [] });
       const average = this._governor.average;
       return freezeRecord({
         status: this._state,
@@ -1668,6 +2571,9 @@
         reducedMotion: this._reducedMotion,
         hidden: Boolean((this._options.document || runtime.document) && (this._options.document || runtime.document).hidden),
         proxySpecies: FLAGSHIP_IDS.slice(),
+        environmentAssets,
+        creatureAssets,
+        rainParticleBudget: ENVIRONMENT_BUDGETS[this._qualityPreset].rainParticles,
         physics: "kinematic-proxy-only"
       });
     }
@@ -1696,6 +2602,7 @@
 
     pause(cause = "user") {
       if (cause !== "visibility") this._pauseRequested = true;
+      this._cancelEnvironmentAssetSchedule();
       if (this._state === "starting" || this._state === "idle") {
         return makeResult(true, { status: this._state, pending: true, cause });
       }
@@ -1719,6 +2626,7 @@
       this._state = "running";
       this._lastFrameAt = now();
       this._engine.runRenderLoop(this._renderFrame);
+      this._scheduleEnvironmentAssetLoad(this._generation);
       this._emitStatus({ cause: String(cause) });
       return makeResult(true, { status: this._state, cause });
     }
@@ -1748,6 +2656,7 @@
     }
 
     _teardownGraphics() {
+      this._cancelEnvironmentAssetSchedule();
       this._removeRuntimeListeners();
       try { this._engine && this._engine.stopRenderLoop(this._renderFrame); } catch { /* Cleanup only. */ }
       if (this._camera && typeof this._camera.detachControl === "function") {
@@ -1755,6 +2664,10 @@
       }
       if (this._streamer) this._streamer.dispose();
       this._streamer = null;
+      this._environmentAssets?.dispose();
+      this._environmentAssets = null;
+      this._creatureAssets?.dispose();
+      this._creatureAssets = null;
       for (const proxy of this._proxies.values()) {
         safeDispose(proxy.root);
         for (const material of proxy.materials) safeDispose(material);
@@ -1764,8 +2677,15 @@
       if (this._water) {
         safeDispose(this._water.mesh);
         safeDispose(this._water.material);
+        safeDispose(this._water.normalTexture);
       }
       this._water = null;
+      if (this._weatherFx) {
+        try { this._weatherFx.rain?.stop(); } catch { /* Cleanup only. */ }
+        safeDispose(this._weatherFx.rain);
+        safeDispose(this._weatherFx.texture);
+      }
+      this._weatherFx = null;
       safeDispose(this._scene);
       safeDispose(this._engine);
       this._scene = null;
@@ -1823,14 +2743,22 @@
     WATER_LEVEL,
     MAX_ACTIVE_CHUNKS,
     DEFAULT_LOCAL_BABYLON_URL,
+    DEFAULT_LOCAL_GLTF_LOADER_URL,
     DEFAULT_REMOTE_BABYLON_URL,
+    DEFAULT_ENVIRONMENT_ASSET_BASE,
+    DEFAULT_CREATURE_ASSET_BASE,
+    ENVIRONMENT_ASSETS,
+    ENVIRONMENT_BUDGETS,
+    CREATURE_PROTOTYPE_ASSETS,
     FLAGSHIP_SPECIES,
     FLAGSHIP_IDS,
     QUALITY_PRESETS,
     detectCapabilities,
     loadBabylon,
+    loadBabylonGltfLoader,
     sampleTerrain,
     sampleTerrainHeight,
+    planEnvironmentPlacements,
     create,
     createRenderer,
     start,

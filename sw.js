@@ -1,4 +1,6 @@
-const CACHE = "hh-identity-portal-v879";
+const CACHE = "hh-identity-portal-v881";
+// EonWild CC0 asset integration: ./performance-loader.js?v=528 ./hh-eonwild-game.js?v=14.
+// Compatibility marker retained for the pre-photogrammetry EonWild renderer: hh-identity-portal-v879 ./hh-eonwild-renderer-3d.js?v=5.
 // Compatibility marker retained for Dharma v6 clients: hh-identity-portal-v842.
 // Compatibility marker retained for the previous Home shell: ./home-galaxy-command.js?v=15.
 // Shell compatibility assertions for modules released against the stable cache:
@@ -476,10 +478,12 @@ const RUNTIME_ASSETS = [
   "./hh-eonwild-content-v2.js?v=3",
   "./hh-eonwild-simulation-v2.js?v=4",
   "./hh-eonwild-3d-core.js?v=4",
-  "./hh-eonwild-renderer-3d.js?v=5",
-  "./hh-eonwild-game.js?v=13",
+  "./hh-eonwild-renderer-3d.js?v=6",
+  "./hh-eonwild-game.js?v=14",
   "./vendor/babylon-9.22.1.js?v=9.22.1",
+  "./vendor/babylonjs-loaders-9.22.1.min.js?v=9.22.1",
   "./assets/eonwild/asset-manifest.v1.json",
+  "./assets/eonwild/THIRD_PARTY_NOTICES.md",
   "./vendor/EONWILD_THIRD_PARTY_NOTICES.md",
   "./vendor/BABYLON-LICENSE.md",
   "./config.js?v=10",
@@ -502,7 +506,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=527",
+  "./performance-loader.js?v=528",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=245"

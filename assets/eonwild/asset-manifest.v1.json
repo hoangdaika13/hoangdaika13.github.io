@@ -16,13 +16,22 @@
     "rendererPath": "../../vendor/babylon-9.22.1.js",
     "rendererLicensePath": "../../vendor/BABYLON-LICENSE.md",
     "rendererSha256": "f2b78fad3ed927cb1035c846c5bc787a6b1bce35baebf12a087531c62cfb7d60",
-    "rendererLicenseSha256": "66506fb29d543e11e1fcf8f74ba24c78c21c122412436f8377e6a7f1ea4d94a5"
+    "rendererLicenseSha256": "66506fb29d543e11e1fcf8f74ba24c78c21c122412436f8377e6a7f1ea4d94a5",
+    "loader": "Babylon.js Loaders",
+    "loaderVersion": "9.22.1",
+    "loaderLicense": "Apache-2.0",
+    "loaderPath": "../../vendor/babylonjs-loaders-9.22.1.min.js",
+    "loaderSourceUrl": "https://unpkg.com/babylonjs-loaders@9.22.1/babylonjs.loaders.min.js",
+    "loaderLicensePath": "../../vendor/BABYLON-LICENSE.md",
+    "loaderSha256": "9f7b1a7a52f1e9649614992c7e41c5cde287fc3f07ca6d6f6119a21daf2132d0",
+    "loaderLicenseSha256": "66506fb29d543e11e1fcf8f74ba24c78c21c122412436f8377e6a7f1ea4d94a5",
+    "licenseChecksumNormalization": "utf8-lf"
   },
   "verticalSlice": {
     "logicalSizeMeters": 4096,
     "chunkSizeMeters": 256,
     "productionModelsReady": false,
-    "visualRepresentation": "procedural-prototype",
+    "visualRepresentation": "hybrid-cc0-environment-and-creature-prototypes",
     "supportedSpecies": [
       "tyrannosaurus",
       "triceratops",
@@ -51,10 +60,33 @@
     "maximumTextureEdge": 4096,
     "maximumNearCreatureTriangles": 180000
   },
+  "environmentPipeline": {
+    "status": "runtime-ready",
+    "provider": "Poly Haven",
+    "apiBaseUrl": "https://api.polyhaven.com",
+    "apiUserAgent": "HH-EonWild-AssetPipeline/1.0 (+https://hoang8.com)",
+    "licenseUrl": "https://polyhaven.com/license",
+    "sourceResolution": "1k",
+    "gltfTransformVersion": "4.4.2",
+    "tangentSpace": "MikkTSpace",
+    "runtimeBudgetBytes": 12582912,
+    "runtimeBytes": 10471123,
+    "provenancePath": "assets/eonwild/environment/polyhaven-provenance.v1.json",
+    "stages": [
+      "official-api-discovery",
+      "source-md5-verification",
+      "gltf-bundle",
+      "tangent-generation",
+      "gltf-validation",
+      "sha256",
+      "manifest"
+    ]
+  },
   "creatureContracts": [
     {
       "speciesId": "tyrannosaurus",
       "status": "placeholder",
+      "prototypeAssetId": "quaternius-tyrannosaurus-animated-prototype",
       "rig": "bespoke-biped-heavy-tail",
       "realScaleMeters": 12.3,
       "lodRatios": [1, 0.55, 0.24, 0.08]
@@ -62,6 +94,7 @@
     {
       "speciesId": "triceratops",
       "status": "placeholder",
+      "prototypeAssetId": "quaternius-triceratops-animated-prototype",
       "rig": "bespoke-quadruped-frill-horns",
       "realScaleMeters": 8.8,
       "lodRatios": [1, 0.55, 0.24, 0.08]
@@ -112,13 +145,226 @@
     "nest",
     "care-young"
   ],
-  "assets": [],
+  "assets": [
+    {
+      "id": "polyhaven-fern-02-1k",
+      "type": "environment-glb",
+      "status": "runtime-ready",
+      "role": "vegetation-ground-cover",
+      "filePath": "assets/eonwild/environment/fern-02-1k.glb",
+      "sourceUrl": "https://polyhaven.com/a/fern_02",
+      "sourceApiUrl": "https://api.polyhaven.com/files/fern_02",
+      "sourceAssetId": "fern_02",
+      "author": "Rob Tuytel; Rico Cilliers",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "runtimeFormat": "glb",
+      "sourceResolution": "1k",
+      "sourceFilesHash": "36e2a53d7f23f422640ad368c1f27745de2fef82",
+      "sourceFiles": [
+        { "path": "fern_02_1k.gltf", "byteSize": 6899, "md5": "cf276874d37bfb73c299504a6b355b77", "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/fern_02/fern_02_1k.gltf" },
+        { "path": "textures/fern_02_arm_1k.jpg", "byteSize": 280359, "md5": "1bbb2b22951f450720d28e17d93a2987", "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fern_02/fern_02_arm_1k.jpg" },
+        { "path": "textures/fern_02_diff_1k.jpg", "byteSize": 315705, "md5": "82c18a6cfd5ae91c37c0e078f591181c", "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fern_02/fern_02_diff_1k.jpg" },
+        { "path": "textures/fern_02_nor_gl_1k.jpg", "byteSize": 367222, "md5": "43aed63dff79554f6064627515afd9d7", "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/fern_02/fern_02_nor_gl_1k.jpg" },
+        { "path": "fern_02.bin", "byteSize": 176176, "md5": "c061e9255f7d36ae9ce0e92ef3e100b2", "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/fern_02/fern_02.bin" }
+      ],
+      "byteSize": 1216404,
+      "polygonCount": 6232,
+      "dimensionsMillimeters": [1972.5302457809448, 1724.0281701087952, 427.6947118341923],
+      "qualityTier": "real-world-scan-1k",
+      "instancingPolicy": "thin-instance-candidate",
+      "sha256": "e804a4afb4b5f2a0d512a69eada3312276c219796a4ff3878d1ae3d047dcf479",
+      "provenancePath": "assets/eonwild/environment/polyhaven-provenance.v1.json",
+      "modificationHistory": [
+        "Downloaded the official Poly Haven 1K glTF package and verified every API-provided MD5.",
+        "Bundled glTF, BIN and JPEG PBR dependencies into one GLB and generated MikkTSpace tangents with glTF Transform 4.4.2; source textures were not recompressed and KTX2 was not applied."
+      ]
+    },
+    {
+      "id": "polyhaven-rock-moss-set-01-1k",
+      "type": "environment-glb",
+      "status": "runtime-ready",
+      "role": "terrain-rock-set",
+      "filePath": "assets/eonwild/environment/rock-moss-set-01-1k.glb",
+      "sourceUrl": "https://polyhaven.com/a/rock_moss_set_01",
+      "sourceApiUrl": "https://api.polyhaven.com/files/rock_moss_set_01",
+      "sourceAssetId": "rock_moss_set_01",
+      "author": "Kless Gyzen",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "runtimeFormat": "glb",
+      "sourceResolution": "1k",
+      "sourceFilesHash": "3d61828e10ef81512a639c8064c9a51a75165b5a",
+      "sourceFiles": [
+        { "path": "rock_moss_set_01_1k.gltf", "byteSize": 9987, "md5": "75113cc1c21806cca5d8badad4737af7", "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/rock_moss_set_01/rock_moss_set_01_1k.gltf" },
+        { "path": "textures/rock_moss_set_01_nor_gl_1k.jpg", "byteSize": 209975, "md5": "eb7ebd31ad08e78d0497900652ff1568", "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rock_moss_set_01/rock_moss_set_01_nor_gl_1k.jpg" },
+        { "path": "rock_moss_set_01.bin", "byteSize": 1466380, "md5": "207a51c9f56d34732e9814bbf9cc07b1", "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/rock_moss_set_01/rock_moss_set_01.bin" },
+        { "path": "textures/rock_moss_set_01_rough_1k.jpg", "byteSize": 82624, "md5": "ed9d8a2c863262f76f881346e8047c6a", "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rock_moss_set_01/rock_moss_set_01_rough_1k.jpg" },
+        { "path": "textures/rock_moss_set_01_diff_1k.jpg", "byteSize": 168099, "md5": "b8742301e6b4bc5683d2de712e83f772", "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/rock_moss_set_01/rock_moss_set_01_diff_1k.jpg" }
+      ],
+      "byteSize": 2487672,
+      "polygonCount": 63127,
+      "dimensionsMillimeters": [8004.603862762451, 6948.764801025391, 1768.319845199585],
+      "qualityTier": "real-world-scan-1k",
+      "instancingPolicy": "thin-instance-by-submesh-candidate",
+      "sha256": "3006908622dc15994d49a254810a4ff4724b2d089fe23c4a902bc30c90aa3275",
+      "provenancePath": "assets/eonwild/environment/polyhaven-provenance.v1.json",
+      "modificationHistory": [
+        "Downloaded the official Poly Haven 1K glTF package and verified every API-provided MD5.",
+        "Bundled glTF, BIN and JPEG PBR dependencies into one GLB and generated MikkTSpace tangents with glTF Transform 4.4.2; source textures were not recompressed and KTX2 was not applied."
+      ]
+    },
+    {
+      "id": "polyhaven-quiver-tree-02-1k",
+      "type": "environment-glb",
+      "status": "runtime-ready",
+      "role": "living-desert-tree",
+      "filePath": "assets/eonwild/environment/quiver-tree-02-1k.glb",
+      "sourceUrl": "https://polyhaven.com/a/quiver_tree_02",
+      "sourceApiUrl": "https://api.polyhaven.com/files/quiver_tree_02",
+      "sourceAssetId": "quiver_tree_02",
+      "author": "Dario Barresi; Rico Cilliers",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "runtimeFormat": "glb",
+      "sourceResolution": "1k",
+      "sourceFilesHash": "0587f20a8675f71008bafe89b42256c1ffda2cf7",
+      "sourceFiles": [
+        { "path": "quiver_tree_02_1k.gltf", "byteSize": 2809, "md5": "1002e67d6921204df06b9a97f4f30cff", "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/quiver_tree_02/quiver_tree_02_1k.gltf" },
+        { "path": "quiver_tree_02.bin", "byteSize": 2060604, "md5": "63635d61c58151eb4fb0b2caaf6b373c", "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/quiver_tree_02/quiver_tree_02.bin" },
+        { "path": "textures/quiver_tree_02_arm_1k.jpg", "byteSize": 759729, "md5": "36d19d0ef3d38ed92c557d9eb2203302", "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/quiver_tree_02/quiver_tree_02_arm_1k.jpg" },
+        { "path": "textures/quiver_tree_02_nor_gl_1k.jpg", "byteSize": 988408, "md5": "5ddb37eb256e324a0929e465d429f5a7", "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/quiver_tree_02/quiver_tree_02_nor_gl_1k.jpg" },
+        { "path": "textures/quiver_tree_02_diff_1k.jpg", "byteSize": 736321, "md5": "7f14325c48fc30112476b851d7e05232", "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/quiver_tree_02/quiver_tree_02_diff_1k.jpg" }
+      ],
+      "byteSize": 5331928,
+      "polygonCount": 153887,
+      "dimensionsMillimeters": [872.0614314079285, 880.8198273181915, 1468.88018399477],
+      "qualityTier": "real-world-scan-1k",
+      "instancingPolicy": "bounded-static-instance",
+      "sha256": "d7cc54763fdf69e97e25cace7f1fa0fa82b8e67d6078471988ff9f798f290c33",
+      "provenancePath": "assets/eonwild/environment/polyhaven-provenance.v1.json",
+      "modificationHistory": [
+        "Downloaded the official Poly Haven 1K glTF package and verified every API-provided MD5.",
+        "Bundled glTF, BIN and JPEG PBR dependencies into one GLB and generated MikkTSpace tangents with glTF Transform 4.4.2; source textures were not recompressed and KTX2 was not applied."
+      ]
+    },
+    {
+      "id": "polyhaven-kloofendal-partly-cloudy-puresky-1k",
+      "type": "environment-hdr",
+      "status": "runtime-ready",
+      "role": "image-based-lighting-sky",
+      "filePath": "assets/eonwild/environment/kloofendal-partly-cloudy-puresky-1k.hdr",
+      "sourceUrl": "https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky",
+      "sourceApiUrl": "https://api.polyhaven.com/files/kloofendal_48d_partly_cloudy_puresky",
+      "sourceAssetId": "kloofendal_48d_partly_cloudy_puresky",
+      "author": "Greg Zaal; Jarod Guest",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "runtimeFormat": "radiance-hdr",
+      "sourceResolution": "1k",
+      "sourceFilesHash": "4cce3bc9b9588036541551fe5ae8077af6b37e45",
+      "sourceFiles": [
+        { "path": "kloofendal_48d_partly_cloudy_puresky_1k.hdr", "byteSize": 1435119, "md5": "c69498687e876bf68d2a8b8a62234eb9", "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/kloofendal_48d_partly_cloudy_puresky_1k.hdr" }
+      ],
+      "byteSize": 1435119,
+      "qualityTier": "photographic-hdri-1k",
+      "instancingPolicy": "single-scene-environment",
+      "sha256": "fd94c84997b8a3c353b62c2125a9b44e19509956986a126e472684432a02d798",
+      "provenancePath": "assets/eonwild/environment/polyhaven-provenance.v1.json",
+      "modificationHistory": [
+        "Downloaded the official Poly Haven 1K Radiance HDR and verified the API-provided MD5.",
+        "Copied byte-for-byte into the same-origin runtime asset folder; no tone mapping or exposure modification applied."
+      ]
+    },
+    {
+      "id": "quaternius-tyrannosaurus-animated-prototype",
+      "speciesId": "tyrannosaurus",
+      "type": "creature-glb",
+      "status": "prototype",
+      "role": "animated-low-poly-runtime-prototype",
+      "filePath": "assets/eonwild/creatures/quaternius-tyrannosaurus-prototype.glb",
+      "sourceUrl": "https://poly.pizza/m/UYtneO5FpF",
+      "sourceApiUrl": "https://static.poly.pizza/34eed102-48f0-43dd-bc6f-ef7a6dfddfbb.glb",
+      "sourceAssetId": "UYtneO5FpF",
+      "author": "Quaternius",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "runtimeFormat": "glb",
+      "sourceResolution": "untextured-low-poly",
+      "byteSize": 336568,
+      "sha256": "e1c9862deef89f096c7d85dacf62aa9ce48089e5867d2bf632ed1e1733013349",
+      "provenancePath": "assets/eonwild/creatures/quaternius-provenance.v1.json",
+      "scientificSource": "https://www.nhm.ac.uk/discover/dino-directory/tyrannosaurus.html",
+      "era": "mesozoic",
+      "timeSlice": "late-cretaceous",
+      "realScaleMeters": 12,
+      "modelVersion": 1,
+      "lodLevels": [0],
+      "textureBudget": {
+        "textureCount": 0,
+        "maximumTextureEdge": 0,
+        "pbrComplete": false
+      },
+      "animationClips": ["attack", "death", "idle", "jump", "run", "walk"],
+      "reconstructionConfidence": "stylized-prototype-not-scientifically-reviewed",
+      "qualityTier": "prototype-only",
+      "modificationHistory": [
+        "Downloaded the same-origin-ready GLB published by Poly Pizza from the Quaternius CC0 Animated Dinosaur Pack.",
+        "Validated glTF structure and six skeletal clips; retained known non-root skinned-mesh warnings and made no production-quality claim."
+      ]
+    },
+    {
+      "id": "quaternius-triceratops-animated-prototype",
+      "speciesId": "triceratops",
+      "type": "creature-glb",
+      "status": "prototype",
+      "role": "animated-low-poly-runtime-prototype",
+      "filePath": "assets/eonwild/creatures/quaternius-triceratops-prototype.glb",
+      "sourceUrl": "https://poly.pizza/m/IGvrUqGrRM",
+      "sourceApiUrl": "https://static.poly.pizza/6aa1f3ff-b9b3-4bb5-9d85-b2ffa514f0cc.glb",
+      "sourceAssetId": "IGvrUqGrRM",
+      "author": "Quaternius",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "runtimeFormat": "glb",
+      "sourceResolution": "untextured-low-poly",
+      "byteSize": 309684,
+      "sha256": "79ade346de5e778a58ce8c253c7e6dbd505499176a616583d1a29fa4624f498c",
+      "provenancePath": "assets/eonwild/creatures/quaternius-provenance.v1.json",
+      "scientificSource": "https://www.nhm.ac.uk/discover/dino-directory/triceratops.html",
+      "era": "mesozoic",
+      "timeSlice": "late-cretaceous",
+      "realScaleMeters": 9,
+      "modelVersion": 1,
+      "lodLevels": [0],
+      "textureBudget": {
+        "textureCount": 0,
+        "maximumTextureEdge": 0,
+        "pbrComplete": false
+      },
+      "animationClips": ["attack", "death", "idle", "jump", "run", "walk"],
+      "reconstructionConfidence": "stylized-prototype-not-scientifically-reviewed",
+      "qualityTier": "prototype-only",
+      "modificationHistory": [
+        "Downloaded the same-origin-ready GLB published by Poly Pizza from the Quaternius CC0 Animated Dinosaur Pack.",
+        "Validated glTF structure and six skeletal clips; retained known non-root skinned-mesh warnings and made no production-quality claim."
+      ]
+    }
+  ],
   "requiredAssetFields": [
     "id",
+    "type",
     "filePath",
     "sourceUrl",
     "author",
     "license",
+    "licenseUrl",
+    "byteSize",
+    "provenancePath",
+    "sha256",
+    "modificationHistory"
+  ],
+  "requiredCreatureAssetFields": [
     "scientificSource",
     "era",
     "timeSlice",
@@ -126,12 +372,23 @@
     "modelVersion",
     "lodLevels",
     "textureBudget",
-    "sha256",
-    "modificationHistory",
     "reconstructionConfidence"
   ],
+  "requiredEnvironmentAssetFields": [
+    "status",
+    "role",
+    "sourceApiUrl",
+    "sourceAssetId",
+    "runtimeFormat",
+    "sourceResolution",
+    "sourceFilesHash",
+    "sourceFiles",
+    "qualityTier",
+    "instancingPolicy"
+  ],
   "notes": [
-    "The current 3D vertical slice uses original procedural primitives and does not claim production-quality animal models.",
+    "Tyrannosaurus and Triceratops may use animated Quaternius CC0 low-poly prototypes at runtime; Spinosaurus and Pteranodon remain procedural, and no animal model is production-approved.",
+    "Poly Haven environment assets are real-world scans or photographic lighting sources reduced to a 1K runtime tier; they improve realism but do not claim camera-footage equivalence.",
     "Google Images may be used for research only; no image, model or audio is ingested without a compatible license record.",
     "Catalogue entries do not become playable entities automatically."
   ]

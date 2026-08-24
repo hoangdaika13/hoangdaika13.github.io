@@ -73,7 +73,7 @@ test("EonWild v3 game composes versioned ecology and 3D APIs", () => {
   assert.equal(simulation.SCHEMA_VERSION, 2);
   assert.equal(simulation.FIXED_STEP, 1 / 30);
   assert.equal(core3d.VERSION, "3.0.0");
-  assert.equal(renderer3d.VERSION, "1.0.0");
+  assert.equal(renderer3d.VERSION, "1.2.0");
   assert.equal(core3d.BABYLON_VERSION, "9.22.1");
   assert.equal(renderer3d.BABYLON_VERSION, "9.22.1");
   for (const name of ["normalizeState", "stepVitals", "terrainAt", "createWorld", "mount", "unmount"]) {
@@ -674,8 +674,7 @@ test("vendored renderer and asset provenance manifest are explicit", () => {
   const babylonPath = path.join(root, "vendor", "babylon-9.22.1.js");
   assert.ok(fs.statSync(babylonPath).size > 8_000_000);
   const runtimeSha256 = crypto.createHash("sha256").update(fs.readFileSync(babylonPath)).digest("hex");
-  const canonicalLicense = read("vendor/BABYLON-LICENSE.md").replace(/\r\n?/g, "\n");
-  const licenseSha256 = crypto.createHash("sha256").update(canonicalLicense, "utf8").digest("hex");
+  const licenseSha256 = crypto.createHash("sha256").update(read("vendor/BABYLON-LICENSE.md").replaceAll("\r\n", "\n"), "utf8").digest("hex");
   assert.match(read("vendor/BABYLON-LICENSE.md"), /Apache License[\s\S]*Version 2\.0/);
   assert.equal(assetManifest.runtime.rendererVersion, "9.22.1");
   assert.equal(assetManifest.runtime.rendererSha256, runtimeSha256);
@@ -684,8 +683,11 @@ test("vendored renderer and asset provenance manifest are explicit", () => {
   assert.equal(assetManifest.policy.unknownLicenseAllowed, false);
   assert.equal(assetManifest.verticalSlice.productionModelsReady, false);
   assert.deepEqual(assetManifest.verticalSlice.supportedSpecies.slice().sort(), ["pteranodon", "spinosaurus", "triceratops", "tyrannosaurus"]);
-  for (const field of ["sourceUrl", "license", "scientificSource", "lodLevels", "sha256", "reconstructionConfidence"]) {
+  for (const field of ["sourceUrl", "license", "sha256"]) {
     assert.ok(assetManifest.requiredAssetFields.includes(field), `missing provenance field ${field}`);
+  }
+  for (const field of ["scientificSource", "lodLevels", "reconstructionConfidence"]) {
+    assert.ok(assetManifest.requiredCreatureAssetFields.includes(field), `missing creature provenance field ${field}`);
   }
 });
 
@@ -709,7 +711,7 @@ test("only Flagship species are offered as playable while other tiers stay truth
 });
 
 test("lazy loader and service worker cache the complete ordered v3 bundle", () => {
-  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=11"\][\s\S]*?scripts:\s*\["hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=4",\s*"hh-eonwild-renderer-3d\.js\?v=5",\s*"hh-eonwild-game\.js\?v=13"\]/);
+  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=11"\][\s\S]*?scripts:\s*\["hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=4",\s*"hh-eonwild-renderer-3d\.js\?v=6",\s*"hh-eonwild-game\.js\?v=14"\]/);
   assert.match(loader, /value === "\/game" \|\| value\.startsWith\("\/game\/"\)\) return \["game"\]/);
   const runtimeAssetsSource = worker.slice(
     worker.indexOf("const RUNTIME_ASSETS"),
@@ -721,19 +723,21 @@ test("lazy loader and service worker cache the complete ordered v3 bundle", () =
     "./hh-eonwild-content-v2.js?v=3",
     "./hh-eonwild-simulation-v2.js?v=4",
     "./hh-eonwild-3d-core.js?v=4",
-    "./hh-eonwild-renderer-3d.js?v=5",
-    "./hh-eonwild-game.js?v=13"
+    "./hh-eonwild-renderer-3d.js?v=6",
+    "./hh-eonwild-game.js?v=14"
   ]) assert.ok(worker.includes(`"${asset}"`), `service worker must cache ${asset}`);
   for (const asset of [
     "./vendor/babylon-9.22.1.js?v=9.22.1",
+    "./vendor/babylonjs-loaders-9.22.1.min.js?v=9.22.1",
     "./assets/eonwild/asset-manifest.v1.json",
+    "./assets/eonwild/THIRD_PARTY_NOTICES.md",
     "./vendor/EONWILD_THIRD_PARTY_NOTICES.md",
     "./vendor/BABYLON-LICENSE.md"
   ]) {
     assert.ok(runtimeAssetsSource.includes(`"${asset}"`), `${asset} must be a runtime asset`);
     assert.ok(!coreAssetsSource.includes(`"${asset}"`), `${asset} must not be a core asset`);
   }
-  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v879"/);
+  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v881"/);
 
   for (const asset of ["performance-loader.js", "script.js"]) {
     const escaped = asset.replaceAll(".", "\\.");
