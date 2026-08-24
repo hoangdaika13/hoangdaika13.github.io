@@ -30,9 +30,92 @@
       "pteranodon"
     ]
   },
+  "productionPipeline": {
+    "status": "contract-ready",
+    "stages": [
+      "blender",
+      "gltf-validation",
+      "meshopt",
+      "ktx2",
+      "manifest",
+      "browser-qa"
+    ],
+    "modelFormat": "glb",
+    "textureFormat": "ktx2",
+    "approvedLicenses": [
+      "CC0-1.0",
+      "CC-BY-4.0",
+      "Apache-2.0",
+      "original-proprietary"
+    ],
+    "maximumTextureEdge": 4096,
+    "maximumNearCreatureTriangles": 180000
+  },
+  "creatureContracts": [
+    {
+      "speciesId": "tyrannosaurus",
+      "status": "placeholder",
+      "rig": "bespoke-biped-heavy-tail",
+      "realScaleMeters": 12.3,
+      "lodRatios": [1, 0.55, 0.24, 0.08]
+    },
+    {
+      "speciesId": "triceratops",
+      "status": "placeholder",
+      "rig": "bespoke-quadruped-frill-horns",
+      "realScaleMeters": 8.8,
+      "lodRatios": [1, 0.55, 0.24, 0.08]
+    },
+    {
+      "speciesId": "spinosaurus",
+      "status": "placeholder",
+      "rig": "bespoke-amphibious-sail-tail",
+      "realScaleMeters": 14.2,
+      "lodRatios": [1, 0.55, 0.24, 0.08]
+    },
+    {
+      "speciesId": "pteranodon",
+      "status": "placeholder",
+      "rig": "bespoke-soaring-wing-membrane",
+      "realScaleMeters": 6.5,
+      "lodRatios": [1, 0.5, 0.2, 0.06]
+    }
+  ],
+  "requiredCreatureTextures": [
+    "albedo",
+    "normal",
+    "roughness",
+    "ambient-occlusion",
+    "wetness-dirt-mask"
+  ],
+  "requiredCreatureAnimations": [
+    "idle",
+    "walk",
+    "run",
+    "turn-left",
+    "turn-right",
+    "start",
+    "stop",
+    "feed",
+    "drink",
+    "rest",
+    "sleep",
+    "call",
+    "attack",
+    "defend",
+    "hit",
+    "injured",
+    "exhausted",
+    "lie-down",
+    "stand-up",
+    "death",
+    "nest",
+    "care-young"
+  ],
   "assets": [],
   "requiredAssetFields": [
     "id",
+    "filePath",
     "sourceUrl",
     "author",
     "license",

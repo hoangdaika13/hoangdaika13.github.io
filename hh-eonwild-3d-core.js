@@ -119,6 +119,52 @@
   })])));
 
   const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, Number(value) || 0));
+  const scheduleTimeout = (callback, delay) => {
+    const scheduler = typeof global.setTimeout === "function" ? global.setTimeout : (typeof setTimeout === "function" ? setTimeout : null);
+    if (!scheduler) throw new Error("A timeout scheduler is required");
+    return scheduler.call(global, callback, delay);
+  };
+  const cancelTimeout = (timer) => {
+    const cancel = typeof global.clearTimeout === "function" ? global.clearTimeout : (typeof clearTimeout === "function" ? clearTimeout : null);
+    if (cancel && timer !== undefined && timer !== null) cancel.call(global, timer);
+  };
+  const disposeSafely = (resource) => {
+    try { resource?.dispose?.(); } catch {}
+  };
+  function withTimeout(value, timeoutMs, message, onLateResolve) {
+    const duration = Math.trunc(clamp(timeoutMs, 1000, 60000));
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      let timedOut = false;
+      let timer;
+      try {
+        timer = scheduleTimeout(() => {
+          if (settled) return;
+          settled = true;
+          timedOut = true;
+          const error = new Error(message || "Operation timed out");
+          error.code = "HWE_TIMEOUT";
+          reject(error);
+        }, duration);
+      } catch (error) { reject(error); return; }
+      Promise.resolve(value).then((result) => {
+        if (settled) {
+          if (timedOut && typeof onLateResolve === "function") {
+            try { onLateResolve(result); } catch {}
+          }
+          return;
+        }
+        settled = true;
+        cancelTimeout(timer);
+        resolve(result);
+      }, (error) => {
+        if (settled) return;
+        settled = true;
+        cancelTimeout(timer);
+        reject(error);
+      });
+    });
+  }
   const safeId = (value, fallback) => {
     const normalized = String(value || "").trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
     return normalized || fallback;
@@ -216,7 +262,10 @@
         else if (goodWindows >= 15 && options.allowUpgrade === true && index < order.length - 1) { qualityId = order[index + 1]; goodWindows = 0; changed = true; }
         return Object.freeze({ changed, quality: qualityId, fps: measured, profile: QUALITY_PROFILES[qualityId] });
       },
-      setQuality(next) { if (QUALITY_PROFILES[next]) qualityId = next; return qualityId; }
+      setQuality(next) {
+        if (QUALITY_PROFILES[next]) { qualityId = next; badWindows = 0; goodWindows = 0; }
+        return qualityId;
+      }
     });
   }
 
@@ -243,36 +292,86 @@
   function loadBabylon(options = {}) {
     if (global.BABYLON?.Engine) return Promise.resolve(global.BABYLON);
     if (!global.document?.createElement) return Promise.reject(new Error("Babylon runtime requires a browser document"));
-    if (babylonPromise) return babylonPromise;
     const requested = String(options.url || BABYLON_URL);
     let source;
     try {
-      source = new URL(requested, global.location?.href || "http://localhost/");
-      const currentOrigin = global.location?.origin;
-      if (currentOrigin && currentOrigin !== "null" && source.origin !== currentOrigin) throw new Error("Babylon source must be same-origin");
+      const baseHref = global.location?.href || global.document?.baseURI;
+      if (!baseHref) throw new Error("Babylon source requires a non-opaque page origin");
+      const page = new URL(baseHref);
+      const currentOrigin = String(global.location?.origin || page.origin || "");
+      if (!/^https?:$/i.test(page.protocol) || !currentOrigin || currentOrigin === "null") throw new Error("Babylon source requires a non-opaque HTTP(S) page origin");
+      source = new URL(requested, page.href);
+      if (!/^https?:$/i.test(source.protocol) || source.origin !== currentOrigin) throw new Error("Babylon source must be same-origin HTTP(S)");
     } catch (error) { return Promise.reject(error); }
-    babylonPromise = new Promise((resolve, reject) => {
-      const existing = global.document.querySelector?.("script[data-hwe-babylon]");
-      if (existing) {
-        const check = () => global.BABYLON?.Engine ? resolve(global.BABYLON) : reject(new Error("Babylon script loaded without engine API"));
-        existing.addEventListener("load", check, { once: true });
-        existing.addEventListener("error", () => reject(new Error("Unable to load Babylon runtime")), { once: true });
-        return;
-      }
-      const script = global.document.createElement("script");
-      script.src = source.href;
-      script.async = true;
-      script.dataset.hweBabylon = BABYLON_VERSION;
-      const timeout = global.setTimeout?.(() => { script.remove(); babylonPromise = null; reject(new Error("Babylon runtime timed out")); }, clamp(options.timeoutMs ?? 20000, 4000, 60000));
-      script.onload = () => {
-        global.clearTimeout?.(timeout);
-        if (global.BABYLON?.Engine) resolve(global.BABYLON);
-        else { babylonPromise = null; reject(new Error("Babylon engine API is unavailable")); }
+    if (babylonPromise) return babylonPromise;
+    const pending = new Promise((resolve, reject) => {
+      const timeoutMs = Math.trunc(clamp(options.timeoutMs ?? 20000, 4000, 60000));
+      let settled = false;
+      let timer = null;
+      let script = null;
+      let owned = false;
+      let onLoad = null;
+      let onError = null;
+      const cleanup = () => {
+        cancelTimeout(timer);
+        if (onLoad) script?.removeEventListener?.("load", onLoad);
+        if (onError) script?.removeEventListener?.("error", onError);
+        if (script?.onload === onLoad) script.onload = null;
+        if (script?.onerror === onError) script.onerror = null;
       };
-      script.onerror = () => { global.clearTimeout?.(timeout); babylonPromise = null; reject(new Error("Unable to load Babylon runtime")); };
-      global.document.head.append(script);
+      const finish = (callback, value) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        callback(value);
+      };
+      const fail = (error) => {
+        if (settled) return;
+        if (script?.dataset) script.dataset.hweBabylonState = "failed";
+        script?.remove?.();
+        finish(reject, error);
+      };
+      onLoad = () => {
+        if (!global.BABYLON?.Engine) { fail(new Error("Babylon engine API is unavailable")); return; }
+        if (script?.dataset) script.dataset.hweBabylonState = "loaded";
+        finish(resolve, global.BABYLON);
+      };
+      onError = () => fail(new Error("Unable to load Babylon runtime"));
+      try {
+        script = global.document.querySelector?.("script[data-hwe-babylon]") || null;
+        if (script) {
+          let existingSource = "";
+          try { existingSource = new URL(String(script.src || ""), global.document?.baseURI || global.location?.href || source.href).href; } catch {}
+          const matchesRequest = existingSource === source.href && script.dataset?.hweBabylon === BABYLON_VERSION && script.dataset?.hweBabylonState === "loading";
+          if (!matchesRequest) { script.remove?.(); script = null; }
+        }
+        owned = !script;
+        if (!script) {
+          script = global.document.createElement("script");
+          script.src = source.href;
+          script.async = true;
+          script.dataset.hweBabylon = BABYLON_VERSION;
+          script.dataset.hweBabylonState = "loading";
+        }
+        timer = scheduleTimeout(() => fail(new Error("Babylon runtime timed out")), timeoutMs);
+        if (typeof script.addEventListener === "function") {
+          script.addEventListener("load", onLoad, { once: true });
+          script.addEventListener("error", onError, { once: true });
+        } else {
+          script.onload = onLoad;
+          script.onerror = onError;
+        }
+        if (global.BABYLON?.Engine) { onLoad(); return; }
+        if (owned) {
+          const host = global.document.head || global.document.body || global.document.documentElement;
+          if (!host?.append) { fail(new Error("Unable to attach Babylon runtime script")); return; }
+          host.append(script);
+        }
+      } catch (error) { fail(error); }
     });
-    return babylonPromise;
+    babylonPromise = pending;
+    pending.catch(() => { if (babylonPromise === pending) babylonPromise = null; });
+    return pending;
   }
 
   function terrainHeight(x, z, seed) {
@@ -347,194 +446,425 @@
 
   async function createEngine(B, canvas, options, capability) {
     const preferWebGPU = options.backend !== "webgl2" && capability.webgpu && B.WebGPUEngine;
+    const notifyWebGPUFailure = (error) => {
+      try { options.onTelemetry?.({ type: "webgpu-init-failed", message: error?.message || "WebGPU init failed" }); } catch {}
+    };
     if (preferWebGPU) {
+      const initTimeoutMs = options.initTimeoutMs ?? options.timeoutMs ?? 12000;
+      let supported = true;
+      let supportError = null;
       try {
-        const engine = new B.WebGPUEngine(canvas, { antialias: true, adaptToDeviceRatio: true, enableAllFeatures: false });
-        await engine.initAsync();
-        return { engine, backend: "webgpu" };
-      } catch (error) { options.onTelemetry?.({ type: "webgpu-init-failed", message: error?.message || "WebGPU init failed" }); }
+        if (B.WebGPUEngine.IsSupportedAsync !== undefined) {
+          const probe = B.WebGPUEngine.IsSupportedAsync;
+          const result = typeof probe === "function" ? probe.call(B.WebGPUEngine) : probe;
+          supported = Boolean(await withTimeout(result, initTimeoutMs, "WebGPU support probe timed out"));
+        }
+      } catch (error) { supported = false; supportError = error; }
+      if (!supported) notifyWebGPUFailure(supportError || new Error("Babylon reports that WebGPU is unavailable"));
+      if (supported) {
+        let engine = null;
+        let engineDisposed = false;
+        const disposeWebGPUEngine = () => {
+          if (engineDisposed) return;
+          engineDisposed = true;
+          disposeSafely(engine);
+        };
+        try {
+          engine = new B.WebGPUEngine(canvas, { antialias: true, adaptToDeviceRatio: true, enableAllFeatures: false });
+          if (typeof engine.initAsync !== "function") throw new Error("Babylon WebGPU engine has no async initializer");
+          await withTimeout(engine.initAsync(), initTimeoutMs, "WebGPU initialization timed out", () => {
+            // initAsync may allocate again after our timeout disposal. Dispose
+            // once more when that late promise settles so no GPU resource can
+            // survive a cancelled or timed-out route startup.
+            disposeSafely(engine);
+          });
+          return { engine, backend: "webgpu" };
+        } catch (error) {
+          disposeWebGPUEngine();
+          notifyWebGPUFailure(error);
+          const failure = new Error("WebGPU initialization failed after binding the render canvas; Canvas Lite fallback is required");
+          failure.code = "WEBGPU_CANVAS_INIT_FAILED";
+          failure.cause = error;
+          throw failure;
+        }
+      }
     }
-    if (!B.Engine?.IsSupported) throw new Error("WebGL is unavailable on this device");
-    const engine = new B.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false, adaptToDeviceRatio: true, useHighPrecisionMatrix: true }, true);
-    return { engine, backend: engine.webGLVersion >= 2 ? "webgl2" : "webgl1" };
+    const webglSupported = typeof B.Engine?.IsSupported === "function" ? B.Engine.IsSupported() : B.Engine?.IsSupported;
+    if (!webglSupported) throw new Error("WebGL is unavailable on this device");
+    let engine = null;
+    try {
+      engine = new B.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false, adaptToDeviceRatio: true, useHighPrecisionMatrix: true }, true);
+      return { engine, backend: engine.webGLVersion >= 2 ? "webgl2" : "webgl1" };
+    } catch (error) {
+      disposeSafely(engine);
+      throw error;
+    }
   }
 
   async function createRuntime(canvas, options = {}) {
     if (!canvas?.getContext) throw new TypeError("A render canvas is required");
+    const startupCancelled = () => {
+      try { return Boolean(options.signal?.aborted || options.isCancelled?.()); }
+      catch { return true; }
+    };
+    const throwIfStartupCancelled = () => {
+      if (!startupCancelled()) return;
+      const error = new Error("3D startup was cancelled");
+      error.code = "RENDER_START_CANCELLED";
+      throw error;
+    };
+    throwIfStartupCancelled();
     const capability = detectCapabilities();
     if (!capability.webgpu && !capability.webgl2 && !capability.webgl1) throw new Error("Thiết bị không hỗ trợ WebGL/WebGPU; Lite Mode vẫn dùng được");
     const B = options.BABYLON || await loadBabylon(options);
-    const created = await createEngine(B, canvas, options, capability);
-    const engine = created.engine;
+    throwIfStartupCancelled();
+    let created = null;
+    let engine = null;
+    let scene = null;
+    let camera = null;
     let disposed = false;
-    let paused = false;
-    let currentQuality = QUALITY_PROFILES[options.quality] ? options.quality : (capability.mobile ? "light" : "balanced");
-    const governor = createAdaptiveGovernor({ quality: currentQuality });
-    engine.setHardwareScalingLevel?.(Math.max(1, (global.devicePixelRatio || 1) / QUALITY_PROFILES[currentQuality].dpr));
-    const scene = new B.Scene(engine);
-    scene.clearColor = new B.Color4(.018, .035, .052, 1);
-    scene.fogMode = B.Scene.FOGMODE_EXP2;
-    scene.fogDensity = QUALITY_PROFILES[currentQuality].fog ? .0017 : 0;
-    scene.fogColor = new B.Color3(.035, .09, .105);
-    const camera = new B.ArcRotateCamera("eonwild-camera", -Math.PI / 2, 1.08, 27, new B.Vector3(0, 2, 0), scene);
-    camera.lowerRadiusLimit = 8; camera.upperRadiusLimit = 65; camera.lowerBetaLimit = .35; camera.upperBetaLimit = 1.48;
-    camera.wheelPrecision = 28; camera.pinchPrecision = 72; camera.attachControl(canvas, true);
-    const hemisphere = new B.HemisphericLight("eonwild-sky-light", new B.Vector3(0, 1, 0), scene);
-    hemisphere.intensity = .78; hemisphere.groundColor = new B.Color3(.08, .12, .09);
-    const sun = new B.DirectionalLight("eonwild-sun", new B.Vector3(-.46, -1, .38), scene);
-    sun.position = new B.Vector3(80, 140, -60); sun.intensity = 1.35;
-    const initialAddress = createWorldAddress(options.address || addressForSpecies(options.speciesId, options.seed));
-    let address = initialAddress;
-    let palette = paletteForAddress(address);
-    const materialCache = new Map();
-    const chunks = new Map();
-    const wildlife = new Map();
-    let lastChunkKey = "";
-    let lastPlayerPosition = null;
-    let playerSpeciesId = options.speciesId || "triceratops";
-    let playerRoot = buildCreature(B, scene, SPECIES_CARTRIDGES[playerSpeciesId] || SPECIES_CARTRIDGES.triceratops, options.speciesColor || "#e4ba65", "player");
-    const waterMaterial = new B.PBRMaterial("eonwild-water-material", scene);
-    waterMaterial.albedoColor = B.Color3.FromHexString("#176681"); waterMaterial.alpha = .82; waterMaterial.metallic = .05; waterMaterial.roughness = .2;
-    const water = B.MeshBuilder.CreateGround("eonwild-water", { width: WORLD_CONFIG.logicalSizeMeters, height: WORLD_CONFIG.logicalSizeMeters, subdivisions: 2 }, scene);
-    water.position.y = -4; water.material = waterMaterial; water.isPickable = false;
-    const getTerrainMaterial = (lod) => {
-      const key = `${address.realmId}:${lod}`;
-      if (materialCache.has(key)) return materialCache.get(key);
-      const material = new B.PBRMaterial(`terrain-${key}`, scene);
-      material.albedoColor = B.Color3.FromHexString(palette[Math.min(palette.length - 1, lod)] || palette[0]);
-      material.roughness = .93; material.metallic = 0;
-      materialCache.set(key, material); return material;
-    };
-    const createTerrainChunk = (descriptor) => {
-      const profile = QUALITY_PROFILES[currentQuality];
-      const subdivisions = profile.terrainSubdivisions[descriptor.lod] || 2;
-      const mesh = B.MeshBuilder.CreateGround(`chunk-${descriptor.key}`, { width: WORLD_CONFIG.chunkSizeMeters, height: WORLD_CONFIG.chunkSizeMeters, subdivisions, updatable: true }, scene);
-      const centerX = descriptor.x * WORLD_CONFIG.chunkSizeMeters + WORLD_CONFIG.chunkSizeMeters / 2;
-      const centerZ = descriptor.z * WORLD_CONFIG.chunkSizeMeters + WORLD_CONFIG.chunkSizeMeters / 2;
-      mesh.position.x = centerX - WORLD_CONFIG.logicalSizeMeters / 2;
-      mesh.position.z = centerZ - WORLD_CONFIG.logicalSizeMeters / 2;
-      const positions = mesh.getVerticesData(B.VertexBuffer.PositionKind);
-      const indices = mesh.getIndices();
-      if (positions && indices) {
-        for (let index = 0; index < positions.length; index += 3) {
-          const globalX = centerX + positions[index];
-          const globalZ = centerZ + positions[index + 2];
-          positions[index + 1] = terrainHeight(globalX, globalZ, address.seed);
-        }
-        const normals = [];
-        B.VertexData.ComputeNormals(positions, indices, normals);
-        mesh.updateVerticesData(B.VertexBuffer.PositionKind, positions);
-        mesh.updateVerticesData(B.VertexBuffer.NormalKind, normals);
-      }
-      mesh.material = getTerrainMaterial(descriptor.lod); mesh.receiveShadows = true; mesh.isPickable = true;
-      mesh.metadata = descriptor; chunks.set(descriptor.key, mesh); return mesh;
-    };
-    const streamChunks = (playerX, playerZ) => {
-      const descriptorList = planChunkStreaming({ x: playerX, z: playerZ }, { quality: currentQuality, address });
-      const next = new Set(descriptorList.map((row) => row.key));
-      descriptorList.forEach((descriptor) => { if (!chunks.has(descriptor.key)) createTerrainChunk(descriptor); });
-      chunks.forEach((mesh, key) => { if (!next.has(key)) { mesh.dispose(false, false); chunks.delete(key); } });
-      return descriptorList;
-    };
-    const rebuildPlayer = (speciesId, color) => {
-      playerRoot?.dispose(false, true);
-      playerSpeciesId = speciesId;
-      playerRoot = buildCreature(B, scene, SPECIES_CARTRIDGES[speciesId] || SPECIES_CARTRIDGES.triceratops, color, "player");
-      lastPlayerPosition = null;
-    };
-    const syncWildlife = (population) => {
-      const budget = QUALITY_PROFILES[currentQuality].wildlife;
-      const visible = (Array.isArray(population) ? population : []).filter((row) => row?.alive !== false).slice(0, budget);
-      const active = new Set();
-      visible.forEach((row, index) => {
-        const id = safeId(row.id, `wildlife-${index}`); active.add(id);
-        let proxy = wildlife.get(id);
-        if (!proxy) {
-          const speciesId = row.species?.id || row.speciesId || "triceratops";
-          proxy = buildCreature(B, scene, SPECIES_CARTRIDGES[speciesId] || { bodyScale: .45, locomotionRig: "quadruped" }, row.species?.color || "#8da477", id);
-          proxy.scaling.scaleInPlace(.42); wildlife.set(id, proxy);
-        }
-        proxy.position.x = clamp(row.x, 0, WORLD_CONFIG.logicalSizeMeters) - WORLD_CONFIG.logicalSizeMeters / 2;
-        proxy.position.z = clamp(row.y ?? row.z, 0, WORLD_CONFIG.logicalSizeMeters) - WORLD_CONFIG.logicalSizeMeters / 2;
-        proxy.position.y = terrainHeight(row.x, row.y ?? row.z, address.seed);
-        if (Math.abs(row.vx || 0) + Math.abs(row.vy || 0) > .02) proxy.rotation.y = -Math.atan2(row.vy || 0, row.vx || 0);
+    let removeExternalListeners = () => {};
+    let stopRuntimeLoop = () => {};
+    try {
+      created = await createEngine(B, canvas, options, capability);
+      engine = created.engine;
+      throwIfStartupCancelled();
+      let paused = options.paused === true;
+      let renderLoopRunning = false;
+      let renderFrame = null;
+      let currentQuality = QUALITY_PROFILES[options.quality] ? options.quality : (capability.mobile ? "light" : "balanced");
+      let adaptiveQuality = options.adaptiveQuality !== false;
+      const governor = createAdaptiveGovernor({ quality: currentQuality });
+      engine.setHardwareScalingLevel?.(Math.max(1, (global.devicePixelRatio || 1) / QUALITY_PROFILES[currentQuality].dpr));
+      scene = new B.Scene(engine);
+      scene.clearColor = new B.Color4(.018, .035, .052, 1);
+      scene.fogMode = B.Scene.FOGMODE_EXP2;
+      scene.fogDensity = QUALITY_PROFILES[currentQuality].fog ? .0017 : 0;
+      scene.fogColor = new B.Color3(.035, .09, .105);
+      camera = new B.ArcRotateCamera("eonwild-camera", -Math.PI / 2, 1.08, 27, new B.Vector3(0, 2, 0), scene);
+      camera.lowerRadiusLimit = 8; camera.upperRadiusLimit = 65; camera.lowerBetaLimit = .35; camera.upperBetaLimit = 1.48;
+      camera.wheelPrecision = 28; camera.pinchPrecision = 72; camera.attachControl(canvas, true);
+      const hemisphere = new B.HemisphericLight("eonwild-sky-light", new B.Vector3(0, 1, 0), scene);
+      hemisphere.intensity = .78; hemisphere.groundColor = new B.Color3(.08, .12, .09);
+      const sun = new B.DirectionalLight("eonwild-sun", new B.Vector3(-.46, -1, .38), scene);
+      sun.position = new B.Vector3(80, 140, -60); sun.intensity = 1.35;
+      let address = createWorldAddress(options.address || addressForSpecies(options.speciesId, options.seed));
+      let palette = paletteForAddress(address);
+      const materialCache = new Map();
+      const chunks = new Map();
+      const desiredChunks = new Map();
+      const chunkQueue = [];
+      const queuedChunks = new Set();
+      const wildlife = new Map();
+      let lastChunkKey = "";
+      let lastPlayerPosition = null;
+      let lastStreamPosition = { x: WORLD_CONFIG.logicalSizeMeters / 2, z: WORLD_CONFIG.logicalSizeMeters / 2 };
+      let lastPopulation = [];
+      let playerSpeciesId = options.speciesId || "triceratops";
+      let playerRoot = buildCreature(B, scene, SPECIES_CARTRIDGES[playerSpeciesId] || SPECIES_CARTRIDGES.triceratops, options.speciesColor || "#e4ba65", "player");
+      const waterMaterial = new B.PBRMaterial("eonwild-water-material", scene);
+      waterMaterial.albedoColor = B.Color3.FromHexString("#176681"); waterMaterial.alpha = .82; waterMaterial.metallic = .05; waterMaterial.roughness = .2;
+      const water = B.MeshBuilder.CreateGround("eonwild-water", { width: WORLD_CONFIG.logicalSizeMeters, height: WORLD_CONFIG.logicalSizeMeters, subdivisions: 2 }, scene);
+      water.position.y = -4; water.material = waterMaterial; water.isPickable = false;
+      const getTerrainMaterial = (lod) => {
+        const key = `${address.realmId}:${lod}`;
+        if (materialCache.has(key)) return materialCache.get(key);
+        const material = new B.PBRMaterial(`terrain-${key}`, scene);
+        material.albedoColor = B.Color3.FromHexString(palette[Math.min(palette.length - 1, lod)] || palette[0]);
+        material.roughness = .93; material.metallic = 0;
+        materialCache.set(key, material); return material;
+      };
+      const enrichDescriptor = (descriptor) => Object.freeze({
+        ...descriptor,
+        subdivisions: QUALITY_PROFILES[currentQuality].terrainSubdivisions[descriptor.lod] || 2
       });
-      wildlife.forEach((proxy, id) => { if (!active.has(id)) { proxy.dispose(false, true); wildlife.delete(id); } });
-    };
-    const sync = (snapshot = {}) => {
-      if (disposed) return false;
-      const player = snapshot.player || {};
-      const speciesId = String(snapshot.speciesId || playerSpeciesId);
-      if (speciesId !== playerSpeciesId) rebuildPlayer(speciesId, snapshot.speciesColor || "#e4ba65");
-      const nextAddress = createWorldAddress(snapshot.address || addressForSpecies(speciesId, address.seed));
-      if (nextAddress.timeSliceId !== address.timeSliceId || nextAddress.regionId !== address.regionId || nextAddress.seed !== address.seed) {
-        address = nextAddress; palette = paletteForAddress(address); chunks.forEach((mesh) => mesh.dispose(false, false)); chunks.clear(); materialCache.forEach((material) => material.dispose()); materialCache.clear(); lastChunkKey = "";
-      }
-      const x = clamp(player.x, 0, WORLD_CONFIG.logicalSizeMeters);
-      const z = clamp(player.y ?? player.z, 0, WORLD_CONFIG.logicalSizeMeters);
-      const localX = x - WORLD_CONFIG.logicalSizeMeters / 2;
-      const localZ = z - WORLD_CONFIG.logicalSizeMeters / 2;
-      const groundY = terrainHeight(x, z, address.seed);
-      const currentChunk = chunkKey(worldToChunk(x, z).x, worldToChunk(x, z).z, address);
-      if (currentChunk !== lastChunkKey) { streamChunks(x, z); lastChunkKey = currentChunk; }
-      playerRoot.position.set(localX, groundY, localZ);
-      const heading = Number(snapshot.heading || 0);
-      playerRoot.rotation.y = -heading;
-      const moving = lastPlayerPosition ? Math.hypot(lastPlayerPosition.x - localX, lastPlayerPosition.z - localZ) > .01 : false;
-      const fracture = clamp(player.injuries?.fracture, 0, 100) / 100;
-      const pulse = global.performance?.now ? global.performance.now() / 1000 : Date.now() / 1000;
-      playerRoot.position.y += moving ? Math.sin(pulse * (fracture > .25 ? 5 : 9)) * .08 * (1 - fracture * .6) : 0;
-      playerRoot.rotation.z = fracture * .08 * Math.sin(pulse * 3);
-      const material = playerRoot.metadata?.material;
-      if (material) material.emissiveColor = snapshot.senseActive ? B.Color3.FromHexString("#55e6ff").scale(.3 + Math.sin(pulse * 6) * .12) : B.Color3.Black();
-      camera.setTarget(new B.Vector3(localX, groundY + 1.5, localZ));
-      syncWildlife(snapshot.population);
-      const day = Number(snapshot.world?.day ?? 12);
-      const daylight = clamp(Math.sin((day - 6) / 24 * Math.PI * 2) * .6 + .48, .08, 1);
-      sun.intensity = .3 + daylight * 1.15; hemisphere.intensity = .22 + daylight * .62;
-      scene.fogDensity = QUALITY_PROFILES[currentQuality].fog ? (snapshot.world?.weather?.type === "mist" ? .0042 : .0017) : 0;
-      paused = snapshot.paused === true;
-      lastPlayerPosition = { x: localX, z: localZ };
-      return true;
-    };
-    let governorAt = global.performance?.now?.() || Date.now();
-    engine.runRenderLoop(() => {
-      if (disposed || paused || global.document?.hidden) return;
-      try {
-        scene.render();
-        const now = global.performance?.now?.() || Date.now();
-        if (now - governorAt > 2000) {
-          governorAt = now;
-          const sample = governor.sample(engine.getFps?.() || 0);
-          if (sample.changed) {
-            currentQuality = sample.quality;
-            engine.setHardwareScalingLevel?.(Math.max(1, (global.devicePixelRatio || 1) / sample.profile.dpr));
-            options.onQualityChange?.(sample);
+      const descriptorMatches = (mesh, descriptor) => Boolean(mesh?.metadata &&
+        mesh.metadata.key === descriptor.key && mesh.metadata.lod === descriptor.lod && mesh.metadata.subdivisions === descriptor.subdivisions);
+      const createTerrainChunk = (descriptor) => {
+        const subdivisions = descriptor.subdivisions;
+        const mesh = B.MeshBuilder.CreateGround(`chunk-${descriptor.key}`, { width: WORLD_CONFIG.chunkSizeMeters, height: WORLD_CONFIG.chunkSizeMeters, subdivisions, updatable: true }, scene);
+        const centerX = descriptor.x * WORLD_CONFIG.chunkSizeMeters + WORLD_CONFIG.chunkSizeMeters / 2;
+        const centerZ = descriptor.z * WORLD_CONFIG.chunkSizeMeters + WORLD_CONFIG.chunkSizeMeters / 2;
+        mesh.position.x = centerX - WORLD_CONFIG.logicalSizeMeters / 2;
+        mesh.position.z = centerZ - WORLD_CONFIG.logicalSizeMeters / 2;
+        const positions = mesh.getVerticesData(B.VertexBuffer.PositionKind);
+        const indices = mesh.getIndices();
+        if (positions && indices) {
+          for (let index = 0; index < positions.length; index += 3) {
+            const globalX = centerX + positions[index];
+            const globalZ = centerZ + positions[index + 2];
+            positions[index + 1] = terrainHeight(globalX, globalZ, address.seed);
           }
+          const normals = [];
+          B.VertexData.ComputeNormals(positions, indices, normals);
+          mesh.updateVerticesData(B.VertexBuffer.PositionKind, positions);
+          mesh.updateVerticesData(B.VertexBuffer.NormalKind, normals);
         }
-      } catch (error) { paused = true; options.onFailure?.(error); }
-    });
-    streamChunks(WORLD_CONFIG.logicalSizeMeters / 2, WORLD_CONFIG.logicalSizeMeters / 2);
-    const resize = () => { if (!disposed) engine.resize?.(); };
-    global.addEventListener?.("resize", resize);
-    return Object.freeze({
-      version: VERSION,
-      backend: created.backend,
-      capability,
-      sync,
-      resize,
-      setPaused(value) { paused = Boolean(value); return paused; },
-      setQuality(value) {
+        mesh.material = getTerrainMaterial(descriptor.lod); mesh.receiveShadows = true; mesh.isPickable = true;
+        mesh.metadata = descriptor;
+        return mesh;
+      };
+      const processChunkQueue = (requestedLimit) => {
+        const limit = Math.trunc(clamp(requestedLimit, 1, 4));
+        let built = 0;
+        while (built < limit && chunkQueue.length) {
+          const pending = chunkQueue.shift();
+          queuedChunks.delete(pending.key);
+          const wanted = desiredChunks.get(pending.key);
+          if (!wanted || wanted.lod !== pending.lod || wanted.subdivisions !== pending.subdivisions) continue;
+          const current = chunks.get(pending.key);
+          if (descriptorMatches(current, wanted)) continue;
+          const replacement = createTerrainChunk(wanted);
+          current?.dispose(false, false);
+          chunks.set(pending.key, replacement);
+          built += 1;
+        }
+        return built;
+      };
+      const streamChunks = (playerX, playerZ) => {
+        lastStreamPosition = { x: playerX, z: playerZ };
+        const descriptorList = planChunkStreaming({ x: playerX, z: playerZ }, { quality: currentQuality, address });
+        desiredChunks.clear();
+        descriptorList.forEach((descriptor) => {
+          const enriched = enrichDescriptor(descriptor);
+          desiredChunks.set(enriched.key, enriched);
+        });
+        chunks.forEach((mesh, key) => {
+          if (desiredChunks.has(key)) return;
+          mesh.dispose(false, false);
+          chunks.delete(key);
+        });
+        chunkQueue.length = 0;
+        queuedChunks.clear();
+        descriptorList.forEach((descriptor) => {
+          const wanted = desiredChunks.get(descriptor.key);
+          if (descriptorMatches(chunks.get(descriptor.key), wanted)) return;
+          if (chunkQueue.length >= WORLD_CONFIG.maximumResidentChunks) return;
+          chunkQueue.push(wanted);
+          queuedChunks.add(wanted.key);
+        });
+        return descriptorList;
+      };
+      let motionMode = options.reducedMotion === undefined ? "auto" : options.reducedMotion;
+      let mediaQuery = null;
+      try { mediaQuery = global.matchMedia?.("(prefers-reduced-motion: reduce)") || null; } catch {}
+      let reducedMotion = false;
+      const refreshReducedMotion = () => {
+        const explicitlyDisabled = motionMode === false;
+        const explicitlyEnabled = motionMode === true || motionMode === "static" || motionMode === "reduce";
+        const systemPreferred = Boolean(mediaQuery?.matches ?? capability.reducedMotion);
+        reducedMotion = !explicitlyDisabled && (explicitlyEnabled || currentQuality === "static" || systemPreferred);
+        if (reducedMotion && playerRoot) playerRoot.rotation.z = 0;
+        return reducedMotion;
+      };
+      refreshReducedMotion();
+      const rebuildPlayer = (speciesId, color) => {
+        playerRoot?.dispose(false, true);
+        playerSpeciesId = speciesId;
+        playerRoot = buildCreature(B, scene, SPECIES_CARTRIDGES[speciesId] || SPECIES_CARTRIDGES.triceratops, color, "player");
+        lastPlayerPosition = null;
+        refreshReducedMotion();
+      };
+      const syncWildlife = (population) => {
+        lastPopulation = Array.isArray(population) ? population : [];
+        const budget = QUALITY_PROFILES[currentQuality].wildlife;
+        const visible = lastPopulation.filter((row) => row?.alive !== false).slice(0, budget);
+        const active = new Set();
+        visible.forEach((row, index) => {
+          const id = safeId(row.id, `wildlife-${index}`); active.add(id);
+          let proxy = wildlife.get(id);
+          if (!proxy) {
+            const speciesId = row.species?.id || row.speciesId || "triceratops";
+            proxy = buildCreature(B, scene, SPECIES_CARTRIDGES[speciesId] || { bodyScale: .45, locomotionRig: "quadruped" }, row.species?.color || "#8da477", id);
+            proxy.scaling.scaleInPlace(.42); wildlife.set(id, proxy);
+          }
+          proxy.position.x = clamp(row.x, 0, WORLD_CONFIG.logicalSizeMeters) - WORLD_CONFIG.logicalSizeMeters / 2;
+          proxy.position.z = clamp(row.y ?? row.z, 0, WORLD_CONFIG.logicalSizeMeters) - WORLD_CONFIG.logicalSizeMeters / 2;
+          proxy.position.y = terrainHeight(row.x, row.y ?? row.z, address.seed);
+          if (Math.abs(row.vx || 0) + Math.abs(row.vy || 0) > .02) proxy.rotation.y = -Math.atan2(row.vy || 0, row.vx || 0);
+        });
+        wildlife.forEach((proxy, id) => { if (!active.has(id)) { proxy.dispose(false, true); wildlife.delete(id); } });
+      };
+      let governorAt = global.performance?.now?.() || Date.now();
+      const stopRenderLoop = () => {
+        if (!renderLoopRunning || !engine) return;
+        try { engine.stopRenderLoop?.(renderFrame); } catch {}
+        renderLoopRunning = false;
+      };
+      const startRenderLoop = () => {
+        if (disposed || paused || global.document?.hidden || renderLoopRunning || !renderFrame) return;
+        governorAt = global.performance?.now?.() || Date.now();
+        renderLoopRunning = true;
+        try { engine.runRenderLoop(renderFrame); }
+        catch (error) { renderLoopRunning = false; throw error; }
+      };
+      stopRuntimeLoop = stopRenderLoop;
+      const setPausedState = (value) => {
+        paused = Boolean(value);
+        if (paused) stopRenderLoop();
+        else startRenderLoop();
+        return paused;
+      };
+      const applyQuality = (value, governorDriven = false) => {
         if (!QUALITY_PROFILES[value]) return currentQuality;
-        currentQuality = value; governor.setQuality(value); engine.setHardwareScalingLevel?.(Math.max(1, (global.devicePixelRatio || 1) / QUALITY_PROFILES[value].dpr)); return currentQuality;
-      },
-      getStatus() { return Object.freeze({ backend: created.backend, quality: currentQuality, fps: Math.round(engine.getFps?.() || 0), chunks: chunks.size, wildlife: wildlife.size, address }); },
-      capture() { return new Promise((resolve, reject) => canvas.toBlob ? canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Unable to capture frame")), "image/png") : reject(new Error("Canvas capture is unsupported"))); },
-      dispose() {
+        const changed = value !== currentQuality;
+        currentQuality = value;
+        if (!governorDriven) governor.setQuality(value);
+        engine.setHardwareScalingLevel?.(Math.max(1, (global.devicePixelRatio || 1) / QUALITY_PROFILES[value].dpr));
+        refreshReducedMotion();
+        if (changed) streamChunks(lastStreamPosition.x, lastStreamPosition.z);
+        syncWildlife(lastPopulation);
+        return currentQuality;
+      };
+      const sync = (snapshot = {}) => {
         if (disposed) return false;
-        disposed = true; global.removeEventListener?.("resize", resize); engine.stopRenderLoop?.(); wildlife.forEach((node) => node.dispose(false, true)); chunks.forEach((mesh) => mesh.dispose(false, false)); materialCache.forEach((material) => material.dispose()); scene.dispose(); engine.dispose(); return true;
-      }
-    });
+        const player = snapshot.player || {};
+        const speciesId = String(snapshot.speciesId || playerSpeciesId);
+        if (speciesId !== playerSpeciesId) rebuildPlayer(speciesId, snapshot.speciesColor || "#e4ba65");
+        const nextAddress = createWorldAddress(snapshot.address || addressForSpecies(speciesId, address.seed));
+        const worldChanged = nextAddress.timeSliceId !== address.timeSliceId || nextAddress.regionId !== address.regionId || nextAddress.seed !== address.seed;
+        address = nextAddress;
+        if (worldChanged) {
+          palette = paletteForAddress(address);
+          chunks.forEach((mesh) => mesh.dispose(false, false));
+          chunks.clear();
+          desiredChunks.clear();
+          chunkQueue.length = 0;
+          queuedChunks.clear();
+          materialCache.forEach((material) => material.dispose());
+          materialCache.clear();
+          lastChunkKey = "";
+        }
+        const x = clamp(player.x, 0, WORLD_CONFIG.logicalSizeMeters);
+        const z = clamp(player.y ?? player.z, 0, WORLD_CONFIG.logicalSizeMeters);
+        lastStreamPosition = { x, z };
+        const localX = x - WORLD_CONFIG.logicalSizeMeters / 2;
+        const localZ = z - WORLD_CONFIG.logicalSizeMeters / 2;
+        const groundY = terrainHeight(x, z, address.seed);
+        const chunk = worldToChunk(x, z);
+        const currentChunk = chunkKey(chunk.x, chunk.z, address);
+        if (currentChunk !== lastChunkKey) { streamChunks(x, z); lastChunkKey = currentChunk; }
+        playerRoot.position.set(localX, groundY, localZ);
+        const heading = Number(snapshot.heading || 0);
+        playerRoot.rotation.y = -heading;
+        const moving = lastPlayerPosition ? Math.hypot(lastPlayerPosition.x - localX, lastPlayerPosition.z - localZ) > .01 : false;
+        const fracture = clamp(player.injuries?.fracture, 0, 100) / 100;
+        const pulse = reducedMotion ? 0 : (global.performance?.now ? global.performance.now() / 1000 : Date.now() / 1000);
+        if (!reducedMotion && moving) playerRoot.position.y += Math.sin(pulse * (fracture > .25 ? 5 : 9)) * .08 * (1 - fracture * .6);
+        playerRoot.rotation.z = reducedMotion ? 0 : fracture * .08 * Math.sin(pulse * 3);
+        const material = playerRoot.metadata?.material;
+        if (material) material.emissiveColor = snapshot.senseActive
+          ? B.Color3.FromHexString("#55e6ff").scale(reducedMotion ? .3 : .3 + Math.sin(pulse * 6) * .12)
+          : B.Color3.Black();
+        camera.setTarget(new B.Vector3(localX, groundY + 1.5, localZ));
+        syncWildlife(snapshot.population);
+        const day = Number(snapshot.world?.day ?? 12);
+        const daylight = clamp(Math.sin((day - 6) / 24 * Math.PI * 2) * .6 + .48, .08, 1);
+        sun.intensity = .3 + daylight * 1.15; hemisphere.intensity = .22 + daylight * .62;
+        scene.fogDensity = QUALITY_PROFILES[currentQuality].fog ? (snapshot.world?.weather?.type === "mist" ? .0042 : .0017) : 0;
+        setPausedState(snapshot.paused === true);
+        lastPlayerPosition = { x: localX, z: localZ };
+        return true;
+      };
+      renderFrame = () => {
+        if (disposed || paused || global.document?.hidden) { stopRenderLoop(); return; }
+        try {
+          const buildLimit = ["high", "cinematic"].includes(currentQuality) ? 2 : 1;
+          processChunkQueue(buildLimit);
+          scene.render();
+          const now = global.performance?.now?.() || Date.now();
+          if (adaptiveQuality && now - governorAt > 2000) {
+            governorAt = now;
+            const sample = governor.sample(engine.getFps?.() || 0);
+            if (sample.changed) {
+              applyQuality(sample.quality, true);
+              try { options.onQualityChange?.(sample); } catch {}
+            }
+          }
+        } catch (error) {
+          setPausedState(true);
+          try { options.onFailure?.(error); } catch {}
+        }
+      };
+      const initialChunk = worldToChunk(lastStreamPosition.x, lastStreamPosition.z);
+      streamChunks(lastStreamPosition.x, lastStreamPosition.z);
+      lastChunkKey = chunkKey(initialChunk.x, initialChunk.z, address);
+      processChunkQueue(1);
+      scene.render();
+      const resize = () => { if (!disposed) engine.resize?.(); };
+      const visibilityChange = () => {
+        if (global.document?.hidden) stopRenderLoop();
+        else if (!paused) startRenderLoop();
+      };
+      const motionChange = () => refreshReducedMotion();
+      removeExternalListeners = () => {
+        try { global.removeEventListener?.("resize", resize); } catch {}
+        try { global.document?.removeEventListener?.("visibilitychange", visibilityChange); } catch {}
+        try {
+          if (typeof mediaQuery?.removeEventListener === "function") mediaQuery.removeEventListener("change", motionChange);
+          else mediaQuery?.removeListener?.(motionChange);
+        } catch {}
+      };
+      global.addEventListener?.("resize", resize);
+      global.document?.addEventListener?.("visibilitychange", visibilityChange);
+      if (typeof mediaQuery?.addEventListener === "function") mediaQuery.addEventListener("change", motionChange);
+      else mediaQuery?.addListener?.(motionChange);
+      startRenderLoop();
+      return Object.freeze({
+        version: VERSION,
+        backend: created.backend,
+        capability,
+        sync,
+        resize,
+        setPaused: setPausedState,
+        setMotion(value) { motionMode = value === undefined ? "auto" : value; return refreshReducedMotion(); },
+        setReducedMotion(value) { motionMode = value === undefined ? "auto" : value; return refreshReducedMotion(); },
+        setAdaptiveQuality(value) {
+          adaptiveQuality = Boolean(value);
+          governor.setQuality(currentQuality);
+          governorAt = global.performance?.now?.() || Date.now();
+          return adaptiveQuality;
+        },
+        setQuality(value) { return applyQuality(value); },
+        getStatus() {
+          return Object.freeze({
+            backend: created.backend,
+            quality: currentQuality,
+            fps: Math.round(engine.getFps?.() || 0),
+            chunks: chunks.size,
+            queuedChunks: queuedChunks.size,
+            desiredChunks: desiredChunks.size,
+            wildlife: wildlife.size,
+            reducedMotion,
+            adaptiveQuality,
+            paused,
+            address
+          });
+        },
+        capture() { return new Promise((resolve, reject) => canvas.toBlob ? canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Unable to capture frame")), "image/png") : reject(new Error("Canvas capture is unsupported"))); },
+        dispose() {
+          if (disposed) return false;
+          disposed = true;
+          stopRenderLoop();
+          removeExternalListeners();
+          try { camera?.detachControl?.(); } catch {}
+          wildlife.forEach((node) => { try { node.dispose(false, true); } catch {} });
+          chunks.forEach((mesh) => { try { mesh.dispose(false, false); } catch {} });
+          materialCache.forEach((material) => disposeSafely(material));
+          disposeSafely(scene);
+          disposeSafely(engine);
+          return true;
+        }
+      });
+    } catch (error) {
+      disposed = true;
+      stopRuntimeLoop();
+      removeExternalListeners();
+      try { camera?.detachControl?.(); } catch {}
+      disposeSafely(scene);
+      disposeSafely(engine);
+      throw error;
+    }
   }
 
   return Object.freeze({

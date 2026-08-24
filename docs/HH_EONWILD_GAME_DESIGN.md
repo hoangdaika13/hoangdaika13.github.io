@@ -62,12 +62,12 @@ Content và simulation `2.0.0` vẫn là lõi sinh thái local-first. Game shell
 
 | Hạng mục | Đã có trong repository | Chưa được tuyên bố hoàn tất |
 |---|---|---|
-| Renderer | Babylon.js `9.22.1` được vendored và tải lazy cùng origin. Engine thử WebGPU trước, nếu khởi tạo thất bại thì tạo WebGL2/WebGL1; Canvas 2D Lite vẫn là đường lui cuối. | WebGPU không phải điều kiện gameplay và không được dùng để suy diễn thiết bị “mạnh”. Không có renderer độc quyền WebGPU. |
-| Vertical slice 3D | Bốn proxy procedural chuyên biệt: Tyrannosaurus, Triceratops, Spinosaurus và Pteranodon; terrain, nước, camera góc nhìn thứ ba, ngày/đêm, fog và weather hook đều dùng primitive do dự án tạo. | Chưa có animal GLB production, bộ texture/animation/audio/collision hoàn chỉnh hoặc chất lượng hình ảnh dùng để quảng bá final. |
+| Renderer | Babylon.js `9.22.1` được vendored và tải lazy cùng origin HTTP(S), có deadline tải/khởi tạo và nút hủy về Lite. Reusable adapter hỗ trợ WebGPU rồi dùng canvas sạch khi rơi về WebGL2/WebGL1; workspace công khai hiện mặc định WebGL2 ổn định sau QA driver; Canvas 2D Lite là đường lui cuối. | WebGPU không phải điều kiện gameplay và không được dùng để suy diễn thiết bị “mạnh”. Không có renderer độc quyền WebGPU. |
+| Vertical slice 3D | Bốn proxy procedural chuyên biệt: Tyrannosaurus, Triceratops, Spinosaurus và Pteranodon; terrain vertex-biome PBR, nước PBR, ACES tone mapping, shadow, camera góc nhìn thứ ba, ngày/đêm, fog và weather hook đều dùng tài nguyên do dự án tạo. | Chưa có animal GLB production, bộ texture/animation/audio/collision hoàn chỉnh hoặc chất lượng hình ảnh dùng để quảng bá final. |
 | Species Cartridge | Có đúng **25 cartridge metadata**: 4 `vertical-slice`, 9 `content-ready` và 12 `roadmap`. Cartridge lưu Time Slice, region, locomotion rig, giác quan, scale, signature, animation-state target và hit-zone target. | `content-ready` hoặc `roadmap` không đồng nghĩa có model, animation hay avatar chơi được. Chỉ bốn cartridge `vertical-slice` có proxy chuyên biệt ở foundation hiện tại. |
-| Streaming và chất lượng | World logic rộng 4.096 m; core, adapter và manifest cùng dùng chunk 256 m, giới hạn tối đa 96 resident chunk/tile, có LOD/skirt và queue dựng hữu hạn. Core có preset `static` → `cinematic`; adapter có governor p95 theo cửa sổ 2 giây và hysteresis. | Chunk ID production vẫn cần migration version trước khi physics/navigation và asset pipeline phụ thuộc lâu dài. Adaptive quality chỉ thay render proxy/DPR/LOD, không được xóa ecology entity. |
+| Streaming và chất lượng | World logic rộng 4.096 m; core, adapter và manifest cùng dùng chunk 256 m, giới hạn tối đa 96 resident chunk/tile, có LOD/skirt và queue dựng hữu hạn theo frame. Đổi quality tái hòa giải resident LOD; pause thực sự dừng render loop. Core có preset `static` → `cinematic`; adapter có governor p95 theo cửa sổ 2 giây và hysteresis. | Chunk ID production vẫn cần migration version trước khi physics/navigation và asset pipeline phụ thuộc lâu dài. Adaptive quality chỉ thay render proxy/DPR/LOD, không được xóa ecology entity. |
 | Save | Schema `hh.game.eonwild.v3` migrate v1/v2, normalize giới hạn, lưu world address/renderer/quality/game mode; export có checksum và import tạo rollback local trước khi thay save. | Chưa có IndexedDB cho replay lớn, cloud sync hoặc account persistence. |
-| Asset provenance | `assets/eonwild/asset-manifest.v1.json` khai báo policy no-human, license/scientific-source/hash/LOD/confidence bắt buộc; Babylon có Apache-2.0 license và third-party notices trong repository. | Manifest hiện có `assets: []` và `productionModelsReady: false`; vì vậy provenance pipeline đã có contract nhưng chưa có animal asset production nào được duyệt. |
+| Asset provenance | `assets/eonwild/asset-manifest.v1.json` khai báo policy no-human, license/scientific-source/hash/LOD/confidence bắt buộc; bốn creature contract có rig bespoke, bốn LOD và danh sách texture/animation bắt buộc. `npm run validate:eonwild-assets` kiểm tra đường dẫn, checksum, license và chặn production claim thiếu GLB. | Manifest hiện có `assets: []` và `productionModelsReady: false`; vì vậy provenance pipeline đã có contract nhưng chưa có animal asset production nào được duyệt. |
 | Physics, navigation, network | Proxy hiện di chuyển kinematic từ simulation snapshot; Multiplayer Readiness chỉ hiển thị capability/gate còn thiếu. | **Rapier, Recast, navmesh, authoritative multiplayer server, room/presence và reconciliation vẫn là roadmap**; không module nào được tuyên bố đã tích hợp. |
 
 ### Content v2
@@ -96,13 +96,13 @@ Content và simulation `2.0.0` vẫn là lõi sinh thái local-first. Game shell
 ### Game workspace v3
 
 - Chín route trực tiếp: Thế giới sống, Eon Codex, Lưới sinh thái, Eon Atlas, Thám hiểm, Dòng gene, Observer & Replay, Multiplayer Readiness và Cài đặt.
-- Renderer mặc định `auto`: chỉ tải Babylon `9.22.1` cùng origin khi bắt đầu hoặc bật 3D. Engine khởi tạo theo thứ tự WebGPU → WebGL2/WebGL1; lỗi khởi tạo quay về Canvas 2D Lite. Canvas Lite vẫn có seed, bốn realm, thời tiết, ngày/đêm, vùng di cư, tài nguyên, quần thể, minimap và adaptive quality. Fallback sau context/device loss ở runtime vẫn cần được harden thành một nhánh idempotent duy nhất trước khi gọi là production-resilient.
+- Renderer UI mặc định `auto`: chỉ tải Babylon `9.22.1` cùng origin khi bắt đầu hoặc bật 3D. Loader loại script lỗi trước khi retry; GPU probe/init có deadline. Workspace công khai khóa WebGL2 cho cả bốn proxy chuyên biệt và generic core sau khi QA phát hiện một số Chromium/D3D báo WebGPU sẵn sàng nhưng làm hỏng swap-buffer; reusable adapter vẫn giữ nhánh WebGPU → canvas sạch WebGL → Lite để thử nghiệm có kiểm soát. Người dùng có thể hủy tải 3D ngay; token startup và dispose adapter ngăn một kết quả đến muộn tự bật lại 3D.
 - 3D foundation stream terrain theo chunk/LOD và đồng bộ player cùng wildlife từ simulation hiện hữu; nó không tạo một ecology thứ hai. Bốn proxy Tyrannosaurus, Triceratops, Spinosaurus và Pteranodon có hình khối riêng; các cartridge còn lại chỉ có primitive/prototype chung hoặc metadata roadmap và được dán nhãn đúng mức hoàn thiện.
-- Mỗi world address gồm Realm → Time Slice → region → chunk → seed. Metadata và hàm validation Time Slice đã có; lọc toàn bộ population/proxy theo address vẫn đang được hoàn thiện, nên v3 foundation chưa tuyên bố isolation địa tầng end-to-end. Eon Convergence vẫn là opt-in hư cấu duy nhất cho phép trộn thời đại.
+- Mỗi world address gồm Realm → Time Slice → region → chunk → seed. Playable registry, population và proxy render đều lọc theo address; Eon Convergence vẫn là opt-in hư cấu duy nhất cho phép trộn thời đại.
 - Ecology Director tạo một simulation local giới hạn theo seed, stream chunk bằng tọa độ thế giới, chạy fixed-step và hiển thị snapshot Biomass Ledger/Utility AI thật thay cho phần trăm minh họa.
 - Vòng sinh tồn gồm máu, đói, khát, stamina, trưởng thành, nhiệt độ, oxy, dinh dưỡng, chất lượng khẩu phần, miễn dịch, chấn thương, ăn/uống, giác quan, phòng vệ, làm tổ và respawn.
 - Vòng đời mới tìm điểm spawn theo locomotion/habitat bằng seed: loài trên cạn không còn xuất hiện giữa đại dương, loài nước bắt đầu ở ocean/reef và save đã chết được dựng lại an toàn khi người chơi chủ động bắt đầu vòng đời mới.
-- Flagship có ability riêng trên phím R; communication wheel trên C; Photo Mode trên P; điều khiển còn lại dùng WASD/phím mũi tên, Shift, E, Q, F, N, touch D-pad và gamepad.
+- Flagship có ability riêng trên phím R; communication wheel trên C; Photo Mode trên P có FOV, phơi sáng và chụp render target; điều khiển còn lại dùng WASD/phím mũi tên, Shift, E, Q, F, N, touch D-pad và gamepad.
 - Lineage lưu tối đa 24 thế hệ, game replay tối đa 240 mẫu và event journal tối đa 40 mục; mọi trường được normalize trước khi render/lưu.
 - Save `hh.game.eonwild.v3` tự đọc và migrate v1/v2, thêm world address, renderer/quality và game mode. Export có checksum; import lưu một bản rollback trước khi thay đổi và vẫn chỉ nằm trên thiết bị.
 - Game loop tạm dừng khi tab ẩn. Unmount hủy RAF, observer timer, event listener, ResizeObserver, worker adapter, simulation và AudioContext.
@@ -220,7 +220,7 @@ Worker adapter
 - `hh-eonwild-content-v2.js` không cần DOM và xuất object đã freeze. Các hàm realm/gene/diet/injury/communication là pure, nên có thể dùng trong test, worker hoặc công cụ biên tập.
 - `hh-eonwild-simulation-v2.js` không mount giao diện và không gọi network. Seed, chunk, utility score và fixed-step có thể tái tạo độc lập.
 - `hh-eonwild-3d-core.js` chứa metadata Time Slice/Species Cartridge và runtime Babylon dùng chung; `hh-eonwild-renderer-3d.js` tăng độ sâu cho bốn proxy nhưng không thay simulation.
-- `assets/eonwild/asset-manifest.v1.json` là cổng provenance cho asset production. Trạng thái `assets: []` và `productionModelsReady: false` là chủ đích trung thực, không phải dữ liệu bị thiếu được phép bỏ qua.
+- `assets/eonwild/asset-manifest.v1.json` là cổng provenance cho asset production; `scripts/validate-eonwild-assets.js` là validator fail-closed và `docs/HH_EONWILD_ASSET_PIPELINE.md` mô tả Blender → GLB → Meshopt → KTX2 → manifest → QA. Trạng thái `assets: []` và `productionModelsReady: false` là chủ đích trung thực.
 - `hh-eonwild-game.js` là adapter trình duyệt: đọc content/simulation/renderer globals, chuẩn hóa save, gắn input, render và dọn tài nguyên khi unmount.
 - `performance-loader.js` bắt buộc tải content → simulation → 3D core → 3D adapter → game theo thứ tự. `sw.js` version hóa các module; runtime Babylon lớn chỉ được request/cache sau lần người chơi thực sự bật 3D.
 
@@ -241,7 +241,7 @@ Worker adapter
 - Worker adapter là worker assist với command allowlist, chưa chuyển toàn bộ simulation sang Worker/OffscreenCanvas.
 - Renderer 3D hiện chỉ dùng terrain/proxy procedural. Không có animal GLB/texture/animation production; không tích hợp Rapier, Recast hoặc navmesh. WebGPU là tùy chọn; WebGL và Canvas Lite vẫn là fallback.
 - 25 Species Cartridge chỉ là các mức metadata `vertical-slice`/`content-ready`/`roadmap`; chỉ bốn loài có proxy procedural chuyên biệt và không loài nào có manifest asset production đã duyệt.
-- World address/Time Slice đã có schema và validation, nhưng lọc population/proxy end-to-end theo address vẫn cần hoàn thiện trước khi tuyên bố cách ly địa tầng hoàn toàn.
+- World address/Time Slice đã có schema, validation và lọc population/proxy theo address; test browser vẫn phải được giữ cho từng Time Slice mới.
 - Observer dùng replay local, không quan sát máy chủ hoặc người chơi khác.
 - Network workspace chỉ là readiness gate; không có authoritative multiplayer backend, room, online presence, prediction/reconciliation hoặc server persistence.
 
@@ -269,7 +269,7 @@ Trạng thái provenance trong repository v3:
 
 - Manifest `hh-eonwild-asset-manifest` version 1 đặt `humanContentAllowed: false`, `unknownLicenseAllowed: false`, `externalRuntimeAssetsAllowed: false` và yêu cầu nguồn khoa học cùng mức tin cậy reconstruction.
 - Babylon.js `9.22.1` được vendored với Apache-2.0 license và third-party notices riêng; loader production mặc định dùng URL cùng origin.
-- Mỗi asset tương lai phải có ít nhất ID, source URL, tác giả, license, nguồn khoa học, era/Time Slice, scale thật, model version, LOD, texture budget, SHA-256, lịch sử chỉnh sửa và reconstruction confidence.
+- Mỗi asset tương lai phải có ít nhất ID, file path trong repository, source URL, tác giả, license, nguồn khoa học, era/Time Slice, scale thật, model version, LOD, texture budget, SHA-256, lịch sử chỉnh sửa và reconstruction confidence.
 - Mảng `assets` hiện rỗng và `productionModelsReady` là `false`. Bốn animal proxy procedural không được ghi thành GLB production hoặc dùng để chứng minh pipeline asset đã hoàn tất.
 
 | Nguồn | Vai trò trong datapack | Xử lý licence/attribution | Không được suy diễn |

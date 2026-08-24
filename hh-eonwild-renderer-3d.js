@@ -292,13 +292,14 @@
       let owned = false;
       let script = null;
       const scripts = documentRef.scripts ? Array.from(documentRef.scripts) : [];
-      script = scripts.find((candidate) => normalizeUrl(candidate.src, documentRef) === url) || null;
+      script = scripts.find((candidate) => normalizeUrl(candidate.src, documentRef) === url && candidate.dataset?.hweBabylonState !== "failed") || null;
       if (!script) {
         script = documentRef.createElement("script");
         owned = true;
         script.async = true;
         script.src = url;
         script.dataset.hweBabylonLoader = VERSION;
+        script.dataset.hweBabylonState = "loading";
         if (options.nonce) script.nonce = String(options.nonce);
         if (options.integrity && typeof options.integrity === "string") {
           script.integrity = options.integrity;
@@ -308,6 +309,14 @@
         }
         script.referrerPolicy = options.referrerPolicy || "no-referrer";
       }
+      const removeManagedScript = () => {
+        const managed = owned || Boolean(script?.dataset?.hweBabylonLoader);
+        if (managed && script && typeof script.remove === "function") script.remove();
+      };
+      const markScriptFailed = () => {
+        if (script?.dataset) script.dataset.hweBabylonState = "failed";
+        removeManagedScript();
+      };
 
       const cleanup = () => {
         runtime.clearTimeout(timer);
@@ -323,24 +332,27 @@
         callback(value);
       };
       const onLoad = () => {
-        if (isBabylonNamespace(runtime.BABYLON)) finish(resolve, runtime.BABYLON);
+        if (isBabylonNamespace(runtime.BABYLON)) {
+          if (script?.dataset) script.dataset.hweBabylonState = "ready";
+          finish(resolve, runtime.BABYLON);
+        }
         else {
           const error = new Error("The script loaded but did not expose a Babylon namespace.");
           error.code = "BABYLON_NAMESPACE_MISSING";
-          if (owned && script && typeof script.remove === "function") script.remove();
+          markScriptFailed();
           finish(reject, error);
         }
       };
       const onError = () => {
         const error = new Error(`Could not load Babylon.js from ${url}.`);
         error.code = "BABYLON_SCRIPT_ERROR";
-        if (owned && script && typeof script.remove === "function") script.remove();
+        markScriptFailed();
         finish(reject, error);
       };
       const timer = runtime.setTimeout(() => {
         const error = new Error(`Timed out loading Babylon.js after ${timeoutMs} ms.`);
         error.code = "BABYLON_LOAD_TIMEOUT";
-        if (owned && script && typeof script.remove === "function") script.remove();
+        markScriptFailed();
         finish(reject, error);
       }, timeoutMs);
 
@@ -399,17 +411,77 @@
     throw error;
   }
 
-  async function createBabylonEngine(B, canvas, capabilities, options) {
+  function withDeadline(task, timeoutMs, code, onLateSettle) {
+    const duration = clamp(timeoutMs, 500, 30000);
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      let timedOut = false;
+      const timer = (runtime.setTimeout || setTimeout)(() => {
+        if (settled) return;
+        settled = true;
+        timedOut = true;
+        const error = new Error(`3D initialization exceeded ${duration} ms.`);
+        error.code = code || "RENDER_INIT_TIMEOUT";
+        reject(error);
+      }, duration);
+      Promise.resolve(task).then((value) => {
+        if (settled) {
+          if (timedOut && typeof onLateSettle === "function") safeCall(onLateSettle);
+          return;
+        }
+        settled = true;
+        (runtime.clearTimeout || clearTimeout)(timer);
+        resolve(value);
+      }, (error) => {
+        if (settled) {
+          if (timedOut && typeof onLateSettle === "function") safeCall(onLateSettle);
+          return;
+        }
+        settled = true;
+        (runtime.clearTimeout || clearTimeout)(timer);
+        reject(error);
+      });
+    });
+  }
+
+  function replaceCanvasAfterWebGPUFailure(canvas, options) {
+    if (options.replaceCanvasOnFallback !== true || !canvas || typeof canvas.cloneNode !== "function") return null;
+    const replacement = canvas.cloneNode(false);
+    replacement.width = canvas.width;
+    replacement.height = canvas.height;
+    replacement.hidden = canvas.hidden;
+    if (canvas.parentNode && typeof canvas.parentNode.replaceChild === "function") canvas.parentNode.replaceChild(replacement, canvas);
+    safeCall(options.onCanvasReplaced, freezeRecord({ previous: canvas, canvas: replacement, reason: "webgpu-fallback" }));
+    return replacement;
+  }
+
+  function startupCancelled(options) {
+    try { return Boolean(options?.signal?.aborted || options?.isCancelled?.()); }
+    catch { return true; }
+  }
+
+  function startupCancelledError(attempts = []) {
+    const error = new Error("3D startup was cancelled.");
+    error.code = "RENDER_START_CANCELLED";
+    error.attempts = attempts;
+    return error;
+  }
+
+  async function createBabylonEngine(B, initialCanvas, capabilities, options) {
     const attempts = [];
+    let canvas = initialCanvas;
+    if (startupCancelled(options)) throw startupCancelledError(attempts);
     const requested = ["auto", "webgpu", "webgl"].includes(options.backend) ? options.backend : "auto";
     const mayTryWebGPU = requested !== "webgl" && Boolean(B.WebGPUEngine) && (capabilities.webgpu || options.forceWebGPUProbe === true);
     if (mayTryWebGPU) {
       let webgpuEngine = null;
+      let webgpuConstructionAttempted = false;
       try {
         if (typeof B.WebGPUEngine.IsSupportedAsync !== "undefined") {
           const supportProbe = B.WebGPUEngine.IsSupportedAsync;
-          const supported = typeof supportProbe === "function" ? await supportProbe.call(B.WebGPUEngine) : await supportProbe;
+          const supported = await withDeadline(typeof supportProbe === "function" ? supportProbe.call(B.WebGPUEngine) : supportProbe, options.webgpuProbeTimeoutMs || 4000, "WEBGPU_PROBE_TIMEOUT");
           if (!supported) throw Object.assign(new Error("Babylon reports that WebGPU is unavailable."), { code: "WEBGPU_UNSUPPORTED" });
+          if (startupCancelled(options)) throw startupCancelledError(attempts);
         }
         const webgpuOptions = {
           antialias: options.antialias !== false,
@@ -417,6 +489,7 @@
           powerPreference: options.powerPreference || "high-performance",
           ...(options.webgpuOptions && typeof options.webgpuOptions === "object" ? options.webgpuOptions : {})
         };
+        webgpuConstructionAttempted = true;
         webgpuEngine = new B.WebGPUEngine(canvas, webgpuOptions);
         if (typeof webgpuEngine.initAsync !== "function") throw new Error("This Babylon WebGPU engine has no async initializer.");
         const startupPreset = QUALITY_PRESETS[normalizePreset(options.qualityPreset || options.quality, "balanced")];
@@ -426,11 +499,13 @@
           // shared texture in Chromium's WebGPU implementation.
           webgpuEngine.setHardwareScalingLevel(clamp(1 / startupPreset.renderScale, 1, 2.25));
         }
-        await webgpuEngine.initAsync(options.webgpuDeviceDescriptor);
+        await withDeadline(webgpuEngine.initAsync(options.webgpuDeviceDescriptor), options.engineTimeoutMs || options.timeoutMs || 10000, "WEBGPU_INIT_TIMEOUT", () => safeDispose(webgpuEngine));
+        if (startupCancelled(options)) throw startupCancelledError(attempts);
         if (!webgpuEngine || typeof webgpuEngine.runRenderLoop !== "function") throw new Error("WebGPU returned an invalid engine.");
         attempts.push(freezeRecord({ backend: "webgpu", ok: true }));
-        return { engine: webgpuEngine, backend: "webgpu", attempts };
+        return { engine: webgpuEngine, backend: "webgpu", attempts, canvas };
       } catch (error) {
+        const canvasMayBeBound = webgpuConstructionAttempted;
         safeDispose(webgpuEngine);
         attempts.push(freezeRecord({ backend: "webgpu", ok: false, error: compactError(error) }));
         if (options.allowWebGLFallback === false) {
@@ -439,6 +514,17 @@
           failure.attempts = attempts;
           throw failure;
         }
+        if (canvasMayBeBound) {
+          const replacement = replaceCanvasAfterWebGPUFailure(canvas, options);
+          if (!replacement) {
+            const failure = new Error("WebGPU bound the canvas and a clean WebGL fallback canvas is unavailable.");
+            failure.code = "WEBGPU_CANVAS_REPLACEMENT_REQUIRED";
+            failure.attempts = attempts;
+            throw failure;
+          }
+          canvas = replacement;
+        }
+        if (startupCancelled(options)) throw startupCancelledError(attempts);
       }
     }
 
@@ -448,6 +534,8 @@
       error.attempts = attempts;
       throw error;
     }
+
+    if (startupCancelled(options)) throw startupCancelledError(attempts);
 
     let webglEngine = null;
     try {
@@ -462,7 +550,7 @@
       webglEngine = new B.Engine(canvas, options.antialias !== false, engineOptions, false);
       if (!webglEngine || typeof webglEngine.runRenderLoop !== "function") throw new Error("WebGL returned an invalid engine.");
       attempts.push(freezeRecord({ backend: webglEngine.webGLVersion >= 2 ? "webgl2" : "webgl1", ok: true }));
-      return { engine: webglEngine, backend: webglEngine.webGLVersion >= 2 ? "webgl2" : "webgl1", attempts };
+      return { engine: webglEngine, backend: webglEngine.webGLVersion >= 2 ? "webgl2" : "webgl1", attempts, canvas };
     } catch (error) {
       safeDispose(webglEngine);
       attempts.push(freezeRecord({ backend: "webgl", ok: false, error: compactError(error) }));
@@ -478,11 +566,20 @@
   }
 
   function createTerrainMaterial(B, scene) {
-    const material = new B.StandardMaterial("hwe3d-terrain-material", scene);
-    material.diffuseColor = new B.Color3(1, 1, 1);
-    material.ambientColor = new B.Color3(0.3, 0.34, 0.28);
-    material.specularColor = new B.Color3(0.025, 0.03, 0.025);
-    material.roughness = 1;
+    const material = typeof B.PBRMaterial === "function"
+      ? new B.PBRMaterial("hwe3d-terrain-pbr-material", scene)
+      : new B.StandardMaterial("hwe3d-terrain-material", scene);
+    if ("albedoColor" in material) {
+      material.albedoColor = new B.Color3(1, 1, 1);
+      material.metallic = 0;
+      material.roughness = 0.96;
+      material.environmentIntensity = 0.62;
+    } else {
+      material.diffuseColor = new B.Color3(1, 1, 1);
+      material.ambientColor = new B.Color3(0.3, 0.34, 0.28);
+      material.specularColor = new B.Color3(0.025, 0.03, 0.025);
+      material.roughness = 1;
+    }
     material.backFaceCulling = false;
     if (typeof material.freeze === "function") material.freeze();
     return material;
@@ -950,6 +1047,7 @@
       this._failureReason = null;
       this._attempts = [];
       this._emitStatus();
+      if (startupCancelled(options)) return this._fail(makeReason("RENDER_START_CANCELLED", "3D startup was cancelled.", "lifecycle", {}, true));
       this._startPromise = this._startInternal(options, generation).finally(() => { this._startPromise = null; });
       return this._startPromise;
     }
@@ -1019,6 +1117,7 @@
           safeDispose(created.engine);
           return makeResult(false, { status: this._state, reason: makeReason("START_CANCELLED", "3D startup was cancelled.", "lifecycle", {}, true) });
         }
+        if (created.canvas && created.canvas !== this._canvas) this._canvas = created.canvas;
         this._engine = created.engine;
         this._backend = created.backend;
         this._attempts = created.attempts.slice();
@@ -1055,6 +1154,7 @@
           status: this._state,
           backend: this._backend,
           qualityPreset: this._qualityPreset,
+          canvas: this._canvas,
           capabilities: this._runtimeCapabilities(),
           attempts: this._attempts.slice()
         });
@@ -1066,12 +1166,20 @@
         }
         const attempts = Array.isArray(error && error.attempts) ? error.attempts : this._attempts;
         const failureStage = this._scene ? "scene" : "engine";
+        const failedBackend = this._backend;
         if (this._canvas && this._canvasCommitted && this._manageCanvasVisibility) this._canvas.hidden = true;
         this._teardownGraphics();
+        // A WebGPU engine can initialize successfully and still fail while
+        // building or warming the first scene. Reset its bound canvas so the
+        // caller can make one clean WebGL retry before falling back to Lite.
+        if (failedBackend === "webgpu" && options.allowWebGLFallback !== false) {
+          const replacement = replaceCanvasAfterWebGPUFailure(this._canvas, options);
+          if (replacement) this._canvas = replacement;
+        }
         this._restoreCanvasPresentation();
         this._releaseOwnedCanvas();
         return this._fail(makeReason(error && error.code || "SCENE_START_FAILED", "The 3D scene could not initialize; 2D mode remains active.", failureStage, {
-          error: compactError(error), attempts: attempts.slice(0, 4)
+          error: compactError(error), attempts: attempts.slice(0, 4), failedBackend
         }, true));
       }
     }
@@ -1083,6 +1191,13 @@
       scene.clearColor = new B.Color4(0.08, 0.15, 0.17, 1);
       scene.skipPointerMovePicking = true;
       scene.autoClear = true;
+      const imageProcessing = scene.imageProcessingConfiguration;
+      if (imageProcessing) {
+        imageProcessing.contrast = 1.12;
+        imageProcessing.exposure = 1.02;
+        imageProcessing.toneMappingEnabled = true;
+        if (B.ImageProcessingConfiguration?.TONEMAPPING_ACES !== undefined) imageProcessing.toneMappingType = B.ImageProcessingConfiguration.TONEMAPPING_ACES;
+      }
 
       const ambient = new B.HemisphericLight("hwe3d-ambient", new B.Vector3(0, 1, 0), scene);
       ambient.intensity = 0.72;
@@ -1090,7 +1205,16 @@
       const sun = new B.DirectionalLight("hwe3d-sun", new B.Vector3(-0.45, -0.78, 0.35), scene);
       sun.intensity = 1.05;
       sun.position = new B.Vector3(180, 280, -120);
-      this._lights = { ambient, sun };
+      let shadow = null;
+      if (typeof B.ShadowGenerator === "function") {
+        const shadowSize = ["high", "ultra"].includes(this._qualityPreset) ? 1024 : 512;
+        shadow = new B.ShadowGenerator(shadowSize, sun);
+        shadow.useBlurExponentialShadowMap = true;
+        shadow.blurKernel = this._qualityPreset === "ultra" ? 24 : 12;
+        shadow.bias = 0.0008;
+        shadow.normalBias = 0.025;
+      }
+      this._lights = { ambient, sun, shadow };
 
       const target = new B.Vector3(this._player.x - WORLD_HALF, terrainHeightNumeric(this._player.x, this._player.z, hashSeed(options.seed)) + 3, this._player.z - WORLD_HALF);
       const camera = new B.ArcRotateCamera("hwe3d-third-person-camera", -Math.PI / 2.2, 1.08, 27, target, scene);
@@ -1107,10 +1231,21 @@
       scene.activeCamera = camera;
       this._camera = camera;
 
-      const waterMaterial = new B.StandardMaterial("hwe3d-water-material", scene);
-      waterMaterial.diffuseColor = new B.Color3(0.08, 0.35, 0.43);
-      waterMaterial.emissiveColor = new B.Color3(0.015, 0.07, 0.085);
-      waterMaterial.specularColor = new B.Color3(0.38, 0.55, 0.58);
+      const waterMaterial = typeof B.PBRMaterial === "function"
+        ? new B.PBRMaterial("hwe3d-water-pbr-material", scene)
+        : new B.StandardMaterial("hwe3d-water-material", scene);
+      if ("albedoColor" in waterMaterial) {
+        waterMaterial.albedoColor = new B.Color3(0.055, 0.3, 0.39);
+        waterMaterial.emissiveColor = new B.Color3(0.01, 0.045, 0.06);
+        waterMaterial.metallic = 0.03;
+        waterMaterial.roughness = 0.16;
+        waterMaterial.environmentIntensity = 0.92;
+        waterMaterial.indexOfRefraction = 1.333;
+      } else {
+        waterMaterial.diffuseColor = new B.Color3(0.08, 0.35, 0.43);
+        waterMaterial.emissiveColor = new B.Color3(0.015, 0.07, 0.085);
+        waterMaterial.specularColor = new B.Color3(0.38, 0.55, 0.58);
+      }
       waterMaterial.alpha = 0.68;
       waterMaterial.backFaceCulling = false;
       const water = B.MeshBuilder.CreateGround("hwe3d-water", { width: WORLD_SIZE, height: WORLD_SIZE, subdivisions: 1 }, scene);
@@ -1137,6 +1272,7 @@
         proxy.root.position = new B.Vector3(worldX - WORLD_HALF, proxy.baseY, worldZ - WORLD_HALF);
         proxy.root.rotation.y = index * 1.45;
         if (typeof proxy.root.setEnabled === "function") proxy.root.setEnabled(species.id === this._playerSpeciesId);
+        if (shadow && typeof shadow.addShadowCaster === "function") proxy.parts.forEach((part) => shadow.addShadowCaster(part, true));
         this._proxies.set(species.id, proxy);
       });
       this._applyPlayerPosition();
@@ -1370,6 +1506,15 @@
 
     getEnvironment() {
       return freezeRecord({ hour: this._environment.hour, weather: this._environment.weather, fog: this._environment.fog ? freezeRecord({ ...this._environment.fog }) : null, dayCycleMinutes: this._environment.dayCycleMinutes });
+    }
+
+    setPhotoSettings(value = {}) {
+      if (!value || typeof value !== "object" || !this._camera || !this._scene) return makeResult(false, { reason: makeReason("PHOTO_SETTINGS_UNAVAILABLE", "Photo controls require a running 3D scene.", "photo", {}, true) });
+      const fovDegrees = clamp(value.fovDegrees === undefined ? this._camera.fov * 180 / Math.PI : value.fovDegrees, 35, 100);
+      const exposure = clamp(value.exposure === undefined ? this._scene.imageProcessingConfiguration?.exposure || 1 : value.exposure, 0.5, 1.6);
+      this._camera.fov = fovDegrees * Math.PI / 180;
+      if (this._scene.imageProcessingConfiguration) this._scene.imageProcessingConfiguration.exposure = exposure;
+      return makeResult(true, { fovDegrees, exposure });
     }
 
     _applyEnvironment(announce = true) {

@@ -246,10 +246,13 @@
         renderer: ["auto", "3d", "lite"].includes(settings.renderer) ? settings.renderer : "auto",
         quality: ["static", "light", "balanced", "high", "cinematic"].includes(settings.quality) ? settings.quality : "balanced",
         sound: settings.sound === true,
+        soundVolume: clamp(settings.soundVolume ?? 70, 0, 100),
         convergence,
         worker: settings.worker !== false,
         adaptiveQuality: settings.adaptiveQuality !== false,
         photoUi: settings.photoUi !== false,
+        photoFov: clamp(settings.photoFov ?? 62, 35, 100),
+        photoExposure: clamp(settings.photoExposure ?? 100, 50, 160),
         seed
       },
       discoveries: Array.isArray(source.discoveries) ? [...new Set(source.discoveries.filter((id) => SPECIES_BY_ID.has(id)))].slice(0, 500) : [],
@@ -409,7 +412,7 @@
       <section class="hwe-viewport" data-hwe-viewport aria-label="Thế giới EonWild đang chơi">
         <canvas class="hwe-render-surface hwe-render-surface--lite" data-hwe-canvas tabindex="0" aria-label="Bản đồ sinh tồn Lite. Dùng WASD hoặc phím mũi tên để di chuyển."></canvas>
         <canvas class="hwe-render-surface hwe-render-surface--3d" data-hwe-canvas-3d tabindex="0" aria-label="Thế giới sinh tồn 3D. Kéo để xoay camera, cuộn để zoom, dùng WASD để di chuyển." hidden></canvas>
-        <div class="hwe-render-loading" data-hwe-render-loading hidden role="status" aria-live="polite"><span><i></i><b>3D</b></span><strong>Đang khởi tạo EonWild 3D…</strong><small data-hwe-render-loading-copy>Đang kiểm tra WebGPU và WebGL2</small></div>
+        <div class="hwe-render-loading" data-hwe-render-loading hidden role="status" aria-live="polite"><span><i></i><b>3D</b></span><strong>Đang khởi tạo EonWild 3D…</strong><small data-hwe-render-loading-copy>Đang kiểm tra WebGPU và WebGL2</small><button type="button" data-hwe-render-cancel>Dùng Canvas Lite ngay</button></div>
         <div class="hwe-atmosphere" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
         <div class="hwe-hud hwe-hud--top"><span><small>Realm</small><strong data-hwe-realm-label>${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</strong></span><span><small>Biome</small><strong data-hwe-biome>Đang dựng thế giới</strong></span><span><small>Thời gian</small><strong data-hwe-time>--:--</strong></span><span><small>Sự kiện</small><strong data-hwe-weather>Ổn định</strong></span><button type="button" class="hwe-render-toggle" data-hwe-renderer="3d" aria-pressed="false"><i></i><span data-hwe-render-label>3D</span></button><button type="button" data-hwe-photo aria-label="Photo Mode">◉</button><button type="button" data-hwe-fullscreen aria-label="Toàn màn hình">⛶</button></div>
         <div class="hwe-minimap"><canvas data-hwe-minimap width="180" height="180" aria-label="Bản đồ thu nhỏ"></canvas><span>MIGRATION</span></div>
@@ -419,7 +422,7 @@
         <div class="hwe-communication-wheel" data-hwe-communication-wheel hidden role="dialog" aria-modal="false" aria-label="Animal Communication Wheel"><header><span><small>ANIMAL COMMUNICATION</small><strong>Không chat toàn cục</strong></span><button type="button" data-hwe-communication-close aria-label="Đóng vòng giao tiếp">×</button></header><div>${COMMUNICATION_CALLS.map((call, index) => { const allowed = !flagship || typeof CONTENT?.isCommunicationCallAllowed !== "function" || CONTENT.isCommunicationCallAllowed(selected.id, call.id); return `<button type="button" data-hwe-call="${escapeHtml(call.id)}" style="--i:${index}" ${allowed ? "" : "disabled"} title="${escapeHtml(call.intent || call.label)}"><i>${escapeHtml(call.icon || (["alarm","distress"].includes(call.id) ? "!" : "◉"))}</i><span>${escapeHtml(call.label)}</span></button>`; }).join("")}</div></div>
         <div class="hwe-start-panel" data-hwe-start-panel><small>ERA REALM · 3D FOUNDATION · KHÔNG CÓ CON NGƯỜI</small><h2>Trở thành ${escapeHtml(selected.vietnamese)}</h2><p>${state.settings.convergence ? "Eon Convergence đang bật: đây là sandbox hư cấu có trộn thời đại." : `Realm ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)} dùng Time Slice để không trộn niên đại ngoài ý muốn.`} Tìm nước, cân bằng khẩu phần, tránh thương tích và tiếp nối dòng gene.</p><div class="hwe-render-choice" role="group" aria-label="Chọn renderer"><button type="button" data-hwe-renderer="3d" class="${state.settings.renderer !== "lite" ? "is-active" : ""}" aria-pressed="${state.settings.renderer !== "lite"}"><b>3D</b><span>Babylon · WebGPU/WebGL</span></button><button type="button" data-hwe-renderer="lite" class="${state.settings.renderer === "lite" ? "is-active" : ""}" aria-pressed="${state.settings.renderer === "lite"}"><b>Lite</b><span>Canvas 2D tiết kiệm pin</span></button></div><p class="hwe-prototype-notice"><b>Vertical Slice:</b> mô hình 3D hiện dùng hình khối nguyên bản để kiểm thử gameplay, không giả là asset động vật hoàn thiện.</p><div><button type="button" data-hwe-difficulty="sanctuary" class="${state.settings.difficulty === "sanctuary" ? "is-active" : ""}">Sanctuary</button><button type="button" data-hwe-difficulty="balanced" class="${state.settings.difficulty === "balanced" ? "is-active" : ""}">Cân bằng</button><button type="button" data-hwe-difficulty="wild" class="${state.settings.difficulty === "wild" ? "is-active" : ""}">Wild</button></div><button type="button" class="is-primary" data-hwe-start>▶ Bắt đầu vòng đời</button></div>
         <div class="hwe-death-panel" data-hwe-death hidden><small>VÒNG TUẦN HOÀN TIẾP DIỄN</small><h2>Dòng sống đã kết thúc</h2><p>Chất dinh dưỡng trở lại hệ sinh thái. Dữ liệu Codex và dòng gene vẫn được giữ.</p><button type="button" data-hwe-respawn>Nở lại</button></div>
-        <div class="hwe-photo-overlay" data-hwe-photo-overlay hidden><span>${escapeHtml(selected.vietnamese)} · ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</span><button type="button" data-hwe-photo-capture>Chụp PNG</button><button type="button" data-hwe-photo-close>Thoát Photo Mode</button></div>
+        <div class="hwe-photo-overlay" data-hwe-photo-overlay hidden><span>${escapeHtml(selected.vietnamese)} · ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</span><div class="hwe-photo-controls"><label>FOV <output>${Math.round(state.settings.photoFov)}°</output><input type="range" min="35" max="100" step="1" value="${Math.round(state.settings.photoFov)}" data-hwe-photo-setting="photoFov"></label><label>Phơi sáng <output>${Math.round(state.settings.photoExposure)}%</output><input type="range" min="50" max="160" step="1" value="${Math.round(state.settings.photoExposure)}" data-hwe-photo-setting="photoExposure"></label></div><button type="button" data-hwe-photo-capture>Chụp PNG</button><button type="button" data-hwe-photo-close>Thoát Photo Mode</button></div>
         <div class="hwe-touch-controls" aria-label="Điều khiển cảm ứng"><button type="button" data-hwe-touch="ArrowUp">▲</button><button type="button" data-hwe-touch="ArrowLeft">◀</button><button type="button" data-hwe-touch="ArrowDown">▼</button><button type="button" data-hwe-touch="ArrowRight">▶</button><button type="button" data-hwe-action="interact">E</button><button type="button" data-hwe-action="sense">Q</button><button type="button" data-hwe-action="ability">R</button><button type="button" data-hwe-communication-open>C</button></div>
       </section>
       <aside class="hwe-telemetry"><header><span class="hwe-avatar" style="--species:${selected.color}">◆</span><span><small>${escapeHtml(selected.name)}</small><strong>${escapeHtml(selected.vietnamese)}</strong></span><button type="button" data-hwe-pause aria-pressed="false">Ⅱ</button></header>
@@ -448,7 +451,7 @@
 
   function codexMarkup(state) {
     const selected = SPECIES_BY_ID.get(state.speciesId);
-    return `<section class="hwe-library"><header class="hwe-view-hero"><div><small>EON CODEX · 3 TẦNG TAXONOMY</small><h2>Bách khoa sự sống xuyên thời đại</h2><p>${SPECIES.length} loài đại diện được tách rõ Playable Flagship, Simulated Wildlife và Codex-only. Có dữ liệu không đồng nghĩa đã chơi được ở chất lượng hoàn chỉnh.</p></div><div class="hwe-stat-orbit"><b>${SPECIES.length}</b><span>mục đã kiểm thử</span></div></header><div class="hwe-catalog-tiers">${[["flagship","12","Playable Flagship","Cơ chế và ability riêng"],["simulated",String(SPECIES.filter((species)=>tierForSpecies(species)==="simulated").length),"Simulated Wildlife","Tham gia lưới sinh thái"],["codex",String(SPECIES.filter((species)=>tierForSpecies(species)==="codex").length),"Eon Codex","Tra cứu, chưa tự nhận là playable"]].map(([id,count,title,copy]) => `<button type="button" data-hwe-tier-filter="${id}" aria-pressed="false"><b>${count}</b><span><strong>${title}</strong><small>${copy}</small></span></button>`).join("")}</div><div class="hwe-filterbar"><label><span>⌕</span><input type="search" data-hwe-species-search placeholder="Tên Việt, Latin hoặc kỷ địa chất…"></label>${Object.values(REALMS).map((realm) => `<button type="button" data-hwe-realm-filter="${realm.id}" aria-pressed="false" style="--era:${realm.color}">${escapeHtml(realm.label)}</button>`).join("")}<button type="button" data-hwe-realm-filter="all" aria-pressed="true">Tất cả</button></div><div class="hwe-codex-layout"><div class="hwe-codex-grid">${speciesCardsMarkup(state)}</div><aside class="hwe-codex-detail" data-hwe-codex-detail>${codexDetailMarkup(selected, state)}</aside></div></section>`;
+    return `<section class="hwe-library"><header class="hwe-view-hero"><div><small>EON CODEX · 3 TẦNG TAXONOMY</small><h2>Bách khoa sự sống xuyên thời đại</h2><p>${SPECIES.length} loài đại diện được tách rõ Playable Flagship, Simulated Wildlife và Codex-only. Có dữ liệu không đồng nghĩa đã chơi được ở chất lượng hoàn chỉnh.</p></div><div class="hwe-stat-orbit"><b>${SPECIES.length}</b><span>mục đã kiểm thử</span></div></header><div class="hwe-catalog-tiers">${[["flagship",String(SPECIES.filter((species)=>tierForSpecies(species)==="flagship").length),"Playable Flagship","Cơ chế và ability riêng"],["simulated",String(SPECIES.filter((species)=>tierForSpecies(species)==="simulated").length),"Simulated Wildlife","Tham gia lưới sinh thái"],["codex",String(SPECIES.filter((species)=>tierForSpecies(species)==="codex").length),"Eon Codex","Tra cứu, chưa tự nhận là playable"]].map(([id,count,title,copy]) => `<button type="button" data-hwe-tier-filter="${id}" aria-pressed="false"><b>${count}</b><span><strong>${title}</strong><small>${copy}</small></span></button>`).join("")}</div><div class="hwe-filterbar"><label><span>⌕</span><input type="search" data-hwe-species-search placeholder="Tên Việt, Latin hoặc kỷ địa chất…"></label>${Object.values(REALMS).map((realm) => `<button type="button" data-hwe-realm-filter="${realm.id}" aria-pressed="false" style="--era:${realm.color}">${escapeHtml(realm.label)}</button>`).join("")}<button type="button" data-hwe-realm-filter="all" aria-pressed="true">Tất cả</button></div><div class="hwe-codex-layout"><div class="hwe-codex-grid">${speciesCardsMarkup(state)}</div><aside class="hwe-codex-detail" data-hwe-codex-detail>${codexDetailMarkup(selected, state)}</aside></div></section>`;
   }
 
   function ecosystemMarkup(state) {
@@ -495,7 +498,7 @@
       <article><small>3D RENDERER</small><h3>${capabilities.recommendedBackend === "lite" ? "Lite Mode được khuyến nghị" : `${escapeHtml(capabilities.recommendedBackend.toUpperCase())} sẵn sàng`}</h3><label>Renderer<select data-hwe-setting="renderer"><option value="auto" ${state.settings.renderer === "auto" ? "selected":""}>Tự chọn 3D → Lite</option><option value="3d" ${state.settings.renderer === "3d" ? "selected":""}>Ưu tiên Babylon 3D</option><option value="lite" ${state.settings.renderer === "lite" ? "selected":""}>Canvas 2D Lite</option></select></label><label>Chất lượng<select data-hwe-setting="quality">${Object.values(RENDERER_3D?.QUALITY_PROFILES || {}).map((profile)=>`<option value="${profile.id}" ${state.settings.quality===profile.id?"selected":""}>${escapeHtml(profile.label)} · ${profile.targetFps} FPS mục tiêu</option>`).join("")}</select></label><p>WebGPU ${capabilities.webgpu?"✓":"—"} · WebGL2 ${capabilities.webgl2?"✓":"—"}. Không báo 3D sẵn sàng nếu engine chưa khởi tạo.</p></article>
       <article><small>HIỆU NĂNG</small><h3>Motion và wildlife budget</h3><label>Chuyển động<select data-hwe-setting="motion"><option value="static" ${state.settings.motion === "static" ? "selected":""}>Tĩnh</option><option value="balanced" ${state.settings.motion === "balanced" ? "selected":""}>Cân bằng</option><option value="cinematic" ${state.settings.motion === "cinematic" ? "selected":""}>Điện ảnh</option></select></label><label>Mật độ wildlife<select data-hwe-setting="density"><option value="low" ${state.settings.density === "low" ? "selected":""}>Thấp</option><option value="balanced" ${state.settings.density === "balanced" ? "selected":""}>Cân bằng</option><option value="high" ${state.settings.density === "high" ? "selected":""}>Cao</option></select></label><label><input type="checkbox" data-hwe-setting="adaptiveQuality" ${state.settings.adaptiveQuality ? "checked":""}> Tự hạ LOD, DPR và proxy hiển thị khi frame time tăng</label></article>
       <article><small>SIMULATION</small><h3>Worker có fallback</h3><label><input type="checkbox" data-hwe-setting="worker" ${state.settings.worker ? "checked":""}> Dùng worker cho tác vụ tương thích</label><p>AI fixed-step vẫn giữ toàn bộ quần thể khi renderer hạ LOD. Far ring chỉ đổi cách biểu diễn, không xóa ecology.</p></article>
-      <article><small>ÂM THANH · TRỢ NĂNG</small><h3>Tín hiệu rõ ràng</h3><label><input type="checkbox" data-hwe-setting="sound" ${state.settings.sound ? "checked":""}> Âm thanh tổng hợp sau tương tác</label><label><input type="checkbox" data-hwe-setting="photoUi" ${state.settings.photoUi ? "checked":""}> Hiện nhãn trong Photo Mode</label><p>Bàn phím, touch, gamepad, focus rõ và prefers-reduced-motion được giữ ở cả 3D lẫn Lite.</p></article>
+      <article><small>ÂM THANH · TRỢ NĂNG</small><h3>Tín hiệu rõ ràng</h3><label><input type="checkbox" data-hwe-setting="sound" ${state.settings.sound ? "checked":""}> Âm thanh tổng hợp sau tương tác</label><label>Âm lượng tín hiệu <output>${Math.round(state.settings.soundVolume)}%</output><input type="range" min="0" max="100" step="1" data-hwe-setting="soundVolume" value="${Math.round(state.settings.soundVolume)}"></label><label><input type="checkbox" data-hwe-setting="photoUi" ${state.settings.photoUi ? "checked":""}> Hiện nhãn trong Photo Mode</label><p>Bàn phím, touch, gamepad, focus rõ và prefers-reduced-motion được giữ ở cả 3D lẫn Lite. Ambience và creature audio production vẫn bị khóa cho tới khi có asset hợp pháp.</p></article>
       <article><small>WORLD SEED</small><h3>Địa chỉ tái tạo được</h3><label>Seed<input type="text" maxlength="24" data-hwe-setting="seed" value="${escapeHtml(state.settings.seed)}"></label><p>${escapeHtml(state.worldAddress?.realmId || state.realmId)} › ${escapeHtml(state.worldAddress?.timeSliceId || "realm")} › ${escapeHtml(state.worldAddress?.regionId || "region")} › chunk ${state.worldAddress?.chunkX || 0}:${state.worldAddress?.chunkZ || 0}</p></article>
       <article><small>DỮ LIỆU CỤC BỘ</small><h3>Schema ${SCHEMA_VERSION}</h3><p>${state.replay.length}/240 replay · ${state.heatmap.length}/256 heatmap · ${state.lineage.length}/24 thế hệ · ${state.eventJournal.length}/40 sự kiện.</p><div class="hwe-data-actions"><button type="button" data-hwe-save-export>Xuất save JSON</button><button type="button" data-hwe-save-import>Nhập save…</button><button type="button" data-hwe-save-rollback>Khôi phục bản trước</button><button type="button" data-hwe-lineage-export>Xuất lineage</button></div><input type="file" accept="application/json,.json" data-hwe-save-file hidden></article>
     </div></section>`;
@@ -530,6 +533,8 @@
 
   function playCue(instance, type = "signal") {
     if (!instance?.state?.settings?.sound) return false;
+    const volume = clamp(instance.state.settings.soundVolume, 0, 100) / 100;
+    if (volume <= 0) return false;
     const AudioEngine = global.AudioContext || global.webkitAudioContext;
     if (typeof AudioEngine !== "function") return false;
     try {
@@ -545,7 +550,7 @@
       oscillator.frequency.setValueAtTime(type === "complete" ? Math.max(220, base) : base, now);
       oscillator.frequency.exponentialRampToValueAtTime(type === "complete" ? Math.max(440, base * 1.45) : Math.max(55, base * 1.35), now + .16);
       gain.gain.setValueAtTime(.0001, now);
-      gain.gain.exponentialRampToValueAtTime(.045, now + .02);
+      gain.gain.exponentialRampToValueAtTime(Math.max(.0001, .045 * volume), now + .02);
       gain.gain.exponentialRampToValueAtTime(.0001, now + .2);
       oscillator.connect(gain); gain.connect(context.destination); oscillator.start(now); oscillator.stop(now + .22);
       return true;
@@ -1374,7 +1379,14 @@
     const loading = instance.root?.querySelector?.("[data-hwe-render-loading]");
     const loadingText = instance.root?.querySelector?.("[data-hwe-render-loading-copy]");
     if (status) status.textContent = String(label || "Canvas 2D Lite").slice(0, 64);
-    if (toggleLabel) toggleLabel.textContent = instance.renderer3d ? "Lite" : "3D";
+    if (toggleLabel) toggleLabel.textContent = "3D";
+    const quickToggle = instance.root?.querySelector?.(".hwe-render-toggle");
+    if (quickToggle) {
+      const loading3D = Boolean(loadingCopy);
+      quickToggle.setAttribute("aria-label", loading3D ? "Hủy tải 3D" : "Chế độ 3D");
+      quickToggle.setAttribute("aria-busy", String(loading3D));
+      quickToggle.title = loading3D ? "Hủy tải 3D và giữ Canvas Lite" : instance.renderer3d ? "Tắt 3D và chuyển sang Canvas Lite" : "Bật Babylon 3D";
+    }
     if (loadingText && loadingCopy) loadingText.textContent = String(loadingCopy).slice(0, 96);
     if (loading) loading.hidden = !loadingCopy;
     instance.root?.classList?.toggle?.("is-render-loading", Boolean(loadingCopy));
@@ -1405,8 +1417,12 @@
     return instance.state.worldAddress;
   }
 
-  const reduced3DPreference = (instance) => instance.state.settings.motion === "static" ||
-    Boolean(global.document?.documentElement?.classList?.contains?.("app-reduce-motion") || global.document?.body?.classList?.contains?.("app-reduce-motion"));
+  const reduced3DPreference = (instance) => {
+    let operatingSystemPrefersReducedMotion = false;
+    try { operatingSystemPrefersReducedMotion = Boolean(global.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches); } catch {}
+    return instance.state.settings.motion === "static" || operatingSystemPrefersReducedMotion ||
+      Boolean(global.document?.documentElement?.classList?.contains?.("app-reduce-motion") || global.document?.body?.classList?.contains?.("app-reduce-motion"));
+  };
 
   function syncRendererControls(instance, mode) {
     const is3D = mode === "3d";
@@ -1417,18 +1433,18 @@
     });
   }
 
-  function scheduleLiteFallback(instance, message) {
-    if (!instance || instance.destroyed || instance.liteFallbackPending) return;
+  function scheduleLiteFallback(instance, message, bootToken) {
+    if (!instance || instance.destroyed || instance.liteFallbackPending || (bootToken != null && bootToken !== instance.rendererBootToken)) return;
     instance.liteFallbackPending = true;
     (global.setTimeout || setTimeout)(() => {
       instance.liteFallbackPending = false;
-      if (instance.destroyed) return;
+      if (instance.destroyed || (bootToken != null && bootToken !== instance.rendererBootToken)) return;
       disable3D(instance, true);
       setToast(instance, message || "Renderer 3D đã dừng an toàn; Canvas 2D Lite đang hoạt động");
     }, 0);
   }
 
-  async function createRendererRuntime(instance, species) {
+  async function createRendererRuntime(instance, species, bootToken) {
     const qualityToAdapter = { static: "low", light: "low", balanced: "balanced", high: "high", cinematic: "ultra" };
     const renderSeed = `${instance.state.settings.seed}:${instance.state.worldAddress?.timeSliceId || instance.state.realmId}:${instance.state.worldAddress?.regionId || "region"}`;
     if (RENDERER_ADAPTER?.FLAGSHIP_IDS?.includes?.(species.id) && typeof RENDERER_ADAPTER.createRenderer === "function") {
@@ -1440,15 +1456,49 @@
         playerX: instance.state.player.x,
         playerZ: instance.state.player.y,
         seed: renderSeed,
+        // Babylon WebGPU remains available in the reusable adapter, but the
+        // public vertical slice defaults to stable WebGL2. Some Chromium/D3D
+        // drivers report WebGPU support and then invalidate the first shared
+        // swap-buffer, causing a black frame or severe throttling.
+        backend: "webgl",
         qualityPreset: qualityToAdapter[instance.state.settings.quality] || "balanced",
         adaptiveQuality: instance.state.settings.adaptiveQuality,
         reducedMotion: reduced3DPreference(instance) ? true : "auto",
+        isCancelled: () => instance.destroyed || bootToken !== instance.rendererBootToken,
         allowRemoteBabylon: false,
+        replaceCanvasOnFallback: true,
         localBabylonUrl: RENDERER_3D?.BABYLON_URL,
-        onStatus: (detail) => { if (detail?.status === "failed") scheduleLiteFallback(instance, "Renderer 3D gặp lỗi; đã chuyển sang Lite Mode"); }
+        onCanvasReplaced: (detail) => {
+          if (!detail?.canvas || detail.previous !== instance.canvas3d) return;
+          // A WebGPU timeout can replace the bound canvas after the user has
+          // already cancelled startup. Keep the host reference connected so a
+          // later 3D retry never reuses the detached, GPU-bound canvas.
+          instance.canvas3d = detail.canvas;
+          if (instance.destroyed || bootToken !== instance.rendererBootToken) detail.canvas.hidden = true;
+        },
+        onStatus: (detail) => {
+          const canRetrySceneInWebGL = detail?.reason?.stage === "scene" && detail?.reason?.details?.failedBackend === "webgpu";
+          if (detail?.status === "failed" && !canRetrySceneInWebGL) scheduleLiteFallback(instance, "Renderer 3D gặp lỗi; đã chuyển sang Lite Mode", bootToken);
+        }
       });
-      const started = await adapter.start({ canvas: instance.canvas3d, allowRemoteBabylon: false });
+      instance.rendererStartingAdapter = adapter;
+      let started;
+      try { started = await adapter.start({ canvas: instance.canvas3d, allowRemoteBabylon: false, timeoutMs: 12000 }); }
+      finally { if (instance.rendererStartingAdapter === adapter) instance.rendererStartingAdapter = null; }
+      const webGPUSceneFailure = !started?.ok && started?.reason?.stage === "scene" &&
+        started?.reason?.details?.failedBackend === "webgpu";
+      if (webGPUSceneFailure && !instance.destroyed && bootToken === instance.rendererBootToken) {
+        setRendererStatus(instance, "Đang thử lại bằng WebGL2…", "WebGPU dựng scene không ổn định; đang khôi phục bằng canvas sạch");
+        instance.rendererStartingAdapter = adapter;
+        try { started = await adapter.start({ canvas: instance.canvas3d, backend: "webgl", allowRemoteBabylon: false, timeoutMs: 12000 }); }
+        finally { if (instance.rendererStartingAdapter === adapter) instance.rendererStartingAdapter = null; }
+      }
+      if (instance.destroyed || bootToken !== instance.rendererBootToken) {
+        adapter.dispose();
+        throw Object.assign(new Error("Renderer startup was cancelled"), { code: "RENDERER_START_CANCELLED" });
+      }
       if (!started?.ok) { adapter.dispose(); throw new Error(started?.reason?.message || "Babylon adapter could not start"); }
+      if (adapter.canvas) instance.canvas3d = adapter.canvas;
       return Object.freeze({
         backend: started.backend,
         sync(snapshot = {}) {
@@ -1473,35 +1523,46 @@
         setMotion(value) { adapter.setReducedMotion(value === "static" || reduced3DPreference(instance) ? true : "auto"); return value; },
         getStatus() { const telemetry = adapter.getTelemetry(); return { backend: adapter.backend, quality: ({ low: "light", balanced: "balanced", high: "high", ultra: "cinematic" })[telemetry.qualityPreset] || "balanced", fps: telemetry.fps, chunks: telemetry.activeChunks, wildlife: telemetry.proxySpecies?.length || 0, address: instance.state.worldAddress }; },
         capture() { return adapter.capture("image/png"); },
+        setPhotoSettings(value) { return adapter.setPhotoSettings?.(value); },
         dispose() { return adapter.dispose()?.ok !== false; }
       });
     }
     return RENDERER_3D.createRuntime(instance.canvas3d, {
+      backend: "webgl2",
       speciesId: species.id,
       speciesColor: species.color,
       seed: instance.state.settings.seed,
       quality: reduced3DPreference(instance) ? "static" : instance.state.settings.quality,
+      reducedMotion: reduced3DPreference(instance),
+      adaptiveQuality: instance.state.settings.adaptiveQuality,
+      isCancelled: () => instance.destroyed || bootToken !== instance.rendererBootToken,
+      timeoutMs: 12000,
       address: instance.state.worldAddress,
       onTelemetry: (event) => { if (event?.type === "webgpu-init-failed") setRendererStatus(instance, "Đang chuyển sang WebGL2…", "WebGPU không khởi tạo được; đang dùng fallback WebGL"); },
       onQualityChange: (sample) => {
         instance.state.settings.quality = sample.quality;
         setRendererStatus(instance, `${instance.renderer3d?.backend?.toUpperCase?.() || "3D"} · ${sample.profile.label}`);
       },
-      onFailure: () => { scheduleLiteFallback(instance, "3D gặp lỗi render; đã tự chuyển sang Lite Mode"); }
+      onFailure: () => { scheduleLiteFallback(instance, "3D gặp lỗi render; đã tự chuyển sang Lite Mode", bootToken); }
     });
   }
 
   async function enable3D(instance, persist = true) {
     if (!instance?.canvas3d || instance.renderer3d || instance.rendererBooting) return Boolean(instance?.renderer3d);
     if (typeof RENDERER_3D?.createRuntime !== "function") { setToast(instance, "3D core chưa được tải; Lite Mode vẫn hoạt động"); return false; }
+    const bootToken = (instance.rendererBootToken || 0) + 1;
+    instance.rendererBootToken = bootToken;
     instance.rendererBooting = true;
     instance.canvas3d.hidden = false;
     setRendererStatus(instance, "Đang khởi tạo 3D…", "Đang tải Babylon.js cùng website và kiểm tra GPU");
     try {
       const species = SPECIES_BY_ID.get(instance.state.speciesId);
       syncAddressForSpecies(instance);
-      const runtime = await createRendererRuntime(instance, species);
-      if (instance.destroyed) { runtime.dispose(); return false; }
+      const runtime = await createRendererRuntime(instance, species, bootToken);
+      // rendererBootToken is the authoritative cancellation signal. The saved
+      // preference may still be "lite" while an explicit user retry is booting;
+      // treating that preference as cancellation made Lite -> 3D impossible.
+      if (instance.destroyed || bootToken !== instance.rendererBootToken) { runtime.dispose(); return false; }
       instance.renderer3d = runtime;
       instance.root.dataset.renderer = runtime.backend;
       instance.canvas.hidden = true;
@@ -1516,17 +1577,29 @@
       setToast(instance, `EonWild 3D đã sẵn sàng bằng ${runtime.backend.toUpperCase()}`);
       return true;
     } catch (error) {
+      if (instance.destroyed || bootToken !== instance.rendererBootToken) return false;
       instance.canvas3d.hidden = true;
       instance.canvas.hidden = false;
       instance.root.dataset.renderer = "lite";
       syncRendererControls(instance, "lite");
+      instance.state.settings.renderer = "lite";
+      saveState(instance);
       setRendererStatus(instance, "Canvas 2D Lite");
       setToast(instance, `3D không khởi tạo: ${String(error?.message || "GPU không tương thích").slice(0, 92)}. Đã dùng Lite Mode.`);
       return false;
-    } finally { instance.rendererBooting = false; setRendererStatus(instance, instance.renderer3d ? `${instance.renderer3d.backend.toUpperCase()} · 3D` : "Canvas 2D Lite"); }
+    } finally {
+      if (bootToken === instance.rendererBootToken) {
+        instance.rendererBooting = false;
+        setRendererStatus(instance, instance.renderer3d ? `${instance.renderer3d.backend.toUpperCase()} · 3D` : "Canvas 2D Lite");
+      }
+    }
   }
 
   function disable3D(instance, persist = true) {
+    instance.rendererBootToken = (instance.rendererBootToken || 0) + 1;
+    instance.rendererBooting = false;
+    instance.rendererStartingAdapter?.dispose?.();
+    instance.rendererStartingAdapter = null;
     instance.renderer3d?.dispose?.();
     instance.renderer3d = null;
     if (instance.canvas3d) instance.canvas3d.hidden = true;
@@ -1566,7 +1639,12 @@
     overlay.hidden = !open;
     instance.root.classList.toggle("is-photo-mode", open);
     instance.photoMode = open;
-    if (open) { instance.pausedBeforePhoto = instance.paused; instance.paused = true; overlay.querySelector("button")?.focus?.({ preventScroll: true }); }
+    if (open) {
+      instance.pausedBeforePhoto = instance.paused;
+      instance.paused = true;
+      instance.renderer3d?.setPhotoSettings?.({ fovDegrees: instance.state.settings.photoFov, exposure: instance.state.settings.photoExposure / 100 });
+      overlay.querySelector("button")?.focus?.({ preventScroll: true });
+    }
     else { instance.paused = Boolean(instance.pausedBeforePhoto); focusSurface(instance); }
     return true;
   }
@@ -1735,7 +1813,8 @@
       const target = event.target.closest?.("button"); if (!target) return;
       if (target.dataset.hweRoute) { global.location.hash = `#${target.dataset.hweRoute}`; return; }
       if (target.matches("[data-hwe-quick-play]")) { if (instance.view === "world") { if (!instance.running) startGame(instance); else focusSurface(instance); } else global.location.hash = "#/game/world"; return; }
-      if (target.matches(".hwe-render-toggle")) { if (instance.renderer3d) disable3D(instance); else enable3D(instance); return; }
+      if (target.matches("[data-hwe-render-cancel]")) { disable3D(instance); setToast(instance, "Đã hủy tải 3D và giữ Canvas Lite"); return; }
+      if (target.matches(".hwe-render-toggle")) { if (instance.renderer3d || instance.rendererBooting) disable3D(instance); else enable3D(instance); return; }
       if (target.dataset.hweRenderer) { if (target.dataset.hweRenderer === "lite") disable3D(instance); else enable3D(instance); return; }
       if (target.matches("[data-hwe-open-codex]")) { global.location.hash = "#/game/species"; return; }
       if (target.dataset.hweRealm) { switchRealm(instance, target.dataset.hweRealm, instance.view === "timeline"); return; }
@@ -1770,8 +1849,24 @@
       if (target.matches("[data-hwe-simulate-season]")) { simulateEcologySeason(instance, target); return; }
       if (target.matches("[data-hwe-reset]")) { if (target.dataset.confirm === "true") { global.localStorage?.removeItem?.(STORAGE_KEY); global.localStorage?.removeItem?.(LEGACY_STORAGE_KEY); global.localStorage?.removeItem?.(OLDER_STORAGE_KEY); global.localStorage?.removeItem?.(ROLLBACK_STORAGE_KEY); instance.state = normalizeState(); mount(instance.host, { view: "world" }); } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa save v1 + v2 + v3"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Khôi phục save mới…"; } }, 4000); } }
     }, { signal: controller.signal });
-    root.addEventListener("input", (event) => { if (event.target.matches("[data-hwe-species-search]")) filterSpecies(instance); if (event.target.matches("[data-hwe-replay-scrubber]")) drawObserver(instance, Number(event.target.value)); }, { signal: controller.signal });
+    root.addEventListener("input", (event) => {
+      if (event.target.matches("[data-hwe-species-search]")) filterSpecies(instance);
+      if (event.target.matches("[data-hwe-replay-scrubber]")) drawObserver(instance, Number(event.target.value));
+      if (event.target.matches('[data-hwe-setting="soundVolume"]')) {
+        const output = event.target.closest("label")?.querySelector?.("output");
+        if (output) output.textContent = `${Math.round(clamp(event.target.value, 0, 100))}%`;
+      }
+      if (event.target.dataset.hwePhotoSetting) {
+        const key = event.target.dataset.hwePhotoSetting;
+        const value = key === "photoFov" ? clamp(event.target.value, 35, 100) : clamp(event.target.value, 50, 160);
+        instance.state.settings[key] = value;
+        const output = event.target.closest("label")?.querySelector?.("output");
+        if (output) output.textContent = key === "photoFov" ? `${Math.round(value)}°` : `${Math.round(value)}%`;
+        instance.renderer3d?.setPhotoSettings?.({ fovDegrees: instance.state.settings.photoFov, exposure: instance.state.settings.photoExposure / 100 });
+      }
+    }, { signal: controller.signal });
     root.addEventListener("change", (event) => {
+      if (event.target.dataset.hwePhotoSetting) { instance.state = normalizeState(instance.state); saveState(instance); return; }
       if (event.target.matches("[data-hwe-save-file]")) { importSave(instance, event.target.files?.[0]); event.target.value = ""; return; }
       if (event.target.matches("[data-hwe-mode]")) { if (RENDERER_3D?.GAME_MODES?.some?.((mode) => mode.id === event.target.value && mode.available)) { instance.state.mode = event.target.value; saveState(instance); setToast(instance, "Đã lưu chế độ vòng đời"); } return; }
       if (event.target.matches("[data-hwe-time-slice]")) {
@@ -1862,7 +1957,7 @@
     }
     const instance = instances.get(host);
     if (!instance) { activeHosts.delete(host); if (host) host.replaceChildren(); return false; }
-    instance.destroyed = true; instance.controller.abort(); clearTimeout(instance.toastTimer); clearInterval(instance.observerTimer); instance.resizeObserver?.disconnect?.(); instance.motionObserver?.disconnect?.(); global.cancelAnimationFrame?.(instance.raf); instance.renderer3d?.dispose?.(); instance.renderer3d = null; instance.workerAdapter?.close?.(); instance.simulation?.dispose?.(); instance.audioContext?.close?.().catch?.(() => {}); saveState(instance); host.replaceChildren(); instances.delete(host); activeHosts.delete(host); return true;
+    instance.destroyed = true; instance.rendererBootToken = (instance.rendererBootToken || 0) + 1; instance.controller.abort(); clearTimeout(instance.toastTimer); clearInterval(instance.observerTimer); instance.resizeObserver?.disconnect?.(); instance.motionObserver?.disconnect?.(); global.cancelAnimationFrame?.(instance.raf); instance.rendererStartingAdapter?.dispose?.(); instance.rendererStartingAdapter = null; instance.renderer3d?.dispose?.(); instance.renderer3d = null; instance.workerAdapter?.close?.(); instance.simulation?.dispose?.(); instance.audioContext?.close?.().catch?.(() => {}); saveState(instance); host.replaceChildren(); instances.delete(host); activeHosts.delete(host); return true;
   }
 
   return Object.freeze({ VERSION, version: VERSION, STORAGE_KEY, LEGACY_STORAGE_KEY, SCHEMA_VERSION, WORLD_SIZE, ERA_META, REALMS, BIOMES, FLAGSHIP_IDS, SPECIES, EXPEDITIONS, normalizeState, stepVitals, terrainAt, terrainForRealm, createWorld, findHabitatSpawn, mount, unmount });

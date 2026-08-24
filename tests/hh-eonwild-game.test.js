@@ -226,6 +226,7 @@ test("game save v3 migrates old state and bounds world address, renderer, vitals
       motion: "cinematic",
       density: "high",
       sound: "yes",
+      soundVolume: 1000,
       convergence: false,
       worker: false,
       adaptiveQuality: false,
@@ -264,10 +265,13 @@ test("game save v3 migrates old state and bounds world address, renderer, vitals
   assert.equal(normalized.settings.renderer, "auto");
   assert.equal(normalized.settings.quality, "balanced");
   assert.equal(normalized.settings.sound, false);
+  assert.equal(normalized.settings.soundVolume, 100);
   assert.equal(normalized.settings.convergence, false);
   assert.equal(normalized.settings.worker, false);
   assert.equal(normalized.settings.adaptiveQuality, false);
   assert.equal(normalized.settings.photoUi, false);
+  assert.equal(normalized.settings.photoFov, 62);
+  assert.equal(normalized.settings.photoExposure, 100);
   assert.match(normalized.settings.seed, /^[a-z0-9-]{1,24}$/i);
   assert.equal(normalized.worldAddress.realmId, "ice-age");
   assert.ok(core3d.TIME_SLICES.some((slice) => slice.id === normalized.worldAddress.timeSliceId));
@@ -593,6 +597,22 @@ test("3D chunk streaming and adaptive quality are deterministic and bounded", ()
   assert.equal(degraded.quality, "light");
 });
 
+test("generic 3D core retries safely, bounds startup work and truly pauses", () => {
+  assert.match(core3dSource, /function withTimeout/);
+  assert.match(core3dSource, /non-opaque HTTP\(S\) page origin/);
+  assert.match(core3dSource, /dataset\.hweBabylonState\s*=\s*"failed"[\s\S]*?script\?\.remove\?\.\(\)/);
+  assert.match(core3dSource, /WEBGPU_CANVAS_INIT_FAILED/);
+  assert.match(core3dSource, /let adaptiveQuality\s*=\s*options\.adaptiveQuality\s*!==\s*false/);
+  assert.match(core3dSource, /processChunkQueue\(1\)/);
+  assert.match(core3dSource, /if\s*\(adaptiveQuality\s*&&\s*now\s*-\s*governorAt/);
+  assert.match(core3dSource, /engine\.stopRenderLoop\?\.\(renderFrame\)/);
+  assert.match(core3dSource, /setReducedMotion\(value\)/);
+  assert.match(core3dSource, /setAdaptiveQuality\(value\)/);
+  assert.match(core3dSource, /options\.signal\?\.aborted\s*\|\|\s*options\.isCancelled\?\.\(\)/);
+  assert.match(core3dSource, /throwIfStartupCancelled\(\)/);
+  assert.match(core3dSource, /if\s*\(changed\)\s*streamChunks\(lastStreamPosition\.x,\s*lastStreamPosition\.z\)/);
+});
+
 test("3D renderer is same-origin, optional, truthful and keeps Lite fallback", () => {
   assert.match(renderer3dSource, /root\.HHEonWildRenderer3D\s*=\s*api/);
   assert.doesNotMatch(renderer3dSource, /root\.HHEonWild3D\s*=\s*api/);
@@ -606,6 +626,29 @@ test("3D renderer is same-origin, optional, truthful and keeps Lite fallback", (
   assert.match(gameSource, /function disable3D/);
   assert.match(gameSource, /RENDERER_3D\?\.worldToChunk\?\.\(instance\.state\.player\.x, instance\.state\.player\.y\)/);
   assert.match(renderer3dSource, /CreateScreenshotUsingRenderTargetAsync/);
+  assert.match(renderer3dSource, /function withDeadline/);
+  assert.match(renderer3dSource, /webgpuConstructionAttempted\s*=\s*true/);
+  assert.match(renderer3dSource, /canvasMayBeBound\s*=\s*webgpuConstructionAttempted/);
+  assert.match(renderer3dSource, /failedBackend\s*===\s*"webgpu"[\s\S]*?replaceCanvasAfterWebGPUFailure/);
+  assert.match(renderer3dSource, /onLateSettle/);
+  assert.match(renderer3dSource, /removeManagedScript/);
+  assert.match(renderer3dSource, /hweBabylonState\s*!==\s*"failed"/);
+  assert.match(renderer3dSource, /markScriptFailed/);
+  assert.match(renderer3dSource, /replaceCanvasAfterWebGPUFailure/);
+  assert.match(renderer3dSource, /function startupCancelled/);
+  assert.match(renderer3dSource, /if\s*\(startupCancelled\(options\)\)\s*throw startupCancelledError/);
+  assert.match(renderer3dSource, /WEBGPU_CANVAS_REPLACEMENT_REQUIRED/);
+  assert.match(renderer3dSource, /new B\.PBRMaterial\("hwe3d-terrain-pbr-material"/);
+  assert.match(renderer3dSource, /TONEMAPPING_ACES/);
+  assert.match(renderer3dSource, /new B\.ShadowGenerator/);
+  assert.match(renderer3dSource, /setPhotoSettings\(value = \{\}\)/);
+  assert.match(gameSource, /replaceCanvasOnFallback:\s*true/);
+  assert.match(gameSource, /backend:\s*"webgl"/);
+  assert.match(gameSource, /webGPUSceneFailure[\s\S]*?backend:\s*"webgl"/);
+  assert.match(gameSource, /canRetrySceneInWebGL/);
+  assert.match(gameSource, /detail\.previous\s*!==\s*instance\.canvas3d/);
+  assert.match(gameSource, /instance\.canvas3d\s*=\s*detail\.canvas/);
+  assert.match(renderer3dSource, /if\s*\(generation\s*!==\s*this\._generation\s*\|\|\s*this\._state\s*===\s*"disposed"\)[\s\S]*?safeDispose\(created\.engine\)[\s\S]*?if\s*\(created\.canvas\s*&&\s*created\.canvas\s*!==\s*this\._canvas\)\s*this\._canvas\s*=\s*created\.canvas/);
   assert.match(gameSource, /Canvas 2D Lite/);
   assert.match(css, /\.hwe-render-loading\s*\{/);
   assert.match(css, /\.hwe-render-surface--3d\s*\{/);
@@ -666,7 +709,7 @@ test("only Flagship species are offered as playable while other tiers stay truth
 });
 
 test("lazy loader and service worker cache the complete ordered v3 bundle", () => {
-  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=10"\][\s\S]*?scripts:\s*\["hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=2",\s*"hh-eonwild-renderer-3d\.js\?v=3",\s*"hh-eonwild-game\.js\?v=11"\]/);
+  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=11"\][\s\S]*?scripts:\s*\["hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=4",\s*"hh-eonwild-renderer-3d\.js\?v=5",\s*"hh-eonwild-game\.js\?v=13"\]/);
   assert.match(loader, /value === "\/game" \|\| value\.startsWith\("\/game\/"\)\) return \["game"\]/);
   const runtimeAssetsSource = worker.slice(
     worker.indexOf("const RUNTIME_ASSETS"),
@@ -674,12 +717,12 @@ test("lazy loader and service worker cache the complete ordered v3 bundle", () =
   );
   const coreAssetsSource = worker.slice(worker.indexOf("const CORE"));
   for (const asset of [
-    "./hh-eonwild-game.css?v=10",
+    "./hh-eonwild-game.css?v=11",
     "./hh-eonwild-content-v2.js?v=3",
     "./hh-eonwild-simulation-v2.js?v=4",
-    "./hh-eonwild-3d-core.js?v=2",
-    "./hh-eonwild-renderer-3d.js?v=3",
-    "./hh-eonwild-game.js?v=11"
+    "./hh-eonwild-3d-core.js?v=4",
+    "./hh-eonwild-renderer-3d.js?v=5",
+    "./hh-eonwild-game.js?v=13"
   ]) assert.ok(worker.includes(`"${asset}"`), `service worker must cache ${asset}`);
   for (const asset of [
     "./vendor/babylon-9.22.1.js?v=9.22.1",
@@ -690,7 +733,7 @@ test("lazy loader and service worker cache the complete ordered v3 bundle", () =
     assert.ok(runtimeAssetsSource.includes(`"${asset}"`), `${asset} must be a runtime asset`);
     assert.ok(!coreAssetsSource.includes(`"${asset}"`), `${asset} must not be a core asset`);
   }
-  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v877"/);
+  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v879"/);
 
   for (const asset of ["performance-loader.js", "script.js"]) {
     const escaped = asset.replaceAll(".", "\\.");
@@ -723,6 +766,23 @@ test("runtime fallback, Time Slice filtering and motion/resize controls fail clo
   assert.match(gameSource, /RENDERER_ADAPTER\.FLAGSHIP_IDS\.forEach[\s\S]*?visible:\s*false/);
   assert.match(gameSource, /instance\.resizeObserver\?\.observe\(viewport\)/);
   assert.match(gameSource, /reduced3DPreference/);
+  assert.match(gameSource, /matchMedia\?\.\("\(prefers-reduced-motion: reduce\)"\)/);
+  assert.match(gameSource, /adaptiveQuality:\s*instance\.state\.settings\.adaptiveQuality/);
+  assert.match(gameSource, /bootToken\s*!==\s*instance\.rendererBootToken/);
+  assert.doesNotMatch(gameSource, /bootToken\s*!==\s*instance\.rendererBootToken\s*\|\|\s*instance\.state\.settings\.renderer\s*===\s*"lite"/);
+  assert.match(gameSource, /instance\.rendererBootToken\s*=\s*\(instance\.rendererBootToken\s*\|\|\s*0\)\s*\+\s*1/);
+  assert.match(gameSource, /instance\.rendererStartingAdapter\?\.dispose\?\.\(\)/);
+  assert.match(gameSource, /isCancelled:\s*\(\)\s*=>\s*instance\.destroyed\s*\|\|\s*bootToken\s*!==\s*instance\.rendererBootToken/);
+  assert.match(gameSource, /quickToggle\.setAttribute\("aria-label",\s*loading3D\s*\?\s*"Hủy tải 3D"\s*:\s*"Chế độ 3D"\)/);
+  assert.match(gameSource, /quickToggle\.setAttribute\("aria-busy",\s*String\(loading3D\)\)/);
+  assert.doesNotMatch(gameSource, /toggleLabel\.textContent\s*=\s*instance\.renderer3d\s*\?\s*"Lite"/);
+  assert.match(gameSource, /tierForSpecies\(species\)===\s*"flagship"/);
+  assert.match(gameSource, /data-hwe-setting="soundVolume"/);
+  assert.match(gameSource, /data-hwe-render-cancel/);
+  assert.match(gameSource, /data-hwe-photo-setting="photoFov"/);
+  assert.match(gameSource, /data-hwe-photo-setting="photoExposure"/);
+  assert.match(gameSource, /catch\s*\(error\)[\s\S]*?instance\.state\.settings\.renderer\s*=\s*"lite";[\s\S]*?saveState\(instance\)/);
+  assert.match(css, /\[data-hwe-render-cancel\]\s*\{[^}]*min-height:\s*44px/);
   assert.match(gameSource, /instance\.motionObserver\?\.disconnect/);
   assert.match(css, /\.hwe-root\s*\{[^}]*overflow:\s*clip/);
   assert.match(css, /data-renderer="webgl"/);
