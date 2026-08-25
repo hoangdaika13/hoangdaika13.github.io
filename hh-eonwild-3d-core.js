@@ -7,7 +7,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createEonWild3D(global) {
   "use strict";
 
-  const VERSION = "3.1.0";
+  const VERSION = "3.1.1";
   const BABYLON_VERSION = "9.22.1";
   const SCRIPT_BASE_URL = (() => {
     try { return global.document?.currentScript?.src ? new URL("./", global.document.currentScript.src).href : ""; } catch { return ""; }
@@ -385,6 +385,11 @@
     return broad + ridge + detail;
   }
 
+  function headingToCreatureRotation(heading) {
+    const value = Number(heading);
+    return (Number.isFinite(value) ? value : 0) - Math.PI / 2;
+  }
+
   function paletteForAddress(address) {
     const palettes = {
       paleozoic: ["#183f44", "#2f766d", "#73c69d"],
@@ -693,7 +698,7 @@
           proxy.position.x = clamp(row.x, 0, WORLD_CONFIG.logicalSizeMeters) - WORLD_CONFIG.logicalSizeMeters / 2;
           proxy.position.z = clamp(row.y ?? row.z, 0, WORLD_CONFIG.logicalSizeMeters) - WORLD_CONFIG.logicalSizeMeters / 2;
           proxy.position.y = terrainHeight(row.x, row.y ?? row.z, address.seed);
-          if (Math.abs(row.vx || 0) + Math.abs(row.vy || 0) > .02) proxy.rotation.y = -Math.atan2(row.vy || 0, row.vx || 0);
+          if (Math.abs(row.vx || 0) + Math.abs(row.vy || 0) > .02) proxy.rotation.y = headingToCreatureRotation(Math.atan2(row.vx || 0, row.vy || 0));
         });
         wildlife.forEach((proxy, id) => { if (!active.has(id)) { proxy.dispose(false, true); wildlife.delete(id); } });
       };
@@ -779,7 +784,7 @@
         if (currentChunk !== lastChunkKey) { streamChunks(x, z); lastChunkKey = currentChunk; }
         playerRoot.position.set(localX, groundY, localZ);
         const heading = Number(snapshot.heading || 0);
-        playerRoot.rotation.y = -heading;
+        playerRoot.rotation.y = headingToCreatureRotation(heading);
         const moving = lastPlayerPosition ? Math.hypot(lastPlayerPosition.x - localX, lastPlayerPosition.z - localZ) > .01 : false;
         const fracture = clamp(player.injuries?.fracture, 0, 100) / 100;
         const pulse = reducedMotion ? 0 : (global.performance?.now ? global.performance.now() / 1000 : Date.now() / 1000);
@@ -928,6 +933,7 @@
     detectCapabilities,
     loadBabylon,
     terrainHeight,
+    headingToCreatureRotation,
     createRuntime
   });
 });

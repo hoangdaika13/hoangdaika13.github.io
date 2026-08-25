@@ -18,7 +18,7 @@
    * Canvas2D fallback contract.
    */
 
-  const VERSION = "1.5.1";
+  const VERSION = "1.5.2";
   // Four 8.192 km half-axes provide a true 16.384 x 16.384 km streamed realm.
   // Only nearby 256 m chunks are materialized, so the larger address space
   // does not multiply active geometry or main-thread work.
@@ -262,6 +262,19 @@
       y: Math.sin(boundedPitch),
       z: Math.cos(finite(yaw, 0)) * horizontal
     });
+  }
+
+  function headingToProxyRotation(heading) {
+    // Gameplay heading is measured from +Z (0 = forward). Procedural creature
+    // meshes are authored facing +X, so their Babylon root needs a -90° basis
+    // correction while the public heading contract stays renderer-neutral.
+    return wrapAngle(finite(heading, 0) - Math.PI / 2);
+  }
+
+  function gameplayCameraForwardXZ(appliedCamera, requestedCamera = DEFAULT_GAMEPLAY_CAMERA) {
+    const yaw = finite(appliedCamera?.yaw, finite(requestedCamera?.yaw, DEFAULT_GAMEPLAY_CAMERA.yaw));
+    const direction = gameplayLookDirection(yaw, 0);
+    return freezeRecord({ x: direction.x, z: direction.z });
   }
   function raySphereIntersectionDistance(origin, direction, center, radius, maximumDistance = Infinity) {
     if (!origin || !direction || !center) return null;
@@ -4486,7 +4499,10 @@
       const rootPosition = proxy?.root?.position || resourceMarker?.mesh?.position;
       const destination = options.target || (rootPosition ? {
         x: rootPosition.x,
-        y: proxy ? finite(proxy.baseY, rootPosition.y) + (proxy.id === "pteranodon" ? .45 : 2.1) : finite(rootPosition.y) + .25,
+        // Resource meshes are positioned by their geometric centre. A fixed
+        // +.25 m offset passed above the shallow water and nest marker meshes,
+        // so a real Babylon ray could never confirm the exact locked target.
+        y: proxy ? finite(proxy.baseY, rootPosition.y) + (proxy.id === "pteranodon" ? .45 : 2.1) : finite(rootPosition.y),
         z: rootPosition.z
       } : null);
       if (!source || !destination) return unsupported("line-segment-unavailable");
@@ -4595,7 +4611,7 @@
       proxy.root.position.x = this._player.x - WORLD_HALF;
       proxy.root.position.y = proxy.baseY;
       proxy.root.position.z = this._player.z - WORLD_HALF;
-      proxy.root.rotation.y = this._player.heading;
+      proxy.root.rotation.y = headingToProxyRotation(this._player.heading);
       this._creatureAssets?.syncPose(this._playerSpeciesId, this._player.x, this._player.z);
       if (this._streamer) this._streamer.update(this._player.x, this._player.z);
     }
@@ -4698,7 +4714,7 @@
       proxy.root.position.x = worldX - WORLD_HALF;
       proxy.root.position.y = proxy.baseY;
       proxy.root.position.z = worldZ - WORLD_HALF;
-      if (state.heading !== undefined) proxy.root.rotation.y = finite(state.heading, proxy.root.rotation.y);
+      if (state.heading !== undefined) proxy.root.rotation.y = headingToProxyRotation(state.heading);
       this._creatureAssets?.syncPose(proxy.id, worldX, worldZ);
       if (state.visible !== undefined) {
         if (state.visible) this._visibleWildlifeSpecies.add(proxy.id);
@@ -4950,11 +4966,12 @@
           };
           if (this._environmentRenderer) {
             this._environmentRenderer.configure?.(vegetationEnvironment);
+            const cameraForward = gameplayCameraForwardXZ(this._gameplayCameraApplied, this._gameplayCamera);
             this._environmentRenderer.update({
               playerX: this._player.x,
               playerZ: this._player.z,
-              forwardX: Math.cos(this._player.heading),
-              forwardZ: Math.sin(this._player.heading),
+              forwardX: cameraForward.x,
+              forwardZ: cameraForward.z,
               fovRadians: this._camera?.fov,
               timeSeconds: this._elapsed,
               deltaSeconds,
@@ -5608,6 +5625,8 @@
     gameplayCameraToArc,
     gameplayCameraOffset,
     gameplayLookDirection,
+    headingToProxyRotation,
+    gameplayCameraForwardXZ,
     raySphereIntersectionDistance,
     LandscapeWorkerBridge,
     CreaturePrototypeManager,

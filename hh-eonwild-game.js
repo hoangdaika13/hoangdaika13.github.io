@@ -6,7 +6,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createEonWild(global) {
   "use strict";
 
-  const VERSION = "4.3.1";
+  const VERSION = "4.3.2";
   const STORAGE_KEY = "hh.game.eonwild.v4";
   const LEGACY_STORAGE_KEY = "hh.game.eonwild.v3";
   const V2_STORAGE_KEY = "hh.game.eonwild.v2";
@@ -3191,7 +3191,7 @@
         personalQualityAlias: true,
         cameraCollisionOwner: "renderer",
         sync(snapshot = {}) {
-          adapter.setPlayerState({ speciesId: snapshot.speciesId, entityId: "player", isPlayer: true, x: snapshot.player?.x, z: snapshot.player?.y, heading: -(snapshot.heading || 0), elevation: snapshot.speciesId === "pteranodon" ? 12 : 0 });
+          adapter.setPlayerState({ speciesId: snapshot.speciesId, entityId: "player", isPlayer: true, x: snapshot.player?.x, z: snapshot.player?.y, heading: snapshot.heading || 0, elevation: snapshot.speciesId === "pteranodon" ? 12 : 0 });
           const syncAt = global.performance?.now?.() || Date.now();
           if (syncAt - lastResourceSyncAt >= 250) {
             lastResourceSyncAt = syncAt;
@@ -3201,7 +3201,7 @@
           (snapshot.population || []).forEach((creature) => {
             const id = creature.species?.id || creature.speciesId;
             if (creature.alive === false || !RENDERER_ADAPTER.FLAGSHIP_IDS.includes(id) || occupied.has(id)) return;
-            occupied.add(id); adapter.updateFlagship(id, { entityId: creature.id, isPlayer: false, x: creature.x, z: creature.y, heading: -Math.atan2(creature.vy || 0, creature.vx || 0), visible: creature.alive !== false });
+            occupied.add(id); adapter.updateFlagship(id, { entityId: creature.id, isPlayer: false, x: creature.x, z: creature.y, heading: Math.atan2(creature.vx || 0, creature.vy || 0), visible: creature.alive !== false });
           });
           RENDERER_ADAPTER.FLAGSHIP_IDS.forEach((id) => {
             if (!occupied.has(id)) adapter.updateFlagship(id, { entityId: "", isPlayer: false, visible: false });

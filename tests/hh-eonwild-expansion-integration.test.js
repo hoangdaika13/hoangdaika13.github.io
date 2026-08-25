@@ -16,17 +16,17 @@ const registry = require(path.join(root, "hh-eonwild-species-registry.js"));
 const atlas = require(path.join(root, "hh-eonwild-world-atlas.js"));
 const input = require(path.join(root, "hh-eonwild-input-system.js"));
 
-test("route-lazy bundle loads and precaches desktop control and collision kernels before game v27", () => {
+test("route-lazy bundle loads and precaches desktop control and collision kernels before game v28", () => {
   const expected = [
     "hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3",
     "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=2",
     "hh-eonwild-desktop-controller.js?v=2",
     "hh-eonwild-collision-system.js?v=1",
     "hh-eonwild-world-atlas.js?v=2", "hh-eonwild-simulation-v2.js?v=4",
-    "hh-eonwild-3d-core.js?v=6", "hh-eonwild-landscape-core.js?v=1",
+    "hh-eonwild-3d-core.js?v=7", "hh-eonwild-landscape-core.js?v=1",
     "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=4",
-    "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=18",
-    "hh-eonwild-game.js?v=27"
+    "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=19",
+    "hh-eonwild-game.js?v=28"
   ];
   let previous = -1;
   for (const asset of expected) {

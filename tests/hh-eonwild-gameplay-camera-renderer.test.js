@@ -4,7 +4,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const renderer = require("../hh-eonwild-renderer-3d.js");
+const core = require("../hh-eonwild-3d-core.js");
 const source = fs.readFileSync(path.join(__dirname, "..", "hh-eonwild-renderer-3d.js"), "utf8");
+const coreSource = fs.readFileSync(path.join(__dirname, "..", "hh-eonwild-3d-core.js"), "utf8");
+const gameSource = fs.readFileSync(path.join(__dirname, "..", "hh-eonwild-game.js"), "utf8");
 
 class Vector3 {
   constructor(x = 0, y = 0, z = 0) {
@@ -81,6 +84,26 @@ test("authoritative center direction includes pitch and sphere intersections sta
   assert.ok(Math.abs(pitched.z) < 1e-12);
   assert.equal(renderer.raySphereIntersectionDistance({ x: 0, y: 0, z: 0 }, level, { x: 0, y: 0, z: 5 }, 1, 10), 4);
   assert.equal(renderer.raySphereIntersectionDistance({ x: 0, y: 0, z: 0 }, level, { x: 5, y: 0, z: 5 }, 1, 10), null);
+});
+
+test("logical +Z heading maps to the +X-authored creature basis and streaming follows camera yaw", () => {
+  assert.ok(Math.abs(renderer.headingToProxyRotation(0) + Math.PI / 2) < 1e-12, "logical +Z must rotate a +X-authored proxy by -90 degrees");
+  assert.ok(Math.abs(renderer.headingToProxyRotation(Math.PI / 2)) < 1e-12, "logical +X must keep a +X-authored proxy at zero rotation");
+  assert.ok(Math.abs(core.headingToCreatureRotation(0) + Math.PI / 2) < 1e-12);
+  assert.ok(Math.abs(core.headingToCreatureRotation(Math.PI / 2)) < 1e-12);
+
+  assert.deepEqual(renderer.gameplayCameraForwardXZ({ yaw: 0 }, { yaw: Math.PI / 2 }), { x: 0, z: 1 });
+  const lookingRight = renderer.gameplayCameraForwardXZ({ yaw: Math.PI / 2 }, { yaw: 0 });
+  assert.ok(Math.abs(lookingRight.x - 1) < 1e-12);
+  assert.ok(Math.abs(lookingRight.z) < 1e-12);
+
+  assert.match(source, /proxy\.root\.rotation\.y\s*=\s*headingToProxyRotation\(this\._player\.heading\)/);
+  assert.match(source, /const cameraForward = gameplayCameraForwardXZ\(this\._gameplayCameraApplied, this\._gameplayCamera\)/);
+  assert.match(source, /forwardX:\s*cameraForward\.x,[\s\S]*?forwardZ:\s*cameraForward\.z/);
+  assert.match(coreSource, /playerRoot\.rotation\.y\s*=\s*headingToCreatureRotation\(heading\)/);
+  assert.match(gameSource, /setPlayerState\(\{[^}]*heading:\s*snapshot\.heading \|\| 0/);
+  assert.match(gameSource, /updateFlagship\(id,\s*\{[^}]*heading:\s*Math\.atan2\(creature\.vx \|\| 0, creature\.vy \|\| 0\)/);
+  assert.doesNotMatch(gameSource, /heading:\s*-\(snapshot\.heading/);
 });
 
 test("public gameplay camera takes sole input ownership and follows stable baseY", () => {
@@ -242,9 +265,10 @@ test("resource targets keep exact identity through pick, highlight, LOS and tear
     constructor(name) { this.name = name; this.disposed = false; }
     dispose() { this.disposed = true; }
   }
-  const makeMesh = (name) => {
+  const makeMesh = (name, geometry = {}) => {
     const mesh = {
       name,
+      geometry,
       position: new Vector3(),
       metadata: {},
       isVisible: true,
@@ -265,16 +289,26 @@ test("resource targets keep exact identity through pick, highlight, LOS and tear
     Color3,
     StandardMaterial,
     MeshBuilder: {
-      CreateCylinder: (name) => makeMesh(name),
-      CreateSphere: (name) => makeMesh(name)
+      CreateCylinder: (name, options) => makeMesh(name, { shape: "cylinder", ...options }),
+      CreateSphere: (name, options) => makeMesh(name, { shape: "sphere", ...options })
     }
   };
   let pickedMesh = null;
+  let requireGeometricHit = false;
+  let observedLosRay = null;
   adapter._camera = { position: new Vector3(0, 2, 0) };
   adapter._scene = {
     pickWithRay(ray, predicate, fastCheck) {
       assert.equal(fastCheck, false);
       if (!pickedMesh || !predicate(pickedMesh)) return { hit: false, distance: null, pickedMesh: null };
+      if (requireGeometricHit) {
+        observedLosRay = ray;
+        const deltaZ = pickedMesh.position.z - ray.origin.z;
+        const along = deltaZ / ray.direction.z;
+        const heightAtMarker = ray.origin.y + ray.direction.y * along;
+        const halfHeight = Number(pickedMesh.geometry?.height || 0) / 2;
+        if (!Number.isFinite(heightAtMarker) || Math.abs(heightAtMarker - pickedMesh.position.y) > halfHeight + 1e-9) return { hit: false, distance: null, pickedMesh: null };
+      }
       return { hit: true, distance: 8, pickedMesh };
     }
   };
@@ -328,11 +362,17 @@ test("resource targets keep exact identity through pick, highlight, LOS and tear
   assert.equal(adapter.setHighlightedTarget({ id: "water-source-other", type: "water" }).ok, false);
 
   pickedMesh = marker.mesh;
+  requireGeometricHit = true;
   const visible = adapter.queryTargetLineOfSight({ entityId: resourceId, type: "water" });
   assert.equal(visible.supported, true);
   assert.equal(visible.visible, true);
   assert.equal(visible.entityId, resourceId);
   assert.equal(visible.type, "water");
+  assert.ok(observedLosRay, "LOS must execute a real geometric ray against the marker");
+  const markerPlaneDistance = (marker.mesh.position.z - observedLosRay.origin.z) / observedLosRay.direction.z;
+  const markerPlaneY = observedLosRay.origin.y + observedLosRay.direction.y * markerPlaneDistance;
+  assert.ok(Math.abs(markerPlaneY - marker.mesh.position.y) < 1e-9, "the locked-target ray must pass through the shallow marker centre");
+  requireGeometricHit = false;
   assert.equal(adapter.queryTargetLineOfSight({ entityId: resourceId, type: "animal" }).reason, "exact-rendered-proxy-unavailable");
   assert.equal(adapter.queryTargetLineOfSight({ entityId: resourceId, type: "food" }).reason, "exact-rendered-target-unavailable");
   assert.equal(adapter.queryTargetLineOfSight({ entityId: "water-source-other", type: "water" }).reason, "exact-rendered-target-unavailable");
