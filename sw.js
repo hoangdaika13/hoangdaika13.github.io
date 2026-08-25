@@ -1,6 +1,6 @@
-const CACHE = "hh-identity-portal-v884";
+const CACHE = "hh-identity-portal-v888";
 const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
-// EonWild cinematic integration: ./performance-loader.js?v=531 ./hh-eonwild-cinematic-pack.js?v=1 ./hh-eonwild-cinematic-pack-worker.js?v=1 ./hh-eonwild-game.js?v=15.
+// EonWild procedural environment integration: ./performance-loader.js?v=535 ./hh-eonwild-landscape-core.js?v=1 ./hh-eonwild-landscape-worker.js?v=1 ./hh-eonwild-vegetation-system.js?v=1 ./hh-eonwild-environment-renderer.js?v=1 ./hh-eonwild-water-weather-system.js?v=1 ./hh-eonwild-renderer-3d.js?v=13 ./hh-eonwild-game.js?v=16.
 // Compatibility marker retained for the pre-photogrammetry EonWild renderer: hh-identity-portal-v879 ./hh-eonwild-renderer-3d.js?v=5.
 // Compatibility marker retained for Dharma v6 clients: hh-identity-portal-v842.
 // Compatibility marker retained for the previous Home shell: ./home-galaxy-command.js?v=15.
@@ -481,8 +481,13 @@ const RUNTIME_ASSETS = [
   "./hh-eonwild-content-v2.js?v=3",
   "./hh-eonwild-simulation-v2.js?v=4",
   "./hh-eonwild-3d-core.js?v=5",
-  "./hh-eonwild-renderer-3d.js?v=9",
-  "./hh-eonwild-game.js?v=15",
+  "./hh-eonwild-landscape-core.js?v=1",
+  "./hh-eonwild-landscape-worker.js?v=1",
+  "./hh-eonwild-vegetation-system.js?v=1",
+  "./hh-eonwild-environment-renderer.js?v=1",
+  "./hh-eonwild-water-weather-system.js?v=1",
+  "./hh-eonwild-renderer-3d.js?v=13",
+  "./hh-eonwild-game.js?v=16",
   "./vendor/babylon-9.22.1.js?v=9.22.1",
   "./vendor/babylonjs-loaders-9.22.1.min.js?v=9.22.1",
   "./assets/eonwild/asset-manifest.v1.json",
@@ -509,7 +514,7 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=531",
+  "./performance-loader.js?v=535",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=245"

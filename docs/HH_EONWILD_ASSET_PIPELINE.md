@@ -8,6 +8,8 @@ The four vertical-slice creature contracts remain placeholders. Tyrannosaurus an
 
 The environment runtime now contains four self-hosted Poly Haven CC0 assets at the 1K tier: fern clumps, a mossy rock set, a living quiver tree and a partly-cloudy photographic HDRI. They are real-world scans/photo-based lighting sources, but 1K runtime assets alone do not make the whole scene equivalent to camera footage. Their combined runtime size is 10,471,123 bytes under a hard 12 MiB budget.
 
+The base renderer also has a fully code-generated environment path: seeded terrain/biomes/rivers, Worker chunk geometry, seventeen vegetation roles with thin-instance rendering, layered wind, water/weather/atmosphere state and bounded environmental interaction pools. These systems remain available with every Cinematic Pack removed. They are documented in `docs/HH_EONWILD_PROCEDURAL_ENVIRONMENT.md` and are still described as procedural fallbacks rather than scanned production scenery.
+
 ## Pipeline
 
 1. Build and rig at real scale in Blender with one bespoke skeleton per species.

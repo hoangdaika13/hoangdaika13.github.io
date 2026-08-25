@@ -150,6 +150,70 @@ test("physical camera controls expose photographic units and drive Babylon DOF",
   assert.match(source, /dimensions\.width[\s\S]*7680/);
 });
 
+test("clear-day WebGPU readability floors preserve lit terrain and remain bounded at night", () => {
+  class Color3 {
+    constructor(r, g, b) { this.r = r; this.g = g; this.b = b; }
+  }
+  const B = { Color3 };
+  const standard = {
+    disableLighting: true,
+    maxSimultaneousLights: 1,
+    emissiveColor: new Color3(0.01, 0.01, 0.01),
+    ambientColor: new Color3(0, 0, 0),
+    metadata: null
+  };
+  assert.equal(renderer.applyTerrainMaterialReadability(B, standard, true), standard);
+  assert.equal(standard.disableLighting, false);
+  assert.equal(standard.maxSimultaneousLights, 4);
+  assert.ok(standard.emissiveColor.r >= renderer.READABILITY_FLOORS.terrainStandardEmissive[0]);
+  assert.ok(standard.ambientColor.g >= renderer.READABILITY_FLOORS.sceneAmbient[1]);
+  assert.equal(standard.metadata.hhEonWildReadabilityFloor, "daylight");
+
+  const pbr = {
+    albedoColor: new Color3(1, 1, 1),
+    emissiveColor: new Color3(0, 0, 0),
+    environmentIntensity: 0.2,
+    directIntensity: 0.1,
+    maxSimultaneousLights: 2
+  };
+  renderer.applyTerrainMaterialReadability(B, pbr, true);
+  assert.ok(pbr.emissiveColor.g >= renderer.READABILITY_FLOORS.terrainPbrEmissive[1]);
+  assert.equal(pbr.environmentIntensity, renderer.READABILITY_FLOORS.terrainEnvironmentIntensity);
+  assert.equal(pbr.directIntensity, 1);
+
+  const scene = {
+    ambientColor: new Color3(0.02, 0.02, 0.02),
+    imageProcessingConfiguration: { exposure: 0.35 }
+  };
+  const lights = {
+    ambient: { intensity: 0.08, groundColor: new Color3(0.01, 0.01, 0.01) },
+    sun: { intensity: 0.12 }
+  };
+  const day = renderer.enforceClearDaylightReadability(B, scene, lights, standard, { daylight: 0.92, weather: "clear" });
+  assert.equal(day.applied, true);
+  assert.ok(lights.ambient.intensity >= renderer.READABILITY_FLOORS.ambientIntensity);
+  assert.ok(lights.sun.intensity >= renderer.READABILITY_FLOORS.sunIntensity);
+  assert.ok(scene.imageProcessingConfiguration.exposure >= renderer.READABILITY_FLOORS.exposure);
+  assert.ok(scene.ambientColor.g >= renderer.READABILITY_FLOORS.sceneAmbient[1]);
+
+  const darkScene = { ambientColor: new Color3(0.01, 0.01, 0.01), imageProcessingConfiguration: { exposure: 0.2 } };
+  const darkLights = { ambient: { intensity: 0.08, groundColor: new Color3(0.01, 0.01, 0.01) }, sun: { intensity: 0.02 } };
+  const night = renderer.enforceClearDaylightReadability(B, darkScene, darkLights, standard, { daylight: 0.05, weather: "clear" });
+  assert.equal(night.applied, false);
+  assert.equal(standard.metadata.hhEonWildReadabilityFloor, "night-weather");
+  assert.ok(standard.emissiveColor.g <= renderer.READABILITY_FLOORS.terrainNightStandardEmissive[1]);
+  assert.ok(standard.emissiveColor.g < renderer.READABILITY_FLOORS.terrainStandardEmissive[1]);
+  assert.equal(darkLights.ambient.intensity, 0.08);
+  assert.equal(darkLights.sun.intensity, 0.02);
+  assert.equal(darkScene.imageProcessingConfiguration.exposure, 0.2);
+  const creature = { albedoColor: new Color3(0.55, 0.42, 0.28), emissiveColor: new Color3(0, 0, 0), environmentIntensity: 0.1, directIntensity: 0.1, maxSimultaneousLights: 1 };
+  renderer.applyCreatureMaterialReadability(B, creature);
+  assert.ok(creature.emissiveColor.r >= 0.044);
+  assert.ok(creature.environmentIntensity >= 1.05);
+  assert.equal(creature.metadata.hhEonWildCreatureReadability, true);
+  assert.match(source, /this\._readabilityState\s*=\s*enforceClearDaylightReadability/);
+});
+
 test("renderer telemetry reports real counters when available and bounded VRAM estimates", () => {
   const adapter = renderer.create({ qualityPreset: "cinematic" });
   const mesh = {
@@ -193,6 +257,14 @@ test("renderer telemetry reports real counters when available and bounded VRAM e
   assert.match(source, /numMaxUncapturedErrors\s*=\s*-1/);
   assert.match(source, /"webgpu-validation"/);
   assert.match(source, /WEBGPU_RUNTIME_VALIDATION_FAILED/);
+});
+
+test("streaming keeps fresh LOD requests and animated water matrices live", () => {
+  assert.match(source, /if \(wanted && !this\.queued\.has\(wanted\.key\)\)/, "stale successful worker jobs must requeue the currently wanted LOD");
+  assert.doesNotMatch(source, /wanted && completed\.error && !this\.queued\.has/, "requeue must not be limited to worker failures");
+  assert.doesNotMatch(source, /water\.freezeWorldMatrix\(\)/, "the runtime tide surface cannot use a frozen world matrix");
+  assert.doesNotMatch(source, /renderState\?\.water\?\.opacity/, "unreachable water opacity state must not remain in the frame loop");
+  assert.match(source, /if \(rawDelta <= 0\.12\) this\._governor\.record/, "tab suspension gaps must not trigger adaptive quality downgrades");
 });
 
 test("verified Personal creature pack descriptors are consumed without being promoted to production", () => {

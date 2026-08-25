@@ -57,7 +57,7 @@ const assertGeneBounds = (genes) => {
 };
 
 test("EonWild v4 game composes versioned ecology and cinematic 3D APIs", () => {
-  assert.equal(game.VERSION, "4.0.0");
+  assert.equal(game.VERSION, "4.1.0");
   assert.equal(game.version, game.VERSION);
   assert.equal(game.SCHEMA_VERSION, 4);
   assert.equal(game.STORAGE_KEY, "hh.game.eonwild.v4");
@@ -73,7 +73,7 @@ test("EonWild v4 game composes versioned ecology and cinematic 3D APIs", () => {
   assert.equal(simulation.SCHEMA_VERSION, 2);
   assert.equal(simulation.FIXED_STEP, 1 / 30);
   assert.equal(core3d.VERSION, "3.1.0");
-  assert.equal(renderer3d.VERSION, "1.3.0");
+  assert.equal(renderer3d.VERSION, "1.4.0");
   assert.equal(core3d.BABYLON_VERSION, "9.22.1");
   assert.equal(renderer3d.BABYLON_VERSION, "9.22.1");
   for (const name of ["normalizeState", "stepVitals", "terrainAt", "createWorld", "mount", "unmount"]) {
@@ -733,7 +733,7 @@ test("only Flagship species are offered as playable while other tiers stay truth
 });
 
 test("lazy loader and service worker cache the complete ordered v4 bundle", () => {
-  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=12"\][\s\S]*?scripts:\s*\["hh-eonwild-cinematic-pack\.js\?v=1",\s*"hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=5",\s*"hh-eonwild-renderer-3d\.js\?v=9",\s*"hh-eonwild-game\.js\?v=15"\]/);
+  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=12"\][\s\S]*?scripts:\s*\["hh-eonwild-cinematic-pack\.js\?v=1",\s*"hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=5",\s*"hh-eonwild-landscape-core\.js\?v=1",\s*"hh-eonwild-vegetation-system\.js\?v=1",\s*"hh-eonwild-environment-renderer\.js\?v=1",\s*"hh-eonwild-water-weather-system\.js\?v=1",\s*"hh-eonwild-renderer-3d\.js\?v=13",\s*"hh-eonwild-game\.js\?v=16"\]/);
   assert.match(loader, /value === "\/game" \|\| value\.startsWith\("\/game\/"\)\) return \["game"\]/);
   const runtimeAssetsSource = worker.slice(
     worker.indexOf("const RUNTIME_ASSETS"),
@@ -747,8 +747,13 @@ test("lazy loader and service worker cache the complete ordered v4 bundle", () =
     "./hh-eonwild-content-v2.js?v=3",
     "./hh-eonwild-simulation-v2.js?v=4",
     "./hh-eonwild-3d-core.js?v=5",
-    "./hh-eonwild-renderer-3d.js?v=9",
-    "./hh-eonwild-game.js?v=15"
+    "./hh-eonwild-landscape-core.js?v=1",
+    "./hh-eonwild-landscape-worker.js?v=1",
+    "./hh-eonwild-vegetation-system.js?v=1",
+    "./hh-eonwild-environment-renderer.js?v=1",
+    "./hh-eonwild-water-weather-system.js?v=1",
+    "./hh-eonwild-renderer-3d.js?v=13",
+    "./hh-eonwild-game.js?v=16"
   ]) assert.ok(worker.includes(`"${asset}"`), `service worker must cache ${asset}`);
   for (const asset of [
     "./vendor/babylon-9.22.1.js?v=9.22.1",
@@ -761,7 +766,7 @@ test("lazy loader and service worker cache the complete ordered v4 bundle", () =
     assert.ok(runtimeAssetsSource.includes(`"${asset}"`), `${asset} must be a runtime asset`);
     assert.ok(!coreAssetsSource.includes(`"${asset}"`), `${asset} must not be a core asset`);
   }
-  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v884"/);
+  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v888"/);
 
   for (const asset of ["performance-loader.js", "script.js"]) {
     const escaped = asset.replaceAll(".", "\\.");

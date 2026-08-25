@@ -238,7 +238,7 @@
     },
     game: {
       styles: ["hh-eonwild-game.css?v=12"],
-      scripts: ["hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3", "hh-eonwild-simulation-v2.js?v=4", "hh-eonwild-3d-core.js?v=5", "hh-eonwild-renderer-3d.js?v=9", "hh-eonwild-game.js?v=15"]
+      scripts: ["hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3", "hh-eonwild-simulation-v2.js?v=4", "hh-eonwild-3d-core.js?v=5", "hh-eonwild-landscape-core.js?v=1", "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=1", "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=13", "hh-eonwild-game.js?v=16"]
     },
     fortune: {
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=26"],

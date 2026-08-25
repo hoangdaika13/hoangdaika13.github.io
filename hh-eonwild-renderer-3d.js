@@ -18,7 +18,7 @@
    * Canvas2D fallback contract.
    */
 
-  const VERSION = "1.3.0";
+  const VERSION = "1.4.0";
   // Four 8.192 km half-axes provide a true 16.384 x 16.384 km streamed realm.
   // Only nearby 256 m chunks are materialized, so the larger address space
   // does not multiply active geometry or main-thread work.
@@ -37,6 +37,19 @@
   const DEFAULT_REMOTE_BABYLON_URL = null;
   const DEFAULT_ENVIRONMENT_ASSET_BASE = "./assets/eonwild/environment/";
   const DEFAULT_CREATURE_ASSET_BASE = "./assets/eonwild/creatures/";
+  const DEFAULT_LANDSCAPE_WORKER_URL = "./hh-eonwild-landscape-worker.js?v=1";
+
+  function optionalRuntimeModule(globalName, localPath) {
+    if (runtime && runtime[globalName]) return runtime[globalName];
+    if (typeof require !== "function") return null;
+    try { return require(localPath); }
+    catch { return null; }
+  }
+
+  const LANDSCAPE_CORE = optionalRuntimeModule("HHEonWildLandscapeCore", "./hh-eonwild-landscape-core.js");
+  const VEGETATION_CORE = optionalRuntimeModule("HHEonWildVegetation", "./hh-eonwild-vegetation-system.js");
+  const ENVIRONMENT_RENDERER = optionalRuntimeModule("HHEonWildEnvironmentRenderer", "./hh-eonwild-environment-renderer.js");
+  const WATER_WEATHER_CORE = optionalRuntimeModule("HHEonWildWaterWeather", "./hh-eonwild-water-weather-system.js");
 
   const ENVIRONMENT_ASSETS = Object.freeze([
     Object.freeze({ id: "fern", file: "fern-02-1k.glb", kind: "vegetation", scale: 2.15, wind: 0.035, salt: 0x4645524e }),
@@ -49,6 +62,13 @@
     high: Object.freeze({ fern: 18, rock: 3, quiver: 1, rainParticles: 160, hdrCubeSize: 128, placementRadius: 3 }),
     ultra: Object.freeze({ fern: 26, rock: 4, quiver: 2, rainParticles: 240, hdrCubeSize: 256, placementRadius: 3 }),
     cinematic: Object.freeze({ fern: 32, rock: 8, quiver: 4, rainParticles: 420, hdrCubeSize: 512, placementRadius: 4 })
+  });
+  const PROCEDURAL_ENVIRONMENT_BUDGETS = Object.freeze({
+    low: Object.freeze({ instances: 3000, perChunk: 120, chunks: 18 }),
+    balanced: Object.freeze({ instances: 9000, perChunk: 240, chunks: 32 }),
+    high: Object.freeze({ instances: 15000, perChunk: 360, chunks: 44 }),
+    ultra: Object.freeze({ instances: 24000, perChunk: 480, chunks: 56 }),
+    cinematic: Object.freeze({ instances: 36000, perChunk: 620, chunks: 64 })
   });
   const DEFAULT_ENVIRONMENT_HDR_FILE = "kloofendal-partly-cloudy-puresky-1k.hdr";
   const CREATURE_PROTOTYPE_ASSETS = Object.freeze([
@@ -88,6 +108,22 @@
     autofocus: true,
     cameraShake: 0
   });
+  // A restrained indirect-light floor keeps vertex-coloured terrain readable
+  // on WebGPU while the optional IBL is absent or still compiling. Directional
+  // sun and weather shading remain active; this is not an unlit override.
+  const READABILITY_FLOORS = Object.freeze({
+    daylightThreshold: 0.42,
+    ambientIntensity: 0.68,
+    sunIntensity: 0.9,
+    exposure: 1.08,
+    sceneAmbient: Object.freeze([0.42, 0.48, 0.4]),
+    hemisphereGround: Object.freeze([0.26, 0.3, 0.24]),
+    terrainStandardEmissive: Object.freeze([0.78, 0.84, 0.7]),
+    terrainPbrEmissive: Object.freeze([0.26, 0.3, 0.22]),
+    terrainNightStandardEmissive: Object.freeze([0.045, 0.055, 0.04]),
+    terrainNightPbrEmissive: Object.freeze([0.012, 0.015, 0.01]),
+    terrainEnvironmentIntensity: 0.92
+  });
 
   const TERRAIN_COLORS = Object.freeze({
     waterbed: Object.freeze([0.16, 0.25, 0.2]),
@@ -97,6 +133,24 @@
     upland: Object.freeze([0.38, 0.4, 0.23]),
     badland: Object.freeze([0.48, 0.31, 0.2]),
     rock: Object.freeze([0.34, 0.34, 0.31])
+  });
+  const LANDSCAPE_BIOME_COLORS = Object.freeze({
+    ocean: Object.freeze([0.1, 0.19, 0.2]),
+    coast: Object.freeze([0.53, 0.46, 0.32]),
+    dunes: Object.freeze([0.58, 0.49, 0.33]),
+    floodplain: Object.freeze([0.25, 0.38, 0.21]),
+    wetland: Object.freeze([0.18, 0.32, 0.23]),
+    swamp: Object.freeze([0.15, 0.27, 0.19]),
+    rainforest: Object.freeze([0.13, 0.3, 0.17]),
+    forest: Object.freeze([0.16, 0.31, 0.18]),
+    conifer: Object.freeze([0.14, 0.27, 0.2]),
+    grassland: Object.freeze([0.35, 0.43, 0.2]),
+    scrub: Object.freeze([0.39, 0.39, 0.22]),
+    badland: Object.freeze([0.46, 0.3, 0.19]),
+    alpine: Object.freeze([0.4, 0.41, 0.38]),
+    snow: Object.freeze([0.71, 0.76, 0.76]),
+    volcanic: Object.freeze([0.25, 0.22, 0.21]),
+    river: Object.freeze([0.18, 0.28, 0.2])
   });
 
   const loaderPromises = new Map();
@@ -203,6 +257,46 @@
     else if (moisture > 0.57) biome = "conifer";
     else if (moisture < 0.3) biome = "upland";
     return { height, moisture, heat, biome, color: TERRAIN_COLORS[biome] };
+  }
+
+  function createProceduralLandscape(options = {}) {
+    if (!LANDSCAPE_CORE || typeof LANDSCAPE_CORE.createLandscapeCore !== "function") return null;
+    try {
+      return LANDSCAPE_CORE.createLandscapeCore({
+        seed: options.seed || "eonwild-mesozoic",
+        realmId: options.realmId || options.eraRealm || "mesozoic",
+        timeSliceId: options.timeSliceId || options.timeSlice || "cretaceous",
+        regionId: options.regionId || "eonwild-wilds",
+        worldSize: WORLD_SIZE,
+        chunkSize: CHUNK_SIZE,
+        seaLevel: WATER_LEVEL,
+        maxGeometryBuildsPerFrame: clamp(options.maxGeometryBuildsPerFrame || 2, 1, 4)
+      });
+    } catch { return null; }
+  }
+
+  function landscapeColor(sample, fallback) {
+    const explicit = Array.isArray(sample?.color) ? sample.color : Array.isArray(sample?.albedo) ? sample.albedo : null;
+    const biomeId = String(sample?.biomeId || sample?.biome || "").toLowerCase();
+    const base = explicit && explicit.length >= 3 ? explicit : LANDSCAPE_BIOME_COLORS[biomeId] || fallback || TERRAIN_COLORS.fern;
+    const wetness = clamp(sample?.wetness ?? sample?.moisture ?? 0.45, 0, 1);
+    const ash = clamp(sample?.ash ?? sample?.materialWeights?.ash ?? 0, 0, 1);
+    const snow = clamp(sample?.snow ?? sample?.materialWeights?.snow ?? 0, 0, 1);
+    const macro = clamp(sample?.macroVariation ?? 0.5, 0, 1);
+    const shade = 0.88 + macro * 0.18 - wetness * 0.08;
+    return [0, 1, 2].map((index) => clamp((base[index] * shade) * (1 - ash * 0.55 - snow * 0.42) + ash * 0.16 + snow * 0.72, 0.035, 0.92));
+  }
+
+  function terrainSampleFromProvider(provider, worldX, worldZ, seed) {
+    if (!provider || typeof provider.sample !== "function") return terrainSampleNumeric(worldX, worldZ, seed);
+    try {
+      const source = provider.sample(worldX, worldZ) || {};
+      const height = finite(source.height ?? source.elevation, terrainHeightNumeric(worldX, worldZ, seed));
+      const moisture = clamp(source.moisture ?? source.humidity ?? 0.5, 0, 1);
+      const heat = clamp(source.heat ?? source.temperature ?? 0.5, 0, 1);
+      const biome = String(source.biomeId || source.biome || "forest").toLowerCase();
+      return { ...source, height, moisture, heat, biome, color: landscapeColor(source, TERRAIN_COLORS.fern) };
+    } catch { return terrainSampleNumeric(worldX, worldZ, seed); }
   }
 
   function sampleTerrainHeight(worldX, worldZ, seed = "eonwild-mesozoic") {
@@ -734,12 +828,107 @@
     return new B.Color3(rgb[0], rgb[1], rgb[2]);
   }
 
+  function setColorFloor(color, floor) {
+    if (!color || !Array.isArray(floor)) return false;
+    color.r = Math.max(finite(color.r), floor[0]);
+    color.g = Math.max(finite(color.g), floor[1]);
+    color.b = Math.max(finite(color.b), floor[2]);
+    return true;
+  }
+
+  function setColorFromBaseline(color, baseline, floor) {
+    if (!color || !Array.isArray(baseline) || !Array.isArray(floor)) return false;
+    color.r = Math.max(finite(baseline[0]), floor[0]);
+    color.g = Math.max(finite(baseline[1]), floor[1]);
+    color.b = Math.max(finite(baseline[2]), floor[2]);
+    return true;
+  }
+
+  function applyTerrainMaterialReadability(B, material, daylight = false) {
+    if (!material) return material;
+    material.disableLighting = false;
+    material.maxSimultaneousLights = Math.max(4, Math.trunc(finite(material.maxSimultaneousLights, 4)));
+    material.metadata = material.metadata && typeof material.metadata === "object" ? material.metadata : {};
+    if (!Array.isArray(material.metadata.hhEonWildBaseEmissive)) {
+      const original = material.emissiveColor;
+      material.metadata.hhEonWildBaseEmissive = [finite(original?.r), finite(original?.g), finite(original?.b)];
+    }
+    const baseEmissive = material.metadata.hhEonWildBaseEmissive;
+    if ("albedoColor" in material) {
+      const floor = daylight ? READABILITY_FLOORS.terrainPbrEmissive : READABILITY_FLOORS.terrainNightPbrEmissive;
+      if (!material.emissiveColor && typeof B?.Color3 === "function") material.emissiveColor = makeColor3(B, floor);
+      else setColorFromBaseline(material.emissiveColor, baseEmissive, floor);
+      if ("environmentIntensity" in material) material.environmentIntensity = Math.max(READABILITY_FLOORS.terrainEnvironmentIntensity, finite(material.environmentIntensity));
+      if ("directIntensity" in material) material.directIntensity = Math.max(1, finite(material.directIntensity));
+    } else {
+      const floor = daylight ? READABILITY_FLOORS.terrainStandardEmissive : READABILITY_FLOORS.terrainNightStandardEmissive;
+      if (!material.emissiveColor && typeof B?.Color3 === "function") material.emissiveColor = makeColor3(B, floor);
+      else setColorFromBaseline(material.emissiveColor, baseEmissive, floor);
+      if (!material.ambientColor && typeof B?.Color3 === "function") material.ambientColor = makeColor3(B, READABILITY_FLOORS.sceneAmbient);
+      else setColorFloor(material.ambientColor, READABILITY_FLOORS.sceneAmbient);
+    }
+    material.metadata.hhEonWildReadabilityFloor = daylight ? "daylight" : "night-weather";
+    return material;
+  }
+
+  function enforceClearDaylightReadability(B, scene, lights, material, context = {}) {
+    const daylight = clamp(context.daylight, 0, 1);
+    const weather = String(context.weather || "clear").toLowerCase();
+    const clearEnough = weather === "clear" || weather === "mist";
+    applyTerrainMaterialReadability(B, material, clearEnough && daylight >= READABILITY_FLOORS.daylightThreshold);
+    if (!clearEnough || daylight < READABILITY_FLOORS.daylightThreshold) return { applied: false, daylight, weather };
+    if (scene?.ambientColor) setColorFloor(scene.ambientColor, READABILITY_FLOORS.sceneAmbient);
+    if (lights?.ambient) {
+      lights.ambient.intensity = Math.max(READABILITY_FLOORS.ambientIntensity, finite(lights.ambient.intensity));
+      if (lights.ambient.groundColor) setColorFloor(lights.ambient.groundColor, READABILITY_FLOORS.hemisphereGround);
+    }
+    if (lights?.sun) lights.sun.intensity = Math.max(READABILITY_FLOORS.sunIntensity, finite(lights.sun.intensity));
+    if (context.allowExposureFloor !== false && scene?.imageProcessingConfiguration) {
+      scene.imageProcessingConfiguration.exposure = Math.max(READABILITY_FLOORS.exposure, finite(scene.imageProcessingConfiguration.exposure));
+    }
+    return {
+      applied: true,
+      daylight,
+      weather,
+      ambientIntensity: finite(lights?.ambient?.intensity),
+      sunIntensity: finite(lights?.sun?.intensity),
+      exposure: finite(scene?.imageProcessingConfiguration?.exposure)
+    };
+  }
+
+  function applyCreatureMaterialReadability(B, material, emissiveFactor = 0.08) {
+    if (!material) return material;
+    material.disableLighting = false;
+    if ("maxSimultaneousLights" in material) material.maxSimultaneousLights = Math.max(4, Math.trunc(finite(material.maxSimultaneousLights, 4)));
+    if ("environmentIntensity" in material) material.environmentIntensity = Math.max(1.05, finite(material.environmentIntensity));
+    if ("directIntensity" in material) material.directIntensity = Math.max(1.05, finite(material.directIntensity));
+    const source = material.albedoColor || material.diffuseColor || null;
+    if (source && typeof B?.Color3 === "function") {
+      const floor = [
+        Math.max(0.018, finite(source.r) * emissiveFactor),
+        Math.max(0.02, finite(source.g) * emissiveFactor),
+        Math.max(0.016, finite(source.b) * emissiveFactor)
+      ];
+      if (!material.emissiveColor) material.emissiveColor = makeColor3(B, floor);
+      else setColorFloor(material.emissiveColor, floor);
+      if (material.ambientColor) setColorFloor(material.ambientColor, floor.map((channel) => channel * 2.2));
+    }
+    material.metadata = material.metadata && typeof material.metadata === "object" ? material.metadata : {};
+    material.metadata.hhEonWildCreatureReadability = true;
+    return material;
+  }
+
   function createTerrainMaterial(B, scene, options = {}) {
-    const material = typeof B.PBRMaterial === "function"
+    const descriptors = Array.isArray(options.cinematicTerrainAssets) ? options.cinematicTerrainAssets : [];
+    // Babylon PBR without an environment texture is technically valid but
+    // renders the repository-only terrain far too dark on several WebGPU
+    // backends. Keep PBR for verified terrain/IBL inputs and use the lit
+    // StandardMaterial fallback when every Cinematic Pack has been removed.
+    const hasVerifiedPbrInput = descriptors.length > 0 || Boolean(scene?.environmentTexture);
+    const material = hasVerifiedPbrInput && typeof B.PBRMaterial === "function"
       ? new B.PBRMaterial("hwe3d-terrain-pbr-material", scene)
       : new B.StandardMaterial("hwe3d-terrain-material", scene);
     const documentRef = options.document || runtime.document;
-    const descriptors = Array.isArray(options.cinematicTerrainAssets) ? options.cinematicTerrainAssets : [];
     const textureByChannel = new Map();
     for (const descriptor of descriptors) {
       const channel = String(descriptor?.channel || "").toLowerCase();
@@ -764,6 +953,10 @@
     } else {
       material.diffuseColor = new B.Color3(1, 1, 1);
       material.ambientColor = new B.Color3(0.3, 0.34, 0.28);
+      // Repository-only fallback has no guaranteed IBL. Keep physical direct
+      // light and a small colour-preserving floor so WebGPU cannot turn whole
+      // shaded valleys black before the optional HDR environment is ready.
+      material.emissiveColor = new B.Color3(0.24, 0.24, 0.24);
       material.specularColor = new B.Color3(0.025, 0.03, 0.025);
       material.roughness = 1;
       if (textureByChannel.has("albedo")) material.diffuseTexture = textureByChannel.get("albedo");
@@ -771,7 +964,10 @@
       if (textureByChannel.has("ao")) material.ambientTexture = textureByChannel.get("ao");
     }
     material.backFaceCulling = false;
-    if (typeof material.freeze === "function") material.freeze();
+    applyTerrainMaterialReadability(B, material, false);
+    // Terrain wetness, atmosphere and a late verified HDR environment all
+    // change after the first frame. Freezing here captured the pre-HDR light
+    // state on WebGPU and could leave an otherwise valid landscape near-black.
     return { material, textures: [...textureByChannel.values()] };
   }
 
@@ -790,7 +986,7 @@
     }
   }
 
-  function buildTerrainChunk(B, scene, material, chunkX, chunkZ, segments, seed) {
+  function buildTerrainChunk(B, scene, material, chunkX, chunkZ, segments, seed, landscape = null) {
     const boundedSegments = Math.round(clamp(segments, 4, 48));
     const positions = [];
     const indices = [];
@@ -803,7 +999,7 @@
       for (let xIndex = 0; xIndex <= boundedSegments; xIndex += 1) {
         const worldX = originX + xIndex * step;
         const worldZ = originZ + zIndex * step;
-        const sample = terrainSampleNumeric(worldX, worldZ, seed);
+        const sample = terrainSampleFromProvider(landscape, worldX, worldZ, seed);
         positions.push(xIndex * step - CHUNK_SIZE / 2, sample.height, zIndex * step - CHUNK_SIZE / 2);
         colors.push(sample.color[0], sample.color[1], sample.color[2], 1);
       }
@@ -837,6 +1033,10 @@
     appendSkirt(positions, colors, indices, west, 10, edgeColor);
     appendSkirt(positions, colors, indices, east, 10, edgeColor);
 
+    const uvs = [];
+    for (let index = 0; index < positions.length; index += 3) {
+      uvs.push((originX + positions[index] + CHUNK_SIZE / 2) / CHUNK_SIZE, (originZ + positions[index + 2] + CHUNK_SIZE / 2) / CHUNK_SIZE);
+    }
     B.VertexData.ComputeNormals(positions, indices, normals);
     const mesh = new B.Mesh(`hwe3d-terrain-${chunkX}-${chunkZ}`, scene);
     const vertexData = new B.VertexData();
@@ -844,6 +1044,7 @@
     vertexData.indices = indices;
     vertexData.normals = normals;
     vertexData.colors = colors;
+    vertexData.uvs = uvs;
     vertexData.applyToMesh(mesh, false);
     mesh.position.x = originX + CHUNK_SIZE / 2 - WORLD_HALF;
     mesh.position.z = originZ + CHUNK_SIZE / 2 - WORLD_HALF;
@@ -856,11 +1057,215 @@
     return mesh;
   }
 
+  function buildTerrainChunkFromGeometry(B, scene, material, descriptor, payload, landscape, seed) {
+    const geometry = payload?.geometry || payload?.result || payload;
+    if (!geometry || !geometry.positions || !geometry.indices) throw new Error("Landscape worker returned incomplete geometry");
+    const chunkX = Math.trunc(descriptor.chunkX);
+    const chunkZ = Math.trunc(descriptor.chunkZ);
+    const originX = chunkX * CHUNK_SIZE;
+    const originZ = chunkZ * CHUNK_SIZE;
+    let positions = geometry.positions;
+    if (geometry.coordinateSpace === "world") {
+      const local = new Float32Array(positions.length);
+      for (let index = 0; index < positions.length; index += 3) {
+        local[index] = positions[index] - originX - CHUNK_SIZE / 2;
+        local[index + 1] = positions[index + 1];
+        local[index + 2] = positions[index + 2] - originZ - CHUNK_SIZE / 2;
+      }
+      positions = local;
+    } else if (geometry.origin && !["chunk-centered", "centered-chunk"].includes(geometry.coordinateSpace)) {
+      const centered = new Float32Array(positions.length);
+      for (let index = 0; index < positions.length; index += 3) {
+        centered[index] = positions[index] - CHUNK_SIZE / 2;
+        centered[index + 1] = positions[index + 1];
+        centered[index + 2] = positions[index + 2] - CHUNK_SIZE / 2;
+      }
+      positions = centered;
+    }
+    let indices = geometry.indices;
+    let normals = geometry.normals?.length === positions.length ? geometry.normals : [];
+    const vertexCount = Math.floor(positions.length / 3);
+    let colors = geometry.colors;
+    if (!colors || colors.length !== vertexCount * 4) {
+      colors = new Float32Array(vertexCount * 4);
+      const biomeIds = Array.isArray(geometry.biomeIds) ? geometry.biomeIds : [];
+      const biomeWeights = geometry.biomeWeights;
+      const hasWorkerWeights = biomeWeights && biomeIds.length && biomeWeights.length === vertexCount * biomeIds.length;
+      for (let index = 0; index < vertexCount; index += 1) {
+        let color;
+        if (hasWorkerWeights) {
+          const mixed = [0, 0, 0];
+          let total = 0;
+          for (let biomeIndex = 0; biomeIndex < biomeIds.length; biomeIndex += 1) {
+            const weight = clamp(biomeWeights[index * biomeIds.length + biomeIndex], 0, 1);
+            const base = LANDSCAPE_BIOME_COLORS[biomeIds[biomeIndex]] || TERRAIN_COLORS.fern;
+            mixed[0] += base[0] * weight; mixed[1] += base[1] * weight; mixed[2] += base[2] * weight; total += weight;
+          }
+          const macro = 0.9 + hash2D(Math.floor(originX + positions[index * 3]), Math.floor(originZ + positions[index * 3 + 2]), seed ^ 0x6d2b79f5) * 0.16;
+          color = total > 0 ? mixed.map((channel) => clamp(channel / total * macro, 0.035, 0.92)) : TERRAIN_COLORS.fern;
+        } else {
+          const px = positions[index * 3] + originX + CHUNK_SIZE / 2;
+          const pz = positions[index * 3 + 2] + originZ + CHUNK_SIZE / 2;
+          color = terrainSampleFromProvider(landscape, px, pz, seed).color;
+        }
+        colors[index * 4] = color[0]; colors[index * 4 + 1] = color[1]; colors[index * 4 + 2] = color[2]; colors[index * 4 + 3] = 1;
+      }
+    }
+    const resolution = Math.trunc(geometry.resolution || Math.sqrt(vertexCount));
+    if (geometry.includesSkirts !== true && resolution >= 2 && resolution * resolution === vertexCount) {
+      positions = Array.from(positions);
+      indices = Array.from(indices);
+      colors = Array.from(colors);
+      const pointAt = (xIndex, zIndex) => {
+        const offset = (zIndex * resolution + xIndex) * 3;
+        return [positions[offset], positions[offset + 1], positions[offset + 2]];
+      };
+      const north = []; const south = []; const west = []; const east = [];
+      for (let index = 0; index < resolution; index += 1) {
+        north.push(pointAt(index, 0)); south.push(pointAt(index, resolution - 1));
+        west.push(pointAt(0, index)); east.push(pointAt(resolution - 1, index));
+      }
+      appendSkirt(positions, colors, indices, north, 12, TERRAIN_COLORS.rock);
+      appendSkirt(positions, colors, indices, south, 12, TERRAIN_COLORS.rock);
+      appendSkirt(positions, colors, indices, west, 12, TERRAIN_COLORS.rock);
+      appendSkirt(positions, colors, indices, east, 12, TERRAIN_COLORS.rock);
+      normals = [];
+    }
+    if (!normals.length) B.VertexData.ComputeNormals(positions, indices, normals);
+    const uvs = new Float32Array(Math.floor(positions.length / 3) * 2);
+    for (let index = 0; index < positions.length / 3; index += 1) {
+      uvs[index * 2] = (originX + positions[index * 3] + CHUNK_SIZE / 2) / CHUNK_SIZE;
+      uvs[index * 2 + 1] = (originZ + positions[index * 3 + 2] + CHUNK_SIZE / 2) / CHUNK_SIZE;
+    }
+    const mesh = new B.Mesh(`hwe3d-terrain-${chunkX}-${chunkZ}`, scene);
+    const vertexData = new B.VertexData();
+    vertexData.positions = positions;
+    vertexData.indices = indices;
+    vertexData.normals = normals;
+    vertexData.colors = colors;
+    vertexData.uvs = uvs;
+    vertexData.applyToMesh(mesh, false);
+    mesh.position.x = originX + CHUNK_SIZE / 2 - WORLD_HALF;
+    mesh.position.z = originZ + CHUNK_SIZE / 2 - WORLD_HALF;
+    mesh.material = material;
+    mesh.useVertexColors = true;
+    mesh.isPickable = false;
+    mesh.checkCollisions = false;
+    mesh.metadata = { eonwild: true, kind: "terrain-chunk", chunkX, chunkZ, segments: descriptor.segments, workerBuilt: true, biomeSummary: geometry.biomeSummary || null };
+    if (typeof mesh.freezeWorldMatrix === "function") mesh.freezeWorldMatrix();
+    return mesh;
+  }
+
+  class LandscapeWorkerBridge {
+    constructor(options = {}) {
+      this.runtime = options.runtime || runtime;
+      this.url = String(options.url || DEFAULT_LANDSCAPE_WORKER_URL);
+      this.onFailure = typeof options.onFailure === "function" ? options.onFailure : null;
+      this.worker = null;
+      this.pending = new Map();
+      this.sequence = 0;
+      this.disposed = false;
+      this.disabled = options.enabled === false;
+      this.failures = [];
+    }
+
+    _safeUrl() {
+      try {
+        const base = new URL(this.runtime.document?.baseURI || this.runtime.location?.href);
+        const parsed = new URL(this.url, base);
+        if (parsed.origin !== base.origin || parsed.username || parsed.password || !["http:", "https:", "file:"].includes(parsed.protocol)) return "";
+        return parsed.href;
+      } catch { return ""; }
+    }
+
+    _ensureWorker() {
+      if (this.worker || this.disabled || this.disposed || typeof this.runtime.Worker !== "function") return this.worker;
+      const url = this._safeUrl();
+      if (!url) { this.disabled = true; return null; }
+      try {
+        const worker = new this.runtime.Worker(url, { name: "hh-eonwild-landscape" });
+        worker.onmessage = (event) => this._handleMessage(event);
+        worker.onerror = (event) => this._fail(new Error(String(event?.message || "Landscape worker crashed")));
+        this.worker = worker;
+      } catch (error) { this._fail(error); }
+      return this.worker;
+    }
+
+    _handleMessage(event) {
+      const message = event?.data && typeof event.data === "object" ? event.data : {};
+      const entry = this.pending.get(String(message.id || ""));
+      if (!entry) return;
+      this.pending.delete(entry.id);
+      this.runtime.clearTimeout?.(entry.timeout);
+      try { entry.callback(message.ok === true ? null : new Error(message.error?.message || "Landscape worker rejected a job"), message.result); }
+      catch { /* A stale chunk callback must not break worker delivery. */ }
+    }
+
+    _fail(error) {
+      const failure = compactError(error);
+      this.failures.push(failure);
+      if (this.failures.length > 8) this.failures.shift();
+      const queued = Array.from(this.pending.values());
+      this.pending.clear();
+      try { this.worker?.terminate?.(); } catch { /* Worker may already be gone. */ }
+      this.worker = null;
+      this.disabled = true;
+      for (const entry of queued) {
+        this.runtime.clearTimeout?.(entry.timeout);
+        try { entry.callback(error || new Error(failure.message)); } catch { /* Fallback is handled by the streamer. */ }
+      }
+      safeCall(this.onFailure, failure);
+    }
+
+    submit(job, callback) {
+      const worker = this._ensureWorker();
+      if (!worker || !job || typeof callback !== "function") return false;
+      const id = `land-${++this.sequence}`;
+      const timeout = this.runtime.setTimeout?.(() => this._fail(new Error("Landscape worker job timed out")), 12000);
+      this.pending.set(id, { id, callback, timeout });
+      try { worker.postMessage({ id, job }); }
+      catch (error) { this.pending.delete(id); this.runtime.clearTimeout?.(timeout); this._fail(error); return false; }
+      return true;
+    }
+
+    pause() {
+      if (!this.worker) return;
+      const callbacks = Array.from(this.pending.values());
+      this.pending.clear();
+      try { this.worker.terminate(); } catch { /* Visibility pause remains best effort. */ }
+      this.worker = null;
+      for (const entry of callbacks) {
+        this.runtime.clearTimeout?.(entry.timeout);
+        try { entry.callback(new Error("Landscape worker paused")); } catch { /* Queue will be rebuilt on resume. */ }
+      }
+    }
+
+    resume() { if (!this.disposed && !this.disabled) this._ensureWorker(); }
+    getStatus() { return freezeRecord({ active: Boolean(this.worker), pending: this.pending.size, disabled: this.disabled, failures: this.failures.slice() }); }
+    dispose() { this.disposed = true; this.pause(); }
+  }
+
   class TerrainStreamer {
     constructor(B, scene, options) {
       this.B = B;
       this.scene = scene;
       this.seed = hashSeed(options.seed);
+      this.landscape = options.landscapeCore || null;
+      this.worker = this.landscape && typeof this.landscape.createWorkerJob === "function"
+        ? new LandscapeWorkerBridge({
+          runtime,
+          url: options.landscapeWorkerUrl || DEFAULT_LANDSCAPE_WORKER_URL,
+          enabled: options.worker !== false,
+          onFailure: (failure) => safeCall(options.onTelemetry, { type: "landscape-worker-failed", failure })
+        })
+        : null;
+      this.inFlight = new Map();
+      this.completed = [];
+      this.reducedMotion = options.reducedMotion === true;
+      this.lodController = LANDSCAPE_CORE && typeof LANDSCAPE_CORE.TerrainLODController === "function"
+        ? new LANDSCAPE_CORE.TerrainLODController({ thresholds: [CHUNK_SIZE * 1.35, CHUNK_SIZE * 2.85, CHUNK_SIZE * 5.2], hysteresis: 0.16, transitionMs: 360, maxEntries: MAX_ACTIVE_CHUNKS * 2 })
+        : null;
+      this.fades = [];
       const terrainMaterial = createTerrainMaterial(B, scene, options);
       this.material = terrainMaterial.material;
       this.textures = terrainMaterial.textures;
@@ -881,8 +1286,17 @@
       this.dirty = true;
     }
 
-    segmentsForDistance(distance) {
+    segmentsForDistance(distance, key) {
       const base = this.preset.terrainSegments;
+      if (this.lodController) {
+        try {
+          const state = this.lodController.update(key, distance * CHUNK_SIZE, now());
+          if (state.lod === 0) return base;
+          if (state.lod === 1) return Math.max(8, Math.round(base / 2));
+          if (state.lod === 2) return Math.max(4, Math.round(base / 4));
+          return 4;
+        } catch { /* Fall through to the renderer's stable legacy thresholds. */ }
+      }
       if (distance <= 1) return base;
       if (distance <= 2.25) return Math.max(8, Math.round(base / 2));
       return Math.max(4, Math.round(base / 4));
@@ -912,12 +1326,13 @@
       candidates.sort((left, right) => left.distance - right.distance || left.chunkZ - right.chunkZ || left.chunkX - right.chunkX);
       const desired = candidates.slice(0, Math.min(this.preset.maxChunks, MAX_ACTIVE_CHUNKS));
       this.wanted.clear();
-      for (const item of desired) this.wanted.set(item.key, { ...item, segments: this.segmentsForDistance(item.distance) });
+      for (const item of desired) this.wanted.set(item.key, { ...item, segments: this.segmentsForDistance(item.distance, item.key) });
 
       for (const [key, entry] of this.active) {
         if (this.wanted.has(key)) continue;
         safeDispose(entry.mesh);
         this.active.delete(key);
+        this.lodController?.forget?.(key);
       }
 
       this.queue.length = 0;
@@ -934,19 +1349,59 @@
 
     process(buildLimit) {
       if (this.disposed) return 0;
+      this._processFades();
       const limit = Math.round(clamp(buildLimit || this.preset.chunkBuildsPerFrame, 1, 4));
       let built = 0;
+      while (built < limit && this.completed.length) {
+        const completed = this.completed.shift();
+        const wanted = this.wanted.get(completed.item.key);
+        if (!wanted || wanted.segments !== completed.item.segments || completed.error) {
+          if (wanted && !this.queued.has(wanted.key)) {
+            this.queue.unshift(wanted);
+            this.queued.add(wanted.key);
+          }
+          continue;
+        }
+        try {
+          const mesh = buildTerrainChunkFromGeometry(this.B, this.scene, this.material, completed.item, completed.result, this.landscape, this.seed);
+          this._installMesh(completed.item.key, mesh, completed.item.segments);
+          built += 1;
+        } catch {
+          this.active.delete(completed.item.key);
+          if (!this.queued.has(completed.item.key)) { this.queue.unshift(completed.item); this.queued.add(completed.item.key); }
+        }
+      }
       while (built < limit && this.queue.length) {
         const item = this.queue.shift();
-        this.queued.delete(item.key);
         const wanted = this.wanted.get(item.key);
-        if (!wanted || wanted.segments !== item.segments) continue;
+        if (!wanted || wanted.segments !== item.segments) { this.queued.delete(item.key); continue; }
         const current = this.active.get(item.key);
-        if (current && current.segments === item.segments) continue;
-        if (current) safeDispose(current.mesh);
+        if (current && current.segments === item.segments) { this.queued.delete(item.key); continue; }
+        if (this.inFlight.has(item.key)) { this.queued.add(item.key); continue; }
+        if (this.worker && this.active.size > 0 && !this.worker.disabled) {
+          if (this.inFlight.size >= 2) { this.queue.unshift(item); break; }
+          let job = null;
+          try {
+            const lod = item.segments >= this.preset.terrainSegments * 0.75 ? 0 : item.segments >= this.preset.terrainSegments * 0.35 ? 1 : 2;
+            job = this.landscape.createWorkerJob({ chunkX: item.chunkX, chunkZ: item.chunkZ, lod, resolution: item.segments + 1, includeNormals: true, includeBiomeWeights: true, priority: Math.round(100 - item.distance * 10) });
+          }
+          catch { job = null; }
+          if (job) {
+            const accepted = this.worker.submit(job, (error, result) => {
+              this.inFlight.delete(item.key);
+              this.queued.delete(item.key);
+              if (this.disposed) return;
+              this.completed.push({ item, error, result });
+            });
+            if (accepted) { this.inFlight.set(item.key, item); continue; }
+          }
+        }
+        this.queued.delete(item.key);
         try {
-          const mesh = buildTerrainChunk(this.B, this.scene, this.material, item.chunkX, item.chunkZ, item.segments, this.seed);
-          this.active.set(item.key, { mesh, segments: item.segments });
+          const initialSegments = this.active.size === 0 ? Math.min(item.segments, 24) : item.segments;
+          const mesh = buildTerrainChunk(this.B, this.scene, this.material, item.chunkX, item.chunkZ, initialSegments, this.seed, this.landscape);
+          this._installMesh(item.key, mesh, initialSegments);
+          if (initialSegments !== item.segments) { this.queue.unshift(item); this.queued.add(item.key); }
           built += 1;
         } catch {
           this.active.delete(item.key);
@@ -955,14 +1410,43 @@
       return built;
     }
 
-    getStats() {
-      return freezeRecord({ activeChunks: this.active.size, queuedChunks: this.queue.length, maxChunks: this.preset.maxChunks, chunkSize: CHUNK_SIZE });
+    _installMesh(key, mesh, segments) {
+      const current = this.active.get(key);
+      if (current?.mesh && !this.reducedMotion && "visibility" in mesh && "visibility" in current.mesh) {
+        mesh.visibility = 0;
+        mesh.metadata = { ...(mesh.metadata || {}), lodTransition: "dither-fade" };
+        this.fades.push({ key, previous: current.mesh, next: mesh, startedAt: now(), duration: 360 });
+      } else if (current?.mesh) safeDispose(current.mesh);
+      this.active.set(key, { mesh, segments });
     }
+
+    _processFades() {
+      if (!this.fades.length) return;
+      const timestamp = now();
+      for (let index = this.fades.length - 1; index >= 0; index -= 1) {
+        const fade = this.fades[index];
+        const progress = clamp((timestamp - fade.startedAt) / fade.duration, 0, 1);
+        try { fade.next.visibility = progress; fade.previous.visibility = 1 - progress; }
+        catch { /* A context transition may already have disposed one mesh. */ }
+        if (progress >= 1) { safeDispose(fade.previous); this.fades.splice(index, 1); }
+      }
+    }
+
+    getStats() {
+      return freezeRecord({ activeChunks: this.active.size, queuedChunks: this.queue.length + this.inFlight.size + this.completed.length, maxChunks: this.preset.maxChunks, chunkSize: CHUNK_SIZE, worker: this.worker?.getStatus?.() || freezeRecord({ active: false, pending: 0, disabled: true, failures: [] }) });
+    }
+
+    pause() { this.worker?.pause?.(); }
+    resume() { if (!this.disposed) { this.worker?.resume?.(); this.dirty = true; } }
 
     dispose() {
       if (this.disposed) return;
       this.disposed = true;
       this.queue.length = 0;
+      this.completed.length = 0;
+      this.inFlight.clear();
+      for (const fade of this.fades) { safeDispose(fade.previous); if (!this.active.get(fade.key)?.mesh || this.active.get(fade.key).mesh !== fade.next) safeDispose(fade.next); }
+      this.fades.length = 0;
       this.queued.clear();
       this.wanted.clear();
       for (const entry of this.active.values()) safeDispose(entry.mesh);
@@ -970,6 +1454,10 @@
       safeDispose(this.material);
       for (const texture of this.textures) safeDispose(texture);
       this.textures.length = 0;
+      this.worker?.dispose?.();
+      this.worker = null;
+      this.lodController?.dispose?.();
+      this.lodController = null;
     }
   }
 
@@ -1577,9 +2065,12 @@
         mesh.metadata = { ...(mesh.metadata || {}), eonwild: true, kind: cinematic ? "verified-cinematic-creature-candidate-part" : "animated-creature-prototype-part", speciesId: definition.id, lod, productionApproved: false };
         if (this.adapter._lights?.shadow && typeof this.adapter._lights.shadow.addShadowCaster === "function") this.adapter._lights.shadow.addShadowCaster(mesh, true);
       }
-      if (!cinematic) for (const material of container.materials || []) {
-        if ("roughness" in material) material.roughness = Math.max(0.78, finite(material.roughness, 0.9));
-        if ("metallic" in material) material.metallic = 0;
+      for (const material of container.materials || []) {
+        if (!cinematic) {
+          if ("roughness" in material) material.roughness = Math.max(0.78, finite(material.roughness, 0.9));
+          if ("metallic" in material) material.metallic = 0;
+        }
+        applyCreatureMaterialReadability(this.B, material, cinematic ? 0.04 : 0.3);
       }
       for (const group of groups) { try { group.stop(); } catch { /* Clip selection starts only after the model is attached. */ } }
       const entry = { definition: { ...definition, lod }, lod, container, wrapper, groups, clipMap, activeClip: "", proxy };
@@ -1788,6 +2279,8 @@
     try { color = typeof B.Color3.FromHexString === "function" ? B.Color3.FromHexString(hex) : new B.Color3(0.55, 0.45, 0.3); }
     catch { color = new B.Color3(0.55, 0.45, 0.3); }
     material.diffuseColor = accent ? new B.Color3(color.r * 0.72, color.g * 0.72, color.b * 0.72) : color;
+    material.ambientColor = new B.Color3(material.diffuseColor.r * 0.34, material.diffuseColor.g * 0.34, material.diffuseColor.b * 0.34);
+    material.emissiveColor = new B.Color3(material.diffuseColor.r * 0.12, material.diffuseColor.g * 0.12, material.diffuseColor.b * 0.12);
     material.specularColor = new B.Color3(0.04, 0.04, 0.035);
     material.roughness = 0.95;
     if (typeof material.freeze === "function") material.freeze();
@@ -1875,6 +2368,7 @@
       this.enabled = enabled !== false;
       this.samples = [];
       this.lastEvaluation = now();
+      this.warmupUntil = this.lastEvaluation + 8000;
       this.slowWindows = 0;
       this.fastWindows = 0;
       this.p95 = 0;
@@ -1882,6 +2376,7 @@
     }
 
     record(frameMs, timestamp) {
+      if (timestamp < this.warmupUntil) return;
       const value = clamp(frameMs, 0.1, 250);
       this.samples.push({ at: timestamp, value });
       while (this.samples.length && (this.samples.length > MAX_FRAME_SAMPLES || this.samples[0].at < timestamp - 2000)) this.samples.shift();
@@ -1919,6 +2414,7 @@
       this.p95 = 0;
       this.average = 0;
       this.lastEvaluation = now();
+      this.warmupUntil = this.lastEvaluation + 8000;
     }
   }
 
@@ -2026,10 +2522,18 @@
       this._canvasCommitted = false;
       this._canvasStyleSnapshot = null;
       this._Babylon = null;
+      this._landscape = null;
       this._streamer = null;
+      this._vegetation = null;
+      this._environmentRenderer = null;
+      this._waterWeather = null;
       this._water = null;
       this._weatherFx = null;
       this._fogBaseDensity = 0.00055;
+      this._sunBaseIntensity = 1.05;
+      this._ambientBaseIntensity = 0.72;
+      this._environmentRenderState = null;
+      this._readabilityState = null;
       this._environmentAssets = null;
       this._creatureAssets = null;
       this._cinematicAudio = null;
@@ -2049,6 +2553,7 @@
         heading: finite(this._options.heading, 0),
         elevation: finite(this._options.elevation, 0)
       };
+      this._lastEnvironmentInteraction = { x: this._player.x, z: this._player.z, at: 0 };
       this._environment = {
         hour: clamp(this._options.timeOfDay === undefined ? 10.5 : this._options.timeOfDay, 0, 24),
         weather: "clear",
@@ -2337,7 +2842,7 @@
       for (const proxy of this._proxies.values()) for (const part of proxy.parts || []) add(part);
       for (const mesh of this._scene?.meshes || []) {
         const kind = String(mesh?.metadata?.kind || "");
-        if (["terrain-chunk", "water-proxy", "cc0-hdri-sky"].includes(kind)) continue;
+        if (["terrain-chunk", "water-proxy", "cc0-hdri-sky"].includes(kind) || mesh?.metadata?.hhEonWildWater) continue;
         // Imported GLB child meshes may not carry metadata, whereas their
         // wrapper does. They are safe bounded assets and should cast shadows.
         add(mesh);
@@ -2561,6 +3066,7 @@
       const B = this._Babylon;
       const scene = new B.Scene(this._engine);
       this._scene = scene;
+      this._landscape = createProceduralLandscape({ ...options, seed: options.seed || "eonwild-mesozoic" });
       scene.clearColor = new B.Color4(0.08, 0.15, 0.17, 1);
       scene.skipPointerMovePicking = true;
       scene.autoClear = true;
@@ -2574,13 +3080,18 @@
 
       const ambient = new B.HemisphericLight("hwe3d-ambient", new B.Vector3(0, 1, 0), scene);
       ambient.intensity = 0.72;
-      ambient.groundColor = new B.Color3(0.12, 0.16, 0.13);
+      ambient.groundColor = makeColor3(B, READABILITY_FLOORS.hemisphereGround);
+      // StandardMaterial uses scene ambient light as its indirect repository
+      // fallback. A non-black value keeps valleys readable before the verified
+      // HDR environment has loaded, without making vegetation self-emissive.
+      scene.ambientColor = makeColor3(B, READABILITY_FLOORS.sceneAmbient);
       const sun = new B.DirectionalLight("hwe3d-sun", new B.Vector3(-0.45, -0.78, 0.35), scene);
       sun.intensity = 1.05;
       sun.position = new B.Vector3(180, 280, -120);
       this._lights = { ambient, sun, shadow: null, shadowKind: "none" };
 
-      const target = new B.Vector3(this._player.x - WORLD_HALF, terrainHeightNumeric(this._player.x, this._player.z, hashSeed(options.seed)) + 3, this._player.z - WORLD_HALF);
+      const targetHeight = terrainSampleFromProvider(this._landscape, this._player.x, this._player.z, hashSeed(options.seed)).height;
+      const target = new B.Vector3(this._player.x - WORLD_HALF, targetHeight + 3, this._player.z - WORLD_HALF);
       const camera = new B.ArcRotateCamera("hwe3d-third-person-camera", -Math.PI / 2.2, 1.08, 27, target, scene);
       camera.lowerRadiusLimit = 10;
       camera.upperRadiusLimit = 72;
@@ -2605,10 +3116,11 @@
       this._rebuildRenderingFeatures(this._qualityPreset, true);
       const shadow = this._lights.shadow;
 
-      const waterMaterial = typeof B.PBRMaterial === "function"
+      const oceanAssets = Array.isArray(options.cinematicOceanAssets) ? options.cinematicOceanAssets : [];
+      const hasVerifiedWaterPbrInput = oceanAssets.length > 0 || Boolean(scene.environmentTexture);
+      const waterMaterial = hasVerifiedWaterPbrInput && typeof B.PBRMaterial === "function"
         ? new B.PBRMaterial("hwe3d-water-pbr-material", scene)
         : new B.StandardMaterial("hwe3d-water-material", scene);
-      const oceanAssets = Array.isArray(options.cinematicOceanAssets) ? options.cinematicOceanAssets : [];
       const personalOceanNormal = oceanAssets.find((asset) => asset?.channel === "normal");
       const personalOceanFoam = oceanAssets.find((asset) => asset?.channel === "foam");
       const waterNormalTexture = createRuntimeTexture(B, scene, personalOceanNormal, options.document || runtime.document, { uScale: 68, vScale: 68, anisotropy: 12 })
@@ -2628,7 +3140,7 @@
         }
       } else {
         waterMaterial.diffuseColor = new B.Color3(0.08, 0.35, 0.43);
-        waterMaterial.emissiveColor = new B.Color3(0.015, 0.07, 0.085);
+        waterMaterial.emissiveColor = new B.Color3(0.055, 0.26, 0.32);
         waterMaterial.specularColor = new B.Color3(0.38, 0.55, 0.58);
         if (typeof B.FresnelParameters === "function") {
           waterMaterial.opacityFresnelParameters = new B.FresnelParameters();
@@ -2650,11 +3162,108 @@
       water.material = waterMaterial;
       water.isPickable = false;
       water.metadata = { eonwild: true, kind: "water-proxy", procedural: true };
-      if (typeof water.freezeWorldMatrix === "function") water.freezeWorldMatrix();
+      // Tide and storm displacement update position.y at runtime, so this
+      // shared surface must keep an unfrozen world matrix.
       this._water = { mesh: water, material: waterMaterial, normalTexture: waterNormalTexture, foamTexture: waterFoamTexture };
       this._weatherFx = createWeatherEffects(B, scene);
 
-      this._streamer = new TerrainStreamer(B, scene, { ...options, document: options.document || runtime.document, seed: options.seed || "eonwild-mesozoic", qualityPreset: this._qualityPreset });
+      this._streamer = new TerrainStreamer(B, scene, { ...options, document: options.document || runtime.document, seed: options.seed || "eonwild-mesozoic", qualityPreset: this._qualityPreset, landscapeCore: this._landscape });
+      if (VEGETATION_CORE && typeof VEGETATION_CORE.create === "function") {
+        try {
+          this._vegetation = VEGETATION_CORE.create({
+            Babylon: B,
+            scene,
+            landscape: this._landscape,
+            seed: options.seed || "eonwild-mesozoic",
+            worldSize: WORLD_SIZE,
+            chunkSize: CHUNK_SIZE,
+            waterLevel: WATER_LEVEL,
+            quality: this._qualityPreset,
+            reducedMotion: this._reducedMotion,
+            document: options.document || runtime.document
+          });
+        } catch (error) { safeCall(options.onTelemetry, { type: "vegetation-fallback", error: compactError(error) }); }
+      }
+      if (ENVIRONMENT_RENDERER && typeof ENVIRONMENT_RENDERER.create === "function") {
+        try {
+          const environmentBudget = PROCEDURAL_ENVIRONMENT_BUDGETS[this._qualityPreset];
+          this._environmentRenderer = ENVIRONMENT_RENDERER.create({
+            BABYLON: B,
+            scene,
+            landscape: this._landscape,
+            vegetationSystem: this._vegetation,
+            seed: options.seed || "eonwild-mesozoic",
+            chunkSize: CHUNK_SIZE,
+            quality: this._qualityPreset,
+            playerX: this._player.x,
+            playerZ: this._player.z,
+            renderOffsetX: -WORLD_HALF,
+            renderOffsetZ: -WORLD_HALF,
+            maxActiveChunks: environmentBudget.chunks,
+            maxActiveInstances: environmentBudget.instances,
+            maxInstancesPerChunk: environmentBudget.perChunk
+          });
+        } catch (error) { safeCall(options.onTelemetry, { type: "environment-renderer-fallback", error: compactError(error) }); }
+      }
+      if (WATER_WEATHER_CORE && typeof WATER_WEATHER_CORE.create === "function") {
+        try {
+          this._waterWeather = WATER_WEATHER_CORE.create({
+            Babylon: B,
+            scene,
+            camera: this._camera,
+            landscape: this._landscape,
+            seed: options.seed || "eonwild-mesozoic",
+            worldSize: WORLD_SIZE,
+            chunkSize: CHUNK_SIZE,
+            waterLevel: WATER_LEVEL,
+            quality: this._qualityPreset,
+            reducedMotion: this._reducedMotion,
+            maxParticles: ENVIRONMENT_BUDGETS[this._qualityPreset].rainParticles
+          });
+          const riverNetwork = this._landscape?.getRiverNetwork?.();
+          if (Array.isArray(riverNetwork) && typeof this._waterWeather.water?.syncRiverNetwork === "function") {
+            const renderNetwork = riverNetwork.map((river) => ({
+              ...river,
+              points: (river.points || []).map((point, index, points) => {
+                const next = points[Math.min(points.length - 1, index + 1)] || point;
+                const run = Math.max(0.001, Math.hypot(finite(next.x) - finite(point.x), finite(next.z) - finite(point.z)));
+                return {
+                  ...point,
+                  x: finite(point.x) - WORLD_HALF,
+                  y: finite(point.bedHeight ?? point.elevation, WATER_LEVEL) + 0.18,
+                  z: finite(point.z) - WORLD_HALF,
+                  flow: clamp(point.discharge ?? point.flow ?? 0.5, 0.05, 8),
+                  slope: clamp((finite(point.bedHeight) - finite(next.bedHeight)) / run, 0, 2)
+                };
+              })
+            }));
+            this._waterWeather.water.syncRiverNetwork(renderNetwork);
+          }
+          if (typeof this._waterWeather.water?.addLake === "function" && this._landscape) {
+            const offsets = [[-540, -310], [460, -620], [720, 280], [-680, 520], [220, 760], [-180, -840]];
+            let lakes = 0;
+            for (let index = 0; index < offsets.length && lakes < 2; index += 1) {
+              const worldX = clamp(this._player.x + offsets[index][0], 96, WORLD_SIZE - 96);
+              const worldZ = clamp(this._player.z + offsets[index][1], 96, WORLD_SIZE - 96);
+              const sample = terrainSampleFromProvider(this._landscape, worldX, worldZ, this._streamer.seed);
+              if (sample.height <= WATER_LEVEL + 0.6 || sample.moisture < 0.68 || finite(sample.slopeDegrees, finite(sample.slope) * 57.2958) > 9) continue;
+              const swamp = ["wetland", "rainforest"].includes(String(sample.biome));
+              this._waterWeather.water.addLake({
+                id: `procedural-${swamp ? "swamp" : "lake"}-${index}`,
+                position: { x: worldX - WORLD_HALF, y: sample.height + 0.12, z: worldZ - WORLD_HALF },
+                level: sample.height + 0.12,
+                width: swamp ? 58 : 92,
+                length: swamp ? 88 : 126,
+                depth: swamp ? 1.4 : 5.2,
+                sediment: swamp ? 0.82 : 0.28,
+                clarity: swamp ? 0.26 : 0.72,
+                flowSpeed: 0.08
+              });
+              lakes += 1;
+            }
+          }
+        } catch (error) { safeCall(options.onTelemetry, { type: "water-weather-fallback", error: compactError(error) }); }
+      }
       this._environmentAssets = new EnvironmentAssetManager(this, B, scene, { ...options, document: options.document || runtime.document, qualityPreset: this._qualityPreset });
       this._creatureAssets = new CreaturePrototypeManager(this, B, scene, { ...options, document: options.document || runtime.document });
       this._cinematicAudio = new CinematicAudioManager(options, options.document || runtime.document);
@@ -2670,13 +3279,14 @@
         const proxy = createSpeciesProxy(B, scene, species);
         const worldX = clamp(placements[index][0], 8, WORLD_SIZE - 8);
         const worldZ = clamp(placements[index][1], 8, WORLD_SIZE - 8);
-        proxy.baseY = terrainHeightNumeric(worldX, worldZ, this._streamer.seed) + proxy.flightOffset;
+        proxy.baseY = terrainSampleFromProvider(this._landscape, worldX, worldZ, this._streamer.seed).height + proxy.flightOffset;
         proxy.root.position = new B.Vector3(worldX - WORLD_HALF, proxy.baseY, worldZ - WORLD_HALF);
         proxy.root.rotation.y = index * 1.45;
         if (typeof proxy.root.setEnabled === "function") proxy.root.setEnabled(species.id === this._playerSpeciesId);
         if (shadow && typeof shadow.addShadowCaster === "function") proxy.parts.forEach((part) => shadow.addShadowCaster(part, true));
         this._proxies.set(species.id, proxy);
       });
+      this._registerShadowCasters(shadow);
       this._applyPlayerPosition();
       this._applyEnvironment();
     }
@@ -2881,9 +3491,13 @@
       this._reducedMotion = next;
       if (this._camera) this._camera.inertia = next ? 0 : 0.72;
       if (next && this._water && this._water.material) this._water.material.alpha = 0.72;
+      if (this._streamer) this._streamer.reducedMotion = next;
       if (next && QUALITY_ORDER.indexOf(this._qualityPreset) > QUALITY_ORDER.indexOf("low")) this._applyQuality("low", "reduced-motion", true);
       else if (!next && QUALITY_ORDER.indexOf(this._qualityPreset) < QUALITY_ORDER.indexOf(this._qualityRequested)) this._applyQuality(this._qualityRequested, "reduced-motion-ended", true);
       this._creatureAssets?.setReducedMotion(next);
+      this._vegetation?.configure?.({ reducedMotion: next });
+      this._environmentRenderer?.configure?.({ reducedMotion: next });
+      this._waterWeather?.configure?.({ reducedMotion: next });
       this._syncWeatherEffects();
       this._emitStatus({ change: "reduced-motion" });
     }
@@ -2907,7 +3521,7 @@
     _applyPlayerPosition() {
       const proxy = this._proxies.get(this._playerSpeciesId);
       if (!proxy || !this._streamer) return;
-      const ground = terrainHeightNumeric(this._player.x, this._player.z, this._streamer.seed);
+      const ground = terrainSampleFromProvider(this._landscape, this._player.x, this._player.z, this._streamer.seed).height;
       proxy.baseY = ground + proxy.flightOffset + this._player.elevation;
       proxy.root.position.x = this._player.x - WORLD_HALF;
       proxy.root.position.y = proxy.baseY;
@@ -2928,10 +3542,57 @@
       if (state.heading !== undefined) this._player.heading = finite(state.heading, this._player.heading);
       if (state.elevation !== undefined) this._player.elevation = clamp(state.elevation, -20, 300);
       this._applyPlayerPosition();
+      const interactionNow = now();
+      const moved = Math.hypot(this._player.x - this._lastEnvironmentInteraction.x, this._player.z - this._lastEnvironmentInteraction.z);
+      if (moved >= 1.2 && interactionNow - this._lastEnvironmentInteraction.at >= 150) {
+        const terrain = terrainSampleFromProvider(this._landscape, this._player.x, this._player.z, this._streamer?.seed || hashSeed(this._options.seed));
+        this.recordEnvironmentalInteraction({
+          type: terrain.height <= WATER_LEVEL + 0.4 ? "water-step" : "footprint",
+          x: this._player.x,
+          z: this._player.z,
+          y: terrain.height,
+          speciesId: this._playerSpeciesId,
+          radius: this._playerSpeciesId === "pteranodon" ? 0.5 : this._playerSpeciesId === "triceratops" ? 2.4 : 1.8,
+          intensity: clamp(moved / 5, 0.35, 1)
+        });
+        this._lastEnvironmentInteraction = { x: this._player.x, z: this._player.z, at: interactionNow };
+      }
       return makeResult(true, { player: freezeRecord({ ...this._player, speciesId: this._playerSpeciesId }) });
     }
 
     updatePlayer(state) { return this.setPlayerState(state); }
+
+    recordEnvironmentalInteraction(input = {}) {
+      if (!input || typeof input !== "object") return makeResult(false, { reason: makeReason("ENVIRONMENT_INTERACTION_INVALID", "Environmental interactions must be objects.", "input", {}, true) });
+      const eventX = clamp(input.x, 0, WORLD_SIZE);
+      const eventZ = clamp(input.z === undefined ? input.worldZ : input.z, 0, WORLD_SIZE);
+      const groundY = terrainSampleFromProvider(this._landscape, eventX, eventZ, this._streamer?.seed || hashSeed(this._options.seed)).height;
+      const event = freezeRecord({
+        type: String(input.type || "footprint").replace(/[^a-z0-9-]/gi, "").slice(0, 32) || "footprint",
+        x: eventX,
+        y: clamp(finite(input.y, groundY), -512, 4096),
+        z: eventZ,
+        speciesId: String(input.speciesId || this._playerSpeciesId).replace(/[^a-z0-9-]/gi, "").slice(0, 48),
+        radius: clamp(input.radius ?? 1, 0.1, 24),
+        intensity: clamp(input.intensity ?? 0.6, 0, 1),
+        at: finite(input.at, now())
+      });
+      try {
+        if (this._environmentRenderer?.disturb) this._environmentRenderer.disturb(event);
+        else this._vegetation?.disturb?.(event);
+      } catch { /* Disturbance is a bounded visual enhancement. */ }
+      try {
+        const environment = this._waterWeather;
+        if (event.type === "water-step") {
+          environment?.interactions?.addSplash?.({ ...event, strength: event.intensity, surface: "water" });
+          environment?.water?.emitRipple?.({ ...event, strength: event.intensity, surface: "water" });
+          environment?.water?.emitWake?.({ ...event, strength: event.intensity * 0.7, surface: "water" });
+        } else environment?.interactions?.addFootprint?.({ ...event, strength: event.intensity, surface: event.type.includes("snow") ? "snow" : "soil" });
+        environment?.interactions?.addDisturbance?.({ ...event, strength: event.intensity, compression: event.intensity });
+        environment?.interactions?.addWetness?.({ ...event, wetness: this._environmentRenderState?.weather?.wetness || 0, surface: "ground" });
+      } catch { /* Water/footprint fallback remains optional. */ }
+      return makeResult(true, { interaction: event });
+    }
 
     selectSpecies(speciesId) {
       const id = String(speciesId || "").toLowerCase();
@@ -2951,7 +3612,7 @@
       const worldX = clamp(state.x === undefined ? proxy.root.position.x + WORLD_HALF : state.x, 0, WORLD_SIZE);
       const worldZ = clamp(state.z === undefined ? (state.y === undefined ? proxy.root.position.z + WORLD_HALF : state.y) : state.z, 0, WORLD_SIZE);
       const altitude = proxy.flightOffset + clamp(state.elevation || 0, -20, 300);
-      proxy.baseY = terrainHeightNumeric(worldX, worldZ, this._streamer ? this._streamer.seed : hashSeed(this._options.seed)) + altitude;
+      proxy.baseY = terrainSampleFromProvider(this._landscape, worldX, worldZ, this._streamer ? this._streamer.seed : hashSeed(this._options.seed)).height + altitude;
       proxy.root.position.x = worldX - WORLD_HALF;
       proxy.root.position.y = proxy.baseY;
       proxy.root.position.z = worldZ - WORLD_HALF;
@@ -3088,6 +3749,8 @@
       this._scene.clearColor = new B.Color4(sky[0], sky[1], sky[2], 1);
       this._lights.ambient.intensity = (0.18 + daylight * 0.58) * weather.light;
       this._lights.sun.intensity = (0.06 + daylight * 1.14) * weather.light;
+      this._ambientBaseIntensity = this._lights.ambient.intensity;
+      this._sunBaseIntensity = this._lights.sun.intensity;
       this._lights.sun.direction = new B.Vector3(-Math.cos(angle) * 0.66, -Math.max(0.08, elevation), Math.sin(angle) * 0.45);
       this._lights.sun.diffuse = new B.Color3(1, lerp(0.58, 0.96, daylight), lerp(0.38, 0.82, daylight));
 
@@ -3099,6 +3762,7 @@
       const fogColor = override && override.color || sky.map((channel) => channel * 0.82);
       this._scene.fogColor = makeColor3(B, fogColor);
       this._syncWeatherEffects();
+      this._waterWeather?.configure?.({ weather: this._environment.weather, timeOfDay: hour, fog: this._environment.fog, reducedMotion: this._reducedMotion });
       this._environmentAssets?.syncEnvironment(hour, this._environment.weather);
       if (announce) safeCall(this._options.onEnvironmentChange, this.getEnvironment());
     }
@@ -3108,7 +3772,18 @@
       if (!effect?.rain) return;
       const rainy = this._environment.weather === "rain" || this._environment.weather === "storm";
       const budget = ENVIRONMENT_BUDGETS[this._qualityPreset].rainParticles;
-      effect.rain.emitRate = rainy ? Math.round(budget * (this._environment.weather === "storm" ? 2.2 : 1.35) * (this._reducedMotion ? 0.45 : 1)) : 0;
+      let rainOcclusion = 0;
+      try {
+        const chunkX = Math.floor(this._player.x / CHUNK_SIZE);
+        const chunkZ = Math.floor(this._player.z / CHUNK_SIZE);
+        const shelters = this._landscape?.getSheltersForChunk?.(chunkX, chunkZ) || this._landscape?.querySheltersInChunk?.(chunkX, chunkZ) || [];
+        for (const shelter of shelters) {
+          const distance = Math.hypot(this._player.x - finite(shelter?.position?.x), this._player.z - finite(shelter?.position?.z));
+          const reach = clamp(finite(shelter?.radius, 2) + finite(shelter?.depth, 0) * 0.35, 1, 24);
+          if (distance <= reach) rainOcclusion = Math.max(rainOcclusion, clamp(shelter?.rainOcclusion ?? 0.75, 0, 1) * (1 - distance / reach));
+        }
+      } catch { rainOcclusion = 0; }
+      effect.rain.emitRate = rainy ? Math.round(budget * (this._environment.weather === "storm" ? 2.2 : 1.35) * (this._reducedMotion ? 0.45 : 1) * (1 - rainOcclusion)) : 0;
       effect.rain.direction1.x = this._environment.weather === "storm" ? -9 : -2.2;
       effect.rain.direction2.x = this._environment.weather === "storm" ? -4 : 1.2;
       if (rainy && !effect.active) {
@@ -3123,6 +3798,10 @@
       const reduced = this._reducedMotion;
       if (this._water?.material) {
         this._water.material.alpha = reduced ? 0.72 : 0.7 + Math.sin(this._elapsed * 0.45) * 0.018;
+        if (this._water.mesh?.position) {
+          const stormWave = this._environment.weather === "storm" ? Math.sin(this._elapsed * 0.82) * 0.1 : 0;
+          this._water.mesh.position.y = WATER_LEVEL + Math.sin(this._elapsed * 0.012) * 0.16 + stormWave;
+        }
         const texture = this._water.normalTexture;
         if (texture && !reduced) {
           texture.uOffset = (this._elapsed * 0.0045) % 1;
@@ -3141,6 +3820,102 @@
         this._weatherFx.rain.emitter.z = this._player.z - WORLD_HALF;
       }
       this._environmentAssets?.animate(this._elapsed, this._environment.weather, reduced);
+    }
+
+    _updateProceduralEnvironment(deltaSeconds) {
+      const sample = terrainSampleFromProvider(this._landscape, this._player.x, this._player.z, this._streamer?.seed || hashSeed(this._options.seed));
+      const context = {
+        elapsed: this._elapsed,
+        deltaSeconds,
+        player: { x: this._player.x, y: sample.height, z: this._player.z, speciesId: this._playerSpeciesId },
+        camera: this._camera ? { x: finite(this._camera.position?.x) + WORLD_HALF, y: finite(this._camera.position?.y), z: finite(this._camera.position?.z) + WORLD_HALF } : null,
+        cameraX: this._camera ? finite(this._camera.position?.x) + WORLD_HALF : this._player.x,
+        cameraZ: this._camera ? finite(this._camera.position?.z) + WORLD_HALF : this._player.z,
+        terrain: sample,
+        time: this._elapsed,
+        timeSeconds: this._elapsed,
+        delta: deltaSeconds,
+        hour: this._environment.hour,
+        weather: this._environment.weather,
+        quality: this._qualityPreset,
+        reducedMotion: this._reducedMotion,
+        visible: !(this._options.document || runtime.document)?.hidden
+      };
+      let renderState = null;
+      if (this._waterWeather) {
+        try {
+          const updated = this._waterWeather.update(deltaSeconds, { ...context, collectState: false });
+          renderState = updated && typeof updated === "object"
+            ? updated
+            : { weather: this._waterWeather.weather?.getState?.(), atmosphere: this._waterWeather.atmosphere?.getRenderState?.() };
+        } catch (error) { safeCall(this._options.onTelemetry, { type: "water-weather-runtime-fallback", error: compactError(error) }); }
+      }
+      this._environmentRenderState = renderState;
+      if (this._vegetation) {
+        try {
+          const weatherWind = renderState?.weather?.wind;
+          const vegetationEnvironment = {
+            wetness: renderState?.weather?.wetness ?? 0,
+            snow: renderState?.weather?.snowCover ?? 0,
+            burn: this._environment.weather === "ash" ? 0.18 : 0,
+            mud: clamp((renderState?.weather?.wetness ?? 0) * (sample.moisture ?? 0.5), 0, 1),
+            baseWindSpeed: weatherWind?.speed,
+            windDirectionRadians: weatherWind ? Math.atan2(finite(weatherWind.z), finite(weatherWind.x, 1)) : undefined
+          };
+          if (this._environmentRenderer) {
+            this._environmentRenderer.configure?.(vegetationEnvironment);
+            this._environmentRenderer.update({
+              playerX: this._player.x,
+              playerZ: this._player.z,
+              forwardX: Math.cos(this._player.heading),
+              forwardZ: Math.sin(this._player.heading),
+              fovRadians: this._camera?.fov,
+              timeSeconds: this._elapsed,
+              deltaSeconds,
+              weather: { type: this._environment.weather, ...renderState?.weather, ...vegetationEnvironment },
+              wetness: vegetationEnvironment.wetness
+            });
+          } else {
+            this._vegetation.configure?.(vegetationEnvironment);
+            this._vegetation.update({
+              ...context,
+              time: this._elapsed,
+              dt: deltaSeconds,
+              wetness: renderState?.wetness?.ground ?? renderState?.weather?.wetness ?? 0,
+              wind: renderState?.wind || renderState?.weather?.wind || null
+            });
+          }
+        } catch (error) { safeCall(this._options.onTelemetry, { type: "vegetation-runtime-fallback", error: compactError(error) }); }
+      }
+
+      const wetness = clamp(renderState?.wetness?.ground ?? renderState?.weather?.wetness ?? 0, 0, 1);
+      const lightning = clamp(renderState?.lightning?.intensity ?? renderState?.weather?.flash?.intensity ?? renderState?.weather?.lightning ?? 0, 0, 1);
+      if (this._streamer?.material && "roughness" in this._streamer.material) this._streamer.material.roughness = lerp(0.96, 0.68, wetness);
+      const atmosphere = renderState?.atmosphere;
+      const skyColor = atmosphere?.sky?.color;
+      if (skyColor && this._scene && this._Babylon) this._scene.clearColor = new this._Babylon.Color4(clamp(skyColor.r, 0, 1), clamp(skyColor.g, 0, 1), clamp(skyColor.b, 0, 1), 1);
+      if (this._lights?.sun) {
+        const sunDirection = atmosphere?.sun?.direction;
+        if (sunDirection && this._Babylon) this._lights.sun.direction = new this._Babylon.Vector3(-finite(sunDirection.x), -Math.max(0.04, finite(sunDirection.y)), -finite(sunDirection.z));
+        this._lights.sun.intensity = finite(atmosphere?.sun?.intensity, this._sunBaseIntensity) + lightning * 2.8;
+      }
+      if (this._lights?.ambient) {
+        const ambientColor = atmosphere?.ambient?.color;
+        if (ambientColor && this._Babylon) this._lights.ambient.diffuse = new this._Babylon.Color3(clamp(ambientColor.r, 0, 1), clamp(ambientColor.g, 0, 1), clamp(ambientColor.b, 0, 1));
+        this._lights.ambient.intensity = finite(atmosphere?.ambient?.intensity, this._ambientBaseIntensity) + lightning * 0.8;
+      }
+      const layeredFogDensity = Array.isArray(atmosphere?.fogLayers) ? atmosphere.fogLayers.reduce((sum, layer) => sum + clamp(layer?.density, 0, 0.1), 0) * 0.09 : NaN;
+      const fogDensity = finite(atmosphere?.fogDensity ?? renderState?.fog?.density ?? layeredFogDensity, NaN);
+      if (this._scene && Number.isFinite(fogDensity) && this._scene.fogMode !== this._Babylon?.Scene?.FOGMODE_NONE) {
+        this._scene.fogDensity = clamp(Math.max(this._scene.fogDensity, fogDensity), 0, 0.02);
+      }
+      const hourAngle = (this._environment.hour - 6) / 24 * Math.PI * 2;
+      const fallbackDaylight = clamp((Math.sin(hourAngle) + 0.08) / 0.35, 0, 1);
+      this._readabilityState = enforceClearDaylightReadability(this._Babylon, this._scene, this._lights, this._streamer?.material, {
+        daylight: atmosphere?.sun?.daylight == null ? fallbackDaylight : atmosphere.sun.daylight,
+        weather: this._environment.weather,
+        allowExposureFloor: finite(this._photoSettings.exposure, DEFAULT_PHOTO_SETTINGS.exposure) >= READABILITY_FLOORS.exposure
+      });
     }
 
     setQualityPreset(value, options = {}) {
@@ -3170,6 +3945,10 @@
         this._streamer.update(this._player.x, this._player.z, true);
       }
       this._environmentAssets?.configure(presetId);
+      this._vegetation?.configure?.({ quality: presetId, reducedMotion: this._reducedMotion });
+      const environmentBudget = PROCEDURAL_ENVIRONMENT_BUDGETS[presetId];
+      this._environmentRenderer?.configure?.({ quality: presetId, reducedMotion: this._reducedMotion, maxActiveChunks: environmentBudget.chunks, maxActiveInstances: environmentBudget.instances, maxInstancesPerChunk: environmentBudget.perChunk });
+      this._waterWeather?.configure?.({ quality: presetId, reducedMotion: this._reducedMotion, maxParticles: ENVIRONMENT_BUDGETS[presetId].rainParticles });
       this._syncWeatherEffects();
       if (this._canvas) this._canvas.setAttribute("data-hwe-3d-quality", presetId);
       if (changed && announce) {
@@ -3204,6 +3983,7 @@
         }
       }
       this._animateAtmosphere();
+      this._updateProceduralEnvironment(deltaSeconds);
     }
 
     _followPlayer(deltaSeconds) {
@@ -3260,7 +4040,9 @@
           }
         } catch { /* Keep the mesh-derived estimate when the backend has no counter. */ }
         const finishedAt = now();
-        this._governor.record(Math.max(finishedAt - startedAt, rawDelta * 1000), finishedAt);
+        // Ignore browser suspension/debugger gaps. Genuine slow rendering still
+        // appears in finishedAt-startedAt and in consecutive <=120 ms frames.
+        if (rawDelta <= 0.12) this._governor.record(Math.max(finishedAt - startedAt, rawDelta * 1000), finishedAt);
         if (finishedAt - this._lastTelemetryAt >= 1000) {
           this._lastTelemetryAt = finishedAt;
           safeCall(this._options.onTelemetry, this.getTelemetry());
@@ -3366,10 +4148,12 @@
     }
 
     getTelemetry() {
-      const streaming = this._streamer ? this._streamer.getStats() : freezeRecord({ activeChunks: 0, queuedChunks: 0, maxChunks: 0, chunkSize: CHUNK_SIZE });
+      const streaming = this._streamer ? this._streamer.getStats() : freezeRecord({ activeChunks: 0, queuedChunks: 0, maxChunks: 0, chunkSize: CHUNK_SIZE, worker: freezeRecord({ active: false, pending: 0, disabled: true, failures: [] }) });
       const environmentAssets = this._environmentAssets ? this._environmentAssets.getStatus() : freezeRecord({ status: "procedural", loadedAssets: [], loadedInstances: 0, visibleInstances: 0, hdr: false, failures: [] });
       const creatureAssets = this._creatureAssets ? this._creatureAssets.getStatus() : freezeRecord({ status: "procedural", loadedSpecies: [], activeClips: freezeRecord({}), productionApproved: false, failures: [] });
       const cinematicAudio = this._cinematicAudio ? this._cinematicAudio.getStatus() : freezeRecord({ status: "fallback", enabled: false, channel: "", playing: false, playBlocked: false, productionApproved: false });
+      const vegetation = this._environmentRenderer?.getTelemetry?.() || this._vegetation?.getStatus?.() || freezeRecord({ status: "fallback", activeChunks: 0, activeInstances: 0 });
+      const waterWeather = this._waterWeather?.getTelemetry?.() || freezeRecord({ status: "fallback", waterBodies: 1, particles: 0, interactions: 0 });
       const average = this._governor.average;
       const render = this._collectRenderTelemetry();
       return freezeRecord({
@@ -3394,14 +4178,21 @@
         activeChunks: streaming.activeChunks,
         queuedChunks: streaming.queuedChunks,
         maxChunks: streaming.maxChunks,
+        landscapeWorker: streaming.worker,
         worldSize: WORLD_SIZE,
         reducedMotion: this._reducedMotion,
         hidden: Boolean((this._options.document || runtime.document) && (this._options.document || runtime.document).hidden),
         proxySpecies: FLAGSHIP_IDS.slice(),
         environmentAssets,
+        proceduralEnvironment: freezeRecord({
+          landscape: this._landscape ? "active" : "legacy-fallback",
+          vegetation,
+          waterWeather
+        }),
         creatureAssets,
         cinematicAudio,
         renderingFeatures: this._getRenderingFeatureStatus(),
+        readability: this._readabilityState ? freezeRecord({ ...this._readabilityState }) : freezeRecord({ applied: false }),
         photoCamera: this.getPhotoSettings(),
         rainParticleBudget: ENVIRONMENT_BUDGETS[this._qualityPreset].rainParticles,
         physics: "kinematic-proxy-only"
@@ -3438,6 +4229,10 @@
       }
       if (this._state !== "running") return makeResult(this._state === "paused", { status: this._state, cause });
       try { this._engine && this._engine.stopRenderLoop(this._renderFrame); } catch { /* Pausing must remain safe. */ }
+      this._streamer?.pause?.();
+      this._environmentRenderer?.pause?.(cause);
+      this._vegetation?.pause?.(cause);
+      this._waterWeather?.pause?.(cause);
       this._cinematicAudio?.pause();
       this._state = "paused";
       this._emitStatus({ cause: String(cause) });
@@ -3456,6 +4251,10 @@
       this._pausedByVisibility = false;
       this._state = "running";
       this._lastFrameAt = now();
+      this._streamer?.resume?.();
+      this._environmentRenderer?.resume?.(cause);
+      this._vegetation?.resume?.(cause);
+      this._waterWeather?.resume?.(cause);
       this._engine.runRenderLoop(this._renderFrame);
       this._cinematicAudio?.resume();
       this._scheduleEnvironmentAssetLoad(this._generation);
@@ -3509,6 +4308,14 @@
       this._renderFeaturePreset = null;
       if (this._streamer) this._streamer.dispose();
       this._streamer = null;
+      try { this._environmentRenderer?.dispose?.(); } catch { /* Thin-instance cleanup must fail open. */ }
+      this._environmentRenderer = null;
+      try { this._vegetation?.dispose?.(); } catch { /* Subsystem disposal must fail open. */ }
+      this._vegetation = null;
+      try { this._waterWeather?.dispose?.(); } catch { /* Subsystem disposal must fail open. */ }
+      this._waterWeather = null;
+      try { this._landscape?.dispose?.(); } catch { /* Pure procedural state remains optional. */ }
+      this._landscape = null;
       this._environmentAssets?.dispose();
       this._environmentAssets = null;
       this._creatureAssets?.dispose();
@@ -3528,6 +4335,8 @@
         safeDispose(this._water.foamTexture);
       }
       this._water = null;
+      this._environmentRenderState = null;
+      this._readabilityState = null;
       if (this._weatherFx) {
         try { this._weatherFx.rain?.stop(); } catch { /* Cleanup only. */ }
         safeDispose(this._weatherFx.rain);
@@ -3598,6 +4407,7 @@
     DEFAULT_REMOTE_BABYLON_URL,
     DEFAULT_ENVIRONMENT_ASSET_BASE,
     DEFAULT_CREATURE_ASSET_BASE,
+    DEFAULT_LANDSCAPE_WORKER_URL,
     ENVIRONMENT_ASSETS,
     ENVIRONMENT_BUDGETS,
     CREATURE_PROTOTYPE_ASSETS,
@@ -3607,12 +4417,18 @@
     QUALITY_ORDER,
     CINEMATIC_PRESET,
     DEFAULT_PHOTO_SETTINGS,
+    READABILITY_FLOORS,
     detectCapabilities,
     loadBabylon,
     loadBabylonGltfLoader,
     sampleTerrain,
     sampleTerrainHeight,
+    createProceduralLandscape,
+    applyTerrainMaterialReadability,
+    applyCreatureMaterialReadability,
+    enforceClearDaylightReadability,
     planEnvironmentPlacements,
+    LandscapeWorkerBridge,
     create,
     createRenderer,
     start,

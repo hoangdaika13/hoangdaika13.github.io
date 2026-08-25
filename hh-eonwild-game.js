@@ -6,7 +6,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createEonWild(global) {
   "use strict";
 
-  const VERSION = "4.0.0";
+  const VERSION = "4.1.0";
   const STORAGE_KEY = "hh.game.eonwild.v4";
   const LEGACY_STORAGE_KEY = "hh.game.eonwild.v3";
   const V2_STORAGE_KEY = "hh.game.eonwild.v2";
@@ -1136,7 +1136,10 @@
         const cinematicTelemetry = rendererStatus?.drawCalls != null
           ? ` · ${rendererStatus.drawCalls} draw · ${Math.round((rendererStatus.triangles || 0) / 1000)}K tri · ~${rendererStatus.estimatedVramMiB || 0} MiB VRAM${rendererStatus.vramWarning ? " ⚠" : ""}`
           : "";
-        node.textContent = `${fps} FPS · ${instance.population.filter((row) => row.alive).length} wildlife · ${rendererStatus?.backend?.toUpperCase?.() || "LITE"}${cinematicTelemetry}`;
+        const procedural = rendererStatus?.proceduralEnvironment;
+        const vegetationCount = procedural?.vegetation?.activeInstances ?? procedural?.vegetation?.renderedInstances ?? procedural?.vegetation?.instances ?? procedural?.vegetation?.instanceCount;
+        const environmentTelemetry = Number.isFinite(vegetationCount) ? ` · ${vegetationCount} vegetation` : "";
+        node.textContent = `${fps} FPS · ${instance.population.filter((row) => row.alive).length} wildlife · ${rendererStatus?.backend?.toUpperCase?.() || "LITE"}${cinematicTelemetry}${environmentTelemetry}`;
       }
       if (!instance.renderer3d && instance.state.settings.adaptiveQuality && fps < 28) {
         instance.renderBudget = Math.max(.45, (instance.renderBudget || 1) - .18);
@@ -1596,6 +1599,10 @@
         playerX: instance.state.player.x,
         playerZ: instance.state.player.y,
         seed: renderSeed,
+        realmId: instance.state.realmId,
+        timeSliceId: instance.state.worldAddress?.timeSliceId,
+        regionId: instance.state.worldAddress?.regionId,
+        worker: instance.state.settings.worker,
         // Prefer WebGPU, then let the guarded adapter rebuild a clean canvas
         // and fall back to WebGL2 before Canvas Lite if a driver rejects it.
         backend: "auto",
@@ -1671,7 +1678,7 @@
         setQuality(value) { adapter.setQualityPreset(qualityToAdapter[value] || "balanced"); return value; },
         setMotion(value) { adapter.setReducedMotion(value === "static" || reduced3DPreference(instance) ? true : "auto"); return value; },
         setAudio(enabled, volume) { return adapter.setAmbientAudio?.(enabled, clamp(volume, 0, 1)); },
-        getStatus() { const telemetry = lastTelemetry || adapter.getTelemetry(); const observedQuality = ({ low: "light", balanced: "balanced", high: "high", ultra: "cinematic", cinematic: "personal" })[telemetry.qualityPreset] || "balanced"; return { backend: adapter.backend, quality: instance.state.settings.quality === "personal" ? "personal" : observedQuality, fps: telemetry.fps, chunks: telemetry.activeChunks, wildlife: telemetry.proxySpecies?.length || 0, address: instance.state.worldAddress, drawCalls: telemetry.drawCalls, triangles: telemetry.triangles, estimatedVramMiB: telemetry.estimatedVramMiB, vramWarning: telemetry.estimatedVramMiB >= 6144 }; },
+        getStatus() { const telemetry = lastTelemetry || adapter.getTelemetry(); const observedQuality = ({ low: "light", balanced: "balanced", high: "high", ultra: "cinematic", cinematic: "personal" })[telemetry.qualityPreset] || "balanced"; return { backend: adapter.backend, quality: instance.state.settings.quality === "personal" ? "personal" : observedQuality, fps: telemetry.fps, chunks: telemetry.activeChunks, wildlife: telemetry.proxySpecies?.length || 0, address: instance.state.worldAddress, drawCalls: telemetry.drawCalls, triangles: telemetry.triangles, estimatedVramMiB: telemetry.estimatedVramMiB, vramWarning: telemetry.estimatedVramMiB >= 6144, landscapeWorker: telemetry.landscapeWorker, proceduralEnvironment: telemetry.proceduralEnvironment }; },
         capture(options = {}) { return adapter.capture("image/png", options); },
         setPhotoSettings(value) { return adapter.setPhotoSettings?.(value); },
         dispose() { const result = adapter.dispose()?.ok !== false; releaseCinematicUrls(); return result; }
