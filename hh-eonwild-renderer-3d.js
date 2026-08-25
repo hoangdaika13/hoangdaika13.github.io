@@ -18,7 +18,7 @@
    * Canvas2D fallback contract.
    */
 
-  const VERSION = "1.4.0";
+  const VERSION = "1.5.1";
   // Four 8.192 km half-axes provide a true 16.384 x 16.384 km streamed realm.
   // Only nearby 256 m chunks are materialized, so the larger address space
   // does not multiply active geometry or main-thread work.
@@ -129,6 +129,20 @@
     cameraShake: 0,
     smoothing: 10
   });
+  const CAMERA_COLLISION_RAY_OFFSETS = Object.freeze([
+    Object.freeze([0, 0]),
+    Object.freeze([1, 0]),
+    Object.freeze([-1, 0]),
+    Object.freeze([0, 1]),
+    Object.freeze([0, -1])
+  ]);
+  const CAMERA_BLOCKER_CATEGORIES = Object.freeze(new Set(["mature-tree", "dead-tree", "sapling", "root", "log"]));
+  const MAX_INTERACTIVE_RESOURCE_MARKERS = 48;
+  const INTERACTIVE_RESOURCE_DISTANCE = 180;
+  const PROCEDURAL_LAKE_OFFSETS = Object.freeze([
+    Object.freeze([-540, -310]), Object.freeze([460, -620]), Object.freeze([720, 280]),
+    Object.freeze([-680, 520]), Object.freeze([220, 760]), Object.freeze([-180, -840])
+  ]);
   // A restrained indirect-light floor keeps vertex-coloured terrain readable
   // on WebGPU while the optional IBL is absent or still compiling. Directional
   // sun and weather shading remain active; this is not an unlit override.
@@ -239,6 +253,46 @@
       y: -Math.sin(finite(pitch, 0)) * radius,
       z: -Math.cos(finite(yaw, 0)) * horizontal * radius
     });
+  }
+  function gameplayLookDirection(yaw, pitch) {
+    const boundedPitch = clamp(pitch, -Math.PI / 2 + 0.001, Math.PI / 2 - 0.001);
+    const horizontal = Math.cos(boundedPitch);
+    return freezeRecord({
+      x: Math.sin(finite(yaw, 0)) * horizontal,
+      y: Math.sin(boundedPitch),
+      z: Math.cos(finite(yaw, 0)) * horizontal
+    });
+  }
+  function raySphereIntersectionDistance(origin, direction, center, radius, maximumDistance = Infinity) {
+    if (!origin || !direction || !center) return null;
+    const dx = finite(direction.x, NaN); const dy = finite(direction.y, NaN); const dz = finite(direction.z, NaN);
+    const length = Math.hypot(dx, dy, dz);
+    const boundedRadius = Math.max(0, finite(radius, 0));
+    if (!Number.isFinite(length) || length <= 1e-9 || boundedRadius <= 0) return null;
+    const ux = dx / length; const uy = dy / length; const uz = dz / length;
+    const ox = finite(origin.x, NaN) - finite(center.x, NaN);
+    const oy = finite(origin.y, NaN) - finite(center.y, NaN);
+    const oz = finite(origin.z, NaN) - finite(center.z, NaN);
+    if (![ox, oy, oz].every(Number.isFinite)) return null;
+    const projection = ox * ux + oy * uy + oz * uz;
+    const discriminant = projection * projection - (ox * ox + oy * oy + oz * oz - boundedRadius * boundedRadius);
+    if (discriminant < 0) return null;
+    const root = Math.sqrt(discriminant);
+    const near = -projection - root;
+    const far = -projection + root;
+    const distance = near >= 0 ? near : (far >= 0 ? 0 : null);
+    const limit = Math.max(0, finite(maximumDistance, Infinity));
+    return distance !== null && distance <= limit ? distance : null;
+  }
+  function safeEntityId(value) {
+    return String(value == null ? "" : value).normalize("NFKC").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 128);
+  }
+  function exactMetadataEntityId(metadata) {
+    if (!metadata || metadata.identityExact !== true) return "";
+    const targetId = safeEntityId(metadata.targetId);
+    const entityId = safeEntityId(metadata.entityId);
+    if (targetId && entityId && targetId !== entityId) return "";
+    return targetId || entityId;
   }
   const normalizePreset = (value, fallback = "balanced") => {
     const normalized = String(value || "").trim().toLowerCase();
@@ -388,6 +442,57 @@
       biome: sample.biome,
       underwater: sample.height < WATER_LEVEL
     });
+  }
+
+  function planProceduralLakes(landscape, playerX, playerZ) {
+    if (!landscape || typeof landscape.sample !== "function") return Object.freeze([]);
+    const lakes = [];
+    for (let index = 0; index < PROCEDURAL_LAKE_OFFSETS.length && lakes.length < 2; index += 1) {
+      const offset = PROCEDURAL_LAKE_OFFSETS[index];
+      const worldX = clamp(finite(playerX, WORLD_HALF) + offset[0], 96, WORLD_SIZE - 96);
+      const worldZ = clamp(finite(playerZ, WORLD_HALF) + offset[1], 96, WORLD_SIZE - 96);
+      const sample = terrainSampleFromProvider(landscape, worldX, worldZ, hashSeed("eonwild-lakes"));
+      if (sample.height <= WATER_LEVEL + .6 || sample.moisture < .68 || finite(sample.slopeDegrees, finite(sample.slope) * 57.2958) > 9) continue;
+      const swamp = ["wetland", "rainforest"].includes(String(sample.biome));
+      lakes.push(freezeRecord({
+        id: `procedural-${swamp ? "swamp" : "lake"}-${index}`,
+        type: swamp ? "swamp" : "lake",
+        worldX,
+        worldZ,
+        level: sample.height + .12,
+        width: swamp ? 58 : 92,
+        length: swamp ? 88 : 126,
+        depth: swamp ? 1.4 : 5.2,
+        sediment: swamp ? .82 : .28,
+        clarity: swamp ? .26 : .72,
+        flowSpeed: .08
+      }));
+    }
+    return Object.freeze(lakes);
+  }
+
+  function queryLandscapeWater(landscape, worldX, worldZ, options = {}) {
+    if (!landscape || typeof landscape.sample !== "function") return null;
+    const x = clamp(worldX, 0, WORLD_SIZE);
+    const z = clamp(worldZ, 0, WORLD_SIZE);
+    const sample = terrainSampleFromProvider(landscape, x, z, hashSeed(options.seed || "eonwild-water-query"));
+    const seaLevel = finite(landscape.config?.seaLevel, WATER_LEVEL);
+    if (sample.height <= seaLevel) return freezeRecord({ inside: true, isWater: true, type: "ocean", surfaceHeight: seaLevel, depth: Math.max(0, seaLevel - sample.height), walkable: false });
+    const river = sample.river;
+    if (river && finite(river.distance, Infinity) <= Math.max(.5, finite(river.width, 0))) {
+      const surfaceHeight = finite(river.bedHeight, sample.height) + .18;
+      return freezeRecord({ inside: true, isWater: true, type: "river", surfaceHeight, depth: Math.max(.18, surfaceHeight - sample.height), walkable: false });
+    }
+    const lakes = Array.isArray(options.lakes) ? options.lakes : [];
+    for (const lake of lakes) {
+      const radiusX = Math.max(1, finite(lake.width, 1) * .5);
+      const radiusZ = Math.max(1, finite(lake.length, 1) * .5);
+      const dx = (x - finite(lake.worldX)) / radiusX;
+      const dz = (z - finite(lake.worldZ)) / radiusZ;
+      if (dx * dx + dz * dz > 1) continue;
+      return freezeRecord({ inside: true, isWater: true, type: String(lake.type || "lake"), surfaceHeight: finite(lake.level, sample.height), depth: Math.max(0, finite(lake.depth, finite(lake.level) - sample.height)), walkable: false });
+    }
+    return null;
   }
 
   function testWebGL(documentRef, kind) {
@@ -1540,15 +1645,20 @@
 
   function environmentPlacementAllowed(definition, sample, slope) {
     if (!definition || !sample || sample.height <= WATER_LEVEL + 0.75 || slope > (definition.id === "rock" ? 10 : 5.5)) return false;
-    if (definition.id === "fern") return sample.moisture >= 0.34 && !["badland", "rock"].includes(sample.biome);
-    if (definition.id === "quiver") return sample.moisture < 0.62 && ["upland", "badland", "fern"].includes(sample.biome);
-    return sample.biome !== "waterbed";
+    if (["ocean", "reef", "waterbed", "river"].includes(sample.biome)) return false;
+    if (definition.id === "fern") return sample.moisture >= 0.34 && !["badland", "rock", "desert", "volcanic"].includes(sample.biome);
+    if (definition.id === "quiver") return sample.moisture < 0.62 && ["upland", "badland", "fern", "grassland", "desert", "scrub"].includes(sample.biome);
+    return true;
   }
 
   function planEnvironmentPlacements(worldX, worldZ, options = {}) {
     const presetId = normalizePreset(options.qualityPreset || options.quality, "balanced");
     const budget = ENVIRONMENT_BUDGETS[presetId];
     const seed = typeof options.seed === "number" ? options.seed >>> 0 : hashSeed(options.seed || "eonwild-mesozoic");
+    const terrainProvider = typeof options.terrainSampler === "function"
+      ? { sample: options.terrainSampler }
+      : options.landscape || options.landscapeCore || null;
+    const sampleTerrain = (x, z) => terrainSampleFromProvider(terrainProvider, x, z, seed);
     const centerChunkX = clamp(Math.floor(clamp(worldX, 0, WORLD_SIZE - 0.001) / CHUNK_SIZE), 0, CHUNKS_PER_AXIS - 1);
     const centerChunkZ = clamp(Math.floor(clamp(worldZ, 0, WORLD_SIZE - 0.001) / CHUNK_SIZE), 0, CHUNKS_PER_AXIS - 1);
     const placements = [];
@@ -1570,10 +1680,10 @@
           const x = cellX * fineCellSize + 7 + hash2D(cellX, cellZ, cellSeed) * (fineCellSize - 14);
           const z = cellZ * fineCellSize + 7 + hash2D(cellX + 17, cellZ - 19, cellSeed ^ 0x27d4eb2f) * (fineCellSize - 14);
           if (x < 4 || z < 4 || x > WORLD_SIZE - 4 || z > WORLD_SIZE - 4) continue;
-          const sample = terrainSampleNumeric(x, z, seed);
+          const sample = sampleTerrain(x, z);
           const slope = Math.max(
-            Math.abs(sample.height - terrainHeightNumeric(x + 3, z, seed)),
-            Math.abs(sample.height - terrainHeightNumeric(x, z + 3, seed))
+            Math.abs(sample.height - sampleTerrain(x + 3, z).height),
+            Math.abs(sample.height - sampleTerrain(x, z + 3).height)
           );
           const distance = Math.hypot(x - worldX, z - worldZ);
           if (distance < 16 || !environmentPlacementAllowed(definition, sample, slope)) continue;
@@ -1602,10 +1712,10 @@
             const offsetZ = 12 + hash2D(chunkX * 29 - slot, chunkZ * 19 + slot, slotSeed ^ 0x85ebca6b) * (CHUNK_SIZE - 24);
             const x = chunkX * CHUNK_SIZE + offsetX;
             const z = chunkZ * CHUNK_SIZE + offsetZ;
-            const sample = terrainSampleNumeric(x, z, seed);
+            const sample = sampleTerrain(x, z);
             const slope = Math.max(
-              Math.abs(sample.height - terrainHeightNumeric(x + 3, z, seed)),
-              Math.abs(sample.height - terrainHeightNumeric(x, z + 3, seed))
+              Math.abs(sample.height - sampleTerrain(x + 3, z).height),
+              Math.abs(sample.height - sampleTerrain(x, z + 3).height)
             );
             if (!environmentPlacementAllowed(definition, sample, slope)) continue;
             const distance = Math.hypot(x - worldX, z - worldZ);
@@ -1663,6 +1773,7 @@
       this.failures = [];
       this.centerChunkKey = "";
       this.loadedInstances = 0;
+      this.collisionPlacements = Object.freeze([]);
     }
 
     _emit(change = "environment-assets") {
@@ -1830,13 +1941,13 @@
         source: entry.definition.source || "Poly Haven",
         productionApproved: false
       };
-      if (this.adapter._lights?.shadow && typeof this.adapter._lights.shadow.addShadowCaster === "function") {
-        const childMeshes = typeof wrapper.getChildMeshes === "function" ? wrapper.getChildMeshes(false) : [];
-        for (const mesh of childMeshes) {
-          mesh.isPickable = false;
-          mesh.checkCollisions = false;
-          this.adapter._lights.shadow.addShadowCaster(mesh, true);
-        }
+      const childMeshes = typeof wrapper.getChildMeshes === "function" ? wrapper.getChildMeshes(false) : [];
+      const obstructionKind = entry.definition.id === "rock" ? "rock" : (entry.definition.id === "quiver" ? "tree" : "");
+      for (const mesh of childMeshes) {
+        mesh.isPickable = Boolean(obstructionKind);
+        mesh.checkCollisions = false;
+        if (obstructionKind) this.adapter._registerEnvironmentBlockerMesh(mesh, obstructionKind, "imported-mesh");
+        if (this.adapter._lights?.shadow && typeof this.adapter._lights.shadow.addShadowCaster === "function") this.adapter._lights.shadow.addShadowCaster(mesh, true);
       }
       for (const group of result.animationGroups || []) { try { group.stop(); } catch { /* Static CC0 environment prop. */ } }
       const instance = { wrapper, result, placement: null, baseRotationX: 0, baseRotationZ: 0, phase: 0 };
@@ -1892,11 +2003,31 @@
       const chunkKey = `${Math.floor(clamp(worldX, 0, WORLD_SIZE - 0.001) / placementCellSize)}:${Math.floor(clamp(worldZ, 0, WORLD_SIZE - 0.001) / placementCellSize)}:${this.qualityPreset}`;
       if (!force && chunkKey === this.centerChunkKey) return;
       this.centerChunkKey = chunkKey;
-      const placements = planEnvironmentPlacements(worldX, worldZ, { seed: this.seed, qualityPreset: this.qualityPreset });
+      const placements = planEnvironmentPlacements(worldX, worldZ, {
+        seed: this.seed,
+        qualityPreset: this.qualityPreset,
+        landscape: this.adapter._landscape
+      });
+      const collisionPlacements = [];
       for (const definition of this.definitions) {
-        try { this._syncInstancesFor(definition.id, placements.filter((placement) => placement.assetId === definition.id)); }
+        const matching = placements.filter((placement) => placement.assetId === definition.id);
+        try {
+          this._syncInstancesFor(definition.id, matching);
+          if (this.entries.has(definition.id) && ["rock", "quiver"].includes(definition.id)) collisionPlacements.push(...matching);
+        }
         catch (error) { this._recordFailure(`${definition.id}-instance`, error); }
       }
+      this.collisionPlacements = Object.freeze(collisionPlacements.slice());
+    }
+
+    getCollisionPlacements(worldX, worldZ, force = false) {
+      this.update(worldX, worldZ, force);
+      return freezeRecord({
+        supported: this.started && !this.disposed,
+        cellKey: this.centerChunkKey,
+        placements: this.collisionPlacements,
+        visible: this.collisionPlacements.length
+      });
     }
 
     configure(qualityPreset) {
@@ -1971,6 +2102,7 @@
       this.skybox = null;
       this.hdrTexture = null;
       this.loadedInstances = 0;
+      this.collisionPlacements = Object.freeze([]);
       this.status = "disposed";
     }
   }
@@ -1986,6 +2118,7 @@
       this.lodEntries = new Map();
       this.activeLods = new Map();
       this.lastPose = new Map();
+      this.clipTransitions = new Map();
       this.failures = [];
       this.started = false;
       this.loading = false;
@@ -2132,14 +2265,14 @@
       wrapper.parent = proxy.root;
       wrapper.rotation.y = definition.rotationY;
       wrapper.scaling.set(definition.scale, definition.scale, definition.scale);
-      wrapper.metadata = { eonwild: true, kind: cinematic ? "verified-cinematic-creature-candidate" : "animated-creature-prototype", speciesId: definition.id, lod, source: definition.source, packId: definition.packId || "", productionApproved: false };
+      wrapper.metadata = { eonwild: true, kind: cinematic ? "verified-cinematic-creature-candidate" : "animated-creature-prototype", targetType: "animal", targetable: true, speciesId: definition.id, targetId: proxy.entityId || "", entityId: proxy.entityId || "", identityExact: proxy.identityExact === true, isPlayer: proxy.isPlayer === true, lod, source: definition.source, packId: definition.packId || "", productionApproved: false };
       for (const rootNode of container.rootNodes || []) rootNode.parent = wrapper;
       const childMeshes = typeof wrapper.getChildMeshes === "function" ? wrapper.getChildMeshes(false) : [];
       for (const mesh of childMeshes) {
         mesh.isPickable = true;
         mesh.checkCollisions = false;
         mesh.receiveShadows = true;
-        mesh.metadata = { ...(mesh.metadata || {}), eonwild: true, kind: cinematic ? "verified-cinematic-creature-candidate-part" : "animated-creature-prototype-part", targetType: "animal", targetable: true, speciesId: definition.id, lod, productionApproved: false };
+        mesh.metadata = { ...(mesh.metadata || {}), eonwild: true, kind: cinematic ? "verified-cinematic-creature-candidate-part" : "animated-creature-prototype-part", targetType: "animal", targetable: true, speciesId: definition.id, targetId: proxy.entityId || "", entityId: proxy.entityId || "", identityExact: proxy.identityExact === true, isPlayer: proxy.isPlayer === true, lod, productionApproved: false };
         if (this.adapter._lights?.shadow && typeof this.adapter._lights.shadow.addShadowCaster === "function") this.adapter._lights.shadow.addShadowCaster(mesh, true);
       }
       for (const material of container.materials || []) {
@@ -2150,7 +2283,7 @@
         applyCreatureMaterialReadability(this.B, material, cinematic ? 0.04 : 0.3);
       }
       for (const group of groups) { try { group.stop(); } catch { /* Clip selection starts only after the model is attached. */ } }
-      const entry = { definition: { ...definition, lod }, lod, container, wrapper, groups, clipMap, activeClip: "", proxy };
+      const entry = { definition: { ...definition, lod }, lod, container, wrapper, groups, clipMap, activeClip: "", animationLodActive: lod < 2, proxy };
       const lods = existingLods || new Map();
       lods.set(lod, entry);
       this.lodEntries.set(definition.id, lods);
@@ -2166,23 +2299,107 @@
       this._applyClip(entry, becomesPrimary && !this.reducedMotion ? "idle" : "");
       const pose = this.lastPose.get(definition.id);
       if (becomesPrimary && pose?.motion && !this.reducedMotion) this._applyClip(entry, pose.motion);
-      if (this.adapter._highlightedTarget?.speciesId === definition.id) this.adapter.setHighlightedTarget(this.adapter._highlightedTarget);
+      if (proxy.entityId && this.adapter._highlightedTarget?.entityId === proxy.entityId) this.adapter.setHighlightedTarget(this.adapter._highlightedTarget);
       return entry;
     }
 
-    _applyClip(entry, clip) {
+    _setAnimationGroupWeight(group, weight) {
+      if (!group) return false;
+      const bounded = clamp(weight, 0, 1);
+      try {
+        if (typeof group.setWeightForAllAnimatables === "function") { group.setWeightForAllAnimatables(bounded); return true; }
+        if (Array.isArray(group.animatables)) {
+          for (const animatable of group.animatables) animatable.weight = bounded;
+          return group.animatables.length > 0;
+        }
+      } catch { /* Babylon blending remains available below. */ }
+      return false;
+    }
+
+    _configureAnimationBlending(group) {
+      if (!group) return;
+      for (const targeted of group.targetedAnimations || []) {
+        const animation = targeted?.animation;
+        if (!animation) continue;
+        try {
+          animation.enableBlending = true;
+          animation.blendingSpeed = clamp(this.options.animationBlendingSpeed ?? 0.12, 0.02, 0.3);
+        } catch { /* Optional GLB tracks may be immutable. */ }
+      }
+    }
+
+    _advanceClipTransitions(timestamp = now()) {
+      for (const [entry, transition] of this.clipTransitions) {
+        const elapsed = timestamp - transition.startedAt;
+        // Comparing the deadline explicitly avoids leaving a transition alive
+        // for one extra frame when floating-point subtraction lands just below 1.
+        const completed = timestamp >= transition.startedAt + transition.durationMs;
+        const amount = completed ? 1 : clamp(elapsed / transition.durationMs, 0, 1);
+        this._setAnimationGroupWeight(transition.previous, 1 - amount);
+        this._setAnimationGroupWeight(transition.next, amount);
+        if (!completed) continue;
+        try { transition.previous?.stop?.(); } catch { /* The new clip is already authoritative. */ }
+        this._setAnimationGroupWeight(transition.next, 1);
+        this.clipTransitions.delete(entry);
+      }
+    }
+
+    _stopEntryAnimation(entry) {
+      const transition = this.clipTransitions.get(entry);
+      this.clipTransitions.delete(entry);
+      const groups = new Set([transition?.previous, transition?.next, entry?.clipMap?.get(entry?.activeClip)].filter(Boolean));
+      for (const group of groups) {
+        this._setAnimationGroupWeight(group, 0);
+        try { group.stop(); } catch { /* A broken optional clip must not break gameplay. */ }
+      }
+      if (entry) entry.activeClip = "";
+    }
+
+    _applyClip(entry, clip, options = {}) {
+      this._advanceClipTransitions();
       const next = clip && entry.clipMap.has(clip) ? clip : "";
       if (entry.activeClip === next) return;
-      for (const group of entry.groups) { try { group.stop(); } catch { /* A broken optional clip must not break gameplay. */ } }
-      entry.activeClip = next;
-      if (!next) return;
+      const previous = entry.clipMap.get(entry.activeClip) || null;
+      const interrupted = this.clipTransitions.get(entry);
+      if (interrupted) {
+        this.clipTransitions.delete(entry);
+        if (interrupted.previous && interrupted.previous !== previous) {
+          this._setAnimationGroupWeight(interrupted.previous, 0);
+          try { interrupted.previous.stop(); } catch { /* Stale transition cleanup only. */ }
+        }
+      }
+      if (!next) { this._stopEntryAnimation(entry); return; }
       const group = entry.clipMap.get(next);
+      this._configureAnimationBlending(group);
       try {
         group.speedRatio = next === "run" ? 1.05 : 1;
         group.start(true);
       } catch {
         entry.activeClip = "";
+        this._setAnimationGroupWeight(previous, 1);
+        return;
       }
+      entry.activeClip = next;
+      if (!previous || previous === group || options.immediate === true) {
+        this._setAnimationGroupWeight(group, 1);
+        if (previous && previous !== group) { try { previous.stop(); } catch { /* New clip already started. */ } }
+        return;
+      }
+      const weighted = this._setAnimationGroupWeight(group, 0);
+      this._setAnimationGroupWeight(previous, 1);
+      if (!weighted) {
+        // Babylon track blending still prevents a bind-pose snap. Start the new
+        // group first, then retire only the previous active group.
+        try { previous.stop(); } catch { /* New clip already started. */ }
+        this._setAnimationGroupWeight(group, 1);
+        return;
+      }
+      this.clipTransitions.set(entry, {
+        previous,
+        next: group,
+        startedAt: now(),
+        durationMs: clamp(options.durationMs ?? this.options.animationCrossFadeMs ?? 180, 80, 420)
+      });
     }
 
     _selectLod(speciesId, worldX, worldZ, motion) {
@@ -2199,7 +2416,7 @@
       if (current !== selected) {
         const previous = lods.get(current);
         if (previous) {
-          this._applyClip(previous, "");
+          this._applyClip(previous, "", { immediate: true });
           try { previous.wrapper.setEnabled(false); } catch { previous.wrapper.isVisible = false; }
         }
         const next = lods.get(selected);
@@ -2209,7 +2426,10 @@
         }
       }
       const active = lods.get(this.activeLods.get(speciesId));
-      if (active) this._applyClip(active, this.reducedMotion ? "" : motion);
+      if (active) {
+        active.animationLodActive = wanted < 2 && active.lod < 2;
+        this._applyClip(active, this.reducedMotion || !active.animationLodActive ? "" : motion, { immediate: !active.animationLodActive });
+      }
       return active || null;
     }
 
@@ -2226,6 +2446,7 @@
         else if (speed > 0.35) motion = "walk";
       }
       this.lastPose.set(id, { x: finite(worldX), z: finite(worldZ), at: timestamp, motion });
+      this._advanceClipTransitions(timestamp);
       this._selectLod(id, worldX, worldZ, motion);
     }
 
@@ -2233,7 +2454,7 @@
       this.reducedMotion = Boolean(value);
       for (const [speciesId, lods] of this.lodEntries) {
         const motion = this.lastPose.get(speciesId)?.motion || "idle";
-        for (const [lod, entry] of lods) this._applyClip(entry, !this.reducedMotion && lod === this.activeLods.get(speciesId) ? motion : "");
+        for (const [lod, entry] of lods) this._applyClip(entry, !this.reducedMotion && entry.animationLodActive && lod === this.activeLods.get(speciesId) ? motion : "", { immediate: this.reducedMotion || !entry.animationLodActive });
       }
     }
 
@@ -2246,6 +2467,12 @@
           return [id, entry?.activeClip || "static"];
         }))),
         activeLods: freezeRecord(Object.fromEntries(this.activeLods)),
+        animationLodActive: freezeRecord(Object.fromEntries(Array.from(this.lodEntries, ([id, lods]) => {
+          const entry = lods.get(this.activeLods.get(id));
+          return [id, Boolean(entry?.animationLodActive)];
+        }))),
+        animationCrossFadeMs: clamp(this.options.animationCrossFadeMs ?? 180, 80, 420),
+        footIk: freezeRecord({ supported: false, active: false, reason: "asset-contract-unavailable" }),
         availableLods: freezeRecord(Object.fromEntries(Array.from(this.lodEntries, ([id, lods]) => [id, [...lods.keys()].sort()]))),
         productionApproved: false,
         cinematicSpecies: Array.from(this.lodEntries)
@@ -2271,6 +2498,7 @@
       this.lodEntries.clear();
       this.activeLods.clear();
       this.lastPose.clear();
+      this.clipTransitions.clear();
       this.status = "disposed";
     }
   }
@@ -2378,7 +2606,7 @@
     mesh.material = material;
     mesh.isPickable = true;
     mesh.checkCollisions = false;
-    mesh.metadata = { eonwild: true, kind: "species-proxy-part", targetType: "animal", targetable: true, speciesId: rootNode.metadata?.speciesId || "", part: definition.name };
+    mesh.metadata = { eonwild: true, kind: "species-proxy-part", targetType: "animal", targetable: true, speciesId: rootNode.metadata?.speciesId || "", targetId: "", entityId: "", identityExact: false, isPlayer: false, part: definition.name };
     return mesh;
   }
 
@@ -2427,7 +2655,7 @@
 
   function createSpeciesProxy(B, scene, species) {
     const rootNode = new B.TransformNode(`hwe3d-${species.id}`, scene);
-    rootNode.metadata = { eonwild: true, kind: "species-proxy", targetType: "animal", targetable: true, speciesId: species.id, proxyOnly: true };
+    rootNode.metadata = { eonwild: true, kind: "species-proxy", targetType: "animal", targetable: true, speciesId: species.id, targetId: "", entityId: "", identityExact: false, isPlayer: false, proxyOnly: true };
     const bodyMaterial = createProxyMaterial(B, scene, species.id, species.color, false);
     const accentMaterial = createProxyMaterial(B, scene, species.id, species.color, true);
     const parts = [];
@@ -2437,7 +2665,7 @@
       parts.push(part);
       if (definition.wing) wings.push({ mesh: part, side: definition.wing, baseRotation: part.rotation.x });
     }
-    return { id: species.id, species, root: rootNode, parts, wings, materials: [bodyMaterial, accentMaterial], baseY: 0, flightOffset: species.locomotion === "fly" ? 18 : 0 };
+    return { id: species.id, entityId: "", identityExact: false, isPlayer: false, species, root: rootNode, parts, wings, materials: [bodyMaterial, accentMaterial], baseY: 0, flightOffset: species.locomotion === "fly" ? 18 : 0 };
   }
 
   class AdaptiveQualityGovernor {
@@ -2450,19 +2678,25 @@
       this.slowWindows = 0;
       this.fastWindows = 0;
       this.p95 = 0;
+      this.p99 = 0;
       this.average = 0;
+      this.maximum = 0;
+      this.longFrameCount = 0;
     }
 
     record(frameMs, timestamp) {
       if (timestamp < this.warmupUntil) return;
       const value = clamp(frameMs, 0.1, 250);
+      if (value >= 100) this.longFrameCount += 1;
       this.samples.push({ at: timestamp, value });
       while (this.samples.length && (this.samples.length > MAX_FRAME_SAMPLES || this.samples[0].at < timestamp - 2000)) this.samples.shift();
       if (timestamp - this.lastEvaluation < 2000 || this.samples.length < 12) return;
       this.lastEvaluation = timestamp;
       const sorted = this.samples.map((sample) => sample.value).sort((a, b) => a - b);
       this.p95 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))];
+      this.p99 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.99))];
       this.average = this.samples.reduce((sum, sample) => sum + sample.value, 0) / this.samples.length;
+      this.maximum = sorted[sorted.length - 1];
       if (!this.enabled) return;
       const preset = QUALITY_PRESETS[this.adapter._qualityPreset];
       const targetMs = 1000 / preset.targetFps;
@@ -2490,7 +2724,10 @@
       this.slowWindows = 0;
       this.fastWindows = 0;
       this.p95 = 0;
+      this.p99 = 0;
       this.average = 0;
+      this.maximum = 0;
+      this.longFrameCount = 0;
       this.lastEvaluation = now();
       this.warmupUntil = this.lastEvaluation + 8000;
     }
@@ -2605,6 +2842,7 @@
       this._vegetation = null;
       this._environmentRenderer = null;
       this._waterWeather = null;
+      this._proceduralLakes = Object.freeze([]);
       this._water = null;
       this._weatherFx = null;
       this._fogBaseDensity = 0.00055;
@@ -2624,8 +2862,13 @@
       this._photoSettings = { ...DEFAULT_PHOTO_SETTINGS };
       this._photoCameraOverride = false;
       this._proxies = new Map();
+      this._proxyByEntityId = new Map();
       this._visibleWildlifeSpecies = new Set();
+      this._resourceMarkers = new Map();
+      this._resourceMaterials = new Map();
+      this._environmentBlockerMeshes = new Set();
       this._playerSpeciesId = FLAGSHIP_IDS.includes(this._options.speciesId) ? this._options.speciesId : "tyrannosaurus";
+      this._playerEntityId = safeEntityId(this._options.playerEntityId ?? this._options.playerId ?? "player") || "player";
       const initialCameraProfileId = defaultGameplayCameraProfileForSpecies(this._playerSpeciesId);
       const configuredGameplayCamera = this._options.gameplayCamera && typeof this._options.gameplayCamera === "object"
         ? this._options.gameplayCamera
@@ -2643,7 +2886,7 @@
       this._gameplayCameraApplied = null;
       this._gameplayCameraFovDirty = Boolean(configuredGameplayCamera);
       this._gameplayCameraLimitsDirty = Boolean(configuredGameplayCamera);
-      this._gameplayCameraCollision = freezeRecord({ supported: false, mode: "unavailable", terrainOnly: true, hit: false, desiredDistance: this._gameplayCamera.distance, resolvedDistance: this._gameplayCamera.distance, hitDistance: null, meshKind: null });
+      this._gameplayCameraCollision = freezeRecord({ supported: false, mode: "unavailable", terrainOnly: true, approximate: false, rayCount: 0, blockerCoverage: Object.freeze([]), hit: false, desiredDistance: this._gameplayCamera.distance, resolvedDistance: this._gameplayCamera.distance, hitDistance: null, meshKind: null });
       this._controlsAttached = false;
       this._highlightedTarget = null;
       this._highlightedMeshes = new Map();
@@ -2947,6 +3190,358 @@
         // wrapper does. They are safe bounded assets and should cast shadows.
         add(mesh);
       }
+    }
+
+    _registerEnvironmentBlockerMesh(mesh, obstructionKind, source = "mesh") {
+      if (!mesh) return false;
+      const kind = String(obstructionKind || "environment").toLowerCase();
+      mesh.metadata = {
+        ...(mesh.metadata || {}),
+        eonwild: true,
+        cameraObstruction: true,
+        cameraObstructionKind: kind,
+        cameraObstructionSource: String(source || "mesh")
+      };
+      mesh.isPickable = true;
+      if ("thinInstanceEnablePicking" in mesh) mesh.thinInstanceEnablePicking = true;
+      this._environmentBlockerMeshes.add(mesh);
+      return true;
+    }
+
+    _registerProceduralEnvironmentBlockers() {
+      const buckets = this._environmentRenderer?._buckets;
+      if (!Array.isArray(buckets)) return 0;
+      let count = 0;
+      for (const bucket of buckets) {
+        const category = String(bucket?.definition?.category || "").toLowerCase();
+        if (!CAMERA_BLOCKER_CATEGORIES.has(category) || !bucket?.mesh) continue;
+        if (this._registerEnvironmentBlockerMesh(bucket.mesh, category.includes("tree") || category === "sapling" ? "tree" : "wood", "thin-instance-mesh")) count += 1;
+      }
+      return count;
+    }
+
+    _cameraCollisionCapabilities() {
+      let environmentMesh = false;
+      for (const mesh of this._environmentBlockerMeshes) {
+        let disposed = false;
+        try { disposed = typeof mesh?.isDisposed === "function" ? mesh.isDisposed() : Boolean(mesh?.disposed); } catch { disposed = true; }
+        if (!disposed) { environmentMesh = true; break; }
+      }
+      const proceduralApproximation = Boolean(this._environmentRenderer?.mode === "babylon-thin-instances" && Array.isArray(this._environmentRenderer._buckets));
+      const importedApproximation = Boolean(this._environmentAssets?.entries instanceof Map && this._environmentAssets.entries.size);
+      const environmentApproximation = proceduralApproximation || importedApproximation;
+      const sceneRaycast = Boolean(this._scene && typeof this._scene.pickWithRay === "function" && this._Babylon && typeof this._Babylon.Ray === "function");
+      const blockerCoverage = ["terrain-mesh"];
+      if (environmentMesh) blockerCoverage.push("rock-tree-mesh");
+      if (environmentApproximation) blockerCoverage.push("rock-tree-sphere-approximation");
+      return freezeRecord({
+        supported: sceneRaycast,
+        sceneRaycast,
+        terrain: sceneRaycast,
+        environmentMesh,
+        environmentApproximation,
+        terrainOnly: !environmentMesh && !environmentApproximation,
+        approximate: environmentApproximation,
+        rayCount: sceneRaycast ? CAMERA_COLLISION_RAY_OFFSETS.length : 0,
+        blockerCoverage: Object.freeze(blockerCoverage)
+      });
+    }
+
+    _disposeResourceMarker(entityId) {
+      const id = safeEntityId(entityId);
+      const marker = id ? this._resourceMarkers.get(id) : null;
+      if (!marker) return false;
+      if (this._highlightedTarget?.entityId === id) this._clearHighlightedTargetInternal();
+      const mesh = marker.mesh;
+      if (mesh) {
+        try {
+          mesh.isPickable = false;
+          mesh.metadata = {
+            ...(mesh.metadata || {}),
+            targetable: false,
+            targetId: "",
+            entityId: "",
+            identityExact: false
+          };
+        } catch { /* Disposal remains authoritative if metadata is immutable. */ }
+        safeDispose(mesh);
+      }
+      this._resourceMarkers.delete(id);
+      return true;
+    }
+
+    _resourceMarkerCapabilities() {
+      let exactIdentities = 0;
+      const activeTypes = new Set();
+      for (const [id, marker] of this._resourceMarkers) {
+        const metadata = marker?.mesh?.metadata || {};
+        const metadataId = exactMetadataEntityId(metadata);
+        if (marker?.mesh && metadata.targetable === true && metadataId === id) {
+          exactIdentities += 1;
+          activeTypes.add(String(metadata.targetType || marker.targetType || "interactive").toLowerCase());
+        }
+      }
+      const markerMeshes = Boolean(this._scene && this._Babylon?.MeshBuilder && typeof this._Babylon?.Vector3 === "function");
+      return freezeRecord({
+        supported: markerMeshes,
+        markerMeshes,
+        materials: this._resourceMaterials.size,
+        active: this._resourceMarkers.size,
+        exactIdentities,
+        identityCoverageComplete: exactIdentities === this._resourceMarkers.size,
+        exactEntityIdRequired: true,
+        maximum: MAX_INTERACTIVE_RESOURCE_MARKERS,
+        distance: INTERACTIVE_RESOURCE_DISTANCE,
+        supportedTypes: Object.freeze(["food", "water", "nest", "interactive"]),
+        activeTypes: Object.freeze(Array.from(activeTypes).sort())
+      });
+    }
+
+    _syncProxyIdentity(proxy, entityId, isPlayer = false, identityExact = true) {
+      if (!proxy) return false;
+      const nextId = safeEntityId(entityId);
+      const previousId = safeEntityId(proxy.entityId);
+      const nextExact = Boolean(nextId && identityExact);
+      const changed = previousId !== nextId || proxy.identityExact !== nextExact || proxy.isPlayer !== Boolean(isPlayer);
+      if (changed) {
+        if (this._highlightedTarget && (this._highlightedTarget.entityId === previousId || this._highlightedTarget.speciesId === proxy.id)) this._clearHighlightedTargetInternal();
+        if (previousId && this._proxyByEntityId.get(previousId) === proxy) this._proxyByEntityId.delete(previousId);
+        const occupied = nextId ? this._proxyByEntityId.get(nextId) : null;
+        if (occupied && occupied !== proxy) this._syncProxyIdentity(occupied, "", occupied.isPlayer === true, false);
+        if (nextId) this._disposeResourceMarker(nextId);
+      }
+      proxy.entityId = nextId;
+      proxy.identityExact = nextExact;
+      proxy.isPlayer = Boolean(isPlayer);
+      if (nextId) this._proxyByEntityId.set(nextId, proxy);
+      const apply = (node) => {
+        if (!node) return;
+        node.metadata = {
+          ...(node.metadata || {}),
+          targetType: "animal",
+          targetable: true,
+          speciesId: proxy.id,
+          targetId: nextId,
+          entityId: nextId,
+          identityExact: proxy.identityExact,
+          isPlayer: proxy.isPlayer
+        };
+      };
+      apply(proxy.root);
+      const meshes = new Set(proxy.parts || []);
+      try { for (const mesh of proxy.root?.getChildMeshes?.(false) || []) meshes.add(mesh); } catch { /* Procedural parts remain authoritative. */ }
+      for (const mesh of meshes) apply(mesh);
+      return true;
+    }
+
+    _resourceTargetType(type) {
+      const value = String(type || "").toLowerCase();
+      if (value === "water") return "water";
+      if (value === "shelter" || value === "nest") return "nest";
+      if (value === "plant" || value === "carcass" || value === "food") return "food";
+      return "interactive";
+    }
+
+    _resourceMaterial(type) {
+      const key = this._resourceTargetType(type);
+      if (this._resourceMaterials.has(key)) return this._resourceMaterials.get(key);
+      const B = this._Babylon;
+      if (!B || !this._scene || typeof B.StandardMaterial !== "function" || typeof B.Color3 !== "function") return null;
+      const colors = {
+        water: [.18, .72, .98],
+        food: [.48, .86, .32],
+        nest: [.84, .62, .3],
+        interactive: [.78, .48, .72]
+      };
+      const color = colors[key] || colors.interactive;
+      const material = new B.StandardMaterial(`hwe3d-resource-${key}`, this._scene);
+      material.diffuseColor = new B.Color3(color[0], color[1], color[2]);
+      material.emissiveColor = new B.Color3(color[0] * .22, color[1] * .22, color[2] * .22);
+      material.roughness = .82;
+      material.metallic = 0;
+      material.alpha = key === "water" ? .82 : 1;
+      this._resourceMaterials.set(key, material);
+      return material;
+    }
+
+    _createResourceMarker(resource, targetType) {
+      const B = this._Babylon;
+      if (!B?.MeshBuilder || !this._scene) return null;
+      const id = safeEntityId(resource?.id);
+      if (!id) return null;
+      let mesh = null;
+      try {
+        if (targetType === "water") mesh = B.MeshBuilder.CreateCylinder(`hwe3d-resource-${id}`, { height: .12, diameter: 2.4, tessellation: 16 }, this._scene);
+        else if (targetType === "nest") mesh = B.MeshBuilder.CreateCylinder(`hwe3d-resource-${id}`, { height: .42, diameterTop: 1.35, diameterBottom: 2.1, tessellation: 12 }, this._scene);
+        else mesh = B.MeshBuilder.CreateSphere(`hwe3d-resource-${id}`, { diameter: targetType === "food" ? .82 : .72, segments: 8 }, this._scene);
+      } catch { return null; }
+      mesh.material = this._resourceMaterial(targetType);
+      mesh.isPickable = true;
+      mesh.checkCollisions = false;
+      mesh.metadata = { eonwild: true, kind: "interactive-resource-marker", targetType, targetable: true, targetId: id, entityId: id, identityExact: true, isPlayer: false, resourceType: String(resource?.type || "interactive").slice(0, 24) };
+      return { id, targetType, resourceType: String(resource?.type || "interactive"), mesh };
+    }
+
+    syncResources(resources = []) {
+      if (!Array.isArray(resources) || !this._scene || !this._Babylon) return makeResult(false, { reason: makeReason("RESOURCE_MARKERS_UNAVAILABLE", "The active renderer cannot create world resource markers.", "target", {}, true) });
+      const candidates = [];
+      const maximumDistanceSquared = INTERACTIVE_RESOURCE_DISTANCE * INTERACTIVE_RESOURCE_DISTANCE;
+      for (const resource of resources) {
+        const id = safeEntityId(resource?.id);
+        const worldX = finite(resource?.x, NaN);
+        const worldZ = finite(resource?.z ?? resource?.y, NaN);
+        if (!id || this._proxyByEntityId.has(id) || !Number.isFinite(worldX) || !Number.isFinite(worldZ) || finite(resource?.amount, 0) <= 0) continue;
+        const distanceSquared = (worldX - this._player.x) ** 2 + (worldZ - this._player.z) ** 2;
+        if (distanceSquared > maximumDistanceSquared) continue;
+        candidates.push({ resource, id, worldX, worldZ, distanceSquared });
+      }
+      candidates.sort((left, right) => left.distanceSquared - right.distanceSquared || left.id.localeCompare(right.id));
+      const wanted = new Set();
+      for (const candidate of candidates.slice(0, MAX_INTERACTIVE_RESOURCE_MARKERS)) {
+        const targetType = this._resourceTargetType(candidate.resource.type);
+        let marker = this._resourceMarkers.get(candidate.id);
+        if (!marker || marker.targetType !== targetType) {
+          if (marker) this._disposeResourceMarker(candidate.id);
+          marker = this._createResourceMarker(candidate.resource, targetType);
+          if (!marker) continue;
+          this._resourceMarkers.set(candidate.id, marker);
+        }
+        wanted.add(candidate.id);
+        const ground = terrainSampleFromProvider(this._landscape, candidate.worldX, candidate.worldZ, this._streamer ? this._streamer.seed : hashSeed(this._options.seed)).height;
+        const water = targetType === "water" ? queryLandscapeWater(this._landscape, candidate.worldX, candidate.worldZ, { lakes: this._proceduralLakes, seed: this._options.seed }) : null;
+        const height = water?.surfaceHeight ?? (ground + (targetType === "nest" ? .24 : targetType === "water" ? .08 : .45));
+        marker.mesh.position = new this._Babylon.Vector3(candidate.worldX - WORLD_HALF, height, candidate.worldZ - WORLD_HALF);
+        marker.mesh.metadata = { ...(marker.mesh.metadata || {}), targetType, targetable: true, targetId: candidate.id, entityId: candidate.id, identityExact: true, resourceType: String(candidate.resource.type || "interactive").slice(0, 24) };
+        try { marker.mesh.setEnabled(true); } catch { marker.mesh.isVisible = true; }
+      }
+      for (const [id] of this._resourceMarkers) {
+        if (wanted.has(id)) continue;
+        this._disposeResourceMarker(id);
+      }
+      return makeResult(true, { visible: this._resourceMarkers.size, maximum: MAX_INTERACTIVE_RESOURCE_MARKERS, distance: INTERACTIVE_RESOURCE_DISTANCE });
+    }
+
+    getEnvironmentCollisionPlacements(options = {}) {
+      const x = finite(options.x, this._player.x);
+      const z = finite(options.z ?? options.y, this._player.z);
+      const manager = this._environmentAssets;
+      const imported = manager && typeof manager.getCollisionPlacements === "function"
+        ? manager.getCollisionPlacements(x, z, options.force === true)
+        : freezeRecord({ supported: false, cellKey: "", placements: Object.freeze([]), visible: 0 });
+      const procedural = this._environmentRenderer && typeof this._environmentRenderer.getCollisionSnapshot === "function"
+        ? this._environmentRenderer.getCollisionSnapshot({ x, z, radius: options.radius, budget: options.budget })
+        : freezeRecord({ supported: false, cellKey: "", revision: 0, digest: "", colliders: Object.freeze([]), truncated: false });
+      const placements = Object.freeze([
+        ...(Array.isArray(procedural.colliders) ? procedural.colliders : []),
+        ...(Array.isArray(imported.placements) ? imported.placements : [])
+      ]);
+      let importedDigestA = hashSeed(`imported-collision-a:${imported.cellKey || ""}`);
+      let importedDigestB = hashSeed(`imported-collision-b:${imported.cellKey || ""}`);
+      for (const placement of Array.isArray(imported.placements) ? imported.placements : []) {
+        const token = `${safeEntityId(placement?.id)}:${String(placement?.assetId || "")}:${Math.round(finite(placement?.x) * 1000)}:${Math.round(finite(placement?.y) * 1000)}:${Math.round(finite(placement?.z) * 1000)}:${Math.round(finite(placement?.scale, 1) * 1000)}`;
+        importedDigestA = hashSeed(`${importedDigestA}:${token}`);
+        importedDigestB = hashSeed(`${importedDigestB}:${token}:${importedDigestA}`);
+      }
+      const importedDigest = `${imported.placements?.length || 0}:${importedDigestA.toString(16)}:${importedDigestB.toString(16)}`;
+      const combinedDigestA = hashSeed(`combined-a:${procedural.digest || ""}:${importedDigest}`);
+      const combinedDigestB = hashSeed(`combined-b:${importedDigest}:${procedural.digest || ""}`);
+      const digest = `v2:${placements.length}:${combinedDigestA.toString(16)}:${combinedDigestB.toString(16)}`;
+      return freezeRecord({
+        supported: procedural.supported === true || imported.supported === true,
+        format: "hh-eonwild-renderer-colliders-v2",
+        cellKey: `procedural:${procedural.cellKey || "none"}|imported:${imported.cellKey || "none"}`,
+        revision: `${Math.max(0, Math.trunc(finite(procedural.revision)))}:${digest}`,
+        digest,
+        placements,
+        visible: placements.length,
+        procedural: Array.isArray(procedural.colliders) ? procedural.colliders.length : 0,
+        imported: Array.isArray(imported.placements) ? imported.placements.length : 0,
+        truncated: procedural.truncated === true
+      });
+    }
+
+    planProceduralLakes(options = {}) {
+      const descriptor = options && typeof options === "object" ? options : {};
+      const landscape = descriptor.landscape || this._landscape;
+      const lakes = planProceduralLakes(landscape, finite(descriptor.x, this._player.x), finite(descriptor.z ?? descriptor.y, this._player.z));
+      if (descriptor.commit === true) this._proceduralLakes = lakes;
+      return lakes;
+    }
+
+    queryLandscapeWater(options = {}) {
+      const x = finite(options.x, this._player.x);
+      const z = finite(options.z ?? options.y, this._player.z);
+      return queryLandscapeWater(this._landscape, x, z, { lakes: this._proceduralLakes, seed: this._options.seed });
+    }
+
+    queryWorldWater(options = {}) { return this.queryLandscapeWater(options); }
+
+    _queryEnvironmentBlockerDistance(ray, maximumDistance) {
+      if (!ray?.origin || !ray?.direction) return freezeRecord({ hit: false, distance: null, kind: null, tested: 0, approximate: false });
+      const limit = Math.max(0, finite(maximumDistance, 0));
+      let bestDistance = null;
+      let bestKind = null;
+      let tested = 0;
+      const center = { x: 0, y: 0, z: 0 };
+      const testSphere = (x, y, z, radius, kind) => {
+        if (tested >= 4096) return;
+        const boundedRadius = Math.max(0.05, finite(radius, 0.05));
+        if (Math.hypot(finite(x) - finite(ray.origin.x), finite(z) - finite(ray.origin.z)) > limit + boundedRadius) return;
+        tested += 1;
+        center.x = finite(x); center.y = finite(y); center.z = finite(z);
+        const distance = raySphereIntersectionDistance(ray.origin, ray.direction, center, boundedRadius, limit);
+        if (distance !== null && (bestDistance === null || distance < bestDistance)) { bestDistance = distance; bestKind = kind; }
+      };
+
+      const entries = this._environmentAssets?.entries;
+      if (entries instanceof Map) {
+        for (const entry of entries.values()) {
+          const assetId = String(entry?.definition?.id || "").toLowerCase();
+          if (assetId !== "rock" && assetId !== "quiver") continue;
+          for (const instance of entry.instances || []) {
+            const placement = instance?.placement;
+            if (!placement) continue;
+            const x = finite(placement.x) - WORLD_HALF; const y = finite(placement.y); const z = finite(placement.z) - WORLD_HALF;
+            const scale = Math.max(0.1, finite(placement.scale, 1));
+            if (assetId === "rock") testSphere(x, y + scale * 0.7, z, scale * 1.15, "rock-sphere");
+            else {
+              for (const height of [0.35, 0.75, 1.15]) testSphere(x, y + scale * height, z, scale * 0.22, "tree-trunk-sphere");
+              testSphere(x, y + scale * 1.35, z, scale * 0.55, "tree-canopy-sphere");
+            }
+          }
+        }
+      }
+
+      const buckets = this._environmentRenderer?.mode === "babylon-thin-instances" ? this._environmentRenderer._buckets : null;
+      if (Array.isArray(buckets)) {
+        for (const bucket of buckets) {
+          const category = String(bucket?.definition?.category || "").toLowerCase();
+          if (!CAMERA_BLOCKER_CATEGORIES.has(category)) continue;
+          const matrices = bucket?.matrices;
+          const count = Math.min(Math.max(0, Math.trunc(finite(bucket?.count, 0))), matrices ? Math.floor(matrices.length / 16) : 0);
+          for (let index = 0; index < count && tested < 4096; index += 1) {
+            const offset = index * 16;
+            const x = finite(matrices[offset + 12]); const y = finite(matrices[offset + 13]); const z = finite(matrices[offset + 14]);
+            const scale = Math.max(
+              0.05,
+              Math.hypot(finite(matrices[offset]), finite(matrices[offset + 2])),
+              Math.abs(finite(matrices[offset + 5])),
+              Math.hypot(finite(matrices[offset + 8]), finite(matrices[offset + 10]))
+            );
+            if (category === "mature-tree") {
+              for (const height of [0.55, 1.55, 2.55, 3.55, 4.55, 5.55]) testSphere(x, y + scale * height, z, scale * 0.58, "tree-trunk-sphere");
+              testSphere(x, y + scale * 6.5, z, scale * 2.4, "tree-canopy-sphere");
+            } else if (category === "dead-tree") {
+              for (const height of [0.55, 1.55, 2.55, 3.55, 4.55]) testSphere(x, y + scale * height, z, scale * 0.52, "tree-trunk-sphere");
+            }
+            else if (category === "sapling") {
+              for (const height of [0.45, 1.15, 1.85]) testSphere(x, y + scale * height, z, scale * 0.38, "tree-trunk-sphere");
+              testSphere(x, y + scale * 2.8, z, scale * 1.05, "tree-canopy-sphere");
+            } else testSphere(x, y + scale * 0.35, z, scale * (category === "log" ? 2.1 : 1.15), "wood-sphere");
+          }
+        }
+      }
+      return freezeRecord({ hit: bestDistance !== null, distance: bestDistance, kind: bestKind, tested, approximate: tested > 0 });
     }
 
     _createShadowGenerator(presetId) {
@@ -3315,6 +3910,7 @@
             maxActiveInstances: environmentBudget.instances,
             maxInstancesPerChunk: environmentBudget.perChunk
           });
+          this._registerProceduralEnvironmentBlockers();
         } catch (error) { safeCall(options.onTelemetry, { type: "environment-renderer-fallback", error: compactError(error) }); }
       }
       if (WATER_WEATHER_CORE && typeof WATER_WEATHER_CORE.create === "function") {
@@ -3352,26 +3948,19 @@
             this._waterWeather.water.syncRiverNetwork(renderNetwork);
           }
           if (typeof this._waterWeather.water?.addLake === "function" && this._landscape) {
-            const offsets = [[-540, -310], [460, -620], [720, 280], [-680, 520], [220, 760], [-180, -840]];
-            let lakes = 0;
-            for (let index = 0; index < offsets.length && lakes < 2; index += 1) {
-              const worldX = clamp(this._player.x + offsets[index][0], 96, WORLD_SIZE - 96);
-              const worldZ = clamp(this._player.z + offsets[index][1], 96, WORLD_SIZE - 96);
-              const sample = terrainSampleFromProvider(this._landscape, worldX, worldZ, this._streamer.seed);
-              if (sample.height <= WATER_LEVEL + 0.6 || sample.moisture < 0.68 || finite(sample.slopeDegrees, finite(sample.slope) * 57.2958) > 9) continue;
-              const swamp = ["wetland", "rainforest"].includes(String(sample.biome));
+            this._proceduralLakes = planProceduralLakes(this._landscape, this._player.x, this._player.z);
+            for (const lake of this._proceduralLakes) {
               this._waterWeather.water.addLake({
-                id: `procedural-${swamp ? "swamp" : "lake"}-${index}`,
-                position: { x: worldX - WORLD_HALF, y: sample.height + 0.12, z: worldZ - WORLD_HALF },
-                level: sample.height + 0.12,
-                width: swamp ? 58 : 92,
-                length: swamp ? 88 : 126,
-                depth: swamp ? 1.4 : 5.2,
-                sediment: swamp ? 0.82 : 0.28,
-                clarity: swamp ? 0.26 : 0.72,
-                flowSpeed: 0.08
+                id: lake.id,
+                position: { x: lake.worldX - WORLD_HALF, y: lake.level, z: lake.worldZ - WORLD_HALF },
+                level: lake.level,
+                width: lake.width,
+                length: lake.length,
+                depth: lake.depth,
+                sediment: lake.sediment,
+                clarity: lake.clarity,
+                flowSpeed: lake.flowSpeed
               });
-              lakes += 1;
             }
           }
         } catch (error) { safeCall(options.onTelemetry, { type: "water-weather-fallback", error: compactError(error) }); }
@@ -3397,6 +3986,7 @@
         if (typeof proxy.root.setEnabled === "function") proxy.root.setEnabled(species.id === this._playerSpeciesId);
         if (shadow && typeof shadow.addShadowCaster === "function") proxy.parts.forEach((part) => shadow.addShadowCaster(part, true));
         this._proxies.set(species.id, proxy);
+        this._syncProxyIdentity(proxy, species.id === this._playerSpeciesId ? this._playerEntityId : "", species.id === this._playerSpeciesId, species.id === this._playerSpeciesId);
       });
       this._registerShadowCasters(shadow);
       this._applyPlayerPosition();
@@ -3634,7 +4224,7 @@
       const fovProvided = value.fov !== undefined || value.fovDegrees !== undefined;
       this._gameplayCameraFovDirty = this._gameplayCameraFovDirty || fovProvided || this._gameplayCamera.fov !== previous.fov || !previous.active;
       this._gameplayCameraLimitsDirty = this._gameplayCameraLimitsDirty || this._gameplayCamera.profileId !== previous.profileId || this._gameplayCamera.firstPerson !== previous.firstPerson || !previous.active;
-      this._gameplayCameraCollision = freezeRecord({ supported: false, mode: "unavailable", terrainOnly: true, hit: false, desiredDistance: this._gameplayCamera.distance, resolvedDistance: this._gameplayCamera.distance, hitDistance: null, meshKind: null });
+      this._gameplayCameraCollision = freezeRecord({ supported: false, mode: "unavailable", terrainOnly: true, approximate: false, rayCount: 0, blockerCoverage: Object.freeze([]), hit: false, desiredDistance: this._gameplayCamera.distance, resolvedDistance: this._gameplayCamera.distance, hitDistance: null, meshKind: null });
       if (this._gameplayCamera.active && this._camera && typeof this._camera.detachControl === "function") {
         try { this._camera.detachControl(); } catch { /* Route input ownership remains authoritative. */ }
         this._controlsAttached = false;
@@ -3644,14 +4234,18 @@
         this._camera.inertialPanningX = 0;
         this._camera.inertialPanningY = 0;
       }
-      if (this._camera && this._gameplayCamera.active) this._followPlayer(0, !previous.active);
+      // The render loop is the sole steady-state camera/collision owner.  An
+      // immediate follow is needed only when route ownership first activates;
+      // applying every input sample here used to repeat all five collision rays
+      // before the same frame was rendered.
+      if (this._camera && this._gameplayCamera.active && !previous.active) this._followPlayer(0, true);
       return makeResult(true, { camera: this.getGameplayCamera() });
     }
 
     getGameplayCamera() {
       const state = this._gameplayCamera || DEFAULT_GAMEPLAY_CAMERA;
       const applied = this._gameplayCameraApplied;
-      const collision = this._gameplayCameraCollision || { supported: false, mode: "unavailable", terrainOnly: true, hit: false, desiredDistance: state.distance, resolvedDistance: state.distance, hitDistance: null, meshKind: null };
+      const collision = this._gameplayCameraCollision || { supported: false, mode: "unavailable", terrainOnly: true, approximate: false, rayCount: 0, blockerCoverage: Object.freeze([]), hit: false, desiredDistance: state.distance, resolvedDistance: state.distance, hitDistance: null, meshKind: null };
       return freezeRecord({
         ...state,
         profile: state.profileId,
@@ -3665,35 +4259,103 @@
       });
     }
 
+    getGameplayCapabilities() {
+      const cameraCollision = this._cameraCollisionCapabilities();
+      const resourceMarkers = this._resourceMarkerCapabilities();
+      let visibleWildlife = 0;
+      let exactWildlifeIdentities = 0;
+      for (const speciesId of this._visibleWildlifeSpecies) {
+        const proxy = this._proxies.get(speciesId);
+        if (!proxy || proxy.isPlayer) continue;
+        visibleWildlife += 1;
+        if (proxy.identityExact && proxy.entityId) exactWildlifeIdentities += 1;
+      }
+      return freezeRecord({
+        cameraCollision,
+        targeting: freezeRecord({
+          centerRay: "authoritative-yaw-pitch",
+          lockOnLineOfSight: cameraCollision.sceneRaycast,
+          terrainLineOfSight: cameraCollision.sceneRaycast,
+          environmentLineOfSight: cameraCollision.environmentMesh || cameraCollision.environmentApproximation,
+          environmentApproximate: cameraCollision.environmentApproximation,
+          exactEntityIdSupported: true,
+          exactEntityIdRequired: true,
+          requiresHostEntityId: true,
+          supportedTypes: Object.freeze(["animal", ...resourceMarkers.supportedTypes]),
+          resourceMarkers: resourceMarkers.supported,
+          proxyGranularity: "one-visible-entity-per-flagship-species",
+          visibleWildlife,
+          exactWildlifeIdentities,
+          identityCoverageComplete: visibleWildlife === exactWildlifeIdentities
+        }),
+        resourceMarkers,
+        waterQueries: freezeRecord({
+          supported: Boolean(this._landscape && typeof this._landscape.sample === "function"),
+          proceduralLakes: this._proceduralLakes.length,
+          sharesRenderedLakePlan: true
+        }),
+        highlighting: freezeRecord({ exactEntityIdRequired: true, active: Boolean(this._highlightedTarget), activeType: this._highlightedTarget?.type || null })
+      });
+    }
+
     queryCameraObstructionDistance(options = {}) {
       const state = this._gameplayCamera || DEFAULT_GAMEPLAY_CAMERA;
       const profile = GAMEPLAY_CAMERA_PROFILES[state.profileId] || GAMEPLAY_CAMERA_PROFILES.ground;
       const desiredDistance = clamp(options.desiredDistance ?? options.distance ?? state.distance, state.firstPerson ? 0.1 : profile.minDistance, profile.maxDistance);
-      const unsupported = (mode = "unavailable") => freezeRecord({ supported: false, mode, terrainOnly: true, hit: false, desiredDistance, distance: null, meshKind: null });
-      if (!this._scene || !this._camera || !this._Babylon || typeof this._Babylon.Ray !== "function" || typeof this._scene.pickWithRay !== "function") return unsupported();
+      const capability = this._cameraCollisionCapabilities();
+      const unsupported = (mode = "unavailable") => freezeRecord({ ...capability, supported: false, mode, hit: false, desiredDistance, distance: null, meshKind: null });
+      if (!capability.supported || !this._camera) return unsupported();
       const source = options.origin || this._camera.target;
       if (!source || !Number.isFinite(Number(source.x)) || !Number.isFinite(Number(source.y)) || !Number.isFinite(Number(source.z))) return unsupported("origin-unavailable");
       const yaw = Number.isFinite(Number(options.yaw)) ? Number(options.yaw) : finite(this._gameplayCameraApplied?.yaw, state.yaw);
       const pitch = Number.isFinite(Number(options.pitch)) ? Number(options.pitch) : finite(this._gameplayCameraApplied?.pitch, state.pitch);
       const offset = gameplayCameraOffset(yaw, pitch, 1);
+      const right = { x: Math.cos(yaw), y: 0, z: -Math.sin(yaw) };
+      const probeRadius = clamp(options.probeRadius ?? Math.max(0.12, Math.min(0.8, profile.collisionPadding)), 0, 2);
       try {
-        const origin = new this._Babylon.Vector3(Number(source.x), Number(source.y), Number(source.z));
-        const direction = new this._Babylon.Vector3(offset.x, offset.y, offset.z);
-        if (typeof direction.normalize === "function") direction.normalize();
-        const ray = new this._Babylon.Ray(origin, direction, desiredDistance);
-        const picked = this._scene.pickWithRay(ray, (mesh) => Boolean(mesh?.metadata?.cameraObstruction === true && mesh?.metadata?.kind === "terrain-chunk"), false);
-        const distance = picked?.hit && Number.isFinite(Number(picked.distance)) ? clamp(picked.distance, 0, desiredDistance) : null;
+        let distance = null;
+        let meshKind = null;
+        let rayCount = 0;
+        let sphereTests = 0;
+        for (const [horizontalOffset, verticalOffset] of CAMERA_COLLISION_RAY_OFFSETS) {
+          const origin = new this._Babylon.Vector3(
+            Number(source.x) + right.x * horizontalOffset * probeRadius,
+            Number(source.y) + verticalOffset * probeRadius,
+            Number(source.z) + right.z * horizontalOffset * probeRadius
+          );
+          const direction = new this._Babylon.Vector3(offset.x, offset.y, offset.z);
+          if (typeof direction.normalize === "function") direction.normalize();
+          const ray = new this._Babylon.Ray(origin, direction, desiredDistance);
+          rayCount += 1;
+          const picked = this._scene.pickWithRay(ray, (mesh) => Boolean(mesh?.metadata?.cameraObstruction === true), false);
+          const meshDistance = picked?.hit && Number.isFinite(Number(picked.distance)) ? clamp(picked.distance, 0, desiredDistance) : null;
+          if (meshDistance !== null && (distance === null || meshDistance < distance)) {
+            distance = meshDistance;
+            meshKind = String(picked?.pickedMesh?.metadata?.cameraObstructionKind || picked?.pickedMesh?.metadata?.kind || "obstruction");
+          }
+          if (!capability.environmentMesh) {
+            const approximate = this._queryEnvironmentBlockerDistance(ray, desiredDistance);
+            sphereTests += approximate.tested;
+            if (approximate.hit && (distance === null || approximate.distance < distance)) {
+              distance = approximate.distance;
+              meshKind = approximate.kind;
+            }
+          }
+        }
         return freezeRecord({
+          ...capability,
           supported: true,
-          mode: "terrain-ray",
-          terrainOnly: true,
+          mode: capability.terrainOnly ? "terrain-multi-ray" : "terrain-environment-multi-ray",
+          approximate: sphereTests > 0 || rayCount > 1,
+          rayCount,
+          sphereTests,
           hit: distance !== null,
           desiredDistance,
           distance,
-          meshKind: distance !== null ? String(picked?.pickedMesh?.metadata?.kind || "terrain-chunk") : null
+          meshKind: distance !== null ? meshKind : null
         });
       } catch {
-        return unsupported("terrain-ray-error");
+        return unsupported("multi-ray-error");
       }
     }
 
@@ -3704,7 +4366,7 @@
       const desiredDistance = clamp(options.desiredDistance ?? options.distance ?? state.distance, minimum, profile.maxDistance);
       const hasProvidedHit = Number.isFinite(Number(options.hitDistance)) && Number(options.hitDistance) >= 0;
       const query = hasProvidedHit
-        ? freezeRecord({ supported: true, mode: "provided", terrainOnly: true, hit: true, desiredDistance, distance: clamp(options.hitDistance, 0, desiredDistance), meshKind: String(options.meshKind || "provided") })
+        ? freezeRecord({ supported: true, mode: "provided", terrainOnly: true, approximate: false, rayCount: 0, blockerCoverage: Object.freeze(["provided"]), hit: true, desiredDistance, distance: clamp(options.hitDistance, 0, desiredDistance), meshKind: String(options.meshKind || "provided") })
         : this.queryCameraObstructionDistance({ ...options, desiredDistance });
       const padding = Number.isFinite(Number(options.padding)) ? clamp(options.padding, 0, 5) : profile.collisionPadding;
       const obstructedDistance = query.hit ? clamp(finite(query.distance, desiredDistance) - padding, minimum, desiredDistance) : desiredDistance;
@@ -3719,7 +4381,10 @@
       const result = freezeRecord({
         supported: query.supported,
         mode: query.mode,
-        terrainOnly: true,
+        terrainOnly: query.terrainOnly,
+        approximate: Boolean(query.approximate),
+        rayCount: Math.max(0, Math.trunc(finite(query.rayCount, 0))),
+        blockerCoverage: Object.freeze(Array.from(query.blockerCoverage || [])),
         hit: query.hit,
         desiredDistance,
         resolvedDistance: clamp(resolvedDistance, minimum, desiredDistance),
@@ -3731,36 +4396,136 @@
     }
 
     pickCenter(options = {}) {
-      if (!this._scene || !this._camera || typeof this._scene.pickWithRay !== "function" || typeof this._camera.getForwardRay !== "function") return null;
+      if (!this._scene || !this._camera || typeof this._scene.pickWithRay !== "function") return null;
       const maximumDistance = clamp(options.maxDistance ?? 120, 0.1, 1000);
       const allowed = new Set(Array.isArray(options.allowedTypes) && options.allowedTypes.length ? options.allowedTypes.map((value) => String(value).toLowerCase()) : ["animal"]);
-      let ray;
-      try { ray = this._camera.getForwardRay(maximumDistance); }
+      const state = this._gameplayCamera || DEFAULT_GAMEPLAY_CAMERA;
+      const yaw = Number.isFinite(Number(options.yaw)) ? Number(options.yaw) : finite(this._gameplayCameraApplied?.yaw, state.yaw);
+      const pitch = Number.isFinite(Number(options.pitch)) ? Number(options.pitch) : finite(this._gameplayCameraApplied?.pitch, state.pitch);
+      let ray = null;
+      try {
+        const source = options.origin || this._camera.position;
+        if (source && this._Babylon && typeof this._Babylon.Ray === "function" && typeof this._Babylon.Vector3 === "function") {
+          const look = gameplayLookDirection(yaw, pitch);
+          const origin = new this._Babylon.Vector3(finite(source.x), finite(source.y), finite(source.z));
+          const direction = new this._Babylon.Vector3(look.x, look.y, look.z);
+          if (typeof direction.normalize === "function") direction.normalize();
+          ray = new this._Babylon.Ray(origin, direction, maximumDistance);
+        } else if (typeof this._camera.getForwardRay === "function") ray = this._camera.getForwardRay(maximumDistance);
+      }
       catch { return null; }
       if (!ray) return null;
       try {
+        const capability = this._cameraCollisionCapabilities();
         const picked = this._scene.pickWithRay(ray, (mesh) => {
           const metadata = mesh?.metadata || {};
-          if (metadata.cameraObstruction === true && metadata.kind === "terrain-chunk") return true;
-          const type = String(metadata.targetType || "").toLowerCase();
-          if (metadata.targetable !== true || !allowed.has(type)) return false;
-          if (options.excludePlayer !== false && type === "animal" && metadata.speciesId === this._playerSpeciesId) return false;
-          return true;
+          if (metadata.cameraObstruction === true) return true;
+           const type = String(metadata.targetType || "").toLowerCase();
+           if (metadata.targetable !== true || !allowed.has(type)) return false;
+           if (options.excludePlayer !== false && type === "animal" && metadata.isPlayer === true) return false;
+           if (!exactMetadataEntityId(metadata)) return false;
+           return true;
         }, false);
         if (!picked?.hit || !picked.pickedMesh) return null;
         const metadata = picked.pickedMesh.metadata || {};
         if (metadata.cameraObstruction === true) return null;
         const type = String(metadata.targetType || "").toLowerCase();
         if (!allowed.has(type)) return null;
+        const targetDistance = clamp(picked.distance, 0, maximumDistance);
+        const approximateBlocker = capability.environmentMesh
+          ? freezeRecord({ hit: false, distance: null, kind: null, tested: 0, approximate: false })
+          : this._queryEnvironmentBlockerDistance(ray, targetDistance);
+        if (approximateBlocker.hit && approximateBlocker.distance + 0.001 < targetDistance) return null;
+        const entityId = exactMetadataEntityId(metadata);
+        const identityExact = Boolean(entityId);
+        if (!identityExact) return null;
+        if (type !== "animal") {
+          const marker = this._resourceMarkers.get(entityId);
+          if (!marker || marker.mesh !== picked.pickedMesh || marker.targetType !== type) return null;
+        }
         return freezeRecord({
-          id: String(metadata.targetId || metadata.speciesId || picked.pickedMesh.id || picked.pickedMesh.name || "target").slice(0, 128),
+          id: entityId || safeEntityId(picked.pickedMesh.id || picked.pickedMesh.name || "target"),
+          entityId,
+          identityExact,
           type,
           speciesId: String(metadata.speciesId || "").slice(0, 64),
-          distance: clamp(picked.distance, 0, maximumDistance),
+          distance: targetDistance,
           lineOfSight: true,
+          lineOfSightMode: approximateBlocker.tested ? "mesh-ray+environment-sphere" : "mesh-ray",
+          yaw,
+          pitch,
           meshKind: String(metadata.kind || "target").slice(0, 64)
         });
       } catch { return null; }
+    }
+
+    queryTargetLineOfSight(target, options = {}) {
+      const descriptor = typeof target === "string" ? { id: target } : target;
+      const entityId = safeEntityId(descriptor?.entityId ?? descriptor?.targetId ?? descriptor?.id);
+      const suppliedType = String(descriptor?.type || "animal").toLowerCase();
+      const requestedType = suppliedType === "animal" ? "animal" : this._resourceTargetType(suppliedType);
+      const capability = this._cameraCollisionCapabilities();
+      const unsupported = (reason) => freezeRecord({
+        supported: false,
+        visible: false,
+        entityId,
+        reason,
+        approximate: capability.approximate,
+        blockerCoverage: capability.blockerCoverage,
+        distance: null,
+        blockerKind: null
+      });
+      if (!entityId) return unsupported("entity-id-required");
+      const proxy = requestedType === "animal" ? this._proxyByEntityId.get(entityId) : null;
+      const resourceMarker = requestedType !== "animal" ? this._resourceMarkers.get(entityId) : null;
+      if (requestedType === "animal" && (!proxy || !proxy.identityExact || proxy.isPlayer || proxy.entityId !== entityId)) return unsupported("exact-rendered-proxy-unavailable");
+      const resourceMetadata = resourceMarker?.mesh?.metadata || {};
+      if (requestedType !== "animal" && (!resourceMarker?.mesh || resourceMarker.targetType !== requestedType || resourceMetadata.targetable !== true || String(resourceMetadata.targetType || "").toLowerCase() !== requestedType || exactMetadataEntityId(resourceMetadata) !== entityId)) return unsupported("exact-rendered-target-unavailable");
+      if (!capability.sceneRaycast || !this._camera || !this._Babylon?.Vector3) return unsupported("scene-raycast-unavailable");
+      const source = options.origin || this._camera.position;
+      const rootPosition = proxy?.root?.position || resourceMarker?.mesh?.position;
+      const destination = options.target || (rootPosition ? {
+        x: rootPosition.x,
+        y: proxy ? finite(proxy.baseY, rootPosition.y) + (proxy.id === "pteranodon" ? .45 : 2.1) : finite(rootPosition.y) + .25,
+        z: rootPosition.z
+      } : null);
+      if (!source || !destination) return unsupported("line-segment-unavailable");
+      const dx = finite(destination.x, NaN) - finite(source.x, NaN);
+      const dy = finite(destination.y, NaN) - finite(source.y, NaN);
+      const dz = finite(destination.z, NaN) - finite(source.z, NaN);
+      const maximumDistance = Math.hypot(dx, dy, dz);
+      if (!Number.isFinite(maximumDistance) || maximumDistance <= 1e-6) return unsupported("line-segment-invalid");
+      try {
+        const origin = new this._Babylon.Vector3(finite(source.x), finite(source.y), finite(source.z));
+        const direction = new this._Babylon.Vector3(dx / maximumDistance, dy / maximumDistance, dz / maximumDistance);
+        const ray = new this._Babylon.Ray(origin, direction, maximumDistance + 0.05);
+        const picked = this._scene.pickWithRay(ray, (mesh) => {
+          const metadata = mesh?.metadata || {};
+          return metadata.cameraObstruction === true || (metadata.targetable === true && String(metadata.targetType || "").toLowerCase() === requestedType && exactMetadataEntityId(metadata) === entityId);
+        }, false);
+        const pickedDistance = picked?.hit && Number.isFinite(Number(picked.distance)) ? clamp(picked.distance, 0, maximumDistance + 0.05) : null;
+        const pickedMetadata = picked?.pickedMesh?.metadata || {};
+        const hitTarget = pickedDistance !== null && pickedMetadata.cameraObstruction !== true && String(pickedMetadata.targetType || "").toLowerCase() === requestedType && exactMetadataEntityId(pickedMetadata) === entityId;
+        const approximateBlocker = capability.environmentMesh
+          ? freezeRecord({ hit: false, distance: null, kind: null, tested: 0, approximate: false })
+          : this._queryEnvironmentBlockerDistance(ray, hitTarget ? pickedDistance : maximumDistance);
+        const blockedByApproximation = approximateBlocker.hit && (!hitTarget || approximateBlocker.distance + 0.001 < pickedDistance);
+        const visible = hitTarget && !blockedByApproximation;
+        return freezeRecord({
+          supported: true,
+          visible,
+          entityId,
+          type: requestedType,
+          identityExact: true,
+          reason: visible ? "visible" : "occluded",
+          approximate: capability.approximate || approximateBlocker.tested > 0,
+          blockerCoverage: capability.blockerCoverage,
+          distance: maximumDistance,
+          blockerDistance: blockedByApproximation ? approximateBlocker.distance : (!hitTarget ? pickedDistance : null),
+          blockerKind: blockedByApproximation ? approximateBlocker.kind : (!hitTarget && pickedDistance !== null ? String(pickedMetadata.cameraObstructionKind || pickedMetadata.kind || "obstruction") : null),
+          mode: approximateBlocker.tested ? "mesh-ray+environment-sphere" : "mesh-ray"
+        });
+      } catch { return unsupported("scene-raycast-error"); }
     }
 
     _clearHighlightedTargetInternal() {
@@ -3780,14 +4545,20 @@
     setHighlightedTarget(target = null) {
       if (target == null || target === false) return this.clearHighlightedTarget();
       if (this._state === "disposed") return makeResult(false, { status: this._state, reason: makeReason("ADAPTER_DISPOSED", "A disposed renderer cannot highlight a target.", "target", {}, false) });
-      const descriptor = typeof target === "string" ? { speciesId: target, id: target } : target;
-      if (!descriptor || typeof descriptor !== "object" || Array.isArray(descriptor)) return makeResult(false, { reason: makeReason("TARGET_INVALID", "Highlighted targets must identify an animal species.", "target", {}, true) });
-      const speciesId = String(descriptor.speciesId || descriptor.id || "").toLowerCase();
-      const proxy = this._proxies.get(speciesId);
-      if (!proxy) return makeResult(false, { reason: makeReason("TARGET_PROXY_UNAVAILABLE", "No rendered animal proxy matches this target.", "target", { speciesId }, true) });
+      const descriptor = typeof target === "string" ? { id: target } : target;
+      if (!descriptor || typeof descriptor !== "object" || Array.isArray(descriptor)) return makeResult(false, { reason: makeReason("TARGET_INVALID", "Highlighted targets must identify one rendered world entity.", "target", {}, true) });
+      const entityId = safeEntityId(descriptor.entityId ?? descriptor.targetId ?? descriptor.id);
+      const suppliedType = String(descriptor.type || "animal").toLowerCase();
+      const targetType = suppliedType === "animal" ? "animal" : this._resourceTargetType(suppliedType);
+      const speciesId = String(descriptor.speciesId || "").toLowerCase();
+      const proxy = targetType === "animal" && entityId ? this._proxyByEntityId.get(entityId) : null;
+      const resourceMarker = targetType !== "animal" && entityId ? this._resourceMarkers.get(entityId) : null;
+      const resourceMetadata = resourceMarker?.mesh?.metadata || {};
+      if (targetType === "animal" && (!proxy || proxy.isPlayer || !proxy.identityExact || proxy.entityId !== entityId || (speciesId && proxy.id !== speciesId))) return makeResult(false, { reason: makeReason("TARGET_PROXY_UNAVAILABLE", "No rendered animal proxy matches this exact entity identity.", "target", { entityId, speciesId, identityRequired: true }, true) });
+      if (targetType !== "animal" && (!resourceMarker?.mesh || resourceMarker.targetType !== targetType || resourceMetadata.targetable !== true || String(resourceMetadata.targetType || "").toLowerCase() !== targetType || exactMetadataEntityId(resourceMetadata) !== entityId)) return makeResult(false, { reason: makeReason("RESOURCE_MARKER_UNAVAILABLE", "No rendered resource marker matches this exact entity identity and type.", "target", { entityId, targetType }, true) });
       this._clearHighlightedTargetInternal();
-      const meshes = new Set(proxy.parts || []);
-      try { for (const mesh of proxy.root?.getChildMeshes?.(false) || []) meshes.add(mesh); } catch { /* Procedural parts remain sufficient. */ }
+      const meshes = resourceMarker ? new Set([resourceMarker.mesh]) : new Set(proxy.parts || []);
+      if (proxy) try { for (const mesh of proxy.root?.getChildMeshes?.(false) || []) meshes.add(mesh); } catch { /* Procedural parts remain sufficient. */ }
       let color = null;
       const requestedColor = /^#[0-9a-f]{6}$/i.test(String(descriptor.highlightColor || "")) ? String(descriptor.highlightColor) : "#79f2c0";
       try { color = this._Babylon?.Color3?.FromHexString?.(requestedColor) || new this._Babylon.Color3(0.475, 0.949, 0.753); } catch { color = { r: 0.475, g: 0.949, b: 0.753 }; }
@@ -3800,8 +4571,8 @@
           mesh.renderOverlay = true;
         } catch { this._highlightedMeshes.delete(mesh); }
       }
-      if (!this._highlightedMeshes.size) return makeResult(false, { reason: makeReason("TARGET_MESH_UNAVAILABLE", "The selected animal has no highlightable render mesh.", "target", { speciesId }, true) });
-      this._highlightedTarget = freezeRecord({ id: String(descriptor.id || speciesId).slice(0, 128), speciesId, type: "animal" });
+      if (!this._highlightedMeshes.size) return makeResult(false, { reason: makeReason("TARGET_MESH_UNAVAILABLE", "The selected world target has no highlightable render mesh.", "target", { entityId, speciesId: proxy?.id || "", targetType }, true) });
+      this._highlightedTarget = freezeRecord({ id: entityId || proxy?.id, entityId, identityExact: true, speciesId: proxy?.id || "", type: targetType });
       return makeResult(true, { target: this._highlightedTarget, meshCount: this._highlightedMeshes.size });
     }
 
@@ -3831,10 +4602,13 @@
 
     setPlayerState(state = {}) {
       if (!state || typeof state !== "object") return makeResult(false, { reason: makeReason("PLAYER_STATE_INVALID", "Player state must be an object.", "input", {}, true) });
+      const suppliedEntityId = state.entityId ?? state.targetId ?? state.id ?? state.playerId;
+      if (suppliedEntityId !== undefined) this._playerEntityId = safeEntityId(suppliedEntityId) || this._playerEntityId;
       if (state.speciesId !== undefined) {
         const selected = this.selectSpecies(state.speciesId);
         if (!selected.ok) return selected;
       }
+      this._syncProxyIdentity(this._proxies.get(this._playerSpeciesId), this._playerEntityId, true, true);
       if (state.x !== undefined) this._player.x = clamp(state.x, 0, WORLD_SIZE);
       if (state.z !== undefined || state.y !== undefined) this._player.z = clamp(state.z === undefined ? state.y : state.z, 0, WORLD_SIZE);
       if (state.heading !== undefined) this._player.heading = finite(state.heading, this._player.heading);
@@ -3855,7 +4629,7 @@
         });
         this._lastEnvironmentInteraction = { x: this._player.x, z: this._player.z, at: interactionNow };
       }
-      return makeResult(true, { player: freezeRecord({ ...this._player, speciesId: this._playerSpeciesId }) });
+      return makeResult(true, { player: freezeRecord({ ...this._player, speciesId: this._playerSpeciesId, entityId: this._playerEntityId, identityExact: true }) });
     }
 
     updatePlayer(state) { return this.setPlayerState(state); }
@@ -3897,6 +4671,8 @@
       if (!FLAGSHIP_IDS.includes(id)) return makeResult(false, { reason: makeReason("SPECIES_PROXY_UNAVAILABLE", "This foundation provides only four bounded Mesozoic proxy species.", "input", { supported: FLAGSHIP_IDS.slice() }, true) });
       const previousId = this._playerSpeciesId;
       this._playerSpeciesId = id;
+      if (previousId !== id) this._syncProxyIdentity(this._proxies.get(previousId), "", false, false);
+      this._syncProxyIdentity(this._proxies.get(id), this._playerEntityId, true, true);
       this._syncProxyVisibility(previousId);
       this._syncProxyVisibility(id);
       this._applyPlayerPosition();
@@ -3907,6 +4683,14 @@
     updateFlagship(speciesId, state = {}) {
       const proxy = this._proxies.get(String(speciesId || "").toLowerCase());
       if (!proxy) return makeResult(false, { reason: makeReason("SPECIES_PROXY_UNAVAILABLE", "No 3D proxy exists for this species.", "input", { speciesId }, true) });
+      const suppliedEntityId = state.entityId ?? state.targetId ?? state.id;
+      const isPlayerProxy = proxy.id === this._playerSpeciesId;
+      if (!isPlayerProxy && suppliedEntityId !== undefined) {
+        const entityId = safeEntityId(suppliedEntityId);
+        const occupied = entityId ? this._proxyByEntityId.get(entityId) : null;
+        if (occupied && occupied !== proxy) return makeResult(false, { reason: makeReason("ENTITY_ID_CONFLICT", "A rendered proxy already owns this exact entity identity.", "input", { entityId, speciesId: proxy.id }, true) });
+        this._syncProxyIdentity(proxy, entityId, false, true);
+      }
       const worldX = clamp(state.x === undefined ? proxy.root.position.x + WORLD_HALF : state.x, 0, WORLD_SIZE);
       const worldZ = clamp(state.z === undefined ? (state.y === undefined ? proxy.root.position.z + WORLD_HALF : state.y) : state.z, 0, WORLD_SIZE);
       const altitude = proxy.flightOffset + clamp(state.elevation || 0, -20, 300);
@@ -3918,10 +4702,13 @@
       this._creatureAssets?.syncPose(proxy.id, worldX, worldZ);
       if (state.visible !== undefined) {
         if (state.visible) this._visibleWildlifeSpecies.add(proxy.id);
-        else this._visibleWildlifeSpecies.delete(proxy.id);
+        else {
+          this._visibleWildlifeSpecies.delete(proxy.id);
+          if (!isPlayerProxy) this._syncProxyIdentity(proxy, "", false, false);
+        }
         this._syncProxyVisibility(proxy.id);
       }
-      return makeResult(true, { speciesId: proxy.id, x: worldX, z: worldZ, elevation: altitude });
+      return makeResult(true, { speciesId: proxy.id, entityId: proxy.entityId || "", identityExact: proxy.identityExact === true, x: worldX, z: worldZ, elevation: altitude });
     }
 
     setTimeOfDay(hour) {
@@ -4386,6 +5173,7 @@
         this._streamer.update(this._player.x, this._player.z);
         this._streamer.process(this._reducedMotion ? 1 : undefined);
         this._environmentAssets?.update(this._player.x, this._player.z);
+        this._creatureAssets?._advanceClipTransitions(startedAt);
         this._animateProxies(deltaSeconds);
         this._followPlayer(deltaSeconds);
         let drawCallsBefore = NaN;
@@ -4403,9 +5191,9 @@
           }
         } catch { /* Keep the mesh-derived estimate when the backend has no counter. */ }
         const finishedAt = now();
-        // Ignore browser suspension/debugger gaps. Genuine slow rendering still
-        // appears in finishedAt-startedAt and in consecutive <=120 ms frames.
-        if (rawDelta <= 0.12) this._governor.record(Math.max(finishedAt - startedAt, rawDelta * 1000), finishedAt);
+        // Visibility suspension stops the render loop and resume() resets
+        // _lastFrameAt, so every remaining long delta is a real observed hitch.
+        this._governor.record(Math.max(finishedAt - startedAt, rawDelta * 1000), finishedAt);
         if (finishedAt - this._lastTelemetryAt >= 1000) {
           this._lastTelemetryAt = finishedAt;
           safeCall(this._options.onTelemetry, this.getTelemetry());
@@ -4519,6 +5307,7 @@
       const waterWeather = this._waterWeather?.getTelemetry?.() || freezeRecord({ status: "fallback", waterBodies: 1, particles: 0, interactions: 0 });
       const average = this._governor.average;
       const render = this._collectRenderTelemetry();
+      const resourceMarkers = this._resourceMarkerCapabilities();
       return freezeRecord({
         status: this._state,
         backend: this._backend,
@@ -4528,6 +5317,10 @@
         fps: average > 0 ? Math.round(1000 / average) : 0,
         frameTimeAverageMs: Math.round(average * 10) / 10,
         frameTimeP95Ms: Math.round(this._governor.p95 * 10) / 10,
+        frameTimeP99Ms: Math.round(this._governor.p99 * 10) / 10,
+        frameTimeMaximumMs: Math.round(this._governor.maximum * 10) / 10,
+        frameTimeMaxMs: Math.round(this._governor.maximum * 10) / 10,
+        longFrameCount: this._governor.longFrameCount,
         drawCalls: render.drawCalls,
         drawCallsMeasured: render.drawCallsMeasured,
         triangles: render.triangles,
@@ -4546,6 +5339,7 @@
         reducedMotion: this._reducedMotion,
         hidden: Boolean((this._options.document || runtime.document) && (this._options.document || runtime.document).hidden),
         proxySpecies: FLAGSHIP_IDS.slice(),
+        resourceMarkers,
         environmentAssets,
         proceduralEnvironment: freezeRecord({
           landscape: this._landscape ? "active" : "legacy-fallback",
@@ -4558,6 +5352,7 @@
         readability: this._readabilityState ? freezeRecord({ ...this._readabilityState }) : freezeRecord({ applied: false }),
         photoCamera: this.getPhotoSettings(),
         gameplayCamera: this.getGameplayCamera(),
+        gameplayCapabilities: this.getGameplayCapabilities(),
         rainParticleBudget: ENVIRONMENT_BUDGETS[this._qualityPreset].rainParticles,
         physics: "kinematic-proxy-only"
       });
@@ -4679,6 +5474,7 @@
       this._vegetation = null;
       try { this._waterWeather?.dispose?.(); } catch { /* Subsystem disposal must fail open. */ }
       this._waterWeather = null;
+      this._proceduralLakes = Object.freeze([]);
       try { this._landscape?.dispose?.(); } catch { /* Pure procedural state remains optional. */ }
       this._landscape = null;
       this._environmentAssets?.dispose();
@@ -4687,12 +5483,18 @@
       this._creatureAssets = null;
       this._cinematicAudio?.dispose();
       this._cinematicAudio = null;
+      for (const id of Array.from(this._resourceMarkers.keys())) this._disposeResourceMarker(id);
+      this._resourceMarkers.clear();
+      for (const material of this._resourceMaterials.values()) safeDispose(material);
+      this._resourceMaterials.clear();
       for (const proxy of this._proxies.values()) {
         safeDispose(proxy.root);
         for (const material of proxy.materials) safeDispose(material);
       }
       this._proxies.clear();
+      this._proxyByEntityId.clear();
       this._visibleWildlifeSpecies.clear();
+      this._environmentBlockerMeshes.clear();
       if (this._water) {
         safeDispose(this._water.mesh);
         safeDispose(this._water.material);
@@ -4716,7 +5518,7 @@
       this._controlsAttached = false;
       this._gameplayCameraApplied = null;
       this._photoCameraOverride = false;
-      this._gameplayCameraCollision = freezeRecord({ supported: false, mode: "unavailable", terrainOnly: true, hit: false, desiredDistance: this._gameplayCamera.distance, resolvedDistance: this._gameplayCamera.distance, hitDistance: null, meshKind: null });
+      this._gameplayCameraCollision = freezeRecord({ supported: false, mode: "unavailable", terrainOnly: true, approximate: false, rayCount: 0, blockerCoverage: Object.freeze([]), hit: false, desiredDistance: this._gameplayCamera.distance, resolvedDistance: this._gameplayCamera.distance, hitDistance: null, meshKind: null });
       this._lights = null;
       this._postProcessingFailureHistory.length = 0;
       this._lastFrameDrawCalls = 0;
@@ -4796,6 +5598,8 @@
     sampleTerrain,
     sampleTerrainHeight,
     createProceduralLandscape,
+    planProceduralLakes,
+    queryLandscapeWater,
     applyTerrainMaterialReadability,
     applyCreatureMaterialReadability,
     enforceClearDaylightReadability,
@@ -4803,7 +5607,10 @@
     normalizeGameplayCamera,
     gameplayCameraToArc,
     gameplayCameraOffset,
+    gameplayLookDirection,
+    raySphereIntersectionDistance,
     LandscapeWorkerBridge,
+    CreaturePrototypeManager,
     create,
     createRenderer,
     start,

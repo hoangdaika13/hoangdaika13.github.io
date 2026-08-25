@@ -103,6 +103,42 @@ test("readability overrides wrap legacy labels instead of visually discarding th
   assert.match(hardening, /\.hwe-condition-panel > div\s*\{[\s\S]*?repeat\(auto-fit, minmax\(68px, 1fr\)\)/);
 });
 
+test("ready-screen copy and native progress tracks cannot retain legacy intrinsic clipping", () => {
+  const explicitMarker = "These selectors intentionally match or outrank the legacy nowrap rules";
+  const explicitIndex = hardening.indexOf(explicitMarker);
+  assert.ok(explicitIndex > hardening.indexOf("Let labels wrap instead of discarding Vietnamese text with ellipsis"));
+  const explicit = hardening.slice(explicitIndex, hardening.indexOf(".hwe-species-card,", explicitIndex));
+  for (const selector of [
+    ".hwe-root .hwe-telemetry > header strong",
+    ".hwe-root .hwe-ability-bar strong",
+    ".hwe-root .hwe-engine-telemetry dd"
+  ]) {
+    assert.ok(explicit.includes(selector), `missing cascade-safe wrap override for ${selector}`);
+  }
+  assert.match(explicit, /overflow:\s*visible[\s\S]*?text-overflow:\s*clip[\s\S]*?white-space:\s*normal/);
+  assert.match(explicit, /\.hwe-root progress\s*\{[^}]*inline-size:\s*100%[^}]*min-inline-size:\s*0[^}]*max-inline-size:\s*100%/);
+});
+
+test("375px ready screen preserves the complete quick-play and ability copy", () => {
+  assert.match(hardening, /375px ready screen keeps action names and descriptions visible/);
+  assert.match(hardening, /@media \(max-width:\s*430px\)[\s\S]*?\.hwe-header-status > button\s*\{[^}]*width:\s*auto[^}]*min-inline-size:\s*94px[^}]*overflow:\s*visible[^}]*color:\s*#fff7dc[^}]*white-space:\s*normal/);
+  assert.match(hardening, /\.hwe-header-status > button::before\s*\{\s*content:\s*none/);
+  assert.match(hardening, /\.hwe-ability-bar\s*\{[^}]*display:\s*flex[^}]*overflow-x:\s*auto[^}]*scroll-snap-type:\s*x proximity/);
+  assert.match(hardening, /\.hwe-ability-bar small\s*\{\s*display:\s*block/);
+  assert.match(hardening, /\.hwe-ability-bar button :where\(small, strong\)\s*\{[^}]*overflow:\s*visible[^}]*text-overflow:\s*clip[^}]*white-space:\s*normal[^}]*word-break:\s*normal/);
+});
+
+test("compact landscape reserves the complete quick-play label", () => {
+  assert.match(css, /@media \(min-width:\s*431px\) and \(max-width:\s*1000px\)[\s\S]*?\.hwe-header-status\s*>\s*button\s*\{[\s\S]*?min-inline-size:\s*96px[\s\S]*?flex:\s*0\s+0\s+auto[\s\S]*?white-space:\s*nowrap/);
+});
+
+test("tablet and compact landscape keep Era Realm names intact in a scroll rail", () => {
+  assert.match(hardening, /tablet or landscape phone can have a desktop-class viewport/);
+  assert.match(hardening, /@media \(max-width:\s*1000px\)[\s\S]*?\.hwe-realm-selector\s*>\s*div\s*\{[\s\S]*?display:\s*flex[\s\S]*?overflow-x:\s*auto[\s\S]*?scroll-snap-type:\s*inline proximity/);
+  assert.match(hardening, /\.hwe-realm-selector\s*>\s*div button\s*\{[\s\S]*?min-inline-size:\s*148px[\s\S]*?flex:\s*0 0 148px/);
+  assert.match(hardening, /\.hwe-realm-selector\s*>\s*div button\s*>\s*span,[\s\S]*?overflow-wrap:\s*normal[\s\S]*?word-break:\s*normal[\s\S]*?hyphens:\s*none/);
+});
+
 test("motion and contrast preferences remain authoritative in the final layer", () => {
   assert.match(hardening, /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?scroll-behavior:\s*auto\s*!important[\s\S]*?scroll-snap-type:\s*none\s*!important/);
   assert.match(hardening, /@media \(forced-colors:\s*active\)[\s\S]*?outline:\s*3px solid Highlight[\s\S]*?box-shadow:\s*none/);

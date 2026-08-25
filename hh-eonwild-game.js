@@ -6,7 +6,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createEonWild(global) {
   "use strict";
 
-  const VERSION = "4.2.0";
+  const VERSION = "4.3.1";
   const STORAGE_KEY = "hh.game.eonwild.v4";
   const LEGACY_STORAGE_KEY = "hh.game.eonwild.v3";
   const V2_STORAGE_KEY = "hh.game.eonwild.v2";
@@ -25,6 +25,7 @@
   const SPECIES_REGISTRY = global.HHEonWildSpeciesRegistry || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-species-registry.js"); } catch { return null; } })() : null);
   const INPUT_SYSTEM = global.HHEonWildInputSystem || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-input-system.js"); } catch { return null; } })() : null);
   const DESKTOP = global.HHEonWildDesktopController || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-desktop-controller.js"); } catch { return null; } })() : null);
+  const COLLISION = global.HHEonWildCollisionSystem || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-collision-system.js"); } catch { return null; } })() : null);
   const PERSONAL_QUALITY_PROFILE = Object.freeze({ id: "personal", label: "Cinematic Personal", targetFps: 30 });
   const CINEMATIC_PACK_FALLBACK = Object.freeze([
     { id: "creature-ultra", label: "Creature Ultra Pack", description: "Model đúng loài, rig, animation, PBR và bốn LOD.", accent: "#ff9b70" },
@@ -163,10 +164,72 @@
   ]);
   const instances = new WeakMap();
   const activeHosts = new Set();
+  const FRAME_SAMPLE_WINDOW_MS = 2000;
+  const MAX_FRAME_SAMPLES = 300;
 
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character]));
   const safeView = (value) => VIEW_IDS.includes(value) ? value : "world";
+
+  function createFramePacingState(timestamp = 0) {
+    const startedAt = Math.max(0, Number(timestamp) || 0);
+    return {
+      samples: [],
+      averageMs: 0,
+      p95Ms: 0,
+      p99Ms: 0,
+      fps: 0,
+      onePercentLowFps: 0,
+      lastSummaryAt: startedAt,
+      lastAdaptiveAt: startedAt,
+      warmupUntil: startedAt + 8000,
+      slowWindows: 0,
+      fastWindows: 0
+    };
+  }
+
+  function recordFramePacing(state, frameMs, timestamp) {
+    if (!state || !Array.isArray(state.samples)) return null;
+    const at = Math.max(0, Number(timestamp) || 0);
+    const value = clamp(frameMs, .1, 250);
+    state.samples.push({ at, value });
+    while (state.samples.length && (state.samples.length > MAX_FRAME_SAMPLES || state.samples[0].at < at - FRAME_SAMPLE_WINDOW_MS)) state.samples.shift();
+    if (at - state.lastSummaryAt < 500 && state.fps > 0) return state;
+    state.lastSummaryAt = at;
+    const values = state.samples.map((sample) => sample.value).sort((left, right) => left - right);
+    if (!values.length) return state;
+    const percentile = (ratio) => values[Math.min(values.length - 1, Math.max(0, Math.floor(values.length * ratio)))];
+    state.averageMs = values.reduce((sum, sample) => sum + sample, 0) / values.length;
+    state.p95Ms = percentile(.95);
+    state.p99Ms = percentile(.99);
+    state.fps = state.averageMs > 0 ? Math.round(1000 / state.averageMs) : 0;
+    state.onePercentLowFps = state.p99Ms > 0 ? Math.round(1000 / state.p99Ms) : 0;
+    return state;
+  }
+
+  function evaluateAdaptivePacing(state, targetFps = 45) {
+    if (!state) return 0;
+    const targetMs = 1000 / clamp(targetFps, 24, 120);
+    if (state.p95Ms > targetMs * 1.25) {
+      state.slowWindows += 1;
+      state.fastWindows = 0;
+    } else if (state.p95Ms < targetMs * .72) {
+      state.fastWindows += 1;
+      state.slowWindows = 0;
+    } else {
+      state.slowWindows = 0;
+      state.fastWindows = 0;
+    }
+    if (state.slowWindows >= 2) {
+      state.slowWindows = 0;
+      return -1;
+    }
+    if (state.fastWindows >= 4) {
+      state.fastWindows = 0;
+      return 1;
+    }
+    return 0;
+  }
   const seededRandom = (seed = 1) => {
     let value = (Number(seed) || 1) >>> 0;
     return () => { value ^= value << 13; value ^= value >>> 17; value ^= value << 5; return (value >>> 0) / 4294967296; };
@@ -223,6 +286,28 @@
     return { bleeding: clamp(source.bleeding, 0, 100), fracture: clamp(source.fracture, 0, 100), infection: clamp(source.infection, 0, 100), disease: clamp(source.disease, 0, 100) };
   };
 
+  function defaultPlayableAtlasMap(realmId, speciesId, worldAddress, seed) {
+    const maps = WORLD_ATLAS?.listMaps?.({ realmId }) || [];
+    const activeMaps = maps.filter((map) => map?.gameplayStatus === "active-region" && map.rendererTimeSliceId && map.rendererRegionId);
+    const exact = activeMaps.find((map) => map.rendererTimeSliceId === worldAddress?.timeSliceId && map.rendererRegionId === worldAddress?.regionId);
+    if (exact) return exact;
+    if (typeof RENDERER_3D?.createWorldAddress === "function" && typeof RENDERER_3D?.isSpeciesAllowedAtAddress === "function") {
+      const compatible = activeMaps.find((map) => {
+        try {
+          const address = RENDERER_3D.createWorldAddress({
+            realmId: map.realmId,
+            timeSliceId: map.rendererTimeSliceId,
+            regionId: map.rendererRegionId,
+            seed
+          });
+          return RENDERER_3D.isSpeciesAllowedAtAddress(speciesId, address, false);
+        } catch { return false; }
+      });
+      if (compatible) return compatible;
+    }
+    return activeMaps[0] || WORLD_ATLAS?.defaultMapForRealm?.(realmId) || null;
+  }
+
   function normalizeState(value = {}) {
     const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
     // A state without an explicit schema is treated as newly-created v4 data.
@@ -254,9 +339,10 @@
       worldAddress = RENDERER_3D.createWorldAddress({ ...cartridgeAddress, realmId, seed });
     }
     const requestedAtlasMap = WORLD_ATLAS?.getMap?.(source.atlasMapId);
+    const playableDefaultMap = defaultPlayableAtlasMap(realmId, speciesId, worldAddress, seed);
     const atlasMap = requestedAtlasMap && (requestedAtlasMap.realmId === realmId || (convergence && requestedAtlasMap.realmId === "convergence"))
       ? requestedAtlasMap
-      : WORLD_ATLAS?.defaultMapForRealm?.(realmId);
+      : playableDefaultMap;
     const planetAddress = WORLD_ATLAS?.normalizeAddress?.({
       ...(source.planetAddress && typeof source.planetAddress === "object" ? source.planetAddress : {}),
       mapId: atlasMap?.id,
@@ -678,7 +764,7 @@
   function shellMarkup(instance) {
     const view = instance.view;
   const atlasMap = WORLD_ATLAS?.getMap?.(instance.state.atlasMapId);
-  return `<section class="hwe-root" data-hwe-root data-view="${view}" data-realm="${instance.state.realmId}" data-motion="${instance.state.settings.motion}" data-quality="${instance.state.settings.quality}" data-renderer="lite" aria-label="HH EonWild"><header class="hwe-header"><div class="hwe-brand"><span aria-hidden="true"><i></i><b>EW</b></span><div><small>HH GAME · LIVING EARTH 4.2 · ORIGINAL</small><h1>HH EonWild</h1><p>${escapeHtml(atlasMap?.label || REALMS[instance.state.realmId]?.label || "Trái Đất Muôn Thời")} · Planet Atlas / vùng dựng 16 × 16 km · Không có con người</p></div></div><div class="hwe-header-status"><span><i></i> Local single-player</span><span>${CONTENT?.FLAGSHIP_IDS?.length || 13} Flagship · ${Object.keys(RENDERER_3D?.SPECIES_CARTRIDGES || {}).length} Species Cartridge · ${MERGED_SPECIES_COUNT} catalog không trùng</span><button type="button" data-hwe-quick-play>Chơi tiếp →</button></div></header>${navMarkup(view)}<main class="hwe-main" data-hwe-main>${viewMarkup(view, instance.state, instance)}</main><footer class="hwe-controls"><span><kbd>WASD</kbd> Di chuyển</span><span><kbd>Shift</kbd> Chạy</span><span><kbd>F</kbd> Ăn/Uống</span><span><kbd>Q</kbd> Giác quan</span><span><kbd>R</kbd> Ability</span><span><kbd>C</kbd> Giao tiếp</span><span><kbd>M</kbd> Atlas</span><span><kbd>P</kbd> Photo</span><b data-hwe-fps>Engine nghỉ</b></footer><div class="hwe-toast" data-hwe-toast role="status" aria-live="polite"></div></section>`;
+  return `<section class="hwe-root" data-hwe-root data-view="${view}" data-realm="${instance.state.realmId}" data-motion="${instance.state.settings.motion}" data-quality="${instance.state.settings.quality}" data-renderer="lite" aria-label="HH EonWild"><header class="hwe-header"><div class="hwe-brand"><span aria-hidden="true"><i></i><b>EW</b></span><div><small>HH GAME · LIVING EARTH 4.3 · ORIGINAL</small><h1>HH EonWild</h1><p>${escapeHtml(atlasMap?.label || REALMS[instance.state.realmId]?.label || "Trái Đất Muôn Thời")} · Planet Atlas / vùng dựng 16 × 16 km · Không có con người</p></div></div><div class="hwe-header-status"><span><i></i> Local single-player</span><span>${CONTENT?.FLAGSHIP_IDS?.length || 13} Flagship · ${Object.keys(RENDERER_3D?.SPECIES_CARTRIDGES || {}).length} Species Cartridge · ${MERGED_SPECIES_COUNT} catalog không trùng</span><button type="button" data-hwe-quick-play>Chơi tiếp →</button></div></header>${navMarkup(view)}<main class="hwe-main" data-hwe-main>${viewMarkup(view, instance.state, instance)}</main><footer class="hwe-controls"><span><kbd>WASD</kbd> Di chuyển</span><span><kbd>Shift</kbd> Chạy</span><span><kbd>F</kbd> Ăn/Uống</span><span><kbd>Q</kbd> Giác quan</span><span><kbd>R</kbd> Ability</span><span><kbd>C</kbd> Giao tiếp</span><span><kbd>M</kbd> Atlas</span><span><kbd>P</kbd> Photo</span><b data-hwe-fps>Engine nghỉ</b></footer><div class="hwe-toast" data-hwe-toast role="status" aria-live="polite"></div></section>`;
   }
 
   function setToast(instance, message) {
@@ -937,12 +1023,105 @@
     return fallback;
   }
 
+  function collisionHabitatAccepts(instance, species, x, z) {
+    const landscape = instance?.collisionLandscape;
+    if (!landscape || typeof landscape.sample !== "function" || !species) return false;
+    try {
+      const sample = landscape.sample(clamp(x, 20, WORLD_SIZE - 20), clamp(z, 20, WORLD_SIZE - 20));
+      const height = Number(sample?.height);
+      const slopeDegrees = Number(sample?.slopeDegrees);
+      if (!Number.isFinite(height) || !Number.isFinite(slopeDegrees)) return false;
+      const seaLevel = Number(landscape.config?.seaLevel ?? RENDERER_ADAPTER?.WATER_LEVEL ?? 3.5);
+      let water = null;
+      try {
+        water = RENDERER_ADAPTER?.queryLandscapeWater?.(landscape, x, z, {
+          lakes: instance.collisionLakes || [],
+          seed: rendererSeedForState(instance.state)
+        }) || null;
+      } catch { water = null; }
+      // Older/fallback renderer bundles may not expose the shared query yet.
+      // Keep spawn validation conservative around ocean and river descriptors
+      // so a terrestrial save can never resume inside invisible deep water.
+      if (!water && height <= seaLevel) water = { type: "ocean", depth: Math.max(0, seaLevel - height) };
+      const river = sample?.river;
+      if (!water && river && Number(river.distance) <= Math.max(.5, Number(river.width) || 0)) {
+        const surfaceHeight = Number(river.bedHeight ?? height) + .18;
+        water = { type: "river", depth: Math.max(.18, surfaceHeight - height) };
+      }
+      const profile = collisionProfileForSpecies(species);
+      if (profile === "aquatic") return Boolean(water && Number(water.depth) >= .75) && slopeDegrees <= 42;
+      if (profile === "amphibious") return (Boolean(water) || (height >= seaLevel - 1.5 && height <= seaLevel + 7)) && slopeDegrees <= 38;
+      if (profile === "flying") return !water && height > seaLevel + .75 && slopeDegrees <= 42;
+      const slopeLimitDegrees = collisionSlopeLimitForSpecies(species) * 180 / Math.PI;
+      return !water && height > seaLevel + .9 && slopeDegrees <= slopeLimitDegrees;
+    } catch { return false; }
+  }
+
+  function findCollisionHabitatSpawn(instance, species) {
+    if (!instance?.collisionLandscape || !species) return null;
+    const seed = hashSeed(`${rendererSeedForState(instance.state)}:${instance.state.realmId}:${species.id}:landscape-spawn`);
+    const random = seededRandom(seed);
+    for (let index = 0; index < 640; index += 1) {
+      const x = 96 + random() * (WORLD_SIZE - 192);
+      const z = 96 + random() * (WORLD_SIZE - 192);
+      if (collisionHabitatAccepts(instance, species, x, z)) return { x, y: z, source: "landscape-random" };
+    }
+    const gridSize = 32;
+    const start = seed % (gridSize * gridSize);
+    for (let offset = 0; offset < gridSize * gridSize; offset += 1) {
+      const index = (start + offset * 73) % (gridSize * gridSize);
+      const x = (index % gridSize + .5) / gridSize * WORLD_SIZE;
+      const z = (Math.floor(index / gridSize) + .5) / gridSize * WORLD_SIZE;
+      if (collisionHabitatAccepts(instance, species, x, z)) return { x, y: z, source: "landscape-grid" };
+    }
+    return null;
+  }
+
   function placePlayerAtHabitat(instance) {
     const species = SPECIES_BY_ID.get(instance.state.speciesId);
     if (!species || !instance.world) return false;
-    const point = findHabitatSpawn(species, instance.world.seed, instance.state.realmId);
+    const point = findCollisionHabitatSpawn(instance, species) || findHabitatSpawn(species, instance.world.seed, instance.state.realmId);
     instance.state.player.x = point.x; instance.state.player.y = point.y; instance.state.player.spawnPending = false;
     return true;
+  }
+
+  function ensureStarterResources(instance, species) {
+    if (!instance?.world || !species) return false;
+    const player = instance.state.player;
+    const nearby = (type) => instance.world.resources.some((resource) => resource.amount > 0 && resource.type === type && Math.hypot(resource.x - player.x, resource.y - player.y) <= 120);
+    const foodType = ["meat"].includes(species.diet) ? "carcass" : "plant";
+    const wanted = [
+      { id: "water", type: "water", distance: 22 },
+      { id: "food", type: foodType, distance: 34 },
+      { id: "shelter", type: "shelter", distance: 48 }
+    ];
+    let added = false;
+    wanted.forEach((item, wantedIndex) => {
+      if (nearby(item.type)) return;
+      let point = null;
+      const baseAngle = hashSeed(`${rendererSeedForState(instance.state)}:${species.id}:${item.id}`) / 4294967296 * Math.PI * 2;
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        const angle = baseAngle + attempt * Math.PI * 2 / 12;
+        const x = clamp(player.x + Math.cos(angle) * item.distance, 20, WORLD_SIZE - 20);
+        const y = clamp(player.y + Math.sin(angle) * item.distance, 20, WORLD_SIZE - 20);
+        if (!instance.collisionLandscape || collisionHabitatAccepts(instance, species, x, y)) { point = { x, y }; break; }
+      }
+      if (!point) point = { x: clamp(player.x + (wantedIndex + 1) * 4, 20, WORLD_SIZE - 20), y: clamp(player.y + (wantedIndex + 1) * 3, 20, WORLD_SIZE - 20) };
+      const terrain = terrainForRealm(terrainAt(point.x, point.y, instance.world.seed), instance.state.realmId, point.x, point.y);
+      instance.world.resources.push({ id: `starter-${item.id}-${species.id}`, x: point.x, y: point.y, type: item.type, amount: 100, terrain, starter: true });
+      added = true;
+    });
+    return added;
+  }
+
+  function ensureValidPlayerSpawn(instance, force = false) {
+    const species = SPECIES_BY_ID.get(instance?.state?.speciesId);
+    if (!species || !instance?.world) return false;
+    const player = instance.state.player;
+    const invalid = Boolean(instance.collisionLandscape) && !collisionHabitatAccepts(instance, species, player.x, player.y);
+    const relocated = force || player.spawnPending || invalid ? placePlayerAtHabitat(instance) : false;
+    ensureStarterResources(instance, species);
+    return relocated;
   }
 
   function gamepadInput(instance) {
@@ -960,6 +1139,291 @@
     if (species.mass >= 3000) return "heavy";
     if (species.mass < 8) return "small";
     return "ground";
+  }
+
+  function collisionProfileForSpecies(species) {
+    if (!species) return "terrestrial";
+    if (species.locomotion === "fly") return "flying";
+    if (species.locomotion === "swim") return "aquatic";
+    if (species.locomotion === "amphibious") return "amphibious";
+    if (species.locomotion === "climb") return "climbing";
+    if (species.locomotion === "crawl" && species.mass < 5) return "burrowing";
+    if (species.mass >= 3000) return "heavy";
+    return "terrestrial";
+  }
+
+  function collisionDimensionsForSpecies(species) {
+    const bodyScale = clamp(Math.cbrt(Math.max(.001, Number(species?.mass) || 1)) * .12, .12, 4.2);
+    const elongated = ["swim", "crawl"].includes(species?.locomotion);
+    return {
+      radius: bodyScale,
+      height: clamp(bodyScale * (elongated ? .8 : 2.4), .18, 12)
+    };
+  }
+
+  function collisionSlopeLimitForSpecies(species) {
+    const profileId = cameraProfileIdForSpecies(species);
+    return profileId === "heavy" ? .43 : profileId === "small" || profileId === "climbing" ? .8 : .58;
+  }
+
+  function collisionAltitudeForSpecies(species) {
+    return species?.locomotion === "fly" ? 30 : 0;
+  }
+
+  function collisionTerrainHeight(instance, x, z) {
+    try {
+      const height = Number(instance?.collisionTerrainSampler?.(x, z));
+      return Number.isFinite(height) ? height : NaN;
+    } catch { return NaN; }
+  }
+
+  function terrainHeightForInstance(instance, x, z, fallbackSeed = rendererSeedForState(instance?.state || {})) {
+    const shared = collisionTerrainHeight(instance, x, z);
+    if (Number.isFinite(shared)) return shared;
+    const fallback = RENDERER_ADAPTER?.sampleTerrainHeight || RENDERER_3D?.terrainHeight;
+    if (typeof fallback !== "function") return 0;
+    try {
+      const height = Number(fallback(x, z, fallbackSeed));
+      return Number.isFinite(height) ? height : 0;
+    } catch { return 0; }
+  }
+
+  function environmentCollisionKind(placement) {
+    const assetId = String(placement?.assetId || "").toLowerCase();
+    const category = String(placement?.category || "").toLowerCase();
+    if (assetId === "rock" || category === "rock") return "rock";
+    if (assetId === "quiver" || ["mature-tree", "dead-tree", "sapling"].includes(category)) return "tree";
+    if (["root", "log"].includes(category)) return "static";
+    return "";
+  }
+
+  function environmentCollisionObstacle(placement) {
+    const type = environmentCollisionKind(placement);
+    if (!type) return null;
+    const id = String(placement?.id || "").replace(/[^a-z0-9:._-]/gi, "-").slice(0, 128);
+    const number = (value) => {
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric : NaN;
+    };
+    const x = number(placement.x);
+    const y = number(placement.y ?? placement.minY);
+    const z = number(placement.z);
+    if (!id || !Number.isFinite(x) || !Number.isFinite(z)) return null;
+    if (String(placement.shape || "").toLowerCase() === "aabb") {
+      const minX = number(placement.minX); const maxX = number(placement.maxX);
+      const minZ = number(placement.minZ); const maxZ = number(placement.maxZ);
+      const minY = number(placement.minY ?? y); const maxY = number(placement.maxY ?? (Number.isFinite(y) ? y + number(placement.height) : NaN));
+      if (![minX, maxX, minY, maxY, minZ, maxZ].every(Number.isFinite) || maxX <= minX || maxY <= minY || maxZ <= minZ) return null;
+      return { id, type, shape: "aabb", minX, maxX, minY, maxY, minZ, maxZ };
+    }
+    if (placement.source === "procedural-environment" || placement.category) {
+      const radius = number(placement.radius); const height = number(placement.height);
+      if (!Number.isFinite(y) || !Number.isFinite(radius) || radius <= 0 || !Number.isFinite(height) || height <= 0) return null;
+      return { id, type, shape: "circle", x, y, z, radius: clamp(radius, .05, 64), height: clamp(height, .1, 128) };
+    }
+    const scale = clamp(number(placement.scale) || 1, .05, 100);
+    const tree = type === "tree";
+    const radius = tree ? Math.max(.55, scale * .2) : Math.max(.5, scale * 1.15);
+    const height = tree ? Math.max(3, scale * 2.6) : Math.max(.6, scale * 1.1);
+    if (!Number.isFinite(y)) return null;
+    return { id, type, shape: "circle", x, y, z, radius, height };
+  }
+
+  function environmentCollisionDigest(placements) {
+    if (!Array.isArray(placements)) return "0:0";
+    const rows = [];
+    for (const placement of placements) {
+      const obstacle = environmentCollisionObstacle(placement);
+      if (!obstacle) continue;
+      const number = (value) => {
+        const numeric = Number(value);
+        return Number.isFinite(numeric) ? Math.round(numeric * 10000) / 10000 : "invalid";
+      };
+      rows.push([
+        obstacle.id,
+        obstacle.type,
+        obstacle.shape,
+        number(obstacle.x), number(obstacle.y), number(obstacle.z),
+        number(obstacle.radius), number(obstacle.height),
+        number(obstacle.minX), number(obstacle.maxX), number(obstacle.minY), number(obstacle.maxY), number(obstacle.minZ), number(obstacle.maxZ)
+      ].join("|"));
+      if (rows.length >= 640) break;
+    }
+    rows.sort();
+    const serialized = rows.join(";");
+    return `v1:${rows.length}:${hashSeed(`collision-a:${serialized}`).toString(36)}:${hashSeed(`collision-b:${serialized}`).toString(36)}`;
+  }
+
+  function refreshStaticCollision(instance, force = false) {
+    if (!instance?.collisionSystem) return false;
+    const player = instance.state.player;
+    const placementQuery = instance.renderer3d?.getEnvironmentCollisionPlacements;
+    if (typeof placementQuery !== "function") {
+      if (force || instance.collisionCellKey !== "terrain-only") {
+        instance.collisionSystem.clearObstacles();
+        instance.collisionCellKey = "terrain-only";
+      }
+      return true;
+    }
+    let snapshot;
+    try {
+      snapshot = placementQuery.call(instance.renderer3d, { x: player.x, z: player.y, force });
+    } catch {
+      instance.collisionRefreshFailures = Math.min(1000000, (instance.collisionRefreshFailures || 0) + 1);
+      return false;
+    }
+    if (!snapshot || typeof snapshot.then === "function" || snapshot.supported !== true) {
+      if (force || instance.collisionCellKey !== "renderer-assets-unavailable") instance.collisionSystem.clearObstacles();
+      instance.collisionCellKey = "renderer-assets-unavailable";
+      return true;
+    }
+    const placements = snapshot.placements;
+    if (!Array.isArray(placements)) return false;
+    const revision = String(snapshot.revision ?? snapshot.digest ?? "0").replace(/[^a-z0-9:._-]/gi, "").slice(0, 64) || "0";
+    const announcedDigest = String(snapshot.digest || "").replace(/[^a-z0-9:._-]/gi, "").slice(0, 96);
+    const placementDigest = announcedDigest || environmentCollisionDigest(placements);
+    const cellKey = `renderer:${String(snapshot.cellKey || "empty").replace(/[^a-z0-9:._|/-]/gi, "").slice(0, 128)}:${revision}:${placementDigest}`;
+    if (!force && cellKey === instance.collisionCellKey) return true;
+    const obstacles = [];
+    for (const placement of placements) {
+      const obstacle = environmentCollisionObstacle(placement);
+      if (obstacle) obstacles.push(obstacle);
+    }
+    instance.collisionSystem.clearObstacles();
+    for (const obstacle of obstacles) {
+      try { instance.collisionSystem.upsertObstacle(obstacle); }
+      catch { /* A malformed optional placement must not disable movement. */ }
+    }
+    instance.collisionCellKey = cellKey;
+    return true;
+  }
+
+  function initializeCollisionLandscape(instance) {
+    const renderSeed = rendererSeedForState(instance.state);
+    instance.collisionLandscape?.dispose?.();
+    instance.collisionLandscape = RENDERER_ADAPTER?.createProceduralLandscape?.({
+      seed: renderSeed,
+      realmId: instance.state.realmId,
+      timeSliceId: instance.state.worldAddress?.timeSliceId,
+      regionId: instance.state.worldAddress?.regionId
+    }) || null;
+    return instance.collisionLandscape;
+  }
+
+  function initializeWorldCollision(instance) {
+    if (typeof COLLISION?.createCollisionSystem !== "function") return false;
+    const renderSeed = rendererSeedForState(instance.state);
+    if (!instance.collisionLandscape) initializeCollisionLandscape(instance);
+    const fallbackGroundHeight = RENDERER_ADAPTER?.sampleTerrainHeight || RENDERER_3D?.terrainHeight;
+    const terrainSampler = instance.collisionLandscape
+      ? (x, z) => typeof instance.collisionLandscape.sampleHeight === "function"
+        ? instance.collisionLandscape.sampleHeight(clamp(x, 0, WORLD_SIZE), clamp(z, 0, WORLD_SIZE))
+        : instance.collisionLandscape.sample(x, z)?.height
+      : (typeof fallbackGroundHeight === "function" ? (x, z) => fallbackGroundHeight(x, z, renderSeed) : null);
+    if (typeof terrainSampler !== "function") return false;
+    instance.collisionTerrainSampler = terrainSampler;
+    const waterLevel = Number(RENDERER_ADAPTER?.WATER_LEVEL ?? 3.5);
+    instance.collisionLakes = RENDERER_ADAPTER?.planProceduralLakes?.(instance.collisionLandscape, instance.state.player.x, instance.state.player.y) || Object.freeze([]);
+    const waterSampler = (x, z) => {
+      const shared = RENDERER_ADAPTER?.queryLandscapeWater?.(instance.collisionLandscape, x, z, { lakes: instance.collisionLakes, seed: renderSeed });
+      if (shared) return shared;
+      const height = Number(terrainSampler(x, z));
+      if (!Number.isFinite(height) || height > waterLevel) return null;
+      return { inside: true, type: "ocean", surfaceHeight: waterLevel, depth: Math.max(0, waterLevel - height) };
+    };
+    instance.collisionWaterSampler = waterSampler;
+    try {
+      instance.collisionSystem = COLLISION.createCollisionSystem({ terrainSampler, waterSampler, cellSize: 24, maxQueryResults: 128 });
+      instance.collisionResult = {};
+      const species = SPECIES_BY_ID.get(instance.state.speciesId);
+      const initialGround = instance.collisionSystem.sampleGround(instance.state.player.x, instance.state.player.y, { radius: collisionDimensionsForSpecies(species).radius }, {});
+      instance.collisionGroundY = (initialGround.available ? initialGround.height : 0) + collisionAltitudeForSpecies(species);
+      refreshStaticCollision(instance, true);
+      return true;
+    } catch {
+      instance.collisionSystem?.dispose?.();
+      instance.collisionSystem = null;
+      instance.collisionLandscape?.dispose?.();
+      instance.collisionLandscape = null;
+      instance.collisionTerrainSampler = null;
+      instance.collisionWaterSampler = null;
+      instance.collisionLakes = Object.freeze([]);
+      return false;
+    }
+  }
+
+  function syncPlayerCollisionGround(instance) {
+    if (!instance?.collisionSystem) return false;
+    const species = SPECIES_BY_ID.get(instance.state.speciesId);
+    const dimensions = collisionDimensionsForSpecies(species);
+    const ground = instance.collisionSystem.sampleGround(instance.state.player.x, instance.state.player.y, { radius: dimensions.radius }, {});
+    if (ground.available) instance.collisionGroundY = ground.height + collisionAltitudeForSpecies(species);
+    refreshStaticCollision(instance, true);
+    return Boolean(ground.available);
+  }
+
+  function resolveDesktopCollisionStep(instance, proposed, current) {
+    const species = SPECIES_BY_ID.get(instance.state.speciesId);
+    const nextX = clamp(proposed.x, 20, WORLD_SIZE - 20);
+    const nextZ = clamp(proposed.z, 20, WORLD_SIZE - 20);
+    const travel = Math.hypot(nextX - current.x, nextZ - current.z);
+    if (travel <= 1e-9) return { ...proposed, x: nextX, z: nextZ };
+    const altitude = collisionAltitudeForSpecies(species);
+    const currentGround = collisionTerrainHeight(instance, current.x, current.z);
+    const nextGround = collisionTerrainHeight(instance, nextX, nextZ);
+    if (instance.collisionSystem) {
+      try {
+        const dimensions = collisionDimensionsForSpecies(species);
+        const currentY = Number.isFinite(instance.collisionGroundY) ? instance.collisionGroundY : (Number.isFinite(currentGround) ? currentGround + altitude : altitude);
+        const targetY = Number.isFinite(nextGround) ? nextGround + altitude : currentY;
+        const collision = instance.collisionSystem.resolveMovement(
+          { x: current.x, y: currentY, z: current.z },
+          { x: nextX, y: targetY, z: nextZ },
+          {
+            locomotion: collisionProfileForSpecies(species),
+            radius: dimensions.radius,
+            height: dimensions.height,
+            maxMoveDistance: clamp(Math.hypot(nextX - current.x, targetY - currentY, nextZ - current.z) * 1.25 + .05, .25, 64),
+            velocityX: proposed.velocityX,
+            velocityZ: proposed.velocityZ
+          },
+          instance.collisionResult
+        );
+        instance.collisionGroundY = collision.y;
+        const hardBoundary = collision.blockedBySlope || collision.blockedByStepUp || collision.blockedByStepDown || collision.blockedByWater || collision.broadPhaseTruncated || collision.iterationLimitReached;
+        instance.lastCollision = {
+          blocked: collision.blocked,
+          obstacleId: collision.obstacleId,
+          blockedBySlope: collision.blockedBySlope,
+          blockedByStepUp: collision.blockedByStepUp,
+          blockedByStepDown: collision.blockedByStepDown,
+          blockedByWater: collision.blockedByWater,
+          broadPhaseTruncated: collision.broadPhaseTruncated,
+          iterationLimitReached: collision.iterationLimitReached,
+          grounded: collision.grounded,
+          terrainAvailable: collision.terrainAvailable,
+          waterBoundaryApplied: collision.waterBoundaryApplied
+        };
+        return {
+          ...proposed,
+          x: clamp(collision.x, 20, WORLD_SIZE - 20),
+          z: clamp(collision.z, 20, WORLD_SIZE - 20),
+          velocityX: hardBoundary ? 0 : collision.resolvedVelocityX,
+          velocityZ: hardBoundary ? 0 : collision.resolvedVelocityZ
+        };
+      } catch {
+        instance.collisionResolveFailures = Math.min(1000000, (instance.collisionResolveFailures || 0) + 1);
+        instance.lastCollision = null;
+      }
+    }
+    const slopeRadians = travel > .001 && Number.isFinite(currentGround) && Number.isFinite(nextGround)
+      ? Math.atan2(Math.abs(nextGround - currentGround), travel)
+      : 0;
+    const profileId = cameraProfileIdForSpecies(species);
+    const slopeLimit = collisionSlopeLimitForSpecies(species);
+    const groundBound = !["bird", "aquatic"].includes(profileId);
+    if (groundBound && slopeRadians > slopeLimit) return { ...proposed, x: current.x, z: current.z, velocityX: 0, velocityZ: 0 };
+    return { ...proposed, x: nextX, z: nextZ };
   }
 
   function desktopCameraProfile(instance) {
@@ -1009,6 +1473,7 @@
         initialState: { x: player.x, z: player.y, heading: instance.heading || 0 }
       });
     }
+    if (!instance.collisionStepResolver) instance.collisionStepResolver = (proposed, current) => resolveDesktopCollisionStep(instance, proposed, current);
     return true;
   }
 
@@ -1089,6 +1554,16 @@
     return true;
   }
 
+  function resetGameplayFramePacing(instance, timestamp = global.performance?.now?.() || Date.now()) {
+    if (!instance) return false;
+    const at = Math.max(0, Number(timestamp) || 0);
+    instance.framePacing = createFramePacingState(at);
+    instance.lastFrame = at;
+    instance.fpsAt = at;
+    instance.frameCount = 0;
+    return true;
+  }
+
   function resumeGame(instance) {
     if (!instance?.running || instance.dead) return false;
     if (gameplayStateName(instance) !== "paused") return false;
@@ -1099,7 +1574,7 @@
     instance.root.querySelector("[data-hwe-game-overlay]")?.setAttribute("hidden", "");
     instance.inputSystem?.resume?.("gameplay-state");
     instance.renderer3d?.setPaused?.(false);
-    instance.lastFrame = global.performance?.now?.() || Date.now();
+    resetGameplayFramePacing(instance);
     requestGameplayPointerLock(instance);
     return true;
   }
@@ -1209,7 +1684,12 @@
     instance.camera.fov = instance.state.settings.cameraFov;
     instance.camera.firstPerson = instance.state.settings.viewMode === "animal-eye";
     if (instance.camera.firstPerson) instance.camera.desiredDistance = profile.minDistance;
-    const collision = instance.renderer3d?.resolveCameraCollision?.({
+    // Babylon owns its multi-ray camera collision inside the render loop.  Do
+    // not raycast once in the route and then twice again while applying and
+    // rendering the same camera frame.  Generic renderers may still expose the
+    // older host-owned collision query and truthfully return unsupported.
+    const rendererOwnsCameraCollision = instance.renderer3d?.cameraCollisionOwner === "renderer";
+    const collision = rendererOwnsCameraCollision ? null : instance.renderer3d?.resolveCameraCollision?.({
       target: { x: instance.state.player.x, z: instance.state.player.y },
       yaw: instance.camera.yaw,
       pitch: instance.camera.pitch,
@@ -1314,28 +1794,18 @@
     const locomotionScale = crouching ? .46 : 1;
     inputX *= locomotionScale; inputY *= locomotionScale;
     if (instance.desktopController && DESKTOP?.resolveLocomotionConfig) instance.desktopController.options = DESKTOP.resolveLocomotionConfig({ profile, maxSpeed: baseSpeed, sprintMultiplier: 1.7, acceleration: profile.acceleration, deceleration: profile.deceleration, turnRate: profile.turnRate });
-    const advanced = instance.desktopController?.advance?.(seconds, { x: inputX, y: inputY, cameraYaw: instance.camera?.yaw || 0, sprint: wantsSprint }) || null;
+    refreshStaticCollision(instance);
+    const advanced = instance.desktopController?.advance?.(
+      seconds,
+      { x: inputX, y: inputY, cameraYaw: instance.camera?.yaw || 0, sprint: wantsSprint },
+      instance.collisionStepResolver
+    ) || null;
     const fixedSeconds = (advanced?.steps || 0) * (instance.desktopController?.stepSeconds || 1 / 120);
     if (!advanced || fixedSeconds <= 0) return;
-    let physics = advanced.state;
-    let render = advanced.renderState || physics;
-    let nextX = clamp(physics.x, 20, WORLD_SIZE - 20);
-    let nextY = clamp(physics.z, 20, WORLD_SIZE - 20);
-    const groundHeight = RENDERER_ADAPTER?.sampleTerrainHeight || RENDERER_3D?.terrainHeight;
-    const renderSeed = rendererSeedForState(instance.state);
-    const previousGround = typeof groundHeight === "function" ? Number(groundHeight(player.x, player.y, renderSeed)) : NaN;
-    const nextGround = typeof groundHeight === "function" ? Number(groundHeight(nextX, nextY, renderSeed)) : NaN;
-    const horizontalTravel = Math.hypot(nextX - player.x, nextY - player.y);
-    const slopeRadians = horizontalTravel > .001 && Number.isFinite(previousGround) && Number.isFinite(nextGround)
-      ? Math.atan2(Math.abs(nextGround - previousGround), horizontalTravel)
-      : 0;
-    const slopeLimit = profile.id === "heavy" ? .43 : profile.id === "small" || profile.id === "climbing" ? .8 : .58;
-    const groundBound = !["bird", "aquatic"].includes(profile.id);
-    if (groundBound && slopeRadians > slopeLimit) { nextX = player.x; nextY = player.y; }
-    if (nextX !== physics.x || nextY !== physics.z) {
-      physics = instance.desktopController.reset({ ...physics, x: nextX, z: nextY, velocityX: 0, velocityZ: 0 });
-      render = physics;
-    }
+    const physics = advanced.state;
+    const render = advanced.renderState || physics;
+    const nextX = clamp(physics.x, 20, WORLD_SIZE - 20);
+    const nextY = clamp(physics.z, 20, WORLD_SIZE - 20);
     player.x = nextX;
     player.y = nextY;
     instance.heading = physics.heading;
@@ -1434,6 +1904,146 @@
     if (action !== "rest") { ctx.globalAlpha = .7; ctx.strokeStyle = action === "flee" ? "#ff8a72" : action === "hunt" ? "#ffda75" : "#72efd2"; ctx.beginPath(); ctx.arc(0, 0, size * 1.95, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1; }
   }
 
+  function createLiteWorldProjection(options = {}) {
+    const number = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+    const width = clamp(number(options.width, 1), 1, 16384);
+    const height = clamp(number(options.height, 1), 1, 16384);
+    const yaw = number(options.yaw, 0);
+    const pitch = clamp(number(options.pitch, 0), -Math.PI / 2 + .01, Math.PI / 2 - .01);
+    const fovDegrees = clamp(number(options.fovDegrees ?? options.fov, 68), 35, 120);
+    const distance = clamp(number(options.distance, 6), .05, 1000);
+    const target = Object.freeze({
+      x: number(options.target?.x),
+      y: number(options.target?.y),
+      z: number(options.target?.z)
+    });
+    const horizontal = Math.cos(pitch);
+    const forward = Object.freeze({ x: Math.sin(yaw) * horizontal, y: Math.sin(pitch), z: Math.cos(yaw) * horizontal });
+    const right = Object.freeze({ x: Math.cos(yaw), y: 0, z: -Math.sin(yaw) });
+    const up = Object.freeze({
+      x: -Math.sin(yaw) * Math.sin(pitch),
+      y: Math.cos(pitch),
+      z: -Math.cos(yaw) * Math.sin(pitch)
+    });
+    const origin = Object.freeze({
+      x: target.x - forward.x * distance,
+      y: target.y - forward.y * distance,
+      z: target.z - forward.z * distance
+    });
+    const focalPixels = height / (2 * Math.tan(fovDegrees * Math.PI / 360));
+    const near = .05;
+    const far = clamp(number(options.far, 1000), 1, 4000);
+    const project = (point) => {
+      const x = Number(point?.x); const y = Number(point?.y); const z = Number(point?.z);
+      if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return null;
+      const dx = x - origin.x; const dy = y - origin.y; const dz = z - origin.z;
+      const depth = dx * forward.x + dy * forward.y + dz * forward.z;
+      if (!Number.isFinite(depth) || depth <= near || depth > far) return null;
+      const screenX = width / 2 + (dx * right.x + dy * right.y + dz * right.z) * focalPixels / depth;
+      const screenY = height / 2 - (dx * up.x + dy * up.y + dz * up.z) * focalPixels / depth;
+      if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) return null;
+      return {
+        x: screenX,
+        y: screenY,
+        depth,
+        distance: Math.hypot(dx, dy, dz),
+        scale: focalPixels / depth,
+        inViewport: screenX >= 0 && screenX <= width && screenY >= 0 && screenY <= height
+      };
+    };
+    return Object.freeze({
+      mode: "perspective-yaw-pitch",
+      yaw,
+      pitch,
+      pitchSupported: true,
+      fovDegrees,
+      width,
+      height,
+      centerX: width / 2,
+      centerY: height / 2,
+      target,
+      origin,
+      forward,
+      right,
+      up,
+      project
+    });
+  }
+
+  function liteTargetWorldRadius(candidate) {
+    if (candidate?.type === "animal") return clamp(Math.cbrt(Math.max(.001, Number(candidate.entity?.species?.mass) || 1)) * .09, .22, 3.6);
+    if (candidate?.type === "nest") return .75;
+    if (candidate?.type === "water") return .65;
+    return .42;
+  }
+
+  function selectLiteReticleTarget(candidates, projection, options = {}) {
+    if (!Array.isArray(candidates) || !projection?.project) return null;
+    const maximumDistance = clamp(options.maxDistance ?? 120, .1, 1000);
+    const reticleRadius = clamp(options.reticleRadiusPixels ?? 3, 0, 32);
+    const allowed = new Set(Array.isArray(options.allowedTypes) && options.allowedTypes.length ? options.allowedTypes.map((value) => String(value).toLowerCase()) : ["animal"]);
+    let best = null;
+    candidates.forEach((candidate, sourceIndex) => {
+      const type = String(candidate?.type || "").toLowerCase();
+      if (!candidate?.targetable || !allowed.has(type)) return;
+      const projected = projection.project(candidate.position);
+      if (!projected?.inViewport) return;
+      const distance = Math.hypot(Number(candidate.position.x) - projection.target.x, Number(candidate.position.z) - projection.target.z);
+      if (!Number.isFinite(distance) || distance > maximumDistance) return;
+      const targetRadiusPixels = clamp(liteTargetWorldRadius(candidate) * projected.scale, 4, 42);
+      const screenDistance = Math.hypot(projected.x - projection.centerX, projected.y - projection.centerY);
+      if (screenDistance > targetRadiusPixels + reticleRadius) return;
+      const ray = { distance, screenDistance, targetRadiusPixels, projectionMode: projection.mode };
+      if (typeof options.hasLineOfSight === "function" && options.hasLineOfSight(candidate, ray) !== true) return;
+      const hitDepth = projected.depth - liteTargetWorldRadius(candidate);
+      if (!best || hitDepth < best.hitDepth || (hitDepth === best.hitDepth && screenDistance < best.screenDistance)) {
+        best = { id: candidate.id, type, distance, screenDistance, targetRadiusPixels, hitDepth, sourceIndex, projectionMode: projection.mode };
+      }
+    });
+    if (!best) return null;
+    const { hitDepth, ...result } = best;
+    return Object.freeze(result);
+  }
+
+  function drawLiteResource(ctx, resource, projected, highlighted = false, senseActive = false) {
+    if (!ctx || !resource || !projected) return false;
+    const baseRadius = clamp((resource.type === "shelter" ? .72 : resource.type === "water" ? .55 : .34) * projected.scale, 3, 13);
+    ctx.save?.();
+    if (highlighted) {
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = "#fff1a8";
+      ctx.lineWidth = 3;
+      ctx.shadowColor = "rgba(255, 225, 128, .92)";
+      ctx.shadowBlur = 14;
+      ctx.beginPath(); ctx.arc(projected.x, projected.y, baseRadius + 7, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = resource.type === "water" ? "#65dcff" : resource.type === "plant" ? "#a7ee78" : resource.type === "shelter" ? "#e9c47b" : "#d48275";
+    ctx.globalAlpha = highlighted ? 1 : senseActive ? .95 : .62;
+    ctx.beginPath(); ctx.arc(projected.x, projected.y, baseRadius, 0, Math.PI * 2); ctx.fill();
+    ctx.restore?.();
+    return true;
+  }
+
+  function liteProjectionForInstance(instance, player = instance.renderPlayer || instance.state.player) {
+    const canvas = instance.canvas;
+    const dpr = instance.dpr || 1;
+    const width = Math.max(1, Number(canvas?.width) / dpr || Number(canvas?.clientWidth) || 1);
+    const height = Math.max(1, Number(canvas?.height) / dpr || Number(canvas?.clientHeight) || 1);
+    const profile = desktopCameraProfile(instance);
+    const ground = terrainHeightForInstance(instance, player.x, player.y, worldSeedForState(instance.state));
+    return createLiteWorldProjection({
+      width,
+      height,
+      yaw: instance.camera?.yaw || 0,
+      pitch: instance.camera?.pitch || 0,
+      fovDegrees: instance.camera?.fov || instance.state.settings.cameraFov || profile.fov,
+      distance: instance.camera?.firstPerson ? Math.max(.05, instance.camera?.distance || profile.minDistance) : instance.camera?.distance || profile.distance,
+      target: { x: player.x, y: ground + (profile.height || 1.5), z: player.y },
+      far: 1000
+    });
+  }
+
   function drawWorld(instance) {
     const canvas = instance.canvas;
     const ctx = instance.ctx;
@@ -1444,83 +2054,123 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
     const player = instance.renderPlayer || instance.state.player;
-    const cameraX = player.x - width / 2;
-    const cameraY = player.y - height / 2;
+    const projection = liteProjectionForInstance(instance, player);
+    const renderSeed = worldSeedForState(instance.state);
+    const groundAt = (x, z) => terrainHeightForInstance(instance, x, z, renderSeed);
+    const waterAt = (x, z) => {
+      try { return instance.collisionWaterSampler?.(x, z) || null; }
+      catch { return null; }
+    };
+    const playerTerrain = terrainForRealm(terrainAt(player.x, player.y, instance.world.seed), instance.state.realmId, player.x, player.y);
+    ctx.fillStyle = "#07171b";
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = BIOMES[playerTerrain].color;
+    ctx.globalAlpha = .34;
+    ctx.fillRect(0, height * .42, width, height * .58);
+    ctx.globalAlpha = 1;
+
+    // Lite uses the same yaw/pitch/FOV camera basis as reticle selection. A
+    // bounded ground fan replaces the former fixed-axis top-down projection.
     const tile = 96;
-    for (let sx = -tile; sx < width + tile; sx += tile) {
-      for (let sy = -tile; sy < height + tile; sy += tile) {
-        const wx = cameraX + sx;
-        const wy = cameraY + sy;
-        const terrain = terrainForRealm(terrainAt(wx, wy, instance.world.seed), instance.state.realmId, wx, wy);
+    const terrainRange = instance.renderBudget >= .8 ? 384 : 288;
+    const forwardX = Math.sin(projection.yaw); const forwardZ = Math.cos(projection.yaw);
+    const rightX = Math.cos(projection.yaw); const rightZ = -Math.sin(projection.yaw);
+    for (let depth = terrainRange; depth >= -tile; depth -= tile) {
+      for (let lateral = -terrainRange; lateral < terrainRange; lateral += tile) {
+        const centerDepth = depth + tile * .5; const centerLateral = lateral + tile * .5;
+        const worldX = player.x + forwardX * centerDepth + rightX * centerLateral;
+        const worldZ = player.y + forwardZ * centerDepth + rightZ * centerLateral;
+        const ground = groundAt(worldX, worldZ);
+        const corners = [[lateral, depth], [lateral + tile, depth], [lateral + tile, depth + tile], [lateral, depth + tile]].map(([side, ahead]) => projection.project({
+          x: player.x + forwardX * ahead + rightX * side,
+          y: ground,
+          z: player.y + forwardZ * ahead + rightZ * side
+        }));
+        if (corners.some((point) => !point)) continue;
+        if (corners.every((point) => point.x < -tile || point.x > width + tile || point.y < -tile || point.y > height + tile)) continue;
+        const terrain = waterAt(worldX, worldZ) ? "ocean" : terrainForRealm(terrainAt(worldX, worldZ, instance.world.seed), instance.state.realmId, worldX, worldZ);
         ctx.fillStyle = BIOMES[terrain].color;
-        ctx.fillRect(sx, sy, tile + 1, tile + 1);
-        ctx.globalAlpha = .16;
         ctx.strokeStyle = BIOMES[terrain].accent;
-        ctx.beginPath(); ctx.arc(sx + tile * .5, sy + tile * .5, 8 + ((wx + wy) % 23), 0, Math.PI * 2); ctx.stroke();
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = .9;
+        ctx.beginPath(); ctx.moveTo(corners[0].x, corners[0].y);
+        for (let index = 1; index < corners.length; index += 1) ctx.lineTo(corners[index].x, corners[index].y);
+        ctx.closePath(); ctx.fill();
+        ctx.globalAlpha = .12; ctx.stroke(); ctx.globalAlpha = 1;
       }
     }
     const migration = instance.world.migration;
-    ctx.strokeStyle = "rgba(255,211,103,.72)"; ctx.lineWidth = 3; ctx.setLineDash([8, 10]);
-    ctx.beginPath(); ctx.arc(migration.x - cameraX, migration.y - cameraY, migration.radius, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    const migrationPoint = projection.project({ x: migration.x, y: groundAt(migration.x, migration.y) + .2, z: migration.y });
+    if (migrationPoint) {
+      ctx.strokeStyle = "rgba(255,211,103,.72)"; ctx.lineWidth = 3; ctx.setLineDash([8, 10]);
+      ctx.beginPath(); ctx.arc(migrationPoint.x, migrationPoint.y, clamp(migration.radius * migrationPoint.scale, 4, width * 1.5), 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    }
     (instance.world.loadedChunks || []).forEach((chunk) => {
       const chunkSize = chunk.size || 256;
-      const x = (chunk.cx * chunkSize) - cameraX;
-      const y = (chunk.cy * chunkSize) - cameraY;
-      if (x > width || y > height || x + chunkSize < 0 || y + chunkSize < 0) return;
+      const worldX = (chunk.cx + .5) * chunkSize; const worldZ = (chunk.cy + .5) * chunkSize;
+      const point = projection.project({ x: worldX, y: groundAt(worldX, worldZ) + .05, z: worldZ });
+      if (!point?.inViewport) return;
+      const screenSize = clamp(chunkSize * point.scale, 4, Math.max(width, height) * 2);
       ctx.strokeStyle = "rgba(112,239,205,.09)";
       ctx.lineWidth = 1;
-      ctx.strokeRect(x, y, chunkSize, chunkSize);
+      ctx.strokeRect(point.x - screenSize / 2, point.y - screenSize / 2, screenSize, screenSize);
     });
     const trails = instance.simulation?.trails;
     (trails?.footprints || []).slice(-180).forEach((trail) => {
-      const x = trail.x - cameraX; const y = trail.y - cameraY;
-      if (x < -8 || y < -8 || x > width + 8 || y > height + 8) return;
+      const point = projection.project({ x: trail.x, y: groundAt(trail.x, trail.y) + .03, z: trail.y });
+      if (!point?.inViewport) return;
       ctx.globalAlpha = .08 + trail.intensity * .3;
       ctx.fillStyle = "#ddf6d0";
-      ctx.beginPath(); ctx.ellipse(x, y, 2.5, 5, trail.direction || 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(point.x, point.y, clamp(.16 * point.scale, 1, 4), clamp(.3 * point.scale, 2, 7), (trail.direction || 0) - projection.yaw, 0, Math.PI * 2); ctx.fill();
     });
     if (instance.senseUntil > performance.now()) (trails?.scents || []).slice(-160).forEach((trail) => {
-      const x = trail.x - cameraX; const y = trail.y - cameraY;
-      if (x < -16 || y < -16 || x > width + 16 || y > height + 16) return;
+      const point = projection.project({ x: trail.x, y: groundAt(trail.x, trail.y) + .15, z: trail.y });
+      if (!point?.inViewport) return;
       ctx.globalAlpha = .08 + trail.intensity * .32;
       ctx.fillStyle = trail.kind === "pheromone" ? "#ff77ce" : "#78efd2";
-      ctx.beginPath(); ctx.arc(x, y, 5 + trail.intensity * 10, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(point.x, point.y, clamp((.18 + trail.intensity * .32) * point.scale, 3, 18), 0, Math.PI * 2); ctx.fill();
     });
     ctx.globalAlpha = 1;
     instance.simulation?.hazards?.activeEvents?.().forEach((event) => {
-      const x = event.x - cameraX; const y = event.y - cameraY;
+      const point = projection.project({ x: event.x, y: groundAt(event.x, event.y) + .1, z: event.y });
+      if (!point) return;
       const color = event.type === "flood" ? "87,206,255" : event.type === "wildfire" ? "255,111,72" : "255,190,92";
       ctx.fillStyle = `rgba(${color},${.08 + event.intensity * .12})`;
       ctx.strokeStyle = `rgba(${color},${.42 + event.intensity * .3})`;
       ctx.lineWidth = 3; ctx.setLineDash([10, 8]);
-      ctx.beginPath(); ctx.arc(x, y, event.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(point.x, point.y, clamp(event.radius * point.scale, 3, width * 1.5), 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
     });
     instance.world.resources.forEach((resource) => {
-      const x = resource.x - cameraX; const y = resource.y - cameraY;
-      if (x < -30 || y < -30 || x > width + 30 || y > height + 30 || resource.amount <= 0) return;
-      ctx.fillStyle = resource.type === "water" ? "#65dcff" : resource.type === "plant" ? "#a7ee78" : resource.type === "shelter" ? "#e9c47b" : "#d48275";
-      ctx.globalAlpha = instance.senseUntil > performance.now() ? .95 : .62;
-      ctx.beginPath(); ctx.arc(x, y, resource.type === "shelter" ? 9 : 5, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+      if (resource.amount <= 0) return;
+      const point = projection.project({ x: resource.x, y: groundAt(resource.x, resource.y) + .35, z: resource.y });
+      if (!point?.inViewport) return;
+      drawLiteResource(ctx, resource, point, instance.currentTarget?.id === resource.id, instance.senseUntil > performance.now());
     });
     instance.population.forEach((creature, creatureIndex) => {
       if (!creature.alive) return;
       const renderStride = instance.renderBudget >= .99 ? 1 : instance.renderBudget >= .66 ? 2 : 3;
       if (creatureIndex % renderStride) return;
-      const x = creature.x - cameraX; const y = creature.y - cameraY;
-      if (x < -40 || y < -40 || x > width + 40 || y > height + 40) return;
-      ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(creature.vy, creature.vx));
-      const size = clamp(5 + Math.log10(creature.species.mass + 1) * 2.2, 5, 16);
+      const worldY = groundAt(creature.x, creature.y) + Math.max(.25, Math.log10((creature.species?.mass || 1) + 1));
+      const point = projection.project({ x: creature.x, y: worldY, z: creature.y });
+      if (!point?.inViewport) return;
+      const velocityLength = Math.hypot(creature.vx || 0, creature.vy || 0) || 1;
+      const headingPoint = projection.project({ x: creature.x + (creature.vx || 0) / velocityLength, y: worldY, z: creature.y + (creature.vy || 0) / velocityLength });
+      const screenHeading = headingPoint ? Math.atan2(headingPoint.y - point.y, headingPoint.x - point.x) : Math.atan2(creature.vy, creature.vx) - projection.yaw;
+      ctx.save(); ctx.translate(point.x, point.y); ctx.rotate(screenHeading);
+      const baseSize = clamp(5 + Math.log10(creature.species.mass + 1) * 2.2, 5, 16);
+      const size = clamp(baseSize * point.scale / 20, 3, 28);
       drawSpeciesBody(ctx, creature.species, size, instance.currentTarget?.id === creature.id, creature.action); ctx.restore();
     });
     const selected = SPECIES_BY_ID.get(instance.state.speciesId);
-    ctx.save(); ctx.translate(width / 2, height / 2); ctx.rotate(Math.PI / 2 - (instance.renderHeading ?? instance.heading ?? 0));
+    const playerWorldY = groundAt(player.x, player.y) + Math.max(.25, Math.log10((selected.mass || 1) + 1));
+    const playerPoint = projection.project({ x: player.x, y: playerWorldY, z: player.y }) || { x: projection.centerX, y: projection.centerY, scale: 20 };
+    ctx.save(); ctx.translate(playerPoint.x, playerPoint.y); ctx.rotate((instance.renderHeading ?? instance.heading ?? 0) - projection.yaw - Math.PI / 2);
     const playerSize = clamp(11 + Math.log10(selected.mass + 1) * 2.5, 11, 25);
-    ctx.shadowColor = selected.color; ctx.shadowBlur = 18; drawSpeciesBody(ctx, selected, playerSize, true, instance.camouflageUntil > performance.now() ? "camouflage" : "rest"); ctx.restore();
+    const projectedPlayerSize = clamp(playerSize * playerPoint.scale / 20, 5, 34);
+    ctx.shadowColor = selected.color; ctx.shadowBlur = 18; drawSpeciesBody(ctx, selected, projectedPlayerSize, true, instance.camouflageUntil > performance.now() ? "camouflage" : "rest"); ctx.restore();
     if (instance.senseUntil > performance.now()) {
       const pulse = ((performance.now() / 900) % 1) * 170;
       ctx.strokeStyle = `rgba(96,239,205,${1 - pulse / 180})`; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(width / 2, height / 2, pulse, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(playerPoint.x, playerPoint.y, pulse, 0, Math.PI * 2); ctx.stroke();
     }
     drawMinimap(instance);
   }
@@ -1580,11 +2230,44 @@
     const trailNode = instance.root.querySelector("[data-hwe-trail-count]"); if (trailNode) trailNode.textContent = String(trailCount);
   }
 
+  function evaluateLiteAdaptiveQuality(instance, now, pacing) {
+    if (!instance || instance.renderer3d || !instance.state.settings.adaptiveQuality || !pacing || now < pacing.warmupUntil || now - pacing.lastAdaptiveAt < 2000) return 0;
+    pacing.lastAdaptiveAt = now;
+    const profile = qualityProfiles().find((item) => item.id === instance.state.settings.quality);
+    const targetFps = clamp(profile?.targetFps || 45, 24, 120);
+    const decision = evaluateAdaptivePacing(pacing, targetFps);
+    if (decision < 0) {
+      const previousBudget = instance.renderBudget || 1;
+      const previousCap = instance.dprCap || instance.dpr || 1;
+      instance.renderBudget = Math.max(.45, previousBudget - .12);
+      instance.dprCap = Math.max(1, previousCap - .1);
+      if (instance.renderBudget !== previousBudget || instance.dprCap !== previousCap) {
+        resizeCanvas(instance);
+        logSignal(instance, `Adaptive Lite giảm tải sau hai cửa sổ chậm liên tiếp (P95 ${pacing.p95Ms.toFixed(1)} ms).`);
+        return -1;
+      }
+    } else if (decision > 0) {
+      const previousBudget = instance.renderBudget || 1;
+      const previousCap = instance.dprCap || 1;
+      instance.renderBudget = Math.min(1, previousBudget + .08);
+      instance.dprCap = Math.min(instance.dpr || 1, previousCap + .08);
+      if (instance.renderBudget !== previousBudget || instance.dprCap !== previousCap) {
+        resizeCanvas(instance);
+        logSignal(instance, `Adaptive Lite tăng dần chất lượng sau bốn cửa sổ ổn định (P95 ${pacing.p95Ms.toFixed(1)} ms).`);
+        return 1;
+      }
+    }
+    return 0;
+  }
+
   function loop(instance, now) {
     if (instance.destroyed) return;
-    const seconds = Math.min(.2, Math.max(0, (now - instance.lastFrame) / 1000 || 0));
+    const frameMs = Math.min(250, Math.max(.1, now - instance.lastFrame || .1));
+    const seconds = Math.min(.2, frameMs / 1000);
     instance.lastFrame = now;
+    const gameplayActive = !global.document?.hidden && isGameplayActive(instance);
     if (!global.document?.hidden) {
+      if (gameplayActive) recordFramePacing(instance.framePacing, frameMs, now);
       instance.inputSystem?.updateGamepads?.(null, now);
       processInputActions(instance, now);
       updateGameplayCamera(instance, seconds);
@@ -1612,7 +2295,16 @@
     instance.frameCount += 1;
     if (now - instance.fpsAt > 1000) {
       const rendererStatus = instance.renderer3d?.getStatus?.();
-      const fps = rendererStatus?.fps || instance.frameCount;
+      const reportedCollisionQuality = rendererStatus?.quality;
+      if (reportedCollisionQuality && reportedCollisionQuality !== instance.collisionObservedQuality) {
+        instance.collisionObservedQuality = reportedCollisionQuality;
+        instance.collisionCellKey = "";
+      }
+      const elapsed = Math.max(1, now - instance.fpsAt);
+      const measuredFps = Math.round(instance.frameCount * 1000 / elapsed);
+      const fps = rendererStatus?.fps || instance.framePacing?.fps || measuredFps;
+      const p95 = Number(rendererStatus?.frameTimeP95Ms ?? instance.framePacing?.p95Ms);
+      const onePercentLow = instance.renderer3d ? 0 : Number(instance.framePacing?.onePercentLowFps || 0);
       const node = instance.root.querySelector("[data-hwe-fps]");
       if (node) {
         const cinematicTelemetry = rendererStatus?.drawCalls != null
@@ -1621,13 +2313,10 @@
         const procedural = rendererStatus?.proceduralEnvironment;
         const vegetationCount = procedural?.vegetation?.activeInstances ?? procedural?.vegetation?.renderedInstances ?? procedural?.vegetation?.instances ?? procedural?.vegetation?.instanceCount;
         const environmentTelemetry = Number.isFinite(vegetationCount) ? ` · ${vegetationCount} vegetation` : "";
-        node.textContent = `${fps} FPS · ${instance.population.filter((row) => row.alive).length} wildlife · ${rendererStatus?.backend?.toUpperCase?.() || "LITE"}${cinematicTelemetry}${environmentTelemetry}`;
+        const pacingTelemetry = `${onePercentLow > 0 ? ` · 1% low ${onePercentLow}` : ""}${Number.isFinite(p95) && p95 > 0 ? ` · P95 ${p95.toFixed(1)}ms` : ""}`;
+        node.textContent = `${fps} FPS${pacingTelemetry} · ${instance.population.filter((row) => row.alive).length} wildlife · ${rendererStatus?.backend?.toUpperCase?.() || "LITE"}${cinematicTelemetry}${environmentTelemetry}`;
       }
-      if (!instance.renderer3d && instance.state.settings.adaptiveQuality && fps < 28) {
-        instance.renderBudget = Math.max(.45, (instance.renderBudget || 1) - .18);
-        if ((instance.dpr || 1) > 1) { instance.dprCap = Math.max(1, (instance.dpr || 1) - .2); resizeCanvas(instance); }
-        logSignal(instance, "Adaptive quality đã giảm DPR và mật độ wildlife hiển thị; simulation vẫn giữ nguyên.");
-      } else if (!instance.renderer3d && instance.state.settings.adaptiveQuality && fps > 48 && (instance.renderBudget || 1) < 1) instance.renderBudget = Math.min(1, instance.renderBudget + .08);
+      if (gameplayActive) evaluateLiteAdaptiveQuality(instance, now, instance.framePacing);
       instance.frameCount = 0; instance.fpsAt = now;
     }
     instance.raf = global.requestAnimationFrame?.((time) => loop(instance, time));
@@ -1649,13 +2338,8 @@
 
   function targetCandidates(instance) {
     if (!instance.world) return [];
-    const sampleHeight = RENDERER_ADAPTER?.sampleTerrainHeight || RENDERER_3D?.terrainHeight;
     const seed = typeof instance.renderer3d?.pickCenter === "function" ? rendererSeedForState(instance.state) : worldSeedForState(instance.state);
-    const groundAt = (x, z) => {
-      if (typeof sampleHeight !== "function") return 0;
-      const height = Number(sampleHeight(x, z, seed));
-      return Number.isFinite(height) ? height : 0;
-    };
+    const groundAt = (x, z) => terrainHeightForInstance(instance, x, z, seed);
     const animals = (instance.population || []).filter((row) => row.alive !== false).map((row) => ({
       id: row.id,
       type: "animal",
@@ -1678,11 +2362,9 @@
   }
 
   function hasTerrainLineOfSight(instance, candidate, ray = {}) {
-    const sampleHeight = RENDERER_ADAPTER?.sampleTerrainHeight || RENDERER_3D?.terrainHeight;
-    if (typeof sampleHeight !== "function") return true;
     const player = instance.state.player;
     const seed = typeof instance.renderer3d?.pickCenter === "function" ? rendererSeedForState(instance.state) : worldSeedForState(instance.state);
-    const originHeight = Number(sampleHeight(player.x, player.y, seed)) + (desktopCameraProfile(instance).height || 1.5);
+    const originHeight = terrainHeightForInstance(instance, player.x, player.y, seed) + (desktopCameraProfile(instance).height || 1.5);
     const targetHeight = Number(candidate.position?.y || .5);
     if (!Number.isFinite(originHeight) || !Number.isFinite(targetHeight)) return true;
     const steps = Math.max(4, Math.min(12, Math.ceil((ray.distance || 0) / 12)));
@@ -1691,10 +2373,22 @@
       const x = player.x + (candidate.position.x - player.x) * t;
       const z = player.y + (candidate.position.z - player.y) * t;
       const sightHeight = originHeight + (targetHeight - originHeight) * t;
-      const terrainHeight = Number(sampleHeight(x, z, seed));
+      const terrainHeight = terrainHeightForInstance(instance, x, z, seed);
       if (Number.isFinite(terrainHeight) && terrainHeight > sightHeight + .65) return false;
     }
     return true;
+  }
+
+  function hasLockedTargetLineOfSight(instance, candidate, ray) {
+    const query = instance?.renderer3d?.queryTargetLineOfSight;
+    if (typeof query === "function") {
+      try {
+        const result = query.call(instance.renderer3d, { entityId: candidate.id, type: candidate?.type || "animal" });
+        if (!result || typeof result.then === "function") return false;
+        return result.supported === true && result.visible === true;
+      } catch { return false; }
+    }
+    return hasTerrainLineOfSight(instance, candidate, ray || {});
   }
 
   function clearCurrentTarget(instance) {
@@ -1721,44 +2415,45 @@
   }
 
   function updateTargeting(instance, force = false) {
-    if (!isGameplayActive(instance) || !DESKTOP?.selectTarget) { if (!instance.paused) clearCurrentTarget(instance); return null; }
+    if (!isGameplayActive(instance)) { if (!instance.paused) clearCurrentTarget(instance); return null; }
     const now = global.performance?.now?.() || Date.now();
     if (!force && now < (instance.targetAt || 0)) return instance.currentTarget || null;
     instance.targetAt = now + 80;
     const candidates = targetCandidates(instance);
     const player = instance.state.player;
     const rendererCanPick = typeof instance.renderer3d?.pickCenter === "function";
+    const allowedTypes = ["animal", "food", "water", "trail", "nest", "interactive"];
+    const liteProjection = rendererCanPick ? null : liteProjectionForInstance(instance, instance.renderPlayer || player);
     let selected = null;
     if (instance.lockedTargetId) {
       const locked = candidates.find((row) => row.id === instance.lockedTargetId);
       if (locked) {
         const distance = Math.hypot(locked.position.x - player.x, locked.position.z - player.y);
-        if (distance <= 120 && hasTerrainLineOfSight(instance, locked, { distance })) selected = { id: locked.id, type: locked.type, distance, source: locked };
+        if (rendererCanPick) {
+          if (distance <= 120 && hasLockedTargetLineOfSight(instance, locked, { distance })) selected = { id: locked.id, type: locked.type, distance, source: locked };
+        } else {
+          const reticleHit = selectLiteReticleTarget([locked], liteProjection, {
+            maxDistance: 120,
+            allowedTypes,
+            hasLineOfSight: (candidate, ray) => hasTerrainLineOfSight(instance, candidate, ray)
+          });
+          if (reticleHit) selected = { ...reticleHit, source: locked };
+        }
       }
       if (!selected) instance.lockedTargetId = "";
     }
     if (!selected && rendererCanPick) {
-      const rendererPick = instance.renderer3d?.pickCenter?.({ maxDistance: 120, allowedTypes: ["animal", "food", "water", "trail", "nest", "interactive"], excludePlayer: true });
+      const rendererPick = instance.renderer3d?.pickCenter?.({ maxDistance: 120, allowedTypes, excludePlayer: true });
       const picked = rendererPick && typeof rendererPick.then !== "function" ? rendererPick : null;
       if (picked?.id) {
-        const source = candidates.find((row) => row.id === picked.id || row.entity?.species?.id === picked.speciesId);
+        const source = candidates.find((row) => row.id === picked.id);
         if (source) selected = { id: source.id, type: source.type, distance: Number(picked.distance) || Math.hypot(source.position.x - player.x, source.position.z - player.y), source };
       }
     }
     if (!selected && !rendererCanPick) {
-      const yaw = instance.camera?.yaw || 0;
-      const pitch = instance.camera?.pitch || 0;
-      const horizontal = Math.cos(pitch);
-      const result = DESKTOP.selectTarget(candidates, {
-        origin: {
-          x: player.x,
-          y: Number((RENDERER_ADAPTER?.sampleTerrainHeight || RENDERER_3D?.terrainHeight)?.(player.x, player.y, worldSeedForState(instance.state)) || 0) + (desktopCameraProfile(instance).height || 1.5),
-          z: player.y
-        },
-        forward: { x: Math.sin(yaw) * horizontal, y: Math.sin(pitch), z: Math.cos(yaw) * horizontal },
+      const result = selectLiteReticleTarget(candidates, liteProjection, {
         maxDistance: 120,
-        maxAngle: .15,
-        allowedTypes: ["animal", "food", "water", "trail", "nest", "interactive"],
+        allowedTypes,
         hasLineOfSight: (candidate, ray) => hasTerrainLineOfSight(instance, candidate, ray)
       });
       if (result) selected = { ...result, source: candidates[result.sourceIndex] };
@@ -2026,12 +2721,16 @@
 
   function startGame(instance) {
     if (!instance.canvas) return;
+    let needsFreshSpawn = false;
     if (!instance.state.player.health) {
       const previous = instance.state.player;
       instance.state.player = normalizeState({ speciesId: instance.state.speciesId, player: { genes: previous.genes, generation: previous.generation, lineage: previous.lineage } }).player;
-      placePlayerAtHabitat(instance);
+      needsFreshSpawn = true;
     }
+    ensureValidPlayerSpawn(instance, needsFreshSpawn);
+    syncPlayerCollisionGround(instance);
     initializeDesktopGameplay(instance, true);
+    resetGameplayFramePacing(instance);
     instance.running = true; instance.paused = false; instance.dead = false; instance.spawnGraceUntil = performance.now() + 15000;
     if (gameplayStateName(instance) === "ready") transitionGameplay(instance, { type: "START" });
     else {
@@ -2059,7 +2758,11 @@
     if (!instance.canvas) return;
     instance.ctx = instance.canvas.getContext("2d", { alpha: false });
     instance.world = createWorld(worldSeedForState(instance.state), instance.state.settings.density, instance.state.realmId);
-    if (instance.state.player.spawnPending) { placePlayerAtHabitat(instance); saveState(instance); }
+    initializeCollisionLandscape(instance);
+    const relocated = ensureValidPlayerSpawn(instance, instance.state.player.spawnPending);
+    initializeWorldCollision(instance);
+    syncPlayerCollisionGround(instance);
+    if (relocated) saveState(instance);
     initPlanetRuntime(instance);
     instance.population = createPopulation(instance);
     instance.keys = new Set(); instance.running = false; instance.paused = false; instance.dead = false; instance.senseUntil = 0; instance.senseCount = 0; instance.autosave = 0; instance.heading = 0; instance.lastFrame = performance.now(); instance.fpsAt = performance.now(); instance.frameCount = 0;
@@ -2410,6 +3113,7 @@
     if (RENDERER_ADAPTER?.FLAGSHIP_IDS?.includes?.(species.id) && typeof RENDERER_ADAPTER.createRenderer === "function") {
       let lastEnvironment = "";
       let lastTelemetry = null;
+      let lastResourceSyncAt = -Infinity;
       const cinematicRuntimeAssets = await prepareCinematicRuntimeAssets(instance);
       let cinematicUrlsReleased = false;
       const releaseCinematicUrls = () => {
@@ -2485,16 +3189,22 @@
       return Object.freeze({
         backend: started.backend,
         personalQualityAlias: true,
+        cameraCollisionOwner: "renderer",
         sync(snapshot = {}) {
-          adapter.setPlayerState({ speciesId: snapshot.speciesId, x: snapshot.player?.x, z: snapshot.player?.y, heading: -(snapshot.heading || 0), elevation: snapshot.speciesId === "pteranodon" ? 12 : 0 });
+          adapter.setPlayerState({ speciesId: snapshot.speciesId, entityId: "player", isPlayer: true, x: snapshot.player?.x, z: snapshot.player?.y, heading: -(snapshot.heading || 0), elevation: snapshot.speciesId === "pteranodon" ? 12 : 0 });
+          const syncAt = global.performance?.now?.() || Date.now();
+          if (syncAt - lastResourceSyncAt >= 250) {
+            lastResourceSyncAt = syncAt;
+            adapter.syncResources?.(snapshot.world?.resources || []);
+          }
           const occupied = new Set([snapshot.speciesId]);
           (snapshot.population || []).forEach((creature) => {
             const id = creature.species?.id || creature.speciesId;
-            if (!RENDERER_ADAPTER.FLAGSHIP_IDS.includes(id) || occupied.has(id)) return;
-            occupied.add(id); adapter.updateFlagship(id, { x: creature.x, z: creature.y, heading: -Math.atan2(creature.vy || 0, creature.vx || 0), visible: creature.alive !== false });
+            if (creature.alive === false || !RENDERER_ADAPTER.FLAGSHIP_IDS.includes(id) || occupied.has(id)) return;
+            occupied.add(id); adapter.updateFlagship(id, { entityId: creature.id, isPlayer: false, x: creature.x, z: creature.y, heading: -Math.atan2(creature.vy || 0, creature.vx || 0), visible: creature.alive !== false });
           });
           RENDERER_ADAPTER.FLAGSHIP_IDS.forEach((id) => {
-            if (!occupied.has(id)) adapter.updateFlagship(id, { visible: false });
+            if (!occupied.has(id)) adapter.updateFlagship(id, { entityId: "", isPlayer: false, visible: false });
           });
           const environmentKey = `${Math.floor(snapshot.world?.day || 0)}:${snapshot.world?.weather?.type || "clear"}`;
           if (environmentKey !== lastEnvironment) { lastEnvironment = environmentKey; adapter.setEnvironment({ hour: snapshot.world?.day || 12, weather: snapshot.world?.weather?.type || "clear", fog: true }); }
@@ -2511,10 +3221,13 @@
         },
         setHighlightedTarget(value) { return value ? adapter.setHighlightedTarget?.(value) : adapter.clearHighlightedTarget?.(); },
         pickCenter(value) { return adapter.pickCenter?.(value) || null; },
+        queryTargetLineOfSight(value) { return adapter.queryTargetLineOfSight?.(value) || null; },
+        getEnvironmentCollisionPlacements(value) { return adapter.getEnvironmentCollisionPlacements?.(value) || null; },
+        queryWorldWater(value) { return adapter.queryWorldWater?.(value) || null; },
         setQuality(value) { adapter.setQualityPreset(qualityToAdapter[value] || "balanced"); return value; },
         setMotion(value) { adapter.setReducedMotion(value === "static" || reduced3DPreference(instance) ? true : "auto"); return value; },
         setAudio(enabled, volume) { return adapter.setAmbientAudio?.(enabled, clamp(volume, 0, 1)); },
-        getStatus() { const telemetry = lastTelemetry || adapter.getTelemetry(); const observedQuality = ({ low: "light", balanced: "balanced", high: "high", ultra: "cinematic", cinematic: "personal" })[telemetry.qualityPreset] || "balanced"; return { backend: adapter.backend, quality: instance.state.settings.quality === "personal" ? "personal" : observedQuality, fps: telemetry.fps, chunks: telemetry.activeChunks, wildlife: telemetry.proxySpecies?.length || 0, address: instance.state.worldAddress, drawCalls: telemetry.drawCalls, triangles: telemetry.triangles, estimatedVramMiB: telemetry.estimatedVramMiB, vramWarning: telemetry.estimatedVramMiB >= 6144, landscapeWorker: telemetry.landscapeWorker, proceduralEnvironment: telemetry.proceduralEnvironment }; },
+        getStatus() { const telemetry = lastTelemetry || adapter.getTelemetry(); const observedQuality = ({ low: "light", balanced: "balanced", high: "high", ultra: "cinematic", cinematic: "personal" })[telemetry.qualityPreset] || "balanced"; return { backend: adapter.backend, quality: instance.state.settings.quality === "personal" ? "personal" : observedQuality, fps: telemetry.fps, frameTimeAverageMs: telemetry.frameTimeAverageMs, frameTimeP95Ms: telemetry.frameTimeP95Ms, frameTimeP99Ms: telemetry.frameTimeP99Ms, frameTimeMaximumMs: telemetry.frameTimeMaximumMs, longFrameCount: telemetry.longFrameCount, chunks: telemetry.activeChunks, wildlife: telemetry.proxySpecies?.length || 0, resources: Math.max(0, Number(telemetry.resourceMarkers?.active ?? telemetry.resourceMarkers) || 0), address: instance.state.worldAddress, drawCalls: telemetry.drawCalls, triangles: telemetry.triangles, estimatedVramMiB: telemetry.estimatedVramMiB, vramWarning: telemetry.estimatedVramMiB >= 6144, landscapeWorker: telemetry.landscapeWorker, proceduralEnvironment: telemetry.proceduralEnvironment, gameplayCapabilities: telemetry.gameplayCapabilities }; },
         capture(options = {}) { return adapter.capture("image/png", options); },
         setPhotoSettings(value) { return adapter.setPhotoSettings?.(value); },
         dispose() { const result = adapter.dispose()?.ok !== false; releaseCinematicUrls(); return result; }
@@ -2558,6 +3271,9 @@
       // treating that preference as cancellation made Lite -> 3D impossible.
       if (instance.destroyed || bootToken !== instance.rendererBootToken) { runtime.dispose(); return false; }
       instance.renderer3d = runtime;
+      instance.collisionObservedQuality = instance.state.settings.quality;
+      instance.collisionCellKey = "";
+      refreshStaticCollision(instance, true);
       instance.root.dataset.renderer = runtime.backend;
       const fallbackPanel = instance.root.querySelector("[data-hwe-render-fallback]");
       if (fallbackPanel) fallbackPanel.hidden = true;
@@ -2609,6 +3325,8 @@
     instance.rendererStartingAdapter = null;
     instance.renderer3d?.dispose?.();
     instance.renderer3d = null;
+    instance.collisionObservedQuality = "";
+    refreshStaticCollision(instance, true);
     if (instance.canvas3d) instance.canvas3d.hidden = true;
     if (instance.canvas) instance.canvas.hidden = false;
     instance.root.dataset.renderer = "lite";
@@ -3525,7 +4243,8 @@
   function mount(host, options = {}) {
     if (!host) return false;
     unmount(host);
-    const instance = { host, root: null, view: safeView(options.view), state: readState(), controller: new AbortController(), destroyed: false, raf: 0, resizeObserver: null, motionObserver: null, toastTimer: 0, audioContext: null, eraFilter: "all", realmFilter: "all", tierFilter: "all", planetGroupFilter: "all", observerTimer: 0, cinematicPackManager: null, packUnsubscribe: null, packManifests: new Map(), packStates: new Map(), pendingPackId: "", pendingLocalPackId: "", inputSystem: null, inputVelocity: { x: 0, y: 0 }, remapAction: "" };
+    const mountedAt = global.performance?.now?.() || Date.now();
+    const instance = { host, root: null, view: safeView(options.view), state: readState(), controller: new AbortController(), destroyed: false, raf: 0, resizeObserver: null, motionObserver: null, toastTimer: 0, audioContext: null, eraFilter: "all", realmFilter: "all", tierFilter: "all", planetGroupFilter: "all", observerTimer: 0, cinematicPackManager: null, packUnsubscribe: null, packManifests: new Map(), packStates: new Map(), pendingPackId: "", pendingLocalPackId: "", inputSystem: null, inputVelocity: { x: 0, y: 0 }, remapAction: "", framePacing: createFramePacingState(mountedAt) };
     if (typeof INPUT_SYSTEM?.createInputActionSystem === "function") {
       try {
         instance.inputSystem = INPUT_SYSTEM.createInputActionSystem({ runtime: global, clock: () => global.performance?.now?.() ?? Date.now() });
@@ -3628,6 +4347,16 @@
     instance.rendererStartingAdapter = null;
     instance.renderer3d?.dispose?.();
     instance.renderer3d = null;
+    instance.collisionSystem?.dispose?.();
+    instance.collisionSystem = null;
+    instance.collisionResult = null;
+    instance.collisionLandscape?.dispose?.();
+    instance.collisionLandscape = null;
+    instance.collisionTerrainSampler = null;
+    instance.collisionWaterSampler = null;
+    instance.collisionLakes = Object.freeze([]);
+    instance.collisionCellKey = "";
+    instance.collisionStepResolver = null;
     instance.packUnsubscribe?.();
     instance.cinematicPackManager?.dispose?.();
     instance.workerAdapter?.close?.();
@@ -3640,5 +4369,5 @@
     return true;
   }
 
-  return Object.freeze({ VERSION, version: VERSION, STORAGE_KEY, LEGACY_STORAGE_KEY, V2_STORAGE_KEY, OLDER_STORAGE_KEY, SCHEMA_VERSION, WORLD_SIZE, ERA_META, REALMS, BIOMES, FLAGSHIP_IDS, SPECIES, IMPORTED_SPECIES, MERGED_SPECIES_COUNT, MERGED_DUPLICATE_COUNT, EXPEDITIONS, normalizeState, stepVitals, terrainAt, terrainForRealm, createWorld, findHabitatSpawn, mount, unmount });
+  return Object.freeze({ VERSION, version: VERSION, STORAGE_KEY, LEGACY_STORAGE_KEY, V2_STORAGE_KEY, OLDER_STORAGE_KEY, SCHEMA_VERSION, WORLD_SIZE, ERA_META, REALMS, BIOMES, FLAGSHIP_IDS, SPECIES, IMPORTED_SPECIES, MERGED_SPECIES_COUNT, MERGED_DUPLICATE_COUNT, EXPEDITIONS, normalizeState, stepVitals, terrainAt, terrainForRealm, createWorld, findHabitatSpawn, collisionHabitatAccepts, createFramePacingState, recordFramePacing, evaluateAdaptivePacing, resetGameplayFramePacing, environmentCollisionKind, environmentCollisionObstacle, environmentCollisionDigest, createLiteWorldProjection, selectLiteReticleTarget, drawLiteResource, mount, unmount });
 });

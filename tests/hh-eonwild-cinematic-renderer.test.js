@@ -259,12 +259,28 @@ test("renderer telemetry reports real counters when available and bounded VRAM e
   assert.match(source, /WEBGPU_RUNTIME_VALIDATION_FAILED/);
 });
 
+test("renderer telemetry preserves visible long frames in P99 and maximum counters", () => {
+  const adapter = renderer.create({ adaptiveQuality: false });
+  adapter._governor.warmupUntil = 0;
+  adapter._governor.lastEvaluation = 0;
+  for (let index = 0; index < 11; index += 1) adapter._governor.record(16, 10000 + index);
+  adapter._governor.record(145, 12000);
+
+  const telemetry = adapter.getTelemetry();
+  assert.equal(telemetry.frameTimeP99Ms, 145);
+  assert.equal(telemetry.frameTimeMaximumMs, 145);
+  assert.equal(telemetry.frameTimeMaxMs, 145);
+  assert.equal(telemetry.longFrameCount, 1);
+  adapter.dispose();
+});
+
 test("streaming keeps fresh LOD requests and animated water matrices live", () => {
   assert.match(source, /if \(wanted && !this\.queued\.has\(wanted\.key\)\)/, "stale successful worker jobs must requeue the currently wanted LOD");
   assert.doesNotMatch(source, /wanted && completed\.error && !this\.queued\.has/, "requeue must not be limited to worker failures");
   assert.doesNotMatch(source, /water\.freezeWorldMatrix\(\)/, "the runtime tide surface cannot use a frozen world matrix");
   assert.doesNotMatch(source, /renderState\?\.water\?\.opacity/, "unreachable water opacity state must not remain in the frame loop");
-  assert.match(source, /if \(rawDelta <= 0\.12\) this\._governor\.record/, "tab suspension gaps must not trigger adaptive quality downgrades");
+  assert.match(source, /this\._governor\.record\(Math\.max\(finishedAt - startedAt, rawDelta \* 1000\), finishedAt\)/, "visible long frames must remain in adaptive-quality telemetry");
+  assert.match(source, /resume\(cause = "user"\)[\s\S]{0,1200}this\._lastFrameAt = now\(\)/, "resume must reset the suspension gap before the next visible frame");
 });
 
 test("verified Personal creature pack descriptors are consumed without being promoted to production", () => {

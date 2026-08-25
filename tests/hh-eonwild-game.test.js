@@ -23,6 +23,7 @@ const content = require(path.join(root, "hh-eonwild-content-v2.js"));
 const simulation = require(path.join(root, "hh-eonwild-simulation-v2.js"));
 const core3d = require(path.join(root, "hh-eonwild-3d-core.js"));
 const renderer3d = require(path.join(root, "hh-eonwild-renderer-3d.js"));
+const worldAtlas = require(path.join(root, "hh-eonwild-world-atlas.js"));
 const speciesRegistry = require(path.join(root, "hh-eonwild-species-registry.js"));
 const assetManifest = JSON.parse(read("assets/eonwild/asset-manifest.v1.json"));
 
@@ -131,6 +132,13 @@ test("paused input consumes buffered gameplay actions without invoking them", ()
   assert.deepEqual(calls, gameplayActions, "unpaused gameplay actions must remain usable");
 });
 
+test("the Babylon render loop owns camera collision without a duplicate route raycast", () => {
+  const cameraUpdate = extractFunctionSource(gameSource, "updateGameplayCamera");
+  assert.match(gameSource, /cameraCollisionOwner:\s*"renderer"/);
+  assert.match(cameraUpdate, /rendererOwnsCameraCollision\s*=\s*instance\.renderer3d\?\.cameraCollisionOwner\s*===\s*"renderer"/);
+  assert.match(cameraUpdate, /rendererOwnsCameraCollision\s*\?\s*null\s*:\s*instance\.renderer3d\?\.resolveCameraCollision/);
+});
+
 test("Atlas telemetry describes planner candidates as prioritized, never loaded", () => {
   const updateHudSource = extractFunctionSource(gameSource, "updateHud");
   assert.match(updateHudSource, /const atlasChunks\s*=\s*instance\.atlasStreamPlan\?\.wanted\?\.length\s*\|\|\s*0/);
@@ -193,7 +201,7 @@ const assertGeneBounds = (genes) => {
 };
 
 test("EonWild v4 game composes versioned ecology and cinematic 3D APIs", () => {
-  assert.equal(game.VERSION, "4.2.0");
+  assert.equal(game.VERSION, "4.3.1");
   assert.equal(game.version, game.VERSION);
   assert.equal(game.SCHEMA_VERSION, 4);
   assert.equal(game.STORAGE_KEY, "hh.game.eonwild.v4");
@@ -209,12 +217,69 @@ test("EonWild v4 game composes versioned ecology and cinematic 3D APIs", () => {
   assert.equal(simulation.SCHEMA_VERSION, 2);
   assert.equal(simulation.FIXED_STEP, 1 / 30);
   assert.equal(core3d.VERSION, "3.1.0");
-  assert.equal(renderer3d.VERSION, "1.4.0");
+  assert.equal(renderer3d.VERSION, "1.5.1");
   assert.equal(core3d.BABYLON_VERSION, "9.22.1");
   assert.equal(renderer3d.BABYLON_VERSION, "9.22.1");
-  for (const name of ["normalizeState", "stepVitals", "terrainAt", "createWorld", "mount", "unmount"]) {
+  for (const name of ["normalizeState", "stepVitals", "terrainAt", "createWorld", "createFramePacingState", "recordFramePacing", "evaluateAdaptivePacing", "mount", "unmount"]) {
     assert.equal(typeof game[name], "function", `${name} must remain public and testable`);
   }
+});
+
+test("frame pacing telemetry is sample-derived, bounded and reports a real 1% low", () => {
+  const pacing = game.createFramePacingState(0);
+  for (let index = 0; index < 99; index += 1) game.recordFramePacing(pacing, 10, index * 10);
+  game.recordFramePacing(pacing, 100, 1000);
+
+  assert.ok(pacing.averageMs > 10 && pacing.averageMs < 12);
+  assert.equal(pacing.p95Ms, 10);
+  assert.equal(pacing.p99Ms, 100);
+  assert.equal(pacing.onePercentLowFps, 10);
+  assert.equal(pacing.fps, Math.round(1000 / pacing.averageMs));
+
+  for (let index = 0; index < 500; index += 1) game.recordFramePacing(pacing, 16, 3000 + index * 16);
+  assert.ok(pacing.samples.length <= 126, "the two-second window must not grow with play time");
+  assert.ok(pacing.samples.every((sample) => sample.at >= pacing.samples.at(-1).at - 2000));
+});
+
+test("Lite adaptive pacing uses two slow and four stable windows instead of flapping", () => {
+  const pacing = game.createFramePacingState(0);
+  pacing.p95Ms = 40;
+  assert.equal(game.evaluateAdaptivePacing(pacing, 45), 0);
+  assert.equal(game.evaluateAdaptivePacing(pacing, 45), -1);
+
+  pacing.p95Ms = 10;
+  assert.equal(game.evaluateAdaptivePacing(pacing, 45), 0);
+  assert.equal(game.evaluateAdaptivePacing(pacing, 45), 0);
+  assert.equal(game.evaluateAdaptivePacing(pacing, 45), 0);
+  assert.equal(game.evaluateAdaptivePacing(pacing, 45), 1);
+
+  pacing.p95Ms = 22;
+  assert.equal(game.evaluateAdaptivePacing(pacing, 45), 0);
+  assert.equal(pacing.slowWindows, 0);
+  assert.equal(pacing.fastWindows, 0);
+});
+
+test("ready and paused gaps reset gameplay pacing instead of causing a false downgrade", () => {
+  const instance = {
+    framePacing: game.createFramePacingState(0),
+    lastFrame: 10,
+    fpsAt: 10,
+    frameCount: 99
+  };
+  game.recordFramePacing(instance.framePacing, 250, 12000);
+  assert.ok(instance.framePacing.samples.length > 0);
+  assert.equal(game.resetGameplayFramePacing(instance, 15000), true);
+  assert.equal(instance.framePacing.samples.length, 0);
+  assert.equal(instance.framePacing.warmupUntil, 23000);
+  assert.equal(instance.lastFrame, 15000);
+  assert.equal(instance.fpsAt, 15000);
+  assert.equal(instance.frameCount, 0);
+
+  const loop = extractFunctionSource(gameSource, "loop");
+  assert.match(loop, /const gameplayActive = !global\.document\?\.hidden && isGameplayActive\(instance\)/);
+  assert.ok(loop.indexOf("const gameplayActive") < loop.indexOf("if (!global.document?.hidden)"), "gameplayActive must remain in scope for the once-per-second adaptive pacing branch");
+  assert.match(loop, /if \(gameplayActive\) recordFramePacing\(instance\.framePacing, frameMs, now\)/);
+  assert.match(loop, /if \(gameplayActive\) evaluateLiteAdaptiveQuality\(instance, now, instance\.framePacing\)/);
 });
 
 test("content v2 defines four isolated realms and exactly thirteen expected flagship animals", () => {
@@ -324,6 +389,19 @@ test("v2 gene normalization, mutation and inheritance are deterministic and boun
   assert.deepEqual(inheritedA, inheritedB);
   assertGeneBounds(inheritedA);
   assert.equal(content.validateGeneProfile({ bodyScale: 9 }).valid, false);
+});
+
+test("a fresh save selects an active Atlas region compatible with its default playable animal", () => {
+  const fresh = game.normalizeState();
+  const map = worldAtlas.getMap(fresh.atlasMapId);
+  assert.equal(fresh.speciesId, "triceratops");
+  assert.equal(map?.gameplayStatus, "active-region");
+  assert.equal(map?.rendererTimeSliceId, fresh.worldAddress.timeSliceId);
+  assert.equal(map?.rendererRegionId, fresh.worldAddress.regionId);
+  assert.equal(core3d.isSpeciesAllowedAtAddress(fresh.speciesId, fresh.worldAddress, false), true);
+
+  const deliberateObserverMap = game.normalizeState({ atlasMapId: "triassic-pangaea" });
+  assert.equal(deliberateObserverMap.atlasMapId, "triassic-pangaea", "an explicit Atlas choice must remain user-owned");
 });
 
 test("game save v4 migrates old coordinates once and bounds world address, renderer, vitals and history", () => {
@@ -869,7 +947,7 @@ test("only Flagship species are offered as playable while other tiers stay truth
 });
 
 test("lazy loader and service worker cache the complete ordered v4 bundle", () => {
-  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=18"\][\s\S]*?scripts:\s*\["hh-eonwild-cinematic-pack\.js\?v=1",\s*"hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-species-registry\.js\?v=1",\s*"hh-eonwild-input-system\.js\?v=2",\s*"hh-eonwild-desktop-controller\.js\?v=1",\s*"hh-eonwild-world-atlas\.js\?v=2",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=6",\s*"hh-eonwild-landscape-core\.js\?v=1",\s*"hh-eonwild-vegetation-system\.js\?v=1",\s*"hh-eonwild-environment-renderer\.js\?v=1",\s*"hh-eonwild-water-weather-system\.js\?v=1",\s*"hh-eonwild-renderer-3d\.js\?v=14",\s*"hh-eonwild-game\.js\?v=23"\]/);
+  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=22"\][\s\S]*?scripts:\s*\["hh-eonwild-cinematic-pack\.js\?v=1",\s*"hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-species-registry\.js\?v=1",\s*"hh-eonwild-input-system\.js\?v=2",\s*"hh-eonwild-desktop-controller\.js\?v=2",\s*"hh-eonwild-collision-system\.js\?v=1",\s*"hh-eonwild-world-atlas\.js\?v=2",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=6",\s*"hh-eonwild-landscape-core\.js\?v=1",\s*"hh-eonwild-vegetation-system\.js\?v=1",\s*"hh-eonwild-environment-renderer\.js\?v=4",\s*"hh-eonwild-water-weather-system\.js\?v=1",\s*"hh-eonwild-renderer-3d\.js\?v=18",\s*"hh-eonwild-game\.js\?v=27"\]/);
   assert.match(loader, /value === "\/game" \|\| value\.startsWith\("\/game\/"\)\) return \["game"\]/);
   const runtimeAssetsSource = worker.slice(
     worker.indexOf("const RUNTIME_ASSETS"),
@@ -879,21 +957,22 @@ test("lazy loader and service worker cache the complete ordered v4 bundle", () =
   for (const asset of [
     "./hh-eonwild-cinematic-pack.js?v=1",
     "./hh-eonwild-cinematic-pack-worker.js?v=1",
-    "./hh-eonwild-game.css?v=18",
+    "./hh-eonwild-game.css?v=22",
     "./hh-eonwild-content-v2.js?v=3",
     "./hh-eonwild-species-registry.js?v=1",
     "./hh-eonwild-input-system.js?v=2",
-    "./hh-eonwild-desktop-controller.js?v=1",
+    "./hh-eonwild-desktop-controller.js?v=2",
+    "./hh-eonwild-collision-system.js?v=1",
     "./hh-eonwild-world-atlas.js?v=2",
     "./hh-eonwild-simulation-v2.js?v=4",
     "./hh-eonwild-3d-core.js?v=6",
     "./hh-eonwild-landscape-core.js?v=1",
     "./hh-eonwild-landscape-worker.js?v=1",
     "./hh-eonwild-vegetation-system.js?v=1",
-    "./hh-eonwild-environment-renderer.js?v=1",
+    "./hh-eonwild-environment-renderer.js?v=4",
     "./hh-eonwild-water-weather-system.js?v=1",
-    "./hh-eonwild-renderer-3d.js?v=14",
-    "./hh-eonwild-game.js?v=23"
+    "./hh-eonwild-renderer-3d.js?v=18",
+    "./hh-eonwild-game.js?v=27"
   ]) assert.ok(worker.includes(`"${asset}"`), `service worker must cache ${asset}`);
   for (const asset of [
     "./vendor/babylon-9.22.1.js?v=9.22.1",
@@ -906,7 +985,7 @@ test("lazy loader and service worker cache the complete ordered v4 bundle", () =
     assert.ok(runtimeAssetsSource.includes(`"${asset}"`), `${asset} must be a runtime asset`);
     assert.ok(!coreAssetsSource.includes(`"${asset}"`), `${asset} must not be a core asset`);
   }
-  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v897"/);
+  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v903"/);
   assert.match(worker, /const EONWILD_OFFLINE_ASSETS\s*=\s*RUNTIME_ASSETS\.filter/);
   assert.match(worker, /cache\.addAll\(INSTALL_ASSETS\)/);
 

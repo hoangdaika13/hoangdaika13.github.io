@@ -14,12 +14,24 @@
    * Babylon thin-instance surface, the same deterministic chunk descriptors
    * remain available in fail-open descriptor mode.
    */
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.0";
   const FORMAT = "hh-eonwild-environment-renderer-v1";
   const MATRIX_STRIDE = 16;
   const ATTRIBUTE_STRIDE = 4;
   const MAX_SOURCES = 17;
   const TWO_PI = Math.PI * 2;
+  const MAX_CHUNK_BUILDS_PER_UPDATE = 1;
+  const COLLISION_SNAPSHOT_FORMAT = "hh-eonwild-environment-colliders-v1";
+  const COLLIDER_CATEGORIES = Object.freeze(["mature-tree", "dead-tree", "sapling", "root", "log", "rock"]);
+  const COLLIDER_CATEGORY_SET = new Set(COLLIDER_CATEGORIES);
+  const DEFAULT_COLLIDER_RADIUS = 192;
+  const MAX_COLLIDER_RADIUS = 384;
+  const DEFAULT_COLLIDER_BUDGET = 384;
+  const MAX_COLLIDERS_PER_SNAPSHOT = 512;
+  const MAX_COLLIDER_SCAN_PLACEMENTS = 8192;
+  const DEFAULT_COLLIDER_CELL_SIZE = 16;
+  const DEFAULT_QUEUE_DIRECTION_RESET_RADIANS = Math.PI / 8;
+  const LOD_DENSITY = Object.freeze([1, 0.78, 0.5, 0.24, 0]);
   const NATURAL_LIGHT_FLOOR = Object.freeze({ ambientFactor: 0.46, emissiveFactor: 0.34 });
 
   function optionalModule(globalName, path) {
@@ -111,6 +123,66 @@
     return value / 4294967296;
   }
 
+  function safeColliderId(chunk, placement, index) {
+    const chunkKey = String(chunk && chunk.key || "0:0").replace(/[^a-z0-9:._-]/gi, "").slice(0, 24) || "0:0";
+    const sourceId = String(placement && placement.id || placement && placement.typeId || "placement")
+      .replace(/[^a-z0-9:._-]/gi, "-").slice(0, 52) || "placement";
+    return `env:${chunkKey}:${Math.max(0, Math.trunc(finite(index)))}:${sourceId}`.slice(0, 96);
+  }
+
+  function colliderDescriptor(chunk, placement, index, categoryOverride) {
+    const category = String(categoryOverride || placement && placement.category || "").toLowerCase();
+    if (!COLLIDER_CATEGORY_SET.has(category)) return null;
+    const scale = clamp(placement.scale, 0.05, 20);
+    const x = finite(placement.x);
+    const y = finite(placement.y);
+    const z = finite(placement.z);
+    const rotationY = finite(placement.rotationY);
+    const descriptor = {
+      id: safeColliderId(chunk, placement, index),
+      source: "procedural-environment",
+      typeId: String(placement.typeId || category).slice(0, 64),
+      category,
+      type: category === "mature-tree" || category === "dead-tree" || category === "sapling" ? "tree" : category,
+      x, y, z, scale, rotationY,
+      minY: y,
+      chunkKey: String(chunk && chunk.key || "")
+    };
+    if (category === "root" || category === "log") {
+      const halfLength = (category === "log" ? 2.25 : 1.2) * scale;
+      const halfWidth = 0.24 * scale;
+      const cosine = Math.abs(Math.cos(rotationY));
+      const sine = Math.abs(Math.sin(rotationY));
+      const extentX = cosine * halfLength + sine * halfWidth;
+      const extentZ = sine * halfLength + cosine * halfWidth;
+      descriptor.shape = "aabb";
+      descriptor.minX = x - extentX;
+      descriptor.maxX = x + extentX;
+      descriptor.minZ = z - extentZ;
+      descriptor.maxZ = z + extentZ;
+      descriptor.radius = Math.hypot(extentX, extentZ);
+      descriptor.height = Math.max(0.24, 0.42 * scale);
+    } else {
+      const baseRadius = category === "mature-tree" ? 0.36 : category === "sapling" ? 0.225 : category === "dead-tree" ? 0.225 : 0.72;
+      const baseHeight = category === "mature-tree" ? 7.5 : category === "sapling" ? 3.2 : category === "dead-tree" ? 5.6 : 1.35;
+      descriptor.shape = "circle";
+      descriptor.radius = Math.max(category === "sapling" ? 0.14 : 0.2, baseRadius * scale);
+      descriptor.height = Math.max(0.35, baseHeight * scale);
+    }
+    descriptor.maxY = y + descriptor.height;
+    return descriptor;
+  }
+
+  function colliderToken(collider) {
+    const number = (value) => Math.round(finite(value) * 1000);
+    return [
+      collider.id, collider.category, collider.shape,
+      number(collider.x), number(collider.y), number(collider.z),
+      number(collider.radius), number(collider.height),
+      number(collider.minX), number(collider.maxX), number(collider.minZ), number(collider.maxZ)
+    ].join("|");
+  }
+
   function normalizeQuality(moduleLike, input) {
     if (moduleLike && typeof moduleLike.normalizeQuality === "function") {
       try {
@@ -187,7 +259,17 @@
         target.wind.gust = 0;
         return target;
       },
-      sampleStateInto(_x, _z, _now, out) { Object.assign(out, state, { compression: 0, health: 1 - state.burn * 0.88, activeInfluences: 0 }); return out; },
+      sampleStateInto(_x, _z, _now, out) {
+        const target = out || {};
+        target.wetness = state.wetness;
+        target.burn = state.burn;
+        target.snow = state.snow;
+        target.mud = state.mud;
+        target.compression = 0;
+        target.health = 1 - state.burn * 0.88;
+        target.activeInfluences = 0;
+        return target;
+      },
       disturb(input) { if (input && /fire|burn/.test(String(input.type))) state.burn = clamp01(input.strength == null ? 0.9 : input.strength); return disposed ? null : hashText(JSON.stringify(input || {})); },
       pause() { paused = true; return !disposed; },
       resume() { paused = false; return !disposed; },
@@ -497,7 +579,7 @@
   }
 
   function createLodEvaluator(quality) {
-    return function evaluate(distance, previousLod) {
+    return function evaluate(distance, previousLod, out) {
       const thresholds = quality.lodDistances;
       let lod = distance <= thresholds[0] ? 0 : distance <= thresholds[1] ? 1 : distance <= thresholds[2] ? 2 : distance <= thresholds[3] ? 3 : 4;
       const previous = Number.isInteger(previousLod) ? clamp(previousLod, 0, 4) : lod;
@@ -511,7 +593,13 @@
       }
       if (nearest > quality.ditherMeters * 0.5) transitionIndex = -1;
       const dither = transitionIndex < 0 ? 0 : clamp01((distance - (thresholds[transitionIndex] - quality.ditherMeters * 0.5)) / quality.ditherMeters);
-      return { lod, nextLod: Math.min(4, lod + 1), visible: lod < 4, dither, transitionIndex };
+      const target = out || {};
+      target.lod = lod;
+      target.nextLod = Math.min(4, lod + 1);
+      target.visible = lod < 4;
+      target.dither = dither;
+      target.transitionIndex = transitionIndex;
+      return target;
     };
   }
 
@@ -553,6 +641,9 @@
       this.queuedKeys = new Set();
       this._desiredKeys = new Set();
       this._candidates = [];
+      this._candidatePool = [];
+      this._sortedChunks = [];
+      this._freeQueueJobs = [];
       this._sourceMeshes = [];
       this._materials = [];
       this._materialByGroup = new Map();
@@ -561,17 +652,65 @@
       this._systemFrame = { timeSeconds: 0, deltaSeconds: 0, cameraX: 0, cameraZ: 0 };
       this._runtimeFrame = this.vegetationModule && typeof this.vegetationModule.createRuntimeFrame === "function" ? this.vegetationModule.createRuntimeFrame() : { wind: { layers: [] } };
       this._stateSample = this.vegetationModule && typeof this.vegetationModule.createVegetationStateSample === "function" ? this.vegetationModule.createVegetationStateSample() : { compression: 0, wetness: 0, burn: 0, snow: 0, mud: 0, health: 1 };
+      this._matrixVisual = { compression: 0, phase: 0, bend: 0, gust: 0, flexibility: 1, directionX: 1, directionZ: 0, time: 0, reducedMotion: false };
       this._envPatch = { wetness: 0, burn: 0, snow: 0, mud: 0 };
-      this._frameResult = { status: "idle", mode: "descriptor", buildsThisUpdate: 0, builtChunk: null, telemetry: {} };
+      this._frameResult = {
+        status: "idle", mode: "descriptor", buildsThisUpdate: 0, builtChunk: null,
+        buildBudget: { limit: MAX_CHUNK_BUILDS_PER_UPDATE, used: 0, remaining: MAX_CHUNK_BUILDS_PER_UPDATE, deferred: 0 },
+        telemetry: {}
+      };
       this._buffersDirty = true;
       this._stateDirty = true;
       this._descriptorDigest = "00000000";
+      this.collisionRadius = clamp(options.collisionRadius == null ? DEFAULT_COLLIDER_RADIUS : options.collisionRadius, 24, MAX_COLLIDER_RADIUS);
+      this.maxCollisionColliders = Math.round(clamp(options.maxCollisionColliders == null ? DEFAULT_COLLIDER_BUDGET : options.maxCollisionColliders, 1, MAX_COLLIDERS_PER_SNAPSHOT));
+      this.collisionCellSize = Math.round(clamp(options.collisionCellSize == null ? DEFAULT_COLLIDER_CELL_SIZE : options.collisionCellSize, 8, 64));
+      this._renderedColliderIds = new Set();
+      this._nextRenderedColliderIds = new Set();
+      this._collisionChunkScratch = [];
+      this._collisionCandidateScratch = [];
+      this._collisionDigest = "0:00000000:00000000";
+      this._collisionRevision = 0;
+      this._collisionSnapshotCacheKey = "";
+      this._collisionSnapshot = Object.freeze({
+        supported: true,
+        format: COLLISION_SNAPSHOT_FORMAT,
+        mode: "descriptor",
+        cellKey: "",
+        revision: 0,
+        digest: this._collisionDigest,
+        center: Object.freeze({ x: this.playerX, z: this.playerZ }),
+        radius: this.collisionRadius,
+        coverageRadius: this.collisionRadius,
+        budget: this.maxCollisionColliders,
+        count: 0,
+        tracked: 0,
+        scanned: 0,
+        truncated: false,
+        colliders: Object.freeze([])
+      });
       this._activeInstances = 0;
       this._renderedInstances = 0;
       this._droppedInstances = 0;
       this._chunkBuilds = 0;
+      this._chunkPlanCalls = 0;
       this._lastBuiltChunk = "";
       this._lastPlayerChunk = "";
+      this._queueRevision = 1;
+      this._queueDirectionReady = false;
+      this._queueForwardX = 0;
+      this._queueForwardZ = 1;
+      this._queueDirectionResetCosine = Math.cos(clamp(options.queueDirectionResetRadians == null ? DEFAULT_QUEUE_DIRECTION_RESET_RADIANS : options.queueDirectionResetRadians, Math.PI / 18, Math.PI * 0.75));
+      this._queueDirectionInvalidations = 0;
+      this._staleQueuedChunksDiscarded = 0;
+      this._staleQueuedChunksDiscardedThisUpdate = 0;
+      this._staleDirectionChunksDiscarded = 0;
+      this._staleVisibilityChunksDiscarded = 0;
+      this._queueHighWaterMark = 0;
+      this._queueJobAllocations = 0;
+      this._desiredUnqueuedChunks = 0;
+      this._buildBudgetUsedThisUpdate = 0;
+      this._buildBudgetDeferredThisUpdate = 0;
       this._nextInteractionBufferAt = 0;
       this._configureBudget(options);
       this._terrainSampler = (x, z, out) => this._sampleTerrain(x, z, out);
@@ -745,6 +884,114 @@
       return Math.max(0, Math.hypot(centerX - this.playerX, centerZ - this.playerZ) - this.chunkSize * Math.SQRT1_2);
     }
 
+    _candidateScore(key, distance, facing, hasForward) {
+      const surfaceDistance = Math.max(0, distance - this.chunkSize * Math.SQRT1_2);
+      const distanceRatio = clamp01(distance / Math.max(this.chunkSize, this.viewDistance));
+      const directionPenalty = hasForward
+        ? (1 - clamp(facing, -1, 1)) * this.chunkSize * (0.58 + distanceRatio * 0.34)
+        : 0;
+      const retentionBonus = this.chunks.has(key)
+        ? this.chunkSize * 0.12
+        : (this.queuedKeys.has(key) ? this.chunkSize * 0.04 : 0);
+      // Quantization prevents sub-millimetre camera jitter from shuffling jobs;
+      // chunk coordinates remain the deterministic final tie breaker.
+      return Math.round((surfaceDistance + directionPenalty - retentionBonus) * 256) / 256;
+    }
+
+    _acquireQueueJob(candidate) {
+      let job = this._freeQueueJobs.pop();
+      if (!job) {
+        job = {};
+        this._queueJobAllocations += 1;
+      }
+      job.cx = candidate.cx;
+      job.cz = candidate.cz;
+      job.key = candidate.key;
+      job.distance = candidate.distance;
+      job.facing = candidate.facing;
+      job.score = candidate.score;
+      job.revision = this._queueRevision;
+      return job;
+    }
+
+    _releaseQueueJob(job) {
+      if (!job) return;
+      job.key = "";
+      job.revision = 0;
+      if (this._freeQueueJobs.length < this.maxQueuedChunks) this._freeQueueJobs.push(job);
+    }
+
+    _recordStaleQueueDiscard(count, reason) {
+      const discarded = Math.max(0, Math.trunc(finite(count)));
+      if (!discarded) return;
+      this._staleQueuedChunksDiscarded += discarded;
+      this._staleQueuedChunksDiscardedThisUpdate += discarded;
+      if (reason === "direction") this._staleDirectionChunksDiscarded += discarded;
+      else this._staleVisibilityChunksDiscarded += discarded;
+    }
+
+    _discardQueuedJobAt(index, reason = "visibility") {
+      const job = this.queue[index];
+      if (!job) return false;
+      this.queuedKeys.delete(job.key);
+      for (let cursor = index + 1; cursor < this.queue.length; cursor += 1) this.queue[cursor - 1] = this.queue[cursor];
+      this.queue.length -= 1;
+      this._releaseQueueJob(job);
+      this._recordStaleQueueDiscard(1, reason);
+      return true;
+    }
+
+    _clearQueuedJobsAsStale(reason = "visibility") {
+      const discarded = this.queue.length;
+      for (let index = 0; index < this.queue.length; index += 1) this._releaseQueueJob(this.queue[index]);
+      this.queue.length = 0;
+      this.queuedKeys.clear();
+      this._recordStaleQueueDiscard(discarded, reason);
+      return discarded;
+    }
+
+    _resetQueuedJobs() {
+      for (let index = 0; index < this.queue.length; index += 1) this._releaseQueueJob(this.queue[index]);
+      this.queue.length = 0;
+      this.queuedKeys.clear();
+      this._desiredUnqueuedChunks = 0;
+      this._queueRevision += 1;
+      this._queueDirectionReady = false;
+    }
+
+    _currentStaleQueuedCount() {
+      if (!this.queue.length) return 0;
+      const forwardLength = Math.hypot(this.forwardX, this.forwardZ);
+      if (this._queueDirectionReady && forwardLength > 0.01) {
+        const alignment = clamp((this._queueForwardX * this.forwardX + this._queueForwardZ * this.forwardZ) / forwardLength, -1, 1);
+        if (alignment < this._queueDirectionResetCosine) return this.queue.length;
+      }
+      let stale = 0;
+      for (let index = 0; index < this.queue.length; index += 1) {
+        const job = this.queue[index];
+        if (job.revision !== this._queueRevision || !this._desiredKeys.has(job.key)) stale += 1;
+      }
+      return stale;
+    }
+
+    _updateQueueDirection(hasForward, fx, fz) {
+      if (!hasForward) return false;
+      if (!this._queueDirectionReady) {
+        this._queueForwardX = fx;
+        this._queueForwardZ = fz;
+        this._queueDirectionReady = true;
+        return false;
+      }
+      const alignment = clamp(this._queueForwardX * fx + this._queueForwardZ * fz, -1, 1);
+      if (alignment >= this._queueDirectionResetCosine) return false;
+      this._queueDirectionInvalidations += 1;
+      this._queueRevision += 1;
+      this._clearQueuedJobsAsStale("direction");
+      this._queueForwardX = fx;
+      this._queueForwardZ = fz;
+      return true;
+    }
+
     _withinWorld(cx, cz) {
       const config = this.landscape && this.landscape.config;
       if (!config || !Number.isFinite(config.chunksPerAxis)) return true;
@@ -753,7 +1000,7 @@
 
     _refreshDesiredChunks(frame) {
       this._desiredKeys.clear();
-      this._candidates.length = 0;
+      let candidateCount = 0;
       const centerX = Math.floor(this.playerX / this.chunkSize);
       const centerZ = Math.floor(this.playerZ / this.chunkSize);
       const radius = Math.ceil((this.viewDistance + this.chunkSize * 0.72) / this.chunkSize);
@@ -762,6 +1009,7 @@
       const fx = this.forwardX / forwardLength;
       const fz = this.forwardZ / forwardLength;
       const fovCosine = Math.cos(Math.min(Math.PI, this.fovRadians * 0.62));
+      this._updateQueueDirection(hasForward, fx, fz);
       for (let cz = centerZ - radius; cz <= centerZ + radius; cz += 1) {
         for (let cx = centerX - radius; cx <= centerX + radius; cx += 1) {
           if (!this._withinWorld(cx, cz)) continue;
@@ -771,15 +1019,29 @@
           const dz = chunkCenterZ - this.playerZ;
           const distance = Math.hypot(dx, dz);
           if (distance > this.viewDistance + this.chunkSize * 0.72) continue;
+          const facing = hasForward ? (dx * fx + dz * fz) / Math.max(0.001, distance) : 1;
           if (this.frustumCulling && hasForward && distance > this.nearOmnidirectionalDistance) {
-            const facing = (dx * fx + dz * fz) / Math.max(0.001, distance);
             if (facing < fovCosine) continue;
           }
-          this._candidates.push({ cx, cz, key: this._chunkKey(cx, cz), distance });
+          let candidate = this._candidatePool[candidateCount];
+          if (!candidate) {
+            candidate = {};
+            this._candidatePool[candidateCount] = candidate;
+          }
+          const key = this._chunkKey(cx, cz);
+          candidate.cx = cx;
+          candidate.cz = cz;
+          candidate.key = key;
+          candidate.distance = distance;
+          candidate.facing = facing;
+          candidate.score = this._candidateScore(key, distance, facing, hasForward);
+          this._candidates[candidateCount] = candidate;
+          candidateCount += 1;
         }
       }
-      this._candidates.sort((a, b) => a.distance - b.distance || a.cx - b.cx || a.cz - b.cz);
-      const desiredCount = Math.min(this.maxActiveChunks, this._candidates.length);
+      this._candidates.length = candidateCount;
+      this._candidates.sort((a, b) => a.score - b.score || a.distance - b.distance || b.facing - a.facing || a.cx - b.cx || a.cz - b.cz);
+      const desiredCount = Math.min(this.maxActiveChunks, candidateCount);
       for (let index = 0; index < desiredCount; index += 1) this._desiredKeys.add(this._candidates[index].key);
 
       for (const [key, chunk] of this.chunks) {
@@ -790,23 +1052,32 @@
         }
       }
       for (let index = this.queue.length - 1; index >= 0; index -= 1) {
-        if (!this._desiredKeys.has(this.queue[index].key)) {
-          this.queuedKeys.delete(this.queue[index].key);
-          this.queue.splice(index, 1);
-        }
+        const job = this.queue[index];
+        if (job.revision !== this._queueRevision || !this._desiredKeys.has(job.key)) this._discardQueuedJobAt(index, "visibility");
       }
-      for (let index = 0; index < desiredCount && this.queue.length < this.maxQueuedChunks; index += 1) {
+
+      for (let index = 0; index < this.queue.length; index += 1) {
+        const job = this.queue[index];
+        const dx = (job.cx + 0.5) * this.chunkSize - this.playerX;
+        const dz = (job.cz + 0.5) * this.chunkSize - this.playerZ;
+        job.distance = Math.hypot(dx, dz);
+        job.facing = hasForward ? (dx * fx + dz * fz) / Math.max(0.001, job.distance) : 1;
+        job.score = this._candidateScore(job.key, job.distance, job.facing, hasForward);
+      }
+
+      this._desiredUnqueuedChunks = 0;
+      for (let index = 0; index < desiredCount; index += 1) {
         const candidate = this._candidates[index];
         if (!this.chunks.has(candidate.key) && !this.queuedKeys.has(candidate.key)) {
-          this.queue.push(candidate);
-          this.queuedKeys.add(candidate.key);
+          if (this.queue.length < this.maxQueuedChunks) {
+            const job = this._acquireQueueJob(candidate);
+            this.queue.push(job);
+            this.queuedKeys.add(job.key);
+          } else this._desiredUnqueuedChunks += 1;
         }
       }
-      this.queue.sort((a, b) => {
-        const ad = Math.hypot((a.cx + 0.5) * this.chunkSize - this.playerX, (a.cz + 0.5) * this.chunkSize - this.playerZ);
-        const bd = Math.hypot((b.cx + 0.5) * this.chunkSize - this.playerX, (b.cz + 0.5) * this.chunkSize - this.playerZ);
-        return ad - bd || a.cx - b.cx || a.cz - b.cz;
-      });
+      this.queue.sort((a, b) => a.score - b.score || a.distance - b.distance || b.facing - a.facing || a.cx - b.cx || a.cz - b.cz);
+      this._queueHighWaterMark = Math.max(this._queueHighWaterMark, this.queue.length);
       this._lastPlayerChunk = `${centerX}:${centerZ}`;
       void frame;
     }
@@ -822,35 +1093,50 @@
       if (!this.queue.length || this.chunks.size >= this.maxActiveChunks) return null;
       const job = this.queue.shift();
       this.queuedKeys.delete(job.key);
-      if (!this._desiredKeys.has(job.key)) return null;
+      const jobKey = job.key;
+      const jobCx = job.cx;
+      const jobCz = job.cz;
+      if (job.revision !== this._queueRevision || !this._desiredKeys.has(jobKey)) {
+        this._releaseQueueJob(job);
+        this._recordStaleQueueDiscard(1, "visibility");
+        return null;
+      }
       const remaining = Math.max(0, this.maxActiveInstances - this._activeInstances);
       const maximum = Math.min(this.maxInstancesPerChunk, remaining);
-      const centerX = (job.cx + 0.5) * this.chunkSize;
-      const centerZ = (job.cz + 0.5) * this.chunkSize;
+      const centerX = (jobCx + 0.5) * this.chunkSize;
+      const centerZ = (jobCz + 0.5) * this.chunkSize;
       let plan = null;
+      this._chunkPlanCalls += 1;
       try {
         plan = this.vegetation.planChunk({
-          cx: job.cx, cz: job.cz, biomeId: this._sampleBiome(centerX, centerZ), quality: this.quality.id,
+          cx: jobCx, cz: jobCz, biomeId: this._sampleBiome(centerX, centerZ), quality: this.quality.id,
           terrainSampler: this._terrainSampler, maxInstances: maximum
         });
       } catch (_) { plan = null; }
-      const placements = plan && plan.ok !== false && Array.isArray(plan.placements) ? plan.placements.slice(0, maximum) : [];
+      const plannedPlacements = plan && plan.ok !== false && Array.isArray(plan.placements) ? plan.placements : null;
+      const placements = !plannedPlacements
+        ? []
+        : (plannedPlacements.length > maximum ? plannedPlacements.slice(0, maximum) : plannedPlacements);
       const distance = this._chunkSurfaceDistance(centerX, centerZ);
       const lod = this._lodEvaluate(distance, null);
-      const chunk = { key: job.key, cx: job.cx, cz: job.cz, centerX, centerZ, distance, lod, placements, stats: plan && plan.stats || null };
-      this.chunks.set(job.key, chunk);
+      const chunk = { key: jobKey, cx: jobCx, cz: jobCz, centerX, centerZ, distance, lod, placements, stats: plan && plan.stats || null };
+      this.chunks.set(jobKey, chunk);
       this._activeInstances += placements.length;
       this._chunkBuilds += 1;
-      this._lastBuiltChunk = job.key;
+      this._lastBuiltChunk = jobKey;
       this._buffersDirty = true;
-      return job.key;
+      this._releaseQueueJob(job);
+      return jobKey;
     }
 
     _refreshChunkLods() {
       for (const chunk of this.chunks.values()) {
         const distance = this._chunkSurfaceDistance(chunk.centerX, chunk.centerZ);
-        const next = this._lodEvaluate(distance, chunk.lod && chunk.lod.lod);
-        if (!chunk.lod || next.lod !== chunk.lod.lod || next.transitionIndex !== chunk.lod.transitionIndex || Math.abs(next.dither - chunk.lod.dither) >= 0.08) this._buffersDirty = true;
+        const previousLod = chunk.lod && chunk.lod.lod;
+        const previousTransition = chunk.lod && chunk.lod.transitionIndex;
+        const previousDither = chunk.lod && chunk.lod.dither;
+        const next = this._lodEvaluate(distance, previousLod, chunk.lod);
+        if (next.lod !== previousLod || next.transitionIndex !== previousTransition || Math.abs(next.dither - previousDither) >= 0.08) this._buffersDirty = true;
         chunk.distance = distance;
         chunk.lod = next;
       }
@@ -887,22 +1173,146 @@
       }
     }
 
+    _commitRenderedColliderTracking(renderedColliderIds, count, digestA, digestB) {
+      const nextDigest = `${count}:${(digestA >>> 0).toString(16).padStart(8, "0")}:${(digestB >>> 0).toString(16).padStart(8, "0")}`;
+      const previousIds = this._renderedColliderIds;
+      this._renderedColliderIds = renderedColliderIds;
+      this._nextRenderedColliderIds = previousIds;
+      this._nextRenderedColliderIds.clear();
+      if (nextDigest === this._collisionDigest) return false;
+      this._collisionDigest = nextDigest;
+      this._collisionRevision += 1;
+      this._collisionSnapshotCacheKey = "";
+      return true;
+    }
+
+    _clearCollisionTracking(forceRevision = false) {
+      const changed = this._renderedColliderIds.size > 0 || this._collisionDigest !== "0:00000000:00000000";
+      this._renderedColliderIds.clear();
+      this._nextRenderedColliderIds.clear();
+      this._collisionDigest = "0:00000000:00000000";
+      if (changed || forceRevision) this._collisionRevision += 1;
+      this._collisionSnapshotCacheKey = "";
+      this._collisionChunkScratch.length = 0;
+      this._collisionCandidateScratch.length = 0;
+      return changed;
+    }
+
+    _insertCollisionCandidate(candidate, budget) {
+      const list = this._collisionCandidateScratch;
+      let low = 0;
+      let high = list.length;
+      while (low < high) {
+        const middle = (low + high) >>> 1;
+        const current = list[middle];
+        if (current.distance < candidate.distance || (current.distance === candidate.distance && current.collider.id <= candidate.collider.id)) low = middle + 1;
+        else high = middle;
+      }
+      list.splice(low, 0, candidate);
+      if (list.length > budget) list.pop();
+    }
+
+    getCollisionSnapshot(options = {}) {
+      if (this.disposed) return this._collisionSnapshot;
+      const radius = clamp(options.radius == null ? this.collisionRadius : options.radius, 24, MAX_COLLIDER_RADIUS);
+      const budget = Math.round(clamp(options.budget == null ? this.maxCollisionColliders : options.budget, 1, MAX_COLLIDERS_PER_SNAPSHOT));
+      const queryX = finite(options.x == null ? options.playerX : options.x, this.playerX);
+      const queryZ = finite(options.z == null ? options.playerZ : options.z, this.playerZ);
+      const cellX = Math.floor(queryX / this.collisionCellSize);
+      const cellZ = Math.floor(queryZ / this.collisionCellSize);
+      const centerX = (cellX + 0.5) * this.collisionCellSize;
+      const centerZ = (cellZ + 0.5) * this.collisionCellSize;
+      const coverageRadius = radius + this.collisionCellSize * Math.SQRT1_2;
+      const cellKey = `${cellX}:${cellZ}:${this.quality.id}:${radius}:${budget}`;
+      const cacheKey = `${cellKey}:${this._collisionRevision}:${this.mode}`;
+      if (cacheKey === this._collisionSnapshotCacheKey) return this._collisionSnapshot;
+
+      const chunks = this._collisionChunkScratch;
+      chunks.length = 0;
+      const chunkReach = coverageRadius + this.chunkSize * Math.SQRT1_2 + 4;
+      for (const chunk of this.chunks.values()) {
+        const distance = Math.hypot(chunk.centerX - centerX, chunk.centerZ - centerZ);
+        if (distance <= chunkReach) chunks.push(chunk);
+      }
+      chunks.sort((left, right) => Math.hypot(left.centerX - centerX, left.centerZ - centerZ) - Math.hypot(right.centerX - centerX, right.centerZ - centerZ) || left.cx - right.cx || left.cz - right.cz);
+
+      const candidates = this._collisionCandidateScratch;
+      candidates.length = 0;
+      let eligible = 0;
+      let scanned = 0;
+      let scanLimitReached = false;
+      outer: for (const chunk of chunks) {
+        for (let index = 0; index < chunk.placements.length; index += 1) {
+          scanned += 1;
+          if (scanned > MAX_COLLIDER_SCAN_PLACEMENTS) { scanLimitReached = true; break outer; }
+          const placement = chunk.placements[index];
+          const category = String(placement.category || this._bucketByType.get(placement.typeId)?.definition?.category || "").toLowerCase();
+          if (!COLLIDER_CATEGORY_SET.has(category)) continue;
+          const id = safeColliderId(chunk, placement, index);
+          if (!this._renderedColliderIds.has(id)) continue;
+          const collider = colliderDescriptor(chunk, placement, index, category);
+          if (!collider) continue;
+          const distance = Math.hypot(collider.x - centerX, collider.z - centerZ);
+          if (distance > coverageRadius + collider.radius) continue;
+          eligible += 1;
+          this._insertCollisionCandidate({ distance, collider }, budget);
+        }
+      }
+
+      const colliders = Object.freeze(candidates.map((candidate) => Object.freeze(candidate.collider)));
+      let digestA = hashText(`collision-snapshot-a:${cellKey}`);
+      let digestB = hashText(`collision-snapshot-b:${cellKey}`);
+      for (const collider of colliders) {
+        const token = colliderToken(collider);
+        digestA = mix32(digestA ^ hashText(token));
+        digestB = mix32(digestB ^ hashText(`${token}:${digestA}`));
+      }
+      const digest = `${colliders.length}:${digestA.toString(16).padStart(8, "0")}:${digestB.toString(16).padStart(8, "0")}`;
+      this._collisionSnapshot = Object.freeze({
+        supported: true,
+        format: COLLISION_SNAPSHOT_FORMAT,
+        mode: this.mode,
+        cellKey,
+        revision: this._collisionRevision,
+        digest,
+        center: Object.freeze({ x: centerX, z: centerZ }),
+        radius,
+        coverageRadius,
+        budget,
+        count: colliders.length,
+        tracked: this._renderedColliderIds.size,
+        scanned: Math.min(scanned, MAX_COLLIDER_SCAN_PLACEMENTS),
+        truncated: scanLimitReached || eligible > budget,
+        colliders
+      });
+      this._collisionSnapshotCacheKey = cacheKey;
+      candidates.length = 0;
+      chunks.length = 0;
+      return this._collisionSnapshot;
+    }
+
     _rebuildBuffers() {
       if (!this._buffersDirty || this.disposed) return false;
       for (const bucket of this._buckets) bucket.count = 0;
       let digest = 2166136261;
+      let collisionDigestA = hashText("rendered-colliders-a");
+      let collisionDigestB = hashText("rendered-colliders-b");
+      let renderedColliderCount = 0;
+      const renderedColliderIds = this._nextRenderedColliderIds;
+      renderedColliderIds.clear();
       let rendered = 0;
       let dropped = 0;
-      const chunks = Array.from(this.chunks.values()).sort((a, b) => a.key.localeCompare(b.key));
-      for (const chunk of chunks) {
+      this._sortedChunks.length = 0;
+      for (const chunk of this.chunks.values()) this._sortedChunks.push(chunk);
+      this._sortedChunks.sort((a, b) => a.cx - b.cx || a.cz - b.cz);
+      for (const chunk of this._sortedChunks) {
         digest = mix32(digest ^ hashText(chunk.key));
         for (let index = 0; index < chunk.placements.length; index += 1) {
           const placement = chunk.placements[index];
           const bucket = this._bucketByType.get(placement.typeId) || this._bucketByType.get(this.types[0].id);
           if (!bucket || bucket.count >= bucket.capacity || !chunk.lod.visible) { dropped += 1; continue; }
-          const densityByLod = [1, 0.78, 0.5, 0.24, 0];
-          const currentDensity = densityByLod[chunk.lod.lod] == null ? 0 : densityByLod[chunk.lod.lod];
-          const nextDensity = densityByLod[chunk.lod.nextLod] == null ? currentDensity : densityByLod[chunk.lod.nextLod];
+          const currentDensity = LOD_DENSITY[chunk.lod.lod] == null ? 0 : LOD_DENSITY[chunk.lod.lod];
+          const nextDensity = LOD_DENSITY[chunk.lod.nextLod] == null ? currentDensity : LOD_DENSITY[chunk.lod.nextLod];
           const density = chunk.lod.transitionIndex < 0 ? currentDensity : currentDensity + (nextDensity - currentDensity) * clamp01(chunk.lod.dither);
           const visibilityRoll = random01(this.seed, chunk.cx, chunk.cz, index + 4099);
           if (visibilityRoll > density) { dropped += 1; continue; }
@@ -911,17 +1321,16 @@
           const state = this._stateAt(placement.x, placement.z);
           const phase = random01(this.seed, chunk.cx, chunk.cz, index) * TWO_PI;
           const wind = this._runtimeFrame && this._runtimeFrame.wind || {};
-          writeMatrix(bucket.matrices, instanceIndex * MATRIX_STRIDE, placement, this.renderOffsetX, this.renderOffsetZ, {
-            compression: state.compression,
-            phase,
-            bend: wind.bend,
-            gust: wind.gust,
-            flexibility: /tree|sapling/.test(bucket.definition.category) ? 0.38 : 1,
-            directionX: wind.directionX,
-            directionZ: wind.directionZ,
-            time: this.timeSeconds,
-            reducedMotion: this.reducedMotion
-          });
+          this._matrixVisual.compression = state.compression;
+          this._matrixVisual.phase = phase;
+          this._matrixVisual.bend = wind.bend;
+          this._matrixVisual.gust = wind.gust;
+          this._matrixVisual.flexibility = /tree|sapling/.test(bucket.definition.category) ? 0.38 : 1;
+          this._matrixVisual.directionX = wind.directionX;
+          this._matrixVisual.directionZ = wind.directionZ;
+          this._matrixVisual.time = this.timeSeconds;
+          this._matrixVisual.reducedMotion = this.reducedMotion;
+          writeMatrix(bucket.matrices, instanceIndex * MATRIX_STRIDE, placement, this.renderOffsetX, this.renderOffsetZ, this._matrixVisual);
           bucket.lodData[attributeOffset] = chunk.lod.lod;
           bucket.lodData[attributeOffset + 1] = chunk.lod.nextLod;
           bucket.lodData[attributeOffset + 2] = chunk.lod.dither;
@@ -936,13 +1345,28 @@
           bucket.windData[attributeOffset + 3] = clamp01(state.mud);
           bucket.count += 1;
           rendered += 1;
-          digest = mix32(digest ^ hashText(`${placement.id}|${placement.typeId}|${finite(placement.x).toFixed(3)}|${finite(placement.z).toFixed(3)}`));
+          digest = mix32(digest ^ hashText(placement.id));
+          digest = mix32(digest ^ hashText(placement.typeId));
+          digest = mix32(digest ^ (Math.round(finite(placement.x) * 1000) >>> 0));
+          digest = mix32(digest ^ (Math.round(finite(placement.z) * 1000) >>> 0));
+          const category = String(placement.category || bucket.definition.category || "").toLowerCase();
+          if (COLLIDER_CATEGORY_SET.has(category)) {
+            const collider = colliderDescriptor(chunk, placement, index, category);
+            if (collider) {
+              const token = colliderToken(collider);
+              renderedColliderIds.add(collider.id);
+              renderedColliderCount += 1;
+              collisionDigestA = mix32(collisionDigestA ^ hashText(token));
+              collisionDigestB = mix32(collisionDigestB ^ hashText(`${token}:${collisionDigestA}`));
+            }
+          }
         }
       }
       for (const bucket of this._buckets) this._uploadBucket(bucket);
       this._renderedInstances = rendered;
       this._droppedInstances = dropped;
       this._descriptorDigest = digest.toString(16).padStart(8, "0");
+      this._commitRenderedColliderTracking(renderedColliderIds, renderedColliderCount, collisionDigestA, collisionDigestB);
       this._buffersDirty = false;
       this._stateDirty = false;
       return true;
@@ -1031,10 +1455,17 @@
       const previousQuality = this.quality.id;
       if (requestedQuality) this.quality = normalizeQuality(this.vegetationModule, requestedQuality);
       if (options.reducedMotion != null) this.reducedMotion = Boolean(options.reducedMotion);
+      if (options.collisionRadius != null) this.collisionRadius = clamp(options.collisionRadius, 24, MAX_COLLIDER_RADIUS);
+      if (options.maxCollisionColliders != null) this.maxCollisionColliders = Math.round(clamp(options.maxCollisionColliders, 1, MAX_COLLIDERS_PER_SNAPSHOT));
+      if (options.collisionCellSize != null) this.collisionCellSize = Math.round(clamp(options.collisionCellSize, 8, 64));
+      if (options.collisionRadius != null || options.maxCollisionColliders != null || options.collisionCellSize != null) this._collisionSnapshotCacheKey = "";
+      if (options.queueDirectionResetRadians != null) {
+        this._queueDirectionResetCosine = Math.cos(clamp(options.queueDirectionResetRadians, Math.PI / 18, Math.PI * 0.75));
+      }
       if (this.vegetation && typeof this.vegetation.configure === "function") {
         try { this.vegetation.configure(options); } catch (_) { /* Fail open. */ }
       }
-      if (requestedQuality || options.maxActiveInstances != null || options.maxInstancesPerChunk != null || options.maxActiveChunks != null || options.maxQueuedChunks != null || options.viewDistance != null || options.frustumCulling != null) {
+      if (requestedQuality || options.maxActiveInstances != null || options.maxInstancesPerChunk != null || options.maxActiveChunks != null || options.maxQueuedChunks != null || options.viewDistance != null || options.frustumCulling != null || options.nearOmnidirectionalDistance != null || options.queueDirectionResetRadians != null) {
         const mergedBudget = {
           ...options,
           maxActiveInstances: options.maxActiveInstances == null && !requestedQuality ? this.maxActiveInstances : options.maxActiveInstances,
@@ -1042,14 +1473,19 @@
           maxActiveChunks: options.maxActiveChunks == null && !requestedQuality ? this.maxActiveChunks : options.maxActiveChunks,
           maxQueuedChunks: options.maxQueuedChunks == null && !requestedQuality ? this.maxQueuedChunks : options.maxQueuedChunks,
           viewDistance: options.viewDistance == null && !requestedQuality ? this.viewDistance : options.viewDistance,
-          frustumCulling: options.frustumCulling == null ? this.frustumCulling : options.frustumCulling
+          frustumCulling: options.frustumCulling == null ? this.frustumCulling : options.frustumCulling,
+          nearOmnidirectionalDistance: options.nearOmnidirectionalDistance == null && !requestedQuality ? this.nearOmnidirectionalDistance : options.nearOmnidirectionalDistance
         };
         this._configureBudget(mergedBudget);
-        this.queue.length = 0;
-        this.queuedKeys.clear();
+        this._resetQueuedJobs();
+        if (this._freeQueueJobs.length > this.maxQueuedChunks) this._freeQueueJobs.length = this.maxQueuedChunks;
         this.chunks.clear();
+        this._candidates.length = 0;
+        this._candidatePool.length = 0;
+        this._sortedChunks.length = 0;
         this._activeInstances = 0;
         this._lastBuiltChunk = "";
+        this._clearCollisionTracking();
         if (previousQuality !== this.quality.id || options.maxActiveInstances != null) this._allocateBuckets();
         else this._buffersDirty = true;
       }
@@ -1086,6 +1522,12 @@
     update(frame = {}) {
       this._frameResult.buildsThisUpdate = 0;
       this._frameResult.builtChunk = null;
+      this._staleQueuedChunksDiscardedThisUpdate = 0;
+      this._buildBudgetUsedThisUpdate = 0;
+      this._buildBudgetDeferredThisUpdate = this.queue.length + this._desiredUnqueuedChunks;
+      this._frameResult.buildBudget.used = 0;
+      this._frameResult.buildBudget.remaining = MAX_CHUNK_BUILDS_PER_UPDATE;
+      this._frameResult.buildBudget.deferred = this._buildBudgetDeferredThisUpdate;
       if (this.disposed) {
         this._frameResult.status = "disposed";
         this._frameResult.mode = "descriptor";
@@ -1119,8 +1561,17 @@
         this._nextInteractionBufferAt = this.timeSeconds + 0.4;
       } else if (activeInfluences === 0) this._nextInteractionBufferAt = this.timeSeconds;
       this._refreshDesiredChunks(frame);
-      const built = this._buildOneChunk();
-      if (built) { this._frameResult.buildsThisUpdate = 1; this._frameResult.builtChunk = built; }
+      let built = null;
+      if (this._buildBudgetUsedThisUpdate < MAX_CHUNK_BUILDS_PER_UPDATE) built = this._buildOneChunk();
+      if (built) {
+        this._buildBudgetUsedThisUpdate += 1;
+        this._frameResult.buildsThisUpdate = this._buildBudgetUsedThisUpdate;
+        this._frameResult.builtChunk = built;
+      }
+      this._buildBudgetDeferredThisUpdate = this.queue.length + this._desiredUnqueuedChunks;
+      this._frameResult.buildBudget.used = this._buildBudgetUsedThisUpdate;
+      this._frameResult.buildBudget.remaining = MAX_CHUNK_BUILDS_PER_UPDATE - this._buildBudgetUsedThisUpdate;
+      this._frameResult.buildBudget.deferred = this._buildBudgetDeferredThisUpdate;
       this._refreshChunkLods();
       this._rebuildBuffers();
       this._updateWindAndMaterials();
@@ -1150,6 +1601,20 @@
       target.reducedMotion = this.reducedMotion;
       target.activeChunks = this.chunks.size;
       target.queuedChunks = this.queue.length;
+      target.staleQueuedChunks = this._currentStaleQueuedCount();
+      target.staleQueuedChunksDiscarded = this._staleQueuedChunksDiscarded;
+      target.staleQueuedChunksDiscardedThisUpdate = this._staleQueuedChunksDiscardedThisUpdate;
+      target.staleDirectionChunksDiscarded = this._staleDirectionChunksDiscarded;
+      target.staleVisibilityChunksDiscarded = this._staleVisibilityChunksDiscarded;
+      target.queueRevision = this._queueRevision;
+      target.queueDirectionInvalidations = this._queueDirectionInvalidations;
+      target.queueHighWaterMark = this._queueHighWaterMark;
+      target.queueHeadScore = this.queue.length ? this.queue[0].score : null;
+      target.queueHeadFacing = this.queue.length ? this.queue[0].facing : null;
+      target.desiredUnqueuedChunks = this._desiredUnqueuedChunks;
+      target.pendingDesiredChunks = this.queue.length + this._desiredUnqueuedChunks;
+      target.candidatePoolSize = this._candidatePool.length;
+      target.queueJobAllocations = this._queueJobAllocations;
       target.maxActiveChunks = this.maxActiveChunks;
       target.maxQueuedChunks = this.maxQueuedChunks;
       target.activeInstances = this._activeInstances;
@@ -1164,9 +1629,20 @@
       target.thinInstanceSources = thinBuffers;
       target.visualStateConsumer = this.mode === "babylon-thin-instances" ? "cpu-build-matrix-wind-compression+density-lod+shared-live-sway" : "descriptor";
       target.chunkBuilds = this._chunkBuilds;
+      target.chunkPlanCalls = this._chunkPlanCalls;
+      target.chunkBuildBudgetPerUpdate = MAX_CHUNK_BUILDS_PER_UPDATE;
+      target.chunkBuildBudgetUsed = this._buildBudgetUsedThisUpdate;
+      target.chunkBuildBudgetRemaining = MAX_CHUNK_BUILDS_PER_UPDATE - this._buildBudgetUsedThisUpdate;
+      target.chunkBuildsDeferred = this._buildBudgetDeferredThisUpdate;
       target.lastBuiltChunk = this._lastBuiltChunk;
       target.playerChunk = this._lastPlayerChunk;
       target.descriptorDigest = this._descriptorDigest;
+      target.collisionSnapshotFormat = COLLISION_SNAPSHOT_FORMAT;
+      target.collisionRevision = this._collisionRevision;
+      target.collisionDigest = this._collisionDigest;
+      target.trackedColliders = this._renderedColliderIds.size;
+      target.collisionRadius = this.collisionRadius;
+      target.maxCollisionColliders = this.maxCollisionColliders;
       target.environment = target.environment || {};
       Object.assign(target.environment, this.environment);
       target.disposed = this.disposed;
@@ -1177,10 +1653,12 @@
       if (this.disposed) return false;
       this.paused = true;
       this.pauseReason = "disposed";
-      this.queue.length = 0;
-      this.queuedKeys.clear();
+      this._resetQueuedJobs();
+      this._freeQueueJobs.length = 0;
       this._desiredKeys.clear();
       this._candidates.length = 0;
+      this._candidatePool.length = 0;
+      this._sortedChunks.length = 0;
       this.chunks.clear();
       for (const bucket of this._buckets) {
         if (bucket.mesh) {
@@ -1211,8 +1689,30 @@
       this._activeInstances = 0;
       this._renderedInstances = 0;
       this._droppedInstances = 0;
+      this._desiredUnqueuedChunks = 0;
+      this._buildBudgetUsedThisUpdate = 0;
+      this._buildBudgetDeferredThisUpdate = 0;
       this.mode = "descriptor";
       this.disposed = true;
+      this._clearCollisionTracking(true);
+      this._collisionSnapshot = Object.freeze({
+        supported: false,
+        format: COLLISION_SNAPSHOT_FORMAT,
+        mode: "descriptor",
+        cellKey: "disposed",
+        revision: this._collisionRevision,
+        digest: this._collisionDigest,
+        center: Object.freeze({ x: this.playerX, z: this.playerZ }),
+        radius: 0,
+        coverageRadius: 0,
+        budget: 0,
+        count: 0,
+        tracked: 0,
+        scanned: 0,
+        truncated: false,
+        colliders: Object.freeze([])
+      });
+      this._collisionSnapshotCacheKey = "disposed";
       return true;
     }
   }
@@ -1224,6 +1724,14 @@
     version: VERSION,
     FORMAT,
     MAX_SOURCES,
+    MAX_CHUNK_BUILDS_PER_UPDATE,
+    COLLISION_SNAPSHOT_FORMAT,
+    COLLIDER_CATEGORIES,
+    DEFAULT_COLLIDER_RADIUS,
+    MAX_COLLIDER_RADIUS,
+    DEFAULT_COLLIDER_BUDGET,
+    MAX_COLLIDERS_PER_SNAPSHOT,
+    MAX_COLLIDER_SCAN_PLACEMENTS,
     MATRIX_STRIDE,
     ATTRIBUTE_STRIDE,
     NATURAL_LIGHT_FLOOR,

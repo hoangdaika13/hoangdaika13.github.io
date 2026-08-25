@@ -5571,6 +5571,36 @@ body:has(.hwe-root) .app-workspace {
   line-height: 1.3;
 }
 
+/* These selectors intentionally match or outrank the legacy nowrap rules.
+   The :where() compatibility pass above has lower specificity, so long
+   Vietnamese ability names and measured renderer values need this explicit
+   ready-screen cascade to remain visible. */
+.hwe-root .hwe-telemetry > header strong,
+.hwe-root .hwe-telemetry > header small,
+.hwe-root .hwe-ability-bar small,
+.hwe-root .hwe-ability-bar strong,
+.hwe-root .hwe-engine-telemetry dt,
+.hwe-root .hwe-engine-telemetry dd {
+  max-inline-size: 100%;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.hwe-root .hwe-telemetry > header > span:last-of-type,
+.hwe-root .hwe-ability-bar button > span,
+.hwe-root .hwe-engine-telemetry dl > div {
+  min-inline-size: 0;
+}
+
+.hwe-root progress {
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
 .hwe-species-card,
 .hwe-catalog-tiers button,
 .hwe-ability-bar button {
@@ -5664,6 +5694,55 @@ body:has(.hwe-root) .app-workspace {
     flex: 0 0 142px;
     grid-template-columns: 32px minmax(0, 1fr);
     scroll-snap-align: start;
+  }
+}
+
+/* A tablet or landscape phone can have a desktop-class viewport while the app
+   sidebar leaves the EonWild container much narrower. Keep realm names intact
+   and move the cards into a bounded horizontal rail instead of squeezing four
+   columns until Vietnamese words break in the middle. */
+@media (max-width: 1000px) {
+  .hwe-brand p {
+    display: none;
+  }
+
+  .hwe-realm-selector {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hwe-realm-selector > div,
+  .hwe-realm-selector > label,
+  .hwe-realm-selector > .hwe-world-address {
+    grid-column: 1 / -1;
+  }
+
+  .hwe-realm-selector > div {
+    display: flex;
+    gap: 6px;
+    min-inline-size: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline proximity;
+    scrollbar-width: none;
+  }
+
+  .hwe-realm-selector > div::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hwe-realm-selector > div button {
+    min-inline-size: 148px;
+    flex: 0 0 148px;
+    grid-template-rows: 1fr;
+    scroll-snap-align: start;
+  }
+
+  .hwe-realm-selector > div button > span,
+  .hwe-realm-selector > div button > small {
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
   }
 }
 
@@ -6655,10 +6734,80 @@ body.app-eonwild-immersive [data-hh-eonwild-host] {
   .hwe-overlay-map { grid-template-columns: 1fr; }
   .hwe-overlay-codex dl { grid-template-columns: 1fr; }
   :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-immersive-vitals {
-    width: min(170px, 44vw);
-    padding: 7px;
+    width: min(196px, 52vw);
+    padding: 8px;
   }
-  .hwe-immersive-vitals label { grid-template-columns: 42px minmax(0, 1fr) 24px; gap: 4px; font-size: 9px; }
+  .hwe-immersive-vitals label { grid-template-columns: 48px minmax(0, 1fr) 26px; gap: 5px; font-size: 11px; }
+}
+
+/* Compact split-shell and landscape widths must reserve the quick-play label. */
+@media (min-width: 431px) and (max-width: 1000px) {
+  .hwe-header { gap: 8px; }
+  .hwe-brand {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .hwe-brand > div { min-width: 0; }
+  .hwe-brand h1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hwe-header-status {
+    min-width: max-content;
+    flex: 0 0 auto;
+  }
+  .hwe-header-status > button {
+    min-inline-size: 96px;
+    flex: 0 0 auto;
+    padding-inline: 10px;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+  }
+}
+
+/* 375px ready screen keeps action names and descriptions visible. */
+@media (max-width: 430px) {
+  .hwe-header { gap: 6px; }
+  .hwe-brand { flex: 1 1 auto; }
+  .hwe-header-status { flex: 0 0 auto; }
+  .hwe-header-status > button {
+    width: auto;
+    min-inline-size: 94px;
+    max-inline-size: 124px;
+    padding-inline: 10px;
+    overflow: visible;
+    color: #fff7dc;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+  }
+  .hwe-header-status > button::before { content: none; }
+
+  .hwe-ability-bar {
+    display: flex;
+    gap: 8px;
+    padding-block: 2px 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+  }
+  .hwe-ability-bar button {
+    min-width: 0;
+    min-height: 68px;
+    flex: 0 0 min(286px, calc(100vw - 32px));
+    scroll-snap-align: center;
+  }
+  .hwe-ability-bar small { display: block; }
+  .hwe-ability-bar button :where(small, strong) {
+    max-inline-size: 100%;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
 }
 
 @keyframes hweReticleAcquire {

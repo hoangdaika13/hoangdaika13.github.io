@@ -16,16 +16,17 @@ const registry = require(path.join(root, "hh-eonwild-species-registry.js"));
 const atlas = require(path.join(root, "hh-eonwild-world-atlas.js"));
 const input = require(path.join(root, "hh-eonwild-input-system.js"));
 
-test("route-lazy bundle loads and precaches desktop control kernels before game v23", () => {
+test("route-lazy bundle loads and precaches desktop control and collision kernels before game v27", () => {
   const expected = [
     "hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3",
     "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=2",
-    "hh-eonwild-desktop-controller.js?v=1",
+    "hh-eonwild-desktop-controller.js?v=2",
+    "hh-eonwild-collision-system.js?v=1",
     "hh-eonwild-world-atlas.js?v=2", "hh-eonwild-simulation-v2.js?v=4",
     "hh-eonwild-3d-core.js?v=6", "hh-eonwild-landscape-core.js?v=1",
-    "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=1",
-    "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=14",
-    "hh-eonwild-game.js?v=23"
+    "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=4",
+    "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=18",
+    "hh-eonwild-game.js?v=27"
   ];
   let previous = -1;
   for (const asset of expected) {
@@ -33,8 +34,8 @@ test("route-lazy bundle loads and precaches desktop control kernels before game 
     assert.ok(index > previous, `${asset} must load once and after its dependency`);
     previous = index;
   }
-  assert.match(loader, /styles:\s*\["hh-eonwild-game\.css\?v=18"\]/);
-  for (const asset of [...expected.slice(2), "hh-eonwild-game.css?v=18"]) {
+  assert.match(loader, /styles:\s*\["hh-eonwild-game\.css\?v=22"\]/);
+  for (const asset of [...expected.slice(2), "hh-eonwild-game.css?v=22"]) {
     const escapedAsset = asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     assert.equal((serviceWorker.match(new RegExp(`"\\./${escapedAsset}"`, "g")) || []).length, 1, `${asset} must have one immutable cache entry`);
   }
@@ -42,6 +43,7 @@ test("route-lazy bundle loads and precaches desktop control kernels before game 
   assert.match(serviceWorker, /RUNTIME_ASSETS\.filter\(asset => asset\.startsWith\("\.\/hh-eonwild-"\)\)/);
   assert.match(serviceWorker, /INSTALL_ASSETS\s*=\s*\[\.\.\.new Set\(\[\.\.\.CORE, \.\.\.EONWILD_OFFLINE_ASSETS\]\)\]/);
   assert.match(serviceWorker, /cache\.addAll\(INSTALL_ASSETS\)/);
+  assert.match(packageJson.scripts["test:eonwild"], /hh-eonwild-collision-system\.test\.js/);
 });
 
 test("game mounts the 300-species catalog without promoting imported taxa", () => {

@@ -67,6 +67,80 @@ test("environment placement is deterministic, finite and never placed underwater
   }
 });
 
+test("environment placement follows the active landscape and safely falls back", () => {
+  const landscape = {
+    sample(x, z) {
+      return {
+        height: 96 + x * 0.002 + z * 0.001,
+        moisture: 0.52,
+        heat: 0.58,
+        biomeId: "forest"
+      };
+    }
+  };
+  const options = { qualityPreset: "balanced", seed: "renderer-landscape-placement", landscape };
+  const first = renderer.planEnvironmentPlacements(2048, 2048, options);
+  const second = renderer.planEnvironmentPlacements(2048, 2048, options);
+  assert.ok(first.length > 0, "the landscape-backed planner must produce visible environment props");
+  assert.deepEqual(first, second, "the same landscape and seed must remain deterministic");
+  for (const placement of first) {
+    assert.equal(placement.y, landscape.sample(placement.x, placement.z).height);
+  }
+
+  const fallbackOptions = { qualityPreset: "balanced", seed: "renderer-landscape-fallback" };
+  const legacy = renderer.planEnvironmentPlacements(2048, 2048, fallbackOptions);
+  const failedLandscape = renderer.planEnvironmentPlacements(2048, 2048, {
+    ...fallbackOptions,
+    landscape: { sample() { throw new Error("landscape unavailable"); } }
+  });
+  assert.deepEqual(failedLandscape, legacy, "a failed landscape sampler must preserve the deterministic legacy fallback");
+
+  const managerUpdateStart = source.indexOf("\n    update(worldX, worldZ, force = false)");
+  const managerUpdate = source.slice(managerUpdateStart, source.indexOf("\n    configure(qualityPreset)", managerUpdateStart));
+  assert.match(managerUpdate, /planEnvironmentPlacements\([\s\S]*landscape:\s*this\.adapter\._landscape/);
+});
+
+test("procedural lake planning and water queries share one public adapter plan", () => {
+  assert.equal(typeof renderer.planProceduralLakes, "function");
+  assert.equal(typeof renderer.queryLandscapeWater, "function");
+  for (const method of ["planProceduralLakes", "queryLandscapeWater", "queryWorldWater"]) {
+    assert.equal(typeof renderer.EonWild3DAdapter.prototype[method], "function", `${method} must be public`);
+  }
+
+  const landscape = {
+    config: { seaLevel: renderer.WATER_LEVEL },
+    sample() {
+      return {
+        height: 20,
+        moisture: 0.9,
+        heat: 0.62,
+        slopeDegrees: 0,
+        biomeId: "wetland"
+      };
+    }
+  };
+  const purePlan = renderer.planProceduralLakes(landscape, 2048, 2048);
+  assert.ok(Object.isFrozen(purePlan));
+  assert.ok(purePlan.length > 0);
+  const lake = purePlan[0];
+  const pureQuery = renderer.queryLandscapeWater(landscape, lake.worldX, lake.worldZ, { lakes: purePlan });
+  assert.equal(pureQuery.isWater, true);
+  assert.equal(pureQuery.type, "swamp");
+  assert.equal(pureQuery.surfaceHeight, lake.level);
+
+  const adapter = renderer.create({ playerX: 2048, playerZ: 2048 });
+  adapter._landscape = landscape;
+  const committedPlan = adapter.planProceduralLakes({ x: 2048, z: 2048, commit: true });
+  assert.deepEqual(committedPlan, purePlan);
+  assert.equal(adapter._proceduralLakes, committedPlan, "the adapter must query the same immutable plan used by rendering");
+  const adapterQuery = adapter.queryLandscapeWater({ x: lake.worldX, z: lake.worldZ });
+  assert.deepEqual(adapterQuery, pureQuery);
+  assert.deepEqual(adapter.queryWorldWater({ x: lake.worldX, z: lake.worldZ }), pureQuery);
+  assert.equal(adapter.getGameplayCapabilities().waterQueries.proceduralLakes, purePlan.length);
+  adapter._landscape = null;
+  adapter.dispose();
+});
+
 test("photogrammetry streams only after the warm frame and fails open", async () => {
   assert.match(source, /this\._scene\.render\(\)[\s\S]{0,1800}this\._scheduleEnvironmentAssetLoad\(generation\)/);
   assert.match(source, /requestIdleCallback/);

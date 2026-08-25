@@ -13,7 +13,7 @@
    * This module intentionally owns no browser events, renderer objects or
    * persistence. Integrations feed it normalized input and apply its outputs.
    */
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.0";
   const FORMAT = "hh-eonwild-desktop-controller-v1";
   const TAU = Math.PI * 2;
   const EPSILON = 1e-10;
@@ -290,7 +290,7 @@
       this.droppedSeconds = 0;
     }
 
-    advance(frameDeltaSeconds, input = {}) {
+    advance(frameDeltaSeconds, input = {}, resolveStep = null) {
       const frameDelta = clamp(frameDeltaSeconds, 0, this.maxFrameSeconds);
       this.accumulator += frameDelta;
       const availableSteps = Math.floor((this.accumulator + EPSILON) / this.stepSeconds);
@@ -300,7 +300,13 @@
           ? (input(this.state.elapsed + this.stepSeconds, this.state) || {})
           : input;
         this.previousState = this.state;
-        this.state = stepControllerState(this.state, stepInput, this.stepSeconds, { ...this.options, profile: this.profile });
+        const proposedState = stepControllerState(this.state, stepInput, this.stepSeconds, { ...this.options, profile: this.profile });
+        if (typeof resolveStep === "function") {
+          let resolvedState = null;
+          try { resolvedState = resolveStep(proposedState, this.state, stepInput, this.stepSeconds, index); }
+          catch { /* A route-owned collision hook must fail open without breaking the fixed-step clock. */ }
+          this.state = resolvedState && typeof resolvedState === "object" ? createControllerState({ ...proposedState, ...resolvedState }) : proposedState;
+        } else this.state = proposedState;
       }
       this.accumulator = Math.max(0, this.accumulator - steps * this.stepSeconds);
       if (availableSteps > this.maxSubSteps) {

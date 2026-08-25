@@ -13,7 +13,7 @@ const desktop = require(sourcePath);
 const near = (actual, expected, tolerance = 1e-9) => assert.ok(Math.abs(actual - expected) <= tolerance, `${actual} must be within ${tolerance} of ${expected}`);
 
 test("desktop controller is a renderer-neutral UMD/CommonJS module with a bounded API", () => {
-  assert.equal(desktop.VERSION, "1.0.0");
+  assert.equal(desktop.VERSION, "1.1.0");
   assert.equal(desktop.FORMAT, "hh-eonwild-desktop-controller-v1");
   for (const name of [
     "getCameraProfile", "applyMouseLook", "cameraRelativeMovement", "updateZoom",
@@ -157,6 +157,29 @@ test("fixed step exposes bounded substeps and an interpolated render state", () 
   assert.ok(result.alpha >= 0 && result.alpha <= 1);
   assert.ok(result.renderState.elapsed >= result.previousState.elapsed);
   assert.ok(result.renderState.elapsed <= result.state.elapsed);
+});
+
+test("fixed timestep resolves collision inside every substep without resetting interpolation time", () => {
+  const controller = new desktop.FixedTimestepController({
+    stepSeconds: 1 / 120,
+    initialState: { x: 0, z: 0 },
+    maxSpeed: 12,
+    acceleration: 1000,
+    deceleration: 1000
+  });
+  let resolvedSteps = 0;
+  const frame = controller.advance(1 / 30, { x: 0, y: 1, cameraYaw: 0 }, (proposed) => {
+    resolvedSteps += 1;
+    return proposed.z > 0.1 ? { ...proposed, z: 0.1, velocityZ: 0 } : proposed;
+  });
+
+  assert.equal(frame.steps, 4);
+  assert.equal(resolvedSteps, frame.steps);
+  assert.equal(frame.state.z, 0.1);
+  assert.equal(frame.state.velocityZ, 0);
+  assert.equal(frame.state.elapsed, 1 / 30);
+  assert.equal(frame.droppedSeconds, 0);
+  assert.ok(frame.alpha >= 0 && frame.alpha <= 1);
 });
 
 test("target selection defaults to animals and enforces range, reticle angle and line of sight", () => {

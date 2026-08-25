@@ -135,10 +135,71 @@ function runFrames(renderer, count, start = 0, framePatch = {}) {
   return results;
 }
 
+const COLLIDER_TEST_TYPES = Object.freeze([
+  Object.freeze({ id: "tree-mature-deciduous", category: "mature-tree" }),
+  Object.freeze({ id: "tree-dead", category: "dead-tree" }),
+  Object.freeze({ id: "sapling", category: "sapling" }),
+  Object.freeze({ id: "root-exposed", category: "root" }),
+  Object.freeze({ id: "log-fallen", category: "log" })
+]);
+
+function createColliderVegetation() {
+  let planCalls = 0;
+  return {
+    get planCalls() { return planCalls; },
+    planChunk(input) {
+      planCalls += 1;
+      const placements = COLLIDER_TEST_TYPES.slice(0, Math.max(0, input.maxInstances)).map((type, index) => ({
+        id: `${input.cx}:${input.cz}:${type.id}`,
+        typeId: type.id,
+        category: type.category,
+        x: input.cx * 64 + 12 + index * 7,
+        y: 8,
+        z: input.cz * 64 + 14 + index * 5,
+        rotationY: index * 0.31,
+        scale: 0.9 + index * 0.08
+      }));
+      return { ok: true, placements, stats: { accepted: placements.length } };
+    },
+    configure() { return true; },
+    update(_frame, out) {
+      out.wind = out.wind || { layers: [] };
+      Object.assign(out.wind, { x: 1, z: 0, directionX: 1, directionZ: 0, bend: 0, gust: 0 });
+      return out;
+    },
+    sampleStateInto(_x, _z, _time, out) { return Object.assign(out, { wetness: 0, burn: 0, snow: 0, mud: 0, compression: 0, health: 1 }); },
+    getStatus() { return { activeInfluences: 0 }; },
+    pause() { return true; },
+    resume() { return true; },
+    dispose() { return true; }
+  };
+}
+
+function collisionRendererOptions(vegetationSystem, patch = {}) {
+  return {
+    landscape: createLandscape(),
+    vegetationModule: { VEGETATION_TYPES: COLLIDER_TEST_TYPES },
+    vegetationSystem,
+    seed: "COLLIDER-SNAPSHOT-2026",
+    quality: "static",
+    chunkSize: 64,
+    viewDistance: 110,
+    maxActiveChunks: 4,
+    maxQueuedChunks: 5,
+    maxActiveInstances: 60,
+    maxInstancesPerChunk: 5,
+    collisionRadius: 128,
+    maxCollisionColliders: 12,
+    frustumCulling: false,
+    ...patch
+  };
+}
+
 test("module is UMD/CommonJS, renderer-only and exposes the requested lifecycle API", () => {
-  assert.equal(rendererApi.VERSION, "1.0.0");
+  assert.equal(rendererApi.VERSION, "1.1.0");
   assert.equal(rendererApi.FORMAT, "hh-eonwild-environment-renderer-v1");
   assert.equal(rendererApi.MAX_SOURCES, 17);
+  assert.equal(rendererApi.MAX_CHUNK_BUILDS_PER_UPDATE, 1);
   assert.equal(typeof rendererApi.create, "function");
   assert.equal(typeof rendererApi.ProceduralVegetationRenderer, "function");
 
@@ -149,8 +210,70 @@ test("module is UMD/CommonJS, renderer-only and exposes the requested lifecycle 
   assert.doesNotMatch(source, /createElement|requestAnimationFrame|setInterval|\bfetch\s*\(/, "adapter must not own DOM, network or frame loops");
 
   const renderer = rendererApi.create({ landscape: createLandscape(), quality: "static", chunkSize: 64, frustumCulling: false });
-  for (const method of ["update", "configure", "disturb", "pause", "resume", "getTelemetry", "dispose"]) assert.equal(typeof renderer[method], "function", method);
+  for (const method of ["update", "configure", "disturb", "pause", "resume", "getCollisionSnapshot", "getTelemetry", "dispose"]) assert.equal(typeof renderer[method], "function", method);
   renderer.dispose();
+});
+
+test("collision snapshots reuse actually rendered placements with stable cell revisions and strict budgets", () => {
+  const vegetation = createColliderVegetation();
+  const renderer = rendererApi.create(collisionRendererOptions(vegetation, { maxCollisionColliders: 3 }));
+  renderer.update({ playerX: 1024, playerZ: 1024, time: 0, deltaSeconds: 0.016 });
+  const first = renderer.getCollisionSnapshot({ x: 1024, z: 1024 });
+  const planCallsAfterFirstBuild = vegetation.planCalls;
+  assert.equal(first.format, rendererApi.COLLISION_SNAPSHOT_FORMAT);
+  assert.equal(first.supported, true);
+  assert.ok(first.count > 0 && first.count <= 3);
+  assert.equal(first.colliders.length, first.count);
+  assert.equal(first.truncated, true);
+  assert.ok(first.tracked >= first.count);
+  assert.ok(first.radius <= rendererApi.MAX_COLLIDER_RADIUS && first.coverageRadius >= first.radius);
+  assert.ok(first.colliders.every((collider) => rendererApi.COLLIDER_CATEGORIES.includes(collider.category)));
+  assert.ok(first.colliders.every((collider) => collider.radius > 0 && collider.height > 0));
+  assert.ok(Object.isFrozen(first) && Object.isFrozen(first.center) && Object.isFrozen(first.colliders));
+  assert.ok(first.colliders.every(Object.isFrozen));
+  assert.equal(renderer.getCollisionSnapshot({ x: 1025, z: 1025 }), first, "queries inside the same collision cell must reuse the immutable snapshot");
+  assert.equal(vegetation.planCalls, planCallsAfterFirstBuild, "collision queries must never run the vegetation planner a second time");
+
+  renderer.update({ playerX: 1024, playerZ: 1024, time: 0.016, deltaSeconds: 0.016 });
+  const second = renderer.getCollisionSnapshot({ x: 1024, z: 1024 });
+  assert.ok(second.revision > first.revision, "a newly rendered chunk must invalidate colliders even when the player cell is unchanged");
+  assert.equal(second.cellKey, first.cellKey);
+  assert.notEqual(second.digest, first.digest);
+  assert.ok(second.count <= rendererApi.MAX_COLLIDERS_PER_SNAPSHOT);
+  assert.ok(second.scanned <= rendererApi.MAX_COLLIDER_SCAN_PLACEMENTS);
+  renderer.dispose();
+});
+
+test("descriptor and Babylon modes publish identical procedural collider geometry and clean it on dispose", () => {
+  const descriptorVegetation = createColliderVegetation();
+  const babylonVegetation = createColliderVegetation();
+  const descriptor = rendererApi.create(collisionRendererOptions(descriptorVegetation));
+  const mock = createBabylonMock();
+  const babylon = rendererApi.create(collisionRendererOptions(babylonVegetation, { BABYLON: mock.BABYLON, scene: {} }));
+  runFrames(descriptor, 4);
+  runFrames(babylon, 4);
+  const descriptorSnapshot = descriptor.getCollisionSnapshot({ x: 1024, z: 1024 });
+  const babylonSnapshot = babylon.getCollisionSnapshot({ x: 1024, z: 1024 });
+  assert.equal(descriptorSnapshot.mode, "descriptor");
+  assert.equal(babylonSnapshot.mode, "babylon-thin-instances");
+  assert.equal(descriptorSnapshot.cellKey, babylonSnapshot.cellKey);
+  assert.equal(descriptorSnapshot.revision, babylonSnapshot.revision);
+  assert.equal(descriptorSnapshot.digest, babylonSnapshot.digest);
+  assert.deepEqual(descriptorSnapshot.colliders, babylonSnapshot.colliders);
+  assert.equal(descriptorVegetation.planCalls, babylonVegetation.planCalls);
+  assert.ok(descriptorSnapshot.colliders.some((collider) => collider.shape === "circle"));
+  assert.ok(descriptorSnapshot.colliders.some((collider) => collider.shape === "aabb"));
+
+  descriptor.dispose();
+  babylon.dispose();
+  for (const renderer of [descriptor, babylon]) {
+    const disposed = renderer.getCollisionSnapshot();
+    assert.equal(disposed.supported, false);
+    assert.equal(disposed.count, 0);
+    assert.equal(disposed.tracked, 0);
+    assert.deepEqual(disposed.colliders, []);
+    assert.equal(renderer.getTelemetry().trackedColliders, 0);
+  }
 });
 
 test("complete Babylon surface uses shared source meshes and thin-instance buffers, never a mesh per placement", () => {
@@ -287,6 +410,99 @@ test("chunk queues, active chunks and typed instance storage stay inside configu
   const telemetry = renderer.getTelemetry();
   assert.equal(telemetry.mode, "descriptor");
   assert.ok(telemetry.chunkBuilds <= 16);
+  renderer.dispose();
+});
+
+test("streaming score prioritizes the camera-forward hemisphere with deterministic ties and reuses hot-path storage", () => {
+  const renderer = rendererApi.create({
+    landscape: createLandscape(),
+    seed: "FORWARD-SCORE-2026",
+    quality: "static",
+    chunkSize: 64,
+    playerX: 1024,
+    playerZ: 1024,
+    viewDistance: 150,
+    maxActiveChunks: 5,
+    maxQueuedChunks: 5,
+    maxActiveInstances: 85,
+    maxInstancesPerChunk: 3,
+    frustumCulling: false
+  });
+
+  const first = renderer.update({ playerX: 1024, playerZ: 1024, forwardX: 0, forwardZ: 1, time: 0, deltaSeconds: 0.016 });
+  const [, firstCz] = first.builtChunk.split(":").map(Number);
+  const firstCenterZ = (firstCz + 0.5) * 64;
+  assert.ok(firstCenterZ > 1024, "an equidistant chunk in front of the camera must build before a rear chunk");
+  assert.equal(first.buildBudget.limit, 1);
+  assert.equal(first.buildBudget.used, 1);
+  assert.equal(first.buildBudget.remaining, 0);
+  assert.equal(first.telemetry.queueHeadFacing >= 0, true);
+  assert.equal(first.telemetry.staleQueuedChunks, 0);
+
+  runFrames(renderer, 8, 0.016, { playerX: 1024, playerZ: 1024, forwardX: 0, forwardZ: 1 });
+  const warmed = renderer.getTelemetry();
+  const candidatePoolSize = warmed.candidatePoolSize;
+  const queueJobAllocations = warmed.queueJobAllocations;
+  runFrames(renderer, 20, 1, { playerX: 1024, playerZ: 1024, forwardX: 0, forwardZ: 1 });
+  const settled = renderer.getTelemetry();
+  assert.equal(settled.candidatePoolSize, candidatePoolSize, "candidate objects must be pooled after warm-up");
+  assert.equal(settled.queueJobAllocations, queueJobAllocations, "settled streaming must not allocate new queue jobs");
+  assert.equal(settled.queueHeadScore, null);
+  assert.doesNotMatch(source, /const densityByLod\s*=|Array\.from\(this\.chunks\.values\(\)\)/, "per-instance density arrays and per-rebuild chunk arrays must not remain on hot paths");
+  renderer.dispose();
+});
+
+test("a material camera turn invalidates stale queued chunks and never spends more than one build budget", () => {
+  const renderer = rendererApi.create({
+    landscape: createLandscape(),
+    seed: "STALE-DIRECTION-QUEUE-2026",
+    quality: "static",
+    chunkSize: 64,
+    playerX: 1024,
+    playerZ: 1024,
+    viewDistance: 150,
+    maxActiveChunks: 5,
+    maxQueuedChunks: 5,
+    maxActiveInstances: 85,
+    maxInstancesPerChunk: 3,
+    frustumCulling: false
+  });
+
+  const forward = renderer.update({ playerX: 1024, playerZ: 1024, forwardX: 0, forwardZ: 1, time: 0, deltaSeconds: 0.016 });
+  const queuedBeforeTurn = forward.telemetry.queuedChunks;
+  const allocationsBeforeTurn = forward.telemetry.queueJobAllocations;
+  assert.equal(queuedBeforeTurn, 4);
+
+  const reverse = renderer.update({ playerX: 1024, playerZ: 1024, forwardX: 0, forwardZ: -1, time: 0.016, deltaSeconds: 0.016 });
+  const [, reverseCz] = reverse.builtChunk.split(":").map(Number);
+  assert.ok((reverseCz + 0.5) * 64 < 1024, "the first replacement build must follow the new camera direction");
+  assert.equal(reverse.buildsThisUpdate, 1);
+  assert.equal(reverse.telemetry.chunkBuildBudgetPerUpdate, 1);
+  assert.equal(reverse.telemetry.chunkBuildBudgetUsed, 1);
+  assert.equal(reverse.telemetry.chunkBuildBudgetRemaining, 0);
+  assert.equal(reverse.telemetry.chunkPlanCalls, 2, "one and only one planner call is allowed per update");
+  assert.equal(reverse.telemetry.queueDirectionInvalidations, 1);
+  assert.equal(reverse.telemetry.staleQueuedChunksDiscardedThisUpdate, queuedBeforeTurn);
+  assert.equal(reverse.telemetry.staleDirectionChunksDiscarded, queuedBeforeTurn);
+  assert.equal(reverse.telemetry.staleQueuedChunks, 0, "no invalid job may survive the refresh");
+  assert.equal(reverse.telemetry.queueJobAllocations, allocationsBeforeTurn, "replacement jobs must reuse the discarded queue pool");
+
+  let planCalls = reverse.telemetry.chunkPlanCalls;
+  for (let index = 0; index < 12; index += 1) {
+    const frame = renderer.update({
+      playerX: 1024 + index * 7,
+      playerZ: 1024 - index * 5,
+      forwardX: index % 2 ? 1 : -1,
+      forwardZ: index % 3 ? -0.25 : 0.25,
+      time: 0.032 + index * 0.016,
+      deltaSeconds: 0.016
+    });
+    assert.ok(frame.buildsThisUpdate <= 1);
+    assert.ok(frame.telemetry.chunkPlanCalls - planCalls <= 1);
+    assert.equal(frame.telemetry.chunkBuildBudgetUsed + frame.telemetry.chunkBuildBudgetRemaining, 1);
+    assert.equal(frame.telemetry.chunkBuildsDeferred, frame.telemetry.pendingDesiredChunks);
+    planCalls = frame.telemetry.chunkPlanCalls;
+  }
   renderer.dispose();
 });
 
