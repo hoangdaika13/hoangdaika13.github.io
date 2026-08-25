@@ -23,6 +23,7 @@ const content = require(path.join(root, "hh-eonwild-content-v2.js"));
 const simulation = require(path.join(root, "hh-eonwild-simulation-v2.js"));
 const core3d = require(path.join(root, "hh-eonwild-3d-core.js"));
 const renderer3d = require(path.join(root, "hh-eonwild-renderer-3d.js"));
+const speciesRegistry = require(path.join(root, "hh-eonwild-species-registry.js"));
 const assetManifest = JSON.parse(read("assets/eonwild/asset-manifest.v1.json"));
 
 const FLAGSHIP_IDS = [
@@ -32,6 +33,141 @@ const FLAGSHIP_IDS = [
 const ERA_REALMS = ["paleozoic", "mesozoic", "ice-age", "modern"];
 const UTILITY_ACTIONS = ["hunt", "flee", "drink", "feed", "rest", "migrate", "mate", "guardNest"];
 const HUMAN_TAXON = /(?:\bhomo\b|\bhuman\b|\bperson\b|\bpeople\b|người)/iu;
+
+const extractFunctionSource = (source, name) => {
+  const start = source.indexOf(`function ${name}(`);
+  assert.notEqual(start, -1, `missing function ${name}`);
+  const end = source.indexOf("\n  function ", start + `function ${name}(`.length);
+  return source.slice(start, end < 0 ? source.length : end).trim();
+};
+
+const extractConditionalBody = (source, condition) => {
+  const conditionIndex = source.indexOf(condition);
+  assert.notEqual(conditionIndex, -1, `missing condition ${condition}`);
+  const openingBrace = source.indexOf("{", conditionIndex + condition.length);
+  assert.notEqual(openingBrace, -1, `missing block for ${condition}`);
+  let depth = 0;
+  for (let index = openingBrace; index < source.length; index += 1) {
+    if (source[index] === "{") depth += 1;
+    else if (source[index] === "}") {
+      depth -= 1;
+      if (depth === 0) return source.slice(openingBrace + 1, index);
+    }
+  }
+  assert.fail(`unterminated block for ${condition}`);
+};
+
+test("Codex exposes 346 unique species and documents exactly three source overlaps", () => {
+  const normalized = (name) => String(name || "").trim().toLocaleLowerCase("en");
+  const legacyNames = new Map(game.SPECIES.map((species) => [normalized(species.name), species.name]));
+  const registryNames = new Set(speciesRegistry.species.map((species) => normalized(species.scientificName)));
+  const overlaps = [...legacyNames]
+    .filter(([name]) => registryNames.has(name))
+    .map(([, name]) => name)
+    .sort((left, right) => left.localeCompare(right, "en"));
+  const mergedNames = [
+    ...game.SPECIES.map((species) => normalized(species.name)),
+    ...speciesRegistry.species.map((species) => normalized(species.scientificName))
+  ];
+
+  assert.deepEqual(overlaps, ["Apis mellifera", "Loxodonta africana", "Macropus giganteus"]);
+  assert.equal(new Set(mergedNames).size, 346);
+  assert.equal(game.MERGED_SPECIES_COUNT, 346);
+  assert.equal(game.MERGED_DUPLICATE_COUNT, 3);
+  assert.equal(game.IMPORTED_SPECIES.length, 297);
+  assert.equal(
+    game.IMPORTED_SPECIES.every((species) => !legacyNames.has(normalized(species.scientificName))),
+    true,
+    "the runtime registry must exclude every documented overlap"
+  );
+});
+
+test("paused input consumes buffered gameplay actions without invoking them", () => {
+  const processInputActions = Function(
+    "performance", "global", "setPhotoMode", "setCommunicationWheel",
+    "interact", "sense", "useFlagshipAbility", "defend",
+    `"use strict"; return (${extractFunctionSource(gameSource, "processInputActions")});`
+  )(
+    { now: () => 0 }, { location: { hash: "#/game/world" } }, () => {}, () => {},
+    () => calls.push("interact"), () => calls.push("sense"),
+    () => calls.push("ability"), () => calls.push("jump")
+  );
+  const gameplayActions = ["interact", "sense", "ability", "jump"];
+  const calls = [];
+  const run = ({ paused, includePause = false }) => {
+    const queued = new Set([...gameplayActions, ...(includePause ? ["pause"] : [])]);
+    const instance = {
+      paused,
+      photoMode: false,
+      inputSystem: {
+        disposed: false,
+        wasPressed(actionId) {
+          if (!queued.has(actionId)) return false;
+          queued.delete(actionId);
+          return true;
+        }
+      },
+      root: {
+        querySelector(selector) {
+          if (selector === "[data-hwe-communication-wheel]") return { hidden: true };
+          if (selector === "[data-hwe-pause]") return { click() { instance.paused = !instance.paused; } };
+          return null;
+        }
+      }
+    };
+    processInputActions(instance, 10);
+    return { instance, queued };
+  };
+
+  run({ paused: true });
+  assert.deepEqual(calls, [], "an already-paused frame must not invoke gameplay actions");
+
+  const sameFrame = run({ paused: false, includePause: true });
+  assert.equal(sameFrame.instance.paused, true);
+  assert.deepEqual(calls, [], "pressing pause must block actions buffered in the same frame");
+  assert.equal(gameplayActions.every((actionId) => !sameFrame.queued.has(actionId)), true);
+
+  run({ paused: false });
+  assert.deepEqual(calls, gameplayActions, "unpaused gameplay actions must remain usable");
+});
+
+test("Atlas telemetry describes planner candidates as prioritized, never loaded", () => {
+  const updateHudSource = extractFunctionSource(gameSource, "updateHud");
+  assert.match(updateHudSource, /const atlasChunks\s*=\s*instance\.atlasStreamPlan\?\.wanted\?\.length\s*\|\|\s*0/);
+  assert.match(updateHudSource, /\$\{atlasChunks\}\s+atlas\s+(?:ưu tiên|planned|prioritized)/iu);
+  assert.doesNotMatch(updateHudSource, /\$\{atlasChunks\}\s+(?:atlas\s+)?(?:đã tải|đã nạp|loaded|rendered)/iu);
+});
+
+test("reference-only Atlas selections and world mounts always route to Eon Atlas", () => {
+  const assignment = 'global.location.hash = "#/game/timeline"';
+  const contracts = [
+    {
+      label: "selection guard",
+      source: extractConditionalBody(
+        extractFunctionSource(gameSource, "selectAtlasMap"),
+        'if (map.gameplayStatus === "atlas-reference-only")'
+      )
+    },
+    {
+      label: "world mount guard",
+      source: extractConditionalBody(
+        extractFunctionSource(gameSource, "mount"),
+        'if (selectedMap?.gameplayStatus === "atlas-reference-only")'
+      )
+    }
+  ];
+
+  for (const contract of contracts) {
+    const assignmentIndex = contract.source.indexOf(assignment);
+    assert.notEqual(assignmentIndex, -1, `${contract.label} must assign the canonical timeline route`);
+    const prefix = contract.source.slice(0, assignmentIndex);
+    assert.doesNotMatch(
+      prefix,
+      /instance\.view\s*===|global\.location\?\.hash|global\.location\.hash\s*(?:===|!==)/,
+      `${contract.label} must not make the route assignment depend on the stale view/hash`
+    );
+  }
+});
 
 const assertRange = (value, minimum, maximum, label) => {
   assert.ok(Number.isFinite(value), `${label} must be finite`);
@@ -733,7 +869,7 @@ test("only Flagship species are offered as playable while other tiers stay truth
 });
 
 test("lazy loader and service worker cache the complete ordered v4 bundle", () => {
-  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=12"\][\s\S]*?scripts:\s*\["hh-eonwild-cinematic-pack\.js\?v=1",\s*"hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=5",\s*"hh-eonwild-landscape-core\.js\?v=1",\s*"hh-eonwild-vegetation-system\.js\?v=1",\s*"hh-eonwild-environment-renderer\.js\?v=1",\s*"hh-eonwild-water-weather-system\.js\?v=1",\s*"hh-eonwild-renderer-3d\.js\?v=13",\s*"hh-eonwild-game\.js\?v=16"\]/);
+  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=14"\][\s\S]*?scripts:\s*\["hh-eonwild-cinematic-pack\.js\?v=1",\s*"hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-species-registry\.js\?v=1",\s*"hh-eonwild-input-system\.js\?v=1",\s*"hh-eonwild-world-atlas\.js\?v=2",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=5",\s*"hh-eonwild-landscape-core\.js\?v=1",\s*"hh-eonwild-vegetation-system\.js\?v=1",\s*"hh-eonwild-environment-renderer\.js\?v=1",\s*"hh-eonwild-water-weather-system\.js\?v=1",\s*"hh-eonwild-renderer-3d\.js\?v=13",\s*"hh-eonwild-game\.js\?v=18"\]/);
   assert.match(loader, /value === "\/game" \|\| value\.startsWith\("\/game\/"\)\) return \["game"\]/);
   const runtimeAssetsSource = worker.slice(
     worker.indexOf("const RUNTIME_ASSETS"),
@@ -743,8 +879,11 @@ test("lazy loader and service worker cache the complete ordered v4 bundle", () =
   for (const asset of [
     "./hh-eonwild-cinematic-pack.js?v=1",
     "./hh-eonwild-cinematic-pack-worker.js?v=1",
-    "./hh-eonwild-game.css?v=12",
+    "./hh-eonwild-game.css?v=14",
     "./hh-eonwild-content-v2.js?v=3",
+    "./hh-eonwild-species-registry.js?v=1",
+    "./hh-eonwild-input-system.js?v=1",
+    "./hh-eonwild-world-atlas.js?v=2",
     "./hh-eonwild-simulation-v2.js?v=4",
     "./hh-eonwild-3d-core.js?v=5",
     "./hh-eonwild-landscape-core.js?v=1",
@@ -753,7 +892,7 @@ test("lazy loader and service worker cache the complete ordered v4 bundle", () =
     "./hh-eonwild-environment-renderer.js?v=1",
     "./hh-eonwild-water-weather-system.js?v=1",
     "./hh-eonwild-renderer-3d.js?v=13",
-    "./hh-eonwild-game.js?v=16"
+    "./hh-eonwild-game.js?v=18"
   ]) assert.ok(worker.includes(`"${asset}"`), `service worker must cache ${asset}`);
   for (const asset of [
     "./vendor/babylon-9.22.1.js?v=9.22.1",
@@ -766,7 +905,9 @@ test("lazy loader and service worker cache the complete ordered v4 bundle", () =
     assert.ok(runtimeAssetsSource.includes(`"${asset}"`), `${asset} must be a runtime asset`);
     assert.ok(!coreAssetsSource.includes(`"${asset}"`), `${asset} must not be a core asset`);
   }
-  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v888"/);
+  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v890"/);
+  assert.match(worker, /const EONWILD_OFFLINE_ASSETS\s*=\s*RUNTIME_ASSETS\.filter/);
+  assert.match(worker, /cache\.addAll\(INSTALL_ASSETS\)/);
 
   for (const asset of ["performance-loader.js", "script.js"]) {
     const escaped = asset.replaceAll(".", "\\.");

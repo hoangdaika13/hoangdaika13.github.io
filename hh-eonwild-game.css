@@ -3844,6 +3844,454 @@ body:has(.hwe-root) .app-workspace {
   }
 }
 
+/* 300-species registry: searchable catalog with a truthful review inspector. */
+.hwe-planet-registry {
+  min-width: 0;
+  margin-top: 24px;
+  padding: clamp(16px, 2vw, 24px);
+  border: 1px solid rgba(101, 229, 255, .24);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(10, 31, 58, .94), rgba(19, 18, 48, .92));
+}
+
+.hwe-planet-registry > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.hwe-planet-registry > header > div {
+  min-width: 0;
+  max-width: 860px;
+}
+
+.hwe-planet-registry > header h3 {
+  margin: 5px 0 8px;
+  color: #fff;
+  font-size: clamp(1.45rem, 2.4vw, 2.15rem);
+  line-height: 1.2;
+}
+
+.hwe-planet-registry > header p {
+  margin: 0;
+  color: #d5e2f8;
+  font-size: max(16px, .92rem);
+  line-height: 1.6;
+}
+
+.hwe-planet-registry > header > span {
+  min-width: 128px;
+  padding: 12px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(101, 229, 255, .3);
+  border-radius: 18px;
+  background: rgba(22, 57, 84, .64);
+}
+
+.hwe-planet-registry > header > span b {
+  color: #65e5ff;
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+.hwe-planet-registry > header > span small {
+  margin-top: 5px;
+  color: #c5d8f5;
+  font-size: max(14px, .75rem);
+}
+
+.hwe-planet-toolbar {
+  position: sticky;
+  top: -1px;
+  z-index: 5;
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(172, 201, 255, .16);
+  border-radius: 18px;
+  background: rgba(8, 22, 46, .96);
+  backdrop-filter: blur(16px);
+}
+
+.hwe-planet-toolbar > label {
+  min-width: 0;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid rgba(95, 226, 255, .28);
+  border-radius: 14px;
+  background: rgba(18, 42, 71, .74);
+}
+
+.hwe-planet-toolbar input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: max(16px, .94rem);
+}
+
+.hwe-planet-toolbar > div {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.hwe-planet-toolbar > div button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 8px 13px;
+  white-space: nowrap;
+  color: #d6e4fa;
+  background: rgba(27, 48, 79, .74);
+}
+
+.hwe-planet-toolbar > div button[aria-pressed="true"] {
+  color: #07131f;
+  border-color: #6be8ff;
+  background: linear-gradient(135deg, #62e7ff, #74f0b5);
+}
+
+.hwe-planet-layout {
+  min-width: 0;
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, .72fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.hwe-planet-grid {
+  min-width: 0;
+  max-height: min(68vh, 720px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 2px 6px 12px 2px;
+  scrollbar-width: thin;
+}
+
+.hwe-planet-grid::after {
+  content: attr(data-visible-count) " kết quả đang hiển thị";
+  grid-column: 1 / -1;
+  min-height: 40px;
+  display: grid;
+  place-items: center;
+  color: #aebfdd;
+  font-size: max(14px, .76rem);
+}
+
+.hwe-planet-grid button {
+  min-width: 0;
+  min-height: 94px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  text-align: left;
+  white-space: normal;
+  border-color: rgba(162, 194, 243, .15);
+  background: linear-gradient(135deg, rgba(19, 47, 79, .72), rgba(30, 27, 69, .66));
+}
+
+.hwe-planet-grid button:hover,
+.hwe-planet-grid button:focus-visible,
+.hwe-planet-grid button[aria-pressed="true"] {
+  border-color: #62e7ff;
+  background: linear-gradient(135deg, rgba(31, 84, 112, .9), rgba(62, 37, 101, .86));
+}
+
+.hwe-planet-grid button > i {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(98, 231, 255, .5);
+  border-radius: 50%;
+  color: #6deaff;
+  font-style: normal;
+  box-shadow: inset 0 0 12px rgba(98, 231, 255, .2);
+}
+
+.hwe-planet-grid button span,
+.hwe-planet-grid button strong,
+.hwe-planet-grid button small,
+.hwe-planet-grid button em {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.hwe-planet-grid button span {
+  display: grid;
+  gap: 4px;
+}
+
+.hwe-planet-grid button strong {
+  color: #fff;
+  font-size: max(16px, .94rem);
+  line-height: 1.3;
+}
+
+.hwe-planet-grid button small {
+  color: #c3d6f2;
+  font-size: max(14px, .75rem);
+  line-height: 1.4;
+}
+
+.hwe-planet-grid button em {
+  color: #72e6ff;
+  font-size: max(14px, .72rem);
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.hwe-planet-detail {
+  position: sticky;
+  top: 118px;
+  min-width: 0;
+  max-height: min(68vh, 720px);
+  overflow-y: auto;
+  padding: 18px;
+  border: 1px solid rgba(113, 231, 255, .24);
+  border-radius: 20px;
+  background: radial-gradient(circle at 90% 0, rgba(115, 103, 255, .2), transparent 36%), rgba(10, 27, 55, .92);
+}
+
+.hwe-planet-detail h3 {
+  margin: 10px 0 3px;
+  color: #fff;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  overflow-wrap: anywhere;
+}
+
+.hwe-planet-detail > em,
+.hwe-planet-detail > small {
+  color: #85eaff;
+  overflow-wrap: anywhere;
+}
+
+.hwe-planet-detail dl {
+  margin: 16px 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hwe-planet-detail dl div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(164, 194, 240, .14);
+  border-radius: 12px;
+  background: rgba(24, 46, 76, .5);
+}
+
+.hwe-planet-detail dt {
+  color: #9eb5d9;
+  font-size: max(14px, .72rem);
+}
+
+.hwe-planet-detail dd {
+  margin: 4px 0 0;
+  color: #fff;
+  font-size: max(16px, .9rem);
+  overflow-wrap: anywhere;
+}
+
+.hwe-planet-review-note,
+.hwe-planet-detail .hwe-tier-note {
+  color: #d6e1f5;
+  font-size: max(16px, .88rem);
+  line-height: 1.55;
+}
+
+.hwe-planet-review-note {
+  padding: 10px 12px;
+  border-left: 3px solid #ffd067;
+  background: rgba(114, 75, 24, .22);
+}
+
+.hwe-planet-source {
+  min-height: 44px;
+  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(102, 231, 255, .35);
+  border-radius: 12px;
+  color: #72e8ff;
+  text-decoration: none;
+}
+
+@container hwe-workspace (max-width: 900px) {
+  .hwe-planet-layout { grid-template-columns: minmax(0, 1fr); }
+  .hwe-planet-detail { position: static; max-height: none; }
+}
+
+@container hwe-workspace (max-width: 620px) {
+  .hwe-planet-registry > header { align-items: stretch; flex-direction: column; }
+  .hwe-planet-registry > header > span { min-width: 0; }
+  .hwe-planet-grid { grid-template-columns: minmax(0, 1fr); max-height: 64vh; }
+  .hwe-planet-detail dl { grid-template-columns: minmax(0, 1fr); }
+}
+
+.hwe-input-settings {
+  grid-column: span 2;
+}
+
+.hwe-input-bindings {
+  min-width: 0;
+  max-height: 430px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 4px 4px 8px 0;
+  overscroll-behavior: contain;
+}
+
+.hwe-input-bindings button {
+  min-width: 0;
+  min-height: 62px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  white-space: normal;
+  background: linear-gradient(135deg, rgba(28, 53, 86, .76), rgba(38, 31, 76, .7));
+}
+
+.hwe-input-bindings button span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.hwe-input-bindings button strong,
+.hwe-input-bindings button small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.hwe-input-bindings button strong {
+  color: #fff;
+  font-size: max(16px, .9rem);
+}
+
+.hwe-input-bindings button small {
+  color: #bcd0ed;
+  font-size: max(14px, .72rem);
+  line-height: 1.4;
+}
+
+.hwe-input-bindings button kbd {
+  min-width: 42px;
+  max-width: 112px;
+  padding: 7px 9px;
+  overflow-wrap: anywhere;
+  text-align: center;
+  color: #75ecff;
+  border: 1px solid rgba(104, 232, 255, .42);
+  border-radius: 9px;
+  background: rgba(5, 19, 37, .85);
+}
+
+.hwe-input-bindings button.is-listening {
+  border-color: #ffd26d;
+  box-shadow: 0 0 0 2px rgba(255, 210, 109, .2), 0 0 24px rgba(255, 181, 78, .18);
+}
+
+.hwe-input-conflicts {
+  padding: 10px 12px;
+  color: #d8e7fb;
+  border-left: 3px solid #65e8ff;
+  background: rgba(31, 65, 96, .46);
+}
+
+.hwe-touch-stick {
+  --stick-x: 0px;
+  --stick-y: 0px;
+  position: relative;
+  width: 78px;
+  height: 78px;
+  grid-row: span 2;
+  border: 1px solid rgba(117, 235, 255, .45);
+  border-radius: 50%;
+  touch-action: none;
+  background: radial-gradient(circle, rgba(65, 127, 164, .38), rgba(9, 26, 51, .78) 68%);
+  box-shadow: inset 0 0 20px rgba(85, 224, 255, .18);
+}
+
+.hwe-touch-stick::before,
+.hwe-touch-stick::after {
+  content: "";
+  position: absolute;
+  inset: 50% 12px auto;
+  height: 1px;
+  background: rgba(159, 217, 255, .24);
+}
+
+.hwe-touch-stick::after {
+  inset: 12px auto;
+  left: 50%;
+  width: 1px;
+  height: auto;
+}
+
+.hwe-touch-stick i {
+  position: absolute;
+  left: calc(50% - 16px);
+  top: calc(50% - 16px);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transform: translate(var(--stick-x), var(--stick-y));
+  background: radial-gradient(circle at 35% 30%, #fff, #6eeaff 24%, #635eea 72%);
+  box-shadow: 0 0 18px rgba(104, 232, 255, .56);
+  pointer-events: none;
+}
+
+@container hwe-workspace (max-width: 720px) {
+  .hwe-input-settings { grid-column: auto; }
+  .hwe-input-bindings { grid-template-columns: minmax(0, 1fr); max-height: none; }
+}
+
+@media (max-width: 760px), (pointer: coarse) {
+  .hwe-touch-controls {
+    grid-template-columns: 78px repeat(4, 44px);
+    grid-template-rows: repeat(2, 44px);
+    gap: 4px;
+  }
+
+  .hwe-touch-stick { grid-column: 1; grid-row: 1 / 3; }
+  .hwe-touch-controls button:nth-of-type(1) { grid-column: 3; grid-row: 1; }
+  .hwe-touch-controls button:nth-of-type(2) { grid-column: 2; grid-row: 2; }
+  .hwe-touch-controls button:nth-of-type(3) { grid-column: 3; grid-row: 2; }
+  .hwe-touch-controls button:nth-of-type(4) { grid-column: 4; grid-row: 2; }
+  .hwe-touch-controls button:nth-of-type(5) { grid-column: 2; grid-row: 1; color: var(--hwe-amber); }
+  .hwe-touch-controls button:nth-of-type(6) { grid-column: 4; grid-row: 1; color: var(--hwe-ocean); }
+  .hwe-touch-controls button:nth-of-type(7) { grid-column: 5; grid-row: 1; color: var(--hwe-coral); }
+  .hwe-touch-controls button:nth-of-type(8) { grid-column: 5; grid-row: 2; color: var(--hwe-violet); }
+}
+
+@media (max-width: 390px) {
+  .hwe-touch-stick { width: 66px; height: 66px; align-self: end; }
+  .hwe-touch-controls { grid-template-columns: 66px repeat(4, 44px); grid-template-rows: repeat(2, 44px); }
+}
+
 @media (forced-colors: active) {
   .hwe-root,
   .hwe-root :where(button, input, select, textarea, article, aside, section, nav, header, footer),
@@ -3879,6 +4327,212 @@ body:has(.hwe-root) .app-workspace {
   .hwe-root::before,
   .hwe-root::after {
     display: none;
+  }
+}
+
+/* Planet Atlas v1: dense scientific map selection without losing readable text. */
+.hwe-world-atlas {
+  min-width: 0;
+}
+
+.hwe-atlas-summary {
+  min-width: min(100%, 250px);
+  padding: 16px 18px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 12px;
+  border: 1px solid color-mix(in srgb, #64e7ff 42%, transparent);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(24, 63, 91, .82), rgba(42, 25, 77, .76));
+}
+
+.hwe-atlas-summary b {
+  grid-row: 1 / 3;
+  font-size: clamp(2.1rem, 4vw, 3.4rem);
+  line-height: 1;
+  color: #77eeff;
+}
+
+.hwe-atlas-summary span,
+.hwe-atlas-summary small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.hwe-atlas-summary span {
+  font-weight: 800;
+  color: #fff;
+}
+
+.hwe-atlas-summary small {
+  color: #c9d9f7;
+  font-size: max(14px, .78rem);
+}
+
+.hwe-atlas-groups {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.hwe-atlas-group {
+  min-width: 0;
+  padding: clamp(14px, 2vw, 22px);
+  border: 1px solid color-mix(in srgb, var(--era) 30%, rgba(255,255,255,.12));
+  border-radius: 22px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--era) 10%, rgba(8,19,39,.96)), rgba(11, 17, 37, .92));
+  box-shadow: inset 0 1px rgba(255,255,255,.05), 0 16px 45px rgba(0,0,0,.2);
+}
+
+.hwe-atlas-group > header {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--era) 26%, transparent);
+}
+
+.hwe-atlas-group > header h3 {
+  margin: 2px 0 10px;
+  color: #fff;
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+}
+
+.hwe-atlas-group > header small,
+.hwe-atlas-group > header b {
+  color: color-mix(in srgb, var(--era) 72%, white);
+}
+
+.hwe-atlas-group > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hwe-atlas-map {
+  position: relative;
+  min-width: 0;
+  min-height: 220px;
+  padding: 16px;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  align-content: start;
+  border: 1px solid rgba(179, 207, 255, .18);
+  border-radius: 18px;
+  overflow: hidden;
+  background: radial-gradient(circle at 88% 6%, color-mix(in srgb, var(--era) 18%, transparent), transparent 38%), rgba(10, 22, 45, .78);
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+
+.hwe-atlas-map::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(112deg, transparent 15%, color-mix(in srgb, var(--era) 10%, transparent) 45%, transparent 72%);
+  transform: translateX(-105%);
+}
+
+.hwe-atlas-map:hover,
+.hwe-atlas-map:focus-within,
+.hwe-atlas-map.is-selected {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--era) 72%, white);
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--era) 18%, transparent);
+}
+
+.hwe-atlas-map.is-selected::before {
+  animation: hwe-atlas-scan 2.8s ease-in-out infinite;
+}
+
+.hwe-atlas-map > small {
+  padding-right: 46px;
+  color: color-mix(in srgb, var(--era) 64%, #e8efff);
+  font-size: max(14px, .76rem);
+  line-height: 1.45;
+}
+
+.hwe-atlas-map h4 {
+  margin: 10px 0 8px;
+  color: #fff;
+  font-size: clamp(1.08rem, 1.5vw, 1.3rem);
+  line-height: 1.25;
+}
+
+.hwe-atlas-map p {
+  margin: 0 0 14px;
+  color: #d6e2f9;
+  font-size: max(16px, .9rem);
+  line-height: 1.55;
+}
+
+.hwe-atlas-map footer {
+  display: grid;
+  gap: 10px;
+}
+
+.hwe-atlas-map footer span {
+  color: #b9cbea;
+  font-size: max(14px, .76rem);
+}
+
+.hwe-atlas-map footer button {
+  width: 100%;
+  min-height: 44px;
+  white-space: normal;
+  color: #fff;
+  border-color: color-mix(in srgb, var(--era) 46%, rgba(255,255,255,.18));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--era) 24%, rgba(20,42,71,.9)), rgba(25,28,66,.9));
+}
+
+.hwe-atlas-map-orb {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--era) 76%, white);
+  border-radius: 50%;
+  box-shadow: inset 0 0 12px color-mix(in srgb, var(--era) 48%, transparent), 0 0 14px color-mix(in srgb, var(--era) 24%, transparent);
+}
+
+.hwe-atlas-map-orb i {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, white, var(--era) 34%, color-mix(in srgb, var(--era) 35%, #020915));
+}
+
+.hwe-root:not([data-motion="static"]) .hwe-atlas-map-orb {
+  animation: hwe-atlas-orbit 6s linear infinite;
+}
+
+@keyframes hwe-atlas-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes hwe-atlas-scan {
+  0%, 26% { transform: translateX(-105%); }
+  70%, 100% { transform: translateX(105%); }
+}
+
+@container hwe-workspace (max-width: 1050px) {
+  .hwe-atlas-group > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@container hwe-workspace (max-width: 660px) {
+  .hwe-atlas-group > div { grid-template-columns: minmax(0, 1fr); }
+  .hwe-atlas-map { min-height: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hwe-atlas-map.is-selected::before,
+  .hwe-root:not([data-motion="static"]) .hwe-atlas-map-orb {
+    animation: none !important;
   }
 }
 
@@ -4711,4 +5365,551 @@ body:has(.hwe-root) .app-workspace {
 @keyframes hweModernCanopy {
   0%, 100% { opacity: 0.38; transform: translate3d(0, 0, 0); }
   50% { opacity: 0.96; transform: translate3d(-12px, 18px, 0); }
+}
+
+/* EonWild P0 readability and one-viewport accessibility hardening -------- */
+.hwe-root {
+  --hwe-ui-scale: 1;
+  --hwe-touch-target: 44px;
+  --hwe-font-ui: "Segoe UI Variable", "Segoe UI", "Noto Sans", Inter, Roboto, Arial, system-ui, -apple-system, sans-serif;
+  --hwe-font-mono: "Cascadia Code", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+  --hwe-font-body: max(1rem, calc(1rem * var(--hwe-ui-scale)));
+  --hwe-font-small: max(0.875rem, calc(0.875rem * var(--hwe-ui-scale)));
+  --hwe-font-control: max(0.875rem, calc(0.875rem * var(--hwe-ui-scale)));
+  --hwe-safe-top: env(safe-area-inset-top, 0px);
+  --hwe-safe-right: env(safe-area-inset-right, 0px);
+  --hwe-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --hwe-safe-left: env(safe-area-inset-left, 0px);
+  container-name: hwe-workspace;
+  container-type: inline-size;
+  grid-template-rows: minmax(68px, auto) minmax(56px, auto) minmax(0, 1fr) minmax(44px, auto);
+  max-inline-size: 100%;
+  max-block-size: 100%;
+  font-family: var(--hwe-font-ui);
+  font-size: var(--hwe-font-body);
+  font-kerning: normal;
+  font-synthesis: none;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+.hwe-root,
+.hwe-root :where(button, input, select, textarea) {
+  font-family: var(--hwe-font-ui);
+}
+
+.hwe-root :where(kbd, code, samp, .hwe-utility-actions span) {
+  font-family: var(--hwe-font-mono);
+}
+
+.hwe-root :where(h1, h2, h3, h4) {
+  max-inline-size: 100%;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.hwe-root h1 {
+  font-size: clamp(calc(1.25rem * var(--hwe-ui-scale)), 2.2cqi, calc(1.9rem * var(--hwe-ui-scale))) !important;
+}
+
+.hwe-root h2 {
+  font-size: clamp(calc(1.55rem * var(--hwe-ui-scale)), 3.2cqi, calc(2.5rem * var(--hwe-ui-scale))) !important;
+}
+
+.hwe-root h3 {
+  font-size: clamp(calc(1.125rem * var(--hwe-ui-scale)), 2.1cqi, calc(1.75rem * var(--hwe-ui-scale))) !important;
+}
+
+.hwe-root h4 {
+  font-size: clamp(calc(1rem * var(--hwe-ui-scale)), 1.7cqi, calc(1.3rem * var(--hwe-ui-scale))) !important;
+}
+
+/* A readable floor prevents Vietnamese diacritics and status copy becoming
+   illegible after compact cinematic rules or browser zoom are applied. */
+.hwe-root :where(p, li, dd, dt, label, input, select, textarea) {
+  font-size: var(--hwe-font-body) !important;
+  line-height: 1.55;
+}
+
+.hwe-root small {
+  font-size: var(--hwe-font-small) !important;
+  line-height: 1.45;
+}
+
+.hwe-root button {
+  min-block-size: var(--hwe-touch-target);
+  font-size: var(--hwe-font-control) !important;
+  line-height: 1.35;
+}
+
+.hwe-root :where(kbd, output, .hwe-tier-badge, .hwe-capability-lock) {
+  font-size: var(--hwe-font-small) !important;
+}
+
+.hwe-root :where(p, li, dd, dt, label, button, small, strong, em, b, output) {
+  word-break: normal;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.hwe-root :where(
+  button,
+  [role="button"],
+  [role="tab"],
+  summary,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea
+) {
+  min-block-size: var(--hwe-touch-target);
+}
+
+.hwe-root :where(label:has(input[type="checkbox"]), label:has(input[type="radio"])) {
+  min-block-size: var(--hwe-touch-target);
+  padding-block: 6px;
+}
+
+.hwe-root input[type="range"] {
+  min-block-size: var(--hwe-touch-target);
+}
+
+.hwe-root :where(a[href], button, input, select, textarea, summary, [role="button"], [role="tab"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 3px solid #ffd978;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(255, 217, 120, 0.2), 0 0 26px rgba(85, 230, 255, 0.24);
+  scroll-margin: 14px;
+}
+
+.hwe-root :where(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+
+.hwe-root :where(input, select, textarea) {
+  caret-color: var(--hwe-ocean);
+}
+
+.hwe-header {
+  padding-top: max(9px, var(--hwe-safe-top));
+  padding-right: max(16px, var(--hwe-safe-right));
+  padding-left: max(16px, var(--hwe-safe-left));
+}
+
+.hwe-controls {
+  padding-right: max(14px, var(--hwe-safe-right));
+  padding-bottom: max(5px, var(--hwe-safe-bottom));
+  padding-left: max(14px, var(--hwe-safe-left));
+}
+
+.hwe-main,
+.hwe-species-list,
+.hwe-telemetry,
+.hwe-library,
+.hwe-ecosystem,
+.hwe-atlas,
+.hwe-expeditions,
+.hwe-lineage,
+.hwe-observer,
+.hwe-network,
+.hwe-settings,
+.hwe-codex-grid,
+.hwe-codex-detail,
+.hwe-communication-wheel > div,
+.hwe-photo-controls,
+.hwe-start-panel,
+.hwe-death-panel {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scroll-padding-block: 14px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.hwe-root :where(img, svg, video) {
+  max-inline-size: 100%;
+  block-size: auto;
+}
+
+/* Let labels wrap instead of discarding Vietnamese text with ellipsis. */
+.hwe-nav button span,
+.hwe-realm-selector > div button > span,
+.hwe-realm-selector > div button > small,
+.hwe-world-address > span strong,
+.hwe-species-card :where(strong, small, em),
+.hwe-telemetry > header :where(strong, small),
+.hwe-hud--top strong,
+.hwe-ability-bar :where(strong, small),
+.hwe-catalog-tiers button :where(strong, small),
+.hwe-gene-bars label span,
+.hwe-gene-preview > div span :where(b, em),
+.hwe-engine-telemetry :where(dt, dd),
+.hwe-pack-copy strong,
+.hwe-pack-progress em,
+.hwe-photo-overlay > header strong {
+  max-inline-size: 100%;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.hwe-nav button span,
+.hwe-species-card strong,
+.hwe-catalog-tiers button strong,
+.hwe-ability-bar strong {
+  line-height: 1.3;
+}
+
+.hwe-species-card,
+.hwe-catalog-tiers button,
+.hwe-ability-bar button {
+  block-size: auto;
+}
+
+.hwe-condition-panel > div {
+  grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
+}
+
+.hwe-condition-panel :where(b, em),
+.hwe-nav button span,
+.hwe-realm-selector > div button > span,
+.hwe-species-card em,
+.hwe-minimap span,
+.hwe-ability-bar strong,
+.hwe-communication-wheel > div button span,
+.hwe-utility-actions span,
+.hwe-utility-actions span b,
+.hwe-stat-orbit span,
+.hwe-network-grid article > p[data-hwe-network-check] b,
+.hwe-cinematic-packs > header > span,
+.hwe-root[data-quality="personal"] .hwe-hud--top::before,
+.hwe-render-choice button span,
+.hwe-pack-copy :where(p, strong),
+.hwe-pack-progress > span,
+.hwe-pack-progress em,
+.hwe-pack-actions button,
+.hwe-pack-truth,
+.hwe-render-fallback :where(p, strong),
+.hwe-render-loading > p[data-hwe-render-detail],
+.hwe-photo-controls :where(label, legend),
+.hwe-photo-overlay > footer p {
+  font-size: var(--hwe-font-small) !important;
+  line-height: 1.45;
+}
+
+.hwe-condition-panel :where(b, em) {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  text-align: center;
+}
+
+.hwe-communication-wheel,
+.hwe-start-panel,
+.hwe-death-panel,
+.hwe-photo-overlay {
+  max-block-size: calc(100% - max(20px, var(--hwe-safe-top)) - max(20px, var(--hwe-safe-bottom)));
+}
+
+.hwe-start-panel,
+.hwe-death-panel {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.hwe-touch-controls {
+  right: max(7px, var(--hwe-safe-right));
+  bottom: max(7px, var(--hwe-safe-bottom));
+}
+
+.hwe-ability-bar {
+  bottom: max(10px, var(--hwe-safe-bottom));
+}
+
+.hwe-toast {
+  right: max(10px, var(--hwe-safe-right));
+  bottom: max(60px, calc(var(--hwe-safe-bottom) + 10px));
+}
+
+.hwe-render-fallback {
+  right: max(16px, var(--hwe-safe-right));
+  bottom: max(16px, calc(var(--hwe-safe-bottom) + 8px));
+}
+
+/* At desktop widths that cannot fit nine readable tabs, horizontal navigation
+   is preferable to clipped labels or an unstable two-line app shell. */
+@media (max-width: 1360px) {
+  .hwe-nav {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline proximity;
+    scrollbar-gutter: auto;
+  }
+
+  .hwe-nav button {
+    min-inline-size: 142px;
+    flex: 0 0 142px;
+    grid-template-columns: 32px minmax(0, 1fr);
+    scroll-snap-align: start;
+  }
+}
+
+/* Container rules keep embedded and 200%-zoom workspaces usable even when the
+   browser viewport itself is still classified as desktop. */
+@container hwe-workspace (max-width: 62rem) {
+  .hwe-root[data-view="world"] .hwe-world-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(230px, 270px);
+  }
+
+  .hwe-root[data-view="world"] .hwe-species-dock {
+    display: none;
+  }
+
+  .hwe-codex-grid,
+  .hwe-mission-grid {
+    grid-template-columns: repeat(2, minmax(min(220px, 100%), 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .hwe-root {
+    grid-template-rows: minmax(64px, auto) minmax(62px, auto) minmax(0, 1fr);
+  }
+
+  .hwe-header {
+    padding-top: max(7px, var(--hwe-safe-top));
+    padding-right: max(9px, var(--hwe-safe-right));
+    padding-left: max(9px, var(--hwe-safe-left));
+  }
+
+  .hwe-brand h1 {
+    max-inline-size: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .hwe-nav {
+    padding-right: max(7px, var(--hwe-safe-right));
+    padding-left: max(7px, var(--hwe-safe-left));
+  }
+
+  .hwe-nav button {
+    min-inline-size: 132px;
+    flex-basis: 132px;
+  }
+
+  .hwe-realm-selector {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hwe-realm-selector > div,
+  .hwe-realm-selector > label,
+  .hwe-realm-selector > .hwe-world-address {
+    grid-column: 1 / -1;
+  }
+
+  .hwe-main,
+  .hwe-root[data-view="world"] .hwe-main {
+    padding-bottom: var(--hwe-safe-bottom);
+  }
+
+  .hwe-viewport {
+    height: max(360px, 58dvh);
+    min-height: 360px;
+  }
+
+  .hwe-hud--top {
+    flex-wrap: wrap;
+  }
+
+  .hwe-hud--top > span {
+    min-inline-size: min(112px, calc(50% - 4px));
+  }
+
+  .hwe-event-banner {
+    max-block-size: 104px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .hwe-photo-overlay {
+    inset: max(8px, var(--hwe-safe-top)) max(8px, var(--hwe-safe-right)) max(78px, var(--hwe-safe-bottom)) max(8px, var(--hwe-safe-left));
+    width: auto;
+  }
+}
+
+@media (max-width: 430px) {
+  .hwe-nav button {
+    grid-template-columns: 26px minmax(0, 1fr);
+    min-inline-size: 128px;
+    flex-basis: 128px;
+  }
+
+  .hwe-nav button span {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+  }
+
+  .hwe-header-status > button {
+    min-inline-size: var(--hwe-touch-target);
+  }
+
+  .hwe-start-panel > div,
+  .hwe-render-choice,
+  .hwe-photo-controls fieldset,
+  .hwe-pack-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .hwe-toast {
+    bottom: max(10px, calc(var(--hwe-safe-bottom) + 10px));
+  }
+
+  .hwe-render-fallback {
+    right: max(8px, var(--hwe-safe-right));
+    bottom: max(72px, calc(var(--hwe-safe-bottom) + 64px));
+  }
+}
+
+@media (min-width: 2560px) {
+  .hwe-root {
+    --hwe-ui-scale: 1.0625;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .hwe-root button:hover {
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+.hwe-atlas-citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-block: 9px 4px;
+}
+
+.hwe-atlas-citations a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  max-width: 100%;
+  padding: 5px 9px;
+  border: 1px solid color-mix(in srgb, var(--era, #72ef9d) 38%, transparent);
+  border-radius: 999px;
+  color: #dffcff;
+  font-size: max(14px, .82em);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.hwe-atlas-citations a:hover,
+.hwe-atlas-citations a:focus-visible {
+  border-color: var(--era, #72ef9d);
+  background: color-mix(in srgb, var(--era, #72ef9d) 14%, transparent);
+}
+
+/* The original Codex reserved its last grid row for one catalog. The Planet
+   Registry adds a second catalog, so desktop needs an explicit scrollable row
+   instead of clipping the fifth child below the viewport. */
+@media (min-width: 761px) {
+  .hwe-library {
+    grid-template-rows: auto auto auto minmax(480px, 62dvh) auto;
+    align-content: start;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .hwe-codex-layout {
+    height: clamp(480px, 62dvh, 760px);
+  }
+}
+
+/* Workspace-width rules are independent of the browser viewport because the
+   HH sidebar can leave a narrow embedded game surface on desktop. */
+@container hwe-workspace (max-width: 90rem) {
+  .hwe-nav {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline proximity;
+  }
+
+  .hwe-nav button {
+    min-inline-size: 168px;
+    flex: 0 0 168px;
+    grid-template-columns: 32px minmax(0, 1fr);
+    scroll-snap-align: start;
+  }
+
+  .hwe-nav button span {
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: normal;
+  }
+
+  .hwe-header-status > span:nth-child(2) {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .hwe-settings-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .hwe-settings-grid > article,
+  .hwe-input-settings {
+    width: 100%;
+    grid-column: 1 / -1 !important;
+  }
+
+  .hwe-input-bindings,
+  .hwe-atlas-group > div {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .hwe-input-bindings button {
+    min-height: 88px;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .hwe-input-bindings button kbd {
+    justify-self: start;
+  }
+
+  .hwe-atlas-map {
+    min-height: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hwe-root,
+  .hwe-root * {
+    scroll-behavior: auto !important;
+    scroll-snap-type: none !important;
+  }
+
+  .hwe-root :where(button, input, select, textarea, [tabindex]) {
+    transition: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .hwe-root :where(a[href], button, input, select, textarea, summary, [role="button"], [role="tab"], [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 3px solid Highlight;
+    box-shadow: none;
+  }
 }

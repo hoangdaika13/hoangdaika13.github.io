@@ -23,7 +23,7 @@ test("route bundle loads every procedural dependency before the guarded renderer
     "hh-eonwild-environment-renderer.js?v=1",
     "hh-eonwild-water-weather-system.js?v=1",
     "hh-eonwild-renderer-3d.js?v=13",
-    "hh-eonwild-game.js?v=16"
+    "hh-eonwild-game.js?v=18"
   ];
   let previous = -1;
   for (const asset of order) {

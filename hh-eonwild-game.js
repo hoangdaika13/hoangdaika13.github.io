@@ -21,6 +21,9 @@
   const SIMULATION = global.HHEonWildSimulationV2 || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-simulation-v2.js"); } catch { return null; } })() : null);
   const RENDERER_3D = global.HHEonWild3D || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-3d-core.js"); } catch { return null; } })() : null);
   const RENDERER_ADAPTER = global.HHEonWildRenderer3D || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-renderer-3d.js"); } catch { return null; } })() : null);
+  const WORLD_ATLAS = global.HHEonWildWorldAtlas || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-world-atlas.js"); } catch { return null; } })() : null);
+  const SPECIES_REGISTRY = global.HHEonWildSpeciesRegistry || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-species-registry.js"); } catch { return null; } })() : null);
+  const INPUT_SYSTEM = global.HHEonWildInputSystem || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-input-system.js"); } catch { return null; } })() : null);
   const PERSONAL_QUALITY_PROFILE = Object.freeze({ id: "personal", label: "Cinematic Personal", targetFps: 30 });
   const CINEMATIC_PACK_FALLBACK = Object.freeze([
     { id: "creature-ultra", label: "Creature Ultra Pack", description: "Model đúng loài, rig, animation, PBR và bốn LOD.", accent: "#ff9b70" },
@@ -99,6 +102,11 @@
   ]);
   const SPECIES = Object.freeze(SPECIES_ROWS.map(([id, name, vietnamese, era, period, diet, locomotion, habitat, mass, speed, color, ability]) => Object.freeze({ id, name, vietnamese, era, period, diet, locomotion, habitat, mass, speed, color, ability })));
   const SPECIES_BY_ID = new Map(SPECIES.map((species) => [species.id, species]));
+  const LEGACY_SCIENTIFIC_NAMES = new Set(SPECIES.map((species) => species.name.trim().toLocaleLowerCase("en")));
+  const IMPORTED_SPECIES = Object.freeze((Array.isArray(SPECIES_REGISTRY?.SPECIES) ? SPECIES_REGISTRY.SPECIES : [])
+    .filter((species) => !LEGACY_SCIENTIFIC_NAMES.has(String(species.scientificName || "").trim().toLocaleLowerCase("en"))));
+  const MERGED_SPECIES_COUNT = SPECIES.length + IMPORTED_SPECIES.length;
+  const MERGED_DUPLICATE_COUNT = Math.max(0, (SPECIES_REGISTRY?.SPECIES?.length || 0) - IMPORTED_SPECIES.length);
   const FALLBACK_REALMS = Object.freeze({
     paleozoic: Object.freeze({ id: "paleozoic", label: "Cambri–Permi", subtitle: "541–252 triệu năm", color: "#58e6d2", era: "paleozoic", biomes: ["ocean", "reef", "wetland", "forest", "volcanic"] }),
     mesozoic: Object.freeze({ id: "mesozoic", label: "Đại Trung sinh", subtitle: "252–66 triệu năm", color: "#ffb65f", era: "mesozoic", biomes: ["ocean", "reef", "wetland", "forest", "grassland", "desert", "volcanic"] }),
@@ -244,11 +252,26 @@
         !RENDERER_3D.isSpeciesAllowedAtAddress(speciesId, worldAddress, false)) {
       worldAddress = RENDERER_3D.createWorldAddress({ ...cartridgeAddress, realmId, seed });
     }
+    const requestedAtlasMap = WORLD_ATLAS?.getMap?.(source.atlasMapId);
+    const atlasMap = requestedAtlasMap && (requestedAtlasMap.realmId === realmId || (convergence && requestedAtlasMap.realmId === "convergence"))
+      ? requestedAtlasMap
+      : WORLD_ATLAS?.defaultMapForRealm?.(realmId);
+    const planetAddress = WORLD_ATLAS?.normalizeAddress?.({
+      ...(source.planetAddress && typeof source.planetAddress === "object" ? source.planetAddress : {}),
+      mapId: atlasMap?.id,
+      realmId: atlasMap?.realmId || realmId,
+      regionId: atlasMap?.regions?.some?.((region) => region.id === source.atlasRegionId) ? source.atlasRegionId : atlasMap?.regions?.[0]?.id,
+      localX: source.planetAddress?.localX ?? WORLD_ATLAS.SECTOR_SIZE_METERS / 2,
+      localZ: source.planetAddress?.localZ ?? WORLD_ATLAS.SECTOR_SIZE_METERS / 2
+    }) || null;
     return {
       schemaVersion: SCHEMA_VERSION,
       speciesId,
       realmId,
       worldAddress,
+      atlasMapId: atlasMap?.id || "",
+      atlasRegionId: planetAddress?.regionId || "",
+      planetAddress,
       mode: RENDERER_3D?.GAME_MODES?.some?.((mode) => mode.id === source.mode && mode.available) ? source.mode : "one-life",
       player: {
         x: clamp(scaledCoordinate(player.x, WORLD_SIZE * .48), 80, WORLD_SIZE - 80),
@@ -406,12 +429,22 @@
   };
   const playableSpeciesAtAddress = (state, address = state?.worldAddress) => SPECIES.filter((species) =>
     tierForSpecies(species) === "flagship" && speciesAllowedAtAddress(species, state, address));
+  const worldSeedForState = (state, mapId = state?.atlasMapId) => `${state?.settings?.seed || "EON-541"}-${mapId || state?.realmId || "atlas"}`
+    .replace(/[^a-z0-9-]/gi, "-").replace(/-+/g, "-").slice(0, 64) || "EON-541-atlas";
   const addressForSlice = (state, slice) => RENDERER_3D?.createWorldAddress?.({
     realmId: state.realmId,
     timeSliceId: slice.id,
     regionId: slice.regionIds[0],
-    seed: state.settings.seed
+    seed: worldSeedForState(state)
   });
+  const atlasAddressForMap = (state, map) => map?.gameplayStatus === "active-region" && RENDERER_3D?.createWorldAddress
+    ? RENDERER_3D.createWorldAddress({
+      realmId: map.realmId,
+      timeSliceId: map.rendererTimeSliceId,
+      regionId: map.rendererRegionId,
+      seed: worldSeedForState(state, map.id)
+    })
+    : null;
   function realmSelectorMarkup(state) {
     const slices = RENDERER_3D?.listTimeSlices?.(state.realmId) || [];
     const selectedSlice = slices.find((slice) => slice.id === state.worldAddress?.timeSliceId) || slices[0];
@@ -467,7 +500,7 @@
           <fieldset><legend>Focus & bố cục</legend><label class="hwe-photo-check"><input type="checkbox" data-hwe-photo-setting="photoAutofocus" ${state.settings.photoAutofocus?"checked":""}> Autofocus theo sinh vật</label><label>Khoảng focus <output>${Number(state.settings.photoFocusDistance).toFixed(1)} m</output><input type="range" min="0.3" max="500" step="0.1" value="${state.settings.photoFocusDistance}" data-hwe-photo-setting="photoFocusDistance"></label><label>Lưới bố cục<select data-hwe-photo-setting="photoComposition"><option value="thirds" ${state.settings.photoComposition==="thirds"?"selected":""}>Rule of thirds</option><option value="off" ${state.settings.photoComposition==="off"?"selected":""}>Tắt lưới</option></select></label><label>Tỷ lệ khung<select data-hwe-photo-setting="photoCrop"><option value="native" ${state.settings.photoCrop==="native"?"selected":""}>Theo viewport</option><option value="2.39" ${state.settings.photoCrop==="2.39"?"selected":""}>CinemaScope 2.39:1</option><option value="1.85" ${state.settings.photoCrop==="1.85"?"selected":""}>Cinema 1.85:1</option><option value="1.0" ${state.settings.photoCrop==="1.0"?"selected":""}>Vuông 1:1</option></select></label><label>Rung camera <output>${Math.round(state.settings.photoShake)}%</output><input type="range" min="0" max="100" step="1" value="${state.settings.photoShake}" data-hwe-photo-setting="photoShake"></label></fieldset>
           <input type="hidden" value="${Math.round(state.settings.photoFov)}" data-hwe-photo-setting="photoFov"><input type="hidden" value="${Math.round(state.settings.photoExposure)}" data-hwe-photo-setting="photoExposure">
         </div><footer><p><b>PNG thật từ renderer hiện tại.</b> Chế độ Lite vẫn chụp được canvas; DOF vật lý chỉ bật khi pipeline 3D hỗ trợ.</p><button type="button" class="is-primary" data-hwe-photo-capture>Chụp PNG</button><button type="button" data-hwe-photo-close>Thoát Photo Mode</button></footer></div>
-        <div class="hwe-touch-controls" aria-label="Điều khiển cảm ứng"><button type="button" data-hwe-touch="ArrowUp">▲</button><button type="button" data-hwe-touch="ArrowLeft">◀</button><button type="button" data-hwe-touch="ArrowDown">▼</button><button type="button" data-hwe-touch="ArrowRight">▶</button><button type="button" data-hwe-action="interact">E</button><button type="button" data-hwe-action="sense">Q</button><button type="button" data-hwe-action="ability">R</button><button type="button" data-hwe-communication-open>C</button></div>
+        <div class="hwe-touch-controls" aria-label="Điều khiển cảm ứng"><div class="hwe-touch-stick" data-hwe-touch-stick role="application" tabindex="0" aria-label="Joystick cảm ứng linh hoạt"><i></i></div><button type="button" data-hwe-touch="ArrowUp" aria-label="Đi tới">▲</button><button type="button" data-hwe-touch="ArrowLeft" aria-label="Đi trái">◀</button><button type="button" data-hwe-touch="ArrowDown" aria-label="Đi lùi">▼</button><button type="button" data-hwe-touch="ArrowRight" aria-label="Đi phải">▶</button><button type="button" data-hwe-action="interact" aria-label="Tương tác, ăn hoặc uống">F</button><button type="button" data-hwe-action="sense" aria-label="Kích hoạt giác quan">Q</button><button type="button" data-hwe-action="ability" aria-label="Dùng năng lực loài">R</button><button type="button" data-hwe-communication-open aria-label="Mở vòng giao tiếp">C</button></div>
       </section>
       <aside class="hwe-telemetry"><header><span class="hwe-avatar" style="--species:${selected.color}">◆</span><span><small>${escapeHtml(selected.name)}</small><strong>${escapeHtml(selected.vietnamese)}</strong></span><button type="button" data-hwe-pause aria-pressed="false">Ⅱ</button></header>
         <section class="hwe-vitals">${[["health","Máu"],["hunger","Đói"],["thirst","Khát"],["stamina","Thể lực"],["growth","Trưởng thành"],["oxygen","Oxy"],["nutrition","Dinh dưỡng"],["dietQuality","Khẩu phần"]].map(([key,label]) => `<label>${label} <progress data-hwe-vital="${key}" max="100" value="${state.player[key]}"></progress><b data-hwe-value="${key}">${Math.round(state.player[key])}</b></label>`).join("")}</section>
@@ -493,9 +526,26 @@
     return `<span class="hwe-creature-sigil" style="--species:${species.color}">◆</span><small>${escapeHtml(ERA_META[species.era].label)} · ${escapeHtml(species.period)}</small><span class="hwe-tier-badge" data-tier="${tier}">${tierLabel(tier)}</span><h3>${escapeHtml(species.vietnamese)}</h3><em>${escapeHtml(species.name)}</em><dl><div><dt>Realm</dt><dd>${realmId === "convergence-only" ? "Codex / Convergence" : escapeHtml(REALMS[realmId]?.label || realmId)}</dd></div><div><dt>Khối lượng</dt><dd>${escapeHtml(formatMass(species.mass))}</dd></div><div><dt>Khẩu phần</dt><dd>${escapeHtml(dietLabel(species.diet))}</dd></div><div><dt>Vận động</dt><dd>${escapeHtml(mechanicLabel(flagship?.locomotion, species.locomotion))}</dd></div><div><dt>Giác quan</dt><dd>${escapeHtml(mechanicLabel(flagship?.sense, species.ability))}</dd></div><div><dt>Phòng vệ</dt><dd>${escapeHtml(mechanicLabel(flagship?.defense, "Archetype dùng chung"))}</dd></div><div><dt>Sinh sản</dt><dd>${escapeHtml(mechanicLabel(flagship?.reproduction, "Vòng đời archetype"))}</dd></div></dl>${tier === "flagship" ? `<p class="hwe-flagship-note">Có profile Flagship riêng; mức hoàn thiện 3D phụ thuộc Species Cartridge v3.</p>` : `<p class="hwe-tier-note">${tier === "simulated" ? "Tham gia Utility AI và Biomass Ledger; được quan sát nhưng không giả là playable." : "Catalog tra cứu; không tự nhận là playable hoàn chỉnh."}</p>`}${action}`;
   }
 
+  function planetSpeciesDetailMarkup(species) {
+    if (!species) return `<div class="hwe-planet-empty"><strong>Chọn một loài để xem phân loại</strong><p>Registry mới không tự gán model hoặc hành vi chưa được duyệt.</p></div>`;
+    const taxonomy = species.taxonomy || {};
+    const missingVi = species.vernacularStatus !== "vi-preferred";
+    const sourceUrl = `https://www.inaturalist.org/taxa/${Number(species.taxonId) || 0}`;
+    return `<small>${escapeHtml(species.groupLabelVi)} · TAXON ${Number(species.taxonId) || "—"}</small><span class="hwe-tier-badge" data-tier="codex">CATALOG-ONLY</span><h3>${escapeHtml(species.vietnameseName)}</h3><em>${escapeHtml(species.scientificName)}</em>${missingVi ? `<p class="hwe-planet-review-note">Tên Việt chưa được nguồn cung cấp; đang hiển thị tên khoa học thay thế và không giả là bản dịch đã duyệt.</p>` : ""}<dl><div><dt>Giới</dt><dd>${escapeHtml(taxonomy.kingdom || "Chưa duyệt")}</dd></div><div><dt>Ngành</dt><dd>${escapeHtml(taxonomy.phylum || "Chưa duyệt")}</dd></div><div><dt>Lớp</dt><dd>${escapeHtml(taxonomy.class || "Chưa duyệt")}</dd></div><div><dt>Bộ</dt><dd>${escapeHtml(taxonomy.order || "Chưa duyệt")}</dd></div><div><dt>Họ</dt><dd>${escapeHtml(taxonomy.family || "Chưa duyệt")}</dd></div><div><dt>Chi</dt><dd>${escapeHtml(taxonomy.genus || "Chưa duyệt")}</dd></div><div><dt>Vận động</dt><dd>${escapeHtml((species.locomotion || []).join(" · "))}</dd></div><div><dt>Biome gợi ý</dt><dd>${escapeHtml((species.biomes || []).join(" · "))}</dd></div></dl><p class="hwe-tier-note"><b>Chưa được spawn:</b> hình thái, khẩu phần, quan hệ săn mồi và model vẫn cần kiểm duyệt theo loài. Registry không biến dữ liệu tra cứu thành NPC giả.</p><a class="hwe-planet-source" href="${sourceUrl}" target="_blank" rel="noopener noreferrer">Mở nguồn phân loại ↗</a>`;
+  }
+
+  function planetRegistryMarkup() {
+    const registrySpecies = IMPORTED_SPECIES;
+    if (!registrySpecies.length) return "";
+    const selected = registrySpecies[0];
+    const groups = (SPECIES_REGISTRY.groups || []).map((group) => ({ ...group, count: registrySpecies.filter((species) => species.groupId === group.id).length })).filter((group) => group.count);
+    return `<section class="hwe-planet-registry" aria-labelledby="hwe-planet-registry-title"><header><div><small>PLANET SPECIES REGISTRY · TAXONOMY IMPORT</small><h3 id="hwe-planet-registry-title">${registrySpecies.length} loài bổ sung từ registry 300 taxon</h3><p>Dữ liệu phân loại có nguồn thật; ${MERGED_DUPLICATE_COUNT} tên khoa học trùng catalog cũ đã được hợp nhất. Mọi mục nhập mới vẫn khóa ở Catalog-only cho đến khi ecology, model, rig và giấy phép được duyệt.</p></div><span><b>${registrySpecies.length}</b><small>taxon bổ sung không trùng</small></span></header><div class="hwe-planet-toolbar"><label><span>⌕</span><input type="search" data-hwe-planet-search placeholder="Tên Việt, English, Latin, họ hoặc bộ…" aria-label="Tìm trong ${registrySpecies.length} loài động vật bổ sung"></label><div role="group" aria-label="Lọc nhóm động vật"><button type="button" data-hwe-planet-group="all" aria-pressed="true">Tất cả · ${registrySpecies.length}</button>${groups.map((group) => `<button type="button" data-hwe-planet-group="${escapeHtml(group.id)}" aria-pressed="false">${escapeHtml(group.labelVi)} · ${group.count}</button>`).join("")}</div></div><div class="hwe-planet-layout"><div class="hwe-planet-grid" data-hwe-planet-grid data-visible-count="${registrySpecies.length}">${registrySpecies.map((species) => `<button type="button" data-hwe-planet-species="${escapeHtml(species.id)}" data-hwe-planet-card data-group="${escapeHtml(species.groupId)}" data-search="${escapeHtml(`${species.vietnameseName} ${species.englishName} ${species.scientificName} ${species.taxonomy?.order || ""} ${species.taxonomy?.family || ""}`.toLocaleLowerCase("vi"))}"><i aria-hidden="true">◇</i><span><strong>${escapeHtml(species.vietnameseName)}</strong><small>${escapeHtml(species.englishName)} · ${escapeHtml(species.scientificName)}</small><em>${escapeHtml(species.groupLabelVi)} · Catalog-only</em></span></button>`).join("")}</div><aside class="hwe-planet-detail" data-hwe-planet-detail>${planetSpeciesDetailMarkup(selected)}</aside></div></section>`;
+  }
+
   function codexMarkup(state) {
     const selected = SPECIES_BY_ID.get(state.speciesId);
-    return `<section class="hwe-library"><header class="hwe-view-hero"><div><small>EON CODEX · 3 TẦNG TAXONOMY</small><h2>Bách khoa sự sống xuyên thời đại</h2><p>${SPECIES.length} loài đại diện được tách rõ Playable Flagship, Simulated Wildlife và Codex-only. Có dữ liệu không đồng nghĩa đã chơi được ở chất lượng hoàn chỉnh.</p></div><div class="hwe-stat-orbit"><b>${SPECIES.length}</b><span>mục đã kiểm thử</span></div></header><div class="hwe-catalog-tiers">${[["flagship",String(SPECIES.filter((species)=>tierForSpecies(species)==="flagship").length),"Playable Flagship","Cơ chế và ability riêng"],["simulated",String(SPECIES.filter((species)=>tierForSpecies(species)==="simulated").length),"Simulated Wildlife","Tham gia lưới sinh thái"],["codex",String(SPECIES.filter((species)=>tierForSpecies(species)==="codex").length),"Eon Codex","Tra cứu, chưa tự nhận là playable"]].map(([id,count,title,copy]) => `<button type="button" data-hwe-tier-filter="${id}" aria-pressed="false"><b>${count}</b><span><strong>${title}</strong><small>${copy}</small></span></button>`).join("")}</div><div class="hwe-filterbar"><label><span>⌕</span><input type="search" data-hwe-species-search placeholder="Tên Việt, Latin hoặc kỷ địa chất…"></label>${Object.values(REALMS).map((realm) => `<button type="button" data-hwe-realm-filter="${realm.id}" aria-pressed="false" style="--era:${realm.color}">${escapeHtml(realm.label)}</button>`).join("")}<button type="button" data-hwe-realm-filter="all" aria-pressed="true">Tất cả</button></div><div class="hwe-codex-layout"><div class="hwe-codex-grid">${speciesCardsMarkup(state)}</div><aside class="hwe-codex-detail" data-hwe-codex-detail>${codexDetailMarkup(selected, state)}</aside></div></section>`;
+    const expandedCount = MERGED_SPECIES_COUNT;
+    return `<section class="hwe-library"><header class="hwe-view-hero"><div><small>EON CODEX · 3 TẦNG TAXONOMY · PLANET REGISTRY</small><h2>Bách khoa sự sống xuyên thời đại</h2><p>${expandedCount} loài không trùng được tách rõ Playable Flagship, Simulated Wildlife và Catalog-only. Có dữ liệu không đồng nghĩa đã chơi được hoặc có model hoàn chỉnh.</p></div><div class="hwe-stat-orbit"><b>${expandedCount}</b><span>loài không trùng</span></div></header><div class="hwe-catalog-tiers">${[["flagship",String(SPECIES.filter((species)=>tierForSpecies(species)==="flagship").length),"Playable Flagship","Cơ chế và ability riêng"],["simulated",String(SPECIES.filter((species)=>tierForSpecies(species)==="simulated").length),"Simulated Wildlife","Tham gia lưới sinh thái"],["codex",String(SPECIES.filter((species)=>tierForSpecies(species)==="codex").length + IMPORTED_SPECIES.length),"Eon Codex","Tra cứu, chưa tự nhận là playable"]].map(([id,count,title,copy]) => `<button type="button" data-hwe-tier-filter="${id}" aria-pressed="false"><b>${count}</b><span><strong>${title}</strong><small>${copy}</small></span></button>`).join("")}</div><div class="hwe-filterbar"><label><span>⌕</span><input type="search" data-hwe-species-search placeholder="Tên Việt, Latin hoặc kỷ địa chất…"></label>${Object.values(REALMS).map((realm) => `<button type="button" data-hwe-realm-filter="${realm.id}" aria-pressed="false" style="--era:${realm.color}">${escapeHtml(realm.label)}</button>`).join("")}<button type="button" data-hwe-realm-filter="all" aria-pressed="true">Tất cả</button></div><div class="hwe-codex-layout"><div class="hwe-codex-grid">${speciesCardsMarkup(state)}</div><aside class="hwe-codex-detail" data-hwe-codex-detail>${codexDetailMarkup(selected, state)}</aside></div>${planetRegistryMarkup()}</section>`;
   }
 
   function ecosystemMarkup(state) {
@@ -505,8 +555,16 @@
     return `<section class="hwe-ecosystem"><header class="hwe-view-hero"><div><small>UTILITY AI · BIOMASS LEDGER · CHUNK STREAMING</small><h2>Ecology Director 2.0</h2><p>Mỗi lần chạy tạo một simulation local có seed, chunk, wildlife, hazard và Utility AI thật; kết quả được lưu giới hạn trên thiết bị.</p></div><button type="button" data-hwe-simulate-season>Chạy mùa ${Number(snapshot?.season || 0) + 1} →</button></header><div class="hwe-eco-grid"><article class="hwe-food-web"><span class="is-source">Nắng · Nước</span><i></i><span class="is-plant">Thực vật</span><i></i><span class="is-prey">Ăn cỏ</span><i></i><span class="is-predator">Săn mồi</span><i></i><span class="is-cycle">Phân hủy</span></article><article class="hwe-population"><small>CATALOG THEO REALM</small>${counts.map(([realm, count]) => `<label><span>${escapeHtml(realm.label)}</span><progress max="${SPECIES.length}" value="${count}"></progress><b>${count}</b></label>`).join("")}</article><article class="hwe-biomass-ledger"><small>BIOMASS LEDGER · ${snapshot ? `${snapshot.population} CÁ THỂ / ${snapshot.chunks} CHUNK` : "CHƯA CÓ SNAPSHOT"}</small><dl><div><dt>Producer budget</dt><dd data-hwe-ledger="producer">${snapshot ? Math.round(snapshot.producer) + "%" : "—"}</dd></div><div><dt>Prey biomass</dt><dd data-hwe-ledger="prey">${snapshot ? Math.round(snapshot.prey) + "%" : "—"}</dd></div><div><dt>Predator biomass</dt><dd data-hwe-ledger="predator">${snapshot ? Math.round(snapshot.predator) + "%" : "—"}</dd></div><div><dt>Apex active</dt><dd data-hwe-ledger="apex">${snapshot ? snapshot.apex : "—"}</dd></div></dl><p>Số liệu chỉ đến từ lần mô phỏng local gần nhất; không tạo population hay online status giả.</p></article><article class="hwe-director"><small>ECOLOGY DIRECTOR</small><h3 data-hwe-season-title>${escapeHtml(snapshot?.title || "Chưa có mùa đã mô phỏng")}</h3><p data-hwe-season-copy>${escapeHtml(snapshot?.copy || "Nhấn “Chạy một mùa” để sinh chunk, phân bổ wildlife theo cap và chạy fixed-step.")}</p><div><span>Thủy triều</span><span>Lũ</span><span>Cháy tự nhiên</span><span>Núi lửa</span><span>Mùa sinh sản</span><span>Băng tan</span></div></article><article class="hwe-utility-actions"><small>UTILITY ACTIONS · SNAPSHOT THẬT</small>${["hunt","flee","drink","feed","rest","migrate","mate","guardNest"].map((action,index)=>`<span style="--i:${index}"><i></i>${action}<b>${Math.round(actions[action] || 0)}</b></span>`).join("")}</article><article class="hwe-senses"><small>GIÁC QUAN KHÔNG PHẢI CON NGƯỜI</small>${["Mùi theo gió", "Vết chân phân rã", "Định vị âm", "Nhiệt", "Điện trường", "Phân cực ánh sáng", "Từ trường", "Pheromone"].map((sense, index) => `<span style="--i:${index}">${sense}</span>`).join("")}</article></div></section>`;
   }
 
-  function timelineMarkup() {
-    return `<section class="hwe-atlas"><header class="hwe-view-hero"><div><small>FOUR ERA REALMS · NO SILENT MIXING</small><h2>Trái Đất Muôn Thời</h2><p>Mỗi realm có allowlist loài, biome và biến động riêng. Những loài Tân sinh ngoài Kỷ băng hà nằm trong Codex hoặc Convergence cho đến khi có realm khoa học phù hợp.</p></div></header><div class="hwe-timeline">${Object.values(REALMS).map((realm, index) => `<article data-realm-card="${realm.id}" style="--era:${realm.color};--i:${index}"><i></i><small>${escapeHtml(realm.subtitle || realm.range || "")}</small><h3>${escapeHtml(realm.label)}</h3><p>${realm.id === "paleozoic" ? "Đại dương Cambri, rừng Carbon và bước chuyển đầu tiên lên cạn." : realm.id === "mesozoic" ? "Chuỗi thức ăn đất–biển–trời trong Trias, Jura và Phấn Trắng." : realm.id === "ice-age" ? "Tundra, đồng cỏ lạnh và megafauna Pleistocene." : "Đất–biển–trời hiện đại với sinh thái theo habitat."}</p><b>${SPECIES.filter((species) => speciesAllowedInRealm(species, realm.id, false)).length} loài được phép</b><button type="button" data-hwe-realm="${realm.id}">Chọn realm này →</button></article>`).join("")}</div><div class="hwe-realm-note"><strong>Hai luật thế giới</strong><span><b>Era Realm</b> Không trộn loài sai niên đại.</span><span><b>Eon Convergence</b> Sandbox hư cấu chỉ bật sau lựa chọn rõ ràng.</span></div></section>`;
+  function timelineMarkup(state) {
+    const atlasMaps = Array.isArray(WORLD_ATLAS?.MAPS) ? WORLD_ATLAS.MAPS : [];
+    if (!atlasMaps.length) {
+      return `<section class="hwe-atlas"><header class="hwe-view-hero"><div><small>FOUR ERA REALMS · NO SILENT MIXING</small><h2>Trái Đất Muôn Thời</h2><p>Mỗi realm có allowlist loài, biome và biến động riêng.</p></div></header><div class="hwe-timeline">${Object.values(REALMS).map((realm, index) => `<article data-realm-card="${realm.id}" style="--era:${realm.color};--i:${index}"><i></i><small>${escapeHtml(realm.subtitle || realm.range || "")}</small><h3>${escapeHtml(realm.label)}</h3><b>${SPECIES.filter((species) => speciesAllowedInRealm(species, realm.id, false)).length} loài được phép</b><button type="button" data-hwe-realm="${realm.id}">Chọn realm này →</button></article>`).join("")}</div></section>`;
+    }
+    const groups = Object.entries(WORLD_ATLAS.REALM_META || {}).map(([realmId, meta]) => ({ realmId, meta, maps: atlasMaps.filter((map) => map.realmId === realmId) })).filter((group) => group.maps.length);
+    const confidenceLabel = (value) => ({ high: "Tin cậy cao", medium: "Tin cậy trung bình", hypothesis: "Giả thuyết", fictional: "Sandbox hư cấu" }[value] || value);
+    return `<section class="hwe-atlas hwe-world-atlas"><header class="hwe-view-hero"><div><small>PLANET ATLAS · ${atlasMaps.length} KHUNG BẢN ĐỒ · STREAM THEO VÙNG</small><h2>Trái Đất Muôn Thời</h2><p>Chọn lát cắt địa chất hoặc khu vực hiện đại. Hành tinh dùng địa chỉ logic và floating origin; renderer chỉ dựng vùng 16 × 16 km đang hoạt động để giữ frame time ổn định. Atlas hiện là chỉ mục có nguồn, chưa nhập tile GIS tái dựng.</p></div><div class="hwe-atlas-summary"><b>${atlasMaps.length}</b><span>khung có nguồn và sandbox</span><small>${Math.round((WORLD_ATLAS.PLANET_CIRCUMFERENCE_METERS || 0) / 1000).toLocaleString("vi-VN")} km chu vi logic</small></div></header>
+      <div class="hwe-atlas-groups">${groups.map((group, groupIndex) => `<section class="hwe-atlas-group" style="--era:${escapeHtml(group.meta.accent || "#72ef9d")};--i:${groupIndex}"><header><span><small>ERA REALM</small><h3>${escapeHtml(group.meta.label)}</h3></span><b>${group.maps.length} bản đồ</b></header><div>${group.maps.map((map, index) => `<article class="hwe-atlas-map${state.atlasMapId === map.id ? " is-selected" : ""}" data-confidence="${escapeHtml(map.confidence)}" style="--i:${index}"><span class="hwe-atlas-map-orb" aria-hidden="true"><i></i></span><small>${escapeHtml(map.range)} · ${escapeHtml(confidenceLabel(map.confidence))}</small><h4>${escapeHtml(map.label)}</h4><p>${map.regions.slice(0, 4).map((region) => escapeHtml(region.name)).join(" · ")}</p>${map.sourceIds?.length ? `<div class="hwe-atlas-citations" aria-label="Nguồn tham khảo">${map.sourceIds.map((sourceId) => WORLD_ATLAS.SOURCE_REGISTRY?.[sourceId]).filter(Boolean).map((source) => `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.publisher)} ↗</a>`).join("")}</div>` : ""}<footer><span>${map.reconstruction === "fictional-sandbox" ? "Không phải tái dựng khoa học" : "Nguồn tham khảo · terrain vẫn procedural"}</span><button type="button" data-hwe-atlas-map="${escapeHtml(map.id)}" aria-pressed="${state.atlasMapId === map.id}">${state.atlasMapId === map.id ? "Đang chọn" : "Chọn bản đồ →"}</button></footer></article>`).join("")}</div></section>`).join("")}</div>
+      <div class="hwe-realm-note"><strong>Luật hiển thị trung thực</strong><span><b>Era Realm</b> Không trộn loài sai niên đại.</span><span><b>Confidence</b> Chỉ áp dụng cho khung niên đại/vùng tham khảo, không chứng nhận terrain procedural.</span><span><b>Eon Convergence</b> Sandbox hư cấu chỉ bật sau lựa chọn rõ ràng.</span></div></section>`;
   }
 
   function expeditionsMarkup(state) {
@@ -555,37 +613,55 @@
     </section>`;
   }
 
-  function settingsMarkup(state) {
+  function inputBindingLabel(binding) {
+    if (!binding) return "Chưa gán";
+    if (binding.device === "keyboard") return String(binding.code || "Phím").replace(/^Key/, "").replace(/^Digit/, "");
+    if (binding.device === "gamepad") return binding.control === "button" ? `Pad B${binding.index}` : `Pad A${binding.index}${binding.direction < 0 ? "−" : "+"}`;
+    return `Touch · ${binding.id || binding.control || "action"}`;
+  }
+
+  function inputSettingsMarkup(inputSystem) {
+    if (!inputSystem || !INPUT_SYSTEM) return `<article><small>ĐIỀU KHIỂN</small><h3>Legacy input fallback</h3><p>Input Action System chưa được tải; WASD và Canvas Lite vẫn hoạt động.</p></article>`;
+    const mappings = inputSystem.getMappings();
+    const presets = inputSystem.listPresets();
+    const conflicts = inputSystem.getConflicts();
+    return `<article class="hwe-input-settings"><small>INPUT ACTION SYSTEM · REMAP ĐA THIẾT BỊ</small><h3>Phím, gamepad và cảm ứng</h3><label>Preset<select data-hwe-input-preset>${presets.map((preset) => `<option value="${escapeHtml(preset.id)}" ${inputSystem.presetId === preset.id ? "selected" : ""}>${escapeHtml(preset.label)}${preset.builtin ? "" : " · cá nhân"}</option>`).join("")}</select></label><label>Gamepad deadzone <output>${Math.round(inputSystem.settings.gamepadDeadzone * 100)}%</output><input type="range" min="5" max="60" step="1" value="${Math.round(inputSystem.settings.gamepadDeadzone * 100)}" data-hwe-input-setting="gamepadDeadzone"></label><label>Touch deadzone <output>${Math.round(inputSystem.settings.touchDeadzone * 100)}%</output><input type="range" min="2" max="50" step="1" value="${Math.round(inputSystem.settings.touchDeadzone * 100)}" data-hwe-input-setting="touchDeadzone"></label><label><input type="checkbox" data-hwe-input-setting="gamepadVibration" ${inputSystem.settings.gamepadVibration ? "checked" : ""}> Rung gamepad khi thiết bị hỗ trợ</label><div class="hwe-input-bindings">${INPUT_SYSTEM.ACTION_IDS.map((actionId) => `<button type="button" data-hwe-remap-action="${escapeHtml(actionId)}"><span><strong>${escapeHtml(INPUT_SYSTEM.ACTION_METADATA[actionId].labelVi)}</strong><small>${escapeHtml(INPUT_SYSTEM.ACTION_METADATA[actionId].ariaLabel)}</small></span><kbd>${escapeHtml(inputBindingLabel(mappings[actionId]?.find((binding) => binding.device === "keyboard") || mappings[actionId]?.[0]))}</kbd></button>`).join("")}</div><p class="hwe-input-conflicts" data-hwe-input-conflicts>${conflicts.length ? `${conflicts.length} phím đang trùng; hãy remap trước khi chơi.` : "Không có phím trùng trong preset hiện tại."}</p><div class="hwe-data-actions"><button type="button" data-hwe-input-export>Xuất profile</button><button type="button" data-hwe-input-import>Nhập profile…</button><button type="button" data-hwe-input-reset>Khôi phục Standard</button></div><input type="file" accept="application/json,.json" data-hwe-input-file hidden></article>`;
+  }
+
+  function settingsMarkup(state, inputSystem) {
     const capabilities = RENDERER_3D?.detectCapabilities?.() || { recommendedBackend: "lite", webgpu: false, webgl2: false };
     const slices = RENDERER_3D?.listTimeSlices?.(state.realmId) || [];
     const modes = RENDERER_3D?.GAME_MODES || [];
-    return `<section class="hwe-settings"><header class="hwe-view-hero"><div><small>3D ENGINE · ACCESSIBILITY · SAVE V4</small><h2>Cấu hình thế giới 16 × 16 km</h2><p>Save v1–v3 được migrate đúng một lần sang schema v4. Babylon 3D chỉ tải khi dùng và Canvas Lite luôn là fallback.</p></div><button type="button" data-hwe-reset>Khôi phục save mới…</button></header><div class="hwe-settings-grid">
-      <article><small>REALM · TIME SLICE</small><h3>Luật niên đại</h3><label>Era Realm<select data-hwe-setting="realmId">${Object.values(REALMS).map((realm)=>`<option value="${realm.id}" ${state.realmId===realm.id?"selected":""}>${escapeHtml(realm.label)}</option>`).join("")}</select></label>${slices.length ? `<label>Lát cắt địa chất<select data-hwe-time-slice>${slices.map((slice)=>{ const playable = state.settings.convergence || playableSpeciesAtAddress(state, addressForSlice(state, slice)).length > 0; return `<option value="${escapeHtml(slice.id)}" ${slice.id===state.worldAddress?.timeSliceId?"selected":""} ${playable?"":"disabled"}>${escapeHtml(slice.label)} · ${escapeHtml(slice.range)}${playable?"":" · Observer only"}</option>`; }).join("")}</select></label>` : ""}<label><input type="checkbox" data-hwe-setting="convergence" ${state.settings.convergence ? "checked" : ""}> Cho phép Eon Convergence hư cấu</label></article>
+    const atlasMaps = WORLD_ATLAS?.listMaps?.({ realmId: state.realmId }) || [];
+    return `<section class="hwe-settings"><header class="hwe-view-hero"><div><small>3D ENGINE · PLANET ATLAS · ACCESSIBILITY · SAVE V4</small><h2>Cấu hình hành tinh và vùng dựng 16 × 16 km</h2><p>World Atlas giữ địa chỉ logic quy mô hành tinh; Babylon chỉ dựng region đang hoạt động. Save v1–v3 được migrate đúng một lần sang schema v4 và Canvas Lite luôn là fallback.</p></div><button type="button" data-hwe-reset>Khôi phục save mới…</button></header><div class="hwe-settings-grid">
+      <article><small>REALM · WORLD MAP · TIME SLICE</small><h3>Luật niên đại</h3><label>Era Realm<select data-hwe-setting="realmId">${Object.values(REALMS).map((realm)=>`<option value="${realm.id}" ${state.realmId===realm.id?"selected":""}>${escapeHtml(realm.label)}</option>`).join("")}</select></label>${atlasMaps.length ? `<label>Bản đồ hành tinh<select data-hwe-atlas-map-select>${atlasMaps.map((map) => `<option value="${escapeHtml(map.id)}" ${state.atlasMapId === map.id ? "selected" : ""}>${escapeHtml(map.label)} · ${escapeHtml(map.range)}</option>`).join("")}</select></label>` : ""}${slices.length ? `<label>Lát cắt địa chất<select data-hwe-time-slice>${slices.map((slice)=>{ const playable = state.settings.convergence || playableSpeciesAtAddress(state, addressForSlice(state, slice)).length > 0; return `<option value="${escapeHtml(slice.id)}" ${slice.id===state.worldAddress?.timeSliceId?"selected":""} ${playable?"":"disabled"}>${escapeHtml(slice.label)} · ${escapeHtml(slice.range)}${playable?"":" · Observer only"}</option>`; }).join("")}</select></label>` : ""}<label><input type="checkbox" data-hwe-setting="convergence" ${state.settings.convergence ? "checked" : ""}> Cho phép Eon Convergence hư cấu</label></article>
       <article><small>GAMEPLAY</small><h3>Vòng đời và độ khó</h3><label>Chế độ<select data-hwe-mode>${modes.map((mode)=>`<option value="${escapeHtml(mode.id)}" ${state.mode===mode.id?"selected":""} ${mode.available?"":"disabled"}>${escapeHtml(mode.label)}${mode.available?"":" · lộ trình"}</option>`).join("")}</select></label><label>Độ khó<select data-hwe-setting="difficulty"><option value="sanctuary" ${state.settings.difficulty === "sanctuary" ? "selected" : ""}>Sanctuary</option><option value="balanced" ${state.settings.difficulty === "balanced" ? "selected" : ""}>Cân bằng</option><option value="wild" ${state.settings.difficulty === "wild" ? "selected" : ""}>Wild Survival</option></select></label></article>
       <article class="${state.settings.quality === "personal" ? "is-personal-quality" : ""}"><small>3D RENDERER</small><h3>${capabilities.recommendedBackend === "lite" ? "Lite Mode được khuyến nghị" : `${escapeHtml(capabilities.recommendedBackend.toUpperCase())} sẵn sàng`}</h3><label>Renderer<select data-hwe-setting="renderer"><option value="auto" ${state.settings.renderer === "auto" ? "selected":""}>Tự chọn 3D → Lite</option><option value="3d" ${state.settings.renderer === "3d" ? "selected":""}>Ưu tiên Babylon 3D</option><option value="lite" ${state.settings.renderer === "lite" ? "selected":""}>Canvas 2D Lite</option></select></label><label>Chất lượng<select data-hwe-setting="quality">${qualityProfiles().map((profile)=>`<option value="${profile.id}" ${state.settings.quality===profile.id?"selected":""}>${escapeHtml(profile.label)} · ${profile.id === "personal" ? "ưu tiên hình ảnh / không adaptive" : `${profile.targetFps} FPS mục tiêu`}</option>`).join("")}</select></label><p>WebGPU ${capabilities.webgpu?"✓":"—"} · WebGL2 ${capabilities.webgl2?"✓":"—"}. Personal là lựa chọn thủ công của chủ máy, không bao giờ được adaptive governor tự nâng lên.</p></article>
       <article><small>HIỆU NĂNG</small><h3>Motion và wildlife budget</h3><label>Chuyển động<select data-hwe-setting="motion"><option value="static" ${state.settings.motion === "static" ? "selected":""}>Tĩnh</option><option value="balanced" ${state.settings.motion === "balanced" ? "selected":""}>Cân bằng</option><option value="cinematic" ${state.settings.motion === "cinematic" ? "selected":""}>Điện ảnh</option></select></label><label>Mật độ wildlife<select data-hwe-setting="density"><option value="low" ${state.settings.density === "low" ? "selected":""}>Thấp</option><option value="balanced" ${state.settings.density === "balanced" ? "selected":""}>Cân bằng</option><option value="high" ${state.settings.density === "high" ? "selected":""}>Cao</option></select></label><label><input type="checkbox" data-hwe-setting="adaptiveQuality" ${state.settings.adaptiveQuality ? "checked":""}> Tự hạ LOD, DPR và proxy hiển thị khi frame time tăng</label></article>
       <article><small>SIMULATION</small><h3>Worker có fallback</h3><label><input type="checkbox" data-hwe-setting="worker" ${state.settings.worker ? "checked":""}> Dùng worker cho tác vụ tương thích</label><p>AI fixed-step vẫn giữ toàn bộ quần thể khi renderer hạ LOD. Far ring chỉ đổi cách biểu diễn, không xóa ecology.</p></article>
       <article><small>ÂM THANH · TRỢ NĂNG</small><h3>Tín hiệu rõ ràng</h3><label><input type="checkbox" data-hwe-setting="sound" ${state.settings.sound ? "checked":""}> Âm thanh tương tác và ambience đã xác minh</label><label>Âm lượng tín hiệu <output>${Math.round(state.settings.soundVolume)}%</output><input type="range" min="0" max="100" step="1" data-hwe-setting="soundVolume" value="${Math.round(state.settings.soundVolume)}"></label><label><input type="checkbox" data-hwe-setting="photoUi" ${state.settings.photoUi ? "checked":""}> Hiện nhãn trong Photo Mode</label><p>Bàn phím, touch, gamepad, focus rõ và prefers-reduced-motion được giữ ở cả 3D lẫn Lite. Cinematic Audio Pack chỉ phát asset đã đúng SHA-256, dừng cùng renderer và không tự nhận là production.</p></article>
-      <article><small>WORLD SEED</small><h3>Địa chỉ tái tạo được</h3><label>Seed<input type="text" maxlength="24" data-hwe-setting="seed" value="${escapeHtml(state.settings.seed)}"></label><p>${escapeHtml(state.worldAddress?.realmId || state.realmId)} › ${escapeHtml(state.worldAddress?.timeSliceId || "realm")} › ${escapeHtml(state.worldAddress?.regionId || "region")} › chunk ${state.worldAddress?.chunkX || 0}:${state.worldAddress?.chunkZ || 0}</p></article>
+      ${inputSettingsMarkup(inputSystem)}
+      <article><small>WORLD SEED · FLOATING ORIGIN</small><h3>Địa chỉ tái tạo được</h3><label>Seed<input type="text" maxlength="24" data-hwe-setting="seed" value="${escapeHtml(state.settings.seed)}"></label><p>${escapeHtml(state.atlasMapId || "atlas")} › ${escapeHtml(state.atlasRegionId || "region")} › sector ${state.planetAddress?.sectorX || 0}:${state.planetAddress?.sectorZ || 0}</p><p>${escapeHtml(state.worldAddress?.realmId || state.realmId)} › ${escapeHtml(state.worldAddress?.timeSliceId || "realm")} › active chunk ${state.worldAddress?.chunkX || 0}:${state.worldAddress?.chunkZ || 0}</p></article>
       <article><small>DỮ LIỆU CỤC BỘ</small><h3>Schema ${SCHEMA_VERSION}</h3><p>${state.replay.length}/240 replay · ${state.heatmap.length}/256 heatmap · ${state.lineage.length}/24 thế hệ · ${state.eventJournal.length}/40 sự kiện.</p><div class="hwe-data-actions"><button type="button" data-hwe-save-export>Xuất save JSON</button><button type="button" data-hwe-save-import>Nhập save…</button><button type="button" data-hwe-save-rollback>Khôi phục bản trước</button><button type="button" data-hwe-lineage-export>Xuất lineage</button></div><input type="file" accept="application/json,.json" data-hwe-save-file hidden></article>
     </div>${cinematicPackMarkup()}</section>`;
   }
 
-  function viewMarkup(view, state) {
+  function viewMarkup(view, state, instance) {
     if (view === "species") return codexMarkup(state);
     if (view === "ecosystem") return ecosystemMarkup(state);
-    if (view === "timeline") return timelineMarkup();
+    if (view === "timeline") return timelineMarkup(state);
     if (view === "expeditions") return expeditionsMarkup(state);
     if (view === "lineage") return lineageMarkup(state);
     if (view === "observer") return observerMarkup(state);
     if (view === "network") return networkMarkup();
-    if (view === "settings") return settingsMarkup(state);
+    if (view === "settings") return settingsMarkup(state, instance?.inputSystem);
     return worldMarkup(state);
   }
 
   function shellMarkup(instance) {
     const view = instance.view;
-  return `<section class="hwe-root" data-hwe-root data-view="${view}" data-realm="${instance.state.realmId}" data-motion="${instance.state.settings.motion}" data-quality="${instance.state.settings.quality}" data-renderer="lite" aria-label="HH EonWild"><header class="hwe-header"><div class="hwe-brand"><span aria-hidden="true"><i></i><b>EW</b></span><div><small>HH GAME · LIVING EARTH 4.0 · ORIGINAL</small><h1>HH EonWild</h1><p>${escapeHtml(REALMS[instance.state.realmId]?.label || "Trái Đất Muôn Thời")} · 16 × 16 km · Không có con người</p></div></div><div class="hwe-header-status"><span><i></i> Local single-player</span><span>${CONTENT?.FLAGSHIP_IDS?.length || 13} Flagship · ${Object.keys(RENDERER_3D?.SPECIES_CARTRIDGES || {}).length} Species Cartridge · ${SPECIES.length} catalog</span><button type="button" data-hwe-quick-play>Chơi tiếp →</button></div></header>${navMarkup(view)}<main class="hwe-main" data-hwe-main>${viewMarkup(view, instance.state)}</main><footer class="hwe-controls"><span><kbd>WASD</kbd> Di chuyển</span><span><kbd>Shift</kbd> Chạy</span><span><kbd>E</kbd> Ăn/Uống</span><span><kbd>Q</kbd> Giác quan</span><span><kbd>R</kbd> Ability</span><span><kbd>C</kbd> Giao tiếp</span><span><kbd>P</kbd> Photo</span><span><kbd>N</kbd> Làm tổ</span><b data-hwe-fps>Engine nghỉ</b></footer><div class="hwe-toast" data-hwe-toast role="status" aria-live="polite"></div></section>`;
+  const atlasMap = WORLD_ATLAS?.getMap?.(instance.state.atlasMapId);
+  return `<section class="hwe-root" data-hwe-root data-view="${view}" data-realm="${instance.state.realmId}" data-motion="${instance.state.settings.motion}" data-quality="${instance.state.settings.quality}" data-renderer="lite" aria-label="HH EonWild"><header class="hwe-header"><div class="hwe-brand"><span aria-hidden="true"><i></i><b>EW</b></span><div><small>HH GAME · LIVING EARTH 4.2 · ORIGINAL</small><h1>HH EonWild</h1><p>${escapeHtml(atlasMap?.label || REALMS[instance.state.realmId]?.label || "Trái Đất Muôn Thời")} · Planet Atlas / vùng dựng 16 × 16 km · Không có con người</p></div></div><div class="hwe-header-status"><span><i></i> Local single-player</span><span>${CONTENT?.FLAGSHIP_IDS?.length || 13} Flagship · ${Object.keys(RENDERER_3D?.SPECIES_CARTRIDGES || {}).length} Species Cartridge · ${MERGED_SPECIES_COUNT} catalog không trùng</span><button type="button" data-hwe-quick-play>Chơi tiếp →</button></div></header>${navMarkup(view)}<main class="hwe-main" data-hwe-main>${viewMarkup(view, instance.state, instance)}</main><footer class="hwe-controls"><span><kbd>WASD</kbd> Di chuyển</span><span><kbd>Shift</kbd> Chạy</span><span><kbd>F</kbd> Ăn/Uống</span><span><kbd>Q</kbd> Giác quan</span><span><kbd>R</kbd> Ability</span><span><kbd>C</kbd> Giao tiếp</span><span><kbd>M</kbd> Atlas</span><span><kbd>P</kbd> Photo</span><b data-hwe-fps>Engine nghỉ</b></footer><div class="hwe-toast" data-hwe-toast role="status" aria-live="polite"></div></section>`;
   }
 
   function setToast(instance, message) {
@@ -640,6 +716,28 @@
     });
   }
 
+  function updatePlanetSpeciesDetail(instance, species) {
+    const panel = instance.root.querySelector("[data-hwe-planet-detail]");
+    if (!panel || !species) return false;
+    panel.innerHTML = planetSpeciesDetailMarkup(species);
+    instance.root.querySelectorAll("[data-hwe-planet-species]").forEach((card) => card.setAttribute("aria-pressed", String(card.dataset.hwePlanetSpecies === species.id)));
+    return true;
+  }
+
+  function filterPlanetRegistry(instance) {
+    const query = String(instance.root.querySelector("[data-hwe-planet-search]")?.value || "").toLocaleLowerCase("vi").trim().slice(0, 120);
+    const group = instance.planetGroupFilter || "all";
+    let visible = 0;
+    instance.root.querySelectorAll("[data-hwe-planet-card]").forEach((card) => {
+      const hidden = Boolean((group !== "all" && card.dataset.group !== group) || (query && !String(card.dataset.search || "").includes(query)));
+      card.hidden = hidden;
+      if (!hidden) visible += 1;
+    });
+    const grid = instance.root.querySelector("[data-hwe-planet-grid]");
+    if (grid) grid.dataset.visibleCount = String(visible);
+    return visible;
+  }
+
   function createPopulation(instance) {
     const random = seededRandom(instance.world.seed ^ 0x9e3779b9);
     const base = instance.state.settings.density === "high" ? 54 : instance.state.settings.density === "low" ? 24 : 38;
@@ -663,7 +761,7 @@
     if (typeof SIMULATION?.createSimulation !== "function") return false;
     try {
       instance.simulation = SIMULATION.createSimulation({
-        seed: instance.state.settings.seed,
+        seed: worldSeedForState(instance.state),
         realm: instance.state.settings.convergence ? "convergence" : instance.state.realmId,
         viewRadius: global.matchMedia?.("(max-width: 760px)")?.matches ? 1 : 2,
         maxChunks: 49,
@@ -747,7 +845,7 @@
         instance.state.worldAddress = RENDERER_3D.createWorldAddress({
           ...instance.state.worldAddress,
           realmId: instance.state.realmId,
-          seed: instance.state.settings.seed,
+          seed: worldSeedForState(instance.state),
           chunkX: renderedChunk.x,
           chunkZ: renderedChunk.z
         });
@@ -836,6 +934,36 @@
     return { x: Math.abs(pad.axes?.[0] || 0) > .18 ? pad.axes?.[0] : 0, y: Math.abs(pad.axes?.[1] || 0) > .18 ? pad.axes?.[1] : 0, sprint: Boolean(pad.buttons?.[0]?.pressed || pad.buttons?.[7]?.pressed) };
   }
 
+  function processInputActions(instance, now = performance.now()) {
+    const input = instance.inputSystem;
+    if (!input || input.disposed) return false;
+    const discardGameplayBuffer = () => {
+      ["interact", "sense", "ability", "jump"].forEach((actionId) => {
+        while (input.wasPressed?.(actionId, now)) { /* discard actions queued while gameplay is paused */ }
+      });
+    };
+    // Pause is evaluated before every other action. Returning immediately also
+    // prevents a key buffered in the same frame from mutating gameplay while
+    // the pause state changes.
+    if (input.wasPressed?.("pause", now)) {
+      discardGameplayBuffer();
+      if (instance.photoMode) setPhotoMode(instance, false);
+      else if (instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden === false) setCommunicationWheel(instance, false);
+      else instance.root.querySelector("[data-hwe-pause]")?.click?.();
+      return true;
+    }
+    if (input.wasPressed?.("worldMap", now)) { global.location.hash = "#/game/timeline"; return true; }
+    if (input.wasPressed?.("codex", now)) { global.location.hash = "#/game/species"; return true; }
+    if (input.wasPressed?.("photoMode", now)) setPhotoMode(instance, !instance.photoMode);
+    if (instance.paused) { discardGameplayBuffer(); return true; }
+    if (input.wasPressed?.("communicationWheel", now)) setCommunicationWheel(instance, instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden !== false);
+    if (input.wasPressed?.("interact", now)) interact(instance);
+    if (input.wasPressed?.("sense", now)) sense(instance);
+    if (input.wasPressed?.("ability", now)) useFlagshipAbility(instance);
+    if (input.wasPressed?.("jump", now)) defend(instance);
+    return true;
+  }
+
   function injurePlayer(instance, type, severity = .2) {
     const player = instance.state.player;
     const proxy = {
@@ -863,22 +991,31 @@
 
   function updateWorld(instance, seconds) {
     if (!instance.running || instance.paused || instance.dead) return;
+    instance.inputSystem?.updateGamepads?.(null, performance.now());
     const player = instance.state.player;
     const species = SPECIES_BY_ID.get(instance.state.speciesId);
-    const pad = gamepadInput(instance);
-    let dx = (instance.keys.has("ArrowRight") || instance.keys.has("KeyD") ? 1 : 0) - (instance.keys.has("ArrowLeft") || instance.keys.has("KeyA") ? 1 : 0) + pad.x;
-    let dy = (instance.keys.has("ArrowDown") || instance.keys.has("KeyS") ? 1 : 0) - (instance.keys.has("ArrowUp") || instance.keys.has("KeyW") ? 1 : 0) + pad.y;
-    const length = Math.hypot(dx, dy) || 1;
-    dx /= length; dy /= length;
+    const pad = instance.inputSystem ? null : gamepadInput(instance);
+    const movement = instance.inputSystem?.getMovementVector?.();
+    let dx = movement ? movement.x : (instance.keys.has("ArrowRight") || instance.keys.has("KeyD") ? 1 : 0) - (instance.keys.has("ArrowLeft") || instance.keys.has("KeyA") ? 1 : 0) + pad.x;
+    let dy = movement ? -movement.y : (instance.keys.has("ArrowDown") || instance.keys.has("KeyS") ? 1 : 0) - (instance.keys.has("ArrowUp") || instance.keys.has("KeyW") ? 1 : 0) + pad.y;
+    if (instance.inputSystem && typeof INPUT_SYSTEM?.stepMovement === "function") {
+      instance.inputVelocity = INPUT_SYSTEM.stepMovement(instance.inputVelocity || { x: 0, y: 0 }, { x: dx, y: dy }, 5.2, 7.4, seconds);
+      dx = instance.inputVelocity.x; dy = instance.inputVelocity.y;
+    } else {
+      const length = Math.hypot(dx, dy) || 1;
+      dx /= length; dy /= length;
+    }
     const moving = Math.abs(dx) + Math.abs(dy) > .05;
-    const sprinting = moving && (instance.keys.has("ShiftLeft") || instance.keys.has("ShiftRight") || pad.sprint) && player.stamina > 5;
+    const crouching = Boolean(instance.inputSystem?.isActionDown?.("crouch"));
+    const sprinting = moving && !crouching && (instance.inputSystem?.isActionDown?.("sprint") || instance.keys.has("ShiftLeft") || instance.keys.has("ShiftRight") || pad?.sprint) && player.stamina > 5;
     const terrain = terrainForRealm(terrainAt(player.x, player.y, instance.world.seed), instance.state.realmId, player.x, player.y);
     const injurySpeed = 1 - player.injuries.fracture / 150;
     const geneEndurance = CONTENT?.GENE_SCHEMA?.endurance ? clamp(player.genes.endurance, .7, 1.3) : 1;
-    const speed = (30 + Math.min(80, species.speed * 2.2)) * (sprinting ? 1.7 : 1) * habitatPenalty(species, terrain) * injurySpeed * geneEndurance;
+    const speed = (30 + Math.min(80, species.speed * 2.2)) * (sprinting ? 1.7 : crouching ? .46 : 1) * habitatPenalty(species, terrain) * injurySpeed * geneEndurance;
     player.x = clamp(player.x + dx * speed * seconds, 20, WORLD_SIZE - 20);
     player.y = clamp(player.y + dy * speed * seconds, 20, WORLD_SIZE - 20);
     if (moving) instance.heading = Math.atan2(dy, dx);
+    syncPlanetRuntime(instance, seconds, dx, dy);
     if (moving && instance.simulation?.trails && instance.trailClock >= .18) {
       instance.trailClock = 0;
       instance.simulation.trails.leaveFootprint({ sourceId: "player", speciesId: species.id, x: player.x, y: player.y, intensity: sprinting ? 1 : .58, direction: instance.heading });
@@ -1094,7 +1231,10 @@
     const aiMode = instance.root.querySelector("[data-hwe-ai-mode]"); if (aiMode) aiMode.textContent = instance.engineMode || "Local bounded AI";
     const renderInfo = instance.renderer3d?.getStatus?.();
     const renderStatus = instance.root.querySelector("[data-hwe-render-status]"); if (renderStatus) renderStatus.textContent = renderInfo ? `${renderInfo.backend.toUpperCase()} · ${RENDERER_3D?.QUALITY_PROFILES?.[renderInfo.quality]?.label || renderInfo.quality}` : "Canvas 2D Lite";
-    const chunkCount = instance.root.querySelector("[data-hwe-chunk-count]"); if (chunkCount) chunkCount.textContent = renderInfo ? `${instance.world.loadedChunks?.length || 0} sim · ${renderInfo.chunks} render` : String(instance.world.loadedChunks?.length || 0);
+    const chunkCount = instance.root.querySelector("[data-hwe-chunk-count]"); if (chunkCount) {
+      const atlasChunks = instance.atlasStreamPlan?.wanted?.length || 0;
+      chunkCount.textContent = renderInfo ? `${instance.world.loadedChunks?.length || 0} sim · ${renderInfo.chunks} render · ${atlasChunks} atlas ưu tiên` : `${instance.world.loadedChunks?.length || 0} sim · ${atlasChunks} atlas ưu tiên`;
+    }
     const ledger = instance.simulation?.ledger?.snapshot?.();
     const apexCount = Object.values(ledger?.apex || {}).reduce((sum, value) => sum + Number(value || 0), 0);
     const apexBudget = instance.root.querySelector("[data-hwe-apex-budget]"); if (apexBudget) apexBudget.textContent = `${apexCount} active · cap 3/chunk`;
@@ -1108,6 +1248,7 @@
     instance.lastFrame = now;
     if (!global.document?.hidden) {
       updateWorld(instance, seconds);
+      processInputActions(instance, now);
       if (instance.renderer3d) {
         const species = SPECIES_BY_ID.get(instance.state.speciesId);
         instance.renderer3d.sync({
@@ -1309,6 +1450,82 @@
     instance.dead = false; instance.running = true; instance.spawnGraceUntil = performance.now() + 15000; instance.root.classList.add("is-running"); instance.root.querySelector("[data-hwe-death]").hidden = true; saveState(instance); logSignal(instance, "Một vòng đời mới bắt đầu.");
   }
 
+  function initPlanetRuntime(instance) {
+    if (!WORLD_ATLAS?.addressToWorld || !WORLD_ATLAS?.worldToAddress) return false;
+    const logical = WORLD_ATLAS.addressToWorld(instance.state.planetAddress || { mapId: instance.state.atlasMapId, realmId: instance.state.realmId });
+    instance.planetAnchor = { x: logical.x - instance.state.player.x, z: logical.z - instance.state.player.y };
+    instance.floatingOrigin = typeof WORLD_ATLAS.FloatingOrigin === "function"
+      ? new WORLD_ATLAS.FloatingOrigin({ originX: logical.x, originY: logical.y, originZ: logical.z })
+      : null;
+    instance.atlasStreamPlanner = typeof WORLD_ATLAS.ChunkStreamPlanner === "function"
+      ? new WORLD_ATLAS.ChunkStreamPlanner({ maximum: 96, chunkSizeM: WORLD_ATLAS.CHUNK_SIZE_METERS })
+      : null;
+    // The Atlas currently supplies a bounded priority plan. Actual renderer
+    // chunks are tracked separately so a planned key is never reported as
+    // loaded before a terrain provider completes it.
+    instance.atlasRenderedKeys = new Set();
+    instance.atlasPlannedKeys = new Set();
+    instance.atlasVisitedKeys = new Set();
+    instance.atlasPlanClock = .5;
+    instance.atlasCacheClock = 0;
+    instance.atlasTileCache = typeof WORLD_ATLAS.AtlasTileCache === "function" ? new WORLD_ATLAS.AtlasTileCache() : null;
+    const tile = { mapId: instance.state.atlasMapId, layer: "fog", zoom: 0, x: instance.state.planetAddress?.sectorX || 0, y: instance.state.planetAddress?.sectorZ || 0 };
+    instance.atlasTileCache?.get?.(tile).then((record) => {
+      if (instance.destroyed) return;
+      const visited = Array.isArray(record?.payload?.visitedChunkKeys) ? record.payload.visitedChunkKeys.slice(-512) : [];
+      visited.forEach((key) => instance.atlasVisitedKeys?.add?.(String(key).slice(0, 160)));
+    }).catch(() => {});
+    return true;
+  }
+
+  function syncPlanetRuntime(instance, seconds, directionX = 0, directionZ = 0) {
+    if (!instance.planetAnchor || !WORLD_ATLAS?.worldToAddress) return false;
+    const worldX = instance.planetAnchor.x + instance.state.player.x;
+    const worldZ = instance.planetAnchor.z + instance.state.player.y;
+    const worldPosition = { x: worldX, y: instance.state.planetAddress?.altitudeM || 0, z: worldZ };
+    const rebase = instance.floatingOrigin?.update?.(worldPosition) || null;
+    const origin = rebase?.origin || instance.floatingOrigin?.snapshot?.().origin || { x: 0, y: 0, z: 0 };
+    instance.floatingOriginState = rebase;
+    instance.localPlanetPosition = {
+      x: worldPosition.x - origin.x,
+      y: worldPosition.y - origin.y,
+      z: worldPosition.z - origin.z
+    };
+    instance.state.planetAddress = WORLD_ATLAS.worldToAddress({
+      ...instance.state.planetAddress,
+      mapId: instance.state.atlasMapId,
+      realmId: instance.state.realmId,
+      regionId: instance.state.atlasRegionId,
+      ...worldPosition
+    });
+    instance.atlasPlanClock += seconds;
+    instance.atlasCacheClock += seconds;
+    if (!instance.atlasStreamPlanner || instance.atlasPlanClock < .5) return true;
+    instance.atlasPlanClock = 0;
+    const plan = instance.atlasStreamPlanner.plan({
+      mapId: instance.state.atlasMapId,
+      worldX,
+      worldZ,
+      directionX,
+      directionZ,
+      radius: global.matchMedia?.("(max-width: 760px)")?.matches ? 2 : 4,
+      loadedKeys: Array.from(instance.atlasRenderedKeys || [])
+    });
+    instance.atlasStreamPlan = plan;
+    instance.atlasPlannedKeys = new Set(plan.wanted.map((row) => row.key));
+    // Discovery fog records the chunk the animal physically occupies, not all
+    // speculative chunks prioritized around the camera.
+    const centerKey = `${instance.state.atlasMapId}:${plan.center.chunkX}:${plan.center.chunkZ}`;
+    instance.atlasVisitedKeys.add(centerKey);
+    while (instance.atlasVisitedKeys.size > 512) instance.atlasVisitedKeys.delete(instance.atlasVisitedKeys.values().next().value);
+    if (instance.atlasCacheClock >= 2 && instance.atlasTileCache) {
+      instance.atlasCacheClock = 0;
+      const tile = { mapId: instance.state.atlasMapId, layer: "fog", zoom: 0, x: instance.state.planetAddress.sectorX, y: instance.state.planetAddress.sectorZ };
+      instance.atlasTileCache.put(tile, { format: "hh-eonwild-discovery-fog-v1", visitedChunkKeys: Array.from(instance.atlasVisitedKeys), updatedAt: Date.now() }).catch(() => {});
+    }
+    return true;
+  }
+
   function startGame(instance) {
     if (!instance.canvas) return;
     if (!instance.state.player.health) {
@@ -1330,8 +1547,9 @@
     instance.canvas3d = instance.root.querySelector("[data-hwe-canvas-3d]");
     if (!instance.canvas) return;
     instance.ctx = instance.canvas.getContext("2d", { alpha: false });
-    instance.world = createWorld(instance.state.settings.seed, instance.state.settings.density, instance.state.realmId);
+    instance.world = createWorld(worldSeedForState(instance.state), instance.state.settings.density, instance.state.realmId);
     if (instance.state.player.spawnPending) { placePlayerAtHabitat(instance); saveState(instance); }
+    initPlanetRuntime(instance);
     instance.population = createPopulation(instance);
     instance.keys = new Set(); instance.running = false; instance.paused = false; instance.dead = false; instance.senseUntil = 0; instance.senseCount = 0; instance.autosave = 0; instance.heading = 0; instance.lastFrame = performance.now(); instance.fpsAt = performance.now(); instance.frameCount = 0;
     instance.chunkClock = 0; instance.trailClock = 0; instance.replayClock = 0; instance.eventClock = 0; instance.injuryClock = 0; instance.abilityReadyAt = 0; instance.camouflageUntil = 0; instance.hudAt = 0; instance.minimapAt = 0; instance.dprCap = 0; instance.renderBudget = 1;
@@ -1354,12 +1572,88 @@
       fallback = SPECIES.find((species) => tierForSpecies(species) === "flagship" && speciesAllowedInRealm(species, realmId, instance.state.settings.convergence));
       if (fallback) { instance.state.speciesId = fallback.id; instance.state.player = normalizeState({ speciesId: fallback.id, player: { lineage: instance.state.player.lineage } }).player; }
     }
-    instance.state.worldAddress = RENDERER_3D?.createWorldAddress?.({ realmId, seed: instance.state.settings.seed }) || instance.state.worldAddress;
+    const currentAtlasMap = WORLD_ATLAS?.getMap?.(instance.state.atlasMapId);
+    if (!currentAtlasMap || currentAtlasMap.realmId !== realmId) {
+      const atlasMap = WORLD_ATLAS?.defaultMapForRealm?.(realmId);
+      if (atlasMap) {
+        instance.state.atlasMapId = atlasMap.id;
+        instance.state.atlasRegionId = atlasMap.regions[0]?.id || "";
+        instance.state.planetAddress = WORLD_ATLAS.normalizeAddress({ mapId: atlasMap.id, regionId: instance.state.atlasRegionId, localX: WORLD_ATLAS.SECTOR_SIZE_METERS / 2, localZ: WORLD_ATLAS.SECTOR_SIZE_METERS / 2 });
+      }
+    }
+    const selectedAtlasMap = WORLD_ATLAS?.getMap?.(instance.state.atlasMapId);
+    instance.state.worldAddress = atlasAddressForMap(instance.state, selectedAtlasMap) || RENDERER_3D?.createWorldAddress?.({ realmId, seed: worldSeedForState(instance.state) }) || instance.state.worldAddress;
     if (fallback) syncAddressForSpecies(instance, fallback.id);
     saveState(instance);
     if ((navigateToWorld || instance.view === "timeline") && !fallback) global.location.hash = "#/game/ecosystem";
     else if (navigateToWorld || instance.view === "timeline") global.location.hash = "#/game/world";
     else mount(instance.host, { view: instance.view });
+    return true;
+  }
+
+  function selectAtlasMap(instance, mapId) {
+    const map = WORLD_ATLAS?.getMap?.(mapId);
+    if (!map) { setToast(instance, "Bản đồ không hợp lệ hoặc chưa được kiểm chứng"); return false; }
+    if (map.realmId === "convergence") {
+      instance.state.settings.convergence = true;
+    } else {
+      instance.state.settings.convergence = false;
+      instance.state.realmId = map.realmId;
+    }
+    instance.state.atlasMapId = map.id;
+    instance.state.atlasRegionId = map.regions[0]?.id || "";
+    instance.state.planetAddress = WORLD_ATLAS.normalizeAddress({
+      mapId: map.id,
+      realmId: map.realmId,
+      regionId: instance.state.atlasRegionId,
+      localX: WORLD_ATLAS.SECTOR_SIZE_METERS / 2,
+      localZ: WORLD_ATLAS.SECTOR_SIZE_METERS / 2
+    });
+    const mappedAddress = atlasAddressForMap(instance.state, map);
+    if (mappedAddress) instance.state.worldAddress = mappedAddress;
+    if (map.realmId !== "convergence" && mappedAddress) {
+      const mapState = { ...instance.state, realmId: map.realmId, settings: { ...instance.state.settings, convergence: false } };
+      const playable = playableSpeciesAtAddress(mapState, mappedAddress);
+      const selected = SPECIES_BY_ID.get(instance.state.speciesId);
+      const fallback = selected && playable.some((species) => species.id === selected.id) ? selected : playable[0];
+      if (fallback) {
+        const lineage = instance.state.player.lineage;
+        instance.state.speciesId = fallback.id;
+        instance.state.player = normalizeState({ speciesId: fallback.id, realmId: map.realmId, atlasMapId: map.id, atlasRegionId: instance.state.atlasRegionId, planetAddress: instance.state.planetAddress, worldAddress: mappedAddress, player: { lineage } }).player;
+      }
+    }
+    saveState(instance);
+    if (map.gameplayStatus === "atlas-reference-only") {
+      global.location.hash = "#/game/timeline";
+      if (instance.view === "timeline") {
+        instance.root.querySelectorAll("[data-hwe-atlas-map]").forEach((button) => {
+          const selected = button.dataset.hweAtlasMap === map.id;
+          button.setAttribute("aria-pressed", String(selected));
+          button.textContent = selected ? "Đang chọn" : "Chọn bản đồ →";
+          button.closest(".hwe-atlas-map")?.classList?.toggle?.("is-selected", selected);
+        });
+        setToast(instance, `${map.label} · Atlas có nguồn, active region chưa được dựng nên không ghép sai thời đại`);
+      }
+      return true;
+    }
+    if (map.realmId !== "convergence" && mappedAddress) {
+      const mapState = { ...instance.state, settings: { ...instance.state.settings, convergence: false } };
+      if (!playableSpeciesAtAddress(mapState, mappedAddress).length) {
+        if (instance.view === "timeline" && global.location?.hash === "#/game/timeline") {
+          instance.root.querySelectorAll("[data-hwe-atlas-map]").forEach((button) => {
+            const selected = button.dataset.hweAtlasMap === map.id;
+            button.setAttribute("aria-pressed", String(selected));
+            button.textContent = selected ? "Đang chọn" : "Chọn bản đồ →";
+            button.closest(".hwe-atlas-map")?.classList?.toggle?.("is-selected", selected);
+          });
+          setToast(instance, `${map.label} · active region đã ánh xạ nhưng chưa có Flagship playable phù hợp`);
+        } else global.location.hash = "#/game/timeline";
+        return true;
+      }
+    }
+    setToast(instance, `${map.label} · ${map.confidence === "fictional" ? "sandbox hư cấu" : "active region đã ánh xạ"}`);
+    if (global.location.hash === "#/game/world") mount(instance.host, { view: "world" });
+    else global.location.hash = "#/game/world";
     return true;
   }
 
@@ -1530,7 +1824,7 @@
     const current = RENDERER_3D.createWorldAddress({
       ...(instance.state.worldAddress || {}),
       realmId: instance.state.realmId,
-      seed: instance.state.settings.seed
+      seed: worldSeedForState(instance.state)
     });
     if (instance.state.settings.convergence || RENDERER_3D.isSpeciesAllowedAtAddress?.(speciesId, current, false)) {
       instance.state.worldAddress = current;
@@ -1538,12 +1832,12 @@
     }
     const cartridge = RENDERER_3D.SPECIES_CARTRIDGES?.[speciesId];
     const desired = cartridge
-      ? RENDERER_3D.addressForSpecies(speciesId, instance.state.settings.seed)
-      : RENDERER_3D.createWorldAddress({ realmId: instance.state.realmId, seed: instance.state.settings.seed });
+      ? RENDERER_3D.addressForSpecies(speciesId, worldSeedForState(instance.state))
+      : RENDERER_3D.createWorldAddress({ realmId: instance.state.realmId, seed: worldSeedForState(instance.state) });
     instance.state.worldAddress = RENDERER_3D.createWorldAddress({
       ...desired,
       realmId: instance.state.realmId,
-      seed: instance.state.settings.seed,
+      seed: worldSeedForState(instance.state),
       chunkX: current.chunkX,
       chunkZ: current.chunkZ
     });
@@ -1688,7 +1982,7 @@
       backend: "webgl2",
       speciesId: species.id,
       speciesColor: species.color,
-      seed: instance.state.settings.seed,
+      seed: worldSeedForState(instance.state),
       quality: reduced3DPreference(instance) ? "static" : qualityForCore(instance.state.settings.quality),
       reducedMotion: reduced3DPreference(instance),
       adaptiveQuality: adaptiveQuality,
@@ -2151,6 +2445,21 @@
     return installCinematicPack(instance, packId, assetFiles, licenseReportFile);
   }
 
+  const TOUCH_MOVEMENT_ACTIONS = Object.freeze({ ArrowUp: "moveForward", ArrowDown: "moveBackward", ArrowLeft: "moveLeft", ArrowRight: "moveRight" });
+
+  function updateTouchJoystick(instance, event) {
+    const stick = instance.root.querySelector("[data-hwe-touch-stick]");
+    if (!stick || !instance.inputSystem) return false;
+    const rect = stick.getBoundingClientRect();
+    const radius = Math.max(1, Math.min(rect.width, rect.height) / 2);
+    const x = clamp((event.clientX - (rect.left + rect.width / 2)) / radius, -1, 1);
+    const y = clamp((event.clientY - (rect.top + rect.height / 2)) / radius, -1, 1);
+    const normalized = instance.inputSystem.setTouchJoystick(x, y);
+    stick.style.setProperty("--stick-x", `${normalized.x * 22}px`);
+    stick.style.setProperty("--stick-y", `${normalized.y * 22}px`);
+    return true;
+  }
+
   function bind(instance) {
     const { root, controller } = instance;
     // `overflow:hidden` elements can still be scrolled programmatically when a
@@ -2172,14 +2481,30 @@
     root.addEventListener("click", (event) => {
       const target = event.target.closest?.("button"); if (!target) return;
       if (target.dataset.hweRoute) { global.location.hash = `#${target.dataset.hweRoute}`; return; }
-      if (target.matches("[data-hwe-quick-play]")) { if (instance.view === "world") { if (!instance.running) startGame(instance); else focusSurface(instance); } else global.location.hash = "#/game/world"; return; }
+      if (target.matches("[data-hwe-quick-play]")) {
+        if (instance.view === "world") {
+          if (!instance.running) startGame(instance); else focusSurface(instance);
+          return;
+        }
+        const selectedMap = WORLD_ATLAS?.getMap?.(instance.state.atlasMapId);
+        if (selectedMap?.gameplayStatus === "atlas-reference-only") {
+          if (global.location.hash !== "#/game/timeline") global.location.hash = "#/game/timeline";
+          else setToast(instance, `${selectedMap.label} mới là Atlas tham khảo; hãy chọn bản đồ có active region để chơi`);
+          return;
+        }
+        global.location.hash = "#/game/world";
+        return;
+      }
       if (target.matches("[data-hwe-render-cancel]")) { disable3D(instance); setToast(instance, "Đã hủy tải 3D và giữ Canvas Lite"); return; }
       if (target.matches("[data-hwe-render-retry]")) { const panel = target.closest("[data-hwe-render-fallback]"); if (panel) panel.hidden = true; enable3D(instance); return; }
       if (target.matches("[data-hwe-fallback-dismiss]")) { const panel = target.closest("[data-hwe-render-fallback]"); if (panel) panel.hidden = true; focusSurface(instance); return; }
       if (target.matches(".hwe-render-toggle")) { if (instance.renderer3d || instance.rendererBooting) disable3D(instance); else enable3D(instance); return; }
       if (target.dataset.hweRenderer) { if (target.dataset.hweRenderer === "lite") disable3D(instance); else enable3D(instance); return; }
       if (target.matches("[data-hwe-open-codex]")) { global.location.hash = "#/game/species"; return; }
+      if (target.dataset.hweAtlasMap) { selectAtlasMap(instance, target.dataset.hweAtlasMap); return; }
       if (target.dataset.hweRealm) { switchRealm(instance, target.dataset.hweRealm, instance.view === "timeline"); return; }
+      if (target.dataset.hwePlanetSpecies) { updatePlanetSpeciesDetail(instance, SPECIES_REGISTRY?.getById?.(target.dataset.hwePlanetSpecies)); return; }
+      if (target.dataset.hwePlanetGroup) { instance.planetGroupFilter = target.dataset.hwePlanetGroup; root.querySelectorAll("[data-hwe-planet-group]").forEach((button) => button.setAttribute("aria-pressed", String(button === target))); filterPlanetRegistry(instance); return; }
       if (target.dataset.hweSpecies) { const species = SPECIES_BY_ID.get(target.dataset.hweSpecies); if (!species) return; if (instance.view === "world") { selectPlayableSpecies(instance, species); return; } root.querySelectorAll("[data-hwe-species]").forEach((card) => card.classList.toggle("is-selected", card === target)); updateCodexDetail(instance, species); setToast(instance, `${species.vietnamese} · ${tierLabel(tierForSpecies(species))}`); return; }
       if (target.dataset.hwePlaySpecies) { selectPlayableSpecies(instance, SPECIES_BY_ID.get(target.dataset.hwePlaySpecies), true); return; }
       if (target.dataset.hweEraFilter) { instance.eraFilter = target.dataset.hweEraFilter; root.querySelectorAll("[data-hwe-era-filter]").forEach((button) => button.setAttribute("aria-pressed", String(button === target))); filterSpecies(instance); return; }
@@ -2196,14 +2521,18 @@
       if (target.matches("[data-hwe-communication-open]")) { setCommunicationWheel(instance, instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden !== false); return; }
       if (target.matches("[data-hwe-communication-close]")) { setCommunicationWheel(instance, false); return; }
       if (target.dataset.hweCall) { emitCommunication(instance, target.dataset.hweCall); setCommunicationWheel(instance, false); return; }
-      if (target.dataset.hweAction === "interact") { interact(instance); return; }
-      if (target.dataset.hweAction === "sense") { sense(instance); return; }
-      if (target.dataset.hweAction === "ability") { useFlagshipAbility(instance); return; }
+      if (target.dataset.hweAction === "interact") { if (!instance.paused) interact(instance); return; }
+      if (target.dataset.hweAction === "sense") { if (!instance.paused) sense(instance); return; }
+      if (target.dataset.hweAction === "ability") { if (!instance.paused) useFlagshipAbility(instance); return; }
       if (target.dataset.hweExpedition) { instance.state.activeExpedition = target.dataset.hweExpedition; saveState(instance); global.location.hash = "#/game/world"; return; }
       if (target.matches("[data-hwe-lineage-export]")) { exportLineage(instance); return; }
       if (target.matches("[data-hwe-save-export]")) { exportSave(instance); return; }
       if (target.matches("[data-hwe-save-import]")) { root.querySelector("[data-hwe-save-file]")?.click?.(); return; }
       if (target.matches("[data-hwe-save-rollback]")) { restoreRollback(instance); return; }
+      if (target.dataset.hweRemapAction) { instance.remapAction = target.dataset.hweRemapAction; root.querySelectorAll("[data-hwe-remap-action]").forEach((button) => button.classList.toggle("is-listening", button === target)); const key = target.querySelector("kbd"); if (key) key.textContent = "Nhấn phím…"; setToast(instance, "Nhấn phím mới; Escape cũng có thể được gán cho Pause"); return; }
+      if (target.matches("[data-hwe-input-export]")) { const exported = instance.inputSystem?.exportProfile?.(); if (exported?.ok && downloadLocalFile(instance, `hh-eonwild-input-${Date.now()}.json`, exported.json)) setToast(instance, "Đã xuất profile điều khiển không chứa secret"); else setToast(instance, "Không thể xuất profile điều khiển"); return; }
+      if (target.matches("[data-hwe-input-import]")) { root.querySelector("[data-hwe-input-file]")?.click?.(); return; }
+      if (target.matches("[data-hwe-input-reset]")) { instance.inputSystem?.clearPersistence?.(); instance.inputSystem?.applyPreset?.("standard"); instance.inputSystem?.save?.(); setToast(instance, "Đã khôi phục preset Standard"); mount(instance.host, { view: "settings" }); return; }
       if (target.matches("[data-hwe-gene-preview]")) { previewGenes(instance); return; }
       if (target.matches("[data-hwe-replay-play]")) { toggleObserverPlayback(instance, target); return; }
       if (target.matches("[data-hwe-replay-clear]")) { if (target.dataset.confirm === "true") { clearInterval(instance.observerTimer); instance.observerTimer = 0; instance.state.replay = []; saveState(instance); mount(instance.host, { view: "observer" }); } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa replay"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Xóa replay local"; } }, 4000); } return; }
@@ -2249,10 +2578,31 @@
       }
       if (target.matches("[data-hwe-reset]")) { if (target.dataset.confirm === "true") { global.localStorage?.removeItem?.(STORAGE_KEY); global.localStorage?.removeItem?.(LEGACY_STORAGE_KEY); global.localStorage?.removeItem?.(V2_STORAGE_KEY); global.localStorage?.removeItem?.(OLDER_STORAGE_KEY); global.localStorage?.removeItem?.(ROLLBACK_STORAGE_KEY); global.localStorage?.removeItem?.(LEGACY_ROLLBACK_STORAGE_KEY); instance.state = normalizeState(); mount(instance.host, { view: "world" }); } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa save v1 + v2 + v3 + v4"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Khôi phục save mới…"; } }, 4000); } }
     }, { signal: controller.signal });
+    root.addEventListener("keydown", (event) => {
+      if (!instance.remapAction || !instance.inputSystem) return;
+      event.preventDefault(); event.stopPropagation();
+      const actionId = instance.remapAction;
+      const retainedBindings = (instance.inputSystem.getMappings?.()[actionId] || []).filter((binding) => binding.device !== "keyboard");
+      const result = instance.inputSystem.remap(actionId, [{ device: "keyboard", code: event.code || event.key }, ...retainedBindings]);
+      if (!result.ok) {
+        const conflictNames = (result.conflicts || []).flatMap((conflict) => conflict.actions || []).filter((id) => id !== actionId).map((id) => INPUT_SYSTEM.ACTION_METADATA[id]?.labelVi || id);
+        setToast(instance, conflictNames.length ? `Phím đang dùng cho: ${conflictNames.join(", ")}` : "Phím không hợp lệ");
+        return;
+      }
+      instance.remapAction = "";
+      instance.inputSystem.save();
+      setToast(instance, `Đã gán ${INPUT_SYSTEM.ACTION_METADATA[actionId]?.labelVi || actionId} → ${inputBindingLabel({ device: "keyboard", code: event.code || event.key })}`);
+      mount(instance.host, { view: "settings" });
+    }, { signal: controller.signal, capture: true });
     root.addEventListener("input", (event) => {
       if (event.target.matches("[data-hwe-species-search]")) filterSpecies(instance);
+      if (event.target.matches("[data-hwe-planet-search]")) filterPlanetRegistry(instance);
       if (event.target.matches("[data-hwe-replay-scrubber]")) drawObserver(instance, Number(event.target.value));
       if (event.target.matches('[data-hwe-setting="soundVolume"]')) {
+        const output = event.target.closest("label")?.querySelector?.("output");
+        if (output) output.textContent = `${Math.round(clamp(event.target.value, 0, 100))}%`;
+      }
+      if (event.target.dataset.hweInputSetting && event.target.type === "range") {
         const output = event.target.closest("label")?.querySelector?.("output");
         if (output) output.textContent = `${Math.round(clamp(event.target.value, 0, 100))}%`;
       }
@@ -2280,6 +2630,28 @@
       }
     }, { signal: controller.signal });
     root.addEventListener("change", (event) => {
+      if (event.target.matches("[data-hwe-input-file]")) {
+        const file = event.target.files?.[0]; event.target.value = "";
+        if (!file || file.size > (INPUT_SYSTEM?.LIMITS?.MAX_PROFILE_BYTES || 32768)) { setToast(instance, "Profile điều khiển không hợp lệ hoặc quá lớn"); return; }
+        file.text().then((json) => {
+          const result = instance.inputSystem?.importProfile?.(json);
+          if (!result?.ok) throw new Error(result?.reason || "PROFILE_INVALID");
+          instance.inputSystem.save(); mount(instance.host, { view: "settings" });
+        }).catch(() => setToast(instance, "Profile bị từ chối; mapping hiện tại được giữ nguyên"));
+        return;
+      }
+      if (event.target.matches("[data-hwe-input-preset]")) {
+        const result = instance.inputSystem?.applyPreset?.(event.target.value);
+        if (result?.ok) { instance.inputSystem.save(); mount(instance.host, { view: "settings" }); }
+        else setToast(instance, "Preset điều khiển không hợp lệ");
+        return;
+      }
+      if (event.target.dataset.hweInputSetting) {
+        const key = event.target.dataset.hweInputSetting;
+        const value = event.target.type === "checkbox" ? event.target.checked : clamp(event.target.value, 0, 100) / 100;
+        instance.inputSystem?.updateSettings?.({ [key]: value }); instance.inputSystem?.save?.(); setToast(instance, "Đã lưu cấu hình input cục bộ");
+        return;
+      }
       if (event.target.dataset.hwePhotoSetting) { instance.state = normalizeState(instance.state); syncPhotoComposition(instance); saveState(instance); return; }
       if (event.target.matches("[data-hwe-pack-manifest-file]")) {
         const packId = instance.pendingPackId; const file = event.target.files?.[0]; event.target.value = ""; instance.pendingPackId = "";
@@ -2291,6 +2663,7 @@
       }
       if (event.target.matches("[data-hwe-save-file]")) { importSave(instance, event.target.files?.[0]); event.target.value = ""; return; }
       if (event.target.matches("[data-hwe-mode]")) { if (RENDERER_3D?.GAME_MODES?.some?.((mode) => mode.id === event.target.value && mode.available)) { instance.state.mode = event.target.value; saveState(instance); setToast(instance, "Đã lưu chế độ vòng đời"); } return; }
+      if (event.target.matches("[data-hwe-atlas-map-select]")) { selectAtlasMap(instance, event.target.value); return; }
       if (event.target.matches("[data-hwe-time-slice]")) {
         const slice = RENDERER_3D?.TIME_SLICES?.find?.((row) => row.id === event.target.value && row.realmId === instance.state.realmId);
         if (!slice) return;
@@ -2328,10 +2701,64 @@
       else if (instance.view === "world" && ["density", "seed", "worker"].includes(key)) mount(instance.host, { view: "world" });
       else setToast(instance, "Đã lưu cấu hình cục bộ");
     }, { signal: controller.signal });
-    root.addEventListener("pointerdown", (event) => { const key = event.target.closest?.("[data-hwe-touch]")?.dataset.hweTouch; if (key) { instance.keys?.add(key); event.target.setPointerCapture?.(event.pointerId); } }, { signal: controller.signal });
-    ["pointerup", "pointercancel", "pointerleave"].forEach((name) => root.addEventListener(name, (event) => { const key = event.target.closest?.("[data-hwe-touch]")?.dataset.hweTouch; if (key) instance.keys?.delete(key); }, { signal: controller.signal }));
-    global.addEventListener?.("keydown", (event) => { if (!activeSurface(instance) || !root.contains(global.document.activeElement)) return; if (event.code === "Escape") { if (instance.photoMode) setPhotoMode(instance, false); else setCommunicationWheel(instance, false); return; } instance.keys.add(event.code); if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault(); if (event.code === "KeyE") interact(instance); if (event.code === "KeyQ") sense(instance); if (event.code === "KeyR") useFlagshipAbility(instance); if (event.code === "KeyC") setCommunicationWheel(instance, instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden !== false); if (event.code === "KeyP") setPhotoMode(instance, !instance.photoMode); if (event.code === "KeyF" || event.code === "Space") defend(instance); if (event.code === "KeyN") createNest(instance); }, { signal: controller.signal });
-    global.addEventListener?.("keyup", (event) => instance.keys?.delete(event.code), { signal: controller.signal });
+    root.addEventListener("pointerdown", (event) => {
+      const stick = event.target.closest?.("[data-hwe-touch-stick]");
+      if (stick && instance.inputSystem) {
+        instance.touchJoystickPointer = event.pointerId;
+        stick.setPointerCapture?.(event.pointerId);
+        updateTouchJoystick(instance, event);
+        event.preventDefault();
+        return;
+      }
+      const key = event.target.closest?.("[data-hwe-touch]")?.dataset.hweTouch;
+      if (!key) return;
+      instance.touchPointers ||= new Map();
+      instance.touchPointers.set(event.pointerId, key);
+      const action = TOUCH_MOVEMENT_ACTIONS[key];
+      if (instance.inputSystem && action) instance.inputSystem.setTouchAction(action, true);
+      else instance.keys?.add(key);
+      event.target.setPointerCapture?.(event.pointerId);
+    }, { signal: controller.signal });
+    root.addEventListener("pointermove", (event) => { if (event.pointerId === instance.touchJoystickPointer) updateTouchJoystick(instance, event); }, { signal: controller.signal });
+    ["pointerup", "pointercancel", "pointerleave"].forEach((name) => root.addEventListener(name, (event) => {
+      if (event.pointerId === instance.touchJoystickPointer) {
+        instance.touchJoystickPointer = null;
+        instance.inputSystem?.setTouchJoystick?.(0, 0);
+        const stick = instance.root.querySelector("[data-hwe-touch-stick]");
+        stick?.style?.setProperty("--stick-x", "0px"); stick?.style?.setProperty("--stick-y", "0px");
+      }
+      const key = instance.touchPointers?.get?.(event.pointerId) || event.target.closest?.("[data-hwe-touch]")?.dataset.hweTouch;
+      if (key) {
+        const action = TOUCH_MOVEMENT_ACTIONS[key];
+        if (instance.inputSystem && action) instance.inputSystem.setTouchAction(action, false);
+        else instance.keys?.delete(key);
+        instance.touchPointers?.delete?.(event.pointerId);
+      }
+    }, { signal: controller.signal }));
+    if (!instance.inputSystem) {
+      global.addEventListener?.("keydown", (event) => {
+        if (!activeSurface(instance) || !root.contains(global.document.activeElement) || INPUT_SYSTEM?.isTextEntryEvent?.(event)) return;
+        if (event.code === "Escape") {
+          if (instance.photoMode) setPhotoMode(instance, false);
+          else if (instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden === false) setCommunicationWheel(instance, false);
+          else instance.root.querySelector("[data-hwe-pause]")?.click?.();
+          return;
+        }
+        if (event.code === "KeyP") { setPhotoMode(instance, !instance.photoMode); return; }
+        if (instance.paused) return;
+        instance.keys.add(event.code);
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
+        if (event.code === "KeyF" || event.code === "KeyE") interact(instance);
+        if (event.code === "KeyQ") sense(instance);
+        if (event.code === "KeyR") useFlagshipAbility(instance);
+        if (event.code === "KeyC") setCommunicationWheel(instance, instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden !== false);
+        if (event.code === "Space") defend(instance);
+        if (event.code === "KeyN") createNest(instance);
+      }, { signal: controller.signal });
+      global.addEventListener?.("keyup", (event) => instance.keys?.delete(event.code), { signal: controller.signal });
+    }
+    else global.addEventListener?.("keyup", (event) => instance.inputSystem?.handleKeyUp?.(event), { signal: controller.signal });
+    global.addEventListener?.("blur", () => instance.inputSystem?.releaseAll?.("window-blur"), { signal: controller.signal });
     global.addEventListener?.("pagehide", () => {
       instance.pausedByPageHide = !instance.paused;
       instance.renderer3d?.setPaused?.(true);
@@ -2346,22 +2773,63 @@
   function mount(host, options = {}) {
     if (!host) return false;
     unmount(host);
-    const instance = { host, root: null, view: safeView(options.view), state: readState(), controller: new AbortController(), destroyed: false, raf: 0, resizeObserver: null, motionObserver: null, toastTimer: 0, audioContext: null, eraFilter: "all", realmFilter: "all", tierFilter: "all", observerTimer: 0, cinematicPackManager: null, packUnsubscribe: null, packManifests: new Map(), packStates: new Map(), pendingPackId: "", pendingLocalPackId: "" };
+    const instance = { host, root: null, view: safeView(options.view), state: readState(), controller: new AbortController(), destroyed: false, raf: 0, resizeObserver: null, motionObserver: null, toastTimer: 0, audioContext: null, eraFilter: "all", realmFilter: "all", tierFilter: "all", planetGroupFilter: "all", observerTimer: 0, cinematicPackManager: null, packUnsubscribe: null, packManifests: new Map(), packStates: new Map(), pendingPackId: "", pendingLocalPackId: "", inputSystem: null, inputVelocity: { x: 0, y: 0 }, remapAction: "" };
+    if (typeof INPUT_SYSTEM?.createInputActionSystem === "function") {
+      try {
+        instance.inputSystem = INPUT_SYSTEM.createInputActionSystem({ runtime: global, clock: () => global.performance?.now?.() ?? Date.now() });
+        instance.inputSystem.load?.();
+      } catch { instance.inputSystem = null; }
+    }
     if (instance.view === "world") {
-      const current = SPECIES_BY_ID.get(instance.state.speciesId);
-      if (!current || tierForSpecies(current) !== "flagship" || !speciesAllowedInRealm(current, instance.state.realmId, instance.state.settings.convergence)) {
-        const fallback = SPECIES.find((species) => tierForSpecies(species) === "flagship" && speciesAllowedInRealm(species, instance.state.realmId, instance.state.settings.convergence));
-        if (fallback) {
+      const requestedHash = global.location?.hash;
+      const selectedMap = WORLD_ATLAS?.getMap?.(instance.state.atlasMapId);
+      const mappedAddress = atlasAddressForMap(instance.state, selectedMap);
+      if (selectedMap?.gameplayStatus === "atlas-reference-only") {
+        global.location.hash = "#/game/timeline";
+        if (requestedHash && requestedHash !== "#/game/timeline") {
+          instance.inputSystem?.dispose?.();
+          instance.controller.abort();
+          return false;
+        }
+        instance.view = "timeline";
+      }
+      else if (mappedAddress && !instance.state.settings.convergence) {
+        instance.state.worldAddress = mappedAddress;
+        const mapState = { ...instance.state, settings: { ...instance.state.settings, convergence: false } };
+        const playable = playableSpeciesAtAddress(mapState, mappedAddress);
+        const current = SPECIES_BY_ID.get(instance.state.speciesId);
+        const fallback = current && playable.some((species) => species.id === current.id) ? current : playable[0];
+        if (!fallback) {
+          if (global.location?.hash && global.location.hash !== "#/game/timeline") {
+            instance.inputSystem?.dispose?.();
+            instance.controller.abort();
+            global.location.hash = "#/game/timeline";
+            return false;
+          }
+          instance.view = "timeline";
+        }
+        else if (fallback.id !== current?.id) {
           instance.state.speciesId = fallback.id;
-          instance.state.player = normalizeState({ speciesId: fallback.id, realmId: instance.state.realmId, player: { lineage: instance.state.player.lineage } }).player;
-          syncAddressForSpecies(instance, fallback.id);
+          instance.state.player = normalizeState({ speciesId: fallback.id, realmId: instance.state.realmId, atlasMapId: selectedMap.id, worldAddress: mappedAddress, player: { lineage: instance.state.player.lineage } }).player;
           saveState(instance);
         }
-        else instance.view = "ecosystem";
+      } else {
+        const current = SPECIES_BY_ID.get(instance.state.speciesId);
+        if (!current || tierForSpecies(current) !== "flagship" || !speciesAllowedInRealm(current, instance.state.realmId, instance.state.settings.convergence)) {
+          const fallback = SPECIES.find((species) => tierForSpecies(species) === "flagship" && speciesAllowedInRealm(species, instance.state.realmId, instance.state.settings.convergence));
+          if (fallback) {
+            instance.state.speciesId = fallback.id;
+            instance.state.player = normalizeState({ speciesId: fallback.id, realmId: instance.state.realmId, player: { lineage: instance.state.player.lineage } }).player;
+            syncAddressForSpecies(instance, fallback.id);
+            saveState(instance);
+          }
+          else instance.view = "ecosystem";
+        }
       }
     }
     host.innerHTML = shellMarkup(instance);
     instance.root = host.querySelector("[data-hwe-root]");
+    if (instance.view === "world") instance.inputSystem?.attach?.(instance.root);
     instances.set(host, instance); activeHosts.add(host); bind(instance);
     if (instance.view === "world") initWorld(instance);
     if (instance.view === "observer") initObserver(instance);
@@ -2369,8 +2837,8 @@
     return Object.freeze({
       version: VERSION,
       state: () => JSON.parse(JSON.stringify(instance.state)),
-      pause: () => { instance.paused = true; instance.renderer3d?.setPaused?.(true); return true; },
-      resume: () => { instance.paused = false; instance.renderer3d?.setPaused?.(false); instance.lastFrame = performance.now(); return true; },
+      pause: () => { instance.paused = true; instance.inputSystem?.pause?.("api"); instance.renderer3d?.setPaused?.(true); return true; },
+      resume: () => { instance.paused = false; instance.inputSystem?.resume?.("api"); instance.renderer3d?.setPaused?.(false); instance.lastFrame = performance.now(); return true; },
       destroy: () => unmount(host)
     });
   }
@@ -2383,8 +2851,36 @@
     }
     const instance = instances.get(host);
     if (!instance) { activeHosts.delete(host); if (host) host.replaceChildren(); return false; }
-    instance.destroyed = true; instance.rendererBootToken = (instance.rendererBootToken || 0) + 1; instance.controller.abort(); clearTimeout(instance.toastTimer); clearInterval(instance.observerTimer); instance.resizeObserver?.disconnect?.(); instance.motionObserver?.disconnect?.(); global.cancelAnimationFrame?.(instance.raf); instance.rendererStartingAdapter?.dispose?.(); instance.rendererStartingAdapter = null; instance.renderer3d?.dispose?.(); instance.renderer3d = null; instance.packUnsubscribe?.(); instance.cinematicPackManager?.dispose?.(); instance.workerAdapter?.close?.(); instance.simulation?.dispose?.(); instance.audioContext?.close?.().catch?.(() => {}); saveState(instance); host.replaceChildren(); instances.delete(host); activeHosts.delete(host); return true;
+    instance.destroyed = true;
+    instance.rendererBootToken = (instance.rendererBootToken || 0) + 1;
+    instance.controller.abort();
+    clearTimeout(instance.toastTimer);
+    clearInterval(instance.observerTimer);
+    instance.resizeObserver?.disconnect?.();
+    instance.motionObserver?.disconnect?.();
+    global.cancelAnimationFrame?.(instance.raf);
+    instance.inputSystem?.dispose?.();
+    instance.inputSystem = null;
+    instance.atlasTileCache?.close?.();
+    instance.atlasTileCache = null;
+    instance.atlasRenderedKeys?.clear?.();
+    instance.atlasPlannedKeys?.clear?.();
+    instance.atlasVisitedKeys?.clear?.();
+    instance.rendererStartingAdapter?.dispose?.();
+    instance.rendererStartingAdapter = null;
+    instance.renderer3d?.dispose?.();
+    instance.renderer3d = null;
+    instance.packUnsubscribe?.();
+    instance.cinematicPackManager?.dispose?.();
+    instance.workerAdapter?.close?.();
+    instance.simulation?.dispose?.();
+    instance.audioContext?.close?.().catch?.(() => {});
+    saveState(instance);
+    host.replaceChildren();
+    instances.delete(host);
+    activeHosts.delete(host);
+    return true;
   }
 
-  return Object.freeze({ VERSION, version: VERSION, STORAGE_KEY, LEGACY_STORAGE_KEY, V2_STORAGE_KEY, OLDER_STORAGE_KEY, SCHEMA_VERSION, WORLD_SIZE, ERA_META, REALMS, BIOMES, FLAGSHIP_IDS, SPECIES, EXPEDITIONS, normalizeState, stepVitals, terrainAt, terrainForRealm, createWorld, findHabitatSpawn, mount, unmount });
+  return Object.freeze({ VERSION, version: VERSION, STORAGE_KEY, LEGACY_STORAGE_KEY, V2_STORAGE_KEY, OLDER_STORAGE_KEY, SCHEMA_VERSION, WORLD_SIZE, ERA_META, REALMS, BIOMES, FLAGSHIP_IDS, SPECIES, IMPORTED_SPECIES, MERGED_SPECIES_COUNT, MERGED_DUPLICATE_COUNT, EXPEDITIONS, normalizeState, stepVitals, terrainAt, terrainForRealm, createWorld, findHabitatSpawn, mount, unmount });
 });
