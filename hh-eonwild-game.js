@@ -6,7 +6,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function createEonWild(global) {
   "use strict";
 
-  const VERSION = "4.1.0";
+  const VERSION = "4.2.0";
   const STORAGE_KEY = "hh.game.eonwild.v4";
   const LEGACY_STORAGE_KEY = "hh.game.eonwild.v3";
   const V2_STORAGE_KEY = "hh.game.eonwild.v2";
@@ -24,6 +24,7 @@
   const WORLD_ATLAS = global.HHEonWildWorldAtlas || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-world-atlas.js"); } catch { return null; } })() : null);
   const SPECIES_REGISTRY = global.HHEonWildSpeciesRegistry || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-species-registry.js"); } catch { return null; } })() : null);
   const INPUT_SYSTEM = global.HHEonWildInputSystem || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-input-system.js"); } catch { return null; } })() : null);
+  const DESKTOP = global.HHEonWildDesktopController || (typeof require === "function" ? (() => { try { return require("./hh-eonwild-desktop-controller.js"); } catch { return null; } })() : null);
   const PERSONAL_QUALITY_PROFILE = Object.freeze({ id: "personal", label: "Cinematic Personal", targetFps: 30 });
   const CINEMATIC_PACK_FALLBACK = Object.freeze([
     { id: "creature-ultra", label: "Creature Ultra Pack", description: "Model đúng loài, rig, animation, PBR và bốn LOD.", accent: "#ff9b70" },
@@ -308,6 +309,15 @@
         photoComposition: ["off", "thirds"].includes(settings.photoComposition) ? settings.photoComposition : "thirds",
         photoCrop: ["native", "2.39", "1.85", "1.0"].includes(settings.photoCrop) ? settings.photoCrop : "native",
         photoShake: clamp(settings.photoShake ?? 18, 0, 100),
+        cameraSensitivityX: clamp(settings.cameraSensitivityX ?? 24, 1, 100),
+        cameraSensitivityY: clamp(settings.cameraSensitivityY ?? 22, 1, 100),
+        invertCameraY: settings.invertCameraY === true,
+        cameraFov: clamp(settings.cameraFov ?? 68, 45, 105),
+        cameraSmoothing: clamp(settings.cameraSmoothing ?? 72, 0, 100),
+        cameraShake: clamp(settings.cameraShake ?? 12, 0, 100),
+        headBob: clamp(settings.headBob ?? 8, 0, 100),
+        autoCenterCamera: settings.autoCenterCamera === true,
+        viewMode: ["third-person", "animal-eye"].includes(settings.viewMode) ? settings.viewMode : "third-person",
         seed
       },
       discoveries: Array.isArray(source.discoveries) ? [...new Set(source.discoveries.filter((id) => SPECIES_BY_ID.has(id)))].slice(0, 500) : [],
@@ -431,6 +441,7 @@
     tierForSpecies(species) === "flagship" && speciesAllowedAtAddress(species, state, address));
   const worldSeedForState = (state, mapId = state?.atlasMapId) => `${state?.settings?.seed || "EON-541"}-${mapId || state?.realmId || "atlas"}`
     .replace(/[^a-z0-9-]/gi, "-").replace(/-+/g, "-").slice(0, 64) || "EON-541-atlas";
+  const rendererSeedForState = (state) => `${state?.settings?.seed || "EON-541"}:${state?.worldAddress?.timeSliceId || state?.realmId || "realm"}:${state?.worldAddress?.regionId || "region"}`;
   const addressForSlice = (state, slice) => RENDERER_3D?.createWorldAddress?.({
     realmId: state.realmId,
     timeSliceId: slice.id,
@@ -481,26 +492,31 @@
       <aside class="hwe-species-dock" aria-label="Chọn loài"><header><span><small>PLAYABLE REGISTRY</small><strong>${playableSpeciesAtAddress(state).length} Flagship trong Time Slice</strong></span><button type="button" data-hwe-open-codex>Mở Codex</button></header><label class="hwe-search"><span>⌕</span><input type="search" data-hwe-species-search placeholder="Tìm Flagship…" aria-label="Tìm loài Flagship"></label><div class="hwe-species-list">${speciesCardsMarkup(state, true)}</div></aside>
       <section class="hwe-viewport" data-hwe-viewport aria-label="Thế giới EonWild đang chơi">
         <canvas class="hwe-render-surface hwe-render-surface--lite" data-hwe-canvas tabindex="0" aria-label="Bản đồ sinh tồn Lite. Dùng WASD hoặc phím mũi tên để di chuyển."></canvas>
-        <canvas class="hwe-render-surface hwe-render-surface--3d" data-hwe-canvas-3d tabindex="0" aria-label="Thế giới sinh tồn 3D. Kéo để xoay camera, cuộn để zoom, dùng WASD để di chuyển." hidden></canvas>
+        <canvas class="hwe-render-surface hwe-render-surface--3d" data-hwe-canvas-3d tabindex="0" aria-label="Thế giới sinh tồn 3D. Click để khóa chuột, lia chuột để xoay camera, cuộn để zoom và dùng WASD để di chuyển." hidden></canvas>
         <div class="hwe-render-loading" data-hwe-render-loading hidden role="status" aria-live="polite"><span><i></i><b>EW</b></span><strong>Đang mở thế giới điện ảnh…</strong><small data-hwe-render-loading-copy>Đang kiểm tra GPU và giữ Canvas Lite ở phía sau</small><div class="hwe-render-stage" aria-hidden="true"><i class="is-complete"></i><i class="is-active"></i><i></i><i></i></div><p data-hwe-render-detail>Không có phần trăm giả · giao diện sẽ mở ngay khi frame 3D đầu tiên sẵn sàng</p><button type="button" data-hwe-render-cancel>Dùng Canvas Lite ngay</button></div>
         <aside class="hwe-render-fallback" data-hwe-render-fallback hidden role="status" aria-live="polite"><i aria-hidden="true">◇</i><div><small>SAFE FALLBACK · KHÔNG MÀN HÌNH ĐEN</small><strong data-hwe-render-fallback-title>Canvas Lite đang tiếp tục vòng đời</strong><p data-hwe-render-fallback-copy>Asset hoặc GPU 3D chưa sẵn sàng. Model thay thế nhẹ được dùng mà không làm mất save.</p></div><button type="button" data-hwe-render-retry>Thử lại 3D</button><button type="button" data-hwe-fallback-dismiss aria-label="Đóng thông báo fallback">×</button></aside>
         <div class="hwe-atmosphere" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div class="hwe-reticle" data-hwe-reticle aria-hidden="true"><i></i></div>
+        <div class="hwe-target-prompt" data-hwe-target-prompt role="status" aria-live="polite"></div>
         <div class="hwe-hud hwe-hud--top"><span><small>Realm</small><strong data-hwe-realm-label>${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</strong></span><span><small>Biome</small><strong data-hwe-biome>Đang dựng thế giới</strong></span><span><small>Thời gian</small><strong data-hwe-time>--:--</strong></span><span><small>Sự kiện</small><strong data-hwe-weather>Ổn định</strong></span><button type="button" class="hwe-render-toggle" data-hwe-renderer="3d" aria-pressed="false"><i></i><span data-hwe-render-label>3D</span></button><button type="button" data-hwe-photo aria-label="Photo Mode">◉</button><button type="button" data-hwe-fullscreen aria-label="Toàn màn hình">⛶</button></div>
+        <div class="hwe-immersive-vitals" aria-label="Trạng thái sinh tồn">${[["health","Máu"],["hunger","Đói"],["thirst","Khát"],["stamina","Thể lực"],["oxygen","Oxy"]].map(([key,label]) => `<label><span>${label}</span><progress data-hwe-vital="${key}" max="100" value="${state.player[key]}"></progress><b data-hwe-value="${key}">${Math.round(state.player[key])}</b></label>`).join("")}</div>
         <div class="hwe-minimap"><canvas data-hwe-minimap width="180" height="180" aria-label="Bản đồ thu nhỏ"></canvas><span>MIGRATION</span></div>
         <div class="hwe-event-banner" data-hwe-event-banner hidden><small>WORLD EVENT</small><strong data-hwe-event-title>Biến động tự nhiên</strong><progress data-hwe-event-progress max="100" value="0"></progress></div>
         <div class="hwe-sense" data-hwe-sense hidden><span>Q · ECO SENSE</span><strong>Đang đọc dấu vết tự nhiên…</strong></div>
         <div class="hwe-ability-bar"><button type="button" data-hwe-action="sense"><kbd>Q</kbd><span><small>Giác quan</small><strong>${escapeHtml(mechanicLabel(flagship?.sense, selected.ability))}</strong></span></button><button type="button" data-hwe-action="ability"><kbd>R</kbd><span><small>${flagship ? "FLAGSHIP ACTIVE" : "SPECIAL ACTION"}</small><strong>${escapeHtml(activeAbility)}</strong></span></button><button type="button" data-hwe-communication-open aria-expanded="false"><kbd>C</kbd><span><small>Giao tiếp động vật</small><strong>Tín hiệu không lời</strong></span></button></div>
-        <div class="hwe-communication-wheel" data-hwe-communication-wheel hidden role="dialog" aria-modal="false" aria-label="Animal Communication Wheel"><header><span><small>ANIMAL COMMUNICATION</small><strong>Không chat toàn cục</strong></span><button type="button" data-hwe-communication-close aria-label="Đóng vòng giao tiếp">×</button></header><div>${COMMUNICATION_CALLS.map((call, index) => { const allowed = !flagship || typeof CONTENT?.isCommunicationCallAllowed !== "function" || CONTENT.isCommunicationCallAllowed(selected.id, call.id); return `<button type="button" data-hwe-call="${escapeHtml(call.id)}" style="--i:${index}" ${allowed ? "" : "disabled"} title="${escapeHtml(call.intent || call.label)}"><i>${escapeHtml(call.icon || (["alarm","distress"].includes(call.id) ? "!" : "◉"))}</i><span>${escapeHtml(call.label)}</span></button>`; }).join("")}</div></div>
+        <div class="hwe-communication-wheel" data-hwe-communication-wheel hidden role="dialog" aria-modal="true" aria-label="Animal Communication Wheel"><header><span><small>ANIMAL COMMUNICATION</small><strong>Không chat toàn cục</strong></span><button type="button" data-hwe-communication-close aria-label="Đóng vòng giao tiếp">×</button></header><div>${COMMUNICATION_CALLS.map((call, index) => { const allowed = !flagship || typeof CONTENT?.isCommunicationCallAllowed !== "function" || CONTENT.isCommunicationCallAllowed(selected.id, call.id); return `<button type="button" data-hwe-call="${escapeHtml(call.id)}" style="--i:${index}" ${allowed ? "" : "disabled"} title="${escapeHtml(call.intent || call.label)}"><i>${escapeHtml(call.icon || (["alarm","distress"].includes(call.id) ? "!" : "◉"))}</i><span>${escapeHtml(call.label)}</span></button>`; }).join("")}</div></div>
         <div class="hwe-start-panel" data-hwe-start-panel><small>ERA REALM · 3D FOUNDATION · KHÔNG CÓ CON NGƯỜI</small><h2>Trở thành ${escapeHtml(selected.vietnamese)}</h2><p>${state.settings.convergence ? "Eon Convergence đang bật: đây là sandbox hư cấu có trộn thời đại." : `Realm ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)} dùng Time Slice để không trộn niên đại ngoài ý muốn.`} Tìm nước, cân bằng khẩu phần, tránh thương tích và tiếp nối dòng gene.</p><div class="hwe-render-choice" role="group" aria-label="Chọn renderer"><button type="button" data-hwe-renderer="3d" class="${state.settings.renderer !== "lite" ? "is-active" : ""}" aria-pressed="${state.settings.renderer !== "lite"}"><b>3D</b><span>Babylon · WebGPU/WebGL</span></button><button type="button" data-hwe-renderer="lite" class="${state.settings.renderer === "lite" ? "is-active" : ""}" aria-pressed="${state.settings.renderer === "lite"}"><b>Lite</b><span>Canvas 2D tiết kiệm pin</span></button></div><p class="hwe-prototype-notice"><b>Vertical Slice:</b> T‑Rex và Triceratops dùng model CC0 có animation ở mức prototype; các loài chưa có asset phù hợp vẫn dùng hình khối procedural. Chưa model nào được mô tả là chất lượng điện ảnh.</p><div><button type="button" data-hwe-difficulty="sanctuary" class="${state.settings.difficulty === "sanctuary" ? "is-active" : ""}">Sanctuary</button><button type="button" data-hwe-difficulty="balanced" class="${state.settings.difficulty === "balanced" ? "is-active" : ""}">Cân bằng</button><button type="button" data-hwe-difficulty="wild" class="${state.settings.difficulty === "wild" ? "is-active" : ""}">Wild</button></div><button type="button" class="is-primary" data-hwe-start>▶ Bắt đầu vòng đời</button></div>
         <div class="hwe-death-panel" data-hwe-death hidden><small>VÒNG TUẦN HOÀN TIẾP DIỄN</small><h2>Dòng sống đã kết thúc</h2><p>Chất dinh dưỡng trở lại hệ sinh thái. Dữ liệu Codex và dòng gene vẫn được giữ.</p><button type="button" data-hwe-respawn>Nở lại</button></div>
         <div class="hwe-photo-composition" data-hwe-photo-composition aria-hidden="true" hidden><i></i><i></i><i></i><i></i></div>
         <div class="hwe-photo-crop" data-hwe-photo-crop aria-hidden="true" hidden><i></i><i></i></div>
-        <div class="hwe-photo-overlay" data-hwe-photo-overlay hidden role="dialog" aria-modal="false" aria-label="Photo Mode vật lý"><header><span><small>PHYSICAL CAMERA · PAUSED</small><strong>${escapeHtml(selected.vietnamese)} · ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</strong></span><button type="button" data-hwe-photo-close aria-label="Thoát Photo Mode">×</button></header><div class="hwe-photo-controls">
+        <div class="hwe-photo-overlay" data-hwe-photo-overlay hidden role="dialog" aria-modal="true" aria-label="Photo Mode vật lý"><header><span><small>PHYSICAL CAMERA · PAUSED</small><strong>${escapeHtml(selected.vietnamese)} · ${escapeHtml(REALMS[state.realmId]?.label || state.realmId)}</strong></span><button type="button" data-hwe-photo-close aria-label="Thoát Photo Mode">×</button></header><div class="hwe-photo-controls">
           <fieldset><legend>Ống kính & phơi sáng</legend><label>Tiêu cự <output>${Math.round(state.settings.photoFocalLength)} mm</output><input type="range" min="18" max="200" step="1" value="${state.settings.photoFocalLength}" data-hwe-photo-setting="photoFocalLength"></label><label>Khẩu độ <output>f/${Number(state.settings.photoAperture).toFixed(1)}</output><input type="range" min="1.4" max="16" step="0.1" value="${state.settings.photoAperture}" data-hwe-photo-setting="photoAperture"></label><label>Tốc độ màn trập<select data-hwe-photo-setting="photoShutter">${[15,30,60,125,250,500,1000,2000,4000,8000].map((value)=>`<option value="${value}" ${Math.round(state.settings.photoShutter)===value?"selected":""}>1/${value} giây</option>`).join("")}</select></label><label>ISO <output>${Math.round(state.settings.photoIso)}</output><input type="range" min="50" max="6400" step="50" value="${state.settings.photoIso}" data-hwe-photo-setting="photoIso"></label><label>Bù sáng <output>${state.settings.photoExposureComp > 0 ? "+" : ""}${Number(state.settings.photoExposureComp).toFixed(1)} EV</output><input type="range" min="-5" max="5" step="0.1" value="${state.settings.photoExposureComp}" data-hwe-photo-setting="photoExposureComp"></label></fieldset>
-          <fieldset><legend>Focus & bố cục</legend><label class="hwe-photo-check"><input type="checkbox" data-hwe-photo-setting="photoAutofocus" ${state.settings.photoAutofocus?"checked":""}> Autofocus theo sinh vật</label><label>Khoảng focus <output>${Number(state.settings.photoFocusDistance).toFixed(1)} m</output><input type="range" min="0.3" max="500" step="0.1" value="${state.settings.photoFocusDistance}" data-hwe-photo-setting="photoFocusDistance"></label><label>Lưới bố cục<select data-hwe-photo-setting="photoComposition"><option value="thirds" ${state.settings.photoComposition==="thirds"?"selected":""}>Rule of thirds</option><option value="off" ${state.settings.photoComposition==="off"?"selected":""}>Tắt lưới</option></select></label><label>Tỷ lệ khung<select data-hwe-photo-setting="photoCrop"><option value="native" ${state.settings.photoCrop==="native"?"selected":""}>Theo viewport</option><option value="2.39" ${state.settings.photoCrop==="2.39"?"selected":""}>CinemaScope 2.39:1</option><option value="1.85" ${state.settings.photoCrop==="1.85"?"selected":""}>Cinema 1.85:1</option><option value="1.0" ${state.settings.photoCrop==="1.0"?"selected":""}>Vuông 1:1</option></select></label><label>Rung camera <output>${Math.round(state.settings.photoShake)}%</output><input type="range" min="0" max="100" step="1" value="${state.settings.photoShake}" data-hwe-photo-setting="photoShake"></label></fieldset>
+          <fieldset><legend>Focus & bố cục</legend><label class="hwe-photo-check"><input type="checkbox" data-hwe-photo-setting="photoAutofocus" ${state.settings.photoAutofocus?"checked":""}><span>Autofocus theo sinh vật</span></label><label>Khoảng focus <output>${Number(state.settings.photoFocusDistance).toFixed(1)} m</output><input type="range" min="0.3" max="500" step="0.1" value="${state.settings.photoFocusDistance}" data-hwe-photo-setting="photoFocusDistance"></label><label>Lưới bố cục<select data-hwe-photo-setting="photoComposition"><option value="thirds" ${state.settings.photoComposition==="thirds"?"selected":""}>Rule of thirds</option><option value="off" ${state.settings.photoComposition==="off"?"selected":""}>Tắt lưới</option></select></label><label>Tỷ lệ khung<select data-hwe-photo-setting="photoCrop"><option value="native" ${state.settings.photoCrop==="native"?"selected":""}>Theo viewport</option><option value="2.39" ${state.settings.photoCrop==="2.39"?"selected":""}>CinemaScope 2.39:1</option><option value="1.85" ${state.settings.photoCrop==="1.85"?"selected":""}>Cinema 1.85:1</option><option value="1.0" ${state.settings.photoCrop==="1.0"?"selected":""}>Vuông 1:1</option></select></label><label>Rung camera <output>${Math.round(state.settings.photoShake)}%</output><input type="range" min="0" max="100" step="1" value="${state.settings.photoShake}" data-hwe-photo-setting="photoShake"></label></fieldset>
           <input type="hidden" value="${Math.round(state.settings.photoFov)}" data-hwe-photo-setting="photoFov"><input type="hidden" value="${Math.round(state.settings.photoExposure)}" data-hwe-photo-setting="photoExposure">
         </div><footer><p><b>PNG thật từ renderer hiện tại.</b> Chế độ Lite vẫn chụp được canvas; DOF vật lý chỉ bật khi pipeline 3D hỗ trợ.</p><button type="button" class="is-primary" data-hwe-photo-capture>Chụp PNG</button><button type="button" data-hwe-photo-close>Thoát Photo Mode</button></footer></div>
-        <div class="hwe-touch-controls" aria-label="Điều khiển cảm ứng"><div class="hwe-touch-stick" data-hwe-touch-stick role="application" tabindex="0" aria-label="Joystick cảm ứng linh hoạt"><i></i></div><button type="button" data-hwe-touch="ArrowUp" aria-label="Đi tới">▲</button><button type="button" data-hwe-touch="ArrowLeft" aria-label="Đi trái">◀</button><button type="button" data-hwe-touch="ArrowDown" aria-label="Đi lùi">▼</button><button type="button" data-hwe-touch="ArrowRight" aria-label="Đi phải">▶</button><button type="button" data-hwe-action="interact" aria-label="Tương tác, ăn hoặc uống">F</button><button type="button" data-hwe-action="sense" aria-label="Kích hoạt giác quan">Q</button><button type="button" data-hwe-action="ability" aria-label="Dùng năng lực loài">R</button><button type="button" data-hwe-communication-open aria-label="Mở vòng giao tiếp">C</button></div>
+        <div class="hwe-touch-controls" aria-label="Điều khiển cảm ứng"><div class="hwe-touch-stick" data-hwe-touch-stick role="application" tabindex="0" aria-label="Joystick cảm ứng linh hoạt"><i></i></div><div class="hwe-camera-pad" data-hwe-camera-pad role="application" tabindex="0" aria-label="Vuốt để lia camera"></div><button type="button" data-hwe-touch="ArrowUp" aria-label="Đi tới">▲</button><button type="button" data-hwe-touch="ArrowLeft" aria-label="Đi trái">◀</button><button type="button" data-hwe-touch="ArrowDown" aria-label="Đi lùi">▼</button><button type="button" data-hwe-touch="ArrowRight" aria-label="Đi phải">▶</button><button type="button" data-hwe-action="interact" aria-label="Tương tác, ăn hoặc uống">F</button><button type="button" data-hwe-action="sense" aria-label="Kích hoạt giác quan">Q</button><button type="button" data-hwe-action="ability" aria-label="Dùng năng lực loài">R</button><button type="button" data-hwe-action="lock-target" aria-label="Khóa hoặc bỏ khóa mục tiêu">Z</button><button type="button" data-hwe-communication-open aria-label="Mở vòng giao tiếp">C</button></div>
+        <div class="hwe-pause-overlay" data-hwe-pause-overlay hidden role="dialog" aria-modal="true" aria-labelledby="hwe-pause-title"><section><small>IMMERSIVE GAMEPLAY · CON TRỎ ĐÃ GIẢI PHÓNG</small><h2 id="hwe-pause-title">Tạm dừng vòng đời</h2><p>Chỉ trạng thái Playing mới nhận WASD và chuột. Bấm Tiếp tục để khóa chuột lại bằng một thao tác hợp lệ.</p><div><button type="button" class="is-primary" data-hwe-resume>▶ Tiếp tục</button><button type="button" data-hwe-fullscreen>⛶ Toàn màn hình</button><button type="button" data-hwe-game-overlay-open="map">M · World Map</button><button type="button" data-hwe-game-overlay-open="codex">Tab · Animal Codex</button><button type="button" data-hwe-photo> P · Photo Mode</button><button type="button" data-hwe-game-overlay-open="settings">⚙ Camera & điều khiển</button><button type="button" data-hwe-exit-immersive>Thoát chế độ nhập vai</button></div></section></div>
+        <div class="hwe-game-overlay" data-hwe-game-overlay hidden role="dialog" aria-modal="true" aria-labelledby="hwe-game-overlay-title"><section><header><div><small data-hwe-game-overlay-kicker>IN-GAME OVERLAY</small><h2 id="hwe-game-overlay-title" data-hwe-game-overlay-title>World Map</h2></div><button type="button" data-hwe-game-overlay-close aria-label="Đóng overlay">×</button></header><div data-hwe-game-overlay-body></div><footer><button type="button" data-hwe-game-overlay-close>Quay lại Pause</button></footer></section></div>
       </section>
       <aside class="hwe-telemetry"><header><span class="hwe-avatar" style="--species:${selected.color}">◆</span><span><small>${escapeHtml(selected.name)}</small><strong>${escapeHtml(selected.vietnamese)}</strong></span><button type="button" data-hwe-pause aria-pressed="false">Ⅱ</button></header>
         <section class="hwe-vitals">${[["health","Máu"],["hunger","Đói"],["thirst","Khát"],["stamina","Thể lực"],["growth","Trưởng thành"],["oxygen","Oxy"],["nutrition","Dinh dưỡng"],["dietQuality","Khẩu phần"]].map(([key,label]) => `<label>${label} <progress data-hwe-vital="${key}" max="100" value="${state.player[key]}"></progress><b data-hwe-value="${key}">${Math.round(state.player[key])}</b></label>`).join("")}</section>
@@ -638,6 +654,7 @@
       <article><small>GAMEPLAY</small><h3>Vòng đời và độ khó</h3><label>Chế độ<select data-hwe-mode>${modes.map((mode)=>`<option value="${escapeHtml(mode.id)}" ${state.mode===mode.id?"selected":""} ${mode.available?"":"disabled"}>${escapeHtml(mode.label)}${mode.available?"":" · lộ trình"}</option>`).join("")}</select></label><label>Độ khó<select data-hwe-setting="difficulty"><option value="sanctuary" ${state.settings.difficulty === "sanctuary" ? "selected" : ""}>Sanctuary</option><option value="balanced" ${state.settings.difficulty === "balanced" ? "selected" : ""}>Cân bằng</option><option value="wild" ${state.settings.difficulty === "wild" ? "selected" : ""}>Wild Survival</option></select></label></article>
       <article class="${state.settings.quality === "personal" ? "is-personal-quality" : ""}"><small>3D RENDERER</small><h3>${capabilities.recommendedBackend === "lite" ? "Lite Mode được khuyến nghị" : `${escapeHtml(capabilities.recommendedBackend.toUpperCase())} sẵn sàng`}</h3><label>Renderer<select data-hwe-setting="renderer"><option value="auto" ${state.settings.renderer === "auto" ? "selected":""}>Tự chọn 3D → Lite</option><option value="3d" ${state.settings.renderer === "3d" ? "selected":""}>Ưu tiên Babylon 3D</option><option value="lite" ${state.settings.renderer === "lite" ? "selected":""}>Canvas 2D Lite</option></select></label><label>Chất lượng<select data-hwe-setting="quality">${qualityProfiles().map((profile)=>`<option value="${profile.id}" ${state.settings.quality===profile.id?"selected":""}>${escapeHtml(profile.label)} · ${profile.id === "personal" ? "ưu tiên hình ảnh / không adaptive" : `${profile.targetFps} FPS mục tiêu`}</option>`).join("")}</select></label><p>WebGPU ${capabilities.webgpu?"✓":"—"} · WebGL2 ${capabilities.webgl2?"✓":"—"}. Personal là lựa chọn thủ công của chủ máy, không bao giờ được adaptive governor tự nâng lên.</p></article>
       <article><small>HIỆU NĂNG</small><h3>Motion và wildlife budget</h3><label>Chuyển động<select data-hwe-setting="motion"><option value="static" ${state.settings.motion === "static" ? "selected":""}>Tĩnh</option><option value="balanced" ${state.settings.motion === "balanced" ? "selected":""}>Cân bằng</option><option value="cinematic" ${state.settings.motion === "cinematic" ? "selected":""}>Điện ảnh</option></select></label><label>Mật độ wildlife<select data-hwe-setting="density"><option value="low" ${state.settings.density === "low" ? "selected":""}>Thấp</option><option value="balanced" ${state.settings.density === "balanced" ? "selected":""}>Cân bằng</option><option value="high" ${state.settings.density === "high" ? "selected":""}>Cao</option></select></label><label><input type="checkbox" data-hwe-setting="adaptiveQuality" ${state.settings.adaptiveQuality ? "checked":""}> Tự hạ LOD, DPR và proxy hiển thị khi frame time tăng</label></article>
+      <article class="hwe-camera-settings"><small>DESKTOP CAMERA</small><h3>Camera sinh vật</h3><label>Góc nhìn<select data-hwe-setting="viewMode"><option value="third-person" ${state.settings.viewMode === "third-person" ? "selected":""}>Góc nhìn thứ ba</option><option value="animal-eye" ${state.settings.viewMode === "animal-eye" ? "selected":""}>Animal-eye</option></select></label><label>Độ nhạy ngang <output>${Math.round(state.settings.cameraSensitivityX)}%</output><input type="range" min="1" max="100" step="1" value="${state.settings.cameraSensitivityX}" data-hwe-camera-setting="cameraSensitivityX"></label><label>Độ nhạy dọc <output>${Math.round(state.settings.cameraSensitivityY)}%</output><input type="range" min="1" max="100" step="1" value="${state.settings.cameraSensitivityY}" data-hwe-camera-setting="cameraSensitivityY"></label><label>FOV <output>${Math.round(state.settings.cameraFov)}°</output><input type="range" min="45" max="105" step="1" value="${state.settings.cameraFov}" data-hwe-camera-setting="cameraFov"></label><label>Độ mượt <output>${Math.round(state.settings.cameraSmoothing)}%</output><input type="range" min="0" max="100" step="1" value="${state.settings.cameraSmoothing}" data-hwe-camera-setting="cameraSmoothing"></label><label>Rung camera <output>${Math.round(state.settings.cameraShake)}%</output><input type="range" min="0" max="100" step="1" value="${state.settings.cameraShake}" data-hwe-camera-setting="cameraShake"></label><label><input type="checkbox" data-hwe-setting="invertCameraY" ${state.settings.invertCameraY ? "checked":""}> Đảo trục Y</label><label><input type="checkbox" data-hwe-setting="autoCenterCamera" ${state.settings.autoCenterCamera ? "checked":""}> Tự căn camera khi di chuyển</label><p>Pointer Lock chỉ bật sau thao tác click hợp lệ; Escape làm mất khóa chuột và mở Pause.</p></article>
       <article><small>SIMULATION</small><h3>Worker có fallback</h3><label><input type="checkbox" data-hwe-setting="worker" ${state.settings.worker ? "checked":""}> Dùng worker cho tác vụ tương thích</label><p>AI fixed-step vẫn giữ toàn bộ quần thể khi renderer hạ LOD. Far ring chỉ đổi cách biểu diễn, không xóa ecology.</p></article>
       <article><small>ÂM THANH · TRỢ NĂNG</small><h3>Tín hiệu rõ ràng</h3><label><input type="checkbox" data-hwe-setting="sound" ${state.settings.sound ? "checked":""}> Âm thanh tương tác và ambience đã xác minh</label><label>Âm lượng tín hiệu <output>${Math.round(state.settings.soundVolume)}%</output><input type="range" min="0" max="100" step="1" data-hwe-setting="soundVolume" value="${Math.round(state.settings.soundVolume)}"></label><label><input type="checkbox" data-hwe-setting="photoUi" ${state.settings.photoUi ? "checked":""}> Hiện nhãn trong Photo Mode</label><p>Bàn phím, touch, gamepad, focus rõ và prefers-reduced-motion được giữ ở cả 3D lẫn Lite. Cinematic Audio Pack chỉ phát asset đã đúng SHA-256, dừng cùng renderer và không tự nhận là production.</p></article>
       ${inputSettingsMarkup(inputSystem)}
@@ -934,11 +951,297 @@
     return { x: Math.abs(pad.axes?.[0] || 0) > .18 ? pad.axes?.[0] : 0, y: Math.abs(pad.axes?.[1] || 0) > .18 ? pad.axes?.[1] : 0, sprint: Boolean(pad.buttons?.[0]?.pressed || pad.buttons?.[7]?.pressed) };
   }
 
+  function cameraProfileIdForSpecies(species) {
+    if (!species) return "ground";
+    if (species.locomotion === "fly") return "bird";
+    if (species.locomotion === "swim") return "aquatic";
+    if (species.locomotion === "climb") return "climbing";
+    if (species.locomotion === "crawl" && species.mass < 5) return "burrow";
+    if (species.mass >= 3000) return "heavy";
+    if (species.mass < 8) return "small";
+    return "ground";
+  }
+
+  function desktopCameraProfile(instance) {
+    const species = SPECIES_BY_ID.get(instance.state.speciesId);
+    const id = cameraProfileIdForSpecies(species);
+    const base = DESKTOP?.getCameraProfile?.(id) || { id, distance: 6, minDistance: 1, maxDistance: 16, minPitch: -1.1, maxPitch: .7, fov: 68, height: 1.5, sensitivityX: .0024, sensitivityY: .0024, zoomSpeed: .0045, acceleration: 10, deceleration: 16, turnRate: 2.6, sprintMultiplier: 1.55 };
+    const sensitivity = (value, fallback) => Number.isFinite(Number(value)) ? .00045 + clamp(value, 1, 100) / 100 * .0042 : fallback;
+    return DESKTOP?.getCameraProfile?.({
+      ...base,
+      sensitivityX: sensitivity(instance.state.settings.cameraSensitivityX, base.sensitivityX),
+      sensitivityY: sensitivity(instance.state.settings.cameraSensitivityY, base.sensitivityY),
+      invertY: instance.state.settings.invertCameraY,
+      fov: instance.state.settings.cameraFov
+    }) || base;
+  }
+
+  function initializeDesktopGameplay(instance, reset = false) {
+    if (!DESKTOP) return false;
+    const player = instance.state.player;
+    const profile = desktopCameraProfile(instance);
+    if (!instance.camera || reset) {
+      instance.camera = {
+        profileId: profile.id,
+        yaw: instance.heading || 0,
+        pitch: -.18,
+        targetYaw: instance.heading || 0,
+        targetPitch: -.18,
+        desiredDistance: instance.state.settings.viewMode === "animal-eye" ? profile.minDistance : profile.distance,
+        distance: instance.state.settings.viewMode === "animal-eye" ? profile.minDistance : profile.distance,
+        fov: instance.state.settings.cameraFov,
+        firstPerson: instance.state.settings.viewMode === "animal-eye"
+      };
+    }
+    if (!instance.desktopController || reset) {
+      const species = SPECIES_BY_ID.get(instance.state.speciesId);
+      const speed = Math.min(100, 30 + Math.min(80, (species?.speed || 10) * 2.2));
+      instance.desktopController = new DESKTOP.FixedTimestepController({
+        stepSeconds: 1 / 120,
+        maxFrameSeconds: .2,
+        maxSubSteps: 24,
+        profile: profile.id,
+        maxSpeed: speed,
+        sprintMultiplier: 1.7,
+        acceleration: profile.acceleration,
+        deceleration: profile.deceleration,
+        turnRate: profile.turnRate,
+        initialState: { x: player.x, z: player.y, heading: instance.heading || 0 }
+      });
+    }
+    return true;
+  }
+
+  function gameplayStateName(instance) {
+    return String(instance.gameplayMachine?.status || (instance.running ? "PLAYING" : "READY")).toLowerCase().replace("_mode", "");
+  }
+
+  function transitionGameplay(instance, event) {
+    if (!DESKTOP?.reduceGameplayState) return instance.gameplayMachine;
+    instance.gameplayMachine = DESKTOP.reduceGameplayState(instance.gameplayMachine, event);
+    if (instance.root) instance.root.dataset.gameplayState = gameplayStateName(instance);
+    return instance.gameplayMachine;
+  }
+
+  function isGameplayActive(instance) {
+    if (!instance.running || instance.dead || gameplayStateName(instance) !== "playing") return false;
+    const surface = activeSurface(instance);
+    const coarsePointer = typeof global.matchMedia === "function"
+      ? Boolean(global.matchMedia("(pointer: coarse)").matches)
+      : (global.navigator?.maxTouchPoints || 0) > 0;
+    const pointerLockSupported = typeof surface?.requestPointerLock === "function";
+    return Boolean(coarsePointer || !pointerLockSupported || global.document?.pointerLockElement === surface);
+  }
+
+  function isGameplayStatePlaying(instance) {
+    return Boolean(instance?.running && !instance.dead && gameplayStateName(instance) === "playing");
+  }
+
+  function releasePointerLock(instance, deliberate = true) {
+    const documentRef = global.document;
+    if (!documentRef) return false;
+    if (deliberate && DESKTOP?.reducePointerLock) instance.pointerLockState = DESKTOP.reducePointerLock(instance.pointerLockState, { type: "RELEASE" });
+    if (documentRef.pointerLockElement && typeof documentRef.exitPointerLock === "function") {
+      try { documentRef.exitPointerLock(); return true; } catch {}
+    }
+    return false;
+  }
+
+  function requestGameplayPointerLock(instance) {
+    const surface = activeSurface(instance);
+    if (!surface || !isGameplayStatePlaying(instance)) return Promise.resolve(false);
+    focusSurface(instance);
+    const coarsePointer = typeof global.matchMedia === "function"
+      ? Boolean(global.matchMedia("(pointer: coarse)").matches)
+      : (global.navigator?.maxTouchPoints || 0) > 0;
+    if (coarsePointer || typeof surface.requestPointerLock !== "function") return Promise.resolve(true);
+    if (global.document?.pointerLockElement === surface) return Promise.resolve(true);
+    if (DESKTOP?.reducePointerLock) instance.pointerLockState = DESKTOP.reducePointerLock(instance.pointerLockState, { type: "REQUEST" });
+    const rejected = (error) => {
+      if (DESKTOP?.reducePointerLock) instance.pointerLockState = DESKTOP.reducePointerLock(instance.pointerLockState, { type: "ERROR", error: error?.message || "REQUEST_REJECTED" });
+      pauseGame(instance, "pointer-error", false);
+      setToast(instance, "Trình duyệt chưa cấp khóa chuột. Bấm Tiếp tục để thử lại.");
+      return false;
+    };
+    try {
+      const result = surface.requestPointerLock({ unadjustedMovement: true });
+      return Promise.resolve(result).then(() => true).catch(() => {
+        try { return Promise.resolve(surface.requestPointerLock()).then(() => true); }
+        catch (error) { throw error; }
+      }).catch(rejected);
+    } catch {
+      try { return Promise.resolve(surface.requestPointerLock()).then(() => true).catch(rejected); }
+      catch (error) { return Promise.resolve(rejected(error)); }
+    }
+  }
+
+  function pauseGame(instance, reason = "manual", releaseLock = true) {
+    if (!instance?.running || instance.dead) return false;
+    if (gameplayStateName(instance) === "playing") transitionGameplay(instance, { type: "PAUSE" });
+    instance.paused = true;
+    instance.root.classList.add("is-paused");
+    instance.root.querySelector("[data-hwe-pause-overlay]")?.removeAttribute("hidden");
+    instance.root.querySelector("[data-hwe-game-overlay]")?.setAttribute("hidden", "");
+    instance.inputSystem?.pause?.("gameplay-state");
+    instance.renderer3d?.setPaused?.(true);
+    if (releaseLock) releasePointerLock(instance, true);
+    instance.root.querySelector("[data-hwe-resume]")?.focus?.({ preventScroll: true });
+    return true;
+  }
+
+  function resumeGame(instance) {
+    if (!instance?.running || instance.dead) return false;
+    if (gameplayStateName(instance) !== "paused") return false;
+    transitionGameplay(instance, { type: "RESUME" });
+    instance.paused = false;
+    instance.root.classList.remove("is-paused");
+    instance.root.querySelector("[data-hwe-pause-overlay]")?.setAttribute("hidden", "");
+    instance.root.querySelector("[data-hwe-game-overlay]")?.setAttribute("hidden", "");
+    instance.inputSystem?.resume?.("gameplay-state");
+    instance.renderer3d?.setPaused?.(false);
+    instance.lastFrame = global.performance?.now?.() || Date.now();
+    requestGameplayPointerLock(instance);
+    return true;
+  }
+
+  function setImmersiveShell(instance, active) {
+    const body = global.document?.body;
+    const mobileNavigation = global.document?.querySelector?.(".app-mobile-nav");
+    if (active) {
+      if (mobileNavigation && !instance.mobileNavigationDisplay) {
+        instance.mobileNavigationDisplay = {
+          value: mobileNavigation.style.getPropertyValue("display"),
+          priority: mobileNavigation.style.getPropertyPriority("display")
+        };
+      }
+      // App Shell pins this dock with an inline `!important` rule on phones.
+      // Remove it while CSS owns the immersive viewport, then restore it on exit.
+      mobileNavigation?.style?.removeProperty?.("display");
+      body?.classList?.add("app-eonwild-immersive");
+      return true;
+    }
+    body?.classList?.remove("app-eonwild-immersive");
+    const previous = instance?.mobileNavigationDisplay;
+    if (mobileNavigation && previous) {
+      if (previous.value) mobileNavigation.style.setProperty("display", previous.value, previous.priority || "");
+      else mobileNavigation.style.removeProperty("display");
+    }
+    if (instance) instance.mobileNavigationDisplay = null;
+    return false;
+  }
+
+  function exitImmersive(instance) {
+    if (!instance) return false;
+    transitionGameplay(instance, { type: "EXIT" });
+    releasePointerLock(instance, true);
+    if (instance.ownsFullscreen && global.document?.fullscreenElement === instance.root) global.document.exitFullscreen?.().catch?.(() => {});
+    instance.ownsFullscreen = false;
+    instance.running = false;
+    instance.paused = false;
+    instance.inputSystem?.pause?.("gameplay-state");
+    instance.renderer3d?.setPaused?.(true);
+    instance.root.classList.remove("is-playing", "is-running", "is-paused");
+    instance.root.dataset.gameplayState = "ready";
+    setImmersiveShell(instance, false);
+    instance.root.querySelector("[data-hwe-pause-overlay]")?.setAttribute("hidden", "");
+    instance.root.querySelector("[data-hwe-game-overlay]")?.setAttribute("hidden", "");
+    const startPanel = instance.root.querySelector("[data-hwe-start-panel]");
+    if (startPanel) startPanel.hidden = false;
+    const start = instance.root.querySelector("[data-hwe-start]");
+    start?.focus?.({ preventScroll: true });
+    return true;
+  }
+
+  function toggleGameplayFullscreen(instance) {
+    const documentRef = global.document;
+    if (!documentRef || !instance?.root) return Promise.resolve(false);
+    if (documentRef.fullscreenElement === instance.root) {
+      instance.ownsFullscreen = false;
+      return Promise.resolve(documentRef.exitFullscreen?.()).then(() => true).catch(() => false);
+    }
+    if (typeof instance.root.requestFullscreen !== "function") {
+      setToast(instance, "Thiết bị này chưa hỗ trợ Fullscreen API.");
+      return Promise.resolve(false);
+    }
+    return Promise.resolve(instance.root.requestFullscreen()).then(() => {
+      instance.ownsFullscreen = true;
+      resizeCanvas(instance);
+      return true;
+    }).catch(() => {
+      setToast(instance, "Trình duyệt chưa cho phép toàn màn hình.");
+      return false;
+    });
+  }
+
+  function applyLookDelta(instance, movementX, movementY) {
+    if (!DESKTOP?.applyMouseLook || !instance.camera || !isGameplayActive(instance)) return false;
+    const profile = desktopCameraProfile(instance);
+    const next = DESKTOP.applyMouseLook({ yaw: instance.camera.targetYaw, pitch: instance.camera.targetPitch }, { movementX, movementY }, {
+      profile,
+      sensitivityX: profile.sensitivityX,
+      sensitivityY: profile.sensitivityY,
+      invertY: instance.state.settings.invertCameraY,
+      minPitch: profile.minPitch,
+      maxPitch: profile.maxPitch
+    });
+    instance.camera.targetYaw = next.yaw;
+    instance.camera.targetPitch = next.pitch;
+    return true;
+  }
+
+  function updateGameplayCamera(instance, seconds) {
+    if (!instance.camera || !DESKTOP) return;
+    const profile = desktopCameraProfile(instance);
+    const pad = instance.inputSystem?.activeGamepad;
+    if (isGameplayActive(instance) && pad?.axes) {
+      const deadzone = instance.inputSystem.settings?.gamepadDeadzone || .18;
+      const x = Math.abs(Number(pad.axes[2]) || 0) > deadzone ? Number(pad.axes[2]) || 0 : 0;
+      const y = Math.abs(Number(pad.axes[3]) || 0) > deadzone ? Number(pad.axes[3]) || 0 : 0;
+      if (x || y) applyLookDelta(instance, x * 720 * seconds, y * 720 * seconds);
+    }
+    const reduced = global.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches || instance.state.settings.motion === "static";
+    const smoothing = reduced ? 1 : clamp(instance.state.settings.cameraSmoothing, 0, 100) / 100;
+    const amount = smoothing <= .01 ? 1 : 1 - Math.exp(-seconds * (4 + (1 - smoothing) * 20));
+    const yawDelta = DESKTOP.shortestAngleDelta(instance.camera.yaw, instance.camera.targetYaw);
+    instance.camera.yaw = DESKTOP.wrapAngle(instance.camera.yaw + yawDelta * amount);
+    instance.camera.pitch += (instance.camera.targetPitch - instance.camera.pitch) * amount;
+    instance.camera.profileId = profile.id;
+    instance.camera.fov = instance.state.settings.cameraFov;
+    instance.camera.firstPerson = instance.state.settings.viewMode === "animal-eye";
+    if (instance.camera.firstPerson) instance.camera.desiredDistance = profile.minDistance;
+    const collision = instance.renderer3d?.resolveCameraCollision?.({
+      target: { x: instance.state.player.x, z: instance.state.player.y },
+      yaw: instance.camera.yaw,
+      pitch: instance.camera.pitch,
+      desiredDistance: instance.camera.desiredDistance,
+      padding: profile.collisionPadding
+    });
+    const collidedDistance = Number(collision?.distance ?? collision);
+    const targetDistance = Number.isFinite(collidedDistance)
+      ? DESKTOP.resolveCameraCollisionDistance(instance.camera.desiredDistance, collidedDistance, { profile })
+      : instance.camera.desiredDistance;
+    const distanceRate = targetDistance < instance.camera.distance ? 24 : 6;
+    instance.camera.distance += (targetDistance - instance.camera.distance) * (1 - Math.exp(-seconds * distanceRate));
+    instance.renderer3d?.applyCameraInput?.({
+      yaw: instance.camera.yaw,
+      pitch: instance.camera.pitch,
+      distance: instance.camera.distance,
+      desiredDistance: instance.camera.desiredDistance,
+      profileId: profile.id,
+      fov: instance.camera.fov,
+      firstPerson: instance.camera.firstPerson,
+      // The route controller already performs FPS-independent smoothing; the
+      // renderer consumes that authoritative result without a second lag layer.
+      smoothing: 0,
+      shake: instance.state.settings.cameraShake / 100
+    });
+  }
+
   function processInputActions(instance, now = performance.now()) {
     const input = instance.inputSystem;
     if (!input || input.disposed) return false;
     const discardGameplayBuffer = () => {
-      ["interact", "sense", "ability", "jump"].forEach((actionId) => {
+      ["interact", "sense", "ability", "jump", "toggleView", "lockTarget", "communicationWheel"].forEach((actionId) => {
         while (input.wasPressed?.(actionId, now)) { /* discard actions queued while gameplay is paused */ }
       });
     };
@@ -948,15 +1251,18 @@
     if (input.wasPressed?.("pause", now)) {
       discardGameplayBuffer();
       if (instance.photoMode) setPhotoMode(instance, false);
+      else if (instance.root.querySelector("[data-hwe-game-overlay]")?.hidden === false) closeGameOverlay(instance);
       else if (instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden === false) setCommunicationWheel(instance, false);
-      else instance.root.querySelector("[data-hwe-pause]")?.click?.();
+      else pauseGame(instance, "keyboard");
       return true;
     }
-    if (input.wasPressed?.("worldMap", now)) { global.location.hash = "#/game/timeline"; return true; }
-    if (input.wasPressed?.("codex", now)) { global.location.hash = "#/game/species"; return true; }
+    if (input.wasPressed?.("worldMap", now)) { if (instance.running) openGameOverlay(instance, "map"); else global.location.hash = "#/game/timeline"; return true; }
+    if (input.wasPressed?.("codex", now)) { if (instance.running) openGameOverlay(instance, "codex"); else global.location.hash = "#/game/species"; return true; }
     if (input.wasPressed?.("photoMode", now)) setPhotoMode(instance, !instance.photoMode);
-    if (instance.paused) { discardGameplayBuffer(); return true; }
+    if (instance.paused || !isGameplayActive(instance)) { discardGameplayBuffer(); return true; }
     if (input.wasPressed?.("communicationWheel", now)) setCommunicationWheel(instance, instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden !== false);
+    if (input.wasPressed?.("toggleView", now)) toggleViewMode(instance);
+    if (input.wasPressed?.("lockTarget", now)) toggleTargetLock(instance);
     if (input.wasPressed?.("interact", now)) interact(instance);
     if (input.wasPressed?.("sense", now)) sense(instance);
     if (input.wasPressed?.("ability", now)) useFlagshipAbility(instance);
@@ -990,31 +1296,57 @@
   }
 
   function updateWorld(instance, seconds) {
-    if (!instance.running || instance.paused || instance.dead) return;
-    instance.inputSystem?.updateGamepads?.(null, performance.now());
+    if (!isGameplayActive(instance)) return;
+    initializeDesktopGameplay(instance);
     const player = instance.state.player;
     const species = SPECIES_BY_ID.get(instance.state.speciesId);
     const pad = instance.inputSystem ? null : gamepadInput(instance);
     const movement = instance.inputSystem?.getMovementVector?.();
-    let dx = movement ? movement.x : (instance.keys.has("ArrowRight") || instance.keys.has("KeyD") ? 1 : 0) - (instance.keys.has("ArrowLeft") || instance.keys.has("KeyA") ? 1 : 0) + pad.x;
-    let dy = movement ? -movement.y : (instance.keys.has("ArrowDown") || instance.keys.has("KeyS") ? 1 : 0) - (instance.keys.has("ArrowUp") || instance.keys.has("KeyW") ? 1 : 0) + pad.y;
-    if (instance.inputSystem && typeof INPUT_SYSTEM?.stepMovement === "function") {
-      instance.inputVelocity = INPUT_SYSTEM.stepMovement(instance.inputVelocity || { x: 0, y: 0 }, { x: dx, y: dy }, 5.2, 7.4, seconds);
-      dx = instance.inputVelocity.x; dy = instance.inputVelocity.y;
-    } else {
-      const length = Math.hypot(dx, dy) || 1;
-      dx /= length; dy /= length;
-    }
-    const moving = Math.abs(dx) + Math.abs(dy) > .05;
+    let inputX = movement ? movement.x : (instance.keys.has("ArrowRight") || instance.keys.has("KeyD") ? 1 : 0) - (instance.keys.has("ArrowLeft") || instance.keys.has("KeyA") ? 1 : 0) + pad.x;
+    let inputY = movement ? movement.y : (instance.keys.has("ArrowUp") || instance.keys.has("KeyW") ? 1 : 0) - (instance.keys.has("ArrowDown") || instance.keys.has("KeyS") ? 1 : 0) - pad.y;
     const crouching = Boolean(instance.inputSystem?.isActionDown?.("crouch"));
-    const sprinting = moving && !crouching && (instance.inputSystem?.isActionDown?.("sprint") || instance.keys.has("ShiftLeft") || instance.keys.has("ShiftRight") || pad?.sprint) && player.stamina > 5;
+    const wantsSprint = !crouching && (instance.inputSystem?.isActionDown?.("sprint") || instance.keys.has("ShiftLeft") || instance.keys.has("ShiftRight") || pad?.sprint) && player.stamina > 5;
     const terrain = terrainForRealm(terrainAt(player.x, player.y, instance.world.seed), instance.state.realmId, player.x, player.y);
     const injurySpeed = 1 - player.injuries.fracture / 150;
     const geneEndurance = CONTENT?.GENE_SCHEMA?.endurance ? clamp(player.genes.endurance, .7, 1.3) : 1;
-    const speed = (30 + Math.min(80, species.speed * 2.2)) * (sprinting ? 1.7 : crouching ? .46 : 1) * habitatPenalty(species, terrain) * injurySpeed * geneEndurance;
-    player.x = clamp(player.x + dx * speed * seconds, 20, WORLD_SIZE - 20);
-    player.y = clamp(player.y + dy * speed * seconds, 20, WORLD_SIZE - 20);
-    if (moving) instance.heading = Math.atan2(dy, dx);
+    const profile = desktopCameraProfile(instance);
+    const baseSpeed = Math.min(100, 30 + Math.min(80, species.speed * 2.2)) * habitatPenalty(species, terrain) * injurySpeed * geneEndurance;
+    const locomotionScale = crouching ? .46 : 1;
+    inputX *= locomotionScale; inputY *= locomotionScale;
+    if (instance.desktopController && DESKTOP?.resolveLocomotionConfig) instance.desktopController.options = DESKTOP.resolveLocomotionConfig({ profile, maxSpeed: baseSpeed, sprintMultiplier: 1.7, acceleration: profile.acceleration, deceleration: profile.deceleration, turnRate: profile.turnRate });
+    const advanced = instance.desktopController?.advance?.(seconds, { x: inputX, y: inputY, cameraYaw: instance.camera?.yaw || 0, sprint: wantsSprint }) || null;
+    const fixedSeconds = (advanced?.steps || 0) * (instance.desktopController?.stepSeconds || 1 / 120);
+    if (!advanced || fixedSeconds <= 0) return;
+    let physics = advanced.state;
+    let render = advanced.renderState || physics;
+    let nextX = clamp(physics.x, 20, WORLD_SIZE - 20);
+    let nextY = clamp(physics.z, 20, WORLD_SIZE - 20);
+    const groundHeight = RENDERER_ADAPTER?.sampleTerrainHeight || RENDERER_3D?.terrainHeight;
+    const renderSeed = rendererSeedForState(instance.state);
+    const previousGround = typeof groundHeight === "function" ? Number(groundHeight(player.x, player.y, renderSeed)) : NaN;
+    const nextGround = typeof groundHeight === "function" ? Number(groundHeight(nextX, nextY, renderSeed)) : NaN;
+    const horizontalTravel = Math.hypot(nextX - player.x, nextY - player.y);
+    const slopeRadians = horizontalTravel > .001 && Number.isFinite(previousGround) && Number.isFinite(nextGround)
+      ? Math.atan2(Math.abs(nextGround - previousGround), horizontalTravel)
+      : 0;
+    const slopeLimit = profile.id === "heavy" ? .43 : profile.id === "small" || profile.id === "climbing" ? .8 : .58;
+    const groundBound = !["bird", "aquatic"].includes(profile.id);
+    if (groundBound && slopeRadians > slopeLimit) { nextX = player.x; nextY = player.y; }
+    if (nextX !== physics.x || nextY !== physics.z) {
+      physics = instance.desktopController.reset({ ...physics, x: nextX, z: nextY, velocityX: 0, velocityZ: 0 });
+      render = physics;
+    }
+    player.x = nextX;
+    player.y = nextY;
+    instance.heading = physics.heading;
+    instance.renderPlayer = { ...player, x: clamp(render.x, 20, WORLD_SIZE - 20), y: clamp(render.z, 20, WORLD_SIZE - 20) };
+    instance.renderHeading = render.heading;
+    const velocityLength = Math.hypot(physics.velocityX, physics.velocityZ);
+    const moving = velocityLength > .05;
+    const sprinting = moving && wantsSprint;
+    const dx = velocityLength > .001 ? physics.velocityX / velocityLength : 0;
+    const dy = velocityLength > .001 ? physics.velocityZ / velocityLength : 0;
+    seconds = fixedSeconds;
     syncPlanetRuntime(instance, seconds, dx, dy);
     if (moving && instance.simulation?.trails && instance.trailClock >= .18) {
       instance.trailClock = 0;
@@ -1031,7 +1363,15 @@
     player.health = clamp(player.health - seconds * (effects.wildfire * 5 + effects.volcano * 7 + effects.flood * .7), 0, 100);
     if ((effects.wildfire > .32 || effects.volcano > .32) && instance.injuryClock > 3) { instance.injuryClock = 0; injurePlayer(instance, "burn", .08 + effects.danger * .12); }
     instance.injuryClock += seconds;
-    if (!player.health) { instance.dead = true; instance.running = false; instance.root.classList.remove("is-running"); instance.root.querySelector("[data-hwe-death]").hidden = false; instance.state.player.lineage += 1; saveState(instance); }
+    if (!player.health) {
+      instance.dead = true; instance.running = false; instance.paused = true;
+      transitionGameplay(instance, { type: "GAME_OVER" });
+      releasePointerLock(instance, true);
+      instance.root.classList.remove("is-running", "is-playing");
+      setImmersiveShell(instance, false);
+      instance.root.querySelector("[data-hwe-death]").hidden = false;
+      instance.state.player.lineage += 1; saveState(instance);
+    }
     instance.world.day = (instance.world.day + seconds * .08) % 24;
     instance.world.weather.phase += seconds * .1;
     if (!instance.simulation) instance.population.forEach((creature, index) => {
@@ -1103,7 +1443,7 @@
     const height = canvas.height / dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
-    const player = instance.state.player;
+    const player = instance.renderPlayer || instance.state.player;
     const cameraX = player.x - width / 2;
     const cameraY = player.y - height / 2;
     const tile = 96;
@@ -1171,10 +1511,10 @@
       if (x < -40 || y < -40 || x > width + 40 || y > height + 40) return;
       ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(creature.vy, creature.vx));
       const size = clamp(5 + Math.log10(creature.species.mass + 1) * 2.2, 5, 16);
-      drawSpeciesBody(ctx, creature.species, size, false, creature.action); ctx.restore();
+      drawSpeciesBody(ctx, creature.species, size, instance.currentTarget?.id === creature.id, creature.action); ctx.restore();
     });
     const selected = SPECIES_BY_ID.get(instance.state.speciesId);
-    ctx.save(); ctx.translate(width / 2, height / 2); ctx.rotate(instance.heading || 0);
+    ctx.save(); ctx.translate(width / 2, height / 2); ctx.rotate(Math.PI / 2 - (instance.renderHeading ?? instance.heading ?? 0));
     const playerSize = clamp(11 + Math.log10(selected.mass + 1) * 2.5, 11, 25);
     ctx.shadowColor = selected.color; ctx.shadowBlur = 18; drawSpeciesBody(ctx, selected, playerSize, true, instance.camouflageUntil > performance.now() ? "camouflage" : "rest"); ctx.restore();
     if (instance.senseUntil > performance.now()) {
@@ -1202,10 +1542,8 @@
   function updateHud(instance) {
     const player = instance.state.player;
     ["health", "hunger", "thirst", "stamina", "growth", "oxygen", "nutrition", "dietQuality"].forEach((key) => {
-      const progress = instance.root.querySelector(`[data-hwe-vital="${key}"]`);
-      const value = instance.root.querySelector(`[data-hwe-value="${key}"]`);
-      if (progress) progress.value = player[key];
-      if (value) value.textContent = Math.round(player[key]);
+      instance.root.querySelectorAll(`[data-hwe-vital="${key}"]`).forEach((progress) => { progress.value = player[key]; });
+      instance.root.querySelectorAll(`[data-hwe-value="${key}"]`).forEach((value) => { value.textContent = Math.round(player[key]); });
     });
     [["temperature", player.temperature], ["bleeding", player.injuries.bleeding], ["fracture", player.injuries.fracture], ["infection", player.injuries.infection], ["disease", player.injuries.disease]].forEach(([key, current]) => {
       const node = instance.root.querySelector(`[data-hwe-condition="${key}"]`);
@@ -1244,20 +1582,23 @@
 
   function loop(instance, now) {
     if (instance.destroyed) return;
-    const seconds = Math.min(.05, Math.max(0, (now - instance.lastFrame) / 1000 || 0));
+    const seconds = Math.min(.2, Math.max(0, (now - instance.lastFrame) / 1000 || 0));
     instance.lastFrame = now;
     if (!global.document?.hidden) {
-      updateWorld(instance, seconds);
+      instance.inputSystem?.updateGamepads?.(null, now);
       processInputActions(instance, now);
+      updateGameplayCamera(instance, seconds);
+      updateWorld(instance, seconds);
+      updateTargeting(instance);
       if (instance.renderer3d) {
         const species = SPECIES_BY_ID.get(instance.state.speciesId);
         instance.renderer3d.sync({
-          player: instance.state.player,
+          player: instance.renderPlayer || instance.state.player,
           population: instance.population,
           world: instance.world,
           speciesId: species.id,
           speciesColor: species.color,
-          heading: instance.heading,
+          heading: instance.renderHeading ?? instance.heading,
           senseActive: instance.senseUntil > now,
           // Photo Mode freezes simulation but keeps the renderer alive so
           // lens, exposure and focus adjustments remain visible immediately.
@@ -1306,6 +1647,156 @@
     logSignal(instance, `Hoàn thành: ${mission.title}. ${mission.reward}.`); setToast(instance, `✓ ${mission.title}`); return true;
   }
 
+  function targetCandidates(instance) {
+    if (!instance.world) return [];
+    const sampleHeight = RENDERER_ADAPTER?.sampleTerrainHeight || RENDERER_3D?.terrainHeight;
+    const seed = typeof instance.renderer3d?.pickCenter === "function" ? rendererSeedForState(instance.state) : worldSeedForState(instance.state);
+    const groundAt = (x, z) => {
+      if (typeof sampleHeight !== "function") return 0;
+      const height = Number(sampleHeight(x, z, seed));
+      return Number.isFinite(height) ? height : 0;
+    };
+    const animals = (instance.population || []).filter((row) => row.alive !== false).map((row) => ({
+      id: row.id,
+      type: "animal",
+      position: { x: row.x, y: groundAt(row.x, row.y) + Math.max(.25, Math.log10((row.species?.mass || 1) + 1)), z: row.y },
+      entity: row,
+      label: row.species?.vietnamese || row.species?.name || "Động vật",
+      action: "Quan sát / tương tác",
+      targetable: true
+    }));
+    const resources = (instance.world.resources || []).filter((row) => row.amount > 0).map((row) => ({
+      id: row.id,
+      type: row.type === "water" ? "water" : row.type === "shelter" ? "nest" : "food",
+      position: { x: row.x, y: groundAt(row.x, row.y) + .35, z: row.y },
+      entity: row,
+      label: row.type === "water" ? "Nguồn nước" : row.type === "plant" ? "Thực vật ăn được" : row.type === "carcass" ? "Nguồn đạm" : "Nơi trú ẩn",
+      action: row.type === "water" ? "Uống nước" : row.type === "shelter" ? "Kiểm tra nơi trú" : "Ăn",
+      targetable: true
+    }));
+    return [...animals, ...resources];
+  }
+
+  function hasTerrainLineOfSight(instance, candidate, ray = {}) {
+    const sampleHeight = RENDERER_ADAPTER?.sampleTerrainHeight || RENDERER_3D?.terrainHeight;
+    if (typeof sampleHeight !== "function") return true;
+    const player = instance.state.player;
+    const seed = typeof instance.renderer3d?.pickCenter === "function" ? rendererSeedForState(instance.state) : worldSeedForState(instance.state);
+    const originHeight = Number(sampleHeight(player.x, player.y, seed)) + (desktopCameraProfile(instance).height || 1.5);
+    const targetHeight = Number(candidate.position?.y || .5);
+    if (!Number.isFinite(originHeight) || !Number.isFinite(targetHeight)) return true;
+    const steps = Math.max(4, Math.min(12, Math.ceil((ray.distance || 0) / 12)));
+    for (let index = 1; index < steps; index += 1) {
+      const t = index / steps;
+      const x = player.x + (candidate.position.x - player.x) * t;
+      const z = player.y + (candidate.position.z - player.y) * t;
+      const sightHeight = originHeight + (targetHeight - originHeight) * t;
+      const terrainHeight = Number(sampleHeight(x, z, seed));
+      if (Number.isFinite(terrainHeight) && terrainHeight > sightHeight + .65) return false;
+    }
+    return true;
+  }
+
+  function clearCurrentTarget(instance) {
+    instance.currentTarget = null;
+    instance.lockedTargetId = "";
+    instance.renderer3d?.setHighlightedTarget?.(null);
+    const reticle = instance.root.querySelector("[data-hwe-reticle]");
+    reticle?.classList?.remove("is-targeting");
+    reticle?.removeAttribute?.("data-target-state");
+    const prompt = instance.root.querySelector("[data-hwe-target-prompt]");
+    if (prompt) prompt.replaceChildren();
+  }
+
+  function updateTargetPrompt(instance) {
+    const target = instance.currentTarget;
+    const prompt = instance.root.querySelector("[data-hwe-target-prompt]");
+    const reticle = instance.root.querySelector("[data-hwe-reticle]");
+    if (!prompt || !reticle) return;
+    if (!target) { prompt.replaceChildren(); reticle.classList.remove("is-targeting"); reticle.removeAttribute("data-target-state"); return; }
+    reticle.classList.add("is-targeting");
+    reticle.dataset.targetState = "valid";
+    const locked = instance.lockedTargetId === target.id;
+    prompt.innerHTML = `<strong>${escapeHtml(target.label)}</strong><small data-hwe-target-distance>${target.distance.toFixed(1).replace(".", ",")} m${locked ? " · ĐÃ KHÓA" : ""}</small><span data-hwe-target-action><kbd>F</kbd> · ${escapeHtml(target.action)} &nbsp; <kbd>Z</kbd> · ${locked ? "Bỏ khóa" : "Khóa mục tiêu"}</span>`;
+  }
+
+  function updateTargeting(instance, force = false) {
+    if (!isGameplayActive(instance) || !DESKTOP?.selectTarget) { if (!instance.paused) clearCurrentTarget(instance); return null; }
+    const now = global.performance?.now?.() || Date.now();
+    if (!force && now < (instance.targetAt || 0)) return instance.currentTarget || null;
+    instance.targetAt = now + 80;
+    const candidates = targetCandidates(instance);
+    const player = instance.state.player;
+    const rendererCanPick = typeof instance.renderer3d?.pickCenter === "function";
+    let selected = null;
+    if (instance.lockedTargetId) {
+      const locked = candidates.find((row) => row.id === instance.lockedTargetId);
+      if (locked) {
+        const distance = Math.hypot(locked.position.x - player.x, locked.position.z - player.y);
+        if (distance <= 120 && hasTerrainLineOfSight(instance, locked, { distance })) selected = { id: locked.id, type: locked.type, distance, source: locked };
+      }
+      if (!selected) instance.lockedTargetId = "";
+    }
+    if (!selected && rendererCanPick) {
+      const rendererPick = instance.renderer3d?.pickCenter?.({ maxDistance: 120, allowedTypes: ["animal", "food", "water", "trail", "nest", "interactive"], excludePlayer: true });
+      const picked = rendererPick && typeof rendererPick.then !== "function" ? rendererPick : null;
+      if (picked?.id) {
+        const source = candidates.find((row) => row.id === picked.id || row.entity?.species?.id === picked.speciesId);
+        if (source) selected = { id: source.id, type: source.type, distance: Number(picked.distance) || Math.hypot(source.position.x - player.x, source.position.z - player.y), source };
+      }
+    }
+    if (!selected && !rendererCanPick) {
+      const yaw = instance.camera?.yaw || 0;
+      const pitch = instance.camera?.pitch || 0;
+      const horizontal = Math.cos(pitch);
+      const result = DESKTOP.selectTarget(candidates, {
+        origin: {
+          x: player.x,
+          y: Number((RENDERER_ADAPTER?.sampleTerrainHeight || RENDERER_3D?.terrainHeight)?.(player.x, player.y, worldSeedForState(instance.state)) || 0) + (desktopCameraProfile(instance).height || 1.5),
+          z: player.y
+        },
+        forward: { x: Math.sin(yaw) * horizontal, y: Math.sin(pitch), z: Math.cos(yaw) * horizontal },
+        maxDistance: 120,
+        maxAngle: .15,
+        allowedTypes: ["animal", "food", "water", "trail", "nest", "interactive"],
+        hasLineOfSight: (candidate, ray) => hasTerrainLineOfSight(instance, candidate, ray)
+      });
+      if (result) selected = { ...result, source: candidates[result.sourceIndex] };
+    }
+    if (!selected?.source) { clearCurrentTarget(instance); return null; }
+    instance.currentTarget = {
+      id: selected.source.id,
+      type: selected.source.type,
+      distance: selected.distance,
+      entity: selected.source.entity,
+      label: selected.source.label,
+      action: selected.source.action
+    };
+    instance.renderer3d?.setHighlightedTarget?.({ id: instance.currentTarget.id, type: instance.currentTarget.type, speciesId: instance.currentTarget.entity?.species?.id });
+    updateTargetPrompt(instance);
+    return instance.currentTarget;
+  }
+
+  function toggleTargetLock(instance) {
+    updateTargeting(instance, true);
+    if (!instance.currentTarget) { setToast(instance, "Không có mục tiêu hợp lệ gần tâm ngắm"); return false; }
+    instance.lockedTargetId = instance.lockedTargetId === instance.currentTarget.id ? "" : instance.currentTarget.id;
+    updateTargetPrompt(instance);
+    return Boolean(instance.lockedTargetId);
+  }
+
+  function toggleViewMode(instance) {
+    instance.state.settings.viewMode = instance.state.settings.viewMode === "animal-eye" ? "third-person" : "animal-eye";
+    const profile = desktopCameraProfile(instance);
+    if (instance.camera) {
+      instance.camera.firstPerson = instance.state.settings.viewMode === "animal-eye";
+      instance.camera.desiredDistance = instance.camera.firstPerson ? profile.minDistance : profile.distance;
+    }
+    saveState(instance);
+    setToast(instance, instance.state.settings.viewMode === "animal-eye" ? "Animal-eye view" : "Camera góc nhìn thứ ba");
+    return instance.state.settings.viewMode;
+  }
+
   function applyMeal(instance, resourceType) {
     const player = instance.state.player;
     const species = SPECIES_BY_ID.get(instance.state.speciesId);
@@ -1327,8 +1818,9 @@
   function interact(instance) {
     if (!instance.world || !instance.running) return;
     const player = instance.state.player; const species = SPECIES_BY_ID.get(instance.state.speciesId);
-    const resource = instance.world.resources.filter((row) => row.amount > 0).sort((a, b) => Math.hypot(player.x - a.x, player.y - a.y) - Math.hypot(player.x - b.x, player.y - b.y))[0];
-    if (!resource || Math.hypot(player.x - resource.x, player.y - resource.y) > 95) { logSignal(instance, "Không có tài nguyên phù hợp trong tầm tương tác."); return; }
+    updateTargeting(instance, true);
+    const resource = ["food", "water", "nest", "interactive"].includes(instance.currentTarget?.type) ? instance.currentTarget.entity : null;
+    if (!resource || Math.hypot(player.x - resource.x, player.y - resource.y) > 32) { logSignal(instance, "Hãy đưa tài nguyên vào tâm ngắm và tiến gần hơn để tương tác."); return; }
     if (resource.type === "water") { player.thirst = clamp(player.thirst + 38, 0, 100); resource.amount -= 8; logSignal(instance, "Đã uống nước. Hãy quan sát dấu chân quanh bờ."); completeExpedition(instance, "water"); }
     else if (resource.type === "plant" && ["plant", "omnivore", "nectar", "filter"].includes(species.diet)) { player.hunger = clamp(player.hunger + 32, 0, 100); resource.amount -= 12; const score = applyMeal(instance, "plant"); logSignal(instance, `Khẩu phần thực vật đạt chất lượng ${score}/100.`); completeExpedition(instance, "food"); }
     else if (resource.type === "carcass" && ["meat", "omnivore"].includes(species.diet)) { player.hunger = clamp(player.hunger + 35, 0, 100); resource.amount -= 14; const score = applyMeal(instance, "carcass"); logSignal(instance, `Nguồn đạm đạt chất lượng ${score}/100; xác cũ tăng rủi ro nhiễm trùng.`); completeExpedition(instance, "food"); }
@@ -1348,7 +1840,8 @@
     if (!instance.world || !instance.running || instance.state.player.stamina < 12) return;
     instance.state.player.stamina = clamp(instance.state.player.stamina - 12 * Math.max(1, power * .72), 0, 100);
     const player = instance.state.player;
-    const target = instance.population.filter((row) => row.alive).sort((a, b) => Math.hypot(player.x - a.x, player.y - a.y) - Math.hypot(player.x - b.x, player.y - b.y))[0];
+    updateTargeting(instance, true);
+    const target = instance.currentTarget?.type === "animal" ? instance.currentTarget.entity : null;
     if (!target || Math.hypot(player.x - target.x, player.y - target.y) > 58) { logSignal(instance, "Đòn phòng vệ không chạm mục tiêu."); return; }
     target.health -= 38 * power;
     const simulationTarget = instance.simulation?.damageEntity?.(target.id, 38 * power, { type: power > 1.35 ? "fracture" : "bleeding", severity: clamp(.14 * power, .05, .45) });
@@ -1447,7 +1940,12 @@
     const nextGeneration = instance.state.lineage.at(-1);
     instance.state.player = normalizeState({ speciesId: instance.state.speciesId, player: { genes: nextGeneration?.genes, generation: nextGeneration?.generation || instance.state.player.generation, lineage: previousLineageCount } }).player;
     placePlayerAtHabitat(instance);
-    instance.dead = false; instance.running = true; instance.spawnGraceUntil = performance.now() + 15000; instance.root.classList.add("is-running"); instance.root.querySelector("[data-hwe-death]").hidden = true; saveState(instance); logSignal(instance, "Một vòng đời mới bắt đầu.");
+    instance.dead = false; instance.running = false;
+    instance.gameplayMachine = DESKTOP?.createGameplayState?.("READY") || { status: "READY", context: "NONE" };
+    instance.root.dataset.gameplayState = "ready";
+    instance.root.querySelector("[data-hwe-death]").hidden = true;
+    startGame(instance);
+    saveState(instance); logSignal(instance, "Một vòng đời mới bắt đầu.");
   }
 
   function initPlanetRuntime(instance) {
@@ -1533,13 +2031,26 @@
       instance.state.player = normalizeState({ speciesId: instance.state.speciesId, player: { genes: previous.genes, generation: previous.generation, lineage: previous.lineage } }).player;
       placePlayerAtHabitat(instance);
     }
+    initializeDesktopGameplay(instance, true);
     instance.running = true; instance.paused = false; instance.dead = false; instance.spawnGraceUntil = performance.now() + 15000;
+    if (gameplayStateName(instance) === "ready") transitionGameplay(instance, { type: "START" });
+    else {
+      instance.gameplayMachine = DESKTOP?.createGameplayState?.("PLAYING") || instance.gameplayMachine;
+      instance.root.dataset.gameplayState = "playing";
+    }
     instance.root.querySelector("[data-hwe-start-panel]").hidden = true;
-    instance.root.classList.add("is-running");
+    instance.root.classList.add("is-running", "is-playing");
+    instance.root.classList.remove("is-paused");
+    setImmersiveShell(instance, true);
+    instance.inputSystem?.resume?.("gameplay-state");
+    instance.renderer3d?.setPaused?.(false);
+    instance.root.querySelector("[data-hwe-pause-overlay]")?.setAttribute("hidden", "");
     instance.root.querySelector("[data-hwe-pause]")?.setAttribute("aria-pressed", "false");
     saveState(instance);
     if (instance.state.settings.renderer !== "lite" && !instance.renderer3d) enable3D(instance, instance.state.settings.renderer === "3d");
-    focusSurface(instance); logSignal(instance, "Vòng đời bắt đầu. Nước và thức ăn đang phát tín hiệu nhẹ.");
+    focusSurface(instance);
+    requestGameplayPointerLock(instance);
+    logSignal(instance, "Vòng đời bắt đầu. Chuột điều khiển camera; tâm ngắm chọn mục tiêu trong thế giới.");
   }
 
   function initWorld(instance) {
@@ -1552,6 +2063,11 @@
     initPlanetRuntime(instance);
     instance.population = createPopulation(instance);
     instance.keys = new Set(); instance.running = false; instance.paused = false; instance.dead = false; instance.senseUntil = 0; instance.senseCount = 0; instance.autosave = 0; instance.heading = 0; instance.lastFrame = performance.now(); instance.fpsAt = performance.now(); instance.frameCount = 0;
+    instance.gameplayMachine = DESKTOP?.createGameplayState?.("BOOT") || { status: "BOOT", context: "NONE" };
+    instance.pointerLockState = DESKTOP?.createPointerLockState?.() || { status: "UNLOCKED", desired: false };
+    transitionGameplay(instance, { type: "BOOT_COMPLETE" });
+    initializeDesktopGameplay(instance, true);
+    instance.inputSystem?.pause?.("gameplay-state");
     instance.chunkClock = 0; instance.trailClock = 0; instance.replayClock = 0; instance.eventClock = 0; instance.injuryClock = 0; instance.abilityReadyAt = 0; instance.camouflageUntil = 0; instance.hudAt = 0; instance.minimapAt = 0; instance.dprCap = 0; instance.renderBudget = 1;
     initSimulationKernel(instance);
     resizeCanvas(instance);
@@ -1750,8 +2266,23 @@
     } catch { setToast(instance, "Phiên bản trước không thể đọc được"); return false; }
   }
 
-  const activeSurface = (instance) => instance.renderer3d ? instance.canvas3d : instance.canvas;
+  function activeSurface(instance) {
+    const booting3D = Boolean(instance?.rendererBooting && instance?.canvas3d && !instance.canvas3d.hidden);
+    return instance?.renderer3d || booting3D ? instance?.canvas3d : instance?.canvas;
+  }
+
   const focusSurface = (instance) => activeSurface(instance)?.focus?.({ preventScroll: true });
+
+  function reconcileGameplaySurface(instance) {
+    const surface = activeSurface(instance);
+    const lockedSurface = global.document?.pointerLockElement;
+    if (instance?.running && lockedSurface && lockedSurface !== surface) {
+      pauseGame(instance, "renderer-changed");
+      return false;
+    }
+    focusSurface(instance);
+    return Boolean(surface);
+  }
 
   const qualityLabel = (quality) => quality === "personal"
     ? PERSONAL_QUALITY_PROFILE.label
@@ -1875,7 +2406,7 @@
   async function createRendererRuntime(instance, species, bootToken) {
     const qualityToAdapter = { static: "low", light: "low", balanced: "balanced", high: "high", cinematic: "ultra", personal: "cinematic" };
     const adaptiveQuality = instance.state.settings.quality !== "personal" && instance.state.settings.adaptiveQuality;
-    const renderSeed = `${instance.state.settings.seed}:${instance.state.worldAddress?.timeSliceId || instance.state.realmId}:${instance.state.worldAddress?.regionId || "region"}`;
+    const renderSeed = rendererSeedForState(instance.state);
     if (RENDERER_ADAPTER?.FLAGSHIP_IDS?.includes?.(species.id) && typeof RENDERER_ADAPTER.createRenderer === "function") {
       let lastEnvironment = "";
       let lastTelemetry = null;
@@ -1920,8 +2451,11 @@
           // A WebGPU timeout can replace the bound canvas after the user has
           // already cancelled startup. Keep the host reference connected so a
           // later 3D retry never reuses the detached, GPU-bound canvas.
+          const replacedLockedSurface = global.document?.pointerLockElement === detail.previous;
           instance.canvas3d = detail.canvas;
+          detail.canvas.tabIndex = 0;
           if (instance.destroyed || bootToken !== instance.rendererBootToken) detail.canvas.hidden = true;
+          else if (replacedLockedSurface && instance.running) pauseGame(instance, "renderer-canvas-replaced");
         },
         onStatus: (detail) => {
           const canRetrySceneInWebGL = detail?.reason?.stage === "scene" && detail?.reason?.details?.failedBackend === "webgpu";
@@ -1969,6 +2503,14 @@
         },
         resize() { adapter.engine?.resize?.(); },
         setPaused(value) { return value ? adapter.pause("host") : adapter.resume("host"); },
+        applyCameraInput(value) { return adapter.setGameplayCamera?.({ ...value, cameraShake: value?.shake }); },
+        getCameraState() { return adapter.getGameplayCamera?.(); },
+        resolveCameraCollision(value) {
+          const result = adapter.resolveGameplayCameraCollision?.({ ...value, deltaSeconds: 1 / 60 });
+          return result ? { ...result, distance: result.hit ? result.hitDistance : null } : null;
+        },
+        setHighlightedTarget(value) { return value ? adapter.setHighlightedTarget?.(value) : adapter.clearHighlightedTarget?.(); },
+        pickCenter(value) { return adapter.pickCenter?.(value) || null; },
         setQuality(value) { adapter.setQualityPreset(qualityToAdapter[value] || "balanced"); return value; },
         setMotion(value) { adapter.setReducedMotion(value === "static" || reduced3DPreference(instance) ? true : "auto"); return value; },
         setAudio(enabled, volume) { return adapter.setAmbientAudio?.(enabled, clamp(volume, 0, 1)); },
@@ -2027,7 +2569,8 @@
       setRendererStatus(instance, `${runtime.backend.toUpperCase()} · ${qualityLabel(instance.state.settings.quality)}`);
       // The renderer already owns responsive sizing. A second resize here can
       // invalidate Chromium's first WebGPU swap-buffer while it is submitted.
-      focusSurface(instance);
+      updateGameplayCamera(instance, 1 / 60);
+      reconcileGameplaySurface(instance);
       setToast(instance, `EonWild 3D đã sẵn sàng bằng ${runtime.backend.toUpperCase()}`);
       return true;
     } catch (error) {
@@ -2041,6 +2584,7 @@
       setRendererStatus(instance, "Canvas 2D Lite");
       showRendererFallback(instance, `Không thể dựng 3D (${String(error?.message || "GPU không tương thích").slice(0, 96)}). Canvas Lite đang dùng model thay thế và save vẫn an toàn.`);
       setToast(instance, `3D không khởi tạo: ${String(error?.message || "GPU không tương thích").slice(0, 92)}. Đã dùng Lite Mode.`);
+      reconcileGameplaySurface(instance);
       return false;
     } finally {
       if (bootToken === instance.rendererBootToken) {
@@ -2058,6 +2602,7 @@
   }
 
   function disable3D(instance, persist = true) {
+    const rendererWasLocked = global.document?.pointerLockElement === instance.canvas3d;
     instance.rendererBootToken = (instance.rendererBootToken || 0) + 1;
     instance.rendererBooting = false;
     instance.rendererStartingAdapter?.dispose?.();
@@ -2071,7 +2616,10 @@
     syncRendererControls(instance, "lite");
     if (persist) { instance.state.settings.renderer = "lite"; saveState(instance); }
     setRendererStatus(instance, "Canvas 2D Lite");
-    resizeCanvas(instance); focusSurface(instance); return true;
+    resizeCanvas(instance);
+    if (rendererWasLocked && instance.running) pauseGame(instance, "renderer-changed");
+    else focusSurface(instance);
+    return true;
   }
 
   function previewGenes(instance) {
@@ -2088,28 +2636,128 @@
   function setCommunicationWheel(instance, open) {
     const wheel = instance.root.querySelector("[data-hwe-communication-wheel]");
     if (!wheel) return false;
+    if (open && !instance.running) return false;
     wheel.hidden = !open;
     instance.root.querySelectorAll("[data-hwe-communication-open]").forEach((button) => button.setAttribute("aria-expanded", String(open)));
-    if (open) wheel.querySelector("button:not([disabled])")?.focus?.({ preventScroll: true });
-    else focusSurface(instance);
+    if (open) {
+      pauseGame(instance, "communication");
+      instance.root.querySelector("[data-hwe-pause-overlay]")?.setAttribute("hidden", "");
+      wheel.querySelector("button:not([disabled])")?.focus?.({ preventScroll: true });
+    }
+    else {
+      instance.root.querySelector("[data-hwe-pause-overlay]")?.removeAttribute("hidden");
+      instance.root.querySelector("[data-hwe-resume]")?.focus?.({ preventScroll: true });
+    }
+    return true;
+  }
+
+  function gameOverlayMarkup(instance, mode) {
+    const species = SPECIES_BY_ID.get(instance.state.speciesId);
+    if (mode === "codex") {
+      const flagship = flagshipFor(species.id);
+      return `<article class="hwe-overlay-codex"><span class="hwe-creature-sigil" style="--species:${escapeHtml(species.color)}">◆</span><small>${escapeHtml(species.period)} · ${escapeHtml(REALMS[instance.state.realmId]?.label || instance.state.realmId)}</small><h3>${escapeHtml(species.vietnamese)}</h3><em>${escapeHtml(species.name)}</em><dl><div><dt>Khẩu phần</dt><dd>${escapeHtml(dietLabel(species.diet))}</dd></div><div><dt>Khối lượng</dt><dd>${escapeHtml(formatMass(species.mass))}</dd></div><div><dt>Vận động</dt><dd>${escapeHtml(species.locomotion)}</dd></div><div><dt>Giác quan</dt><dd>${escapeHtml(mechanicLabel(flagship?.sense, species.ability))}</dd></div><div><dt>Năng lực</dt><dd>${escapeHtml(mechanicLabel(flagship?.defense?.special || flagship?.activeAbility, species.ability))}</dd></div></dl><p>Codex in-game không đổi route và không thu nhỏ canvas. Tiếp tục game từ Pause khi đã đọc xong.</p></article>`;
+    }
+    if (mode === "settings") {
+      return `<article class="hwe-overlay-settings"><h3>Camera & điều khiển</h3><label>Độ nhạy ngang <output>${Math.round(instance.state.settings.cameraSensitivityX)}%</output><input type="range" min="1" max="100" value="${instance.state.settings.cameraSensitivityX}" data-hwe-camera-setting="cameraSensitivityX"></label><label>Độ nhạy dọc <output>${Math.round(instance.state.settings.cameraSensitivityY)}%</output><input type="range" min="1" max="100" value="${instance.state.settings.cameraSensitivityY}" data-hwe-camera-setting="cameraSensitivityY"></label><label>FOV <output>${Math.round(instance.state.settings.cameraFov)}°</output><input type="range" min="45" max="105" value="${instance.state.settings.cameraFov}" data-hwe-camera-setting="cameraFov"></label><label>Độ mượt <output>${Math.round(instance.state.settings.cameraSmoothing)}%</output><input type="range" min="0" max="100" value="${instance.state.settings.cameraSmoothing}" data-hwe-camera-setting="cameraSmoothing"></label><label><input type="checkbox" data-hwe-setting="invertCameraY" ${instance.state.settings.invertCameraY ? "checked" : ""}> Đảo trục Y</label><label>Góc nhìn<select data-hwe-setting="viewMode"><option value="third-person" ${instance.state.settings.viewMode === "third-person" ? "selected" : ""}>Góc nhìn thứ ba</option><option value="animal-eye" ${instance.state.settings.viewMode === "animal-eye" ? "selected" : ""}>Animal-eye</option></select></label><p><kbd>WASD</kbd> di chuyển theo camera · <kbd>V</kbd> đổi góc nhìn · <kbd>Z</kbd> khóa mục tiêu · <kbd>Esc</kbd> Pause.</p></article>`;
+    }
+    const map = WORLD_ATLAS?.getMap?.(instance.state.atlasMapId);
+    return `<article class="hwe-overlay-map"><div><small>WORLD ATLAS · KHÔNG RỜI GAMEPLAY</small><h3>${escapeHtml(map?.label || REALMS[instance.state.realmId]?.label || "Thế giới sống")}</h3><p>${escapeHtml(map?.range || instance.state.worldAddress?.timeSliceId || "Time Slice hiện tại")} · ${escapeHtml(instance.state.atlasRegionId || instance.state.worldAddress?.regionId || "active region")}</p><p>Vị trí logic ${Math.round(instance.state.player.x).toLocaleString("vi-VN")} : ${Math.round(instance.state.player.y).toLocaleString("vi-VN")} m. Sương khám phá không tự tiết lộ loài quý hiếm.</p></div><canvas width="420" height="420" data-hwe-overlay-map-canvas aria-label="Bản đồ khu vực đang chơi"></canvas></article>`;
+  }
+
+  function drawGameOverlayMap(instance) {
+    const canvas = instance.root.querySelector("[data-hwe-overlay-map-canvas]");
+    const ctx = canvas?.getContext?.("2d");
+    if (!ctx || !instance.world) return false;
+    const size = canvas.width;
+    ctx.fillStyle = "#061310"; ctx.fillRect(0, 0, size, size);
+    for (let x = 0; x < size; x += 20) for (let y = 0; y < size; y += 20) {
+      const worldX = x / size * WORLD_SIZE; const worldY = y / size * WORLD_SIZE;
+      const terrain = terrainForRealm(terrainAt(worldX, worldY, instance.world.seed), instance.state.realmId, worldX, worldY);
+      ctx.fillStyle = BIOMES[terrain].color; ctx.fillRect(x, y, 21, 21);
+    }
+    ctx.strokeStyle = "#ffd367"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(instance.world.migration.x / WORLD_SIZE * size, instance.world.migration.y / WORLD_SIZE * size, Math.max(4, instance.world.migration.radius / WORLD_SIZE * size), 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(instance.state.player.x / WORLD_SIZE * size, instance.state.player.y / WORLD_SIZE * size, 6, 0, Math.PI * 2); ctx.fill();
+    return true;
+  }
+
+  function openGameOverlay(instance, mode = "map") {
+    if (!instance?.running) return false;
+    const requested = ["map", "codex", "settings"].includes(mode) ? mode : "map";
+    const activeElement = global.document?.activeElement;
+    instance.gameOverlayReturnFocus = activeElement?.matches?.("[data-hwe-game-overlay-open]")
+      ? activeElement
+      : null;
+    const status = gameplayStateName(instance);
+    if (requested === "map" && ["playing", "paused"].includes(status)) transitionGameplay(instance, { type: "OPEN_MAP" });
+    else if (requested === "codex" && ["playing", "paused"].includes(status)) transitionGameplay(instance, { type: "OPEN_CODEX" });
+    else if (status === "playing") transitionGameplay(instance, { type: "PAUSE" });
+    instance.paused = true;
+    instance.inputSystem?.pause?.("gameplay-state");
+    instance.renderer3d?.setPaused?.(true);
+    releasePointerLock(instance, true);
+    const overlay = instance.root.querySelector("[data-hwe-game-overlay]");
+    const title = overlay?.querySelector?.("[data-hwe-game-overlay-title]");
+    const kicker = overlay?.querySelector?.("[data-hwe-game-overlay-kicker]");
+    const body = overlay?.querySelector?.("[data-hwe-game-overlay-body]");
+    if (!overlay || !body) return false;
+    instance.gameOverlayMode = requested;
+    if (title) title.textContent = requested === "map" ? "World Map" : requested === "codex" ? "Animal Codex" : "Camera & điều khiển";
+    if (kicker) kicker.textContent = requested === "map" ? "MAP CONTEXT" : requested === "codex" ? "CODEX CONTEXT" : "PAUSE CONTEXT";
+    body.innerHTML = gameOverlayMarkup(instance, requested);
+    instance.root.querySelector("[data-hwe-pause-overlay]")?.setAttribute("hidden", "");
+    overlay.hidden = false;
+    overlay.querySelector("[data-hwe-game-overlay-close]")?.focus?.({ preventScroll: true });
+    if (requested === "map") drawGameOverlayMap(instance);
+    return true;
+  }
+
+  function closeGameOverlay(instance) {
+    const overlay = instance.root.querySelector("[data-hwe-game-overlay]");
+    if (overlay) overlay.hidden = true;
+    const status = gameplayStateName(instance);
+    if (status === "map") transitionGameplay(instance, { type: "CLOSE_MAP" });
+    else if (status === "codex") transitionGameplay(instance, { type: "CLOSE_CODEX" });
+    if (gameplayStateName(instance) === "playing") transitionGameplay(instance, { type: "PAUSE" });
+    instance.paused = true;
+    instance.root.classList.add("is-paused");
+    instance.root.querySelector("[data-hwe-pause-overlay]")?.removeAttribute("hidden");
+    const returnFocus = instance.gameOverlayReturnFocus;
+    instance.gameOverlayReturnFocus = null;
+    if (returnFocus?.isConnected && instance.root.contains(returnFocus)) returnFocus.focus?.({ preventScroll: true });
+    else instance.root.querySelector("[data-hwe-resume]")?.focus?.({ preventScroll: true });
     return true;
   }
 
   function setPhotoMode(instance, open) {
     const overlay = instance.root.querySelector("[data-hwe-photo-overlay]");
     if (!overlay) return false;
+    if (open && !instance.running) { setToast(instance, "Hãy bắt đầu vòng đời trước khi mở Photo Mode."); return false; }
     overlay.hidden = !open;
     instance.root.classList.toggle("is-photo-mode", open);
     instance.photoMode = open;
     if (open) {
-      instance.pausedBeforePhoto = instance.paused;
+      if (["playing", "paused"].includes(gameplayStateName(instance))) transitionGameplay(instance, { type: "ENTER_PHOTO" });
       instance.paused = true;
+      instance.inputSystem?.pause?.("gameplay-state");
+      releasePointerLock(instance, true);
+      instance.root.querySelector("[data-hwe-pause-overlay]")?.setAttribute("hidden", "");
+      instance.root.querySelector("[data-hwe-game-overlay]")?.setAttribute("hidden", "");
+      instance.root.querySelector("[data-hwe-communication-wheel]")?.setAttribute("hidden", "");
       instance.renderer3d?.setPaused?.(false);
       instance.renderer3d?.setPhotoSettings?.(photoRendererSettings(instance.state.settings));
       syncPhotoComposition(instance);
       overlay.querySelector("[data-hwe-photo-close]")?.focus?.({ preventScroll: true });
     }
-    else { instance.paused = Boolean(instance.pausedBeforePhoto); syncPhotoComposition(instance); instance.renderer3d?.setPaused?.(instance.paused); focusSurface(instance); }
+    else {
+      if (gameplayStateName(instance) === "photo") transitionGameplay(instance, { type: "EXIT_PHOTO" });
+      if (gameplayStateName(instance) === "playing") transitionGameplay(instance, { type: "PAUSE" });
+      instance.paused = true;
+      syncPhotoComposition(instance);
+      instance.renderer3d?.setPaused?.(true);
+      instance.root.classList.add("is-paused");
+      instance.root.querySelector("[data-hwe-pause-overlay]")?.removeAttribute("hidden");
+      instance.root.querySelector("[data-hwe-resume]")?.focus?.({ preventScroll: true });
+    }
     return true;
   }
 
@@ -2511,10 +3159,14 @@
       if (target.dataset.hweTierFilter) { instance.tierFilter = instance.tierFilter === target.dataset.hweTierFilter ? "all" : target.dataset.hweTierFilter; root.querySelectorAll("[data-hwe-tier-filter]").forEach((button) => button.setAttribute("aria-pressed", String(instance.tierFilter === button.dataset.hweTierFilter))); filterSpecies(instance); return; }
       if (target.dataset.hweRealmFilter) { instance.realmFilter = target.dataset.hweRealmFilter; root.querySelectorAll("[data-hwe-realm-filter]").forEach((button) => button.setAttribute("aria-pressed", String(button === target))); filterSpecies(instance); return; }
       if (target.dataset.hweDifficulty) { instance.state.settings.difficulty = target.dataset.hweDifficulty; root.querySelectorAll("[data-hwe-difficulty]").forEach((button) => button.classList.toggle("is-active", button === target)); saveState(instance); return; }
-      if (target.matches("[data-hwe-start]")) { startGame(instance); return; }
+      if (target.matches("[data-hwe-start]")) { instance.startTrigger = target; startGame(instance); return; }
       if (target.matches("[data-hwe-respawn]")) { respawn(instance); return; }
-      if (target.matches("[data-hwe-pause]")) { instance.paused = !instance.paused; instance.renderer3d?.setPaused?.(instance.paused); target.setAttribute("aria-pressed", String(instance.paused)); target.textContent = instance.paused ? "▶" : "Ⅱ"; setToast(instance, instance.paused ? "Đã tạm dừng" : "Tiếp tục vòng đời"); return; }
-      if (target.matches("[data-hwe-fullscreen]")) { instance.root.requestFullscreen?.().catch?.(() => setToast(instance, "Trình duyệt chưa cho phép toàn màn hình.")); return; }
+      if (target.matches("[data-hwe-pause]")) { if (instance.paused) resumeGame(instance); else pauseGame(instance, "button"); return; }
+      if (target.matches("[data-hwe-resume]")) { resumeGame(instance); return; }
+      if (target.matches("[data-hwe-fullscreen]")) { toggleGameplayFullscreen(instance); return; }
+      if (target.dataset.hweGameOverlayOpen) { openGameOverlay(instance, target.dataset.hweGameOverlayOpen); return; }
+      if (target.matches("[data-hwe-game-overlay-close]")) { closeGameOverlay(instance); return; }
+      if (target.matches("[data-hwe-exit-immersive]")) { exitImmersive(instance); return; }
       if (target.matches("[data-hwe-photo]")) { setPhotoMode(instance, true); return; }
       if (target.matches("[data-hwe-photo-close]")) { setPhotoMode(instance, false); return; }
       if (target.matches("[data-hwe-photo-capture]")) { capturePhoto(instance); return; }
@@ -2524,6 +3176,7 @@
       if (target.dataset.hweAction === "interact") { if (!instance.paused) interact(instance); return; }
       if (target.dataset.hweAction === "sense") { if (!instance.paused) sense(instance); return; }
       if (target.dataset.hweAction === "ability") { if (!instance.paused) useFlagshipAbility(instance); return; }
+      if (target.dataset.hweAction === "lock-target") { if (!instance.paused) toggleTargetLock(instance); return; }
       if (target.dataset.hweExpedition) { instance.state.activeExpedition = target.dataset.hweExpedition; saveState(instance); global.location.hash = "#/game/world"; return; }
       if (target.matches("[data-hwe-lineage-export]")) { exportLineage(instance); return; }
       if (target.matches("[data-hwe-save-export]")) { exportSave(instance); return; }
@@ -2579,6 +3232,23 @@
       if (target.matches("[data-hwe-reset]")) { if (target.dataset.confirm === "true") { global.localStorage?.removeItem?.(STORAGE_KEY); global.localStorage?.removeItem?.(LEGACY_STORAGE_KEY); global.localStorage?.removeItem?.(V2_STORAGE_KEY); global.localStorage?.removeItem?.(OLDER_STORAGE_KEY); global.localStorage?.removeItem?.(ROLLBACK_STORAGE_KEY); global.localStorage?.removeItem?.(LEGACY_ROLLBACK_STORAGE_KEY); instance.state = normalizeState(); mount(instance.host, { view: "world" }); } else { target.dataset.confirm = "true"; target.textContent = "Xác nhận xóa save v1 + v2 + v3 + v4"; setTimeout(() => { if (target.isConnected) { delete target.dataset.confirm; target.textContent = "Khôi phục save mới…"; } }, 4000); } }
     }, { signal: controller.signal });
     root.addEventListener("keydown", (event) => {
+      const visibleDialog = [...root.querySelectorAll('[role="dialog"]:not([hidden])')].find((dialog) => dialog.offsetParent !== null || dialog.matches?.(".hwe-pause-overlay,.hwe-game-overlay,.hwe-photo-overlay,.hwe-communication-wheel"));
+      if (!visibleDialog) return;
+      if (event.code === "Escape") {
+        event.preventDefault(); event.stopPropagation();
+        if (visibleDialog.matches("[data-hwe-game-overlay]")) closeGameOverlay(instance);
+        else if (visibleDialog.matches("[data-hwe-photo-overlay]")) setPhotoMode(instance, false);
+        else if (visibleDialog.matches("[data-hwe-communication-wheel]")) setCommunicationWheel(instance, false);
+        return;
+      }
+      if (event.code !== "Tab") return;
+      const focusable = [...visibleDialog.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter((node) => !node.hidden);
+      if (!focusable.length) { event.preventDefault(); visibleDialog.focus?.(); return; }
+      const first = focusable[0]; const last = focusable.at(-1);
+      if (event.shiftKey && global.document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && global.document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }, { signal: controller.signal, capture: true });
+    root.addEventListener("keydown", (event) => {
       if (!instance.remapAction || !instance.inputSystem) return;
       event.preventDefault(); event.stopPropagation();
       const actionId = instance.remapAction;
@@ -2606,6 +3276,18 @@
         const output = event.target.closest("label")?.querySelector?.("output");
         if (output) output.textContent = `${Math.round(clamp(event.target.value, 0, 100))}%`;
       }
+      if (event.target.dataset.hweCameraSetting) {
+        const key = event.target.dataset.hweCameraSetting;
+        const ranges = { cameraSensitivityX: [1, 100], cameraSensitivityY: [1, 100], cameraFov: [45, 105], cameraSmoothing: [0, 100], cameraShake: [0, 100], headBob: [0, 100] };
+        if (Object.hasOwn(ranges, key)) {
+          const value = clamp(event.target.value, ranges[key][0], ranges[key][1]);
+          instance.state.settings[key] = value;
+          const output = event.target.closest("label")?.querySelector?.("output");
+          if (output) output.textContent = key === "cameraFov" ? `${Math.round(value)}°` : `${Math.round(value)}%`;
+          if (instance.camera && key === "cameraFov") instance.camera.fov = value;
+          updateGameplayCamera(instance, 1 / 60);
+        }
+      }
       if (event.target.dataset.hwePhotoSetting) {
         const key = event.target.dataset.hwePhotoSetting;
         const ranges = {
@@ -2630,6 +3312,7 @@
       }
     }, { signal: controller.signal });
     root.addEventListener("change", (event) => {
+      if (event.target.dataset.hweCameraSetting) { instance.state = normalizeState(instance.state); saveState(instance); return; }
       if (event.target.matches("[data-hwe-input-file]")) {
         const file = event.target.files?.[0]; event.target.value = "";
         if (!file || file.size > (INPUT_SYSTEM?.LIMITS?.MAX_PROFILE_BYTES || 32768)) { setToast(instance, "Profile điều khiển không hợp lệ hoặc quá lớn"); return; }
@@ -2689,6 +3372,12 @@
       if (!Object.hasOwn(instance.state.settings, key)) return;
       instance.state.settings[key] = event.target.type === "checkbox" ? event.target.checked : String(event.target.value).slice(0, 24);
       instance.state = normalizeState(instance.state); root.dataset.motion = instance.state.settings.motion; root.dataset.quality = instance.state.settings.quality; saveState(instance);
+      if (["viewMode", "invertCameraY", "autoCenterCamera"].includes(key) && instance.camera) {
+        const profile = desktopCameraProfile(instance);
+        instance.camera.firstPerson = instance.state.settings.viewMode === "animal-eye";
+        instance.camera.desiredDistance = instance.camera.firstPerson ? profile.minDistance : profile.distance;
+        updateGameplayCamera(instance, 1 / 60);
+      }
       if (key === "quality" && instance.renderer3d) setRuntimeQuality(instance, instance.state.settings.quality);
       if (key === "motion" && instance.renderer3d) {
         instance.renderer3d.setMotion?.(instance.state.settings.motion);
@@ -2702,11 +3391,24 @@
       else setToast(instance, "Đã lưu cấu hình cục bộ");
     }, { signal: controller.signal });
     root.addEventListener("pointerdown", (event) => {
+      if ((event.target === instance.canvas || event.target === instance.canvas3d) && isGameplayStatePlaying(instance)) {
+        requestGameplayPointerLock(instance);
+        event.preventDefault();
+        return;
+      }
       const stick = event.target.closest?.("[data-hwe-touch-stick]");
       if (stick && instance.inputSystem) {
         instance.touchJoystickPointer = event.pointerId;
         stick.setPointerCapture?.(event.pointerId);
         updateTouchJoystick(instance, event);
+        event.preventDefault();
+        return;
+      }
+      const cameraPad = event.target.closest?.("[data-hwe-camera-pad]");
+      if (cameraPad && isGameplayActive(instance)) {
+        instance.touchCameraPointer = event.pointerId;
+        instance.touchCameraPoint = { x: event.clientX, y: event.clientY };
+        cameraPad.setPointerCapture?.(event.pointerId);
         event.preventDefault();
         return;
       }
@@ -2719,13 +3421,25 @@
       else instance.keys?.add(key);
       event.target.setPointerCapture?.(event.pointerId);
     }, { signal: controller.signal });
-    root.addEventListener("pointermove", (event) => { if (event.pointerId === instance.touchJoystickPointer) updateTouchJoystick(instance, event); }, { signal: controller.signal });
+    root.addEventListener("pointermove", (event) => {
+      if (event.pointerId === instance.touchJoystickPointer) updateTouchJoystick(instance, event);
+      if (event.pointerId === instance.touchCameraPointer && instance.touchCameraPoint) {
+        const previous = instance.touchCameraPoint;
+        instance.touchCameraPoint = { x: event.clientX, y: event.clientY };
+        applyLookDelta(instance, event.clientX - previous.x, event.clientY - previous.y);
+        event.preventDefault();
+      }
+    }, { signal: controller.signal });
     ["pointerup", "pointercancel", "pointerleave"].forEach((name) => root.addEventListener(name, (event) => {
       if (event.pointerId === instance.touchJoystickPointer) {
         instance.touchJoystickPointer = null;
         instance.inputSystem?.setTouchJoystick?.(0, 0);
         const stick = instance.root.querySelector("[data-hwe-touch-stick]");
         stick?.style?.setProperty("--stick-x", "0px"); stick?.style?.setProperty("--stick-y", "0px");
+      }
+      if (event.pointerId === instance.touchCameraPointer) {
+        instance.touchCameraPointer = null;
+        instance.touchCameraPoint = null;
       }
       const key = instance.touchPointers?.get?.(event.pointerId) || event.target.closest?.("[data-hwe-touch]")?.dataset.hweTouch;
       if (key) {
@@ -2740,11 +3454,14 @@
         if (!activeSurface(instance) || !root.contains(global.document.activeElement) || INPUT_SYSTEM?.isTextEntryEvent?.(event)) return;
         if (event.code === "Escape") {
           if (instance.photoMode) setPhotoMode(instance, false);
+          else if (instance.root.querySelector("[data-hwe-game-overlay]")?.hidden === false) closeGameOverlay(instance);
           else if (instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden === false) setCommunicationWheel(instance, false);
-          else instance.root.querySelector("[data-hwe-pause]")?.click?.();
+          else if (isGameplayActive(instance)) pauseGame(instance, "keyboard");
           return;
         }
         if (event.code === "KeyP") { setPhotoMode(instance, !instance.photoMode); return; }
+        if (event.code === "KeyM") { openGameOverlay(instance, "map"); return; }
+        if (event.code === "Tab") { event.preventDefault(); openGameOverlay(instance, "codex"); return; }
         if (instance.paused) return;
         instance.keys.add(event.code);
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
@@ -2752,22 +3469,57 @@
         if (event.code === "KeyQ") sense(instance);
         if (event.code === "KeyR") useFlagshipAbility(instance);
         if (event.code === "KeyC") setCommunicationWheel(instance, instance.root.querySelector("[data-hwe-communication-wheel]")?.hidden !== false);
+        if (event.code === "KeyV") toggleViewMode(instance);
+        if (event.code === "KeyZ") toggleTargetLock(instance);
         if (event.code === "Space") defend(instance);
         if (event.code === "KeyN") createNest(instance);
       }, { signal: controller.signal });
       global.addEventListener?.("keyup", (event) => instance.keys?.delete(event.code), { signal: controller.signal });
     }
-    else global.addEventListener?.("keyup", (event) => instance.inputSystem?.handleKeyUp?.(event), { signal: controller.signal });
-    global.addEventListener?.("blur", () => instance.inputSystem?.releaseAll?.("window-blur"), { signal: controller.signal });
+    global.document?.addEventListener?.("mousemove", (event) => {
+      if (!isGameplayActive(instance) || global.document?.pointerLockElement !== activeSurface(instance)) return;
+      applyLookDelta(instance, event.movementX || 0, event.movementY || 0);
+    }, { signal: controller.signal, passive: true });
+    root.addEventListener("wheel", (event) => {
+      if (!isGameplayActive(instance) || !instance.camera || !DESKTOP?.updateZoom || !event.target.closest?.("[data-hwe-viewport]")) return;
+      const profile = desktopCameraProfile(instance);
+      instance.camera.desiredDistance = DESKTOP.updateZoom(instance.camera.desiredDistance, event.deltaY, { profile });
+      if (instance.camera.firstPerson && instance.camera.desiredDistance > profile.minDistance * 1.35) {
+        instance.state.settings.viewMode = "third-person";
+        instance.camera.firstPerson = false;
+      }
+      event.preventDefault();
+    }, { signal: controller.signal, passive: false });
+    global.document?.addEventListener?.("pointerlockchange", () => {
+      const locked = global.document.pointerLockElement === activeSurface(instance);
+      if (DESKTOP?.reducePointerLock) instance.pointerLockState = DESKTOP.reducePointerLock(instance.pointerLockState, { type: locked ? "LOCKED" : "UNLOCKED" });
+      if (!locked && instance.pointerLockState?.shouldPause && isGameplayStatePlaying(instance)) pauseGame(instance, "pointer-lock-lost", false);
+    }, { signal: controller.signal });
+    global.document?.addEventListener?.("pointerlockerror", () => {
+      if (DESKTOP?.reducePointerLock) instance.pointerLockState = DESKTOP.reducePointerLock(instance.pointerLockState, { type: "ERROR", error: "POINTER_LOCK_ERROR" });
+      if (isGameplayStatePlaying(instance)) pauseGame(instance, "pointer-lock-error", false);
+    }, { signal: controller.signal });
+    global.document?.addEventListener?.("fullscreenchange", () => {
+      if (global.document.fullscreenElement !== instance.root) instance.ownsFullscreen = false;
+      resizeCanvas(instance);
+      global.requestAnimationFrame?.(() => resizeCanvas(instance));
+    }, { signal: controller.signal });
+    global.document?.addEventListener?.("fullscreenerror", () => setToast(instance, "Không thể chuyển toàn màn hình trên thiết bị này."), { signal: controller.signal });
+    global.addEventListener?.("blur", () => {
+      instance.inputSystem?.releaseAll?.("window-blur");
+      if (isGameplayStatePlaying(instance)) pauseGame(instance, "window-blur");
+    }, { signal: controller.signal });
     global.addEventListener?.("pagehide", () => {
-      instance.pausedByPageHide = !instance.paused;
+      if (isGameplayStatePlaying(instance)) pauseGame(instance, "pagehide");
       instance.renderer3d?.setPaused?.(true);
     }, { signal: controller.signal });
     global.addEventListener?.("pageshow", () => {
-      if (instance.pausedByPageHide && !instance.paused && !global.document?.hidden) instance.renderer3d?.setPaused?.(false);
-      instance.pausedByPageHide = false;
+      if (instance.running && instance.paused) instance.root.querySelector("[data-hwe-resume]")?.focus?.({ preventScroll: true });
     }, { signal: controller.signal });
-    global.document?.addEventListener?.("visibilitychange", () => { if (global.document.hidden) { instance.pausedByVisibility = !instance.paused; instance.paused = true; instance.renderer3d?.setPaused?.(true); } else if (instance.pausedByVisibility) { instance.paused = false; instance.pausedByVisibility = false; instance.renderer3d?.setPaused?.(false); instance.lastFrame = performance.now(); } }, { signal: controller.signal });
+    global.document?.addEventListener?.("visibilitychange", () => {
+      if (global.document.hidden && isGameplayStatePlaying(instance)) pauseGame(instance, "visibility");
+      else if (!global.document.hidden && instance.running && instance.paused) instance.root.querySelector("[data-hwe-resume]")?.focus?.({ preventScroll: true });
+    }, { signal: controller.signal });
   }
 
   function mount(host, options = {}) {
@@ -2837,8 +3589,10 @@
     return Object.freeze({
       version: VERSION,
       state: () => JSON.parse(JSON.stringify(instance.state)),
-      pause: () => { instance.paused = true; instance.inputSystem?.pause?.("api"); instance.renderer3d?.setPaused?.(true); return true; },
-      resume: () => { instance.paused = false; instance.inputSystem?.resume?.("api"); instance.renderer3d?.setPaused?.(false); instance.lastFrame = performance.now(); return true; },
+      pause: () => instance.running ? pauseGame(instance, "api") : false,
+      // Pointer Lock requires a trusted click. Programmatic callers can expose
+      // the Resume control but cannot silently reacquire the mouse.
+      resume: () => { instance.root.querySelector("[data-hwe-resume]")?.focus?.({ preventScroll: true }); return false; },
       destroy: () => unmount(host)
     });
   }
@@ -2852,6 +3606,10 @@
     const instance = instances.get(host);
     if (!instance) { activeHosts.delete(host); if (host) host.replaceChildren(); return false; }
     instance.destroyed = true;
+    if (global.document?.pointerLockElement === instance.canvas || global.document?.pointerLockElement === instance.canvas3d) releasePointerLock(instance, true);
+    if (instance.ownsFullscreen && global.document?.fullscreenElement === instance.root) global.document.exitFullscreen?.().catch?.(() => {});
+    instance.ownsFullscreen = false;
+    setImmersiveShell(instance, false);
     instance.rendererBootToken = (instance.rendererBootToken || 0) + 1;
     instance.controller.abort();
     clearTimeout(instance.toastTimer);

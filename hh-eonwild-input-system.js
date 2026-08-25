@@ -14,14 +14,14 @@
    * stateful controller owns only event subscriptions and ephemeral input
    * state; it never stores account data, credentials, or arbitrary payloads.
    */
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.0";
   const FORMAT = "hh-eonwild-input-profile-v1";
   const STORAGE_KEY = "hh:eonwild:input-profile:v1";
 
   const ACTION_IDS = Object.freeze([
     "moveForward", "moveBackward", "moveLeft", "moveRight",
     "sprint", "crouch", "jump", "interact", "sense", "ability",
-    "communicationWheel", "codex", "worldMap", "photoMode", "pause"
+    "communicationWheel", "toggleView", "lockTarget", "codex", "worldMap", "photoMode", "pause"
   ]);
   const ACTION_ID_SET = new Set(ACTION_IDS);
 
@@ -52,6 +52,8 @@
     sense: actionMeta("Giác quan", "Sense", "gameplay", "Kích hoạt giác quan nổi bật của loài"),
     ability: actionMeta("Năng lực", "Ability", "gameplay", "Dùng năng lực đặc trưng của loài"),
     communicationWheel: actionMeta("Vòng giao tiếp", "Communication wheel", "gameplay", "Mở vòng tín hiệu giao tiếp động vật"),
+    toggleView: actionMeta("Đổi góc nhìn", "Toggle view", "interface", "Đổi camera theo loài hoặc chế độ animal-eye"),
+    lockTarget: actionMeta("Khóa mục tiêu", "Lock target", "gameplay", "Khóa hoặc bỏ khóa mục tiêu hợp lệ trong thế giới 3D"),
     codex: actionMeta("Bách khoa loài", "Animal Codex", "interface", "Mở Bách khoa EonWild"),
     worldMap: actionMeta("Bản đồ thế giới", "World map", "interface", "Mở bản đồ thế giới"),
     photoMode: actionMeta("Chế độ chụp ảnh", "Photo mode", "interface", "Bật hoặc tắt chế độ chụp ảnh"),
@@ -235,10 +237,12 @@
     sprint: [keyboard("ShiftLeft"), keyboard("ShiftRight"), gamepadButton(10), touch("sprint")],
     crouch: [keyboard("ControlLeft"), keyboard("ControlRight"), gamepadButton(1), touch("crouch")],
     jump: [keyboard("Space"), gamepadButton(0), touch("jump")],
-    interact: [keyboard("KeyF"), gamepadButton(2), touch("interact")],
+    interact: [keyboard("KeyE"), keyboard("KeyF"), gamepadButton(2), touch("interact")],
     sense: [keyboard("KeyQ"), gamepadButton(4), touch("sense")],
     ability: [keyboard("KeyR"), gamepadButton(3), touch("ability")],
     communicationWheel: [keyboard("KeyC"), gamepadButton(5), touch("communication-wheel")],
+    toggleView: [keyboard("KeyV"), gamepadButton(11), touch("toggle-view")],
+    lockTarget: [keyboard("KeyZ"), gamepadButton(12), touch("lock-target")],
     codex: [keyboard("Tab"), gamepadButton(6), touch("codex")],
     worldMap: [keyboard("KeyM"), gamepadButton(8), touch("world-map")],
     photoMode: [keyboard("KeyP"), gamepadButton(7), touch("photo-mode")],
@@ -257,6 +261,8 @@
     sense: [keyboard("Numpad4"), gamepadButton(4), touch("sense")],
     ability: [keyboard("Numpad2"), gamepadButton(3), touch("ability")],
     communicationWheel: [keyboard("Numpad3"), gamepadButton(5), touch("communication-wheel")],
+    toggleView: [keyboard("KeyV"), gamepadButton(11), touch("toggle-view")],
+    lockTarget: [keyboard("KeyZ"), gamepadButton(12), touch("lock-target")],
     codex: [keyboard("Tab"), gamepadButton(6), touch("codex")],
     worldMap: [keyboard("KeyM"), gamepadButton(8), touch("world-map")],
     photoMode: [keyboard("KeyP"), gamepadButton(7), touch("photo-mode")],
@@ -275,6 +281,8 @@
     sense: [keyboard("KeyQ"), gamepadButton(4), touch("sense")],
     ability: [keyboard("KeyR"), gamepadButton(3), touch("ability")],
     communicationWheel: [keyboard("KeyC"), gamepadButton(5), touch("communication-wheel")],
+    toggleView: [keyboard("KeyV"), gamepadButton(11), touch("toggle-view")],
+    lockTarget: [keyboard("KeyZ"), gamepadButton(12), touch("lock-target")],
     codex: [keyboard("Tab"), gamepadButton(6), touch("codex")],
     worldMap: [keyboard("KeyM"), gamepadButton(8), touch("world-map")],
     photoMode: [keyboard("KeyP"), gamepadButton(7), touch("photo-mode")],

@@ -5086,6 +5086,19 @@ body:has(.hwe-root) .app-workspace {
   align-items: center;
 }
 
+.hwe-photo-controls label.hwe-photo-check input[type="checkbox"] {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.hwe-photo-controls label.hwe-photo-check > span {
+  grid-column: 2;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
 .hwe-photo-controls output { color: #63f2b3; font-weight: 850; }
 .hwe-photo-controls :where(input[type="range"], select) { grid-column: 1 / -1; width: 100%; min-width: 0; accent-color: #55e6ff; }
 .hwe-photo-controls select { min-height: 36px; padding-inline: 8px; color: #effaff; }
@@ -5911,5 +5924,774 @@ body:has(.hwe-root) .app-workspace {
   .hwe-root :where(a[href], button, input, select, textarea, summary, [role="button"], [role="tab"], [tabindex]:not([tabindex="-1"])):focus-visible {
     outline: 3px solid Highlight;
     box-shadow: none;
+  }
+}
+
+/* EonWild immersive gameplay -------------------------------------------------
+   Gameplay is a viewport, not another dashboard card. The body class owns the
+   app-shell takeover; root state selectors also work in an embedded host. */
+body.app-eonwild-immersive {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  background: #02080d;
+}
+
+body.app-eonwild-immersive :where(
+  .app-header,
+  .app-sidebar,
+  .app-sidebar-backdrop,
+  .app-mobile-nav,
+  .app-bottom-nav,
+  .app-route-progress,
+  .app-breadcrumb,
+  .app-page-header,
+  .app-context-bar
+) {
+  display: none !important;
+}
+
+/* App Shell gives the mobile dock an equally important route rule. Keep the
+   concrete class outside :where() so immersive mode wins that specificity. */
+body.app-eonwild-immersive .app-mobile-nav,
+body.app-eonwild-immersive .app-bottom-nav {
+  display: none !important;
+}
+
+body.app-eonwild-immersive .app-shell {
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+body.app-eonwild-immersive .app-shell__body,
+body.app-eonwild-immersive.app-sidebar-collapsed .app-shell__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) !important;
+  width: 100%;
+  height: 100dvh !important;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.app-eonwild-immersive :where(.app-main, #appMain) {
+  position: relative;
+  grid-column: 1;
+  width: 100%;
+  height: 100dvh !important;
+  min-width: 0;
+  min-height: 0;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  background: #02080d;
+}
+
+body.app-eonwild-immersive .app-workspace {
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-width: 0;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: 100dvh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+body.app-eonwild-immersive [data-hh-eonwild-host] {
+  width: 100%;
+  height: 100dvh;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+:is(
+  .hwe-root.is-playing,
+  .hwe-root[data-gameplay-state="playing"],
+  body.app-eonwild-immersive .hwe-root[data-view="world"]
+) {
+  --hwe-immersive-gutter: clamp(8px, 1.15vw, 20px);
+  --hwe-immersive-control: max(44px, calc(44px * var(--hwe-ui-scale, 1)));
+  grid-template-rows: minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:is(
+  .hwe-root.is-playing,
+  .hwe-root[data-gameplay-state="playing"],
+  body.app-eonwild-immersive .hwe-root[data-view="world"]
+) > :where(.hwe-header, .hwe-nav, .hwe-controls),
+:is(
+  .hwe-root.is-playing,
+  .hwe-root[data-gameplay-state="playing"],
+  body.app-eonwild-immersive .hwe-root[data-view="world"]
+) :where(.hwe-realm-selector, .hwe-species-dock, .hwe-telemetry) {
+  display: none !important;
+}
+
+:is(
+  .hwe-root.is-playing,
+  .hwe-root[data-gameplay-state="playing"],
+  body.app-eonwild-immersive .hwe-root[data-view="world"]
+) :where(.hwe-main, .hwe-world-layout) {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
+:is(
+  .hwe-root.is-playing,
+  .hwe-root[data-gameplay-state="playing"],
+  body.app-eonwild-immersive .hwe-root[data-view="world"]
+) .hwe-viewport {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:is(
+  .hwe-root.is-playing,
+  .hwe-root[data-gameplay-state="playing"],
+  body.app-eonwild-immersive .hwe-root[data-view="world"]
+) :where(
+  .hwe-render-surface,
+  .hwe-viewport > canvas[data-hwe-canvas],
+  .hwe-viewport > canvas[data-hwe-canvas-3d]
+) {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  touch-action: none;
+}
+
+/* HUD layers stay above the renderer without participating in its layout. */
+:is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) :where(
+  .hwe-hud,
+  .hwe-minimap,
+  .hwe-event-banner,
+  .hwe-sense,
+  .hwe-ability-bar,
+  .hwe-reticle,
+  .hwe-target-prompt
+) {
+  position: absolute;
+  pointer-events: none;
+}
+
+:is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-hud--top {
+  top: max(var(--hwe-immersive-gutter), var(--hwe-safe-top));
+  right: max(var(--hwe-immersive-gutter), var(--hwe-safe-right));
+  left: max(var(--hwe-immersive-gutter), var(--hwe-safe-left));
+  max-width: none;
+  flex-wrap: wrap;
+}
+
+:is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-hud--top button {
+  min-width: var(--hwe-immersive-control);
+  min-height: var(--hwe-immersive-control);
+  pointer-events: none;
+}
+
+:is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-minimap {
+  top: max(calc(var(--hwe-safe-top) + 76px), 76px);
+  right: max(var(--hwe-immersive-gutter), var(--hwe-safe-right));
+}
+
+:is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-event-banner {
+  top: max(calc(var(--hwe-safe-top) + 76px), 76px);
+}
+
+:is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-ability-bar {
+  bottom: max(var(--hwe-immersive-gutter), var(--hwe-safe-bottom));
+  width: min(760px, calc(100% - max(176px, calc(var(--hwe-safe-left) + var(--hwe-safe-right) + 32px))));
+}
+
+:is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) :where(
+  .hwe-hud--top > span,
+  .hwe-hud--top strong,
+  .hwe-ability-bar span,
+  .hwe-ability-bar strong,
+  .hwe-ability-bar small,
+  .hwe-target-prompt,
+  .hwe-target-prompt *
+) {
+  max-width: 100%;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* World-space targeting stays visually centred and never steals look input. */
+.hwe-reticle {
+  z-index: 18;
+  top: 50%;
+  left: 50%;
+  display: none;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: #effff8;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+}
+
+:is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-reticle {
+  display: grid;
+}
+
+.hwe-reticle::before,
+.hwe-reticle::after {
+  position: absolute;
+  content: "";
+  background: currentColor;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.72);
+}
+
+.hwe-reticle::before {
+  width: 24px;
+  height: 2px;
+}
+
+.hwe-reticle::after {
+  width: 2px;
+  height: 24px;
+}
+
+.hwe-reticle > i {
+  position: relative;
+  z-index: 1;
+  width: 4px;
+  height: 4px;
+  border: 1px solid #03100d;
+  border-radius: 50%;
+  background: var(--hwe-realm-accent, #69f0ae);
+  box-shadow: 0 0 10px var(--hwe-realm-accent, #69f0ae);
+}
+
+.hwe-reticle:is(.is-targeting, [data-target-state="valid"]) {
+  color: var(--hwe-amber);
+  animation: hweReticleAcquire 720ms ease-out both;
+}
+
+.hwe-target-prompt {
+  z-index: 19;
+  top: calc(50% + 28px);
+  left: 50%;
+  display: none;
+  width: max-content;
+  max-width: min(390px, calc(100% - max(32px, calc(var(--hwe-safe-left) + var(--hwe-safe-right) + 20px))));
+  gap: 2px;
+  padding: 8px 12px;
+  border: 1px solid rgba(239, 255, 248, 0.24);
+  border-radius: 10px;
+  background: rgba(2, 13, 12, 0.78);
+  box-shadow: 0 10px 28px rgba(0, 4, 3, 0.42);
+  color: #f2fff8;
+  text-align: center;
+  text-shadow: 0 1px 3px #000;
+  transform: translateX(-50%);
+  backdrop-filter: blur(8px);
+}
+
+:is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-target-prompt:not([hidden]) {
+  display: grid;
+}
+
+.hwe-target-prompt:empty {
+  display: none !important;
+}
+
+.hwe-target-prompt :where(small, [data-hwe-target-distance]) {
+  color: #b9d8ca;
+}
+
+.hwe-target-prompt :where(kbd, [data-hwe-target-action]) {
+  color: #ffe29a;
+}
+
+/* Visible modal overlays alone receive pointer input; HUD and reticle do not. */
+.hwe-game-overlay,
+.hwe-pause-overlay {
+  position: absolute;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 14px;
+  padding:
+    max(16px, var(--hwe-safe-top))
+    max(16px, var(--hwe-safe-right))
+    max(16px, var(--hwe-safe-bottom))
+    max(16px, var(--hwe-safe-left));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: rgba(1, 8, 7, 0.78);
+  backdrop-filter: blur(14px);
+  pointer-events: none;
+}
+
+:is(.hwe-game-overlay, .hwe-pause-overlay):not([hidden]) {
+  pointer-events: auto;
+}
+
+:is(.hwe-game-overlay, .hwe-pause-overlay):not([hidden]) > * {
+  pointer-events: auto;
+}
+
+:is(.hwe-game-overlay, .hwe-pause-overlay) :where(
+  header,
+  section,
+  article,
+  footer,
+  h2,
+  h3,
+  p,
+  small,
+  strong,
+  span,
+  button
+) {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+:is(.hwe-game-overlay, .hwe-pause-overlay) button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.hwe-root:is(
+  .is-paused,
+  [data-gameplay-state="paused"],
+  [data-gameplay-state="map"],
+  [data-gameplay-state="codex"],
+  [data-gameplay-state="photo"]
+) .hwe-viewport > :where(canvas, .hwe-reticle, .hwe-target-prompt, .hwe-touch-controls) {
+  pointer-events: none;
+}
+
+.hwe-root:is(
+  .is-paused,
+  [data-gameplay-state="paused"],
+  [data-gameplay-state="map"],
+  [data-gameplay-state="codex"],
+  [data-gameplay-state="photo"]
+) :where(.hwe-reticle, .hwe-target-prompt, .hwe-touch-controls),
+.hwe-root.is-photo-mode :where(.hwe-reticle, .hwe-target-prompt) {
+  visibility: hidden;
+  opacity: 0;
+}
+
+/* Touch gameplay: analogue movement left, dedicated look surface right. */
+.hwe-camera-pad {
+  display: none;
+}
+
+@media (pointer: coarse), (max-width: 760px) {
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-touch-controls {
+    position: absolute;
+    z-index: 24;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    touch-action: none;
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-touch-stick {
+    position: absolute;
+    z-index: 2;
+    left: max(14px, var(--hwe-safe-left));
+    bottom: max(18px, var(--hwe-safe-bottom));
+    width: clamp(96px, 27vw, 124px);
+    height: clamp(96px, 27vw, 124px);
+    min-width: 44px;
+    min-height: 44px;
+    grid-column: auto;
+    grid-row: auto;
+    pointer-events: auto;
+    touch-action: none;
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-camera-pad {
+    position: absolute;
+    z-index: 1;
+    right: 0;
+    bottom: 0;
+    display: block;
+    width: min(50vw, 420px);
+    height: clamp(150px, 42dvh, 360px);
+    min-width: 44px;
+    min-height: 44px;
+    border: 1px solid rgba(89, 217, 255, 0.1);
+    border-right: 0;
+    border-bottom: 0;
+    border-radius: 38% 0 0;
+    background: radial-gradient(circle at 72% 70%, rgba(89, 217, 255, 0.09), transparent 62%);
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .hwe-camera-pad::after {
+    position: absolute;
+    right: max(12px, var(--hwe-safe-right));
+    bottom: max(10px, var(--hwe-safe-bottom));
+    color: rgba(220, 249, 255, 0.55);
+    font-size: 0.75rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    content: "CAMERA";
+    pointer-events: none;
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-touch-controls > [data-hwe-touch] {
+    display: none;
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) :where(
+    .hwe-touch-actions,
+    .hwe-touch-controls > button:not([data-hwe-touch])
+  ) {
+    z-index: 3;
+    min-width: 44px;
+    min-height: 44px;
+    pointer-events: auto;
+    touch-action: manipulation;
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-touch-actions {
+    position: absolute;
+    right: max(14px, var(--hwe-safe-right));
+    bottom: max(62px, calc(var(--hwe-safe-bottom) + 54px));
+    display: grid;
+    grid-template-columns: repeat(2, minmax(52px, 58px));
+    gap: 9px;
+    pointer-events: none;
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-touch-actions > button {
+    min-width: 52px;
+    min-height: 52px;
+    pointer-events: auto;
+  }
+
+  /* Legacy direct action buttons remain usable until every cached shell has
+     received the grouped touch-action markup. */
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-touch-controls > button:not([data-hwe-touch]) {
+    position: absolute;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-touch-controls > [data-hwe-action="interact"] {
+    right: max(76px, calc(var(--hwe-safe-right) + 66px));
+    bottom: max(132px, calc(var(--hwe-safe-bottom) + 122px));
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-touch-controls > [data-hwe-action="sense"] {
+    right: max(14px, var(--hwe-safe-right));
+    bottom: max(132px, calc(var(--hwe-safe-bottom) + 122px));
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-touch-controls > [data-hwe-action="ability"] {
+    right: max(76px, calc(var(--hwe-safe-right) + 66px));
+    bottom: max(70px, calc(var(--hwe-safe-bottom) + 60px));
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-touch-controls > [data-hwe-communication-open] {
+    right: max(14px, var(--hwe-safe-right));
+    bottom: max(70px, calc(var(--hwe-safe-bottom) + 60px));
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-touch-controls > [data-hwe-action="lock-target"] {
+    right: max(14px, var(--hwe-safe-right));
+    bottom: max(8px, var(--hwe-safe-bottom));
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-ability-bar {
+    display: none;
+  }
+}
+
+/* 1366px laptops keep every HUD label while reserving the centre for aiming. */
+@media (min-width: 761px) and (max-width: 1366px) {
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-hud--top > span {
+    min-width: 82px;
+    padding-inline: 8px;
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-ability-bar {
+    width: min(660px, calc(100% - 196px));
+  }
+}
+
+/* 375px-class phones use the full width without truncating Vietnamese labels. */
+@media (max-width: 430px) {
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-hud--top {
+    top: max(6px, var(--hwe-safe-top));
+    right: max(6px, var(--hwe-safe-right));
+    left: max(6px, var(--hwe-safe-left));
+    display: flex;
+    gap: 3px;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-hud--top > span {
+    min-width: 0;
+    min-height: 44px;
+    flex: 1 1 0;
+    padding: 4px;
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-hud--top > :where(span, button) {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-hud--top button {
+    width: 44px;
+    flex: 0 0 44px;
+    padding-inline: 3px;
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-minimap {
+    display: none;
+  }
+
+  .hwe-target-prompt {
+    top: calc(50% + 24px);
+    max-width: calc(100% - max(24px, calc(var(--hwe-safe-left) + var(--hwe-safe-right) + 16px)));
+    padding: 7px 9px;
+  }
+
+  :is(.hwe-game-overlay, .hwe-pause-overlay) {
+    place-items: stretch;
+    align-content: center;
+  }
+
+  :is(.hwe-game-overlay, .hwe-pause-overlay) > * {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* 4K keeps controls readable without letting HUD cards cover the animal. */
+@media (min-width: 2560px) {
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) {
+    --hwe-immersive-gutter: clamp(18px, 1vw, 32px);
+  }
+
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-hud--top > span {
+    min-width: 132px;
+  }
+
+  .hwe-reticle {
+    scale: 1.12;
+  }
+
+  .hwe-target-prompt {
+    max-width: 460px;
+  }
+}
+
+.hwe-immersive-vitals {
+  display: none;
+}
+
+:is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-immersive-vitals {
+  position: absolute;
+  z-index: 22;
+  bottom: max(var(--hwe-immersive-gutter), var(--hwe-safe-bottom));
+  left: max(var(--hwe-immersive-gutter), var(--hwe-safe-left));
+  display: grid;
+  width: min(250px, calc(42vw - var(--hwe-safe-left)));
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid rgba(111, 240, 195, .18);
+  border-radius: 12px;
+  background: rgba(2, 14, 13, .7);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .34);
+  pointer-events: none;
+  backdrop-filter: blur(9px);
+}
+
+.hwe-immersive-vitals label {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: #d9f4e8;
+  font-size: 11px;
+}
+
+.hwe-immersive-vitals progress {
+  width: 100%;
+  min-width: 0;
+  height: 7px;
+}
+
+.hwe-immersive-vitals b { text-align: right; }
+
+:is(.hwe-pause-overlay, .hwe-game-overlay) > section {
+  width: min(760px, 100%);
+  max-height: min(82dvh, 820px);
+  padding: clamp(18px, 3vw, 34px);
+  overflow: auto;
+  border: 1px solid rgba(106, 239, 203, .22);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(8, 27, 24, .98), rgba(5, 14, 18, .985));
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .64), inset 0 1px rgba(255, 255, 255, .05);
+}
+
+:is(.hwe-pause-overlay, .hwe-game-overlay) > section > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hwe-pause-overlay section > div,
+.hwe-game-overlay footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.hwe-game-overlay [data-hwe-game-overlay-body] {
+  min-width: 0;
+  margin-top: 16px;
+}
+
+.hwe-overlay-map {
+  display: grid;
+  grid-template-columns: minmax(220px, .8fr) minmax(260px, 1.2fr);
+  align-items: center;
+  gap: 20px;
+}
+
+.hwe-overlay-map canvas {
+  width: 100%;
+  max-height: 52dvh;
+  border: 1px solid rgba(107, 232, 196, .2);
+  border-radius: 16px;
+  background: #061310;
+}
+
+.hwe-overlay-codex dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hwe-overlay-codex dl > div,
+.hwe-overlay-settings label {
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .035);
+}
+
+.hwe-overlay-settings { display: grid; gap: 9px; }
+
+@media (max-width: 760px) {
+  .hwe-settings-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .hwe-settings-grid > article,
+  .hwe-input-settings { width: 100%; grid-column: 1 / -1 !important; }
+  .hwe-input-bindings,
+  .hwe-atlas-group > div { grid-template-columns: minmax(0, 1fr) !important; }
+  .hwe-input-bindings button { min-height: 88px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .hwe-atlas-map { min-height: 0; }
+  .hwe-overlay-map { grid-template-columns: 1fr; }
+  .hwe-overlay-codex dl { grid-template-columns: 1fr; }
+  :is(.hwe-root.is-playing, .hwe-root[data-gameplay-state="playing"]) .hwe-immersive-vitals {
+    width: min(170px, 44vw);
+    padding: 7px;
+  }
+  .hwe-immersive-vitals label { grid-template-columns: 42px minmax(0, 1fr) 24px; gap: 4px; font-size: 9px; }
+}
+
+@keyframes hweReticleAcquire {
+  0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.32); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    .hwe-reticle,
+    .hwe-target-prompt,
+    .hwe-game-overlay,
+    .hwe-pause-overlay,
+    .hwe-touch-stick,
+    .hwe-camera-pad
+  ) {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .hwe-reticle,
+  .hwe-target-prompt,
+  .hwe-game-overlay,
+  .hwe-pause-overlay,
+  .hwe-touch-stick,
+  .hwe-camera-pad {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+    filter: none;
   }
 }

@@ -1,6 +1,6 @@
-const CACHE = "hh-identity-portal-v890";
+const CACHE = "hh-identity-portal-v897";
 const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
-// EonWild Planet Atlas integration: ./hh-eonwild-species-registry.js?v=1 ./hh-eonwild-input-system.js?v=1 ./hh-eonwild-world-atlas.js?v=2 ./hh-eonwild-renderer-3d.js?v=13 ./hh-eonwild-game.js?v=18.
+// EonWild desktop integration: ./hh-eonwild-input-system.js?v=2 ./hh-eonwild-desktop-controller.js?v=1.
 // Compatibility marker retained for the pre-photogrammetry EonWild renderer: hh-identity-portal-v879 ./hh-eonwild-renderer-3d.js?v=5.
 // Compatibility marker retained for Dharma v6 clients: hh-identity-portal-v842.
 // Compatibility marker retained for the previous Home shell: ./home-galaxy-command.js?v=15.
@@ -477,20 +477,21 @@ const RUNTIME_ASSETS = [
   "./hh-play.js?v=4&build=2",
   "./hh-eonwild-cinematic-pack.js?v=1",
   "./hh-eonwild-cinematic-pack-worker.js?v=1",
-  "./hh-eonwild-game.css?v=14",
+  "./hh-eonwild-game.css?v=18",
   "./hh-eonwild-content-v2.js?v=3",
   "./hh-eonwild-species-registry.js?v=1",
-  "./hh-eonwild-input-system.js?v=1",
+  "./hh-eonwild-input-system.js?v=2",
+  "./hh-eonwild-desktop-controller.js?v=1",
   "./hh-eonwild-world-atlas.js?v=2",
   "./hh-eonwild-simulation-v2.js?v=4",
-  "./hh-eonwild-3d-core.js?v=5",
+  "./hh-eonwild-3d-core.js?v=6",
   "./hh-eonwild-landscape-core.js?v=1",
   "./hh-eonwild-landscape-worker.js?v=1",
   "./hh-eonwild-vegetation-system.js?v=1",
   "./hh-eonwild-environment-renderer.js?v=1",
   "./hh-eonwild-water-weather-system.js?v=1",
-  "./hh-eonwild-renderer-3d.js?v=13",
-  "./hh-eonwild-game.js?v=18",
+  "./hh-eonwild-renderer-3d.js?v=14",
+  "./hh-eonwild-game.js?v=23",
   "./vendor/babylon-9.22.1.js?v=9.22.1",
   "./vendor/babylonjs-loaders-9.22.1.min.js?v=9.22.1",
   "./assets/eonwild/asset-manifest.v1.json",
@@ -517,10 +518,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=537",
+  "./performance-loader.js?v=541",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=245"
+  "./script.js?v=246"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

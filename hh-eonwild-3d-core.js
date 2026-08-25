@@ -546,7 +546,8 @@
       scene.fogColor = new B.Color3(.035, .09, .105);
       camera = new B.ArcRotateCamera("eonwild-camera", -Math.PI / 2, 1.08, 27, new B.Vector3(0, 2, 0), scene);
       camera.lowerRadiusLimit = 8; camera.upperRadiusLimit = 65; camera.lowerBetaLimit = .35; camera.upperBetaLimit = 1.48;
-      camera.wheelPrecision = 28; camera.pinchPrecision = 72; camera.attachControl(canvas, true);
+      camera.wheelPrecision = 28; camera.pinchPrecision = 72;
+      if (options.controls === true) camera.attachControl(canvas, true);
       const hemisphere = new B.HemisphericLight("eonwild-sky-light", new B.Vector3(0, 1, 0), scene);
       hemisphere.intensity = .78; hemisphere.groundColor = new B.Color3(.08, .12, .09);
       const sun = new B.DirectionalLight("eonwild-sun", new B.Vector3(-.46, -1, .38), scene);
@@ -564,6 +565,14 @@
       let lastStreamPosition = { x: WORLD_CONFIG.logicalSizeMeters / 2, z: WORLD_CONFIG.logicalSizeMeters / 2 };
       let lastPopulation = [];
       let playerSpeciesId = options.speciesId || "triceratops";
+      let gameplayCamera = {
+        yaw: 0,
+        pitch: -.18,
+        distance: 27,
+        fov: 68,
+        profileId: "ground",
+        firstPerson: false
+      };
       let playerRoot = buildCreature(B, scene, SPECIES_CARTRIDGES[playerSpeciesId] || SPECIES_CARTRIDGES.triceratops, options.speciesColor || "#e4ba65", "player");
       const waterMaterial = new B.PBRMaterial("eonwild-water-material", scene);
       waterMaterial.albedoColor = B.Color3.FromHexString("#176681"); waterMaterial.alpha = .82; waterMaterial.metallic = .05; waterMaterial.roughness = .2;
@@ -708,6 +717,27 @@
         else startRenderLoop();
         return paused;
       };
+      const applyCameraInput = (value = {}) => {
+        if (disposed || !value || typeof value !== "object") return false;
+        const profileLimits = {
+          ground: [1.3, 18], heavy: [2.5, 24], small: [.7, 12], bird: [1.5, 28], aquatic: [1.2, 24], climbing: [.9, 16], burrow: [.5, 9]
+        };
+        const profileId = Object.hasOwn(profileLimits, value.profileId) ? value.profileId : gameplayCamera.profileId;
+        const limits = profileLimits[profileId] || profileLimits.ground;
+        gameplayCamera = {
+          yaw: Number.isFinite(Number(value.yaw)) ? Number(value.yaw) : gameplayCamera.yaw,
+          pitch: clamp(value.pitch ?? gameplayCamera.pitch, -1.35, 1.05),
+          distance: clamp(value.distance ?? gameplayCamera.distance, value.firstPerson ? .1 : limits[0], limits[1]),
+          fov: clamp(value.fov ?? gameplayCamera.fov, 35, 120),
+          profileId,
+          firstPerson: value.firstPerson === undefined ? gameplayCamera.firstPerson : Boolean(value.firstPerson)
+        };
+        camera.alpha = -gameplayCamera.yaw - Math.PI / 2;
+        camera.beta = Math.PI / 2 + gameplayCamera.pitch;
+        camera.radius = gameplayCamera.distance;
+        camera.fov = gameplayCamera.fov * Math.PI / 180;
+        return true;
+      };
       const applyQuality = (value, governorDriven = false) => {
         if (!QUALITY_PROFILES[value]) return currentQuality;
         const changed = value !== currentQuality;
@@ -819,6 +849,12 @@
         capability,
         sync,
         resize,
+        applyCameraInput,
+        getCameraState() {
+          return Object.freeze({ ...gameplayCamera, forward: Object.freeze({ x: Math.sin(gameplayCamera.yaw), z: Math.cos(gameplayCamera.yaw) }), right: Object.freeze({ x: Math.cos(gameplayCamera.yaw), z: -Math.sin(gameplayCamera.yaw) }) });
+        },
+        resolveCameraCollision() { return Object.freeze({ supported: false, terrainOnly: true, mode: "generic-core-unavailable", distance: null, desiredDistance: gameplayCamera.distance }); },
+        setHighlightedTarget() { return false; },
         setPaused: setPausedState,
         setMotion(value) { motionMode = value === undefined ? "auto" : value; return refreshReducedMotion(); },
         setReducedMotion(value) { motionMode = value === undefined ? "auto" : value; return refreshReducedMotion(); },

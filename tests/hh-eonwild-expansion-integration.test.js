@@ -16,15 +16,16 @@ const registry = require(path.join(root, "hh-eonwild-species-registry.js"));
 const atlas = require(path.join(root, "hh-eonwild-world-atlas.js"));
 const input = require(path.join(root, "hh-eonwild-input-system.js"));
 
-test("route-lazy bundle loads and precaches data/control kernels before game v18", () => {
+test("route-lazy bundle loads and precaches desktop control kernels before game v23", () => {
   const expected = [
     "hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3",
-    "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=1",
+    "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=2",
+    "hh-eonwild-desktop-controller.js?v=1",
     "hh-eonwild-world-atlas.js?v=2", "hh-eonwild-simulation-v2.js?v=4",
-    "hh-eonwild-3d-core.js?v=5", "hh-eonwild-landscape-core.js?v=1",
+    "hh-eonwild-3d-core.js?v=6", "hh-eonwild-landscape-core.js?v=1",
     "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=1",
-    "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=13",
-    "hh-eonwild-game.js?v=18"
+    "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=14",
+    "hh-eonwild-game.js?v=23"
   ];
   let previous = -1;
   for (const asset of expected) {
@@ -32,8 +33,8 @@ test("route-lazy bundle loads and precaches data/control kernels before game v18
     assert.ok(index > previous, `${asset} must load once and after its dependency`);
     previous = index;
   }
-  assert.match(loader, /styles:\s*\["hh-eonwild-game\.css\?v=14"\]/);
-  for (const asset of [...expected.slice(2), "hh-eonwild-game.css?v=14"]) {
+  assert.match(loader, /styles:\s*\["hh-eonwild-game\.css\?v=18"\]/);
+  for (const asset of [...expected.slice(2), "hh-eonwild-game.css?v=18"]) {
     const escapedAsset = asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     assert.equal((serviceWorker.match(new RegExp(`"\\./${escapedAsset}"`, "g")) || []).length, 1, `${asset} must have one immutable cache entry`);
   }
@@ -73,7 +74,12 @@ test("World Atlas exposes map selection, confidence and active-region truth", ()
 });
 
 test("Input Action System owns remap, persistence, joystick and cleanup", () => {
-  assert.equal(input.ACTION_IDS.length, 15);
+  assert.equal(input.VERSION, "1.1.0");
+  assert.equal(input.ACTION_IDS.length, 17);
+  assert.ok(input.DEFAULT_ACTIONS.interact.some((binding) => binding.code === "KeyE"));
+  assert.ok(input.DEFAULT_ACTIONS.interact.some((binding) => binding.code === "KeyF"));
+  assert.ok(input.DEFAULT_ACTIONS.toggleView.some((binding) => binding.code === "KeyV"));
+  assert.ok(input.DEFAULT_ACTIONS.lockTarget.some((binding) => binding.code === "KeyZ"));
   assert.match(game, /HHEonWildInputSystem/);
   assert.match(game, /data-hwe-remap-action/);
   assert.match(game, /data-hwe-input-preset/);
@@ -81,9 +87,10 @@ test("Input Action System owns remap, persistence, joystick and cleanup", () => 
   assert.match(game, /data-hwe-touch-stick/);
   assert.match(game, /inputSystem\?\.attach\?\.\(instance\.root\)/);
   assert.match(game, /inputSystem\?\.dispose\?\.\(\)/);
-  assert.match(game, /INPUT_SYSTEM\.stepMovement/);
+  assert.match(game, /new DESKTOP\.FixedTimestepController/);
+  assert.match(game, /desktopController\?\.advance/);
   assert.match(game, /filter\(\(binding\) => binding\.device !== "keyboard"\)/);
-  assert.match(game, /inputSystem\?\.handleKeyUp\?\.\(event\)/);
+  assert.match(game, /inputSystem\?\.attach\?\.\(instance\.root\)/);
   assert.match(game, /releaseAll\?\.\("window-blur"\)/);
   assert.match(css, /\.hwe-touch-stick\s*\{/);
   assert.match(css, /\.hwe-input-bindings\s*\{/);
@@ -94,7 +101,7 @@ test("Input Action System owns remap, persistence, joystick and cleanup", () => 
 test("expanded EonWild suite is part of the default feature command", () => {
   const command = packageJson.scripts["test:eonwild"];
   for (const file of [
-    "hh-eonwild-input-system.test.js", "hh-eonwild-ui-accessibility.test.js",
+    "hh-eonwild-input-system.test.js", "hh-eonwild-desktop-controller.test.js", "hh-eonwild-ui-accessibility.test.js",
     "hh-eonwild-species-registry.test.js", "hh-eonwild-world-atlas.test.js",
     "hh-eonwild-expansion-integration.test.js"
   ]) assert.match(command, new RegExp(file.replaceAll(".", "\\.")));

@@ -5249,7 +5249,7 @@ function initAppShell() {
   const syncMobileSidebarDock = () => {
     const mobileNavigation = document.querySelector(".app-mobile-nav");
     if (mobileNavigation) {
-      const workspaceOwnsMobileDock = document.body.classList.contains("app-dharma-route");
+      const workspaceOwnsMobileDock = document.body.classList.contains("app-dharma-route") || document.body.classList.contains("app-eonwild-immersive");
       if (mobileSidebarQuery.matches && !workspaceOwnsMobileDock) mobileNavigation.style.setProperty("display", "grid", "important");
       else mobileNavigation.style.removeProperty("display");
     }

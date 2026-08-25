@@ -84,11 +84,11 @@ test("Codex exposes 346 unique species and documents exactly three source overla
 
 test("paused input consumes buffered gameplay actions without invoking them", () => {
   const processInputActions = Function(
-    "performance", "global", "setPhotoMode", "setCommunicationWheel",
+    "performance", "global", "setPhotoMode", "setCommunicationWheel", "closeGameOverlay", "pauseGame", "openGameOverlay", "toggleViewMode", "toggleTargetLock", "isGameplayActive",
     "interact", "sense", "useFlagshipAbility", "defend",
     `"use strict"; return (${extractFunctionSource(gameSource, "processInputActions")});`
   )(
-    { now: () => 0 }, { location: { hash: "#/game/world" } }, () => {}, () => {},
+    { now: () => 0 }, { location: { hash: "#/game/world" } }, () => {}, () => {}, () => {}, (instance) => { instance.paused = true; }, () => {}, () => {}, () => {}, () => true,
     () => calls.push("interact"), () => calls.push("sense"),
     () => calls.push("ability"), () => calls.push("jump")
   );
@@ -193,7 +193,7 @@ const assertGeneBounds = (genes) => {
 };
 
 test("EonWild v4 game composes versioned ecology and cinematic 3D APIs", () => {
-  assert.equal(game.VERSION, "4.1.0");
+  assert.equal(game.VERSION, "4.2.0");
   assert.equal(game.version, game.VERSION);
   assert.equal(game.SCHEMA_VERSION, 4);
   assert.equal(game.STORAGE_KEY, "hh.game.eonwild.v4");
@@ -869,7 +869,7 @@ test("only Flagship species are offered as playable while other tiers stay truth
 });
 
 test("lazy loader and service worker cache the complete ordered v4 bundle", () => {
-  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=14"\][\s\S]*?scripts:\s*\["hh-eonwild-cinematic-pack\.js\?v=1",\s*"hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-species-registry\.js\?v=1",\s*"hh-eonwild-input-system\.js\?v=1",\s*"hh-eonwild-world-atlas\.js\?v=2",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=5",\s*"hh-eonwild-landscape-core\.js\?v=1",\s*"hh-eonwild-vegetation-system\.js\?v=1",\s*"hh-eonwild-environment-renderer\.js\?v=1",\s*"hh-eonwild-water-weather-system\.js\?v=1",\s*"hh-eonwild-renderer-3d\.js\?v=13",\s*"hh-eonwild-game\.js\?v=18"\]/);
+  assert.match(loader, /game:\s*\{[\s\S]*?styles:\s*\["hh-eonwild-game\.css\?v=18"\][\s\S]*?scripts:\s*\["hh-eonwild-cinematic-pack\.js\?v=1",\s*"hh-eonwild-content-v2\.js\?v=3",\s*"hh-eonwild-species-registry\.js\?v=1",\s*"hh-eonwild-input-system\.js\?v=2",\s*"hh-eonwild-desktop-controller\.js\?v=1",\s*"hh-eonwild-world-atlas\.js\?v=2",\s*"hh-eonwild-simulation-v2\.js\?v=4",\s*"hh-eonwild-3d-core\.js\?v=6",\s*"hh-eonwild-landscape-core\.js\?v=1",\s*"hh-eonwild-vegetation-system\.js\?v=1",\s*"hh-eonwild-environment-renderer\.js\?v=1",\s*"hh-eonwild-water-weather-system\.js\?v=1",\s*"hh-eonwild-renderer-3d\.js\?v=14",\s*"hh-eonwild-game\.js\?v=23"\]/);
   assert.match(loader, /value === "\/game" \|\| value\.startsWith\("\/game\/"\)\) return \["game"\]/);
   const runtimeAssetsSource = worker.slice(
     worker.indexOf("const RUNTIME_ASSETS"),
@@ -879,20 +879,21 @@ test("lazy loader and service worker cache the complete ordered v4 bundle", () =
   for (const asset of [
     "./hh-eonwild-cinematic-pack.js?v=1",
     "./hh-eonwild-cinematic-pack-worker.js?v=1",
-    "./hh-eonwild-game.css?v=14",
+    "./hh-eonwild-game.css?v=18",
     "./hh-eonwild-content-v2.js?v=3",
     "./hh-eonwild-species-registry.js?v=1",
-    "./hh-eonwild-input-system.js?v=1",
+    "./hh-eonwild-input-system.js?v=2",
+    "./hh-eonwild-desktop-controller.js?v=1",
     "./hh-eonwild-world-atlas.js?v=2",
     "./hh-eonwild-simulation-v2.js?v=4",
-    "./hh-eonwild-3d-core.js?v=5",
+    "./hh-eonwild-3d-core.js?v=6",
     "./hh-eonwild-landscape-core.js?v=1",
     "./hh-eonwild-landscape-worker.js?v=1",
     "./hh-eonwild-vegetation-system.js?v=1",
     "./hh-eonwild-environment-renderer.js?v=1",
     "./hh-eonwild-water-weather-system.js?v=1",
-    "./hh-eonwild-renderer-3d.js?v=13",
-    "./hh-eonwild-game.js?v=18"
+    "./hh-eonwild-renderer-3d.js?v=14",
+    "./hh-eonwild-game.js?v=23"
   ]) assert.ok(worker.includes(`"${asset}"`), `service worker must cache ${asset}`);
   for (const asset of [
     "./vendor/babylon-9.22.1.js?v=9.22.1",
@@ -905,7 +906,7 @@ test("lazy loader and service worker cache the complete ordered v4 bundle", () =
     assert.ok(runtimeAssetsSource.includes(`"${asset}"`), `${asset} must be a runtime asset`);
     assert.ok(!coreAssetsSource.includes(`"${asset}"`), `${asset} must not be a core asset`);
   }
-  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v890"/);
+  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v897"/);
   assert.match(worker, /const EONWILD_OFFLINE_ASSETS\s*=\s*RUNTIME_ASSETS\.filter/);
   assert.match(worker, /cache\.addAll\(INSTALL_ASSETS\)/);
 
@@ -964,8 +965,8 @@ test("runtime fallback, Time Slice filtering and motion/resize controls fail clo
 });
 
 test("visibility and unmount clean every EonWild v3 runtime resource", () => {
-  assert.match(gameSource, /visibilitychange[\s\S]*?global\.document\.hidden[\s\S]*?instance\.paused\s*=\s*true/);
-  assert.match(gameSource, /if\s*\(!global\.document\?\.hidden\)\s*\{\s*updateWorld/);
+  assert.match(gameSource, /visibilitychange[\s\S]*?global\.document\.hidden[\s\S]*?pauseGame\(instance,\s*"visibility"\)/);
+  assert.match(gameSource, /if\s*\(!global\.document\?\.hidden\)\s*\{[\s\S]*?processInputActions[\s\S]*?updateWorld/);
   assert.match(gameSource, /new AbortController\(\)/);
   assert.match(gameSource, /instance\.controller\.abort\(\)/);
   assert.match(gameSource, /clearInterval\(instance\.observerTimer\)/);

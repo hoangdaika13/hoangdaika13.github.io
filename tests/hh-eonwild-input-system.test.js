@@ -49,9 +49,9 @@ const keyboardEvent = (code, target = null, timeStamp = 100) => {
 };
 
 test("input kernel exposes a renderer-neutral UMD/CommonJS API and accessible action metadata", () => {
-  assert.equal(input.VERSION, "1.0.0");
+  assert.equal(input.VERSION, "1.1.0");
   assert.equal(input.FORMAT, "hh-eonwild-input-profile-v1");
-  assert.equal(input.ACTION_IDS.length, 15);
+  assert.equal(input.ACTION_IDS.length, 17);
   assert.equal(Object.keys(input.ACTION_METADATA).length, input.ACTION_IDS.length);
   for (const actionId of input.ACTION_IDS) {
     assert.ok(input.ACTION_METADATA[actionId].labelVi.length > 0);
@@ -75,13 +75,16 @@ test("input kernel exposes a renderer-neutral UMD/CommonJS API and accessible ac
 
 test("default mappings cover required keyboard controls without collisions and normalize deterministically", () => {
   const expected = {
-    moveForward: "KeyW", moveBackward: "KeyS", moveLeft: "KeyA", moveRight: "KeyD",
-    sprint: "ShiftLeft", crouch: "ControlLeft", jump: "Space", interact: "KeyF",
-    sense: "KeyQ", ability: "KeyR", communicationWheel: "KeyC", codex: "Tab",
-    worldMap: "KeyM", photoMode: "KeyP", pause: "Escape"
+    moveForward: ["KeyW"], moveBackward: ["KeyS"], moveLeft: ["KeyA"], moveRight: ["KeyD"],
+    sprint: ["ShiftLeft"], crouch: ["ControlLeft"], jump: ["Space"], interact: ["KeyE", "KeyF"],
+    sense: ["KeyQ"], ability: ["KeyR"], communicationWheel: ["KeyC"],
+    toggleView: ["KeyV"], lockTarget: ["KeyZ"], codex: ["Tab"],
+    worldMap: ["KeyM"], photoMode: ["KeyP"], pause: ["Escape"]
   };
-  for (const [actionId, code] of Object.entries(expected)) {
-    assert.ok(input.DEFAULT_ACTIONS[actionId].some((binding) => binding.device === "keyboard" && binding.code === code), `${actionId} must include ${code}`);
+  for (const [actionId, codes] of Object.entries(expected)) {
+    for (const code of codes) {
+      assert.ok(input.DEFAULT_ACTIONS[actionId].some((binding) => binding.device === "keyboard" && binding.code === code), `${actionId} must include ${code}`);
+    }
   }
   assert.deepEqual(input.detectBindingConflicts(input.DEFAULT_ACTIONS), []);
   assert.equal(input.canonicalKeyboardCode("w"), "KeyW");
@@ -247,7 +250,7 @@ test("persistence is allow-listed, bounded, secret-free and round-trips custom m
     removeItem(key) { memory.delete(key); }
   };
   const first = new input.InputActionSystem({ storage, clock: () => 1000 });
-  assert.equal(first.remap("jump", ["KeyZ"]).ok, true);
+  assert.equal(first.remap("jump", ["KeyX"]).ok, true);
   assert.equal(first.createPreset("quiet", "Điều khiển yên tĩnh").ok, true);
   assert.equal(first.save().ok, true);
   const raw = memory.get(input.STORAGE_KEY);
@@ -257,7 +260,7 @@ test("persistence is allow-listed, bounded, secret-free and round-trips custom m
 
   const second = new input.InputActionSystem({ storage, clock: () => 1000 });
   assert.equal(second.load().ok, true);
-  assert.ok(second.getMappings().jump.some((binding) => binding.code === "KeyZ"));
+  assert.ok(second.getMappings().jump.some((binding) => binding.code === "KeyX"));
   assert.ok(second.listPresets().some((preset) => preset.id === "quiet"));
   assert.equal(second.clearPersistence(), true);
   assert.equal(memory.has(input.STORAGE_KEY), false);
