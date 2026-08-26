@@ -5,3 +5,121 @@
 @media (max-width:760px){@layer pages{body.home-neon.auth-locked>aside.hh-consent-banner[data-privacy-banner]:not([hidden]){display:grid!important}}}
 .hh-consent-banner.is-customizing{align-items:stretch;max-height:min(78vh,640px);overflow:auto}.hh-banner-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px;margin-top:8px}.hh-banner-options .hh-consent-row{padding:9px 0}.hh-banner-options .hh-consent-row small{font-size:.75rem}.hh-consent-banner.is-customizing>div:last-child{align-content:end;align-items:flex-end}
 @media(max-width:760px){.hh-banner-options{grid-template-columns:1fr}.hh-consent-banner.is-customizing>div:last-child{align-items:stretch}}
+
+/* Kim Lien Dien: privacy surfaces are part of the same ceremonial system. */
+html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.hh-consent-center, .hh-consent-banner) {
+  color: var(--kl-ivory, #fff8e8);
+  font-family: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.hh-consent-hero, .hh-consent-panel, .hh-consent-banner) {
+  border-color: rgba(232, 190, 84, .4);
+  background: linear-gradient(145deg, #3a1713, #1c0908 72%);
+  box-shadow: 0 22px 64px rgba(9, 1, 1, .58), inset 0 0 0 1px rgba(255, 232, 163, .035);
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-hero::after {
+  background: radial-gradient(circle, rgba(232, 190, 84, .2), transparent 68%);
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.hh-consent-hero, .hh-consent-panel, .hh-consent-banner) small,
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-inventory code {
+  color: var(--kl-gold-bright, #f2d483);
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.hh-consent-hero, .hh-consent-banner) p,
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-row small,
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-boundary {
+  color: #d7c39a;
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-banner p {
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-orb {
+  border-color: var(--kl-gold-bright, #f2d483);
+  background: radial-gradient(circle at 34% 28%, #fff1b6 0 5%, #e2b347 18%, #9d5720 58%, #541d18 100%);
+  box-shadow: 0 0 42px rgba(226, 179, 71, .3);
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-orb i { border-color: rgba(242, 212, 131, .68); }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-orb strong { color: #2c0e0b; }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-panel header { border-color: rgba(232, 190, 84, .2); }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-panel header > span { color: #9fbd83; }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-row { border-color: rgba(232, 190, 84, .14); }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-row i { border-color: #85612e; background: #2a1510; }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-row i::after { background: #b9a47a; }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-row input:checked + i {
+  border-color: #f0cc72;
+  background: linear-gradient(90deg, #8e3424, #d8a63c);
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-inventory article {
+  border-color: rgba(232, 190, 84, .2);
+  background: rgba(29, 9, 8, .7);
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-inventory article span { color: #dcae58; }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-boundary {
+  border-left-color: #d8a63c;
+  background: rgba(216, 166, 60, .09);
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-boundary strong { color: #f2d483; }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-footer { color: #b9a47a; }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-footer a { color: #edc866; }
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.hh-consent-panel, .hh-consent-footer, .hh-consent-banner) :is(button, a) {
+  min-height: 44px;
+  border-color: rgba(232, 190, 84, .38);
+  background: #2d120f;
+  color: #f7e6b9;
+  font-size: 14px;
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.hh-consent-panel, .hh-consent-banner) button.primary {
+  border-color: #edc866;
+  background: linear-gradient(135deg, #f0ce72, #b66c25);
+  box-shadow: 0 9px 24px rgba(216, 166, 60, .2);
+  color: #2d100b;
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.hh-consent-panel, .hh-consent-footer, .hh-consent-banner) :is(button, a):focus-visible,
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .hh-consent-row input:focus-visible + i {
+  outline: 3px solid var(--kl-gold-bright, #f2d483);
+  outline-offset: 3px;
+}
+
+html[data-hh-theme="kim-lien"] body.home-neon.hh-kim-lien.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) {
+  z-index: 10020 !important;
+  border-color: rgba(232, 190, 84, .4) !important;
+  background: linear-gradient(145deg, #3a1713, #1c0908 72%) !important;
+  box-shadow: 0 22px 64px rgba(9, 1, 1, .58), inset 0 0 0 1px rgba(255, 232, 163, .035) !important;
+}
+
+html[data-hh-theme="kim-lien"] body.home-neon.hh-kim-lien.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) :is(small, strong) {
+  color: var(--kl-gold-bright, #f2d483) !important;
+  font-size: 14px !important;
+}
+
+html[data-hh-theme="kim-lien"] body.home-neon.hh-kim-lien.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) p {
+  color: #d7c39a !important;
+  font-size: 16px !important;
+  line-height: 1.55 !important;
+}
+
+html[data-hh-theme="kim-lien"] body.home-neon.hh-kim-lien.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) button {
+  min-height: 44px !important;
+  border-color: rgba(232, 190, 84, .38) !important;
+  background: #2d120f !important;
+  color: #f7e6b9 !important;
+  font-size: 14px !important;
+}
+
+html[data-hh-theme="kim-lien"] body.home-neon.hh-kim-lien.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) button.primary {
+  border-color: #edc866 !important;
+  background: linear-gradient(135deg, #f0ce72, #b66c25) !important;
+  color: #2d100b !important;
+}

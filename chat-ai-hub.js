@@ -292,7 +292,7 @@
   function shellMarkup(runtime) {
     const session = currentSession(runtime);
     const activeMode = currentMode(runtime);
-    const messages = session.messages.length ? session.messages.map(messageMarkup).join("") : `<section class="chat-ai-welcome"><div class="chat-ai-orb"><span>HH</span><i></i><b></b></div><small>HH INTELLIGENCE · COSMIC WORKSPACE</small><h2>Hôm nay chúng ta sẽ tạo nên điều gì?</h2><p>Trò chuyện nhiều lượt, nghiên cứu có nguồn, phân tích ảnh/PDF, viết nội dung và hỗ trợ lập trình trong một không gian riêng của bạn.</p><div>${PROMPTS.slice(0, 4).map(([title], index) => `<button type="button" data-chat-ai-prompt="${index}"><i>✦</i>${escapeHtml(title)}</button>`).join("")}</div></section>`;
+    const messages = session.messages.length ? session.messages.map(messageMarkup).join("") : `<section class="chat-ai-welcome"><div class="chat-ai-orb"><span>HH</span><i></i><b></b></div><small>HH INTELLIGENCE · KIM LIÊN ĐIỆN</small><h2>Hôm nay chúng ta sẽ tạo nên điều gì?</h2><p>Trò chuyện nhiều lượt, nghiên cứu có nguồn, phân tích ảnh/PDF, viết nội dung và hỗ trợ lập trình trong một không gian riêng của bạn.</p><div>${PROMPTS.slice(0, 4).map(([title], index) => `<button type="button" data-chat-ai-prompt="${index}"><i>✦</i>${escapeHtml(title)}</button>`).join("")}</div></section>`;
     const mobilePanelClass = runtime.mobilePanel ? ` is-${runtime.mobilePanel}-open` : "";
     const providerLabel = runtime.providerStatus === "online" ? "HH Intelligence sẵn sàng" : runtime.providerStatus === "degraded" ? "HH AI đã tự chuyển phương án" : runtime.providerStatus === "offline" ? "HH Basic Assist sẵn sàng" : "Đang kiểm tra dịch vụ AI";
     const layoutClass = `${mobilePanelClass}${runtime.state.inspectorOpen ? "" : " is-inspector-hidden"}${runtime.state.sidebarCollapsed ? " is-sidebar-collapsed" : ""}`;
@@ -305,7 +305,7 @@
       <div class="chat-ai-cosmos" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b><b></b><span></span><span></span><span></span></div>
       <header class="chat-ai-topbar">
         <button class="chat-ai-mobile-sessions" type="button" data-chat-ai-mobile-panel="sessions" aria-expanded="${runtime.mobilePanel === "sessions"}" aria-label="Mở danh sách hội thoại">☰</button>
-        <div class="chat-ai-brand"><i><span>HH</span></i><span><small>HH INTELLIGENCE</small><strong>Chat AI</strong></span></div>
+        <div class="chat-ai-brand"><i><span>HH</span></i><span><small>HH · KIM LIÊN TRÍ TUỆ</small><strong>Chat AI</strong></span></div>
         <label class="chat-ai-chat-title"><span>Hội thoại hiện tại</span><input data-chat-ai-title value="${escapeHtml(session.title)}" maxlength="120" ${runtime.incognito ? "disabled" : ""} aria-label="Tên cuộc trò chuyện"></label>
         <div class="chat-ai-live-status" data-chat-ai-provider-state="${runtime.providerStatus}"><i></i><span>${providerLabel}</span></div>
         <div class="chat-ai-top-actions">

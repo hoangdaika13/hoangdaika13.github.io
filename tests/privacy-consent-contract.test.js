@@ -26,6 +26,21 @@ test("privacy choices are explicit, reversible and marketing stays disabled", ()
   assert.match(endpoint, /expireAfterSeconds:\s*0/);
 });
 
+test("privacy center adopts the opaque Kim Lien palette and readable mobile controls", () => {
+  const styles = read("privacy-consent-center.css");
+  const html = read("index.html");
+  const themed = styles.slice(styles.indexOf("/* Kim Lien Dien"));
+
+  assert.match(html, /<html[^>]+data-hh-theme="kim-lien"/);
+  assert.match(html, /<body[^>]+hh-kim-lien[^>]+kim-lien-theme/);
+  assert.match(themed, /html\[data-hh-theme="kim-lien"\][\s\S]*?\.hh-consent-banner/);
+  assert.match(themed, /auth-locked[^}]*\.hh-consent-banner[^}]*\{[\s\S]*?z-index:\s*10020\s*!important/);
+  assert.match(themed, /background:\s*linear-gradient\(145deg,\s*#3a1713,\s*#1c0908 72%\)/);
+  assert.match(themed, /\.hh-consent-banner p[\s\S]*?font-size:\s*16px/);
+  assert.match(themed, /min-height:\s*44px[\s\S]*?font-size:\s*14px/);
+  assert.doesNotMatch(themed, /#(?:d84bb4|59d8dc|dd4dae|62e5d8)/i);
+});
+
 test("consent audit hashes guest identity and never stores raw tracking secrets", () => {
   const endpoint = read("utils/privacy-consent-api.js");
 

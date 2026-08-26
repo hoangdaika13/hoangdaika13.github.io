@@ -8,6 +8,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 test("the first paint only loads the shell and identity portal", () => {
   const html = read("index.html");
+  const loader = read("performance-loader.js");
   const executableHtml = html.replace(/<!--[\s\S]*?-->/g, "");
   const styles = [...executableHtml.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi)];
   const scripts = [...executableHtml.matchAll(/<script\b[^>]*src=["'][^"']+["'][^>]*>/gi)];
@@ -16,6 +17,17 @@ test("the first paint only loads the shell and identity portal", () => {
   assert.ok(scripts.length <= 15, `initial script budget exceeded: ${scripts.length}`);
   assert.match(executableHtml, /performance-loader\.js\?v=\d+/);
   assert.doesNotMatch(executableHtml, /<script[^>]+(?:space-explorer|video-editor-resolve|english-learning|music-ai-studio)\.js/i);
+  for (const deferredAsset of [
+    "auth-zoom-resilience.js?v=4",
+    "privacy-consent-center.js?v=2",
+    "vercel-observability.js?v=2"
+  ]) {
+    assert.doesNotMatch(executableHtml, new RegExp(`<script[^>]+${deferredAsset.replace(/[.?]/g, "\\$&")}`, "i"));
+    assert.match(loader, new RegExp(deferredAsset.replace(/[.?]/g, "\\$&")));
+  }
+  assert.match(loader, /"post-paint-essential"[\s\S]*?auth-zoom-resilience\.js\?v=4[\s\S]*?privacy-consent-center\.js\?v=2/);
+  assert.match(loader, /ensureGroup\("post-paint-essential"\)[\s\S]*?then\(loadObservabilityWhenIdle\)/);
+  assert.match(loader, /loadObservabilityWhenIdle[\s\S]*?ensureGroup\("observability"\)[\s\S]*?requestIdleCallback/);
 });
 
 test("heavy workspaces load by route and retain deterministic dependencies", () => {
@@ -47,12 +59,20 @@ test("service worker precaches a small shell and uses stale while revalidate", (
   assert.ok(core, "CORE cache list is missing");
   const entries = [...core[1].matchAll(/"\.\//g)];
   assert.ok(entries.length <= 20, `service worker core budget exceeded: ${entries.length}`);
+  for (const runtimeOnlyAsset of [
+    "auth-zoom-resilience.js?v=4",
+    "privacy-consent-center.js?v=2",
+    "vercel-observability.js?v=2"
+  ]) {
+    assert.ok(worker.includes(`"./${runtimeOnlyAsset}"`), `${runtimeOnlyAsset} must remain discoverable at runtime`);
+    assert.ok(!core[1].includes(runtimeOnlyAsset), `${runtimeOnlyAsset} must not block the atomic shell install`);
+  }
   assert.match(worker, /caches\.match\(request\)/);
   assert.match(worker, /event\.waitUntil\(refresh/);
   assert.match(worker, /request\.mode === "navigate"/);
 });
 
-test("the identity logo stays within the first-paint image budget", () => {
-  const logo = fs.statSync(path.join(root, "assets", "hh-neon-logo-v2.png"));
+test("the Kim Lien identity mark stays within the first-paint image budget", () => {
+  const logo = fs.statSync(path.join(root, "assets", "phat-phap", "hh-kim-lien-mark.svg"));
   assert.ok(logo.size <= 200_000, `identity logo budget exceeded: ${logo.size} bytes`);
 });

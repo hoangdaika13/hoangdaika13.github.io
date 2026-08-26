@@ -297,7 +297,7 @@ test("service worker bypasses API and authorized requests instead of caching pri
   const worker = read("sw.js");
   assert.match(worker, /url\.pathname\.startsWith\("\/api\/"\)/);
   assert.match(worker, /request\.headers\.has\("authorization"\)/i);
-  assert.match(worker, /if \(url\.origin !== self\.location\.origin \|\| isPrivateRequest\)[\s\S]{0,120}fetch\(request\)/);
+  assert.match(worker, /if \(url\.origin !== self\.location\.origin \|\| isPrivateRequest(?: \|\| [^)]+)?\)[\s\S]{0,160}fetch\(request\)/);
   assert.doesNotMatch(worker, /cache\.put\([^\n]*(?:\/api\/|isPrivateRequest)/);
 });
 

@@ -25,6 +25,14 @@
 
   // Compatibility contracts: scripts: ["auth-creative-universe.js?v=5"] home-galaxy-command.js?v=8 home-galaxy-command.css?v=9
   const groups = Object.freeze({
+    "post-paint-essential": {
+      styles: [],
+      scripts: ["auth-zoom-resilience.js?v=4", "privacy-consent-center.js?v=2"]
+    },
+    observability: {
+      styles: [],
+      scripts: ["vercel-observability.js?v=2"]
+    },
     "auth-effects": {
       /*
        * The H Galaxy mounted by auth-neon-gateway is the only visual owner.
@@ -104,10 +112,10 @@
         "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=22", "image-text-studio.css?v=12", "facebook-page-command-center.css?v=4", "tiktok-creator-galaxy.css?v=2"
       ],
       scripts: [
-        "media-design-studio.js?v=1", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
+        "media-design-studio.js?v=2", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
         "video-editor-resolve.js?v=12", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1", "h-cosmic-web-studio.js?v=3",
-        "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=27", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=12", "facebook-page-command-center.js?v=4", "services/tiktokCreatorCore.js?v=2", "services/tiktokCreatorConnections.js?v=2", "services/tiktokCreatorPublishing.js?v=2", "services/tiktokCreatorAnalytics.js?v=2", "tiktok-creator-galaxy.js?v=2"
+        "youtube-publisher.js?v=9", "youtube-creator-galaxy.js?v=27", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=12", "facebook-page-command-center.js?v=4", "services/tiktokCreatorCore.js?v=2", "services/tiktokCreatorConnections.js?v=2", "services/tiktokCreatorPublishing.js?v=2", "services/tiktokCreatorAnalytics.js?v=2", "tiktok-creator-galaxy.js?v=2"
       ]
     },
     "ai-video-remake": {
@@ -161,7 +169,7 @@
     },
     communication: {
       styles: [
-        "communication-overview.css?v=1", "communication-suite.css?v=7", "communication-workspace-fix.css?v=7",
+        "communication-overview.css?v=1", "communication-suite.css?v=7", "communication-workspace-fix.css?v=9",
         "communication-command-center.css?v=1", "communication-messenger-next.css?v=2",
         "communication-channels-forum.css?v=1", "communication-live-room.css?v=1",
         "communication-canvas-automation.css?v=1", "communication-intelligence.css?v=3",
@@ -253,8 +261,8 @@
       scripts: ["remote-hub.js?v=4"]
     },
     "chat-ai": {
-      styles: ["chat-ai-hub.css?v=17"],
-      scripts: ["chat-ai-hub.js?v=17"]
+      styles: ["chat-ai-hub.css?v=20"],
+      scripts: ["chat-ai-hub.js?v=20"]
     },
     settings: {
       styles: ["settings-studio.css?v=7"],
@@ -459,6 +467,26 @@
     global.requestAnimationFrame(() => global.requestAnimationFrame(afterFirstPaint));
   }
 
+  function schedulePostPaintRuntime() {
+    let started = false;
+    const loadObservabilityWhenIdle = () => {
+      const start = () => ensureGroup("observability").catch(() => {});
+      if ("requestIdleCallback" in global) global.requestIdleCallback(start, { timeout: 3500 });
+      else global.setTimeout(start, 1200);
+    };
+    const start = () => {
+      if (started) return;
+      started = true;
+      ensureGroup("post-paint-essential")
+        .then(loadObservabilityWhenIdle)
+        .catch(() => {
+          started = false;
+        });
+    };
+    const afterFirstPaint = () => start();
+    global.requestAnimationFrame(() => global.requestAnimationFrame(afterFirstPaint));
+  }
+
   function ensureForRoute(route) {
     const value = normalizeRoute(route);
     const names = groupsForRoute(value);
@@ -583,6 +611,7 @@
   });
 
   global.HHAssetLoader = Object.freeze({ ensureForRoute, retryForRoute, ensureGroup, isRouteReady, groupsForRoute, loadedGroups: () => [...loaded] });
+  schedulePostPaintRuntime();
   loadFontWhenIdle();
   loadAuthEffectsWhenNeeded();
   registerServiceWorkerWhenIdle();
