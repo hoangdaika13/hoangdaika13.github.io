@@ -14,14 +14,16 @@
    * stateful controller owns only event subscriptions and ephemeral input
    * state; it never stores account data, credentials, or arbitrary payloads.
    */
-  const VERSION = "1.1.0";
+  const VERSION = "1.2.0";
   const FORMAT = "hh-eonwild-input-profile-v1";
   const STORAGE_KEY = "hh:eonwild:input-profile:v1";
 
   const ACTION_IDS = Object.freeze([
     "moveForward", "moveBackward", "moveLeft", "moveRight",
-    "sprint", "crouch", "jump", "interact", "sense", "ability",
-    "communicationWheel", "toggleView", "lockTarget", "codex", "worldMap", "photoMode", "pause"
+    "sprint", "crouch", "jump", "interact", "createNest", "sense", "ability",
+    "communicationWheel", "toggleView", "lockTarget",
+    "shoulderSwap", "lookBack", "cameraReset", "toggleMinimap", "quickTurn",
+    "codex", "worldMap", "photoMode", "pause"
   ]);
   const ACTION_ID_SET = new Set(ACTION_IDS);
 
@@ -49,11 +51,17 @@
     crouch: actionMeta("Hạ thấp cơ thể", "Crouch", "movement", "Hạ thấp cơ thể hoặc lặn tùy loài"),
     jump: actionMeta("Nhảy / bay lên", "Jump / ascend", "movement", "Nhảy, cất cánh hoặc nổi lên tùy loài"),
     interact: actionMeta("Tương tác", "Interact", "gameplay", "Ăn, uống hoặc tương tác với môi trường"),
+    createNest: actionMeta("Tạo tổ", "Create nest", "gameplay", "Tạo tổ tại nơi trú hợp lệ khi cá thể đã trưởng thành"),
     sense: actionMeta("Giác quan", "Sense", "gameplay", "Kích hoạt giác quan nổi bật của loài"),
     ability: actionMeta("Năng lực", "Ability", "gameplay", "Dùng năng lực đặc trưng của loài"),
     communicationWheel: actionMeta("Vòng giao tiếp", "Communication wheel", "gameplay", "Mở vòng tín hiệu giao tiếp động vật"),
     toggleView: actionMeta("Đổi góc nhìn", "Toggle view", "interface", "Đổi camera theo loài hoặc chế độ animal-eye"),
     lockTarget: actionMeta("Khóa mục tiêu", "Lock target", "gameplay", "Khóa hoặc bỏ khóa mục tiêu hợp lệ trong thế giới 3D"),
+    shoulderSwap: actionMeta("Đổi vai camera", "Shoulder swap", "camera", "Đổi camera qua vai trái hoặc vai phải"),
+    lookBack: actionMeta("Nhìn phía sau", "Look back", "camera", "Giữ để nhìn nhanh ra phía sau mà không đổi hướng di chuyển"),
+    cameraReset: actionMeta("Đặt lại camera", "Reset camera", "camera", "Đưa camera mượt về góc nhìn mặc định của loài"),
+    toggleMinimap: actionMeta("Ẩn hoặc hiện bản đồ nhỏ", "Toggle minimap", "interface", "Ẩn hoặc hiện bản đồ nhỏ trong HUD"),
+    quickTurn: actionMeta("Quay nhanh", "Quick turn", "camera", "Quay nhanh camera và hướng điều khiển khi dùng tay cầm"),
     codex: actionMeta("Bách khoa loài", "Animal Codex", "interface", "Mở Bách khoa EonWild"),
     worldMap: actionMeta("Bản đồ thế giới", "World map", "interface", "Mở bản đồ thế giới"),
     photoMode: actionMeta("Chế độ chụp ảnh", "Photo mode", "interface", "Bật hoặc tắt chế độ chụp ảnh"),
@@ -238,11 +246,17 @@
     crouch: [keyboard("ControlLeft"), keyboard("ControlRight"), gamepadButton(1), touch("crouch")],
     jump: [keyboard("Space"), gamepadButton(0), touch("jump")],
     interact: [keyboard("KeyE"), keyboard("KeyF"), gamepadButton(2), touch("interact")],
+    createNest: [keyboard("KeyN"), touch("create-nest")],
     sense: [keyboard("KeyQ"), gamepadButton(4), touch("sense")],
     ability: [keyboard("KeyR"), gamepadButton(3), touch("ability")],
     communicationWheel: [keyboard("KeyC"), gamepadButton(5), touch("communication-wheel")],
     toggleView: [keyboard("KeyV"), gamepadButton(11), touch("toggle-view")],
     lockTarget: [keyboard("KeyZ"), gamepadButton(12), touch("lock-target")],
+    shoulderSwap: [keyboard("KeyX"), gamepadButton(15), touch("shoulder-swap")],
+    lookBack: [keyboard("KeyB"), gamepadButton(13), touch("look-back")],
+    cameraReset: [keyboard("Home"), touch("camera-reset")],
+    toggleMinimap: [keyboard("KeyH"), touch("toggle-minimap")],
+    quickTurn: [keyboard("KeyG"), gamepadButton(14), touch("quick-turn")],
     codex: [keyboard("Tab"), gamepadButton(6), touch("codex")],
     worldMap: [keyboard("KeyM"), gamepadButton(8), touch("world-map")],
     photoMode: [keyboard("KeyP"), gamepadButton(7), touch("photo-mode")],
@@ -258,11 +272,17 @@
     crouch: [keyboard("ControlRight"), gamepadButton(1), touch("crouch")],
     jump: [keyboard("Numpad0"), gamepadButton(0), touch("jump")],
     interact: [keyboard("Numpad1"), gamepadButton(2), touch("interact")],
+    createNest: [keyboard("KeyN"), touch("create-nest")],
     sense: [keyboard("Numpad4"), gamepadButton(4), touch("sense")],
     ability: [keyboard("Numpad2"), gamepadButton(3), touch("ability")],
     communicationWheel: [keyboard("Numpad3"), gamepadButton(5), touch("communication-wheel")],
     toggleView: [keyboard("KeyV"), gamepadButton(11), touch("toggle-view")],
     lockTarget: [keyboard("KeyZ"), gamepadButton(12), touch("lock-target")],
+    shoulderSwap: [keyboard("KeyX"), gamepadButton(15), touch("shoulder-swap")],
+    lookBack: [keyboard("KeyB"), gamepadButton(13), touch("look-back")],
+    cameraReset: [keyboard("Home"), touch("camera-reset")],
+    toggleMinimap: [keyboard("KeyH"), touch("toggle-minimap")],
+    quickTurn: [keyboard("KeyG"), gamepadButton(14), touch("quick-turn")],
     codex: [keyboard("Tab"), gamepadButton(6), touch("codex")],
     worldMap: [keyboard("KeyM"), gamepadButton(8), touch("world-map")],
     photoMode: [keyboard("KeyP"), gamepadButton(7), touch("photo-mode")],
@@ -278,11 +298,17 @@
     crouch: [keyboard("KeyO"), gamepadButton(1), touch("crouch")],
     jump: [keyboard("Space"), gamepadButton(0), touch("jump")],
     interact: [keyboard("Enter"), gamepadButton(2), touch("interact")],
+    createNest: [keyboard("KeyN"), touch("create-nest")],
     sense: [keyboard("KeyQ"), gamepadButton(4), touch("sense")],
     ability: [keyboard("KeyR"), gamepadButton(3), touch("ability")],
     communicationWheel: [keyboard("KeyC"), gamepadButton(5), touch("communication-wheel")],
     toggleView: [keyboard("KeyV"), gamepadButton(11), touch("toggle-view")],
     lockTarget: [keyboard("KeyZ"), gamepadButton(12), touch("lock-target")],
+    shoulderSwap: [keyboard("KeyX"), gamepadButton(15), touch("shoulder-swap")],
+    lookBack: [keyboard("KeyB"), gamepadButton(13), touch("look-back")],
+    cameraReset: [keyboard("Home"), touch("camera-reset")],
+    toggleMinimap: [keyboard("KeyH"), touch("toggle-minimap")],
+    quickTurn: [keyboard("KeyG"), gamepadButton(14), touch("quick-turn")],
     codex: [keyboard("Tab"), gamepadButton(6), touch("codex")],
     worldMap: [keyboard("KeyM"), gamepadButton(8), touch("world-map")],
     photoMode: [keyboard("KeyP"), gamepadButton(7), touch("photo-mode")],
@@ -446,6 +472,14 @@
       }
       const before = this.events.length;
       this.events = this.events.filter((event) => event.actionId !== actionId);
+      return before - this.events.length;
+    }
+
+    clearSource(source) {
+      const normalizedSource = safePresetId(source);
+      if (!normalizedSource) return 0;
+      const before = this.events.length;
+      this.events = this.events.filter((event) => event.payload.source !== normalizedSource);
       return before - this.events.length;
     }
 
@@ -618,6 +652,11 @@
       this._boundKeyDown = (event) => this.handleKeyDown(event);
       this._boundKeyUp = (event) => this.handleKeyUp(event);
       this._boundBlur = () => this.releaseAll("blur");
+      this._boundPointerCancel = (event) => {
+        const pointerType = safeText(event?.pointerType, 12).toLowerCase();
+        if (!pointerType || pointerType === "touch" || pointerType === "pen") this.releaseTouchInput("pointercancel");
+      };
+      this._boundTouchCancel = () => this.releaseTouchInput("touchcancel");
       this._boundVisibility = () => {
         const documentRef = this._documentRef();
         if (documentRef?.hidden) this.pause("visibility");
@@ -659,6 +698,8 @@
       this._listen(target, "keydown", this._boundKeyDown, { passive: false });
       this._listen(target, "keyup", this._boundKeyUp, { passive: true });
       this._listen(target, "blur", this._boundBlur, { passive: true });
+      this._listen(target, "pointercancel", this._boundPointerCancel, { passive: true });
+      this._listen(target, "touchcancel", this._boundTouchCancel, { passive: true });
       const documentRef = this._documentRef();
       if (documentRef && documentRef !== target) this._listen(documentRef, "visibilitychange", this._boundVisibility, { passive: true });
       this.attached = true;
@@ -787,6 +828,16 @@
       if (down && !wasDown) this.buffer.push(actionId, at, { source: "touch", value: 1 });
       if (down !== wasDown) this._emit("touch-action", Object.freeze({ actionId, pressed: down }));
       return true;
+    }
+
+    releaseTouchInput(source = "manual") {
+      const hadPhysicalState = this.touchActions.size > 0 || this.touchStick.magnitude > 0;
+      this.touchActions.clear();
+      this.touchStick = Object.freeze({ x: 0, y: 0, magnitude: 0 });
+      const clearedEvents = this.buffer.clearSource("touch");
+      const hadState = hadPhysicalState || clearedEvents > 0;
+      if (hadState) this._emit("release-touch", Object.freeze({ source: safePresetId(source, "manual") }));
+      return hadState;
     }
 
     updateGamepads(gamepads = null, at = this.clock()) {

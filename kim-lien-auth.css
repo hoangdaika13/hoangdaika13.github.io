@@ -1,0 +1,1845 @@
+/*
+ * HH Phật Pháp — phương án A: Kim Liên Điện
+ *
+ * This is a late presentation layer. Load it after auth-experience.css,
+ * auth-zoom-resilience.css, auth-typography-unified.css, auth-login-repair.css,
+ * auth-neon-gateway.css, auth-h-galaxy.css and auth-living-galaxy-3d.css.
+ * It deliberately does not change form visibility, validation, routing or
+ * authentication state.  All selectors are scoped to the existing auth and
+ * loader surfaces so the application workspace remains untouched.
+ */
+
+:root {
+  --kl-ink: #281711;
+  --kl-ink-soft: #5f4433;
+  --kl-bark: #1f0d0c;
+  --kl-wood: #351514;
+  --kl-wood-mid: #54231d;
+  --kl-wine: #651d1d;
+  --kl-wine-light: #8b3730;
+  --kl-gold: #d8a63c;
+  --kl-gold-bright: #f2d483;
+  --kl-gold-soft: #ffe8a3;
+  --kl-amber: #b96f22;
+  --kl-ivory: #fff8e8;
+  --kl-cream: #f5ecd8;
+  --kl-mist: #f8efe0;
+  --kl-sage: #78956f;
+  --kl-coral: #d96554;
+  --kl-focus: #ffd978;
+  --kl-shadow: rgba(18, 5, 3, .62);
+  --kl-halo: rgba(234, 184, 75, .26);
+}
+
+/* -------------------------------------------------------------------------
+   Shared type and hard opaque surfaces
+   ------------------------------------------------------------------------- */
+
+html.kim-lien-theme,
+html.kim-lien-theme body,
+body.kim-lien-theme {
+  color-scheme: dark;
+}
+
+html.kim-lien-theme body.home-neon.auth-locked,
+body.home-neon.auth-locked {
+  background: var(--kl-bark) !important;
+}
+
+/* Prevent a stale cosmic layer from shining through either authentication
+   state.  The old nodes stay mounted so their own runtimes can clean up. */
+
+html body.home-neon #authGate,
+html body.home-neon.auth-resolving #authGate,
+html body.home-neon.auth-locked #authGate {
+  isolation: isolate !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  min-height: 100dvh !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  color: var(--kl-ivory) !important;
+  background:
+    radial-gradient(ellipse at 50% -18%, rgba(242, 212, 131, .16), transparent 44%),
+    radial-gradient(ellipse at 8% 92%, rgba(139, 55, 48, .24), transparent 40%),
+    radial-gradient(ellipse at 95% 70%, rgba(185, 111, 34, .14), transparent 38%),
+    repeating-linear-gradient(112deg, rgba(255, 232, 163, .025) 0 1px, transparent 1px 34px),
+    linear-gradient(135deg, #1c0b0a 0%, #351514 44%, #1f0d0c 100%) !important;
+  font-family: "Be Vietnam Pro", "Noto Sans", "Segoe UI", Arial, sans-serif !important;
+  scrollbar-color: rgba(242, 212, 131, .52) transparent;
+}
+
+/* Authentication state is authoritative. Responsive layout must never revive
+   the gate after auth-platform has hidden it. */
+html body.home-neon.auth-unlocked #authGate[hidden],
+html body.home-neon.auth-authenticated #authGate[hidden],
+html body.home-neon #authGate[aria-hidden="true"][hidden] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+html body.home-neon #authGate::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  display: block;
+  background:
+    linear-gradient(90deg, transparent 0 7%, rgba(242, 212, 131, .1) 7.1%, transparent 7.2% 92.8%, rgba(242, 212, 131, .1) 92.9%, transparent 93%),
+    linear-gradient(0deg, rgba(255, 232, 163, .06), transparent 20% 80%, rgba(255, 232, 163, .06));
+  content: "";
+  pointer-events: none;
+}
+
+html body.home-neon #authGate > :where(
+  .auth-spectrum,
+  .auth-motion-field,
+  .auth-gateway-scene,
+  .hh-h-galaxy,
+  .hh-identity-constellation,
+  .auth-living-background,
+  .auth-spatial-aurora,
+  .auth-creative-universe,
+  .auth-cosmic-prism-background,
+  .auth-emotional-live
+) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html body.home-neon #authGate > :where([aria-hidden="true"]):not(.kl-auth-ambient) {
+  display: none !important;
+}
+
+/* Marketing widgets from the previous galaxy presentation duplicate the
+   sign-in content and consume vertical space.  The Kim Liên sanctum replaces
+   them without removing any form or route. */
+
+html body.home-neon #authGate :where(
+  .auth-product-preview,
+  .auth-feature-showcase,
+  .auth-feature-switcher,
+  .auth-tool-stream,
+  .auth-benefits
+) {
+  display: none !important;
+}
+
+html body.home-neon #authGate [hidden] {
+  display: none !important;
+}
+
+/* The authenticated state owns this attribute.  Keep it stronger than the
+   responsive display rules below so the visual theme can never reopen auth. */
+html body #authGate[hidden] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+html body.home-neon #authGate :where(
+  h1, h2, h3, h4, p, strong, small, span, label, button, input, textarea,
+  select, li, summary, code
+) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+html body.home-neon #authGate :where(h1, h2, h3, h4, p, strong, small, span, label, button, input, textarea, select, li, summary) {
+  text-overflow: clip;
+}
+
+/* -------------------------------------------------------------------------
+   Login shell and Kim Liên ambient decoration
+   ------------------------------------------------------------------------- */
+
+html body.home-neon #authGate .kl-auth-ambient {
+  position: fixed !important;
+  z-index: 0 !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(242, 212, 131, .1), transparent 18%),
+    linear-gradient(180deg, transparent 0 76%, rgba(12, 3, 3, .36));
+  pointer-events: none !important;
+}
+
+html body.home-neon #authGate .kl-auth-ambient::before,
+html body.home-neon #authGate .kl-auth-ambient::after {
+  position: absolute;
+  left: 50%;
+  display: block;
+  border: 1px solid rgba(242, 212, 131, .11);
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0;
+  content: "";
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+html body.home-neon #authGate .kl-auth-ambient::before {
+  bottom: -22vh;
+  width: min(84vw, 1120px);
+  height: min(72vh, 700px);
+  box-shadow: 0 0 0 18px rgba(242, 212, 131, .035), 0 0 0 38px rgba(242, 212, 131, .024);
+}
+
+html body.home-neon #authGate .kl-auth-ambient::after {
+  bottom: -30vh;
+  width: min(58vw, 760px);
+  height: min(60vh, 580px);
+  border-color: rgba(242, 212, 131, .16);
+}
+
+html body.home-neon #authGate .kl-ambient-arch {
+  position: absolute;
+  top: 7%;
+  left: 50%;
+  width: min(76vw, 980px);
+  height: 86%;
+  border: 1px solid rgba(242, 212, 131, .08);
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0;
+  box-shadow: inset 0 0 54px rgba(242, 212, 131, .035);
+  transform: translateX(-50%);
+}
+
+html body.home-neon #authGate .kl-ambient-lantern {
+  position: absolute;
+  top: 19%;
+  width: 9px;
+  height: 23px;
+  border: 1px solid rgba(242, 212, 131, .42);
+  border-radius: 5px 5px 8px 8px;
+  background: linear-gradient(180deg, rgba(255, 232, 163, .9), rgba(185, 111, 34, .12));
+  box-shadow: 0 0 18px rgba(242, 212, 131, .25);
+  opacity: .72;
+  animation: kl-lantern-breathe 4.8s ease-in-out infinite;
+}
+
+html body.home-neon #authGate .kl-ambient-lantern::before {
+  position: absolute;
+  top: -11px;
+  left: 3px;
+  width: 1px;
+  height: 10px;
+  background: rgba(242, 212, 131, .45);
+  content: "";
+}
+
+html body.home-neon #authGate .kl-ambient-lantern::after {
+  position: absolute;
+  bottom: -8px;
+  left: -4px;
+  width: 15px;
+  height: 7px;
+  border: 1px solid rgba(242, 212, 131, .25);
+  border-top: 0;
+  border-radius: 0 0 50% 50%;
+  content: "";
+}
+
+html body.home-neon #authGate .kl-ambient-lantern--left { left: 8%; }
+html body.home-neon #authGate .kl-ambient-lantern--right { right: 8%; animation-delay: -2.1s; }
+
+html body.home-neon #authGate .kl-ambient-mist {
+  position: absolute;
+  right: -12%;
+  bottom: 10%;
+  left: -12%;
+  height: 18%;
+  background: linear-gradient(90deg, transparent, rgba(255, 248, 232, .04), transparent);
+  filter: blur(20px);
+  opacity: .7;
+  animation: kl-mist-drift 14s ease-in-out infinite alternate;
+}
+
+html body.home-neon #authGate .auth-gate-brand,
+html body.home-neon #authGate .auth-gate-card {
+  position: relative !important;
+  z-index: 10 !important;
+  min-width: 0 !important;
+}
+
+html body.home-neon #authGate .auth-gate-brand {
+  grid-column: 1 !important;
+  align-content: center !important;
+  align-self: center !important;
+  justify-self: stretch !important;
+  gap: 19px !important;
+  width: min(100%, 760px) !important;
+  max-width: 760px !important;
+  padding: 12px 0 28px !important;
+}
+
+html body.home-neon #authGate .auth-gate-brand::before {
+  top: -8px !important;
+  left: 0 !important;
+  width: 118px !important;
+  height: 3px !important;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--kl-gold-bright), var(--kl-gold), transparent) !important;
+  box-shadow: 0 0 20px rgba(242, 212, 131, .35) !important;
+}
+
+html body.home-neon #authGate .auth-brand-lockup {
+  display: flex !important;
+  align-items: center !important;
+  gap: 15px !important;
+  min-width: 0 !important;
+}
+
+html body.home-neon #authGate .auth-brand-lockup > div {
+  min-width: 0;
+}
+
+html body.home-neon #authGate .auth-brand-lockup .section-kicker {
+  margin: 0 0 5px !important;
+  color: var(--kl-gold-bright) !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  letter-spacing: .16em !important;
+  line-height: 1.35 !important;
+  text-transform: uppercase;
+}
+
+html body.home-neon #authGate .auth-brand-lockup > div > span {
+  display: block;
+  color: rgba(255, 248, 232, .69) !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+html body.home-neon #authGate .auth-brand-lockup > div > span i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--kl-gold-bright);
+  box-shadow: 0 0 12px var(--kl-gold);
+}
+
+html body.home-neon #authGate .kl-brand-seal,
+html body.home-neon #authGate .auth-brand-lockup .brand-mark {
+  position: relative !important;
+  display: grid !important;
+  flex: 0 0 78px !important;
+  place-items: center !important;
+  width: 78px !important;
+  height: 78px !important;
+  border: 1px solid rgba(242, 212, 131, .78) !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle at 50% 42%, #7c3a26 0%, #4e201b 57%, #24100e 100%) !important;
+  box-shadow: inset 0 0 0 5px rgba(242, 212, 131, .075), inset 0 0 22px rgba(0, 0, 0, .56), 0 0 0 7px rgba(242, 212, 131, .035), 0 13px 32px rgba(12, 3, 2, .42), 0 0 32px rgba(242, 212, 131, .14) !important;
+  overflow: visible !important;
+  transform: none !important;
+  animation: kl-seal-breathe 6s ease-in-out infinite !important;
+}
+
+html body.home-neon #authGate .kl-brand-seal::before,
+html body.home-neon #authGate .kl-brand-seal::after {
+  position: absolute;
+  inset: -8px;
+  border: 1px solid rgba(242, 212, 131, .28);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+html body.home-neon #authGate .kl-brand-seal::after {
+  inset: -14px;
+  border-color: rgba(242, 212, 131, .1);
+  border-style: dotted;
+  animation: kl-ring-turn 24s linear infinite;
+}
+
+html body.home-neon #authGate .kl-brand-seal > :where(.auth-h-channel-core, i, b) {
+  display: none !important;
+}
+
+html body.home-neon #authGate .kl-brand-lotus,
+html body.home-neon #authGate .kl-brand-lotus .kl-lotus-svg {
+  display: block !important;
+  width: 66px !important;
+  height: 54px !important;
+}
+
+html body.home-neon #authGate .kl-brand-lotus {
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 0 9px rgba(242, 212, 131, .35));
+}
+
+html body.home-neon #authGate .auth-gate-brand > h1 {
+  max-width: 740px !important;
+  margin: 0 !important;
+  color: var(--kl-ivory) !important;
+  font-size: clamp(38px, 4.7vw, 68px) !important;
+  font-weight: 850 !important;
+  line-height: 1.08 !important;
+  letter-spacing: -.045em !important;
+  text-wrap: balance;
+  text-shadow: 0 16px 46px rgba(10, 2, 2, .55) !important;
+}
+
+html body.home-neon #authGate .auth-gate-brand > h1 > span {
+  display: block;
+  color: var(--kl-gold-bright) !important;
+  background: none !important;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  -webkit-text-fill-color: var(--kl-gold-bright);
+  text-shadow: none !important;
+}
+
+html body.home-neon #authGate .auth-gate-brand > p:not(.section-kicker) {
+  max-width: 650px !important;
+  margin: 0 !important;
+  color: rgba(255, 248, 232, .74) !important;
+  font-size: 16px !important;
+  line-height: 1.72 !important;
+}
+
+/* Compact feature panel inserted by kim-lien-auth.js. */
+
+html body.home-neon #authGate .kl-sanctum-panel {
+  display: grid;
+  grid-template-columns: minmax(210px, .78fr) minmax(0, 1.22fr);
+  align-items: center;
+  gap: 22px;
+  width: 100%;
+  max-width: 740px;
+  min-height: 270px;
+  padding: 21px 23px;
+  border: 1px solid rgba(242, 212, 131, .26);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(101, 29, 29, .8), rgba(42, 14, 13, .88)),
+    repeating-linear-gradient(90deg, rgba(255, 232, 163, .02) 0 1px, transparent 1px 18px);
+  box-shadow: inset 0 1px rgba(255, 248, 232, .08), 0 25px 65px rgba(12, 3, 2, .26), 0 0 0 5px rgba(242, 212, 131, .025);
+  overflow: hidden;
+}
+
+html body.home-neon #authGate .kl-sanctum-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 224px;
+  border: 1px solid rgba(242, 212, 131, .18);
+  border-radius: 50% 50% 44% 44%;
+  background: radial-gradient(circle at 50% 42%, rgba(242, 212, 131, .17), transparent 54%), linear-gradient(180deg, rgba(30, 10, 8, .08), rgba(16, 4, 4, .48));
+  overflow: hidden;
+}
+
+html body.home-neon #authGate .kl-sanctum-buddha-image {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 51% 50%;
+  border-radius: 18px;
+  filter: saturate(.88) sepia(.08) contrast(1.04);
+  -webkit-mask-image: linear-gradient(90deg, #000 72%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 72%, transparent 100%);
+}
+
+html body.home-neon #authGate .kl-sanctum-art::before,
+html body.home-neon #authGate .kl-sanctum-art::after {
+  position: absolute;
+  left: 50%;
+  border: 1px solid rgba(242, 212, 131, .28);
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0;
+  content: "";
+  transform: translateX(-50%);
+}
+
+html body.home-neon #authGate .kl-sanctum-art::before { bottom: -43%; width: 125%; height: 70%; }
+html body.home-neon #authGate .kl-sanctum-art::after { bottom: -57%; width: 92%; height: 66%; border-color: rgba(242, 212, 131, .14); }
+
+html body.home-neon #authGate .kl-buddha-svg {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: min(100%, 220px);
+  height: auto;
+  filter: drop-shadow(0 7px 14px rgba(242, 212, 131, .2));
+  animation: kl-buddha-glow 7s ease-in-out infinite;
+}
+
+html body.home-neon #authGate .kl-art-ring {
+  position: absolute;
+  z-index: 1;
+  width: 174px;
+  height: 174px;
+  border: 1px solid rgba(242, 212, 131, .28);
+  border-radius: 50%;
+  box-shadow: 0 0 28px rgba(242, 212, 131, .08);
+}
+
+html body.home-neon #authGate .kl-art-ring--one { animation: kl-ring-breathe 8s ease-in-out infinite; }
+html body.home-neon #authGate .kl-art-ring--two { width: 204px; height: 204px; border-style: dotted; opacity: .48; animation: kl-ring-turn 30s linear infinite; }
+
+html body.home-neon #authGate .kl-sanctum-copy {
+  min-width: 0;
+}
+
+html body.home-neon #authGate .kl-sanctum-copy .kl-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: var(--kl-gold-bright) !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  letter-spacing: .13em;
+  line-height: 1.45;
+}
+
+html body.home-neon #authGate .kl-mini-wheel {
+  display: inline-grid;
+  flex: 0 0 22px;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: var(--kl-gold-bright);
+}
+
+html body.home-neon #authGate .kl-mini-wheel .kl-wheel-svg {
+  width: 22px;
+  height: 22px;
+}
+
+html body.home-neon #authGate .kl-sanctum-copy h2 {
+  margin: 0 0 9px;
+  color: var(--kl-ivory) !important;
+  font-size: clamp(22px, 2.5vw, 34px) !important;
+  line-height: 1.15 !important;
+  letter-spacing: -.025em;
+}
+
+html body.home-neon #authGate .kl-sanctum-copy > p:not(.kl-eyebrow) {
+  margin: 0;
+  color: rgba(255, 248, 232, .72) !important;
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+}
+
+html body.home-neon #authGate .kl-sanctum-links {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  color: rgba(255, 248, 232, .8);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+html body.home-neon #authGate .kl-sanctum-links span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+html body.home-neon #authGate .kl-sanctum-links i {
+  display: inline-grid;
+  flex: 0 0 22px;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(242, 212, 131, .27);
+  border-radius: 50%;
+  color: var(--kl-gold-bright);
+  font-size: 12px;
+  font-style: normal;
+}
+
+/* -------------------------------------------------------------------------
+   Authentication card, controls and readable form states
+   ------------------------------------------------------------------------- */
+
+html body.home-neon #authGate .auth-gate-card,
+html body.home-neon #authGate .kl-auth-card {
+  grid-column: 2 !important;
+  align-self: center !important;
+  justify-self: stretch !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 590px !important;
+  max-height: calc(100dvh - 48px) !important;
+  padding: 24px !important;
+  border: 1px solid rgba(242, 212, 131, .42) !important;
+  border-radius: 22px !important;
+  background:
+    linear-gradient(145deg, rgba(74, 27, 24, .98), rgba(32, 11, 11, .985)) padding-box,
+    linear-gradient(135deg, var(--kl-gold-bright), var(--kl-gold) 42%, var(--kl-wine-light) 76%, var(--kl-gold)) border-box !important;
+  box-shadow: 0 34px 84px var(--kl-shadow), inset 0 1px rgba(255, 248, 232, .1), 0 0 42px rgba(242, 212, 131, .08) !important;
+  backdrop-filter: blur(18px) saturate(120%);
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242, 212, 131, .45) transparent;
+  transform: none !important;
+  animation: kl-card-arrive .72s cubic-bezier(.16, 1, .3, 1) both !important;
+}
+
+html body.home-neon #authGate .auth-gate-card::before {
+  top: 0 !important;
+  right: 10% !important;
+  left: 10% !important;
+  width: auto !important;
+  height: 3px !important;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--kl-gold-bright), var(--kl-gold), transparent) !important;
+  box-shadow: 0 0 18px rgba(242, 212, 131, .4) !important;
+  animation: kl-gold-sweep 5s ease-in-out infinite !important;
+}
+
+html body.home-neon #authGate .auth-gate-card::after {
+  inset: 1px !important;
+  border: 1px solid rgba(242, 212, 131, .08);
+  border-radius: 21px;
+  background: radial-gradient(circle at 50% 0, rgba(242, 212, 131, .08), transparent 38%);
+  content: "";
+  pointer-events: none;
+}
+
+html body.home-neon #authGate .auth-gate-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+html body.home-neon #authGate .auth-card-heading {
+  grid-template-columns: 56px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-height: 56px !important;
+}
+
+html body.home-neon #authGate .auth-card-heading > span,
+html body.home-neon #authGate .kl-card-seal {
+  position: relative !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 56px !important;
+  height: 56px !important;
+  border: 1px solid rgba(242, 212, 131, .5) !important;
+  border-radius: 16px !important;
+  background: radial-gradient(circle at 50% 40%, #7a3b28, #351514 74%) !important;
+  box-shadow: inset 0 0 0 3px rgba(242, 212, 131, .06), 0 0 22px rgba(242, 212, 131, .12) !important;
+  overflow: hidden !important;
+}
+
+html body.home-neon #authGate .auth-card-heading > span img {
+  display: none !important;
+}
+
+html body.home-neon #authGate .kl-card-lotus,
+html body.home-neon #authGate .kl-card-lotus .kl-lotus-svg {
+  display: block !important;
+  width: 48px !important;
+  height: 40px !important;
+}
+
+html body.home-neon #authGate .kl-card-lotus { filter: drop-shadow(0 0 7px rgba(242, 212, 131, .32)); }
+
+html body.home-neon #authGate .auth-card-heading > div {
+  min-width: 0 !important;
+}
+
+html body.home-neon #authGate .auth-card-heading small {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--kl-gold-bright) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  letter-spacing: .13em;
+  line-height: 1.35 !important;
+}
+
+html body.home-neon #authGate .auth-card-heading strong {
+  display: block;
+  color: var(--kl-ivory) !important;
+  font-size: 19px !important;
+  line-height: 1.28 !important;
+}
+
+html body.home-neon #authGate .auth-card-heading p {
+  margin: 3px 0 0;
+  color: rgba(255, 248, 232, .62) !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+html body.home-neon #authGate .auth-secure-badge {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 4px 8px;
+  border: 1px solid rgba(242, 212, 131, .3) !important;
+  border-radius: 999px !important;
+  background: rgba(242, 212, 131, .08) !important;
+  color: var(--kl-gold-soft) !important;
+  font-size: 10px !important;
+  white-space: nowrap;
+}
+
+html body.home-neon #authGate .auth-secure-badge i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--kl-sage);
+  box-shadow: 0 0 10px rgba(120, 149, 111, .75);
+}
+
+html body.home-neon #authGate .auth-gate-status {
+  display: flex !important;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 8px 12px 8px 34px !important;
+  border: 1px solid rgba(242, 212, 131, .24) !important;
+  border-radius: 12px !important;
+  background: linear-gradient(90deg, rgba(242, 212, 131, .1), rgba(139, 55, 48, .18)) !important;
+  color: var(--kl-gold-soft) !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+html body.home-neon #authGate .auth-gate-status::before {
+  left: 13px !important;
+  width: 8px !important;
+  height: 8px !important;
+  background: var(--kl-gold-bright) !important;
+  box-shadow: 0 0 12px var(--kl-gold) !important;
+}
+
+html body.home-neon #authGate .auth-gate-status > i {
+  display: none;
+}
+
+html body.home-neon #authGate .auth-gate-status.is-error {
+  border-color: rgba(217, 101, 84, .52) !important;
+  background: rgba(217, 101, 84, .12) !important;
+  color: #ffc0a9 !important;
+}
+
+html body.home-neon #authGate .auth-gate-status.is-error::before { background: var(--kl-coral) !important; box-shadow: 0 0 12px rgba(217, 101, 84, .8) !important; }
+html body.home-neon #authGate .auth-gate-status.is-success { border-color: rgba(120, 149, 111, .52) !important; color: #c5e9bb !important; }
+html body.home-neon #authGate .auth-gate-status.is-success::before { background: var(--kl-sage) !important; box-shadow: 0 0 12px rgba(120, 149, 111, .8) !important; }
+
+html body.home-neon #authGate .auth-mode-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+  padding: 5px !important;
+  border: 1px solid rgba(242, 212, 131, .2) !important;
+  border-radius: 14px !important;
+  background: rgba(30, 9, 9, .76) !important;
+}
+
+html body.home-neon #authGate .auth-mode-tabs button {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 46px !important;
+  padding: 8px 10px;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: rgba(255, 248, 232, .62) !important;
+  font-size: 13px !important;
+  font-weight: 760 !important;
+  line-height: 1.3 !important;
+  white-space: normal;
+}
+
+html body.home-neon #authGate .auth-mode-tabs button i {
+  display: inline-grid;
+  flex: 0 0 23px;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  border: 1px solid rgba(242, 212, 131, .26);
+  border-radius: 50%;
+  color: var(--kl-gold-bright);
+  font-size: 12px;
+  font-style: normal;
+}
+
+html body.home-neon #authGate .auth-mode-tabs button.active {
+  background: linear-gradient(135deg, rgba(216, 166, 60, .24), rgba(101, 29, 29, .6)) !important;
+  color: var(--kl-ivory) !important;
+  box-shadow: inset 0 0 0 1px rgba(242, 212, 131, .36), 0 7px 20px rgba(12, 3, 2, .2) !important;
+}
+
+html body.home-neon #authGate .auth-social-row { display: grid !important; gap: 10px !important; }
+
+html body.home-neon #authGate .auth-provider--google,
+html body.home-neon #authGate .auth-provider,
+html body.home-neon #authGate .auth-guest-row > button {
+  box-sizing: border-box;
+  min-height: 50px !important;
+  width: 100% !important;
+  border: 1px solid rgba(242, 212, 131, .24) !important;
+  border-radius: 13px !important;
+  background: linear-gradient(135deg, rgba(255, 248, 232, .08), rgba(216, 166, 60, .08)) !important;
+  color: var(--kl-ivory) !important;
+}
+
+html body.home-neon #authGate .auth-provider--google:hover,
+html body.home-neon #authGate .auth-provider--google:focus-visible,
+html body.home-neon #authGate .auth-guest-row > button:hover,
+html body.home-neon #authGate .auth-guest-row > button:focus-visible {
+  border-color: rgba(242, 212, 131, .66) !important;
+  background: linear-gradient(135deg, rgba(242, 212, 131, .16), rgba(101, 29, 29, .55)) !important;
+  box-shadow: 0 12px 30px rgba(12, 3, 2, .28), 0 0 24px rgba(242, 212, 131, .1) !important;
+  transform: translateY(-1px);
+}
+
+html body.home-neon #authGate .auth-provider--google > b {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--kl-ivory);
+  color: #4285f4;
+  font-size: 14px;
+}
+
+html body.home-neon #authGate .auth-provider--google > span,
+html body.home-neon #authGate .auth-guest-row > button > span {
+  min-width: 0;
+  color: var(--kl-ivory) !important;
+}
+
+html body.home-neon #authGate .auth-provider--google > span small,
+html body.home-neon #authGate .auth-guest-row small {
+  color: rgba(255, 248, 232, .58) !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+}
+
+html body.home-neon #authGate .auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 248, 232, .52) !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  white-space: normal;
+}
+
+html body.home-neon #authGate .auth-divider::before,
+html body.home-neon #authGate .auth-divider::after {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(242, 212, 131, .27), transparent);
+  content: "";
+}
+
+html body.home-neon #authGate .auth-gate-forms form,
+html body.home-neon #authGate .auth-step-panel {
+  gap: 12px !important;
+}
+
+html body.home-neon #authGate .auth-field {
+  display: grid;
+  gap: 7px;
+  color: var(--kl-cream) !important;
+  font-size: 13px !important;
+  font-weight: 750 !important;
+  line-height: 1.45 !important;
+}
+
+html body.home-neon #authGate .auth-field > span:first-child {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+html body.home-neon #authGate .auth-field > span:first-child small {
+  color: rgba(255, 248, 232, .5) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+}
+
+html body.home-neon #authGate .auth-input-shell {
+  display: grid !important;
+  grid-template-columns: 38px minmax(0, 1fr) !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-height: 50px !important;
+  border: 1px solid rgba(242, 212, 131, .24) !important;
+  border-radius: 12px !important;
+  background: rgba(24, 7, 7, .75) !important;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease, transform .2s ease;
+}
+
+html body.home-neon #authGate .auth-password.auth-input-shell {
+  grid-template-columns: 38px minmax(0, 1fr) auto !important;
+}
+
+html body.home-neon #authGate .auth-input-shell > i {
+  display: grid;
+  place-items: center;
+  height: 27px;
+  border-right: 1px solid rgba(242, 212, 131, .2);
+  color: var(--kl-gold-bright) !important;
+  font-size: 13px;
+  font-style: normal;
+}
+
+html body.home-neon #authGate .auth-gate-forms :where(input[type="text"], input[type="email"], input[type="password"]) {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  padding: 0 13px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  color: var(--kl-ivory) !important;
+  font: inherit !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+html body.home-neon #authGate .auth-gate-forms :where(input[type="text"], input[type="email"], input[type="password"])::placeholder {
+  color: rgba(255, 248, 232, .42) !important;
+  opacity: 1;
+}
+
+html body.home-neon #authGate .auth-input-shell:focus-within {
+  border-color: rgba(242, 212, 131, .78) !important;
+  background: rgba(43, 13, 12, .94) !important;
+  box-shadow: 0 0 0 3px rgba(242, 212, 131, .12), 0 10px 26px rgba(12, 3, 2, .22) !important;
+  transform: translateY(-1px);
+}
+
+html body.home-neon #authGate .auth-password button {
+  min-height: 34px;
+  margin-right: 7px;
+  padding: 5px 8px;
+  border: 1px solid rgba(242, 212, 131, .3);
+  border-radius: 8px;
+  background: rgba(242, 212, 131, .08);
+  color: var(--kl-gold-soft);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+html body.home-neon #authGate .auth-password button:hover,
+html body.home-neon #authGate .auth-password button:focus-visible {
+  border-color: var(--kl-gold-bright);
+  background: rgba(242, 212, 131, .18);
+}
+
+html body.home-neon #authGate .auth-form-options {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: rgba(255, 248, 232, .68) !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+html body.home-neon #authGate .auth-form-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+}
+
+html body.home-neon #authGate input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--kl-gold);
+}
+
+html body.home-neon #authGate :where(button, a, summary, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(255, 217, 120, .85) !important;
+  outline-offset: 3px !important;
+}
+
+html body.home-neon #authGate :where([data-forgot-open], [data-auth-forgot], .auth-mini-action, [data-recovery-use-code], [data-email-verify-resend]) {
+  color: var(--kl-gold-soft) !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+html body.home-neon #authGate .auth-gate-forms .auth-submit,
+html body.home-neon #authGate .auth-submit {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100% !important;
+  min-height: 53px !important;
+  margin-top: 2px;
+  padding: 8px 12px 8px 18px !important;
+  border: 1px solid rgba(255, 240, 181, .72) !important;
+  border-radius: 13px !important;
+  background: linear-gradient(105deg, #ffe9aa, #d8a63c 46%, #9b4a2b 78%, #f2d483) !important;
+  background-size: 200% 100% !important;
+  color: #2a130d !important;
+  box-shadow: 0 14px 32px rgba(12, 3, 2, .34), 0 0 22px rgba(242, 212, 131, .15) !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+  text-align: left;
+  transition: transform .2s ease, box-shadow .2s ease, background-position .35s ease;
+}
+
+html body.home-neon #authGate .auth-gate-forms .auth-submit:hover:not(:disabled),
+html body.home-neon #authGate .auth-gate-forms .auth-submit:focus-visible {
+  background-position: 100% 0 !important;
+  box-shadow: 0 18px 38px rgba(12, 3, 2, .4), 0 0 30px rgba(242, 212, 131, .26) !important;
+  transform: translateY(-2px);
+}
+
+html body.home-neon #authGate .auth-submit > i {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(42, 19, 13, .25);
+  border-radius: 50%;
+  font-size: 15px;
+  font-style: normal;
+}
+
+html body.home-neon #authGate .auth-inline-error,
+html body.home-neon #authGate .auth-caps-warning {
+  color: #ffc0a9 !important;
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+html body.home-neon #authGate .auth-field-hint { color: #c5e9bb !important; font-size: 11px !important; line-height: 1.45 !important; }
+
+html body.home-neon #authGate .auth-trust-row,
+html body.home-neon #authGate .auth-card-footer {
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 15px;
+  color: rgba(255, 248, 232, .5) !important;
+  font-size: 10px !important;
+  line-height: 1.45 !important;
+}
+
+html body.home-neon #authGate .auth-trust-row i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: var(--kl-sage);
+}
+
+html body.home-neon #authGate .auth-guest-row { display: block !important; min-width: 0 !important; }
+html body.home-neon #authGate .auth-guest-row > button { padding: 9px 12px !important; text-align: left; }
+html body.home-neon #authGate .auth-guest-row > button > i { color: var(--kl-gold-bright) !important; }
+html body.home-neon #authGate .auth-guest-row > button > strong { color: var(--kl-gold-soft) !important; font-size: 11px !important; white-space: nowrap; }
+
+html body.home-neon #authGate .auth-privacy-panel {
+  min-width: 0;
+  padding: 11px 13px !important;
+  border: 1px solid rgba(242, 212, 131, .18) !important;
+  border-radius: 12px !important;
+  background: rgba(24, 7, 7, .46) !important;
+  color: rgba(255, 248, 232, .72) !important;
+}
+
+html body.home-neon #authGate .auth-privacy-panel summary {
+  display: flex !important;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 24px;
+  color: var(--kl-gold-soft) !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  cursor: pointer;
+}
+
+html body.home-neon #authGate .auth-privacy-panel summary small {
+  color: rgba(255, 248, 232, .52) !important;
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+html body.home-neon #authGate .auth-privacy-panel p {
+  margin: 9px 0 0;
+  color: rgba(255, 248, 232, .65) !important;
+  font-size: 12px !important;
+  line-height: 1.65 !important;
+}
+
+/* Recovery, QR and email verification panels inherit the same readable
+   surface, including their long Vietnamese helper copy. */
+
+html body.home-neon #authGate :where(.auth-recovery-panel, .auth-qr-panel, .auth-email-verify-panel) {
+  min-width: 0 !important;
+  width: 100% !important;
+  padding: 15px !important;
+  border: 1px solid rgba(242, 212, 131, .23) !important;
+  border-radius: 14px !important;
+  background: rgba(27, 8, 8, .58) !important;
+  color: var(--kl-ivory) !important;
+}
+
+html body.home-neon #authGate :where(.auth-recovery-panel, .auth-qr-panel, .auth-email-verify-panel) > header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+html body.home-neon #authGate :where(.auth-recovery-panel, .auth-qr-panel, .auth-email-verify-panel) > header strong {
+  display: block;
+  color: var(--kl-ivory) !important;
+  font-size: 16px !important;
+  line-height: 1.35 !important;
+}
+
+html body.home-neon #authGate :where(.auth-recovery-panel, .auth-qr-panel, .auth-email-verify-panel) > header p,
+html body.home-neon #authGate :where(.auth-recovery-panel, .auth-qr-panel, .auth-email-verify-panel) > small {
+  margin: 3px 0 0;
+  color: rgba(255, 248, 232, .62) !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+}
+
+html body.home-neon #authGate .auth-signup-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+html body.home-neon #authGate .auth-signup-steps button {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  min-height: 55px;
+  padding: 6px;
+  border: 1px solid rgba(242, 212, 131, .2);
+  border-radius: 10px;
+  background: rgba(24, 7, 7, .52);
+  color: rgba(255, 248, 232, .58);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+html body.home-neon #authGate .auth-signup-steps button.active {
+  border-color: rgba(242, 212, 131, .62);
+  background: rgba(216, 166, 60, .15);
+  color: var(--kl-gold-soft);
+}
+
+html body.home-neon #authGate .auth-signup-steps button i {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-style: normal;
+}
+
+html body.home-neon #authGate .auth-step-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+html body.home-neon #authGate .auth-step-actions > button:not(.button) {
+  min-height: 44px;
+  color: var(--kl-gold-soft);
+  font: inherit;
+  font-size: 12px;
+}
+
+html body.home-neon #authGate .auth-form-note,
+html body.home-neon #authGate .auth-password-rules,
+html body.home-neon #authGate .password-strength {
+  color: rgba(255, 248, 232, .58) !important;
+  font-size: 11px !important;
+  line-height: 1.55 !important;
+}
+
+/* Motion toggle remains usable, but no longer advertises a cosmic effect. */
+
+html body.home-neon #authGate > .auth-motion-toggle {
+  position: fixed !important;
+  z-index: 30 !important;
+  right: 18px !important;
+  bottom: max(16px, env(safe-area-inset-bottom)) !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 11px;
+  border: 1px solid rgba(242, 212, 131, .3) !important;
+  border-radius: 999px !important;
+  background: rgba(31, 13, 12, .9) !important;
+  color: var(--kl-gold-soft) !important;
+  box-shadow: 0 12px 28px rgba(12, 3, 2, .3);
+  backdrop-filter: blur(12px);
+  font-size: 11px !important;
+}
+
+html body.home-neon #authGate > .auth-motion-toggle i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--kl-gold-bright);
+  box-shadow: 0 0 10px var(--kl-gold);
+}
+
+/* -------------------------------------------------------------------------
+   First-paint boot surface: opaque Kim Liên gate
+   ------------------------------------------------------------------------- */
+
+#hhBootSurface,
+html body #hhBootSurface {
+  z-index: 2147483000 !important;
+  isolation: isolate !important;
+  contain: strict;
+  background:
+    radial-gradient(circle at 50% 37%, rgba(242, 212, 131, .14), transparent 22%),
+    radial-gradient(circle at 18% 88%, rgba(139, 55, 48, .22), transparent 34%),
+    repeating-linear-gradient(108deg, rgba(255, 232, 163, .025) 0 1px, transparent 1px 32px),
+    linear-gradient(145deg, #1b0808, #351514 51%, #180707) !important;
+  color: var(--kl-ivory) !important;
+  font-family: "Be Vietnam Pro", "Noto Sans", "Segoe UI", Arial, sans-serif !important;
+}
+
+#hhBootSurface > .hh-singularity-gate {
+  display: grid !important;
+  justify-items: center;
+  gap: 16px !important;
+  box-sizing: border-box;
+  width: min(92vw, 600px) !important;
+  min-height: 0 !important;
+  padding: 32px 24px !important;
+  border: 1px solid rgba(242, 212, 131, .24);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(74, 27, 24, .82), rgba(26, 8, 8, .82));
+  box-shadow: 0 36px 90px rgba(12, 3, 2, .58), inset 0 1px rgba(255, 248, 232, .09), 0 0 42px rgba(242, 212, 131, .07);
+  backdrop-filter: blur(16px);
+  text-align: center;
+}
+
+#hhBootSurface .hh-boot-core {
+  position: relative !important;
+  display: grid !important;
+  place-items: center;
+  width: 150px !important;
+  height: 150px !important;
+  margin: 0 !important;
+}
+
+#hhBootSurface .hh-boot-mark {
+  position: relative !important;
+  z-index: 2;
+  display: grid !important;
+  place-items: center;
+  width: 88px !important;
+  height: 88px !important;
+  border: 1px solid rgba(242, 212, 131, .8) !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle at 50% 43%, #7c3a26, #351514 70%) !important;
+  box-shadow: inset 0 0 0 5px rgba(242, 212, 131, .07), 0 0 0 10px rgba(242, 212, 131, .04), 0 0 40px rgba(242, 212, 131, .22) !important;
+  color: var(--kl-gold-bright) !important;
+  font-size: 0 !important;
+  animation: kl-seal-breathe 5.8s ease-in-out infinite;
+}
+
+#hhBootSurface .hh-boot-mark > b { display: none !important; }
+#hhBootSurface .hh-boot-mark > i { display: none !important; }
+
+#hhBootSurface .kl-boot-lotus,
+#hhBootSurface .kl-boot-lotus .kl-lotus-svg {
+  display: block !important;
+  width: 74px !important;
+  height: 60px !important;
+}
+
+#hhBootSurface .hh-boot-mark::before,
+#hhBootSurface .hh-boot-mark::after {
+  position: absolute;
+  inset: -15px;
+  border: 1px solid rgba(242, 212, 131, .3);
+  border-radius: 50%;
+  content: "";
+}
+
+#hhBootSurface .hh-boot-mark::after { inset: -24px; border-style: dotted; border-color: rgba(242, 212, 131, .15); animation: kl-ring-turn 22s linear infinite; }
+
+#hhBootSurface .kl-boot-wheel {
+  position: absolute;
+  z-index: 1;
+  display: block !important;
+  width: 145px;
+  height: 145px;
+  color: var(--kl-gold-bright);
+  opacity: .38;
+  animation: kl-ring-turn 28s linear infinite;
+}
+
+#hhBootSurface .kl-boot-wheel .kl-wheel-svg { width: 100%; height: 100%; }
+
+#hhBootSurface .hh-boot-orbit {
+  position: absolute !important;
+  display: block !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+#hhBootSurface .hh-boot-orbit--outer {
+  inset: 0 !important;
+  border: 1px solid rgba(242, 212, 131, .34) !important;
+  border-top-color: var(--kl-gold-bright) !important;
+  box-shadow: 0 0 25px rgba(242, 212, 131, .11) !important;
+  animation: kl-ring-turn 18s linear infinite !important;
+}
+
+#hhBootSurface .hh-boot-orbit--inner {
+  inset: 14px !important;
+  border: 1px dotted rgba(242, 212, 131, .25) !important;
+  animation: kl-ring-turn-reverse 24s linear infinite !important;
+}
+
+#hhBootSurface .hh-boot-orbit::before,
+#hhBootSurface .hh-boot-orbit::after {
+  background: var(--kl-gold-bright) !important;
+  box-shadow: 0 0 12px rgba(242, 212, 131, .65) !important;
+}
+
+#hhBootSurface .hh-boot-route-motif {
+  top: 20px !important;
+  display: block !important;
+  color: var(--kl-gold-bright) !important;
+}
+
+#hhBootSurface .hh-boot-route-motif b {
+  display: block !important;
+  color: var(--kl-gold-bright) !important;
+  font-size: 20px !important;
+  font-weight: 500;
+}
+
+#hhBootSurface .hh-boot-route-motif i {
+  display: none !important;
+}
+
+#hhBootSurface .hh-boot-copy { gap: 7px !important; }
+#hhBootSurface .hh-boot-copy > small { color: var(--kl-gold-bright) !important; font-size: 10px !important; letter-spacing: .16em !important; }
+#hhBootSurface .hh-boot-copy > strong { color: var(--kl-ivory) !important; font-size: clamp(23px, 5vw, 34px) !important; line-height: 1.16 !important; }
+#hhBootSurface .hh-boot-copy > p { color: rgba(255, 248, 232, .7) !important; font-size: 14px !important; line-height: 1.6 !important; }
+
+#hhBootSurface .hh-boot-steps {
+  width: min(100%, 440px) !important;
+  gap: 12px !important;
+  margin: 2px 0 0 !important;
+}
+
+#hhBootSurface .hh-boot-steps li {
+  color: rgba(255, 248, 232, .5) !important;
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+#hhBootSurface .hh-boot-steps li i {
+  width: 10px !important;
+  height: 10px !important;
+  margin-bottom: 6px !important;
+  border-color: rgba(242, 212, 131, .55) !important;
+  background: transparent !important;
+}
+
+#hhBootSurface .hh-boot-steps li[data-state="active"],
+#hhBootSurface .hh-boot-steps li[data-state="complete"] { color: var(--kl-gold-soft) !important; }
+#hhBootSurface .hh-boot-steps li[data-state="active"] i,
+#hhBootSurface .hh-boot-steps li[data-state="complete"] i { background: var(--kl-gold-bright) !important; box-shadow: 0 0 12px rgba(242, 212, 131, .65); }
+
+#hhBootSurface .hh-boot-progress {
+  width: min(100%, 440px) !important;
+  height: 6px !important;
+  background: rgba(255, 248, 232, .12) !important;
+}
+
+#hhBootSurface .hh-boot-progress i {
+  background: linear-gradient(90deg, #9b4a2b, var(--kl-gold), var(--kl-gold-bright), #c5e9bb) !important;
+  box-shadow: 0 0 15px rgba(242, 212, 131, .5) !important;
+  transition: width .35s ease, background .35s ease;
+}
+
+#hhBootSurface .hh-boot-foot { color: rgba(255, 248, 232, .48) !important; font-size: 11px !important; }
+
+#hhBootSurface .hh-boot-particles {
+  display: block !important;
+  inset: 50% auto auto 50% !important;
+  width: 1px !important;
+  height: 1px !important;
+}
+
+#hhBootSurface .hh-boot-particles i {
+  position: absolute;
+  display: block !important;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--kl-gold-bright);
+  box-shadow: 0 0 12px rgba(242, 212, 131, .65);
+  transform: translate(var(--x), var(--y));
+  animation: kl-particle-gather 2.2s cubic-bezier(.2, .8, .2, 1) infinite alternate;
+  animation-delay: var(--d, 0s);
+}
+
+#hhBootSurface .hh-boot-beams {
+  display: block !important;
+  inset: 50% 0 auto !important;
+  height: 1px !important;
+}
+
+#hhBootSurface .hh-boot-beams i {
+  position: absolute;
+  display: block !important;
+  top: 0;
+  width: 32%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--kl-gold-bright), transparent);
+  opacity: .42;
+  animation: kl-beam-pass 2.8s ease-in-out infinite;
+}
+
+#hhBootSurface .hh-boot-beams i:nth-child(1) { left: -32%; animation-delay: -.4s; }
+#hhBootSurface .hh-boot-beams i:nth-child(2) { left: -32%; animation-delay: .65s; }
+#hhBootSurface .hh-boot-beams i:nth-child(3) { left: -32%; animation-delay: 1.7s; }
+
+/* -------------------------------------------------------------------------
+   Route transition loader: replace the cosmic planet with a lotus gate
+   ------------------------------------------------------------------------- */
+
+#appCosmicLoader:not([hidden]),
+html body #appCosmicLoader:not([hidden]) {
+  z-index: 2147482000 !important;
+  isolation: isolate !important;
+  display: grid !important;
+  place-items: center !important;
+  box-sizing: border-box;
+  padding: 18px !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(242, 212, 131, .14), transparent 23%),
+    repeating-linear-gradient(112deg, rgba(255, 232, 163, .022) 0 1px, transparent 1px 32px),
+    linear-gradient(145deg, #1b0808, #351514 54%, #180707) !important;
+  color: var(--kl-ivory) !important;
+  font-family: "Be Vietnam Pro", "Noto Sans", "Segoe UI", Arial, sans-serif !important;
+  pointer-events: auto !important;
+}
+
+#appCosmicLoader .app-cosmic-loader__space,
+#appCosmicLoader .app-cosmic-loader__stars,
+#appCosmicLoader .app-cosmic-loader__motif,
+#appCosmicLoader .app-cosmic-loader__beams {
+  display: none !important;
+}
+
+#appCosmicLoader::before,
+#appCosmicLoader::after {
+  position: absolute;
+  left: 50%;
+  display: block;
+  border: 1px solid rgba(242, 212, 131, .16);
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0;
+  content: "";
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+#appCosmicLoader::before { bottom: -32vh; width: min(90vw, 980px); height: 74vh; box-shadow: 0 0 0 15px rgba(242, 212, 131, .03), 0 0 0 34px rgba(242, 212, 131, .02); }
+#appCosmicLoader::after { bottom: -41vh; width: min(62vw, 700px); height: 70vh; border-color: rgba(242, 212, 131, .1); }
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__card {
+  position: relative;
+  z-index: 2;
+  display: grid !important;
+  justify-items: center;
+  box-sizing: border-box;
+  width: min(460px, calc(100vw - 32px)) !important;
+  padding: 29px 25px 24px !important;
+  border: 1px solid rgba(242, 212, 131, .4) !important;
+  border-radius: 23px !important;
+  background: linear-gradient(145deg, rgba(74, 27, 24, .97), rgba(27, 8, 8, .97)) !important;
+  box-shadow: 0 34px 90px rgba(12, 3, 2, .6), inset 0 1px rgba(255, 248, 232, .1), 0 0 46px rgba(242, 212, 131, .1) !important;
+  text-align: center;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__card::before {
+  position: absolute;
+  top: 0;
+  right: 12%;
+  left: 12%;
+  height: 3px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, transparent, var(--kl-gold-bright), var(--kl-gold), transparent);
+  box-shadow: 0 0 17px rgba(242, 212, 131, .45);
+  content: "";
+  animation: kl-gold-sweep 4.6s ease-in-out infinite;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__planet {
+  position: relative;
+  display: grid !important;
+  place-items: center;
+  width: 126px !important;
+  height: 126px !important;
+  margin: 0 0 7px;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__planet > span {
+  position: relative;
+  z-index: 3;
+  display: grid !important;
+  place-items: center;
+  width: 67px !important;
+  height: 67px !important;
+  border: 1px solid rgba(242, 212, 131, .8) !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle at 50% 42%, #7c3a26, #351514 74%) !important;
+  box-shadow: inset 0 0 0 4px rgba(242, 212, 131, .06), 0 0 28px rgba(242, 212, 131, .22) !important;
+  color: var(--kl-gold-bright) !important;
+  font-size: 20px !important;
+  font-weight: 850 !important;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__planet > span::after {
+  position: absolute;
+  width: 58px;
+  height: 47px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 96'%3E%3Cpath d='M60 9c9 11 12 22 9 33 10-13 22-19 34-17-6 16-18 27-34 32 17-1 30 4 38 15-17 8-32 5-47-5-15 10-30 13-47 5 8-11 21-16 38-15C35 52 23 41 17 25c12-2 24 4 34 17C48 31 51 20 60 9Z' fill='%23e7b84c'/%3E%3Cpath d='M16 71c15-5 30-4 44 5 14-9 29-10 44-5-12 12-27 17-44 14-17 3-32-2-44-14Z' fill='%23fff0b5'/%3E%3C/svg%3E") center/contain no-repeat;
+  content: "";
+  opacity: .38;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__planet > i,
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__planet > b {
+  position: absolute !important;
+  display: block !important;
+  border: 1px solid rgba(242, 212, 131, .45) !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__planet > i { inset: 16px !important; animation: kl-ring-turn 13s linear infinite !important; }
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__planet > b { inset: 4px !important; border-style: dotted !important; opacity: .42; animation: kl-ring-turn-reverse 19s linear infinite !important; }
+
+#appCosmicLoader .kl-route-lotus,
+#appCosmicLoader .kl-route-lotus .kl-lotus-svg,
+#appCosmicLoader .kl-route-wheel,
+#appCosmicLoader .kl-route-wheel .kl-wheel-svg {
+  display: none !important;
+}
+
+/* Existing route-specific rules can paint their own planet/mosaic/neuron
+   motifs on pseudo-elements.  The Kim Liên seal owns this area for every
+   route, so neutralize those variants at the final cascade position. */
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__planet::before,
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__planet::after {
+  display: none !important;
+  background: none !important;
+  box-shadow: none !important;
+  animation: none !important;
+  content: none !important;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__card > small {
+  color: var(--kl-gold-bright) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  letter-spacing: .15em !important;
+  line-height: 1.45 !important;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__card > strong {
+  margin-top: 8px;
+  color: var(--kl-ivory) !important;
+  font-size: clamp(22px, 5vw, 30px) !important;
+  line-height: 1.18 !important;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__card > p {
+  max-width: 380px;
+  margin: 8px 0 17px !important;
+  color: rgba(255, 248, 232, .7) !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__route {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr) !important;
+  align-items: center;
+  width: 100% !important;
+  gap: 8px;
+  margin-bottom: 14px !important;
+  color: rgba(255, 248, 232, .56) !important;
+  font-size: 10px !important;
+  line-height: 1.45 !important;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__route span,
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__route b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__route b { color: var(--kl-gold-soft) !important; font-weight: 750; }
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__route > i { height: 1px !important; background: linear-gradient(90deg, transparent, var(--kl-gold), transparent) !important; }
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__progress {
+  width: 100% !important;
+  height: 6px !important;
+  border-radius: 99px !important;
+  background: rgba(255, 248, 232, .12) !important;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__progress > i {
+  background: linear-gradient(90deg, #9b4a2b, var(--kl-gold), var(--kl-gold-bright), #c5e9bb) !important;
+  box-shadow: 0 0 14px rgba(242, 212, 131, .5) !important;
+  transition: width .35s ease;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__steps {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100% !important;
+  margin-top: 12px !important;
+  color: rgba(255, 248, 232, .56) !important;
+  font-size: 10px !important;
+  line-height: 1.4 !important;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__steps span {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#appCosmicLoader:not([hidden]) .app-cosmic-loader__steps i {
+  flex: 0 0 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--kl-gold-bright) !important;
+  box-shadow: 0 0 9px rgba(242, 212, 131, .6) !important;
+}
+
+/* -------------------------------------------------------------------------
+   Responsive / mobile 375px contract
+   ------------------------------------------------------------------------- */
+
+@media (min-width: 1101px) {
+  html body.home-neon.auth-locked #authGate[data-auth-view="login"] #gateLoginForm {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: stretch !important;
+    gap: 11px !important;
+  }
+
+  html body.home-neon.auth-locked #authGate[data-auth-view="login"] #gateLoginForm > * {
+    grid-column: 1 !important;
+    min-width: 0 !important;
+  }
+
+  html body.home-neon.auth-locked #authGate[data-auth-view="login"] #gateLoginForm .auth-trust-row {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body.home-neon.auth-locked #authGate:not([hidden]) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.04fr) minmax(460px, .78fr) !important;
+    align-items: center !important;
+    gap: clamp(34px, 5vw, 88px) !important;
+    padding: 34px max(28px, calc((100vw - 1480px) / 2)) !important;
+  }
+}
+
+@media (max-width: 1179px) {
+  html body.home-neon.auth-locked #authGate:not([hidden]) {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 18px !important;
+    padding: 18px !important;
+  }
+
+  html body.home-neon #authGate .auth-gate-card { order: 1 !important; align-self: center !important; max-width: 640px !important; }
+  html body.home-neon #authGate .auth-gate-brand { order: 2 !important; align-self: center !important; width: min(100%, 760px) !important; }
+}
+
+@media (max-width: 760px) {
+  html body.home-neon.auth-locked #authGate:not([hidden]) {
+    display: block !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    padding: max(10px, env(safe-area-inset-top)) max(9px, env(safe-area-inset-right)) max(84px, calc(env(safe-area-inset-bottom) + 74px)) max(9px, env(safe-area-inset-left)) !important;
+  }
+
+  html body.home-neon #authGate .auth-gate-brand {
+    display: none !important;
+  }
+
+  html body.home-neon #authGate > .auth-motion-toggle {
+    display: none !important;
+  }
+
+  html body.home-neon #authGate .auth-gate-card,
+  html body.home-neon #authGate .kl-auth-card {
+    display: grid !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 17px 14px 20px !important;
+    border-radius: 18px !important;
+  }
+
+  html body.home-neon #authGate .auth-card-heading {
+    grid-template-columns: 47px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  html body.home-neon #authGate .auth-card-heading > span,
+  html body.home-neon #authGate .kl-card-seal { width: 47px !important; height: 47px !important; border-radius: 14px !important; }
+  html body.home-neon #authGate .kl-card-lotus,
+  html body.home-neon #authGate .kl-card-lotus .kl-lotus-svg { width: 41px !important; height: 34px !important; }
+  html body.home-neon #authGate .auth-secure-badge { display: none !important; }
+  html body.home-neon #authGate .auth-card-heading strong { font-size: 17px !important; }
+  html body.home-neon #authGate .auth-card-heading p { display: block !important; font-size: 11px !important; }
+
+  html body.home-neon #authGate .auth-mode-tabs button { min-height: 48px !important; font-size: 13px !important; }
+  html body.home-neon #authGate .auth-field { font-size: 13px !important; }
+  html body.home-neon #authGate .auth-field > span:first-child small { flex: 1 1 100%; }
+  html body.home-neon #authGate .auth-input-shell { min-height: 52px !important; }
+  html body.home-neon #authGate .auth-gate-forms :where(input[type="text"], input[type="email"], input[type="password"]) { min-height: 50px !important; font-size: 15px !important; }
+  html body.home-neon #authGate .auth-form-options { align-items: flex-start; }
+  html body.home-neon #authGate .auth-gate-forms .auth-submit { min-height: 55px !important; font-size: 14px !important; }
+  html body.home-neon #authGate > .auth-motion-toggle {
+    position: relative !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: max-content;
+    max-width: 100%;
+    margin: 0 0 8px auto !important;
+  }
+}
+
+@media (max-width: 420px) {
+  html body.home-neon #authGate .auth-gate-status { min-height: 46px !important; font-size: 11px !important; }
+  html body.home-neon #authGate .auth-divider { font-size: 10px !important; }
+  html body.home-neon #authGate .auth-gate-forms form { gap: 11px !important; }
+  html body.home-neon #authGate .auth-guest-row > button > strong { display: none !important; }
+  html body.home-neon #authGate .auth-privacy-panel summary { display: block !important; }
+  html body.home-neon #authGate .auth-privacy-panel summary small { display: block; margin-top: 3px; }
+}
+
+@media (max-width: 360px) {
+  html body.home-neon #authGate .auth-card-heading p { display: none !important; }
+  html body.home-neon #authGate .auth-card-heading strong { font-size: 16px !important; }
+  html body.home-neon #authGate .auth-mode-tabs button { padding-inline: 6px; font-size: 12px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body.home-neon #authGate *,
+  html body.home-neon #authGate *::before,
+  html body.home-neon #authGate *::after,
+  #hhBootSurface *,
+  #hhBootSurface *::before,
+  #hhBootSurface *::after,
+  #appCosmicLoader *,
+  #appCosmicLoader *::before,
+  #appCosmicLoader *::after {
+    animation: none !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html body.home-neon #authGate .auth-gate-card,
+  #hhBootSurface .hh-boot-mark { transform: none !important; }
+}
+
+@media (forced-colors: active) {
+  html body.home-neon #authGate :where(button, input, .auth-input-shell, .auth-gate-card),
+  #hhBootSurface > .hh-singularity-gate,
+  #appCosmicLoader:not([hidden]) .app-cosmic-loader__card {
+    border: 1px solid CanvasText !important;
+    box-shadow: none !important;
+  }
+}
+
+@keyframes kl-card-arrive {
+  from { opacity: 0; transform: translateY(14px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes kl-seal-breathe {
+  0%, 100% { box-shadow: inset 0 0 0 5px rgba(242, 212, 131, .07), 0 0 0 7px rgba(242, 212, 131, .035), 0 0 28px rgba(242, 212, 131, .12); }
+  50% { box-shadow: inset 0 0 0 5px rgba(242, 212, 131, .12), 0 0 0 10px rgba(242, 212, 131, .06), 0 0 42px rgba(242, 212, 131, .24); }
+}
+
+@keyframes kl-buddha-glow { 0%, 100% { opacity: .9; transform: translateY(1px); } 50% { opacity: 1; transform: translateY(-3px); } }
+@keyframes kl-ring-breathe { 0%, 100% { transform: scale(.96); opacity: .6; } 50% { transform: scale(1.04); opacity: .95; } }
+@keyframes kl-ring-turn { to { transform: rotate(1turn); } }
+@keyframes kl-ring-turn-reverse { to { transform: rotate(-1turn); } }
+@keyframes kl-gold-sweep { 0%, 100% { opacity: .55; transform: scaleX(.72); } 50% { opacity: 1; transform: scaleX(1); } }
+@keyframes kl-lantern-breathe { 0%, 100% { opacity: .48; transform: translateY(0); } 50% { opacity: .9; transform: translateY(3px); } }
+@keyframes kl-mist-drift { from { transform: translateX(-3%); } to { transform: translateX(3%); } }
+@keyframes kl-particle-gather { from { opacity: .22; transform: translate(var(--x), var(--y)) scale(.68); } to { opacity: .92; transform: translate(0, 0) scale(1); } }
+@keyframes kl-beam-pass { 0% { transform: translateX(0); opacity: 0; } 20%, 70% { opacity: .65; } 100% { transform: translateX(420%); opacity: 0; } }

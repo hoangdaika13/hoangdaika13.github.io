@@ -18,7 +18,7 @@
    * Canvas2D fallback contract.
    */
 
-  const VERSION = "1.5.2";
+  const VERSION = "1.6.1";
   // Four 8.192 km half-axes provide a true 16.384 x 16.384 km streamed realm.
   // Only nearby 256 m chunks are materialized, so the larger address space
   // does not multiply active geometry or main-thread work.
@@ -109,25 +109,36 @@
     cameraShake: 0
   });
   const GAMEPLAY_CAMERA_PROFILES = Object.freeze({
-    ground: Object.freeze({ id: "ground", distance: 11, minDistance: 1.2, maxDistance: 32, targetHeight: 1.8, fov: 65, minPitch: -1.15, maxPitch: 0.65, collisionPadding: 0.35 }),
-    heavy: Object.freeze({ id: "heavy", distance: 18, minDistance: 2.5, maxDistance: 48, targetHeight: 3.2, fov: 69, minPitch: -1.05, maxPitch: 0.55, collisionPadding: 0.65 }),
-    small: Object.freeze({ id: "small", distance: 6, minDistance: 0.7, maxDistance: 18, targetHeight: 0.8, fov: 62, minPitch: -1.25, maxPitch: 0.75, collisionPadding: 0.22 }),
-    bird: Object.freeze({ id: "bird", distance: 16, minDistance: 1.5, maxDistance: 42, targetHeight: 1.4, fov: 76, minPitch: -1.35, maxPitch: 1.05, collisionPadding: 0.42 }),
-    aquatic: Object.freeze({ id: "aquatic", distance: 13, minDistance: 1.2, maxDistance: 36, targetHeight: 1.1, fov: 72, minPitch: -1.25, maxPitch: 1.05, collisionPadding: 0.5 }),
-    climbing: Object.freeze({ id: "climbing", distance: 9, minDistance: 0.9, maxDistance: 24, targetHeight: 1.1, fov: 68, minPitch: -1.35, maxPitch: 0.95, collisionPadding: 0.3 }),
-    burrow: Object.freeze({ id: "burrow", distance: 5, minDistance: 0.5, maxDistance: 14, targetHeight: 0.55, fov: 60, minPitch: -0.9, maxPitch: 0.5, collisionPadding: 0.18 })
+    ground: Object.freeze({ id: "ground", distance: 11, minDistance: 1.2, maxDistance: 32, targetHeight: 1.8, fov: 65, defaultPitch: -0.18, minPitch: -1.15, maxPitch: 0.65, collisionPadding: 0.35, maxShoulderOffset: 1.2, headBobScale: 0.1, headBobCyclesPerMeter: 0.72, autoCenterDelay: 0.9, autoCenterRate: 2.4, collisionRecoveryRate: 6, collisionReleaseDelay: 0.12, collisionHysteresis: 0.12 }),
+    heavy: Object.freeze({ id: "heavy", distance: 18, minDistance: 2.5, maxDistance: 48, targetHeight: 3.2, fov: 69, defaultPitch: -0.16, minPitch: -1.05, maxPitch: 0.55, collisionPadding: 0.65, maxShoulderOffset: 2, headBobScale: 0.065, headBobCyclesPerMeter: 0.48, autoCenterDelay: 1.15, autoCenterRate: 1.7, collisionRecoveryRate: 4.2, collisionReleaseDelay: 0.18, collisionHysteresis: 0.22 }),
+    small: Object.freeze({ id: "small", distance: 6, minDistance: 0.7, maxDistance: 18, targetHeight: 0.8, fov: 62, defaultPitch: -0.22, minPitch: -1.25, maxPitch: 0.75, collisionPadding: 0.22, maxShoulderOffset: 0.55, headBobScale: 0.075, headBobCyclesPerMeter: 1.25, autoCenterDelay: 0.55, autoCenterRate: 3.4, collisionRecoveryRate: 8, collisionReleaseDelay: 0.08, collisionHysteresis: 0.06 }),
+    bird: Object.freeze({ id: "bird", distance: 16, minDistance: 1.5, maxDistance: 42, targetHeight: 1.4, fov: 76, defaultPitch: -0.12, minPitch: -1.35, maxPitch: 1.05, collisionPadding: 0.42, maxShoulderOffset: 1.6, headBobScale: 0.02, headBobCyclesPerMeter: 0.42, autoCenterDelay: 0.7, autoCenterRate: 2.2, collisionRecoveryRate: 5, collisionReleaseDelay: 0.1, collisionHysteresis: 0.15 }),
+    aquatic: Object.freeze({ id: "aquatic", distance: 13, minDistance: 1.2, maxDistance: 36, targetHeight: 1.1, fov: 72, defaultPitch: -0.08, minPitch: -1.25, maxPitch: 1.05, collisionPadding: 0.5, maxShoulderOffset: 1.2, headBobScale: 0.025, headBobCyclesPerMeter: 0.38, autoCenterDelay: 0.75, autoCenterRate: 2, collisionRecoveryRate: 5, collisionReleaseDelay: 0.14, collisionHysteresis: 0.14 }),
+    climbing: Object.freeze({ id: "climbing", distance: 9, minDistance: 0.9, maxDistance: 24, targetHeight: 1.1, fov: 68, defaultPitch: -0.2, minPitch: -1.35, maxPitch: 0.95, collisionPadding: 0.3, maxShoulderOffset: 0.8, headBobScale: 0.05, headBobCyclesPerMeter: 0.85, autoCenterDelay: 0.65, autoCenterRate: 2.8, collisionRecoveryRate: 7, collisionReleaseDelay: 0.1, collisionHysteresis: 0.08 }),
+    burrow: Object.freeze({ id: "burrow", distance: 5, minDistance: 0.5, maxDistance: 14, targetHeight: 0.55, fov: 60, defaultPitch: -0.12, minPitch: -0.9, maxPitch: 0.5, collisionPadding: 0.18, maxShoulderOffset: 0.35, headBobScale: 0.035, headBobCyclesPerMeter: 1.45, autoCenterDelay: 0.45, autoCenterRate: 3.8, collisionRecoveryRate: 9, collisionReleaseDelay: 0.06, collisionHysteresis: 0.04 })
   });
   const GAMEPLAY_CAMERA_PROFILE_IDS = Object.freeze(Object.keys(GAMEPLAY_CAMERA_PROFILES));
   const DEFAULT_GAMEPLAY_CAMERA = Object.freeze({
     active: false,
-    yaw: -Math.PI / 22,
-    pitch: 1.08 - Math.PI / 2,
+    yaw: 0,
+    pitch: GAMEPLAY_CAMERA_PROFILES.ground.defaultPitch,
     distance: GAMEPLAY_CAMERA_PROFILES.ground.distance,
     fov: GAMEPLAY_CAMERA_PROFILES.ground.fov,
     profileId: "ground",
     firstPerson: false,
     cameraShake: 0,
-    smoothing: 10
+    smoothing: 10,
+    shoulderOffset: 0,
+    headBob: 0,
+    movementSpeed: 0,
+    autoCenter: false,
+    autoCenterDelay: GAMEPLAY_CAMERA_PROFILES.ground.autoCenterDelay,
+    autoCenterRate: GAMEPLAY_CAMERA_PROFILES.ground.autoCenterRate,
+    playerHeading: 0,
+    lookBack: false,
+    collisionRecoveryRate: GAMEPLAY_CAMERA_PROFILES.ground.collisionRecoveryRate,
+    collisionReleaseDelay: GAMEPLAY_CAMERA_PROFILES.ground.collisionReleaseDelay,
+    collisionHysteresis: GAMEPLAY_CAMERA_PROFILES.ground.collisionHysteresis
   });
   const CAMERA_COLLISION_RAY_OFFSETS = Object.freeze([
     Object.freeze([0, 0]),
@@ -210,8 +221,7 @@
   const defaultGameplayCameraProfileForSpecies = (speciesId) => {
     const id = String(speciesId || "").toLowerCase();
     if (id === "pteranodon") return "bird";
-    if (id === "spinosaurus") return "aquatic";
-    if (id === "triceratops" || id === "tyrannosaurus") return "heavy";
+    if (id === "spinosaurus" || id === "triceratops" || id === "tyrannosaurus") return "heavy";
     return "ground";
   };
   function normalizeGameplayCamera(value = {}, previous = DEFAULT_GAMEPLAY_CAMERA) {
@@ -222,18 +232,30 @@
     const profileId = GAMEPLAY_CAMERA_PROFILES[requestedProfile] ? requestedProfile : (GAMEPLAY_CAMERA_PROFILES[prior.profileId] ? prior.profileId : "ground");
     const profile = GAMEPLAY_CAMERA_PROFILES[profileId];
     const profileChanged = profileId !== prior.profileId;
+    const firstPerson = source.firstPerson === undefined ? Boolean(prior.firstPerson) : Boolean(source.firstPerson);
     const numberOr = (candidate, fallback) => Number.isFinite(Number(candidate)) ? Number(candidate) : fallback;
     const fovInput = source.fov === undefined ? source.fovDegrees : source.fov;
     return freezeRecord({
       active: source.active === undefined ? true : Boolean(source.active),
       yaw: wrapAngle(numberOr(source.yaw, prior.yaw)),
-      pitch: clamp(numberOr(source.pitch, profileChanged ? clamp(prior.pitch, profile.minPitch, profile.maxPitch) : prior.pitch), profile.minPitch, profile.maxPitch),
-      distance: clamp(numberOr(source.distance, profileChanged ? profile.distance : prior.distance), profile.minDistance, profile.maxDistance),
+      pitch: clamp(numberOr(source.pitch, profileChanged ? profile.defaultPitch : prior.pitch), profile.minPitch, profile.maxPitch),
+      distance: clamp(numberOr(source.distance, profileChanged ? profile.distance : prior.distance), firstPerson ? 0.1 : profile.minDistance, profile.maxDistance),
       fov: clamp(numberOr(fovInput, profileChanged ? profile.fov : prior.fov), 35, 120),
       profileId,
-      firstPerson: source.firstPerson === undefined ? Boolean(prior.firstPerson) : Boolean(source.firstPerson),
-      cameraShake: clamp(numberOr(source.cameraShake, prior.cameraShake), 0, 1),
-      smoothing: clamp(numberOr(source.smoothing, prior.smoothing), 0, 30)
+      firstPerson,
+      cameraShake: clamp(numberOr(source.cameraShake ?? source.shake, prior.cameraShake), 0, 1),
+      smoothing: clamp(numberOr(source.smoothing, prior.smoothing), 0, 30),
+      shoulderOffset: clamp(numberOr(source.shoulderOffset, prior.shoulderOffset), -profile.maxShoulderOffset, profile.maxShoulderOffset),
+      headBob: clamp(numberOr(source.headBob, prior.headBob), 0, 1),
+      movementSpeed: clamp(numberOr(source.movementSpeed ?? source.speed, prior.movementSpeed), 0, 100),
+      autoCenter: source.autoCenter === undefined && source.autoCenterCamera === undefined ? Boolean(prior.autoCenter) : Boolean(source.autoCenter ?? source.autoCenterCamera),
+      autoCenterDelay: clamp(numberOr(source.autoCenterDelay, profileChanged ? profile.autoCenterDelay : prior.autoCenterDelay), 0, 5),
+      autoCenterRate: clamp(numberOr(source.autoCenterRate, profileChanged ? profile.autoCenterRate : prior.autoCenterRate), 0, 10),
+      playerHeading: wrapAngle(numberOr(source.playerHeading, prior.playerHeading)),
+      lookBack: source.lookBack === undefined ? Boolean(prior.lookBack) : Boolean(source.lookBack),
+      collisionRecoveryRate: clamp(numberOr(source.collisionRecoveryRate, profileChanged ? profile.collisionRecoveryRate : prior.collisionRecoveryRate), 0, 30),
+      collisionReleaseDelay: clamp(numberOr(source.collisionReleaseDelay, profileChanged ? profile.collisionReleaseDelay : prior.collisionReleaseDelay), 0, 1),
+      collisionHysteresis: clamp(numberOr(source.collisionHysteresis, profileChanged ? profile.collisionHysteresis : prior.collisionHysteresis), 0, 2)
     });
   }
   function gameplayCameraToArc(value = DEFAULT_GAMEPLAY_CAMERA) {
@@ -275,6 +297,18 @@
     const yaw = finite(appliedCamera?.yaw, finite(requestedCamera?.yaw, DEFAULT_GAMEPLAY_CAMERA.yaw));
     const direction = gameplayLookDirection(yaw, 0);
     return freezeRecord({ x: direction.x, z: direction.z });
+  }
+
+  function isCameraObstructionMesh(mesh) {
+    const metadata = mesh?.metadata || {};
+    if (metadata.cameraObstruction === true) return true;
+    return metadata.targetType === "animal" && metadata.targetable === true && metadata.isPlayer !== true;
+  }
+
+  function cameraObstructionKind(mesh) {
+    const metadata = mesh?.metadata || {};
+    if (metadata.targetType === "animal" && metadata.isPlayer !== true) return "creature";
+    return String(metadata.cameraObstructionKind || metadata.kind || "obstruction");
   }
   function raySphereIntersectionDistance(origin, direction, center, radius, maximumDistance = Infinity) {
     if (!origin || !direction || !center) return null;
@@ -2889,6 +2923,7 @@
       const speciesCameraDefaults = freezeRecord({
         ...DEFAULT_GAMEPLAY_CAMERA,
         profileId: initialCameraProfileId,
+        pitch: GAMEPLAY_CAMERA_PROFILES[initialCameraProfileId].defaultPitch,
         distance: GAMEPLAY_CAMERA_PROFILES[initialCameraProfileId].distance,
         fov: GAMEPLAY_CAMERA_PROFILES[initialCameraProfileId].fov,
         active: false
@@ -2897,9 +2932,13 @@
         ? normalizeGameplayCamera({ ...configuredGameplayCamera, profileId: configuredGameplayCamera.profileId ?? configuredGameplayCamera.profile ?? initialCameraProfileId, active: configuredGameplayCamera.active !== false }, speciesCameraDefaults)
         : speciesCameraDefaults;
       this._gameplayCameraApplied = null;
+      this._gameplayCameraSourceYaw = this._gameplayCamera.yaw;
+      this._gameplayCameraYawOverrideLatched = false;
+      this._gameplayCameraManualIdleSeconds = 0;
       this._gameplayCameraFovDirty = Boolean(configuredGameplayCamera);
       this._gameplayCameraLimitsDirty = Boolean(configuredGameplayCamera);
       this._gameplayCameraCollision = freezeRecord({ supported: false, mode: "unavailable", terrainOnly: true, approximate: false, rayCount: 0, blockerCoverage: Object.freeze([]), hit: false, desiredDistance: this._gameplayCamera.distance, resolvedDistance: this._gameplayCamera.distance, hitDistance: null, meshKind: null });
+      this._gameplayCameraCollisionHold = { active: false, distance: this._gameplayCamera.distance, clearSeconds: 0 };
       this._controlsAttached = false;
       this._highlightedTarget = null;
       this._highlightedMeshes = new Map();
@@ -2909,6 +2948,7 @@
         heading: finite(this._options.heading, 0),
         elevation: finite(this._options.elevation, 0)
       };
+      this._playerMotion = { speed: 0, distance: 0, sampledAt: now() };
       this._lastEnvironmentInteraction = { x: this._player.x, z: this._player.z, at: 0 };
       this._environment = {
         hour: clamp(this._options.timeOfDay === undefined ? 10.5 : this._options.timeOfDay, 0, 24),
@@ -3244,16 +3284,19 @@
       const importedApproximation = Boolean(this._environmentAssets?.entries instanceof Map && this._environmentAssets.entries.size);
       const environmentApproximation = proceduralApproximation || importedApproximation;
       const sceneRaycast = Boolean(this._scene && typeof this._scene.pickWithRay === "function" && this._Babylon && typeof this._Babylon.Ray === "function");
+      const creatureMesh = sceneRaycast;
       const blockerCoverage = ["terrain-mesh"];
+      if (creatureMesh) blockerCoverage.push("wildlife-creature-mesh");
       if (environmentMesh) blockerCoverage.push("rock-tree-mesh");
       if (environmentApproximation) blockerCoverage.push("rock-tree-sphere-approximation");
       return freezeRecord({
         supported: sceneRaycast,
         sceneRaycast,
         terrain: sceneRaycast,
+        creatureMesh,
         environmentMesh,
         environmentApproximation,
-        terrainOnly: !environmentMesh && !environmentApproximation,
+        terrainOnly: !creatureMesh && !environmentMesh && !environmentApproximation,
         approximate: environmentApproximation,
         rayCount: sceneRaycast ? CAMERA_COLLISION_RAY_OFFSETS.length : 0,
         blockerCoverage: Object.freeze(blockerCoverage)
@@ -4232,12 +4275,40 @@
       if (this._state === "disposed") return makeResult(false, { status: this._state, reason: makeReason("ADAPTER_DISPOSED", "A disposed renderer cannot accept gameplay camera state.", "camera", {}, false) });
       if (!value || typeof value !== "object" || Array.isArray(value)) return makeResult(false, { reason: makeReason("GAMEPLAY_CAMERA_INVALID", "Gameplay camera state must be an object.", "camera", {}, true) });
       const previous = this._gameplayCamera;
-      this._gameplayCamera = normalizeGameplayCamera({ ...value, active: value.active === false ? false : true }, previous);
+      const requestedProfileId = String(value.profileId ?? value.profile ?? previous.profileId ?? "ground").toLowerCase();
+      const requestedProfile = GAMEPLAY_CAMERA_PROFILES[requestedProfileId] || GAMEPLAY_CAMERA_PROFILES[previous.profileId] || GAMEPLAY_CAMERA_PROFILES.ground;
+      const normalizedInput = {
+        ...value,
+        active: value.active === false ? false : true,
+        playerHeading: value.playerHeading === undefined ? this._player.heading : value.playerHeading
+      };
+      const incomingYaw = Number.isFinite(Number(value.yaw)) ? wrapAngle(Number(value.yaw)) : null;
+      if (incomingYaw !== null) {
+        const inputChanged = Math.abs(shortestAngleDelta(this._gameplayCameraSourceYaw, incomingYaw)) > 1e-5;
+        if (inputChanged) {
+          this._gameplayCameraSourceYaw = incomingYaw;
+          this._gameplayCameraYawOverrideLatched = false;
+          this._gameplayCameraManualIdleSeconds = 0;
+        } else if (this._gameplayCameraYawOverrideLatched && value.resetCamera !== true && value.reset !== true && value.resetYaw !== true) normalizedInput.yaw = previous.yaw;
+      }
+      const resetCamera = value.resetCamera === true || value.reset === true || value.resetYaw === true;
+      if (resetCamera) {
+        normalizedInput.yaw = wrapAngle(finite(normalizedInput.playerHeading, this._player.heading));
+        if (value.resetYaw !== true && value.resetPitch !== false) normalizedInput.pitch = requestedProfile.defaultPitch;
+        this._gameplayCameraYawOverrideLatched = true;
+        this._gameplayCameraManualIdleSeconds = 0;
+      }
+      if (value.lookBack !== undefined && Boolean(value.lookBack) !== Boolean(previous.lookBack)) this._gameplayCameraManualIdleSeconds = 0;
+      this._gameplayCamera = normalizeGameplayCamera(normalizedInput, previous);
       this._photoCameraOverride = false;
       const fovProvided = value.fov !== undefined || value.fovDegrees !== undefined;
       this._gameplayCameraFovDirty = this._gameplayCameraFovDirty || fovProvided || this._gameplayCamera.fov !== previous.fov || !previous.active;
-      this._gameplayCameraLimitsDirty = this._gameplayCameraLimitsDirty || this._gameplayCamera.profileId !== previous.profileId || this._gameplayCamera.firstPerson !== previous.firstPerson || !previous.active;
-      this._gameplayCameraCollision = freezeRecord({ supported: false, mode: "unavailable", terrainOnly: true, approximate: false, rayCount: 0, blockerCoverage: Object.freeze([]), hit: false, desiredDistance: this._gameplayCamera.distance, resolvedDistance: this._gameplayCamera.distance, hitDistance: null, meshKind: null });
+      const collisionBasisChanged = this._gameplayCamera.profileId !== previous.profileId || this._gameplayCamera.firstPerson !== previous.firstPerson || !previous.active;
+      this._gameplayCameraLimitsDirty = this._gameplayCameraLimitsDirty || collisionBasisChanged;
+      if (collisionBasisChanged) {
+        this._gameplayCameraCollision = freezeRecord({ supported: false, mode: "unavailable", terrainOnly: true, approximate: false, rayCount: 0, blockerCoverage: Object.freeze([]), hit: false, desiredDistance: this._gameplayCamera.distance, resolvedDistance: this._gameplayCamera.distance, hitDistance: null, meshKind: null });
+        this._gameplayCameraCollisionHold = { active: false, distance: this._gameplayCamera.distance, clearSeconds: 0 };
+      }
       if (this._gameplayCamera.active && this._camera && typeof this._camera.detachControl === "function") {
         try { this._camera.detachControl(); } catch { /* Route input ownership remains authoritative. */ }
         this._controlsAttached = false;
@@ -4266,6 +4337,9 @@
         effectiveYaw: applied ? wrapAngle(applied.yaw) : state.yaw,
         effectivePitch: applied ? applied.pitch : state.pitch,
         effectiveDistance: applied ? finite(applied.collisionDistance, applied.distance) : state.distance,
+        effectiveShoulderOffset: applied ? finite(applied.shoulderOffset, state.shoulderOffset) : state.shoulderOffset,
+        headBobOffset: applied ? finite(applied.headBobOffset, 0) : 0,
+        manualIdleSeconds: this._gameplayCameraManualIdleSeconds,
         inputOwner: state.active ? "route" : (this._controlsAttached ? "babylon-opt-in" : "none"),
         photoOverride: this._photoCameraOverride,
         collision: freezeRecord({ ...collision })
@@ -4340,11 +4414,11 @@
           if (typeof direction.normalize === "function") direction.normalize();
           const ray = new this._Babylon.Ray(origin, direction, desiredDistance);
           rayCount += 1;
-          const picked = this._scene.pickWithRay(ray, (mesh) => Boolean(mesh?.metadata?.cameraObstruction === true), false);
+          const picked = this._scene.pickWithRay(ray, isCameraObstructionMesh, false);
           const meshDistance = picked?.hit && Number.isFinite(Number(picked.distance)) ? clamp(picked.distance, 0, desiredDistance) : null;
           if (meshDistance !== null && (distance === null || meshDistance < distance)) {
             distance = meshDistance;
-            meshKind = String(picked?.pickedMesh?.metadata?.cameraObstructionKind || picked?.pickedMesh?.metadata?.kind || "obstruction");
+            meshKind = cameraObstructionKind(picked?.pickedMesh);
           }
           if (!capability.environmentMesh) {
             const approximate = this._queryEnvironmentBlockerDistance(ray, desiredDistance);
@@ -4358,7 +4432,7 @@
         return freezeRecord({
           ...capability,
           supported: true,
-          mode: capability.terrainOnly ? "terrain-multi-ray" : "terrain-environment-multi-ray",
+          mode: capability.environmentMesh || capability.environmentApproximation ? "terrain-environment-multi-ray" : "terrain-multi-ray",
           approximate: sphereTests > 0 || rayCount > 1,
           rayCount,
           sphereTests,
@@ -4378,19 +4452,50 @@
       const minimum = state.firstPerson ? 0.1 : profile.minDistance;
       const desiredDistance = clamp(options.desiredDistance ?? options.distance ?? state.distance, minimum, profile.maxDistance);
       const hasProvidedHit = Number.isFinite(Number(options.hitDistance)) && Number(options.hitDistance) >= 0;
+      const providedMeshKind = String(options.meshKind || "provided");
+      const providedCreatureHit = ["animal", "creature", "wildlife"].includes(providedMeshKind.toLowerCase());
       const query = hasProvidedHit
-        ? freezeRecord({ supported: true, mode: "provided", terrainOnly: true, approximate: false, rayCount: 0, blockerCoverage: Object.freeze(["provided"]), hit: true, desiredDistance, distance: clamp(options.hitDistance, 0, desiredDistance), meshKind: String(options.meshKind || "provided") })
+        ? freezeRecord({ supported: true, mode: "provided", terrainOnly: !providedCreatureHit, approximate: false, rayCount: 0, blockerCoverage: Object.freeze([providedCreatureHit ? "wildlife-creature-mesh" : "provided"]), hit: true, desiredDistance, distance: clamp(options.hitDistance, 0, desiredDistance), meshKind: providedMeshKind })
         : this.queryCameraObstructionDistance({ ...options, desiredDistance });
       const padding = Number.isFinite(Number(options.padding)) ? clamp(options.padding, 0, 5) : profile.collisionPadding;
       const obstructedDistance = query.hit ? clamp(finite(query.distance, desiredDistance) - padding, minimum, desiredDistance) : desiredDistance;
       const previousDistance = finite(this._gameplayCameraApplied?.collisionDistance, desiredDistance);
-      const deltaSeconds = clamp(options.deltaSeconds, 0, 0.25);
-      const recoveryRate = clamp(options.recoverySmoothing ?? state.smoothing, 0, 30);
-      const recoveryAmount = deltaSeconds > 0 && recoveryRate > 0 ? 1 - Math.exp(-deltaSeconds * recoveryRate) : 1;
-      // A nearer obstruction collapses immediately. Any outward recovery,
-      // including a receding terrain hit, remains exponentially smoothed.
-      const targetDistance = query.hit ? obstructedDistance : desiredDistance;
-      const resolvedDistance = targetDistance < previousDistance ? targetDistance : lerp(previousDistance, targetDistance, recoveryAmount);
+      const deltaSeconds = clamp(Number.isFinite(Number(options.deltaSeconds)) ? options.deltaSeconds : 1 / 60, 0, 0.25);
+      const recoveryRate = clamp(options.recoverySmoothing ?? state.collisionRecoveryRate ?? profile.collisionRecoveryRate, 0, 30);
+      // Retraction is deliberately much faster than release, but still uses
+      // exponential damping so the same obstruction converges identically at
+      // 30, 60 or 120 Hz and never teleports the camera in a single frame.
+      const retractionRate = clamp(options.retractionSmoothing ?? Math.max(36, recoveryRate * 6), 0, 120);
+      const releaseDelay = clamp(options.releaseDelay ?? state.collisionReleaseDelay ?? profile.collisionReleaseDelay, 0, 1);
+      const hysteresis = clamp(options.hysteresis ?? state.collisionHysteresis ?? profile.collisionHysteresis, 0, 2);
+      const dampingAmount = (rate) => deltaSeconds <= 0 ? 0 : (rate > 0 ? 1 - Math.exp(-deltaSeconds * rate) : 1);
+      const recoveryAmount = dampingAmount(recoveryRate);
+      const retractionAmount = dampingAmount(retractionRate);
+      const priorHold = this._gameplayCameraCollisionHold || { active: false, distance: previousDistance, clearSeconds: 0 };
+      let holdActive = Boolean(priorHold.active);
+      let heldDistance = clamp(priorHold.distance, minimum, desiredDistance);
+      let clearSeconds = Math.max(0, finite(priorHold.clearSeconds, 0));
+      let releaseHeld = false;
+      let targetDistance = desiredDistance;
+      if (query.hit) {
+        clearSeconds = 0;
+        // Moving inward is safety-critical, so it converges with the fast
+        // retraction rate. Outward movement must clear a small band before
+        // recovery begins, so adjacent terrain triangles cannot pump the camera.
+        if (!holdActive || obstructedDistance < heldDistance) heldDistance = obstructedDistance;
+        else if (obstructedDistance > heldDistance + hysteresis) heldDistance = obstructedDistance - hysteresis;
+        holdActive = true;
+        targetDistance = heldDistance;
+      } else if (holdActive) {
+        clearSeconds = Math.min(1, clearSeconds + deltaSeconds);
+        releaseHeld = clearSeconds < releaseDelay;
+        if (releaseHeld) targetDistance = Math.min(heldDistance, desiredDistance);
+        else { holdActive = false; targetDistance = desiredDistance; heldDistance = desiredDistance; }
+      }
+      // Both directions are frame-rate independent: pull-in is aggressively
+      // damped while outward recovery remains intentionally softer.
+      const movingInward = targetDistance < previousDistance;
+      const resolvedDistance = lerp(previousDistance, targetDistance, movingInward ? retractionAmount : recoveryAmount);
       const result = freezeRecord({
         supported: query.supported,
         mode: query.mode,
@@ -4399,12 +4504,23 @@
         rayCount: Math.max(0, Math.trunc(finite(query.rayCount, 0))),
         blockerCoverage: Object.freeze(Array.from(query.blockerCoverage || [])),
         hit: query.hit,
+        holding: query.hit || releaseHeld,
+        releaseHeld,
+        clearSeconds,
+        releaseDelay,
+        hysteresis,
+        retractionRate,
+        recoveryRate,
         desiredDistance,
         resolvedDistance: clamp(resolvedDistance, minimum, desiredDistance),
         hitDistance: query.hit ? query.distance : null,
         meshKind: query.meshKind || null
       });
-      if (options.commit !== false) this._gameplayCameraCollision = result;
+      if (options.commit !== false) {
+        if (this._gameplayCameraApplied) this._gameplayCameraApplied.collisionDistance = result.resolvedDistance;
+        this._gameplayCameraCollisionHold = { active: holdActive, distance: heldDistance, clearSeconds };
+        this._gameplayCameraCollision = result;
+      }
       return result;
     }
 
@@ -4625,10 +4741,28 @@
         if (!selected.ok) return selected;
       }
       this._syncProxyIdentity(this._proxies.get(this._playerSpeciesId), this._playerEntityId, true, true);
+      const previousX = this._player.x;
+      const previousZ = this._player.z;
       if (state.x !== undefined) this._player.x = clamp(state.x, 0, WORLD_SIZE);
       if (state.z !== undefined || state.y !== undefined) this._player.z = clamp(state.z === undefined ? state.y : state.z, 0, WORLD_SIZE);
-      if (state.heading !== undefined) this._player.heading = finite(state.heading, this._player.heading);
+      if (state.heading !== undefined) {
+        const nextHeading = finite(state.heading, this._player.heading);
+        this._player.heading = nextHeading;
+        if (Math.abs(shortestAngleDelta(this._gameplayCamera?.playerHeading, nextHeading)) > 1e-7) {
+          this._gameplayCamera = normalizeGameplayCamera({ ...this._gameplayCamera, playerHeading: nextHeading }, this._gameplayCamera);
+        }
+      }
       if (state.elevation !== undefined) this._player.elevation = clamp(state.elevation, -20, 300);
+      const sampledAt = now();
+      const travel = Math.hypot(this._player.x - previousX, this._player.z - previousZ);
+      const sampleSeconds = Math.max(0, (sampledAt - finite(this._playerMotion?.sampledAt, sampledAt)) / 1000);
+      const explicitSpeed = state.movementSpeed ?? state.speed;
+      const inferredSpeed = sampleSeconds > 1e-4 && travel <= 64 ? travel / sampleSeconds : 0;
+      this._playerMotion = {
+        speed: state.moving === false ? 0 : clamp(Number.isFinite(Number(explicitSpeed)) ? explicitSpeed : inferredSpeed, 0, 100),
+        distance: finite(this._playerMotion?.distance, 0) + (travel <= 64 ? travel : 0),
+        sampledAt
+      };
       this._applyPlayerPosition();
       const interactionNow = now();
       const moved = Math.hypot(this._player.x - this._lastEnvironmentInteraction.x, this._player.z - this._lastEnvironmentInteraction.z);
@@ -5094,16 +5228,29 @@
       const proxy = this._proxies.get(this._playerSpeciesId);
       if (!proxy) return;
       const stableBaseY = finite(proxy.baseY, finite(proxy.root?.position?.y, 0));
-      const cameraState = this._gameplayCamera || DEFAULT_GAMEPLAY_CAMERA;
+      let cameraState = this._gameplayCamera || DEFAULT_GAMEPLAY_CAMERA;
       const massFactor = proxy.id === "pteranodon" ? 0.34 : proxy.id === "triceratops" ? 0.92 : 1;
       if (cameraState.active) {
         const profile = GAMEPLAY_CAMERA_PROFILES[cameraState.profileId] || GAMEPLAY_CAMERA_PROFILES.ground;
         const current = this._gameplayCameraApplied || { yaw: cameraState.yaw, pitch: cameraState.pitch, distance: cameraState.distance, collisionDistance: cameraState.distance };
         const delta = clamp(deltaSeconds, 0, 0.1);
+        const movementSpeed = Math.max(finite(cameraState.movementSpeed, 0), finite(this._playerMotion?.speed, 0));
+        this._gameplayCameraManualIdleSeconds = Math.min(60, this._gameplayCameraManualIdleSeconds + delta);
+        if (!this._reducedMotion && cameraState.autoCenter && !cameraState.lookBack && movementSpeed > 0.05 && this._gameplayCameraManualIdleSeconds >= cameraState.autoCenterDelay && cameraState.autoCenterRate > 0) {
+          const centerAmount = immediate ? 1 : 1 - Math.exp(-delta * cameraState.autoCenterRate);
+          const autoCenterHeading = finite(cameraState.playerHeading, this._player.heading);
+          const centeredYaw = wrapAngle(cameraState.yaw + shortestAngleDelta(cameraState.yaw, autoCenterHeading) * centerAmount);
+          if (Math.abs(shortestAngleDelta(cameraState.yaw, centeredYaw)) > 1e-7) {
+            cameraState = normalizeGameplayCamera({ ...cameraState, yaw: centeredYaw, playerHeading: autoCenterHeading }, cameraState);
+            this._gameplayCamera = cameraState;
+            this._gameplayCameraYawOverrideLatched = true;
+          }
+        }
+        const displayYaw = wrapAngle(cameraState.yaw + (cameraState.lookBack ? Math.PI : 0));
         const followAmount = immediate || this._reducedMotion || cameraState.smoothing <= 0
           ? 1
           : 1 - Math.exp(-delta * cameraState.smoothing);
-        current.yaw = wrapAngle(current.yaw + shortestAngleDelta(current.yaw, cameraState.yaw) * followAmount);
+        current.yaw = wrapAngle(current.yaw + shortestAngleDelta(current.yaw, displayYaw) * followAmount);
         current.pitch = lerp(current.pitch, cameraState.pitch, followAmount);
         current.distance = lerp(current.distance, cameraState.distance, followAmount);
         this._gameplayCameraApplied = current;
@@ -5127,10 +5274,20 @@
         const firstPersonOffset = lookAhead > 0 ? gameplayCameraOffset(current.yaw, current.pitch, lookAhead) : null;
         const configuredShake = this._photoCameraOverride ? this._photoSettings.cameraShake : cameraState.cameraShake;
         const shake = this._reducedMotion ? 0 : clamp(configuredShake, 0, 1) * massFactor * 0.08;
+        const rightX = Math.cos(current.yaw);
+        const rightZ = -Math.sin(current.yaw);
+        const shoulderOffset = clamp(cameraState.shoulderOffset, -profile.maxShoulderOffset, profile.maxShoulderOffset);
+        const motionAmount = clamp(movementSpeed / 8, 0, 1);
+        const bobAmplitude = this._reducedMotion ? 0 : clamp(cameraState.headBob, 0, 1) * profile.headBobScale * motionAmount;
+        const bobPhase = finite(this._playerMotion?.distance, 0) * profile.headBobCyclesPerMeter * Math.PI * 2;
+        const lateralBob = Math.sin(bobPhase) * bobAmplitude * 0.35;
+        const verticalBob = Math.sin(bobPhase * 2) * bobAmplitude;
+        current.shoulderOffset = shoulderOffset;
+        current.headBobOffset = verticalBob;
         const desiredTarget = new this._Babylon.Vector3(
-          finite(proxy.root?.position?.x) - (firstPersonOffset?.x || 0) + Math.sin(this._elapsed * 7.1) * shake,
-          stableBaseY + profile.targetHeight - (firstPersonOffset?.y || 0) + Math.sin(this._elapsed * 11.3) * shake * 0.65,
-          finite(proxy.root?.position?.z) - (firstPersonOffset?.z || 0) + Math.cos(this._elapsed * 6.4) * shake
+          finite(proxy.root?.position?.x) - (firstPersonOffset?.x || 0) + rightX * (shoulderOffset + lateralBob) + Math.sin(this._elapsed * 7.1) * shake,
+          stableBaseY + profile.targetHeight - (firstPersonOffset?.y || 0) + verticalBob + Math.sin(this._elapsed * 11.3) * shake * 0.65,
+          finite(proxy.root?.position?.z) - (firstPersonOffset?.z || 0) + rightZ * (shoulderOffset + lateralBob) + Math.cos(this._elapsed * 6.4) * shake
         );
         const targetAmount = immediate || this._reducedMotion || !this._camera.target ? 1 : followAmount;
         const target = targetAmount >= 1 ? desiredTarget : new this._Babylon.Vector3(
@@ -5534,6 +5691,9 @@
       this._camera = null;
       this._controlsAttached = false;
       this._gameplayCameraApplied = null;
+      this._gameplayCameraCollisionHold = { active: false, distance: this._gameplayCamera.distance, clearSeconds: 0 };
+      this._gameplayCameraManualIdleSeconds = 0;
+      this._gameplayCameraYawOverrideLatched = false;
       this._photoCameraOverride = false;
       this._gameplayCameraCollision = freezeRecord({ supported: false, mode: "unavailable", terrainOnly: true, approximate: false, rayCount: 0, blockerCoverage: Object.freeze([]), hit: false, desiredDistance: this._gameplayCamera.distance, resolvedDistance: this._gameplayCamera.distance, hitDistance: null, meshKind: null });
       this._lights = null;
@@ -5622,11 +5782,14 @@
     enforceClearDaylightReadability,
     planEnvironmentPlacements,
     normalizeGameplayCamera,
+    defaultGameplayCameraProfileForSpecies,
     gameplayCameraToArc,
     gameplayCameraOffset,
     gameplayLookDirection,
     headingToProxyRotation,
     gameplayCameraForwardXZ,
+    isCameraObstructionMesh,
+    cameraObstructionKind,
     raySphereIntersectionDistance,
     LandscapeWorkerBridge,
     CreaturePrototypeManager,

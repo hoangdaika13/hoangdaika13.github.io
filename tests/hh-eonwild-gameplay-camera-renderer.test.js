@@ -23,6 +23,13 @@ class Vector3 {
     this.z /= length;
     return this;
   }
+
+  set(x = 0, y = 0, z = 0) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    return this;
+  }
 }
 
 class Ray {
@@ -33,14 +40,99 @@ class Ray {
   }
 }
 
+function createGenericBabylonMock() {
+  const scaling = () => ({
+    x: 1,
+    y: 1,
+    z: 1,
+    scaleInPlace(value) { this.x *= value; this.y *= value; this.z *= value; return this; }
+  });
+  const mesh = () => ({
+    position: new Vector3(),
+    rotation: new Vector3(),
+    scaling: scaling(),
+    metadata: {},
+    getVerticesData() { return null; },
+    getIndices() { return null; },
+    updateVerticesData() {},
+    dispose() { this.disposed = true; }
+  });
+  class Engine {
+    static IsSupported() { return true; }
+    constructor() { this.webGLVersion = 2; this.loop = null; }
+    setHardwareScalingLevel() {}
+    runRenderLoop(callback) { this.loop = callback; }
+    stopRenderLoop() { this.loop = null; }
+    getFps() { return 60; }
+    resize() {}
+    dispose() { this.disposed = true; }
+  }
+  class Scene {
+    static FOGMODE_EXP2 = 2;
+    constructor() { this.renderCount = 0; }
+    render() { this.renderCount += 1; }
+    dispose() { this.disposed = true; }
+  }
+  class Color3 {
+    constructor(r = 0, g = 0, b = 0) { this.r = r; this.g = g; this.b = b; }
+    static FromHexString() { return new Color3(0.4, 0.6, 0.5); }
+    static Black() { return new Color3(); }
+    scale(value) { return new Color3(this.r * value, this.g * value, this.b * value); }
+  }
+  class TransformNode {
+    constructor() { this.position = new Vector3(); this.rotation = new Vector3(); this.scaling = scaling(); this.metadata = {}; }
+    dispose() { this.disposed = true; }
+  }
+  class ArcRotateCamera {
+    constructor(name, alpha, beta, radius, target) { this.name = name; this.alpha = alpha; this.beta = beta; this.radius = radius; this.target = target; }
+    setTarget(value) { this.target = value; }
+    attachControl() {}
+    detachControl() {}
+  }
+  class PBRMaterial {
+    constructor(name) { this.name = name; }
+    dispose() { this.disposed = true; }
+  }
+  class Light {
+    constructor(name, direction) { this.name = name; this.direction = direction; this.position = new Vector3(); }
+  }
+  return {
+    Engine,
+    Scene,
+    Color3,
+    Color4: class Color4 { constructor(r, g, b, a) { Object.assign(this, { r, g, b, a }); } },
+    Vector3,
+    ArcRotateCamera,
+    TransformNode,
+    PBRMaterial,
+    HemisphericLight: Light,
+    DirectionalLight: Light,
+    MeshBuilder: {
+      CreateSphere: mesh,
+      CreateCylinder: mesh,
+      CreateBox: mesh,
+      CreateGround: mesh
+    },
+    VertexBuffer: { PositionKind: "position", NormalKind: "normal" },
+    VertexData: { ComputeNormals() {} }
+  };
+}
+
 test("gameplay camera profiles and ArcRotate mapping are bounded and deterministic", () => {
   assert.deepEqual(renderer.GAMEPLAY_CAMERA_PROFILE_IDS, ["ground", "heavy", "small", "bird", "aquatic", "climbing", "burrow"]);
   assert.ok(Object.isFrozen(renderer.GAMEPLAY_CAMERA_PROFILES));
+  assert.deepEqual(core.DEFAULT_GAMEPLAY_CAMERA, renderer.DEFAULT_GAMEPLAY_CAMERA, "both renderers must begin from one camera contract");
   for (const id of renderer.GAMEPLAY_CAMERA_PROFILE_IDS) {
     const profile = renderer.GAMEPLAY_CAMERA_PROFILES[id];
     assert.ok(Object.isFrozen(profile));
     assert.ok(profile.minDistance < profile.distance && profile.distance < profile.maxDistance);
     assert.ok(profile.minPitch < profile.maxPitch);
+    assert.ok(profile.defaultPitch >= profile.minPitch && profile.defaultPitch <= profile.maxPitch);
+    assert.ok(profile.maxShoulderOffset > 0);
+    assert.ok(profile.headBobScale >= 0 && profile.headBobCyclesPerMeter > 0);
+    assert.ok(profile.autoCenterDelay >= 0 && profile.autoCenterRate > 0);
+    assert.ok(profile.collisionRecoveryRate > 0 && profile.collisionReleaseDelay >= 0 && profile.collisionHysteresis >= 0);
+    assert.deepEqual(core.GAMEPLAY_CAMERA_PROFILES[id], profile, `generic core must share the complete ${id} camera profile`);
   }
 
   const state = renderer.normalizeGameplayCamera({
@@ -51,13 +143,23 @@ test("gameplay camera profiles and ArcRotate mapping are bounded and determinist
     profileId: "ground",
     firstPerson: false,
     cameraShake: 0.25,
-    smoothing: 9
+    smoothing: 9,
+    shoulderOffset: 0.5,
+    headBob: 0.4,
+    movementSpeed: 6,
+    autoCenter: true,
+    playerHeading: 1.2,
+    lookBack: true
   });
   const arc = renderer.gameplayCameraToArc(state);
   assert.ok(Math.abs(arc.alpha + Math.PI / 2) < 1e-12);
   assert.ok(Math.abs(arc.beta - Math.PI / 2) < 1e-12);
   assert.equal(arc.radius, 7);
   assert.ok(Math.abs(arc.fovRadians - 70 * Math.PI / 180) < 1e-12);
+  assert.equal(state.shoulderOffset, 0.5);
+  assert.equal(state.headBob, 0.4);
+  assert.equal(state.autoCenter, true);
+  assert.equal(state.lookBack, true);
 
   const clamped = renderer.normalizeGameplayCamera({ profileId: "small", pitch: 99, distance: 999, fov: 999, cameraShake: 9, smoothing: -1 });
   assert.equal(clamped.pitch, renderer.GAMEPLAY_CAMERA_PROFILES.small.maxPitch);
@@ -65,6 +167,26 @@ test("gameplay camera profiles and ArcRotate mapping are bounded and determinist
   assert.equal(clamped.fov, 120);
   assert.equal(clamped.cameraShake, 1);
   assert.equal(clamped.smoothing, 0);
+  assert.equal(clamped.shoulderOffset, 0);
+
+  const coreState = core.normalizeGameplayCamera({ profileId: "small", shoulderOffset: 99, headBob: 99, autoCenterCamera: true, lookBack: true });
+  assert.equal(coreState.shoulderOffset, core.GAMEPLAY_CAMERA_PROFILES.small.maxShoulderOffset);
+  assert.equal(coreState.headBob, 1);
+  assert.equal(coreState.autoCenter, true);
+  assert.equal(coreState.lookBack, true);
+
+  const prior = renderer.normalizeGameplayCamera({ profileId: "ground", pitch: 0.4, distance: 9, cameraShake: 0.2, smoothing: 7 });
+  const profileSwitch = { profileId: "heavy", firstPerson: true, distance: 0.1, shoulderOffset: -0.8, movementSpeed: 5, shake: 0.3 };
+  const guardedSwitch = renderer.normalizeGameplayCamera(profileSwitch, prior);
+  const genericSwitch = core.normalizeGameplayCamera(profileSwitch, prior);
+  assert.deepEqual(genericSwitch, guardedSwitch, "profile switches and first-person bounds must normalize identically");
+  assert.equal(guardedSwitch.pitch, renderer.GAMEPLAY_CAMERA_PROFILES.heavy.defaultPitch);
+  assert.equal(guardedSwitch.distance, 0.1);
+  assert.equal(guardedSwitch.cameraShake, 0.3);
+  for (const [speciesId, profileId] of [["pteranodon", "bird"], ["spinosaurus", "heavy"], ["triceratops", "heavy"], ["tyrannosaurus", "heavy"], ["wolf", "ground"]]) {
+    assert.equal(core.defaultGameplayCameraProfileForSpecies(speciesId), profileId);
+    assert.equal(renderer.defaultGameplayCameraProfileForSpecies(speciesId), profileId);
+  }
 
   const configured = renderer.createRenderer({ speciesId: "tyrannosaurus", gameplayCamera: { profile: "bird" } });
   const configuredState = configured.getGameplayCamera();
@@ -73,6 +195,56 @@ test("gameplay camera profiles and ArcRotate mapping are bounded and determinist
   assert.equal(configuredState.distance, renderer.GAMEPLAY_CAMERA_PROFILES.bird.distance);
   assert.equal(configuredState.fov, renderer.GAMEPLAY_CAMERA_PROFILES.bird.fov);
   configured.dispose();
+});
+
+test("generic camera pause is sticky, freezes temporal behavior and resumes without a stale-frame jump", async () => {
+  const originalDocument = global.document;
+  const context = { getExtension() { return null; } };
+  global.document = {
+    hidden: false,
+    createElement() { return { getContext() { return context; } }; },
+    addEventListener() {},
+    removeEventListener() {}
+  };
+  const canvas = { getContext() { return context; } };
+  let runtime = null;
+  try {
+    runtime = await core.createRuntime(canvas, {
+      BABYLON: createGenericBabylonMock(),
+      backend: "webgl2",
+      adaptiveQuality: false,
+      reducedMotion: false,
+      speciesId: "triceratops",
+      gameplayCamera: { yaw: 0, pitch: 0, autoCenter: true, autoCenterDelay: 0, autoCenterRate: 10, movementSpeed: 8 }
+    });
+    const center = core.WORLD_CONFIG.logicalSizeMeters / 2;
+    const snapshot = { speciesId: "triceratops", heading: Math.PI / 2, movementSpeed: 8, player: { x: center, y: center }, population: [] };
+    runtime.applyCameraInput({ yaw: 0, pitch: 0, playerHeading: Math.PI / 2, autoCenter: true, autoCenterDelay: 0, autoCenterRate: 10, movementSpeed: 8, lookBack: false });
+    runtime.setPaused(true);
+    const before = runtime.getCameraState();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    runtime.sync(snapshot);
+    const held = runtime.getCameraState();
+    assert.equal(runtime.getStatus().paused, true, "sync without a paused field must not implicitly resume");
+    assert.equal(held.yaw, before.yaw);
+    assert.equal(held.headBobOffset, before.headBobOffset);
+
+    runtime.sync({ ...snapshot, paused: false });
+    assert.equal(runtime.getStatus().paused, false);
+    assert.equal(runtime.getCameraState().yaw, before.yaw, "the resume packet must not integrate the whole paused wall-clock gap");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    runtime.sync(snapshot);
+    const firstCenteredYaw = runtime.getCameraState().yaw;
+    assert.ok(firstCenteredYaw > before.yaw, "auto-center may continue on a fresh sample after resume");
+    runtime.applyCameraInput({ yaw: 0, pitch: 0, playerHeading: Math.PI / 2, autoCenter: true, autoCenterDelay: 0, autoCenterRate: 10, movementSpeed: 8, lookBack: false });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    runtime.sync(snapshot);
+    assert.ok(runtime.getCameraState().yaw > firstCenteredYaw, "generic full-state packets must preserve renderer-generated yaw until manual yaw changes");
+  } finally {
+    runtime?.dispose();
+    if (originalDocument === undefined) delete global.document;
+    else global.document = originalDocument;
+  }
 });
 
 test("authoritative center direction includes pitch and sphere intersections stay bounded", () => {
@@ -164,7 +336,7 @@ test("public gameplay camera takes sole input ownership and follows stable baseY
   adapter.dispose();
 });
 
-test("terrain ray collision reports capability truthfully and resolves padding", () => {
+test("multi-ray camera collision reports creature coverage truthfully and resolves padding without a one-frame snap", () => {
   const adapter = renderer.createRenderer();
   const observedRays = [];
   adapter._Babylon = { Vector3, Ray };
@@ -183,10 +355,11 @@ test("terrain ray collision reports capability truthfully and resolves padding",
   const query = adapter.queryCameraObstructionDistance({ desiredDistance: 10 });
   assert.equal(query.supported, true);
   assert.equal(query.mode, "terrain-multi-ray");
-  assert.equal(query.terrainOnly, true);
-  assert.equal(query.approximate, true, "five rays approximate a camera volume even with terrain-only coverage");
+  assert.equal(query.creatureMesh, true);
+  assert.equal(query.terrainOnly, false, "a raycast that accepts wildlife meshes cannot advertise terrain-only coverage");
+  assert.equal(query.approximate, true, "five rays approximate a camera volume");
   assert.equal(query.rayCount, 5);
-  assert.deepEqual(query.blockerCoverage, ["terrain-mesh"]);
+  assert.deepEqual(query.blockerCoverage, ["terrain-mesh", "wildlife-creature-mesh"]);
   assert.equal(query.hit, true);
   assert.equal(query.distance, 4);
   assert.equal(observedRays.length, 5);
@@ -196,12 +369,171 @@ test("terrain ray collision reports capability truthfully and resolves padding",
   const resolved = adapter.resolveGameplayCameraCollision({ desiredDistance: 10, hitDistance: 4, padding: 0.5, commit: false });
   assert.equal(resolved.supported, true);
   assert.equal(resolved.mode, "provided");
-  assert.equal(resolved.resolvedDistance, 3.5);
+  assert.ok(resolved.resolvedDistance > 3.5 && resolved.resolvedDistance < 10, "the first pull-in frame must be fast but must not teleport to the padded hit distance");
 
   adapter._scene = null;
   adapter._camera = null;
   adapter._Babylon = null;
   adapter.dispose();
+});
+
+test("camera state owns shoulder, head bob, look-back, reset and auto-center without losing pause orientation", () => {
+  const adapter = renderer.createRenderer({ speciesId: "tyrannosaurus" });
+  const camera = {
+    alpha: 0,
+    beta: 0,
+    radius: 20,
+    fov: 0,
+    target: new Vector3(),
+    detachControl() {},
+    setTarget(value) { this.target = value; }
+  };
+  adapter._Babylon = { Vector3 };
+  adapter._camera = camera;
+  adapter.resolveGameplayCameraCollision = (options = {}) => ({ supported: true, hit: false, desiredDistance: options.desiredDistance, resolvedDistance: options.desiredDistance });
+  adapter._proxies.set("tyrannosaurus", {
+    id: "tyrannosaurus",
+    baseY: 10,
+    root: { position: new Vector3(2, 10, 3) },
+    parts: [],
+    materials: []
+  });
+  adapter._player.heading = Math.PI / 2;
+  adapter._playerMotion = { speed: 8, distance: 0.25, sampledAt: 0 };
+
+  adapter.setGameplayCamera({ yaw: 0, pitch: 0.2, distance: 10, profileId: "ground", smoothing: 0, shoulderOffset: 0.8, headBob: 1, movementSpeed: 8, lookBack: true });
+  adapter._followPlayer(1 / 60, true);
+  const lookedBack = adapter.getGameplayCamera();
+  assert.ok(Math.abs(lookedBack.effectiveYaw - Math.PI) < 1e-12);
+  assert.equal(lookedBack.effectivePitch, 0.2);
+  assert.equal(lookedBack.effectiveShoulderOffset, 0.8);
+  assert.notEqual(lookedBack.headBobOffset, 0);
+  assert.ok(Math.abs(camera.target.x - (2 - 0.8)) < 0.08, "shoulder offset must use effective look-back right vector");
+
+  const pausedYaw = lookedBack.effectiveYaw;
+  const pausedPitch = lookedBack.effectivePitch;
+  adapter._state = "running";
+  adapter._engine = { stopRenderLoop() {}, runRenderLoop() {} };
+  adapter.pause("overlay");
+  adapter.resume("overlay");
+  const resumed = adapter.getGameplayCamera();
+  assert.equal(resumed.effectiveYaw, pausedYaw);
+  assert.equal(resumed.effectivePitch, pausedPitch);
+
+  adapter.setGameplayCamera({ yaw: 0, resetCamera: true, playerHeading: Math.PI / 2, profileId: "ground", smoothing: 0, lookBack: false });
+  const reset = adapter.getGameplayCamera();
+  assert.ok(Math.abs(reset.yaw - Math.PI / 2) < 1e-12);
+  assert.equal(reset.pitch, renderer.GAMEPLAY_CAMERA_PROFILES.ground.defaultPitch);
+
+  adapter._player.heading = -Math.PI / 2;
+  adapter._gameplayCameraYawOverrideLatched = false;
+  adapter._gameplayCameraSourceYaw = 0;
+  adapter.setGameplayCamera({ yaw: 0, pitch: 0, playerHeading: Math.PI / 2, profileId: "ground", smoothing: 0, autoCenter: true, autoCenterDelay: 0, autoCenterRate: 10, movementSpeed: 8, lookBack: false });
+  adapter._gameplayCameraManualIdleSeconds = 1;
+  adapter._followPlayer(0.1);
+  let centeredYaw = adapter.getGameplayCamera().yaw;
+  assert.ok(centeredYaw > 0.8, "auto-center must consume the heading carried by the camera contract");
+  for (let frame = 0; frame < 3; frame += 1) {
+    adapter.setGameplayCamera({ yaw: 0, playerHeading: Math.PI / 2, profileId: "ground", smoothing: 0, autoCenter: true, autoCenterDelay: 0, autoCenterRate: 10, movementSpeed: 8, lookBack: false });
+    adapter._followPlayer(0.1);
+    const nextYaw = adapter.getGameplayCamera().yaw;
+    assert.ok(nextYaw > centeredYaw, "a repeated full-state packet must not overwrite renderer-generated yaw");
+    centeredYaw = nextYaw;
+  }
+  adapter.setGameplayCamera({ yaw: -0.25, playerHeading: Math.PI / 2, profileId: "ground", smoothing: 0, autoCenter: true, movementSpeed: 8, lookBack: false });
+  assert.equal(adapter.getGameplayCamera().yaw, -0.25, "a real manual yaw delta must release the override latch");
+  assert.equal(adapter.getGameplayCamera().manualIdleSeconds, 0);
+
+  adapter.setReducedMotion(true);
+  adapter._gameplayCameraYawOverrideLatched = false;
+  adapter._gameplayCameraSourceYaw = 1;
+  adapter.setGameplayCamera({ yaw: 0, profileId: "ground", smoothing: 0, autoCenter: true, autoCenterDelay: 0, autoCenterRate: 10, movementSpeed: 8, headBob: 1 });
+  adapter._gameplayCameraManualIdleSeconds = 1;
+  adapter._followPlayer(0.1);
+  const reduced = adapter.getGameplayCamera();
+  assert.equal(reduced.yaw, 0, "reduced motion must suppress automatic camera rotation");
+  assert.equal(reduced.headBobOffset, 0, "head bob must be fully disabled by reduced motion");
+
+  adapter._state = "idle";
+  adapter._camera = null;
+  adapter._Babylon = null;
+  adapter._proxies.clear();
+  adapter.dispose();
+});
+
+test("camera collision includes non-player creatures and releases obstruction with bounded hysteresis", () => {
+  assert.equal(renderer.isCameraObstructionMesh({ metadata: { targetType: "animal", targetable: true, isPlayer: false } }), true);
+  assert.equal(renderer.isCameraObstructionMesh({ metadata: { targetType: "animal", targetable: true, isPlayer: true } }), false);
+  assert.equal(renderer.cameraObstructionKind({ metadata: { targetType: "animal", isPlayer: false } }), "creature");
+
+  const adapter = renderer.createRenderer();
+  adapter._Babylon = { Vector3, Ray };
+  adapter._camera = { target: new Vector3(0, 3, 0) };
+  const creature = { metadata: { targetType: "animal", targetable: true, isPlayer: false, kind: "species-proxy-part" } };
+  adapter._scene = {
+    pickWithRay(ray, predicate) {
+      assert.equal(predicate(creature), true);
+      return { hit: true, distance: 3, pickedMesh: creature };
+    }
+  };
+  adapter.setGameplayCamera({ profileId: "ground", yaw: 0, pitch: 0, distance: 10, smoothing: 0, collisionRecoveryRate: 5, collisionReleaseDelay: 0.1, collisionHysteresis: 0.2 });
+  adapter._gameplayCameraApplied = { yaw: 0, pitch: 0, distance: 10, collisionDistance: 10 };
+  const hit = adapter.queryCameraObstructionDistance({ desiredDistance: 10 });
+  assert.equal(hit.meshKind, "creature");
+  assert.equal(hit.creatureMesh, true);
+  assert.equal(hit.terrainOnly, false);
+  assert.ok(hit.blockerCoverage.includes("wildlife-creature-mesh"));
+  const collapsed = adapter.resolveGameplayCameraCollision({ desiredDistance: 10, hitDistance: 3, padding: 0.5, deltaSeconds: 1 / 60 });
+  assert.ok(collapsed.resolvedDistance > 2.5 && collapsed.resolvedDistance < 7, "pull-in must be visibly fast without snapping in one frame");
+
+  const inBand = adapter.resolveGameplayCameraCollision({ desiredDistance: 10, hitDistance: 3.1, padding: 0.5, deltaSeconds: 0.1 });
+  assert.ok(inBand.resolvedDistance >= 2.5 && inBand.resolvedDistance < collapsed.resolvedDistance, "a receding hit inside the dead-band must continue converging inward instead of pumping outward");
+  const beyondBand = adapter.resolveGameplayCameraCollision({ desiredDistance: 10, hitDistance: 3.4, padding: 0.5, deltaSeconds: 0.1 });
+  assert.ok(beyondBand.resolvedDistance > inBand.resolvedDistance && beyondBand.resolvedDistance < 2.7, "a receding obstruction outside the band must recover smoothly");
+  const nearer = adapter.resolveGameplayCameraCollision({ desiredDistance: 10, hitDistance: 2.7, padding: 0.5, deltaSeconds: 0.1 });
+  assert.ok(nearer.resolvedDistance > 2.2 && nearer.resolvedDistance < beyondBand.resolvedDistance, "a nearer obstruction must retract quickly without a one-frame snap");
+
+  adapter._scene.pickWithRay = () => ({ hit: false, distance: null, pickedMesh: null });
+  const held = adapter.resolveGameplayCameraCollision({ desiredDistance: 10, deltaSeconds: 0.05 });
+  assert.equal(held.releaseHeld, true);
+  assert.ok(held.resolvedDistance >= 2.2 && held.resolvedDistance < nearer.resolvedDistance);
+  const recovering = adapter.resolveGameplayCameraCollision({ desiredDistance: 10, deltaSeconds: 0.06 });
+  assert.equal(recovering.releaseHeld, false);
+  assert.ok(recovering.resolvedDistance > 2.2 && recovering.resolvedDistance < 10);
+
+  adapter.resolveGameplayCameraCollision({ desiredDistance: 10, hitDistance: 3, padding: 0.5, deltaSeconds: 1 / 60 });
+  let publicRecovery = null;
+  for (let frame = 0; frame < 8; frame += 1) publicRecovery = adapter.resolveGameplayCameraCollision({ desiredDistance: 10 });
+  assert.equal(publicRecovery.releaseHeld, false, "public collision calls without an explicit delta must eventually release");
+  assert.ok(publicRecovery.resolvedDistance > 2.5);
+
+  adapter._scene = null;
+  adapter._camera = null;
+  adapter._Babylon = null;
+  adapter.dispose();
+});
+
+test("camera collision pull-in damping is frame-rate independent", () => {
+  const integrate = (frameRate) => {
+    const adapter = renderer.createRenderer();
+    adapter.setGameplayCamera({ profileId: "ground", distance: 10, collisionRecoveryRate: 5 });
+    adapter._gameplayCameraApplied = { yaw: 0, pitch: 0, distance: 10, collisionDistance: 10 };
+    let result = null;
+    for (let frame = 0; frame < frameRate / 10; frame += 1) {
+      result = adapter.resolveGameplayCameraCollision({ desiredDistance: 10, hitDistance: 3, meshKind: "creature", padding: 0.5, deltaSeconds: 1 / frameRate, retractionSmoothing: 36 });
+    }
+    adapter.dispose();
+    return result;
+  };
+
+  const at30 = integrate(30);
+  const at60 = integrate(60);
+  const at120 = integrate(120);
+  assert.ok(at30.resolvedDistance > 2.5 && at30.resolvedDistance < 2.8, "100 ms of pull-in should nearly converge without snapping");
+  assert.ok(Math.abs(at30.resolvedDistance - at60.resolvedDistance) < 1e-10);
+  assert.ok(Math.abs(at60.resolvedDistance - at120.resolvedDistance) < 1e-10);
+  assert.equal(at60.terrainOnly, false);
+  assert.deepEqual(at60.blockerCoverage, ["wildlife-creature-mesh"]);
 });
 
 test("animal highlight covers procedural and imported meshes and restores prior state", () => {
@@ -489,7 +821,7 @@ test("locked-target LOS requires an exact rendered identity and rejects nearer b
     entityId: "",
     reason: "entity-id-required",
     approximate: false,
-    blockerCoverage: ["terrain-mesh"],
+    blockerCoverage: ["terrain-mesh", "wildlife-creature-mesh"],
     distance: null,
     blockerKind: null
   });

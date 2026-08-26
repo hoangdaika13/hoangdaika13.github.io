@@ -80,7 +80,7 @@ test("authentication uses calm motion with pausable automatic previews", () => {
   assert.match(comfort, /auth-tool-stream > div/);
 });
 
-test("custom domain branding and Google-only OAuth stay in sync", () => {
+test("Kim Liên Điện branding and Google-only OAuth stay in sync", () => {
   const html = read("index.html");
   const api = read("api/auth/[...action].js");
   const platform = read("utils/platform.js");
@@ -88,15 +88,15 @@ test("custom domain branding and Google-only OAuth stay in sync", () => {
 
   assert.equal(fs.existsSync(path.join(root, "CNAME")), true);
   assert.equal(read("CNAME").trim(), "hoang8.com");
-  assert.match(html, /<title>Nhhoang \| HH Neon Platform<\/title>/);
+  assert.match(html, /<title>HH Phật Pháp \| Kim Liên Điện<\/title>/);
   assert.match(html, /rel="canonical" href="https:\/\/hoang8\.com\/"/);
   assert.match(html, /data-oauth-provider="google"/);
   assert.doesNotMatch(html, /data-oauth-provider="facebook"|id="facebookLogin"/);
   assert.match(api, /https:\/\/hoang8\.com/);
   assert.doesNotMatch(api, /FACEBOOK_APP_ID|graph\.facebook\.com|facebookVersion/);
   assert.match(platform, /https:\/\/hoang8\.com/);
-  assert.match(manifest, /Nhhoang · HH Neon Platform/);
-  assert.match(manifest, /assets\/hh-neon-logo-v2\.png\?v=2/);
+  assert.match(manifest, /HH Phật Pháp · Kim Liên Điện/);
+  assert.match(manifest, /assets\/phat-phap\/duc-phat-hao-quang-v1\.webp/);
 });
 
 test("Vercel Hobby deployment stays within the twelve-function limit", () => {

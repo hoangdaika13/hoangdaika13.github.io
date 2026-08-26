@@ -1,0 +1,217 @@
+@layer kim-lien-theme {
+  html[data-hh-theme="kim-lien"] {
+    --kl-gold: #d8a63c;
+    --kl-gold-bright: #f2d483;
+    --kl-gold-soft: #ffe8a3;
+    --kl-amber: #b96f22;
+    --kl-burgundy: #651d1d;
+    --kl-burgundy-deep: #351514;
+    --kl-wood: #27100d;
+    --kl-wood-soft: #4f241b;
+    --kl-ivory: #fff8e8;
+    --kl-paper: #f5ecd8;
+    --kl-paper-deep: #ead4a9;
+    --kl-ink: #281711;
+    --kl-muted: #745b43;
+    --kl-sage: #78956f;
+    --app-bg: #1b0c0a;
+    --sidebar-bg: #26100d;
+    --header-bg: #2b110e;
+    --surface-1: #361713;
+    --surface-2: #452019;
+    --surface-3: #5b2a20;
+    --surface-hover: #633025;
+    --field-bg: #fff8e8;
+    --text-primary: #fff4d1;
+    --text-secondary: #decba3;
+    --text-muted: #b7a27c;
+    --border-subtle: rgba(231, 185, 82, .18);
+    --border-default: rgba(231, 185, 82, .3);
+    --border-strong: rgba(242, 212, 131, .52);
+    --accent: #d8a63c;
+    --accent-hover: #f2d483;
+    --accent-soft: rgba(216, 166, 60, .13);
+    --accent-secondary: #9b3d2a;
+    --accent-secondary-soft: rgba(155, 61, 42, .18);
+    --success: #86a774;
+    --warning: #e9bd56;
+    --danger: #df7162;
+    --route-accent: #d8a63c;
+    color-scheme: dark;
+    background: #1b0c0a;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien {
+    background: #1b0c0a;
+    color: var(--text-primary);
+    font-family: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.ambient-canvas, .neon-grid-bg, .cursor-glow, .scroll-meter) { display: none !important; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-shell { --route-accent: var(--kl-gold) !important; background: #1b0c0a; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-main {
+    background:
+      radial-gradient(circle at 85% 8%, rgba(216, 166, 60, .08), transparent 30%),
+      linear-gradient(160deg, #2a100d, #180a08 58%, #24100c);
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-main::before {
+    position: fixed;
+    z-index: 0;
+    inset: var(--header-height, 64px) 0 0 var(--sidebar-width, 284px);
+    opacity: .12;
+    background:
+      repeating-linear-gradient(45deg, transparent 0 26px, rgba(244, 212, 131, .09) 27px, transparent 28px),
+      linear-gradient(90deg, transparent, rgba(242, 212, 131, .08), transparent);
+    content: "";
+    pointer-events: none;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien.app-sidebar-collapsed .app-main::before { inset-inline-start: var(--sidebar-collapsed-width, 76px); }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace,
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.app-breadcrumb, .app-page-header, .app-context-bar) { position: relative; z-index: 1; }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-breadcrumb {
+    color: #c8ae79;
+    font-size: 12px;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-breadcrumb :is(a, button) { color: #e1bd64; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-page-header {
+    border-color: rgba(229, 179, 68, .2);
+    background: linear-gradient(90deg, rgba(55, 21, 16, .92), rgba(38, 14, 11, .74));
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-page-header__eyebrow {
+    color: #e0b54f;
+    font-weight: 850;
+    letter-spacing: .11em;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-page-header h1 {
+    color: #fff0bc;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(27px, 3vw, 39px);
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-page-header p:not(.app-page-header__eyebrow) { color: #cdbb96; font-size: 14px; line-height: 1.65; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-page-header__actions :is(button, a),
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-context-bar button {
+    min-height: 42px;
+    border: 1px solid rgba(218, 168, 66, .4);
+    border-radius: 8px;
+    background: rgba(255, 244, 206, .06);
+    color: #ebce80;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-page-header__actions .app-primary-action {
+    background: linear-gradient(135deg, #edc75f, #ae641d);
+    color: #33130b;
+    box-shadow: 0 10px 28px rgba(205, 143, 37, .18);
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-context-bar {
+    border-color: rgba(218, 168, 66, .25);
+    background: #2e130f;
+    color: #f5deb0;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.command-palette, .app-drawer, .app-user-menu, .app-theme-panel, .app-help-panel, .app-notification-drawer) {
+    border-color: rgba(218, 168, 66, .38) !important;
+    background: linear-gradient(155deg, #3a1813, #21100d) !important;
+    color: #f7e7be !important;
+    box-shadow: 0 28px 80px rgba(13, 3, 2, .6), inset 0 0 0 2px rgba(239, 197, 91, .035) !important;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.command-palette, .app-drawer, .app-user-menu, .app-theme-panel) :is(input, select, textarea) {
+    border-color: rgba(178, 120, 39, .48) !important;
+    background: #fff8e8 !important;
+    color: #321b12 !important;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.command-palette, .app-drawer, .app-user-menu, .app-theme-panel) button:hover { background: rgba(216, 166, 60, .13) !important; color: #ffe8a2 !important; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-drawer-backdrop { background: rgba(19, 5, 3, .72); backdrop-filter: blur(5px); }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-route-progress i { background: linear-gradient(90deg, #8b3022, #d8a63c, #f4da86, #d8a63c); box-shadow: 0 0 16px rgba(235, 189, 77, .5); }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-route-loader {
+    border-color: rgba(216, 166, 60, .36);
+    background: linear-gradient(145deg, #3c1813, #25100d);
+    color: #f6e4b5;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-route-loader > i {
+    border-color: rgba(242, 212, 131, .28);
+    border-top-color: #e6b851;
+    box-shadow: 0 0 22px rgba(216, 166, 60, .18);
+  }
+
+  /* Generic hub routes keep their capabilities while adopting the approved
+     wood, ceremonial-gold and parchment hierarchy. */
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub--cosmic {
+    --hub-secondary: #9b3d2a !important;
+    color: #f5e4b7;
+    background: linear-gradient(155deg, #3d1712, #210d0b 58%, #32130f) !important;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub__space { display: none !important; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub--cosmic > header,
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub__guide,
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub__toolbar,
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub__filters,
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub__grid > button,
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub--cosmic > footer {
+    border-color: rgba(216, 166, 60, .27) !important;
+    background: linear-gradient(145deg, rgba(255, 247, 218, .075), rgba(120, 43, 28, .08)) !important;
+    box-shadow: none !important;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub--cosmic h2,
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub__grid strong { color: #ffe9aa !important; font-family: Georgia, "Times New Roman", serif; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub--cosmic p,
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub--cosmic small,
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub--cosmic em { color: #c9b791 !important; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub__icon { border-color: #d3a548 !important; background: #76261d !important; color: #f0ce71 !important; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-module-hub__grid > button:hover { border-color: rgba(241, 201, 102, .62) !important; transform: translateY(-2px); }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-simple-view,
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-empty-state,
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-runtime-error {
+    border-color: rgba(216, 166, 60, .28);
+    background: linear-gradient(145deg, #fff8e8, #ead5aa);
+    color: #352016;
+  }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-simple-view :is(h2, h3, strong),
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-empty-state :is(h2, h3, strong) { color: #4e2418; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-simple-view p,
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-empty-state p { color: #765b42; }
+
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-workspace :is(input, select, textarea):not([type="range"]):focus-visible { outline: 3px solid rgba(242, 212, 131, .58); outline-offset: 2px; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(button, a, input, select, textarea, [tabindex]):focus-visible { outline-color: #f2d483 !important; }
+
+  /* The new home owns the viewport. Legacy cosmic dashboards remain in source
+     for compatibility but are not mounted by the router in Kim Liên mode. */
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien.kim-lien-home-route :is(.app-breadcrumb, .app-page-header) { display: none !important; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien.kim-lien-home-route #appWorkspace { width: 100%; max-width: none; min-height: 100%; padding: 0; overflow: visible; }
+  html[data-hh-theme="kim-lien"] body.hh-kim-lien.kim-lien-home-route #appMain { overflow-y: auto !important; }
+
+  @media (max-width: 760px) {
+    html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-main::before { inset-inline-start: 0; }
+    html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-workspace { padding-inline: 10px; }
+    html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-page-header { padding-inline: 15px; }
+    html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-page-header__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+    html[data-hh-theme="kim-lien"] body.hh-kim-lien .app-page-header__actions :is(button, a) { min-width: 0; white-space: normal; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html[data-hh-theme="kim-lien"] body.hh-kim-lien *,
+    html[data-hh-theme="kim-lien"] body.hh-kim-lien *::before,
+    html[data-hh-theme="kim-lien"] body.hh-kim-lien *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+
+  @media (forced-colors: active) {
+    html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(button, input, select, textarea, article, section) { border-color: CanvasText; box-shadow: none; }
+  }
+}

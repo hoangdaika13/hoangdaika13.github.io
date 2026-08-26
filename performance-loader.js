@@ -45,8 +45,8 @@
     "home-critical": {
       // Compatibility ordering marker for older first-paint contracts:
       // home-galaxy-command.css?v=13 home-galaxy-mission.css?v=9 home-galaxy-command.js?v=15 home-galaxy-mission.js?v=12
-      styles: ["home-galaxy-command.css?v=13", "home-galaxy-mission.css?v=9", "home-cosmic-os.css?v=9"],
-      scripts: ["home-galaxy-command.js?v=17", "home-galaxy-mission.js?v=12", "home-cosmic-os.js?v=20"]
+      styles: ["kim-lien-home.css?v=3"],
+      scripts: ["kim-lien-home.js?v=2"]
     },
     "home-enhancements": {
       styles: [
@@ -237,8 +237,8 @@
       scripts: ["hh-play.js?v=4&build=2"]
     },
     game: {
-      styles: ["hh-eonwild-game.css?v=22"],
-      scripts: ["hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3", "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=2", "hh-eonwild-desktop-controller.js?v=2", "hh-eonwild-collision-system.js?v=1", "hh-eonwild-world-atlas.js?v=2", "hh-eonwild-simulation-v2.js?v=4", "hh-eonwild-3d-core.js?v=7", "hh-eonwild-landscape-core.js?v=1", "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=4", "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=19", "hh-eonwild-game.js?v=28"]
+      styles: ["hh-eonwild-game.css?v=27"],
+      scripts: ["hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3", "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=3", "hh-eonwild-desktop-controller.js?v=3", "hh-eonwild-collision-system.js?v=1", "hh-eonwild-world-atlas.js?v=2", "hh-eonwild-simulation-v2.js?v=4", "hh-eonwild-3d-core.js?v=9", "hh-eonwild-landscape-core.js?v=1", "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=4", "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=21", "hh-eonwild-game.js?v=30"]
     },
     fortune: {
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=26"],
@@ -440,6 +440,7 @@
   }
 
   function scheduleHomeEnhancements() {
+    if (document.documentElement.dataset.hhTheme === "kim-lien" || document.body?.classList.contains("hh-kim-lien")) return;
     if (homeEnhancementsScheduled || loaded.has("home-enhancements")) return;
     homeEnhancementsScheduled = true;
     const start = () => {

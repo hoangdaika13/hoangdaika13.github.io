@@ -315,3 +315,23 @@ test("all six verified Personal packs have a bounded runtime consumer and lifecy
   assert.match(source, /this\.hdrDefinition = null/);
   assert.match(source, /await this\._loadDefinition\(fallback\)/);
 });
+
+test("cinematic and gameplay camera motion controls stay orthogonal and Foot IK remains truthful", () => {
+  const normalized = renderer.normalizeGameplayCamera({
+    profileId: "heavy",
+    headBob: 1,
+    shoulderOffset: 99,
+    cameraShake: 1,
+    autoCenter: true,
+    lookBack: true
+  });
+  assert.equal(normalized.headBob, 1);
+  assert.equal(normalized.shoulderOffset, renderer.GAMEPLAY_CAMERA_PROFILES.heavy.maxShoulderOffset);
+  assert.equal(normalized.cameraShake, 1);
+  assert.equal(normalized.autoCenter, true);
+  assert.equal(normalized.lookBack, true);
+  assert.match(source, /this\._reducedMotion \? 0 : clamp\(cameraState\.headBob/);
+  assert.match(source, /this\._reducedMotion \? 0 : clamp\(configuredShake/);
+  assert.match(source, /footIk:\s*freezeRecord\(\{ supported: false, active: false, reason: "asset-contract-unavailable" \}\)/);
+  assert.doesNotMatch(source, /footIk:\s*freezeRecord\(\{ supported: true/);
+});

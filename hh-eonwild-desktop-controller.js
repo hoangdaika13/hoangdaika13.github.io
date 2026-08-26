@@ -13,7 +13,7 @@
    * This module intentionally owns no browser events, renderer objects or
    * persistence. Integrations feed it normalized input and apply its outputs.
    */
-  const VERSION = "1.1.0";
+  const VERSION = "1.2.0";
   const FORMAT = "hh-eonwild-desktop-controller-v1";
   const TAU = Math.PI * 2;
   const EPSILON = 1e-10;
@@ -62,6 +62,19 @@
     const step = clamp(Math.abs(finite(maximumDelta, 0)), 0, Math.PI);
     if (Math.abs(delta) <= step) return wrapAngle(to);
     return wrapAngle(finite(from, 0) + Math.sign(delta) * step);
+  }
+
+  function dampAngle(from, to, ratePerSecond, deltaSeconds) {
+    const rate = clamp(ratePerSecond, 0, 100);
+    const delta = clamp(deltaSeconds, 0, LIMITS.MAX_FRAME_SECONDS);
+    const amount = rate <= EPSILON ? 0 : 1 - Math.exp(-rate * delta);
+    return wrapAngle(finite(from, 0) + shortestAngleDelta(from, to) * amount);
+  }
+
+  function autoCenterCameraYaw(currentYaw, movementHeading, deltaSeconds, options = {}) {
+    if (options.enabled !== true || options.manualLookActive === true || options.lookBackActive === true || finite(options.movementSpeed, 0) <= finite(options.minimumSpeed, 0.2)) return wrapAngle(currentYaw);
+    if (finite(options.idleMilliseconds, 0) < finite(options.delayMilliseconds, 1600)) return wrapAngle(currentYaw);
+    return dampAngle(currentYaw, movementHeading, finite(options.ratePerSecond, 1.9), deltaSeconds);
   }
 
   const CAMERA_PROFILES = deepFreeze({
@@ -406,6 +419,7 @@
   const GAMEPLAY_STATES = Object.freeze({
     BOOT: "BOOT",
     READY: "READY",
+    ENTERING: "ENTERING",
     PLAYING: "PLAYING",
     PAUSED: "PAUSED",
     MAP: "MAP",
@@ -428,6 +442,8 @@
   const GAMEPLAY_EVENTS = Object.freeze({
     BOOT_COMPLETE: "BOOT_COMPLETE",
     START: "START",
+    POINTER_READY: "POINTER_READY",
+    ENTRY_FAILED: "ENTRY_FAILED",
     PAUSE: "PAUSE",
     RESUME: "RESUME",
     OPEN_MAP: "OPEN_MAP",
@@ -472,11 +488,15 @@
     } else if (status === GAMEPLAY_STATES.BOOT && type === GAMEPLAY_EVENTS.BOOT_COMPLETE) {
       status = GAMEPLAY_STATES.READY;
     } else if (status === GAMEPLAY_STATES.READY && type === GAMEPLAY_EVENTS.START) {
+      status = GAMEPLAY_STATES.ENTERING;
+    } else if (status === GAMEPLAY_STATES.ENTERING && type === GAMEPLAY_EVENTS.POINTER_READY) {
       status = GAMEPLAY_STATES.PLAYING;
+    } else if (status === GAMEPLAY_STATES.ENTERING && (type === GAMEPLAY_EVENTS.ENTRY_FAILED || type === GAMEPLAY_EVENTS.PAUSE)) {
+      status = GAMEPLAY_STATES.PAUSED;
     } else if (status === GAMEPLAY_STATES.PLAYING && type === GAMEPLAY_EVENTS.PAUSE) {
       status = GAMEPLAY_STATES.PAUSED;
     } else if (status === GAMEPLAY_STATES.PAUSED && type === GAMEPLAY_EVENTS.RESUME) {
-      status = GAMEPLAY_STATES.PLAYING;
+      status = GAMEPLAY_STATES.ENTERING;
     } else if ((status === GAMEPLAY_STATES.PLAYING || status === GAMEPLAY_STATES.PAUSED) && type === GAMEPLAY_EVENTS.OPEN_MAP) {
       returnTo = status;
       status = GAMEPLAY_STATES.MAP;
@@ -588,6 +608,8 @@
     wrapAngle,
     shortestAngleDelta,
     rotateTowards,
+    dampAngle,
+    autoCenterCameraYaw,
     getCameraProfile,
     applyMouseLook,
     normalizePlanarInput,

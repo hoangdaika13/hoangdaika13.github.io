@@ -1,0 +1,2134 @@
+/*
+ * HH Platform — Kim Liên Điện application shell
+ * Late-loaded, opt-in overrides for the authenticated workspace only.
+ * Enable with either html[data-hh-theme="kim-lien"] or body.hh-kim-lien.
+ */
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) {
+  --kl-shell-gold: var(--kim-lien-gold, var(--hh-kim-lien-gold, #d8a63c));
+  --kl-shell-gold-bright: var(--kim-lien-gold-bright, var(--hh-kim-lien-gold-bright, #f2d483));
+  --kl-shell-gold-soft: var(--kim-lien-gold-soft, var(--hh-kim-lien-gold-soft, #e8c56d));
+  --kl-shell-amber: var(--kim-lien-amber, var(--hh-kim-lien-amber, #b96f22));
+  --kl-shell-copper: var(--kim-lien-copper, var(--hh-kim-lien-copper, #9a4d25));
+  --kl-shell-burgundy: var(--kim-lien-burgundy, var(--hh-kim-lien-burgundy, #651d1d));
+  --kl-shell-burgundy-deep: var(--kim-lien-burgundy-deep, var(--hh-kim-lien-burgundy-deep, #351512));
+  --kl-shell-rosewood: var(--kim-lien-rosewood, var(--hh-kim-lien-rosewood, #2b100f));
+  --kl-shell-rosewood-deep: var(--kim-lien-rosewood-deep, var(--hh-kim-lien-rosewood-deep, #180907));
+  --kl-shell-ivory: var(--kim-lien-ivory, var(--hh-kim-lien-ivory, #fff8e8));
+  --kl-shell-cream: var(--kim-lien-cream, var(--hh-kim-lien-cream, #f5ecd8));
+  --kl-shell-muted: var(--kim-lien-muted, var(--hh-kim-lien-muted, #c8b995));
+  --kl-shell-line: var(--kim-lien-line, var(--hh-kim-lien-line, rgba(242, 212, 131, .22)));
+  --kl-shell-line-strong: var(--kim-lien-line-strong, var(--hh-kim-lien-line-strong, rgba(242, 212, 131, .42)));
+  --kl-shell-focus: var(--kim-lien-focus, var(--hh-kim-lien-focus, #f6d779));
+  --kl-shell-shadow: 0 18px 52px rgba(19, 5, 4, .4);
+  --header-height: 66px;
+  --sidebar-width: clamp(276px, 19vw, 284px);
+  --sidebar-collapsed-width: 76px;
+  --app-bg: var(--kl-shell-rosewood-deep);
+  --sidebar-bg: var(--kl-shell-rosewood);
+  --header-bg: var(--kl-shell-rosewood-deep);
+  --surface-1: #351614;
+  --surface-2: #431c18;
+  --surface-3: #54231c;
+  --surface-hover: #61291f;
+  --field-bg: #210d0b;
+  --text-primary: var(--kl-shell-ivory);
+  --text-secondary: #e2d4b8;
+  --text-muted: var(--kl-shell-muted);
+  --border-subtle: rgba(242, 212, 131, .13);
+  --border-default: var(--kl-shell-line);
+  --border-strong: var(--kl-shell-line-strong);
+  --accent: var(--kl-shell-gold);
+  --accent-hover: var(--kl-shell-gold-bright);
+  --accent-soft: rgba(216, 166, 60, .13);
+  --accent-secondary: var(--kl-shell-copper);
+  --accent-secondary-soft: rgba(154, 77, 37, .16);
+  --success: #a9c884;
+  --warning: #f1c867;
+  --danger: #ed806d;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  color-scheme: dark;
+}
+
+/* Application frame */
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-shell {
+  --shell-bg: var(--app-bg);
+  --shell-panel: var(--surface-1);
+  --shell-line: var(--border-subtle);
+  --shell-text: var(--text-primary);
+  --shell-muted: var(--text-muted);
+  --shell-accent: var(--kl-shell-gold);
+  --shell-cyan: var(--kl-shell-gold-bright);
+  --route-accent: var(--kl-shell-gold);
+  isolation: isolate;
+  color: var(--kl-shell-ivory);
+  background:
+    radial-gradient(ellipse at 50% -20%, rgba(216, 166, 60, .11), transparent 40%),
+    linear-gradient(145deg, var(--kl-shell-rosewood-deep), #230d0b 54%, #130605);
+  font-family: "Be Vietnam Pro", "Noto Sans", "Segoe UI", system-ui, sans-serif;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-shell,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .command-palette,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-drawer,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-menu,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-mobile-nav {
+  font-size: 16px;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-shell__body {
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  height: calc(100dvh - var(--header-height));
+  min-height: 0;
+  overflow: hidden;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien).app-sidebar-collapsed .app-shell__body,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) body.app-sidebar-collapsed .app-shell__body {
+  grid-template-columns: var(--sidebar-collapsed-width) minmax(0, 1fr);
+}
+
+/* Ceremonial top header */
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header {
+  position: relative;
+  z-index: 30;
+  grid-template-columns: minmax(224px, .72fr) minmax(260px, 1.32fr) minmax(288px, .9fr);
+  min-width: 0;
+  min-height: var(--header-height);
+  padding: 0 clamp(14px, 2vw, 24px);
+  overflow: visible;
+  border-bottom: 1px solid var(--kl-shell-line-strong);
+  background:
+    linear-gradient(90deg, rgba(216, 166, 60, .075), transparent 25%, transparent 75%, rgba(185, 111, 34, .06)),
+    repeating-linear-gradient(4deg, rgba(255, 248, 232, .018) 0 1px, transparent 1px 9px),
+    linear-gradient(180deg, #2c100e, var(--kl-shell-rosewood-deep));
+  box-shadow: 0 12px 34px rgba(17, 4, 3, .28), inset 0 -1px rgba(255, 240, 189, .035);
+  backdrop-filter: none;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header::before,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header::after {
+  position: absolute;
+  z-index: 0;
+  right: clamp(14px, 2vw, 24px);
+  left: clamp(14px, 2vw, 24px);
+  height: 1px;
+  pointer-events: none;
+  content: "";
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header::before {
+  top: 4px;
+  background: linear-gradient(90deg, transparent, rgba(242, 212, 131, .26) 18%, rgba(242, 212, 131, .55) 50%, rgba(242, 212, 131, .26) 82%, transparent);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header::after {
+  bottom: 3px;
+  background: repeating-linear-gradient(90deg, transparent 0 20px, rgba(216, 166, 60, .32) 20px 34px, transparent 34px 42px);
+  opacity: .52;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header > * {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header__start,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header__actions {
+  min-width: 0;
+  gap: 9px;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-brand {
+  min-width: 0;
+  gap: 11px;
+  color: var(--kl-shell-ivory);
+  text-decoration: none;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-brand span {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  overflow: hidden;
+  border: 1px solid var(--kl-shell-gold-bright);
+  border-radius: 50% 50% 44% 44%;
+  background: radial-gradient(circle at 50% 35%, #f8df9b, var(--kl-shell-gold) 48%, #7c2b19 100%);
+  color: #4b160f;
+  box-shadow: 0 0 0 4px rgba(216, 166, 60, .075), 0 0 24px rgba(216, 166, 60, .18), inset 0 0 12px rgba(78, 22, 13, .26);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-brand span::after {
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(87, 30, 18, .35);
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-brand img {
+  filter: sepia(1) saturate(.85) hue-rotate(345deg) brightness(1.02) contrast(1.08);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-brand strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--kl-shell-ivory);
+  font-size: .9375rem;
+  font-weight: 780;
+  letter-spacing: .015em;
+  line-height: 1.25;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-icon-button {
+  border: 1px solid transparent;
+  color: var(--kl-shell-muted);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-icon-button:is(:hover, [aria-expanded="true"]),
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-action-button:hover,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-button:hover {
+  border-color: var(--kl-shell-line);
+  background: rgba(216, 166, 60, .09);
+  color: var(--kl-shell-gold-bright);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-global-search {
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--kl-shell-line);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(65, 25, 20, .9), rgba(27, 9, 7, .96));
+  color: var(--kl-shell-muted);
+  box-shadow: inset 0 0 22px rgba(216, 166, 60, .035);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-global-search:is(:hover, :focus-visible) {
+  border-color: rgba(242, 212, 131, .62);
+  background: linear-gradient(145deg, rgba(77, 31, 24, .96), rgba(31, 10, 8, .98));
+  color: var(--kl-shell-ivory);
+  box-shadow: 0 0 0 3px rgba(216, 166, 60, .1), 0 10px 28px rgba(15, 3, 2, .2);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-global-search > span:first-child {
+  color: var(--kl-shell-gold-bright);
+  text-shadow: 0 0 12px rgba(216, 166, 60, .34);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) :is(.app-global-search, .command-palette) kbd {
+  border-color: var(--kl-shell-line);
+  background: rgba(255, 248, 232, .045);
+  color: #d2c19d;
+  box-shadow: inset 0 1px rgba(255, 248, 232, .05);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-live-status {
+  border-color: var(--kl-shell-line);
+  background: rgba(42, 15, 12, .82);
+  color: var(--kl-shell-muted);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-live-status > i {
+  background: #b3cc8a;
+  box-shadow: 0 0 10px rgba(179, 204, 138, .58);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-live-status > b {
+  color: #c5dca1;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-live-status > time {
+  border-left-color: var(--kl-shell-line);
+  color: var(--kl-shell-cream);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-action-button,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header__actions .app-primary-action {
+  border-color: rgba(242, 212, 131, .42);
+  background: linear-gradient(145deg, rgba(216, 166, 60, .18), rgba(154, 77, 37, .12));
+  color: var(--kl-shell-gold-bright);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-button {
+  min-width: 0;
+  color: var(--kl-shell-ivory);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-button > span,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-menu__profile > span {
+  border-color: var(--kl-shell-line-strong);
+  background: linear-gradient(145deg, #792d20, #3b1511);
+  color: var(--kl-shell-gold-bright);
+  box-shadow: 0 0 14px rgba(216, 166, 60, .11);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-button strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Sidebar: fixed search/home, independently scrolling categories, fixed footer. */
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar {
+  container: kim-lien-sidebar / inline-size;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  border-right: 1px solid rgba(242, 212, 131, .32);
+  background:
+    repeating-linear-gradient(7deg, rgba(255, 248, 232, .016) 0 1px, transparent 1px 10px),
+    linear-gradient(90deg, rgba(216, 166, 60, .04), transparent 16%, transparent 84%, rgba(216, 166, 60, .035)),
+    linear-gradient(180deg, #30110f 0%, #210b09 48%, #180806 100%);
+  box-shadow: inset -1px 0 rgba(255, 248, 232, .025), 14px 0 38px rgba(16, 3, 2, .16);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar::after {
+  z-index: -1;
+  opacity: .5;
+  background:
+    linear-gradient(90deg, transparent 0 8px, rgba(242, 212, 131, .11) 8px 9px, transparent 9px calc(100% - 9px), rgba(242, 212, 131, .1) calc(100% - 9px) calc(100% - 8px), transparent calc(100% - 8px)),
+    repeating-linear-gradient(0deg, transparent 0 78px, rgba(216, 166, 60, .04) 78px 79px, transparent 79px 96px);
+  background-position: 0 0;
+  background-size: auto;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__primary {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__fixed-head {
+  position: relative;
+  z-index: 12;
+  display: grid;
+  flex: none;
+  gap: 8px;
+  padding: 11px 10px 9px;
+  border-bottom: 1px solid rgba(242, 212, 131, .17);
+  background:
+    linear-gradient(180deg, rgba(59, 21, 17, .995), rgba(39, 13, 10, .985)),
+    var(--kl-shell-rosewood);
+  box-shadow: 0 10px 24px rgba(15, 3, 2, .18);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__scroll-region {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 9px 12px 18px 9px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(216, 166, 60, .48) transparent;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__scroll-region::-webkit-scrollbar {
+  width: 7px;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__scroll-region::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: linear-gradient(var(--kl-shell-gold-bright), var(--kl-shell-amber)) padding-box;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-panel {
+  position: relative;
+  top: auto;
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-panel label {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 9px;
+  overflow: hidden;
+  border: 1px solid var(--kl-shell-line);
+  border-radius: 11px;
+  background: linear-gradient(145deg, rgba(77, 30, 23, .94), rgba(30, 9, 7, .98));
+  color: var(--kl-shell-gold-bright);
+  box-shadow: inset 0 0 22px rgba(216, 166, 60, .035);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-panel label:focus-within {
+  border-color: rgba(242, 212, 131, .7);
+  box-shadow: 0 0 0 3px rgba(216, 166, 60, .11), inset 0 0 24px rgba(216, 166, 60, .055);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-panel input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--kl-shell-ivory);
+  font-size: .9rem;
+  line-height: 1.4;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-panel input::placeholder {
+  color: #bbaa86;
+  opacity: 1;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-panel kbd {
+  border-color: var(--kl-shell-line);
+  background: rgba(255, 248, 232, .04);
+  color: #c3b38e;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-panel > div {
+  min-width: 0;
+  color: var(--kl-shell-muted);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-panel > div small {
+  color: #bbaa87;
+  font-size: .6875rem;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-panel > div button {
+  min-height: 28px;
+  border: 1px solid transparent;
+  background: rgba(216, 166, 60, .08);
+  color: var(--kl-shell-gold-soft);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__home {
+  grid-template-columns: 36px minmax(0, 1fr) 20px;
+  gap: 10px;
+  min-width: 0;
+  min-height: 50px;
+  margin: 0;
+  padding: 4px 10px;
+  border: 1px solid rgba(242, 212, 131, .18);
+  border-radius: 12px;
+  background: linear-gradient(105deg, rgba(216, 166, 60, .1), rgba(68, 23, 18, .75));
+  color: #dfd1b1;
+  animation: kl-home-lantern 4.8s ease-in-out -.8s infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__home > span {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(242, 212, 131, .44);
+  border-radius: 11px 11px 8px 8px;
+  background: radial-gradient(circle at 50% 30%, rgba(242, 212, 131, .2), transparent 62%), #4b1b15;
+  color: var(--kl-shell-gold-bright);
+  box-shadow: 0 0 16px rgba(216, 166, 60, .12), inset 0 0 11px rgba(216, 166, 60, .08);
+  animation: kl-icon-halo 4s ease-in-out -.7s infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__home > b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: inherit;
+  font-size: .9375rem;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__home > i {
+  color: #a99468;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__home:is(:hover, :focus-visible, .is-active) {
+  border-color: rgba(242, 212, 131, .58);
+  background: linear-gradient(105deg, rgba(216, 166, 60, .19), rgba(97, 34, 25, .7));
+  color: var(--kl-shell-ivory);
+  box-shadow: inset 3px 0 var(--kl-shell-gold-bright), 0 9px 24px rgba(19, 4, 3, .18);
+}
+
+/* Navigation colors stay within the ceremonial gold/wood family. */
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category {
+  --nav-accent: var(--kl-shell-gold) !important;
+  --nav-accent-secondary: var(--kl-shell-copper) !important;
+  min-width: 0;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category[data-nav-section="ai-creative"] {
+  --nav-accent: #e6b54d !important;
+  --nav-accent-secondary: #a85a2c !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category[data-nav-section="web-community"] {
+  --nav-accent: #efd07b !important;
+  --nav-accent-secondary: #8e5930 !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category[data-nav-section="entertainment"] {
+  --nav-accent: #d99b39 !important;
+  --nav-accent-secondary: #913b2b !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category[data-nav-section="work-tech"] {
+  --nav-accent: #cba24f !important;
+  --nav-accent-secondary: #75513a !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category[data-nav-section="learning"] {
+  --nav-accent: var(--kl-shell-gold-bright) !important;
+  --nav-accent-secondary: #b17b27 !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category[data-nav-section="system-admin"] {
+  --nav-accent: #d8bd76 !important;
+  --nav-accent-secondary: #765747 !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__categories {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-toggle {
+  position: relative;
+  z-index: 0;
+  grid-template-columns: 36px minmax(0, 1fr) 25px 28px;
+  gap: 3px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 5px 6px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--nav-accent) 24%, rgba(255, 248, 232, .07));
+  border-radius: 13px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--nav-accent) 9%, transparent), transparent 42%),
+    linear-gradient(112deg, rgba(74, 27, 21, .9), rgba(35, 11, 9, .94));
+  color: #d8c9a8;
+  animation: kl-group-lantern var(--nav-live-speed, 4.6s) ease-in-out var(--nav-live-delay, 0s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-toggle::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, transparent 0 62%, color-mix(in srgb, var(--nav-accent) 10%, transparent) 78%, transparent 100%),
+    repeating-linear-gradient(135deg, transparent 0 18px, color-mix(in srgb, var(--nav-accent) 6%, transparent) 18px 19px, transparent 19px 36px);
+  background-size: 180% 100%, auto;
+  content: "";
+  opacity: .5;
+  pointer-events: none;
+  animation: kl-temple-line 7s ease-in-out var(--nav-live-delay, 0s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-toggle:is(:hover, :focus-visible),
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category.is-expanded > .app-sidebar__section-toggle,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-toggle.is-active {
+  border-color: color-mix(in srgb, var(--nav-accent) 70%, #fff1c4);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--nav-accent) 16%, transparent), transparent 52%),
+    linear-gradient(112deg, #66291f, #35110e 74%);
+  color: var(--kl-shell-ivory);
+  box-shadow: inset 0 0 26px color-mix(in srgb, var(--nav-accent) 7%, transparent), 0 8px 24px rgba(17, 3, 2, .18);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category.has-active-route > .app-sidebar__section-toggle::before {
+  inset: 9px auto 9px -1px;
+  width: 3px;
+  border-radius: 0 5px 5px 0;
+  background: linear-gradient(var(--kl-shell-gold-bright), var(--kl-shell-amber));
+  box-shadow: 0 0 14px rgba(242, 212, 131, .52);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-toggle > b {
+  display: block;
+  min-width: 0;
+  overflow: visible;
+  color: inherit;
+  font-size: .875rem;
+  font-weight: 770;
+  letter-spacing: -.018em;
+  line-height: 1.18;
+  text-overflow: clip;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  -webkit-line-clamp: unset;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category[data-nav-section="work-tech"] .app-sidebar__section-toggle > b {
+  font-size: .8125rem;
+  letter-spacing: -.032em;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-orb {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border: 1px solid color-mix(in srgb, var(--nav-accent) 78%, #fff1bc);
+  border-radius: 50% 50% 44% 44%;
+  background:
+    radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--nav-accent) 30%, #fff6d9), transparent 48%),
+    linear-gradient(145deg, #67291f, #36120f);
+  color: color-mix(in srgb, var(--nav-accent) 82%, #fff7df);
+  box-shadow: inset 0 0 12px rgba(216, 166, 60, .08), 0 0 14px color-mix(in srgb, var(--nav-accent) 18%, transparent);
+  animation: kl-medallion-breathe 4.8s ease-in-out var(--nav-live-delay, 0s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-orb::after {
+  inset: -4px;
+  border: 1px solid color-mix(in srgb, var(--nav-accent) 28%, transparent);
+  border-radius: 50%;
+  transform: none;
+  animation: kl-halo-breathe 4.8s ease-in-out var(--nav-live-delay, 0s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-orb > .app-sidebar__svg-icon {
+  width: 20px;
+  height: 20px;
+  animation: kl-svg-glow 4.5s ease-in-out var(--nav-live-delay, 0s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__count {
+  display: grid;
+  width: 25px;
+  min-width: 25px;
+  height: 23px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--nav-accent) 40%, #5b3327);
+  border-radius: 999px;
+  background: rgba(28, 8, 6, .66);
+  color: color-mix(in srgb, var(--nav-accent) 86%, #f5e8c4);
+  font-size: .6875rem;
+  font-weight: 840;
+  animation: kl-badge-glow 4.3s ease-in-out var(--nav-live-delay, 0s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__chevron {
+  position: relative;
+  display: grid;
+  width: 28px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--nav-accent) 40%, #604031);
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(216, 166, 60, .12), rgba(48, 15, 12, .9));
+  color: color-mix(in srgb, var(--nav-accent) 80%, #f3e4c2);
+  font-size: 1.25rem;
+  box-shadow: inset 0 0 12px rgba(216, 166, 60, .045);
+  animation: kl-chevron-breathe 4s ease-in-out var(--nav-live-delay, 0s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__chevron::before {
+  top: 5px;
+  right: 5px;
+  width: 4px;
+  height: 4px;
+  background: var(--nav-accent);
+  box-shadow: 0 0 7px var(--nav-accent);
+  animation: kl-dot-breathe 2.4s ease-in-out var(--nav-live-delay, 0s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category.is-expanded .app-sidebar__chevron {
+  border-color: color-mix(in srgb, var(--nav-accent) 74%, #fff1c8);
+  background: color-mix(in srgb, var(--nav-accent) 17%, #3a1511);
+  color: var(--kl-shell-ivory);
+  transform: rotate(90deg);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__submenu {
+  position: relative;
+  display: grid;
+  max-height: 0;
+  gap: 4px;
+  margin: 0 3px 0 20px;
+  padding: 0 0 0 12px;
+  overflow: hidden;
+  border-left: 1px solid transparent;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: max-height .3s cubic-bezier(.2, .8, .2, 1), opacity .18s ease, transform .22s ease, padding .22s ease, margin .22s ease, border-color .2s ease, visibility 0s linear .3s;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category.is-expanded > .app-sidebar__submenu {
+  max-height: 120rem;
+  margin-top: 5px;
+  margin-bottom: 7px;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  border-left-color: color-mix(in srgb, var(--nav-accent) 42%, #5a3529);
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category.is-expanded > .app-sidebar__submenu::before {
+  left: -1px;
+  width: 2px;
+  height: 38px;
+  background: linear-gradient(transparent, var(--kl-shell-gold-bright), var(--kl-shell-amber), transparent);
+  filter: drop-shadow(0 0 5px rgba(242, 212, 131, .42));
+  animation: kl-submenu-light 4.4s ease-in-out infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  min-width: 0;
+  min-height: 48px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--nav-accent) 12%, transparent);
+  border-radius: 10px;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--nav-accent) 5%, rgba(70, 25, 19, .75)), rgba(31, 10, 8, .58));
+  background-size: 180% 100%;
+  animation: kl-tool-ambient 5.6s ease-in-out calc(var(--tool-index, 0) * -.35s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row::before {
+  z-index: 0;
+  inset: 0 34px 0 0;
+  background: linear-gradient(100deg, transparent 8%, color-mix(in srgb, var(--nav-accent) 14%, transparent) 48%, transparent 88%);
+  opacity: .12;
+  animation: kl-tool-sheen 6.4s ease-in-out calc(var(--tool-index, 0) * -.42s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row:is(:hover, :focus-within, .is-active) {
+  border-color: color-mix(in srgb, var(--nav-accent) 48%, #684335);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--nav-accent) 12%, #531f18), rgba(39, 12, 9, .92));
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row.is-active {
+  box-shadow: inset 3px 0 var(--kl-shell-gold-bright), 0 6px 18px rgba(20, 4, 3, .17);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row.is-active::after {
+  border-color: transparent;
+  animation: kl-active-ring .85s ease-out both !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__subitem {
+  position: relative;
+  z-index: 1;
+  display: grid !important;
+  grid-template-columns: 34px minmax(0, 1fr) 9px !important;
+  gap: 9px !important;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px !important;
+  padding: 3px 4px 3px 7px !important;
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: color-mix(in srgb, var(--nav-accent) 18%, #e4d8bd) !important;
+  text-align: left;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__subitem:is(:hover, :focus-visible, .is-active) {
+  color: var(--kl-shell-ivory) !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__subitem > b {
+  display: -webkit-box;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  color: inherit !important;
+  font-size: .90625rem !important;
+  font-weight: 680 !important;
+  line-height: 1.34;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-icon {
+  position: relative;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--nav-accent) 48%, #674334);
+  border-radius: 10px 10px 7px 7px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--nav-accent) 11%, #5a2119), #28100d);
+  color: color-mix(in srgb, var(--nav-accent) 84%, #fff3d1);
+  box-shadow: inset 0 0 12px color-mix(in srgb, var(--nav-accent) 6%, transparent);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-icon::before {
+  background: conic-gradient(transparent 0 40%, color-mix(in srgb, var(--nav-accent) 38%, #fff4d0) 49%, transparent 58%);
+  opacity: .18;
+  animation: kl-icon-aureole 7s linear calc(var(--tool-index, 0) * -.25s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-icon > .app-sidebar__svg-icon {
+  width: 18px;
+  height: 18px;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, currentColor 28%, transparent));
+  animation: kl-svg-glow 4.8s ease-in-out calc(var(--tool-index, 0) * -.25s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row[data-tool-motion="orbit"] .app-sidebar__tool-icon {
+  animation: kl-icon-turn 5.8s ease-in-out -.8s infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row[data-tool-motion="pulse"] .app-sidebar__tool-icon {
+  animation: kl-icon-pulse 5s ease-in-out -1.4s infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row[data-tool-motion="wave"] .app-sidebar__tool-icon {
+  animation: kl-icon-float 5.6s ease-in-out -2s infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row[data-tool-motion="comet"] .app-sidebar__tool-icon {
+  animation: kl-icon-glint 6.2s ease-in-out -2.8s infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar .app-sidebar__tool-row.is-launching .app-sidebar__tool-icon {
+  animation: kl-route-lotus .32s ease both !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__svg-icon {
+  stroke-width: 1.7;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, currentColor 24%, transparent));
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__svg-icon > :nth-child(even):not(.sidebar-icon-fill):not(.sidebar-icon-label) {
+  stroke: color-mix(in srgb, var(--nav-accent-secondary, var(--kl-shell-copper)) 72%, var(--kl-shell-gold-bright));
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__svg-icon .sidebar-icon-fill {
+  fill: color-mix(in srgb, var(--nav-accent-secondary, var(--kl-shell-copper)) 70%, var(--kl-shell-gold-bright));
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__active-dot {
+  width: 6px;
+  height: 6px;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row.is-active .app-sidebar__active-dot {
+  background: var(--kl-shell-gold-bright);
+  box-shadow: 0 0 10px rgba(242, 212, 131, .72);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__pin {
+  width: 32px;
+  min-height: 44px;
+  color: #9f8c65;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row:hover .app-sidebar__pin,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row:focus-within .app-sidebar__pin,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__pin:is(:focus-visible, .is-pinned) {
+  opacity: 1;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__pin:is(:hover, .is-pinned) {
+  background: rgba(216, 166, 60, .11);
+  color: var(--kl-shell-gold-bright);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row.is-pinned {
+  --nav-accent: var(--kl-shell-gold-bright) !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__drag {
+  color: #a28e65;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__pinned {
+  gap: 5px;
+  margin: 0 0 9px;
+  padding: 7px;
+  border: 1px solid rgba(242, 212, 131, .22);
+  border-radius: 13px;
+  background: linear-gradient(145deg, rgba(216, 166, 60, .09), rgba(91, 31, 23, .12));
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__pinned-toggle {
+  min-width: 0;
+  min-height: 32px;
+  color: var(--kl-shell-gold-soft);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__pinned-toggle > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: .6875rem;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__pinned-toggle > small {
+  color: #b5a47e;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-empty {
+  border-color: rgba(242, 212, 131, .28);
+  background: rgba(48, 16, 12, .76);
+  color: var(--kl-shell-muted);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-empty > span,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-empty > button {
+  color: var(--kl-shell-gold-bright);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-empty > strong {
+  color: var(--kl-shell-ivory);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-empty > button {
+  min-height: 40px;
+  border-color: var(--kl-shell-line-strong);
+  background: rgba(216, 166, 60, .1);
+}
+
+/* Footer remains a non-scrolling, always reachable region. */
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__footer {
+  position: relative;
+  z-index: 14;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  flex: none;
+  gap: 5px;
+  margin: 0;
+  padding: 9px max(9px, env(safe-area-inset-left)) max(10px, env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(242, 212, 131, .22);
+  background: linear-gradient(180deg, #29100d, #1a0807);
+  box-shadow: 0 -12px 28px rgba(15, 3, 2, .18);
+  backdrop-filter: none;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__footer > .app-sidebar__item {
+  --footer-accent: var(--kl-shell-gold-soft) !important;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 50px;
+  padding: 4px 2px;
+  overflow: hidden;
+  border-radius: 10px;
+  color: #c5b58f;
+  animation: kl-footer-breathe 5.4s ease-in-out infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__footer > .app-sidebar__item:nth-child(2) {
+  --footer-accent: #d9ae57 !important;
+  animation-delay: -1.8s !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__footer > .app-sidebar__item:nth-child(3) {
+  --footer-accent: #e7cb80 !important;
+  animation-delay: -3.6s !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__footer > .app-sidebar__item > span {
+  color: var(--footer-accent);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--footer-accent) 34%, transparent);
+  animation: kl-footer-icon 5s ease-in-out infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__footer > .app-sidebar__item > b {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: .6875rem;
+  font-weight: 720;
+  line-height: 1.25;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__footer > .app-sidebar__item:is(:hover, :focus-visible, .is-active) {
+  border-color: color-mix(in srgb, var(--footer-accent) 48%, transparent);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--footer-accent) 12%, #531e17), rgba(37, 11, 9, .86));
+  color: var(--kl-shell-ivory);
+}
+
+/* Collapsed desktop rail and its accessible flyouts. */
+@media (min-width: 761px) {
+  :is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien).hh-settings-applied:not(.app-sidebar-collapsed):not(.app-sidebar-auto-hide):not(.app-sidebar-labels-hidden) .app-shell__body {
+    grid-template-columns: clamp(276px, var(--hh-user-sidebar-width, 284px), 284px) minmax(0, 1fr) !important;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien).app-sidebar-collapsed .app-sidebar,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) body.app-sidebar-collapsed .app-sidebar {
+    z-index: 40;
+    overflow: visible;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien).app-sidebar-collapsed .app-sidebar__fixed-head,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) body.app-sidebar-collapsed .app-sidebar__fixed-head {
+    padding: 9px;
+    border-bottom-color: rgba(242, 212, 131, .13);
+    background: linear-gradient(180deg, #351511, #230b09);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien).app-sidebar-collapsed .app-sidebar__scroll-region,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) body.app-sidebar-collapsed .app-sidebar__scroll-region {
+    padding: 2px 9px;
+    overflow: visible;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien).app-sidebar-collapsed .app-sidebar__home::after,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) body.app-sidebar-collapsed .app-sidebar__home::after {
+    left: 62px;
+    padding: 9px 12px;
+    border-color: var(--kl-shell-line-strong);
+    border-radius: 9px;
+    background: #32120f;
+    color: var(--kl-shell-ivory);
+    box-shadow: 0 14px 34px rgba(17, 3, 2, .48);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien).app-sidebar-collapsed .app-sidebar__flyout,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) body.app-sidebar-collapsed .app-sidebar__flyout {
+    left: calc(100% + 12px);
+    width: min(308px, calc(100vw - 104px));
+    max-height: min(590px, calc(100dvh - 92px));
+    padding: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 1px solid color-mix(in srgb, var(--nav-accent) 48%, #6b4535);
+    border-radius: 15px;
+    background:
+      linear-gradient(135deg, rgba(216, 166, 60, .07), transparent 38%),
+      linear-gradient(145deg, #421a15, #210b09);
+    color: var(--kl-shell-ivory);
+    box-shadow: 0 24px 62px rgba(14, 3, 2, .62), inset 0 0 28px rgba(216, 166, 60, .035);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(216, 166, 60, .5) transparent;
+    animation: kl-flyout-in .2s ease both !important;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien).app-sidebar-collapsed .app-sidebar__flyout > header,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) body.app-sidebar-collapsed .app-sidebar__flyout > header {
+    border-bottom-color: var(--kl-shell-line);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien).app-sidebar-collapsed .app-sidebar__flyout > header small,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) body.app-sidebar-collapsed .app-sidebar__flyout > header small {
+    color: var(--nav-accent);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien).app-sidebar-collapsed .app-sidebar__flyout > header strong,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) body.app-sidebar-collapsed .app-sidebar__flyout > header strong {
+    overflow-wrap: anywhere;
+    color: var(--kl-shell-ivory);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien).app-sidebar-collapsed .app-sidebar__flyout .app-sidebar__subitem > b,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) body.app-sidebar-collapsed .app-sidebar__flyout .app-sidebar__subitem > b {
+    white-space: normal;
+    -webkit-line-clamp: 2;
+  }
+}
+
+/* Main viewport and generic content framing. */
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-main {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background:
+    linear-gradient(rgba(216, 166, 60, .018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(216, 166, 60, .018) 1px, transparent 1px),
+    radial-gradient(ellipse at 84% 0%, rgba(151, 51, 33, .16), transparent 34%),
+    linear-gradient(145deg, #220b09, #160705 64%, #210b09);
+  background-size: 48px 48px, 48px 48px, auto, auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(216, 166, 60, .48) transparent;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-main::-webkit-scrollbar {
+  width: 9px;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-main::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: linear-gradient(var(--kl-shell-gold-bright), var(--kl-shell-amber)) padding-box;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) :is(.app-breadcrumb, .app-page-header, .app-workspace) {
+  width: min(100%, 1520px);
+  min-width: 0;
+  margin-inline: auto;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-breadcrumb {
+  min-height: 42px;
+  padding-inline: clamp(18px, 3vw, 38px);
+  border-bottom: 1px solid rgba(242, 212, 131, .1);
+  color: #b9aa88;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-breadcrumb button {
+  min-width: 0;
+  min-height: 30px;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-breadcrumb button[data-app-route]:hover {
+  border-color: var(--kl-shell-line);
+  background: rgba(216, 166, 60, .08);
+  color: var(--kl-shell-ivory);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-breadcrumb button[aria-current="page"],
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-breadcrumb > span {
+  color: var(--kl-shell-gold-soft);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header {
+  position: relative;
+  align-items: center;
+  min-width: 0;
+  padding: 18px clamp(18px, 3vw, 38px) 20px;
+  overflow: visible;
+  border-bottom: 1px solid rgba(242, 212, 131, .18);
+  background:
+    linear-gradient(90deg, rgba(216, 166, 60, .085), transparent 55%),
+    linear-gradient(180deg, rgba(73, 25, 19, .7), rgba(44, 14, 11, .48));
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header::before {
+  position: absolute;
+  top: 7px;
+  right: clamp(18px, 3vw, 38px);
+  left: clamp(18px, 3vw, 38px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(242, 212, 131, .28) 20%, rgba(242, 212, 131, .44) 50%, rgba(242, 212, 131, .28) 80%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header::after {
+  right: clamp(18px, 3vw, 38px);
+  left: clamp(18px, 3vw, 38px);
+  background: linear-gradient(90deg, var(--kl-shell-gold-bright), var(--kl-shell-amber), transparent 76%);
+  opacity: .62;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header > div:first-child {
+  min-width: 0;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header__eyebrow {
+  color: var(--kl-shell-gold-bright);
+  font-size: .75rem;
+  font-weight: 780;
+  letter-spacing: .075em;
+  overflow-wrap: anywhere;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header h1 {
+  max-width: 100%;
+  color: var(--kl-shell-ivory);
+  font-size: clamp(1.65rem, 2.4vw, 2.25rem);
+  font-weight: 720;
+  letter-spacing: -.02em;
+  line-height: 1.25;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header p {
+  max-width: 76ch;
+  color: #d7c8aa;
+  font-size: .9375rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header__actions {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header__actions button {
+  min-height: 42px;
+  padding-inline: 13px;
+  border-color: var(--kl-shell-line);
+  background: rgba(57, 18, 14, .84);
+  color: #deceb0;
+  font-size: .8125rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header__actions button:hover {
+  border-color: var(--kl-shell-line-strong);
+  background: rgba(216, 166, 60, .1);
+  color: var(--kl-shell-ivory);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-workspace {
+  min-width: 0;
+  min-height: auto;
+  padding: clamp(18px, 2.5vw, 32px) clamp(18px, 3vw, 38px) 64px;
+  overflow: visible;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-context-bar {
+  position: sticky;
+  z-index: 16;
+  top: 0;
+  min-width: 0;
+  min-height: 50px;
+  border: 1px solid var(--kl-shell-line);
+  background: linear-gradient(145deg, rgba(66, 24, 19, .985), rgba(30, 9, 7, .99));
+  box-shadow: 0 10px 30px rgba(16, 3, 2, .28), inset 0 1px rgba(255, 248, 232, .035);
+  backdrop-filter: none;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-context-bar > div:nth-child(2) {
+  min-width: 0;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-context-bar small {
+  color: var(--kl-shell-gold-bright);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-context-bar strong {
+  min-width: 0;
+  color: var(--kl-shell-ivory);
+  text-overflow: ellipsis;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-context-bar > button,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-context-bar__actions button {
+  min-height: 38px;
+  border-color: var(--kl-shell-line);
+  color: #d8c9aa;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-context-bar > button:hover,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-context-bar__actions button:hover {
+  border-color: var(--kl-shell-line-strong);
+  background: rgba(216, 166, 60, .1);
+  color: var(--kl-shell-ivory);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-context-bar__status i {
+  background: #b3cc8a;
+  box-shadow: 0 0 8px rgba(179, 204, 138, .55);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-route-progress i {
+  background: linear-gradient(90deg, transparent, var(--kl-shell-copper), var(--kl-shell-gold), var(--kl-shell-gold-bright), transparent);
+  box-shadow: 0 0 14px rgba(216, 166, 60, .52);
+}
+
+/* Generic shell-owned surfaces only; feature workspaces keep their own layout. */
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) :is(.app-simple-view__intro, .app-item-grid button, .app-settings-list label) {
+  min-width: 0;
+  border-color: var(--kl-shell-line);
+  background: linear-gradient(145deg, rgba(69, 25, 20, .88), rgba(38, 12, 10, .9));
+  color: var(--kl-shell-ivory);
+  box-shadow: inset 0 1px rgba(255, 248, 232, .025);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) :is(.app-simple-view__intro, .app-item-grid button, .app-settings-list label) :is(h2, h3, strong, span, p) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-item-grid button:hover {
+  border-color: var(--kl-shell-line-strong);
+  background: linear-gradient(145deg, rgba(92, 34, 25, .92), rgba(45, 14, 11, .95));
+}
+
+/* Palette, drawers, user menu and sidebar context menu. */
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .command-palette {
+  max-width: calc(100vw - 24px);
+  overflow: hidden;
+  border: 1px solid var(--kl-shell-line-strong);
+  background: linear-gradient(145deg, #471b16, #210b09);
+  color: var(--kl-shell-ivory);
+  box-shadow: 0 30px 90px rgba(13, 2, 2, .72), inset 0 0 38px rgba(216, 166, 60, .04);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .command-palette::backdrop {
+  background: rgba(18, 4, 3, .86);
+  backdrop-filter: none;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .command-palette__header {
+  border-bottom-color: var(--kl-shell-line);
+  color: var(--kl-shell-gold-bright);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .command-palette__header input {
+  min-width: 0;
+  color: var(--kl-shell-ivory);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .command-palette__results button {
+  min-width: 0;
+  min-height: 60px;
+  color: var(--kl-shell-ivory);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .command-palette__results button:is(:hover, .is-selected) {
+  border-color: var(--kl-shell-line);
+  background: rgba(216, 166, 60, .1);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .command-palette__results button > span,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .command-palette__footer > strong {
+  color: var(--kl-shell-gold-bright);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .command-palette__results :is(strong, small, p) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .command-palette__footer {
+  border-top-color: var(--kl-shell-line);
+  background: rgba(30, 9, 7, .76);
+  color: var(--kl-shell-muted);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-drawer {
+  border-left-color: var(--kl-shell-line-strong);
+  background: linear-gradient(180deg, #431a15, #210b09);
+  color: var(--kl-shell-ivory);
+  box-shadow: -24px 0 58px rgba(14, 3, 2, .48);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-drawer > header,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-drawer__toolbar {
+  border-bottom-color: var(--kl-shell-line);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-drawer > header p {
+  color: var(--kl-shell-gold-bright);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-drawer__toolbar button:is(:hover, .is-active),
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-notice:hover,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-help-link:hover {
+  border-color: var(--kl-shell-line);
+  background: rgba(216, 166, 60, .09);
+  color: var(--kl-shell-ivory);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-notice > span,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-notice--new > span {
+  background: rgba(216, 166, 60, .11);
+  color: var(--kl-shell-gold-bright);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-help-search input,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-help-link {
+  border-color: var(--kl-shell-line);
+  background: rgba(38, 12, 10, .72);
+  color: var(--kl-shell-ivory);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-drawer-backdrop {
+  background: rgba(19, 5, 4, .8);
+  backdrop-filter: none;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-menu {
+  max-width: calc(100vw - 24px);
+  border-color: var(--kl-shell-line-strong);
+  background: linear-gradient(145deg, #481c16, #210b09);
+  color: var(--kl-shell-ivory);
+  box-shadow: var(--kl-shell-shadow);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-menu__profile {
+  border-bottom-color: var(--kl-shell-line);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-menu__profile :is(strong, small) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-menu > button {
+  min-height: 44px;
+  color: #d8c9aa;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-menu > button:hover {
+  background: rgba(216, 166, 60, .1);
+  color: var(--kl-shell-ivory);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar-context-menu {
+  border-color: var(--kl-shell-line-strong);
+  background: linear-gradient(145deg, #481b16, #210b09);
+  color: var(--kl-shell-ivory);
+  box-shadow: 0 24px 64px rgba(13, 2, 2, .64), inset 0 0 28px rgba(216, 166, 60, .035);
+  backdrop-filter: none;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar-context-menu > header {
+  border-bottom-color: var(--kl-shell-line);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar-context-menu > header > span {
+  border-color: var(--kl-shell-line-strong);
+  background: rgba(216, 166, 60, .1);
+  color: var(--kl-shell-gold-bright);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar-context-menu > header :is(strong, small) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar-context-menu > button {
+  min-height: 42px;
+  color: #d0c09f;
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar-context-menu > button:is(:hover, :focus-visible) {
+  background: rgba(216, 166, 60, .11);
+  color: var(--kl-shell-ivory);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar-context-menu > button span,
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar-pin-flight {
+  color: var(--kl-shell-gold-bright);
+  text-shadow: 0 0 10px rgba(242, 212, 131, .58);
+}
+
+/* At high browser zoom the header becomes two rows instead of clipping controls. */
+@media (max-width: 1080px) and (min-width: 761px) {
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) {
+    --header-height: 112px;
+    --sidebar-width: clamp(268px, 28vw, 276px);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header {
+    grid-template-columns: minmax(210px, 1fr) minmax(0, auto);
+    grid-template-rows: 56px 48px;
+    align-content: center;
+    gap: 0 14px;
+    padding-block: 4px;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header__start {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header__actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-global-search {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header__actions {
+    width: 100%;
+  }
+}
+
+/* Mobile shell: 82dvh bottom sheet, fixed search/header, scrollable middle and visible bottom nav. */
+@media (max-width: 760px) {
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) {
+    --header-height: 60px;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: 1fr;
+    min-height: var(--header-height);
+    height: var(--header-height);
+    gap: 8px;
+    padding: 0 10px;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header__start {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-global-search {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header__actions {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-shell__body,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien).app-sidebar-collapsed .app-shell__body,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) body.app-sidebar-collapsed .app-shell__body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    height: calc(100dvh - var(--header-height));
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar {
+    position: fixed;
+    z-index: 162;
+    top: auto;
+    right: 0;
+    bottom: 68px;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    height: min(82dvh, 760px) !important;
+    max-height: calc(100dvh - var(--header-height) - 68px);
+    padding-top: 0;
+    overflow: hidden;
+    border: 1px solid rgba(242, 212, 131, .4);
+    border-bottom: 0;
+    border-radius: 24px 24px 0 0;
+    background:
+      repeating-linear-gradient(7deg, rgba(255, 248, 232, .016) 0 1px, transparent 1px 10px),
+      linear-gradient(180deg, #441a15, #210b09 62%, #180806);
+    box-shadow: 0 -24px 76px rgba(13, 2, 2, .72), inset 0 1px rgba(255, 239, 190, .08);
+    transform: translateY(calc(105% + var(--sheet-drag-y, 0px)));
+    transition: transform .28s cubic-bezier(.2, .8, .2, 1);
+  }
+
+  html[data-hh-theme="kim-lien"] body:not(.app-sidebar-collapsed) .app-sidebar,
+  body.hh-kim-lien:not(.app-sidebar-collapsed) .app-sidebar {
+    transform: translateY(var(--sheet-drag-y, 0px));
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar.is-sheet-dragging {
+    transition: none;
+    user-select: none;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__primary {
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__fixed-head {
+    padding: 8px 10px 9px;
+    border-radius: 23px 23px 0 0;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__mobile-title {
+    display: flex;
+    min-height: 32px;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: calc(50% - 27px);
+    color: #c7b58f;
+    font-size: .6875rem;
+    font-weight: 780;
+    letter-spacing: .065em;
+    touch-action: none;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__mobile-title::before {
+    width: 52px;
+    height: 5px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--kl-shell-amber), var(--kl-shell-gold-bright), var(--kl-shell-amber));
+    box-shadow: 0 0 13px rgba(216, 166, 60, .32);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__mobile-title > span {
+    left: 14px;
+    max-width: calc(50% - 50px);
+    overflow: hidden;
+    color: var(--kl-shell-gold-soft);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__mobile-title > button {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    border: 1px solid var(--kl-shell-line);
+    border-radius: 10px;
+    background: rgba(216, 166, 60, .075);
+    color: var(--kl-shell-gold-bright);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__scroll-region {
+    padding: 8px 13px calc(20px + env(safe-area-inset-bottom)) 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    touch-action: pan-y;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-toggle {
+    min-height: 56px;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__category.is-expanded > .app-sidebar__submenu {
+    max-height: 120rem;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__tool-row,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__subitem {
+    min-height: 48px !important;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__pin {
+    min-height: 48px;
+    opacity: .72;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__footer {
+    padding-bottom: max(9px, env(safe-area-inset-bottom));
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar-backdrop {
+    position: fixed;
+    z-index: 158;
+    inset: var(--header-height) 0 68px;
+    display: block;
+    border: 0;
+    background: rgba(19, 5, 4, .8);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    backdrop-filter: blur(2px);
+  }
+
+  html[data-hh-theme="kim-lien"] body:not(.app-sidebar-collapsed) .app-sidebar-backdrop,
+  body.hh-kim-lien:not(.app-sidebar-collapsed) .app-sidebar-backdrop {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  html[data-hh-theme="kim-lien"] body:not(.app-sidebar-collapsed) .app-main,
+  body.hh-kim-lien:not(.app-sidebar-collapsed) .app-main {
+    overflow: hidden !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-main {
+    grid-row: 1;
+    width: 100%;
+    height: 100%;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-breadcrumb {
+    min-height: 38px;
+    padding-inline: 16px;
+    flex-wrap: wrap;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 16px 18px;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header h1 {
+    font-size: clamp(1.5rem, 7vw, 1.9rem);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header p {
+    font-size: .9rem;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header__actions {
+    width: 100%;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-page-header__actions button {
+    flex: 1 1 min(180px, 100%);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-context-bar {
+    position: static;
+    width: calc(100% - 24px);
+    margin: 10px 12px;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-workspace {
+    padding: 18px 16px calc(100px + env(safe-area-inset-bottom));
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien).app-shell-enabled .app-mobile-nav,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) body.app-shell-enabled .app-mobile-nav {
+    z-index: 180;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    min-height: 68px;
+    padding: 5px 7px max(5px, env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(242, 212, 131, .38);
+    background:
+      linear-gradient(90deg, rgba(216, 166, 60, .05), transparent 50%, rgba(216, 166, 60, .04)),
+      #1d0907;
+    box-shadow: 0 -12px 30px rgba(14, 3, 2, .35);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-mobile-nav button {
+    min-width: 0;
+    min-height: 52px;
+    padding-inline: 2px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: #b5a47f;
+    font-size: .6875rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-mobile-nav button > span {
+    color: var(--kl-shell-gold-soft);
+    font-size: 1.125rem;
+    text-shadow: 0 0 9px rgba(216, 166, 60, .22);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-mobile-nav button:is(:hover, :focus-visible, .is-active) {
+    border-color: rgba(242, 212, 131, .2);
+    background: rgba(216, 166, 60, .08);
+    color: var(--kl-shell-gold-bright);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-mobile-nav__create > span {
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--kl-shell-gold-bright);
+    background: radial-gradient(circle at 50% 35%, #f4d682, var(--kl-shell-gold) 56%, #8a3b20);
+    color: #47140e;
+    box-shadow: 0 0 0 4px rgba(216, 166, 60, .07), 0 0 20px rgba(216, 166, 60, .22);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-drawer {
+    top: 0;
+    height: 100dvh;
+  }
+}
+
+@container kim-lien-sidebar (max-width: 276px) {
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-toggle {
+    grid-template-columns: 36px minmax(0, 1fr) 26px 30px;
+    gap: 5px;
+    padding-inline: 5px;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-toggle > b {
+    font-size: .8125rem;
+    letter-spacing: -.025em;
+  }
+}
+
+@media (max-width: 390px) {
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar {
+    border-radius: 20px 20px 0 0;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__fixed-head {
+    border-radius: 19px 19px 0 0;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__search-panel kbd {
+    display: none;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-toggle {
+    grid-template-columns: 36px minmax(0, 1fr) 26px 30px;
+    gap: 4px;
+    min-height: 60px;
+    padding-inline: 4px;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-toggle > b {
+    font-size: .8125rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__submenu {
+    margin-left: 7px;
+    padding-left: 8px;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-mobile-nav button {
+    font-size: .625rem;
+  }
+}
+
+/* Focus and zoom resilience. */
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) :where(
+  .app-shell,
+  .command-palette,
+  .app-drawer,
+  .app-user-menu,
+  .app-mobile-nav,
+  .app-sidebar-context-menu
+) :where(a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 3px solid var(--kl-shell-focus);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgba(86, 29, 21, .72);
+}
+
+:is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) :where(
+  .app-header,
+  .app-sidebar,
+  .app-page-header,
+  .app-context-bar,
+  .command-palette,
+  .app-drawer,
+  .app-user-menu
+) :where(h1, h2, h3, h4, p, strong, small, span, label, button) {
+  max-width: 100%;
+}
+
+@media (hover: none), (pointer: coarse) {
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__pin {
+    opacity: .72;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-shell *,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-shell *::before,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-shell *::after,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .command-palette *,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-drawer *,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-menu *,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-mobile-nav *,
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar-context-menu * {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) :where(.app-header, .app-sidebar, .app-main, .app-mobile-nav, .app-drawer, .command-palette) {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) :where(.app-sidebar__section-toggle, .app-sidebar__subitem, .app-sidebar__home, .app-mobile-nav button):focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+/*
+ * The legacy theme picker keeps data-app-theme on body. Its generic rules use
+ * !important, so this opt-in theme must explicitly become the final shell owner
+ * without disabling the user's density, font-size or accessibility settings.
+ */
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] {
+  --app-bg: var(--kl-shell-rosewood-deep);
+  --sidebar-bg: var(--kl-shell-rosewood);
+  --header-bg: var(--kl-shell-rosewood-deep);
+  --surface-1: #351614;
+  --surface-2: #431c18;
+  --surface-3: #54231c;
+  --surface-hover: #61291f;
+  --field-bg: #210d0b;
+  --text-primary: var(--kl-shell-ivory);
+  --text-secondary: #e2d4b8;
+  --text-muted: var(--kl-shell-muted);
+  --border-subtle: rgba(242, 212, 131, .13);
+  --border-default: var(--kl-shell-line);
+  --border-strong: var(--kl-shell-line-strong);
+  --accent: var(--kl-shell-gold);
+  --accent-hover: var(--kl-shell-gold-bright);
+  --accent-soft: rgba(216, 166, 60, .13);
+  --accent-secondary: var(--kl-shell-copper);
+  --accent-secondary-soft: rgba(154, 77, 37, .16);
+  --theme-page-background:
+    radial-gradient(ellipse at 84% 0%, rgba(151, 51, 33, .16), transparent 34%),
+    linear-gradient(145deg, #220b09, #160705 64%, #210b09);
+  --theme-sidebar-background:
+    repeating-linear-gradient(7deg, rgba(255, 248, 232, .016) 0 1px, transparent 1px 10px),
+    linear-gradient(180deg, #30110f 0%, #210b09 48%, #180806 100%);
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-shell {
+  background:
+    radial-gradient(ellipse at 50% -20%, rgba(216, 166, 60, .11), transparent 40%),
+    linear-gradient(145deg, var(--kl-shell-rosewood-deep), #230d0b 54%, #130605) !important;
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-header {
+  border-bottom-color: var(--kl-shell-line-strong) !important;
+  background:
+    linear-gradient(90deg, rgba(216, 166, 60, .075), transparent 25%, transparent 75%, rgba(185, 111, 34, .06)),
+    repeating-linear-gradient(4deg, rgba(255, 248, 232, .018) 0 1px, transparent 1px 9px),
+    linear-gradient(180deg, #2c100e, var(--kl-shell-rosewood-deep)) !important;
+  box-shadow: 0 12px 34px rgba(17, 4, 3, .28), inset 0 -1px rgba(255, 240, 189, .035);
+  backdrop-filter: none;
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-sidebar {
+  border-right-color: rgba(242, 212, 131, .32) !important;
+  background:
+    repeating-linear-gradient(7deg, rgba(255, 248, 232, .016) 0 1px, transparent 1px 10px),
+    linear-gradient(90deg, rgba(216, 166, 60, .04), transparent 16%, transparent 84%, rgba(216, 166, 60, .035)),
+    linear-gradient(180deg, #30110f 0%, #210b09 48%, #180806 100%) !important;
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-sidebar::after {
+  display: block !important;
+  opacity: .5;
+  filter: none;
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-main {
+  background:
+    linear-gradient(rgba(216, 166, 60, .018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(216, 166, 60, .018) 1px, transparent 1px),
+    radial-gradient(ellipse at 84% 0%, rgba(151, 51, 33, .16), transparent 34%),
+    linear-gradient(145deg, #220b09, #160705 64%, #210b09) !important;
+  background-size: 48px 48px, 48px 48px, auto, auto !important;
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-sidebar .app-sidebar__section-toggle {
+  border-radius: 13px !important;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--nav-accent) 9%, transparent), transparent 42%),
+    linear-gradient(112deg, rgba(74, 27, 21, .9), rgba(35, 11, 9, .94)) !important;
+  box-shadow: inset 0 0 14px color-mix(in srgb, var(--nav-accent) 2%, transparent) !important;
+  animation: kl-group-lantern var(--nav-live-speed, 4.6s) ease-in-out var(--nav-live-delay, 0s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-sidebar .app-sidebar__section-toggle:is(:hover, :focus-visible),
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-sidebar .app-sidebar__category.is-expanded > .app-sidebar__section-toggle,
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-sidebar .app-sidebar__section-toggle.is-active {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--nav-accent) 16%, transparent), transparent 52%),
+    linear-gradient(112deg, #66291f, #35110e 74%) !important;
+  box-shadow: inset 0 0 26px color-mix(in srgb, var(--nav-accent) 7%, transparent), 0 8px 24px rgba(17, 3, 2, .18) !important;
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-sidebar .app-sidebar__section-toggle::after {
+  background:
+    linear-gradient(90deg, transparent 0 62%, color-mix(in srgb, var(--nav-accent) 10%, transparent) 78%, transparent 100%),
+    repeating-linear-gradient(135deg, transparent 0 18px, color-mix(in srgb, var(--nav-accent) 6%, transparent) 18px 19px, transparent 19px 36px) !important;
+  background-size: 180% 100%, auto !important;
+  animation: kl-temple-line 7s ease-in-out var(--nav-live-delay, 0s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-sidebar .app-sidebar__section-orb {
+  border-color: color-mix(in srgb, var(--nav-accent) 78%, #fff1bc) !important;
+  border-radius: 50% 50% 44% 44% !important;
+  background:
+    radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--nav-accent) 30%, #fff6d9), transparent 48%),
+    linear-gradient(145deg, #67291f, #36120f) !important;
+  color: color-mix(in srgb, var(--nav-accent) 82%, #fff7df) !important;
+  box-shadow: inset 0 0 12px rgba(216, 166, 60, .08), 0 0 14px color-mix(in srgb, var(--nav-accent) 18%, transparent) !important;
+  animation: kl-medallion-breathe 4.8s ease-in-out var(--nav-live-delay, 0s) infinite !important;
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-context-bar {
+  border-color: var(--kl-shell-line) !important;
+  background: linear-gradient(145deg, rgba(66, 24, 19, .985), rgba(30, 9, 7, .99)) !important;
+  box-shadow: 0 10px 30px rgba(16, 3, 2, .28), inset 0 1px rgba(255, 248, 232, .035);
+  backdrop-filter: none;
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .command-palette {
+  border-color: var(--kl-shell-line-strong) !important;
+  background: linear-gradient(145deg, #471b16, #210b09) !important;
+  color: var(--kl-shell-ivory);
+  box-shadow: 0 30px 90px rgba(13, 2, 2, .72), inset 0 0 38px rgba(216, 166, 60, .04);
+  backdrop-filter: none;
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-drawer {
+  border-color: var(--kl-shell-line-strong) !important;
+  background: linear-gradient(180deg, #431a15, #210b09) !important;
+  color: var(--kl-shell-ivory);
+  box-shadow: -24px 0 58px rgba(14, 3, 2, .48);
+  backdrop-filter: none;
+}
+
+:is(html[data-hh-theme="kim-lien"] body, body.hh-kim-lien)[data-app-theme] .app-user-menu {
+  border-color: var(--kl-shell-line-strong) !important;
+  background: linear-gradient(145deg, #481c16, #210b09) !important;
+  color: var(--kl-shell-ivory);
+  box-shadow: var(--kl-shell-shadow);
+  backdrop-filter: none;
+}
+
+/* Restrained, continuous ceremonial motion. */
+@keyframes kl-home-lantern {
+  0%, 100% { border-color: rgba(242, 212, 131, .18); box-shadow: inset 0 0 14px rgba(216, 166, 60, .025); }
+  50% { border-color: rgba(242, 212, 131, .34); box-shadow: inset 0 0 23px rgba(216, 166, 60, .065), 0 0 14px rgba(216, 166, 60, .07); }
+}
+
+@keyframes kl-icon-halo {
+  0%, 100% { transform: translateY(0); filter: brightness(.96); }
+  50% { transform: translateY(-1px); filter: brightness(1.12); }
+}
+
+@keyframes kl-group-lantern {
+  0%, 100% { border-color: color-mix(in srgb, var(--nav-accent) 22%, rgba(255, 248, 232, .06)); box-shadow: inset 0 0 14px color-mix(in srgb, var(--nav-accent) 2%, transparent); }
+  50% { border-color: color-mix(in srgb, var(--nav-accent) 39%, #69483a); box-shadow: inset 0 0 24px color-mix(in srgb, var(--nav-accent) 6%, transparent), 0 0 15px color-mix(in srgb, var(--nav-accent) 9%, transparent); }
+}
+
+@keyframes kl-temple-line {
+  0%, 100% { background-position: 100% 0, 0 0; opacity: .34; }
+  50% { background-position: 0 0, 18px 0; opacity: .58; }
+}
+
+@keyframes kl-medallion-breathe {
+  0%, 100% { filter: brightness(.96) saturate(.95); }
+  50% { filter: brightness(1.16) saturate(1.08); }
+}
+
+@keyframes kl-halo-breathe {
+  0%, 100% { opacity: .32; transform: scale(.96); }
+  50% { opacity: .72; transform: scale(1.08); }
+}
+
+@keyframes kl-svg-glow {
+  0%, 100% { filter: brightness(.94) drop-shadow(0 0 2px currentColor); }
+  50% { filter: brightness(1.24) drop-shadow(0 0 6px currentColor); }
+}
+
+@keyframes kl-badge-glow {
+  0%, 100% { filter: brightness(.94); box-shadow: 0 0 4px color-mix(in srgb, var(--nav-accent) 6%, transparent); }
+  50% { filter: brightness(1.14); box-shadow: 0 0 12px color-mix(in srgb, var(--nav-accent) 22%, transparent); }
+}
+
+@keyframes kl-chevron-breathe {
+  0%, 100% { filter: brightness(.92); }
+  50% { filter: brightness(1.16); box-shadow: inset 0 0 14px rgba(216, 166, 60, .07), 0 0 13px color-mix(in srgb, var(--nav-accent) 16%, transparent); }
+}
+
+@keyframes kl-dot-breathe {
+  0%, 100% { opacity: .3; transform: scale(.75); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes kl-submenu-light {
+  0%, 100% { opacity: .1; transform: translateY(-12px); }
+  24%, 72% { opacity: .8; }
+  88% { opacity: .15; transform: translateY(350px); }
+}
+
+@keyframes kl-tool-ambient {
+  0%, 100% { background-position: 100% 50%; border-color: color-mix(in srgb, var(--nav-accent) 10%, transparent); }
+  50% { background-position: 0 50%; border-color: color-mix(in srgb, var(--nav-accent) 20%, transparent); }
+}
+
+@keyframes kl-tool-sheen {
+  0%, 12% { opacity: .05; transform: translateX(-120%); }
+  42% { opacity: .22; }
+  70%, 100% { opacity: .05; transform: translateX(125%); }
+}
+
+@keyframes kl-icon-aureole {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes kl-icon-turn {
+  0%, 100% { transform: rotate(0) scale(1); }
+  50% { transform: rotate(4deg) scale(1.045); filter: brightness(1.12); }
+}
+
+@keyframes kl-icon-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.055); filter: brightness(1.15); }
+}
+
+@keyframes kl-icon-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); filter: brightness(1.13); }
+}
+
+@keyframes kl-icon-glint {
+  0%, 100% { filter: brightness(.96); }
+  48% { filter: brightness(1.2) drop-shadow(0 0 5px color-mix(in srgb, var(--nav-accent) 42%, transparent)); }
+}
+
+@keyframes kl-route-lotus {
+  0% { transform: scale(1); opacity: 1; }
+  48% { transform: scale(.68); opacity: .78; filter: brightness(1.45); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes kl-active-ring {
+  0% { border-color: var(--kl-shell-gold-bright); box-shadow: inset 0 0 14px rgba(242, 212, 131, .6); opacity: .82; }
+  100% { border-color: transparent; box-shadow: inset 0 0 32px transparent; opacity: 0; }
+}
+
+@keyframes kl-footer-breathe {
+  0%, 100% { border-color: transparent; background-color: transparent; }
+  50% { border-color: color-mix(in srgb, var(--footer-accent) 23%, transparent); background-color: color-mix(in srgb, var(--footer-accent) 4%, transparent); }
+}
+
+@keyframes kl-footer-icon {
+  0%, 100% { transform: translateY(0); filter: brightness(.95); }
+  50% { transform: translateY(-1px); filter: brightness(1.15); }
+}
+
+@keyframes kl-flyout-in {
+  from { opacity: 0; transform: translateX(-7px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}

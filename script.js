@@ -6849,7 +6849,7 @@ function initAppShell() {
     renderedRoute = route;
     document.documentElement.dataset.hhRouteReady = route;
     window.dispatchEvent(new CustomEvent("hh:route-rendered", { detail: { route } }));
-    if (route !== "/home" || document.querySelector('[data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]')) {
+    if (route !== "/home" || document.querySelector('[data-kim-lien-home], [data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]')) {
       window.HHSurfaceBoot?.release?.(route === "/home" ? "home" : "app", { route });
     }
   };
@@ -6915,6 +6915,7 @@ function initAppShell() {
     document.body.classList.toggle("app-music-ai-route", route === "/music-ai" || route.startsWith("/music-ai/"));
     document.body.classList.toggle("app-social-media-tools-route", route === "/social-media-tools" || route.startsWith("/social-media-tools/"));
     document.body.classList.toggle("app-capability-index-route", Boolean(featureHubRootRoutes[route]));
+    document.body.classList.toggle("kim-lien-home-route", route === "/home");
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) {
       window.HHDeveloperTools?.cleanup?.();
       window.HHDevProSuite?.cleanup?.();
@@ -6937,6 +6938,7 @@ function initAppShell() {
     if (route !== "/japanese" && !route.startsWith("/japanese/")) window.HHJapanese?.unmount?.();
     if (route !== "/chinese" && !route.startsWith("/chinese/")) window.HHChinese?.unmount?.();
     if (route !== "/phat-phap" && !route.startsWith("/phat-phap/")) window.HHPhatPhap?.unmount?.();
+    if (route !== "/home") window.HHKimLienHome?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
     if (route !== "/play" && !route.startsWith("/play/")) window.HHPlay?.unmount?.();
     window.HHEonWild?.unmount?.();
@@ -6979,9 +6981,14 @@ function initAppShell() {
     const module = moduleById(possibleId);
     document.body.classList.toggle("app-single-module", !isCreativeOSRoute(route) && Boolean(module));
     if (route === "/home") {
-      updatePageHeader("Trang chủ", "Bắt đầu với các công cụ phù hợp cho công việc của bạn.", route);
-      workspace.replaceChildren(dashboardHome);
-      updateDashboard();
+      updatePageHeader("Điện Kim Liên", "Tu học, đọc kinh và thực hành chánh niệm trong một không gian trang nghiêm.", route);
+      if (window.HHKimLienHome?.mount) {
+        workspace.innerHTML = '<div data-kim-lien-home-host></div>';
+        window.HHKimLienHome.mount(workspace.firstElementChild, { currentUser: readCurrentAuthUser() });
+      } else {
+        workspace.replaceChildren(dashboardHome);
+        updateDashboard();
+      }
     } else if (route === "/social-media-tools" || route.startsWith("/social-media-tools/")) {
       updatePageHeader("Công cụ truyền thông xã hội", "61 công cụ sáng tạo, văn bản, liên kết, ảnh, video, xem trước, xuất asset và vận hành đa nền tảng bằng API chính thức khi có quyền.", route);
       pageActions.innerHTML = `<button type="button" data-app-route="/davinci-resolve/facebook">Facebook</button><button type="button" data-app-route="/davinci-resolve/tiktok">TikTok</button><button type="button" data-app-route="/davinci-resolve/youtube">YouTube</button>`;
