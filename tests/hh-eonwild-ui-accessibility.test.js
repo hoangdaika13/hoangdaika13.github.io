@@ -130,8 +130,6 @@ test("375px ready screen preserves the complete quick-play and ability copy", ()
 
 test("compact landscape reserves the complete quick-play label", () => {
   assert.match(css, /@media \(min-width:\s*431px\) and \(max-width:\s*1000px\)[\s\S]*?\.hwe-header-status\s*>\s*button\s*\{[\s\S]*?min-inline-size:\s*96px[\s\S]*?flex:\s*0\s+0\s+auto[\s\S]*?white-space:\s*nowrap/);
-  assert.match(hardening, /Short landscape shells have very little vertical workspace/);
-  assert.match(hardening, /@media \(max-height:\s*500px\) and \(min-width:\s*431px\)[\s\S]*?\[data-gameplay-state="ready"\] \.hwe-viewport\s*\{[^}]*height:\s*auto[^}]*overflow:\s*visible[\s\S]*?\.hwe-start-panel\s*\{[^}]*position:\s*relative[^}]*max-height:\s*none[^}]*transform:\s*none/);
 });
 
 test("tablet and compact landscape keep Era Realm names intact in a scroll rail", () => {

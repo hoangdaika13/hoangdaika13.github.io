@@ -13,12 +13,12 @@ const desktop = require(sourcePath);
 const near = (actual, expected, tolerance = 1e-9) => assert.ok(Math.abs(actual - expected) <= tolerance, `${actual} must be within ${tolerance} of ${expected}`);
 
 test("desktop controller is a renderer-neutral UMD/CommonJS module with a bounded API", () => {
-  assert.equal(desktop.VERSION, "1.2.0");
+  assert.equal(desktop.VERSION, "1.1.0");
   assert.equal(desktop.FORMAT, "hh-eonwild-desktop-controller-v1");
   for (const name of [
     "getCameraProfile", "applyMouseLook", "cameraRelativeMovement", "updateZoom",
     "resolveCameraCollisionDistance", "createControllerState", "stepControllerState",
-    "interpolateControllerState", "selectTarget", "dampAngle", "autoCenterCameraYaw", "createGameplayState",
+    "interpolateControllerState", "selectTarget", "createGameplayState",
     "reduceGameplayState", "createPointerLockState", "reducePointerLock"
   ]) assert.equal(typeof desktop[name], "function", `${name} must be exported`);
   assert.equal(typeof desktop.FixedTimestepController, "function");
@@ -221,9 +221,6 @@ test("gameplay reducer gates input contexts and returns from overlays determinis
   assert.deepEqual({ status: machine.status, context: machine.context }, { status: S.BOOT, context: C.NONE });
   machine = desktop.reduceGameplayState(machine, E.BOOT_COMPLETE);
   machine = desktop.reduceGameplayState(machine, E.START);
-  assert.equal(machine.status, S.ENTERING);
-  assert.equal(machine.context, C.NONE);
-  machine = desktop.reduceGameplayState(machine, E.POINTER_READY);
   assert.equal(machine.status, S.PLAYING);
   assert.equal(machine.context, C.GAMEPLAY);
 
@@ -239,10 +236,6 @@ test("gameplay reducer gates input contexts and returns from overlays determinis
   machine = desktop.reduceGameplayState(machine, E.CLOSE_CODEX);
   assert.equal(machine.status, S.PAUSED);
   assert.equal(machine.context, C.PAUSE);
-  machine = desktop.reduceGameplayState(machine, E.RESUME);
-  assert.equal(machine.status, S.ENTERING);
-  machine = desktop.reduceGameplayState(machine, E.ENTRY_FAILED);
-  assert.equal(machine.status, S.PAUSED);
   const unchanged = desktop.reduceGameplayState(machine, E.START);
   assert.equal(unchanged, machine, "invalid transitions must preserve the exact state object");
   machine = desktop.reduceGameplayState(machine, E.EXIT);
@@ -275,17 +268,4 @@ test("pointer-lock reducer distinguishes deliberate release from unexpected loss
   assert.equal(state.status, S.ERROR);
   assert.equal(state.shouldPause, true);
   assert.equal(state.error, "DENIED");
-});
-
-test("auto-center is opt-in, waits after manual look and damps independently of frame rate", () => {
-  const disabled = desktop.autoCenterCameraYaw(1, 0, 1 / 60, { enabled: false, movementSpeed: 8, idleMilliseconds: 5000 });
-  assert.equal(disabled, 1);
-  const waiting = desktop.autoCenterCameraYaw(1, 0, 1 / 60, { enabled: true, movementSpeed: 8, idleMilliseconds: 800, delayMilliseconds: 1600 });
-  assert.equal(waiting, 1);
-  const oneFrame = desktop.autoCenterCameraYaw(1, 0, 1 / 60, { enabled: true, movementSpeed: 8, idleMilliseconds: 2000, delayMilliseconds: 1600, ratePerSecond: 2 });
-  assert.ok(oneFrame < 1 && oneFrame > 0);
-  let fifteenFrames = 1;
-  for (let index = 0; index < 15; index += 1) fifteenFrames = desktop.autoCenterCameraYaw(fifteenFrames, 0, 1 / 60, { enabled: true, movementSpeed: 8, idleMilliseconds: 2000, delayMilliseconds: 1600, ratePerSecond: 2 });
-  const oneQuarterSecond = desktop.autoCenterCameraYaw(1, 0, .25, { enabled: true, movementSpeed: 8, idleMilliseconds: 2000, delayMilliseconds: 1600, ratePerSecond: 2 });
-  assert.ok(Math.abs(fifteenFrames - oneQuarterSecond) < 0.01);
 });

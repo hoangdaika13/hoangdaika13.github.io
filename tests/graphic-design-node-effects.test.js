@@ -133,5 +133,4 @@ test("browser contract exposes UMD mount, local-first state, access, and respons
   ]) assert.ok(source.includes(token), `missing browser contract: ${token}`);
   assert.doesNotMatch(source, /<script[^>]+src=/i);
   assert.doesNotMatch(source, /https?:\/\//i);
-  assert.match(source, /@media\(max-width:680px\)[\s\S]{0,1600}?\.hhne-node\{[^}]*height:auto;[^}]*min-height:104px;[^}]*overflow:visible/);
 });

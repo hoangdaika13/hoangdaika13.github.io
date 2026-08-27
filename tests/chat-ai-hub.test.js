@@ -95,12 +95,6 @@ test("Chat AI interface provides real conversation, attachment, privacy and expo
   assert.match(source, /revealAssistant/);
   assert.match(source, /requestAnimationFrame/);
   assert.match(source, /forceBottom/);
-  assert.match(source, /function updateProviderStatus/);
-  assert.match(source, /updateProviderStatus\(runtime\)/);
-  assert.doesNotMatch(source, /catch \{ runtime\.providerStatus = "offline"; \} render\(runtime\)/);
-  assert.match(source, /function captureFocus/);
-  assert.match(source, /preventScroll:\s*true/);
-  assert.match(source, /focusInput:\s*true/);
   assert.match(source, /HH INTELLIGENCE/);
   assert.match(source, /In \/ PDF/);
   assert.match(source, /application\/pdf/);
@@ -171,12 +165,12 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   assert.match(client, /id: "chat-ai"[\s\S]*?route: "\/chat-ai"/);
   assert.match(client, /window\.HHChatAI\?\.mount/);
   assert.match(client, /title: "Chat AI"[\s\S]*?smart router/);
-  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=24[\s\S]*?chat-ai-hub\.js\?v=23/);
+  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=17[\s\S]*?chat-ai-hub\.js\?v=17/);
   assert.match(html, /performance-loader\.js\?v=474/);
   assert.match(worker, /performance-loader\.js\?v=474/);
   assert.match(loader, /value\.startsWith\("\/chat-ai"\)/);
-  assert.match(worker, /chat-ai-hub\.css\?v=24/);
-  assert.match(worker, /chat-ai-hub\.js\?v=23/);
+  assert.match(worker, /chat-ai-hub\.css\?v=17/);
+  assert.match(worker, /chat-ai-hub\.js\?v=17/);
   assert.match(html, /data-hh-galaxy-key="chatAI"/);
   assert.match(html, /25 LĨNH VỰC/);
   assert.match(galaxy, /chatAI:\s*\{[\s\S]*?route: "#\/chat-ai"/);
@@ -207,9 +201,6 @@ test("Chat AI layout is responsive, accessible and motion-safe", () => {
   assert.match(css, /\.chat-ai-hub\.is-sessions-open \.chat-ai-sidebar,\.chat-ai-hub\.is-inspector-open \.chat-ai-inspector/);
   assert.match(css, /body\.app-chat-ai-route \.app-main\{overflow:hidden!important\}/);
   assert.match(css, /max-width:100%/);
-  assert.match(css, /scrollbar-gutter:\s*stable/);
-  assert.match(css, /body\.app-chat-ai-route \[data-chat-ai-host\][\s\S]{0,360}?100dvh - var\(--header-height, 60px\)[\s\S]{0,220}?safe-area-inset-bottom/);
-  assert.match(css, /body\.app-chat-ai-route \.app-workspace\{height:100%;max-height:100%;padding:0\}/);
   assert.match(css, /\.chat-ai-export-format/);
   assert.match(css, /\.chat-ai-message__body\{font-size:15px\}/);
 });

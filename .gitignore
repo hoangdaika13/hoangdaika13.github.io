@@ -6,7 +6,6 @@ node_modules/
 artifacts-communication-*.png
 online-communication-debug.png
 oauth-verification-artifacts/
-artifacts/*.log
 tmp/
 .tmp-photogrammetry/
 .env*

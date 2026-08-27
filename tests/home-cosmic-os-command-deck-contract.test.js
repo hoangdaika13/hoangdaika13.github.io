@@ -61,12 +61,11 @@ function sensitiveKeys(value, pathParts = [], found = []) {
   return found;
 }
 
-test("Kim Lien Home owns the critical home paint while Cosmic OS stays dormant", () => {
+test("Cosmic OS is part of the critical home paint instead of an idle enhancement", () => {
   const critical = loader.match(/"home-critical"\s*:\s*\{[\s\S]*?\n\s*\}/)?.[0] || "";
   const enhancements = loader.match(/"home-enhancements"\s*:\s*\{[\s\S]*?\n\s*\}/)?.[0] || "";
-  assert.match(critical, /kim-lien-home\.css\?v=3/);
-  assert.match(critical, /kim-lien-home\.js\?v=2/);
-  assert.doesNotMatch(critical, /home-cosmic-os\.(?:css|js)/);
+  assert.match(critical, /home-cosmic-os\.css\?v=\d+/);
+  assert.match(critical, /home-cosmic-os\.js\?v=\d+/);
   assert.doesNotMatch(enhancements, /home-cosmic-os\.(?:css|js)/);
 });
 

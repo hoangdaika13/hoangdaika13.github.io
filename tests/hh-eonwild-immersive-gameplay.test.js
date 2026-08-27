@@ -9,8 +9,6 @@ const root = path.resolve(__dirname, "..");
 const game = fs.readFileSync(path.join(root, "hh-eonwild-game.js"), "utf8");
 const gameplay = require(path.join(root, "hh-eonwild-game.js"));
 const core = fs.readFileSync(path.join(root, "hh-eonwild-3d-core.js"), "utf8");
-const coreApi = require(path.join(root, "hh-eonwild-3d-core.js"));
-const rendererApi = require(path.join(root, "hh-eonwild-renderer-3d.js"));
 const router = fs.readFileSync(path.join(root, "script.js"), "utf8");
 
 const extractFunctionSource = (source, name) => {
@@ -42,73 +40,6 @@ test("immersive lifecycle owns Pointer Lock, app chrome and explicit resume", ()
   assert.match(game, /function setImmersiveShell/);
   assert.match(game, /mobileNavigation\.style\.removeProperty\("display"\)/);
   assert.match(game, /mobileNavigation\.style\.setProperty\("display", previous\.value/);
-});
-
-test("entry handshake gates gameplay until Pointer Lock or the documented fallback is ready", () => {
-  for (const token of [
-    "data-hwe-entry-overlay", "isGameplayEntering", "completeGameplayEntry", "failGameplayEntry",
-    'transitionGameplay(instance, { type: "POINTER_READY" })', 'transitionGameplay(instance, { type: "ENTRY_FAILED" })'
-  ]) assert.ok(game.includes(token), `missing ${token}`);
-  const request = extractFunctionSource(game, "requestGameplayPointerLock");
-  assert.match(request, /typeof surface\.requestPointerLock !== "function"[\s\S]*?completeGameplayEntry\(instance, true\)/);
-  assert.match(request, /pointerLockTimer[\s\S]*?2400/);
-  const start = extractFunctionSource(game, "startGame");
-  assert.match(start, /inputSystem\?\.pause/);
-  assert.match(start, /setEntryOverlay\(instance, true\)[\s\S]*?requestGameplayPointerLock/);
-  const complete = extractFunctionSource(game, "completeGameplayEntry");
-  assert.match(complete, /inputSystem\?\.resume/);
-  assert.match(complete, /setEntryOverlay\(instance, false\)/);
-  const active = extractFunctionSource(game, "isGameplayActive");
-  assert.match(active, /instance\.pointerLookFallback/);
-  const failed = extractFunctionSource(game, "failGameplayEntry");
-  assert.match(failed, /data-hwe-pointer-fallback[\s\S]*?removeAttribute\("hidden"\)/);
-  assert.match(game, /data-hwe-pointer-fallback[^>]*>🖱 Chơi bằng giữ chuột trái/);
-  const fallback = extractFunctionSource(game, "resumeWithPointerFallback");
-  assert.match(fallback, /transitionGameplay\(instance, \{ type: "RESUME" \}\)/);
-  assert.match(fallback, /completeGameplayEntry\(instance, true\)/);
-});
-
-test("camera comfort actions have real consumers and look-back preserves movement direction", () => {
-  const profile = extractFunctionSource(game, "desktopCameraProfile");
-  assert.match(profile, /RENDERER_3D\?\.GAMEPLAY_CAMERA_PROFILES/);
-  assert.match(profile, /targetHeight/);
-  const camera = extractFunctionSource(game, "updateGameplayCamera");
-  for (const token of ["autoCenterCameraYaw", "lookBack", "headBob", "shoulderOffset", "movementSpeed", "resetCamera"]) {
-    assert.ok(camera.includes(token), `camera consumer missing ${token}`);
-  }
-  assert.match(camera, /lookBack:\s*false/);
-  assert.match(camera, /autoCenter:\s*false/);
-  assert.match(camera, /resetCamera:\s*false/);
-  assert.match(camera, /!isGameplayActive\(instance\)[\s\S]*?return false/);
-  const input = extractFunctionSource(game, "processInputActions");
-  for (const token of ["shoulderSwap", "cameraReset", "toggleMinimap", "quickTurn", "createNest"]) assert.ok(input.includes(token), `input consumer missing ${token}`);
-  const update = extractFunctionSource(game, "updateWorld");
-  assert.match(update, /cameraYaw:\s*instance\.camera\?\.lookBackActive\s*\?\s*instance\.camera\.lookBackMovementYaw/);
-  assert.match(game, /data-hwe-camera-reset/);
-  assert.match(game, /data-hwe-shoulder-swap/);
-  assert.match(game, /data-hwe-minimap-toggle/);
-  const rendererBoot = extractFunctionSource(game, "createRendererRuntime");
-  assert.match(rendererBoot, /const gameplayCamera\s*=\s*\{/);
-  assert.equal((rendererBoot.match(/gameplayCamera,/g) || []).length, 2, "guarded and generic renderer boots must receive the route-selected profile");
-});
-
-test("route camera classification is authoritative for every guarded-renderer flagship", () => {
-  for (const speciesId of rendererApi.FLAGSHIP_IDS) {
-    const species = gameplay.SPECIES.find((row) => row.id === speciesId);
-    assert.ok(species, `missing ${speciesId}`);
-    const expected = gameplay.cameraProfileIdForSpecies(species);
-    assert.equal(coreApi.defaultGameplayCameraProfileForSpecies(speciesId), expected);
-    assert.equal(rendererApi.defaultGameplayCameraProfileForSpecies(speciesId), expected);
-  }
-});
-
-test("non-blocking Field Guide covers movement, look, sprint, water, sense and interaction", () => {
-  assert.match(game, /data-hwe-tutorial/);
-  assert.match(game, /GAMEPLAY_TUTORIAL_STEPS/);
-  for (const step of ["move", "look", "sprint", "water", "sense", "interact"]) {
-    assert.match(game, new RegExp(`completeGameplayTutorialStep\\(instance, "${step}"\\)`));
-  }
-  assert.match(game, /tutorialCompleted/);
 });
 
 test("renderer auto boot keeps Pointer Lock on the gameplay surface and reconciles fallback swaps", () => {
@@ -148,7 +79,7 @@ test("renderer auto boot keeps Pointer Lock on the gameplay surface and reconcil
 
 test("gameplay uses camera-relative fixed-step controller and interpolated rendering", () => {
   assert.match(game, /new DESKTOP\.FixedTimestepController/);
-  assert.match(game, /cameraYaw:\s*instance\.camera\?\.lookBackActive\s*\?/);
+  assert.match(game, /cameraYaw:\s*instance\.camera\?\.yaw/);
   assert.match(game, /desktopController\?\.advance/);
   assert.match(game, /const fixedSeconds\s*=\s*\(advanced\?\.steps/);
   assert.match(game, /instance\.renderPlayer/);
@@ -317,10 +248,6 @@ test("Map, Codex, Photo and settings remain opaque in-game contexts", () => {
   assert.match(photoMode, /data-hwe-pause-overlay[\s\S]*?setAttribute\("hidden"/);
   assert.match(photoMode, /data-hwe-game-overlay[\s\S]*?setAttribute\("hidden"/);
   assert.match(photoMode, /data-hwe-communication-wheel[\s\S]*?setAttribute\("hidden"/);
-  const camera = extractFunctionSource(game, "updateGameplayCamera");
-  assert.match(camera, /!isGameplayActive\(instance\)/, "Photo Mode must not receive route gameplay-camera packets");
-  const enable3D = extractFunctionSource(game, "enable3D");
-  assert.match(enable3D, /if \(instance\.photoMode\)[\s\S]*?setPhotoSettings/);
 });
 
 test("generic WebGL fallback shares route-owned gameplay camera contract", () => {

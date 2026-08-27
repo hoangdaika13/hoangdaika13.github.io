@@ -43,15 +43,6 @@ test("HUD remains an overlay while visible modal layers exclusively receive poin
   assert.match(immersive, /\.hwe-game-overlay,\s*\.hwe-pause-overlay\s*\{[^}]*position:\s*absolute[^}]*inset:\s*0[^}]*overflow-y:\s*auto[^}]*pointer-events:\s*none/);
   assert.match(immersive, /:is\(\.hwe-game-overlay,\s*\.hwe-pause-overlay\):not\(\[hidden\]\)\s*\{\s*pointer-events:\s*auto/);
   assert.match(immersive, /\[data-gameplay-state="paused"\][\s\S]*?\.hwe-viewport\s*>\s*:where\(canvas,\s*\.hwe-reticle,\s*\.hwe-target-prompt,\s*\.hwe-touch-controls\)\s*\{\s*pointer-events:\s*none/);
-  assert.match(immersive, /\.hwe-game-overlay,\s*\.hwe-pause-overlay\s*\{[\s\S]*?background:\s*#010807/);
-});
-
-test("Entering and Field Guide layers are readable, bounded and reduced-motion safe", () => {
-  assert.match(immersive, /\.hwe-entry-overlay\s*\{[^}]*position:\s*absolute[^}]*inset:\s*0[^}]*background:[\s\S]*?#02080d/);
-  assert.match(immersive, /\.hwe-entry-overlay\[hidden\]\s*\{\s*display:\s*none/);
-  assert.match(immersive, /\.hwe-field-guide\s*\{[^}]*position:\s*absolute[^}]*width:\s*min\(330px[^}]*pointer-events:\s*none/);
-  assert.match(immersive, /\.hwe-field-guide > div\s*\{[^}]*repeat\(6/);
-  assert.match(immersive, /prefers-reduced-motion:[\s\S]*?\.hwe-entry-overlay > span > i[\s\S]*?animation:\s*none\s*!important/);
 });
 
 test("reticle and target prompt are centred, non-interactive and text-safe", () => {
@@ -66,11 +57,6 @@ test("reticle and target prompt are centred, non-interactive and text-safe", () 
 test("Photo Mode checkbox labels keep readable whole words", () => {
   assert.match(css, /\.hwe-photo-controls label\.hwe-photo-check input\[type="checkbox"\]\s*\{[^}]*grid-column:\s*1[^}]*grid-row:\s*1/);
   assert.match(css, /\.hwe-photo-controls label\.hwe-photo-check > span\s*\{[^}]*grid-column:\s*2[^}]*overflow-wrap:\s*break-word[^}]*word-break:\s*normal/);
-  assert.match(css, /\.hwe-root\.is-photo-mode :where\([^)]*\.hwe-field-guide[^)]*\.hwe-immersive-vitals[^)]*\)\s*\{[^}]*opacity:\s*0[^}]*pointer-events:\s*none/);
-});
-
-test("Pointer Lock denial exposes a readable drag-camera fallback", () => {
-  assert.match(immersive, /\.hwe-pause-overlay \[data-hwe-pointer-fallback\]:not\(\[hidden\]\)\s*\{[^}]*border-color:[^}]*background:/);
 });
 
 test("coarse pointers receive an analogue left stick and a dedicated right camera pad", () => {

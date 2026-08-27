@@ -39,8 +39,8 @@ test("eight large workspace roots mount a descriptive capability catalog", () =>
   assert.match(styles, /grid-template-columns:\s*repeat\(3/);
   assert.match(styles, /@media\s*\(max-width:\s*700px\)/);
   assert.match(styles, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
-  assert.match(html, /workspace-feature-explorer\.css\?v=3/);
-  assert.match(worker, /workspace-feature-explorer\.css\?v=3/);
+  assert.match(html, /workspace-feature-explorer\.css\?v=2/);
+  assert.match(worker, /workspace-feature-explorer\.css\?v=2/);
 });
 
 test("authentication and Home enforce one paint owner at a time", () => {
@@ -69,10 +69,10 @@ test("refresh stays on an opaque boot surface until auth and the current Home ar
   const shell = read("app-shell.css");
   const auth = read("auth-platform.js");
   const loader = read("performance-loader.js");
-  const home = read("kim-lien-home.js");
+  const home = read("home-galaxy-command.js");
   const router = read("script.js");
 
-  assert.match(html, /<body class="[^"]*home-neon[^"]*auth-resolving[^"]*hh-surface-pending[^"]*hh-kim-lien[^"]*kim-lien-theme[^"]*">/);
+  assert.match(html, /<body class="home-neon auth-resolving hh-surface-pending">/);
   assert.ok(html.indexOf('id="hhBootSurface"') < html.indexOf('id="authGate"'));
   assert.match(html, /body\.hh-surface-pending>\s*:not\(#hhBootSurface\)[^}]*display:none!important/);
   assert.match(shell, /body\.hh-surface-pending #authGate[\s\S]*?display:\s*none\s*!important/);
@@ -80,11 +80,13 @@ test("refresh stays on an opaque boot surface until auth and the current Home ar
   assert.match(auth, /const sessionResolving = gate\.dataset\.authSession === "background"/);
   assert.match(auth, /HHSurfaceBoot = Object\.freeze/);
   assert.match(auth, /routeReady && homeReady/);
-  assert.match(loader, /"home-critical":\s*\{[\s\S]*?kim-lien-home\.css\?v=3[\s\S]*?kim-lien-home\.js\?v=2/);
+  assert.match(loader, /"home-critical":\s*\{[\s\S]*?home-galaxy-command\.css\?v=13[\s\S]*?home-galaxy-mission\.css\?v=9[\s\S]*?home-galaxy-command\.js\?v=15[\s\S]*?home-galaxy-mission\.js\?v=12/);
   assert.match(loader, /if \(value === "\/home"\) return \["home-critical"\]/);
-  assert.match(home, /global\.HHKimLienHome\s*=\s*Object\.freeze/);
-  assert.match(router, /window\.HHKimLienHome\?\.mount[\s\S]{0,260}data-kim-lien-home-host/, "Router must mount Kim Lien Home directly into the current workspace");
-  assert.match(router, /\[data-kim-lien-home\][\s\S]{0,240}HHSurfaceBoot\?\.release/, "Boot release must wait for the Kim Lien home surface");
+  assert.match(home, /hh:home-surface-ready/);
+  assert.match(home, /hh:route-rendered[\s\S]{0,180}scheduleMount/, "Home must retry its mount after the router creates the workspace host");
+  assert.match(home, /classList\.contains\("hco-command-active"\)[\s\S]{0,360}overflow-y[\s\S]{0,100}"clip"/, "the Home shell must not re-enable outer scrolling while Cosmic OS owns the route");
+  assert.match(read("home-galaxy-mission.js"), /surface: "mission-control"/);
+  assert.match(home, /HHSurfaceBoot\?\.release\?\.\("home"\)/);
   assert.match(router, /document\.documentElement\.dataset\.hhRouteReady = route/);
 });
 

@@ -15,36 +15,15 @@ test("privacy choices are explicit, reversible and marketing stays disabled", ()
   assert.match(client, /data-banner-refuse/);
   assert.match(client, /data-banner-customize/);
   assert.match(client, /hh-banner-options/);
-  assert.match(client, /is-auth-inline/);
-  assert.match(client, /addEventListener\("hh:auth-change",\s*placeBanner\)/);
-  assert.match(client, /addEventListener\("resize",\s*placeBanner/);
-  assert.match(client, /mobileQuery\.matches[\s\S]*?document\.body\.classList\.contains\("auth-locked"\)/);
   assert.match(client, /data-privacy-reset/);
   assert.match(client, /necessary:\s*true/);
   assert.match(client, /marketing:\s*false/);
   assert.match(styles, /bottom:calc\(78px \+ env\(safe-area-inset-bottom\)\)/);
   assert.match(styles, /max-height:calc\(100dvh - 100px - env\(safe-area-inset-bottom\)\)/);
-  assert.match(styles, /#authGate \.hh-consent-banner\.is-auth-inline[\s\S]{0,520}?position:\s*relative\s*!important/);
-  assert.match(styles, /\.is-auth-inline button\.primary[\s\S]{0,120}?grid-column:\s*1 \/ -1/);
   assert.match(endpoint, /necessary:\s*true/);
   assert.match(endpoint, /marketing:\s*false/);
   assert.match(endpoint, /privacyConsentEvents/);
   assert.match(endpoint, /expireAfterSeconds:\s*0/);
-});
-
-test("privacy center adopts the opaque Kim Lien palette and readable mobile controls", () => {
-  const styles = read("privacy-consent-center.css");
-  const html = read("index.html");
-  const themed = styles.slice(styles.indexOf("/* Kim Lien Dien"));
-
-  assert.match(html, /<html[^>]+data-hh-theme="kim-lien"/);
-  assert.match(html, /<body[^>]+hh-kim-lien[^>]+kim-lien-theme/);
-  assert.match(themed, /html\[data-hh-theme="kim-lien"\][\s\S]*?\.hh-consent-banner/);
-  assert.match(themed, /auth-locked[^}]*\.hh-consent-banner[^}]*\{[\s\S]*?z-index:\s*10020\s*!important/);
-  assert.match(themed, /background:\s*linear-gradient\(145deg,\s*#3a1713,\s*#1c0908 72%\)/);
-  assert.match(themed, /\.hh-consent-banner p[\s\S]*?font-size:\s*16px/);
-  assert.match(themed, /min-height:\s*44px[\s\S]*?font-size:\s*14px/);
-  assert.doesNotMatch(themed, /#(?:d84bb4|59d8dc|dd4dae|62e5d8)/i);
 });
 
 test("consent audit hashes guest identity and never stores raw tracking secrets", () => {

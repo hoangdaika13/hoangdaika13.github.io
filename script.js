@@ -5249,27 +5249,9 @@ function initAppShell() {
   const syncMobileSidebarDock = () => {
     const mobileNavigation = document.querySelector(".app-mobile-nav");
     if (mobileNavigation) {
-      const workspaceOwnsMobileDock = document.body.classList.contains("app-dharma-route")
-        || document.body.classList.contains("app-eonwild-immersive")
-        || document.body.classList.contains("app-chinese-route")
-        || document.body.classList.contains("app-support-route");
-      if (mobileSidebarQuery.matches) {
-        mobileNavigation.style.setProperty("display", workspaceOwnsMobileDock ? "none" : "grid", "important");
-        if (workspaceOwnsMobileDock) {
-          mobileNavigation.style.setProperty("visibility", "hidden", "important");
-          mobileNavigation.style.setProperty("pointer-events", "none", "important");
-          mobileNavigation.setAttribute("aria-hidden", "true");
-        } else {
-          mobileNavigation.style.removeProperty("visibility");
-          mobileNavigation.style.removeProperty("pointer-events");
-          mobileNavigation.removeAttribute("aria-hidden");
-        }
-      } else {
-        mobileNavigation.style.removeProperty("display");
-        mobileNavigation.style.removeProperty("visibility");
-        mobileNavigation.style.removeProperty("pointer-events");
-        mobileNavigation.removeAttribute("aria-hidden");
-      }
+      const workspaceOwnsMobileDock = document.body.classList.contains("app-dharma-route") || document.body.classList.contains("app-eonwild-immersive");
+      if (mobileSidebarQuery.matches && !workspaceOwnsMobileDock) mobileNavigation.style.setProperty("display", "grid", "important");
+      else mobileNavigation.style.removeProperty("display");
     }
     syncSidebarToggleState();
   };
@@ -6736,12 +6718,6 @@ function initAppShell() {
     cosmicLoaderPhaseTimers = [];
     clearTimeout(cosmicLoaderHideTimer);
   };
-  const setRouteWorkspaceInactive = (inactive) => {
-    if (!workspace) return;
-    workspace.inert = Boolean(inactive);
-    workspace.toggleAttribute("aria-hidden", Boolean(inactive));
-    workspace.toggleAttribute("data-route-transition-inert", Boolean(inactive));
-  };
   const setCosmicLoaderPhase = (phase, progress, message = "") => {
     if (!cosmicRouteLoader) return;
     cosmicRouteLoader.style.setProperty("--loader-progress", `${Math.max(0, Math.min(100, progress))}%`);
@@ -6767,7 +6743,6 @@ function initAppShell() {
     cosmicRouteLoader.classList.remove("is-active", "is-departing", "is-arriving", "is-complete", "is-error");
     cosmicRouteLoader.hidden = true;
     cosmicRouteLoader.setAttribute("aria-hidden", "true");
-    setRouteWorkspaceInactive(false);
     cosmicLoaderRoute = "";
   };
   const showCosmicRouteLoader = (route = routeFromHash()) => {
@@ -6784,7 +6759,6 @@ function initAppShell() {
     const previousTitle = pageHeader.querySelector("h1")?.textContent?.trim() || "HH Platform";
     clearCosmicLoaderTimers();
     cosmicLoaderRoute = normalized;
-    setRouteWorkspaceInactive(true);
     cosmicRouteLoader.hidden = false;
     cosmicRouteLoader.setAttribute("aria-hidden", "false");
     cosmicRouteLoader.classList.remove("is-arriving", "is-complete", "is-error");
@@ -6841,11 +6815,6 @@ function initAppShell() {
     cosmicRouteLoader.classList.remove("is-departing");
     cosmicRouteLoader.classList.add("is-arriving");
     cosmicRouteLoader.dataset.transitionState = "arriving";
-    // The newly rendered route becomes the only interactive/accessibility
-    // surface before the visual gate opens. The loader remains as an opaque,
-    // presentation-only curtain until its centre aperture completes.
-    cosmicRouteLoader.setAttribute("aria-hidden", "true");
-    setRouteWorkspaceInactive(false);
     if (!error) cosmicRouteLoader.classList.add("is-complete");
     const duration = motion === "cinematic" ? 540 : motion === "balanced" ? 360 : 50;
     cosmicLoaderHideTimer = window.setTimeout(() => {
@@ -6857,47 +6826,8 @@ function initAppShell() {
     finish: () => finishCosmicRouteLoader(),
     fail: (message) => finishCosmicRouteLoader({ error: true, message })
   });
-  const dismissRouteTransientLayers = () => {
-    // A route can change through Back/Forward, a direct hash edit or another
-    // workspace event, so click-only cleanup is not sufficient. Close the
-    // previous route's top-layer dialogs before its DOM is unmounted; this
-    // prevents a native dialog backdrop from remaining above the next page.
-    document.querySelectorAll("dialog[open]").forEach((dialog) => {
-      try {
-        dialog.dispatchEvent(new Event("cancel", { cancelable: true }));
-        if (dialog.open) dialog.close("cancel");
-      } catch {
-        dialog.removeAttribute("open");
-      }
-    });
-    [notificationDrawer, helpDrawer].forEach((drawer) => {
-      drawer?.classList.remove("is-open");
-      drawer?.setAttribute("aria-hidden", "true");
-    });
-    userMenu?.classList.remove("is-open");
-    userMenu?.setAttribute("aria-hidden", "true");
-    document.querySelectorAll("[data-notification-toggle], [data-help-toggle], [data-user-menu-toggle]").forEach((button) => button.setAttribute("aria-expanded", "false"));
-    if (drawerBackdrop) drawerBackdrop.hidden = true;
-    const themePanel = byId("appThemePanel");
-    themePanel?.classList.remove("is-open");
-    themePanel?.setAttribute("aria-hidden", "true");
-    document.querySelector(".ext-tour-overlay")?.remove();
-    document.querySelectorAll(".ext-tour-focus").forEach((target) => target.classList.remove("ext-tour-focus"));
-    window.HHSearchWatch?.close?.();
-    // Browser Back/Forward and direct hash edits do not pass through a
-    // sidebar route button. Collapse the mobile sheet here as part of the
-    // route transaction so its backdrop and touch lock cannot cover the next
-    // workspace. Desktop keeps the user's persisted sidebar preference.
-    if (mobileSidebarQuery.matches) {
-      document.body.classList.add("app-sidebar-collapsed");
-      syncMobileSidebarDock();
-    }
-  };
   const beginRouteFeedback = (route = routeFromHash()) => {
-    const normalized = String(route || "/home").split("?")[0];
-    if (renderedRoute && normalized !== renderedRoute) dismissRouteTransientLayers();
     document.body.classList.add("app-route-changing");
-    setRouteWorkspaceInactive(true);
     routeProgress?.setAttribute("aria-hidden", "false");
     showCosmicRouteLoader(route);
     if (routeAnnouncer) routeAnnouncer.textContent = `Đang mở ${route.split("/").filter(Boolean).at(-1) || "trang chủ"}`;
@@ -6905,7 +6835,6 @@ function initAppShell() {
   const endRouteFeedback = () => {
     document.body.classList.remove("app-route-changing");
     routeProgress?.setAttribute("aria-hidden", "true");
-    setRouteWorkspaceInactive(false);
     finishCosmicRouteLoader();
     if (routeAnnouncer) routeAnnouncer.textContent = `${pageHeader.querySelector("h1")?.textContent || "Trang"} đã sẵn sàng`;
   };
@@ -6915,16 +6844,12 @@ function initAppShell() {
     requestAnimationFrame(() => {
       document.querySelector(".app-main")?.scrollTo({ top: 0, left: 0, behavior: "auto" });
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-      // Lazy workspaces may restore the inline style they captured while
-      // unmounting later in the same hashchange transaction. Reassert the
-      // route owner's dock after all synchronous route listeners have run.
-      syncMobileSidebarDock();
     });
     legacyMain.hidden = true;
     renderedRoute = route;
     document.documentElement.dataset.hhRouteReady = route;
     window.dispatchEvent(new CustomEvent("hh:route-rendered", { detail: { route } }));
-    if (route !== "/home" || document.querySelector('[data-kim-lien-home], [data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]')) {
+    if (route !== "/home" || document.querySelector('[data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]')) {
       window.HHSurfaceBoot?.release?.(route === "/home" ? "home" : "app", { route });
     }
   };
@@ -6990,7 +6915,6 @@ function initAppShell() {
     document.body.classList.toggle("app-music-ai-route", route === "/music-ai" || route.startsWith("/music-ai/"));
     document.body.classList.toggle("app-social-media-tools-route", route === "/social-media-tools" || route.startsWith("/social-media-tools/"));
     document.body.classList.toggle("app-capability-index-route", Boolean(featureHubRootRoutes[route]));
-    document.body.classList.toggle("kim-lien-home-route", route === "/home");
     if (route !== "/dev-tools" && !route.startsWith("/dev-tools/")) {
       window.HHDeveloperTools?.cleanup?.();
       window.HHDevProSuite?.cleanup?.();
@@ -7013,7 +6937,6 @@ function initAppShell() {
     if (route !== "/japanese" && !route.startsWith("/japanese/")) window.HHJapanese?.unmount?.();
     if (route !== "/chinese" && !route.startsWith("/chinese/")) window.HHChinese?.unmount?.();
     if (route !== "/phat-phap" && !route.startsWith("/phat-phap/")) window.HHPhatPhap?.unmount?.();
-    if (route !== "/home") window.HHKimLienHome?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
     if (route !== "/play" && !route.startsWith("/play/")) window.HHPlay?.unmount?.();
     window.HHEonWild?.unmount?.();
@@ -7032,8 +6955,6 @@ function initAppShell() {
     const learningView = route === "/learn" ? "today" : route.split("/").filter(Boolean)[1];
     if (!(route === "/learn" || window.HHSchool?.supports?.(learningView))) window.HHSchool?.unmount?.();
     if (route !== "/system") window.HHSystemPlatform?.unmount?.();
-    if (route !== "/support") window.HHSupportPage?.unmount?.();
-    if (!(route === "/tools" || route.startsWith("/tools/"))) window.HHFeatureLab?.unmount?.();
     if (!(route === "/work" || workGalaxyPageItems.some((item) => item.route === route))) window.HHWorkCenter?.unmount?.();
     if (route !== "/music-ai" && !route.startsWith("/music-ai/")) {
       window.HHMusicAutopilot?.unmount?.();
@@ -7058,14 +6979,9 @@ function initAppShell() {
     const module = moduleById(possibleId);
     document.body.classList.toggle("app-single-module", !isCreativeOSRoute(route) && Boolean(module));
     if (route === "/home") {
-      updatePageHeader("Điện Kim Liên", "Tu học, đọc kinh và thực hành chánh niệm trong một không gian trang nghiêm.", route);
-      if (window.HHKimLienHome?.mount) {
-        workspace.innerHTML = '<div data-kim-lien-home-host></div>';
-        window.HHKimLienHome.mount(workspace.firstElementChild, { currentUser: readCurrentAuthUser() });
-      } else {
-        workspace.replaceChildren(dashboardHome);
-        updateDashboard();
-      }
+      updatePageHeader("Trang chủ", "Bắt đầu với các công cụ phù hợp cho công việc của bạn.", route);
+      workspace.replaceChildren(dashboardHome);
+      updateDashboard();
     } else if (route === "/social-media-tools" || route.startsWith("/social-media-tools/")) {
       updatePageHeader("Công cụ truyền thông xã hội", "61 công cụ sáng tạo, văn bản, liên kết, ảnh, video, xem trước, xuất asset và vận hành đa nền tảng bằng API chính thức khi có quyền.", route);
       pageActions.innerHTML = `<button type="button" data-app-route="/davinci-resolve/facebook">Facebook</button><button type="button" data-app-route="/davinci-resolve/tiktok">TikTok</button><button type="button" data-app-route="/davinci-resolve/youtube">YouTube</button>`;
@@ -7703,11 +7619,7 @@ function initAppShell() {
       return;
     }
     const touchesHomeSurface = nextRoute === "/home" || renderedRoute === "/home";
-    // A full-screen route gate already owns the visual transaction. Running a
-    // View Transition at the same time preserves a snapshot of the old route,
-    // which can leak through the gate aperture during arrival. Keep the API as
-    // a fallback only for shells that do not provide the route gate.
-    const canTransition = !cosmicRouteLoader && Boolean(document.startViewTransition) && Boolean(renderedRoute) && nextRoute !== renderedRoute && !touchesHomeSurface && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const canTransition = Boolean(document.startViewTransition) && Boolean(renderedRoute) && nextRoute !== renderedRoute && !touchesHomeSurface && !matchMedia("(prefers-reduced-motion: reduce)").matches;
     beginRouteFeedback(nextRoute);
     routeTransition?.skipTransition?.();
     afterCosmicLoaderPaint(nextRoute, () => {

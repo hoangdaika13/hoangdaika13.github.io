@@ -23,17 +23,17 @@ function versionFor(manifest, asset) {
   return manifest.match(new RegExp(`${escaped}\\?v=(\\d+)`))?.[1] || "";
 }
 
-test("legacy Cosmic OS remains versioned offline but is not the active home paint", () => {
+test("Cosmic OS is a versioned home module in both online and offline manifests", () => {
   assert.match(String(api.VERSION || api.version), /^\d+\.\d+\.\d+$/);
   for (const asset of ["home-cosmic-os.css", "home-cosmic-os.js"]) {
+    const loaderVersion = versionFor(loader, asset);
     const workerVersion = versionFor(worker, asset);
+    assert.ok(loaderVersion, `performance loader missing versioned ${asset}`);
     assert.ok(workerVersion, `service worker missing versioned ${asset}`);
-    assert.equal(versionFor(loader, asset), "", `${asset} must stay dormant in the active route loader`);
+    assert.equal(workerVersion, loaderVersion, `${asset} versions must agree`);
   }
-  assert.match(loader, /"home-critical"\s*:\s*\{[\s\S]*?kim-lien-home\.css\?v=3[\s\S]*?kim-lien-home\.js\?v=2/);
-  assert.doesNotMatch(loader.match(/"home-critical"\s*:\s*\{[\s\S]*?\n\s*\}/)?.[0] || "", /home-cosmic-os/);
   assert.match(index, /performance-loader\.js\?v=\d+/);
-  assert.match(worker, /const CACHE = "hh-kim-lien-v\d+"/);
+  assert.match(worker, /hh-identity-portal-v\d+/);
   assert.match(source, /HHHomeCosmicOS/);
   assert.match(source, /data-hco-root/);
 });

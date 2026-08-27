@@ -12,15 +12,12 @@ test("Professional Toolkit uses dedicated dynamic routes and mounts the selected
 
   assert.match(shell, /route === "\/tools" \|\| route\.startsWith\("\/tools\/"\)/);
   assert.match(shell, /HHFeatureLab\?\.mount/);
-  assert.match(shell, /HHFeatureLab\?\.unmount/);
   assert.match(shell, /location\.hash = `#\/tools\/\$\{nextToolId\}`/);
   assert.match(lab, /data-lab-feature/);
   assert.match(lab, /onNavigate\(next\.id\)/);
   assert.match(lab, /HHPlatformTools/);
   assert.match(lab, /HHToolWorkspace/);
   assert.match(lab, /HHUtilityTools/);
-  assert.match(lab, /function unmount\(\)[\s\S]{0,260}?activeCleanup = null[\s\S]{0,260}?activeHost\?\.replaceChildren\(\)/);
-  assert.match(lab, /mount,[\s\S]{0,80}?unmount,/);
 });
 
 test("platform loader includes runtime, manifests, dedicated suites and nested tool routes", () => {
@@ -29,7 +26,7 @@ test("platform loader includes runtime, manifests, dedicated suites and nested t
   for (const asset of [
     "tool-manifests.js?v=1",
     "tool-runtime.js?v=1",
-    "feature-lab.js?v=7",
+    "feature-lab.js?v=6",
     "platform-tools.js?v=1",
     "tool-workspace-pro.js?v=1",
     "utility-lab-tools.js?v=9"

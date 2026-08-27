@@ -649,7 +649,7 @@
         bootReleaseAllowed = true;
         const route = currentRoute();
         const routeReady = document.documentElement.dataset.hhRouteReady === route;
-        const homeReady = route !== "/home" || Boolean(document.querySelector('[data-kim-lien-home], [data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]'));
+        const homeReady = route !== "/home" || Boolean(document.querySelector('[data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]'));
         if (routeReady && homeReady) releaseSurfaceBoot(route === "/home" ? "home" : "app", { route });
         else holdSurfaceBoot({ route, phase: "restore", message: route === "/home" ? "Đang hoàn thiện Trang chủ…" : "Đang mở workspace của bạn…" });
         document.body.classList.remove("auth-panel-open", "app-route-changing");

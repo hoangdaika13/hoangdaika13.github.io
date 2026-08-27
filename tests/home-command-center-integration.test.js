@@ -26,7 +26,7 @@ test("home experience assets are loaded and cached", () => {
     assert.ok(registeredAssets.includes(asset), `${asset} must be registered by the route loader`);
     assert.ok(worker.includes(`./${asset}`), `${asset} must be cached for offline use`);
   }
-  assert.match(worker, /const CACHE = "hh-kim-lien-v\d+"/);
+  assert.match(worker, /const CACHE = "hh-identity-portal-v\d+"/);
 });
 
 test("home enhancements load after the existing Command Center runtime", () => {

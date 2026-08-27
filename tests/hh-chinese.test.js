@@ -222,13 +222,11 @@ test("HH Chinese v11 exposes the complete Learning Cockpit experience", () => {
   assert.match(css, /v11 Learning Cockpit/);
   assert.match(css, /\.hhc-v11\.is-reader-mode/);
   assert.match(css, /\.hhc-progress-inspector/);
-  assert.match(css, /\.app-chinese-route \.hhc-v11 \{ z-index: 2; \}/);
   assert.match(css, /hhc-v11-pitch/);
   assert.match(css, /hhc-v11-stroke/);
   assert.match(css, /data-hsk="9"/);
   assert.match(loader, /hh-chinese\.css\?v=11/);
   assert.match(loader, /hh-chinese\.js\?v=11/);
-  assert.match(loader, /hh-chinese\.css\?v=14/);
   assert.match(worker, /hh-identity-portal-v822/);
   assert.match(worker, /hh-chinese\.css\?v=11/);
   assert.match(worker, /hh-chinese\.js\?v=11/);

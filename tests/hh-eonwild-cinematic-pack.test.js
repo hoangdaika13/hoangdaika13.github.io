@@ -630,11 +630,11 @@ test("OPFS refuses a mismatched resume range instead of combining untrusted byte
 });
 
 test("route-lazy integration loads the pack runtime before the game and preserves its separate cache", () => {
-  const loaderIndex = html.indexOf('<script src="performance-loader.js?v=570"');
+  const loaderIndex = html.indexOf('<script src="performance-loader.js?v=548"');
   assert.ok(loaderIndex > 0);
   assert.equal(html.includes('<script src="hh-eonwild-cinematic-pack.js?v=1" defer></script>'), false, "the base shell must not eagerly load the owner-only pack runtime");
   const cinematicIndex = fs.readFileSync(path.join(root, "performance-loader.js"), "utf8").indexOf('"hh-eonwild-cinematic-pack.js?v=1"');
-  const gameIndex = fs.readFileSync(path.join(root, "performance-loader.js"), "utf8").indexOf('"hh-eonwild-game.js?v=30"');
+  const gameIndex = fs.readFileSync(path.join(root, "performance-loader.js"), "utf8").indexOf('"hh-eonwild-game.js?v=28"');
   assert.ok(cinematicIndex > 0 && cinematicIndex < gameIndex);
   assert.equal((serviceWorker.match(/"\.\/hh-eonwild-cinematic-pack\.js\?v=1"/g) || []).length, 1);
   assert.equal((serviceWorker.match(/"\.\/hh-eonwild-cinematic-pack-worker\.js\?v=1"/g) || []).length, 1);

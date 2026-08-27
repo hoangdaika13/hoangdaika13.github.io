@@ -25,14 +25,6 @@
 
   // Compatibility contracts: scripts: ["auth-creative-universe.js?v=5"] home-galaxy-command.js?v=8 home-galaxy-command.css?v=9
   const groups = Object.freeze({
-    "post-paint-essential": {
-      styles: [],
-      scripts: ["auth-zoom-resilience.js?v=4", "privacy-consent-center.js?v=3"]
-    },
-    observability: {
-      styles: [],
-      scripts: ["vercel-observability.js?v=2"]
-    },
     "auth-effects": {
       /*
        * The H Galaxy mounted by auth-neon-gateway is the only visual owner.
@@ -53,8 +45,8 @@
     "home-critical": {
       // Compatibility ordering marker for older first-paint contracts:
       // home-galaxy-command.css?v=13 home-galaxy-mission.css?v=9 home-galaxy-command.js?v=15 home-galaxy-mission.js?v=12
-      styles: ["kim-lien-home.css?v=3"],
-      scripts: ["kim-lien-home.js?v=2"]
+      styles: ["home-galaxy-command.css?v=13", "home-galaxy-mission.css?v=9", "home-cosmic-os.css?v=9"],
+      scripts: ["home-galaxy-command.js?v=17", "home-galaxy-mission.js?v=12", "home-cosmic-os.js?v=20"]
     },
     "home-enhancements": {
       styles: [
@@ -74,7 +66,7 @@
       ],
       scripts: [
         "extension-suite.js?v=2", "professional-tools.js?v=4", "tool-manifests.js?v=1", "tool-runtime.js?v=1",
-        "feature-lab.js?v=7", "platform-tools.js?v=1", "tool-workspace-pro.js?v=1", "utility-lab-tools.js?v=9", "feature-engines.js?v=2",
+        "feature-lab.js?v=6", "platform-tools.js?v=1", "tool-workspace-pro.js?v=1", "utility-lab-tools.js?v=9", "feature-engines.js?v=2",
         "ai-center-advanced.js?v=2", "platform-p0.js?v=1", "vendor/jszip.min.js?v=3.10.1", "system-platform.js?v=7"
       ]
     },
@@ -112,10 +104,10 @@
         "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=22", "image-text-studio.css?v=12", "facebook-page-command-center.css?v=4", "tiktok-creator-galaxy.css?v=2"
       ],
       scripts: [
-        "media-design-studio.js?v=2", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
+        "media-design-studio.js?v=1", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
         "video-editor-resolve.js?v=12", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1", "h-cosmic-web-studio.js?v=3",
-        "youtube-publisher.js?v=9", "youtube-creator-galaxy.js?v=27", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=12", "facebook-page-command-center.js?v=4", "services/tiktokCreatorCore.js?v=2", "services/tiktokCreatorConnections.js?v=2", "services/tiktokCreatorPublishing.js?v=2", "services/tiktokCreatorAnalytics.js?v=2", "tiktok-creator-galaxy.js?v=2"
+        "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=27", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=12", "facebook-page-command-center.js?v=4", "services/tiktokCreatorCore.js?v=2", "services/tiktokCreatorConnections.js?v=2", "services/tiktokCreatorPublishing.js?v=2", "services/tiktokCreatorAnalytics.js?v=2", "tiktok-creator-galaxy.js?v=2"
       ]
     },
     "ai-video-remake": {
@@ -142,7 +134,7 @@
         "graphic-design-motion.js?v=1", "graphic-design-quick-motion.js?v=1", "graphic-design-mockup.js?v=1",
         "graphic-design-character.js?v=1", "graphic-design-vector-core.js?v=2", "graphic-design-state-machine.js?v=2",
         "graphic-design-adaptive.js?v=2", "graphic-design-project-store.js?v=2", "graphic-design-collaboration.js?v=2",
-        "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-workflow.js?v=2", "graphic-design-universal.js?v=5", "graphic-design-studio.js?v=9"
+        "graphic-design-dev-ai.js?v=2", "graphic-design-composer.js?v=2", "graphic-design-workflow.js?v=2", "graphic-design-universal.js?v=5", "graphic-design-studio.js?v=8"
       ]
     },
     creative: {
@@ -169,7 +161,7 @@
     },
     communication: {
       styles: [
-        "communication-overview.css?v=1", "communication-suite.css?v=7", "communication-workspace-fix.css?v=10",
+        "communication-overview.css?v=1", "communication-suite.css?v=7", "communication-workspace-fix.css?v=7",
         "communication-command-center.css?v=1", "communication-messenger-next.css?v=2",
         "communication-channels-forum.css?v=1", "communication-live-room.css?v=1",
         "communication-canvas-automation.css?v=1", "communication-intelligence.css?v=3",
@@ -223,21 +215,21 @@
     },
     // Compatibility asset markers: english-learning-os.css?v=3 · english-learning-os.js?v=7 · english-learning.js?v=28 · english-vocabulary.css?v=1 · english-vocabulary.js?v=2
     english: {
-      styles: ["language-learning-cockpit.css?v=2", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=6", "english-vocabulary.css?v=2", "english-for-everyone.css?v=1", "english-skill-graph.css?v=1", "english-learning-os.css?v=4"],
+      styles: ["language-learning-cockpit.css?v=1", "english-learning.css?v=17", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=6", "english-vocabulary.css?v=2", "english-for-everyone.css?v=1", "english-skill-graph.css?v=1", "english-learning-os.css?v=4"],
       scripts: ["language-learning-cockpit.js?v=1", "english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=2", "english-learning-galaxy.js?v=5", "english-for-everyone.js?v=2", "english-vocabulary.js?v=3", "english-skill-graph.js?v=1", "english-learning-os.js?v=8", "english-learning.js?v=29"]
     },
     // Compatibility: japanese-os-v4.js?v=7 and v8 remain valid for existing tabs.
     japanese: {
-      styles: ["language-learning-cockpit.css?v=2", "japanese-learning.css?v=8", "japanese-os-v3.css?v=4", "japanese-os-v4.css?v=3"],
+      styles: ["language-learning-cockpit.css?v=1", "japanese-learning.css?v=8", "japanese-os-v3.css?v=4", "japanese-os-v4.css?v=3"],
       scripts: ["language-learning-cockpit.js?v=1", "japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=8", "japanese-os-v3.js?v=2", "japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.js?v=9"]
     },
     // Previous cache keys retained for old clients: hh-chinese.css?v=1 · hh-chinese.js?v=1 · hh-chinese.css?v=11 · hh-chinese.js?v=11
     chinese: {
-      styles: ["language-learning-cockpit.css?v=2", "hh-chinese.css?v=14"],
-      scripts: ["language-learning-cockpit.js?v=1", "hh-chinese.js?v=13"]
+      styles: ["language-learning-cockpit.css?v=1", "hh-chinese.css?v=12"],
+      scripts: ["language-learning-cockpit.js?v=1", "hh-chinese.js?v=12"]
     },
     dharma: {
-      styles: ["phat-phap.css?v=20"],
+      styles: ["phat-phap.css?v=18"],
       scripts: ["phat-phap.js?v=15"]
     },
     play: {
@@ -245,11 +237,11 @@
       scripts: ["hh-play.js?v=4&build=2"]
     },
     game: {
-      styles: ["hh-eonwild-game.css?v=27"],
-      scripts: ["hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3", "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=3", "hh-eonwild-desktop-controller.js?v=3", "hh-eonwild-collision-system.js?v=1", "hh-eonwild-world-atlas.js?v=2", "hh-eonwild-simulation-v2.js?v=4", "hh-eonwild-3d-core.js?v=9", "hh-eonwild-landscape-core.js?v=1", "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=4", "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=21", "hh-eonwild-game.js?v=30"]
+      styles: ["hh-eonwild-game.css?v=22"],
+      scripts: ["hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3", "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=2", "hh-eonwild-desktop-controller.js?v=2", "hh-eonwild-collision-system.js?v=1", "hh-eonwild-world-atlas.js?v=2", "hh-eonwild-simulation-v2.js?v=4", "hh-eonwild-3d-core.js?v=7", "hh-eonwild-landscape-core.js?v=1", "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=4", "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=19", "hh-eonwild-game.js?v=28"]
     },
     fortune: {
-      styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=27"],
+      styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=26"],
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "vendor/iztro-2.6.0.min.js?v=2.6.0", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=4", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-moon-3d.js?v=1", "fortune-extended-tools.js?v=2", "fortune-hub.js?v=28"]
     },
     draw: {
@@ -261,8 +253,8 @@
       scripts: ["remote-hub.js?v=4"]
     },
     "chat-ai": {
-      styles: ["chat-ai-hub.css?v=24"],
-      scripts: ["chat-ai-hub.js?v=23"]
+      styles: ["chat-ai-hub.css?v=17"],
+      scripts: ["chat-ai-hub.js?v=17"]
     },
     settings: {
       styles: ["settings-studio.css?v=7"],
@@ -282,7 +274,7 @@
     },
     support: {
       styles: ["support-platform.css?v=14"],
-      scripts: ["https://cdn.payos.vn/payos-checkout/v1/stable/payos-initialize.js", "support-platform.js?v=22"]
+      scripts: ["https://cdn.payos.vn/payos-checkout/v1/stable/payos-initialize.js", "support-platform.js?v=21"]
     }
   });
 
@@ -448,7 +440,6 @@
   }
 
   function scheduleHomeEnhancements() {
-    if (document.documentElement.dataset.hhTheme === "kim-lien" || document.body?.classList.contains("hh-kim-lien")) return;
     if (homeEnhancementsScheduled || loaded.has("home-enhancements")) return;
     homeEnhancementsScheduled = true;
     const start = () => {
@@ -464,26 +455,6 @@
       if ("requestIdleCallback" in global) global.requestIdleCallback(start, { timeout: 1600 });
       else global.setTimeout(start, 450);
     };
-    global.requestAnimationFrame(() => global.requestAnimationFrame(afterFirstPaint));
-  }
-
-  function schedulePostPaintRuntime() {
-    let started = false;
-    const loadObservabilityWhenIdle = () => {
-      const start = () => ensureGroup("observability").catch(() => {});
-      if ("requestIdleCallback" in global) global.requestIdleCallback(start, { timeout: 3500 });
-      else global.setTimeout(start, 1200);
-    };
-    const start = () => {
-      if (started) return;
-      started = true;
-      ensureGroup("post-paint-essential")
-        .then(loadObservabilityWhenIdle)
-        .catch(() => {
-          started = false;
-        });
-    };
-    const afterFirstPaint = () => start();
     global.requestAnimationFrame(() => global.requestAnimationFrame(afterFirstPaint));
   }
 
@@ -611,7 +582,6 @@
   });
 
   global.HHAssetLoader = Object.freeze({ ensureForRoute, retryForRoute, ensureGroup, isRouteReady, groupsForRoute, loadedGroups: () => [...loaded] });
-  schedulePostPaintRuntime();
   loadFontWhenIdle();
   loadAuthEffectsWhenNeeded();
   registerServiceWorkerWhenIdle();

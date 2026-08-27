@@ -24,8 +24,8 @@
   body.app-dharma-route :is(.app-breadcrumb, .app-page-header, .app-context-bar) { display: none !important; }
   body.app-dharma-route .app-mobile-nav { display: none !important; }
   body.app-dharma-route #appMain { height: 100%; min-height: 0; overflow: hidden; background: #170e08; }
-  body.app-dharma-route #appWorkspace { width: 100% !important; max-width: none !important; height: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
-  body.app-dharma-route #appWorkspace > [data-phat-phap-host] { width: 100%; height: 100%; min-height: 0; }
+  body.app-dharma-route #appWorkspace { width: 100%; max-width: none; height: 100%; min-height: 0; margin: 0; padding: 0; overflow: hidden; }
+  body.app-dharma-route #appWorkspace > [data-phat-phap-host] { height: 100%; min-height: 0; }
   body.app-dharma-route .app-header { border-bottom-color: rgba(212, 160, 23, .18); background: linear-gradient(90deg, #1b1009, #28170c 48%, #1b1009); }
   body.app-dharma-route .app-sidebar { border-right-color: rgba(212, 160, 23, .16); background: linear-gradient(180deg, #1c1009, #27170c); }
   body.app-dharma-route .app-sidebar :where(.app-sidebar__section-header.is-open, .app-sidebar__subitem.is-active) { --section-accent: var(--dharma-gold); --section-secondary: var(--dharma-saffron); }
@@ -427,7 +427,7 @@
   .dharma-content { width: min(100%, 1140px); min-height: calc(100% - 66px); margin: 0 auto; padding: clamp(18px, 2vw, 30px) clamp(16px, 2.4vw, 34px) 44px; }
 
   .dharma-progress { min-width: 0; min-height: 0; padding: 18px 15px; overflow: auto; border-left: 1px solid rgba(245, 215, 118, .15); background: linear-gradient(180deg, rgba(48, 28, 14, .98), rgba(29, 16, 8, .99)); transition: opacity .22s ease, visibility .22s ease; }
-  .dharma-hub.is-progress-closed .dharma-progress { display: none; overflow: hidden; visibility: hidden; opacity: 0; pointer-events: none; }
+  .dharma-hub.is-progress-closed .dharma-progress { visibility: hidden; opacity: 0; pointer-events: none; }
   .dharma-progress > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 0 2px 15px; border-bottom: 1px solid rgba(245, 215, 118, .12); }
   .dharma-progress > header span { display: grid; gap: 3px; }
   .dharma-progress > header small { color: #b09461; font-size: 9px; letter-spacing: .12em; }

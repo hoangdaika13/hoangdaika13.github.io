@@ -17,12 +17,12 @@ test("Phật Pháp is a first-class routed workspace", () => {
   assert.match(router, /window\.HHPhatPhap\?\.mount/);
   assert.match(router, /app-dharma-route/);
   assert.match(loader, /dharma:\s*\{/);
-  assert.match(loader, /phat-phap\.css\?v=20/);
+  assert.match(loader, /phat-phap\.css\?v=18/);
   assert.match(loader, /phat-phap\.js\?v=15/);
   assert.match(index, /performance-loader\.js\?v=494/);
   assert.match(index, /script\.js\?v=241/);
   assert.match(sw, /hh-identity-portal-v842/);
-  assert.match(sw, /phat-phap\.css\?v=20/);
+  assert.match(sw, /phat-phap\.css\?v=18/);
   assert.match(sw, /phat-phap\.js\?v=15/);
   assert.match(sw, /assets\/phat-phap\/duc-phat-hao-quang-v1\.webp/);
 });
@@ -211,7 +211,6 @@ test("Dharma v4 responsive styling covers review, audio and data vault", () => {
   for (const selector of ["dharma-review-workspace", "dharma-meditation-checkin", "dharma-audio-library", "dharma-data-vault", "dharma-import-preview"]) assert.match(css, new RegExp(selector));
   assert.match(css, /dharmaAudioPulse/);
   assert.match(css, /prefers-reduced-motion:reduce/);
-  assert.match(css, /\.dharma-hub\.is-progress-closed \.dharma-progress\s*\{[^}]*overflow:\s*hidden/);
 });
 
 test("Phật Pháp Toàn Thư reads core content directly with solemn long-form controls", () => {

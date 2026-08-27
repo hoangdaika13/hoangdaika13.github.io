@@ -16,17 +16,17 @@ const registry = require(path.join(root, "hh-eonwild-species-registry.js"));
 const atlas = require(path.join(root, "hh-eonwild-world-atlas.js"));
 const input = require(path.join(root, "hh-eonwild-input-system.js"));
 
-test("route-lazy bundle loads and precaches desktop control and collision kernels before game v30", () => {
+test("route-lazy bundle loads and precaches desktop control and collision kernels before game v28", () => {
   const expected = [
     "hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3",
-    "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=3",
-    "hh-eonwild-desktop-controller.js?v=3",
+    "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=2",
+    "hh-eonwild-desktop-controller.js?v=2",
     "hh-eonwild-collision-system.js?v=1",
     "hh-eonwild-world-atlas.js?v=2", "hh-eonwild-simulation-v2.js?v=4",
-    "hh-eonwild-3d-core.js?v=9", "hh-eonwild-landscape-core.js?v=1",
+    "hh-eonwild-3d-core.js?v=7", "hh-eonwild-landscape-core.js?v=1",
     "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=4",
-    "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=21",
-    "hh-eonwild-game.js?v=30"
+    "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=19",
+    "hh-eonwild-game.js?v=28"
   ];
   let previous = -1;
   for (const asset of expected) {
@@ -34,8 +34,8 @@ test("route-lazy bundle loads and precaches desktop control and collision kernel
     assert.ok(index > previous, `${asset} must load once and after its dependency`);
     previous = index;
   }
-  assert.match(loader, /styles:\s*\["hh-eonwild-game\.css\?v=27"\]/);
-  for (const asset of [...expected.slice(2), "hh-eonwild-game.css?v=27"]) {
+  assert.match(loader, /styles:\s*\["hh-eonwild-game\.css\?v=22"\]/);
+  for (const asset of [...expected.slice(2), "hh-eonwild-game.css?v=22"]) {
     const escapedAsset = asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     assert.equal((serviceWorker.match(new RegExp(`"\\./${escapedAsset}"`, "g")) || []).length, 1, `${asset} must have one immutable cache entry`);
   }
@@ -76,8 +76,8 @@ test("World Atlas exposes map selection, confidence and active-region truth", ()
 });
 
 test("Input Action System owns remap, persistence, joystick and cleanup", () => {
-  assert.equal(input.VERSION, "1.2.0");
-  assert.equal(input.ACTION_IDS.length, 23);
+  assert.equal(input.VERSION, "1.1.0");
+  assert.equal(input.ACTION_IDS.length, 17);
   assert.ok(input.DEFAULT_ACTIONS.interact.some((binding) => binding.code === "KeyE"));
   assert.ok(input.DEFAULT_ACTIONS.interact.some((binding) => binding.code === "KeyF"));
   assert.ok(input.DEFAULT_ACTIONS.toggleView.some((binding) => binding.code === "KeyV"));
