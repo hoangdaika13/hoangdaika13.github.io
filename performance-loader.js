@@ -184,7 +184,7 @@
     },
     youtube: {
       styles: ["search-quick-overlay.css?v=1", "youtube-hub.css?v=5", "youtube-hub-pro.css?v=4"],
-      scripts: ["search-platform-core.js?v=3", "search-quick-overlay.js?v=1", "youtube-hub.js?v=1", "youtube-hub-pro.js?v=5"]
+      scripts: ["search-platform-core.js?v=3", "search-quick-overlay.js?v=1", "youtube-hub.js?v=3", "youtube-hub-pro.js?v=7"]
     },
     discord: {
       styles: ["discord-hub.css?v=4"],
@@ -220,8 +220,8 @@
     },
     // Compatibility: japanese-os-v4.js?v=7 and v8 remain valid for existing tabs.
     japanese: {
-      styles: ["language-learning-cockpit.css?v=1", "japanese-learning.css?v=8", "japanese-os-v3.css?v=4", "japanese-os-v4.css?v=3"],
-      scripts: ["language-learning-cockpit.js?v=1", "japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=8", "japanese-os-v3.js?v=2", "japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.js?v=9"]
+      styles: ["language-learning-cockpit.css?v=1", "japanese-learning.css?v=8", "japanese-os-v3.css?v=4", "japanese-os-v4.css?v=5"],
+      scripts: ["language-learning-cockpit.js?v=1", "japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=8", "japanese-os-v3.js?v=2", "japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.js?v=11"]
     },
     // Previous cache keys retained for old clients: hh-chinese.css?v=1 · hh-chinese.js?v=1 · hh-chinese.css?v=11 · hh-chinese.js?v=11
     chinese: {
@@ -229,8 +229,8 @@
       scripts: ["language-learning-cockpit.js?v=1", "hh-chinese.js?v=12"]
     },
     dharma: {
-      styles: ["phat-phap.css?v=18"],
-      scripts: ["phat-phap.js?v=15"]
+      styles: ["phat-phap.css?v=19"],
+      scripts: ["phat-phap.js?v=16"]
     },
     play: {
       styles: ["hh-play.css?v=5&build=2"],

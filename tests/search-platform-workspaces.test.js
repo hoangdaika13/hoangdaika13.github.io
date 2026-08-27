@@ -12,7 +12,7 @@ test("search platform is split into shared core, two hubs and a quick overlay", 
 
   assert.match(loader, /search:\s*\{[\s\S]*?search-platform-core\.js\?v=3[\s\S]*?search-quick-overlay\.js\?v=1/);
   assert.match(loader, /google:\s*\{[\s\S]*?google-hub\.css\?v=4[\s\S]*?google-hub\.js\?v=1/);
-  assert.match(loader, /youtube:\s*\{[\s\S]*?youtube-hub\.css\?v=5[\s\S]*?youtube-hub\.js\?v=1/);
+  assert.match(loader, /youtube:\s*\{[\s\S]*?youtube-hub\.css\?v=5[\s\S]*?youtube-hub\.js\?v=3/);
   assert.match(loader, /value === "\/google"[\s\S]*?return \["google"\]/);
   assert.match(loader, /value === "\/youtube"[\s\S]*?return \["youtube"\]/);
   assert.match(loader, /event\.altKey[\s\S]*?ensureGroup\("search"\)/);
@@ -45,6 +45,8 @@ test("Google Hub has independent discovery, filtering, saving and fallback UI", 
 
 test("YouTube Hub keeps player stable while library and queue controls update", () => {
   const hub = read("youtube-hub.js");
+  const pro = read("youtube-hub-pro.js");
+  const router = read("script.js");
   const core = read("search-platform-core.js");
   const css = read("youtube-hub.css");
 
@@ -52,6 +54,19 @@ test("YouTube Hub keeps player stable while library and queue controls update", 
   assert.match(hub, /if \(playerSlot\.dataset\.videoId !== currentId\)/);
   assert.match(hub, /content\.innerHTML = mainMarkup/);
   assert.match(hub, /function syncVideoButtons/);
+  assert.match(hub, /function ensureMounted\(host\)/);
+  assert.match(hub, /event\.source&&event\.source!==frame\.contentWindow/);
+  assert.match(pro, /function attachRuntime\(host\)/);
+  assert.match(pro, /function ensureMounted\(host\)/);
+  assert.match(pro, /function mainContent\(\)/);
+  assert.match(pro, /ctx\.content\.innerHTML/);
+  assert.doesNotMatch(pro, /function renderResourceResults\(data,type\)\{const main=.*?main\.innerHTML/s);
+  assert.match(pro, /if\(!runtime\|\|!/);
+  assert.match(pro, /event\.source&&event\.source!==frame\.contentWindow/);
+  assert.match(router, /const preserveYouTubePlayer/);
+  assert.match(router, /workspace\.querySelector\?\.\("\[data-youtube-hub-host\]"\)/);
+  assert.match(router, /if \(!preserveYouTubePlayer\)/);
+  assert.match(router, /HHYouTubeHub\?\.ensureMounted/);
   assert.match(hub, /draggable="true"/);
   assert.match(hub, /documentPictureInPicture\.requestWindow/);
   assert.match(hub, /youtube-nocookie\.com\/embed/);

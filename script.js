@@ -7010,9 +7010,21 @@ function initAppShell() {
         : "Tìm web, hình ảnh và tài liệu bằng Google Search Element/API chính thức trong một workspace độc lập.";
       updatePageHeader(title, description, route);
       pageActions.innerHTML = `<button type="button" data-app-route="${isYouTube ? "/google" : "/youtube"}">${isYouTube ? "Mở Google" : "Mở YouTube"}</button><button class="app-primary-action" type="button" data-search-workspace-focus>⌕ Tìm kiếm</button>`;
-      workspace.innerHTML = isYouTube ? '<div data-youtube-hub-host></div>' : '<div data-google-hub-host></div>';
-      const searchHost = workspace.firstElementChild;
-      const mounted = isYouTube ? window.HHYouTubeHub?.mount?.(searchHost) : window.HHGoogleHub?.mount?.(searchHost);
+      // Locate the existing YouTube host anywhere in the workspace. A transient
+      // status/placeholder node may be inserted before it during route updates;
+      // relying on firstElementChild in that case would unnecessarily replace
+      // the host and reload the active iframe.
+      const activeYouTubeHost = isYouTube
+        ? workspace.querySelector?.("[data-youtube-hub-host]") || null
+        : null;
+      const preserveYouTubePlayer = Boolean(activeYouTubeHost && window.HHYouTubeHub?.isMounted?.(activeYouTubeHost));
+      if (!preserveYouTubePlayer) {
+        workspace.innerHTML = isYouTube ? '<div data-youtube-hub-host></div>' : '<div data-google-hub-host></div>';
+      }
+      const searchHost = preserveYouTubePlayer ? activeYouTubeHost : workspace.firstElementChild;
+      const mounted = isYouTube
+        ? (window.HHYouTubeHub?.ensureMounted?.(searchHost) ?? window.HHYouTubeHub?.mount?.(searchHost))
+        : window.HHGoogleHub?.mount?.(searchHost);
       if (!mounted) mountSimpleView(title, `Không thể khởi tạo ${title} Center.`, '<button type="button" data-shell-retry-route>Thử lại</button>');
       pageActions.querySelector("[data-search-workspace-focus]")?.addEventListener("click", () => (isYouTube ? window.HHYouTubeHub : window.HHGoogleHub)?.focus?.());
     } else if (route === "/discord") {

@@ -119,6 +119,23 @@ test("V5 cockpit routes real next steps while keeping mission answers locked", (
   ]) assert.match(css, new RegExp(`\\.${className}\\b`));
 });
 
+test("V5 owns one bounded vertical scroller and preserves its position across local renders", () => {
+  const source = read("japanese-os-v4.js");
+  const css = read("japanese-os-v4.css");
+  assert.match(source, /querySelector\("\.hhj4-main"\)\?\.scrollTop/);
+  assert.match(source, /main\.scrollTop=Math\.max\(0,next\)/);
+  assert.match(source, /instance\.nextScrollTop=0/);
+  assert.match(source, /captureMainScrollState/);
+  assert.match(source, /restoreMainScrollState/);
+  assert.match(source, /installJapaneseScrollGuard/);
+  assert.match(source, /mount:mountSafe/);
+  assert.match(css, /\.app-japanese-route #appMain\{[^}]*overflow-y:auto/);
+  assert.match(css, /\.app-japanese-route \.app-workspace\{[^}]*overflow:visible/);
+  assert.match(css, /\.app-japanese-route \.hhj4-main\{[^}]*overflow-y:auto/);
+  assert.match(css, /touch-action:pan-y/);
+  assert.match(css, /padding-bottom:max\(110px/);
+});
+
 test("V5 normalizes damaged local state and consumes mission or lesson completion once", () => {
   const os = globalThis.HHJapaneseOSV5;
   const japanese = globalThis.HHJapanese;
@@ -276,7 +293,7 @@ test("V5 data provenance and browser assets are versioned and cached", () => {
   const worker = read("sw.js");
   const index = read("index.html");
   const css = read("japanese-os-v4.css");
-  for (const asset of ["japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.css?v=3", "japanese-os-v4.js?v=9"]) {
+  for (const asset of ["japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.css?v=5", "japanese-os-v4.js?v=11"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
     assert.match(worker, pattern);

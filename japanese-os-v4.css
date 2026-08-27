@@ -54,3 +54,25 @@
 @media(max-width:420px){.hhj6-hero-actions,.hhj6-operation-deck>header,.hhj6-vocab-radar>header,.hhj6-vocab-radar>footer{align-items:stretch;flex-direction:column}.hhj6-hero-actions button,.hhj6-vocab-radar>header>button{width:100%}.hhj6-cockpit-hero .hhj4-ring{margin:16px auto 0}.hhj6-stage-line{grid-template-columns:1fr}.hhj6-telemetry>div{grid-template-columns:1fr 1fr}.hhj6-telemetry>footer{align-items:flex-start;flex-direction:column}.hhj6-rating-row{grid-template-columns:repeat(2,1fr)}.hhj6-dictionary-filters{grid-template-columns:1fr}.hhj6-dictionary-filters label:last-child{grid-column:auto}.hhj6-next-dock p{display:none}}
 @media(prefers-reduced-motion:reduce){.hhj6-next-dock{backdrop-filter:none}}
 @media print{.hhj6-next-dock{display:none!important}}
+
+/* V5 scroll contract: the shell can reveal the cockpit/app boundary; lesson content owns .hhj4-main. */
+.app-japanese-route #appMain{height:100%;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable}
+.app-japanese-route .app-workspace{width:100%;height:auto;min-height:0;padding:0 0 max(18px,env(safe-area-inset-bottom));overflow:visible}
+.app-japanese-route .app-workspace>[data-hh-japanese-host]{height:calc(100dvh - var(--app-header-height,64px) - 12px);min-height:560px;overflow:hidden;scroll-margin-top:8px}
+.app-japanese-route .hhj4-app{width:100%;height:100%;min-height:0;max-height:100%;overflow:hidden}
+.app-japanese-route .hhj4-body{min-height:0;overflow:hidden}
+.app-japanese-route .hhj4-main{min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.app-japanese-route .hhj4-view{min-height:min-content;padding-bottom:max(110px,calc(88px + env(safe-area-inset-bottom)))}
+.app-japanese-route .hhj6-next-dock{bottom:max(8px,env(safe-area-inset-bottom))}
+
+@media(max-width:760px){
+  .app-japanese-route .app-workspace{height:auto;min-height:0;padding-bottom:max(82px,calc(68px + env(safe-area-inset-bottom)))}
+  .app-japanese-route .app-workspace>[data-hh-japanese-host]{height:calc(100dvh - 128px);min-height:480px}
+  .app-japanese-route .hhj4-app{height:100%;min-height:0;border-radius:0}
+  .app-japanese-route .hhj4-view{padding-bottom:max(126px,calc(104px + env(safe-area-inset-bottom)))}
+  .app-japanese-route .hhj4-rail{padding-bottom:max(4px,env(safe-area-inset-bottom))}
+  /* The mobile navigation sheet normally freezes .app-main; Japanese keeps a
+     vertical escape route so the cockpit and the lesson can always be reached. */
+  body.app-japanese-route #appMain,
+  body.app-japanese-route:not(.app-sidebar-collapsed) .app-main{overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-y:contain!important;touch-action:pan-y!important}
+}

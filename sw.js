@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v904";
+const CACHE = "hh-identity-portal-v907";
 const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
 // EonWild desktop integration: ./hh-eonwild-input-system.js?v=2 ./hh-eonwild-desktop-controller.js?v=2.
 // Compatibility marker retained for the pre-photogrammetry EonWild renderer: hh-identity-portal-v879 ./hh-eonwild-renderer-3d.js?v=5.
@@ -272,9 +272,9 @@ const RUNTIME_ASSETS = [
   "./google-hub-pro.css?v=3",
   "./google-hub-pro.js?v=3",
   "./youtube-hub.css?v=5",
-  "./youtube-hub.js?v=1",
+  "./youtube-hub.js?v=3",
   "./youtube-hub-pro.css?v=4",
-  "./youtube-hub-pro.js?v=5",
+  "./youtube-hub-pro.js?v=7",
   "./youtube-pip.html",
   "./discord-hub.css?v=2",
   "./discord-hub.js?v=2",
@@ -341,9 +341,9 @@ const RUNTIME_ASSETS = [
   "./english-voice-coach.css?v=4",
   "./japanese-learning.css?v=8",
   "./japanese-os-v3.css?v=4",
-  "./japanese-os-v4.css?v=3",
+  "./japanese-os-v4.css?v=5",
   "./hh-chinese.css?v=12",
-  "./phat-phap.css?v=18",
+  "./phat-phap.css?v=19",
   "./hh-play.css?v=5&build=2",
   "./hh-play-audio-worklet.js?build=2",
   "./assets/phat-phap/duc-phat-hao-quang-v1.webp",
@@ -471,9 +471,9 @@ const RUNTIME_ASSETS = [
   "./japanese-search-worker.js?v=1",
   "./japanese-learning.js?v=8",
   "./japanese-os-v3.js?v=2",
-  "./japanese-os-v4.js?v=9",
+  "./japanese-os-v4.js?v=11",
   "./hh-chinese.js?v=12",
-  "./phat-phap.js?v=15",
+  "./phat-phap.js?v=16",
   "./hh-play.js?v=4&build=2",
   "./hh-eonwild-cinematic-pack.js?v=1",
   "./hh-eonwild-cinematic-pack-worker.js?v=1",
@@ -519,10 +519,10 @@ const CORE = [
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
   "./app-theme-system.js?v=9",
-  "./performance-loader.js?v=548",
+  "./performance-loader.js?v=550",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=246"
+  "./script.js?v=248"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

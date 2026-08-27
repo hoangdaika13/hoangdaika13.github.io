@@ -17,13 +17,13 @@ test("Phật Pháp is a first-class routed workspace", () => {
   assert.match(router, /window\.HHPhatPhap\?\.mount/);
   assert.match(router, /app-dharma-route/);
   assert.match(loader, /dharma:\s*\{/);
-  assert.match(loader, /phat-phap\.css\?v=18/);
-  assert.match(loader, /phat-phap\.js\?v=15/);
+  assert.match(loader, /phat-phap\.css\?v=19/);
+  assert.match(loader, /phat-phap\.js\?v=16/);
   assert.match(index, /performance-loader\.js\?v=494/);
   assert.match(index, /script\.js\?v=241/);
   assert.match(sw, /hh-identity-portal-v842/);
-  assert.match(sw, /phat-phap\.css\?v=18/);
-  assert.match(sw, /phat-phap\.js\?v=15/);
+  assert.match(sw, /phat-phap\.css\?v=19/);
+  assert.match(sw, /phat-phap\.js\?v=16/);
   assert.match(sw, /assets\/phat-phap\/duc-phat-hao-quang-v1\.webp/);
 });
 
@@ -50,7 +50,7 @@ test("learning and practice features are real local-first capabilities", () => {
   for (const contract of [
     "Lộ trình tu học", "Giáo lý", "Canonical Reader", "Thiền đường số", "Phòng tụng niệm", "Trung tâm Phật sự Việt Nam",
     "Pháp thoại", "Thỉnh kinh", "HH Phật học có nguồn", "Nhật ký mã hóa", "Từ điển Phật học", "Bản đồ giáo pháp"
-  ]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  ]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
   assert.match(source, /hh\.phat-phap\.study\.v1/);
   assert.match(source, /hh\.phat-phap\.journal\.v1/);
   assert.match(source, /AES-GCM/);
@@ -167,20 +167,43 @@ test("all new Dharma subroutes are discoverable from the application router", ()
   }
 });
 
-test("Dharma v6 keeps source-based review without gamification", () => {
+test("Dharma v7 keeps source-based review without gamification", () => {
   const source = read("phat-phap.js");
-  assert.match(source, /VERSION\s*=\s*"6\.0\.0"/);
+  assert.match(source, /VERSION\s*=\s*"7\.0\.0"/);
   for (const contract of ["reviewCatalog", "reviewSchedule", "reviewHistory", "data-rate-study-review", "Cần xem lại ngày mai", "Tạm hiểu · sau 7 ngày"]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(source, /không tạo điểm số/i);
   assert.match(source, /không phải chứng nhận hay cấp bậc tâm linh/i);
   assert.doesNotMatch(source, /leaderboard/i);
 });
 
+test("Dharma v7 publishes a unique route registry, an expanded honest canon and multilingual listening sources", () => {
+  const previousWindow = globalThis.window;
+  try {
+    globalThis.window = globalThis;
+    delete require.cache[require.resolve(path.join(root, "phat-phap.js"))];
+    require(path.join(root, "phat-phap.js"));
+    const api = globalThis.HHPhatPhap;
+    assert.equal(api.VERSION, "7.0.0");
+    assert.ok(api.scriptures.length >= 30);
+    assert.equal(new Set(api.scriptures.map((item) => item.id)).size, api.scriptures.length);
+    assert.equal(new Set(api.routes.map((item) => item.routeId)).size, api.routes.length);
+    assert.ok(api.routes.every((item) => item.path.startsWith("/phat-phap/") && item.fallback));
+    assert.equal(api.scriptures.find((item) => item.code === "T19n0945")?.title, "Kinh Thủ Lăng Nghiêm");
+    assert.equal(api.scriptures.find((item) => item.code === "T20n1064")?.title, "Chú Đại Bi");
+    assert.ok(api.scriptures.filter((item) => item.status === "metadata-only").every((item) => /biên tập/i.test(item.editorialStatus)));
+    assert.ok(api.audioSources.length >= 8);
+    assert.ok(new Set(api.audioSources.map((item) => item.language)).size >= 5);
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
+});
+
 test("citation builder and listening library label every generated surface honestly", () => {
   const source = read("phat-phap.js");
   for (const contract of ["citationText", "data-copy-citation", "data-export-citation", "audioStudyCatalog", "data-audio-queue", "data-audio-play", "SpeechSynthesisUtterance"]) assert.match(source, new RegExp(contract));
   assert.match(source, /TRÍCH DẪN TỪ METADATA · KHÔNG TỰ ĐIỀN DỊCH GIẢ/i);
-  assert.match(source, /Đây không phải giọng tăng ni/i);
+  assert.match(source, /không phải giọng tăng ni/i);
   assert.match(source, /Tệp pháp thoại hoặc tụng niệm của bên thứ ba chỉ được thêm khi có giấy phép âm thanh riêng/i);
 });
 

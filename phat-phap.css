@@ -1514,3 +1514,66 @@ body.app-dharma-route .app-mobile-nav { display: none !important; }
     .dharma-encyclopedia-cover,.dharma-encyclopedia-cover::after,.dharma-encyclopedia-volume,.dharma-encyclopedia-page,.dharma-encyclopedia-section,.dharma-encyclopedia-page > header button:first-child:active { animation:none!important; }
   }
 }
+
+/* Dharma v7 route safety, expanded canon and multilingual audio */
+@layer dharma-layout {
+  .dharma-workspace { scroll-padding-block:78px 118px; scrollbar-gutter:stable; -webkit-overflow-scrolling:touch; }
+  .dharma-content { padding-bottom:max(92px,calc(72px + env(safe-area-inset-bottom))); }
+  .dharma-nav-groups { overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:#755022 transparent; }
+  .dharma-sidebar .dharma-nav-group>span,
+  .dharma-sidebar .dharma-nav-items>button>span { overflow:visible; text-overflow:clip; white-space:normal; overflow-wrap:anywhere; }
+}
+
+@layer dharma-components {
+  .dharma-scripture-categories { display:flex; gap:7px; margin:14px 0; padding:4px 1px 8px; overflow-x:auto; scrollbar-width:thin; }
+  .dharma-scripture-categories button { flex:0 0 auto; min-height:38px; padding:0 12px; border:1px solid rgba(141,91,30,.2); border-radius:999px; background:rgba(255,249,235,.7); color:#68451f; font-weight:750; white-space:nowrap; }
+  .dharma-scripture-categories button[aria-pressed="true"] { border-color:#a66d1c; background:linear-gradient(135deg,#8f351f,#c78320); color:#fff8df; box-shadow:0 7px 20px rgba(125,66,20,.16); }
+  .dharma-scripture-status { display:flex; align-items:center; gap:7px; width:fit-content; max-width:100%; margin:0 0 10px; padding:5px 8px; border-radius:8px; color:#755723; font-size:10px; font-weight:750; }
+  .dharma-scripture-status i { font-style:normal; }
+  .dharma-scripture-status.is-published { background:#e4f2df; color:#376335; }
+  .dharma-scripture-status.is-editorial { border:1px solid #dabf80; background:#fff5d8; color:#7a5819; }
+  .dharma-editorial-notice { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:13px; margin:0 0 14px; padding:14px 16px; border:1px solid #c69237; border-radius:14px; background:linear-gradient(135deg,#fff3cd,#f7e0a8); color:#5d3c14; box-shadow:0 10px 28px rgba(100,62,17,.1); }
+  .dharma-editorial-notice>span { display:grid; width:40px; height:40px; place-items:center; border-radius:50%; background:#8d351f; color:#ffe496; font:700 19px Georgia,serif; }
+  .dharma-editorial-notice strong { display:block; }
+  .dharma-editorial-notice p { margin:3px 0 0; font-size:13px; line-height:1.55; }
+  .dharma-editorial-notice a { padding:9px 11px; border:1px solid #a16d24; border-radius:9px; color:#633c14; font-weight:750; text-decoration:none; white-space:nowrap; }
+  .dharma-audio-source-browser { margin:15px 0 18px; padding:20px; }
+  .dharma-audio-source-browser>header { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+  .dharma-audio-source-browser>header h2 { margin:3px 0; }
+  .dharma-audio-source-browser>header small { color:#98661f; font-size:9px; font-weight:850; letter-spacing:.12em; }
+  .dharma-audio-source-browser>header>span { color:#8a672d; font-size:11px; white-space:nowrap; }
+  .dharma-audio-source-filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:16px 0; }
+  .dharma-audio-source-filters select,.dharma-audio-settings select { width:100%; min-height:40px; padding:0 10px; border:1px solid rgba(138,91,31,.25); border-radius:9px; background:#fff9eb; color:#4e321b; }
+  .dharma-audio-source-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+  .dharma-audio-source-grid>article { display:flex; flex-direction:column; min-width:0; padding:14px; border:1px solid rgba(151,101,33,.2); border-radius:13px; background:rgba(255,251,241,.66); }
+  .dharma-audio-source-grid article>header { display:grid; grid-template-columns:36px minmax(0,1fr); gap:9px; }
+  .dharma-audio-source-grid article>header>span { display:grid; width:34px; height:34px; place-items:center; border-radius:50%; background:#8f351f; color:#ffe297; }
+  .dharma-audio-source-grid h3 { margin:3px 0 0; color:#4b2f1a; font-size:15px; line-height:1.35; overflow-wrap:anywhere; }
+  .dharma-audio-source-grid small { color:#9b6c2f; font-size:9px; }
+  .dharma-audio-source-grid dl { display:grid; gap:5px; margin:13px 0 7px; }
+  .dharma-audio-source-grid dl>div { display:grid; grid-template-columns:76px minmax(0,1fr); gap:7px; font-size:10px; }
+  .dharma-audio-source-grid dt { color:#93764e; }
+  .dharma-audio-source-grid dd { margin:0; color:#4f3b26; overflow-wrap:anywhere; }
+  .dharma-audio-source-grid p { margin:5px 0 12px; color:#69533a; font-size:11px; line-height:1.5; }
+  .dharma-audio-source-grid footer { display:grid; gap:8px; margin-top:auto; }
+  .dharma-audio-source-grid footer span { color:#8b7656; font-size:9px; line-height:1.45; }
+  .dharma-audio-source-grid footer a { justify-self:start; padding:8px 10px; border:1px solid #ad782d; border-radius:8px; color:#693f18; font-size:11px; font-weight:800; text-decoration:none; }
+  .dharma-audio-settings { display:grid; grid-template-columns:1fr 120px 130px; gap:8px; margin:12px 0; }
+  .dharma-audio-settings label { display:grid; gap:4px; color:#826443; font-size:10px; }
+  .dharma-audio-settings .dharma-check { grid-column:1/-1; display:flex; align-items:center; }
+}
+
+@media(max-width:1100px) {
+  .dharma-audio-source-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+@media(max-width:700px) {
+  .dharma-content { padding-bottom:calc(168px + env(safe-area-inset-bottom)); }
+  .dharma-actionbar { bottom:calc(64px + env(safe-area-inset-bottom)); }
+  .dharma-mobile-nav { height:calc(64px + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom); }
+  .dharma-editorial-notice { grid-template-columns:auto minmax(0,1fr); padding:12px; }
+  .dharma-editorial-notice a { grid-column:2; justify-self:start; white-space:normal; }
+  .dharma-audio-source-browser { padding:14px; }
+  .dharma-audio-source-filters,.dharma-audio-source-grid,.dharma-audio-settings { grid-template-columns:1fr; }
+  .dharma-audio-settings .dharma-check { grid-column:auto; }
+}

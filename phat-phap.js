@@ -1,7 +1,7 @@
 (function initHHPhatPhap(global) {
   "use strict";
 
-  const VERSION = "6.0.0";
+  const VERSION = "7.0.0";
   const STATE_PREFIX = "hh.phat-phap.study.v1";
   const JOURNAL_PREFIX = "hh.phat-phap.journal.v1";
   const JOURNAL_ITERATIONS = 180000;
@@ -103,13 +103,77 @@
     { id: "tinh-do", title: "Tịnh độ và tín–nguyện–hạnh", category: "Tịnh độ", tradition: "Phật giáo Đại thừa", intro: "Pháp môn nhấn mạnh niềm tin có hiểu biết, nguyện hướng thiện và thực hành niệm Phật.", deep: "Cách giải thích khác nhau theo tông phái; nền tảng vẫn là chuyển hóa thân, khẩu và ý trong đời sống.", application: "Kết hợp thời niệm Phật ngắn với một việc thiện và một lần nhìn lại lời nói trong ngày.", sourceId: "ghpgvn" }
   ]);
 
-  const SCRIPTURES = Object.freeze([
+  const CORE_SCRIPTURES = Object.freeze([
     { id: "dhammacakkappavattana", code: "SN 56.11", canonicalTitle: "Dhammacakkappavattanasutta", title: "Kinh Chuyển Pháp Luân", collection: "Tương Ưng Bộ", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", translator: "Xem theo bản dịch đang chọn tại nguồn", license: "Theo từng bản dịch tại SuttaCentral", verifiedAt: "2026-08-23", type: "Kinh", topic: "Nền tảng", difficulty: "Nhập môn", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/sn56.11", verified: true, parallelIds: ["tu-dieu-de", "bat-chanh-dao"], summary: "Bài kinh trình bày Trung đạo, Tứ Diệu Đế và cách mỗi sự thật gắn với nhận biết, nhiệm vụ cùng sự hoàn tất. Đây là tóm lược nguyên bản của HH, không phải bản dịch kinh văn.", keywords: "tứ diệu đế trung đạo khổ" },
     { id: "metta", code: "Snp 1.8", canonicalTitle: "Karaṇīyamettasutta", title: "Kinh Từ Bi", collection: "Tiểu Bộ", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", translator: "Xem theo bản dịch đang chọn tại nguồn", license: "Theo từng bản dịch tại SuttaCentral", verifiedAt: "2026-08-23", type: "Kinh", topic: "Từ bi", difficulty: "Nhập môn", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/snp1.8", verified: true, parallelIds: ["tu-vo-luong-tam"], summary: "Văn bản nuôi dưỡng tâm từ rộng lớn, đi cùng đời sống ngay thẳng, khiêm cung và biết đủ. Phần hiển thị là tóm lược học tập, không thay thế bản dịch được cấp phép.", keywords: "từ bi tâm từ metta" },
     { id: "mangala", code: "Snp 2.4", canonicalTitle: "Maṅgalasutta", title: "Kinh Điềm Lành", collection: "Tiểu Bộ", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", translator: "Xem theo bản dịch đang chọn tại nguồn", license: "Theo từng bản dịch tại SuttaCentral", verifiedAt: "2026-08-23", type: "Kinh", topic: "Đời sống", difficulty: "Nhập môn", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/snp2.4", verified: true, parallelIds: ["ngu-gioi"], summary: "Điềm lành được trình bày qua lựa chọn bạn lành, học hỏi, hiếu kính, nghề nghiệp chân chính và tâm vững trước biến đổi, thay vì qua bói đoán.", keywords: "điềm lành đời sống đạo đức" },
     { id: "anapanasati", code: "MN 118", canonicalTitle: "Ānāpānassatisutta", title: "Kinh Niệm Hơi Thở", collection: "Trung Bộ", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", translator: "Xem theo bản dịch đang chọn tại nguồn", license: "Theo từng bản dịch tại SuttaCentral", verifiedAt: "2026-08-23", type: "Kinh", topic: "Thiền", difficulty: "Thực hành", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/mn118", verified: true, parallelIds: ["chanh-niem"], summary: "Trình bày tiến trình niệm hơi thở gắn với thân, cảm thọ, tâm và pháp. Người mới nên bắt đầu nhẹ nhàng và tìm hướng dẫn đủ chuyên môn khi có phản ứng tâm lý bất thường.", keywords: "thiền hơi thở anapanasati" },
     { id: "heart", code: "T 251", canonicalTitle: "Prajñāpāramitāhṛdaya", title: "Bát Nhã Tâm Kinh", collection: "Kinh Đại thừa", tradition: "Đại thừa", sourceLanguage: "Sanskrit · Hán văn", translator: "Xem metadata của bản đang đọc", license: "Theo từng bản dịch tại nguồn", verifiedAt: "2026-08-23", type: "Kinh", topic: "Trí tuệ", difficulty: "Nghiên cứu", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/taisho251", verified: true, parallelIds: ["duyen-khoi", "ngu-uan"], summary: "Bản kinh ngắn khai triển trí tuệ Bát Nhã và tính không của các pháp. Cần học cùng chú giải có bối cảnh để tránh hiểu tính không thành phủ nhận đạo đức hoặc đời sống.", keywords: "bát nhã tâm kinh tính không" },
     { id: "sigalovada", code: "DN 31", canonicalTitle: "Sigālovādasutta", title: "Kinh Giáo Thọ Thi-ca-la-việt", collection: "Trường Bộ", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", translator: "Xem theo bản dịch đang chọn tại nguồn", license: "Theo từng bản dịch tại SuttaCentral", verifiedAt: "2026-08-23", type: "Kinh", topic: "Đời sống", difficulty: "Thực hành", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/dn31", verified: true, parallelIds: ["ngu-gioi"], summary: "Các mối quan hệ gia đình, bạn bè, thầy trò và công việc được nhìn qua trách nhiệm hai chiều. Đây là nguồn hữu ích để đưa giáo lý vào đời sống xã hội.", keywords: "gia đình quan hệ trách nhiệm xã hội" }
+  ]);
+
+  const catalogScripture = (row) => Object.freeze({
+    canonicalTitle: row.title,
+    collection: "Danh mục kinh điển",
+    tradition: "Đối chiếu nhiều truyền thống",
+    sourceLanguage: "Đang đối chiếu",
+    translator: "Chọn bản dịch tại nguồn",
+    license: "Kiểm tra theo từng ấn bản tại nguồn",
+    verifiedAt: "2026-08-27",
+    type: "Kinh",
+    topic: "Kinh điển",
+    difficulty: "Nghiên cứu",
+    sourceId: "cbeta",
+    sourceUrl: "https://cbetaonline.dila.edu.tw/zh/",
+    verified: false,
+    status: "metadata-only",
+    editorialStatus: "Đã kiểm tra nguồn · nội dung đang biên tập",
+    category: "Đại Tạng Kinh",
+    parallelIds: [],
+    summary: "Hồ sơ thư mục đã được đưa vào lộ trình biên tập. HH hiện chỉ hiển thị metadata và liên kết nguồn; chưa sao chép nguyên văn hoặc bản dịch chưa rõ quyền.",
+    keywords: "kinh điển phật giáo",
+    ...row
+  });
+
+  const CATALOG_SCRIPTURES = Object.freeze([
+    catalogScripture({ id: "surangama", code: "T19n0945", canonicalTitle: "Śūraṅgamasūtra", title: "Kinh Thủ Lăng Nghiêm", collection: "Đại Tạng Kinh Hán · T19", tradition: "Bắc truyền", sourceLanguage: "Hán văn · Sanskrit đối chiếu", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0945", verified: true, topic: "Thiền định", keywords: "thủ lăng nghiêm định lực căn trần thức", summary: "Hồ sơ T19n0945 dẫn tới bản Hán tại CBETA. Phần giải thích về định, căn–trần–thức và các lớp văn bản đang chờ hiệu đính Phật học; HH chưa dựng nguyên văn vào Reader." }),
+    catalogScripture({ id: "lotus", code: "T09n0262", canonicalTitle: "Saddharmapuṇḍarīkasūtra", title: "Kinh Diệu Pháp Liên Hoa", collection: "Đại Tạng Kinh Hán · T09", tradition: "Bắc truyền", sourceLanguage: "Sanskrit · Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0262", verified: true, topic: "Nhất thừa", keywords: "pháp hoa diệu pháp liên hoa nhất thừa phương tiện" }),
+    catalogScripture({ id: "avatamsaka", code: "T10n0279", canonicalTitle: "Buddhāvataṃsakamahāvaipulyasūtra", title: "Kinh Đại Phương Quảng Phật Hoa Nghiêm", collection: "Đại Tạng Kinh Hán · T10", tradition: "Bắc truyền", sourceLanguage: "Sanskrit · Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0279", verified: true, topic: "Bồ-tát hạnh", keywords: "hoa nghiêm pháp giới bồ tát hạnh" }),
+    catalogScripture({ id: "diamond", code: "T08n0235", canonicalTitle: "Vajracchedikāprajñāpāramitāsūtra", title: "Kinh Kim Cang Bát Nhã", collection: "Đại Tạng Kinh Hán · T08", tradition: "Bắc truyền", sourceLanguage: "Sanskrit · Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0235", verified: true, topic: "Trí tuệ", keywords: "kim cang bát nhã vô trụ" }),
+    catalogScripture({ id: "ksitigarbha", code: "T13n0412", canonicalTitle: "Kṣitigarbhabodhisattvapūrvapraṇidhānasūtra", title: "Kinh Địa Tạng Bồ Tát Bổn Nguyện", collection: "Đại Tạng Kinh Hán · T13", tradition: "Bắc truyền", sourceLanguage: "Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0412", verified: true, topic: "Hiếu hạnh", keywords: "địa tạng bổn nguyện hiếu hạnh" }),
+    catalogScripture({ id: "amitabha", code: "T12n0366", canonicalTitle: "Sukhāvatīvyūhasūtra", title: "Kinh A Di Đà", collection: "Đại Tạng Kinh Hán · T12", tradition: "Tịnh độ", sourceLanguage: "Sanskrit · Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0366", verified: true, topic: "Tịnh độ", keywords: "a di đà cực lạc tịnh độ" }),
+    catalogScripture({ id: "infinite-life", code: "T12n0360", canonicalTitle: "Sukhāvatīvyūhasūtra", title: "Kinh Vô Lượng Thọ", collection: "Đại Tạng Kinh Hán · T12", tradition: "Tịnh độ", sourceLanguage: "Sanskrit · Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0360", verified: true, topic: "Tịnh độ", keywords: "vô lượng thọ đại kinh tịnh độ" }),
+    catalogScripture({ id: "medicine-buddha", code: "T14n0450", canonicalTitle: "Bhaiṣajyaguruvaidūryaprabharājasūtra", title: "Kinh Dược Sư", collection: "Đại Tạng Kinh Hán · T14", tradition: "Bắc truyền", sourceLanguage: "Sanskrit · Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0450", verified: true, topic: "Hạnh nguyện", keywords: "dược sư lưu ly quang hạnh nguyện" }),
+    catalogScripture({ id: "lankavatara", code: "T16n0670", canonicalTitle: "Laṅkāvatārasūtra", title: "Kinh Lăng Già", collection: "Đại Tạng Kinh Hán · T16", tradition: "Đại thừa", sourceLanguage: "Sanskrit · Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0670", verified: true, topic: "Duy thức", keywords: "lăng già duy thức như lai tạng" }),
+    catalogScripture({ id: "vimalakirti", code: "T14n0475", canonicalTitle: "Vimalakīrtinirdeśasūtra", title: "Kinh Duy Ma Cật Sở Thuyết", collection: "Đại Tạng Kinh Hán · T14", tradition: "Đại thừa", sourceLanguage: "Sanskrit · Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0475", verified: true, topic: "Bồ-tát hạnh", keywords: "duy ma cật bất nhị cư sĩ" }),
+    catalogScripture({ id: "ullambana", code: "T16n0685", canonicalTitle: "Ullambanasūtra", title: "Kinh Vu Lan Bồn", collection: "Đại Tạng Kinh Hán · T16", tradition: "Bắc truyền", sourceLanguage: "Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0685", verified: true, topic: "Hiếu hạnh", keywords: "vu lan báo hiếu" }),
+    catalogScripture({ id: "brahma-net", code: "T24n1484", canonicalTitle: "Brahmajālasūtra", title: "Kinh Phạm Võng Bồ Tát Giới", collection: "Đại Tạng Kinh Hán · T24", tradition: "Bắc truyền", sourceLanguage: "Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T1484", verified: true, type: "Luật", category: "Luật tạng", topic: "Giới luật", keywords: "phạm võng bồ tát giới" }),
+    catalogScripture({ id: "bequeathed-teaching", code: "T12n0389", canonicalTitle: "Fo chui ban niepan lüe shuo jiaojie jing", title: "Kinh Di Giáo", collection: "Đại Tạng Kinh Hán · T12", tradition: "Bắc truyền", sourceLanguage: "Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0389", verified: true, topic: "Giới định tuệ", keywords: "di giáo lời dạy cuối" }),
+    catalogScripture({ id: "perfect-enlightenment", code: "T17n0842", canonicalTitle: "Mahāvaipulyapūrṇabuddhasūtra", title: "Kinh Viên Giác", collection: "Đại Tạng Kinh Hán · T17", tradition: "Bắc truyền", sourceLanguage: "Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0842", verified: true, topic: "Thiền quán", keywords: "viên giác thiền quán" }),
+    catalogScripture({ id: "platform-sutra", code: "T48n2008", canonicalTitle: "Liuzu dashi fabao tanjing", title: "Lục Tổ Đại Sư Pháp Bảo Đàn Kinh", collection: "Đại Tạng Kinh Hán · T48", tradition: "Thiền tông", sourceLanguage: "Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T2008", verified: true, topic: "Thiền tông", keywords: "lục tổ huệ năng pháp bảo đàn" }),
+    catalogScripture({ id: "great-compassion", code: "T20n1064", canonicalTitle: "Mahākaruṇādhāraṇī", title: "Chú Đại Bi", collection: "Mật giáo bộ · T20", tradition: "Bắc truyền", sourceLanguage: "Hán văn · Sanskrit đối chiếu", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T1064", verified: true, type: "Đà-la-ni", category: "Chú và Đà-la-ni", topic: "Đại bi", keywords: "chú đại bi thiên thủ thiên nhãn đà la ni", summary: "Hồ sơ T20n1064 được tách riêng cho Hán văn, phiên âm Hán–Việt, Sanskrit kiểm chứng và các dị bản. Nội dung tụng đọc chưa được dựng cho tới khi hoàn tất hiệu đính và quyền sử dụng từng bản." }),
+    catalogScripture({ id: "surangama-mantra", code: "T19n0945 · Đà-la-ni", canonicalTitle: "Śūraṅgamamantra", title: "Chú Lăng Nghiêm", collection: "Trong hồ sơ T19n0945", tradition: "Bắc truyền", sourceLanguage: "Hán văn · Sanskrit đối chiếu", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T0945", verified: true, type: "Đà-la-ni", category: "Chú và Đà-la-ni", topic: "Hộ trì", keywords: "chú lăng nghiêm đà la ni" }),
+    catalogScripture({ id: "rebirth-dharani", code: "T21n1314", canonicalTitle: "Sukhāvatīvyūhadhāraṇī", title: "Chú Vãng Sinh", collection: "Mật giáo bộ · T21", tradition: "Tịnh độ", sourceLanguage: "Sanskrit · Hán văn", sourceUrl: "https://cbetaonline.dila.edu.tw/zh/T1314", verified: true, type: "Đà-la-ni", category: "Chú và Đà-la-ni", topic: "Tịnh độ", keywords: "chú vãng sinh tịnh độ" }),
+    catalogScripture({ id: "mani-mantra", code: "Oṃ maṇi padme hūṃ", canonicalTitle: "Ṣaḍakṣarī mahāvidyā", title: "Lục Tự Đại Minh", collection: "Nghi quỹ và kinh điển Tây Tạng", tradition: "Phật giáo Tây Tạng", sourceLanguage: "Sanskrit · Tây Tạng", sourceId: "84000", sourceUrl: "https://84000.co/reading-room", type: "Chân ngôn", category: "Chú và Đà-la-ni", topic: "Đại bi", keywords: "om mani padme hum lục tự đại minh" }),
+    catalogScripture({ id: "dhammapada", code: "Dhp", canonicalTitle: "Dhammapada", title: "Kinh Pháp Cú", collection: "Tiểu Bộ", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/dhp", verified: true, category: "Kinh tụng phổ biến", topic: "Kệ pháp", difficulty: "Nhập môn", keywords: "pháp cú dhammapada kệ" }),
+    catalogScripture({ id: "white-clad", code: "AN 5.179", canonicalTitle: "Gihisutta", title: "Kinh Người Áo Trắng", collection: "Tăng Chi Bộ", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/an5.179", verified: true, category: "Kinh tụng phổ biến", topic: "Cư sĩ", difficulty: "Nhập môn", keywords: "người áo trắng cư sĩ năm giới" }),
+    catalogScripture({ id: "satipatthana", code: "MN 10", canonicalTitle: "Satipaṭṭhānasutta", title: "Kinh Tứ Niệm Xứ", collection: "Trung Bộ", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/mn10", verified: true, category: "Kinh tụng phổ biến", topic: "Chánh niệm", difficulty: "Thực hành", keywords: "tứ niệm xứ thân thọ tâm pháp" }),
+    catalogScripture({ id: "not-self", code: "SN 22.59", canonicalTitle: "Anattalakkhaṇasutta", title: "Kinh Vô Ngã Tướng", collection: "Tương Ưng Bộ", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/sn22.59", verified: true, category: "Kinh tụng phổ biến", topic: "Vô ngã", difficulty: "Nghiên cứu", keywords: "vô ngã tướng năm uẩn" }),
+    catalogScripture({ id: "maha-parinibbana", code: "DN 16", canonicalTitle: "Mahāparinibbānasutta", title: "Kinh Đại Bát Niết-bàn", collection: "Trường Bộ", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/dn16", verified: true, category: "Đại Tạng Kinh", topic: "Lịch sử", keywords: "đại bát niết bàn cuối đời đức phật" }),
+    catalogScripture({ id: "digha-nikaya", code: "DN", canonicalTitle: "Dīghanikāya", title: "Trường Bộ Kinh", collection: "Kinh tạng Pāli", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/dn", verified: true, category: "Đại Tạng Kinh", topic: "Bộ kinh", keywords: "trường bộ digha nikaya" }),
+    catalogScripture({ id: "majjhima-nikaya", code: "MN", canonicalTitle: "Majjhimanikāya", title: "Trung Bộ Kinh", collection: "Kinh tạng Pāli", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/mn", verified: true, category: "Đại Tạng Kinh", topic: "Bộ kinh", keywords: "trung bộ majjhima nikaya" }),
+    catalogScripture({ id: "samyutta-nikaya", code: "SN", canonicalTitle: "Saṁyuttanikāya", title: "Tương Ưng Bộ Kinh", collection: "Kinh tạng Pāli", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/sn", verified: true, category: "Đại Tạng Kinh", topic: "Bộ kinh", keywords: "tương ưng bộ samyutta nikaya" }),
+    catalogScripture({ id: "anguttara-nikaya", code: "AN", canonicalTitle: "Aṅguttaranikāya", title: "Tăng Chi Bộ Kinh", collection: "Kinh tạng Pāli", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/an", verified: true, category: "Đại Tạng Kinh", topic: "Bộ kinh", keywords: "tăng chi bộ anguttara nikaya" }),
+    catalogScripture({ id: "khuddaka-nikaya", code: "KN", canonicalTitle: "Khuddakanikāya", title: "Tiểu Bộ Kinh", collection: "Kinh tạng Pāli", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/kn", verified: true, category: "Đại Tạng Kinh", topic: "Bộ kinh", keywords: "tiểu bộ khuddaka nikaya" }),
+    catalogScripture({ id: "pali-vinaya", code: "Vinaya Piṭaka", canonicalTitle: "Vinayapiṭaka", title: "Luật tạng Pāli", collection: "Tam tạng Pāli", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/pitaka/vinaya", category: "Luật tạng", type: "Luật", topic: "Giới luật", keywords: "vinaya luật tạng" }),
+    catalogScripture({ id: "pali-abhidhamma", code: "Abhidhamma Piṭaka", canonicalTitle: "Abhidhammapiṭaka", title: "A-tì-đàm Pāli", collection: "Tam tạng Pāli", tradition: "Theravāda", sourceLanguage: "Pāli", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/pitaka/abhidhamma", category: "Luận tạng", type: "Luận", topic: "Pháp học", keywords: "abhidhamma a tì đàm luận tạng" }),
+    catalogScripture({ id: "tibetan-kanjur", code: "Kanjur", canonicalTitle: "bKa’ ’gyur", title: "Kanjur · Lời Phật dạy trong Tạng tạng", collection: "Tạng tạng", tradition: "Phật giáo Tây Tạng", sourceLanguage: "Tây Tạng · Sanskrit", sourceId: "84000", sourceUrl: "https://84000.co/reading-room", category: "Đại Tạng Kinh", topic: "Kinh điển Tây Tạng", keywords: "kanjur tạng tạng 84000" }),
+    catalogScripture({ id: "tibetan-tengyur", code: "Tengyur", canonicalTitle: "bsTan ’gyur", title: "Tengyur · Luận giải Phật giáo Tây Tạng", collection: "Tạng tạng", tradition: "Phật giáo Tây Tạng", sourceLanguage: "Tây Tạng · Sanskrit", sourceId: "84000", sourceUrl: "https://84000.co/reading-room", category: "Luận tạng", type: "Luận", topic: "Luận giải", keywords: "tengyur luận tạng 84000" })
+  ]);
+
+  const SCRIPTURES = Object.freeze([
+    ...CORE_SCRIPTURES.map((item) => Object.freeze({ category: item.collection === "Kinh Đại thừa" ? "Kinh tụng phổ biến" : "Đại Tạng Kinh", status: "published", editorialStatus: "Được xuất bản", ...item })),
+    ...CATALOG_SCRIPTURES
   ]);
 
   const GLOSSARY = Object.freeze([
@@ -423,32 +487,46 @@
     { id: "cbeta-reader", title: "CBETA Online Reader", provider: "CBETA", sourceId: "cbeta", teacher: "CBETA Editorial", center: "CBETA", retreat: "Nghiên cứu Hán tạng", date: "", duration: 0, language: "Hán văn", subtitles: "Không áp dụng", tradition: "Phật giáo Đông Á", topic: "Đại Tạng Hán văn", type: "Thư viện", rights: "Theo tuyên bố bản quyền CBETA", audioAvailable: false, url: "https://cbetaonline.cn/en/", note: "Tìm toàn văn, mã T/X và lịch sử đọc tại nguồn." }
   ]);
 
-  const NAV = Object.freeze([
-    { id: "today", label: "Học hôm nay", icon: "灯", group: "Hôm nay" },
-    { id: "beginner", label: "Lộ trình tu học", icon: "路", group: "Hôm nay" },
-    { id: "situations", label: "Pháp học đời sống", icon: "心", group: "Hôm nay" },
-    { id: "encyclopedia", label: "Đọc Toàn Thư", icon: "藏", group: "Phật Pháp Toàn Thư" },
-    { id: "teachings", label: "Giáo lý theo chủ đề", icon: "法", group: "Phật Pháp Toàn Thư" },
-    { id: "glossary", label: "Từ điển Phật học", icon: "字", group: "Phật Pháp Toàn Thư" },
-    { id: "map", label: "Bản đồ giáo pháp", icon: "圖", group: "Phật Pháp Toàn Thư" },
-    { id: "scriptures", label: "Canonical Reader", icon: "經", group: "Kinh điển" },
-    { id: "research", label: "Tìm kiếm học thuật", icon: "索", group: "Kinh điển" },
-    { id: "scholar", label: "Scholar & OCR Lab", icon: "學", group: "Kinh điển" },
-    { id: "provenance", label: "Editorial & Trust Center", icon: "證", group: "Kinh điển" },
-    { id: "review", label: "Ôn giáo lý", icon: "習", group: "Kinh điển" },
-    { id: "practice", label: "Thiền đường số", icon: "禪", group: "Thực hành" },
-    { id: "chanting", label: "Phòng tụng niệm", icon: "誦", group: "Thực hành" },
-    { id: "audio", label: "Thư viện nghe", icon: "聽", group: "Thực hành" },
-    { id: "talks", label: "Pháp thoại Observatory", icon: "聽", group: "Pháp thoại" },
-    { id: "qna", label: "HH Phật học có nguồn", icon: "問", group: "Pháp thoại" },
-    { id: "temple", label: "Trung tâm Phật sự Việt Nam", icon: "寺", group: "Chùa & Lịch" },
-    { id: "schedule", label: "Lịch tu học", icon: "曆", group: "Chùa & Lịch" },
-    { id: "request", label: "Thỉnh kinh", icon: "請", group: "Chùa & Lịch" },
-    { id: "circles", label: "Nhóm đọc riêng tư", icon: "眾", group: "Cộng đồng" },
-    { id: "journal", label: "Nhật ký mã hóa", icon: "記", group: "Cá nhân" },
-    { id: "accessibility", label: "Trợ năng", icon: "輔", group: "Cá nhân" },
-    { id: "data-control", label: "Tủ dữ liệu", icon: "庫", group: "Cá nhân" }
+  const DHARMA_AUDIO_SOURCES = Object.freeze([
+    { id: "phatsu-vietnamese", title: "Pháp thoại và Phật sự Việt Nam", language: "Tiếng Việt", region: "Việt Nam", tradition: "Phật giáo Việt Nam", provider: "Phật Sự Online", sourceId: "phatsuonline", mode: "Pháp thoại · video", humanAudio: true, availability: "Mở tại kênh chính thức", url: "https://www.youtube.com/PhatsuonlineTV", license: "Quyền thuộc đơn vị đăng; HH không tải lại" },
+    { id: "plum-vietnamese", title: "Thiền hướng dẫn Làng Mai · tiếng Việt", language: "Tiếng Việt", region: "Việt Nam · quốc tế", tradition: "Làng Mai", provider: "Plum Village App", sourceId: "plum-village", mode: "Thiền hướng dẫn", humanAudio: true, availability: "Tra cứu bản đang được nguồn công bố", url: "https://plumvillage.app/", license: "Nghe tại ứng dụng nguồn" },
+    { id: "plum-english", title: "Plum Village guided practices · English", language: "English", region: "Quốc tế", tradition: "Làng Mai", provider: "Plum Village App", sourceId: "plum-village", mode: "Guided meditation", humanAudio: true, availability: "Tra cứu bản đang được nguồn công bố", url: "https://plumvillage.app/", license: "Listen at source" },
+    { id: "plum-french", title: "Pratiques guidées du Village des Pruniers", language: "Français", region: "Pháp · quốc tế", tradition: "Làng Mai", provider: "Plum Village App", sourceId: "plum-village", mode: "Méditation guidée", humanAudio: true, availability: "Tra cứu bản đang được nguồn công bố", url: "https://plumvillage.app/", license: "Écouter à la source" },
+    { id: "plum-spanish", title: "Prácticas guiadas de Plum Village", language: "Español", region: "Quốc tế", tradition: "Làng Mai", provider: "Plum Village App", sourceId: "plum-village", mode: "Meditación guiada", humanAudio: true, availability: "Tra cứu bản đang được nguồn công bố", url: "https://plumvillage.app/", license: "Escuchar en la fuente" },
+    { id: "dharma-seed-english", title: "Dharma talks and retreat instructions", language: "English", region: "Hoa Kỳ · quốc tế", tradition: "Vipassanā", provider: "Dharma Seed", sourceId: "dharma-seed", mode: "Pháp thoại · thiền", humanAudio: true, availability: "Lọc theo teacher, center và retreat tại nguồn", url: "https://dharmaseed.org/talks/", license: "Theo từng track; thường CC BY-NC-ND tại nguồn" },
+    { id: "dharma-seed-thai", title: "Thai-language Dharma catalog", language: "ไทย", region: "Thái Lan · quốc tế", tradition: "Vipassanā", provider: "Dharma Seed", sourceId: "dharma-seed", mode: "Pháp thoại", humanAudio: true, availability: "Chỉ hiện track có ngôn ngữ tương ứng tại nguồn", url: "https://dharmaseed.org/talks/", license: "Kiểm tra theo từng track" },
+    { id: "dharma-seed-spanish", title: "Catálogo de charlas del Dharma", language: "Español", region: "Quốc tế", tradition: "Vipassanā", provider: "Dharma Seed", sourceId: "dharma-seed", mode: "Pháp thoại", humanAudio: true, availability: "Chỉ hiện track có ngôn ngữ tương ứng tại nguồn", url: "https://dharmaseed.org/talks/", license: "Revisar cada pista" },
+    { id: "84000-english-audio", title: "84000 Selected Audio Books", language: "English", region: "Quốc tế", tradition: "Phật giáo Tây Tạng", provider: "84000", sourceId: "84000", mode: "Audiobook chọn lọc", humanAudio: true, availability: "Tìm nhãn audio trong Reading Room", url: "https://84000.co/reading-room", license: "Theo điều khoản 84000; không sửa đổi hoặc phân phối lại trong HH" }
   ]);
+
+  const DHARMA_ROUTE_REGISTRY = Object.freeze([
+    { routeId: "today", path: "/phat-phap/today", title: "Học hôm nay", module: "todayMarkup", source: "LESSONS · local-first", permission: "public", availability: "ready", fallback: "Mở lộ trình nhập môn", icon: "灯", group: "Hôm nay" },
+    { routeId: "beginner", path: "/phat-phap/beginner", title: "Con đường tu học", module: "beginnerMarkup", source: "LESSONS · LEARNING_TIERS", permission: "public", availability: "ready", fallback: "Hiển thị lộ trình tổng quan", icon: "路", group: "Hôm nay" },
+    { routeId: "situations", path: "/phat-phap/situations", title: "Phật pháp ứng dụng", module: "situationsMarkup", source: "LIFE_JOURNEYS", permission: "public", availability: "ready", fallback: "Mở bài học nền tảng", icon: "心", group: "Hôm nay" },
+    { routeId: "encyclopedia", path: "/phat-phap/encyclopedia", title: "Phật Pháp Toàn Thư", module: "encyclopediaMarkup", source: "DHARMA_ENCYCLOPEDIA", permission: "public", availability: "ready", fallback: "Mở danh mục chương đã xuất bản", icon: "藏", group: "Kinh điển" },
+    { routeId: "scriptures", path: "/phat-phap/scriptures", title: "Thư viện kinh điển", module: "scripturesMarkup", source: "SCRIPTURES · SOURCES", permission: "public", availability: "ready", fallback: "Hiện metadata và liên kết nguồn", icon: "經", group: "Kinh điển" },
+    { routeId: "research", path: "/phat-phap/research", title: "Tìm kiếm toàn văn", module: "researchMarkup", source: "Research index cục bộ", permission: "public", availability: "ready", fallback: "Tìm trong metadata đã tải", icon: "索", group: "Kinh điển" },
+    { routeId: "scholar", path: "/phat-phap/scholar", title: "Đối chiếu & OCR", module: "scholarMarkup", source: "Browser File API · TextDetector", permission: "public", availability: "progressive", fallback: "Ghi chú ảnh thủ công, không tạo OCR giả", icon: "學", group: "Kinh điển" },
+    { routeId: "provenance", path: "/phat-phap/provenance", title: "Nguồn & kiểm duyệt", module: "provenanceMarkupV6", source: "SOURCES · editorial state", permission: "public-read/editor-write", availability: "ready", fallback: "Chỉ đọc sổ nguồn", icon: "證", group: "Kinh điển" },
+    { routeId: "review", path: "/phat-phap/review", title: "Ôn giáo lý", module: "reviewMarkup", source: "Dữ liệu người học cục bộ", permission: "account-local", availability: "ready", fallback: "Mời chọn nội dung để ôn", icon: "習", group: "Kinh điển" },
+    { routeId: "teachings", path: "/phat-phap/teachings", title: "Giáo lý Phật học", module: "teachingsMarkup", source: "TEACHINGS · SOURCES", permission: "public", availability: "ready", fallback: "Hiện danh mục nền tảng", icon: "法", group: "Tu học" },
+    { routeId: "map", path: "/phat-phap/map", title: "Bản đồ giáo pháp", module: "mapMarkup", source: "DHARMA_MAP", permission: "public", availability: "ready", fallback: "Hiện danh sách quan hệ", icon: "圖", group: "Tu học" },
+    { routeId: "practice", path: "/phat-phap/practice", title: "Thiền tập", module: "practiceMarkup", source: "Timer cục bộ · MEDITATION_COURSE", permission: "public", availability: "ready", fallback: "Thực hành không chuông", icon: "禪", group: "Tu học" },
+    { routeId: "chanting", path: "/phat-phap/chanting", title: "Niệm Phật & tụng đọc", module: "chantingMarkup", source: "CHANTS · SpeechSynthesis", permission: "public", availability: "progressive", fallback: "Hiện văn bản để tự đọc", icon: "誦", group: "Tu học" },
+    { routeId: "audio", path: "/phat-phap/audio", title: "Tụng kinh & nghe pháp", module: "audioMarkup", source: "TTS thiết bị · nguồn âm thanh bên ngoài", permission: "public", availability: "progressive", fallback: "Mở audio tại nguồn chính thức", icon: "聽", group: "Nghe pháp" },
+    { routeId: "talks", path: "/phat-phap/talks", title: "Pháp thoại", module: "talksMarkup", source: "TALKS · nguồn chính thức", permission: "public", availability: "ready", fallback: "Mở trực tiếp tại nguồn", icon: "聲", group: "Nghe pháp" },
+    { routeId: "qna", path: "/phat-phap/qna", title: "Hỏi đáp có nguồn", module: "qnaMarkup", source: "Chỉ mục nội bộ đã biên tập", permission: "public", availability: "ready", fallback: "Không trả lời khi thiếu nguồn", icon: "問", group: "Nghe pháp" },
+    { routeId: "temple", path: "/phat-phap/temple", title: "Chùa trực tuyến", module: "templeMarkup", source: "TEMPLE_DIRECTORY · nguồn chính thức", permission: "public", availability: "ready", fallback: "Ẩn cơ sở chưa xác minh", icon: "寺", group: "Chùa trực tuyến" },
+    { routeId: "request", path: "/phat-phap/request", title: "Thỉnh kinh", module: "requestMarkup", source: "Yêu cầu cục bộ · liên kết nguồn", permission: "account-local", availability: "ready", fallback: "Lưu yêu cầu trên thiết bị", icon: "請", group: "Chùa trực tuyến" },
+    { routeId: "glossary", path: "/phat-phap/glossary", title: "Từ điển Phật học", module: "glossaryMarkup", source: "GLOSSARY · SOURCES", permission: "public", availability: "ready", fallback: "Hiện định nghĩa HH có cảnh báo", icon: "字", group: "Tra cứu" },
+    { routeId: "schedule", path: "/phat-phap/schedule", title: "Thời khóa cá nhân", module: "scheduleMarkup", source: "Lịch thiết bị · timezone local", permission: "account-local", availability: "ready", fallback: "Hiện lịch ngày hiện tại", icon: "曆", group: "Cá nhân" },
+    { routeId: "circles", path: "/phat-phap/circles", title: "Nhóm đọc riêng tư", module: "circlesMarkup", source: "Mã mời thủ công cục bộ", permission: "account-local", availability: "local-only", fallback: "Không giả đồng bộ máy chủ", icon: "眾", group: "Cá nhân" },
+    { routeId: "journal", path: "/phat-phap/journal", title: "Ghi chú & nhật ký", module: "journalMarkup", source: "AES-GCM cục bộ", permission: "account-local+pin", availability: "ready", fallback: "Giữ nhật ký khóa", icon: "記", group: "Cá nhân" },
+    { routeId: "accessibility", path: "/phat-phap/accessibility", title: "Trợ năng", module: "accessibilityMarkup", source: "Thiết lập cục bộ", permission: "public", availability: "ready", fallback: "Theo thiết lập trình duyệt", icon: "輔", group: "Cá nhân" },
+    { routeId: "data-control", path: "/phat-phap/data-control", title: "Dữ liệu tu học", module: "dataControlMarkup", source: "JSON · SHA-256 · Indexed storage", permission: "account-local", availability: "ready", fallback: "Không nhập dữ liệu lỗi checksum", icon: "庫", group: "Cá nhân" }
+  ]);
+
+  const NAV = Object.freeze(DHARMA_ROUTE_REGISTRY.map((route) => Object.freeze({ id: route.routeId, label: route.title, icon: route.icon, group: route.group })));
 
   const DEFAULT_STATE = Object.freeze({
     completedLessons: [], bookmarks: [], lessonNotes: {}, practiceHistory: [], chantCount: 0,
@@ -457,7 +535,7 @@
     learningTier: "intro", lifePathProgress: {}, scriptureNotes: {}, scriptureSegmentNotes: {}, scriptureHighlights: [], scriptureHighlightColors: {}, readingPosition: {}, offlinePacks: [], readingPath: [], readingProgram: 21, sourceReports: [], metadataDrafts: [],
     meditation: { type: "breath", bellInterval: 0, silent: false, locked: false, presets: [], courseDays: [], checkIn: "steady", playlist: "custom" }, chant: { selected: "refuge", pace: "normal", repeat: false, showTransliteration: true, showMeaning: true, fontSize: 18, lineHeight: 1.7, sleepMinutes: 0 },
     calendar: { view: "week", template: "balanced", paused: false, missedSessions: 0 }, circles: [], circlePrivateNotes: {}, glossaryDeck: [],
-    reviewSchedule: {}, reviewHistory: [], audio: { queue: [], rate: .88 }, exportHistory: [],
+    reviewSchedule: {}, reviewHistory: [], audio: { queue: [], rate: .88, voiceURI: "", repeat: false, sleepMinutes: 0 }, exportHistory: [],
     encyclopediaPosition: { volume: "nhap-mon", chapter: "duc-phat-lich-su" }, encyclopediaBookmarks: [], encyclopediaCompleted: [], encyclopediaNotes: {}, encyclopediaReader: { mode: "paper", outline: true },
     canonical: { layout: "columns", language: "source-summary", showSegmentIds: true }, researchHistory: [],
     talkQueue: [], talkNotes: {}, talkBookmarks: {}, talkSpeed: 1, editorialReviews: [], sourceHealth: {}, editorialSnapshots: [], facsimileNotes: {},
@@ -488,6 +566,7 @@
   let scriptureTradition = "all";
   let scriptureTopic = "all";
   let scriptureDifficulty = "all";
+  let scriptureCategory = "all";
   let scriptureSavedOnly = false;
   let scriptureShelf = "all";
   let activeScriptureTab = "study";
@@ -522,6 +601,10 @@
   let studyReviewReveal = false;
   let audioStudyIndex = 0;
   let audioStudyPlaying = false;
+  let audioSleepTimerId = 0;
+  let audioSourceLanguage = "all";
+  let audioSourceRegion = "all";
+  let audioSourceTradition = "all";
   let pendingImport = null;
   let chantSelectedLine = -1;
   let currentUser = {};
@@ -577,7 +660,10 @@
       if (!Array.isArray(next.meditation.courseDays)) next.meditation.courseDays = [];
       if (!["steady", "uneasy", "overwhelmed"].includes(next.meditation.checkIn)) next.meditation.checkIn = "steady";
       next.audio.queue = unique(next.audio.queue.filter((key) => typeof key === "string")).slice(-30);
-      next.audio.rate = Math.max(.65, Math.min(1.1, Number(next.audio.rate) || .88));
+      next.audio.rate = Math.max(.5, Math.min(2, Number(next.audio.rate) || .88));
+      next.audio.voiceURI = String(next.audio.voiceURI || "").slice(0, 240);
+      next.audio.repeat = Boolean(next.audio.repeat);
+      next.audio.sleepMinutes = [0, 5, 10, 15, 30, 45, 60].includes(Number(next.audio.sleepMinutes)) ? Number(next.audio.sleepMinutes) : 0;
       if (!AURA_MODES.some((mode) => mode.id === next.visual.aura)) next.visual.aura = "radiant";
       if (!["intro", "practice", "deep"].includes(next.learningTier)) next.learningTier = "intro";
       if (!["columns", "stacked", "summary"].includes(next.canonical.layout)) next.canonical.layout = "columns";
@@ -957,6 +1043,7 @@
       (scriptureTradition === "all" || item.tradition === scriptureTradition)
       && (scriptureTopic === "all" || item.topic === scriptureTopic)
       && (scriptureDifficulty === "all" || item.difficulty === scriptureDifficulty)
+      && (scriptureCategory === "all" || item.category === scriptureCategory)
       && (!scriptureSavedOnly || state.bookmarks.includes(item.id))
       && (scriptureShelf === "all" || (scriptureShelf === "path" ? state.readingPath.includes(item.id) : state.offlinePacks.includes(item.id)))
       && normalize(`${item.title} ${item.canonicalTitle} ${item.code} ${item.collection} ${item.summary} ${item.keywords}`).includes(normalize(scriptureQuery))
@@ -964,10 +1051,12 @@
     const traditions = unique(SCRIPTURES.map((item) => item.tradition));
     const topics = unique(SCRIPTURES.map((item) => item.topic));
     const difficulties = unique(SCRIPTURES.map((item) => item.difficulty));
-    return `<section class="dharma-library-head dharma-paper-card"><div><small>SCRIPTURE STUDY LAB</small><h2>Đọc đối chiếu, biết rõ nguồn</h2><p>Kho học tập phân biệt nguyên ngữ, metadata, tóm lược HH và bản dịch ở nguồn. Không sao chép bản dịch chưa rõ giấy phép.</p></div><span>經</span></section>
+    const categories = ["Đại Tạng Kinh", "Kinh tụng phổ biến", "Chú và Đà-la-ni", "Luật tạng", "Luận tạng"];
+    return `<section class="dharma-library-head dharma-paper-card"><div><small>THƯ VIỆN KINH ĐIỂN · ${SCRIPTURES.length} HỒ SƠ</small><h2>Đọc đối chiếu, biết rõ nguồn</h2><p>Kho học tập phân biệt nguyên ngữ, metadata, tóm lược HH và bản dịch ở nguồn. Hồ sơ “đang biên tập” vẫn mở được metadata nhưng không giả là đã có toàn văn.</p></div><span>經</span></section>
+      <nav class="dharma-scripture-categories" aria-label="Phân loại kinh điển"><button type="button" data-scripture-category="all" aria-pressed="${scriptureCategory === "all"}">Tất cả · ${SCRIPTURES.length}</button>${categories.map((category) => `<button type="button" data-scripture-category="${safe(category)}" aria-pressed="${scriptureCategory === category}">${safe(category)} · ${SCRIPTURES.filter((item) => item.category === category).length}</button>`).join("")}<button type="button" data-scripture-compare-shortcut>So sánh bản dịch</button></nav>
       <div class="dharma-library-toolbar dharma-library-toolbar--advanced"><label><span>⌕</span><input type="search" data-scripture-search value="${safe(scriptureQuery)}" placeholder="Tên kinh, mã SN/MN/DN, chủ đề…"></label><select data-scripture-tradition aria-label="Lọc truyền thống"><option value="all">Mọi truyền thống</option>${traditions.map((item) => `<option value="${safe(item)}" ${scriptureTradition === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><select data-scripture-topic aria-label="Lọc chủ đề"><option value="all">Mọi chủ đề</option>${topics.map((item) => `<option value="${safe(item)}" ${scriptureTopic === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><select data-scripture-difficulty aria-label="Lọc độ khó"><option value="all">Mọi cấp độ</option>${difficulties.map((item) => `<option value="${safe(item)}" ${scriptureDifficulty === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><button type="button" data-scripture-saved-only aria-pressed="${scriptureSavedOnly}">${scriptureSavedOnly ? "★ Đang xem đã lưu" : "☆ Chỉ mục đã lưu"}</button>${scriptureShelf !== "all" ? '<button type="button" data-scripture-clear-shelf>× Bỏ lọc kệ</button>' : ""}</div>
       <section class="dharma-reading-shelf"><article><i>路</i><span><strong>Đường đọc cá nhân · ${state.readingProgram} ngày</strong><small>${state.readingPath.length} tài liệu · sắp theo thứ tự bạn thêm</small></span><select data-reading-program aria-label="Chọn độ dài đường đọc">${[7,21,49].map((day) => `<option value="${day}" ${state.readingProgram === day ? "selected" : ""}>${day} ngày</option>`).join("")}</select><button type="button" data-reading-path-view ${state.readingPath.length ? "" : "disabled"}>Mở đường đọc</button></article><article><i>↓</i><span><strong>Gói đọc ngoại tuyến</strong><small>${state.offlinePacks.length} bản tóm lược và metadata đã lưu cục bộ</small></span><button type="button" data-offline-view ${state.offlinePacks.length ? "" : "disabled"}>Xem gói</button></article></section>
-      <section class="dharma-scripture-grid">${filtered.map((item) => `<article><header><span>經</span><div><small>${safe(item.code)} · ${safe(item.collection)}</small><h3>${safe(item.title)}</h3><em>${safe(item.canonicalTitle)}</em></div><button type="button" data-bookmark-scripture="${item.id}" aria-label="${state.bookmarks.includes(item.id) ? "Bỏ lưu" : "Lưu"}">${state.bookmarks.includes(item.id) ? "★" : "☆"}</button></header><div class="dharma-scripture-tags"><span>${safe(item.topic)}</span><span>${safe(item.difficulty)}</span><span>${safe(item.sourceLanguage)}</span></div><p>${safe(item.summary)}</p><footer>${sourceBadge(item.sourceId)}<button type="button" data-open-scripture="${item.id}">Mở Study Lab →</button></footer></article>`).join("") || '<div class="dharma-empty"><span>經</span><strong>Không tìm thấy nội dung</strong><p>Thử tên ngắn hơn hoặc bỏ bớt bộ lọc.</p></div>'}</section>`;
+      <section class="dharma-scripture-grid">${filtered.map((item) => `<article data-editorial-status="${safe(item.status)}"><header><span>${item.type === "Luật" ? "戒" : item.type === "Luận" ? "論" : item.type === "Đà-la-ni" || item.type === "Chân ngôn" ? "誦" : "經"}</span><div><small>${safe(item.code)} · ${safe(item.collection)}</small><h3>${safe(item.title)}</h3><em>${safe(item.canonicalTitle)}</em></div><button type="button" data-bookmark-scripture="${item.id}" aria-label="${state.bookmarks.includes(item.id) ? "Bỏ lưu" : "Lưu"}">${state.bookmarks.includes(item.id) ? "★" : "☆"}</button></header><div class="dharma-scripture-status ${item.status === "published" ? "is-published" : "is-editorial"}"><i>${item.status === "published" ? "✓" : "稿"}</i><span>${safe(item.editorialStatus)}</span></div><div class="dharma-scripture-tags"><span>${safe(item.category)}</span><span>${safe(item.topic)}</span><span>${safe(item.sourceLanguage)}</span></div><p>${safe(item.summary)}</p><footer>${sourceBadge(item.sourceId)}<button type="button" data-open-scripture="${item.id}">${item.status === "published" ? "Mở Reader" : "Mở hồ sơ nguồn"} →</button></footer></article>`).join("") || '<div class="dharma-empty"><span>經</span><strong>Không tìm thấy nội dung</strong><p>Thử tên ngắn hơn hoặc bỏ bớt bộ lọc.</p></div>'}</section>`;
   }
 
   function scriptureDetailMarkup(item) {
@@ -987,7 +1076,7 @@
       relations: `<section class="dharma-related-study dharma-parallel-graph"><header><small>PARALLEL GRAPH · LIÊN HỆ BIÊN TẬP</small><h3>Quan hệ giữa kinh, giáo lý và thuật ngữ</h3><p>Đường nối này hỗ trợ khám phá, không khẳng định các văn bản là bản song song học thuật khi chưa có đối chiếu chuyên môn.</p></header><div class="dharma-parallel-graph__core"><span>經</span><strong>${safe(item.code)}</strong></div>${related.map((entry, index) => `<button type="button" style="--relation:${index}" ${entry.collection ? `data-open-scripture="${entry.id}"` : `data-open-teaching="${entry.id}"`}><i>${entry.collection ? "經" : "法"}</i><span><strong>${safe(entry.title)}</strong><small>${safe(entry.collection || entry.tradition)}</small></span><b>›</b></button>`).join("") || '<p class="dharma-empty-line">Chưa có liên hệ đã biên tập.</p>'}</section>`,
       notes: `<section class="dharma-study-notes"><label>Ghi chú toàn bài<textarea data-scripture-note="${item.id}" maxlength="4000" placeholder="Điều bạn hiểu, câu hỏi cần hỏi vị thầy…">${safe(state.scriptureNotes[item.id] || "")}</textarea><small>Lưu trên thiết bị. Không được xem là chú giải kinh điển.</small></label><div class="dharma-segment-note-list">${segments.map((segment) => `<label><span>${safe(segment.reference)} · ${safe(segment.label)}</span><textarea data-scripture-segment-note="${segment.id}" maxlength="2000" placeholder="Ghi chú cạnh đoạn…">${safe(state.scriptureSegmentNotes[segment.id] || "")}</textarea></label>`).join("")}</div><footer><button type="button" data-open-inspector-note="${item.id}">Viết trong Inspector</button><button type="button" data-export-scripture-notes="${item.id}">Xuất Markdown</button><button type="button" data-print-scripture-notes="${item.id}">In / lưu PDF</button></footer></section>`
     };
-    return `<button class="dharma-back" type="button" data-back-list="scriptures">← Trở lại thư viện</button><article class="dharma-scripture-reader dharma-paper-card" data-canonical-layout="${safe(state.canonical.layout)}"><header><div><small>${safe(item.code)} · ${safe(item.collection)} · ${safe(item.tradition)}</small><h2>${safe(item.title)}</h2><p>${sourceBadge(item.sourceId)} <span class="dharma-original-label">HH TÓM LƯỢC · KHÔNG PHẢI BẢN DỊCH</span></p></div><div><button type="button" data-speak-scripture="${item.id}">▷ Nghe tóm lược</button><button type="button" data-reader-mode>Chế độ tập trung</button></div></header><section class="dharma-canonical-controls" aria-label="Bố cục Canonical Reader"><div>${[["columns","Hai cột"],["stacked","Trên–dưới"],["summary","Chỉ tóm lược"]].map(([id,label]) => `<button type="button" data-canonical-layout="${id}" aria-pressed="${state.canonical.layout === id}">${label}</button>`).join("")}</div><p><strong>${safe(work.workId)}</strong><span>${work.versions.length} phiên bản · ${work.segments.length} đoạn</span></p></section><nav class="dharma-study-tabs" role="tablist">${[["study","Đọc theo đoạn"],["compare","So sánh"],["scholar","Scholar"],["facsimile","Ảnh/OCR"],["provenance","Nguồn"],["relations","Parallel Graph"],["notes","Ghi chú"]].map(([id,label]) => `<button type="button" data-scripture-tab="${id}" aria-selected="${activeScriptureTab === id}">${label}</button>`).join("")}</nav><div class="dharma-study-panel">${panels[activeScriptureTab] || panels.study}</div><aside><strong>Ranh giới nội dung</strong><p>HH chỉ giải thích và tóm lược để hỗ trợ học. Với giáo pháp chuyên sâu hoặc khác biệt truyền thống, hãy tham khảo vị thầy đủ phẩm hạnh trong truyền thống liên quan.</p></aside><footer><button type="button" data-bookmark-scripture="${item.id}">${state.bookmarks.includes(item.id) ? "★ Đã lưu" : "☆ Lưu thư viện"}</button><button type="button" data-reading-path="${item.id}">${inPath ? "✓ Trong đường đọc" : "+ Đường đọc"}</button><button type="button" data-offline-scripture="${item.id}">${offline ? "✓ Đã lưu offline" : "↓ Lưu offline"}</button><a class="dharma-primary" href="${safe(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">Mở nguồn ↗</a></footer></article>`;
+    return `<button class="dharma-back" type="button" data-back-list="scriptures">← Trở lại thư viện</button>${item.status === "published" ? "" : `<aside class="dharma-editorial-notice" role="status"><span>稿</span><div><strong>Nội dung đang biên tập</strong><p>Hồ sơ nguồn và mã tham chiếu đã có. Reader hiện chỉ cung cấp metadata cùng tóm lược thư mục; chưa có nguyên văn, bản dịch hoặc audio đã duyệt.</p></div><a href="${safe(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">Đọc tại nguồn ↗</a></aside>`}<article class="dharma-scripture-reader dharma-paper-card" data-canonical-layout="${safe(state.canonical.layout)}"><header><div><small>${safe(item.code)} · ${safe(item.collection)} · ${safe(item.tradition)}</small><h2>${safe(item.title)}</h2><p>${sourceBadge(item.sourceId)} <span class="dharma-original-label">${item.status === "published" ? "HH TÓM LƯỢC · KHÔNG PHẢI BẢN DỊCH" : "HỒ SƠ METADATA · ĐANG BIÊN TẬP"}</span></p></div><div><button type="button" data-speak-scripture="${item.id}">▷ Nghe tóm lược</button><button type="button" data-reader-mode>Chế độ tập trung</button></div></header><section class="dharma-canonical-controls" aria-label="Bố cục Canonical Reader"><div>${[["columns","Hai cột"],["stacked","Trên–dưới"],["summary","Chỉ tóm lược"]].map(([id,label]) => `<button type="button" data-canonical-layout="${id}" aria-pressed="${state.canonical.layout === id}">${label}</button>`).join("")}</div><p><strong>${safe(work.workId)}</strong><span>${work.versions.length} phiên bản · ${work.segments.length} đoạn</span></p></section><nav class="dharma-study-tabs" role="tablist">${[["study","Đọc theo đoạn"],["compare","So sánh"],["scholar","Scholar"],["facsimile","Ảnh/OCR"],["provenance","Nguồn"],["relations","Parallel Graph"],["notes","Ghi chú"]].map(([id,label]) => `<button type="button" data-scripture-tab="${id}" aria-selected="${activeScriptureTab === id}">${label}</button>`).join("")}</nav><div class="dharma-study-panel">${panels[activeScriptureTab] || panels.study}</div><aside><strong>Ranh giới nội dung</strong><p>HH chỉ giải thích và tóm lược để hỗ trợ học. Với giáo pháp chuyên sâu hoặc khác biệt truyền thống, hãy tham khảo vị thầy đủ phẩm hạnh trong truyền thống liên quan.</p></aside><footer><button type="button" data-bookmark-scripture="${item.id}">${state.bookmarks.includes(item.id) ? "★ Đã lưu" : "☆ Lưu thư viện"}</button><button type="button" data-reading-path="${item.id}">${inPath ? "✓ Trong đường đọc" : "+ Đường đọc"}</button><button type="button" data-offline-scripture="${item.id}">${offline ? "✓ Đã lưu offline" : "↓ Lưu offline"}</button><a class="dharma-primary" href="${safe(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">Mở nguồn ↗</a></footer></article>`;
   }
 
   function practiceMarkup() {
@@ -1056,11 +1145,28 @@
     return [...LESSONS.map((item) => ({ key: `lesson:${item.id}`, kind: "Bài học HH", title: item.title, text: `${item.title}. ${item.summary} Gợi ý thực hành. ${item.practice}`, sourceId: item.sourceId, minutes: Math.max(2, Math.round(item.summary.length / 700)) })), ...SCRIPTURES.map((item) => ({ key: `scripture:${item.id}`, kind: "Tóm lược kinh", title: item.title, text: `${item.title}, ${item.code}. ${item.summary}`, sourceId: item.sourceId, minutes: Math.max(2, Math.round(item.summary.length / 700)) }))];
   }
 
+  function availableSpeechVoices() {
+    if (!("speechSynthesis" in global)) return [];
+    return global.speechSynthesis.getVoices().filter((voice) => voice?.voiceURI && voice?.lang).sort((a, b) => {
+      const preferredA = /^vi\b/i.test(a.lang) ? 0 : 1;
+      const preferredB = /^vi\b/i.test(b.lang) ? 0 : 1;
+      return preferredA - preferredB || a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name);
+    });
+  }
+
   function audioMarkup() {
     const catalog = audioStudyCatalog();
     const queue = state.audio.queue.map((key) => catalog.find((item) => item.key === key)).filter(Boolean);
     const current = queue[audioStudyIndex] || queue[0];
-    return `<section class="dharma-route-intro dharma-paper-card"><div><small>THƯ VIỆN NGHE PHÁP HỌC</small><h2>Nghe tóm lược đã biên soạn, biết rõ loại âm thanh</h2><p>Trình duyệt đọc nội dung HH bằng giọng tổng hợp và luôn gắn nhãn rõ ràng. Đây không phải giọng tăng ni, không phải bản tụng có bản quyền và không phải nguyên văn kinh.</p></div><span class="dharma-seal">聽</span></section><section class="dharma-audio-library"><div><header><small>NỘI DUNG CÓ THỂ NGHE</small><h2>Chọn bài vào hàng nghe</h2></header>${catalog.map((item) => `<article><span>${item.kind === "Bài học HH" ? "法" : "經"}</span><div><small>${safe(item.kind)} · khoảng ${item.minutes} phút</small><h3>${safe(item.title)}</h3>${sourceBadge(item.sourceId)}</div><button type="button" data-audio-queue="${safe(item.key)}">${state.audio.queue.includes(item.key) ? "✓ Đã thêm" : "+ Thêm"}</button></article>`).join("")}</div><aside class="dharma-paper-card"><header><div><small>HÀNG NGHE RIÊNG TƯ</small><h2>${queue.length} nội dung</h2></div><span class="${audioStudyPlaying ? "is-playing" : ""}">♩</span></header>${current ? `<section class="dharma-audio-now"><small>${audioStudyPlaying ? "ĐANG ĐỌC" : "SẴN SÀNG"}</small><strong>${safe(current.title)}</strong><p>Giọng tổng hợp của trình duyệt · ${safe(current.kind)}</p></section>` : '<p class="dharma-empty-line">Chưa có nội dung trong hàng nghe.</p>'}<ol>${queue.map((item,index) => `<li class="${index === audioStudyIndex ? "is-current" : ""}"><i>${index + 1}</i><span><strong>${safe(item.title)}</strong><small>${safe(item.kind)}</small></span><button type="button" data-remove-audio="${safe(item.key)}" aria-label="Bỏ ${safe(item.title)}">×</button></li>`).join("")}</ol><footer><label>Tốc độ<select data-audio-rate>${[[.72,"Chậm"],[.88,"Tự nhiên"],[1,"Nhanh"]].map(([value,label]) => `<option value="${value}" ${Number(state.audio.rate) === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><button type="button" data-audio-stop ${audioStudyPlaying ? "" : "disabled"}>Dừng</button><button class="dharma-primary" type="button" data-audio-play ${queue.length ? "" : "disabled"}>${audioStudyPlaying ? "Tạm dừng" : "Bắt đầu nghe"}</button></footer></aside></section><aside class="dharma-practice-warning"><strong>Quyền sử dụng âm thanh</strong><p>Phiên bản này chỉ dùng SpeechSynthesis cục bộ cho nội dung HH. Tệp pháp thoại hoặc tụng niệm của bên thứ ba chỉ được thêm khi có giấy phép âm thanh riêng, người đọc và nguồn công bố rõ ràng.</p></aside>`;
+    const voices = availableSpeechVoices();
+    const selectedVoice = voices.find((voice) => voice.voiceURI === state.audio.voiceURI);
+    const languages = unique(DHARMA_AUDIO_SOURCES.map((item) => item.language));
+    const regions = unique(DHARMA_AUDIO_SOURCES.map((item) => item.region));
+    const traditions = unique(DHARMA_AUDIO_SOURCES.map((item) => item.tradition));
+    const external = DHARMA_AUDIO_SOURCES.filter((item) => (audioSourceLanguage === "all" || item.language === audioSourceLanguage) && (audioSourceRegion === "all" || item.region === audioSourceRegion) && (audioSourceTradition === "all" || item.tradition === audioSourceTradition));
+    return `<section class="dharma-route-intro dharma-paper-card"><div><small>TRUNG TÂM ÂM THANH ĐA NGÔN NGỮ</small><h2>Phân biệt giọng thiết bị và bản đọc của con người</h2><p>Hàng nghe cục bộ chỉ đọc nội dung HH bằng SpeechSynthesis. Bản tụng, audiobook và pháp thoại do con người thực hiện luôn mở tại đơn vị công bố khi HH chưa có quyền lưu hoặc phát lại.</p></div><span class="dharma-seal">聽</span></section>
+      <section class="dharma-audio-source-browser dharma-paper-card"><header><div><small>NGUỒN NGHE ĐÃ GHI RÕ XUẤT XỨ</small><h2>Chọn ngôn ngữ, khu vực và truyền thống</h2></div><span>${external.length}/${DHARMA_AUDIO_SOURCES.length} danh mục</span></header><div class="dharma-audio-source-filters"><select data-audio-source-language aria-label="Ngôn ngữ audio"><option value="all">Mọi ngôn ngữ</option>${languages.map((value) => `<option value="${safe(value)}" ${audioSourceLanguage === value ? "selected" : ""}>${safe(value)}</option>`).join("")}</select><select data-audio-source-region aria-label="Quốc gia hoặc khu vực"><option value="all">Mọi quốc gia/khu vực</option>${regions.map((value) => `<option value="${safe(value)}" ${audioSourceRegion === value ? "selected" : ""}>${safe(value)}</option>`).join("")}</select><select data-audio-source-tradition aria-label="Truyền thống"><option value="all">Mọi truyền thống</option>${traditions.map((value) => `<option value="${safe(value)}" ${audioSourceTradition === value ? "selected" : ""}>${safe(value)}</option>`).join("")}</select></div><div class="dharma-audio-source-grid">${external.map((item) => `<article><header><span>${item.humanAudio ? "♫" : "讀"}</span><div><small>${safe(item.language)} · ${safe(item.region)}</small><h3>${safe(item.title)}</h3></div></header><dl><div><dt>Đơn vị</dt><dd>${safe(item.provider)}</dd></div><div><dt>Truyền thống</dt><dd>${safe(item.tradition)}</dd></div><div><dt>Hình thức</dt><dd>${safe(item.mode)}</dd></div></dl><p>${safe(item.availability)}</p><footer><span>${safe(item.license)}</span><a href="${safe(item.url)}" target="_blank" rel="noopener noreferrer">Mở tại nguồn ↗</a></footer></article>`).join("") || '<p class="dharma-empty-line">Không có danh mục phù hợp bộ lọc. HH không tạo bản audio giả để lấp chỗ trống.</p>'}</div></section>
+      <section class="dharma-audio-library"><div><header><small>GIỌNG THIẾT BỊ ĐỌC NỘI DUNG HH</small><h2>Chọn bài vào hàng nghe cục bộ</h2><p>Ngôn ngữ của nội dung vẫn là tiếng Việt; đổi voice không phải là dịch kinh.</p></header>${catalog.map((item) => `<article><span>${item.kind === "Bài học HH" ? "法" : "經"}</span><div><small>${safe(item.kind)} · khoảng ${item.minutes} phút</small><h3>${safe(item.title)}</h3>${sourceBadge(item.sourceId)}</div><button type="button" data-audio-queue="${safe(item.key)}">${state.audio.queue.includes(item.key) ? "✓ Đã thêm" : "+ Thêm"}</button></article>`).join("")}</div><aside class="dharma-paper-card"><header><div><small>HÀNG NGHE RIÊNG TƯ</small><h2>${queue.length} nội dung</h2></div><span class="${audioStudyPlaying ? "is-playing" : ""}">♩</span></header>${current ? `<section class="dharma-audio-now"><small>${audioStudyPlaying ? "ĐANG ĐỌC" : "SẴN SÀNG"}</small><strong>${safe(current.title)}</strong><p>${selectedVoice ? `${safe(selectedVoice.name)} · ${safe(selectedVoice.lang)}` : "Giọng mặc định thiết bị"} · ${safe(current.kind)}</p></section>` : '<p class="dharma-empty-line">Chưa có nội dung trong hàng nghe.</p>'}<ol>${queue.map((item,index) => `<li class="${index === audioStudyIndex ? "is-current" : ""}"><i>${index + 1}</i><span><strong>${safe(item.title)}</strong><small>${safe(item.kind)}</small></span><button type="button" data-remove-audio="${safe(item.key)}" aria-label="Bỏ ${safe(item.title)}">×</button></li>`).join("")}</ol><div class="dharma-audio-settings"><label>Giọng đọc<select data-audio-voice><option value="">Mặc định thiết bị</option>${voices.map((voice) => `<option value="${safe(voice.voiceURI)}" ${state.audio.voiceURI === voice.voiceURI ? "selected" : ""}>${safe(voice.name)} · ${safe(voice.lang)}${voice.localService ? " · local" : ""}</option>`).join("")}</select></label><label>Tốc độ<select data-audio-rate>${[.5,.75,.88,1,1.25,1.5,1.75,2].map((value) => `<option value="${value}" ${Number(state.audio.rate) === value ? "selected" : ""}>${value}×</option>`).join("")}</select></label><label>Hẹn dừng<select data-audio-sleep>${[0,5,10,15,30,45,60].map((value) => `<option value="${value}" ${Number(state.audio.sleepMinutes) === value ? "selected" : ""}>${value ? `${value} phút` : "Không hẹn"}</option>`).join("")}</select></label><label class="dharma-check"><input type="checkbox" data-audio-repeat ${state.audio.repeat ? "checked" : ""}><span>Lặp hàng nghe</span></label></div><footer><button type="button" data-audio-stop ${audioStudyPlaying ? "" : "disabled"}>Dừng</button><button class="dharma-primary" type="button" data-audio-play ${queue.length ? "" : "disabled"}>${audioStudyPlaying ? "Tạm dừng" : "Bắt đầu nghe"}</button></footer></aside></section><aside class="dharma-practice-warning"><strong>Quyền sử dụng âm thanh</strong><p>Phiên bản này chỉ dùng SpeechSynthesis cục bộ cho nội dung HH. Tệp pháp thoại hoặc tụng niệm của bên thứ ba chỉ được thêm khi có giấy phép âm thanh riêng, người đọc và nguồn công bố rõ ràng.</p></aside>`;
   }
 
   function dataControlMarkup() {
@@ -1611,6 +1717,8 @@
 
   function stopAudioStudy() {
     audioStudyPlaying = false;
+    global.clearTimeout(audioSleepTimerId);
+    audioSleepTimerId = 0;
     global.speechSynthesis?.cancel?.();
     root?.querySelector("[data-dharma-hub]")?.classList.remove("is-audio-playing");
   }
@@ -1619,10 +1727,16 @@
     if (!audioStudyPlaying) return;
     const catalog = audioStudyCatalog();
     const queue = state.audio.queue.map((key) => catalog.find((item) => item.key === key)).filter(Boolean);
-    if (!queue.length || audioStudyIndex >= queue.length) { stopAudioStudy(); audioStudyIndex = 0; if (activeView === "audio") renderView({ preserveScroll: true }); return; }
+    if (!queue.length || audioStudyIndex >= queue.length) {
+      if (queue.length && state.audio.repeat) { audioStudyIndex = 0; speakAudioStudyEntry(); return; }
+      stopAudioStudy(); audioStudyIndex = 0; if (activeView === "audio") renderView({ preserveScroll: true }); return;
+    }
     const item = queue[audioStudyIndex];
     const utterance = new SpeechSynthesisUtterance(item.text);
-    utterance.lang = "vi-VN"; utterance.rate = Math.max(.65, Math.min(1.1, Number(state.audio.rate) || .88));
+    const selectedVoice = availableSpeechVoices().find((voice) => voice.voiceURI === state.audio.voiceURI);
+    utterance.lang = selectedVoice?.lang || "vi-VN";
+    if (selectedVoice) utterance.voice = selectedVoice;
+    utterance.rate = Math.max(.5, Math.min(2, Number(state.audio.rate) || .88));
     utterance.onend = () => { if (!audioStudyPlaying) return; audioStudyIndex += 1; speakAudioStudyEntry(); if (activeView === "audio") renderView({ preserveScroll: true }); };
     utterance.onerror = () => { stopAudioStudy(); if (activeView === "audio") renderView({ preserveScroll: true }); toast("Giọng tổng hợp đã dừng. Bạn có thể thử lại.", "warning"); };
     global.speechSynthesis.speak(utterance);
@@ -1634,7 +1748,10 @@
     if (audioStudyPlaying) { stopAudioStudy(); renderView({ preserveScroll: true }); return; }
     if (!state.audio.queue.length) return toast("Hãy thêm ít nhất một nội dung vào hàng nghe.", "warning");
     audioStudyIndex = Math.max(0, Math.min(audioStudyIndex, state.audio.queue.length - 1));
-    audioStudyPlaying = true; root?.querySelector("[data-dharma-hub]")?.classList.add("is-audio-playing"); speakAudioStudyEntry();
+    audioStudyPlaying = true;
+    global.clearTimeout(audioSleepTimerId);
+    if (state.audio.sleepMinutes) audioSleepTimerId = global.setTimeout(() => { stopAudioStudy(); if (activeView === "audio") renderView({ preserveScroll: true }); toast("Đã dừng hàng nghe theo hẹn giờ."); }, state.audio.sleepMinutes * 60000);
+    root?.querySelector("[data-dharma-hub]")?.classList.add("is-audio-playing"); speakAudioStudyEntry();
   }
 
   function downloadBlob(content, filename, type) {
@@ -2029,6 +2146,15 @@
     if (event.target.closest("[data-offline-view]")) { scriptureShelf = "offline"; renderView(); return; }
     if (event.target.closest("[data-scripture-clear-shelf]")) { scriptureShelf = "all"; renderView({ preserveScroll: true }); return; }
     if (event.target.closest("[data-scripture-saved-only]")) { scriptureSavedOnly = !scriptureSavedOnly; renderView({ preserveScroll: true }); return; }
+    const scriptureCategoryButton = event.target.closest("[data-scripture-category]");
+    if (scriptureCategoryButton) { scriptureCategory = scriptureCategoryButton.dataset.scriptureCategory || "all"; renderView({ preserveScroll: true }); return; }
+    if (event.target.closest("[data-scripture-compare-shortcut]")) {
+      const next = SCRIPTURES.find((item) => item.status === "published") || SCRIPTURES[0];
+      selectedScripture = state.recentScripture && SCRIPTURES.some((item) => item.id === state.recentScripture) ? state.recentScripture : next.id;
+      activeScriptureTab = "compare";
+      state.recentScripture = selectedScripture;
+      saveState(); renderView(); return;
+    }
     const reportSource = event.target.closest("[data-report-source]");
     if (reportSource) return sourceReportDialog(reportSource.dataset.reportSource);
     const teachingTab = event.target.closest("[data-teaching-tab]");
@@ -2249,7 +2375,13 @@
     if (event.target.matches("[data-chant-font]")) { state.chant = { ...state.chant, fontSize: Number(event.target.value) }; saveState(); renderView({ preserveScroll: true }); }
     if (event.target.matches("[data-chant-line-height]")) { state.chant = { ...state.chant, lineHeight: Number(event.target.value) }; saveState(); renderView({ preserveScroll: true }); }
     if (event.target.matches("[data-chant-sleep]")) { state.chant = { ...state.chant, sleepMinutes: Number(event.target.value) }; saveState(); if (chantTimerId) chantStopAt = state.chant.sleepMinutes ? Date.now() + state.chant.sleepMinutes * 60000 : 0; }
+    if (event.target.matches("[data-audio-source-language]")) { audioSourceLanguage = event.target.value; renderView({ preserveScroll: true }); }
+    if (event.target.matches("[data-audio-source-region]")) { audioSourceRegion = event.target.value; renderView({ preserveScroll: true }); }
+    if (event.target.matches("[data-audio-source-tradition]")) { audioSourceTradition = event.target.value; renderView({ preserveScroll: true }); }
     if (event.target.matches("[data-audio-rate]")) { const running = audioStudyPlaying; stopAudioStudy(); state.audio = { ...state.audio, rate: Number(event.target.value) }; saveState(); renderView({ preserveScroll: true }); if (running) toggleAudioStudy(); }
+    if (event.target.matches("[data-audio-voice]")) { const running = audioStudyPlaying; stopAudioStudy(); state.audio = { ...state.audio, voiceURI: event.target.value }; saveState(); renderView({ preserveScroll: true }); if (running) toggleAudioStudy(); }
+    if (event.target.matches("[data-audio-repeat]")) { state.audio = { ...state.audio, repeat: event.target.checked }; saveState(); }
+    if (event.target.matches("[data-audio-sleep]")) { state.audio = { ...state.audio, sleepMinutes: Number(event.target.value) || 0 }; saveState(); if (audioStudyPlaying) { global.clearTimeout(audioSleepTimerId); audioSleepTimerId = state.audio.sleepMinutes ? global.setTimeout(() => { stopAudioStudy(); if (activeView === "audio") renderView({ preserveScroll: true }); toast("Đã dừng hàng nghe theo hẹn giờ."); }, state.audio.sleepMinutes * 60000) : 0; } }
     if (event.target.matches("[data-calendar-template]")) { applyCalendarTemplate(event.target.value); renderView({ preserveScroll: true }); toast("Đã áp dụng mẫu cho 7 ngày tới; sự kiện cá nhân khác được giữ nguyên."); }
     if (event.target.matches("[data-temple-province]")) { templeProvince = event.target.value; renderView({ preserveScroll: true }); }
     if (event.target.matches("[data-temple-tradition]")) { templeTradition = event.target.value; renderView({ preserveScroll: true }); }
@@ -2408,6 +2540,7 @@
       if (!root?.contains(document.activeElement) || !document.activeElement?.matches?.("input, textarea, [contenteditable='true']")) root?.querySelector("[data-dharma-hub]")?.classList.remove("is-reading");
     }, 0));
     listen(document, "keydown", handleKeydown);
+    if (global.speechSynthesis?.addEventListener) listen(global.speechSynthesis, "voiceschanged", () => { if (activeView === "audio" && root) renderView({ preserveScroll: true }); });
     listen(document, "visibilitychange", () => { if (!document.hidden) return; if (timerRunning) stopTimer(); if (chantTimerId) { stopChant(); renderView({ preserveScroll: true }); } if (audioStudyPlaying) { stopAudioStudy(); if (activeView === "audio") renderView({ preserveScroll: true }); } });
     return true;
   }
@@ -2425,5 +2558,5 @@
     root = null;
   }
 
-  global.HHPhatPhap = Object.freeze({ VERSION, mount, unmount, lessons: LESSONS, teachings: TEACHINGS, scriptures: SCRIPTURES, encyclopedia: DHARMA_ENCYCLOPEDIA, editorialCollections: DHARMA_EDITORIAL_COLLECTIONS, talks: TALKS, sources: SOURCES });
+  global.HHPhatPhap = Object.freeze({ VERSION, mount, unmount, lessons: LESSONS, teachings: TEACHINGS, scriptures: SCRIPTURES, routes: DHARMA_ROUTE_REGISTRY, audioSources: DHARMA_AUDIO_SOURCES, encyclopedia: DHARMA_ENCYCLOPEDIA, editorialCollections: DHARMA_EDITORIAL_COLLECTIONS, talks: TALKS, sources: SOURCES });
 })(window);
