@@ -175,7 +175,7 @@
     return `<section class="hh-admin-app hh-admin-galaxy" data-admin-theme="${esc(preferences.theme)}" data-admin-motion="${esc(preferences.motion)}" data-admin-text="${esc(preferences.textScale)}" data-admin-density="${esc(preferences.density)}" data-admin-planet="${esc(activePlanet)}">
       <span class="hh-admin-stardust" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
       <header class="hh-admin-galaxy-header">
-        <div class="hh-admin-galaxy-brand"><span class="hh-admin-core-mark" aria-hidden="true">HH<i></i></span><div><small>HH ADMIN GALAXY · SERVER RBAC</small><h5>${esc(title)}</h5><p>${esc(description)}</p></div></div>
+        <div class="hh-admin-galaxy-brand"><span class="hh-admin-core-mark" aria-hidden="true" data-hh-galaxy-logo data-galaxy-logo-size="54px"><img class="hh-galaxy-logo-fallback" src="assets/brand/hh-galaxy-star-static.svg?v=1" alt="" width="54" height="54"></span><div><small>HH ADMIN GALAXY · SERVER RBAC</small><h5>${esc(title)}</h5><p>${esc(description)}</p></div></div>
         <div class="hh-admin-galaxy-controls">
           <label><span class="sr-only">Chủ đề Admin Galaxy</span><select data-admin-theme-select aria-label="Chủ đề Admin Galaxy">${themeOptions}</select></label>
           <label><span class="sr-only">Mức hiệu ứng</span><select data-admin-motion-select aria-label="Mức hiệu ứng">${motionOptions}</select></label>
@@ -235,7 +235,7 @@
         <header><span><small>GALAXY MISSION CONTROL</small><strong>HH Platform đang ${healthState === "operational" ? "vận hành ổn định" : healthState === "warning" ? "cần theo dõi" : "có vấn đề ưu tiên"}</strong></span><b class="${healthState}"><i></i>${esc(statusLabel(healthState))}</b></header>
         <div class="hh-admin-orbit-system">
           <span class="hh-admin-orbit-ring ring-one"></span><span class="hh-admin-orbit-ring ring-two"></span><span class="hh-admin-orbit-ring ring-three"></span>
-          <div class="hh-admin-core-star ${Number(data.metrics?.criticalIncidents || 0) ? "has-flare" : ""}" style="--score:${score}"><i>HH</i><span><strong>${score}</strong><small>HEALTH SCORE</small></span></div>
+          <div class="hh-admin-core-star ${Number(data.metrics?.criticalIncidents || 0) ? "has-flare" : ""}" style="--score:${score}"><i data-hh-galaxy-logo data-galaxy-logo-size="70px"><img class="hh-galaxy-logo-fallback" src="assets/brand/hh-galaxy-star-static.svg?v=1" alt="" width="70" height="70"></i><span><strong>${score}</strong><small>HEALTH SCORE</small></span></div>
           ${missionPlanets}
         </div>
         <footer>${metrics}</footer>
@@ -394,7 +394,7 @@
       </section>
       <section class="hh-admin-root-grid">
         <article class="hh-admin-permission-constellation"><header><span><small>PERMISSION CONSTELLATION</small><strong>Bản đồ quyền toàn hệ thống</strong></span><div><button type="button" data-admin-permission-simulate>Permission Simulator</button><button type="button" data-admin-custom-role>Tạo custom role</button></div></header><div>${permissionGroups}</div></article>
-        <article class="hh-admin-infrastructure-map"><header><span><small>LIVE INFRASTRUCTURE MAP</small><strong>Provider và adapter</strong></span><b>${Number(data.infrastructure?.databaseCollections || 0)} collections</b></header><div><span class="hh-admin-infra-core"><i>HH</i><strong>${esc(data.infrastructure?.environment || "production")}</strong></span>${adapters}</div></article>
+        <article class="hh-admin-infrastructure-map"><header><span><small>LIVE INFRASTRUCTURE MAP</small><strong>Provider và adapter</strong></span><b>${Number(data.infrastructure?.databaseCollections || 0)} collections</b></header><div><span class="hh-admin-infra-core"><i data-hh-galaxy-logo data-galaxy-logo-size="38px"><img class="hh-galaxy-logo-fallback" src="assets/brand/hh-galaxy-star-static.svg?v=1" alt="" width="38" height="38"></i><strong>${esc(data.infrastructure?.environment || "production")}</strong></span>${adapters}</div></article>
       </section>
       <section class="hh-admin-power-grid">${capabilities}</section>
       <section class="hh-admin-approval-grid">

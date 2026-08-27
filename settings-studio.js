@@ -685,7 +685,7 @@
         if (!("Notification" in window)) throw new Error("không được hỗ trợ");
         const permission = Notification.permission === "default" ? await Notification.requestPermission() : Notification.permission;
         if (permission !== "granted") throw new Error("chưa được cấp quyền");
-        new Notification("HH Platform · Thông báo thử", { body: "Kênh thông báo trình duyệt đang hoạt động.", icon: "assets/hh-neon-logo-v2.png?v=3" });
+        new Notification("HH Platform · Thông báo thử", { body: "Kênh thông báo trình duyệt đang hoạt động.", icon: "assets/brand/pwa-192.png?v=1" });
         delivered.push("trình duyệt");
       } catch (error) { failed.push(`trình duyệt: ${error.message}`); }
     }

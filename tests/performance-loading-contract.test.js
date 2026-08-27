@@ -52,7 +52,7 @@ test("service worker precaches a small shell and uses stale while revalidate", (
   assert.match(worker, /request\.mode === "navigate"/);
 });
 
-test("the identity logo stays within the first-paint image budget", () => {
-  const logo = fs.statSync(path.join(root, "assets", "hh-neon-logo-v2.png"));
-  assert.ok(logo.size <= 200_000, `identity logo budget exceeded: ${logo.size} bytes`);
+test("the Galaxy Star identity stays within the first-paint image budget", () => {
+  const logo = fs.statSync(path.join(root, "assets", "brand", "hh-galaxy-star-static.svg"));
+  assert.ok(logo.size <= 20_000, `identity logo budget exceeded: ${logo.size} bytes`);
 });

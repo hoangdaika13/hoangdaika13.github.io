@@ -155,7 +155,7 @@ test("UI and backend contracts cover every real System Center domain accessibly"
   assert.match(router, /realtimeUrl: SOCKET_URL/);
   assert.match(router, /id: "system-center", title: "Trung tâm Hệ thống", route: "\/system"/);
   assert.match(router, /updatePageHeader\("Trung tâm Hệ thống"/);
-  assert.match(read("performance-loader.js"), /system-platform\.js\?v=7/);
+  assert.match(read("performance-loader.js"), /system-platform\.js\?v=8/);
   assert.match(read("performance-loader.js"), /system-platform\.css\?v=3/);
   assert.match(read("index.html"), /performance-loader\.js\?v=317/);
   assert.match(read("index.html"), /script\.js\?v=185/);

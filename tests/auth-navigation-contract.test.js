@@ -96,7 +96,9 @@ test("custom domain branding and Google-only OAuth stay in sync", () => {
   assert.doesNotMatch(api, /FACEBOOK_APP_ID|graph\.facebook\.com|facebookVersion/);
   assert.match(platform, /https:\/\/hoang8\.com/);
   assert.match(manifest, /Nhhoang · HH Neon Platform/);
-  assert.match(manifest, /assets\/hh-neon-logo-v2\.png\?v=2/);
+  assert.match(manifest, /assets\/brand\/pwa-192\.png\?v=1/);
+  assert.match(manifest, /assets\/brand\/pwa-512\.png\?v=1/);
+  assert.match(manifest, /assets\/brand\/pwa-maskable-512\.png\?v=1/);
 });
 
 test("Vercel Hobby deployment stays within the twelve-function limit", () => {

@@ -25,6 +25,10 @@
 
   // Compatibility contracts: scripts: ["auth-creative-universe.js?v=5"] home-galaxy-command.js?v=8 home-galaxy-command.css?v=9
   const groups = Object.freeze({
+    brand: {
+      styles: [],
+      scripts: ["brand-galaxy-logo.js?v=1", "galaxy-favicon-controller.js?v=1"]
+    },
     "auth-effects": {
       /*
        * The H Galaxy mounted by auth-neon-gateway is the only visual owner.
@@ -66,8 +70,8 @@
       ],
       scripts: [
         "extension-suite.js?v=2", "professional-tools.js?v=4", "tool-manifests.js?v=1", "tool-runtime.js?v=1",
-        "feature-lab.js?v=6", "platform-tools.js?v=1", "tool-workspace-pro.js?v=1", "utility-lab-tools.js?v=9", "feature-engines.js?v=2",
-        "ai-center-advanced.js?v=2", "platform-p0.js?v=1", "vendor/jszip.min.js?v=3.10.1", "system-platform.js?v=7"
+        "feature-lab.js?v=6", "platform-tools.js?v=1", "tool-workspace-pro.js?v=1", "utility-lab-tools.js?v=10", "feature-engines.js?v=2",
+        "ai-center-advanced.js?v=2", "platform-p0.js?v=1", "vendor/jszip.min.js?v=3.10.1", "system-platform.js?v=8"
       ]
     },
     dev: {
@@ -116,7 +120,7 @@
     },
     "social-media-tools": {
       styles: ["social-media-tools-v2.css?v=9", "social-media-preview-runtime.css?v=6"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/qrcode.js?v=1", "social-media-tools-core.js?v=7", "social-media-tools-workspaces.js?v=8", "social-media-communication-engines.js?v=1", "social-media-tool-contracts.js?v=7", "social-media-local-engines.js?v=6", "social-media-pipeline.js?v=6", "social-media-tool-capabilities.js?v=7", "social-media-preview-runtime.js?v=1", "social-media-interactions.js?v=1", "social-media-tools-v2.js?v=15"]
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/qrcode.js?v=1", "social-media-tools-core.js?v=8", "social-media-tools-workspaces.js?v=8", "social-media-communication-engines.js?v=1", "social-media-tool-contracts.js?v=7", "social-media-local-engines.js?v=6", "social-media-pipeline.js?v=6", "social-media-tool-capabilities.js?v=7", "social-media-preview-runtime.js?v=1", "social-media-interactions.js?v=1", "social-media-tools-v2.js?v=15"]
     },
     "comic-motion": {
       // Compatibility: comic-motion-studio.css?v=3 comic-motion-studio.css?v=4 comic-motion-studio.css?v=5 comic-motion-studio.js?v=6 comic-motion-studio.js?v=7 comic-motion-studio.js?v=8 comic-motion-studio.js?v=9
@@ -258,7 +262,7 @@
     },
     settings: {
       styles: ["settings-studio.css?v=7"],
-      scripts: ["settings-studio.js?v=8"]
+      scripts: ["settings-studio.js?v=9"]
     },
     account: {
       styles: ["account-center.css?v=2"],
@@ -270,7 +274,7 @@
     },
     admin: {
       styles: ["community-admin.css?v=12"],
-      scripts: ["community-admin.js?v=14"]
+      scripts: ["community-admin.js?v=15"]
     },
     support: {
       styles: ["support-platform.css?v=14"],
@@ -582,6 +586,7 @@
   });
 
   global.HHAssetLoader = Object.freeze({ ensureForRoute, retryForRoute, ensureGroup, isRouteReady, groupsForRoute, loadedGroups: () => [...loaded] });
+  ensureGroup("brand").catch(() => {});
   loadFontWhenIdle();
   loadAuthEffectsWhenNeeded();
   registerServiceWorkerWhenIdle();

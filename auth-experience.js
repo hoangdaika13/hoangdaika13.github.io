@@ -419,7 +419,7 @@
     });
   }
 
-  const logos = [...gate.querySelectorAll('img[src*="hh-neon-logo"]')];
+  const logos = [...gate.querySelectorAll("[data-hh-galaxy-logo] img")];
   const markLogoLoaded = (image) => {
     image.classList.add("is-loaded");
     image.closest(".brand-mark, .auth-card-heading > span")?.classList.add("is-loaded");

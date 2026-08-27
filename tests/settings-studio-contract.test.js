@@ -11,7 +11,7 @@ test("Settings Studio is lazy-loaded only for the workspace settings route", () 
   const loader = read("performance-loader.js");
   const html = read("index.html");
   const shell = read("script.js");
-  assert.match(loader, /settings:\s*\{[\s\S]*settings-studio\.css\?v=7[\s\S]*settings-studio\.js\?v=8/);
+  assert.match(loader, /settings:\s*\{[\s\S]*settings-studio\.css\?v=7[\s\S]*settings-studio\.js\?v=9/);
   assert.match(loader, /if \(value === "\/settings"\) return \["settings"\]/);
   assert.match(html, /performance-loader\.js\?v=467/);
   assert.match(shell, /HHSettingsStudio\?\.mount\?\.\(workspace\)/);
@@ -96,7 +96,7 @@ test("Service worker contains the new versioned Settings Studio assets", () => {
   const worker = read("sw.js");
   assert.match(worker, /hh-identity-portal-v822/);
   assert.match(worker, /settings-studio\.css\?v=7/);
-  assert.match(worker, /settings-studio\.js\?v=8/);
+  assert.match(worker, /settings-studio\.js\?v=9/);
   assert.match(worker, /app-theme-system\.js\?v=9/);
   assert.match(worker, /script\.js\?v=232/);
 });
