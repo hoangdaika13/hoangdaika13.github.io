@@ -237,7 +237,7 @@
       scripts: ["language-learning-cockpit.js?v=1", "hh-chinese.js?v=13"]
     },
     dharma: {
-      styles: ["phat-phap.css?v=18"],
+      styles: ["phat-phap.css?v=20"],
       scripts: ["phat-phap.js?v=15"]
     },
     play: {
@@ -261,8 +261,8 @@
       scripts: ["remote-hub.js?v=4"]
     },
     "chat-ai": {
-      styles: ["chat-ai-hub.css?v=20"],
-      scripts: ["chat-ai-hub.js?v=20"]
+      styles: ["chat-ai-hub.css?v=24"],
+      scripts: ["chat-ai-hub.js?v=23"]
     },
     settings: {
       styles: ["settings-studio.css?v=7"],

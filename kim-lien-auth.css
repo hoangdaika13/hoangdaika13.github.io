@@ -589,6 +589,14 @@ html body.home-neon #authGate .auth-gate-brand {
   padding: 12px 0 28px !important;
 }
 
+/* The approved Kim Liên Phật Quang composition gives the entire brand column
+   to the sacred artwork.  Hiding the legacy marketing nodes in CSS also
+   prevents them flashing before the deferred enhancement script runs. */
+html body.home-neon #authGate .auth-gate-brand::before,
+html body.home-neon #authGate .auth-gate-brand > :not(.kl-sanctum-panel) {
+  display: none !important;
+}
+
 html body.home-neon #authGate .auth-gate-brand::before {
   top: -8px !important;
   left: 0 !important;
@@ -718,17 +726,15 @@ html body.home-neon #authGate .auth-gate-brand > p:not(.section-kicker) {
   line-height: 1.72 !important;
 }
 
-/* Centered devotional hero inserted by kim-lien-auth.js.  The artwork is the
-   visual focus; text is an unobtrusive, high-contrast caption below it. */
+/* Artwork-only devotional hero inserted by kim-lien-auth.js. */
 
 html body.home-neon #authGate .kl-sanctum-panel {
   position: relative;
-  display: grid;
-  grid-template-rows: minmax(300px, 1fr) auto;
-  gap: 0;
+  display: block;
   width: 100%;
   max-width: 740px;
-  min-height: 382px;
+  height: min(720px, calc(100dvh - 68px));
+  min-height: 520px;
   margin: 0;
   border: 1px solid rgba(242, 212, 131, .34);
   border-radius: 22px;
@@ -763,8 +769,9 @@ html body.home-neon #authGate .kl-sanctum-art {
   position: relative;
   display: grid;
   place-items: center;
-  min-height: 260px;
-  border-bottom: 1px solid rgba(242, 212, 131, .18);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
   background: #2b100e;
   isolation: isolate;
   overflow: hidden;
@@ -777,7 +784,7 @@ html body.home-neon #authGate .kl-sanctum-buddha-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 38%;
+  object-position: 50% 50%;
   filter: saturate(1.14) sepia(.035) contrast(1.08) brightness(1.1);
   transform: scale(1.035);
   animation: kl-sanctum-image-breathe 9s ease-in-out infinite;
@@ -1931,6 +1938,8 @@ html body #appCosmicLoader:not([hidden]) {
     radial-gradient(circle at 50% 42%, rgba(242, 212, 131, .14), transparent 23%),
     repeating-linear-gradient(112deg, rgba(255, 232, 163, .022) 0 1px, transparent 1px 32px),
     linear-gradient(145deg, #1b0808, #351514 54%, #180707) !important;
+  background-color: #120b08 !important;
+  backdrop-filter: none !important;
   color: var(--kl-ivory) !important;
   font-family: "Be Vietnam Pro", "Noto Sans", "Segoe UI", Arial, sans-serif !important;
   pointer-events: auto !important;
@@ -2139,6 +2148,18 @@ html body #appCosmicLoader:not([hidden]) {
   box-shadow: 0 0 9px rgba(242, 212, 131, .6) !important;
 }
 
+/* Every route, including Phật Pháp, opens through the same centre gate. The
+   opaque outer curtain remains intact until the freshly rendered route is
+   underneath it; no whole-layer fade can expose a retained route snapshot. */
+#appCosmicLoader:not([hidden]).is-arriving,
+#appCosmicLoader:not([hidden])[data-transition-kind="dharma"].is-arriving {
+  opacity: 1;
+  visibility: visible;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0 var(--cosmic-aperture), #000 calc(var(--cosmic-aperture) + 1.2%)) !important;
+  mask-image: radial-gradient(circle at 50% 50%, transparent 0 var(--cosmic-aperture), #000 calc(var(--cosmic-aperture) + 1.2%)) !important;
+  animation: appCosmicReveal var(--transit-duration) cubic-bezier(.2, .78, .2, 1) forwards !important;
+}
+
 /* -------------------------------------------------------------------------
    Responsive / mobile 375px contract
    ------------------------------------------------------------------------- */
@@ -2164,10 +2185,21 @@ html body #appCosmicLoader:not([hidden]) {
 @media (min-width: 1180px) {
   html body.home-neon.auth-locked #authGate:not([hidden]) {
     display: grid !important;
-    grid-template-columns: minmax(0, 1.04fr) minmax(460px, .78fr) !important;
+    grid-template-columns: minmax(0, 1.2fr) minmax(460px, .76fr) !important;
     align-items: center !important;
-    gap: clamp(34px, 5vw, 88px) !important;
+    gap: clamp(28px, 3.5vw, 64px) !important;
     padding: 34px max(28px, calc((100vw - 1480px) / 2)) !important;
+  }
+}
+
+@media (min-width: 1180px) and (max-height: 820px) {
+  html body.home-neon.auth-locked #authGate:not([hidden]) {
+    padding-top: 18px !important;
+    padding-bottom: 18px !important;
+  }
+
+  html body.home-neon #authGate .kl-sanctum-panel {
+    height: min(720px, calc(100dvh - 36px));
   }
 }
 
@@ -2180,8 +2212,12 @@ html body #appCosmicLoader:not([hidden]) {
     padding: 18px !important;
   }
 
-  html body.home-neon #authGate .auth-gate-card { order: 1 !important; align-self: center !important; max-width: 640px !important; }
-  html body.home-neon #authGate .auth-gate-brand { order: 2 !important; align-self: center !important; width: min(100%, 760px) !important; }
+  html body.home-neon #authGate .auth-gate-brand { order: 1 !important; align-self: center !important; width: min(100%, 760px) !important; }
+  html body.home-neon #authGate .auth-gate-card { order: 2 !important; align-self: center !important; max-width: 640px !important; }
+  html body.home-neon #authGate .kl-sanctum-panel {
+    height: clamp(390px, 52dvh, 560px);
+    min-height: 390px;
+  }
   html body.home-neon #authGate .kl-ambient-halo { top: 62%; left: 50%; width: min(82vw, 680px); opacity: .42; }
   html body.home-neon #authGate .kl-ambient-radiance { top: 61%; left: 50%; width: min(96vw, 800px); opacity: .26; }
   html body.home-neon #authGate .kl-ambient-lotus-dais { left: 50%; width: min(68vw, 520px); }
@@ -2200,7 +2236,7 @@ html body #appCosmicLoader:not([hidden]) {
 
   html body.home-neon #authGate .auth-gate-brand {
     display: grid !important;
-    order: 2 !important;
+    order: 1 !important;
     width: 100% !important;
     max-width: 100% !important;
     padding: 2px 0 18px !important;
@@ -2219,13 +2255,15 @@ html body #appCosmicLoader:not([hidden]) {
   }
 
   html body.home-neon #authGate .kl-sanctum-panel {
-    grid-template-rows: minmax(210px, 1fr) auto;
-    min-height: 0;
+    width: 100%;
+    height: clamp(330px, 46dvh, 430px);
+    min-height: 330px;
     border-radius: 18px;
   }
 
   html body.home-neon #authGate .kl-sanctum-art {
-    min-height: 210px;
+    height: 100%;
+    min-height: 0;
   }
 
   html body.home-neon #authGate .kl-art-aureole {
@@ -2291,7 +2329,7 @@ html body #appCosmicLoader:not([hidden]) {
 
   html body.home-neon #authGate .auth-gate-card,
   html body.home-neon #authGate .kl-auth-card {
-    order: 1 !important;
+    order: 2 !important;
     display: grid !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -2355,6 +2393,11 @@ html body #appCosmicLoader:not([hidden]) {
 /* Final mobile ownership rule.  It intentionally sits after every responsive
    block because legacy auth bundles hide the former promo column with an
    equally-important selector.  Only the Kim Liên devotional hero is revived. */
+html body.home-neon #authGate.kim-lien-auth-gate .auth-gate-brand.kl-centered-devotional-host::before,
+html body.home-neon #authGate.kim-lien-auth-gate .auth-gate-brand.kl-centered-devotional-host > :not(.kl-sanctum-panel) {
+  display: none !important;
+}
+
 @media (max-width: 760px) {
   html.kim-lien-theme body.home-neon.auth-locked #authGate.kim-lien-auth-gate.hh-neon-gateway > .auth-gate-brand {
     display: grid !important;
@@ -2369,6 +2412,11 @@ html body #appCosmicLoader:not([hidden]) {
    declarations in a named layer outrank unlayered important declarations, so
    the devotional hero must take ownership from inside that same layer too. */
 @layer pages {
+  html.kim-lien-theme body.home-neon #authGate.kim-lien-auth-gate.hh-neon-gateway > .auth-gate-brand.kl-centered-devotional-host::before,
+  html.kim-lien-theme body.home-neon #authGate.kim-lien-auth-gate.hh-neon-gateway > .auth-gate-brand.kl-centered-devotional-host > :not(.kl-sanctum-panel) {
+    display: none !important;
+  }
+
   @media (max-width: 760px) {
     html.kim-lien-theme body.home-neon.auth-locked #authGate.kim-lien-auth-gate.hh-neon-gateway > .auth-gate-brand.kl-centered-devotional-host {
       display: grid !important;

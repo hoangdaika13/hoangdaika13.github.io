@@ -2072,6 +2072,21 @@
   backdrop-filter: none;
 }
 
+/* Route accent variables are still useful for content-specific charts, but
+   they must not repaint the shared page banner with the former cyan/violet
+   identity.  This late shell owner is intentionally opaque. */
+html[data-hh-theme="kim-lien"] body.hh-kim-lien[data-app-theme] .app-page-header {
+  border-color: rgba(228, 185, 94, .24) !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(244, 216, 137, .09), transparent 34%),
+    linear-gradient(105deg, #3a2118, #24100c 64%, #2e1711) !important;
+  color: var(--kl-shell-ivory) !important;
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien[data-app-theme] .app-page-header::after {
+  background: linear-gradient(90deg, var(--kl-shell-gold-bright), var(--kl-shell-amber), transparent 76%) !important;
+}
+
 /* Restrained, continuous ceremonial motion. */
 @keyframes kl-home-lantern {
   0%, 100% { border-color: rgba(242, 212, 131, .18); box-shadow: inset 0 0 14px rgba(216, 166, 60, .025); }

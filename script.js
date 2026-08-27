@@ -6736,6 +6736,12 @@ function initAppShell() {
     cosmicLoaderPhaseTimers = [];
     clearTimeout(cosmicLoaderHideTimer);
   };
+  const setRouteWorkspaceInactive = (inactive) => {
+    if (!workspace) return;
+    workspace.inert = Boolean(inactive);
+    workspace.toggleAttribute("aria-hidden", Boolean(inactive));
+    workspace.toggleAttribute("data-route-transition-inert", Boolean(inactive));
+  };
   const setCosmicLoaderPhase = (phase, progress, message = "") => {
     if (!cosmicRouteLoader) return;
     cosmicRouteLoader.style.setProperty("--loader-progress", `${Math.max(0, Math.min(100, progress))}%`);
@@ -6761,6 +6767,7 @@ function initAppShell() {
     cosmicRouteLoader.classList.remove("is-active", "is-departing", "is-arriving", "is-complete", "is-error");
     cosmicRouteLoader.hidden = true;
     cosmicRouteLoader.setAttribute("aria-hidden", "true");
+    setRouteWorkspaceInactive(false);
     cosmicLoaderRoute = "";
   };
   const showCosmicRouteLoader = (route = routeFromHash()) => {
@@ -6777,6 +6784,7 @@ function initAppShell() {
     const previousTitle = pageHeader.querySelector("h1")?.textContent?.trim() || "HH Platform";
     clearCosmicLoaderTimers();
     cosmicLoaderRoute = normalized;
+    setRouteWorkspaceInactive(true);
     cosmicRouteLoader.hidden = false;
     cosmicRouteLoader.setAttribute("aria-hidden", "false");
     cosmicRouteLoader.classList.remove("is-arriving", "is-complete", "is-error");
@@ -6833,6 +6841,11 @@ function initAppShell() {
     cosmicRouteLoader.classList.remove("is-departing");
     cosmicRouteLoader.classList.add("is-arriving");
     cosmicRouteLoader.dataset.transitionState = "arriving";
+    // The newly rendered route becomes the only interactive/accessibility
+    // surface before the visual gate opens. The loader remains as an opaque,
+    // presentation-only curtain until its centre aperture completes.
+    cosmicRouteLoader.setAttribute("aria-hidden", "true");
+    setRouteWorkspaceInactive(false);
     if (!error) cosmicRouteLoader.classList.add("is-complete");
     const duration = motion === "cinematic" ? 540 : motion === "balanced" ? 360 : 50;
     cosmicLoaderHideTimer = window.setTimeout(() => {
@@ -6884,6 +6897,7 @@ function initAppShell() {
     const normalized = String(route || "/home").split("?")[0];
     if (renderedRoute && normalized !== renderedRoute) dismissRouteTransientLayers();
     document.body.classList.add("app-route-changing");
+    setRouteWorkspaceInactive(true);
     routeProgress?.setAttribute("aria-hidden", "false");
     showCosmicRouteLoader(route);
     if (routeAnnouncer) routeAnnouncer.textContent = `Đang mở ${route.split("/").filter(Boolean).at(-1) || "trang chủ"}`;
@@ -6891,6 +6905,7 @@ function initAppShell() {
   const endRouteFeedback = () => {
     document.body.classList.remove("app-route-changing");
     routeProgress?.setAttribute("aria-hidden", "true");
+    setRouteWorkspaceInactive(false);
     finishCosmicRouteLoader();
     if (routeAnnouncer) routeAnnouncer.textContent = `${pageHeader.querySelector("h1")?.textContent || "Trang"} đã sẵn sàng`;
   };
@@ -7688,7 +7703,11 @@ function initAppShell() {
       return;
     }
     const touchesHomeSurface = nextRoute === "/home" || renderedRoute === "/home";
-    const canTransition = Boolean(document.startViewTransition) && Boolean(renderedRoute) && nextRoute !== renderedRoute && !touchesHomeSurface && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // A full-screen route gate already owns the visual transaction. Running a
+    // View Transition at the same time preserves a snapshot of the old route,
+    // which can leak through the gate aperture during arrival. Keep the API as
+    // a fallback only for shells that do not provide the route gate.
+    const canTransition = !cosmicRouteLoader && Boolean(document.startViewTransition) && Boolean(renderedRoute) && nextRoute !== renderedRoute && !touchesHomeSurface && !matchMedia("(prefers-reduced-motion: reduce)").matches;
     beginRouteFeedback(nextRoute);
     routeTransition?.skipTransition?.();
     afterCosmicLoaderPaint(nextRoute, () => {

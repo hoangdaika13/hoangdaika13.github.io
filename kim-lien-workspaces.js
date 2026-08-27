@@ -2,8 +2,8 @@
   "use strict";
 
   const STYLES = Object.freeze([
-    ["kimLienWorkspaceTheme", "kim-lien-workspaces.css?v=8"],
-    ["kimLienCreativeLearningTheme", "kim-lien-creative-learning.css?v=3"],
+    ["kimLienWorkspaceTheme", "kim-lien-workspaces.css?v=10"],
+    ["kimLienCreativeLearningTheme", "kim-lien-creative-learning.css?v=4"],
     ["kimLienOperationsTheme", "kim-lien-operations.css?v=6"]
   ]);
   let observer = null;

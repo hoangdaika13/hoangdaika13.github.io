@@ -7,6 +7,13 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 const css = fs.readFileSync(path.join(root, "kim-lien-creative-learning.css"), "utf8");
+
+test("Music Production Studio remaps project colors to Kim Liên tokens", () => {
+  assert.match(css, /\.mps-shell\.mg-shell[\s\S]{0,260}?--theme-a:\s*#e4b95e\s*!important/);
+  assert.match(css, /\.mg-planet-nav\s*>\s*button:nth-child\(3\)[\s\S]{0,100}?--planet:\s*#e4b95e\s*!important/);
+  assert.match(css, /\.mg-quick-head[\s\S]{0,420}?background:\s*linear-gradient\(145deg, rgba\(58, 33, 24, \.98\)/);
+  assert.match(css, /:is\(\.mg-cosmic-fx, \.mg-wormhole\)[\s\S]{0,80}?display:\s*none\s*!important/);
+});
 const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, "");
 
 function count(character) {

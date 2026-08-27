@@ -57,7 +57,7 @@ html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace > div > :first-chi
 }
 
 /* Remove decorative space paint without hiding functional galaxy workspaces. */
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(
   .chat-ai-cosmos,
   [class$="__cosmos"],
   [class$="__starfield"],
@@ -74,7 +74,7 @@ html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
 
 /* Root surfaces receive an opaque ceremonial background. Editor/canvas stages
  * stay neutral below so media colours and game rendering remain accurate. */
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(
   [class$="-hub"],
   [class*="-hub "],
   [class$="-workspace"],
@@ -150,7 +150,7 @@ html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
 /* State classes such as `is-inspector-hidden` can accidentally match the
  * broad chrome selectors above. Reassert every workspace root last so its
  * paint owner always has a fully opaque wood base. */
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(
   [class$="-hub"],
   [class*="-hub "],
   [class$="-workspace"],
@@ -180,33 +180,33 @@ html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
   border-color: rgba(216, 166, 60, .22) !important;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(h1, h2, h3, h4, h5, strong, legend) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(h1, h2, h3, h4, h5, strong, legend) {
   color: var(--kim-lien-ivory);
   overflow-wrap: anywhere;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(h1, h2, h3, h4) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(h1, h2, h3, h4) {
   overflow: visible;
   text-overflow: clip;
   white-space: normal;
   -webkit-line-clamp: unset;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(p, small, label, dt, dd, figcaption, .muted, [class*="description"], [class*="subtitle"]) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(p, small, label, dt, dd, figcaption, .muted, [class*="description"], [class*="subtitle"]) {
   color: var(--kim-lien-muted);
   overflow-wrap: anywhere;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(p, li, td, dd) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(p, li, td, dd) {
   font-size: clamp(.875rem, 1em, 1rem);
   line-height: 1.55;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(button, input, select, textarea, summary, [role="button"], [role="tab"]) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(button, input, select, textarea, summary, [role="button"], [role="tab"]) {
   font-size: clamp(.875rem, 1em, 1rem);
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(input, select, textarea):not([type="range"]):not([type="color"]) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(input, select, textarea):not([type="range"]):not([type="color"]) {
   max-width: 100%;
   border-color: rgba(216, 166, 60, .36) !important;
   background: #1d0c09 !important;
@@ -214,63 +214,63 @@ html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(input, select,
   caret-color: var(--kim-lien-gold-bright);
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(input, textarea)::placeholder {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(input, textarea)::placeholder {
   color: #a7916d !important;
   opacity: 1;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(button, [role="button"], summary) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(button, [role="button"], summary) {
   border-color: rgba(216, 166, 60, .3);
   color: #ead49d;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(button, [role="button"], summary):is(:hover, :focus-visible),
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is([role="tab"][aria-selected="true"], [role="tab"].is-active, button.is-active) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(button, [role="button"], summary):is(:hover, :focus-visible),
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is([role="tab"][aria-selected="true"], [role="tab"].is-active, button.is-active) {
   border-color: var(--kim-lien-gold) !important;
   background-color: rgba(216, 166, 60, .12) !important;
   color: var(--kim-lien-gold-soft) !important;
 }
 
 /* A full-surface backdrop is a layer owner, not a normal gold hover button. */
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(button, [role="button"])[class*="backdrop"] {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(button, [role="button"])[class*="backdrop"] {
   border-color: transparent !important;
   background-color: rgba(18, 4, 5, .9) !important;
   color: transparent !important;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(.primary, [class*="primary"], [class*="submit"], [class*="send"]):is(button, a, [role="button"]) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(.primary, [class*="primary"], [class*="submit"], [class*="send"]):is(button, a, [role="button"]) {
   border-color: #e2b84f !important;
   background: linear-gradient(135deg, #e8bf58, #a95e1c) !important;
   color: #2e110a !important;
   box-shadow: 0 8px 24px rgba(190, 124, 28, .16) !important;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is([role="tab"], [class*="tabs"] button, [class*="nav"] button) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is([role="tab"], [class*="tabs"] button, [class*="nav"] button) {
   min-height: 40px;
   text-overflow: ellipsis;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(table, th, td) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(table, th, td) {
   border-color: rgba(216, 166, 60, .24) !important;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace th {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace th {
   background: rgba(216, 166, 60, .1) !important;
   color: var(--kim-lien-gold-soft) !important;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(pre, code, [class*="code-block"], [class*="terminal"]) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(pre, code, [class*="code-block"], [class*="terminal"]) {
   border-color: rgba(216, 166, 60, .24) !important;
   background-color: #110b09 !important;
   color: #f0dfb5 !important;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is([class*="badge"], [class*="status"], [class*="tag"], [class*="chip"]) {
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is([class*="badge"], [class*="status"], [class*="tag"], [class*="chip"]) {
   border-color: rgba(216, 166, 60, .32) !important;
 }
 
 /* Continuous but restrained identity motion. */
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(
   [class*="icon"],
   [class*="avatar"],
   [class*="brand"] > i
@@ -278,7 +278,7 @@ html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
   animation: kimLienWorkspaceAura 5.8s ease-in-out infinite;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(
   [role="tab"][aria-selected="true"],
   [role="tab"].is-active,
   [class*="tabs"] button.is-active
@@ -287,7 +287,7 @@ html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
   overflow: hidden;
 }
 
-html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
+html[data-hh-theme="kim-lien"] body.hh-kim-lien:not(.app-dharma-route) #appWorkspace :is(
   [role="tab"][aria-selected="true"],
   [role="tab"].is-active,
   [class*="tabs"] button.is-active

@@ -175,6 +175,9 @@ test("every route gets a shared cosmic loading state with progress and fallback"
   assert.match(client, /hh:route-transition-complete/);
   assert.match(client, /lastTransitionDuration/);
   assert.match(client, /lastTransitionOutcome/);
+  assert.match(client, /setRouteWorkspaceInactive/);
+  assert.match(client, /workspace\.inert\s*=\s*Boolean\(inactive\)/);
+  assert.match(client, /const canTransition = !cosmicRouteLoader/);
   assert.doesNotMatch(client, /setTimeout\(\(\) => setCosmicLoaderPhase/);
   assert.match(css, /\.app-cosmic-loader\.is-active/);
   assert.match(css, /@keyframes appCosmicTunnel/);
@@ -189,6 +192,9 @@ test("every route gets a shared cosmic loading state with progress and fallback"
   assert.match(css, /@keyframes appCosmicCardEnter\{from\{opacity:\.72/);
   assert.match(css, /\.app-cosmic-loader\.is-active\s*\{[\s\S]*?pointer-events:none/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?app-cosmic-loader__space/);
+  const kimLienLoader = read("kim-lien-auth.css");
+  assert.match(kimLienLoader, /#appCosmicLoader:not\(\[hidden\]\)[\s\S]{0,900}?background-color:\s*#120b08\s*!important/);
+  assert.match(kimLienLoader, /\[data-transition-kind="dharma"\]\.is-arriving[\s\S]{0,500}?appCosmicReveal/);
   assert.match(legacyCss, /\.home-neon\.neon-soft\s*\{[\s\S]*?filter:\s*none/);
   assert.match(legacyCss, /:not\(#appCosmicLoader\)/);
 });

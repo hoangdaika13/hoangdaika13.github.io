@@ -177,18 +177,13 @@
         appendOnce(mark, ".kl-brand-lotus", lotusSvg("klBrandLotus"));
       }
       appendOnce(brand, ".kl-sanctum-panel", `
-        <figure class="kl-sanctum-panel" aria-labelledby="kl-sanctum-quote">
+        <figure class="kl-sanctum-panel" aria-label="Đức Phật Thích Ca an tọa giữa hào quang vàng trong chánh điện Kim Liên">
           <div class="kl-sanctum-art">
             <img class="kl-sanctum-buddha-image" src="assets/phat-phap/duc-phat-hao-quang-v1.webp" width="1536" height="1024" loading="eager" decoding="async" alt="Đức Phật Thích Ca tọa thiền giữa hào quang vàng trong chánh điện Kim Liên">
             <span class="kl-art-aureole" aria-hidden="true"><i></i><b></b></span>
             <span class="kl-art-ring kl-art-ring--one" aria-hidden="true"></span><span class="kl-art-ring kl-art-ring--two" aria-hidden="true"></span>
             <span class="kl-sanctum-vignette" aria-hidden="true"></span>
           </div>
-          <figcaption class="kl-sanctum-devotion">
-            <p class="kl-eyebrow"><span class="kl-mini-wheel">${wheelSvg()}</span> LỜI NHẮC CHÁNH NIỆM</p>
-            <blockquote id="kl-sanctum-quote">“Tâm an tịnh, trí sáng trong; mỗi bước chân là một đóa sen nở.”</blockquote>
-            <small>Kim Liên Điện · An trú trong hiện tại</small>
-          </figcaption>
         </figure>`);
     }
 

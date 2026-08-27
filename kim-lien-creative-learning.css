@@ -2804,6 +2804,47 @@ body.app-effects-paused :is(.mdp-cockpit, .media-project-photo-studio) * {
   animation-play-state: paused !important;
 }
 
+/* Music Production Studio still writes per-project neon colors inline.  The
+   data and progress values remain intact, while the presentation is mapped to
+   the approved Kim Liên Ngà Trầm family. */
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .mps-shell.mg-shell {
+  --theme-a: #e4b95e !important;
+  --theme-b: #a97732 !important;
+  --theme-c: #8c2f24 !important;
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .mps-shell.mg-shell .mg-planet-nav > button:nth-child(1) { --planet: #b85c52 !important; }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .mps-shell.mg-shell .mg-planet-nav > button:nth-child(2) { --planet: #a97732 !important; }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .mps-shell.mg-shell .mg-planet-nav > button:nth-child(3) { --planet: #e4b95e !important; }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .mps-shell.mg-shell .mg-planet-nav > button:nth-child(4) { --planet: #6f8a57 !important; }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .mps-shell.mg-shell .mg-planet-nav > button:nth-child(5) { --planet: #c7863f !important; }
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .mps-shell.mg-shell .mg-planet-nav > button:nth-child(6) { --planet: #f4d889 !important; }
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .mps-shell.mg-shell :is(
+  .mg-quick-head,
+  .mg-quick-create,
+  .mg-quick-preview,
+  .mg-sfx-quick,
+  .mg-readiness,
+  .mg-quick-queue
+) {
+  border-color: rgba(228, 185, 94, .3) !important;
+  background: linear-gradient(145deg, rgba(58, 33, 24, .98), rgba(36, 16, 12, .99)) !important;
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .mps-shell.mg-shell .mg-quick-steps {
+  border-color: rgba(228, 185, 94, .3) !important;
+  background: #24100c !important;
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .mps-shell.mg-shell .mg-preview-empty {
+  background: radial-gradient(circle at 50% 38%, rgba(228, 185, 94, .14), transparent 58%) !important;
+}
+
+html[data-hh-theme="kim-lien"] body.hh-kim-lien .mps-shell.mg-shell :is(.mg-cosmic-fx, .mg-wormhole) {
+  display: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html[data-hh-theme="kim-lien"] body.hh-kim-lien .mdp-cockpit::before,
   html[data-hh-theme="kim-lien"] body.hh-kim-lien .media-project-photo-studio *,

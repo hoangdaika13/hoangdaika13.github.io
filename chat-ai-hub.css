@@ -108,7 +108,7 @@ body.app-chat-ai-route [data-chat-ai-host]{width:100%;max-width:100%;height:100%
 }
 
 @media(max-width:480px){
-  body.app-chat-ai-route .app-workspace{height:calc(100% - 70px);padding:0}
+  body.app-chat-ai-route .app-workspace{height:100%;max-height:100%;padding:0}
   .chat-ai-hub{grid-template-rows:54px 42px minmax(0,1fr);border-width:0;border-radius:0}
   .chat-ai-topbar{grid-template-columns:34px 34px minmax(0,1fr) auto;gap:6px;padding:6px 7px}.chat-ai-mobile-sessions{width:34px;height:34px}.chat-ai-brand>i{width:34px;height:34px;flex-basis:34px}.chat-ai-chat-title>span{display:none}.chat-ai-chat-title input{font-size:11px}.chat-ai-processing select{width:82px;height:34px;padding-left:7px;font-size:9px}.chat-ai-overflow>summary{width:34px;height:34px;min-width:34px;padding:0}.chat-ai-overflow__menu{position:fixed;top:61px;right:7px;width:min(248px,calc(100vw - 14px))}
   .chat-ai-mode-rail{gap:3px;padding:3px 5px}.chat-ai-mode-tabs{gap:3px}.chat-ai-mode-tabs button{min-height:33px;padding:4px 3px;font-size:8px}.chat-ai-mode-tabs button i{display:none}.chat-ai-mode-more>summary{height:33px;min-width:34px;width:34px;padding:0;font-size:0}.chat-ai-mode-more>summary:after{content:"＋";font-size:14px}.chat-ai-mode-more>div{position:fixed;top:101px;right:6px;width:180px}
@@ -156,8 +156,13 @@ body.app-chat-ai-route [data-chat-ai-host]{width:100%;max-width:100%;height:100%
 body.app-chat-ai-route .app-main,
 body.app-chat-ai-route .app-workspace,
 body.app-chat-ai-route [data-chat-ai-host] {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
   background: #1a0708 !important;
 }
 
@@ -181,6 +186,14 @@ body.app-chat-ai-route [data-chat-ai-host] {
   --cai-kl-line: rgba(226, 183, 77, .3);
   --cai-kl-line-soft: rgba(226, 183, 77, .16);
   border-color: var(--cai-kl-line) !important;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
   color: var(--cai-kl-ivory);
   background:
     radial-gradient(circle at 50% -18%, rgba(240, 197, 85, .12), transparent 34%),
@@ -285,6 +298,16 @@ body.app-chat-ai-route [data-chat-ai-host] {
 .chat-ai-mode-more button { color: #ccb797; }
 
 .chat-ai-layout { height: 100%; }
+.chat-ai-layout,
+.chat-ai-main,
+.chat-ai-sidebar,
+.chat-ai-inspector,
+.chat-ai-stream,
+.chat-ai-composer {
+  min-width: 0;
+  min-height: 0;
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+}
 .chat-ai-sidebar,
 .chat-ai-inspector {
   border-color: var(--cai-kl-line-soft) !important;
@@ -322,6 +345,7 @@ body.app-chat-ai-route [data-chat-ai-host] {
   overflow-x: hidden;
   overscroll-behavior: contain;
   scrollbar-color: rgba(229, 185, 79, .44) transparent;
+  scrollbar-gutter: stable;
 }
 
 .chat-ai-session-group > header,
@@ -372,6 +396,7 @@ body.app-chat-ai-route [data-chat-ai-host] {
   padding-bottom: 24px;
   scroll-padding-block: 20px 32px;
   scrollbar-color: rgba(229, 185, 79, .46) transparent;
+  scrollbar-gutter: stable;
 }
 
 .chat-ai-welcome::before {
@@ -419,7 +444,9 @@ body.app-chat-ai-route [data-chat-ai-host] {
   background: rgba(232, 187, 80, .08) !important;
   color: #f0d68e !important;
 }
-.chat-ai-message__body { color: #f1e6d1; }
+.chat-ai-message__body { min-width: 0; max-width: 100%; color: #f1e6d1; overflow-wrap: anywhere; }
+.chat-ai-message__body table { display: block; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+.chat-ai-message__body :is(pre, .chat-ai-code) { max-width: 100%; overflow-x: auto; }
 .chat-ai-message__body :is(h2, h3, h4) { color: #fff7e5; }
 .chat-ai-message__body blockquote {
   border-color: var(--cai-kl-gold);
@@ -525,6 +552,7 @@ body.app-chat-ai-route [data-chat-ai-host] {
 .chat-ai-inspector__body {
   overscroll-behavior: contain;
   scrollbar-color: rgba(229, 185, 79, .44) transparent;
+  scrollbar-gutter: stable;
 }
 .chat-ai-settings label,
 .chat-ai-settings > small,
@@ -648,6 +676,18 @@ body.app-chat-ai-route [data-chat-ai-host] {
   .chat-ai-stream { padding-bottom: 18px; }
   .chat-ai-composer { margin-bottom: max(4px, env(safe-area-inset-bottom)); }
   .chat-ai-session strong { -webkit-line-clamp: 2; line-clamp: 2; }
+}
+
+/* The shell's mobile dock is fixed above the viewport bottom. Reserve its
+   physical height in the Chat AI route so the composer toolbar and Send
+   action remain reachable instead of rendering underneath that dock. */
+@media(max-width:760px) {
+  body.app-chat-ai-route [data-chat-ai-host] {
+    height: calc(100dvh - var(--header-height, 60px) - max(68px, calc(64px + env(safe-area-inset-bottom)))) !important;
+    max-height: calc(100dvh - var(--header-height, 60px) - max(68px, calc(64px + env(safe-area-inset-bottom)))) !important;
+  }
+
+  .chat-ai-chat-title input { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
 @media(prefers-reduced-motion:reduce) {
