@@ -517,7 +517,7 @@
   grid-template-columns: 36px minmax(0, 1fr) 25px 28px;
   gap: 3px;
   min-width: 0;
-  min-height: 56px;
+  min-height: 62px;
   padding: 5px 6px;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--nav-accent) 24%, rgba(255, 248, 232, .07));
@@ -566,15 +566,16 @@
 :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar__section-toggle > b {
   display: block;
   min-width: 0;
-  overflow: visible;
+  overflow: hidden;
   color: inherit;
   font-size: .875rem;
   font-weight: 770;
   letter-spacing: -.018em;
   line-height: 1.18;
   text-overflow: clip;
-  white-space: nowrap;
-  overflow-wrap: normal;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
   -webkit-line-clamp: unset;
 }
 
@@ -1439,6 +1440,34 @@
   text-shadow: 0 0 10px rgba(242, 212, 131, .58);
 }
 
+/* Keep every header control usable before the two-row zoom layout takes over. */
+@media (max-width: 1440px) and (min-width: 1081px) {
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header {
+    grid-template-columns: minmax(210px, .66fr) minmax(230px, 1fr) minmax(388px, .95fr);
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-header__actions > .app-icon-button {
+    width: 42px;
+    min-width: 42px;
+    flex: 0 0 42px;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-live-status {
+    grid-template-columns: 7px auto;
+    flex: 0 0 auto;
+    padding-inline: 8px;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-live-status > :is(span, b) {
+    display: none;
+  }
+
+  :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-user-button {
+    min-width: 110px;
+    flex: 0 0 auto;
+  }
+}
+
 /* At high browser zoom the header becomes two rows instead of clipping controls. */
 @media (max-width: 1080px) and (min-width: 761px) {
   :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) {
@@ -1545,13 +1574,41 @@
       repeating-linear-gradient(7deg, rgba(255, 248, 232, .016) 0 1px, transparent 1px 10px),
       linear-gradient(180deg, #441a15, #210b09 62%, #180806);
     box-shadow: 0 -24px 76px rgba(13, 2, 2, .72), inset 0 1px rgba(255, 239, 190, .08);
-    transform: translateY(calc(105% + var(--sheet-drag-y, 0px)));
+    /*
+     * The sheet is already offset by `bottom: 68px` for the mobile dock.
+     * Moving it by only 105% leaves a visible strip (and a hit-test target)
+     * at the bottom on short viewports.  Use the actual sheet height plus the
+     * dock offset so the collapsed state is wholly outside the viewport while
+     * retaining the drag variable for the open gesture.
+     */
+    transform: translateY(calc(100% + 69px + var(--sheet-drag-y, 0px)));
     transition: transform .28s cubic-bezier(.2, .8, .2, 1);
   }
 
   html[data-hh-theme="kim-lien"] body:not(.app-sidebar-collapsed) .app-sidebar,
   body.hh-kim-lien:not(.app-sidebar-collapsed) .app-sidebar {
     transform: translateY(var(--sheet-drag-y, 0px));
+  }
+
+  /* A closed sheet must never intercept the dock or reveal a stale sliver. */
+  html[data-hh-theme="kim-lien"] body.app-sidebar-collapsed .app-sidebar,
+  body.hh-kim-lien.app-sidebar-collapsed .app-sidebar {
+    transform: translateY(calc(100% + 69px + var(--sheet-drag-y, 0px))) !important;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  html[data-hh-theme="kim-lien"] body.app-sidebar-collapsed .app-sidebar.is-sheet-dragging,
+  body.hh-kim-lien.app-sidebar-collapsed .app-sidebar.is-sheet-dragging {
+    transform: translateY(var(--sheet-drag-y, 0px)) !important;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  html[data-hh-theme="kim-lien"] body:not(.app-sidebar-collapsed) .app-sidebar,
+  body.hh-kim-lien:not(.app-sidebar-collapsed) .app-sidebar {
+    visibility: visible;
+    pointer-events: auto;
   }
 
   :is(html[data-hh-theme="kim-lien"], body.hh-kim-lien) .app-sidebar.is-sheet-dragging {

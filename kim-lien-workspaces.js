@@ -2,7 +2,7 @@
   "use strict";
 
   const STYLES = Object.freeze([
-    ["kimLienWorkspaceTheme", "kim-lien-workspaces.css?v=7"],
+    ["kimLienWorkspaceTheme", "kim-lien-workspaces.css?v=8"],
     ["kimLienCreativeLearningTheme", "kim-lien-creative-learning.css?v=3"],
     ["kimLienOperationsTheme", "kim-lien-operations.css?v=6"]
   ]);

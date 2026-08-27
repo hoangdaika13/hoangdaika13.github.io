@@ -10,16 +10,16 @@ test("every lazy workspace receives the approved Kim Lien paint owner last", () 
   const html = read("index.html");
   const runtime = read("kim-lien-workspaces.js");
   const worker = read("sw.js");
-  assert.match(html, /kim-lien-workspaces\.js\?v=14/);
-  assert.match(runtime, /kim-lien-workspaces\.css\?v=7/);
+  assert.match(html, /kim-lien-workspaces\.js\?v=15/);
+  assert.match(runtime, /kim-lien-workspaces\.css\?v=8/);
   assert.match(runtime, /kim-lien-creative-learning\.css\?v=3/);
   assert.match(runtime, /kim-lien-operations\.css\?v=6/);
   assert.match(runtime, /document\.head\.append\(link\)/);
   assert.match(runtime, /hh:asset-group-ready/);
   assert.match(runtime, /hh:assets-ready/);
   assert.match(runtime, /hh:route-rendered/);
-  assert.match(worker, /kim-lien-workspaces\.css\?v=7/);
-  assert.match(worker, /kim-lien-workspaces\.js\?v=14/);
+  assert.match(worker, /kim-lien-workspaces\.css\?v=8/);
+  assert.match(worker, /kim-lien-workspaces\.js\?v=15/);
   assert.match(worker, /kim-lien-creative-learning\.css\?v=3/);
   assert.match(worker, /kim-lien-operations\.css\?v=6/);
 });
@@ -63,6 +63,18 @@ test("workspace scrolling has one page owner and explicit immersive exceptions",
   assert.match(runtime, /horizontalOverflow/);
   assert.match(runtime, /canReachEnd/);
   assert.match(runtime, /scrollHeight/);
+});
+
+test("inactive structural drawer hosts never become opaque workspace covers", () => {
+  const css = read("kim-lien-workspaces.css");
+  assert.match(css, /\[class\*="drawer-host"\]/);
+  assert.match(css, /\[class\*="drawer-layer"\]/);
+  assert.match(css, /\[class\*="drawer-portal"\]/);
+  assert.match(
+    css,
+    /\[class\*="drawer-host"\][\s\S]*?background-color:\s*transparent\s*!important[\s\S]*?background-image:\s*none\s*!important/,
+    "structural hosts must not paint over their live workspace while closed"
+  );
 });
 
 test("motion remains restrained, pausable and accessible", () => {

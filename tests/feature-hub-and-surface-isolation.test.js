@@ -39,8 +39,8 @@ test("eight large workspace roots mount a descriptive capability catalog", () =>
   assert.match(styles, /grid-template-columns:\s*repeat\(3/);
   assert.match(styles, /@media\s*\(max-width:\s*700px\)/);
   assert.match(styles, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
-  assert.match(html, /workspace-feature-explorer\.css\?v=2/);
-  assert.match(worker, /workspace-feature-explorer\.css\?v=2/);
+  assert.match(html, /workspace-feature-explorer\.css\?v=3/);
+  assert.match(worker, /workspace-feature-explorer\.css\?v=3/);
 });
 
 test("authentication and Home enforce one paint owner at a time", () => {

@@ -6,6 +6,42 @@
 .hh-consent-banner.is-customizing{align-items:stretch;max-height:min(78vh,640px);overflow:auto}.hh-banner-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px;margin-top:8px}.hh-banner-options .hh-consent-row{padding:9px 0}.hh-banner-options .hh-consent-row small{font-size:.75rem}.hh-consent-banner.is-customizing>div:last-child{align-content:end;align-items:flex-end}
 @media(max-width:760px){.hh-banner-options{grid-template-columns:1fr}.hh-consent-banner.is-customizing>div:last-child{align-items:stretch}}
 
+/* On a narrow authentication screen the consent choices join the form's
+   scroll flow. This keeps every password and submit control unobstructed while
+   preserving all three explicit privacy actions. */
+@media (max-width: 760px) {
+  html body.home-neon.auth-locked #authGate .hh-consent-banner.is-auth-inline[data-privacy-banner] {
+    position: relative !important;
+    inset: auto !important;
+    z-index: 3 !important;
+    display: grid !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 14px 0 0 !important;
+    padding: 16px !important;
+    overflow: visible !important;
+    border-radius: 16px !important;
+    backdrop-filter: none !important;
+  }
+
+  html body.home-neon.auth-locked #authGate .hh-consent-banner.is-auth-inline > div:last-child {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  html body.home-neon.auth-locked #authGate .hh-consent-banner.is-auth-inline button {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+  }
+
+  html body.home-neon.auth-locked #authGate .hh-consent-banner.is-auth-inline button.primary {
+    grid-column: 1 / -1;
+  }
+}
+
 /* Kim Lien Dien: privacy surfaces are part of the same ceremonial system. */
 html[data-hh-theme="kim-lien"] body.hh-kim-lien :is(.hh-consent-center, .hh-consent-banner) {
   color: var(--kl-ivory, #fff8e8);
@@ -97,6 +133,14 @@ html[data-hh-theme="kim-lien"] body.home-neon.hh-kim-lien.auth-locked > aside.hh
   border-color: rgba(232, 190, 84, .4) !important;
   background: linear-gradient(145deg, #3a1713, #1c0908 72%) !important;
   box-shadow: 0 22px 64px rgba(9, 1, 1, .58), inset 0 0 0 1px rgba(255, 232, 163, .035) !important;
+}
+
+html[data-hh-theme="kim-lien"] body.home-neon.hh-kim-lien.auth-locked #authGate .hh-consent-banner.is-auth-inline[data-privacy-banner] {
+  border-color: rgba(242, 212, 131, .48) !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 232, 163, .12), transparent 30%),
+    linear-gradient(145deg, #3a1713, #1c0908 72%) !important;
+  box-shadow: inset 0 1px rgba(255, 248, 232, .08), 0 14px 34px rgba(9, 1, 1, .34), 0 0 28px rgba(232, 190, 84, .08) !important;
 }
 
 html[data-hh-theme="kim-lien"] body.home-neon.hh-kim-lien.auth-locked > aside.hh-consent-banner[data-privacy-banner]:not([hidden]) :is(small, strong) {

@@ -658,7 +658,7 @@
 
   function noteLearnerActivity(session) {
     if (!session) return; session.guideAwake = false; session.host.querySelector("[data-hh-chinese]")?.classList.remove("is-guide-awake");
-    clearTimeout(session.guideTimer); if (session.state.guideMode === "off" || !session.state.guideEnabled) return;
+    clearTimeout(session.guideTimer); if (!session.state.onboardingComplete || session.state.guideMode === "off" || !session.state.guideEnabled) return;
     session.guideTimer = setTimeout(function () { session.guideAwake = true; session.host.querySelector("[data-hh-chinese]")?.classList.add("is-guide-awake"); }, session.state.guideMode === "full" ? 9000 : 14000);
   }
   function scheduleToastDismiss(session) {

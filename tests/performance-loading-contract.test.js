@@ -19,13 +19,13 @@ test("the first paint only loads the shell and identity portal", () => {
   assert.doesNotMatch(executableHtml, /<script[^>]+(?:space-explorer|video-editor-resolve|english-learning|music-ai-studio)\.js/i);
   for (const deferredAsset of [
     "auth-zoom-resilience.js?v=4",
-    "privacy-consent-center.js?v=2",
+    "privacy-consent-center.js?v=3",
     "vercel-observability.js?v=2"
   ]) {
     assert.doesNotMatch(executableHtml, new RegExp(`<script[^>]+${deferredAsset.replace(/[.?]/g, "\\$&")}`, "i"));
     assert.match(loader, new RegExp(deferredAsset.replace(/[.?]/g, "\\$&")));
   }
-  assert.match(loader, /"post-paint-essential"[\s\S]*?auth-zoom-resilience\.js\?v=4[\s\S]*?privacy-consent-center\.js\?v=2/);
+  assert.match(loader, /"post-paint-essential"[\s\S]*?auth-zoom-resilience\.js\?v=4[\s\S]*?privacy-consent-center\.js\?v=3/);
   assert.match(loader, /ensureGroup\("post-paint-essential"\)[\s\S]*?then\(loadObservabilityWhenIdle\)/);
   assert.match(loader, /loadObservabilityWhenIdle[\s\S]*?ensureGroup\("observability"\)[\s\S]*?requestIdleCallback/);
 });
@@ -61,7 +61,7 @@ test("service worker precaches a small shell and uses stale while revalidate", (
   assert.ok(entries.length <= 20, `service worker core budget exceeded: ${entries.length}`);
   for (const runtimeOnlyAsset of [
     "auth-zoom-resilience.js?v=4",
-    "privacy-consent-center.js?v=2",
+    "privacy-consent-center.js?v=3",
     "vercel-observability.js?v=2"
   ]) {
     assert.ok(worker.includes(`"./${runtimeOnlyAsset}"`), `${runtimeOnlyAsset} must remain discoverable at runtime`);

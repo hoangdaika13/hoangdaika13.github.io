@@ -67,6 +67,7 @@
   const STORAGE_KEY = "hh.feature-lab.workspace.v2";
   const runtimeLabels = Object.freeze({ browser: "Trình duyệt", server: "Máy chủ", ai: "AI", integration: "Kết nối", legacy: "Cục bộ" });
   let activeCleanup = null;
+  let activeHost = null;
   let runtimePromise = null;
 
   const readState = () => {
@@ -191,10 +192,21 @@
     }).join("");
   }
 
+  function unmount() {
+    const cleanup = activeCleanup;
+    activeCleanup = null;
+    try { cleanup?.(); }
+    finally {
+      activeHost?.replaceChildren();
+      activeHost = null;
+    }
+  }
+
   function mount(host, options = {}) {
     if (!host) return null;
     const initialTool = getTool(options.toolId);
-    activeCleanup?.();
+    unmount();
+    activeHost = host;
     host.innerHTML = `<section class="feature-lab feature-lab--route" data-lab-route>
       <div class="feature-lab__panel">
         <header class="feature-lab__head">
@@ -261,7 +273,7 @@
       });
     });
     select(initialTool.id);
-    return { root, select, cleanup: () => { activeCleanup?.(); activeCleanup = null; host.innerHTML = ""; } };
+    return { root, select, cleanup: unmount };
   }
 
   function open(value) {
@@ -291,6 +303,7 @@
     catalog: buildCatalog,
     getTool,
     mount,
+    unmount,
     open,
     close: () => { if (location.hash.startsWith("#/tools")) location.hash = "#/home"; }
   });

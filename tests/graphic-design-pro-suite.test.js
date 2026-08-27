@@ -9,7 +9,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const ENGINES = [
   ["graphic-design-nondestructive.js?v=1", "HHGraphicNondestructive", "nondestructive"],
   ["graphic-design-typography-pro.js?v=1", "HHGraphicTypographyPro", "typography"],
-  ["graphic-design-node-effects.js?v=1", "HHGraphicNodeEffects", "effects"],
+  ["graphic-design-node-effects.js?v=2", "HHGraphicNodeEffects", "effects"],
   ["graphic-design-character-pro.js?v=1", "HHGraphicCharacterPro", "character"],
   ["graphic-design-simulation.js?v=1", "HHGraphicSimulation", "simulation"],
   ["graphic-design-data-driven.js?v=1", "HHGraphicDataDriven", "data"],

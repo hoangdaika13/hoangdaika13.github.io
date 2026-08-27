@@ -131,6 +131,22 @@ html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
   box-shadow: none;
 }
 
+/* Hosts and backdrops are structural layer owners, not visible drawers.
+ * Painting a drawer host makes an inactive full-workspace layer opaque and
+ * hides the live route below it (Support Galaxy exposed this on refresh).
+ * Keep the host transparent; the feature stylesheet still owns the actual
+ * drawer/backdrop colour and its open/closed opacity. */
+html[data-hh-theme="kim-lien"] body.hh-kim-lien #appWorkspace :is(
+  [class*="drawer-host"],
+  [class*="drawer-layer"],
+  [class*="drawer-portal"]
+) {
+  border-color: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
 /* State classes such as `is-inspector-hidden` can accidentally match the
  * broad chrome selectors above. Reassert every workspace root last so its
  * paint owner always has a fully opaque wood base. */

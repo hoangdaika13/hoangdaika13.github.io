@@ -155,12 +155,21 @@
     // theme a stable, independent visual layer.
     appendOnce(gate, ".kl-auth-ambient", `
       <div class="kl-auth-ambient" aria-hidden="true">
-        <span class="kl-ambient-arch"></span><span class="kl-ambient-lantern kl-ambient-lantern--left"></span><span class="kl-ambient-lantern kl-ambient-lantern--right"></span>
+        <span class="kl-ambient-arch"></span>
+        <span class="kl-ambient-radiance"><i></i><b></b></span>
+        <span class="kl-ambient-temple-frame"><i></i><i></i><b></b><b></b></span>
+        <span class="kl-ambient-halo"><span class="kl-halo-wheel">${wheelSvg()}</span><i></i><b></b></span>
+        <span class="kl-ambient-lantern kl-ambient-lantern--left"></span><span class="kl-ambient-lantern kl-ambient-lantern--right"></span>
+        <span class="kl-ambient-incense"><i></i><i></i><i></i></span>
+        <span class="kl-ambient-motes">${"<i></i>".repeat(12)}</span>
+        <span class="kl-ambient-petals">${"<i></i>".repeat(6)}</span>
+        <span class="kl-ambient-lotus-dais">${lotusSvg("klAmbientLotus")}</span>
         <span class="kl-ambient-mist"></span>
       </div>`, "afterbegin");
 
     const brand = gate.querySelector(".auth-gate-brand");
     if (brand) {
+      brand.classList.add("kl-centered-devotional-host");
       const mark = brand.querySelector(".auth-h-channel-mark, .brand-mark");
       if (mark) {
         mark.setAttribute("aria-label", "Biểu tượng hoa sen Kim Liên Điện");
@@ -168,20 +177,30 @@
         appendOnce(mark, ".kl-brand-lotus", lotusSvg("klBrandLotus"));
       }
       appendOnce(brand, ".kl-sanctum-panel", `
-        <section class="kl-sanctum-panel" aria-label="Không gian Kim Liên Điện">
-          <div class="kl-sanctum-art"><img class="kl-sanctum-buddha-image" src="assets/phat-phap/duc-phat-hao-quang-v1.webp" width="1536" height="1024" loading="eager" decoding="async" alt="Tranh minh họa Đức Phật Thích Ca tọa thiền trong hào quang vàng"><span class="kl-art-ring kl-art-ring--one"></span><span class="kl-art-ring kl-art-ring--two"></span></div>
-          <div class="kl-sanctum-copy">
-            <p class="kl-eyebrow"><span class="kl-mini-wheel">${wheelSvg()}</span> KIM LIÊN ĐIỆN</p>
-            <h2>Ánh vàng soi đường tu học</h2>
-            <p>Đọc kinh, nghe pháp thoại, thiền tập và ghi lại những điều lành trong một không gian bình an.</p>
-            <div class="kl-sanctum-links"><span><i>☸</i> Giáo lý &amp; Kinh điển</span><span><i>◌</i> Thiền &amp; Niệm Phật</span><span><i>⌂</i> Đi chùa online</span></div>
+        <figure class="kl-sanctum-panel" aria-labelledby="kl-sanctum-quote">
+          <div class="kl-sanctum-art">
+            <img class="kl-sanctum-buddha-image" src="assets/phat-phap/duc-phat-hao-quang-v1.webp" width="1536" height="1024" loading="eager" decoding="async" alt="Đức Phật Thích Ca tọa thiền giữa hào quang vàng trong chánh điện Kim Liên">
+            <span class="kl-art-aureole" aria-hidden="true"><i></i><b></b></span>
+            <span class="kl-art-ring kl-art-ring--one" aria-hidden="true"></span><span class="kl-art-ring kl-art-ring--two" aria-hidden="true"></span>
+            <span class="kl-sanctum-vignette" aria-hidden="true"></span>
           </div>
-        </section>`);
+          <figcaption class="kl-sanctum-devotion">
+            <p class="kl-eyebrow"><span class="kl-mini-wheel">${wheelSvg()}</span> LỜI NHẮC CHÁNH NIỆM</p>
+            <blockquote id="kl-sanctum-quote">“Tâm an tịnh, trí sáng trong; mỗi bước chân là một đóa sen nở.”</blockquote>
+            <small>Kim Liên Điện · An trú trong hiện tại</small>
+          </figcaption>
+        </figure>`);
     }
 
     const card = gate.querySelector("[data-auth-card]");
     if (card) {
       card.classList.add("kl-auth-card");
+      appendOnce(card, ".kl-card-radiance", `
+        <span class="kl-card-radiance" aria-hidden="true">
+          <span class="kl-card-mandala">${wheelSvg()}</span>
+          <span class="kl-card-watermark">${lotusSvg("klCardWatermark")}</span>
+          <i></i><b></b>
+        </span>`, "afterbegin");
       const headingMark = card.querySelector(".auth-card-heading > span");
       if (headingMark) {
         headingMark.classList.add("kl-card-seal");

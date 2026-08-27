@@ -41,6 +41,11 @@
   let paymentPollTimer = 0;
   let paymentCountdownTimer = 0;
   let activeVisibilityHandler = null;
+  // The router can unmount Support while a drawer transition is in flight.
+  // Keep the shell handle here so unmount always closes the host before the
+  // route DOM is replaced, preventing a stale backdrop from leaking across
+  // workspaces.
+  let activeSupportShell = null;
 
   const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const money = value => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(value) || 0);
@@ -314,6 +319,12 @@
 
     const drawerHost = document.createElement("div");
     drawerHost.className = "support-drawer-host";
+    // Keep the host out of the accessibility tree and hit-testing stack while
+    // every drawer is closed.  Child drawers already use `hidden`, but the
+    // host itself spans the whole workspace; leaving it mounted and painted
+    // can create a stale overlay after a route change or a hard refresh.
+    drawerHost.hidden = true;
+    drawerHost.setAttribute("aria-hidden", "true");
     const drawerBackdrop = document.createElement("button");
     drawerBackdrop.className = "support-drawer-backdrop";
     drawerBackdrop.type = "button";
@@ -325,7 +336,10 @@
       drawer.className = "support-drawer";
       drawer.dataset.supportDrawer = id;
       drawer.hidden = true;
-      drawer.innerHTML = `<header><div><small>${eyebrow}</small><strong>${title}</strong></div><button type="button" data-support-drawer-close aria-label="Đóng">×</button></header><div class="support-drawer__content"></div>`;
+      drawer.setAttribute("role", "dialog");
+      drawer.setAttribute("aria-modal", "true");
+      drawer.setAttribute("aria-labelledby", `support-drawer-title-${id}`);
+      drawer.innerHTML = `<header><div><small>${eyebrow}</small><strong id="support-drawer-title-${id}">${title}</strong></div><button type="button" data-support-drawer-close aria-label="Đóng">×</button></header><div class="support-drawer__content"></div>`;
       drawerHost.append(drawer);
       return drawer.querySelector(".support-drawer__content");
     };
@@ -364,16 +378,25 @@
     if (metrics) page.append(metrics);
     page.querySelectorAll("[data-support-effect]").forEach(button => button.classList.toggle("active", button.dataset.supportEffect === page.dataset.effects));
 
-    const closeDrawers = () => {
+    let activeDrawerTrigger = null;
+    const closeDrawers = ({ restoreFocus = true } = {}) => {
       page.classList.remove("is-drawer-open");
+      drawerHost.hidden = true;
+      drawerHost.setAttribute("aria-hidden", "true");
       page.querySelectorAll("[data-support-drawer]").forEach(drawer => { drawer.hidden = true; });
       page.querySelectorAll("[data-support-drawer-open]").forEach(button => button.classList.remove("is-active"));
       page.querySelector("[data-support-home]")?.classList.add("is-active");
+      const trigger = activeDrawerTrigger;
+      activeDrawerTrigger = null;
+      if (restoreFocus && trigger && document.contains(trigger)) trigger.focus({ preventScroll: true });
     };
-    const openDrawer = id => {
+    const openDrawer = (id, trigger = null) => {
       const drawer = page.querySelector(`[data-support-drawer="${id}"]`);
       if (!drawer) return;
+      activeDrawerTrigger = trigger || page.querySelector(`[data-support-drawer-open="${id}"]`);
       page.querySelectorAll("[data-support-drawer]").forEach(node => { node.hidden = node !== drawer; });
+      drawerHost.hidden = false;
+      drawerHost.setAttribute("aria-hidden", "false");
       page.classList.add("is-drawer-open");
       page.classList.remove("is-summary-open");
       page.querySelectorAll("[data-support-drawer-open]").forEach(button => button.classList.toggle("is-active", button.dataset.supportDrawerOpen === id));
@@ -385,7 +408,7 @@
       if (openButton) {
         event.preventDefault();
         event.stopPropagation();
-        openDrawer(openButton.dataset.supportDrawerOpen);
+        openDrawer(openButton.dataset.supportDrawerOpen, openButton);
         return;
       }
       if (event.target.closest("[data-support-drawer-close], [data-support-home]")) {
@@ -407,11 +430,19 @@
       event.stopPropagation();
       page.classList.remove("is-summary-open");
     });
+    // Establish a deterministic closed state after all nodes/listeners are
+    // attached.  This also protects against browser back/forward restoring a
+    // stale class or an interrupted transition.
+    closeDrawers({ restoreFocus: false });
     return {
       openDrawer,
       closeDrawers,
       toggleSummary: force => page.classList.toggle("is-summary-open", typeof force === "boolean" ? force : !page.classList.contains("is-summary-open")),
       focusWorkspace: () => { closeDrawers(); workspaceScroll.scrollTop = 0; },
+      destroy: () => {
+        closeDrawers({ restoreFocus: false });
+        page.classList.remove("is-summary-open");
+      },
       syncSummary({ missionId = "infrastructure", visibility = "public", email = "", providerReady = false, stage = "details", receiptStatus = "", hasDonation = false, receiptEmailAvailable = false } = {}) {
         const mission = missionById(missionId);
         const emailReady = Boolean(email && email.includes("@"));
@@ -448,6 +479,8 @@
   }
 
   async function mount(container, options = {}) {
+    activeSupportShell?.destroy?.();
+    activeSupportShell = null;
     clearInterval(refreshTimer);
     clearInterval(paymentPollTimer);
     clearInterval(paymentCountdownTimer);
@@ -456,6 +489,7 @@
     container.innerHTML = markup(user);
     const page = container.querySelector("[data-support-page]");
     const shell = composeOneScreenWorkspace(page);
+    activeSupportShell = shell;
     let currentDonation = null;
     let adminItems = [];
     let publicData = null;
@@ -1263,6 +1297,8 @@
   }
 
   function unmount() {
+    activeSupportShell?.destroy?.();
+    activeSupportShell = null;
     clearInterval(refreshTimer);
     clearInterval(paymentPollTimer);
     clearInterval(paymentCountdownTimer);

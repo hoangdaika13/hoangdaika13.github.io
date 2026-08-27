@@ -27,7 +27,7 @@ test("language cockpit is loaded offline and has layered motion fallbacks", () =
   const worker = read("sw.js");
   const css = read("language-learning-cockpit.css");
   const js = read("language-learning-cockpit.js");
-  for (const asset of ["language-learning-cockpit.css?v=1", "language-learning-cockpit.js?v=1"]) {
+  for (const asset of ["language-learning-cockpit.css?v=2", "language-learning-cockpit.js?v=1"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
@@ -45,4 +45,13 @@ test("Chinese launchpad keeps tracks bounded and separate from the 50K lookup ca
   assert.match(source, /LEARNING_TRACKS/);
   assert.match(source, /Phòng học theo mục tiêu/);
   assert.match(css, /hhc-learning-launchpad/);
+  assert.match(css, /\.app-chinese-route \.app-mobile-nav \{ display: none !important; \}/);
+  const shell = read("script.js");
+  assert.match(shell, /workspaceOwnsMobileDock[\s\S]{0,320}?app-chinese-route/);
+  assert.match(shell, /if \(mobileSidebarQuery\.matches\) \{\s*mobileNavigation\.style\.setProperty\("display", workspaceOwnsMobileDock \? "none" : "grid", "important"\);/);
+});
+
+test("Chinese onboarding never schedules the floating guide over its start action", () => {
+  const source = read("hh-chinese.js");
+  assert.match(source, /clearTimeout\(session\.guideTimer\); if \(!session\.state\.onboardingComplete \|\| session\.state\.guideMode === "off" \|\| !session\.state\.guideEnabled\) return;/);
 });

@@ -5249,9 +5249,27 @@ function initAppShell() {
   const syncMobileSidebarDock = () => {
     const mobileNavigation = document.querySelector(".app-mobile-nav");
     if (mobileNavigation) {
-      const workspaceOwnsMobileDock = document.body.classList.contains("app-dharma-route") || document.body.classList.contains("app-eonwild-immersive");
-      if (mobileSidebarQuery.matches && !workspaceOwnsMobileDock) mobileNavigation.style.setProperty("display", "grid", "important");
-      else mobileNavigation.style.removeProperty("display");
+      const workspaceOwnsMobileDock = document.body.classList.contains("app-dharma-route")
+        || document.body.classList.contains("app-eonwild-immersive")
+        || document.body.classList.contains("app-chinese-route")
+        || document.body.classList.contains("app-support-route");
+      if (mobileSidebarQuery.matches) {
+        mobileNavigation.style.setProperty("display", workspaceOwnsMobileDock ? "none" : "grid", "important");
+        if (workspaceOwnsMobileDock) {
+          mobileNavigation.style.setProperty("visibility", "hidden", "important");
+          mobileNavigation.style.setProperty("pointer-events", "none", "important");
+          mobileNavigation.setAttribute("aria-hidden", "true");
+        } else {
+          mobileNavigation.style.removeProperty("visibility");
+          mobileNavigation.style.removeProperty("pointer-events");
+          mobileNavigation.removeAttribute("aria-hidden");
+        }
+      } else {
+        mobileNavigation.style.removeProperty("display");
+        mobileNavigation.style.removeProperty("visibility");
+        mobileNavigation.style.removeProperty("pointer-events");
+        mobileNavigation.removeAttribute("aria-hidden");
+      }
     }
     syncSidebarToggleState();
   };
@@ -6826,7 +6844,45 @@ function initAppShell() {
     finish: () => finishCosmicRouteLoader(),
     fail: (message) => finishCosmicRouteLoader({ error: true, message })
   });
+  const dismissRouteTransientLayers = () => {
+    // A route can change through Back/Forward, a direct hash edit or another
+    // workspace event, so click-only cleanup is not sufficient. Close the
+    // previous route's top-layer dialogs before its DOM is unmounted; this
+    // prevents a native dialog backdrop from remaining above the next page.
+    document.querySelectorAll("dialog[open]").forEach((dialog) => {
+      try {
+        dialog.dispatchEvent(new Event("cancel", { cancelable: true }));
+        if (dialog.open) dialog.close("cancel");
+      } catch {
+        dialog.removeAttribute("open");
+      }
+    });
+    [notificationDrawer, helpDrawer].forEach((drawer) => {
+      drawer?.classList.remove("is-open");
+      drawer?.setAttribute("aria-hidden", "true");
+    });
+    userMenu?.classList.remove("is-open");
+    userMenu?.setAttribute("aria-hidden", "true");
+    document.querySelectorAll("[data-notification-toggle], [data-help-toggle], [data-user-menu-toggle]").forEach((button) => button.setAttribute("aria-expanded", "false"));
+    if (drawerBackdrop) drawerBackdrop.hidden = true;
+    const themePanel = byId("appThemePanel");
+    themePanel?.classList.remove("is-open");
+    themePanel?.setAttribute("aria-hidden", "true");
+    document.querySelector(".ext-tour-overlay")?.remove();
+    document.querySelectorAll(".ext-tour-focus").forEach((target) => target.classList.remove("ext-tour-focus"));
+    window.HHSearchWatch?.close?.();
+    // Browser Back/Forward and direct hash edits do not pass through a
+    // sidebar route button. Collapse the mobile sheet here as part of the
+    // route transaction so its backdrop and touch lock cannot cover the next
+    // workspace. Desktop keeps the user's persisted sidebar preference.
+    if (mobileSidebarQuery.matches) {
+      document.body.classList.add("app-sidebar-collapsed");
+      syncMobileSidebarDock();
+    }
+  };
   const beginRouteFeedback = (route = routeFromHash()) => {
+    const normalized = String(route || "/home").split("?")[0];
+    if (renderedRoute && normalized !== renderedRoute) dismissRouteTransientLayers();
     document.body.classList.add("app-route-changing");
     routeProgress?.setAttribute("aria-hidden", "false");
     showCosmicRouteLoader(route);
@@ -6844,6 +6900,10 @@ function initAppShell() {
     requestAnimationFrame(() => {
       document.querySelector(".app-main")?.scrollTo({ top: 0, left: 0, behavior: "auto" });
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      // Lazy workspaces may restore the inline style they captured while
+      // unmounting later in the same hashchange transaction. Reassert the
+      // route owner's dock after all synchronous route listeners have run.
+      syncMobileSidebarDock();
     });
     legacyMain.hidden = true;
     renderedRoute = route;
@@ -6957,6 +7017,8 @@ function initAppShell() {
     const learningView = route === "/learn" ? "today" : route.split("/").filter(Boolean)[1];
     if (!(route === "/learn" || window.HHSchool?.supports?.(learningView))) window.HHSchool?.unmount?.();
     if (route !== "/system") window.HHSystemPlatform?.unmount?.();
+    if (route !== "/support") window.HHSupportPage?.unmount?.();
+    if (!(route === "/tools" || route.startsWith("/tools/"))) window.HHFeatureLab?.unmount?.();
     if (!(route === "/work" || workGalaxyPageItems.some((item) => item.route === route))) window.HHWorkCenter?.unmount?.();
     if (route !== "/music-ai" && !route.startsWith("/music-ai/")) {
       window.HHMusicAutopilot?.unmount?.();

@@ -39,6 +39,21 @@ body.app-communication-route .app-main {
   background: #050a14;
 }
 
+/* Legacy communication tools are rendered by the generic single-module
+   workspace, not by the immersive communication cockpit.  They therefore
+   need the shell page scroller; inheriting the cockpit's fixed-height
+   overflow lock cut off Notification Center and Community content. */
+body.app-communication-route.app-single-module .app-main {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+body.app-communication-route.app-single-module #appWorkspace {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+}
+
 body.app-communication-route .comms-engine-host {
   min-width: 0;
   min-height: 0;

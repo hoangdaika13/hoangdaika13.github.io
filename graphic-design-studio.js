@@ -99,7 +99,7 @@
     workflow: { selector: "[data-graphic-design-workflow]", api: "HHGraphicDesignWorkflow", source: "graphic-design-workflow.js?v=1" },
     nondestructive: { selector: "[data-graphic-nondestructive]", api: "HHGraphicNondestructive", source: "graphic-design-nondestructive.js?v=1" },
     typography: { selector: "[data-graphic-typography-pro]", api: "HHGraphicTypographyPro", source: "graphic-design-typography-pro.js?v=1" },
-    effects: { selector: "[data-graphic-node-effects]", api: "HHGraphicNodeEffects", source: "graphic-design-node-effects.js?v=1" },
+    effects: { selector: "[data-graphic-node-effects]", api: "HHGraphicNodeEffects", source: "graphic-design-node-effects.js?v=2" },
     character: { selector: "[data-graphic-character-pro]", api: "HHGraphicCharacterPro", source: "graphic-design-character-pro.js?v=1" },
     simulation: { selector: "[data-graphic-simulation]", api: "HHGraphicSimulation", source: "graphic-design-simulation.js?v=1" },
     data: { selector: "[data-graphic-data-driven]", api: "HHGraphicDataDriven", source: "graphic-design-data-driven.js?v=1" },

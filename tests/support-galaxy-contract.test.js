@@ -36,6 +36,7 @@ test("Support Galaxy composes one viewport with real drawers and mobile sheets",
   const client = read("support-platform.js");
   const styles = read("support-platform.css");
   const api = read("api/donations.js");
+  const router = read("script.js");
   for (const token of [
     "composeOneScreenWorkspace", "support-one-screen-grid", "support-mission-orbit",
     "support-central-workspace", "support-workspace-scroll", "support-live-summary",
@@ -46,9 +47,18 @@ test("Support Galaxy composes one viewport with real drawers and mobile sheets",
   assert.match(styles, /\.support-workspace-scroll\{[^}]*overflow-y:auto/);
   assert.match(styles, /\.support-drawer__content\{[^}]*overflow-x:hidden;overflow-y:auto/);
   assert.match(styles, /@media\(max-width:760px\)[\s\S]*support-dock-mobile/);
+  assert.match(router, /workspaceOwnsMobileDock[\s\S]{0,420}?app-support-route/);
+  assert.match(router, /workspaceOwnsMobileDock[\s\S]{0,900}?style\.setProperty\("visibility", "hidden", "important"\)/);
+  assert.match(router, /workspaceOwnsMobileDock[\s\S]{0,1100}?style\.setProperty\("pointer-events", "none", "important"\)/);
   assert.match(styles, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(client, /MISSION_DEFINITIONS[\s\S]*Bảo mật & An toàn/);
   assert.match(api, /Bảo mật & An toàn/);
+  assert.match(router, /route !== "\/support"\) window\.HHSupportPage\?\.unmount\?\.\(\)/);
+  assert.match(client, /drawerHost\.hidden = true/);
+  assert.match(client, /drawerHost\.setAttribute\("aria-hidden", "true"\)/);
+  assert.match(client, /drawerHost\.hidden = false/);
+  assert.match(client, /role", "dialog"/);
+  assert.match(client, /activeSupportShell\?\.destroy\?\.\(\)/);
 });
 
 test("Support Galaxy live summary follows real form and PayOS state", () => {

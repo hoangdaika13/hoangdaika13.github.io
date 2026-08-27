@@ -102,11 +102,38 @@
     banner.dataset.privacyBanner = "";
     banner.innerHTML = `<div><small>HH PRIVACY</small><strong>Bạn kiểm soát dữ liệu của mình.</strong><p>Cookie thiết yếu giúp website hoạt động. Phân tích và cá nhân hóa chỉ bật khi bạn chọn.</p></div><div><button type="button" data-banner-customize>Tùy chỉnh</button><button type="button" data-banner-refuse>Từ chối tùy chọn</button><button type="button" class="primary" data-banner-accept>Cho phép phân tích</button></div>`;
     document.body.append(banner);
+    const mobileQuery = window.matchMedia("(max-width: 760px)");
+    const gate = document.getElementById("authGate");
+    const placeBanner = () => {
+      if (!banner.isConnected) return;
+      const card = gate?.querySelector("[data-auth-card], .auth-gate-card");
+      const inline = Boolean(
+        mobileQuery.matches
+        && document.body.classList.contains("auth-locked")
+        && gate
+        && !gate.hidden
+        && card
+      );
+      banner.classList.toggle("is-auth-inline", inline);
+      const host = inline ? card : document.body;
+      if (banner.parentElement !== host) host.append(banner);
+    };
+    const stopPlacement = () => {
+      mobileQuery.removeEventListener?.("change", placeBanner);
+      window.removeEventListener("resize", placeBanner);
+      window.removeEventListener("hh:auth-change", placeBanner);
+      window.removeEventListener("hh:auth-bootstrap-ready", placeBanner);
+    };
+    mobileQuery.addEventListener?.("change", placeBanner);
+    window.addEventListener("resize", placeBanner, { passive: true });
+    window.addEventListener("hh:auth-change", placeBanner);
+    window.addEventListener("hh:auth-bootstrap-ready", placeBanner);
+    placeBanner();
     const close = (preferences, source) => {
       apply(preferences);
       sync(preferences, source)
         .catch(() => window.HHCommunity?.notice?.("Đã lưu lựa chọn trên thiết bị; máy chủ sẽ đồng bộ khi kết nối lại.", "warning"))
-        .finally(() => banner.remove());
+        .finally(() => { stopPlacement(); banner.remove(); });
     };
     const customize = () => {
       banner.classList.add("is-customizing");
