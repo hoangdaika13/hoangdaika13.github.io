@@ -985,7 +985,7 @@ test("lazy loader and service worker cache the complete ordered v4 bundle", () =
     assert.ok(runtimeAssetsSource.includes(`"${asset}"`), `${asset} must be a runtime asset`);
     assert.ok(!coreAssetsSource.includes(`"${asset}"`), `${asset} must not be a core asset`);
   }
-  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v919"/);
+  assert.match(worker, /const CACHE\s*=\s*"hh-identity-portal-v924"/);
   assert.match(worker, /const EONWILD_OFFLINE_ASSETS\s*=\s*RUNTIME_ASSETS\.filter/);
   assert.match(worker, /cache\.addAll\(INSTALL_ASSETS\)/);
 

@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v919";
+const CACHE = "hh-identity-portal-v924";
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v916.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v914.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v913.
@@ -94,7 +94,7 @@ const RUNTIME_ASSETS = [
   "./fortune-hub-v3.css?v=2",
   "./fortune-hub-v4.css?v=8",
   "./fortune-hub-v5.css?v=26",
-  "./draw-studio.css?v=10",
+  "./draw-studio.css?v=14",
   "./remote-hub.css?v=4",
   "./chat-ai-hub.css?v=17",
   "./account-center.css?v=2",
@@ -365,7 +365,7 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v4.css?v=10",
   "./hh-chinese.css?v=13",
   "./phat-phap.css?v=20",
-  "./hh-play.css?v=5&build=2",
+  "./hh-play.css?v=7&build=3",
   "./hh-play-audio-worklet.js?build=2",
   "./assets/phat-phap/duc-phat-hao-quang-v1.webp",
   "./assets/chinese/NOTICE.md",
@@ -448,7 +448,7 @@ const RUNTIME_ASSETS = [
   "./fortune-moon-3d.js?v=1",
   "./fortune-extended-tools.js?v=2",
   "./fortune-hub.js?v=28",
-  "./draw-studio.js?v=10",
+  "./draw-studio.js?v=13",
   "./remote-hub.js?v=4",
   "./draw-studio-worker.js?v=5",
   "./assets/fortune/lenormand/game-of-hope/spiel-der-hoffnung-36.webp",
@@ -496,7 +496,7 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v4.js?v=12",
   "./hh-chinese.js?v=13",
   "./phat-phap.js?v=17",
-  "./hh-play.js?v=4&build=2",
+  "./hh-play.js?v=6&build=3",
   "./hh-eonwild-cinematic-pack.js?v=1",
   "./hh-eonwild-cinematic-pack-worker.js?v=1",
   "./hh-eonwild-game.css?v=22",
@@ -541,7 +541,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=562",
+  "./performance-loader.js?v=567",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=249"

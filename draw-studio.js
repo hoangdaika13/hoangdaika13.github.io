@@ -5,11 +5,25 @@
 })(typeof window !== "undefined" ? window : globalThis, function createDrawStudio(globalScope) {
   "use strict";
 
-  const VERSION = "2.2.0";
+  const VERSION = "2.3.0";
   const STORAGE_SCHEMA = "hh.draw.studio.v1";
   const BRUSH_LIBRARY_SCHEMA = "hh.draw.brush-library.v1";
   const LAYOUT_SCHEMA = "hh.draw.layout.v1";
+  const INSPECTOR_SCHEMA = "hh.draw.inspector.v1";
   const DEFAULT_LAYOUT = Object.freeze({ toolrailCollapsed: false, inspectorCollapsed: false, dockCollapsed: false, compactControls: false });
+  const INSPECTOR_TABS = Object.freeze(["tool", "object", "layer", "document"]);
+  const INSPECTOR_GROUPS = Object.freeze({
+    tool: Object.freeze(["tool-core", "tool-pattern", "tool-dynamics"]),
+    object: Object.freeze(["object-transform"]),
+    layer: Object.freeze(["layer-studio"]),
+    document: Object.freeze(["document-canvas", "document-animation", "document-media", "document-export"])
+  });
+  const DEFAULT_INSPECTOR_STATE = Object.freeze({
+    activeTab: "tool",
+    openGroups: Object.freeze({ tool: "tool-core", object: "object-transform", layer: "layer-studio", document: "document-canvas" }),
+    pinnedGroups: Object.freeze([]),
+    closeLibraryAfterSelect: false
+  });
   const MAX_STROKES = 120;
   const MAX_POINTS_PER_STROKE = 1400;
   const MAX_LAYERS = 16;
@@ -509,6 +523,10 @@
     return `${LAYOUT_SCHEMA}:${seedNumber(storageKey)}`;
   }
 
+  function inspectorKey(storageKey) {
+    return `${INSPECTOR_SCHEMA}:${seedNumber(storageKey)}`;
+  }
+
   function normalizeLayout(input = {}) {
     return {
       toolrailCollapsed: input?.toolrailCollapsed === true,
@@ -526,6 +544,29 @@
   function saveLayout(targetRuntime = runtime) {
     if (!targetRuntime) return false;
     try { globalScope.localStorage?.setItem(layoutKey(targetRuntime.storageKey), JSON.stringify(normalizeLayout(targetRuntime.layout))); return true; }
+    catch { return false; }
+  }
+
+  function normalizeInspectorState(input = {}) {
+    const activeTab = INSPECTOR_TABS.includes(input?.activeTab) ? input.activeTab : DEFAULT_INSPECTOR_STATE.activeTab;
+    const openGroups = {};
+    INSPECTOR_TABS.forEach((tab) => {
+      const candidate = input?.openGroups?.[tab];
+      openGroups[tab] = candidate === "" || INSPECTOR_GROUPS[tab].includes(candidate) ? candidate : DEFAULT_INSPECTOR_STATE.openGroups[tab];
+    });
+    const allGroups = new Set(Object.values(INSPECTOR_GROUPS).flat());
+    const pinnedGroups = Array.isArray(input?.pinnedGroups) ? [...new Set(input.pinnedGroups.filter((id) => allGroups.has(id)))].slice(0, 2) : [];
+    return { activeTab, openGroups, pinnedGroups, closeLibraryAfterSelect: input?.closeLibraryAfterSelect === true };
+  }
+
+  function readInspectorState(storageKey) {
+    try { return normalizeInspectorState(JSON.parse(globalScope.localStorage?.getItem(inspectorKey(storageKey)) || "{}")); }
+    catch { return normalizeInspectorState(); }
+  }
+
+  function saveInspectorState(targetRuntime = runtime) {
+    if (!targetRuntime) return false;
+    try { globalScope.localStorage?.setItem(inspectorKey(targetRuntime.storageKey), JSON.stringify(normalizeInspectorState(targetRuntime.inspectorState))); return true; }
     catch { return false; }
   }
 
@@ -666,9 +707,22 @@
       </div>`;
   }
 
-  function markup(project, library = { favorites: [], recent: [] }) {
+  function inspectorAccordionMarkup(state, id, title, summary, body) {
+    const open = state.openGroups[INSPECTOR_TABS.find((tab) => INSPECTOR_GROUPS[tab].includes(id))] === id || state.pinnedGroups.includes(id);
+    const pinned = state.pinnedGroups.includes(id);
+    return `<section class="draw-accordion ${open ? "is-open" : ""} ${pinned ? "is-pinned" : ""}" data-draw-accordion="${id}">
+      <div class="draw-accordion-heading"><button type="button" data-draw-accordion-toggle="${id}" aria-expanded="${open}" aria-controls="draw-accordion-${id}"><span><strong>${title}</strong><small>${summary}</small></span><i aria-hidden="true">⌄</i></button><button type="button" class="draw-accordion-pin" data-draw-accordion-pin="${id}" aria-pressed="${pinned}" title="${pinned ? "Bỏ ghim nhóm" : "Ghim nhóm này"}" aria-label="${pinned ? "Bỏ ghim" : "Ghim"} ${title}">${pinned ? "◆" : "◇"}</button></div>
+      <div class="draw-accordion-body" id="draw-accordion-${id}" ${open ? "" : "hidden"}>${body}</div>
+    </section>`;
+  }
+
+  function markup(project, library = { favorites: [], recent: [] }, inputInspectorState = DEFAULT_INSPECTOR_STATE) {
     const settings = project.settings;
     const animation = project.animation;
+    const inspectorState = normalizeInspectorState(inputInspectorState);
+    const activePreset = PRESETS[settings.preset] || PRESETS.silk;
+    const activePalette = COLOR_PALETTES[settings.paletteId] || COLOR_PALETTES.custom;
+    const panelHidden = (tab) => inspectorState.activeTab === tab ? "" : "hidden";
     return `<section class="draw-studio" data-draw-studio data-background="${settings.background}">
       <div class="draw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
       <header class="draw-topbar">
@@ -693,12 +747,19 @@
           <span></span>
           <div role="toolbar" aria-label="Điều hướng thuộc tính"><button type="button" data-draw-jump="layers" title="Mở Layer Studio"><i>▱</i><span>Layer</span></button><button type="button" data-draw-jump="brushes" title="Mở thư viện brush"><i>✺</i><span>Brush</span></button><button type="button" data-draw-jump="colors" title="Mở bảng màu"><i>◉</i><span>Màu</span></button><button type="button" data-draw-jump="canvas" title="Mở thiết lập canvas"><i>⌗</i><span>Canvas</span></button><button type="button" data-draw-jump="export" title="Mở thiết lập xuất"><i>↓</i><span>Xuất</span></button></div>
         </aside>
-        <aside class="draw-controls" data-draw-inspector aria-label="Thuộc tính và điều khiển nét vẽ">
-          <header><div><small>THUỘC TÍNH</small><strong>Công cụ & đối tượng</strong></div><span><button type="button" data-draw-layout-toggle="inspector" title="Thu gọn bảng thuộc tính" aria-label="Thu gọn bảng thuộc tính">⇥</button><button type="button" data-draw-panel-close aria-label="Đóng bảng điều khiển">×</button></span></header>
-          <section class="draw-layer-section" data-draw-panel-section="layers" tabindex="-1"><div class="draw-section-heading"><h3>Layer Studio</h3><span>${project.layers.length}/${MAX_LAYERS}</span></div><div data-draw-layer-panel>${layerPanelMarkup(project)}</div></section>
-          <section data-draw-panel-section="brushes" tabindex="-1"><div class="draw-section-heading"><h3>${Object.keys(PRESETS).length} chế độ nét động</h3><span data-draw-mode-count>${Object.keys(PRESETS).length}</span></div><label class="draw-brush-search"><span>⌕</span><input type="search" data-draw-brush-search placeholder="Tìm brush, ví dụ plasma, ink…" autocomplete="off"></label><div class="draw-mode-filters" role="toolbar" aria-label="Lọc chế độ nét">${modeFilterMarkup()}</div><div class="draw-preset-grid">${presetMarkup(settings, library)}</div><p class="draw-filter-empty" data-draw-filter-empty hidden>Không có brush phù hợp. Hãy thử từ khóa hoặc nhóm khác.</p></section>
-          <section><details class="draw-advanced draw-pattern-composer" open><summary><span><strong>Pattern Composer</strong><small>6 thuật toán · seed tái tạo · undo/redo thật</small></span><i>⌄</i></summary><div class="draw-advanced-body">${generatorMarkup(settings)}</div></details></section>
-          <section><details class="draw-advanced"><summary><span><strong>Brush Dynamics</strong><small>Lực bút · độ mượt · tốc độ · độ tán</small></span><i>⌄</i></summary><div class="draw-advanced-body">
+        <aside class="draw-controls" data-draw-inspector aria-label="Thuộc tính theo ngữ cảnh">
+          <header><div><small>THUỘC TÍNH THEO NGỮ CẢNH</small><strong data-draw-inspector-title>Công cụ Bút</strong></div><span><button type="button" data-draw-layout-toggle="inspector" title="Thu gọn bảng thuộc tính" aria-label="Thu gọn bảng thuộc tính">⇥</button><button type="button" data-draw-panel-close aria-label="Đóng bảng điều khiển">×</button></span></header>
+          <nav class="draw-inspector-tabs" role="tablist" aria-label="Nhóm thuộc tính">
+            <button type="button" role="tab" id="draw-tab-tool" data-draw-inspector-tab="tool" aria-controls="draw-panel-tool" aria-selected="${inspectorState.activeTab === "tool"}">Công cụ</button>
+            <button type="button" role="tab" id="draw-tab-object" data-draw-inspector-tab="object" aria-controls="draw-panel-object" aria-selected="${inspectorState.activeTab === "object"}">Đối tượng</button>
+            <button type="button" role="tab" id="draw-tab-layer" data-draw-inspector-tab="layer" aria-controls="draw-panel-layer" aria-selected="${inspectorState.activeTab === "layer"}">Layer</button>
+            <button type="button" role="tab" id="draw-tab-document" data-draw-inspector-tab="document" aria-controls="draw-panel-document" aria-selected="${inspectorState.activeTab === "document"}">Tài liệu</button>
+          </nav>
+          <div class="draw-inspector-body">
+            <div class="draw-inspector-panel" id="draw-panel-tool" role="tabpanel" aria-labelledby="draw-tab-tool" data-draw-inspector-panel="tool" ${panelHidden("tool")}>
+              ${inspectorAccordionMarkup(inspectorState, "tool-core", "Bút & màu", `${escapeHtml(activePreset.label)} · ${settings.brushSize.toFixed(1)} px · ${settings.colorA.toUpperCase()}`, `<div class="draw-context-launchers"><button type="button" data-draw-jump="brushes"><i>✺</i><span><strong data-draw-summary-brush>${escapeHtml(activePreset.label)}</strong><small>Mở thư viện ${Object.keys(PRESETS).length} brush</small></span><b>›</b></button><button type="button" data-draw-jump="colors"><i class="draw-color-orb" data-draw-color-orb style="--draw-active-color:${settings.colorA}"></i><span><strong data-draw-summary-color>${escapeHtml(activePalette.label)}</strong><small data-draw-summary-hex>${settings.colorA}</small></span><b>›</b></button></div><label class="draw-select-row"><span><strong>Chất lượng realtime</strong><small>Tự cân bằng nét theo thiết bị</small></span><select data-draw-setting="quality"><option value="auto"${settings.quality === "auto" ? " selected" : ""}>Tự động thông minh</option><option value="quality"${settings.quality === "quality" ? " selected" : ""}>Chất lượng cao</option><option value="balanced"${settings.quality === "balanced" ? " selected" : ""}>Cân bằng</option><option value="performance"${settings.quality === "performance" ? " selected" : ""}>Ưu tiên tốc độ</option></select></label><label class="draw-range"><span><b>Độ dày</b><output data-draw-output="brushSize">${settings.brushSize.toFixed(1)} px</output></span><input type="range" min="0.5" max="8" step="0.1" value="${settings.brushSize}" data-draw-setting="brushSize"></label><label class="draw-range"><span><b>Hào quang</b><output data-draw-output="glow">${Math.round(settings.glow)}%</output></span><input type="range" min="0" max="48" step="1" value="${settings.glow}" data-draw-setting="glow"></label><label class="draw-range"><span><b>Độ mềm</b><output data-draw-output="flow">${Math.round(settings.flow * 100)}%</output></span><input type="range" min="0.15" max="1" step="0.01" value="${settings.flow}" data-draw-setting="flow"></label>`)}
+              ${inspectorAccordionMarkup(inspectorState, "tool-pattern", "Pattern Composer", "6 thuật toán · seed tái tạo · undo/redo thật", generatorMarkup(settings))}
+              ${inspectorAccordionMarkup(inspectorState, "tool-dynamics", "Brush Dynamics", "Lực bút · độ mượt · tốc độ · độ tán", `
             <label class="draw-range"><span><b>Stabilizer</b><output data-draw-output="stabilizer">${Math.round(settings.stabilizer)}%</output></span><input type="range" min="0" max="95" step="1" value="${settings.stabilizer}" data-draw-setting="stabilizer"></label>
             <label class="draw-switch"><span><strong>Lực bút</strong><small>Dùng pressure của bút hoặc cảm ứng</small></span><input type="checkbox" data-draw-setting="pressureEnabled" ${settings.pressureEnabled ? "checked" : ""}><i></i></label>
             <label class="draw-range"><span><b>Đường cong lực</b><output data-draw-output="pressureCurve">${settings.pressureCurve.toFixed(2)}×</output></span><input type="range" min="0.35" max="3" step="0.05" value="${settings.pressureCurve}" data-draw-setting="pressureCurve"></label>
@@ -713,13 +774,23 @@
             <label class="draw-range"><span><b>Quán tính</b><output data-draw-output="inertia">${Math.round(settings.inertia * 100)}%</output></span><input type="range" min="0" max="1" step="0.01" value="${settings.inertia}" data-draw-setting="inertia"></label>
             <label class="draw-range"><span><b>Xoay đầu bút</b><output data-draw-output="rotation">${Math.round(settings.rotation)}°</output></span><input type="range" min="0" max="360" step="1" value="${settings.rotation}" data-draw-setting="rotation"></label>
             <label class="draw-switch"><span><strong>Đầu tẩy stylus</strong><small>Tự nhận diện nút tẩy của bút</small></span><input type="checkbox" data-draw-setting="stylusEraser" ${settings.stylusEraser ? "checked" : ""}><i></i></label>
-          </div></details></section>
-          <section data-draw-panel-section="colors" tabindex="-1"><h3>Bảng màu đa sắc</h3><div class="draw-gradient-grid">${colorPaletteMarkup(settings)}</div><details class="draw-custom-color"><summary>Tùy chỉnh màu riêng</summary><div class="draw-palette">${paletteMarkup(settings)}</div><div class="draw-color-mix"><label><span>Màu chính</span><input type="color" data-draw-color-a value="${settings.colorA}"></label><i>＋</i><label><span>Màu hòa</span><input type="color" data-draw-color-b value="${settings.colorB}"></label><b data-draw-mix-preview style="--mix:${mixHex(settings.colorA, settings.colorB)}"></b></div>${gradientEditorMarkup(settings)}</details><label class="draw-switch"><span><strong>Cầu vồng chuyển động</strong><small>Tự chạy toàn bộ phổ màu theo chiều dài nét</small></span><input type="checkbox" data-draw-setting="autoHue" ${settings.autoHue ? "checked" : ""}><i></i></label></section>
-          <section data-draw-panel-section="canvas" tabindex="-1"><h3>Canvas & đối xứng</h3><label class="draw-range"><span><b>Đối xứng quay</b><output data-draw-output="symmetry">${settings.symmetry} nhánh</output></span><input type="range" min="1" max="12" step="1" value="${settings.symmetry}" data-draw-setting="symmetry"></label><label class="draw-switch"><span><strong>Phản chiếu qua tâm</strong><small>Nhân đôi nét qua mỗi trục</small></span><input type="checkbox" data-draw-setting="mirror" ${settings.mirror ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Xoáy vào trung tâm</strong><small>Tạo các lớp thu nhỏ hướng tâm</small></span><input type="checkbox" data-draw-setting="spiral" ${settings.spiral ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Hiện đường dẫn</strong><small>Lưới chỉ dẫn không đi vào ảnh xuất</small></span><input type="checkbox" data-draw-setting="guides" ${settings.guides ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Lưới căn chỉnh</strong><small>Lưới chỉ hiển thị khi làm việc</small></span><input type="checkbox" data-draw-setting="grid" ${settings.grid ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Hít vào tâm</strong><small>Tự bắt nét gần đúng tâm canvas</small></span><input type="checkbox" data-draw-setting="snapCenter" ${settings.snapCenter ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Vẽ bằng cảm ứng</strong><small>Tắt để một ngón tay chỉ di chuyển canvas</small></span><input type="checkbox" data-draw-setting="touchDraw" ${settings.touchDraw ? "checked" : ""}><i></i></label></section>
-          <section><h3>Nét vẽ & hiệu năng</h3><label class="draw-select-row"><span><strong>Chất lượng realtime</strong><small>Tự điều chỉnh để nét luôn bám sát con trỏ</small></span><select data-draw-setting="quality"><option value="auto"${settings.quality === "auto" ? " selected" : ""}>Tự động thông minh</option><option value="quality"${settings.quality === "quality" ? " selected" : ""}>Chất lượng cao</option><option value="balanced"${settings.quality === "balanced" ? " selected" : ""}>Cân bằng</option><option value="performance"${settings.quality === "performance" ? " selected" : ""}>Ưu tiên tốc độ</option></select></label><label class="draw-range"><span><b>Độ dày</b><output data-draw-output="brushSize">${settings.brushSize.toFixed(1)} px</output></span><input type="range" min="0.5" max="8" step="0.1" value="${settings.brushSize}" data-draw-setting="brushSize"></label><label class="draw-range"><span><b>Hào quang</b><output data-draw-output="glow">${Math.round(settings.glow)}%</output></span><input type="range" min="0" max="48" step="1" value="${settings.glow}" data-draw-setting="glow"></label><label class="draw-range"><span><b>Độ mềm</b><output data-draw-output="flow">${Math.round(settings.flow * 100)}%</output></span><input type="range" min="0.15" max="1" step="0.01" value="${settings.flow}" data-draw-setting="flow"></label></section>
-          <section><details class="draw-advanced"><summary><span><strong>Animation Studio</strong><small>Replay · timeline · loop · xuất video</small></span><i>⌄</i></summary><div class="draw-advanced-body"><div class="draw-animation-controls"><button type="button" data-draw-animation="play" title="Phát">▶</button><button type="button" data-draw-animation="pause" title="Tạm dừng">Ⅱ</button><button type="button" data-draw-animation="stop" title="Dừng">■</button><span data-draw-animation-time>00:00</span></div><div class="draw-keyframe-controls"><button type="button" data-draw-keyframe="add">＋ Keyframe</button><button type="button" data-draw-keyframe="remove">Xóa gần nhất</button><span><b data-draw-keyframe-count>${animation.keyframes.length}</b>/32</span></div><label class="draw-range"><span><b>Timeline</b><output data-draw-output="timeline">0%</output></span><input type="range" min="0" max="1" step="0.001" value="0" data-draw-timeline></label><label class="draw-range"><span><b>Thời lượng</b><output data-draw-animation-output="duration">${animation.duration.toFixed(0)} giây</output></span><input type="range" min="3" max="30" step="1" value="${animation.duration}" data-draw-animation-setting="duration"></label><div class="draw-inline"><label><span>Tốc độ</span><select data-draw-animation-setting="speed">${[0.25,0.5,1,2,4].map((value) => `<option value="${value}"${animation.speed === value ? " selected" : ""}>${value}×</option>`).join("")}</select></label><label><span>FPS</span><select data-draw-animation-setting="fps">${[15,24,30,60].map((value) => `<option value="${value}"${animation.fps === value ? " selected" : ""}>${value} FPS</option>`).join("")}</select></label><label><span>Video</span><select data-draw-animation-setting="format"><option value="webm"${animation.format === "webm" ? " selected" : ""}>WebM</option><option value="mp4"${animation.format === "mp4" ? " selected" : ""}>MP4 nếu hỗ trợ</option></select></label></div><label class="draw-switch"><span><strong>Loop liền mạch</strong><small>Phát lại từ đầu sau khi hoàn tất</small></span><input type="checkbox" data-draw-animation-setting="loop" ${animation.loop ? "checked" : ""}><i></i></label><button type="button" class="draw-wide" data-draw-audio-reactive>♫ Bật Audio Reactive</button><button type="button" class="draw-wide draw-primary" data-draw-animation-export>Xuất video timelapse</button></div></details></section>
-          <section><h3>Media nền cục bộ</h3><label class="draw-import"><input type="file" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm" data-draw-background-media><span>Chọn ảnh hoặc video nền</span></label><button type="button" class="draw-wide" data-draw-background-remove>Xóa media nền</button><small class="draw-local-note" data-draw-background-status>Không tải media ra khỏi thiết bị · chỉ dùng trong phiên này</small></section>
-          <section data-draw-panel-section="export" tabindex="-1"><h3>Project & xuất bản</h3><label class="draw-select-row"><span><strong>Kích thước canvas</strong><small>Preset mạng xã hội hoặc kích thước tùy chỉnh</small></span><select data-draw-setting="canvasPreset">${Object.entries(CANVAS_PRESETS).map(([id, preset]) => `<option value="${id}"${settings.canvasPreset === id ? " selected" : ""}>${preset.label}</option>`).join("")}</select></label><div class="draw-inline"><label><span>Rộng</span><input type="number" min="320" max="7680" value="${settings.canvasWidth}" data-draw-setting="canvasWidth"></label><label><span>Cao</span><input type="number" min="320" max="7680" value="${settings.canvasHeight}" data-draw-setting="canvasHeight"></label><label><span>Nền</span><select data-draw-setting="background"><option value="cosmic"${settings.background === "cosmic" ? " selected" : ""}>Vũ trụ</option><option value="midnight"${settings.background === "midnight" ? " selected" : ""}>Xanh đêm</option><option value="black"${settings.background === "black" ? " selected" : ""}>Đen</option><option value="transparent"${settings.background === "transparent" ? " selected" : ""}>Trong suốt</option></select></label><label><span>Định dạng</span><select data-draw-setting="exportFormat"><option value="png"${settings.exportFormat === "png" ? " selected" : ""}>PNG</option><option value="webp"${settings.exportFormat === "webp" ? " selected" : ""}>WebP</option><option value="jpeg"${settings.exportFormat === "jpeg" ? " selected" : ""}>JPEG</option></select></label><label><span>Độ phân giải</span><select data-draw-setting="exportScale"><option value="1"${settings.exportScale === 1 ? " selected" : ""}>1×</option><option value="2"${settings.exportScale === 2 ? " selected" : ""}>2×</option><option value="4"${settings.exportScale === 4 ? " selected" : ""}>4×</option></select></label></div><button type="button" class="draw-wide" data-draw-export-svg>Xuất SVG vector</button><button type="button" class="draw-wide" data-draw-export-layers>Xuất từng layer PNG</button><div class="draw-export-pair"><button type="button" data-draw-brush-export>Xuất preset brush</button><label class="draw-import"><input type="file" accept="application/json,.json" data-draw-brush-import><span>Nhập preset</span></label></div><button type="button" class="draw-wide" data-draw-project-export>Xuất project JSON</button><label class="draw-import"><input type="file" accept="application/json,.json" data-draw-project-import><span>Nhập project JSON</span></label></section>
+          `)}
+            </div>
+            <div class="draw-inspector-panel" id="draw-panel-object" role="tabpanel" aria-labelledby="draw-tab-object" data-draw-inspector-panel="object" ${panelHidden("object")}>
+              ${inspectorAccordionMarkup(inspectorState, "object-transform", "Chọn & biến đổi", "Thao tác thật trên các nét đang chọn", `<div class="draw-object-status"><i>◇</i><span><strong><b data-draw-selection-count>0</b> nét đang chọn</strong><small>Kéo trên canvas để tạo vùng chọn chữ nhật, ellipse hoặc lasso.</small></span></div><div class="draw-object-shapes" role="toolbar" aria-label="Kiểu vùng chọn"><button type="button" data-draw-select-shape="rect" class="is-active" aria-pressed="true">□ Chữ nhật</button><button type="button" data-draw-select-shape="ellipse" aria-pressed="false">○ Ellipse</button><button type="button" data-draw-select-shape="lasso" aria-pressed="false">⌁ Lasso</button></div><div class="draw-transform-grid" role="toolbar" aria-label="Biến đổi nét đã chọn"><button type="button" data-draw-transform="duplicate">▣ Nhân bản</button><button type="button" data-draw-transform="rotate">↻ Xoay 90°</button><button type="button" data-draw-transform="scale-up">⊕ Phóng lớn</button><button type="button" data-draw-transform="scale-down">⊖ Thu nhỏ</button><button type="button" data-draw-transform="flip-x">↔ Lật ngang</button><button type="button" data-draw-transform="flip-y">↕ Lật dọc</button><button type="button" data-draw-transform="reverse">⇄ Đảo nét</button><button type="button" data-draw-transform="warp">≋ Warp</button><button type="button" data-draw-transform="perspective">◇ Phối cảnh</button><button type="button" data-draw-transform="mask">◩ Tạo mask</button><button type="button" data-draw-transform="clear-mask">◨ Xóa mask</button><button type="button" class="is-danger" data-draw-transform="delete">× Xóa nét</button></div>`)}
+            </div>
+            <div class="draw-inspector-panel" id="draw-panel-layer" role="tabpanel" aria-labelledby="draw-tab-layer" data-draw-inspector-panel="layer" ${panelHidden("layer")}>
+              ${inspectorAccordionMarkup(inspectorState, "layer-studio", "Layer Studio", `${project.layers.length}/${MAX_LAYERS} layer · opacity · blend · lock`, `<div class="draw-layer-section" data-draw-panel-section="layers" tabindex="-1"><div data-draw-layer-panel>${layerPanelMarkup(project)}</div></div>`)}
+            </div>
+            <div class="draw-inspector-panel" id="draw-panel-document" role="tabpanel" aria-labelledby="draw-tab-document" data-draw-inspector-panel="document" ${panelHidden("document")}>
+              ${inspectorAccordionMarkup(inspectorState, "document-canvas", "Canvas & đối xứng", `${settings.canvasWidth} × ${settings.canvasHeight} · ${settings.symmetry} nhánh`, `<div data-draw-panel-section="canvas" tabindex="-1"><label class="draw-range"><span><b>Đối xứng quay</b><output data-draw-output="symmetry">${settings.symmetry} nhánh</output></span><input type="range" min="1" max="12" step="1" value="${settings.symmetry}" data-draw-setting="symmetry"></label><label class="draw-switch"><span><strong>Phản chiếu qua tâm</strong><small>Nhân đôi nét qua mỗi trục</small></span><input type="checkbox" data-draw-setting="mirror" ${settings.mirror ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Xoáy vào trung tâm</strong><small>Tạo các lớp thu nhỏ hướng tâm</small></span><input type="checkbox" data-draw-setting="spiral" ${settings.spiral ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Hiện đường dẫn</strong><small>Lưới chỉ dẫn không đi vào ảnh xuất</small></span><input type="checkbox" data-draw-setting="guides" ${settings.guides ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Lưới căn chỉnh</strong><small>Lưới chỉ hiển thị khi làm việc</small></span><input type="checkbox" data-draw-setting="grid" ${settings.grid ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Hít vào tâm</strong><small>Tự bắt nét gần đúng tâm canvas</small></span><input type="checkbox" data-draw-setting="snapCenter" ${settings.snapCenter ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Vẽ bằng cảm ứng</strong><small>Tắt để một ngón tay chỉ di chuyển canvas</small></span><input type="checkbox" data-draw-setting="touchDraw" ${settings.touchDraw ? "checked" : ""}><i></i></label></div>`)}
+              ${inspectorAccordionMarkup(inspectorState, "document-animation", "Animation Studio", "Replay · timeline · loop · xuất video", `<div class="draw-animation-controls"><button type="button" data-draw-animation="play" title="Phát">▶</button><button type="button" data-draw-animation="pause" title="Tạm dừng">Ⅱ</button><button type="button" data-draw-animation="stop" title="Dừng">■</button><span data-draw-animation-time>00:00</span></div><div class="draw-keyframe-controls"><button type="button" data-draw-keyframe="add">＋ Keyframe</button><button type="button" data-draw-keyframe="remove">Xóa gần nhất</button><span><b data-draw-keyframe-count>${animation.keyframes.length}</b>/32</span></div><label class="draw-range"><span><b>Timeline</b><output data-draw-output="timeline">0%</output></span><input type="range" min="0" max="1" step="0.001" value="0" data-draw-timeline></label><label class="draw-range"><span><b>Thời lượng</b><output data-draw-animation-output="duration">${animation.duration.toFixed(0)} giây</output></span><input type="range" min="3" max="30" step="1" value="${animation.duration}" data-draw-animation-setting="duration"></label><div class="draw-inline"><label><span>Tốc độ</span><select data-draw-animation-setting="speed">${[0.25,0.5,1,2,4].map((value) => `<option value="${value}"${animation.speed === value ? " selected" : ""}>${value}×</option>`).join("")}</select></label><label><span>FPS</span><select data-draw-animation-setting="fps">${[15,24,30,60].map((value) => `<option value="${value}"${animation.fps === value ? " selected" : ""}>${value} FPS</option>`).join("")}</select></label><label><span>Video</span><select data-draw-animation-setting="format"><option value="webm"${animation.format === "webm" ? " selected" : ""}>WebM</option><option value="mp4"${animation.format === "mp4" ? " selected" : ""}>MP4 nếu hỗ trợ</option></select></label></div><label class="draw-switch"><span><strong>Loop liền mạch</strong><small>Phát lại từ đầu sau khi hoàn tất</small></span><input type="checkbox" data-draw-animation-setting="loop" ${animation.loop ? "checked" : ""}><i></i></label><button type="button" class="draw-wide" data-draw-audio-reactive>♫ Bật Audio Reactive</button><button type="button" class="draw-wide draw-primary" data-draw-animation-export>Xuất video timelapse</button>`)}
+              ${inspectorAccordionMarkup(inspectorState, "document-media", "Media nền cục bộ", "Ảnh hoặc video chỉ lưu trong phiên", `<label class="draw-import"><input type="file" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm" data-draw-background-media><span>Chọn ảnh hoặc video nền</span></label><button type="button" class="draw-wide" data-draw-background-remove>Xóa media nền</button><small class="draw-local-note" data-draw-background-status>Không tải media ra khỏi thiết bị · chỉ dùng trong phiên này</small>`)}
+              ${inspectorAccordionMarkup(inspectorState, "document-export", "Project & xuất bản", "PNG · WebP · JPEG · SVG · project JSON", `<div data-draw-panel-section="export" tabindex="-1"><label class="draw-select-row"><span><strong>Kích thước canvas</strong><small>Preset mạng xã hội hoặc kích thước tùy chỉnh</small></span><select data-draw-setting="canvasPreset">${Object.entries(CANVAS_PRESETS).map(([id, preset]) => `<option value="${id}"${settings.canvasPreset === id ? " selected" : ""}>${preset.label}</option>`).join("")}</select></label><div class="draw-inline"><label><span>Rộng</span><input type="number" min="320" max="7680" value="${settings.canvasWidth}" data-draw-setting="canvasWidth"></label><label><span>Cao</span><input type="number" min="320" max="7680" value="${settings.canvasHeight}" data-draw-setting="canvasHeight"></label><label><span>Nền</span><select data-draw-setting="background"><option value="cosmic"${settings.background === "cosmic" ? " selected" : ""}>Vũ trụ</option><option value="midnight"${settings.background === "midnight" ? " selected" : ""}>Xanh đêm</option><option value="black"${settings.background === "black" ? " selected" : ""}>Đen</option><option value="transparent"${settings.background === "transparent" ? " selected" : ""}>Trong suốt</option></select></label><label><span>Định dạng</span><select data-draw-setting="exportFormat"><option value="png"${settings.exportFormat === "png" ? " selected" : ""}>PNG</option><option value="webp"${settings.exportFormat === "webp" ? " selected" : ""}>WebP</option><option value="jpeg"${settings.exportFormat === "jpeg" ? " selected" : ""}>JPEG</option></select></label><label><span>Độ phân giải</span><select data-draw-setting="exportScale"><option value="1"${settings.exportScale === 1 ? " selected" : ""}>1×</option><option value="2"${settings.exportScale === 2 ? " selected" : ""}>2×</option><option value="4"${settings.exportScale === 4 ? " selected" : ""}>4×</option></select></label></div><button type="button" class="draw-wide" data-draw-export-svg>Xuất SVG vector</button><button type="button" class="draw-wide" data-draw-export-layers>Xuất từng layer PNG</button><div class="draw-export-pair"><button type="button" data-draw-brush-export>Xuất preset brush</button><label class="draw-import"><input type="file" accept="application/json,.json" data-draw-brush-import><span>Nhập preset</span></label></div><button type="button" class="draw-wide" data-draw-project-export>Xuất project JSON</button><label class="draw-import"><input type="file" accept="application/json,.json" data-draw-project-import><span>Nhập project JSON</span></label></div>`)}
+            </div>
+          </div>
+          <section class="draw-context-drawer" data-draw-drawer="brushes" data-draw-panel-section="brushes" tabindex="-1" hidden aria-labelledby="draw-brush-library-title"><header><div><small>THƯ VIỆN BRUSH</small><strong id="draw-brush-library-title">${Object.keys(PRESETS).length} chế độ nét động</strong></div><button type="button" data-draw-drawer-close aria-label="Đóng thư viện brush">×</button></header><div class="draw-drawer-options"><label class="draw-switch"><span><strong>Đóng sau khi chọn</strong><small>Quay lại canvas ngay sau khi chọn brush</small></span><input type="checkbox" data-draw-close-after-select ${inspectorState.closeLibraryAfterSelect ? "checked" : ""}><i></i></label></div><label class="draw-brush-search"><span>⌕</span><input type="search" data-draw-brush-search placeholder="Tìm brush, ví dụ plasma, ink…" autocomplete="off"></label><div class="draw-mode-filters" role="toolbar" aria-label="Lọc chế độ nét">${modeFilterMarkup()}</div><div class="draw-section-heading"><h3>Kết quả</h3><span data-draw-mode-count>${Object.keys(PRESETS).length}</span></div><div class="draw-preset-grid">${presetMarkup(settings, library)}</div><p class="draw-filter-empty" data-draw-filter-empty hidden>Không có brush phù hợp. Hãy thử từ khóa hoặc nhóm khác.</p></section>
+          <section class="draw-context-drawer" data-draw-drawer="colors" data-draw-panel-section="colors" tabindex="-1" hidden aria-labelledby="draw-color-studio-title"><header><div><small>COLOR STUDIO</small><strong id="draw-color-studio-title">Màu, gradient & hòa sắc</strong></div><button type="button" data-draw-drawer-close aria-label="Đóng Color Studio">×</button></header><div class="draw-color-readout"><i data-draw-color-orb style="--draw-active-color:${settings.colorA}"></i><label><span>HEX</span><input type="text" maxlength="7" value="${settings.colorA}" data-draw-color-code aria-label="Mã màu HEX"></label><span><small>RGB</small><b data-draw-color-rgb></b></span><span><small>HSL</small><b data-draw-color-hsl></b></span></div><div class="draw-color-actions"><button type="button" data-draw-eyedropper>⌾ Lấy màu</button><button type="button" data-draw-color-copy>▣ Sao chép HEX</button><button type="button" data-draw-color-paste>⇥ Dán HEX</button></div><div class="draw-gradient-grid">${colorPaletteMarkup(settings)}</div><details class="draw-custom-color" open><summary>Tùy chỉnh màu riêng</summary><div class="draw-palette">${paletteMarkup(settings)}</div><div class="draw-color-mix"><label><span>Màu chính</span><input type="color" data-draw-color-a value="${settings.colorA}"></label><i>＋</i><label><span>Màu hòa</span><input type="color" data-draw-color-b value="${settings.colorB}"></label><b data-draw-mix-preview style="--mix:${mixHex(settings.colorA, settings.colorB)}"></b></div>${gradientEditorMarkup(settings)}</details><label class="draw-switch"><span><strong>Cầu vồng chuyển động</strong><small>Tự chạy toàn bộ phổ màu theo chiều dài nét</small></span><input type="checkbox" data-draw-setting="autoHue" ${settings.autoHue ? "checked" : ""}><i></i></label></section>
         </aside>
         <main class="draw-canvas-stage">
           <canvas data-draw-canvas tabindex="0" aria-label="Khung vẽ ánh sáng. Giữ chuột hoặc chạm và kéo để vẽ.">Trình duyệt chưa hỗ trợ Canvas.</canvas>
@@ -1361,7 +1432,13 @@
     if (!targetRuntime) return;
     const layoutKeys = { toolrail: "toolrailCollapsed", inspector: "inspectorCollapsed", dock: "dockCollapsed", compact: "compactControls" };
     const key = layoutKeys[action] || action;
-    if (action === "reset") targetRuntime.layout = { ...DEFAULT_LAYOUT };
+    if (action === "reset") {
+      targetRuntime.layout = { ...DEFAULT_LAYOUT };
+      targetRuntime.inspectorState = normalizeInspectorState();
+      targetRuntime.activeDrawer = "";
+      saveInspectorState(targetRuntime);
+      syncInspectorUi(targetRuntime);
+    }
     else if (Object.hasOwn(targetRuntime.layout, key)) targetRuntime.layout[key] = !targetRuntime.layout[key];
     else return;
     syncLayoutUi(targetRuntime);
@@ -1369,18 +1446,98 @@
     toast(action === "reset" ? "Đã đặt lại bố cục studio" : "Đã cập nhật bố cục làm việc", targetRuntime);
   }
 
+  function syncInspectorUi(targetRuntime = runtime) {
+    if (!targetRuntime?.root) return;
+    targetRuntime.inspectorState = normalizeInspectorState(targetRuntime.inspectorState);
+    const state = targetRuntime.inspectorState;
+    targetRuntime.root.querySelectorAll("[data-draw-inspector-tab]").forEach((button) => {
+      const active = button.dataset.drawInspectorTab === state.activeTab;
+      button.setAttribute("aria-selected", String(active));
+      button.tabIndex = active ? 0 : -1;
+    });
+    targetRuntime.root.querySelectorAll("[data-draw-inspector-panel]").forEach((panel) => { panel.hidden = panel.dataset.drawInspectorPanel !== state.activeTab; });
+    targetRuntime.root.querySelectorAll("[data-draw-accordion]").forEach((section) => {
+      const id = section.dataset.drawAccordion;
+      const tab = INSPECTOR_TABS.find((candidate) => INSPECTOR_GROUPS[candidate].includes(id));
+      const open = state.pinnedGroups.includes(id) || state.openGroups[tab] === id;
+      const pinned = state.pinnedGroups.includes(id);
+      section.classList.toggle("is-open", open);
+      section.classList.toggle("is-pinned", pinned);
+      section.querySelector("[data-draw-accordion-toggle]")?.setAttribute("aria-expanded", String(open));
+      const body = section.querySelector(".draw-accordion-body"); if (body) body.hidden = !open;
+      const pin = section.querySelector("[data-draw-accordion-pin]");
+      if (pin) { pin.setAttribute("aria-pressed", String(pinned)); pin.textContent = pinned ? "◆" : "◇"; pin.title = pinned ? "Bỏ ghim nhóm" : "Ghim nhóm này"; }
+    });
+    targetRuntime.root.querySelectorAll("[data-draw-drawer]").forEach((drawer) => {
+      const active = drawer.dataset.drawDrawer === targetRuntime.activeDrawer;
+      drawer.hidden = !active;
+      drawer.classList.toggle("is-open", active);
+      drawer.setAttribute("aria-hidden", String(!active));
+    });
+    targetRuntime.root.classList.toggle("is-context-drawer-open", Boolean(targetRuntime.activeDrawer));
+    const title = targetRuntime.root.querySelector("[data-draw-inspector-title]");
+    if (title) title.textContent = targetRuntime.activeDrawer ? ({ brushes: "Thư viện Brush", colors: "Color Studio" })[targetRuntime.activeDrawer] : ({ tool: targetRuntime.tool === "eraser" ? "Công cụ Tẩy" : "Công cụ Bút", object: "Đối tượng đã chọn", layer: "Layer Studio", document: "Thiết lập tài liệu" })[state.activeTab];
+  }
+
+  function setInspectorTab(tab, targetRuntime = runtime, options = {}) {
+    if (!targetRuntime || !INSPECTOR_TABS.includes(tab)) return false;
+    targetRuntime.inspectorState.activeTab = tab;
+    if (options.group && INSPECTOR_GROUPS[tab].includes(options.group)) targetRuntime.inspectorState.openGroups[tab] = options.group;
+    if (options.closeDrawer !== false) targetRuntime.activeDrawer = "";
+    if (options.reveal) {
+      targetRuntime.layout.inspectorCollapsed = false;
+      syncLayoutUi(targetRuntime);
+      saveLayout(targetRuntime);
+      if (globalScope.matchMedia?.("(max-width: 900px)")?.matches) targetRuntime.root.classList.add("is-panel-open");
+    }
+    saveInspectorState(targetRuntime);
+    syncInspectorUi(targetRuntime);
+    if (options.focus) targetRuntime.root.querySelector(`[data-draw-inspector-tab="${tab}"]`)?.focus({ preventScroll: true });
+    return true;
+  }
+
+  function toggleInspectorAccordion(groupId, targetRuntime = runtime) {
+    if (!targetRuntime) return false;
+    const tab = INSPECTOR_TABS.find((candidate) => INSPECTOR_GROUPS[candidate].includes(groupId));
+    if (!tab) return false;
+    const pinned = targetRuntime.inspectorState.pinnedGroups.includes(groupId);
+    targetRuntime.inspectorState.openGroups[tab] = !pinned && targetRuntime.inspectorState.openGroups[tab] === groupId ? "" : groupId;
+    saveInspectorState(targetRuntime); syncInspectorUi(targetRuntime); return true;
+  }
+
+  function toggleInspectorPin(groupId, targetRuntime = runtime) {
+    if (!targetRuntime) return false;
+    const allGroups = Object.values(INSPECTOR_GROUPS).flat(); if (!allGroups.includes(groupId)) return false;
+    const pinned = targetRuntime.inspectorState.pinnedGroups;
+    if (pinned.includes(groupId)) targetRuntime.inspectorState.pinnedGroups = pinned.filter((id) => id !== groupId);
+    else if (pinned.length >= 2) { toast("Chỉ có thể ghim tối đa hai nhóm", targetRuntime); return false; }
+    else targetRuntime.inspectorState.pinnedGroups = [...pinned, groupId];
+    saveInspectorState(targetRuntime); syncInspectorUi(targetRuntime); return true;
+  }
+
+  function openInspectorDrawer(drawerId, targetRuntime = runtime, opener = null) {
+    if (!targetRuntime || !["brushes", "colors"].includes(drawerId)) return false;
+    targetRuntime.drawerOpener = opener || globalScope.document?.activeElement || null;
+    targetRuntime.activeDrawer = drawerId;
+    targetRuntime.layout.inspectorCollapsed = false;
+    syncLayoutUi(targetRuntime); saveLayout(targetRuntime); syncInspectorUi(targetRuntime);
+    if (globalScope.matchMedia?.("(max-width: 900px)")?.matches) targetRuntime.root.classList.add("is-panel-open");
+    globalScope.requestAnimationFrame?.(() => targetRuntime.root.querySelector(`[data-draw-drawer="${drawerId}"] [data-draw-drawer-close]`)?.focus({ preventScroll: true }));
+    return true;
+  }
+
+  function closeInspectorDrawer(targetRuntime = runtime, { restoreFocus = true } = {}) {
+    if (!targetRuntime?.activeDrawer) return false;
+    targetRuntime.activeDrawer = ""; syncInspectorUi(targetRuntime);
+    if (restoreFocus && targetRuntime.drawerOpener?.isConnected) targetRuntime.drawerOpener.focus?.({ preventScroll: true });
+    targetRuntime.drawerOpener = null; return true;
+  }
+
   function jumpToPanel(sectionId, targetRuntime = runtime) {
     if (!targetRuntime?.root || !["layers", "brushes", "colors", "canvas", "export"].includes(sectionId)) return false;
-    targetRuntime.layout.inspectorCollapsed = false;
-    syncLayoutUi(targetRuntime);
-    saveLayout(targetRuntime);
-    if (globalScope.matchMedia?.("(max-width: 760px)")?.matches) targetRuntime.root.classList.add("is-panel-open");
-    const panel = targetRuntime.root.querySelector(".draw-controls");
-    const section = targetRuntime.root.querySelector(`[data-draw-panel-section="${sectionId}"]`);
-    if (!panel || !section) return false;
-    const reduceMotion = globalScope.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    panel.scrollTo?.({ top: Math.max(0, section.offsetTop - 12), behavior: reduceMotion ? "auto" : "smooth" });
-    section.focus?.({ preventScroll: true });
+    const routes = { layers: ["layer", "layer-studio"], canvas: ["document", "document-canvas"], export: ["document", "document-export"] };
+    if (sectionId === "brushes" || sectionId === "colors") openInspectorDrawer(sectionId, targetRuntime, globalScope.document?.activeElement);
+    else setInspectorTab(routes[sectionId][0], targetRuntime, { group: routes[sectionId][1], reveal: true, focus: true });
     targetRuntime.root.querySelectorAll("[data-draw-jump]").forEach((button) => button.classList.toggle("is-active", button.dataset.drawJump === sectionId));
     announce(`Đã mở ${({ layers: "Layer Studio", brushes: "thư viện brush", colors: "bảng màu", canvas: "thiết lập canvas", export: "khu vực xuất bản" })[sectionId]}`, targetRuntime);
     return true;
@@ -1400,6 +1557,33 @@
     node.classList.add("is-visible");
     globalScope.clearTimeout(targetRuntime.toastTimer);
     targetRuntime.toastTimer = globalScope.setTimeout(() => node.classList.remove("is-visible"), 2600);
+  }
+
+  function applyPrimaryColor(value, targetRuntime = runtime) {
+    if (!targetRuntime || !isHex(value)) { toast("Mã màu phải theo dạng #RRGGBB", targetRuntime); return false; }
+    const selected = normalizeHex(value, targetRuntime.project.settings.colorA);
+    const stops = [...targetRuntime.project.settings.customStops]; stops[0] = selected;
+    targetRuntime.project.settings = normalizeSettings({ ...targetRuntime.project.settings, colorA: selected, customStops: stops, paletteId: "custom" });
+    syncControls(targetRuntime); syncGradientEditor(targetRuntime); scheduleSave(targetRuntime); announce(`Màu chính ${selected.toUpperCase()}`, targetRuntime); return true;
+  }
+
+  async function copyPrimaryColor(targetRuntime = runtime) {
+    if (!targetRuntime) return;
+    try { await globalScope.navigator?.clipboard?.writeText(targetRuntime.project.settings.colorA.toUpperCase()); toast("Đã sao chép mã HEX", targetRuntime); }
+    catch { toast("Trình duyệt chưa cho phép sao chép màu", targetRuntime); }
+  }
+
+  async function pastePrimaryColor(targetRuntime = runtime) {
+    if (!targetRuntime) return;
+    try { const value = String(await globalScope.navigator?.clipboard?.readText?.()).trim(); if (applyPrimaryColor(value, targetRuntime)) toast("Đã dán màu từ clipboard", targetRuntime); }
+    catch { toast("Trình duyệt chưa cho phép đọc clipboard", targetRuntime); }
+  }
+
+  async function pickPrimaryColor(targetRuntime = runtime) {
+    if (!targetRuntime) return;
+    if (typeof globalScope.EyeDropper !== "function") { toast("Eyedropper chưa được trình duyệt này hỗ trợ", targetRuntime); return; }
+    try { const result = await new globalScope.EyeDropper().open(); if (result?.sRGBHex) applyPrimaryColor(result.sRGBHex, targetRuntime); }
+    catch { /* Người dùng đóng công cụ lấy màu. */ }
   }
 
   function scheduleSave(targetRuntime = runtime) {
@@ -1911,6 +2095,9 @@
     targetRuntime.tool = tool;
     syncViewUi(targetRuntime);
     syncSelectionUi(targetRuntime);
+    if (tool === "draw" || tool === "eraser") setInspectorTab("tool", targetRuntime, { group: "tool-core", reveal: true });
+    else if (tool === "select") setInspectorTab("object", targetRuntime, { group: "object-transform", reveal: true });
+    else setInspectorTab("document", targetRuntime, { group: "document-canvas", reveal: false });
     announce(({ draw: "Công cụ vẽ", eraser: "Công cụ tẩy", select: "Chọn và biến đổi", pan: "Di chuyển canvas" })[tool], targetRuntime);
   }
 
@@ -1951,7 +2138,7 @@
     if (!targetRuntime?.root) return;
     const actions = targetRuntime.root.querySelector("[data-draw-selection-actions]");
     if (actions) actions.hidden = targetRuntime.tool !== "select";
-    const count = targetRuntime.root.querySelector("[data-draw-selection-count]"); if (count) count.textContent = String(targetRuntime.selectionIds.size);
+    targetRuntime.root.querySelectorAll("[data-draw-selection-count]").forEach((count) => { count.textContent = String(targetRuntime.selectionIds.size); });
     targetRuntime.root.querySelectorAll("[data-draw-select-shape]").forEach((button) => { const active = button.dataset.drawSelectShape === targetRuntime.selectionShape; button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active)); });
   }
 
@@ -2177,7 +2364,18 @@
     const labels = { symmetry: `${settings.symmetry} nhánh`, brushSize: `${settings.brushSize.toFixed(1)} px`, glow: `${Math.round(settings.glow)}%`, flow: `${Math.round(settings.flow * 100)}%`, stabilizer: `${Math.round(settings.stabilizer)}%`, pressureCurve: `${settings.pressureCurve.toFixed(2)}×`, velocityWidth: `${Math.round(settings.velocityWidth * 100)}%`, velocityGlow: `${Math.round(settings.velocityGlow * 100)}%`, spacing: `${settings.spacing.toFixed(1)} px`, scatter: `${settings.scatter.toFixed(1)} px`, rotation: `${Math.round(settings.rotation)}°`, noise: `${Math.round(settings.noise * 100)}%`, curvature: `${Math.round(settings.curvature * 100)}%`, elasticity: `${Math.round(settings.elasticity * 100)}%`, inertia: `${Math.round(settings.inertia * 100)}%`, patternComplexity: String(settings.patternComplexity), patternScale: `${Math.round(settings.patternScale * 100)}%` };
     Object.entries(labels).forEach(([key, label]) => { const output = targetRuntime.root.querySelector(`[data-draw-output=\"${key}\"]`); if (output) output.textContent = label; });
     const preview = targetRuntime.root.querySelector("[data-draw-mix-preview]"); if (preview) preview.style.setProperty("--mix", mixHex(settings.colorA, settings.colorB));
+    const presetLabel = PRESETS[settings.preset]?.label || PRESETS.silk.label;
+    const paletteLabel = COLOR_PALETTES[settings.paletteId]?.label || "Tùy chỉnh";
+    targetRuntime.root.querySelectorAll("[data-draw-summary-brush]").forEach((node) => { node.textContent = presetLabel; });
+    targetRuntime.root.querySelectorAll("[data-draw-summary-color]").forEach((node) => { node.textContent = paletteLabel; });
+    targetRuntime.root.querySelectorAll("[data-draw-summary-hex]").forEach((node) => { node.textContent = settings.colorA.toUpperCase(); });
+    targetRuntime.root.querySelectorAll("[data-draw-color-orb]").forEach((node) => { node.style.setProperty("--draw-active-color", settings.colorA); });
+    const colorCode = targetRuntime.root.querySelector("[data-draw-color-code]"); if (colorCode && globalScope.document?.activeElement !== colorCode) colorCode.value = settings.colorA.toUpperCase();
+    const rgb = hexToRgb(settings.colorA); const hsl = rgbToHsl(rgb);
+    const rgbNode = targetRuntime.root.querySelector("[data-draw-color-rgb]"); if (rgbNode) rgbNode.textContent = rgb.join(", ");
+    const hslNode = targetRuntime.root.querySelector("[data-draw-color-hsl]"); if (hslNode) hslNode.textContent = `${Math.round(hsl[0])}°, ${Math.round(hsl[1] * 100)}%, ${Math.round(hsl[2] * 100)}%`;
     targetRuntime.root.querySelector("[data-draw-guides-toggle]")?.setAttribute("aria-pressed", String(settings.guides));
+    syncInspectorUi(targetRuntime);
     syncViewUi(targetRuntime);
     updateUi(targetRuntime);
   }
@@ -2261,6 +2459,7 @@
     drawGuides(targetRuntime);
     scheduleSave(targetRuntime);
     announce(`Đã chọn ${preset.label}`, targetRuntime);
+    if (targetRuntime.inspectorState.closeLibraryAfterSelect && targetRuntime.activeDrawer === "brushes") closeInspectorDrawer(targetRuntime);
   }
 
   function updateSetting(input, targetRuntime = runtime) {
@@ -2292,6 +2491,13 @@
   }
 
   function handleClick(event, targetRuntime = runtime) {
+    const inspectorTab = event.target.closest("[data-draw-inspector-tab]"); if (inspectorTab) { setInspectorTab(inspectorTab.dataset.drawInspectorTab, targetRuntime, { focus: false }); return; }
+    const accordionToggle = event.target.closest("[data-draw-accordion-toggle]"); if (accordionToggle) { toggleInspectorAccordion(accordionToggle.dataset.drawAccordionToggle, targetRuntime); return; }
+    const accordionPin = event.target.closest("[data-draw-accordion-pin]"); if (accordionPin) { toggleInspectorPin(accordionPin.dataset.drawAccordionPin, targetRuntime); return; }
+    if (event.target.closest("[data-draw-drawer-close]")) { closeInspectorDrawer(targetRuntime); return; }
+    if (event.target.closest("[data-draw-eyedropper]")) { pickPrimaryColor(targetRuntime); return; }
+    if (event.target.closest("[data-draw-color-copy]")) { copyPrimaryColor(targetRuntime); return; }
+    if (event.target.closest("[data-draw-color-paste]")) { pastePrimaryColor(targetRuntime); return; }
     const layoutToggle = event.target.closest("[data-draw-layout-toggle]"); if (layoutToggle) { changeLayout(layoutToggle.dataset.drawLayoutToggle, targetRuntime); return; }
     if (event.target.closest("[data-draw-layout-reset]")) { changeLayout("reset", targetRuntime); return; }
     const panelJump = event.target.closest("[data-draw-jump]"); if (panelJump) { jumpToPanel(panelJump.dataset.drawJump, targetRuntime); return; }
@@ -2345,12 +2551,14 @@
     if (event.target.closest("[data-draw-brush-export]")) { exportBrushPreset(targetRuntime); return; }
     if (event.target.closest("[data-draw-fullscreen]")) { const node = targetRuntime.root; if (globalScope.document.fullscreenElement) globalScope.document.exitFullscreen?.(); else node.requestFullscreen?.(); return; }
     if (event.target.closest("[data-draw-panel-open]")) { targetRuntime.root.classList.add("is-panel-open"); targetRuntime.root.querySelector("[data-draw-panel-close]")?.focus(); return; }
-    if (event.target.closest("[data-draw-panel-close]")) { targetRuntime.root.classList.remove("is-panel-open"); targetRuntime.root.querySelector("[data-draw-panel-open]")?.focus(); return; }
+    if (event.target.closest("[data-draw-panel-close]")) { closeInspectorDrawer(targetRuntime, { restoreFocus: false }); targetRuntime.root.classList.remove("is-panel-open"); targetRuntime.root.querySelector("[data-draw-panel-open]")?.focus(); return; }
     if (event.target.closest("[data-draw-guides-toggle]")) { targetRuntime.project.settings.guides = !targetRuntime.project.settings.guides; syncControls(targetRuntime); drawGuides(targetRuntime); scheduleSave(targetRuntime); }
     if (event.target.closest("[data-draw-checkpoint-restore]")) { restoreLatestCheckpoint(targetRuntime); return; }
   }
 
   function handleChange(event, targetRuntime = runtime) {
+    if (event.target.matches("[data-draw-close-after-select]")) { targetRuntime.inspectorState.closeLibraryAfterSelect = event.target.checked; saveInspectorState(targetRuntime); return; }
+    if (event.target.matches("[data-draw-color-code]")) { applyPrimaryColor(event.target.value, targetRuntime); return; }
     if (event.target.matches("[data-draw-animation-setting]")) { updateAnimationSetting(event.target, targetRuntime); return; }
     if (event.target.matches("[data-draw-timeline]")) { pauseAnimation(targetRuntime); targetRuntime.playbackProgress = clamp(event.target.value, 0, 1, 0); renderPlayback(targetRuntime); return; }
     if (event.target.matches("[data-draw-gradient-stop]")) { const stops = [...targetRuntime.project.settings.customStops]; stops[Number(event.target.dataset.drawGradientStop)] = normalizeHex(event.target.value, stops[0]); applyCustomStops(stops, targetRuntime); return; }
@@ -2367,7 +2575,12 @@
 
   function handleKeydown(event, targetRuntime = runtime) {
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName) || event.target?.isContentEditable === true || Boolean(event.target?.closest?.("[contenteditable]:not([contenteditable='false'])"));
+    if (event.key === "Escape" && targetRuntime.activeDrawer) { event.preventDefault(); closeInspectorDrawer(targetRuntime); return; }
     if (event.key === "Escape" && targetRuntime.root.classList.contains("is-panel-open")) { targetRuntime.root.classList.remove("is-panel-open"); targetRuntime.root.querySelector("[data-draw-panel-open]")?.focus(); return; }
+    const activeTabButton = event.target?.closest?.("[data-draw-inspector-tab]");
+    if (activeTabButton && ["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+      event.preventDefault(); const current = INSPECTOR_TABS.indexOf(activeTabButton.dataset.drawInspectorTab); const next = event.key === "Home" ? 0 : event.key === "End" ? INSPECTOR_TABS.length - 1 : (current + (event.key === "ArrowRight" ? 1 : -1) + INSPECTOR_TABS.length) % INSPECTOR_TABS.length; setInspectorTab(INSPECTOR_TABS[next], targetRuntime, { focus: true }); return;
+    }
     if (typing) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") { event.preventDefault(); event.shiftKey ? redo(targetRuntime) : undo(targetRuntime); return; }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") { event.preventDefault(); redo(targetRuntime); return; }
@@ -2398,13 +2611,15 @@
     const project = storageRead(storageKey);
     const brushLibrary = readBrushLibrary(storageKey);
     const layout = readLayout(storageKey);
-    root.innerHTML = markup(project, brushLibrary);
+    const inspectorState = readInspectorState(storageKey);
+    root.innerHTML = markup(project, brushLibrary, inspectorState);
     const studio = root.firstElementChild;
     const canvas = studio.querySelector("[data-draw-canvas]");
     const guideCanvas = studio.querySelector("[data-draw-guides]");
     const minimap = studio.querySelector("[data-draw-minimap]");
+    if (!canvas || !guideCanvas) return false;
     const initialQuality = project.settings.quality === "auto" ? resolveQualityProfile("auto", { deviceMemory: globalScope.navigator?.deviceMemory, hardwareConcurrency: globalScope.navigator?.hardwareConcurrency }).id : project.settings.quality;
-    runtime = { host: root, root: studio, canvas, guideCanvas, minimap, project, storageKey, layout, favoriteBrushes: new Set(brushLibrary.favorites), recentBrushes: brushLibrary.recent, brushFilter: "all", brushSearch: "", historyUndo: [], historyRedo: [], historyActionCount: 0, pendingHistory: "", checkpointPending: false, userChangedProject: false, controlScrollAnchor: null, layerCache: new Map(), renderWorker: null, workerBusy: false, workerRequestId: 0, activeLayerBuffer: null, activeStroke: null, drawing: false, panning: false, panStart: null, touchPointers: new Map(), gesture: null, selecting: false, selectionShape: "rect", selectionPath: [], selectionScreen: null, selectionRegion: null, selectionIds: new Set(), playbackProgress: 0, playbackFrame: 0, isPlaying: false, exportingAnimation: false, exportCancelled: false, audioLevel: 0, audioStream: null, audioContext: null, audioFrame: 0, spacePressed: false, tool: "draw", dpr: 1, saved: true, saveFailed: false, resizeObserver: null, resizeFrame: 0, drawFrame: 0, pointQueue: [], drawRect: null, paintCost: 0, fastFrames: 0, liveQuality: initialQuality, saveTimer: 0, toastTimer: 0 };
+    runtime = { host: root, root: studio, canvas, guideCanvas, minimap, project, storageKey, layout, inspectorState, activeDrawer: "", drawerOpener: null, favoriteBrushes: new Set(brushLibrary.favorites), recentBrushes: brushLibrary.recent, brushFilter: "all", brushSearch: "", historyUndo: [], historyRedo: [], historyActionCount: 0, pendingHistory: "", checkpointPending: false, userChangedProject: false, controlScrollAnchor: null, layerCache: new Map(), renderWorker: null, workerBusy: false, workerRequestId: 0, activeLayerBuffer: null, activeStroke: null, drawing: false, panning: false, panStart: null, touchPointers: new Map(), gesture: null, selecting: false, selectionShape: "rect", selectionPath: [], selectionScreen: null, selectionRegion: null, selectionIds: new Set(), playbackProgress: 0, playbackFrame: 0, isPlaying: false, exportingAnimation: false, exportCancelled: false, audioLevel: 0, audioStream: null, audioContext: null, audioFrame: 0, spacePressed: false, tool: "draw", dpr: 1, saved: true, saveFailed: false, resizeObserver: null, resizeFrame: 0, drawFrame: 0, pointQueue: [], drawRect: null, paintCost: 0, fastFrames: 0, liveQuality: initialQuality, saveTimer: 0, toastTimer: 0 };
     runtime.onClick = (event) => handleClick(event, runtime);
     runtime.onChange = (event) => handleChange(event, runtime);
     runtime.onInput = (event) => { if (event.target.matches("[data-draw-brush-search]")) { runtime.brushSearch = event.target.value; applyBrushFilters(runtime); } else if (event.target.matches("input[type=range][data-draw-setting]")) updateSetting(event.target, runtime); else if (event.target.matches('input[type=range][data-draw-animation-setting]')) updateAnimationSetting(event.target, runtime); else if (event.target.matches("[data-draw-timeline]")) { runtime.playbackProgress = clamp(event.target.value, 0, 1, 0); renderPlayback(runtime); } };
@@ -2433,6 +2648,7 @@
     runtime.resizeObserver = typeof globalScope.ResizeObserver === "function" ? new globalScope.ResizeObserver(() => scheduleResize(runtime)) : null;
     runtime.resizeObserver?.observe(canvas);
     syncLayoutUi(runtime, { resize: false });
+    syncInspectorUi(runtime);
     globalScope.requestAnimationFrame?.(() => { resizeCanvases(runtime); syncControls(runtime); syncBrushLibraryUi(runtime); announce("Đã sẵn sàng · kéo để vẽ", runtime); });
     hydrateFromDatabase(runtime);
     return true;
@@ -2481,5 +2697,5 @@
     return renderLayerBuffer(layer, targetRuntime, Math.max(1, pixelWidth / ratio), Math.max(1, pixelHeight / ratio), ratio, 1, false);
   }
 
-  return { VERSION, STORAGE_SCHEMA, BRUSH_LIBRARY_SCHEMA, LAYOUT_SCHEMA, DEFAULT_LAYOUT, PALETTE, COLOR_PALETTES, PRESETS, BRUSH_MODES, PATTERN_GENERATORS, DEFAULT_SETTINGS, QUALITY_PROFILES, LAYER_BLEND_MODES, LAYER_TYPES, CANVAS_PRESETS, normalizeLayout, normalizeSettings, normalizeProject, normalizeLayer, projectStrokes, projectRenderCost, resolveQualityProfile, buildSymmetryPoints, generatePatternStrokes, mixHex, samplePalette, harmonyColors, renderLayerBitmap, mount, unmount, inspect };
+  return { VERSION, STORAGE_SCHEMA, BRUSH_LIBRARY_SCHEMA, LAYOUT_SCHEMA, INSPECTOR_SCHEMA, DEFAULT_LAYOUT, DEFAULT_INSPECTOR_STATE, INSPECTOR_TABS, INSPECTOR_GROUPS, PALETTE, COLOR_PALETTES, PRESETS, BRUSH_MODES, PATTERN_GENERATORS, DEFAULT_SETTINGS, QUALITY_PROFILES, LAYER_BLEND_MODES, LAYER_TYPES, CANVAS_PRESETS, normalizeLayout, normalizeInspectorState, normalizeSettings, normalizeProject, normalizeLayer, projectStrokes, projectRenderCost, resolveQualityProfile, buildSymmetryPoints, generatePatternStrokes, mixHex, samplePalette, harmonyColors, renderLayerBitmap, mount, unmount, inspect };
 });

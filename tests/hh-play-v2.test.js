@@ -16,6 +16,8 @@ test("HH Play v2 exposes state integrity, cartridge and data tools", () => {
   for (const term of ["hhp-cartridge", "hhp-difficulty", "hhp-watch-controls", "hhp-content-studio", "prefers-reduced-motion", "hhp-achievement-strip"]) assert.ok(css.includes(term), `missing style ${term}`);
   assert.match(source, /audioWorklet\.addModule/);
   assert.match(worklet, /registerProcessor\("hh-play-metronome"/);
+  assert.match(source, /hydrateIndexedState\(generation, revisionAtStart, fallbackSavedAt, requestedView/);
+  assert.match(source, /VIEWS\.some\(\(view\) => view\.id === requestedView\)\) state\.view = requestedView/);
 });
 
 test("HH Play realtime is authenticated and authoritative by construction", () => {

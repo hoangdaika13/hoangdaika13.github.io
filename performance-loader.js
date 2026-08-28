@@ -237,8 +237,8 @@
       scripts: ["phat-phap.js?v=17"]
     },
     play: {
-      styles: ["hh-play.css?v=5&build=2"],
-      scripts: ["hh-play.js?v=4&build=2"]
+      styles: ["hh-play.css?v=7&build=3"],
+      scripts: ["hh-play.js?v=6&build=3"]
     },
     game: {
       styles: ["hh-eonwild-game.css?v=22"],
@@ -249,8 +249,8 @@
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "vendor/iztro-2.6.0.min.js?v=2.6.0", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=4", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-moon-3d.js?v=1", "fortune-extended-tools.js?v=2", "fortune-hub.js?v=28"]
     },
     draw: {
-      styles: ["draw-studio.css?v=10"],
-      scripts: ["draw-studio.js?v=10"]
+      styles: ["draw-studio.css?v=14"],
+      scripts: ["draw-studio.js?v=13"]
     },
     remote: {
       styles: ["remote-hub.css?v=4"],

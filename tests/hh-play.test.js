@@ -19,10 +19,10 @@ test("HH Play is a first-class lazy route in Entertainment", () => {
   assert.match(router, /window\.HHPlay\?\.mount/);
   assert.match(router, /window\.HHPlay\?\.unmount/);
   assert.match(router, /app-play-route/);
-  assert.match(loader, /play:\s*\{[\s\S]*?hh-play\.css\?v=5[\s\S]*?hh-play\.js\?v=4/);
+  assert.match(loader, /play:\s*\{[\s\S]*?hh-play\.css\?v=7&build=3[\s\S]*?hh-play\.js\?v=6&build=3/);
   assert.match(loader, /value\.startsWith\("\/play"\)[^\n]*\["play"\]/);
-  assert.match(worker, /\.\/hh-play\.css\?v=5/);
-  assert.match(worker, /\.\/hh-play\.js\?v=4/);
+  assert.match(worker, /\.\/hh-play\.css\?v=7&build=3/);
+  assert.match(worker, /\.\/hh-play\.js\?v=6&build=3/);
   for (const asset of ["performance-loader.js", "script.js"]) {
     const escaped = asset.replaceAll(".", "\\.");
     const match = html.match(new RegExp(`<script src="${escaped}\\?v=(\\d+)"`));
@@ -49,10 +49,33 @@ test("Entertainment OS exposes ten distinct workspaces and real local activities
 test("HH Play API advertises all views without requiring a DOM at parse time", () => {
   const sandbox = { window: {}, console, URL, Date, Math, JSON, setTimeout, clearTimeout, setInterval, clearInterval };
   vm.runInNewContext(source, sandbox, { filename: "hh-play.js" });
-  assert.equal(sandbox.window.HHPlay.version, "1.0.0");
+  assert.equal(sandbox.window.HHPlay.version, "1.1.1");
   assert.deepEqual(Array.from(sandbox.window.HHPlay.views), ["today", "arcade", "party", "watch", "story", "escape", "rhythm", "pet", "chill", "quiz"]);
+  assert.ok(sandbox.window.HHPlay.quizQuestions >= 30);
+  assert.deepEqual(Array.from(sandbox.window.HHPlay.quizTopics), ["all", "science", "technology", "culture", "thinking"]);
   assert.equal(typeof sandbox.window.HHPlay.mount, "function");
   assert.equal(typeof sandbox.window.HHPlay.unmount, "function");
+});
+
+test("Quiz Arena has a deep validated bank and real filter controls", () => {
+  const quizSource = source.slice(source.indexOf("const QUIZ ="), source.indexOf("const WORDS ="));
+  const entries = [...quizSource.matchAll(/\{ id: "([^"]+)", topic: "([^"]+)", difficulty: "([^"]+)", skill: "([^"]+)", q: "([^"]+)", choices: \[([^\]]+)\], answer: ([0-3]), why: "([^"]+)", insight: "([^"]+)" \}/g)];
+  assert.ok(entries.length >= 30, `expected at least 30 complete questions, received ${entries.length}`);
+  const ids = new Set();
+  for (const entry of entries) {
+    const [, id, topic, difficulty, skill, question, choices, answer, why, insight] = entry;
+    assert.ok(!ids.has(id), `duplicate question id ${id}`);
+    ids.add(id);
+    assert.ok(["science", "technology", "culture", "thinking"].includes(topic), `invalid topic ${topic}`);
+    assert.ok(["foundation", "advanced"].includes(difficulty), `invalid difficulty ${difficulty}`);
+    assert.ok(skill.length > 2 && question.length > 12 && why.length > 20 && insight.length > 20);
+    assert.equal((choices.match(/"[^"]+"/g) || []).length, 4, `${id} must have four choices`);
+    assert.ok(Number(answer) >= 0 && Number(answer) <= 3);
+  }
+  for (const contract of ["data-quiz-topic", "data-quiz-difficulty", "hhp-quiz-toolbar", "hhp-question-meta", "hhp-insight-note", "hhp-quiz-profile", "hhp-command-deck", "hhp-duration-chips", "hhp-mood-grid"]) {
+    assert.ok(source.includes(contract) || css.includes(contract), `missing professional Quiz contract ${contract}`);
+  }
+  assert.match(source, /selected:\s*integer\(merged\.quiz\.selected,\s*-1,\s*3,\s*-1\)/);
 });
 
 test("one-screen shell keeps the center as the primary scroller", () => {

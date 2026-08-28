@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.1";
   const STORAGE_KEY = "hh.play.profile.v1";
   const RECOVERY_KEY = "hh.play.recovery.v1";
   const STATE_SCHEMA_VERSION = 2;
@@ -20,6 +20,18 @@
     { id: "easy", label: "Dễ", note: "Nhịp chậm · nhiều mạng", factor: .78 },
     { id: "normal", label: "Thường", note: "Cân bằng", factor: 1 },
     { id: "hard", label: "Khó", note: "Nhanh · nhiều điểm", factor: 1.28 }
+  ]);
+  const QUIZ_TOPICS = Object.freeze([
+    { id: "all", label: "Tổng hợp", icon: "✦" },
+    { id: "science", label: "Khoa học", icon: "⌬" },
+    { id: "technology", label: "Công nghệ", icon: "⌘" },
+    { id: "culture", label: "Văn hóa", icon: "◫" },
+    { id: "thinking", label: "Tư duy", icon: "◇" }
+  ]);
+  const QUIZ_DIFFICULTIES = Object.freeze([
+    { id: "all", label: "Mọi mức" },
+    { id: "foundation", label: "Nền tảng" },
+    { id: "advanced", label: "Chuyên sâu" }
   ]);
   const GAME_GUIDES = Object.freeze({
     snake: { goal: "Ăn tinh thể, lớn dần và không chạm tường hoặc thân.", controls: "Mũi tên / WASD / vuốt / D-pad", tip: "Đổi hướng sớm một nhịp để không tự khóa đường." },
@@ -73,16 +85,40 @@
     { id: "tower", icon: "T", title: "Tower Tactics", type: "dom", desc: "Phân phối năng lượng để giữ ba tuyến." }
   ];
 
-  const QUIZ = [
-    { q: "Hành tinh nào được gọi là Hành tinh Đỏ?", choices: ["Sao Kim", "Sao Hỏa", "Sao Thủy"], answer: 1, why: "Ôxít sắt trên bề mặt làm Sao Hỏa có màu đỏ đặc trưng." },
-    { q: "Âm thanh truyền nhanh nhất trong môi trường nào?", choices: ["Chất rắn", "Không khí", "Chân không"], answer: 0, why: "Các hạt trong chất rắn liên kết gần nhau nên truyền dao động nhanh hơn." },
-    { q: "CSS chủ yếu dùng để làm gì?", choices: ["Lưu mật khẩu", "Tạo kiểu giao diện", "Nén video"], answer: 1, why: "CSS mô tả cách trình bày và bố cục của tài liệu web." },
-    { q: "Nhạc ở 120 BPM có bao nhiêu nhịp mỗi phút?", choices: ["60", "100", "120"], answer: 2, why: "BPM là viết tắt của beats per minute – số nhịp trong một phút." },
-    { q: "Thủ đô của Việt Nam là thành phố nào?", choices: ["Hà Nội", "Huế", "Đà Nẵng"], answer: 0, why: "Hà Nội là thủ đô của nước Cộng hòa xã hội chủ nghĩa Việt Nam." },
-    { q: "Cổng nào thường dùng cho website HTTPS?", choices: ["21", "80", "443"], answer: 2, why: "HTTPS theo mặc định sử dụng cổng TCP 443." },
-    { q: "Thiên thể nào quay quanh Trái Đất?", choices: ["Mặt Trăng", "Sao Mộc", "Mặt Trời"], answer: 0, why: "Mặt Trăng là vệ tinh tự nhiên của Trái Đất." },
-    { q: "Phím nào thường dùng để tạm dừng trò chơi?", choices: ["Escape", "Caps Lock", "Print Screen"], answer: 0, why: "Escape thường được trò chơi dùng để mở menu tạm dừng." }
-  ];
+  const QUIZ = Object.freeze([
+    { id: "sci-mars", topic: "science", difficulty: "foundation", skill: "Ghi nhớ", q: "Hành tinh nào được gọi là Hành tinh Đỏ?", choices: ["Sao Kim", "Sao Hỏa", "Sao Thủy", "Sao Hải Vương"], answer: 1, why: "Các khoáng vật chứa ôxít sắt trên bề mặt khiến Sao Hỏa có sắc đỏ đặc trưng.", insight: "Màu quan sát được có thể hé lộ thành phần hóa học của một thiên thể." },
+    { id: "sci-sound", topic: "science", difficulty: "foundation", skill: "Hiểu cơ chế", q: "Trong ba môi trường rắn, lỏng và khí, âm thanh thường truyền nhanh nhất ở đâu?", choices: ["Chất rắn", "Chất lỏng", "Chất khí", "Tốc độ luôn bằng nhau"], answer: 0, why: "Trong chất rắn, các hạt thường liên kết chặt và truyền dao động cơ học hiệu quả hơn.", insight: "Âm thanh cần môi trường vật chất; nó không lan truyền trong chân không lý tưởng." },
+    { id: "sci-moon", topic: "science", difficulty: "foundation", skill: "Phân loại", q: "Mặt Trăng được phân loại đúng nhất là gì?", choices: ["Một ngôi sao", "Một hành tinh", "Vệ tinh tự nhiên", "Một thiên hà"], answer: 2, why: "Mặt Trăng chuyển động quanh Trái Đất nên là vệ tinh tự nhiên của Trái Đất.", insight: "Tên gọi khoa học dựa vào quan hệ chuyển động và bản chất vật thể, không chỉ kích thước." },
+    { id: "sci-water", topic: "science", difficulty: "foundation", skill: "Vận dụng", q: "Vì sao mồ hôi giúp cơ thể hạ nhiệt hiệu quả nhất?", choices: ["Mồ hôi phản chiếu ánh sáng", "Nước bay hơi lấy đi nhiệt", "Muối làm da lạnh tức thì", "Da tạo thêm gió"], answer: 1, why: "Quá trình bay hơi cần năng lượng và lấy nhiệt từ bề mặt da.", insight: "Trong không khí quá ẩm, bay hơi chậm hơn nên cảm giác nóng có thể tăng." },
+    { id: "sci-ecosystem", topic: "science", difficulty: "advanced", skill: "Phân tích hệ thống", q: "Nếu một quần thể thú săn đầu bảng giảm mạnh, hệ quả nào có khả năng xảy ra trước trong lưới thức ăn?", choices: ["Con mồi tăng và gây áp lực lên thực vật", "Mọi loài cùng giảm ngay lập tức", "Thực vật biến mất do thú săn ăn", "Khí hậu đổi trong một ngày"], answer: 0, why: "Ít thú săn có thể làm quần thể con mồi tăng, từ đó tăng áp lực ăn lên thực vật.", insight: "Hiệu ứng dây chuyền dinh dưỡng cho thấy thay đổi ở một tầng có thể lan qua cả hệ sinh thái." },
+    { id: "sci-experiment", topic: "science", difficulty: "advanced", skill: "Thiết kế thí nghiệm", q: "Muốn biết phân bón A có làm cây cao hơn, thiết kế nào cho kết luận đáng tin nhất?", choices: ["Bón A cho một cây rồi quan sát", "So hai nhóm giống nhau, chỉ thay loại phân và lặp lại", "Hỏi người bán phân", "So cây khác loài ở hai nơi khác nhau"], answer: 1, why: "Nhóm đối chứng, kiểm soát biến và lặp lại giúp tách tác động của phân bón khỏi các yếu tố khác.", insight: "Một thí nghiệm tốt không chỉ tìm khác biệt mà còn loại trừ các giải thích thay thế." },
+    { id: "sci-climate", topic: "science", difficulty: "advanced", skill: "Đọc bằng chứng", q: "Một ngày rất lạnh có bác bỏ xu hướng ấm lên toàn cầu dài hạn không?", choices: ["Có, vì khí hậu chỉ là nhiệt độ hôm nay", "Không, thời tiết ngắn hạn khác xu hướng khí hậu dài hạn", "Có, nếu có tuyết", "Không, vì mọi nơi luôn nóng hơn mỗi ngày"], answer: 1, why: "Thời tiết mô tả trạng thái ngắn hạn; khí hậu được đánh giá từ thống kê dài hạn trên phạm vi lớn.", insight: "Đừng dùng một điểm dữ liệu đơn lẻ để phủ định hoặc khẳng định một xu hướng dài hạn." },
+    { id: "sci-orbit", topic: "science", difficulty: "advanced", skill: "Suy luận", q: "Vì sao phi hành gia trên quỹ đạo có cảm giác không trọng lượng dù lực hấp dẫn vẫn tồn tại?", choices: ["Ngoài khí quyển không có hấp dẫn", "Tàu và phi hành gia cùng rơi tự do quanh Trái Đất", "Mặt Trăng hút hết lực", "Áp suất trong tàu triệt tiêu hấp dẫn"], answer: 1, why: "Cả tàu và người liên tục rơi tự do với cùng gia tốc trong khi vận tốc ngang giữ họ trên quỹ đạo.", insight: "Cảm giác không trọng lượng không đồng nghĩa lực hấp dẫn bằng không." },
+    { id: "tech-css", topic: "technology", difficulty: "foundation", skill: "Ghi nhớ", q: "CSS chủ yếu đảm nhiệm vai trò nào trong một trang web?", choices: ["Lưu mật khẩu", "Mô tả trình bày và bố cục", "Nén video", "Cấp chứng chỉ HTTPS"], answer: 1, why: "CSS quy định cách tài liệu web được hiển thị, từ màu sắc đến bố cục responsive.", insight: "HTML mô tả cấu trúc; CSS trình bày; JavaScript thường xử lý hành vi." },
+    { id: "tech-https", topic: "technology", difficulty: "foundation", skill: "Ghi nhớ", q: "Cổng TCP mặc định thường dùng cho HTTPS là cổng nào?", choices: ["21", "53", "80", "443"], answer: 3, why: "HTTPS theo mặc định sử dụng cổng TCP 443.", insight: "Đúng cổng không tự bảo đảm an toàn; cấu hình TLS và xác minh chứng chỉ vẫn quan trọng." },
+    { id: "tech-password", topic: "technology", difficulty: "foundation", skill: "An toàn số", q: "Cách nào an toàn hơn khi tạo mật khẩu cho nhiều dịch vụ?", choices: ["Dùng một mật khẩu ngắn cho tất cả", "Dùng mật khẩu riêng, dài và trình quản lý mật khẩu", "Ghi mật khẩu công khai", "Chỉ đổi một ký tự cuối"], answer: 1, why: "Mật khẩu riêng hạn chế thiệt hại khi một dịch vụ rò rỉ; trình quản lý giúp tạo và lưu chuỗi mạnh.", insight: "Bật xác thực đa yếu tố giúp bổ sung một lớp bảo vệ quan trọng." },
+    { id: "tech-cache", topic: "technology", difficulty: "foundation", skill: "Hiểu cơ chế", q: "Bộ nhớ đệm trình duyệt có mục đích chính nào?", choices: ["Lưu tạm tài nguyên để tải lại nhanh hơn", "Thay thế hoàn toàn máy chủ", "Mã hóa mọi tệp người dùng", "Tăng độ phân giải màn hình"], answer: 0, why: "Cache giữ bản sao tài nguyên phù hợp để giảm tải lại và độ trễ.", insight: "Quản lý phiên bản tài nguyên giúp tránh việc người dùng nhận mã cũ sau khi cập nhật." },
+    { id: "tech-race", topic: "technology", difficulty: "advanced", skill: "Chẩn đoán", q: "Hai thao tác bất đồng bộ cùng ghi vào một trạng thái và kết quả phụ thuộc thứ tự hoàn tất. Đây gần nhất là lỗi gì?", choices: ["Race condition", "Syntax error", "Compression artifact", "Color banding"], answer: 0, why: "Race condition xảy ra khi kết quả phụ thuộc vào thời điểm hoặc thứ tự của các tác vụ đồng thời.", insight: "Có thể giảm lỗi bằng hàng đợi, khóa, phiên bản trạng thái hoặc kiểm tra yêu cầu cũ." },
+    { id: "tech-accessibility", topic: "technology", difficulty: "advanced", skill: "Thiết kế bao trùm", q: "Một dialog web mở đúng cách nên xử lý focus như thế nào?", choices: ["Không thay đổi focus", "Đưa focus vào dialog, giữ trong dialog và trả lại nút mở khi đóng", "Luôn đưa focus lên đầu trang", "Ẩn toàn bộ nút đóng"], answer: 1, why: "Quản lý focus giúp người dùng bàn phím và công nghệ hỗ trợ hiểu được ngữ cảnh hiện tại.", insight: "Escape, nhãn truy cập và thứ tự tab hợp lý cũng là phần của dialog dễ tiếp cận." },
+    { id: "tech-authority", topic: "technology", difficulty: "advanced", skill: "Kiến trúc hệ thống", q: "Trong game cạnh tranh trực tuyến, vì sao điểm số nên được máy chủ xác thực?", choices: ["Để giao diện có nhiều màu hơn", "Để giảm khả năng client tự sửa điểm và gian lận", "Để không cần mạng", "Để mọi animation chạy 60 FPS"], answer: 1, why: "Client nằm trong quyền kiểm soát của người chơi nên dữ liệu cạnh tranh quan trọng cần được máy chủ kiểm chứng.", insight: "Server-authoritative không loại bỏ mọi gian lận nhưng tạo một ranh giới tin cậy rõ hơn." },
+    { id: "tech-performance", topic: "technology", difficulty: "advanced", skill: "Đánh giá hiệu năng", q: "Chỉ số nào phản ánh độ mượt khung hình rõ hơn một con số FPS trung bình đơn lẻ?", choices: ["Độ dài tên tệp", "Phân bố frame time và các spike", "Số màu trong logo", "Kích thước con trỏ"], answer: 1, why: "Frame time cho biết thời gian của từng khung; spike có thể gây khựng dù FPS trung bình cao.", insight: "Đánh giá hiệu năng nên kết hợp CPU, GPU, bộ nhớ và nhịp khung hình thực tế." },
+    { id: "culture-capital", topic: "culture", difficulty: "foundation", skill: "Ghi nhớ", q: "Thủ đô của Việt Nam là thành phố nào?", choices: ["Hà Nội", "Huế", "Đà Nẵng", "Hải Phòng"], answer: 0, why: "Hà Nội là thủ đô của nước Cộng hòa xã hội chủ nghĩa Việt Nam.", insight: "Thủ đô là trung tâm chính trị; điều đó không nhất thiết đồng nghĩa là thành phố đông dân nhất." },
+    { id: "culture-bpm", topic: "culture", difficulty: "foundation", skill: "Đọc ký hiệu", q: "Một bản nhạc ghi 120 BPM có ý nghĩa gì?", choices: ["120 nốt trong cả bài", "120 nhịp mỗi phút", "Dài 120 giây", "Âm lượng 120 dB"], answer: 1, why: "BPM là beats per minute, mô tả số nhịp trong một phút.", insight: "BPM mô tả tốc độ nhịp, không tự quyết định nhịp phách hay cảm xúc của tác phẩm." },
+    { id: "culture-source", topic: "culture", difficulty: "foundation", skill: "Đọc nguồn", q: "Khi dùng một ảnh CC BY trong sản phẩm, việc nào thường cần thiết?", choices: ["Xóa tên tác giả", "Ghi công theo điều kiện giấy phép", "Tuyên bố ảnh do mình tạo", "Không cần đọc giấy phép"], answer: 1, why: "CC BY yêu cầu ghi công phù hợp cho tác giả/nguồn theo điều kiện giấy phép.", insight: "Luôn kiểm tra phiên bản giấy phép và các quyền riêng như hình ảnh con người hoặc nhãn hiệu." },
+    { id: "culture-history", topic: "culture", difficulty: "foundation", skill: "Bối cảnh", q: "Khi đọc một văn bản lịch sử, câu hỏi nào hữu ích nhất để hiểu bối cảnh?", choices: ["Ai viết, viết khi nào và cho ai?", "Phông chữ có đẹp không?", "Tệp nặng bao nhiêu?", "Có bao nhiêu dấu chấm?"], answer: 0, why: "Tác giả, thời điểm, đối tượng và mục đích giúp đánh giá góc nhìn và giới hạn của nguồn.", insight: "Nguồn sơ cấp rất quý nhưng không tự động trung lập hoặc đầy đủ." },
+    { id: "culture-translation", topic: "culture", difficulty: "advanced", skill: "Diễn giải", q: "Vì sao hai bản dịch tốt của cùng một câu văn vẫn có thể khác nhau?", choices: ["Một bản chắc chắn giả", "Ngữ nghĩa, sắc thái và cấu trúc không luôn có tương đương một-một", "Ngôn ngữ không có quy tắc", "Dịch giả không cần hiểu văn bản"], answer: 1, why: "Người dịch phải cân bằng nghĩa, sắc thái, nhịp điệu và bối cảnh; đôi khi không có một lựa chọn duy nhất.", insight: "So sánh nhiều bản dịch có thể làm rõ những lớp nghĩa mà một bản khó truyền tải hết." },
+    { id: "culture-statue", topic: "culture", difficulty: "advanced", skill: "Đạo đức bảo tồn", q: "Khi số hóa hiện vật văn hóa, lựa chọn nào có trách nhiệm nhất?", choices: ["Bỏ mọi thông tin nguồn", "Lưu provenance, quyền sử dụng và bối cảnh cộng đồng", "Tự đổi tên tác giả", "Công khai dữ liệu nhạy cảm không giới hạn"], answer: 1, why: "Nguồn gốc, quyền và bối cảnh giúp bảo tồn ý nghĩa, tôn trọng cộng đồng và sử dụng đúng pháp lý.", insight: "Khả năng quét hoặc tải một hiện vật không tự động tạo quyền tái sử dụng vô hạn." },
+    { id: "culture-argument", topic: "culture", difficulty: "advanced", skill: "Đọc phản biện", q: "Một bài viết chỉ trích dẫn những ví dụ ủng hộ quan điểm và bỏ qua bằng chứng trái chiều đang có nguy cơ gì?", choices: ["Selection bias", "Đo lường chính xác hơn", "Tăng tính đại diện", "Loại bỏ thiên kiến"], answer: 0, why: "Chọn lọc bằng chứng thuận lợi có thể làm kết luận có vẻ mạnh hơn thực tế.", insight: "Hãy chủ động tìm phản ví dụ và tiêu chí chọn dữ liệu trước khi kết luận." },
+    { id: "thinking-pause", topic: "thinking", difficulty: "foundation", skill: "Trải nghiệm game", q: "Phím nào thường được game trên máy tính dùng để mở menu tạm dừng?", choices: ["Escape", "Caps Lock", "Print Screen", "Num Lock"], answer: 0, why: "Escape là quy ước phổ biến để mở menu pause hoặc quay lại màn trước.", insight: "Game tốt vẫn nên cho phép đổi phím và hiển thị lệnh điều khiển rõ ràng." },
+    { id: "thinking-correlation", topic: "thinking", difficulty: "foundation", skill: "Lập luận", q: "Hai biến thay đổi cùng nhau có đủ để kết luận biến này gây ra biến kia không?", choices: ["Luôn đủ", "Không; tương quan chưa chứng minh quan hệ nhân quả", "Chỉ cần biểu đồ đẹp", "Đủ nếu mẫu rất nhỏ"], answer: 1, why: "Tương quan có thể do biến thứ ba, chiều tác động ngược hoặc ngẫu nhiên.", insight: "Lập luận nhân quả cần thiết kế nghiên cứu và bằng chứng bổ sung." },
+    { id: "thinking-sample", topic: "thinking", difficulty: "foundation", skill: "Đánh giá dữ liệu", q: "Khảo sát mức hài lòng của cả trường nhưng chỉ hỏi câu lạc bộ yêu thích trường dễ mắc lỗi gì?", choices: ["Mẫu không đại diện", "Dữ liệu quá ngẫu nhiên", "Không có biến", "Đơn vị đo quá nhỏ"], answer: 0, why: "Nhóm được hỏi có thể tích cực hơn trung bình nên không đại diện cho toàn trường.", insight: "Cách chọn mẫu thường quan trọng không kém số lượng người tham gia." },
+    { id: "thinking-claim", topic: "thinking", difficulty: "foundation", skill: "Kiểm chứng", q: "Khi gặp một tuyên bố gây sốc trên mạng, bước đầu hợp lý nhất là gì?", choices: ["Chia sẻ ngay", "Kiểm tra nguồn gốc và đối chiếu nguồn độc lập", "Chỉ đọc tiêu đề", "Tin nếu có nhiều biểu tượng cảm xúc"], answer: 1, why: "Kiểm tra nguồn ban đầu, ngày tháng và các nguồn độc lập giúp giảm nguy cơ lan truyền thông tin sai.", insight: "Số lượt chia sẻ không phải bằng chứng về độ chính xác." },
+    { id: "thinking-base-rate", topic: "thinking", difficulty: "advanced", skill: "Suy luận xác suất", q: "Một bệnh rất hiếm có xét nghiệm khá chính xác. Khi kết quả dương tính, thông tin nào vẫn rất cần để ước lượng khả năng thật sự mắc bệnh?", choices: ["Màu máy xét nghiệm", "Tỷ lệ nền của bệnh và sai số xét nghiệm", "Tên người nhập dữ liệu", "Giờ mở cửa phòng khám"], answer: 1, why: "Giá trị dự đoán phụ thuộc cả độ nhạy, độ đặc hiệu và tỷ lệ bệnh trong quần thể.", insight: "Bỏ qua base rate có thể khiến ta đánh giá quá cao ý nghĩa của một kết quả dương tính." },
+    { id: "thinking-falsifiable", topic: "thinking", difficulty: "advanced", skill: "Phương pháp khoa học", q: "Đặc điểm nào làm một giả thuyết dễ kiểm tra khoa học hơn?", choices: ["Không thể bị phản bác trong mọi trường hợp", "Đưa ra dự đoán có thể quan sát và có khả năng sai", "Dùng từ ngữ càng mơ hồ càng tốt", "Chỉ dựa trên uy tín người nói"], answer: 1, why: "Một giả thuyết kiểm chứng được cần dự đoán rõ để bằng chứng có thể ủng hộ hoặc bác bỏ.", insight: "Khả năng sai không làm giả thuyết yếu; nó làm quá trình kiểm tra minh bạch hơn." },
+    { id: "thinking-tradeoff", topic: "thinking", difficulty: "advanced", skill: "Ra quyết định", q: "Khi hai phương án đều có lợi ích và chi phí, cách so sánh nào tốt nhất?", choices: ["Chỉ nhìn lợi ích dễ thấy", "Đặt tiêu chí, trọng số và xem độ nhạy của kết quả", "Chọn phương án đầu tiên", "Bỏ qua tác động dài hạn"], answer: 1, why: "Tiêu chí minh bạch và phân tích độ nhạy giúp thấy quyết định thay đổi ra sao khi giả định thay đổi.", insight: "Một quyết định tốt có thể vẫn cho kết quả xấu; chất lượng quy trình khác với may rủi của kết quả." },
+    { id: "thinking-ai", topic: "thinking", difficulty: "advanced", skill: "AI literacy", q: "Vì sao câu trả lời trôi chảy của AI vẫn cần được kiểm tra nguồn?", choices: ["Vì AI luôn từ chối trả lời", "Vì độ trôi chảy không bảo đảm dữ kiện đúng hoặc còn mới", "Vì AI không thể tạo câu", "Vì mọi nguồn trên mạng đều giống nhau"], answer: 1, why: "Mô hình có thể tạo nội dung hợp lý về ngôn ngữ nhưng sai dữ kiện, thiếu bối cảnh hoặc lỗi thời.", insight: "Mức kiểm chứng nên tăng theo độ mới, độ khó và hậu quả của quyết định." },
+    { id: "thinking-evidence", topic: "thinking", difficulty: "advanced", skill: "Tổng hợp bằng chứng", q: "Hai nghiên cứu đáng tin cho kết quả khác nhau. Phản ứng nào hợp lý nhất?", choices: ["Chọn nghiên cứu hợp ý mình", "So thiết kế, mẫu, độ bất định và tìm tổng quan hệ thống", "Kết luận khoa học vô dụng", "Cộng hai con số không cần ngữ cảnh"], answer: 1, why: "Khác biệt có thể đến từ quần thể, phương pháp, sai số hoặc ngẫu nhiên; cần so sánh có cấu trúc.", insight: "Bất đồng bằng chứng là lý do để phân tích sâu hơn, không phải để bỏ qua toàn bộ bằng chứng." }
+  ]);
 
   const STORY = {
     intro: { title: "Ga cuối của Ánh Sao", text: "Bạn tỉnh dậy trên một đoàn tàu đang dừng giữa khoảng không. Trước mặt là hai toa còn phát sáng.", choices: [["Vào toa lưu trữ", "archive"], ["Đi tới buồng lái", "cockpit"]] },
@@ -189,7 +225,7 @@
       escape: { stage: 0, hints: 0, completed: false },
       pet: { type: "dragon", name: "Lumi", hunger: 76, happy: 72, energy: 84, xp: 0, level: 1, lastCare: Date.now() },
       chill: { scene: "rain", rain: 55, wind: 20, fire: 0, piano: 0, minutes: 25, timer: { running: false, endsAt: 0, startedAt: 0 } },
-      quiz: { index: 0, score: 0, answered: false, selected: -1, completed: false },
+      quiz: { index: 0, score: 0, answered: false, selected: -1, completed: false, topic: "all", difficulty: "all" },
       settings: { motion: "balanced", sound: true, inspector: false, safeChat: true },
       arcadeGame: "snake",
       arcade: { difficulty: "normal", runs: [], tutorialSeen: {}, input: "keyboard-touch" },
@@ -321,7 +357,9 @@
     };
     merged.quiz = {
       index: integer(merged.quiz.index, 0, 239, 0), score: integer(merged.quiz.score, 0, 240, 0),
-      answered: merged.quiz.answered === true, selected: integer(merged.quiz.selected, -1, 2, -1), completed: merged.quiz.completed === true
+      answered: merged.quiz.answered === true, selected: integer(merged.quiz.selected, -1, 3, -1), completed: merged.quiz.completed === true,
+      topic: QUIZ_TOPICS.some((item) => item.id === merged.quiz.topic) ? merged.quiz.topic : "all",
+      difficulty: QUIZ_DIFFICULTIES.some((item) => item.id === merged.quiz.difficulty) ? merged.quiz.difficulty : "all"
     };
     merged.settings = {
       motion: ["static", "balanced", "cinematic"].includes(merged.settings.motion) ? merged.settings.motion : "balanced",
@@ -465,7 +503,7 @@
     if (!hydrationPending) persistIndexedState(state);
   }
 
-  async function hydrateIndexedState(generation, revisionAtStart, fallbackSavedAt) {
+  async function hydrateIndexedState(generation, revisionAtStart, fallbackSavedAt, requestedView = "") {
     const record = await databaseGet(PROFILE_STORE, PROFILE_ID);
     if (generation !== mountGeneration || !state) return;
     if (isRecord(record?.profile) && safeTimestamp(record.savedAt, 0) >= safeTimestamp(fallbackSavedAt, 0)) {
@@ -482,6 +520,7 @@
         current.history = [...activity.values()].sort((a, b) => a.at - b.at).slice(-MAX_HISTORY);
         state = normalizeState(current);
       }
+      if (VIEWS.some((view) => view.id === requestedView)) state.view = requestedView;
       render();
     }
     hydrationPending = false;
@@ -601,9 +640,27 @@
     return VIEWS.find((item) => item.id === id) || VIEWS[0];
   }
 
-  function quizBank() {
-    const custom = (state?.contentPacks || []).filter((pack) => pack.type === "quiz").flatMap((pack) => pack.items || []).map((item) => ({ q: clean(item.q, 300), choices: (Array.isArray(item.choices) ? item.choices : []).map((choice) => clean(choice, 120)).filter(Boolean), answer: integer(item.answer, 0, 3, 0), why: clean(item.why, 500) })).filter((item) => item.q && item.choices.length >= 2 && item.answer < item.choices.length);
+  function quizCatalog() {
+    const custom = (state?.contentPacks || []).filter((pack) => pack.type === "quiz").flatMap((pack, packIndex) => (pack.items || []).map((item, itemIndex) => ({
+      id: clean(item.id, 60) || `custom-${packIndex + 1}-${itemIndex + 1}`,
+      topic: QUIZ_TOPICS.some((topic) => topic.id !== "all" && topic.id === item.topic) ? item.topic : "custom",
+      difficulty: QUIZ_DIFFICULTIES.some((level) => level.id !== "all" && level.id === item.difficulty) ? item.difficulty : "foundation",
+      skill: clean(item.skill, 80) || "Kiến thức riêng",
+      q: clean(item.q, 300),
+      choices: (Array.isArray(item.choices) ? item.choices : []).map((choice) => clean(choice, 120)).filter(Boolean).slice(0, 4),
+      answer: integer(item.answer, 0, 3, 0),
+      why: clean(item.why, 500) || "Nội dung giải thích chưa được tác giả gói bổ sung.",
+      insight: clean(item.insight, 500) || "Hãy đối chiếu thêm nguồn tin cậy để mở rộng kết luận."
+    }))).filter((item) => item.q && item.choices.length >= 2 && item.answer < item.choices.length);
     return [...QUIZ, ...custom].slice(0, 240);
+  }
+
+  function quizBank() {
+    const catalog = quizCatalog();
+    const topic = state?.quiz?.topic || "all";
+    const difficulty = state?.quiz?.difficulty || "all";
+    const filtered = catalog.filter((item) => (topic === "all" || item.topic === topic) && (difficulty === "all" || item.difficulty === difficulty));
+    return filtered.length ? filtered : catalog;
   }
   function wordBank() {
     const custom = (state?.contentPacks || []).filter((pack) => pack.type === "word").flatMap((pack) => pack.items || []).map((item) => ({ word: clean(item.word, 40).toUpperCase().replace(/[^A-Z0-9À-Ỹ]/gi, ""), clue: clean(item.clue, 180) })).filter((item) => item.word && item.clue);
@@ -715,7 +772,10 @@
   function todayView() {
     const progress = missionProgress();
     const recent = state.recent.map((id) => ARCADE_GAMES.find((game) => game.id === id)).filter(Boolean).slice(0, 4);
+    const continueGame = recent[0] || ARCADE_GAMES[0];
+    const quizCount = quizCatalog().length;
     return `<section class="hhp-view hhp-today">${heading("DAILY ENTERTAINMENT", "Một điểm bắt đầu, nhiều cách để vui", "Chọn nhiệm vụ ngắn phù hợp hoặc tiếp tục trải nghiệm gần nhất.", `${state.streak} ngày`) }
+      <nav class="hhp-command-deck" aria-label="Truy cập nhanh HH Play"><button type="button" data-game="${continueGame.id}"><i>▶</i><span><small>TIẾP TỤC</small><strong>${esc(continueGame.title)}</strong></span><b>→</b></button><button type="button" data-play-view="quiz"><i>?</i><span><small>KHO TRI THỨC</small><strong>${quizCount} câu có giải thích</strong></span><b>→</b></button><button type="button" data-play-action="content"><i>✧</i><span><small>CONTENT PACK</small><strong>${state.contentPacks.length} gói nội dung riêng</strong></span><b>→</b></button><article><i>◆</i><span><small>HỒ SƠ HOẠT ĐỘNG</small><strong>${state.achievements.length}/${ACHIEVEMENTS.length} huy hiệu · ${state.history.length} lượt</strong></span></article></nav>
       <article class="hhp-hero-card"><div class="hhp-hero-orbit" aria-hidden="true"><i></i><i></i><i></i><b>PLAY</b></div><div><small>GỢI Ý TIẾP THEO · 3–5 PHÚT</small><h3>${state.daily.played ? "Thử một nhánh truyện mới" : "Neon Snake đang chờ bạn"}</h3><p>${state.daily.played ? "Mỗi lựa chọn được lưu trên thiết bị và có thể quay lại bằng ba ô lưu riêng." : "Điều khiển bằng phím mũi tên hoặc nút cảm ứng; không cần tải thêm tài nguyên."}</p><button type="button" data-play-view="${state.daily.played ? "story" : "arcade"}">${state.daily.played ? "Mở Story Universe" : "Chơi ngay"} →</button></div></article>
       <div class="hhp-daily-grid"><article><header><i>▣</i><span><strong>Chơi một trò</strong><small>Arcade hoặc Rhythm</small></span><b>${state.daily.played ? "✓" : "0/1"}</b></header><div><i style="width:${state.daily.played ? 100 : 0}%"></i></div></article><article><header><i>?</i><span><strong>Trả lời Quiz</strong><small>Một câu có giải thích</small></span><b>${state.daily.quiz ? "✓" : "0/1"}</b></header><div><i style="width:${state.daily.quiz ? 100 : 0}%"></i></div></article><article><header><i>◎</i><span><strong>Tạo phòng local</strong><small>Chuẩn bị quyền trước khi chia sẻ</small></span><b>${state.daily.social ? "✓" : "0/1"}</b></header><div><i style="width:${state.daily.social ? 100 : 0}%"></i></div></article></div>
       <div class="hhp-section-title"><div><span>TIẾN ĐỘ HÔM NAY</span><strong>${progress.completed}/3 hoàn thành</strong></div><div class="hhp-progress"><i style="width:${progress.percent}%"></i></div>${progress.completed === 3 ? `<button type="button" data-play-claim ${state.daily.claimed ? "disabled" : ""}>${state.daily.claimed ? "Đã nhận huy hiệu" : "Nhận huy hiệu ngày"}</button>` : ""}</div>
@@ -887,9 +947,15 @@
     const quiz = state.quiz;
     const bank = quizBank();
     const item = bank[quiz.index % bank.length] || QUIZ[0];
-    return `<section class="hhp-view hhp-quiz">${heading("QUIZ ARENA", quiz.completed ? "Hoàn thành lượt đố vui" : `Câu ${quiz.index + 1}/${bank.length}`, "Mỗi đáp án đều có giải thích. Gói cá nhân được đánh dấu là nội dung local.", `${quiz.score} điểm`)}
-      <article class="hhp-quiz-card">${quiz.completed ? `<div class="hhp-quiz-result"><i>?</i><small>KẾT QUẢ</small><strong>${quiz.score}/${bank.length}</strong><p>${quiz.score >= Math.ceil(bank.length * .75) ? "Phản xạ kiến thức rất tốt!" : "Bạn có thể chơi lại để xem toàn bộ phần giải thích."}</p><button type="button" data-quiz-reset>Chơi lại</button></div>` : `<header><span>CHỦ ĐỀ HỖN HỢP · ${bank.length > QUIZ.length ? "CÓ GÓI RIÊNG" : "HH PLAY"}</span><div><i style="width:${(quiz.index + 1) / bank.length * 100}%"></i></div></header><h3>${esc(item.q)}</h3><div class="hhp-quiz-choices">${item.choices.map((choice, index) => `<button type="button" data-quiz-answer="${index}" class="${quiz.answered ? index === item.answer ? "is-correct" : index === quiz.selected ? "is-wrong" : "" : ""}" ${quiz.answered ? "disabled" : ""}><i>${String.fromCharCode(65 + index)}</i><span>${esc(choice)}</span></button>`).join("")}</div>${quiz.answered ? `<div class="hhp-answer-note"><i>${quiz.selected === item.answer ? "✓" : "i"}</i><p><strong>${quiz.selected === item.answer ? "Chính xác" : `Đáp án: ${esc(item.choices[item.answer])}`}</strong>${esc(item.why)}</p></div><button class="hhp-quiz-next" type="button" data-quiz-next>${quiz.index === bank.length - 1 ? "Xem kết quả" : "Câu tiếp theo"} →</button>` : ""}`}</article>
-      <div class="hhp-quiz-modes"><button class="is-active"><i>⚡</i><span><strong>Chơi nhanh</strong><small>8 câu trên thiết bị</small></span></button><button type="button" data-route-link="/communication/live-room"><i>◎</i><span><strong>Đấu cùng bạn</strong><small>Mở Live Room để kết nối thật</small></span></button><button type="button" data-quiz-report><i>!</i><span><strong>Báo lỗi câu hỏi</strong><small>Lưu ghi chú cục bộ</small></span></button></div>
+    const topicMeta = QUIZ_TOPICS.find((topic) => topic.id === quiz.topic) || QUIZ_TOPICS[0];
+    const difficultyMeta = QUIZ_DIFFICULTIES.find((level) => level.id === quiz.difficulty) || QUIZ_DIFFICULTIES[0];
+    const catalog = quizCatalog();
+    const customCount = catalog.filter((question) => question.topic === "custom").length;
+    return `<section class="hhp-view hhp-quiz">${heading("QUIZ ARENA", quiz.completed ? "Hoàn thành lượt đố vui" : `Câu ${quiz.index + 1}/${bank.length}`, "Lọc theo lĩnh vực và độ khó, sau đó học từ lời giải cùng góc nhìn mở rộng của từng câu.", `${quiz.score} điểm`)}
+      <div class="hhp-quiz-toolbar"><div class="hhp-quiz-filter"><span>Chủ đề</span><div role="group" aria-label="Chọn chủ đề Quiz">${QUIZ_TOPICS.map((topic) => `<button type="button" data-quiz-topic="${topic.id}" class="${topic.id === quiz.topic ? "is-active" : ""}" aria-pressed="${topic.id === quiz.topic}"><i>${topic.icon}</i>${topic.label}</button>`).join("")}</div></div><div class="hhp-quiz-filter hhp-quiz-filter--level"><span>Độ khó</span><div role="group" aria-label="Chọn độ khó Quiz">${QUIZ_DIFFICULTIES.map((level) => `<button type="button" data-quiz-difficulty="${level.id}" class="${level.id === quiz.difficulty ? "is-active" : ""}" aria-pressed="${level.id === quiz.difficulty}">${level.label}</button>`).join("")}</div></div><b>${bank.length} câu phù hợp</b></div>
+      <div class="hhp-quiz-layout"><article class="hhp-quiz-card">${quiz.completed ? `<div class="hhp-quiz-result"><i>?</i><small>KẾT QUẢ · ${esc(topicMeta.label.toUpperCase())}</small><strong>${quiz.score}/${bank.length}</strong><p>${quiz.score >= Math.ceil(bank.length * .75) ? "Bạn đã nắm tốt nhóm kiến thức này. Hãy đổi chủ đề hoặc thử mức chuyên sâu." : "Hãy chơi lại và đọc kỹ phần lý giải để củng cố cách suy luận."}</p><button type="button" data-quiz-reset>Làm lại bộ câu hỏi</button></div>` : `<header><span>${esc(topicMeta.label.toUpperCase())} · ${esc(difficultyMeta.label.toUpperCase())}</span><div aria-label="Tiến độ ${quiz.index + 1} trên ${bank.length}"><i style="width:${(quiz.index + 1) / bank.length * 100}%"></i></div></header><div class="hhp-question-meta"><span>${esc(item.skill || "Kiến thức")}</span><span>${item.topic === "custom" ? "Gói nội dung riêng" : "HH Play biên soạn"}</span><b>${quiz.index + 1}/${bank.length}</b></div><h3>${esc(item.q)}</h3><div class="hhp-quiz-choices">${item.choices.map((choice, index) => `<button type="button" data-quiz-answer="${index}" class="${quiz.answered ? index === item.answer ? "is-correct" : index === quiz.selected ? "is-wrong" : "" : ""}" ${quiz.answered ? "disabled" : ""}><i>${String.fromCharCode(65 + index)}</i><span>${esc(choice)}</span></button>`).join("")}</div>${quiz.answered ? `<div class="hhp-quiz-answer-stack"><div class="hhp-answer-note"><i>${quiz.selected === item.answer ? "✓" : "i"}</i><p><strong>${quiz.selected === item.answer ? "Chính xác" : `Đáp án: ${esc(item.choices[item.answer])}`}</strong>${esc(item.why)}</p></div><div class="hhp-insight-note"><i>◇</i><p><strong>Góc nhìn mở rộng</strong>${esc(item.insight)}</p></div></div><button class="hhp-quiz-next" type="button" data-quiz-next>${quiz.index === bank.length - 1 ? "Xem kết quả" : "Câu tiếp theo"} →</button>` : ""}`}</article>
+      <aside class="hhp-quiz-profile" aria-label="Hồ sơ lượt Quiz"><header><span>KNOWLEDGE SESSION</span><strong>Phiên học có cấu trúc</strong></header><dl><div><dt>Chủ đề</dt><dd>${topicMeta.icon} ${esc(topicMeta.label)}</dd></div><div><dt>Độ khó</dt><dd>${esc(difficultyMeta.label)}</dd></div><div><dt>Điểm hiện tại</dt><dd>${quiz.score}/${Math.max(quiz.index + Number(quiz.answered), 1)}</dd></div><div><dt>Kho câu hỏi</dt><dd>${catalog.length}</dd></div></dl><section><strong>Nhịp học đề xuất</strong><p>Đọc câu hỏi, tự giải thích lựa chọn của mình, rồi đối chiếu phần “Vì sao” và “Góc nhìn mở rộng”.</p></section>${customCount ? `<small>${customCount} câu từ gói nội dung riêng đang được đánh dấu rõ nguồn local.</small>` : `<small>Bạn có thể nhập gói Quiz riêng trong Content Pack Studio.</small>`}</aside></div>
+      <div class="hhp-quiz-modes"><button type="button" data-quiz-reset class="is-active"><i>↻</i><span><strong>Làm lại phiên</strong><small>${bank.length} câu theo bộ lọc hiện tại</small></span></button><button type="button" data-route-link="/communication/live-room"><i>◎</i><span><strong>Đấu cùng bạn</strong><small>Mở Live Room để kết nối thật</small></span></button><button type="button" data-quiz-report><i>!</i><span><strong>Báo lỗi câu hỏi</strong><small>Lưu ghi chú cục bộ</small></span></button></div>
     </section>`;
   }
 
@@ -984,9 +1050,13 @@
     const chillScene = event.target.closest("button[data-chill-scene]")?.dataset.chillScene; if (chillScene) { state.chill.scene = chillScene; save(); return render(); }
     if (event.target.closest("[data-chill-toggle]")) return toggleChillAudio();
     const timerAction = event.target.closest("[data-pomodoro]")?.dataset.pomodoro; if (timerAction) return handlePomodoro(timerAction);
+    const quizTopic = event.target.closest("[data-quiz-topic]")?.dataset.quizTopic;
+    if (quizTopic !== undefined && QUIZ_TOPICS.some((item) => item.id === quizTopic)) return resetQuizProgress({ topic: quizTopic });
+    const quizDifficulty = event.target.closest("[data-quiz-difficulty]")?.dataset.quizDifficulty;
+    if (quizDifficulty !== undefined && QUIZ_DIFFICULTIES.some((item) => item.id === quizDifficulty)) return resetQuizProgress({ difficulty: quizDifficulty });
     const quizAnswer = event.target.closest("[data-quiz-answer]")?.dataset.quizAnswer; if (quizAnswer !== undefined) return answerQuiz(Number(quizAnswer));
     if (event.target.closest("[data-quiz-next]")) return nextQuiz();
-    if (event.target.closest("[data-quiz-reset]")) { state.quiz = { index: 0, score: 0, answered: false, selected: -1, completed: false }; save(); return render(); }
+    if (event.target.closest("[data-quiz-reset]")) return resetQuizProgress();
     if (event.target.closest("[data-quiz-report]")) return openQuizReport();
     if (event.target.closest("[data-hhp-dialog-close]")) return closeDialog();
   }
@@ -1483,7 +1553,16 @@
   }
   function updatePomodoroUI(status) { const time = root?.querySelector("[data-pomodoro-time]"); const label = root?.querySelector("[data-pomodoro-status]"); if (time) time.textContent = formatTime(pomodoroRemaining || state.chill.minutes * 60); if (label && status) label.textContent = status; const button = root?.querySelector('[data-pomodoro="start"]'); if (button) button.textContent = pomodoroTimer ? "Tạm dừng" : "Bắt đầu"; }
 
-  function answerQuiz(index) { if (state.quiz.answered) return; const bank = quizBank(); const item = bank[state.quiz.index % bank.length] || bank[0]; if (!item || index < 0 || index >= item.choices.length) return; state.quiz.selected = index; state.quiz.answered = true; if (index === item.answer) state.quiz.score += 1; state.daily.quiz = 1; grantXP(`quiz:${DAY_KEY()}:${state.quiz.index}`, index === item.answer ? 15 : 5, { id: `quiz-${state.quiz.index}`, type: "quiz", score: index === item.answer ? 1 : 0 }); save(); render(); }
+  function resetQuizProgress(patch = {}) {
+    state.quiz = {
+      index: 0, score: 0, answered: false, selected: -1, completed: false,
+      topic: QUIZ_TOPICS.some((item) => item.id === patch.topic) ? patch.topic : state.quiz.topic,
+      difficulty: QUIZ_DIFFICULTIES.some((item) => item.id === patch.difficulty) ? patch.difficulty : state.quiz.difficulty
+    };
+    save();
+    render();
+  }
+  function answerQuiz(index) { if (state.quiz.answered) return; const bank = quizBank(); const item = bank[state.quiz.index % bank.length] || bank[0]; if (!item || index < 0 || index >= item.choices.length) return; state.quiz.selected = index; state.quiz.answered = true; if (index === item.answer) state.quiz.score += 1; state.daily.quiz = 1; const questionKey = clean(item.id, 60) || `index-${state.quiz.index}`; grantXP(`quiz:${DAY_KEY()}:${questionKey}`, index === item.answer ? 15 : 5, { id: `quiz-${questionKey}`, type: "quiz", score: index === item.answer ? 1 : 0 }); save(); render(); }
   function nextQuiz() { const bank = quizBank(); if (!state.quiz.answered && !state.quiz.completed) return toast("Hãy chọn một đáp án trước."); if (state.quiz.index >= bank.length - 1) state.quiz.completed = true; else { state.quiz.index += 1; state.quiz.answered = false; state.quiz.selected = -1; } save(); render(); }
   function openQuizReport() {
     openDialog("Báo lỗi câu hỏi", `<form data-quiz-report-form><p>Ghi chú được lưu cục bộ; không tự gửi ra ngoài.</p><label><span>Mô tả vấn đề</span><textarea name="message" maxlength="500" required></textarea></label><button type="submit">Lưu ghi chú</button></form>`);
@@ -1586,7 +1665,7 @@
     window.addEventListener("hh:realtime-offline", realtimeOfflineHandler);
     watchMessageHandler = watchWindowMessage;
     window.addEventListener("message", watchMessageHandler);
-    void hydrateIndexedState(generation, stateRevision, state.savedAt);
+    void hydrateIndexedState(generation, stateRevision, state.savedAt, requested);
   }
   function realtimeReadyHandler(event) { if (!state) return; if (state.view === "party") { state.party.realtime.status = "unavailable"; state.party.realtime.lastError = "Socket realtime đã sẵn sàng. Bấm kết nối để xác nhận phòng."; save(); render(); } }
   function realtimeOfflineHandler() { if (!state) return; state.party.realtime.status = "offline"; state.party.realtime.lastError = "Máy chủ realtime đang ngoại tuyến."; save(); if (state.view === "party") render(); }
@@ -1613,6 +1692,8 @@
 
   window.HHPlay = Object.freeze({
     mount, unmount, version: VERSION, views: VIEWS.map((view) => view.id),
+    quizQuestions: QUIZ.length,
+    quizTopics: Object.freeze(QUIZ_TOPICS.map((topic) => topic.id)),
     capabilities: Object.freeze({ localGames: true, indexedDb: typeof indexedDB !== "undefined", contentPacks: true, authenticatedRealtime: true, fakePresence: false }),
     exportData: () => exportPlayData(false),
     importData: (payload) => importPlayData(payload),

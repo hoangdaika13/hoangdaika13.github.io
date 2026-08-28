@@ -76,6 +76,18 @@ test("workspace layout preferences are bounded and default to a complete studio"
   assert.deepEqual(draw.normalizeLayout(), draw.DEFAULT_LAYOUT);
 });
 
+test("contextual inspector state keeps one active group per tab and at most two valid pins", () => {
+  assert.equal(draw.INSPECTOR_SCHEMA, "hh.draw.inspector.v1");
+  assert.deepEqual(draw.INSPECTOR_TABS, ["tool", "object", "layer", "document"]);
+  const state = draw.normalizeInspectorState({ activeTab: "invalid", openGroups: { tool: "tool-dynamics", object: "invalid", document: "" }, pinnedGroups: ["tool-core", "document-export", "invalid", "layer-studio"], closeLibraryAfterSelect: 1 });
+  assert.equal(state.activeTab, "tool");
+  assert.equal(state.openGroups.tool, "tool-dynamics");
+  assert.equal(state.openGroups.object, "object-transform");
+  assert.equal(state.openGroups.document, "");
+  assert.deepEqual(state.pinnedGroups, ["tool-core", "document-export"]);
+  assert.equal(state.closeLibraryAfterSelect, false);
+});
+
 test("adaptive quality selects a low-latency profile for constrained devices", () => {
   assert.equal(draw.resolveQualityProfile("auto", { deviceMemory: 2, hardwareConcurrency: 8 }).id, "performance");
   assert.equal(draw.resolveQualityProfile("auto", { deviceMemory: 8, hardwareConcurrency: 8 }).id, "balanced");
@@ -151,16 +163,17 @@ test("Draw is a first-class lazy route with a real interactive tool contract", (
   assert.match(client, /id: "draw"[\s\S]*?label: "Vẽ"[\s\S]*?route: "\/draw"/);
   assert.match(client, /window\.HHDrawStudio\?\.mount/);
   assert.match(client, /title: "Vẽ · Chromatic Studio"[\s\S]*?route: "\/draw"/);
-  assert.match(loader, /draw:\s*\{[\s\S]*?draw-studio\.css\?v=10[\s\S]*?draw-studio\.js\?v=10/);
+  assert.match(loader, /draw:\s*\{[\s\S]*?draw-studio\.css\?v=14[\s\S]*?draw-studio\.js\?v=13/);
   assert.match(loader, /value\.startsWith\("\/draw"\)/);
-  assert.match(worker, /draw-studio\.css\?v=10/);
-  assert.match(worker, /draw-studio\.js\?v=10/);
+  assert.match(worker, /draw-studio\.css\?v=14/);
+  assert.match(worker, /draw-studio\.js\?v=13/);
   assert.match(worker, /draw-studio-worker\.js\?v=5/);
   assert.match(html, /data-hh-galaxy-key="draw"/);
   assert.match(galaxy, /draw:\s*\{[\s\S]*?route: "#\/draw"/);
   for (const contract of ["data-draw-canvas", "data-draw-preset", "data-draw-setting=\"symmetry\"", "data-draw-setting=\"mirror\"", "data-draw-setting=\"spiral\"", "data-draw-setting=\"quality\"", "data-draw-layer-panel", "data-draw-tool=\"select\"", "data-draw-animation-export", "data-draw-export-svg", "data-draw-export-layers", "data-draw-undo", "data-draw-redo", "data-draw-save", "data-draw-export", "data-draw-project-export", "data-draw-project-import"]) assert.match(source, new RegExp(contract));
   for (const contract of ["data-draw-brush-search", "data-draw-favorite", "data-draw-generator", "data-draw-generator-remix", "data-draw-zen", "data-draw-engine"]) assert.match(source, new RegExp(contract));
   for (const contract of ["data-draw-layout-toggle", "data-draw-layout-reset", "data-draw-jump", "data-draw-inspector", "draw-toolrail", "draw-workspace-dock", "data-draw-panel-section=\"layers\"", "data-draw-panel-section=\"export\""]) assert.match(source, new RegExp(contract));
+  for (const contract of ["data-draw-inspector-tab=\"tool\"", "data-draw-inspector-tab=\"object\"", "data-draw-inspector-tab=\"layer\"", "data-draw-inspector-tab=\"document\"", "data-draw-accordion-toggle", "data-draw-accordion-pin", "data-draw-drawer=\"brushes\"", "data-draw-drawer=\"colors\"", "data-draw-close-after-select", "data-draw-eyedropper"]) assert.match(source, new RegExp(contract));
   assert.match(source, /data-draw-palette/);
   for (const mode of ["plasma", "electric", "nebula", "prism", "fire", "galaxy", "comet", "ripple", "quantum", "rainbow", "ink"]) assert.match(source, new RegExp(`mode === \\\"${mode}\\\"|\\[.*\\\"${mode}\\\"`));
   assert.match(source, /pointerdown/);
@@ -190,10 +203,15 @@ test("Draw is a first-class lazy route with a real interactive tool contract", (
   assert.match(css, /prefers-reduced-motion:reduce/);
   assert.match(css, /grid-template-columns:var\(--draw-rail-width\) minmax\(0,1fr\) var\(--draw-inspector-width\)/);
   assert.match(css, /\.draw-studio\.is-inspector-collapsed/);
+  assert.match(css, /body\.app-draw-route \.app-workspace\{width:100%!important;max-width:none!important/);
+  assert.match(css, /@media\(max-width:760px\)\{\.draw-studio\{--draw-rail-width:0px;--draw-inspector-width:0px\}\.draw-workspace\{grid-template-columns:minmax\(0,1fr\)!important\}\.draw-controls\{position:absolute/);
+  assert.match(css, /\.draw-inspector-tabs/);
+  assert.match(css, /\.draw-context-drawer/);
+  assert.match(css, /\.draw-accordion-body\[hidden\]/);
 });
 
 test("module inspection is safe before browser mounting", () => {
-  assert.deepEqual(draw.inspect(), { version: "2.2.0", mounted: false, strokes: 0, layers: 0, preset: "silk", brushMode: "silk", paletteId: "cosmic", quality: "auto" });
+  assert.deepEqual(draw.inspect(), { version: "2.3.0", mounted: false, strokes: 0, layers: 0, preset: "silk", brushMode: "silk", paletteId: "cosmic", quality: "auto" });
   assert.equal(typeof draw.mount, "function");
   assert.equal(typeof draw.unmount, "function");
 });
