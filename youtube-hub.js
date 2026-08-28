@@ -185,6 +185,19 @@
     if (badge) badge.textContent = String(core().list("queue").length);
   }
 
+  // Changing the current video must not replace the whole queue sidebar.  A
+  // full replace forces an unnecessary layout/paint around the active iframe
+  // and was one of the sources of visible playback hitches.
+  function syncQueueCurrent() {
+    if (!session) return;
+    const current=session.state.current;
+    session.host.querySelectorAll("[data-yh-queue-index]").forEach((row)=>row.classList.toggle("is-active",row.dataset.yhVideoId===current?.id));
+    const mini=session.host.querySelector(".yh-now-mini");
+    if(!mini)return;
+    const next=current?`<img src="${esc(current.thumbnail)}" alt=""><span><small>ĐANG PHÁT</small><strong>${esc(current.title)}</strong></span><i></i>`:'<span><small>CHƯA PHÁT VIDEO</small><strong>Chọn một video để bắt đầu</strong></span>';
+    if(mini.dataset.currentVideoId!==String(current?.id||"")){mini.innerHTML=next;mini.dataset.currentVideoId=String(current?.id||"");}
+  }
+
   function setView(view) {
     if (!VIEWS.some((item)=>item[0]===view)) return;
     session.state.view = view;
@@ -206,15 +219,17 @@
     if (session.state.view === "home") session.state.view = "results";
     if (sameVideo) {
       playerCommand("playVideo");
-      renderQueue();
+      syncQueueCurrent();
       return;
     }
     if (render) {
       if (previousView === "home") renderMain();
       else renderPlayerOnly();
     }
-    renderQueue();
-    playerCommand("setPlaybackRate",[core().preferences().playerRate]);
+    syncQueueCurrent();
+    const frame=session.host.querySelector("[data-yh-player-frame]");
+    const playbackCore=playback?.();
+    if(!playbackCore||playbackCore.get?.(frame)?.ready)playerCommand("setPlaybackRate",[core().preferences().playerRate]);
   }
 
   function playerCommand(func, args = []) {
@@ -398,5 +413,5 @@
 
   function unmount(){if(!session)return;clearTimeout(session.toastTimer);if(session.pipWindow&&!session.pipWindow.closed)session.pipWindow.close();playback()?.destroy?.(session.host.querySelector("[data-yh-player-frame]"));session.host.removeEventListener("click",session.onClick);session.host.removeEventListener("submit",session.onSubmit);session.host.removeEventListener("change",session.onChange);session.host.removeEventListener("dragstart",session.onDragStart);session.host.removeEventListener("dragover",session.onDragOver);session.host.removeEventListener("drop",session.onDrop);scope.removeEventListener("message",session.onMessage);scope.removeEventListener("hh:search-pending",session.onPending);session=null;}
 
-  return Object.freeze({version:"1.2.0",mount,unmount,focus,runSearch,isMounted,ensureMounted});
+  return Object.freeze({version:"1.3.0",mount,unmount,focus,runSearch,isMounted,ensureMounted});
 });

@@ -12,7 +12,7 @@ test("search platform is split into shared core, two hubs and a quick overlay", 
 
   assert.match(loader, /search:\s*\{[\s\S]*?search-platform-core\.js\?v=3[\s\S]*?search-quick-overlay\.js\?v=1/);
   assert.match(loader, /google:\s*\{[\s\S]*?google-hub\.css\?v=4[\s\S]*?google-hub\.js\?v=1/);
-  assert.match(loader, /youtube:\s*\{[\s\S]*?youtube-hub\.css\?v=5[\s\S]*?youtube-playback-core\.js\?v=2[\s\S]*?youtube-hub\.js\?v=5/);
+  assert.match(loader, /youtube:\s*\{[\s\S]*?youtube-hub\.css\?v=6[\s\S]*?youtube-playback-core\.js\?v=2[\s\S]*?youtube-hub\.js\?v=6/);
   assert.match(loader, /value === "\/google"[\s\S]*?return \["google"\]/);
   assert.match(loader, /value === "\/youtube"[\s\S]*?return \["youtube"\]/);
   assert.match(loader, /event\.altKey[\s\S]*?ensureGroup\("search"\)/);

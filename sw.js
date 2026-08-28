@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v916";
+const CACHE = "hh-identity-portal-v917";
+// Compatibility marker for the immediately preceding release: hh-identity-portal-v916.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v914.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v913.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v908.
@@ -290,11 +291,11 @@ const RUNTIME_ASSETS = [
   "./google-hub.js?v=1",
   "./google-hub-pro.css?v=3",
   "./google-hub-pro.js?v=3",
-  "./youtube-hub.css?v=5",
+  "./youtube-hub.css?v=6",
   "./youtube-playback-core.js?v=2",
-  "./youtube-hub.js?v=5",
-  "./youtube-hub-pro.css?v=4",
-  "./youtube-hub-pro.js?v=9",
+  "./youtube-hub.js?v=6",
+  "./youtube-hub-pro.css?v=5",
+  "./youtube-hub-pro.js?v=10",
   "./youtube-pip.html",
   "./discord-hub.css?v=2",
   "./discord-hub.js?v=2",
@@ -540,7 +541,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=559",
+  "./performance-loader.js?v=560",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=249"

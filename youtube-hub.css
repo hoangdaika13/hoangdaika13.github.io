@@ -42,3 +42,10 @@ body.app-search-route [data-google-hub-host],body.app-search-route [data-youtube
 @media(prefers-reduced-motion:reduce){.youtube-hub *{scroll-behavior:auto!important}.youtube-hub *,.youtube-hub *:before,.youtube-hub *:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}.yh-ambient{opacity:.26}}
 .yh-video-title{font-size:12px}.yh-video-card p{font-size:9px}.yh-video-card footer button{font-size:8px}.yh-now-mini small{font-size:7px}.yh-now-mini strong{font-size:9px}.yh-queue-list strong{font-size:10px}.yh-queue-list small{font-size:8px}
 @media(max-width:800px){.yh-queue-list article{grid-template-columns:16px 62px minmax(0,1fr) auto}.yh-queue-list article>div{grid-template-columns:repeat(3,30px);opacity:1}.yh-queue-list article>div button{width:30px;height:30px;font-size:11px}}
+/* Playback-friendly visual meter: animate only compositor transforms, never layout height. */
+.yh-player-energy i{height:12px;transform:scaleY(.42);transform-origin:bottom;animation-name:yhPlayerMeter;will-change:transform}
+@keyframes yhPlayerMeter{from{transform:scaleY(.42)}to{transform:scaleY(1)}}
+/* Keep the decorative nebula stable while the iframe is decoding video.  The
+   visuals stay visible; only their continuous repaint is paused. */
+.youtube-hub.is-playing .yh-ambient>i,.youtube-hub.is-playing .yh-ambient>b{animation-play-state:paused}
+.yh-player-stage{contain:layout paint;isolation:isolate}

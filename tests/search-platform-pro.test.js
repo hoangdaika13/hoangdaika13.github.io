@@ -42,6 +42,12 @@ test("YouTube Pro implements real player telemetry, resume, chapters, queue, cre
   const source = read("youtube-hub-pro.js");
   const css = read("youtube-hub-pro.css");
   for (const contract of ["infoDelivery", "getAvailablePlaybackRates", "savePlayback", "data-yh-resume", "addBookmark", "data-yh-queue-shuffle", "duplicatePlaylist", "metadataScore", "youtube:watch:create", "youtube:watch:state", "data-yh-focus-mode", "retryPlayer", "MAX_RETRIES", "frameReady", "saveTimer"]) assert.match(source, new RegExp(contract.replace(/[().]/g, "\\$&")));
+  const telemetryRenderer = source.match(/function renderTelemetry\(\)[\s\S]*?(?=\n  function onMessage)/)?.[0] || "";
+  assert.match(source, /const renderTelemetryNow=renderTelemetry/);
+  assert.match(source, /telemetryFrame/);
+  assert.doesNotMatch(telemetryRenderer, /\.innerHTML/);
+  assert.match(read("youtube-hub.js"), /function syncQueueCurrent\(\)/);
+  assert.match(read("youtube-hub.css"), /@keyframes yhPlayerMeter/);
   assert.match(source, /HH không tuyên bố tải transcript của mọi video/);
   assert.match(source, /Mỗi người phát video bằng player YouTube riêng/);
   assert.match(css, /\.yh-pro-telemetry/);
@@ -70,13 +76,13 @@ test("realtime server synchronizes only bounded YouTube player state", () => {
 test("versioned Pro assets are loaded in order and cached offline", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["search-platform-core.js?v=3", "google-hub-pro.css?v=3", "google-hub-pro.js?v=3", "youtube-playback-core.js?v=2", "youtube-hub-pro.css?v=4", "youtube-hub-pro.js?v=9"]) {
+  for (const asset of ["search-platform-core.js?v=3", "google-hub-pro.css?v=3", "google-hub-pro.js?v=3", "youtube-playback-core.js?v=2", "youtube-hub-pro.css?v=5", "youtube-hub-pro.js?v=10"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
   assert.ok(loader.indexOf("google-hub.js?v=1") < loader.indexOf("google-hub-pro.js?v=3"));
-  assert.ok(loader.indexOf("youtube-playback-core.js?v=2") < loader.indexOf("youtube-hub.js?v=5"));
-  assert.ok(loader.indexOf("youtube-hub.js?v=5") < loader.indexOf("youtube-hub-pro.js?v=9"));
+  assert.ok(loader.indexOf("youtube-playback-core.js?v=2") < loader.indexOf("youtube-hub.js?v=6"));
+  assert.ok(loader.indexOf("youtube-hub.js?v=6") < loader.indexOf("youtube-hub-pro.js?v=10"));
 });
 
 test("YouTube startup uses the dedicated IFrame listening handshake", () => {

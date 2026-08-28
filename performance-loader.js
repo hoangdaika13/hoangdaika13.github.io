@@ -187,8 +187,8 @@
       scripts: ["search-platform-core.js?v=3", "search-quick-overlay.js?v=1", "google-hub.js?v=1", "google-hub-pro.js?v=3"]
     },
     youtube: {
-      styles: ["search-quick-overlay.css?v=1", "youtube-hub.css?v=5", "youtube-hub-pro.css?v=4"],
-      scripts: ["search-platform-core.js?v=3", "search-quick-overlay.js?v=1", "youtube-playback-core.js?v=2", "youtube-hub.js?v=5", "youtube-hub-pro.js?v=9"]
+      styles: ["search-quick-overlay.css?v=1", "youtube-hub.css?v=6", "youtube-hub-pro.css?v=5"],
+      scripts: ["search-platform-core.js?v=3", "search-quick-overlay.js?v=1", "youtube-playback-core.js?v=2", "youtube-hub.js?v=6", "youtube-hub-pro.js?v=10"]
     },
     discord: {
       styles: ["discord-hub.css?v=4"],
