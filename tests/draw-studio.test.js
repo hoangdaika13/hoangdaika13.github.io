@@ -65,6 +65,17 @@ test("draw settings preserve Pattern Composer controls within safe bounds", () =
   assert.doesNotMatch(settings.patternSeed, /[<>]/);
 });
 
+test("workspace layout preferences are bounded and default to a complete studio", () => {
+  assert.equal(draw.LAYOUT_SCHEMA, "hh.draw.layout.v1");
+  assert.deepEqual(draw.normalizeLayout({ toolrailCollapsed: 1, inspectorCollapsed: true, dockCollapsed: false, compactControls: "yes", unknown: true }), {
+    toolrailCollapsed: false,
+    inspectorCollapsed: true,
+    dockCollapsed: false,
+    compactControls: false
+  });
+  assert.deepEqual(draw.normalizeLayout(), draw.DEFAULT_LAYOUT);
+});
+
 test("adaptive quality selects a low-latency profile for constrained devices", () => {
   assert.equal(draw.resolveQualityProfile("auto", { deviceMemory: 2, hardwareConcurrency: 8 }).id, "performance");
   assert.equal(draw.resolveQualityProfile("auto", { deviceMemory: 8, hardwareConcurrency: 8 }).id, "balanced");
@@ -140,15 +151,16 @@ test("Draw is a first-class lazy route with a real interactive tool contract", (
   assert.match(client, /id: "draw"[\s\S]*?label: "Vẽ"[\s\S]*?route: "\/draw"/);
   assert.match(client, /window\.HHDrawStudio\?\.mount/);
   assert.match(client, /title: "Vẽ · Chromatic Studio"[\s\S]*?route: "\/draw"/);
-  assert.match(loader, /draw:\s*\{[\s\S]*?draw-studio\.css\?v=8[\s\S]*?draw-studio\.js\?v=9/);
+  assert.match(loader, /draw:\s*\{[\s\S]*?draw-studio\.css\?v=10[\s\S]*?draw-studio\.js\?v=10/);
   assert.match(loader, /value\.startsWith\("\/draw"\)/);
-  assert.match(worker, /draw-studio\.css\?v=8/);
-  assert.match(worker, /draw-studio\.js\?v=9/);
+  assert.match(worker, /draw-studio\.css\?v=10/);
+  assert.match(worker, /draw-studio\.js\?v=10/);
   assert.match(worker, /draw-studio-worker\.js\?v=5/);
   assert.match(html, /data-hh-galaxy-key="draw"/);
   assert.match(galaxy, /draw:\s*\{[\s\S]*?route: "#\/draw"/);
-  for (const contract of ["data-draw-canvas", "data-draw-preset", "data-draw-setting=\"symmetry\"", "data-draw-setting=\"mirror\"", "data-draw-setting=\"spiral\"", "data-draw-setting=\"quality\"", "data-draw-layer-panel", "data-draw-tool=\"select\"", "data-draw-animation-export", "data-draw-export-svg", "data-draw-export-layers", "data-draw-undo", "data-draw-redo", "data-draw-export", "data-draw-project-export", "data-draw-project-import"]) assert.match(source, new RegExp(contract));
+  for (const contract of ["data-draw-canvas", "data-draw-preset", "data-draw-setting=\"symmetry\"", "data-draw-setting=\"mirror\"", "data-draw-setting=\"spiral\"", "data-draw-setting=\"quality\"", "data-draw-layer-panel", "data-draw-tool=\"select\"", "data-draw-animation-export", "data-draw-export-svg", "data-draw-export-layers", "data-draw-undo", "data-draw-redo", "data-draw-save", "data-draw-export", "data-draw-project-export", "data-draw-project-import"]) assert.match(source, new RegExp(contract));
   for (const contract of ["data-draw-brush-search", "data-draw-favorite", "data-draw-generator", "data-draw-generator-remix", "data-draw-zen", "data-draw-engine"]) assert.match(source, new RegExp(contract));
+  for (const contract of ["data-draw-layout-toggle", "data-draw-layout-reset", "data-draw-jump", "data-draw-inspector", "draw-toolrail", "draw-workspace-dock", "data-draw-panel-section=\"layers\"", "data-draw-panel-section=\"export\""]) assert.match(source, new RegExp(contract));
   assert.match(source, /data-draw-palette/);
   for (const mode of ["plasma", "electric", "nebula", "prism", "fire", "galaxy", "comet", "ripple", "quantum", "rainbow", "ink"]) assert.match(source, new RegExp(`mode === \\\"${mode}\\\"|\\[.*\\\"${mode}\\\"`));
   assert.match(source, /pointerdown/);
@@ -166,16 +178,22 @@ test("Draw is a first-class lazy route with a real interactive tool contract", (
   assert.match(source, /captureStream/);
   assert.match(source, /globalCompositeOperation = "lighter"/);
   assert.match(source, /localStorage/);
+  assert.match(source, /isContentEditable/);
+  assert.match(source, /\[contenteditable\]/);
+  assert.match(source, /event\.key === "0"/);
+  assert.match(source, /event\.key === "1"/);
   assert.match(css, /touch-action:none/);
   assert.match(css, /overflow-anchor:none/);
   assert.match(css, /\.draw-switch\{position:relative/);
   assert.match(renderWorker, /OffscreenCanvas|renderLayerBitmap/);
   assert.match(css, /@media\(max-width:760px\)/);
   assert.match(css, /prefers-reduced-motion:reduce/);
+  assert.match(css, /grid-template-columns:var\(--draw-rail-width\) minmax\(0,1fr\) var\(--draw-inspector-width\)/);
+  assert.match(css, /\.draw-studio\.is-inspector-collapsed/);
 });
 
 test("module inspection is safe before browser mounting", () => {
-  assert.deepEqual(draw.inspect(), { version: "2.1.0", mounted: false, strokes: 0, layers: 0, preset: "silk", brushMode: "silk", paletteId: "cosmic", quality: "auto" });
+  assert.deepEqual(draw.inspect(), { version: "2.2.0", mounted: false, strokes: 0, layers: 0, preset: "silk", brushMode: "silk", paletteId: "cosmic", quality: "auto" });
   assert.equal(typeof draw.mount, "function");
   assert.equal(typeof draw.unmount, "function");
 });

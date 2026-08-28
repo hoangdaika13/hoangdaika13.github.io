@@ -5,9 +5,11 @@
 })(typeof window !== "undefined" ? window : globalThis, function createDrawStudio(globalScope) {
   "use strict";
 
-  const VERSION = "2.1.0";
+  const VERSION = "2.2.0";
   const STORAGE_SCHEMA = "hh.draw.studio.v1";
   const BRUSH_LIBRARY_SCHEMA = "hh.draw.brush-library.v1";
+  const LAYOUT_SCHEMA = "hh.draw.layout.v1";
+  const DEFAULT_LAYOUT = Object.freeze({ toolrailCollapsed: false, inspectorCollapsed: false, dockCollapsed: false, compactControls: false });
   const MAX_STROKES = 120;
   const MAX_POINTS_PER_STROKE = 1400;
   const MAX_LAYERS = 16;
@@ -503,6 +505,30 @@
     return `${BRUSH_LIBRARY_SCHEMA}:${seedNumber(storageKey)}`;
   }
 
+  function layoutKey(storageKey) {
+    return `${LAYOUT_SCHEMA}:${seedNumber(storageKey)}`;
+  }
+
+  function normalizeLayout(input = {}) {
+    return {
+      toolrailCollapsed: input?.toolrailCollapsed === true,
+      inspectorCollapsed: input?.inspectorCollapsed === true,
+      dockCollapsed: input?.dockCollapsed === true,
+      compactControls: input?.compactControls === true
+    };
+  }
+
+  function readLayout(storageKey) {
+    try { return normalizeLayout(JSON.parse(globalScope.localStorage?.getItem(layoutKey(storageKey)) || "{}")); }
+    catch { return { ...DEFAULT_LAYOUT }; }
+  }
+
+  function saveLayout(targetRuntime = runtime) {
+    if (!targetRuntime) return false;
+    try { globalScope.localStorage?.setItem(layoutKey(targetRuntime.storageKey), JSON.stringify(normalizeLayout(targetRuntime.layout))); return true; }
+    catch { return false; }
+  }
+
   function readBrushLibrary(storageKey) {
     try {
       const value = JSON.parse(globalScope.localStorage?.getItem(brushLibraryKey(storageKey)) || "{}");
@@ -647,21 +673,30 @@
       <div class="draw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
       <header class="draw-topbar">
         <div class="draw-brand"><span>✦</span><div><small>HH CREATIVE LIGHT LAB</small><strong>Vẽ · Chromatic Studio</strong></div></div>
+        <div class="draw-project-context" aria-label="Trạng thái dự án"><span><small>DỰ ÁN HIỆN TẠI</small><strong>Tác phẩm ánh sáng</strong></span><i></i><span><small data-draw-save-state>Đã tự lưu</small><b>${settings.canvasWidth} × ${settings.canvasHeight}</b></span></div>
         <nav aria-label="Thao tác dự án">
           <button type="button" data-draw-new><i>＋</i><span>Mới</span></button>
+          <button type="button" data-draw-save><i>✓</i><span>Lưu</span></button>
           <button type="button" data-draw-undo disabled><i>↶</i><span>Hoàn tác</span></button>
           <button type="button" data-draw-redo disabled><i>↷</i><span>Làm lại</span></button>
           <button type="button" data-draw-copy><i>▣</i><span>Sao chép</span></button>
           <button type="button" data-draw-zen aria-pressed="false"><i>◐</i><span>Zen Canvas</span></button>
           <button type="button" data-draw-fullscreen><i>⛶</i><span>Toàn màn hình</span></button>
+          <button type="button" data-draw-layout-reset title="Đặt lại bố cục studio"><i>▦</i><span>Bố cục</span></button>
           <button type="button" class="draw-primary" data-draw-export><i>↓</i><span>Tải ảnh</span></button>
         </nav>
       </header>
       <div class="draw-workspace">
-        <aside class="draw-controls" aria-label="Điều khiển nét vẽ">
-          <header><div><small>ĐIỀU KHIỂN</small><strong>Tạo ánh sáng của bạn</strong></div><button type="button" data-draw-panel-close aria-label="Đóng bảng điều khiển">×</button></header>
-          <section class="draw-layer-section"><div class="draw-section-heading"><h3>Layer Studio</h3><span>${project.layers.length}/${MAX_LAYERS}</span></div><div data-draw-layer-panel>${layerPanelMarkup(project)}</div></section>
-          <section><div class="draw-section-heading"><h3>${Object.keys(PRESETS).length} chế độ nét động</h3><span data-draw-mode-count>${Object.keys(PRESETS).length}</span></div><label class="draw-brush-search"><span>⌕</span><input type="search" data-draw-brush-search placeholder="Tìm brush, ví dụ plasma, ink…" autocomplete="off"></label><div class="draw-mode-filters" role="toolbar" aria-label="Lọc chế độ nét">${modeFilterMarkup()}</div><div class="draw-preset-grid">${presetMarkup(settings, library)}</div><p class="draw-filter-empty" data-draw-filter-empty hidden>Không có brush phù hợp. Hãy thử từ khóa hoặc nhóm khác.</p></section>
+        <aside class="draw-toolrail" aria-label="Công cụ vẽ chính">
+          <button type="button" class="draw-rail-toggle" data-draw-layout-toggle="toolrail" title="Thu gọn thanh công cụ" aria-label="Thu gọn thanh công cụ">⇤</button>
+          <div role="toolbar" aria-label="Chọn công cụ"><button type="button" class="is-active" data-draw-tool="draw" title="Bút vẽ (B)" aria-pressed="true"><i>✎</i><span>Bút</span><kbd>B</kbd></button><button type="button" data-draw-tool="eraser" title="Tẩy (E)" aria-pressed="false"><i>⌫</i><span>Tẩy</span><kbd>E</kbd></button><button type="button" data-draw-tool="select" title="Chọn nét (V)" aria-pressed="false"><i>◇</i><span>Chọn</span><kbd>V</kbd></button><button type="button" data-draw-tool="pan" title="Di chuyển canvas (H hoặc Space)" aria-pressed="false"><i>✥</i><span>Di chuyển</span><kbd>H</kbd></button></div>
+          <span></span>
+          <div role="toolbar" aria-label="Điều hướng thuộc tính"><button type="button" data-draw-jump="layers" title="Mở Layer Studio"><i>▱</i><span>Layer</span></button><button type="button" data-draw-jump="brushes" title="Mở thư viện brush"><i>✺</i><span>Brush</span></button><button type="button" data-draw-jump="colors" title="Mở bảng màu"><i>◉</i><span>Màu</span></button><button type="button" data-draw-jump="canvas" title="Mở thiết lập canvas"><i>⌗</i><span>Canvas</span></button><button type="button" data-draw-jump="export" title="Mở thiết lập xuất"><i>↓</i><span>Xuất</span></button></div>
+        </aside>
+        <aside class="draw-controls" data-draw-inspector aria-label="Thuộc tính và điều khiển nét vẽ">
+          <header><div><small>THUỘC TÍNH</small><strong>Công cụ & đối tượng</strong></div><span><button type="button" data-draw-layout-toggle="inspector" title="Thu gọn bảng thuộc tính" aria-label="Thu gọn bảng thuộc tính">⇥</button><button type="button" data-draw-panel-close aria-label="Đóng bảng điều khiển">×</button></span></header>
+          <section class="draw-layer-section" data-draw-panel-section="layers" tabindex="-1"><div class="draw-section-heading"><h3>Layer Studio</h3><span>${project.layers.length}/${MAX_LAYERS}</span></div><div data-draw-layer-panel>${layerPanelMarkup(project)}</div></section>
+          <section data-draw-panel-section="brushes" tabindex="-1"><div class="draw-section-heading"><h3>${Object.keys(PRESETS).length} chế độ nét động</h3><span data-draw-mode-count>${Object.keys(PRESETS).length}</span></div><label class="draw-brush-search"><span>⌕</span><input type="search" data-draw-brush-search placeholder="Tìm brush, ví dụ plasma, ink…" autocomplete="off"></label><div class="draw-mode-filters" role="toolbar" aria-label="Lọc chế độ nét">${modeFilterMarkup()}</div><div class="draw-preset-grid">${presetMarkup(settings, library)}</div><p class="draw-filter-empty" data-draw-filter-empty hidden>Không có brush phù hợp. Hãy thử từ khóa hoặc nhóm khác.</p></section>
           <section><details class="draw-advanced draw-pattern-composer" open><summary><span><strong>Pattern Composer</strong><small>6 thuật toán · seed tái tạo · undo/redo thật</small></span><i>⌄</i></summary><div class="draw-advanced-body">${generatorMarkup(settings)}</div></details></section>
           <section><details class="draw-advanced"><summary><span><strong>Brush Dynamics</strong><small>Lực bút · độ mượt · tốc độ · độ tán</small></span><i>⌄</i></summary><div class="draw-advanced-body">
             <label class="draw-range"><span><b>Stabilizer</b><output data-draw-output="stabilizer">${Math.round(settings.stabilizer)}%</output></span><input type="range" min="0" max="95" step="1" value="${settings.stabilizer}" data-draw-setting="stabilizer"></label>
@@ -679,12 +714,12 @@
             <label class="draw-range"><span><b>Xoay đầu bút</b><output data-draw-output="rotation">${Math.round(settings.rotation)}°</output></span><input type="range" min="0" max="360" step="1" value="${settings.rotation}" data-draw-setting="rotation"></label>
             <label class="draw-switch"><span><strong>Đầu tẩy stylus</strong><small>Tự nhận diện nút tẩy của bút</small></span><input type="checkbox" data-draw-setting="stylusEraser" ${settings.stylusEraser ? "checked" : ""}><i></i></label>
           </div></details></section>
-          <section><h3>Bảng màu đa sắc</h3><div class="draw-gradient-grid">${colorPaletteMarkup(settings)}</div><details class="draw-custom-color"><summary>Tùy chỉnh màu riêng</summary><div class="draw-palette">${paletteMarkup(settings)}</div><div class="draw-color-mix"><label><span>Màu chính</span><input type="color" data-draw-color-a value="${settings.colorA}"></label><i>＋</i><label><span>Màu hòa</span><input type="color" data-draw-color-b value="${settings.colorB}"></label><b data-draw-mix-preview style="--mix:${mixHex(settings.colorA, settings.colorB)}"></b></div>${gradientEditorMarkup(settings)}</details><label class="draw-switch"><span><strong>Cầu vồng chuyển động</strong><small>Tự chạy toàn bộ phổ màu theo chiều dài nét</small></span><input type="checkbox" data-draw-setting="autoHue" ${settings.autoHue ? "checked" : ""}><i></i></label></section>
-          <section><h3>Canvas & đối xứng</h3><label class="draw-range"><span><b>Đối xứng quay</b><output data-draw-output="symmetry">${settings.symmetry} nhánh</output></span><input type="range" min="1" max="12" step="1" value="${settings.symmetry}" data-draw-setting="symmetry"></label><label class="draw-switch"><span><strong>Phản chiếu qua tâm</strong><small>Nhân đôi nét qua mỗi trục</small></span><input type="checkbox" data-draw-setting="mirror" ${settings.mirror ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Xoáy vào trung tâm</strong><small>Tạo các lớp thu nhỏ hướng tâm</small></span><input type="checkbox" data-draw-setting="spiral" ${settings.spiral ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Hiện đường dẫn</strong><small>Lưới chỉ dẫn không đi vào ảnh xuất</small></span><input type="checkbox" data-draw-setting="guides" ${settings.guides ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Lưới căn chỉnh</strong><small>Lưới chỉ hiển thị khi làm việc</small></span><input type="checkbox" data-draw-setting="grid" ${settings.grid ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Hít vào tâm</strong><small>Tự bắt nét gần đúng tâm canvas</small></span><input type="checkbox" data-draw-setting="snapCenter" ${settings.snapCenter ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Vẽ bằng cảm ứng</strong><small>Tắt để một ngón tay chỉ di chuyển canvas</small></span><input type="checkbox" data-draw-setting="touchDraw" ${settings.touchDraw ? "checked" : ""}><i></i></label></section>
+          <section data-draw-panel-section="colors" tabindex="-1"><h3>Bảng màu đa sắc</h3><div class="draw-gradient-grid">${colorPaletteMarkup(settings)}</div><details class="draw-custom-color"><summary>Tùy chỉnh màu riêng</summary><div class="draw-palette">${paletteMarkup(settings)}</div><div class="draw-color-mix"><label><span>Màu chính</span><input type="color" data-draw-color-a value="${settings.colorA}"></label><i>＋</i><label><span>Màu hòa</span><input type="color" data-draw-color-b value="${settings.colorB}"></label><b data-draw-mix-preview style="--mix:${mixHex(settings.colorA, settings.colorB)}"></b></div>${gradientEditorMarkup(settings)}</details><label class="draw-switch"><span><strong>Cầu vồng chuyển động</strong><small>Tự chạy toàn bộ phổ màu theo chiều dài nét</small></span><input type="checkbox" data-draw-setting="autoHue" ${settings.autoHue ? "checked" : ""}><i></i></label></section>
+          <section data-draw-panel-section="canvas" tabindex="-1"><h3>Canvas & đối xứng</h3><label class="draw-range"><span><b>Đối xứng quay</b><output data-draw-output="symmetry">${settings.symmetry} nhánh</output></span><input type="range" min="1" max="12" step="1" value="${settings.symmetry}" data-draw-setting="symmetry"></label><label class="draw-switch"><span><strong>Phản chiếu qua tâm</strong><small>Nhân đôi nét qua mỗi trục</small></span><input type="checkbox" data-draw-setting="mirror" ${settings.mirror ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Xoáy vào trung tâm</strong><small>Tạo các lớp thu nhỏ hướng tâm</small></span><input type="checkbox" data-draw-setting="spiral" ${settings.spiral ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Hiện đường dẫn</strong><small>Lưới chỉ dẫn không đi vào ảnh xuất</small></span><input type="checkbox" data-draw-setting="guides" ${settings.guides ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Lưới căn chỉnh</strong><small>Lưới chỉ hiển thị khi làm việc</small></span><input type="checkbox" data-draw-setting="grid" ${settings.grid ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Hít vào tâm</strong><small>Tự bắt nét gần đúng tâm canvas</small></span><input type="checkbox" data-draw-setting="snapCenter" ${settings.snapCenter ? "checked" : ""}><i></i></label><label class="draw-switch"><span><strong>Vẽ bằng cảm ứng</strong><small>Tắt để một ngón tay chỉ di chuyển canvas</small></span><input type="checkbox" data-draw-setting="touchDraw" ${settings.touchDraw ? "checked" : ""}><i></i></label></section>
           <section><h3>Nét vẽ & hiệu năng</h3><label class="draw-select-row"><span><strong>Chất lượng realtime</strong><small>Tự điều chỉnh để nét luôn bám sát con trỏ</small></span><select data-draw-setting="quality"><option value="auto"${settings.quality === "auto" ? " selected" : ""}>Tự động thông minh</option><option value="quality"${settings.quality === "quality" ? " selected" : ""}>Chất lượng cao</option><option value="balanced"${settings.quality === "balanced" ? " selected" : ""}>Cân bằng</option><option value="performance"${settings.quality === "performance" ? " selected" : ""}>Ưu tiên tốc độ</option></select></label><label class="draw-range"><span><b>Độ dày</b><output data-draw-output="brushSize">${settings.brushSize.toFixed(1)} px</output></span><input type="range" min="0.5" max="8" step="0.1" value="${settings.brushSize}" data-draw-setting="brushSize"></label><label class="draw-range"><span><b>Hào quang</b><output data-draw-output="glow">${Math.round(settings.glow)}%</output></span><input type="range" min="0" max="48" step="1" value="${settings.glow}" data-draw-setting="glow"></label><label class="draw-range"><span><b>Độ mềm</b><output data-draw-output="flow">${Math.round(settings.flow * 100)}%</output></span><input type="range" min="0.15" max="1" step="0.01" value="${settings.flow}" data-draw-setting="flow"></label></section>
           <section><details class="draw-advanced"><summary><span><strong>Animation Studio</strong><small>Replay · timeline · loop · xuất video</small></span><i>⌄</i></summary><div class="draw-advanced-body"><div class="draw-animation-controls"><button type="button" data-draw-animation="play" title="Phát">▶</button><button type="button" data-draw-animation="pause" title="Tạm dừng">Ⅱ</button><button type="button" data-draw-animation="stop" title="Dừng">■</button><span data-draw-animation-time>00:00</span></div><div class="draw-keyframe-controls"><button type="button" data-draw-keyframe="add">＋ Keyframe</button><button type="button" data-draw-keyframe="remove">Xóa gần nhất</button><span><b data-draw-keyframe-count>${animation.keyframes.length}</b>/32</span></div><label class="draw-range"><span><b>Timeline</b><output data-draw-output="timeline">0%</output></span><input type="range" min="0" max="1" step="0.001" value="0" data-draw-timeline></label><label class="draw-range"><span><b>Thời lượng</b><output data-draw-animation-output="duration">${animation.duration.toFixed(0)} giây</output></span><input type="range" min="3" max="30" step="1" value="${animation.duration}" data-draw-animation-setting="duration"></label><div class="draw-inline"><label><span>Tốc độ</span><select data-draw-animation-setting="speed">${[0.25,0.5,1,2,4].map((value) => `<option value="${value}"${animation.speed === value ? " selected" : ""}>${value}×</option>`).join("")}</select></label><label><span>FPS</span><select data-draw-animation-setting="fps">${[15,24,30,60].map((value) => `<option value="${value}"${animation.fps === value ? " selected" : ""}>${value} FPS</option>`).join("")}</select></label><label><span>Video</span><select data-draw-animation-setting="format"><option value="webm"${animation.format === "webm" ? " selected" : ""}>WebM</option><option value="mp4"${animation.format === "mp4" ? " selected" : ""}>MP4 nếu hỗ trợ</option></select></label></div><label class="draw-switch"><span><strong>Loop liền mạch</strong><small>Phát lại từ đầu sau khi hoàn tất</small></span><input type="checkbox" data-draw-animation-setting="loop" ${animation.loop ? "checked" : ""}><i></i></label><button type="button" class="draw-wide" data-draw-audio-reactive>♫ Bật Audio Reactive</button><button type="button" class="draw-wide draw-primary" data-draw-animation-export>Xuất video timelapse</button></div></details></section>
           <section><h3>Media nền cục bộ</h3><label class="draw-import"><input type="file" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm" data-draw-background-media><span>Chọn ảnh hoặc video nền</span></label><button type="button" class="draw-wide" data-draw-background-remove>Xóa media nền</button><small class="draw-local-note" data-draw-background-status>Không tải media ra khỏi thiết bị · chỉ dùng trong phiên này</small></section>
-          <section><h3>Project & xuất bản</h3><label class="draw-select-row"><span><strong>Kích thước canvas</strong><small>Preset mạng xã hội hoặc kích thước tùy chỉnh</small></span><select data-draw-setting="canvasPreset">${Object.entries(CANVAS_PRESETS).map(([id, preset]) => `<option value="${id}"${settings.canvasPreset === id ? " selected" : ""}>${preset.label}</option>`).join("")}</select></label><div class="draw-inline"><label><span>Rộng</span><input type="number" min="320" max="7680" value="${settings.canvasWidth}" data-draw-setting="canvasWidth"></label><label><span>Cao</span><input type="number" min="320" max="7680" value="${settings.canvasHeight}" data-draw-setting="canvasHeight"></label><label><span>Nền</span><select data-draw-setting="background"><option value="cosmic"${settings.background === "cosmic" ? " selected" : ""}>Vũ trụ</option><option value="midnight"${settings.background === "midnight" ? " selected" : ""}>Xanh đêm</option><option value="black"${settings.background === "black" ? " selected" : ""}>Đen</option><option value="transparent"${settings.background === "transparent" ? " selected" : ""}>Trong suốt</option></select></label><label><span>Định dạng</span><select data-draw-setting="exportFormat"><option value="png"${settings.exportFormat === "png" ? " selected" : ""}>PNG</option><option value="webp"${settings.exportFormat === "webp" ? " selected" : ""}>WebP</option><option value="jpeg"${settings.exportFormat === "jpeg" ? " selected" : ""}>JPEG</option></select></label><label><span>Độ phân giải</span><select data-draw-setting="exportScale"><option value="1"${settings.exportScale === 1 ? " selected" : ""}>1×</option><option value="2"${settings.exportScale === 2 ? " selected" : ""}>2×</option><option value="4"${settings.exportScale === 4 ? " selected" : ""}>4×</option></select></label></div><button type="button" class="draw-wide" data-draw-export-svg>Xuất SVG vector</button><button type="button" class="draw-wide" data-draw-export-layers>Xuất từng layer PNG</button><div class="draw-export-pair"><button type="button" data-draw-brush-export>Xuất preset brush</button><label class="draw-import"><input type="file" accept="application/json,.json" data-draw-brush-import><span>Nhập preset</span></label></div><button type="button" class="draw-wide" data-draw-project-export>Xuất project JSON</button><label class="draw-import"><input type="file" accept="application/json,.json" data-draw-project-import><span>Nhập project JSON</span></label></section>
+          <section data-draw-panel-section="export" tabindex="-1"><h3>Project & xuất bản</h3><label class="draw-select-row"><span><strong>Kích thước canvas</strong><small>Preset mạng xã hội hoặc kích thước tùy chỉnh</small></span><select data-draw-setting="canvasPreset">${Object.entries(CANVAS_PRESETS).map(([id, preset]) => `<option value="${id}"${settings.canvasPreset === id ? " selected" : ""}>${preset.label}</option>`).join("")}</select></label><div class="draw-inline"><label><span>Rộng</span><input type="number" min="320" max="7680" value="${settings.canvasWidth}" data-draw-setting="canvasWidth"></label><label><span>Cao</span><input type="number" min="320" max="7680" value="${settings.canvasHeight}" data-draw-setting="canvasHeight"></label><label><span>Nền</span><select data-draw-setting="background"><option value="cosmic"${settings.background === "cosmic" ? " selected" : ""}>Vũ trụ</option><option value="midnight"${settings.background === "midnight" ? " selected" : ""}>Xanh đêm</option><option value="black"${settings.background === "black" ? " selected" : ""}>Đen</option><option value="transparent"${settings.background === "transparent" ? " selected" : ""}>Trong suốt</option></select></label><label><span>Định dạng</span><select data-draw-setting="exportFormat"><option value="png"${settings.exportFormat === "png" ? " selected" : ""}>PNG</option><option value="webp"${settings.exportFormat === "webp" ? " selected" : ""}>WebP</option><option value="jpeg"${settings.exportFormat === "jpeg" ? " selected" : ""}>JPEG</option></select></label><label><span>Độ phân giải</span><select data-draw-setting="exportScale"><option value="1"${settings.exportScale === 1 ? " selected" : ""}>1×</option><option value="2"${settings.exportScale === 2 ? " selected" : ""}>2×</option><option value="4"${settings.exportScale === 4 ? " selected" : ""}>4×</option></select></label></div><button type="button" class="draw-wide" data-draw-export-svg>Xuất SVG vector</button><button type="button" class="draw-wide" data-draw-export-layers>Xuất từng layer PNG</button><div class="draw-export-pair"><button type="button" data-draw-brush-export>Xuất preset brush</button><label class="draw-import"><input type="file" accept="application/json,.json" data-draw-brush-import><span>Nhập preset</span></label></div><button type="button" class="draw-wide" data-draw-project-export>Xuất project JSON</button><label class="draw-import"><input type="file" accept="application/json,.json" data-draw-project-import><span>Nhập project JSON</span></label></section>
         </aside>
         <main class="draw-canvas-stage">
           <canvas data-draw-canvas tabindex="0" aria-label="Khung vẽ ánh sáng. Giữ chuột hoặc chạm và kéo để vẽ.">Trình duyệt chưa hỗ trợ Canvas.</canvas>
@@ -706,6 +741,12 @@
             <button type="button" data-draw-checkpoint-restore title="Khôi phục checkpoint gần nhất">⟲</button>
             <button type="button" data-draw-export title="Tải ảnh">↓</button>
           </div>
+          <section class="draw-workspace-dock" data-draw-dock aria-label="Điều hướng nhanh studio">
+            <button type="button" class="draw-dock-toggle" data-draw-layout-toggle="dock" title="Thu gọn thanh studio" aria-label="Thu gọn thanh studio">⌄</button>
+            <div class="draw-dock-tabs" role="toolbar" aria-label="Mở nhanh khu vực làm việc"><button type="button" data-draw-jump="layers"><i>▱</i><span><strong>Layer</strong><small data-draw-dock-layers>${project.layers.length} lớp</small></span></button><button type="button" data-draw-jump="brushes"><i>✺</i><span><strong>Brush</strong><small>${escapeHtml(PRESETS[settings.preset]?.label || "Silk Light")}</small></span></button><button type="button" data-draw-jump="colors"><i>◉</i><span><strong>Màu</strong><small>${escapeHtml(COLOR_PALETTES[settings.paletteId]?.label || "Tùy chỉnh")}</small></span></button><button type="button" data-draw-jump="canvas"><i>⌗</i><span><strong>Artboard</strong><small>${settings.canvasWidth} × ${settings.canvasHeight}</small></span></button></div>
+            <div class="draw-dock-history" role="toolbar" aria-label="Lịch sử thao tác"><span><small>LỊCH SỬ</small><b data-draw-history-count>0 thao tác</b></span><button type="button" data-draw-undo title="Hoàn tác" disabled>↶</button><button type="button" data-draw-redo title="Làm lại" disabled>↷</button></div>
+            <div class="draw-dock-layout" role="toolbar" aria-label="Tùy chỉnh bố cục"><button type="button" data-draw-layout-toggle="toolrail" title="Bật hoặc tắt thanh công cụ">⇤</button><button type="button" data-draw-layout-toggle="inspector" title="Bật hoặc tắt bảng thuộc tính">⇥</button><button type="button" data-draw-layout-reset title="Đặt lại bố cục">▦</button></div>
+          </section>
           <button type="button" class="draw-zen-exit" data-draw-zen aria-label="Thoát Zen Canvas">Thoát Zen · Z</button>
         </main>
       </div>
@@ -1276,7 +1317,13 @@
     const empty = targetRuntime.root.querySelector("[data-draw-empty]");
     if (empty) empty.hidden = Boolean(strokes || targetRuntime.activeStroke);
     const stats = targetRuntime.root.querySelector("[data-draw-stats]");
-    if (stats) stats.textContent = `${strokes} nét · ${targetRuntime.project.layers.length} layer · ${targetRuntime.saved ? "đã tự lưu" : "đang lưu"}`;
+    if (stats) stats.textContent = `${strokes} nét · ${targetRuntime.project.layers.length} layer · ${targetRuntime.saved ? "đã tự lưu" : targetRuntime.saveFailed ? "lưu thất bại" : "đang lưu"}`;
+    const saveState = targetRuntime.root.querySelector("[data-draw-save-state]");
+    if (saveState) { const state = targetRuntime.saved ? "saved" : targetRuntime.saveFailed ? "failed" : "saving"; saveState.textContent = state === "saved" ? "Đã tự lưu" : state === "failed" ? "Lưu thất bại" : "Đang lưu…"; saveState.dataset.state = state; }
+    const historyCount = targetRuntime.root.querySelector("[data-draw-history-count]");
+    if (historyCount) historyCount.textContent = `${targetRuntime.historyUndo.length} thao tác`;
+    const dockLayers = targetRuntime.root.querySelector("[data-draw-dock-layers]");
+    if (dockLayers) dockLayers.textContent = `${targetRuntime.project.layers.length} lớp`;
     const performance = targetRuntime.root.querySelector("[data-draw-performance]");
     if (performance) {
       const labels = { quality: "Chất lượng cao", balanced: "Cân bằng", performance: "Ưu tiên tốc độ" };
@@ -1290,6 +1337,53 @@
       engine.textContent = cost ? `${worker} · ${cost.toFixed(1)} ms · hàng đợi ${targetRuntime.pointQueue.length}` : `${worker} · sẵn sàng`;
       engine.dataset.tone = cost > 12 ? "hot" : cost > 7 ? "warm" : "cool";
     }
+  }
+
+  function syncLayoutUi(targetRuntime = runtime, { resize = true } = {}) {
+    if (!targetRuntime?.root) return;
+    const layout = normalizeLayout(targetRuntime.layout);
+    targetRuntime.layout = layout;
+    targetRuntime.root.classList.toggle("is-toolrail-collapsed", layout.toolrailCollapsed);
+    targetRuntime.root.classList.toggle("is-inspector-collapsed", layout.inspectorCollapsed);
+    targetRuntime.root.classList.toggle("is-dock-collapsed", layout.dockCollapsed);
+    targetRuntime.root.classList.toggle("is-compact-controls", layout.compactControls);
+    targetRuntime.root.querySelectorAll("[data-draw-layout-toggle]").forEach((button) => {
+      const key = button.dataset.drawLayoutToggle;
+      const active = key === "toolrail" ? !layout.toolrailCollapsed : key === "inspector" ? !layout.inspectorCollapsed : key === "dock" ? !layout.dockCollapsed : false;
+      button.setAttribute("aria-pressed", String(active));
+      const labels = { toolrail: "thanh công cụ", inspector: "bảng thuộc tính", dock: "thanh studio" };
+      if (labels[key]) button.setAttribute("aria-label", `${active ? "Thu gọn" : "Mở"} ${labels[key]}`);
+    });
+    if (resize) scheduleResize(targetRuntime);
+  }
+
+  function changeLayout(action, targetRuntime = runtime) {
+    if (!targetRuntime) return;
+    const layoutKeys = { toolrail: "toolrailCollapsed", inspector: "inspectorCollapsed", dock: "dockCollapsed", compact: "compactControls" };
+    const key = layoutKeys[action] || action;
+    if (action === "reset") targetRuntime.layout = { ...DEFAULT_LAYOUT };
+    else if (Object.hasOwn(targetRuntime.layout, key)) targetRuntime.layout[key] = !targetRuntime.layout[key];
+    else return;
+    syncLayoutUi(targetRuntime);
+    saveLayout(targetRuntime);
+    toast(action === "reset" ? "Đã đặt lại bố cục studio" : "Đã cập nhật bố cục làm việc", targetRuntime);
+  }
+
+  function jumpToPanel(sectionId, targetRuntime = runtime) {
+    if (!targetRuntime?.root || !["layers", "brushes", "colors", "canvas", "export"].includes(sectionId)) return false;
+    targetRuntime.layout.inspectorCollapsed = false;
+    syncLayoutUi(targetRuntime);
+    saveLayout(targetRuntime);
+    if (globalScope.matchMedia?.("(max-width: 760px)")?.matches) targetRuntime.root.classList.add("is-panel-open");
+    const panel = targetRuntime.root.querySelector(".draw-controls");
+    const section = targetRuntime.root.querySelector(`[data-draw-panel-section="${sectionId}"]`);
+    if (!panel || !section) return false;
+    const reduceMotion = globalScope.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    panel.scrollTo?.({ top: Math.max(0, section.offsetTop - 12), behavior: reduceMotion ? "auto" : "smooth" });
+    section.focus?.({ preventScroll: true });
+    targetRuntime.root.querySelectorAll("[data-draw-jump]").forEach((button) => button.classList.toggle("is-active", button.dataset.drawJump === sectionId));
+    announce(`Đã mở ${({ layers: "Layer Studio", brushes: "thư viện brush", colors: "bảng màu", canvas: "thiết lập canvas", export: "khu vực xuất bản" })[sectionId]}`, targetRuntime);
+    return true;
   }
 
   function announce(message, targetRuntime = runtime) {
@@ -1312,12 +1406,33 @@
     if (!targetRuntime) return;
     targetRuntime.userChangedProject = true;
     targetRuntime.saved = false;
+    targetRuntime.saveFailed = false;
     updateUi(targetRuntime);
     globalScope.clearTimeout(targetRuntime.saveTimer);
     targetRuntime.saveTimer = globalScope.setTimeout(() => {
       targetRuntime.saved = storageWrite(targetRuntime.storageKey, targetRuntime.project);
+      targetRuntime.saveFailed = !targetRuntime.saved;
       updateUi(targetRuntime);
     }, 280);
+  }
+
+  function saveNow(targetRuntime = runtime) {
+    if (!targetRuntime) return false;
+    globalScope.clearTimeout(targetRuntime.saveTimer);
+    targetRuntime.saveTimer = 0;
+    targetRuntime.userChangedProject = true;
+    targetRuntime.saved = storageWrite(targetRuntime.storageKey, targetRuntime.project);
+    targetRuntime.saveFailed = !targetRuntime.saved;
+    updateUi(targetRuntime);
+    if (targetRuntime.saved) {
+      scheduleCheckpoint(targetRuntime, "Lưu thủ công");
+      toast("Đã lưu project an toàn", targetRuntime);
+      announce("Project đã được lưu", targetRuntime);
+    } else {
+      toast("Không thể lưu project trên thiết bị này", targetRuntime);
+      announce("Lưu project thất bại", targetRuntime);
+    }
+    return targetRuntime.saved;
   }
 
   function projectSnapshot(project) {
@@ -2177,6 +2292,9 @@
   }
 
   function handleClick(event, targetRuntime = runtime) {
+    const layoutToggle = event.target.closest("[data-draw-layout-toggle]"); if (layoutToggle) { changeLayout(layoutToggle.dataset.drawLayoutToggle, targetRuntime); return; }
+    if (event.target.closest("[data-draw-layout-reset]")) { changeLayout("reset", targetRuntime); return; }
+    const panelJump = event.target.closest("[data-draw-jump]"); if (panelJump) { jumpToPanel(panelJump.dataset.drawJump, targetRuntime); return; }
     const favorite = event.target.closest("[data-draw-favorite]"); if (favorite) { toggleFavorite(favorite.dataset.drawFavorite, targetRuntime); return; }
     const generator = event.target.closest("[data-draw-generator]"); if (generator) { composePattern(generator.dataset.drawGenerator, targetRuntime); return; }
     if (event.target.closest("[data-draw-generator-remix]")) { remixPattern(targetRuntime); return; }
@@ -2216,6 +2334,7 @@
     }
     const color = event.target.closest("[data-draw-color]"); if (color) { const selected = color.dataset.drawColor.toLowerCase(); targetRuntime.project.settings = normalizeSettings({ ...targetRuntime.project.settings, colorA: selected, customStops: [selected, ...targetRuntime.project.settings.customStops.slice(1)], paletteId: "custom" }); syncControls(targetRuntime); syncGradientEditor(targetRuntime); scheduleSave(targetRuntime); return; }
     if (event.target.closest("[data-draw-new]")) { clearDrawing(targetRuntime); return; }
+    if (event.target.closest("[data-draw-save]")) { saveNow(targetRuntime); return; }
     if (event.target.closest("[data-draw-undo]")) { undo(targetRuntime); return; }
     if (event.target.closest("[data-draw-redo]")) { redo(targetRuntime); return; }
     if (event.target.closest("[data-draw-export]")) { exportCanvas(targetRuntime); return; }
@@ -2247,18 +2366,25 @@
   }
 
   function handleKeydown(event, targetRuntime = runtime) {
-    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName);
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName) || event.target?.isContentEditable === true || Boolean(event.target?.closest?.("[contenteditable]:not([contenteditable='false'])"));
+    if (event.key === "Escape" && targetRuntime.root.classList.contains("is-panel-open")) { targetRuntime.root.classList.remove("is-panel-open"); targetRuntime.root.querySelector("[data-draw-panel-open]")?.focus(); return; }
+    if (typing) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") { event.preventDefault(); event.shiftKey ? redo(targetRuntime) : undo(targetRuntime); return; }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") { event.preventDefault(); redo(targetRuntime); return; }
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); exportCanvas(targetRuntime); return; }
-    if (!typing && event.code === "Space") { event.preventDefault(); targetRuntime.spacePressed = true; targetRuntime.root.classList.add("is-space-pan"); return; }
-    if (!typing && event.key.toLowerCase() === "b") { event.preventDefault(); setTool("draw", targetRuntime); return; }
-    if (!typing && event.key.toLowerCase() === "e") { event.preventDefault(); setTool("eraser", targetRuntime); return; }
-    if (!typing && event.key.toLowerCase() === "v") { event.preventDefault(); setTool("select", targetRuntime); return; }
-    if (!typing && event.key.toLowerCase() === "h") { event.preventDefault(); setTool("pan", targetRuntime); return; }
-    if (!typing && event.key.toLowerCase() === "f") { event.preventDefault(); targetRuntime.root.requestFullscreen?.(); return; }
-    if (!typing && event.key.toLowerCase() === "z") { event.preventDefault(); const active = targetRuntime.root.classList.toggle("is-zen"); targetRuntime.root.querySelectorAll("[data-draw-zen]").forEach((button) => button.setAttribute("aria-pressed", String(active))); scheduleResize(targetRuntime); return; }
-    if (event.key === "Escape" && targetRuntime.root.classList.contains("is-panel-open")) { targetRuntime.root.classList.remove("is-panel-open"); targetRuntime.root.querySelector("[data-draw-panel-open]")?.focus(); }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); saveNow(targetRuntime); return; }
+    if ((event.ctrlKey || event.metaKey) && (event.key === "+" || event.key === "=")) { event.preventDefault(); updateView("zoom-in", targetRuntime); return; }
+    if ((event.ctrlKey || event.metaKey) && event.key === "-") { event.preventDefault(); updateView("zoom-out", targetRuntime); return; }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d") { event.preventDefault(); transformSelection("duplicate", targetRuntime); return; }
+    if ((event.key === "Delete" || event.key === "Backspace") && targetRuntime.selectionIds?.size) { event.preventDefault(); transformSelection("delete", targetRuntime); return; }
+    if (event.key === "0") { event.preventDefault(); updateView("fit", targetRuntime); return; }
+    if (event.key === "1") { event.preventDefault(); updateView("reset", targetRuntime); return; }
+    if (event.code === "Space") { event.preventDefault(); targetRuntime.spacePressed = true; targetRuntime.root.classList.add("is-space-pan"); return; }
+    if (event.key.toLowerCase() === "b") { event.preventDefault(); setTool("draw", targetRuntime); return; }
+    if (event.key.toLowerCase() === "e") { event.preventDefault(); setTool("eraser", targetRuntime); return; }
+    if (event.key.toLowerCase() === "v") { event.preventDefault(); setTool("select", targetRuntime); return; }
+    if (event.key.toLowerCase() === "h") { event.preventDefault(); setTool("pan", targetRuntime); return; }
+    if (event.key.toLowerCase() === "f") { event.preventDefault(); targetRuntime.root.requestFullscreen?.(); return; }
+    if (event.key.toLowerCase() === "z") { event.preventDefault(); const active = targetRuntime.root.classList.toggle("is-zen"); targetRuntime.root.querySelectorAll("[data-draw-zen]").forEach((button) => button.setAttribute("aria-pressed", String(active))); scheduleResize(targetRuntime); return; }
   }
 
   function handleKeyup(event, targetRuntime = runtime) {
@@ -2271,13 +2397,14 @@
     const storageKey = ownerKey(options.currentUser);
     const project = storageRead(storageKey);
     const brushLibrary = readBrushLibrary(storageKey);
+    const layout = readLayout(storageKey);
     root.innerHTML = markup(project, brushLibrary);
     const studio = root.firstElementChild;
     const canvas = studio.querySelector("[data-draw-canvas]");
     const guideCanvas = studio.querySelector("[data-draw-guides]");
     const minimap = studio.querySelector("[data-draw-minimap]");
     const initialQuality = project.settings.quality === "auto" ? resolveQualityProfile("auto", { deviceMemory: globalScope.navigator?.deviceMemory, hardwareConcurrency: globalScope.navigator?.hardwareConcurrency }).id : project.settings.quality;
-    runtime = { host: root, root: studio, canvas, guideCanvas, minimap, project, storageKey, favoriteBrushes: new Set(brushLibrary.favorites), recentBrushes: brushLibrary.recent, brushFilter: "all", brushSearch: "", historyUndo: [], historyRedo: [], historyActionCount: 0, pendingHistory: "", checkpointPending: false, userChangedProject: false, controlScrollAnchor: null, layerCache: new Map(), renderWorker: null, workerBusy: false, workerRequestId: 0, activeLayerBuffer: null, activeStroke: null, drawing: false, panning: false, panStart: null, touchPointers: new Map(), gesture: null, selecting: false, selectionShape: "rect", selectionPath: [], selectionScreen: null, selectionRegion: null, selectionIds: new Set(), playbackProgress: 0, playbackFrame: 0, isPlaying: false, exportingAnimation: false, exportCancelled: false, audioLevel: 0, audioStream: null, audioContext: null, audioFrame: 0, spacePressed: false, tool: "draw", dpr: 1, saved: true, resizeObserver: null, resizeFrame: 0, drawFrame: 0, pointQueue: [], drawRect: null, paintCost: 0, fastFrames: 0, liveQuality: initialQuality, saveTimer: 0, toastTimer: 0 };
+    runtime = { host: root, root: studio, canvas, guideCanvas, minimap, project, storageKey, layout, favoriteBrushes: new Set(brushLibrary.favorites), recentBrushes: brushLibrary.recent, brushFilter: "all", brushSearch: "", historyUndo: [], historyRedo: [], historyActionCount: 0, pendingHistory: "", checkpointPending: false, userChangedProject: false, controlScrollAnchor: null, layerCache: new Map(), renderWorker: null, workerBusy: false, workerRequestId: 0, activeLayerBuffer: null, activeStroke: null, drawing: false, panning: false, panStart: null, touchPointers: new Map(), gesture: null, selecting: false, selectionShape: "rect", selectionPath: [], selectionScreen: null, selectionRegion: null, selectionIds: new Set(), playbackProgress: 0, playbackFrame: 0, isPlaying: false, exportingAnimation: false, exportCancelled: false, audioLevel: 0, audioStream: null, audioContext: null, audioFrame: 0, spacePressed: false, tool: "draw", dpr: 1, saved: true, saveFailed: false, resizeObserver: null, resizeFrame: 0, drawFrame: 0, pointQueue: [], drawRect: null, paintCost: 0, fastFrames: 0, liveQuality: initialQuality, saveTimer: 0, toastTimer: 0 };
     runtime.onClick = (event) => handleClick(event, runtime);
     runtime.onChange = (event) => handleChange(event, runtime);
     runtime.onInput = (event) => { if (event.target.matches("[data-draw-brush-search]")) { runtime.brushSearch = event.target.value; applyBrushFilters(runtime); } else if (event.target.matches("input[type=range][data-draw-setting]")) updateSetting(event.target, runtime); else if (event.target.matches('input[type=range][data-draw-animation-setting]')) updateAnimationSetting(event.target, runtime); else if (event.target.matches("[data-draw-timeline]")) { runtime.playbackProgress = clamp(event.target.value, 0, 1, 0); renderPlayback(runtime); } };
@@ -2305,6 +2432,7 @@
     globalScope.document.addEventListener("keyup", runtime.onKeyup);
     runtime.resizeObserver = typeof globalScope.ResizeObserver === "function" ? new globalScope.ResizeObserver(() => scheduleResize(runtime)) : null;
     runtime.resizeObserver?.observe(canvas);
+    syncLayoutUi(runtime, { resize: false });
     globalScope.requestAnimationFrame?.(() => { resizeCanvases(runtime); syncControls(runtime); syncBrushLibraryUi(runtime); announce("Đã sẵn sàng · kéo để vẽ", runtime); });
     hydrateFromDatabase(runtime);
     return true;
@@ -2353,5 +2481,5 @@
     return renderLayerBuffer(layer, targetRuntime, Math.max(1, pixelWidth / ratio), Math.max(1, pixelHeight / ratio), ratio, 1, false);
   }
 
-  return { VERSION, STORAGE_SCHEMA, BRUSH_LIBRARY_SCHEMA, PALETTE, COLOR_PALETTES, PRESETS, BRUSH_MODES, PATTERN_GENERATORS, DEFAULT_SETTINGS, QUALITY_PROFILES, LAYER_BLEND_MODES, LAYER_TYPES, CANVAS_PRESETS, normalizeSettings, normalizeProject, normalizeLayer, projectStrokes, projectRenderCost, resolveQualityProfile, buildSymmetryPoints, generatePatternStrokes, mixHex, samplePalette, harmonyColors, renderLayerBitmap, mount, unmount, inspect };
+  return { VERSION, STORAGE_SCHEMA, BRUSH_LIBRARY_SCHEMA, LAYOUT_SCHEMA, DEFAULT_LAYOUT, PALETTE, COLOR_PALETTES, PRESETS, BRUSH_MODES, PATTERN_GENERATORS, DEFAULT_SETTINGS, QUALITY_PROFILES, LAYER_BLEND_MODES, LAYER_TYPES, CANVAS_PRESETS, normalizeLayout, normalizeSettings, normalizeProject, normalizeLayer, projectStrokes, projectRenderCost, resolveQualityProfile, buildSymmetryPoints, generatePatternStrokes, mixHex, samplePalette, harmonyColors, renderLayerBitmap, mount, unmount, inspect };
 });
