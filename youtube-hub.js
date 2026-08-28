@@ -16,7 +16,7 @@
 
   function warmPlaybackConnections() {
     if (!scope.document?.head) return;
-    ["https://www.youtube-nocookie.com", "https://i.ytimg.com"].forEach((href) => {
+    ["https://www.youtube-nocookie.com", "https://www.youtube.com", "https://i.ytimg.com"].forEach((href) => {
       if (scope.document.head.querySelector(`link[rel="preconnect"][href="${href}"]`)) return;
       const link = scope.document.createElement("link");
       link.rel = "preconnect";
