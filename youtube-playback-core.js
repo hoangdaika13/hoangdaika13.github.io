@@ -5,10 +5,10 @@
 })(typeof window !== "undefined" ? window : globalThis, function createHHYouTubePlaybackCore(scope) {
   "use strict";
 
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.0";
   const YOUTUBE_ORIGINS = Object.freeze(["https://www.youtube-nocookie.com", "https://youtube-nocookie.com", "https://www.youtube.com", "https://youtube.com"]);
   const COMMANDS = new Set([
-    "listening", "playVideo", "pauseVideo", "stopVideo", "cueVideoById", "loadVideoById", "seekTo",
+    "playVideo", "pauseVideo", "stopVideo", "cueVideoById", "loadVideoById", "seekTo",
     "setVolume", "mute", "unMute", "isMuted", "getCurrentTime", "getDuration", "getVideoLoadedFraction",
     "getVolume", "getPlaybackRate", "setPlaybackRate", "getAvailablePlaybackRates", "getPlaybackQuality"
   ]);
@@ -17,6 +17,7 @@
   let mounts = 0;
   let destroys = 0;
   let commandCount = 0;
+  let listenCount = 0;
   let duplicateMounts = 0;
 
   function cleanVideoId(value) {
@@ -98,6 +99,22 @@
     }
   }
 
+  function listen(frame, listenerId = "hh-youtube-player") {
+    const entry = registry.get(frame);
+    if (!entry || entry.destroyed || !frame.contentWindow) return false;
+    const targetOrigin = YOUTUBE_ORIGINS.find((origin) => String(frame.src || "").startsWith(`${origin}/embed/`));
+    if (!targetOrigin) return false;
+    const id = String(frame.id || listenerId || "hh-youtube-player").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 80) || "hh-youtube-player";
+    try {
+      frame.contentWindow.postMessage(JSON.stringify({ event: "listening", id }), targetOrigin);
+      entry.listens = Number(entry.listens || 0) + 1;
+      listenCount += 1;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function update(frame, info = {}) {
     const entry = registry.get(frame);
     if (!entry || entry.destroyed) return null;
@@ -127,7 +144,9 @@
       mounts,
       destroys,
       duplicateMounts,
-      commandCount
+      commandCount,
+      listens: entry?.listens || 0,
+      listenCount
     });
   }
 
@@ -142,6 +161,7 @@
     mounts = 0;
     destroys = 0;
     commandCount = 0;
+    listenCount = 0;
     duplicateMounts = 0;
   }
 
@@ -150,6 +170,7 @@
     origins: YOUTUBE_ORIGINS,
     commands: Object.freeze([...COMMANDS]),
     attach,
+    listen,
     command,
     update,
     get,

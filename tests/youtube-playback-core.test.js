@@ -1,5 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const path = require("node:path");
 
 const corePath = path.resolve(__dirname, "..", "youtube-playback-core.js");
@@ -75,6 +76,20 @@ test("YouTube playback commands are allowlisted and scoped to the iframe origin"
   const untrusted = mockFrame("zyxwvutsrqp", "https://example.com");
   assert.equal(core.attach(untrusted, "zyxwvutsrqp"), null);
   assert.equal(core.command(untrusted, "playVideo"), false);
+});
+
+test("listening uses the IFrame API handshake instead of a command message", () => {
+  const core = loadCore();
+  const frame = mockFrame("abcdefghijk");
+  core.attach(frame, "abcdefghijk");
+  assert.equal(core.listen(frame), true);
+  assert.equal(frame.messages.length, 1);
+  assert.deepEqual(JSON.parse(frame.messages[0].message), { event: "listening", id: "hh-youtube-player" });
+  assert.equal(frame.messages[0].targetOrigin, "https://www.youtube-nocookie.com");
+  const source = fs.readFileSync(corePath, "utf8");
+  assert.match(source, /function listen\(frame, listenerId/);
+  assert.match(source, /event: "listening"/);
+  assert.doesNotMatch(source, /"listening", "playVideo"/);
 });
 
 test("Replacing or destroying a player cleans the previous registration", () => {

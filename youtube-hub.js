@@ -14,6 +14,19 @@
   const core = () => scope.HHSearchPlatform;
   const playback = () => scope.HHYouTubePlaybackCore;
 
+  function warmPlaybackConnections() {
+    if (!scope.document?.head) return;
+    ["https://www.youtube-nocookie.com", "https://i.ytimg.com"].forEach((href) => {
+      if (scope.document.head.querySelector(`link[rel="preconnect"][href="${href}"]`)) return;
+      const link = scope.document.createElement("link");
+      link.rel = "preconnect";
+      link.href = href;
+      link.crossOrigin = "anonymous";
+      link.dataset.hhYoutubeWarmup = "true";
+      scope.document.head.append(link);
+    });
+  }
+
   function topbarMarkup(state) {
     return `<header class="yh-topbar">
       <button class="yh-brand" type="button" data-yh-view="home"><span>▶</span><div><small>HH VIDEO UNIVERSE</small><strong>YouTube Center</strong></div></button>
@@ -84,7 +97,7 @@
   function playerMarkup(video) {
     if (!video) return "";
     const origin = location.origin && location.origin !== "null" ? `&origin=${encodeURIComponent(location.origin)}` : "";
-    return `<section class="yh-player-shell" data-yh-player><header><div><i></i><span>NOW PLAYING · YOUTUBE NOCookie</span></div><nav><button type="button" data-yh-theatre aria-pressed="${session?.state.theatre || false}">◐ Rạp</button><button type="button" data-yh-mini>▣ Mini</button><button type="button" data-yh-pip>▣ PiP</button><button type="button" data-yh-player-close>×</button></nav></header><div class="yh-player-stage"><iframe data-yh-player-frame src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(video.id)}?autoplay=1&playsinline=1&controls=1&fs=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1${origin}" title="YouTube · ${esc(video.title)}" loading="eager" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe><div class="yh-player-energy" aria-hidden="true"><i></i><i></i><i></i><i></i></div></div><div class="yh-player-controls"><button type="button" data-yh-player-command="previous">◀</button><button type="button" data-yh-player-command="play">▶</button><button type="button" data-yh-player-command="pause">Ⅱ</button><button type="button" data-yh-player-command="next">▶▶</button><label>Tốc độ<select data-yh-rate>${[.5,.75,1,1.25,1.5,2].map((rate)=>`<option value="${rate}" ${core().preferences().playerRate===rate?"selected":""}>${rate}×</option>`).join("")}</select></label><span>${core().preferences().privacyShield ? "NoCookie · riêng tư" : "NoCookie · có lịch sử HH"}</span></div><footer><div><h2>${esc(video.title)}</h2><p>${esc(video.channel)}${video.views ? ` · ${core().formatNumber(video.views)} lượt xem` : ""}</p></div><nav><button type="button" data-yh-favorite="${esc(video.id)}" class="${core().isVideoIn("favorites",video.id)?"is-active":""}">${core().isVideoIn("favorites",video.id)?"★ Đã lưu":"☆ Lưu"}</button><button type="button" data-yh-share>Chia sẻ</button><a href="https://www.youtube.com/watch?v=${encodeURIComponent(video.id)}" target="_blank" rel="noopener">YouTube ↗</a></nav></footer></section>`;
+    return `<section class="yh-player-shell" data-yh-player><header><div><i></i><span>NOW PLAYING · YOUTUBE NOCookie</span></div><nav><button type="button" data-yh-theatre aria-pressed="${session?.state.theatre || false}">◐ Rạp</button><button type="button" data-yh-mini>▣ Mini</button><button type="button" data-yh-pip>▣ PiP</button><button type="button" data-yh-player-close>×</button></nav></header><div class="yh-player-stage"><iframe id="hh-youtube-player" data-yh-player-frame src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(video.id)}?autoplay=1&playsinline=1&controls=1&fs=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1${origin}" title="YouTube · ${esc(video.title)}" loading="eager" fetchpriority="high" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe><div class="yh-player-energy" aria-hidden="true"><i></i><i></i><i></i><i></i></div></div><div class="yh-player-controls"><button type="button" data-yh-player-command="previous">◀</button><button type="button" data-yh-player-command="play">▶</button><button type="button" data-yh-player-command="pause">Ⅱ</button><button type="button" data-yh-player-command="next">▶▶</button><label>Tốc độ<select data-yh-rate>${[.5,.75,1,1.25,1.5,2].map((rate)=>`<option value="${rate}" ${core().preferences().playerRate===rate?"selected":""}>${rate}×</option>`).join("")}</select></label><span>${core().preferences().privacyShield ? "NoCookie · riêng tư" : "NoCookie · có lịch sử HH"}</span></div><footer><div><h2>${esc(video.title)}</h2><p>${esc(video.channel)}${video.views ? ` · ${core().formatNumber(video.views)} lượt xem` : ""}</p></div><nav><button type="button" data-yh-favorite="${esc(video.id)}" class="${core().isVideoIn("favorites",video.id)?"is-active":""}">${core().isVideoIn("favorites",video.id)?"★ Đã lưu":"☆ Lưu"}</button><button type="button" data-yh-share>Chia sẻ</button><a href="https://www.youtube.com/watch?v=${encodeURIComponent(video.id)}" target="_blank" rel="noopener">YouTube ↗</a></nav></footer></section>`;
   }
 
   function resultsMarkup(state) {
@@ -145,6 +158,22 @@
     session.host.querySelectorAll("[data-yh-view]").forEach((button)=>button.classList.toggle("is-active",button.dataset.yhView===session.state.view));
   }
 
+  function renderPlayerOnly() {
+    if (!session) return false;
+    const node = session.host.querySelector("[data-yh-main]");
+    const playerSlot = node?.querySelector("[data-yh-player-slot]");
+    if (!node || !playerSlot) return false;
+    const currentId = session.state.current?.id || "";
+    if (playerSlot.dataset.videoId === currentId) return false;
+    const previousFrame = playerSlot.querySelector("[data-yh-player-frame]");
+    if (previousFrame) playback()?.destroy?.(previousFrame);
+    playerSlot.dataset.videoId = currentId;
+    playerSlot.innerHTML = playerMarkup(session.state.current);
+    const nextFrame = playerSlot.querySelector("[data-yh-player-frame]");
+    if (nextFrame && currentId) playback()?.attach?.(nextFrame, currentId);
+    return true;
+  }
+
   function renderQueue() {
     if (!session) return;
     const old = session.host.querySelector("[data-yh-queue]");
@@ -171,6 +200,7 @@
     const safeVideo = core().normalizeVideo(video);
     if (!safeVideo) return;
     const sameVideo = session.state.current?.id === safeVideo.id && session.host.querySelector("[data-yh-player-frame]");
+    const previousView = session.state.view;
     session.state.current = safeVideo;
     core().rememberVideo(safeVideo);
     if (session.state.view === "home") session.state.view = "results";
@@ -179,7 +209,10 @@
       renderQueue();
       return;
     }
-    if (render) renderMain();
+    if (render) {
+      if (previousView === "home") renderMain();
+      else renderPlayerOnly();
+    }
     renderQueue();
     playerCommand("setPlaybackRate",[core().preferences().playerRate]);
   }
@@ -357,7 +390,7 @@
   function onMessage(event){if(!/^(https:\/\/www\.)?youtube(?:-nocookie)?\.com$/.test(event.origin))return;const frame=session?.host?.querySelector?.("[data-yh-player-frame]");if(!frame||(event.source&&event.source!==frame.contentWindow))return;let message=event.data;try{if(typeof message==="string")message=JSON.parse(message);}catch{return;}if(message?.event==="onStateChange"&&Number(message.info)===0){if(core().preferences().autoplayQueue)playQueueStep(1);else if(core().preferences().loopQueue)playerCommand("playVideo");}}
 
   function mount(host) {
-    if(!host||!core())return false;if(session?.host===host&&host.querySelector?.("[data-youtube-hub]"))return true;unmount();const pending=core().consumePending("youtube");const state={view:pending?.query?"results":"home",query:pending?.query||"",results:[],current:null,status:"",nextPageToken:"",previousPageToken:"",filtersOpen:false,theatre:false,activePlaylistId:"",busy:false,filters:{order:"relevance",duration:"any",published:"any",caption:"any",event:"any",definition:"any",region:"VN",language:"vi",safe:"moderate"}};host.innerHTML=shellMarkup(state);session={host,state,toastTimer:0,dragIndex:-1,onClick,onSubmit,onChange,onDragStart,onDragOver,onDrop,onMessage,onPending:(event)=>{if(event.detail?.provider!=="youtube")return;state.query=core().cleanText(event.detail.query,180);runSearch(state.query);}};renderMain();host.addEventListener("click",onClick);host.addEventListener("submit",onSubmit);host.addEventListener("change",onChange);host.addEventListener("dragstart",onDragStart);host.addEventListener("dragover",onDragOver);host.addEventListener("drop",onDrop);scope.addEventListener("message",onMessage);scope.addEventListener("hh:search-pending",session.onPending);if(state.query)requestAnimationFrame(()=>runSearch(state.query));return true;
+    if(!host||!core())return false;if(session?.host===host&&host.querySelector?.("[data-youtube-hub]"))return true;unmount();warmPlaybackConnections();const pending=core().consumePending("youtube");const state={view:pending?.query?"results":"home",query:pending?.query||"",results:[],current:null,status:"",nextPageToken:"",previousPageToken:"",filtersOpen:false,theatre:false,activePlaylistId:"",busy:false,filters:{order:"relevance",duration:"any",published:"any",caption:"any",event:"any",definition:"any",region:"VN",language:"vi",safe:"moderate"}};host.innerHTML=shellMarkup(state);session={host,state,toastTimer:0,dragIndex:-1,onClick,onSubmit,onChange,onDragStart,onDragOver,onDrop,onMessage,onPending:(event)=>{if(event.detail?.provider!=="youtube")return;state.query=core().cleanText(event.detail.query,180);runSearch(state.query);}};renderMain();host.addEventListener("click",onClick);host.addEventListener("submit",onSubmit);host.addEventListener("change",onChange);host.addEventListener("dragstart",onDragStart);host.addEventListener("dragover",onDragOver);host.addEventListener("drop",onDrop);scope.addEventListener("message",onMessage);scope.addEventListener("hh:search-pending",session.onPending);if(state.query)requestAnimationFrame(()=>runSearch(state.query));return true;
   }
 
   function isMounted(host){return Boolean(session&&(!host||session.host===host)&&session.host.querySelector?.("[data-youtube-hub]"));}

@@ -70,11 +70,18 @@ test("realtime server synchronizes only bounded YouTube player state", () => {
 test("versioned Pro assets are loaded in order and cached offline", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["search-platform-core.js?v=3", "google-hub-pro.css?v=3", "google-hub-pro.js?v=3", "youtube-playback-core.js?v=1", "youtube-hub-pro.css?v=4", "youtube-hub-pro.js?v=8"]) {
+  for (const asset of ["search-platform-core.js?v=3", "google-hub-pro.css?v=3", "google-hub-pro.js?v=3", "youtube-playback-core.js?v=2", "youtube-hub-pro.css?v=4", "youtube-hub-pro.js?v=9"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
   assert.ok(loader.indexOf("google-hub.js?v=1") < loader.indexOf("google-hub-pro.js?v=3"));
-  assert.ok(loader.indexOf("youtube-playback-core.js?v=1") < loader.indexOf("youtube-hub.js?v=4"));
-  assert.ok(loader.indexOf("youtube-hub.js?v=4") < loader.indexOf("youtube-hub-pro.js?v=8"));
+  assert.ok(loader.indexOf("youtube-playback-core.js?v=2") < loader.indexOf("youtube-hub.js?v=5"));
+  assert.ok(loader.indexOf("youtube-hub.js?v=5") < loader.indexOf("youtube-hub-pro.js?v=9"));
+});
+
+test("YouTube startup uses the dedicated IFrame listening handshake", () => {
+  const core = read("youtube-playback-core.js");
+  assert.match(core, /function listen\(frame, listenerId/);
+  assert.match(core, /event: "listening"/);
+  assert.doesNotMatch(core, /COMMANDS = new Set\(\[[^\]]*"listening"/s);
 });

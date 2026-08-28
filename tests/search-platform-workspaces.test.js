@@ -12,7 +12,7 @@ test("search platform is split into shared core, two hubs and a quick overlay", 
 
   assert.match(loader, /search:\s*\{[\s\S]*?search-platform-core\.js\?v=3[\s\S]*?search-quick-overlay\.js\?v=1/);
   assert.match(loader, /google:\s*\{[\s\S]*?google-hub\.css\?v=4[\s\S]*?google-hub\.js\?v=1/);
-  assert.match(loader, /youtube:\s*\{[\s\S]*?youtube-hub\.css\?v=5[\s\S]*?youtube-playback-core\.js\?v=1[\s\S]*?youtube-hub\.js\?v=4/);
+  assert.match(loader, /youtube:\s*\{[\s\S]*?youtube-hub\.css\?v=5[\s\S]*?youtube-playback-core\.js\?v=2[\s\S]*?youtube-hub\.js\?v=5/);
   assert.match(loader, /value === "\/google"[\s\S]*?return \["google"\]/);
   assert.match(loader, /value === "\/youtube"[\s\S]*?return \["youtube"\]/);
   assert.match(loader, /event\.altKey[\s\S]*?ensureGroup\("search"\)/);
@@ -51,6 +51,9 @@ test("YouTube Hub keeps player stable while library and queue controls update", 
   const css = read("youtube-hub.css");
 
   assert.match(hub, /data-yh-player-slot/);
+  assert.match(hub, /function renderPlayerOnly/);
+  assert.match(hub, /fetchpriority="high"/);
+  assert.match(hub, /warmPlaybackConnections/);
   assert.match(hub, /if \(playerSlot\.dataset\.videoId !== currentId\)/);
   assert.match(hub, /content\.innerHTML = mainMarkup/);
   assert.match(hub, /function syncVideoButtons/);
@@ -63,6 +66,8 @@ test("YouTube Hub keeps player stable while library and queue controls update", 
   assert.doesNotMatch(pro, /function renderResourceResults\(data,type\)\{const main=.*?main\.innerHTML/s);
   assert.match(pro, /if\(!runtime\|\|!/);
   assert.match(pro, /event\.source&&event\.source!==frame\.contentWindow/);
+  const stallSection = pro.match(/function trackStall\(\)[\s\S]*?(?=\n\n  function retryPlayer)/)?.[0] || "";
+  assert.doesNotMatch(stallSection, /retryPlayer/);
   assert.match(router, /const preserveYouTubePlayer/);
   assert.match(router, /workspace\.querySelector\?\.\("\[data-youtube-hub-host\]"\)/);
   assert.match(router, /if \(!preserveYouTubePlayer\)/);
