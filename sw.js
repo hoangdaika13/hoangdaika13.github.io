@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v924";
+const CACHE = "hh-identity-portal-v925";
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v916.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v914.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v913.
@@ -365,7 +365,7 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v4.css?v=10",
   "./hh-chinese.css?v=13",
   "./phat-phap.css?v=20",
-  "./hh-play.css?v=7&build=3",
+  "./hh-play.css?v=8&build=4",
   "./hh-play-audio-worklet.js?build=2",
   "./assets/phat-phap/duc-phat-hao-quang-v1.webp",
   "./assets/chinese/NOTICE.md",
@@ -496,7 +496,7 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v4.js?v=12",
   "./hh-chinese.js?v=13",
   "./phat-phap.js?v=17",
-  "./hh-play.js?v=6&build=3",
+  "./hh-play.js?v=7&build=4",
   "./hh-eonwild-cinematic-pack.js?v=1",
   "./hh-eonwild-cinematic-pack-worker.js?v=1",
   "./hh-eonwild-game.css?v=22",
@@ -541,7 +541,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=567",
+  "./performance-loader.js?v=568",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=249"

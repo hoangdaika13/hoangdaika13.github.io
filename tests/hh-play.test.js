@@ -19,10 +19,10 @@ test("HH Play is a first-class lazy route in Entertainment", () => {
   assert.match(router, /window\.HHPlay\?\.mount/);
   assert.match(router, /window\.HHPlay\?\.unmount/);
   assert.match(router, /app-play-route/);
-  assert.match(loader, /play:\s*\{[\s\S]*?hh-play\.css\?v=7&build=3[\s\S]*?hh-play\.js\?v=6&build=3/);
+  assert.match(loader, /play:\s*\{[\s\S]*?hh-play\.css\?v=8&build=4[\s\S]*?hh-play\.js\?v=7&build=4/);
   assert.match(loader, /value\.startsWith\("\/play"\)[^\n]*\["play"\]/);
-  assert.match(worker, /\.\/hh-play\.css\?v=7&build=3/);
-  assert.match(worker, /\.\/hh-play\.js\?v=6&build=3/);
+  assert.match(worker, /\.\/hh-play\.css\?v=8&build=4/);
+  assert.match(worker, /\.\/hh-play\.js\?v=7&build=4/);
   for (const asset of ["performance-loader.js", "script.js"]) {
     const escaped = asset.replaceAll(".", "\\.");
     const match = html.match(new RegExp(`<script src="${escaped}\\?v=(\\d+)"`));
@@ -49,9 +49,10 @@ test("Entertainment OS exposes ten distinct workspaces and real local activities
 test("HH Play API advertises all views without requiring a DOM at parse time", () => {
   const sandbox = { window: {}, console, URL, Date, Math, JSON, setTimeout, clearTimeout, setInterval, clearInterval };
   vm.runInNewContext(source, sandbox, { filename: "hh-play.js" });
-  assert.equal(sandbox.window.HHPlay.version, "1.1.1");
-  assert.deepEqual(Array.from(sandbox.window.HHPlay.views), ["today", "arcade", "party", "watch", "story", "escape", "rhythm", "pet", "chill", "quiz"]);
-  assert.ok(sandbox.window.HHPlay.quizQuestions >= 30);
+  assert.equal(sandbox.window.HHPlay.version, "1.2.0");
+  assert.deepEqual(Array.from(sandbox.window.HHPlay.views), ["today", "library", "arcade", "party", "watch", "story", "escape", "rhythm", "pet", "chill", "quiz"]);
+  assert.equal(sandbox.window.HHPlay.gameCount, 16);
+  assert.ok(sandbox.window.HHPlay.quizQuestions >= 40);
   assert.deepEqual(Array.from(sandbox.window.HHPlay.quizTopics), ["all", "science", "technology", "culture", "thinking"]);
   assert.equal(typeof sandbox.window.HHPlay.mount, "function");
   assert.equal(typeof sandbox.window.HHPlay.unmount, "function");
@@ -60,7 +61,7 @@ test("HH Play API advertises all views without requiring a DOM at parse time", (
 test("Quiz Arena has a deep validated bank and real filter controls", () => {
   const quizSource = source.slice(source.indexOf("const QUIZ ="), source.indexOf("const WORDS ="));
   const entries = [...quizSource.matchAll(/\{ id: "([^"]+)", topic: "([^"]+)", difficulty: "([^"]+)", skill: "([^"]+)", q: "([^"]+)", choices: \[([^\]]+)\], answer: ([0-3]), why: "([^"]+)", insight: "([^"]+)" \}/g)];
-  assert.ok(entries.length >= 30, `expected at least 30 complete questions, received ${entries.length}`);
+  assert.ok(entries.length >= 40, `expected at least 40 complete questions, received ${entries.length}`);
   const ids = new Set();
   for (const entry of entries) {
     const [, id, topic, difficulty, skill, question, choices, answer, why, insight] = entry;
@@ -76,6 +77,26 @@ test("Quiz Arena has a deep validated bank and real filter controls", () => {
     assert.ok(source.includes(contract) || css.includes(contract), `missing professional Quiz contract ${contract}`);
   }
   assert.match(source, /selected:\s*integer\(merged\.quiz\.selected,\s*-1,\s*3,\s*-1\)/);
+});
+
+test("HH Play v4 exposes a searchable professional library and six additional real cartridges", () => {
+  for (const term of [
+    "Kho trò chơi HH Play", "data-library-search", "data-library-genre", "data-library-duration",
+    "data-library-favorite", "data-library-results", "data-library-count", "libraryGames", "gameLibraryCard",
+    "refreshLibraryResults", "searchableLibrary"
+  ]) assert.ok(source.includes(term), `missing library contract ${term}`);
+  for (const game of ["Pattern Relay", "Math Sprint", "Nebula Maze", "Orbit Lines", "Spectrum Focus", "Glyph Slider"]) {
+    assert.ok(source.includes(game), `missing expanded game ${game}`);
+  }
+  for (const implementation of ["startPattern", "submitMath", "moveMaze", "playTicTacToe", "pickSpectrum", "moveSlider"]) {
+    assert.match(source, new RegExp(`function\\s+${implementation}\\s*\\(`), `missing implementation ${implementation}`);
+  }
+  for (const style of ["hhp-library-grid", "hhp-library-card", "hhp-library-toolbar", "hhp-pattern", "hhp-maze", "hhp-ttt", "hhp-spectrum", "hhp-slider"]) {
+    assert.ok(css.includes(style), `missing responsive style ${style}`);
+  }
+  assert.match(css, /\.hhp-grid:has\(\.hhp-inspector\.is-open\)/, "desktop grid should only reserve inspector space while it is open");
+  assert.match(css, /grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(250px,\s*100%\),\s*1fr\)\)/);
+  assert.match(source, /if \(event\.target\.matches\("\[data-library-search\]"\)\) \{[\s\S]*?refreshLibraryResults\(\);[\s\S]*?return;\s*\}/, "typing in library search should update results without rebuilding the HH Play root");
 });
 
 test("one-screen shell keeps the center as the primary scroller", () => {

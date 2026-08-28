@@ -237,8 +237,8 @@
       scripts: ["phat-phap.js?v=17"]
     },
     play: {
-      styles: ["hh-play.css?v=7&build=3"],
-      scripts: ["hh-play.js?v=6&build=3"]
+      styles: ["hh-play.css?v=8&build=4"],
+      scripts: ["hh-play.js?v=7&build=4"]
     },
     game: {
       styles: ["hh-eonwild-game.css?v=22"],

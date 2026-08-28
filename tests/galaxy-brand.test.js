@@ -269,7 +269,7 @@ test("manifest, ICO, static fallback and service worker publish versioned Galaxy
   assert.match(html, /hh-galaxy-star-share\.png\?v=1/);
   assert.match(loader, /brand-galaxy-logo\.js\?v=1[\s\S]*galaxy-favicon-controller\.js\?v=2/);
   assert.match(loader, /ensureGroup\("brand"\)/);
-  assert.match(worker, /hh-identity-portal-v924/);
+  assert.match(worker, /hh-identity-portal-v925/);
   assert.match(worker, /brand-galaxy-logo\.css\?v=1/);
   assert.match(worker, /assets\/brand\/hh-galaxy-star-static\.svg\?v=2/);
   assert.match(worker, /assets\/brand\/favicon\.ico\?v=2/);

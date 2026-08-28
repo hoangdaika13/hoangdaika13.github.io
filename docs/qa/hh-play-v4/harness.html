@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HH Play v4 QA</title>
+  <link rel="stylesheet" href="../../../hh-play.css?v=8&build=4">
+  <style>
+    html, body, [data-hh-play-host] { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #03050e; }
+  </style>
+</head>
+<body>
+  <main data-hh-play-host></main>
+  <script src="../../../hh-play.js?v=7&build=4"></script>
+  <script>
+    const requested = new URLSearchParams(location.search).get("view") || "library";
+    HHPlay.mount(document.querySelector("[data-hh-play-host]"), {
+      view: requested,
+      currentUser: { name: "HH QA" }
+    });
+  </script>
+</body>
+</html>

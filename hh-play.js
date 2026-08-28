@@ -1,10 +1,10 @@
 (function () {
   "use strict";
 
-  const VERSION = "1.1.1";
+  const VERSION = "1.2.0";
   const STORAGE_KEY = "hh.play.profile.v1";
   const RECOVERY_KEY = "hh.play.recovery.v1";
-  const STATE_SCHEMA_VERSION = 2;
+  const STATE_SCHEMA_VERSION = 3;
   const DB_NAME = "hh-play-local-v2";
   const DB_VERSION = 1;
   const PROFILE_STORE = "profiles";
@@ -43,7 +43,13 @@
     elements: { goal: "Trượt và hợp nhất nguyên tố tới 2048.", controls: "Mũi tên / WASD / swipe", tip: "Giữ một góc làm vùng neo cho các ô lớn." },
     sudoku: { goal: "Điền các ô trống sao cho mỗi hàng và cột hợp lệ.", controls: "Bàn phím số / chạm", tip: "Kiểm tra ô còn thiếu trước khi gửi kết quả." },
     word: { goal: "Sắp chữ theo gợi ý thành một từ đúng.", controls: "Bàn phím / chạm", tip: "Có thể bỏ dấu khi nhập câu trả lời tiếng Việt." },
-    tower: { goal: "Giữ cả ba tuyến năng lượng qua 12 wave.", controls: "Chạm hoặc Enter trên tuyến", tip: "Ưu tiên tuyến yếu nhất; năng lượng hồi theo wave." }
+    tower: { goal: "Giữ cả ba tuyến năng lượng qua 12 wave.", controls: "Chạm hoặc Enter trên tuyến", tip: "Ưu tiên tuyến yếu nhất; năng lượng hồi theo wave." },
+    pattern: { goal: "Ghi nhớ và lặp lại chuỗi tín hiệu ngày càng dài.", controls: "Chuột / chạm / phím 1–4", tip: "Chia chuỗi thành từng cụm nhỏ thay vì nhớ từng tín hiệu rời." },
+    math: { goal: "Giải đúng 10 phép tính trong một phiên ngắn.", controls: "Bàn phím / chạm", tip: "Ước lượng trước rồi mới kiểm tra phép tính chi tiết." },
+    maze: { goal: "Đưa tàu thăm dò tới cổng sáng mà không xuyên tường.", controls: "Mũi tên / WASD / D-pad", tip: "Quan sát đường cụt trước khi di chuyển nhiều bước." },
+    tictactoe: { goal: "Xếp ba quỹ đạo liên tiếp trước đối thủ máy cục bộ.", controls: "Chuột / chạm / bàn phím", tip: "Giữ ô trung tâm hoặc tạo hai hướng thắng cùng lúc." },
+    spectrum: { goal: "Tìm ô có sắc độ khác trước khi hết 10 vòng.", controls: "Chuột / chạm", tip: "Nhìn toàn bộ lưới thay vì dò từng ô." },
+    slider: { goal: "Trượt các mảnh glyph về đúng thứ tự từ 1 đến 8.", controls: "Chuột / chạm / phím mũi tên", tip: "Hoàn thiện hàng trên trước rồi giữ cấu trúc đã đúng." }
   });
   const ACHIEVEMENTS = Object.freeze([
     { id: "first-light", title: "Ánh sáng đầu tiên", note: "Hoàn thành ván đầu tiên", icon: "✦" },
@@ -61,6 +67,7 @@
 
   const VIEWS = [
     { id: "today", icon: "✦", title: "Hôm nay", note: "Nhiệm vụ và chơi nhanh", color: "#ffd86b" },
+    { id: "library", icon: "▦", title: "Kho trò chơi", note: "Lọc, yêu thích và khám phá", color: "#7ce7ff" },
     { id: "arcade", icon: "▣", title: "Arcade Galaxy", note: "Trò chơi dùng được ngay", color: "#63eaff" },
     { id: "party", icon: "◎", title: "Party Room", note: "Phòng riêng và quyền truy cập", color: "#ff68c7" },
     { id: "watch", icon: "▶", title: "Watch Party", note: "Hàng đợi video có nguồn", color: "#ff6578" },
@@ -73,16 +80,22 @@
   ];
 
   const ARCADE_GAMES = [
-    { id: "snake", icon: "S", title: "Neon Snake", type: "canvas", desc: "Thu thập tinh thể và tránh chạm thân." },
-    { id: "dodge", icon: "A", title: "Asteroid Dodge", type: "canvas", desc: "Lái phi thuyền né mưa thiên thạch." },
-    { id: "breaker", icon: "B", title: "Light Breaker", type: "canvas", desc: "Phá tường ánh sáng bằng phản xạ." },
-    { id: "shooter", icon: "↟", title: "Star Shooter", type: "canvas", desc: "Bảo vệ cổng sao trước từng wave." },
-    { id: "memory", icon: "M", title: "Memory Constellation", type: "dom", desc: "Ghép các cặp chòm sao giống nhau." },
-    { id: "reaction", icon: "R", title: "Reaction Pulse", type: "dom", desc: "Đo phản xạ sau tín hiệu an toàn." },
-    { id: "elements", icon: "4", title: "Element 2048", type: "dom", desc: "Hợp nhất nguyên tố để tạo lõi 2048." },
-    { id: "sudoku", icon: "9", title: "Solar Sudoku", type: "dom", desc: "Hoàn thành bảng số 4 × 4 ngắn gọn." },
-    { id: "word", icon: "W", title: "Word Orbit", type: "dom", desc: "Sắp chữ thành từ đúng theo gợi ý." },
-    { id: "tower", icon: "T", title: "Tower Tactics", type: "dom", desc: "Phân phối năng lượng để giữ ba tuyến." }
+    { id: "snake", icon: "S", title: "Neon Snake", type: "canvas", genre: "arcade", duration: 5, players: 1, skills: ["phản xạ", "định hướng"], desc: "Thu thập tinh thể và tránh chạm thân." },
+    { id: "dodge", icon: "A", title: "Asteroid Dodge", type: "canvas", genre: "arcade", duration: 3, players: 1, skills: ["phản xạ", "tập trung"], desc: "Lái phi thuyền né mưa thiên thạch." },
+    { id: "breaker", icon: "B", title: "Light Breaker", type: "canvas", genre: "arcade", duration: 8, players: 1, skills: ["góc phản xạ", "điều khiển"], desc: "Phá tường ánh sáng bằng phản xạ." },
+    { id: "shooter", icon: "↟", title: "Star Shooter", type: "canvas", genre: "arcade", duration: 6, players: 1, skills: ["phản xạ", "chiến thuật"], desc: "Bảo vệ cổng sao trước từng wave." },
+    { id: "memory", icon: "M", title: "Memory Constellation", type: "dom", genre: "logic", duration: 5, players: 1, skills: ["trí nhớ", "quan sát"], desc: "Ghép các cặp chòm sao giống nhau." },
+    { id: "reaction", icon: "R", title: "Reaction Pulse", type: "dom", genre: "arcade", duration: 3, players: 1, skills: ["phản xạ", "kiểm soát"], desc: "Đo phản xạ sau tín hiệu an toàn." },
+    { id: "elements", icon: "4", title: "Element 2048", type: "dom", genre: "strategy", duration: 12, players: 1, skills: ["lập kế hoạch", "không gian"], desc: "Hợp nhất nguyên tố để tạo lõi 2048." },
+    { id: "sudoku", icon: "9", title: "Solar Sudoku", type: "dom", genre: "logic", duration: 8, players: 1, skills: ["suy luận", "loại trừ"], desc: "Hoàn thành bảng số 4 × 4 ngắn gọn." },
+    { id: "word", icon: "W", title: "Word Orbit", type: "dom", genre: "knowledge", duration: 4, players: 1, skills: ["ngôn ngữ", "từ vựng"], desc: "Sắp chữ thành từ đúng theo gợi ý." },
+    { id: "tower", icon: "T", title: "Tower Tactics", type: "dom", genre: "strategy", duration: 6, players: 1, skills: ["ưu tiên", "quản lý tài nguyên"], desc: "Phân phối năng lượng để giữ ba tuyến." },
+    { id: "pattern", icon: "P", title: "Pattern Relay", type: "dom", genre: "logic", duration: 5, players: 1, skills: ["trí nhớ làm việc", "mẫu hình"], desc: "Lặp lại chuỗi tín hiệu tăng dần qua năm vòng." },
+    { id: "math", icon: "Σ", title: "Math Sprint", type: "dom", genre: "knowledge", duration: 5, players: 1, skills: ["tính nhẩm", "tốc độ"], desc: "Giải một phiên 10 phép tính được tạo tại chỗ." },
+    { id: "maze", icon: "⌘", title: "Nebula Maze", type: "dom", genre: "strategy", duration: 7, players: 1, skills: ["định hướng", "lập kế hoạch"], desc: "Tìm đường qua mê cung tới cổng không gian." },
+    { id: "tictactoe", icon: "×", title: "Orbit Lines", type: "dom", genre: "strategy", duration: 4, players: 1, skills: ["dự đoán", "chiến thuật"], desc: "Đấu ba ô liên tiếp với đối thủ máy cục bộ." },
+    { id: "spectrum", icon: "◉", title: "Spectrum Focus", type: "dom", genre: "arcade", duration: 3, players: 1, skills: ["thị giác", "tập trung"], desc: "Phát hiện sắc độ khác biệt qua 10 vòng." },
+    { id: "slider", icon: "▦", title: "Glyph Slider", type: "dom", genre: "logic", duration: 8, players: 1, skills: ["không gian", "lập trình tự"], desc: "Trượt tám glyph về đúng thứ tự." }
   ];
 
   const QUIZ = Object.freeze([
@@ -117,7 +130,15 @@
     { id: "thinking-falsifiable", topic: "thinking", difficulty: "advanced", skill: "Phương pháp khoa học", q: "Đặc điểm nào làm một giả thuyết dễ kiểm tra khoa học hơn?", choices: ["Không thể bị phản bác trong mọi trường hợp", "Đưa ra dự đoán có thể quan sát và có khả năng sai", "Dùng từ ngữ càng mơ hồ càng tốt", "Chỉ dựa trên uy tín người nói"], answer: 1, why: "Một giả thuyết kiểm chứng được cần dự đoán rõ để bằng chứng có thể ủng hộ hoặc bác bỏ.", insight: "Khả năng sai không làm giả thuyết yếu; nó làm quá trình kiểm tra minh bạch hơn." },
     { id: "thinking-tradeoff", topic: "thinking", difficulty: "advanced", skill: "Ra quyết định", q: "Khi hai phương án đều có lợi ích và chi phí, cách so sánh nào tốt nhất?", choices: ["Chỉ nhìn lợi ích dễ thấy", "Đặt tiêu chí, trọng số và xem độ nhạy của kết quả", "Chọn phương án đầu tiên", "Bỏ qua tác động dài hạn"], answer: 1, why: "Tiêu chí minh bạch và phân tích độ nhạy giúp thấy quyết định thay đổi ra sao khi giả định thay đổi.", insight: "Một quyết định tốt có thể vẫn cho kết quả xấu; chất lượng quy trình khác với may rủi của kết quả." },
     { id: "thinking-ai", topic: "thinking", difficulty: "advanced", skill: "AI literacy", q: "Vì sao câu trả lời trôi chảy của AI vẫn cần được kiểm tra nguồn?", choices: ["Vì AI luôn từ chối trả lời", "Vì độ trôi chảy không bảo đảm dữ kiện đúng hoặc còn mới", "Vì AI không thể tạo câu", "Vì mọi nguồn trên mạng đều giống nhau"], answer: 1, why: "Mô hình có thể tạo nội dung hợp lý về ngôn ngữ nhưng sai dữ kiện, thiếu bối cảnh hoặc lỗi thời.", insight: "Mức kiểm chứng nên tăng theo độ mới, độ khó và hậu quả của quyết định." },
-    { id: "thinking-evidence", topic: "thinking", difficulty: "advanced", skill: "Tổng hợp bằng chứng", q: "Hai nghiên cứu đáng tin cho kết quả khác nhau. Phản ứng nào hợp lý nhất?", choices: ["Chọn nghiên cứu hợp ý mình", "So thiết kế, mẫu, độ bất định và tìm tổng quan hệ thống", "Kết luận khoa học vô dụng", "Cộng hai con số không cần ngữ cảnh"], answer: 1, why: "Khác biệt có thể đến từ quần thể, phương pháp, sai số hoặc ngẫu nhiên; cần so sánh có cấu trúc.", insight: "Bất đồng bằng chứng là lý do để phân tích sâu hơn, không phải để bỏ qua toàn bộ bằng chứng." }
+    { id: "thinking-evidence", topic: "thinking", difficulty: "advanced", skill: "Tổng hợp bằng chứng", q: "Hai nghiên cứu đáng tin cho kết quả khác nhau. Phản ứng nào hợp lý nhất?", choices: ["Chọn nghiên cứu hợp ý mình", "So thiết kế, mẫu, độ bất định và tìm tổng quan hệ thống", "Kết luận khoa học vô dụng", "Cộng hai con số không cần ngữ cảnh"], answer: 1, why: "Khác biệt có thể đến từ quần thể, phương pháp, sai số hoặc ngẫu nhiên; cần so sánh có cấu trúc.", insight: "Bất đồng bằng chứng là lý do để phân tích sâu hơn, không phải để bỏ qua toàn bộ bằng chứng." },
+    { id: "sci-biodiversity", topic: "science", difficulty: "advanced", skill: "Sinh thái học", q: "Vì sao đa dạng sinh học cao thường giúp hệ sinh thái chống chịu biến động tốt hơn?", choices: ["Mọi loài có chức năng giống hệt nhau", "Nhiều loài có thể bổ sung hoặc thay thế một phần chức năng sinh thái", "Đa dạng luôn ngăn mọi thiên tai", "Chỉ vì hệ có nhiều cá thể hơn"], answer: 1, why: "Sự đa dạng về vai trò và phản ứng giúp một số chức năng được duy trì khi một nhóm chịu tác động mạnh.", insight: "Khả năng chống chịu còn phụ thuộc cấu trúc mạng lưới, mức kết nối và cường độ biến động." },
+    { id: "sci-model", topic: "science", difficulty: "advanced", skill: "Hiểu mô hình", q: "Một mô hình khoa học đơn giản hóa thực tế có đồng nghĩa mô hình đó vô dụng không?", choices: ["Có, mô hình phải chứa mọi chi tiết", "Không, giá trị phụ thuộc câu hỏi, giả định và độ chính xác cần thiết", "Có, nếu dùng toán học", "Không, vì mọi mô hình luôn đúng"], answer: 1, why: "Mô hình hữu ích khi giữ đúng các yếu tố quan trọng cho câu hỏi và nêu rõ phạm vi áp dụng.", insight: "Hãy đánh giá mô hình bằng dự đoán, độ bất định và giới hạn thay vì chỉ bằng mức độ phức tạp." },
+    { id: "tech-offline", topic: "technology", difficulty: "foundation", skill: "Kiến trúc web", q: "Service Worker thường giúp Progressive Web App cải thiện điều gì?", choices: ["Tăng kích thước màn hình", "Kiểm soát yêu cầu mạng và hỗ trợ trải nghiệm ngoại tuyến", "Thay thế hệ điều hành", "Tự tạo mật khẩu người dùng"], answer: 1, why: "Service Worker có thể chặn yêu cầu, phối hợp cache và cung cấp phản hồi khi mạng không khả dụng.", insight: "Chiến lược cache phải có phiên bản và quy tắc làm mới để tránh giữ tài nguyên lỗi thời." },
+    { id: "tech-input", topic: "technology", difficulty: "advanced", skill: "Thiết kế tương tác", q: "Vì sao game nên ánh xạ hành động thay vì kiểm tra trực tiếp từng phím ở mọi nơi?", choices: ["Để mã dài hơn", "Để remap và dùng chung keyboard, touch, gamepad dễ hơn", "Để tắt trợ năng", "Để không cần lưu cài đặt"], answer: 1, why: "Lớp hành động tách ý định gameplay khỏi thiết bị đầu vào và giảm logic trùng lặp.", insight: "Cùng một hành động có thể nhận dữ liệu số, trục analog hoặc nút theo ngữ cảnh." },
+    { id: "culture-archive", topic: "culture", difficulty: "foundation", skill: "Lưu trữ số", q: "Thông tin nào quan trọng khi lưu một tài nguyên văn hóa số để dùng lâu dài?", choices: ["Chỉ tên tệp ngẫu nhiên", "Nguồn gốc, định dạng, quyền sử dụng và metadata mô tả", "Màu thư mục", "Số lần đổi tên"], answer: 1, why: "Provenance, định dạng và quyền giúp tài nguyên có thể được hiểu, kiểm chứng và tái sử dụng đúng cách.", insight: "Checksum và bản sao dự phòng còn giúp phát hiện hỏng dữ liệu theo thời gian." },
+    { id: "culture-perspective", topic: "culture", difficulty: "advanced", skill: "Đa góc nhìn", q: "Khi tái dựng một sự kiện lịch sử, vì sao nên đối chiếu nguồn từ nhiều nhóm khác nhau?", choices: ["Để mọi nguồn trở nên giống nhau", "Để nhận ra khác biệt góc nhìn, lợi ích và khoảng trống tư liệu", "Để bỏ qua niên đại", "Để chọn nguồn dài nhất"], answer: 1, why: "Mỗi nguồn được tạo trong một hoàn cảnh và có giới hạn riêng; đối chiếu giúp tránh phụ thuộc một câu chuyện duy nhất.", insight: "Bất đồng giữa các nguồn có thể là dữ liệu quan trọng về quyền lực và ký ức tập thể." },
+    { id: "thinking-uncertainty", topic: "thinking", difficulty: "foundation", skill: "Đọc xác suất", q: "Dự báo mưa 70% nên được hiểu hợp lý nhất như thế nào?", choices: ["Chắc chắn mưa 70% thời gian trong ngày", "Trong các tình huống tương tự, mưa xảy ra khoảng 70% trường hợp theo mô hình", "Mưa trên đúng 70% diện tích mọi lúc", "Dự báo chắc chắn sai 30 phút"], answer: 1, why: "Xác suất dự báo mô tả mức tin cậy hiệu chỉnh trên nhiều trường hợp tương tự, không phải cam kết cho một điểm đơn lẻ.", insight: "Cách định nghĩa xác suất cụ thể có thể khác theo cơ quan dự báo, vì vậy nên đọc phần giải thích của nguồn." },
+    { id: "thinking-opportunity", topic: "thinking", difficulty: "advanced", skill: "Ra quyết định", q: "Chi phí cơ hội của việc dành tối nay cho phương án A là gì?", choices: ["Chỉ số tiền đã trả cho A", "Giá trị của phương án tốt nhất bị bỏ qua", "Mọi lựa chọn trong tương lai", "Cảm xúc sau khi chọn A"], answer: 1, why: "Chi phí cơ hội là lợi ích của lựa chọn thay thế tốt nhất mà ta từ bỏ khi quyết định.", insight: "Tính chi phí cơ hội giúp so sánh thời gian, tiền và sự chú ý trên cùng một khung quyết định." }
   ]);
 
   const STORY = {
@@ -158,6 +179,13 @@
   let reactionState = { phase: "idle", startedAt: 0, best: 0 };
   let elementBoard = [];
   let towerState = null;
+  let patternState = null;
+  let mathState = null;
+  let mazeState = null;
+  let tictactoeState = null;
+  let spectrumState = null;
+  let sliderState = null;
+  let miniGameTimers = [];
   let databasePromise = null;
   let persistQueue = Promise.resolve();
   let hydrationPending = false;
@@ -214,6 +242,7 @@
       scores: {},
       favorites: ["snake", "memory"],
       recent: [],
+      library: { genre: "all", duration: "all", favoritesOnly: false, query: "" },
       history: [],
       rewardLedger: {},
       contentPacks: [],
@@ -245,6 +274,10 @@
       migrated.rewardLedger = isRecord(migrated.rewardLedger) ? migrated.rewardLedger : {};
       migrated.savedAt = safeTimestamp(migrated.savedAt);
     }
+    if (version < 3) {
+      migrated.schemaVersion = 3;
+      migrated.library = isRecord(migrated.library) ? migrated.library : { genre: "all", duration: "all", favoritesOnly: false, query: "" };
+    }
     return migrated;
   }
 
@@ -271,6 +304,7 @@
       pet: { ...base.pet, ...(isRecord(saved.pet) ? saved.pet : {}) },
       chill: { ...base.chill, ...(isRecord(saved.chill) ? saved.chill : {}) },
       quiz: { ...base.quiz, ...(isRecord(saved.quiz) ? saved.quiz : {}) },
+      library: { ...base.library, ...(isRecord(saved.library) ? saved.library : {}) },
       settings: { ...base.settings, ...(isRecord(saved.settings) ? saved.settings : {}) }
     };
     merged.schema = "hh.play.profile";
@@ -284,8 +318,14 @@
     merged.sessions = integer(merged.sessions, 0, 10000000, 0);
     merged.scores = Object.fromEntries(Object.entries(merged.scores).filter(([key]) => /^[a-z0-9-]{1,32}$/i.test(key)).slice(0, 64).map(([key, value]) => [key, integer(value, 0, MAX_SCORE, 0)]));
     const gameIds = new Set(ARCADE_GAMES.map((game) => game.id));
-    merged.favorites = [...new Set((Array.isArray(merged.favorites) ? merged.favorites : []).filter((id) => gameIds.has(id)))].slice(0, 12);
-    merged.recent = [...new Set((Array.isArray(merged.recent) ? merged.recent : []).filter((id) => gameIds.has(id)))].slice(0, 6);
+    merged.favorites = [...new Set((Array.isArray(merged.favorites) ? merged.favorites : []).filter((id) => gameIds.has(id)))].slice(0, 40);
+    merged.recent = [...new Set((Array.isArray(merged.recent) ? merged.recent : []).filter((id) => gameIds.has(id)))].slice(0, 12);
+    merged.library = {
+      genre: ["all", "arcade", "logic", "strategy", "knowledge"].includes(merged.library.genre) ? merged.library.genre : "all",
+      duration: ["all", "short", "medium", "long"].includes(merged.library.duration) ? merged.library.duration : "all",
+      favoritesOnly: merged.library.favoritesOnly === true,
+      query: clean(merged.library.query, 60)
+    };
     merged.history = (Array.isArray(saved.history) ? saved.history : []).slice(-MAX_HISTORY).map((entry) => ({
       id: clean(entry?.id, 48) || "activity",
       type: ["game", "quiz", "mission", "focus", "social", "system"].includes(entry?.type) ? entry.type : "game",
@@ -371,8 +411,8 @@
     merged.arcade = {
       difficulty: difficultyIds.has(savedArcade.difficulty) ? savedArcade.difficulty : "normal",
       input: ["keyboard-touch", "keyboard", "touch", "gamepad"].includes(savedArcade.input) ? savedArcade.input : "keyboard-touch",
-      tutorialSeen: Object.fromEntries(Object.entries(isRecord(savedArcade.tutorialSeen) ? savedArcade.tutorialSeen : {}).filter(([key, value]) => gameIds.has(key) && value === true).slice(0, 32)),
-      runs: (Array.isArray(savedArcade.runs) ? savedArcade.runs : []).slice(-40).map((run) => ({
+      tutorialSeen: Object.fromEntries(Object.entries(isRecord(savedArcade.tutorialSeen) ? savedArcade.tutorialSeen : {}).filter(([key, value]) => gameIds.has(key) && value === true).slice(0, 64)),
+      runs: (Array.isArray(savedArcade.runs) ? savedArcade.runs : []).slice(-80).map((run) => ({
         id: clean(run?.id, 60) || `run-${safeTimestamp(run?.at)}`,
         game: gameIds.has(run?.game) ? run.game : "snake",
         difficulty: difficultyIds.has(run?.difficulty) ? run.difficulty : "normal",
@@ -672,6 +712,26 @@
     return { completed, percent: Math.round(completed / 3 * 100) };
   }
 
+  function normalizedSearch(value) {
+    return clean(value, 80).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  }
+
+  function libraryGames() {
+    const filters = state?.library || defaultState().library;
+    const query = normalizedSearch(filters.query);
+    return ARCADE_GAMES.filter((game) => {
+      const durationMatch = filters.duration === "all"
+        || (filters.duration === "short" && game.duration <= 5)
+        || (filters.duration === "medium" && game.duration > 5 && game.duration <= 8)
+        || (filters.duration === "long" && game.duration > 8);
+      const haystack = normalizedSearch(`${game.title} ${game.desc} ${game.genre} ${(game.skills || []).join(" ")}`);
+      return (filters.genre === "all" || game.genre === filters.genre)
+        && durationMatch
+        && (!filters.favoritesOnly || state.favorites.includes(game.id))
+        && (!query || haystack.includes(query));
+    });
+  }
+
   function setView(next, updateHash = true) {
     if (!VIEWS.some((item) => item.id === next)) next = "today";
     cleanupRuntime();
@@ -733,7 +793,7 @@
   }
 
   function sidebar() {
-    return `<aside class="hhp-sidebar" aria-label="Danh mục HH Play"><header><span>KHÁM PHÁ</span><small>10 trải nghiệm</small></header><nav>${VIEWS.map((item) => `<button type="button" data-play-view="${item.id}" class="${item.id === state.view ? "is-active" : ""}" style="--item:${item.color}"><i>${item.icon}</i><span><strong>${item.title}</strong><small>${item.note}</small></span><b>›</b></button>`).join("")}</nav><footer><span>● Local-first</span><small>Không giả người online</small></footer></aside>`;
+    return `<aside class="hhp-sidebar" aria-label="Danh mục HH Play"><header><span>KHÁM PHÁ</span><small>${VIEWS.length} khu · ${ARCADE_GAMES.length} trò</small></header><nav>${VIEWS.map((item) => `<button type="button" data-play-view="${item.id}" class="${item.id === state.view ? "is-active" : ""}" style="--item:${item.color}"><i>${item.icon}</i><span><strong>${item.title}</strong><small>${item.note}</small></span><b>›</b></button>`).join("")}</nav><footer><span>● Local-first</span><small>Không giả người online</small></footer></aside>`;
   }
 
   function inspector(meta) {
@@ -743,7 +803,7 @@
   }
 
   function actionbar(meta) {
-    const primary = ({ today: ["arcade", "Chơi ngay"], arcade: ["arcade-start", "Bắt đầu"], party: ["party-focus", "Tạo phòng"], watch: ["watch-focus", "Thêm video"], story: ["story-reset", "Chơi lại truyện"], escape: ["escape-focus", "Nhập mật mã"], rhythm: ["rhythm-start", "Bắt đầu nhịp"], pet: ["pet-play", "Chơi với pet"], chill: ["chill-toggle", "Bật âm cảnh"], quiz: ["quiz-next", "Câu tiếp theo"] })[state.view] || ["today", "Về Hôm nay"];
+    const primary = ({ today: ["library", "Mở kho"], library: ["library-random", "Chọn giúp tôi"], arcade: ["arcade-start", "Bắt đầu"], party: ["party-focus", "Tạo phòng"], watch: ["watch-focus", "Thêm video"], story: ["story-reset", "Chơi lại truyện"], escape: ["escape-focus", "Nhập mật mã"], rhythm: ["rhythm-start", "Bắt đầu nhịp"], pet: ["pet-play", "Chơi với pet"], chill: ["chill-toggle", "Bật âm cảnh"], quiz: ["quiz-next", "Câu tiếp theo"] })[state.view] || ["today", "Về Hôm nay"];
     return `<footer class="hhp-actionbar"><div><button type="button" data-play-action="exit">⌂ <span>Thoát</span></button><button type="button" data-play-action="invite">↗ <span>Mời bạn</span></button><button type="button" data-play-action="content">✧ <span>Nội dung</span></button><button type="button" data-play-action="settings">⚙ <span>Cài đặt</span></button><button type="button" data-play-action="fullscreen">⛶ <span>Toàn màn hình</span></button><button type="button" data-play-action="restart">↻ <span>Chơi lại</span></button></div><span><i style="background:${meta.color}"></i>${meta.title}</span><button class="hhp-primary" type="button" data-play-action="${primary[0]}">${primary[1]} →</button></footer>`;
   }
 
@@ -754,6 +814,7 @@
 
   function renderView() {
     if (state.view === "today") return todayView();
+    if (state.view === "library") return libraryView();
     if (state.view === "arcade") return arcadeView();
     if (state.view === "party") return partyView();
     if (state.view === "watch") return watchView();
@@ -775,7 +836,7 @@
     const continueGame = recent[0] || ARCADE_GAMES[0];
     const quizCount = quizCatalog().length;
     return `<section class="hhp-view hhp-today">${heading("DAILY ENTERTAINMENT", "Một điểm bắt đầu, nhiều cách để vui", "Chọn nhiệm vụ ngắn phù hợp hoặc tiếp tục trải nghiệm gần nhất.", `${state.streak} ngày`) }
-      <nav class="hhp-command-deck" aria-label="Truy cập nhanh HH Play"><button type="button" data-game="${continueGame.id}"><i>▶</i><span><small>TIẾP TỤC</small><strong>${esc(continueGame.title)}</strong></span><b>→</b></button><button type="button" data-play-view="quiz"><i>?</i><span><small>KHO TRI THỨC</small><strong>${quizCount} câu có giải thích</strong></span><b>→</b></button><button type="button" data-play-action="content"><i>✧</i><span><small>CONTENT PACK</small><strong>${state.contentPacks.length} gói nội dung riêng</strong></span><b>→</b></button><article><i>◆</i><span><small>HỒ SƠ HOẠT ĐỘNG</small><strong>${state.achievements.length}/${ACHIEVEMENTS.length} huy hiệu · ${state.history.length} lượt</strong></span></article></nav>
+      <nav class="hhp-command-deck" aria-label="Truy cập nhanh HH Play"><button type="button" data-game="${continueGame.id}"><i>▶</i><span><small>TIẾP TỤC</small><strong>${esc(continueGame.title)}</strong></span><b>→</b></button><button type="button" data-play-view="library"><i>▦</i><span><small>TOÀN BỘ KHO</small><strong>${ARCADE_GAMES.length} trò dùng được thật</strong></span><b>→</b></button><button type="button" data-play-view="quiz"><i>?</i><span><small>KHO TRI THỨC</small><strong>${quizCount} câu có giải thích</strong></span><b>→</b></button><article><i>◆</i><span><small>HỒ SƠ HOẠT ĐỘNG</small><strong>${state.achievements.length}/${ACHIEVEMENTS.length} huy hiệu · ${state.history.length} lượt</strong></span></article></nav>
       <article class="hhp-hero-card"><div class="hhp-hero-orbit" aria-hidden="true"><i></i><i></i><i></i><b>PLAY</b></div><div><small>GỢI Ý TIẾP THEO · 3–5 PHÚT</small><h3>${state.daily.played ? "Thử một nhánh truyện mới" : "Neon Snake đang chờ bạn"}</h3><p>${state.daily.played ? "Mỗi lựa chọn được lưu trên thiết bị và có thể quay lại bằng ba ô lưu riêng." : "Điều khiển bằng phím mũi tên hoặc nút cảm ứng; không cần tải thêm tài nguyên."}</p><button type="button" data-play-view="${state.daily.played ? "story" : "arcade"}">${state.daily.played ? "Mở Story Universe" : "Chơi ngay"} →</button></div></article>
       <div class="hhp-daily-grid"><article><header><i>▣</i><span><strong>Chơi một trò</strong><small>Arcade hoặc Rhythm</small></span><b>${state.daily.played ? "✓" : "0/1"}</b></header><div><i style="width:${state.daily.played ? 100 : 0}%"></i></div></article><article><header><i>?</i><span><strong>Trả lời Quiz</strong><small>Một câu có giải thích</small></span><b>${state.daily.quiz ? "✓" : "0/1"}</b></header><div><i style="width:${state.daily.quiz ? 100 : 0}%"></i></div></article><article><header><i>◎</i><span><strong>Tạo phòng local</strong><small>Chuẩn bị quyền trước khi chia sẻ</small></span><b>${state.daily.social ? "✓" : "0/1"}</b></header><div><i style="width:${state.daily.social ? 100 : 0}%"></i></div></article></div>
       <div class="hhp-section-title"><div><span>TIẾN ĐỘ HÔM NAY</span><strong>${progress.completed}/3 hoàn thành</strong></div><div class="hhp-progress"><i style="width:${progress.percent}%"></i></div>${progress.completed === 3 ? `<button type="button" data-play-claim ${state.daily.claimed ? "disabled" : ""}>${state.daily.claimed ? "Đã nhận huy hiệu" : "Nhận huy hiệu ngày"}</button>` : ""}</div>
@@ -784,6 +845,42 @@
       <section class="hhp-collections hhp-collections--moods"><header><div><span>BỘ SƯU TẬP</span><strong>Chọn theo tâm trạng</strong></div></header><div class="hhp-mood-grid"><button type="button" data-play-collection="calm"><i>☾</i><span><strong>Thư giãn</strong><small>Chill · Pet · Story</small></span></button><button type="button" data-play-collection="competitive"><i>⚡</i><span><strong>Cạnh tranh</strong><small>Arcade · Rhythm · Quiz</small></span></button><button type="button" data-play-collection="solo"><i>◇</i><span><strong>Một mình</strong><small>Escape · Memory · Word</small></span></button><button type="button" data-play-collection="social"><i>◎</i><span><strong>Cùng bạn</strong><small>Party · Watch · Quiz</small></span></button></div></section>
       <section class="hhp-achievement-strip"><header><div><span>ACHIEVEMENT BOOK</span><strong>${state.achievements.length}/${ACHIEVEMENTS.length} huy hiệu</strong></div><small>Thành tích có bằng chứng từ hoạt động local</small></header><div>${ACHIEVEMENTS.map((badge) => `<article class="${state.achievements.includes(badge.id) ? "is-unlocked" : ""}"><i>${state.achievements.includes(badge.id) ? badge.icon : "?"}</i><span><strong>${esc(badge.title)}</strong><small>${esc(badge.note)}</small></span></article>`).join("")}</div></section>
     </section>`;
+  }
+
+  function libraryView() {
+    const games = libraryGames();
+    const genres = [
+      ["all", "Tất cả"], ["arcade", "Arcade"], ["logic", "Logic"], ["strategy", "Chiến thuật"], ["knowledge", "Kiến thức"]
+    ];
+    const durations = [["all", "Mọi thời lượng"], ["short", "≤ 5 phút"], ["medium", "6–8 phút"], ["long", "> 8 phút"]];
+    const completedIds = new Set((state.arcade?.runs || []).map((run) => run.game));
+    return `<section class="hhp-view hhp-library">${heading("GAME LIBRARY", "Kho trò chơi HH Play", "Tìm theo tên, kỹ năng, thể loại hoặc thời lượng. Mọi thẻ dưới đây mở một cartridge có luật, điều khiển, độ khó và lịch sử riêng.", `<span data-library-count>${games.length}/${ARCADE_GAMES.length} trò</span>`) }
+      <section class="hhp-library-overview" aria-label="Tổng quan kho"><article><i>▦</i><span><strong>${ARCADE_GAMES.length}</strong><small>trò dùng được</small></span></article><article><i>★</i><span><strong>${state.favorites.length}</strong><small>đã yêu thích</small></span></article><article><i>✓</i><span><strong>${completedIds.size}</strong><small>đã trải nghiệm</small></span></article><article><i>↻</i><span><strong>${state.arcade?.runs?.length || 0}</strong><small>ván đã ghi</small></span></article></section>
+      <section class="hhp-library-toolbar"><label class="hhp-library-search"><span>⌕</span><input type="search" data-library-search data-focus-key="library-search" value="${esc(state.library.query)}" placeholder="Tìm trò, kỹ năng…" autocomplete="off"></label><div class="hhp-library-filter" role="group" aria-label="Lọc thể loại">${genres.map(([id, label]) => `<button type="button" data-library-genre="${id}" class="${state.library.genre === id ? "is-active" : ""}" aria-pressed="${state.library.genre === id}">${label}</button>`).join("")}</div><label class="hhp-library-select"><span>Thời lượng</span><select data-library-duration>${durations.map(([id, label]) => `<option value="${id}" ${state.library.duration === id ? "selected" : ""}>${label}</option>`).join("")}</select></label><button type="button" class="hhp-library-favorites ${state.library.favoritesOnly ? "is-active" : ""}" data-library-favorites aria-pressed="${state.library.favoritesOnly}">★ Yêu thích</button></section>
+      <div data-library-results>${libraryResultsMarkup(games, completedIds)}</div>
+      <footer class="hhp-library-note"><span><i></i>LOCAL-FIRST CATALOG</span><p>Không có lượt chơi, xếp hạng hay người online giả. Kỷ lục chỉ xuất hiện sau hoạt động thật trên thiết bị.</p></footer>
+    </section>`;
+  }
+
+  function libraryResultsMarkup(games = libraryGames(), completedIds = new Set((state.arcade?.runs || []).map((run) => run.game))) {
+    return games.length
+      ? `<div class="hhp-library-grid">${games.map((game) => gameLibraryCard(game, completedIds.has(game.id))).join("")}</div>`
+      : `<article class="hhp-library-empty"><i>⌕</i><h3>Chưa có trò phù hợp</h3><p>Hãy xóa từ khóa hoặc đổi bộ lọc; dữ liệu kho của bạn vẫn được giữ nguyên.</p><button type="button" data-library-reset>Đặt lại bộ lọc</button></article>`;
+  }
+
+  function refreshLibraryResults() {
+    if (!root || state.view !== "library") return;
+    const games = libraryGames();
+    const results = root.querySelector("[data-library-results]");
+    const count = root.querySelector("[data-library-count]");
+    if (results) results.innerHTML = libraryResultsMarkup(games);
+    if (count) count.textContent = `${games.length}/${ARCADE_GAMES.length} trò`;
+  }
+
+  function gameLibraryCard(game, completed) {
+    const favorite = state.favorites.includes(game.id);
+    const genreNames = { arcade: "Arcade", logic: "Logic", strategy: "Chiến thuật", knowledge: "Kiến thức" };
+    return `<article class="hhp-library-card" style="--card:${({ arcade: "#63eaff", logic: "#aa82ff", strategy: "#ffb45f", knowledge: "#ffe05e" })[game.genre] || "#7ce7ff"}"><header><i>${game.icon}</i><span>${esc(genreNames[game.genre] || game.genre)}</span><button type="button" data-library-favorite="${game.id}" class="${favorite ? "is-active" : ""}" aria-pressed="${favorite}" aria-label="${favorite ? "Bỏ yêu thích" : "Thêm yêu thích"} ${esc(game.title)}">★</button></header><div><h3>${esc(game.title)}</h3><p>${esc(game.desc)}</p><ul>${(game.skills || []).slice(0, 2).map((skill) => `<li>${esc(skill)}</li>`).join("")}</ul></div><footer><span>◷ ${game.duration} phút</span><span>${completed ? "✓ Đã chơi" : "○ Chưa chơi"}</span><button type="button" data-game="${game.id}">Mở trò →</button></footer></article>`;
   }
 
   function arcadeView() {
@@ -818,6 +915,12 @@
     if (game.id === "elements") return `<div class="hhp-elements" data-elements-board></div><div class="hhp-game-inline-actions"><button type="button" data-element-move="left">←</button><button type="button" data-element-move="up">↑</button><button type="button" data-element-move="down">↓</button><button type="button" data-element-move="right">→</button></div>`;
     if (game.id === "sudoku") return sudokuMarkup();
     if (game.id === "word") return wordMarkup();
+    if (game.id === "pattern") return patternMarkup();
+    if (game.id === "math") return mathMarkup();
+    if (game.id === "maze") return mazeMarkup();
+    if (game.id === "tictactoe") return ticTacToeMarkup();
+    if (game.id === "spectrum") return spectrumMarkup();
+    if (game.id === "slider") return sliderMarkup();
     return towerMarkup();
   }
 
@@ -980,6 +1083,13 @@
   }
 
   function handleClick(event) {
+    const favoriteButton = event.target.closest("[data-library-favorite]");
+    if (favoriteButton) {
+      const id = favoriteButton.dataset.libraryFavorite;
+      if (!ARCADE_GAMES.some((game) => game.id === id)) return;
+      state.favorites = state.favorites.includes(id) ? state.favorites.filter((item) => item !== id) : [...state.favorites, id].slice(0, 40);
+      save(); render(); return toast(state.favorites.includes(id) ? "Đã thêm vào Yêu thích." : "Đã bỏ khỏi Yêu thích.");
+    }
     const viewButton = event.target.closest("button[data-play-view]");
     if (viewButton) return setView(viewButton.dataset.playView);
     const gameButton = event.target.closest("[data-game]");
@@ -988,6 +1098,10 @@
     if (duration) { const optionsByDuration = { 3: "reaction", 10: "snake", 30: "memory" }; state.arcadeGame = optionsByDuration[duration] || "snake"; save(); return setView("arcade"); }
     const collection = event.target.closest("[data-play-collection]")?.dataset.playCollection;
     if (collection) { const optionsByCollection = { calm: "chill", competitive: "rhythm", solo: "escape", social: "party" }; return setView(optionsByCollection[collection] || "arcade"); }
+    const libraryGenre = event.target.closest("[data-library-genre]")?.dataset.libraryGenre;
+    if (libraryGenre && ["all", "arcade", "logic", "strategy", "knowledge"].includes(libraryGenre)) { state.library.genre = libraryGenre; save(); return render(); }
+    if (event.target.closest("[data-library-favorites]")) { state.library.favoritesOnly = !state.library.favoritesOnly; save(); return render(); }
+    if (event.target.closest("[data-library-reset]")) { state.library = { genre: "all", duration: "all", favoritesOnly: false, query: "" }; save(); return render(); }
     const difficultyButton = event.target.closest("[data-arcade-difficulty]");
     if (difficultyButton) {
       state.arcade = state.arcade || { difficulty: "normal", runs: [], tutorialSeen: {}, input: "keyboard-touch" };
@@ -1028,6 +1142,14 @@
     if (event.target.closest("[data-word-check]")) return checkWord();
     if (event.target.closest("[data-word-next]")) { state.wordIndex = ((state.wordIndex || 0) + 1) % wordBank().length; save(); return render(); }
     const towerLane = event.target.closest("[data-tower-lane]")?.dataset.towerLane; if (towerLane !== undefined) return towerAction(Number(towerLane));
+    const patternPad = event.target.closest("[data-pattern-pad]")?.dataset.patternPad; if (patternPad !== undefined) return patternTap(Number(patternPad));
+    if (event.target.closest("[data-pattern-start]")) return startPattern();
+    const mazeMoveButton = event.target.closest("[data-maze-move]")?.dataset.mazeMove; if (mazeMoveButton) return moveMaze(mazeMoveButton);
+    const tttCell = event.target.closest("[data-ttt-cell]")?.dataset.tttCell; if (tttCell !== undefined) return playTicTacToe(Number(tttCell));
+    if (event.target.closest("[data-ttt-reset]")) return setupTicTacToe();
+    const spectrumCell = event.target.closest("[data-spectrum-cell]")?.dataset.spectrumCell; if (spectrumCell !== undefined) return pickSpectrum(Number(spectrumCell));
+    if (event.target.closest("[data-spectrum-start]")) return setupSpectrum(true);
+    const sliderCell = event.target.closest("[data-slider-cell]")?.dataset.sliderCell; if (sliderCell !== undefined) return moveSlider(Number(sliderCell));
     const roomSelect = event.target.closest("[data-party-select]")?.dataset.partySelect; if (roomSelect) { state.party.activeCode = roomSelect; save(); return render(); }
     const roomDelete = event.target.closest("[data-party-delete]")?.dataset.partyDelete; if (roomDelete) { if (state.party.realtime?.status === "connected") { try { partySocket?.emit("play:room:leave", { code: state.party.realtime.code }); } catch {} unbindPartySocket(); } state.party.rooms = state.party.rooms.filter((room) => room.code !== roomDelete); state.party.activeCode = state.party.rooms[0]?.code || ""; state.party.realtime = { status: "unavailable", code: "", members: [], revision: 0, lastError: "" }; state.party.mode = "local-only"; save(); return render(); }
     const roomCopy = event.target.closest("[data-party-copy]")?.dataset.partyCopy; if (roomCopy) return copyText(roomCopy, "Đã sao chép mã phòng.");
@@ -1063,6 +1185,7 @@
 
   function handleSubmit(event) {
     event.preventDefault();
+    if (event.target.matches("[data-math-form]")) return submitMath(new FormData(event.target).get("answer"));
     if (event.target.matches("[data-party-form]")) {
       const form = new FormData(event.target); const code = randomCode();
       const room = { code, name: clean(form.get("name"), 48) || "Phòng HH Play", privacy: clean(form.get("privacy"), 20), limit: clamp(form.get("limit"), 2, 8), permissions: { chat: form.has("chat"), control: form.has("control"), spectate: form.has("spectate") }, createdAt: Date.now(), provider: "local-device" };
@@ -1107,6 +1230,12 @@
   }
 
   function handleInput(event) {
+    if (event.target.matches("[data-library-search]")) {
+      state.library.query = clean(event.target.value, 60);
+      save();
+      refreshLibraryResults();
+      return;
+    }
     if (event.target.matches("[data-play-search]")) {
       renderSearchSuggestions(event.target.value);
       event.target.setAttribute("aria-expanded", clean(event.target.value, 80) ? "true" : "false");
@@ -1117,6 +1246,8 @@
   }
 
   function handleChange(event) {
+    if (event.target.matches("[data-library-search]")) return refreshLibraryResults();
+    if (event.target.matches("[data-library-duration]")) { state.library.duration = ["all", "short", "medium", "long"].includes(event.target.value) ? event.target.value : "all"; save(); return render(); }
     if (event.target.matches("[data-play-import]")) {
       const file = event.target.files?.[0]; event.target.value = "";
       if (!file) return;
@@ -1167,6 +1298,8 @@
     if (action === "content") return openContentStudio();
     if (action === "fullscreen") return toggleFullscreen();
     if (action === "restart") return restartCurrent();
+    if (action === "library") return setView("library");
+    if (action === "library-random") { const games = libraryGames().length ? libraryGames() : ARCADE_GAMES; const game = games[Math.floor(Math.random() * games.length)] || ARCADE_GAMES[0]; state.arcadeGame = game.id; save(); return setView("arcade"); }
     if (action === "arcade") return setView("arcade");
     if (action === "arcade-start") return startArcadePrimary();
     if (action === "party-focus") return root.querySelector("[data-party-form] input")?.focus();
@@ -1211,6 +1344,14 @@
     if (arcade?.raf) cancelAnimationFrame(arcade.raf);
     if (towerState?.timer) clearInterval(towerState.timer);
     towerState = null;
+    miniGameTimers.forEach((timer) => clearTimeout(timer));
+    miniGameTimers = [];
+    patternState = null;
+    mathState = null;
+    mazeState = null;
+    tictactoeState = null;
+    spectrumState = null;
+    sliderState = null;
     arcade = null;
     clearTimeout(reactionTimer);
     if (rhythm?.raf) cancelAnimationFrame(rhythm.raf);
@@ -1230,12 +1371,23 @@
     else if (game.id === "reaction") updateReaction();
     else if (game.id === "elements") setupElements();
     else if (game.id === "tower") setupTower();
+    else if (game.id === "pattern") setupPattern();
+    else if (game.id === "math") setupMath();
+    else if (game.id === "maze") setupMaze();
+    else if (game.id === "tictactoe") setupTicTacToe();
+    else if (game.id === "spectrum") setupSpectrum();
+    else if (game.id === "slider") setupSlider();
   }
 
   function startArcadePrimary() {
     const game = ARCADE_GAMES.find((item) => item.id === state.arcadeGame) || ARCADE_GAMES[0];
     if (game.type === "canvas") startCanvasGame();
     else if (game.id === "reaction") reactionTap();
+    else if (game.id === "pattern") startPattern();
+    else if (game.id === "spectrum") setupSpectrum(true);
+    else if (game.id === "tictactoe") setupTicTacToe();
+    else if (game.id === "maze") setupMaze();
+    else if (game.id === "slider") setupSlider();
     else { state.arcade = state.arcade || { difficulty: "normal", runs: [], tutorialSeen: {}, input: "keyboard-touch" }; state.arcade.tutorialSeen[game.id] = true; toast("Thử thách đã sẵn sàng trong vùng chơi."); }
   }
 
@@ -1474,6 +1626,112 @@
   function setupTower() { towerState = { hp: [100, 100, 100], energy: 100, wave: 0, timer: setInterval(() => { if (!towerState || state.view !== "arcade" || state.arcadeGame !== "tower") return; towerState.wave += 1; const lane = Math.floor(Math.random() * 3); towerState.hp[lane] = Math.max(0, towerState.hp[lane] - (12 + Math.floor(Math.random() * 18))); towerState.energy = Math.min(100, towerState.energy + 8); drawTower(); if (towerState.hp.some((hp) => hp <= 0)) { clearInterval(towerState.timer); toast("Một tuyến đã thất thủ. Hãy đặt lại để thử lại.", true); } else if (towerState.wave >= 12) { clearInterval(towerState.timer); markPlayed("tower", towerState.hp.reduce((a, b) => a + b, 0), { won: true }); toast("Đã giữ vững 12 wave!"); } }, 1600) }; drawTower(); }
   function towerAction(lane) { if (!towerState || towerState.energy < 18) return toast("Chưa đủ năng lượng.", true); towerState.energy -= 18; towerState.hp[lane] = Math.min(100, towerState.hp[lane] + 30); drawTower(); }
   function drawTower() { if (!towerState) return; towerState.hp.forEach((hp, lane) => { const element = root?.querySelector(`[data-tower-hp="${lane}"]`); if (element) element.textContent = `${Math.round(hp)}%`; }); updateArcadeScoreValue(towerState.wave * 25); updateArcadeStatus(`Wave ${towerState.wave}/12 · NL ${towerState.energy}`); }
+
+  function patternMarkup() {
+    return `<div class="hhp-pattern" data-pattern-board><header><span data-pattern-status>Nhấn bắt đầu để xem chuỗi</span><b data-pattern-round>0/5</b></header><div>${[0, 1, 2, 3].map((index) => `<button type="button" data-pattern-pad="${index}" aria-label="Tín hiệu ${index + 1}"><i>${["✦", "◇", "△", "◎"][index]}</i><kbd>${index + 1}</kbd></button>`).join("")}</div><button type="button" data-pattern-start>Bắt đầu chuỗi</button></div>`;
+  }
+  function setupPattern() {
+    const random = seededRng(`${DAY_KEY()}:pattern:${state.arcade?.difficulty || "normal"}`);
+    patternState = { random, sequence: [], input: [], round: 0, score: 0, accepting: false, startedAt: Date.now() };
+    drawPattern();
+  }
+  function drawPattern(status = "Nhấn bắt đầu để xem chuỗi") {
+    const label = root?.querySelector("[data-pattern-status]"); const round = root?.querySelector("[data-pattern-round]");
+    if (label) label.textContent = status; if (round) round.textContent = `${patternState?.round || 0}/5`; updateArcadeScoreValue(patternState?.score || 0);
+  }
+  function startPattern() {
+    if (!patternState || patternState.round >= 5) setupPattern();
+    miniGameTimers.forEach((timer) => clearTimeout(timer)); miniGameTimers = [];
+    patternState.input = []; patternState.accepting = false; patternState.round += 1;
+    const extra = state.arcade?.difficulty === "hard" ? 2 : state.arcade?.difficulty === "easy" ? 0 : 1;
+    while (patternState.sequence.length < patternState.round + 1 + extra) patternState.sequence.push(Math.floor(patternState.random() * 4));
+    drawPattern("Quan sát chuỗi…");
+    patternState.sequence.forEach((pad, index) => {
+      miniGameTimers.push(setTimeout(() => root?.querySelector(`[data-pattern-pad="${pad}"]`)?.classList.add("is-active"), 350 + index * 620));
+      miniGameTimers.push(setTimeout(() => root?.querySelector(`[data-pattern-pad="${pad}"]`)?.classList.remove("is-active"), 700 + index * 620));
+    });
+    miniGameTimers.push(setTimeout(() => { if (!patternState) return; patternState.accepting = true; drawPattern("Lặp lại chuỗi"); }, 850 + patternState.sequence.length * 620));
+  }
+  function patternTap(value) {
+    if (!patternState?.accepting || value < 0 || value > 3) return;
+    const index = patternState.input.length;
+    if (patternState.sequence[index] !== value) { patternState.accepting = false; patternState.round = Math.max(0, patternState.round - 1); patternState.sequence = patternState.sequence.slice(0, Math.max(1, patternState.sequence.length - 1)); drawPattern("Chưa đúng · nhấn bắt đầu để thử vòng này"); tone(180, .08); return; }
+    patternState.input.push(value); tone(420 + value * 90, .05);
+    if (patternState.input.length < patternState.sequence.length) return drawPattern(`Đúng ${patternState.input.length}/${patternState.sequence.length}`);
+    patternState.accepting = false; patternState.score += patternState.sequence.length * 50;
+    if (patternState.round >= 5) { const result = markPlayed("pattern", patternState.score, { won: true, duration: (Date.now() - patternState.startedAt) / 1000 }); drawPattern(`Hoàn thành · ${result.score} điểm`); return; }
+    drawPattern("Chính xác · bắt đầu vòng tiếp theo");
+  }
+
+  function mathMarkup() {
+    return `<div class="hhp-math" data-math-board><header><span>PHIÊN TÍNH NHẨM</span><b data-math-progress>0/10</b></header><strong data-math-question>Chuẩn bị…</strong><form data-math-form><label><span>Kết quả</span><input name="answer" inputmode="numeric" autocomplete="off" required></label><button type="submit">Xác nhận</button></form><p data-math-feedback>Trả lời đúng để sang phép tính tiếp theo.</p></div>`;
+  }
+  function setupMath() {
+    mathState = { random: seededRng(`${DAY_KEY()}:math:${state.arcade?.difficulty || "normal"}`), count: 0, correct: 0, score: 0, answer: 0, startedAt: Date.now(), completed: false };
+    nextMathProblem();
+  }
+  function nextMathProblem() {
+    if (!mathState || mathState.completed) return;
+    const hard = state.arcade?.difficulty === "hard"; const easy = state.arcade?.difficulty === "easy";
+    const max = easy ? 12 : hard ? 60 : 30; const a = 2 + Math.floor(mathState.random() * max); const b = 2 + Math.floor(mathState.random() * max);
+    const operators = hard ? ["+", "−", "×"] : ["+", "−"]; const operator = operators[Math.floor(mathState.random() * operators.length)];
+    let left = a; let right = b; if (operator === "−" && right > left) [left, right] = [right, left];
+    mathState.answer = operator === "+" ? left + right : operator === "−" ? left - right : left * right;
+    mathState.question = `${left} ${operator} ${right}`; drawMath();
+  }
+  function drawMath(feedback = "Trả lời đúng để sang phép tính tiếp theo.") {
+    const question = root?.querySelector("[data-math-question]"); const progress = root?.querySelector("[data-math-progress]"); const note = root?.querySelector("[data-math-feedback]");
+    if (question) question.textContent = mathState?.completed ? "Hoàn thành!" : mathState?.question || "Chuẩn bị…";
+    if (progress) progress.textContent = `${mathState?.count || 0}/10`; if (note) note.textContent = feedback; updateArcadeScoreValue(mathState?.score || 0);
+    root?.querySelector("[data-math-form] input")?.focus({ preventScroll: true });
+  }
+  function submitMath(value) {
+    if (!mathState || mathState.completed) return;
+    const answer = Number(String(value || "").trim());
+    if (!Number.isFinite(answer) || answer !== mathState.answer) return drawMath("Chưa đúng · hãy kiểm tra lại phép tính.");
+    mathState.count += 1; mathState.correct += 1; mathState.score += 100; tone(620, .05);
+    if (mathState.count >= 10) { mathState.completed = true; markPlayed("math", mathState.score, { won: true, duration: (Date.now() - mathState.startedAt) / 1000 }); return drawMath("10/10 chính xác · kết quả đã được lưu."); }
+    nextMathProblem();
+    const input = root?.querySelector("[data-math-form] input"); if (input) input.value = "";
+  }
+
+  const MAZE_MAP = Object.freeze(["#########", "#S#.....#", "#.#.###.#", "#...#...#", "###.#.#.#", "#...#.#.#", "#.###.#.#", "#.....#G#", "#########"]);
+  function mazeMarkup() { return `<div class="hhp-maze-wrap"><div class="hhp-maze" data-maze-board aria-label="Mê cung 9 nhân 9"></div><div class="hhp-maze-controls"><button type="button" data-maze-move="up">↑</button><button type="button" data-maze-move="left">←</button><button type="button" data-maze-move="down">↓</button><button type="button" data-maze-move="right">→</button></div><p data-maze-status>Tìm đường từ tàu tới cổng sáng.</p></div>`; }
+  function setupMaze() { mazeState = { x: 1, y: 1, moves: 0, startedAt: Date.now(), won: false }; drawMaze(); }
+  function drawMaze() {
+    const board = root?.querySelector("[data-maze-board]"); if (!board || !mazeState) return;
+    board.innerHTML = MAZE_MAP.flatMap((row, y) => [...row].map((cell, x) => `<i class="${cell === "#" ? "is-wall" : cell === "G" ? "is-goal" : ""} ${mazeState.x === x && mazeState.y === y ? "is-player" : ""}">${cell === "G" ? "◎" : mazeState.x === x && mazeState.y === y ? "◆" : ""}</i>`)).join("");
+    updateArcadeScoreValue(Math.max(0, 1000 - mazeState.moves * 20)); const status = root.querySelector("[data-maze-status]"); if (status) status.textContent = mazeState.won ? `Đã tới cổng sau ${mazeState.moves} bước.` : `${mazeState.moves} bước · tìm đường tới cổng sáng.`;
+  }
+  function moveMaze(direction) {
+    if (!mazeState || mazeState.won) return; const delta = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[direction]; if (!delta) return;
+    const x = mazeState.x + delta[0]; const y = mazeState.y + delta[1]; if (MAZE_MAP[y]?.[x] === "#" || !MAZE_MAP[y]?.[x]) return tone(160, .04);
+    mazeState.x = x; mazeState.y = y; mazeState.moves += 1;
+    if (MAZE_MAP[y][x] === "G") { mazeState.won = true; markPlayed("maze", Math.max(150, 1000 - mazeState.moves * 20), { won: true, duration: (Date.now() - mazeState.startedAt) / 1000 }); }
+    drawMaze();
+  }
+
+  function ticTacToeMarkup() { return `<div class="hhp-ttt-wrap"><div class="hhp-ttt" data-ttt-board></div><p data-ttt-status>Bạn đi trước với ký hiệu ✦.</p><button type="button" data-ttt-reset>Ván mới</button></div>`; }
+  function setupTicTacToe() { tictactoeState = { board: Array(9).fill(""), over: false, startedAt: Date.now() }; drawTicTacToe(); }
+  function tttWinner(board) { const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; for (const line of lines) if (board[line[0]] && board[line[0]] === board[line[1]] && board[line[1]] === board[line[2]]) return board[line[0]]; return board.every(Boolean) ? "draw" : ""; }
+  function drawTicTacToe(message = "Bạn đi trước với ký hiệu ✦.") { const board = root?.querySelector("[data-ttt-board]"); if (!board || !tictactoeState) return; board.innerHTML = tictactoeState.board.map((cell, index) => `<button type="button" data-ttt-cell="${index}" ${cell || tictactoeState.over ? "disabled" : ""}>${cell === "X" ? "✦" : cell === "O" ? "○" : ""}</button>`).join(""); const status = root.querySelector("[data-ttt-status]"); if (status) status.textContent = message; }
+  function finishTicTacToe(result) { tictactoeState.over = true; if (result === "X") { markPlayed("tictactoe", 500, { won: true, duration: (Date.now() - tictactoeState.startedAt) / 1000 }); drawTicTacToe("Bạn thắng! Kết quả đã được lưu."); } else if (result === "O") drawTicTacToe("Máy đã tạo thành một đường. Hãy thử ván mới."); else { markPlayed("tictactoe", 250, { won: true, duration: (Date.now() - tictactoeState.startedAt) / 1000 }); drawTicTacToe("Ván hòa · bạn đã giữ cân bằng quỹ đạo."); } }
+  function playTicTacToe(index) {
+    if (!tictactoeState || tictactoeState.over || tictactoeState.board[index]) return; tictactoeState.board[index] = "X"; let result = tttWinner(tictactoeState.board); if (result) return finishTicTacToe(result);
+    drawTicTacToe("Máy đang tính nước đi…"); miniGameTimers.push(setTimeout(() => { if (!tictactoeState || tictactoeState.over) return; const free = tictactoeState.board.map((cell, i) => cell ? -1 : i).filter((i) => i >= 0); const findMove = (symbol) => free.find((candidate) => { const copy = [...tictactoeState.board]; copy[candidate] = symbol; return tttWinner(copy) === symbol; }); const move = findMove("O") ?? findMove("X") ?? (free.includes(4) ? 4 : free[0]); if (move !== undefined) tictactoeState.board[move] = "O"; result = tttWinner(tictactoeState.board); if (result) finishTicTacToe(result); else drawTicTacToe("Lượt của bạn · ký hiệu ✦."); }, 320));
+  }
+
+  function spectrumMarkup() { return `<div class="hhp-spectrum-wrap"><header><span data-spectrum-status>Nhấn bắt đầu để luyện thị giác.</span><b data-spectrum-round>0/10</b></header><div class="hhp-spectrum" data-spectrum-board></div><button type="button" data-spectrum-start>Bắt đầu / làm lại</button></div>`; }
+  function setupSpectrum(start = false) { spectrumState = { random: seededRng(`${DAY_KEY()}:spectrum:${state.arcade?.difficulty || "normal"}`), round: 0, score: 0, target: -1, startedAt: Date.now(), active: start }; if (start) nextSpectrum(); else drawSpectrum(); }
+  function nextSpectrum() { if (!spectrumState || spectrumState.round >= 10) return; spectrumState.round += 1; spectrumState.target = Math.floor(spectrumState.random() * 16); spectrumState.hue = Math.floor(spectrumState.random() * 320); spectrumState.active = true; drawSpectrum(); }
+  function drawSpectrum(message = "Chọn ô có sắc độ khác.") { const board = root?.querySelector("[data-spectrum-board]"); if (!board || !spectrumState) return; const delta = state.arcade?.difficulty === "hard" ? 5 : state.arcade?.difficulty === "easy" ? 15 : 9; board.innerHTML = Array.from({ length: 16 }, (_, index) => `<button type="button" data-spectrum-cell="${index}" style="--tone:hsl(${spectrumState.hue || 190} 72% ${index === spectrumState.target ? 52 + delta : 52}%)" ${spectrumState.active ? "" : "disabled"} aria-label="Ô màu ${index + 1}"></button>`).join(""); const status = root.querySelector("[data-spectrum-status]"); const round = root.querySelector("[data-spectrum-round]"); if (status) status.textContent = message; if (round) round.textContent = `${spectrumState.round}/10`; updateArcadeScoreValue(spectrumState.score); }
+  function pickSpectrum(index) { if (!spectrumState?.active) return; if (index !== spectrumState.target) { spectrumState.score = Math.max(0, spectrumState.score - 20); return drawSpectrum("Chưa đúng · hãy nhìn lại toàn bộ lưới."); } spectrumState.score += 100; if (spectrumState.round >= 10) { spectrumState.active = false; markPlayed("spectrum", spectrumState.score, { won: true, duration: (Date.now() - spectrumState.startedAt) / 1000 }); return drawSpectrum("Hoàn thành 10 vòng · kết quả đã lưu."); } nextSpectrum(); }
+
+  function sliderMarkup() { return `<div class="hhp-slider-wrap"><div class="hhp-slider" data-slider-board></div><p data-slider-status>Trượt ô cạnh khoảng trống để xếp từ 1 đến 8.</p></div>`; }
+  function setupSlider() { const layouts = { easy: [1,2,3,4,5,6,0,7,8], normal: [1,2,3,5,0,6,4,7,8], hard: [2,3,6,1,5,0,4,7,8] }; sliderState = { board: [...(layouts[state.arcade?.difficulty] || layouts.normal)], moves: 0, startedAt: Date.now(), won: false }; drawSlider(); }
+  function drawSlider() { const board = root?.querySelector("[data-slider-board]"); if (!board || !sliderState) return; board.innerHTML = sliderState.board.map((value, index) => `<button type="button" data-slider-cell="${index}" class="${value ? "" : "is-empty"}" ${value && !sliderState.won ? "" : "disabled"}>${value || ""}</button>`).join(""); const status = root.querySelector("[data-slider-status]"); if (status) status.textContent = sliderState.won ? `Hoàn thành sau ${sliderState.moves} lượt.` : `${sliderState.moves} lượt · xếp từ 1 đến 8.`; updateArcadeScoreValue(Math.max(0, 800 - sliderState.moves * 15)); }
+  function moveSlider(index) { if (!sliderState || sliderState.won) return; const empty = sliderState.board.indexOf(0); const adjacent = Math.abs(index - empty) === 3 || (Math.abs(index - empty) === 1 && Math.floor(index / 3) === Math.floor(empty / 3)); if (!adjacent) return; [sliderState.board[index], sliderState.board[empty]] = [sliderState.board[empty], sliderState.board[index]]; sliderState.moves += 1; if (sliderState.board.join(",") === "1,2,3,4,5,6,7,8,0") { sliderState.won = true; markPlayed("slider", Math.max(150, 800 - sliderState.moves * 15), { won: true, duration: (Date.now() - sliderState.startedAt) / 1000 }); } drawSlider(); }
+
   function updateArcadeScoreValue(value) { const target = root?.querySelector("[data-arcade-score]"); if (target) target.textContent = Math.round(value); }
 
   function youtubeId(value) { const text = String(value || "").trim(); try { const url = new URL(text); if (!["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"].includes(url.hostname)) return ""; const id = url.hostname === "youtu.be" ? url.pathname.slice(1) : url.searchParams.get("v") || url.pathname.split("/").filter(Boolean).at(-1); return /^[A-Za-z0-9_-]{11}$/.test(id || "") ? id : ""; } catch { return ""; } }
@@ -1580,8 +1838,8 @@
 
   function restartCurrent() { if (state.view === "arcade") return resetArcadeChallenge(); if (state.view === "story") return resetStory(); if (state.view === "escape") { state.escape = { stage: 0, hints: 0, completed: false }; } if (state.view === "quiz") state.quiz = { index: 0, score: 0, answered: false, selected: -1, completed: false }; save(); render(); }
   function searchCatalog() {
-    const aliases = { game: "arcade", trò: "arcade", nhịp: "rhythm", nhac: "rhythm", phòng: "party", bạn: "party", xem: "watch", truyện: "story", mật: "escape", thú: "pet", thưgiãn: "chill", đố: "quiz" };
-    return [...VIEWS.map((item) => ({ id: item.id, title: item.title, note: item.note, icon: item.icon, color: item.color, kind: "view", keywords: aliases[item.id] || "" })), ...ARCADE_GAMES.map((item) => ({ ...item, note: item.desc, color: "#63eaff", kind: "game", keywords: `${item.id} game trò chơi` }))];
+    const aliases = { game: "arcade", library: "kho trò chơi yêu thích", trò: "arcade", nhịp: "rhythm", nhac: "rhythm", phòng: "party", bạn: "party", xem: "watch", truyện: "story", mật: "escape", thú: "pet", thưgiãn: "chill", đố: "quiz" };
+    return [...VIEWS.map((item) => ({ id: item.id, title: item.title, note: item.note, icon: item.icon, color: item.color, kind: "view", keywords: aliases[item.id] || "" })), ...ARCADE_GAMES.map((item) => ({ ...item, note: item.desc, color: "#63eaff", kind: "game", keywords: `${item.id} ${item.genre} ${(item.skills || []).join(" ")} ${item.duration} phút game trò chơi` }))];
   }
   function searchResults(query) {
     const term = clean(query, 80).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -1672,6 +1930,13 @@
   function globalKeydown(event) {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k" && root) { event.preventDefault(); root.querySelector("[data-play-search]")?.focus(); return; }
     if (event.key === "Escape" && root?.querySelector("[data-dialog-host]")) { event.preventDefault(); closeDialog(); return; }
+    if (!event.target?.closest?.("input, textarea, select, [contenteditable='true']") && state?.view === "arcade") {
+      const key = String(event.key || "").toLowerCase();
+      if (state.arcadeGame === "pattern" && /^[1-4]$/.test(key)) { event.preventDefault(); patternTap(Number(key) - 1); return; }
+      const direction = ({ arrowup: "up", w: "up", arrowdown: "down", s: "down", arrowleft: "left", a: "left", arrowright: "right", d: "right" })[key];
+      if (state.arcadeGame === "maze" && direction) { event.preventDefault(); moveMaze(direction); return; }
+      if (state.arcadeGame === "slider" && direction && sliderState) { event.preventDefault(); const empty = sliderState.board.indexOf(0); const candidate = ({ up: empty + 3, down: empty - 3, left: empty + 1, right: empty - 1 })[direction]; if (candidate >= 0 && candidate < 9) moveSlider(candidate); return; }
+    }
     const dialog = root?.querySelector("[data-dialog-host] .hhp-dialog");
     if (event.key === "Tab" && dialog) {
       const focusables = [...dialog.querySelectorAll("button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex='-1'])")].filter((item) => item.offsetParent !== null);
@@ -1686,6 +1951,8 @@
       if (arcade?.running) { arcade.paused = true; cancelAnimationFrame(arcade.raf); updateArcadeStatus("Tự tạm dừng vì tab bị ẩn"); }
       if (rhythm?.running) { rhythm.running = false; cancelAnimationFrame(rhythm.raf); rhythm.timers?.forEach((timer) => clearTimeout(timer)); try { rhythm.worklet?.disconnect?.(); } catch {} }
       if (audio?.scheduled) { audio.scheduled.forEach((node) => { try { node.stop(); } catch {} }); audio.scheduled.clear(); }
+      miniGameTimers.forEach((timer) => clearTimeout(timer)); miniGameTimers = [];
+      if (patternState?.accepting) { patternState.accepting = false; drawPattern("Đã tạm dừng vì tab bị ẩn · hãy phát lại chuỗi"); }
     }
   }
   function unmount() { mountGeneration += 1; hydrationPending = false; if (partySocket?.connected) { try { partySocket.emit("play:room:leave", { code: state?.party?.realtime?.code || "" }); } catch {} } unbindPartySocket(); cleanupRuntime(); clearInterval(pomodoroTimer); pomodoroTimer = 0; stopAmbient(); if (typeof document !== "undefined") { document.removeEventListener("visibilitychange", visibilityHandler); document.removeEventListener("keydown", globalKeydown); } if (typeof window !== "undefined") { window.removeEventListener("hh:realtime-ready", realtimeReadyHandler); window.removeEventListener("hh:realtime-offline", realtimeOfflineHandler); if (watchMessageHandler) window.removeEventListener("message", watchMessageHandler); } watchMessageHandler = null; if (host) host.replaceChildren(); host = null; root = null; options = {}; state = null; }
@@ -1694,11 +1961,12 @@
     mount, unmount, version: VERSION, views: VIEWS.map((view) => view.id),
     quizQuestions: QUIZ.length,
     quizTopics: Object.freeze(QUIZ_TOPICS.map((topic) => topic.id)),
-    capabilities: Object.freeze({ localGames: true, indexedDb: typeof indexedDB !== "undefined", contentPacks: true, authenticatedRealtime: true, fakePresence: false }),
+    gameCount: ARCADE_GAMES.length,
+    capabilities: Object.freeze({ localGames: true, searchableLibrary: true, favorites: true, indexedDb: typeof indexedDB !== "undefined", contentPacks: true, authenticatedRealtime: true, fakePresence: false }),
     exportData: () => exportPlayData(false),
     importData: (payload) => importPlayData(payload),
     checkpoint: (label) => createSnapshot(label),
     restoreLatest: () => restoreLatestSnapshot(),
-    inspect: () => state ? { version: VERSION, schemaVersion: STATE_SCHEMA_VERSION, view: state.view, source: "indexeddb-with-local-fallback", rooms: state.party.rooms.length, queue: state.watch.queue.length, level: level(), history: state.history.length, achievements: state.achievements.length, contentPacks: state.contentPacks.length, realtime: state.party.realtime.status } : null
+    inspect: () => state ? { version: VERSION, schemaVersion: STATE_SCHEMA_VERSION, view: state.view, source: "indexeddb-with-local-fallback", games: ARCADE_GAMES.length, favorites: state.favorites.length, rooms: state.party.rooms.length, queue: state.watch.queue.length, level: level(), history: state.history.length, achievements: state.achievements.length, contentPacks: state.contentPacks.length, realtime: state.party.realtime.status } : null
   });
 })();
