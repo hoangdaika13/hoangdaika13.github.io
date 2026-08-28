@@ -27,7 +27,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=1", "galaxy-favicon-controller.js?v=1"]
+      scripts: ["brand-galaxy-logo.js?v=1", "galaxy-favicon-controller.js?v=2"]
     },
     "auth-effects": {
       /*

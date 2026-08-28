@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "build:favicons": "node scripts/build-galaxy-favicons.js",
     "start": "vercel dev",
     "test:community": "node --test tests/community-contract.test.js",
     "test:ai": "node --test tests/ai-center-contract.test.js",
