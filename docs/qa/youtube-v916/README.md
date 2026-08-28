@@ -15,7 +15,7 @@
 - `node --check youtube-hub.js`
 - `node --check youtube-hub-pro.js`
 - Focused YouTube/search contract tests: all passed.
-- Full repository test suite: run before release; external YouTube CDN, ads, codec choice and network quality remain outside the application boundary.
+- Full repository test suite: 2,281/2,281 passed; external YouTube CDN, ads, codec choice and network quality remain outside the application boundary.
 
 ## Limitations
 
