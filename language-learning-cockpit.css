@@ -21,9 +21,9 @@
   contain: layout paint;
   z-index: 1;
 }
-.hh-language-cockpit[data-language="english"] { --language-accent:#59e7ff; --language-secondary:#a673ff; }
-.hh-language-cockpit[data-language="japanese"] { --language-accent:#ff6b86; --language-secondary:#ffca69; }
-.hh-language-cockpit[data-language="chinese"] { --language-accent:#ffd166; --language-secondary:#ff6f9f; }
+.hh-language-cockpit[data-language="english"] { --language-accent:#4fd7ef; --language-secondary:#e4b64c; --language-ink:#f7fbff; --language-muted:#c8d7e6; background:radial-gradient(circle at 7% 10%,rgba(79,215,239,.16),transparent 34%),linear-gradient(135deg,#102c4b,#163b5e 54%,#10243d); }
+.hh-language-cockpit[data-language="japanese"] { --language-accent:#c3423f; --language-secondary:#d8ad55; --language-ink:#2b2420; --language-muted:#665b51; background:radial-gradient(circle at 91% 12%,rgba(195,66,63,.14),transparent 31%),repeating-linear-gradient(7deg,rgba(80,67,50,.025) 0 1px,transparent 1px 7px),linear-gradient(135deg,#fffaf0,#f2e6cf 58%,#e9d8b9); }
+.hh-language-cockpit[data-language="chinese"] { --language-accent:#bc382f; --language-secondary:#d5a43a; --language-ink:#2b211a; --language-muted:#6b5948; background:radial-gradient(circle at 8% 8%,rgba(213,164,58,.2),transparent 30%),repeating-linear-gradient(90deg,rgba(117,73,39,.022) 0 1px,transparent 1px 9px),linear-gradient(135deg,#fff7e5,#f0dfbd 55%,#e7cfa2); }
 .hh-language-cockpit__backdrop { position:absolute; inset:0; pointer-events:none; z-index:-1; opacity:.9; }
 .hh-language-cockpit__backdrop::before,
 .hh-language-cockpit__backdrop::after { content:""; position:absolute; border:1px solid color-mix(in srgb, var(--language-accent) 22%, transparent); border-radius:50%; transform:rotate(-18deg); animation:hhLanguageOrbit 15s linear infinite; }
@@ -32,13 +32,25 @@
 .hh-language-cockpit__backdrop b { position:absolute; width:92px; height:92px; left:50%; top:58%; border-radius:50%; background:radial-gradient(circle, color-mix(in srgb,var(--language-accent) 16%,transparent), transparent 68%); filter:blur(2px); transform:translate(-50%,-50%); animation:hhLanguagePulse 4.6s ease-in-out infinite; }
 .hh-language-cockpit__backdrop i { position:absolute; width:3px; height:3px; border-radius:50%; background:var(--language-accent); box-shadow:0 0 9px var(--language-accent), 0 0 18px color-mix(in srgb,var(--language-accent) 62%,transparent); animation:hhLanguageDrift 4.5s ease-in-out infinite; }
 .hh-language-cockpit__backdrop i:nth-child(1){left:12%;top:22%;animation-delay:-.8s}.hh-language-cockpit__backdrop i:nth-child(2){left:28%;top:76%;animation-delay:-2.1s;background:var(--language-secondary)}.hh-language-cockpit__backdrop i:nth-child(3){left:52%;top:16%;animation-delay:-3.2s}.hh-language-cockpit__backdrop i:nth-child(4){left:70%;top:66%;animation-delay:-1.4s;background:var(--language-secondary)}.hh-language-cockpit__backdrop i:nth-child(5){left:86%;top:28%;animation-delay:-2.8s}.hh-language-cockpit__backdrop i:nth-child(6){left:44%;top:91%;animation-delay:-.2s}
+.hh-language-cockpit[data-language="japanese"] .hh-language-cockpit__backdrop,
+.hh-language-cockpit[data-language="chinese"] .hh-language-cockpit__backdrop { opacity:.34; }
+.hh-language-cockpit[data-language="japanese"] .hh-language-cockpit__backdrop::before { border-radius:46% 54% 48% 52%; transform:rotate(-8deg); }
+.hh-language-cockpit[data-language="chinese"] .hh-language-cockpit__backdrop::before { border-radius:4px; transform:rotate(45deg); }
 .hh-language-cockpit__header { position:relative; display:flex; align-items:center; justify-content:space-between; gap:18px; }
 .hh-language-cockpit__identity { display:flex; align-items:center; min-width:0; gap:13px; }
 .hh-language-cockpit__planet { position:relative; display:grid; place-items:center; flex:0 0 48px; width:48px; height:48px; border:1px solid color-mix(in srgb,var(--language-accent) 60%,#fff); border-radius:50%; color:var(--language-accent); font:800 23px/1 "Be Vietnam Pro",system-ui,sans-serif; background:radial-gradient(circle at 34% 27%,#fff,color-mix(in srgb,var(--language-accent) 66%,#101636) 35%,#121736 76%); box-shadow:0 0 0 5px color-mix(in srgb,var(--language-accent) 8%,transparent),0 0 24px color-mix(in srgb,var(--language-accent) 34%,transparent),inset 0 0 16px rgba(255,255,255,.15); animation:hhLanguagePlanet 3.6s ease-in-out infinite; }
 .hh-language-cockpit__planet::after { content:""; position:absolute; inset:-8px -16px; border:1px solid color-mix(in srgb,var(--language-secondary) 62%,transparent); border-radius:50%; transform:rotate(-19deg); animation:hhLanguageRing 8s linear infinite; }
+.hh-language-cockpit[data-language="japanese"] .hh-language-cockpit__planet,
+.hh-language-cockpit[data-language="chinese"] .hh-language-cockpit__planet { color:#fff9e9; border-radius:10px; background:linear-gradient(145deg,var(--language-accent),#7d201c); box-shadow:0 0 0 5px color-mix(in srgb,var(--language-secondary) 14%,transparent),0 8px 20px rgba(82,45,25,.2); }
+.hh-language-cockpit[data-language="japanese"] .hh-language-cockpit__planet::after,
+.hh-language-cockpit[data-language="chinese"] .hh-language-cockpit__planet::after { inset:-5px; border-color:color-mix(in srgb,var(--language-secondary) 55%,transparent); border-radius:13px; animation:hhLanguageSeal 3.8s ease-in-out infinite; }
 .hh-language-cockpit__identity small,.hh-language-cockpit__section-label>span { display:block; color:color-mix(in srgb,var(--language-accent) 78%,#fff); font-size:9px; font-weight:800; letter-spacing:.15em; text-transform:uppercase; }
 .hh-language-cockpit__identity h2 { margin:2px 0 2px; color:#fff; font-size:clamp(18px,2vw,24px); line-height:1.12; letter-spacing:-.02em; }
 .hh-language-cockpit__identity p { max-width:670px; margin:0; color:var(--language-muted); font-size:12px; line-height:1.42; }
+.hh-language-cockpit[data-language="japanese"] :is(.hh-language-cockpit__identity h2,.hh-language-cockpit__action b,.hh-language-cockpit__node b,.hh-language-cockpit__stats b,.hh-language-cockpit__status b,.hh-language-cockpit__continue b),
+.hh-language-cockpit[data-language="chinese"] :is(.hh-language-cockpit__identity h2,.hh-language-cockpit__action b,.hh-language-cockpit__node b,.hh-language-cockpit__stats b,.hh-language-cockpit__status b,.hh-language-cockpit__continue b) { color:var(--language-ink); }
+.hh-language-cockpit[data-language="japanese"] :is(.hh-language-cockpit__section-label small,.hh-language-cockpit__action small,.hh-language-cockpit__node small,.hh-language-cockpit__stats small,.hh-language-cockpit__status small,.hh-language-cockpit__continue span),
+.hh-language-cockpit[data-language="chinese"] :is(.hh-language-cockpit__section-label small,.hh-language-cockpit__action small,.hh-language-cockpit__node small,.hh-language-cockpit__stats small,.hh-language-cockpit__status small,.hh-language-cockpit__continue span) { color:var(--language-muted); }
 .hh-language-cockpit__journey { display:flex; align-items:center; justify-content:flex-end; gap:8px; min-width:280px; }
 .hh-language-cockpit__journey button,.hh-language-cockpit__continue { appearance:none; border:1px solid rgba(255,255,255,.15); border-radius:10px; color:#f7f8ff; background:rgba(255,255,255,.06); cursor:pointer; font:700 11px/1.2 inherit; transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease; }
 .hh-language-cockpit__journey button { min-height:30px; padding:0 10px; white-space:nowrap; }
@@ -55,6 +67,10 @@
 .hh-language-cockpit__action::before { content:""; position:absolute; inset:0; background:linear-gradient(112deg,transparent 20%,color-mix(in srgb,var(--language-accent) 23%,transparent),transparent 72%); transform:translateX(-120%); animation:hhLanguageSheen 5.4s ease-in-out infinite; pointer-events:none; }
 .hh-language-cockpit__action:nth-child(2)::before{animation-delay:-1.8s}.hh-language-cockpit__action:nth-child(3)::before{animation-delay:-3.1s}.hh-language-cockpit__action:nth-child(4)::before{animation-delay:-4.2s}
 .hh-language-cockpit__action:hover,.hh-language-cockpit__action:focus-visible { transform:translateY(-3px); border-color:color-mix(in srgb,var(--language-accent) 64%,#fff); background:linear-gradient(145deg,color-mix(in srgb,var(--language-accent) 16%,rgba(255,255,255,.08)),rgba(255,255,255,.035)); box-shadow:0 10px 24px rgba(3,7,28,.28),0 0 20px color-mix(in srgb,var(--language-accent) 15%,transparent); outline:none; }
+.hh-language-cockpit[data-language="japanese"] :is(.hh-language-cockpit__action,.hh-language-cockpit__node,.hh-language-cockpit__orbit),
+.hh-language-cockpit[data-language="chinese"] :is(.hh-language-cockpit__action,.hh-language-cockpit__node,.hh-language-cockpit__orbit) { color:var(--language-ink); border-color:rgba(99,65,41,.18); background:rgba(255,253,244,.54); box-shadow:none; }
+.hh-language-cockpit[data-language="japanese"] .hh-language-cockpit__journey button:not(.is-next),
+.hh-language-cockpit[data-language="chinese"] .hh-language-cockpit__journey button:not(.is-next) { color:var(--language-ink); border-color:rgba(99,65,41,.2); background:rgba(255,253,244,.6); }
 .hh-language-cockpit__action.is-current { border-color:color-mix(in srgb,var(--language-accent) 72%,#fff); box-shadow:inset 3px 0 0 var(--language-accent),0 0 15px color-mix(in srgb,var(--language-accent) 13%,transparent); }
 .hh-language-cockpit__action i { position:relative; display:grid; place-items:center; flex:0 0 28px; width:28px; height:28px; border-radius:9px; color:#10172d; font-size:14px; font-style:normal; font-weight:900; background:linear-gradient(145deg,var(--language-accent),var(--language-secondary)); box-shadow:0 0 14px color-mix(in srgb,var(--language-accent) 25%,transparent); }
 .hh-language-cockpit__action span { position:relative; min-width:0; }
@@ -93,6 +109,7 @@
 @keyframes hhLanguageDrift { 50% { opacity:.35; transform:translate(7px,-5px) scale(.6); } }
 @keyframes hhLanguagePlanet { 50% { transform:translateY(-3px) scale(1.04); filter:brightness(1.14); } }
 @keyframes hhLanguageRing { to { transform:rotate(341deg); } }
+@keyframes hhLanguageSeal { 50% { opacity:.42; transform:scale(1.08); } }
 @keyframes hhLanguageDot { 50% { transform:scale(1.25); } }
 @keyframes hhLanguageNode { 50% { transform:translateY(-1px); } }
 @keyframes hhLanguageStatus { 50% { opacity:.42; transform:scale(.72); } }

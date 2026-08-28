@@ -2,7 +2,7 @@
   "use strict";
 
   const root = typeof window !== "undefined" ? window : globalThis;
-  const VERSION = "3.1.0";
+  const VERSION = "3.2.0";
   const SCHEMA_VERSION = 3;
   const MAX_MISTAKES = 500;
   const esc = (value = "") => String(value).replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '\"': "&quot;" })[char]);
@@ -441,26 +441,49 @@
     runtime.writeState(state); runtime.render({ focusView: true, preserveScroll: true }); runtime.toast("Đúng · checkpoint đã được lưu.", "success"); return true;
   };
 
-  const boundHosts = new WeakSet();
+  const boundHosts = new WeakMap();
+  const activeHosts = new Set();
   let activeRuntime = null;
   let documentBound = false;
+  const handleDocumentClick = (event) => { if (activeRuntime?.host?.contains?.(event.target)) dispatchClick(activeRuntime, event); };
+  const handleDocumentSubmit = (event) => { if (activeRuntime?.host?.contains?.(event.target)) dispatchSubmit(activeRuntime, event); };
   const bind = (runtime) => {
     const { host } = runtime;
     if (!host) return;
     activeRuntime = runtime;
     if (!documentBound && root.document) {
       documentBound = true;
-      root.document.addEventListener("click", (event) => { if (activeRuntime?.host?.contains?.(event.target)) dispatchClick(activeRuntime, event); }, true);
-      root.document.addEventListener("submit", (event) => { if (activeRuntime?.host?.contains?.(event.target)) dispatchSubmit(activeRuntime, event); }, true);
+      root.document.addEventListener("click", handleDocumentClick, true);
+      root.document.addEventListener("submit", handleDocumentSubmit, true);
     }
     if (boundHosts.has(host)) return;
-    boundHosts.add(host); host.dataset.hheoBound = VERSION;
-    host.addEventListener("input", (event) => { if (event.target.matches("[data-hheo-tool-search]")) filterTools(host, event.target.value); });
-    host.addEventListener("click", (event) => dispatchClick(runtime, event));
-    host.addEventListener("submit", (event) => dispatchSubmit(runtime, event), true);
+    const handlers = {
+      input: (event) => { if (event.target.matches("[data-hheo-tool-search]")) filterTools(host, event.target.value); },
+      click: (event) => dispatchClick(runtime, event),
+      submit: (event) => dispatchSubmit(runtime, event)
+    };
+    boundHosts.set(host, handlers); activeHosts.add(host); host.dataset.hheoBound = VERSION;
+    host.addEventListener("input", handlers.input);
+    host.addEventListener("click", handlers.click);
+    host.addEventListener("submit", handlers.submit, true);
+  };
+  const unbind = (host) => {
+    const handlers = host && boundHosts.get(host);
+    if (handlers) {
+      host.removeEventListener("input", handlers.input);
+      host.removeEventListener("click", handlers.click);
+      host.removeEventListener("submit", handlers.submit, true);
+      boundHosts.delete(host); activeHosts.delete(host); delete host.dataset.hheoBound;
+    }
+    if (activeRuntime?.host === host) activeRuntime = null;
+    if (!activeHosts.size && documentBound && root.document) {
+      root.document.removeEventListener("click", handleDocumentClick, true);
+      root.document.removeEventListener("submit", handleDocumentSubmit, true);
+      documentBound = false;
+    }
   };
 
-  const api = Object.freeze({ VERSION, SCHEMA_VERSION, mainNavigation, sessionModes, pathways, tools, lessonSteps, learningPhases, defaults, normalizeState, activeVocabularyStage, vocabularyCounts, dueReviewItems, todayModel, currentCheckpoint, phaseForStep, markTransition, setCheckpointStep, completeCurrentStep, recordMistake, renderView, dispatchClick, dispatchSubmit, bind, exportCsv });
+  const api = Object.freeze({ VERSION, SCHEMA_VERSION, mainNavigation, sessionModes, pathways, tools, lessonSteps, learningPhases, defaults, normalizeState, activeVocabularyStage, vocabularyCounts, dueReviewItems, todayModel, currentCheckpoint, phaseForStep, markTransition, setCheckpointStep, completeCurrentStep, recordMistake, renderView, dispatchClick, dispatchSubmit, bind, unbind, exportCsv });
   root.HHEnglishLearningOS = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

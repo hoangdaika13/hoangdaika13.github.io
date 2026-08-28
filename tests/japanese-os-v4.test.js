@@ -119,21 +119,99 @@ test("V5 cockpit routes real next steps while keeping mission answers locked", (
   ]) assert.match(css, new RegExp(`\\.${className}\\b`));
 });
 
-test("V5 owns one bounded vertical scroller and preserves its position across local renders", () => {
+test("V5 delegates page scrolling to appMain and preserves per-room position across local renders", () => {
   const source = read("japanese-os-v4.js");
   const css = read("japanese-os-v4.css");
-  assert.match(source, /querySelector\("\.hhj4-main"\)\?\.scrollTop/);
-  assert.match(source, /main\.scrollTop=Math\.max\(0,next\)/);
-  assert.match(source, /instance\.nextScrollTop=0/);
+  assert.match(source, /function scrollRoot\(\)/);
+  assert.match(source, /closest\?\.\("#appMain"\)/);
+  assert.match(source, /nextRoot\.scrollTop=next==="view-start"/);
+  assert.match(source, /scrollPositions\.set/);
+  assert.match(source, /scrollPositions\.get/);
   assert.match(source, /captureMainScrollState/);
   assert.match(source, /restoreMainScrollState/);
-  assert.match(source, /installJapaneseScrollGuard/);
   assert.match(source, /mount:mountSafe/);
+  assert.doesNotMatch(source, /installJapaneseScrollGuard/);
   assert.match(css, /\.app-japanese-route #appMain\{[^}]*overflow-y:auto/);
   assert.match(css, /\.app-japanese-route \.app-workspace\{[^}]*overflow:visible/);
-  assert.match(css, /\.app-japanese-route \.hhj4-main\{[^}]*overflow-y:auto/);
+  assert.match(css, /\.app-japanese-route \.hhj4-main\{[^}]*overflow:visible/);
   assert.match(css, /touch-action:pan-y/);
   assert.match(css, /padding-bottom:max\(110px/);
+  for (const contract of [
+    /\.hhj4-list\{max-height:none;overflow:visible\}/,
+    /\.hhj5-lesson>aside\{max-height:none;overflow:visible\}/,
+    /\.hhj6-dictionary\{max-height:none;overflow:visible\}/
+  ]) assert.match(css, contract, "mobile lesson content must delegate vertical scrolling to appMain");
+});
+
+test("V5 adds eleven real learning rooms, an accessible reader dialog and shared evidence", () => {
+  const os = globalThis.HHJapaneseOSV5;
+  const source = read("japanese-os-v4.js");
+  const css = read("japanese-os-v4.css");
+  assert.equal(os.rooms.length, 11);
+  for (const room of ["dashboard", "path", "kana", "kanji", "vocabulary", "grammar", "listening-speaking", "reader", "standards", "culture", "review"]) {
+    assert.ok(os.rooms.some((item) => item.id === room));
+  }
+  for (const marker of ["HHLanguageLearningCore", "data-hhj7-custom-text-dialog", "trapDialogFocus", "returnDialogFocus", "hhj7-kana-grid", "hhj7-culture-grid"]) {
+    assert.match(source + css, new RegExp(marker));
+  }
+  assert.match(source, /function focusIdentity\(control\)/);
+  assert.match(source, /occurrence:Math\.max\(0,same\.indexOf\(active\)\)/);
+  assert.match(source, /history\?\.pushState/);
+  assert.match(source, /completed:false,interactions:1/);
+  assert.doesNotMatch(source, /score:1,completed:true,interactions:1,durationSeconds:3/);
+  for (const color of ["#c64751", "#f7eedb", "#131722", "#e1bd70"]) assert.match(css, new RegExp(color));
+  assert.match(css, /repeating-linear-gradient\(98deg/);
+});
+
+test("V5 records only truthful shared attempts and keeps room navigation in browser history", async () => {
+  const japanese = globalThis.HHJapanese;
+  const os = globalThis.HHJapaneseOSV5;
+  const previous = {
+    localStorage: globalThis.localStorage,
+    location: globalThis.location,
+    history: globalThis.history,
+    addEventListener: globalThis.addEventListener,
+    core: globalThis.HHLanguageLearningCore
+  };
+  const store = new Map();
+  const calls = [];
+  let pushed = "";
+  const listeners = {};
+  const host = {
+    innerHTML: "",
+    addEventListener(type, handler) { listeners[type] = handler; },
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    contains() { return false; }
+  };
+  const target = (dataset) => {
+    const button = { dataset, disabled: false, matches() { return false; }, querySelector() { return null; } };
+    button.closest = (selector) => selector === "button" ? button : null;
+    return button;
+  };
+  try {
+    globalThis.localStorage = { getItem: (key) => store.get(key) ?? null, setItem: (key, value) => store.set(key, String(value)) };
+    globalThis.location = { hash: "#/japanese/dashboard", pathname: "/", search: "" };
+    globalThis.history = { state: null, pushState(_state, _title, url) { pushed = String(url); } };
+    globalThis.addEventListener = () => {};
+    globalThis.HHLanguageLearningCore = { recordEvidence(_language, _learner, evidence) { calls.push(evidence); } };
+    japanese.mount(host, { view: "dashboard" });
+    await listeners.click({ target: target({ hhj7Room: "culture" }) });
+    assert.equal(pushed, "/#/japanese/culture");
+    await listeners.click({ target: target({ hhj4MissionComplete: os.missions[0].id }) });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].completed, false);
+    assert.equal("score" in calls[0], false);
+    assert.equal(calls[0].xp, 0);
+    assert.equal("durationSeconds" in calls[0], false);
+  } finally {
+    japanese.unmount();
+    if (previous.localStorage === undefined) delete globalThis.localStorage; else globalThis.localStorage = previous.localStorage;
+    if (previous.location === undefined) delete globalThis.location; else globalThis.location = previous.location;
+    if (previous.history === undefined) delete globalThis.history; else globalThis.history = previous.history;
+    if (previous.addEventListener === undefined) delete globalThis.addEventListener; else globalThis.addEventListener = previous.addEventListener;
+    if (previous.core === undefined) delete globalThis.HHLanguageLearningCore; else globalThis.HHLanguageLearningCore = previous.core;
+  }
 });
 
 test("V5 normalizes damaged local state and consumes mission or lesson completion once", () => {
@@ -293,7 +371,7 @@ test("V5 data provenance and browser assets are versioned and cached", () => {
   const worker = read("sw.js");
   const index = read("index.html");
   const css = read("japanese-os-v4.css");
-  for (const asset of ["japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.css?v=5", "japanese-os-v4.js?v=11"]) {
+  for (const asset of ["japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.css?v=10", "japanese-os-v4.js?v=12"]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
     assert.match(worker, pattern);
@@ -304,4 +382,14 @@ test("V5 data provenance and browser assets are versioned and cached", () => {
   assert.match(css, /height:calc\(100dvh/);
   assert.match(css, /@media\(max-width:760px\)/);
   assert.match(css, /prefers-reduced-motion:reduce/);
+});
+
+test("Japanese mobile constrains the implicit app grid column and keeps the room map usable", () => {
+  const css = read("japanese-os-v4.css");
+  assert.match(css, /\.hhj4-app\{[^}]*grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(css, /\.hhj6-cockpit\{[^}]*grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(css, /\.hhj6-priority\{grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(css, /\.app-japanese-route \.hhj7-room-map\{display:flex;[^}]*overflow-x:auto/);
+  assert.match(css, /\.app-japanese-route \.hhj7-room-map>button\{[^}]*flex:0 0 clamp/);
+  assert.match(css, /@media\(min-width:761px\) and \(max-width:900px\)/);
 });

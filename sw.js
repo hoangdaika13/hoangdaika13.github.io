@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v908";
+const CACHE = "hh-identity-portal-v913";
+// Compatibility marker for the immediately preceding release: hh-identity-portal-v908.
 const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
 // EonWild desktop integration: ./hh-eonwild-input-system.js?v=2 ./hh-eonwild-desktop-controller.js?v=2.
 // Compatibility marker retained for the pre-photogrammetry EonWild renderer: hh-identity-portal-v879 ./hh-eonwild-renderer-3d.js?v=5.
@@ -21,7 +22,7 @@ const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
 // YouTube Batch compatibility: ./script.js?v=179 ./performance-loader.js?v=272 ./youtube-creator-galaxy.css?v=20 ./youtube-creator-galaxy.js?v=24 ./home-galaxy-command.css?v=9
 // communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1
 // HH School v1 replaces the former Learning OS bundle; legacy caches are removed during activation.
-// HH English compatibility: english-learning.js?v=22 english-learning.js?v=24 english-learning.js?v=28 english-learning-os.js?v=7 english-learning-os.css?v=3 english-vocabulary.css?v=1 english-vocabulary.js?v=2; current language cockpit loads the versioned Learning OS bundle below.
+// HH English compatibility: app-shell.css?v=64 script.js?v=179 script.js?v=232 sidebar-navigation-pro.css?v=29 motion-comfort.css?v=1 auth-experience.js?v=9 english-learning.css?v=17 english-learning.js?v=22 english-learning.js?v=24 english-learning.js?v=28 english-learning-os.js?v=7 english-learning-os.css?v=3 english-galaxy.css?v=1 english-galaxy.js?v=2 english-learning-galaxy.css?v=6 english-learning-galaxy.js?v=5 english-vocabulary.css?v=1 english-vocabulary.js?v=2 english-for-everyone.css?v=1 english-for-everyone.js?v=2; current language cockpit loads the versioned Learning OS bundle below.
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
@@ -343,8 +344,8 @@ const RUNTIME_ASSETS = [
   "./vendor/addons/utils/BufferGeometryUtils.js",
   "./vendor/addons/utils/SkeletonUtils.js",
   "./hh-school.css?v=4",
-  "./english-learning.css?v=17",
-  "./language-learning-cockpit.css?v=1",
+  "./english-learning.css?v=18",
+  "./language-learning-cockpit.css?v=2",
   "./english-skill-graph.css?v=1",
   "./english-learning-os.css?v=4",
   "./english-galaxy.css?v=1",
@@ -354,9 +355,9 @@ const RUNTIME_ASSETS = [
   "./english-voice-coach.css?v=4",
   "./japanese-learning.css?v=8",
   "./japanese-os-v3.css?v=4",
-  "./japanese-os-v4.css?v=5",
-  "./hh-chinese.css?v=12",
-  "./phat-phap.css?v=19",
+  "./japanese-os-v4.css?v=10",
+  "./hh-chinese.css?v=13",
+  "./phat-phap.css?v=20",
   "./hh-play.css?v=5&build=2",
   "./hh-play-audio-worklet.js?build=2",
   "./assets/phat-phap/duc-phat-hao-quang-v1.webp",
@@ -463,18 +464,19 @@ const RUNTIME_ASSETS = [
   "./hh-school-code-worker.js?v=2",
   "./hh-school.js?v=5",
   "./english-curriculum.js?v=1",
-  "./language-learning-cockpit.js?v=1",
+  "./language-learning-core.js?v=1",
+  "./language-learning-cockpit.js?v=2",
   "./english-career-expansion.js?v=1",
   "./english-career-curriculum.js?v=2",
   "./english-galaxy.js?v=2",
   "./english-learning-galaxy.js?v=5",
-  "./english-vocabulary.js?v=3",
+  "./english-vocabulary.js?v=4",
   "./english-vocabulary-worker.js?v=1",
   "./english-for-everyone.js?v=2",
   "./assets/english-vocabulary/manifest.json",
   "./english-skill-graph.js?v=1",
-  "./english-learning-os.js?v=8",
-  "./english-learning.js?v=29",
+  "./english-learning-os.js?v=9",
+  "./english-learning.js?v=30",
   "./japanese-vocabulary-packs.js?v=1",
   "./japanese-vocabulary-10k.js?v=1",
   "./japanese-vietnamese-pack.js?v=1",
@@ -484,9 +486,9 @@ const RUNTIME_ASSETS = [
   "./japanese-search-worker.js?v=1",
   "./japanese-learning.js?v=8",
   "./japanese-os-v3.js?v=2",
-  "./japanese-os-v4.js?v=11",
-  "./hh-chinese.js?v=12",
-  "./phat-phap.js?v=16",
+  "./japanese-os-v4.js?v=12",
+  "./hh-chinese.js?v=13",
+  "./phat-phap.js?v=17",
   "./hh-play.js?v=4&build=2",
   "./hh-eonwild-cinematic-pack.js?v=1",
   "./hh-eonwild-cinematic-pack-worker.js?v=1",
@@ -532,10 +534,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=551",
+  "./performance-loader.js?v=556",
   "./auth-platform.js?v=18",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=248"
+  "./script.js?v=249"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

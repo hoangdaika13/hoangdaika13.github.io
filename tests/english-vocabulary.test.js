@@ -75,17 +75,35 @@ test("personal deck policy uses local days, a bounded goal and explicit lesson s
     },
     reviewQueue: {
       hello: { dueAt: new Date(now - 1000).toISOString() },
-      deadline: { dueAt: new Date("2999-01-01T00:00:00.000Z").toISOString() }
+      deadline: { dueAt: new Date("2999-01-01T00:00:00.000Z").toISOString() },
+      journey: { dueAt: new Date(now - 2000).toISOString() }
     },
     wordMastery: {}, mistakeNotebook: [], galaxySession: { attempts: 0 }
   };
   const policy = vocabulary.deckPolicy(state, now);
   assert.equal(policy.dailyGoal, 5);
   assert.equal(policy.addedToday, 2);
-  assert.equal(policy.due, 1);
+  assert.equal(policy.due, 2);
   assert.equal(policy.remaining, 3);
   assert.equal(vocabulary.buildDeckLesson(words, state, "deck", 5).words.length, 2);
-  assert.deepEqual(vocabulary.buildDeckLesson(words, state, "due", 5).words.map((item) => item.term), ["hello"]);
+  assert.deepEqual(vocabulary.buildDeckLesson(words, state, "due", 5).words.map((item) => item.term), ["hello", "journey"]);
+});
+
+test("Vocabulary tracks attempts per term and never penalizes every card for one difficult word", () => {
+  const lesson = vocabulary.buildLesson([
+    { term: "affect", meaning: "ảnh hưởng", reviewed: true },
+    { term: "effect", meaning: "kết quả", reviewed: true }
+  ], { galaxySession: { attempts: 0 }, mistakeNotebook: [], wordMastery: {}, savedWords: {}, reviewQueue: {} }, 2);
+  vocabulary.recordTermAttempt(lesson, "affect", false);
+  vocabulary.recordTermAttempt(lesson, "affect", false);
+  vocabulary.recordTermAttempt(lesson, "affect", true);
+  vocabulary.recordTermAttempt(lesson, "effect", true);
+  vocabulary.recordTermAttempt(lesson, "effect", true);
+  assert.deepEqual(vocabulary.termProgressFor(lesson, "affect"), { attempts: 3, errors: 2, correct: 1 });
+  assert.deepEqual(vocabulary.termProgressFor(lesson, "effect"), { attempts: 2, errors: 0, correct: 2 });
+  assert.equal(vocabulary.ratingForTerm(vocabulary.termProgressFor(lesson, "affect")), "again");
+  assert.equal(vocabulary.ratingForTerm(vocabulary.termProgressFor(lesson, "effect")), "good");
+  assert.equal(lesson.errors, 2);
 });
 
 test("personal dictionary import export and reading coverage stay local and deterministic", () => {
@@ -117,4 +135,15 @@ test("one-page vocabulary studio exposes explorer, lesson, labs, privacy and laz
   assert.match(css, /grid-template-rows:130px minmax\(0,1fr\)/);
   assert.match(css, /@media\(max-width:620px\)/);
   assert.match(css, /prefers-reduced-motion:reduce/);
+});
+
+test("vocabulary completion schedules real reviews, shared evidence and removable listeners", () => {
+  const source = fs.readFileSync(path.join(root, "english-vocabulary.js"), "utf8");
+  assert.equal(vocabulary.VERSION, "1.2.0");
+  assert.match(source, /instance\.runtime\.scheduleReview\?\./);
+  assert.match(source, /instance\.runtime\.reviewSharedCard\?\./);
+  assert.match(source, /instance\.runtime\.recordSharedEvidence\?\./);
+  assert.match(source, /const progress = termProgressFor\(lesson, word\.term\)/);
+  assert.match(source, /state\.reviewQueue\[word\.term\] = instance\.runtime\.scheduleReview/);
+  assert.match(source, /host\.removeEventListener\("click", instance\.handlers\.click\)/);
 });

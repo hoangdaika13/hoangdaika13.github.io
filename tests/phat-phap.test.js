@@ -17,13 +17,13 @@ test("Phật Pháp is a first-class routed workspace", () => {
   assert.match(router, /window\.HHPhatPhap\?\.mount/);
   assert.match(router, /app-dharma-route/);
   assert.match(loader, /dharma:\s*\{/);
-  assert.match(loader, /phat-phap\.css\?v=19/);
-  assert.match(loader, /phat-phap\.js\?v=16/);
+  assert.match(loader, /phat-phap\.css\?v=20/);
+  assert.match(loader, /phat-phap\.js\?v=17/);
   assert.match(index, /performance-loader\.js\?v=494/);
   assert.match(index, /script\.js\?v=241/);
   assert.match(sw, /hh-identity-portal-v842/);
-  assert.match(sw, /phat-phap\.css\?v=19/);
-  assert.match(sw, /phat-phap\.js\?v=16/);
+  assert.match(sw, /phat-phap\.css\?v=20/);
+  assert.match(sw, /phat-phap\.js\?v=17/);
   assert.match(sw, /assets\/phat-phap\/duc-phat-hao-quang-v1\.webp/);
 });
 
@@ -167,23 +167,23 @@ test("all new Dharma subroutes are discoverable from the application router", ()
   }
 });
 
-test("Dharma v7 keeps source-based review without gamification", () => {
+test("Dharma v8 keeps source-based review without gamification", () => {
   const source = read("phat-phap.js");
-  assert.match(source, /VERSION\s*=\s*"7\.0\.0"/);
+  assert.match(source, /VERSION\s*=\s*"8\.0\.0"/);
   for (const contract of ["reviewCatalog", "reviewSchedule", "reviewHistory", "data-rate-study-review", "Cần xem lại ngày mai", "Tạm hiểu · sau 7 ngày"]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(source, /không tạo điểm số/i);
   assert.match(source, /không phải chứng nhận hay cấp bậc tâm linh/i);
   assert.doesNotMatch(source, /leaderboard/i);
 });
 
-test("Dharma v7 publishes a unique route registry, an expanded honest canon and multilingual listening sources", () => {
+test("Dharma v8 publishes a unique route registry, an expanded honest canon and multilingual listening sources", () => {
   const previousWindow = globalThis.window;
   try {
     globalThis.window = globalThis;
     delete require.cache[require.resolve(path.join(root, "phat-phap.js"))];
     require(path.join(root, "phat-phap.js"));
     const api = globalThis.HHPhatPhap;
-    assert.equal(api.VERSION, "7.0.0");
+    assert.equal(api.VERSION, "8.0.0");
     assert.ok(api.scriptures.length >= 30);
     assert.equal(new Set(api.scriptures.map((item) => item.id)).size, api.scriptures.length);
     assert.equal(new Set(api.routes.map((item) => item.routeId)).size, api.routes.length);
@@ -284,4 +284,42 @@ test("Dharma v6 provides a complete research and trust cockpit without pretendin
   assert.match(source, /closest\("button\[data-canonical-layout\]"\)/);
   for (const selector of ["dharma-research-console", "dharma-scholar-browser", "dharma-facsimile-lab", "dharma-talk-observatory", "dharma-trust-dashboard", "dharma-editorial-roadmap"]) assert.match(css, new RegExp(selector));
   assert.match(source, /Không tự tạo mã kinh hoặc lời Phật dạy/i);
+});
+
+test("Dharma v8 completes ritual, Vietnamese Buddhism and private study profile layers", () => {
+  const source = read("phat-phap.js");
+  const css = read("phat-phap.css");
+  const router = read("script.js");
+  for (const view of ["rituals", "vietnam", "profile"]) {
+    assert.match(source, new RegExp(`routeId:\\s*"${view}"`));
+    assert.match(router, new RegExp(`route:\\s*"/phat-phap/${view}"`));
+  }
+  assert.match(source, /function ritualsMarkup/);
+  assert.match(source, /function vietnamMarkup/);
+  assert.match(source, /function profileMarkup/);
+  assert.match(source, /Không phải chứng nhận, cấp bậc, công đức/);
+  assert.match(css, /\.dharma-ritual-grid/);
+  assert.match(css, /\.dharma-vietnam-grid/);
+  assert.match(css, /\.dharma-profile-facts/);
+});
+
+test("multilingual Dharma catalog distinguishes human audio from source-only fallbacks", () => {
+  const source = read("phat-phap.js");
+  for (const language of ["Pāli", "Sanskrit", "Hán văn", "日本語", "한국어", "Tiếng Tây Tạng"]) assert.match(source, new RegExp(language));
+  assert.match(source, /humanAudio:\s*false/);
+  assert.match(source, /Không tạo giọng tụng giả/);
+  assert.match(source, /Chưa xác nhận audio/);
+});
+
+test("Dharma deep links preserve the destination instead of falling back to Today", () => {
+  const source = read("phat-phap.js");
+  assert.match(source, /String\(options\.view \|\| "today"\)\.split\("\?"\)\[0\]/);
+  for (const parameter of ["lesson", "journey", "teaching", "term", "chapter", "work", "segment"]) {
+    assert.match(source, new RegExp(`routeParams\\.get\\("${parameter}"\\)`));
+  }
+  assert.match(source, /navigate\("beginner", \{ lesson: selectedLesson \}\)/);
+  assert.match(source, /navigate\("teachings", \{ teaching: selectedTeaching \}\)/);
+  assert.match(source, /navigate\("scriptures", \{ work: selectedScripture \}\)/);
+  assert.match(source, /navigate\("encyclopedia", \{ chapter: chapter\.id \}\)/);
+  assert.match(source, /new URLSearchParams\(Object\.entries\(params\)/);
 });

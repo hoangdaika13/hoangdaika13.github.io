@@ -27,12 +27,13 @@ test("language cockpit is loaded offline and has layered motion fallbacks", () =
   const worker = read("sw.js");
   const css = read("language-learning-cockpit.css");
   const js = read("language-learning-cockpit.js");
-  for (const asset of ["language-learning-cockpit.css?v=1", "language-learning-cockpit.js?v=1"]) {
+  for (const asset of ["language-learning-core.js?v=1", "language-learning-cockpit.css?v=2", "language-learning-cockpit.js?v=2"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
   for (const marker of ["hh-language-cockpit__backdrop", "hh-language-cockpit__continue", "hhLanguageArrive", "prefers-reduced-motion", "is-tab-hidden"]) assert.match(css, new RegExp(marker));
-  for (const marker of ["hh:route-transition-start", "hh:route-transition-complete", "data-language-route", "HH LANGUAGE CONSTELLATION"]) assert.match(js, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  for (const marker of ["hh:route-transition-start", "hh:route-transition-complete", "data-language-route", "HH LANGUAGE LEARNING"]) assert.match(js, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  for (const theme of ['data-language="english"', 'data-language="japanese"', 'data-language="chinese"', "hhLanguageSeal"]) assert.match(css, new RegExp(theme.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
 test("Chinese launchpad keeps tracks bounded and separate from the 50K lookup catalog", () => {

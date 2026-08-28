@@ -1001,7 +1001,7 @@
     .dharma-toast { right: 10px; bottom: 124px; left: 10px; }
   }
 
-  @media (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: reduce) {
     .dharma-hub *,
     .dharma-hub *::before,
     .dharma-hub *::after { scroll-behavior: auto !important; animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
@@ -1576,4 +1576,53 @@ body.app-dharma-route .app-mobile-nav { display: none !important; }
   .dharma-audio-source-browser { padding:14px; }
   .dharma-audio-source-filters,.dharma-audio-source-grid,.dharma-audio-settings { grid-template-columns:1fr; }
   .dharma-audio-settings .dharma-check { grid-column:auto; }
+}
+
+/* Dharma v8: explicit ritual, Vietnamese Buddhism and private study profile */
+@layer dharma-components {
+  .dharma-ritual-grid,
+  .dharma-vietnam-grid,
+  .dharma-profile-facts {
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:12px;
+    margin:14px 0;
+  }
+  .dharma-ritual-grid>article,
+  .dharma-vietnam-grid>article { display:flex; flex-direction:column; min-width:0; padding:20px; }
+  .dharma-ritual-grid>article>span { display:grid; width:44px; height:44px; place-items:center; border:1px solid #c28d37; border-radius:50%; color:#ffe7a0; background:linear-gradient(145deg,#711f17,#a83a21); box-shadow:0 0 22px rgba(211,158,52,.22); font:700 20px Georgia,serif; }
+  .dharma-ritual-grid h3,.dharma-vietnam-grid h3 { margin:14px 0 7px; color:#4c2c18; font:700 20px/1.3 Georgia,"Noto Serif",serif; }
+  .dharma-ritual-grid p,.dharma-vietnam-grid p { margin:0 0 16px; color:#67513b; font-size:13px; line-height:1.68; }
+  .dharma-ritual-grid button,.dharma-vietnam-grid button,.dharma-vietnam-grid a { align-self:flex-start; margin-top:auto; padding:9px 12px; border:1px solid #a8742b; border-radius:9px; color:#633b17; background:#fff7df; font-weight:800; text-decoration:none; }
+  .dharma-vietnam-grid article>header { display:grid; grid-template-columns:42px minmax(0,1fr); align-items:center; gap:10px; }
+  .dharma-vietnam-grid article>header>span { display:grid; width:40px; height:40px; place-items:center; border-radius:50%; color:#ffdf83; background:#78251b; }
+  .dharma-vietnam-grid article>header h3 { margin:3px 0 0; }
+  .dharma-vietnam-grid article>header small { color:#946525; font-size:9px; font-weight:850; letter-spacing:.1em; }
+  .dharma-profile-facts>article { min-width:0; padding:17px; border:1px solid rgba(144,93,29,.2); border-radius:15px; background:linear-gradient(145deg,rgba(255,251,239,.94),rgba(247,231,190,.74)); box-shadow:0 9px 24px rgba(87,51,16,.08); }
+  .dharma-profile-facts small { color:#8a612a; font-size:9px; font-weight:850; letter-spacing:.1em; }
+  .dharma-profile-facts strong { display:block; margin:7px 0 3px; color:#762a1c; font:700 30px/1 Georgia,serif; }
+  .dharma-profile-facts p { margin:0; color:#6e5a42; font-size:11px; line-height:1.5; }
+  .dharma-profile-columns { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0; }
+  .dharma-profile-columns>article { padding:20px; }
+  .dharma-profile-columns>article>header { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+  .dharma-profile-columns>article>header>span { color:#a46f22; font:700 28px Georgia,serif; }
+  .dharma-profile-columns h2,.dharma-profile-control h2 { margin:3px 0; color:#4e301c; font:700 24px/1.3 Georgia,"Noto Serif",serif; }
+  .dharma-profile-columns small,.dharma-profile-control small { color:#98661f; font-size:9px; font-weight:850; letter-spacing:.11em; }
+  .dharma-profile-columns p,.dharma-profile-control p { color:#69543d; line-height:1.6; }
+  .dharma-profile-columns>article>div { display:flex; flex-wrap:wrap; gap:8px; }
+  .dharma-profile-columns button,.dharma-profile-control button { min-height:40px; padding:0 12px; border:1px solid #a8742b; border-radius:9px; color:#663e18; background:#fff7df; font-weight:800; }
+  .dharma-profile-practice { display:grid; grid-template-columns:76px minmax(0,1fr); gap:8px; margin:8px 0!important; padding:8px 0; border-bottom:1px solid rgba(133,89,31,.13); }
+  .dharma-profile-practice strong { color:#762a1c; }
+  .dharma-profile-practice span { overflow-wrap:anywhere; }
+  .dharma-profile-control { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:20px; }
+  .dharma-profile-control button { flex:0 0 auto; }
+}
+
+@media(max-width:1100px) {
+  .dharma-ritual-grid,.dharma-vietnam-grid,.dharma-profile-facts { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+@media(max-width:700px) {
+  .dharma-ritual-grid,.dharma-vietnam-grid,.dharma-profile-facts,.dharma-profile-columns { grid-template-columns:1fr; }
+  .dharma-profile-control { align-items:flex-start; flex-direction:column; }
 }

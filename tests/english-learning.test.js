@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit } = require("../english-learning.js");
+const { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, learningJourney, journeyStageForView, grammarMapForLevel, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit } = require("../english-learning.js");
 const skillGraph = require("../english-skill-graph.js");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -83,15 +83,39 @@ test("voice and microphone adapters are reported truthfully before permission", 
   assert.equal(unsupported.speechOutput.supported, false);
   assert.equal(unsupported.recognition.supported, false);
   assert.equal(unsupported.microphone.status, "unavailable");
+  assert.equal(unsupported.recording.status, "unavailable");
   const available = speechAdapterStatus({
     SpeechSynthesisUtterance: function Utterance() {},
     speechSynthesis: { speak() {} },
     SpeechRecognition: function Recognition() {},
+    MediaRecorder: function MediaRecorder() {},
     navigator: { mediaDevices: { getUserMedia() {} } }
   });
   assert.equal(available.speechOutput.status, "available");
   assert.equal(available.recognition.status, "available");
   assert.equal(available.microphone.status, "permission required");
+  assert.equal(available.recording.status, "permission required");
+});
+
+test("six-layer journey maps every primary learning outcome to a working destination", () => {
+  assert.deepEqual(learningJourney.map((stage) => stage.id), ["cefr", "skills", "lesson", "practice", "results", "review"]);
+  assert.equal(journeyStageForView("pathways").id, "cefr");
+  assert.equal(journeyStageForView("speaking").id, "practice");
+  assert.equal(journeyStageForView("progress").id, "results");
+  assert.equal(journeyStageForView("vocabulary").id, "review");
+  assert.ok(learningJourney.every((stage) => stage.view && stage.views.length));
+});
+
+test("grammar map is derived from verified CEFR lessons and keeps real lesson IDs", () => {
+  courseLevels.forEach((level) => {
+    const map = grammarMapForLevel(level.id);
+    assert.equal(map.length, level.units.length, `${level.id} unit count`);
+    assert.deepEqual(map.flatMap((unit) => unit.lessons.map((lesson) => lesson.id)), level.units.flatMap((unit) => unit.lessons.map((lesson) => lesson.id)));
+    map.flatMap((unit) => unit.lessons).forEach((lesson) => {
+      assert.ok(lesson.grammar.length > 20);
+      assert.ok(lesson.canDo.length > 20);
+    });
+  });
 });
 
 test("career roleplay brief and feedback stay deterministic and transparent", () => {
@@ -269,6 +293,34 @@ test("HH English dashboard is compact while lesson workspaces keep their bounded
   assert.match(baseCss, /\.hhe-app:is\(\[data-view="listening"\],\[data-view="reading"\]\)\{height:calc\(100dvh - 106px\)/);
   assert.match(shell, /const scrollContainers = \[/);
   assert.doesNotMatch(shell.slice(shell.indexOf("const focusCurrentView"), shell.indexOf("const render", shell.indexOf("const focusCurrentView"))), /scrollIntoView/);
+});
+
+test("HH English preserves active control, selection and nested scroll across same-view renders", () => {
+  const shell = fs.readFileSync(path.join(__dirname, "..", "english-learning.js"), "utf8");
+  for (const contract of ["continuitySelectors", "captureViewContinuity", "restoreViewContinuity", "selectionStart", "preventScroll: true", "previousView === state.activeView"]) assert.match(shell, new RegExp(contract.replace(/[.?]/g, "\\$&")));
+  assert.match(shell, /options\?\.preserveScroll !== false/);
+  assert.match(shell, /data-hhe-grammar-search/);
+  assert.match(shell, /data-hhe-grammar-item/);
+});
+
+test("HH English optionally records truthful completion evidence in the shared language core", () => {
+  const shell = fs.readFileSync(path.join(__dirname, "..", "english-learning.js"), "utf8");
+  assert.match(shell, /HHLanguageLearningCore\?\.recordEvidence/);
+  assert.match(shell, /HHLanguageLearningCore\?\.reviewCard/);
+  assert.match(shell, /durationSeconds: Number\.isFinite\(startedAt\)/);
+  assert.match(shell, /interactions: completedSteps \|\| legacyInteractions/);
+  assert.match(shell, /root\.HHEnglishLearningOS\?\.unbind\?\.\(host\)/);
+});
+
+test("HH English stops microphone resources before replacing or unmounting the active view", () => {
+  const shell = fs.readFileSync(path.join(__dirname, "..", "english-learning.js"), "utf8");
+  for (const contract of [
+    "recordingRequestId", "recordingSession", "stopRecordingTracks", "disposeRecordingSession",
+    "cancelActiveRecognition", "recorder.ondataavailable = null", "recordingHost.isConnected === false",
+    "currentHost !== recordingHost", "disposeRecordingSession({ revokeUrl: true })"
+  ]) assert.match(shell, new RegExp(contract.replace(/[.?{}()]/g, "\\$&")));
+  assert.match(shell, /if \(state\.activeView !== "speaking"\) revokeRecordingUrl\(\)/);
+  assert.match(shell, /if \(requestId !== recordingRequestId[\s\S]*?stopRecordingTracks\(stream\)/);
 });
 
 test("CEFR 2020 Skill Graph separates domains and reports evidence without claiming certification", () => {

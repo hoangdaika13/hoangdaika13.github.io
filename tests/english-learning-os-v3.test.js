@@ -119,3 +119,11 @@ test("asset loader, offline cache, scoped storage and responsive accessibility a
   assert.match(css, /focus-visible/);
   assert.match(css, /@media print/);
 });
+
+test("Learning OS releases host and document listeners when English unmounts", () => {
+  const source = fs.readFileSync(path.join(root, "english-learning-os.js"), "utf8");
+  assert.equal(os.VERSION, "3.2.0");
+  assert.equal(typeof os.unbind, "function");
+  assert.match(source, /removeEventListener\("click", handleDocumentClick, true\)/);
+  assert.match(source, /boundHosts\.delete\(host\)/);
+});

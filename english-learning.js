@@ -33,6 +33,15 @@
     return { ownerId, learnerProfileId, signedIn: Boolean(user && (user._id || user.id || user.userId || user.email)) };
   };
   const scopedStorageKey = (scope = currentLearningScope()) => `${STORAGE_PREFIX}:${scope.ownerId}:${scope.learnerProfileId}`;
+  const sharedLearnerId = (scope = currentLearningScope()) => `${scope.ownerId}:${scope.learnerProfileId}`;
+  const recordSharedEvidence = (input = {}) => {
+    try { return root.HHLanguageLearningCore?.recordEvidence?.("english", sharedLearnerId(), input) || null; }
+    catch (_) { return null; }
+  };
+  const reviewSharedCard = (cardId, rating, at = new Date()) => {
+    try { return root.HHLanguageLearningCore?.reviewCard?.("english", sharedLearnerId(), cardId, rating, at) || null; }
+    catch (_) { return null; }
+  };
 
   const voiceProfiles = [
     { id: "us-female", lang: "en-US", gender: "female", flag: "US", label: "Nữ · Anh-Mỹ", detail: "Rõ, sáng, phù hợp hội thoại" },
@@ -64,10 +73,12 @@
     const speechOutput = Boolean(env?.speechSynthesis && typeof env?.SpeechSynthesisUtterance === "function");
     const recognition = Boolean(env?.SpeechRecognition || env?.webkitSpeechRecognition);
     const microphone = Boolean(env?.navigator?.mediaDevices?.getUserMedia);
+    const recording = Boolean(microphone && typeof env?.MediaRecorder === "function");
     return {
       speechOutput: { supported: speechOutput, status: speechOutput ? "available" : "unavailable" },
       recognition: { supported: recognition, status: recognition ? "available" : "unavailable" },
-      microphone: { supported: microphone, status: microphone ? "permission required" : "unavailable" }
+      microphone: { supported: microphone, status: microphone ? "permission required" : "unavailable" },
+      recording: { supported: recording, status: recording ? "permission required" : "unavailable" }
     };
   };
   const rankVoice = (voice, settings = {}) => {
@@ -440,6 +451,7 @@
     const previous = readStoredJson(scopedStorageKey(scope)) || {};
     let openedNext = false;
     const justCompleted = state.activeView === "lesson" && state.activeLesson && state.completed?.[state.activeLesson] && !previous.completed?.[state.activeLesson];
+    const completedLessonId = justCompleted ? state.activeLesson : "";
     if (justCompleted) {
       const lesson = getLesson(state.activeLesson);
       const track = lesson.trackId ? careerTrackById(lesson.trackId) : null;
@@ -449,6 +461,28 @@
     }
     if (state.galaxy) state.galaxy.lastSavedAt = new Date().toISOString();
     persistLocalState(state, scope);
+    if (justCompleted) {
+      const lesson = getLesson(completedLessonId);
+      const checkpoint = state.learningOS?.lessonCheckpoints?.[completedLessonId];
+      const completedSteps = Array.isArray(checkpoint?.completedSteps) ? checkpoint.completedSteps.length : 0;
+      const legacyInteractions = Object.keys(state.attempts?.[completedLessonId] || {}).length;
+      const startedAt = Date.parse(checkpoint?.startedAt || ""); const completedAt = Date.parse(checkpoint?.completedAt || "");
+      const answers = Object.values(checkpoint?.answers || {}).filter((answer) => Number.isFinite(Number(answer?.score)));
+      const score = answers.length ? answers.reduce((sum, answer) => sum + Number(answer.score) / 100, 0) / answers.length : completedSteps ? completedSteps / 12 : 1;
+      recordSharedEvidence({
+        activityId: `lesson-${lesson.id}`,
+        evidenceId: `english-${lesson.id}-${checkpoint?.completedAt || todayKey()}`,
+        kind: "lesson",
+        skill: lesson.primarySkill || "general",
+        score,
+        minimumScore: .6,
+        completed: true,
+        interactions: completedSteps || legacyInteractions,
+        durationSeconds: Number.isFinite(startedAt) && Number.isFinite(completedAt) ? Math.max(0, Math.round((completedAt - startedAt) / 1000)) : 0,
+        occurredAt: checkpoint?.completedAt || new Date().toISOString(),
+        xp: Number(lesson.xp) || 30
+      });
+    }
     scheduleServerSync();
     root.dispatchEvent?.(new CustomEvent("hh:english-state-changed", { detail: { version: APP_VERSION, activeView: state.activeView, ownerId: scope.ownerId, learnerProfileId: scope.learnerProfileId, savedAt: state.galaxy?.lastSavedAt || new Date().toISOString() } }));
     if (openedNext && host) root.setTimeout?.(() => { if (host) { render({ focusView: true }); toast("Bài tiếp theo đã tự mở.", "success"); } }, 450);
@@ -670,8 +704,11 @@
 
   let host = null;
   let mediaRecorder = null;
+  let recordingSession = null;
+  let recordingRequestId = 0;
   let recordedChunks = [];
   let recordingUrl = "";
+  let activeRecognition = null;
   let focusSeconds = 15 * 60;
   let focusTimer = null;
   let activeCareerCategory = "all";
@@ -680,6 +717,54 @@
   let activeUtterance = null;
   let focusAfterRender = false;
   const handleVisibility = () => host?.querySelector?.("[data-hhe-app]")?.setAttribute?.("data-tab-hidden", String(Boolean(root.document?.hidden)));
+  const stopRecordingTracks = (stream) => {
+    try { stream?.getTracks?.().forEach((track) => { try { track.stop?.(); } catch (_) { /* best effort */ } }); }
+    catch (_) { /* malformed browser adapter */ }
+  };
+  const revokeRecordingUrl = () => {
+    if (!recordingUrl) return;
+    try { root.URL?.revokeObjectURL?.(recordingUrl); } catch (_) { /* already released */ }
+    recordingUrl = "";
+  };
+  const disposeRecordingSession = ({ revokeUrl = false } = {}) => {
+    recordingRequestId += 1;
+    const session = recordingSession;
+    if (session) {
+      session.cancelled = true;
+      const recorder = session.recorder;
+      recorder.ondataavailable = null;
+      recorder.onstop = null;
+      recorder.onerror = null;
+      try { if (recorder.state !== "inactive") recorder.stop?.(); } catch (_) { /* recorder may already be closing */ }
+      stopRecordingTracks(session.stream || recorder.stream);
+      if (mediaRecorder === recorder) mediaRecorder = null;
+      recordingSession = null;
+    }
+    recordedChunks = [];
+    if (revokeUrl) revokeRecordingUrl();
+  };
+  const cancelActiveRecognition = () => {
+    const recognition = activeRecognition;
+    activeRecognition = null;
+    if (!recognition) return;
+    recognition.onresult = null;
+    recognition.onerror = null;
+    recognition.onend = null;
+    try { recognition.abort?.(); } catch (_) { try { recognition.stop?.(); } catch (_) { /* already stopped */ } }
+  };
+  const restoreRecordingPlayback = () => {
+    if (!recordingUrl || !host) return;
+    const audio = host.querySelector?.("[data-hhe-audio]");
+    if (!audio) return;
+    audio.src = recordingUrl;
+    audio.hidden = false;
+    const remove = host.querySelector?.("[data-hhe-delete-record]");
+    const record = host.querySelector?.("[data-hhe-record]");
+    const stop = host.querySelector?.("[data-hhe-stop]");
+    if (remove) remove.disabled = false;
+    if (record) record.disabled = false;
+    if (stop) stop.disabled = true;
+  };
 
   const updateSpeechNow = (status, text = "", voice = null) => {
     const node = host?.querySelector("[data-hhe-speaking-now]");
@@ -710,9 +795,37 @@
     return true;
   };
 
+  const learningJourney = Object.freeze([
+    { id: "cefr", number: "01", label: "CEFR", detail: "Chọn điểm bắt đầu", view: "pathways", views: ["dashboard", "pathways", "plan", "learn", "placement", "survey", "career", "everyone", "settings"] },
+    { id: "skills", number: "02", label: "Kỹ năng", detail: "Xem bằng chứng", view: "skill-graph", views: ["skill-graph", "explore", "grammar-map"] },
+    { id: "lesson", number: "03", label: "Bài học", detail: "Đi từng checkpoint", view: "lesson", views: ["lesson"] },
+    { id: "practice", number: "04", label: "Luyện tập", detail: "Nghe · nói · đọc · viết", view: "practice-hub", views: ["practice-hub", "practice", "lab", "listening", "reading", "listen-read", "speaking", "writing", "galaxy"] },
+    { id: "results", number: "05", label: "Kết quả", detail: "Dựa trên bằng chứng", view: "progress", views: ["progress", "mistakes"] },
+    { id: "review", number: "06", label: "Ôn tập", detail: "SRS đúng hạn", view: "vocabulary", views: ["vocabulary"] }
+  ]);
+  const journeyStageForView = (view = "dashboard") => learningJourney.find((stage) => stage.views.includes(view)) || learningJourney[0];
+  const grammarMapForLevel = (levelId = "A0") => {
+    const level = levelById(levelOrder.includes(levelId) ? levelId : "A0");
+    return level.units.map((unit) => ({
+      id: unit.id,
+      title: unit.title,
+      vi: unit.vi,
+      primarySkill: skillForUnit(unit),
+      lessons: unit.lessons.map((lesson) => ({ id: lesson.id, title: lesson.title, canDo: lesson.canDo, grammar: lesson.grammar, minutes: lesson.minutes }))
+    }));
+  };
+  const learningJourneyMarkup = (state, nextLesson) => {
+    const active = journeyStageForView(state.activeView);
+    return `<nav class="hhe-learning-journey" aria-label="Lộ trình học sáu lớp"><header><small>LEARNING JOURNEY · ${escapeHtml(selectedLevelId(state))}</small><strong>${escapeHtml(active.label)}</strong></header><ol>${learningJourney.map((stage) => {
+      const isActive = stage.id === active.id;
+      const action = stage.id === "lesson" ? `data-hhe-open-lesson="${escapeHtml(nextLesson.id)}"` : `data-hhe-view="${stage.view}"`;
+      return `<li class="${isActive ? "active" : ""}"><button type="button" ${action} ${isActive ? 'aria-current="step"' : ""}><span>${stage.number}</span><b>${escapeHtml(stage.label)}</b><small>${escapeHtml(stage.detail)}</small></button></li>`;
+    }).join("")}</ol></nav>`;
+  };
+
   const navItems = [
-    ["dashboard", "☉", "Hôm nay"], ["pathways", "⌁", "Lộ trình"], ["practice-hub", "✦", "Luyện tập"], ["explore", "⌕", "Khám phá"], ["listening", "◖", "Luyện nghe"], ["reading", "Aa", "Đọc hiểu"], ["listen-read", "∞", "Nghe & đọc"], ["galaxy", "✦", "Bản đồ từ vựng"], ["lab", "◌", "16 chế độ học"], ["plan", "✓", "Kế hoạch"], ["learn", "▶", "Bài học"], ["career", "▦", "Chuyên ngành"], ["practice", "✦", "Luyện tập chi tiết"], ["placement", "◎", "Xếp lớp"], ["survey", "◈", "Khảo sát nghề"], ["vocabulary", "◇", "Sổ từ"], ["mistakes", "!", "Sổ lỗi"],
-    ["speaking", "◉", "Luyện nói"], ["writing", "✎", "Luyện viết"], ["skill-graph", "◎", "Skill Graph"], ["progress", "↗", "Tiến độ"], ["everyone", "◎", "Mọi lứa tuổi"], ["settings", "⚙", "Cài đặt"]
+    ["dashboard", "☉", "Hôm nay"], ["pathways", "⌁", "Lộ trình"], ["practice-hub", "✦", "Luyện tập"], ["explore", "⌕", "Khám phá"], ["listening", "◖", "Luyện nghe"], ["reading", "Aa", "Đọc hiểu"], ["listen-read", "∞", "Nghe & đọc"], ["galaxy", "✦", "Bản đồ từ vựng"], ["lab", "◌", "19 chế độ học"], ["plan", "✓", "Kế hoạch"], ["learn", "▶", "Bài học"], ["career", "▦", "Chuyên ngành"], ["practice", "✦", "Luyện tập chi tiết"], ["placement", "◎", "Xếp lớp"], ["survey", "◈", "Khảo sát nghề"], ["vocabulary", "◇", "Sổ từ"], ["mistakes", "!", "Sổ lỗi"],
+    ["speaking", "◉", "Luyện nói"], ["writing", "✎", "Luyện viết"], ["grammar-map", "G", "Bản đồ ngữ pháp"], ["skill-graph", "◎", "Skill Graph"], ["progress", "↗", "Tiến độ"], ["everyone", "◎", "Mọi lứa tuổi"], ["settings", "⚙", "Cài đặt"]
   ];
   const beginnerNavIds = new Set(["dashboard", "listening", "reading", "listen-read", "galaxy", "lab", "learn", "vocabulary", "speaking", "progress", "everyone"]);
   const navigatorGroups = [
@@ -811,11 +924,13 @@
     const selected = selectVoice(voices, state.settings);
     const profile = voiceProfileById(state.settings.voiceProfile);
     const adapter = speechAdapterStatus();
-    const permissionMarkup = `<div class="hhe-voice-permissions"><label><input type="checkbox" data-hhe-audio-consent ${state.settings.audioPlaybackConsent ? "checked" : ""}> Cho phép phát âm thanh khi tôi bấm nút nghe</label><label><input type="checkbox" data-hhe-mic-consent ${state.settings.microphoneConsent ? "checked" : ""}> Cho phép HH xin quyền microphone cho nhận dạng shadowing</label><small data-hhe-adapter-status>Voice output: ${adapter.speechOutput.status} · Recognition: ${adapter.recognition.status} · Microphone: ${adapter.microphone.status}. Điểm là heuristic cục bộ, không phải chấm phát âm AI.</small></div>`;
+    const outputDisabled = adapter.speechOutput.supported ? "" : "disabled aria-disabled=\"true\" title=\"Trình duyệt này không có Speech Synthesis\"";
+    const microphoneDisabled = adapter.microphone.supported ? "" : "disabled";
+    const permissionMarkup = `<div class="hhe-voice-permissions"><label><input type="checkbox" data-hhe-audio-consent ${state.settings.audioPlaybackConsent ? "checked" : ""} ${adapter.speechOutput.supported ? "" : "disabled"}> Cho phép phát âm thanh khi tôi bấm nút nghe</label><label><input type="checkbox" data-hhe-mic-consent ${state.settings.microphoneConsent ? "checked" : ""} ${microphoneDisabled}> Cho phép HH xin quyền microphone khi tôi dùng shadowing hoặc ghi âm</label><small data-hhe-adapter-status role="status">Giọng đọc: ${adapter.speechOutput.status} · Nhận dạng lời nói: ${adapter.recognition.status} · Microphone: ${adapter.microphone.status} · Ghi âm cục bộ: ${adapter.recording.status}. Điểm hiển thị chỉ là độ phủ transcript, không phải chấm phoneme hay giọng chuẩn.</small></div>`;
     return `<section class="hhe-voice-studio ${compact ? "compact" : ""}">${permissionMarkup}
-      <header><div><small>HH VOICE STUDIO</small><h3>${compact ? "Chọn giọng trước khi nghe" : "Một câu, nhiều chất giọng thật trên thiết bị"}</h3><p>${voices.length ? `${voices.length} giọng tiếng Anh đang khả dụng. HH sẽ ưu tiên đúng vùng và kiểu giọng bạn chọn.` : "Đang nạp danh sách giọng của trình duyệt. Nếu thiết bị chỉ có một giọng, HH vẫn giữ đúng vùng phát âm gần nhất."}</p></div><span>${escapeHtml(profile.flag)} · ${escapeHtml(profile.gender === "female" ? "NỮ" : "NAM")}</span></header>
+      <header><div><small>HH VOICE STUDIO</small><h3>${compact ? "Chọn giọng trước khi nghe" : "Một câu, nhiều chất giọng thật trên thiết bị"}</h3><p>${adapter.speechOutput.supported ? (voices.length ? `${voices.length} giọng tiếng Anh đang khả dụng. HH ưu tiên đúng vùng và kiểu giọng bạn chọn.` : "Trình duyệt hỗ trợ đọc nhưng chưa trả danh sách giọng. HH sẽ thử giọng tiếng Anh mặc định sau khi bạn cho phép phát.") : "Thiết bị này chưa hỗ trợ giọng đọc trong trình duyệt; văn bản và transcript vẫn sử dụng bình thường."}</p></div><span>${escapeHtml(profile.flag)} · ${escapeHtml(profile.gender === "female" ? "NỮ" : "NAM")}</span></header>
       <div class="hhe-voice-presets">${voiceProfiles.map((item) => `<button type="button" class="${item.id === profile.id ? "active" : ""}" data-hhe-voice-profile="${item.id}"><b>${item.flag}</b><span><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.detail)}</small></span>${item.id === profile.id ? "<i>✓</i>" : ""}</button>`).join("")}</div>
-      <div class="hhe-voice-controls"><label><span>Giọng cài trên thiết bị</span><select data-hhe-voice-uri>${voices.length ? voices.map((voice) => `<option value="${escapeHtml(voice.voiceURI)}" ${voice.voiceURI === (state.settings.voiceURI || selected?.voiceURI) ? "selected" : ""}>${escapeHtml(voice.name)} · ${escapeHtml(voice.lang)}${inferVoiceGender(voice) === "unknown" ? "" : ` · ${inferVoiceGender(voice) === "female" ? "nữ" : "nam"}`}</option>`).join("") : `<option value="">Giọng mặc định của trình duyệt</option>`}</select></label><label><span>Tốc độ</span><select data-hhe-voice-rate>${[[0.65,"0.65× · Chậm"],[0.85,"0.85× · Học"],[1,"1× · Tự nhiên"],[1.1,"1.1× · Thử thách"]].map(([value,label]) => `<option value="${value}" ${Number(state.settings.voiceRate) === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><div><button type="button" data-hhe-speak="${escapeHtml(phrase)}" data-hhe-speak-rate="0.65">◁ Nghe chậm</button><button class="primary" type="button" data-hhe-speak="${escapeHtml(phrase)}">▶ Nghe giọng đã chọn</button></div></div>
+      <div class="hhe-voice-controls"><label><span>Giọng cài trên thiết bị</span><select data-hhe-voice-uri ${adapter.speechOutput.supported ? "" : "disabled"}>${voices.length ? voices.map((voice) => `<option value="${escapeHtml(voice.voiceURI)}" ${voice.voiceURI === (state.settings.voiceURI || selected?.voiceURI) ? "selected" : ""}>${escapeHtml(voice.name)} · ${escapeHtml(voice.lang)}${inferVoiceGender(voice) === "unknown" ? "" : ` · ${inferVoiceGender(voice) === "female" ? "nữ" : "nam"}`}</option>`).join("") : `<option value="">${adapter.speechOutput.supported ? "Giọng mặc định của trình duyệt" : "Không có Speech Synthesis"}</option>`}</select></label><label><span>Tốc độ</span><select data-hhe-voice-rate ${adapter.speechOutput.supported ? "" : "disabled"}>${[[0.65,"0.65× · Chậm"],[0.85,"0.85× · Học"],[1,"1× · Tự nhiên"],[1.1,"1.1× · Thử thách"]].map(([value,label]) => `<option value="${value}" ${Number(state.settings.voiceRate) === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><div><button type="button" data-hhe-speak="${escapeHtml(phrase)}" data-hhe-speak-rate="0.65" ${outputDisabled}>◁ Nghe chậm</button><button class="primary" type="button" data-hhe-speak="${escapeHtml(phrase)}" ${outputDisabled}>▶ Nghe giọng đã chọn</button></div></div>
       <div class="hhe-speaking-now" data-hhe-speaking-now data-status="ready"><span><i></i> SẴN SÀNG</span><strong>Chọn từ hoặc câu để nghe</strong><small>${escapeHtml(profile.label)} · tốc độ ${state.settings.voiceRate}×</small></div>
     </section>`;
   };
@@ -823,14 +938,14 @@
     const levelId = selectedLevelId(state); const level = levelById(levelId); const done = completedCount(state, levelId); const total = levelLessonIds(levelId).length;
     const next = nextLessonFor(state, levelId);
     const navCollapsed = Boolean(state.settings.navCollapsed);
-    const learningViews = new Set(["learn", "lesson", "listening", "reading", "listen-read", "speaking", "practice", "galaxy", "vocabulary", "mistakes", "skill-graph", "everyone", "settings"]);
+    const learningViews = new Set(["learn", "lesson", "listening", "reading", "listen-read", "speaking", "writing", "practice", "galaxy", "vocabulary", "mistakes", "grammar-map", "skill-graph", "everyone", "settings"]);
     const compactNavButton = (id, icon, label) => `<button type="button" class="${state.activeView === id ? "active" : ""}" data-hhe-view="${id}" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"><i>${icon}</i><span>${label}</span></button>`;
     const currentLabel = state.activeView === "lesson" ? "Bài học đang mở" : (navItems.find(([id]) => id === state.activeView)?.[2] || "Hôm nay");
     const universal = root.HHEnglishForEveryone?.normalizeState?.(state)?.universalProfile || { ageMode: "adult", support: {} };
     const ageLabel = root.HHEnglishForEveryone?.modeById?.(universal.ageMode)?.label || "Adults";
     return `<section class="hhe-app ${navCollapsed ? "is-nav-collapsed" : ""}" data-hhe-app data-view="${state.activeView}" data-theme="${state.settings.theme}" data-age-mode="${escapeHtml(universal.ageMode)}" data-large-text="${Boolean(universal.support.largeText)}" data-dyslexia="${Boolean(universal.support.dyslexia)}" data-hearing-support="${Boolean(universal.support.hearingSupport)}">
     <header class="hhe-topbar"><div class="hhe-brand"><span>HH</span><div><small>HỌC TIẾNG ANH MIỄN PHÍ</small><strong>HH English</strong></div></div><div class="hhe-top-stats"><button type="button" data-hhe-view="learn"><i>CEFR</i><b>${levelId}</b> ${escapeHtml(level.name)}</button><span><i>◆</i><b>${state.streak.current}</b> ngày</span><span><i>◷</i><b>${state.dailyGoal}</b> phút</span></div><div class="hhe-top-actions"><button type="button" data-hhe-view="everyone" aria-label="Chế độ người học">${escapeHtml(ageLabel)}</button><button type="button" data-hheg-action="mode-${state.galaxy?.workspaceMode === "advanced" ? "basic" : "advanced"}">${state.galaxy?.workspaceMode === "advanced" ? "Advanced" : "Basic"}</button><button type="button" data-hhe-view="settings" aria-label="Cài đặt HH English">⚙ Cài đặt</button></div></header>
-    <div class="hhe-layout"><aside class="hhe-nav hhe-nav--focused hhe-nav--os" aria-label="Điều hướng chính HH English"><header><strong>HH ENGLISH OS</strong><button type="button" data-hhe-nav-toggle aria-label="${navCollapsed ? "Mở rộng" : "Thu gọn"} menu">${navCollapsed ? "›" : "‹"}</button></header>${compactNavButton("dashboard", "☉", "Hôm nay")}${compactNavButton("pathways", "⌁", "Lộ trình")}${compactNavButton("practice-hub", "✦", "Luyện tập")}${compactNavButton("explore", "⌕", "Khám phá")}${compactNavButton("progress", "↗", "Tiến độ")}<details class="hhe-nav-learning" ${learningViews.has(state.activeView) ? "open" : ""}><summary class="${learningViews.has(state.activeView) ? "active" : ""}"><i>▦</i><span>Công cụ</span><b>⌄</b></summary><div>${compactNavButton("listening", "◖", "Luyện nghe")}${compactNavButton("reading", "Aa", "Đọc hiểu")}${compactNavButton("galaxy", "⌕", "Tra cứu")}${compactNavButton("vocabulary", "◇", "Ôn tập")}${compactNavButton("mistakes", "!", "Sổ lỗi")}${compactNavButton("speaking", "◉", "Phát âm")}${compactNavButton("writing", "✎", "Viết")}${compactNavButton("learn", "A0", "CEFR")}${compactNavButton("skill-graph", "◎", "Skill Graph")}${compactNavButton("everyone", "◎", "Hồ sơ")}<button type="button" data-hhe-open-lesson="${next.id}" title="${escapeHtml(next.title)}"><i>→</i><span>Học tiếp</span></button></div></details><section><small>Bạn đang học</small><strong>${levelId}</strong><span>${done}/${total} bài</span></section></aside><main class="hhe-main"><div class="hhe-view-stage" data-hhe-layer="${escapeHtml(state.activeView)}"><div class="hhe-route-atmosphere" aria-hidden="true"><i></i><i></i><i></i><span>EN</span></div>${content}</div><nav class="hhe-route-dock" aria-label="Bước học tiếp theo"><button type="button" data-hhe-view="dashboard">← Hôm nay</button><div><small>MÀN HÌNH HIỆN TẠI</small><strong>${escapeHtml(currentLabel)}</strong></div><span><i></i> Đã tự lưu</span><button class="primary" type="button" data-hhe-open-lesson="${next.id}">${state.activeView === "lesson" ? "Tiếp tục bài" : "Học bài tiếp theo"} →</button></nav></main></div>
+    <div class="hhe-layout"><aside class="hhe-nav hhe-nav--focused hhe-nav--os" aria-label="Điều hướng chính HH English"><header><strong>HH ENGLISH OS</strong><button type="button" data-hhe-nav-toggle aria-label="${navCollapsed ? "Mở rộng" : "Thu gọn"} menu">${navCollapsed ? "›" : "‹"}</button></header>${compactNavButton("dashboard", "☉", "Hôm nay")}${compactNavButton("pathways", "⌁", "Lộ trình")}${compactNavButton("practice-hub", "✦", "Luyện tập")}${compactNavButton("explore", "⌕", "Khám phá")}${compactNavButton("progress", "↗", "Tiến độ")}<details class="hhe-nav-learning" ${learningViews.has(state.activeView) ? "open" : ""}><summary class="${learningViews.has(state.activeView) ? "active" : ""}"><i>▦</i><span>Công cụ</span><b>⌄</b></summary><div>${compactNavButton("listening", "◖", "Luyện nghe")}${compactNavButton("reading", "Aa", "Đọc hiểu")}${compactNavButton("galaxy", "⌕", "Tra cứu")}${compactNavButton("vocabulary", "◇", "Ôn tập")}${compactNavButton("mistakes", "!", "Sổ lỗi")}${compactNavButton("speaking", "◉", "Phát âm")}${compactNavButton("writing", "✎", "Viết")}${compactNavButton("grammar-map", "G", "Ngữ pháp")}${compactNavButton("learn", "A0", "CEFR")}${compactNavButton("skill-graph", "◎", "Skill Graph")}${compactNavButton("everyone", "◎", "Hồ sơ")}<button type="button" data-hhe-open-lesson="${next.id}" title="${escapeHtml(next.title)}"><i>→</i><span>Học tiếp</span></button></div></details><section><small>Bạn đang học</small><strong>${levelId}</strong><span>${done}/${total} bài</span></section></aside><main class="hhe-main">${learningJourneyMarkup(state, next)}<div class="hhe-view-stage" data-hhe-layer="${escapeHtml(state.activeView)}"><div class="hhe-route-atmosphere" aria-hidden="true"><i></i><i></i><i></i><span>EN</span></div>${content}</div><nav class="hhe-route-dock" aria-label="Bước học tiếp theo"><button type="button" data-hhe-view="dashboard">← Hôm nay</button><div><small>MÀN HÌNH HIỆN TẠI</small><strong>${escapeHtml(currentLabel)}</strong></div><span><i></i> Đã tự lưu</span><button class="primary" type="button" data-hhe-open-lesson="${next.id}">${state.activeView === "lesson" ? "Tiếp tục bài" : "Học bài tiếp theo"} →</button></nav></main></div>
     <div class="hhe-toast" data-hhe-toast role="status" aria-live="polite"></div>
     ${navigatorMarkup(state)}
     ${shouldShowOnboarding(state) ? onboardingMarkup(state) : ""}
@@ -1014,6 +1129,13 @@
     const levelId = selectedLevelId(state); const practice = levelPractice(state, levelId); const tasks = practiceTasksFor(state);
     return `<section class="hhe-practice"><header class="hhe-section-head"><div><small>${levelId} · DAILY SKILL LAB</small><h2>Phòng luyện tập theo trình độ</h2><p>Bài luyện thay đổi theo cấp ${levelId}; đáp án và giải thích chỉ xuất hiện sau khi bạn nộp từng câu.</p></div><span>${Object.values(practice).filter((score) => score >= 100).length}/3 hoàn thành</span></header><div class="hhe-practice-summary">${[["listening", "Nghe", "Âm thanh + hiểu ý"], ["reading", "Đọc", "Chi tiết + suy luận"], ["grammar", "Ngữ pháp", "Cấu trúc + cách dùng"]].map(([id, label, text]) => `<article><span>${practice[id] >= 100 ? "✓" : "○"}</span><div><strong>${label}</strong><small>${text}</small></div><b>${practice[id] || 0}%</b></article>`).join("")}</div><div class="hhe-practice-grid">${tasks.map((task, index) => `<form data-hhe-practice="${task.id}"><header><span>${String(index + 1).padStart(2, "0")}</span><div><small>${task.label} · ${levelId}</small><h3>${escapeHtml(task.title)}</h3></div></header>${task.id === "reading" ? `<blockquote>${escapeHtml(task.intro)}</blockquote>` : `<p>${escapeHtml(task.intro)}</p>`}${task.media ? `<button type="button" data-hhe-speak="${escapeHtml(task.media)}">▶ Phát nội dung nghe</button>` : ""}<fieldset><legend>${escapeHtml(task.prompt)}</legend>${task.options.map((answer) => `<label><input type="radio" name="answer" value="${escapeHtml(answer)}"><span>${escapeHtml(answer)}</span></label>`).join("")}</fieldset><button class="primary" type="submit">Kiểm tra ${task.id === "listening" ? "bài nghe" : task.id === "reading" ? "đọc hiểu" : "ngữ pháp"}</button><output data-hhe-practice-feedback></output></form>`).join("")}</div><section class="hhe-practice-more"><div><small>LUYỆN KỸ NĂNG MỞ RỘNG · ${levelId}</small><h3>Từ nhận biết đến sử dụng độc lập</h3></div><button type="button" data-hhe-view="speaking">Luyện phát âm</button><button type="button" data-hhe-view="writing">Luyện viết</button><button type="button" data-hhe-view="vocabulary">Ôn flashcard</button></section></section>`;
   };
+  const grammarMapView = (state) => {
+    const levelId = selectedLevelId(state);
+    const units = grammarMapForLevel(levelId);
+    const completed = units.flatMap((unit) => unit.lessons).filter((lesson) => state.completed?.[lesson.id]).length;
+    const total = units.reduce((sum, unit) => sum + unit.lessons.length, 0);
+    return `<section class="hhe-grammar-map"><header class="hhe-section-head"><div><small>${levelId} · GRAMMAR MAP</small><h2>Ngữ pháp gắn với năng lực sử dụng</h2><p>Không học cấu trúc rời rạc: mỗi điểm ngữ pháp mở đúng bài CEFR, hội thoại và bài tập tương ứng.</p></div><span>${completed}/${total} bài có bằng chứng</span></header><nav aria-label="Chọn cấp độ ngữ pháp">${levelOrder.map((id) => `<button type="button" class="${id === levelId ? "active" : ""}" data-hhe-grammar-level="${id}" aria-pressed="${id === levelId}">${id}</button>`).join("")}</nav><label class="hhe-grammar-search"><span>⌕</span><input type="search" data-hhe-grammar-search placeholder="Tìm cấu trúc, mục tiêu hoặc tên bài…" autocomplete="off"><small data-hhe-grammar-count>${total} bài</small></label><div class="hhe-grammar-map-grid">${units.map((unit, index) => `<section data-hhe-grammar-unit data-search="${escapeHtml(foldSearch(`${unit.title} ${unit.vi} ${unit.primarySkill}`))}"><header><span>${String(index + 1).padStart(2, "0")}</span><div><small>${escapeHtml(unit.primarySkill.toUpperCase())}</small><h3>${escapeHtml(unit.title)}</h3><p>${escapeHtml(unit.vi)}</p></div><b>${unit.lessons.filter((lesson) => state.completed?.[lesson.id]).length}/${unit.lessons.length}</b></header><div>${unit.lessons.map((lesson) => `<article data-hhe-grammar-item data-search="${escapeHtml(foldSearch(`${lesson.title} ${lesson.canDo} ${lesson.grammar}`))}"><div><small>${state.completed?.[lesson.id] ? "ĐÃ HỌC" : `${lesson.minutes} PHÚT`}</small><h4>${escapeHtml(lesson.title)}</h4><p>${escapeHtml(lesson.grammar)}</p><span>I can · ${escapeHtml(lesson.canDo)}</span></div><button type="button" data-hhe-open-lesson="${escapeHtml(lesson.id)}">${state.completed?.[lesson.id] ? "Ôn lại" : "Mở bài"} →</button></article>`).join("")}</div></section>`).join("")}</div><p class="hhe-empty" data-hhe-grammar-empty hidden>Không tìm thấy điểm ngữ pháp phù hợp. Hãy thử từ khóa ngắn hơn.</p></section>`;
+  };
 
   const lessonView = (state, lesson) => {
     const answers = state.attempts[lesson.id] || {};
@@ -1048,6 +1170,9 @@
 
   const speakingView = (state) => {
     const levelId = selectedLevelId(state); const prompt = levelById(levelId).speaking;
+    const capabilities = speechAdapterStatus();
+    const recognitionDisabled = capabilities.recognition.supported && capabilities.microphone.supported ? "" : 'disabled aria-disabled="true" title="Trình duyệt này chưa hỗ trợ nhận dạng lời nói"';
+    const recordingDisabled = capabilities.recording.supported ? "" : 'disabled aria-disabled="true" title="Trình duyệt này chưa hỗ trợ ghi âm cục bộ"';
     const scenario = speakingScenarios.find((item) => item.id === state.speakingScenario) || speakingScenarios[0];
     const phrase = state.galaxy?.shadowingTarget || scenario.phrase;
     const attempts = Array.isArray(state.speakingAttempts) ? state.speakingAttempts.filter((item) => item.level === levelId).slice(0, 4) : [];
@@ -1061,9 +1186,9 @@
       ${voiceStudioMarkup(state, phrase)}
       ${roleplayMarkup}
       <section class="hhe-scenario-picker"><header><div><small>REAL-WORLD ROLE PLAY</small><h3>Chọn tình huống muốn luyện</h3><p>Mỗi lựa chọn cập nhật ngay câu luyện và mở đầy đủ công cụ phía dưới.</p></div><span>${escapeHtml(levelId)} · 6 tình huống</span></header><div>${speakingScenarios.map((item) => `<button type="button" class="${item.id === scenario.id ? "active" : ""}" data-hhe-speaking-scenario="${item.id}"><b>${item.icon}</b><span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.context)}</small></span><i>${item.id === scenario.id ? "Đang học" : "Mở →"}</i></button>`).join("")}</div></section>
-      <div class="hhe-speaking-lab-grid"><section class="hhe-shadowing-card"><header><span>02</span><div><small>SHADOWING COACH</small><h3>Nghe theo cụm, rồi nói liền mạch</h3></div></header><div class="hhe-phrase-card"><small>${escapeHtml(scenario.title.toUpperCase())}</small><strong data-hhe-speaking-phrase>${escapeHtml(phrase)}</strong><span>${escapeHtml(prompt.ipa || "Nghe nhịp và trọng âm của cả cụm, không đọc từng từ rời.")}</span></div><ol><li><b>1</b><span>Nghe chậm một lượt</span><button type="button" data-hhe-speak="${escapeHtml(phrase)}" data-hhe-speak-rate="0.65">Phát chậm</button></li><li><b>2</b><span>Nghe tốc độ tự nhiên</span><button type="button" data-hhe-speak="${escapeHtml(phrase)}">Phát chuẩn</button></li><li><b>3</b><span>Nói lại và nhận transcript</span><button class="primary" type="button" data-hhe-recognize data-hhe-target="${escapeHtml(phrase)}">Bắt đầu nói</button></li></ol><output data-hhe-transcript>Transcript và mức khớp từ sẽ xuất hiện tại đây.</output><div class="hhe-pron-score" data-hhe-pron-score hidden></div></section>
+      <div class="hhe-speaking-lab-grid"><section class="hhe-shadowing-card"><header><span>02</span><div><small>SHADOWING COACH</small><h3>Nghe theo cụm, rồi nói liền mạch</h3></div></header><div class="hhe-phrase-card"><small>${escapeHtml(scenario.title.toUpperCase())}</small><strong data-hhe-speaking-phrase>${escapeHtml(phrase)}</strong><span>${escapeHtml(prompt.ipa || "Nghe nhịp và trọng âm của cả cụm, không đọc từng từ rời.")}</span></div><ol><li><b>1</b><span>Nghe chậm một lượt</span><button type="button" data-hhe-speak="${escapeHtml(phrase)}" data-hhe-speak-rate="0.65">Phát chậm</button></li><li><b>2</b><span>Nghe tốc độ tự nhiên</span><button type="button" data-hhe-speak="${escapeHtml(phrase)}">Phát chuẩn</button></li><li><b>3</b><span>Nói lại và nhận transcript</span><button class="primary" type="button" data-hhe-recognize data-hhe-target="${escapeHtml(phrase)}" ${recognitionDisabled}>${capabilities.recognition.supported ? "Bắt đầu nói" : "Không hỗ trợ nhận dạng"}</button></li></ol><output data-hhe-transcript>${capabilities.recognition.supported ? "Transcript và mức khớp từ sẽ xuất hiện tại đây." : "Trình duyệt này chưa có Speech Recognition; bạn vẫn có thể nghe mẫu và tự luyện."}</output><div class="hhe-pron-score" data-hhe-pron-score hidden></div></section>
       <section class="hhe-dictation-card"><header><span>03</span><div><small>LISTENING DICTATION</small><h3>Nghe mà không nhìn đáp án</h3></div></header><p>Phát câu bằng giọng đã chọn, nhập những gì bạn nghe được rồi xem từng từ còn thiếu.</p><button type="button" data-hhe-speak="${escapeHtml(phrase)}">▶ Phát câu bí mật</button><form data-hhe-dictation><label><span>Nhập câu nghe được</span><textarea name="dictation" autocomplete="off" spellcheck="false" placeholder="Type what you hear..."></textarea></label><button class="primary" type="submit">Kiểm tra từng từ</button><output data-hhe-dictation-feedback></output></form><aside><small>CÂU THEO CẤP ${levelId}</small><strong>Đáp án được khóa trong lúc làm bài</strong><span>Chỉ hiển thị sau khi bạn bấm kiểm tra.</span></aside></section></div>
-      <section class="hhe-speaking-grid hhe-recording-zone"><section class="hhe-recorder"><div class="hhe-mic"><i></i><span>MIC</span></div><h3>Nghe lại chính giọng của bạn</h3><p>Trình duyệt chỉ xin quyền micro khi bạn bấm ghi. Bản ghi không được tải lên máy chủ.</p><div><button class="primary" type="button" data-hhe-record>● Bắt đầu ghi</button><button type="button" data-hhe-stop disabled>■ Dừng</button><button type="button" data-hhe-delete-record disabled>Xóa</button></div><audio data-hhe-audio controls hidden></audio><small data-hhe-record-status>Sẵn sàng.</small></section><section class="hhe-attempt-history"><small>PHẢN HỒI GẦN ĐÂY</small><h3>Tiến bộ qua từng lần nói</h3>${attempts.length ? `<div>${attempts.map((item) => `<article><b>${item.score}%</b><span><strong>${escapeHtml(item.scenario)}</strong><small>${escapeHtml(item.transcript)}</small></span><time>${new Date(item.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</time></article>`).join("")}</div>` : `<p>Chưa có lượt nhận dạng nào. Bấm “Bắt đầu nói” ở Shadowing Coach để lưu lần luyện đầu tiên.</p>`}</section></section>
+      <section class="hhe-speaking-grid hhe-recording-zone"><section class="hhe-recorder"><div class="hhe-mic"><i></i><span>MIC</span></div><h3>Nghe lại chính giọng của bạn</h3><p>Trình duyệt chỉ xin quyền micro khi bạn bấm ghi. Bản ghi không được tải lên máy chủ.</p><div><button class="primary" type="button" data-hhe-record ${recordingDisabled}>● ${capabilities.recording.supported ? "Bắt đầu ghi" : "Không hỗ trợ ghi âm"}</button><button type="button" data-hhe-stop disabled>■ Dừng</button><button type="button" data-hhe-delete-record disabled>Xóa</button></div><audio data-hhe-audio controls hidden></audio><small data-hhe-record-status>${capabilities.recording.supported ? "Sẵn sàng." : "MediaRecorder hoặc microphone không khả dụng trên trình duyệt này."}</small></section><section class="hhe-attempt-history"><small>PHẢN HỒI GẦN ĐÂY</small><h3>Tiến bộ qua từng lần nói</h3>${attempts.length ? `<div>${attempts.map((item) => `<article><b>${item.score}%</b><span><strong>${escapeHtml(item.scenario)}</strong><small>${escapeHtml(item.transcript)}</small></span><time>${new Date(item.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</time></article>`).join("")}</div>` : `<p>Chưa có lượt nhận dạng nào. ${capabilities.recognition.supported ? "Bấm “Bắt đầu nói” ở Shadowing Coach để lưu lần luyện đầu tiên." : "Bạn có thể luyện nghe, dictation và tự ghi chú mà không cần Speech Recognition."}</p>`}</section></section>
     </section>`;
   };
 
@@ -1106,7 +1231,7 @@
     const mastery = Object.values(state.wordMastery || {});
     const mastered = mastery.filter((item) => Number(item.score) >= 90).length;
     return `<section class="hhe-galaxy-mission">
-      <header><div><small>MISSION CONTROL · HỌC THÍCH ỨNG</small><h3>Hôm nay bạn muốn bay tới đâu?</h3><p>HH ưu tiên ${due ? `${due} từ đến hạn` : "từ mới theo cấp độ"} và kỹ năng ${escapeHtml(skillLabels[weakSkillFor(state)] || "giao tiếp")} dựa trên các lần trả lời cục bộ.</p></div><span>${mastered} từ thành thạo</span></header>
+      <header><div><small>KẾ HOẠCH ÔN TẬP · HỌC THÍCH ỨNG</small><h3>Hôm nay bạn muốn luyện phần nào?</h3><p>HH ưu tiên ${due ? `${due} từ đến hạn` : "từ mới theo cấp độ"} và kỹ năng ${escapeHtml(skillLabels[weakSkillFor(state)] || "giao tiếp")} dựa trên các lần trả lời cục bộ.</p></div><span>${mastered} từ thành thạo</span></header>
       <div><button type="button" data-hhe-galaxy-start="speed-review"><b>⚡</b><strong>Ôn nhanh 60 giây</strong><small>${due || 0} từ đang chờ</small></button><button type="button" data-hhe-galaxy-start="typed-recall"><b>⌨</b><strong>Đánh thức trí nhớ</strong><small>Nhìn nghĩa và tự gõ</small></button><button type="button" data-hhe-galaxy-start="role-play"><b>◎</b><strong>Giao tiếp thực tế</strong><small>Role-play theo nghề</small></button></div>
       <footer><span><i></i> Dữ liệu và điểm được lưu trên thiết bị</span><button type="button" data-hhe-view="progress">Xem báo cáo học tập →</button></footer>
     </section>`;
@@ -1119,12 +1244,13 @@
     const currentPlanet = galaxyData?.packs?.find((pack) => pack.level === currentLevel);
     const mastered = Object.values(state.wordMastery || {}).filter((item) => Number(item.score) >= 90).length;
     const activeTopic = topics.find((topic) => topic.id === state.galaxyTopic);
+    const modeCount = galaxyData?.learningModes?.length || 19;
     return `<section class="hhe-galaxy">
-      <header class="hhe-galaxy-hero"><div><small>ENGLISH LEARNING GALAXY · H COSMOS</small><h2>Biến mỗi từ thành một ngôi sao.</h2><p>Bản đồ học tiếng Anh từ A0 đến C2, 70 Career Galaxies và 16 cách luyện. Độ sáng của sao tăng theo mức ghi nhớ của bạn.</p><div><button class="primary" type="button" data-hhe-galaxy-start="flashcards">Bắt đầu chuyến bay →</button><button type="button" data-hhe-view="lab">Mở 16 chế độ học</button></div></div><div class="hhe-galaxy-sun" aria-label="Hồ sơ người học"><span>H</span><b>${mastered}</b><small>STARS MASTERED</small><i></i><i></i><i></i></div></header>
+      <header class="hhe-galaxy-hero"><div><small>ENGLISH KNOWLEDGE LIBRARY · CEFR A0–C2</small><h2>Biến mỗi từ thành kỹ năng sử dụng.</h2><p>Thư viện học tiếng Anh từ A0 đến C2, 70 lộ trình nghề nghiệp và ${modeCount} cách luyện. Tiến độ của từng mục chỉ tăng từ hoạt động học thực tế.</p><div><button class="primary" type="button" data-hhe-galaxy-start="flashcards">Mở bộ thẻ từ →</button><button type="button" data-hhe-view="lab">Mở ${modeCount} chế độ học</button></div></div><div class="hhe-galaxy-sun" aria-label="Hồ sơ người học"><span>H</span><b>${mastered}</b><small>TỪ ĐÃ THÀNH THẠO</small><i></i><i></i><i></i></div></header>
       ${galaxyPlanMarkup(state)}
-      <section class="hhe-galaxy-map"><header><div><small>CEFR PLANET MAP</small><h3>Bảy hành tinh trình độ</h3></div><span>${currentPlanet ? `${currentPlanet.count} từ đã nạp` : "Chọn một hành tinh"}</span></header><div class="hhe-galaxy-planets">${(galaxyData?.packs || []).map((pack) => `<button type="button" class="${pack.level === currentLevel ? "active" : ""}" style="--planet:${pack.color}" data-hhe-galaxy-level="${pack.level}"><i>${pack.level === "A0" ? "H" : pack.level}</i><strong>${escapeHtml(pack.title)}</strong><small>${pack.count}/${pack.target} từ · ${pack.count ? Math.round(pack.count / pack.target * 100) : 0}% gói hiện có</small><b>${pack.level === currentLevel ? "Đang bay" : "Mở hành tinh"}</b></button>`).join("")}</div></section>
-      <section class="hhe-galaxy-systems"><header><div><small>TOPIC STAR SYSTEMS</small><h3>Chọn hệ sao để học theo ngữ cảnh</h3></div><span>${activeTopic ? escapeHtml(activeTopic.vi) : "Tất cả chủ đề"}</span></header><div class="hhe-galaxy-topic-tabs"><button type="button" class="${state.galaxyTopic === "all" ? "active" : ""}" data-hhe-galaxy-topic="all">✦ Tất cả</button>${topics.map((topic) => `<button type="button" class="${state.galaxyTopic === topic.id ? "active" : ""}" style="--topic:${topic.color}" data-hhe-galaxy-topic="${topic.id}">${topic.icon} ${escapeHtml(topic.vi)}</button>`).join("")}</div><div class="hhe-galaxy-starfield">${words.slice(0, 18).map((word) => `<article class="hhe-galaxy-star-card" style="--star:${galaxyData.levelColors[word.level] || "#63e8ff"};--glow:${Math.max(.25, masteryFor(state, word) / 100)}"><span class="hhe-star"></span><div><small>${escapeHtml(word.level)} · ${escapeHtml(word.topic)}</small><h4>${escapeHtml(word.term)}</h4><p>${escapeHtml(word.meaning)}</p><em>${masteryLabel(masteryFor(state, word))}</em></div><button type="button" data-hhe-galaxy-speak="${escapeHtml(word.example || word.term)}" aria-label="Nghe ${escapeHtml(word.term)}">▶</button></article>`).join("") || `<p class="hhe-empty-state">Gói từ đang chuẩn bị. Hãy chọn một hành tinh để nạp dữ liệu.</p>`}</div><footer><span>${words.length} mục đang hiển thị · ${stats.unique} mục độc nhất đã lập chỉ mục</span><button type="button" data-hhe-view="vocabulary">Mở sổ từ chi tiết →</button></footer></section>
-      <section class="hhe-galaxy-packs"><header><div><small>LAZY VOCABULARY PACKS</small><h3>Nạp đúng gói, giữ website nhẹ</h3></div><span>Chỉ tải khi bạn bấm</span></header><div>${(galaxyData?.packs || []).map((pack) => `<article style="--pack:${pack.color}"><span>${pack.level}</span><div><strong>${escapeHtml(pack.title)}</strong><p>${pack.count} mục hiện có · mục tiêu ${pack.target} từ trong gói</p><i style="--p:${Math.min(100, Math.round(pack.count / Math.max(1, pack.target) * 100))}%"></i></div><button type="button" data-hhe-galaxy-pack="${pack.id}">${state.galaxyPackStatus?.[pack.id] ? "Đã nạp ✓" : "Nạp gói"}</button></article>`).join("")}</div></section>
+      <section class="hhe-galaxy-map"><header><div><small>CEFR LEVEL LIBRARY</small><h3>Bảy cấp độ từ Starter đến C2</h3></div><span>${currentPlanet ? `${currentPlanet.count} từ đã nạp` : "Chọn một cấp độ"}</span></header><div class="hhe-galaxy-planets">${(galaxyData?.packs || []).map((pack) => `<button type="button" class="${pack.level === currentLevel ? "active" : ""}" style="--planet:${pack.color}" data-hhe-galaxy-level="${pack.level}"><i>${pack.level === "A0" ? "S" : pack.level}</i><strong>${escapeHtml(pack.title)}</strong><small>${pack.count}/${pack.target} từ · ${pack.count ? Math.round(pack.count / pack.target * 100) : 0}% gói hiện có</small><b>${pack.level === currentLevel ? "Đang học" : "Mở cấp độ"}</b></button>`).join("")}</div></section>
+      <section class="hhe-galaxy-systems"><header><div><small>TOPIC LIBRARY</small><h3>Chọn chủ đề để học theo ngữ cảnh</h3></div><span>${activeTopic ? escapeHtml(activeTopic.vi) : "Tất cả chủ đề"}</span></header><div class="hhe-galaxy-topic-tabs"><button type="button" class="${state.galaxyTopic === "all" ? "active" : ""}" data-hhe-galaxy-topic="all">Aa Tất cả</button>${topics.map((topic) => `<button type="button" class="${state.galaxyTopic === topic.id ? "active" : ""}" style="--topic:${topic.color}" data-hhe-galaxy-topic="${topic.id}">${topic.icon} ${escapeHtml(topic.vi)}</button>`).join("")}</div><div class="hhe-galaxy-starfield">${words.slice(0, 18).map((word) => `<article class="hhe-galaxy-star-card" style="--star:${galaxyData.levelColors[word.level] || "#63e8ff"};--glow:${Math.max(.25, masteryFor(state, word) / 100)}"><span class="hhe-star"></span><div><small>${escapeHtml(word.level)} · ${escapeHtml(word.topic)}</small><h4>${escapeHtml(word.term)}</h4><p>${escapeHtml(word.meaning)}</p><em>${masteryLabel(masteryFor(state, word))}</em></div><button type="button" data-hhe-galaxy-speak="${escapeHtml(word.example || word.term)}" aria-label="Nghe ${escapeHtml(word.term)}">▶</button></article>`).join("") || `<p class="hhe-empty-state">Gói từ đang chuẩn bị. Hãy chọn cấp độ hoặc chủ đề khác.</p>`}</div><footer><span>${words.length} mục đang hiển thị · ${stats.unique} mục độc nhất đã lập chỉ mục</span><button type="button" data-hhe-view="vocabulary">Mở sổ từ chi tiết →</button></footer></section>
+      <section class="hhe-galaxy-packs"><header><div><small>VOCABULARY CONTENT PACKS</small><h3>Nạp đúng gói, giữ website nhẹ</h3></div><span>Chỉ tải khi bạn bấm</span></header><div>${(galaxyData?.packs || []).map((pack) => `<article style="--pack:${pack.color}"><span>${pack.level}</span><div><strong>${escapeHtml(pack.title)}</strong><p>${pack.count} mục hiện có · mục tiêu ${pack.target} từ trong gói</p><i style="--p:${Math.min(100, Math.round(pack.count / Math.max(1, pack.target) * 100))}%"></i></div><button type="button" data-hhe-galaxy-pack="${pack.id}">${state.galaxyPackStatus?.[pack.id] ? "Đã nạp ✓" : "Nạp gói"}</button></article>`).join("")}</div></section>
     </section>`;
   };
   const labView = (state) => {
@@ -1138,9 +1264,9 @@
       : `<div class="hhe-lab-word"><span>${escapeHtml(word?.level || selectedLevelId(state))} · ${escapeHtml(word?.topic || "daily")}</span><strong>${escapeHtml(word?.term || "Ready")}</strong><button type="button" data-hhe-speak="${escapeHtml(challenge.sentence || word?.term || "")}">▶ Nghe câu mẫu</button><p>${escapeHtml(challenge.sentence || "")}</p></div>`;
     const optionMarkup = challenge.options?.length ? `<div class="hhe-lab-options">${challenge.options.map((option, index) => `<label><input type="radio" name="galaxyAnswer" value="${escapeHtml(option)}" required><span><b>${String.fromCharCode(65 + index)}</b>${escapeHtml(option)}</span></label>`).join("")}</div>` : "";
     const answerMarkup = challenge.type === "flashcard" ? `<article class="hhe-lab-flashcard"><button type="button" data-hhe-galaxy-reveal>Lật thẻ · xem nghĩa</button><div hidden data-hhe-galaxy-reveal-panel><strong>${escapeHtml(challenge.answer)}</strong><p>${escapeHtml(challenge.sentence)}</p><footer><button type="button" data-hhe-galaxy-rate="again" data-hhe-galaxy-word="${escapeHtml(word?.term || "")}">Again</button><button type="button" data-hhe-galaxy-rate="hard" data-hhe-galaxy-word="${escapeHtml(word?.term || "")}">Hard</button><button type="button" class="primary" data-hhe-galaxy-rate="good" data-hhe-galaxy-word="${escapeHtml(word?.term || "")}">Good</button><button type="button" data-hhe-galaxy-rate="easy" data-hhe-galaxy-word="${escapeHtml(word?.term || "")}">Easy</button></footer></div></article>` : challenge.type === "choice" ? optionMarkup : challenge.type === "story" ? `<article class="hhe-lab-story"><p>${escapeHtml(challenge.sentence)}</p><button type="button" class="primary" data-hhe-galaxy-rate="easy" data-hhe-galaxy-word="${escapeHtml(word?.term || "")}">Tôi đã hiểu từ này ✓</button></article>` : `<label class="hhe-lab-input"><span>${challenge.type === "textarea" ? "Câu trả lời của bạn" : "Câu trả lời"}</span>${challenge.type === "textarea" ? `<textarea name="galaxyAnswer" required placeholder="Write your answer in English..."></textarea>` : `<input name="galaxyAnswer" required autocomplete="off" placeholder="Type in English...">`}</label>`;
-    return `<section class="hhe-lab"><header class="hhe-lab-hero"><div><small>MISSION CONTROL · PRACTICE LAB</small><h2>16 cách học, một trí nhớ bền hơn.</h2><p>Đổi phương pháp bất cứ lúc nào. HH ghi lại độ đúng, lỗi và khoảng ôn tiếp theo trên thiết bị.</p></div><aside><strong>${state.galaxySession?.correct || 0}</strong><span>đúng trong phiên</span><b>${formatFocusTime(Math.max(0, 60 - (state.galaxySession?.attempts || 0) * 4))}</b><small>nhịp speed review</small></aside></header>
+    return `<section class="hhe-lab"><header class="hhe-lab-hero"><div><small>PRACTICE STUDIO · HỌC THÍCH ỨNG</small><h2>${galaxyData?.learningModes?.length || 19} cách học, một trí nhớ bền hơn.</h2><p>Đổi phương pháp bất cứ lúc nào. HH ghi lại độ đúng, lỗi và khoảng ôn tiếp theo trên thiết bị.</p></div><aside><strong>${state.galaxySession?.correct || 0}</strong><span>đúng trong phiên</span><b>${formatFocusTime(Math.max(0, 60 - (state.galaxySession?.attempts || 0) * 4))}</b><small>nhịp ôn nhanh</small></aside></header>
       <nav class="hhe-mode-orbit" aria-label="Các chế độ học">${(galaxyData?.learningModes || []).map((item) => `<button type="button" class="${item.id === mode ? "active" : ""}" data-hhe-mode="${item.id}"><b>${item.icon}</b><span>${escapeHtml(item.title)}</span><small>${escapeHtml(item.detail)}</small></button>`).join("")}</nav>
-      <section class="hhe-lab-chamber"><header><div><small>${escapeHtml(challenge.modeTitle || "PRACTICE")}</small><h3>${escapeHtml(challenge.prompt || "")}</h3></div><button type="button" data-hhe-view="galaxy">← Về bản đồ Galaxy</button></header>${contextMarkup}<form data-hhe-galaxy-challenge data-word="${escapeHtml(word?.term || "")}">${answerMarkup}${challenge.type !== "story" && challenge.type !== "flashcard" ? `<footer><span data-hhe-galaxy-feedback></span><button class="primary" type="submit">Kiểm tra →</button></footer>` : ""}</form></section>
+      <section class="hhe-lab-chamber"><header><div><small>${escapeHtml(challenge.modeTitle || "PRACTICE")}</small><h3>${escapeHtml(challenge.prompt || "")}</h3></div><button type="button" data-hhe-view="galaxy">← Về thư viện từ vựng</button></header>${contextMarkup}<form data-hhe-galaxy-challenge data-word="${escapeHtml(word?.term || "")}">${answerMarkup}${challenge.type !== "story" && challenge.type !== "flashcard" ? `<footer><span data-hhe-galaxy-feedback></span><button class="primary" type="submit">Kiểm tra →</button></footer>` : ""}</form></section>
       <section class="hhe-lab-footer"><article><b>Ôn thích nghi</b><p>Again / Hard / Good / Easy điều chỉnh ease factor và ngày ôn, không dùng lịch cố định.</p></article><article><b>Mistake Notebook</b><p>${state.mistakeNotebook?.length || 0} lỗi đang được giữ lại để mở bằng chế độ riêng.</p></article><article><b>Chế độ hiện tại</b><p>${escapeHtml((galaxyData?.learningModes || []).find((item) => item.id === mode)?.detail || "")}</p></article></section>
     </section>`;
   };
@@ -1164,12 +1290,47 @@
     heading?.setAttribute?.("tabindex", "-1");
     heading?.focus?.({ preventScroll: true });
   });
+  const continuitySelectors = Object.freeze([
+    ".hhe-view-stage", ".hhe-nav", "[data-hhe-internal-scroll]", ".hheg-tool-stage",
+    ".hheg-reader-scroll", ".hhev-filters", ".hhev-results>[data-hhev-result-list]",
+    ".hhev-detail", ".hhev-personal-list", ".hhee-body", ".hhee-content>main"
+  ]);
+  const captureViewContinuity = () => {
+    const scrolling = [];
+    continuitySelectors.forEach((selector) => host?.querySelectorAll?.(selector).forEach((node, index) => scrolling.push({ selector, index, top: node.scrollTop || 0, left: node.scrollLeft || 0 })));
+    const active = root.document?.activeElement;
+    if (!active || !host?.contains?.(active)) return { scrolling, focus: null };
+    const dataEntry = Object.entries(active.dataset || {}).find(([key, value]) => /^(?:hhe|hheg|hhev|hhee|hheo)/.test(key) && value !== undefined);
+    return { scrolling, focus: { tag: active.tagName, id: active.id || "", name: active.getAttribute?.("name") || "", dataEntry, value: "value" in active ? active.value : undefined, checked: "checked" in active ? active.checked : undefined, start: active.selectionStart, end: active.selectionEnd } };
+  };
+  const restoreViewContinuity = (snapshot, restoreFocus = true) => {
+    snapshot?.scrolling?.forEach(({ selector, index, top, left }) => {
+      const node = host?.querySelectorAll?.(selector)?.[index]; if (node) { node.scrollTop = top; node.scrollLeft = left; }
+    });
+    if (!restoreFocus || !snapshot?.focus) return;
+    const identity = snapshot.focus; const byId = identity.id ? root.document?.getElementById?.(identity.id) : null; let target = byId && host?.contains?.(byId) ? byId : null;
+    if (!target && identity.name) target = Array.from(host?.querySelectorAll?.(identity.tag || "input") || []).find((node) => node.getAttribute?.("name") === identity.name) || null;
+    if (!target && identity.dataEntry) target = Array.from(host?.querySelectorAll?.(identity.tag || "button") || []).find((node) => node.dataset?.[identity.dataEntry[0]] === identity.dataEntry[1]) || null;
+    if (target && identity.value !== undefined && "value" in target) target.value = identity.value;
+    if (target && identity.checked !== undefined && "checked" in target) target.checked = identity.checked;
+    target?.focus?.({ preventScroll: true });
+    if (target && Number.isInteger(identity.start) && typeof target.setSelectionRange === "function") target.setSelectionRange(identity.start, Number.isInteger(identity.end) ? identity.end : identity.start);
+    if (target && identity.value !== undefined && typeof root.Event === "function") target.dispatchEvent?.(new root.Event("input", { bubbles: true }));
+  };
   const render = (options = {}) => {
     if (!host) return;
     const shouldFocus = options === true || Boolean(options.focusView) || focusAfterRender;
     focusAfterRender = false;
     const state = readState(); let content = "";
     const previousView = host.querySelector?.("[data-hhe-app]")?.dataset?.view || "";
+    const viewContinuity = captureViewContinuity();
+    // Every render replaces the learning workspace DOM. Invalidate a pending
+    // microphone request and stop live browser media before those controls are
+    // detached, otherwise MediaRecorder/SpeechRecognition callbacks can write
+    // into a stale route (or keep a microphone track alive off-screen).
+    disposeRecordingSession();
+    cancelActiveRecognition();
+    if (state.activeView !== "speaking") revokeRecordingUrl();
     const continuityNodes = [host.closest?.(".app-main"), host.closest?.(".app-workspace"), root.document?.scrollingElement].filter((node, index, rows) => node && rows.indexOf(node) === index);
     const continuity = continuityNodes.map((node) => ({ node, top: node.scrollTop || 0, left: node.scrollLeft || 0 }));
     const learningContext = {
@@ -1194,6 +1355,7 @@
     else if (state.activeView === "vocabulary") content = vocabularyView(state);
     else if (state.activeView === "speaking") content = speakingView(state);
     else if (state.activeView === "writing") content = writingView(state);
+    else if (state.activeView === "grammar-map") content = grammarMapView(state);
     else if (state.activeView === "skill-graph") content = root.HHEnglishSkillGraph?.renderView?.(state, { allLessons, levelOrder }) || progressView(state);
     else if (state.activeView === "progress") content = progressView(state);
     else if (state.activeView === "everyone") content = root.HHEnglishForEveryone?.renderView?.(state) || settingsView(state);
@@ -1205,8 +1367,10 @@
     host.querySelector("[data-hhe-writing]")?.addEventListener("input", onWritingInput);
     host.querySelector("[data-hhe-search]")?.addEventListener("input", onLessonSearch);
     host.querySelector("[data-hhe-career-search]")?.addEventListener("input", filterCareerTracks);
+    host.querySelector("[data-hhe-grammar-search]")?.addEventListener("input", filterGrammarMap);
     host.querySelector("[data-hhe-navigator-search]")?.addEventListener("input", filterNavigator);
     host.querySelector('[name="voiceRate"]')?.addEventListener("input", (event) => { event.target.nextElementSibling.textContent = `${event.target.value}×`; });
+    if (state.activeView === "speaking") restoreRecordingPlayback();
     root.HHEnglishLearningGalaxy?.bind?.({
       host, state, readState, writeState, render, toast, speak, selectVoice, englishVoices,
       voiceProfileById, compareTranscript, escapeHtml, selectedLevelId, todayKey,
@@ -1216,11 +1380,11 @@
       host, state, readState, writeState, render, toast, speak, selectedLevelId, todayKey,
       scheduleReview, updateStreak, context: learningContext
     });
-    root.HHEnglishVocabulary?.mount?.({ host, state, readState, writeState, render, toast, speak, selectedLevelId, scheduleReview });
+    root.HHEnglishVocabulary?.mount?.({ host, state, readState, writeState, render, toast, speak, selectedLevelId, scheduleReview, recordSharedEvidence, reviewSharedCard });
     root.HHEnglishForEveryone?.mount?.({ host, state, readState, writeState, render, toast, speak, selectedLevelId });
     updateFocusClock();
-    const preserveScroll = Boolean(options?.preserveScroll && previousView === state.activeView);
-    if (preserveScroll) root.requestAnimationFrame?.(() => continuity.forEach(({ node, top, left }) => { node.scrollTop = top; node.scrollLeft = left; }));
+    const preserveScroll = previousView === state.activeView && options?.preserveScroll !== false;
+    if (preserveScroll) root.requestAnimationFrame?.(() => { continuity.forEach(({ node, top, left }) => { node.scrollTop = top; node.scrollLeft = left; }); restoreViewContinuity(viewContinuity, !shouldFocus); });
     if (shouldFocus) focusCurrentView({ resetScroll: !preserveScroll });
   };
   const learningOSRuntime = () => ({
@@ -1273,6 +1437,19 @@
       card.hidden = !(categoryMatches && queryMatches); visibleCount += card.hidden ? 0 : 1;
     });
     const empty = host?.querySelector("[data-hhe-career-empty]"); if (empty) empty.hidden = visibleCount > 0;
+  };
+  const filterGrammarMap = (event) => {
+    const query = foldSearch(event?.target?.value || ""); let visibleCount = 0;
+    host?.querySelectorAll("[data-hhe-grammar-unit]").forEach((unit) => {
+      let unitCount = 0;
+      unit.querySelectorAll("[data-hhe-grammar-item]").forEach((item) => {
+        const visible = !query || item.dataset.search.includes(query) || unit.dataset.search.includes(query);
+        item.hidden = !visible; unitCount += visible ? 1 : 0;
+      });
+      unit.hidden = unitCount === 0; visibleCount += unitCount;
+    });
+    const counter = host?.querySelector("[data-hhe-grammar-count]"); if (counter) counter.textContent = `${visibleCount} bài`;
+    const empty = host?.querySelector("[data-hhe-grammar-empty]"); if (empty) empty.hidden = visibleCount > 0;
   };
   const filterNavigator = (event) => {
     const query = foldSearch(event?.target?.value || "");
@@ -1369,6 +1546,12 @@
     const galaxyLevel = event.target.closest("[data-hhe-galaxy-level]");
     if (galaxyLevel) {
       const state = readState(); state.galaxyLevel = galaxyLevel.dataset.hheGalaxyLevel || "all"; state.selectedLevel = levelOrder.includes(state.galaxyLevel) ? state.galaxyLevel : state.selectedLevel; writeState(state); render({ focusView: true }); return;
+    }
+    const grammarLevel = event.target.closest("[data-hhe-grammar-level]");
+    if (grammarLevel) {
+      const state = readState(); const level = grammarLevel.dataset.hheGrammarLevel;
+      if (!levelOrder.includes(level)) return;
+      state.selectedLevel = level; state.activeView = "grammar-map"; writeState(state); render({ focusView: true }); return;
     }
     const galaxyPack = event.target.closest("[data-hhe-galaxy-pack]");
     if (galaxyPack) {
@@ -1529,7 +1712,7 @@
       if (!card) { rating.dataset.submitting = "false"; return toast("Thẻ ôn không còn trong hồ sơ hiện tại.", "error"); }
       const mutationKey = `legacy-review:${word}:${Number(card.repetitions || 0)}:${grade}`;
       if (state.reviewEvents?.includes(mutationKey)) { rating.dataset.submitting = "false"; return; }
-      state.reviewQueue[word] = scheduleReview(card, grade); state.reviewEvents = [...(state.reviewEvents || []), mutationKey].slice(-500); state.xp += 2; writeState(state); render(); toast("Đã lên lịch ôn tiếp theo."); return;
+      state.reviewQueue[word] = scheduleReview(card, grade); state.reviewEvents = [...(state.reviewEvents || []), mutationKey].slice(-500); state.xp += 2; writeState(state); reviewSharedCard(word, grade); render(); toast("Đã lên lịch ôn tiếp theo."); return;
     }
     if (event.target.closest("[data-hhe-theme]")) { const state = readState(); state.settings.theme = state.settings.theme === "day" ? "night" : "day"; writeState(state); render(); return; }
     const studyDay = event.target.closest("[data-hhe-day]");
@@ -1542,8 +1725,8 @@
     if (event.target.closest("[data-hhe-reset]")) { if (!confirm("Xóa toàn bộ tiến độ HH English của hồ sơ hiện tại trên thiết bị này?")) return; const scope = currentLearningScope(); try { localStorage.removeItem(scopedStorageKey(scope)); const legacy = readStoredJson(STORAGE_KEY); if (!legacy?.ownerId || (legacy.ownerId === scope.ownerId && (legacy.learnerProfileId || "default") === scope.learnerProfileId)) localStorage.removeItem(STORAGE_KEY); } catch (_) { /* storage may be disabled; keep the running workspace alive */ } render(); return; }
     if (event.target.closest("[data-hhe-recognize]")) { const button = event.target.closest("[data-hhe-recognize]"); startRecognition(button.dataset.hheTarget || host.querySelector("[data-hhe-speaking-phrase]")?.textContent || ""); return; }
     if (event.target.closest("[data-hhe-record]")) { await startRecording(); return; }
-    if (event.target.closest("[data-hhe-stop]")) { mediaRecorder?.stop(); return; }
-    if (event.target.closest("[data-hhe-delete-record]")) { if (recordingUrl) URL.revokeObjectURL(recordingUrl); recordingUrl = ""; const audio = host.querySelector("[data-hhe-audio]"); audio.hidden = true; audio.removeAttribute("src"); event.target.disabled = true; toast("Đã xóa bản ghi."); }
+    if (event.target.closest("[data-hhe-stop]")) { finishRecording(); return; }
+    if (event.target.closest("[data-hhe-delete-record]")) { revokeRecordingUrl(); const audio = host?.querySelector?.("[data-hhe-audio]"); if (audio) { audio.pause?.(); audio.hidden = true; audio.removeAttribute("src"); } event.target.disabled = true; toast("Đã xóa bản ghi."); }
   };
 
   const handleSubmit = (event) => {
@@ -1757,20 +1940,25 @@
 
   const startRecognition = (target = "") => {
     const Recognition = root.SpeechRecognition || root.webkitSpeechRecognition;
-    const output = host.querySelector("[data-hhe-transcript]");
+    const recognitionHost = host;
+    const output = recognitionHost?.querySelector?.("[data-hhe-transcript]");
+    if (!output) return;
     if (!Recognition) { output.textContent = "Trình duyệt chưa hỗ trợ nhận dạng giọng nói. Bạn vẫn có thể dùng phần ghi âm bên cạnh."; return; }
     const stateAtStart = readState();
     if (stateAtStart.settings.microphoneConsent !== true) { output.textContent = "Hãy bật quyền microphone ở Voice Studio trước khi bắt đầu shadowing."; return; }
+    cancelActiveRecognition();
     const recognition = new Recognition(); recognition.lang = voiceProfileById(stateAtStart.settings.voiceProfile).lang; recognition.interimResults = true; recognition.continuous = false;
+    activeRecognition = recognition;
     output.textContent = "Đang nghe… Âm thanh có thể được trình duyệt gửi tới dịch vụ nhận dạng của nhà cung cấp.";
     recognition.onresult = (event) => {
+      if (activeRecognition !== recognition || host !== recognitionHost || recognitionHost.isConnected === false) return;
       const transcript = Array.from(event.results).map((result) => result[0].transcript).join(" ");
       output.textContent = transcript;
       const finalResult = Array.from(event.results).every((result) => result.isFinal);
       if (!finalResult || !target) return;
       const comparison = compareTranscript(transcript, target);
       const phonemeFeedback = buildPhonemeFeedback(transcript, target);
-      const scoreNode = host.querySelector("[data-hhe-pron-score]");
+      const scoreNode = recognitionHost.querySelector("[data-hhe-pron-score]");
       if (scoreNode) {
         scoreNode.hidden = false;
         scoreNode.className = `hhe-pron-score ${comparison.score >= 80 ? "good" : comparison.score >= 55 ? "fair" : "retry"}`;
@@ -1783,15 +1971,82 @@
       state.speakingAttempts = state.speakingAttempts.slice(0, 30);
       writeState(state);
     };
-    recognition.onerror = (event) => { output.textContent = `Không thể nhận dạng: ${event.error}. Hãy kiểm tra quyền micro.`; };
-    recognition.start();
+    recognition.onerror = (event) => {
+      if (activeRecognition !== recognition || host !== recognitionHost || recognitionHost.isConnected === false) return;
+      output.textContent = `Không thể nhận dạng: ${event.error}. Hãy kiểm tra quyền micro.`;
+    };
+    recognition.onend = () => { if (activeRecognition === recognition) activeRecognition = null; };
+    try { recognition.start(); }
+    catch (error) { if (activeRecognition === recognition) activeRecognition = null; output.textContent = `Không thể bắt đầu nhận dạng: ${error.message}`; }
+  };
+  const finishRecording = () => {
+    const session = recordingSession;
+    if (!session || session.recorder.state === "inactive") return false;
+    const sessionHost = session.host;
+    const stop = sessionHost?.querySelector?.("[data-hhe-stop]");
+    const status = sessionHost?.querySelector?.("[data-hhe-record-status]");
+    if (stop) stop.disabled = true;
+    if (status) status.textContent = "Đang hoàn tất bản ghi…";
+    try { session.recorder.stop(); return true; }
+    catch (_) { disposeRecordingSession(); return false; }
   };
   const startRecording = async () => {
-    const status = host.querySelector("[data-hhe-record-status]");
+    const recordingHost = host;
+    const status = recordingHost?.querySelector?.("[data-hhe-record-status]");
+    if (!status) return false;
     if (readState().settings.microphoneConsent !== true) { status.textContent = "Hãy bật quyền microphone ở Voice Studio trước khi ghi."; return; }
-    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { status.textContent = "Thiết bị chưa hỗ trợ ghi âm trong trình duyệt."; return; }
-    try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); recordedChunks = []; mediaRecorder = new MediaRecorder(stream); mediaRecorder.ondataavailable = (event) => { if (event.data.size) recordedChunks.push(event.data); }; mediaRecorder.onstop = () => { stream.getTracks().forEach((track) => track.stop()); const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || "audio/webm" }); if (recordingUrl) URL.revokeObjectURL(recordingUrl); recordingUrl = URL.createObjectURL(blob); const audio = host.querySelector("[data-hhe-audio]"); audio.src = recordingUrl; audio.hidden = false; host.querySelector("[data-hhe-delete-record]").disabled = false; host.querySelector("[data-hhe-record]").disabled = false; host.querySelector("[data-hhe-stop]").disabled = true; status.textContent = "Đã ghi xong. Hãy nghe lại trước khi xóa hoặc thu lại."; }; mediaRecorder.start(); host.querySelector("[data-hhe-record]").disabled = true; host.querySelector("[data-hhe-stop]").disabled = false; status.textContent = "Đang ghi…"; }
-    catch (error) { status.textContent = error.name === "NotAllowedError" ? "Bạn chưa cho phép dùng micro." : `Không thể ghi âm: ${error.message}`; }
+    const Recorder = root.MediaRecorder;
+    if (!root.navigator?.mediaDevices?.getUserMedia || typeof Recorder !== "function") { status.textContent = "Thiết bị chưa hỗ trợ ghi âm trong trình duyệt."; return false; }
+    disposeRecordingSession({ revokeUrl: true });
+    const requestId = ++recordingRequestId;
+    try {
+      const stream = await root.navigator.mediaDevices.getUserMedia({ audio: true });
+      if (requestId !== recordingRequestId || host !== recordingHost || recordingHost.isConnected === false || !recordingHost.querySelector?.("[data-hhe-record]")) {
+        stopRecordingTracks(stream);
+        return false;
+      }
+      const recorder = new Recorder(stream);
+      const session = { recorder, stream, host: recordingHost, chunks: [], cancelled: false };
+      recordingSession = session;
+      mediaRecorder = recorder;
+      recordedChunks = session.chunks;
+      recorder.ondataavailable = (event) => { if (recordingSession === session && !session.cancelled && event.data?.size) session.chunks.push(event.data); };
+      recorder.onstop = () => {
+        stopRecordingTracks(stream);
+        if (recordingSession !== session || session.cancelled) return;
+        recordingSession = null;
+        if (mediaRecorder === recorder) mediaRecorder = null;
+        recordedChunks = [];
+        const currentHost = host;
+        if (currentHost !== recordingHost || recordingHost.isConnected === false || currentHost.querySelector?.("[data-hhe-app]")?.dataset?.view !== "speaking") return;
+        const liveStatus = currentHost.querySelector?.("[data-hhe-record-status]");
+        if (!session.chunks.length) {
+          if (liveStatus) liveStatus.textContent = "Không nhận được dữ liệu âm thanh. Hãy kiểm tra microphone và thử lại.";
+          const record = currentHost.querySelector?.("[data-hhe-record]"); if (record) record.disabled = false;
+          return;
+        }
+        const blob = new Blob(session.chunks, { type: recorder.mimeType || "audio/webm" });
+        revokeRecordingUrl();
+        recordingUrl = root.URL?.createObjectURL?.(blob) || "";
+        restoreRecordingPlayback();
+        if (liveStatus) liveStatus.textContent = recordingUrl ? "Đã ghi xong. Hãy nghe lại trước khi xóa hoặc thu lại." : "Trình duyệt không thể tạo bản nghe lại.";
+      };
+      recorder.onerror = (event) => {
+        const liveStatus = recordingHost.querySelector?.("[data-hhe-record-status]");
+        disposeRecordingSession();
+        if (host === recordingHost && liveStatus) liveStatus.textContent = `Không thể ghi âm: ${event?.error?.message || event?.error || "lỗi MediaRecorder"}`;
+      };
+      recorder.start();
+      const record = recordingHost.querySelector?.("[data-hhe-record]");
+      const stop = recordingHost.querySelector?.("[data-hhe-stop]");
+      if (record) record.disabled = true;
+      if (stop) stop.disabled = false;
+      status.textContent = "Đang ghi…";
+      return true;
+    } catch (error) {
+      if (requestId === recordingRequestId && host === recordingHost && recordingHost.isConnected !== false) status.textContent = error.name === "NotAllowedError" ? "Bạn chưa cho phép dùng micro." : `Không thể ghi âm: ${error.message}`;
+      return false;
+    }
   };
 
   const handleChange = async (event) => {
@@ -1850,8 +2105,8 @@
     hydrateFromServer();
   };
   const handleVoicesChanged = () => { if (host?.querySelector(".hhe-voice-studio")) render(); };
-  const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.document?.removeEventListener("visibilitychange", handleVisibility); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); root.HHEnglishLearningGalaxy?.unmount?.(host); root.HHEnglishVocabulary?.unmount?.(host); root.HHEnglishForEveryone?.unmount?.(host); if (focusTimer) clearInterval(focusTimer); if (syncTimer) root.clearTimeout?.(syncTimer); focusTimer = null; syncTimer = null; navigatorOpen = false; if (mediaRecorder?.state === "recording") mediaRecorder.stop(); host = null; };
+  const unmount = () => { root.document?.removeEventListener("keydown", handleKeydown); root.document?.removeEventListener("visibilitychange", handleVisibility); root.speechSynthesis?.removeEventListener?.("voiceschanged", handleVoicesChanged); root.speechSynthesis?.cancel?.(); cancelActiveRecognition(); disposeRecordingSession({ revokeUrl: true }); root.HHEnglishLearningOS?.unbind?.(host); root.HHEnglishLearningGalaxy?.unmount?.(host); root.HHEnglishVocabulary?.unmount?.(host); root.HHEnglishForEveryone?.unmount?.(host); if (focusTimer) clearInterval(focusTimer); if (syncTimer) root.clearTimeout?.(syncTimer); focusTimer = null; syncTimer = null; navigatorOpen = false; mediaRecorder = null; recordedChunks = []; host = null; };
 
-  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit, galaxyData, todayKey, previousDayKey, currentLearningScope, scopedStorageKey, syncStateToServer };
-  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit, galaxyData };
+  root.HHEnglish = { mount, unmount, courses, courseLevels, careerCategories, careerTracks, voiceProfiles, learningJourney, journeyStageForView, grammarMapForLevel, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit, galaxyData, todayKey, previousDayKey, currentLearningScope, scopedStorageKey, syncStateToServer };
+  if (typeof module !== "undefined" && module.exports) module.exports = { courses, courseLevels, careerCategories, careerTracks, placementQuestions, voiceProfiles, learningJourney, journeyStageForView, grammarMapForLevel, inferVoiceGender, selectVoice, compareTranscript, buildPhonemeFeedback, speechAdapterStatus, buildRoleplayBrief, evaluateRoleplayReply, scheduleReview, scoreAnswers, levelFromScore, normalize, buildSmartPlan, beginnerChecklist, selectCareerVocabulary, personalizeCareerLesson, skillForUnit, galaxyData };
 })();

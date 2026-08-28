@@ -2,7 +2,7 @@
   "use strict";
 
   const root = typeof window !== "undefined" ? window : globalThis;
-  const VERSION = "1.1.0";
+  const VERSION = "1.2.0";
   const MANIFEST_URL = "assets/english-vocabulary/manifest.json";
   const WORKER_URL = "english-vocabulary-worker.js?v=1";
   const DB_NAME = "hhEnglishVocabularyV1";
@@ -64,8 +64,40 @@
     contentRating: boundedString(item.contentRating, 20) || "everyone", reviewStatus: boundedString(item.reviewStatus, 20) || (item.meaning ? "reviewed" : "unreviewed"),
     reviewed: Boolean(item.meaning), verification: item.meaning ? "reviewed" : "term-index"
   });
+  const termProgressKey = (term) => `term:${normalizeTerm(term)}`;
+  const normalizeTermProgress = (row = {}) => {
+    const attempts = Math.round(clamp(row.attempts, 0, 100));
+    const errors = Math.round(clamp(row.errors, 0, attempts));
+    return { attempts, errors, correct: Math.round(clamp(row.correct, 0, Math.max(0, attempts - errors))) };
+  };
+  const termProgressFor = (lesson = {}, term = "") => normalizeTermProgress(lesson.termStats?.[termProgressKey(term)] || {});
+  const recordTermAttempt = (lesson = {}, term = "", correct = false) => {
+    if (!normalizeTerm(term)) return normalizeTermProgress();
+    lesson.termStats = lesson.termStats && typeof lesson.termStats === "object" ? lesson.termStats : {};
+    const key = termProgressKey(term);
+    const row = termProgressFor(lesson, term);
+    row.attempts += 1;
+    if (correct) row.correct += 1;
+    else row.errors += 1;
+    lesson.termStats[key] = row;
+    lesson.errors = Object.values(lesson.termStats).reduce((sum, item) => sum + normalizeTermProgress(item).errors, 0);
+    return row;
+  };
+  const ratingForTerm = (row = {}) => {
+    const progress = normalizeTermProgress(row);
+    if (!progress.attempts) return "again";
+    if (progress.errors >= 2 || (progress.attempts > 0 && progress.correct === 0)) return "again";
+    if (progress.errors === 1) return "hard";
+    return "good";
+  };
   const normalizeStudio = (state = {}) => {
     const source = state.vocabularyStudio || {};
+    const sourceLesson = source.lesson && typeof source.lesson === "object" ? source.lesson : null;
+    const lesson = sourceLesson ? {
+      ...sourceLesson,
+      termStats: Object.fromEntries(Object.entries(sourceLesson.termStats || {}).slice(0, 30).map(([key, value]) => [boundedString(key, 90), normalizeTermProgress(value)]).filter(([key]) => key.startsWith("term:") && key.length > 5))
+    } : null;
+    if (lesson) lesson.errors = Object.values(lesson.termStats).reduce((sum, item) => sum + item.errors, 0);
     state.vocabularyStudio = {
       activeTab: ["explorer", "lesson", "labs", "personal"].includes(source.activeTab) ? source.activeTab : "explorer",
       selectedTerm: boundedString(source.selectedTerm, 80),
@@ -73,7 +105,7 @@
       dailyGoal: clamp(source.dailyGoal || 10, 3, 30),
       deckLimit: clamp(source.deckLimit || 2000, 100, 2000),
       lessonSource: ["adaptive", "deck", "due"].includes(source.lessonSource) ? source.lessonSource : "adaptive",
-      lesson: source.lesson && typeof source.lesson === "object" ? source.lesson : null,
+      lesson,
       notes: Object.fromEntries(Object.entries(source.notes || {}).slice(0, 500).map(([key, value]) => [boundedString(key, 80), boundedString(value, 2000)])),
       personalDictionary: Array.isArray(source.personalDictionary) ? source.personalDictionary.slice(0, 1000).map(reviewedEntry).filter((item) => item.term) : [],
       lastCoverage: source.lastCoverage && typeof source.lastCoverage === "object" ? source.lastCoverage : null,
@@ -96,14 +128,16 @@
     const saved = Object.values(state.savedWords || {});
     const today = localDayKey(now);
     const addedToday = saved.filter((item) => item?.savedAt && localDayKey(item.savedAt) === today).length;
-    const due = saved.filter((item) => isDue(state, item.word || item.term, now)).length;
+    const due = Object.keys(state.reviewQueue || {}).filter((term) => isDue(state, term, now)).length;
     return { dailyGoal: studio.dailyGoal, deckLimit: studio.deckLimit, saved: saved.length, addedToday, due, remaining: Math.max(0, studio.dailyGoal - addedToday), atCapacity: saved.length >= studio.deckLimit };
   };
   const lessonPool = (words = [], state = {}, source = "adaptive") => {
     const normalizedSource = ["adaptive", "deck", "due"].includes(source) ? source : "adaptive";
     if (normalizedSource === "adaptive") return words;
-    const savedTerms = new Set(Object.values(state.savedWords || {}).filter((item) => normalizedSource !== "due" || isDue(state, item.word || item.term)).map((item) => normalizeTerm(item.word || item.term)).filter(Boolean));
-    return words.filter((item) => savedTerms.has(normalizeTerm(item.term || item.word)));
+    const selectedTerms = normalizedSource === "due"
+      ? new Set(Object.keys(state.reviewQueue || {}).filter((term) => isDue(state, term)).map(normalizeTerm).filter(Boolean))
+      : new Set(Object.values(state.savedWords || {}).map((item) => normalizeTerm(item.word || item.term)).filter(Boolean));
+    return words.filter((item) => selectedTerms.has(normalizeTerm(item.term || item.word)));
   };
   const buildLesson = (words = [], state = {}, requested = 15) => {
     const adaptiveCount = Number(root.HHEnglishForEveryone?.lessonPolicy?.(state)?.wordCount);
@@ -115,7 +149,7 @@
     pool.sort((a, b) => Number(dueTerms.has(normalizeTerm(b.term))) - Number(dueTerms.has(normalizeTerm(a.term))) || Number(mistakes.has(normalizeTerm(b.term))) - Number(mistakes.has(normalizeTerm(a.term))) || masteryFor(state, a.term) - masteryFor(state, b.term));
     const selected = pool.slice(0, count);
     return {
-      id: `vocab-${Date.now()}`, createdAt: new Date().toISOString(), completedAt: "", current: 0, step: 0, errors: 0,
+      id: `vocab-${Date.now()}`, createdAt: new Date().toISOString(), completedAt: "", current: 0, step: 0, errors: 0, termStats: {},
       words: selected.map((item) => ({ term: item.term, meaning: item.meaning, ipaUS: item.ipaUS, ipaUK: item.ipaUK, example: item.example, vnExample: item.vnExample, level: item.level, pos: item.pos, collocations: item.collocations }))
     };
   };
@@ -375,12 +409,52 @@
   const writeAndRefresh = (instance, state) => { instance.runtime.writeState(state); renderActive(instance); };
   const advanceLesson = (instance, state, error = false) => {
     const lesson = normalizeStudio(state).lesson; if (!lesson) return;
-    if (error) { lesson.errors = (Number(lesson.errors) || 0) + 1; return; }
+    const currentWord = lesson.words?.[Math.min((lesson.words?.length || 1) - 1, Number(lesson.current) || 0)];
+    if (error === true) { recordTermAttempt(lesson, currentWord?.term, false); return; }
+    if (error === "correct") recordTermAttempt(lesson, currentWord?.term, true);
     if (lesson.step < lessonSteps.length - 1) lesson.step += 1;
     else if (lesson.current < lesson.words.length - 1) { lesson.current += 1; lesson.step = 0; }
     else {
       lesson.completedAt = new Date().toISOString();
-      lesson.words.forEach((word) => { state.wordMastery[word.term] = { ...(state.wordMastery[word.term] || {}), score: Math.max(70, masteryFor(state, word.term)), lastSeenAt: lesson.completedAt }; });
+      state.reviewQueue = state.reviewQueue && typeof state.reviewQueue === "object" ? state.reviewQueue : {};
+      state.wordMastery = state.wordMastery && typeof state.wordMastery === "object" ? state.wordMastery : {};
+      lesson.words.forEach((word) => {
+        const progress = termProgressFor(lesson, word.term);
+        const rating = ratingForTerm(progress);
+        const reviewSeed = state.reviewQueue[word.term] || { type: "word", dueAt: lesson.completedAt, repetitions: 0, interval: 0, easeFactor: 2.5, lapses: 0 };
+        state.reviewQueue[word.term] = instance.runtime.scheduleReview?.(reviewSeed, rating, Date.parse(lesson.completedAt)) || reviewSeed;
+        instance.runtime.reviewSharedCard?.(word.term, rating, new Date(lesson.completedAt));
+        const previous = state.wordMastery[word.term] || {};
+        const previousAttempts = Math.max(0, Number(previous.attempts) || 0);
+        const sessionScore = rating === "good" ? 80 : rating === "hard" ? 60 : 35;
+        const totalAttempts = previousAttempts + progress.attempts;
+        state.wordMastery[word.term] = {
+          ...previous,
+          score: totalAttempts ? Math.round(((Number(previous.score) || 0) * previousAttempts + sessionScore * progress.attempts) / totalAttempts) : Number(previous.score) || 0,
+          attempts: totalAttempts,
+          correct: Math.max(0, Number(previous.correct) || 0) + progress.correct,
+          lastRating: rating,
+          lastSeenAt: lesson.completedAt,
+          updatedAt: lesson.completedAt
+        };
+      });
+      const startedAt = Date.parse(lesson.createdAt || ""); const completedAt = Date.parse(lesson.completedAt);
+      const termProgress = lesson.words.map((word) => termProgressFor(lesson, word.term));
+      const attempts = termProgress.reduce((sum, row) => sum + row.attempts, 0);
+      const correct = termProgress.reduce((sum, row) => sum + row.correct, 0);
+      instance.runtime.recordSharedEvidence?.({
+        activityId: `vocabulary-${lesson.id}`,
+        evidenceId: `english-${lesson.id}-${lesson.completedAt}`,
+        kind: lesson.source === "due" ? "review" : "lesson",
+        skill: "vocabulary",
+        score: attempts ? correct / attempts : 0,
+        minimumScore: .6,
+        completed: true,
+        interactions: attempts,
+        durationSeconds: Number.isFinite(startedAt) && Number.isFinite(completedAt) ? Math.max(0, Math.round((completedAt - startedAt) / 1000)) : 0,
+        occurredAt: lesson.completedAt,
+        xp: Math.min(30, lesson.words.length * 2)
+      });
     }
   };
   const download = (filename, text, type) => {
@@ -413,7 +487,7 @@
     if (personalTerm) { const state = instance.runtime.readState(); const studio = normalizeStudio(state); studio.activeTab = "explorer"; studio.selectedTerm = personalTerm.dataset.hhevPersonalTerm; studio.filters.query = personalTerm.dataset.hhevPersonalTerm; instance.runtime.writeState(state); renderActive(instance); return; }
     const next = event.target.closest("[data-hhev-lesson-next]"); if (next) { const state = instance.runtime.readState(); advanceLesson(instance, state); writeAndRefresh(instance, state); return; }
     const choice = event.target.closest("[data-hhev-choice]");
-    if (choice) { const state = instance.runtime.readState(); const lesson = normalizeStudio(state).lesson; const word = lesson?.words?.[Math.min((lesson.words?.length || 1) - 1, Number(lesson.current) || 0)]; const correct = normalizeTerm(choice.dataset.hhevChoice) === normalizeTerm(word?.meaning || ""); if (!correct) { advanceLesson(instance, state, true); instance.runtime.writeState(state); const output = instance.host.querySelector("[data-hhev-feedback]"); if (output) output.textContent = "Chưa đúng. Hãy thử lại."; } else { advanceLesson(instance, state); writeAndRefresh(instance, state); } return; }
+    if (choice) { const state = instance.runtime.readState(); const lesson = normalizeStudio(state).lesson; const word = lesson?.words?.[Math.min((lesson.words?.length || 1) - 1, Number(lesson.current) || 0)]; const correct = normalizeTerm(choice.dataset.hhevChoice) === normalizeTerm(word?.meaning || ""); if (!correct) { advanceLesson(instance, state, true); instance.runtime.writeState(state); const output = instance.host.querySelector("[data-hhev-feedback]"); if (output) output.textContent = "Chưa đúng. Hãy thử lại."; } else { advanceLesson(instance, state, "correct"); writeAndRefresh(instance, state); } return; }
     const mode = event.target.closest("[data-hhev-open-mode]");
     if (mode) { const state = instance.runtime.readState(); state.galaxyMode = mode.dataset.hhevOpenMode; state.activeView = "lab"; instance.runtime.writeState(state); instance.runtime.render({ focusView: true }); return; }
     const analyze = event.target.closest("[data-hhev-coverage]");
@@ -425,7 +499,7 @@
     const form = event.target.closest("[data-hhev-type-check]"); if (!form) return;
     event.preventDefault(); const input = form.elements.answer; const state = instance.runtime.readState(); const lesson = normalizeStudio(state).lesson; const word = lesson?.words?.[Math.min((lesson.words?.length || 1) - 1, Number(lesson.current) || 0)]; const correct = normalizeTerm(input.value) === normalizeTerm(word?.term || "");
     if (!correct) { advanceLesson(instance, state, true); instance.runtime.writeState(state); const output = form.querySelector("[data-hhev-feedback]"); if (output) output.textContent = "Chưa đúng. Hãy kiểm tra chính tả và thử lại."; return; }
-    advanceLesson(instance, state); writeAndRefresh(instance, state);
+    advanceLesson(instance, state, "correct"); writeAndRefresh(instance, state);
   };
   const handleInput = (instance, event) => {
     if (event.target.matches("[data-hhev-search], [data-hhev-filter]")) {
@@ -446,21 +520,31 @@
     let instance = instances.get(runtime.host);
     if (!instance) {
       instance = { host: runtime.host, runtime, manifest: null, index: null, packs: new Map(), worker: null, pending: new Map(), requestId: 0, readyPromise: null, searchTimer: 0, noteTimer: 0, results: [] };
+      instance.handlers = {
+        click: (event) => handleClick(instance, event),
+        submit: (event) => handleSubmit(instance, event),
+        input: (event) => handleInput(instance, event),
+        change: (event) => handleChange(instance, event)
+      };
       instances.set(runtime.host, instance);
-      runtime.host.addEventListener("click", (event) => handleClick(instance, event));
-      runtime.host.addEventListener("submit", (event) => handleSubmit(instance, event));
-      runtime.host.addEventListener("input", (event) => handleInput(instance, event));
-      runtime.host.addEventListener("change", (event) => handleChange(instance, event));
+      runtime.host.addEventListener("click", instance.handlers.click);
+      runtime.host.addEventListener("submit", instance.handlers.submit);
+      runtime.host.addEventListener("input", instance.handlers.input);
+      runtime.host.addEventListener("change", instance.handlers.change);
     }
     instance.runtime = runtime;
     if (runtime.readState().activeView === "galaxy") { ensureData(instance).catch(() => {}); renderActive(instance); }
   };
   const unmount = (host) => {
     const instance = instances.get(host); if (!instance) return;
+    host.removeEventListener("click", instance.handlers.click);
+    host.removeEventListener("submit", instance.handlers.submit);
+    host.removeEventListener("input", instance.handlers.input);
+    host.removeEventListener("change", instance.handlers.change);
     clearTimeout(instance.searchTimer); clearTimeout(instance.noteTimer); instance.worker?.terminate?.(); instance.pending.clear(); instances.delete(host);
   };
 
-  const api = { VERSION, MANIFEST_URL, lessonSteps, labModes, normalizeTerm, normalizeStudio, localDayKey, deckPolicy, lessonPool, searchTerms, reviewedEntry, buildLesson, buildDeckLesson, coverageReport, parseImport, exportRows, renderShell, mount, unmount };
+  const api = { VERSION, MANIFEST_URL, lessonSteps, labModes, normalizeTerm, normalizeStudio, localDayKey, deckPolicy, lessonPool, termProgressFor, recordTermAttempt, ratingForTerm, searchTerms, reviewedEntry, buildLesson, buildDeckLesson, coverageReport, parseImport, exportRows, renderShell, mount, unmount };
   root.HHEnglishVocabulary = Object.freeze(api);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

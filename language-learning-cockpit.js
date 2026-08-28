@@ -8,7 +8,7 @@
    * transition state.  Keeping it outside each engine's host means a redraw
    * of a lesson cannot erase the rail or the learner's focus.
    */
-  const VERSION = 1;
+  const VERSION = 2;
   const DESCRIPTORS = Object.freeze([
     Object.freeze({
       id: "english",
@@ -16,14 +16,14 @@
       native: "English",
       icon: "E",
       accent: "#59e7ff",
-      secondary: "#a673ff",
-      description: "Từ PRE-A1 đến C2, giao tiếp, nghề nghiệp và luyện 16 kỹ năng.",
+      secondary: "#e7b84d",
+      description: "Từ PRE-A1 đến C2, giao tiếp, nghề nghiệp và luyện nghe–nói–đọc–viết.",
       corpus: "CEFR A0–C2",
       next: "japanese",
       previous: "chinese",
       actions: Object.freeze([
         ["/english", "⌂", "Hôm nay", "Nhiệm vụ tiếp theo và tiến độ"],
-        ["/english/galaxy", "✦", "Vũ trụ từ vựng", "Từ theo cấp và chủ đề"],
+        ["/english/galaxy", "Aa", "Kho từ vựng", "Từ theo cấp và chủ đề"],
         ["/english/lab", "⌘", "Practice Lab", "Nghe, nói, gõ và phản xạ"],
         ["/english/career", "◈", "Career English", "Học theo nghề nghiệp"]
       ])
@@ -33,8 +33,8 @@
       label: "HH Japanese",
       native: "日本語",
       icon: "日",
-      accent: "#ff6b86",
-      secondary: "#ffca69",
+      accent: "#b5322f",
+      secondary: "#d8ad55",
       description: "JLPT, JF, hội thoại đời sống, Kanji, trợ từ và shadowing.",
       corpus: "42.301 từ · 30.000 câu",
       next: "chinese",
@@ -51,8 +51,8 @@
       label: "HH Chinese",
       native: "中文",
       icon: "中",
-      accent: "#ffd166",
-      secondary: "#ff6f9f",
+      accent: "#c23b32",
+      secondary: "#d5a43a",
       description: "Từ số 0 đến HSK 9: Pinyin, Hán tự, SRS, đọc–nghe–nói.",
       corpus: "50.000 mục tra cứu · HSK 1–9",
       next: "english",
@@ -61,7 +61,7 @@
         ["/chinese", "⌂", "Hôm nay", "Lộ trình và nhiệm vụ 15 phút"],
         ["/chinese/pinyin", "声", "Pinyin & Tone", "Thanh điệu và luyện nói"],
         ["/chinese/vocabulary", "词", "Bộ học cá nhân", "SRS, thẻ khó và từ mới"],
-        ["/chinese/reading-nebula", "阅", "Reading Nebula", "Đọc, tóm tắt và dịch"]
+        ["/chinese/reading-nebula", "阅", "Smart Reader", "Đọc, tóm tắt và dịch"]
       ])
     })
   ]);
@@ -125,7 +125,7 @@
     host.setAttribute("aria-label", `${descriptor.label} · Language Learning Cockpit`);
     const next = byId.get(descriptor.next);
     const previous = byId.get(descriptor.previous);
-    host.innerHTML = `<div class="hh-language-cockpit__backdrop" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></div><header class="hh-language-cockpit__header"><div class="hh-language-cockpit__identity"><span class="hh-language-cockpit__planet" aria-hidden="true">${esc(descriptor.icon)}</span><div><small>HH LANGUAGE CONSTELLATION · ${esc(descriptor.native)}</small><h2>${esc(descriptor.label)}</h2><p>${esc(descriptor.description)}</p></div></div><div class="hh-language-cockpit__journey"><button type="button" data-language-route="/${previous.id}" aria-label="Mở ${esc(previous.label)}">‹ ${esc(previous.label)}</button><div class="hh-language-cockpit__dots" aria-label="Chọn trung tâm ngôn ngữ">${DESCRIPTORS.map((item) => `<i class="${item.id === descriptor.id ? "is-active" : ""}" style="--dot:${item.accent}" title="${esc(item.label)}"></i>`).join("")}</div><button type="button" class="is-next" data-language-route="/${next.id}">${esc(next.label)} ›</button></div></header><div class="hh-language-cockpit__body"><div class="hh-language-cockpit__actions"><div class="hh-language-cockpit__section-label"><span>HÀNH LANG HỌC TẬP</span><small>Chọn một phòng · chuyển cảnh tức thì</small></div><div class="hh-language-cockpit__action-grid">${actionMarkup(descriptor, route)}</div></div><aside class="hh-language-cockpit__orbit"><span class="hh-language-cockpit__section-label"><span>ORBIT MAP</span><small>Ba trung tâm · một hành trình</small></span><div class="hh-language-cockpit__nodes">${DESCRIPTORS.map((item) => nodeMarkup(item, descriptor)).join("")}</div>${progressMarkup(descriptor)}</aside></div><footer class="hh-language-cockpit__footer"><span class="hh-language-cockpit__status" role="status" aria-live="polite"><i></i><b>Đã sẵn sàng</b><small>Tiến độ được lưu riêng trên thiết bị của bạn</small></span><button type="button" class="hh-language-cockpit__continue" data-language-route="/${next.id}"><span>Chuyến tiếp theo</span><b>${esc(next.label)} <strong>→</strong></b></button></footer>`;
+    host.innerHTML = `<div class="hh-language-cockpit__backdrop" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></div><header class="hh-language-cockpit__header"><div class="hh-language-cockpit__identity"><span class="hh-language-cockpit__planet" aria-hidden="true">${esc(descriptor.icon)}</span><div><small>HH LANGUAGE LEARNING · ${esc(descriptor.native)}</small><h2>${esc(descriptor.label)}</h2><p>${esc(descriptor.description)}</p></div></div><div class="hh-language-cockpit__journey"><button type="button" data-language-route="/${previous.id}" aria-label="Mở ${esc(previous.label)}">‹ ${esc(previous.label)}</button><div class="hh-language-cockpit__dots" aria-label="Chọn trung tâm ngôn ngữ">${DESCRIPTORS.map((item) => `<i class="${item.id === descriptor.id ? "is-active" : ""}" style="--dot:${item.accent}" title="${esc(item.label)}"></i>`).join("")}</div><button type="button" class="is-next" data-language-route="/${next.id}">${esc(next.label)} ›</button></div></header><div class="hh-language-cockpit__body"><div class="hh-language-cockpit__actions"><div class="hh-language-cockpit__section-label"><span>LỘ TRÌNH HỌC TẬP</span><small>Chọn đúng kỹ năng cần luyện</small></div><div class="hh-language-cockpit__action-grid">${actionMarkup(descriptor, route)}</div></div><aside class="hh-language-cockpit__orbit"><span class="hh-language-cockpit__section-label"><span>TRUNG TÂM NGÔN NGỮ</span><small>Ba hồ sơ tiến độ tách biệt</small></span><div class="hh-language-cockpit__nodes">${DESCRIPTORS.map((item) => nodeMarkup(item, descriptor)).join("")}</div>${progressMarkup(descriptor)}</aside></div><footer class="hh-language-cockpit__footer"><span class="hh-language-cockpit__status" role="status" aria-live="polite"><i></i><b>Đã sẵn sàng</b><small>Tiến độ được lưu riêng trên thiết bị của bạn</small></span><button type="button" class="hh-language-cockpit__continue" data-language-route="/${next.id}"><span>Trung tâm tiếp theo</span><b>${esc(next.label)} <strong>→</strong></b></button></footer>`;
     return host;
   };
   const navigate = (route) => {
