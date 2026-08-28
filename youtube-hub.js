@@ -12,6 +12,7 @@
   ]);
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
   const core = () => scope.HHSearchPlatform;
+  const playback = () => scope.HHYouTubePlaybackCore;
 
   function topbarMarkup(state) {
     return `<header class="yh-topbar">
@@ -131,8 +132,12 @@
     }
     const currentId = session.state.current?.id || "";
     if (playerSlot.dataset.videoId !== currentId) {
+      const previousFrame = playerSlot.querySelector("[data-yh-player-frame]");
+      if (previousFrame) playback()?.destroy?.(previousFrame);
       playerSlot.dataset.videoId = currentId;
       playerSlot.innerHTML = playerMarkup(session.state.current);
+      const nextFrame = playerSlot.querySelector("[data-yh-player-frame]");
+      if (nextFrame && currentId) playback()?.attach?.(nextFrame, currentId);
     }
     content.innerHTML = mainMarkup(session.state);
     node.scrollTop = scroll;
@@ -165,17 +170,24 @@
   function playVideo(video, { render = true } = {}) {
     const safeVideo = core().normalizeVideo(video);
     if (!safeVideo) return;
+    const sameVideo = session.state.current?.id === safeVideo.id && session.host.querySelector("[data-yh-player-frame]");
     session.state.current = safeVideo;
     core().rememberVideo(safeVideo);
     if (session.state.view === "home") session.state.view = "results";
+    if (sameVideo) {
+      playerCommand("playVideo");
+      renderQueue();
+      return;
+    }
     if (render) renderMain();
     renderQueue();
-    setTimeout(()=>playerCommand("setPlaybackRate",[core().preferences().playerRate]),600);
+    playerCommand("setPlaybackRate",[core().preferences().playerRate]);
   }
 
   function playerCommand(func, args = []) {
     const frame = session?.host.querySelector("[data-yh-player-frame]");
     if (!frame?.contentWindow || !session.state.current) return;
+    if (playback()?.command?.(frame, func, args)) return;
     frame.contentWindow.postMessage(JSON.stringify({ event:"command", func, args }),"https://www.youtube-nocookie.com");
   }
 
@@ -351,7 +363,7 @@
   function isMounted(host){return Boolean(session&&(!host||session.host===host)&&session.host.querySelector?.("[data-youtube-hub]"));}
   function ensureMounted(host){return isMounted(host)||mount(host);}
 
-  function unmount(){if(!session)return;clearTimeout(session.toastTimer);if(session.pipWindow&&!session.pipWindow.closed)session.pipWindow.close();session.host.removeEventListener("click",session.onClick);session.host.removeEventListener("submit",session.onSubmit);session.host.removeEventListener("change",session.onChange);session.host.removeEventListener("dragstart",session.onDragStart);session.host.removeEventListener("dragover",session.onDragOver);session.host.removeEventListener("drop",session.onDrop);scope.removeEventListener("message",session.onMessage);scope.removeEventListener("hh:search-pending",session.onPending);session=null;}
+  function unmount(){if(!session)return;clearTimeout(session.toastTimer);if(session.pipWindow&&!session.pipWindow.closed)session.pipWindow.close();playback()?.destroy?.(session.host.querySelector("[data-yh-player-frame]"));session.host.removeEventListener("click",session.onClick);session.host.removeEventListener("submit",session.onSubmit);session.host.removeEventListener("change",session.onChange);session.host.removeEventListener("dragstart",session.onDragStart);session.host.removeEventListener("dragover",session.onDragOver);session.host.removeEventListener("drop",session.onDrop);scope.removeEventListener("message",session.onMessage);scope.removeEventListener("hh:search-pending",session.onPending);session=null;}
 
-  return Object.freeze({version:"1.1.0",mount,unmount,focus,runSearch,isMounted,ensureMounted});
+  return Object.freeze({version:"1.2.0",mount,unmount,focus,runSearch,isMounted,ensureMounted});
 });

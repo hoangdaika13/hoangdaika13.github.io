@@ -81,7 +81,7 @@ test("Google search falls back to the official free Search Element", () => {
 test("Versioned assets are available offline", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  for (const asset of ["communication-overview.css?v=1", "communication-overview.js?v=3", "search-platform-core.js?v=3", "search-quick-overlay.css?v=1", "search-quick-overlay.js?v=1", "google-hub.css?v=4", "google-hub.js?v=1", "google-hub-pro.css?v=3", "google-hub-pro.js?v=3", "youtube-hub.css?v=5", "youtube-hub.js?v=3", "youtube-hub-pro.css?v=4", "youtube-hub-pro.js?v=7"]) {
+  for (const asset of ["communication-overview.css?v=1", "communication-overview.js?v=3", "search-platform-core.js?v=3", "search-quick-overlay.css?v=1", "search-quick-overlay.js?v=1", "google-hub.css?v=4", "google-hub.js?v=1", "google-hub-pro.css?v=3", "google-hub-pro.js?v=3", "youtube-hub.css?v=5", "youtube-playback-core.js?v=1", "youtube-hub.js?v=4", "youtube-hub-pro.css?v=4", "youtube-hub-pro.js?v=8"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }
