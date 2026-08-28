@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v925";
+const CACHE = "hh-identity-portal-v926";
+// Compatibility marker for the immediately preceding release: hh-identity-portal-v925.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v916.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v914.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v913.
@@ -74,7 +75,7 @@ const RUNTIME_ASSETS = [
   "./video-editor-studio.css?v=4",
   "./video-batch-factory.css?v=4",
   "./comic-motion-studio.css?v=7",
-  "./comic-reader-hub.css?v=14",
+  "./comic-reader-hub.css?v=15",
   "./cinema-hub.css?v=5",
   "./open-music-hub.css?v=5",
   "./open-media-governance.css?v=1",
@@ -167,7 +168,7 @@ const RUNTIME_ASSETS = [
   "./services/comicLibraryBridge.js?v=1",
   "./comic-motion-studio.js?v=11",
   "./comic-open-source-catalog.js?v=2",
-  "./comic-reader-hub.js?v=20",
+  "./comic-reader-hub.js?v=21",
   "./utils/open-media-rights.js?v=4",
   "./cinema-hub.js?v=6",
   "./open-music-hub.js?v=4",
@@ -203,7 +204,7 @@ const RUNTIME_ASSETS = [
   "./music-composer-lyrics.js?v=1",
   "./music-audio-labs.js?v=1",
   "./music-mix-master.js?v=1",
-  "./music-visual-studio.js?v=2",
+  "./music-visual-studio.js?v=3",
   "./music-publishing-rights.js?v=1",
   "./music-intelligence-engine.js?v=1",
   "./music-generative-arrangement.js?v=1",
@@ -264,7 +265,8 @@ const RUNTIME_ASSETS = [
   "./assets/brand/pwa-maskable-512.png?v=1",
   "./assets/brand/hh-galaxy-star-share.png?v=1",
   "./manifest.webmanifest?v=3",
-  "./auth-platform.js?v=18",
+  "./realtime-core.js?v=1",
+  "./auth-platform.js?v=19",
   "./auth-experience.js?v=9",
   "./auth-neon-gateway.js?v=29",
   "./auth-h-galaxy.js?v=14",
@@ -320,7 +322,7 @@ const RUNTIME_ASSETS = [
   "./work-center.js?v=5",
   "./download-center-pro.css?v=1",
   "./team-collaboration-pro.css?v=2",
-  "./team-collaboration-pro.js?v=2",
+  "./team-collaboration-pro.js?v=3",
   "./creative-suite.css?v=6",
   "./ai-center-pro.css?v=1",
   "./ai-center-advanced.css?v=1",
@@ -400,7 +402,7 @@ const RUNTIME_ASSETS = [
   "./creative-production-lab.css?v=1",
   "./creative-production-lab.js?v=1",
   "./creative-collaboration-os.css?v=1",
-  "./creative-collaboration-os.js?v=1",
+  "./creative-collaboration-os.js?v=2",
   "./creative-publishing.css?v=1",
   "./creative-publishing.js?v=1",
   "./creative-marketplace.css?v=1",
@@ -495,7 +497,7 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v3.js?v=2",
   "./japanese-os-v4.js?v=12",
   "./hh-chinese.js?v=13",
-  "./phat-phap.js?v=17",
+  "./phat-phap.js?v=18",
   "./hh-play.js?v=7&build=4",
   "./hh-eonwild-cinematic-pack.js?v=1",
   "./hh-eonwild-cinematic-pack-worker.js?v=1",
@@ -541,10 +543,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=568",
-  "./auth-platform.js?v=18",
+  "./performance-loader.js?v=569",
+  "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=249"
+  "./script.js?v=250"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

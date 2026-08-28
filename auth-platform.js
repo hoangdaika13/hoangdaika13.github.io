@@ -956,17 +956,16 @@
     };
 
     const connectSocket = async () => {
-      if (socket) socket.disconnect();
-      if (!socketUrl || !window.io) return;
-      socket = window.io(socketUrl, {
-        transports: ["websocket", "polling"],
-        withCredentials: true,
-        auth: { token: token(), anonymousId, consent: Boolean(consent?.checked), page: location.pathname, referrer: document.referrer }
+      if (!socketUrl || !window.HHRealtime) return;
+      window.HHRealtime.configure({
+        url: socketUrl,
+        auth: () => ({ token: token(), anonymousId, consent: Boolean(consent?.checked), page: location.pathname, referrer: document.referrer })
       });
-      window.HHRealtimeSocket = socket;
-      socket.on("connect", () => window.dispatchEvent(new CustomEvent("hh:realtime-ready", { detail: { socket } })));
-      socket.on("disconnect", () => window.dispatchEvent(new CustomEvent("hh:realtime-offline")));
-      socket.on("site:stats", (stats) => { if (online) online.textContent = `${Number(stats.online || 0)} đang online`; });
+      socket = await window.HHRealtime.connect();
+      window.HHRealtime.unsubscribeScope("auth-platform");
+      window.HHRealtime.subscribe("auth-platform", "site:stats", (stats) => {
+        if (online) online.textContent = `${Number(stats.online || 0)} đang online`;
+      });
     };
 
     const approveQrFromUrl = async () => {
@@ -1103,7 +1102,9 @@
       sessionStorage.removeItem(GUEST_KEY);
       sessionStorage.removeItem("hh.auth.guest-user");
       localStorage.removeItem("hh-auth-user");
-      if (socket) socket.disconnect();
+      window.HHRealtime?.unsubscribeScope?.("auth-platform");
+      window.HHRealtime?.disconnect?.({ clear: true });
+      socket = null;
       gate.classList.remove("auth-success", "is-auth-success", "is-gateway-opening");
       setStatus("Đã đăng xuất an toàn.", "info");
       setGateState();
@@ -1114,7 +1115,10 @@
     };
     logoutButton?.addEventListener("click", handleLogout);
     window.addEventListener("hh:logout-request", handleLogout);
-    consent?.addEventListener("change", () => localStorage.setItem("hh-tracking-consent", consent.checked ? "yes" : "no"));
+    consent?.addEventListener("change", () => {
+      localStorage.setItem("hh-tracking-consent", consent.checked ? "yes" : "no");
+      connectSocket();
+    });
 
     const params = new URLSearchParams(location.search);
     const oauthCallbackPending = params.has("authCode");

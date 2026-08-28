@@ -88,3 +88,22 @@ body.app-comic-reader-route .app-workspace:has(.cr-app){height:calc(100dvh - 106
 .cr-reader-motion-tools{display:grid;gap:6px;padding:8px;border:1px solid rgba(103,233,231,.16);border-radius:9px;background:rgba(103,233,231,.035)}.cr-reader-motion-tools>div{display:grid;grid-template-columns:1fr 1fr auto;gap:5px}.cr-reader-motion-tools input{min-width:0;height:32px;padding:0 6px;border:1px solid var(--cr-line);border-radius:7px;color:var(--cr-text);background:#07151d}
 @media(max-width:720px){.cr-motion-summary,.cr-motion-options{grid-template-columns:1fr}.cr-chapter-row>button{grid-template-columns:minmax(0,1fr) auto}.cr-chapter-row button>i{display:none}.cr-motion-actions strong{flex-basis:100%}.cr-motion-dialog{max-height:calc(100dvh - 12px)}.cr-reader-bar [data-motion-action="reader-current"]{display:none}}
 @media(prefers-reduced-motion:reduce){.cr-motion-dialog,.cr-motion-bridge *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* HH Comics Reader v15 — direct reading, balanced workspace and legible controls */
+.cr-app{font-size:14px;line-height:1.5}
+.cr-home{max-width:1680px;margin-inline:auto;padding:18px}
+.cr-home-grid{grid-template-columns:minmax(0,1fr) minmax(280px,320px);align-items:start;gap:18px}
+.cr-series-grid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:16px;padding:16px}
+.cr-series-card{border-radius:12px;outline:none}
+.cr-series-card:focus-visible{box-shadow:0 0 0 3px rgba(103,233,231,.42)}
+.cr-card-copy{gap:6px;padding:9px 2px 4px}.cr-card-copy>strong{min-height:39px;font-size:13px}.cr-card-copy p{font-size:11px}
+.cr-card-actions{display:grid!important;grid-template-columns:auto auto;justify-content:start!important;gap:6px!important}.cr-card-actions small{grid-column:1/-1;font-size:10px}.cr-card-copy .cr-card-actions>button{min-height:30px;padding:4px 8px;font-size:11px}.cr-card-copy .cr-card-detail{border-color:rgba(255,255,255,.14);color:#b8cad1;background:rgba(255,255,255,.035)}
+.cr-ranking>button{min-height:66px}.cr-ranking button strong{font-size:12px}.cr-ranking button small{font-size:10px}
+.cr-topbar nav button,.cr-sidebar>button,.cr-sidebar footer button{font-size:12px}.cr-sidebar>strong,.cr-sidebar footer small{font-size:10px}
+.cr-catalog-section>header small,.cr-pagination span,.cr-pagination label{font-size:11px}
+.cr-series-skeleton{display:grid;gap:8px;min-width:0}.cr-series-skeleton i,.cr-series-skeleton span,.cr-series-skeleton small{display:block;border-radius:9px;background:linear-gradient(100deg,rgba(255,255,255,.035) 20%,rgba(103,233,231,.1) 42%,rgba(255,255,255,.035) 64%);background-size:260% 100%;animation:crSkeleton 1.25s ease-in-out infinite}.cr-series-skeleton i{aspect-ratio:600/850}.cr-series-skeleton span{width:92%;height:16px}.cr-series-skeleton small{width:68%;height:11px}@keyframes crSkeleton{to{background-position:-180% 0}}
+.cr-reader{grid-template-rows:minmax(56px,auto) minmax(0,1fr) 54px}.cr-reader-bar{min-height:56px;overflow-x:auto;scrollbar-width:thin}.cr-reader-bar strong{font-size:13px}.cr-reader-bar small,.cr-reader-bar select,.cr-reader-modes button{font-size:11px}.cr-reader>footer button,.cr-reader>footer span,.cr-reader>footer small{font-size:11px}.cr-reader-settings label,.cr-reader-settings p,.cr-reader-settings label button,.cr-clean-page{font-size:12px}
+.cr-importing{z-index:40}.cr-importing strong{font-size:17px}.cr-importing span{font-size:12px}
+@media(max-width:1100px){.cr-home-grid{grid-template-columns:1fr}.cr-ranking{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.cr-ranking>header{grid-column:1/-1}.cr-ranking>button{border-right:1px solid rgba(145,215,226,.08)}}
+@media(max-width:680px){.cr-home{padding:10px}.cr-series-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px}.cr-card-copy>strong{font-size:12px}.cr-card-actions small{font-size:9px}.cr-ranking{grid-template-columns:1fr}.cr-reader-bar{padding-inline:7px}.cr-reader-bar>button{flex:0 0 34px}.cr-reader>footer button{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.cr-series-skeleton i,.cr-series-skeleton span,.cr-series-skeleton small{animation:none!important}}

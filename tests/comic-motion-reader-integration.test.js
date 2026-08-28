@@ -33,7 +33,7 @@ test("Reader and Motion Studio expose the secure handoff and durable batch APIs"
   for (const name of ["openHandoff", "getBatchStatus", "pauseBatch", "resumeBatch", "retryBatch"]) {
     assert.equal(typeof window.HHComicMotionStudio[name], "function", name);
   }
-  assert.equal(window.HHComicReaderHub.version, "4.0.0");
+  assert.equal(window.HHComicReaderHub.version, "4.1.0");
   assert.equal(window.HHComicMotionStudio.version, "4.0.0");
   assert.equal(window.HHComicLibraryBridge.handoffFromLocation(), "test");
 });
@@ -61,8 +61,8 @@ test("cache loader executes the shared bridge before each consumer", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
   assert.match(loader, /services\/comicLibraryBridge\.js\?v=1["],\s*[" ]*comic-motion-studio\.js\?v=11/);
-  assert.match(loader, /services\/comicLibraryBridge\.js\?v=1["],\s*[" ]*comic-reader-hub\.js\?v=20/);
+  assert.match(loader, /services\/comicLibraryBridge\.js\?v=1["],\s*[" ]*comic-reader-hub\.js\?v=21/);
   assert.match(worker, /hh-identity-portal-v822/);
   assert.match(worker, /comic-motion-studio\.css\?v=7/);
-  assert.match(worker, /comic-reader-hub\.css\?v=14/);
+  assert.match(worker, /comic-reader-hub\.css\?v=15/);
 });

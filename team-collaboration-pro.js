@@ -2,10 +2,15 @@
   "use strict";
 
   const KEY = "hh-team-collaboration-pro";
+  const REALTIME_SCOPE = "team-collaboration-pro";
   const STATUS = Object.freeze({ backlog: "Backlog", todo: "Cần làm", doing: "Đang làm", review: "Đang duyệt", done: "Hoàn tất" });
   const STATUS_ORDER = ["todo", "doing", "review", "done"];
   const PRIORITY = Object.freeze({ low: "Thấp", normal: "Bình thường", high: "Cao", urgent: "Khẩn cấp" });
   const ROLE_RANK = Object.freeze({ viewer: 0, commenter: 1, editor: 2, owner: 3 });
+  let realtimeResourceId = "";
+  let realtimeJoinPromise = null;
+  let realtimeUnsubscribe = null;
+  let realtimeRefreshTimer = 0;
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
   const attr = (value) => esc(value).replace(/`/g, "&#96;");
   const taskId = (task) => String(task?._id || task?.id || "");
@@ -56,6 +61,64 @@
   const setStatus = (root, message, tone = "") => {
     const node = root?.querySelector("[data-tc-status]");
     if (node) { node.textContent = message; node.dataset.tone = tone; }
+  };
+  const setRealtimeStatus = (root, message, tone = "") => {
+    const node = root?.querySelector("[data-tc-realtime]");
+    if (node) { node.textContent = message; node.dataset.tone = tone; }
+  };
+  const realtime = () => window.HHRealtime;
+  const leaveRealtimeBoard = async () => {
+    const resourceId = realtimeResourceId;
+    realtimeResourceId = "";
+    if (realtimeRefreshTimer) window.clearTimeout(realtimeRefreshTimer);
+    realtimeRefreshTimer = 0;
+    if (!resourceId || !realtime()?.socket()?.connected) return;
+    await realtime().emit("workspace:resource:leave", { service: "team-board", resourceId }).catch(() => {});
+  };
+  const scheduleRealtimeHydrate = (resourceId) => {
+    if (!resourceId || resourceId !== realtimeResourceId) return;
+    if (realtimeRefreshTimer) window.clearTimeout(realtimeRefreshTimer);
+    realtimeRefreshTimer = window.setTimeout(() => {
+      realtimeRefreshTimer = 0;
+      const root = currentRoot();
+      if (root?.isConnected && read().board?.id === resourceId) hydrate(root, { realtime: true });
+    }, 220);
+  };
+  const bindRealtimeEvents = () => {
+    if (realtimeUnsubscribe || !realtime()?.subscribe) return;
+    realtimeUnsubscribe = realtime().subscribe(REALTIME_SCOPE, "workspace:resource:event", (event = {}) => {
+      if (event.service === "team-board" && event.type === "invalidate") scheduleRealtimeHydrate(String(event.resourceId || ""));
+    });
+  };
+  const ensureRealtimeBoard = async (root, resourceId) => {
+    const id = String(resourceId || "");
+    if (!root?.isConnected || !id || !realtime()?.connect) return setRealtimeStatus(root, "HTTP sync · Socket.IO chưa cấu hình", "offline");
+    if (realtimeResourceId === id && realtime()?.socket()?.connected) return setRealtimeStatus(root, "Socket.IO · Đồng bộ trực tiếp", "online");
+    if (realtimeJoinPromise) return realtimeJoinPromise;
+    realtimeJoinPromise = (async () => {
+      if (realtimeResourceId && realtimeResourceId !== id) await leaveRealtimeBoard();
+      bindRealtimeEvents();
+      const socket = await realtime().connect();
+      if (!socket?.connected) return setRealtimeStatus(root, "HTTP sync · Đang chờ kết nối lại", "offline");
+      const response = await realtime().emit("workspace:resource:join", { service: "team-board", resourceId: id });
+      if (response?.ok === false) throw new Error(response.error || "Không thể tham gia realtime workspace.");
+      realtimeResourceId = id;
+      setRealtimeStatus(root, "Socket.IO · MongoDB source · Đã xác thực", "online");
+    })().catch((error) => {
+      realtimeResourceId = "";
+      setRealtimeStatus(root, `HTTP sync · ${error.message || "Realtime chưa sẵn sàng"}`, "offline");
+    }).finally(() => { realtimeJoinPromise = null; });
+    return realtimeJoinPromise;
+  };
+  const broadcastInvalidation = async (body = {}) => {
+    const resourceId = String(body.boardId || realtimeResourceId || "");
+    if (!resourceId || resourceId !== realtimeResourceId || !realtime()?.socket()?.connected) return;
+    await realtime().emit("workspace:resource:event", {
+      service: "team-board",
+      resourceId,
+      type: "invalidate",
+      data: { action: String(body.action || "update").slice(0, 60), taskId: String(body.taskId || "").slice(0, 120) }
+    }).catch(() => {});
   };
   const taskById = (data, id) => (data.tasks || []).find((item) => taskId(item) === String(id));
   const filteredTasks = (data) => {
@@ -156,18 +219,20 @@
       <div class="tc-stats"><article><b>${data.tasks?.length || 0}</b><span>Công việc</span></article><article><b>${done}</b><span>Hoàn tất</span></article><article><b>${board?.members?.length || 0}</b><span>Thành viên</span></article><article><b>${esc(formatEstimate(estimate))}</b><span>Tổng estimate</span></article></div>
       ${board ? `<nav class="tc-workspace-nav" aria-label="Chế độ xem"><div>${[["board", "Board"], ["list", "List"], ["calendar", "Calendar"], ["timeline", "Timeline"]].map(([value, label]) => `<button type="button" data-tc-view="${value}" class="${data.view === value ? "is-active" : ""}">${label}</button>`).join("")}</div><label><span>⌕</span><input data-tc-search value="${attr(data.search || "")}" placeholder="Tìm task, assignee, label..."></label><button type="button" data-tc-export>Xuất JSON</button></nav>
         <div class="tc-layout"><aside class="tc-sidebar">${memberPanel(data)}${activityPanel(data)}<section class="tc-automation"><header><span>AUTOMATION</span><small>Server-side</small></header>${[["completeOnSubtasks", "Hoàn tất khi xong mọi subtask"], ["reopenOnSubtask", "Mở lại khi subtask chưa xong"], ["startOnAssignee", "Bắt đầu khi giao người phụ trách"]].map(([key, label]) => `<label><input type="checkbox" data-tc-automation="${key}" ${board.automations?.[key] ? "checked" : ""} ${can(board, "editor") ? "" : "disabled"}><span>${label}</span></label>`).join("")}</section></aside><main>${createPanel(data)}${data.view === "list" ? listView(data, tasks) : data.view === "calendar" ? calendarView(data, tasks) : data.view === "timeline" ? timelineView(data, tasks) : boardView(data, tasks)}</main>${inspector(data)}</div>` : `<section class="tc-onboard"><div><span>TEAM OS</span><h5>Bắt đầu workspace chung</h5><p>Tạo một board riêng có phân quyền viewer, commenter, editor và owner. Link mời không làm lộ dữ liệu trước khi người dùng đăng nhập.</p></div><label>Tên workspace<input data-tc-board-name placeholder="Ví dụ: HH Platform Sprint"></label><label>Mô tả<textarea data-tc-board-description rows="3" placeholder="Mục tiêu của nhóm..."></textarea></label><button class="primary" type="button" data-tc-create>Tạo workspace</button></section>`}
-      <footer class="tc-footer"><span data-tc-status>${board ? "Sẵn sàng cộng tác." : "Tạo workspace để bắt đầu."}</span><small>MongoDB · Permission-aware · Versioned</small></footer>
+      <footer class="tc-footer"><span data-tc-status>${board ? "Sẵn sàng cộng tác." : "Tạo workspace để bắt đầu."}</span><small data-tc-realtime>${board ? "HTTP sync · Đang kết nối Socket.IO" : "MongoDB · Permission-aware · Versioned"}</small></footer>
     </section>`;
   }
 
   const replaceTask = (data, task) => ({ ...data, tasks: (data.tasks || []).map((item) => taskId(item) === taskId(task) ? task : item) });
-  const hydrate = async (root) => {
+  const hydrate = async (root, options = {}) => {
     const local = read();
     if (!local.board?.id) return render(root, local);
     try {
       const data = await request({ query: `?boardId=${encodeURIComponent(local.board.id)}` });
       const next = { ...local, board: data.board, tasks: data.tasks || [], activity: data.activity || [] };
       save(next); render(root, next);
+      await ensureRealtimeBoard(root, next.board.id);
+      if (options.realtime) setStatus(root, "Đã nhận thay đổi realtime mới nhất.", "success");
     } catch (error) { render(root, local); setStatus(root, error.message, "error"); }
   };
   const loadHistory = async (root, id) => {
@@ -199,6 +264,8 @@
     if (data.task) local = replaceTask(local, data.task);
     if (data.deleted) local = { ...local, tasks: (local.tasks || []).filter((item) => taskId(item) !== data.taskId), selectedTaskId: "", pendingDeleteTaskId: "" };
     save(local); render(root, local); setStatus(root, options.done || "Đã lưu thay đổi.", "success");
+    await ensureRealtimeBoard(root, local.board?.id);
+    await broadcastInvalidation(body);
     if (options.refresh) await hydrate(root);
     return data;
   };
@@ -222,7 +289,7 @@
       if (event.target.matches("[data-tc-automation]")) {
         const automations = { ...(local.board.automations || {}), [event.target.dataset.tcAutomation]: event.target.checked };
         const data = await request({ method: "POST", body: { action: "update-automation", boardId: local.board.id, automations } });
-        const next = { ...read(), board: { ...read().board, automations: data.automations } }; save(next); render(root, next); setStatus(root, "Đã cập nhật automation.", "success");
+        const next = { ...read(), board: { ...read().board, automations: data.automations } }; save(next); render(root, next); setStatus(root, "Đã cập nhật automation.", "success"); await ensureRealtimeBoard(root, local.board.id); await broadcastInvalidation({ action: "update-automation", boardId: local.board.id });
       }
       if (event.target.matches("[data-tc-toggle-subtask]")) {
         await mutate(root, { action: "toggle-subtask", boardId: local.board.id, taskId: local.selectedTaskId, subtaskId: event.target.dataset.tcToggleSubtask, done: event.target.checked }, { done: "Đã cập nhật subtask.", refresh: true });
@@ -249,8 +316,9 @@
       }
       if (event.target.closest("[data-tc-add]")) {
         const assignee = selectedOption(root.querySelector("[data-tc-assignee]")); const dependency = root.querySelector("[data-tc-dependency-create]")?.value;
-        const data = await request({ method: "POST", body: { action: "create-task", boardId: board.id, title: root.querySelector("[data-tc-title]").value, description: root.querySelector("[data-tc-description]").value, assignee: assignee.name, assigneeId: assignee.id, dueDate: root.querySelector("[data-tc-due]").value, priority: root.querySelector("[data-tc-priority]").value, estimateMinutes: root.querySelector("[data-tc-estimate]").value, dependencies: dependency ? [dependency] : [] } });
-        save({ ...local, tasks: [data.task, ...(local.tasks || [])] }); render(root, read()); setStatus(root, "Đã tạo công việc.", "success"); return;
+        const body = { action: "create-task", boardId: board.id, title: root.querySelector("[data-tc-title]").value, description: root.querySelector("[data-tc-description]").value, assignee: assignee.name, assigneeId: assignee.id, dueDate: root.querySelector("[data-tc-due]").value, priority: root.querySelector("[data-tc-priority]").value, estimateMinutes: root.querySelector("[data-tc-estimate]").value, dependencies: dependency ? [dependency] : [] };
+        const data = await request({ method: "POST", body });
+        save({ ...local, tasks: [data.task, ...(local.tasks || [])] }); render(root, read()); setStatus(root, "Đã tạo công việc.", "success"); await ensureRealtimeBoard(root, board.id); await broadcastInvalidation({ ...body, taskId: taskId(data.task) }); return;
       }
       if (event.target.closest("[data-tc-export]")) { download("hh-team-workspace.json", { board: local.board, tasks: local.tasks, activity: local.activity }); return; }
       if (event.target.closest("[data-tc-close-task]")) { render(root, patchState({ selectedTaskId: "", pendingDeleteTaskId: "" })); return; }
@@ -299,7 +367,15 @@
     catch (error) { setStatus(root, error.message, "error"); }
   });
 
-  const observer = new MutationObserver(() => mount(currentRoot()));
+  window.addEventListener("hh:realtime-ready", () => {
+    const root = currentRoot(); const boardId = read().board?.id;
+    if (root?.isConnected && boardId) { realtimeResourceId = ""; ensureRealtimeBoard(root, boardId); }
+  });
+  const observer = new MutationObserver(() => {
+    const root = currentRoot();
+    if (root) mount(root);
+    else if (realtimeResourceId) leaveRealtimeBoard();
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   mount(currentRoot());
 })();

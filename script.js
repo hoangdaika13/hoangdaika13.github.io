@@ -828,61 +828,37 @@ function initRealtimeAuth() {
     localStorage.removeItem("hh-community-center");
     Object.keys(localStorage).filter((key) => key.startsWith("hh-community-center:")).forEach((key) => localStorage.removeItem(key));
     sessionStorage.removeItem("hh-auth-return-to");
-    if (socket) {
-      socket.disconnect();
-      socket = null;
-      window.HHRealtimeSocket = null;
-      window.dispatchEvent(new CustomEvent("hh:realtime-offline"));
-    }
+    window.HHRealtime?.unsubscribeScope?.("legacy-auth");
+    window.HHRealtime?.disconnect?.({ clear: true });
+    socket = null;
     renderAuth();
     location.hash = "";
   });
 
   let socket;
-  const loadSocketClient = () => new Promise((resolve, reject) => {
-    if (window.io) return resolve();
-    if (!SOCKET_URL) return reject(new Error("No realtime URL"));
-    const script = document.createElement("script");
-    script.src = `${SOCKET_URL}/socket.io/socket.io.js`;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-
   async function connectSocket() {
-    if (socket) {
-      socket.disconnect();
-      socket = null;
-      window.HHRealtimeSocket = null;
-    }
     if (!SOCKET_URL) {
       online.textContent = "0 đang online";
       return;
     }
     try {
-      await loadSocketClient();
-      socket = window.io(SOCKET_URL, {
-        transports: ["websocket", "polling"],
-        auth: {
+      if (!window.HHRealtime) throw new Error("Realtime core chưa sẵn sàng.");
+      window.HHRealtime.configure({
+        url: SOCKET_URL,
+        auth: () => ({
           token,
           anonymousId,
           consent: consent.checked,
           page: location.pathname,
           referrer: document.referrer
-        }
+        })
       });
-      window.HHRealtimeSocket = socket;
-      socket.on("connect", () => {
-        window.HHRealtimeSocket = socket;
-        window.dispatchEvent(new CustomEvent("hh:realtime-ready", { detail: { socket } }));
-      });
-      socket.on("disconnect", () => {
-        window.dispatchEvent(new CustomEvent("hh:realtime-offline"));
-      });
-      socket.on("site:stats", (stats) => {
+      socket = await window.HHRealtime.connect();
+      window.HHRealtime.unsubscribeScope("legacy-auth");
+      window.HHRealtime.subscribe("legacy-auth", "site:stats", (stats) => {
         online.textContent = `${Number(stats.online || 0)} đang online`;
       });
-      socket.emit("page:event", { type: "page:view", path: location.pathname, detail: { title: document.title } });
+      if (socket?.connected) window.HHRealtime.emit("page:event", { type: "page:view", path: location.pathname, detail: { title: document.title } }, { ack: false }).catch(() => {});
     } catch {
       note.textContent = "Không kết nối được realtime backend.";
     }

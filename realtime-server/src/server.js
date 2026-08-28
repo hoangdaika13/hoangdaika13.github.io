@@ -12,6 +12,7 @@ const { MongoClient, ObjectId } = require("mongodb");
 const { registerCommunicationV2 } = require("./communication-v2");
 const { registerRemoteSignaling } = require("./remote-signaling");
 const { registerPlayRealtime } = require("./play-realtime");
+const { registerWorkspaceRealtime } = require("./workspace-realtime");
 const { Server } = require("socket.io");
 
 const app = express();
@@ -139,7 +140,11 @@ app.use(passport.initialize());
 const io = new Server(server, {
   cors: { origin: allowedOrigins, methods: ["GET", "POST"], credentials: true },
   maxHttpBufferSize: 128 * 1024,
-  perMessageDeflate: false
+  perMessageDeflate: false,
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: false
+  }
 });
 
 let client;
@@ -806,6 +811,21 @@ registerPlayRealtime({
   maxMembers: Number(process.env.MAX_PLAY_MEMBERS || 12)
 });
 
+const workspaceRealtime = registerWorkspaceRealtime({
+  io,
+  maxRooms: Number(process.env.MAX_WORKSPACE_ROOMS || 500),
+  verifyResourceAccess: async ({ service, resourceId, user }) => {
+    if (service !== "team-board" || !user?._id || !ObjectId.isValid(resourceId)) return null;
+    const userObjectId = ObjectId.isValid(String(user._id)) ? new ObjectId(String(user._id)) : user._id;
+    const board = await (await db()).collection("teamBoards").findOne({
+      _id: new ObjectId(resourceId),
+      "members.userId": userObjectId
+    }, { projection: { members: 1 } });
+    const member = board?.members?.find((item) => String(item.userId) === String(user._id));
+    return member ? { role: cleanString(member.role || "viewer", 20) } : null;
+  }
+});
+
 app.use((error, _req, res, _next) => {
   console.error("Realtime HTTP error:", error?.message || error);
   if (res.headersSent) return;
@@ -829,6 +849,22 @@ io.on("connection", async (socket) => {
   let activeDesignRoom = "";
   let activeYouTubeWatchRoom = "";
   const activeCallIds = new Set();
+  socket.emit("realtime:hello", {
+    protocol: "hh-realtime-v1",
+    authenticated: Boolean(socket.user),
+    recovered: Boolean(socket.recovered),
+    serverTime: new Date().toISOString(),
+    capabilities: {
+      community: true,
+      communication: true,
+      calls: true,
+      graphicDesign: true,
+      play: true,
+      watchParty: true,
+      remote: true,
+      workspaces: workspaceRealtime.capabilities
+    }
+  });
   if (socket.user) {
     socket.join(`community:user:${String(socket.user._id)}`);
     socket.join("community:all");

@@ -13,8 +13,11 @@ test("the first paint only loads the shell and identity portal", () => {
   const scripts = [...executableHtml.matchAll(/<script\b[^>]*src=["'][^"']+["'][^>]*>/gi)];
 
   assert.ok(styles.length <= 20, `initial stylesheet budget exceeded: ${styles.length}`);
-  assert.ok(scripts.length <= 15, `initial script budget exceeded: ${scripts.length}`);
+  // The sixteenth deferred script is the single shared Socket.IO owner. Feature
+  // workspaces still remain route-lazy and never load separate clients.
+  assert.ok(scripts.length <= 16, `initial script budget exceeded: ${scripts.length}`);
   assert.match(executableHtml, /performance-loader\.js\?v=\d+/);
+  assert.match(executableHtml, /realtime-core\.js\?v=1[^>]*defer/);
   assert.doesNotMatch(executableHtml, /<script[^>]+(?:space-explorer|video-editor-resolve|english-learning|music-ai-studio)\.js/i);
 });
 

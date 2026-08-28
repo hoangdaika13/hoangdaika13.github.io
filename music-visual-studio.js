@@ -346,12 +346,16 @@
       this.recordChunks = [];
       this.recordUrl = "";
       this.objectListeners = [];
+      this.jamRealtime = { state: "offline", code: "", role: "", members: [], revision: 0, message: "Chưa tham gia phòng" };
+      this.realtimeDisposers = [];
+      this.realtimeParamTimer = 0;
       this.boundClick = (event) => this.onClick(event);
       this.boundInput = (event) => this.onInput(event);
       this.boundChange = (event) => this.onChange(event);
       this.boundKeydown = (event) => this.onKeydown(event);
       this.boundDragOver = (event) => this.onDragOver(event);
       this.boundDrop = (event) => this.onDrop(event);
+      this.bindRealtime();
     }
 
     persist() {
@@ -486,9 +490,13 @@
           <div class="mvs-file-actions"><button type="button" data-mvs-action="automation-export">Xuất JSON</button><label>Nhập JSON<input type="file" accept="application/json,.json" data-mvs-automation-input></label></div>
         </aside>
         <aside class="mvs-panel mvs-connector-panel">
+          <div class="mvs-panel__head"><div><p>SOCKET.IO ROOM</p><h3>Jam cùng thiết bị khác</h3></div><span class="mvs-badge ${this.jamRealtime.state === "connected" ? "is-ready" : "is-access"}">${this.jamRealtime.state === "connected" ? "Realtime" : "Ngoại tuyến"}</span></div>
+          <p>${escapeHtml(this.jamRealtime.message)}. Chỉ BPM, tông, nhạc cụ, mood, XY pad và transport được đồng bộ; audio WebAudio vẫn phát cục bộ sau khi bạn bấm.</p>
+          <div class="mvs-signal-grid"><span>Mã phòng</span><b>${escapeHtml(this.jamRealtime.code || "—")}</b><span>Vai trò</span><b>${escapeHtml(this.jamRealtime.role || "—")}</b><span>Thành viên</span><b class="is-ready">${this.jamRealtime.members.length || 0}</b></div>
+          <div class="mvs-file-actions"><button type="button" class="mvs-button mvs-button--primary" data-mvs-action="jam-room-create">Tạo phòng</button><label>Mã phòng<input maxlength="12" data-mvs-jam-room-code value="${escapeHtml(this.jamRealtime.code)}" placeholder="ABC234"></label><button type="button" class="mvs-button" data-mvs-action="jam-room-join">Tham gia</button>${this.jamRealtime.code ? '<button type="button" class="mvs-button" data-mvs-action="jam-room-leave">Rời phòng</button>' : ""}</div>
+          <hr>
           <div class="mvs-panel__head"><div><p>ADVANCED CONNECTOR</p><h3>Lyria RealTime</h3></div><span class="mvs-badge is-access">Cần quyền truy cập</span></div>
-          <p>Connector này chỉ sẵn sàng khi tài khoản Google Cloud được cấp quyền Lyria RealTime và backend HH đã cấu hình. Synth local vẫn hoạt động độc lập.</p>
-          <div class="mvs-signal-grid"><span>Streaming</span><b>Chưa kết nối</b><span>Credentials</span><b>Chỉ phía server</b><span>Fallback</span><b class="is-ready">WebAudio sẵn sàng</b></div>
+          <p>Lyria chỉ sẵn sàng khi tài khoản Google Cloud được cấp quyền và backend HH đã cấu hình. Synth local vẫn hoạt động độc lập.</p>
           <button type="button" class="mvs-button" data-mvs-action="lyria-request">Kiểm tra connector</button>
         </aside>
       </div>`;
@@ -597,7 +605,10 @@
         "refresh-providers": () => this.refreshProviders(),
         "provider-run": () => this.runProvider(),
         "jam-toggle": () => this.toggleJam(),
-        "jam-note": () => this.playSynthNote(true),
+        "jam-note": () => this.triggerJamNote(),
+        "jam-room-create": () => this.createJamRoom(),
+        "jam-room-join": () => this.joinJamRoom(),
+        "jam-room-leave": () => this.leaveJamRoom(),
         "automation-toggle": () => this.toggleAutomationCapture(),
         "automation-play": () => this.playAutomation(),
         "automation-clear": () => this.clearAutomation(),
@@ -660,6 +671,7 @@
       this.state = normalizeState(this.state);
       this.persist();
       if (group === "jam" && ["instrument", "mood"].includes(field)) this.captureAutomation(field, value);
+      if (group === "jam") this.scheduleRealtimeJamUpdate();
     }
 
     addUrl(url) {
@@ -671,6 +683,95 @@
       if (!url) return;
       try { URL.revokeObjectURL(url); } catch (_error) {}
       this.urls.delete(url);
+    }
+
+    bindRealtime() {
+      if (!globalScope.HHRealtime?.subscribe) return;
+      const scopeName = `music-jam:${uid("mount")}`;
+      this.realtimeScope = scopeName;
+      this.realtimeDisposers.push(globalScope.HHRealtime.subscribe(scopeName, "workspace:room:presence", (payload = {}) => {
+        if (payload.service !== "music-jam" || payload.code !== this.jamRealtime.code) return;
+        this.jamRealtime = { ...this.jamRealtime, state: "connected", members: Array.isArray(payload.members) ? payload.members : [], revision: Number(payload.revision || this.jamRealtime.revision || 0), message: "Presence được máy chủ xác nhận" };
+        this.refreshJamRealtimePanel();
+      }));
+      this.realtimeDisposers.push(globalScope.HHRealtime.subscribe(scopeName, "workspace:room:state", (payload = {}) => {
+        if (payload.service !== "music-jam" || payload.code !== this.jamRealtime.code) return;
+        this.applyRemoteJam(payload.state?.jam || {});
+        this.jamRealtime = { ...this.jamRealtime, revision: Number(payload.revision || this.jamRealtime.revision || 0), message: "Đã đồng bộ lại trạng thái phòng" };
+      }));
+      this.realtimeDisposers.push(globalScope.HHRealtime.subscribe(scopeName, "workspace:room:event", (payload = {}) => {
+        if (payload.service !== "music-jam" || payload.code !== this.jamRealtime.code) return;
+        if (payload.type === "param:update") this.applyRemoteJam(payload.data?.jam || {});
+        if (payload.type === "transport:set") {
+          this.jamRealtime = { ...this.jamRealtime, revision: Number(payload.revision || 0), message: payload.data?.playing ? "Chủ phòng đã bắt đầu; bấm Play để bật âm thanh trên thiết bị này" : "Chủ phòng đã dừng transport" };
+          this.refreshJamRealtimePanel();
+        }
+      }));
+    }
+
+    refreshJamRealtimePanel() {
+      const panel = this.host?.querySelector(".mvs-connector-panel");
+      if (!panel || this.view !== "realtime-jam") return;
+      const badge = panel.querySelector(".mvs-panel__head .mvs-badge");
+      if (badge) { badge.textContent = this.jamRealtime.state === "connected" ? "Realtime" : "Ngoại tuyến"; badge.classList.toggle("is-ready", this.jamRealtime.state === "connected"); badge.classList.toggle("is-access", this.jamRealtime.state !== "connected"); }
+      const paragraph = panel.querySelector(":scope > p");
+      if (paragraph) paragraph.textContent = `${this.jamRealtime.message}. Chỉ tham số được đồng bộ; audio vẫn phát cục bộ sau khi bạn bấm.`;
+      const values = panel.querySelectorAll(".mvs-signal-grid b");
+      if (values[0]) values[0].textContent = this.jamRealtime.code || "—";
+      if (values[1]) values[1].textContent = this.jamRealtime.role || "—";
+      if (values[2]) values[2].textContent = String(this.jamRealtime.members.length || 0);
+    }
+
+    applyRemoteJam(input) {
+      const remote = normalizeState({ ...this.state, jam: { ...this.state.jam, ...(input || {}) } }).jam;
+      this.state.jam = remote;
+      this.persist();
+      for (const field of ["bpm", "key", "instrument", "mood"]) {
+        const inputNode = this.host?.querySelector(`[data-mvs-field="jam.${field}"]`);
+        if (inputNode) inputNode.value = remote[field];
+      }
+      for (const [id, fields] of [["tone", ["density", "brightness"]], ["motion", ["groove", "tension"]]]) {
+        const pad = this.host?.querySelector(`[data-mvs-pad="${id}"]`);
+        const knob = pad?.querySelector("i");
+        if (knob) { knob.style.setProperty("--pad-x", `${remote[fields[0]]}%`); knob.style.setProperty("--pad-y", `${100 - remote[fields[1]]}%`); }
+        const x = this.host?.querySelector(`[data-mvs-pad-value="${id}-x"]`); const y = this.host?.querySelector(`[data-mvs-pad-value="${id}-y"]`);
+        if (x) x.textContent = Math.round(remote[fields[0]]); if (y) y.textContent = Math.round(remote[fields[1]]);
+      }
+      this.updateSynthParameters();
+    }
+
+    async createJamRoom() {
+      if (!globalScope.HHRealtime?.socket?.()?.connected) return this.toast("Đăng nhập và kết nối realtime trước khi tạo phòng.", "warning");
+      try {
+        const response = await globalScope.HHRealtime.emit("workspace:room:create", { service: "music-jam", name: "HH Realtime Music Jam", state: { jam: this.state.jam, transport: { playing: false, step: this.jamStep } } });
+        this.jamRealtime = { state: "connected", code: response.room.code, role: response.self.role, members: response.room.members || [], revision: Number(response.room.revision || 0), message: "Phòng Socket.IO đã sẵn sàng" };
+        this.unbind(); this.render(); this.toast(`Đã tạo phòng ${response.room.code}.`, "success");
+      } catch (error) { this.toast(error.message || "Không thể tạo phòng realtime.", "error"); }
+    }
+
+    async joinJamRoom() {
+      const code = String(this.host?.querySelector("[data-mvs-jam-room-code]")?.value || "").trim().toUpperCase();
+      if (!/^[A-Z0-9]{6,12}$/.test(code)) return this.toast("Mã phòng cần 6–12 ký tự.", "warning");
+      try {
+        const response = await globalScope.HHRealtime.emit("workspace:room:join", { service: "music-jam", code });
+        this.jamRealtime = { state: "connected", code, role: response.self.role, members: response.room.members || [], revision: Number(response.room.revision || 0), message: "Đã vào phòng và nhận trạng thái mới nhất" };
+        this.applyRemoteJam(response.room.state?.jam || {});
+        this.unbind(); this.render(); this.toast(`Đã tham gia phòng ${code}.`, "success");
+      } catch (error) { this.toast(error.message || "Không thể tham gia phòng.", "error"); }
+    }
+
+    async leaveJamRoom() {
+      try { await globalScope.HHRealtime?.emit?.("workspace:room:leave", { service: "music-jam" }, { timeout: 3000 }); } catch (_) { /* local cleanup still completes */ }
+      this.jamRealtime = { state: "offline", code: "", role: "", members: [], revision: 0, message: "Chưa tham gia phòng" };
+      this.unbind(); this.render(); this.toast("Đã rời phòng realtime.", "success");
+    }
+
+    scheduleRealtimeJamUpdate() {
+      if (this.jamRealtime.state !== "connected" || !this.jamRealtime.code) return;
+      clearTimeout(this.realtimeParamTimer);
+      this.realtimeParamTimer = globalScope.setTimeout(() => {
+        globalScope.HHRealtime?.emit?.("workspace:room:event", { service: "music-jam", type: "param:update", data: { jam: this.state.jam } }, { volatile: true, ack: false }).catch(() => {});
+      }, 45);
     }
 
     async loadImage(file) {
@@ -839,6 +940,7 @@
       this.captureAutomation(fields[1], this.state.jam[fields[1]]);
       this.updateSynthParameters();
       this.persist();
+      this.scheduleRealtimeJamUpdate();
     }
 
     ensureAudioContext() {
@@ -866,9 +968,17 @@
         if (context.state === "suspended") await context.resume();
         if (this.jamTimer) this.stopJam();
         else this.startJam();
+        if (this.jamRealtime.state === "connected") {
+          globalScope.HHRealtime?.emit?.("workspace:room:event", { service: "music-jam", type: "transport:set", data: { playing: Boolean(this.jamTimer), step: this.jamStep } }).catch((error) => this.toast(error.message || "Chỉ chủ phòng được đồng bộ transport.", "warning"));
+        }
       } catch (error) {
         this.toast(error.message || "Không thể khởi tạo âm thanh.", "error");
       }
+    }
+
+    triggerJamNote() {
+      this.playSynthNote(true);
+      if (this.jamRealtime.state === "connected") globalScope.HHRealtime?.emit?.("workspace:room:event", { service: "music-jam", type: "note:trigger", data: { step: this.jamStep } }, { volatile: true, ack: false }).catch(() => {});
     }
 
     startJam() {
@@ -1322,6 +1432,10 @@
 
     destroy() {
       clearTimeout(this.toastTimer);
+      clearTimeout(this.realtimeParamTimer);
+      if (this.jamRealtime.code) globalScope.HHRealtime?.emit?.("workspace:room:leave", { service: "music-jam" }, { timeout: 2000 }).catch(() => {});
+      if (this.realtimeScope) globalScope.HHRealtime?.unsubscribeScope?.(this.realtimeScope);
+      this.realtimeDisposers.splice(0).forEach((dispose) => { try { dispose(); } catch (_error) {} });
       this.cleanupRuntime(true);
       this.unbind();
       this.urls.forEach((url) => { try { URL.revokeObjectURL(url); } catch (_error) {} });

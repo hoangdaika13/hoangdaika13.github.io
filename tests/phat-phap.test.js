@@ -18,12 +18,12 @@ test("Phật Pháp is a first-class routed workspace", () => {
   assert.match(router, /app-dharma-route/);
   assert.match(loader, /dharma:\s*\{/);
   assert.match(loader, /phat-phap\.css\?v=20/);
-  assert.match(loader, /phat-phap\.js\?v=17/);
+  assert.match(loader, /phat-phap\.js\?v=18/);
   assert.match(index, /performance-loader\.js\?v=494/);
   assert.match(index, /script\.js\?v=241/);
   assert.match(sw, /hh-identity-portal-v842/);
   assert.match(sw, /phat-phap\.css\?v=20/);
-  assert.match(sw, /phat-phap\.js\?v=17/);
+  assert.match(sw, /phat-phap\.js\?v=18/);
   assert.match(sw, /assets\/phat-phap\/duc-phat-hao-quang-v1\.webp/);
 });
 
@@ -141,8 +141,8 @@ test("temple directory and private reading circles fail closed around trust and 
   const source = read("phat-phap.js");
   for (const contract of ["TEMPLE_DIRECTORY", "data-temple-province", "data-temple-tradition", "data-report-temple", "HHC1.", "data-circle-create", "data-circle-join", "data-circle-private-note", "data-circle-shared-note", "manual-local"]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(source, /không lưu số điện thoại hay tài khoản cúng dường/i);
-  assert.match(source, /Không chia sẻ nhật ký, thời lượng thiền, tiến độ bài học/i);
-  assert.match(source, /Đây chưa phải đồng bộ máy chủ/i);
+  assert.match(source, /Nhật ký, thời lượng thiền, tiến độ bài học và ghi chú riêng luôn ở thiết bị/i);
+  assert.match(source, /Socket\.IO đã kết nối|Mã phòng được xác minh bởi máy chủ/i);
   assert.match(source, /Lợi dụng tài chính/);
 });
 

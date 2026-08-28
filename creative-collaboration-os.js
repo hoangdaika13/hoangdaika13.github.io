@@ -811,9 +811,9 @@
       bindings.push([eventName, handler]);
     }
 
-    function bindSocket(nextSocket) {
+    function bindSocket(nextSocket, ownsConnection = true) {
       socket = nextSocket;
-      ownSocket = true;
+      ownSocket = ownsConnection;
       on("connect", () => {
         if (disposed) return;
         setState("realtime", "");
@@ -859,10 +859,21 @@
         }
         setState("connecting", "");
         try {
+          if (!settings.socketFactory && globalScope.HHRealtime?.connect) {
+            globalScope.HHRealtime.configure?.({ url: socketUrl });
+            const sharedSocket = await globalScope.HHRealtime.connect();
+            if (!sharedSocket) throw createError("SOCKET_UNAVAILABLE", "Không kết nối được lõi realtime dùng chung.");
+            bindSocket(sharedSocket, false);
+            return client.getState();
+          }
           const factory = settings.socketFactory || await loadSocketFactory(socketUrl);
-          const nextSocket = typeof factory === "function" ? factory(socketUrl, { transports: ["websocket", "polling"], withCredentials: true }) : factory;
+          const nextSocket = typeof factory === "function" ? factory(socketUrl, {
+            transports: ["websocket", "polling"],
+            withCredentials: true,
+            auth: { token: globalScope.HHAuthSession?.token?.() || "" }
+          }) : factory;
           if (!nextSocket || typeof nextSocket.on !== "function" || typeof nextSocket.emit !== "function") throw createError("SOCKET_UNAVAILABLE", "Socket.io client không hợp lệ.");
-          bindSocket(nextSocket);
+          bindSocket(nextSocket, true);
         } catch (connectionError) {
           setState("local", cleanText(connectionError && connectionError.message, 300) || "Không kết nối được realtime. Đang dùng cục bộ một người.");
         }

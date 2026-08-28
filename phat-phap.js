@@ -529,7 +529,7 @@
     { routeId: "glossary", path: "/phat-phap/glossary", title: "Từ điển Phật học", module: "glossaryMarkup", source: "GLOSSARY · SOURCES", permission: "public", availability: "ready", fallback: "Hiện định nghĩa HH có cảnh báo", icon: "字", group: "Tra cứu" },
     { routeId: "schedule", path: "/phat-phap/schedule", title: "Thời khóa cá nhân", module: "scheduleMarkup", source: "Lịch thiết bị · timezone local", permission: "account-local", availability: "ready", fallback: "Hiện lịch ngày hiện tại", icon: "曆", group: "Cá nhân" },
     { routeId: "profile", path: "/phat-phap/profile", title: "Hồ sơ tu học", module: "profileMarkup", source: "Tiến độ cục bộ có bằng chứng", permission: "account-local", availability: "ready", fallback: "Hiện hồ sơ khách trên thiết bị", icon: "行", group: "Cá nhân" },
-    { routeId: "circles", path: "/phat-phap/circles", title: "Nhóm đọc riêng tư", module: "circlesMarkup", source: "Mã mời thủ công cục bộ", permission: "account-local", availability: "local-only", fallback: "Không giả đồng bộ máy chủ", icon: "眾", group: "Cá nhân" },
+    { routeId: "circles", path: "/phat-phap/circles", title: "Nhóm đọc riêng tư", module: "circlesMarkup", source: "Socket.IO room · HHC1 fallback", permission: "account", availability: "ready", fallback: "Mã HHC1 cục bộ khi realtime ngoại tuyến", icon: "眾", group: "Cá nhân" },
     { routeId: "journal", path: "/phat-phap/journal", title: "Ghi chú & nhật ký", module: "journalMarkup", source: "AES-GCM cục bộ", permission: "account-local+pin", availability: "ready", fallback: "Giữ nhật ký khóa", icon: "記", group: "Cá nhân" },
     { routeId: "accessibility", path: "/phat-phap/accessibility", title: "Trợ năng", module: "accessibilityMarkup", source: "Thiết lập cục bộ", permission: "public", availability: "ready", fallback: "Theo thiết lập trình duyệt", icon: "輔", group: "Cá nhân" },
     { routeId: "data-control", path: "/phat-phap/data-control", title: "Dữ liệu tu học", module: "dataControlMarkup", source: "JSON · SHA-256 · Indexed storage", permission: "account-local", availability: "ready", fallback: "Không nhập dữ liệu lỗi checksum", icon: "庫", group: "Cá nhân" }
@@ -604,6 +604,7 @@
   let templeAccess = "all";
   let templeProgram = "all";
   let activeCircle = "";
+  let circleRealtime = { state: "offline", code: "", role: "", members: [], revision: 0, message: "Realtime chưa kết nối" };
   let glossaryReviewIndex = 0;
   let glossaryReveal = false;
   let selectedReviewKey = "";
@@ -1235,7 +1236,112 @@
     return `<section class="dharma-route-intro dharma-paper-card"><div><small>PHÁP THOẠI OBSERVATORY</small><h2>Tìm đúng người giảng, đơn vị, khóa tu và quyền phát</h2><p>HH quản lý metadata, hàng đợi, bookmark và ghi chú cục bộ. Audio/video luôn mở tại nguồn chính thức nếu chưa có quyền phát trực tiếp riêng.</p></div><span class="dharma-seal">聽</span></section><section class="dharma-talk-observatory"><aside class="dharma-talk-library"><label><span>⌕</span><input type="search" data-talk-query value="${safe(talkQuery)}" placeholder="Giảng sư, chủ đề, khóa tu…"></label><div class="dharma-talk-filters"><select data-talk-provider><option value="all">Mọi nguồn</option>${providers.map((item) => `<option value="${safe(item)}" ${talkProvider === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><select data-talk-type><option value="all">Mọi loại</option>${types.map((item) => `<option value="${safe(item)}" ${talkType === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select><select data-talk-language><option value="all">Mọi ngôn ngữ</option>${languages.map((item) => `<option value="${safe(item)}" ${talkLanguage === item ? "selected" : ""}>${safe(item)}</option>`).join("")}</select></div><div>${filtered.map((talk) => `<button type="button" data-open-talk="${talk.id}" class="${selected?.id === talk.id ? "is-active" : ""}"><i>${talk.type === "Video" ? "▷" : talk.type === "Trực tiếp" ? "●" : talk.audioAvailable ? "♫" : "讀"}</i><span><small>${safe(talk.provider)} · ${safe(talk.type)}</small><strong>${safe(talk.title)}</strong><em>${safe(talk.teacher)}</em></span><b>›</b></button>`).join("") || '<p class="dharma-empty-line">Không có hồ sơ phù hợp bộ lọc.</p>'}</div></aside><main class="dharma-talk-detail">${selected ? `<article class="dharma-paper-card"><header><span>${selected.audioAvailable ? "♫" : "聽"}</span><div><small>${safe(selected.type)} · ${safe(selected.provider)}</small><h2>${safe(selected.title)}</h2><p>${safe(selected.teacher)} · ${safe(selected.center)}</p></div></header><div class="dharma-talk-rights"><strong>${selected.audioAvailable ? "Có audio tại nguồn" : "Không có tệp phát trực tiếp trong HH"}</strong><span>${safe(selected.rights)}</span></div><dl><div><dt>Khóa tu / bộ sưu tập</dt><dd>${safe(selected.retreat)}</dd></div><div><dt>Truyền thống</dt><dd>${safe(selected.tradition)}</dd></div><div><dt>Chủ đề</dt><dd>${safe(selected.topic)}</dd></div><div><dt>Ngôn ngữ</dt><dd>${safe(selected.language)}</dd></div><div><dt>Phụ đề</dt><dd>${safe(selected.subtitles)}</dd></div></dl><p>${safe(selected.note)}</p><section class="dharma-talk-controls"><label>Tốc độ ghi nhớ<select data-talk-speed>${[.75,1,1.25,1.5,1.75,2].map((rate) => `<option value="${rate}" ${Number(state.talkSpeed) === rate ? "selected" : ""}>${rate}×</option>`).join("")}</select></label><button type="button" data-talk-queue="${selected.id}">${state.talkQueue.includes(selected.id) ? "✓ Trong hàng đợi" : "+ Thêm hàng đợi"}</button><button type="button" data-save-talk="${selected.id}">${state.savedTalks.includes(selected.id) ? "★ Đã lưu" : "☆ Yêu thích"}</button><a class="dharma-primary" href="${safe(selected.url)}" target="_blank" rel="noopener noreferrer">Mở tại nguồn ↗</a></section><section class="dharma-talk-bookmark"><form data-talk-bookmark="${selected.id}"><label>Mốc thời gian<input name="timestamp" type="text" inputmode="numeric" maxlength="12" placeholder="12:30"></label><label>Nhãn<input name="label" maxlength="100" placeholder="Đoạn cần nghe lại"></label><button type="submit">Thêm bookmark</button></form>${(state.talkBookmarks[selected.id] || []).map((mark, index) => `<p><strong>${safe(mark.timestamp)}</strong><span>${safe(mark.label || "Mốc nghe")}</span><button type="button" data-talk-remove-bookmark="${selected.id}" data-talk-bookmark-index="${index}">×</button></p>`).join("")}</section><label class="dharma-talk-note">Ghi chú cạnh pháp thoại<textarea data-talk-note="${selected.id}" maxlength="5000" placeholder="Ghi chú riêng, không gửi tới nguồn…">${safe(state.talkNotes[selected.id] || "")}</textarea></label></article>` : '<div class="dharma-empty"><span>聽</span><strong>Chọn một hồ sơ pháp thoại</strong><p>Thông tin giảng sư, trung tâm, quyền phát và nguồn sẽ hiện tại đây.</p></div>'}</main><aside class="dharma-talk-queue"><header><small>HÀNG ĐỢI CỤC BỘ</small><strong>${queue.length} mục</strong></header>${queue.map((talk, index) => `<article><i>${index + 1}</i><span><strong>${safe(talk.title)}</strong><small>${safe(talk.provider)}</small></span><button type="button" data-open-talk="${talk.id}">Mở</button><button type="button" data-talk-queue="${talk.id}" aria-label="Bỏ khỏi hàng đợi">×</button></article>`).join("") || '<p class="dharma-empty-line">Hàng đợi đang trống.</p>'}<p>HH chỉ lưu thứ tự, tốc độ và ghi chú; không tải lại audio của bên thứ ba.</p></aside></section>`;
   }
 
+  const CIRCLE_REALTIME_SERVICE = "dharma-circle";
+  const CIRCLE_ROOM_CODE = /^[A-Z0-9]{6,12}$/;
+
+  function realtimeCircleReady() {
+    return Boolean(global.HHRealtime?.socket?.()?.connected);
+  }
+
+  function circleMemberRows(members) {
+    return (Array.isArray(members) ? members : []).slice(0, 24).map((member) => ({
+      id: String(member.id || "").slice(0, 100),
+      alias: String(member.name || member.alias || "Thành viên ẩn danh").slice(0, 40),
+      role: member.role === "host" || member.role === "Chủ nhóm" ? "Chủ nhóm" : "Thành viên"
+    }));
+  }
+
+  function circleFromRealtimeRoom(room, self, alias, existing = {}) {
+    const roomState = room?.state && typeof room.state === "object" ? room.state : {};
+    const code = String(room?.code || existing.realtimeCode || "").toUpperCase();
+    const members = circleMemberRows(room?.members);
+    return {
+      ...existing,
+      id: existing.id || `realtime-${code}`,
+      title: String(roomState.title || room?.name || existing.title || "Nhóm đọc Phật Pháp").slice(0, 80),
+      scriptureId: SCRIPTURES.some((item) => item.id === roomState.scriptureId) ? roomState.scriptureId : (existing.scriptureId || SCRIPTURES[0].id),
+      discussionAt: String(roomState.discussionAt || existing.discussionAt || "").slice(0, 80),
+      role: self?.role === "host" ? "Chủ nhóm" : (existing.role || "Thành viên"),
+      members: members.length ? members : (existing.members || [{ id: accountKey, alias: alias || "Thành viên ẩn danh", role: self?.role === "host" ? "Chủ nhóm" : "Thành viên" }]),
+      sharedNotes: Array.isArray(roomState.sharedNotes) ? roomState.sharedNotes.slice(-100).map((note) => ({ id: String(note.id || `${Date.now()}`), alias: String(note.alias || "Thành viên ẩn danh").slice(0, 40), body: String(note.body || "").slice(0, 2000), createdAt: String(note.createdAt || new Date().toISOString()) })) : (existing.sharedNotes || []),
+      privacy: { ...(existing.privacy || {}), shareAlias: true },
+      createdAt: existing.createdAt || new Date().toISOString(),
+      realtimeCode: code,
+      sync: "socket.io",
+      selfMemberId: String(self?.id || existing.selfMemberId || "").slice(0, 100),
+      revision: Number(room?.revision || existing.revision || 0)
+    };
+  }
+
+  function upsertRealtimeCircle(room, self, alias = "") {
+    const code = String(room?.code || "").toUpperCase();
+    if (!code) return null;
+    const existing = state.circles.find((item) => item.realtimeCode === code);
+    const circle = circleFromRealtimeRoom(room, self, alias, existing || {});
+    state.circles = existing ? state.circles.map((item) => item.id === existing.id ? circle : item) : [...state.circles, circle];
+    circleRealtime = { state: "connected", code, role: circle.role, members: circle.members, revision: circle.revision, message: "Socket.IO đã xác nhận phòng" };
+    saveState();
+    return circle;
+  }
+
+  async function joinRealtimeCircle(code, alias = "", options = {}) {
+    if (!global.HHRealtime || !realtimeCircleReady()) throw new Error("Realtime đang ngoại tuyến. Bạn vẫn có thể dùng mã HHC1 cục bộ.");
+    circleRealtime = { ...circleRealtime, state: "connecting", code, message: "Đang xác minh phòng…" };
+    const response = await global.HHRealtime.emit("workspace:room:join", { service: CIRCLE_REALTIME_SERVICE, code, alias: String(alias || "").slice(0, 40) });
+    const circle = upsertRealtimeCircle(response.room, response.self, alias);
+    if (options.open !== false && circle) activeCircle = circle.id;
+    return circle;
+  }
+
+  async function reconnectActiveCircle() {
+    const circle = state?.circles?.find((item) => item.id === activeCircle && item.sync === "socket.io" && item.realtimeCode);
+    if (!circle || !realtimeCircleReady()) return;
+    const alias = circle.members?.find((member) => member.id === circle.selfMemberId)?.alias || "Thành viên ẩn danh";
+    try { await joinRealtimeCircle(circle.realtimeCode, alias, { open: false }); if (activeView === "circles") renderView({ preserveScroll: true }); }
+    catch (error) { circleRealtime = { ...circleRealtime, state: "offline", message: error.message || "Không thể đồng bộ phòng" }; if (activeView === "circles") renderView({ preserveScroll: true }); }
+  }
+
+  function handleCirclePresence(payload = {}) {
+    if (payload.service !== CIRCLE_REALTIME_SERVICE || !state) return;
+    const code = String(payload.code || "").toUpperCase();
+    const members = circleMemberRows(payload.members);
+    let changed = false;
+    state.circles = state.circles.map((circle) => {
+      if (circle.realtimeCode !== code) return circle;
+      changed = true;
+      return { ...circle, members, revision: Number(payload.revision || circle.revision || 0) };
+    });
+    if (!changed) return;
+    circleRealtime = { ...circleRealtime, state: "connected", code, members, revision: Number(payload.revision || 0), message: "Hiện diện được máy chủ xác nhận" };
+    saveState();
+    if (activeView === "circles") renderView({ preserveScroll: true });
+  }
+
+  function handleCircleState(payload = {}) {
+    if (payload.service !== CIRCLE_REALTIME_SERVICE || !state) return;
+    const code = String(payload.code || "").toUpperCase();
+    const existing = state.circles.find((circle) => circle.realtimeCode === code);
+    if (!existing) return;
+    const circle = circleFromRealtimeRoom({ code, state: payload.state, revision: payload.revision, members: existing.members }, null, "", existing);
+    state.circles = state.circles.map((item) => item.id === existing.id ? circle : item);
+    saveState();
+    if (activeView === "circles") renderView({ preserveScroll: true });
+  }
+
+  function handleCircleEvent(payload = {}) {
+    if (payload.service !== CIRCLE_REALTIME_SERVICE || payload.type !== "note:add" || !state) return;
+    const code = String(payload.code || "").toUpperCase();
+    const note = payload.data && typeof payload.data === "object" ? payload.data : {};
+    state.circles = state.circles.map((circle) => {
+      if (circle.realtimeCode !== code || circle.sharedNotes?.some((item) => item.id === note.id)) return circle;
+      return { ...circle, sharedNotes: [...(circle.sharedNotes || []), { id: String(note.id || `${Date.now()}`), alias: String(note.alias || payload.actor?.name || "Thành viên ẩn danh").slice(0, 40), body: String(note.body || "").slice(0, 2000), createdAt: String(note.createdAt || new Date().toISOString()) }].slice(-100), revision: Number(payload.revision || circle.revision || 0) };
+    });
+    saveState();
+    if (activeView === "circles") renderView({ preserveScroll: true });
+  }
+
   function circleInviteCode(circle) {
+    if (circle.sync === "socket.io" && CIRCLE_ROOM_CODE.test(String(circle.realtimeCode || ""))) return circle.realtimeCode;
     const owner = circle.members?.find((member) => member.role === "Chủ nhóm");
     const payload = { version: 1, kind: "hh-dharma-reading-circle", title: circle.title, scriptureId: circle.scriptureId, discussionAt: circle.discussionAt, sharedNotes: circle.sharedNotes || [], coordinator: circle.privacy?.shareAlias ? { alias: owner?.alias || "Chủ nhóm", role: "Chủ nhóm" } : null };
     return `HHC1.${bytesToBase64(new TextEncoder().encode(JSON.stringify(payload)))}`;
@@ -1251,10 +1357,19 @@
 
   function circlesMarkup() {
     const circle = state.circles.find((item) => item.id === activeCircle);
-    if (!circle) return `<section class="dharma-route-intro dharma-paper-card"><div><small>NHÓM ĐỌC KINH RIÊNG TƯ</small><h2>Học cùng nhau mà không lộ dữ liệu cá nhân</h2><p>Nhóm được lưu cục bộ và trao tay bằng mã lời mời. Đây chưa phải đồng bộ máy chủ; nhật ký, thời lượng thiền và tiến độ riêng không bao giờ được đưa vào mã.</p></div><span class="dharma-seal">眾</span></section><section class="dharma-circle-overview"><div class="dharma-circle-list">${state.circles.map((item) => `<button type="button" data-open-circle="${safe(item.id)}"><i>眾</i><span><small>${safe(item.role || "Thành viên")} · ${item.members?.length || 1} người</small><strong>${safe(item.title)}</strong><p>${safe(SCRIPTURES.find((scripture) => scripture.id === item.scriptureId)?.title || "Chưa chọn bài đọc")}</p></span><b>›</b></button>`).join("") || '<div class="dharma-empty"><span>眾</span><strong>Chưa có nhóm đọc</strong><p>Tạo nhóm mới hoặc nhập mã lời mời do người quen gửi trực tiếp.</p></div>'}</div><div class="dharma-circle-create"><article class="dharma-paper-card"><small>TẠO NHÓM CỤC BỘ</small><h2>Một bài đọc, một lịch thảo luận</h2><form data-circle-create><label>Tên nhóm<input name="title" required maxlength="80" placeholder="Ví dụ: Cùng đọc Kinh Từ Bi"></label><label>Bài đọc<select name="scripture">${SCRIPTURES.map((item) => `<option value="${item.id}">${safe(item.title)} · ${safe(item.code)}</option>`).join("")}</select></label><label>Lịch thảo luận<input name="discussionAt" type="datetime-local" required></label><label>Bí danh trong nhóm<input name="alias" maxlength="40" placeholder="Ví dụ: An Tâm"></label><button class="dharma-primary" type="submit">Tạo nhóm riêng tư</button></form></article><article class="dharma-paper-card"><small>NHẬP LỜI MỜI THỦ CÔNG</small><h2>Tham gia từ mã HHC1</h2><form data-circle-join><label>Mã lời mời<textarea name="code" required maxlength="12000" placeholder="HHC1.…"></textarea></label><label>Bí danh của bạn<input name="alias" maxlength="40" placeholder="Không bắt buộc"></label><button type="submit">Kiểm tra và nhập nhóm</button></form><p>Không dán mã từ người lạ. Mã chỉ chứa bài đọc, lịch và ghi chú chia sẻ; không thực hiện đăng nhập hay tải dữ liệu từ mạng.</p></article></div></section>`;
+    const live = realtimeCircleReady();
+    if (!circle) return `<section class="dharma-route-intro dharma-paper-card"><div><small>NHÓM ĐỌC KINH RIÊNG TƯ · ${live ? "REALTIME SẴN SÀNG" : "LOCAL FALLBACK"}</small><h2>Học cùng nhau, đồng bộ thật và giữ riêng dữ liệu cá nhân</h2><p>${live ? "Socket.IO đã kết nối. Mã phòng ngắn cho phép thành viên ở thiết bị khác cùng xem lịch và ghi chú chia sẻ theo thời gian thực." : "Realtime đang ngoại tuyến; bạn vẫn có thể tạo và trao tay bản HHC1 cục bộ."} Nhật ký, thời lượng thiền, tiến độ và ghi chú riêng không bao giờ được gửi vào phòng.</p></div><span class="dharma-seal">眾</span></section>
+      <section class="dharma-circle-overview">
+        <div class="dharma-circle-list">${state.circles.map((item) => `<button type="button" data-open-circle="${safe(item.id)}"><i>眾</i><span><small>${safe(item.role || "Thành viên")} · ${item.members?.length || 1} người · ${item.sync === "socket.io" ? "Socket.IO" : "HHC1 cục bộ"}</small><strong>${safe(item.title)}</strong><p>${safe(SCRIPTURES.find((scripture) => scripture.id === item.scriptureId)?.title || "Chưa chọn bài đọc")}</p></span><b>›</b></button>`).join("") || '<div class="dharma-empty"><span>眾</span><strong>Chưa có nhóm đọc</strong><p>Tạo phòng realtime hoặc nhập mã do người quen gửi trực tiếp.</p></div>'}</div>
+        <div class="dharma-circle-create">
+          <article class="dharma-paper-card"><small>TẠO PHÒNG ${live ? "SOCKET.IO" : "CỤC BỘ"}</small><h2>Một bài đọc, một lịch thảo luận</h2><form data-circle-create><label>Tên nhóm<input name="title" required maxlength="80" placeholder="Ví dụ: Cùng đọc Kinh Từ Bi"></label><label>Bài đọc<select name="scripture">${SCRIPTURES.map((item) => `<option value="${item.id}">${safe(item.title)} · ${safe(item.code)}</option>`).join("")}</select></label><label>Lịch thảo luận<input name="discussionAt" type="datetime-local" required></label><label>Bí danh trong nhóm<input name="alias" maxlength="40" placeholder="Ví dụ: An Tâm"></label><button class="dharma-primary" type="submit">${live ? "Tạo phòng realtime" : "Tạo nhóm cục bộ"}</button></form><p>${live ? "Máy chủ chỉ nhận trạng thái phòng và nội dung bạn chủ động chia sẻ." : "Đăng nhập và kết nối realtime để tạo mã phòng ngắn."}</p></article>
+          <article class="dharma-paper-card"><small>THAM GIA AN TOÀN</small><h2>Mã phòng hoặc bản HHC1</h2><form data-circle-join><label>Mã lời mời<textarea name="code" required maxlength="12000" placeholder="ABC234 hoặc HHC1.…"></textarea></label><label>Bí danh của bạn<input name="alias" maxlength="40" placeholder="Ví dụ: Tâm An"></label><button type="submit">Xác minh và tham gia</button></form><p>Mã phòng được xác minh bởi máy chủ; HHC1 chỉ nhập một bản sao cục bộ. Không dán mã từ người lạ.</p></article>
+        </div>
+      </section>`;
     const scripture = SCRIPTURES.find((item) => item.id === circle.scriptureId);
     const privateNote = state.circlePrivateNotes[circle.id] || "";
-    return `<button class="dharma-back" type="button" data-back-circles>← Tất cả nhóm đọc</button><section class="dharma-circle-workspace"><article class="dharma-circle-main dharma-paper-card"><header><span>眾</span><div><small>${safe(circle.role || "Thành viên")} · NHÓM LƯU CỤC BỘ</small><h2>${safe(circle.title)}</h2><p>${safe(scripture?.title || "Chưa chọn bài đọc")} · ${safe(circle.discussionAt ? formatDate(circle.discussionAt) : "Chưa có lịch")}</p></div></header><div class="dharma-circle-privacy"><strong>Riêng tư mặc định</strong><p>Không chia sẻ nhật ký, thời lượng thiền, tiến độ bài học hoặc tài khoản của bạn.</p><label class="dharma-check"><input type="checkbox" data-circle-share-alias="${safe(circle.id)}" ${circle.privacy?.shareAlias ? "checked" : ""}><span>Cho phép đưa bí danh vào mã lời mời</span></label></div><section><header><small>GHI CHÚ CHIA SẺ</small><span>${circle.sharedNotes?.length || 0} ghi chú</span></header>${(circle.sharedNotes || []).map((note) => `<article><small>${safe(note.alias || "Thành viên ẩn danh")} · ${safe(formatDate(note.createdAt))}</small><p>${safe(note.body)}</p></article>`).join("") || '<p class="dharma-empty-line">Chưa có ghi chú chia sẻ.</p>'}<form data-circle-shared-note="${safe(circle.id)}"><label>Nội dung<textarea name="body" required maxlength="2000" placeholder="Chỉ viết điều bạn đồng ý chia sẻ với nhóm…"></textarea></label><button type="submit">Thêm ghi chú chia sẻ</button></form></section><section><header><small>GHI CHÚ RIÊNG</small><span>Chỉ trên thiết bị</span></header><label class="dharma-note"><textarea data-circle-private-note="${safe(circle.id)}" maxlength="3000" placeholder="Không đi vào mã lời mời…">${safe(privateNote)}</textarea></label></section></article><aside class="dharma-circle-side"><article class="dharma-paper-card"><small>THÀNH VIÊN & VAI TRÒ</small><h3>${circle.members?.length || 1} thành viên cục bộ</h3>${(circle.members || []).map((member) => `<p><span><strong>${safe(member.alias || "Ẩn danh")}</strong><small>${safe(member.role)}</small></span></p>`).join("")}</article><article class="dharma-paper-card"><small>LỜI MỜI THỦ CÔNG</small><p>Mỗi lần sao chép sẽ tạo mã từ trạng thái chia sẻ hiện tại. Đây không phải liên kết máy chủ.</p><button type="button" data-copy-circle-invite="${safe(circle.id)}">Sao chép mã lời mời</button></article><article class="dharma-paper-card dharma-circle-safety"><small>AN TOÀN CỘNG ĐỒNG</small><p>Báo nội dung gây sợ hãi, mê tín, giả danh người tu hoặc lợi dụng tài chính.</p><button type="button" data-report-circle="${safe(circle.id)}">Mở biểu mẫu báo cáo</button><button type="button" data-delete-circle="${safe(circle.id)}">Rời / xóa nhóm cục bộ</button></article></aside></section>`;
+    const isRealtime = circle.sync === "socket.io";
+    return `<button class="dharma-back" type="button" data-back-circles>← Tất cả nhóm đọc</button><section class="dharma-circle-workspace"><article class="dharma-circle-main dharma-paper-card"><header><span>眾</span><div><small>${safe(circle.role || "Thành viên")} · ${isRealtime ? `SOCKET.IO ${safe(circle.realtimeCode)} · ${safe(circleRealtime.state === "connected" ? "ĐÃ KẾT NỐI" : "ĐANG KHÔI PHỤC")}` : "BẢN HHC1 CỤC BỘ"}</small><h2>${safe(circle.title)}</h2><p>${safe(scripture?.title || "Chưa chọn bài đọc")} · ${safe(circle.discussionAt ? formatDate(circle.discussionAt) : "Chưa có lịch")}</p></div></header><div class="dharma-circle-privacy"><strong>Riêng tư mặc định</strong><p>Chỉ lịch, bài đọc và ghi chú chia sẻ đi vào phòng. Nhật ký, thời lượng thiền, tiến độ bài học và ghi chú riêng luôn ở thiết bị.</p>${isRealtime ? `<p><strong>Trạng thái:</strong> ${safe(circleRealtime.message)}</p>` : `<label class="dharma-check"><input type="checkbox" data-circle-share-alias="${safe(circle.id)}" ${circle.privacy?.shareAlias ? "checked" : ""}><span>Cho phép đưa bí danh vào mã HHC1</span></label>`}</div><section><header><small>GHI CHÚ CHIA SẺ</small><span>${circle.sharedNotes?.length || 0} ghi chú</span></header>${(circle.sharedNotes || []).map((note) => `<article><small>${safe(note.alias || "Thành viên ẩn danh")} · ${safe(formatDate(note.createdAt))}</small><p>${safe(note.body)}</p></article>`).join("") || '<p class="dharma-empty-line">Chưa có ghi chú chia sẻ.</p>'}<form data-circle-shared-note="${safe(circle.id)}"><label>Nội dung<textarea name="body" required maxlength="2000" placeholder="Chỉ viết điều bạn đồng ý chia sẻ với nhóm…"></textarea></label><button type="submit">${isRealtime ? "Gửi vào phòng realtime" : "Thêm vào bản cục bộ"}</button></form></section><section><header><small>GHI CHÚ RIÊNG</small><span>Chỉ trên thiết bị</span></header><label class="dharma-note"><textarea data-circle-private-note="${safe(circle.id)}" maxlength="3000" placeholder="Không bao giờ gửi lên máy chủ…">${safe(privateNote)}</textarea></label></section></article><aside class="dharma-circle-side"><article class="dharma-paper-card"><small>THÀNH VIÊN & VAI TRÒ</small><h3>${circle.members?.length || 1} ${isRealtime ? "thành viên đã xác nhận" : "thành viên trong bản sao"}</h3>${(circle.members || []).map((member) => `<p><span><strong>${safe(member.alias || "Ẩn danh")}</strong><small>${safe(member.role)}</small></span></p>`).join("")}</article><article class="dharma-paper-card"><small>${isRealtime ? "MÃ PHÒNG RIÊNG" : "LỜI MỜI HHC1"}</small><p>${isRealtime ? "Chỉ người có mã và tài khoản đăng nhập mới vào được; không có danh sách phòng công khai." : "Mã mang theo một bản sao của trạng thái chia sẻ, không kết nối máy chủ."}</p><button type="button" data-copy-circle-invite="${safe(circle.id)}">Sao chép ${isRealtime ? "mã phòng" : "mã lời mời"}</button></article><article class="dharma-paper-card dharma-circle-safety"><small>AN TOÀN CỘNG ĐỒNG</small><p>Báo nội dung gây sợ hãi, mê tín, giả danh người tu hoặc lợi dụng tài chính.</p><button type="button" data-report-circle="${safe(circle.id)}">Mở biểu mẫu báo cáo</button><button type="button" data-delete-circle="${safe(circle.id)}">Rời / xóa nhóm khỏi thiết bị</button></article></aside></section>`;
   }
 
   function accessibilityMarkup() {
@@ -2280,13 +2395,14 @@
     const reportTemple = event.target.closest("[data-report-temple]");
     if (reportTemple) { const item = TEMPLE_DIRECTORY.find((entry) => entry.id === reportTemple.dataset.reportTemple); return safetyReportDialog("temple", reportTemple.dataset.reportTemple, item?.title || "Nguồn Chùa online"); }
     const openCircle = event.target.closest("[data-open-circle]");
-    if (openCircle) { activeCircle = openCircle.dataset.openCircle; renderView(); return; }
+    if (openCircle) { activeCircle = openCircle.dataset.openCircle; renderView(); void reconnectActiveCircle(); return; }
     if (event.target.closest("[data-back-circles]")) { activeCircle = ""; renderView(); return; }
     const copyCircle = event.target.closest("[data-copy-circle-invite]");
     if (copyCircle) {
       const circle = state.circles.find((item) => item.id === copyCircle.dataset.copyCircleInvite); if (!circle) return;
       const code = circleInviteCode(circle);
-      if (global.navigator?.clipboard?.writeText) global.navigator.clipboard.writeText(code).then(() => toast("Đã sao chép mã lời mời thủ công.")).catch(() => global.prompt("Sao chép mã lời mời:", code));
+      const label = circle.sync === "socket.io" ? "mã phòng realtime" : "mã lời mời HHC1";
+      if (global.navigator?.clipboard?.writeText) global.navigator.clipboard.writeText(code).then(() => toast(`Đã sao chép ${label}.`)).catch(() => global.prompt(`Sao chép ${label}:`, code));
       else global.prompt("Sao chép mã lời mời:", code);
       return;
     }
@@ -2295,7 +2411,9 @@
     const deleteCircle = event.target.closest("[data-delete-circle]");
     if (deleteCircle) {
       if (!global.confirm("Xóa nhóm khỏi thiết bị này? Ghi chú chia sẻ cục bộ của nhóm cũng sẽ bị xóa.")) return;
-      const id = deleteCircle.dataset.deleteCircle; state.circles = state.circles.filter((item) => item.id !== id); const privateNotes = { ...state.circlePrivateNotes }; delete privateNotes[id]; state.circlePrivateNotes = privateNotes; activeCircle = ""; saveState(); renderView(); toast("Đã xóa nhóm cục bộ.", "warning"); return;
+      const id = deleteCircle.dataset.deleteCircle; const circle = state.circles.find((item) => item.id === id);
+      if (circle?.sync === "socket.io") global.HHRealtime?.emit?.("workspace:room:leave", { service: CIRCLE_REALTIME_SERVICE }, { timeout: 3000 }).catch(() => {});
+      state.circles = state.circles.filter((item) => item.id !== id); const privateNotes = { ...state.circlePrivateNotes }; delete privateNotes[id]; state.circlePrivateNotes = privateNotes; activeCircle = ""; saveState(); renderView(); toast("Đã rời nhóm và xóa bản lưu trên thiết bị.", "warning"); return;
     }
     const glossaryDeck = event.target.closest("[data-glossary-deck]");
     if (glossaryDeck) { const id = glossaryDeck.dataset.glossaryDeck; const existed = state.glossaryDeck.includes(id); state.glossaryDeck = existed ? state.glossaryDeck.filter((item) => item !== id) : unique([...state.glossaryDeck, id]); glossaryReviewIndex = 0; glossaryReveal = false; saveState(); renderView({ preserveScroll: true }); toast(existed ? "Đã bỏ khỏi bộ ôn." : "Đã thêm vào bộ ôn thuật ngữ."); return; }
@@ -2480,13 +2598,24 @@
     }
     if (form.matches("[data-circle-create]")) {
       const data = new FormData(form); const id = global.crypto?.randomUUID?.() || `${Date.now()}`; const alias = String(data.get("alias") || "").trim();
+      const sharedState = { title: String(data.get("title")).trim(), scriptureId: String(data.get("scripture")), discussionAt: String(data.get("discussionAt")), sharedNotes: [] };
+      if (realtimeCircleReady()) {
+        try {
+          const response = await global.HHRealtime.emit("workspace:room:create", { service: CIRCLE_REALTIME_SERVICE, name: sharedState.title, alias, state: sharedState });
+          const circle = upsertRealtimeCircle(response.room, response.self, alias); activeCircle = circle.id; renderView(); toast(`Đã tạo phòng realtime ${circle.realtimeCode}.`, "success"); return;
+        } catch (error) { toast(`${error.message} Đang tạo bản cục bộ để bạn không mất nội dung.`, "warning"); }
+      }
       const circle = { id, title: String(data.get("title")).trim(), scriptureId: String(data.get("scripture")), discussionAt: String(data.get("discussionAt")), role: "Chủ nhóm", members: [{ id: accountKey, alias: alias || "Chủ nhóm ẩn danh", role: "Chủ nhóm" }], sharedNotes: [], privacy: { shareAlias: false }, createdAt: new Date().toISOString(), sync: "manual-local" };
       state.circles = [...state.circles, circle]; activeCircle = id; saveState(); renderView(); toast("Đã tạo nhóm cục bộ. Chỉ chia sẻ khi bạn sao chép mã lời mời."); return;
     }
     if (form.matches("[data-circle-join]")) {
       const data = new FormData(form);
       try {
-        const invited = parseCircleInvite(data.get("code")); const id = global.crypto?.randomUUID?.() || `${Date.now()}`; const alias = String(data.get("alias") || "").trim();
+        const rawCode = String(data.get("code") || "").trim(); const roomCode = rawCode.toUpperCase(); const alias = String(data.get("alias") || "").trim();
+        if (CIRCLE_ROOM_CODE.test(roomCode)) {
+          const circle = await joinRealtimeCircle(roomCode, alias); renderView(); toast(`Đã vào phòng ${circle.realtimeCode}; ghi chú chia sẻ sẽ đồng bộ tự động.`, "success"); return;
+        }
+        const invited = parseCircleInvite(rawCode); const id = global.crypto?.randomUUID?.() || `${Date.now()}`;
         const members = [...(invited.coordinator?.alias ? [{ id: "invited-coordinator", alias: String(invited.coordinator.alias).slice(0, 40), role: "Chủ nhóm" }] : []), { id: accountKey, alias: alias || "Thành viên ẩn danh", role: "Thành viên" }];
         const circle = { id, title: String(invited.title).slice(0, 80), scriptureId: SCRIPTURES.some((item) => item.id === invited.scriptureId) ? invited.scriptureId : SCRIPTURES[0].id, discussionAt: String(invited.discussionAt || ""), role: "Thành viên", members, sharedNotes: Array.isArray(invited.sharedNotes) ? invited.sharedNotes.slice(-50).map((note) => ({ id: String(note.id || `${Date.now()}`), alias: String(note.alias || "Thành viên ẩn danh").slice(0, 40), body: String(note.body || "").slice(0, 2000), createdAt: String(note.createdAt || new Date().toISOString()) })) : [], privacy: { shareAlias: false }, createdAt: new Date().toISOString(), sync: "manual-local" };
         state.circles = [...state.circles, circle]; activeCircle = id; saveState(); renderView(); toast("Đã nhập bản sao cục bộ của nhóm. Không có đồng bộ tự động.");
@@ -2495,6 +2624,16 @@
     }
     if (form.matches("[data-circle-shared-note]")) {
       const id = form.dataset.circleSharedNote; const body = String(new FormData(form).get("body") || "").trim();
+      const circle = state.circles.find((item) => item.id === id);
+      if (circle?.sync === "socket.io") {
+        try {
+          const response = await global.HHRealtime.emit("workspace:room:event", { service: CIRCLE_REALTIME_SERVICE, type: "note:add", data: { body } });
+          const note = response.data || { id: global.crypto?.randomUUID?.() || `${Date.now()}`, alias: "Thành viên", body, createdAt: new Date().toISOString() };
+          state.circles = state.circles.map((item) => item.id === id && !item.sharedNotes?.some((entry) => entry.id === note.id) ? { ...item, sharedNotes: [...(item.sharedNotes || []), note].slice(-100), revision: Number(response.revision || item.revision || 0) } : item);
+          saveState(); renderView({ preserveScroll: true }); toast("Đã đồng bộ ghi chú với phòng realtime.", "success");
+        } catch (error) { toast(error.message || "Không thể gửi ghi chú realtime.", "warning"); }
+        return;
+      }
       state.circles = state.circles.map((item) => item.id === id ? { ...item, sharedNotes: [...(item.sharedNotes || []), { id: global.crypto?.randomUUID?.() || `${Date.now()}`, alias: item.privacy?.shareAlias ? (item.members?.find((member) => member.id === accountKey)?.alias || "Thành viên") : "Thành viên ẩn danh", body, createdAt: new Date().toISOString() }].slice(-100) } : item);
       saveState(); renderView({ preserveScroll: true }); toast("Đã thêm vào phần chia sẻ của nhóm cục bộ."); return;
     }
@@ -2587,6 +2726,15 @@
     listen(root, "input", handleInput);
     listen(root, "change", handleChange);
     listen(root, "submit", handleSubmit);
+    if (global.HHRealtime?.subscribe) {
+      listeners.push(global.HHRealtime.subscribe("phat-phap-circles", "workspace:room:presence", handleCirclePresence));
+      listeners.push(global.HHRealtime.subscribe("phat-phap-circles", "workspace:room:state", handleCircleState));
+      listeners.push(global.HHRealtime.subscribe("phat-phap-circles", "workspace:room:event", handleCircleEvent));
+      circleRealtime = realtimeCircleReady()
+        ? { ...circleRealtime, state: "connected", message: "Lõi Socket.IO dùng chung đã kết nối" }
+        : { ...circleRealtime, state: "offline", message: "Realtime ngoại tuyến; HHC1 vẫn dùng được" };
+      if (activeView === "circles") void reconnectActiveCircle();
+    }
     listen(root, "focusin", (event) => {
       if (event.target.matches("input, textarea, [contenteditable='true']")) root.querySelector("[data-dharma-hub]")?.classList.add("is-reading");
     });
@@ -2594,12 +2742,16 @@
       if (!root?.contains(document.activeElement) || !document.activeElement?.matches?.("input, textarea, [contenteditable='true']")) root?.querySelector("[data-dharma-hub]")?.classList.remove("is-reading");
     }, 0));
     listen(document, "keydown", handleKeydown);
+    listen(global, "hh:realtime-ready", () => { circleRealtime = { ...circleRealtime, state: "connected", message: "Đã kết nối lại Socket.IO" }; void reconnectActiveCircle(); });
+    listen(global, "hh:realtime-offline", () => { circleRealtime = { ...circleRealtime, state: "offline", message: "Mất kết nối tạm thời; dữ liệu riêng vẫn an toàn trên thiết bị" }; if (activeView === "circles") renderView({ preserveScroll: true }); });
     if (global.speechSynthesis?.addEventListener) listen(global.speechSynthesis, "voiceschanged", () => { if (activeView === "audio" && root) renderView({ preserveScroll: true }); });
     listen(document, "visibilitychange", () => { if (!document.hidden) return; if (timerRunning) stopTimer(); if (chantTimerId) { stopChant(); renderView({ preserveScroll: true }); } if (audioStudyPlaying) { stopAudioStudy(); if (activeView === "audio") renderView({ preserveScroll: true }); } });
     return true;
   }
 
   function unmount() {
+    if (state?.circles?.some((item) => item.id === activeCircle && item.sync === "socket.io")) global.HHRealtime?.emit?.("workspace:room:leave", { service: CIRCLE_REALTIME_SERVICE }, { timeout: 2000 }).catch(() => {});
+    global.HHRealtime?.unsubscribeScope?.("phat-phap-circles");
     stopTimer();
     stopChant();
     stopAudioStudy();

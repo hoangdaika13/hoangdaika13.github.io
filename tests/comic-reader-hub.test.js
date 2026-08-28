@@ -15,10 +15,10 @@ test("HH Comics is a first-class major route inside hoang8.com", () => {
   assert.match(app, /id: "comic-reader"[\s\S]*?label: "Đọc truyện"[\s\S]*?route: "\/comic-reader"/);
   assert.match(app, /HHComicReaderHub\.mount/);
   assert.match(app, /app-comic-reader-route/);
-  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=14[\s\S]*?comic-open-source-catalog\.js\?v=2[\s\S]*?services\/comicLibraryBridge\.js\?v=1[\s\S]*?comic-reader-hub\.js\?v=20/);
-  assert.match(worker, /comic-reader-hub\.css\?v=14/);
+  assert.match(loader, /"comic-reader"[\s\S]*?comic-reader-hub\.css\?v=15[\s\S]*?comic-open-source-catalog\.js\?v=2[\s\S]*?services\/comicLibraryBridge\.js\?v=1[\s\S]*?comic-reader-hub\.js\?v=21/);
+  assert.match(worker, /comic-reader-hub\.css\?v=15/);
   assert.match(worker, /comic-open-source-catalog\.js\?v=2/);
-  assert.match(worker, /comic-reader-hub\.js\?v=20/);
+  assert.match(worker, /comic-reader-hub\.js\?v=21/);
 });
 
 test("catalog includes discovery, detail, ranking, follow and history", () => {
@@ -143,17 +143,17 @@ test("professional reader focuses content and persists display controls", () => 
   assert.match(css, /\.cr-reader-chapters/);
 });
 
-test("catalog has no generated demo comics and Clean Reader filters promotional pages", () => {
+test("catalog has no generated demo comics and preserves provider pages by default", () => {
   const client = read("comic-reader-hub.js");
 
   assert.match(client, /state\.catalog = \[\]/);
   assert.doesNotMatch(client, /function demoCatalog|HH Originals demo|Biên Niên Sử Nexus/);
-  assert.match(client, /cleanRemotePages/);
-  assert.match(client, /filteredPages/);
+  assert.match(client, /chapter\.pages = pages\.filter/);
+  assert.match(client, /Preserve the provider's complete chapter by default/);
   assert.match(client, /reader-hide-page/);
   assert.match(client, /blockedPages/);
-  assert.match(client, /Clean Reader đang loại trang quảng cáo/);
-  assert.match(client, /storyBaseline \* 1\.22/);
+  assert.match(client, /Trình đọc giữ nguyên toàn bộ trang từ nguồn/);
+  assert.doesNotMatch(client, /const cleaned = await cleanRemotePages/);
 });
 
 test("reader v2 restores sessions, supports page bookmarks and resilient navigation", () => {
@@ -169,7 +169,7 @@ test("reader v2 restores sessions, supports page bookmarks and resilient navigat
   assert.match(client, /preloadAdjacentPages/);
   assert.match(client, /function restoreReaderPosition/);
   assert.match(client, /target\.offsetTop - readerPages\.offsetTop/);
-  assert.match(client, /version: "4\.0\.0"/);
+  assert.match(client, /version: "4\.1\.0"/);
   assert.match(css, /\.cr-continue-shelf/);
   assert.match(css, /\.cr-bookmark-list/);
   assert.match(css, /\.cr-tap-zone/);

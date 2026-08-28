@@ -128,8 +128,8 @@
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/tesseract.min.js?v=6.0.1", "services/comicLibraryBridge.js?v=1", "comic-motion-studio.js?v=11"]
     },
     "comic-reader": {
-      styles: ["comic-reader-hub.css?v=14"],
-      scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-open-source-catalog.js?v=2", "services/comicLibraryBridge.js?v=1", "comic-reader-hub.js?v=20"]
+      styles: ["comic-reader-hub.css?v=15"],
+      scripts: ["vendor/jszip.min.js?v=3.10.1", "comic-open-source-catalog.js?v=2", "services/comicLibraryBridge.js?v=1", "comic-reader-hub.js?v=21"]
     },
     graphic: {
       styles: ["graphic-design-studio.css?v=9", "graphic-design-universal.css?v=4"],
@@ -157,7 +157,7 @@
       ],
       scripts: [
         "creative-os-core.js?v=4", "youtube-publisher.js?v=9", "music-autopilot-core.js?v=2", "music-autopilot.js?v=2", "music-daw-workspace.js?v=1", "music-composer-lyrics.js?v=1",
-        "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=2",
+        "music-audio-labs.js?v=1", "music-mix-master.js?v=1", "music-visual-studio.js?v=3",
         "music-publishing-rights.js?v=1", "music-intelligence-engine.js?v=1", "music-generative-arrangement.js?v=1",
         "music-adaptive-library.js?v=1", "music-mix-performance.js?v=1", "music-project-governance.js?v=1",
         "music-production-suite.js?v=7", "music-ai-apps.js?v=3", "music-ai-studio.js?v=9"
@@ -208,7 +208,7 @@
     },
     work: {
       styles: ["work-center.css?v=4", "download-center-pro.css?v=1", "team-collaboration-pro.css?v=2"],
-      scripts: ["team-collaboration-pro.js?v=2", "work-center.js?v=5"]
+      scripts: ["team-collaboration-pro.js?v=3", "work-center.js?v=5"]
     },
     learning: {
       styles: ["hh-school.css?v=4"],
@@ -234,7 +234,7 @@
     },
     dharma: {
       styles: ["phat-phap.css?v=20"],
-      scripts: ["phat-phap.js?v=17"]
+      scripts: ["phat-phap.js?v=18"]
     },
     play: {
       styles: ["hh-play.css?v=8&build=4"],

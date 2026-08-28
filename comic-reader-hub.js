@@ -47,6 +47,9 @@
   let keyHandler = null;
   let imageErrorHandler = null;
   let readerObserver = null;
+  let prefetchHandler = null;
+  let prefetchTimer = 0;
+  const prefetchedSeries = new Set();
   const blobUrls = new Set();
   const preloadedPageUrls = new Set();
 
@@ -312,9 +315,10 @@
     if (!item?.chapter_path || !Array.isArray(item.chapter_image)) throw new Error("Chapter chưa có danh sách ảnh");
     const base = String(data.domain_cdn || "").replace(/\/$/, "");
     const pages = [...item.chapter_image].sort((a, b) => Number(a.image_page) - Number(b.image_page)).map((image) => `${base}/${String(item.chapter_path).replace(/^\/+|\/+$/g, "")}/${String(image.image_file).replace(/^\/+/, "")}`);
-    const cleaned = await cleanRemotePages(pages);
-    chapter.pages = cleaned.pages.filter((url) => !state.blockedPages.has(url));
-    chapter.filteredPages = cleaned.filtered + (cleaned.pages.length - chapter.pages.length);
+    // Preserve the provider's complete chapter by default. Pages are removed only
+    // after the reader explicitly hides that exact URL on this device.
+    chapter.pages = pages.filter((url) => !state.blockedPages.has(url));
+    chapter.filteredPages = pages.length - chapter.pages.length;
     return chapter;
   }
 
@@ -847,9 +851,9 @@
     const primaryAction = series.sourceType === "open-book"
       ? `<button type="button" data-series="${escapeHtml(series.id)}">Xem sách mở</button>`
       : `<button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(resumeChapterId)}">${progress ? `Đọc tiếp · ${progress.percent || 0}%` : `Ch. ${latest?.number || chapterCount || "?"}`}</button>`;
-    return `<article class="cr-series-card" data-series="${escapeHtml(series.id)}">
+    return `<article class="cr-series-card" data-quick-read="${escapeHtml(series.id)}" tabindex="0" aria-label="Đọc ${escapeHtml(series.title)}">
       <div class="cr-cover"><img src="${escapeHtml(series.cover)}" alt="Bìa ${escapeHtml(series.title)}" loading="lazy" referrerpolicy="no-referrer"><span>${series.sourceType === "github-open" ? "OPEN" : series.sourceType === "mangadex" ? "MDX" : series.status === "Đã hoàn thành" ? "FULL" : "NEW"}</span><em class="cr-format-badge">${escapeHtml(inferFormat(series))}</em><button type="button" class="cr-card-follow${followed ? " is-active" : ""}" data-follow="${escapeHtml(series.id)}" aria-label="${followed ? "Bỏ theo dõi" : "Theo dõi"} ${escapeHtml(series.title)}">${followed ? "♥" : "♡"}</button>${progress ? `<i style="--p:${clamp(progress.percent || 0, 0, 100)}%"></i>` : ""}</div>
-      <div class="cr-card-copy"><strong>${escapeHtml(series.title)}</strong><p>${escapeHtml([inferFormat(series), ...(series.genres || []).slice(0, 2).map(genreLabel)].join(" · "))}</p><div>${primaryAction}<small>${series.sourceType === "open-book" ? "CC BY-SA 4.0 · mở tại nguồn" : chapterCount ? `${chapterCount.toLocaleString("vi-VN")} chap · ${timeAgo(latest?.updatedAt || series.updatedAt)}` : `Chưa rõ số chap · ${timeAgo(latest?.updatedAt || series.updatedAt)}`}</small></div></div>
+      <div class="cr-card-copy"><strong>${escapeHtml(series.title)}</strong><p>${escapeHtml([inferFormat(series), ...(series.genres || []).slice(0, 2).map(genreLabel)].join(" · "))}</p><div class="cr-card-actions">${primaryAction}<button type="button" class="cr-card-detail" data-series="${escapeHtml(series.id)}" aria-label="Xem chi tiết ${escapeHtml(series.title)}">Chi tiết</button><small>${series.sourceType === "open-book" ? "CC BY-SA 4.0 · mở tại nguồn" : chapterCount ? `${chapterCount.toLocaleString("vi-VN")} chap · ${timeAgo(latest?.updatedAt || series.updatedAt)}` : `Chưa rõ số chap · ${timeAgo(latest?.updatedAt || series.updatedAt)}`}</small></div></div>
     </article>`;
   }
 
@@ -877,6 +881,10 @@
     const visible = visibleCatalog();
     const hero = visible[0] || state.catalog[0];
     const rankings = [...state.catalog].sort((a, b) => seriesChapterCount(b) - seriesChapterCount(a) || smartCatalogCompare(a, b)).slice(0, 7);
+    const catalogBusy = state.remote.loading || state.mangadex.loading || state.openBooks.loading;
+    const catalogCards = visible.length ? visible.map(seriesCard).join("") : catalogBusy
+      ? Array.from({ length: 10 }, () => `<article class="cr-series-skeleton" aria-hidden="true"><i></i><span></span><small></small></article>`).join("")
+      : `<div class="cr-empty"><span>⌕</span><strong>Không tìm thấy truyện</strong><small>Thử từ khóa hoặc thể loại khác.</small></div>`;
     return `<div class="cr-home">
       <section class="cr-hero" style="--hero-cover:url('${escapeHtml(hero?.cover || "")}')">
         <div class="cr-hero-copy"><span>HH COMICS · THƯ VIỆN ĐA THỂ LOẠI</span><h1>${escapeHtml(hero?.title || "Kho truyện tranh thế giới")}</h1><p>${escapeHtml(hero?.description || "Khám phá manga, manhwa, manhua, webtoon, truyện Việt và comic theo đúng sở thích.")}</p><div>${hero ? `<button type="button" class="is-primary" data-read="${escapeHtml(hero.id)}" data-chapter="${escapeHtml(state.progress[hero.id]?.chapterId || hero.chapters?.[0]?.id || "")}">▶ Đọc ngay</button><button type="button" data-series="${escapeHtml(hero.id)}">Xem chi tiết</button>` : ""}</div></div>
@@ -886,12 +894,12 @@
       ${genreExplorer()}
       <nav class="cr-discovery-tabs" aria-label="Lọc kho truyện"><button type="button" data-catalog-filter="all"${state.catalogFilter === "all" ? ' class="is-active"' : ""}>Tất cả</button><button type="button" data-catalog-filter="ongoing"${state.catalogFilter === "ongoing" ? ' class="is-active"' : ""}>Đang cập nhật</button><button type="button" data-catalog-filter="completed"${state.catalogFilter === "completed" ? ' class="is-active"' : ""}>Hoàn thành</button><button type="button" data-catalog-filter="followed"${state.catalogFilter === "followed" ? ' class="is-active"' : ""}>Đang theo dõi · ${state.follows.size}</button><span>${state.remote.loading || state.mangadex.loading || state.openBooks.loading ? "Đang đồng bộ dữ liệu…" : "Truyện · Manga · Webtoon · Sách mở"}</span></nav>
       <div class="cr-home-grid">
-        <section class="cr-catalog-section"><header><div><strong>${state.query || [state.genre, state.format, state.demographic].some((value) => value !== ALL_FILTER) ? `Kết quả · ${escapeHtml(activeFacetSummary())}` : state.sort === "az" ? "Tên truyện A–Z" : state.sort === "za" ? "Tên truyện Z–A" : state.sort === "popular" ? "Phổ biến" : state.sort === "chapters" ? "Nhiều chap nhất" : state.sort === "updated" ? "Mới cập nhật" : "Cập nhật mạnh · nhiều chap"}</strong><small>${visible.length.toLocaleString("vi-VN")} truyện ở trang ${state.catalogPage.toLocaleString("vi-VN")}${state.remote.total ? ` · ${state.remote.total.toLocaleString("vi-VN")} OTruyen` : ""}${state.mangadex.total ? ` · ${state.mangadex.total.toLocaleString("vi-VN")} MangaDex tiếng Việt` : ""}</small></div><select data-sort aria-label="Sắp xếp toàn bộ kho truyện"><option value="smart">Ưu tiên cập nhật & nhiều chap</option><option value="chapters">Nhiều chap → ít chap</option><option value="updated">Mới cập nhật</option><option value="popular">Phổ biến</option><option value="az">Tên A–Z</option><option value="za">Tên Z–A</option></select></header>
-          <div class="cr-series-grid">${visible.length ? visible.map(seriesCard).join("") : `<div class="cr-empty"><span>⌕</span><strong>Không tìm thấy truyện</strong><small>Thử từ khóa hoặc thể loại khác.</small></div>`}</div>
+        <section class="cr-catalog-section${catalogBusy ? " is-loading" : ""}" aria-busy="${catalogBusy}"><header><div><strong>${state.query || [state.genre, state.format, state.demographic].some((value) => value !== ALL_FILTER) ? `Kết quả · ${escapeHtml(activeFacetSummary())}` : state.sort === "az" ? "Tên truyện A–Z" : state.sort === "za" ? "Tên truyện Z–A" : state.sort === "popular" ? "Phổ biến" : state.sort === "chapters" ? "Nhiều chap nhất" : state.sort === "updated" ? "Mới cập nhật" : "Cập nhật mạnh · nhiều chap"}</strong><small>${visible.length.toLocaleString("vi-VN")} truyện ở trang ${state.catalogPage.toLocaleString("vi-VN")}${state.remote.total ? ` · ${state.remote.total.toLocaleString("vi-VN")} OTruyen` : ""}${state.mangadex.total ? ` · ${state.mangadex.total.toLocaleString("vi-VN")} MangaDex tiếng Việt` : ""}</small></div><select data-sort aria-label="Sắp xếp toàn bộ kho truyện"><option value="smart">Ưu tiên cập nhật & nhiều chap</option><option value="chapters">Nhiều chap → ít chap</option><option value="updated">Mới cập nhật</option><option value="popular">Phổ biến</option><option value="az">Tên A–Z</option><option value="za">Tên Z–A</option></select></header>
+          <div class="cr-series-grid">${catalogCards}</div>
           ${catalogPagination()}
           ${state.remote.error || state.mangadex.error || state.openBooks.error ? `<footer class="cr-load-more"><span>${escapeHtml([state.remote.error, state.mangadex.error, state.openBooks.error].filter(Boolean).join(" · "))}</span></footer>` : ""}
         </section>
-        <aside class="cr-ranking"><header><strong>Top nhiều chap</strong><span>Đang cập nhật</span></header>${rankings.map((series, index) => `<button type="button" data-series="${escapeHtml(series.id)}"><b>${String(index + 1).padStart(2, "0")}</b><img src="${escapeHtml(series.cover)}" alt=""><span><strong>${escapeHtml(series.title)}</strong><small>${seriesChapterCount(series).toLocaleString("vi-VN")} chap · ${timeAgo(series.updatedAt)}</small></span></button>`).join("")}</aside>
+        <aside class="cr-ranking"><header><strong>Top nhiều chap</strong><span>Đang cập nhật</span></header>${rankings.map((series, index) => `<button type="button" data-quick-read="${escapeHtml(series.id)}"><b>${String(index + 1).padStart(2, "0")}</b><img src="${escapeHtml(series.cover)}" alt=""><span><strong>${escapeHtml(series.title)}</strong><small>${seriesChapterCount(series).toLocaleString("vi-VN")} chap · ${timeAgo(series.updatedAt)}</small></span></button>`).join("")}</aside>
       </div>
     </div>`;
   }
@@ -968,8 +976,8 @@
     const bookmarked = isCurrentPageBookmarked();
     state.readerPage = clamp(state.readerPage, 0, Math.max(0, pages.length - 1));
     return `<div class="cr-reader is-${state.readerMode} width-${state.readerWidth} theme-${state.readerTheme}" data-reader>
-      <header class="cr-reader-bar"><button type="button" class="cr-reader-back" data-series="${escapeHtml(series.id)}" aria-label="Trở về trang truyện">←</button><div><strong>${escapeHtml(series.title)}</strong><small>Chương ${chapter.number} · <span data-reader-page-label>Trang ${state.readerPage + 1}/${pages.length}</span>${chapter.filteredPages ? ` · Clean Reader đã ẩn ${chapter.filteredPages} trang` : ""}</small></div><button type="button" class="cr-reader-chapter-button" data-action="reader-chapters" aria-expanded="false">☰ Chương</button><select data-reader-chapter aria-label="Chọn chương">${chapters.map((entry) => `<option value="${escapeHtml(entry.id)}"${entry.id === chapter.id ? " selected" : ""}>Chương ${entry.number}</option>`).join("")}</select><div class="cr-reader-modes"><button type="button" data-reader-mode="scroll"${state.readerMode === "scroll" ? ' class="is-active"' : ""}>Cuộn dọc</button><button type="button" data-reader-mode="page"${state.readerMode === "page" ? ' class="is-active"' : ""}>Từng trang</button></div><button type="button" data-motion-action="reader-current" aria-label="Tạo video chương này">🎬</button><button type="button" data-action="reader-bookmark" class="${bookmarked ? "is-bookmarked" : ""}" aria-label="${bookmarked ? "Bỏ dấu trang" : "Đánh dấu trang này"}">${bookmarked ? "★" : "☆"}</button><button type="button" data-action="reader-share" aria-label="Sao chép liên kết">↗</button><button type="button" data-action="reader-settings" aria-label="Cài đặt trình đọc" aria-expanded="false">⚙</button><button type="button" data-action="reader-fullscreen" aria-label="Toàn màn hình">⛶</button></header>
-      <aside class="cr-reader-settings" hidden><header><strong>Cài đặt đọc</strong><small>Được lưu trên thiết bị này</small></header><label>Độ rộng trang<div>${[["compact","Gọn"],["fit","Vừa màn hình"],["wide","Rộng"]].map(([value,label]) => `<button type="button" data-reader-width="${value}"${state.readerWidth === value ? ' class="is-active"' : ""}>${label}</button>`).join("")}</div></label><label>Nền đọc<div>${[["dark","Tối"],["black","Đen"],["paper","Giấy"]].map(([value,label]) => `<button type="button" data-reader-theme="${value}"${state.readerTheme === value ? ' class="is-active"' : ""}>${label}</button>`).join("")}</div></label><section class="cr-reader-motion-tools"><strong>Comic Motion</strong><button type="button" data-motion-action="reader-current">Tạo video chương này</button><button type="button" data-motion-action="reader-from-current">Tạo từ trang hiện tại</button><div><input type="number" min="1" max="${pages.length}" value="${state.readerPage + 1}" data-motion-page-start aria-label="Trang bắt đầu"><input type="number" min="1" max="${pages.length}" value="${pages.length}" data-motion-page-end aria-label="Trang kết thúc"><button type="button" data-motion-action="reader-range">Chọn đoạn trang</button></div><button type="button" data-motion-action="open-studio">Mở trong Comic Motion</button></section><button type="button" class="cr-clean-page" data-action="reader-hide-page">Ẩn vĩnh viễn trang quảng cáo đang xem</button><p>Clean Reader tự loại trang quảng bá ngắn ở đầu/cuối chapter. Phím tắt: ← → đổi trang/chương · M đổi chế độ · F toàn màn hình · Esc trở về.</p></aside>
+      <header class="cr-reader-bar"><button type="button" class="cr-reader-back" data-series="${escapeHtml(series.id)}" aria-label="Trở về trang truyện">←</button><div><strong>${escapeHtml(series.title)}</strong><small>Chương ${chapter.number} · <span data-reader-page-label>Trang ${state.readerPage + 1}/${pages.length}</span>${chapter.filteredPages ? ` · Bạn đã ẩn ${chapter.filteredPages} trang trên thiết bị này` : ""}</small></div><button type="button" class="cr-reader-chapter-button" data-action="reader-chapters" aria-expanded="false">☰ Chương</button><select data-reader-chapter aria-label="Chọn chương">${chapters.map((entry) => `<option value="${escapeHtml(entry.id)}"${entry.id === chapter.id ? " selected" : ""}>Chương ${entry.number}</option>`).join("")}</select><div class="cr-reader-modes"><button type="button" data-reader-mode="scroll"${state.readerMode === "scroll" ? ' class="is-active"' : ""}>Cuộn dọc</button><button type="button" data-reader-mode="page"${state.readerMode === "page" ? ' class="is-active"' : ""}>Từng trang</button></div><button type="button" data-motion-action="reader-current" aria-label="Tạo video chương này">🎬</button><button type="button" data-action="reader-bookmark" class="${bookmarked ? "is-bookmarked" : ""}" aria-label="${bookmarked ? "Bỏ dấu trang" : "Đánh dấu trang này"}">${bookmarked ? "★" : "☆"}</button><button type="button" data-action="reader-share" aria-label="Sao chép liên kết">↗</button><button type="button" data-action="reader-settings" aria-label="Cài đặt trình đọc" aria-expanded="false">⚙</button><button type="button" data-action="reader-fullscreen" aria-label="Toàn màn hình">⛶</button></header>
+      <aside class="cr-reader-settings" hidden><header><strong>Cài đặt đọc</strong><small>Được lưu trên thiết bị này</small></header><label>Độ rộng trang<div>${[["compact","Gọn"],["fit","Vừa màn hình"],["wide","Rộng"]].map(([value,label]) => `<button type="button" data-reader-width="${value}"${state.readerWidth === value ? ' class="is-active"' : ""}>${label}</button>`).join("")}</div></label><label>Nền đọc<div>${[["dark","Tối"],["black","Đen"],["paper","Giấy"]].map(([value,label]) => `<button type="button" data-reader-theme="${value}"${state.readerTheme === value ? ' class="is-active"' : ""}>${label}</button>`).join("")}</div></label><section class="cr-reader-motion-tools"><strong>Comic Motion</strong><button type="button" data-motion-action="reader-current">Tạo video chương này</button><button type="button" data-motion-action="reader-from-current">Tạo từ trang hiện tại</button><div><input type="number" min="1" max="${pages.length}" value="${state.readerPage + 1}" data-motion-page-start aria-label="Trang bắt đầu"><input type="number" min="1" max="${pages.length}" value="${pages.length}" data-motion-page-end aria-label="Trang kết thúc"><button type="button" data-motion-action="reader-range">Chọn đoạn trang</button></div><button type="button" data-motion-action="open-studio">Mở trong Comic Motion</button></section><button type="button" class="cr-clean-page" data-action="reader-hide-page">Ẩn trang đang xem trên thiết bị này</button><p>Trình đọc giữ nguyên toàn bộ trang từ nguồn. Nút ẩn chỉ áp dụng khi chính bạn chọn. Phím tắt: ← → đổi trang/chương · M đổi chế độ · F toàn màn hình · Esc trở về.</p></aside>
       <aside class="cr-reader-chapters" hidden><header><strong>${chapters.length} chương</strong><button type="button" data-action="reader-chapters">×</button></header><div>${[...chapters].reverse().map((entry) => `<button type="button" data-read="${escapeHtml(series.id)}" data-chapter="${escapeHtml(entry.id)}"${entry.id === chapter.id ? ' class="is-active"' : ""}><span>Chương ${entry.number}</span><small>${escapeHtml(entry.title || "")}</small></button>`).join("")}</div></aside>
       <main class="cr-reader-pages" data-reader-pages>${state.readerMode === "scroll" ? pages.map((page, index) => `<figure data-page="${index}"><img src="${escapeHtml(page)}" data-reader-image data-original-src="${escapeHtml(page)}" alt="Trang ${index + 1}" loading="${index < 3 ? "eager" : "lazy"}" referrerpolicy="no-referrer"><button type="button" class="cr-image-retry" data-action="reader-retry-image" hidden>↻ Thử tải lại</button><figcaption>${index + 1} / ${pages.length}</figcaption></figure>`).join("") : `<figure data-page="${state.readerPage}"><img src="${escapeHtml(pages[state.readerPage] || "")}" data-reader-image data-original-src="${escapeHtml(pages[state.readerPage] || "")}" alt="Trang ${state.readerPage + 1}" referrerpolicy="no-referrer"><button type="button" class="cr-image-retry" data-action="reader-retry-image" hidden>↻ Thử tải lại</button><figcaption>${state.readerPage + 1} / ${pages.length}</figcaption></figure>`}</main>
       <button type="button" class="cr-tap-zone is-prev" data-reader-nav="prev" aria-label="Trang trước"></button><button type="button" class="cr-tap-zone is-next" data-reader-nav="next" aria-label="Trang sau"></button>
@@ -1138,6 +1146,37 @@
     loadMotionJobs(id).catch(() => {});
   }
 
+  async function prefetchSeries(id) {
+    const series = state.catalog.find((entry) => entry.id === id);
+    if (!series || prefetchedSeries.has(id) || series.sourceType === "open-book") return series;
+    prefetchedSeries.add(id);
+    try {
+      if (series.sourceType === "otruyen" && !series.chaptersLoaded) await ensureRemoteSeriesDetails(series);
+      if (series.sourceType === "mangadex" && !series.chaptersLoaded) await ensureMangaDexSeriesDetails(series);
+      return series;
+    } catch (error) {
+      prefetchedSeries.delete(id);
+      throw error;
+    }
+  }
+
+  async function quickReadSeries(id, requestedChapterId = "", requestedPage = null) {
+    let series = state.catalog.find((entry) => entry.id === id);
+    if (!series) return notify("Không tìm thấy truyện trong trang hiện tại.", "error");
+    if (series.sourceType === "open-book") return openSeries(id);
+    setLoadingOverlay(true, `Đang mở ${series.title}…`, "Đang lấy danh sách chương và chuẩn bị trang đọc đầu tiên.");
+    try {
+      series = await prefetchSeries(id) || series;
+      const savedChapter = state.progress[id]?.chapterId;
+      const chapterId = requestedChapterId || savedChapter || series.chapters?.[0]?.id || "";
+      await openReader(id, chapterId, requestedPage);
+    } catch (error) {
+      notify(error.message || "Không thể mở truyện ngay lúc này.", "error");
+    } finally {
+      setLoadingOverlay(false);
+    }
+  }
+
   async function openReader(seriesId, chapterId, requestedPage = null) {
     const series = state.catalog.find((entry) => entry.id === seriesId);
     if (series?.sourceType === "otruyen" && !series.chaptersLoaded) {
@@ -1156,7 +1195,7 @@
     if (!series || !chapter) return notify("Chương này chưa có ảnh.", "error");
     if (series.sourceType === "otruyen" && !chapter.pages?.length) {
       state.remote.loading = true;
-      setLoadingOverlay(true, `Đang chuẩn bị Chương ${chapter.number}…`, "Clean Reader đang loại trang quảng cáo trước khi hiển thị nội dung truyện.");
+      setLoadingOverlay(true, `Đang chuẩn bị Chương ${chapter.number}…`, "Đang lấy nguyên vẹn danh sách trang từ nguồn và tối ưu thứ tự tải ảnh.");
       try { await ensureRemoteChapterPages(chapter); }
       catch (error) { return notify(error.message || "Không thể tải ảnh chapter.", "error"); }
       finally { state.remote.loading = false; setLoadingOverlay(false); }
@@ -1430,6 +1469,7 @@
     const nav = event.target.closest("[data-nav]");
     const read = event.target.closest("[data-read]");
     const series = event.target.closest("[data-series]");
+    const quickRead = event.target.closest("[data-quick-read]");
     const genre = event.target.closest("[data-genre]");
     const follow = event.target.closest("[data-follow]");
     const catalogFilter = event.target.closest("[data-catalog-filter]");
@@ -1442,6 +1482,7 @@
     if (follow) { event.stopPropagation(); const id = follow.dataset.follow; state.follows.has(id) ? state.follows.delete(id) : state.follows.add(id); saveLocalState(); return render(); }
     if (catalogPage) return loadCatalogPage(Number(catalogPage.dataset.catalogPage));
     if (series) return openSeries(series.dataset.series);
+    if (quickRead) return quickReadSeries(quickRead.dataset.quickRead);
     if (catalogFilter) {
       state.catalogFilter = catalogFilter.dataset.catalogFilter; state.view = "home"; state.catalogPage = 1; clearDeepLink();
       return state.catalogFilter === "followed" ? render() : loadCatalogPage(1);
@@ -1586,6 +1627,17 @@
     host.addEventListener("click", handleClick);
     host.addEventListener("input", handleInput);
     host.addEventListener("change", handleInput);
+    prefetchHandler = (event) => {
+      const candidate = event.target.closest?.("[data-quick-read],[data-series],[data-read]");
+      if (!candidate || candidate.closest("[data-follow]")) return;
+      const id = candidate.dataset.quickRead || candidate.dataset.series || candidate.dataset.read;
+      if (!id || prefetchedSeries.has(id)) return;
+      if (prefetchTimer) global.clearTimeout(prefetchTimer);
+      prefetchTimer = global.setTimeout(() => prefetchSeries(id).catch(() => {}), event.type === "touchstart" ? 0 : 120);
+    };
+    host.addEventListener("pointerover", prefetchHandler);
+    host.addEventListener("focusin", prefetchHandler);
+    host.addEventListener("touchstart", prefetchHandler, { passive: true });
     imageErrorHandler = (event) => {
       const image = event.target;
       if (!(image instanceof HTMLImageElement) || !image.matches("[data-reader-image]")) return;
@@ -1595,7 +1647,9 @@
     host.addEventListener("error", imageErrorHandler, true);
     keyHandler = (event) => {
       if (!root?.isConnected || event.target instanceof Element && event.target.matches("input,textarea,select,[contenteditable]")) return;
-      if (state.view === "reader" && event.key === "ArrowLeft") readerNavigate(-1);
+      const quickRead = event.target.closest?.("[data-quick-read]");
+      if (quickRead && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); quickReadSeries(quickRead.dataset.quickRead); }
+      else if (state.view === "reader" && event.key === "ArrowLeft") readerNavigate(-1);
       else if (state.view === "reader" && event.key === "ArrowRight") readerNavigate(1);
       else if (state.view === "reader" && event.key.toLocaleLowerCase() === "m") { state.readerMode = state.readerMode === "scroll" ? "page" : "scroll"; saveLocalState(); render(); }
       else if (state.view === "reader" && event.key.toLocaleLowerCase() === "f") root.querySelector("[data-reader]")?.requestFullscreen?.();
@@ -1618,14 +1672,18 @@
     blobUrls.forEach((url) => URL.revokeObjectURL(url));
     blobUrls.clear();
     preloadedPageUrls.clear();
-    if (host) { host.removeEventListener("click", handleClick); host.removeEventListener("input", handleInput); host.removeEventListener("change", handleInput); if (imageErrorHandler) host.removeEventListener("error", imageErrorHandler, true); host.replaceChildren(); }
+    prefetchedSeries.clear();
+    if (prefetchTimer) global.clearTimeout(prefetchTimer);
+    prefetchTimer = 0;
+    if (host) { host.removeEventListener("click", handleClick); host.removeEventListener("input", handleInput); host.removeEventListener("change", handleInput); if (prefetchHandler) { host.removeEventListener("pointerover", prefetchHandler); host.removeEventListener("focusin", prefetchHandler); host.removeEventListener("touchstart", prefetchHandler); } if (imageErrorHandler) host.removeEventListener("error", imageErrorHandler, true); host.replaceChildren(); }
+    prefetchHandler = null;
     imageErrorHandler = null;
     host = null;
     root = null;
   }
 
   global.HHComicReaderHub = Object.freeze({
-    mount, unmount, version: "4.0.0", getSeriesDescriptor, getChapterDescriptor,
+    mount, unmount, version: "4.1.0", getSeriesDescriptor, getChapterDescriptor,
     getMotionEligibility, createMotionHandoff
   });
 })(window);

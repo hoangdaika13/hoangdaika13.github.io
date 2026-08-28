@@ -44,6 +44,13 @@ test("Team client exposes distinct Board, List, Calendar and Timeline workspaces
   assert.match(client, /dataTransfer/);
 });
 
+test("Team client uses authenticated Socket.IO invalidation without broadcasting task bodies", () => {
+  for (const marker of ["workspace:resource:join", "workspace:resource:event", "workspace:resource:leave", "team-board", "broadcastInvalidation", "scheduleRealtimeHydrate"]) assert.match(client, new RegExp(marker));
+  assert.match(client, /type: "invalidate"/);
+  assert.match(client, /Socket\.IO · MongoDB source · Đã xác thực/);
+  assert.doesNotMatch(client, /workspace:resource:event[\s\S]{0,500}(title|description|comment):/);
+});
+
 test("Team client hides mutation controls from roles without permission", () => {
   assert.match(client, /can\(data\.board, "editor"\)/);
   assert.match(client, /can\(data\.board, "commenter"\)/);

@@ -9,7 +9,8 @@
     "test:astra": "node --test test/remote-signaling.test.js",
     "test:communication": "node --test test/communication-v2.test.js",
     "test:remote": "node --test test/remote-signaling.test.js",
-    "test:play": "node --test test/play-realtime.test.js"
+    "test:play": "node --test test/play-realtime.test.js",
+    "test:workspace": "node --test test/workspace-realtime.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
