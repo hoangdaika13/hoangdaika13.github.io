@@ -2,6 +2,21 @@
 
 `galaxy-domain-views.js` là lớp trình bày/adaptor cho sáu màn hình tham chiếu HH Galaxy. Lớp này không thay thế engine đang hoạt động, không đổi schema cũ và không tạo dữ liệu giả để lấp giao diện.
 
+`galaxy-planet-hubs.js` sở hữu lớp trung chuyển cho chín hành tinh và hai khu vực tiện ích. Trên Galaxy Map, chỉ control có `data-gha-entry="hh-core"` đi tới `/home/dashboard`. Các hành tinh đi tới `/galaxy/*`, hiển thị hub độc lập rồi mới mở route engine thật; deep-link legacy vẫn được giữ nguyên.
+
+| Hành tinh | Hub route | Engine chính |
+|---|---|---|
+| AI Universe | `/galaxy/ai` | `/chat-ai`, `/create/ai-center` |
+| Music Planet | `/galaxy/music` | `/music/ambient`, `/music-ai`, `/music` |
+| Video Planet | `/galaxy/video` | `/davinci-resolve`, `/youtube`, `/cinema` |
+| Creator Studio | `/galaxy/creator` | `/create/workflow` |
+| Games World | `/galaxy/games` | `/play`, `/game`, `/comic-reader` |
+| Dev Planet | `/galaxy/dev` | `/dev-tools` |
+| Learning Star | `/galaxy/learning` | `/learn`, `/english`, `/japanese`, `/chinese`, `/phat-phap` |
+| Community | `/galaxy/community` | `/communication/*` |
+| Tools Galaxy | `/galaxy/tools` | Project, Automation, Desktop và `/universe` |
+| Analytics / Cài đặt | `/galaxy/analytics`, `/galaxy/settings` | `/analytics`, `/settings` |
+
 ## API
 
 ```js
@@ -26,11 +41,11 @@ window.HHGalaxyDomainViews.getState(root);
 
 | Màn hình | Canonical route | Alias adapter | Engine/đích chính |
 |---|---|---|---|
-| Creator Pipeline | `/create/workflow` | `/create`, `/galaxy/creator-pipeline` | Creative OS và các tool `/create/*`, `/media-design/*`, `/music-ai/*`, `/davinci-resolve/*` |
+| Creator Pipeline | `/create/workflow` | `/create`, `/galaxy/creator-pipeline`, `/galaxy/creator` | Creative OS và các tool `/create/*`, `/media-design/*`, `/music-ai/*`, `/davinci-resolve/*` |
 | Automation Builder | `/work/automation-lab` | `/galaxy/automation-builder` | Work Center Automation Lab; AI Automation giữ workspace riêng |
 | Project Hub & Media Vault | `/work/projects-tasks` | `/galaxy/project-hub` | Work Center, Universal Project và Media & Design |
-| Community Showcase | `/communication/community` | `/galaxy/community-showcase` | Communication Community và backend Social/Realtime |
-| Ambient Room | `/music/ambient` | `/music`, `/galaxy/ambient-room` | Web Audio cục bộ; Music Planet cho dự án âm nhạc |
+| Community Showcase | `/communication/community` | `/galaxy/community-showcase`, `/galaxy/community` | Communication Community và backend Social/Realtime |
+| Ambient Room | `/music/ambient` | `/music`, `/galaxy/ambient-room`, `/galaxy/music` | Web Audio cục bộ; Music Planet cho dự án âm nhạc |
 | HH Web Desktop | `/system/desktop` | `/galaxy/web-desktop` | Launcher opt-in; không mount lặp engine tính năng |
 
 Alias chỉ giúp `canHandle()` nhận route cũ/thử nghiệm. Router tích hợp nên gọi `canHandle(route, { includeAliases: false })` khi mount tự động để chỉ nhận sáu canonical route và không che engine con. Chỉ bật alias `/create`, `/music` hoặc `/galaxy/*` theo feature flag rõ ràng. Các route engine như `/create/ai-automation` và `/music-ai/ambient-room` cố ý không phải alias.

@@ -7,7 +7,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function (globalScope) {
   "use strict";
 
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.0";
   const HOME_PREF_KEY = "hh.galaxy.home.preferences.v1";
   const FOCUS_KEY = "hh.galaxy.dashboard.focus.v1";
   const TASK_KEY = "hh.command-center.todos.v2";
@@ -16,29 +16,29 @@
   const PROJECT_KEYS = Object.freeze(["hh.creative-os.v1", "hh-project-center"]);
   const ROUTES = Object.freeze(["/home", "/home/dashboard", "/create/ai-center", "/chat-ai"]);
   const PLANETS = Object.freeze([
-    { id: "music", label: "Music Planet", note: "Nhạc và âm thanh", route: "/music-ai", tone: "cyan", x: 27.96, y: 13.47, size: 82 },
-    { id: "video", label: "Video Planet", note: "Video và điện ảnh", route: "/davinci-resolve", tone: "orange", x: 58.82, y: 15.9, size: 72 },
-    { id: "creator", label: "Creator Studio", note: "Không gian sáng tạo", route: "/create", tone: "violet", x: 75.14, y: 30.09, size: 80 },
-    { id: "dev", label: "Dev Planet", note: "Code và công cụ", route: "/dev-tools", tone: "blue", x: 74.57, y: 51.29, size: 78 },
-    { id: "community", label: "Community", note: "Kết nối cộng đồng", route: "/communication/community", tone: "aqua", x: 61.42, y: 65.47, size: 78 },
-    { id: "tools", label: "Tools Galaxy", note: "Tiện ích chuyên dụng", route: "/work", tone: "violet", x: 40.32, y: 73.21, size: 82 },
-    { id: "learn", label: "Learning Star", note: "Học tập và ngôn ngữ", route: "/learn", tone: "blue", x: 22.4, y: 62.75, size: 82 },
-    { id: "games", label: "Games World", note: "Trò chơi và giải trí", route: "/play", tone: "pink", x: 8.45, y: 45.56, size: 78 },
-    { id: "ai", label: "AI Universe", note: "AI và trợ lý", route: "/create/ai-center", tone: "amber", x: 14.96, y: 27.79, size: 82 }
+    { id: "music", label: "Music Planet", note: "Nhạc và âm thanh", route: "/galaxy/music", tone: "cyan", x: 27.96, y: 13.47, size: 82 },
+    { id: "video", label: "Video Planet", note: "Video và điện ảnh", route: "/galaxy/video", tone: "orange", x: 58.82, y: 15.9, size: 72 },
+    { id: "creator", label: "Creator Studio", note: "Không gian sáng tạo", route: "/galaxy/creator", tone: "violet", x: 75.14, y: 30.09, size: 80 },
+    { id: "dev", label: "Dev Planet", note: "Code và công cụ", route: "/galaxy/dev", tone: "blue", x: 74.57, y: 51.29, size: 78 },
+    { id: "community", label: "Community", note: "Kết nối cộng đồng", route: "/galaxy/community", tone: "aqua", x: 61.42, y: 65.47, size: 78 },
+    { id: "tools", label: "Tools Galaxy", note: "Tiện ích chuyên dụng", route: "/galaxy/tools", tone: "violet", x: 40.32, y: 73.21, size: 82 },
+    { id: "learn", label: "Learning Star", note: "Học tập và ngôn ngữ", route: "/galaxy/learning", tone: "blue", x: 22.4, y: 62.75, size: 82 },
+    { id: "games", label: "Games World", note: "Trò chơi và giải trí", route: "/galaxy/games", tone: "pink", x: 8.45, y: 45.56, size: 78 },
+    { id: "ai", label: "AI Universe", note: "AI và trợ lý", route: "/galaxy/ai", tone: "amber", x: 14.96, y: 27.79, size: 82 }
   ]);
   const HOME_NAV_ITEMS = Object.freeze([
     { id: "home", label: "Trang chủ", route: "/home" },
-    { id: "ai", label: "AI Universe", route: "/create/ai-center" },
-    { id: "music", label: "Music Planet", route: "/music-ai" },
-    { id: "video", label: "Video Planet", route: "/davinci-resolve" },
-    { id: "creator", label: "Creator Studio", route: "/create" },
-    { id: "games", label: "Games World", route: "/play" },
-    { id: "dev", label: "Dev Planet", route: "/dev-tools" },
-    { id: "learn", label: "Learning Star", route: "/learn" },
-    { id: "community", label: "Community", route: "/communication/community" },
-    { id: "tools", label: "Tools Galaxy", route: "/work" },
-    { id: "analytics", label: "Analytics", route: "/analytics" },
-    { id: "settings", label: "Cài đặt", route: "/settings" }
+    { id: "ai", label: "AI Universe", route: "/galaxy/ai" },
+    { id: "music", label: "Music Planet", route: "/galaxy/music" },
+    { id: "video", label: "Video Planet", route: "/galaxy/video" },
+    { id: "creator", label: "Creator Studio", route: "/galaxy/creator" },
+    { id: "games", label: "Games World", route: "/galaxy/games" },
+    { id: "dev", label: "Dev Planet", route: "/galaxy/dev" },
+    { id: "learn", label: "Learning Star", route: "/galaxy/learning" },
+    { id: "community", label: "Community", route: "/galaxy/community" },
+    { id: "tools", label: "Tools Galaxy", route: "/galaxy/tools" },
+    { id: "analytics", label: "Analytics", route: "/galaxy/analytics" },
+    { id: "settings", label: "Cài đặt", route: "/galaxy/settings" }
   ]);
   const AI_DESTINATIONS = Object.freeze([
     { id: "chat", label: "AI Chat", description: "Trò chuyện bằng engine HH AI hiện có", route: "/chat-ai", glyph: "CH", x: 72, y: 17 },
@@ -452,7 +452,7 @@
           <div class="gha-system" data-gha-system>
             <div class="gha-map__stars" aria-hidden="true"></div><div class="gha-map__nebula" aria-hidden="true"></div>
             <div class="gha-orbits" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-            <button class="gha-core" type="button" data-gha-route="/home/dashboard" style="--x:44.51%;--y:39.4%;--size:148px" aria-label="Mở Dashboard cá nhân"><span aria-hidden="true">HH</span><strong>HH CORE</strong><small>Trái tim của vũ trụ HH</small></button>
+            <button class="gha-core" type="button" data-gha-entry="hh-core" data-gha-route="/home/dashboard" style="--x:44.51%;--y:39.4%;--size:148px" aria-label="Mở HH Core và vào Dashboard cá nhân"><span aria-hidden="true">HH</span><strong>HH CORE</strong><small>Trái tim của vũ trụ HH</small></button>
             <div class="gha-planets" role="navigation" aria-label="Bản đồ các chức năng">${PLANETS.map((planet, index) => `<button class="gha-planet gha-planet--${planet.tone}" type="button" data-gha-route="${escapeHtml(planet.route)}" data-gha-planet="${escapeHtml(planet.id)}" data-gha-searchable style="--x:${planet.x}%;--y:${planet.y}%;--size:${planet.size}px;--delay:${index * -1.8}s" aria-label="Mở ${escapeHtml(planet.label)} — ${escapeHtml(planet.note)}">${planetIconMarkup(planet.id)}<strong>${escapeHtml(planet.label)}</strong><small>${escapeHtml(planet.note)}</small></button>`).join("")}</div>
             <form class="gha-home-prompt" data-gha-ai-form autocomplete="off"><label class="gha-sr-only" for="gha-home-prompt-input">Hỏi HH AI</label><span aria-hidden="true">⌕</span><input id="gha-home-prompt-input" data-gha-ai-input type="text" maxlength="1600" placeholder="Nhập câu hỏi hoặc gõ / để mở nhanh..." aria-describedby="gha-home-prompt-hint"><small id="gha-home-prompt-hint" class="gha-sr-only">Nội dung sẽ được chuyển an toàn tới HH AI Copilot.</small><button type="submit" aria-label="Gửi câu hỏi tới HH AI">${iconMarkup("send")}</button></form>
             <div class="gha-map__controls" aria-label="Điều khiển bản đồ">

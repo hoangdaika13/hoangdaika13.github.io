@@ -455,3 +455,110 @@ body.app-sidebar-auto-hide:not(.app-sidebar-collapsed) [data-galaxy-shell] > .ap
     display: none;
   }
 }
+
+/* Planet routes are full Galaxy workspaces.  The legacy application chrome is
+ * retained for HH Core (/home/dashboard), while planet entries own their
+ * sidebar and topbar so a second accordion rail cannot cover the content. */
+[data-galaxy-shell][data-galaxy-route^="/galaxy/"] > .app-header,
+[data-galaxy-shell][data-galaxy-route^="/galaxy/"] > .app-shell__body > .app-sidebar,
+[data-galaxy-shell][data-galaxy-route^="/galaxy/"] > .app-shell__body > .app-sidebar-backdrop,
+[data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-header,
+[data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-shell__body > .app-sidebar,
+[data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-shell__body > .app-sidebar-backdrop {
+  display: none !important;
+}
+
+[data-galaxy-shell][data-galaxy-route^="/galaxy/"] > .app-shell__body,
+[data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-shell__body {
+  display: block !important;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  background: transparent;
+}
+
+[data-galaxy-shell][data-galaxy-route^="/galaxy/"] > .app-shell__body > .app-main,
+[data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-shell__body > .app-main {
+  width: 100%;
+  min-width: 0;
+  height: 100dvh;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 !important;
+  background: transparent;
+  scrollbar-gutter: stable;
+}
+
+[data-galaxy-shell][data-galaxy-route^="/galaxy/"] > .app-shell__body > .app-main > .app-workspace,
+[data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-shell__body > .app-main > .app-workspace {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+[data-galaxy-shell][data-galaxy-route^="/galaxy/"] :is(.app-breadcrumb, .app-page-header, .app-context-bar),
+[data-galaxy-shell][data-galaxy-route^="/chat-ai"] :is(.app-breadcrumb, .app-page-header, .app-context-bar) {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  [data-galaxy-shell][data-galaxy-route^="/galaxy/"] > .app-shell__body > .app-main,
+  [data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-shell__body > .app-main {
+    height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
+/* Canonical deep-links (for example /create/workflow or
+ * /work/projects-tasks) use the same immersive surface as their /galaxy/*
+ * entry aliases.  The shell marks them with data-galaxy-immersive so a direct
+ * bookmark cannot reintroduce the legacy header/sidebar over the new view. */
+[data-galaxy-shell][data-galaxy-immersive="true"] > .app-header,
+[data-galaxy-shell][data-galaxy-immersive="true"] > .app-shell__body > .app-sidebar,
+[data-galaxy-shell][data-galaxy-immersive="true"] > .app-shell__body > .app-sidebar-backdrop {
+  display: none !important;
+}
+
+[data-galaxy-shell][data-galaxy-immersive="true"] > .app-shell__body {
+  display: block !important;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  background: transparent;
+}
+
+[data-galaxy-shell][data-galaxy-immersive="true"] > .app-shell__body > .app-main {
+  width: 100%;
+  min-width: 0;
+  height: 100dvh;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 !important;
+  background: transparent;
+  scrollbar-gutter: stable;
+}
+
+[data-galaxy-shell][data-galaxy-immersive="true"] > .app-shell__body > .app-main > .app-workspace {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+[data-galaxy-shell][data-galaxy-immersive="true"] :is(.app-breadcrumb, .app-page-header, .app-context-bar) {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  [data-galaxy-shell][data-galaxy-immersive="true"] > .app-shell__body > .app-main {
+    height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}

@@ -1,7 +1,7 @@
 (function galaxyDomainViewsBootstrap(global) {
   "use strict";
 
-  const VERSION = 1;
+  const VERSION = 2;
   const STORAGE_KEY = "hh.galaxy.domain-views.v1";
   const MAX_DESKTOP_WINDOWS = 3;
   const instances = new WeakMap();
@@ -11,7 +11,7 @@
     creator: Object.freeze({
       id: "creator",
       canonical: "/create/workflow",
-      aliases: Object.freeze(["/create", "/galaxy/creator-pipeline"]),
+      aliases: Object.freeze(["/create", "/galaxy/creator-pipeline", "/galaxy/creator"]),
       title: "Creator Pipeline",
       eyebrow: "QUY TRÌNH SÁNG TẠO NỘI DUNG"
     }),
@@ -32,14 +32,14 @@
     community: Object.freeze({
       id: "community",
       canonical: "/communication/community",
-      aliases: Object.freeze(["/galaxy/community-showcase"]),
+      aliases: Object.freeze(["/galaxy/community-showcase", "/galaxy/community"]),
       title: "Community Showcase",
       eyebrow: "CỘNG ĐỒNG HH"
     }),
     ambient: Object.freeze({
       id: "ambient",
       canonical: "/music/ambient",
-      aliases: Object.freeze(["/music", "/galaxy/ambient-room"]),
+      aliases: Object.freeze(["/music", "/galaxy/ambient-room", "/galaxy/music"]),
       title: "Ambient Room",
       eyebrow: "PHÒNG ÂM THANH TẬP TRUNG"
     }),
@@ -60,6 +60,44 @@
     { id: "ambient", label: "Ambient", icon: "♫" },
     { id: "desktop", label: "Desktop", icon: "⌗" }
   ]);
+
+  /* The Galaxy surface keeps one predictable navigation rail on every
+   * immersive workspace.  The rail points at the real feature routes; it is
+   * deliberately separate from the legacy accordion sidebar so a module can
+   * be used without stacking two navigation systems on top of each other. */
+  const GALAXY_PORTAL_NAV = Object.freeze([
+    { id: "home", label: "Trang chủ", route: "/home", icon: "⌂" },
+    { id: "ai", label: "AI Universe", route: "/galaxy/ai", icon: "✦" },
+    { id: "music", label: "Music Planet", route: "/galaxy/music", icon: "♫" },
+    { id: "video", label: "Video Planet", route: "/galaxy/video", icon: "▣" },
+    { id: "creator", label: "Creator Studio", route: "/galaxy/creator", icon: "⌘" },
+    { id: "games", label: "Games World", route: "/galaxy/games", icon: "♧" },
+    { id: "dev", label: "Dev Planet", route: "/galaxy/dev", icon: "</>" },
+    { id: "learning", label: "Learning Star", route: "/galaxy/learning", icon: "◇" },
+    { id: "community", label: "Community", route: "/galaxy/community", icon: "◎" },
+    { id: "tools", label: "Tools Galaxy", route: "/galaxy/tools", icon: "⌘" },
+    { id: "analytics", label: "Analytics", route: "/galaxy/analytics", icon: "⌁" },
+    { id: "settings", label: "Cài đặt", route: "/galaxy/settings", icon: "⚙" }
+  ]);
+
+  function portalNavActive(view) {
+    if (view === "ambient") return "music";
+    if (view === "creator") return "creator";
+    if (view === "community") return "community";
+    if (view === "automation" || view === "projects" || view === "desktop") return "tools";
+    return view;
+  }
+
+  function portalSidebarMarkup(view) {
+    const active = portalNavActive(view);
+    return `<aside class="gdv-portal-sidebar" aria-label="Galaxy navigation">
+      <a class="gdv-portal-brand" href="#/home" data-gdv-route="/home" aria-label="HH Galaxy — Trang chủ"><span aria-hidden="true">HH</span><strong>HOANG8.COM</strong><small>GALAXY OS</small></a>
+      <label class="gdv-portal-search"><span aria-hidden="true">⌕</span><input type="search" data-gdv-nav-search maxlength="80" placeholder="Tìm trong Galaxy…" aria-label="Tìm trong Galaxy"></label>
+      <nav class="gdv-portal-nav" aria-label="Các không gian HH">${GALAXY_PORTAL_NAV.map((item) => `<button type="button" data-gdv-route="${item.route}" data-gdv-nav-item="${item.id}"${active === item.id ? ' aria-current="page"' : ""}><i aria-hidden="true">${item.icon}</i><span>${escapeHtml(item.label)}</span></button>`).join("")}</nav>
+      <section class="gdv-portal-upgrade"><span aria-hidden="true">✧</span><strong>Nâng cấp Galaxy</strong><p>Mở thêm không gian sáng tạo và lưu trữ.</p><button type="button" data-gdv-route="/settings">Xem tùy chọn →</button></section>
+      <footer class="gdv-portal-profile"><span aria-hidden="true">HH</span><div><strong>Thành viên HH</strong><small>Local-first workspace</small></div></footer>
+    </aside>`;
+  }
 
   const ENGINE_TARGETS = Object.freeze({
     automation: Object.freeze({ route: "/work/automation-lab", fallbackRoute: "/work/workflow-automation", label: "Automation Lab" }),
@@ -273,7 +311,7 @@
       </div>
       <nav class="gdv-view-nav" aria-label="Chuyển không gian Galaxy">
         ${VIEW_NAV.map((item) => {
-          const route = ROUTES[item.id].canonical;
+          const route = ROUTES[item.id].aliases.find((alias) => alias.startsWith("/galaxy/")) || ROUTES[item.id].canonical;
           const current = item.id === definition.id;
           return `<button type="button" data-gdv-route="${route}"${current ? ' aria-current="page" disabled' : ""}><span aria-hidden="true">${item.icon}</span>${escapeHtml(item.label)}</button>`;
         }).join("")}
@@ -289,6 +327,7 @@
     const definition = ROUTES[instance.view];
     return `<section class="gdv" data-gdv-root data-gdv-view="${definition.id}" aria-labelledby="gdv-title-${definition.id}">
       <div class="gdv-space" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      ${portalSidebarMarkup(definition.id)}
       ${headerMarkup(definition).replace(`<h2>`, `<h2 id="gdv-title-${definition.id}">`)}
       <div class="gdv-body">${body}</div>
       <p class="gdv-sr-live" data-gdv-live aria-live="polite" aria-atomic="true"></p>
@@ -900,6 +939,14 @@
   function handleInput(instance, event) {
     const slider = event.target.closest("[data-gdv-mix]");
     if (slider) setMix(instance, slider.dataset.gdvMix, slider.value);
+    const navSearch = event.target.closest("[data-gdv-nav-search]");
+    if (navSearch) {
+      const query = String(navSearch.value || "").trim().toLocaleLowerCase("vi-VN");
+      instance.root.querySelectorAll("[data-gdv-nav-item]").forEach((item) => {
+        const label = String(item.textContent || "").toLocaleLowerCase("vi-VN");
+        item.hidden = Boolean(query && !label.includes(query));
+      });
+    }
   }
 
   function handleVisibility(instance) {

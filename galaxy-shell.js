@@ -25,41 +25,41 @@
     { id: "personal-dashboard", planet: "home", title: "Dashboard cá nhân", route: "/home/dashboard", aliases: ["/settings/user-dashboard"], assetGroup: "galaxy-home-ai", layout: "dashboard", capabilities: ["widgets", "local-preferences"], adminOnly: false },
     { id: "favorites", planet: "home", title: "Yêu thích", route: "/favorites", aliases: [], assetGroup: "core", layout: "standard", capabilities: ["local-preferences"], adminOnly: false },
     { id: "recent", planet: "home", title: "Gần đây", route: "/recent", aliases: [], assetGroup: "core", layout: "standard", capabilities: ["local-history"], adminOnly: false },
-    { id: "work-center", planet: "home", title: "Work Center", route: "/work", aliases: [], assetGroup: "work", layout: "standard", capabilities: ["projects", "tasks"], adminOnly: false },
-    { id: "project-hub", planet: "home", title: "Project Hub", route: "/work/projects-tasks", aliases: ["/work/project-hub"], assetGroup: "galaxy-domain-views", layout: "three-column", capabilities: ["projects", "tasks", "local-storage"], adminOnly: false },
+    { id: "work-center", planet: "home", title: "Work Center", route: "/work", aliases: ["/galaxy/tools"], assetGroup: "work", layout: "standard", capabilities: ["projects", "tasks"], adminOnly: false },
+    { id: "project-hub", planet: "home", title: "Project Hub", route: "/work/projects-tasks", aliases: ["/work/project-hub", "/galaxy/project-hub"], assetGroup: "galaxy-domain-views", layout: "three-column", capabilities: ["projects", "tasks", "local-storage"], adminOnly: false },
     { id: "automation-builder", planet: "home", title: "Automation Builder", route: "/work/automation-lab", aliases: [], assetGroup: "work", layout: "workbench", capabilities: ["workflow", "dry-run", "execution-log"], adminOnly: false },
 
-    { id: "creator-studio", planet: "ai", title: "Creator Studio", route: "/create/workflow", aliases: ["/create"], assetGroup: "galaxy-domain-views", layout: "workbench", capabilities: ["creative-tools", "projects"], adminOnly: false },
-    { id: "ai-universe", planet: "ai", title: "AI Universe", route: "/create/ai-center", aliases: [], assetGroup: "ai", layout: "atlas", capabilities: ["ai-providers", "prompting"], adminOnly: false },
+    { id: "creator-studio", planet: "ai", title: "Creator Studio", route: "/create/workflow", aliases: ["/create", "/galaxy/creator"], assetGroup: "galaxy-domain-views", layout: "workbench", capabilities: ["creative-tools", "projects"], adminOnly: false },
+    { id: "ai-universe", planet: "ai", title: "AI Universe", route: "/create/ai-center", aliases: ["/galaxy/ai"], assetGroup: "ai", layout: "atlas", capabilities: ["ai-providers", "prompting"], adminOnly: false },
     { id: "ai-copilot", planet: "ai", title: "HH AI Copilot", route: "/chat-ai", aliases: [], assetGroup: "chat-ai", layout: "three-column", capabilities: ["chat", "streaming", "history"], adminOnly: false },
     { id: "draw-studio", planet: "ai", title: "Draw Studio", route: "/draw", aliases: [], assetGroup: "draw", layout: "workbench", capabilities: ["canvas", "export"], adminOnly: false },
     { id: "media-design", planet: "ai", title: "Media & Design", route: "/media-design", aliases: [], assetGroup: "media", layout: "workbench", capabilities: ["media", "design", "projects"], adminOnly: false },
     { id: "graphic-design", planet: "ai", title: "Thiết kế đồ họa", route: "/graphic-design", aliases: [], assetGroup: "graphic-design", layout: "workbench", capabilities: ["canvas", "vector", "export"], adminOnly: false },
 
-    { id: "music-planet", planet: "music", title: "Music Planet", route: "/music", aliases: [], assetGroup: "music-library", layout: "media-dock", capabilities: ["audio", "library", "playlists"], adminOnly: false },
-    { id: "ambient-room", planet: "music", title: "Ambient Room", route: "/music/ambient", aliases: [], assetGroup: "galaxy-domain-views", layout: "media-dock", capabilities: ["audio", "focus-timer"], adminOnly: false },
+    { id: "music-planet", planet: "music", title: "Music Planet", route: "/music", aliases: ["/galaxy/music"], assetGroup: "music-library", layout: "media-dock", capabilities: ["audio", "library", "playlists"], adminOnly: false },
+    { id: "ambient-room", planet: "music", title: "Ambient Room", route: "/music/ambient", aliases: ["/galaxy/ambient-room"], assetGroup: "galaxy-domain-views", layout: "media-dock", capabilities: ["audio", "focus-timer"], adminOnly: false },
     { id: "music-ai", planet: "music", title: "Làm nhạc AI", route: "/music-ai", aliases: [], assetGroup: "music-ai", layout: "workbench", capabilities: ["audio", "composition", "projects"], adminOnly: false },
-    { id: "video-planet", planet: "video", title: "Video Planet", route: "/davinci-resolve", aliases: [], assetGroup: "davinci-resolve", layout: "workbench", capabilities: ["video", "timeline", "export"], adminOnly: false },
+    { id: "video-planet", planet: "video", title: "Video Planet", route: "/davinci-resolve", aliases: ["/galaxy/video"], assetGroup: "davinci-resolve", layout: "workbench", capabilities: ["video", "timeline", "export"], adminOnly: false },
     { id: "youtube", planet: "video", title: "YouTube", route: "/youtube", aliases: [], assetGroup: "search", layout: "media-dock", capabilities: ["youtube-player", "search"], adminOnly: false },
     { id: "cinema", planet: "video", title: "Phim", route: "/cinema", aliases: [], assetGroup: "cinema", layout: "media-dock", capabilities: ["video", "library"], adminOnly: false },
 
-    { id: "games-world", planet: "games", title: "Games World", route: "/play", aliases: [], assetGroup: "play", layout: "standard", capabilities: ["games", "local-save"], adminOnly: false },
+    { id: "games-world", planet: "games", title: "Games World", route: "/play", aliases: ["/galaxy/games"], assetGroup: "play", layout: "standard", capabilities: ["games", "local-save"], adminOnly: false },
     { id: "eonwild", planet: "games", title: "HH EonWild", route: "/game", aliases: [], assetGroup: "eonwild", layout: "atlas", capabilities: ["webgl", "simulation", "local-save"], adminOnly: false },
     { id: "comic-reader", planet: "games", title: "Đọc truyện", route: "/comic-reader", aliases: [], assetGroup: "comic-reader", layout: "three-column", capabilities: ["reader", "library"], adminOnly: false },
 
-    { id: "dev-planet", planet: "dev", title: "Dev Planet", route: "/dev-tools", aliases: [], assetGroup: "dev-tools", layout: "workbench", capabilities: ["code", "api", "diagnostics"], adminOnly: false },
-    { id: "learning-star", planet: "learning", title: "Learning Star", route: "/learn", aliases: [], assetGroup: "learning", layout: "standard", capabilities: ["curriculum", "progress"], adminOnly: false },
+    { id: "dev-planet", planet: "dev", title: "Dev Planet", route: "/dev-tools", aliases: ["/galaxy/dev"], assetGroup: "dev-tools", layout: "workbench", capabilities: ["code", "api", "diagnostics"], adminOnly: false },
+    { id: "learning-star", planet: "learning", title: "Learning Star", route: "/learn", aliases: ["/galaxy/learning"], assetGroup: "learning", layout: "standard", capabilities: ["curriculum", "progress"], adminOnly: false },
     { id: "hh-english", planet: "learning", title: "HH English", route: "/english", aliases: [], assetGroup: "english", layout: "three-column", capabilities: ["curriculum", "srs", "progress"], adminOnly: false },
     { id: "hh-japanese", planet: "learning", title: "HH Japanese", route: "/japanese", aliases: [], assetGroup: "japanese", layout: "three-column", capabilities: ["curriculum", "srs", "progress"], adminOnly: false },
     { id: "hh-chinese", planet: "learning", title: "HH Chinese", route: "/chinese", aliases: [], assetGroup: "chinese", layout: "three-column", capabilities: ["curriculum", "srs", "progress"], adminOnly: false },
     { id: "buddhist-learning", planet: "learning", title: "Phật Pháp", route: "/phat-phap", aliases: [], assetGroup: "phat-phap", layout: "three-column", capabilities: ["library", "audio", "progress"], adminOnly: false },
 
-    { id: "community", planet: "community", title: "Community", route: "/communication", aliases: [], assetGroup: "communication", layout: "three-column", capabilities: ["realtime", "messaging", "community"], adminOnly: false },
+    { id: "community", planet: "community", title: "Community", route: "/communication", aliases: ["/galaxy/community"], assetGroup: "communication", layout: "three-column", capabilities: ["realtime", "messaging", "community"], adminOnly: false },
     { id: "tools-galaxy", planet: "tools", title: "Tools Galaxy", route: "/system", aliases: [], assetGroup: "system", layout: "standard", capabilities: ["utilities", "settings"], adminOnly: false },
     { id: "web-desktop", planet: "tools", title: "HH Web Desktop", route: "/system/desktop", aliases: [], assetGroup: "galaxy-domain-views", layout: "desktop", capabilities: ["window-launcher", "local-preferences"], adminOnly: false },
     { id: "universe", planet: "tools", title: "Vũ trụ", route: "/universe", aliases: ["/cosmic-observatory"], assetGroup: "cosmic", layout: "atlas", capabilities: ["astronomy", "webgl", "data-sources"], adminOnly: false },
-    { id: "analytics", planet: "tools", title: "Analytics", route: "/analytics", aliases: [], assetGroup: "analytics", layout: "dashboard", capabilities: ["analytics"], adminOnly: false },
-    { id: "settings", planet: "tools", title: "Cài đặt", route: "/settings", aliases: [], assetGroup: "settings", layout: "standard", capabilities: ["preferences", "privacy"], adminOnly: false },
+    { id: "analytics", planet: "tools", title: "Analytics", route: "/analytics", aliases: ["/galaxy/analytics"], assetGroup: "analytics", layout: "dashboard", capabilities: ["analytics"], adminOnly: false },
+    { id: "settings", planet: "tools", title: "Cài đặt", route: "/settings", aliases: ["/galaxy/settings"], assetGroup: "settings", layout: "standard", capabilities: ["preferences", "privacy"], adminOnly: false },
     { id: "admin", planet: "tools", title: "Admin Panel", route: "/admin", aliases: [], assetGroup: "admin", layout: "dashboard", capabilities: ["administration"], adminOnly: true }
   ]);
 
@@ -135,6 +135,24 @@
   };
 
   const routeMatches = (candidate, route) => route === candidate || route.startsWith(`${candidate}/`);
+
+  // Immersive workspaces own their entire viewport and render a contextual
+  // Galaxy rail.  Keep the legacy application chrome for ordinary routes and
+  // for HH Core, but expose one explicit attribute so canonical deep-links
+  // (not only /galaxy/* aliases) cannot accidentally stack two sidebars.
+  const isImmersiveRoute = (input) => {
+    const route = normalizeRoute(input);
+    return route.startsWith("/galaxy/")
+      || route.startsWith("/chat-ai")
+      || [
+        "/create/workflow",
+        "/work/automation-lab",
+        "/work/projects-tasks",
+        "/communication/community",
+        "/music/ambient",
+        "/system/desktop"
+      ].some((canonical) => route === canonical || route.startsWith(`${canonical}/`));
+  };
 
   const findRoute = (input) => {
     const route = normalizeRoute(input);
@@ -273,6 +291,7 @@
     state.layout = VALID_LAYOUTS.has(match.layout) ? match.layout : "standard";
     if (root) {
       setOwnedAttribute(root, "data-galaxy-route", route);
+      setOwnedAttribute(root, "data-galaxy-immersive", String(isImmersiveRoute(route)));
       setOwnedAttribute(root, "data-galaxy-planet", state.planet);
       setOwnedAttribute(root, "data-galaxy-layout", state.layout);
     }

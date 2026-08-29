@@ -21,7 +21,7 @@ function memoryStorage(seed = {}) {
 
 test("exposes the HHGalaxyHomeAI mount contract", () => {
   assert.equal(global.HHGalaxyHomeAI, api);
-  assert.equal(api.VERSION, "1.0.0");
+  assert.equal(api.VERSION, "1.1.0");
   for (const method of ["mount", "unmount", "getState", "canHandle", "normalizeRoute", "collectLocalData", "mergeData", "viewMarkup"]) {
     assert.equal(typeof api[method], "function", `${method} should be exported`);
   }
@@ -48,7 +48,7 @@ test("handles only the four owned Home and AI route families", () => {
   assert.equal(api.normalizeRoute("#chat-ai/new?fresh=1"), "/chat-ai/new");
 });
 
-test("Galaxy Map planets point to real internal route families", () => {
+test("Galaxy Map planets point to isolated Galaxy hub routes", () => {
   assert.equal(api.PLANETS.length, 9);
   const routes = api.PLANETS.map((planet) => planet.route);
   for (const route of routes) {
@@ -56,9 +56,11 @@ test("Galaxy Map planets point to real internal route families", () => {
     assert.doesNotMatch(route, /^https?:/);
   }
   assert.deepEqual(new Set(routes).size, routes.length);
-  for (const required of ["/create/ai-center", "/music-ai", "/davinci-resolve", "/create", "/play", "/dev-tools", "/learn", "/communication/community", "/work"]) {
+  for (const required of ["/galaxy/ai", "/galaxy/music", "/galaxy/video", "/galaxy/creator", "/galaxy/games", "/galaxy/dev", "/galaxy/learning", "/galaxy/community", "/galaxy/tools"]) {
     assert.ok(routes.includes(required), `${required} should be reachable from the map`);
   }
+  assert.ok(routes.every((route) => route.startsWith("/galaxy/")));
+  assert.ok(routes.every((route) => route !== "/home/dashboard"));
 });
 
 test("Home reference surface keeps its live geometry and controls in the DOM", () => {

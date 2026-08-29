@@ -97,7 +97,7 @@ test("runtime rollback cleans adapters and immediately rerenders the current rou
 });
 
 test("Galaxy Shell joins the existing brand loader without increasing first-paint requests", () => {
-  assert.match(loader, /brand:[\s\S]*?galaxy-shell\.js\?v=1/);
+  assert.match(loader, /brand:[\s\S]*?galaxy-shell\.js\?v=2/);
   assert.match(router, /HHAssetLoader\?\.ensureGroup\?\.\("brand"\)/);
   assert.match(router, /brandReady\.then\(initAppShell, initAppShell\)/);
   assert.doesNotMatch(html, /<script\b[^>]*src=["']galaxy-shell\.js\?v=1/);

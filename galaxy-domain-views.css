@@ -667,3 +667,186 @@
   .gdv-stage,
   .gdv-tool-strip button { border: 1px solid CanvasText !important; background: Canvas !important; }
 }
+
+/* Immersive Galaxy portal shell.  It is intentionally appended after the
+ * legacy adapter rules so the same domain views can be opened from a direct
+ * canonical URL or from the new planet entry point without layout drift. */
+[data-gdv-root] {
+  display: grid;
+  grid-template-columns: minmax(208px, 232px) minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr;
+  align-items: start;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 100dvh;
+  padding: 18px;
+  overflow-x: clip;
+  overflow-y: visible;
+  background:
+    radial-gradient(circle at 78% 12%, rgb(80 37 164 / 18%), transparent 30%),
+    radial-gradient(circle at 17% 72%, rgb(14 125 190 / 12%), transparent 32%),
+    linear-gradient(145deg, #02040e 0%, #050a1b 52%, #02030b 100%);
+}
+
+[data-gdv-root] > .gdv-space { z-index: 0; grid-column: 1 / -1; grid-row: 1 / -1; }
+[data-gdv-root] > .gdv-portal-sidebar,
+[data-gdv-root] > .gdv-header,
+[data-gdv-root] > .gdv-body,
+[data-gdv-root] > .gdv-sr-live { position: relative; z-index: 1; }
+[data-gdv-root] > .gdv-portal-sidebar { grid-column: 1; grid-row: 1 / -1; }
+[data-gdv-root] > .gdv-header { grid-column: 2; grid-row: 1; }
+[data-gdv-root] > .gdv-body { grid-column: 2; grid-row: 2; min-width: 0; }
+
+.gdv-portal-sidebar {
+  display: flex;
+  align-items: stretch;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-height: calc(100dvh - 36px);
+  padding: 15px 11px;
+  border: 1px solid rgb(123 130 205 / 24%);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgb(5 11 28 / 94%), rgb(2 7 17 / 96%));
+  box-shadow: 0 25px 70px rgb(0 0 0 / 30%), inset 0 1px rgb(255 255 255 / 5%);
+}
+
+.gdv-portal-brand {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 54px;
+  padding: 2px 7px 12px;
+  color: white;
+  text-decoration: none;
+  border-bottom: 1px solid rgb(130 145 207 / 16%);
+}
+.gdv-portal-brand > span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgb(224 117 255 / 62%);
+  border-radius: 50%;
+  color: #f4d9ff;
+  background: radial-gradient(circle at 35% 28%, #ffb7ef 0 5%, #a545ec 28%, #1e1347 68%, #030617 100%);
+  box-shadow: 0 0 22px rgb(191 76 255 / 58%), inset 0 0 16px rgb(103 227 255 / 28%);
+  font-size: 1rem;
+  font-weight: 900;
+}
+.gdv-portal-brand strong,
+.gdv-portal-brand small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gdv-portal-brand strong { font-size: 0.88rem; letter-spacing: 0.02em; }
+.gdv-portal-brand small { grid-column: 2; margin-top: -7px; color: #8e9bb8; font-size: 0.6rem; letter-spacing: 0.16em; }
+.gdv-portal-brand:hover strong { color: #d9c5ff; }
+
+.gdv-portal-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid rgb(111 144 211 / 26%);
+  border-radius: 9px;
+  color: #66dcff;
+  background: rgb(6 17 37 / 78%);
+}
+.gdv-portal-search input { min-width: 0; width: 100%; border: 0; outline: 0; color: white; background: transparent; font-size: 0.78rem; }
+.gdv-portal-search input::placeholder { color: #7786a4; }
+
+.gdv-portal-nav { display: grid; gap: 4px; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.gdv-portal-nav button {
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 39px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #b7c1d8;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease, color 160ms ease;
+}
+.gdv-portal-nav button i {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 7px;
+  color: #a87cff;
+  background: rgb(124 58 237 / 13%);
+  font-size: 0.78rem;
+  font-style: normal;
+}
+.gdv-portal-nav button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; }
+.gdv-portal-nav button:hover { border-color: rgb(147 104 255 / 36%); color: white; background: rgb(124 58 237 / 13%); transform: translateX(2px); }
+.gdv-portal-nav button[aria-current="page"] { border-color: rgb(178 112 255 / 62%); color: white; background: linear-gradient(90deg, rgb(103 48 201 / 52%), rgb(41 44 115 / 52%)); box-shadow: inset 2px 0 #ba7aff, 0 0 20px rgb(139 92 246 / 16%); }
+.gdv-portal-nav button[aria-current="page"] i { color: white; background: linear-gradient(145deg, #9b5cff, #49309d); box-shadow: 0 0 15px rgb(160 93 255 / 54%); }
+
+.gdv-portal-upgrade {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 2px 8px;
+  margin-top: auto;
+  padding: 12px 10px;
+  border: 1px solid rgb(156 86 255 / 34%);
+  border-radius: 11px;
+  background: radial-gradient(circle at 85% 20%, rgb(174 76 255 / 30%), transparent 38%), linear-gradient(145deg, rgb(48 20 93 / 76%), rgb(14 16 48 / 88%));
+}
+.gdv-portal-upgrade > span { display: grid; grid-row: 1 / 4; width: 30px; height: 30px; place-items: center; color: #f3bdff; text-shadow: 0 0 14px #d85cff; }
+.gdv-portal-upgrade strong { font-size: 0.76rem; }
+.gdv-portal-upgrade p { margin: 0; color: #aab2ca; font-size: 0.66rem; line-height: 1.35; }
+.gdv-portal-upgrade button { grid-column: 2; min-height: 30px; margin-top: 6px; padding: 0 8px; border: 1px solid rgb(196 118 255 / 38%); border-radius: 7px; color: white; background: linear-gradient(100deg, #5b1bb6, #8a32dc); cursor: pointer; font-size: 0.68rem; }
+
+.gdv-portal-profile { display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 7px 8px 0; border-top: 1px solid rgb(130 145 207 / 16%); }
+.gdv-portal-profile > span { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid #7656d2; border-radius: 50%; color: #f3eaff; background: #2c1a62; font-size: 0.68rem; font-weight: 800; }
+.gdv-portal-profile strong,
+.gdv-portal-profile small { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gdv-portal-profile strong { font-size: 0.7rem; }
+.gdv-portal-profile small { color: #7f8ca8; font-size: 0.6rem; }
+
+.gdv-ambient-scene {
+  background-image:
+    linear-gradient(to top, rgb(2 6 16 / 88%), rgb(2 6 16 / 16%) 56%),
+    url("assets/galaxy/hh-ambient-room-rainy-v1.png"),
+    radial-gradient(ellipse at 65% 76%, rgb(231 174 94 / 34%), transparent 13%),
+    linear-gradient(145deg, #07192b 0%, #0b1b2b 48%, #06101b 100%);
+  background-size: cover;
+  background-position: center;
+}
+
+@media (max-width: 900px) {
+  [data-gdv-root] { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; gap: 10px; padding: 10px; }
+  [data-gdv-root] > .gdv-portal-sidebar,
+  [data-gdv-root] > .gdv-header,
+  [data-gdv-root] > .gdv-body,
+  [data-gdv-root] > .gdv-sr-live { grid-column: 1; min-width: 0; max-width: 100%; }
+  [data-gdv-root] > .gdv-portal-sidebar { grid-row: 1; min-height: 0; padding: 10px; }
+  [data-gdv-root] > .gdv-header { grid-row: 2; }
+  [data-gdv-root] > .gdv-body { grid-row: 3; }
+  .gdv-portal-brand { grid-template-columns: 39px minmax(0, 1fr); min-height: 42px; padding-bottom: 8px; }
+  .gdv-portal-brand > span { width: 36px; height: 36px; }
+  .gdv-portal-brand,
+  .gdv-portal-search,
+  .gdv-portal-nav,
+  .gdv-view-nav { min-width: 0; max-width: 100%; }
+  .gdv-portal-nav { display: flex; align-items: center; gap: 5px; overflow-x: auto; overflow-y: hidden; padding-bottom: 2px; }
+  .gdv-portal-nav button { flex: 0 0 auto; width: auto; min-height: 40px; grid-template-columns: 25px auto; }
+  .gdv-portal-nav button span { max-width: 120px; }
+  .gdv-portal-upgrade { display: none; }
+  .gdv-portal-profile { display: none; }
+}
+
+@media (max-width: 520px) {
+  [data-gdv-root] { padding: 6px; }
+  .gdv-portal-sidebar { border-radius: 12px; }
+  .gdv-portal-search { min-height: 38px; }
+  .gdv-portal-nav button { min-height: 44px; }
+}

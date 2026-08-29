@@ -30,3 +30,12 @@ Generation brief: one cinematic sapphire/cyan glassy planet with visible cloud a
 - SHA-256: `30565B439C6F2841E2EC7B6967C7930B1B9869CDD2B4A8F86AAC22EDF264F6BE`.
 
 Generation brief: one compact golden-orange sun with detailed molten granulation, curling plasma filaments and a controlled corona on a transparent background; no text, symbol, orbit or backdrop.
+
+## `hh-ambient-room-rainy-v1.png`
+
+- Purpose: original atmospheric backdrop for the immersive Ambient Room workspace (`/galaxy/music` and `/music/ambient`).
+- Created: 2026-08-29 with OpenAI ImageGen for HH Platform.
+- Content boundary: the image is background art only; it contains no interface, text, logo, watermark, person or animal. Mixer, timer, player and scene controls remain live HTML.
+- SHA-256: `EB6EC43C94C69B8D18A8064E5D974FFB71BAD3024A4FF92D0F974A961783C740`.
+
+Generation brief: original cinematic rainy-night study room with a window, rain droplets, warm lamps, chair, plants and fireplace; dark left-side negative space for readable controls; no copied website or game artwork.

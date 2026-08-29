@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v938";
+const CACHE = "hh-identity-portal-v939";
 // Compatibility marker for HH Universe Solar 3D: hh-identity-portal-v934.
 // HH Galaxy v1: persistent shell plus ten route adapters, all backed by the
 // existing HH engines and versioned local-first state.
@@ -256,15 +256,18 @@ const RUNTIME_ASSETS = [
   "./brand-galaxy-logo.css?v=1",
   "./brand-galaxy-logo.js?v=1",
   "./galaxy-design-system.css?v=1",
-  "./galaxy-shell.css?v=1",
-  "./galaxy-shell.js?v=1",
-  "./galaxy-home-ai.css?v=4",
-  "./galaxy-home-ai.js?v=4",
+  "./galaxy-shell.css?v=2",
+  "./galaxy-shell.js?v=2",
+  "./galaxy-home-ai.css?v=5",
+  "./galaxy-home-ai.js?v=5",
   "./assets/galaxy/hh-galaxy-map-bg-v1.png?v=1",
   "./assets/galaxy/hh-luminous-planet-v1.webp?v=1",
   "./assets/galaxy/hh-stellar-core-v1.webp?v=1",
-  "./galaxy-domain-views.css?v=1",
-  "./galaxy-domain-views.js?v=1",
+  "./galaxy-domain-views.css?v=2",
+  "./galaxy-domain-views.js?v=2",
+  "./galaxy-planet-hubs.css?v=1",
+  "./galaxy-planet-hubs.js?v=1",
+  "./assets/galaxy/hh-ambient-room-rainy-v1.png?v=1",
   "./galaxy-favicon-controller.js?v=2",
   "./assets/brand/hh-galaxy-star-static.svg?v=2",
   "./assets/brand/hh-galaxy-star.svg?v=1",
@@ -564,10 +567,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=579",
+  "./performance-loader.js?v=580",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=255"
+  "./script.js?v=256"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

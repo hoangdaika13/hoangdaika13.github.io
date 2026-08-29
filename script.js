@@ -6972,6 +6972,7 @@ function initAppShell() {
     cleanupGalaxyEngineTakeover();
     window.HHGalaxyHomeAI?.unmount?.();
     window.HHGalaxyDomainViews?.unmount?.();
+    window.HHGalaxyPlanetHubs?.unmount?.();
     // The Home Cosmic OS owns a fixed command deck and temporarily applies
     // inline `overflow: clip` to #appMain. A hash transition can detach the
     // Home root before its observer gets the matching unmount callback,
@@ -7132,38 +7133,46 @@ function initAppShell() {
       if (!mounted) mountSimpleView(galaxyHomeMeta[0], "Không thể khởi tạo lớp HH Galaxy cho workspace này.", '<button type="button" data-shell-retry-route>Thử lại</button>');
       if (route.startsWith("/chat-ai")) remember("chat-ai");
     } else if (isGalaxyDomainRoute) {
+      const planetHub = window.HHGalaxyPlanetHubs?.canHandle?.(route) ? window.HHGalaxyPlanetHubs : null;
       const definition = Object.values(window.HHGalaxyDomainViews?.routes || {}).find((item) => item.canonical === route || item.aliases?.includes?.(route));
-      updatePageHeader(definition?.title || "HH Galaxy Workspace", definition?.eyebrow || "Không gian chức năng dùng dữ liệu và engine thật.", route);
+      const hubDefinition = planetHub?.ROUTES?.[planetHub.normalizeRoute?.(route)] || null;
+      updatePageHeader(hubDefinition?.label || definition?.title || "HH Galaxy Workspace", hubDefinition?.description || definition?.eyebrow || "Không gian chức năng dùng dữ liệu và engine thật.", route);
       workspace.innerHTML = '<div data-galaxy-domain-host></div>';
-      const mounted = window.HHGalaxyDomainViews?.mount?.(workspace.firstElementChild, {
-        route,
-        apiBase: String(window.HH_REALTIME_URL || ""),
-        navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
-        openEngine: ({ id, host }) => {
-          if (!host) return false;
-          if (id === "automation" || id === "projects") {
-            const view = id === "automation" ? "automation-lab" : "projects-tasks";
-            if (!window.HHWorkCenter?.supports?.(view)) return false;
-            window.HHGalaxyDomainViews?.unmount?.(host);
-            window.HHWorkCenter.mount(host, { view });
-            galaxyEngineCleanup = () => window.HHWorkCenter?.unmount?.();
-            return true;
+      const mounted = planetHub
+        ? planetHub.mount?.(workspace.firstElementChild, {
+          route,
+          navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
+          data: { account: readCurrentAuthUser() }
+        })
+        : window.HHGalaxyDomainViews?.mount?.(workspace.firstElementChild, {
+          route,
+          apiBase: String(window.HH_REALTIME_URL || ""),
+          navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
+          openEngine: ({ id, host }) => {
+            if (!host) return false;
+            if (id === "automation" || id === "projects") {
+              const view = id === "automation" ? "automation-lab" : "projects-tasks";
+              if (!window.HHWorkCenter?.supports?.(view)) return false;
+              window.HHGalaxyDomainViews?.unmount?.(host);
+              window.HHWorkCenter.mount(host, { view });
+              galaxyEngineCleanup = () => window.HHWorkCenter?.unmount?.();
+              return true;
+            }
+            if (id === "community" && window.HHCommunicationSuite?.supports?.("community")) {
+              window.HHGalaxyDomainViews?.unmount?.(host);
+              window.HHCommunicationSuite.mount(host, {
+                view: "community",
+                apiBase: REALTIME_URL,
+                socketUrl: SOCKET_URL,
+                currentUser: readCurrentAuthUser()
+              });
+              galaxyEngineCleanup = () => window.HHCommunicationSuite?.unmount?.();
+              return true;
+            }
+            return false;
           }
-          if (id === "community" && window.HHCommunicationSuite?.supports?.("community")) {
-            window.HHGalaxyDomainViews?.unmount?.(host);
-            window.HHCommunicationSuite.mount(host, {
-              view: "community",
-              apiBase: REALTIME_URL,
-              socketUrl: SOCKET_URL,
-              currentUser: readCurrentAuthUser()
-            });
-            galaxyEngineCleanup = () => window.HHCommunicationSuite?.unmount?.();
-            return true;
-          }
-          return false;
-        }
-      });
-      if (!mounted) mountSimpleView(definition?.title || "HH Galaxy Workspace", "Không thể khởi tạo workspace Galaxy.", '<button type="button" data-shell-retry-route>Thử lại</button>');
+        });
+      if (!mounted) mountSimpleView(hubDefinition?.label || definition?.title || "HH Galaxy Workspace", "Không thể khởi tạo workspace Galaxy.", '<button type="button" data-shell-retry-route>Thử lại</button>');
     } else if (route === "/home") {
       updatePageHeader("Trang chủ", "Bắt đầu với các công cụ phù hợp cho công việc của bạn.", route);
       workspace.replaceChildren(dashboardHome);
@@ -8273,6 +8282,7 @@ function initAppShell() {
     cleanupGalaxyEngineTakeover();
     window.HHGalaxyHomeAI?.unmount?.();
     window.HHGalaxyDomainViews?.unmount?.();
+    window.HHGalaxyPlanetHubs?.unmount?.();
     renderRouteSafely();
   });
   window.addEventListener("hashchange", renderRouteWithTransition);
