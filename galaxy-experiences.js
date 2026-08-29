@@ -42,12 +42,12 @@
   ];
 
   const AMBIENT_PRESETS = [
-    { index: 0, label: "Pink Morning", detail: "piano pad", icon: "☀" },
-    { index: 1, label: "Soft Rain", detail: "dream bell", icon: "☂" },
-    { index: 4, label: "Cloud Room", detail: "air pad", icon: "☁" },
-    { index: 7, label: "Late Night", detail: "lofi pad", icon: "☾" },
-    { index: 18, label: "Happy Focus", detail: "clean bell", icon: "✦" },
-    { index: 19, label: "Night Halo", detail: "deep pad", icon: "◎" }
+    { index: 0, label: "Rainy Study", detail: "piano · rain", icon: "☂" },
+    { index: 1, label: "Cafe Morning", detail: "warm room tone", icon: "☕" },
+    { index: 4, label: "Cozy Night", detail: "fireplace · pad", icon: "✦" },
+    { index: 7, label: "Forest Cabin", detail: "wind · birds", icon: "⌂" },
+    { index: 18, label: "Space Station", detail: "deep ambient", icon: "◉" },
+    { index: 19, label: "Happy Focus", detail: "clean bell", icon: "◎" }
   ];
 
   const safeRead = (key, fallback = {}) => {
@@ -113,7 +113,8 @@
 
   const aiUniverseMarkup = () => `
     <section class="hh-ai-universe" data-hh-ai-universe aria-label="AI Universe">
-      <div class="hh-ai-universe__copy"><small>GALAXY EXPLORER · AI UNIVERSE</small><h2>AI UNIVERSE</h2><p>Hệ sinh thái trí tuệ nhân tạo kết nối các workspace AI thật của HH Platform.</p><div><button type="button" data-app-route="/chat-ai">Vào AI Chat</button><button type="button" data-app-route="/create/ai-center">Mở AI Center</button></div></div>
+      <div class="hh-ai-universe__copy"><small>GALAXY EXPLORER · AI UNIVERSE</small><h2>AI UNIVERSE</h2><p>Vũ trụ trí tuệ nhân tạo – Nơi công nghệ biến ý tưởng thành hiện thực.</p><div><button type="button" data-app-route="/chat-ai">Enter Planet</button><button type="button" data-app-route="/create/ai-center">Start Tour</button></div></div>
+      <aside class="hh-ai-universe__stats" aria-label="Thống kê AI Universe"><header><span>THỐNG KÊ AI UNIVERSE</span><i>⌁</i></header><div><b>▦</b><span>Ứng dụng AI</span><strong data-hh-ai-app-count>0</strong><small>Apps</small></div><div><b>□</b><span>Dự án đang chạy</span><strong data-hh-ai-project-count>0</strong><small>Projects</small></div><div><b>◎</b><span>Workspace thật</span><strong data-hh-ai-workspace-count>0</strong><small>Workspaces</small></div></aside>
       <div class="hh-ai-universe__planet" aria-hidden="true"><span>AI</span></div>
       <div class="hh-ai-universe__satellites">${AI_SATELLITES.map((item, index) => `<button type="button" data-app-route="${item.route}" style="--satellite-index:${index}"><i>${item.icon}</i><span><b>${item.label}</b><small>${item.detail}</small></span></button>`).join("")}</div>
       <footer><span><b data-hh-ai-module-count>0</b> lối mở AI có thật</span><span><i></i> Sẵn sàng trên thiết bị</span><span>Không tạo API hoặc dữ liệu giả</span></footer>
@@ -122,29 +123,33 @@
   const vaultHeroMarkup = (mode) => {
     const isMedia = mode === "media";
     return `<section class="hh-vault-hero" data-hh-vault-hero="${mode}">
-      <div><small>${isMedia ? "PROJECT HUB & MEDIA VAULT" : "PROJECT CONTROL"}</small><h2>${isMedia ? "Kho dự án & tài nguyên sáng tạo" : "Điều hành dự án trong Galaxy"}</h2><p>${isMedia ? "Kết nối Media Center, Project Center, Prompt Studio, template và cloud đang có." : "Mở dữ liệu Project Center cục bộ hiện có, không sinh dự án minh họa mới."}</p></div>
+      <div><small>${isMedia ? "PROJECT HUB & MEDIA VAULT" : "PROJECT HUB"}</small><h2>${isMedia ? "PROJECT HUB & MEDIA VAULT" : "PROJECT HUB"}</h2><p>${isMedia ? "Kho dự án và tài nguyên sáng tạo của bạn, kết nối trực tiếp với các workspace thật." : "Điều hành dự án, task và tiến độ trong Galaxy bằng dữ liệu đã lưu."}</p></div>
       <nav>${[
-        ["Tất cả dự án", "/work/project-center", "□"],
+        ["All Projects", "/work/project-center", "□"],
         ["Media Vault", "/create/media-center", "◇"],
         ["Prompts", "/create/prompt-studio", "⌘"],
         ["Templates", "/create/marketplace", "▧"],
-        ["Cloud", "/work/cloud-storage", "☁"],
-        ["Yêu thích", "/favorites", "☆"]
+        ["Favorites", "/favorites", "☆"],
+        ["Cloud Sync", "/work/cloud-storage", "☁"]
       ].map(([label, route, icon]) => `<button type="button" data-app-route="${route}"><i>${icon}</i>${label}</button>`).join("")}</nav>
-      <aside><span><small>DỰ ÁN ĐÃ LƯU</small><b data-hh-real-projects>0</b></span><span><small>MEDIA ĐÃ LƯU</small><b data-hh-real-media>0</b></span><span><small>DUNG LƯỢNG ORIGIN</small><b data-hh-real-storage>Đang đo</b></span></aside>
+      <aside><span><small>PROJECTS</small><b data-hh-real-projects>0</b></span><span><small>MEDIA</small><b data-hh-real-media>0</b></span><span><small>CLOUD STORAGE</small><b data-hh-real-storage>Đang đo</b></span></aside>
     </section>`;
   };
 
   const automationHeroMarkup = () => `
     <section class="hh-automation-map" data-hh-automation-map aria-label="Automation Builder">
-      <header><div><small>AUTOMATION BUILDER</small><h2>Tự động hóa sáng tạo có bước duyệt</h2><p>Sơ đồ dẫn tới các công cụ thật. Việc chạy workflow vẫn do Automation Lab hiện có kiểm soát.</p></div><button type="button" data-hh-scroll-native>↓ Mở builder hiện có</button></header>
+      <header><div><small>AUTOMATION BUILDER · TỰ ĐỘNG HÓA SÁNG TẠO</small><h2>Automation Builder</h2><p>Kết nối AI, nội dung và công cụ để tạo ra sản phẩm hoàn chỉnh với một workflow tự động.</p></div><button type="button" data-hh-scroll-native>⌁ Chạy thử workflow</button></header>
+      <aside class="hh-automation-library" aria-label="Thư viện template"><header><strong>THƯ VIỆN TEMPLATE</strong><button type="button" data-app-route="/create/marketplace" aria-label="Mở Creative Marketplace">＋</button></header><label>⌕ <input type="search" placeholder="Tìm template..." aria-label="Tìm template automation"></label><div><button type="button" data-app-route="/create/marketplace">YouTube AI Automation</button><button type="button" data-app-route="/create/marketplace">TikTok Viral Automation</button><button type="button" data-app-route="/create/marketplace">Podcast Automation</button><button type="button" data-app-route="/create/marketplace">Blog Content Automation</button></div></aside>
       <div>${AUTOMATION_STEPS.map(([number, label, route]) => `<button type="button" data-app-route="${route}"><i>${number}</i><b>${label}</b><small>Mở workspace</small></button>`).join("")}</div>
+      <aside class="hh-automation-runtime" aria-label="Trạng thái thực thi"><header><strong>TRẠNG THÁI THỰC THI</strong><i>● Online</i></header><div class="hh-automation-runtime__ring"><b>—</b><small>Chưa chạy</small></div><p>Chạy thử hoặc mở Automation Lab để xem log và lịch sử thực thi.</p><button type="button" data-hh-scroll-native>Xem chi tiết thực thi</button></aside>
     </section>`;
 
   const communityHeroMarkup = () => `
     <section class="hh-community-showcase" data-hh-community-showcase>
-      <div><small>COMMUNITY SHOWCASE</small><h2>Cộng đồng HH</h2><p>Bài đăng, tương tác và đồng bộ bên dưới đến từ Community hiện có; khi backend chưa sẵn sàng, hệ thống công khai trạng thái dự phòng.</p></div>
-      <nav><button type="button" data-app-route="/communication/community">Bảng tin</button><button type="button" data-app-route="/communication">Không gian giao tiếp</button><button type="button" data-app-route="/create/portfolio-builder">Portfolio</button></nav>
+      <div><small>COMMUNITY SHOWCASE · CỘNG ĐỒNG HH</small><h2>Cộng đồng HH</h2><p>Khám phá những dự án, tác phẩm và ý tưởng sáng tạo từ cộng đồng HH. Dữ liệu và tương tác vẫn dùng Community hiện có.</p></div>
+      <nav role="tablist" aria-label="Bộ lọc Community"><button type="button" role="tab" aria-selected="true" class="is-active" data-hh-community-tab="trending">Trending</button><button type="button" role="tab" aria-selected="false" data-hh-community-tab="following">Following</button><button type="button" role="tab" aria-selected="false" data-hh-community-tab="projects">Projects</button><button type="button" role="tab" aria-selected="false" data-hh-community-tab="artworks">Artworks</button><button type="button" role="tab" aria-selected="false" data-hh-community-tab="music">Music</button><button type="button" role="tab" aria-selected="false" data-hh-community-tab="prompts">Prompts</button></nav>
+      <aside class="hh-community-sidebar"><section><header><strong>FEATURED CREATOR</strong></header><div class="hh-community-creator"><i>HH</i><b>HH Community</b><small>Chia sẻ · Cộng tác · Sáng tạo</small><button type="button" data-app-route="/communication">Mở Community</button></div></section><section><header><strong>LEADERBOARD</strong></header><p>Thành tích sẽ được lấy từ dữ liệu Community khi có kết nối.</p></section></aside>
+      <div class="hh-community-feed-preview" data-hh-community-feed-preview><strong>Community feed</strong><span>Đang đồng bộ bài đăng thật…</span><button type="button" data-app-route="/communication/community">Mở bảng tin đầy đủ →</button></div>
     </section>`;
 
   const updateRealCounts = async () => {
@@ -182,6 +187,11 @@
     if ((route === "/communication" || route === "/communication/community") && !workspace.querySelector("[data-hh-community-showcase]")) { workspace.insertAdjacentHTML("afterbegin", communityHeroMarkup()); mounted = true; }
     const aiRoutes = new Set(Array.from(document.querySelectorAll("[data-app-route]"), (node) => node.getAttribute("data-app-route")).filter((value) => /(?:ai|prompt|script)/i.test(value || "")));
     document.querySelectorAll("[data-hh-ai-module-count]").forEach((node) => { setText(node, aiRoutes.size); });
+    document.querySelectorAll("[data-hh-ai-app-count]").forEach((node) => { setText(node, aiRoutes.size); });
+    const projectState = safeRead("hh-project-center", {});
+    const projectCount = Array.isArray(projectState.projects) ? projectState.projects.length : 0;
+    document.querySelectorAll("[data-hh-ai-project-count]").forEach((node) => { setText(node, projectCount); });
+    document.querySelectorAll("[data-hh-ai-workspace-count]").forEach((node) => { setText(node, AI_SATELLITES.length); });
     if (mounted || workspace.querySelector("[data-hh-vault-hero]")) void updateRealCounts();
   };
 
@@ -212,10 +222,10 @@
       <div class="hh-ambient-room__rain" aria-hidden="true"></div>
       <header><div><span>HH</span><strong>AMBIENT ROOM</strong></div><button type="button" data-command-open>⌕ Search Galaxy</button><button type="button" data-hh-overlay-close="ambient">Thoát Ambient Room</button></header>
       <main>
-        <section class="hh-ambient-room__intro"><small>PHÒNG ÂM THANH TẬP TRUNG</small><h2>Không gian yên tĩnh của bạn</h2><p>20 bản ambient được tạo trực tiếp bằng Web Audio hiện có, không tải nguồn âm thanh không rõ bản quyền.</p></section>
-        <section class="hh-ambient-mixer"><header><span>MIX ÂM THANH</span><button type="button" data-hh-ambient-reset>Đặt lại</button></header><label>Âm lượng<input type="range" min="0" max="100" data-hh-ambient-volume></label><label>Độ sáng âm sắc<input type="range" min="0" max="100" data-hh-ambient-mood></label><div><button type="button" data-hh-ambient-toggle>▶ Phát / Tạm dừng</button><strong data-hh-ambient-status>Đang đồng bộ</strong></div></section>
+        <section class="hh-ambient-room__intro"><small>AMBIENT ROOM · PHÒNG ÂM THANH TẬP TRUNG</small><h2>Rainy Study</h2><p>Tạo không gian âm thanh lý tưởng để tập trung, thư giãn và sáng tạo bằng Web Audio hiện có.</p></section>
+        <section class="hh-ambient-mixer"><header><span>MIX ÂM THANH AMBIENT</span><button type="button" data-hh-ambient-reset>Đặt lại</button></header><label>Âm lượng<input type="range" min="0" max="100" data-hh-ambient-volume></label><label>Độ sáng âm sắc<input type="range" min="0" max="100" data-hh-ambient-mood></label><div><button type="button" data-hh-ambient-toggle>▶ Phát / Tạm dừng</button><strong data-hh-ambient-status>Đang đồng bộ</strong></div></section>
         <section class="hh-ambient-presets"><span>SCENE PRESETS · WEB AUDIO THẬT</span><div>${AMBIENT_PRESETS.map((item) => `<button type="button" data-hh-ambient-track="${item.index}" aria-pressed="false"><i>${item.icon}</i><b>${item.label}</b><small>${item.detail}</small></button>`).join("")}</div></section>
-        <aside class="hh-pomodoro"><header><span>POMODORO TIMER</span><button type="button" data-hh-pomodoro-reset aria-label="Đặt lại Pomodoro">↻</button></header><strong data-hh-pomodoro-time role="timer" aria-live="polite">25:00</strong><small data-hh-pomodoro-label>Tập trung</small><button type="button" data-hh-pomodoro-toggle aria-pressed="false">BẮT ĐẦU</button><footer>Timer lưu trạng thái cục bộ trên thiết bị</footer></aside>
+        <aside class="hh-pomodoro"><header><span>POMODORO TIMER</span><button type="button" data-hh-pomodoro-reset aria-label="Đặt lại Pomodoro">↻</button></header><nav class="hh-pomodoro__modes" role="tablist" aria-label="Chế độ Pomodoro"><button type="button" role="tab" data-hh-pomodoro-mode="focus" aria-selected="true">Focus</button><button type="button" role="tab" data-hh-pomodoro-mode="short" aria-selected="false">Short Break</button><button type="button" role="tab" data-hh-pomodoro-mode="long" aria-selected="false">Long Break</button></nav><strong data-hh-pomodoro-time role="timer" aria-live="polite">25:00</strong><small data-hh-pomodoro-label>Tập trung</small><button type="button" data-hh-pomodoro-toggle aria-pressed="false">BẮT ĐẦU</button><footer>Timer lưu trạng thái cục bộ trên thiết bị</footer></aside>
       </main>
       <footer><div><span>♫</span><div><strong data-hh-ambient-status>Đang đồng bộ player</strong><small>HH Web Audio Engine</small></div></div><button type="button" data-hh-ambient-toggle>▶ / Ⅱ</button><input type="range" min="0" max="100" data-hh-ambient-volume aria-label="Âm lượng ambient"><button type="button" data-app-route="/music-ai">Mở Music Planet</button></footer>
     </section>`;
@@ -418,26 +428,37 @@
   };
 
   const pomodoroKey = "hh.galaxy.pomodoro.v1";
+  const POMODORO_MODES = {
+    focus: { seconds: 1500, label: "Tập trung" },
+    short: { seconds: 300, label: "Nghỉ ngắn" },
+    long: { seconds: 900, label: "Nghỉ dài" }
+  };
   const normalizePomodoro = (value) => ({
-    seconds: clamp(value?.seconds ?? 1500, 0, 86400),
+    mode: Object.prototype.hasOwnProperty.call(POMODORO_MODES, value?.mode) ? value.mode : "focus",
+    seconds: clamp(value?.seconds ?? POMODORO_MODES[Object.prototype.hasOwnProperty.call(POMODORO_MODES, value?.mode) ? value.mode : "focus"].seconds, 0, 86400),
     running: Boolean(value?.running && Number(value?.endAt) > 0),
     endAt: Math.max(0, Number(value?.endAt) || 0)
   });
-  let pomodoro = normalizePomodoro(safeRead(pomodoroKey, { seconds: 1500, running: false, endAt: 0 }));
+  let pomodoro = normalizePomodoro(safeRead(pomodoroKey, { mode: "focus", seconds: 1500, running: false, endAt: 0 }));
   const pomodoroSeconds = () => pomodoro.running ? Math.max(0, Math.ceil((pomodoro.endAt - Date.now()) / 1000)) : pomodoro.seconds;
   const updatePomodoro = () => {
     let remaining = pomodoroSeconds();
     if (pomodoro.running && !remaining) {
-      pomodoro = { seconds: 0, running: false, endAt: 0 };
+      pomodoro = { mode: pomodoro.mode, seconds: 0, running: false, endAt: 0 };
       safeWrite(pomodoroKey, pomodoro);
     }
     remaining = pomodoroSeconds();
     const minutes = Math.floor(remaining / 60);
     const seconds = remaining % 60;
     document.querySelectorAll("[data-hh-pomodoro-time]").forEach((node) => { setText(node, `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`); });
-    document.querySelectorAll("[data-hh-pomodoro-label]").forEach((node) => { setText(node, remaining ? "Tập trung" : "Đã hoàn tất"); });
+    document.querySelectorAll("[data-hh-pomodoro-label]").forEach((node) => { setText(node, remaining ? POMODORO_MODES[pomodoro.mode].label : "Đã hoàn tất"); });
+    document.querySelectorAll("[data-hh-pomodoro-mode]").forEach((node) => {
+      const active = node.dataset.hhPomodoroMode === pomodoro.mode;
+      node.classList.toggle("is-active", active);
+      node.setAttribute("aria-selected", String(active));
+    });
     document.querySelectorAll("[data-hh-pomodoro-toggle]").forEach((node) => {
-      setText(node, pomodoro.running ? "TẠM DỪNG" : remaining > 0 && remaining < 1500 ? "TIẾP TỤC" : "BẮT ĐẦU");
+      setText(node, pomodoro.running ? "TẠM DỪNG" : remaining > 0 && remaining < POMODORO_MODES[pomodoro.mode].seconds ? "TIẾP TỤC" : "BẮT ĐẦU");
       node.setAttribute("aria-pressed", String(pomodoro.running));
     });
   };
@@ -503,15 +524,33 @@
 
       if (event.target.closest("[data-hh-pomodoro-toggle]")) {
         if (pomodoro.running) {
-          pomodoro = { seconds: pomodoroSeconds(), running: false, endAt: 0 };
+          pomodoro = { mode: pomodoro.mode, seconds: pomodoroSeconds(), running: false, endAt: 0 };
         } else {
-          const seconds = pomodoro.seconds > 0 ? pomodoro.seconds : 1500;
-          pomodoro = { seconds, running: true, endAt: Date.now() + seconds * 1000 };
+          const seconds = pomodoro.seconds > 0 ? pomodoro.seconds : POMODORO_MODES[pomodoro.mode].seconds;
+          pomodoro = { mode: pomodoro.mode, seconds, running: true, endAt: Date.now() + seconds * 1000 };
         }
         safeWrite(pomodoroKey, pomodoro);
         updatePomodoro();
       }
-      if (event.target.closest("[data-hh-pomodoro-reset]")) { pomodoro = { seconds: 1500, running: false, endAt: 0 }; safeWrite(pomodoroKey, pomodoro); updatePomodoro(); }
+      const pomodoroMode = event.target.closest("[data-hh-pomodoro-mode]");
+      if (pomodoroMode && POMODORO_MODES[pomodoroMode.dataset.hhPomodoroMode]) {
+        const mode = pomodoroMode.dataset.hhPomodoroMode;
+        pomodoro = { mode, seconds: POMODORO_MODES[mode].seconds, running: false, endAt: 0 };
+        safeWrite(pomodoroKey, pomodoro);
+        updatePomodoro();
+      }
+      if (event.target.closest("[data-hh-pomodoro-reset]")) { pomodoro = { mode: pomodoro.mode, seconds: POMODORO_MODES[pomodoro.mode].seconds, running: false, endAt: 0 }; safeWrite(pomodoroKey, pomodoro); updatePomodoro(); }
+      const communityTab = event.target.closest("[data-hh-community-tab]");
+      if (communityTab) {
+        const showcase = communityTab.closest("[data-hh-community-showcase]");
+        showcase?.querySelectorAll("[data-hh-community-tab]").forEach((node) => {
+          const active = node === communityTab;
+          node.classList.toggle("is-active", active);
+          node.setAttribute("aria-selected", String(active));
+        });
+        const preview = showcase?.querySelector("[data-hh-community-feed-preview] span");
+        if (preview) setText(preview, `${communityTab.textContent.trim()} · dữ liệu sẽ lấy từ Community hiện có`);
+      }
       if (event.target.closest("[data-hh-scroll-native]")) document.querySelector("[data-hh-automation-map]")?.nextElementSibling?.scrollIntoView({ behavior: "smooth", block: "start" });
 
       if (event.target.closest("[data-app-route]")) {
