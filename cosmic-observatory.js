@@ -8,27 +8,57 @@
   const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
   const LUNAR_DISTANCE_AU = 0.00256955529;
   const AU_KM = 149_597_870.7;
-  const VIEW_ALIASES = Object.freeze({ "solar-system": "solar-system", "live-sky": "live-sky", "universe-map": "universe-map", missions: "missions", asteroids: "asteroids", exoplanets: "exoplanets", earth: "earth", "space-weather": "space-weather", media: "media", tours: "tours", planner: "planner", "data-center": "data-center", overview: "overview" });
+  const VIEW_ALIASES = Object.freeze({
+    "solar-system": "solar-system", "live-sky": "live-sky", observatory: "observatory", dsn: "dsn",
+    asteroids: "asteroids", surfaces: "surfaces", exoplanets: "exoplanets", earth: "earth",
+    "space-weather": "space-weather", timeline: "timeline", learning: "learning", media: "media",
+    "universe-map": "universe-map", missions: "missions", tours: "tours", planner: "planner",
+    "data-center": "data-center", overview: "overview"
+  });
   const VIEWS = Object.freeze({
-    overview: { title: "Đài Quan sát Vũ trụ HH", eyebrow: "COSMIC OBSERVATORY", description: "Khám phá Hệ Mặt Trời, bầu trời, tiểu hành tinh và tư liệu NASA bằng dữ liệu có nguồn." },
+    overview: { title: "Vũ trụ HH", eyebrow: "HH UNIVERSE", description: "Trung tâm khám phá Hệ Mặt Trời, bầu trời, nhiệm vụ, ngoại hành tinh và dữ liệu khoa học có nguồn." },
     "solar-system": { title: "Hệ Mặt Trời 3D", eyebrow: "MISSION CONTROL", description: "Vị trí thiên thể được tính theo thời gian; tỉ lệ hiển thị luôn được ghi rõ." },
     "live-sky": { title: "Bầu trời tại vị trí của bạn", eyebrow: "LIVE SKY", description: "Bản đồ chân trời tính từ vị trí, ngày giờ và múi giờ thiết bị." },
+    observatory: { title: "Đài quan sát", eyebrow: "OBSERVATION STATION", description: "Lập phiên quan sát, lưu mục tiêu, thiết bị và ghi chú khoa học trên thiết bị." },
+    dsn: { title: "Liên lạc không gian DSN", eyebrow: "DEEP SPACE NETWORK", description: "Cửa ngõ tới trạng thái liên lạc được NASA/JPL công bố; không tạo tín hiệu trực tuyến giả." },
+    surfaces: { title: "Bề mặt hành tinh", eyebrow: "PLANETARY TREK", description: "Khám phá cổng địa hình chính thức và tính khoảng cách bề mặt theo tọa độ đã chọn." },
     "universe-map": { title: "Vũ trụ đa bước sóng", eyebrow: "MULTI-WAVELENGTH", description: "Cửa ngõ tới dữ liệu HiPS và WorldWide Telescope có attribution." },
     missions: { title: "Nhiệm vụ không gian", eyebrow: "MISSION TIMELINE", description: "Tra cứu nhiệm vụ từ nguồn chính thức; không mô phỏng telemetry giả." },
     asteroids: { title: "Asteroid Watch", eyebrow: "JPL CNEOS", description: "Các lần tiếp cận gần theo JPL CAD, kèm khoảng cách, tốc độ và độ bất định." },
     exoplanets: { title: "Ngoại hành tinh", eyebrow: "NASA EXOPLANET ARCHIVE", description: "Khám phá các thế giới đã công bố từ NASA Exoplanet Archive." },
     earth: { title: "Trái Đất từ không gian", eyebrow: "EARTH EVENTS", description: "Sự kiện tự nhiên EONET có thời gian cập nhật và nguồn rõ ràng." },
     "space-weather": { title: "Thời tiết không gian", eyebrow: "NASA DONKI", description: "Sự kiện Mặt Trời được phân biệt rõ quan sát và dự báo." },
+    timeline: { title: "Dòng thời gian Vũ trụ", eyebrow: "13,8 TỶ NĂM", description: "Khám phá các mốc lớn từ Vũ trụ sơ khai đến Hệ Mặt Trời và hiện tại." },
+    learning: { title: "Phòng học thiên văn", eyebrow: "COSMIC LEARNING LAB", description: "Bài học ngắn, câu hỏi kiểm tra và tiến độ được lưu cục bộ." },
     media: { title: "Thư viện NASA", eyebrow: "NASA MEDIA", description: "Tìm ảnh, video và âm thanh, luôn giữ metadata và attribution từng mục." },
     tours: { title: "Hành trình dẫn dắt", eyebrow: "COSMIC TOURS", description: "Các lộ trình khám phá ngắn, không tự phát âm thanh khi chưa được phép." },
     planner: { title: "Lập kế hoạch quan sát", eyebrow: "OBSERVATION PLANNER", description: "Tìm thiên thể có thể quan sát theo vị trí và giờ địa phương." },
     "data-center": { title: "Dữ liệu & ghi công", eyebrow: "TRUST CENTER", description: "Xem nguồn, kiểu dữ liệu, cache, giấy phép và kiểm soát dữ liệu cá nhân." }
   });
   const NAV_ITEMS = Object.freeze([
-    ["overview", "Tổng quan", "✦"], ["solar-system", "Hệ Mặt Trời", "◎"], ["live-sky", "Bầu trời", "⌖"],
-    ["asteroids", "Tiểu hành tinh", "◆"], ["media", "NASA Media", "▣"], ["exoplanets", "Ngoại hành tinh", "◉"],
-    ["earth", "Trái Đất", "◍"], ["space-weather", "Thời tiết vũ trụ", "☀"], ["universe-map", "Vũ trụ sâu", "∞"],
-    ["missions", "Nhiệm vụ", "↗"], ["tours", "Cosmic Tours", "▷"], ["planner", "Kế hoạch", "◫"], ["data-center", "Nguồn dữ liệu", "✓"]
+    ["overview", "Trung tâm", "✦"], ["solar-system", "Hệ Mặt Trời", "◎"], ["live-sky", "Bầu trời", "⌖"],
+    ["observatory", "Đài quan sát", "◫"], ["missions", "Nhiệm vụ", "↗"], ["dsn", "DSN", "⌁"],
+    ["asteroids", "Tiểu hành tinh", "◆"], ["surfaces", "Bề mặt", "◒"], ["exoplanets", "Ngoại hành tinh", "◉"],
+    ["earth", "Trái Đất", "◍"], ["space-weather", "Thời tiết", "☀"], ["timeline", "Dòng thời gian", "⌛"],
+    ["learning", "Phòng học", "◇"], ["media", "Media", "▣"], ["universe-map", "Bản đồ sâu", "∞"],
+    ["tours", "Tours", "▷"], ["planner", "Kế hoạch", "◫"], ["data-center", "Dữ liệu", "✓"]
+  ]);
+  const SEARCH_ITEMS = Object.freeze([
+    ["solar-system", "Hệ Mặt Trời 3D", "hành tinh mặt trời mặt trăng sao chổi quỹ đạo tua thời gian"],
+    ["live-sky", "Bầu trời đêm", "ngôi sao chòm sao vị trí chân trời quan sát tối nay"],
+    ["observatory", "Đài quan sát", "kính thiên văn phiên quan sát mục tiêu ghi chú"],
+    ["missions", "Nhiệm vụ không gian", "tàu vũ trụ nasa jpl mission flight director"],
+    ["dsn", "Liên lạc không gian DSN", "deep space network anten tín hiệu tàu vũ trụ"],
+    ["asteroids", "Tiểu hành tinh và sao chổi", "asteroid comet cneos tiếp cận gần trái đất"],
+    ["surfaces", "Bề mặt hành tinh", "địa hình mặt trăng sao hỏa đo khoảng cách trek"],
+    ["exoplanets", "Ngoại hành tinh", "exoplanet kepler tess hệ sao vùng ở được"],
+    ["earth", "Trái Đất từ không gian", "eonet vệ tinh thiên tai khí hậu"],
+    ["space-weather", "Thời tiết không gian", "bão mặt trời cme cực quang donki"],
+    ["timeline", "Dòng thời gian Vũ trụ", "big bang thiên hà sao hệ mặt trời 13,8 tỷ năm"],
+    ["learning", "Phòng học thiên văn", "bài học câu hỏi quiz giáo dục"],
+    ["media", "Thư viện ảnh và video", "nasa ảnh video âm thanh thư viện"],
+    ["universe-map", "Bản đồ Vũ trụ sâu", "thiên hà tinh vân đa bước sóng hips wwt esasky"],
+    ["data-center", "Trung tâm dữ liệu và nguồn", "nguồn ghi công cache xuất nhập riêng tư"]
   ]);
   const PLANETS = Object.freeze([
     { id: "Mercury", vi: "Sao Thủy", color: [0.72, 0.68, 0.62], size: 7, orbit: 0.387 },
@@ -92,6 +122,10 @@
   function formatDate(value) {
     const date = new Date(value);
     return Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(date) : escapeHtml(value || "Chưa có");
+  }
+
+  function foldText(value) {
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase().trim();
   }
 
   function getSettings() {
@@ -219,7 +253,7 @@
   }
 
   function viewRoute(id) {
-    return id === "overview" ? "/cosmic-observatory" : `/cosmic-observatory/${id}`;
+    return id === "overview" ? "/universe" : `/universe/${id}`;
   }
 
   function shellMarkup(view) {
@@ -227,12 +261,12 @@
     return `<section class="cosmic-observatory" data-cosmic-app data-view="${escapeHtml(view)}">
       <div class="cosmic-space" aria-hidden="true"><i></i><i></i><i></i></div>
       <header class="cosmic-topbar">
-        <a class="cosmic-brand" href="#/cosmic-observatory" aria-label="Về tổng quan Đài Quan sát Vũ trụ HH"><span>✦</span><div><small>HH PLATFORM</small><strong>Cosmic Observatory</strong></div></a>
+        <a class="cosmic-brand" href="#/universe" aria-label="Về Trung tâm Vũ trụ HH"><span>✦</span><div><small>HH PLATFORM</small><strong>HH Universe</strong></div></a>
         <nav class="cosmic-quick-nav" aria-label="Không gian thiên văn">${NAV_ITEMS.slice(0, 8).map(([id, label]) => `<a href="#${viewRoute(id)}" class="${id === view ? "is-active" : ""}" ${id === view ? 'aria-current="page"' : ""}>${escapeHtml(label)}</a>`).join("")}</nav>
-        <a class="cosmic-data-link" href="#/cosmic-observatory/data-center">Nguồn dữ liệu <span>✓</span></a>
+        <a class="cosmic-data-link" href="#/universe/data-center">Nguồn dữ liệu <span>✓</span></a>
       </header>
       <div class="cosmic-layout">
-        <aside class="cosmic-rail" aria-label="Điều hướng Đài quan sát">${NAV_ITEMS.map(([id, label, icon]) => `<a href="#${viewRoute(id)}" title="${escapeHtml(label)}" class="${id === view ? "is-active" : ""}" ${id === view ? 'aria-current="page"' : ""}><i>${escapeHtml(icon)}</i><span>${escapeHtml(label)}</span></a>`).join("")}</aside>
+        <aside class="cosmic-rail" aria-label="Điều hướng Vũ trụ HH">${NAV_ITEMS.map(([id, label, icon]) => `<a href="#${viewRoute(id)}" title="${escapeHtml(label)}" class="${id === view ? "is-active" : ""}" ${id === view ? 'aria-current="page"' : ""}><i>${escapeHtml(icon)}</i><span>${escapeHtml(label)}</span></a>`).join("")}</aside>
         <main class="cosmic-main" tabindex="-1">
           <header class="cosmic-view-heading"><div><span>${escapeHtml(meta.eyebrow)}</span><h1>${escapeHtml(meta.title)}</h1><p>${escapeHtml(meta.description)}</p></div><div class="cosmic-truth-legend" aria-label="Chú thích kiểu dữ liệu"><span data-kind="observed">Quan sát</span><span data-kind="computed">Tính toán</span><span data-kind="illustrative">Minh họa</span></div></header>
           <div data-cosmic-view-host></div>
@@ -254,52 +288,67 @@
 
   async function renderOverview(host) {
     const settings = getSettings();
+    const resumeView = settings.lastView && settings.lastView !== "overview" && VIEWS[settings.lastView] ? settings.lastView : "solar-system";
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Múi giờ thiết bị";
     host.innerHTML = `<section class="cosmic-hero">
-      <div class="cosmic-hero-copy"><span class="cosmic-kicker">DỮ LIỆU THẬT · KHÔNG GIAN TƯƠNG TÁC</span><h2>Chạm vào vũ trụ,<br><em>hiểu điều bạn đang thấy.</em></h2><p>Điều khiển thời gian Hệ Mặt Trời, dựng bầu trời theo vị trí thiết bị và khám phá dữ liệu NASA/JPL có provenance rõ ràng.</p><div><a class="cosmic-primary" href="#/cosmic-observatory/solar-system">Khám phá vũ trụ <span>→</span></a><a class="cosmic-secondary" href="#/cosmic-observatory/live-sky">Bầu trời tối nay</a></div><small>Mỗi con số đều ghi nguồn, đơn vị, thời điểm và kiểu dữ liệu.</small></div>
+      <div class="cosmic-hero-copy"><span class="cosmic-kicker">HH UNIVERSE · DỮ LIỆU CÓ NGUỒN</span><h2>Bước vào Vũ trụ,<br><em>hiểu điều bạn đang thấy.</em></h2><p>Điều khiển thời gian Hệ Mặt Trời, dựng bầu trời theo vị trí thiết bị và khám phá dữ liệu NASA/JPL với provenance rõ ràng.</p><div><a class="cosmic-primary" href="#${viewRoute(resumeView)}">Tiếp tục khám phá <span>→</span></a></div><small>Điểm đến tiếp theo: ${escapeHtml(VIEWS[resumeView].title)} · Không tạo telemetry hoặc trạng thái trực tuyến giả.</small></div>
       <div class="cosmic-hero-orbit" aria-hidden="true"><div class="cosmic-sun"></div>${[1,2,3,4].map((n) => `<i style="--orbit:${n}"><b></b></i>`).join("")}<span>HH</span></div>
     </section>
-    <section class="cosmic-today-grid" aria-label="Dữ liệu mới">
-      <article><span>TIẾP CẬN GẦN</span><strong data-home-asteroid>Đang kết nối JPL…</strong><small data-home-asteroid-note>Không thay bằng số liệu giả nếu nguồn lỗi.</small></article>
-      <article class="cosmic-media-highlight"><span>NASA MEDIA</span><strong data-home-media>Đang mở thư viện…</strong><small data-home-media-note>Ảnh có nguồn và ghi công.</small></article>
-      <article><span>PHIÊN GẦN NHẤT</span><strong>${escapeHtml(settings.lastView ? VIEWS[settings.lastView]?.title || "Đài quan sát" : "Chưa có phiên")}</strong><small>${settings.updatedAt ? `Lưu ${formatDate(settings.updatedAt)}` : "Bắt đầu để lưu tiến trình cục bộ."}</small></article>
+    <section class="cosmic-universe-search" aria-label="Tìm kiếm trong Vũ trụ HH">
+      <form data-universe-search><label><span>Tìm hành tinh, ngôi sao, nhiệm vụ hoặc công cụ</span><input type="search" name="q" maxlength="80" autocomplete="off" placeholder="Ví dụ: Sao Hỏa, DSN, ngoại hành tinh…"></label><button type="submit">Khám phá</button></form>
+      <div class="cosmic-search-results" data-universe-search-results aria-live="polite" hidden></div>
     </section>
-    <section class="cosmic-section-heading"><div><span>12 KHÔNG GIAN ĐỘC LẬP</span><h2>Chọn cách bạn muốn khám phá</h2></div><a href="#/cosmic-observatory/data-center">Kiểm tra nguồn dữ liệu →</a></section>
+    <section class="cosmic-today-grid cosmic-today-grid--command" aria-label="Trung tâm Vũ trụ hôm nay">
+      <article><span>BẦU TRỜI TẠI THIẾT BỊ</span><strong>${escapeHtml(new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit" }).format(new Date()))}</strong><small>${escapeHtml(timeZone)} · <a href="#/universe/live-sky">Mở bản đồ theo vị trí</a></small></article>
+      <article><span>TIẾP CẬN GẦN</span><strong data-home-asteroid>Đang kết nối JPL…</strong><small data-home-asteroid-note>Không thay bằng số liệu giả nếu nguồn lỗi.</small></article>
+      <article><span>BỘ SƯU TẬP</span><strong data-home-bookmarks>Đang đọc dữ liệu…</strong><small>Bookmark được lưu trong IndexedDB trên thiết bị.</small></article>
+      <article><span>HÀNH TRÌNH GẦN NHẤT</span><strong>${escapeHtml(VIEWS[resumeView].title)}</strong><small>${settings.updatedAt ? `Lưu ${formatDate(settings.updatedAt)}` : "Bắt đầu để lưu tiến trình cục bộ."}</small></article>
+    </section>
+    <section class="cosmic-section-heading"><div><span>15 KHÔNG GIAN CỐT LÕI</span><h2>Chọn cách bạn muốn khám phá</h2></div><a href="#/universe/data-center">Kiểm tra nguồn dữ liệu →</a></section>
     <section class="cosmic-workspace-grid">
       ${workspaceCard("solar-system", "◎", "P0 · COMPUTED", "Xoay, zoom, theo dõi thiên thể và tua thời gian bằng Astronomy Engine.")}
       ${workspaceCard("live-sky", "⌖", "P0 · OBSERVER", "Bản đồ chân trời theo tọa độ, ngày giờ và múi giờ thiết bị.")}
+      ${workspaceCard("observatory", "◫", "LOCAL-FIRST", "Lập phiên quan sát, lưu mục tiêu, thiết bị và nhật ký riêng.")}
+      ${workspaceCard("missions", "↗", "OFFICIAL SOURCES", "Theo dõi nhiệm vụ qua các cổng chính thức, không dựng telemetry giả.")}
+      ${workspaceCard("dsn", "⌁", "NASA/JPL", "Mở trạng thái liên lạc Deep Space Network được nguồn công bố.")}
       ${workspaceCard("asteroids", "◆", "P0 · JPL CNEOS", "Các lần tiếp cận gần từ JPL CAD, không tạo cảnh báo giật gân.")}
-      ${workspaceCard("media", "▣", "P0 · NASA", "Tìm ảnh, video, audio và lưu yêu thích trong IndexedDB.")}
+      ${workspaceCard("surfaces", "◒", "NASA TREKS", "Chọn thiên thể, mở địa hình chính thức và đo cung bề mặt.")}
       ${workspaceCard("exoplanets", "◉", "P1 · NASA TAP", "Lọc các thế giới ngoài Hệ Mặt Trời theo số đo đã công bố.")}
       ${workspaceCard("earth", "◍", "P1 · EONET", "Theo dõi các sự kiện tự nhiên đang được NASA tổng hợp.")}
       ${workspaceCard("space-weather", "☀", "P1 · DONKI", "Solar flare, CME và bão địa từ có thời gian cập nhật.")}
-      ${workspaceCard("universe-map", "∞", "P1 · WWT / HiPS", "Mở bản đồ bầu trời đa bước sóng bằng công cụ chính thức.")}
-      ${workspaceCard("missions", "↗", "P1 · OFFICIAL", "Cửa ngõ mission chính thức; không hiển thị telemetry mô phỏng như dữ liệu sống.")}
-      ${workspaceCard("tours", "▷", "P2 · EDUCATION", "Hành trình học ngắn sử dụng các workspace khoa học sẵn có.")}
-      ${workspaceCard("planner", "◫", "P2 · COMPUTED", "Lập kế hoạch quan sát dựa trên độ cao thiên thể.")}
+      ${workspaceCard("timeline", "⌛", "SCIENCE STORY", "Dòng thời gian từ Vũ trụ sơ khai đến hiện tại, kèm nguồn đọc thêm.")}
+      ${workspaceCard("learning", "◇", "LEARNING LAB", "Bài học ngắn, quiz có phản hồi và tiến độ cục bộ.")}
+      ${workspaceCard("media", "▣", "NASA MEDIA", "Tìm ảnh, video, audio và lưu yêu thích trong IndexedDB.")}
+      ${workspaceCard("universe-map", "∞", "WWT / HiPS", "Mở bản đồ bầu trời đa bước sóng bằng công cụ chính thức.")}
       ${workspaceCard("data-center", "✓", "TRUST CENTER", "Nguồn, cache, giấy phép, export/import và dữ liệu cá nhân.")}
     </section>`;
+    const searchForm = host.querySelector("[data-universe-search]");
+    const searchResults = host.querySelector("[data-universe-search-results]");
+    const renderSearch = () => {
+      const query = foldText(new FormData(searchForm).get("q"));
+      if (!query) { searchResults.hidden = true; searchResults.innerHTML = ""; return []; }
+      const matches = SEARCH_ITEMS.filter(([, label, keywords]) => foldText(`${label} ${keywords}`).includes(query)).slice(0, 8);
+      searchResults.hidden = false;
+      searchResults.innerHTML = matches.length ? matches.map(([id, label]) => `<a href="#${viewRoute(id)}"><span>${escapeHtml(label)}</span><small>${escapeHtml(VIEWS[id].description)}</small><b>→</b></a>`).join("") : '<p>Không tìm thấy không gian phù hợp. Hãy thử “Sao Hỏa”, “DSN” hoặc “ngoại hành tinh”.</p>';
+      return matches;
+    };
+    searchForm.addEventListener("input", renderSearch);
+    searchForm.addEventListener("submit", (event) => { event.preventDefault(); const matches = renderSearch(); if (matches.length === 1) location.hash = `#${viewRoute(matches[0][0])}`; });
     const asteroidLabel = host.querySelector("[data-home-asteroid]");
     const asteroidNote = host.querySelector("[data-home-asteroid-note]");
-    const mediaLabel = host.querySelector("[data-home-media]");
-    const mediaNote = host.querySelector("[data-home-media-note]");
+    const bookmarkLabel = host.querySelector("[data-home-bookmarks]");
     const end = new Date(); end.setDate(end.getDate() + 3);
     Promise.allSettled([
       fetchCosmic("asteroids", { start: localDay(), end: localDay(end), distance: 0.1 }),
-      fetchCosmic("media", { q: "nebula", type: "image", page: 1 })
-    ]).then(([asteroidResult, mediaResult]) => {
+      dbAll("bookmarks")
+    ]).then(([asteroidResult, bookmarkResult]) => {
       if (!active || !host.isConnected) return;
       if (asteroidResult.status === "fulfilled") {
         const records = asteroidResult.value.data?.records || [];
         asteroidLabel.textContent = records.length ? `${records.length} lượt trong 3 ngày` : "Không có lượt trong bộ lọc";
         asteroidNote.innerHTML = `${sourceBadge(asteroidResult.value)} · cập nhật ${formatDate(asteroidResult.value.fetchedAt)}`;
       } else { asteroidLabel.textContent = "JPL tạm thời không phản hồi"; asteroidNote.textContent = asteroidResult.reason?.message || "Hãy thử lại sau."; }
-      if (mediaResult.status === "fulfilled") {
-        const item = mediaResult.value.data?.items?.[0];
-        mediaLabel.textContent = item?.title || "Thư viện đã kết nối";
-        mediaNote.innerHTML = `${sourceBadge(mediaResult.value)} · ${formatNumber(mediaResult.value.data?.totalHits, 0)} kết quả`;
-        const image = safeUrl(item?.previewUrl);
-        if (image) host.querySelector(".cosmic-media-highlight")?.style.setProperty("--cosmic-media-image", `url("${image.replace(/\"/g, "%22")}")`);
-      } else { mediaLabel.textContent = "NASA Media tạm thời không phản hồi"; mediaNote.textContent = mediaResult.reason?.message || "Hãy thử lại sau."; }
+      bookmarkLabel.textContent = bookmarkResult.status === "fulfilled" ? `${bookmarkResult.value.length} mục đã lưu` : "Chưa đọc được bộ sưu tập";
     });
   }
 
@@ -655,6 +704,104 @@
     form.addEventListener("submit", (event) => { event.preventDefault(); load(); }); load();
   }
 
+  async function renderObservatory(host) {
+    const sessions = (await dbAll("sessions")).filter((item) => item?.type === "observation").sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 50);
+    const renderSessions = (items) => items.length ? `<div class="cosmic-observation-list">${items.map((item) => `<article><div><span>${escapeHtml(item.target || "Mục tiêu chưa đặt")}</span><h2>${escapeHtml(item.title || "Phiên quan sát")}</h2><p>${escapeHtml(item.notes || "Không có ghi chú.")}</p></div><dl><div><dt>Thời gian</dt><dd>${formatDate(item.scheduledAt || item.createdAt)}</dd></div><div><dt>Thiết bị</dt><dd>${escapeHtml(item.equipment || "Mắt thường")}</dd></div></dl><button type="button" data-observation-delete="${escapeHtml(item.id)}" aria-label="Xóa phiên ${escapeHtml(item.title || "quan sát")}">Xóa</button></article>`).join("")}</div>` : '<div class="cosmic-empty">Chưa có phiên quan sát. Hãy tạo phiên đầu tiên ở biểu mẫu bên cạnh.</div>';
+    host.innerHTML = `<section class="cosmic-observatory-workspace"><div class="cosmic-observation-intro"><span>LOCAL-FIRST OBSERVATION LOG</span><h2>Chuẩn bị một đêm quan sát có mục tiêu</h2><p>Thông tin được lưu trong IndexedDB trên thiết bị. Vị trí chỉ được dùng khi bạn chủ động cấp quyền trong Bầu trời đêm.</p><div><a class="cosmic-secondary" href="#/universe/live-sky">Kiểm tra bầu trời tối nay</a><a class="cosmic-secondary" href="#/universe/planner">Mở công cụ lập kế hoạch</a></div></div><form class="cosmic-observation-form" data-observation-form><label>Tên phiên<input name="title" maxlength="80" required placeholder="Ví dụ: Quan sát Sao Mộc"></label><label>Mục tiêu<input name="target" maxlength="80" required placeholder="Hành tinh, sao hoặc thiên thể"></label><label>Thời gian<input name="scheduledAt" type="datetime-local" value="${localDateTimeValue()}"></label><label>Thiết bị<select name="equipment"><option>Mắt thường</option><option>Ống nhòm</option><option>Kính thiên văn khúc xạ</option><option>Kính thiên văn phản xạ</option><option>Thiết bị khác</option></select></label><label class="is-wide">Ghi chú<textarea name="notes" maxlength="800" rows="4" placeholder="Điều kiện mây, hướng nhìn, mục tiêu cần kiểm tra…"></textarea></label><button type="submit" class="cosmic-primary">Lưu phiên quan sát</button></form></section><section class="cosmic-section-heading"><div><span>NHẬT KÝ CỤC BỘ</span><h2>Các phiên gần đây</h2></div><small>Tối đa hiển thị 50 phiên mới nhất</small></section><div data-observation-list>${renderSessions(sessions)}</div>`;
+    const listHost = host.querySelector("[data-observation-list]");
+    const refresh = async () => {
+      const items = (await dbAll("sessions")).filter((item) => item?.type === "observation").sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 50);
+      listHost.innerHTML = renderSessions(items);
+    };
+    host.querySelector("[data-observation-form]").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(event.currentTarget));
+      const title = String(values.title || "").trim().slice(0, 80);
+      const target = String(values.target || "").trim().slice(0, 80);
+      if (!title || !target) return announce("Hãy nhập tên phiên và mục tiêu quan sát.");
+      await dbWrite("sessions", { id: `observation-${Date.now()}`, type: "observation", title, target, scheduledAt: String(values.scheduledAt || "").slice(0, 32), equipment: String(values.equipment || "Mắt thường").slice(0, 80), notes: String(values.notes || "").trim().slice(0, 800), createdAt: new Date().toISOString() });
+      event.currentTarget.reset();
+      event.currentTarget.elements.scheduledAt.value = localDateTimeValue();
+      await refresh();
+      announce("Đã lưu phiên quan sát trên thiết bị.");
+    });
+    listHost.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-observation-delete]");
+      if (!button) return;
+      await dbDelete("sessions", button.dataset.observationDelete);
+      await refresh();
+      announce("Đã xóa phiên quan sát theo yêu cầu.");
+    });
+  }
+
+  function renderDsn(host) {
+    const stations = [
+      ["Goldstone", "California, Hoa Kỳ", "DSS"],
+      ["Madrid", "Tây Ban Nha", "MDSCC"],
+      ["Canberra", "Australia", "CDSCC"]
+    ];
+    host.innerHTML = `<section class="cosmic-dsn-hero"><div class="cosmic-dsn-visual" aria-hidden="true"><i></i><i></i><b>DSN</b></div><div><span>NASA/JPL OFFICIAL STATUS</span><h2>Nghe cách Trái Đất giữ liên lạc với không gian sâu</h2><p>HH Universe không sao chép hoặc suy đoán luồng telemetry. Nút dưới đây mở DSN Now của NASA/JPL, nơi trạng thái anten và tàu vũ trụ được nguồn chính thức cập nhật.</p><a class="cosmic-primary" href="https://eyes.nasa.gov/dsn/dsn.html" target="_blank" rel="noopener">Mở DSN Now chính thức ↗</a><small data-kind="observed">Trạng thái trực tiếp chỉ được xem tại nguồn NASA/JPL</small></div></section><section class="cosmic-station-grid">${stations.map(([name, locationName, code]) => `<article><span>${escapeHtml(code)}</span><h2>${escapeHtml(name)}</h2><p>${escapeHtml(locationName)}</p><small>Một trong ba khu phức hợp tạo vùng phủ quanh Trái Đất.</small></article>`).join("")}</section><div class="cosmic-notice is-info">Nếu nguồn chính thức không tải được, HH giữ thông báo lỗi hoặc liên kết thử lại; không thay bằng anten, tàu hay số liệu giả.</div>`;
+  }
+
+  function renderSurfaces(host) {
+    const bodies = Object.freeze({ Moon: ["Mặt Trăng", 1737.4], Mars: ["Sao Hỏa", 3389.5], Mercury: ["Sao Thủy", 2439.7], Ceres: ["Ceres", 469.7], Vesta: ["Vesta", 262.7], Europa: ["Europa", 1560.8] });
+    host.innerHTML = `<section class="cosmic-surface-workspace"><div class="cosmic-surface-map" aria-hidden="true"><i></i><span>PLANETARY<br>TREK</span></div><div><span>NASA SOLAR SYSTEM TREKS</span><h2>Địa hình hành tinh có nguồn</h2><p>Mở cổng NASA để xem lớp ảnh và địa hình nhiệm vụ. Máy tính bên dưới dùng bán kính trung bình và công thức haversine để ước tính cung ngắn nhất giữa hai tọa độ; đây không phải khoảng cách đi bộ qua địa hình.</p><a class="cosmic-primary" href="https://trek.nasa.gov/" target="_blank" rel="noopener">Mở NASA Solar System Treks ↗</a></div></section><form class="cosmic-surface-calculator" data-surface-form><label>Thiên thể<select name="body">${Object.entries(bodies).map(([id, [label]]) => `<option value="${id}">${escapeHtml(label)}</option>`).join("")}</select></label><fieldset><legend>Điểm A</legend><label>Vĩ độ<input name="latA" type="number" min="-90" max="90" step="0.0001" value="0"></label><label>Kinh độ<input name="lonA" type="number" min="-180" max="180" step="0.0001" value="0"></label></fieldset><fieldset><legend>Điểm B</legend><label>Vĩ độ<input name="latB" type="number" min="-90" max="90" step="0.0001" value="1"></label><label>Kinh độ<input name="lonB" type="number" min="-180" max="180" step="0.0001" value="1"></label></fieldset><button type="submit" class="cosmic-primary">Tính khoảng cách cung</button><output data-surface-result aria-live="polite">Nhập hai tọa độ để bắt đầu.</output></form>`;
+    host.querySelector("[data-surface-form]").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(event.currentTarget));
+      const numbers = ["latA", "lonA", "latB", "lonB"].map((key) => Number(values[key]));
+      const valid = numbers.every(Number.isFinite) && Math.abs(numbers[0]) <= 90 && Math.abs(numbers[2]) <= 90 && Math.abs(numbers[1]) <= 180 && Math.abs(numbers[3]) <= 180;
+      const output = event.currentTarget.querySelector("[data-surface-result]");
+      if (!valid || !bodies[values.body]) { output.textContent = "Tọa độ không hợp lệ."; return; }
+      const [latA, lonA, latB, lonB] = numbers.map((value) => value * Math.PI / 180);
+      const deltaLat = latB - latA; const deltaLon = lonB - lonA;
+      const a = Math.sin(deltaLat / 2) ** 2 + Math.cos(latA) * Math.cos(latB) * Math.sin(deltaLon / 2) ** 2;
+      const distance = 2 * bodies[values.body][1] * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
+      output.innerHTML = `<strong>${formatNumber(distance, 2)} km</strong><span data-kind="computed">Tính toán · bán kính trung bình ${formatNumber(bodies[values.body][1], 1)} km</span>`;
+    });
+  }
+
+  function renderTimeline(host) {
+    const events = [
+      ["13,8 tỷ năm trước", "Vũ trụ sơ khai", "Vật chất, bức xạ và không-thời gian tiến hóa từ trạng thái rất nóng và đậm đặc.", "Giá trị tuổi là ước lượng khoa học."],
+      ["Hơn 13 tỷ năm trước", "Những thế hệ sao đầu tiên", "Các ngôi sao sớm bắt đầu tạo ra nhiều nguyên tố nặng hơn hydro và heli.", "Thời điểm chính xác còn được nghiên cứu."],
+      ["Khoảng 4,6 tỷ năm trước", "Hệ Mặt Trời hình thành", "Mặt Trời và các thiên thể cùng hình thành từ đám mây khí bụi tiền hành tinh.", "Mốc xấp xỉ."],
+      ["Khoảng 4,54 tỷ năm trước", "Trái Đất hình thành", "Hành tinh tiếp tục biến đổi qua địa chất, khí quyển và sự sống.", "Mốc xấp xỉ."],
+      ["Hiện tại", "Kỷ nguyên quan sát", "Kính thiên văn và tàu vũ trụ mở rộng phần Vũ trụ con người có thể đo đạc.", "Dữ liệu tiếp tục được cập nhật."]
+    ];
+    host.innerHTML = `<section class="cosmic-timeline-intro"><span>COSMIC HISTORY</span><h2>Từ Vũ trụ sơ khai đến bầu trời hôm nay</h2><p>Các mốc thời gian dưới đây được trình bày theo quy mô gần đúng. Chúng không phải đồng hồ đếm tuyệt đối và luôn cần đọc cùng nguồn khoa học.</p><a class="cosmic-secondary" href="https://science.nasa.gov/universe/" target="_blank" rel="noopener">Đọc thêm tại NASA Science ↗</a></section><ol class="cosmic-universe-timeline">${events.map(([time, title, description, note], index) => `<li style="--timeline-index:${index}"><span>${escapeHtml(time)}</span><article><h2>${escapeHtml(title)}</h2><p>${escapeHtml(description)}</p><small data-kind="illustrative">${escapeHtml(note)}</small></article></li>`).join("")}</ol>`;
+  }
+
+  function renderLearning(host) {
+    const questions = [
+      { question: "Nguồn nào phù hợp để lấy ephemeris và vector quỹ đạo?", options: ["NASA Media", "JPL Horizons", "EONET"], answer: 1, explanation: "JPL Horizons cung cấp ephemeris, vector trạng thái và phần tử quỹ đạo." },
+      { question: "Dữ liệu 'computed' trong HH Universe có nghĩa gì?", options: ["Kết quả từ mô hình/tính toán", "Tín hiệu trực tiếp", "Dữ liệu do người dùng đo"], answer: 0, explanation: "Computed là kết quả tính từ mô hình đã nêu nguồn, không phải quan sát trực tiếp." },
+      { question: "DSN dùng để làm gì?", options: ["Theo dõi thời tiết mặt đất", "Liên lạc với tàu vũ trụ", "Phát video thương mại"], answer: 1, explanation: "Deep Space Network hỗ trợ liên lạc và theo dõi nhiều nhiệm vụ không gian." },
+      { question: "Khoảng cách haversine trong Bề mặt hành tinh biểu diễn gì?", options: ["Đường thẳng xuyên tâm", "Cung ngắn nhất trên mặt cầu", "Đường đi tránh núi"], answer: 1, explanation: "Đó là cung ngắn nhất trên mô hình cầu, không tính địa hình." },
+      { question: "Khi nguồn NASA tạm lỗi, HH Universe phải làm gì?", options: ["Tạo số thay thế", "Giữ lỗi/cache có nhãn rõ", "Hiển thị trạng thái online giả"], answer: 1, explanation: "Ứng dụng chỉ dùng cache còn hạn với nhãn rõ hoặc báo lỗi; không bịa dữ liệu." }
+    ];
+    const settings = getSettings();
+    host.innerHTML = `<section class="cosmic-learning-summary"><div><span>MICRO LEARNING</span><h2>5 câu để đọc dữ liệu Vũ trụ đúng cách</h2><p>Làm bài không cần tài khoản. Kết quả tốt nhất chỉ được lưu cục bộ trong thiết bị này.</p></div><strong>${Number.isFinite(Number(settings.learningBest)) ? `${Number(settings.learningBest)}/5` : "Chưa làm"}<small>Kỷ lục cá nhân</small></strong></section><form class="cosmic-learning-quiz" data-learning-quiz>${questions.map((item, questionIndex) => `<fieldset><legend><span>0${questionIndex + 1}</span>${escapeHtml(item.question)}</legend>${item.options.map((option, optionIndex) => `<label><input type="radio" name="question-${questionIndex}" value="${optionIndex}" required><span>${escapeHtml(option)}</span></label>`).join("")}<p data-learning-explanation="${questionIndex}" hidden></p></fieldset>`).join("")}<button type="submit" class="cosmic-primary">Chấm bài</button><output data-learning-result aria-live="polite"></output></form>`;
+    host.querySelector("[data-learning-quiz]").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const data = new FormData(event.currentTarget);
+      let score = 0;
+      questions.forEach((item, index) => {
+        const selected = Number(data.get(`question-${index}`));
+        const correct = selected === item.answer;
+        if (correct) score += 1;
+        const explanation = event.currentTarget.querySelector(`[data-learning-explanation="${index}"]`);
+        explanation.hidden = false;
+        explanation.className = correct ? "is-correct" : "is-incorrect";
+        explanation.textContent = `${correct ? "Đúng." : `Chưa đúng. Đáp án: ${item.options[item.answer]}.`} ${item.explanation}`;
+      });
+      const best = Math.max(score, Number(getSettings().learningBest || 0));
+      saveSettings({ learningBest: best, learningLastScore: score, learningCompletedAt: new Date().toISOString() });
+      event.currentTarget.querySelector("[data-learning-result]").innerHTML = `<strong>${score}/5</strong><span>${score === 5 ? "Bạn đã hoàn thành xuất sắc." : "Hãy xem giải thích và thử lại khi sẵn sàng."}</span>`;
+      announce(`Kết quả Phòng học thiên văn: ${score} trên 5 câu.`);
+    });
+  }
+
   function renderUniverseMap(host) {
     host.innerHTML = `<section class="cosmic-external-explorer"><div class="cosmic-external-visual"><span>∞</span><i></i><i></i><i></i></div><div><span>WORLDWIDE TELESCOPE · HiPS</span><h2>Bầu trời đa bước sóng cần engine chuyên dụng</h2><p>HH không sao chép Stellarium hoặc ESASky. Phiên này mở công cụ WorldWide Telescope chính thức trong tab riêng để giữ attribution, hiệu năng và quyền sử dụng đúng nguồn.</p><div><a class="cosmic-primary" href="https://worldwidetelescope.org/webclient/" target="_blank" rel="noopener">Mở WorldWide Telescope ↗</a><a class="cosmic-secondary" href="https://sky.esa.int/esasky/" target="_blank" rel="noopener">Mở ESASky ↗</a></div><dl><div><dt>Trạng thái</dt><dd>Liên kết chính thức</dd></div><div><dt>Không nhúng mã AGPL</dt><dd>Đã tuân thủ</dd></div><div><dt>Dữ liệu giả</dt><dd>Không sử dụng</dd></div></dl></div></section>`;
   }
@@ -662,6 +809,7 @@
   function renderMissions(host) {
     const missions = [
       ["NASA Eyes", "Theo dõi mission và Hệ Mặt Trời bằng sản phẩm chính thức của NASA.", "https://eyes.nasa.gov/apps/solar-system/"],
+      ["JPL Horizons", "Tạo ephemeris, vector trạng thái và phần tử quỹ đạo theo thời gian.", "https://ssd.jpl.nasa.gov/horizons/app.html#/"],
       ["JPL Mission Directory", "Danh mục nhiệm vụ của Jet Propulsion Laboratory.", "https://www.jpl.nasa.gov/missions/"],
       ["NASA Missions", "Tra cứu nhiệm vụ và chương trình không gian NASA.", "https://www.nasa.gov/missions/"],
       ["Deep Space Network", "Trạng thái liên lạc DSN công khai từ NASA/JPL.", "https://eyes.nasa.gov/dsn/dsn.html"]
@@ -670,7 +818,7 @@
   }
 
   function renderTours(host) {
-    const tours = [["Hệ Mặt Trời trong 3 phút", "Bắt đầu từ Trái Đất và quan sát vị trí các hành tinh.", "/cosmic-observatory/solar-system"], ["Bầu trời tối nay", "Dựng đường chân trời tại vị trí thiết bị.", "/cosmic-observatory/live-sky"], ["Vật thể đi ngang Trái Đất", "Hiểu đúng khoảng cách và độ bất định trong JPL CAD.", "/cosmic-observatory/asteroids"], ["Vũ trụ qua ảnh NASA", "Khám phá media kèm NASA ID và attribution.", "/cosmic-observatory/media"]];
+    const tours = [["Hệ Mặt Trời trong 3 phút", "Bắt đầu từ Trái Đất và quan sát vị trí các hành tinh.", "/universe/solar-system"], ["Bầu trời tối nay", "Dựng đường chân trời tại vị trí thiết bị.", "/universe/live-sky"], ["Vật thể đi ngang Trái Đất", "Hiểu đúng khoảng cách và độ bất định trong JPL CAD.", "/universe/asteroids"], ["Vũ trụ qua ảnh NASA", "Khám phá media kèm NASA ID và attribution.", "/universe/media"]];
     host.innerHTML = `<section class="cosmic-tour-grid">${tours.map(([title, description, route], index) => `<a href="#${route}"><span>0${index + 1}</span><div><small>TOUR CÓ DỮ LIỆU NGUỒN</small><h2>${escapeHtml(title)}</h2><p>${escapeHtml(description)}</p><b>Bắt đầu →</b></div></a>`).join("")}</section>`;
   }
 
@@ -692,7 +840,7 @@
   async function renderDataCenter(host) {
     const bookmarks = await dbAll("bookmarks");
     host.innerHTML = `<section class="cosmic-trust-center"><div class="cosmic-trust-summary"><article><span>NGUỒN ĐÃ ĐĂNG KÝ</span><strong>${SOURCES.length}</strong><small>Không có proxy URL tùy ý</small></article><article><span>BOOKMARK CỤC BỘ</span><strong>${bookmarks.length}</strong><small>IndexedDB trên thiết bị</small></article><article><span>SCHEMA</span><strong>v1</strong><small>Có validate khi nhập</small></article><article><span>SECRET FRONTEND</span><strong>0</strong><small>API key chỉ ở server</small></article></div><div class="cosmic-source-table" role="table" aria-label="Nguồn dữ liệu"><div role="row"><span role="columnheader">Nguồn</span><span role="columnheader">Mục đích</span><span role="columnheader">Kiểu</span><span role="columnheader">Tài liệu</span></div>${SOURCES.map(([name, purpose, url, kind]) => `<div role="row"><strong role="cell">${escapeHtml(name)}</strong><span role="cell">${escapeHtml(purpose)}</span><span role="cell" data-kind="${kind}">${escapeHtml(kind)}</span><a role="cell" href="${url}" target="_blank" rel="noopener">Mở ↗</a></div>`).join("")}</div><section class="cosmic-data-controls"><div><span>KIỂM SOÁT DỮ LIỆU</span><h2>Xuất, nhập và dọn cache</h2><p>File xuất không chứa API key, token đăng nhập hoặc cache response từ NASA/JPL.</p></div><div><button type="button" data-cosmic-export>Xuất dữ liệu</button><label class="cosmic-file-button">Nhập dữ liệu<input type="file" accept="application/json,.json" data-cosmic-import></label><button type="button" data-cosmic-clear-cache>Dọn cache thiên văn</button></div></section><div class="cosmic-data-dictionary"><span data-kind="observed"><b>Quan sát</b>Dữ liệu do nguồn công bố.</span><span data-kind="computed"><b>Tính toán</b>Kết quả từ mô hình thiên văn.</span><span data-kind="predicted"><b>Dự báo</b>Có thể thay đổi khi nguồn cập nhật.</span><span data-kind="interpolated"><b>Nội suy</b>Giá trị giữa các mốc nguồn.</span><span data-kind="illustrative"><b>Minh họa</b>Chỉ phục vụ hiển thị.</span></div></section>`;
-    host.querySelector("[data-cosmic-export]").addEventListener("click", () => exportData().then(() => announce("Đã xuất dữ liệu Cosmic Observatory.")));
+    host.querySelector("[data-cosmic-export]").addEventListener("click", () => exportData().then(() => announce("Đã xuất dữ liệu Vũ trụ HH.")));
     host.querySelector("[data-cosmic-import]").addEventListener("change", (event) => importData(event.target.files?.[0]).then(() => { announce("Đã nhập dữ liệu hợp lệ."); renderDataCenter(host); }).catch((error) => announce(error.message)));
     host.querySelector("[data-cosmic-clear-cache]").addEventListener("click", async () => { const entries = await dbAll("cache"); await Promise.all(entries.map((entry) => dbDelete("cache", entry.key))); announce(`Đã dọn ${entries.length} bản cache thiên văn.`); });
   }
@@ -701,11 +849,16 @@
     if (view === "overview") return renderOverview(host);
     if (view === "solar-system") return renderSolarSystem(host);
     if (view === "live-sky") return renderLiveSky(host);
+    if (view === "observatory") return renderObservatory(host);
+    if (view === "dsn") return renderDsn(host);
     if (view === "asteroids") return renderAsteroids(host);
+    if (view === "surfaces") return renderSurfaces(host);
     if (view === "media") return renderMedia(host);
     if (view === "exoplanets") return renderExoplanets(host);
     if (view === "earth") return renderEarth(host);
     if (view === "space-weather") return renderSpaceWeather(host);
+    if (view === "timeline") return renderTimeline(host);
+    if (view === "learning") return renderLearning(host);
     if (view === "universe-map") return renderUniverseMap(host);
     if (view === "missions") return renderMissions(host);
     if (view === "tours") return renderTours(host);
@@ -735,14 +888,17 @@
     host.innerHTML = shellMarkup(view);
     active.root = host.querySelector("[data-cosmic-app]");
     active.root.classList.add("is-mounted");
-    saveSettings({ lastView: view });
+    saveSettings(view === "overview" ? { lastOpenedAt: new Date().toISOString() } : { lastView: view, lastRoute: viewRoute(view) });
     renderView(host.querySelector("[data-cosmic-view-host]"), view);
     requestAnimationFrame(() => host.querySelector(".cosmic-main")?.focus({ preventScroll: true }));
     return true;
   }
 
-  global.HHCosmicObservatory = Object.freeze({
-    version: 1,
+  const universeApi = Object.freeze({
+    version: 2,
+    productName: "HH Universe",
+    canonicalRoute: "/universe",
+    legacyRoute: "/cosmic-observatory",
     views: VIEWS,
     supports: (view) => Boolean(VIEW_ALIASES[String(view || "overview").toLowerCase()]),
     normalizeView,
@@ -750,4 +906,6 @@
     unmount,
     dataTypes: Object.freeze(["observed", "computed", "predicted", "interpolated", "illustrative"])
   });
+  global.HHUniverse = universeApi;
+  global.HHCosmicObservatory = universeApi;
 })(window);

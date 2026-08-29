@@ -5624,25 +5624,30 @@ function initAppShell() {
     },
     {
       id: "cosmic-observatory",
-      label: "Đài Vũ trụ",
+      label: "Vũ trụ",
       icon: "✦",
       accent: "#67e8ff",
-      route: "/cosmic-observatory",
+      route: "/universe",
       items: [],
       pages: [
-        { id: "overview", title: "Tổng quan", route: "/cosmic-observatory" },
-        { id: "solar-system", title: "Hệ Mặt Trời 3D", route: "/cosmic-observatory/solar-system" },
-        { id: "live-sky", title: "Bầu trời trực tiếp", route: "/cosmic-observatory/live-sky" },
-        { id: "asteroids", title: "Asteroid Watch", route: "/cosmic-observatory/asteroids" },
-        { id: "media", title: "NASA Media", route: "/cosmic-observatory/media" },
-        { id: "exoplanets", title: "Ngoại hành tinh", route: "/cosmic-observatory/exoplanets" },
-        { id: "earth", title: "Trái Đất từ không gian", route: "/cosmic-observatory/earth" },
-        { id: "space-weather", title: "Thời tiết không gian", route: "/cosmic-observatory/space-weather" },
-        { id: "universe-map", title: "Vũ trụ đa bước sóng", route: "/cosmic-observatory/universe-map" },
-        { id: "missions", title: "Nhiệm vụ không gian", route: "/cosmic-observatory/missions" },
-        { id: "tours", title: "Cosmic Tours", route: "/cosmic-observatory/tours" },
-        { id: "planner", title: "Kế hoạch quan sát", route: "/cosmic-observatory/planner" },
-        { id: "data-center", title: "Dữ liệu & ghi công", route: "/cosmic-observatory/data-center" }
+        { id: "overview", title: "Trung tâm Vũ trụ", route: "/universe" },
+        { id: "solar-system", title: "Hệ Mặt Trời 3D", route: "/universe/solar-system" },
+        { id: "live-sky", title: "Bầu trời đêm", route: "/universe/live-sky" },
+        { id: "observatory", title: "Đài quan sát", route: "/universe/observatory" },
+        { id: "missions", title: "Nhiệm vụ không gian", route: "/universe/missions" },
+        { id: "dsn", title: "Liên lạc không gian DSN", route: "/universe/dsn" },
+        { id: "asteroids", title: "Tiểu hành tinh và sao chổi", route: "/universe/asteroids" },
+        { id: "surfaces", title: "Bề mặt hành tinh", route: "/universe/surfaces" },
+        { id: "exoplanets", title: "Ngoại hành tinh", route: "/universe/exoplanets" },
+        { id: "earth", title: "Trái Đất từ không gian", route: "/universe/earth" },
+        { id: "space-weather", title: "Thời tiết không gian", route: "/universe/space-weather" },
+        { id: "timeline", title: "Dòng thời gian Vũ trụ", route: "/universe/timeline" },
+        { id: "learning", title: "Phòng học thiên văn", route: "/universe/learning" },
+        { id: "media", title: "Thư viện ảnh và video", route: "/universe/media" },
+        { id: "universe-map", title: "Vũ trụ đa bước sóng", route: "/universe/universe-map" },
+        { id: "tours", title: "Hành trình dẫn dắt", route: "/universe/tours" },
+        { id: "planner", title: "Kế hoạch quan sát", route: "/universe/planner" },
+        { id: "data-center", title: "Trung tâm dữ liệu và nguồn", route: "/universe/data-center" }
       ]
     },
     {
@@ -5830,7 +5835,7 @@ function initAppShell() {
     cinema: "phim điện ảnh movie video",
     "music-library": "nhạc nghe audio playlist",
     "play-center": "hh play game arcade trò chơi party room watch party truyện tương tác escape rhythm karaoke pet chill quiz giải trí nhiều người",
-    "cosmic-observatory": "vũ trụ thiên văn nasa jpl hệ mặt trời hành tinh bầu trời sao tiểu hành tinh ngoại hành tinh asteroid exoplanet solar system observatory",
+    "cosmic-observatory": "vũ trụ hh universe thiên văn nasa jpl hệ mặt trời hành tinh bầu trời sao đài quan sát dsn bề mặt dòng thời gian phòng học tiểu hành tinh ngoại hành tinh asteroid exoplanet solar system observatory",
     "eonwild-game": "game eonwild động vật muôn loài khủng long sinh tồn thế giới mở cổ sinh trung sinh tân sinh hiện đại không con người ecology survival",
     fortune: "xem bói tarot tử vi chiêm tinh kinh dịch",
     work: "công việc dự án task ghi chú lịch",
@@ -6689,8 +6694,9 @@ function initAppShell() {
     pageHeader.querySelector("h1").textContent = title;
     pageHeader.querySelector("p:not(.app-page-header__eyebrow)").textContent = description;
     const crumbs = route.split("/").filter(Boolean);
-    const crumbLabels = { home: "Trang chủ", create: "Sáng tạo", draw: "Vẽ", remote: "Remote", "chat-ai": "Chat AI", google: "Google", youtube: "YouTube", discord: "Discord", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "phat-phap": "Phật Pháp", beginner: "Lộ trình tu học", situations: "Pháp học đời sống", teachings: "Giáo lý", scriptures: "Canonical Reader", research: "Tìm kiếm học thuật", scholar: "Scholar & OCR Lab", glossary: "Từ điển Phật học", map: "Bản đồ giáo pháp", provenance: "Editorial & Trust Center", practice: "Thiền đường số", rituals: "Nghi thức căn bản", chanting: "Phòng tụng niệm", audio: "Thư viện nghe", schedule: "Lịch tu học", temple: "Trung tâm Phật sự Việt Nam", vietnam: "Phật giáo Việt Nam", profile: "Hồ sơ tu học", request: "Thỉnh kinh", talks: "Pháp thoại Observatory", circles: "Nhóm đọc riêng tư", qna: "HH Phật học có nguồn", journal: "Nhật ký mã hóa", accessibility: "Trợ năng", "data-control": "Tủ dữ liệu", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", chinese: "HH Chinese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "19 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
+    const crumbLabels = { home: "Trang chủ", universe: "Vũ trụ", observatory: "Đài quan sát", dsn: "Liên lạc DSN", surfaces: "Bề mặt hành tinh", timeline: "Dòng thời gian Vũ trụ", learning: "Phòng học thiên văn", create: "Sáng tạo", draw: "Vẽ", remote: "Remote", "chat-ai": "Chat AI", google: "Google", youtube: "YouTube", discord: "Discord", "music-ai": "Làm nhạc AI", music: "Nhạc", cinema: "Phim", copyright: "Bản quyền", fortune: "Xem bói", "phat-phap": "Phật Pháp", beginner: "Lộ trình tu học", situations: "Pháp học đời sống", teachings: "Giáo lý", scriptures: "Canonical Reader", research: "Tìm kiếm học thuật", scholar: "Scholar & OCR Lab", glossary: "Từ điển Phật học", map: "Bản đồ giáo pháp", provenance: "Editorial & Trust Center", practice: "Thiền đường số", rituals: "Nghi thức căn bản", chanting: "Phòng tụng niệm", audio: "Thư viện nghe", schedule: "Lịch tu học", temple: "Trung tâm Phật sự Việt Nam", vietnam: "Phật giáo Việt Nam", profile: "Hồ sơ tu học", request: "Thỉnh kinh", talks: "Pháp thoại Observatory", circles: "Nhóm đọc riêng tư", qna: "HH Phật học có nguồn", journal: "Nhật ký mã hóa", accessibility: "Trợ năng", "data-control": "Tủ dữ liệu", "davinci-resolve": "Tool", "media-design": "Media & Design", "graphic-design": "Thiết kế đồ họa", vector: "Vector & Motion Core", "quick-motion": "Motion Maker", animation: "Animation 2D", "state-machine": "State Machine & Data Binding", "3d": "3D Scene Studio", mockup: "3D Device Mockup", character: "Character Creator 2.0", prototype: "UI/UX Prototype", motion: "Motion & Video", adaptive: "Adaptive Design", projects: "Project & Version Vault", collaboration: "Live Collaboration", "dev-ai": "Dev Mode & Controlled AI", composer: "Universal Scene Composer", "dev-tools": "DEV", work: "Công việc", communication: "Giao tiếp", analytics: "Phân tích", admin: "Admin Panel", learn: "Học tập", paths: "Lộ trình cá nhân", mastery: "Skill Graph", review: "Smart Review", mistakes: "Mistake Notebook", lesson: "Lesson Player", coach: "AI Learning Coach", assessments: "Kiểm tra & Chứng chỉ", classroom: "Classroom", "study-together": "Study Together", passport: "Learning Passport", english: "HH English", japanese: "HH Japanese", chinese: "HH Chinese", dictionary: "Từ điển", kanji: "Kanji", grammar: "Ngữ pháp", reader: "Đọc hiểu", jlpt: "Luyện JLPT", notebook: "Sổ tay & SRS", conversation: "Hội thoại", galaxy: "English Galaxy", lab: "19 chế độ học", plan: "Kế hoạch hôm nay", career: "Tiếng Anh chuyên ngành", survey: "Khảo sát nghề nghiệp", placement: "Kiểm tra xếp lớp", vocabulary: "Sổ từ vựng", speaking: "Phát âm", writing: "Luyện viết", progress: "Tiến độ", tools: "Công cụ", settings: "Cài đặt", support: "Ủng hộ nhà phát triển" };
     Object.assign(crumbLabels, { play: "HH Play", arcade: "Arcade Galaxy", party: "Party Room", watch: "Watch Party", story: "Story Universe", escape: "Escape Room", rhythm: "Rhythm Arena", pet: "HH Virtual Pet", chill: "Chill Rooms", quiz: "Quiz Arena", game: "Game · EonWild", world: "Thế giới sống", species: "Eon Codex", ecosystem: "Lưới sinh thái", timeline: "Eon Atlas", expeditions: "Thám hiểm", lineage: "Dòng gene", observer: "Observer & Replay", network: "Multiplayer Readiness" });
+    if (route === "/universe/timeline" || route.startsWith("/universe/timeline/")) crumbLabels.timeline = "Dòng thời gian Vũ trụ";
     crumbLabels["social-media-tools"] = "Công cụ truyền thông xã hội";
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
@@ -6926,6 +6932,10 @@ function initAppShell() {
     if (!isUnlocked()) return;
     const hash = location.hash.replace(/^#/, "") || "/home";
     let route = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
+    if (route === "/cosmic-observatory" || route.startsWith("/cosmic-observatory/")) {
+      route = `/universe${route.slice("/cosmic-observatory".length)}`;
+      history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
+    }
     if (route === "/entertainment" || route.startsWith("/entertainment/") || route === "/character-3d" || route.startsWith("/character-3d/")) {
       route = "/home";
       history.replaceState({}, document.title, `${location.pathname}${location.search}#/home`);
@@ -6968,7 +6978,8 @@ function initAppShell() {
     document.body.classList.toggle("app-dharma-route", route === "/phat-phap" || route.startsWith("/phat-phap/"));
     document.body.classList.toggle("app-fortune-route", route === "/fortune" || route.startsWith("/fortune/"));
     document.body.classList.toggle("app-play-route", route === "/play" || route.startsWith("/play/"));
-    document.body.classList.toggle("app-cosmic-observatory-route", route === "/cosmic-observatory" || route.startsWith("/cosmic-observatory/"));
+    document.body.classList.toggle("app-cosmic-observatory-route", route === "/universe" || route.startsWith("/universe/"));
+    document.body.classList.toggle("app-universe-route", route === "/universe" || route.startsWith("/universe/"));
     document.body.classList.toggle("app-eonwild-route", route === "/game" || route.startsWith("/game/"));
     document.body.classList.toggle("app-draw-route", route === "/draw" || route.startsWith("/draw/"));
     document.body.classList.toggle("app-remote-route", route === "/remote" || route.startsWith("/remote/"));
@@ -7009,7 +7020,7 @@ function initAppShell() {
     if (route !== "/phat-phap" && !route.startsWith("/phat-phap/")) window.HHPhatPhap?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
     if (route !== "/play" && !route.startsWith("/play/")) window.HHPlay?.unmount?.();
-    if (route !== "/cosmic-observatory" && !route.startsWith("/cosmic-observatory/")) window.HHCosmicObservatory?.unmount?.();
+    if (route !== "/universe" && !route.startsWith("/universe/")) window.HHUniverse?.unmount?.();
     window.HHEonWild?.unmount?.();
     if (route !== "/draw" && !route.startsWith("/draw/")) window.HHDrawStudio?.unmount?.();
     if (route !== "/remote" && !route.startsWith("/remote/")) window.HHRemoteHub?.unmount?.();
@@ -7226,18 +7237,18 @@ function initAppShell() {
         pageActions.querySelector("[data-remote-global-connect]")?.addEventListener("click", () => remoteHost.querySelector("[data-remote-create-session]")?.focus());
       } else mountSimpleView("HH Quantum Remote", "Đang tải WebRTC Remote Hub...", "");
       remember("remote");
-    } else if (route === "/cosmic-observatory" || route.startsWith("/cosmic-observatory/")) {
+    } else if (route === "/universe" || route.startsWith("/universe/")) {
       const cosmicView = parts[1] || "overview";
-      const cosmicMeta = window.HHCosmicObservatory?.views?.[window.HHCosmicObservatory?.normalizeView?.(cosmicView) || cosmicView];
-      updatePageHeader(cosmicMeta?.title || "Đài Quan sát Vũ trụ HH", "Khám phá Hệ Mặt Trời, bầu trời, tiểu hành tinh và tư liệu NASA bằng dữ liệu có nguồn, đơn vị và thời gian rõ ràng.", route);
-      pageActions.innerHTML = '<button type="button" data-app-route="/cosmic-observatory/live-sky">Bầu trời tối nay</button><button type="button" data-app-route="/cosmic-observatory/asteroids">Asteroid Watch</button><button class="app-primary-action" type="button" data-app-route="/cosmic-observatory/solar-system">Khám phá vũ trụ</button>';
+      const cosmicMeta = window.HHUniverse?.views?.[window.HHUniverse?.normalizeView?.(cosmicView) || cosmicView];
+      updatePageHeader(cosmicMeta?.title || "Vũ trụ HH", "Khám phá Hệ Mặt Trời, bầu trời, nhiệm vụ và dữ liệu NASA/JPL với nguồn, đơn vị và thời gian rõ ràng.", route);
+      pageActions.innerHTML = '<button type="button" data-app-route="/universe/live-sky">Bầu trời tối nay</button><button type="button" data-app-route="/universe/observatory">Đài quan sát</button><button class="app-primary-action" type="button" data-app-route="/universe/solar-system">Tiếp tục khám phá</button>';
       workspace.innerHTML = '<div data-cosmic-observatory-host></div>';
-      if (window.HHCosmicObservatory?.mount) window.HHCosmicObservatory.mount(workspace.firstElementChild, {
+      if (window.HHUniverse?.mount) window.HHUniverse.mount(workspace.firstElementChild, {
         view: cosmicView,
         currentUser: readCurrentAuthUser(),
         navigate: (nextRoute) => { location.hash = `#${nextRoute}`; }
       });
-      else mountSimpleView("Đài Quan sát Vũ trụ HH", "Đang tải cổng dữ liệu thiên văn và renderer…", "");
+      else mountSimpleView("Vũ trụ HH", "Đang tải trung tâm dữ liệu thiên văn và renderer…", "");
       remember("cosmic-observatory");
     } else if (route === "/play" || route.startsWith("/play/")) {
       const playView = parts[1] || "today";

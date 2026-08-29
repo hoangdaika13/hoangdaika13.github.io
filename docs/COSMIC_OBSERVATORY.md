@@ -1,8 +1,10 @@
-# HH Cosmic Observatory v1
+# HH Universe v2
 
 ## Phạm vi phát hành
 
-Phiên bản v1 tích hợp `#/cosmic-observatory/*` vào App Shell và tải tài nguyên theo route. P0 dùng được gồm tổng quan, Hệ Mặt Trời, Live Sky, JPL Asteroid Watch, NASA Media và Data & Attribution Center. Exoplanets, EONET Earth Events và DONKI Space Weather cũng có adapter đọc dữ liệu thật; các workspace mission/WWT hiện là cửa ngõ tới nguồn chính thức và không giả lập telemetry.
+Phiên bản v2 đổi tên sản phẩm thành **Vũ trụ / HH Universe** và dùng route chuẩn `#/universe/*`. Mọi route `#/cosmic-observatory/*` cũ được chuyển tương thích sang route mới tương ứng. Hệ thống giữ nguyên IndexedDB, localStorage, bookmark, session và schema export cũ để không làm mất dữ liệu.
+
+Trung tâm Vũ trụ có một CTA “Tiếp tục khám phá”, tìm kiếm toàn module, trạng thái phiên gần nhất, bầu trời theo giờ thiết bị, bookmark và JPL Asteroid Watch. Các workspace mới gồm Đài quan sát local-first, DSN official gateway, Bề mặt hành tinh với máy đo cung, Dòng thời gian Vũ trụ và Phòng học thiên văn.
 
 ## Kiến trúc
 
@@ -10,25 +12,32 @@ Phiên bản v1 tích hợp `#/cosmic-observatory/*` vào App Shell và tải t�
 - `cosmic-observatory.css`: giao diện responsive, focus, reduced motion và forced colors.
 - `utils/cosmic-data-gateway.js`: same-origin data gateway với allowlist, timeout, retry, cache, rate limit và giới hạn response; được dùng lại trong function `api/platform/summary.js` để giữ giới hạn Vercel Hobby.
 - `vendor/astronomy-engine-2.1.19.min.js`: tính vị trí thiên thể trong trình duyệt, đi kèm license ở `vendor/astronomy-engine-LICENSE.txt`.
-- `performance-loader.js`: chỉ tải bundle khi route bắt đầu bằng `/cosmic-observatory`.
+- `performance-loader.js`: chỉ tải bundle khi route bắt đầu bằng `/universe` hoặc route tương thích `/cosmic-observatory`.
 
 ## Route
 
 | Route | Nguồn/trạng thái |
 | --- | --- |
-| `/cosmic-observatory` | Tổng quan có widget JPL và NASA Media |
-| `/cosmic-observatory/solar-system` | Astronomy Engine, `computed` |
-| `/cosmic-observatory/live-sky` | Astronomy Engine + vị trí người quan sát, `computed` |
-| `/cosmic-observatory/asteroids` | JPL CNEOS CAD, `observed` |
-| `/cosmic-observatory/media` | NASA Image and Video Library, `observed` |
-| `/cosmic-observatory/exoplanets` | NASA Exoplanet Archive TAP, `observed` |
-| `/cosmic-observatory/earth` | NASA EONET v3, `observed` |
-| `/cosmic-observatory/space-weather` | NASA DONKI, `observed` |
-| `/cosmic-observatory/universe-map` | Liên kết chính thức WWT/ESASky; chưa nhúng engine |
-| `/cosmic-observatory/missions` | Directory chính thức; chưa hiển thị telemetry |
-| `/cosmic-observatory/tours` | Điều hướng tour tới các workspace thật |
-| `/cosmic-observatory/planner` | Bản đồ observer sky ở chế độ lập kế hoạch |
-| `/cosmic-observatory/data-center` | Registry, export/import và cache control |
+| `/universe` | Command Center, tìm kiếm và tiếp tục hành trình |
+| `/universe/solar-system` | Astronomy Engine, `computed` |
+| `/universe/live-sky` | Astronomy Engine + vị trí người quan sát, `computed` |
+| `/universe/observatory` | Nhật ký phiên quan sát trong IndexedDB |
+| `/universe/missions` | Directory NASA/JPL/Horizons chính thức; chưa hiển thị telemetry |
+| `/universe/dsn` | Cửa ngõ DSN Now chính thức; không tạo tín hiệu giả |
+| `/universe/asteroids` | JPL CNEOS CAD, `observed` |
+| `/universe/surfaces` | NASA Treks + máy tính khoảng cách cung, `computed` |
+| `/universe/exoplanets` | NASA Exoplanet Archive TAP, `observed` |
+| `/universe/earth` | NASA EONET v3, `observed` |
+| `/universe/space-weather` | NASA DONKI, `observed` |
+| `/universe/timeline` | Timeline giáo dục với mốc gần đúng, `illustrative` |
+| `/universe/learning` | Quiz thiên văn và kỷ lục cục bộ |
+| `/universe/media` | NASA Image and Video Library, `observed` |
+| `/universe/universe-map` | Liên kết chính thức WWT/ESASky; chưa nhúng engine |
+| `/universe/tours` | Điều hướng tour tới các workspace thật |
+| `/universe/planner` | Bản đồ observer sky ở chế độ lập kế hoạch |
+| `/universe/data-center` | Registry, export/import và cache control |
+
+Route cũ `/cosmic-observatory` và mọi route con được giữ làm compatibility redirect, không còn là URL chuẩn.
 
 ## API
 
@@ -51,7 +60,7 @@ Mọi response thành công có provenance envelope:
 
 - Serverless instance cache dữ liệu upstream trong bộ nhớ ngắn hạn và trả CDN cache header.
 - Client cache response đã validate trong IndexedDB; khi upstream lỗi chỉ dùng cache có tuổi giới hạn và gắn nhãn `client-stale`.
-- Bookmark media, session và cache nằm trong database `hh.cosmic-observatory` schema v1.
+- Bookmark media, phiên quan sát và cache tiếp tục nằm trong database `hh.cosmic-observatory` schema v1 để tránh migration phá dữ liệu.
 - Export không chứa cache response, token hoặc API key.
 - Import giới hạn 2 MB, kiểm tra `schema`, `version`, số lượng bookmark/session và ID.
 

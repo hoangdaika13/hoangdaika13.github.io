@@ -1,5 +1,5 @@
-const CACHE = "hh-identity-portal-v930";
-// Cosmic Observatory v1: lazy UI, Astronomy Engine calculations and same-origin scientific data gateway.
+const CACHE = "hh-identity-portal-v931";
+// HH Universe v2: canonical routes, legacy compatibility, scientific workspaces and local-first observation/learning data.
 // Creative specialist compatibility: hh-identity-portal-v928 creative-os.js?v=14 creative-os.css?v=8 performance-loader.js?v=570 script.js?v=251.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v925.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v916.
@@ -445,8 +445,8 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.js?v=2",
   "./support-platform.js?v=21",
   "./vendor/astronomy-engine-2.1.19.min.js?v=1",
-  "./cosmic-observatory.css?v=1",
-  "./cosmic-observatory.js?v=1",
+  "./cosmic-observatory.css?v=2",
+  "./cosmic-observatory.js?v=2",
   "./vendor/iztro-2.6.0.min.js?v=2.6.0",
   "./fortune-iching-64.js?v=1",
   "./fortune-accuracy-lab.js?v=1",
@@ -549,10 +549,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=572",
+  "./performance-loader.js?v=573",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=253"
+  "./script.js?v=254"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

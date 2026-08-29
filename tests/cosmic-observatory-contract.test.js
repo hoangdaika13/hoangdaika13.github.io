@@ -16,20 +16,31 @@ const api = read(path.join("utils", "cosmic-data-gateway.js"));
 const platformApi = read(path.join("api", "platform", "summary.js"));
 const vercel = read("vercel.json");
 
-test("Cosmic Observatory is a lazy first-class route with cleanup", () => {
-  assert.match(router, /id:\s*"cosmic-observatory"[\s\S]*?route:\s*"\/cosmic-observatory"/);
-  assert.match(router, /window\.HHCosmicObservatory\?\.mount/);
-  assert.match(router, /window\.HHCosmicObservatory\?\.unmount/);
+test("HH Universe is a lazy first-class route with cleanup and legacy redirects", () => {
+  assert.match(router, /id:\s*"cosmic-observatory"[\s\S]*?label:\s*"Vũ trụ"[\s\S]*?route:\s*"\/universe"/);
+  assert.match(router, /route === "\/cosmic-observatory"[\s\S]*?route = `\/universe/);
+  assert.match(router, /window\.HHUniverse\?\.mount/);
+  assert.match(router, /window\.HHUniverse\?\.unmount/);
+  assert.match(router, /route === "\/universe\/timeline"[\s\S]*?crumbLabels\.timeline = "Dòng thời gian Vũ trụ"/);
   assert.match(router, /app-cosmic-observatory-route/);
-  assert.match(loader, /cosmic:\s*\{[\s\S]*?cosmic-observatory\.css\?v=1[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?cosmic-observatory\.js\?v=1/);
-  assert.match(loader, /value === "\/cosmic-observatory" \|\| value\.startsWith\("\/cosmic-observatory\/"\)/);
+  assert.match(loader, /cosmic:\s*\{[\s\S]*?cosmic-observatory\.css\?v=2[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?cosmic-observatory\.js\?v=2/);
+  assert.match(loader, /value === "\/universe" \|\| value\.startsWith\("\/universe\/"\)[\s\S]*?value === "\/cosmic-observatory"/);
+  assert.match(client, /canonicalRoute:\s*"\/universe"/);
+  assert.match(client, /global\.HHUniverse = universeApi/);
+  assert.match(client, /global\.HHCosmicObservatory = universeApi/);
   assert.doesNotMatch(shell, /<script[^>]+cosmic-observatory\.js/i, "Cosmic Observatory must not load on every route");
 });
 
-test("P0 workspaces and the source trust center are present", () => {
-  for (const view of ["overview", "solar-system", "live-sky", "asteroids", "media", "data-center"]) {
+test("the Universe command center, 15 core spaces and source trust center are present", () => {
+  for (const view of ["overview", "solar-system", "live-sky", "observatory", "missions", "dsn", "asteroids", "surfaces", "exoplanets", "earth", "space-weather", "timeline", "learning", "media", "universe-map", "data-center"]) {
     assert.match(client, new RegExp(`"${view}"`));
   }
+  assert.match(client, /Tiếp tục khám phá/);
+  assert.match(client, /data-universe-search/);
+  assert.match(client, /type:\s*"observation"/);
+  assert.match(client, /NASA Solar System Treks|trek\.nasa\.gov/);
+  assert.match(client, /Deep Space Network|DSN Now/);
+  assert.match(client, /learningBest/);
   for (const source of ["JPL Horizons", "JPL CNEOS Close-Approach Data", "NASA Image and Video Library", "NASA Exoplanet Archive", "NASA EONET v3", "NASA DONKI", "Astronomy Engine", "WorldWide Telescope"]) {
     assert.match(client, new RegExp(source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
@@ -74,11 +85,11 @@ test("responsive and accessibility contracts cover mobile, focus and motion", ()
   assert.match(client, /requestFullscreen/);
 });
 
-test("release shell and service worker ship the same Cosmic Observatory versions", () => {
-  assert.match(shell, /Release v930 HH Cosmic Observatory/);
-  assert.match(shell, /performance-loader\.js\?v=572/);
-  assert.match(shell, /script\.js\?v=253/);
-  assert.match(worker, /hh-identity-portal-v930/);
-  assert.match(worker, /cosmic-observatory\.css\?v=1/);
-  assert.match(worker, /cosmic-observatory\.js\?v=1/);
+test("release shell and service worker ship the same HH Universe versions", () => {
+  assert.match(shell, /Release v931 HH Universe/);
+  assert.match(shell, /performance-loader\.js\?v=573/);
+  assert.match(shell, /script\.js\?v=254/);
+  assert.match(worker, /hh-identity-portal-v931/);
+  assert.match(worker, /cosmic-observatory\.css\?v=2/);
+  assert.match(worker, /cosmic-observatory\.js\?v=2/);
 });
