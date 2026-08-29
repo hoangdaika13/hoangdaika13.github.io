@@ -12,18 +12,33 @@
   const FOCUS_KEY = "hh.galaxy.dashboard.focus.v1";
   const TASK_KEY = "hh.command-center.todos.v2";
   const NOTE_KEY = "hh.dashboard.sticky-notes.v1";
+  const NOTIFICATION_KEY = "hh-notification-center";
   const PROJECT_KEYS = Object.freeze(["hh.creative-os.v1", "hh-project-center"]);
   const ROUTES = Object.freeze(["/home", "/home/dashboard", "/create/ai-center", "/chat-ai"]);
   const PLANETS = Object.freeze([
-    { id: "ai", label: "AI Universe", route: "/create/ai-center", short: "AI", tone: "amber", x: 20, y: 27, size: 108 },
-    { id: "music", label: "Music Planet", route: "/music-ai", short: "MU", tone: "cyan", x: 38, y: 11, size: 98 },
-    { id: "video", label: "Video Planet", route: "/davinci-resolve", short: "VI", tone: "orange", x: 68, y: 14, size: 102 },
-    { id: "creator", label: "Creator Studio", route: "/create", short: "CR", tone: "violet", x: 83, y: 29, size: 108 },
-    { id: "dev", label: "Dev Planet", route: "/dev-tools", short: "DV", tone: "blue", x: 81, y: 68, size: 102 },
-    { id: "community", label: "Community", route: "/communication/community", short: "CO", tone: "aqua", x: 67, y: 82, size: 96 },
-    { id: "tools", label: "Tools Galaxy", route: "/work", short: "TO", tone: "violet", x: 48, y: 88, size: 92 },
-    { id: "learn", label: "Learning Star", route: "/learn", short: "LE", tone: "blue", x: 26, y: 77, size: 102 },
-    { id: "games", label: "Games World", route: "/play", short: "GA", tone: "pink", x: 13, y: 57, size: 98 }
+    { id: "music", label: "Music Planet", note: "Nhạc và âm thanh", route: "/music-ai", tone: "cyan", x: 27.96, y: 13.47, size: 82 },
+    { id: "video", label: "Video Planet", note: "Video và điện ảnh", route: "/davinci-resolve", tone: "orange", x: 58.82, y: 15.9, size: 72 },
+    { id: "creator", label: "Creator Studio", note: "Không gian sáng tạo", route: "/create", tone: "violet", x: 75.14, y: 30.09, size: 80 },
+    { id: "dev", label: "Dev Planet", note: "Code và công cụ", route: "/dev-tools", tone: "blue", x: 74.57, y: 51.29, size: 78 },
+    { id: "community", label: "Community", note: "Kết nối cộng đồng", route: "/communication/community", tone: "aqua", x: 61.42, y: 65.47, size: 78 },
+    { id: "tools", label: "Tools Galaxy", note: "Tiện ích chuyên dụng", route: "/work", tone: "violet", x: 40.32, y: 73.21, size: 82 },
+    { id: "learn", label: "Learning Star", note: "Học tập và ngôn ngữ", route: "/learn", tone: "blue", x: 22.4, y: 62.75, size: 82 },
+    { id: "games", label: "Games World", note: "Trò chơi và giải trí", route: "/play", tone: "pink", x: 8.45, y: 45.56, size: 78 },
+    { id: "ai", label: "AI Universe", note: "AI và trợ lý", route: "/create/ai-center", tone: "amber", x: 14.96, y: 27.79, size: 82 }
+  ]);
+  const HOME_NAV_ITEMS = Object.freeze([
+    { id: "home", label: "Trang chủ", route: "/home" },
+    { id: "ai", label: "AI Universe", route: "/create/ai-center" },
+    { id: "music", label: "Music Planet", route: "/music-ai" },
+    { id: "video", label: "Video Planet", route: "/davinci-resolve" },
+    { id: "creator", label: "Creator Studio", route: "/create" },
+    { id: "games", label: "Games World", route: "/play" },
+    { id: "dev", label: "Dev Planet", route: "/dev-tools" },
+    { id: "learn", label: "Learning Star", route: "/learn" },
+    { id: "community", label: "Community", route: "/communication/community" },
+    { id: "tools", label: "Tools Galaxy", route: "/work" },
+    { id: "analytics", label: "Analytics", route: "/analytics" },
+    { id: "settings", label: "Cài đặt", route: "/settings" }
   ]);
   const AI_DESTINATIONS = Object.freeze([
     { id: "chat", label: "AI Chat", description: "Trò chuyện bằng engine HH AI hiện có", route: "/chat-ai", glyph: "CH", x: 72, y: 17 },
@@ -128,14 +143,34 @@
     return { key: null, items: [], found: false };
   }
 
+  function readNotificationSnapshot(storage) {
+    const record = readRecord(storage, NOTIFICATION_KEY);
+    const inbox = asArray(record.value?.inbox).filter((item) => isObject(item));
+    return {
+      unreadCount: clamp(inbox.filter((item) => !item.read).length, 0, 999),
+      totalCount: clamp(inbox.length, 0, 999),
+      found: record.found && Array.isArray(record.value?.inbox)
+    };
+  }
+
   function collectLocalData(storage = globalScope.localStorage, scope = globalScope) {
-    const auth = readRecord(storage, "hh-auth-user");
+    const storedAuth = readRecord(storage, "hh-auth-user");
+    const sessionAuth = storedAuth.found ? { found: false, value: null } : readRecord(scope.sessionStorage, "hh.auth.guest-user");
+    let runtimeAuth = { found: false, value: null };
+    if (!storedAuth.found && !sessionAuth.found && typeof scope.HHAuthz?.currentUser === "function") {
+      try {
+        const value = scope.HHAuthz.currentUser();
+        runtimeAuth = { found: isObject(value), value };
+      } catch { /* Authentication adapters may not be ready during first paint. */ }
+    }
+    const auth = storedAuth.found ? storedAuth : sessionAuth.found ? sessionAuth : runtimeAuth;
     const tasks = readRecord(storage, TASK_KEY);
     const notes = readRecord(storage, NOTE_KEY);
     const favorites = readRecord(storage, "hh-module-favorites");
     const activity = readRecord(storage, "hh.command-center.activity.v1");
     const weather = readRecord(storage, "hh.dashboard.weather.v1");
     const projects = firstProjectCollection(storage);
+    const notifications = readNotificationSnapshot(storage);
     const taskItems = asArray(tasks.value).map(normalizeTask).filter(Boolean);
     const noteItems = asArray(notes.value).map(normalizeNote).filter(Boolean).sort((left, right) => Number(right.pinned) - Number(left.pinned));
     const weatherPayload = isObject(weather.value?.payload) ? weather.value.payload : {};
@@ -159,6 +194,7 @@
         location: String(weather.value?.location?.name || "").trim().slice(0, 120),
         observedAt: weather.value?.savedAt || weather.value?.updatedAt || null
       } : null,
+      notifications,
       modules,
       capability: {
         chat: typeof scope.HHChatAI?.mount === "function" ? "ready" : "configuration-required",
@@ -172,6 +208,7 @@
         favorites: favorites.found,
         activity: activity.found,
         weather: weather.found,
+        notifications: notifications.found,
         modules: Array.isArray(scope.HH_PLATFORM_MODULES)
       },
       source: "local"
@@ -206,6 +243,15 @@
       result.weather = isObject(provided.weather) ? { ...provided.weather } : null;
       result.evidence = { ...result.evidence, weather: true };
     }
+    if (Object.prototype.hasOwnProperty.call(provided, "notifications")) {
+      const value = isObject(provided.notifications) ? provided.notifications : {};
+      result.notifications = {
+        unreadCount: clamp(value.unreadCount, 0, 999),
+        totalCount: clamp(value.totalCount, 0, 999),
+        found: Boolean(value.found)
+      };
+      result.evidence = { ...result.evidence, notifications: Boolean(value.found) };
+    }
     if (isObject(provided.capability)) result.capability = { ...result.capability, ...provided.capability };
     if (isObject(provided.evidence)) result.evidence = { ...result.evidence, ...provided.evidence };
     Object.defineProperty(result, "_raw", { enumerable: false, value: local._raw || {} });
@@ -214,6 +260,52 @@
 
   function initials(name) {
     return String(name || "HH").trim().split(/\s+/).filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase().slice(0, 2) || "HH";
+  }
+
+  function safeImageUrl(value) {
+    const url = String(value || "").trim();
+    if (!url || url.length > 2048) return "";
+    if (/^(?:https?:\/\/|\/[^/]|\.\.?\/)/i.test(url)) return escapeHtml(url);
+    if (/^data:image\/(?:png|jpe?g|webp|gif);base64,[a-z0-9+/=]+$/i.test(url) && url.length <= 1048576) return escapeHtml(url);
+    return "";
+  }
+
+  function iconMarkup(id, className = "") {
+    const icons = {
+      home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10M9 20v-6h6v6"/>',
+      ai: '<rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 9h6v6H9zM9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3m14-6h3m-3 6h3"/>',
+      music: '<path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>',
+      video: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/>',
+      creator: '<path d="m12 3 2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.8z"/>',
+      games: '<path d="M7.5 8h9a5 5 0 0 1 4.6 6.9l-1.3 3.2a2.2 2.2 0 0 1-3.7.7L14.5 17h-5l-1.6 1.8a2.2 2.2 0 0 1-3.7-.7l-1.3-3.2A5 5 0 0 1 7.5 8Z"/><path d="M8 11v4m-2-2h4m6-1h.01m2 2h.01"/>',
+      dev: '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/>',
+      learn: '<path d="m3 9 9-5 9 5-9 5z"/><path d="M7 12v4c2.8 2.2 7.2 2.2 10 0v-4m4-3v7"/>',
+      community: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20v-2a5 5 0 0 1 10 0v2m1.5-5.5A4.5 4.5 0 0 1 21 18.6V20"/>',
+      tools: '<path d="m14 6 4-4 4 4-4 4M2 18l4 4 4-4-4-4zM8 16l8-8"/><path d="m4 4 16 16"/>',
+      analytics: '<path d="M4 20V10m5 10V4m6 16v-7m5 7V7M2 20h20"/>',
+      settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/>',
+      user: '<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
+      resource: '<path d="m12 3 8 4-8 4-8-4zM4 12l8 4 8-4M4 17l8 4 8-4"/>',
+      globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+      bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
+      compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
+      fullscreen: '<path d="M8 3H3v5m13-5h5v5M8 21H3v-5m13 5h5v-5"/>',
+      send: '<path d="m3 11 18-8-8 18-2-8zM11 13l4-4"/>',
+      chevron: '<path d="m9 18 6-6-6-6"/>',
+      diamond: '<path d="m12 2 9 8-9 12L3 10zM3 10h18M8 2l-2 8 6 12 6-12-2-8"/>',
+      folder: '<path d="M3 6h7l2 2h9v11H3z"/>',
+      layers: '<path d="m12 3 9 5-9 5-9-5zM3 12l9 5 9-5M3 16l9 5 9-5"/>',
+      activity: '<path d="M3 12h4l2-6 4 12 2-6h6"/>',
+      task: '<path d="M9 5h11v15H4V5h2m3 7 2 2 4-5"/><path d="M8 3h8v4H8z"/>'
+    };
+    const body = icons[id] || icons.globe;
+    return `<svg${className ? ` class="${escapeHtml(className)}"` : ""} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${body}</svg>`;
+  }
+
+  function accountAvatarMarkup(account, className = "") {
+    const name = String(account?.name || "Thành viên HH").trim();
+    const avatar = safeImageUrl(account?.avatar);
+    return `<span${className ? ` class="${escapeHtml(className)}"` : ""}>${avatar ? `<img src="${avatar}" alt="">` : escapeHtml(initials(name))}</span>`;
   }
 
   function sourceLabel(data) {
@@ -246,25 +338,130 @@
     return `<aside class="gha-sidebar"><div class="gha-sidebar__title"><span>HH GALAXY</span><small>Điều hướng chức năng</small></div><nav aria-label="Các không gian HH">${items.map(([id, label, route, glyph]) => `<button type="button" data-gha-route="${route}" ${active === id ? 'aria-current="page"' : ""}><i aria-hidden="true">${glyph}</i><span>${label}</span></button>`).join("")}</nav><footer><span class="gha-live-dot" aria-hidden="true"></span><div><strong data-gha-network>Đang kiểm tra</strong><small>Trạng thái trình duyệt</small></div></footer></aside>`;
   }
 
-  function homeMarkup(data) {
+  function homeSidebarMarkup(data) {
+    const account = data.account;
+    const name = String(account?.name || "Thành viên HH").trim().slice(0, 120);
+    const accountDetail = String(account?.email || (data.evidence.account ? "Tài khoản HH" : "Chưa đăng nhập")).trim().slice(0, 180);
+    return `<aside class="gha-sidebar gha-home-sidebar" aria-label="Điều hướng HH Galaxy">
+      <a class="gha-home-brand" href="#/home" data-gha-route="/home" aria-label="HOANG8.COM — Trang chủ">
+        <span class="gha-home-brand__mark" aria-hidden="true">HH</span>
+        <strong>HOANG8.COM</strong>
+        <small>PRO</small>
+      </a>
+      <label class="gha-search gha-home-search">
+        ${iconMarkup("globe")}
+        <span class="gha-sr-only">Tìm chức năng trong Galaxy</span>
+        <input type="search" data-gha-search autocomplete="off" maxlength="80" placeholder="Tìm kiếm trong galaxy..." aria-label="Tìm chức năng trong Galaxy">
+        <kbd>⌘K</kbd>
+      </label>
+      <nav class="gha-home-nav" aria-label="Các không gian HH">${HOME_NAV_ITEMS.map((item) => `<button type="button" data-gha-route="${escapeHtml(item.route)}" data-gha-nav-item="${escapeHtml(item.id)}" data-gha-searchable ${item.id === "home" ? 'aria-current="page"' : ""}>${iconMarkup(item.id)}<span>${escapeHtml(item.label)}</span>${item.id === "home" ? iconMarkup("chevron", "gha-home-nav__arrow") : ""}</button>`).join("")}</nav>
+      <p class="gha-home-search-empty" data-gha-search-empty hidden role="status">Không tìm thấy chức năng phù hợp.</p>
+      <section class="gha-home-customize" aria-labelledby="gha-customize-title">
+        ${iconMarkup("diamond")}
+        <div><h2 id="gha-customize-title">Tùy chỉnh Galaxy</h2><p>Màu sắc, chuyển động và bố cục theo cách của bạn.</p></div>
+        <button type="button" data-gha-route="/settings">Mở cài đặt ${iconMarkup("chevron")}</button>
+      </section>
+      <button class="gha-home-profile" type="button" data-user-menu-toggle aria-haspopup="menu" aria-expanded="false" aria-label="Mở menu tài khoản của ${escapeHtml(name)}">
+        ${accountAvatarMarkup(account, "gha-home-profile__avatar")}
+        <span><strong>${escapeHtml(name)}</strong><small>${escapeHtml(accountDetail)}</small></span>
+        <i aria-hidden="true">⌄</i>
+      </button>
+    </aside>`;
+  }
+
+  function homeTopbarMarkup(data) {
+    const account = data.account;
+    const name = String(account?.name || "Tài khoản").trim().slice(0, 120);
+    const unreadCount = clamp(data.notifications?.unreadCount, 0, 999);
+    const notificationBadge = unreadCount ? `<span class="gha-home-notification__badge" aria-label="${unreadCount} thông báo chưa đọc">${unreadCount > 99 ? "99+" : unreadCount}</span>` : "";
+    return `<header class="gha-topbar gha-home-topbar">
+      <div class="gha-home-topbar__title">${iconMarkup("globe")}<span><strong>HH GALAXY MAP 3D <i>BETA</i></strong><small>Khám phá vũ trụ số · Kết nối không giới hạn</small></span></div>
+      <section class="gha-home-player" aria-label="Lối tắt đến trình phát nhạc">
+        <button class="gha-home-player__cover" type="button" data-gha-route="/music/ambient" aria-label="Mở Ambient Room">${iconMarkup("music")}</button>
+        <button class="gha-home-player__copy" type="button" data-gha-route="/music/ambient"><strong>Ambient Room</strong><small>Trình phát nhạc HH</small></button>
+        <div class="gha-home-player__controls">
+          <button type="button" data-gha-route="/music/ambient" aria-label="Mở danh sách nhạc"><span aria-hidden="true">|◀</span></button>
+          <button type="button" data-gha-route="/music/ambient" aria-label="Mở trình phát nhạc"><span aria-hidden="true">▶</span></button>
+          <button type="button" data-gha-route="/music/ambient" aria-label="Mở bài tiếp theo"><span aria-hidden="true">▶|</span></button>
+        </div>
+        <span class="gha-home-player__wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+        <small class="gha-home-player__state">Mở player</small>
+      </section>
+      <div class="gha-home-topbar__actions">
+        <button class="gha-home-notification" type="button" data-notification-toggle aria-haspopup="true" aria-expanded="false" aria-label="Mở thông báo">${iconMarkup("bell")}${notificationBadge}</button>
+        <button class="gha-home-user" type="button" data-user-menu-toggle aria-haspopup="menu" aria-expanded="false" aria-label="Mở menu tài khoản của ${escapeHtml(name)}">${accountAvatarMarkup(account, "gha-home-user__avatar")}<span>${escapeHtml(name)}</span><i aria-hidden="true">⌄</i></button>
+      </div>
+    </header>`;
+  }
+
+  function planetIconMarkup(id) {
+    return `<span class="gha-planet__sphere" aria-hidden="true">${iconMarkup(id)}</span>`;
+  }
+
+  function homeMetricMarkup(icon, label, value, detail, available, route) {
+    return `<button class="gha-home-stat" type="button" data-gha-route="${escapeHtml(route)}" data-state="${available ? "ready" : "empty"}">
+      <span class="gha-home-stat__icon" aria-hidden="true">${iconMarkup(icon)}</span>
+      <span><small>${escapeHtml(label)}</small><strong>${available ? escapeHtml(value) : "—"}</strong><em>${available ? escapeHtml(detail) : "Chưa có dữ liệu"}</em></span>
+    </button>`;
+  }
+
+  function homeTimelineMarkup(data) {
+    const items = data.evidence.activity ? asArray(data.activity).slice(0, 2) : [];
+    const content = items.length ? `<ol>${items.map((item) => {
+      const label = typeof item === "string" ? item : String(item.action || item.title || item.label || "Hoạt động đã lưu");
+      const time = typeof item === "string" ? "" : formatDate(item.at || item.createdAt || item.updatedAt, true);
+      return `<li><span aria-hidden="true">${iconMarkup("activity")}</span><div><strong>${escapeHtml(label.slice(0, 180))}</strong><small>${time ? escapeHtml(time) : "Đã lưu trên thiết bị"}</small></div></li>`;
+    }).join("")}</ol>` : `<div class="gha-home-timeline__empty" data-state="empty"><span>${iconMarkup("activity")}</span><p>Chưa có hoạt động đã lưu.</p></div>`;
+    return `<aside class="gha-home-timeline" aria-labelledby="gha-timeline-title"><header><h2 id="gha-timeline-title">Galaxy Timeline</h2><button type="button" data-gha-route="/analytics">Xem tất cả ${iconMarkup("chevron")}</button></header>${content}</aside>`;
+  }
+
+  function homeDockMarkup(data) {
     const projectsAvailable = Boolean(data.evidence.projects);
     const tasksAvailable = Boolean(data.evidence.tasks);
-    const completed = asArray(data.tasks).filter((task) => task.completed).length;
-    const taskValue = tasksAvailable ? `${completed}/${data.tasks.length}` : "";
-    const moduleValue = data.evidence.modules ? String(data.modules.length) : "";
+    const taskCount = asArray(data.tasks).length;
+    const completedTasks = asArray(data.tasks).filter((task) => task.completed).length;
+    return `<footer class="gha-home-dock" aria-label="Trạng thái và dữ liệu Galaxy">
+      <section class="gha-home-status" aria-labelledby="gha-status-title">
+        <header><span class="gha-live-dot" aria-hidden="true"></span><div><h2 id="gha-status-title">Galaxy Status</h2><strong data-gha-network>Đang kiểm tra</strong></div></header>
+        <p data-gha-network-copy>Kết nối trình duyệt</p>
+        <small>${escapeHtml(sourceLabel(data))}</small>
+      </section>
+      <section class="gha-home-stats" aria-label="Số liệu thật của tài khoản">
+        ${homeMetricMarkup("user", "Thành viên", "1", "Tài khoản đang hoạt động", Boolean(data.evidence.account), "/settings")}
+        ${homeMetricMarkup("folder", "Dự án", String(asArray(data.projects).length), "Trong workspace", projectsAvailable, "/work/projects-tasks")}
+        <button class="gha-home-stat gha-home-stat--storage" type="button" data-gha-route="/settings" data-state="loading">
+          <span class="gha-home-stat__icon" aria-hidden="true">${iconMarkup("resource")}</span>
+          <span><small>Tài nguyên</small><strong data-gha-storage-value>—</strong><em data-gha-storage-detail>Đang đọc Storage API…</em><i data-gha-storage-state data-state="loading">Đang đo</i><b data-gha-storage-bar style="--usage:0%"></b></span>
+        </button>
+        <button class="gha-home-stat" type="button" data-gha-route="/analytics" data-state="${tasksAvailable ? "ready" : "empty"}">
+          <span class="gha-home-stat__icon" aria-hidden="true">${iconMarkup("activity")}</span>
+          <span><small>Hoạt động</small><strong>${tasksAvailable ? escapeHtml(`${completedTasks}/${taskCount}`) : "—"}</strong><em>${tasksAvailable ? "Công việc hoàn thành" : "Chưa có dữ liệu"}</em></span>
+        </button>
+      </section>
+      ${homeTimelineMarkup(data)}
+    </footer>`;
+  }
+
+  function homeMarkup(data) {
     return `<section class="gha-app gha-home" data-gha-root data-gha-view="home">
-      ${topbarMarkup("HH Galaxy Map", "Khám phá chức năng ngay trong website", "home")}
-      ${sidebarMarkup("home")}
+      ${homeSidebarMarkup(data)}
+      ${homeTopbarMarkup(data)}
       <main class="gha-stage">
         <section class="gha-map" data-gha-map aria-labelledby="gha-home-title">
-          <div class="gha-map__stars" aria-hidden="true"></div><div class="gha-map__nebula" aria-hidden="true"></div>
-          <header class="gha-map__heading"><span>HH GALAXY MAP · LIVE NAVIGATION</span><h1 id="gha-home-title">Vũ trụ số của bạn</h1><p>Mỗi hành tinh là một chức năng thật. Chọn bằng chuột, cảm ứng hoặc bàn phím.</p></header>
-          <div class="gha-orbits" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-          <button class="gha-core" type="button" data-gha-route="/home/dashboard" aria-label="Mở Dashboard cá nhân"><span>HH</span><strong>HH CORE</strong><small>Dashboard cá nhân</small></button>
-          <div class="gha-planets" role="navigation" aria-label="Bản đồ các chức năng">${PLANETS.map((planet, index) => `<button class="gha-planet gha-planet--${planet.tone}" type="button" data-gha-route="${planet.route}" data-gha-planet="${planet.id}" style="--x:${planet.x}%;--y:${planet.y}%;--size:${planet.size}px;--delay:${index * -1.8}s"><span aria-hidden="true">${planet.short}</span><strong>${planet.label}</strong><small>Mở chức năng</small></button>`).join("")}</div>
-          <div class="gha-map__controls" aria-label="Điều khiển bản đồ"><button type="button" data-gha-action="zoom-out" aria-label="Thu nhỏ bản đồ">−</button><output data-gha-zoom>100%</output><button type="button" data-gha-action="zoom-in" aria-label="Phóng to bản đồ">＋</button><button type="button" data-gha-action="reset-view">Đặt lại</button><button type="button" data-gha-action="fullscreen">Toàn màn hình</button></div>
-          <div class="gha-map__metrics" aria-label="Số liệu thật">${metricMarkup("Dự án", String(data.projects.length), projectsAvailable, "/work/projects-tasks")}${metricMarkup("Công việc", taskValue, tasksAvailable, "/home/dashboard")}${metricMarkup("Module đã nạp", moduleValue, data.evidence.modules, "/home/dashboard")}</div>
-          <p class="gha-source"><span class="gha-live-dot"></span>${escapeHtml(sourceLabel(data))}</p>
+          <h1 id="gha-home-title" class="gha-sr-only">HH Galaxy Map 3D</h1>
+          <div class="gha-system" data-gha-system>
+            <div class="gha-map__stars" aria-hidden="true"></div><div class="gha-map__nebula" aria-hidden="true"></div>
+            <div class="gha-orbits" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <button class="gha-core" type="button" data-gha-route="/home/dashboard" style="--x:44.51%;--y:39.4%;--size:148px" aria-label="Mở Dashboard cá nhân"><span aria-hidden="true">HH</span><strong>HH CORE</strong><small>Trái tim của vũ trụ HH</small></button>
+            <div class="gha-planets" role="navigation" aria-label="Bản đồ các chức năng">${PLANETS.map((planet, index) => `<button class="gha-planet gha-planet--${planet.tone}" type="button" data-gha-route="${escapeHtml(planet.route)}" data-gha-planet="${escapeHtml(planet.id)}" data-gha-searchable style="--x:${planet.x}%;--y:${planet.y}%;--size:${planet.size}px;--delay:${index * -1.8}s" aria-label="Mở ${escapeHtml(planet.label)} — ${escapeHtml(planet.note)}">${planetIconMarkup(planet.id)}<strong>${escapeHtml(planet.label)}</strong><small>${escapeHtml(planet.note)}</small></button>`).join("")}</div>
+            <form class="gha-home-prompt" data-gha-ai-form autocomplete="off"><label class="gha-sr-only" for="gha-home-prompt-input">Hỏi HH AI</label><span aria-hidden="true">⌕</span><input id="gha-home-prompt-input" data-gha-ai-input type="text" maxlength="1600" placeholder="Nhập câu hỏi hoặc gõ / để mở nhanh..." aria-describedby="gha-home-prompt-hint"><small id="gha-home-prompt-hint" class="gha-sr-only">Nội dung sẽ được chuyển an toàn tới HH AI Copilot.</small><button type="submit" aria-label="Gửi câu hỏi tới HH AI">${iconMarkup("send")}</button></form>
+            <div class="gha-map__controls" aria-label="Điều khiển bản đồ">
+              <button type="button" data-gha-action="reset-view" aria-label="Đặt lại hướng nhìn">${iconMarkup("compass")}</button>
+              <div><button type="button" data-gha-action="zoom-in" aria-label="Phóng to bản đồ">＋</button><output data-gha-zoom aria-live="polite">100%</output><button type="button" data-gha-action="zoom-out" aria-label="Thu nhỏ bản đồ">−</button></div>
+              <button type="button" data-gha-action="fullscreen" aria-label="Bật chế độ toàn màn hình" aria-pressed="false">${iconMarkup("fullscreen")}</button>
+            </div>
+          </div>
+          ${homeDockMarkup(data)}
         </section>
       </main>
     </section>`;
@@ -388,6 +585,9 @@
     runtime.state.online = online;
     runtime.host.querySelectorAll("[data-gha-network]").forEach((node) => { node.textContent = online == null ? "Không hỗ trợ" : online ? "Đang trực tuyến" : "Ngoại tuyến"; node.dataset.state = online == null ? "unknown" : online ? "ready" : "offline"; });
     runtime.host.querySelectorAll("[data-gha-network-detail]").forEach((node) => { node.textContent = online == null ? "Không hỗ trợ" : online ? "Trực tuyến" : "Ngoại tuyến"; node.dataset.state = online == null ? "unknown" : online ? "ready" : "offline"; });
+    runtime.host.querySelectorAll("[data-gha-network-copy]").forEach((node) => {
+      node.textContent = online == null ? "Không đọc được trạng thái kết nối" : online ? "Kết nối trình duyệt đang hoạt động" : "Nội dung cục bộ vẫn khả dụng";
+    });
   }
 
   function updateClock(runtime) {
@@ -446,9 +646,11 @@
     const detailNode = runtime.host.querySelector("[data-gha-storage-detail]");
     const barNode = runtime.host.querySelector("[data-gha-storage-bar]");
     if (!stateNode || !valueNode) return;
+    const metricNode = stateNode.closest?.(".gha-home-stat");
     if (typeof globalScope.navigator?.storage?.estimate !== "function") {
       stateNode.dataset.state = "unsupported";
       stateNode.textContent = "Không hỗ trợ";
+      if (metricNode) metricNode.dataset.state = "unsupported";
       valueNode.textContent = "Storage API không khả dụng";
       if (detailNode) detailNode.textContent = "Trình duyệt này không cung cấp phép đo dung lượng website.";
       return;
@@ -464,6 +666,7 @@
       const quotaMb = quota / 1048576;
       stateNode.dataset.state = "ready";
       stateNode.textContent = "Storage API";
+      if (metricNode) metricNode.dataset.state = "ready";
       valueNode.textContent = `${formatter.format(usedMb)} / ${formatter.format(quotaMb)}`;
       if (detailNode) detailNode.textContent = `${(usage / quota * 100).toFixed(1)}% quota dành cho website đã dùng.`;
       if (barNode) barNode.style.setProperty("--usage", `${clamp(usage / quota * 100, 0, 100)}%`);
@@ -471,6 +674,7 @@
     } catch {
       stateNode.dataset.state = "error";
       stateNode.textContent = "Không đọc được";
+      if (metricNode) metricNode.dataset.state = "error";
       valueNode.textContent = "Không có số liệu dung lượng";
       if (detailNode) detailNode.textContent = "Không thay thế bằng số liệu giả.";
       runtime.state.storage = { supported: false };
@@ -520,6 +724,35 @@
     } catch {
       runtime.state.fullscreen = "error";
     }
+  }
+
+  function updateFullscreenState(runtime) {
+    const active = Boolean(globalScope.document?.fullscreenElement);
+    runtime.state.fullscreen = active ? "active" : "inactive";
+    runtime.host.querySelectorAll('[data-gha-action="fullscreen"]').forEach((button) => {
+      button.setAttribute("aria-pressed", String(active));
+      button.setAttribute("aria-label", active ? "Thoát chế độ toàn màn hình" : "Bật chế độ toàn màn hình");
+    });
+  }
+
+  function submitHomePrompt(runtime, form) {
+    const input = form?.querySelector?.("[data-gha-ai-input]");
+    const prompt = String(input?.value || "").trim().slice(0, 1600);
+    if (!prompt) {
+      input?.focus?.();
+      input?.setAttribute?.("aria-invalid", "true");
+      return false;
+    }
+    input.removeAttribute?.("aria-invalid");
+    const payload = { prompt, at: Date.now(), source: "galaxy-home" };
+    try {
+      globalScope.sessionStorage?.setItem?.("hh.chat-ai.handoff.v1", JSON.stringify(payload));
+      runtime.state.lastAction = "chat-handoff";
+    } catch {
+      runtime.state.lastAction = "chat-handoff-storage-error";
+    }
+    navigate(runtime, "/chat-ai");
+    return true;
   }
 
   function setEngineState(runtime, state, label) {
@@ -594,17 +827,32 @@
   }
 
   function handleInput(runtime, event) {
+    if (event.target.matches?.("[data-gha-ai-input]")) {
+      event.target.removeAttribute?.("aria-invalid");
+      return;
+    }
     if (!event.target.matches?.("[data-gha-search]")) return;
     const query = event.target.value.trim().toLocaleLowerCase("vi");
-    runtime.host.querySelectorAll("[data-gha-planet], .gha-ai-destinations [data-gha-route]").forEach((node) => {
-      node.hidden = Boolean(query && !node.textContent.toLocaleLowerCase("vi").includes(query));
+    let matches = 0;
+    const nodes = runtime.host.querySelectorAll("[data-gha-searchable], .gha-ai-destinations [data-gha-route]");
+    nodes.forEach((node) => {
+      const visible = !query || node.textContent.toLocaleLowerCase("vi").includes(query);
+      node.hidden = !visible;
+      if (visible) matches += 1;
     });
+    const empty = runtime.host.querySelector("[data-gha-search-empty]");
+    if (empty) empty.hidden = !query || matches > 0;
   }
 
   function handleKeydown(runtime, event) {
-    if (event.key === "/" && !event.ctrlKey && !event.metaKey && !/input|textarea|select/i.test(event.target.tagName)) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase("vi") === "k") {
       event.preventDefault();
       runtime.host.querySelector("[data-gha-search]")?.focus();
+      return;
+    }
+    if (event.key === "/" && !event.ctrlKey && !event.metaKey && !/input|textarea|select/i.test(event.target.tagName)) {
+      event.preventDefault();
+      runtime.host.querySelector(runtime.route === "/home" ? "[data-gha-ai-input]" : "[data-gha-search]")?.focus();
       return;
     }
     const planet = event.target.closest?.("[data-gha-planet]");
@@ -617,14 +865,64 @@
     planets[(current + delta + planets.length) % planets.length]?.focus();
   }
 
+  function handleSubmit(runtime, event) {
+    const form = event.target.closest?.("[data-gha-ai-form]");
+    if (!form) return;
+    event.preventDefault();
+    submitHomePrompt(runtime, form);
+  }
+
+  /* The host is also observed by the outer Galaxy shell. Attach a small,
+     route-local listener to controls that do not carry a navigation target so
+     shell delegation cannot swallow map actions or the AI handoff submit. The
+     AbortSignal keeps these listeners disposable on every route transition. */
+  function bindHomeControls(runtime) {
+    if (runtime.route !== "/home") return;
+    const signal = runtime.controller.signal;
+    runtime.host.querySelectorAll?.("[data-gha-action]").forEach((button) => {
+      const onAction = (event) => {
+        const action = button.dataset?.ghaAction || "";
+        event.stopPropagation?.();
+        event.preventDefault?.();
+        if (action === "zoom-in" || action === "zoom-out") {
+          runtime.preferences.zoom = clamp(runtime.preferences.zoom + (action === "zoom-in" ? 0.1 : -0.1), 0.72, 1.45);
+          writeRecord(runtime.storage, HOME_PREF_KEY, runtime.preferences);
+          applyMapZoom(runtime);
+          runtime.state.lastAction = action;
+          return;
+        }
+        if (action === "reset-view") {
+          runtime.preferences.zoom = 1;
+          writeRecord(runtime.storage, HOME_PREF_KEY, runtime.preferences);
+          applyMapZoom(runtime);
+          runtime.state.lastAction = action;
+          return;
+        }
+        handleClick(runtime, event);
+      };
+      /* Use a direct handler as well as delegation: the surrounding shell can
+         re-render or intercept bubbling events while the map remains mounted. */
+      button.onclick = onAction;
+    });
+    runtime.host.querySelectorAll?.("[data-gha-ai-form]").forEach((form) => {
+      form.addEventListener?.("submit", (event) => {
+        event.preventDefault?.();
+        event.stopPropagation?.();
+        handleSubmit(runtime, event);
+      }, { signal });
+    });
+  }
+
   function bindRuntime(runtime) {
     const signal = runtime.controller.signal;
     runtime.host.addEventListener("click", (event) => handleClick(runtime, event), { signal });
     runtime.host.addEventListener("change", (event) => handleChange(runtime, event), { signal });
     runtime.host.addEventListener("input", (event) => handleInput(runtime, event), { signal });
     runtime.host.addEventListener("keydown", (event) => handleKeydown(runtime, event), { signal });
+    runtime.host.addEventListener("submit", (event) => handleSubmit(runtime, event), { signal });
     globalScope.addEventListener?.("online", () => updateNetwork(runtime), { signal });
     globalScope.addEventListener?.("offline", () => updateNetwork(runtime), { signal });
+    globalScope.document?.addEventListener?.("fullscreenchange", () => updateFullscreenState(runtime), { signal });
     globalScope.document?.addEventListener?.("visibilitychange", () => {
       runtime.state.paused = Boolean(globalScope.document.hidden);
       runtime.host.setAttribute?.("data-gha-paused", String(runtime.state.paused));
@@ -636,11 +934,13 @@
     runtime.host.innerHTML = viewMarkup(runtime.route, runtime.data);
     runtime.host.dataset.ghaHomeAiHost = "";
     runtime.host.dataset.ghaRoute = runtime.route;
+    bindHomeControls(runtime);
     applyMapZoom(runtime);
     updateNetwork(runtime);
     updateClock(runtime);
     updateFocus(runtime);
-    if (runtime.route === "/home/dashboard") updateStorageEstimate(runtime);
+    updateFullscreenState(runtime);
+    if (runtime.route === "/home" || runtime.route === "/home/dashboard") updateStorageEstimate(runtime);
   }
 
   async function loadPassedData(runtime) {
@@ -733,6 +1033,7 @@
     VERSION,
     ROUTES,
     PLANETS,
+    HOME_NAV_ITEMS,
     AI_DESTINATIONS,
     HOME_PREF_KEY,
     FOCUS_KEY,

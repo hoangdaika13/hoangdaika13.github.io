@@ -63,8 +63,8 @@
       ]
     },
     "galaxy-home-ai": {
-      styles: ["galaxy-home-ai.css?v=1"],
-      scripts: ["galaxy-home-ai.js?v=1"]
+      styles: ["galaxy-home-ai.css?v=4"],
+      scripts: ["galaxy-home-ai.js?v=4"]
     },
     "galaxy-domain-views": {
       styles: ["galaxy-domain-views.css?v=1"],

@@ -1248,6 +1248,2313 @@
     .gha-chat__bar > i { min-width: 0; max-width: 105px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   }
 
+  /* ---------------------------------------------------------------------
+     Home Galaxy reference layout
+
+     The /home route owns a self-contained, full-viewport command surface.
+     Keeping these rules route-scoped lets Dashboard, Chat AI and every other
+     workspace continue to use the persistent Galaxy shell unchanged.
+     ------------------------------------------------------------------ */
+  [data-galaxy-shell][data-galaxy-route="/home"] {
+    --header-h: 0px;
+    --sidebar-w: 0px;
+    --sidebar-width: 0px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] > .app-header,
+  [data-galaxy-shell][data-galaxy-route="/home"] > .app-shell__body > .app-sidebar,
+  [data-galaxy-shell][data-galaxy-route="/home"] > .app-shell__body > .app-sidebar-backdrop {
+    display: none !important;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] > .app-shell__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] > .app-shell__body > .app-main,
+  [data-galaxy-shell][data-galaxy-route="/home"] [data-galaxy-outlet],
+  [data-galaxy-shell][data-galaxy-route="/home"] [data-gha-home-ai-host] {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] [data-galaxy-outlet] {
+    padding: 0;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] > [data-galaxy-effect-owner="shell"] {
+    display: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home.gha-app {
+    --gha-home-sidebar: 288px;
+    --gha-home-topbar: 79px;
+    --gha-home-dock-h: 164px;
+    grid-template: var(--gha-home-topbar) minmax(0, 1fr) / var(--gha-home-sidebar) minmax(0, 1fr) !important;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    background: #020611;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home.gha-app::before {
+    display: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-sidebar {
+    grid-area: 1 / 1 / -1 / 2;
+    display: flex !important;
+    width: var(--gha-home-sidebar);
+    min-width: 0;
+    height: 100dvh;
+    padding: 12px 13px 12px;
+    overflow: hidden;
+    border: 0;
+    border-right: 1px solid rgb(102 124 191 / 13%);
+    background:
+      radial-gradient(circle at 20% 1%, rgb(83 37 160 / 13%), transparent 26%),
+      linear-gradient(180deg, #040817 0%, #030714 52%, #050a1b 100%);
+    box-shadow: 14px 0 44px rgb(0 0 0 / 22%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-topbar {
+    grid-area: 1 / 2 / 2 / 3;
+    display: grid !important;
+    grid-template-columns: minmax(240px, 1fr) 492px 255px;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    min-height: 67px;
+    height: 67px;
+    margin: 11px 12px 0 15px;
+    padding: 7px 10px 7px 18px;
+    overflow: visible;
+    border: 1px solid rgb(117 136 196 / 18%);
+    border-radius: 16px;
+    background: linear-gradient(100deg, rgb(5 10 26 / 89%), rgb(4 8 22 / 82%));
+    box-shadow: inset 0 1px rgb(255 255 255 / 3%), 0 18px 45px rgb(0 0 0 / 22%);
+    backdrop-filter: blur(20px) saturate(128%);
+  }
+
+  /* Sidebar identity and search. New semantic classes are supported while
+     the legacy title remains a graceful fallback during cached transitions. */
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__brand, .gha-home-brand) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 58px;
+    padding: 1px 9px 9px;
+    color: #fff;
+    text-decoration: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__brand-mark, .gha-home-brand__mark) {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 47px;
+    height: 47px;
+    border: 1px solid #b84cff;
+    border-radius: 50%;
+    color: #ffd5ff;
+    font-size: 23px;
+    font-weight: 900;
+    letter-spacing: -.06em;
+    background: radial-gradient(circle at 50% 44%, #7d178f 0 25%, #30106e 51%, #080b2b 74%);
+    box-shadow: 0 0 0 3px rgb(129 53 255 / 13%), 0 0 22px rgb(196 49 255 / 55%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__brand, .gha-home-brand) strong {
+    display: block;
+    overflow: hidden;
+    font-size: 16px;
+    letter-spacing: .015em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__brand, .gha-home-brand) small,
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__brand, .gha-home-brand) em {
+    display: inline-grid;
+    place-items: center;
+    min-width: 38px;
+    min-height: 22px;
+    margin-left: 4px;
+    padding: 0 7px;
+    border: 1px solid rgb(222 84 255 / 22%);
+    border-radius: 7px;
+    color: #e68cff;
+    font-size: 9px;
+    font-style: normal;
+    font-weight: 800;
+    background: rgb(136 36 180 / 25%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__search, .gha-home-search, .gha-sidebar > .gha-search) {
+    display: grid;
+    grid-template-columns: 21px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 42px;
+    margin: 1px 0 11px;
+    padding: 0 11px;
+    border: 1px solid rgb(119 139 198 / 22%);
+    border-radius: 11px;
+    background: rgb(10 17 39 / 77%);
+    box-shadow: inset 0 1px rgb(255 255 255 / 3%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__search, .gha-home-search, .gha-sidebar > .gha-search):focus-within {
+    border-color: rgb(155 96 255 / 73%);
+    box-shadow: 0 0 0 3px rgb(139 92 246 / 14%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__search, .gha-home-search, .gha-sidebar > .gha-search) input {
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    color: #eef1ff;
+    background: transparent;
+    font-size: 11px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar__title {
+    min-height: 57px;
+    padding: 10px 12px;
+    border: 1px solid rgb(152 82 255 / 22%);
+    border-radius: 11px;
+    background: rgb(32 21 79 / 30%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav {
+    display: grid;
+    flex: 0 0 auto;
+    gap: 3px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav button {
+    grid-template-columns: 34px minmax(0, 1fr) 14px;
+    gap: 7px;
+    width: 100%;
+    min-height: 40px;
+    padding: 3px 10px;
+    border-radius: 8px;
+    color: #aeb7ce;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav button::after {
+    color: #7b89a9;
+    font-size: 16px;
+    content: "";
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav button[aria-current="page"]::after {
+    content: "›";
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button::after {
+    display: none;
+    content: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav button[aria-current="page"] {
+    border-color: rgb(120 97 255 / 40%);
+    background: linear-gradient(90deg, rgb(96 30 165 / 59%), rgb(31 55 152 / 53%));
+    box-shadow: inset 2px 0 #e855ff, inset -2px 0 #5d9cff, 0 0 18px rgb(99 51 255 / 18%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav i {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    font-size: 9px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav span {
+    font-size: 12px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__upgrade, .gha-galaxy-card) {
+    display: grid;
+    gap: 7px;
+    margin-top: auto;
+    padding: 13px 16px 15px;
+    border: 1px solid rgb(126 143 199 / 22%);
+    border-radius: 12px;
+    background:
+      radial-gradient(circle at 17% 5%, rgb(193 59 255 / 19%), transparent 38%),
+      linear-gradient(140deg, rgb(21 15 52 / 94%), rgb(8 18 43 / 94%));
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__upgrade, .gha-galaxy-card) strong {
+    color: #f0a7ff;
+    font-size: 12px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__upgrade, .gha-galaxy-card) p {
+    margin: 0;
+    color: #929fba;
+    font-size: 9px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__upgrade, .gha-galaxy-card) button {
+    min-height: 36px;
+    margin-top: 4px;
+    border: 1px solid rgb(207 80 255 / 36%);
+    border-radius: 8px;
+    background: linear-gradient(105deg, #451280, #591a9d 54%, #39157e);
+    box-shadow: inset 0 1px rgb(255 255 255 / 8%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-sidebar__profile, .gha-home-profile, .gha-sidebar > footer) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 75px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    border: 1px solid rgb(111 134 191 / 19%);
+    border-radius: 12px;
+    background: rgb(6 14 34 / 82%);
+  }
+
+  /* Compact title, live mini player and account actions in the top bar. */
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-topbar__identity, .gha-topbar__copy) {
+    min-width: 0;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-topbar__identity, .gha-topbar__copy) strong {
+    color: #f3f4ff;
+    font-size: 13px;
+    letter-spacing: .035em;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-topbar__identity, .gha-topbar__copy) small {
+    margin-top: 4px;
+    color: #8490a9;
+    font-size: 10px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-topbar__badge, .gha-beta-badge) {
+    display: inline-grid;
+    place-items: center;
+    min-height: 20px;
+    margin-left: 6px;
+    padding: 0 7px;
+    border: 1px solid rgb(103 101 255 / 28%);
+    border-radius: 6px;
+    color: #858cff;
+    font-size: 8px;
+    background: rgb(57 51 145 / 28%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-mini-player, .gha-topbar__player) {
+    display: grid;
+    grid-template-columns: 46px minmax(110px, 1fr) repeat(3, 34px) minmax(54px, 96px) 38px;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    min-width: 0;
+    height: 52px;
+    padding: 4px 8px 4px 5px;
+    border: 1px solid rgb(120 138 192 / 20%);
+    border-radius: 12px;
+    background: rgb(5 11 29 / 67%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-mini-player, .gha-topbar__player) img,
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-mini-player__cover, .gha-topbar__cover) {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border: 1px solid rgb(205 154 255 / 24%);
+    border-radius: 6px;
+    background: linear-gradient(145deg, #311748, #14264f);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-mini-player, .gha-topbar__player) button {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    min-height: 34px;
+    padding: 0;
+    border-radius: 50%;
+    color: #c9d0e2;
+    background: transparent;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-mini-player, .gha-topbar__player) button:hover {
+    color: #fff;
+    background: rgb(123 80 255 / 18%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-topbar__actions, .gha-home-actions) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-topbar__actions, .gha-home-actions) > button {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    min-height: 38px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    color: #d7deee;
+    background: transparent;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-topbar__actions, .gha-home-actions) > button:hover {
+    border-color: rgb(121 132 186 / 24%);
+    background: rgb(255 255 255 / 4%);
+  }
+
+  /* Main map. The generated background contains no baked text or controls;
+     every visible destination remains an interactive DOM element. */
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-stage {
+    grid-area: 2 / 2 / 3 / 3 !important;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map {
+    --gha-map-scale: 1;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    background-color: #020611;
+    background-image:
+      linear-gradient(to bottom, transparent 62%, rgb(2 6 17 / 74%) 83%, #020611 96%),
+      url("assets/galaxy/hh-galaxy-map-bg-v1.png?v=1");
+    background-repeat: no-repeat;
+    background-position: center, right -152px;
+    background-size: cover, 110% auto;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map::after {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, rgb(2 6 17 / 18%), transparent 17%, transparent 84%, rgb(2 6 17 / 14%)),
+      linear-gradient(to bottom, transparent 67%, rgb(2 6 17 / 51%) 84%, rgb(2 6 17 / 90%));
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-map__stars, .gha-map__nebula) {
+    display: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__heading {
+    display: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-system, .gha-map__system) {
+    position: absolute;
+    z-index: 3;
+    inset: 0 0 var(--gha-home-dock-h);
+    min-width: 0;
+    min-height: 0;
+    pointer-events: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-system, .gha-map__system) :is(button, a, input) {
+    pointer-events: auto;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-orbits {
+    top: 39.4%;
+    left: 44.51%;
+    width: 70%;
+    aspect-ratio: 1.85;
+    opacity: .34;
+    transform: translate(-50%, -50%) scale(var(--gha-map-scale));
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-orbits i {
+    border-color: rgb(117 111 255 / 22%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-core {
+    z-index: 5;
+    top: 39.4%;
+    left: 44.51%;
+    width: 148px;
+    padding: 0;
+    border: 1px solid rgb(255 219 99 / 72%) !important;
+    background:
+      radial-gradient(circle at 44% 39%, #fffef0 0 3%, #ffe07b 8%, #f09328 25%, #bb4a16 48%, #4a1608 78%),
+      #431706;
+    box-shadow:
+      inset -13px -16px 28px rgb(65 9 0 / 58%),
+      inset 12px 10px 28px rgb(255 229 128 / 23%),
+      0 0 24px #ffd05c,
+      0 0 68px rgb(255 154 36 / 82%),
+      0 0 138px rgb(255 93 30 / 49%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-core > span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: 0;
+    font-size: 35px;
+    transform: translate(-50%, -50%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-core strong,
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-core small {
+    position: absolute;
+    top: calc(100% + 13px);
+    left: 50%;
+    width: max-content;
+    max-width: 180px;
+    margin: 0;
+    text-align: center;
+    transform: translateX(-50%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-core strong {
+    font-size: 14px;
+    letter-spacing: .055em;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-core small {
+    top: calc(100% + 33px);
+    color: #ffeac3;
+    font-size: 10px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planets {
+    z-index: 4;
+    inset: 0;
+    transform: scale(var(--gha-map-scale));
+    transform-origin: 44.51% 39.4%;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet {
+    display: block;
+    width: var(--size);
+    min-width: var(--size);
+    height: var(--size);
+    padding: 0;
+    overflow: visible;
+    color: #fff;
+    background: transparent;
+    transform: translate(-50%, -50%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet > span {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    border-width: 1px;
+    font-size: calc(var(--size) * .23);
+    text-shadow: 0 0 11px currentColor;
+    background:
+      radial-gradient(circle at 36% 28%, rgb(255 255 255 / 32%), transparent 13%),
+      radial-gradient(circle at 47% 42%, rgb(var(--planet-rgb) / 48%), rgb(8 18 42 / 88%) 55%, #020611 77%);
+    box-shadow:
+      inset -15px -14px 28px rgb(0 0 0 / 76%),
+      inset 9px 8px 22px rgb(var(--planet-rgb) / 18%),
+      0 0 15px rgb(var(--planet-rgb) / 95%),
+      0 0 45px rgb(var(--planet-rgb) / 51%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet > span svg {
+    width: 38%;
+    height: 38%;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.75;
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet strong,
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet small {
+    position: absolute;
+    left: calc(100% + 13px);
+    display: block;
+    width: max-content;
+    max-width: 150px;
+    margin: 0;
+    line-height: 1.15;
+    pointer-events: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet strong {
+    top: calc(50% - 14px);
+    font-size: 12px;
+    letter-spacing: .025em;
+    text-transform: uppercase;
+    text-shadow: 0 2px 8px #000;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet small {
+    top: calc(50% + 5px);
+    color: #a2abc2;
+    font-size: 10px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet:focus-visible {
+    outline-offset: 8px;
+  }
+
+  /* Right-hand map tools: compass, grouped zoom and fullscreen. */
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls {
+    z-index: 12;
+    top: 34.45%;
+    right: 30px;
+    bottom: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 11px;
+    width: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > :is(button, output, .gha-map__zoom) {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0;
+    border: 1px solid rgb(124 142 196 / 20%);
+    border-radius: 12px;
+    color: #c8d0e2;
+    background: rgb(5 11 28 / 82%);
+    box-shadow: inset 0 1px rgb(255 255 255 / 3%), 0 13px 32px rgb(0 0 0 / 24%);
+    backdrop-filter: blur(13px);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > output {
+    display: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > .gha-map__zoom {
+    display: grid;
+    grid-template-rows: 43px 1px 43px;
+    min-height: 89px;
+    overflow: hidden;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > .gha-map__zoom::before {
+    grid-area: 2 / 1;
+    width: 25px;
+    height: 1px;
+    justify-self: center;
+    content: "";
+    background: rgb(124 142 196 / 21%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > .gha-map__zoom button {
+    width: 100%;
+    min-height: 43px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  /* Quick AI handoff near the bottom of the map. */
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-home__assistant, .gha-map__assistant, .gha-quick-prompt, .gha-ai-prompt) {
+    position: absolute;
+    z-index: 12;
+    bottom: 210px;
+    left: 47.65%;
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) 38px;
+    align-items: center;
+    gap: 9px;
+    width: 455px;
+    max-width: calc(100% - 150px);
+    height: 47px;
+    padding: 0 7px 0 16px;
+    border: 1px solid rgb(93 132 255 / 60%);
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgb(4 12 31 / 91%), rgb(24 12 48 / 91%));
+    box-shadow: 0 0 0 1px rgb(190 68 255 / 18%), 0 0 22px rgb(99 65 255 / 22%);
+    transform: translateX(-50%);
+    backdrop-filter: blur(17px);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-home__assistant, .gha-map__assistant, .gha-quick-prompt, .gha-ai-prompt) input {
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    color: #eef0ff;
+    background: transparent;
+    font-size: 11px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-home__assistant, .gha-map__assistant, .gha-quick-prompt, .gha-ai-prompt) button {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    min-height: 34px;
+    padding: 0;
+    border-radius: 50%;
+    color: #cbbfff;
+    background: rgb(92 38 154 / 37%);
+  }
+
+  /* Real-data lower dock. Both the composed dock and legacy source/metrics
+     receive identical geometry, so cached markup cannot expose dead space. */
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-home__dock, .gha-map__dock, .gha-bottom-dock) {
+    position: absolute;
+    z-index: 10;
+    right: 22px;
+    bottom: 36px;
+    left: 15px;
+    display: grid;
+    grid-template-columns: 215px minmax(0, 1fr) 297px;
+    gap: 13px;
+    height: 128px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-dock-card, .gha-status-card, .gha-dock__metrics, .gha-timeline, .gha-home__timeline) {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgb(109 129 184 / 19%);
+    border-radius: 13px;
+    background: linear-gradient(140deg, rgb(6 15 35 / 91%), rgb(5 12 28 / 88%));
+    box-shadow: inset 0 1px rgb(255 255 255 / 3%), 0 18px 42px rgb(0 0 0 / 17%);
+    backdrop-filter: blur(14px);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-source {
+    z-index: 10;
+    right: auto;
+    bottom: 36px;
+    left: 15px;
+    display: flex;
+    align-items: flex-start;
+    width: 215px;
+    height: 128px;
+    margin: 0;
+    padding: 17px 14px;
+    border: 1px solid rgb(109 129 184 / 19%);
+    border-radius: 13px;
+    background: linear-gradient(140deg, rgb(6 15 35 / 91%), rgb(5 12 28 / 88%));
+    backdrop-filter: blur(14px);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__metrics {
+    z-index: 10;
+    top: auto;
+    right: 321px;
+    bottom: 36px;
+    left: 228px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    height: 128px;
+    border: 1px solid rgb(109 129 184 / 19%);
+    border-radius: 13px;
+    background: linear-gradient(140deg, rgb(6 15 35 / 91%), rgb(5 12 28 / 88%));
+    backdrop-filter: blur(14px);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-metric {
+    min-width: 0;
+    height: 100%;
+    padding: 16px;
+    border: 0 !important;
+    border-right: 1px solid rgb(109 129 184 / 13%) !important;
+    border-radius: 0;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-metric:last-child {
+    border-right: 0 !important;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-metric span {
+    color: #97a2ba;
+    font-size: 9px;
+    text-transform: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-metric strong {
+    margin: 16px 0 5px;
+    font-size: 23px;
+    line-height: 1;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-metric small {
+    color: #6f7b96;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-timeline, .gha-home__timeline) {
+    grid-column: 3;
+    padding: 14px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-timeline, .gha-home__timeline) header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 9px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-timeline, .gha-home__timeline) ol {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-timeline, .gha-home__timeline) li {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px;
+    min-height: 31px;
+    border-top: 1px solid rgb(111 128 177 / 11%);
+    color: #aeb8ce;
+    font-size: 9px;
+  }
+
+  @media (max-width: 1240px) and (min-width: 901px) {
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home.gha-app {
+      --gha-home-sidebar: 232px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-sidebar {
+      width: var(--gha-home-sidebar);
+      padding-inline: 10px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-topbar {
+      grid-template-columns: minmax(190px, 1fr) minmax(330px, 440px) auto;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar__title,
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav span,
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar footer div {
+      display: initial;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav button {
+      grid-template-columns: 31px minmax(0, 1fr) 12px;
+      justify-items: stretch;
+      padding-inline: 7px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet strong,
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet small {
+      max-width: 112px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-home__dock, .gha-map__dock, .gha-bottom-dock) {
+      grid-template-columns: 180px minmax(0, 1fr) 240px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-source {
+      width: 180px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__metrics {
+      right: 263px;
+      left: 193px;
+    }
+  }
+
+  @media (max-width: 900px) {
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home.gha-app {
+      --gha-home-sidebar: 0px;
+      --gha-home-topbar: 64px;
+      --gha-home-dock-h: 0px;
+      grid-template: 64px minmax(0, 1fr) 70px / minmax(0, 1fr) !important;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-topbar {
+      grid-area: 1 / 1;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      height: 54px;
+      min-height: 54px;
+      margin: 6px 8px 0;
+      padding: 6px 9px 6px 12px;
+      border-radius: 13px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-topbar :is(.gha-mini-player, .gha-topbar__player, .gha-search, nav) {
+      display: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-sidebar {
+      grid-area: 3 / 1;
+      display: block !important;
+      width: 100%;
+      height: 70px;
+      padding: 6px 8px max(6px, env(safe-area-inset-bottom));
+      overflow: hidden auto;
+      border: 0;
+      border-top: 1px solid rgb(102 124 191 / 18%);
+      background: rgb(3 8 22 / 97%);
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-sidebar > :not(nav) {
+      display: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-sidebar > .gha-home-search,
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-sidebar > .gha-home-brand,
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-sidebar > .gha-home-customize,
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-sidebar > .gha-home-profile {
+      display: none !important;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav {
+      display: flex;
+      flex: 0 0 55px;
+      flex-wrap: nowrap;
+      grid-template-columns: none;
+      width: max-content;
+      min-width: 100%;
+      gap: 4px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x proximity;
+      scrollbar-width: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav button,
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav button:nth-child(n + 7) {
+      display: grid;
+      grid-template-columns: 1fr;
+      justify-items: center;
+      min-width: 58px;
+      min-height: 55px;
+      padding: 2px;
+      scroll-snap-align: start;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav button::after,
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-sidebar nav span {
+      display: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-stage {
+      grid-area: 2 / 1 / 3 / 2 !important;
+      overflow: auto;
+      scrollbar-width: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-stage::-webkit-scrollbar {
+      display: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map {
+      min-width: 0;
+      min-height: 980px;
+      height: auto;
+      background-position: center, 49% top;
+      background-size: cover, auto 690px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-orbits {
+      top: 278px;
+      left: 50%;
+      width: min(95%, 650px);
+      height: 270px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-core {
+      top: 278px;
+      left: 50%;
+      width: 128px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planets {
+      top: 420px;
+      right: 12px;
+      bottom: auto;
+      left: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      transform: none !important;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet {
+      position: static;
+      display: grid;
+      grid-template: auto auto / 58px minmax(0, 1fr);
+      align-content: center;
+      width: auto;
+      min-width: 0;
+      height: 76px;
+      min-height: 76px;
+      padding: 8px;
+      border: 1px solid rgb(112 131 187 / 18%);
+      border-radius: 11px;
+      background: rgb(5 13 31 / 81%);
+      transform: none;
+      backdrop-filter: blur(12px);
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet > span {
+      position: relative;
+      grid-area: 1 / 1 / 3 / 2;
+      inset: auto;
+      width: 58px;
+      height: 58px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet strong,
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet small {
+      position: static;
+      width: auto;
+      max-width: none;
+      margin-left: 10px;
+      pointer-events: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet strong {
+      align-self: end;
+      font-size: 11px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet small {
+      align-self: start;
+      margin-top: 4px;
+      font-size: 9px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls {
+      top: 15px;
+      right: 12px;
+      flex-direction: row;
+      width: auto;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > :is(button, output, .gha-map__zoom) {
+      min-width: 44px;
+      width: 44px;
+      min-height: 44px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > .gha-map__zoom {
+      display: flex;
+      min-width: 89px;
+      width: 89px;
+      min-height: 44px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > .gha-map__zoom::before {
+      display: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-home__assistant, .gha-map__assistant, .gha-quick-prompt, .gha-ai-prompt) {
+      position: absolute;
+      top: 370px;
+      bottom: auto;
+      left: 50%;
+      width: min(455px, calc(100% - 24px));
+      max-width: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-home__dock, .gha-map__dock, .gha-bottom-dock) {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      left: 12px;
+      display: flex;
+      gap: 8px;
+      height: 130px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-home__dock, .gha-map__dock, .gha-bottom-dock) > * {
+      flex: 0 0 min(82vw, 310px);
+      scroll-snap-align: start;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-source {
+      right: auto;
+      bottom: 12px;
+      left: 12px;
+      width: 180px;
+      height: 118px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__metrics {
+      right: 12px;
+      bottom: 12px;
+      left: 200px;
+      height: 118px;
+      overflow-x: auto;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-metric {
+      min-width: 118px;
+      padding: 12px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map {
+      min-height: 1060px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planets {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet {
+      height: 68px;
+      min-height: 68px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet > span {
+      width: 51px;
+      height: 51px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-source {
+      display: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__metrics {
+      left: 12px;
+    }
+  }
+
+  /* Exact hooks used by the semantic /home markup. */
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-home-sidebar {
+    padding-top: 18px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-brand {
+    min-height: 63px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-home-sidebar > label.gha-home-search {
+    flex: 0 0 42px;
+    height: 42px;
+    margin-bottom: 12px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home nav.gha-home-nav {
+    gap: 4.8px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-customize {
+    display: grid;
+    grid-template-columns: 27px minmax(0, 1fr);
+    gap: 7px 9px;
+    margin-top: auto;
+    padding: 13px 16px 15px;
+    border: 1px solid rgb(126 143 199 / 22%);
+    border-radius: 12px;
+    background:
+      radial-gradient(circle at 17% 5%, rgb(193 59 255 / 19%), transparent 38%),
+      linear-gradient(140deg, rgb(21 15 52 / 94%), rgb(8 18 43 / 94%));
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-customize > svg {
+    width: 25px;
+    height: 25px;
+    color: #ffe2ad;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-customize h2 {
+    margin: 0;
+    color: #f0a7ff;
+    font-size: 12px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-customize p {
+    margin: 4px 0 0;
+    color: #929fba;
+    font-size: 9px;
+    line-height: 1.4;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-customize > button {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 36px;
+    margin-top: 3px;
+    border: 1px solid rgb(207 80 255 / 36%);
+    border-radius: 8px;
+    color: #f3c2ff;
+    background: linear-gradient(105deg, #451280, #591a9d 54%, #39157e);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-customize > button svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home button.gha-home-profile {
+    flex: 0 0 75px;
+    width: 100%;
+    height: 75px;
+    margin-top: 25px;
+    margin-bottom: 27px;
+    color: #fff;
+    text-align: left;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-home-brand, .gha-home-search, .gha-home-customize) {
+    flex-shrink: 0;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button {
+    grid-template-columns: 34px minmax(0, 1fr) 14px;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button::after {
+    content: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button > svg:first-child {
+    grid-column: 1;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button > span {
+    grid-column: 2;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav .gha-home-nav__arrow {
+    grid-column: 3;
+    width: 12px;
+    height: 12px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-profile__avatar,
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-user__avatar {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 43px;
+    height: 43px;
+    overflow: hidden;
+    border: 1px solid rgb(218 183 255 / 56%);
+    border-radius: 50%;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 850;
+    background: linear-gradient(145deg, #4c1d95, #12244c);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-home-profile__avatar, .gha-home-user__avatar) img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-profile > span {
+    min-width: 0;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-profile > span strong,
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-profile > span small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-profile > span strong {
+    font-size: 11px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-profile > span small {
+    margin-top: 4px;
+    color: #8793ad;
+    font-size: 9px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-profile > i {
+    margin-left: auto;
+    color: #8895b1;
+    font-style: normal;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-topbar__title {
+    display: grid;
+    grid-template-columns: 25px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  @media (min-width: 1241px) {
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-home-topbar {
+      grid-template-columns: minmax(300px, 552px) minmax(370px, 492px) minmax(210px, 1fr);
+    }
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-topbar__title > svg {
+    width: 22px;
+    height: 22px;
+    color: #dce2ff;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-topbar__title :is(strong, small) {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-topbar__title strong {
+    color: #f3f4ff;
+    font-size: 13px;
+    letter-spacing: .035em;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-topbar__title strong i {
+    display: inline-grid;
+    place-items: center;
+    min-height: 20px;
+    margin-left: 6px;
+    padding: 0 7px;
+    border: 1px solid rgb(103 101 255 / 28%);
+    border-radius: 6px;
+    color: #858cff;
+    font-size: 8px;
+    font-style: normal;
+    background: rgb(57 51 145 / 28%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-topbar__title small {
+    margin-top: 4px;
+    color: #8490a9;
+    font-size: 10px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player {
+    display: grid;
+    grid-template-columns: 46px minmax(112px, 1fr) 109px minmax(56px, 84px) 54px;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    min-width: 0;
+    height: 52px;
+    padding: 4px 8px 4px 5px;
+    border: 1px solid rgb(120 138 192 / 20%);
+    border-radius: 12px;
+    background: rgb(5 11 29 / 67%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__cover {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 1px solid rgb(205 154 255 / 24%);
+    border-radius: 6px;
+    color: #d6b7ff;
+    background: linear-gradient(145deg, #311748, #14264f);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__cover svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__copy {
+    min-width: 0;
+    padding: 0;
+    text-align: left;
+    background: transparent;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__copy :is(strong, small) {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__copy strong {
+    font-size: 10px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__copy small,
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__state {
+    color: #8f9ab2;
+    font-size: 9px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__controls button {
+    display: grid;
+    place-items: center;
+    width: 33px;
+    min-height: 33px;
+    padding: 0;
+    border-radius: 50%;
+    color: #c9d0e2;
+    background: transparent;
+    font-size: 9px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__controls button:nth-child(2) {
+    border: 1px solid rgb(150 163 208 / 27%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__wave {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 25px;
+    color: #a04cff;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__wave i {
+    width: 2px;
+    height: var(--wave-h, 8px);
+    border-radius: 99px;
+    background: currentColor;
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__wave i:nth-child(2) { --wave-h: 15px; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__wave i:nth-child(3) { --wave-h: 20px; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__wave i:nth-child(4) { --wave-h: 13px; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__wave i:nth-child(5) { --wave-h: 7px; }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-topbar__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-notification {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 38px;
+    min-height: 38px;
+    padding: 0;
+    border-radius: 50%;
+    color: #d7deee;
+    background: transparent;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-notification svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-notification__badge {
+    position: absolute;
+    top: -1px;
+    right: -2px;
+    display: grid;
+    min-width: 16px;
+    height: 16px;
+    place-items: center;
+    padding: 0 4px;
+    border: 2px solid #060b1b;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 8px;
+    font-weight: 850;
+    line-height: 1;
+    background: #b71e35;
+    box-shadow: 0 0 12px rgb(255 64 102 / 48%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-user {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 105px;
+    max-width: 165px;
+    min-height: 42px;
+    padding: 3px 7px;
+    border: 1px solid rgb(111 130 184 / 18%);
+    border-radius: 999px;
+    color: #e8ebf7;
+    background: rgb(4 10 26 / 66%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-user__avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-user > span {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-user > i {
+    margin-left: auto;
+    color: #7f8ba5;
+    font-style: normal;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-system {
+    inset: 0 0 var(--gha-home-dock-h);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-system > .gha-orbits,
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-system > .gha-core {
+    top: 39.4%;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-system > .gha-planets {
+    inset: 0;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-prompt {
+    position: absolute;
+    z-index: 12;
+    bottom: 47px;
+    left: 47.65%;
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) 38px;
+    align-items: center;
+    gap: 9px;
+    width: 455px;
+    max-width: calc(100% - 150px);
+    height: 47px;
+    padding: 0 7px 0 16px;
+    border: 1px solid rgb(93 132 255 / 60%);
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgb(4 12 31 / 91%), rgb(24 12 48 / 91%));
+    box-shadow: 0 0 0 1px rgb(190 68 255 / 18%), 0 0 22px rgb(99 65 255 / 22%);
+    transform: translateX(-50%);
+    backdrop-filter: blur(17px);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-prompt input {
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    color: #eef0ff;
+    background: transparent;
+    font-size: 11px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-prompt > button {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    min-height: 34px;
+    padding: 0;
+    border-radius: 50%;
+    color: #cbbfff;
+    background: rgb(92 38 154 / 37%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-prompt > button svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > div {
+    position: relative;
+    display: grid;
+    grid-template-rows: 44px 44px;
+    width: 48px;
+    min-height: 89px;
+    overflow: hidden;
+    border: 1px solid rgb(124 142 196 / 20%);
+    border-radius: 12px;
+    background: rgb(5 11 28 / 82%);
+    box-shadow: inset 0 1px rgb(255 255 255 / 3%), 0 13px 32px rgb(0 0 0 / 24%);
+    backdrop-filter: blur(13px);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > div::after {
+    position: absolute;
+    top: 44px;
+    left: 11px;
+    width: 24px;
+    height: 1px;
+    content: "";
+    background: rgb(124 142 196 / 21%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > div button {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 0;
+    color: #c8d0e2;
+    background: transparent;
+    font-size: 18px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > div output {
+    display: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls {
+    top: 42.55%;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-dock {
+    position: absolute;
+    z-index: 10;
+    right: 22px;
+    bottom: 36px;
+    left: 15px;
+    display: grid;
+    grid-template-columns: 215px minmax(0, 1fr) 297px;
+    align-items: stretch;
+    gap: 13px;
+    height: 128px;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-home-status, .gha-home-stats, .gha-home-timeline) {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgb(109 129 184 / 19%);
+    border-radius: 13px;
+    background: linear-gradient(140deg, rgb(6 15 35 / 91%), rgb(5 12 28 / 88%));
+    box-shadow: inset 0 1px rgb(255 255 255 / 3%), 0 18px 42px rgb(0 0 0 / 17%);
+    backdrop-filter: blur(14px);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-status {
+    padding: 16px 14px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-status header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-status :is(h2, p, small) {
+    margin: 0;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-status h2 {
+    color: #aeb7cc;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-status header strong {
+    display: block;
+    margin-top: 4px;
+    color: #43df9c;
+    font-size: 9px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-status > p {
+    margin-top: 20px;
+    color: #8190aa;
+    font-size: 9px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-status > small {
+    display: block;
+    margin-top: 11px;
+    color: #c4cede;
+    font-size: 9px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 0;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-content: center;
+    align-items: start;
+    gap: 9px;
+    min-width: 0;
+    height: 100%;
+    padding: 13px;
+    border-right: 1px solid rgb(109 129 184 / 13%);
+    border-radius: 0;
+    color: #fff;
+    text-align: left;
+    background: transparent;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat:last-child {
+    border-right: 0;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat__icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgb(128 94 236 / 24%);
+    border-radius: 9px;
+    color: #bd68ff;
+    background: rgb(77 35 146 / 20%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat__icon svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat > span:last-child :is(small, strong, em, i) {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat > span:last-child small {
+    color: #97a2ba;
+    font-size: 9px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat > span:last-child strong {
+    margin-top: 14px;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat > span:last-child em {
+    margin-top: 6px;
+    color: #75819a;
+    font-size: 8px;
+    font-style: normal;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat > span:last-child i {
+    margin-top: 5px;
+    color: #6f7b94;
+    font-size: 8px;
+    font-style: normal;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat > span:last-child b {
+    display: block;
+    width: 100%;
+    height: 2px;
+    margin-top: 5px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: rgb(112 127 171 / 16%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat > span:last-child b::after {
+    display: block;
+    width: var(--usage, 0%);
+    height: 100%;
+    content: "";
+    background: linear-gradient(90deg, #7358ff, #d54cff);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline {
+    padding: 14px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 18px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline h2 {
+    margin: 0;
+    color: #d5dbea;
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline header button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    color: #7f8ba5;
+    background: transparent;
+    font-size: 8px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline header svg {
+    width: 11px;
+    height: 11px;
+    fill: none;
+    stroke: currentColor;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline ol {
+    display: grid;
+    gap: 4px;
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline li {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+    min-height: 34px;
+    padding-top: 4px;
+    border-top: 1px solid rgb(111 128 177 / 11%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline li > span {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid rgb(65 207 224 / 35%);
+    border-radius: 50%;
+    color: #5fe7ee;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline li svg {
+    width: 11px;
+    height: 11px;
+    fill: none;
+    stroke: currentColor;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline li :is(strong, small) {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline li strong {
+    color: #b5bfd2;
+    font-size: 8px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline li small {
+    margin-top: 3px;
+    color: #69758e;
+    font-size: 7px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline__empty {
+    display: grid;
+    place-items: center;
+    min-height: 76px;
+    color: #71809c;
+    text-align: center;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline__empty p {
+    margin: 5px 0 0;
+    font-size: 8px;
+  }
+
+  @media (max-width: 1240px) and (min-width: 901px) {
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-dock {
+      grid-template-columns: 180px minmax(0, 1fr) 240px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat {
+      grid-template-columns: 30px minmax(0, 1fr);
+      gap: 7px;
+      padding: 10px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat__icon {
+      width: 30px;
+      height: 30px;
+    }
+  }
+
+  @media (max-width: 900px) {
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-topbar .gha-home-player {
+      display: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-topbar__title {
+      grid-template-columns: 22px minmax(0, 1fr);
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-user {
+      min-width: 40px;
+      width: 40px;
+      padding: 2px;
+      border: 0;
+      background: transparent;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-user > :not(.gha-home-user__avatar) {
+      display: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-prompt {
+      top: 370px;
+      bottom: auto;
+      left: 50%;
+      width: min(455px, calc(100% - 24px));
+      max-width: none;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > div {
+      display: flex;
+      width: 89px;
+      min-height: 44px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > div::after {
+      top: 9px;
+      left: 44px;
+      width: 1px;
+      height: 24px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-dock {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      left: 12px;
+      display: flex;
+      gap: 8px;
+      height: 130px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-dock > * {
+      flex: 0 0 min(82vw, 310px);
+      scroll-snap-align: start;
+    }
+  }
+
+  /* Final reference polish: retain live controls while increasing the
+     photographic depth, color separation and luminous planet surfaces seen
+     in the approved visual. */
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map {
+    background-image:
+      linear-gradient(to bottom, transparent 70%, rgb(2 6 17 / 12%) 88%, rgb(2 6 17 / 25%) 100%),
+      url("assets/galaxy/hh-galaxy-map-bg-v1.png?v=1");
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map::before {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+    opacity: .43;
+    background: url("assets/galaxy/hh-galaxy-map-bg-v1.png?v=1") right -152px / 110% auto no-repeat;
+    filter: brightness(1.22) saturate(1.28) contrast(1.04);
+    mix-blend-mode: screen;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map::after {
+    background:
+      linear-gradient(to top, rgb(8 22 52 / 55%) 0%, transparent 18%),
+      linear-gradient(to bottom, rgb(0 13 63 / 15%) 0%, rgb(75 41 121 / 5%) 50%, transparent 68%),
+      linear-gradient(to bottom, transparent 12%, rgb(70 80 160 / 8%) 28%, rgb(70 80 160 / 8%) 76%, transparent 92%),
+      radial-gradient(ellipse 42% 38% at 44.5% 43%, rgb(185 94 60 / 16%), rgb(82 53 148 / 9%) 48%, transparent 74%),
+      radial-gradient(ellipse 58% 30% at 45% 68%, rgb(39 31 106 / 14%), transparent 75%),
+      linear-gradient(90deg, rgb(2 6 17 / 11%), transparent 16%, transparent 86%, rgb(2 6 17 / 9%)),
+      linear-gradient(to bottom, transparent 76%, rgb(2 6 17 / 8%) 89%, rgb(2 6 17 / 18%));
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-orbits {
+    opacity: .64;
+    filter: drop-shadow(0 0 7px rgb(189 76 255 / 18%));
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-orbits i {
+    border-color: rgb(200 99 255 / 27%);
+    box-shadow: 0 0 14px rgb(255 117 91 / 8%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-core {
+    overflow: visible;
+    border-color: rgb(255 237 152 / 94%) !important;
+    background:
+      radial-gradient(circle at 34% 25%, rgb(255 255 255 / 88%) 0 2%, transparent 10%),
+      radial-gradient(circle at 72% 67%, rgb(255 226 117 / 42%) 0 4%, transparent 13%),
+      radial-gradient(circle at 23% 61%, rgb(255 245 190 / 31%) 0 3%, transparent 10%),
+      radial-gradient(circle at 48% 43%, #fff3b4 0 3%, #ffd563 10%, #f39a24 30%, #c45116 55%, #6d1c09 78%, #270802 100%);
+    box-shadow:
+      inset -10px -12px 24px rgb(93 13 0 / 42%),
+      inset 10px 8px 25px rgb(255 248 187 / 31%),
+      0 0 18px #fff1a6,
+      0 0 49px rgb(255 184 54 / 96%),
+      0 0 112px rgb(255 113 31 / 67%),
+      0 0 190px rgb(255 67 23 / 31%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-core::before {
+    position: absolute;
+    z-index: 1;
+    inset: -10%;
+    content: "";
+    pointer-events: none;
+    opacity: .92;
+    background: url("assets/galaxy/hh-stellar-core-v1.webp?v=1") center / contain no-repeat;
+    filter: saturate(1.06) contrast(1.04) drop-shadow(0 0 10px #ffde72) drop-shadow(0 0 27px rgb(255 142 30 / 76%));
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-core > :is(span, strong, small) {
+    z-index: 2;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet > span {
+    border-color: rgb(var(--planet-rgb) / 82%);
+    background:
+      radial-gradient(circle at 30% 23%, rgb(255 255 255 / 77%) 0 3%, transparent 11%),
+      radial-gradient(circle at 66% 68%, rgb(var(--planet-rgb) / 62%) 0 5%, transparent 15%),
+      radial-gradient(circle at 46% 42%, rgb(var(--planet-rgb) / 88%) 0, rgb(var(--planet-rgb) / 59%) 28%, rgb(var(--planet-rgb) / 28%) 53%, #08142d 69%, #020611 82%);
+    box-shadow:
+      inset -12px -12px 24px rgb(0 0 0 / 46%),
+      inset 9px 8px 19px rgb(255 255 255 / 13%),
+      0 0 9px rgb(255 255 255 / 33%),
+      0 0 22px rgb(var(--planet-rgb) / 100%),
+      0 0 57px rgb(var(--planet-rgb) / 68%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet > span::before {
+    position: absolute;
+    z-index: 1;
+    inset: -23%;
+    content: "";
+    pointer-events: none;
+    opacity: .86;
+    background: url("assets/galaxy/hh-luminous-planet-v1.webp?v=1") center / contain no-repeat;
+    filter: hue-rotate(var(--planet-hue, 0deg)) saturate(1.08) brightness(.96) drop-shadow(0 0 8px rgb(var(--planet-rgb) / 71%));
+    mix-blend-mode: screen;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet > span::after {
+    z-index: 2;
+    opacity: .58;
+    border-color: rgb(var(--planet-rgb) / 78%);
+    box-shadow: 0 0 9px rgb(var(--planet-rgb) / 75%), 0 0 18px rgb(var(--planet-rgb) / 38%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet > span > svg {
+    position: relative;
+    z-index: 3;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet--cyan { --planet-hue: 0deg; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet--amber { --planet-hue: 190deg; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet--orange { --planet-hue: 170deg; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet--violet { --planet-hue: 77deg; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet--blue { --planet-hue: 0deg; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet--aqua { --planet-hue: 0deg; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet--pink { --planet-hue: 122deg; }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button:nth-child(1) > svg:first-child { color: #c68bff; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button:nth-child(2) > svg:first-child { color: #d5d9ef; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button:nth-child(3) > svg:first-child { color: #ec63ff; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button:nth-child(4) > svg:first-child { color: #ff64c8; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button:nth-child(5) > svg:first-child { color: #d574ff; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button:nth-child(6) > svg:first-child { color: #95e74b; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button:nth-child(7) > svg:first-child { color: #d0dc46; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button:nth-child(8) > svg:first-child { color: #f2a64d; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button:nth-child(9) > svg:first-child { color: #ff7188; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button:nth-child(10) > svg:first-child { color: #f061e8; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button:nth-child(11) > svg:first-child { color: #a5afca; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button:nth-child(12) > svg:first-child { color: #b5bdd2; }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat:nth-child(1) .gha-home-stat__icon { color: #f06cbe; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat:nth-child(2) .gha-home-stat__icon { color: #e8b85f; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat:nth-child(3) .gha-home-stat__icon { color: #648cff; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat:nth-child(4) .gha-home-stat__icon { color: #b56bff; }
+
+  /* QA v4 color polish. Geometry is intentionally untouched: this pass only
+     harmonizes chrome, contrast and luminance with the approved reference. */
+  [data-galaxy-shell][data-galaxy-route="/home"] > .app-route-progress {
+    position: absolute !important;
+    z-index: 24;
+    top: 77px !important;
+    right: 12px !important;
+    left: 303px !important;
+    width: auto !important;
+    height: 1px !important;
+    border-radius: 999px;
+    background: rgb(80 111 219 / 8%);
+    box-shadow: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] > .app-route-progress > i {
+    width: 100% !important;
+    height: 1px !important;
+    border-radius: inherit;
+    background: linear-gradient(90deg, transparent 0%, #536cff 15%, #9f55ff 55%, #37c9ed 88%, transparent 100%) !important;
+    box-shadow: 0 0 5px rgb(105 93 255 / 42%) !important;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-home-sidebar {
+    border-right-color: rgb(69 113 191 / 20%);
+    background:
+      radial-gradient(circle at 18% 2%, rgb(31 86 177 / 18%), transparent 30%),
+      radial-gradient(circle at 100% 55%, rgb(23 79 159 / 8%), transparent 42%),
+      linear-gradient(180deg, #040722 0%, #030620 52%, #050925 100%);
+    box-shadow: 14px 0 44px rgb(0 4 18 / 27%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-search {
+    border-color: rgb(77 113 180 / 26%);
+    background: rgb(7 18 42 / 82%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-nav button[aria-current="page"] {
+    border-color: rgb(86 132 255 / 48%);
+    background: linear-gradient(90deg, rgb(39 53 137 / 76%), rgb(22 55 130 / 68%));
+    box-shadow: inset 2px 0 #a65fff, inset -2px 0 #56a7ff, 0 0 20px rgb(50 107 255 / 19%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-customize {
+    border-color: rgb(76 108 181 / 27%);
+    background:
+      radial-gradient(circle at 15% 0%, rgb(78 82 199 / 16%), transparent 42%),
+      linear-gradient(140deg, rgb(12 22 55 / 96%), rgb(6 19 45 / 95%));
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-customize > button {
+    border-color: rgb(89 116 238 / 38%);
+    background: linear-gradient(105deg, #21347d, #3b2b8c 55%, #1a3f82);
+    box-shadow: inset 0 1px rgb(255 255 255 / 7%), 0 0 14px rgb(50 104 255 / 9%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-profile {
+    border-color: rgb(73 105 172 / 24%);
+    background: linear-gradient(145deg, rgb(6 17 41 / 90%), rgb(5 13 32 / 91%));
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-prompt {
+    border: 1px solid transparent;
+    background:
+      linear-gradient(90deg, rgb(4 13 33 / 95%), rgb(20 12 43 / 95%)) padding-box,
+      linear-gradient(98deg, #35c9f2 0%, #6576ff 34%, #a850ff 67%, #f04bc5 100%) border-box;
+    box-shadow:
+      0 0 11px rgb(50 194 242 / 19%),
+      0 0 18px rgb(202 67 240 / 17%),
+      inset 0 1px rgb(255 255 255 / 4%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet strong {
+    font-size: 13px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map::before {
+    opacity: .56;
+    filter: brightness(1.27) saturate(1.28) contrast(1.04);
+    -webkit-mask-image: linear-gradient(to bottom, rgb(0 0 0 / 50%) 0%, #000 25%, #000 76%, rgb(0 0 0 / 78%) 100%);
+    mask-image: linear-gradient(to bottom, rgb(0 0 0 / 50%) 0%, #000 25%, #000 76%, rgb(0 0 0 / 78%) 100%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-core::before {
+    opacity: .98;
+    filter: brightness(1.75) saturate(1.07) contrast(1.04) drop-shadow(0 0 13px #ffdf78) drop-shadow(0 0 38px rgb(255 148 32 / 84%));
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-planet > span::before {
+    opacity: var(--planet-texture-opacity, .7);
+    filter: hue-rotate(var(--planet-hue, 0deg)) saturate(1.12) brightness(var(--planet-texture-brightness, 1)) contrast(1.12) drop-shadow(0 0 5px rgb(var(--planet-rgb) / 32%));
+    mix-blend-mode: normal;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home [data-gha-planet="music"] { --planet-texture-opacity: .4; --planet-texture-brightness: .825; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home [data-gha-planet="video"] { --planet-texture-opacity: .75; --planet-texture-brightness: 1.105; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home [data-gha-planet="creator"] { --planet-texture-opacity: .5; --planet-texture-brightness: .97; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home [data-gha-planet="dev"] { --planet-texture-opacity: .7; --planet-texture-brightness: .575; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home [data-gha-planet="community"] { --planet-texture-opacity: .3; --planet-texture-brightness: .515; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home [data-gha-planet="tools"] { --planet-texture-opacity: .7; --planet-texture-brightness: .52; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home [data-gha-planet="learn"] { --planet-texture-opacity: .55; --planet-texture-brightness: .93; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home [data-gha-planet="games"] { --planet-texture-opacity: .42; --planet-texture-brightness: .875; }
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home [data-gha-planet="ai"] { --planet-texture-opacity: .8; --planet-texture-brightness: 1.105; }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home :is(.gha-home-status, .gha-home-stats, .gha-home-timeline) {
+    border-color: rgb(77 111 177 / 27%);
+    background:
+      radial-gradient(circle at 12% 0%, rgb(31 87 172 / 11%), transparent 42%),
+      linear-gradient(142deg, rgb(9 22 59 / 96%), rgb(7 16 47 / 94%));
+    box-shadow: inset 0 1px rgb(153 193 255 / 5%), 0 18px 42px rgb(0 4 18 / 21%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat {
+    border-right-color: rgb(71 105 173 / 18%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stat__icon {
+    border-color: rgb(86 113 199 / 31%);
+    background: rgb(32 48 105 / 29%);
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-home-topbar {
+    border-color: rgb(91 126 198 / 24%);
+    background: linear-gradient(100deg, rgb(10 15 42 / 94%), rgb(8 13 38 / 91%));
+  }
+
+  @media (max-width: 900px) {
+    [data-galaxy-shell][data-galaxy-route="/home"] > .app-route-progress {
+      top: 59px !important;
+      right: 8px !important;
+      left: 8px !important;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map::before {
+      opacity: .35;
+      background-position: 49% top;
+      background-size: auto 690px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map {
+      min-height: 1040px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-system > .gha-orbits,
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-system > .gha-core {
+      top: 220px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-system > .gha-planets {
+      inset: 466px 12px auto;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      transform: none !important;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-prompt {
+      top: 344px;
+      bottom: auto;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls {
+      top: 400px;
+      right: 12px;
+      bottom: auto;
+      left: auto;
+      flex-direction: row;
+      gap: 8px;
+      width: auto;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > button {
+      width: 44px;
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map__controls > div {
+      display: flex;
+      width: 89px;
+      min-width: 89px;
+      min-height: 44px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-map {
+      min-height: 1322px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-system > .gha-planets {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .gha-app *,
     .gha-app *::before,

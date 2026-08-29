@@ -6,6 +6,7 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "galaxy-home-ai.js"), "utf8");
 const styles = fs.readFileSync(path.join(root, "galaxy-home-ai.css"), "utf8");
+const galaxyAssetReadme = fs.readFileSync(path.join(root, "assets", "galaxy", "README.md"), "utf8");
 const api = require("../galaxy-home-ai.js");
 
 function memoryStorage(seed = {}) {
@@ -57,6 +58,24 @@ test("Galaxy Map planets point to real internal route families", () => {
   assert.deepEqual(new Set(routes).size, routes.length);
   for (const required of ["/create/ai-center", "/music-ai", "/davinci-resolve", "/create", "/play", "/dev-tools", "/learn", "/communication/community", "/work"]) {
     assert.ok(routes.includes(required), `${required} should be reachable from the map`);
+  }
+});
+
+test("Home reference surface keeps its live geometry and controls in the DOM", () => {
+  const markup = api.viewMarkup("/home", api.collectLocalData(memoryStorage(), {}));
+  assert.equal((markup.match(/data-gha-planet=/g) || []).length, api.PLANETS.length);
+  assert.equal((markup.match(/data-gha-nav-item=/g) || []).length, api.HOME_NAV_ITEMS.length);
+  assert.match(markup, /class="gha-system"/);
+  assert.match(markup, /class="[^"]*\bgha-home-topbar\b[^"]*"/);
+  assert.match(markup, /class="[^"]*\bgha-home-dock\b[^"]*"/);
+  assert.match(markup, /data-gha-action="zoom-in"/);
+  assert.match(markup, /data-gha-action="zoom-out"/);
+  assert.match(markup, /data-gha-action="fullscreen"/);
+  assert.match(markup, /data-gha-ai-form/);
+  assert.match(markup, /--x:44\.51%;--y:39\.4%;--size:148px/);
+  for (const planet of api.PLANETS) {
+    assert.match(markup, new RegExp(`data-gha-planet="${planet.id}"`));
+    assert.match(markup, new RegExp(`--x:${planet.x}%;--y:${planet.y}%;--size:${planet.size}px`));
   }
 });
 
@@ -152,7 +171,16 @@ test("visual layer is code-native, responsive and motion-safe", () => {
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(styles, /:focus-visible/);
   assert.match(styles, /env\(safe-area-inset-bottom\)/);
-  assert.doesNotMatch(styles, /url\([^)]*(?:ChatGPT Image|\.png|\.jpe?g|screenshot)/i);
+  assert.match(styles, /url\(["']?assets\/galaxy\/hh-galaxy-map-bg-v1\.png(?:\?v=1)?["']?\)/i);
+  assert.match(styles, /url\(["']?assets\/galaxy\/hh-luminous-planet-v1\.webp(?:\?v=1)?["']?\)/i);
+  assert.match(styles, /url\(["']?assets\/galaxy\/hh-stellar-core-v1\.webp(?:\?v=1)?["']?\)/i);
+  const rasterUrls = [...styles.matchAll(/url\(\s*["']?([^"')]+\.(?:png|jpe?g)(?:\?[^"')]+)?)/gi)].map((match) => match[1]);
+  assert.deepEqual(rasterUrls.filter((url) => !/^assets\/galaxy\/hh-galaxy-map-bg-v1\.png(?:\?v=1)?$/i.test(url)), []);
+  assert.doesNotMatch(styles, /ChatGPT Image|screenshot/i);
+  assert.match(galaxyAssetReadme, /OpenAI ImageGen/);
+  assert.match(galaxyAssetReadme, /7BE8CF59220BC280B1B5C11A425BE507BAEB00E34A003FFD2E6DF575C35FB5F8/);
+  assert.match(galaxyAssetReadme, /DC8370BA9C8F0E8C56E6B699145BE072986E8C7519687B8E74F290B8AD40924F/);
+  assert.match(galaxyAssetReadme, /30565B439C6F2841E2EC7B6967C7930B1B9869CDD2B4A8F86AAC22EDF264F6BE/);
 });
 
 test("lifecycle uses abortable listeners and clears timers", () => {

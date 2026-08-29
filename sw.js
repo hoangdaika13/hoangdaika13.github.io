@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v935";
+const CACHE = "hh-identity-portal-v938";
 // Compatibility marker for HH Universe Solar 3D: hh-identity-portal-v934.
 // HH Galaxy v1: persistent shell plus ten route adapters, all backed by the
 // existing HH engines and versioned local-first state.
@@ -258,8 +258,11 @@ const RUNTIME_ASSETS = [
   "./galaxy-design-system.css?v=1",
   "./galaxy-shell.css?v=1",
   "./galaxy-shell.js?v=1",
-  "./galaxy-home-ai.css?v=1",
-  "./galaxy-home-ai.js?v=1",
+  "./galaxy-home-ai.css?v=4",
+  "./galaxy-home-ai.js?v=4",
+  "./assets/galaxy/hh-galaxy-map-bg-v1.png?v=1",
+  "./assets/galaxy/hh-luminous-planet-v1.webp?v=1",
+  "./assets/galaxy/hh-stellar-core-v1.webp?v=1",
   "./galaxy-domain-views.css?v=1",
   "./galaxy-domain-views.js?v=1",
   "./galaxy-favicon-controller.js?v=2",
@@ -561,7 +564,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=576",
+  "./performance-loader.js?v=579",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=255"
