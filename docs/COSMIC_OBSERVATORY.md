@@ -1,8 +1,8 @@
-# HH Universe v3
+# HH Universe v4
 
 ## Phạm vi phát hành
 
-Phiên bản v2 đổi tên sản phẩm thành **Vũ trụ / HH Universe** và dùng route chuẩn `#/universe/*`. Mọi route `#/cosmic-observatory/*` cũ được chuyển tương thích sang route mới tương ứng. Hệ thống giữ nguyên IndexedDB, localStorage, bookmark, session và schema export cũ để không làm mất dữ liệu.
+Phiên bản v4 giữ tên **Vũ trụ / HH Universe** và route chuẩn `#/universe/*`, đồng thời thay workspace Hệ Mặt Trời bằng trải nghiệm 3D chạy trực tiếp trong HH Platform. Mọi route `#/cosmic-observatory/*` cũ tiếp tục được chuyển tương thích. IndexedDB, localStorage, bookmark, session và schema export cũ được giữ nguyên để không làm mất dữ liệu.
 
 Trung tâm Vũ trụ có một CTA “Tiếp tục khám phá”, tìm kiếm toàn module, trạng thái phiên gần nhất, bầu trời theo giờ thiết bị, bookmark và JPL Asteroid Watch. Các workspace gồm Đài quan sát local-first, DSN official gateway, Bề mặt hành tinh với máy đo cung, Dòng thời gian Vũ trụ, Phòng học thiên văn và Flight Director dùng vector JPL Horizons thật.
 
@@ -10,6 +10,8 @@ Trung tâm Vũ trụ có một CTA “Tiếp tục khám phá”, tìm kiếm to
 
 - `cosmic-observatory.js`: UI, renderer WebGL2/Canvas, observer sky, IndexedDB, provenance và lifecycle.
 - `cosmic-observatory.css`: giao diện responsive, focus, reduced motion và forced colors.
+- `cosmic-solar-system-3d.js`: renderer nội bộ WebGL2 với Canvas Lite fallback, camera orbit/pan/zoom, chọn mục tiêu, tua thời gian, context recovery và lifecycle độc lập.
+- `cosmic-solar-system-3d.css`: cockpit/HUD immersive được scope trong `.hh-solar3d`, hỗ trợ fullscreen, safe-area, touch, 200% zoom và mobile bottom sheet.
 - `utils/cosmic-data-gateway.js`: same-origin data gateway với allowlist, timeout, retry, cache, rate limit và giới hạn response; được dùng lại trong function `api/platform/summary.js` để giữ giới hạn Vercel Hobby.
 - `vendor/astronomy-engine-2.1.19.min.js`: tính vị trí thiên thể trong trình duyệt, đi kèm license ở `vendor/astronomy-engine-LICENSE.txt`.
 - `performance-loader.js`: chỉ tải bundle khi route bắt đầu bằng `/universe` hoặc route tương thích `/cosmic-observatory`.
@@ -19,7 +21,7 @@ Trung tâm Vũ trụ có một CTA “Tiếp tục khám phá”, tìm kiếm to
 | Route | Nguồn/trạng thái |
 | --- | --- |
 | `/universe` | Command Center, tìm kiếm và tiếp tục hành trình |
-| `/universe/solar-system` | Astronomy Engine, `computed` |
+| `/universe/solar-system` | Renderer 3D nội bộ + Astronomy Engine, `computed`; kích thước/màu và scale phi tuyến là `illustrative` |
 | `/universe/live-sky` | Astronomy Engine + vị trí người quan sát, `computed` |
 | `/universe/observatory` | Nhật ký phiên quan sát trong IndexedDB |
 | `/universe/missions` | Flight Director từ JPL Horizons + directory nhiệm vụ chính thức |
@@ -72,6 +74,19 @@ Mọi response thành công có provenance envelope:
 - Vận tốc km/s được đổi từ vector AU/ngày; khoảng cách km được đổi theo hằng số AU đã công bố trong client.
 - Nút CSV chỉ xuất các bản ghi đang hiển thị. Khi nguồn lỗi, giao diện giữ thông báo lỗi hoặc cache có nhãn, không tạo dữ liệu thay thế.
 
+## Hệ Mặt Trời 3D nội bộ
+
+- Trải nghiệm chạy ngay trong `hoang8.com`; không chuyển người dùng sang NASA Eyes và không phụ thuộc iframe bên ngoài.
+- Tọa độ nhật tâm và quỹ đạo lấy từ Astronomy Engine. Nếu phép tính lỗi, thiên thể không có tọa độ bị bỏ qua hoặc workspace báo lỗi; không dựng vị trí giả.
+- Chế độ `scientific` giữ quan hệ khoảng cách tuyến tính theo AU. `educational` và `cinematic` nén khoảng cách để các hành tinh cùng quan sát được và luôn gắn nhãn minh họa.
+- Chuột, cảm ứng và bàn phím hỗ trợ orbit, pan, wheel/pinch zoom, chọn thiên thể và đặt lại camera. Fullscreen dùng Fullscreen API của trình duyệt.
+- Playback ghi rõ đơn vị ngày mô phỏng/giây. Ephemeris được giới hạn tần suất cập nhật để không tính lại hàng trăm mẫu quỹ đạo mỗi frame.
+- RAF dừng khi tab ẩn hoặc playback tạm dừng. Khi mất WebGL context, workspace chuyển sang Canvas Lite và thử phục hồi WebGL khi context trở lại.
+- Camera, ngày giờ, mục tiêu, tốc độ, scale, chất lượng và trạng thái nhãn được lưu vào storage key v1 hiện có khi ẩn tab hoặc rời route.
+- Màu, ánh sáng khối cầu, dải khí quyển minh họa và vòng Sao Thổ được tạo bằng shader/procedural display; nhãn ưu tiên mục tiêu và tự tránh chồng lấp. Không sao chép texture, model, UI hoặc bundle độc quyền của NASA Eyes.
+- Khi rời Trang chủ, router dọn khóa cuộn do Home Cosmic OS sở hữu trước khi dựng Vũ trụ; CSS route cũng có lớp bảo vệ để timeline và inspector luôn cuộn tới được nếu teardown bị trễ.
+- Playback chỉ vẽ lại khi ephemeris thực sự đổi, thay vì tải GPU/Canvas ở mọi frame giống nhau. Lỗi dựng quỹ đạo nền được ghi vào runtime state và thử lại có giới hạn.
+
 ## Quy tắc khoa học và hiển thị
 
 - `observed`: bản ghi do upstream công bố.
@@ -95,3 +110,4 @@ Chế độ Solar System `scientific` giữ quan hệ khoảng cách theo AU. `e
 - Flight Director hiện hỗ trợ hành tinh và Mặt Trăng trong allowlist; tàu vũ trụ chưa được thêm nếu chưa có registry ID và metadata nhiệm vụ được kiểm duyệt.
 - Không có benchmark GPU thực tế nếu môi trường kiểm thử không cung cấp trình duyệt có WebGL2.
 - Star catalogue tích hợp của Live Sky chỉ gồm nhóm sao sáng tham chiếu J2000; hành tinh, Mặt Trời và Mặt Trăng được tính theo thời gian/vị trí.
+- Hệ Mặt Trời 3D dùng vật liệu procedural tối ưu cho web, chưa dùng texture/model bề mặt độ phân giải cao. Đây không phải ảnh chụp, mô hình photoreal hoặc bản sao NASA Eyes.

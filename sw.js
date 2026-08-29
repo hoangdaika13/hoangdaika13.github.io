@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v932";
+const CACHE = "hh-identity-portal-v934";
 // HH Universe v3: JPL Horizons Flight Director with parsed vectors, playback, comparison and CSV export.
 // Creative specialist compatibility: hh-identity-portal-v928 creative-os.js?v=14 creative-os.css?v=8 performance-loader.js?v=570 script.js?v=251.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v925.
@@ -445,8 +445,10 @@ const RUNTIME_ASSETS = [
   "./editor-workflow-pro.js?v=2",
   "./support-platform.js?v=21",
   "./vendor/astronomy-engine-2.1.19.min.js?v=1",
-  "./cosmic-observatory.css?v=3",
-  "./cosmic-observatory.js?v=3",
+  "./cosmic-observatory.css?v=4",
+  "./cosmic-solar-system-3d.css?v=3",
+  "./cosmic-solar-system-3d.js?v=3",
+  "./cosmic-observatory.js?v=5",
   "./vendor/iztro-2.6.0.min.js?v=2.6.0",
   "./fortune-iching-64.js?v=1",
   "./fortune-accuracy-lab.js?v=1",
@@ -549,7 +551,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=574",
+  "./performance-loader.js?v=575",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=254"

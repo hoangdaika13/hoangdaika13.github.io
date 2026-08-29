@@ -8,6 +8,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 const client = read("cosmic-observatory.js");
 const styles = read("cosmic-observatory.css");
+const solarClient = read("cosmic-solar-system-3d.js");
+const solarStyles = read("cosmic-solar-system-3d.css");
 const router = read("script.js");
 const loader = read("performance-loader.js");
 const shell = read("index.html");
@@ -23,10 +25,10 @@ test("HH Universe is a lazy first-class route with cleanup and legacy redirects"
   assert.match(router, /window\.HHUniverse\?\.unmount/);
   assert.match(router, /route === "\/universe\/timeline"[\s\S]*?crumbLabels\.timeline = "Dòng thời gian Vũ trụ"/);
   assert.match(router, /app-cosmic-observatory-route/);
-  assert.match(loader, /cosmic:\s*\{[\s\S]*?cosmic-observatory\.css\?v=3[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?cosmic-observatory\.js\?v=3/);
+  assert.match(loader, /cosmic:\s*\{[\s\S]*?cosmic-observatory\.css\?v=4[\s\S]*?cosmic-solar-system-3d\.css\?v=3[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?cosmic-solar-system-3d\.js\?v=3[\s\S]*?cosmic-observatory\.js\?v=5/);
   assert.match(loader, /value === "\/universe" \|\| value\.startsWith\("\/universe\/"\)[\s\S]*?value === "\/cosmic-observatory"/);
   assert.match(client, /canonicalRoute:\s*"\/universe"/);
-  assert.match(client, /version:\s*3/);
+  assert.match(client, /version:\s*4/);
   assert.match(client, /global\.HHUniverse = universeApi/);
   assert.match(client, /global\.HHCosmicObservatory = universeApi/);
   assert.doesNotMatch(shell, /<script[^>]+cosmic-observatory\.js/i, "Cosmic Observatory must not load on every route");
@@ -65,6 +67,13 @@ test("solar and sky views use scientific calculation APIs and deterministic fall
   assert.match(client, /Canvas Lite/);
   assert.match(client, /data-kind="illustrative"/);
   assert.match(client, /Không dùng quỹ đạo giả|không dựng bản đồ bầu trời bằng dữ liệu giả/i);
+  assert.match(client, /HHUniverseSolar3D/);
+  assert.match(client, /engine\.mount\(host/);
+  assert.match(client, /engine\.unmount\(\)/);
+  assert.match(solarClient, /global\.HHUniverseSolar3D/);
+  assert.match(solarClient, /webglcontextlost/);
+  assert.match(solarClient, /Canvas Lite/);
+  assert.match(solarStyles, /\.hh-solar3d/);
 });
 
 test("the client never contains a NASA API key or arbitrary upstream proxy", () => {
@@ -89,15 +98,25 @@ test("responsive and accessibility contracts cover mobile, focus and motion", ()
   assert.match(styles, /:focus-visible/);
   assert.match(styles, /min-height:\s*44px/);
   assert.match(client, /aria-live="polite"/);
-  assert.match(client, /role="img"/);
+  assert.match(solarClient, /role="application" aria-roledescription="mô phỏng không gian 3D"/);
+  assert.match(solarClient, /aria-describedby="hh-solar3d-canvas-help"/);
   assert.match(client, /requestFullscreen/);
 });
 
+test("leaving Home restores the app shell scroll lock before routed workspaces mount", () => {
+  assert.match(router, /if \(route !== "\/home"\) \{[\s\S]*?HHHomeCosmicOS\?\.unmount/);
+  assert.match(router, /appMain\?\.classList\.contains\("hco-command-active"\)/);
+  assert.match(router, /appMain\.style\.getPropertyValue\("overflow-y"\) === "clip"/);
+  assert.match(solarStyles, /body\.app-universe-route \.app-main\.hco-command-active[\s\S]*?overflow-y:\s*auto\s*!important/);
+});
+
 test("release shell and service worker ship the same HH Universe versions", () => {
-  assert.match(shell, /Release v932 HH Universe/);
-  assert.match(shell, /performance-loader\.js\?v=574/);
+  assert.match(shell, /Release v934 HH Universe Solar 3D/);
+  assert.match(shell, /performance-loader\.js\?v=575/);
   assert.match(shell, /script\.js\?v=254/);
-  assert.match(worker, /hh-identity-portal-v932/);
-  assert.match(worker, /cosmic-observatory\.css\?v=3/);
-  assert.match(worker, /cosmic-observatory\.js\?v=3/);
+  assert.match(worker, /hh-identity-portal-v934/);
+  assert.match(worker, /cosmic-observatory\.css\?v=4/);
+  assert.match(worker, /cosmic-solar-system-3d\.css\?v=3/);
+  assert.match(worker, /cosmic-solar-system-3d\.js\?v=3/);
+  assert.match(worker, /cosmic-observatory\.js\?v=5/);
 });

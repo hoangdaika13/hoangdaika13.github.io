@@ -6951,6 +6951,24 @@ function initAppShell() {
       route = "/analytics";
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
     }
+    // The Home Cosmic OS owns a fixed command deck and temporarily applies
+    // inline `overflow: clip` to #appMain. A hash transition can detach the
+    // Home root before its observer gets the matching unmount callback,
+    // leaving that lock on the next workspace (most visible in Universe,
+    // whose 3D timeline intentionally extends below the first viewport).
+    // Tear down the owner and restore only the exact properties it set before
+    // rendering any non-Home route. This keeps Home's one-screen contract
+    // while making every routed workspace scrollable again.
+    if (route !== "/home") {
+      window.HHHomeCosmicOS?.unmount?.();
+      const appMain = document.querySelector(".app-main");
+      if (appMain?.classList.contains("hco-command-active")) {
+        appMain.classList.remove("hco-command-active");
+        if (appMain.style.getPropertyValue("overflow-x") === "clip") appMain.style.removeProperty("overflow-x");
+        if (appMain.style.getPropertyValue("overflow-y") === "clip") appMain.style.removeProperty("overflow-y");
+        if (appMain.style.getPropertyValue("overscroll-behavior-y") === "none") appMain.style.removeProperty("overscroll-behavior-y");
+      }
+    }
     activeRoute = route;
     rememberSidebarRoute(route);
     const activeGroup = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));

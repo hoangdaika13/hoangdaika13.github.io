@@ -451,9 +451,9 @@
       const rect = this.stage.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
       const Astronomy = global.Astronomy;
-      const planetData = PLANETS.map((planet) => {
+      const planetData = PLANETS.flatMap((planet) => {
         try { return { planet, vector: Astronomy.HelioVector(Astronomy.Body?.[planet.id] || planet.id, date) }; }
-        catch { return { planet, vector: { x: planet.orbit, y: 0, z: 0 } }; }
+        catch { return []; }
       });
       const projected = planetData.map((item) => ({ ...item, screen: this.project(item.vector, mode, rect) }));
       this.points = projected.map((item) => ({ planet: item.planet, px: item.screen.x, py: item.screen.y, size: item.planet.size }));
@@ -511,12 +511,60 @@
 
   function renderSolarSystem(host) {
     if (!global.Astronomy?.HelioVector) return notice(host, "Astronomy Engine chưa tải được; không dùng quỹ đạo giả để thay thế.", "error");
+    const engine = global.HHUniverseSolar3D;
+    if (!engine?.mount || !engine?.getState || !engine?.unmount) return renderLegacySolarSystem(host);
+    const saved = getSettings();
+    const simulationDate = saved.solarDate ? new Date(saved.solarDate) : new Date();
+    const safeDate = Number.isFinite(simulationDate.getTime()) ? simulationDate : new Date();
+    const selectedBody = String(saved.solarTarget || "earth").toLowerCase();
+    const quality = ["low", "medium", "high"].includes(saved.solarQuality) ? saved.solarQuality : "medium";
+    try {
+      engine.mount(host, {
+        astronomy: global.Astronomy,
+        time: safeDate,
+        selectedBody,
+        quality,
+        playing: false,
+        labels: saved.solarLabels !== false,
+        speed: Number(saved.solarSpeed || 1),
+        scaleMode: saved.solarScale,
+        camera: saved.solarCamera
+      });
+    } catch (error) {
+      engine.unmount?.();
+      console.warn("HH Universe Solar 3D could not mount; using the local compatibility renderer.", error);
+      return renderLegacySolarSystem(host);
+    }
+    const persist = () => {
+      const state = engine.getState();
+      if (!state?.mounted) return;
+      saveSettings({
+        solarDate: state.time instanceof Date && Number.isFinite(state.time.getTime()) ? state.time.toISOString() : safeDate.toISOString(),
+        solarTarget: state.selectedBody,
+        solarSpeed: state.speed,
+        solarScale: state.scaleMode,
+        solarQuality: state.quality,
+        solarLabels: state.labels,
+        solarCamera: state.camera
+      });
+    };
+    const saveWhenHidden = () => { if (document.hidden) persist(); };
+    document.addEventListener("visibilitychange", saveWhenHidden);
+    registerCleanup(() => {
+      document.removeEventListener("visibilitychange", saveWhenHidden);
+      persist();
+      engine.unmount();
+    });
+  }
+
+  function renderLegacySolarSystem(host) {
+    if (!global.Astronomy?.HelioVector) return notice(host, "Astronomy Engine chưa tải được; không dùng quỹ đạo giả để thay thế.", "error");
     const saved = getSettings();
     let simulationDate = saved.solarDate ? new Date(saved.solarDate) : new Date();
     if (!Number.isFinite(simulationDate.getTime())) simulationDate = new Date();
     let speed = Number(saved.solarSpeed || 1);
     let scaleMode = ["scientific", "educational", "cinematic"].includes(saved.solarScale) ? saved.solarScale : "educational";
-    let selected = saved.solarTarget || "Earth";
+    let selected = PLANETS.find((item) => item.id.toLowerCase() === String(saved.solarTarget || "Earth").toLowerCase())?.id || "Earth";
     let paused = true;
     host.innerHTML = `<section class="cosmic-control-deck">
       <div class="cosmic-toolbar" aria-label="Điều khiển mô phỏng"><button type="button" data-solar-play aria-pressed="false">▶ Tiếp tục</button><label>Ngày giờ thiết bị<input type="datetime-local" data-solar-date value="${localDateTimeValue(simulationDate)}"></label><button type="button" data-solar-now>Về hiện tại</button><label>Tốc độ<select data-solar-speed>${[1,10,100,1000].map((value) => `<option value="${value}" ${value === speed ? "selected" : ""}>${value}×</option>`).join("")}</select></label><label>Tỉ lệ<select data-solar-scale><option value="scientific" ${scaleMode === "scientific" ? "selected" : ""}>Khoa học</option><option value="educational" ${scaleMode === "educational" ? "selected" : ""}>Giáo dục</option><option value="cinematic" ${scaleMode === "cinematic" ? "selected" : ""}>Điện ảnh</option></select></label></div>
@@ -1016,7 +1064,7 @@
   }
 
   const universeApi = Object.freeze({
-    version: 3,
+    version: 4,
     productName: "HH Universe",
     canonicalRoute: "/universe",
     legacyRoute: "/cosmic-observatory",

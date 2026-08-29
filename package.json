@@ -7,7 +7,7 @@
     "start": "vercel dev",
     "test:community": "node --test tests/community-contract.test.js",
     "test:ai": "node --test tests/ai-center-contract.test.js",
-    "test:space": "node --test tests/cosmic-observatory-contract.test.js tests/cosmic-api.test.js",
+    "test:space": "node --test tests/cosmic-observatory-contract.test.js tests/cosmic-solar-system-3d.test.js tests/cosmic-api.test.js",
     "test:auth": "node --test tests/auth-neon-gateway-contract.test.js",
     "test:account": "node --test tests/account-center-contract.test.js",
     "test:settings": "node --test tests/settings-studio-contract.test.js",
