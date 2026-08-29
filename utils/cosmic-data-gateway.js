@@ -59,6 +59,28 @@ function numberParam(value, fallback, min, max) {
   return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
 }
 
+function parseHorizonsVectors(value) {
+  const raw = String(value ?? "");
+  const start = raw.indexOf("$$SOE");
+  const end = raw.indexOf("$$EOE", start + 5);
+  if (start < 0 || end < 0 || end <= start) return [];
+  return raw.slice(start + 5, end).split(/\r?\n/).map((line) => {
+    const fields = line.split(",").map((field) => field.trim());
+    if (fields.length < 8) return null;
+    const julianDate = Number(fields[0]);
+    const [x, y, z, vx, vy, vz] = fields.slice(2, 8).map(Number);
+    if (![julianDate, x, y, z, vx, vy, vz].every(Number.isFinite)) return null;
+    return {
+      julianDate,
+      calendar: cleanText(fields[1], 48),
+      positionAu: { x, y, z },
+      velocityAuPerDay: { x: vx, y: vy, z: vz },
+      distanceAu: Math.hypot(x, y, z),
+      speedAuPerDay: Math.hypot(vx, vy, vz)
+    };
+  }).filter(Boolean).slice(0, 128);
+}
+
 function clientId(req) {
   const forwarded = cleanText(req.headers?.["x-forwarded-for"], 180).split(",")[0].trim();
   return forwarded || cleanText(req.socket?.remoteAddress || "anonymous", 120);
@@ -323,12 +345,15 @@ async function horizons(query) {
   const stepDays = Math.round(numberParam(query.step, 1, 1, 7));
   const url = new URL("https://ssd.jpl.nasa.gov/api/horizons.api");
   const params = {
-    format: "json", COMMAND: `'${target}'`, EPHEM_TYPE: "VECTORS", CENTER: "'500@10'",
+    format: "json", COMMAND: `'${target}'`, OBJ_DATA: "'NO'", MAKE_EPHEM: "'YES'", EPHEM_TYPE: "VECTORS", CENTER: "'500@10'",
     START_TIME: `'${start}'`, STOP_TIME: `'${end}'`, STEP_SIZE: `'${stepDays} d'`,
-    OUT_UNITS: "'AU-D'", VEC_TABLE: "'2'", CSV_FORMAT: "'YES'"
+    OUT_UNITS: "'AU-D'", VEC_TABLE: "'2'", VEC_LABELS: "'NO'", CSV_FORMAT: "'YES'"
   };
   Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
   const result = await fetchJson(url, { ttl: 12 * 60 * 60_000, timeout: 14_000 });
+  const rawResult = String(result.value?.result || "");
+  const records = parseHorizonsVectors(rawResult);
+  if (!records.length) throw Object.assign(new Error("JPL Horizons không trả về bảng vector hợp lệ."), { statusCode: 502 });
   return envelope({
     sourceName: "JPL Horizons",
     sourceUrl: url.toString(),
@@ -341,7 +366,14 @@ async function horizons(query) {
     attribution: "NASA/JPL Solar System Dynamics",
     usagePolicy: "https://ssd-api.jpl.nasa.gov/doc/horizons.html",
     dataType: "computed",
-    data: { target: targetKey, rawResult: cleanText(result.value?.result, 800_000), signature: result.value?.signature || null }
+    data: {
+      target: targetKey,
+      count: records.length,
+      records,
+      rawResult: cleanText(rawResult, 800_000),
+      signature: result.value?.signature || null,
+      apiVersion: cleanText(result.value?.signature?.version, 24) || null
+    }
   });
 }
 
@@ -370,6 +402,6 @@ async function handler(req, res) {
   }
 }
 
-handler._test = Object.freeze({ ALLOWED_SOURCES, HORIZONS_TARGETS, boundedDateRange, cleanText, envelope, rowsFromFields });
+handler._test = Object.freeze({ ALLOWED_SOURCES, HORIZONS_TARGETS, boundedDateRange, cleanText, envelope, parseHorizonsVectors, rowsFromFields });
 
 module.exports = handler;

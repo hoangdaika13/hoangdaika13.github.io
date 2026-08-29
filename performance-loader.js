@@ -237,8 +237,8 @@
       scripts: ["phat-phap.js?v=18"]
     },
     cosmic: {
-      styles: ["cosmic-observatory.css?v=2"],
-      scripts: ["vendor/astronomy-engine-2.1.19.min.js?v=1", "cosmic-observatory.js?v=2"]
+      styles: ["cosmic-observatory.css?v=3"],
+      scripts: ["vendor/astronomy-engine-2.1.19.min.js?v=1", "cosmic-observatory.js?v=3"]
     },
     play: {
       styles: ["hh-play.css?v=8&build=4"],

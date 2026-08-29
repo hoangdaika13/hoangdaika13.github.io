@@ -72,6 +72,34 @@ test("NASA media results keep NASA ID, attribution and bounded metadata", async 
   } finally { global.fetch = originalFetch; }
 });
 
+test("JPL Horizons vectors are parsed into bounded numeric flight records", async () => {
+  const originalFetch = global.fetch;
+  global.fetch = async (url) => {
+    assert.match(String(url), /^https:\/\/ssd\.jpl\.nasa\.gov\/api\/horizons\.api/);
+    assert.match(String(url), /EPHEM_TYPE=VECTORS/);
+    return upstream({
+      signature: { source: "NASA/JPL Horizons API", version: "1.2" },
+      result: `Header\n$$SOE\n2461281.500000000, A.D. 2026-Aug-29 00:00:00.0000, 5.5E-1, 1.4E+0, 1.5E-2, -1.2E-2, 6.3E-3, 4.3E-4,\n2461282.500000000, A.D. 2026-Aug-30 00:00:00.0000, 5.4E-1, 1.41E+0, 1.6E-2, -1.25E-2, 6.2E-3, 4.2E-4,\n$$EOE\nFooter`
+    });
+  };
+  try {
+    const req = { method: "GET", headers: {}, socket: { remoteAddress: "test-horizons" }, query: { source: "horizons", target: "mars", start: "2026-08-29", end: "2026-08-30", step: "1" } };
+    const res = responseHarness();
+    await handler(req, res);
+    const { statusCode, body } = res.result();
+    assert.equal(statusCode, 200);
+    assert.equal(body.sourceName, "JPL Horizons");
+    assert.equal(body.dataType, "computed");
+    assert.equal(body.data.target, "mars");
+    assert.equal(body.data.apiVersion, "1.2");
+    assert.equal(body.data.count, 2);
+    assert.equal(body.data.records[0].julianDate, 2461281.5);
+    assert.equal(body.data.records[0].positionAu.x, 0.55);
+    assert.ok(body.data.records[0].distanceAu > 1);
+    assert.ok(body.data.records[0].speedAuPerDay > 0);
+  } finally { global.fetch = originalFetch; }
+});
+
 test("unsupported source and methods fail without contacting the network", async () => {
   const originalFetch = global.fetch;
   let calls = 0;

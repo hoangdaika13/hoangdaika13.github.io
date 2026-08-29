@@ -23,7 +23,7 @@
     dsn: { title: "Liên lạc không gian DSN", eyebrow: "DEEP SPACE NETWORK", description: "Cửa ngõ tới trạng thái liên lạc được NASA/JPL công bố; không tạo tín hiệu trực tuyến giả." },
     surfaces: { title: "Bề mặt hành tinh", eyebrow: "PLANETARY TREK", description: "Khám phá cổng địa hình chính thức và tính khoảng cách bề mặt theo tọa độ đã chọn." },
     "universe-map": { title: "Vũ trụ đa bước sóng", eyebrow: "MULTI-WAVELENGTH", description: "Cửa ngõ tới dữ liệu HiPS và WorldWide Telescope có attribution." },
-    missions: { title: "Nhiệm vụ không gian", eyebrow: "MISSION TIMELINE", description: "Tra cứu nhiệm vụ từ nguồn chính thức; không mô phỏng telemetry giả." },
+    missions: { title: "Flight Director", eyebrow: "JPL HORIZONS", description: "Tính và tua vector quỹ đạo từ JPL Horizons; trạng thái nguồn, hệ tọa độ và đơn vị luôn hiển thị rõ." },
     asteroids: { title: "Asteroid Watch", eyebrow: "JPL CNEOS", description: "Các lần tiếp cận gần theo JPL CAD, kèm khoảng cách, tốc độ và độ bất định." },
     exoplanets: { title: "Ngoại hành tinh", eyebrow: "NASA EXOPLANET ARCHIVE", description: "Khám phá các thế giới đã công bố từ NASA Exoplanet Archive." },
     earth: { title: "Trái Đất từ không gian", eyebrow: "EARTH EVENTS", description: "Sự kiện tự nhiên EONET có thời gian cập nhật và nguồn rõ ràng." },
@@ -806,7 +806,17 @@
     host.innerHTML = `<section class="cosmic-external-explorer"><div class="cosmic-external-visual"><span>∞</span><i></i><i></i><i></i></div><div><span>WORLDWIDE TELESCOPE · HiPS</span><h2>Bầu trời đa bước sóng cần engine chuyên dụng</h2><p>HH không sao chép Stellarium hoặc ESASky. Phiên này mở công cụ WorldWide Telescope chính thức trong tab riêng để giữ attribution, hiệu năng và quyền sử dụng đúng nguồn.</p><div><a class="cosmic-primary" href="https://worldwidetelescope.org/webclient/" target="_blank" rel="noopener">Mở WorldWide Telescope ↗</a><a class="cosmic-secondary" href="https://sky.esa.int/esasky/" target="_blank" rel="noopener">Mở ESASky ↗</a></div><dl><div><dt>Trạng thái</dt><dd>Liên kết chính thức</dd></div><div><dt>Không nhúng mã AGPL</dt><dd>Đã tuân thủ</dd></div><div><dt>Dữ liệu giả</dt><dd>Không sử dụng</dd></div></dl></div></section>`;
   }
 
-  function renderMissions(host) {
+  async function renderMissions(host) {
+    const targetOptions = [
+      ["mercury", "Sao Thủy"], ["venus", "Sao Kim"], ["earth", "Trái Đất"], ["moon", "Mặt Trăng"],
+      ["mars", "Sao Hỏa"], ["jupiter", "Sao Mộc"], ["saturn", "Sao Thổ"], ["uranus", "Sao Thiên Vương"],
+      ["neptune", "Sao Hải Vương"], ["pluto", "Sao Diêm Vương"]
+    ];
+    const targetLabels = Object.fromEntries(targetOptions);
+    const settings = getSettings();
+    const start = localDay();
+    const endDate = new Date(); endDate.setDate(endDate.getDate() + 14);
+    const end = localDay(endDate);
     const missions = [
       ["NASA Eyes", "Theo dõi mission và Hệ Mặt Trời bằng sản phẩm chính thức của NASA.", "https://eyes.nasa.gov/apps/solar-system/"],
       ["JPL Horizons", "Tạo ephemeris, vector trạng thái và phần tử quỹ đạo theo thời gian.", "https://ssd.jpl.nasa.gov/horizons/app.html#/"],
@@ -814,7 +824,118 @@
       ["NASA Missions", "Tra cứu nhiệm vụ và chương trình không gian NASA.", "https://www.nasa.gov/missions/"],
       ["Deep Space Network", "Trạng thái liên lạc DSN công khai từ NASA/JPL.", "https://eyes.nasa.gov/dsn/dsn.html"]
     ];
-    host.innerHTML = `<section class="cosmic-directory"><div class="cosmic-notice is-info">HH chỉ hiển thị liên kết mission chính thức ở giai đoạn này; chưa dựng vị trí realtime nếu không có telemetry đã xác minh.</div><div>${missions.map(([title, description, url]) => `<a href="${url}" target="_blank" rel="noopener"><span>↗</span><h2>${escapeHtml(title)}</h2><p>${escapeHtml(description)}</p><small>Nguồn chính thức · Mở tab mới</small></a>`).join("")}</div></section>`;
+    const options = targetOptions.map(([id, label]) => `<option value="${id}">${escapeHtml(label)}</option>`).join("");
+    host.innerHTML = `<section class="cosmic-flight-director">
+      <form class="cosmic-filter-bar cosmic-flight-form" data-flight-form>
+        <label>Thiên thể chính<select name="target">${options}</select></label>
+        <label>So sánh<select name="compareTarget"><option value="">Không so sánh</option>${options}</select></label>
+        <label>Ngày bắt đầu<input type="date" name="start" value="${start}" min="1950-01-01" max="2050-12-31" required></label>
+        <label>Ngày kết thúc<input type="date" name="end" value="${end}" min="1950-01-02" max="2050-12-31" required></label>
+        <label>Bước thời gian<select name="step"><option value="1">1 ngày</option><option value="2">2 ngày</option><option value="3">3 ngày</option><option value="7">7 ngày</option></select></label>
+        <button type="submit" class="cosmic-primary">Tải vector JPL</button>
+      </form>
+      <div class="cosmic-flight-status" data-flight-status aria-live="polite"><div class="cosmic-notice is-info">Chọn thiên thể và khoảng ngày để tạo hành trình. Đây là ephemeris được tính bởi JPL Horizons, không phải telemetry tàu vũ trụ trực tiếp.</div></div>
+    </section>
+    <section class="cosmic-directory cosmic-mission-directory"><div class="cosmic-notice is-info">Dùng các cổng chính thức dưới đây cho mô phỏng nhiệm vụ, danh mục tàu và liên lạc trực tiếp. HH không thay nguồn lỗi bằng trạng thái giả.</div><div>${missions.map(([title, description, url]) => `<a href="${url}" target="_blank" rel="noopener"><span>↗</span><h2>${escapeHtml(title)}</h2><p>${escapeHtml(description)}</p><small>Nguồn chính thức · Mở tab mới</small></a>`).join("")}</div></section>`;
+    const form = host.querySelector("[data-flight-form]");
+    const status = host.querySelector("[data-flight-status]");
+    form.elements.target.value = targetLabels[settings.flightTarget] ? settings.flightTarget : "mars";
+    form.elements.compareTarget.value = targetLabels[settings.flightCompareTarget] ? settings.flightCompareTarget : "earth";
+    form.elements.step.value = ["1", "2", "3", "7"].includes(String(settings.flightStep)) ? String(settings.flightStep) : "1";
+    let playbackTimer = 0;
+    let currentDatasets = [];
+    const stopPlayback = () => { if (playbackTimer) global.clearInterval(playbackTimer); playbackTimer = 0; };
+    const stopWhenHidden = () => {
+      if (!document.hidden) return;
+      stopPlayback();
+      const playButton = status.querySelector("[data-flight-play]");
+      if (playButton) playButton.textContent = "Phát hành trình";
+    };
+    document.addEventListener("visibilitychange", stopWhenHidden);
+    registerCleanup(() => { stopPlayback(); document.removeEventListener("visibilitychange", stopWhenHidden); });
+    const projectRecords = (datasets) => {
+      const all = datasets.flatMap((dataset) => dataset.records);
+      const extent = Math.max(0.0001, ...all.map((record) => Math.hypot(record.positionAu.x, record.positionAu.y)));
+      return datasets.map((dataset) => ({ ...dataset, points: dataset.records.map((record) => ({ x: 400 + record.positionAu.x / extent * 330, y: 240 - record.positionAu.y / extent * 200 })) }));
+    };
+    const renderFlight = (datasets, payloads) => {
+      currentDatasets = projectRecords(datasets);
+      const maxIndex = Math.max(0, Math.min(...currentDatasets.map((dataset) => dataset.records.length)) - 1);
+      const colors = ["#65e8ff", "#ff84d6"];
+      status.innerHTML = `<div class="cosmic-flight-grid">
+        <div class="cosmic-flight-stage">
+          <svg viewBox="0 0 800 480" role="img" aria-label="Đường vector nhật tâm do JPL Horizons tính toán">
+            <defs><radialGradient id="flightSun"><stop stop-color="#fffbd0"/><stop offset=".3" stop-color="#ffd45e"/><stop offset="1" stop-color="#ff7738" stop-opacity=".1"/></radialGradient></defs>
+            <g class="cosmic-flight-gridlines">${[80,160,240,320].map((radius) => `<circle cx="400" cy="240" r="${radius}"/>`).join("")}<path d="M40 240H760M400 24V456"/></g>
+            <circle class="cosmic-flight-sun" cx="400" cy="240" r="20" fill="url(#flightSun)"/>
+            ${currentDatasets.map((dataset, index) => `<polyline points="${dataset.points.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(" ")}" style="--flight-color:${colors[index]}"/><circle data-flight-marker="${index}" cx="${dataset.points[0].x}" cy="${dataset.points[0].y}" r="8" style="--flight-color:${colors[index]}"/><text data-flight-label="${index}" x="${dataset.points[0].x + 13}" y="${dataset.points[0].y - 12}" fill="${colors[index]}">${escapeHtml(dataset.label)}</text>`).join("")}
+          </svg>
+          <div class="cosmic-flight-legend">${currentDatasets.map((dataset, index) => `<span><i style="--flight-color:${colors[index]}"></i>${escapeHtml(dataset.label)}</span>`).join("")}<small data-kind="illustrative">Phép chiếu 2D nhật tâm · không đúng tỉ lệ kích thước</small></div>
+        </div>
+        <aside class="cosmic-flight-inspector">
+          <span>FLIGHT DIRECTOR</span><h2 data-flight-date>—</h2>
+          <div class="cosmic-flight-metrics" data-flight-metrics></div>
+          <label>Thời điểm trong bảng<input type="range" min="0" max="${maxIndex}" value="0" step="1" data-flight-range></label>
+          <div><button type="button" class="cosmic-secondary" data-flight-play>Phát hành trình</button><button type="button" class="cosmic-secondary" data-flight-csv>Xuất CSV</button></div>
+        </aside>
+      </div>
+      <div class="cosmic-provenance"><div>${sourceBadge(payloads[0])}<span>${escapeHtml(payloads[0].coordinateFrame || "JPL Horizons frame")}</span></div><p>API ${escapeHtml(payloads[0].data?.apiVersion || "không ghi phiên bản")} · ${escapeHtml(payloads[0].timeScale || "TDB")} · tải ${formatDate(payloads[0].fetchedAt)} · ${escapeHtml(payloads[0].cacheStatus || "upstream")}</p></div>`;
+      const range = status.querySelector("[data-flight-range]");
+      const play = status.querySelector("[data-flight-play]");
+      const update = (index) => {
+        const safeIndex = Math.max(0, Math.min(maxIndex, Number(index) || 0));
+        range.value = String(safeIndex);
+        currentDatasets.forEach((dataset, datasetIndex) => {
+          const point = dataset.points[safeIndex];
+          const marker = status.querySelector(`[data-flight-marker="${datasetIndex}"]`);
+          const label = status.querySelector(`[data-flight-label="${datasetIndex}"]`);
+          marker.setAttribute("cx", point.x); marker.setAttribute("cy", point.y);
+          label.setAttribute("x", point.x + 13); label.setAttribute("y", point.y - 12);
+        });
+        const primary = currentDatasets[0].records[safeIndex];
+        const speedKms = primary.speedAuPerDay * AU_KM / 86_400;
+        const comparison = currentDatasets[1]?.records[safeIndex];
+        const separation = comparison ? Math.hypot(primary.positionAu.x - comparison.positionAu.x, primary.positionAu.y - comparison.positionAu.y, primary.positionAu.z - comparison.positionAu.z) : null;
+        status.querySelector("[data-flight-date]").textContent = primary.calendar || `JD ${formatNumber(primary.julianDate, 5)}`;
+        status.querySelector("[data-flight-metrics]").innerHTML = `<article><span>Khoảng cách tới Mặt Trời</span><strong>${formatNumber(primary.distanceAu, 6)} AU</strong><small>${formatNumber(primary.distanceAu * AU_KM, 0)} km</small></article><article><span>Vận tốc vector</span><strong>${formatNumber(speedKms, 3)} km/s</strong><small>${formatNumber(primary.speedAuPerDay, 8)} AU/ngày</small></article>${comparison ? `<article><span>Cách ${escapeHtml(currentDatasets[1].label)}</span><strong>${formatNumber(separation, 6)} AU</strong><small>${formatNumber(separation * AU_KM, 0)} km</small></article>` : ""}<article><span>Julian Date</span><strong>${formatNumber(primary.julianDate, 5)}</strong><small>Dữ liệu thời gian ${escapeHtml(payloads[0].timeScale || "TDB")}</small></article>`;
+      };
+      range.addEventListener("input", () => { stopPlayback(); play.textContent = "Phát hành trình"; update(range.value); });
+      play.addEventListener("click", () => {
+        if (playbackTimer) { stopPlayback(); play.textContent = "Phát hành trình"; return; }
+        play.textContent = "Tạm dừng";
+        playbackTimer = global.setInterval(() => {
+          const next = Number(range.value) >= maxIndex ? 0 : Number(range.value) + 1;
+          update(next);
+        }, 700);
+      });
+      status.querySelector("[data-flight-csv]").addEventListener("click", () => {
+        const rows = [["target", "calendar", "julianDate", "xAu", "yAu", "zAu", "vxAuDay", "vyAuDay", "vzAuDay", "distanceAu"]];
+        currentDatasets.forEach((dataset) => dataset.records.forEach((record) => rows.push([dataset.id, record.calendar, record.julianDate, record.positionAu.x, record.positionAu.y, record.positionAu.z, record.velocityAuPerDay.x, record.velocityAuPerDay.y, record.velocityAuPerDay.z, record.distanceAu])));
+        const blob = new Blob([rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = `hh-flight-director-${localDay()}.csv`; anchor.click(); global.setTimeout(() => URL.revokeObjectURL(url), 0);
+      });
+      update(0);
+    };
+    const load = async () => {
+      stopPlayback();
+      const values = Object.fromEntries(new FormData(form));
+      if (values.target === values.compareTarget) { notice(status, "Hai thiên thể so sánh phải khác nhau.", "error"); return; }
+      const startTime = Date.parse(`${values.start}T00:00:00Z`); const endTime = Date.parse(`${values.end}T00:00:00Z`);
+      if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime < startTime || endTime - startTime > 62 * 86_400_000) { notice(status, "Khoảng ngày phải hợp lệ, tối đa 62 ngày.", "error"); return; }
+      status.innerHTML = `<div class="cosmic-flight-loading"><i></i><strong>Đang nhận vector từ JPL Horizons…</strong><small>Không có dữ liệu mô phỏng thay thế nếu nguồn lỗi.</small></div>`;
+      try {
+        const ids = [values.target, values.compareTarget].filter(Boolean);
+        const payloads = await Promise.all(ids.map((target) => fetchCosmic("horizons", { target, start: values.start, end: values.end, step: values.step }, { timeout: 16_000, maxStaleMs: 24 * 60 * 60_000 })));
+        if (!host.isConnected) return;
+        const datasets = payloads.map((payload, index) => ({ id: ids[index], label: targetLabels[ids[index]], records: payload.data?.records || [] }));
+        if (datasets.some((dataset) => !dataset.records.length)) throw new Error("JPL Horizons không trả về đủ bản ghi vector.");
+        saveSettings({ flightTarget: values.target, flightCompareTarget: values.compareTarget, flightStep: values.step });
+        renderFlight(datasets, payloads);
+        announce(`Đã tải ${datasets.reduce((total, dataset) => total + dataset.records.length, 0)} vector JPL Horizons.`);
+      } catch (error) { notice(status, error.message, "error"); }
+    };
+    form.addEventListener("submit", (event) => { event.preventDefault(); load(); });
+    load();
   }
 
   function renderTours(host) {
@@ -895,7 +1016,7 @@
   }
 
   const universeApi = Object.freeze({
-    version: 2,
+    version: 3,
     productName: "HH Universe",
     canonicalRoute: "/universe",
     legacyRoute: "/cosmic-observatory",

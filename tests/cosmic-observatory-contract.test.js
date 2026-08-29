@@ -23,9 +23,10 @@ test("HH Universe is a lazy first-class route with cleanup and legacy redirects"
   assert.match(router, /window\.HHUniverse\?\.unmount/);
   assert.match(router, /route === "\/universe\/timeline"[\s\S]*?crumbLabels\.timeline = "Dòng thời gian Vũ trụ"/);
   assert.match(router, /app-cosmic-observatory-route/);
-  assert.match(loader, /cosmic:\s*\{[\s\S]*?cosmic-observatory\.css\?v=2[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?cosmic-observatory\.js\?v=2/);
+  assert.match(loader, /cosmic:\s*\{[\s\S]*?cosmic-observatory\.css\?v=3[\s\S]*?astronomy-engine-2\.1\.19\.min\.js\?v=1[\s\S]*?cosmic-observatory\.js\?v=3/);
   assert.match(loader, /value === "\/universe" \|\| value\.startsWith\("\/universe\/"\)[\s\S]*?value === "\/cosmic-observatory"/);
   assert.match(client, /canonicalRoute:\s*"\/universe"/);
+  assert.match(client, /version:\s*3/);
   assert.match(client, /global\.HHUniverse = universeApi/);
   assert.match(client, /global\.HHCosmicObservatory = universeApi/);
   assert.doesNotMatch(shell, /<script[^>]+cosmic-observatory\.js/i, "Cosmic Observatory must not load on every route");
@@ -41,6 +42,12 @@ test("the Universe command center, 15 core spaces and source trust center are pr
   assert.match(client, /NASA Solar System Treks|trek\.nasa\.gov/);
   assert.match(client, /Deep Space Network|DSN Now/);
   assert.match(client, /learningBest/);
+  assert.match(client, /data-flight-form/);
+  assert.match(client, /fetchCosmic\("horizons"/);
+  assert.match(client, /data-flight-range/);
+  assert.match(client, /data-flight-csv/);
+  assert.match(client, /visibilitychange/);
+  assert.match(styles, /cosmic-flight-grid/);
   for (const source of ["JPL Horizons", "JPL CNEOS Close-Approach Data", "NASA Image and Video Library", "NASA Exoplanet Archive", "NASA EONET v3", "NASA DONKI", "Astronomy Engine", "WorldWide Telescope"]) {
     assert.match(client, new RegExp(source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
@@ -65,6 +72,7 @@ test("the client never contains a NASA API key or arbitrary upstream proxy", () 
   assert.doesNotMatch(client, /https:\/\/api\.nasa\.gov\/DONKI/i);
   assert.match(api, /ALLOWED_SOURCES/);
   assert.match(api, /HORIZONS_TARGETS/);
+  assert.match(api, /parseHorizonsVectors/);
   assert.match(api, /process\.env\.NASA_API_KEY/);
   assert.doesNotMatch(api, /req\.query\.(?:url|endpoint)|query\.(?:url|endpoint)/i);
   assert.match(api, /MAX_RESPONSE_BYTES/);
@@ -86,10 +94,10 @@ test("responsive and accessibility contracts cover mobile, focus and motion", ()
 });
 
 test("release shell and service worker ship the same HH Universe versions", () => {
-  assert.match(shell, /Release v931 HH Universe/);
-  assert.match(shell, /performance-loader\.js\?v=573/);
+  assert.match(shell, /Release v932 HH Universe/);
+  assert.match(shell, /performance-loader\.js\?v=574/);
   assert.match(shell, /script\.js\?v=254/);
-  assert.match(worker, /hh-identity-portal-v931/);
-  assert.match(worker, /cosmic-observatory\.css\?v=2/);
-  assert.match(worker, /cosmic-observatory\.js\?v=2/);
+  assert.match(worker, /hh-identity-portal-v932/);
+  assert.match(worker, /cosmic-observatory\.css\?v=3/);
+  assert.match(worker, /cosmic-observatory\.js\?v=3/);
 });

@@ -1,10 +1,10 @@
-# HH Universe v2
+# HH Universe v3
 
 ## Phạm vi phát hành
 
 Phiên bản v2 đổi tên sản phẩm thành **Vũ trụ / HH Universe** và dùng route chuẩn `#/universe/*`. Mọi route `#/cosmic-observatory/*` cũ được chuyển tương thích sang route mới tương ứng. Hệ thống giữ nguyên IndexedDB, localStorage, bookmark, session và schema export cũ để không làm mất dữ liệu.
 
-Trung tâm Vũ trụ có một CTA “Tiếp tục khám phá”, tìm kiếm toàn module, trạng thái phiên gần nhất, bầu trời theo giờ thiết bị, bookmark và JPL Asteroid Watch. Các workspace mới gồm Đài quan sát local-first, DSN official gateway, Bề mặt hành tinh với máy đo cung, Dòng thời gian Vũ trụ và Phòng học thiên văn.
+Trung tâm Vũ trụ có một CTA “Tiếp tục khám phá”, tìm kiếm toàn module, trạng thái phiên gần nhất, bầu trời theo giờ thiết bị, bookmark và JPL Asteroid Watch. Các workspace gồm Đài quan sát local-first, DSN official gateway, Bề mặt hành tinh với máy đo cung, Dòng thời gian Vũ trụ, Phòng học thiên văn và Flight Director dùng vector JPL Horizons thật.
 
 ## Kiến trúc
 
@@ -22,7 +22,7 @@ Trung tâm Vũ trụ có một CTA “Tiếp tục khám phá”, tìm kiếm to
 | `/universe/solar-system` | Astronomy Engine, `computed` |
 | `/universe/live-sky` | Astronomy Engine + vị trí người quan sát, `computed` |
 | `/universe/observatory` | Nhật ký phiên quan sát trong IndexedDB |
-| `/universe/missions` | Directory NASA/JPL/Horizons chính thức; chưa hiển thị telemetry |
+| `/universe/missions` | Flight Director từ JPL Horizons + directory nhiệm vụ chính thức |
 | `/universe/dsn` | Cửa ngõ DSN Now chính thức; không tạo tín hiệu giả |
 | `/universe/asteroids` | JPL CNEOS CAD, `observed` |
 | `/universe/surfaces` | NASA Treks + máy tính khoảng cách cung, `computed` |
@@ -64,6 +64,14 @@ Mọi response thành công có provenance envelope:
 - Export không chứa cache response, token hoặc API key.
 - Import giới hạn 2 MB, kiểm tra `schema`, `version`, số lượng bookmark/session và ID.
 
+## Flight Director
+
+- Chỉ nhận target trong allowlist hành tinh/Mặt Trăng đã định danh bằng Horizons ID.
+- Server trích bảng CSV nằm giữa `$$SOE` và `$$EOE`, kiểm tra mọi trường số và giới hạn tối đa 128 bản ghi.
+- Client hiển thị phép chiếu 2D nhật tâm, timeline, khoảng cách, vận tốc và so sánh hai thiên thể.
+- Vận tốc km/s được đổi từ vector AU/ngày; khoảng cách km được đổi theo hằng số AU đã công bố trong client.
+- Nút CSV chỉ xuất các bản ghi đang hiển thị. Khi nguồn lỗi, giao diện giữ thông báo lỗi hoặc cache có nhãn, không tạo dữ liệu thay thế.
+
 ## Quy tắc khoa học và hiển thị
 
 - `observed`: bản ghi do upstream công bố.
@@ -84,6 +92,6 @@ Chế độ Solar System `scientific` giữ quan hệ khoảng cách theo AU. `e
 ## Giới hạn đã biết
 
 - WorldWide Telescope và ESASky đang mở ở tab nguồn chính thức; chưa nhúng layer HiPS vào renderer riêng.
-- Mission Timeline chưa có data adapter mission thống nhất, vì vậy chỉ cung cấp directory chính thức.
+- Flight Director hiện hỗ trợ hành tinh và Mặt Trăng trong allowlist; tàu vũ trụ chưa được thêm nếu chưa có registry ID và metadata nhiệm vụ được kiểm duyệt.
 - Không có benchmark GPU thực tế nếu môi trường kiểm thử không cung cấp trình duyệt có WebGL2.
 - Star catalogue tích hợp của Live Sky chỉ gồm nhóm sao sáng tham chiếu J2000; hành tinh, Mặt Trời và Mặt Trăng được tính theo thời gian/vị trí.
