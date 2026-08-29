@@ -10,7 +10,7 @@ const galaxy = require(path.join(root, "creative-galaxy.js"));
 test("Creative Galaxy exposes six real clusters, LIVE widgets, themes and presets", () => {
   assert.equal(galaxy.VERSION, "1.0.0");
   assert.equal(galaxy.CLUSTERS.length, 6);
-  assert.equal(galaxy.CLUSTERS.flatMap((cluster) => cluster.tools).length, 25);
+  assert.equal(galaxy.CLUSTERS.flatMap((cluster) => cluster.tools).length, 35);
   assert.equal(galaxy.WIDGETS.length, 8);
   assert.equal(galaxy.THEMES.length, 13);
   assert.equal(galaxy.PRESETS.length, 6);
@@ -19,7 +19,7 @@ test("Creative Galaxy exposes six real clusters, LIVE widgets, themes and preset
   ]);
 });
 
-test("Creative LIVE ORBIT derives values from Universal Project without fake data", () => {
+test("Creative LIVE ORBIT derives values from the current workspace without fake data", () => {
   const empty = galaxy.snapshot({ projects: [], runs: [] });
   assert.equal(empty.widgets.project.value, "Chưa có dự án");
   assert.equal(empty.widgets.ai.value, "Chưa có hoạt động");
@@ -63,6 +63,38 @@ test("Creative LIVE ORBIT derives values from Universal Project without fake dat
   assert.equal(result.rightsCount, 2);
 });
 
+test("Creative Galaxy builds a read-only index without merging tool storage", () => {
+  const entries = [
+    {
+      toolId: "idea-lab",
+      state: {
+        activeProjectId: "same-id",
+        projects: [{ id: "same-id", name: "Ý tưởng riêng", assets: [], analytics: { progress: 25 } }],
+        runs: [{ id: "run-1", projectId: "same-id", status: "success" }]
+      }
+    },
+    {
+      toolId: "naming-studio",
+      state: {
+        activeProjectId: "same-id",
+        projects: [{ id: "same-id", name: "Tên gọi riêng", assets: [], analytics: { progress: 75 } }],
+        runs: [{ id: "run-1", projectId: "same-id", status: "running" }]
+      }
+    }
+  ];
+
+  const index = galaxy.aggregateToolStates(entries, { lastWorkspace: "naming-studio" });
+  const result = galaxy.snapshot(index);
+
+  assert.equal(index.readOnly, true);
+  assert.equal(index.projects.length, 2);
+  assert.equal(new Set(index.projects.map((project) => project.id)).size, 2);
+  assert.equal(index.activeProjectId, "naming-studio:same-id");
+  assert.equal(result.project.name, "Tên gọi riêng");
+  assert.equal(result.pendingRuns.length, 1);
+  assert.equal(entries[0].state.projects[0].id, "same-id", "read-only indexing mutated a tool state");
+});
+
 test("Creative personalization limits pinned workspaces and presets change real layout", () => {
   const toolIds = galaxy.CLUSTERS.flatMap((cluster) => cluster.tools.map((tool) => tool[0]));
   const normalized = galaxy.normalizePrefs({ pinnedTools: toolIds, motion: "invalid" });
@@ -79,7 +111,7 @@ test("Creative Galaxy UI contracts include focus, semantic effects and mobile su
   const source = read("creative-galaxy.js");
   const css = read("creative-galaxy.css");
   for (const contract of [
-    "CREATIVE LIVE ORBIT", "CREATIVE GALAXY COMMAND CENTER", "Universal Project",
+    "CREATIVE LIVE ORBIT", "CREATIVE GALAXY COMMAND CENTER", "workspace hiện tại",
     "data-cg-focus", "data-cg-settings-panel", "hh:creative-project-change",
     "hh.creative.retry.pending.v1", "requestAnimationFrame", "document.hidden"
   ]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -110,8 +142,9 @@ test("Creative Galaxy assets are versioned and precached", () => {
   const worker = read("sw.js");
   const html = read("index.html");
   for (const asset of [
-    "creative-galaxy.css?v=3", "creative-galaxy.js?v=4", "creative-star-map.css?v=2",
-    "creative-star-map.js?v=3", "creative-os-core.js?v=4", "creative-os.js?v=13", "ai-center-advanced.js?v=2"
+    "creative-galaxy.css?v=3", "creative-galaxy.js?v=5", "creative-star-map.css?v=2",
+    "creative-star-map.js?v=4", "creative-os-core.js?v=4", "creative-os.js?v=15",
+    "creative-specialist-studios.css?v=2", "creative-specialist-studios.js?v=2", "ai-center-advanced.js?v=2"
   ]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(`${loader}\n${worker}`, pattern);

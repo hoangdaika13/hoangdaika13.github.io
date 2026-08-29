@@ -12,7 +12,7 @@
   const HOME_PREF_KEY = "hh.home.galaxy.preferences.v2";
   const CORE_KEY = "hh.creative-os.v1";
   const RETRY_KEY = "hh.creative.retry.pending.v1";
-  const ENGINE_ROUTES = new Set(["overview", "project", "brief", "moodboard", "storyboard", "world-bible", "workflow", "ai-director", "prompt-studio", "repurpose", "brand", "audio-dubbing", "prototype", "review", "collaboration", "publishing", "analytics", "rights", "providers", "marketplace"]);
+  const ENGINE_ROUTES = new Set(["overview", "project", "brief", "moodboard", "storyboard", "world-bible", "workflow", "ai-director", "prompt-studio", "repurpose", "brand", "audio-dubbing", "prototype", "review", "collaboration", "publishing", "analytics", "rights", "providers", "marketplace", "idea-lab", "naming-studio", "copy-studio", "writing-room", "campaign-planner", "photo-planner", "motion-planner", "podcast-studio", "three-d-planner", "portfolio-builder"]);
 
   const CLUSTERS = Object.freeze([
     {
@@ -24,18 +24,22 @@
       ]
     },
     {
-      id: "idea", label: "Ý tưởng AI", icon: "AI", color: "#ff59d5", angle: -30,
-      description: "Hội thoại, prompt, kịch bản và brief dùng chung dự án.",
+      id: "idea", label: "Ý tưởng & Ngôn từ", icon: "AI", color: "#ff59d5", angle: -30,
+      description: "Mỗi công cụ ngôn từ có đầu vào, đầu ra và lịch sử riêng.",
       tools: [
         ["ai-center", "AI Center", "/create/ai-center"],
         ["ai-script", "Kịch bản AI", "/create/ai-script"],
-        ["brief", "Creative Brief", "/create/brief"]
+        ["idea-lab", "Idea Lab", "/create/idea-lab"],
+        ["naming-studio", "Naming Studio", "/create/naming-studio"],
+        ["copy-studio", "Copy Studio", "/create/copy-studio"],
+        ["writing-room", "Writing Room", "/create/writing-room"]
       ]
     },
     {
       id: "preproduction", label: "Tiền kỳ", icon: "SB", color: "#a887ff", angle: 30,
       description: "Moodboard, storyboard và World Bible có liên kết.",
       tools: [
+        ["brief", "Creative Brief", "/create/brief"],
         ["moodboard", "Moodboard", "/create/moodboard"],
         ["storyboard", "Storyboard", "/create/storyboard"],
         ["world-bible", "World Bible", "/create/world-bible"]
@@ -43,14 +47,18 @@
     },
     {
       id: "production", label: "Sản xuất", icon: "PX", color: "#6af0ae", angle: 90,
-      description: "Tạo nội dung, asset, thương hiệu, audio và prototype.",
+      description: "Sản xuất chuyên biệt cho ảnh, motion, audio, 3D và prototype.",
       tools: [
         ["creator-studio", "Creator Studio", "/create/creator-studio"],
         ["media-center", "Media Center", "/create/media-center"],
         ["repurpose", "Repurpose Engine", "/create/repurpose"],
         ["brand", "Brand Intelligence", "/create/brand"],
         ["audio-dubbing", "Audio & Dubbing", "/create/audio-dubbing"],
-        ["prototype", "Prototype", "/create/prototype"]
+        ["prototype", "Prototype", "/create/prototype"],
+        ["photo-planner", "Photo Planner", "/create/photo-planner"],
+        ["motion-planner", "Motion Planner", "/create/motion-planner"],
+        ["podcast-studio", "Podcast Studio", "/create/podcast-studio"],
+        ["three-d-planner", "3D Scene Planner", "/create/three-d-planner"]
       ]
     },
     {
@@ -60,7 +68,8 @@
         ["workflow", "Creative Workflow", "/create/workflow"],
         ["ai-director", "AI Director", "/create/ai-director"],
         ["prompt-studio", "Prompt Studio", "/create/prompt-studio"],
-        ["ai-automation", "AI Automation", "/create/ai-automation"]
+        ["ai-automation", "AI Automation", "/create/ai-automation"],
+        ["campaign-planner", "Campaign Planner", "/create/campaign-planner"]
       ]
     },
     {
@@ -73,7 +82,8 @@
         ["analytics", "Analytics", "/create/analytics"],
         ["rights", "Rights", "/create/rights"],
         ["providers", "Providers", "/create/providers"],
-        ["marketplace", "Marketplace", "/create/marketplace"]
+        ["marketplace", "Marketplace", "/create/marketplace"],
+        ["portfolio-builder", "Portfolio Builder", "/create/portfolio-builder"]
       ]
     }
   ]);
@@ -152,6 +162,70 @@
     try { global.localStorage?.setItem?.(key, JSON.stringify(value)); return true; }
     catch { return false; }
   };
+
+  function normalizeStoredState(value) {
+    try { return global.HHCreativeCore?.normalizeState?.(value) || value || {}; }
+    catch { return {}; }
+  }
+
+  function aggregateToolStates(entries = [], prefs = {}) {
+    const projects = [];
+    const runs = [];
+    let activeProjectId = "";
+    let fallbackProjectId = "";
+    let updatedAt = "";
+    asArray(entries).forEach((entry) => {
+      const toolId = clean(entry?.toolId, 80);
+      if (!toolId || !toolById(toolId)) return;
+      const state = entry?.state && typeof entry.state === "object" ? entry.state : {};
+      const idMap = new Map();
+      asArray(state.projects).forEach((project, index) => {
+        if (!project || typeof project !== "object") return;
+        const originalId = clean(project.id, 120) || `project-${index + 1}`;
+        const aggregateId = `${toolId}:${originalId}`;
+        idMap.set(originalId, aggregateId);
+        const next = clone(project);
+        next.id = aggregateId;
+        next.originalProjectId = originalId;
+        next.creativeToolId = toolId;
+        projects.push(next);
+        if (!fallbackProjectId) fallbackProjectId = aggregateId;
+        if (toolId === prefs.lastWorkspace && originalId === state.activeProjectId) activeProjectId = aggregateId;
+        const projectUpdatedAt = clean(project.updatedAt, 60);
+        if (projectUpdatedAt && (!updatedAt || new Date(projectUpdatedAt) > new Date(updatedAt))) updatedAt = projectUpdatedAt;
+      });
+      asArray(state.runs).forEach((run, index) => {
+        if (!run || typeof run !== "object") return;
+        const next = clone(run);
+        const originalProjectId = clean(run.projectId, 120);
+        next.id = `${toolId}:${clean(run.id, 120) || `run-${index + 1}`}`;
+        next.projectId = idMap.get(originalProjectId) || `${toolId}:${originalProjectId || "unassigned"}`;
+        next.creativeToolId = toolId;
+        runs.push(next);
+      });
+      if (!activeProjectId && toolId === prefs.lastWorkspace) {
+        activeProjectId = idMap.get(clean(state.activeProjectId, 120)) || [...idMap.values()][0] || "";
+      }
+    });
+    return {
+      format: "hh-creative-tool-index",
+      version: 1,
+      activeProjectId: activeProjectId || fallbackProjectId || null,
+      projects,
+      runs,
+      updatedAt: updatedAt || null,
+      readOnly: true
+    };
+  }
+
+  function readToolIndex(prefs = normalizePrefs(read(PREF_KEY, {}))) {
+    const entries = allTools().map((tool) => {
+      const raw = read(`hh.creative.tool.${tool[0]}.project.v1`, null);
+      return raw ? { toolId: tool[0], state: normalizeStoredState(raw) } : null;
+    }).filter(Boolean);
+    if (entries.length) return aggregateToolStates(entries, prefs);
+    return normalizeStoredState(read(CORE_KEY, {}));
+  }
 
   function defaultPrefs() {
     return {
@@ -324,7 +398,7 @@
 
   function clusterSignal(cluster, data) {
     const project = data.project;
-    if (!project) return { value: "Chưa có hoạt động", level: "empty", detail: "Tạo Universal Project để kích hoạt cụm." };
+    if (!project) return { value: "Chưa có hoạt động", level: "empty", detail: "Mở một công cụ để tạo hồ sơ riêng." };
     if (cluster.id === "command") return { value: `${data.progress}% dự án`, level: data.progress >= 80 ? "ready" : "active", detail: `${data.projects.length} dự án · ${asArray(project.versions).length} phiên bản` };
     if (cluster.id === "idea") return { value: data.pendingRuns.length ? `${data.pendingRuns.length} AI đang chạy` : data.runs.length ? `${data.runs.length} AI run` : "Chưa có AI run", level: data.failedRuns.length ? "error" : data.pendingRuns.length ? "processing" : "active", detail: `${asArray(project.prompts).length} prompt · ${asArray(project.scripts).length} kịch bản` };
     if (cluster.id === "preproduction") return { value: `${asArray(project.storyboard).length} shot`, level: asArray(project.storyboard).length ? "active" : "empty", detail: `${asArray(project.world?.characters).length} nhân vật · ${asArray(project.world?.locations).length} địa điểm` };
@@ -383,7 +457,7 @@
 
   function liveMarkup(instance, data) {
     return `<section class="cg-live" aria-label="Creative LIVE ORBIT">
-      <header><span><i></i><b>CREATIVE LIVE ORBIT</b><small>Dữ liệu Universal Project · không tạo số giả</small></span><button type="button" data-cg-settings>⚙ Cá nhân hóa</button></header>
+      <header><span><i></i><b>CREATIVE LIVE ORBIT</b><small>Dữ liệu đã lưu của workspace hiện tại · không tạo số giả</small></span><button type="button" data-cg-settings>⚙ Cá nhân hóa</button></header>
       <div data-cg-live-list>${instance.prefs.widgetOrder.filter((id) => !instance.prefs.hiddenWidgets.includes(id)).map((id) => {
         const widget = WIDGETS.find((item) => item[0] === id);
         const item = data.widgets[id];
@@ -398,7 +472,7 @@
     return `<section class="cg-universe ${active ? "has-focus" : ""}" data-cg-universe>
       <canvas data-cg-canvas aria-hidden="true"></canvas>
       <div class="cg-nebula" aria-hidden="true"><i></i><i></i><i></i></div>
-      <header class="cg-universe-head"><span><small>CREATIVE GALAXY COMMAND CENTER</small><h2>Biến ý tưởng thành sản phẩm</h2><p>Sáu cụm chức năng dùng chung một Universal Project có phiên bản, quyền và lịch sử thật.</p></span>
+      <header class="cg-universe-head"><span><small>CREATIVE GALAXY COMMAND CENTER</small><h2>Biến ý tưởng thành sản phẩm</h2><p>Ba mươi lăm công cụ chuyên trách có vai trò, dữ liệu, đầu ra và lịch sử tách biệt.</p></span>
         <div><button type="button" data-cg-new-project>+ Dự án mới</button><button type="button" data-cg-continue>Tiếp tục công việc →</button></div>
       </header>
       <div class="cg-orbits" aria-label="Sáu cụm thiên hà sáng tạo">
@@ -501,9 +575,9 @@
 
   function miniMarkup(data, theme) {
     return `<section class="cg-mini" data-cg-mini data-theme="${theme}">
-      <button class="cg-mini-sun" type="button" data-cg-mini-route="/create"><i>H</i><span><small>CREATIVE GALAXY</small><b>${data.project ? esc(data.project.name) : "Chưa có Universal Project"}</b></span></button>
+      <button class="cg-mini-sun" type="button" data-cg-mini-route="/create"><i>H</i><span><small>CREATIVE GALAXY · CHỈ ĐỌC</small><b>${data.project ? esc(data.project.name) : "Chưa có hoạt động sáng tạo"}</b></span></button>
       <div><span><i style="--signal:#5eefff"></i><small>Tiến độ</small><b>${data.project ? `${data.progress}%` : "—"}</b></span><span><i style="--signal:#ff59d5"></i><small>AI</small><b>${data.pendingRuns.length || data.runs.length || "—"}</b></span><span><i style="--signal:#6af0ae"></i><small>Asset</small><b>${data.assets.length || "—"}</b></span><span><i style="--signal:#7fa7ff"></i><small>Xuất bản</small><b>${data.pendingPublishing.length || "—"}</b></span></div>
-      <button type="button" data-cg-mini-route="/create">Mở Command Center →</button>
+      <button type="button" data-cg-mini-route="/create">Mở kho Sáng tạo →</button>
     </section>`;
   }
 
@@ -938,9 +1012,7 @@
   }
 
   function readCoreState() {
-    const raw = read(CORE_KEY, {});
-    try { return global.HHCreativeCore?.normalizeState?.(raw) || raw || {}; }
-    catch { return {}; }
+    return readToolIndex();
   }
 
   function mountMini() {
@@ -1030,7 +1102,7 @@
 
   return Object.freeze({
     VERSION, PREF_KEY, CORE_KEY, CLUSTERS, WIDGETS, THEMES, PRESETS,
-    normalizePrefs, applyPreset, snapshot, clusterSignal, projectProgress, visualProfile,
+    normalizePrefs, applyPreset, aggregateToolStates, readToolIndex, snapshot, clusterSignal, projectProgress, visualProfile,
     mount, unmount, autoMount, openWormhole, closeWormhole
   });
 });

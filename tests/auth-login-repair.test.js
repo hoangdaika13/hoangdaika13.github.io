@@ -38,8 +38,8 @@ test("auth requests time out cleanly instead of leaving the form busy forever", 
   assert.match(runtime, /controller\.abort\("auth-timeout"\)/);
   assert.match(runtime, /Máy chủ phản hồi quá lâu/);
   assert.match(runtime, /finally\s*\{[\s\S]*?clearTimeout\(timeoutId\)/);
-  assert.match(html, /auth-platform\.js\?v=18/);
-  assert.match(worker, /auth-platform\.js\?v=18/);
+  assert.match(html, /auth-platform\.js\?v=19/);
+  assert.match(worker, /auth-platform\.js\?v=19/);
   assert.match(runtime, /hh:logout-request/);
   assert.match(runtime, /history\.replaceState\(\{\}, document\.title/);
 });
@@ -64,7 +64,7 @@ test("authentication boots independently from the large application bundle", () 
   const html = read("index.html");
   const runtime = read("auth-platform.js");
   const worker = read("sw.js");
-  assert.match(html, /auth-platform\.js\?v=18[\s\S]*script\.js\?v=227/);
+  assert.match(html, /auth-platform\.js\?v=19[\s\S]*script\.js\?v=252/);
   assert.match(runtime, /realtimeUrl:\s*String\(window\.HH_REALTIME_URL/);
   assert.match(runtime, /socketUrl:\s*String\(window\.HH_SOCKET_URL/);
   assert.match(runtime, /hh:auth-bootstrap-ready/);

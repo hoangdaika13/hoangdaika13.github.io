@@ -5,7 +5,7 @@
 
   const VIEWS = Object.freeze([
     { id: "overview", group: "Điều hành", icon: "CC", title: "Creative Command Center", description: "Dự án, deadline, chi phí, lịch và tiến độ" },
-    { id: "project", group: "Điều hành", icon: "UP", title: "Universal Project", description: "Brief, prompt, script, media và phiên bản dùng chung" },
+    { id: "project", group: "Điều hành", icon: "UP", title: "Universal Project", description: "Quản lý brief, tài sản và phiên bản; công cụ chuyên trách lưu riêng" },
     { id: "ai-center", group: "AI & Kịch bản", icon: "AI", title: "AI Center", description: "Chat, prompt, phân tích và workflow AI" },
     { id: "ai-script", group: "AI & Kịch bản", icon: "KS", title: "Kịch bản AI", description: "Viết, phân tích, dịch, batch và quản lý series" },
     { id: "brief", group: "Tiền kỳ", icon: "BR", title: "Creative Brief", description: "Mục tiêu, đối tượng và kế hoạch nội dung" },
@@ -28,8 +28,56 @@
     { id: "analytics", group: "Xuất bản", icon: "AN", title: "Creative Analytics", description: "CTR, retention và A/B test" },
     { id: "rights", group: "Xuất bản", icon: "RC", title: "Rights & Provenance", description: "Nguồn, giấy phép và manifest" },
     { id: "providers", group: "Xuất bản", icon: "PR", title: "Provider Router", description: "Quota, chi phí, độ trễ và cooldown" },
-    { id: "marketplace", group: "Mở rộng", icon: "MK", title: "Creative Marketplace", description: "Template, workflow và asset pack" }
+    { id: "marketplace", group: "Mở rộng", icon: "MK", title: "Creative Marketplace", description: "Template, workflow và asset pack" },
+    { id: "idea-lab", group: "Ý tưởng & Ngôn từ", icon: "IL", title: "Idea Lab", description: "Mở rộng một vấn đề thành các hướng ý tưởng có tiêu chí" },
+    { id: "naming-studio", group: "Ý tưởng & Ngôn từ", icon: "NS", title: "Naming Studio", description: "Tạo, lọc và chấm tên theo quy tắc thương hiệu" },
+    { id: "copy-studio", group: "Ý tưởng & Ngôn từ", icon: "CP", title: "Copy Studio", description: "Viết headline, CTA và biến thể nội dung theo kênh" },
+    { id: "writing-room", group: "Ý tưởng & Ngôn từ", icon: "WR", title: "Writing Room", description: "Soạn bài dài, dàn ý, chương và kiểm tra cấu trúc" },
+    { id: "campaign-planner", group: "Chiến dịch", icon: "CA", title: "Campaign Planner", description: "Lập mục tiêu, kênh, ngân sách và lịch chiến dịch" },
+    { id: "photo-planner", group: "Hình ảnh & Chuyển động", icon: "PH", title: "Photo Planner", description: "Shot list, ánh sáng, ống kính và checklist buổi chụp" },
+    { id: "motion-planner", group: "Hình ảnh & Chuyển động", icon: "MO", title: "Motion Planner", description: "Scene, cue, keyframe và thời lượng motion graphics" },
+    { id: "podcast-studio", group: "Âm thanh & Không gian", icon: "PO", title: "Podcast Studio", description: "Run-of-show, segment, câu hỏi và chapter podcast" },
+    { id: "three-d-planner", group: "Hình ảnh & Chuyển động", icon: "3D", title: "3D Scene Planner", description: "Scene graph, camera, ánh sáng và ngân sách asset 3D" },
+    { id: "portfolio-builder", group: "Xuất bản", icon: "PF", title: "Portfolio Builder", description: "Biên tập case study và xuất portfolio HTML độc lập" }
   ]);
+
+  const TOOL_CONTRACTS = Object.freeze({
+    overview: ["Điều phối danh mục sáng tạo", "Trạng thái và deadline", "Quyết định ưu tiên"],
+    project: ["Quản lý hồ sơ dự án", "Brief, asset và phiên bản", "Gói dự án có thể khôi phục"],
+    "ai-center": ["Hội thoại hỗ trợ sáng tạo", "Câu hỏi và ngữ cảnh", "Câu trả lời có nguồn/trạng thái thật"],
+    "ai-script": ["Viết và biên tập kịch bản", "Chủ đề, đối tượng và độ dài", "Kịch bản có cấu trúc"],
+    brief: ["Chốt định hướng trước sản xuất", "Mục tiêu, đối tượng và thông điệp", "Creative brief ra quyết định"],
+    moodboard: ["Tổ chức tham chiếu thị giác", "Ảnh, màu, font và ghi chú", "Concept board có nhóm"],
+    storyboard: ["Thiết kế chuỗi cảnh", "Shot, thoại, camera và thời lượng", "Storyboard và animatic"],
+    "world-bible": ["Giữ nhất quán thế giới", "Nhân vật, địa điểm và quy tắc", "World bible có kiểm tra"],
+    "creator-studio": ["Sản xuất gói nội dung", "Chủ đề và nền tảng", "Bộ nội dung theo kênh"],
+    "media-center": ["Quản lý thư viện media", "Tệp và metadata", "Bộ sưu tập có thể tìm kiếm"],
+    workflow: ["Thiết kế pipeline node", "Bước, phụ thuộc và gate", "Workflow có lịch sử chạy"],
+    "ai-director": ["Lập kế hoạch xử lý có duyệt", "Mục tiêu và ràng buộc", "Đề xuất từng bước"],
+    "prompt-studio": ["Quản lý prompt đa phương thức", "Prompt, reference và seed", "Biến thể có lineage"],
+    "ai-automation": ["Chạy chuỗi tác vụ lặp", "Preset, đầu vào và lịch", "Run log có trạng thái thật"],
+    repurpose: ["Chuyển đổi một nội dung", "Transcript hoặc bài nguồn", "Bundle đa định dạng"],
+    brand: ["Kiểm tra nhất quán thương hiệu", "Brand kit và nội dung", "Báo cáo cùng bản sửa không phá hủy"],
+    "audio-dubbing": ["Dựng voice, nhạc và phụ đề", "Clip, transcript và consent", "Timeline, WAV, SRT và CSV"],
+    prototype: ["Dựng luồng tương tác", "Mô tả màn hình", "Prototype JSON/HTML an toàn"],
+    review: ["Phản biện một phiên bản", "Snapshot và nhận xét", "Quyết định duyệt có audit"],
+    collaboration: ["Phối hợp thời gian thực", "Phòng riêng và thay đổi", "Timeline cộng tác xác thực"],
+    publishing: ["Lập lịch phát hành", "Nội dung, kênh và thời điểm", "Hàng đợi có preflight"],
+    analytics: ["Phân tích hiệu quả sáng tạo", "Số liệu đã nhập/kết nối", "Báo cáo và thử nghiệm A/B"],
+    rights: ["Kiểm tra quyền và nguồn gốc", "Asset, tác giả và giấy phép", "Provenance manifest"],
+    providers: ["Theo dõi nhà cung cấp", "Cấu hình backend và quota", "Trạng thái, chi phí và cooldown"],
+    marketplace: ["Quản lý gói mở rộng", "Manifest có quyền rõ ràng", "Pack dữ liệu được kiểm duyệt"],
+    "idea-lab": ["Khám phá hướng ý tưởng", "Vấn đề, đối tượng và ràng buộc", "Ma trận ý tưởng được chấm"],
+    "naming-studio": ["Đặt tên có tiêu chí", "Từ khóa, giọng điệu và từ cấm", "Danh sách tên cùng điểm"],
+    "copy-studio": ["Viết microcopy theo kênh", "Thông điệp, kênh và CTA", "Headline và biến thể copy"],
+    "writing-room": ["Soạn nội dung dài", "Luận điểm, độc giả và cấu trúc", "Dàn ý và bản thảo Markdown"],
+    "campaign-planner": ["Lập kế hoạch chiến dịch", "Mục tiêu, kênh, ngân sách", "Timeline và phân bổ nguồn lực"],
+    "photo-planner": ["Chuẩn bị buổi chụp", "Bối cảnh, ánh sáng và mục đích", "Shot list và checklist"],
+    "motion-planner": ["Thiết kế motion trước dựng", "Scene, cue và nhịp", "Timeline keyframe có thể xuất"],
+    "podcast-studio": ["Biên tập cấu trúc podcast", "Chủ đề, khách mời và thời lượng", "Run-of-show và chapter"],
+    "three-d-planner": ["Lập scene 3D", "Đối tượng, camera và ánh sáng", "Scene graph cùng budget"],
+    "portfolio-builder": ["Đóng gói case study", "Vai trò, quy trình và kết quả", "Portfolio HTML/Markdown" ]
+  });
 
   const ENGINES = Object.freeze({
     overview: { api: "HHCreativeCommandCenter", js: "creative-command-center.js?v=2", css: "creative-command-center.css?v=2" },
@@ -56,7 +104,17 @@
     analytics: { api: "HHCreativePublishing", js: "creative-publishing.js?v=1", css: "creative-publishing.css?v=1" },
     rights: { api: "HHCreativePublishing", js: "creative-publishing.js?v=1", css: "creative-publishing.css?v=1" },
     providers: { api: "HHCreativePublishing", js: "creative-publishing.js?v=1", css: "creative-publishing.css?v=1" },
-    marketplace: { api: "HHCreativeMarketplace", js: "creative-marketplace.js?v=1", css: "creative-marketplace.css?v=1" }
+    marketplace: { api: "HHCreativeMarketplace", js: "creative-marketplace.js?v=1", css: "creative-marketplace.css?v=1" },
+    "idea-lab": { api: "HHCreativeSpecialistStudios", js: "creative-specialist-studios.js?v=2", css: "creative-specialist-studios.css?v=2" },
+    "naming-studio": { api: "HHCreativeSpecialistStudios", js: "creative-specialist-studios.js?v=2", css: "creative-specialist-studios.css?v=2" },
+    "copy-studio": { api: "HHCreativeSpecialistStudios", js: "creative-specialist-studios.js?v=2", css: "creative-specialist-studios.css?v=2" },
+    "writing-room": { api: "HHCreativeSpecialistStudios", js: "creative-specialist-studios.js?v=2", css: "creative-specialist-studios.css?v=2" },
+    "campaign-planner": { api: "HHCreativeSpecialistStudios", js: "creative-specialist-studios.js?v=2", css: "creative-specialist-studios.css?v=2" },
+    "photo-planner": { api: "HHCreativeSpecialistStudios", js: "creative-specialist-studios.js?v=2", css: "creative-specialist-studios.css?v=2" },
+    "motion-planner": { api: "HHCreativeSpecialistStudios", js: "creative-specialist-studios.js?v=2", css: "creative-specialist-studios.css?v=2" },
+    "podcast-studio": { api: "HHCreativeSpecialistStudios", js: "creative-specialist-studios.js?v=2", css: "creative-specialist-studios.css?v=2" },
+    "three-d-planner": { api: "HHCreativeSpecialistStudios", js: "creative-specialist-studios.js?v=2", css: "creative-specialist-studios.css?v=2" },
+    "portfolio-builder": { api: "HHCreativeSpecialistStudios", js: "creative-specialist-studios.js?v=2", css: "creative-specialist-studios.css?v=2" }
   });
   const GROUP_ACCENTS = Object.freeze({
     "Điều hành": ["#65e8f4", "#6f8cff"],
@@ -65,6 +123,10 @@
     "Sản xuất nội dung": ["#5be7c4", "#5f9dff"],
     "AI & Workflow": ["#7d76ff", "#65e8f4"],
     "Sản xuất chuyên sâu": ["#ff8b68", "#ffd969"],
+    "Ý tưởng & Ngôn từ": ["#ff72c8", "#9f7cff"],
+    "Chiến dịch": ["#ffd166", "#ff7b72"],
+    "Hình ảnh & Chuyển động": ["#64e6ff", "#8c75ff"],
+    "Âm thanh & Không gian": ["#70e5bd", "#5f9dff"],
     "Cộng tác": ["#55dfaf", "#67b8ff"],
     "Xuất bản": ["#ff69be", "#8c76ff"],
     "Mở rộng": ["#ffe06b", "#ff7e78"]
@@ -76,6 +138,10 @@
     "Sản xuất nội dung": ["Chọn nguồn", "Sản xuất", "Xem trước", "Đưa vào dự án"],
     "AI & Workflow": ["Thiết lập", "Chạy pipeline", "Kiểm tra", "Phê duyệt"],
     "Sản xuất chuyên sâu": ["Chọn đầu vào", "Xử lý", "So sánh", "Xuất kết quả"],
+    "Ý tưởng & Ngôn từ": ["Đặt ràng buộc", "Phát triển", "Đánh giá", "Xuất bản nháp"],
+    "Chiến dịch": ["Đặt mục tiêu", "Phân bổ", "Lập lịch", "Xuất kế hoạch"],
+    "Hình ảnh & Chuyển động": ["Khai báo cảnh", "Thiết kế", "Kiểm tra", "Xuất đặc tả"],
+    "Âm thanh & Không gian": ["Đặt cấu trúc", "Biên tập", "Kiểm tra", "Xuất run-of-show"],
     "Cộng tác": ["Chọn nội dung", "Góp ý", "Duyệt thay đổi", "Chốt phiên bản"],
     "Xuất bản": ["Chuẩn bị", "Kiểm tra quyền", "Xếp lịch", "Theo dõi"],
     "Mở rộng": ["Chọn gói", "Xem quyền", "Cài đặt", "Quản lý"]
@@ -87,17 +153,27 @@
     "Sản xuất nội dung": ["▶", "◉", "♫", "✺"],
     "AI & Workflow": ["⌘", "∞", "⇄", "✓"],
     "Sản xuất chuyên sâu": ["◈", "✺", "⌁", "↯"],
+    "Ý tưởng & Ngôn từ": ["✎", "◇", "Aa", "✦"],
+    "Chiến dịch": ["◎", "↗", "%", "✓"],
+    "Hình ảnh & Chuyển động": ["◫", "◉", "3D", "↯"],
+    "Âm thanh & Không gian": ["♫", "◌", "≋", "●"],
     "Cộng tác": ["◌", "◎", "⇄", "✓"],
     "Xuất bản": ["↗", "◫", "✓", "◉"],
     "Mở rộng": ["✦", "◇", "+", "◎"]
   });
 
   const loads = new Map();
+  // Keep one in-flight store creation per tool.  Route transitions can be
+  // triggered by both the router and the workspace itself; without this
+  // guard two concurrent calls could each create a different store before
+  // either one is placed in `toolStores`, causing lost writes/subscriptions.
+  const storeLoads = new Map();
   let activeRoot = null;
   let activeApi = null;
   let activeEngineRoot = null;
   let activeEngineHandle = null;
   let activeStore = null;
+  const toolStores = new Map();
   let activeView = "overview";
   let activeOptions = {};
   let unsubscribe = null;
@@ -112,6 +188,11 @@
   const escapeHTML = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
   const normalizeView = (view) => VIEWS.some((item) => item.id === view) ? view : "overview";
   const viewMeta = (view) => VIEWS.find((item) => item.id === normalizeView(view)) || VIEWS[0];
+  const viewContract = (view) => {
+    const id = normalizeView(view);
+    const values = TOOL_CONTRACTS[id] || [viewMeta(id).description, "Dữ liệu của công cụ", "Kết quả độc lập"];
+    return { role: values[0], input: values[1], output: values[2], storageKey: toolStorageKey(id) };
+  };
 
   function capabilityAudit() {
     return VIEWS.map((view) => {
@@ -161,13 +242,43 @@
     return promise;
   }
 
-  async function ensureStore() {
-    if (activeStore) return activeStore;
-    await loadScript("creative-os-core.js?v=4");
-    if (!window.HHCreativeCore?.createStore) throw new Error("Creative project store chưa sẵn sàng.");
-    activeStore = window.__HH_CREATIVE_STORE__ || window.HHCreativeCore.createStore();
-    window.__HH_CREATIVE_STORE__ = activeStore;
-    return activeStore;
+  function toolStorageKey(view) {
+    return `hh.creative.tool.${normalizeView(view)}.project.v1`;
+  }
+
+  function scopedStorage(view) {
+    const prefix = `hh.creative.tool.${normalizeView(view)}.state`;
+    const storage = window.localStorage;
+    return {
+      getItem(key) { return storage?.getItem?.(`${prefix}:${String(key || "default")}`) ?? null; },
+      setItem(key, value) { storage?.setItem?.(`${prefix}:${String(key || "default")}`, String(value)); },
+      removeItem(key) { storage?.removeItem?.(`${prefix}:${String(key || "default")}`); }
+    };
+  }
+
+  async function ensureStore(view = activeView) {
+    const id = normalizeView(view);
+    if (toolStores.has(id)) return toolStores.get(id);
+    if (storeLoads.has(id)) {
+      return storeLoads.get(id);
+    }
+    const pending = (async () => {
+      await loadScript("creative-os-core.js?v=4");
+      if (!window.HHCreativeCore?.createStore) throw new Error("Creative project store chưa sẵn sàng.");
+      const store = window.HHCreativeCore.createStore({ storageKey: toolStorageKey(id) });
+      if (!store.getState?.().projects?.length) {
+        const meta = viewMeta(id);
+        store.createProject?.({ name: `${meta.title} · Workspace`, brief: { description: meta.description } });
+      }
+      toolStores.set(id, store);
+      return store;
+    })();
+    storeLoads.set(id, pending);
+    try {
+      return await pending;
+    } finally {
+      storeLoads.delete(id);
+    }
   }
 
   function routeView(routeOrView) {
@@ -182,19 +293,21 @@
     return Boolean(engine && window[engine.api]?.mount);
   }
 
-  async function prepareRoute(routeOrView) {
+  async function prepareRoute(routeOrView, settings = {}) {
     const view = routeView(routeOrView);
     const engine = ENGINES[view];
     if (!engine) throw new Error("Không tìm thấy workspace sáng tạo.");
     if (engine.api === "HHCreativeLegacyTools" && !window.HHCreativeLegacyTools?.mount) {
       window.dispatchEvent?.(new CustomEvent("hh:workspace-open"));
     }
-    const work = [ensureStore()];
+    // Hover/focus warm-up may load code and styles without creating or
+    // persisting a blank project. A real mount still requests the store.
+    const work = [settings.createStore === false ? Promise.resolve(null) : ensureStore(view)];
     if (engine.css) work.push(loadStyle(engine.css));
     if (!window[engine.api]?.mount && engine.js) work.push(loadScript(engine.js));
-    await Promise.all(work);
+    const [store] = await Promise.all(work);
     if (!window[engine.api]?.mount) throw new Error(`${engine.api} chưa sẵn sàng.`);
-    return { view, ready: true };
+    return { view, ready: true, store };
   }
 
   function stateMetrics(state) {
@@ -259,25 +372,30 @@
 
   function shellMarkup(view) {
     const current = viewMeta(view);
+    const contract = viewContract(view);
     return `<section class="creative-os" data-creative-os data-view="${escapeHTML(current.id)}">
       <div class="creative-os__cosmos" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><span></span><span></span><span></span><b></b><em></em></div>
       <div class="creative-os__glyphs" data-cos-glyphs aria-hidden="true">${glyphMarkup(current.group)}</div>
       <header class="creative-os__topbar">
-        <div class="creative-os__brand"><i><b>HH</b><span></span></i><span><small>CREATIVE LIVING UNIVERSE</small><strong data-cos-active-project>Đang tải dự án...</strong><em data-cos-sync-time>Đã lưu local</em></span></div>
-        <div class="creative-os__summary" aria-label="Dữ liệu dự án thật">
-          <span><small>Tiến độ</small><b data-cos-progress>0%</b></span>
-          <span><small>Dự án</small><b data-cos-project-count>0</b></span>
-          <span><small>Assets</small><b data-cos-asset-count>0</b></span>
-          <span><small>Lượt chạy</small><b data-cos-run-count>0</b></span>
-          <span><small>Chờ xuất bản</small><b data-cos-queue-count>0</b></span>
+        <div class="creative-os__brand"><i><b>HH</b><span></span></i><span><small>CREATIVE SPECIALIST WORKSPACE</small><strong data-cos-active-project>Đang tải dữ liệu...</strong><em data-cos-sync-time>Đã lưu độc lập</em></span></div>
+        <div class="creative-os__summary" aria-label="Dữ liệu độc lập của công cụ">
+          <span><small>Hoàn thiện</small><b data-cos-progress>0%</b></span>
+          <span><small>Hồ sơ</small><b data-cos-project-count>0</b></span>
+          <span><small>Tệp</small><b data-cos-asset-count>0</b></span>
+          <span><small>Lịch sử</small><b data-cos-run-count>0</b></span>
+          <span><small>Đầu ra</small><b data-cos-queue-count>0</b></span>
         </div>
-        <div class="creative-os__top-actions"><button type="button" data-cos-readiness title="Kiểm tra 25 engine"><i data-cos-engine-count>25/25</i> Engine</button><button type="button" data-cos-import-project title="Nhập Universal Project (Ctrl+O)">Nhập</button><button type="button" data-cos-snapshot title="Lưu phiên bản hiện tại (Ctrl+S)">Snapshot</button><button type="button" data-cos-new-project title="Tạo Universal Project (Ctrl+N)">+ Dự án</button><button type="button" class="creative-os__action-toggle" data-cos-action-menu aria-expanded="false">✦ Tác vụ</button><button type="button" data-cos-command title="Tìm lệnh toàn hệ thống">Ctrl K</button><input type="file" hidden accept="application/json,.json,.hhcreative.json" data-cos-import-input></div>
-        <aside class="creative-os__action-panel" data-cos-action-panel hidden><header><strong>Thao tác nhanh</strong><button type="button" data-cos-close-actions aria-label="Đóng">×</button></header><button type="button" data-cos-menu-readiness><i>25</i><span><b>Trạng thái engine</b><small>Kiểm tra mọi workspace</small></span></button><button type="button" data-cos-menu-import><i>⇧</i><span><b>Nhập project</b><small>Đọc tệp .hhcreative.json</small></span></button><button type="button" data-cos-menu-snapshot><i>◇</i><span><b>Tạo snapshot</b><small>Lưu phiên bản có thể khôi phục</small></span></button><button type="button" data-cos-menu-export><i>⇩</i><span><b>Xuất project</b><small>Tải toàn bộ dữ liệu dự án</small></span></button></aside>
-        <aside class="creative-os__readiness" data-cos-readiness-panel hidden><header><div><small>ENGINE CONTRACT</small><strong>25 workspace đã nối chức năng thật</strong></div><button type="button" data-cos-close-readiness aria-label="Đóng">×</button></header><p>Engine chỉ được tải khi mở để giữ giao diện mượt. “Lazy” nghĩa là đã khai báo và sẵn sàng tải, không phải chức năng giả.</p><div data-cos-readiness-list></div></aside>
+        <div class="creative-os__top-actions"><button type="button" data-cos-readiness title="Kiểm tra ${VIEWS.length} công cụ"><i data-cos-engine-count>${VIEWS.length}/${VIEWS.length}</i> Công cụ</button><button type="button" data-cos-import-project title="Nhập dữ liệu riêng của công cụ (Ctrl+O)">Nhập</button><button type="button" data-cos-snapshot title="Lưu phiên bản hiện tại (Ctrl+S)">Phiên bản</button><button type="button" data-cos-new-project title="Tạo hồ sơ mới cho công cụ (Ctrl+N)">+ Hồ sơ</button><button type="button" class="creative-os__action-toggle" data-cos-action-menu aria-expanded="false">✦ Tác vụ</button><button type="button" data-cos-command title="Tìm lệnh toàn hệ thống">Ctrl K</button><input type="file" hidden accept="application/json,.json,.hhcreative.json" data-cos-import-input></div>
+        <aside class="creative-os__action-panel" data-cos-action-panel hidden><header><strong>Thao tác nhanh</strong><button type="button" data-cos-close-actions aria-label="Đóng">×</button></header><button type="button" data-cos-menu-readiness><i>${VIEWS.length}</i><span><b>Trạng thái công cụ</b><small>Kiểm tra toàn bộ workspace</small></span></button><button type="button" data-cos-menu-import><i>⇧</i><span><b>Nhập dữ liệu</b><small>Chỉ nhập vào công cụ đang mở</small></span></button><button type="button" data-cos-menu-snapshot><i>◇</i><span><b>Tạo phiên bản</b><small>Lưu trạng thái có thể khôi phục</small></span></button><button type="button" data-cos-menu-export><i>⇩</i><span><b>Xuất dữ liệu</b><small>Tải dữ liệu riêng của công cụ</small></span></button></aside>
+        <aside class="creative-os__readiness" data-cos-readiness-panel hidden><header><div><small>TOOL CONTRACT</small><strong>${VIEWS.length} công cụ có nhiệm vụ riêng</strong></div><button type="button" data-cos-close-readiness aria-label="Đóng">×</button></header><p>Mỗi công cụ chỉ tải khi được mở, có vùng lưu và lịch sử riêng. “Lazy” nghĩa là đã khai báo và sẵn sàng tải, không phải chức năng giả.</p><div data-cos-readiness-list></div></aside>
       </header>
       <div class="creative-os__body">
         <section class="creative-os__stage">
-          <header class="creative-os__stage-head"><div><small data-cos-group-label>${escapeHTML(current.group)}</small><h2 data-cos-title>${escapeHTML(current.title)}</h2><p data-cos-description>${escapeHTML(current.description)}</p></div><div><span data-cos-engine-status><i></i>Engine có dữ liệu thật</span><button type="button" data-cos-export-project>Xuất project</button></div></header>
+          <header class="creative-os__stage-head"><div><small data-cos-group-label>${escapeHTML(current.group)}</small><h2 data-cos-title>${escapeHTML(current.title)}</h2><p data-cos-description>${escapeHTML(current.description)}</p></div><div><span data-cos-engine-status><i></i>Công cụ độc lập</span><button type="button" data-cos-export-project>Xuất dữ liệu</button></div></header>
+          <section class="creative-os__role-strip" data-cos-tool-contract>
+            <div><small>VAI TRÒ DUY NHẤT</small><strong data-cos-role>${escapeHTML(contract.role)}</strong><p>Màn hình này không tự chuyển hoặc ghi dữ liệu sang công cụ khác.</p></div>
+            <dl><div><dt>Đầu vào</dt><dd data-cos-input>${escapeHTML(contract.input)}</dd></div><div><dt>Đầu ra</dt><dd data-cos-output>${escapeHTML(contract.output)}</dd></div><div><dt>Vùng lưu</dt><dd data-cos-storage>${escapeHTML(contract.storageKey)}</dd></div></dl>
+          </section>
           <nav class="creative-os__journey" data-cos-journey aria-label="Luồng thao tác nhanh">${journeyMarkup(current.group)}<em><i></i>Chạm từng bước để tìm đúng thao tác</em></nav>
           <main class="creative-os__workspace" data-cos-workspace aria-live="polite"><section class="creative-os__loader" role="status"><i></i><strong>Đang mở ${escapeHTML(current.title)}...</strong><span>Chỉ tải engine đang sử dụng để giữ giao diện mượt.</span></section></main>
         </section>
@@ -306,7 +424,10 @@
     host.classList?.remove?.("is-ready");
     host.innerHTML = `<section class="creative-os__loader" role="status"><i></i><strong>Đang mở ${escapeHTML(viewMeta(view).title)}...</strong><span>Đang chuẩn bị đúng công cụ bạn chọn.</span></section>`;
     try {
-      const [store] = await Promise.all([ensureStore(), prepareRoute(view)]);
+      // prepareRoute owns the store-loading promise.  Awaiting it first
+      // prevents a second store from being created during a fast route swap.
+      const preparation = await prepareRoute(view);
+      const store = preparation.store || await ensureStore(view);
       if (token !== mountToken || !activeRoot) return;
       const api = window[engine.api];
       if (!api?.mount) throw new Error(`${engine.api} chưa cung cấp mount().`);
@@ -321,20 +442,28 @@
         store,
         projectId: projectId,
         activeProjectId: projectId,
+        standalone: true,
+        storage: scopedStorage(view),
+        storageKey: viewContract(view).storageKey,
+        toolContract: viewContract(view),
         apiBase: options.apiBase || "",
         socketUrl: options.socketUrl || "",
         currentUser: options.currentUser || null,
         providerAdapters: options.providerAdapters || {},
         runAI: options.runAI,
-        onNavigate: (target) => {
+        onNavigate: (target, payload) => {
           const targetView = routeView(target);
-          if (String(target).includes("/create") && VIEWS.some((item) => item.id === targetView)) activateView(targetView, options, true);
-          else if (typeof options.onNavigate === "function") options.onNavigate(target.startsWith("/") ? target : `/create/${target}`);
+          if (VIEWS.some((item) => item.id === targetView) && targetView !== view) {
+            showNotice(`“${viewMeta(targetView).title}” là công cụ độc lập. Hãy mở từ thanh Sáng tạo để tránh ghi nhầm dữ liệu.`, "info");
+            return false;
+          }
+          if (typeof options.onNavigate === "function") options.onNavigate(target.startsWith("/") ? target : `/${target}`, payload);
+          return true;
         },
         onInstall: (pack) => {
           const state = store.getState?.();
           const selectedProjectId = state?.activeProjectId || state?.projects?.[0]?.id;
-          if (!selectedProjectId) throw new Error("Hãy tạo một Universal Project trước khi cài creative pack.");
+          if (!selectedProjectId) throw new Error("Hãy tạo một hồ sơ trong công cụ này trước khi cài creative pack.");
           const asset = pack?.asset || { type: "marketplace", name: pack?.name || "Creative pack", metadata: pack };
           return store.addAsset?.(selectedProjectId, asset);
         }
@@ -353,6 +482,7 @@
 
   function syncActiveView(view) {
     const current = viewMeta(view);
+    const contract = viewContract(view);
     if (!activeRoot) return;
     const shell = activeRoot.querySelector("[data-creative-os]") || activeRoot;
     const colors = GROUP_ACCENTS[current.group] || GROUP_ACCENTS["Điều hành"];
@@ -362,7 +492,11 @@
     const text = {
       "[data-cos-group-label]": current.group,
       "[data-cos-title]": current.title,
-      "[data-cos-description]": current.description
+      "[data-cos-description]": current.description,
+      "[data-cos-role]": contract.role,
+      "[data-cos-input]": contract.input,
+      "[data-cos-output]": contract.output,
+      "[data-cos-storage]": contract.storageKey
     };
     Object.entries(text).forEach(([selector, value]) => { const node = activeRoot.querySelector(selector); if (node) node.textContent = value; });
     const journey = activeRoot.querySelector("[data-cos-journey]");
@@ -377,6 +511,7 @@
   function activateView(nextView, options = activeOptions, userInitiated = false) {
     const view = normalizeView(nextView);
     activeView = view;
+    activeStore = toolStores.get(view) || null;
     syncActiveView(view);
     const shell = activeRoot?.querySelector("[data-creative-os]") || activeRoot;
     window.clearTimeout(viewMotionTimer);
@@ -409,8 +544,8 @@
     const project = activeStore?.importProject?.(text);
     if (!project) throw new Error("Không thể nhập dự án này.");
     renderContext();
-    await activateView("project", options, true);
-    showNotice(`Đã nhập “${project.name || "Dự án sáng tạo"}”.`, "success");
+    await activateView(activeView, options, false);
+    showNotice(`Đã nhập “${project.name || "Hồ sơ sáng tạo"}” vào ${viewMeta(activeView).title}.`, "success");
   }
 
   function snapshotProject() {
@@ -493,8 +628,8 @@
       if (event.target.closest("[data-cos-menu-snapshot]")) { if (actionPanel) actionPanel.hidden = true; try { snapshotProject(); } catch (error) { showNotice(error.message || error, "error"); } return; }
       if (event.target.closest("[data-cos-new-project]")) {
         try {
-          const project = activeStore?.createProject?.({ name: `Dự án sáng tạo ${new Date().toLocaleDateString("vi-VN")}` });
-          if (project) { showNotice("Đã tạo Universal Project mới.", "success"); activateView("project", options, true); }
+          const project = activeStore?.createProject?.({ name: `${viewMeta(activeView).title} · ${new Date().toLocaleDateString("vi-VN")}` });
+          if (project) { showNotice(`Đã tạo hồ sơ mới cho ${viewMeta(activeView).title}.`, "success"); activateView(activeView, options, false); }
         } catch (error) { showNotice(error.message || error, "error"); }
         return;
       }
@@ -540,6 +675,7 @@
     pageWorkspace = null;
     if (activeRoot) activeRoot.replaceChildren();
     activeRoot = null;
+    activeStore = null;
   }
 
   async function mount(root, options = {}) {
@@ -562,8 +698,11 @@
     pageWorkspace?.classList.add("app-workspace--creative-fixed");
     root.innerHTML = shellMarkup(view);
     bind(root, options);
-    const store = await ensureStore();
+    const store = await ensureStore(view);
     if (!activeRoot || root !== activeRoot) return;
+    // Route preloading also calls ensureStore(). Only an actual mount may
+    // select the mutable store used by shell actions and status rendering.
+    activeStore = store;
     unsubscribe = store.subscribe?.((_state, action) => {
       renderContext();
       const sync = activeRoot?.querySelector("[data-cos-sync-time]");
@@ -585,6 +724,8 @@
     isPrepared,
     views: VIEWS.map((item) => ({ ...item })),
     normalizeView,
+    viewContract,
+    toolStorageKey,
     stateMetrics,
     capabilityAudit,
     version: 5

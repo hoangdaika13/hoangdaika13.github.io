@@ -993,20 +993,24 @@
     return normalizeProject(parsed);
   }
 
-  function readLocal() {
+  function readLocal(storage = globalScope.localStorage, storageKey = STORAGE_KEY) {
     try {
-      if (!globalScope.localStorage) return null;
-      const raw = globalScope.localStorage.getItem(STORAGE_KEY);
+      if (!storage?.getItem) return null;
+      const raw = storage.getItem(storageKey);
       return raw ? importProject(raw) : null;
     } catch {
       return null;
     }
   }
 
-  function writeLocal(project) {
+  function normalizeStorageKey(value) {
+    return safeText(value, STORAGE_KEY, 180) || STORAGE_KEY;
+  }
+
+  function writeLocal(project, storage = globalScope.localStorage, storageKey = STORAGE_KEY) {
     try {
-      if (!globalScope.localStorage) return false;
-      globalScope.localStorage.setItem(STORAGE_KEY, exportProject(project));
+      if (!storage?.setItem) return false;
+      storage.setItem(storageKey, exportProject(project));
       return true;
     } catch {
       return false;
@@ -1017,8 +1021,13 @@
     if (!store || typeof store.getState !== "function") return null;
     const state = store.getState() || {};
     if (!Array.isArray(state.projects)) return null;
+    const hasRequestedId = Boolean(projectId);
     const id = safeId(projectId || state.activeProjectId, "");
-    return state.projects.find((item) => item && item.id === id) || state.projects.find((item) => item && item.id === state.activeProjectId) || state.projects[0] || null;
+    const match = state.projects.find((item) => item && item.id === id);
+    // An explicit project id is an isolation boundary. Never silently fall
+    // back to another project's data when that id is not present.
+    if (hasRequestedId) return match || null;
+    return match || state.projects.find((item) => item && item.id === state.activeProjectId) || state.projects[0] || null;
   }
 
   function projectFromShared(shared) {
@@ -1040,22 +1049,24 @@
     return normalizeProject(project);
   }
 
-  function createStoreAdapter(store, projectId) {
+  function createStoreAdapter(store, projectId, settings = {}) {
     const key = "creativeAIWorkflow";
+    const storage = Object.prototype.hasOwnProperty.call(settings, "storage") ? settings.storage : globalScope.localStorage;
+    const storageKey = normalizeStorageKey(settings.storageKey);
     return {
       read() {
         try {
           const sharedProject = sharedProjectFor(store, projectId);
-          if (sharedProject) return projectFromShared(sharedProject) || readLocal();
-          if (store && typeof store.getProject === "function") return store.getProject(key) || readLocal();
-          if (store && typeof store.get === "function") return store.get(key) || readLocal();
+          if (sharedProject) return projectFromShared(sharedProject) || readLocal(storage, storageKey);
+          if (store && typeof store.getProject === "function") return store.getProject(key) || readLocal(storage, storageKey);
+          if (store && typeof store.get === "function") return store.get(key) || readLocal(storage, storageKey);
           if (store && typeof store.getState === "function") {
             const state = store.getState();
-            return state && (state[key] || state.aiWorkflow) || readLocal();
+            return state && (state[key] || state.aiWorkflow) || readLocal(storage, storageKey);
           }
-          if (store && store.state) return store.state[key] || store.state.aiWorkflow || readLocal();
+          if (store && store.state) return store.state[key] || store.state.aiWorkflow || readLocal(storage, storageKey);
         } catch { /* fall through to local storage */ }
-        return readLocal();
+        return readLocal(storage, storageKey);
       },
       write(project) {
         const normalized = normalizeProject(project);
@@ -1100,8 +1111,8 @@
             shared = true;
           }
         } catch { shared = false; }
-        writeLocal(normalized);
-        return { shared, local: true };
+        const local = writeLocal(normalized, storage, storageKey);
+        return { shared, local };
       }
     };
   }
@@ -1125,17 +1136,17 @@
     return ({ idle: "Sẵn sàng", queued: "Trong hàng", running: "Đang chạy", success: "Hoàn tất", cached: "Từ cache", failed: "Lỗi", blocked: "Đang chờ", "waiting-approval": "Chờ duyệt" })[status] || status;
   }
 
-  function shellMarkup(view, hasAI) {
+  function shellMarkup(view, hasAI, standalone) {
     return `<section class="hhcaw" data-hhcaw-view="${view}">
       <header class="hhcaw-hero">
         <div><span class="hhcaw-kicker">CREATIVE OS · AI WORKFLOW</span><h2>Điều phối sáng tạo <em>có kiểm soát</em></h2><p>Graph sản xuất, AI Director và prompt đa phương thức trong cùng một project.</p></div>
         <div class="hhcaw-health"><i></i><strong>${hasAI ? "runAI đã kết nối" : "Local planner"}</strong><small>${hasAI ? "Mọi kết quả vẫn cần duyệt" : "Không gọi AI bên ngoài"}</small></div>
       </header>
-      <nav class="hhcaw-tabs" role="tablist" aria-label="Creative AI Workflow">
+      ${standalone ? "" : `<nav class="hhcaw-tabs" role="tablist" aria-label="Creative AI Workflow">
         <button type="button" role="tab" aria-selected="${view === "workflow"}" data-hhcaw-view-target="workflow"><i>WF</i><span>Workflow<small>Graph & cache</small></span></button>
         <button type="button" role="tab" aria-selected="${view === "ai-director"}" data-hhcaw-view-target="ai-director"><i>DR</i><span>AI Director<small>Duyệt từng bước</small></span></button>
         <button type="button" role="tab" aria-selected="${view === "prompt-studio"}" data-hhcaw-view-target="prompt-studio"><i>PS</i><span>Prompt Studio<small>Variant & lineage</small></span></button>
-      </nav>
+      </nav>`}
       <div class="hhcaw-stage" data-hhcaw-stage></div>
       <footer class="hhcaw-status" role="status" aria-live="polite" data-hhcaw-status>Sẵn sàng.</footer>
     </section>`;
@@ -1269,10 +1280,14 @@
     if (!root || typeof root.querySelector !== "function") throw new TypeError("HHCreativeAIWorkflow.mount cần một root element.");
     unmount(root);
     const opts = options && typeof options === "object" ? options : {};
-    const adapter = createStoreAdapter(opts.store, opts.projectId);
+    const adapter = createStoreAdapter(opts.store, opts.projectId, {
+      storage: Object.prototype.hasOwnProperty.call(opts, "storage") ? opts.storage : globalScope.localStorage,
+      storageKey: normalizeStorageKey(opts.storageKey)
+    });
     let project = normalizeProject(adapter.read() || opts.project || createDefaultProject());
     let view = VIEWS.includes(opts.view) ? opts.view : project.activeView;
     let running = false;
+    let destroyed = false;
     const objectUrls = new Map();
     const abort = typeof AbortController === "function" ? new AbortController() : null;
     const listeners = [];
@@ -1284,6 +1299,7 @@
     }
 
     function persist(message) {
+      if (destroyed) return { shared: false, local: false };
       project.activeView = view;
       project.updatedAt = nowIso();
       const result = adapter.write(project);
@@ -1292,6 +1308,7 @@
     }
 
     function renderStage() {
+      if (destroyed) return;
       const stage = root.querySelector("[data-hhcaw-stage]");
       if (!stage) return;
       if (view === "ai-director") stage.innerHTML = directorMarkup(project, running);
@@ -1302,6 +1319,7 @@
     }
 
     function setProject(next, message) {
+      if (destroyed) return clone(project);
       project = normalizeProject(next);
       persist(message);
       renderStage();
@@ -1309,7 +1327,7 @@
     }
 
     function setView(nextView) {
-      if (!VIEWS.includes(nextView)) return;
+      if (destroyed || !VIEWS.includes(nextView) || (opts.standalone === true && nextView !== view)) return false;
       view = nextView;
       project.activeView = view;
       persist(`Đã mở ${nextView}.`);
@@ -1317,16 +1335,17 @@
       if (typeof opts.onNavigate === "function") opts.onNavigate(nextView, clone(project));
     }
 
-    root.innerHTML = shellMarkup(view, typeof opts.runAI === "function");
+    root.innerHTML = shellMarkup(view, typeof opts.runAI === "function", opts.standalone === true);
     renderStage();
 
     listen(root, "click", async (event) => {
       const target = event.target.closest("button, [data-hhcaw-view-target]");
       if (!target) return;
-      if (target.dataset.hhcawViewTarget) { setView(target.dataset.hhcawViewTarget); return; }
+      if (target.dataset.hhcawViewTarget) { if (opts.standalone === true) return; setView(target.dataset.hhcawViewTarget); return; }
       if (target.dataset.hhcawRunNode) {
         running = true; renderStage();
         project = await runWorkflowNode(project, target.dataset.hhcawRunNode, { runAI: opts.runAI });
+        if (destroyed) return;
         running = false; persist("Đã chạy node."); renderStage(); return;
       }
       if (target.dataset.hhcawRemoveEdge) {
@@ -1343,10 +1362,12 @@
       if (action === "run-all") {
         running = true; renderStage();
         project = await runWorkflow(project, { runAI: opts.runAI });
+        if (destroyed) return;
         running = false; persist("Workflow đã chạy đến gate Publish."); renderStage();
       } else if (action === "retry") {
         running = true; renderStage();
         project = await retryFailed(project, { runAI: opts.runAI });
+        if (destroyed) return;
         running = false; persist("Đã thử lại các node lỗi."); renderStage();
       } else if (action === "approve") {
         try { setProject(approvePublish(project, "Người dùng HH"), "Publish đã được duyệt thủ công."); }
@@ -1354,7 +1375,7 @@
       } else if (action === "export") download(`${safeId(project.name, "creative-workflow")}.json`, exportProject(project));
       else if (action === "export-handoff") download(`${safeId(project.name, "creative-production")}.handoff.json`, exportProductionHandoff(project));
       else if (action === "apply-director") {
-        try { setProject(applyDirectorPlan(project), "Đã áp dụng pipeline được duyệt."); setView("workflow"); }
+        try { setProject(applyDirectorPlan(project), "Đã áp dụng pipeline được duyệt."); if (opts.standalone !== true) setView("workflow"); }
         catch (error) { const status = root.querySelector("[data-hhcaw-status]"); if (status) status.textContent = error.message; }
       }
     });
@@ -1454,6 +1475,7 @@
         const goal = new FormData(event.target).get("goal");
         running = true; renderStage();
         project.director = await proposeDirectorPlan(goal, { runAI: opts.runAI });
+        if (destroyed) return;
         running = false; persist("Director đã đề xuất; hãy duyệt từng bước."); renderStage();
       } else if (event.target.matches("[data-hhcaw-prompt-form]")) {
         event.preventDefault();
@@ -1465,6 +1487,7 @@
           try {
             const payload = buildPromptPayload(project.promptStudio.draft);
             const output = await opts.runAI({ task: "multimodal-prompt", prompt: clone(payload), requirement: "Generate a reviewed draft only; do not publish or overwrite assets." });
+            if (destroyed) return;
             const variant = createPromptVariant(project.promptStudio.draft, { output: boundedValue(output), source: "external-ai" });
             project = addPromptVariant(project, variant);
             persist("runAI đã trả biến thể; hãy so sánh và duyệt kết quả.");
@@ -1485,10 +1508,21 @@
     });
 
     persist("Creative AI Workflow sẵn sàng.");
+    const dispose = () => {
+      if (destroyed) return;
+      destroyed = true;
+      if (abort) abort.abort();
+      listeners.splice(0).forEach(([target, event, handler]) => target.removeEventListener(event, handler));
+      objectUrls.forEach((url) => {
+        if (globalScope.URL && typeof globalScope.URL.revokeObjectURL === "function") globalScope.URL.revokeObjectURL(url);
+      });
+      objectUrls.clear();
+    };
     const context = {
       abort,
       listeners,
       objectUrls,
+      dispose,
       getProject: () => clone(project),
       setProject,
       getView: () => view,
@@ -1503,12 +1537,7 @@
   function unmount(root) {
     const context = root && mounted.get(root);
     if (!context) return false;
-    if (context.abort) context.abort.abort();
-    context.listeners.forEach(([target, event, handler]) => target.removeEventListener(event, handler));
-    context.objectUrls.forEach((url) => {
-      if (globalScope.URL && typeof globalScope.URL.revokeObjectURL === "function") globalScope.URL.revokeObjectURL(url);
-    });
-    context.objectUrls.clear();
+    context.dispose?.();
     mounted.delete(root);
     if (root) root.innerHTML = "";
     return true;

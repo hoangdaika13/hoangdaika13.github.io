@@ -494,20 +494,25 @@
     };
   }
 
-  function saveLocalState(state, storage) {
+  function normalizeStorageKey(value) {
+    const key = safeText(value, 180);
+    return key || STORAGE_KEY;
+  }
+
+  function saveLocalState(state, storage, storageKey) {
     if (!storage?.setItem) return { ok: false, reason: "unsupported" };
     try {
-      storage.setItem(STORAGE_KEY, JSON.stringify(normalizeState(state)));
+      storage.setItem(normalizeStorageKey(storageKey), JSON.stringify(normalizeState(state)));
       return { ok: true };
     } catch (error) {
       return { ok: false, reason: error?.name === "QuotaExceededError" ? "quota" : "write-failed", error };
     }
   }
 
-  function loadLocalState(storage) {
+  function loadLocalState(storage, storageKey) {
     if (!storage?.getItem) return null;
     try {
-      const parsed = JSON.parse(storage.getItem(STORAGE_KEY) || "null");
+      const parsed = JSON.parse(storage.getItem(normalizeStorageKey(storageKey)) || "null");
       return parsed?.format === FORMAT ? normalizeState(parsed) : null;
     } catch (_) {
       return null;
@@ -517,8 +522,10 @@
   function projectFromStoreState(raw, projectId) {
     const storeState = raw && typeof raw === "object" ? raw : {};
     const projects = Array.isArray(storeState.projects) ? storeState.projects : [];
+    const hasRequestedId = Boolean(projectId);
     const wanted = safeText(projectId || storeState.activeProjectId || "", 100);
-    return projects.find((project) => project?.id === wanted) || projects[0] || null;
+    const match = projects.find((project) => project?.id === wanted) || null;
+    return hasRequestedId ? match : (match || projects[0] || null);
   }
 
   async function saveProjectState(store, state) {
@@ -598,9 +605,9 @@
     return `<nav class="cpl-tabs" aria-label="Production Lab">${VIEWS.map((view) => { const item = VIEW_META[view]; return `<button type="button" role="tab" aria-selected="${view === active}" tabindex="${view === active ? "0" : "-1"}" data-cpl-view="${view}" style="--cpl-tab:${item.accent}"><i>${item.code}</i><span>${item.title}<small>${item.note}</small></span></button>`; }).join("")}</nav>`;
   }
 
-  function shellMarkup(state, capabilities, body) {
+  function shellMarkup(state, capabilities, body, standalone) {
     const meta = VIEW_META[state.activeView];
-    return `<section class="cpl-app" data-creative-production-lab style="--cpl-accent:${meta.accent}"><header class="cpl-hero"><div><p><i></i>HH CREATIVE OS / PRODUCTION LAB</p><h1>${meta.title}</h1><span>${meta.note}</span></div><aside><span><b>${state.projectName}</b><small>Autosave ${capabilities.localStorage ? "local + project store" : "project store"}</small></span><button type="button" data-cpl-action="save">Luu</button></aside></header>${viewTabs(state.activeView)}<main class="cpl-stage">${body}</main><footer class="cpl-footer"><span><i></i>Xu ly tren thiet bi</span><span>${FORMAT} v${VERSION}</span><strong role="status" aria-live="polite" data-cpl-status>San sang.</strong></footer></section>`;
+    return `<section class="cpl-app" data-creative-production-lab style="--cpl-accent:${meta.accent}"><header class="cpl-hero"><div><p><i></i>HH CREATIVE OS / PRODUCTION LAB</p><h1>${meta.title}</h1><span>${meta.note}</span></div><aside><span><b>${state.projectName}</b><small>Autosave ${capabilities.localStorage ? "local + project store" : "project store"}</small></span><button type="button" data-cpl-action="save">Luu</button></aside></header>${standalone ? "" : viewTabs(state.activeView)}<main class="cpl-stage">${body}</main><footer class="cpl-footer"><span><i></i>Xu ly tren thiet bi</span><span>${FORMAT} v${VERSION}</span><strong role="status" aria-live="polite" data-cpl-status>San sang.</strong></footer></section>`;
   }
 
   function repurposeMarkup(state) {
@@ -665,8 +672,9 @@
     if (!root || !doc) return null;
     unmount(root);
     const storage = Object.prototype.hasOwnProperty.call(opts, "storage") ? opts.storage : globalScope.localStorage;
+    const storageKey = normalizeStorageKey(opts.storageKey);
     const capabilities = detectCapabilities(globalScope, doc, storage);
-    let state = normalizeState(opts.state || loadLocalState(storage) || createDefaultState());
+    let state = normalizeState(opts.state || loadLocalState(storage, storageKey) || createDefaultState());
     const creativeProject = typeof opts.store?.getState === "function" ? projectFromStoreState(opts.store.getState(), opts.projectId) : null;
     if (creativeProject) {
       const projectState = creativeProject.workflows?.productionLab;
@@ -680,18 +688,21 @@
     let recordStream = null;
     let recordingChunks = [];
     let syncTimer = 0;
+    let destroyed = false;
 
     const on = (node, type, handler) => {
       node.addEventListener(type, handler);
       listeners.push(() => node.removeEventListener(type, handler));
     };
     const status = (message) => {
+      if (destroyed) return;
       const node = root.querySelector("[data-cpl-status]");
       if (node) node.textContent = safeText(message, 260);
     };
     const scheduleStoreSync = () => {
       globalScope.clearTimeout(syncTimer);
       syncTimer = globalScope.setTimeout(async () => {
+        if (destroyed) return;
         try {
           const result = await saveProjectState(opts.store, state);
           if (result.ok) status("Da dong bo vao Universal Creative Project.");
@@ -701,8 +712,9 @@
       }, 180);
     };
     const persist = (message) => {
+      if (destroyed) return { ok: false, reason: "destroyed" };
       state.updatedAt = new Date().toISOString();
-      const saved = saveLocalState(state, storage);
+      const saved = saveLocalState(state, storage, storageKey);
       scheduleStoreSync();
       if (message) status(`${message}${saved.ok ? "" : " Project store se duoc uu tien."}`);
     };
@@ -712,7 +724,7 @@
       "audio-dubbing": () => audioMarkup(state, capabilities),
       prototype: () => prototypeMarkup(state)
     })[state.activeView]();
-    const render = () => { root.innerHTML = shellMarkup(state, capabilities, bodyMarkup()); };
+    const render = () => { if (!destroyed) root.innerHTML = shellMarkup(state, capabilities, bodyMarkup(), opts.standalone === true); };
 
     function captureRepurpose() {
       root.querySelectorAll("[data-cpl-repurpose]").forEach((node) => { state.repurpose.input[node.dataset.cplRepurpose] = node.type === "number" ? Number(node.value) || 0 : node.value; });
@@ -743,6 +755,7 @@
     on(root, "click", async (event) => {
       const viewButton = event.target.closest("[data-cpl-view]");
       if (viewButton) {
+        if (opts.standalone === true) return;
         state.activeView = viewButton.dataset.cplView;
         persist("Da chuyen workspace.");
         render();
@@ -789,6 +802,7 @@
         actionButton.disabled = true; status("Dang yeu cau AI tao ban nhap moi...");
         try {
           const response = await invokeRunAI("repurpose", state.repurpose.input);
+          if (destroyed) return;
           const local = generateRepurpose(state.repurpose.input);
           if (response?.outputs && typeof response.outputs === "object") local.outputs = { ...local.outputs, ...response.outputs };
           else if (response?.output) local.outputs.blog.markdown = safeText(response.output, 50000);
@@ -818,8 +832,9 @@
           recordStream = await globalScope.navigator.mediaDevices.getUserMedia({ audio: true, video: false });
           recordingChunks = [];
           mediaRecorder = new globalScope.MediaRecorder(recordStream);
-          mediaRecorder.ondataavailable = (item) => { if (item.data?.size) recordingChunks.push(item.data); };
+          mediaRecorder.ondataavailable = (item) => { if (!destroyed && item.data?.size) recordingChunks.push(item.data); };
           mediaRecorder.onstop = () => {
+            if (destroyed) { recordStream?.getTracks().forEach((track) => track.stop()); recordStream = null; return; }
             const blob = new Blob(recordingChunks, { type: mediaRecorder.mimeType || "audio/webm" });
             state.audio.timeline = addTimelineClip(state.audio.timeline, { type: "voice", start: state.audio.timeline.duration, duration: 3, text: "Ban ghi am local", sourceName: `recording-${Date.now()}.webm`, blobSize: blob.size });
             recordStream?.getTracks().forEach((track) => track.stop()); recordStream = null; persist("Da them metadata ban ghi local vao timeline."); render();
@@ -862,7 +877,7 @@
         const file = node.files?.[0]; if (!file) return;
         if (!capabilities.fileReader) return status("FileReader khong kha dung.");
         const reader = new globalScope.FileReader();
-        reader.onload = () => { state.repurpose.input.transcript = normalizeWhitespace(reader.result); state.repurpose.input.title ||= file.name.replace(/\.[^.]+$/, ""); persist("Da nap transcript tu thiet bi."); render(); };
+        reader.onload = () => { if (destroyed) return; state.repurpose.input.transcript = normalizeWhitespace(reader.result); state.repurpose.input.title ||= file.name.replace(/\.[^.]+$/, ""); persist("Da nap transcript tu thiet bi."); render(); };
         reader.onerror = () => status("Khong the doc file da chon."); reader.readAsText(file); node.value = "";
       }
     });
@@ -875,26 +890,26 @@
 
     on(root, "keydown", (event) => {
       const tab = event.target.closest("[data-cpl-view]");
-      if (tab && ["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+      if (tab && opts.standalone !== true && ["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
         event.preventDefault(); const index = VIEWS.indexOf(tab.dataset.cplView); const next = event.key === "Home" ? 0 : event.key === "End" ? VIEWS.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + VIEWS.length) % VIEWS.length; state.activeView = VIEWS[next]; persist(); render(); root.querySelector(`[data-cpl-view="${state.activeView}"]`)?.focus();
       }
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); persist("Da luu bang phim tat."); }
     });
 
     render();
-    const ready = opts.store && state.projectId ? loadProjectState(opts.store, state.projectId).then((projectState) => { if (projectState) { state = projectState; if (VIEWS.includes(opts.view)) state.activeView = opts.view; render(); status("Da nap du lieu tu Universal Creative Project."); } return clone(state); }).catch(() => clone(state)) : Promise.resolve(clone(state));
+    const ready = opts.store && state.projectId ? loadProjectState(opts.store, state.projectId).then((projectState) => { if (destroyed) return clone(state); if (projectState) { state = projectState; if (VIEWS.includes(opts.view)) state.activeView = opts.view; render(); status("Da nap du lieu tu Universal Creative Project."); } return clone(state); }).catch(() => clone(state)) : Promise.resolve(clone(state));
     const api = {
       ready,
       getState: () => clone(state),
       setState(next) { state = normalizeState(next); if (VIEWS.includes(opts.view)) state.activeView = opts.view; persist("Da thay trang thai Production Lab."); render(); return clone(state); },
-      setView(view) { if (!VIEWS.includes(view)) return false; state.activeView = view; persist(); render(); return true; },
+      setView(view) { if (destroyed || (opts.standalone === true && view !== state.activeView) || !VIEWS.includes(view)) return false; state.activeView = view; persist(); render(); return true; },
       save: () => { persist("Da luu Production Lab."); return saveProjectState(opts.store, state); },
       generateRepurpose(input) { state.repurpose.input = { ...state.repurpose.input, ...(input || {}) }; state.repurpose.result = generateRepurpose(state.repurpose.input); persist(); render(); return clone(state.repurpose.result); },
       scoreBrand(output, brand) { return scoreBrandOutput(output, brand || state.brand.kit); },
       getTimeline: () => clone(state.audio.timeline),
       getPrototype: () => clone(state.prototype.project)
     };
-    mounted.set(root, { api, cleanup() { listeners.splice(0).forEach((off) => off()); globalScope.clearTimeout(syncTimer); audioPreview?.stop(); if (mediaRecorder?.state === "recording") mediaRecorder.stop(); recordStream?.getTracks().forEach((track) => track.stop()); } });
+    mounted.set(root, { api, cleanup() { destroyed = true; listeners.splice(0).forEach((off) => off()); globalScope.clearTimeout(syncTimer); audioPreview?.stop(); if (mediaRecorder?.state === "recording") mediaRecorder.stop(); recordStream?.getTracks().forEach((track) => track.stop()); } });
     return api;
   }
 

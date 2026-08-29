@@ -343,6 +343,7 @@
 
   function createStore(options) {
     const settings = options || {};
+    const storageKey = cleanText(settings.storageKey, 180).trim() || STORAGE_KEY;
     const storage = Object.prototype.hasOwnProperty.call(settings, "storage")
       ? settings.storage
       : globalScope.localStorage;
@@ -354,7 +355,7 @@
     let state;
 
     try {
-      const stored = storage && storage.getItem ? JSON.parse(storage.getItem(STORAGE_KEY) || "null") : null;
+      const stored = storage && storage.getItem ? JSON.parse(storage.getItem(storageKey) || "null") : null;
       state = normalizeEnvelope(settings.initialState || stored, currentUser, now);
     } catch (error) {
       persistenceError = cleanText(error && error.message, 300) || "Không đọc được dữ liệu cục bộ.";
@@ -388,7 +389,7 @@
     function persist() {
       state.savedAt = now();
       try {
-        if (storage && storage.setItem) storage.setItem(STORAGE_KEY, JSON.stringify(state));
+        if (storage && storage.setItem) storage.setItem(storageKey, JSON.stringify(state));
         persistenceError = "";
       } catch (error) {
         persistenceError = cleanText(error && error.message, 300) || "Không lưu được dữ liệu cục bộ.";
@@ -434,7 +435,7 @@
     const api = {
       getState() { return clone(state); },
       getProject(projectId) { return clone(projectRef(projectId)); },
-      getPersistence() { return { type: storage && storage.setItem ? "localStorage" : "memory", key: STORAGE_KEY, version: VERSION, error: persistenceError }; },
+      getPersistence() { return { type: storage && storage.setItem ? "localStorage" : "memory", key: storageKey, version: VERSION, error: persistenceError }; },
       subscribe(listener) {
         if (typeof listener !== "function") return function () {};
         listeners.add(listener);
@@ -940,7 +941,13 @@
     const requestedProjectId = cleanText(settings.projectId || universalProject?.id, 120);
     const store = settings.store && typeof settings.store.getProject === "function"
       ? settings.store
-      : createStore({ currentUser, projectId: requestedProjectId, projectTitle: universalProject?.name });
+      : createStore({
+        currentUser,
+        projectId: requestedProjectId,
+        projectTitle: universalProject?.name,
+        storage: Object.prototype.hasOwnProperty.call(settings, "storage") ? settings.storage : globalScope.localStorage,
+        storageKey: settings.storageKey
+      });
     let view = settings.view === "collaboration" ? "collaboration" : "review";
     let projectId = requestedProjectId || store.getState().activeProjectId;
     let network = { mode: settings.socketUrl ? "connecting" : "local", realtime: false, error: settings.socketUrl ? "" : "Chưa cấu hình Socket.io. Đang dùng chế độ cục bộ một người." };
@@ -975,10 +982,10 @@
     function header(projectData) {
       return `<header class="cco-header">
         <div class="cco-brand"><span class="cco-brand-mark" aria-hidden="true">CO</span><div><span>CREATIVE OS</span><h2>Review & Collaboration</h2></div></div>
-        <nav class="cco-view-tabs" role="tablist" aria-label="Workspace Creative OS">
+        ${settings.standalone === true ? "" : `<nav class="cco-view-tabs" role="tablist" aria-label="Workspace Creative OS">
           <button type="button" role="tab" aria-selected="${view === "review"}" class="${view === "review" ? "is-active" : ""}" data-cco-view="review">Review</button>
           <button type="button" role="tab" aria-selected="${view === "collaboration"}" class="${view === "collaboration" ? "is-active" : ""}" data-cco-view="collaboration">Cộng tác</button>
-        </nav>
+        </nav>`}
         <div class="cco-head-status">${modeBadge()}<span class="cco-user">${escapeHtml(currentUser.name)}</span></div>
       </header>
       <section class="cco-project-bar">
@@ -1079,7 +1086,8 @@
     function render() {
       if (destroyed || !root) return;
       const projectData = project();
-      root.innerHTML = `<section class="cco-shell" data-hh-creative-collaboration data-view="${escapeHtml(view)}">${header(projectData)}${noticeView()}${view === "review" ? reviewView(projectData) : collaborationView(projectData)}<footer class="cco-footer"><span>Dữ liệu local-first · ${escapeHtml(STORAGE_KEY)}</span><span>${network.realtime ? network.secure ? "Socket.io đang truyền qua TLS" : "Socket.io local development" : "Không tuyên bố realtime khi chưa kết nối"}</span></footer></section>`;
+      const persistenceKey = store.getPersistence?.().key || settings.storageKey || STORAGE_KEY;
+      root.innerHTML = `<section class="cco-shell" data-hh-creative-collaboration data-view="${escapeHtml(view)}">${header(projectData)}${noticeView()}${view === "review" ? reviewView(projectData) : collaborationView(projectData)}<footer class="cco-footer"><span>Dữ liệu local-first · ${escapeHtml(persistenceKey)}</span><span>${network.realtime ? network.secure ? "Socket.io đang truyền qua TLS" : "Socket.io local development" : "Không tuyên bố realtime khi chưa kết nối"}</span></footer></section>`;
     }
     function emit(eventName, payload) { realtime.emit(eventName, payload); }
     function act(action) {
@@ -1106,7 +1114,7 @@
     }
     function onClick(event) {
       const viewButton = event.target.closest("[data-cco-view]");
-      if (viewButton) { view = viewButton.dataset.ccoView === "collaboration" ? "collaboration" : "review"; render(); return; }
+      if (viewButton) { if (settings.standalone === true) return; view = viewButton.dataset.ccoView === "collaboration" ? "collaboration" : "review"; render(); return; }
       const actionButton = event.target.closest("[data-cco-action]");
       if (actionButton) { act(actionButton.dataset.ccoAction); return; }
       const transitionButton = event.target.closest("[data-cco-transition]");
@@ -1173,7 +1181,7 @@
     }
     function onKeyDown(event) {
       if (event.key === "Escape" && (notice || requestOpen)) { notice = ""; requestOpen = false; render(); return; }
-      if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && event.target.matches("[role=tab]")) {
+      if (settings.standalone !== true && (event.key === "ArrowLeft" || event.key === "ArrowRight") && event.target.matches("[role=tab]")) {
         event.preventDefault();
         view = view === "review" ? "collaboration" : "review";
         render();
@@ -1198,7 +1206,7 @@
     return {
       store,
       realtime,
-      setView(nextView) { view = nextView === "collaboration" ? "collaboration" : "review"; render(); },
+      setView(nextView) { if (settings.standalone === true && nextView !== view) return false; view = nextView === "collaboration" ? "collaboration" : "review"; render(); return true; },
       getView() { return view; },
       destroy() {
         if (destroyed) return;

@@ -452,17 +452,18 @@
   function createStore(options) {
     const settings = options && typeof options === "object" ? options : {};
     const storage = Object.prototype.hasOwnProperty.call(settings, "storage") ? settings.storage : globalScope.localStorage;
+    const storageKey = cleanText(settings.storageKey || STORAGE_KEY, 180) || STORAGE_KEY;
     const external = settings.store || null;
     const adapters = settings.providerAdapters || {};
     let stored = null;
-    try { stored = storage && JSON.parse(storage.getItem(STORAGE_KEY) || "null"); } catch (_) { stored = null; }
+    try { stored = storage && JSON.parse(storage.getItem(storageKey) || "null"); } catch (_) { stored = null; }
     let state = normalizeState(readExternalStore(external) || stored || defaultState(), adapters, settings.idFactory);
     const listeners = new Set();
 
     function persist() {
       state.updatedAt = new Date().toISOString();
       const snapshot = clone(state);
-      try { if (storage) storage.setItem(STORAGE_KEY, JSON.stringify(snapshot)); } catch (_) { /* memory state remains active */ }
+      try { if (storage && typeof storage.setItem === "function") storage.setItem(storageKey, JSON.stringify(snapshot)); } catch (_) { /* memory state remains active */ }
       persistExternalStore(external, snapshot);
       listeners.forEach((listener) => { try { listener(clone(snapshot)); } catch (_) { /* listener isolation */ } });
       return snapshot;
@@ -568,16 +569,17 @@
   function formatPercent(value) { return `${(Number(value || 0) * 100).toFixed(1)}%`; }
   function formatDate(value) { if (!value) return "Chưa đặt"; const date = new Date(value); return Number.isFinite(date.getTime()) ? date.toLocaleString("vi-VN") : "Không hợp lệ"; }
 
-  function tabsMarkup(active) {
+  function tabsMarkup(active, standalone) {
     const labels = { publishing: "Lịch xuất bản", analytics: "Analytics", rights: "Quyền tài sản", providers: "Provider Router" };
+    if (standalone) return "";
     return `<nav class="cp-tabs" role="tablist" aria-label="Publishing & Intelligence">${VIEWS.map((view) => `<button type="button" role="tab" aria-selected="${view === active}" tabindex="${view === active ? "0" : "-1"}" data-cp-view="${view}"><span>${escapeHtml(labels[view])}</span></button>`).join("")}</nav>`;
   }
 
-  function headerMarkup(state, view) {
+  function headerMarkup(state, view, standalone) {
     const due = state.queue.filter((item) => ["queued", "scheduled"].includes(item.status)).length;
     const rights = auditRights(state.rights);
     const connected = state.providers.filter((item) => providerAvailable(item, null)).length;
-    return `<header class="cp-hero"><div><p class="cp-eyebrow">CREATIVE OS · PUBLISHING & INTELLIGENCE</p><h2>Xuất bản có kiểm soát, quyết định bằng dữ liệu</h2><p>Quản lý lịch đa nền tảng, kiểm chứng A/B test, truy vết bản quyền và định tuyến AI mà không đưa khóa bí mật xuống frontend.</p></div><div class="cp-hero-stats"><span><b>${due}</b><small>Đang chờ</small></span><span><b>${state.analytics.length}</b><small>Mẫu đo</small></span><span><b>${rights.valid ? "OK" : rights.errorCount}</b><small>Quyền lỗi</small></span><span><b>${connected}</b><small>Provider sẵn sàng</small></span></div></header>${tabsMarkup(view)}`;
+    return `<header class="cp-hero"><div><p class="cp-eyebrow">CREATIVE OS · PUBLISHING & INTELLIGENCE</p><h2>Xuất bản có kiểm soát, quyết định bằng dữ liệu</h2><p>Quản lý lịch đa nền tảng, kiểm chứng A/B test, truy vết bản quyền và định tuyến AI mà không đưa khóa bí mật xuống frontend.</p></div><div class="cp-hero-stats"><span><b>${due}</b><small>Đang chờ</small></span><span><b>${state.analytics.length}</b><small>Mẫu đo</small></span><span><b>${rights.valid ? "OK" : rights.errorCount}</b><small>Quyền lỗi</small></span><span><b>${connected}</b><small>Provider sẵn sàng</small></span></div></header>${tabsMarkup(view, standalone)}`;
   }
 
   function queueCard(item) {
@@ -622,11 +624,11 @@
     return `<section class="cp-workspace" data-cp-providers><div class="cp-toolbar"><div><span>AI Cost & Provider Router</span><strong>Định tuyến rõ ràng, không lộ khóa</strong></div><div class="cp-mode"><label>Chế độ<select data-cp-route-mode><option value="balanced" ${state.settings.routeMode === "balanced" ? "selected" : ""}>Cân bằng</option><option value="fast" ${state.settings.routeMode === "fast" ? "selected" : ""}>Nhanh</option><option value="quality" ${state.settings.routeMode === "quality" ? "selected" : ""}>Chất lượng</option></select></label></div></div><section class="cp-router-decision"><div class="cp-route-orbit"><i></i><span>${decision.provider ? escapeHtml(decision.provider.label.slice(0, 3).toUpperCase()) : "--"}</span></div><div><small>ĐỀ XUẤT DETERMINISTIC</small><h3>${decision.provider ? escapeHtml(decision.provider.label) : "Chưa có provider khả dụng"}</h3><p>${escapeHtml(decision.reason)}</p></div><dl><div><dt>Mode</dt><dd>${escapeHtml(decision.mode)}</dd></div><div><dt>Score</dt><dd>${decision.score}</dd></div><div><dt>Provider</dt><dd>${state.providers.length}</dd></div></dl></section><div class="cp-provider-grid">${state.providers.length ? state.providers.map((provider) => { const available = providerAvailable(provider, state.settings.routeMode); const quota = provider.quotaLimit ? provider.quotaUsed / provider.quotaLimit : 0; return `<article class="cp-provider-card ${available ? "is-ready" : "is-unavailable"}"><header><div class="cp-provider-icon">${escapeHtml(provider.label.slice(0, 2).toUpperCase())}</div><div><strong>${escapeHtml(provider.label)}</strong><span>${escapeHtml(provider.status)}</span></div><i title="${available ? "Sẵn sàng" : "Không khả dụng"}"></i></header><div class="cp-provider-metrics"><span><b>${formatNumber(provider.avgLatencyMs)}ms</b><small>Latency</small></span><span><b>${formatPercent(provider.errorRate)}</b><small>Error</small></span><span><b>${formatNumber(provider.inputTokens + provider.outputTokens)}</b><small>Tokens</small></span><span><b>${formatNumber(provider.credits)}</b><small>Credits</small></span></div><div class="cp-quota"><span style="width:${clamp(quota * 100, 0, 100)}%"></span></div><footer><span>${provider.quotaLimit ? `${formatNumber(provider.quotaUsed)} / ${formatNumber(provider.quotaLimit)}` : "Không đặt quota"}</span><span>${provider.cooldownUntil ? `Cooldown: ${escapeHtml(formatDate(provider.cooldownUntil))}` : "Không cooldown"}</span></footer></article>`; }).join("") : `<div class="cp-empty"><b>Chưa có adapter backend</b><span>Module chỉ hiển thị trạng thái. Hãy cấu hình provider ở server rồi truyền providerAdapters khi mount.</span></div>`}</div><div class="cp-security-note"><b>Ranh giới bảo mật</b><p>Frontend chỉ nhận trạng thái, quota và số liệu sử dụng. Mật khẩu, khóa dịch vụ và credential phải nằm trong biến môi trường của backend.</p></div></section>`;
   }
 
-  function renderViewMarkup(view, stateInput) {
+  function renderViewMarkup(view, stateInput, options) {
     const active = VIEWS.includes(view) ? view : "publishing";
     const state = normalizeState(stateInput || defaultState());
     const body = active === "analytics" ? analyticsMarkup(state) : active === "rights" ? rightsMarkup(state) : active === "providers" ? providersMarkup(state) : publishingMarkup(state);
-    return `<div class="cp-shell" data-cp-shell data-cp-active-view="${active}">${headerMarkup(state, active)}${body}<div class="cp-live" role="status" aria-live="polite" data-cp-live></div></div>`;
+    return `<div class="cp-shell" data-cp-shell data-cp-active-view="${active}">${headerMarkup(state, active, options?.standalone === true)}${body}<div class="cp-live" role="status" aria-live="polite" data-cp-live></div></div>`;
   }
 
   function drawAnalyticsCanvas(canvas, records) {
@@ -669,25 +671,28 @@
     if (!root || typeof root.addEventListener !== "function") throw makeError("ROOT_REQUIRED", "Cần phần tử gốc để mount Publishing & Intelligence.");
     unmount(root);
     const settings = options && typeof options === "object" ? options : {};
-    const store = settings.store && typeof settings.store.addPublication === "function" ? settings.store : createStore({ store: settings.store, providerAdapters: settings.providerAdapters, storage: Object.prototype.hasOwnProperty.call(settings, "storage") ? settings.storage : globalScope.localStorage, idFactory: settings.idFactory });
+    const store = settings.store && typeof settings.store.addPublication === "function" ? settings.store : createStore({ store: settings.store, providerAdapters: settings.providerAdapters, storage: Object.prototype.hasOwnProperty.call(settings, "storage") ? settings.storage : globalScope.localStorage, storageKey: settings.storageKey, idFactory: settings.idFactory });
     let view = VIEWS.includes(settings.view) ? settings.view : "publishing";
+    let destroyed = false;
     const listeners = [];
     const on = (node, event, handler) => { node.addEventListener(event, handler); listeners.push(() => node.removeEventListener(event, handler)); };
     const say = (message, tone) => { const live = root.querySelector("[data-cp-live]"); if (live) { live.textContent = message; live.dataset.tone = tone || "info"; } };
 
     function render() {
+      if (destroyed) return;
       const active = globalScope.document && globalScope.document.activeElement && globalScope.document.activeElement.dataset && globalScope.document.activeElement.dataset.cpView;
       root.setAttribute("data-creative-publishing", "");
-      root.innerHTML = renderViewMarkup(view, store.getState());
+      root.innerHTML = renderViewMarkup(view, store.getState(), { standalone: settings.standalone === true });
       if (view === "analytics") drawAnalyticsCanvas(root.querySelector("[data-cp-chart]"), store.getState().analytics);
       if (active) root.querySelector(`[data-cp-view="${active}"]`)?.focus();
     }
 
     function navigate(next) {
-      if (!VIEWS.includes(next)) return;
+      if (destroyed || settings.standalone === true || !VIEWS.includes(next)) return false;
       if (typeof settings.onNavigate === "function") settings.onNavigate(next);
       view = next;
       render();
+      return true;
     }
 
     function updatePreflight(form) {
@@ -764,7 +769,7 @@
 
     on(root, "keydown", (event) => {
       const tab = event.target.closest("[data-cp-view]");
-      if (!tab || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      if (settings.standalone === true || !tab || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
       event.preventDefault();
       const current = VIEWS.indexOf(tab.dataset.cpView);
       const next = event.key === "Home" ? 0 : event.key === "End" ? VIEWS.length - 1 : (current + (event.key === "ArrowRight" ? 1 : -1) + VIEWS.length) % VIEWS.length;
@@ -775,7 +780,7 @@
     const unsubscribe = typeof store.subscribe === "function" ? store.subscribe(() => {}) : () => {};
     render();
     const instanceApi = Object.freeze({ getView: () => view, setView: (next) => navigate(next), getState: store.getState, store, refresh: render });
-    mounted.set(root, { api: instanceApi, cleanup: () => { listeners.splice(0).forEach((off) => off()); unsubscribe(); } });
+    mounted.set(root, { api: instanceApi, cleanup: () => { destroyed = true; listeners.splice(0).forEach((off) => off()); unsubscribe(); } });
     activeRoots.add(root);
     return instanceApi;
   }

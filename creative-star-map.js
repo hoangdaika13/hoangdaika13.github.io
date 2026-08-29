@@ -14,11 +14,11 @@
 
   const GROUPS = Object.freeze([
     { id: "command", label: "Điều hành", icon: "CC", color: "#5eefff", tools: ["overview", "project"] },
-    { id: "idea", label: "Ý tưởng AI", icon: "AI", color: "#ff59d5", tools: ["ai-center", "ai-script"] },
+    { id: "idea", label: "Ý tưởng & Ngôn từ", icon: "AI", color: "#ff59d5", tools: ["ai-center", "ai-script", "idea-lab", "naming-studio", "copy-studio", "writing-room"] },
     { id: "preproduction", label: "Tiền kỳ", icon: "SB", color: "#a887ff", tools: ["brief", "moodboard", "storyboard", "world-bible"] },
-    { id: "production", label: "Sản xuất", icon: "PX", color: "#6af0ae", tools: ["creator-studio", "media-center", "repurpose", "brand", "audio-dubbing", "prototype"] },
-    { id: "workflow", label: "Workflow", icon: "WF", color: "#ffbd59", tools: ["workflow", "ai-director", "prompt-studio", "ai-automation"] },
-    { id: "publish", label: "Xuất bản", icon: "PB", color: "#7fa7ff", tools: ["review", "collaboration", "publishing", "analytics", "rights", "providers", "marketplace"] }
+    { id: "production", label: "Sản xuất", icon: "PX", color: "#6af0ae", tools: ["creator-studio", "media-center", "repurpose", "brand", "audio-dubbing", "prototype", "photo-planner", "motion-planner", "podcast-studio", "three-d-planner"] },
+    { id: "workflow", label: "Workflow", icon: "WF", color: "#ffbd59", tools: ["workflow", "ai-director", "prompt-studio", "ai-automation", "campaign-planner"] },
+    { id: "publish", label: "Xuất bản", icon: "PB", color: "#7fa7ff", tools: ["review", "collaboration", "publishing", "analytics", "rights", "providers", "marketplace", "portfolio-builder"] }
   ]);
 
   const THEMES = Object.freeze([
@@ -74,16 +74,25 @@
     };
   }
 
-  function creativeState() {
+  function creativeState(view = "") {
     try {
-      return global.__HH_CREATIVE_STORE__?.getState?.()
-        || global.HHCreativeCore?.normalizeState?.(read(CORE_KEY, {}))
-        || read(CORE_KEY, {});
+      if (view) {
+        const stored = read(`hh.creative.tool.${view}.project.v1`, null);
+        // A missing route store is an honest empty state. Falling back to the
+        // former global key would make activity from one tool appear in a
+        // different tool and break the specialist isolation contract.
+        if (!stored) return {};
+        return global.HHCreativeCore?.normalizeState?.(stored) || stored;
+      }
+      const indexed = global.HHCreativeGalaxy?.readToolIndex?.();
+      if (indexed?.projects?.length || indexed?.runs?.length) return indexed;
+      const legacy = read(CORE_KEY, {});
+      return global.HHCreativeCore?.normalizeState?.(legacy) || legacy;
     } catch { return {}; }
   }
 
-  function creativeSnapshot() {
-    const state = creativeState();
+  function creativeSnapshot(view = "") {
+    const state = creativeState(view);
     try { return global.HHCreativeGalaxy?.snapshot?.(state, {}) || fallbackSnapshot(state); }
     catch { return fallbackSnapshot(state); }
   }
@@ -111,7 +120,15 @@
   }
 
   function signalForTool(id, data) {
-    if (!data.project) return { label: "Chưa có hoạt động", level: "empty", detail: "Hãy tạo Universal Project để kích hoạt tín hiệu." };
+    if (["idea-lab", "naming-studio", "copy-studio", "writing-room", "campaign-planner", "photo-planner", "motion-planner", "podcast-studio", "three-d-planner", "portfolio-builder"].includes(id)) {
+      const directKey = `hh.creative.tool.${id}.v1`;
+      const scopedKey = `hh.creative.tool.${id}.state:hh.creative.tool.${id}.project.v1`;
+      let history = 0;
+      try { history = asArray(read(scopedKey, read(directKey, {})).history).length; } catch {}
+      return { label: history ? `${history} kết quả` : "Chưa có kết quả", level: history ? "active" : "empty", detail: "Dữ liệu và lịch sử được lưu riêng cho công cụ này." };
+    }
+    data = creativeSnapshot(id);
+    if (!data.project) return { label: "Chưa có hoạt động", level: "empty", detail: "Hãy mở công cụ để tạo hồ sơ riêng và kích hoạt tín hiệu." };
     if (["overview", "project"].includes(id)) return { label: `${data.progress || 0}% dự án`, level: "active", detail: `${data.projects?.length || 0} dự án · ${asArray(data.project.versions).length} phiên bản` };
     if (["ai-center", "ai-script", "workflow", "ai-director", "prompt-studio", "ai-automation"].includes(id)) {
       if (data.failedRuns?.length) return { label: `${data.failedRuns.length} lỗi`, level: "error", detail: "Có AI job cần kiểm tra hoặc chạy lại." };
@@ -121,8 +138,8 @@
     if (["moodboard", "creator-studio", "media-center", "repurpose", "brand", "audio-dubbing", "prototype"].includes(id)) {
       return { label: data.assets?.length ? `${data.assets.length} asset` : "Chưa có asset", level: data.assets?.length ? "ready" : "empty", detail: data.assets?.[0]?.name || "Media Center chưa ghi nhận asset." };
     }
-    if (id === "storyboard") return { label: `${asArray(data.project.storyboard).length} shot`, level: asArray(data.project.storyboard).length ? "active" : "empty", detail: "Storyboard dùng chung dữ liệu dự án." };
-    if (id === "world-bible") return { label: `${asArray(data.project.world?.characters).length} nhân vật`, level: asArray(data.project.world?.characters).length ? "active" : "empty", detail: "Nhân vật và bối cảnh của Universal Project." };
+    if (id === "storyboard") return { label: `${asArray(data.project.storyboard).length} shot`, level: asArray(data.project.storyboard).length ? "active" : "empty", detail: "Storyboard chỉ đọc hồ sơ của công cụ này." };
+    if (id === "world-bible") return { label: `${asArray(data.project.world?.characters).length} nhân vật`, level: asArray(data.project.world?.characters).length ? "active" : "empty", detail: "Nhân vật và bối cảnh được lưu riêng trong World Bible." };
     if (id === "brief") return { label: data.project.brief?.goal || data.project.brief?.description ? "Đã có brief" : "Chưa có brief", level: data.project.brief?.goal || data.project.brief?.description ? "ready" : "empty", detail: data.project.brief?.goal || "Chưa đặt mục tiêu dự án." };
     if (["review", "collaboration"].includes(id)) return { label: data.unread?.length ? `${data.unread.length} chưa đọc` : data.project.review?.status || "draft", level: data.unread?.length ? "processing" : "active", detail: "Comment và approval lấy từ Creative Review." };
     if (id === "publishing") return { label: data.pendingPublishing?.length ? `${data.pendingPublishing.length} đang chờ` : "Chưa có lịch", level: data.pendingPublishing?.length ? "processing" : "empty", detail: "Chỉ hiện lịch đã lưu hoặc provider xác nhận." };
@@ -168,7 +185,7 @@
           </section>`;
         }).join("")}
       </div>
-      <footer><span><i></i>Dữ liệu Universal Project</span><button type="button" data-app-route="/create/project">Mở dự án →</button></footer>
+      <footer><span><i></i>${GROUPS.flatMap((group) => group.tools).length} công cụ · vùng lưu độc lập</span><button type="button" data-app-route="/create/project">Mở hồ sơ →</button></footer>
     </div>`;
   }
 
@@ -236,7 +253,7 @@
     const preparePlanet = (event) => {
       const planet = event.target.closest?.("[data-csm-wormhole-route]");
       if (!planet?.closest("[data-creative-star-map]")) return;
-      global.HHCreativeOS?.prepareRoute?.(planet.dataset.csmWormholeRoute).catch?.(() => {});
+      global.HHCreativeOS?.prepareRoute?.(planet.dataset.csmWormholeRoute, { createStore: false }).catch?.(() => {});
     };
     global.document.addEventListener("pointerover", preparePlanet, { passive: true });
     global.document.addEventListener("focusin", preparePlanet);
@@ -262,6 +279,6 @@
 
   return Object.freeze({
     VERSION, PREF_KEY, HOME_PREF_KEY, GROUPS, THEMES,
-    normalizePrefs, homeProfile, groupForTool, signalForTool, markup, applyProfile, autoMount
+    normalizePrefs, homeProfile, creativeState, creativeSnapshot, groupForTool, signalForTool, markup, applyProfile, autoMount
   });
 });

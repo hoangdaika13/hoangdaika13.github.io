@@ -937,6 +937,7 @@ function initSuperPlatform() {
   let activeFilter = "all";
   let selectedModule = null;
   let favorites = JSON.parse(localStorage.getItem(favoritesKey) || "[]");
+  let platformEmbedding = null;
 
   const setCounter = (node, value) => {
     if (node) node.textContent = String(value).padStart(2, "0");
@@ -1625,7 +1626,10 @@ const securityCenterMarkup=()=>`<section class="security-app" data-security><hea
   };
 
   const render = () => {
-    const visible = filteredModules();
+    const embeddedView = platformEmbedding?.view || "";
+    const visible = embeddedView
+      ? modules.filter((module) => module.id === embeddedView)
+      : filteredModules();
     if (!modules.length) {
       grid.innerHTML = `
         <article class="module-card skeleton-card">
@@ -1732,6 +1736,13 @@ const securityCenterMarkup=()=>`<section class="security-app" data-security><hea
     `;
     }).join("");
 
+    if (embeddedView) {
+      grid.querySelectorAll("[data-module-id]").forEach((card) => {
+        const active = card.dataset.moduleId === embeddedView;
+        card.hidden = !active;
+        card.toggleAttribute("data-shell-active", active);
+      });
+    }
     if (visible.some((module) => module.id === "download-center")) checkDownloadService();
     if (visible.some((module) => module.id === "ai-center")) loadAICenterStatus();
     if (visible.some((module) => module.id === "knowledge-center")) updateWikiPreview();
@@ -3270,6 +3281,41 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
 
   const creativeLegacyModuleIds = new Set(["ai-center", "creator-studio", "media-center", "ai-automation"]);
   const platformRoot = byId("platform");
+  const platformHomeParent = platformRoot?.parentNode || null;
+  const platformHomeAnchor = platformRoot?.ownerDocument?.createComment?.("hh-creative-platform-home") || null;
+  if (platformRoot?.parentNode && platformHomeAnchor) platformRoot.parentNode.insertBefore(platformHomeAnchor, platformRoot);
+
+  const restoreEmbeddedPlatform = (expectedEmbedding = platformEmbedding) => {
+    if (!platformRoot || !expectedEmbedding || platformEmbedding !== expectedEmbedding) return false;
+    const focusedInsidePlatform = platformRoot.contains(platformRoot.ownerDocument?.activeElement);
+    const scrollNodes = [
+      platformRoot.ownerDocument?.scrollingElement,
+      expectedEmbedding.host?.closest?.(".creative-os__workspace"),
+      expectedEmbedding.host?.closest?.(".app-main")
+    ].filter((node, index, values) => node && values.indexOf(node) === index)
+      .map((node) => ({ node, top: node.scrollTop, left: node.scrollLeft }));
+    if (focusedInsidePlatform) platformRoot.ownerDocument?.activeElement?.blur?.();
+    platformEmbedding = null;
+    platformRoot.classList.remove("app-workspace__platform", "creative-os-embedded-platform");
+    delete platformRoot.dataset.cosEmbeddedPlatform;
+    const anchorParent = platformHomeAnchor?.parentNode;
+    const connectedAnchorParent = anchorParent && anchorParent.isConnected !== false ? anchorParent : null;
+    const connectedHomeParent = platformHomeParent && platformHomeParent.isConnected !== false ? platformHomeParent : null;
+    const homeParent = connectedAnchorParent || connectedHomeParent || byId("top");
+    if (homeParent === connectedAnchorParent) homeParent.insertBefore(platformRoot, platformHomeAnchor.nextSibling);
+    else homeParent?.append?.(platformRoot);
+    platformRoot.hidden = expectedEmbedding.hidden;
+    render();
+    scrollNodes.forEach(({ node, top, left }) => {
+      node.scrollTop = top;
+      node.scrollLeft = left;
+    });
+    if (focusedInsidePlatform && expectedEmbedding.returnFocus?.isConnected && !platformRoot.contains(expectedEmbedding.returnFocus)) {
+      expectedEmbedding.returnFocus.focus?.({ preventScroll: true });
+    }
+    return true;
+  };
+
   window.HHCreativeLegacyTools = {
     supports(view) {
       return view === "ai-script" || creativeLegacyModuleIds.has(view);
@@ -3283,7 +3329,19 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
         return { unmount() { scriptHost?.remove?.(); } };
       }
       if (!host || !platformRoot || !creativeLegacyModuleIds.has(view)) throw new Error("Công cụ sáng tạo chưa sẵn sàng.");
+      restoreEmbeddedPlatform();
+      const embedding = {
+        view,
+        host,
+        hidden: platformRoot.hidden,
+        returnFocus: platformRoot.ownerDocument?.activeElement || null
+      };
+      platformEmbedding = embedding;
       if (!grid.querySelector(`[data-module-id="${view}"]`)) render();
+      if (!grid.querySelector(`[data-module-id="${view}"]`)) {
+        platformEmbedding = null;
+        throw new Error(`Không tìm thấy module ${view} trong registry.`);
+      }
       platformRoot.hidden = false;
       platformRoot.classList.add("app-workspace__platform", "creative-os-embedded-platform");
       platformRoot.dataset.cosEmbeddedPlatform = view;
@@ -3298,14 +3356,12 @@ const communityForm=event.target.closest("[data-community-form]");if(communityFo
       window.HHExtensionSuite?.mount?.(grid, [modules.find((item) => item.id === view)].filter(Boolean));
       return {
         unmount() {
-          platformRoot.classList.remove("creative-os-embedded-platform");
-          delete platformRoot.dataset.cosEmbeddedPlatform;
+          restoreEmbeddedPlatform(embedding);
         }
       };
     },
     unmount() {
-      platformRoot?.classList.remove("creative-os-embedded-platform");
-      if (platformRoot) delete platformRoot.dataset.cosEmbeddedPlatform;
+      restoreEmbeddedPlatform();
     }
   };
 
@@ -5277,7 +5333,7 @@ function initAppShell() {
   ];
   const creativeStudioItems = [
     { id: "overview", icon: "CC", title: "Creative Command Center", group: "Điều hành", description: "Dự án, deadline, chi phí, lịch và tiến độ" },
-    { id: "project", icon: "UP", title: "Universal Project", group: "Điều hành", description: "Brief, prompt, script, media và phiên bản dùng chung" },
+    { id: "project", icon: "UP", title: "Universal Project", group: "Điều hành", description: "Quản lý brief, tài sản và phiên bản; công cụ chuyên trách lưu riêng" },
     { id: "ai-center", icon: "AI", title: "AI Center", group: "AI & Kịch bản", description: "Chat, prompt, phân tích và workflow AI" },
     { id: "ai-script", icon: "KS", title: "Kịch bản AI", group: "AI & Kịch bản", description: "Viết, phân tích, dịch, batch và quản lý series" },
     { id: "brief", icon: "BR", title: "Creative Brief", group: "Tiền kỳ", description: "Mục tiêu, đối tượng và kế hoạch nội dung" },
@@ -5300,7 +5356,17 @@ function initAppShell() {
     { id: "analytics", icon: "AN", title: "Creative Analytics", group: "Xuất bản", description: "CTR, retention và A/B test" },
     { id: "rights", icon: "RC", title: "Rights & Provenance", group: "Xuất bản", description: "Nguồn, giấy phép và manifest" },
     { id: "providers", icon: "PR", title: "Provider Router", group: "Xuất bản", description: "Quota, chi phí, độ trễ và cooldown" },
-    { id: "marketplace", icon: "MK", title: "Creative Marketplace", group: "Mở rộng", description: "Template, workflow và asset pack" }
+    { id: "marketplace", icon: "MK", title: "Creative Marketplace", group: "Mở rộng", description: "Template, workflow và asset pack" },
+    { id: "idea-lab", icon: "IL", title: "Idea Lab", group: "Ý tưởng & Ngôn từ", description: "Ma trận ý tưởng có tiêu chí và lịch sử riêng" },
+    { id: "naming-studio", icon: "NS", title: "Naming Studio", group: "Ý tưởng & Ngôn từ", description: "Đặt tên, lọc từ cấm và chấm độ phù hợp" },
+    { id: "copy-studio", icon: "CP", title: "Copy Studio", group: "Ý tưởng & Ngôn từ", description: "Headline, CTA và copy riêng cho từng kênh" },
+    { id: "writing-room", icon: "WR", title: "Writing Room", group: "Ý tưởng & Ngôn từ", description: "Dàn ý, bài dài và xuất Markdown" },
+    { id: "campaign-planner", icon: "CA", title: "Campaign Planner", group: "Chiến dịch", description: "Mục tiêu, kênh, ngân sách và timeline" },
+    { id: "photo-planner", icon: "PH", title: "Photo Planner", group: "Hình ảnh & Chuyển động", description: "Shot list, ánh sáng, ống kính và checklist" },
+    { id: "motion-planner", icon: "MO", title: "Motion Planner", group: "Hình ảnh & Chuyển động", description: "Scene, cue, keyframe và timeline motion" },
+    { id: "podcast-studio", icon: "PO", title: "Podcast Studio", group: "Âm thanh & Không gian", description: "Run-of-show, câu hỏi, segment và chapter" },
+    { id: "three-d-planner", icon: "3D", title: "3D Scene Planner", group: "Hình ảnh & Chuyển động", description: "Scene graph, camera, ánh sáng và asset budget" },
+    { id: "portfolio-builder", icon: "PF", title: "Portfolio Builder", group: "Xuất bản", description: "Case study và portfolio HTML độc lập" }
   ];
   const creativeOSViews = new Set(creativeStudioItems.map((item) => item.id));
   const isCreativeOSRoute = (route) => {

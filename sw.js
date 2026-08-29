@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v926";
+const CACHE = "hh-identity-portal-v929";
+// Creative specialist compatibility: hh-identity-portal-v928 creative-os.js?v=14 creative-os.css?v=8 performance-loader.js?v=570 script.js?v=251.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v925.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v916.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v914.
@@ -30,7 +31,7 @@ const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
 const RUNTIME_ASSETS = [
   "./",
   "./index.html",
-  "./app-shell.css?v=65",
+  "./app-shell.css?v=66",
   "./workspace-feature-explorer.css?v=2",
   "./app-theme-system.css?v=9",
   "./dashboard-aurora.css?v=4",
@@ -386,13 +387,15 @@ const RUNTIME_ASSETS = [
   "./insights-pro.js?v=7",
   "./privacy-consent-center.js?v=2",
   "./creative-suite.js?v=7",
-  "./creative-os.css?v=7",
+  "./creative-os.css?v=8",
   "./creative-galaxy.css?v=3",
-  "./creative-galaxy.js?v=4",
+  "./creative-galaxy.js?v=5",
   "./creative-star-map.css?v=2",
-  "./creative-star-map.js?v=3",
-  "./creative-os.js?v=13",
+  "./creative-star-map.js?v=4",
+  "./creative-os.js?v=15",
   "./creative-os-core.js?v=4",
+  "./creative-specialist-studios.css?v=2",
+  "./creative-specialist-studios.js?v=2",
   "./creative-command-center.css?v=2",
   "./creative-command-center.js?v=2",
   "./creative-preproduction.css?v=1",
@@ -528,7 +531,7 @@ const RUNTIME_ASSETS = [
 ];
 const CORE = [
   "./index.html",
-  "./app-shell.css?v=65",
+  "./app-shell.css?v=66",
   "./app-theme-system.css?v=9",
   "./sidebar-navigation-pro.css?v=29",
   "./auth-experience.css?v=6",
@@ -543,10 +546,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=569",
+  "./performance-loader.js?v=571",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=250"
+  "./script.js?v=252"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

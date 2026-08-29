@@ -13,7 +13,8 @@ const engines = [
   ["creative-production-lab.js?v=1", "HHCreativeProductionLab"],
   ["creative-collaboration-os.js?v=2", "HHCreativeCollaborationOS"],
   ["creative-publishing.js?v=1", "HHCreativePublishing"],
-  ["creative-marketplace.js?v=1", "HHCreativeMarketplace"]
+  ["creative-marketplace.js?v=1", "HHCreativeMarketplace"],
+  ["creative-specialist-studios.js?v=2", "HHCreativeSpecialistStudios"]
 ];
 
 test("Creative OS shell is routed, versioned and cached", () => {
@@ -23,7 +24,7 @@ test("Creative OS shell is routed, versioned and cached", () => {
   const shell = read("creative-os.js");
   const worker = read("sw.js");
   const registeredAssets = `${html}\n${loader}`;
-  assert.match(registeredAssets, /creative-os\.css\?v=7/);
+  assert.match(registeredAssets, /creative-os\.css\?v=8/);
   assert.match(registeredAssets, /creative-os\.js\?v=\d+/);
   assert.match(html, /script\.js\?v=\d+/);
   assert.match(worker, /hh-identity-portal-v\d+/);
@@ -42,7 +43,7 @@ test("Creative OS shell is routed, versioned and cached", () => {
 
 test("Creative OS keeps existing tools and adds all requested routes", () => {
   const script = read("script.js");
-  for (const id of ["ai-center", "ai-script", "creator-studio", "media-center", "ai-automation", "overview", "project", "brief", "moodboard", "storyboard", "world-bible", "workflow", "ai-director", "prompt-studio", "repurpose", "brand", "audio-dubbing", "prototype", "review", "collaboration", "publishing", "analytics", "rights", "providers", "marketplace"]) {
+  for (const id of ["ai-center", "ai-script", "creator-studio", "media-center", "ai-automation", "overview", "project", "brief", "moodboard", "storyboard", "world-bible", "workflow", "ai-director", "prompt-studio", "repurpose", "brand", "audio-dubbing", "prototype", "review", "collaboration", "publishing", "analytics", "rights", "providers", "marketplace", "idea-lab", "naming-studio", "copy-studio", "writing-room", "campaign-planner", "photo-planner", "motion-planner", "podcast-studio", "three-d-planner", "portfolio-builder"]) {
     assert.match(script, new RegExp(`id: ["']${id}["']`));
   }
 });

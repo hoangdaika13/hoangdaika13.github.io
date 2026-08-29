@@ -12,7 +12,8 @@ const ROUTES = Object.freeze([
   "overview", "project", "ai-center", "ai-script", "brief", "moodboard", "storyboard", "world-bible",
   "creator-studio", "media-center", "workflow", "ai-director", "prompt-studio", "ai-automation", "repurpose", "brand",
   "audio-dubbing", "prototype", "review", "collaboration", "publishing",
-  "analytics", "rights", "providers", "marketplace"
+  "analytics", "rights", "providers", "marketplace", "idea-lab", "naming-studio", "copy-studio", "writing-room",
+  "campaign-planner", "photo-planner", "motion-planner", "podcast-studio", "three-d-planner", "portfolio-builder"
 ]);
 
 const ENGINES = Object.freeze([
@@ -22,7 +23,8 @@ const ENGINES = Object.freeze([
   ["creative-production-lab.js", "creative-production-lab.css", "HHCreativeProductionLab"],
   ["creative-collaboration-os.js", "creative-collaboration-os.css", "HHCreativeCollaborationOS"],
   ["creative-publishing.js", "creative-publishing.css", "HHCreativePublishing"],
-  ["creative-marketplace.js", "creative-marketplace.css", "HHCreativeMarketplace"]
+  ["creative-marketplace.js", "creative-marketplace.css", "HHCreativeMarketplace"],
+  ["creative-specialist-studios.js", "creative-specialist-studios.css", "HHCreativeSpecialistStudios"]
 ]);
 
 function memoryStorage() {
@@ -58,8 +60,8 @@ class FakeNode {
     this.listeners.get(type)?.delete(handler);
   }
 
-  dispatch(type) {
-    [...(this.listeners.get(type) || [])].forEach((handler) => handler({ type, target: this }));
+  dispatch(type, event = {}) {
+    [...(this.listeners.get(type) || [])].forEach((handler) => handler({ type, target: this, ...event }));
   }
 
   listenerCount(type) {
@@ -100,7 +102,7 @@ function createFakeDocument() {
 
 const settle = () => new Promise((resolve) => setImmediate(() => setImmediate(resolve)));
 
-test("all 25 Creative OS routes are reachable and mapped to one workspace shell", () => {
+test("all 35 Creative OS routes are reachable and mapped to a specialist workspace shell", () => {
   const shell = read("creative-os.js");
   const router = read("script.js");
   const worker = read("sw.js");
@@ -161,10 +163,10 @@ test("shell passes the active Universal Project id to every mounted workspace", 
   );
 });
 
-test("mounting all routes reuses one store and unmount removes root listeners", async () => {
+test("mounting all routes isolates stores and unmount removes root listeners", async () => {
   const core = require(path.join(root, "creative-os-core.js"));
   const store = core.createStore({ storage: memoryStorage() });
-  const project = store.createProject({ name: "Shared journey" });
+  store.createProject({ name: "Legacy seed must not leak" });
   const document = createFakeDocument();
   const mounts = [];
   const context = {
@@ -206,8 +208,9 @@ test("mounting all routes reuses one store and unmount removes root listeners", 
     assert.equal(host.listenerCount("click"), 1, `duplicate click listener after mounting ${route}`);
   }
   assert.deepEqual(mounts.map((item) => item.view), ROUTES);
-  assert.ok(mounts.every((item) => item.projectId === project.id), "a route detached from the active project");
-  assert.ok(mounts.every((item) => item.store === store), "a route received a different store instance");
+  assert.equal(new Set(mounts.map((item) => item.projectId)).size, ROUTES.length, "two routes reused one project id");
+  assert.equal(new Set(mounts.map((item) => item.store)).size, ROUTES.length, "two routes reused one mutable store");
+  assert.ok(mounts.every((item) => item.store !== store), "legacy universal store leaked into a specialist route");
   context.HHCreativeOS.unmount();
   assert.equal(host.listenerCount("click"), 0);
 });
@@ -245,6 +248,113 @@ test("Creative OS immediately reuses core assets already loaded by the route loa
   await context.HHCreativeOS.mount(host, { view: "overview" });
   assert.equal(mounted, true, "the preloaded core script was mistaken for a still-loading asset");
   assert.equal(context.HHCreativeOS.isPrepared("/create/overview"), true);
+});
+
+test("concurrent route preparation creates exactly one isolated store", async () => {
+  const core = require(path.join(root, "creative-os-core.js"));
+  const document = createFakeDocument();
+  let createCount = 0;
+  const storageKeys = [];
+  const countedCore = {
+    ...core,
+    createStore(options = {}) {
+      createCount += 1;
+      storageKeys.push(options.storageKey);
+      return core.createStore({ ...options, storage: memoryStorage() });
+    }
+  };
+  const context = {
+    console,
+    document,
+    location: { hash: "#/create/idea-lab" },
+    AbortController,
+    Blob,
+    URL,
+    CustomEvent: class CustomEvent { constructor(type) { this.type = type; } },
+    setTimeout,
+    clearTimeout,
+    queueMicrotask,
+    HHCreativeCore: countedCore,
+    HHCreativeSpecialistStudios: { mount() { return { unmount() {} }; }, unmount() {} }
+  };
+  context.window = context;
+  vm.runInNewContext(read("creative-os.js"), context, { filename: "creative-os.js" });
+
+  const results = await Promise.all(Array.from({ length: 8 }, () => context.HHCreativeOS.prepareRoute("/create/idea-lab")));
+
+  assert.equal(createCount, 1, "concurrent prepareRoute calls created duplicate mutable stores");
+  assert.deepEqual(storageKeys, ["hh.creative.tool.idea-lab.project.v1"]);
+  assert.ok(results.every((result) => result.store === results[0].store));
+});
+
+test("hover warm-up loads an engine without persisting an empty project", async () => {
+  const core = require(path.join(root, "creative-os-core.js"));
+  const document = createFakeDocument();
+  let createCount = 0;
+  const context = {
+    console,
+    document,
+    location: { hash: "#/create" },
+    AbortController,
+    Blob,
+    URL,
+    setTimeout,
+    clearTimeout,
+    queueMicrotask,
+    HHCreativeCore: {
+      ...core,
+      createStore(options) { createCount += 1; return core.createStore({ ...options, storage: memoryStorage() }); }
+    },
+    HHCreativeSpecialistStudios: { mount() { return { unmount() {} }; }, unmount() {} }
+  };
+  context.window = context;
+  vm.runInNewContext(read("creative-os.js"), context, { filename: "creative-os.js" });
+
+  const result = await context.HHCreativeOS.prepareRoute("/create/photo-planner", { createStore: false });
+
+  assert.equal(result.ready, true);
+  assert.equal(result.store, null);
+  assert.equal(createCount, 0, "hover warm-up created persistent tool data");
+});
+
+test("hover preloading cannot retarget actions in the mounted workspace", async () => {
+  const core = require(path.join(root, "creative-os-core.js"));
+  const document = createFakeDocument();
+  let overviewStore = null;
+  const context = {
+    console,
+    document,
+    location: { hash: "#/create/overview" },
+    AbortController,
+    Blob,
+    URL,
+    CustomEvent: class CustomEvent { constructor(type) { this.type = type; } },
+    setTimeout,
+    clearTimeout,
+    queueMicrotask,
+    HHCreativeCore: core,
+    HHCreativeCommandCenter: {
+      mount(_host, options) { overviewStore = options.store; return { unmount() {} }; },
+      unmount() {}
+    },
+    HHCreativeSpecialistStudios: { mount() { return { unmount() {} }; }, unmount() {} }
+  };
+  context.window = context;
+  vm.runInNewContext(read("creative-os.js"), context, { filename: "creative-os.js" });
+  const host = new FakeNode("div");
+  await context.HHCreativeOS.mount(host, { view: "overview" });
+  await settle();
+  const namingPreparation = await context.HHCreativeOS.prepareRoute("/create/naming-studio");
+
+  host.dispatch("click", {
+    target: {
+      closest(selector) { return selector === "[data-cos-new-project]" ? this : null; }
+    }
+  });
+  await settle();
+
+  assert.equal(overviewStore.getState().projects.length, 2, "mounted overview action wrote to the wrong preloaded store");
+  assert.equal(namingPreparation.store.getState().projects.length, 1, "hovered Naming Studio received an Overview project");
 });
 
 test("external publishing stays blocked until a configured adapter confirms success", async () => {

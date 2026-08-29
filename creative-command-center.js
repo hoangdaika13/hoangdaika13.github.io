@@ -615,11 +615,35 @@
     }
   }
 
+  // A mounted Command Center may be hosted by Creative OS with a per-tool
+  // storage adapter.  Do not let an explicitly supplied null/undefined
+  // storage silently fall back to the browser's global localStorage: that
+  // would make an otherwise isolated route leak data into the legacy key.
+  function storeOptions(options) {
+    const settings = options && typeof options === "object" ? options : {};
+    const result = {};
+    if (Object.prototype.hasOwnProperty.call(settings, "storage")) {
+      result.storage = settings.storage && typeof settings.storage.getItem === "function" && typeof settings.storage.setItem === "function"
+        ? settings.storage
+        : { getItem() { return null; }, setItem() {} };
+    }
+    if (Object.prototype.hasOwnProperty.call(settings, "storageKey")) result.storageKey = settings.storageKey;
+    return result;
+  }
+
   function mount(root, options = {}) {
     if (!root || typeof root.querySelector !== "function") throw new TypeError("HHCreativeCommandCenter.mount cần một root DOM hợp lệ.");
     if (!CreativeCore) throw new Error("HHCreativeCore phải được tải trước Creative Command Center.");
     unmount(root);
-    const store = options.store || CreativeCore.createStore();
+    const optionsForStore = storeOptions(options);
+    // Preserve the original no-argument factory contract for host adapters:
+    // options.store || CreativeCore.createStore() remains the safe fallback.
+    const createDefaultStore = () => options.store || CreativeCore.createStore();
+    // Keep the no-options path identical to the original API so integrations
+    // that monkey-patch/createStore without arguments continue to work.
+    const store = options.store || (Object.keys(optionsForStore).length
+      ? CreativeCore.createStore(optionsForStore)
+      : createDefaultStore());
     const state = store.getState();
     const view = options.view === "project" ? "project" : "overview";
     const instance = {

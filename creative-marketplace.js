@@ -191,7 +191,9 @@
   }
 
   function createMarketplaceStore(options = {}) {
-    const storage = options.storage || (typeof localStorage !== "undefined" ? localStorage : null);
+    const storage = Object.prototype.hasOwnProperty.call(options, "storage")
+      ? options.storage
+      : (typeof localStorage !== "undefined" ? localStorage : null);
     const storageKey = cleanText(options.storageKey || STORAGE_KEY, 160);
     let state;
     try {
@@ -424,7 +426,7 @@
       root.innerHTML = `<section class="cmp-shell">
         <header class="cmp-hero">
           <div><span>CREATIVE MARKETPLACE · LOCAL-FIRST</span><h2>Pack sáng tạo, quyền minh bạch.</h2><p>Khám phá template, prompt, workflow, LUT, giọng, nhân vật và Brand Kit. Mọi pack chỉ được cài vào dự án sau khi bạn duyệt quyền.</p></div>
-          <aside><small>Dự án đang chọn</small><strong>${escapeHtml(project?.name || "Chưa có dự án")}</strong><span>${installedForProject.length} pack đã cài · ${state.favorites.length} yêu thích</span><button type="button" data-action="navigate-project">Mở Universal Project</button></aside>
+          <aside><small>Dự án đang chọn</small><strong>${escapeHtml(project?.name || "Chưa có dự án")}</strong><span>${installedForProject.length} pack đã cài · ${state.favorites.length} yêu thích</span>${options.standalone === true ? "" : `<button type="button" data-action="navigate-project">Mở Universal Project</button>`}</aside>
         </header>
         <div class="cmp-stats"><div><span>Thư viện</span><strong>${catalog().length}</strong><small>${state.imported.length} manifest nhập</small></div><div><span>Đã cài</span><strong>${installedForProject.length}</strong><small>Trong dự án hiện tại</small></div><div><span>Runtime</span><strong>Local</strong><small>Không chạy mã bên thứ ba</small></div><div><span>Tài khoản</span><strong>${escapeHtml(cleanText(options.currentUser?.name || "Khách cục bộ", 24))}</strong><small>Dữ liệu trên thiết bị này</small></div></div>
         <nav class="cmp-toolbar" aria-label="Chế độ Marketplace"><div><button type="button" data-mode="discover" class="${runtime.mode === "discover" ? "is-active" : ""}">Khám phá</button><button type="button" data-mode="installed" class="${runtime.mode === "installed" ? "is-active" : ""}">Đã cài</button></div><div><button type="button" data-action="import">Nhập manifest</button><input type="file" data-field="manifest-file" accept="application/json,.json" hidden><button type="button" data-action="export-selected" ${runtime.selectedId ? "" : "disabled"}>Xuất manifest</button></div></nav>
@@ -506,7 +508,7 @@
       if (action === "import") { root.querySelector("[data-field='manifest-file']")?.click(); return; }
       if (action === "export-pack" && runtime.selectedId) { const pack = findPack(runtime.selectedId); downloadText(`${pack.id}.hhpack.json`, exportManifest(pack)); return; }
       if (action === "export-selected" && runtime.selectedId) { const pack = findPack(runtime.selectedId); if (pack) downloadText(`${pack.id}.hhpack.json`, exportManifest(pack)); return; }
-      if (action === "navigate-project") options.onNavigate?.("/create/project");
+      if (action === "navigate-project" && options.standalone !== true) options.onNavigate?.("/create/project");
     }
 
     function onInput(event) {

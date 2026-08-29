@@ -41,7 +41,7 @@
     home: {
       /*
        * The usable dashboard shell and its first-paint styles already live in
-       * index.html/app-shell.css. Richer controllers mount after first paint.
+       * index.html/app-shell.css?v=66. Richer controllers mount after first paint.
        */
       styles: [],
       scripts: []
@@ -142,9 +142,9 @@
       ]
     },
     creative: {
-      styles: ["creative-suite.css?v=6", "creative-os.css?v=7", "creative-galaxy.css?v=3", "creative-star-map.css?v=2", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
+      styles: ["creative-suite.css?v=6", "creative-os.css?v=8", "creative-galaxy.css?v=3", "creative-star-map.css?v=2", "creative-specialist-studios.css?v=2", "ai-center-pro.css?v=1", "ai-center-advanced.css?v=1"],
       scripts: [
-        "creative-os-core.js?v=4", "creative-galaxy.js?v=4", "creative-star-map.js?v=3", "creative-os.js?v=13", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
+        "creative-os-core.js?v=4", "creative-galaxy.js?v=5", "creative-star-map.js?v=4", "creative-os.js?v=15", "creative-specialist-studios.js?v=2", "creative-suite.js?v=7", "ai-center-advanced.js?v=2"
       ]
     },
     music: {
@@ -331,7 +331,10 @@
     if (value.startsWith("/work")) return ["work"];
     if (value === "/admin" || value.startsWith("/admin/") || value === "/analytics/admin-panel") return ["analytics", "admin"];
     if (value.startsWith("/analytics")) return ["analytics"];
-    if (value.startsWith("/create")) return ["creative", "platform"];
+    // Match the Creative namespace at a path boundary.  A malformed route such
+    // as `/creative` or `/create-old` must not pull the entire Creative bundle
+    // (and should be handled by the normal not-found/router path instead).
+    if (value === "/create" || value.startsWith("/create/")) return ["creative", "platform"];
     if (value.startsWith("/system") || value.startsWith("/tools") || value === "/favorites" || value === "/recent") return ["platform"];
     return [];
   }

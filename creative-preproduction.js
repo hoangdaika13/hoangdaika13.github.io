@@ -354,56 +354,83 @@
     };
   }
 
-  function projectFromStoreState(raw) {
+  function projectFromStoreState(raw, projectId) {
     const state = raw && typeof raw === "object" ? raw : {};
     if (state.format === FORMAT) return normalizeProject(state);
     if (state.currentProject && typeof state.currentProject === "object") return normalizeProject(state.currentProject);
     if (state.project && typeof state.project === "object") return normalizeProject(state.project);
     if (state.activeProjectId && Array.isArray(state.projects)) {
-      return normalizeProject(state.projects.find((project) => project?.id === state.activeProjectId) || state.projects[0]);
+      const requested = projectId ? state.projects.find((project) => project?.id === projectId) : null;
+      const shared = requested || state.projects.find((project) => project?.id === state.activeProjectId) || state.projects[0];
+      if (!shared) return null;
+      const saved = shared.workflows && (shared.workflows.preproduction || shared.workflows.creativePreproduction);
+      if (saved && typeof saved === "object") {
+        return normalizeProject({ ...saved, id: shared.id, name: shared.name, status: shared.review?.status || shared.status, brief: { ...(saved.brief || {}), ...(shared.brief || {}) } });
+      }
+      return normalizeProject({ ...shared, id: shared.id, name: shared.name, status: shared.review?.status || shared.status, worldBible: shared.world?.preproductionWorldBible || shared.worldBible });
     }
     if (state.activeProjectId && state.projects && typeof state.projects === "object") {
-      return normalizeProject(state.projects[state.activeProjectId] || Object.values(state.projects)[0]);
+      const shared = state.projects[projectId || state.activeProjectId] || state.projects[state.activeProjectId] || Object.values(state.projects)[0];
+      return shared ? normalizeProject(shared) : null;
     }
     return null;
   }
 
-  function saveLocal(storage, project) {
+  function normalizeStorageKey(value) {
+    const key = cleanText(value, 180).trim();
+    return key || STORAGE_KEY;
+  }
+
+  function saveLocal(storage, project, storageKey) {
     if (!storage || typeof storage.setItem !== "function") return { ok: false, reason: "unsupported" };
     try {
-      storage.setItem(STORAGE_KEY, JSON.stringify(normalizeProject(project)));
+      storage.setItem(normalizeStorageKey(storageKey), JSON.stringify(normalizeProject(project)));
       return { ok: true };
     } catch (error) {
       return { ok: false, reason: cleanText(error?.message || "storage-error", 160) };
     }
   }
 
-  function loadLocal(storage) {
+  function loadLocal(storage, storageKey) {
     if (!storage || typeof storage.getItem !== "function") return { ok: false, reason: "unsupported", project: createDefaultProject() };
     try {
-      const value = storage.getItem(STORAGE_KEY);
+      const value = storage.getItem(normalizeStorageKey(storageKey));
       return { ok: true, project: value ? normalizeProject(JSON.parse(value)) : createDefaultProject() };
     } catch (error) {
       return { ok: false, reason: cleanText(error?.message || "storage-error", 160), project: createDefaultProject() };
     }
   }
 
-  function createStoreAdapter(store, storage) {
+  function createStoreAdapter(store, storage, options) {
+    const settings = options && typeof options === "object" ? options : {};
+    const storageKey = normalizeStorageKey(settings.storageKey);
     const external = store && typeof store.getState === "function" && typeof store.updateProject === "function";
     const getProject = () => {
       if (external) {
-        try { return projectFromStoreState(store.getState()) || createDefaultProject(); } catch (_) { return createDefaultProject(); }
+        try { return projectFromStoreState(store.getState(), settings.projectId) || createDefaultProject(); } catch (_) { return createDefaultProject(); }
       }
-      return loadLocal(storage).project;
+      return loadLocal(storage, storageKey).project;
     };
     const updateProject = (project) => {
       const next = normalizeProject({ ...project, updatedAt: new Date().toISOString() });
       if (external) {
-        if (store.updateProject.length >= 2) store.updateProject(next.id, next);
-        else store.updateProject(next);
+        let payload = next;
+        const state = typeof store.getState === "function" ? store.getState() : null;
+        const projects = Array.isArray(state?.projects) ? state.projects : [];
+        const shared = projects.find((item) => item?.id === next.id) || projects.find((item) => item?.id === settings.projectId) || projects.find((item) => item?.id === state?.activeProjectId);
+        if (shared) {
+          payload = {
+            brief: { ...(shared.brief || {}), ...clone(next.brief) },
+            storyboard: clone(next.storyboard),
+            workflows: { ...(shared.workflows || {}), preproduction: clone(next) },
+            world: { ...(shared.world || {}), preproductionWorldBible: clone(next.worldBible) }
+          };
+        }
+        if (store.updateProject.length >= 2) store.updateProject(shared?.id || next.id, payload);
+        else store.updateProject(shared ? { ...shared, ...payload } : next);
         return { ok: true, project: next, external: true };
       }
-      return { ...saveLocal(storage, next), project: next, external: false };
+      return { ...saveLocal(storage, next, storageKey), project: next, external: false };
     };
     const subscribe = (listener) => {
       if (!external || typeof store.subscribe !== "function") return () => {};
@@ -424,15 +451,15 @@
     return ({ brief: "Creative Brief", moodboard: "Moodboard", storyboard: "Storyboard", "world-bible": "World Bible" })[view] || "Pre-production";
   }
 
-  function shellMarkup(view, project, body) {
+  function shellMarkup(view, project, body, standalone) {
     return `<section class="hhcp" data-hhcp-view="${escapeHtml(view)}">
       <header class="hhcp__hero">
         <div><p class="hhcp__kicker">PRE-PRODUCTION OS</p><h2>${escapeHtml(viewLabel(view))}</h2><p>Biến ý tưởng thành tài liệu sản xuất có cấu trúc, lưu cùng dự án và sẵn sàng chuyển sang bước tiếp theo.</p></div>
         <div class="hhcp__project"><span>Đang làm việc</span><strong>${escapeHtml(project.name)}</strong><small>${project.status} · tự lưu</small></div>
       </header>
-      <nav class="hhcp__tabs" aria-label="Không gian tiền kỳ">
+      ${standalone ? "" : `<nav class="hhcp__tabs" aria-label="Không gian tiền kỳ">
         ${VIEWS.map((item) => `<button type="button" data-hhcp-view-button="${item}" class="${item === view ? "is-active" : ""}" aria-current="${item === view ? "page" : "false"}">${escapeHtml(viewLabel(item))}</button>`).join("")}
-      </nav>
+      </nav>`}
       <div class="hhcp__workspace">${body}</div>
       <div class="hhcp__toast" data-hhcp-status role="status" aria-live="polite">Sẵn sàng.</div>
       <dialog class="hhcp__dialog" data-hhcp-comment-dialog aria-labelledby="hhcp-comment-title">
@@ -594,8 +621,9 @@
     if (!root || !globalScope.document) return null;
     unmount(root);
     const config = options && typeof options === "object" ? options : {};
-    const storage = config.storage || globalScope.localStorage || null;
-    const adapter = createStoreAdapter(config.store, storage);
+    const hasStorage = Object.prototype.hasOwnProperty.call(config, "storage");
+    const storage = hasStorage ? config.storage : globalScope.localStorage || null;
+    const adapter = createStoreAdapter(config.store, storage, { storageKey: config.storageKey, projectId: config.projectId });
     let project = adapter.getProject();
     let view = VIEWS.includes(config.view) ? config.view : "brief";
     const runtime = {
@@ -655,7 +683,7 @@
       if (view === "moodboard") body = moodboardMarkup(project, runtime);
       if (view === "storyboard") body = storyboardMarkup(project);
       if (view === "world-bible") body = bibleMarkup(project, runtime);
-      root.innerHTML = shellMarkup(view, project, body);
+      root.innerHTML = shellMarkup(view, project, body, config.standalone === true);
       root.setAttribute("data-creative-preproduction", "");
       root.setAttribute("aria-label", `${viewLabel(view)} workspace`);
       if (view === "moodboard" && runtime.filterGroup !== "all") {
@@ -722,7 +750,7 @@
 
     const onClick = async (event) => {
       const viewButton = event.target.closest("[data-hhcp-view-button]");
-      if (viewButton) { view = viewButton.dataset.hhcpViewButton; render(); return; }
+      if (viewButton) { if (config.standalone === true) return; view = viewButton.dataset.hhcpViewButton; render(); return; }
       const action = event.target.closest("[data-hhcp-action]")?.dataset.hhcpAction;
       if (action === "copy-brief") {
         const text = [project.brief.persona, project.brief.message, project.brief.tone, project.brief.cta, project.brief.format, ...project.brief.contentPlan].filter(Boolean).join("\n\n");
@@ -926,7 +954,7 @@
       getProject: () => clone(project),
       setProject(next) { project = normalizeProject(next); persist("Đã nạp project."); render(); },
       getView: () => view,
-      setView(next) { if (!VIEWS.includes(next)) return false; view = next; render(); return true; },
+      setView(next) { if (config.standalone === true && next !== view) return false; if (!VIEWS.includes(next)) return false; view = next; render(); return true; },
       render,
       save: () => persist("Đã lưu project."),
       unmount: () => unmount(root)

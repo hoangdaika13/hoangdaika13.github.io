@@ -1995,6 +1995,462 @@ html.hh-page-hidden #hhBootSurface *,html.hh-page-hidden #hhBootSurface *::befor
 .app-cosmic-loader[data-motion="static"].is-departing .app-cosmic-loader__card{animation:none}.app-cosmic-loader[data-motion="static"].is-arriving{mask-image:none;-webkit-mask-image:none;animation:appCosmicReducedExit 40ms linear forwards}
 .app-cosmic-loader[data-motion="balanced"] .app-cosmic-loader__space>i:nth-child(n+5),.app-cosmic-loader[data-motion="balanced"] .app-cosmic-loader__motif>i:nth-child(n+7){display:none}
 
+/* Cosmic loading visual system v3
+ *
+ * The loader is shared by the first-paint boot surface and every route
+ * transition.  These layers are deliberately CSS-only: no image requests,
+ * timers, or extra DOM are needed, so a slow workspace cannot make the
+ * loading state flash or block the main thread.  The card remains opaque
+ * enough for text to stay readable over the animated nebula.
+ */
+#hhBootSurface,
+.app-cosmic-loader {
+  --cosmic-cyan: #55e6ff;
+  --cosmic-violet: #9c72ff;
+  --cosmic-pink: #ff58c8;
+}
+
+#hhBootSurface {
+  background:
+    radial-gradient(ellipse at 50% 44%, rgba(5, 12, 31, .08), rgba(1, 3, 12, .72) 74%),
+    radial-gradient(circle at 12% 86%, color-mix(in srgb, var(--boot-tertiary) 19%, transparent), transparent 36%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--boot-primary) 18%, transparent), transparent 34%),
+    linear-gradient(135deg, #050511 0%, #0d0a25 43%, #031722 100%);
+}
+
+#hhBootSurface::before {
+  inset: -46%;
+  opacity: .84;
+  background:
+    conic-gradient(from 18deg at 50% 50%, transparent 0 17%, color-mix(in srgb, var(--boot-primary) 14%, transparent) 24%, transparent 33% 51%, color-mix(in srgb, var(--boot-tertiary) 14%, transparent) 62%, transparent 73%),
+    radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--boot-secondary) 16%, transparent), transparent 58%);
+  filter: blur(28px) saturate(1.18);
+  animation: hhCosmicNebulaDrift 16s linear infinite;
+}
+
+#hhBootSurface::after {
+  opacity: .78;
+  background:
+    radial-gradient(ellipse at center, transparent 0 32%, rgba(1, 4, 15, .22) 67%, rgba(1, 3, 10, .78) 100%),
+    linear-gradient(115deg, transparent 0 38%, rgba(255, 255, 255, .018) 50%, transparent 62%);
+  mix-blend-mode: screen;
+}
+
+#hhBootSurface .hh-singularity-gate {
+  width: min(94vw, 640px);
+  min-height: 430px;
+  padding-inline: clamp(16px, 4vw, 42px);
+}
+
+#hhBootSurface .hh-boot-core {
+  isolation: isolate;
+  filter: drop-shadow(0 18px 34px rgba(0, 0, 0, .38));
+}
+
+#hhBootSurface .hh-boot-core::before,
+#hhBootSurface .hh-boot-core::after {
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+#hhBootSurface .hh-boot-core::before {
+  z-index: 0;
+  background: radial-gradient(circle, color-mix(in srgb, var(--boot-primary) 21%, transparent), transparent 67%);
+  filter: blur(10px);
+  animation: hhCosmicHaloPulse 3.8s ease-in-out infinite;
+}
+
+#hhBootSurface .hh-boot-core::after {
+  z-index: 1;
+  border: 1px solid color-mix(in srgb, var(--boot-tertiary) 42%, transparent);
+  border-left-color: color-mix(in srgb, var(--boot-primary) 66%, transparent);
+  border-right-color: color-mix(in srgb, var(--boot-secondary) 66%, transparent);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--boot-secondary) 18%, transparent), inset 0 0 18px color-mix(in srgb, var(--boot-primary) 9%, transparent);
+  animation: hhCosmicCoreRing 9s linear infinite reverse;
+}
+
+#hhBootSurface .hh-boot-core > :is(.hh-boot-orbit, .hh-boot-mark) { z-index: 2; }
+#hhBootSurface .hh-boot-mark > img { filter: drop-shadow(0 0 9px var(--boot-primary)) drop-shadow(0 0 22px var(--boot-secondary)); }
+
+#hhBootSurface .hh-boot-copy { width: min(100%, 520px); }
+#hhBootSurface .hh-boot-copy strong {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  white-space: normal;
+}
+#hhBootSurface .hh-boot-copy p { max-width: 48ch; min-height: 2.8em; }
+#hhBootSurface .hh-boot-foot { min-height: 16px; }
+#hhBootSurface .hh-boot-progress i { position: relative; overflow: hidden; }
+#hhBootSurface .hh-boot-progress i::after {
+  position: absolute;
+  inset: 0 auto 0 -40%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .8), transparent);
+  content: "";
+  animation: hhCosmicProgressShimmer 1.7s ease-in-out infinite;
+}
+
+.app-cosmic-loader {
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(5, 11, 34, .08), rgba(1, 4, 14, .54) 74%),
+    radial-gradient(circle at 18% 78%, color-mix(in srgb, var(--loader-accent) 18%, transparent), transparent 38%),
+    radial-gradient(circle at 86% 15%, color-mix(in srgb, var(--loader-secondary) 17%, transparent), transparent 36%),
+    linear-gradient(135deg, #030611, #0b0921 48%, #031722);
+  backdrop-filter: blur(10px) saturate(1.12);
+}
+
+.app-cosmic-loader::before,
+.app-cosmic-loader::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.app-cosmic-loader::before {
+  z-index: 0;
+  inset: -42%;
+  background:
+    conic-gradient(from 30deg at 50% 50%, transparent 0 19%, color-mix(in srgb, var(--loader-accent) 13%, transparent) 28%, transparent 38% 57%, color-mix(in srgb, var(--loader-secondary) 14%, transparent) 69%, transparent 79%),
+    radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--loader-accent) 12%, transparent), transparent 59%);
+  filter: blur(36px) saturate(1.22);
+  opacity: .78;
+  animation: hhCosmicNebulaDrift 18s linear infinite;
+}
+
+.app-cosmic-loader::after {
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 0 36%, rgba(0, 0, 0, .22) 69%, rgba(0, 0, 0, .66) 100%),
+    linear-gradient(115deg, transparent 0 43%, rgba(255, 255, 255, .017) 50%, transparent 57%);
+  mix-blend-mode: screen;
+}
+
+.app-cosmic-loader__space { z-index: 0; }
+.app-cosmic-loader__space::before,
+.app-cosmic-loader__space::after {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.app-cosmic-loader__space::before {
+  width: min(74vw, 740px);
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--loader-secondary) 24%, transparent);
+  box-shadow: 0 0 55px color-mix(in srgb, var(--loader-secondary) 11%, transparent), inset 0 0 55px color-mix(in srgb, var(--loader-accent) 8%, transparent);
+  animation: hhCosmicCoreRing 14s linear infinite;
+}
+
+.app-cosmic-loader__space::after {
+  width: min(48vw, 480px);
+  aspect-ratio: 1;
+  background: radial-gradient(circle, color-mix(in srgb, var(--loader-accent) 10%, transparent), transparent 67%);
+  filter: blur(12px);
+  animation: hhCosmicHaloPulse 4.8s ease-in-out infinite;
+}
+
+.app-cosmic-loader__stars {
+  z-index: 1;
+  opacity: .58;
+  will-change: background-position;
+}
+
+.app-cosmic-loader__stars::before,
+.app-cosmic-loader__stars::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.app-cosmic-loader__stars::before {
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, .95) 0 1px, transparent 1.4px),
+    radial-gradient(circle, color-mix(in srgb, var(--loader-accent) 88%, #fff) 0 .8px, transparent 1.2px);
+  background-position: 13px 28px, 91px 71px;
+  background-size: 173px 149px, 227px 191px;
+  opacity: .56;
+  animation: hhCosmicStarTwinkle 3.4s ease-in-out infinite alternate;
+}
+
+.app-cosmic-loader__stars::after {
+  left: 50%;
+  top: 22%;
+  inset-block: auto;
+  width: min(24vw, 210px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .85), color-mix(in srgb, var(--loader-accent) 80%, #fff), transparent);
+  box-shadow: 0 0 9px var(--loader-accent);
+  opacity: 0;
+  transform: rotate(-24deg) translateX(-20vw);
+  animation: hhCosmicShootingStar 5.6s ease-in-out 1.2s infinite;
+}
+
+.app-cosmic-loader__card {
+  z-index: 3;
+  width: min(500px, calc(100vw - 32px));
+  min-height: 292px;
+  padding: 30px clamp(18px, 4vw, 34px) 24px;
+  isolation: isolate;
+  border-color: color-mix(in srgb, var(--loader-accent) 66%, #26374b);
+  background:
+    radial-gradient(circle at 50% -8%, color-mix(in srgb, var(--loader-accent) 17%, transparent), transparent 46%),
+    linear-gradient(145deg, rgba(8, 16, 35, .965), rgba(7, 7, 25, .965));
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, .62),
+    0 0 38px color-mix(in srgb, var(--loader-accent) 20%, transparent),
+    0 0 100px color-mix(in srgb, var(--loader-secondary) 11%, transparent),
+    inset 0 0 35px color-mix(in srgb, var(--loader-accent) 7%, transparent);
+}
+
+.app-cosmic-loader__card::after {
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border: 1px solid color-mix(in srgb, var(--loader-secondary) 35%, transparent);
+  border-radius: inherit;
+  box-shadow: 0 0 20px color-mix(in srgb, var(--loader-secondary) 14%, transparent);
+  content: "";
+  pointer-events: none;
+  animation: hhCosmicBorderPulse 3.6s ease-in-out infinite;
+}
+
+.app-cosmic-loader__card > * { position: relative; z-index: 1; }
+.app-cosmic-loader__card > small { font-size: 9px; }
+.app-cosmic-loader__card > strong {
+  max-width: min(100%, 25ch);
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-align: center;
+  text-overflow: clip;
+  text-wrap: balance;
+  white-space: normal;
+}
+.app-cosmic-loader__card > p {
+  max-width: 42ch;
+  min-height: 2.8em;
+  color: #b3c1d4;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.app-cosmic-loader__planet {
+  isolation: isolate;
+  width: 94px;
+  height: 94px;
+  margin-bottom: 10px;
+}
+
+.app-cosmic-loader__planet::before,
+.app-cosmic-loader__planet::after {
+  position: absolute;
+  inset: -11px;
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.app-cosmic-loader__planet::before {
+  z-index: 0;
+  background: radial-gradient(circle, color-mix(in srgb, var(--loader-accent) 28%, transparent), transparent 65%);
+  filter: blur(8px);
+  animation: hhCosmicHaloPulse 2.8s ease-in-out infinite;
+}
+
+.app-cosmic-loader__planet::after {
+  z-index: 1;
+  inset: -4px;
+  border: 1px solid color-mix(in srgb, var(--loader-secondary) 54%, transparent);
+  border-top-color: color-mix(in srgb, var(--loader-accent) 86%, #fff);
+  box-shadow: 0 0 17px color-mix(in srgb, var(--loader-secondary) 18%, transparent);
+  animation: hhCosmicCoreRing 7.5s linear infinite reverse;
+}
+
+.app-cosmic-loader__planet > span {
+  z-index: 2;
+  width: 70px;
+  height: 70px;
+  border-color: rgba(255, 255, 255, .78);
+  background:
+    radial-gradient(circle at 28% 22%, #fff 0 4%, transparent 7%),
+    radial-gradient(circle at 66% 72%, color-mix(in srgb, var(--loader-secondary) 74%, #111a3b), transparent 37%),
+    radial-gradient(circle at 36% 29%, color-mix(in srgb, var(--loader-accent) 52%, #fff), var(--loader-accent) 48%, color-mix(in srgb, var(--loader-secondary) 60%, #11152c) 100%);
+  box-shadow:
+    inset -12px -14px 18px rgba(0, 0, 0, .42),
+    0 0 28px color-mix(in srgb, var(--loader-accent) 72%, transparent),
+    0 0 56px color-mix(in srgb, var(--loader-secondary) 24%, transparent);
+}
+
+.app-cosmic-loader__planet > span::before,
+.app-cosmic-loader__planet > span::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.app-cosmic-loader__planet > span::before {
+  inset: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, .34);
+  opacity: .72;
+  transform: rotate(-28deg) scaleY(.34);
+}
+
+.app-cosmic-loader__planet > span::after {
+  left: 22%;
+  top: 17%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 10px #fff, 25px 32px 0 -1px color-mix(in srgb, var(--loader-secondary) 80%, #fff);
+  animation: hhCosmicStarTwinkle 1.8s ease-in-out infinite alternate;
+}
+
+.app-cosmic-loader__progress {
+  height: 6px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(12, 25, 45, .92);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .62), 0 0 12px color-mix(in srgb, var(--loader-accent) 11%, transparent);
+}
+
+.app-cosmic-loader__progress > i { position: relative; overflow: hidden; }
+.app-cosmic-loader__progress > i::after {
+  position: absolute;
+  inset: 0 auto 0 -45%;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .82), transparent);
+  content: "";
+  animation: hhCosmicProgressShimmer 1.55s ease-in-out infinite;
+}
+
+.app-cosmic-loader__steps { gap: 8px; margin-top: 13px; }
+.app-cosmic-loader__steps > span {
+  min-width: 0;
+  color: #7186a5;
+  font-size: 9px;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+}
+.app-cosmic-loader__steps > span > i { flex: 0 0 auto; }
+
+/* The Dharma route keeps its Kim Lien gold/wood palette while still sharing
+ * the same cosmic depth as every other workspace. Static motion preferences
+ * continue to remove these decorative layers through the existing contract. */
+.app-cosmic-loader[data-transition-kind="dharma"]:not([data-motion="static"]) .app-cosmic-loader__space { display: grid !important; }
+.app-cosmic-loader[data-transition-kind="dharma"]:not([data-motion="static"]) :is(.app-cosmic-loader__stars, .app-cosmic-loader__beams) { display: block !important; }
+
+@keyframes hhCosmicNebulaDrift {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.07); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes hhCosmicCoreRing { to { transform: rotate(1turn); } }
+@keyframes hhCosmicHaloPulse { 0%, 100% { opacity: .48; transform: scale(.92); } 50% { opacity: .92; transform: scale(1.08); } }
+@keyframes hhCosmicBorderPulse { 0%, 100% { opacity: .38; } 50% { opacity: .82; } }
+@keyframes hhCosmicProgressShimmer { 0%, 28% { transform: translateX(0); opacity: 0; } 45% { opacity: .9; } 78%, 100% { transform: translateX(330%); opacity: 0; } }
+@keyframes hhCosmicStarTwinkle { 0%, 100% { opacity: .32; filter: brightness(.8); } 50% { opacity: 1; filter: brightness(1.5); } }
+@keyframes hhCosmicShootingStar { 0%, 72% { opacity: 0; transform: rotate(-24deg) translateX(-24vw); } 80% { opacity: .9; } 100% { opacity: 0; transform: rotate(-24deg) translateX(72vw); } }
+
+@media (max-width: 560px) {
+  #hhBootSurface .hh-singularity-gate { min-height: 400px; padding: 20px 12px 18px; }
+  #hhBootSurface .hh-boot-core { transform: scale(.92); transform-origin: center; }
+  #hhBootSurface .hh-boot-copy strong { font-size: clamp(21px, 7vw, 28px); }
+  #hhBootSurface .hh-boot-copy p { font-size: 12px; }
+  .app-cosmic-loader { padding: 12px; }
+  .app-cosmic-loader__card { width: min(500px, calc(100vw - 24px)); min-height: 276px; padding: 24px 16px 20px; border-radius: 21px; }
+  .app-cosmic-loader__planet { transform: scale(.9); margin-bottom: 3px; }
+  .app-cosmic-loader__card > strong { max-width: 19ch; font-size: clamp(20px, 7vw, 27px); }
+  .app-cosmic-loader__card > p { font-size: 11px; }
+  .app-cosmic-loader__route { grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr); gap: 5px; font-size: 9px; line-height: 1.35; }
+  .app-cosmic-loader__route > span,
+  .app-cosmic-loader__route > b { overflow-wrap: anywhere; white-space: normal; }
+  .app-cosmic-loader__steps { gap: 3px; }
+  .app-cosmic-loader__steps > span { font-size: 8px; }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  #hhBootSurface .hh-singularity-gate { min-height: 330px; gap: 7px; padding-block: 10px; }
+  #hhBootSurface .hh-boot-core { transform: scale(.68); margin-block: -17px; }
+  .app-cosmic-loader__card { max-height: calc(100dvh - 18px); padding-block: 15px; overflow-y: auto; scrollbar-width: thin; }
+  .app-cosmic-loader__planet { transform: scale(.72); margin-block: -11px -10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #hhBootSurface::before,
+  #hhBootSurface .hh-boot-core::before,
+  #hhBootSurface .hh-boot-core::after,
+  #hhBootSurface .hh-boot-progress i::after,
+  .app-cosmic-loader::before,
+  .app-cosmic-loader__space::before,
+  .app-cosmic-loader__space::after,
+  .app-cosmic-loader__stars::before,
+  .app-cosmic-loader__stars::after,
+  .app-cosmic-loader__card::after,
+  .app-cosmic-loader__planet::before,
+  .app-cosmic-loader__planet::after,
+  .app-cosmic-loader__planet > span::after,
+  .app-cosmic-loader__progress > i::after { animation: none !important; }
+  #hhBootSurface::before,
+  .app-cosmic-loader::before { filter: none; }
+  .app-cosmic-loader__stars::after { display: none; }
+}
+
+#hhBootSurface[data-motion-mode="static"]::before,
+#hhBootSurface[data-motion-mode="static"] .hh-boot-core::before,
+#hhBootSurface[data-motion-mode="static"] .hh-boot-core::after,
+#hhBootSurface[data-motion-mode="static"] .hh-boot-progress i::after,
+.app-cosmic-loader[data-motion="static"]::before,
+.app-cosmic-loader[data-motion="static"] .app-cosmic-loader__space::before,
+.app-cosmic-loader[data-motion="static"] .app-cosmic-loader__space::after,
+.app-cosmic-loader[data-motion="static"] .app-cosmic-loader__stars::before,
+.app-cosmic-loader[data-motion="static"] .app-cosmic-loader__card::after,
+.app-cosmic-loader[data-motion="static"] .app-cosmic-loader__planet::before,
+.app-cosmic-loader[data-motion="static"] .app-cosmic-loader__planet::after,
+.app-cosmic-loader[data-motion="static"] .app-cosmic-loader__planet > span::after,
+.app-cosmic-loader[data-motion="static"] .app-cosmic-loader__progress > i::after {
+  animation: none !important;
+}
+.app-cosmic-loader[data-motion="static"]::before { filter: none; }
+.app-cosmic-loader[data-motion="static"] .app-cosmic-loader__stars::after { display: none; }
+
+html.hh-page-hidden #hhBootSurface::before,
+html.hh-page-hidden #hhBootSurface .hh-boot-core::before,
+html.hh-page-hidden #hhBootSurface .hh-boot-core::after,
+html.hh-page-hidden .app-cosmic-loader::before,
+html.hh-page-hidden .app-cosmic-loader__space::before,
+html.hh-page-hidden .app-cosmic-loader__space::after,
+html.hh-page-hidden .app-cosmic-loader__stars::before,
+html.hh-page-hidden .app-cosmic-loader__stars::after,
+html.hh-page-hidden .app-cosmic-loader__card::after,
+html.hh-page-hidden .app-cosmic-loader__planet::before,
+html.hh-page-hidden .app-cosmic-loader__planet::after {
+  animation-play-state: paused !important;
+}
+
+@media (forced-colors: active) {
+  #hhBootSurface::before,
+  #hhBootSurface::after,
+  .app-cosmic-loader::before,
+  .app-cosmic-loader::after,
+  .app-cosmic-loader__space::before,
+  .app-cosmic-loader__space::after,
+  .app-cosmic-loader__stars::before,
+  .app-cosmic-loader__stars::after { display: none; }
+  #hhBootSurface .hh-boot-copy strong,
+  .app-cosmic-loader__card > strong { color: CanvasText; }
+}
+
 /* Global experience polish v2 */
 @layer layout {
   .app-shell {

@@ -6,11 +6,11 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("Creative workspace keeps all 25 routes while using only the global sidebar navigator", () => {
+test("Creative workspace keeps all 35 routes while using only the global sidebar navigator", () => {
   const source = read("creative-os.js");
   const ids = [...source.matchAll(/\{ id: "([^"]+)", group:/g)].map((match) => match[1]);
-  assert.equal(ids.length, 25);
-  assert.equal(new Set(ids).size, 25);
+  assert.equal(ids.length, 35);
+  assert.equal(new Set(ids).size, 35);
   assert.match(source, /data-cos-workspace/);
   assert.doesNotMatch(source, /creative-os__navigator|data-cos-navigator|data-cos-search|data-cos-tool-count/);
   assert.doesNotMatch(source, /creative-os__legacy/);

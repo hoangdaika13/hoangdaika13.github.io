@@ -11,10 +11,10 @@ const ITEMS = starMap.GROUPS.flatMap((group) => group.tools.map((id) => ({
   id, icon: id.slice(0, 2).toUpperCase(), title: id, description: `Workspace ${id}`
 })));
 
-test("Creative Star Map has six color-coded clusters and all 25 workspaces", () => {
+test("Creative Star Map has six color-coded clusters and all 35 workspaces", () => {
   assert.equal(starMap.VERSION, "1.0.0");
   assert.equal(starMap.GROUPS.length, 6);
-  assert.equal(starMap.GROUPS.flatMap((group) => group.tools).length, 25);
+  assert.equal(starMap.GROUPS.flatMap((group) => group.tools).length, 35);
   assert.deepEqual(starMap.GROUPS.map((group) => group.id), [
     "command", "idea", "preproduction", "production", "workflow", "publish"
   ]);
@@ -23,14 +23,15 @@ test("Creative Star Map has six color-coded clusters and all 25 workspaces", () 
   ]);
 });
 
-test("all 25 planets resolve to a real Creative OS engine or an existing production module", () => {
+test("all 35 planets resolve to a real Creative OS engine or an existing production module", () => {
   const shell = read("creative-os.js");
   const router = read("script.js");
   const engineViews = new Set([
     "overview", "project", "brief", "moodboard", "storyboard", "world-bible",
     "workflow", "ai-director", "prompt-studio", "repurpose", "brand",
     "audio-dubbing", "prototype", "review", "collaboration", "publishing",
-    "analytics", "rights", "providers", "marketplace"
+    "analytics", "rights", "providers", "marketplace", "idea-lab", "naming-studio", "copy-studio", "writing-room",
+    "campaign-planner", "photo-planner", "motion-planner", "podcast-studio", "three-d-planner", "portfolio-builder"
   ]);
   const legacyViews = new Set(["ai-center", "ai-script", "creator-studio", "media-center", "ai-automation"]);
   for (const id of starMap.GROUPS.flatMap((group) => group.tools)) {
@@ -48,6 +49,26 @@ test("Star Map, Focus and Compact modes are persisted safely", () => {
   assert.equal(starMap.normalizePrefs({ mode: "compact" }).mode, "compact");
   assert.equal(starMap.normalizePrefs({ mode: "unknown" }).mode, "map");
   assert.equal(starMap.normalizePrefs({ activeCluster: "workflow" }).activeCluster, "workflow");
+});
+
+test("Star Map never falls back to another tool's legacy project", () => {
+  const previousStorage = global.localStorage;
+  const data = new Map([
+    ["hh.creative-os.v1", JSON.stringify({ activeProjectId: "legacy", projects: [{ id: "legacy", name: "Dữ liệu cũ" }], runs: [] })],
+    ["hh.creative.tool.overview.project.v1", JSON.stringify({ activeProjectId: "overview-one", projects: [{ id: "overview-one", name: "Tổng quan riêng" }], runs: [] })]
+  ]);
+  global.localStorage = {
+    getItem(key) { return data.has(key) ? data.get(key) : null; },
+    setItem(key, value) { data.set(key, String(value)); },
+    removeItem(key) { data.delete(key); }
+  };
+  try {
+    assert.equal(starMap.creativeState("overview").projects[0].name, "Tổng quan riêng");
+    assert.deepEqual(starMap.creativeState("naming-studio"), {});
+  } finally {
+    if (previousStorage === undefined) delete global.localStorage;
+    else global.localStorage = previousStorage;
+  }
 });
 
 test("Galaxy profile mirrors the complete home control deck contract", () => {
@@ -71,7 +92,7 @@ test("Sidebar markup is a real star map with truthful empty state", () => {
   assert.doesNotMatch(markup, /csm-sun-header/);
   assert.doesNotMatch(markup, /data-csm-set-mode/);
   assert.equal((markup.match(/data-csm-cluster-section=/g) || []).length, 6);
-  assert.equal((markup.match(/data-csm-wormhole-route=/g) || []).length, 25);
+  assert.equal((markup.match(/data-csm-wormhole-route=/g) || []).length, 35);
   assert.match(markup, /Chưa có hoạt động/);
   assert.doesNotMatch(markup, /\b(mock|fake|demoData)\b/i);
 });
@@ -112,7 +133,7 @@ test("Main Creative Galaxy keeps a fixed constellation view and preserves wormho
   assert.match(shell, /hh:creative-workspace-error/);
   assert.match(shell, /prepareRoute/);
   assert.match(shell, /dataset\.hhRuntimeAsset === "script"/);
-  assert.match(read("creative-star-map.js"), /prepareRoute[\s\S]*pointerover/);
+  assert.match(read("creative-star-map.js"), /prepareRoute[\s\S]*createStore:\s*false[\s\S]*pointerover/);
   assert.match(script, /mountFeatureGroupHub\("create"\)/);
   assert.match(script, /HHCreativeOS\?\.mount/);
   assert.match(script, /hh:route-rendered/);
@@ -123,8 +144,9 @@ test("Creative Star Map release assets are versioned and cached", () => {
   const worker = read("sw.js");
   const html = read("index.html");
   for (const asset of [
-    "creative-star-map.css?v=2", "creative-star-map.js?v=3",
-    "creative-galaxy.css?v=3", "creative-galaxy.js?v=4", "creative-os.js?v=13"
+    "creative-star-map.css?v=2", "creative-star-map.js?v=4",
+    "creative-galaxy.css?v=3", "creative-galaxy.js?v=5", "creative-os.js?v=15",
+    "creative-specialist-studios.css?v=2", "creative-specialist-studios.js?v=2"
   ]) {
     const pattern = new RegExp(asset.replace(/[.?]/g, "\\$&"));
     assert.match(loader, pattern);
