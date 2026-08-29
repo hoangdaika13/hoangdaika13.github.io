@@ -17,6 +17,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/cosmic/:cosmicSource",
+      "destination": "/api/platform/summary?cosmicSource=:cosmicSource"
+    },
+    {
       "source": "/api/account-center",
       "destination": "/api/platform/summary?accountCenter=1"
     },

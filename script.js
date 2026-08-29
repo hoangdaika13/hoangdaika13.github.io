@@ -5623,6 +5623,29 @@ function initAppShell() {
       items: []
     },
     {
+      id: "cosmic-observatory",
+      label: "Đài Vũ trụ",
+      icon: "✦",
+      accent: "#67e8ff",
+      route: "/cosmic-observatory",
+      items: [],
+      pages: [
+        { id: "overview", title: "Tổng quan", route: "/cosmic-observatory" },
+        { id: "solar-system", title: "Hệ Mặt Trời 3D", route: "/cosmic-observatory/solar-system" },
+        { id: "live-sky", title: "Bầu trời trực tiếp", route: "/cosmic-observatory/live-sky" },
+        { id: "asteroids", title: "Asteroid Watch", route: "/cosmic-observatory/asteroids" },
+        { id: "media", title: "NASA Media", route: "/cosmic-observatory/media" },
+        { id: "exoplanets", title: "Ngoại hành tinh", route: "/cosmic-observatory/exoplanets" },
+        { id: "earth", title: "Trái Đất từ không gian", route: "/cosmic-observatory/earth" },
+        { id: "space-weather", title: "Thời tiết không gian", route: "/cosmic-observatory/space-weather" },
+        { id: "universe-map", title: "Vũ trụ đa bước sóng", route: "/cosmic-observatory/universe-map" },
+        { id: "missions", title: "Nhiệm vụ không gian", route: "/cosmic-observatory/missions" },
+        { id: "tours", title: "Cosmic Tours", route: "/cosmic-observatory/tours" },
+        { id: "planner", title: "Kế hoạch quan sát", route: "/cosmic-observatory/planner" },
+        { id: "data-center", title: "Dữ liệu & ghi công", route: "/cosmic-observatory/data-center" }
+      ]
+    },
+    {
       id: "play-center",
       label: "HH Play",
       icon: "◆",
@@ -5763,7 +5786,7 @@ function initAppShell() {
       icon: "▶",
       accent: "#ff6f82",
       accentSecondary: "#ffc65c",
-      groupIds: ["play-center", "eonwild-game", "comic-reader", "cinema", "music-library", "fortune"]
+      groupIds: ["cosmic-observatory", "play-center", "eonwild-game", "comic-reader", "cinema", "music-library", "fortune"]
     },
     {
       id: "work-tech",
@@ -5807,6 +5830,7 @@ function initAppShell() {
     cinema: "phim điện ảnh movie video",
     "music-library": "nhạc nghe audio playlist",
     "play-center": "hh play game arcade trò chơi party room watch party truyện tương tác escape rhythm karaoke pet chill quiz giải trí nhiều người",
+    "cosmic-observatory": "vũ trụ thiên văn nasa jpl hệ mặt trời hành tinh bầu trời sao tiểu hành tinh ngoại hành tinh asteroid exoplanet solar system observatory",
     "eonwild-game": "game eonwild động vật muôn loài khủng long sinh tồn thế giới mở cổ sinh trung sinh tân sinh hiện đại không con người ecology survival",
     fortune: "xem bói tarot tử vi chiêm tinh kinh dịch",
     work: "công việc dự án task ghi chú lịch",
@@ -5866,7 +5890,7 @@ function initAppShell() {
   const sidebarIconNames = Object.freeze({
     home: "home", search: "search", "ai-creative": "sparkles", "web-community": "orbit", entertainment: "play", "work-tech": "cpu", learning: "book", "system-admin": "shield",
     "chat-ai": "bot", create: "wand", draw: "brush", "music-ai": "music", "comic-motion": "panels", "media-design": "image", "graphic-design": "pen",
-    google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "play-center": "gamepad", "eonwild-game": "paw", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", fortune: "moon",
+    google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "cosmic-observatory": "orbit", "play-center": "gamepad", "eonwild-game": "paw", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", fortune: "moon",
     work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
     admin: "crown", system: "settings", support: "heart"
   });
@@ -6944,6 +6968,7 @@ function initAppShell() {
     document.body.classList.toggle("app-dharma-route", route === "/phat-phap" || route.startsWith("/phat-phap/"));
     document.body.classList.toggle("app-fortune-route", route === "/fortune" || route.startsWith("/fortune/"));
     document.body.classList.toggle("app-play-route", route === "/play" || route.startsWith("/play/"));
+    document.body.classList.toggle("app-cosmic-observatory-route", route === "/cosmic-observatory" || route.startsWith("/cosmic-observatory/"));
     document.body.classList.toggle("app-eonwild-route", route === "/game" || route.startsWith("/game/"));
     document.body.classList.toggle("app-draw-route", route === "/draw" || route.startsWith("/draw/"));
     document.body.classList.toggle("app-remote-route", route === "/remote" || route.startsWith("/remote/"));
@@ -6984,6 +7009,7 @@ function initAppShell() {
     if (route !== "/phat-phap" && !route.startsWith("/phat-phap/")) window.HHPhatPhap?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
     if (route !== "/play" && !route.startsWith("/play/")) window.HHPlay?.unmount?.();
+    if (route !== "/cosmic-observatory" && !route.startsWith("/cosmic-observatory/")) window.HHCosmicObservatory?.unmount?.();
     window.HHEonWild?.unmount?.();
     if (route !== "/draw" && !route.startsWith("/draw/")) window.HHDrawStudio?.unmount?.();
     if (route !== "/remote" && !route.startsWith("/remote/")) window.HHRemoteHub?.unmount?.();
@@ -7200,6 +7226,19 @@ function initAppShell() {
         pageActions.querySelector("[data-remote-global-connect]")?.addEventListener("click", () => remoteHost.querySelector("[data-remote-create-session]")?.focus());
       } else mountSimpleView("HH Quantum Remote", "Đang tải WebRTC Remote Hub...", "");
       remember("remote");
+    } else if (route === "/cosmic-observatory" || route.startsWith("/cosmic-observatory/")) {
+      const cosmicView = parts[1] || "overview";
+      const cosmicMeta = window.HHCosmicObservatory?.views?.[window.HHCosmicObservatory?.normalizeView?.(cosmicView) || cosmicView];
+      updatePageHeader(cosmicMeta?.title || "Đài Quan sát Vũ trụ HH", "Khám phá Hệ Mặt Trời, bầu trời, tiểu hành tinh và tư liệu NASA bằng dữ liệu có nguồn, đơn vị và thời gian rõ ràng.", route);
+      pageActions.innerHTML = '<button type="button" data-app-route="/cosmic-observatory/live-sky">Bầu trời tối nay</button><button type="button" data-app-route="/cosmic-observatory/asteroids">Asteroid Watch</button><button class="app-primary-action" type="button" data-app-route="/cosmic-observatory/solar-system">Khám phá vũ trụ</button>';
+      workspace.innerHTML = '<div data-cosmic-observatory-host></div>';
+      if (window.HHCosmicObservatory?.mount) window.HHCosmicObservatory.mount(workspace.firstElementChild, {
+        view: cosmicView,
+        currentUser: readCurrentAuthUser(),
+        navigate: (nextRoute) => { location.hash = `#${nextRoute}`; }
+      });
+      else mountSimpleView("Đài Quan sát Vũ trụ HH", "Đang tải cổng dữ liệu thiên văn và renderer…", "");
+      remember("cosmic-observatory");
     } else if (route === "/play" || route.startsWith("/play/")) {
       const playView = parts[1] || "today";
       const playPage = groups.find((item) => item.id === "play-center")?.pages?.find((item) => item.id === playView);

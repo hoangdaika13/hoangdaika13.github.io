@@ -236,6 +236,10 @@
       styles: ["phat-phap.css?v=20"],
       scripts: ["phat-phap.js?v=18"]
     },
+    cosmic: {
+      styles: ["cosmic-observatory.css?v=1"],
+      scripts: ["vendor/astronomy-engine-2.1.19.min.js?v=1", "cosmic-observatory.js?v=1"]
+    },
     play: {
       styles: ["hh-play.css?v=8&build=4"],
       scripts: ["hh-play.js?v=7&build=4"]
@@ -315,6 +319,7 @@
     if (value.startsWith("/japanese")) return ["japanese"];
     if (value.startsWith("/chinese")) return ["chinese"];
     if (value.startsWith("/phat-phap")) return ["dharma"];
+    if (value === "/cosmic-observatory" || value.startsWith("/cosmic-observatory/")) return ["cosmic"];
     if (value.startsWith("/play")) return ["play"];
     if (value === "/game" || value.startsWith("/game/")) return ["game"];
     if (value.startsWith("/fortune")) return ["fortune"];
