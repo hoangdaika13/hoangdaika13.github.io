@@ -5254,6 +5254,16 @@ function initAppShell() {
   const drawerBackdrop = document.querySelector(".app-drawer-backdrop");
   const userMenu = byId("appUserMenu");
   if (!shell || !workspace || !navigation || !platform) return;
+  // HH Galaxy is the approved presentation layer for this release. Keep the
+  // persisted feature flag as an explicit rollback switch: an existing false
+  // preference is respected, while first-time clients enter the new shell.
+  if (window.HHGalaxyShell) {
+    const initialGalaxyRoute = (location.hash.replace(/^#/, "") || "/home").split("?")[0];
+    let hasGalaxyPreference = false;
+    try { hasGalaxyPreference = localStorage.getItem(window.HHGalaxyShell.flagKey) !== null; } catch {}
+    if (hasGalaxyPreference) window.HHGalaxyShell.mount(shell, { route: initialGalaxyRoute });
+    else window.HHGalaxyShell.setEnabled(true, { root: shell, route: initialGalaxyRoute });
+  }
   // Keep the transit layer outside App Shell stacking contexts. This also
   // prevents route-specific overflow/contain rules from clipping the loader.
   if (cosmicRouteLoader && cosmicRouteLoader.parentElement !== document.body) document.body.append(cosmicRouteLoader);
@@ -5989,6 +5999,13 @@ function initAppShell() {
   let renderedRoute = "";
   let routeTransition = null;
   let routeTransitionRequest = 0;
+  let galaxyEngineCleanup = null;
+  const cleanupGalaxyEngineTakeover = () => {
+    const cleanup = galaxyEngineCleanup;
+    galaxyEngineCleanup = null;
+    if (typeof cleanup !== "function") return;
+    try { cleanup(); } catch { /* A detached feature host must not block routing. */ }
+  };
   const moduleList = () => Array.isArray(window.HH_PLATFORM_MODULES) ? window.HH_PLATFORM_MODULES : [];
   const moduleById = (id) => moduleList().find((item) => item.id === id);
   const routeForModule = (id) => {
@@ -6923,8 +6940,9 @@ function initAppShell() {
     legacyMain.hidden = true;
     renderedRoute = route;
     document.documentElement.dataset.hhRouteReady = route;
+    window.HHGalaxyShell?.syncRoute?.(route);
     window.dispatchEvent(new CustomEvent("hh:route-rendered", { detail: { route } }));
-    if (route !== "/home" || document.querySelector('[data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]')) {
+    if (route !== "/home" || document.querySelector('[data-gha-home-ai-host], [data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]')) {
       window.HHSurfaceBoot?.release?.(route === "/home" ? "home" : "app", { route });
     }
   };
@@ -6951,6 +6969,9 @@ function initAppShell() {
       route = "/analytics";
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
     }
+    cleanupGalaxyEngineTakeover();
+    window.HHGalaxyHomeAI?.unmount?.();
+    window.HHGalaxyDomainViews?.unmount?.();
     // The Home Cosmic OS owns a fixed command deck and temporarily applies
     // inline `overflow: clip` to #appMain. A hash transition can detach the
     // Home root before its observer gets the matching unmount callback,
@@ -7078,7 +7099,72 @@ function initAppShell() {
     const possibleId = parts.at(-1);
     const module = moduleById(possibleId);
     document.body.classList.toggle("app-single-module", !isCreativeOSRoute(route) && Boolean(module));
-    if (route === "/home") {
+    const galaxyViewsEnabled = Boolean(window.HHGalaxyShell?.isEnabled?.());
+    const isGalaxyHomeRoute = galaxyViewsEnabled && (route === "/home" || route === "/home/dashboard" || route === "/create/ai-center" || route === "/chat-ai" || route.startsWith("/chat-ai/"));
+    const isGalaxyDomainRoute = galaxyViewsEnabled && (route === "/create/workflow"
+      || route === "/work/automation-lab"
+      || route === "/work/projects-tasks"
+      || route === "/communication/community"
+      || route === "/music/ambient"
+      || route === "/system/desktop"
+      || route.startsWith("/galaxy/"));
+    if (isGalaxyHomeRoute) {
+      const galaxyHomeMeta = route === "/home"
+        ? ["HH Galaxy Map", "Bản đồ trực quan dẫn tới toàn bộ chức năng thật trong HH Platform."]
+        : route === "/home/dashboard"
+          ? ["Dashboard cá nhân", "Công việc, dự án, ghi chú, focus và dung lượng dựa trên dữ liệu của thiết bị."]
+          : route === "/create/ai-center"
+            ? ["AI Universe", "Không gian dẫn tới Chat AI, Prompt Studio, Image AI và Script Generator hiện có."]
+            : ["HH AI Copilot", "Chat AI thật với lịch sử, provider, upload, voice và streaming hiện có."];
+      updatePageHeader(galaxyHomeMeta[0], galaxyHomeMeta[1], route);
+      workspace.innerHTML = '<div data-galaxy-home-ai-host></div>';
+      const galaxyHost = workspace.firstElementChild;
+      const mounted = window.HHGalaxyHomeAI?.mount?.(galaxyHost, {
+        route,
+        navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
+        baseMount: (host, options = {}) => window.HHChatAI?.mount?.(host, {
+          currentUser: readCurrentAuthUser(),
+          apiBase: String(window.HH_REALTIME_URL || location.origin),
+          newSession: Boolean(options.newSession)
+        }),
+        baseUnmount: () => window.HHChatAI?.unmount?.()
+      });
+      if (!mounted) mountSimpleView(galaxyHomeMeta[0], "Không thể khởi tạo lớp HH Galaxy cho workspace này.", '<button type="button" data-shell-retry-route>Thử lại</button>');
+      if (route.startsWith("/chat-ai")) remember("chat-ai");
+    } else if (isGalaxyDomainRoute) {
+      const definition = Object.values(window.HHGalaxyDomainViews?.routes || {}).find((item) => item.canonical === route || item.aliases?.includes?.(route));
+      updatePageHeader(definition?.title || "HH Galaxy Workspace", definition?.eyebrow || "Không gian chức năng dùng dữ liệu và engine thật.", route);
+      workspace.innerHTML = '<div data-galaxy-domain-host></div>';
+      const mounted = window.HHGalaxyDomainViews?.mount?.(workspace.firstElementChild, {
+        route,
+        apiBase: String(window.HH_REALTIME_URL || ""),
+        navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
+        openEngine: ({ id, host }) => {
+          if (!host) return false;
+          if (id === "automation" || id === "projects") {
+            const view = id === "automation" ? "automation-lab" : "projects-tasks";
+            if (!window.HHWorkCenter?.supports?.(view)) return false;
+            window.HHGalaxyDomainViews?.unmount?.(host);
+            window.HHWorkCenter.mount(host, { view });
+            galaxyEngineCleanup = () => window.HHWorkCenter?.unmount?.();
+            return true;
+          }
+          if (id === "community" && window.HHCommunicationSuite?.supports?.("community")) {
+            window.HHGalaxyDomainViews?.unmount?.(host);
+            window.HHCommunicationSuite.mount(host, {
+              view: "community",
+              apiBase: REALTIME_URL,
+              socketUrl: SOCKET_URL,
+              currentUser: readCurrentAuthUser()
+            });
+            galaxyEngineCleanup = () => window.HHCommunicationSuite?.unmount?.();
+            return true;
+          }
+          return false;
+        }
+      });
+      if (!mounted) mountSimpleView(definition?.title || "HH Galaxy Workspace", "Không thể khởi tạo workspace Galaxy.", '<button type="button" data-shell-retry-route>Thử lại</button>');
+    } else if (route === "/home") {
       updatePageHeader("Trang chủ", "Bắt đầu với các công cụ phù hợp cho công việc của bạn.", route);
       workspace.replaceChildren(dashboardHome);
       updateDashboard();
@@ -7795,6 +7881,18 @@ function initAppShell() {
       { type: "Sản xuất video", title: "Comic Motion Studio", description: "Biến ảnh truyện được cấp phép từ ảnh, folder, ZIP, CBZ, PDF hoặc URL đã xác minh thành video có voice, camera, nhạc và phụ đề.", route: "/comic-motion-studio", key: "comic motion studio truyện tranh ảnh panel speech bubble voice tts timeline subtitle zip cbz pdf website bản quyền" }
     ];
     modules.unshift(
+      ...[
+        ["HH Galaxy", "Galaxy Map", "Bản đồ trực quan của toàn bộ chức năng thật trong HH Platform.", "/home", "galaxy map home hành tinh"],
+        ["HH Galaxy", "Dashboard cá nhân", "Task, project, ghi chú, focus và dung lượng từ dữ liệu thiết bị.", "/home/dashboard", "dashboard widget cá nhân"],
+        ["HH Galaxy", "AI Universe", "Điểm vào Chat AI, Prompt Studio, Image AI và Script Generator.", "/create/ai-center", "ai universe copilot"],
+        ["HH Galaxy", "Creator Pipeline", "Quy trình Idea đến Publish, mỗi bước mở engine chuyên trách.", "/create/workflow", "creator pipeline workflow"],
+        ["HH Galaxy", "Automation Builder", "Tổng quan automation, dry run và execution log không dùng dữ liệu giả.", "/work/automation-lab", "automation builder workflow dag"],
+        ["HH Galaxy", "Project Hub & Media Vault", "Dự án, tài nguyên, storage và cổng provider có trạng thái thật.", "/work/projects-tasks", "project hub media vault"],
+        ["HH Galaxy", "Community Showcase", "Showcase và lối vào Community backend, không tạo tương tác giả.", "/communication/community", "community showcase feed"],
+        ["HH Galaxy", "Ambient Room", "Mixer Web Audio, waveform thật, scene và Pomodoro.", "/music/ambient", "ambient room rain focus audio"],
+        ["HH Galaxy", "HH Web Desktop", "Desktop đa cửa sổ tùy chọn với launcher tới ứng dụng thật.", "/system/desktop", "web desktop window launcher"],
+        ["HH Galaxy", "HH AI Copilot", "Chat AI hiện có trong lớp giao diện Galaxy.", "/chat-ai", "chat ai copilot"]
+      ].map(([type, title, description, route, key]) => ({ type, title, description, route, key })),
       ...comicMotion,
       {
         type: "Sáng tạo",
@@ -8171,6 +8269,12 @@ function initAppShell() {
       setCosmicLoaderPhase(2, 96, "Workspace đã sẵn sàng, đang hoàn thiện hiển thị...");
     }
   });
+  window.addEventListener("hh:galaxy-shell-enabled-change", () => {
+    cleanupGalaxyEngineTakeover();
+    window.HHGalaxyHomeAI?.unmount?.();
+    window.HHGalaxyDomainViews?.unmount?.();
+    renderRouteSafely();
+  });
   window.addEventListener("hashchange", renderRouteWithTransition);
   window.addEventListener("hh:modules-ready", () => {
     renderNavigation();
@@ -8245,6 +8349,15 @@ function initPlatformOnDemand(initializer) {
   window.addEventListener("hh:workspace-open", start);
 }
 
+function initAppShellAfterGalaxyRuntime() {
+  const brandReady = window.HHAssetLoader?.ensureGroup?.("brand");
+  if (!brandReady || typeof brandReady.then !== "function") {
+    initAppShell();
+    return;
+  }
+  brandReady.then(initAppShell, initAppShell);
+}
+
 resizeCanvas();
 updateScrollMeter();
 initReveal();
@@ -8252,7 +8365,7 @@ initTheme();
 initVoteStats();
 initPublicPresence();
 initRealtimeAuth();
-initAppShell();
+initAppShellAfterGalaxyRuntime();
 initPlatformOnDemand(() => {
   drawParticles();
   initHomeNeonInteractions();

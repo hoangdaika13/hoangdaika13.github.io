@@ -1,0 +1,1269 @@
+@layer hh-galaxy-home-ai {
+  [data-gha-home-ai-host] {
+    min-width: 0;
+    color: #f6f7ff;
+    color-scheme: dark;
+    font-family: Inter, "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  }
+
+  [data-gha-home-ai-host] *,
+  [data-gha-home-ai-host] *::before,
+  [data-gha-home-ai-host] *::after {
+    box-sizing: border-box;
+  }
+
+  [data-gha-home-ai-host] [hidden] {
+    display: none !important;
+  }
+
+  /* HHGalaxyShell already owns persistent chrome. These views become pure
+     route outlets when mounted inside it, preventing duplicated bars/rails. */
+  [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-app:not(.gha-chat) {
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    min-height: 100%;
+  }
+
+  [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) :is(.gha-topbar, .gha-sidebar, .gha-chat__bar) {
+    display: none;
+  }
+
+  [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-stage {
+    grid-area: 1 / 1;
+  }
+
+  [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-chat {
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    min-height: 100%;
+  }
+
+  /* Chat AI is an absolutely positioned engine inside the adapter stage. A
+     block host has no intrinsic height when the legacy workspace reserves a
+     fixed viewport, which collapses the engine to zero pixels. Give the
+     embedded host a definite track so the existing Chat AI layout can own its
+     full-height scroll region without changing its engine or lifecycle. */
+  [data-galaxy-shell] :is([data-galaxy-outlet] > [data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) {
+    display: grid;
+    height: 100%;
+    min-height: 100%;
+  }
+
+  [data-galaxy-shell] :is([data-galaxy-outlet] > [data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-chat {
+    height: 100%;
+    min-height: 100%;
+  }
+
+  [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) :is(.gha-map__stars, .gha-map__nebula, .gha-ai-world__nebula, .gha-chat__aurora) {
+    animation: none;
+  }
+
+  .gha-app {
+    --gha-bg: #020611;
+    --gha-surface: rgb(7 17 32 / 91%);
+    --gha-raised: rgb(10 22 41 / 92%);
+    --gha-border: rgb(132 162 210 / 19%);
+    --gha-border-strong: rgb(145 116 255 / 48%);
+    --gha-muted: #95a4c0;
+    --gha-violet: #8b5cf6;
+    --gha-cyan: #38bdf8;
+    --gha-magenta: #ec4899;
+    --gha-success: #34d399;
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template: 68px minmax(0, 1fr) / 248px minmax(0, 1fr);
+    width: 100%;
+    min-height: min(941px, calc(100dvh - var(--app-header-height, 0px)));
+    overflow: clip;
+    background:
+      radial-gradient(circle at 68% 18%, rgb(76 29 149 / 18%), transparent 31%),
+      radial-gradient(circle at 35% 76%, rgb(14 165 233 / 10%), transparent 36%),
+      #020611;
+  }
+
+  .gha-app::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+    opacity: .48;
+    background-image:
+      radial-gradient(circle, rgb(255 255 255 / 68%) 0 1px, transparent 1.4px),
+      radial-gradient(circle, rgb(119 166 255 / 54%) 0 1px, transparent 1.5px);
+    background-position: 0 0, 31px 47px;
+    background-size: 83px 83px, 131px 131px;
+    mask-image: linear-gradient(to bottom, #000, transparent 94%);
+  }
+
+  .gha-app button,
+  .gha-app input,
+  .gha-app textarea {
+    color: inherit;
+    font: inherit;
+  }
+
+  .gha-app button {
+    border: 0;
+    cursor: pointer;
+  }
+
+  .gha-app button:focus-visible,
+  .gha-app a:focus-visible,
+  .gha-app input:focus-visible,
+  .gha-app textarea:focus-visible {
+    outline: 3px solid rgb(56 189 248 / 82%);
+    outline-offset: 3px;
+  }
+
+  .gha-sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  .gha-topbar {
+    position: relative;
+    z-index: 20;
+    grid-area: 1 / 1 / 2 / 3;
+    display: grid;
+    grid-template-columns: 248px minmax(280px, 520px) minmax(220px, 1fr) auto;
+    align-items: center;
+    gap: 18px;
+    min-width: 0;
+    padding: 8px 18px 8px 15px;
+    border-bottom: 1px solid var(--gha-border);
+    background: rgb(2 6 17 / 78%);
+    box-shadow: 0 10px 35px rgb(0 0 0 / 22%);
+    backdrop-filter: blur(18px) saturate(125%);
+  }
+
+  .gha-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .gha-brand > span {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    aspect-ratio: 1;
+    border: 1px solid rgb(206 139 255 / 75%);
+    border-radius: 50%;
+    color: #f0b7ff;
+    font-size: 17px;
+    font-weight: 900;
+    letter-spacing: -.04em;
+    background:
+      radial-gradient(circle at 50% 42%, #681b91 0 22%, transparent 48%),
+      conic-gradient(from 20deg, #5b21b6, #e879f9, #2563eb, #5b21b6);
+    box-shadow: 0 0 0 6px rgb(126 34 206 / 9%), 0 0 26px rgb(168 85 247 / 48%);
+  }
+
+  .gha-brand b {
+    overflow: hidden;
+    font-size: 14px;
+    letter-spacing: .035em;
+    text-overflow: ellipsis;
+  }
+
+  .gha-search {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--gha-border);
+    border-radius: 11px;
+    background: rgb(8 17 33 / 80%);
+    box-shadow: inset 0 1px rgb(255 255 255 / 3%);
+  }
+
+  .gha-search:focus-within {
+    border-color: rgb(139 92 246 / 72%);
+    box-shadow: 0 0 0 3px rgb(139 92 246 / 13%), inset 0 1px rgb(255 255 255 / 4%);
+  }
+
+  .gha-search input {
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+  }
+
+  .gha-search input::placeholder { color: #75849e; }
+
+  .gha-search kbd {
+    padding: 3px 6px;
+    border: 1px solid rgb(148 163 184 / 18%);
+    border-radius: 6px;
+    color: #75849e;
+    font: 11px/1 Inter, sans-serif;
+    background: rgb(255 255 255 / 4%);
+  }
+
+  .gha-topbar__copy {
+    min-width: 0;
+  }
+
+  .gha-topbar__copy strong,
+  .gha-topbar__copy small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gha-topbar__copy strong { font-size: 14px; }
+  .gha-topbar__copy small { margin-top: 3px; color: var(--gha-muted); font-size: 11px; }
+
+  .gha-topbar nav {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .gha-topbar nav button {
+    min-height: 38px;
+    padding: 0 13px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    color: #aebbd1;
+    background: transparent;
+  }
+
+  .gha-topbar nav button:hover,
+  .gha-topbar nav button[aria-current="page"] {
+    border-color: rgb(139 92 246 / 32%);
+    color: #fff;
+    background: rgb(91 33 182 / 27%);
+  }
+
+  .gha-sidebar {
+    position: relative;
+    z-index: 15;
+    grid-area: 2 / 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 18px 12px 14px;
+    overflow: hidden auto;
+    border-right: 1px solid var(--gha-border);
+    background: linear-gradient(180deg, rgb(4 10 24 / 96%), rgb(3 9 21 / 88%));
+  }
+
+  .gha-sidebar__title {
+    padding: 3px 12px 15px;
+    border-bottom: 1px solid rgb(148 163 184 / 10%);
+  }
+
+  .gha-sidebar__title span,
+  .gha-sidebar__title small { display: block; }
+  .gha-sidebar__title span { color: #d8dcff; font-size: 12px; font-weight: 800; letter-spacing: .08em; }
+  .gha-sidebar__title small { margin-top: 4px; color: #687894; font-size: 11px; }
+
+  .gha-sidebar nav {
+    display: grid;
+    gap: 4px;
+    margin-top: 14px;
+  }
+
+  .gha-sidebar nav button {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 9px;
+    min-height: 44px;
+    padding: 5px 10px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    color: #aebbd1;
+    text-align: left;
+    background: transparent;
+    transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
+  }
+
+  .gha-sidebar nav button:hover {
+    color: #fff;
+    background: rgb(255 255 255 / 4%);
+    transform: translateX(2px);
+  }
+
+  .gha-sidebar nav button[aria-current="page"] {
+    border-color: rgb(139 92 246 / 37%);
+    color: #fff;
+    background: linear-gradient(90deg, rgb(76 29 149 / 72%), rgb(30 64 175 / 40%));
+    box-shadow: inset 2px 0 #c084fc, 0 8px 24px rgb(76 29 149 / 18%);
+  }
+
+  .gha-sidebar nav i {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    color: #c4b5fd;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 850;
+    background: rgb(124 58 237 / 16%);
+  }
+
+  .gha-sidebar nav span { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+
+  .gha-sidebar footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: auto;
+    padding: 13px;
+    border: 1px solid var(--gha-border);
+    border-radius: 12px;
+    background: rgb(8 20 37 / 80%);
+  }
+
+  .gha-sidebar footer strong,
+  .gha-sidebar footer small { display: block; }
+  .gha-sidebar footer strong { font-size: 12px; }
+  .gha-sidebar footer small { margin-top: 3px; color: var(--gha-muted); font-size: 10px; }
+
+  .gha-live-dot {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gha-success);
+    box-shadow: 0 0 13px rgb(52 211 153 / 78%);
+  }
+
+  [data-state="offline"] .gha-live-dot,
+  .gha-live-dot[data-state="offline"] { background: #fb7185; box-shadow: 0 0 13px rgb(251 113 133 / 72%); }
+
+  .gha-stage {
+    position: relative;
+    z-index: 1;
+    grid-area: 2 / 2;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: rgb(124 58 237 / 60%) rgb(2 6 17 / 30%);
+  }
+
+  .gha-map,
+  .gha-ai-world {
+    --gha-map-scale: 1;
+    position: relative;
+    isolation: isolate;
+    min-width: 840px;
+    min-height: 760px;
+    height: max(760px, calc(100dvh - 68px));
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 55% 48%, rgb(30 64 175 / 22%), transparent 26%),
+      radial-gradient(ellipse at 67% 46%, rgb(126 34 206 / 19%), transparent 45%),
+      linear-gradient(145deg, #020715, #020510 68%, #050815);
+  }
+
+  .gha-map__stars,
+  .gha-ai-world__nebula,
+  .gha-map__nebula {
+    position: absolute;
+    z-index: -1;
+    inset: -10%;
+    pointer-events: none;
+  }
+
+  .gha-map__stars {
+    opacity: .65;
+    background-image:
+      radial-gradient(circle, #fff 0 1px, transparent 1.5px),
+      radial-gradient(circle, #6fdcff 0 1px, transparent 1.6px),
+      radial-gradient(circle, #df8eff 0 1.2px, transparent 1.7px);
+    background-position: 3px 7px, 43px 18px, 79px 62px;
+    background-size: 107px 107px, 151px 151px, 211px 211px;
+    animation: gha-star-drift 70s linear infinite;
+  }
+
+  .gha-map__nebula {
+    opacity: .82;
+    filter: blur(28px);
+    background:
+      radial-gradient(ellipse at 49% 50%, rgb(99 102 241 / 26%), transparent 20%),
+      radial-gradient(ellipse at 60% 50%, rgb(168 85 247 / 22%), transparent 37%),
+      radial-gradient(ellipse at 42% 60%, rgb(14 165 233 / 15%), transparent 40%);
+    animation: gha-nebula-breathe 11s ease-in-out infinite alternate;
+  }
+
+  .gha-map__heading {
+    position: absolute;
+    z-index: 5;
+    top: 29px;
+    left: 32px;
+    max-width: 400px;
+  }
+
+  .gha-map__heading span,
+  .gha-ai-world__copy > span,
+  .gha-dashboard__head > div:nth-child(2) > span {
+    color: #9eaafd;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .09em;
+  }
+
+  .gha-map__heading h1 {
+    margin: 8px 0 4px;
+    font-size: clamp(25px, 2.25vw, 38px);
+    line-height: 1.05;
+    letter-spacing: -.035em;
+  }
+
+  .gha-map__heading p {
+    margin: 0;
+    color: var(--gha-muted);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .gha-orbits {
+    position: absolute;
+    z-index: 0;
+    top: 52%;
+    left: 52%;
+    width: min(73%, 980px);
+    aspect-ratio: 1.7;
+    transform: translate(-50%, -50%) scale(var(--gha-map-scale));
+    transition: transform 220ms ease;
+  }
+
+  .gha-orbits i {
+    position: absolute;
+    inset: calc(var(--ring, 0) * 7%);
+    border: 1px solid rgb(86 144 255 / calc(.25 - var(--ring, 0) * .025));
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgb(61 115 255 / 7%);
+    transform: rotate(calc(-7deg + var(--ring, 0) * 4deg));
+  }
+
+  .gha-orbits i:nth-child(1) { --ring: 0; }
+  .gha-orbits i:nth-child(2) { --ring: 1; }
+  .gha-orbits i:nth-child(3) { --ring: 2; }
+  .gha-orbits i:nth-child(4) { --ring: 3; }
+  .gha-orbits i:nth-child(5) { --ring: 4; }
+
+  .gha-core {
+    position: absolute;
+    z-index: 4;
+    top: 50%;
+    left: 51%;
+    display: grid;
+    place-items: center;
+    width: 174px;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 1px solid rgb(255 220 119 / 75%) !important;
+    border-radius: 50%;
+    color: #fff;
+    background:
+      radial-gradient(circle at 46% 42%, #fffbe7 0 3%, #ffd25d 8%, #db7016 27%, #8a2b0c 47%, transparent 69%),
+      #431706;
+    box-shadow: 0 0 32px #ff8a1f, 0 0 90px rgb(255 152 31 / 60%), 0 0 180px rgb(255 86 31 / 25%);
+    transform: translate(-50%, -50%) scale(var(--gha-map-scale));
+    transition: transform 220ms ease, filter 180ms ease;
+    animation: gha-core-pulse 5s ease-in-out infinite;
+  }
+
+  .gha-core:hover { filter: brightness(1.18); transform: translate(-50%, -50%) scale(calc(var(--gha-map-scale) * 1.04)); }
+  .gha-core > span { font-size: 38px; font-weight: 950; text-shadow: 0 0 18px #fff; }
+  .gha-core strong { margin-top: -38px; font-size: 14px; letter-spacing: .1em; }
+  .gha-core small { margin-top: -40px; color: #fff1bd; font-size: 10px; }
+
+  .gha-planets {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    transform: scale(var(--gha-map-scale));
+    transform-origin: 51% 50%;
+    transition: transform 220ms ease;
+  }
+
+  .gha-planet {
+    position: absolute;
+    top: var(--y);
+    left: var(--x);
+    display: grid;
+    grid-template: auto auto auto / var(--size) minmax(118px, auto);
+    align-items: center;
+    gap: 2px 13px;
+    min-width: 0;
+    padding: 0;
+    color: #fff;
+    text-align: left;
+    background: transparent;
+    transform: translate(-50%, -50%);
+  }
+
+  .gha-planet > span {
+    position: relative;
+    grid-area: 1 / 1 / 4 / 2;
+    display: grid;
+    place-items: center;
+    width: var(--size);
+    aspect-ratio: 1;
+    border: 1px solid rgb(var(--planet-rgb) / 62%);
+    border-radius: 50%;
+    color: rgb(var(--planet-rgb));
+    font-size: calc(var(--size) * .18);
+    font-weight: 950;
+    letter-spacing: -.04em;
+    background:
+      radial-gradient(circle at 38% 31%, rgb(255 255 255 / 24%), transparent 12%),
+      radial-gradient(circle at 48% 44%, rgb(var(--planet-rgb) / 30%), #071228 55%, #020611 73%);
+    box-shadow: inset -18px -15px 31px #000b, inset 10px 9px 26px rgb(var(--planet-rgb) / 12%), 0 0 12px rgb(var(--planet-rgb) / 90%), 0 0 40px rgb(var(--planet-rgb) / 42%);
+    animation: gha-planet-float 7s ease-in-out var(--delay) infinite;
+  }
+
+  .gha-planet > span::after {
+    position: absolute;
+    inset: 47% -13%;
+    border: 1px solid rgb(var(--planet-rgb) / 56%);
+    border-radius: 50%;
+    content: "";
+    transform: rotate(-14deg);
+    box-shadow: 0 0 13px rgb(var(--planet-rgb) / 40%);
+  }
+
+  .gha-planet strong { align-self: end; max-width: 165px; font-size: 13px; letter-spacing: .03em; white-space: nowrap; }
+  .gha-planet small { align-self: start; color: #91a0b9; font-size: 10px; }
+  .gha-planet:hover > span { filter: brightness(1.25); }
+  .gha-planet:hover strong { color: rgb(var(--planet-rgb)); }
+  .gha-planet--amber { --planet-rgb: 255 184 76; }
+  .gha-planet--cyan { --planet-rgb: 68 214 255; }
+  .gha-planet--orange { --planet-rgb: 255 116 75; }
+  .gha-planet--violet { --planet-rgb: 175 94 255; }
+  .gha-planet--blue { --planet-rgb: 65 139 255; }
+  .gha-planet--aqua { --planet-rgb: 73 225 205; }
+  .gha-planet--pink { --planet-rgb: 255 91 190; }
+
+  .gha-map__controls {
+    position: absolute;
+    z-index: 8;
+    right: 22px;
+    bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px;
+    border: 1px solid var(--gha-border);
+    border-radius: 11px;
+    background: rgb(4 12 27 / 88%);
+    box-shadow: 0 18px 42px #0008;
+    backdrop-filter: blur(14px);
+  }
+
+  .gha-map__controls button,
+  .gha-map__controls output {
+    display: grid;
+    place-items: center;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0 9px;
+    border-radius: 7px;
+    color: #b8c5d9;
+    background: rgb(255 255 255 / 4%);
+    font-size: 12px;
+  }
+
+  .gha-map__controls button:hover { color: #fff; background: rgb(124 58 237 / 30%); }
+
+  .gha-map__metrics {
+    position: absolute;
+    z-index: 7;
+    right: 22px;
+    top: 26px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(92px, 1fr));
+    gap: 8px;
+  }
+
+  .gha-metric {
+    min-width: 110px;
+    padding: 11px;
+    border: 1px solid var(--gha-border) !important;
+    border-radius: 11px;
+    color: #fff;
+    text-align: left;
+    background: rgb(7 17 32 / 82%);
+    backdrop-filter: blur(12px);
+  }
+
+  .gha-metric span,
+  .gha-metric strong,
+  .gha-metric small { display: block; }
+  .gha-metric span { color: #8fa0bb; font-size: 9px; text-transform: uppercase; }
+  .gha-metric strong { margin: 5px 0 3px; font-size: 18px; }
+  .gha-metric small { color: #6f809b; font-size: 9px; }
+  .gha-metric[data-state="empty"] strong { color: #64748b; }
+
+  .gha-source {
+    position: absolute;
+    z-index: 7;
+    left: 27px;
+    bottom: 27px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: #91a0b9;
+    font-size: 11px;
+  }
+
+  /* Dashboard */
+  .gha-dashboard .gha-stage {
+    padding: 20px;
+    background:
+      radial-gradient(circle at 45% 4%, rgb(67 56 202 / 17%), transparent 33%),
+      linear-gradient(145deg, rgb(3 10 23 / 92%), #020611);
+  }
+
+  .gha-dashboard__head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 15px;
+    max-width: 1440px;
+    min-height: 96px;
+    margin: 0 auto 14px;
+    padding: 16px 20px;
+    border: 1px solid var(--gha-border);
+    border-radius: 14px;
+    background: linear-gradient(100deg, rgb(26 24 87 / 62%), rgb(7 17 32 / 89%));
+    box-shadow: 0 18px 50px rgb(0 0 0 / 24%), inset 0 1px rgb(255 255 255 / 4%);
+  }
+
+  .gha-avatar {
+    display: grid;
+    place-items: center;
+    width: 62px;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 2px solid #9b68ff;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 900;
+    background: radial-gradient(circle, #5b21b6, #090e2d 70%);
+    box-shadow: 0 0 22px rgb(139 92 246 / 50%);
+  }
+
+  .gha-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .gha-dashboard__head h1 { margin: 5px 0 2px; font-size: clamp(20px, 2vw, 28px); }
+  .gha-dashboard__head p { margin: 0; color: var(--gha-muted); font-size: 12px; }
+  .gha-dashboard__clock { text-align: right; }
+  .gha-dashboard__clock strong,
+  .gha-dashboard__clock small { display: block; }
+  .gha-dashboard__clock strong { font-size: 27px; font-variant-numeric: tabular-nums; }
+  .gha-dashboard__clock small { margin-top: 3px; color: var(--gha-muted); font-size: 10px; }
+
+  .gha-widget-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-flow: dense;
+    gap: 12px;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+
+  .gha-widget {
+    min-width: 0;
+    min-height: 230px;
+    padding: 15px;
+    border: 1px solid var(--gha-border);
+    border-radius: 13px;
+    background:
+      linear-gradient(145deg, rgb(8 19 37 / 96%), rgb(5 13 27 / 94%));
+    box-shadow: 0 17px 44px rgb(0 0 0 / 20%), inset 0 1px rgb(255 255 255 / 3%);
+  }
+
+  .gha-widget--tasks { grid-column: span 4; }
+  .gha-widget--projects { grid-column: span 5; }
+  .gha-widget--weather { grid-column: span 3; }
+  .gha-widget--focus { grid-column: span 3; text-align: center; }
+  .gha-widget--notes { grid-column: span 4; }
+  .gha-widget--storage { grid-column: span 5; }
+  .gha-widget--activity { grid-column: span 7; }
+  .gha-widget--status { grid-column: span 5; }
+
+  .gha-widget > header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 40px;
+    margin-bottom: 12px;
+  }
+
+  .gha-widget > header span,
+  .gha-widget > header h2 { display: block; }
+  .gha-widget > header span { color: #9b8cff; font-size: 9px; font-weight: 800; letter-spacing: .09em; }
+  .gha-widget > header h2 { margin: 3px 0 0; font-size: 14px; }
+  .gha-widget > header button,
+  .gha-widget > header i {
+    min-height: 30px;
+    padding: 0 9px;
+    border: 1px solid rgb(139 92 246 / 20%);
+    border-radius: 7px;
+    color: #b7c2d5;
+    font-size: 10px;
+    font-style: normal;
+    background: rgb(124 58 237 / 10%);
+  }
+
+  .gha-widget > header i { display: grid; place-items: center; }
+  .gha-widget [data-state="ready"] { color: #6ee7b7; }
+  .gha-widget [data-state="empty"],
+  .gha-widget [data-state="unknown"],
+  .gha-widget [data-state="configuration-required"] { color: #fbbf24; }
+  .gha-widget [data-state="error"],
+  .gha-widget [data-state="offline"] { color: #fb7185; }
+
+  .gha-task-list,
+  .gha-project-list { display: grid; gap: 7px; }
+
+  .gha-task-list label {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: center;
+    gap: 9px;
+    padding: 8px 9px;
+    border: 1px solid rgb(148 163 184 / 10%);
+    border-radius: 8px;
+    background: rgb(255 255 255 / 2%);
+  }
+
+  .gha-task-list input { width: 16px; height: 16px; accent-color: #8b5cf6; }
+  .gha-task-list strong,
+  .gha-task-list small { display: block; }
+  .gha-task-list strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+  .gha-task-list small { margin-top: 2px; color: #7f8da5; font-size: 9px; }
+  .gha-task-list input:checked + span strong { color: #6f7d93; text-decoration: line-through; }
+
+  .gha-project-list > button {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 10px;
+    border: 1px solid rgb(148 163 184 / 10%);
+    border-radius: 8px;
+    text-align: left;
+    background: rgb(255 255 255 / 2%);
+  }
+
+  .gha-project-list > button:hover { border-color: rgb(139 92 246 / 40%); background: rgb(124 58 237 / 8%); }
+  .gha-project-list strong,
+  .gha-project-list small { display: block; }
+  .gha-project-list strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+  .gha-project-list small { margin-top: 3px; color: #7f8da5; font-size: 9px; }
+  .gha-project-list output { color: #c4b5fd; font-size: 12px; font-weight: 800; }
+
+  .gha-empty {
+    display: grid;
+    place-items: center;
+    min-height: 120px;
+    padding: 12px;
+    border: 1px dashed rgb(148 163 184 / 17%);
+    border-radius: 9px;
+    color: #72819a;
+    text-align: center;
+  }
+
+  .gha-empty > span { color: #8b5cf6; font-size: 22px; }
+  .gha-empty p { margin: 5px 0; font-size: 11px; }
+  .gha-empty button { min-height: 32px; padding: 0 11px; border-radius: 7px; color: #d9d2ff; background: rgb(124 58 237 / 20%); font-size: 10px; }
+
+  .gha-weather { display: grid; align-content: center; min-height: 140px; }
+  .gha-weather > strong { font-size: clamp(35px, 4vw, 52px); line-height: 1; }
+  .gha-weather > span { margin-top: 6px; color: #c1ccdb; font-size: 12px; }
+  .gha-weather dl { display: flex; gap: 9px; margin: 15px 0 8px; }
+  .gha-weather dl div { flex: 1; padding: 8px; border-radius: 8px; background: rgb(56 189 248 / 7%); }
+  .gha-weather dt { color: #77879f; font-size: 9px; }
+  .gha-weather dd { margin: 2px 0 0; color: #b9efff; font-size: 11px; }
+  .gha-weather > small { color: #65748d; font-size: 9px; }
+
+  .gha-focus-ring {
+    display: grid;
+    place-items: center;
+    width: 125px;
+    aspect-ratio: 1;
+    margin: 1px auto 11px;
+    border: 7px solid rgb(124 58 237 / 18%);
+    border-top-color: #9b6dff;
+    border-right-color: #38bdf8;
+    border-radius: 50%;
+    box-shadow: 0 0 28px rgb(124 58 237 / 23%), inset 0 0 28px rgb(59 130 246 / 10%);
+  }
+
+  .gha-focus-ring strong,
+  .gha-focus-ring span { grid-area: 1 / 1; display: block; }
+  .gha-focus-ring strong { margin-top: -12px; font-size: 26px; font-variant-numeric: tabular-nums; }
+  .gha-focus-ring span { align-self: end; margin-bottom: 27px; color: #8797af; font-size: 9px; }
+  .gha-primary {
+    min-height: 38px;
+    padding: 0 17px;
+    border: 1px solid rgb(192 132 252 / 46%) !important;
+    border-radius: 9px;
+    color: #fff;
+    font-weight: 800;
+    background: linear-gradient(135deg, #4c1d95, #7c3aed 55%, #9333ea);
+    box-shadow: 0 8px 25px rgb(109 40 217 / 27%);
+  }
+  .gha-widget--focus > small { display: block; margin-top: 8px; color: #71819a; font-size: 9px; }
+
+  .gha-widget--notes label { display: block; }
+  .gha-widget--notes textarea {
+    display: block;
+    width: 100%;
+    min-height: 122px;
+    resize: vertical;
+    padding: 11px;
+    border: 1px solid rgb(139 92 246 / 18%);
+    border-radius: 9px;
+    outline: 0;
+    color: #e7e9f6;
+    background: rgb(2 8 20 / 70%);
+    line-height: 1.55;
+  }
+  .gha-widget--notes footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 9px; }
+  .gha-widget--notes footer small { color: #74839b; font-size: 9px; }
+  .gha-widget--notes footer button { min-height: 32px; padding: 0 12px; border-radius: 7px; background: rgb(124 58 237 / 28%); font-size: 10px; }
+
+  .gha-storage-meter { position: relative; height: 9px; margin: 34px 0 18px; overflow: hidden; border-radius: 999px; background: rgb(148 163 184 / 12%); }
+  .gha-storage-meter span { display: block; width: var(--usage); height: 100%; border-radius: inherit; background: linear-gradient(90deg, #22d3ee, #8b5cf6, #ec4899); box-shadow: 0 0 15px rgb(139 92 246 / 70%); transition: width 300ms ease; }
+  .gha-widget--storage > strong { display: block; font-size: 16px; }
+  .gha-widget--storage > small { display: block; margin-top: 8px; color: #75849d; font-size: 10px; }
+  .gha-widget--activity ol { display: grid; gap: 7px; margin: 0; padding-left: 22px; }
+  .gha-widget--activity li { padding: 8px 10px; border-radius: 7px; color: #aebbd0; background: rgb(255 255 255 / 2%); font-size: 10px; }
+  .gha-widget--status dl { display: grid; gap: 8px; margin: 0; }
+  .gha-widget--status dl div { display: flex; justify-content: space-between; gap: 10px; padding: 10px; border-bottom: 1px solid rgb(148 163 184 / 9%); }
+  .gha-widget--status dt { color: #8392aa; font-size: 10px; }
+  .gha-widget--status dd { margin: 0; color: #dce3ef; font-size: 10px; font-weight: 750; text-align: right; }
+
+  /* AI Universe */
+  .gha-ai-world {
+    min-height: 780px;
+    background:
+      radial-gradient(circle at 55% 48%, rgb(21 94 239 / 27%), transparent 27%),
+      radial-gradient(ellipse at 65% 51%, rgb(126 34 206 / 26%), transparent 48%),
+      #020611;
+  }
+
+  .gha-ai-world__nebula {
+    opacity: .7;
+    filter: blur(36px);
+    background:
+      conic-gradient(from 70deg at 58% 49%, transparent, rgb(37 99 235 / 22%), transparent 20%, rgb(168 85 247 / 20%), transparent 41%),
+      radial-gradient(ellipse at 55% 48%, rgb(14 165 233 / 20%), transparent 44%);
+    animation: gha-nebula-breathe 12s ease-in-out infinite alternate;
+  }
+
+  .gha-ai-world__copy {
+    position: absolute;
+    z-index: 8;
+    top: 7%;
+    left: 3.5%;
+    width: min(34%, 430px);
+  }
+
+  .gha-ai-world__copy h1 {
+    margin: 12px 0;
+    color: #f5f7ff;
+    font-size: clamp(42px, 5vw, 75px);
+    line-height: .92;
+    letter-spacing: -.055em;
+    text-shadow: 0 0 20px rgb(56 189 248 / 48%);
+  }
+
+  .gha-ai-world__copy > p { max-width: 390px; color: #aab8cf; font-size: 14px; line-height: 1.65; }
+  .gha-ai-world__actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 21px; }
+  .gha-ai-world__actions button { min-height: 43px; padding: 0 16px; border: 1px solid var(--gha-border); border-radius: 9px; background: rgb(8 21 43 / 78%); }
+  .gha-ai-world__copy > section { width: min(320px, 100%); margin-top: 25px; padding: 15px; border: 1px solid var(--gha-border); border-radius: 12px; background: rgb(7 17 32 / 75%); backdrop-filter: blur(12px); }
+  .gha-ai-world__copy section h2 { margin: 0 0 10px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+  .gha-ai-world__copy section strong { color: #fbbf24; font-size: 13px; }
+  .gha-ai-world__copy section strong[data-state="ready"] { color: #6ee7b7; }
+  .gha-ai-world__copy section p { margin: 7px 0 0; color: #8493aa; font-size: 10px; line-height: 1.5; }
+
+  .gha-ai-core {
+    position: absolute;
+    z-index: 3;
+    top: 50%;
+    left: 56%;
+    display: grid;
+    place-items: center;
+    width: clamp(280px, 30vw, 460px);
+    aspect-ratio: 1;
+    border: 1px solid rgb(82 190 255 / 65%) !important;
+    border-radius: 50%;
+    color: #fff;
+    background:
+      radial-gradient(circle at 38% 30%, rgb(255 230 195 / 65%), transparent 8%),
+      radial-gradient(circle at 44% 38%, #334fc0 0 6%, #15346e 23%, #102250 43%, #07122b 68%);
+    box-shadow: inset -58px -48px 70px #000b, inset 28px 17px 50px rgb(56 189 248 / 25%), 0 0 18px #2d8ffb, 0 0 70px rgb(37 99 235 / 65%), 0 0 190px rgb(126 34 206 / 33%);
+    transform: translate(-50%, -50%);
+    animation: gha-ai-float 9s ease-in-out infinite;
+  }
+
+  .gha-ai-core::before,
+  .gha-ai-core::after {
+    position: absolute;
+    inset: 48% -35%;
+    border: 1px solid rgb(76 167 255 / 45%);
+    border-radius: 50%;
+    content: "";
+    transform: rotate(-14deg);
+    box-shadow: 0 0 18px rgb(37 99 235 / 35%);
+  }
+  .gha-ai-core::after { inset: 40% -55%; transform: rotate(9deg); opacity: .55; }
+  .gha-ai-core span { font-size: clamp(55px, 8vw, 100px); font-weight: 950; text-shadow: 0 0 26px #58c9ff; }
+  .gha-ai-core strong { margin-top: -55px; font-size: 15px; letter-spacing: .12em; }
+  .gha-ai-core small { margin-top: -68px; color: #b9dfff; }
+
+  .gha-ai-destinations { position: absolute; inset: 0; z-index: 6; }
+  .gha-ai-destinations button {
+    position: absolute;
+    top: var(--y);
+    left: var(--x);
+    display: grid;
+    grid-template: auto auto / 88px minmax(170px, 260px);
+    align-items: center;
+    gap: 2px 13px;
+    color: #fff;
+    text-align: left;
+    background: transparent;
+    transform: translate(-50%, -50%);
+  }
+  .gha-ai-destinations button > span {
+    grid-area: 1 / 1 / 3 / 2;
+    display: grid;
+    place-items: center;
+    width: 88px;
+    aspect-ratio: 1;
+    border: 1px solid rgb(106 189 255 / 60%);
+    border-radius: 50%;
+    color: #a4d9ff;
+    font-weight: 900;
+    background: radial-gradient(circle at 38% 31%, rgb(84 173 255 / 46%), #102550 46%, #040818 75%);
+    box-shadow: inset -12px -15px 26px #000b, 0 0 15px #318bff, 0 0 40px rgb(49 75 255 / 38%);
+    animation: gha-planet-float 7s ease-in-out var(--delay) infinite;
+  }
+  .gha-ai-destinations strong { align-self: end; font-size: 14px; }
+  .gha-ai-destinations small { align-self: start; color: #94a5bd; font-size: 10px; line-height: 1.35; }
+  .gha-ai-destinations button:hover > span { filter: brightness(1.25); }
+
+  .gha-ai-world__facts {
+    position: absolute;
+    z-index: 10;
+    right: 2%;
+    bottom: 2.8%;
+    left: 2%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 12px;
+    border: 1px solid var(--gha-border);
+    border-radius: 13px;
+    background: rgb(5 14 30 / 81%);
+    backdrop-filter: blur(16px);
+  }
+  .gha-ai-world__facts span { padding: 5px 17px; border-right: 1px solid rgb(148 163 184 / 11%); color: #8797af; font-size: 10px; }
+  .gha-ai-world__facts span:last-child { border-right: 0; }
+  .gha-ai-world__facts b { display: block; margin-bottom: 4px; color: #dce6f5; font-size: 11px; }
+
+  /* Chat adapter: the actual chat engine owns everything inside the engine host. */
+  .gha-chat {
+    display: grid;
+    grid-template: 68px minmax(0, 1fr) / minmax(0, 1fr);
+    min-height: min(941px, calc(100dvh - var(--app-header-height, 0px)));
+  }
+
+  .gha-chat__bar {
+    position: relative;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: 250px minmax(180px, 1fr) auto auto;
+    align-items: center;
+    gap: 17px;
+    padding: 8px 18px;
+    border-bottom: 1px solid var(--gha-border);
+    background: rgb(2 6 17 / 86%);
+    backdrop-filter: blur(18px);
+  }
+  .gha-chat__bar > div span,
+  .gha-chat__bar > div strong { display: block; }
+  .gha-chat__bar > div span { color: #9582f8; font-size: 9px; letter-spacing: .09em; }
+  .gha-chat__bar > div strong { margin-top: 3px; font-size: 14px; }
+  .gha-chat__bar nav { display: flex; gap: 5px; }
+  .gha-chat__bar nav button { min-height: 36px; padding: 0 12px; border: 1px solid var(--gha-border); border-radius: 8px; color: #adbad0; background: rgb(255 255 255 / 3%); font-size: 11px; }
+  .gha-chat__bar > i { min-width: 108px; padding: 8px 10px; border-radius: 999px; color: #fbbf24; font-size: 10px; font-style: normal; text-align: center; background: rgb(245 158 11 / 9%); }
+  .gha-chat__bar > i[data-state="ready"] { color: #6ee7b7; background: rgb(16 185 129 / 9%); }
+  .gha-chat__bar > i[data-state="error"],
+  .gha-chat__bar > i[data-state="configuration-required"] { color: #fb7185; background: rgb(244 63 94 / 9%); }
+
+  .gha-chat__stage {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 2%, rgb(76 29 149 / 24%), transparent 38%),
+      radial-gradient(circle at 12% 92%, rgb(30 64 175 / 17%), transparent 28%),
+      #020611;
+  }
+  .gha-chat__aurora { position: absolute; inset: 0; pointer-events: none; opacity: .4; background: linear-gradient(115deg, transparent 10%, rgb(37 99 235 / 9%), transparent 45%, rgb(168 85 247 / 8%), transparent 85%); animation: gha-chat-aurora 18s ease-in-out infinite alternate; }
+  .gha-chat__engine { position: absolute; z-index: 2; inset: 0; min-width: 0; overflow: auto; }
+  .gha-chat__engine > * { min-height: 100%; }
+  .gha-chat__missing { position: absolute; z-index: 4; top: 50%; left: 50%; width: min(460px, calc(100% - 32px)); padding: 30px; border: 1px solid var(--gha-border-strong); border-radius: 16px; text-align: center; background: rgb(7 17 32 / 94%); box-shadow: 0 30px 90px #000a, 0 0 40px rgb(124 58 237 / 17%); transform: translate(-50%, -50%); }
+  .gha-chat__missing > span { display: grid; place-items: center; width: 75px; aspect-ratio: 1; margin: 0 auto; border-radius: 50%; color: #c4b5fd; font-size: 24px; font-weight: 900; background: radial-gradient(circle, #5b21b6, #071120 70%); box-shadow: 0 0 30px rgb(139 92 246 / 42%); }
+  .gha-chat__missing h1 { margin: 19px 0 8px; font-size: 22px; }
+  .gha-chat__missing p { color: #95a4ba; font-size: 12px; line-height: 1.6; }
+  .gha-chat__missing button { min-height: 40px; padding: 0 16px; border-radius: 9px; background: linear-gradient(135deg, #4c1d95, #7c3aed); }
+
+  [data-gha-paused="true"] .gha-map__stars,
+  [data-gha-paused="true"] .gha-map__nebula,
+  [data-gha-paused="true"] .gha-planet > span,
+  [data-gha-paused="true"] .gha-core,
+  [data-gha-paused="true"] .gha-ai-core,
+  [data-gha-paused="true"] .gha-ai-destinations span,
+  [data-gha-paused="true"] .gha-chat__aurora { animation-play-state: paused !important; }
+
+  @keyframes gha-star-drift { to { transform: translate3d(-2.5%, 2%, 0); } }
+  @keyframes gha-nebula-breathe { from { transform: scale(.96) rotate(-1deg); opacity: .6; } to { transform: scale(1.05) rotate(1deg); opacity: .9; } }
+  @keyframes gha-core-pulse { 0%, 100% { box-shadow: 0 0 32px #ff8a1f, 0 0 90px rgb(255 152 31 / 60%), 0 0 180px rgb(255 86 31 / 25%); } 50% { box-shadow: 0 0 42px #ffc05e, 0 0 115px rgb(255 152 31 / 70%), 0 0 215px rgb(255 86 31 / 31%); } }
+  @keyframes gha-planet-float { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-7px) rotate(1deg); } }
+  @keyframes gha-ai-float { 0%, 100% { transform: translate(-50%, -50%) rotate(-.5deg); } 50% { transform: translate(-50%, calc(-50% - 8px)) rotate(.5deg); } }
+  @keyframes gha-chat-aurora { from { transform: translateX(-3%); opacity: .25; } to { transform: translateX(3%); opacity: .52; } }
+
+  @media (max-width: 1240px) {
+    .gha-app { grid-template-columns: 76px minmax(0, 1fr); }
+    .gha-topbar { grid-template-columns: 76px minmax(250px, 470px) minmax(180px, 1fr) auto; padding-left: 10px; }
+    .gha-brand b,
+    .gha-sidebar__title,
+    .gha-sidebar nav span,
+    .gha-sidebar footer div { display: none; }
+    .gha-sidebar { padding-inline: 9px; }
+    .gha-sidebar nav button { grid-template-columns: 1fr; justify-items: center; padding-inline: 0; }
+    .gha-sidebar nav i { width: 34px; }
+    .gha-sidebar footer { justify-content: center; padding-inline: 0; }
+    .gha-ai-world__copy { width: 38%; }
+    .gha-widget--tasks { grid-column: span 6; }
+    .gha-widget--projects { grid-column: span 6; }
+    .gha-widget--weather { grid-column: span 4; }
+    .gha-widget--focus { grid-column: span 4; }
+    .gha-widget--notes { grid-column: span 4; }
+    .gha-widget--storage,
+    .gha-widget--activity,
+    .gha-widget--status { grid-column: span 6; }
+  }
+
+  /* With the persistent 224px Galaxy navigation, a tablet route outlet is
+     narrower than the viewport media query suggests. Stack the live metrics
+     beneath the heading so they never cover its Vietnamese title or copy. */
+  @media (min-width: 681px) and (max-width: 1023px) {
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-map {
+      min-width: 0;
+      min-height: 1090px;
+      height: auto;
+    }
+
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-map__heading {
+      top: 24px;
+      right: 24px;
+      left: 24px;
+      max-width: 430px;
+    }
+
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-map__metrics {
+      top: auto;
+      right: 24px;
+      bottom: 94px;
+      left: 24px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-metric {
+      min-width: 0;
+    }
+
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-orbits {
+      top: 270px;
+      left: 50%;
+      width: min(92%, 520px);
+      height: 260px;
+    }
+
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-core {
+      top: 270px;
+      left: 50%;
+      width: 145px;
+    }
+
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-planets {
+      top: 410px;
+      right: 24px;
+      bottom: auto;
+      left: 24px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+      transform: none !important;
+    }
+
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-planet {
+      position: static;
+      display: grid;
+      grid-template: auto auto / 57px minmax(0, 1fr);
+      align-content: center;
+      min-width: 0;
+      min-height: 74px;
+      padding: 8px;
+      border: 1px solid var(--gha-border);
+      border-radius: 10px;
+      background: rgb(7 17 32 / 78%);
+      transform: none;
+    }
+
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-planet > span {
+      grid-area: 1 / 1 / 3 / 2;
+      width: 57px;
+    }
+
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-planet strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-planet small {
+      display: none;
+    }
+
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-map__controls {
+      right: auto;
+      bottom: 34px;
+      left: 24px;
+    }
+
+    [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-source {
+      right: 24px;
+      bottom: 44px;
+      left: auto;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .gha-app { grid-template: 60px minmax(0, 1fr) 68px / minmax(0, 1fr); min-height: 100dvh; overflow: hidden; }
+    .gha-topbar { grid-area: 1 / 1; grid-template-columns: auto minmax(160px, 1fr) auto; gap: 10px; padding: 7px 11px; }
+    .gha-topbar .gha-brand { width: 42px; }
+    .gha-topbar .gha-brand > span { width: 40px; }
+    .gha-topbar__copy { display: none; }
+    .gha-topbar nav button:not([aria-current="page"]) { display: none; }
+    .gha-topbar nav button { min-height: 40px; padding-inline: 10px; }
+    .gha-search { height: 40px; }
+    .gha-search kbd { display: none; }
+    .gha-sidebar { grid-area: 3 / 1; display: block; padding: 6px 8px max(6px, env(safe-area-inset-bottom)); overflow: hidden auto; border-top: 1px solid var(--gha-border); border-right: 0; }
+    .gha-sidebar nav { display: grid; grid-template-columns: repeat(10, minmax(54px, 1fr)); gap: 4px; margin: 0; }
+    .gha-sidebar nav button { min-height: 54px; }
+    .gha-sidebar nav button:nth-child(n + 7) { display: none; }
+    .gha-sidebar footer { display: none; }
+    .gha-stage { grid-area: 2 / 1; }
+    .gha-map,
+    .gha-ai-world { min-width: 0; height: 100%; min-height: 700px; }
+    .gha-dashboard .gha-stage { padding: 12px; }
+    .gha-widget--tasks,
+    .gha-widget--projects,
+    .gha-widget--weather,
+    .gha-widget--focus,
+    .gha-widget--notes,
+    .gha-widget--storage,
+    .gha-widget--activity,
+    .gha-widget--status { grid-column: span 6; }
+    .gha-chat { min-height: 100dvh; grid-template-rows: 60px minmax(0, 1fr); }
+    .gha-chat__bar { grid-template-columns: auto minmax(0, 1fr) auto; padding: 7px 11px; }
+    .gha-chat__bar .gha-brand { width: 43px; }
+    .gha-chat__bar .gha-brand b,
+    .gha-chat__bar nav { display: none; }
+  }
+
+  @media (max-width: 680px) {
+    .gha-topbar { grid-template-columns: auto minmax(0, 1fr) auto; }
+    .gha-topbar nav button { width: 43px; padding: 0; overflow: hidden; color: transparent; }
+    .gha-topbar nav button::before { color: #fff; content: "•••"; }
+    .gha-map { min-width: 0; min-height: 1090px; height: auto; transform-origin: top left; }
+    .gha-map__heading { top: 22px; left: 20px; max-width: 300px; }
+    .gha-map__heading p { max-width: 260px; }
+    .gha-map__metrics { top: auto; right: 14px; bottom: 94px; left: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .gha-metric { min-width: 0; padding: 8px; }
+    .gha-metric small { display: none; }
+    .gha-orbits { top: 270px; left: 50%; width: min(92%, 520px); height: 260px; }
+    .gha-core { top: 270px; left: 50%; width: 145px; }
+    .gha-planets { top: 410px; right: 14px; bottom: auto; left: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; transform: none !important; }
+    .gha-planet { position: static; display: grid; grid-template: auto auto / 57px minmax(0, 1fr); align-content: center; min-width: 0; min-height: 74px; padding: 8px; border: 1px solid var(--gha-border); border-radius: 10px; background: rgb(7 17 32 / 78%); transform: none; }
+    .gha-planet > span { grid-area: 1 / 1 / 3 / 2; width: 57px; }
+    .gha-planet strong { font-size: 11px; }
+    .gha-planet small { display: none; }
+    .gha-map__controls { right: auto; bottom: 34px; left: 14px; width: max-content; }
+    .gha-map__controls button:last-child { display: none; }
+    .gha-source { right: 14px; bottom: 44px; left: auto; }
+    .gha-dashboard__head { grid-template-columns: auto minmax(0, 1fr); padding: 13px; }
+    .gha-dashboard__clock { grid-column: 1 / 3; display: flex; align-items: baseline; justify-content: space-between; padding-top: 10px; border-top: 1px solid rgb(148 163 184 / 10%); text-align: left; }
+    .gha-dashboard__clock strong { font-size: 21px; }
+    .gha-widget-grid { display: block; }
+    .gha-widget { min-height: 0; margin-bottom: 11px; }
+    .gha-ai-world { min-width: 0; min-height: 1080px; height: auto; }
+    .gha-ai-world__copy { top: 28px; right: 20px; left: 20px; width: auto; }
+    .gha-ai-world__copy h1 { font-size: 43px; }
+    .gha-ai-world__copy > p { font-size: 11px; }
+    .gha-ai-world__copy > section { display: none; }
+    .gha-ai-core { top: 435px; left: 50%; width: 240px; }
+    .gha-ai-destinations { top: 590px; right: 15px; bottom: auto; left: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .gha-ai-destinations button { position: static; display: grid; grid-template-columns: 60px minmax(0, 1fr); min-height: 78px; padding: 8px; border: 1px solid var(--gha-border); border-radius: 10px; background: rgb(7 17 32 / 78%); transform: none; }
+    .gha-ai-destinations button > span { width: 68px; }
+    .gha-ai-destinations button small { display: none; }
+    .gha-ai-world__facts { right: 15px; bottom: 14px; left: 15px; grid-template-columns: 1fr 1fr; }
+    .gha-ai-world__facts span:nth-child(2) { border-right: 0; }
+    .gha-chat__bar > i { min-width: 0; max-width: 105px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gha-app *,
+    .gha-app *::before,
+    .gha-app *::after {
+      scroll-behavior: auto !important;
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important;
+    }
+  }
+
+  @media (prefers-contrast: more) {
+    .gha-app { --gha-border: rgb(196 210 234 / 54%); --gha-muted: #c5d0e2; }
+    .gha-widget,
+    .gha-topbar,
+    .gha-sidebar,
+    .gha-map__controls { backdrop-filter: none; }
+  }
+}

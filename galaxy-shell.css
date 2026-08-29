@@ -1,0 +1,457 @@
+/* HH Galaxy persistent chrome enhancer v1. Every rule is shell-scoped. */
+
+[data-galaxy-shell] {
+  --header-h: 68px;
+  --sidebar-w: 248px;
+  /* Keep the visual rail and the legacy app-shell grid in lockstep. The
+     existing shell uses --sidebar-width while Galaxy uses --sidebar-w; if
+     only the latter changes, a transparent gap appears between the rail and
+     the outlet and labels get squeezed into a few pixels. */
+  --sidebar-width: var(--sidebar-w);
+  --rail-w: 72px;
+  --library-w: 292px;
+  --inspector-w: 320px;
+  --dock-h: 84px;
+  --layout-gap: 14px;
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 100dvh;
+  overflow: clip;
+  background:
+    radial-gradient(circle at 68% 20%, rgb(76 29 149 / 15%), transparent 34%),
+    linear-gradient(145deg, var(--galaxy-bg-deep), var(--galaxy-bg) 52%, #02040c);
+}
+
+[data-galaxy-shell][data-galaxy-layout="atlas"] {
+  --sidebar-w: 272px;
+  --sidebar-width: var(--sidebar-w);
+  --layout-gap: 12px;
+}
+
+[data-galaxy-shell][data-galaxy-layout="standard"] {
+  --sidebar-w: 248px;
+  --sidebar-width: var(--sidebar-w);
+  --layout-gap: 14px;
+}
+
+[data-galaxy-shell][data-galaxy-layout="dashboard"] {
+  --sidebar-w: 248px;
+  --sidebar-width: var(--sidebar-w);
+  --layout-gap: 12px;
+}
+
+[data-galaxy-shell][data-galaxy-layout="three-column"] {
+  --sidebar-w: 232px;
+  --sidebar-width: var(--sidebar-w);
+  --inspector-w: 312px;
+  --layout-gap: 12px;
+}
+
+[data-galaxy-shell][data-galaxy-layout="workbench"] {
+  /* Editors still expose the full product navigation. A compact rail is
+     reserved for the explicit tablet breakpoint below; keeping a readable
+     desktop rail prevents labels from wrapping into single characters. */
+  --sidebar-w: 248px;
+  --sidebar-width: var(--sidebar-w);
+  --library-w: 252px;
+  --inspector-w: 304px;
+  --layout-gap: 8px;
+}
+
+[data-galaxy-shell][data-galaxy-layout="media-dock"] {
+  --sidebar-w: 232px;
+  --sidebar-width: var(--sidebar-w);
+  --dock-h: 96px;
+  --layout-gap: 12px;
+}
+
+[data-galaxy-shell][data-galaxy-layout="desktop"] {
+  --header-h: 64px;
+  --sidebar-w: 0px;
+  --sidebar-width: var(--sidebar-w);
+  --dock-h: 76px;
+  --layout-gap: 10px;
+}
+
+[data-galaxy-shell] > [data-galaxy-effect-owner="shell"] {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.66;
+  contain: strict;
+  transition: opacity 600ms ease;
+}
+
+[data-galaxy-shell] > [data-galaxy-effect-owner="shell"]::before,
+[data-galaxy-shell] > [data-galaxy-effect-owner="shell"]::after {
+  position: absolute;
+  inset: -18%;
+  content: "";
+  will-change: transform, opacity;
+}
+
+[data-galaxy-shell] > [data-galaxy-effect-owner="shell"]::before {
+  background-image:
+    radial-gradient(circle at 18% 23%, rgb(56 189 248 / 70%) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 72% 31%, rgb(168 85 247 / 72%) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 45% 79%, rgb(246 247 255 / 60%) 0 1px, transparent 1.7px);
+  background-size: 127px 131px, 193px 179px, 89px 97px;
+  opacity: 0.32;
+  animation: galaxy-shell-star-drift 72s linear infinite;
+}
+
+[data-galaxy-shell] > [data-galaxy-effect-owner="shell"]::after {
+  background:
+    radial-gradient(ellipse at 72% 28%, rgb(124 58 237 / 17%), transparent 28%),
+    radial-gradient(ellipse at 22% 72%, rgb(14 165 233 / 11%), transparent 25%);
+  filter: blur(28px);
+  opacity: 0.56;
+  animation: galaxy-shell-nebula-breathe 7s ease-in-out infinite alternate;
+}
+
+[data-galaxy-shell][data-galaxy-effects="paused"] > [data-galaxy-effect-owner="shell"],
+[data-galaxy-shell][data-galaxy-media-active="true"] > [data-galaxy-effect-owner="shell"] {
+  opacity: 0.12;
+}
+
+[data-galaxy-shell][data-galaxy-effects="paused"] > [data-galaxy-effect-owner="shell"]::before,
+[data-galaxy-shell][data-galaxy-effects="paused"] > [data-galaxy-effect-owner="shell"]::after,
+[data-galaxy-shell][data-galaxy-media-active="true"] > [data-galaxy-effect-owner="shell"]::before,
+[data-galaxy-shell][data-galaxy-media-active="true"] > [data-galaxy-effect-owner="shell"]::after {
+  animation-play-state: paused;
+}
+
+[data-galaxy-shell] > :is(.app-header, .app-shell__body) {
+  position: relative;
+  z-index: 1;
+}
+
+[data-galaxy-shell] [data-galaxy-chrome="topbar"] {
+  min-height: var(--header-h);
+  border-bottom: 1px solid var(--galaxy-border);
+  background: rgb(2 6 17 / 82%);
+  box-shadow: 0 12px 38px rgb(0 0 0 / 20%);
+  backdrop-filter: blur(22px) saturate(138%);
+}
+
+[data-galaxy-shell] [data-galaxy-chrome="topbar"] :where(.app-brand, .app-user-button, .app-icon-button, .app-global-search) {
+  min-height: var(--galaxy-control-min);
+  border-color: var(--galaxy-border);
+}
+
+[data-galaxy-shell] [data-galaxy-chrome="topbar"] .app-global-search {
+  width: min(100%, 484px);
+  background: rgb(7 17 32 / 76%);
+  color: var(--galaxy-text-secondary);
+}
+
+[data-galaxy-shell] [data-galaxy-chrome="navigation"] {
+  width: 100%;
+  min-width: 0;
+  border-right: 1px solid var(--galaxy-border);
+  background: linear-gradient(180deg, rgb(4 10 24 / 95%), rgb(3 8 18 / 92%));
+  box-shadow: 14px 0 40px rgb(0 0 0 / 17%);
+  backdrop-filter: blur(20px) saturate(128%);
+}
+
+/* The legacy shell and Galaxy use different variable names for the same grid
+   track. Own the track at the enhancer boundary so a profile cannot leave a
+   dead strip between the navigation and route outlet. Collapsed/auto-hide
+   states retain the legacy rail width and remain user-controlled. */
+[data-galaxy-shell] > .app-shell__body {
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) !important;
+}
+
+body.app-sidebar-collapsed [data-galaxy-shell] > .app-shell__body,
+body.app-sidebar-labels-hidden [data-galaxy-shell] > .app-shell__body,
+body.app-sidebar-auto-hide:not(.app-sidebar-collapsed) [data-galaxy-shell] > .app-shell__body {
+  grid-template-columns: var(--sidebar-collapsed-width, var(--rail-w)) minmax(0, 1fr) !important;
+}
+
+body.app-sidebar-auto-hide:not(.app-sidebar-collapsed) [data-galaxy-shell] > .app-shell__body:has(.app-sidebar:hover) {
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) !important;
+}
+
+[data-galaxy-shell] [data-galaxy-chrome="navigation"] :where(button, [href]) {
+  min-height: var(--galaxy-control-min);
+}
+
+[data-galaxy-shell] [data-galaxy-chrome="navigation"] :where(.is-active, [aria-current="page"]) {
+  border-color: color-mix(in srgb, var(--galaxy-color-accent) 42%, transparent);
+  background: linear-gradient(100deg, color-mix(in srgb, var(--galaxy-color-accent) 25%, transparent), rgb(59 130 246 / 12%));
+  color: var(--galaxy-text);
+  box-shadow: inset 2px 0 var(--galaxy-color-accent), 0 0 24px color-mix(in srgb, var(--galaxy-color-accent) 10%, transparent);
+}
+
+[data-galaxy-shell] [data-galaxy-chrome="outlet"] {
+  min-width: 0;
+  min-height: 0;
+  color: var(--galaxy-text);
+  scrollbar-color: rgb(139 92 246 / 62%) rgb(7 17 32 / 45%);
+  scrollbar-width: thin;
+}
+
+[data-galaxy-shell] [data-galaxy-outlet] {
+  min-width: 0;
+  max-width: none;
+  overflow-x: clip;
+}
+
+/* Immersive Galaxy workspaces provide their own semantic title/tool region.
+   The persistent header and sidebar remain mounted; only the redundant legacy
+   breadcrumb/page banner is removed and the outlet receives the full canvas. */
+[data-galaxy-shell]:is(
+  [data-galaxy-route="/home"],
+  [data-galaxy-route="/home/dashboard"],
+  [data-galaxy-route="/create/ai-center"],
+  [data-galaxy-route^="/chat-ai"],
+  [data-galaxy-route="/create/workflow"],
+  [data-galaxy-route="/work/automation-lab"],
+  [data-galaxy-route="/work/projects-tasks"],
+  [data-galaxy-route="/communication/community"],
+  [data-galaxy-route="/music/ambient"],
+  [data-galaxy-route="/system/desktop"]
+) :is(.app-breadcrumb, .app-page-header, .app-context-bar) {
+  display: none !important;
+}
+
+[data-galaxy-shell]:is(
+  [data-galaxy-route="/home"],
+  [data-galaxy-route="/home/dashboard"],
+  [data-galaxy-route="/create/ai-center"],
+  [data-galaxy-route^="/chat-ai"],
+  [data-galaxy-route="/create/workflow"],
+  [data-galaxy-route="/work/automation-lab"],
+  [data-galaxy-route="/work/projects-tasks"],
+  [data-galaxy-route="/communication/community"],
+  [data-galaxy-route="/music/ambient"],
+  [data-galaxy-route="/system/desktop"]
+) .app-workspace {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+[data-galaxy-shell] [data-galaxy-layout-region="library"] {
+  width: var(--library-w);
+  min-width: 0;
+}
+
+[data-galaxy-shell] [data-galaxy-layout-region="inspector"] {
+  width: var(--inspector-w);
+  min-width: 0;
+}
+
+[data-galaxy-shell] [data-galaxy-layout-region="dock"] {
+  min-height: var(--dock-h);
+}
+
+[data-galaxy-shell] :where([data-galaxy-grid], .galaxy-grid) {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: var(--layout-gap);
+}
+
+[data-galaxy-shell] [data-galaxy-capability]:not([data-galaxy-capability="ready"]) [data-galaxy-requires-ready] {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+[data-galaxy-shell] [data-galaxy-capability="loading"] {
+  cursor: progress;
+}
+
+[data-galaxy-shell] [data-galaxy-capability="error"] {
+  border-color: color-mix(in srgb, var(--galaxy-danger) 42%, var(--galaxy-border));
+}
+
+@keyframes galaxy-shell-star-drift {
+  to { transform: translate3d(7%, 5%, 0) rotate(0.01deg); }
+}
+
+@keyframes galaxy-shell-nebula-breathe {
+  from { transform: scale(0.98) translate3d(-1%, 0, 0); opacity: 0.42; }
+  to { transform: scale(1.04) translate3d(1%, -1%, 0); opacity: 0.68; }
+}
+
+@media (max-width: 1439px) {
+  [data-galaxy-shell] {
+    --sidebar-w: 224px;
+    --sidebar-width: var(--sidebar-w);
+    --inspector-w: min(360px, calc(100vw - 32px));
+  }
+
+  [data-galaxy-shell] [data-galaxy-layout-region="inspector"] {
+    position: fixed;
+    z-index: 30;
+    top: calc(var(--header-h) + 10px);
+    right: 10px;
+    bottom: 10px;
+    max-width: calc(100vw - 20px);
+    overflow: auto;
+  }
+}
+
+@media (max-width: 1179px) {
+  [data-galaxy-shell][data-galaxy-layout]:not([data-galaxy-layout="desktop"]) {
+    --sidebar-w: 224px;
+    --sidebar-width: var(--sidebar-w);
+    --layout-gap: 12px;
+  }
+
+  [data-galaxy-shell] [data-galaxy-chrome="topbar"] {
+    grid-template-columns: minmax(170px, 0.65fr) minmax(220px, 1fr) auto;
+  }
+
+  [data-galaxy-shell] :where([data-galaxy-grid], .galaxy-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  [data-galaxy-shell][data-galaxy-layout] {
+    --header-h: 56px;
+    --sidebar-w: min(88vw, 336px);
+    --sidebar-width: var(--sidebar-w);
+    --dock-h: 72px;
+    --layout-gap: 10px;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+
+  /* On phones the legacy navigation is an off-canvas bottom sheet, not a
+     persistent grid column. Keep the route outlet full width regardless of
+     the desktop profile selected for the current route. */
+  [data-galaxy-shell] > .app-shell__body,
+  body.app-sidebar-collapsed [data-galaxy-shell] > .app-shell__body,
+  body.app-sidebar-labels-hidden [data-galaxy-shell] > .app-shell__body,
+  body.app-sidebar-auto-hide [data-galaxy-shell] > .app-shell__body {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  [data-galaxy-shell] [data-galaxy-chrome="topbar"] {
+    min-height: var(--header-h);
+    padding-right: max(8px, env(safe-area-inset-right));
+    padding-left: max(8px, env(safe-area-inset-left));
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  [data-galaxy-shell] [data-galaxy-chrome="topbar"] .app-global-search {
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+  }
+
+  [data-galaxy-shell] [data-galaxy-chrome="topbar"] .app-global-search :where(span:nth-child(2), kbd),
+  [data-galaxy-shell] [data-galaxy-chrome="topbar"] :where(.app-live-status, .app-user-button strong, .app-user-button i) {
+    display: none;
+  }
+
+  [data-galaxy-shell] [data-galaxy-chrome="navigation"] {
+    width: var(--sidebar-w);
+    max-width: calc(100vw - 24px);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* The compact tablet rail visually hides labels. Restore them inside the
+     mobile sheet so opening navigation always exposes readable destinations. */
+  [data-galaxy-shell] [data-galaxy-chrome="navigation"] :where(.app-sidebar__item > b, .app-sidebar__subitem b, .app-sidebar__count, .app-sidebar__chevron) {
+    position: static;
+    width: auto;
+    height: auto;
+    clip: auto;
+    clip-path: none;
+  }
+
+  [data-galaxy-shell] [data-galaxy-chrome="navigation"] :where(.app-sidebar__item > b, .app-sidebar__subitem b) {
+    overflow: hidden;
+    white-space: normal;
+  }
+
+  [data-galaxy-shell] [data-galaxy-chrome="navigation"] :where(.app-sidebar__count, .app-sidebar__chevron) {
+    overflow: visible;
+    white-space: nowrap;
+  }
+
+  [data-galaxy-shell] [data-galaxy-chrome="outlet"] {
+    padding-right: max(0px, env(safe-area-inset-right));
+    padding-left: max(0px, env(safe-area-inset-left));
+  }
+
+  [data-galaxy-shell] :where([data-galaxy-grid], .galaxy-grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-galaxy-shell] [data-galaxy-layout-region="inspector"] {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-width: none;
+    max-height: min(78dvh, 680px);
+    padding-bottom: env(safe-area-inset-bottom);
+    border-radius: 18px 18px 0 0;
+  }
+
+  /* Privacy remains an independent feature, but its first-run action row is
+     visible above Galaxy's mobile dock. Let long Vietnamese labels wrap
+     instead of increasing the grid's min-content width beyond the viewport. */
+  body:has([data-galaxy-shell]) .hh-consent-banner > div {
+    min-width: 0;
+  }
+
+  body:has([data-galaxy-shell]) .hh-consent-banner {
+    box-sizing: border-box;
+    max-width: calc(100vw - 20px);
+  }
+
+  body:has([data-galaxy-shell]) .hh-consent-banner > div:last-child {
+    display: grid;
+    width: auto;
+    max-width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body:has([data-galaxy-shell]) .hh-consent-banner button {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  body:has([data-galaxy-shell]) .hh-consent-banner > div:last-child > button.primary:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-galaxy-shell] > [data-galaxy-effect-owner="shell"]::before,
+  [data-galaxy-shell] > [data-galaxy-effect-owner="shell"]::after {
+    animation: none;
+  }
+
+  [data-galaxy-shell] > [data-galaxy-effect-owner="shell"] {
+    opacity: 0.16;
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  [data-galaxy-shell],
+  [data-galaxy-shell] [data-galaxy-chrome] {
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+    forced-color-adjust: auto;
+  }
+
+  [data-galaxy-shell] > [data-galaxy-effect-owner="shell"] {
+    display: none;
+  }
+}

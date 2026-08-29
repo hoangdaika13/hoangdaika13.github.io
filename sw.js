@@ -1,4 +1,7 @@
-const CACHE = "hh-identity-portal-v934";
+const CACHE = "hh-identity-portal-v935";
+// Compatibility marker for HH Universe Solar 3D: hh-identity-portal-v934.
+// HH Galaxy v1: persistent shell plus ten route adapters, all backed by the
+// existing HH engines and versioned local-first state.
 // HH Universe v3: JPL Horizons Flight Director with parsed vectors, playback, comparison and CSV export.
 // Creative specialist compatibility: hh-identity-portal-v928 creative-os.js?v=14 creative-os.css?v=8 performance-loader.js?v=570 script.js?v=251.
 // Compatibility marker for the immediately preceding release: hh-identity-portal-v925.
@@ -252,6 +255,13 @@ const RUNTIME_ASSETS = [
   "./auth-typography-unified.css?v=2",
   "./brand-galaxy-logo.css?v=1",
   "./brand-galaxy-logo.js?v=1",
+  "./galaxy-design-system.css?v=1",
+  "./galaxy-shell.css?v=1",
+  "./galaxy-shell.js?v=1",
+  "./galaxy-home-ai.css?v=1",
+  "./galaxy-home-ai.js?v=1",
+  "./galaxy-domain-views.css?v=1",
+  "./galaxy-domain-views.js?v=1",
   "./galaxy-favicon-controller.js?v=2",
   "./assets/brand/hh-galaxy-star-static.svg?v=2",
   "./assets/brand/hh-galaxy-star.svg?v=1",
@@ -551,10 +561,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=575",
+  "./performance-loader.js?v=576",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=254"
+  "./script.js?v=255"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

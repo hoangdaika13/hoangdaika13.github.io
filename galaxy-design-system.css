@@ -1,0 +1,255 @@
+/*
+ * HH Galaxy Design System v1
+ * Foundation tokens and primitives are deliberately scoped to the enhanced
+ * application shell. Nothing in this file owns routing or feature markup.
+ */
+
+[data-galaxy-shell] {
+  /* Color: foundations */
+  --galaxy-bg: #020611;
+  --galaxy-bg-deep: #030816;
+  --galaxy-surface: #071120;
+  --galaxy-surface-raised: #0a1629;
+  --galaxy-surface-hover: #101f3a;
+  --galaxy-glass: rgb(6 15 29 / 88%);
+  --galaxy-border: rgb(132 162 210 / 18%);
+  --galaxy-border-strong: rgb(145 116 255 / 45%);
+
+  /* Color: content and state */
+  --galaxy-text: #f6f7ff;
+  --galaxy-text-secondary: #b4bfd4;
+  --galaxy-text-muted: #7887a3;
+  --galaxy-violet: #8b5cf6;
+  --galaxy-purple: #a855f7;
+  --galaxy-cyan: #38bdf8;
+  --galaxy-blue: #3b82f6;
+  --galaxy-magenta: #ec4899;
+  --galaxy-success: #34d399;
+  --galaxy-warning: #f59e0b;
+  --galaxy-danger: #fb7185;
+
+  /* Semantic aliases: feature modules consume meaning, not palette names. */
+  --galaxy-color-canvas: var(--galaxy-bg);
+  --galaxy-color-surface: var(--galaxy-surface);
+  --galaxy-color-surface-raised: var(--galaxy-surface-raised);
+  --galaxy-color-surface-interactive: var(--galaxy-surface-hover);
+  --galaxy-color-border: var(--galaxy-border);
+  --galaxy-color-border-active: var(--galaxy-border-strong);
+  --galaxy-color-text: var(--galaxy-text);
+  --galaxy-color-text-secondary: var(--galaxy-text-secondary);
+  --galaxy-color-text-muted: var(--galaxy-text-muted);
+  --galaxy-color-accent: var(--route-accent, var(--galaxy-violet));
+  --galaxy-color-focus: var(--galaxy-cyan);
+  --galaxy-color-positive: var(--galaxy-success);
+  --galaxy-color-caution: var(--galaxy-warning);
+  --galaxy-color-negative: var(--galaxy-danger);
+
+  /* Typography */
+  --galaxy-font-body: "Inter Variable", "Be Vietnam Pro", "Segoe UI", sans-serif;
+  --galaxy-font-mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  --galaxy-font-size-0: 0.75rem;
+  --galaxy-font-size-1: 0.875rem;
+  --galaxy-font-size-2: 1rem;
+  --galaxy-font-size-3: clamp(1.125rem, 1rem + 0.35vw, 1.375rem);
+  --galaxy-font-size-4: clamp(1.5rem, 1.18rem + 0.8vw, 2.125rem);
+  --galaxy-font-size-5: clamp(2rem, 1.35rem + 1.8vw, 3.5rem);
+  --galaxy-line-compact: 1.25;
+  --galaxy-line-body: 1.55;
+  --galaxy-line-readable: 1.7;
+
+  /* Spacing and shape */
+  --galaxy-space-1: 0.25rem;
+  --galaxy-space-2: 0.5rem;
+  --galaxy-space-3: 0.75rem;
+  --galaxy-space-4: 1rem;
+  --galaxy-space-5: 1.25rem;
+  --galaxy-space-6: 1.5rem;
+  --galaxy-space-8: 2rem;
+  --galaxy-space-10: 2.5rem;
+  --galaxy-radius-control: 9px;
+  --galaxy-radius-panel: 14px;
+  --galaxy-radius-pill: 999px;
+  --galaxy-control-min: 44px;
+
+  /* Depth and motion */
+  --galaxy-cta: linear-gradient(135deg, #4c1d95, #7c3aed 55%, #9333ea);
+  --galaxy-focus-ring: 0 0 0 3px rgb(56 189 248 / 72%);
+  --galaxy-panel-shadow: 0 20px 56px rgb(0 0 0 / 44%);
+  --galaxy-glow: 0 0 32px color-mix(in srgb, var(--galaxy-color-accent) 24%, transparent);
+  --galaxy-duration-hover: 170ms;
+  --galaxy-duration-drawer: 220ms;
+  --galaxy-duration-route: 280ms;
+  --galaxy-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  color: var(--galaxy-color-text);
+  font-family: var(--galaxy-font-body);
+  line-height: var(--galaxy-line-body);
+  color-scheme: dark;
+}
+
+[data-galaxy-shell] :where(h1, h2, h3, h4, h5, h6, p) {
+  overflow-wrap: anywhere;
+}
+
+[data-galaxy-shell] :where(button, input, select, textarea) {
+  font: inherit;
+}
+
+[data-galaxy-shell] :where(button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--galaxy-focus-ring);
+}
+
+[data-galaxy-shell] :where(.galaxy-panel, [data-galaxy-panel]) {
+  min-width: 0;
+  border: 1px solid var(--galaxy-color-border);
+  border-radius: var(--galaxy-radius-panel);
+  background: linear-gradient(145deg, rgb(10 22 41 / 94%), var(--galaxy-glass));
+  box-shadow: var(--galaxy-panel-shadow);
+  color: var(--galaxy-color-text);
+}
+
+[data-galaxy-shell] :where(.galaxy-panel, [data-galaxy-panel])[data-interactive="true"] {
+  transition:
+    border-color var(--galaxy-duration-hover) var(--galaxy-ease-standard),
+    background-color var(--galaxy-duration-hover) var(--galaxy-ease-standard),
+    transform var(--galaxy-duration-hover) var(--galaxy-ease-standard);
+}
+
+[data-galaxy-shell] :where(.galaxy-panel, [data-galaxy-panel])[data-interactive="true"]:hover {
+  border-color: var(--galaxy-color-border-active);
+  background-color: var(--galaxy-color-surface-interactive);
+  transform: translateY(-1px);
+}
+
+[data-galaxy-shell] :where(.galaxy-button, [data-galaxy-button]) {
+  display: inline-flex;
+  min-height: var(--galaxy-control-min);
+  align-items: center;
+  justify-content: center;
+  gap: var(--galaxy-space-2);
+  padding: 0 var(--galaxy-space-4);
+  border: 1px solid var(--galaxy-color-border);
+  border-radius: var(--galaxy-radius-control);
+  background: var(--galaxy-color-surface-raised);
+  color: var(--galaxy-color-text);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color var(--galaxy-duration-hover) var(--galaxy-ease-standard),
+    background-color var(--galaxy-duration-hover) var(--galaxy-ease-standard),
+    transform var(--galaxy-duration-hover) var(--galaxy-ease-standard);
+}
+
+[data-galaxy-shell] :where(.galaxy-button, [data-galaxy-button]):hover {
+  border-color: var(--galaxy-color-border-active);
+  background: var(--galaxy-color-surface-interactive);
+}
+
+[data-galaxy-shell] :where(.galaxy-button, [data-galaxy-button]):active {
+  transform: translateY(1px);
+}
+
+[data-galaxy-shell] :where(.galaxy-button--primary, [data-galaxy-button="primary"]) {
+  border-color: rgb(168 85 247 / 62%);
+  background: var(--galaxy-cta);
+  box-shadow: 0 12px 30px rgb(76 29 149 / 38%), inset 0 1px rgb(255 255 255 / 13%);
+}
+
+[data-galaxy-shell] :where(.galaxy-icon-button, [data-galaxy-icon-button]) {
+  display: inline-grid;
+  width: var(--galaxy-control-min);
+  min-width: var(--galaxy-control-min);
+  height: var(--galaxy-control-min);
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--galaxy-color-border);
+  border-radius: var(--galaxy-radius-control);
+  background: rgb(7 17 32 / 82%);
+  color: var(--galaxy-color-text-secondary);
+}
+
+[data-galaxy-shell] :where(.galaxy-field, [data-galaxy-field]) {
+  min-width: 0;
+  min-height: var(--galaxy-control-min);
+  padding: 0 var(--galaxy-space-3);
+  border: 1px solid var(--galaxy-color-border);
+  border-radius: var(--galaxy-radius-control);
+  background: rgb(3 8 22 / 78%);
+  color: var(--galaxy-color-text);
+}
+
+[data-galaxy-shell] :where(.galaxy-field, [data-galaxy-field])::placeholder {
+  color: var(--galaxy-color-text-muted);
+  opacity: 1;
+}
+
+[data-galaxy-shell] :where(.galaxy-status, [data-galaxy-status]) {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--galaxy-color-border);
+  border-radius: var(--galaxy-radius-pill);
+  background: rgb(7 17 32 / 78%);
+  color: var(--galaxy-color-text-secondary);
+  font-size: var(--galaxy-font-size-0);
+  font-weight: 700;
+}
+
+[data-galaxy-shell] [data-galaxy-status="ready"] {
+  border-color: color-mix(in srgb, var(--galaxy-success) 44%, transparent);
+  color: var(--galaxy-success);
+}
+
+[data-galaxy-shell] [data-galaxy-status="degraded"],
+[data-galaxy-shell] [data-galaxy-status="configuration-required"],
+[data-galaxy-shell] [data-galaxy-status="permission-required"] {
+  border-color: color-mix(in srgb, var(--galaxy-warning) 44%, transparent);
+  color: var(--galaxy-warning);
+}
+
+[data-galaxy-shell] [data-galaxy-status="error"] {
+  border-color: color-mix(in srgb, var(--galaxy-danger) 44%, transparent);
+  color: var(--galaxy-danger);
+}
+
+[data-galaxy-shell] :where(.galaxy-sr-only, [data-galaxy-sr-only]) {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-galaxy-shell] {
+    --galaxy-duration-hover: 1ms;
+    --galaxy-duration-drawer: 1ms;
+    --galaxy-duration-route: 1ms;
+  }
+
+  [data-galaxy-shell] :where(.galaxy-panel, [data-galaxy-panel])[data-interactive="true"]:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  [data-galaxy-shell] :where(.galaxy-panel, [data-galaxy-panel], .galaxy-button, [data-galaxy-button]) {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+  }
+
+  [data-galaxy-shell] :where(button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 3px solid Highlight;
+    box-shadow: none;
+  }
+}

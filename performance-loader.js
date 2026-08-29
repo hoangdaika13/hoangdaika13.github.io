@@ -27,7 +27,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=1", "galaxy-favicon-controller.js?v=2"]
+      scripts: ["brand-galaxy-logo.js?v=1", "galaxy-favicon-controller.js?v=2", "galaxy-shell.js?v=1"]
     },
     "auth-effects": {
       /*
@@ -61,6 +61,14 @@
         "dashboard-aurora.js?v=5", "home-galaxy-operations.js?v=7", "home-galaxy-control-deck.js?v=3", "command-center-pro.js?v=6", "home-daily-command.js?v=6",
         "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-capability-atlas.js?v=3", "home-live-widgets.js?v=8"
       ]
+    },
+    "galaxy-home-ai": {
+      styles: ["galaxy-home-ai.css?v=1"],
+      scripts: ["galaxy-home-ai.js?v=1"]
+    },
+    "galaxy-domain-views": {
+      styles: ["galaxy-domain-views.css?v=1"],
+      scripts: ["galaxy-domain-views.js?v=1"]
     },
     platform: {
       styles: [
@@ -299,9 +307,46 @@
     return value.startsWith("/") ? value : `/${value}`;
   }
 
+  // Keep the legacy first-paint contract in a small, explicit helper. The
+  // Galaxy shell can opt into its own adapter, while clients that have the
+  // enhancer disabled still receive the original critical Home bundle.
+  function legacyHomeCriticalGroups(value) {
+    if (value === "/home") return ["home-critical"];
+    return [];
+  }
+
+  function galaxyShellEnabled() {
+    if (global.HHGalaxyShell?.isEnabled) return global.HHGalaxyShell.isEnabled();
+    let storage;
+    try { storage = global.localStorage; } catch { return true; }
+    if (!storage) return true;
+    try {
+      const raw = storage.getItem("hh.galaxy-shell.v1");
+      if (raw === null) return true;
+      if (raw === "1" || raw === "true" || raw === "enabled") return true;
+      if (raw === "0" || raw === "false" || raw === "disabled") return false;
+      const parsed = JSON.parse(raw);
+      return parsed?.version === 1 && parsed?.enabled === true;
+    } catch {
+      return false;
+    }
+  }
+
   function featureGroupsForRoute(route) {
     const value = normalizeRoute(route);
-    if (value === "/home") return ["home-critical"];
+    if (value === "/home") return galaxyShellEnabled() ? ["galaxy-home-ai"] : legacyHomeCriticalGroups(value);
+    if (value === "/home/dashboard") return ["galaxy-home-ai"];
+    if (value === "/create/ai-center") return ["creative", "platform", "galaxy-home-ai"];
+    // Galaxy adapters are presentation shells around the existing feature
+    // engines. Load the owning engine in the same navigation pass so an
+    // explicit "Mở engine" action can mount real functionality in-place
+    // instead of falling through to a legacy redirect after a cold load.
+    if (value === "/create/workflow" || value === "/galaxy/creator-pipeline") return ["creative", "platform", "galaxy-domain-views"];
+    if (value === "/work/automation-lab" || value === "/work/projects-tasks"
+      || value === "/galaxy/automation-builder" || value === "/galaxy/project-hub") return ["work", "galaxy-domain-views"];
+    if (value === "/communication/community" || value === "/galaxy/community-showcase") return ["communication", "galaxy-domain-views"];
+    if (value === "/music/ambient" || value === "/galaxy/ambient-room"
+      || value === "/system/desktop" || value === "/galaxy/web-desktop") return ["galaxy-domain-views"];
     if (value.startsWith("/social-media-tools")) return ["social-media-tools"];
     if (value.startsWith("/dev-tools")) return ["dev"];
     if (value === "/davinci-resolve/ai-video-remake") return ["davinci", "ai-video-remake"];
@@ -325,7 +370,7 @@
     if (value.startsWith("/fortune")) return ["fortune"];
     if (value.startsWith("/draw")) return ["draw"];
     if (value.startsWith("/remote")) return ["remote"];
-    if (value.startsWith("/chat-ai")) return ["chat-ai"];
+    if (value.startsWith("/chat-ai")) return ["chat-ai", "galaxy-home-ai"];
     if (value === "/settings") return ["settings"];
     if (value.startsWith("/settings/account") || value === "/settings/user-dashboard" || value === "/settings/security-center") return ["account"];
     if (value.startsWith("/support")) return ["support"];
@@ -452,6 +497,7 @@
   }
 
   function scheduleHomeEnhancements() {
+    if (galaxyShellEnabled()) return;
     if (homeEnhancementsScheduled || loaded.has("home-enhancements")) return;
     homeEnhancementsScheduled = true;
     const start = () => {
