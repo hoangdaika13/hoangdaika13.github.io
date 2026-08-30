@@ -81,8 +81,9 @@ test("Creative engines declare every registered tool and specialist assets are c
     assert.equal(occurrences.length, 1, `${asset} should occur exactly once in RUNTIME_ASSETS`);
   }
 
-  const loaderVersion = html.match(/<script[^>]+src="performance-loader\.js\?v=(\d+)"/)?.[1];
-  const scriptVersion = html.match(/<script[^>]+src="script\.js\?v=(\d+)"/)?.[1];
+  // Match the canonical src attribute, not the later data-compat-src value.
+  const loaderVersion = html.match(/<script\s+src="performance-loader\.js\?v=(\d+)"/)?.[1];
+  const scriptVersion = html.match(/<script\s+src="script\.js\?v=(\d+)"/)?.[1];
   assert.ok(loaderVersion, "loader version is not discoverable");
   assert.ok(scriptVersion, "script version is not discoverable");
   assert.match(html, new RegExp(`performance-loader\\.js\\?v=${loaderVersion}`));

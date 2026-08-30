@@ -15,7 +15,7 @@ const html = read("index.html");
 
 test("HH Play is a first-class lazy route in Entertainment", () => {
   assert.match(router, /id:\s*"play-center"[\s\S]*?label:\s*"HH Play"[\s\S]*?route:\s*"\/play"/);
-  assert.match(router, /groupIds:\s*\["play-center",\s*"eonwild-game",\s*"comic-reader",\s*"cinema",\s*"music-library",\s*"fortune"\]/);
+  assert.match(router, /groupIds:\s*\["cosmic-observatory",\s*"play-center",\s*"eonwild-game",\s*"comic-reader",\s*"cinema",\s*"music-library",\s*"fortune"\]/);
   assert.match(router, /window\.HHPlay\?\.mount/);
   assert.match(router, /window\.HHPlay\?\.unmount/);
   assert.match(router, /app-play-route/);
