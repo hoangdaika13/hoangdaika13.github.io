@@ -260,6 +260,7 @@ test("manifest, ICO, static fallback and service worker publish versioned Galaxy
   assert.deepEqual(icoSizes("assets/brand/favicon.ico"), [16, 32, 48]);
   assert.equal(manifest.icons.find((icon) => icon.purpose === "maskable")?.src, "assets/brand/pwa-maskable-512.png?v=1");
   assert.match(html, /id="hhDynamicFavicon"[^>]+rel="icon"[^>]+sizes="any"[^>]+hh-galaxy-star-static\.svg\?v=2/);
+  assert.doesNotMatch(html, /hh-galaxy-star-static\.svg\?v=1/);
   assert.match(html, /rel="icon"[^>]+type="image\/x-icon"[^>]+sizes="16x16 32x32 48x48"[^>]+favicon\.ico\?v=2/);
   assert.match(html, /rel="icon"[^>]+type="image\/png"[^>]+sizes="16x16"[^>]+favicon-16\.png\?v=2/);
   assert.match(html, /rel="icon"[^>]+type="image\/png"[^>]+sizes="32x32"[^>]+favicon-32\.png\?v=2/);
@@ -267,9 +268,11 @@ test("manifest, ICO, static fallback and service worker publish versioned Galaxy
   assert.match(html, /apple-touch-icon[^>]+apple-touch-icon\.png\?v=2/);
   assert.match(html, /manifest\.webmanifest\?v=3/);
   assert.match(html, /hh-galaxy-star-share\.png\?v=1/);
-  assert.match(loader, /brand-galaxy-logo\.js\?v=1[\s\S]*galaxy-favicon-controller\.js\?v=2/);
+  assert.match(loader, /brand-galaxy-logo\.js\?v=2[\s\S]*galaxy-favicon-controller\.js\?v=2/);
+  assert.doesNotMatch(read("brand-galaxy-logo.js"), /hh-galaxy-star-static\.svg\?v=1/);
+  assert.doesNotMatch(read("community-admin.js"), /hh-galaxy-star-static\.svg\?v=1/);
   assert.match(loader, /ensureGroup\("brand"\)/);
-  assert.match(worker, /hh-identity-portal-v925/);
+  assert.match(worker, /const CACHE = "hh-identity-portal-v945"/);
   assert.match(worker, /brand-galaxy-logo\.css\?v=1/);
   assert.match(worker, /assets\/brand\/hh-galaxy-star-static\.svg\?v=2/);
   assert.match(worker, /assets\/brand\/favicon\.ico\?v=2/);

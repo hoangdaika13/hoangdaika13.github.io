@@ -27,7 +27,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=1", "galaxy-favicon-controller.js?v=2", "galaxy-shell.js?v=2"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "galaxy-shell.js?v=5"]
     },
     "auth-effects": {
       /*
@@ -63,20 +63,20 @@
       ]
     },
     "galaxy-home-ai": {
-      styles: ["galaxy-home-ai.css?v=6"],
-      scripts: ["galaxy-home-ai.js?v=6"]
+      styles: ["galaxy-home-ai.css?v=10"],
+      scripts: ["galaxy-home-ai.js?v=10"]
     },
     "galaxy-domain-views": {
-      styles: ["galaxy-domain-views.css?v=3"],
-      scripts: ["galaxy-domain-views.js?v=3"]
+      styles: ["galaxy-domain-views.css?v=6"],
+      scripts: ["galaxy-domain-views.js?v=5"]
     },
     "galaxy-community-showcase": {
-      styles: ["galaxy-community-showcase.css?v=1"],
-      scripts: ["galaxy-community-showcase.js?v=1"]
+      styles: ["galaxy-community-showcase.css?v=4"],
+      scripts: ["galaxy-community-showcase.js?v=4"]
     },
     "galaxy-web-desktop": {
-      styles: ["galaxy-web-desktop.css?v=1"],
-      scripts: ["galaxy-web-desktop.js?v=1"]
+      styles: ["galaxy-web-desktop.css?v=4"],
+      scripts: ["galaxy-web-desktop.js?v=4"]
     },
     "galaxy-planet-hubs": {
       styles: ["galaxy-planet-hubs.css?v=1"],
@@ -128,10 +128,10 @@
         "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=22", "image-text-studio.css?v=12", "facebook-page-command-center.css?v=4", "tiktok-creator-galaxy.css?v=2"
       ],
       scripts: [
-        "media-design-studio.js?v=1", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
+        "media-design-studio.js?v=2", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
         "video-editor-resolve.js?v=12", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1", "h-cosmic-web-studio.js?v=3",
-        "youtube-publisher.js?v=7", "youtube-creator-galaxy.js?v=27", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=12", "facebook-page-command-center.js?v=4", "services/tiktokCreatorCore.js?v=2", "services/tiktokCreatorConnections.js?v=2", "services/tiktokCreatorPublishing.js?v=2", "services/tiktokCreatorAnalytics.js?v=2", "tiktok-creator-galaxy.js?v=2"
+        "youtube-publisher.js?v=9", "youtube-creator-galaxy.js?v=27", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=12", "facebook-page-command-center.js?v=4", "services/tiktokCreatorCore.js?v=2", "services/tiktokCreatorConnections.js?v=2", "services/tiktokCreatorPublishing.js?v=2", "services/tiktokCreatorAnalytics.js?v=2", "tiktok-creator-galaxy.js?v=2"
       ]
     },
     "ai-video-remake": {
@@ -281,7 +281,7 @@
       scripts: ["remote-hub.js?v=4"]
     },
     "chat-ai": {
-      styles: ["chat-ai-hub.css?v=17"],
+      styles: ["chat-ai-hub.css?v=19"],
       scripts: ["chat-ai-hub.js?v=17"]
     },
     settings: {
@@ -315,8 +315,11 @@
   const SCRIPT_TIMEOUT_MS = 20000;
 
   function normalizeRoute(route) {
-    const value = String(route || global.location.hash.replace(/^#/, "") || "/home");
-    return value.startsWith("/") ? value : `/${value}`;
+    let value = String(route || global.location.hash.replace(/^#/, "") || "/home").trim();
+    if (value.startsWith("#")) value = value.slice(1);
+    value = value.split("?")[0].split(";")[0] || "/home";
+    value = value.startsWith("/") ? value : `/${value}`;
+    return value.length > 1 ? value.replace(/\/+$/, "") : value;
   }
 
   // Keep the legacy first-paint contract in a small, explicit helper. The
@@ -357,11 +360,14 @@
     if (value === "/create/workflow" || value === "/galaxy/creator-pipeline") return ["creative", "platform", "galaxy-domain-views"];
     if (value === "/work/automation-lab" || value === "/work/projects-tasks"
       || value === "/galaxy/automation-builder" || value === "/galaxy/project-hub") return ["work", "galaxy-domain-views"];
-    if (value === "/communication/community") return ["communication", "galaxy-community-showcase"];
-    if (value === "/galaxy/community-showcase") return ["communication", "galaxy-domain-views"];
-    if (value === "/system/desktop") return ["galaxy-web-desktop"];
-    if (value === "/music/ambient" || value === "/galaxy/ambient-room"
-      || value === "/galaxy/web-desktop") return ["galaxy-domain-views"];
+    if (value === "/communication/community" || value === "/galaxy/community-showcase") {
+      // Showcase owns its API adapter and truthful loading/error states. Keep
+      // the large legacy Communication suite lazy until a legacy destination
+      // is actually opened instead of delaying this immersive workspace.
+      return ["galaxy-community-showcase"];
+    }
+    if (value === "/system/desktop" || value === "/galaxy/web-desktop") return ["galaxy-web-desktop"];
+    if (value === "/music/ambient" || value === "/galaxy/ambient-room") return ["galaxy-domain-views"];
     if (value.startsWith("/social-media-tools")) return ["social-media-tools"];
     if (value.startsWith("/dev-tools")) return ["dev"];
     if (value === "/davinci-resolve/ai-video-remake") return ["davinci", "ai-video-remake"];

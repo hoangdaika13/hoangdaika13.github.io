@@ -22,16 +22,17 @@
    */
   const routeManifest = deepFreeze([
     { id: "home-galaxy", planet: "home", title: "Home Galaxy", route: "/home", aliases: ["/"], assetGroup: "home", layout: "atlas", capabilities: ["navigation", "search"], adminOnly: false },
-    { id: "personal-dashboard", planet: "home", title: "Dashboard cá nhân", route: "/home/dashboard", aliases: ["/settings/user-dashboard"], assetGroup: "galaxy-home-ai", layout: "dashboard", capabilities: ["widgets", "local-preferences"], adminOnly: false },
+    { id: "personal-dashboard", planet: "home", title: "Dashboard cá nhân", route: "/home/dashboard", aliases: [], assetGroup: "galaxy-home-ai", layout: "dashboard", capabilities: ["widgets", "local-preferences"], adminOnly: false },
     { id: "favorites", planet: "home", title: "Yêu thích", route: "/favorites", aliases: [], assetGroup: "core", layout: "standard", capabilities: ["local-preferences"], adminOnly: false },
     { id: "recent", planet: "home", title: "Gần đây", route: "/recent", aliases: [], assetGroup: "core", layout: "standard", capabilities: ["local-history"], adminOnly: false },
-    { id: "work-center", planet: "home", title: "Work Center", route: "/work", aliases: ["/galaxy/tools"], assetGroup: "work", layout: "standard", capabilities: ["projects", "tasks"], adminOnly: false },
-    { id: "project-hub", planet: "home", title: "Project Hub", route: "/work/projects-tasks", aliases: ["/work/project-hub", "/galaxy/project-hub"], assetGroup: "galaxy-domain-views", layout: "three-column", capabilities: ["projects", "tasks", "local-storage"], adminOnly: false },
-    { id: "automation-builder", planet: "home", title: "Automation Builder", route: "/work/automation-lab", aliases: [], assetGroup: "work", layout: "workbench", capabilities: ["workflow", "dry-run", "execution-log"], adminOnly: false },
+    { id: "work-center", planet: "home", title: "Work Center", route: "/work", aliases: [], assetGroup: "work", layout: "standard", capabilities: ["projects", "tasks"], adminOnly: false },
+    { id: "project-hub", planet: "home", title: "Project Hub", route: "/work/projects-tasks", aliases: ["/galaxy/project-hub"], assetGroup: "galaxy-domain-views", layout: "three-column", capabilities: ["projects", "tasks", "local-storage"], adminOnly: false },
+    { id: "automation-builder", planet: "home", title: "Automation Builder", route: "/work/automation-lab", aliases: ["/galaxy/automation-builder"], assetGroup: "galaxy-domain-views", layout: "workbench", capabilities: ["workflow", "dry-run", "execution-log"], adminOnly: false },
 
-    { id: "creator-studio", planet: "ai", title: "Creator Studio", route: "/create/workflow", aliases: ["/create", "/galaxy/creator"], assetGroup: "galaxy-domain-views", layout: "workbench", capabilities: ["creative-tools", "projects"], adminOnly: false },
-    { id: "ai-universe", planet: "ai", title: "AI Universe", route: "/create/ai-center", aliases: ["/galaxy/ai"], assetGroup: "ai", layout: "atlas", capabilities: ["ai-providers", "prompting"], adminOnly: false },
-    { id: "ai-copilot", planet: "ai", title: "HH AI Copilot", route: "/chat-ai", aliases: [], assetGroup: "chat-ai", layout: "three-column", capabilities: ["chat", "streaming", "history"], adminOnly: false },
+    { id: "creative-center", planet: "ai", title: "Trung tâm sáng tạo", route: "/create", aliases: [], assetGroup: "creative", layout: "workbench", capabilities: ["creative-tools", "projects"], adminOnly: false },
+    { id: "creator-studio", planet: "ai", title: "Creator Studio", route: "/create/workflow", aliases: ["/galaxy/creator", "/galaxy/creator-pipeline"], assetGroup: "galaxy-domain-views", layout: "workbench", capabilities: ["creative-tools", "projects"], adminOnly: false },
+    { id: "ai-universe", planet: "ai", title: "AI Universe", route: "/create/ai-center", aliases: ["/galaxy/ai"], assetGroup: "galaxy-home-ai", layout: "atlas", capabilities: ["ai-providers", "prompting"], adminOnly: false },
+    { id: "ai-copilot", planet: "ai", title: "HH AI Copilot", route: "/chat-ai", aliases: [], assetGroup: "galaxy-home-ai", layout: "three-column", capabilities: ["chat", "streaming", "history"], adminOnly: false },
     { id: "draw-studio", planet: "ai", title: "Draw Studio", route: "/draw", aliases: [], assetGroup: "draw", layout: "workbench", capabilities: ["canvas", "export"], adminOnly: false },
     { id: "media-design", planet: "ai", title: "Media & Design", route: "/media-design", aliases: [], assetGroup: "media", layout: "workbench", capabilities: ["media", "design", "projects"], adminOnly: false },
     { id: "graphic-design", planet: "ai", title: "Thiết kế đồ họa", route: "/graphic-design", aliases: [], assetGroup: "graphic-design", layout: "workbench", capabilities: ["canvas", "vector", "export"], adminOnly: false },
@@ -55,8 +56,9 @@
     { id: "buddhist-learning", planet: "learning", title: "Phật Pháp", route: "/phat-phap", aliases: [], assetGroup: "phat-phap", layout: "three-column", capabilities: ["library", "audio", "progress"], adminOnly: false },
 
     { id: "community", planet: "community", title: "Community", route: "/communication", aliases: ["/galaxy/community"], assetGroup: "communication", layout: "three-column", capabilities: ["realtime", "messaging", "community"], adminOnly: false },
-    { id: "tools-galaxy", planet: "tools", title: "Tools Galaxy", route: "/system", aliases: [], assetGroup: "system", layout: "standard", capabilities: ["utilities", "settings"], adminOnly: false },
-    { id: "web-desktop", planet: "tools", title: "HH Web Desktop", route: "/system/desktop", aliases: [], assetGroup: "galaxy-domain-views", layout: "desktop", capabilities: ["window-launcher", "local-preferences"], adminOnly: false },
+    { id: "community-showcase", planet: "community", title: "Community Showcase", route: "/communication/community", aliases: ["/galaxy/community-showcase"], assetGroup: "galaxy-community-showcase", layout: "three-column", capabilities: ["community", "search", "filter", "realtime"], adminOnly: false },
+    { id: "tools-galaxy", planet: "tools", title: "Tools Galaxy", route: "/system", aliases: ["/galaxy/tools"], assetGroup: "system", layout: "standard", capabilities: ["utilities", "settings"], adminOnly: false },
+    { id: "web-desktop", planet: "tools", title: "HH Web Desktop", route: "/system/desktop", aliases: ["/galaxy/web-desktop"], assetGroup: "galaxy-web-desktop", layout: "desktop", capabilities: ["window-launcher", "local-preferences"], adminOnly: false },
     { id: "universe", planet: "tools", title: "Vũ trụ", route: "/universe", aliases: ["/cosmic-observatory"], assetGroup: "cosmic", layout: "atlas", capabilities: ["astronomy", "webgl", "data-sources"], adminOnly: false },
     { id: "analytics", planet: "tools", title: "Analytics", route: "/analytics", aliases: ["/galaxy/analytics"], assetGroup: "analytics", layout: "dashboard", capabilities: ["analytics"], adminOnly: false },
     { id: "settings", planet: "tools", title: "Cài đặt", route: "/settings", aliases: ["/galaxy/settings"], assetGroup: "settings", layout: "standard", capabilities: ["preferences", "privacy"], adminOnly: false },
@@ -145,6 +147,8 @@
     return route.startsWith("/galaxy/")
       || route.startsWith("/chat-ai")
       || [
+        "/home/dashboard",
+        "/create/ai-center",
         "/create/workflow",
         "/work/automation-lab",
         "/work/projects-tasks",

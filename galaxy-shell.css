@@ -456,20 +456,35 @@ body.app-sidebar-auto-hide:not(.app-sidebar-collapsed) [data-galaxy-shell] > .ap
   }
 }
 
-/* Planet routes are full Galaxy workspaces.  The legacy application chrome is
- * retained for HH Core (/home/dashboard), while planet entries own their
- * sidebar and topbar so a second accordion rail cannot cover the content. */
+/* Immersive Galaxy routes own their sidebar/topbar so the legacy application
+ * chrome cannot cover their reference workspace. HH Core is still the only
+ * entry from the Galaxy Map; entering it now reveals its dedicated dashboard. */
 [data-galaxy-shell][data-galaxy-route^="/galaxy/"] > .app-header,
 [data-galaxy-shell][data-galaxy-route^="/galaxy/"] > .app-shell__body > .app-sidebar,
 [data-galaxy-shell][data-galaxy-route^="/galaxy/"] > .app-shell__body > .app-sidebar-backdrop,
 [data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-header,
 [data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-shell__body > .app-sidebar,
-[data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-shell__body > .app-sidebar-backdrop {
+[data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-shell__body > .app-sidebar-backdrop,
+[data-galaxy-shell][data-galaxy-route="/home/dashboard"] > .app-header,
+[data-galaxy-shell][data-galaxy-route="/home/dashboard"] > .app-shell__body > .app-sidebar,
+[data-galaxy-shell][data-galaxy-route="/home/dashboard"] > .app-shell__body > .app-sidebar-backdrop,
+[data-galaxy-shell][data-galaxy-route="/create/ai-center"] > .app-header,
+[data-galaxy-shell][data-galaxy-route="/create/ai-center"] > .app-shell__body > .app-sidebar,
+[data-galaxy-shell][data-galaxy-route="/create/ai-center"] > .app-shell__body > .app-sidebar-backdrop {
   display: none !important;
 }
 
 [data-galaxy-shell][data-galaxy-route^="/galaxy/"] > .app-shell__body,
 [data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-shell__body {
+  display: block !important;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  background: transparent;
+}
+
+[data-galaxy-shell][data-galaxy-route="/home/dashboard"] > .app-shell__body,
+[data-galaxy-shell][data-galaxy-route="/create/ai-center"] > .app-shell__body {
   display: block !important;
   min-height: 100dvh;
   height: 100dvh;
@@ -489,8 +504,30 @@ body.app-sidebar-auto-hide:not(.app-sidebar-collapsed) [data-galaxy-shell] > .ap
   scrollbar-gutter: stable;
 }
 
+[data-galaxy-shell][data-galaxy-route="/home/dashboard"] > .app-shell__body > .app-main,
+[data-galaxy-shell][data-galaxy-route="/create/ai-center"] > .app-shell__body > .app-main {
+  width: 100%;
+  min-width: 0;
+  height: 100dvh;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 !important;
+  background: transparent;
+  scrollbar-gutter: stable;
+}
+
 [data-galaxy-shell][data-galaxy-route^="/galaxy/"] > .app-shell__body > .app-main > .app-workspace,
 [data-galaxy-shell][data-galaxy-route^="/chat-ai"] > .app-shell__body > .app-main > .app-workspace {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+[data-galaxy-shell][data-galaxy-route="/home/dashboard"] > .app-shell__body > .app-main > .app-workspace,
+[data-galaxy-shell][data-galaxy-route="/create/ai-center"] > .app-shell__body > .app-main > .app-workspace {
   width: 100%;
   min-width: 0;
   min-height: 100%;
@@ -548,7 +585,7 @@ body.app-shell-enabled #appShell[data-galaxy-shell][data-galaxy-immersive="true"
   overflow: auto;
   padding: 0 !important;
   background: transparent;
-  scrollbar-gutter: stable;
+  scrollbar-gutter: auto;
 }
 
 [data-galaxy-shell][data-galaxy-immersive="true"] > .app-shell__body > .app-main > .app-workspace {

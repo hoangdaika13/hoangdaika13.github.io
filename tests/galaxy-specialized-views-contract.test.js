@@ -27,9 +27,11 @@ const functionBlock = (source, name, nextName) => {
 test("specialized views own only their canonical route and lifecycle API", () => {
   assert.equal(community.canHandle("/communication/community"), true);
   assert.equal(community.canHandle("#/communication/community?post=42"), true);
+  assert.equal(community.canHandle("/galaxy/community-showcase"), true);
   assert.equal(community.canHandle("/galaxy/community"), false);
   assert.equal(desktop.canHandle("/system/desktop"), true);
   assert.equal(desktop.canHandle("#/system/desktop"), true);
+  assert.equal(desktop.canHandle("/galaxy/web-desktop"), true);
   assert.equal(desktop.canHandle("/system"), false);
   for (const api of [community, desktop]) {
     for (const method of ["mount", "unmount", "canHandle", "getState"]) assert.equal(typeof api[method], "function", method);
@@ -58,6 +60,17 @@ test("Community Showcase normalizes only supplied backend evidence", () => {
   assert.deepEqual(empty.items, []);
   assert.deepEqual(empty.leaderboard, []);
   assert.deepEqual(empty.stats, {});
+
+  const malformed = community.normalizePayload({
+    posts: [null, undefined, "not-a-post", [], { id: "valid-post", title: "Bài hợp lệ" }],
+    suggestions: [null, "not-a-person", []],
+    featuredCreator: "not-a-person",
+    leaderboard: [null, 42, []]
+  });
+  assert.deepEqual(malformed.items.map((item) => item.id), ["valid-post"]);
+  assert.deepEqual(malformed.suggestions, []);
+  assert.equal(malformed.featured, null);
+  assert.deepEqual(malformed.leaderboard, []);
 });
 
 test("Community uses real adapter/API states and contains no fabricated showcase counters", () => {
@@ -80,6 +93,18 @@ test("Community uses real adapter/API states and contains no fabricated showcase
   assert.match(communitySource, /runtime\.filter === filter\[0\]/);
   assert.match(communitySource, /runtime\.sort === "oldest"/);
   assert.match(communitySource, /data-gcs-empty-state/);
+  assert.match(communitySource, /function emptyShowcaseMarkup/);
+  assert.match(communitySource, /gcs-card--skeleton/);
+  assert.match(communitySource, /các khung phía sau chỉ giữ bố cục/);
+  assert.match(communitySource, /SHOWCASE - CỘNG ĐỒNG HH/);
+  assert.match(communitySource, /Thống kê đang chờ backend/);
+  assert.match(communitySource, /Chưa có số liệu/);
+  assert.match(communitySource, /postIdFromRoute\(options\.route\)/);
+  assert.match(communitySource, /revealRequestedPost\(runtime\)/);
+  assert.match(communitySource, /openItemDetail\(runtime, item\)/);
+  assert.match(communitySource, /aria-current="page"/);
+  assert.match(communitySource, /aria-label="Mở /);
+  assert.match(communitySource, /aria-labelledby/);
 });
 
 test("Community external media and displayed text are constrained", () => {
@@ -124,6 +149,11 @@ test("Web Desktop reports only browser evidence and labels its measurement scope
   assert.match(desktopSource, /Chưa có adapter Project/);
   assert.doesNotMatch(desktopSource, /CPU\s*32%|RAM\s*68%|Network\s*78%|12\.5K|99\.9%/);
   assert.doesNotMatch(desktopSource, /Math\.random/);
+  assert.match(desktopSource, /Preview tĩnh · Không thực thi mã/);
+  assert.match(desktopSource, /Xem trước tĩnh · Mở ứng dụng để bắt đầu/);
+  assert.match(desktopSource, /gwd-editor-shell/);
+  assert.match(desktopSource, /gwd-dock-brand/);
+  assert.match(desktopSource, /aria-label="' \+ escapeHtml\(app\.title\)/);
 });
 
 test("Web Desktop owns timers, listeners and persistent layout cleanup", () => {
@@ -235,26 +265,39 @@ test("specialized styles remain scoped, responsive and accessible", () => {
     assert.doesNotMatch(styles, /(?:^|\n)\s*(?:button|input|main|article|section)\s*\{/);
   }
   assert.match(desktopStyles, /\.gwd-stage \{ display: flex; flex-direction: column;/);
-  assert.match(desktopStyles, /\.gwd-window \{ position: relative; inset: auto; flex: 0 0 auto; width: 100%; max-width: 100%; min-width: 0;/);
+  assert.match(desktopStyles, /\.gwd-window \{ position: relative; inset: auto;[^}]*flex: 0 0 auto; width: 100%; max-width: 100%; min-width: 0;/);
   assert.match(communityStyles, /\.gcs-tabs select \{ position: static; margin-left: 0; \}/);
+  assert.match(communityStyles, /\.gcs-tabs \{ width: 100%; max-width: 100%;/);
+  assert.match(communityStyles, /\.gcs-title > button \{ margin-right: 0; \}/);
+  assert.match(communityStyles, /\.gcs-right \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); transform: none; \}/);
+  assert.match(desktopStyles, /grid-template-columns: minmax\(220px, 1fr\) minmax\(360px, 426px\) minmax\(260px, 1fr\)/);
+  assert.match(desktopStyles, /\.gwd-window\[data-gwd-window="ai"\] \{[^}]*width: 392px;[^}]*min-height: 435px;[^}]*max-height: 435px; \}/);
+  assert.match(desktopStyles, /\.gwd-window\[data-gwd-window="system"\] \{[^}]*width: 420px; height: 275px; min-height: 275px; \}/);
+  assert.match(desktopSource, /runtime\.dragCleanup\?\.\(\)/);
+  assert.match(desktopSource, /lostpointercapture/);
+  assert.match(desktopStyles, /calc\(100% - 420px\)/);
 });
 
 test("specialized views are route-lazy, router-owned and versioned for release", () => {
-  assert.match(loaderSource, /"galaxy-community-showcase"[\s\S]*galaxy-community-showcase\.css\?v=1[\s\S]*galaxy-community-showcase\.js\?v=1/);
-  assert.match(loaderSource, /"galaxy-web-desktop"[\s\S]*galaxy-web-desktop\.css\?v=1[\s\S]*galaxy-web-desktop\.js\?v=1/);
-  assert.match(loaderSource, /value === "\/communication\/community"[\s\S]{0,160}\["communication", "galaxy-community-showcase"\]/);
+  assert.match(loaderSource, /"galaxy-community-showcase"[\s\S]*galaxy-community-showcase\.css\?v=4[\s\S]*galaxy-community-showcase\.js\?v=4/);
+  assert.match(loaderSource, /"galaxy-web-desktop"[\s\S]*galaxy-web-desktop\.css\?v=4[\s\S]*galaxy-web-desktop\.js\?v=4/);
+  assert.match(loaderSource, /value === "\/communication\/community"[\s\S]{0,360}return \["galaxy-community-showcase"\]/);
+  assert.match(loaderSource, /value = value\.split\("\?"\)\[0\]/);
   assert.match(loaderSource, /value === "\/system\/desktop"[\s\S]{0,100}\["galaxy-web-desktop"\]/);
   assert.match(routerSource, /HHGalaxyCommunityShowcase\?\.canHandle/);
+  assert.match(routerSource, /const routePath = route\.split\("\?"\)\[0\]/);
+  assert.match(routerSource, /"\/galaxy\/community-showcase"/);
+  assert.match(routerSource, /"\/galaxy\/web-desktop"/);
   assert.match(routerSource, /HHGalaxyWebDesktop\?\.canHandle/);
   assert.match(routerSource, /HHGalaxyCommunityShowcase\?\.unmount/);
   assert.match(routerSource, /HHGalaxyWebDesktop\?\.unmount/);
-  assert.match(serviceWorkerSource, /hh-identity-portal-v940/);
-  for (const asset of ["galaxy-community-showcase.css?v=1", "galaxy-community-showcase.js?v=1", "galaxy-web-desktop.css?v=1", "galaxy-web-desktop.js?v=1"]) {
+  assert.match(serviceWorkerSource, /hh-identity-portal-v945/);
+  for (const asset of ["galaxy-community-showcase.css?v=4", "galaxy-community-showcase.js?v=4", "galaxy-web-desktop.css?v=4", "galaxy-web-desktop.js?v=4"]) {
     assert.match(serviceWorkerSource, new RegExp(asset.replaceAll(".", "\\.").replace("?", "\\?")), asset);
   }
-  assert.match(indexSource, /performance-loader\.js\?v=581/);
-  assert.match(indexSource, /script\.js\?v=258/);
-  assert.match(indexSource, /galaxy-shell\.css\?v=4/);
+  assert.match(indexSource, /performance-loader\.js\?v=585/);
+  assert.match(indexSource, /script\.js\?v=259/);
+  assert.match(indexSource, /galaxy-shell\.css\?v=5/);
   assert.match(routerSource, /dataset\.galaxyImmersive === "true"/);
   assert.match(shellStyles, /body\.app-shell-enabled #appShell\[data-galaxy-shell\]\[data-galaxy-immersive="true"\] ~ \.app-mobile-nav[\s\S]{0,80}display:\s*none\s*!important/);
 });

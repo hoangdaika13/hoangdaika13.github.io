@@ -7100,19 +7100,20 @@ function initAppShell() {
       else activeItem.scrollIntoView({ block: "nearest", behavior: "auto" });
     });
     updateMobileNavigation();
-    const parts = route.split("?")[0].split("/").filter(Boolean);
+    const routePath = route.split("?")[0];
+    const parts = routePath.split("/").filter(Boolean);
     const possibleId = parts.at(-1);
     const module = moduleById(possibleId);
     document.body.classList.toggle("app-single-module", !isCreativeOSRoute(route) && Boolean(module));
     const galaxyViewsEnabled = Boolean(window.HHGalaxyShell?.isEnabled?.());
-    const isGalaxyHomeRoute = galaxyViewsEnabled && (route === "/home" || route === "/home/dashboard" || route === "/create/ai-center" || route === "/chat-ai" || route.startsWith("/chat-ai/"));
-    const isGalaxyDomainRoute = galaxyViewsEnabled && (route === "/create/workflow"
-      || route === "/work/automation-lab"
-      || route === "/work/projects-tasks"
-      || route === "/communication/community"
-      || route === "/music/ambient"
-      || route === "/system/desktop"
-      || route.startsWith("/galaxy/"));
+    const isGalaxyHomeRoute = galaxyViewsEnabled && (routePath === "/home" || routePath === "/home/dashboard" || routePath === "/create/ai-center" || routePath === "/chat-ai" || routePath.startsWith("/chat-ai/"));
+    const isGalaxyDomainRoute = galaxyViewsEnabled && (routePath === "/create/workflow"
+      || routePath === "/work/automation-lab"
+      || routePath === "/work/projects-tasks"
+      || routePath === "/communication/community"
+      || routePath === "/music/ambient"
+      || routePath === "/system/desktop"
+      || routePath.startsWith("/galaxy/"));
     if (isGalaxyHomeRoute) {
       const galaxyHomeMeta = route === "/home"
         ? ["HH Galaxy Map", "Bản đồ trực quan dẫn tới toàn bộ chức năng thật trong HH Platform."]
@@ -7143,11 +7144,11 @@ function initAppShell() {
         : window.HHGalaxyWebDesktop?.canHandle?.(route)
           ? window.HHGalaxyWebDesktop
           : null;
-      const definition = Object.values(window.HHGalaxyDomainViews?.routes || {}).find((item) => item.canonical === route || item.aliases?.includes?.(route));
-      const hubDefinition = planetHub?.ROUTES?.[planetHub.normalizeRoute?.(route)] || null;
-      const specializedMeta = route === "/communication/community"
+      const definition = Object.values(window.HHGalaxyDomainViews?.routes || {}).find((item) => item.canonical === routePath || item.aliases?.includes?.(routePath));
+      const hubDefinition = planetHub?.ROUTES?.[planetHub.normalizeRoute?.(routePath)] || null;
+      const specializedMeta = ["/communication/community", "/galaxy/community-showcase"].includes(routePath)
         ? { title: "Community Showcase", description: "Tác phẩm và tương tác chỉ hiển thị khi backend hoặc cache đã xác minh cung cấp dữ liệu." }
-        : route === "/system/desktop"
+        : ["/system/desktop", "/galaxy/web-desktop"].includes(routePath)
           ? { title: "HH Web Desktop", description: "Desktop opt-in với launcher nhẹ, giới hạn tài nguyên và chỉ số thuộc tab hoặc origin hiện tại." }
           : null;
       updatePageHeader(hubDefinition?.label || specializedMeta?.title || definition?.title || "HH Galaxy Workspace", hubDefinition?.description || specializedMeta?.description || definition?.eyebrow || "Không gian chức năng dùng dữ liệu và engine thật.", route);

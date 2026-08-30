@@ -128,6 +128,73 @@ function createAmbientLifecycleHarness() {
   };
 }
 
+function createDomainHarness({ route = "/work/automation-lab", capabilities = {}, estimate } = {}) {
+  const rootListeners = new Map();
+  const documentListeners = new Map();
+  const windowListeners = new Map();
+  const elements = new Map();
+  const flowStyles = new Map();
+  const storage = new Map();
+  const listenerTarget = (listeners, extra = {}) => Object.assign({
+    addEventListener(type, listener) { listeners.set(type, listener); },
+    removeEventListener(type, listener) { if (listeners.get(type) === listener) listeners.delete(type); }
+  }, extra);
+  const rootNode = listenerTarget(rootListeners, {
+    classList: { add() {}, remove() {} },
+    dataset: {},
+    innerHTML: "",
+    contains() { return true; },
+    querySelector(selector) {
+      if (selector === "[data-gdv-canvas-zoom-value]") {
+        if (!elements.has(selector)) elements.set(selector, { textContent: "100%", setAttribute(name, value) { this[name] = value; } });
+        return elements.get(selector);
+      }
+      if (selector === ".gdv-node-flow--blueprint") return { style: { setProperty(name, value) { flowStyles.set(name, value); } } };
+      if (selector === "[data-gdv-live]") return null;
+      if (selector === ".gdv-storage-card .gdv-status") {
+        if (!elements.has(selector)) elements.set(selector, { className: "", lastChild: { textContent: "" } });
+        return elements.get(selector);
+      }
+      if (selector === "[data-gdv-storage-note]") {
+        if (!elements.has(selector)) elements.set(selector, { textContent: "" });
+        return elements.get(selector);
+      }
+      return null;
+    },
+    querySelectorAll() { return []; },
+    replaceChildren() { this.innerHTML = ""; }
+  });
+  const documentNode = listenerTarget(documentListeners, { hidden: false });
+  const localStorage = {
+    getItem(key) { return storage.has(key) ? storage.get(key) : null; },
+    setItem(key, value) { storage.set(key, String(value)); },
+    removeItem(key) { storage.delete(key); }
+  };
+  const windowNode = listenerTarget(windowListeners, {
+    document: documentNode,
+    localStorage,
+    location: { hash: `#${route}`, href: `http://127.0.0.1/#${route}` },
+    navigator: { onLine: true, storage: estimate ? { estimate } : undefined },
+    requestAnimationFrame(callback) { callback(); return 1; },
+    cancelAnimationFrame() {},
+    setInterval() { return 1; },
+    clearInterval() {}
+  });
+  vm.runInNewContext(source, { window: windowNode, globalThis: windowNode, URL, Date, console });
+  const controller = windowNode.HHGalaxyDomainViews.mount(rootNode, { route, capabilities });
+  return {
+    api: windowNode.HHGalaxyDomainViews,
+    controller,
+    root: rootNode,
+    click(selector, dataset = {}) {
+      const target = { dataset, closest(candidate) { return candidate === selector ? target : null; } };
+      rootListeners.get("click")({ target, preventDefault() {} });
+    },
+    element(selector) { return elements.get(selector); },
+    flowStyles
+  };
+}
+
 test("domain views expose the required lifecycle contract", () => {
   assert.match(source, /global\.HHGalaxyDomainViews\s*=\s*api/);
   for (const method of ["mount", "unmount", "canHandle", "getState"]) {
@@ -271,6 +338,65 @@ test("views include keyboard and screen reader affordances", () => {
   assert.match(styles, /:focus-visible/);
   assert.match(styles, /prefers-reduced-motion:\s*reduce/);
   assert.match(styles, /forced-colors:\s*active/);
+});
+
+test("golden-reference domain controls stay interactive and structurally anchored", () => {
+  assert.match(source, /data-gdv-project-category/);
+  assert.match(source, /data-gdv-mood/);
+  assert.match(source, /function applyMood\(instance, mood\)/);
+  assert.match(source, /class="gdv-automation-tabs"/);
+  assert.match(source, /class="gdv-automation-features"/);
+  assert.match(source, /class="gdv-template-placeholder-list" aria-hidden="true"/);
+  assert.match(source, /class="gdv-vault-placeholder-grid" aria-hidden="true"/);
+  assert.match(source, /data-gdv-storage-ring/);
+  assert.match(source, /data-gdv-storage-percent/);
+  assert.match(source, /class="gdv-creator-dashboard"/);
+  assert.match(source, /class="gdv-creator-placeholder-grid" aria-hidden="true"/);
+  assert.match(source, /class="gdv-creator-metrics"/);
+  assert.match(styles, /data-gdv-view="projects"\]\s+\.gdv-project-list\s*\{[^}]*overflow:\s*hidden/);
+  assert.match(styles, /data-gdv-view="ambient"\][^\{]*\.gdv-scene-picker\s*\{[^}]*grid-column:\s*1\s*\/\s*-1[^}]*inset-inline:\s*clamp\(280px,\s*22vw,\s*372px\)/);
+  assert.match(styles, /\.gdv-empty--vault\s*\{[^}]*backdrop-filter:\s*blur/);
+  assert.match(styles, /\.gdv-automation-features\s*\{[^}]*grid-template-columns:\s*repeat\(8/);
+  assert.match(styles, /\.gdv-cloud-readiness li > span:not\(\.gdv-status\)/);
+  assert.doesNotMatch(styles, /\.gdv-cloud-readiness li > span\s*\{/);
+  assert.match(styles, /@media \(min-width:\s*1221px\) and \(max-height:\s*850px\)[\s\S]*data-gdv-view="projects"[\s\S]*overflow-y:\s*visible/);
+  assert.match(styles, /@media \(min-width:\s*1221px\) and \(max-height:\s*850px\)[\s\S]*data-gdv-view="ambient"[\s\S]*overflow-y:\s*visible/);
+});
+
+test("Automation blueprint zoom controls update their own canvas without launching an engine", () => {
+  const harness = createDomainHarness();
+  harness.click("[data-gdv-canvas-zoom]", { gdvCanvasZoom: "1" });
+  assert.equal(harness.controller.getState().canvasZoom, 110);
+  assert.equal(harness.element("[data-gdv-canvas-zoom-value]").textContent, "110%");
+  assert.equal(harness.flowStyles.get("--gdv-canvas-scale"), "1.1");
+  for (let index = 0; index < 10; index += 1) harness.click("[data-gdv-canvas-zoom]", { gdvCanvasZoom: "-1" });
+  assert.equal(harness.controller.getState().canvasZoom, 50, "zoom must stay within the supported range");
+  harness.controller.unmount();
+});
+
+test("cloud provider readiness requires per-provider verification", () => {
+  const generic = createDomainHarness({ route: "/work/projects-tasks", capabilities: { cloud: "ready" } });
+  assert.equal(generic.controller.getState().capabilities.cloud, "ready");
+  assert.equal(generic.controller.getState().capabilities.cloudProviders.drive, "configuration-required");
+  generic.controller.unmount();
+
+  const verified = createDomainHarness({ route: "/work/projects-tasks", capabilities: { cloud: "ready", cloudProviders: { drive: "ready" } } });
+  assert.equal(verified.controller.getState().capabilities.cloudProviders.drive, "ready");
+  assert.equal(verified.controller.getState().capabilities.cloudProviders.dropbox, "configuration-required");
+  verified.controller.unmount();
+});
+
+test("invalid Pomodoro dataset values are rejected and Storage API failures leave loading state", async () => {
+  const timer = createDomainHarness({ route: "/music/ambient" });
+  timer.click("[data-gdv-timer-minutes]", { gdvTimerMinutes: "NaN" });
+  assert.equal(timer.controller.getState().timer.remaining, 1500);
+  timer.controller.unmount();
+
+  const projects = createDomainHarness({ route: "/work/projects-tasks", estimate: () => Promise.reject(new Error("quota blocked")) });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(projects.controller.getState().capabilities.storageEstimate, "error");
+  assert.equal(projects.element(".gdv-storage-card .gdv-status").className, "gdv-status gdv-status--error");
+  projects.controller.unmount();
 });
 
 test("styles are scoped and responsive without broad element ownership", () => {

@@ -41,10 +41,12 @@
     { id: "settings", label: "Cài đặt", route: "/galaxy/settings" }
   ]);
   const AI_DESTINATIONS = Object.freeze([
-    { id: "chat", label: "AI Chat", description: "Trò chuyện bằng engine HH AI hiện có", route: "/chat-ai", glyph: "CH", x: 72, y: 17 },
-    { id: "prompt", label: "Prompt Studio", description: "Thiết kế prompt có cấu trúc", route: "/create/prompt-studio", glyph: "PR", x: 82, y: 42 },
-    { id: "image", label: "Image AI", description: "Mở AI Task Center cho hình ảnh", route: "/media-design/ai-task-center", glyph: "IM", x: 76, y: 68 },
-    { id: "script", label: "Script Generator", description: "Viết và quản lý kịch bản", route: "/create/ai-script", glyph: "SC", x: 61, y: 82 }
+    { id: "chat", label: "Hỏi đáp nhanh", description: "Giải đáp mọi thắc mắc nhanh chóng", route: "/chat-ai", icon: "activity" },
+    { id: "project", label: "Tạo project mới", description: "Khởi tạo dự án với AI hỗ trợ", route: "/work/projects-tasks", icon: "folder" },
+    { id: "tools", label: "Tìm tool / app", description: "Tìm kiếm công cụ phù hợp", route: "/galaxy/tools", icon: "globe" },
+    { id: "automation", label: "Tự động hóa (AI)", description: "Xây workflow với trạng thái rõ ràng", route: "/work/automation-lab", icon: "settings" },
+    { id: "analytics", label: "Phân tích tổng quan", description: "Mở dữ liệu và báo cáo hiện có", route: "/analytics", icon: "analytics" },
+    { id: "today", label: "Gợi ý hôm nay", description: "Xem lối tắt từ dữ liệu đã lưu", route: "/home/dashboard", icon: "diamond" }
   ]);
 
   let activeRuntime = null;
@@ -320,22 +322,29 @@
     return `<button class="gha-metric" type="button" data-gha-route="${escapeHtml(route)}" data-state="${state}"><span>${escapeHtml(label)}</span><strong>${content}</strong><small>${available ? "Dữ liệu hiện có" : "Chưa có dữ liệu"}</small></button>`;
   }
 
-  function topbarMarkup(title, subtitle, active) {
+  function topbarMarkup(title, subtitle, active, data = {}) {
+    const account = data.account || null;
+    const accountName = String(account?.name || "Tài khoản HH").trim().slice(0, 120);
+    const routeControls = active === "dashboard"
+      ? `<button type="button" data-gha-route="/work/projects-tasks" aria-label="Mở lịch và công việc">${iconMarkup("task")}</button><button type="button" data-gha-route="/recent" aria-label="Mở hoạt động gần đây">${iconMarkup("bell")}</button><button type="button" data-gha-route="/settings" aria-label="Mở cài đặt giao diện">${iconMarkup("settings")}</button><button class="gha-topbar__account" type="button" data-gha-route="/settings" aria-label="Mở tài khoản ${escapeHtml(accountName)}">${accountAvatarMarkup(account)}<span>${escapeHtml(accountName)}</span></button>`
+      : active === "ai"
+        ? `<button type="button" data-gha-route="/recent" aria-label="Mở hoạt động gần đây">${iconMarkup("bell")}</button><button class="gha-topbar__account" type="button" data-gha-route="/settings" aria-label="Mở tài khoản ${escapeHtml(accountName)}">${accountAvatarMarkup(account)}<span>${escapeHtml(accountName)}</span></button><button class="gha-topbar__primary" type="button" data-gha-route="/chat-ai/new"><i aria-hidden="true">＋</i><span>+ Cuộc trò chuyện mới</span></button>`
+        : `<button type="button" data-gha-route="/home" ${active === "home" ? 'aria-current="page"' : ""}>Bản đồ</button><button type="button" data-gha-route="/home/dashboard" ${active === "dashboard" ? 'aria-current="page"' : ""}>Dashboard</button><button type="button" data-gha-route="/create/ai-center" ${active === "ai" ? 'aria-current="page"' : ""}>AI</button>`;
     return `<header class="gha-topbar">
       <a class="gha-brand" href="#/home" data-gha-route="/home" aria-label="Về Home Galaxy"><span aria-hidden="true">HH</span><b>HOANG8.COM</b></a>
-      <label class="gha-search"><span aria-hidden="true">⌕</span><input type="search" data-gha-search placeholder="Tìm trong không gian này..." aria-label="Tìm trong không gian này"><kbd>⌘K</kbd></label>
+      <label class="gha-search"><span aria-hidden="true">⌕</span><input type="search" data-gha-search placeholder="Tìm kiếm galaxy, công cụ, tài nguyên..." aria-label="Tìm trong không gian này"><kbd>⌘K</kbd></label>
       <div class="gha-topbar__copy"><strong>${escapeHtml(title)}</strong><small>${escapeHtml(subtitle)}</small></div>
-      <nav aria-label="Điều hướng nhanh"><button type="button" data-gha-route="/home" ${active === "home" ? 'aria-current="page"' : ""}>Bản đồ</button><button type="button" data-gha-route="/home/dashboard" ${active === "dashboard" ? 'aria-current="page"' : ""}>Dashboard</button><button type="button" data-gha-route="/create/ai-center" ${active === "ai" ? 'aria-current="page"' : ""}>AI</button></nav>
+      <nav aria-label="Điều hướng nhanh">${routeControls}</nav>
     </header>`;
   }
 
   function sidebarMarkup(active) {
     const items = [
-      ["home", "Home Galaxy", "/home", "HG"], ["ai", "AI Universe", "/create/ai-center", "AI"], ["music", "Music Planet", "/music-ai", "MU"],
-      ["video", "Video Planet", "/davinci-resolve", "VI"], ["creator", "Creator Studio", "/create", "CR"], ["games", "Games World", "/play", "GA"],
-      ["dev", "Dev Planet", "/dev-tools", "DV"], ["learn", "Learning Star", "/learn", "LE"], ["community", "Community", "/communication/community", "CO"], ["tools", "Tools Galaxy", "/work", "TO"]
+      ["home", "Home Galaxy", "/home"], ["ai", "AI Universe", "/create/ai-center"], ["music", "Music Planet", "/music-ai"],
+      ["video", "Video Planet", "/davinci-resolve"], ["creator", "Creator Studio", "/create"], ["games", "Games World", "/play"],
+      ["dev", "Dev Planet", "/dev-tools"], ["learn", "Learning Star", "/learn"], ["community", "Community", "/communication/community"], ["tools", "Tools Galaxy", "/galaxy/tools"]
     ];
-    return `<aside class="gha-sidebar"><div class="gha-sidebar__title"><span>HH GALAXY</span><small>Điều hướng chức năng</small></div><nav aria-label="Các không gian HH">${items.map(([id, label, route, glyph]) => `<button type="button" data-gha-route="${route}" ${active === id ? 'aria-current="page"' : ""}><i aria-hidden="true">${glyph}</i><span>${label}</span></button>`).join("")}</nav><footer><span class="gha-live-dot" aria-hidden="true"></span><div><strong data-gha-network>Đang kiểm tra</strong><small>Trạng thái trình duyệt</small></div></footer></aside>`;
+    return `<aside class="gha-sidebar"><div class="gha-sidebar__title"><span>HH GALAXY</span><small>Không gian số của bạn</small></div><nav aria-label="Các không gian HH">${items.map(([id, label, route]) => `<button type="button" data-gha-route="${route}" ${active === id ? 'aria-current="page"' : ""}><i aria-hidden="true">${iconMarkup(id)}</i><span>${label}</span></button>`).join("")}</nav><footer><span class="gha-live-dot" aria-hidden="true"></span><div><strong data-gha-network>Đang kiểm tra</strong><small>Trạng thái trình duyệt</small></div></footer></aside>`;
   }
 
   function homeSidebarMarkup(data) {
@@ -514,24 +523,25 @@
 
   function dashboardMarkup(data) {
     const name = String(data.account?.name || "Thành viên HH").trim();
+    const avatar = safeImageUrl(data.account?.avatar);
     const note = data.notes[0]?.text || "";
     const projectCount = asArray(data.projects).length;
     const taskCount = asArray(data.tasks).length;
     const completedTasks = asArray(data.tasks).filter((task) => task.completed).length;
     const favoriteCount = asArray(data.favorites).length;
     return `<section class="gha-app gha-dashboard" data-gha-root data-gha-view="dashboard">
-      ${topbarMarkup("Dashboard cá nhân", "Widget dùng dữ liệu thật và trạng thái rõ ràng", "dashboard")}
+      ${topbarMarkup("Dashboard cá nhân", "Widget dùng dữ liệu thật và trạng thái rõ ràng", "dashboard", data)}
       ${sidebarMarkup("home")}
       <main class="gha-stage">
         <header class="gha-dashboard-toolbar">
-          <div><span>HH CORE · KHÔNG GIAN CÁ NHÂN</span><h1>Dashboard cá nhân</h1><p>Tổng hợp dữ liệu đã lưu, công việc và công cụ trên thiết bị của bạn.</p></div>
+          <div><span>HH CORE · KHÔNG GIAN CÁ NHÂN</span><h1>Dashboard cá nhân · Tùy chỉnh widget</h1><p>Trung tâm điều khiển cá nhân hóa trong vũ trụ số của bạn.</p></div>
           <div><button type="button" data-gha-route="/work/projects-tasks">${iconMarkup("task")} Mở công việc</button><button class="gha-primary" type="button" data-gha-route="/settings">${iconMarkup("settings")} Tùy chỉnh</button></div>
         </header>
         <section class="gha-dashboard__head">
-          <div class="gha-dashboard-profile"><div class="gha-avatar">${data.account?.avatar ? `<img src="${escapeHtml(data.account.avatar)}" alt="">` : escapeHtml(initials(name))}</div><div><span>Xin chào</span><h2>${escapeHtml(name)}</h2><p>${escapeHtml(sourceLabel(data))}</p></div></div>
+          <div class="gha-dashboard-profile"><div class="gha-avatar">${avatar ? `<img src="${avatar}" alt="">` : escapeHtml(initials(name))}</div><div><span>Xin chào</span><h2>${escapeHtml(name)}</h2><p>${escapeHtml(sourceLabel(data))}</p></div></div>
           <div class="gha-dashboard-metrics" aria-label="Số liệu cá nhân đã xác minh">
             ${dashboardMetricMarkup("folder", "Dự án", String(projectCount), "Trong workspace", Boolean(data.evidence.projects), "/work/projects-tasks")}
-            ${dashboardMetricMarkup("task", "Nhiệm vụ", `${completedTasks}/${taskCount}`, "Đã hoàn thành", Boolean(data.evidence.tasks), "/work/projects-tasks")}
+            ${dashboardMetricMarkup("task", "Nhiệm vụ", `${completedTasks}/${taskCount}`, "Đã hoàn thành", Boolean(data.evidence.tasks), "/work/projects-tasks", ' data-gha-task-metric')}
             ${dashboardMetricMarkup("diamond", "Yêu thích", String(favoriteCount), "Module đã đánh dấu", Boolean(data.evidence.favorites), "/favorites")}
             ${dashboardMetricMarkup("activity", "Focus", "0", "Phiên hoàn thành", true, "/home/dashboard", ' data-gha-focus-metric')}
           </div>
@@ -549,6 +559,7 @@
         </section>
         <footer class="gha-dashboard-foot"><span>${iconMarkup("layers")} Widget chỉ hiển thị dữ liệu có nguồn</span><button type="button" data-gha-route="/settings">Quản lý dữ liệu và bố cục</button></footer>
       </main>
+      <footer class="gha-dashboard-system" aria-label="Nền tảng Dashboard"><span><b>HH Galaxy</b> Không gian cá nhân</span><span><b>Dữ liệu thật</b> Nguồn được cấp</span><span><b>Local-first</b> Lưu trên thiết bị</span><button type="button" data-gha-route="/settings"><b>Tùy chỉnh</b> Mở cài đặt</button></footer>
     </section>`;
   }
 
@@ -582,17 +593,17 @@
     const chatState = String(data.capability?.chat || "configuration-required");
     const chatLabel = capabilityText(chatState);
     return `<section class="gha-app gha-ai" data-gha-root data-gha-view="ai">
-      ${topbarMarkup("HH AI Copilot", "Trợ lý trung tâm và lối vào công cụ AI của HH", "ai")}
+      ${topbarMarkup("HH AI Copilot", "Trợ lý trung tâm và lối vào công cụ AI của HH", "ai", data)}
       ${sidebarMarkup("ai")}
       <main class="gha-stage">
         <section class="gha-ai-world gha-copilot" aria-labelledby="gha-ai-title">
           <div class="gha-map__stars" aria-hidden="true"></div><div class="gha-ai-world__nebula" aria-hidden="true"></div>
-          <header class="gha-copilot__head"><div><span>AI UNIVERSE · TRỢ LÝ TRUNG TÂM</span><h1 id="gha-ai-title">HH AI COPILOT</h1></div><div><i data-state="${escapeHtml(chatState)}"><b></b>${escapeHtml(chatLabel)}</i><button type="button" data-gha-route="/chat-ai/new">+ Cuộc trò chuyện mới</button></div></header>
+          <header class="gha-copilot__head"><div><h1 id="gha-ai-title">HH AI COPILOT</h1><span>TRỢ LÝ AI TOÀN NĂNG</span></div><div><i data-state="${escapeHtml(chatState)}"><b></b>${escapeHtml(chatLabel)}</i></div></header>
           <div class="gha-copilot__layout">
             <section class="gha-copilot__hero">
               <div class="gha-copilot-orbit-stage"><button class="gha-ai-core gha-copilot-orb" type="button" data-gha-route="/chat-ai" aria-label="Mở HH AI Copilot"><span aria-hidden="true"><i></i><i></i></span><strong>HH</strong><small>AI COPILOT</small></button></div>
-              <div class="gha-copilot__intro"><h2>Tôi có thể giúp gì cho bạn?</h2><p>Hỏi đáp, lập kế hoạch hoặc mở đúng công cụ trong HH Platform. Copilot không giả lập provider hay kết quả chưa được tạo.</p></div>
-              <div class="gha-ai-destinations gha-copilot-actions" role="navigation" aria-label="Công cụ AI">${AI_DESTINATIONS.map((destination) => `<button type="button" data-gha-route="${destination.route}" data-gha-searchable><span aria-hidden="true">${escapeHtml(destination.glyph)}</span><strong>${escapeHtml(destination.label)}</strong><small>${escapeHtml(destination.description)}</small></button>`).join("")}<button type="button" data-gha-route="/work/automation-lab" data-gha-searchable><span aria-hidden="true">AU</span><strong>Tự động hóa</strong><small>Xây workflow với trạng thái thực thi rõ ràng</small></button><button type="button" data-gha-route="/analytics" data-gha-searchable><span aria-hidden="true">AN</span><strong>Phân tích</strong><small>Mở dữ liệu và báo cáo hiện có</small></button></div>
+              <div class="gha-copilot__intro"><h2>Tôi có thể giúp gì cho bạn?</h2><p>Trợ lý AI toàn năng của HH — hỗ trợ hỏi đáp, lập kế hoạch và mở đúng công cụ bạn cần.</p></div>
+              <div class="gha-ai-destinations gha-copilot-actions" role="navigation" aria-label="Công cụ AI">${AI_DESTINATIONS.map((destination) => `<button type="button" data-gha-route="${destination.route}" data-gha-searchable><span aria-hidden="true">${iconMarkup(destination.icon)}</span><strong>${escapeHtml(destination.label)}</strong><small>${escapeHtml(destination.description)}</small></button>`).join("")}</div>
               <form class="gha-copilot-prompt" data-gha-ai-form autocomplete="off"><label class="gha-sr-only" for="gha-copilot-prompt-input">Nhập yêu cầu cho HH AI Copilot</label><input id="gha-copilot-prompt-input" data-gha-ai-input type="text" maxlength="1600" placeholder="Nhập yêu cầu của bạn..." aria-describedby="gha-copilot-prompt-hint"><small id="gha-copilot-prompt-hint">Nội dung được chuyển tới engine Chat AI hiện có.</small><button type="submit" aria-label="Gửi yêu cầu tới HH AI Copilot">${iconMarkup("send")}</button></form>
               <div class="gha-copilot-chips" aria-label="Gợi ý nhanh"><span>Gợi ý nhanh</span><button type="button" data-gha-route="/work/projects-tasks">Lập kế hoạch từ dự án</button><button type="button" data-gha-route="/create/prompt-studio">Thiết kế prompt</button><button type="button" data-gha-route="/galaxy/tools">Tìm công cụ phù hợp</button></div>
             </section>
@@ -760,6 +771,12 @@
     if (!writeRecord(runtime.storage, TASK_KEY, record.value)) return false;
     const local = collectLocalData(runtime.storage, globalScope);
     runtime.data = mergeData(local, runtime.options.data);
+    const metric = runtime.host.querySelector?.("[data-gha-task-metric] strong");
+    if (metric) {
+      const total = asArray(runtime.data.tasks).length;
+      const done = asArray(runtime.data.tasks).filter((item) => item.completed).length;
+      metric.textContent = `${done}/${total}`;
+    }
     runtime.state.lastAction = "task-updated";
     try { globalScope.dispatchEvent?.(new globalScope.CustomEvent("hh:command-center-sync", { detail: { source: "galaxy-dashboard", taskIndex: index } })); } catch { /* Event APIs may be unavailable. */ }
     return true;
@@ -837,26 +854,36 @@
 
   async function mountChatEngine(runtime) {
     if (runtime.route !== "/chat-ai" && !runtime.route.startsWith("/chat-ai/")) return;
+    if (runtime.chatMountPromise) return runtime.chatMountPromise;
     const engineHost = runtime.host.querySelector("[data-gha-chat-engine]");
     const baseMount = runtime.options.baseMount;
     if (!engineHost || typeof baseMount !== "function") {
       setEngineState(runtime, "configuration-required", "Engine chưa được cấp");
       return;
     }
-    setEngineState(runtime, "loading", "Đang gắn engine");
-    try {
-      const result = await baseMount(engineHost, { ...runtime.options.baseOptions, route: runtime.route, newSession: runtime.route.endsWith("/new") });
-      if (runtime !== activeRuntime || runtime.controller.signal.aborted) {
-        result?.unmount?.();
-        return;
+    const promise = (async () => {
+      setEngineState(runtime, "loading", "Đang gắn engine");
+      try {
+        const result = await baseMount(engineHost, { ...runtime.options.baseOptions, route: runtime.route, newSession: runtime.route.endsWith("/new") });
+        if (runtime !== activeRuntime || runtime.controller.signal.aborted) {
+          result?.unmount?.();
+          return;
+        }
+        if (result === false) throw new Error("CHAT_ENGINE_REJECTED");
+        runtime.baseController = result && typeof result === "object" ? result : null;
+        setEngineState(runtime, "ready", "Engine hiện có");
+      } catch (error) {
+        if (runtime !== activeRuntime || runtime.controller.signal.aborted) return;
+        runtime.state.error = String(error?.message || "CHAT_ENGINE_MOUNT_FAILED");
+        setEngineState(runtime, "error", "Không thể gắn engine");
       }
-      if (result === false) throw new Error("CHAT_ENGINE_REJECTED");
-      runtime.baseController = result && typeof result === "object" ? result : null;
-      setEngineState(runtime, "ready", "Engine hiện có");
-    } catch (error) {
-      runtime.state.error = String(error?.message || "CHAT_ENGINE_MOUNT_FAILED");
-      setEngineState(runtime, "error", "Không thể gắn engine");
-    }
+    })();
+    runtime.chatMountPromise = promise;
+    const clearFlight = () => {
+      if (runtime.chatMountPromise === promise) runtime.chatMountPromise = null;
+    };
+    promise.then(clearFlight, clearFlight);
+    return promise;
   }
 
   function handleClick(runtime, event) {

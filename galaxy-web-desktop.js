@@ -9,18 +9,19 @@
 
   var VERSION = "1.0.0";
   var ROUTE = "/system/desktop";
+  var ROUTE_ALIASES = Object.freeze([ROUTE, "/galaxy/web-desktop"]);
   var STORAGE_KEY = "hh.galaxy.web-desktop.v1";
   var NOTE_KEY = "hh.galaxy.web-desktop.note.v1";
   var MAX_WINDOWS = 3;
   var instances = new WeakMap();
   var mountedRoots = new Set();
   var APPS = Object.freeze([
-    { id: "ai", icon: "AI", title: "HH AI Copilot", subtitle: "Trợ lý và lịch sử hội thoại", route: "/chat-ai", accent: "#b35dff" },
-    { id: "code", icon: "</>", title: "Code Nebula", subtitle: "Code, preview và kiểm thử", route: "/dev-tools/code-nebula", accent: "#35d7ff" },
+    { id: "ai", icon: "AI", title: "HH AI Copilot", windowTitle: "AI Chat - Trợ lý HH AI", subtitle: "Trợ lý và lịch sử hội thoại", route: "/chat-ai", accent: "#b35dff" },
+    { id: "code", icon: "</>", title: "Code Nebula", windowTitle: "Code Editor - HH Dev Studio", subtitle: "Code, preview và kiểm thử", route: "/dev-tools/code-nebula", accent: "#35d7ff" },
     { id: "music", icon: "♫", title: "Music Planet", subtitle: "Thư viện và xưởng âm thanh", route: "/music-ai", accent: "#e55dff" },
     { id: "projects", icon: "▣", title: "Project Manager", subtitle: "Dự án, task và milestone", route: "/work/projects-tasks", accent: "#ffad48" },
     { id: "notes", icon: "▤", title: "Sticky Notes", subtitle: "Ghi chú cục bộ trên thiết bị", route: "/home/dashboard", accent: "#5e9cff" },
-    { id: "system", icon: "⌁", title: "System Monitor", subtitle: "Số liệu trình duyệt có thể đo", route: "/system", accent: "#54e1a6" }
+    { id: "system", icon: "⌁", title: "System Monitor", windowTitle: "System Monitor - Giám sát hệ thống", subtitle: "Số liệu trình duyệt có thể đo", route: "/system", accent: "#54e1a6" }
   ]);
 
   function escapeHtml(value) {
@@ -38,7 +39,7 @@
     return route.length > 1 ? route.replace(/\/+$/, "") : route;
   }
 
-  function canHandle(route) { return cleanRoute(route) === ROUTE; }
+  function canHandle(route) { return ROUTE_ALIASES.indexOf(cleanRoute(route)) >= 0; }
 
   function safeRead() {
     try {
@@ -93,8 +94,8 @@
   function windowBody(runtime, app) {
     if (app.id === "notes") return '<textarea data-gwd-note maxlength="5000" placeholder="Viết ghi chú cục bộ…">' + escapeHtml(readNote()) + '</textarea><small data-gwd-note-state>Tự lưu trên thiết bị</small>';
     if (app.id === "system") return systemRows(runtime);
-    if (app.id === "ai") return '<div class="gwd-orb" aria-hidden="true"><i></i></div><h3>HH AI Copilot</h3><p>Launcher không khởi tạo provider hay phiên chat cho tới khi bạn mở ứng dụng.</p>';
-    if (app.id === "code") return '<pre aria-label="Preview launcher"><code>HH Web Desktop\n→ Code Nebula\n→ Engine chạy tại route riêng</code></pre><p>Preview không thực thi mã.</p>';
+    if (app.id === "ai") return '<div class="gwd-ai-preview"><div class="gwd-orb" aria-hidden="true"><i></i></div><h3>Xin chào! Tôi là HH AI Copilot</h3><p>Launcher không khởi tạo provider hay phiên chat cho tới khi bạn mở ứng dụng.</p><div class="gwd-ai-capabilities" aria-label="Khả năng trong ứng dụng đầy đủ"><span>Gợi ý sáng tạo</span><span>Viết nội dung &amp; blog</span><span>Hỗ trợ code</span><span>Phân tích dữ liệu</span><span>Tạo hình ảnh AI</span><span>Giải đáp kiến thức</span></div><small>Xem trước tĩnh · Mở ứng dụng để bắt đầu</small></div>';
+    if (app.id === "code") return '<div class="gwd-editor-shell"><nav aria-hidden="true"><span>▱</span><span>⌕</span><span>⑂</span><span>▷</span><span>▦</span><i></i><span>◎</span></nav><div class="gwd-code-preview" aria-label="Preview tĩnh của Code Nebula"><header><span>●</span><strong>main.py</strong><i>＋</i></header><ol><li><code><b>import</b> hh_universe <b>as</b> hh</code></li><li><code><b>from</b> galaxy.core <b>import</b> Universe</code></li><li><code></code></li><li><code><b>def</b> create_galaxy():</code></li><li><code>&nbsp;&nbsp;galaxy = Universe("HH Universe")</code></li><li><code>&nbsp;&nbsp;galaxy.add_star("HH Core")</code></li><li><code>&nbsp;&nbsp;galaxy.add_planet("AI Planet")</code></li><li><code>&nbsp;&nbsp;galaxy.add_planet("Music Planet")</code></li><li><code>&nbsp;&nbsp;<b>return</b> galaxy</code></li></ol><footer>Preview tĩnh · Không thực thi mã</footer></div></div>';
     if (app.id === "music") return '<div class="gwd-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><h3>Music Planet</h3><p>Không phát âm thanh trước tương tác.</p>';
     if (app.id === "projects") {
       var count = Array.isArray(runtime.options.projects) ? runtime.options.projects.length : null;
@@ -109,16 +110,19 @@
     var minimized = runtime.minimized.includes(id);
     var active = runtime.activeId === id;
     var stored = runtime.positions[id] || {};
-    var defaults = [[3, 4], [36, 3], [68, 47]];
+    var defaults = [[3.5, 1.8], [41.1, 1.7], [71.8, 61.7]];
     var position = defaults[index] || [10 + index * 12, 9 + index * 9];
     var x = Number.isFinite(Number(stored.x)) ? Math.max(0, Math.min(72, Number(stored.x))) : position[0];
     var y = Number.isFinite(Number(stored.y)) ? Math.max(0, Math.min(62, Number(stored.y))) : position[1];
-    return '<article class="gwd-window' + (active ? " is-active" : "") + (minimized ? " is-minimized" : "") + '" data-gwd-window="' + app.id + '" style="--app:' + app.accent + ";--x:" + x + ";--y:" + y + ';--z:' + (active ? 8 : index + 2) + '" tabindex="0"><header data-gwd-drag-handle><div><i>' + escapeHtml(app.icon) + '</i><span><strong>' + escapeHtml(app.title) + '</strong><small>Launcher nhẹ</small></span></div><nav><button type="button" data-gwd-action="minimize" data-gwd-id="' + app.id + '" aria-label="' + (minimized ? "Khôi phục" : "Thu nhỏ") + '">−</button><button type="button" data-gwd-action="close" data-gwd-id="' + app.id + '" aria-label="Đóng">×</button></nav></header><section class="gwd-window-body">' + windowBody(runtime, app) + '</section><footer><span>' + escapeHtml(app.subtitle) + '</span><button type="button" data-gwd-route="' + app.route + '">Đi tới ứng dụng →</button></footer></article>';
+    var footer = app.id === "ai"
+      ? '<footer class="gwd-ai-launchbar"><span>Mở ứng dụng để nhập câu hỏi…</span><button type="button" data-gwd-route="' + app.route + '" aria-label="Mở HH AI Copilot">➤</button></footer>'
+      : '<footer><span>' + escapeHtml(app.subtitle) + '</span><button type="button" data-gwd-route="' + app.route + '">Đi tới ứng dụng →</button></footer>';
+    return '<article class="gwd-window' + (active ? " is-active" : "") + (minimized ? " is-minimized" : "") + '" data-gwd-window="' + app.id + '" style="--app:' + app.accent + ";--x:" + x + ";--y:" + y + ';--z:' + (active ? 8 : index + 2) + '" tabindex="0"><header data-gwd-drag-handle><div><i>' + escapeHtml(app.icon) + '</i><span><strong>' + escapeHtml(app.windowTitle || app.title) + '</strong></span></div><nav><button type="button" data-gwd-action="minimize" data-gwd-id="' + app.id + '" aria-label="' + (minimized ? "Khôi phục" : "Thu nhỏ") + '">−</button><button type="button" data-gwd-action="close" data-gwd-id="' + app.id + '" aria-label="Đóng">×</button></nav></header><section class="gwd-window-body">' + windowBody(runtime, app) + '</section>' + footer + '</article>';
   }
 
   function dockMarkup(runtime) {
-    return '<nav class="gwd-dock" aria-label="Ứng dụng Web Desktop"><button class="gwd-launcher" type="button" data-gwd-action="launcher" aria-label="Mở danh sách ứng dụng"><i></i><i></i><i></i><i></i></button>' + APPS.map(function (app) {
-      return '<button type="button" data-gwd-app="' + app.id + '" style="--app:' + app.accent + '" aria-pressed="' + String(runtime.windows.includes(app.id)) + '"><span>' + escapeHtml(app.icon) + '</span><small>' + escapeHtml(app.title) + "</small></button>";
+    return '<nav class="gwd-dock" aria-label="Ứng dụng Web Desktop"><span class="gwd-dock-brand"><b aria-hidden="true"><i></i><i></i><i></i><i></i></b><span><strong>HH WEB DESKTOP</strong><small>Launcher cục bộ</small></span></span><button class="gwd-launcher" type="button" data-gwd-action="launcher" aria-label="Mở danh sách ứng dụng"><i></i><i></i><i></i><i></i></button>' + APPS.map(function (app) {
+      return '<button type="button" data-gwd-app="' + app.id + '" style="--app:' + app.accent + '" aria-label="' + escapeHtml(app.title) + '" aria-pressed="' + String(runtime.windows.includes(app.id)) + '"><span>' + escapeHtml(app.icon) + '</span><small>' + escapeHtml(app.title) + "</small></button>";
     }).join("") + '<i></i>' + timeMarkup() + "</nav>";
   }
 
@@ -140,6 +144,8 @@
 
   function render(runtime, focusSelector) {
     if (!runtime.mounted) return;
+    runtime.dragCleanup?.();
+    runtime.dragCleanup = null;
     runtime.root.innerHTML = rootMarkup(runtime);
     if (focusSelector) global.requestAnimationFrame?.(function () { runtime.root.querySelector(focusSelector)?.focus({ preventScroll: true }); });
   }
@@ -225,15 +231,36 @@
     var rect = windowNode.getBoundingClientRect();
     var startX = event.clientX; var startY = event.clientY;
     var originX = rect.left - stageRect.left; var originY = rect.top - stageRect.top;
+    runtime.dragCleanup?.();
     windowNode.setPointerCapture?.(event.pointerId);
+    var active = true;
     function move(moveEvent) {
       var x = Math.max(0, Math.min(stageRect.width - rect.width, originX + moveEvent.clientX - startX));
       var y = Math.max(0, Math.min(stageRect.height - rect.height, originY + moveEvent.clientY - startY));
       runtime.positions[id] = { x: stageRect.width ? x / stageRect.width * 100 : 0, y: stageRect.height ? y / stageRect.height * 100 : 0 };
       windowNode.style.setProperty("--x", runtime.positions[id].x); windowNode.style.setProperty("--y", runtime.positions[id].y);
     }
-    function up(upEvent) { windowNode.releasePointerCapture?.(upEvent.pointerId); windowNode.removeEventListener("pointermove", move); windowNode.removeEventListener("pointerup", up); windowNode.removeEventListener("pointercancel", up); save(runtime); }
-    windowNode.addEventListener("pointermove", move); windowNode.addEventListener("pointerup", up); windowNode.addEventListener("pointercancel", up);
+    function finish(pointerId, releaseCapture) {
+      if (!active) return;
+      active = false;
+      windowNode.removeEventListener("pointermove", move);
+      windowNode.removeEventListener("pointerup", up);
+      windowNode.removeEventListener("pointercancel", up);
+      windowNode.removeEventListener("lostpointercapture", lostCapture);
+      if (releaseCapture) {
+        try { if (windowNode.hasPointerCapture?.(pointerId)) windowNode.releasePointerCapture(pointerId); } catch (error) { /* detached node */ }
+      }
+      if (runtime.dragCleanup === cancel) runtime.dragCleanup = null;
+      save(runtime);
+    }
+    function up(upEvent) { finish(upEvent.pointerId, true); }
+    function lostCapture(lostEvent) { finish(lostEvent.pointerId, false); }
+    function cancel() { finish(event.pointerId, true); }
+    runtime.dragCleanup = cancel;
+    windowNode.addEventListener("pointermove", move);
+    windowNode.addEventListener("pointerup", up);
+    windowNode.addEventListener("pointercancel", up);
+    windowNode.addEventListener("lostpointercapture", lostCapture);
   }
 
   function bind(runtime) {
@@ -299,7 +326,7 @@
     if (!root || typeof root.querySelector !== "function" || !canHandle(options.route || ROUTE)) return false;
     unmount(root);
     var stored = safeRead();
-    var runtime = { root: root, options: options, route: ROUTE, enabled: stored.enabled, windows: stored.windows, activeId: stored.activeId, minimized: stored.minimized, positions: stored.positions, launcherOpen: false, paused: Boolean(global.document && global.document.hidden), evidence: {}, notice: "", mounted: true, mountedAt: new Date().toISOString(), controller: typeof AbortController === "function" ? new AbortController() : null, clockTimer: 0 };
+    var runtime = { root: root, options: options, route: ROUTE, enabled: stored.enabled, windows: stored.windows, activeId: stored.activeId, minimized: stored.minimized, positions: stored.positions, launcherOpen: false, paused: Boolean(global.document && global.document.hidden), evidence: {}, notice: "", mounted: true, mountedAt: new Date().toISOString(), controller: typeof AbortController === "function" ? new AbortController() : null, clockTimer: 0, dragCleanup: null };
     instances.set(root, runtime); mountedRoots.add(root); root.dataset.gwdMounted = "true";
     root.innerHTML = rootMarkup(runtime); bind(runtime);
     runtime.clockTimer = global.setInterval ? global.setInterval(function () { if (runtime.mounted && !runtime.paused) tickClock(runtime); }, 30000) : 0;
@@ -311,7 +338,7 @@
     Array.from(mountedRoots).forEach(function (entry) {
       if (root && root !== entry) return;
       var runtime = instances.get(entry); if (!runtime) return;
-      runtime.mounted = false; runtime.controller?.abort(); if (runtime.clockTimer) global.clearInterval?.(runtime.clockTimer);
+      runtime.mounted = false; runtime.controller?.abort(); runtime.dragCleanup?.(); runtime.dragCleanup = null; if (runtime.clockTimer) global.clearInterval?.(runtime.clockTimer);
       delete entry.dataset.gwdMounted; entry.replaceChildren(); instances.delete(entry); mountedRoots.delete(entry);
     });
   }

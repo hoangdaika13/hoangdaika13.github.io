@@ -68,6 +68,7 @@ test("lazy loader and router mount and release the planet hub adapter", () => {
 test("canonical reference views and aliases use one immersive shell", () => {
   assert.match(shell, /function|const isImmersiveRoute/);
   for (const route of [
+    "/home/dashboard", "/create/ai-center",
     "/create/workflow", "/work/automation-lab", "/work/projects-tasks",
     "/communication/community", "/music/ambient", "/system/desktop"
   ]) {

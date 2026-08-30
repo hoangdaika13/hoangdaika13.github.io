@@ -13,7 +13,7 @@
   const mountedHosts = new Set();
   const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)") || null;
   const scriptBase = document.currentScript?.src || document.baseURI;
-  const coreAsset = new URL("assets/brand/hh-galaxy-star-static.svg?v=1", scriptBase).href;
+  const coreAsset = new URL("assets/brand/hh-galaxy-star-static.svg?v=2", scriptBase).href;
   let refreshFrame = 0;
 
   const isElement = (value) => value instanceof Element;

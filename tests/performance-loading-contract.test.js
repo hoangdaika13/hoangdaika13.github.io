@@ -44,6 +44,23 @@ test("heavy workspaces load by route and retain deterministic dependencies", () 
   assert.doesNotMatch(executableHtml, /accounts\.google\.com\/gsi\/client/);
 });
 
+test("lazy executable assets use one canonical version per path", () => {
+  const loader = read("performance-loader.js")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+  const assets = [...loader.matchAll(/["']([^"']+\.(?:js|css)\?v=[^"']+)["']/g)].map((match) => match[1]);
+  const urlsByPath = new Map();
+  assets.forEach((url) => {
+    const assetPath = url.split("?")[0];
+    if (!urlsByPath.has(assetPath)) urlsByPath.set(assetPath, new Set());
+    urlsByPath.get(assetPath).add(url);
+  });
+  const conflicts = [...urlsByPath]
+    .filter(([, urls]) => urls.size > 1)
+    .map(([assetPath, urls]) => `${assetPath}: ${[...urls].join(", ")}`);
+  assert.deepEqual(conflicts, [], `version conflicts can execute a workspace twice:\n${conflicts.join("\n")}`);
+});
+
 test("service worker precaches a small shell and uses stale while revalidate", () => {
   const worker = read("sw.js");
   const core = worker.match(/const CORE = \[([\s\S]*?)\n\];/);
@@ -53,6 +70,9 @@ test("service worker precaches a small shell and uses stale while revalidate", (
   assert.match(worker, /caches\.match\(request\)/);
   assert.match(worker, /event\.waitUntil\(refresh/);
   assert.match(worker, /request\.mode === "navigate"/);
+  assert.match(worker, /vendor\/qrcode\.js\?v=1/);
+  assert.match(worker, /discord-hub\.css\?v=4/);
+  assert.match(worker, /discord-hub\.js\?v=4/);
 });
 
 test("the Galaxy Star identity stays within the first-paint image budget", () => {

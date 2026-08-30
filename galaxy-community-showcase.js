@@ -9,6 +9,7 @@
 
   var VERSION = "1.0.0";
   var ROUTE = "/communication/community";
+  var ROUTE_ALIASES = Object.freeze([ROUTE, "/galaxy/community-showcase"]);
   var instances = new WeakMap();
   var mountedRoots = new Set();
   var FILTERS = Object.freeze([
@@ -33,8 +34,20 @@
     return route.length > 1 ? route.replace(/\/+$/, "") : route;
   }
 
-  function canHandle(route) {
-    return cleanRoute(route) === ROUTE;
+  function canHandle(route) { return ROUTE_ALIASES.indexOf(cleanRoute(route)) >= 0; }
+
+  function postIdFromRoute(value) {
+    var source = String(value || global.location && global.location.hash || "");
+    var query = source.indexOf("?") >= 0 ? source.slice(source.indexOf("?") + 1).split("#")[0] : "";
+    if (!query) return "";
+    try {
+      var params = new (global.URLSearchParams || URLSearchParams)(query);
+      return String(params.get("post") || "").trim().slice(0, 160);
+    } catch (error) {
+      var match = query.match(/(?:^|&)post=([^&]*)/);
+      try { return match ? decodeURIComponent(match[1]).trim().slice(0, 160) : ""; }
+      catch (_) { return ""; }
+    }
   }
 
   function safeUrl(value) {
@@ -52,6 +65,8 @@
   }
 
   function list(value) { return Array.isArray(value) ? value : []; }
+
+  function isRecord(value) { return Boolean(value) && typeof value === "object" && !Array.isArray(value); }
 
   function itemType(item) {
     var source = String(item.type || item.kind || item.mediaType || item.category || item.topic || "").toLowerCase();
@@ -116,12 +131,13 @@
     var posts = list(payload.items).concat(list(payload.posts)).concat(list(payload.showcase));
     var unique = new Map();
     posts.forEach(function (item, index) {
+      if (!isRecord(item)) return;
       var normalized = normalizeItem(item, index);
       if (!unique.has(normalized.id)) unique.set(normalized.id, normalized);
     });
-    var suggestions = list(payload.suggestions || payload.creators).map(normalizePerson);
-    var featured = payload.featuredCreator ? normalizePerson(payload.featuredCreator, 0) : null;
-    var leaderboard = list(payload.leaderboard).map(normalizePerson);
+    var suggestions = list(payload.suggestions || payload.creators).filter(isRecord).map(normalizePerson);
+    var featured = isRecord(payload.featuredCreator) ? normalizePerson(payload.featuredCreator, 0) : null;
+    var leaderboard = list(payload.leaderboard).filter(isRecord).map(normalizePerson);
     var tags = list(payload.trendingHashtags || payload.tags).map(function (tag) {
       return String(tag && tag.name || tag || "").replace(/^#/, "").trim();
     }).filter(Boolean).slice(0, 12);
@@ -192,7 +208,7 @@
       '<a class="gcs-brand" href="#/home"><span>HH</span><strong>HOANG8.COM</strong><small>COMMUNITY</small></a>' +
       '<section class="gcs-profile">' + avatar(person) + '<div><strong>' + escapeHtml(person.name) + '</strong><small>' + (user.email ? "Tài khoản đã đăng nhập" : "Chưa xác minh tài khoản") + '</small></div></section>' +
       '<nav aria-label="Điều hướng Community">' +
-        '<button type="button" class="is-active" data-gcs-nav="showcase"><i>⌂</i><span>Showcase</span></button>' +
+        '<button type="button" class="is-active" data-gcs-nav="showcase" aria-current="page"><i>⌂</i><span>Showcase</span></button>' +
         '<button type="button" data-gcs-route="/communication/messenger"><i>✉</i><span>Messenger</span></button>' +
         '<button type="button" data-gcs-route="/communication/channels"><i>#</i><span>Kênh thảo luận</span></button>' +
         '<button type="button" data-gcs-route="/communication/forum"><i>▤</i><span>Forum</span></button>' +
@@ -215,13 +231,43 @@
     return '<article><i>' + icon + '</i><div><strong>' + numberLabel(count) + '</strong><small>' + escapeHtml(label) + '</small></div></article>';
   }
 
+  function emptyMetricsMarkup() {
+    return '<section class="gcs-metrics gcs-metrics--empty" aria-label="Thống kê đang chờ backend">' + [
+      ["Dự án", "▧"], ["Tác phẩm", "◈"], ["Âm thanh", "♫"],
+      ["Nhà sáng tạo", "◎"], ["Tương tác", "◇"], ["Quốc gia", "◉"]
+    ].map(function (metric) {
+      return '<article><i>' + metric[1] + '</i><div><strong aria-hidden="true">—</strong><small>' + escapeHtml(metric[0]) + '</small><em>Chưa có số liệu</em></div></article>';
+    }).join("") + '</section>';
+  }
+
+  function emptyShowcaseMarkup(runtime) {
+    var loading = runtime.capability === "loading";
+    var title = loading ? "Đang tải Community Showcase" : emptyStateTitle(runtime.capability);
+    var message = loading
+      ? "Đang yêu cầu dữ liệu thật; các khung phía sau chỉ giữ bố cục trong lúc chờ."
+      : (runtime.message || "Khi backend trả bài viết, nội dung sẽ xuất hiện tại đây.");
+    var cards = Array.from({ length: 10 }, function (_, index) {
+      return '<article class="gcs-card gcs-card--skeleton gcs-card--skeleton-' + ((index % 5) + 1) + '" aria-hidden="true">' +
+        '<div class="gcs-card-media"><span class="gcs-skeleton-orbit"></span></div>' +
+        '<div class="gcs-card-body"><span class="gcs-skeleton-line gcs-skeleton-line--title"></span><span class="gcs-skeleton-line gcs-skeleton-line--author"></span><footer><span class="gcs-skeleton-line gcs-skeleton-line--meta"></span></footer></div>' +
+      '</article>';
+    }).join("");
+    return '<section class="gcs-empty-showcase" data-gcs-empty-state="' + escapeHtml(runtime.capability) + '">' +
+      '<section class="gcs-grid gcs-skeleton-grid" aria-hidden="true">' + cards + '</section>' +
+      '<section class="gcs-state gcs-state--overlay" role="status">' +
+        (loading ? '<i aria-hidden="true"></i>' : '<span aria-hidden="true">◎</span>') +
+        '<strong>' + escapeHtml(title) + '</strong><p>' + escapeHtml(message) + '</p>' +
+        (loading ? '' : '<button type="button" data-gcs-action="refresh">Thử tải lại</button>') +
+      '</section></section>';
+  }
+
   function itemCard(item) {
     var counts = [];
     if (item.reactions != null) counts.push('<span title="Lượt bày tỏ cảm xúc">♡ ' + numberLabel(item.reactions) + "</span>");
     if (item.comments != null) counts.push('<span title="Bình luận">◌ ' + numberLabel(item.comments) + "</span>");
     if (item.saves != null) counts.push('<span title="Lượt lưu">◇ ' + numberLabel(item.saves) + "</span>");
     return '<article class="gcs-card" data-gcs-item="' + escapeHtml(item.id) + '" data-gcs-type="' + item.type + '">' +
-      '<button class="gcs-card-media" type="button" data-gcs-action="detail" data-gcs-id="' + escapeHtml(item.id) + '">' +
+      '<button class="gcs-card-media" type="button" data-gcs-action="detail" data-gcs-id="' + escapeHtml(item.id) + '" aria-label="Mở ' + escapeHtml(item.title) + '">' +
         (item.media ? '<img src="' + escapeHtml(item.media) + '" alt="" loading="lazy">' : '<span class="gcs-media-fallback"><i>✦</i><small>Không có ảnh đại diện</small></span>') +
         '<b>' + escapeHtml(item.type.toUpperCase()) + '</b>' +
       '</button>' +
@@ -256,19 +302,18 @@
       metricMarkup("Tương tác", stats.interactions, "◇"), metricMarkup("Quốc gia", stats.countries, "◉")
     ].filter(Boolean).join("");
     var body;
-    if (runtime.capability === "loading") body = '<section class="gcs-state"><i></i><strong>Đang tải Community Showcase</strong><p>Đang yêu cầu dữ liệu thật; chưa có card hoặc lượt tương tác nào được dựng tạm.</p></section>';
-    else if (!items.length) body = '<section class="gcs-state" data-gcs-empty-state="' + escapeHtml(runtime.capability) + '"><span>◎</span><strong>' + escapeHtml(emptyStateTitle(runtime.capability)) + '</strong><p>' + escapeHtml(runtime.message || "Khi backend trả bài viết, nội dung sẽ xuất hiện tại đây.") + '</p><button type="button" data-gcs-action="refresh">Thử tải lại</button></section>';
+    if (runtime.capability === "loading" || !items.length) body = emptyShowcaseMarkup(runtime);
     else body = '<section class="gcs-grid' + (runtime.view === "list" ? " is-list" : "") + '" data-gcs-grid data-gcs-view="' + runtime.view + '">' + items.map(itemCard).join("") + '</section><section class="gcs-no-match" data-gcs-no-match hidden><strong>Không tìm thấy nội dung phù hợp</strong><p>Hãy đổi từ khóa hoặc bộ lọc.</p></section>';
     return '<main class="gcs-main" data-gcs-active-view="' + runtime.view + '">' +
-      '<section class="gcs-title"><div><span>COMMUNITY</span><h1>COMMUNITY <em>SHOWCASE</em></h1><p>Tác phẩm và cuộc trò chuyện từ nguồn Community đã kết nối.</p></div><button type="button" data-gcs-action="compose">⇧ Chia sẻ</button></section>' +
+      '<section class="gcs-title"><div><span>COMMUNITY</span><h1>COMMUNITY <em>SHOWCASE - CỘNG ĐỒNG HH</em></h1><p>Khám phá dự án, tác phẩm và cuộc trò chuyện từ nguồn Community đã kết nối.</p></div><button type="button" data-gcs-action="compose">⇧ Chia sẻ</button></section>' +
       '<nav class="gcs-tabs" aria-label="Lọc loại nội dung">' + FILTERS.map(function (filter) { return '<button type="button" data-gcs-filter="' + filter[0] + '" aria-pressed="' + String(runtime.filter === filter[0]) + '">' + escapeHtml(filter[1]) + '</button>'; }).join("") + '<select data-gcs-sort aria-label="Sắp xếp"><option value="newest"' + (runtime.sort === "newest" ? " selected" : "") + '>Mới nhất</option><option value="oldest"' + (runtime.sort === "oldest" ? " selected" : "") + '>Cũ nhất</option></select><span class="gcs-view-switch" role="group" aria-label="Kiểu hiển thị"><button type="button" data-gcs-view="grid" aria-pressed="' + String(runtime.view !== "list") + '" aria-label="Dạng lưới">▦</button><button type="button" data-gcs-view="list" aria-pressed="' + String(runtime.view === "list") + '" aria-label="Dạng danh sách">☷</button></span></nav>' +
-      '<div class="gcs-layout"><section class="gcs-feed">' + body + (metrics ? '<section class="gcs-metrics">' + metrics + '</section>' : '<p class="gcs-metrics-empty">Thống kê tổng hợp sẽ xuất hiện khi backend cung cấp số liệu đã xác minh.</p>') + '</section>' +
+      '<div class="gcs-layout"><section class="gcs-feed">' + body + (metrics ? '<section class="gcs-metrics">' + metrics + '</section>' : emptyMetricsMarkup()) + '</section>' +
       '<aside class="gcs-right">' + featuredMarkup(data.featured) + leaderboardMarkup(data.leaderboard || []) + tagsMarkup(data.tags || []) + '</aside></div>' +
     '</main>';
   }
 
   function rootMarkup(runtime) {
-    return '<section class="gcs-root" data-gcs-root data-gcs-capability="' + runtime.capability + '"><div class="gcs-space" aria-hidden="true"><i></i><i></i></div>' + sidebarMarkup(runtime) + '<div class="gcs-workspace">' + topbarMarkup(runtime) + '<div data-gcs-content>' + contentMarkup(runtime) + '</div></div><dialog class="gcs-dialog" data-gcs-dialog></dialog><p class="gcs-live" data-gcs-live aria-live="polite"></p></section>';
+    return '<section class="gcs-root" data-gcs-root data-gcs-capability="' + runtime.capability + '"><div class="gcs-space" aria-hidden="true"><i></i><i></i></div>' + sidebarMarkup(runtime) + '<div class="gcs-workspace">' + topbarMarkup(runtime) + '<div data-gcs-content>' + contentMarkup(runtime) + '</div></div><dialog class="gcs-dialog" data-gcs-dialog aria-label="Hộp thoại Community"></dialog><p class="gcs-live" data-gcs-live aria-live="polite"></p></section>';
   }
 
   function render(runtime, preserveFocus) {
@@ -282,7 +327,8 @@
       runtime.root.querySelector("[data-gcs-root]").dataset.gcsCapability = runtime.capability;
     }
     applyFilters(runtime);
-    if (preserveFocus) global.requestAnimationFrame && global.requestAnimationFrame(function () { runtime.root.querySelector(preserveFocus)?.focus({ preventScroll: true }); });
+    var revealed = revealRequestedPost(runtime);
+    if (preserveFocus && !revealed) global.requestAnimationFrame && global.requestAnimationFrame(function () { runtime.root.querySelector(preserveFocus)?.focus({ preventScroll: true }); });
   }
 
   function announce(runtime, message) {
@@ -368,10 +414,11 @@
     else if (global.location) global.location.hash = "#" + route;
   }
 
-  function openDialog(runtime, markup) {
+  function openDialog(runtime, markup, labelId) {
     var dialog = runtime.root.querySelector("[data-gcs-dialog]");
     if (!dialog) return null;
     dialog.innerHTML = markup;
+    if (labelId) dialog.setAttribute("aria-labelledby", labelId); else dialog.removeAttribute("aria-labelledby");
     if (typeof dialog.showModal === "function") dialog.showModal(); else dialog.setAttribute("open", "");
     return dialog;
   }
@@ -380,6 +427,27 @@
     if (!dialog) return;
     if (typeof dialog.close === "function") dialog.close(); else dialog.removeAttribute("open");
     dialog.innerHTML = "";
+    dialog.removeAttribute("aria-labelledby");
+  }
+
+  function detailMarkup(item) {
+    return '<article class="gcs-detail"><header><div><small>' + escapeHtml(item.type.toUpperCase()) + '</small><h2 id="gcs-detail-title">' + escapeHtml(item.title) + '</h2></div><button type="button" data-gcs-dialog-close aria-label="Đóng">×</button></header>' + (item.media ? '<img src="' + escapeHtml(item.media) + '" alt="">' : "") + '<div class="gcs-author">' + avatar(item.author) + '<span><strong>' + escapeHtml(item.author.name) + '</strong><small>' + escapeHtml(dateLabel(item.createdAt)) + '</small></span></div><p>' + escapeHtml(item.description || item.title) + '</p><footer><button type="button" data-gcs-action="share" data-gcs-id="' + escapeHtml(item.id) + '">Chia sẻ</button><button class="gcs-primary" type="button" data-gcs-dialog-close>Đóng</button></footer></article>';
+  }
+
+  function openItemDetail(runtime, item) {
+    var dialog = openDialog(runtime, detailMarkup(item), "gcs-detail-title");
+    dialog?.querySelector("[data-gcs-dialog-close]")?.focus();
+    return Boolean(dialog);
+  }
+
+  function revealRequestedPost(runtime) {
+    if (!runtime.requestedPostId || runtime.requestedPostHandled) return false;
+    var item = (runtime.data.items || []).find(function (entry) { return entry.id === runtime.requestedPostId; });
+    if (!item) return false;
+    runtime.requestedPostHandled = true;
+    var card = Array.from(runtime.root.querySelectorAll("[data-gcs-item]")).find(function (entry) { return entry.dataset.gcsItem === item.id; });
+    card?.scrollIntoView?.({ block: "center", behavior: "auto" });
+    return openItemDetail(runtime, item);
   }
 
   async function mutate(runtime, body) {
@@ -417,12 +485,12 @@
     if (!action) return;
     if (action.dataset.gcsAction === "refresh") { await refresh(runtime); return; }
     if (action.dataset.gcsAction === "compose") {
-      var composer = openDialog(runtime, '<form class="gcs-compose"><header><div><small>COMMUNITY CREATOR</small><h2>Chia sẻ tác phẩm</h2></div><button type="button" data-gcs-dialog-close aria-label="Đóng">×</button></header><label><span>Nội dung</span><textarea name="content" maxlength="3000" required placeholder="Giới thiệu tác phẩm hoặc dự án của bạn…"></textarea></label><div><label><span>Chủ đề</span><select name="topic"><option>Dự án</option><option>Tác phẩm</option><option>Âm nhạc</option><option>Video</option><option>Prompt</option></select></label><label><span>Quyền xem</span><select name="privacy"><option value="public">Công khai</option><option value="followers">Người theo dõi</option><option value="private">Chỉ mình tôi</option></select></label></div><label><span>Liên kết ảnh/video HTTPS (không bắt buộc)</span><input name="mediaUrl" type="url" placeholder="https://…"></label><footer><button type="button" data-gcs-dialog-close>Hủy</button><button class="gcs-primary" type="submit">Đăng lên Community</button></footer></form>');
+      var composer = openDialog(runtime, '<form class="gcs-compose"><header><div><small>COMMUNITY CREATOR</small><h2 id="gcs-compose-title">Chia sẻ tác phẩm</h2></div><button type="button" data-gcs-dialog-close aria-label="Đóng">×</button></header><label><span>Nội dung</span><textarea name="content" maxlength="3000" required placeholder="Giới thiệu tác phẩm hoặc dự án của bạn…"></textarea></label><div><label><span>Chủ đề</span><select name="topic"><option>Dự án</option><option>Tác phẩm</option><option>Âm nhạc</option><option>Video</option><option>Prompt</option></select></label><label><span>Quyền xem</span><select name="privacy"><option value="public">Công khai</option><option value="followers">Người theo dõi</option><option value="private">Chỉ mình tôi</option></select></label></div><label><span>Liên kết ảnh/video HTTPS (không bắt buộc)</span><input name="mediaUrl" type="url" placeholder="https://…"></label><footer><button type="button" data-gcs-dialog-close>Hủy</button><button class="gcs-primary" type="submit">Đăng lên Community</button></footer></form>', "gcs-compose-title");
       composer?.querySelector("textarea")?.focus(); return;
     }
     var item = (runtime.data.items || []).find(function (entry) { return entry.id === action.dataset.gcsId; });
     if (action.dataset.gcsAction === "detail" && item) {
-      openDialog(runtime, '<article class="gcs-detail"><header><div><small>' + escapeHtml(item.type.toUpperCase()) + '</small><h2>' + escapeHtml(item.title) + '</h2></div><button type="button" data-gcs-dialog-close aria-label="Đóng">×</button></header>' + (item.media ? '<img src="' + escapeHtml(item.media) + '" alt="">' : "") + '<div class="gcs-author">' + avatar(item.author) + '<span><strong>' + escapeHtml(item.author.name) + '</strong><small>' + escapeHtml(dateLabel(item.createdAt)) + '</small></span></div><p>' + escapeHtml(item.description || item.title) + '</p><footer><button type="button" data-gcs-action="share" data-gcs-id="' + escapeHtml(item.id) + '">Chia sẻ</button><button class="gcs-primary" type="button" data-gcs-dialog-close>Đóng</button></footer></article>'); return;
+      openItemDetail(runtime, item); return;
     }
     if (action.dataset.gcsAction === "share" && item) {
       var url = String(global.location && global.location.href || "").split("#")[0] + "#/communication/community?post=" + encodeURIComponent(item.id);
@@ -479,7 +547,8 @@
       root: root, options: options, route: ROUTE, mounted: true,
       controller: typeof AbortController === "function" ? new AbortController() : null,
       capability: cached ? "cached" : "loading", data: cached ? payloadData(cached) : payloadData({}),
-      filter: "all", view: options.view === "list" ? "list" : "grid", sort: options.sort === "oldest" ? "oldest" : "newest", message: cached ? "Đang xác minh dữ liệu mới với backend." : "", mountedAt: new Date().toISOString(), lastVerifiedAt: ""
+      filter: "all", view: options.view === "list" ? "list" : "grid", sort: options.sort === "oldest" ? "oldest" : "newest", message: cached ? "Đang xác minh dữ liệu mới với backend." : "", mountedAt: new Date().toISOString(), lastVerifiedAt: "",
+      requestedPostId: postIdFromRoute(options.route), requestedPostHandled: false
     };
     sortItems(runtime);
     instances.set(root, runtime); mountedRoots.add(root);

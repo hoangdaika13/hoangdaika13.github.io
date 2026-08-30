@@ -125,6 +125,14 @@ body.app-chat-ai-route [data-chat-ai-host]{width:100%;max-width:100%;height:100%
   .chat-ai-cosmos,.chat-ai-welcome:before{display:none!important}.chat-ai-hub *,.chat-ai-hub :before,.chat-ai-hub :after{animation:none!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.chat-ai-orb,.chat-ai-brand>i,.chat-ai-avatar{transform:none!important}.chat-ai-stream-caret{display:none!important}
 }
 
+/* Keep the compact More control icon-only after the readable type-scale
+   overrides below. Otherwise the hidden label and generated plus both render
+   on narrow screens, producing the duplicated, wrapped control. */
+@media(max-width:480px){
+  .chat-ai-hub .chat-ai-mode-more>summary{font-size:0;line-height:0}
+  .chat-ai-hub .chat-ai-mode-more>summary:after{font-size:14px;line-height:1}
+}
+
 /* Readable type scale v3.4: larger labels and conversation text without
    increasing fixed chrome or taking space away from the message scroller. */
 .chat-ai-brand small{font-size:10px}.chat-ai-brand strong{font-size:17px}

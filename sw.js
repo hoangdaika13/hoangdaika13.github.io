@@ -1,4 +1,9 @@
-const CACHE = "hh-identity-portal-v940";
+const CACHE = "hh-identity-portal-v945";
+// Compatibility marker for the previous Galaxy reference refinement release: hh-identity-portal-v944.
+// Compatibility marker for the previous Galaxy functional refinement release: hh-identity-portal-v943.
+// Compatibility marker for the previous Galaxy Golden QA release: hh-identity-portal-v942.
+// Compatibility marker for the previous Galaxy Golden Refinement release: hh-identity-portal-v941.
+// Compatibility marker for the previous Galaxy Reference Workspaces release: hh-identity-portal-v940.
 // Compatibility marker for the previous Galaxy Planet Hubs release: hh-identity-portal-v939.
 // Compatibility marker for HH Universe Solar 3D: hh-identity-portal-v934.
 // HH Galaxy v1: persistent shell plus ten route adapters, all backed by the
@@ -103,7 +108,7 @@ const RUNTIME_ASSETS = [
   "./fortune-hub-v5.css?v=26",
   "./draw-studio.css?v=14",
   "./remote-hub.css?v=4",
-  "./chat-ai-hub.css?v=17",
+  "./chat-ai-hub.css?v=19",
   "./account-center.css?v=2",
   "./account-center.js?v=2",
   "./settings-studio.css?v=7",
@@ -185,6 +190,7 @@ const RUNTIME_ASSETS = [
   "./assets/open-media/curated-music-expansion-v1.json",
   "./assets/open-media/rights-registry-v2.json",
   "./vendor/jszip.min.js?v=3.10.1",
+  "./vendor/qrcode.js?v=1",
   "./vendor/tesseract.min.js?v=6.0.1",
   "./vendor/tesseract-worker.min.js?v=6.0.1",
   "./vendor/tesseract-core-simd-lstm.wasm.js?v=6.0.0",
@@ -255,21 +261,21 @@ const RUNTIME_ASSETS = [
   "./auth-zoom-resilience.css?v=3",
   "./auth-typography-unified.css?v=2",
   "./brand-galaxy-logo.css?v=1",
-  "./brand-galaxy-logo.js?v=1",
+  "./brand-galaxy-logo.js?v=2",
   "./galaxy-design-system.css?v=1",
-  "./galaxy-shell.css?v=4",
-  "./galaxy-shell.js?v=2",
-  "./galaxy-home-ai.css?v=6",
-  "./galaxy-home-ai.js?v=6",
+  "./galaxy-shell.css?v=5",
+  "./galaxy-shell.js?v=5",
+  "./galaxy-home-ai.css?v=10",
+  "./galaxy-home-ai.js?v=10",
   "./assets/galaxy/hh-galaxy-map-bg-v1.png?v=1",
   "./assets/galaxy/hh-luminous-planet-v1.webp?v=1",
   "./assets/galaxy/hh-stellar-core-v1.webp?v=1",
-  "./galaxy-domain-views.css?v=3",
-  "./galaxy-domain-views.js?v=3",
-  "./galaxy-community-showcase.css?v=1",
-  "./galaxy-community-showcase.js?v=1",
-  "./galaxy-web-desktop.css?v=1",
-  "./galaxy-web-desktop.js?v=1",
+  "./galaxy-domain-views.css?v=6",
+  "./galaxy-domain-views.js?v=5",
+  "./galaxy-community-showcase.css?v=4",
+  "./galaxy-community-showcase.js?v=4",
+  "./galaxy-web-desktop.css?v=4",
+  "./galaxy-web-desktop.js?v=4",
   "./galaxy-planet-hubs.css?v=1",
   "./galaxy-planet-hubs.js?v=1",
   "./assets/galaxy/hh-ambient-room-rainy-v1.png?v=1",
@@ -322,8 +328,8 @@ const RUNTIME_ASSETS = [
   "./youtube-hub-pro.css?v=5",
   "./youtube-hub-pro.js?v=10",
   "./youtube-pip.html",
-  "./discord-hub.css?v=2",
-  "./discord-hub.js?v=2",
+  "./discord-hub.css?v=4",
+  "./discord-hub.js?v=4",
   "./communication-overview.css?v=1",
   "./communication-overview.js?v=3",
   "./communication-suite.css?v=7",
@@ -567,15 +573,15 @@ const CORE = [
   "./privacy-consent-center.css?v=3",
   "./motion-comfort.css?v=1",
   "./brand-galaxy-logo.css?v=1",
-  "./brand-galaxy-logo.js?v=1",
+  "./brand-galaxy-logo.js?v=2",
   "./assets/brand/hh-galaxy-star-static.svg?v=2",
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=581",
+  "./performance-loader.js?v=586",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=258"
+  "./script.js?v=259"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

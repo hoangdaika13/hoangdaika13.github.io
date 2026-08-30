@@ -33,6 +33,14 @@ test("Galaxy Shell exposes a frozen, versioned lifecycle API", () => {
   assert.equal(api.syncRoute("#/work/automation-lab/runs").id, "automation-builder");
   assert.equal(api.syncRoute("/music-ai/mix").id, "music-ai");
   assert.equal(api.syncRoute("/cosmic-observatory/solar-system").id, "universe");
+  assert.equal(api.syncRoute("/home/dashboard").id, "personal-dashboard");
+  assert.equal(api.syncRoute("/create/ai-center").id, "ai-universe");
+  assert.equal(api.syncRoute("/galaxy/automation-builder").id, "automation-builder");
+  assert.equal(api.syncRoute("/galaxy/creator").id, "creator-studio");
+  assert.equal(api.syncRoute("/galaxy/creator-pipeline").id, "creator-studio");
+  assert.equal(api.syncRoute("/galaxy/community-showcase").id, "community-showcase");
+  assert.equal(api.syncRoute("/galaxy/web-desktop").id, "web-desktop");
+  assert.equal(api.syncRoute("/galaxy/tools").id, "tools-galaxy");
 });
 
 test("route manifest has stable semantic fields and no provider readiness claims", () => {
@@ -62,6 +70,19 @@ test("route manifest has stable semantic fields and no provider readiness claims
     assert.ok(ids.has(id), `missing Galaxy destination ${id}`);
   }
   assert.doesNotMatch(client, /12\.5K|99\.9% uptime|đã kết nối|online users/i);
+});
+
+test("Galaxy manifest does not claim legacy routes owned by other workspaces", () => {
+  const api = loadApi();
+  const claimedAliases = new Set(api.routeManifest.flatMap((entry) => entry.aliases));
+  for (const legacyRoute of ["/create", "/work/project-hub", "/settings/user-dashboard"]) {
+    assert.equal(claimedAliases.has(legacyRoute), false, `${legacyRoute} must remain owned by its legacy workspace`);
+  }
+  assert.equal(api.syncRoute("/create").id, "creative-center");
+  assert.equal(api.syncRoute("/work/project-hub").id, "work-center");
+  assert.equal(api.syncRoute("/settings/user-dashboard").id, "settings");
+  assert.equal(api.syncRoute("/galaxy/creator").id, "creator-studio");
+  assert.equal(api.syncRoute("/galaxy/project-hub").id, "project-hub");
 });
 
 test("enhancer preserves feature DOM and restores every owned attribute", () => {
@@ -97,10 +118,10 @@ test("runtime rollback cleans adapters and immediately rerenders the current rou
 });
 
 test("Galaxy Shell joins the existing brand loader without increasing first-paint requests", () => {
-  assert.match(loader, /brand:[\s\S]*?galaxy-shell\.js\?v=2/);
+  assert.match(loader, /brand:[\s\S]*?galaxy-shell\.js\?v=5/);
   assert.match(router, /HHAssetLoader\?\.ensureGroup\?\.\("brand"\)/);
   assert.match(router, /brandReady\.then\(initAppShell, initAppShell\)/);
-  assert.doesNotMatch(html, /<script\b[^>]*src=["']galaxy-shell\.js\?v=1/);
+  assert.doesNotMatch(html, /<script\b[^>]*src=["']galaxy-shell\.js\?v=2/);
 });
 
 test("semantic tokens reproduce the approved HH Galaxy foundation", () => {
