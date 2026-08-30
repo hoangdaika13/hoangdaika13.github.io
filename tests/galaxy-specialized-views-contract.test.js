@@ -105,6 +105,11 @@ test("Community uses real adapter/API states and contains no fabricated showcase
   assert.match(communitySource, /aria-current="page"/);
   assert.match(communitySource, /aria-label="Mở /);
   assert.match(communitySource, /aria-labelledby/);
+  assert.match(communitySource, /hh\.auth\.guest-user/);
+  assert.match(communitySource, /requestController\?\.abort/);
+  assert.match(communitySource, /requestId !== runtime\.requestId/);
+  assert.match(communitySource, /data-gcs-skip/);
+  assert.match(communitySource, /opener\.focus/);
 });
 
 test("Community external media and displayed text are constrained", () => {
@@ -172,6 +177,8 @@ test("Web Desktop evidence and visibility updates never remount the workspace", 
   const eventBinding = functionBlock(desktopSource, "bind", "tickClock");
   const localEvidencePatch = functionBlock(desktopSource, "updateSystemEvidence", "updateVisibilityState");
   const localVisibilityPatch = functionBlock(desktopSource, "updateVisibilityState", "openApp");
+  const windowInteractions = functionBlock(desktopSource, "openApp", "formatBytes");
+  const windowPatchHelpers = functionBlock(desktopSource, "focusLater", "announce");
 
   assert.doesNotMatch(evidenceUpdate, /\brender\s*\(/);
   assert.doesNotMatch(eventBinding.match(/visibilitychange[\s\S]*?\}, options\);/)[0], /\brender\s*\(/);
@@ -184,6 +191,11 @@ test("Web Desktop evidence and visibility updates never remount the workspace", 
   assert.match(localVisibilityPatch, /governor\.outerHTML = statusPill\(runtime\)/);
   assert.match(evidenceUpdate, /updateSystemEvidence\(runtime\)/);
   assert.match(eventBinding, /updateVisibilityState\(runtime\)/);
+  assert.doesNotMatch(windowInteractions, /\brender\s*\(/);
+  assert.match(windowInteractions, /insertWindow\(runtime, id\)/);
+  assert.match(windowInteractions, /removeWindow\(runtime, id\)/);
+  assert.match(windowPatchHelpers, /toggleMinimize/);
+  assert.doesNotMatch(windowPatchHelpers, /runtime\.root\.innerHTML|rootMarkup\(|\brender\s*\(/);
 });
 
 test("Web Desktop runtime preserves the mounted root during evidence and visibility patches", async () => {
@@ -270,6 +282,9 @@ test("specialized styles remain scoped, responsive and accessible", () => {
   assert.match(communityStyles, /\.gcs-tabs \{ width: 100%; max-width: 100%;/);
   assert.match(communityStyles, /\.gcs-title > button \{ margin-right: 0; \}/);
   assert.match(communityStyles, /\.gcs-right \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); transform: none; \}/);
+  assert.match(communityStyles, /\.gcs-layout \{ display: contents; \}/);
+  assert.match(communityStyles, /\.gcs-skeleton-grid \{ display: none; \}/);
+  assert.match(communityStyles, /\.gcs-state--overlay \{ position: relative; top: auto; left: auto; width: 100%;/);
   assert.match(desktopStyles, /grid-template-columns: minmax\(220px, 1fr\) minmax\(360px, 426px\) minmax\(260px, 1fr\)/);
   assert.match(desktopStyles, /\.gwd-window\[data-gwd-window="ai"\] \{[^}]*width: 392px;[^}]*min-height: 435px;[^}]*max-height: 435px; \}/);
   assert.match(desktopStyles, /\.gwd-window\[data-gwd-window="system"\] \{[^}]*width: 420px; height: 275px; min-height: 275px; \}/);
@@ -279,8 +294,8 @@ test("specialized styles remain scoped, responsive and accessible", () => {
 });
 
 test("specialized views are route-lazy, router-owned and versioned for release", () => {
-  assert.match(loaderSource, /"galaxy-community-showcase"[\s\S]*galaxy-community-showcase\.css\?v=4[\s\S]*galaxy-community-showcase\.js\?v=4/);
-  assert.match(loaderSource, /"galaxy-web-desktop"[\s\S]*galaxy-web-desktop\.css\?v=4[\s\S]*galaxy-web-desktop\.js\?v=4/);
+  assert.match(loaderSource, /"galaxy-community-showcase"[\s\S]*galaxy-community-showcase\.css\?v=5[\s\S]*galaxy-community-showcase\.js\?v=5/);
+  assert.match(loaderSource, /"galaxy-web-desktop"[\s\S]*galaxy-web-desktop\.css\?v=5[\s\S]*galaxy-web-desktop\.js\?v=5/);
   assert.match(loaderSource, /value === "\/communication\/community"[\s\S]{0,360}return \["galaxy-community-showcase"\]/);
   assert.match(loaderSource, /value = value\.split\("\?"\)\[0\]/);
   assert.match(loaderSource, /value === "\/system\/desktop"[\s\S]{0,100}\["galaxy-web-desktop"\]/);
@@ -291,11 +306,11 @@ test("specialized views are route-lazy, router-owned and versioned for release",
   assert.match(routerSource, /HHGalaxyWebDesktop\?\.canHandle/);
   assert.match(routerSource, /HHGalaxyCommunityShowcase\?\.unmount/);
   assert.match(routerSource, /HHGalaxyWebDesktop\?\.unmount/);
-  assert.match(serviceWorkerSource, /hh-identity-portal-v945/);
-  for (const asset of ["galaxy-community-showcase.css?v=4", "galaxy-community-showcase.js?v=4", "galaxy-web-desktop.css?v=4", "galaxy-web-desktop.js?v=4"]) {
+  assert.match(serviceWorkerSource, /hh-identity-portal-v946/);
+  for (const asset of ["galaxy-community-showcase.css?v=5", "galaxy-community-showcase.js?v=5", "galaxy-web-desktop.css?v=5", "galaxy-web-desktop.js?v=5"]) {
     assert.match(serviceWorkerSource, new RegExp(asset.replaceAll(".", "\\.").replace("?", "\\?")), asset);
   }
-  assert.match(indexSource, /performance-loader\.js\?v=585/);
+  assert.match(indexSource, /<script src="performance-loader\.js\?v=587"/);
   assert.match(indexSource, /script\.js\?v=259/);
   assert.match(indexSource, /galaxy-shell\.css\?v=5/);
   assert.match(routerSource, /dataset\.galaxyImmersive === "true"/);

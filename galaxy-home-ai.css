@@ -4438,6 +4438,57 @@
     }
   }
 
+  /* A short desktop viewport still keeps the informational system footer as
+     a third grid child. Without taking it out of normal flow, CSS Grid creates
+     an implicit row and compresses both the sidebar and Dashboard stage to a
+     thin strip. Keep the footer fixed, preserve the stage as the only second
+     row, and leave enough scroll padding for the footer's hit targets. */
+  @media (min-width: 768px) and (max-height: 819px) {
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-stage {
+      padding-bottom: 72px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-system {
+      position: fixed;
+      z-index: 28;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      align-items: center;
+      min-height: 56px;
+      padding: 0 26px;
+      border-top: 1px solid rgb(99 117 193 / 27%);
+      color: #9aa8bd;
+      font-size: 10px;
+      background: linear-gradient(90deg, rgb(3 10 27 / 97%), rgb(5 10 31 / 97%));
+      box-shadow: 0 -16px 42px rgb(0 0 0 / 18%);
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-system > :is(span, button) {
+      display: grid;
+      justify-items: center;
+      gap: 4px;
+      min-width: 0;
+      min-height: 34px;
+      padding: 4px 16px;
+      border-right: 1px solid rgb(120 135 193 / 16%);
+      color: inherit;
+      text-align: center;
+      background: transparent;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-system > :last-child { border-right: 0; }
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-system b { color: #d9e1ee; font-size: 11px; }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-sidebar nav button {
+      grid-template-columns: 30px minmax(0, 1fr);
+      gap: 6px;
+      padding-inline: 8px;
+    }
+  }
+
   [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot {
     min-height: 100%;
     height: auto;

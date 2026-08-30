@@ -77,6 +77,8 @@ test("immersive Dashboard and Copilot own their reference chrome without fake me
   assert.match(styles, /grid-template-rows:\s*252px\s+294px/);
   assert.match(styles, /grid-auto-rows:\s*294px;\s*gap:\s*17px/);
   assert.match(styles, /\.gha-dashboard \.gha-topbar > \.gha-search\s*\{[\s\S]*?left:\s*50%;[\s\S]*?width:\s*min\(570px/);
+  assert.match(styles, /@media \(min-width:\s*768px\) and \(max-height:\s*819px\)[\s\S]*?\.gha-dashboard-system\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?grid-template-columns:\s*repeat\(4/);
+  assert.match(styles, /@media \(min-width:\s*768px\) and \(max-height:\s*819px\)[\s\S]*?\.gha-dashboard \.gha-stage\s*\{[\s\S]*?padding-bottom:\s*72px/);
   assert.match(styles, /url\("assets\/galaxy\/hh-galaxy-map-bg-v1\.png\?v=1"\)/);
   assert.match(styles, /\.gha-copilot__rail\s*\{[\s\S]*?grid-template-rows:\s*494px\s+232px/);
   assert.match(styles, /gha-copilot-orbit-forward\s+18s\s+linear\s+infinite/);

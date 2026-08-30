@@ -110,18 +110,18 @@
     var minimized = runtime.minimized.includes(id);
     var active = runtime.activeId === id;
     var stored = runtime.positions[id] || {};
-    var defaults = [[3.5, 1.8], [41.1, 1.7], [71.8, 61.7]];
+    var defaults = [[3.5, 1.8], [41.1, 1.7], [71.8, 62.5]];
     var position = defaults[index] || [10 + index * 12, 9 + index * 9];
     var x = Number.isFinite(Number(stored.x)) ? Math.max(0, Math.min(72, Number(stored.x))) : position[0];
     var y = Number.isFinite(Number(stored.y)) ? Math.max(0, Math.min(62, Number(stored.y))) : position[1];
     var footer = app.id === "ai"
       ? '<footer class="gwd-ai-launchbar"><span>Mở ứng dụng để nhập câu hỏi…</span><button type="button" data-gwd-route="' + app.route + '" aria-label="Mở HH AI Copilot">➤</button></footer>'
       : '<footer><span>' + escapeHtml(app.subtitle) + '</span><button type="button" data-gwd-route="' + app.route + '">Đi tới ứng dụng →</button></footer>';
-    return '<article class="gwd-window' + (active ? " is-active" : "") + (minimized ? " is-minimized" : "") + '" data-gwd-window="' + app.id + '" style="--app:' + app.accent + ";--x:" + x + ";--y:" + y + ';--z:' + (active ? 8 : index + 2) + '" tabindex="0"><header data-gwd-drag-handle><div><i>' + escapeHtml(app.icon) + '</i><span><strong>' + escapeHtml(app.windowTitle || app.title) + '</strong></span></div><nav><button type="button" data-gwd-action="minimize" data-gwd-id="' + app.id + '" aria-label="' + (minimized ? "Khôi phục" : "Thu nhỏ") + '">−</button><button type="button" data-gwd-action="close" data-gwd-id="' + app.id + '" aria-label="Đóng">×</button></nav></header><section class="gwd-window-body">' + windowBody(runtime, app) + '</section>' + footer + '</article>';
+    return '<article class="gwd-window' + (active ? " is-active" : "") + (minimized ? " is-minimized" : "") + '" data-gwd-window="' + app.id + '" style="--app:' + app.accent + ";--x:" + x + ";--y:" + y + ';--z:' + (active ? 8 : index + 2) + '" tabindex="0"><header data-gwd-drag-handle><div><i>' + escapeHtml(app.icon) + '</i><span><strong>' + escapeHtml(app.windowTitle || app.title) + '</strong></span></div><nav><button type="button" data-gwd-action="minimize" data-gwd-id="' + app.id + '" aria-label="' + (minimized ? "Khôi phục" : "Thu nhỏ") + '">' + (minimized ? "+" : "−") + '</button><button type="button" data-gwd-action="close" data-gwd-id="' + app.id + '" aria-label="Đóng">×</button></nav></header><section class="gwd-window-body">' + windowBody(runtime, app) + '</section>' + footer + '</article>';
   }
 
   function dockMarkup(runtime) {
-    return '<nav class="gwd-dock" aria-label="Ứng dụng Web Desktop"><span class="gwd-dock-brand"><b aria-hidden="true"><i></i><i></i><i></i><i></i></b><span><strong>HH WEB DESKTOP</strong><small>Launcher cục bộ</small></span></span><button class="gwd-launcher" type="button" data-gwd-action="launcher" aria-label="Mở danh sách ứng dụng"><i></i><i></i><i></i><i></i></button>' + APPS.map(function (app) {
+    return '<nav class="gwd-dock" aria-label="Ứng dụng Web Desktop"><span class="gwd-dock-brand"><b aria-hidden="true"><i></i><i></i><i></i><i></i></b><span><strong>HH WEB DESKTOP</strong><small>Launcher cục bộ</small></span></span><button class="gwd-launcher" type="button" data-gwd-action="launcher" aria-label="Mở danh sách ứng dụng" aria-expanded="' + String(runtime.launcherOpen) + '"><i></i><i></i><i></i><i></i></button>' + APPS.map(function (app) {
       return '<button type="button" data-gwd-app="' + app.id + '" style="--app:' + app.accent + '" aria-label="' + escapeHtml(app.title) + '" aria-pressed="' + String(runtime.windows.includes(app.id)) + '"><span>' + escapeHtml(app.icon) + '</span><small>' + escapeHtml(app.title) + "</small></button>";
     }).join("") + '<i></i>' + timeMarkup() + "</nav>";
   }
@@ -133,9 +133,13 @@
     }).join("") + '</div><footer><span>' + runtime.windows.length + ' / ' + MAX_WINDOWS + ' cửa sổ</span><small>Engine đầy đủ chỉ chạy tại route ứng dụng.</small></footer></aside>';
   }
 
+  function emptyMarkup() {
+    return '<section class="gwd-empty"><div class="gwd-orb" aria-hidden="true"><i></i></div><strong>Chọn ứng dụng từ dock</strong><p>Launcher nhẹ giúp sắp xếp công việc mà không chạy nhiều engine cùng lúc.</p><small>0 / ' + MAX_WINDOWS + " cửa sổ đang mở</small></section>";
+  }
+
   function workspaceMarkup(runtime) {
     var windows = runtime.windows.map(function (id, index) { return windowMarkup(runtime, id, index); }).join("");
-    return '<section class="gwd-desktop" data-gwd-desktop data-gwd-paused="' + String(runtime.paused) + '"><div class="gwd-wallpaper" aria-hidden="true"><i></i><i></i><i></i></div><header class="gwd-topbar"><a href="#/home"><span>HH</span><strong>HOANG8.COM</strong><small>WEB DESKTOP</small></a><label><span>⌕</span><input type="search" data-gwd-search placeholder="Tìm ứng dụng trong dock…" aria-label="Tìm ứng dụng"></label><div>' + statusPill(runtime) + '<button type="button" data-gwd-action="disable">Tắt Desktop</button></div></header><main class="gwd-stage" data-gwd-stage>' + (windows || '<section class="gwd-empty"><div class="gwd-orb"><i></i></div><strong>Chọn ứng dụng từ dock</strong><p>Launcher nhẹ giúp sắp xếp công việc mà không chạy nhiều engine cùng lúc.</p><small>0 / ' + MAX_WINDOWS + " cửa sổ đang mở</small></section>") + '</main>' + launcherMarkup(runtime) + dockMarkup(runtime) + '<p class="gwd-notice" data-gwd-notice aria-live="polite">' + escapeHtml(runtime.notice || "") + "</p></section>";
+    return '<section class="gwd-desktop" data-gwd-desktop data-gwd-paused="' + String(runtime.paused) + '"><div class="gwd-wallpaper" aria-hidden="true"><i></i><i></i><i></i></div><header class="gwd-topbar"><a href="#/home"><span>HH</span><strong>HOANG8.COM</strong><small>WEB DESKTOP</small></a><label><span>⌕</span><input type="search" data-gwd-search placeholder="Tìm ứng dụng trong dock…" aria-label="Tìm ứng dụng"></label><div>' + statusPill(runtime) + '<button type="button" data-gwd-action="disable">Tắt Desktop</button></div></header><main class="gwd-stage" data-gwd-stage>' + (windows || emptyMarkup()) + '</main>' + launcherMarkup(runtime) + dockMarkup(runtime) + '<p class="gwd-notice" data-gwd-notice aria-live="polite">' + escapeHtml(runtime.notice || "") + "</p></section>";
   }
 
   function rootMarkup(runtime) {
@@ -148,6 +152,107 @@
     runtime.dragCleanup = null;
     runtime.root.innerHTML = rootMarkup(runtime);
     if (focusSelector) global.requestAnimationFrame?.(function () { runtime.root.querySelector(focusSelector)?.focus({ preventScroll: true }); });
+  }
+
+  function focusLater(runtime, selector) {
+    if (!selector) return;
+    var focus = function () { if (runtime.mounted) runtime.root.querySelector(selector)?.focus({ preventScroll: true }); };
+    if (typeof global.requestAnimationFrame === "function") global.requestAnimationFrame(focus);
+    else focus();
+  }
+
+  function syncActiveWindows(runtime) {
+    runtime.root.querySelectorAll("[data-gwd-window]").forEach(function (entry) {
+      var id = entry.dataset.gwdWindow;
+      var index = runtime.windows.indexOf(id);
+      var active = runtime.activeId === id;
+      entry.classList.toggle("is-active", active);
+      entry.style.setProperty("--z", active ? 8 : Math.max(2, index + 2));
+    });
+  }
+
+  function syncLaunchers(runtime) {
+    runtime.root.querySelectorAll(".gwd-dock [data-gwd-app]").forEach(function (button) {
+      button.setAttribute("aria-pressed", String(runtime.windows.includes(button.dataset.gwdApp)));
+    });
+    runtime.root.querySelectorAll("[data-gwd-launcher-panel] [data-gwd-app]").forEach(function (button) {
+      var state = button.querySelector("b");
+      if (state) state.textContent = runtime.windows.includes(button.dataset.gwdApp) ? "Đang mở" : "Mở";
+    });
+    var counter = runtime.root.querySelector("[data-gwd-launcher-panel] > footer > span");
+    if (counter) counter.textContent = runtime.windows.length + " / " + MAX_WINDOWS + " cửa sổ";
+    var launcher = runtime.root.querySelector('[data-gwd-action="launcher"]');
+    if (launcher) launcher.setAttribute("aria-expanded", String(runtime.launcherOpen));
+  }
+
+  function applySearchFilter(runtime, shouldAnnounce) {
+    var search = runtime.root.querySelector("[data-gwd-search]");
+    var query = String(search?.value || "").trim().toLocaleLowerCase("vi-VN");
+    var matches = new Set();
+    runtime.root.querySelectorAll("[data-gwd-app]").forEach(function (button) {
+      button.hidden = Boolean(query) && !button.textContent.toLocaleLowerCase("vi-VN").includes(query);
+      if (!button.hidden) matches.add(button.dataset.gwdApp);
+    });
+    if (shouldAnnounce) announce(runtime, query ? (matches.size ? "Tìm thấy " + matches.size + " lối mở ứng dụng phù hợp." : "Không tìm thấy ứng dụng phù hợp.") : "");
+  }
+
+  function patchLauncher(runtime, focusSelector) {
+    var desktop = runtime.root.querySelector("[data-gwd-desktop]");
+    var panel = runtime.root.querySelector("[data-gwd-launcher-panel]");
+    if (!desktop) return;
+    if (!runtime.launcherOpen) {
+      panel?.remove();
+      syncLaunchers(runtime);
+      applySearchFilter(runtime, false);
+      focusLater(runtime, focusSelector);
+      return;
+    }
+    if (!panel) {
+      var dock = desktop.querySelector(".gwd-dock");
+      if (dock) dock.insertAdjacentHTML("beforebegin", launcherMarkup(runtime));
+    }
+    syncLaunchers(runtime);
+    applySearchFilter(runtime, false);
+    focusLater(runtime, focusSelector);
+  }
+
+  function insertWindow(runtime, id) {
+    var stage = runtime.root.querySelector("[data-gwd-stage]");
+    if (!stage) return;
+    stage.querySelector(".gwd-empty")?.remove();
+    stage.insertAdjacentHTML("beforeend", windowMarkup(runtime, id, runtime.windows.indexOf(id)));
+  }
+
+  function removeWindow(runtime, id) {
+    var stage = runtime.root.querySelector("[data-gwd-stage]");
+    if (!stage) return;
+    stage.querySelector('[data-gwd-window="' + id + '"]')?.remove();
+    if (!runtime.windows.length && !stage.querySelector(".gwd-empty")) stage.insertAdjacentHTML("beforeend", emptyMarkup());
+  }
+
+  function restoreWindow(runtime, id) {
+    var node = runtime.root.querySelector('[data-gwd-window="' + id + '"]');
+    if (!node) return;
+    node.classList.remove("is-minimized");
+    var control = node.querySelector('[data-gwd-action="minimize"]');
+    if (control) { control.setAttribute("aria-label", "Thu nhỏ"); control.textContent = "−"; }
+  }
+
+  function toggleMinimize(runtime, id) {
+    if (!runtime.windows.includes(id)) return;
+    var minimized = runtime.minimized.includes(id);
+    runtime.minimized = minimized ? runtime.minimized.filter(function (entry) { return entry !== id; }) : runtime.minimized.concat(id);
+    runtime.activeId = id;
+    save(runtime);
+    var node = runtime.root.querySelector('[data-gwd-window="' + id + '"]');
+    if (node) {
+      node.classList.toggle("is-minimized", !minimized);
+      var control = node.querySelector('[data-gwd-action="minimize"]');
+      if (control) { control.setAttribute("aria-label", minimized ? "Thu nhỏ" : "Khôi phục"); control.textContent = minimized ? "−" : "+"; }
+    }
+    syncActiveWindows(runtime);
+    syncLaunchers(runtime);
+    focusLater(runtime, '[data-gwd-window="' + id + '"]');
   }
 
   function announce(runtime, message) {
@@ -178,19 +283,20 @@
     if (runtime.windows.includes(id)) {
       runtime.activeId = id;
       runtime.minimized = runtime.minimized.filter(function (entry) { return entry !== id; });
-      runtime.launcherOpen = false; save(runtime); render(runtime, '[data-gwd-window="' + id + '"]'); return;
+      runtime.launcherOpen = false; save(runtime); restoreWindow(runtime, id); patchLauncher(runtime); syncActiveWindows(runtime); syncLaunchers(runtime); focusLater(runtime, '[data-gwd-window="' + id + '"]'); return;
     }
     if (runtime.windows.length >= MAX_WINDOWS) { announce(runtime, "Đã đạt giới hạn 3 launcher. Hãy đóng một cửa sổ trước khi mở ứng dụng khác."); return; }
     runtime.windows.push(id); runtime.activeId = id; runtime.minimized = runtime.minimized.filter(function (entry) { return entry !== id; }); runtime.launcherOpen = false;
-    save(runtime); render(runtime, '[data-gwd-window="' + id + '"]');
+    save(runtime); insertWindow(runtime, id); patchLauncher(runtime); syncActiveWindows(runtime); syncLaunchers(runtime); focusLater(runtime, '[data-gwd-window="' + id + '"]');
   }
 
   function closeApp(runtime, id) {
+    if (!runtime.windows.includes(id)) return;
     runtime.windows = runtime.windows.filter(function (entry) { return entry !== id; });
     runtime.minimized = runtime.minimized.filter(function (entry) { return entry !== id; });
     delete runtime.positions[id];
     runtime.activeId = runtime.windows.at(-1) || "";
-    save(runtime); render(runtime, "[data-gwd-app]");
+    save(runtime); removeWindow(runtime, id); syncActiveWindows(runtime); syncLaunchers(runtime); focusLater(runtime, runtime.activeId ? '[data-gwd-window="' + runtime.activeId + '"]' : "[data-gwd-app]");
   }
 
   function formatBytes(value) {
@@ -210,12 +316,14 @@
       var estimate = await global.navigator?.storage?.estimate?.();
       if (estimate) evidence.storage = formatBytes(estimate.usage) + (estimate.quota ? " / " + formatBytes(estimate.quota) : "");
     } catch (error) { /* unsupported */ }
+    if (!runtime.mounted) return;
     var connection = global.navigator?.connection || global.navigator?.mozConnection || global.navigator?.webkitConnection;
     if (connection) evidence.connection = [connection.effectiveType, Number.isFinite(connection.downlink) ? connection.downlink + " Mbps do trình duyệt ước lượng" : ""].filter(Boolean).join(" · ");
     try {
       var battery = await global.navigator?.getBattery?.();
       if (battery) evidence.battery = Math.round(battery.level * 100) + "%" + (battery.charging ? " · đang sạc" : "");
     } catch (error) { /* unsupported */ }
+    if (!runtime.mounted) return;
     evidence.serviceWorker = global.navigator?.serviceWorker?.controller ? "Đang điều khiển trang" : ("serviceWorker" in (global.navigator || {}) ? "Chưa điều khiển trang" : "Không hỗ trợ");
     runtime.evidence = evidence;
     updateSystemEvidence(runtime);
@@ -272,40 +380,31 @@
       var action = event.target.closest("[data-gwd-action]"); if (!action) return;
       var id = action.dataset.gwdId;
       if (action.dataset.gwdAction === "enable") { runtime.enabled = true; save(runtime); render(runtime, "[data-gwd-app]"); collectEvidence(runtime); return; }
-      if (action.dataset.gwdAction === "launcher") { runtime.launcherOpen = !runtime.launcherOpen; render(runtime, runtime.launcherOpen ? "[data-gwd-launcher-panel] button" : ".gwd-launcher"); return; }
-      if (action.dataset.gwdAction === "launcher-close") { runtime.launcherOpen = false; render(runtime, ".gwd-launcher"); return; }
+      if (action.dataset.gwdAction === "launcher") { runtime.launcherOpen = !runtime.launcherOpen; patchLauncher(runtime, runtime.launcherOpen ? "[data-gwd-launcher-panel] button" : ".gwd-launcher"); return; }
+      if (action.dataset.gwdAction === "launcher-close") { runtime.launcherOpen = false; patchLauncher(runtime, ".gwd-launcher"); return; }
       if (action.dataset.gwdAction === "disable") {
         var approved = typeof global.confirm !== "function" || global.confirm("Tắt Web Desktop? Bố cục launcher sẽ được giữ lại để bạn có thể bật lại sau.");
         if (!approved) return;
         runtime.enabled = false; save(runtime); render(runtime, '[data-gwd-action="enable"]'); return;
       }
       if (action.dataset.gwdAction === "close") { closeApp(runtime, id); return; }
-      if (action.dataset.gwdAction === "minimize") {
-        runtime.minimized = runtime.minimized.includes(id) ? runtime.minimized.filter(function (entry) { return entry !== id; }) : runtime.minimized.concat(id);
-        runtime.activeId = id; save(runtime); render(runtime, '[data-gwd-window="' + id + '"]'); return;
-      }
+      if (action.dataset.gwdAction === "minimize") { toggleMinimize(runtime, id); return; }
     }, options);
     runtime.root.addEventListener("pointerdown", function (event) {
       var node = event.target.closest("[data-gwd-window]");
       if (!node) return;
       var id = node.dataset.gwdWindow;
-      if (runtime.activeId !== id) { runtime.activeId = id; save(runtime); runtime.root.querySelectorAll("[data-gwd-window]").forEach(function (entry) { entry.classList.toggle("is-active", entry === node); entry.style.setProperty("--z", entry === node ? 8 : 2); }); }
+      if (runtime.activeId !== id) { runtime.activeId = id; save(runtime); syncActiveWindows(runtime); }
       if (event.target.closest("[data-gwd-drag-handle]") && !event.target.closest("button")) startDrag(runtime, event, node);
     }, options);
     runtime.root.addEventListener("input", function (event) {
       if (event.target.matches("[data-gwd-note]")) { var saved = writeNote(event.target.value); var state = runtime.root.querySelector("[data-gwd-note-state]"); if (state) state.textContent = saved ? "Đã lưu trên thiết bị" : "Không thể lưu trên thiết bị"; return; }
       if (event.target.matches("[data-gwd-search]")) {
-        var query = event.target.value.trim().toLocaleLowerCase("vi-VN");
-        var matches = 0;
-        runtime.root.querySelectorAll("[data-gwd-app]").forEach(function (button) {
-          button.hidden = Boolean(query) && !button.textContent.toLocaleLowerCase("vi-VN").includes(query);
-          if (!button.hidden) matches += 1;
-        });
-        announce(runtime, query ? (matches ? "Tìm thấy " + matches + " lối mở ứng dụng phù hợp." : "Không tìm thấy ứng dụng phù hợp.") : "");
+        applySearchFilter(runtime, true);
       }
     }, options);
     runtime.root.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && runtime.launcherOpen) { runtime.launcherOpen = false; render(runtime, ".gwd-launcher"); }
+      if (event.key === "Escape" && runtime.launcherOpen) { runtime.launcherOpen = false; patchLauncher(runtime, ".gwd-launcher"); }
     }, options);
     global.document?.addEventListener("visibilitychange", function () {
       runtime.paused = Boolean(global.document.hidden);

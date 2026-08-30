@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v945";
+const CACHE = "hh-identity-portal-v946";
+// Compatibility marker for the previous Galaxy fit and lifecycle hardening release: hh-identity-portal-v945.
 // Compatibility marker for the previous Galaxy reference refinement release: hh-identity-portal-v944.
 // Compatibility marker for the previous Galaxy functional refinement release: hh-identity-portal-v943.
 // Compatibility marker for the previous Galaxy Golden QA release: hh-identity-portal-v942.
@@ -265,17 +266,17 @@ const RUNTIME_ASSETS = [
   "./galaxy-design-system.css?v=1",
   "./galaxy-shell.css?v=5",
   "./galaxy-shell.js?v=5",
-  "./galaxy-home-ai.css?v=10",
+  "./galaxy-home-ai.css?v=11",
   "./galaxy-home-ai.js?v=10",
   "./assets/galaxy/hh-galaxy-map-bg-v1.png?v=1",
   "./assets/galaxy/hh-luminous-planet-v1.webp?v=1",
   "./assets/galaxy/hh-stellar-core-v1.webp?v=1",
-  "./galaxy-domain-views.css?v=6",
+  "./galaxy-domain-views.css?v=7",
   "./galaxy-domain-views.js?v=5",
-  "./galaxy-community-showcase.css?v=4",
-  "./galaxy-community-showcase.js?v=4",
-  "./galaxy-web-desktop.css?v=4",
-  "./galaxy-web-desktop.js?v=4",
+  "./galaxy-community-showcase.css?v=5",
+  "./galaxy-community-showcase.js?v=5",
+  "./galaxy-web-desktop.css?v=5",
+  "./galaxy-web-desktop.js?v=5",
   "./galaxy-planet-hubs.css?v=1",
   "./galaxy-planet-hubs.js?v=1",
   "./assets/galaxy/hh-ambient-room-rainy-v1.png?v=1",
@@ -578,7 +579,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=586",
+  "./performance-loader.js?v=587",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=259"

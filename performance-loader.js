@@ -63,20 +63,20 @@
       ]
     },
     "galaxy-home-ai": {
-      styles: ["galaxy-home-ai.css?v=10"],
+      styles: ["galaxy-home-ai.css?v=11"],
       scripts: ["galaxy-home-ai.js?v=10"]
     },
     "galaxy-domain-views": {
-      styles: ["galaxy-domain-views.css?v=6"],
+      styles: ["galaxy-domain-views.css?v=7"],
       scripts: ["galaxy-domain-views.js?v=5"]
     },
     "galaxy-community-showcase": {
-      styles: ["galaxy-community-showcase.css?v=4"],
-      scripts: ["galaxy-community-showcase.js?v=4"]
+      styles: ["galaxy-community-showcase.css?v=5"],
+      scripts: ["galaxy-community-showcase.js?v=5"]
     },
     "galaxy-web-desktop": {
-      styles: ["galaxy-web-desktop.css?v=4"],
-      scripts: ["galaxy-web-desktop.js?v=4"]
+      styles: ["galaxy-web-desktop.css?v=5"],
+      scripts: ["galaxy-web-desktop.js?v=5"]
     },
     "galaxy-planet-hubs": {
       styles: ["galaxy-planet-hubs.css?v=1"],

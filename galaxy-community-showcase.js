@@ -149,8 +149,13 @@
   }
 
   function authUser() {
-    try { return JSON.parse(global.localStorage && global.localStorage.getItem("hh-auth-user") || "{}"); }
-    catch (error) { return {}; }
+    try {
+      var authenticated = global.HHAuthSession && typeof global.HHAuthSession.user === "function" ? global.HHAuthSession.user() : null;
+      if (authenticated && typeof authenticated === "object") return authenticated;
+      var stored = JSON.parse(global.localStorage && global.localStorage.getItem("hh-auth-user") || "null");
+      if (stored && typeof stored === "object") return stored;
+      return JSON.parse(global.sessionStorage && global.sessionStorage.getItem("hh.auth.guest-user") || "{}");
+    } catch (error) { return {}; }
   }
 
   function initials(name) {
@@ -222,7 +227,7 @@
 
   function topbarMarkup(runtime) {
     return '<header class="gcs-topbar"><label><span>⌕</span><input type="search" data-gcs-search maxlength="120" placeholder="Tìm dự án, tác phẩm hoặc tác giả…" aria-label="Tìm trong Community Showcase"></label>' +
-      '<div>' + statusMarkup(runtime) + '<button type="button" data-gcs-action="refresh" aria-label="Tải lại">↻</button><button class="gcs-primary" type="button" data-gcs-action="compose">＋ Chia sẻ tác phẩm</button></div></header>';
+      '<div>' + statusMarkup(runtime) + '<button type="button" data-gcs-action="refresh" aria-label="Tải lại"' + (runtime.capability === "loading" ? ' disabled aria-busy="true"' : "") + '>↻</button><button class="gcs-primary" type="button" data-gcs-action="compose">＋ Chia sẻ tác phẩm</button></div></header>';
   }
 
   function metricMarkup(label, value, icon) {
@@ -304,7 +309,7 @@
     var body;
     if (runtime.capability === "loading" || !items.length) body = emptyShowcaseMarkup(runtime);
     else body = '<section class="gcs-grid' + (runtime.view === "list" ? " is-list" : "") + '" data-gcs-grid data-gcs-view="' + runtime.view + '">' + items.map(itemCard).join("") + '</section><section class="gcs-no-match" data-gcs-no-match hidden><strong>Không tìm thấy nội dung phù hợp</strong><p>Hãy đổi từ khóa hoặc bộ lọc.</p></section>';
-    return '<main class="gcs-main" data-gcs-active-view="' + runtime.view + '">' +
+    return '<main class="gcs-main" id="gcs-showcase-main" tabindex="-1" data-gcs-active-view="' + runtime.view + '">' +
       '<section class="gcs-title"><div><span>COMMUNITY</span><h1>COMMUNITY <em>SHOWCASE - CỘNG ĐỒNG HH</em></h1><p>Khám phá dự án, tác phẩm và cuộc trò chuyện từ nguồn Community đã kết nối.</p></div><button type="button" data-gcs-action="compose">⇧ Chia sẻ</button></section>' +
       '<nav class="gcs-tabs" aria-label="Lọc loại nội dung">' + FILTERS.map(function (filter) { return '<button type="button" data-gcs-filter="' + filter[0] + '" aria-pressed="' + String(runtime.filter === filter[0]) + '">' + escapeHtml(filter[1]) + '</button>'; }).join("") + '<select data-gcs-sort aria-label="Sắp xếp"><option value="newest"' + (runtime.sort === "newest" ? " selected" : "") + '>Mới nhất</option><option value="oldest"' + (runtime.sort === "oldest" ? " selected" : "") + '>Cũ nhất</option></select><span class="gcs-view-switch" role="group" aria-label="Kiểu hiển thị"><button type="button" data-gcs-view="grid" aria-pressed="' + String(runtime.view !== "list") + '" aria-label="Dạng lưới">▦</button><button type="button" data-gcs-view="list" aria-pressed="' + String(runtime.view === "list") + '" aria-label="Dạng danh sách">☷</button></span></nav>' +
       '<div class="gcs-layout"><section class="gcs-feed">' + body + (metrics ? '<section class="gcs-metrics">' + metrics + '</section>' : emptyMetricsMarkup()) + '</section>' +
@@ -313,7 +318,7 @@
   }
 
   function rootMarkup(runtime) {
-    return '<section class="gcs-root" data-gcs-root data-gcs-capability="' + runtime.capability + '"><div class="gcs-space" aria-hidden="true"><i></i><i></i></div>' + sidebarMarkup(runtime) + '<div class="gcs-workspace">' + topbarMarkup(runtime) + '<div data-gcs-content>' + contentMarkup(runtime) + '</div></div><dialog class="gcs-dialog" data-gcs-dialog aria-label="Hộp thoại Community"></dialog><p class="gcs-live" data-gcs-live aria-live="polite"></p></section>';
+    return '<section class="gcs-root" data-gcs-root data-gcs-capability="' + runtime.capability + '" aria-busy="' + String(runtime.capability === "loading") + '"><button class="gcs-skip" type="button" data-gcs-skip>Bỏ qua điều hướng</button><div class="gcs-space" aria-hidden="true"><i></i><i></i></div>' + sidebarMarkup(runtime) + '<div class="gcs-workspace">' + topbarMarkup(runtime) + '<div data-gcs-content>' + contentMarkup(runtime) + '</div></div><dialog class="gcs-dialog" data-gcs-dialog aria-label="Hộp thoại Community"></dialog><p class="gcs-live" data-gcs-live aria-live="polite"></p></section>';
   }
 
   function render(runtime, preserveFocus) {
@@ -324,7 +329,15 @@
       if (container) container.innerHTML = contentMarkup(runtime);
       var status = runtime.root.querySelector(".gcs-topbar .gcs-status");
       if (status) status.outerHTML = statusMarkup(runtime);
-      runtime.root.querySelector("[data-gcs-root]").dataset.gcsCapability = runtime.capability;
+      var shell = runtime.root.querySelector("[data-gcs-root]");
+      shell.dataset.gcsCapability = runtime.capability;
+      shell.setAttribute("aria-busy", String(runtime.capability === "loading"));
+      var refreshButton = runtime.root.querySelector('.gcs-topbar [data-gcs-action="refresh"]');
+      if (refreshButton) {
+        refreshButton.disabled = runtime.capability === "loading";
+        if (refreshButton.disabled) refreshButton.setAttribute("aria-busy", "true");
+        else refreshButton.removeAttribute("aria-busy");
+      }
     }
     applyFilters(runtime);
     var revealed = revealRequestedPost(runtime);
@@ -348,12 +361,13 @@
 
   async function requestPayload(runtime) {
     var adapter = runtime.options.adapter;
-    if (adapter && typeof adapter.loadShowcase === "function") return adapter.loadShowcase({ signal: runtime.controller && runtime.controller.signal });
+    var signal = runtime.requestController && runtime.requestController.signal || runtime.controller && runtime.controller.signal;
+    if (adapter && typeof adapter.loadShowcase === "function") return adapter.loadShowcase({ signal: signal });
     if (global.HHCommunity && typeof global.HHCommunity.api === "function") return global.HHCommunity.api({ query: "?feed=ranked" });
     var base = String(runtime.options.apiBase || global.HH_REALTIME_URL || global.HH_API_BASE || "").replace(/\/$/, "");
     if (!base) throw Object.assign(new Error("Cần cấu hình Community API để tải nội dung thật."), { code: "CONFIG_REQUIRED" });
     var token = global.HHAuthSession && global.HHAuthSession.token && global.HHAuthSession.token();
-    var response = await global.fetch(base + "/api/community?feed=ranked", { cache: "no-store", signal: runtime.controller && runtime.controller.signal, headers: token ? { Authorization: "Bearer " + token } : {} });
+    var response = await global.fetch(base + "/api/community?feed=ranked", { cache: "no-store", signal: signal, headers: token ? { Authorization: "Bearer " + token } : {} });
     var data = await response.json().catch(function () { return {}; });
     if (!response.ok) throw new Error(data.error || "Community API không phản hồi.");
     return data;
@@ -361,12 +375,15 @@
 
   async function refresh(runtime) {
     if (!runtime || !runtime.mounted) return false;
+    runtime.requestController?.abort();
+    runtime.requestController = typeof AbortController === "function" ? new AbortController() : null;
+    var requestId = ++runtime.requestId;
     runtime.capability = "loading";
     runtime.message = "";
     render(runtime);
     try {
       var payload = await requestPayload(runtime);
-      if (!runtime.mounted) return false;
+      if (!runtime.mounted || requestId !== runtime.requestId) return false;
       runtime.data = payloadData(payload);
       sortItems(runtime);
       runtime.capability = runtime.data.items.length ? "ready" : "empty";
@@ -376,7 +393,7 @@
       announce(runtime, "Đã tải lại Community Showcase.");
       return true;
     } catch (error) {
-      if (!runtime.mounted || error && error.name === "AbortError") return false;
+      if (!runtime.mounted || requestId !== runtime.requestId || error && error.name === "AbortError") return false;
       var cache = cachedPayload();
       if (cache) {
         runtime.data = payloadData(cache);
@@ -384,7 +401,7 @@
         runtime.message = "Đang hiển thị bản sao từ lần đồng bộ gần nhất.";
       } else {
         runtime.capability = error && error.code === "CONFIG_REQUIRED" ? "configuration-required" : (global.navigator && global.navigator.onLine === false ? "offline" : "error");
-        runtime.message = String(error && error.message || "Không thể tải Community Showcase.");
+        runtime.message = error && error.name === "TypeError" ? "Máy chủ Community chưa phản hồi. Hãy kiểm tra kết nối hoặc thử lại." : String(error && error.message || "Không thể tải Community Showcase.");
       }
       render(runtime, '[data-gcs-action="refresh"]');
       announce(runtime, runtime.message);
@@ -417,17 +434,24 @@
   function openDialog(runtime, markup, labelId) {
     var dialog = runtime.root.querySelector("[data-gcs-dialog]");
     if (!dialog) return null;
+    runtime.dialogOpener = global.document && global.document.activeElement;
     dialog.innerHTML = markup;
     if (labelId) dialog.setAttribute("aria-labelledby", labelId); else dialog.removeAttribute("aria-labelledby");
     if (typeof dialog.showModal === "function") dialog.showModal(); else dialog.setAttribute("open", "");
     return dialog;
   }
 
-  function closeDialog(dialog) {
+  function closeDialog(dialog, runtime, restoreFocus) {
     if (!dialog) return;
-    if (typeof dialog.close === "function") dialog.close(); else dialog.removeAttribute("open");
+    var opener = runtime && runtime.dialogOpener;
+    if (runtime) runtime.dialogOpener = null;
+    if (dialog.hasAttribute("open") && typeof dialog.close === "function") dialog.close(); else dialog.removeAttribute("open");
     dialog.innerHTML = "";
     dialog.removeAttribute("aria-labelledby");
+    if (restoreFocus !== false && opener && opener.isConnected) {
+      if (global.requestAnimationFrame) global.requestAnimationFrame(function () { if (opener.isConnected) opener.focus({ preventScroll: true }); });
+      else opener.focus();
+    }
   }
 
   function detailMarkup(item) {
@@ -464,6 +488,12 @@
   }
 
   async function handleAction(runtime, event) {
+    var skip = event.target.closest("[data-gcs-skip]");
+    if (skip) {
+      event.preventDefault();
+      runtime.root.querySelector("#gcs-showcase-main")?.focus({ preventScroll: true });
+      return;
+    }
     var route = event.target.closest("[data-gcs-route]");
     if (route) { navigate(runtime, route.dataset.gcsRoute); return; }
     var filter = event.target.closest("[data-gcs-filter]");
@@ -513,9 +543,12 @@
     var options = signal ? { signal: signal } : undefined;
     runtime.root.addEventListener("click", function (event) {
       var close = event.target.closest("[data-gcs-dialog-close]");
-      if (close) { closeDialog(close.closest("dialog")); return; }
+      if (close) { closeDialog(close.closest("dialog"), runtime); return; }
       handleAction(runtime, event).catch(function (error) { announce(runtime, String(error.message || error)); });
     }, options);
+    runtime.root.addEventListener("close", function (event) {
+      if (event.target.matches("[data-gcs-dialog]")) closeDialog(event.target, runtime);
+    }, { capture: true, ...(signal ? { signal: signal } : {}) });
     runtime.root.addEventListener("input", function (event) { if (event.target.matches("[data-gcs-search]")) applyFilters(runtime); }, options);
     runtime.root.addEventListener("change", function (event) {
       if (!event.target.matches("[data-gcs-sort]")) return;
@@ -530,7 +563,7 @@
       var button = form.querySelector('[type="submit"]');
       var values = Object.fromEntries(new FormData(form));
       button.disabled = true;
-      mutate(runtime, { action: "create", content: String(values.content || "").trim(), topic: values.topic, privacy: values.privacy, mediaUrl: safeUrl(values.mediaUrl), mediaType: /\.(mp4|webm|mov)(?:$|\?)/i.test(values.mediaUrl || "") ? "video" : "image" }).then(function () { closeDialog(form.closest("dialog")); return refresh(runtime); }).catch(function (error) { announce(runtime, String(error.message || error)); button.disabled = false; });
+      mutate(runtime, { action: "create", content: String(values.content || "").trim(), topic: values.topic, privacy: values.privacy, mediaUrl: safeUrl(values.mediaUrl), mediaType: /\.(mp4|webm|mov)(?:$|\?)/i.test(values.mediaUrl || "") ? "video" : "image" }).then(function () { closeDialog(form.closest("dialog"), runtime); return refresh(runtime); }).catch(function (error) { announce(runtime, String(error.message || error)); button.disabled = false; });
     }, options);
     global.document?.addEventListener("visibilitychange", function () {
       var root = runtime.root.querySelector("[data-gcs-root]");
@@ -546,6 +579,7 @@
     var runtime = {
       root: root, options: options, route: ROUTE, mounted: true,
       controller: typeof AbortController === "function" ? new AbortController() : null,
+      requestController: null, requestId: 0, dialogOpener: null,
       capability: cached ? "cached" : "loading", data: cached ? payloadData(cached) : payloadData({}),
       filter: "all", view: options.view === "list" ? "list" : "grid", sort: options.sort === "oldest" ? "oldest" : "newest", message: cached ? "Đang xác minh dữ liệu mới với backend." : "", mountedAt: new Date().toISOString(), lastVerifiedAt: "",
       requestedPostId: postIdFromRoute(options.route), requestedPostHandled: false
@@ -566,7 +600,8 @@
       if (!runtime) return;
       runtime.mounted = false;
       runtime.controller?.abort();
-      entry.querySelectorAll("dialog[open]").forEach(closeDialog);
+      runtime.requestController?.abort();
+      entry.querySelectorAll("dialog[open]").forEach(function (dialog) { closeDialog(dialog, runtime, false); });
       delete entry.dataset.gcsMounted;
       entry.replaceChildren();
       instances.delete(entry); mountedRoots.delete(entry);
