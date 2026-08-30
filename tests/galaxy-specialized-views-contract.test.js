@@ -1,0 +1,260 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const test = require("node:test");
+
+const root = path.resolve(__dirname, "..");
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const communitySource = read("galaxy-community-showcase.js");
+const communityStyles = read("galaxy-community-showcase.css");
+const desktopSource = read("galaxy-web-desktop.js");
+const desktopStyles = read("galaxy-web-desktop.css");
+const loaderSource = read("performance-loader.js");
+const routerSource = read("script.js");
+const serviceWorkerSource = read("sw.js");
+const indexSource = read("index.html");
+const shellStyles = read("galaxy-shell.css");
+const community = require("../galaxy-community-showcase.js");
+const desktop = require("../galaxy-web-desktop.js");
+const functionBlock = (source, name, nextName) => {
+  const start = source.indexOf(`function ${name}(`);
+  const end = source.indexOf(`function ${nextName}(`, start + 1);
+  assert.notEqual(start, -1, `${name} must exist`);
+  assert.notEqual(end, -1, `${nextName} must follow ${name}`);
+  return source.slice(start, end);
+};
+
+test("specialized views own only their canonical route and lifecycle API", () => {
+  assert.equal(community.canHandle("/communication/community"), true);
+  assert.equal(community.canHandle("#/communication/community?post=42"), true);
+  assert.equal(community.canHandle("/galaxy/community"), false);
+  assert.equal(desktop.canHandle("/system/desktop"), true);
+  assert.equal(desktop.canHandle("#/system/desktop"), true);
+  assert.equal(desktop.canHandle("/system"), false);
+  for (const api of [community, desktop]) {
+    for (const method of ["mount", "unmount", "canHandle", "getState"]) assert.equal(typeof api[method], "function", method);
+    assert.ok(Object.isFrozen(api));
+  }
+});
+
+test("Community Showcase normalizes only supplied backend evidence", () => {
+  const data = community.normalizePayload({
+    posts: [{
+      id: "real-post", title: "Dự án thật", type: "project", reactionCount: 7,
+      comments: [{ id: "c1" }], author: { id: "author-1", name: "Tác giả", followerCount: 12 }
+    }],
+    featuredCreator: { id: "author-1", name: "Tác giả", followerCount: 12 },
+    leaderboard: [{ id: "author-1", name: "Tác giả", followerCount: 12 }],
+    stats: { projects: 1, creators: 1 }
+  });
+  assert.equal(data.items.length, 1);
+  assert.equal(data.items[0].reactions, 7);
+  assert.equal(data.items[0].comments, 1);
+  assert.equal(data.featured.followers, 12);
+  assert.equal(data.leaderboard[0].followers, 12);
+  assert.deepEqual(data.stats, { projects: 1, creators: 1 });
+
+  const empty = community.normalizePayload({});
+  assert.deepEqual(empty.items, []);
+  assert.deepEqual(empty.leaderboard, []);
+  assert.deepEqual(empty.stats, {});
+});
+
+test("Community uses real adapter/API states and contains no fabricated showcase counters", () => {
+  for (const state of ["loading", "ready", "cached", "empty", "offline", "configuration-required", "error"]) {
+    assert.match(communitySource, new RegExp(state.replace("-", "\\-")), state);
+  }
+  assert.match(communitySource, /adapter\.loadShowcase/);
+  assert.match(communitySource, /global\.HHCommunity\.api/);
+  assert.match(communitySource, /\/api\/community/);
+  assert.match(communitySource, /Chỉ hiển thị lượt tương tác/);
+  assert.match(communitySource, /Không tạo thứ hạng hoặc điểm số minh họa/);
+  assert.doesNotMatch(communitySource, /12\.5K|89\.2K|45,672|2,847|1\.2M|Premium Member|AI Architect/);
+  assert.doesNotMatch(communitySource, /Math\.random/);
+  assert.doesNotMatch(communitySource, /<iframe|window\.open\s*\(/i);
+  assert.match(communitySource, /data-gcs-view="grid"/);
+  assert.match(communitySource, /data-gcs-view="list"/);
+  assert.match(communitySource, /data-gcs-search/);
+  assert.match(communitySource, /data-gcs-filter/);
+  assert.match(communitySource, /data-gcs-sort/);
+  assert.match(communitySource, /runtime\.filter === filter\[0\]/);
+  assert.match(communitySource, /runtime\.sort === "oldest"/);
+  assert.match(communitySource, /data-gcs-empty-state/);
+});
+
+test("Community external media and displayed text are constrained", () => {
+  assert.match(communitySource, /function safeUrl\(value\)/);
+  assert.match(communitySource, /\["http:", "https:", "blob:"\]/);
+  assert.match(communitySource, /function escapeHtml\(value\)/);
+  assert.doesNotMatch(communitySource, /src="\$\{[^}]*thumbnail/);
+  assert.match(communitySource, /AbortController/);
+  assert.match(communitySource, /controller\?\.abort/);
+  assert.match(communitySource, /replaceChildren\(\)/);
+});
+
+test("Web Desktop is explicit opt-in with a three-launcher resource governor", () => {
+  assert.equal(desktop.MAX_WINDOWS, 3);
+  assert.equal(desktop.apps.length, 6);
+  assert.equal(new Set(desktop.apps.map((app) => app.id)).size, desktop.apps.length);
+  desktop.apps.forEach((app) => {
+    assert.match(app.route, /^\/[a-z0-9/-]+$/i);
+    assert.ok(app.title);
+  });
+  assert.match(desktopSource, /value\.enabled === true/);
+  assert.match(desktopSource, /var MAX_WINDOWS = 3/);
+  assert.match(desktopSource, /runtime\.windows\.length >= MAX_WINDOWS/);
+  assert.match(desktopSource, /data-gwd-action="enable"/);
+  assert.match(desktopSource, /data-gwd-action="disable"/);
+  assert.match(desktopSource, /data-gwd-action="launcher"/);
+  assert.match(desktopSource, /data-gwd-action="minimize"/);
+  assert.match(desktopSource, /data-gwd-action="close"/);
+  assert.match(desktopSource, /data-gwd-search/);
+  assert.match(desktopSource, /Không tìm thấy ứng dụng phù hợp/);
+  assert.match(desktopSource, /Launcher nhẹ/);
+  assert.match(desktopSource, /Không tự phát âm thanh, video hoặc mở AudioContext/);
+  assert.doesNotMatch(desktopSource, /new AudioContext|createElement\(["']iframe/);
+});
+
+test("Web Desktop reports only browser evidence and labels its measurement scope", () => {
+  assert.match(desktopSource, /performance && global\.performance\.memory/);
+  assert.match(desktopSource, /navigator\?\.storage\?\.estimate/);
+  assert.match(desktopSource, /navigator\?\.getBattery/);
+  assert.match(desktopSource, /serviceWorker/);
+  assert.match(desktopSource, /Chỉ số thuộc tab\/origin này, không phải CPU hoặc RAM toàn máy/);
+  assert.match(desktopSource, /Chưa có adapter Project/);
+  assert.doesNotMatch(desktopSource, /CPU\s*32%|RAM\s*68%|Network\s*78%|12\.5K|99\.9%/);
+  assert.doesNotMatch(desktopSource, /Math\.random/);
+});
+
+test("Web Desktop owns timers, listeners and persistent layout cleanup", () => {
+  assert.match(desktopSource, /AbortController/);
+  assert.match(desktopSource, /controller\?\.abort/);
+  assert.match(desktopSource, /clearInterval/);
+  assert.match(desktopSource, /visibilitychange/);
+  assert.match(desktopSource, /entry\.replaceChildren\(\)/);
+  assert.match(desktopSource, /runtime\.positions/);
+  assert.match(desktopSource, /pointercancel/);
+  assert.match(desktopSource, /NOTE_KEY/);
+});
+
+test("Web Desktop evidence and visibility updates never remount the workspace", () => {
+  const evidenceUpdate = functionBlock(desktopSource, "collectEvidence", "startDrag");
+  const eventBinding = functionBlock(desktopSource, "bind", "tickClock");
+  const localEvidencePatch = functionBlock(desktopSource, "updateSystemEvidence", "updateVisibilityState");
+  const localVisibilityPatch = functionBlock(desktopSource, "updateVisibilityState", "openApp");
+
+  assert.doesNotMatch(evidenceUpdate, /\brender\s*\(/);
+  assert.doesNotMatch(eventBinding.match(/visibilitychange[\s\S]*?\}, options\);/)[0], /\brender\s*\(/);
+  assert.doesNotMatch(localEvidencePatch, /runtime\.root\.innerHTML|rootMarkup\(|\brender\s*\(/);
+  assert.doesNotMatch(localVisibilityPatch, /runtime\.root\.innerHTML|rootMarkup\(|\brender\s*\(/);
+  assert.match(localEvidencePatch, /\[data-gwd-window="system"\] \.gwd-window-body/);
+  assert.match(localEvidencePatch, /body\.innerHTML = systemRows\(runtime\)/);
+  assert.match(localEvidencePatch, /scrollTop/);
+  assert.match(localVisibilityPatch, /desktop\.dataset\.gwdPaused/);
+  assert.match(localVisibilityPatch, /governor\.outerHTML = statusPill\(runtime\)/);
+  assert.match(evidenceUpdate, /updateSystemEvidence\(runtime\)/);
+  assert.match(eventBinding, /updateVisibilityState\(runtime\)/);
+});
+
+test("Web Desktop runtime preserves the mounted root during evidence and visibility patches", async () => {
+  const originalStorage = global.localStorage;
+  const originalNavigator = Object.getOwnPropertyDescriptor(global, "navigator");
+  const originalDocument = global.document;
+  let visibilityHandler = null;
+  const systemBody = { innerHTML: "", scrollTop: 17 };
+  const desktopNode = { dataset: {} };
+  const governorNode = { outerHTML: "unchanged" };
+  const root = {
+    dataset: {}, writes: 0, markup: "", listeners: [],
+    set innerHTML(value) { this.markup = value; this.writes += 1; },
+    get innerHTML() { return this.markup; },
+    querySelector(selector) {
+      if (selector === '[data-gwd-window="system"] .gwd-window-body') return systemBody;
+      if (selector === "[data-gwd-desktop]") return desktopNode;
+      if (selector === ".gwd-governor") return governorNode;
+      return null;
+    },
+    querySelectorAll() { return []; },
+    addEventListener(type, listener) { this.listeners.push([type, listener]); },
+    replaceChildren() { this.markup = ""; }
+  };
+
+  try {
+    global.localStorage = {
+      getItem(key) {
+        return key === "hh.galaxy.web-desktop.v1"
+          ? JSON.stringify({ enabled: true, windows: ["system"], activeId: "system", minimized: [], positions: {} })
+          : null;
+      },
+      setItem() {}
+    };
+    Object.defineProperty(global, "navigator", { configurable: true, value: {
+      storage: { estimate: async () => ({ usage: 1024, quota: 2048 }) },
+      getBattery: async () => ({ level: 0.75, charging: false }),
+      connection: { effectiveType: "4g", downlink: 8 },
+      serviceWorker: { controller: {} }
+    } });
+    global.document = {
+      hidden: false,
+      addEventListener(type, listener) { if (type === "visibilitychange") visibilityHandler = listener; }
+    };
+
+    assert.equal(desktop.mount(root, { route: "/system/desktop" }), true);
+    assert.equal(root.writes, 1, "mount writes the initial workspace once");
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(root.writes, 1, "evidence collection must not replace the root");
+    assert.match(systemBody.innerHTML, /Origin Storage/);
+    assert.equal(systemBody.scrollTop, 17, "local evidence patch preserves window scroll");
+
+    global.document.hidden = true;
+    visibilityHandler();
+    assert.equal(root.writes, 1, "visibility changes must not replace the root");
+    assert.equal(desktopNode.dataset.gwdPaused, "true");
+    assert.match(governorNode.outerHTML, /Tab nền · preview tạm dừng/);
+  } finally {
+    desktop.unmount(root);
+    if (originalStorage === undefined) delete global.localStorage;
+    else global.localStorage = originalStorage;
+    if (originalNavigator) Object.defineProperty(global, "navigator", originalNavigator);
+    else delete global.navigator;
+    if (originalDocument === undefined) delete global.document;
+    else global.document = originalDocument;
+  }
+});
+
+test("specialized styles remain scoped, responsive and accessible", () => {
+  assert.match(communityStyles, /\[data-gcs-root\]/);
+  assert.match(desktopStyles, /\[data-gwd-root\]/);
+  for (const styles of [communityStyles, desktopStyles]) {
+    assert.match(styles, /:focus-visible/);
+    assert.match(styles, /prefers-reduced-motion:\s*reduce/);
+    assert.match(styles, /forced-colors:\s*active/);
+    assert.match(styles, /@media \(max-width:/);
+    assert.doesNotMatch(styles, /(?:^|\n)\s*(?:html|body|:root)\s*\{/);
+    assert.doesNotMatch(styles, /(?:^|\n)\s*(?:button|input|main|article|section)\s*\{/);
+  }
+  assert.match(desktopStyles, /\.gwd-stage \{ display: flex; flex-direction: column;/);
+  assert.match(desktopStyles, /\.gwd-window \{ position: relative; inset: auto; flex: 0 0 auto; width: 100%; max-width: 100%; min-width: 0;/);
+  assert.match(communityStyles, /\.gcs-tabs select \{ position: static; margin-left: 0; \}/);
+});
+
+test("specialized views are route-lazy, router-owned and versioned for release", () => {
+  assert.match(loaderSource, /"galaxy-community-showcase"[\s\S]*galaxy-community-showcase\.css\?v=1[\s\S]*galaxy-community-showcase\.js\?v=1/);
+  assert.match(loaderSource, /"galaxy-web-desktop"[\s\S]*galaxy-web-desktop\.css\?v=1[\s\S]*galaxy-web-desktop\.js\?v=1/);
+  assert.match(loaderSource, /value === "\/communication\/community"[\s\S]{0,160}\["communication", "galaxy-community-showcase"\]/);
+  assert.match(loaderSource, /value === "\/system\/desktop"[\s\S]{0,100}\["galaxy-web-desktop"\]/);
+  assert.match(routerSource, /HHGalaxyCommunityShowcase\?\.canHandle/);
+  assert.match(routerSource, /HHGalaxyWebDesktop\?\.canHandle/);
+  assert.match(routerSource, /HHGalaxyCommunityShowcase\?\.unmount/);
+  assert.match(routerSource, /HHGalaxyWebDesktop\?\.unmount/);
+  assert.match(serviceWorkerSource, /hh-identity-portal-v940/);
+  for (const asset of ["galaxy-community-showcase.css?v=1", "galaxy-community-showcase.js?v=1", "galaxy-web-desktop.css?v=1", "galaxy-web-desktop.js?v=1"]) {
+    assert.match(serviceWorkerSource, new RegExp(asset.replaceAll(".", "\\.").replace("?", "\\?")), asset);
+  }
+  assert.match(indexSource, /performance-loader\.js\?v=581/);
+  assert.match(indexSource, /script\.js\?v=258/);
+  assert.match(indexSource, /galaxy-shell\.css\?v=4/);
+  assert.match(routerSource, /dataset\.galaxyImmersive === "true"/);
+  assert.match(shellStyles, /body\.app-shell-enabled #appShell\[data-galaxy-shell\]\[data-galaxy-immersive="true"\] ~ \.app-mobile-nav[\s\S]{0,80}display:\s*none\s*!important/);
+});

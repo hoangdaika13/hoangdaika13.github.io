@@ -1,6 +1,6 @@
 # HH Galaxy domain views — routes và capability contract
 
-`galaxy-domain-views.js` là lớp trình bày/adaptor cho sáu màn hình tham chiếu HH Galaxy. Lớp này không thay thế engine đang hoạt động, không đổi schema cũ và không tạo dữ liệu giả để lấp giao diện.
+`galaxy-domain-views.js` là lớp trình bày/adaptor dùng chung cho Creator Pipeline, Automation Builder, Project Hub và Ambient Room. Hai màn hình có lifecycle riêng được tách thành `galaxy-community-showcase.js` và `galaxy-web-desktop.js`. Các lớp này không thay thế engine đang hoạt động, không đổi schema cũ và không tạo dữ liệu giả để lấp giao diện.
 
 `galaxy-planet-hubs.js` sở hữu lớp trung chuyển cho chín hành tinh và hai khu vực tiện ích. Trên Galaxy Map, chỉ control có `data-gha-entry="hh-core"` đi tới `/home/dashboard`. Các hành tinh đi tới `/galaxy/*`, hiển thị hub độc lập rồi mới mở route engine thật; deep-link legacy vẫn được giữ nguyên.
 
@@ -33,9 +33,20 @@ window.HHGalaxyDomainViews.unmount(root);
 window.HHGalaxyDomainViews.canHandle("/music/ambient");
 window.HHGalaxyDomainViews.canHandle("/music", { includeAliases: false }); // false
 window.HHGalaxyDomainViews.getState(root);
+
+window.HHGalaxyCommunityShowcase.mount(root, {
+  route: "/communication/community",
+  apiBase: window.HH_REALTIME_URL,
+  navigate: (route) => { location.hash = `#${route}`; }
+});
+
+window.HHGalaxyWebDesktop.mount(root, {
+  route: "/system/desktop",
+  navigate: (route) => { location.hash = `#${route}`; }
+});
 ```
 
-`mount()` trả về handle có `navigate()`, `getState()` và `unmount()`. Mỗi root chỉ có một instance; mount lần nữa sẽ cleanup instance cũ trước.
+Mỗi module công khai `mount()`, `unmount()`, `canHandle()` và `getState()`. Mỗi root chỉ có một instance; mount lần nữa sẽ cleanup instance cũ trước.
 
 ## Route map
 
@@ -44,21 +55,20 @@ window.HHGalaxyDomainViews.getState(root);
 | Creator Pipeline | `/create/workflow` | `/create`, `/galaxy/creator-pipeline`, `/galaxy/creator` | Creative OS và các tool `/create/*`, `/media-design/*`, `/music-ai/*`, `/davinci-resolve/*` |
 | Automation Builder | `/work/automation-lab` | `/galaxy/automation-builder` | Work Center Automation Lab; AI Automation giữ workspace riêng |
 | Project Hub & Media Vault | `/work/projects-tasks` | `/galaxy/project-hub` | Work Center, Universal Project và Media & Design |
-| Community Showcase | `/communication/community` | `/galaxy/community-showcase`, `/galaxy/community` | Communication Community và backend Social/Realtime |
+| Community Showcase | `/communication/community` | `/galaxy/community-showcase`; `/galaxy/community` là Planet Hub | Module Community chuyên trách và backend Social/Realtime |
 | Ambient Room | `/music/ambient` | `/music`, `/galaxy/ambient-room`, `/galaxy/music` | Web Audio cục bộ; Music Planet cho dự án âm nhạc |
-| HH Web Desktop | `/system/desktop` | `/galaxy/web-desktop` | Launcher opt-in; không mount lặp engine tính năng |
+| HH Web Desktop | `/system/desktop` | `/galaxy/web-desktop` | Module Desktop chuyên trách; launcher opt-in, không mount lặp engine tính năng |
 
-Alias chỉ giúp `canHandle()` nhận route cũ/thử nghiệm. Router tích hợp nên gọi `canHandle(route, { includeAliases: false })` khi mount tự động để chỉ nhận sáu canonical route và không che engine con. Chỉ bật alias `/create`, `/music` hoặc `/galaxy/*` theo feature flag rõ ràng. Các route engine như `/create/ai-automation` và `/music-ai/ambient-room` cố ý không phải alias.
+Alias chỉ giúp `HHGalaxyDomainViews.canHandle()` nhận route cũ/thử nghiệm. Router chỉ mount Community Showcase chuyên trách tại `/communication/community` và Web Desktop chuyên trách tại `/system/desktop`; mỗi module này cố ý từ chối alias để không che Planet Hub hoặc engine con. Các route engine như `/create/ai-automation` và `/music-ai/ambient-room` cố ý không phải alias.
 
 ### Tránh vòng lặp canonical route
 
-Ba view dùng chính route của engine hiện hữu: Automation, Projects và Community. Vì router đã mount Galaxy view tại route đó, CTA chính không được gán lại cùng hash. Các nút này dùng `data-gdv-engine` và gọi `options.openEngine()`:
+Hai view dùng chính route của engine hiện hữu: Automation và Projects. Vì router đã mount Galaxy view tại route đó, CTA chính không được gán lại cùng hash. Các nút này dùng `data-gdv-engine` và gọi `options.openEngine()`:
 
 | Engine ID | Canonical route đang hiển thị | Fallback nếu không truyền `openEngine` |
 |---|---|---|
 | `automation` | `/work/automation-lab` | `/work/workflow-automation` |
 | `projects` | `/work/projects-tasks` | `/work/project-center` |
-| `community` | `/communication/community` | `/communication/command-center` |
 
 Router tích hợp nên truyền callback như sau:
 
@@ -67,7 +77,6 @@ openEngine({ id, route, host }) {
   window.HHGalaxyDomainViews.unmount(host);
   if (id === "automation") return window.HHWorkCenter?.mount(host, { view: "automation-lab" });
   if (id === "projects") return window.HHWorkCenter?.mount(host, { view: "projects-tasks" });
-  if (id === "community") return window.HHCommunicationSuite?.mount(host, { view: "community" });
   return false;
 }
 ```
@@ -97,15 +106,15 @@ Không được đổi `configuration-required`, `empty` hoặc `offline` thành
 
 ## Nguồn dữ liệu
 
-Adapter chỉ đọc các nguồn cục bộ sau:
+Domain adapter chỉ đọc các nguồn cục bộ sau:
 
 - `hh.creative-os.v1`
 - `hh-work-center-v2`
 - `hh-project-center`
 
-Adapter không ghi lại hoặc migrate ba key trên. Preference mới dùng duy nhất `hh.galaxy.domain-views.v1`, gồm opt-in Web Desktop, preset Ambient Room, mức mix và thời lượng Pomodoro.
+Adapter không ghi lại hoặc migrate ba key trên. Preset Ambient Room, mức mix và thời lượng Pomodoro dùng `hh.galaxy.domain-views.v1`. Web Desktop chuyên trách lưu opt-in/layout vào `hh.galaxy.web-desktop.v1` và ghi chú vào `hh.galaxy.web-desktop.note.v1`.
 
-Project hoặc community data từ backend có thể truyền qua `options.data`. Backend Community chỉ được báo `ready` khi thiết bị online và integration layer truyền `capabilities.community: true` sau health check. Nếu mới có `apiBase`/`HH_REALTIME_URL` nhưng chưa xác minh, trạng thái là `degraded`. Lượt thích, follower, leaderboard và số người online không được nội suy hoặc tạo mặc định.
+Project data có thể truyền qua `options.data`. Community Showcase chỉ chuyển sang `ready` sau khi adapter/backend trả payload hợp lệ; `cached` chỉ dùng khi engine Community có `lastSync` và `remotePosts` thực. Nếu thiếu API thì hiển thị `configuration-required`. Lượt thích, follower, leaderboard và số người online không được nội suy hoặc tạo mặc định.
 
 Cloud chỉ được báo `ready` khi integration layer truyền `capabilities.cloud: true` (sau OAuth/provider health check). Dung lượng browser lấy trực tiếp từ `navigator.storage.estimate()`; nếu không có quota thì hiển thị `degraded`, không tạo phần trăm minh họa.
 
@@ -125,7 +134,7 @@ Pomodoro dựa trên `Date.now()`/thời điểm kết thúc, không trừ thờ
 
 ## Web Desktop Resource Governor
 
-HH Web Desktop mặc định **tắt**. Người dùng phải chọn **Bật Web Desktop**; preference này mới được lưu.
+HH Web Desktop mặc định **tắt**. Người dùng phải chọn **Bật Web Desktop**; preference này mới được lưu. Màn hình System chỉ dùng các bằng chứng mà trình duyệt cung cấp như heap JavaScript của tab, storage của origin, connection estimate, battery và Service Worker; không gắn nhãn chúng là CPU/RAM toàn máy.
 
 Resource Governor áp dụng:
 
@@ -143,8 +152,9 @@ Resource Governor áp dụng:
 - Timer, RAF, AudioContext và DOM thuộc instance được giải phóng.
 - Live region chỉ đọc hành động rời rạc, không đọc lại toàn view.
 - Các control có focus ring, tên truy cập và state `aria-pressed`/`aria-current`.
-- CSS scope trong `[data-gdv-root]`, không sở hữu global `body`, `button`, `input`, `main` hoặc `canvas`.
+- CSS scope lần lượt trong `[data-gdv-root]`, `[data-gcs-root]` và `[data-gwd-root]`; không sở hữu global `body`, `button`, `input`, `main` hoặc `canvas`.
 - Layout chuyển từ multi-column sang một cột ở tablet/mobile; touch controls giữ chiều cao tối thiểu phù hợp.
+- Route có `data-galaxy-immersive="true"` sở hữu toàn bộ viewport và thanh điều hướng riêng; dock mobile cũ chỉ bị ẩn trong thời gian route này hoạt động để không che composer hoặc cửa sổ, rồi tự hiện lại ở route thường.
 - `prefers-reduced-motion` và forced-colors đều có fallback.
 
 ## Nguyên tắc trung thực

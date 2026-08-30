@@ -523,6 +523,15 @@ body.app-sidebar-auto-hide:not(.app-sidebar-collapsed) [data-galaxy-shell] > .ap
   display: none !important;
 }
 
+/* The legacy mobile dock lives outside #appShell. Immersive Galaxy views own
+ * their own navigation and viewport-safe controls, so the duplicate dock must
+ * not cover chat composers, desktop windows or bottom action bars. The dock is
+ * only hidden while an immersive route is active and remains available on all
+ * standard application routes. */
+body.app-shell-enabled #appShell[data-galaxy-shell][data-galaxy-immersive="true"] ~ .app-mobile-nav {
+  display: none !important;
+}
+
 [data-galaxy-shell][data-galaxy-immersive="true"] > .app-shell__body {
   display: block !important;
   min-height: 100dvh;

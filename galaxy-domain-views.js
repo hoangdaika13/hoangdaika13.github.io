@@ -1,7 +1,7 @@
 (function galaxyDomainViewsBootstrap(global) {
   "use strict";
 
-  const VERSION = 2;
+  const VERSION = 3;
   const STORAGE_KEY = "hh.galaxy.domain-views.v1";
   const MAX_DESKTOP_WINDOWS = 3;
   const instances = new WeakMap();
@@ -199,7 +199,7 @@
     return {
       version: VERSION,
       desktopEnabled: raw?.desktopEnabled === true,
-      ambientScene: ["rainy", "deep", "quiet"].includes(raw?.ambientScene) ? raw.ambientScene : "rainy",
+      ambientScene: ["rainy", "cafe", "cozy", "forest", "deep"].includes(raw?.ambientScene) ? raw.ambientScene : "rainy",
       mix: {
         rain: clamp(mix.rain, 0, 1, 0.62),
         wind: clamp(mix.wind, 0, 1, 0.22),
@@ -303,19 +303,28 @@
     instance.cleanup.push(() => target.removeEventListener(type, listener, options));
   }
 
+  function headerActionsMarkup(view) {
+    if (view === "projects") return `<button class="gdv-button" type="button" data-gdv-route="/media-design">Media Vault</button><button class="gdv-button gdv-button--primary" type="button" data-gdv-engine="projects">+ Dự án</button>`;
+    if (view === "automation") return `<button class="gdv-button" type="button" data-gdv-route="/create/ai-automation">AI Automation</button><button class="gdv-button gdv-button--primary" type="button" data-gdv-engine="automation">Mở Builder</button>`;
+    if (view === "creator") return `<button class="gdv-button" type="button" data-gdv-route="/create/overview">Tổng quan</button><button class="gdv-button gdv-button--primary" type="button" data-gdv-route="/create/project">+ Dự án</button>`;
+    if (view === "ambient") return `<button class="gdv-button" type="button" data-gdv-route="/music-ai">Music Planet</button>`;
+    return "";
+  }
+
   function headerMarkup(definition) {
-    return `<header class="gdv-header">
+    return `<header class="gdv-header gdv-header--${definition.id}">
       <div class="gdv-header__title">
         <span class="gdv-orb" aria-hidden="true"><i></i></span>
         <div><p>${escapeHtml(definition.eyebrow)}</p><h2>${escapeHtml(definition.title)}</h2></div>
       </div>
-      <nav class="gdv-view-nav" aria-label="Chuyển không gian Galaxy">
+      <label class="gdv-command-search"><span aria-hidden="true">⌕</span><input type="search" data-gdv-global-search maxlength="80" placeholder="Tìm module, dự án, công cụ…" aria-label="Tìm trong không gian hiện tại"><kbd>⌘K</kbd></label>
+      <div class="gdv-header-tools">${headerActionsMarkup(definition.id)}<details class="gdv-space-switcher"><summary aria-label="Chuyển không gian Galaxy"><span aria-hidden="true">✦</span> Không gian</summary><nav class="gdv-view-nav" aria-label="Chuyển không gian Galaxy">
         ${VIEW_NAV.map((item) => {
           const route = ROUTES[item.id].aliases.find((alias) => alias.startsWith("/galaxy/")) || ROUTES[item.id].canonical;
           const current = item.id === definition.id;
           return `<button type="button" data-gdv-route="${route}"${current ? ' aria-current="page" disabled' : ""}><span aria-hidden="true">${item.icon}</span>${escapeHtml(item.label)}</button>`;
         }).join("")}
-      </nav>
+      </nav></details></div>
     </header>`;
   }
 
@@ -339,74 +348,76 @@
     const projectSummary = projects.length
       ? `${projects.length} dự án cục bộ/provider đã được đọc`
       : "Chưa có dự án trong kho dữ liệu đã kết nối";
-    return frameMarkup(instance, `<section class="gdv-hero gdv-hero--creator">
-      <div><span class="gdv-kicker">CREATOR STUDIO · ADAPTER</span><h3>Từ ý tưởng đến xuất bản,<br><em>mỗi bước mở đúng công cụ.</em></h3><p>Galaxy Pipeline không giả lập kết quả. Trạng thái hoàn thành chỉ được xác nhận trong engine chuyên trách của từng bước.</p></div>
-      <div class="gdv-hero__actions"><button class="gdv-button gdv-button--primary" type="button" data-gdv-route="/create/project">+ Mở Universal Project</button><button class="gdv-button" type="button" data-gdv-route="/create/overview">Command Center</button></div>
-    </section>
-    <section class="gdv-panel gdv-pipeline" aria-labelledby="gdv-pipeline-title">
-      <header><div><span>WORKFLOW MAP</span><h3 id="gdv-pipeline-title">Quy trình sản xuất</h3></div>${statusPill(projects.length ? "ready" : "empty", projectSummary)}</header>
+    const projectCards = projects.slice(0, 3).map((project, index) => {
+      const thumbnail = safeMediaUrl(project.thumbnail || project.cover || project.preview);
+      const destination = project.source === "Creative OS" ? 'data-gdv-route="/create/project"' : 'data-gdv-engine="projects"';
+      return `<article class="gdv-creator-project" data-gdv-filterable="${escapeHtml(`${project.name || project.title || "dự án"} ${project.source || ""}`)}"><div class="gdv-creator-project__media gdv-creator-project__media--${index % 3}">${thumbnail ? `<img src="${escapeHtml(thumbnail)}" alt="">` : `<span aria-hidden="true">${CREATOR_STAGES[(index * 3) % CREATOR_STAGES.length].icon}</span>`}<small>${escapeHtml(project.source || "Kho cục bộ")}</small></div><div><strong>${escapeHtml(project.name || project.title || "Dự án không tên")}</strong><p>${escapeHtml(project.description || "Tiếp tục trong workspace chuyên trách để bảo toàn dữ liệu và phiên bản.")}</p><button type="button" ${destination}>Mở dự án →</button></div></article>`;
+    }).join("");
+    return frameMarkup(instance, `<section class="gdv-panel gdv-pipeline gdv-creator-pipeline" aria-labelledby="gdv-pipeline-title">
+      <header><div><span>PRODUCTION PATH</span><h3 id="gdv-pipeline-title">Idea → Script → Media → Publish</h3></div>${statusPill(projects.length ? "ready" : "empty", projectSummary)}</header>
       <ol class="gdv-pipeline__grid">
         ${CREATOR_STAGES.map((stage) => `<li>
           <button type="button" class="gdv-stage gdv-stage--${stage.tone}" data-gdv-route="${stage.route}" aria-label="Bước ${stage.number}: ${escapeHtml(stage.title)}. ${escapeHtml(stage.note)}">
-            <small>${String(stage.number).padStart(2, "0")}</small><span aria-hidden="true">${stage.icon}</span><strong>${escapeHtml(stage.title)}</strong><em>${escapeHtml(stage.note)}</em><b>Mở công cụ →</b>
+            <small>${stage.number}</small><span aria-hidden="true">${stage.icon}</span><strong>${escapeHtml(stage.title)}</strong><em>${escapeHtml(stage.note)}</em><b>Mở →</b>
           </button>
         </li>`).join("")}
       </ol>
       <footer><span><i></i>Không có bước nào tự đánh dấu hoàn thành.</span><button type="button" data-gdv-route="/create/rights">Kiểm tra Rights & Provenance</button></footer>
     </section>
-    <section class="gdv-split">
-      <article class="gdv-panel gdv-capability-card"><span>PROJECT CONTEXT</span><h3>${projects.length ? escapeHtml(projects[0].name || projects[0].title || "Dự án gần nhất") : "Chưa chọn dự án"}</h3><p>${projects.length ? `Nguồn: ${escapeHtml(projects[0].source)}. Mở Universal Project để tiếp tục từ dữ liệu gốc.` : "Tạo hoặc nhập project trong Universal Project; adapter này không sinh dự án mẫu."}</p><button type="button" data-gdv-route="/create/project">Mở dữ liệu dự án</button></article>
-      <article class="gdv-panel gdv-capability-card"><span>CAPABILITY</span><h3>Engine chuyên trách, dữ liệu tách biệt</h3><p>Script, ảnh, giọng nói, nhạc, video và xuất bản tiếp tục dùng storage và lifecycle riêng của từng module.</p><button type="button" data-gdv-route="/media-design">Mở Media & Design</button></article>
-    </section>`);
+    <div class="gdv-creator-lower">
+      <section class="gdv-panel gdv-creator-projects"><header><div><span>CONNECTED PROJECTS</span><h3>Dự án gần đây</h3></div><button type="button" data-gdv-route="/create/project">Xem tất cả →</button></header>${projectCards || `<div class="gdv-empty gdv-empty--creator"><span>✦</span><strong>Chưa có dự án thực</strong><p>Tạo dự án trong Universal Project; màn hình Pipeline không chèn dự án hoặc tiến độ mẫu.</p><button type="button" data-gdv-route="/create/project">Tạo dự án đầu tiên</button></div>`}</section>
+      <aside class="gdv-panel gdv-creator-context"><header><div><span>PROJECT CONTEXT</span><h3>Ngữ cảnh đang kết nối</h3></div></header><dl><div><dt>Dự án đọc được</dt><dd>${projects.length}</dd></div><div><dt>Kho dữ liệu</dt><dd>${statusPill(instance.capabilities.localStorage)}</dd></div><div><dt>Media workflow</dt><dd><button type="button" data-gdv-route="/media-design">Mở</button></dd></div><div><dt>Rights & Provenance</dt><dd><button type="button" data-gdv-route="/create/rights">Kiểm tra</button></dd></div></dl><p>Script, ảnh, giọng nói, nhạc và video giữ storage cùng lifecycle riêng trong từng module.</p></aside>
+    </div>
+    <section class="gdv-tool-strip gdv-creator-tools" aria-label="Công cụ và phím tắt Creator">${CREATOR_STAGES.slice(0, 8).map((stage) => `<button type="button" data-gdv-route="${stage.route}"><span aria-hidden="true">${stage.icon}</span><strong>${escapeHtml(stage.title)}</strong><small>${escapeHtml(stage.note)}</small><i>→</i></button>`).join("")}</section>`);
   }
 
   function automationMarkup(instance) {
     const runs = instance.data.automationRuns;
     const automations = instance.data.automations;
     const state = instance.capabilities.automation;
-    return frameMarkup(instance, `<section class="gdv-hero gdv-hero--automation">
-      <div><span class="gdv-kicker">AUTOMATION LAB · REAL EXECUTION</span><h3>Thiết kế luồng có bước duyệt,<br><em>dry run và nhật ký thật.</em></h3><p>Adapter chỉ trình bày dữ liệu đã lưu. Việc kích hoạt, retry hoặc hủy được thực hiện trong Automation Lab.</p></div>
-      <div class="gdv-hero__actions"><button class="gdv-button gdv-button--primary" type="button" data-gdv-engine="automation">Mở Automation Lab</button><button class="gdv-button" type="button" data-gdv-route="/create/ai-automation">AI Automation</button></div>
-    </section>
-    <div class="gdv-automation-layout">
+    const blueprint = [
+      ["01", "✧", "Idea input", "Nhận brief do bạn cung cấp"],
+      ["02", "≡", "AI script", "Soạn nội dung trong engine"],
+      ["03", "▧", "Image", "Tạo hoặc chọn hình ảnh"],
+      ["04", "◉", "Voice", "Tạo giọng đọc được duyệt"],
+      ["05", "♫", "Music", "Chọn nhạc có quyền sử dụng"],
+      ["06", "▶", "Video", "Dựng và kiểm tra video"],
+      ["07", "▤", "Thumbnail", "Thiết kế ảnh đại diện"],
+      ["08", "⌕", "SEO", "Kiểm tra metadata"],
+      ["09", "↗", "Publish", "Duyệt trước khi xuất bản"]
+    ];
+    return frameMarkup(instance, `<div class="gdv-automation-workspace">
+      <aside class="gdv-panel gdv-template-library"><header><div><span>TEMPLATE LIBRARY</span><h3>Luồng đã lưu</h3></div>${statusPill(automations.length ? "ready" : "empty", automations.length ? `${automations.length} luồng` : "Kho trống")}</header><label><span aria-hidden="true">⌕</span><input type="search" data-gdv-automation-search placeholder="Tìm automation…" aria-label="Tìm automation đã lưu"></label>${automations.length ? `<ul>${automations.slice(0, 8).map((item) => `<li data-gdv-filterable="${escapeHtml(`${item.name || item.title || "automation"} ${item.status || ""}`)}"><button type="button" data-gdv-engine="automation"><span>⌘</span><div><strong>${escapeHtml(item.name || item.title || "Automation")}</strong><small>${escapeHtml(item.status || "Đã lưu")}</small></div><i>→</i></button></li>`).join("")}</ul>` : `<div class="gdv-empty"><span>⌘</span><strong>Chưa có automation</strong><p>Tạo luồng đầu tiên trong Automation Lab; thư viện không chèn template giả.</p><button type="button" data-gdv-engine="automation">Mở engine</button></div>`}<footer><button type="button" data-gdv-engine="automation">+ Tạo automation mới</button></footer></aside>
       <section class="gdv-panel gdv-automation-canvas" aria-labelledby="gdv-automation-title">
-        <header><div><span>CONTROLLED DAG</span><h3 id="gdv-automation-title">Trigger → Condition → Approval → Action</h3></div>${statusPill(state)}</header>
-        <div class="gdv-node-flow" role="list" aria-label="Cấu trúc automation mẫu giải thích, không phải lượt chạy">
-          <article role="listitem"><i>01</i><span>⚡</span><strong>Trigger</strong><p>Sự kiện hoặc lịch do bạn cấu hình</p></article>
-          <b aria-hidden="true">→</b>
-          <article role="listitem"><i>02</i><span>◇</span><strong>Condition</strong><p>Điều kiện được kiểm tra rõ ràng</p></article>
-          <b aria-hidden="true">→</b>
-          <article role="listitem"><i>03</i><span>✓</span><strong>Approval</strong><p>Cổng duyệt trước tác vụ nhạy cảm</p></article>
-          <b aria-hidden="true">→</b>
-          <article role="listitem"><i>04</i><span>↗</span><strong>Action</strong><p>Hành động từ engine đã kết nối</p></article>
-        </div>
+        <header><div><span>CONTROLLED DAG · BLUEPRINT</span><h3 id="gdv-automation-title">Quy trình automation</h3></div>${statusPill(state)}</header>
+        <div class="gdv-node-flow gdv-node-flow--blueprint" role="list" aria-label="Cấu trúc automation minh họa, không phải lượt chạy">${blueprint.map((node) => `<article role="listitem"><i>${node[0]}</i><span>${node[1]}</span><div><strong>${node[2]}</strong><p>${node[3]}</p></div><small>Chưa xác nhận cấu hình</small></article>`).join("")}</div>
         <aside class="gdv-honesty-note"><span aria-hidden="true">ⓘ</span><p><strong>Không có tiến độ minh họa.</strong> Chỉ run thật từ Work Center mới xuất hiện ở bảng trạng thái.</p></aside>
       </section>
-      <aside class="gdv-panel gdv-run-panel">
-        <header><div><span>LOCAL STATE</span><h3>Automation đã lưu</h3></div>${statusPill(automations.length ? "ready" : "empty", automations.length ? `${automations.length} luồng` : "Chưa có luồng")}</header>
-        ${automations.length ? `<ul>${automations.slice(0, 5).map((item) => `<li><span>⌘</span><div><strong>${escapeHtml(item.name || item.title || "Automation")}</strong><small>${escapeHtml(item.status || "Đã lưu")}</small></div></li>`).join("")}</ul>` : `<div class="gdv-empty"><span>⌘</span><strong>Chưa có automation</strong><p>Mở Automation Lab để tạo trigger, điều kiện và hành động đầu tiên.</p><button type="button" data-gdv-engine="automation">Mở engine</button></div>`}
-      </aside>
-    </div>
-    <section class="gdv-panel gdv-run-history">
-      <header><div><span>EXECUTION HISTORY</span><h3>Lịch sử chạy đã ghi nhận</h3></div><button type="button" data-gdv-engine="automation">Xem trong engine →</button></header>
-      ${runs.length ? `<div class="gdv-table" role="table" aria-label="Lịch sử automation"><div role="row"><b role="columnheader">Luồng</b><b role="columnheader">Trạng thái</b><b role="columnheader">Thời điểm</b></div>${runs.slice(0, 6).map((item) => `<div role="row"><span role="cell">${escapeHtml(item.name || item.automationName || item.automationId || "Automation")}</span><span role="cell">${statusPill(String(item.status || "idle").toLowerCase(), item.status || "Chưa rõ")}</span><time role="cell">${escapeHtml(formatDate(item.finishedAt || item.startedAt || item.createdAt))}</time></div>`).join("")}</div>` : `<div class="gdv-empty gdv-empty--row"><span>◷</span><div><strong>Chưa có execution log</strong><p>Không hiển thị log, thời gian hoặc phần trăm giả.</p></div></div>`}
-    </section>`);
+      <aside class="gdv-panel gdv-run-panel gdv-execution-panel"><header><div><span>EXECUTION STATUS</span><h3>Lượt chạy thật</h3></div>${statusPill(runs.length ? "ready" : "empty", runs.length ? `${runs.length} bản ghi` : "Chưa có log")}</header>${runs.length ? `<ol>${runs.slice(0, 8).map((item, index) => `<li><span>${index + 1}</span><div><strong>${escapeHtml(item.name || item.automationName || item.automationId || "Automation")}</strong><small>${escapeHtml(formatDate(item.finishedAt || item.startedAt || item.createdAt))}</small></div>${statusPill(String(item.status || "idle").toLowerCase(), item.status || "Chưa rõ")}</li>`).join("")}</ol>` : `<div class="gdv-empty"><span>◷</span><strong>Chưa có execution log</strong><p>Không hiển thị thời gian hoặc phần trăm giả khi engine chưa trả dữ liệu.</p></div>`}<footer><button type="button" data-gdv-engine="automation">Xem log trong engine →</button></footer></aside>
+    </div>`);
   }
 
   function projectMarkup(instance) {
     const projects = instance.data.projects;
     const cloud = instance.capabilities.cloud;
-    return frameMarkup(instance, `<section class="gdv-hero gdv-hero--projects">
-      <div><span class="gdv-kicker">LOCAL-FIRST · PROVIDER-AWARE</span><h3>Một cổng vào cho dự án,<br><em>media và phiên bản.</em></h3><p>Project Hub chỉ đọc dữ liệu đã có. Cloud được ghi là chưa cấu hình cho tới khi adapter OAuth/provider xác nhận.</p></div>
-      <div class="gdv-hero__actions"><button class="gdv-button gdv-button--primary" type="button" data-gdv-engine="projects">Mở Projects & Tasks</button><button class="gdv-button" type="button" data-gdv-route="/media-design">Media Vault</button></div>
-    </section>
-    <div class="gdv-project-layout">
+    const cards = projects.slice(0, 8).map((project, index) => {
+      const thumbnail = safeMediaUrl(project.thumbnail || project.cover || project.preview);
+      const destination = project.source === "Creative OS" ? 'data-gdv-route="/create/project"' : 'data-gdv-engine="projects"';
+      const searchText = `${project.name || project.title || "dự án"} ${project.source || ""} ${project.description || ""}`;
+      return `<article class="gdv-vault-card" data-gdv-filterable="${escapeHtml(searchText)}"><button type="button" ${destination} aria-label="Mở ${escapeHtml(project.name || project.title || "dự án")}"><div class="gdv-vault-card__media gdv-vault-card__media--${index % 4}">${thumbnail ? `<img src="${escapeHtml(thumbnail)}" alt="">` : `<span aria-hidden="true">${escapeHtml(project.icon || ["✦", "HH", "▧", "◎"][index % 4])}</span>`}<small>PROJECT</small></div><div class="gdv-vault-card__copy"><strong>${escapeHtml(project.name || project.title || "Dự án không tên")}</strong><p>${escapeHtml(project.description || "Mở workspace gốc để xem nội dung và phiên bản.")}</p><small>${escapeHtml(project.source || "Kho cục bộ")}</small><i>→</i></div></button></article>`;
+    }).join("");
+    return frameMarkup(instance, `<div class="gdv-project-layout gdv-project-layout--vault">
+      <main class="gdv-project-main">
       <section class="gdv-panel gdv-project-list" aria-labelledby="gdv-project-title">
-        <header><div><span>CONNECTED DATA</span><h3 id="gdv-project-title">Dự án đã tìm thấy</h3></div>${statusPill(projects.length ? "ready" : "empty", projects.length ? `${projects.length} dự án` : "Kho trống")}</header>
-        ${projects.length ? `<div class="gdv-project-grid">${projects.slice(0, 8).map((project) => `<article><span aria-hidden="true">${escapeHtml(project.icon || "HH")}</span><div><strong>${escapeHtml(project.name || project.title || "Dự án không tên")}</strong><small>${escapeHtml(project.source || "Kho cục bộ")}</small><p>${escapeHtml(project.description || "Mở workspace gốc để xem chi tiết và phiên bản.")}</p></div>${project.source === "Creative OS" ? `<button type="button" data-gdv-route="/create/project">Mở →</button>` : `<button type="button" data-gdv-engine="projects">Mở →</button>`}</article>`).join("")}</div>` : `<div class="gdv-empty"><span>▣</span><strong>Chưa có project thực</strong><p>Tạo project trong Work Center hoặc Universal Project. Màn hình này không tạo card demo.</p><button type="button" data-gdv-route="/create/project">Tạo project</button></div>`}
+        <header><div><span>CONNECTED DATA</span><h3 id="gdv-project-title">Tất cả dự án</h3></div>${statusPill(projects.length ? "ready" : "empty", projects.length ? `${projects.length} dự án` : "Kho trống")}</header>
+        <div class="gdv-vault-toolbar"><label><span aria-hidden="true">⌕</span><input type="search" data-gdv-project-search placeholder="Tìm dự án, nguồn, mô tả…" aria-label="Tìm dự án"></label><div><button type="button" data-gdv-project-view="grid" aria-pressed="true">▦ Grid</button><button type="button" data-gdv-project-view="list" aria-pressed="false">☷ List</button></div></div>
+        ${cards ? `<div class="gdv-vault-grid" data-gdv-project-view-mode="grid">${cards}</div>` : `<div class="gdv-empty"><span>▣</span><strong>Chưa có project thực</strong><p>Tạo project trong Work Center hoặc Universal Project. Project Hub không chèn card, ảnh hoặc dung lượng mẫu.</p><button type="button" data-gdv-route="/create/project">Tạo project</button></div>`}
       </section>
+      ${projects.length ? `<section class="gdv-panel gdv-project-table"><header><div><span>RECENT FILES</span><h3>Danh sách dự án đã kết nối</h3></div><button type="button" data-gdv-engine="projects">Quản lý →</button></header><div class="gdv-table" role="table" aria-label="Danh sách dự án"><div role="row"><b role="columnheader">Tên</b><b role="columnheader">Nguồn</b><b role="columnheader">Mở</b></div>${projects.slice(0, 8).map((project) => `<div role="row" data-gdv-filterable="${escapeHtml(`${project.name || project.title || "dự án"} ${project.source || ""}`)}"><span role="cell">${escapeHtml(project.name || project.title || "Dự án không tên")}</span><span role="cell">${escapeHtml(project.source || "Kho cục bộ")}</span><button type="button" role="cell" ${project.source === "Creative OS" ? 'data-gdv-route="/create/project"' : 'data-gdv-engine="projects"'}>Mở →</button></div>`).join("")}</div></section>` : ""}
+      </main>
       <aside class="gdv-side-stack">
         <section class="gdv-panel gdv-storage-card"><header><div><span>BROWSER STORAGE</span><h3>Dung lượng cục bộ</h3></div>${statusPill(instance.capabilities.storageEstimate)}</header><div data-gdv-storage-estimate class="gdv-storage-value"><strong>Đang kiểm tra…</strong><small>Storage API của trình duyệt</small></div><div class="gdv-meter"><i data-gdv-storage-meter style="--value:0"></i></div><p data-gdv-storage-note>Không dùng phần trăm minh họa.</p></section>
+        <section class="gdv-panel gdv-recent-card"><header><div><span>RECENT ACTIVITY</span><h3>Dữ liệu gần đây</h3></div></header>${projects.length ? `<ul>${projects.slice(0, 5).map((project) => `<li><span>✦</span><div><strong>${escapeHtml(project.name || project.title || "Dự án")}</strong><small>${escapeHtml(project.source || "Kho cục bộ")}</small></div></li>`).join("")}</ul>` : `<p>Chưa có hoạt động dự án để hiển thị.</p>`}</section>
         <section class="gdv-panel gdv-cloud-card"><header><div><span>CLOUD ADAPTER</span><h3>Đồng bộ nhà cung cấp</h3></div>${statusPill(cloud)}</header><p>${cloud === "ready" ? "Adapter cloud đã được phía tích hợp xác nhận sẵn sàng." : "Google Drive, Dropbox hoặc OneDrive chỉ được báo kết nối sau OAuth thành công."}</p><button type="button" data-gdv-route="/work/cloud-storage">Quản lý kết nối</button></section>
       </aside>
     </div>
@@ -439,19 +450,14 @@
 
   function ambientMarkup(instance) {
     const mix = instance.preferences.mix;
-    return frameMarkup(instance, `<div class="gdv-ambient-layout">
-      <section class="gdv-ambient-scene" aria-labelledby="gdv-ambient-title">
+    const sceneButtons = [
+      ["rainy", "☂", "Rainy Study"], ["cafe", "☕", "Café Sáng"], ["cozy", "♨", "Đêm Ấm"], ["forest", "♧", "Cabin Rừng"], ["deep", "◌", "Trạm Không Gian"]
+    ];
+    return frameMarkup(instance, `<div class="gdv-ambient-experience">
+      <section class="gdv-ambient-scene" data-gdv-scene-active="${instance.preferences.ambientScene}" aria-labelledby="gdv-ambient-title">
         <div class="gdv-rain" aria-hidden="true"><i></i><i></i><i></i></div>
-        <div class="gdv-ambient-copy"><span class="gdv-kicker">PROCEDURAL WEB AUDIO</span><h3 id="gdv-ambient-title">Ambient Room</h3><p>Âm thanh được tạo cục bộ bằng Web Audio sau khi bạn chủ động bật. Không phát media hoặc mở AudioContext trước tương tác.</p></div>
-        <canvas data-gdv-waveform width="960" height="180" aria-label="Dạng sóng của âm thanh đang phát"></canvas>
-        <div class="gdv-scene-picker" role="group" aria-label="Preset không gian">
-          <button type="button" data-gdv-scene="rainy" aria-pressed="${instance.preferences.ambientScene === "rainy"}"><span>☂</span>Rainy Study</button>
-          <button type="button" data-gdv-scene="deep" aria-pressed="${instance.preferences.ambientScene === "deep"}"><span>◌</span>Deep Focus</button>
-          <button type="button" data-gdv-scene="quiet" aria-pressed="${instance.preferences.ambientScene === "quiet"}"><span>☾</span>Quiet Night</button>
-        </div>
-      </section>
-      <aside class="gdv-ambient-controls">
-        <section class="gdv-panel gdv-mixer"><header><div><span>LIVE MIXER</span><h3>Âm thanh thủ tục</h3></div>${statusPill(instance.capabilities.audio, instance.capabilities.audio === "idle" ? "Chưa bật" : undefined)}</header>
+        <div class="gdv-ambient-copy"><span class="gdv-kicker">PROCEDURAL WEB AUDIO</span><h3 id="gdv-ambient-title">Ambient Room <i aria-hidden="true">▥</i></h3><strong>Phòng âm thanh tập trung</strong><p>Âm thanh tạo cục bộ bằng Web Audio và chỉ khởi động sau thao tác của bạn.</p></div>
+        <section class="gdv-panel gdv-mixer gdv-mixer--overlay"><header><div><span>LIVE MIXER</span><h3>Mix âm thanh ambient</h3></div>${statusPill(instance.capabilities.audio, instance.capabilities.audio === "idle" ? "Chưa bật" : undefined)}</header>
           ${ambientSlider("rain", "☂", "Mưa", mix.rain)}
           ${ambientSlider("wind", "≋", "Gió", mix.wind)}
           ${ambientSlider("fire", "♨", "Lửa nhỏ", mix.fire)}
@@ -459,10 +465,12 @@
           <button class="gdv-button gdv-button--primary gdv-audio-start" type="button" data-gdv-audio-toggle>${instance.capabilities.audio === "unsupported" ? "Trình duyệt không hỗ trợ" : "Bật âm thanh"}</button>
           <p class="gdv-audio-disclosure">Tín hiệu tạo trong trình duyệt; không sử dụng file âm thanh chưa rõ giấy phép.</p>
         </section>
-        <section class="gdv-panel gdv-timer" aria-labelledby="gdv-timer-title"><header><div><span>FOCUS TIMER</span><h3 id="gdv-timer-title">Pomodoro</h3></div></header><div class="gdv-timer__ring"><strong data-gdv-timer-text>${formatTimer(instance.timer.remaining)}</strong><small data-gdv-timer-state>Chưa bắt đầu</small></div><div class="gdv-timer__presets">${[15, 25, 45, 60].map((minutes) => `<button type="button" data-gdv-timer-minutes="${minutes}" aria-pressed="${minutes === instance.preferences.timerMinutes}">${minutes}</button>`).join("")}</div><button class="gdv-button" type="button" data-gdv-timer-toggle>Bắt đầu</button><button class="gdv-link-button" type="button" data-gdv-timer-reset>Đặt lại</button></section>
-      </aside>
+        <canvas data-gdv-waveform width="960" height="180" aria-label="Dạng sóng của âm thanh đang phát"></canvas>
+        <section class="gdv-panel gdv-timer gdv-timer--overlay" aria-labelledby="gdv-timer-title"><header><div><span>FOCUS TIMER</span><h3 id="gdv-timer-title">Pomodoro</h3></div></header><div class="gdv-timer__ring" role="timer" aria-labelledby="gdv-timer-title"><strong data-gdv-timer-text>${formatTimer(instance.timer.remaining)}</strong><small data-gdv-timer-state>Chưa bắt đầu</small></div><div class="gdv-timer__presets">${[15, 25, 45, 60].map((minutes) => `<button type="button" data-gdv-timer-minutes="${minutes}" aria-label="Đặt Pomodoro ${minutes} phút" aria-pressed="${minutes === instance.preferences.timerMinutes}">${minutes}</button>`).join("")}</div><button class="gdv-button gdv-button--primary" type="button" data-gdv-timer-toggle>Bắt đầu</button><button class="gdv-link-button" type="button" data-gdv-timer-reset>Đặt lại</button></section>
+        <div class="gdv-scene-picker" role="group" aria-label="Preset không gian">${sceneButtons.map(([id, icon, label]) => `<button type="button" data-gdv-scene="${id}" aria-pressed="${instance.preferences.ambientScene === id}"><span>${icon}</span>${escapeHtml(label)}</button>`).join("")}</div>
+      </section>
     </div>
-    <footer class="gdv-ambient-dock"><div><span class="gdv-orb gdv-orb--small" aria-hidden="true"><i></i></span><div><strong data-gdv-now-playing>Âm thanh chưa bật</strong><small>Ambient Room · procedural local audio</small></div></div><button type="button" data-gdv-route="/music-ai">Mở Music Planet →</button></footer>`);
+    <footer class="gdv-ambient-dock"><div><span class="gdv-orb gdv-orb--small" aria-hidden="true"><i></i></span><div><strong data-gdv-now-playing>Âm thanh chưa bật</strong><small>Ambient Room · procedural local audio</small></div></div><div class="gdv-ambient-dock__transport"><button type="button" data-gdv-audio-toggle data-gdv-audio-compact aria-label="Bật âm thanh">▶</button><button type="button" data-gdv-route="/music-ai">Mở Music Planet →</button></div></footer>`);
   }
 
   function ambientSlider(id, icon, label, value) {
@@ -688,7 +696,7 @@
       });
     } catch (error) {
       startedNodes.forEach((node) => { try { node.stop(); } catch {} });
-      try { context?.close(); } catch {}
+      closeAudioContext(context);
       instance.audio = null;
       instance.capabilities.audio = "error";
       instance.errors.push(String(error?.message || error));
@@ -697,31 +705,52 @@
     }
   }
 
+  function closeAudioContext(context) {
+    if (!context || typeof context.close !== "function") return;
+    try {
+      const closing = context.close();
+      if (closing && typeof closing.catch === "function") closing.catch(() => {});
+    } catch {}
+  }
+
   function stopAmbientAudio(instance) {
     if (!instance.audio) return;
     cancelWaveform(instance);
-    Object.values(instance.audio.sources).forEach((entry) => {
+    const audio = instance.audio;
+    instance.audio = null;
+    audio.running = false;
+    Object.values(audio.sources).forEach((entry) => {
       try { entry.source?.stop(); } catch {}
       (entry.oscillators || []).forEach((voice) => { try { voice.source.stop(); } catch {} });
+      try { entry.source?.disconnect(); } catch {}
+      try { entry.filter?.disconnect(); } catch {}
+      try { entry.gain?.disconnect(); } catch {}
+      (entry.oscillators || []).forEach((voice) => {
+        try { voice.source.disconnect(); } catch {}
+        try { voice.gain.disconnect(); } catch {}
+      });
     });
-    try { instance.audio.master.disconnect(); } catch {}
-    try { instance.audio.analyser.disconnect(); } catch {}
-    instance.audio.context.close().catch(() => {});
-    instance.audio = null;
+    try { audio.master.disconnect(); } catch {}
+    try { audio.analyser.disconnect(); } catch {}
+    closeAudioContext(audio.context);
     emitMediaPlayback(false);
     instance.capabilities.audio = (global.AudioContext || global.webkitAudioContext) ? "idle" : "unsupported";
     updateAudioUi(instance);
   }
 
   function updateAudioUi(instance) {
-    const button = instance.root.querySelector("[data-gdv-audio-toggle]");
+    const buttons = instance.root.querySelectorAll("[data-gdv-audio-toggle]");
     const playing = instance.root.querySelector("[data-gdv-now-playing]");
     const status = instance.root.querySelector(".gdv-mixer .gdv-status");
-    if (button) {
-      button.textContent = instance.audio ? "Tắt âm thanh" : (instance.capabilities.audio === "unsupported" ? "Trình duyệt không hỗ trợ" : "Bật âm thanh");
+    buttons.forEach((button) => {
+      const compact = button.hasAttribute("data-gdv-audio-compact");
+      button.textContent = compact
+        ? (instance.audio ? "Ⅱ" : "▶")
+        : (instance.audio ? "Tắt âm thanh" : (instance.capabilities.audio === "unsupported" ? "Trình duyệt không hỗ trợ" : "Bật âm thanh"));
       button.setAttribute("aria-pressed", String(Boolean(instance.audio)));
+      button.setAttribute("aria-label", instance.audio ? "Tắt âm thanh" : "Bật âm thanh");
       button.disabled = instance.capabilities.audio === "unsupported";
-    }
+    });
     if (playing) playing.textContent = instance.audio && instance.capabilities.audio === "ready" ? "Procedural ambient đang phát" : (instance.capabilities.audio === "loading" ? "Đang khởi động Web Audio" : "Âm thanh chưa bật");
     if (status) {
       status.className = `gdv-status gdv-status--${instance.capabilities.audio}`;
@@ -745,8 +774,10 @@
   function applyScene(instance, scene) {
     const presets = {
       rainy: { rain: 0.68, wind: 0.2, fire: 0.12, focus: 0.18 },
-      deep: { rain: 0.24, wind: 0.12, fire: 0.05, focus: 0.44 },
-      quiet: { rain: 0.18, wind: 0.08, fire: 0.28, focus: 0.1 }
+      cafe: { rain: 0.36, wind: 0.08, fire: 0.2, focus: 0.23 },
+      cozy: { rain: 0.18, wind: 0.08, fire: 0.42, focus: 0.1 },
+      forest: { rain: 0.31, wind: 0.36, fire: 0.08, focus: 0.14 },
+      deep: { rain: 0.14, wind: 0.1, fire: 0.04, focus: 0.48 }
     };
     if (!presets[scene]) return;
     instance.preferences.ambientScene = scene;
@@ -756,6 +787,8 @@
       setMix(instance, id, value * 100);
     });
     instance.root.querySelectorAll("[data-gdv-scene]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.gdvScene === scene)));
+    const sceneElement = instance.root.querySelector("[data-gdv-scene-active]");
+    if (sceneElement) sceneElement.dataset.gdvSceneActive = scene;
     savePreferences(instance.preferences);
     announce(instance, `Đã chọn preset ${scene}.`);
   }
@@ -812,8 +845,12 @@
     const state = instance.root.querySelector("[data-gdv-timer-state]");
     const toggle = instance.root.querySelector("[data-gdv-timer-toggle]");
     if (text) text.textContent = formatTimer(instance.timer.remaining);
-    if (state) state.textContent = instance.timer.running ? "Đang tập trung" : (instance.timer.remaining < instance.preferences.timerMinutes * 60 ? "Đã tạm dừng" : "Chưa bắt đầu");
-    if (toggle) toggle.textContent = instance.timer.running ? "Tạm dừng" : "Bắt đầu";
+    const completed = !instance.timer.running && instance.timer.remaining <= 0;
+    if (state) state.textContent = instance.timer.running ? "Đang tập trung" : (completed ? "Đã hoàn thành" : (instance.timer.remaining < instance.preferences.timerMinutes * 60 ? "Đã tạm dừng" : "Chưa bắt đầu"));
+    if (toggle) {
+      toggle.textContent = instance.timer.running ? "Tạm dừng" : (completed ? "Bắt đầu lại" : "Bắt đầu");
+      toggle.setAttribute("aria-label", instance.timer.running ? "Tạm dừng Pomodoro" : (completed ? "Bắt đầu lại Pomodoro" : "Bắt đầu Pomodoro"));
+    }
   }
 
   function toggleTimer(instance) {
@@ -907,6 +944,15 @@
     if (event.target.closest("[data-gdv-timer-reset]")) { resetTimer(instance); return; }
     const timerPreset = event.target.closest("[data-gdv-timer-minutes]");
     if (timerPreset) { resetTimer(instance, Number(timerPreset.dataset.gdvTimerMinutes)); return; }
+    const projectView = event.target.closest("[data-gdv-project-view]");
+    if (projectView) {
+      const mode = projectView.dataset.gdvProjectView === "list" ? "list" : "grid";
+      const grid = instance.root.querySelector("[data-gdv-project-view-mode]");
+      if (grid) grid.dataset.gdvProjectViewMode = mode;
+      instance.root.querySelectorAll("[data-gdv-project-view]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.gdvProjectView === mode)));
+      announce(instance, `Đã chuyển Project Hub sang chế độ ${mode === "list" ? "danh sách" : "lưới"}.`);
+      return;
+    }
     if (event.target.closest("[data-gdv-desktop-enable]")) {
       instance.preferences.desktopEnabled = true;
       instance.capabilities.desktop = "ready";
@@ -947,6 +993,23 @@
         item.hidden = Boolean(query && !label.includes(query));
       });
     }
+    const globalSearch = event.target.closest("[data-gdv-global-search]");
+    const projectSearch = event.target.closest("[data-gdv-project-search]");
+    const automationSearch = event.target.closest("[data-gdv-automation-search]");
+    const filterInput = projectSearch || automationSearch || globalSearch;
+    if (filterInput) {
+      const query = String(filterInput.value || "").trim().toLocaleLowerCase("vi-VN");
+      instance.root.querySelectorAll("[data-gdv-filterable]").forEach((item) => {
+        const haystack = String(item.dataset.gdvFilterable || item.textContent || "").toLocaleLowerCase("vi-VN");
+        item.hidden = Boolean(query && !haystack.includes(query));
+      });
+      if (globalSearch) {
+        instance.root.querySelectorAll("[data-gdv-nav-item]").forEach((item) => {
+          const label = String(item.textContent || "").toLocaleLowerCase("vi-VN");
+          item.hidden = Boolean(query && !label.includes(query));
+        });
+      }
+    }
   }
 
   function handleVisibility(instance) {
@@ -954,6 +1017,7 @@
     instance.desktop.visible = !instance.pausedByVisibility;
     instance.root.dataset.gdvVisibility = instance.pausedByVisibility ? "hidden" : "visible";
     if (instance.pausedByVisibility) cancelWaveform(instance); else if (instance.audio) drawWaveform(instance);
+    if (instance.timer.running) updateTimer(instance);
     if (instance.view === "desktop" && instance.preferences.desktopEnabled) updateDesktopVisibilityUi(instance);
   }
 
@@ -1020,6 +1084,9 @@
     stopAmbientAudio(instance);
     cancelWaveform(instance);
     if (instance.timer.interval) global.clearInterval(instance.timer.interval);
+    instance.timer.interval = 0;
+    instance.timer.running = false;
+    instance.timer.endsAt = 0;
     instance.cleanup.splice(0).reverse().forEach((cleanup) => { try { cleanup(); } catch {} });
     instances.delete(root);
     mountedRoots.delete(root);

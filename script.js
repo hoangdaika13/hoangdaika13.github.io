@@ -5291,7 +5291,9 @@ function initAppShell() {
   const syncMobileSidebarDock = () => {
     const mobileNavigation = document.querySelector(".app-mobile-nav");
     if (mobileNavigation) {
-      const workspaceOwnsMobileDock = document.body.classList.contains("app-dharma-route") || document.body.classList.contains("app-eonwild-immersive");
+      const workspaceOwnsMobileDock = document.body.classList.contains("app-dharma-route")
+        || document.body.classList.contains("app-eonwild-immersive")
+        || document.querySelector("#appShell")?.dataset.galaxyImmersive === "true";
       if (mobileSidebarQuery.matches && !workspaceOwnsMobileDock) mobileNavigation.style.setProperty("display", "grid", "important");
       else mobileNavigation.style.removeProperty("display");
     }
@@ -6971,6 +6973,8 @@ function initAppShell() {
     }
     cleanupGalaxyEngineTakeover();
     window.HHGalaxyHomeAI?.unmount?.();
+    window.HHGalaxyCommunityShowcase?.unmount?.();
+    window.HHGalaxyWebDesktop?.unmount?.();
     window.HHGalaxyDomainViews?.unmount?.();
     window.HHGalaxyPlanetHubs?.unmount?.();
     // The Home Cosmic OS owns a fixed command deck and temporarily applies
@@ -7134,9 +7138,19 @@ function initAppShell() {
       if (route.startsWith("/chat-ai")) remember("chat-ai");
     } else if (isGalaxyDomainRoute) {
       const planetHub = window.HHGalaxyPlanetHubs?.canHandle?.(route) ? window.HHGalaxyPlanetHubs : null;
+      const specializedView = window.HHGalaxyCommunityShowcase?.canHandle?.(route)
+        ? window.HHGalaxyCommunityShowcase
+        : window.HHGalaxyWebDesktop?.canHandle?.(route)
+          ? window.HHGalaxyWebDesktop
+          : null;
       const definition = Object.values(window.HHGalaxyDomainViews?.routes || {}).find((item) => item.canonical === route || item.aliases?.includes?.(route));
       const hubDefinition = planetHub?.ROUTES?.[planetHub.normalizeRoute?.(route)] || null;
-      updatePageHeader(hubDefinition?.label || definition?.title || "HH Galaxy Workspace", hubDefinition?.description || definition?.eyebrow || "Không gian chức năng dùng dữ liệu và engine thật.", route);
+      const specializedMeta = route === "/communication/community"
+        ? { title: "Community Showcase", description: "Tác phẩm và tương tác chỉ hiển thị khi backend hoặc cache đã xác minh cung cấp dữ liệu." }
+        : route === "/system/desktop"
+          ? { title: "HH Web Desktop", description: "Desktop opt-in với launcher nhẹ, giới hạn tài nguyên và chỉ số thuộc tab hoặc origin hiện tại." }
+          : null;
+      updatePageHeader(hubDefinition?.label || specializedMeta?.title || definition?.title || "HH Galaxy Workspace", hubDefinition?.description || specializedMeta?.description || definition?.eyebrow || "Không gian chức năng dùng dữ liệu và engine thật.", route);
       workspace.innerHTML = '<div data-galaxy-domain-host></div>';
       const mounted = planetHub
         ? planetHub.mount?.(workspace.firstElementChild, {
@@ -7144,6 +7158,13 @@ function initAppShell() {
           navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
           data: { account: readCurrentAuthUser() }
         })
+        : specializedView
+          ? specializedView.mount?.(workspace.firstElementChild, {
+            route,
+            apiBase: String(window.HH_REALTIME_URL || window.HH_API_BASE || ""),
+            currentUser: readCurrentAuthUser(),
+            navigate: (nextRoute) => { location.hash = `#${nextRoute}`; }
+          })
         : window.HHGalaxyDomainViews?.mount?.(workspace.firstElementChild, {
           route,
           apiBase: String(window.HH_REALTIME_URL || ""),
@@ -8281,6 +8302,8 @@ function initAppShell() {
   window.addEventListener("hh:galaxy-shell-enabled-change", () => {
     cleanupGalaxyEngineTakeover();
     window.HHGalaxyHomeAI?.unmount?.();
+    window.HHGalaxyCommunityShowcase?.unmount?.();
+    window.HHGalaxyWebDesktop?.unmount?.();
     window.HHGalaxyDomainViews?.unmount?.();
     window.HHGalaxyPlanetHubs?.unmount?.();
     renderRouteSafely();

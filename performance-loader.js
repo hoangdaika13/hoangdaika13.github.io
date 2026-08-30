@@ -63,12 +63,20 @@
       ]
     },
     "galaxy-home-ai": {
-      styles: ["galaxy-home-ai.css?v=5"],
-      scripts: ["galaxy-home-ai.js?v=5"]
+      styles: ["galaxy-home-ai.css?v=6"],
+      scripts: ["galaxy-home-ai.js?v=6"]
     },
     "galaxy-domain-views": {
-      styles: ["galaxy-domain-views.css?v=2"],
-      scripts: ["galaxy-domain-views.js?v=2"]
+      styles: ["galaxy-domain-views.css?v=3"],
+      scripts: ["galaxy-domain-views.js?v=3"]
+    },
+    "galaxy-community-showcase": {
+      styles: ["galaxy-community-showcase.css?v=1"],
+      scripts: ["galaxy-community-showcase.js?v=1"]
+    },
+    "galaxy-web-desktop": {
+      styles: ["galaxy-web-desktop.css?v=1"],
+      scripts: ["galaxy-web-desktop.js?v=1"]
     },
     "galaxy-planet-hubs": {
       styles: ["galaxy-planet-hubs.css?v=1"],
@@ -349,9 +357,11 @@
     if (value === "/create/workflow" || value === "/galaxy/creator-pipeline") return ["creative", "platform", "galaxy-domain-views"];
     if (value === "/work/automation-lab" || value === "/work/projects-tasks"
       || value === "/galaxy/automation-builder" || value === "/galaxy/project-hub") return ["work", "galaxy-domain-views"];
-    if (value === "/communication/community" || value === "/galaxy/community-showcase") return ["communication", "galaxy-domain-views"];
+    if (value === "/communication/community") return ["communication", "galaxy-community-showcase"];
+    if (value === "/galaxy/community-showcase") return ["communication", "galaxy-domain-views"];
+    if (value === "/system/desktop") return ["galaxy-web-desktop"];
     if (value === "/music/ambient" || value === "/galaxy/ambient-room"
-      || value === "/system/desktop" || value === "/galaxy/web-desktop") return ["galaxy-domain-views"];
+      || value === "/galaxy/web-desktop") return ["galaxy-domain-views"];
     if (value.startsWith("/social-media-tools")) return ["social-media-tools"];
     if (value.startsWith("/dev-tools")) return ["dev"];
     if (value === "/davinci-resolve/ai-video-remake") return ["davinci", "ai-video-remake"];
