@@ -427,8 +427,8 @@
       <section class="gdv-panel gdv-automation-canvas" aria-labelledby="gdv-automation-title">
         <nav class="gdv-automation-tabs" aria-label="Chế độ Automation Builder"><button type="button" aria-current="page" data-gdv-engine="automation">◉ Builder</button><button type="button" data-gdv-engine="automation" aria-label="Mở Automation Lab để xem log">Logs</button><button type="button" data-gdv-engine="automation" aria-label="Mở Automation Lab để xem analytics">Analytics</button><button type="button" data-gdv-route="/settings">Settings</button></nav>
         <header><div><span>CONTROLLED DAG · BLUEPRINT</span><h3 id="gdv-automation-title">Quy trình automation</h3></div>${statusPill(state)}</header>
-        <div class="gdv-canvas-tools" role="group" aria-label="Điều khiển canvas"><button type="button" data-gdv-canvas-zoom="-1" aria-label="Thu nhỏ canvas">−</button><span data-gdv-canvas-zoom-value aria-live="polite">100%</span><button type="button" data-gdv-canvas-zoom="1" aria-label="Phóng to canvas">+</button><button type="button" data-gdv-engine="automation">Mở canvas thật ↗</button></div>
-        <div class="gdv-node-flow gdv-node-flow--blueprint" role="list" aria-label="Cấu trúc automation minh họa, không phải lượt chạy">${blueprint.map((node) => `<article role="listitem"><i>${node[0]}</i><span>${node[1]}</span><div><strong>${node[2]}</strong><p>${node[3]}</p></div><small>Chưa xác nhận cấu hình</small></article>`).join("")}</div>
+        <div class="gdv-canvas-tools" role="group" aria-label="Điều khiển canvas"><button type="button" data-gdv-canvas-zoom="-1" aria-controls="gdv-automation-blueprint" aria-label="Thu nhỏ canvas">−</button><output data-gdv-canvas-zoom-value aria-label="Mức thu phóng canvas" aria-live="polite" aria-atomic="true">100%</output><button type="button" data-gdv-canvas-zoom="1" aria-controls="gdv-automation-blueprint" aria-label="Phóng to canvas">+</button><button type="button" data-gdv-engine="automation">Mở canvas thật ↗</button></div>
+        <div class="gdv-canvas-viewport" data-gdv-canvas-viewport role="region" tabindex="0" aria-label="Canvas quy trình automation; có thể cuộn khi phóng to"><div class="gdv-canvas-stage" data-gdv-canvas-stage><div id="gdv-automation-blueprint" class="gdv-node-flow gdv-node-flow--blueprint" role="list" aria-label="Cấu trúc automation minh họa, không phải lượt chạy">${blueprint.map((node) => `<article role="listitem"><i>${node[0]}</i><span>${node[1]}</span><div><strong>${node[2]}</strong><p>${node[3]}</p></div><small>Chưa xác nhận cấu hình</small></article>`).join("")}</div></div></div>
         <aside class="gdv-honesty-note"><span aria-hidden="true">ⓘ</span><p><strong>Không có tiến độ minh họa.</strong> Chỉ run thật từ Work Center mới xuất hiện ở bảng trạng thái.</p></aside>
       </section>
       <aside class="gdv-panel gdv-run-panel gdv-execution-panel"><header><div><span>EXECUTION STATUS</span><h3>Lượt chạy thật</h3></div>${statusPill(runs.length ? "ready" : "empty", runs.length ? `${runs.length} bản ghi` : "Chưa có log")}</header>${runs.length ? `<ol>${runs.slice(0, 8).map((item, index) => `<li><span>${index + 1}</span><div><strong>${escapeHtml(item.name || item.automationName || item.automationId || "Automation")}</strong><small>${escapeHtml(formatDate(item.finishedAt || item.startedAt || item.createdAt))}</small></div>${statusPill(String(item.status || "idle").toLowerCase(), item.status || "Chưa rõ")}</li>`).join("")}</ol>` : `<div class="gdv-execution-empty-state"><div class="gdv-execution-placeholder" aria-hidden="true"><span class="gdv-execution-placeholder__ring"><b>—</b></span><div>${Array.from({ length: 9 }, (_, index) => `<i style="--placeholder-index:${index}"><b></b><small></small></i>`).join("")}</div></div><div class="gdv-empty gdv-empty--compact"><span>◷</span><strong>Chưa có execution log</strong><p>Vòng và các hàng mờ chỉ giữ bố cục; không phải tiến độ hoặc thời gian giả.</p></div></div>`}<footer><button type="button" data-gdv-engine="automation">Xem log trong engine →</button></footer></aside>
@@ -882,11 +882,28 @@
     const value = instance.root.querySelector("[data-gdv-canvas-zoom-value]");
     if (value) {
       value.textContent = `${instance.canvasZoom}%`;
-      value.setAttribute("aria-valuenow", String(instance.canvasZoom));
     }
     const flow = instance.root.querySelector(".gdv-node-flow--blueprint");
     if (flow) flow.style.setProperty("--gdv-canvas-scale", String(instance.canvasZoom / 100));
+    syncCanvasZoomLayout(instance);
     announce(instance, `Thu phóng canvas ${instance.canvasZoom}%.`);
+  }
+
+  function syncCanvasZoomLayout(instance) {
+    if (instance.view !== "automation") return;
+    const viewport = instance.root.querySelector("[data-gdv-canvas-viewport]");
+    const stage = instance.root.querySelector("[data-gdv-canvas-stage]");
+    const flow = instance.root.querySelector(".gdv-node-flow--blueprint");
+    if (!viewport || !stage || !flow) return;
+    const scale = instance.canvasZoom / 100;
+    const measuredWidth = Number(viewport.clientWidth || flow.offsetWidth || flow.scrollWidth || 0);
+    if (!Number.isFinite(measuredWidth) || measuredWidth <= 0) return;
+    const baseWidth = Math.round(measuredWidth);
+    flow.style.width = `${baseWidth}px`;
+    flow.style.setProperty("--gdv-canvas-scale", String(scale));
+    const baseHeight = Math.max(1, Math.ceil(flow.offsetHeight || flow.scrollHeight || 0));
+    stage.style.width = `${Math.max(baseWidth, Math.ceil(baseWidth * scale))}px`;
+    stage.style.height = `${Math.ceil(baseHeight * scale)}px`;
   }
 
   function drawWaveform(instance) {
@@ -1169,8 +1186,10 @@
     instances.set(root, instance);
     mountedRoots.add(root);
     render(instance);
+    syncCanvasZoomLayout(instance);
     addListener(instance, root, "click", (event) => handleClick(instance, event));
     addListener(instance, root, "input", (event) => handleInput(instance, event));
+    if (instance.view === "automation") addListener(instance, global, "resize", () => syncCanvasZoomLayout(instance), { passive: true });
     addListener(instance, global.document, "visibilitychange", () => handleVisibility(instance));
     addListener(instance, global, "online", () => {
       const supplied = options.capabilities && typeof options.capabilities === "object" ? options.capabilities : {};

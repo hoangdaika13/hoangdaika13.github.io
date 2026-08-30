@@ -67,11 +67,11 @@
       scripts: ["galaxy-home-ai.js?v=10"]
     },
     "galaxy-domain-views": {
-      styles: ["galaxy-domain-views.css?v=7"],
-      scripts: ["galaxy-domain-views.js?v=5"]
+      styles: ["galaxy-domain-views.css?v=8"],
+      scripts: ["galaxy-domain-views.js?v=6"]
     },
     "galaxy-community-showcase": {
-      styles: ["galaxy-community-showcase.css?v=5"],
+      styles: ["galaxy-community-showcase.css?v=6"],
       scripts: ["galaxy-community-showcase.js?v=5"]
     },
     "galaxy-web-desktop": {
@@ -282,7 +282,7 @@
     },
     "chat-ai": {
       styles: ["chat-ai-hub.css?v=19"],
-      scripts: ["chat-ai-hub.js?v=17"]
+      scripts: ["chat-ai-hub.js?v=18"]
     },
     settings: {
       styles: ["settings-studio.css?v=7"],

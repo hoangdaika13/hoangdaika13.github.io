@@ -272,7 +272,7 @@ test("manifest, ICO, static fallback and service worker publish versioned Galaxy
   assert.doesNotMatch(read("brand-galaxy-logo.js"), /hh-galaxy-star-static\.svg\?v=1/);
   assert.doesNotMatch(read("community-admin.js"), /hh-galaxy-star-static\.svg\?v=1/);
   assert.match(loader, /ensureGroup\("brand"\)/);
-  assert.match(worker, /const CACHE = "hh-identity-portal-v946"/);
+  assert.match(worker, /const CACHE = "hh-identity-portal-v947"/);
   assert.match(worker, /brand-galaxy-logo\.css\?v=1/);
   assert.match(worker, /assets\/brand\/hh-galaxy-star-static\.svg\?v=2/);
   assert.match(worker, /assets\/brand\/favicon\.ico\?v=2/);

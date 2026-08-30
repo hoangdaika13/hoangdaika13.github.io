@@ -534,9 +534,10 @@
 @media (max-width: 620px) {
   .gcs-main { padding: 13px 9px 22px; }
   [data-gcs-root] :is(button, select, input) { min-height: 44px; }
-  .gcs-title { align-items: flex-start; }
-  .gcs-title h1 { max-width: 300px; font-size: clamp(1.35rem, 6.2vw, 1.62rem); line-height: 1.04; overflow-wrap: anywhere; white-space: normal; }
-  .gcs-title > button { min-height: 40px; padding: 0 10px; font-size: 0; }
+  .gcs-title { position: relative; align-items: flex-start; padding-right: 48px; }
+  .gcs-title > div { width: 100%; }
+  .gcs-title h1 { max-width: none; font-size: clamp(1.16rem, 5.15vw, 1.35rem); line-height: 1.08; overflow-wrap: normal; text-wrap: balance; white-space: normal; }
+  .gcs-title > button { position: absolute; top: 0; right: 0; min-height: 40px; padding: 0 10px; font-size: 0; }
   .gcs-title > button::after { content: "⇧"; font-size: 1rem; }
   .gcs-title p { max-width: 250px; }
   .gcs-grid { grid-template-columns: minmax(0, 1fr); }

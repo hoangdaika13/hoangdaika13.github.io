@@ -1,4 +1,4 @@
-const CACHE = "hh-identity-portal-v946";
+const CACHE = "hh-identity-portal-v947";
 // Compatibility marker for the previous Galaxy fit and lifecycle hardening release: hh-identity-portal-v945.
 // Compatibility marker for the previous Galaxy reference refinement release: hh-identity-portal-v944.
 // Compatibility marker for the previous Galaxy functional refinement release: hh-identity-portal-v943.
@@ -271,9 +271,9 @@ const RUNTIME_ASSETS = [
   "./assets/galaxy/hh-galaxy-map-bg-v1.png?v=1",
   "./assets/galaxy/hh-luminous-planet-v1.webp?v=1",
   "./assets/galaxy/hh-stellar-core-v1.webp?v=1",
-  "./galaxy-domain-views.css?v=7",
-  "./galaxy-domain-views.js?v=5",
-  "./galaxy-community-showcase.css?v=5",
+  "./galaxy-domain-views.css?v=8",
+  "./galaxy-domain-views.js?v=6",
+  "./galaxy-community-showcase.css?v=6",
   "./galaxy-community-showcase.js?v=5",
   "./galaxy-web-desktop.css?v=5",
   "./galaxy-web-desktop.js?v=5",
@@ -492,7 +492,7 @@ const RUNTIME_ASSETS = [
   "./assets/fortune/lenormand/game-of-hope/spiel-der-hoffnung-36.webp",
   "./assets/fortune/moon/nasa-lro/lroc-color-2k.jpg",
   "./assets/fortune/moon/nasa-lro/lroc-height-1k.jpg",
-  "./chat-ai-hub.js?v=17",
+  "./chat-ai-hub.js?v=18",
   "./media-design-page.js?v=23",
   "./tool-manifests.js?v=1",
   "./tool-runtime.js?v=1",
@@ -579,7 +579,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=587",
+  "./performance-loader.js?v=588",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=259"

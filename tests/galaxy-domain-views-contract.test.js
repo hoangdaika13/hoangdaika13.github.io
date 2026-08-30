@@ -134,6 +134,18 @@ function createDomainHarness({ route = "/work/automation-lab", capabilities = {}
   const windowListeners = new Map();
   const elements = new Map();
   const flowStyles = new Map();
+  const canvasStage = { style: {} };
+  const canvasViewport = {
+    clientWidth: 1000,
+    get scrollWidth() { return Number.parseInt(canvasStage.style.width, 10) || this.clientWidth; }
+  };
+  const canvasFlow = {
+    offsetWidth: 1000,
+    scrollWidth: 1000,
+    offsetHeight: 400,
+    scrollHeight: 400,
+    style: { setProperty(name, value) { flowStyles.set(name, value); } }
+  };
   const storage = new Map();
   const listenerTarget = (listeners, extra = {}) => Object.assign({
     addEventListener(type, listener) { listeners.set(type, listener); },
@@ -149,7 +161,9 @@ function createDomainHarness({ route = "/work/automation-lab", capabilities = {}
         if (!elements.has(selector)) elements.set(selector, { textContent: "100%", setAttribute(name, value) { this[name] = value; } });
         return elements.get(selector);
       }
-      if (selector === ".gdv-node-flow--blueprint") return { style: { setProperty(name, value) { flowStyles.set(name, value); } } };
+      if (selector === "[data-gdv-canvas-viewport]") return canvasViewport;
+      if (selector === "[data-gdv-canvas-stage]") return canvasStage;
+      if (selector === ".gdv-node-flow--blueprint") return canvasFlow;
       if (selector === "[data-gdv-live]") return null;
       if (selector === ".gdv-storage-card .gdv-status") {
         if (!elements.has(selector)) elements.set(selector, { className: "", lastChild: { textContent: "" } });
@@ -191,7 +205,9 @@ function createDomainHarness({ route = "/work/automation-lab", capabilities = {}
       rootListeners.get("click")({ target, preventDefault() {} });
     },
     element(selector) { return elements.get(selector); },
-    flowStyles
+    flowStyles,
+    canvasStage,
+    canvasViewport
   };
 }
 
@@ -346,6 +362,9 @@ test("golden-reference domain controls stay interactive and structurally anchore
   assert.match(source, /function applyMood\(instance, mood\)/);
   assert.match(source, /class="gdv-automation-tabs"/);
   assert.match(source, /class="gdv-automation-features"/);
+  assert.match(source, /class="gdv-canvas-viewport" data-gdv-canvas-viewport role="region" tabindex="0"/);
+  assert.match(source, /class="gdv-canvas-stage" data-gdv-canvas-stage/);
+  assert.match(source, /aria-controls="gdv-automation-blueprint"/);
   assert.match(source, /class="gdv-template-placeholder-list" aria-hidden="true"/);
   assert.match(source, /class="gdv-vault-placeholder-grid" aria-hidden="true"/);
   assert.match(source, /data-gdv-storage-ring/);
@@ -357,20 +376,31 @@ test("golden-reference domain controls stay interactive and structurally anchore
   assert.match(styles, /data-gdv-view="ambient"\][^\{]*\.gdv-scene-picker\s*\{[^}]*grid-column:\s*1\s*\/\s*-1[^}]*inset-inline:\s*clamp\(280px,\s*22vw,\s*372px\)/);
   assert.match(styles, /\.gdv-empty--vault\s*\{[^}]*backdrop-filter:\s*blur/);
   assert.match(styles, /\.gdv-automation-features\s*\{[^}]*grid-template-columns:\s*repeat\(8/);
+  assert.match(styles, /\.gdv-canvas-viewport\s*\{[^}]*overflow:\s*auto[^}]*overscroll-behavior-inline:\s*contain[^}]*overscroll-behavior-block:\s*auto/);
+  assert.match(styles, /data-gdv-view="automation"\][^\{]*\.gdv-template-empty-state\s+\.gdv-empty--compact[\s\S]{0,260}position:\s*static/);
+  assert.match(styles, /data-gdv-view="projects"\][^\{]*\.gdv-vault-categories[\s\S]{0,220}scroll-snap-type:\s*x\s+proximity/);
   assert.match(styles, /\.gdv-cloud-readiness li > span:not\(\.gdv-status\)/);
   assert.doesNotMatch(styles, /\.gdv-cloud-readiness li > span\s*\{/);
   assert.match(styles, /@media \(min-width:\s*1221px\) and \(max-height:\s*850px\)[\s\S]*data-gdv-view="projects"[\s\S]*overflow-y:\s*visible/);
   assert.match(styles, /@media \(min-width:\s*1221px\) and \(max-height:\s*850px\)[\s\S]*data-gdv-view="ambient"[\s\S]*overflow-y:\s*visible/);
+  assert.match(styles, /data-gdv-view="ambient"\]\s+\.gdv-orb::before\s*\{\s*inset:\s*3px;\s*transform:\s*none/);
+  assert.match(styles, /\.gdv-mood-wave\s*\{[^}]*overflow:\s*clip/);
+  assert.match(styles, /\.gdv-creator-pipeline\s+\.gdv-pipeline__grid\s*>\s*li:not\(:last-child\)::after\s*\{[^}]*right:\s*0/);
 });
 
 test("Automation blueprint zoom controls update their own canvas without launching an engine", () => {
   const harness = createDomainHarness();
-  harness.click("[data-gdv-canvas-zoom]", { gdvCanvasZoom: "1" });
-  assert.equal(harness.controller.getState().canvasZoom, 110);
-  assert.equal(harness.element("[data-gdv-canvas-zoom-value]").textContent, "110%");
-  assert.equal(harness.flowStyles.get("--gdv-canvas-scale"), "1.1");
+  for (let index = 0; index < 5; index += 1) harness.click("[data-gdv-canvas-zoom]", { gdvCanvasZoom: "1" });
+  assert.equal(harness.controller.getState().canvasZoom, 150);
+  assert.equal(harness.element("[data-gdv-canvas-zoom-value]").textContent, "150%");
+  assert.equal(harness.flowStyles.get("--gdv-canvas-scale"), "1.5");
+  assert.equal(harness.canvasStage.style.width, "1500px");
+  assert.equal(harness.canvasStage.style.height, "600px");
+  assert.equal(harness.canvasViewport.scrollWidth, 1500, "zoom 150% must create a reachable horizontal scroll extent");
+  assert.ok(harness.canvasViewport.scrollWidth > harness.canvasViewport.clientWidth);
   for (let index = 0; index < 10; index += 1) harness.click("[data-gdv-canvas-zoom]", { gdvCanvasZoom: "-1" });
   assert.equal(harness.controller.getState().canvasZoom, 50, "zoom must stay within the supported range");
+  assert.equal(harness.canvasStage.style.width, "1000px", "zooming out must not shrink the focusable viewport below its container");
   harness.controller.unmount();
 });
 

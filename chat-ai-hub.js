@@ -198,7 +198,7 @@
     if (!runtime?.host || reducedMotion || chunks.length <= 1) { message.text = fullText; message.streaming = false; return; }
     message.text = ""; message.loading = false; message.streaming = true;
     let following = isNearStreamBottom(runtime.host.querySelector("[data-chat-ai-stream]"), 150);
-    render(runtime, false, { forceBottom: following });
+    updateMessageNode(runtime, message, { follow: following });
     for (const chunk of chunks) {
       if (runtime.lifecycleController?.signal?.aborted) { message.text = fullText; break; }
       if (runtime.controller?.signal?.aborted) { message.stopped = true; break; }
@@ -213,9 +213,7 @@
       await nextPaint();
     }
     message.streaming = false;
-    const article = runtime.host?.querySelector?.(`[data-chat-ai-message="${message.id}"]`);
-    const body = article?.querySelector(".chat-ai-message__body");
-    if (body) body.innerHTML = markdownMarkup(message.text, message.id);
+    updateMessageNode(runtime, message, { follow: following });
   }
   function sourceMarkup(sources) {
     if (!sources?.length) return "";
@@ -289,12 +287,52 @@
     }
     return `<aside class="chat-ai-inspector"><header class="chat-ai-drawer-head"><strong>Tùy chỉnh HH AI</strong><button type="button" data-chat-ai-mobile-close aria-label="Đóng tùy chỉnh">×</button></header>${tabs}<div class="chat-ai-inspector__body">${body}</div></aside>`;
   }
+  function providerStatusLabel(status) {
+    if (status === "online") return "HH Intelligence sẵn sàng";
+    if (status === "degraded") return "HH AI đã tự chuyển phương án";
+    if (status === "offline") return "HH Basic Assist sẵn sàng";
+    return "Đang kiểm tra dịch vụ AI";
+  }
+  function updateProviderStatus(runtime) {
+    if (!runtime?.host || instance !== runtime || runtime.lifecycleController?.signal.aborted) return;
+    const status = ["online", "degraded", "offline"].includes(runtime.providerStatus) ? runtime.providerStatus : "checking";
+    const label = providerStatusLabel(status);
+    runtime.host.querySelectorAll("[data-chat-ai-provider-state]").forEach((target) => {
+      target.dataset.chatAiProviderState = status;
+      target.setAttribute("aria-label", label);
+      const labelNode = target.querySelector("[data-chat-ai-provider-label]");
+      if (labelNode) labelNode.textContent = label;
+    });
+  }
+  function updateMessageNode(runtime, message, options = {}) {
+    if (!runtime?.host || !message?.id || instance !== runtime || runtime.lifecycleController?.signal.aborted) return false;
+    const stream = runtime.host.querySelector("[data-chat-ai-stream]");
+    if (!stream) return false;
+    const previousTop = stream.scrollTop;
+    const follow = options.follow === true || (options.follow === undefined && isNearStreamBottom(stream));
+    const article = runtime.host.querySelector(`[data-chat-ai-message="${CSS.escape(message.id)}"]`);
+    if (article) article.outerHTML = messageMarkup(message);
+    else stream.insertAdjacentHTML("beforeend", messageMarkup(message));
+    if (follow) scrollStreamToBottom(stream);
+    else stream.scrollTop = previousTop;
+    return true;
+  }
+  function updateBusyState(runtime) {
+    if (!runtime?.host || instance !== runtime || runtime.lifecycleController?.signal.aborted) return;
+    const hub = runtime.host.querySelector("[data-chat-ai-hub]");
+    if (hub) hub.dataset.busy = String(Boolean(runtime.busy));
+    const stop = runtime.host.querySelector("[data-chat-ai-stop]");
+    if (stop) stop.hidden = !runtime.busy;
+    const sendLabel = runtime.host.querySelector("[data-chat-ai-send-label]");
+    if (sendLabel) sendLabel.textContent = runtime.busy ? "Xếp hàng" : "Gửi";
+    updateProviderStatus(runtime);
+  }
   function shellMarkup(runtime) {
     const session = currentSession(runtime);
     const activeMode = currentMode(runtime);
     const messages = session.messages.length ? session.messages.map(messageMarkup).join("") : `<section class="chat-ai-welcome"><div class="chat-ai-orb"><span>HH</span><i></i><b></b></div><small>HH INTELLIGENCE · COSMIC WORKSPACE</small><h2>Hôm nay chúng ta sẽ tạo nên điều gì?</h2><p>Trò chuyện nhiều lượt, nghiên cứu có nguồn, phân tích ảnh/PDF, viết nội dung và hỗ trợ lập trình trong một không gian riêng của bạn.</p><div>${PROMPTS.slice(0, 4).map(([title], index) => `<button type="button" data-chat-ai-prompt="${index}"><i>✦</i>${escapeHtml(title)}</button>`).join("")}</div></section>`;
     const mobilePanelClass = runtime.mobilePanel ? ` is-${runtime.mobilePanel}-open` : "";
-    const providerLabel = runtime.providerStatus === "online" ? "HH Intelligence sẵn sàng" : runtime.providerStatus === "degraded" ? "HH AI đã tự chuyển phương án" : runtime.providerStatus === "offline" ? "HH Basic Assist sẵn sàng" : "Đang kiểm tra dịch vụ AI";
+    const providerLabel = providerStatusLabel(runtime.providerStatus);
     const layoutClass = `${mobilePanelClass}${runtime.state.inspectorOpen ? "" : " is-inspector-hidden"}${runtime.state.sidebarCollapsed ? " is-sidebar-collapsed" : ""}`;
     const folders = [...new Set(runtime.state.sessions.map((item) => item.folder || "Chung"))].sort((a, b) => a.localeCompare(b, "vi"));
     const primaryModes = MODES.filter((mode) => ["chat", "research", "code", "study"].includes(mode.id));
@@ -307,7 +345,7 @@
         <button class="chat-ai-mobile-sessions" type="button" data-chat-ai-mobile-panel="sessions" aria-expanded="${runtime.mobilePanel === "sessions"}" aria-label="Mở danh sách hội thoại">☰</button>
         <div class="chat-ai-brand"><i><span>HH</span></i><span><small>HH INTELLIGENCE</small><strong>Chat AI</strong></span></div>
         <label class="chat-ai-chat-title"><span>Hội thoại hiện tại</span><input data-chat-ai-title value="${escapeHtml(session.title)}" maxlength="120" ${runtime.incognito ? "disabled" : ""} aria-label="Tên cuộc trò chuyện"></label>
-        <div class="chat-ai-live-status" data-chat-ai-provider-state="${runtime.providerStatus}"><i></i><span>${providerLabel}</span></div>
+        <div class="chat-ai-live-status" data-chat-ai-provider-state="${runtime.providerStatus}" aria-label="${providerLabel}"><i></i><span data-chat-ai-provider-label>${providerLabel}</span></div>
         <div class="chat-ai-top-actions">
           <label class="chat-ai-processing"><span class="chat-ai-sr-only">Chế độ xử lý</span><select data-chat-ai-processing aria-label="Chế độ xử lý">${processingModes.map((mode) => `<option value="${mode.id}" ${runtime.state.processingMode === mode.id ? "selected" : ""}>${mode.id === "auto" ? "Tự động" : mode.id === "fast" ? "Nhanh" : "Suy luận sâu"}</option>`).join("")}</select></label>
           <details class="chat-ai-overflow"><summary aria-label="Mở thêm tùy chọn">•••</summary><div class="chat-ai-overflow__menu">
@@ -321,8 +359,8 @@
       </header>
       <nav class="chat-ai-mode-rail" aria-label="Chế độ Chat AI"><div class="chat-ai-mode-tabs">${primaryModes.map(modeButton).join("")}</div><details class="chat-ai-mode-more"><summary>＋ Thêm</summary><div>${moreModes.map(modeButton).join("")}</div></details></nav>
       <div class="chat-ai-layout">
-        <aside class="chat-ai-sidebar"><header class="chat-ai-drawer-head"><strong>Hội thoại</strong><button type="button" data-chat-ai-mobile-close aria-label="Đóng lịch sử">×</button></header><button type="button" class="chat-ai-new" data-chat-ai-new>＋ Cuộc trò chuyện mới</button><label class="chat-ai-search"><span>⌕</span><input type="search" data-chat-ai-session-search value="${escapeHtml(runtime.query)}" placeholder="Tìm trong lịch sử..."></label><div class="chat-ai-folder-row"><select data-chat-ai-folder-filter aria-label="Lọc thư mục"><option value="">Tất cả thư mục</option>${folders.map((folder) => `<option value="${escapeHtml(folder)}" ${runtime.folderFilter === folder ? "selected" : ""}>${escapeHtml(folder)}</option>`).join("")}</select><button type="button" data-chat-ai-toggle-sidebar title="Thu gọn hội thoại">‹</button></div><div class="chat-ai-session-list" data-chat-ai-sessions>${runtime.incognito ? `<article class="chat-ai-private-card"><i>◉</i><strong>Phiên riêng tư</strong><span>Không ghi vào lịch sử</span></article>` : sessionsMarkup(runtime)}</div><footer><span data-chat-ai-provider-state="${runtime.providerStatus}"><i></i>${providerLabel}</span><small>Dữ liệu nhạy cảm và khóa truy cập được giữ phía máy chủ</small></footer></aside>
-        <main class="chat-ai-main"><section class="chat-ai-stream" data-chat-ai-stream aria-live="polite">${messages}</section><section class="chat-ai-pending" data-chat-ai-pending ${runtime.pending.length || runtime.queue.length ? "" : "hidden"}>${pendingMarkup(runtime)}</section><form class="chat-ai-composer" data-chat-ai-form data-drop-active="false"><div class="chat-ai-composer__mode"><i>${escapeHtml(activeMode.icon)}</i><strong>${escapeHtml(activeMode.label)}</strong><span>${escapeHtml(activeMode.prompt)}</span></div><textarea data-chat-ai-input rows="2" maxlength="24000" placeholder="${escapeHtml(activeMode.placeholder)}">${escapeHtml(runtime.state.draft)}</textarea><div class="chat-ai-composer__bar"><div class="chat-ai-composer__tools"><label title="Kéo thả, dán hoặc chọn tệp">＋ <span>Tệp</span><input type="file" data-chat-ai-files multiple accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/markdown,text/csv,application/json,.txt,.md,.csv,.json"></label><button type="button" data-chat-ai-mic title="Nhập bằng giọng nói">◉ <span>Nói</span></button><button type="button" data-chat-ai-save-prompt title="Lưu nội dung đang soạn">☆ <span>Lưu</span></button><button type="button" data-chat-ai-clear-draft title="Xóa nội dung">⌫</button></div><span class="chat-ai-composer__count"><b data-chat-ai-count>${runtime.state.draft.length}</b>/24000${runtime.queue.length ? ` · ${runtime.queue.length} đang chờ` : ""}</span><div class="chat-ai-composer__submit"><button type="button" class="chat-ai-stop" data-chat-ai-stop ${runtime.busy ? "" : "hidden"}>■ Dừng</button><button type="submit" class="chat-ai-send">${runtime.busy ? "Xếp hàng" : "Gửi"}<i>➤</i></button></div></div></form><footer class="chat-ai-honesty">HH Intelligence có thể mắc lỗi. Hãy kiểm tra dữ kiện quan trọng.</footer></main>
+        <aside class="chat-ai-sidebar"><header class="chat-ai-drawer-head"><strong>Hội thoại</strong><button type="button" data-chat-ai-mobile-close aria-label="Đóng lịch sử">×</button></header><button type="button" class="chat-ai-new" data-chat-ai-new>＋ Cuộc trò chuyện mới</button><label class="chat-ai-search"><span>⌕</span><input type="search" data-chat-ai-session-search value="${escapeHtml(runtime.query)}" placeholder="Tìm trong lịch sử..."></label><div class="chat-ai-folder-row"><select data-chat-ai-folder-filter aria-label="Lọc thư mục"><option value="">Tất cả thư mục</option>${folders.map((folder) => `<option value="${escapeHtml(folder)}" ${runtime.folderFilter === folder ? "selected" : ""}>${escapeHtml(folder)}</option>`).join("")}</select><button type="button" data-chat-ai-toggle-sidebar title="Thu gọn hội thoại">‹</button></div><div class="chat-ai-session-list" data-chat-ai-sessions>${runtime.incognito ? `<article class="chat-ai-private-card"><i>◉</i><strong>Phiên riêng tư</strong><span>Không ghi vào lịch sử</span></article>` : sessionsMarkup(runtime)}</div><footer><span data-chat-ai-provider-state="${runtime.providerStatus}" aria-label="${providerLabel}"><i></i><span data-chat-ai-provider-label>${providerLabel}</span></span><small>Dữ liệu nhạy cảm và khóa truy cập được giữ phía máy chủ</small></footer></aside>
+        <main class="chat-ai-main"><section class="chat-ai-stream" data-chat-ai-stream aria-live="polite">${messages}</section><section class="chat-ai-pending" data-chat-ai-pending ${runtime.pending.length || runtime.queue.length ? "" : "hidden"}>${pendingMarkup(runtime)}</section><form class="chat-ai-composer" data-chat-ai-form data-drop-active="false"><div class="chat-ai-composer__mode"><i>${escapeHtml(activeMode.icon)}</i><strong>${escapeHtml(activeMode.label)}</strong><span>${escapeHtml(activeMode.prompt)}</span></div><textarea data-chat-ai-input rows="2" maxlength="24000" placeholder="${escapeHtml(activeMode.placeholder)}">${escapeHtml(runtime.state.draft)}</textarea><div class="chat-ai-composer__bar"><div class="chat-ai-composer__tools"><label title="Kéo thả, dán hoặc chọn tệp">＋ <span>Tệp</span><input type="file" data-chat-ai-files multiple accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/markdown,text/csv,application/json,.txt,.md,.csv,.json"></label><button type="button" data-chat-ai-mic title="Nhập bằng giọng nói">◉ <span>Nói</span></button><button type="button" data-chat-ai-save-prompt title="Lưu nội dung đang soạn">☆ <span>Lưu</span></button><button type="button" data-chat-ai-clear-draft title="Xóa nội dung">⌫</button></div><span class="chat-ai-composer__count"><b data-chat-ai-count>${runtime.state.draft.length}</b>/24000${runtime.queue.length ? ` · ${runtime.queue.length} đang chờ` : ""}</span><div class="chat-ai-composer__submit"><button type="button" class="chat-ai-stop" data-chat-ai-stop ${runtime.busy ? "" : "hidden"}>■ Dừng</button><button type="submit" class="chat-ai-send"><span data-chat-ai-send-label>${runtime.busy ? "Xếp hàng" : "Gửi"}</span><i>➤</i></button></div></div></form><footer class="chat-ai-honesty">HH Intelligence có thể mắc lỗi. Hãy kiểm tra dữ kiện quan trọng.</footer></main>
         ${rightPanelMarkup(runtime, session)}
       </div>
       <button type="button" class="chat-ai-mobile-backdrop" data-chat-ai-mobile-close aria-label="Đóng bảng điều khiển"></button><div class="chat-ai-toast" data-chat-ai-toast role="status" aria-live="polite" hidden></div>${runtime.deleted ? `<button class="chat-ai-undo" type="button" data-chat-ai-undo>Hoàn tác xóa “${escapeHtml(runtime.deleted.title)}”</button>` : ""}
@@ -453,6 +491,7 @@
       Object.assign(loading, { loading: false, streaming: true, error: false, continuity, text: "", provider: actualProvider, providerError: action.providerError || "", model: action.model || (continuity ? "hh-basic-assist-v1" : action.requestedModel), latencyMs: Math.round(performance.now() - startedAt), usage: action.usage || null, sources: action.sources || [] });
       runtime.providerStatus = actualProvider === "gemini" ? "online" : "degraded";
       runtime.lastMeta = { label: assistantIdentity(loading).label, technicalProvider: actualProvider, technicalModel: loading.model, latencyMs: loading.latencyMs, tokens: action.usage?.totalTokenCount || action.usage?.total_tokens || action.usage?.totalTokens || "--", fallbackUsed: Boolean(action.fallbackUsed || actualProvider !== "gemini"), requestedModel: action.requestedModel || "" };
+      updateProviderStatus(runtime);
       await revealAssistant(runtime, loading, responseText);
     } catch (error) {
       const limited = Number(error.status) === 429 || /quota|resource_exhausted|rate limit/i.test(error.message);
@@ -464,10 +503,13 @@
         Object.assign(loading, { loading: false, streaming: true, error: false, continuity: true, provider: "local-client", model: "hh-basic-assist-v1", providerError: clean(error.message, 500), latencyMs: Math.round(performance.now() - startedAt), text: "" });
         runtime.providerStatus = "offline";
         runtime.lastMeta = { label: "HH Basic Assist", technicalProvider: "local-client", technicalModel: "hh-basic-assist-v1", latencyMs: loading.latencyMs, tokens: "local", fallbackUsed: true, requestedModel: "" };
+        updateProviderStatus(runtime);
         await revealAssistant(runtime, loading, responseText);
       }
     } finally {
-      runtime.busy = false; runtime.controller = null; session.updatedAt = new Date().toISOString(); writeState(runtime); render(runtime);
+      runtime.busy = false; runtime.controller = null; session.updatedAt = new Date().toISOString(); loading.streaming = false; writeState(runtime);
+      if (instance !== runtime || runtime.lifecycleController?.signal.aborted) { runtime.queue.length = 0; return; }
+      updateMessageNode(runtime, loading); updateBusyState(runtime);
       const next = runtime.queue.shift();
       if (next) globalScope.setTimeout?.(() => send(runtime, next.input, next.attachments, { mode: next.mode }), 0);
     }
@@ -504,7 +546,9 @@
   }
   async function checkProvider(runtime) {
     const base = clean(runtime.options.apiBase || globalScope.HH_API_BASE || globalScope.location?.origin, 600).replace(/\/$/, ""); const token = globalScope.HHAuthSession?.token?.() || "";
-    try { const response = await fetch(`${base}/api/modules/chat-ai/actions?anonymousId=${encodeURIComponent(anonymousId())}`, { headers: token ? { Authorization: `Bearer ${token}` } : {}, cache: "no-store" }); const data = await response.json().catch(() => ({})); const geminiReady = Boolean(data.providers?.gemini?.configured && data.providers?.gemini?.availableKeyCount !== 0); const alternateReady = Boolean(data.providers?.openai?.configured); runtime.providerStatus = response.ok && geminiReady ? "online" : response.ok && (alternateReady || data.supports?.localContinuity) ? "degraded" : "offline"; runtime.providerDetail = data.providers || null; } catch { runtime.providerStatus = "offline"; } render(runtime);
+    try { const response = await fetch(`${base}/api/modules/chat-ai/actions?anonymousId=${encodeURIComponent(anonymousId())}`, { headers: token ? { Authorization: `Bearer ${token}` } : {}, cache: "no-store", signal: runtime.lifecycleController?.signal }); const data = await response.json().catch(() => ({})); const geminiReady = Boolean(data.providers?.gemini?.configured && data.providers?.gemini?.availableKeyCount !== 0); const alternateReady = Boolean(data.providers?.openai?.configured); runtime.providerStatus = response.ok && geminiReady ? "online" : response.ok && (alternateReady || data.supports?.localContinuity) ? "degraded" : "offline"; runtime.providerDetail = data.providers || null; } catch { runtime.providerStatus = "offline"; }
+    if (instance !== runtime || runtime.lifecycleController?.signal.aborted) return;
+    updateProviderStatus(runtime);
   }
 
   async function addFiles(runtime, files) {

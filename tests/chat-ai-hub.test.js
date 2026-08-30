@@ -102,6 +102,29 @@ test("Chat AI interface provides real conversation, attachment, privacy and expo
   assert.doesNotMatch(source, /GEMINI_API_KEY|GOOGLE_AI_API_KEY/);
 });
 
+test("provider health checks update status in place without remounting the composer", () => {
+  const source = read("chat-ai-hub.js");
+  const providerCheck = source.match(/async function checkProvider\(runtime\)\s*\{([\s\S]*?)\n  \}/);
+  assert.ok(providerCheck, "checkProvider must remain independently testable");
+  assert.match(providerCheck[1], /updateProviderStatus\(runtime\)/);
+  assert.match(providerCheck[1], /signal:\s*runtime\.lifecycleController\?\.signal/);
+  assert.doesNotMatch(providerCheck[1], /\brender\s*\(/, "provider status changes must not replace the input or composer");
+  assert.match(source, /function updateProviderStatus\(runtime\)/);
+  assert.match(source, /data-chat-ai-provider-label/);
+});
+
+test("streaming updates only the active message and keeps the composer node stable", () => {
+  const source = read("chat-ai-hub.js");
+  const reveal = source.match(/async function revealAssistant\(runtime, message, value\)\s*\{([\s\S]*?)\n  \}/);
+  assert.ok(reveal, "revealAssistant must remain independently testable");
+  assert.match(reveal[1], /updateMessageNode\(runtime, message/);
+  assert.doesNotMatch(reveal[1], /\brender\s*\(/, "token streaming must not replace the composer");
+  assert.match(source, /function updateBusyState\(runtime\)/);
+  assert.match(source, /data-chat-ai-send-label/);
+  assert.match(source, /instance !== runtime \|\| runtime\.lifecycleController\?\.signal\.aborted\) \{ runtime\.queue\.length = 0; return; \}/);
+  assert.doesNotMatch(source, /finally\s*\{[^}]*\brender\(runtime\)/, "send completion must update local UI state instead of remounting the shell");
+});
+
 test("HH Basic Assist fallback is useful and explicitly labeled", () => {
   const output = chat.localContinuityResponse("Fix lỗi API JavaScript", { mode: "code" });
   assert.match(output, /HH Basic Assist đang hỗ trợ/);
@@ -165,12 +188,12 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   assert.match(client, /id: "chat-ai"[\s\S]*?route: "\/chat-ai"/);
   assert.match(client, /window\.HHChatAI\?\.mount/);
   assert.match(client, /title: "Chat AI"[\s\S]*?smart router/);
-  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=19[\s\S]*?chat-ai-hub\.js\?v=17/);
+  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=19[\s\S]*?chat-ai-hub\.js\?v=18/);
   assert.match(html, /performance-loader\.js\?v=474/);
   assert.match(worker, /performance-loader\.js\?v=474/);
   assert.match(loader, /value\.startsWith\("\/chat-ai"\)/);
   assert.match(worker, /chat-ai-hub\.css\?v=19/);
-  assert.match(worker, /chat-ai-hub\.js\?v=17/);
+  assert.match(worker, /chat-ai-hub\.js\?v=18/);
   assert.match(html, /data-hh-galaxy-key="chatAI"/);
   assert.match(html, /25 LĨNH VỰC/);
   assert.match(galaxy, /chatAI:\s*\{[\s\S]*?route: "#\/chat-ai"/);
