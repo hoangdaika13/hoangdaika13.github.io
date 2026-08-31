@@ -1,4 +1,6 @@
-const CACHE = "hh-identity-portal-v960";
+const CACHE = "hh-identity-portal-v966";
+// Learning Star reference refinement: original four-portal atlas, compact
+// stellar dashboard, live HH CORE handoff and local-first study workspace.
 // Compatibility markers for the previous twelve-world visual releases: hh-identity-portal-v959 hh-identity-portal-v958.
 // HH Galaxy cosmic worlds: all twelve Layer One routes receive independent
 // visual identities while HH CORE remains the sole Layer Two gateway.
@@ -278,8 +280,9 @@ const RUNTIME_ASSETS = [
   "./galaxy-home-ai.css?v=19",
   "./galaxy-home-ai.js?v=12",
   "./galaxy-layer-one.css?v=2",
-  "./galaxy-layer-one-worlds.css?v=4",
-  "./galaxy-layer-one.js?v=3",
+  "./galaxy-layer-one-worlds.css?v=10",
+  "./galaxy-layer-one.js?v=7",
+  "./assets/galaxy/learning-portals-atlas-v1.png",
   "./galaxy-layer-one-data.js?v=2",
   "./galaxy-creator-studio.css?v=9",
   "./galaxy-creator-studio.js?v=3",
@@ -594,7 +597,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=612",
+  "./performance-loader.js?v=618",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=263"

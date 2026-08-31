@@ -39,3 +39,14 @@ Generation brief: one compact golden-orange sun with detailed molten granulation
 - SHA-256: `EB6EC43C94C69B8D18A8064E5D974FFB71BAD3024A4FF92D0F974A961783C740`.
 
 Generation brief: original cinematic rainy-night study room with a window, rain droplets, warm lamps, chair, plants and fireplace; dark left-side negative space for readable controls; no copied website or game artwork.
+
+## `learning-portals-atlas-v1.png`
+
+- Purpose: one 1254×1254 decorative 2×2 atlas for the four live Learning Star destination cards: Japanese, English, Chinese and Phật pháp.
+- Created: 2026-08-31 with OpenAI ImageGen for HH Platform.
+- Source type: original generated raster; the user-supplied Learning Star dashboard was used only as a mood and composition reference.
+- Content boundary: no interface, text, logo, route, statistic, button or watermark is baked into the asset. Titles, descriptions, HH CORE access notices and controls remain semantic HTML.
+- Rendering: CSS crops one quadrant per card and applies a dark readability layer; the cards continue to route exclusively through the HH CORE gateway boundary.
+- SHA-256: `9AC40781C3103926173AA0341DC1095ECE3025C97D5B570F33DD0933D03169BD`.
+
+Generation brief: a unified cosmic-learning atlas containing a twilight torii and Mount Fuji, a midnight London skyline with Big Ben, the Great Wall through emerald mountain mist, and a golden Buddha-lotus halo scene; no people, interface, typography, logo or watermark.

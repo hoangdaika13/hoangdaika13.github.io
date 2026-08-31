@@ -279,6 +279,24 @@
     })
   });
 
+  // Canonical HH Platform destinations verified against galaxy-shell.js.
+  // Layer One only describes these destinations; access remains exclusively
+  // granted by the HH CORE control on /home.
+  const LEARNING_DESTINATIONS = Object.freeze([
+    Object.freeze({ id: "japanese", title: "HH Japanese", route: "/japanese", glyph: "日", description: "Ngôn ngữ của sự tinh tế, ngữ cảnh và kỷ luật." }),
+    Object.freeze({ id: "english", title: "HH English", route: "/english", glyph: "EN", description: "Ngôn ngữ toàn cầu cho học tập và kết nối." }),
+    Object.freeze({ id: "chinese", title: "HH Chinese", route: "/chinese", glyph: "中", description: "Hán tự, thanh điệu và chiều sâu văn hóa." }),
+    Object.freeze({ id: "dharma", title: "Phật pháp", route: "/phat-phap", glyph: "✦", description: "Kinh văn, thực hành và hành trình hiểu biết từ bi." })
+  ]);
+
+  const LEARNING_STAGES = Object.freeze([
+    Object.freeze({ id: "start", title: "Khởi động", description: "Làm quen và định hướng", icon: "home" }),
+    Object.freeze({ id: "discover", title: "Khám phá", description: "Nội dung cơ bản và nền tảng", icon: "search" }),
+    Object.freeze({ id: "understand", title: "Thấu hiểu", description: "Luyện tập và vận dụng", icon: "ai" }),
+    Object.freeze({ id: "expand", title: "Mở rộng", description: "Dự án và thực hành nâng cao", icon: "learning" }),
+    Object.freeze({ id: "shine", title: "Tỏa sáng", description: "Chia sẻ và lan tỏa tri thức", icon: "creator" })
+  ]);
+
   function freezeTemplate(template) {
     return Object.freeze({
       id: template.id,
@@ -429,11 +447,16 @@
     const title = String(value.title || "").trim().slice(0, 160);
     if (!title) return null;
     const metaSource = value.meta && typeof value.meta === "object" ? value.meta : {};
+    const learningCategory = ["note", "plan", "resource"].includes(metaSource.learningCategory) ? metaSource.learningCategory : "";
+    const dueDate = /^\d{4}-\d{2}-\d{2}$/.test(String(metaSource.dueDate || "")) ? String(metaSource.dueDate) : "";
     const meta = {
       fileName: String(metaSource.fileName || "").slice(0, 180),
       fileType: String(metaSource.fileType || "").slice(0, 120),
       fileSize: Math.max(0, Math.min(Number(metaSource.fileSize) || 0, Number.MAX_SAFE_INTEGER)),
-      copiedFrom: String(metaSource.copiedFrom || "").slice(0, 100)
+      copiedFrom: String(metaSource.copiedFrom || "").slice(0, 100),
+      learningCategory: learningCategory,
+      dueDate: dueDate,
+      completed: metaSource.completed === true
     };
     return {
       id: String(value.id || createId()).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 96) || createId(),
@@ -576,6 +599,20 @@
     return true;
   }
 
+  function toggleLearningItem(id, candidate) {
+    const cleanId = String(id || "");
+    const result = inspectLocalState(candidate);
+    if (result.status !== "ready") return null;
+    const item = result.data.items.find(function findLearningItem(entry) {
+      return entry.id === cleanId && entry.route === "/galaxy/learning";
+    });
+    if (!item) return null;
+    item.meta.completed = item.meta.completed !== true;
+    item.updatedAt = new Date().toISOString();
+    if (!writeLocalState(result.data, candidate)) return null;
+    return item.meta.completed;
+  }
+
   function serializeBackup(candidate) {
     const state = collectLocalState(candidate);
     return JSON.stringify({
@@ -642,6 +679,25 @@
     }
   }
 
+  function localDateKey(value) {
+    const date = value instanceof Date ? value : new Date(value || Date.now());
+    if (!Number.isFinite(date.getTime())) return "";
+    const year = String(date.getFullYear()).padStart(4, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return year + "-" + month + "-" + day;
+  }
+
+  function formatLearningDate(value) {
+    const key = /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? String(value) : "";
+    if (!key) return "Chưa đặt ngày";
+    try {
+      return new Intl.DateTimeFormat("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(key + "T12:00:00"));
+    } catch (_) {
+      return key;
+    }
+  }
+
   function navMarkup(activeRoute, mobileOnly) {
     const links = routeManifest.filter(function mobileRoutes(entry) {
       return !mobileOnly || ["home", "ai", "creator", "tools", "settings"].includes(entry.id);
@@ -702,14 +758,20 @@
     const title = options.title || experience.title;
     const description = options.description || experience.description;
     const eyebrow = options.eyebrow || entry.eyebrow;
-    return "<header class=\"hgl1-page-head hgl1-world-hero hgl1-world-hero--" + entry.id + "\" aria-labelledby=\"hgl1-world-title-" + entry.id + "\">" +
-      "<div class=\"hgl1-world-hero__body\"><span class=\"hgl1-eyebrow\">" + escapeHtml(eyebrow) + "</span>" +
+    const heroClass = options.heroClass ? " " + options.heroClass : "";
+    const bodyClass = options.bodyClass ? " " + options.bodyClass : "";
+    const visualClass = options.visualClass ? " " + options.visualClass : "";
+    const orbClass = options.orbClass ? " " + options.orbClass : "";
+    const constellationClass = options.constellationClass ? " " + options.constellationClass : "";
+    const extra = options.extra || "";
+    return "<header class=\"hgl1-page-head hgl1-world-hero hgl1-world-hero--" + entry.id + heroClass + "\" aria-labelledby=\"hgl1-world-title-" + entry.id + "\">" +
+      "<div class=\"hgl1-world-hero__body" + bodyClass + "\"><span class=\"hgl1-eyebrow\">" + escapeHtml(eyebrow) + "</span>" +
       "<span class=\"hgl1-world-hero__signal\"><i aria-hidden=\"true\"></i>" + escapeHtml(experience.signal) + "</span>" +
       "<h1 id=\"hgl1-world-title-" + entry.id + "\">" + escapeHtml(title) + "</h1><p>" + escapeHtml(description) + "</p>" +
       (actions ? "<div class=\"hgl1-page-head__actions\">" + actions + "</div>" : "") + "</div>" +
-      "<div class=\"hgl1-world-hero__visual\" aria-hidden=\"true\"><span class=\"hgl1-world-constellation hgl1-world-constellation--" + entry.id + "\"><i></i><i></i><i></i><i></i><i></i><i></i></span>" +
-      "<span class=\"hgl1-world-orb hgl1-world-orb--" + entry.id + "\"><i class=\"hgl1-world-orb__ring\"></i><i class=\"hgl1-world-orb__core\"></i><i class=\"hgl1-world-orb__satellite\"></i><span class=\"hgl1-world-orb__glyph\">" + icon(entry.icon) + "</span></span>" +
-      "<span class=\"hgl1-world-hero__caption\"><b>" + escapeHtml(experience.visualLabel) + "</b><small>" + escapeHtml(experience.visualHint) + "</small></span></div></header>";
+      "<div class=\"hgl1-world-hero__visual" + visualClass + "\" aria-hidden=\"true\"><span class=\"hgl1-world-constellation hgl1-world-constellation--" + entry.id + constellationClass + "\"><i></i><i></i><i></i><i></i><i></i><i></i></span>" +
+      "<span class=\"hgl1-world-orb hgl1-world-orb--" + entry.id + orbClass + "\"><i class=\"hgl1-world-orb__ring\"></i><i class=\"hgl1-world-orb__core\"></i><i class=\"hgl1-world-orb__satellite\"></i><span class=\"hgl1-world-orb__glyph\">" + icon(entry.icon) + "</span></span>" +
+      "<span class=\"hgl1-world-hero__caption\"><b>" + escapeHtml(experience.visualLabel) + "</b><small>" + escapeHtml(experience.visualHint) + "</small></span></div>" + extra + "</header>";
   }
 
   function worldRailMarkup(entry, options) {
@@ -797,6 +859,94 @@
       worldRailMarkup(entry, { status: "Module chuyên dụng", scope: "Dữ liệu Creator lớp 1" }) + "</div></section>";
   }
 
+  function learningItemCategory(item) {
+    if (item && item.meta && item.meta.fileName) return "imports";
+    if (item && item.meta && item.meta.learningCategory === "plan") return "plans";
+    if (item && item.kind === "learning-plan") return "plans";
+    return "notes";
+  }
+
+  function learningResourceMarkup(item) {
+    const category = learningItemCategory(item);
+    const categoryLabels = { notes: "Ghi chú", plans: "Kế hoạch", imports: "Tệp đã nhập" };
+    const categoryIcons = { notes: "learning", plans: "bell", imports: "upload" };
+    const completed = item.meta && item.meta.completed === true;
+    const dueDate = item.meta && item.meta.dueDate;
+    return "<article class=\"hgl1-document hgl1-learning-resource" + (completed ? " is-complete" : "") + "\" data-hgl1-item data-hgl1-learning-resource data-learning-category=\"" + category + "\" data-filter-text=\"" + escapeHtml(normalizedSearchText(item.title + " " + item.description + " " + categoryLabels[category])) + "\">" +
+      "<div class=\"hgl1-document__visual hgl1-document__visual--amber hgl1-learning-resource__visual\" aria-hidden=\"true\">" + icon(categoryIcons[category]) + "<span></span></div>" +
+      "<div class=\"hgl1-document__body\"><div class=\"hgl1-document__meta\"><span class=\"hgl1-badge hgl1-badge--local\">" + categoryLabels[category] + "</span>" + (completed ? "<span class=\"hgl1-badge hgl1-badge--success\">Đã hoàn thành</span>" : "<span>Cục bộ</span>") + "</div>" +
+      "<h3>" + escapeHtml(item.title) + "</h3><p>" + (item.description ? escapeHtml(item.description) : "Tài liệu học tập do bạn tạo trên thiết bị này.") + "</p>" +
+      (dueDate ? "<p class=\"hgl1-learning-resource__due\">Ngày dự kiến: <time datetime=\"" + escapeHtml(dueDate) + "\">" + escapeHtml(formatLearningDate(dueDate)) + "</time></p>" : "") +
+      "<div class=\"hgl1-document__footer\"><time datetime=\"" + escapeHtml(item.updatedAt) + "\">" + escapeHtml(formatLocalTime(item.updatedAt)) + "</time><div class=\"hgl1-learning-resource__actions\">" +
+      "<button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"toggle-learning\" data-item-id=\"" + escapeHtml(item.id) + "\" aria-pressed=\"" + String(completed) + "\">" + (completed ? "Đánh dấu chưa xong" : "Đánh dấu hoàn thành") + "</button>" +
+      "<button class=\"hgl1-icon-button hgl1-icon-button--danger\" type=\"button\" data-hgl1-action=\"delete-item\" data-item-id=\"" + escapeHtml(item.id) + "\" aria-label=\"Xóa " + escapeHtml(item.title) + "\">" + icon("close") + "</button></div></div></div></article>";
+  }
+
+  function learningTemplateMarkup() {
+    const template = templateByRoute.get("/galaxy/learning");
+    return "<article class=\"hgl1-document hgl1-document--template hgl1-learning-resource\" data-hgl1-learning-resource data-learning-category=\"templates\" data-filter-text=\"" + escapeHtml(normalizedSearchText(template.title + " " + template.description + " bản mẫu")) + "\" data-is-demo=\"true\" data-source=\"" + template.source + "\" data-template-version=\"" + template.templateVersion + "\" data-editable=\"false\">" +
+      "<div class=\"hgl1-document__visual hgl1-document__visual--amber hgl1-learning-resource__visual\" aria-hidden=\"true\">" + icon("learning") + "<span></span></div><div class=\"hgl1-document__body\">" +
+      "<div class=\"hgl1-document__meta\"><span class=\"hgl1-badge hgl1-badge--demo\">Bản mẫu</span><span>Không tính tiến trình</span></div><h3>" + escapeHtml(template.title) + "</h3><p>" + escapeHtml(template.description) + "</p>" +
+      "<button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"copy-template\" data-route=\"/galaxy/learning\">Tạo bản sao</button></div></article>";
+  }
+
+  function learningMarkup(state) {
+    const entry = findRoute("/galaxy/learning");
+    const items = state.items.filter(function learningItems(item) { return item.route === "/galaxy/learning"; }).slice().sort(function newestFirst(a, b) {
+      return Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
+    });
+    const today = localDateKey(new Date());
+    const plans = items.filter(function learningPlans(item) { return learningItemCategory(item) === "plans"; }).slice().sort(function dueFirst(a, b) {
+      const first = (a.meta && a.meta.dueDate) || "9999-12-31";
+      const second = (b.meta && b.meta.dueDate) || "9999-12-31";
+      return first.localeCompare(second);
+    });
+    const todayPlans = plans.filter(function todayPlan(item) { return item.meta && item.meta.dueDate === today; });
+    const completedCount = items.filter(function completedItem(item) { return item.meta && item.meta.completed === true; }).length;
+    const updatedToday = items.filter(function updatedItem(item) { return localDateKey(item.updatedAt) === today; }).length;
+    const journey = LEARNING_STAGES.map(function learningStage(stage, index) {
+      return "<li class=\"hgl1-learning-journey__node hgl1-learning-stage hgl1-learning-stage--" + stage.id + "\" data-stage=\"" + stage.id + "\"><span class=\"hgl1-learning-journey__orb hgl1-learning-stage__orb\" aria-hidden=\"true\">" + icon(stage.icon) + "</span><div class=\"hgl1-learning-stage__body hgl1-learning-journey__label\"><h3>" + escapeHtml(stage.title) + "</h3><p>" + escapeHtml(stage.description) + "</p></div>" + (index < LEARNING_STAGES.length - 1 ? "<i aria-hidden=\"true\"></i>" : "") + "</li>";
+    }).join("");
+    const destinations = LEARNING_DESTINATIONS.map(function learningDestination(destination) {
+      const dharmaAlias = destination.id === "dharma" ? " hgl1-learning-portal--buddhist hgl1-learning-destination--buddhist" : "";
+      return "<article class=\"hgl1-learning-portal hgl1-learning-destination hgl1-learning-portal--" + destination.id + " hgl1-learning-destination--" + destination.id + dharmaAlias + "\" data-platform-route=\"" + destination.route + "\" data-capability=\"unconfigured\">" +
+        "<div class=\"hgl1-learning-portal__art hgl1-learning-destination__art\" aria-hidden=\"true\"><span class=\"hgl1-learning-portal__landmark\">" + escapeHtml(destination.glyph) + "</span><i></i><i></i><i></i></div>" +
+        "<div class=\"hgl1-learning-portal__body hgl1-learning-destination__body\"><span>HH Platform · " + escapeHtml(destination.route) + "</span><h2>" + escapeHtml(destination.title) + "</h2><p>" + escapeHtml(destination.description) + "</p>" +
+        "<button class=\"hgl1-button hgl1-button--ghost hgl1-learning-portal__action hgl1-learning-destination__action\" type=\"button\" data-hgl1-action=\"open-platform-via-core\">Vào học qua HH CORE " + icon("arrow") + "</button></div></article>";
+    }).join("");
+    const todayMarkup = todayPlans.length ? "<div class=\"hgl1-learning-today__list\">" + todayPlans.map(function todayPlanMarkup(item) {
+      const completed = item.meta && item.meta.completed === true;
+      return "<article><span aria-hidden=\"true\">" + icon("learning") + "</span><div><b>" + escapeHtml(item.title) + "</b><small>" + (completed ? "Đã đánh dấu hoàn thành" : "Kế hoạch của hôm nay") + "</small></div><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"toggle-learning\" data-item-id=\"" + escapeHtml(item.id) + "\" aria-pressed=\"" + String(completed) + "\">" + (completed ? "Mở lại" : "Hoàn thành") + "</button></article>";
+    }).join("") + "</div>" : "<div class=\"hgl1-learning-empty\" data-state=\"empty\"><span aria-hidden=\"true\">" + icon("learning") + "</span><div><b>Chưa có bài học được lên lịch hôm nay</b><p>Tạo một kế hoạch có ngày dự kiến để hiển thị tại đây.</p></div><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"focus-learning-plan\">Lên kế hoạch</button></div>";
+    const planList = plans.length ? "<ul class=\"hgl1-learning-plan__list\">" + plans.slice(0, 6).map(function planItem(item) {
+      return "<li class=\"" + (item.meta.completed ? "is-complete" : "") + "\"><time datetime=\"" + escapeHtml(item.meta.dueDate) + "\">" + escapeHtml(formatLearningDate(item.meta.dueDate)) + "</time><span>" + escapeHtml(item.title) + "</span></li>";
+    }).join("") + "</ul>" : "<p class=\"hgl1-learning-plan__empty\">Chưa có kế hoạch học tập nào được lưu.</p>";
+    const heroActions = "<button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"focus-learning-note\">" + icon("plus") + " Ghi chú nhanh</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"trigger-file\" data-route=\"/galaxy/learning\">" + icon("upload") + " Nhập tài liệu</button><input class=\"hgl1-sr-only\" type=\"file\" data-hgl1-module-file data-route=\"/galaxy/learning\" accept=\".txt,.md,.json,text/plain,application/json\"/>";
+    const coreGate = "<button class=\"hgl1-learning-core-gate\" type=\"button\" data-hgl1-action=\"open-platform-via-core\" aria-label=\"Mở cổng HH CORE tại bản đồ Galaxy\"><span aria-hidden=\"true\">HH</span><b>HH CORE</b><small>Cổng vào HH Platform</small>" + icon("arrow") + "</button>";
+    const libraryShortcuts = "<div class=\"hgl1-learning-library__shortcuts\" aria-label=\"Thao tác nhanh trong thư viện\">" +
+      "<button type=\"button\" data-hgl1-action=\"focus-learning-note\">" + icon("learning") + "<span>Ghi chú</span></button>" +
+      "<button type=\"button\" data-hgl1-action=\"focus-learning-plan\">" + icon("bell") + "<span>Kế hoạch</span></button>" +
+      "<button type=\"button\" data-hgl1-action=\"trigger-file\" data-route=\"/galaxy/learning\">" + icon("upload") + "<span>Nhập tài liệu</span></button>" +
+      "<button type=\"button\" data-hgl1-action=\"filter-learning\" data-learning-filter=\"imports\" aria-pressed=\"false\">" + icon("video") + "<span>Tệp đã nhập</span></button>" +
+      "<button type=\"button\" data-hgl1-action=\"filter-learning\" data-learning-filter=\"plans\" aria-pressed=\"false\">" + icon("creator") + "<span>Bài tập</span></button>" +
+      "<button type=\"button\" data-hgl1-action=\"filter-learning\" data-learning-filter=\"templates\" aria-pressed=\"false\">" + icon("ai") + "<span>Bản mẫu</span></button></div>";
+    return "<section class=\"hgl1-page hgl1-page--module hgl1-page--learning hgl1-learning hgl1-learning-shell\" data-module=\"learning\">" +
+      worldHeroMarkup(entry, heroActions, { title: "Learning Star", description: "Khám phá tri thức • Kết nối vạn tinh tú • Thắp sáng tương lai", eyebrow: "Hành trình học tập", heroClass: "hgl1-learning-hero", bodyClass: "hgl1-learning-hero__body", visualClass: "hgl1-learning-hero__visual", orbClass: "hgl1-learning-hero__star", constellationClass: "hgl1-learning-hero__constellation", extra: coreGate }) +
+      "<div class=\"hgl1-status-strip\"><span class=\"hgl1-status-dot hgl1-status-dot--local\"></span><span>Ghi chú, kế hoạch và metadata tài liệu được lưu trên thiết bị</span><b>Dữ liệu riêng của lớp 1</b></div>" +
+      "<section class=\"hgl1-learning-journey\" aria-labelledby=\"hgl1-learning-journey-title\"><div class=\"hgl1-learning-journey__title\"><span class=\"hgl1-kicker\">Lộ trình 5 bước</span><h2 id=\"hgl1-learning-journey-title\">Lộ trình của bạn</h2><p>Các bước định hướng, không phải tiến độ hoàn thành của người dùng.</p></div><div class=\"hgl1-learning-journey__track\"><span class=\"hgl1-learning-journey__path\" aria-hidden=\"true\"></span><ol class=\"hgl1-learning-track\">" + journey + "</ol></div></section>" +
+      "<section class=\"hgl1-feature-grid hgl1-portal-grid hgl1-learning-portals hgl1-learning-destinations\" aria-label=\"Các không gian học thuộc HH Platform\">" + destinations + "</section>" +
+      "<div class=\"hgl1-world-layout hgl1-learning-dashboard hgl1-learning-layout\"><div class=\"hgl1-world-main hgl1-learning-dashboard__main hgl1-learning-main\">" +
+      "<section class=\"hgl1-learning-today\" aria-labelledby=\"hgl1-learning-today-title\"><header class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Hôm nay · " + escapeHtml(formatLearningDate(today)) + "</span><h2 id=\"hgl1-learning-today-title\">Bài học hôm nay</h2></div><span>" + todayPlans.length + " kế hoạch thật</span></header>" + todayMarkup + "</section>" +
+      "<section class=\"hgl1-library hgl1-learning-library\" data-capability=\"available\" aria-labelledby=\"hgl1-learning-library-title\"><header class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Kho cục bộ</span><h2 id=\"hgl1-learning-library-title\">Thư viện học tập</h2></div><label class=\"hgl1-filter\">" + icon("search") + "<span class=\"hgl1-sr-only\">Tìm trong thư viện học tập</span><input type=\"search\" data-hgl1-learning-search placeholder=\"Tìm tài liệu, ghi chú, kế hoạch...\"/></label></header>" +
+      "<div class=\"hgl1-learning-library__filters\" role=\"group\" aria-label=\"Lọc thư viện\"><button class=\"is-active\" type=\"button\" data-hgl1-action=\"filter-learning\" data-learning-filter=\"all\" aria-pressed=\"true\">Tất cả</button><button type=\"button\" data-hgl1-action=\"filter-learning\" data-learning-filter=\"notes\" aria-pressed=\"false\">Ghi chú</button><button type=\"button\" data-hgl1-action=\"filter-learning\" data-learning-filter=\"plans\" aria-pressed=\"false\">Kế hoạch</button><button type=\"button\" data-hgl1-action=\"filter-learning\" data-learning-filter=\"imports\" aria-pressed=\"false\">Tệp đã nhập</button><button type=\"button\" data-hgl1-action=\"filter-learning\" data-learning-filter=\"templates\" aria-pressed=\"false\">Bản mẫu</button><output data-hgl1-learning-result-count>" + (items.length + 1) + " mục</output></div>" + libraryShortcuts +
+      "<div class=\"hgl1-document-grid hgl1-learning-library__grid\" data-hgl1-learning-list>" + learningTemplateMarkup() + items.map(learningResourceMarkup).join("") + "</div><div class=\"hgl1-learning-library__empty\" data-hgl1-learning-empty hidden>Không có mục nào khớp bộ lọc hiện tại.</div></section>" +
+      "<section class=\"hgl1-learning-progress\"><header><span class=\"hgl1-kicker\">Dữ liệu thật</span><h2>Tiến trình của bạn</h2></header>" + (items.length ? "<dl><div><dt>Tài liệu người dùng</dt><dd>" + items.length + "</dd></div><div><dt>Đã đánh dấu hoàn thành</dt><dd>" + completedCount + "</dd></div><div><dt>Cập nhật hôm nay</dt><dd>" + updatedToday + "</dd></div></dl>" : "<div class=\"hgl1-learning-empty\" data-state=\"empty\"><b>Chưa có dữ liệu học tập</b><p>Tạo ghi chú hoặc kế hoạch đầu tiên để bắt đầu ghi nhận.</p></div>") + "</section></div>" +
+      "<aside class=\"hgl1-world-rail hgl1-world-rail--learning hgl1-learning-dashboard__sidebar hgl1-learning-rail\" aria-label=\"Kế hoạch và ghi chú học tập\">" +
+      "<section class=\"hgl1-learning-plan hgl1-learning-schedule\"><header><span class=\"hgl1-kicker\">Lịch cục bộ</span><h2>Kế hoạch học tập</h2></header>" + planList + "<form data-hgl1-learning-plan-form><label for=\"hgl1-learning-plan-title\">Nội dung kế hoạch</label><input id=\"hgl1-learning-plan-title\" name=\"title\" maxlength=\"160\" required placeholder=\"Ví dụ: Ôn lại ghi chú hôm nay\"/><label for=\"hgl1-learning-plan-date\">Ngày dự kiến</label><input id=\"hgl1-learning-plan-date\" name=\"dueDate\" type=\"date\" required/><button class=\"hgl1-button hgl1-button--primary\" type=\"submit\">Lưu kế hoạch</button></form></section>" +
+      "<section class=\"hgl1-learning-note hgl1-learning-quick-note\"><header><span class=\"hgl1-kicker\">Ghi chú nhanh</span><h2>Lưu một ý tưởng học tập</h2></header><form data-hgl1-learning-note-form><label class=\"hgl1-sr-only\" for=\"hgl1-learning-note\">Nội dung ghi chú</label><textarea id=\"hgl1-learning-note\" name=\"note\" rows=\"4\" maxlength=\"500\" required placeholder=\"Ghi chú, câu hỏi hoặc mục tiêu hôm nay...\"></textarea><button class=\"hgl1-button hgl1-button--primary\" type=\"submit\">Lưu ghi chú</button></form></section>" +
+      "<section class=\"hgl1-learning-motivation\"><span aria-hidden=\"true\">✦</span><div><h2>Giữ nhịp học tập</h2><p>Tiến một bước nhỏ, kiểm tra điều đã hiểu và ghi lại câu hỏi tiếp theo.</p></div></section></aside></div></section>";
+  }
+
   function toolsMarkup(state) {
     const entry = findRoute("/galaxy/tools");
     const items = state.items.filter(function toolsItem(item) { return item.route === "/galaxy/tools"; }).slice().reverse();
@@ -843,6 +993,7 @@
     if (ui && ui.status === "error") return statePanel("error", ui.message || "Vui lòng kiểm tra quyền lưu trữ của trình duyệt.");
     if (entry.route === "/home") return homeMarkup();
     if (entry.route === "/galaxy/creator") return creatorMarkup(state);
+    if (entry.route === "/galaxy/learning") return learningMarkup(state);
     if (entry.route === "/galaxy/tools") return toolsMarkup(state);
     if (entry.route === "/galaxy/analytics") return analyticsMarkup(state);
     if (entry.route === "/galaxy/settings") return settingsMarkup(state);
@@ -1066,6 +1217,30 @@
     });
   }
 
+  function applyLearningLibraryFilter(source) {
+    if (!runtime || !runtime.app) return;
+    const library = source && typeof source.closest === "function" ? source.closest(".hgl1-learning-library") : null;
+    const host = library || runtime.app.querySelector(".hgl1-learning-library");
+    if (!host) return;
+    const search = host.querySelector("[data-hgl1-learning-search]");
+    const selected = host.querySelector("[data-hgl1-action=\"filter-learning\"][aria-pressed=\"true\"]");
+    const filter = selected ? selected.dataset.learningFilter : "all";
+    const needle = normalizedSearchText(search ? search.value : "");
+    const resources = host.querySelectorAll("[data-hgl1-learning-resource]");
+    let visible = 0;
+    Array.prototype.forEach.call(resources, function filterLearningResource(resource) {
+      const category = resource.dataset.learningCategory || "notes";
+      const categoryMatch = filter === "all" || category === filter;
+      const textMatch = !needle || normalizedSearchText(resource.getAttribute("data-filter-text")).indexOf(needle) >= 0;
+      resource.hidden = !(categoryMatch && textMatch);
+      if (!resource.hidden) visible += 1;
+    });
+    const count = host.querySelector("[data-hgl1-learning-result-count]");
+    if (count) count.textContent = visible + " mục";
+    const empty = host.querySelector("[data-hgl1-learning-empty]");
+    if (empty) empty.hidden = visible !== 0;
+  }
+
   function downloadText(fileName, text, type) {
     if (!globalScope.document || typeof globalScope.Blob !== "function" || !globalScope.URL || typeof globalScope.URL.createObjectURL !== "function") return false;
     const url = globalScope.URL.createObjectURL(new globalScope.Blob([text], { type: type || "application/json;charset=utf-8" }));
@@ -1124,7 +1299,7 @@
     if (!match) return;
     const item = createLocalItem(match.route, file.name, runtime.storage, {
       description: "Metadata tệp được nhập từ thiết bị. Nội dung tệp không được tải lên.",
-      meta: { fileName: file.name, fileType: file.type, fileSize: file.size }
+      meta: { fileName: file.name, fileType: file.type, fileSize: file.size, learningCategory: match.route === "/galaxy/learning" ? "resource" : "" }
     });
     if (item) {
       render();
@@ -1192,7 +1367,37 @@
     const action = control.dataset.hgl1Action;
     if (action === "open-drawer") setDrawer(true);
     else if (action === "close-drawer") setDrawer(false);
-    else if (action === "focus-create") {
+    else if (action === "open-platform-via-core") {
+      const destinationCard = control.closest("[data-platform-route]");
+      const destination = LEARNING_DESTINATIONS.find(function findLearningDestination(entry) {
+        return destinationCard && entry.route === destinationCard.dataset.platformRoute;
+      });
+      navigate("/home");
+      showToast(destination ? destination.title + " thuộc HH Platform. Hãy chọn HH CORE trên bản đồ để mở đúng cổng." : "Hãy chọn HH CORE trên bản đồ để vào HH Platform.", "info");
+    } else if (action === "filter-learning") {
+      const library = control.closest(".hgl1-learning-library");
+      const filters = library ? library.querySelectorAll("[data-hgl1-action=\"filter-learning\"]") : [];
+      Array.prototype.forEach.call(filters, function resetLearningFilter(button) {
+        const selected = button === control;
+        button.classList.toggle("is-active", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      });
+      applyLearningLibraryFilter(control);
+    } else if (action === "toggle-learning") {
+      const completed = toggleLearningItem(control.dataset.itemId, runtime.storage);
+      if (completed === null) {
+        showToast("Không thể cập nhật mục học tập này.", "error");
+      } else {
+        render();
+        showToast(completed ? "Đã đánh dấu hoàn thành." : "Đã chuyển về trạng thái chưa hoàn thành.", "success");
+      }
+    } else if (action === "focus-learning-note") {
+      const note = runtime.app.querySelector("[data-hgl1-learning-note-form] textarea[name=\"note\"]");
+      note && note.focus();
+    } else if (action === "focus-learning-plan") {
+      const plan = runtime.app.querySelector("[data-hgl1-learning-plan-form] input[name=\"title\"]");
+      plan && plan.focus();
+    } else if (action === "focus-create") {
       const input = runtime.app.querySelector("[data-hgl1-create-form] input[name=\"title\"]");
       input && input.focus();
     } else if (action === "copy-template") {
@@ -1254,6 +1459,50 @@
   }
 
   function handleSubmit(event) {
+    const noteForm = event.target.closest("[data-hgl1-learning-note-form]");
+    if (noteForm && runtime) {
+      event.preventDefault();
+      const field = noteForm.querySelector("textarea[name=\"note\"]");
+      const note = String(field && field.value || "").trim().slice(0, 500);
+      const firstLine = note.split(/\r?\n/)[0].trim();
+      const title = firstLine.length > 96 ? firstLine.slice(0, 93) + "..." : firstLine;
+      const item = createLocalItem("/galaxy/learning", title, runtime.storage, {
+        kind: "learning-quick-note",
+        description: note,
+        meta: { learningCategory: "note", completed: false }
+      });
+      if (!item) {
+        showToast("Nhập nội dung ghi chú hợp lệ và kiểm tra quyền lưu trữ.", "error");
+        return;
+      }
+      render();
+      showToast("Đã lưu ghi chú học tập trên thiết bị.", "success");
+      return;
+    }
+    const planForm = event.target.closest("[data-hgl1-learning-plan-form]");
+    if (planForm && runtime) {
+      event.preventDefault();
+      const titleField = planForm.querySelector("input[name=\"title\"]");
+      const dateField = planForm.querySelector("input[name=\"dueDate\"]");
+      const title = String(titleField && titleField.value || "").trim().slice(0, 160);
+      const dueDate = String(dateField && dateField.value || "");
+      if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+        showToast("Nhập nội dung và ngày dự kiến hợp lệ.", "error");
+        return;
+      }
+      const item = createLocalItem("/galaxy/learning", title, runtime.storage, {
+        kind: "learning-plan",
+        description: "Kế hoạch học tập do bạn tạo cho " + formatLearningDate(dueDate) + ".",
+        meta: { learningCategory: "plan", dueDate: dueDate, completed: false }
+      });
+      if (!item) {
+        showToast("Không thể lưu kế hoạch trên thiết bị.", "error");
+        return;
+      }
+      render();
+      showToast("Đã lưu kế hoạch học tập.", "success");
+      return;
+    }
     const form = event.target.closest("[data-hgl1-create-form]");
     if (!form || !runtime) return;
     event.preventDefault();
@@ -1270,6 +1519,7 @@
   function handleInput(event) {
     if (event.target.matches("[data-hgl1-global-search]")) updateGlobalSearch(event.target);
     else if (event.target.matches("[data-hgl1-item-filter]")) updateItemFilter(event.target);
+    else if (event.target.matches("[data-hgl1-learning-search]")) applyLearningLibraryFilter(event.target);
   }
 
   function handleChange(event) {
