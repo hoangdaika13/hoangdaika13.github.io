@@ -143,6 +143,142 @@
     })
   });
 
+  function freezeWorldExperience(experience) {
+    return Object.freeze({
+      signal: experience.signal,
+      title: experience.title,
+      description: experience.description,
+      visualLabel: experience.visualLabel,
+      visualHint: experience.visualHint,
+      railTitle: experience.railTitle,
+      railDescription: experience.railDescription,
+      portalIcons: Object.freeze((experience.portalIcons || []).slice())
+    });
+  }
+
+  const WORLD_EXPERIENCES = Object.freeze({
+    home: freezeWorldExperience({
+      signal: "Điểm khởi hành",
+      title: "Khám phá HH Galaxy",
+      description: "Mỗi hành tinh là một không gian chức năng độc lập. Chọn điểm đến ở bản đồ hoặc thanh điều hướng để bắt đầu hành trình.",
+      visualLabel: "Galaxy Nexus",
+      visualHint: "Bản đồ lớp 1",
+      railTitle: "La bàn Galaxy",
+      railDescription: "Bản đồ chỉ điều hướng giữa các khu vực của lớp 1 và không tạo thêm cổng sang sản phẩm khác.",
+      portalIcons: ["home", "search", "settings"]
+    }),
+    ai: freezeWorldExperience({
+      signal: "Tinh vân trí tuệ",
+      title: "Kiến tạo ý tưởng trong AI Universe",
+      description: "Xây dựng thư viện prompt, ghi chú ngữ cảnh và tài liệu AI của riêng bạn trong một workspace cục bộ, minh bạch.",
+      visualLabel: "AI Nebula",
+      visualHint: "Nhà cung cấp chưa cấu hình",
+      railTitle: "Trạm điều phối AI",
+      railDescription: "Prompt được lưu trên thiết bị. Hội thoại chỉ hoạt động sau khi có backend proxy và nhà cung cấp hợp lệ.",
+      portalIcons: ["ai", "database", "upload"]
+    }),
+    music: freezeWorldExperience({
+      signal: "Quỹ đạo âm thanh",
+      title: "Chạm vào nhịp điệu của Music Planet",
+      description: "Tổ chức dự án âm thanh, playlist và metadata tệp ngay trên thiết bị trong một hành tinh giàu nhịp điệu.",
+      visualLabel: "Sonic Orbit",
+      visualHint: "Thư viện cục bộ",
+      railTitle: "Đài âm thanh",
+      railDescription: "Tệp chỉ được chọn khi bạn chủ động nhập; quyền microphone chỉ được hỏi khi bạn yêu cầu kiểm tra.",
+      portalIcons: ["music", "upload", "settings"]
+    }),
+    video: freezeWorldExperience({
+      signal: "Dải ngân hà điện ảnh",
+      title: "Dựng câu chuyện tại Video Planet",
+      description: "Chuẩn bị media, caption, thumbnail và kế hoạch video trong một không gian trực quan dành riêng cho hình ảnh chuyển động.",
+      visualLabel: "Cinema Halo",
+      visualHint: "Media trên thiết bị",
+      railTitle: "Buồng dựng hình",
+      railDescription: "Workspace hiện quản lý dự án và metadata. Timeline editor chỉ xuất hiện khi có runtime chuyên dụng.",
+      portalIcons: ["video", "database", "creator"]
+    }),
+    creator: freezeWorldExperience({
+      signal: "Trung tâm sáng tạo",
+      title: "Điều phối hành trình tại Creator Studio",
+      description: "Một buồng lái chuyên dụng cho quy trình sản xuất nội dung lớp 1, từ ý tưởng đến kiểm tra đầu ra.",
+      visualLabel: "Creator Core",
+      visualHint: "Pipeline độc lập",
+      railTitle: "Bản đồ quy trình",
+      railDescription: "Creator Studio sở hữu dữ liệu và vòng đời dự án riêng, không sử dụng component hoặc dữ liệu của lớp 2.",
+      portalIcons: ["creator", "database", "analytics"]
+    }),
+    games: freezeWorldExperience({
+      signal: "Thế giới tương tác",
+      title: "Mở hành trình trong Games World",
+      description: "Quản lý hồ sơ game web, save cục bộ và tùy chọn trợ năng mà không tạo thành tích hoặc trạng thái người chơi giả.",
+      visualLabel: "Play Sphere",
+      visualHint: "Save trên thiết bị",
+      railTitle: "Trạm trò chơi",
+      railDescription: "Game chỉ chạy khi có runtime web an toàn; hồ sơ hiện tại là dữ liệu cục bộ do bạn tạo.",
+      portalIcons: ["games", "database", "settings"]
+    }),
+    dev: freezeWorldExperience({
+      signal: "Trạm kiến tạo số",
+      title: "Lắp ghép ý tưởng tại Dev Planet",
+      description: "Lưu snippet, metadata dự án và thử nghiệm cấu trúc code trong workspace không tự động thực thi mã.",
+      visualLabel: "Code Singularity",
+      visualHint: "Không tự chạy mã",
+      railTitle: "Bảng điều khiển Dev",
+      railDescription: "Nội dung được lưu cục bộ. Preview chỉ được bật sau khi có sandbox cô lập và chính sách an toàn phù hợp.",
+      portalIcons: ["dev", "tools", "database"]
+    }),
+    learning: freezeWorldExperience({
+      signal: "Ngôi sao tri thức",
+      title: "Mở rộng hiểu biết cùng Learning Star",
+      description: "Biến ghi chú, flashcard và câu hỏi của bạn thành một hành trình học tập có nguồn dữ liệu rõ ràng.",
+      visualLabel: "Knowledge Star",
+      visualHint: "Tiến độ từ hoạt động thật",
+      railTitle: "Đài quan sát tri thức",
+      railDescription: "Tiến độ chỉ được hình thành từ nội dung và hoạt động do bạn lưu; không có chứng nhận tự sinh.",
+      portalIcons: ["learning", "database", "help"]
+    }),
+    community: freezeWorldExperience({
+      signal: "Chòm sao kết nối",
+      title: "Nuôi dưỡng kết nối tại Community",
+      description: "Soạn bài, chuẩn bị nhóm và kế hoạch sự kiện trong không gian ngoại tuyến trước khi có dịch vụ realtime thật.",
+      visualLabel: "Social Constellation",
+      visualHint: "Realtime chưa cấu hình",
+      railTitle: "Tín hiệu cộng đồng",
+      railDescription: "Chỉ bản nháp cục bộ đang khả dụng. Thành viên, nhóm, sự kiện và realtime cần dữ liệu từ backend hợp lệ.",
+      portalIcons: ["community", "database", "bell"]
+    }),
+    tools: freezeWorldExperience({
+      signal: "Cụm tiện ích",
+      title: "Xử lý nhanh tại Tools Galaxy",
+      description: "Phân tích văn bản và định dạng JSON trực tiếp trong trình duyệt, không tự động gửi nội dung ra mạng.",
+      visualLabel: "Utility Cluster",
+      visualHint: "Xử lý cục bộ",
+      railTitle: "Khoang công cụ",
+      railDescription: "Mỗi tiện ích xử lý đúng dữ liệu bạn nhập trong phiên làm việc hiện tại.",
+      portalIcons: ["tools", "dev", "database"]
+    }),
+    analytics: freezeWorldExperience({
+      signal: "Đài quan sát dữ liệu",
+      title: "Quan sát hoạt động thật trong Analytics",
+      description: "Theo dõi số liệu tối thiểu của lớp 1 trên thiết bị, chỉ sau khi bạn chủ động bật consent.",
+      visualLabel: "Data Observatory",
+      visualHint: "Consent rõ ràng",
+      railTitle: "Phạm vi đo lường",
+      railDescription: "Không đọc nội dung tài liệu, không tính bản mẫu và không gửi dữ liệu sang dịch vụ bên ngoài.",
+      portalIcons: ["analytics", "database", "download"]
+    }),
+    settings: freezeWorldExperience({
+      signal: "Trung tâm hiệu chỉnh",
+      title: "Cá nhân hóa Cài đặt Galaxy",
+      description: "Điều chỉnh giao diện, chuyển động, độ tương phản và quyền riêng tư chỉ dành cho lớp 1.",
+      visualLabel: "Control Moon",
+      visualHint: "Thiết lập riêng biệt",
+      railTitle: "Quyền kiểm soát",
+      railDescription: "Mọi thay đổi được lưu trên thiết bị và không tác động đến thiết lập của sản phẩm khác.",
+      portalIcons: ["settings", "download", "upload"]
+    })
+  });
+
   function freezeTemplate(template) {
     return Object.freeze({
       id: template.id,
@@ -512,7 +648,7 @@
     }).map(function navEntry(entry) {
       const active = entry.route === activeRoute;
       return "<a class=\"hgl1-nav__link hgl1-tone--" + entry.tone + "\" href=\"#" + entry.route + "\" data-hgl1-route=\"" + entry.route + "\" aria-current=\"" + (active ? "page" : "false") + "\">" +
-        "<span class=\"hgl1-nav__icon\">" + icon(entry.icon) + "</span>" +
+        "<span class=\"hgl1-nav__icon hgl1-nav__planet hgl1-nav__planet--" + entry.id + "\" aria-hidden=\"true\"><span class=\"hgl1-nav__planet-glow\"></span>" + icon(entry.icon) + "</span>" +
         "<span class=\"hgl1-nav__label\">" + escapeHtml(entry.label) + "</span>" +
         (mobileOnly ? "" : "<span class=\"hgl1-nav__arrow\">" + icon("arrow") + "</span>") +
       "</a>";
@@ -547,6 +683,51 @@
     return "<section class=\"hgl1-state hgl1-state--" + safeStatus + "\" data-state=\"" + safeStatus + "\" role=\"status\"><span class=\"hgl1-state__orb\" aria-hidden=\"true\"></span><div><h2>" + titles[safeStatus] + "</h2><p>" + escapeHtml(message || "") + "</p></div></section>";
   }
 
+  function worldExperience(entry) {
+    return WORLD_EXPERIENCES[entry.id] || freezeWorldExperience({
+      signal: entry.eyebrow,
+      title: entry.title,
+      description: entry.description,
+      visualLabel: entry.label,
+      visualHint: "Không gian lớp 1",
+      railTitle: "Thông tin khu vực",
+      railDescription: entry.description,
+      portalIcons: [entry.icon, "database", "settings"]
+    });
+  }
+
+  function worldHeroMarkup(entry, actions, overrides) {
+    const experience = worldExperience(entry);
+    const options = overrides && typeof overrides === "object" ? overrides : {};
+    const title = options.title || experience.title;
+    const description = options.description || experience.description;
+    const eyebrow = options.eyebrow || entry.eyebrow;
+    return "<header class=\"hgl1-page-head hgl1-world-hero hgl1-world-hero--" + entry.id + "\" aria-labelledby=\"hgl1-world-title-" + entry.id + "\">" +
+      "<div class=\"hgl1-world-hero__body\"><span class=\"hgl1-eyebrow\">" + escapeHtml(eyebrow) + "</span>" +
+      "<span class=\"hgl1-world-hero__signal\"><i aria-hidden=\"true\"></i>" + escapeHtml(experience.signal) + "</span>" +
+      "<h1 id=\"hgl1-world-title-" + entry.id + "\">" + escapeHtml(title) + "</h1><p>" + escapeHtml(description) + "</p>" +
+      (actions ? "<div class=\"hgl1-page-head__actions\">" + actions + "</div>" : "") + "</div>" +
+      "<div class=\"hgl1-world-hero__visual\" aria-hidden=\"true\"><span class=\"hgl1-world-constellation hgl1-world-constellation--" + entry.id + "\"><i></i><i></i><i></i><i></i><i></i><i></i></span>" +
+      "<span class=\"hgl1-world-orb hgl1-world-orb--" + entry.id + "\"><i class=\"hgl1-world-orb__ring\"></i><i class=\"hgl1-world-orb__core\"></i><i class=\"hgl1-world-orb__satellite\"></i><span class=\"hgl1-world-orb__glyph\">" + icon(entry.icon) + "</span></span>" +
+      "<span class=\"hgl1-world-hero__caption\"><b>" + escapeHtml(experience.visualLabel) + "</b><small>" + escapeHtml(experience.visualHint) + "</small></span></div></header>";
+  }
+
+  function worldRailMarkup(entry, options) {
+    const experience = worldExperience(entry);
+    const context = options && typeof options === "object" ? options : {};
+    const facts = [];
+    if (context.status) facts.push(["Trạng thái", context.status]);
+    if (Number.isFinite(context.itemCount)) facts.push(["Tài liệu của bạn", String(Math.max(0, context.itemCount))]);
+    if (context.scope) facts.push(["Phạm vi", context.scope]);
+    const factsMarkup = facts.length ? "<dl class=\"hgl1-world-rail__facts\">" + facts.map(function worldFact(fact) {
+      return "<div><dt>" + escapeHtml(fact[0]) + "</dt><dd>" + escapeHtml(fact[1]) + "</dd></div>";
+    }).join("") + "</dl>" : "";
+    return "<aside class=\"hgl1-world-rail hgl1-world-rail--" + entry.id + "\" aria-label=\"Thông tin " + escapeHtml(entry.label) + "\">" +
+      "<section class=\"hgl1-world-rail__card\"><span class=\"hgl1-kicker\">Tín hiệu khu vực</span><h2>" + escapeHtml(experience.railTitle) + "</h2><p>" + escapeHtml(experience.railDescription) + "</p></section>" +
+      factsMarkup +
+      "<section class=\"hgl1-world-rail__card hgl1-world-rail__card--privacy\"><span class=\"hgl1-world-rail__beacon\" aria-hidden=\"true\"></span><div><b>Dữ liệu tách biệt</b><p>Không gian này chỉ sử dụng dữ liệu thuộc HH Galaxy lớp 1.</p></div></section></aside>";
+  }
+
   function templateMarkup(route) {
     const template = templateByRoute.get(route);
     if (!template) return "";
@@ -569,11 +750,15 @@
     "</article>";
   }
 
-  function featureMarkup(features) {
-    return features.map(function featureCard(feature) {
+  function featureMarkup(features, entry) {
+    const experience = worldExperience(entry);
+    return features.map(function featureCard(feature, index) {
       const state = feature[2];
       const labels = { available: "Cục bộ", unconfigured: "Chưa cấu hình", permission: "Theo yêu cầu" };
-      return "<article class=\"hgl1-feature\" data-capability=\"" + state + "\"><span class=\"hgl1-feature__signal\" aria-hidden=\"true\"></span><div><span class=\"hgl1-feature__state\">" + labels[state] + "</span><h3>" + escapeHtml(feature[0]) + "</h3><p>" + escapeHtml(feature[1]) + "</p></div></article>";
+      const portalIcon = experience.portalIcons[index] || entry.icon;
+      return "<article class=\"hgl1-feature hgl1-portal-card hgl1-portal-card--" + state + "\" data-capability=\"" + state + "\">" +
+        "<div class=\"hgl1-portal-card__visual\" aria-hidden=\"true\"><span></span>" + icon(portalIcon) + "</div>" +
+        "<div class=\"hgl1-portal-card__body\"><span class=\"hgl1-feature__signal\" aria-hidden=\"true\"></span><span class=\"hgl1-feature__state\">" + labels[state] + "</span><h3>" + escapeHtml(feature[0]) + "</h3><p>" + escapeHtml(feature[1]) + "</p></div></article>";
     }).join("");
   }
 
@@ -583,57 +768,74 @@
     const userItems = items.map(itemMarkup).join("");
     const importControl = definition.fileAccept ? "<button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"trigger-file\" data-route=\"" + entry.route + "\">" + icon("upload") + " Nhập tệp</button><input class=\"hgl1-sr-only\" type=\"file\" data-hgl1-module-file data-route=\"" + entry.route + "\" accept=\"" + escapeHtml(definition.fileAccept) + "\"/>" : "";
     const permissionControl = entry.route === "/galaxy/music" ? "<button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"check-microphone\">Kiểm tra microphone</button>" : "";
+    const heroActions = "<button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"focus-create\">" + icon("plus") + " " + escapeHtml(definition.createLabel) + "</button>" + importControl + permissionControl;
     return "<section class=\"hgl1-page hgl1-page--module\" data-module=\"" + entry.id + "\">" +
-      "<header class=\"hgl1-page-head\"><div><span class=\"hgl1-eyebrow\">" + escapeHtml(entry.eyebrow) + "</span><h1>" + escapeHtml(entry.title) + "</h1><p>" + escapeHtml(entry.description) + "</p></div>" +
-      "<div class=\"hgl1-page-head__actions\"><button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"focus-create\">" + icon("plus") + " " + escapeHtml(definition.createLabel) + "</button>" + importControl + permissionControl + "</div></header>" +
+      worldHeroMarkup(entry, heroActions) +
       "<div class=\"hgl1-status-strip\"><span class=\"hgl1-status-dot hgl1-status-dot--" + definition.statusTone + "\"></span><span>" + escapeHtml(definition.status) + "</span><b>Dữ liệu riêng của lớp 1</b></div>" +
-      "<section class=\"hgl1-feature-grid\" aria-label=\"Khả năng module\">" + featureMarkup(definition.features) + "</section>" +
+      "<div class=\"hgl1-world-layout\"><div class=\"hgl1-world-main\">" +
+      "<section class=\"hgl1-feature-grid hgl1-portal-grid\" aria-label=\"Cổng chức năng " + escapeHtml(entry.label) + "\">" + featureMarkup(definition.features, entry) + "</section>" +
       "<section class=\"hgl1-library\"><div class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Workspace</span><h2>Tài liệu của bạn</h2></div><label class=\"hgl1-filter\">" + icon("search") + "<span class=\"hgl1-sr-only\">Lọc tài liệu</span><input type=\"search\" data-hgl1-item-filter placeholder=\"Lọc theo tên...\"/></label></div>" +
       "<form class=\"hgl1-create-form\" data-hgl1-create-form data-route=\"" + entry.route + "\"><label for=\"hgl1-title-" + entry.id + "\">Tên tài liệu mới</label><div><input id=\"hgl1-title-" + entry.id + "\" name=\"title\" maxlength=\"160\" required placeholder=\"Nhập tên rõ ràng...\"/><button class=\"hgl1-button hgl1-button--primary\" type=\"submit\">Lưu cục bộ</button></div></form>" +
       "<div class=\"hgl1-document-grid\" data-hgl1-item-list>" + templateMarkup(entry.route) + userItems + "</div>" +
       (items.length ? "" : statePanel("empty", "Chưa có tài liệu người dùng. Bản mẫu bên trên không được tính là dữ liệu thật.")) +
-      "</section></section>";
+      "</section></div>" + worldRailMarkup(entry, { status: definition.status, itemCount: items.length, scope: "Trên thiết bị" }) + "</div></section>";
   }
 
   function homeMarkup() {
-    return "<section class=\"hgl1-page hgl1-page--home\" aria-labelledby=\"hgl1-home-title\"><div class=\"hgl1-home-intro\"><span class=\"hgl1-eyebrow\">Bản đồ lớp 1</span><h1 id=\"hgl1-home-title\">Khám phá HH Galaxy</h1><p>Bản đồ hiện có được gắn vào vùng này qua host contract; shell không tạo thêm cổng sang sản phẩm khác.</p></div>" +
-      "<div class=\"hgl1-delegated-host hgl1-delegated-host--home\" data-hh-galaxy-home-host data-route=\"/home\" role=\"region\" aria-label=\"Bản đồ HH Galaxy\"><div class=\"hgl1-delegated-placeholder\"><span class=\"hgl1-orbit\" aria-hidden=\"true\"></span><div><h2>Đang chuẩn bị bản đồ Galaxy</h2><p>Host sẵn sàng cho trình dựng bản đồ hiện có.</p></div></div></div></section>";
+    const entry = findRoute("/home");
+    return "<section class=\"hgl1-page hgl1-page--home\">" + worldHeroMarkup(entry, "", { eyebrow: "Bản đồ lớp 1" }) +
+      "<div class=\"hgl1-world-layout\"><div class=\"hgl1-world-main\"><div class=\"hgl1-delegated-host hgl1-delegated-host--home\" data-hh-galaxy-home-host data-route=\"/home\" role=\"region\" aria-label=\"Bản đồ HH Galaxy\"><div class=\"hgl1-delegated-placeholder\"><span class=\"hgl1-orbit\" aria-hidden=\"true\"></span><div><h2>Đang chuẩn bị bản đồ Galaxy</h2><p>Host sẵn sàng cho trình dựng bản đồ hiện có.</p></div></div></div></div>" +
+      worldRailMarkup(entry, { status: "Bản đồ đang được gắn vào host", scope: "Điều hướng lớp 1" }) + "</div></section>";
   }
 
   function creatorMarkup() {
-    return "<section class=\"hgl1-page hgl1-page--creator\"><header class=\"hgl1-page-head\"><div><span class=\"hgl1-eyebrow\">Creator Studio</span><h1>Không gian sáng tạo lớp 1</h1><p>Shell dành toàn bộ vùng nội dung bên dưới cho Creator Studio chuyên dụng; module này sở hữu pipeline, dự án, lịch và thống kê của chính nó.</p></div></header>" +
-      "<section class=\"hgl1-creator-host-shell\" aria-label=\"Creator Studio lớp 1\"><div class=\"hgl1-delegated-host hgl1-delegated-host--creator\" data-hh-galaxy-creator-host data-route=\"/galaxy/creator\" aria-label=\"Creator Studio workspace\"><div class=\"hgl1-delegated-placeholder\" data-hgl1-creator-placeholder><span class=\"hgl1-orbit\" aria-hidden=\"true\"></span><div><h2>Đang chuẩn bị Creator Studio</h2><p>Host sẵn sàng cho module Creator lớp 1. Không sử dụng dữ liệu hoặc component của lớp 2.</p></div></div></div></section></section>";
+    const entry = findRoute("/galaxy/creator");
+    return "<section class=\"hgl1-page hgl1-page--creator\">" + worldHeroMarkup(entry, "", {
+      description: "Shell dành toàn bộ vùng nội dung bên dưới cho Creator Studio chuyên dụng; module này sở hữu pipeline, dự án, lịch và thống kê của chính nó."
+    }) +
+      "<div class=\"hgl1-world-layout\"><div class=\"hgl1-world-main\"><section class=\"hgl1-creator-host-shell\" aria-label=\"Creator Studio lớp 1\"><div class=\"hgl1-delegated-host hgl1-delegated-host--creator\" data-hh-galaxy-creator-host data-route=\"/galaxy/creator\" aria-label=\"Creator Studio workspace\"><div class=\"hgl1-delegated-placeholder\" data-hgl1-creator-placeholder><span class=\"hgl1-orbit\" aria-hidden=\"true\"></span><div><h2>Đang chuẩn bị Creator Studio</h2><p>Host sẵn sàng cho module Creator lớp 1. Không sử dụng dữ liệu hoặc component của lớp 2.</p></div></div></div></section></div>" +
+      worldRailMarkup(entry, { status: "Module chuyên dụng", scope: "Dữ liệu Creator lớp 1" }) + "</div></section>";
   }
 
   function toolsMarkup(state) {
+    const entry = findRoute("/galaxy/tools");
     const items = state.items.filter(function toolsItem(item) { return item.route === "/galaxy/tools"; }).slice().reverse();
-    return "<section class=\"hgl1-page hgl1-page--tools\"><header class=\"hgl1-page-head\"><div><span class=\"hgl1-eyebrow\">Tiện ích cục bộ</span><h1>Tools Galaxy</h1><p>Xử lý đầu vào ngay trong trình duyệt; nội dung không được tự động gửi ra mạng.</p></div><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"export-route\" data-route=\"/galaxy/tools\">" + icon("download") + " Xuất ghi chú</button></header>" +
+    const heroActions = "<button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"export-route\" data-route=\"/galaxy/tools\">" + icon("download") + " Xuất ghi chú</button>";
+    return "<section class=\"hgl1-page hgl1-page--tools\">" + worldHeroMarkup(entry, heroActions) +
+      "<div class=\"hgl1-world-layout\"><div class=\"hgl1-world-main\">" +
       "<div class=\"hgl1-tools-grid\"><article class=\"hgl1-tool\"><div class=\"hgl1-tool__head\">" + icon("tools") + "<div><span class=\"hgl1-badge hgl1-badge--local\">Cục bộ</span><h2>Phân tích văn bản</h2></div></div><label for=\"hgl1-text-tool\">Nội dung</label><textarea id=\"hgl1-text-tool\" data-hgl1-text-tool rows=\"9\" placeholder=\"Nhập văn bản cần đếm...\"></textarea><button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"analyze-text\">Phân tích</button><output class=\"hgl1-tool__output\" data-hgl1-text-output aria-live=\"polite\">Chưa có kết quả.</output></article>" +
       "<article class=\"hgl1-tool\"><div class=\"hgl1-tool__head\">" + icon("dev") + "<div><span class=\"hgl1-badge hgl1-badge--local\">Cục bộ</span><h2>JSON Formatter</h2></div></div><label for=\"hgl1-json-tool\">JSON đầu vào</label><textarea id=\"hgl1-json-tool\" data-hgl1-json-tool rows=\"9\" spellcheck=\"false\" placeholder=\"{ &quot;hello&quot;: &quot;galaxy&quot; }\"></textarea><button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"format-json\">Định dạng</button><output class=\"hgl1-tool__output hgl1-tool__output--code\" data-hgl1-json-output aria-live=\"polite\">Chưa có kết quả.</output></article></div>" +
-      "<section class=\"hgl1-library\"><div class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Lịch sử do bạn lưu</span><h2>Ghi chú công cụ</h2></div></div><form class=\"hgl1-create-form\" data-hgl1-create-form data-route=\"/galaxy/tools\"><label for=\"hgl1-title-tools\">Tên ghi chú</label><div><input id=\"hgl1-title-tools\" name=\"title\" maxlength=\"160\" required/><button class=\"hgl1-button hgl1-button--primary\" type=\"submit\">Lưu</button></div></form><div class=\"hgl1-document-grid\">" + templateMarkup("/galaxy/tools") + items.map(itemMarkup).join("") + "</div></section></section>";
+      "<section class=\"hgl1-library\"><div class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Lịch sử do bạn lưu</span><h2>Ghi chú công cụ</h2></div></div><form class=\"hgl1-create-form\" data-hgl1-create-form data-route=\"/galaxy/tools\"><label for=\"hgl1-title-tools\">Tên ghi chú</label><div><input id=\"hgl1-title-tools\" name=\"title\" maxlength=\"160\" required/><button class=\"hgl1-button hgl1-button--primary\" type=\"submit\">Lưu</button></div></form><div class=\"hgl1-document-grid\">" + templateMarkup("/galaxy/tools") + items.map(itemMarkup).join("") + "</div></section></div>" +
+      worldRailMarkup(entry, { status: "Hai tiện ích cục bộ sẵn sàng", itemCount: items.length, scope: "Trong trình duyệt" }) + "</div></section>";
   }
 
   function analyticsMarkup(state) {
+    const entry = findRoute("/galaxy/analytics");
     const summary = summarizeAnalytics(state);
     const events = summary.latestEvents.map(function eventRow(event) {
       const route = findRoute(event.route);
       const typeLabels = { "route-view": "Mở module", "item-create": "Tạo tài liệu", "item-delete": "Xóa tài liệu", "data-export": "Xuất dữ liệu", "data-import": "Nhập dữ liệu", "permission-check": "Kiểm tra quyền" };
       return "<tr><td>" + escapeHtml(typeLabels[event.type] || event.type) + "</td><td>" + escapeHtml(route ? route.label : "Galaxy") + "</td><td><time datetime=\"" + escapeHtml(event.at) + "\">" + escapeHtml(formatLocalTime(event.at)) + "</time></td></tr>";
     }).join("");
-    return "<section class=\"hgl1-page hgl1-page--analytics\"><header class=\"hgl1-page-head\"><div><span class=\"hgl1-eyebrow\">Số liệu lớp 1</span><h1>Analytics</h1><p>Không đọc nội dung tài liệu và không trộn bản mẫu vào thống kê.</p></div><div class=\"hgl1-page-head__actions\"><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"export-analytics-json\" " + (summary.consent ? "" : "disabled title=\"Bật consent để xuất sự kiện\"") + ">JSON</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"export-analytics-csv\" " + (summary.consent ? "" : "disabled title=\"Bật consent để xuất sự kiện\"") + ">CSV</button></div></header>" +
+    const heroActions = "<button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"export-analytics-json\" " + (summary.consent ? "" : "disabled title=\"Bật consent để xuất sự kiện\"") + ">JSON</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"export-analytics-csv\" " + (summary.consent ? "" : "disabled title=\"Bật consent để xuất sự kiện\"") + ">CSV</button>";
+    return "<section class=\"hgl1-page hgl1-page--analytics\">" + worldHeroMarkup(entry, heroActions) +
+      "<div class=\"hgl1-world-layout\"><div class=\"hgl1-world-main\">" +
       "<section class=\"hgl1-consent\"><div><span class=\"hgl1-kicker\">Quyền riêng tư</span><h2>Analytics cục bộ</h2><p>" + (summary.consent ? "Đang ghi các thao tác tối thiểu trên thiết bị này." : "Đang tắt. Không có sự kiện điều hướng mới nào được ghi.") + "</p></div><label class=\"hgl1-switch\"><input type=\"checkbox\" data-hgl1-setting=\"analyticsConsent\" " + (summary.consent ? "checked" : "") + "/><span aria-hidden=\"true\"></span><b>" + (summary.consent ? "Đã bật" : "Đang tắt") + "</b></label></section>" +
       "<section class=\"hgl1-metric-grid\" aria-label=\"Thống kê cục bộ\"><article><span>Tài liệu người dùng</span><strong>" + summary.localItems + "</strong><small>Không gồm bản mẫu</small></article><article><span>Module đã mở</span><strong>" + summary.visitedModules + "</strong><small>Chỉ khi có consent</small></article><article><span>Sự kiện đã lưu</span><strong>" + summary.trackedEvents + "</strong><small>Tối đa " + MAX_EVENTS + " bản ghi</small></article><article><span>Lần xuất dữ liệu</span><strong>" + summary.exports + "</strong><small>Tính từ sự kiện thật</small></article></section>" +
       "<section class=\"hgl1-table-card\"><div class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Gần đây</span><h2>Nhật ký tối thiểu</h2></div></div>" +
       (events ? "<div class=\"hgl1-table-wrap\"><table><thead><tr><th>Hoạt động</th><th>Module</th><th>Thời điểm</th></tr></thead><tbody>" + events + "</tbody></table></div>" : statePanel("empty", summary.consent ? "Chưa có sự kiện thật nào được ghi." : "Bật Analytics nếu bạn muốn lưu thống kê tối thiểu.")) +
-      "</section></section>";
+      "</section></div>" + worldRailMarkup(entry, { status: summary.consent ? "Consent đang bật" : "Consent đang tắt", itemCount: summary.localItems, scope: "Chỉ trên thiết bị" }) + "</div></section>";
   }
 
   function settingsMarkup(state) {
+    const entry = findRoute("/galaxy/settings");
     const settings = state.settings;
-    return "<section class=\"hgl1-page hgl1-page--settings\"><header class=\"hgl1-page-head\"><div><span class=\"hgl1-eyebrow\">Thiết lập lớp 1</span><h1>Cài đặt Galaxy</h1><p>Các lựa chọn này không thay đổi thiết lập của sản phẩm khác.</p></div></header>" +
+    return "<section class=\"hgl1-page hgl1-page--settings\">" + worldHeroMarkup(entry, "") +
+      "<div class=\"hgl1-world-layout\"><div class=\"hgl1-world-main\">" +
       "<div class=\"hgl1-settings-grid\"><section class=\"hgl1-settings-card\"><span class=\"hgl1-kicker\">Giao diện</span><h2>Trải nghiệm hiển thị</h2><label>Chủ đề<select data-hgl1-setting=\"theme\"><option value=\"cosmic\" " + (settings.theme === "cosmic" ? "selected" : "") + ">Cosmic</option><option value=\"midnight\" " + (settings.theme === "midnight" ? "selected" : "") + ">Midnight</option></select></label><label>Mức hiệu ứng<select data-hgl1-setting=\"effects\"><option value=\"quiet\" " + (settings.effects === "quiet" ? "selected" : "") + ">Tĩnh</option><option value=\"balanced\" " + (settings.effects === "balanced" ? "selected" : "") + ">Cân bằng</option><option value=\"rich\" " + (settings.effects === "rich" ? "selected" : "") + ">Nổi bật</option></select></label><label>Độ tương phản<select data-hgl1-setting=\"contrast\"><option value=\"standard\" " + (settings.contrast === "standard" ? "selected" : "") + ">Tiêu chuẩn</option><option value=\"high\" " + (settings.contrast === "high" ? "selected" : "") + ">Cao</option></select></label><label>Giảm chuyển động<select data-hgl1-setting=\"reducedMotion\"><option value=\"system\" " + (settings.reducedMotion === "system" ? "selected" : "") + ">Theo hệ thống</option><option value=\"on\" " + (settings.reducedMotion === "on" ? "selected" : "") + ">Luôn bật</option><option value=\"off\" " + (settings.reducedMotion === "off" ? "selected" : "") + ">Luôn tắt</option></select></label></section>" +
       "<section class=\"hgl1-settings-card\"><span class=\"hgl1-kicker\">Dữ liệu</span><h2>Sao lưu & khôi phục</h2><p>Bản sao lưu chỉ gồm cài đặt, tài liệu người dùng và sự kiện đã được consent. Không bao gồm bản mẫu.</p><div class=\"hgl1-settings-actions\"><button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"export-backup\">" + icon("download") + " Xuất JSON</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"trigger-backup-import\">" + icon("upload") + " Nhập JSON</button><input class=\"hgl1-sr-only\" type=\"file\" accept=\"application/json,.json\" data-hgl1-backup-file/></div><dl><div><dt>Tài liệu người dùng</dt><dd>" + state.items.length + "</dd></div><div><dt>Sự kiện consent</dt><dd>" + (settings.analyticsConsent ? state.events.length : 0) + "</dd></div><div><dt>Kho lưu trữ</dt><dd>" + escapeHtml(STORAGE_KEY) + "</dd></div></dl></section>" +
-      "<section class=\"hgl1-settings-card hgl1-settings-card--wide\"><span class=\"hgl1-kicker\">Analytics</span><h2>Consent rõ ràng</h2><div class=\"hgl1-setting-row\"><div><p>Cho phép lưu sự kiện điều hướng và thao tác tối thiểu trên thiết bị.</p><small>Nội dung tài liệu không được đưa vào sự kiện.</small></div><label class=\"hgl1-switch\"><input type=\"checkbox\" data-hgl1-setting=\"analyticsConsent\" " + (settings.analyticsConsent ? "checked" : "") + "/><span aria-hidden=\"true\"></span><b>" + (settings.analyticsConsent ? "Đã bật" : "Đang tắt") + "</b></label></div></section></div></section>";
+      "<section class=\"hgl1-settings-card hgl1-settings-card--wide\"><span class=\"hgl1-kicker\">Analytics</span><h2>Consent rõ ràng</h2><div class=\"hgl1-setting-row\"><div><p>Cho phép lưu sự kiện điều hướng và thao tác tối thiểu trên thiết bị.</p><small>Nội dung tài liệu không được đưa vào sự kiện.</small></div><label class=\"hgl1-switch\"><input type=\"checkbox\" data-hgl1-setting=\"analyticsConsent\" " + (settings.analyticsConsent ? "checked" : "") + "/><span aria-hidden=\"true\"></span><b>" + (settings.analyticsConsent ? "Đã bật" : "Đang tắt") + "</b></label></div></section></div></div>" +
+      worldRailMarkup(entry, { status: "Thiết lập cục bộ", itemCount: state.items.length, scope: STORAGE_KEY }) + "</div></section>";
   }
 
   function routeContent(entry, state, ui) {
