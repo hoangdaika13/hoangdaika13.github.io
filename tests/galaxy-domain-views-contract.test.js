@@ -356,6 +356,17 @@ test("views include keyboard and screen reader affordances", () => {
   assert.match(styles, /forced-colors:\s*active/);
 });
 
+test("laptop metadata remains readable and mobile rails advertise overflow", () => {
+  assert.match(styles, /Domain readability pass[\s\S]*@media \(min-width:\s*901px\) and \(max-width:\s*1450px\)/);
+  assert.match(styles, /data-gdv-view="automation"\]\s+\.gdv-portal-nav button span\s*\{[^}]*text-overflow:\s*clip[^}]*white-space:\s*normal[^}]*font-size:\s*0\.6875rem/);
+  assert.match(styles, /data-gdv-view="automation"\][\s\S]{0,900}\.gdv-node-flow--blueprint article > small,[\s\S]{0,260}font-size:\s*0\.6875rem/);
+  assert.match(styles, /data-gdv-view="automation"\]\s+\.gdv-node-flow--blueprint article strong\s*\{[^}]*overflow-wrap:\s*anywhere[^}]*white-space:\s*normal/);
+  assert.match(styles, /data-gdv-view="creator"\]\s+\.gdv-creator-toolbox \.gdv-creator-tools button\s*\{[^}]*padding-inline:\s*3px/);
+  assert.match(styles, /data-gdv-view="projects"\]\s+\.gdv-tool-strip small\s*\{[^}]*text-overflow:\s*clip[^}]*white-space:\s*normal/);
+  assert.match(styles, /quiet edge fade[\s\S]*@media \(max-width:\s*900px\)[\s\S]*padding-inline-end:\s*26px[\s\S]*mask-image:\s*linear-gradient/);
+  assert.match(styles, /@media \(max-width:\s*900px\)[\s\S]*\[data-gdv-root\] small,[\s\S]*font-size:\s*10px/);
+});
+
 test("golden-reference domain controls stay interactive and structurally anchored", () => {
   assert.match(source, /data-gdv-project-category/);
   assert.match(source, /data-gdv-mood/);

@@ -63,19 +63,19 @@
       ]
     },
     "galaxy-home-ai": {
-      styles: ["galaxy-home-ai.css?v=11"],
+      styles: ["galaxy-home-ai.css?v=17"],
       scripts: ["galaxy-home-ai.js?v=10"]
     },
     "galaxy-domain-views": {
-      styles: ["galaxy-domain-views.css?v=8"],
+      styles: ["galaxy-domain-views.css?v=13"],
       scripts: ["galaxy-domain-views.js?v=6"]
     },
     "galaxy-community-showcase": {
-      styles: ["galaxy-community-showcase.css?v=6"],
+      styles: ["galaxy-community-showcase.css?v=9"],
       scripts: ["galaxy-community-showcase.js?v=5"]
     },
     "galaxy-web-desktop": {
-      styles: ["galaxy-web-desktop.css?v=5"],
+      styles: ["galaxy-web-desktop.css?v=10"],
       scripts: ["galaxy-web-desktop.js?v=5"]
     },
     "galaxy-planet-hubs": {
@@ -281,7 +281,7 @@
       scripts: ["remote-hub.js?v=4"]
     },
     "chat-ai": {
-      styles: ["chat-ai-hub.css?v=19"],
+      styles: ["chat-ai-hub.css?v=20"],
       scripts: ["chat-ai-hub.js?v=18"]
     },
     settings: {

@@ -86,6 +86,21 @@ test("immersive Dashboard and Copilot own their reference chrome without fake me
   assert.match(styles, /\.gha-ai \.gha-topbar > nav > button:not\(\.gha-topbar__primary\)/);
 });
 
+test("compact desktop and phone layouts preserve readable verified content", () => {
+  assert.match(styles, /@media \(min-width:\s*1181px\) and \(max-width:\s*1399px\)[\s\S]*?\.gha-dashboard \.gha-stage\s*\{[\s\S]*?padding-bottom:\s*calc\(72px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(styles, /@media \(min-width:\s*1181px\) and \(max-width:\s*1399px\)[\s\S]*?\.gha-dashboard \.gha-widget-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(12,[\s\S]*?grid-template-rows:\s*252px\s+352px\s+294px/);
+  assert.match(styles, /@media \(min-width:\s*1181px\) and \(max-width:\s*1399px\)[\s\S]*?\.gha-dashboard \.gha-widget--status\s*\{\s*grid-column:\s*span 8/);
+  assert.match(styles, /@media \(min-width:\s*1181px\) and \(max-width:\s*1399px\)[\s\S]*?\.gha-dashboard-metrics\s*\{[\s\S]*?repeat\(4,\s*minmax\(126px,\s*1fr\)\)/);
+  assert.match(styles, /\.gha-widget--notes footer small\s*\{[\s\S]*?flex:\s*1 1 120px;[\s\S]*?white-space:\s*normal/);
+  assert.match(styles, /\.gha-focus-ring span\s*\{\s*font-size:\s*10px/);
+  assert.match(styles, /@media \(max-width:\s*767px\)[\s\S]*?\.gha-dashboard-metric\s*\{[\s\S]*?min-width:\s*0;[\s\S]*?min-height:\s*78px/);
+  assert.match(styles, /\.gha-copilot \.gha-copilot-actions :is\(strong, small\)[\s\S]*?overflow-wrap:\s*anywhere;[\s\S]*?white-space:\s*normal/);
+  assert.match(styles, /\.gha-copilot-modules > button,[\s\S]*?\.gha-copilot-insights > button\s*\{\s*min-height:\s*72px/);
+  assert.match(styles, /@media \(min-width:\s*1181px\) and \(max-width:\s*1399px\)[\s\S]*?\.gha-copilot__rail\s*\{\s*grid-template-rows:\s*458px\s+268px/);
+  assert.match(styles, /@media \(min-width:\s*1181px\) and \(max-width:\s*1399px\)[\s\S]*?\.gha-copilot-insights > button\s*\{\s*min-height:\s*54px/);
+  assert.match(styles, /@media \(min-width:\s*1400px\) and \(min-height:\s*820px\)[\s\S]*?\.gha-copilot__rail > section:last-child\s*\{[\s\S]*?overflow-y:\s*auto/);
+});
+
 test("Dashboard rejects unsafe account avatar URLs from local or supplied state", () => {
   const local = api.collectLocalData(memoryStorage({
     "hh-auth-user": { name: "Tài khoản kiểm thử", avatar: "javascript:alert(1)" }

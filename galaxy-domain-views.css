@@ -1875,6 +1875,12 @@
   [data-gdv-root][data-gdv-view="projects"] .gdv-cloud-card > button { min-height: 30px; }
   [data-gdv-root][data-gdv-view="projects"] .gdv-tool-strip { min-height: 84px; }
   [data-gdv-root][data-gdv-view="projects"] .gdv-tool-strip button { min-height: 84px; }
+  [data-gdv-root][data-gdv-view="projects"] .gdv-tool-strip small {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    line-height: 1.3;
+  }
 
   [data-gdv-root][data-gdv-view="automation"] .gdv-template-library,
   [data-gdv-root][data-gdv-view="automation"] .gdv-execution-panel { overflow: hidden; }
@@ -2085,7 +2091,153 @@
   }
 }
 
+/* Domain readability pass.
+ * The 1672px golden composition remains untouched. Laptop-width workspaces
+ * get a real 11px floor for operational metadata, while the compact
+ * Automation sidebar and Creator toolbox keep complete labels reachable. */
+@media (min-width: 901px) and (max-width: 1450px) {
+  [data-gdv-root]:is([data-gdv-view="projects"], [data-gdv-view="automation"], [data-gdv-view="creator"], [data-gdv-view="ambient"]) :is(
+    .gdv-portal-brand small,
+    .gdv-portal-upgrade p,
+    .gdv-portal-upgrade button,
+    .gdv-portal-profile > span,
+    .gdv-portal-profile small,
+    .gdv-command-search kbd
+  ) { font-size: 0.6875rem; }
+
+  [data-gdv-root]:is([data-gdv-view="projects"], [data-gdv-view="automation"], [data-gdv-view="creator"], [data-gdv-view="ambient"]) :is(
+    .gdv-header__title p,
+    .gdv-panel > header span:not(.gdv-status),
+    .gdv-kicker
+  ) { font-size: 0.7rem; }
+
+  [data-gdv-root][data-gdv-view="projects"] :is(
+    .gdv-vault-categories button,
+    .gdv-vault-categories small,
+    .gdv-empty--vault p,
+    .gdv-recent-placeholder p,
+    .gdv-storage-ring small,
+    .gdv-storage-value small,
+    .gdv-storage-card > p,
+    .gdv-activity-empty p,
+    .gdv-cloud-card > p,
+    .gdv-cloud-readiness strong
+  ) { font-size: 0.6875rem; }
+
+  [data-gdv-root][data-gdv-view="automation"] .gdv-portal-nav button { min-height: 56px; }
+  [data-gdv-root][data-gdv-view="automation"] .gdv-portal-nav button span {
+    max-width: 84px;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 0.6875rem;
+    line-height: 1.2;
+  }
+  [data-gdv-root][data-gdv-view="automation"] :is(
+    .gdv-empty--compact p,
+    .gdv-empty--compact button,
+    .gdv-canvas-tools button,
+    .gdv-canvas-tools output,
+    .gdv-node-flow--blueprint article > i,
+    .gdv-node-flow--blueprint article p,
+    .gdv-node-flow--blueprint article > small,
+    .gdv-automation-features li
+  ) { font-size: 0.6875rem; }
+  [data-gdv-root][data-gdv-view="automation"] .gdv-node-flow--blueprint article strong {
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    white-space: normal;
+    line-height: 1.2;
+  }
+
+  [data-gdv-root][data-gdv-view="ambient"] :is(
+    .gdv-timer-modes button,
+    .gdv-timer__presets button,
+    .gdv-mood button,
+    .gdv-ambient-experience .gdv-scene-picker button,
+    .gdv-ambient-features li
+  ) { font-size: 0.6875rem; }
+
+  [data-gdv-root][data-gdv-view="creator"] .gdv-creator-toolbox .gdv-creator-tools {
+    gap: 6px;
+  }
+  [data-gdv-root][data-gdv-view="creator"] .gdv-creator-toolbox .gdv-creator-tools button {
+    gap: 2px 4px;
+    padding-inline: 3px;
+  }
+  [data-gdv-root][data-gdv-view="creator"] .gdv-creator-metrics small {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    line-height: 1.2;
+  }
+  [data-gdv-root][data-gdv-view="creator"] :is(
+    .gdv-creator-heading p,
+    .gdv-creator-pipeline .gdv-stage small,
+    .gdv-creator-pipeline .gdv-stage em,
+    .gdv-creator-empty-showcase .gdv-empty--creator p,
+    .gdv-creator-toolbox .gdv-creator-tools strong,
+    .gdv-creator-schedule > header > button,
+    .gdv-creator-schedule summary,
+    .gdv-schedule-empty p,
+    .gdv-creator-metrics small,
+    .gdv-creator-metrics button,
+    .gdv-creator-truth p
+  ) { font-size: 0.6875rem; }
+  [data-gdv-root][data-gdv-view="creator"] .gdv-creator-schedule details[open] .gdv-status {
+    font-size: 0.6875rem !important;
+  }
+}
+
+/* A quiet edge fade makes touch rails discoverable without introducing
+ * decorative motion or expanding the page-level scroll width. */
+@media (max-width: 900px) {
+  [data-gdv-root]:is([data-gdv-view="projects"], [data-gdv-view="automation"], [data-gdv-view="creator"], [data-gdv-view="ambient"]) .gdv-portal-nav,
+  [data-gdv-root]:is([data-gdv-view="projects"], [data-gdv-view="automation"], [data-gdv-view="creator"], [data-gdv-view="ambient"]) .gdv-header-tools,
+  [data-gdv-root][data-gdv-view="projects"] .gdv-vault-categories,
+  [data-gdv-root][data-gdv-view="automation"] .gdv-automation-tabs,
+  [data-gdv-root][data-gdv-view="creator"] .gdv-creator-pipeline .gdv-pipeline__grid {
+    padding-inline-end: 26px;
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 26px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 26px), transparent 100%);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+  }
+  [data-gdv-root] small,
+  [data-gdv-root][data-gdv-view="automation"] :is(
+    .gdv-empty--compact p,
+    .gdv-canvas-tools button,
+    .gdv-canvas-tools output,
+    .gdv-node-flow--blueprint article p,
+    .gdv-node-flow--blueprint article > small,
+    .gdv-automation-features li
+  ),
+  [data-gdv-root][data-gdv-view="ambient"] :is(
+    .gdv-timer-modes button,
+    .gdv-timer__presets button,
+    .gdv-mood button,
+    .gdv-ambient-features li
+  ),
+  [data-gdv-root][data-gdv-view="creator"] :is(
+    .gdv-creator-heading p,
+    .gdv-creator-empty-showcase p,
+    .gdv-creator-metrics button
+  ) {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+}
+
 @media (forced-colors: active) {
+  [data-gdv-root] .gdv-portal-nav,
+  [data-gdv-root] .gdv-header-tools,
+  [data-gdv-root] .gdv-vault-categories,
+  [data-gdv-root] .gdv-automation-tabs,
+  [data-gdv-root] .gdv-creator-pipeline .gdv-pipeline__grid {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
   .gdv-vault-placeholder,
   .gdv-template-placeholder-list > span,
   .gdv-execution-placeholder i,

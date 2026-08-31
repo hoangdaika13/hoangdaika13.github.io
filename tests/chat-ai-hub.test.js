@@ -188,11 +188,11 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   assert.match(client, /id: "chat-ai"[\s\S]*?route: "\/chat-ai"/);
   assert.match(client, /window\.HHChatAI\?\.mount/);
   assert.match(client, /title: "Chat AI"[\s\S]*?smart router/);
-  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=19[\s\S]*?chat-ai-hub\.js\?v=18/);
-  assert.match(html, /performance-loader\.js\?v=474/);
-  assert.match(worker, /performance-loader\.js\?v=474/);
+  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=20[\s\S]*?chat-ai-hub\.js\?v=18/);
+  assert.match(html, /<script src="performance-loader\.js\?v=596"/);
+  assert.match(worker, /\.\/performance-loader\.js\?v=596/);
   assert.match(loader, /value\.startsWith\("\/chat-ai"\)/);
-  assert.match(worker, /chat-ai-hub\.css\?v=19/);
+  assert.match(worker, /chat-ai-hub\.css\?v=20/);
   assert.match(worker, /chat-ai-hub\.js\?v=18/);
   assert.match(html, /data-hh-galaxy-key="chatAI"/);
   assert.match(html, /25 LĨNH VỰC/);
@@ -227,4 +227,5 @@ test("Chat AI layout is responsive, accessible and motion-safe", () => {
   assert.match(css, /max-width:100%/);
   assert.match(css, /\.chat-ai-export-format/);
   assert.match(css, /\.chat-ai-message__body\{font-size:15px\}/);
+  assert.match(css, /@media\(max-width:480px\)[\s\S]*\.chat-ai-hub \.chat-ai-message footer button\{font-size:10px!important\}/);
 });

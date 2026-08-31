@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v947";
+const CACHE = "hh-identity-portal-v950";
+// Compatibility marker for the previous Galaxy interaction and responsive refinement release: hh-identity-portal-v947.
 // Compatibility marker for the previous Galaxy fit and lifecycle hardening release: hh-identity-portal-v945.
 // Compatibility marker for the previous Galaxy reference refinement release: hh-identity-portal-v944.
 // Compatibility marker for the previous Galaxy functional refinement release: hh-identity-portal-v943.
@@ -109,7 +110,7 @@ const RUNTIME_ASSETS = [
   "./fortune-hub-v5.css?v=26",
   "./draw-studio.css?v=14",
   "./remote-hub.css?v=4",
-  "./chat-ai-hub.css?v=19",
+  "./chat-ai-hub.css?v=20",
   "./account-center.css?v=2",
   "./account-center.js?v=2",
   "./settings-studio.css?v=7",
@@ -266,16 +267,16 @@ const RUNTIME_ASSETS = [
   "./galaxy-design-system.css?v=1",
   "./galaxy-shell.css?v=5",
   "./galaxy-shell.js?v=5",
-  "./galaxy-home-ai.css?v=11",
+  "./galaxy-home-ai.css?v=17",
   "./galaxy-home-ai.js?v=10",
   "./assets/galaxy/hh-galaxy-map-bg-v1.png?v=1",
   "./assets/galaxy/hh-luminous-planet-v1.webp?v=1",
   "./assets/galaxy/hh-stellar-core-v1.webp?v=1",
-  "./galaxy-domain-views.css?v=8",
+  "./galaxy-domain-views.css?v=13",
   "./galaxy-domain-views.js?v=6",
-  "./galaxy-community-showcase.css?v=6",
+  "./galaxy-community-showcase.css?v=9",
   "./galaxy-community-showcase.js?v=5",
-  "./galaxy-web-desktop.css?v=5",
+  "./galaxy-web-desktop.css?v=10",
   "./galaxy-web-desktop.js?v=5",
   "./galaxy-planet-hubs.css?v=1",
   "./galaxy-planet-hubs.js?v=1",
@@ -579,7 +580,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=588",
+  "./performance-loader.js?v=596",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=259"

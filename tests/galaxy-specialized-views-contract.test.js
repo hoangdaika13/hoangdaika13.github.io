@@ -288,7 +288,18 @@ test("specialized styles remain scoped, responsive and accessible", () => {
   assert.match(communityStyles, /\.gcs-title \{ position: relative; align-items: flex-start; padding-right: 48px; \}/);
   assert.match(communityStyles, /\.gcs-title h1 \{ max-width: none;[^}]*text-wrap: balance;[^}]*white-space: normal; \}/);
   assert.match(communityStyles, /\.gcs-title > button \{ position: absolute; top: 0; right: 0;/);
+  assert.match(communityStyles, /\.gcs-title h1 \{ max-width: 100%;[^}]*overflow-wrap: anywhere;[^}]*text-wrap: balance; white-space: normal; \}/);
+  assert.match(communityStyles, /\.gcs-tabs \{[^}]*overscroll-behavior-inline: contain;[^}]*scrollbar-color:[^}]*scroll-snap-type: x proximity;\s*\}/);
+  assert.match(communityStyles, /\.gcs-card footer > div \{[^}]*font-size: 0\.65rem; line-height: 1\.35; \}/);
+  assert.match(communityStyles, /@media \(min-width: 901px\) and \(max-width: 1450px\)[\s\S]*\.gcs-metrics \{ grid-template-columns: repeat\(3,[^}]*\}[\s\S]*\.gcs-metrics :is\(small, em\)/);
+  assert.match(communityStyles, /@media \(max-width: 900px\)[\s\S]*\.gcs-brand small,[\s\S]*font-size: 10px/);
   assert.match(desktopStyles, /grid-template-columns: minmax\(220px, 1fr\) minmax\(360px, 426px\) minmax\(260px, 1fr\)/);
+  assert.match(desktopStyles, /\.gwd-window > header strong \{[^}]*overflow-wrap: anywhere; white-space: normal; \}/);
+  assert.match(desktopStyles, /\.gwd-dock \{ gap: 5px;[^}]*overflow-x: auto;[^}]*overscroll-behavior-inline: contain;[^}]*scroll-snap-type: x proximity;\s*\}/);
+  assert.match(desktopStyles, /\.gwd-system-list strong \{[^}]*font-size: 0\.66rem; \}/);
+  assert.match(desktopStyles, /\.gwd-dock > button:hover,[\s\S]{0,100}transform: none;/);
+  assert.match(desktopStyles, /@media \(min-width: 901px\) and \(max-width: 1450px\)[\s\S]*\[data-gwd-root\] small,[\s\S]*font-size: 10px/);
+  assert.match(desktopStyles, /@media \(max-width: 900px\)[\s\S]*\[data-gwd-root\] small,[\s\S]*font-size: 10px/);
   assert.match(desktopStyles, /\.gwd-window\[data-gwd-window="ai"\] \{[^}]*width: 392px;[^}]*min-height: 435px;[^}]*max-height: 435px; \}/);
   assert.match(desktopStyles, /\.gwd-window\[data-gwd-window="system"\] \{[^}]*width: 420px; height: 275px; min-height: 275px; \}/);
   assert.match(desktopSource, /runtime\.dragCleanup\?\.\(\)/);
@@ -297,8 +308,8 @@ test("specialized styles remain scoped, responsive and accessible", () => {
 });
 
 test("specialized views are route-lazy, router-owned and versioned for release", () => {
-  assert.match(loaderSource, /"galaxy-community-showcase"[\s\S]*galaxy-community-showcase\.css\?v=6[\s\S]*galaxy-community-showcase\.js\?v=5/);
-  assert.match(loaderSource, /"galaxy-web-desktop"[\s\S]*galaxy-web-desktop\.css\?v=5[\s\S]*galaxy-web-desktop\.js\?v=5/);
+  assert.match(loaderSource, /"galaxy-community-showcase"[\s\S]*galaxy-community-showcase\.css\?v=9[\s\S]*galaxy-community-showcase\.js\?v=5/);
+  assert.match(loaderSource, /"galaxy-web-desktop"[\s\S]*galaxy-web-desktop\.css\?v=10[\s\S]*galaxy-web-desktop\.js\?v=5/);
   assert.match(loaderSource, /value === "\/communication\/community"[\s\S]{0,360}return \["galaxy-community-showcase"\]/);
   assert.match(loaderSource, /value = value\.split\("\?"\)\[0\]/);
   assert.match(loaderSource, /value === "\/system\/desktop"[\s\S]{0,100}\["galaxy-web-desktop"\]/);
@@ -309,11 +320,11 @@ test("specialized views are route-lazy, router-owned and versioned for release",
   assert.match(routerSource, /HHGalaxyWebDesktop\?\.canHandle/);
   assert.match(routerSource, /HHGalaxyCommunityShowcase\?\.unmount/);
   assert.match(routerSource, /HHGalaxyWebDesktop\?\.unmount/);
-  assert.match(serviceWorkerSource, /hh-identity-portal-v947/);
-  for (const asset of ["galaxy-community-showcase.css?v=6", "galaxy-community-showcase.js?v=5", "galaxy-web-desktop.css?v=5", "galaxy-web-desktop.js?v=5"]) {
+  assert.match(serviceWorkerSource, /hh-identity-portal-v950/);
+  for (const asset of ["galaxy-community-showcase.css?v=9", "galaxy-community-showcase.js?v=5", "galaxy-web-desktop.css?v=10", "galaxy-web-desktop.js?v=5"]) {
     assert.match(serviceWorkerSource, new RegExp(asset.replaceAll(".", "\\.").replace("?", "\\?")), asset);
   }
-  assert.match(indexSource, /<script src="performance-loader\.js\?v=588"/);
+  assert.match(indexSource, /<script src="performance-loader\.js\?v=596"/);
   assert.match(indexSource, /script\.js\?v=259/);
   assert.match(indexSource, /galaxy-shell\.css\?v=5/);
   assert.match(routerSource, /dataset\.galaxyImmersive === "true"/);

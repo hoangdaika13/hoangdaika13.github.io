@@ -5074,6 +5074,299 @@
     [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-system { display: none; }
   }
 
+  /* Readability bridge for compact desktop viewports. The 24-column golden
+     composition is intentionally preserved above 1400px; below that width it
+     made the lower Dashboard cards and Copilot metadata too narrow to read.
+     Reflow the same verified content without changing routes or data. */
+  @media (min-width: 1181px) and (max-width: 1399px) {
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-stage {
+      padding-bottom: calc(72px + env(safe-area-inset-bottom));
+      scroll-padding-bottom: 72px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard__head {
+      grid-template-columns: minmax(210px, .78fr) minmax(0, 1.55fr);
+      gap: 12px;
+      min-height: 128px;
+      height: auto;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-metrics {
+      grid-template-columns: repeat(4, minmax(126px, 1fr));
+      width: 100%;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-metric {
+      min-width: 126px;
+      min-height: 66px;
+      padding-inline: 9px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-metric small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-metric em {
+      font-size: 10px;
+      line-height: 1.25;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-profile :is(span, p) {
+      font-size: 10px;
+      line-height: 1.3;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-widget--notes footer {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-widget--notes footer small {
+      flex: 1 1 120px;
+      min-width: 0;
+      overflow: visible;
+      text-overflow: clip;
+      white-space: normal;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-focus-ring span {
+      font-size: 10px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard__clock {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      min-width: 0;
+      padding-top: 7px;
+      border-top: 1px solid rgb(148 163 184 / 9%);
+      text-align: left;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget-grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-template-rows: 252px 352px 294px;
+      grid-auto-rows: minmax(252px, auto);
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--weather,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--projects,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--tasks { grid-column: span 4; }
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--storage { grid-column: span 3; }
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--activity { grid-column: span 5; }
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--notes { grid-column: span 4; }
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--focus { grid-column: span 4; }
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--status { grid-column: span 8; }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--status dl {
+      grid-template-columns: repeat(3, minmax(150px, 1fr));
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--status :is(dt, dd),
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget > header :is(span, button, i),
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--activity li small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-task-list small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-project-list small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-weather dt,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-weather > small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-widget--notes footer small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-widget--focus > small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-foot button {
+      font-size: 10px;
+      line-height: 1.3;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__layout {
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 386px);
+      gap: 16px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__rail {
+      grid-template-rows: 458px 268px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-insights { gap: 6px; }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-insights > button {
+      min-height: 54px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__head > div:last-child > i,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-prompt > small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-chips,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-chips button,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot .gha-copilot-actions small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__rail header span,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__rail header > i,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-modules small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-insights small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-modules > button > i {
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-modules strong,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-insights strong {
+      font-size: 11px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot .gha-copilot-actions button {
+      min-height: 96px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-modules > button {
+      min-height: 66px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__rail header > i,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-modules > button > i {
+      max-width: 132px;
+      overflow-wrap: anywhere;
+      text-align: right;
+      text-overflow: clip;
+      white-space: normal;
+    }
+  }
+
+  @media (min-width: 1400px) and (min-height: 820px) {
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__rail > section:last-child {
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+    }
+  }
+
+  /* Phone text must remain readable without widening the document. Cards grow
+     vertically and wrap their own copy instead of forcing an 8px single line. */
+  @media (max-width: 767px) {
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-toolbar > div:first-child,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__head > div:first-child {
+      min-width: 0;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-toolbar h1 {
+      max-width: 100%;
+      font-size: clamp(20px, 6.2vw, 24px);
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-toolbar > div:first-child > span,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-profile :is(span, p),
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-metric :is(small, em) {
+      font-size: 10px;
+      line-height: 1.3;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-toolbar p {
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-profile h2,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-profile p,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-metric :is(small, em) {
+      overflow: visible;
+      overflow-wrap: anywhere;
+      text-overflow: clip;
+      white-space: normal;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard-metric {
+      min-width: 0;
+      min-height: 78px;
+      padding: 8px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-focus-ring span {
+      font-size: 10px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget > header span,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget > header :is(button, i),
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--status :is(dt, dd),
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--activity li small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-task-list small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-project-list small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-weather dt,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-weather > small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-widget--notes footer small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-widget--focus > small {
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--status dl div {
+      min-height: 68px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 8px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__head h1 {
+      max-width: 100%;
+      line-height: 1.08;
+      overflow-wrap: anywhere;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__head > div:first-child > span,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__head > div:last-child > i,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-prompt > small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-chips,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-chips button,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot .gha-copilot-actions small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__rail header span,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__rail header > i,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-modules small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-insights small,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-modules > button > i,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-empty p {
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot .gha-copilot-actions strong,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-modules strong,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-insights strong,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-empty strong {
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot .gha-copilot-actions button {
+      min-height: 96px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot .gha-copilot-actions :is(strong, small),
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-modules :is(strong, small),
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-insights :is(strong, small) {
+      overflow-wrap: anywhere;
+      text-overflow: clip;
+      white-space: normal;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-modules > button,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-insights > button {
+      min-height: 72px;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__rail header > i,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-modules > button > i {
+      max-width: 92px;
+      overflow-wrap: anywhere;
+      text-align: right;
+      text-overflow: clip;
+      white-space: normal;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-chips button {
+      min-height: 32px;
+    }
+  }
+
   @media (prefers-contrast: more) {
     .gha-app { --gha-border: rgb(196 210 234 / 54%); --gha-muted: #c5d0e2; }
     .gha-widget,

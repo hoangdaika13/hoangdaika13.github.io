@@ -154,6 +154,6 @@ body.app-chat-ai-route [data-chat-ai-host]{width:100%;max-width:100%;height:100%
 @media(max-width:480px){
   .chat-ai-chat-title input{font-size:12px}.chat-ai-processing select{font-size:10px}.chat-ai-mode-tabs button{font-size:10px}
   .chat-ai-welcome small{font-size:8.5px}.chat-ai-welcome h2{font-size:24px}.chat-ai-welcome p{font-size:12px}.chat-ai-welcome button{font-size:11px}
-  .chat-ai-message>section>header strong{font-size:12px}.chat-ai-message__body{font-size:14px}.chat-ai-hub .chat-ai-message footer button{font-size:9px!important}
+  .chat-ai-message>section>header strong{font-size:12px}.chat-ai-message__body{font-size:14px}.chat-ai-hub .chat-ai-message footer button{font-size:10px!important}
   .chat-ai-composer__mode strong{font-size:10px}.chat-ai-composer textarea{font-size:14px}.chat-ai-composer__bar button,.chat-ai-composer__bar label{font-size:10px}
 }
