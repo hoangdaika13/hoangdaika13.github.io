@@ -1,4 +1,6 @@
-const CACHE = "hh-identity-portal-v951";
+const CACHE = "hh-identity-portal-v956";
+// HH Galaxy independent product layer: exact Galaxy routes remain accessible
+// without Core access, while HH CORE is the sole Platform grant call-site.
 // HH Core two-layer boundary: the Galaxy Gateway is isolated from every HH
 // Platform route and grants tab-scoped access only through the central Core.
 // Compatibility marker for the previous Galaxy interaction and responsive refinement release: hh-identity-portal-v947.
@@ -267,22 +269,27 @@ const RUNTIME_ASSETS = [
   "./brand-galaxy-logo.css?v=1",
   "./brand-galaxy-logo.js?v=2",
   "./galaxy-design-system.css?v=1",
-  "./galaxy-shell.css?v=8",
-  "./galaxy-shell.js?v=6",
-  "./hh-core-gateway.js?v=1",
-  "./galaxy-home-ai.css?v=18",
-  "./galaxy-home-ai.js?v=11",
+  "./galaxy-shell.css?v=9",
+  "./galaxy-shell.js?v=7",
+  "./hh-core-gateway.js?v=2",
+  "./galaxy-home-ai.css?v=19",
+  "./galaxy-home-ai.js?v=12",
+  "./galaxy-layer-one.css?v=2",
+  "./galaxy-layer-one.js?v=2",
+  "./galaxy-layer-one-data.js?v=2",
+  "./galaxy-creator-studio.css?v=9",
+  "./galaxy-creator-studio.js?v=3",
   "./assets/galaxy/hh-galaxy-map-bg-v1.png?v=1",
   "./assets/galaxy/hh-luminous-planet-v1.webp?v=1",
   "./assets/galaxy/hh-stellar-core-v1.webp?v=1",
   "./galaxy-domain-views.css?v=13",
-  "./galaxy-domain-views.js?v=6",
+  "./galaxy-domain-views.js?v=7",
   "./galaxy-community-showcase.css?v=9",
   "./galaxy-community-showcase.js?v=5",
   "./galaxy-web-desktop.css?v=10",
   "./galaxy-web-desktop.js?v=5",
   "./galaxy-planet-hubs.css?v=1",
-  "./galaxy-planet-hubs.js?v=1",
+  "./galaxy-planet-hubs.js?v=2",
   "./assets/galaxy/hh-ambient-room-rainy-v1.png?v=1",
   "./galaxy-favicon-controller.js?v=2",
   "./assets/brand/hh-galaxy-star-static.svg?v=2",
@@ -583,10 +590,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=598",
+  "./performance-loader.js?v=608",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=262"
+  "./script.js?v=263"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

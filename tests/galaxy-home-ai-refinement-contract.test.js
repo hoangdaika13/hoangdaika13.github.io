@@ -101,6 +101,13 @@ test("compact desktop and phone layouts preserve readable verified content", () 
   assert.match(styles, /@media \(min-width:\s*1400px\) and \(min-height:\s*820px\)[\s\S]*?\.gha-copilot__rail > section:last-child\s*\{[\s\S]*?overflow-y:\s*auto/);
 });
 
+test("Home Gateway mobile topbar keeps its title copy out of the immersive icon track", () => {
+  assert.match(styles, /Home Gateway has a different topbar contract from the immersive/);
+  assert.match(styles, /@media \(max-width:\s*900px\)[\s\S]*?data-galaxy-route="\/home"\]\[data-galaxy-immersive="true"\][\s\S]*?\.gha-home-topbar,[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)\s+auto\s*!important/);
+  assert.match(styles, /data-galaxy-route="\/home"\]\[data-galaxy-immersive="true"\][\s\S]*?\.gha-home-topbar__title\s*\{[\s\S]*?grid-column:\s*1/);
+  assert.match(styles, /data-galaxy-route="\/home"\]\[data-galaxy-immersive="true"\][\s\S]*?\.gha-home-topbar__actions\s*\{[\s\S]*?grid-column:\s*2/);
+});
+
 test("Dashboard rejects unsafe account avatar URLs from local or supplied state", () => {
   const local = api.collectLocalData(memoryStorage({
     "hh-auth-user": { name: "Tài khoản kiểm thử", avatar: "javascript:alert(1)" }

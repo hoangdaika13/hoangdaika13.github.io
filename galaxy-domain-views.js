@@ -11,6 +11,24 @@
   const instances = new WeakMap();
   const mountedRoots = new Set();
 
+  /* These destinations are owned exclusively by HH Galaxy Layer One. Keep the
+   * legacy aliases below as compatibility metadata, but never let this older
+   * adapter claim or mount a first-layer route if it is loaded out of order. */
+  const LAYER_ONE_OWNED_ROUTES = new Set(Object.freeze([
+    "/home",
+    "/galaxy/ai",
+    "/galaxy/music",
+    "/galaxy/video",
+    "/galaxy/creator",
+    "/galaxy/games",
+    "/galaxy/dev",
+    "/galaxy/learning",
+    "/galaxy/community",
+    "/galaxy/tools",
+    "/galaxy/analytics",
+    "/galaxy/settings"
+  ]));
+
   const ROUTES = Object.freeze({
     creator: Object.freeze({
       id: "creator",
@@ -184,9 +202,11 @@
   }
 
   function canHandle(route, options = {}) {
-    const definition = routeDefinition(route);
+    const normalizedRoute = cleanRoute(route);
+    if (LAYER_ONE_OWNED_ROUTES.has(normalizedRoute)) return false;
+    const definition = routeDefinition(normalizedRoute);
     if (!definition) return false;
-    return options.includeAliases !== false || definition.canonical === cleanRoute(route);
+    return options.includeAliases !== false || definition.canonical === normalizedRoute;
   }
 
   function safeRead(key, fallback = null) {
@@ -1157,8 +1177,10 @@
 
   function mount(root, options = {}) {
     if (!root || typeof root.querySelector !== "function") throw new TypeError("HHGalaxyDomainViews.mount cần một root element hợp lệ.");
+    const requestedRoute = cleanRoute(options.route || global.location?.hash || "/create/workflow");
+    if (LAYER_ONE_OWNED_ROUTES.has(requestedRoute)) return false;
     unmount(root);
-    const definition = routeDefinition(options.route || global.location?.hash || "/create/workflow");
+    const definition = routeDefinition(requestedRoute);
     if (!definition) throw new Error("Route không thuộc HH Galaxy Domain Views.");
     const preferences = readPreferences();
     const instance = {

@@ -27,7 +27,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=1", "galaxy-shell.js?v=6"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=2", "galaxy-shell.js?v=7"]
     },
     "auth-effects": {
       /*
@@ -63,12 +63,16 @@
       ]
     },
     "galaxy-home-ai": {
-      styles: ["galaxy-home-ai.css?v=18"],
-      scripts: ["galaxy-home-ai.js?v=11"]
+      styles: ["galaxy-home-ai.css?v=19"],
+      scripts: ["galaxy-home-ai.js?v=12"]
+    },
+    "galaxy-layer-one": {
+      styles: ["galaxy-creator-studio.css?v=9", "galaxy-layer-one.css?v=2"],
+      scripts: ["galaxy-layer-one-data.js?v=2", "galaxy-creator-studio.js?v=3", "galaxy-layer-one.js?v=2"]
     },
     "galaxy-domain-views": {
       styles: ["galaxy-domain-views.css?v=13"],
-      scripts: ["galaxy-domain-views.js?v=6"]
+      scripts: ["galaxy-domain-views.js?v=7"]
     },
     "galaxy-community-showcase": {
       styles: ["galaxy-community-showcase.css?v=9"],
@@ -80,7 +84,7 @@
     },
     "galaxy-planet-hubs": {
       styles: ["galaxy-planet-hubs.css?v=1"],
-      scripts: ["galaxy-planet-hubs.js?v=1"]
+      scripts: ["galaxy-planet-hubs.js?v=2"]
     },
     platform: {
       styles: [
@@ -358,7 +362,7 @@
     // engines. Load the owning engine in the same navigation pass so an
     // explicit "Mở engine" action can mount real functionality in-place
     // instead of falling through to a legacy redirect after a cold load.
-    if (["/galaxy/ai", "/galaxy/music", "/galaxy/video", "/galaxy/creator", "/galaxy/games", "/galaxy/dev", "/galaxy/learning", "/galaxy/community", "/galaxy/tools", "/galaxy/analytics", "/galaxy/settings"].includes(value)) return ["galaxy-planet-hubs"];
+    if (["/galaxy/ai", "/galaxy/music", "/galaxy/video", "/galaxy/creator", "/galaxy/games", "/galaxy/dev", "/galaxy/learning", "/galaxy/community", "/galaxy/tools", "/galaxy/analytics", "/galaxy/settings"].includes(value)) return ["galaxy-layer-one"];
     if (value === "/create/workflow" || value === "/galaxy/creator-pipeline") return ["creative", "platform", "galaxy-domain-views"];
     if (value === "/work/automation-lab" || value === "/work/projects-tasks"
       || value === "/galaxy/automation-builder" || value === "/galaxy/project-hub") return ["work", "galaxy-domain-views"];

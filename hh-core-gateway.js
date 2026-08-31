@@ -12,6 +12,64 @@
   const GATEWAY_ROUTE = "/home";
   const PLATFORM_ENTRY_ROUTE = "/create";
   const ENTRY_SOURCE = "hh-core";
+  const GALAXY_MANIFEST = Object.freeze([
+    "/home",
+    "/galaxy/ai",
+    "/galaxy/music",
+    "/galaxy/video",
+    "/galaxy/creator",
+    "/galaxy/games",
+    "/galaxy/dev",
+    "/galaxy/learning",
+    "/galaxy/community",
+    "/galaxy/tools",
+    "/galaxy/analytics",
+    "/galaxy/settings"
+  ]);
+  const CORE_ROUTE_PREFIXES = Object.freeze([
+    "/home/dashboard",
+    "/create",
+    "/social-media-tools",
+    "/draw",
+    "/remote",
+    "/chat-ai",
+    "/google",
+    "/youtube",
+    "/discord",
+    "/music-ai",
+    "/davinci-resolve",
+    "/comic-motion-studio",
+    "/comic-reader",
+    "/media-design",
+    "/graphic-design",
+    "/dev-tools",
+    "/work",
+    "/communication",
+    "/cinema",
+    "/music",
+    "/universe",
+    "/cosmic-observatory",
+    "/play",
+    "/game",
+    "/entertainment",
+    "/character-3d",
+    "/copyright",
+    "/analytics",
+    "/admin",
+    "/learn",
+    "/english",
+    "/japanese",
+    "/chinese",
+    "/phat-phap",
+    "/fortune",
+    "/system",
+    "/support",
+    "/tools",
+    "/favorites",
+    "/recent",
+    "/settings",
+    "/profile"
+  ]);
 
   function normalizeRoute(input) {
     let value = String(input || GATEWAY_ROUTE).trim();
@@ -34,6 +92,15 @@
     if (candidate) return candidate;
     try { return globalScope.sessionStorage || null; }
     catch { return null; }
+  }
+
+  function isGalaxyRoute(input) {
+    return GALAXY_MANIFEST.includes(normalizeRoute(input));
+  }
+
+  function isCoreRoute(input) {
+    const requested = normalizeRoute(input);
+    return CORE_ROUTE_PREFIXES.some((prefix) => requested === prefix || requested.startsWith(`${prefix}/`));
   }
 
   function readRecord(candidate) {
@@ -62,7 +129,7 @@
     globalScope.dispatchEvent(new globalScope.CustomEvent("hh:core-gateway-change", {
       detail: Object.freeze({
         access: Boolean(access),
-        layer: access ? "platform" : "gateway",
+        layer: access ? "platform" : "galaxy",
         source: String(source || "unknown")
       })
     }));
@@ -104,14 +171,16 @@
 
   function resolveRoute(input, options = {}) {
     const requested = normalizeRoute(input);
-    const gateway = requested === GATEWAY_ROUTE;
-    const access = gateway || hasAccess(options.storage);
+    const galaxy = isGalaxyRoute(requested);
+    const core = !galaxy && isCoreRoute(requested);
+    const access = core && hasAccess(options.storage);
+    const allowed = galaxy || access;
     return Object.freeze({
       requested,
-      route: access ? requested : GATEWAY_ROUTE,
-      allowed: access,
-      redirected: !access,
-      layer: gateway || !access ? "gateway" : "platform"
+      route: allowed ? requested : GATEWAY_ROUTE,
+      allowed,
+      redirected: !allowed,
+      layer: galaxy ? "galaxy" : core ? "platform" : "unknown"
     });
   }
 
@@ -121,7 +190,12 @@
     gatewayRoute: GATEWAY_ROUTE,
     platformEntryRoute: PLATFORM_ENTRY_ROUTE,
     entrySource: ENTRY_SOURCE,
+    galaxyManifest: GALAXY_MANIFEST,
+    coreManifest: CORE_ROUTE_PREFIXES,
+    coreRoutePrefixes: CORE_ROUTE_PREFIXES,
     normalizeRoute,
+    isGalaxyRoute,
+    isCoreRoute,
     hasAccess,
     enter,
     leave,

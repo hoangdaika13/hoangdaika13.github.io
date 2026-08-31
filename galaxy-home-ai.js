@@ -14,6 +14,14 @@
   const NOTE_KEY = "hh.dashboard.sticky-notes.v1";
   const NOTIFICATION_KEY = "hh-notification-center";
   const PROJECT_KEYS = Object.freeze(["hh.creative-os.v1", "hh-project-center"]);
+  const GALAXY_DATA_KEYS = Object.freeze({
+    projects: "hh.galaxy.projects.v1",
+    tasks: "hh.galaxy.tasks.v1",
+    notes: "hh.galaxy.notes.v1",
+    favorites: "hh.galaxy.favorites.v1",
+    activity: "hh.galaxy.activity.v1",
+    notifications: "hh.galaxy.notifications.v1"
+  });
   const CORE_ENTRY_ROUTE = "/create";
   const ROUTES = Object.freeze(["/home", "/home/dashboard", "/create/ai-center", "/chat-ai"]);
   const PLANETS = Object.freeze([
@@ -183,7 +191,8 @@
       account: auth.found && isObject(auth.value) ? {
         name: String(auth.value.name || auth.value.displayName || "").trim().slice(0, 120),
         avatar: String(auth.value.avatar || auth.value.picture || "").trim(),
-        email: String(auth.value.email || "").trim().slice(0, 180)
+        email: String(auth.value.email || "").trim().slice(0, 180),
+        plan: String(auth.value.plan || auth.value.tier || "").trim().slice(0, 32)
       } : null,
       projects: projects.items,
       tasks: taskItems,
@@ -221,6 +230,48 @@
       value: { taskItems: asArray(tasks.value), noteItems: asArray(notes.value), projectKey: projects.key }
     });
     return local;
+  }
+
+  function collectGalaxyLocalData(storage = globalScope.localStorage, scope = globalScope) {
+    const platform = collectLocalData(storage, scope);
+    const projectsRecord = readRecord(storage, GALAXY_DATA_KEYS.projects);
+    const tasksRecord = readRecord(storage, GALAXY_DATA_KEYS.tasks);
+    const notesRecord = readRecord(storage, GALAXY_DATA_KEYS.notes);
+    const favoritesRecord = readRecord(storage, GALAXY_DATA_KEYS.favorites);
+    const activityRecord = readRecord(storage, GALAXY_DATA_KEYS.activity);
+    const notificationRecord = readRecord(storage, GALAXY_DATA_KEYS.notifications);
+    const projectItems = Array.isArray(projectsRecord.value)
+      ? projectsRecord.value
+      : asArray(projectsRecord.value?.projects);
+    const notificationItems = Array.isArray(notificationRecord.value)
+      ? notificationRecord.value
+      : asArray(notificationRecord.value?.inbox);
+    return {
+      ...platform,
+      projects: projectItems.filter(isObject),
+      tasks: asArray(tasksRecord.value).map(normalizeTask).filter(Boolean),
+      notes: asArray(notesRecord.value).map(normalizeNote).filter(Boolean),
+      favorites: asArray(favoritesRecord.value).filter((item) => typeof item === "string").slice(0, 100),
+      activity: asArray(activityRecord.value).filter((item) => typeof item === "string" || isObject(item)).slice(0, 20),
+      notifications: {
+        unreadCount: clamp(notificationItems.filter((item) => isObject(item) && !item.read).length, 0, 999),
+        totalCount: clamp(notificationItems.length, 0, 999),
+        found: notificationRecord.found
+      },
+      modules: HOME_NAV_ITEMS.map((item) => ({ ...item })),
+      evidence: {
+        account: platform.evidence.account,
+        projects: projectsRecord.found,
+        tasks: tasksRecord.found,
+        notes: notesRecord.found,
+        favorites: favoritesRecord.found,
+        activity: activityRecord.found,
+        weather: false,
+        notifications: notificationRecord.found,
+        modules: true
+      },
+      source: "local"
+    };
   }
 
   function mergeData(local, provided) {
@@ -352,11 +403,13 @@
     const account = data.account;
     const name = String(account?.name || "Thành viên HH").trim().slice(0, 120);
     const accountDetail = String(account?.email || (data.evidence.account ? "Tài khoản HH" : "Chưa đăng nhập")).trim().slice(0, 180);
+    const plan = String(account?.plan || account?.tier || "").trim().toLowerCase();
+    const planBadge = ["pro", "premium", "paid"].includes(plan) ? "<small>PRO</small>" : "";
     return `<aside class="gha-sidebar gha-home-sidebar" aria-label="Điều hướng HH Galaxy">
       <a class="gha-home-brand" href="#/home" data-gha-route="/home" aria-label="HOANG8.COM — Trang chủ">
         <span class="gha-home-brand__mark" aria-hidden="true">HH</span>
         <strong>HOANG8.COM</strong>
-        <small>PRO</small>
+        ${planBadge}
       </a>
       <label class="gha-search gha-home-search">
         ${iconMarkup("globe")}
@@ -369,7 +422,7 @@
       <section class="gha-home-customize" aria-labelledby="gha-customize-title">
         ${iconMarkup("diamond")}
         <div><h2 id="gha-customize-title">Tùy chỉnh Galaxy</h2><p>Màu sắc, chuyển động và bố cục theo cách của bạn.</p></div>
-        <button type="button" data-gha-route="/settings">Mở cài đặt ${iconMarkup("chevron")}</button>
+        <button type="button" data-gha-route="/galaxy/settings">Mở cài đặt ${iconMarkup("chevron")}</button>
       </section>
       <button class="gha-home-profile" type="button" data-user-menu-toggle aria-haspopup="menu" aria-expanded="false" aria-label="Mở menu tài khoản của ${escapeHtml(name)}">
         ${accountAvatarMarkup(account, "gha-home-profile__avatar")}
@@ -387,18 +440,18 @@
     return `<header class="gha-topbar gha-home-topbar">
       <div class="gha-home-topbar__title">${iconMarkup("globe")}<span><strong>HH GALAXY MAP 3D <i>BETA</i></strong><small>Khám phá vũ trụ số · Kết nối không giới hạn</small></span></div>
       <section class="gha-home-player" aria-label="Lối tắt đến trình phát nhạc">
-        <button class="gha-home-player__cover" type="button" data-gha-route="/music/ambient" aria-label="Mở Ambient Room">${iconMarkup("music")}</button>
-        <button class="gha-home-player__copy" type="button" data-gha-route="/music/ambient"><strong>Ambient Room</strong><small>Trình phát nhạc HH</small></button>
+        <button class="gha-home-player__cover" type="button" data-gha-route="/galaxy/music" aria-label="Mở Music Planet">${iconMarkup("music")}</button>
+        <button class="gha-home-player__copy" type="button" data-gha-route="/galaxy/music"><strong>Music Planet</strong><small>Không gian âm thanh lớp Galaxy</small></button>
         <div class="gha-home-player__controls">
-          <button type="button" data-gha-route="/music/ambient" aria-label="Mở danh sách nhạc"><span aria-hidden="true">|◀</span></button>
-          <button type="button" data-gha-route="/music/ambient" aria-label="Mở trình phát nhạc"><span aria-hidden="true">▶</span></button>
-          <button type="button" data-gha-route="/music/ambient" aria-label="Mở bài tiếp theo"><span aria-hidden="true">▶|</span></button>
+          <button type="button" data-gha-route="/galaxy/music" aria-label="Mở danh sách nhạc"><span aria-hidden="true">|◀</span></button>
+          <button type="button" data-gha-route="/galaxy/music" aria-label="Mở trình phát nhạc"><span aria-hidden="true">▶</span></button>
+          <button type="button" data-gha-route="/galaxy/music" aria-label="Mở Music Planet"><span aria-hidden="true">▶|</span></button>
         </div>
         <span class="gha-home-player__wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
         <small class="gha-home-player__state">Mở player</small>
       </section>
       <div class="gha-home-topbar__actions">
-        <button class="gha-home-notification" type="button" data-notification-toggle aria-haspopup="true" aria-expanded="false" aria-label="Mở thông báo">${iconMarkup("bell")}${notificationBadge}</button>
+        <button class="gha-home-notification" type="button" data-gha-route="/galaxy/settings" aria-label="Mở cài đặt thông báo Galaxy">${iconMarkup("bell")}${notificationBadge}</button>
         <button class="gha-home-user" type="button" data-user-menu-toggle aria-haspopup="menu" aria-expanded="false" aria-label="Mở menu tài khoản của ${escapeHtml(name)}">${accountAvatarMarkup(account, "gha-home-user__avatar")}<span>${escapeHtml(name)}</span><i aria-hidden="true">⌄</i></button>
       </div>
     </header>`;
@@ -422,7 +475,7 @@
       const time = typeof item === "string" ? "" : formatDate(item.at || item.createdAt || item.updatedAt, true);
       return `<li><span aria-hidden="true">${iconMarkup("activity")}</span><div><strong>${escapeHtml(label.slice(0, 180))}</strong><small>${time ? escapeHtml(time) : "Đã lưu trên thiết bị"}</small></div></li>`;
     }).join("")}</ol>` : `<div class="gha-home-timeline__empty" data-state="empty"><span>${iconMarkup("activity")}</span><p>Chưa có hoạt động đã lưu.</p></div>`;
-    return `<aside class="gha-home-timeline" aria-labelledby="gha-timeline-title"><header><h2 id="gha-timeline-title">Galaxy Timeline</h2><button type="button" data-gha-route="/analytics">Xem tất cả ${iconMarkup("chevron")}</button></header>${content}</aside>`;
+    return `<aside class="gha-home-timeline" aria-labelledby="gha-timeline-title"><header><h2 id="gha-timeline-title">Galaxy Timeline</h2><button type="button" data-gha-route="/galaxy/analytics">Xem tất cả ${iconMarkup("chevron")}</button></header>${content}</aside>`;
   }
 
   function homeDockMarkup(data) {
@@ -437,13 +490,13 @@
         <small>${escapeHtml(sourceLabel(data))}</small>
       </section>
       <section class="gha-home-stats" aria-label="Số liệu thật của tài khoản">
-        ${homeMetricMarkup("user", "Thành viên", "1", "Tài khoản đang hoạt động", Boolean(data.evidence.account), "/settings")}
-        ${homeMetricMarkup("folder", "Dự án", String(asArray(data.projects).length), "Trong workspace", projectsAvailable, "/work/projects-tasks")}
-        <button class="gha-home-stat gha-home-stat--storage" type="button" data-gha-route="/settings" data-state="loading">
+        ${homeMetricMarkup("user", "Thành viên", "1", "Tài khoản đang hoạt động", Boolean(data.evidence.account), "/galaxy/settings")}
+        ${homeMetricMarkup("folder", "Dự án", String(asArray(data.projects).length), "Trong HH Galaxy", projectsAvailable, "/galaxy/creator")}
+        <button class="gha-home-stat gha-home-stat--storage" type="button" data-gha-route="/galaxy/settings" data-state="loading">
           <span class="gha-home-stat__icon" aria-hidden="true">${iconMarkup("resource")}</span>
           <span><small>Tài nguyên</small><strong data-gha-storage-value>—</strong><em data-gha-storage-detail>Đang đọc Storage API…</em><i data-gha-storage-state data-state="loading">Đang đo</i><b data-gha-storage-bar style="--usage:0%"></b></span>
         </button>
-        <button class="gha-home-stat" type="button" data-gha-route="/analytics" data-state="${tasksAvailable ? "ready" : "empty"}">
+        <button class="gha-home-stat" type="button" data-gha-route="/galaxy/analytics" data-state="${tasksAvailable ? "ready" : "empty"}">
           <span class="gha-home-stat__icon" aria-hidden="true">${iconMarkup("activity")}</span>
           <span><small>Hoạt động</small><strong>${tasksAvailable ? escapeHtml(`${completedTasks}/${taskCount}`) : "—"}</strong><em>${tasksAvailable ? "Công việc hoàn thành" : "Chưa có dữ liệu"}</em></span>
         </button>
@@ -662,7 +715,7 @@
     try {
       entered = typeof runtime.options.enterCore === "function"
         ? runtime.options.enterCore({ source: "hh-core", route: destination }) !== false
-        : globalScope.HHCoreGateway?.enter?.({ source: "hh-core" }) === true;
+        : false;
     } catch {
       entered = false;
     }
@@ -859,19 +912,15 @@
       input?.setAttribute?.("aria-invalid", "true");
       return false;
     }
-    if (runtime.route === "/home") {
-      notifyGateway(runtime, "Hãy nhấn HH Core để vào HH Platform trước khi sử dụng Chat AI.", "blocked");
-      return false;
-    }
     input.removeAttribute?.("aria-invalid");
-    const payload = { prompt, at: Date.now(), source: "galaxy-home" };
+    const payload = { prompt, at: Date.now(), source: "galaxy-home", layer: "galaxy" };
     try {
-      globalScope.sessionStorage?.setItem?.("hh.chat-ai.handoff.v1", JSON.stringify(payload));
-      runtime.state.lastAction = "chat-handoff";
+      globalScope.sessionStorage?.setItem?.("hh.galaxy.ai.handoff.v1", JSON.stringify(payload));
+      runtime.state.lastAction = "galaxy-ai-handoff";
     } catch {
-      runtime.state.lastAction = "chat-handoff-storage-error";
+      runtime.state.lastAction = "galaxy-ai-handoff-storage-error";
     }
-    navigate(runtime, "/chat-ai");
+    navigate(runtime, "/galaxy/ai");
     return true;
   }
 
@@ -926,7 +975,9 @@
       event.preventDefault();
       if (runtime.route === "/home") {
         if (routeButton.dataset.ghaEntry === "hh-core") enterCore(runtime, routeButton.dataset.ghaRoute || CORE_ENTRY_ROUTE);
-        else notifyGateway(runtime, "Điểm đến này thuộc lớp HH Platform. Hãy nhấn HH Core để mở.", "blocked");
+        else if (globalScope.HHCoreGateway?.isGalaxyRoute?.(routeButton.dataset.ghaRoute)
+          || HOME_NAV_ITEMS.some((item) => item.route === routeButton.dataset.ghaRoute)) navigate(runtime, routeButton.dataset.ghaRoute);
+        else notifyGateway(runtime, "Điểm đến này thuộc HH Core Platform. Chỉ nút HH CORE được phép mở lớp 2.", "blocked");
         return;
       }
       navigate(runtime, routeButton.dataset.ghaRoute);
@@ -1103,7 +1154,7 @@
     if (!canHandle(route)) return false;
     unmount();
     const storage = options.storage || globalScope.localStorage;
-    const local = collectLocalData(storage, globalScope);
+    const local = route === "/home" ? collectGalaxyLocalData(storage, globalScope) : collectLocalData(storage, globalScope);
     const runtime = {
       host,
       route,
@@ -1170,6 +1221,7 @@
     PLANETS,
     HOME_NAV_ITEMS,
     AI_DESTINATIONS,
+    GALAXY_DATA_KEYS,
     HOME_PREF_KEY,
     FOCUS_KEY,
     TASK_KEY,
@@ -1178,6 +1230,7 @@
     normalizeRoute,
     canHandle,
     collectLocalData,
+    collectGalaxyLocalData,
     mergeData,
     viewMarkup,
     mount,

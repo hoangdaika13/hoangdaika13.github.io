@@ -6745,7 +6745,9 @@ function initAppShell() {
   const syncCoreLayer = (layer) => {
     const value = layer === "platform" ? "platform" : "gateway";
     shell.dataset.hhLayer = value;
+    shell.dataset.hhProduct = value === "platform" ? "core" : "galaxy";
     document.body.dataset.hhLayer = value;
+    document.body.dataset.hhProduct = value === "platform" ? "core" : "galaxy";
     syncMobileSidebarDock();
   };
   const platformSafeRoute = (input) => {
@@ -6763,7 +6765,9 @@ function initAppShell() {
     const gateway = window.HHCoreGateway;
     if (!gateway?.resolveRoute) {
       syncCoreLayer("gateway");
-      if (route !== "/home") history.replaceState({}, document.title, `${location.pathname}${location.search}#/home`);
+      const bootstrapGalaxyRoutes = new Set(["/home", "/galaxy/ai", "/galaxy/music", "/galaxy/video", "/galaxy/creator", "/galaxy/games", "/galaxy/dev", "/galaxy/learning", "/galaxy/community", "/galaxy/tools", "/galaxy/analytics", "/galaxy/settings"]);
+      if (bootstrapGalaxyRoutes.has(route)) return route;
+      history.replaceState({}, document.title, `${location.pathname}${location.search}#/home`);
       return "/home";
     }
     // Once HH Core has opened the Platform, legacy modules that still assign
@@ -6783,7 +6787,7 @@ function initAppShell() {
       }
       return gateway.gatewayRoute;
     }
-    syncCoreLayer("platform");
+    syncCoreLayer(resolution.layer);
     return resolution.route;
   };
   let cosmicLoaderRoute = "";
@@ -7017,6 +7021,8 @@ function initAppShell() {
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
     }
     cleanupGalaxyEngineTakeover();
+    window.HHGalaxyLayerOne?.unmount?.();
+    window.HHGalaxyCreatorStudio?.unmount?.();
     window.HHGalaxyHomeAI?.unmount?.();
     window.HHGalaxyCommunityShowcase?.unmount?.();
     window.HHGalaxyWebDesktop?.unmount?.();
@@ -7151,14 +7157,16 @@ function initAppShell() {
     const module = moduleById(possibleId);
     document.body.classList.toggle("app-single-module", !isCreativeOSRoute(route) && Boolean(module));
     const galaxyViewsEnabled = Boolean(window.HHGalaxyShell?.isEnabled?.());
+    const isGalaxyLayerOneRoute = galaxyViewsEnabled
+      && routePath !== "/home"
+      && window.HHCoreGateway?.isGalaxyRoute?.(routePath) === true;
     const isGalaxyHomeRoute = galaxyViewsEnabled && (routePath === "/home" || routePath === "/home/dashboard" || routePath === "/create/ai-center" || routePath === "/chat-ai" || routePath.startsWith("/chat-ai/"));
     const isGalaxyDomainRoute = galaxyViewsEnabled && (routePath === "/create/workflow"
       || routePath === "/work/automation-lab"
       || routePath === "/work/projects-tasks"
       || routePath === "/communication/community"
       || routePath === "/music/ambient"
-      || routePath === "/system/desktop"
-      || routePath.startsWith("/galaxy/"));
+      || routePath === "/system/desktop");
     if (isGalaxyHomeRoute) {
       const galaxyHomeMeta = route === "/home"
         ? ["HH Galaxy Map", "Bản đồ trực quan dẫn tới toàn bộ chức năng thật trong HH Platform."]
@@ -7173,7 +7181,7 @@ function initAppShell() {
       const mounted = window.HHGalaxyHomeAI?.mount?.(galaxyHost, {
         route,
         navigate: (nextRoute) => { location.hash = `#${platformSafeRoute(nextRoute)}`; },
-        enterCore: (detail = {}) => window.HHCoreGateway?.enter?.({ source: detail.source || "hh-core" }) === true,
+        enterCore: () => window.HHCoreGateway?.enter?.({ source: "hh-core" }) === true,
         baseMount: (host, options = {}) => window.HHChatAI?.mount?.(host, {
           currentUser: readCurrentAuthUser(),
           apiBase: String(window.HH_REALTIME_URL || location.origin),
@@ -7183,6 +7191,25 @@ function initAppShell() {
       });
       if (!mounted) mountSimpleView(galaxyHomeMeta[0], "Không thể khởi tạo lớp HH Galaxy cho workspace này.", '<button type="button" data-shell-retry-route>Thử lại</button>');
       if (route.startsWith("/chat-ai")) remember("chat-ai");
+    } else if (isGalaxyLayerOneRoute) {
+      const entry = window.HHGalaxyLayerOne?.routeManifest?.find?.((item) => item.route === routePath);
+      updatePageHeader(entry?.title || entry?.label || "HH Galaxy", entry?.description || "Workspace độc lập thuộc lớp HH Galaxy.", route);
+      workspace.innerHTML = '<div data-hh-galaxy-layer-one-host></div>';
+      const layerHost = workspace.firstElementChild;
+      const mounted = window.HHGalaxyLayerOne?.mount?.(layerHost, {
+        route,
+        user: readCurrentAuthUser(),
+        navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
+        mountCreator: (creatorHost, context = {}) => {
+          const result = window.HHGalaxyCreatorStudio?.mount?.(creatorHost, {
+            route: context.route || "/galaxy/creator",
+            storage: context.storage || window.localStorage
+          });
+          if (result === false || result == null) return false;
+          return () => window.HHGalaxyCreatorStudio?.unmount?.(creatorHost);
+        }
+      });
+      if (!mounted) mountSimpleView(entry?.title || "HH Galaxy", "Không thể khởi tạo workspace lớp 1.", '<button type="button" data-shell-retry-route>Thử lại</button>');
     } else if (isGalaxyDomainRoute) {
       const planetHub = window.HHGalaxyPlanetHubs?.canHandle?.(route) ? window.HHGalaxyPlanetHubs : null;
       const specializedView = window.HHGalaxyCommunityShowcase?.canHandle?.(route)
@@ -8319,11 +8346,21 @@ function initAppShell() {
     if (setting.dataset.shellSetting === "advanced") { document.body.classList.toggle("app-advanced-mode", setting.checked); renderNavigation(); }
   });
   document.addEventListener("keydown", (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); openPalette(); }
+    const galaxyLayerActive = document.body.dataset.hhProduct === "galaxy";
+    const focusGalaxySearch = () => document.querySelector(".hh-galaxy-app [data-hgl1-global-search], .hh-galaxy-app [data-hgl1-sidebar-search], [data-gha-home-ai-host] [data-gha-search]")?.focus?.();
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      if (galaxyLayerActive) focusGalaxySearch();
+      else openPalette();
+    }
     const typing = event.target.matches("input, textarea, select, [contenteditable=true]");
-    if (!typing && event.key === "/") { event.preventDefault(); openPalette(); }
-    if (!typing && event.altKey && event.key.toLowerCase() === "h") { event.preventDefault(); location.hash = `#${window.HHCoreGateway?.hasAccess?.() ? (window.HHCoreGateway.platformEntryRoute || "/create") : "/home"}`; }
-    if (!typing && event.altKey && event.key.toLowerCase() === "m") { event.preventDefault(); location.hash = "#/music-ai/project"; }
+    if (!typing && event.key === "/") {
+      event.preventDefault();
+      if (galaxyLayerActive) focusGalaxySearch();
+      else openPalette();
+    }
+    if (!typing && event.altKey && event.key.toLowerCase() === "h") { event.preventDefault(); location.hash = `#${galaxyLayerActive ? "/home" : (window.HHCoreGateway?.platformEntryRoute || "/create")}`; }
+    if (!typing && event.altKey && event.key.toLowerCase() === "m") { event.preventDefault(); location.hash = galaxyLayerActive ? "#/galaxy/music" : "#/music-ai/project"; }
     if (event.key === "Escape") { closePalette(); closeOverlays(); closeSidebarContextMenu(); }
     if (palette?.open && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) {
       const options = [...paletteResults.querySelectorAll("[role=option]")];
@@ -8356,6 +8393,8 @@ function initAppShell() {
   });
   window.addEventListener("hh:galaxy-shell-enabled-change", () => {
     cleanupGalaxyEngineTakeover();
+    window.HHGalaxyLayerOne?.unmount?.();
+    window.HHGalaxyCreatorStudio?.unmount?.();
     window.HHGalaxyHomeAI?.unmount?.();
     window.HHGalaxyCommunityShowcase?.unmount?.();
     window.HHGalaxyWebDesktop?.unmount?.();

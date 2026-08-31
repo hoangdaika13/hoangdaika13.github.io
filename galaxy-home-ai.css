@@ -3603,6 +3603,38 @@
     }
   }
 
+  /* The Home Gateway has a different topbar contract from the immersive
+     Platform workspaces below.  At phone/tablet widths the generic immersive
+     rule uses a three-column brand/search/account grid; Home hides the player
+     instead, so that rule assigns the title to a 36px icon track and collapses
+     its copy to a few pixels.  Keep the two visible Home children in their own
+     two-column layout and scope the override to the Gateway route. */
+  @media (max-width: 900px) {
+    [data-galaxy-shell][data-galaxy-route="/home"][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-home > .gha-home-topbar,
+    [data-galaxy-shell][data-galaxy-route="/home"][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-home > .gha-topbar {
+      grid-template-columns: minmax(0, 1fr) auto !important;
+      grid-template-rows: minmax(0, 1fr);
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-home .gha-home-topbar__title {
+      grid-column: 1;
+      min-width: 0;
+      width: auto;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-home .gha-home-topbar__title > span {
+      min-width: 0;
+      width: auto;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-home .gha-home-topbar__actions {
+      grid-column: 2;
+      width: auto;
+      min-width: max-content;
+      justify-self: end;
+    }
+  }
+
   /* ---------------------------------------------------------------------
      Personal Dashboard + HH AI Copilot reference refinement
 

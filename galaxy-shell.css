@@ -663,7 +663,7 @@ body.app-shell-enabled #appShell[data-galaxy-shell][data-galaxy-immersive="true"
 /* Fail closed while a direct deep-link is being resolved. This prevents a
    Platform header, sidebar or workspace from flashing for one frame before
    the gateway router restores /home. */
-[data-galaxy-shell][data-hh-layer="gateway"]:not([data-galaxy-route="/home"]) > .app-shell__body {
+[data-galaxy-shell][data-hh-layer="gateway"]:not([data-galaxy-route="/home"]):not([data-galaxy-route^="/galaxy/"]) > .app-shell__body {
   visibility: hidden;
   pointer-events: none;
 }

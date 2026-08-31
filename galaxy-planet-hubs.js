@@ -141,6 +141,10 @@
   });
 
   var routes = Object.freeze(Object.keys(HUBS));
+  /* Layer One supersedes the old Planet Hub renderer for these destinations.
+   * The hub manifest remains available to older imports, while this adapter
+   * refuses ownership so a stale or eagerly loaded script cannot mount there. */
+  var LAYER_ONE_OWNED_ROUTES = Object.freeze(SIDEBAR_ITEMS.map(function (item) { return item.route; }));
 
   function card(id, title, description, icon, route, capability, tags) {
     return Object.freeze({ id: id, title: title, description: description, icon: icon, route: route, capability: capability, tags: Object.freeze(tags || []) });
@@ -155,7 +159,9 @@
   }
 
   function canHandle(route) {
-    return routes.indexOf(normalizeRoute(route)) !== -1;
+    var normalized = normalizeRoute(route);
+    if (LAYER_ONE_OWNED_ROUTES.indexOf(normalized) !== -1) return false;
+    return routes.indexOf(normalized) !== -1;
   }
 
   function escapeHtml(value) {

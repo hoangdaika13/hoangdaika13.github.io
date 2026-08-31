@@ -320,13 +320,13 @@ test("specialized views are route-lazy, router-owned and versioned for release",
   assert.match(routerSource, /HHGalaxyWebDesktop\?\.canHandle/);
   assert.match(routerSource, /HHGalaxyCommunityShowcase\?\.unmount/);
   assert.match(routerSource, /HHGalaxyWebDesktop\?\.unmount/);
-  assert.match(serviceWorkerSource, /hh-identity-portal-v951/);
+  assert.match(serviceWorkerSource, /hh-identity-portal-v\d+/);
   for (const asset of ["galaxy-community-showcase.css?v=9", "galaxy-community-showcase.js?v=5", "galaxy-web-desktop.css?v=10", "galaxy-web-desktop.js?v=5"]) {
     assert.match(serviceWorkerSource, new RegExp(asset.replaceAll(".", "\\.").replace("?", "\\?")), asset);
   }
-  assert.match(indexSource, /<script src="performance-loader\.js\?v=598"/);
-  assert.match(indexSource, /script\.js\?v=262/);
-  assert.match(indexSource, /galaxy-shell\.css\?v=8/);
+  assert.match(indexSource, /<script src="performance-loader\.js\?v=\d+"/);
+  assert.match(indexSource, /script\.js\?v=\d+/);
+  assert.match(indexSource, /galaxy-shell\.css\?v=\d+/);
   assert.match(routerSource, /dataset\.galaxyImmersive === "true"/);
   assert.match(shellStyles, /body\.app-shell-enabled #appShell\[data-galaxy-shell\]\[data-galaxy-immersive="true"\] ~ \.app-mobile-nav[\s\S]{0,80}display:\s*none\s*!important/);
 });

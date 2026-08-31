@@ -6,11 +6,22 @@ const test = require("node:test");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const home = require("../galaxy-home-ai.js");
-const hubs = require("../galaxy-planet-hubs.js");
+const gateway = require("../hh-core-gateway.js");
+const layerOne = require("../galaxy-layer-one.js");
+const layerOneData = require("../galaxy-layer-one-data.js");
+require("../galaxy-domain-views.js");
+const domainViews = global.HHGalaxyDomainViews;
+const legacyPlanetHubs = require("../galaxy-planet-hubs.js");
 const loader = read("performance-loader.js");
 const router = read("script.js");
 const shell = read("galaxy-shell.js");
 const shellStyles = read("galaxy-shell.css");
+
+const layerOneRoutes = Object.freeze([
+  "/home", "/galaxy/ai", "/galaxy/music", "/galaxy/video", "/galaxy/creator",
+  "/galaxy/games", "/galaxy/dev", "/galaxy/learning", "/galaxy/community",
+  "/galaxy/tools", "/galaxy/analytics", "/galaxy/settings"
+]);
 
 function memoryStorage() {
   return { getItem() { return null; }, setItem() {}, removeItem() {} };
@@ -26,47 +37,177 @@ test("HH Core is the only HH Platform entry rendered on the Galaxy Gateway", () 
     assert.match(planet.route, /^\/galaxy\/[a-z-]+$/);
     assert.notEqual(planet.route, "/home/dashboard");
   });
+
+  const entryRuntime = [
+    router,
+    read("galaxy-home-ai.js"),
+    read("galaxy-layer-one.js"),
+    read("galaxy-creator-studio.js"),
+    read("galaxy-layer-one-data.js")
+  ].join("\n");
+  assert.equal(
+    (entryRuntime.match(/HHCoreGateway\?\.enter\?\.\(/g) || []).length,
+    1,
+    "only the existing Home HH Core callback may call HHCoreGateway.enter"
+  );
+  assert.match(router, /enterCore:\s*\(\)\s*=>\s*window\.HHCoreGateway\?\.enter\?\.\(\{\s*source:\s*"hh-core"\s*\}\)\s*===\s*true/);
+  assert.doesNotMatch(read("galaxy-layer-one.js"), /HHCoreGateway|\.enter\s*\(/);
 });
 
-test("planet hubs own the eleven isolated Galaxy destinations", () => {
-  const expected = [
-    "/galaxy/ai", "/galaxy/music", "/galaxy/video", "/galaxy/creator",
-    "/galaxy/games", "/galaxy/dev", "/galaxy/learning", "/galaxy/community",
-    "/galaxy/tools", "/galaxy/analytics", "/galaxy/settings"
-  ];
-  assert.deepEqual([...hubs.routes], expected);
-  expected.forEach((route) => assert.equal(hubs.canHandle(route), true, route));
-  assert.equal(hubs.canHandle("/home/dashboard"), false);
-  assert.equal(hubs.canHandle("/music-ai"), false);
-  assert.equal(typeof hubs.mount, "function");
-  assert.equal(typeof hubs.unmount, "function");
-  assert.equal(typeof hubs.getState, "function");
+test("Galaxy Layer One owns the exact twelve access-free destinations", () => {
+  assert.deepEqual([...layerOne.routes], layerOneRoutes);
+  assert.deepEqual([...gateway.galaxyManifest], layerOneRoutes);
+  layerOneRoutes.forEach((route) => {
+    assert.equal(layerOne.canHandle(route), true, route);
+    assert.equal(gateway.resolveRoute(route, { storage: memoryStorage() }).layer, "galaxy", route);
+  });
+  assert.equal(layerOne.canHandle("/home/dashboard"), false);
+  assert.equal(layerOne.canHandle("/music-ai"), false);
+  assert.equal(layerOne.canHandle("/create"), false);
+  assert.equal(typeof layerOne.mount, "function");
+  assert.equal(typeof layerOne.unmount, "function");
+  assert.equal(typeof layerOne.syncRoute, "function");
+  assert.equal(typeof layerOne.getState, "function");
 });
 
-test("each hub exposes real internal targets and honest provider state", () => {
-  for (const route of hubs.routes) {
-    const markup = hubs.markup(route, {});
-    assert.match(markup, new RegExp(`data-ghph-route="${route.replaceAll("/", "\\/")}"`));
-    assert.match(markup, /data-ghph-open-route="\/[a-z0-9/-]+"/i);
+test("retired Galaxy adapters retain compatibility metadata without claiming Layer One routes", () => {
+  assert.ok(domainViews, "HHGalaxyDomainViews must remain available for canonical Core views");
+  for (const route of layerOneRoutes) {
+    assert.equal(domainViews.canHandle(route), false, `Domain Views still claims ${route}`);
+    assert.equal(legacyPlanetHubs.canHandle(route), false, `Planet Hubs still claims ${route}`);
+  }
+
+  const domainAliases = Object.values(domainViews.routes).flatMap((entry) => entry.aliases);
+  for (const alias of [
+    "/create", "/galaxy/creator-pipeline", "/galaxy/creator",
+    "/galaxy/automation-builder", "/galaxy/project-hub",
+    "/galaxy/community-showcase", "/galaxy/community", "/music",
+    "/galaxy/ambient-room", "/galaxy/music", "/galaxy/web-desktop"
+  ]) {
+    assert.ok(domainAliases.includes(alias), `missing compatibility alias ${alias}`);
+  }
+  assert.deepEqual([...legacyPlanetHubs.routes], layerOneRoutes.slice(1));
+  assert.deepEqual(Object.keys(legacyPlanetHubs.ROUTES), layerOneRoutes.slice(1));
+
+  const legacyGroup = loader.slice(
+    loader.indexOf('"galaxy-planet-hubs": {'),
+    loader.indexOf("platform: {")
+  );
+  assert.match(legacyGroup, /galaxy-planet-hubs\.css\?v=\d+/);
+  assert.match(legacyGroup, /galaxy-planet-hubs\.js\?v=\d+/);
+
+  const featureRouting = loader.slice(
+    loader.indexOf("function featureGroupsForRoute"),
+    loader.indexOf("function groupsForRoute")
+  );
+  for (const legacyRoute of [
+    "/galaxy/creator-pipeline", "/galaxy/automation-builder", "/galaxy/project-hub",
+    "/galaxy/community-showcase", "/galaxy/ambient-room", "/galaxy/web-desktop"
+  ]) {
+    assert.ok(featureRouting.includes(legacyRoute), `missing loader compatibility mapping ${legacyRoute}`);
+  }
+});
+
+test("retired Galaxy adapters cannot mount a Layer One destination", () => {
+  const inertRoot = () => ({
+    dataset: {},
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    classList: { add() {}, remove() {} },
+    replaceChildren() {},
+    innerHTML: ""
+  });
+
+  for (const route of layerOneRoutes) {
+    const domainRoot = inertRoot();
+    let domainResult = false;
+    try { domainResult = domainViews.mount(domainRoot, { route }); } catch { domainResult = false; }
+    assert.equal(Boolean(domainResult), false, `Domain Views mounted ${route}`);
+    assert.equal(domainRoot.dataset.gdvMounted, undefined, `Domain Views marked ${route} mounted`);
+
+    const hubRoot = inertRoot();
+    assert.equal(legacyPlanetHubs.mount(hubRoot, { route }), false, `Planet Hubs mounted ${route}`);
+    assert.equal(hubRoot.dataset.ghphMounted, undefined, `Planet Hubs marked ${route} mounted`);
+  }
+});
+
+test("each first-layer dashboard exposes honest local capability state", () => {
+  for (const route of layerOne.routes.filter((route) => route !== "/home")) {
+    const markup = layerOne.viewMarkup(route, layerOne.collectLocalState(memoryStorage()));
+    assert.match(markup, new RegExp(`data-route="${route.replaceAll("/", "\\/")}"`));
     assert.doesNotMatch(markup, /href="https?:|window\.open|<iframe/i);
     assert.doesNotMatch(markup, /1\.2M|78\.4 GB|99\.9%|Online users|doanh thu/i);
+    assert.doesNotMatch(markup, /data-gha-entry="hh-core"|HHCoreGateway|\/create\b/i);
   }
-  const ai = hubs.markup("/galaxy/ai", {});
-  assert.match(ai, /Cần cấu hình nếu dùng API/);
-  assert.match(ai, /HH CORE<\/span><b>Local-first<\/b>/);
+  const ai = layerOne.viewMarkup("/galaxy/ai", {});
+  assert.match(ai, /Chưa cấu hình nhà cung cấp AI/);
+  assert.match(ai, /Cần backend proxy/);
+  const creator = layerOne.viewMarkup("/galaxy/creator", {});
+  assert.equal((creator.match(/data-hh-galaxy-creator-host/g) || []).length, 1);
 });
 
-test("lazy loader and router mount and release the planet hub adapter", () => {
-  assert.match(loader, /"galaxy-planet-hubs"\s*:\s*\{/);
-  assert.match(loader, /galaxy-planet-hubs\.css\?v=1/);
-  assert.match(loader, /galaxy-planet-hubs\.js\?v=1/);
-  assert.match(loader, /"\/galaxy\/ai"[\s\S]{0,520}return \["galaxy-planet-hubs"\]/);
-  assert.match(router, /HHGalaxyPlanetHubs\?\.canHandle\?\.\(route\)/);
-  assert.match(router, /planetHub\.mount\?\.\(/);
-  assert.ok((router.match(/HHGalaxyPlanetHubs\?\.unmount\?\.\(\)/g) || []).length >= 2);
+test("Galaxy routes load and mount only the Layer One adapter", () => {
+  assert.match(loader, /"galaxy-layer-one"\s*:\s*\{/);
+  assert.match(loader, /galaxy-layer-one\.css\?v=\d+/);
+  assert.match(loader, /galaxy-layer-one\.js\?v=\d+/);
+  const featureRouting = loader.slice(
+    loader.indexOf("function featureGroupsForRoute"),
+    loader.indexOf("function groupsForRoute")
+  );
+  assert.match(featureRouting, /"\/galaxy\/ai"[\s\S]{0,520}return \["galaxy-layer-one"\]/);
+  assert.doesNotMatch(featureRouting, /galaxy-planet-hubs/);
+  assert.match(router, /window\.HHCoreGateway\?\.isGalaxyRoute\?\.\(routePath\)\s*===\s*true/);
+  assert.match(router, /window\.HHGalaxyLayerOne\?\.mount\?\.\(layerHost/);
+  assert.ok((router.match(/HHGalaxyLayerOne\?\.unmount\?\.\(\)/g) || []).length >= 2);
+
+  const layerBranch = router.slice(
+    router.indexOf("} else if (isGalaxyLayerOneRoute)"),
+    router.indexOf("} else if (isGalaxyDomainRoute)")
+  );
+  assert.match(layerBranch, /HHGalaxyLayerOne/);
+  assert.doesNotMatch(layerBranch, /HHGalaxyPlanetHubs|planetHub/);
 });
 
-test("canonical reference views and aliases use one immersive shell", () => {
+test("layer-one search never exposes a Core destination", () => {
+  for (const query of ["HH CORE", "/create", "chat ai", "music", "settings", "analytics"]) {
+    const results = layerOne.searchRoutes(query, 12);
+    results.forEach((entry) => {
+      assert.equal(gateway.isGalaxyRoute(entry.route), true, `${query}: ${entry.route}`);
+      assert.equal(gateway.isCoreRoute(entry.route), false, `${query}: ${entry.route}`);
+    });
+  }
+  assert.equal(layerOne.searchRoutes("HH CORE").length, 0);
+  assert.equal(layerOne.searchRoutes("/create").length, 0);
+  assert.match(read("galaxy-layer-one.js"), /const results = routeManifest\.map/);
+});
+
+test("demo projects and schedules never contribute to real Analytics", () => {
+  const sampleOnlyStats = layerOneData.buildStats({
+    projects: layerOneData.SAMPLE_PROJECTS,
+    schedule: layerOneData.SAMPLE_SCHEDULE
+  }, new Date("2026-08-01T08:00:00.000Z"));
+  assert.deepEqual(sampleOnlyStats, {
+    totalProjects: 0,
+    activeProjects: 0,
+    completedProjects: 0,
+    draftProjects: 0,
+    dueToday: 0,
+    completedSteps: 0
+  });
+
+  const store = layerOneData.createStore({
+    storage: layerOneData.memoryStorage(),
+    persistInitial: false,
+    now: () => new Date("2026-08-31T08:00:00.000Z")
+  });
+  assert.ok(store.getSnapshot().projects.every((project) => project.isDemo));
+  assert.equal(store.getStats().totalProjects, 0);
+  const copy = store.cloneProject(layerOneData.SAMPLE_PROJECTS[0].id);
+  assert.equal(copy.isDemo, false);
+  assert.equal(store.getStats().totalProjects, 1);
+});
+
+test("canonical Core reference views use one immersive shell", () => {
   assert.match(shell, /function|const isImmersiveRoute/);
   for (const route of [
     "/home/dashboard", "/create/ai-center",

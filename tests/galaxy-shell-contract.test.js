@@ -13,6 +13,7 @@ const guide = read(path.join("docs", "HH_GALAXY_DESIGN_SYSTEM.md"));
 const loader = read("performance-loader.js");
 const router = read("script.js");
 const html = read("index.html").replace(/<!--[\s\S]*?-->/g, "");
+const layerOne = require("../galaxy-layer-one.js");
 
 const loadApi = () => {
   const window = {};
@@ -35,12 +36,10 @@ test("Galaxy Shell exposes a frozen, versioned lifecycle API", () => {
   assert.equal(api.syncRoute("/cosmic-observatory/solar-system").id, "universe");
   assert.equal(api.syncRoute("/home/dashboard").id, "personal-dashboard");
   assert.equal(api.syncRoute("/create/ai-center").id, "ai-universe");
-  assert.equal(api.syncRoute("/galaxy/automation-builder").id, "automation-builder");
-  assert.equal(api.syncRoute("/galaxy/creator").id, "creator-studio");
-  assert.equal(api.syncRoute("/galaxy/creator-pipeline").id, "creator-studio");
-  assert.equal(api.syncRoute("/galaxy/community-showcase").id, "community-showcase");
-  assert.equal(api.syncRoute("/galaxy/web-desktop").id, "web-desktop");
-  assert.equal(api.syncRoute("/galaxy/tools").id, "tools-galaxy");
+  assert.equal(api.syncRoute("/create/workflow").id, "creator-studio");
+  assert.equal(api.syncRoute("/communication/community").id, "community-showcase");
+  assert.equal(api.syncRoute("/system/desktop").id, "web-desktop");
+  assert.equal(api.syncRoute("/system").id, "tools-galaxy");
 });
 
 test("route manifest has stable semantic fields and no provider readiness claims", () => {
@@ -72,7 +71,7 @@ test("route manifest has stable semantic fields and no provider readiness claims
   assert.doesNotMatch(client, /12\.5K|99\.9% uptime|đã kết nối|online users/i);
 });
 
-test("Galaxy manifest does not claim legacy routes owned by other workspaces", () => {
+test("Platform shell does not claim Layer One routes or legacy aliases", () => {
   const api = loadApi();
   const claimedAliases = new Set(api.routeManifest.flatMap((entry) => entry.aliases));
   for (const legacyRoute of ["/create", "/work/project-hub", "/settings/user-dashboard"]) {
@@ -81,8 +80,12 @@ test("Galaxy manifest does not claim legacy routes owned by other workspaces", (
   assert.equal(api.syncRoute("/create").id, "creative-center");
   assert.equal(api.syncRoute("/work/project-hub").id, "work-center");
   assert.equal(api.syncRoute("/settings/user-dashboard").id, "settings");
-  assert.equal(api.syncRoute("/galaxy/creator").id, "creator-studio");
-  assert.equal(api.syncRoute("/galaxy/project-hub").id, "project-hub");
+
+  for (const galaxyRoute of layerOne.routes.filter((route) => route !== "/home")) {
+    const claimed = api.routeManifest.some((entry) => entry.route === galaxyRoute || entry.aliases.includes(galaxyRoute));
+    assert.equal(claimed, false, `${galaxyRoute} belongs only to HHGalaxyLayerOne`);
+    assert.equal(api.syncRoute(galaxyRoute).id, "home-galaxy");
+  }
 });
 
 test("enhancer preserves feature DOM and restores every owned attribute", () => {
@@ -118,10 +121,10 @@ test("runtime rollback cleans adapters and immediately rerenders the current rou
 });
 
 test("Galaxy Shell joins the existing brand loader without increasing first-paint requests", () => {
-  assert.match(loader, /brand:[\s\S]*?hh-core-gateway\.js\?v=1[\s\S]*?galaxy-shell\.js\?v=6/);
+  assert.match(loader, /brand:[\s\S]*?hh-core-gateway\.js\?v=2[\s\S]*?galaxy-shell\.js\?v=7/);
   assert.match(router, /HHAssetLoader\?\.ensureGroup\?\.\("brand"\)/);
   assert.match(router, /brandReady\.then\(initAppShell, initAppShell\)/);
-  assert.doesNotMatch(html, /<script\b[^>]*src=["']galaxy-shell\.js\?v=2/);
+  assert.doesNotMatch(html, /<script\b[^>]*src=["'][^"']*(?:hh-core-gateway|galaxy-shell)\.js/);
 });
 
 test("Platform layer restores the shared header and sidebar on every inner route", () => {
