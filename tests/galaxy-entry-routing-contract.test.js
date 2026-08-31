@@ -16,10 +16,11 @@ function memoryStorage() {
   return { getItem() { return null; }, setItem() {}, removeItem() {} };
 }
 
-test("HH Core is the only dashboard entry rendered on the Galaxy Map", () => {
+test("HH Core is the only HH Platform entry rendered on the Galaxy Gateway", () => {
   const markup = home.viewMarkup("/home", home.collectLocalData(memoryStorage(), {}));
-  assert.equal((markup.match(/data-gha-route="\/home\/dashboard"/g) || []).length, 1);
-  assert.match(markup, /class="gha-core"[^>]*data-gha-entry="hh-core"[^>]*data-gha-route="\/home\/dashboard"/);
+  assert.equal((markup.match(/data-gha-entry="hh-core"/g) || []).length, 1);
+  assert.match(markup, /class="gha-core"[^>]*data-gha-entry="hh-core"[^>]*data-gha-route="\/create"/);
+  assert.equal(home.CORE_ENTRY_ROUTE, "/create");
   assert.equal(home.PLANETS.length, 9);
   home.PLANETS.forEach((planet) => {
     assert.match(planet.route, /^\/galaxy\/[a-z-]+$/);

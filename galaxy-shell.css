@@ -608,3 +608,259 @@ body.app-shell-enabled #appShell[data-galaxy-shell][data-galaxy-immersive="true"
     overflow-y: auto;
   }
 }
+
+/* -------------------------------------------------------------------------
+ * HH Core two-layer boundary
+ *
+ * The Galaxy Map is the public gateway surface. HH Platform is a separate
+ * application surface that becomes available only after the HH Core runtime
+ * sets data-hh-layer="platform". Keep the boundary visual as well as
+ * semantic: the gateway owns its space scene; Platform owns its product
+ * chrome and never inherits the gateway glow/effect layer.
+ * ---------------------------------------------------------------------- */
+[data-galaxy-shell][data-hh-layer="gateway"] {
+  --hh-layer-canvas: #020611;
+  --hh-layer-panel: rgb(4 10 27 / 96%);
+  --hh-layer-line: rgb(145 116 255 / 24%);
+  --hh-layer-accent: #b35cff;
+  background: var(--hh-layer-canvas);
+}
+
+[data-galaxy-shell][data-hh-layer="platform"] {
+  --hh-layer-canvas: #050914;
+  --hh-layer-panel: rgb(6 13 25 / 97%);
+  --hh-layer-raised: #0d1829;
+  --hh-layer-line: rgb(86 207 224 / 18%);
+  --hh-layer-accent: #56cfe0;
+  --galaxy-bg: var(--hh-layer-canvas);
+  --galaxy-bg-deep: #030711;
+  --galaxy-surface: var(--hh-layer-panel);
+  --galaxy-surface-raised: var(--hh-layer-raised);
+  --galaxy-surface-hover: #13243a;
+  --galaxy-glass: rgb(6 13 25 / 92%);
+  --galaxy-border: var(--hh-layer-line);
+  --galaxy-border-strong: rgb(86 207 224 / 46%);
+  --galaxy-cyan: var(--hh-layer-accent);
+  --galaxy-color-focus: #67e8f9;
+  background:
+    radial-gradient(circle at 82% 0%, rgb(86 207 224 / 7%), transparent 31%),
+    linear-gradient(145deg, #050914, #07101d 58%, #030611);
+}
+
+/* The gateway scene already renders its own stars, nebula and map texture.
+   Suppressing the shell effect prevents a second visual system bleeding
+   through it. Platform retains only a restrained ambient field. */
+[data-galaxy-shell][data-hh-layer="gateway"] > [data-galaxy-effect-owner="shell"] {
+  display: none;
+}
+
+[data-galaxy-shell][data-hh-layer="gateway"] > .app-header,
+[data-galaxy-shell][data-hh-layer="gateway"] > .app-shell__body > .app-sidebar,
+[data-galaxy-shell][data-hh-layer="gateway"] > .app-shell__body > .app-sidebar-backdrop {
+  display: none !important;
+}
+
+/* Fail closed while a direct deep-link is being resolved. This prevents a
+   Platform header, sidebar or workspace from flashing for one frame before
+   the gateway router restores /home. */
+[data-galaxy-shell][data-hh-layer="gateway"]:not([data-galaxy-route="/home"]) > .app-shell__body {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+[data-galaxy-shell][data-hh-layer="platform"] > [data-galaxy-effect-owner="shell"] {
+  opacity: 0.18;
+}
+
+[data-galaxy-shell][data-hh-layer="platform"] [data-galaxy-chrome="topbar"] {
+  border-color: var(--hh-layer-line);
+  background: rgb(5 10 20 / 96%);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 22%);
+  backdrop-filter: blur(18px) saturate(112%);
+}
+
+[data-galaxy-shell][data-hh-layer="platform"] [data-galaxy-chrome="navigation"] {
+  border-color: var(--hh-layer-line);
+  background:
+    linear-gradient(180deg, rgb(5 13 24 / 98%), rgb(3 8 17 / 98%));
+  box-shadow: 12px 0 32px rgb(0 0 0 / 18%);
+}
+
+/* A deliberate, reversible exit is part of the Platform chrome. It is not
+   rendered as a route link, so only the gateway controller can close access
+   and return to the first layer. */
+.app-core-exit {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 11px;
+  border: 1px solid rgb(86 207 224 / 22%);
+  border-radius: 10px;
+  color: #b8cce0;
+  background: rgb(9 20 35 / 78%);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease;
+}
+
+[data-galaxy-shell][data-hh-layer="platform"] .app-core-exit {
+  display: inline-flex;
+}
+
+[data-galaxy-shell][data-hh-layer="platform"] > .app-core-exit {
+  position: fixed;
+  z-index: 90;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  box-shadow: 0 14px 36px rgb(0 0 0 / 34%), 0 0 24px rgb(86 207 224 / 10%);
+  backdrop-filter: blur(16px) saturate(125%);
+}
+
+.app-core-exit > span {
+  color: #67e8f9;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.app-core-exit > b {
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.app-core-exit:hover {
+  border-color: rgb(103 232 249 / 48%);
+  color: #f4fbff;
+  background: rgb(18 41 61 / 86%);
+}
+
+.app-core-exit:focus-visible {
+  outline: 3px solid rgb(103 232 249 / 78%);
+  outline-offset: 3px;
+}
+
+/* The old application dock contains direct Platform destinations. It must not
+   appear in front of the HH Core boundary on compact screens. */
+body.app-shell-enabled #appShell[data-hh-layer="gateway"] ~ .app-mobile-nav {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 1399px) {
+  [data-galaxy-shell][data-hh-layer="platform"] .app-core-exit > b {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  [data-galaxy-shell][data-hh-layer="platform"] .app-core-exit {
+    width: 44px;
+    padding: 0;
+    border-radius: 11px;
+  }
+
+  [data-galaxy-shell][data-hh-layer="platform"] > .app-core-exit {
+    right: max(10px, env(safe-area-inset-right));
+    bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-core-exit {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  [data-galaxy-shell][data-hh-layer] {
+    background: Canvas;
+  }
+
+  [data-galaxy-shell][data-hh-layer="platform"] > [data-galaxy-effect-owner="shell"] {
+    display: none;
+  }
+
+  .app-core-exit {
+    border: 1px solid ButtonText;
+    color: ButtonText;
+    background: ButtonFace;
+    forced-color-adjust: auto;
+  }
+}
+
+/* Platform is a complete second application layer. Older Galaxy releases
+   used route-specific immersive selectors that hid the legacy header/sidebar
+   for Chat, AI Center and the /galaxy/* aliases. Those selectors remain for
+   rollback compatibility, but must never win once the Core gateway has
+   granted platform access. Restore the normal two-column shell explicitly. */
+[data-galaxy-shell][data-hh-layer="platform"] > .app-header {
+  display: grid !important;
+  min-height: var(--header-height, var(--header-h, 64px));
+}
+
+[data-galaxy-shell][data-hh-layer="platform"] > .app-shell__body {
+  display: grid !important;
+  grid-template-columns: var(--sidebar-width, var(--sidebar-w, 248px)) minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr);
+  height: calc(100dvh - var(--header-height, var(--header-h, 64px)));
+  min-height: 0;
+  overflow: visible;
+}
+
+[data-galaxy-shell][data-hh-layer="platform"] > .app-shell__body > .app-sidebar {
+  display: flex !important;
+}
+
+[data-galaxy-shell][data-hh-layer="platform"] > .app-shell__body > .app-sidebar-backdrop {
+  /* The backdrop is a mobile drawer layer, never a desktop grid item.  If it
+     participates in the two-column grid it creates an implicit 0px/real row
+     pair and pushes .app-main into the empty first row. */
+  display: none !important;
+}
+
+[data-galaxy-shell][data-hh-layer="platform"] > .app-shell__body > .app-main {
+  grid-column: 2;
+  grid-row: 1;
+  width: auto;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: initial;
+}
+
+/* On phones the Platform sidebar remains the existing off-canvas drawer;
+   only the desktop grid restoration above is needed. */
+@media (max-width: 767px) {
+  [data-galaxy-shell][data-hh-layer="platform"] > .app-shell__body {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr);
+    height: calc(100dvh - var(--header-height, var(--header-h, 56px)));
+  }
+
+  [data-galaxy-shell][data-hh-layer="platform"] > .app-shell__body > .app-sidebar {
+    display: flex !important;
+  }
+
+  [data-galaxy-shell][data-hh-layer="platform"] > .app-shell__body > .app-sidebar-backdrop {
+    /* Keep the existing off-canvas drawer behavior without adding a grid
+       track.  Visibility/opacity/pointer-events remain controlled by the
+       legacy sidebar state rules. */
+    position: fixed;
+    z-index: 51;
+    inset: var(--header-height, 58px) 0 68px;
+    display: block !important;
+    border: 0;
+  }
+
+  [data-galaxy-shell][data-hh-layer="platform"] > .app-shell__body > .app-main {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    height: 100%;
+  }
+}

@@ -27,7 +27,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "galaxy-shell.js?v=5"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=1", "galaxy-shell.js?v=6"]
     },
     "auth-effects": {
       /*
@@ -63,8 +63,8 @@
       ]
     },
     "galaxy-home-ai": {
-      styles: ["galaxy-home-ai.css?v=17"],
-      scripts: ["galaxy-home-ai.js?v=10"]
+      styles: ["galaxy-home-ai.css?v=18"],
+      scripts: ["galaxy-home-ai.js?v=11"]
     },
     "galaxy-domain-views": {
       styles: ["galaxy-domain-views.css?v=13"],
@@ -349,7 +349,9 @@
 
   function featureGroupsForRoute(route) {
     const value = normalizeRoute(route);
-    if (value === "/home") return galaxyShellEnabled() ? ["galaxy-home-ai"] : legacyHomeCriticalGroups(value);
+    // /home is now the mandatory first-layer Galaxy Gateway. A persisted
+    // legacy shell flag may not replace the only control that can enter Core.
+    if (value === "/home") return ["galaxy-home-ai"];
     if (value === "/home/dashboard") return ["galaxy-home-ai"];
     if (value === "/create/ai-center") return ["creative", "platform", "galaxy-home-ai"];
     // Galaxy adapters are presentation shells around the existing feature
@@ -627,7 +629,12 @@
 
   document.addEventListener("pointerdown", (event) => {
     const route = event.target.closest?.("[data-app-route]")?.dataset.appRoute;
-    if (route) ensureForRoute(route).catch(() => {});
+    if (!route) return;
+    const gateway = global.HHCoreGateway;
+    const allowed = gateway?.resolveRoute
+      ? gateway.resolveRoute(route).allowed
+      : normalizeRoute(route) === "/home";
+    if (allowed) ensureForRoute(route).catch(() => {});
   }, { capture: true, passive: true });
 
   document.addEventListener("click", (event) => {

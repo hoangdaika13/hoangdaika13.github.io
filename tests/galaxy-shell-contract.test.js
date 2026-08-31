@@ -118,10 +118,19 @@ test("runtime rollback cleans adapters and immediately rerenders the current rou
 });
 
 test("Galaxy Shell joins the existing brand loader without increasing first-paint requests", () => {
-  assert.match(loader, /brand:[\s\S]*?galaxy-shell\.js\?v=5/);
+  assert.match(loader, /brand:[\s\S]*?hh-core-gateway\.js\?v=1[\s\S]*?galaxy-shell\.js\?v=6/);
   assert.match(router, /HHAssetLoader\?\.ensureGroup\?\.\("brand"\)/);
   assert.match(router, /brandReady\.then\(initAppShell, initAppShell\)/);
   assert.doesNotMatch(html, /<script\b[^>]*src=["']galaxy-shell\.js\?v=2/);
+});
+
+test("Platform layer restores the shared header and sidebar on every inner route", () => {
+  assert.match(shellStyles, /\[data-galaxy-shell\]\[data-hh-layer="platform"\] > \.app-header/);
+  assert.match(shellStyles, /\[data-galaxy-shell\]\[data-hh-layer="platform"\] > \.app-shell__body/);
+  assert.match(shellStyles, /grid-template-columns:\s*var\(--sidebar-width/);
+  assert.match(shellStyles, /display:\s*grid\s*!important/);
+  assert.match(shellStyles, /data-hh-layer="platform"[^\{]+\.app-sidebar-backdrop\s*\{[\s\S]{0,320}?display:\s*none\s*!important/, "desktop backdrop must not create an implicit grid row");
+  assert.match(shellStyles, /@media \(max-width:\s*767px\)[\s\S]+data-hh-layer="platform"[^\{]+\.app-sidebar-backdrop\s*\{[\s\S]{0,420}?position:\s*fixed[\s\S]{0,220}?display:\s*block\s*!important/, "mobile backdrop must stay outside the grid as a fixed drawer layer");
 });
 
 test("semantic tokens reproduce the approved HH Galaxy foundation", () => {

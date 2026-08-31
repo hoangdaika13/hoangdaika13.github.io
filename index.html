@@ -89,7 +89,7 @@
   <link rel="stylesheet" href="workspace-feature-explorer.css?v=2">
   <link rel="stylesheet" href="brand-galaxy-logo.css?v=1">
   <link rel="stylesheet" href="galaxy-design-system.css?v=1">
-  <link rel="stylesheet" href="galaxy-shell.css?v=5">
+  <link rel="stylesheet" href="galaxy-shell.css?v=8">
   <!-- Lazy workspace assets are loaded by performance-loader.js. HH School v1 owns /learn; HH English and HH Japanese remain independent routes. -->
   <script src="vercel-observability.js?v=2" defer></script>
   <!-- Compatibility: config.js?v=8 config.js?v=9 -->
@@ -97,6 +97,7 @@
   <!-- HH School runtime: hh-school.css?v=4 hh-school-curriculum.js?v=3 hh-school-core.js?v=4 hh-school-offline.js?v=4 hh-school-sync.js?v=4 hh-school.js?v=5 -->
   <!-- Compatibility index for older offline clients: communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1 -->
   <script src="platform-orchestrator.js?v=2" defer></script>
+  <!-- Release v951 HH Core two-layer boundary: /home is the mandatory isolated Galaxy Gateway; only HH Core grants tab-scoped access to the complete HH Platform at /create; direct links and prefetch fail closed, legacy Home commands remain inside Platform until explicit exit/logout, the mobile dock cannot leak into Gateway, and every Platform route restores its own header/sidebar without an empty desktop grid row; performance-loader.js?v=598 script.js?v=262 Galaxy shell CSS v8/JS v6 Home CSS v18/JS v11 Gateway JS v1. -->
   <!-- Release v950 HH Galaxy responsive completion: laptop and phone workspaces preserve full verified text, Dashboard fixed bars no longer cover final content, Copilot insights remain reachable, and the 1672px golden composition remains unchanged; performance-loader.js?v=596 script.js?v=259 Galaxy shell CSS v5/JS v5 assets Home CSS v17/JS v10 Domain CSS v13/JS v6 Community CSS v9/JS v5 Desktop CSS v10/JS v5 Chat CSS v20/JS v18. -->
   <!-- Release v947 HH Galaxy interaction and responsive refinement: Chat AI patches provider/stream state without replacing the composer, Automation zoom stays inside a scrollable canvas, Project/Automation rails keep mobile flow, Ambient/Creator decorative geometry no longer inflates layout, and Community headings stay within two mobile lines; performance-loader.js?v=588 script.js?v=259 Galaxy shell CSS v5/JS v5 assets Home CSS v11/JS v10 Domain CSS v8/JS v6 Community CSS v6/JS v5 Desktop v5 Chat CSS v19/JS v18. -->
   <!-- Release v945 HH Galaxy fit and lifecycle hardening: Cloud status pills remain readable, lazy modules use one canonical version, offline catalogs align with active assets and Galaxy fallbacks share one cache key; performance-loader.js?v=586 script.js?v=259 Galaxy shell CSS v5/JS v5 assets Home v10 Domain CSS v6/JS v5 Community/Desktop v4 Chat CSS v19. -->
@@ -138,7 +139,7 @@
   <!-- Release v572 TikTok Creator Galaxy: 18 compliant workspaces, owner-isolated OAuth/token vault, local creator tools and audited Content Posting flow -->
   <!-- Social Media Tools v2: compact task navigation, contextual forms, real local editors and provider connection wizard. -->
 <!-- Release v649 Cosmic OS V2 + Communication Cockpit: direct workspaces, truthful capability states, mobile sheets and safe first paint. -->
-<script src="performance-loader.js?v=596" data-compat-src="performance-loader.js?v=595" defer></script>
+<script src="performance-loader.js?v=598" data-compat-src="performance-loader.js?v=597 performance-loader.js?v=596 performance-loader.js?v=595" defer></script>
 <!-- Previous loader tag retained as a compatibility index only:
 <script src="performance-loader.js?v=586" data-compat-src="performance-loader.js?v=585" defer></script>
 -->
@@ -409,11 +410,12 @@
     </section>
   </section>
 
-  <section class="app-shell" id="appShell" aria-label="HH Platform workspace" hidden>
+  <section class="app-shell" id="appShell" data-hh-layer="gateway" aria-label="HH Platform workspace" hidden>
+    <button class="app-core-exit" type="button" data-hh-core-exit aria-label="Rời HH Platform và trở về HH Galaxy" title="Về HH Galaxy"><span aria-hidden="true">←</span><b>Về Galaxy</b></button>
     <header class="app-header">
       <div class="app-header__start">
         <button class="app-icon-button" type="button" data-shell-toggle aria-label="Thu gọn thanh điều hướng" aria-expanded="true">☰</button>
-        <a class="app-brand" href="#/home" data-app-route="/home" aria-label="Mở trang chủ HH Platform"><span class="app-brand-logo" data-hh-galaxy-logo data-galaxy-logo-size="34px" data-galaxy-logo-pulse-on="route"><img class="hh-galaxy-logo-fallback" src="assets/brand/hh-galaxy-star-static.svg?v=2" alt="" width="34" height="34"></span><strong>HH Platform</strong></a>
+        <a class="app-brand" href="#/create" data-app-route="/create" aria-label="Mở trang chủ HH Platform"><span class="app-brand-logo" data-hh-galaxy-logo data-galaxy-logo-size="34px" data-galaxy-logo-pulse-on="route"><img class="hh-galaxy-logo-fallback" src="assets/brand/hh-galaxy-star-static.svg?v=2" alt="" width="34" height="34"></span><strong>HH Platform</strong></a>
       </div>
       <button class="app-global-search" type="button" data-command-open aria-haspopup="dialog"><span>⌕</span><span data-i18n-text>Tìm công cụ, chức năng, dự án hoặc hướng dẫn...</span><kbd>Ctrl K</kbd></button>
       <div class="app-header__actions">
@@ -449,7 +451,7 @@
           <button type="button" data-shell-back aria-label="Quay lại trang trước"><span>←</span> Quay lại</button>
           <div><small id="appContextGroup">HH PLATFORM</small><strong id="appContextLabel">Trang hiện tại</strong></div>
           <span class="app-context-bar__status"><i></i> Màn hình độc lập</span>
-          <div class="app-context-bar__actions"><button type="button" data-command-open>⌕ Tìm nhanh</button><button type="button" data-app-route="/home">⌂ Trang chủ</button></div>
+          <div class="app-context-bar__actions"><button type="button" data-command-open>⌕ Tìm nhanh</button><button type="button" data-app-route="/create">⌂ Trang chủ</button></div>
         </nav>
         <div class="app-workspace" id="appWorkspace" aria-live="polite">
           <section class="dashboard-home dashboard-home--pro dashboard-aurora" data-shell-view="home">
@@ -560,7 +562,7 @@
   <div class="app-drawer-backdrop" data-drawer-close hidden></div>
 
   <nav class="app-mobile-nav" aria-label="Điều hướng di động">
-    <button type="button" data-app-route="/home"><span>⌂</span>Trang chủ</button>
+    <button type="button" data-app-route="/create"><span>⌂</span>Trang chủ</button>
     <button type="button" data-app-route="/tools"><span>⌕</span>Công cụ</button>
     <button class="app-mobile-nav__create" type="button" data-app-route="/create" aria-label="Tạo mới"><span>＋</span></button>
     <button type="button" data-app-route="/recent"><span>◷</span>Gần đây</button>
@@ -1203,7 +1205,7 @@
   <!-- Feature scripts are route-lazy and versioned in performance-loader.js; script.js remains the application router. -->
   <script src="realtime-core.js?v=1" defer></script>
   <script src="auth-platform.js?v=19" defer></script>
-<script src="script.js?v=259" data-compat-src="script.js?v=258 script.js?v=257 script.js?v=256 script.js?v=255 script.js?v=254 script.js?v=253 script.js?v=252 script.js?v=251 script.js?v=250 script.js?v=249 script.js?v=248 script.js?v=247 script.js?v=245 script.js?v=244 script.js?v=243 script.js?v=242 script.js?v=241 script.js?v=240 script.js?v=239 script.js?v=238 script.js?v=237 script.js?v=236 script.js?v=235 script.js?v=234 script.js?v=233 script.js?v=232" defer></script>
+<script src="script.js?v=262" data-compat-src="script.js?v=261 script.js?v=260 script.js?v=259 script.js?v=258 script.js?v=257 script.js?v=256 script.js?v=255 script.js?v=254 script.js?v=253 script.js?v=252 script.js?v=251 script.js?v=250 script.js?v=249 script.js?v=248 script.js?v=247 script.js?v=245 script.js?v=244 script.js?v=243 script.js?v=242 script.js?v=241 script.js?v=240 script.js?v=239 script.js?v=238 script.js?v=237 script.js?v=236 script.js?v=235 script.js?v=234 script.js?v=233 script.js?v=232" defer></script>
 <!-- Compatibility router URL retained for older clients:
 <script src="script.js?v=229" data-compat-src="script.js?v=228 script.js?v=227 script.js?v=226 script.js?v=225 script.js?v=224 script.js?v=223 script.js?v=222 script.js?v=221 script.js?v=220 script.js?v=219 script.js?v=218 script.js?v=217 script.js?v=216 script.js?v=215 script.js?v=214 script.js?v=213 script.js?v=212 script.js?v=211 script.js?v=210 script.js?v=209 script.js?v=208 script.js?v=207 script.js?v=206 script.js?v=205 script.js?v=203 script.js?v=202 script.js?v=201 script.js?v=200 script.js?v=199 script.js?v=198 script.js?v=197 script.js?v=196 script.js?v=195 script.js?v=194 script.js?v=193 script.js?v=192 script.js?v=191 script.js?v=190 script.js?v=189 script.js?v=188 script.js?v=187 script.js?v=186 script.js?v=185 script.js?v=184 script.js?v=183 script.js?v=182 script.js?v=181 script.js?v=180 script.js?v=179 script.js?v=178 script.js?v=177 script.js?v=176" defer></script>
 -->

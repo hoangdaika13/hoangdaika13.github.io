@@ -1,4 +1,6 @@
-const CACHE = "hh-identity-portal-v950";
+const CACHE = "hh-identity-portal-v951";
+// HH Core two-layer boundary: the Galaxy Gateway is isolated from every HH
+// Platform route and grants tab-scoped access only through the central Core.
 // Compatibility marker for the previous Galaxy interaction and responsive refinement release: hh-identity-portal-v947.
 // Compatibility marker for the previous Galaxy fit and lifecycle hardening release: hh-identity-portal-v945.
 // Compatibility marker for the previous Galaxy reference refinement release: hh-identity-portal-v944.
@@ -265,10 +267,11 @@ const RUNTIME_ASSETS = [
   "./brand-galaxy-logo.css?v=1",
   "./brand-galaxy-logo.js?v=2",
   "./galaxy-design-system.css?v=1",
-  "./galaxy-shell.css?v=5",
-  "./galaxy-shell.js?v=5",
-  "./galaxy-home-ai.css?v=17",
-  "./galaxy-home-ai.js?v=10",
+  "./galaxy-shell.css?v=8",
+  "./galaxy-shell.js?v=6",
+  "./hh-core-gateway.js?v=1",
+  "./galaxy-home-ai.css?v=18",
+  "./galaxy-home-ai.js?v=11",
   "./assets/galaxy/hh-galaxy-map-bg-v1.png?v=1",
   "./assets/galaxy/hh-luminous-planet-v1.webp?v=1",
   "./assets/galaxy/hh-stellar-core-v1.webp?v=1",
@@ -580,10 +583,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=596",
+  "./performance-loader.js?v=598",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=259"
+  "./script.js?v=262"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

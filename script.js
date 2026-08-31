@@ -5261,7 +5261,12 @@ function initAppShell() {
     const initialGalaxyRoute = (location.hash.replace(/^#/, "") || "/home").split("?")[0];
     let hasGalaxyPreference = false;
     try { hasGalaxyPreference = localStorage.getItem(window.HHGalaxyShell.flagKey) !== null; } catch {}
-    if (hasGalaxyPreference) window.HHGalaxyShell.mount(shell, { route: initialGalaxyRoute });
+    // The approved two-layer architecture requires the Gateway renderer even
+    // for clients that saved the retired shell rollback flag as `false`.
+    // Without this override there is no valid HH Core control that can grant
+    // access to the Platform layer.
+    if (window.HHCoreGateway) window.HHGalaxyShell.setEnabled(true, { root: shell, route: initialGalaxyRoute });
+    else if (hasGalaxyPreference) window.HHGalaxyShell.mount(shell, { route: initialGalaxyRoute });
     else window.HHGalaxyShell.setEnabled(true, { root: shell, route: initialGalaxyRoute });
   }
   // Keep the transit layer outside App Shell stacking contexts. This also
@@ -5293,7 +5298,8 @@ function initAppShell() {
     if (mobileNavigation) {
       const workspaceOwnsMobileDock = document.body.classList.contains("app-dharma-route")
         || document.body.classList.contains("app-eonwild-immersive")
-        || document.querySelector("#appShell")?.dataset.galaxyImmersive === "true";
+        || document.querySelector("#appShell")?.dataset.galaxyImmersive === "true"
+        || document.querySelector("#appShell")?.dataset.hhLayer === "gateway";
       if (mobileSidebarQuery.matches && !workspaceOwnsMobileDock) mobileNavigation.style.setProperty("display", "grid", "important");
       else mobileNavigation.style.removeProperty("display");
     }
@@ -6191,7 +6197,7 @@ function initAppShell() {
         <label><span aria-hidden="true">${sidebarIconMarkup("search")}</span><input type="search" data-sidebar-search placeholder="Tìm chức năng…" autocomplete="off" aria-label="Tìm chức năng trong sidebar"><kbd>Ctrl K</kbd></label>
         <div><small data-sidebar-search-status aria-live="polite">${validSections.reduce((total, section) => total + section.items.length, 0)} chức năng</small>${hiddenRoutes.length ? `<button type="button" data-sidebar-restore-hidden>Khôi phục ${hiddenRoutes.length} mục ẩn</button>` : ""}</div>
       </section>
-      <button class="app-sidebar__home ${route === "/home" ? "is-active" : ""}" type="button" data-app-route="/home" title="Trang chủ" ${route === "/home" ? "aria-current=page" : ""}><span aria-hidden="true">${sidebarIconMarkup("home")}</span><b>Trang chủ</b><i aria-hidden="true">→</i></button></div>
+      <button class="app-sidebar__home ${route === "/create" ? "is-active" : ""}" type="button" data-app-route="/create" title="Trang chủ HH Platform" ${route === "/create" ? "aria-current=page" : ""}><span aria-hidden="true">${sidebarIconMarkup("home")}</span><b>Trang chủ</b><i aria-hidden="true">→</i></button></div>
       <div class="app-sidebar__scroll-region" data-sidebar-scroll-region>${pinnedMarkup}<div class="app-sidebar__categories" data-sidebar-categories>${sectionsMarkup}</div><section class="app-sidebar__search-empty" data-sidebar-search-empty hidden><span>⌕</span><strong>Chưa tìm thấy chức năng</strong><p>Thử tên ngắn hơn hoặc tìm trên toàn hệ thống.</p><button type="button" data-command-open>Mở Ctrl K</button></section></div>`;
     document.querySelectorAll(".app-sidebar__footer [data-app-route]").forEach((button) => {
       const target = button.dataset.appRoute;
@@ -6720,7 +6726,7 @@ function initAppShell() {
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
     let crumbRoute = "";
-    breadcrumb.innerHTML = route === "/home" ? `<button type="button" aria-current="page">Trang chủ</button>` : [`<button type="button" data-app-route="/home">Trang chủ</button>`, ...crumbs.map((crumb, index) => {
+    breadcrumb.innerHTML = route === "/home" ? `<button type="button" aria-current="page">Galaxy Gateway</button>` : [`<button type="button" data-app-route="/create">HH Platform</button>`, ...crumbs.map((crumb, index) => {
       crumbRoute += `/${crumb}`;
       const isCurrent = index === crumbs.length - 1;
       const label = isCurrent && module?.title ? module.title : routeTools.find((item) => item.id === crumb)?.title || crumbLabels[crumb] || crumb;
@@ -6736,10 +6742,49 @@ function initAppShell() {
       if (contextLabel) contextLabel.textContent = title;
     }
   };
+  const syncCoreLayer = (layer) => {
+    const value = layer === "platform" ? "platform" : "gateway";
+    shell.dataset.hhLayer = value;
+    document.body.dataset.hhLayer = value;
+    syncMobileSidebarDock();
+  };
+  const platformSafeRoute = (input) => {
+    const value = String(input || "").trim();
+    if (!value) return input;
+    const route = value.split("?")[0];
+    const gateway = window.HHCoreGateway;
+    if (route === "/home" && gateway?.hasAccess?.()) return gateway.platformEntryRoute || "/create";
+    return input;
+  };
   const routeFromHash = () => {
     const hash = location.hash.replace(/^#/, "") || "/home";
-    const route = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
-    return route === "/entertainment" || route.startsWith("/entertainment/") || route === "/character-3d" || route.startsWith("/character-3d/") ? "/home" : route;
+    const rawRoute = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
+    const route = rawRoute === "/entertainment" || rawRoute.startsWith("/entertainment/") || rawRoute === "/character-3d" || rawRoute.startsWith("/character-3d/") ? "/home" : rawRoute;
+    const gateway = window.HHCoreGateway;
+    if (!gateway?.resolveRoute) {
+      syncCoreLayer("gateway");
+      if (route !== "/home") history.replaceState({}, document.title, `${location.pathname}${location.search}#/home`);
+      return "/home";
+    }
+    // Once HH Core has opened the Platform, legacy modules that still assign
+    // `#/home` must remain inside the second layer. Only the explicit Core
+    // exit/logout/auth-clear flows remove access before navigating Home.
+    if (route === gateway.gatewayRoute && gateway.hasAccess()) {
+      const platformEntry = gateway.platformEntryRoute || "/create";
+      syncCoreLayer("platform");
+      history.replaceState({}, document.title, `${location.pathname}${location.search}#${platformEntry}`);
+      return platformEntry;
+    }
+    const resolution = gateway.resolveRoute(route);
+    if (resolution.route === gateway.gatewayRoute) {
+      syncCoreLayer("gateway");
+      if (resolution.redirected || route !== gateway.gatewayRoute) {
+        history.replaceState({}, document.title, `${location.pathname}${location.search}#${gateway.gatewayRoute}`);
+      }
+      return gateway.gatewayRoute;
+    }
+    syncCoreLayer("platform");
+    return resolution.route;
   };
   let cosmicLoaderRoute = "";
   let cosmicLoaderHideTimer = 0;
@@ -7127,7 +7172,8 @@ function initAppShell() {
       const galaxyHost = workspace.firstElementChild;
       const mounted = window.HHGalaxyHomeAI?.mount?.(galaxyHost, {
         route,
-        navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
+        navigate: (nextRoute) => { location.hash = `#${platformSafeRoute(nextRoute)}`; },
+        enterCore: (detail = {}) => window.HHCoreGateway?.enter?.({ source: detail.source || "hh-core" }) === true,
         baseMount: (host, options = {}) => window.HHChatAI?.mount?.(host, {
           currentUser: readCurrentAuthUser(),
           apiBase: String(window.HH_REALTIME_URL || location.origin),
@@ -7156,7 +7202,7 @@ function initAppShell() {
       const mounted = planetHub
         ? planetHub.mount?.(workspace.firstElementChild, {
           route,
-          navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
+          navigate: (nextRoute) => { location.hash = `#${platformSafeRoute(nextRoute)}`; },
           data: { account: readCurrentAuthUser() }
         })
         : specializedView
@@ -7164,12 +7210,12 @@ function initAppShell() {
             route,
             apiBase: String(window.HH_REALTIME_URL || window.HH_API_BASE || ""),
             currentUser: readCurrentAuthUser(),
-            navigate: (nextRoute) => { location.hash = `#${nextRoute}`; }
+            navigate: (nextRoute) => { location.hash = `#${platformSafeRoute(nextRoute)}`; }
           })
         : window.HHGalaxyDomainViews?.mount?.(workspace.firstElementChild, {
           route,
           apiBase: String(window.HH_REALTIME_URL || ""),
-          navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
+          navigate: (nextRoute) => { location.hash = `#${platformSafeRoute(nextRoute)}`; },
           openEngine: ({ id, host }) => {
             if (!host) return false;
             if (id === "automation" || id === "projects") {
@@ -8039,7 +8085,7 @@ function initAppShell() {
   const executePaletteOption = (option) => {
     if (!option) return;
     const action = option.dataset.commandAction || "";
-    const route = option.dataset.appRoute || "";
+    const route = platformSafeRoute(option.dataset.appRoute || "");
     if (action.startsWith("project-view:")) {
       const view = action.slice("project-view:".length);
       const openProjectView = () => activateProjectView(document.querySelector("[data-project-center]"), view);
@@ -8161,8 +8207,15 @@ function initAppShell() {
       window.HHWorkCenter?.openCapture?.();
       return;
     }
+    if (event.target.closest("[data-hh-core-exit]")) {
+      event.preventDefault();
+      window.HHCoreGateway?.leave?.({ source: "explicit-exit" });
+      location.hash = `#${window.HHCoreGateway?.gatewayRoute || "/home"}`;
+      return;
+    }
     if (event.target.closest("[data-shell-back]")) {
-      if (history.length > 1) history.back();
+      if (window.HHCoreGateway?.hasAccess?.()) location.hash = `#${window.HHCoreGateway.platformEntryRoute || "/create"}`;
+      else if (history.length > 1) history.back();
       else location.hash = "#/home";
       return;
     }
@@ -8178,7 +8231,7 @@ function initAppShell() {
     const routeButton = event.target.closest("[data-app-route]");
     if (routeButton) {
       event.preventDefault();
-      const route = routeButton.dataset.appRoute;
+      const route = platformSafeRoute(routeButton.dataset.appRoute);
       if (route) {
         routeButton.closest(".app-sidebar__tool-row")?.classList.add("is-launching");
         const nextHash = `#${route}`;
@@ -8214,6 +8267,7 @@ function initAppShell() {
     if (event.target.closest("[data-drawer-close]")) { closeOverlays(); return; }
     if (event.target.closest("[data-shell-logout]")) {
       closeOverlays({ restoreFocus: false });
+      window.HHCoreGateway?.leave?.({ source: "logout" });
       window.dispatchEvent(new CustomEvent("hh:logout-request"));
       return;
     }
@@ -8268,7 +8322,7 @@ function initAppShell() {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); openPalette(); }
     const typing = event.target.matches("input, textarea, select, [contenteditable=true]");
     if (!typing && event.key === "/") { event.preventDefault(); openPalette(); }
-    if (!typing && event.altKey && event.key.toLowerCase() === "h") { event.preventDefault(); location.hash = "#/home"; }
+    if (!typing && event.altKey && event.key.toLowerCase() === "h") { event.preventDefault(); location.hash = `#${window.HHCoreGateway?.hasAccess?.() ? (window.HHCoreGateway.platformEntryRoute || "/create") : "/home"}`; }
     if (!typing && event.altKey && event.key.toLowerCase() === "m") { event.preventDefault(); location.hash = "#/music-ai/project"; }
     if (event.key === "Escape") { closePalette(); closeOverlays(); closeSidebarContextMenu(); }
     if (palette?.open && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) {
@@ -8320,7 +8374,8 @@ function initAppShell() {
   window.addEventListener("hh:facebook-page-command-center-ready", renderRouteSafely);
   window.addEventListener("hh:settings-studio-ready", renderRouteSafely);
   window.addEventListener("hh:settings-saved", () => renderNavigation());
-  window.addEventListener("hh:auth-change", () => {
+  window.addEventListener("hh:auth-change", (event) => {
+    if (!event.detail?.user) window.HHCoreGateway?.leave?.({ source: "auth-cleared" });
     openNavigationSection = localStorage.getItem(sidebarStorageKey("open-section.v2")) || "ai-creative";
     expandedNavigationSections = new Set(readExpandedNavigationSections());
     if (!expandedNavigationSections.size && openNavigationSection) expandedNavigationSections.add(openNavigationSection);

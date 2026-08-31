@@ -138,24 +138,12 @@
 
   const routeMatches = (candidate, route) => route === candidate || route.startsWith(`${candidate}/`);
 
-  // Immersive workspaces own their entire viewport and render a contextual
-  // Galaxy rail.  Keep the legacy application chrome for ordinary routes and
-  // for HH Core, but expose one explicit attribute so canonical deep-links
-  // (not only /galaxy/* aliases) cannot accidentally stack two sidebars.
+  // The Galaxy Gateway is the only first-layer viewport. Every route behind
+  // HH Core belongs to the second-layer HH Platform and keeps the common
+  // Platform chrome, even when a feature renders its own internal workspace.
   const isImmersiveRoute = (input) => {
     const route = normalizeRoute(input);
-    return route.startsWith("/galaxy/")
-      || route.startsWith("/chat-ai")
-      || [
-        "/home/dashboard",
-        "/create/ai-center",
-        "/create/workflow",
-        "/work/automation-lab",
-        "/work/projects-tasks",
-        "/communication/community",
-        "/music/ambient",
-        "/system/desktop"
-      ].some((canonical) => route === canonical || route.startsWith(`${canonical}/`));
+    return route === "/home";
   };
 
   const findRoute = (input) => {
