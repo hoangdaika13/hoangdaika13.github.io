@@ -1,0 +1,116 @@
+{
+  "schema": "hh-galaxy-function-portals",
+  "version": 1,
+  "generator": "OpenAI ImageGen",
+  "usage": "Project-local decorative hero artwork for HH Galaxy Layer One",
+  "retainedAssets": {
+    "dev-v1": {
+      "path": "assets/galaxy/function-portals/dev-planet-v1.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2485971,
+      "sha256": "e89f5f16f2aa29064eda69fab5e0c58809557515da1dbc2b7f88a8491bfc1fb9",
+      "status": "retained-original-not-served"
+    },
+    "settings-v1": {
+      "path": "assets/galaxy/function-portals/settings-v1.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2518155,
+      "sha256": "241cc6f2de60ec242ba6d8c64d4cdba637fdb83f3efd0c5d2e33dfc298c38e1d",
+      "status": "retained-original-not-served"
+    }
+  },
+  "assets": {
+    "ai": {
+      "path": "assets/galaxy/function-portals/ai-universe-v1.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2767067,
+      "sha256": "ac0b7ac710c0d441a363df5553206658a8cf30ad9c139e1bfc4155a9032d986a"
+    },
+    "music": {
+      "path": "assets/galaxy/function-portals/music-planet-v1.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2513099,
+      "sha256": "fd34cdce9c1458e616bc9b77dd2c6d70410e93d77fc34bab1be984786859c32c"
+    },
+    "video": {
+      "path": "assets/galaxy/function-portals/video-planet-v1.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2088017,
+      "sha256": "f2532922a66f9e22395196104f276746f59c6faa5d9b4707a9211de3a679df94"
+    },
+    "creator": {
+      "path": "assets/galaxy/function-portals/creator-studio-v1.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2145293,
+      "sha256": "db379f030d0495cffb5d269ea1217fd87be374630b1839bc2810b8e7b5a19285"
+    },
+    "games": {
+      "path": "assets/galaxy/function-portals/games-world-v1.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2566827,
+      "sha256": "15cfab204286f998b2fc274ba14b7d4adb3a1988adeaf2949b9c5fbf21483057"
+    },
+    "dev": {
+      "path": "assets/galaxy/function-portals/dev-planet-v2.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2458206,
+      "sha256": "ecdb22b1f03f46e93a2d9c85c86f347f4cc87147a8f370553ae173ada03f3001"
+    },
+    "learning": {
+      "path": "assets/galaxy/function-portals/learning-star-v1.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1971400,
+      "sha256": "4b3de78018123fc8a1af4ea401b7256b8987156785224e788965ec99cb278818"
+    },
+    "community": {
+      "path": "assets/galaxy/function-portals/community-v1.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2063567,
+      "sha256": "5370ed442237d4175084e69f4c4d636bcf34f2d9aefcaa670499733285ae4921"
+    },
+    "tools": {
+      "path": "assets/galaxy/function-portals/tools-galaxy-v1.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2154141,
+      "sha256": "cb29d9a46a4d62ba93ac9f1a0d8b1fdbbe076232d8314919d0e0ca8e4d313cc2"
+    },
+    "analytics": {
+      "path": "assets/galaxy/function-portals/analytics-v1.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2072587,
+      "sha256": "f3cac705eb64fb28002dcd4482b84bb1dbed74483b997f622cb067d12c4779f3"
+    },
+    "settings": {
+      "path": "assets/galaxy/function-portals/settings-v2.png",
+      "mimeType": "image/png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2368532,
+      "sha256": "32ddc841312c2018fb2e06177ea0ddb207cd91adc1ede68cc2595fcc420730dc"
+    }
+  }
+}

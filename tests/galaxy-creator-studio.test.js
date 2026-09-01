@@ -25,8 +25,10 @@ function fakeHost() {
   const attributes = new Map();
   const classes = new Set();
   const documentListeners = new Map();
+  const selectorNodes = new Map();
   const ownerDocument = {
     hidden: false,
+    activeElement: null,
     addEventListener(type, handler) { documentListeners.set(type, handler); },
     removeEventListener(type) { documentListeners.delete(type); }
   };
@@ -43,16 +45,35 @@ function fakeHost() {
     },
     querySelector(selector) {
       if (selector === "[data-gcs-save-state]") return saveNode;
-      return null;
+      const nodes = selectorNodes.get(selector) || [];
+      return nodes[0] || null;
     },
-    querySelectorAll() { return []; },
+    querySelectorAll(selector) { return selectorNodes.get(selector) || []; },
     addEventListener(type, handler) { listeners.set(type, handler); },
     removeEventListener(type) { listeners.delete(type); },
     setAttribute(name, value) { attributes.set(name, String(value)); },
     removeAttribute(name) { attributes.delete(name); },
     replaceChildren() { this.innerHTML = ""; }
   };
-  return { host, listeners, documentListeners, saveNode, saveLabel, classes };
+  return {
+    host,
+    listeners,
+    documentListeners,
+    saveNode,
+    saveLabel,
+    classes,
+    setSelectorNodes(selector, nodes) { selectorNodes.set(selector, nodes); }
+  };
+}
+
+function actionNode(action, parentNode) {
+  return {
+    parentNode,
+    focusCount: 0,
+    focus() { this.focusCount += 1; },
+    matches(selector) { return selector === "[data-gcs-action]"; },
+    getAttribute(name) { return name === "data-gcs-action" ? action : null; }
+  };
 }
 
 test("Layer-one data exports the canonical nine-step pipeline", () => {
@@ -206,6 +227,87 @@ test("JSON export omits demos and validated import restores user data", () => {
   assert.throws(() => destination.importJSON('{"schema":"other","schemaVersion":1}'), { code: "INVALID_IMPORT" });
 });
 
+test("Creator import gate fails closed on byte, MIME, extension and record limits", () => {
+  assert.ok(Object.isFrozen(studio.IMPORT_LIMITS));
+  assert.equal(studio.IMPORT_LIMITS.maxBytes, 2 * 1024 * 1024);
+  const validFile = {
+    name: "creator-backup.json",
+    type: "application/json",
+    size: 128,
+    text() { return Promise.resolve(""); }
+  };
+  assert.equal(studio.validateImportFile(validFile), true);
+  assert.throws(() => studio.validateImportFile({ ...validFile, type: "text/plain" }), { code: "IMPORT_INVALID_MIME" });
+  assert.throws(() => studio.validateImportFile({ ...validFile, name: "creator-backup.txt" }), { code: "IMPORT_INVALID_EXTENSION" });
+  assert.throws(() => studio.validateImportFile({ ...validFile, size: studio.IMPORT_LIMITS.maxBytes + 1 }), { code: "IMPORT_TOO_LARGE" });
+  assert.throws(() => studio.validateImportFile({ ...validFile, text: null }), { code: "IMPORT_UNREADABLE_FILE" });
+
+  const payload = { schema: data.SCHEMA, schemaVersion: 1, projects: [], schedule: [] };
+  assert.deepEqual(studio.parseImportPayload(JSON.stringify(payload)), payload);
+  assert.throws(
+    () => studio.parseImportPayload(JSON.stringify({ ...payload, projects: Array.from({ length: 501 }, (_, index) => ({ id: `p-${index}` })) })),
+    { code: "IMPORT_TOO_MANY_PROJECTS" }
+  );
+  assert.throws(() => studio.parseImportPayload('{"schema":'), { code: "IMPORT_INVALID_JSON" });
+  assert.throws(() => studio.parseImportPayload(JSON.stringify({ schema: data.SCHEMA, schemaVersion: 1, projects: {} })), { code: "IMPORT_INVALID_COLLECTIONS" });
+});
+
+test("the file-input handler rejects an unsafe MIME before reading or mutating data", () => {
+  const harness = fakeHost();
+  const store = makeStore();
+  const controller = studio.mount(harness.host, { route: "/galaxy/creator", store, now });
+  let read = false;
+  const target = {
+    files: [{ name: "unsafe.json", type: "text/plain", size: 128, text() { read = true; return Promise.resolve("{}"); } }],
+    value: "C:\\fakepath\\unsafe.json",
+    matches(selector) { return selector === "[data-gcs-import]"; }
+  };
+  harness.listeners.get("change")({ target });
+  assert.equal(read, false);
+  assert.equal(target.value, "");
+  assert.equal(store.getStats(FIXED_NOW).totalProjects, 0);
+  controller.unmount();
+});
+
+test("an import that finishes after unmount cannot mutate the Creator store", async () => {
+  const harness = fakeHost();
+  const store = makeStore();
+  let finishRead;
+  const file = {
+    name: "creator-backup.json",
+    type: "application/json",
+    size: 256,
+    text() { return new Promise((resolve) => { finishRead = resolve; }); }
+  };
+  const target = {
+    files: [file],
+    value: "C:\\fakepath\\creator-backup.json",
+    matches(selector) { return selector === "[data-gcs-import]"; }
+  };
+  const controller = studio.mount(harness.host, { route: "/galaxy/creator", store, now });
+  harness.listeners.get("change")({ target });
+  controller.unmount();
+  finishRead(JSON.stringify({
+    schema: data.SCHEMA,
+    schemaVersion: 1,
+    projects: [{ id: "late-project", title: "Không được nhập sau unmount" }],
+    schedule: []
+  }));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(store.getProject("late-project"), null);
+});
+
+test("future user schedule entries are shown instead of falling back to samples", () => {
+  const harness = fakeHost();
+  const store = makeStore();
+  store.addSchedule({ title: "Duyệt bản dựng tương lai", at: "2026-09-15T08:00:00.000Z", stepId: "video" });
+  const controller = studio.mount(harness.host, { route: "/galaxy/creator", store, now });
+  assert.match(harness.host.innerHTML, /Hôm nay &amp; sắp tới/);
+  assert.match(harness.host.innerHTML, /Duyệt bản dựng tương lai/);
+  assert.doesNotMatch(harness.host.innerHTML, /id="gcs-schedule-title">Lịch mẫu/);
+  controller.unmount();
+});
+
 test("Creator Studio owns only /galaxy/creator and exposes a lifecycle API", () => {
   assert.equal(global.HHGalaxyCreatorStudio, studio);
   assert.equal(studio.VERSION, "1.0.0");
@@ -267,6 +369,58 @@ test("editor input autosaves without fabricating a completed state", async () =>
   controller.unmount();
 });
 
+test("a persistence failure is disclosed as session-only instead of falsely saved", async () => {
+  const blocked = {
+    getItem() { return null; },
+    setItem() { throw new Error("quota blocked"); },
+    removeItem() {}
+  };
+  const store = data.createStore({ storage: blocked, now });
+  const project = store.createProject({ title: "Bộ nhớ tạm" });
+  const harness = fakeHost();
+  const controller = studio.mount(harness.host, {
+    route: "/galaxy/creator",
+    store,
+    now,
+    view: "editor",
+    projectId: project.id,
+    autosaveDelay: 0
+  });
+  assert.match(harness.host.innerHTML, /data-state="volatile"/);
+  assert.match(harness.host.innerHTML, /Chỉ lưu trong phiên này/);
+  harness.listeners.get("input")({
+    target: {
+      value: "Nội dung tạm",
+      matches(selector) { return selector === "[data-gcs-step-field]"; },
+      getAttribute(name) { return name === "data-gcs-step-field" ? "content" : null; }
+    }
+  });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(store.getProject(project.id).steps.idea.content, "Nội dung tạm", "session data remains usable");
+  assert.equal(harness.saveNode.dataset.state, "volatile");
+  assert.equal(harness.saveLabel.textContent, "Chỉ lưu trong phiên này");
+  assert.notEqual(harness.saveLabel.textContent, "Đã lưu cục bộ");
+  controller.unmount();
+});
+
+test("closing a dialog returns focus to the exact control that opened it", () => {
+  const harness = fakeHost();
+  const firstCreate = actionNode("create", harness.host);
+  const secondCreate = actionNode("create", harness.host);
+  const autofocus = { focusCount: 0, focus() { this.focusCount += 1; } };
+  harness.setSelectorNodes('[data-gcs-action="create"]', [firstCreate, secondCreate]);
+  harness.setSelectorNodes("[data-gcs-modal] input[autofocus]", [autofocus]);
+  const controller = studio.mount(harness.host, { route: "/galaxy/creator", store: makeStore(), now });
+
+  harness.listeners.get("click")({ target: secondCreate, preventDefault() {} });
+  assert.equal(autofocus.focusCount, 1, "dialog autofocus should still work");
+  const close = actionNode("close-modal", harness.host);
+  harness.listeners.get("click")({ target: close, preventDefault() {} });
+  assert.equal(firstCreate.focusCount, 0);
+  assert.equal(secondCreate.focusCount, 1, "focus must return by opener index, not to the first Create button");
+  controller.unmount();
+});
+
 test("source contract is local-first, motion-safe, and contains no fake showcase metrics", () => {
   assert.match(dataSource, /hh-galaxy\.creator-studio\.v1/);
   assert.match(studioSource, /new AbortController\(\)/);
@@ -285,7 +439,8 @@ test("read-only shell integration loads once, mounts the dedicated slot, and cle
     "the data API must exist before Creator Studio and its owning layer-one shell"
   );
   assert.match(loaderSource, /\/galaxy\/creator["',\s\]]+[\s\S]{0,220}return \["galaxy-layer-one"\]/);
-  assert.equal((layerOneSource.match(/data-hh-galaxy-creator-host/g) || []).length, 2, "one slot declaration plus one querySelector are expected");
+  assert.equal((layerOneSource.match(/data-hh-galaxy-creator-host/g) || []).length, 3, "one slot declaration, one delegate lookup and one persistent-island selector are expected");
+  assert.match(layerOneSource, /runtime\.route\s*===\s*["']\/galaxy\/creator["'][\s\S]{0,120}islandSelector\s*=\s*["']\[data-hh-galaxy-creator-host\]["']/, "same-route renders must preserve the mounted Creator workspace");
   assert.match(layerOneSource, /options\.mountCreator\(creatorHost, context\)/);
   assert.match(layerOneSource, /registerDelegateCleanup\(delegatedCreator\)/);
   assert.match(layerOneSource, /function cleanupDelegate\(\)[\s\S]{0,180}runtime\.delegateCleanups\.splice/);
@@ -313,6 +468,15 @@ test("project-card actions stay inside their own full-width row at tablet and de
     /\.gcs-card-actions button\s*{[^}]*\bmax-width:\s*100%[^}]*\bwhite-space:\s*nowrap\b[^}]*}/,
     "individual actions must remain bounded without clipping their labels"
   );
+});
+
+test("important Creator controls expose 44px targets and readable labels", () => {
+  assert.match(studioStyles, /\.gcs-button,[\s\S]*?\.gcs-back\s*{[^}]*min-height:\s*44px/);
+  assert.match(studioStyles, /\.gcs-card-actions button\s*{[^}]*min-height:\s*44px[^}]*font-size:\s*12px/);
+  assert.match(studioStyles, /\.gcs-side-card > header button\s*{[^}]*min-height:\s*44px[^}]*font-size:\s*12px/);
+  assert.match(studioStyles, /\.gcs-modal__close\s*{[^}]*width:\s*44px[^}]*height:\s*44px/);
+  assert.match(studioStyles, /\.gcs-checklist li > button\s*{[^}]*width:\s*44px[^}]*height:\s*44px/);
+  assert.match(studioStyles, /\.gcs-modal form label > span\s*{[^}]*font-size:\s*12px/);
 });
 
 test("icon-only mobile actions keep explicit accessible names", () => {

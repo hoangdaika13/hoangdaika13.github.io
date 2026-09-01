@@ -177,3 +177,36 @@ player và storage không thay đổi. Nếu JavaScript chưa tải, có thể x
 5. Hiển thị capability state thật; không dùng demo metric ở production.
 6. Kiểm tra keyboard, zoom 200%, 375px, reduced motion và không overflow ngang.
 7. Chạy `node --test tests/galaxy-shell-contract.test.js` trước khi tích hợp shell.
+
+## Layer One functional workspaces (v970)
+
+`galaxy-layer-one.js` giữ một shell ổn định và gắn workspace theo route, không
+đụng vào lớp HH Platform. AI dùng `GET /api/ai` để probe provider và `POST
+/api/ai` với `toolId=ai-chat` khi người dùng chủ động gửi; nếu backend hoặc đăng
+nhập chưa sẵn sàng, UI fail closed và vẫn cho lưu prompt cục bộ. Handoff từ Home
+dùng khóa phiên `hh.galaxy.ai.handoff.v1`, có TTL 15 phút, được đọc một lần và
+luôn đưa vào textarea (không tự gửi).
+
+Music/Video giữ một media node trong `data-hgl1-stable-media-host`; bộ hòa giải
+DOM không tháo node đang phát khỏi document, vì việc tháo rồi gắn lại iframe có
+thể làm mất browsing context. Game canvas, Home delegate và Creator delegate
+cũng được giữ như persistent island khi cùng route. Tệp cục bộ dùng object URL và được pause/revoke khi
+rời route hoặc unmount. Video YouTube chỉ nhận URL `youtube.com`/`youtu.be`,
+chỉ tạo iframe sau submit, dùng `youtube-nocookie.com`, `autoplay=0` và không
+polling trạng thái.
+
+Games có canvas Orbit Collector tối giản, điều khiển WASD/mũi tên/gamepad và
+không báo điểm/người chơi ngoài phiên. Dev lưu snippet và chỉ kiểm tra tĩnh;
+không thực thi code, đồng thời từ chối các chữ ký credential phổ biến trước khi
+ghi localStorage. Community lưu bản nháp gồm tiêu đề, nội dung và privacy
+local-first; Socket.IO chỉ kết nối cùng origin hoặc origin được caller allowlist
+rõ ràng, không gửi browser credential sang origin khác, và chỉ giữ một socket
+trong vòng đời route. Mọi trạng thái chưa cấu hình đều hiển thị rõ.
+
+Settings dùng `settingsDraft` để preview tức thời; chỉ `Lưu thay đổi` ghi
+localStorage, `Hủy` khôi phục bản lưu và `Khôi phục mặc định` chỉ thay đổi draft.
+Backup được parse/validate trước, hiển thị preview, cho chọn merge/replace và
+chỉ ghi sau xác nhận. Consent Analytics của thiết bị không thể bị bật/tắt bởi
+tệp backup; event từ backup không được nhập khi thiết bị chưa consent. Analytics
+có bộ lọc hôm nay/7 ngày/30 ngày/tất cả; phạm vi đang chọn cũng được áp dụng vào
+tệp JSON/CSV và không event nào được xuất khi consent đã tắt.

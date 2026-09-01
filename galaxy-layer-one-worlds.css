@@ -387,7 +387,8 @@
   backdrop-filter: blur(12px);
 }
 
-.hh-galaxy-app .hgl1-world-hero__visual {
+.hh-galaxy-app .hgl1-world-hero__visual:has(.hgl1-world-hero__media),
+.hh-galaxy-app .hgl1-world-hero__visual:has(> .hgl1-world-hero__image) {
   isolation: isolate;
   position: relative;
   z-index: 2;
@@ -1397,6 +1398,471 @@
   .hh-galaxy-app .hgl1-world-orb__core,
   .hh-galaxy-app .hgl1-world-orb__satellite,
   .hh-galaxy-app .hgl1-nav__planet-glow {
+    display: none;
+  }
+}
+
+/* ========================================================================== */
+/* Cosmic Portal media system                                                 */
+/*                                                                            */
+/* The renderer supplies one approved, local portal image per Layer 1 world.  */
+/* These additive rules deliberately leave the Learning Star composition and  */
+/* the delegated Creator workspace intact while giving every hero a shared    */
+/* glass, metal and crystal presentation.                                     */
+/* ========================================================================== */
+
+.hh-galaxy-app .hgl1-world-hero__visual {
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: clamp(16px, 1.6vw, 24px);
+}
+
+/* Support both the preferred picture wrapper and a direct image fallback. */
+.hh-galaxy-app .hgl1-world-hero__media,
+.hh-galaxy-app .hgl1-world-hero__visual > picture.hgl1-world-hero__image {
+  isolation: isolate;
+  position: absolute;
+  z-index: 0;
+  inset: 2px;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgb(var(--hgl1-world-b-rgb) / 0.42);
+  border-radius: clamp(15px, 1.45vw, 22px);
+  background:
+    radial-gradient(circle at 72% 18%, rgb(var(--hgl1-world-c-rgb) / 0.18), transparent 38%),
+    linear-gradient(145deg, rgb(12 20 52 / 0.94), rgb(3 7 24 / 0.98));
+  box-shadow:
+    0 18px 55px rgb(0 0 0 / 0.34),
+    0 0 42px rgb(var(--hgl1-world-a-rgb) / 0.2),
+    inset 0 1px rgb(255 255 255 / 0.16),
+    inset 0 -1px rgb(var(--hgl1-world-b-rgb) / 0.16);
+  transform: translateZ(0);
+}
+
+.hh-galaxy-app .hgl1-world-hero__media::before,
+.hh-galaxy-app .hgl1-world-hero__visual > picture.hgl1-world-hero__image::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(2 6 23 / 0.52), transparent 32%, transparent 74%, rgb(2 6 23 / 0.2)),
+    linear-gradient(180deg, rgb(4 8 26 / 0.08), transparent 48%, rgb(2 6 20 / 0.64));
+}
+
+.hh-galaxy-app .hgl1-world-hero__media::after,
+.hh-galaxy-app .hgl1-world-hero__visual > picture.hgl1-world-hero__image::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  pointer-events: none;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: inherit;
+  background:
+    linear-gradient(118deg, transparent 0 35%, rgb(255 255 255 / 0.12) 48%, transparent 59%) top / 180% 1px no-repeat,
+    radial-gradient(circle at 82% 12%, rgb(var(--hgl1-world-c-rgb) / 0.2), transparent 27%);
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--hgl1-world-a-rgb) / 0.06),
+    inset 0 -28px 55px rgb(1 4 17 / 0.18);
+}
+
+.hh-galaxy-app img.hgl1-world-hero__image,
+.hh-galaxy-app picture.hgl1-world-hero__image > img,
+.hh-galaxy-app .hgl1-world-hero__media > img,
+.hh-galaxy-app .hgl1-world-hero__media > picture,
+.hh-galaxy-app .hgl1-world-hero__media > picture > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+}
+
+.hh-galaxy-app img.hgl1-world-hero__image,
+.hh-galaxy-app picture.hgl1-world-hero__image > img,
+.hh-galaxy-app .hgl1-world-hero__media > img,
+.hh-galaxy-app .hgl1-world-hero__media > picture > img {
+  object-fit: cover;
+  object-position: var(--hgl1-portal-image-position, 50% 50%);
+  filter: saturate(1.06) contrast(1.03) brightness(0.94);
+  transform: scale(1.012) translateZ(0);
+  transform-origin: center;
+}
+
+.hh-galaxy-app .hgl1-world-hero__media > picture {
+  position: absolute;
+  inset: 0;
+}
+
+/* Route-aware crops keep the generated focal subject visible at every size. */
+.hh-galaxy-app .hgl1-world-hero--ai { --hgl1-portal-image-position: 50% 48%; }
+.hh-galaxy-app .hgl1-world-hero--music { --hgl1-portal-image-position: 50% 52%; }
+.hh-galaxy-app .hgl1-world-hero--video { --hgl1-portal-image-position: 50% 48%; }
+.hh-galaxy-app .hgl1-world-hero--creator { --hgl1-portal-image-position: 50% 50%; }
+.hh-galaxy-app .hgl1-world-hero--games { --hgl1-portal-image-position: 50% 54%; }
+.hh-galaxy-app .hgl1-world-hero--dev { --hgl1-portal-image-position: 50% 50%; }
+.hh-galaxy-app .hgl1-world-hero--learning { --hgl1-portal-image-position: 50% 48%; }
+.hh-galaxy-app .hgl1-world-hero--community { --hgl1-portal-image-position: 50% 46%; }
+.hh-galaxy-app .hgl1-world-hero--tools { --hgl1-portal-image-position: 50% 50%; }
+.hh-galaxy-app .hgl1-world-hero--analytics { --hgl1-portal-image-position: 50% 52%; }
+.hh-galaxy-app .hgl1-world-hero--settings { --hgl1-portal-image-position: 50% 50%; }
+
+/* The procedural ornaments remain in the DOM as a lightweight identity layer. */
+.hh-galaxy-app .hgl1-world-hero__visual:has(.hgl1-world-hero__image) .hgl1-world-constellation,
+.hh-galaxy-app .hgl1-world-hero__visual:has(.hgl1-world-hero__media) .hgl1-world-constellation {
+  z-index: 1;
+  opacity: 0.34;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning) .hgl1-world-hero__visual:has(.hgl1-world-hero__image) .hgl1-world-orb,
+.hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning) .hgl1-world-hero__visual:has(.hgl1-world-hero__media) .hgl1-world-orb {
+  position: absolute;
+  z-index: 2;
+  right: clamp(13px, 2vw, 26px);
+  bottom: clamp(15px, 2vw, 27px);
+  width: clamp(54px, 5vw, 78px);
+  opacity: 0.52;
+  pointer-events: none;
+}
+
+.hh-galaxy-app .hgl1-world-hero__visual:has(.hgl1-world-hero__image) .hgl1-world-hero__caption,
+.hh-galaxy-app .hgl1-world-hero__visual:has(.hgl1-world-hero__media) .hgl1-world-hero__caption {
+  z-index: 5;
+  right: auto;
+  bottom: clamp(12px, 1.4vw, 20px);
+  left: clamp(12px, 1.4vw, 20px);
+  max-width: calc(100% - 108px);
+  min-height: 30px;
+  padding: 7px 12px;
+  color: #f3f7ff;
+  background: linear-gradient(135deg, rgb(3 8 27 / 0.84), rgb(13 20 52 / 0.7));
+  border-color: rgb(var(--hgl1-world-b-rgb) / 0.4);
+  border-radius: 10px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.2), inset 0 1px rgb(255 255 255 / 0.08);
+  backdrop-filter: blur(12px) saturate(1.15);
+}
+
+/* Regular portal worlds receive the cinematic split layout. Learning keeps its
+   approved golden observatory, which is declared immediately above this block. */
+.hh-galaxy-app .hgl1-page-head.hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) {
+  grid-template-columns: minmax(320px, 0.88fr) minmax(420px, 1.12fr);
+  gap: clamp(20px, 3.4vw, 54px);
+  min-height: clamp(390px, 38vw, 520px);
+  padding: clamp(24px, 3vw, 48px);
+  background:
+    radial-gradient(circle at 80% 38%, rgb(var(--hgl1-world-a-rgb) / 0.2), transparent 34%),
+    radial-gradient(circle at 16% 108%, rgb(var(--hgl1-world-b-rgb) / 0.12), transparent 43%),
+    linear-gradient(118deg, rgb(3 7 24 / 0.99), rgb(8 12 38 / 0.96) 48%, rgb(3 8 27 / 0.99));
+  border-color: rgb(var(--hgl1-world-a-rgb) / 0.4);
+  box-shadow:
+    0 28px 90px rgb(0 0 0 / 0.28),
+    0 20px 82px rgb(var(--hgl1-world-a-rgb) / 0.16),
+    inset 0 1px rgb(255 255 255 / 0.1);
+}
+
+.hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__body {
+  padding: clamp(20px, 2.2vw, 31px);
+  background:
+    linear-gradient(135deg, rgb(15 24 58 / 0.56), rgb(4 9 29 / 0.3)),
+    radial-gradient(circle at 8% 0, rgb(var(--hgl1-world-a-rgb) / 0.1), transparent 46%);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: clamp(16px, 1.4vw, 22px);
+  box-shadow: inset 0 1px rgb(255 255 255 / 0.05), 0 20px 44px rgb(0 0 0 / 0.12);
+  backdrop-filter: blur(10px) saturate(1.08);
+}
+
+.hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__visual {
+  min-height: clamp(280px, 29vw, 386px);
+  aspect-ratio: 16 / 10;
+  contain: layout paint;
+  border: 1px solid rgb(var(--hgl1-world-a-rgb) / 0.18);
+  background: rgb(3 8 25 / 0.55);
+  box-shadow:
+    0 24px 64px rgb(0 0 0 / 0.26),
+    0 0 48px rgb(var(--hgl1-world-a-rgb) / 0.12);
+}
+
+.hh-galaxy-app .hgl1-world-hero h1,
+.hh-galaxy-app .hgl1-world-hero__body,
+.hh-galaxy-app .hgl1-world-hero__body > p {
+  overflow-wrap: anywhere;
+}
+
+.hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) h1 {
+  font-size: clamp(38px, 4.1vw, 66px);
+  line-height: 1.02;
+}
+
+.hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__body > p {
+  color: #cbd5e8;
+  font-size: clamp(15px, 1.08vw, 17px);
+  line-height: 1.68;
+}
+
+.hh-galaxy-app .hgl1-world-hero :is(.hgl1-button, button, [role="button"]),
+.hh-galaxy-app .hgl1-portal-card :is(.hgl1-button, button, [role="button"]),
+.hh-galaxy-app .hgl1-world-rail :is(.hgl1-button, button, [role="button"]) {
+  min-height: 44px;
+  min-block-size: 44px;
+}
+
+.hh-galaxy-app .hgl1-world-hero :is(a, button, input, select, textarea, [role="button"]):focus-visible,
+.hh-galaxy-app .hgl1-portal-card :is(a, button, input, select, textarea, [role="button"]):focus-visible,
+.hh-galaxy-app .hgl1-world-rail :is(a, button, input, select, textarea, [role="button"]):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--hgl1-world-b) 72%, white);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgb(2 6 23 / 0.82), 0 0 22px rgb(var(--hgl1-world-b-rgb) / 0.42);
+}
+
+/* Layout resilience: long translated labels and delegated content may shrink,
+   but must never manufacture a page-wide horizontal scrollbar. */
+.hh-galaxy-app :is(.hgl1-world-layout, .hgl1-world-main, .hgl1-world-rail, .hgl1-page-head.hgl1-world-hero) {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.hh-galaxy-app .hgl1-world-main > *,
+.hh-galaxy-app .hgl1-world-rail > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__body,
+  .hh-galaxy-app .hgl1-world-hero__visual:has(.hgl1-world-hero__image) .hgl1-world-hero__caption,
+  .hh-galaxy-app .hgl1-world-hero__visual:has(.hgl1-world-hero__media) .hgl1-world-hero__caption {
+    background-color: rgb(4 9 29 / 0.96);
+  }
+}
+
+@media (max-width: 1279px) {
+  .hh-galaxy-app .hgl1-page-head.hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) {
+    grid-template-columns: minmax(290px, 0.92fr) minmax(360px, 1.08fr);
+    min-height: 390px;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__visual {
+    min-height: clamp(250px, 30vw, 340px);
+  }
+}
+
+/* This breakpoint also makes 200% browser zoom usable on common 1080p screens. */
+@media (max-width: 1024px) {
+  .hh-galaxy-app .hgl1-page-head.hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    min-height: 0;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__body {
+    max-width: none;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__visual {
+    min-height: clamp(250px, 48vw, 410px);
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (max-width: 767px) {
+  .hh-galaxy-app .hgl1-page-head.hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) {
+    gap: 14px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-right: max(17px, env(safe-area-inset-right));
+    padding-bottom: max(17px, env(safe-area-inset-bottom));
+    padding-left: max(17px, env(safe-area-inset-left));
+    border-radius: 20px;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__body {
+    padding: 17px;
+    border-radius: 16px;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) h1 {
+    font-size: clamp(34px, 10vw, 48px);
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__body > p {
+    font-size: 15px;
+    line-height: 1.62;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__visual {
+    min-height: clamp(190px, 55vw, 330px);
+    border-radius: 16px;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero__media,
+  .hh-galaxy-app .hgl1-world-hero__visual > picture.hgl1-world-hero__image {
+    border-radius: 15px;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero__visual:has(.hgl1-world-hero__image) .hgl1-world-hero__caption,
+  .hh-galaxy-app .hgl1-world-hero__visual:has(.hgl1-world-hero__media) .hgl1-world-hero__caption {
+    right: 12px;
+    bottom: 11px;
+    left: 12px;
+    max-width: none;
+    min-height: 28px;
+    transform: none;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning) .hgl1-world-hero__visual:has(.hgl1-world-hero__image) .hgl1-world-orb,
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning) .hgl1-world-hero__visual:has(.hgl1-world-hero__media) .hgl1-world-orb {
+    right: 14px;
+    bottom: 52px;
+    width: 54px;
+    opacity: 0.42;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero .hgl1-page-head__actions {
+    gap: 10px;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero .hgl1-page-head__actions .hgl1-button {
+    min-width: min(100%, 148px);
+  }
+}
+
+@media (max-width: 430px) {
+  .hh-galaxy-app .hgl1-page-head.hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) {
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-right: max(13px, env(safe-area-inset-right));
+    padding-bottom: max(15px, env(safe-area-inset-bottom));
+    padding-left: max(13px, env(safe-area-inset-left));
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__body {
+    padding: 15px;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) h1 {
+    font-size: clamp(31px, 10.4vw, 42px);
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__visual {
+    min-height: clamp(178px, 56vw, 235px);
+  }
+
+  .hh-galaxy-app .hgl1-world-hero .hgl1-page-head__actions,
+  .hh-galaxy-app .hgl1-world-hero .hgl1-page-head__actions .hgl1-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 340px) {
+  .hh-galaxy-app .hgl1-page-head.hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) {
+    padding-right: max(10px, env(safe-area-inset-right));
+    padding-left: max(10px, env(safe-area-inset-left));
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__body {
+    padding: 13px;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) h1 {
+    font-size: 29px;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__visual {
+    min-height: 168px;
+  }
+}
+
+.hh-galaxy-app[data-effects="rich"] img.hgl1-world-hero__image,
+.hh-galaxy-app[data-effects="rich"] picture.hgl1-world-hero__image > img,
+.hh-galaxy-app[data-effects="rich"] .hgl1-world-hero__media > img,
+.hh-galaxy-app[data-effects="rich"] .hgl1-world-hero__media > picture > img {
+  animation: hgl1-portal-image-breathe 14s ease-in-out infinite alternate;
+}
+
+.hh-galaxy-app[data-effects="quiet"] .hgl1-world-hero__media,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-world-hero__visual > picture.hgl1-world-hero__image {
+  box-shadow: inset 0 1px rgb(255 255 255 / 0.1);
+}
+
+.hh-galaxy-app[data-effects="quiet"] img.hgl1-world-hero__image,
+.hh-galaxy-app[data-effects="quiet"] picture.hgl1-world-hero__image > img,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-world-hero__media > img,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-world-hero__media > picture > img,
+.hh-galaxy-app[data-reduced-motion="on"] img.hgl1-world-hero__image,
+.hh-galaxy-app[data-reduced-motion="on"] picture.hgl1-world-hero__image > img,
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-world-hero__media > img,
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-world-hero__media > picture > img {
+  animation: none !important;
+  transform: none;
+}
+
+@keyframes hgl1-portal-image-breathe {
+  from { transform: scale(1.012) translate3d(0, 0, 0); }
+  to { transform: scale(1.038) translate3d(0, -0.35%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hh-galaxy-app img.hgl1-world-hero__image,
+  .hh-galaxy-app picture.hgl1-world-hero__image > img,
+  .hh-galaxy-app .hgl1-world-hero__media > img,
+  .hh-galaxy-app .hgl1-world-hero__media > picture > img {
+    animation: none !important;
+    transform: none;
+  }
+}
+
+/* Chromium and WebKit expose this preference; other browsers simply ignore it. */
+@media (prefers-reduced-data: reduce) {
+  .hh-galaxy-app .hgl1-world-hero::before,
+  .hh-galaxy-app .hgl1-world-constellation,
+  .hh-galaxy-app .hgl1-world-orb {
+    animation: none !important;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero__media,
+  .hh-galaxy-app .hgl1-world-hero__visual > picture.hgl1-world-hero__image {
+    box-shadow: inset 0 1px rgb(255 255 255 / 0.08);
+  }
+
+  .hh-galaxy-app img.hgl1-world-hero__image,
+  .hh-galaxy-app picture.hgl1-world-hero__image > img,
+  .hh-galaxy-app .hgl1-world-hero__media > img,
+  .hh-galaxy-app .hgl1-world-hero__media > picture > img {
+    animation: none !important;
+    filter: none;
+    transform: none;
+  }
+}
+
+.hh-galaxy-app[data-contrast="high"] .hgl1-world-hero__media,
+.hh-galaxy-app[data-contrast="high"] .hgl1-world-hero__visual > picture.hgl1-world-hero__image {
+  border-color: #fff;
+}
+
+@media (forced-colors: active) {
+  .hh-galaxy-app .hgl1-world-hero__media,
+  .hh-galaxy-app .hgl1-world-hero__visual > picture.hgl1-world-hero__image {
+    background: Canvas;
+    border: 1px solid CanvasText;
+    box-shadow: none;
+    forced-color-adjust: auto;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero__media::before,
+  .hh-galaxy-app .hgl1-world-hero__media::after,
+  .hh-galaxy-app .hgl1-world-hero__visual > picture.hgl1-world-hero__image::before,
+  .hh-galaxy-app .hgl1-world-hero__visual > picture.hgl1-world-hero__image::after {
+    display: none;
+  }
+}
+
+@media print {
+  .hh-galaxy-app .hgl1-world-hero__media,
+  .hh-galaxy-app .hgl1-world-hero__visual > .hgl1-world-hero__image {
     display: none;
   }
 }
@@ -3042,6 +3508,759 @@
 
   .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-library__grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================================================== */
+/* Cosmic worlds readability and small-viewport hardening                     */
+/*                                                                            */
+/* Typography and hit areas scale up without changing the approved portal     */
+/* imagery, palette, lighting or route-specific compositions.                 */
+/* ========================================================================== */
+
+.hh-galaxy-app :is(
+  .hgl1-functional-workspace,
+  .hgl1-functional-workspace form,
+  .hgl1-settings-form,
+  .hgl1-settings-commit,
+  .hgl1-backup-preview
+) {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.hh-galaxy-app .hgl1-functional-workspace {
+  isolation: isolate;
+  position: relative;
+  padding: clamp(18px, 2vw, 28px);
+  overflow: hidden;
+  overflow: clip;
+  background:
+    radial-gradient(circle at 92% 4%, rgb(var(--hgl1-world-b-rgb) / 0.16), transparent 31%),
+    linear-gradient(145deg, rgb(10 18 47 / 0.93), rgb(4 10 29 / 0.94));
+  border: 1px solid rgb(var(--hgl1-world-a-rgb) / 0.3);
+  border-radius: 18px;
+  box-shadow:
+    0 18px 52px rgb(0 0 0 / 0.2),
+    0 0 34px rgb(var(--hgl1-world-a-rgb) / 0.08),
+    inset 0 1px rgb(255 255 255 / 0.05);
+}
+
+.hh-galaxy-app .hgl1-functional-workspace::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -100px;
+  right: -80px;
+  width: 240px;
+  aspect-ratio: 1;
+  border: 1px solid rgb(var(--hgl1-world-b-rgb) / 0.15);
+  border-radius: 50%;
+  box-shadow: inset 0 0 48px rgb(var(--hgl1-world-a-rgb) / 0.1);
+  pointer-events: none;
+}
+
+.hh-galaxy-app .hgl1-functional-workspace .hgl1-section-head {
+  position: relative;
+  z-index: 2;
+}
+
+.hh-galaxy-app .hgl1-functional-workspace h2 {
+  color: #f8f9ff;
+  font-size: clamp(20px, 1.7vw, 26px);
+  line-height: 1.3;
+}
+
+.hh-galaxy-app .hgl1-functional-workspace > p,
+.hh-galaxy-app .hgl1-functional-workspace form > p {
+  color: #c3cde0;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.hh-galaxy-app .hgl1-functional-workspace form {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 10px;
+}
+
+.hh-galaxy-app .hgl1-functional-workspace form > label,
+.hh-galaxy-app .hgl1-youtube-form > label {
+  color: #d5dced;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.hh-galaxy-app .hgl1-functional-workspace :is(input, select, textarea),
+.hh-galaxy-app .hgl1-table-card select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: #f2f5ff;
+  background: rgb(3 8 25 / 0.78);
+  border: 1px solid rgb(var(--hgl1-world-b-rgb) / 0.3);
+  border-radius: 10px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.hh-galaxy-app .hgl1-functional-workspace textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+
+.hh-galaxy-app .hgl1-functional-workspace :is(input, select, textarea):focus-visible,
+.hh-galaxy-app .hgl1-table-card select:focus-visible {
+  border-color: color-mix(in srgb, var(--hgl1-world-b) 68%, white);
+  outline: 3px solid color-mix(in srgb, var(--hgl1-world-b) 72%, white);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgb(2 6 23 / 0.78);
+}
+
+.hh-galaxy-app .hgl1-workspace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 4px;
+}
+
+.hh-galaxy-app .hgl1-runtime-status {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  min-height: 36px;
+  max-width: 100%;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 8px 11px;
+  overflow-wrap: anywhere;
+  color: #cbd5e7;
+  background: rgb(15 23 52 / 0.66);
+  border: 1px solid rgb(148 163 184 / 0.18);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.hh-galaxy-app .hgl1-runtime-status::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  background: var(--hgl1-world-c);
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.hh-galaxy-app .hgl1-runtime-status[data-state="unconfigured"],
+.hh-galaxy-app .hgl1-runtime-status[data-state="error"] {
+  color: #fed7aa;
+  border-color: rgb(245 158 11 / 0.36);
+}
+
+.hh-galaxy-app .hgl1-runtime-status[data-state="unconfigured"]::before,
+.hh-galaxy-app .hgl1-runtime-status[data-state="error"]::before {
+  background: #f59e0b;
+}
+
+.hh-galaxy-app .hgl1-ai-response {
+  min-height: 150px;
+  margin-top: 14px;
+  overflow-wrap: anywhere;
+  color: #dbeafe;
+  background: rgb(7 18 45 / 0.74);
+  border-color: rgb(var(--hgl1-world-b-rgb) / 0.25);
+  font-size: 16px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.hh-galaxy-app .hgl1-youtube-form {
+  margin-bottom: 14px;
+  padding: 14px;
+  background: rgb(3 9 27 / 0.62);
+  border: 1px solid rgb(var(--hgl1-world-b-rgb) / 0.2);
+  border-radius: 12px;
+}
+
+.hh-galaxy-app .hgl1-youtube-form > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px;
+}
+
+.hh-galaxy-app .hgl1-youtube-form small {
+  color: #aebbd1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.hh-galaxy-app .hgl1-media-stage {
+  isolation: isolate;
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 100%;
+  min-height: clamp(260px, 36vw, 520px);
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 45%, rgb(var(--hgl1-world-a-rgb) / 0.22), transparent 31%),
+    linear-gradient(145deg, #050b20, #020617);
+  border: 1px solid rgb(var(--hgl1-world-b-rgb) / 0.35);
+  border-radius: 15px;
+  box-shadow: inset 0 0 70px rgb(0 0 0 / 0.34);
+}
+
+.hh-galaxy-app .hgl1-media-stage :is(video, iframe) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  object-fit: contain;
+  background: #000;
+  border: 0;
+}
+
+.hh-galaxy-app .hgl1-media-stage audio {
+  display: block;
+  width: min(680px, calc(100% - 32px));
+  min-height: 54px;
+}
+
+.hh-galaxy-app .hgl1-media-workspace > .hgl1-runtime-status {
+  margin: 12px 0 0;
+}
+
+.hh-galaxy-app .hgl1-game-workspace canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  margin: 15px 0 10px;
+  background: #020617;
+  border: 1px solid rgb(var(--hgl1-world-b-rgb) / 0.44);
+  border-radius: 14px;
+  box-shadow: inset 0 0 60px rgb(var(--hgl1-world-a-rgb) / 0.16), 0 15px 38px rgb(0 0 0 / 0.2);
+  touch-action: none;
+}
+
+.hh-galaxy-app .hgl1-game-workspace canvas:focus-visible {
+  outline: 4px solid color-mix(in srgb, var(--hgl1-world-c) 76%, white);
+  outline-offset: 4px;
+}
+
+.hh-galaxy-app .hgl1-game-workspace > output,
+.hh-galaxy-app .hgl1-dev-workspace > output {
+  display: block;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: #dbeafe;
+  background: rgb(3 10 29 / 0.72);
+  border: 1px solid rgb(var(--hgl1-world-b-rgb) / 0.2);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.hh-galaxy-app .hgl1-dev-workspace textarea {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  tab-size: 2;
+}
+
+.hh-galaxy-app .hgl1-community-workspace form > .hgl1-button {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+.hh-galaxy-app .hgl1-settings-form {
+  display: grid;
+  gap: 14px;
+}
+
+.hh-galaxy-app .hgl1-settings-form fieldset.hgl1-settings-card {
+  min-width: 0;
+  margin: 0;
+}
+
+.hh-galaxy-app .hgl1-settings-form fieldset.hgl1-settings-card > legend {
+  max-width: 100%;
+  padding: 0 7px;
+  color: #f7f5ff;
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.hh-galaxy-app .hgl1-settings-commit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px;
+  background: linear-gradient(145deg, rgb(11 20 52 / 0.92), rgb(4 10 29 / 0.94));
+  border: 1px solid rgb(var(--hgl1-world-a-rgb) / 0.26);
+  border-radius: 14px;
+}
+
+.hh-galaxy-app .hgl1-settings-commit > output {
+  color: #cbd5e7;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.hh-galaxy-app .hgl1-settings-commit .hgl1-settings-actions {
+  margin: 0;
+}
+
+.hh-galaxy-app .hgl1-backup-backdrop {
+  position: fixed;
+  z-index: 139;
+  inset: 0;
+  display: grid;
+  overflow: auto;
+  place-items: center;
+  padding: 16px;
+  background: rgb(0 3 16 / 0.78);
+  overscroll-behavior: contain;
+}
+
+.hh-galaxy-app .hgl1-backup-preview {
+  position: relative;
+  z-index: 1;
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: clamp(20px, 3vw, 32px);
+  overflow-y: auto;
+  color: #f3f6ff;
+  background:
+    radial-gradient(circle at 90% 0, rgb(var(--hgl1-world-b-rgb) / 0.2), transparent 36%),
+    linear-gradient(145deg, rgb(10 18 47 / 0.99), rgb(3 8 25 / 0.99));
+  border: 1px solid rgb(var(--hgl1-world-b-rgb) / 0.6);
+  border-radius: 18px;
+  box-shadow: 0 28px 90px rgb(0 0 0 / 0.52);
+  overscroll-behavior: contain;
+}
+
+.hh-galaxy-app .hgl1-backup-preview h2 {
+  margin-bottom: 8px;
+  font-size: clamp(22px, 3vw, 30px);
+  line-height: 1.3;
+}
+
+.hh-galaxy-app .hgl1-backup-preview p,
+.hh-galaxy-app .hgl1-backup-preview legend,
+.hh-galaxy-app .hgl1-backup-preview label {
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.hh-galaxy-app .hgl1-backup-preview fieldset {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid rgb(var(--hgl1-world-b-rgb) / 0.28);
+  border-radius: 12px;
+}
+
+.hh-galaxy-app .hgl1-backup-preview label {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+}
+
+.hh-galaxy-app .hgl1-backup-preview input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  accent-color: var(--hgl1-world-b);
+}
+
+.hh-galaxy-app .hgl1-table-card label {
+  display: grid;
+  gap: 5px;
+  color: #cbd5e7;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.hh-galaxy-app .hgl1-table-card select {
+  padding-block: 8px;
+}
+
+.hh-galaxy-app .hgl1-world-hero__body > p {
+  font-size: clamp(16px, 1.08vw, 18px);
+  line-height: 1.65;
+}
+
+.hh-galaxy-app :is(.hgl1-world-hero__signal, .hgl1-world-hero__caption) {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.hh-galaxy-app .hgl1-world-hero__caption small {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.hh-galaxy-app .hgl1-portal-card__body h3 {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.hh-galaxy-app .hgl1-portal-card__body p {
+  display: block;
+  overflow: visible;
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-line-clamp: unset;
+}
+
+.hh-galaxy-app .hgl1-world-rail__card .hgl1-kicker {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.hh-galaxy-app .hgl1-world-rail__card p {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.hh-galaxy-app .hgl1-world-rail__facts :is(dt, dd),
+.hh-galaxy-app .hgl1-world-rail__card--privacy b {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* Learning Star used 7–9px labels in several live controls. Keep its golden
+   observatory styling, but move all functional labels into a readable band. */
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-core-gate b {
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-core-gate small {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-journey__title h2,
+.hh-galaxy-app[data-route="/galaxy/learning"] :is(
+  .hgl1-learning-today,
+  .hgl1-learning-library,
+  .hgl1-learning-progress,
+  .hgl1-learning-schedule,
+  .hgl1-learning-quick-note
+) > h2,
+.hh-galaxy-app[data-route="/galaxy/learning"] :is(
+  .hgl1-learning-today,
+  .hgl1-learning-library,
+  .hgl1-learning-progress,
+  .hgl1-learning-schedule,
+  .hgl1-learning-quick-note
+) header h2 {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-journey__title p {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-stage h3,
+.hh-galaxy-app[data-route="/galaxy/learning"] :is(
+  .hgl1-learning-stage__body,
+  .hgl1-learning-journey__label
+) b {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] :is(
+  .hgl1-learning-stage p,
+  .hgl1-learning-stage__body small,
+  .hgl1-learning-journey__label small
+) {
+  max-width: 154px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-destination__body > span:first-child {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-destination :is(h2, h3) {
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-destination p {
+  display: block;
+  overflow: visible;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-line-clamp: unset;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] :is(
+  .hgl1-learning-destination__action,
+  .hgl1-learning-destination .hgl1-button,
+  .hgl1-learning-library__filters button,
+  .hgl1-learning-schedule input,
+  .hgl1-learning-schedule button,
+  .hgl1-learning-quick-note button
+) {
+  min-height: 44px;
+  min-block-size: 44px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] :is(
+  .hgl1-learning-library__shortcuts button,
+  .hgl1-learning-library__grid > *,
+  .hgl1-learning-schedule li,
+  .hgl1-learning-schedule label,
+  .hgl1-learning-quick-note label,
+  .hgl1-learning-progress p,
+  .hgl1-learning-library__empty,
+  .hgl1-learning-plan__empty,
+  .hgl1-learning-resource__due,
+  .hgl1-learning-empty p,
+  .hgl1-learning-motivation p
+) {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-today > .hgl1-section-head > span:last-child,
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-today__list small,
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-library__filters output {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-today__list b {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] :is(
+  .hgl1-learning-schedule input,
+  .hgl1-learning-quick-note input,
+  .hgl1-learning-quick-note textarea
+) {
+  min-height: 44px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-library__filters {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-today__list {
+  max-height: none;
+  overflow-y: visible;
+}
+
+@media (max-width: 767px) {
+  .hh-galaxy-app .hgl1-functional-workspace {
+    padding: 16px;
+    border-radius: 15px;
+  }
+
+  .hh-galaxy-app .hgl1-workspace-actions > .hgl1-button {
+    flex: 1 1 160px;
+  }
+
+  .hh-galaxy-app .hgl1-youtube-form > div {
+    grid-template-columns: 1fr;
+  }
+
+  .hh-galaxy-app .hgl1-youtube-form .hgl1-button {
+    width: 100%;
+  }
+
+  .hh-galaxy-app .hgl1-media-stage {
+    min-height: clamp(210px, 56vw, 360px);
+    border-radius: 12px;
+  }
+
+  .hh-galaxy-app .hgl1-settings-commit {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hh-galaxy-app .hgl1-settings-commit .hgl1-settings-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hh-galaxy-app .hgl1-backup-preview {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 20px;
+    border-radius: 15px;
+  }
+
+  .hh-galaxy-app .hgl1-world-hero__body > p,
+  .hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__body > p {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .hh-galaxy-app .hgl1-world-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-track {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-stage {
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: center;
+    justify-items: start;
+    gap: 10px;
+    padding: 10px;
+    text-align: left;
+    background: rgb(7 15 40 / 0.54);
+    border: 1px solid rgb(96 165 250 / 0.15);
+    border-radius: 12px;
+    scroll-snap-align: none;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-stage:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] :is(
+    .hgl1-learning-stage__orb,
+    .hgl1-learning-stage > :first-child:not(.hgl1-learning-stage__body)
+  ) {
+    margin-bottom: 0;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] :is(
+    .hgl1-learning-stage p,
+    .hgl1-learning-stage__body small,
+    .hgl1-learning-journey__label small
+  ) {
+    max-width: none;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-stage > i {
+    display: none;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-today > .hgl1-section-head > div {
+    padding-right: 0;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-today > .hgl1-section-head > span:last-child {
+    position: static;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 430px) {
+  .hh-galaxy-app .hgl1-functional-workspace .hgl1-section-head {
+    align-items: stretch;
+  }
+
+  .hh-galaxy-app .hgl1-workspace-actions,
+  .hh-galaxy-app .hgl1-settings-commit .hgl1-settings-actions,
+  .hh-galaxy-app .hgl1-backup-preview .hgl1-settings-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .hh-galaxy-app .hgl1-workspace-actions > .hgl1-button,
+  .hh-galaxy-app .hgl1-community-workspace form > .hgl1-button {
+    width: 100%;
+  }
+
+  .hh-galaxy-app .hgl1-media-stage {
+    min-height: 190px;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-track {
+    grid-template-columns: 1fr;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-stage:last-child {
+    grid-column: auto;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-library__filters button {
+    flex: 1 1 calc(50% - 6px);
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-today__list article {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-today__list .hgl1-button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+@media (max-width: 340px) {
+  .hh-galaxy-app .hgl1-functional-workspace,
+  .hh-galaxy-app .hgl1-youtube-form {
+    padding: 13px;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-library__grid > .hgl1-learning-resource {
+    grid-template-columns: 1fr;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-resource__visual {
+    min-height: 120px;
+  }
+}
+
+@media (forced-colors: active) {
+  .hh-galaxy-app :is(
+    .hgl1-functional-workspace,
+    .hgl1-media-stage,
+    .hgl1-settings-commit,
+    .hgl1-backup-backdrop,
+    .hgl1-backup-preview
+  ) {
+    color: CanvasText;
+    background: Canvas;
+    border: 1px solid CanvasText;
+    box-shadow: none;
+    forced-color-adjust: auto;
+  }
+
+  .hh-galaxy-app .hgl1-functional-workspace::before,
+  .hh-galaxy-app .hgl1-runtime-status::before {
+    display: none;
+  }
+
+  .hh-galaxy-app .hgl1-game-workspace canvas {
+    background: Canvas;
+    border: 2px solid CanvasText;
+    box-shadow: none;
   }
 }
 

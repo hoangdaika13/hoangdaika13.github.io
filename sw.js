@@ -1,4 +1,8 @@
-const CACHE = "hh-identity-portal-v966";
+const CACHE = "hh-identity-portal-v970";
+// Function portal release: eleven verified local hero images are catalogued as
+// runtime assets and cached only after their active route requests them.
+// Compatibility markers for previous functional portal releases: hh-identity-portal-v969 hh-identity-portal-v968.
+// Compatibility marker for the previous Learning Star release: hh-identity-portal-v966.
 // Learning Star reference refinement: original four-portal atlas, compact
 // stellar dashboard, live HH CORE handoff and local-first study workspace.
 // Compatibility markers for the previous twelve-world visual releases: hh-identity-portal-v959 hh-identity-portal-v958.
@@ -279,13 +283,25 @@ const RUNTIME_ASSETS = [
   "./hh-core-gateway.js?v=2",
   "./galaxy-home-ai.css?v=19",
   "./galaxy-home-ai.js?v=12",
-  "./galaxy-layer-one.css?v=2",
-  "./galaxy-layer-one-worlds.css?v=10",
-  "./galaxy-layer-one.js?v=7",
+  "./galaxy-layer-one.css?v=4",
+  "./galaxy-layer-one-worlds.css?v=13",
+  "./galaxy-layer-one.js?v=11",
   "./assets/galaxy/learning-portals-atlas-v1.png",
+  // Runtime-cached on first route use; deliberately excluded from CORE.
+  "./assets/galaxy/function-portals/ai-universe-v1.png",
+  "./assets/galaxy/function-portals/music-planet-v1.png",
+  "./assets/galaxy/function-portals/video-planet-v1.png",
+  "./assets/galaxy/function-portals/creator-studio-v1.png",
+  "./assets/galaxy/function-portals/games-world-v1.png",
+  "./assets/galaxy/function-portals/dev-planet-v2.png",
+  "./assets/galaxy/function-portals/learning-star-v1.png",
+  "./assets/galaxy/function-portals/community-v1.png",
+  "./assets/galaxy/function-portals/tools-galaxy-v1.png",
+  "./assets/galaxy/function-portals/analytics-v1.png",
+  "./assets/galaxy/function-portals/settings-v2.png",
   "./galaxy-layer-one-data.js?v=2",
-  "./galaxy-creator-studio.css?v=9",
-  "./galaxy-creator-studio.js?v=3",
+  "./galaxy-creator-studio.css?v=11",
+  "./galaxy-creator-studio.js?v=4",
   "./assets/galaxy/hh-galaxy-map-bg-v1.png?v=1",
   "./assets/galaxy/hh-luminous-planet-v1.webp?v=1",
   "./assets/galaxy/hh-stellar-core-v1.webp?v=1",
@@ -597,7 +613,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=618",
+  "./performance-loader.js?v=622",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=263"

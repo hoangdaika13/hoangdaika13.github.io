@@ -67,8 +67,8 @@
       scripts: ["galaxy-home-ai.js?v=12"]
     },
     "galaxy-layer-one": {
-      styles: ["galaxy-creator-studio.css?v=9", "galaxy-layer-one.css?v=2", "galaxy-layer-one-worlds.css?v=10"],
-      scripts: ["galaxy-layer-one-data.js?v=2", "galaxy-creator-studio.js?v=3", "galaxy-layer-one.js?v=7"]
+      styles: ["galaxy-creator-studio.css?v=11", "galaxy-layer-one.css?v=4", "galaxy-layer-one-worlds.css?v=13"],
+      scripts: ["galaxy-layer-one-data.js?v=2", "galaxy-creator-studio.js?v=4", "galaxy-layer-one.js?v=11"]
     },
     "galaxy-domain-views": {
       styles: ["galaxy-domain-views.css?v=13"],

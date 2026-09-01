@@ -12,6 +12,11 @@
   const EVENT_PREFIX = "hh:galaxy:layer-one";
   const MAX_ITEMS = 120;
   const MAX_EVENTS = 300;
+  const MAX_TEXT_LENGTH = 100000;
+  const MAX_ITEM_DESCRIPTION = 16000;
+  const AI_HANDOFF_KEY = "hh.galaxy.ai.handoff.v1";
+  const AI_HANDOFF_TTL_MS = 15 * 60 * 1000;
+  const BACKUP_MAX_BYTES = 2 * 1024 * 1024;
 
   const ICONS = Object.freeze({
     home: "<path d=\"M3 11.5 12 4l9 7.5v8a1.5 1.5 0 0 1-1.5 1.5h-5v-6h-5v6h-5A1.5 1.5 0 0 1 3 19.5z\"/>",
@@ -76,6 +81,23 @@
 
   const routes = Object.freeze(routeManifest.map(function routeOf(entry) { return entry.route; }));
   const routeSet = new Set(routes);
+
+  // Curated, local-only art for the eleven functional Layer One destinations.
+  // Home intentionally keeps its live code-native map instead of preloading a
+  // portal image. Each view renders only its current route's hero asset.
+  const PORTAL_HERO_IMAGES = Object.freeze({
+    ai: Object.freeze({ src: "assets/galaxy/function-portals/ai-universe-v1.png", width: 1672, height: 941 }),
+    music: Object.freeze({ src: "assets/galaxy/function-portals/music-planet-v1.png", width: 1672, height: 941 }),
+    video: Object.freeze({ src: "assets/galaxy/function-portals/video-planet-v1.png", width: 1672, height: 941 }),
+    creator: Object.freeze({ src: "assets/galaxy/function-portals/creator-studio-v1.png", width: 1672, height: 941 }),
+    games: Object.freeze({ src: "assets/galaxy/function-portals/games-world-v1.png", width: 1672, height: 941 }),
+    dev: Object.freeze({ src: "assets/galaxy/function-portals/dev-planet-v2.png", width: 1672, height: 941 }),
+    learning: Object.freeze({ src: "assets/galaxy/function-portals/learning-star-v1.png", width: 1672, height: 941 }),
+    community: Object.freeze({ src: "assets/galaxy/function-portals/community-v1.png", width: 1672, height: 941 }),
+    tools: Object.freeze({ src: "assets/galaxy/function-portals/tools-galaxy-v1.png", width: 1672, height: 941 }),
+    analytics: Object.freeze({ src: "assets/galaxy/function-portals/analytics-v1.png", width: 1672, height: 941 }),
+    settings: Object.freeze({ src: "assets/galaxy/function-portals/settings-v2.png", width: 1672, height: 941 })
+  });
 
   const MODULES = Object.freeze({
     "/galaxy/ai": Object.freeze({
@@ -370,6 +392,26 @@
       .trim();
   }
 
+  // Dev Planet stores snippets in localStorage, so obvious credential material
+  // must fail closed before it ever reaches the persistence layer. References
+  // such as process.env.API_KEY remain allowed because they contain no value.
+  function containsLikelySecret(value) {
+    const text = String(value || "").slice(0, MAX_TEXT_LENGTH);
+    if (!text) return false;
+    const credentialNames = "(?:api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|password|passwd|secret)";
+    const withoutEnvironmentReferences = text.replace(new RegExp("\\b" + credentialNames + "\\b\\s*[:=]\\s*(?:process\\.env|import\\.meta\\.env|Deno\\.env\\.get)\\b[^\\r\\n;]*", "gi"), "");
+    const signatures = [
+      /-----BEGIN(?: [A-Z0-9]+)? PRIVATE KEY-----/i,
+      /\bAKIA[0-9A-Z]{16}\b/,
+      /\bAIza[0-9A-Za-z_-]{30,}\b/,
+      /\bgh[pousr]_[0-9A-Za-z]{20,}\b/,
+      /\b(?:sk|rk)-(?:proj-)?[0-9A-Za-z_-]{16,}\b/,
+      /\bBearer\s+[0-9A-Za-z._~+\/-]{20,}/i
+    ];
+    if (signatures.some(function matchesSecret(pattern) { return pattern.test(text); })) return true;
+    return new RegExp("\\b" + credentialNames + "\\b\\s*[:=]\\s*(?:[\"'][^\"'\\s]{8,}[\"']|[0-9A-Za-z_./+=-]{12,})", "i").test(withoutEnvironmentReferences);
+  }
+
   function searchRoutes(query, limit) {
     const needle = normalizedSearchText(query);
     if (!needle) return Object.freeze([]);
@@ -404,6 +446,8 @@
       effects: "balanced",
       contrast: "standard",
       reducedMotion: "system",
+      uiScale: "medium",
+      colorVision: "standard",
       analyticsConsent: false
     };
   }
@@ -428,6 +472,32 @@
     return Number.isFinite(time) ? new Date(time).toISOString() : new Date().toISOString();
   }
 
+  function consumeAiHandoff(candidate, nowInput) {
+    const storage = candidate || (function sessionStore() {
+      try { return globalScope.sessionStorage || null; } catch (_) { return null; }
+    })();
+    if (!storage || typeof storage.getItem !== "function") return null;
+    let raw = "";
+    try {
+      raw = storage.getItem(AI_HANDOFF_KEY) || "";
+      storage.removeItem(AI_HANDOFF_KEY);
+    } catch (_) {
+      return null;
+    }
+    if (!raw || raw.length > 12000) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      const now = Number.isFinite(Number(nowInput)) ? Number(nowInput) : Date.now();
+      const at = Number(parsed && parsed.at);
+      const prompt = String(parsed && parsed.prompt || "").trim().slice(0, 4000);
+      if (!prompt || !Number.isFinite(at) || at > now + 60000 || now - at > AI_HANDOFF_TTL_MS) return null;
+      if (parsed.layer !== "galaxy" || parsed.source !== "galaxy-home") return null;
+      return Object.freeze({ prompt: prompt, at: at, source: "galaxy-home", layer: "galaxy" });
+    } catch (_) {
+      return null;
+    }
+  }
+
   function sanitizeSettings(value) {
     const source = value && typeof value === "object" ? value : {};
     const defaults = defaultSettings();
@@ -436,6 +506,8 @@
       effects: ["quiet", "balanced", "rich"].includes(source.effects) ? source.effects : defaults.effects,
       contrast: ["standard", "high"].includes(source.contrast) ? source.contrast : defaults.contrast,
       reducedMotion: ["system", "on", "off"].includes(source.reducedMotion) ? source.reducedMotion : defaults.reducedMotion,
+      uiScale: ["small", "medium", "large"].includes(source.uiScale) ? source.uiScale : defaults.uiScale,
+      colorVision: ["standard", "deuteranopia", "protanopia", "tritanopia"].includes(source.colorVision) ? source.colorVision : defaults.colorVision,
       analyticsConsent: source.analyticsConsent === true
     };
   }
@@ -456,6 +528,8 @@
       copiedFrom: String(metaSource.copiedFrom || "").slice(0, 100),
       learningCategory: learningCategory,
       dueDate: dueDate,
+      privacy: ["private", "group", "public"].includes(metaSource.privacy) ? metaSource.privacy : "private",
+      provider: String(metaSource.provider || "").slice(0, 80),
       completed: metaSource.completed === true
     };
     return {
@@ -463,7 +537,7 @@
       route: match.route,
       title: title,
       kind: String(value.kind || "document").slice(0, 60),
-      description: String(value.description || "").slice(0, 500),
+      description: String(value.description || "").slice(0, MAX_ITEM_DESCRIPTION),
       isDemo: false,
       source: value.source === "user-copy" ? "user-copy" : "user",
       editable: true,
@@ -615,43 +689,122 @@
 
   function serializeBackup(candidate) {
     const state = collectLocalState(candidate);
+    const exportState = sanitizeState(state);
+    // Consent is prospective and revocable. Retained events are never exported
+    // while consent is off, even though the user may explicitly clear them later.
+    if (exportState.settings.analyticsConsent !== true) exportState.events = [];
     return JSON.stringify({
       schema: "hh-galaxy-layer-one-backup",
       version: VERSION,
       exportedAt: new Date().toISOString(),
-      data: state
+      data: exportState
     }, null, 2);
   }
 
-  function importBackup(text, candidate) {
+  function inspectBackup(text) {
     const sourceText = String(text || "");
-    if (!sourceText || sourceText.length > 2 * 1024 * 1024) {
-      return { ok: false, error: "BACKUP_SIZE_INVALID", imported: 0 };
+    if (!sourceText || sourceText.length > BACKUP_MAX_BYTES) {
+      return { ok: false, error: "BACKUP_SIZE_INVALID", imported: 0, candidate: null };
     }
     try {
       const parsed = JSON.parse(sourceText);
       if (!parsed || parsed.schema !== "hh-galaxy-layer-one-backup" || Number(parsed.version) !== VERSION || !parsed.data) {
-        return { ok: false, error: "BACKUP_SCHEMA_INVALID", imported: 0 };
+        return { ok: false, error: "BACKUP_SCHEMA_INVALID", imported: 0, candidate: null };
       }
       const sanitized = sanitizeState(parsed.data);
-      if (!writeLocalState(sanitized, candidate)) {
-        return { ok: false, error: "BACKUP_WRITE_FAILED", imported: 0 };
-      }
-      recordEvent("data-import", "/galaxy/settings", candidate);
-      return { ok: true, error: null, imported: sanitized.items.length };
+      if (sanitized.settings.analyticsConsent !== true) sanitized.events = [];
+      return {
+        ok: true,
+        error: null,
+        imported: sanitized.items.length,
+        candidate: sanitized,
+        summary: Object.freeze({
+          items: sanitized.items.length,
+          events: sanitized.settings.analyticsConsent ? sanitized.events.length : 0,
+          exportedAt: safeDate(parsed.exportedAt)
+        })
+      };
     } catch (_) {
-      return { ok: false, error: "BACKUP_JSON_INVALID", imported: 0 };
+      return { ok: false, error: "BACKUP_JSON_INVALID", imported: 0, candidate: null };
     }
   }
 
-  function summarizeAnalytics(stateInput) {
+  function mergeBackupState(currentInput, incomingInput) {
+    const current = sanitizeState(currentInput);
+    const incoming = sanitizeState(incomingInput);
+    const byId = new Map(current.items.map(function currentItem(item) { return [item.id, item]; }));
+    incoming.items.forEach(function mergeItem(item) { if (!byId.has(item.id)) byId.set(item.id, item); });
+    const eventsById = new Map(current.events.map(function currentEvent(event) { return [event.id, event]; }));
+    incoming.events.forEach(function mergeEvent(event) { if (!eventsById.has(event.id)) eventsById.set(event.id, event); });
+    return sanitizeState({
+      version: VERSION,
+      settings: current.settings,
+      // Current device data wins collisions and capacity pressure. A merge may
+      // add backup records, but it must never evict an existing local record.
+      items: Array.from(byId.values()).slice(0, MAX_ITEMS),
+      events: Array.from(eventsById.values()).slice(0, MAX_EVENTS)
+    });
+  }
+
+  function applyBackup(candidateState, storage, mode) {
+    const current = collectLocalState(storage);
+    const next = mode === "merge" ? mergeBackupState(current, candidateState) : sanitizeState(candidateState);
+    const currentItemIds = new Set(current.items.map(function currentItemId(item) { return item.id; }));
+    const importedCount = mode === "merge"
+      ? next.items.filter(function newlyImported(item) { return !currentItemIds.has(item.id); }).length
+      : next.items.length;
+    // A portable backup is data, not permission. Importing it must never opt
+    // this device into Analytics. When consent is currently off, merge keeps
+    // only the device's existing event history and replace imports no events.
+    next.settings.analyticsConsent = current.settings.analyticsConsent === true;
+    if (current.settings.analyticsConsent !== true) {
+      next.events = mode === "merge" ? current.events.slice(-MAX_EVENTS) : [];
+    }
+    const rollback = JSON.stringify(current);
+    if (!writeLocalState(next, storage)) return { ok: false, error: "BACKUP_WRITE_FAILED", imported: 0 };
+    try {
+      recordEvent("data-import", "/galaxy/settings", storage);
+      return { ok: true, error: null, imported: importedCount, mode: mode === "merge" ? "merge" : "replace" };
+    } catch (_) {
+      try { writeLocalState(JSON.parse(rollback), storage); } catch (_) { /* Best-effort rollback. */ }
+      return { ok: false, error: "BACKUP_WRITE_FAILED", imported: 0 };
+    }
+  }
+
+  function importBackup(text, candidate) {
+    const inspected = inspectBackup(text);
+    if (!inspected.ok) return { ok: false, error: inspected.error, imported: 0 };
+    return applyBackup(inspected.candidate, candidate, "replace");
+  }
+
+  function analyticsRangeStart(range, nowInput) {
+    const numeric = Number(nowInput);
+    const parsed = Date.parse(String(nowInput || ""));
+    const now = Number.isFinite(numeric) ? numeric : Number.isFinite(parsed) ? parsed : Date.now();
+    if (range === "today") {
+      const date = new Date(now);
+      date.setHours(0, 0, 0, 0);
+      return date.getTime();
+    }
+    if (range === "7d") return now - 7 * 24 * 60 * 60 * 1000;
+    if (range === "30d") return now - 30 * 24 * 60 * 60 * 1000;
+    return 0;
+  }
+
+  function summarizeAnalytics(stateInput, rangeInput, nowInput) {
     const state = sanitizeState(stateInput || emptyState());
     const consent = state.settings.analyticsConsent === true;
-    const events = consent ? state.events : [];
+    const range = ["today", "7d", "30d", "all"].includes(rangeInput) ? rangeInput : "all";
+    const start = analyticsRangeStart(range, nowInput);
+    const events = consent ? state.events.filter(function inRange(event) {
+      const at = Date.parse(event.at);
+      return Number.isFinite(at) && at >= start;
+    }) : [];
     const routeViews = events.filter(function routeView(event) { return event.type === "route-view"; });
     const moduleRoutes = new Set(routeViews.map(function eventRoute(event) { return event.route; }).filter(Boolean));
     return Object.freeze({
       consent: consent,
+      range: range,
       localItems: state.items.length,
       trackedEvents: events.length,
       exports: events.filter(function exportEvent(event) { return event.type === "data-export"; }).length,
@@ -752,6 +905,14 @@
     });
   }
 
+  function worldHeroImageMarkup(entry) {
+    const image = PORTAL_HERO_IMAGES[entry.id];
+    if (!image) return "";
+    return "<picture class=\"hgl1-world-hero__media hgl1-world-hero__media--" + entry.id + "\" aria-hidden=\"true\">" +
+      "<img class=\"hgl1-world-hero__image\" src=\"" + image.src + "\" width=\"" + image.width + "\" height=\"" + image.height + "\" alt=\"\" loading=\"eager\" decoding=\"async\" fetchpriority=\"high\" draggable=\"false\"/>" +
+      "</picture>";
+  }
+
   function worldHeroMarkup(entry, actions, overrides) {
     const experience = worldExperience(entry);
     const options = overrides && typeof overrides === "object" ? overrides : {};
@@ -764,12 +925,13 @@
     const orbClass = options.orbClass ? " " + options.orbClass : "";
     const constellationClass = options.constellationClass ? " " + options.constellationClass : "";
     const extra = options.extra || "";
+    const heroImage = worldHeroImageMarkup(entry);
     return "<header class=\"hgl1-page-head hgl1-world-hero hgl1-world-hero--" + entry.id + heroClass + "\" aria-labelledby=\"hgl1-world-title-" + entry.id + "\">" +
       "<div class=\"hgl1-world-hero__body" + bodyClass + "\"><span class=\"hgl1-eyebrow\">" + escapeHtml(eyebrow) + "</span>" +
       "<span class=\"hgl1-world-hero__signal\"><i aria-hidden=\"true\"></i>" + escapeHtml(experience.signal) + "</span>" +
       "<h1 id=\"hgl1-world-title-" + entry.id + "\">" + escapeHtml(title) + "</h1><p>" + escapeHtml(description) + "</p>" +
       (actions ? "<div class=\"hgl1-page-head__actions\">" + actions + "</div>" : "") + "</div>" +
-      "<div class=\"hgl1-world-hero__visual" + visualClass + "\" aria-hidden=\"true\"><span class=\"hgl1-world-constellation hgl1-world-constellation--" + entry.id + constellationClass + "\"><i></i><i></i><i></i><i></i><i></i><i></i></span>" +
+      "<div class=\"hgl1-world-hero__visual" + visualClass + "\" aria-hidden=\"true\">" + heroImage + "<span class=\"hgl1-world-constellation hgl1-world-constellation--" + entry.id + constellationClass + "\"><i></i><i></i><i></i><i></i><i></i><i></i></span>" +
       "<span class=\"hgl1-world-orb hgl1-world-orb--" + entry.id + orbClass + "\"><i class=\"hgl1-world-orb__ring\"></i><i class=\"hgl1-world-orb__core\"></i><i class=\"hgl1-world-orb__satellite\"></i><span class=\"hgl1-world-orb__glyph\">" + icon(entry.icon) + "</span></span>" +
       "<span class=\"hgl1-world-hero__caption\"><b>" + escapeHtml(experience.visualLabel) + "</b><small>" + escapeHtml(experience.visualHint) + "</small></span></div>" + extra + "</header>";
   }
@@ -818,23 +980,53 @@
       const state = feature[2];
       const labels = { available: "Cục bộ", unconfigured: "Chưa cấu hình", permission: "Theo yêu cầu" };
       const portalIcon = experience.portalIcons[index] || entry.icon;
-      return "<article class=\"hgl1-feature hgl1-portal-card hgl1-portal-card--" + state + "\" data-capability=\"" + state + "\">" +
+      const actionable = state === "available" || state === "permission";
+      const tag = actionable ? "button" : "article";
+      const action = actionable ? " type=\"button\" data-hgl1-action=\"open-capability\" data-capability-index=\"" + index + "\"" : "";
+      return "<" + tag + " class=\"hgl1-feature hgl1-portal-card hgl1-portal-card--" + state + "\" data-capability=\"" + state + "\"" + action + ">" +
         "<div class=\"hgl1-portal-card__visual\" aria-hidden=\"true\"><span></span>" + icon(portalIcon) + "</div>" +
-        "<div class=\"hgl1-portal-card__body\"><span class=\"hgl1-feature__signal\" aria-hidden=\"true\"></span><span class=\"hgl1-feature__state\">" + labels[state] + "</span><h3>" + escapeHtml(feature[0]) + "</h3><p>" + escapeHtml(feature[1]) + "</p></div></article>";
+        "<div class=\"hgl1-portal-card__body\"><span class=\"hgl1-feature__signal\" aria-hidden=\"true\"></span><span class=\"hgl1-feature__state\">" + labels[state] + "</span><h3>" + escapeHtml(feature[0]) + "</h3><p>" + escapeHtml(feature[1]) + "</p></div></" + tag + ">";
     }).join("");
+  }
+
+  function moduleWorkspaceMarkup(entry) {
+    if (entry.route === "/galaxy/ai") {
+      return "<section class=\"hgl1-functional-workspace hgl1-ai-workspace\" data-hgl1-ai-workspace aria-labelledby=\"hgl1-ai-workspace-title\">" +
+        "<header class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Kết nối có kiểm chứng</span><h2 id=\"hgl1-ai-workspace-title\">Trợ lý AI lớp 1</h2></div><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"probe-ai-provider\">Kiểm tra provider</button></header>" +
+        "<p class=\"hgl1-runtime-status\" data-hgl1-ai-status data-state=\"checking\" role=\"status\">Đang kiểm tra gateway AI trên máy chủ…</p>" +
+        "<form data-hgl1-ai-form><label for=\"hgl1-ai-prompt\">Nội dung yêu cầu</label><textarea id=\"hgl1-ai-prompt\" name=\"prompt\" data-hgl1-ai-draft maxlength=\"4000\" rows=\"7\" placeholder=\"Nhập yêu cầu; nội dung chỉ được gửi khi bạn bấm Gửi…\"></textarea><div class=\"hgl1-workspace-actions\"><button class=\"hgl1-button hgl1-button--primary\" type=\"submit\" data-hgl1-ai-send disabled>Gửi tới provider</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"save-ai-draft\">Lưu bản nháp</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"clear-ai-draft\">Hội thoại mới</button></div></form>" +
+        "<output class=\"hgl1-tool__output hgl1-ai-response\" data-hgl1-ai-response aria-live=\"polite\">Chưa gửi yêu cầu. Provider và trạng thái đăng nhập sẽ được kiểm tra thật.</output></section>";
+    }
+    if (entry.route === "/galaxy/music" || entry.route === "/galaxy/video") {
+      const isVideo = entry.route === "/galaxy/video";
+      return "<section class=\"hgl1-functional-workspace hgl1-media-workspace\" data-hgl1-media-workspace=\"" + (isVideo ? "video" : "audio") + "\" aria-labelledby=\"hgl1-media-title\"><header class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Player phiên hiện tại</span><h2 id=\"hgl1-media-title\">" + (isVideo ? "Trình phát video ổn định" : "Trình phát âm thanh cục bộ") + "</h2></div></header>" +
+        (isVideo ? "<form class=\"hgl1-youtube-form\" data-hgl1-youtube-form><label for=\"hgl1-youtube-url\">Liên kết YouTube do bạn chọn</label><div><input id=\"hgl1-youtube-url\" name=\"url\" type=\"url\" inputmode=\"url\" maxlength=\"500\" placeholder=\"https://www.youtube.com/watch?v=…\"/><button class=\"hgl1-button hgl1-button--ghost\" type=\"submit\">Mở an toàn</button></div><small>Chỉ youtube.com và youtu.be; player dùng youtube-nocookie.com, không tự phát.</small></form>" : "") +
+        "<div class=\"hgl1-media-stage\" data-hgl1-stable-media-host><div class=\"hgl1-delegated-placeholder\" data-hgl1-media-empty><div><h3>Chưa chọn " + (isVideo ? "video" : "âm thanh") + "</h3><p>Bấm Nhập tệp ở phía trên. Tệp chỉ phát từ phiên trình duyệt hiện tại.</p></div></div></div><p class=\"hgl1-runtime-status\" data-hgl1-media-status role=\"status\">Không tự phát · chưa có media đang mở.</p></section>";
+    }
+    if (entry.route === "/galaxy/games") {
+      return "<section class=\"hgl1-functional-workspace hgl1-game-workspace\" aria-labelledby=\"hgl1-game-title\"><header class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Runtime cục bộ</span><h2 id=\"hgl1-game-title\">Orbit Collector</h2></div><button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"toggle-game\">Bắt đầu</button></header><p>Dùng phím mũi tên hoặc WASD khi canvas đang được focus; gamepad được đọc khi trình duyệt hỗ trợ.</p><canvas data-hgl1-game-canvas width=\"960\" height=\"540\" tabindex=\"0\" aria-label=\"Orbit Collector: điều khiển quỹ đạo để thu thập các điểm sáng\"></canvas><output data-hgl1-game-status aria-live=\"polite\">Chưa bắt đầu. Không có điểm số hay người chơi giả.</output></section>";
+    }
+    if (entry.route === "/galaxy/dev") {
+      return "<section class=\"hgl1-functional-workspace hgl1-dev-workspace\" aria-labelledby=\"hgl1-dev-title\"><header class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Không thực thi tự động</span><h2 id=\"hgl1-dev-title\">Code workspace cục bộ</h2></div></header><form data-hgl1-dev-form><label for=\"hgl1-dev-name\">Tên snippet</label><input id=\"hgl1-dev-name\" name=\"title\" maxlength=\"160\" required/><label for=\"hgl1-dev-language\">Ngôn ngữ</label><select id=\"hgl1-dev-language\" name=\"language\"><option value=\"text\">Text</option><option value=\"html\">HTML</option><option value=\"css\">CSS</option><option value=\"javascript\">JavaScript</option><option value=\"json\">JSON</option></select><label for=\"hgl1-dev-code\">Mã nguồn</label><textarea id=\"hgl1-dev-code\" name=\"code\" maxlength=\"" + MAX_TEXT_LENGTH + "\" rows=\"12\" spellcheck=\"false\"></textarea><div class=\"hgl1-workspace-actions\"><button class=\"hgl1-button hgl1-button--primary\" type=\"submit\">Lưu snippet</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"inspect-dev-code\">Kiểm tra tĩnh</button></div></form><output class=\"hgl1-tool__output\" data-hgl1-dev-output aria-live=\"polite\">Mã không được chạy trong trang này.</output></section>";
+    }
+    if (entry.route === "/galaxy/community") {
+      return "<section class=\"hgl1-functional-workspace hgl1-community-workspace\" aria-labelledby=\"hgl1-community-title\"><header class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Bản nháp cục bộ</span><h2 id=\"hgl1-community-title\">Soạn bài cộng đồng</h2></div><span class=\"hgl1-runtime-status\" data-hgl1-community-realtime data-state=\"unconfigured\" role=\"status\">Realtime chưa cấu hình</span></header><form data-hgl1-community-form><label for=\"hgl1-community-title-input\">Tiêu đề</label><input id=\"hgl1-community-title-input\" name=\"title\" maxlength=\"160\" required/><label for=\"hgl1-community-body\">Nội dung</label><textarea id=\"hgl1-community-body\" name=\"body\" maxlength=\"8000\" rows=\"8\" required></textarea><label for=\"hgl1-community-privacy\">Quyền riêng tư</label><select id=\"hgl1-community-privacy\" name=\"privacy\"><option value=\"private\">Chỉ mình tôi (bản nháp)</option><option value=\"group\">Nhóm — cần backend</option><option value=\"public\">Công khai — cần backend</option></select><button class=\"hgl1-button hgl1-button--primary\" type=\"submit\">Lưu bản nháp</button><p>Không có bài nào được đăng ra mạng khi backend chưa xác nhận.</p></form></section>";
+    }
+    return "";
   }
 
   function moduleMarkup(entry, state) {
     const definition = MODULES[entry.route];
     const items = state.items.filter(function routeItems(item) { return item.route === entry.route; }).slice().reverse();
     const userItems = items.map(itemMarkup).join("");
-    const importControl = definition.fileAccept ? "<button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"trigger-file\" data-route=\"" + entry.route + "\">" + icon("upload") + " Nhập tệp</button><input class=\"hgl1-sr-only\" type=\"file\" data-hgl1-module-file data-route=\"" + entry.route + "\" accept=\"" + escapeHtml(definition.fileAccept) + "\"/>" : "";
+    const importControl = definition.fileAccept ? "<button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"trigger-file\" data-route=\"" + entry.route + "\">" + icon("upload") + " Nhập tệp</button><input class=\"hgl1-sr-only\" type=\"file\" tabindex=\"-1\" aria-label=\"Chọn tệp cho " + escapeHtml(entry.label) + "\" data-hgl1-module-file data-route=\"" + entry.route + "\" accept=\"" + escapeHtml(definition.fileAccept) + "\"/>" : "";
     const permissionControl = entry.route === "/galaxy/music" ? "<button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"check-microphone\">Kiểm tra microphone</button>" : "";
     const heroActions = "<button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"focus-create\">" + icon("plus") + " " + escapeHtml(definition.createLabel) + "</button>" + importControl + permissionControl;
     return "<section class=\"hgl1-page hgl1-page--module\" data-module=\"" + entry.id + "\">" +
       worldHeroMarkup(entry, heroActions) +
-      "<div class=\"hgl1-status-strip\"><span class=\"hgl1-status-dot hgl1-status-dot--" + definition.statusTone + "\"></span><span>" + escapeHtml(definition.status) + "</span><b>Dữ liệu riêng của lớp 1</b></div>" +
+      "<div class=\"hgl1-status-strip\" data-hgl1-module-status><span class=\"hgl1-status-dot hgl1-status-dot--" + definition.statusTone + "\"></span><span data-hgl1-module-status-text>" + escapeHtml(definition.status) + "</span><b>Dữ liệu riêng của lớp 1</b></div>" +
       "<div class=\"hgl1-world-layout\"><div class=\"hgl1-world-main\">" +
+      moduleWorkspaceMarkup(entry) +
       "<section class=\"hgl1-feature-grid hgl1-portal-grid\" aria-label=\"Cổng chức năng " + escapeHtml(entry.label) + "\">" + featureMarkup(definition.features, entry) + "</section>" +
       "<section class=\"hgl1-library\"><div class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Workspace</span><h2>Tài liệu của bạn</h2></div><label class=\"hgl1-filter\">" + icon("search") + "<span class=\"hgl1-sr-only\">Lọc tài liệu</span><input type=\"search\" data-hgl1-item-filter placeholder=\"Lọc theo tên...\"/></label></div>" +
       "<form class=\"hgl1-create-form\" data-hgl1-create-form data-route=\"" + entry.route + "\"><label for=\"hgl1-title-" + entry.id + "\">Tên tài liệu mới</label><div><input id=\"hgl1-title-" + entry.id + "\" name=\"title\" maxlength=\"160\" required placeholder=\"Nhập tên rõ ràng...\"/><button class=\"hgl1-button hgl1-button--primary\" type=\"submit\">Lưu cục bộ</button></div></form>" +
@@ -921,7 +1113,7 @@
     const planList = plans.length ? "<ul class=\"hgl1-learning-plan__list\">" + plans.slice(0, 6).map(function planItem(item) {
       return "<li class=\"" + (item.meta.completed ? "is-complete" : "") + "\"><time datetime=\"" + escapeHtml(item.meta.dueDate) + "\">" + escapeHtml(formatLearningDate(item.meta.dueDate)) + "</time><span>" + escapeHtml(item.title) + "</span></li>";
     }).join("") + "</ul>" : "<p class=\"hgl1-learning-plan__empty\">Chưa có kế hoạch học tập nào được lưu.</p>";
-    const heroActions = "<button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"focus-learning-note\">" + icon("plus") + " Ghi chú nhanh</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"trigger-file\" data-route=\"/galaxy/learning\">" + icon("upload") + " Nhập tài liệu</button><input class=\"hgl1-sr-only\" type=\"file\" data-hgl1-module-file data-route=\"/galaxy/learning\" accept=\".txt,.md,.json,text/plain,application/json\"/>";
+    const heroActions = "<button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"focus-learning-note\">" + icon("plus") + " Ghi chú nhanh</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"trigger-file\" data-route=\"/galaxy/learning\">" + icon("upload") + " Nhập tài liệu</button><input class=\"hgl1-sr-only\" type=\"file\" tabindex=\"-1\" aria-label=\"Chọn tài liệu cho Learning Star\" data-hgl1-module-file data-route=\"/galaxy/learning\" accept=\".txt,.md,.json,text/plain,application/json\"/>";
     const coreGate = "<button class=\"hgl1-learning-core-gate\" type=\"button\" data-hgl1-action=\"open-platform-via-core\" aria-label=\"Mở cổng HH CORE tại bản đồ Galaxy\"><span aria-hidden=\"true\">HH</span><b>HH CORE</b><small>Cổng vào HH Platform</small>" + icon("arrow") + "</button>";
     const libraryShortcuts = "<div class=\"hgl1-learning-library__shortcuts\" aria-label=\"Thao tác nhanh trong thư viện\">" +
       "<button type=\"button\" data-hgl1-action=\"focus-learning-note\">" + icon("learning") + "<span>Ghi chú</span></button>" +
@@ -953,15 +1145,16 @@
     const heroActions = "<button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"export-route\" data-route=\"/galaxy/tools\">" + icon("download") + " Xuất ghi chú</button>";
     return "<section class=\"hgl1-page hgl1-page--tools\">" + worldHeroMarkup(entry, heroActions) +
       "<div class=\"hgl1-world-layout\"><div class=\"hgl1-world-main\">" +
-      "<div class=\"hgl1-tools-grid\"><article class=\"hgl1-tool\"><div class=\"hgl1-tool__head\">" + icon("tools") + "<div><span class=\"hgl1-badge hgl1-badge--local\">Cục bộ</span><h2>Phân tích văn bản</h2></div></div><label for=\"hgl1-text-tool\">Nội dung</label><textarea id=\"hgl1-text-tool\" data-hgl1-text-tool rows=\"9\" placeholder=\"Nhập văn bản cần đếm...\"></textarea><button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"analyze-text\">Phân tích</button><output class=\"hgl1-tool__output\" data-hgl1-text-output aria-live=\"polite\">Chưa có kết quả.</output></article>" +
-      "<article class=\"hgl1-tool\"><div class=\"hgl1-tool__head\">" + icon("dev") + "<div><span class=\"hgl1-badge hgl1-badge--local\">Cục bộ</span><h2>JSON Formatter</h2></div></div><label for=\"hgl1-json-tool\">JSON đầu vào</label><textarea id=\"hgl1-json-tool\" data-hgl1-json-tool rows=\"9\" spellcheck=\"false\" placeholder=\"{ &quot;hello&quot;: &quot;galaxy&quot; }\"></textarea><button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"format-json\">Định dạng</button><output class=\"hgl1-tool__output hgl1-tool__output--code\" data-hgl1-json-output aria-live=\"polite\">Chưa có kết quả.</output></article></div>" +
+      "<div class=\"hgl1-tools-grid\"><article class=\"hgl1-tool\"><div class=\"hgl1-tool__head\">" + icon("tools") + "<div><span class=\"hgl1-badge hgl1-badge--local\">Cục bộ</span><h2>Phân tích văn bản</h2></div></div><label for=\"hgl1-text-tool\">Nội dung</label><textarea id=\"hgl1-text-tool\" data-hgl1-text-tool maxlength=\"" + MAX_TEXT_LENGTH + "\" rows=\"9\" placeholder=\"Nhập văn bản cần đếm...\"></textarea><button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"analyze-text\">Phân tích</button><output class=\"hgl1-tool__output\" data-hgl1-text-output aria-live=\"polite\">Chưa có kết quả.</output></article>" +
+      "<article class=\"hgl1-tool\"><div class=\"hgl1-tool__head\">" + icon("dev") + "<div><span class=\"hgl1-badge hgl1-badge--local\">Cục bộ</span><h2>JSON Formatter</h2></div></div><label for=\"hgl1-json-tool\">JSON đầu vào</label><textarea id=\"hgl1-json-tool\" data-hgl1-json-tool maxlength=\"" + MAX_TEXT_LENGTH + "\" rows=\"9\" spellcheck=\"false\" placeholder=\"{ &quot;hello&quot;: &quot;galaxy&quot; }\"></textarea><button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"format-json\">Định dạng</button><output class=\"hgl1-tool__output hgl1-tool__output--code\" data-hgl1-json-output aria-live=\"polite\">Chưa có kết quả.</output></article></div>" +
       "<section class=\"hgl1-library\"><div class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Lịch sử do bạn lưu</span><h2>Ghi chú công cụ</h2></div></div><form class=\"hgl1-create-form\" data-hgl1-create-form data-route=\"/galaxy/tools\"><label for=\"hgl1-title-tools\">Tên ghi chú</label><div><input id=\"hgl1-title-tools\" name=\"title\" maxlength=\"160\" required/><button class=\"hgl1-button hgl1-button--primary\" type=\"submit\">Lưu</button></div></form><div class=\"hgl1-document-grid\">" + templateMarkup("/galaxy/tools") + items.map(itemMarkup).join("") + "</div></section></div>" +
       worldRailMarkup(entry, { status: "Hai tiện ích cục bộ sẵn sàng", itemCount: items.length, scope: "Trong trình duyệt" }) + "</div></section>";
   }
 
-  function analyticsMarkup(state) {
+  function analyticsMarkup(state, ui) {
     const entry = findRoute("/galaxy/analytics");
-    const summary = summarizeAnalytics(state);
+    const range = ui && ["today", "7d", "30d", "all"].includes(ui.analyticsRange) ? ui.analyticsRange : "30d";
+    const summary = summarizeAnalytics(state, range);
     const events = summary.latestEvents.map(function eventRow(event) {
       const route = findRoute(event.route);
       const typeLabels = { "route-view": "Mở module", "item-create": "Tạo tài liệu", "item-delete": "Xóa tài liệu", "data-export": "Xuất dữ liệu", "data-import": "Nhập dữ liệu", "permission-check": "Kiểm tra quyền" };
@@ -970,21 +1163,27 @@
     const heroActions = "<button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"export-analytics-json\" " + (summary.consent ? "" : "disabled title=\"Bật consent để xuất sự kiện\"") + ">JSON</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"export-analytics-csv\" " + (summary.consent ? "" : "disabled title=\"Bật consent để xuất sự kiện\"") + ">CSV</button>";
     return "<section class=\"hgl1-page hgl1-page--analytics\">" + worldHeroMarkup(entry, heroActions) +
       "<div class=\"hgl1-world-layout\"><div class=\"hgl1-world-main\">" +
-      "<section class=\"hgl1-consent\"><div><span class=\"hgl1-kicker\">Quyền riêng tư</span><h2>Analytics cục bộ</h2><p>" + (summary.consent ? "Đang ghi các thao tác tối thiểu trên thiết bị này." : "Đang tắt. Không có sự kiện điều hướng mới nào được ghi.") + "</p></div><label class=\"hgl1-switch\"><input type=\"checkbox\" data-hgl1-setting=\"analyticsConsent\" " + (summary.consent ? "checked" : "") + "/><span aria-hidden=\"true\"></span><b>" + (summary.consent ? "Đã bật" : "Đang tắt") + "</b></label></section>" +
+      "<section class=\"hgl1-consent\"><div><span class=\"hgl1-kicker\">Quyền riêng tư</span><h2>Analytics cục bộ</h2><p>" + (summary.consent ? "Đang ghi các thao tác tối thiểu trên thiết bị này." : "Đang tắt. Không có sự kiện điều hướng mới nào được ghi. " + state.events.length + " sự kiện cũ đang được giữ cục bộ và không được xuất.") + "</p></div><label class=\"hgl1-switch\"><input type=\"checkbox\" aria-label=\"Cho phép Analytics cục bộ\" data-hgl1-setting=\"analyticsConsent\" " + (summary.consent ? "checked" : "") + "/><span aria-hidden=\"true\"></span><b aria-hidden=\"true\">" + (summary.consent ? "Đã bật" : "Đang tắt") + "</b></label></section>" +
       "<section class=\"hgl1-metric-grid\" aria-label=\"Thống kê cục bộ\"><article><span>Tài liệu người dùng</span><strong>" + summary.localItems + "</strong><small>Không gồm bản mẫu</small></article><article><span>Module đã mở</span><strong>" + summary.visitedModules + "</strong><small>Chỉ khi có consent</small></article><article><span>Sự kiện đã lưu</span><strong>" + summary.trackedEvents + "</strong><small>Tối đa " + MAX_EVENTS + " bản ghi</small></article><article><span>Lần xuất dữ liệu</span><strong>" + summary.exports + "</strong><small>Tính từ sự kiện thật</small></article></section>" +
-      "<section class=\"hgl1-table-card\"><div class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Gần đây</span><h2>Nhật ký tối thiểu</h2></div></div>" +
+      "<section class=\"hgl1-table-card\"><div class=\"hgl1-section-head\"><div><span class=\"hgl1-kicker\">Gần đây</span><h2>Nhật ký tối thiểu</h2></div><label>Khoảng thời gian<select data-hgl1-analytics-range><option value=\"today\" " + (range === "today" ? "selected" : "") + ">Hôm nay</option><option value=\"7d\" " + (range === "7d" ? "selected" : "") + ">7 ngày</option><option value=\"30d\" " + (range === "30d" ? "selected" : "") + ">30 ngày</option><option value=\"all\" " + (range === "all" ? "selected" : "") + ">Tất cả</option></select></label></div>" +
       (events ? "<div class=\"hgl1-table-wrap\"><table><thead><tr><th>Hoạt động</th><th>Module</th><th>Thời điểm</th></tr></thead><tbody>" + events + "</tbody></table></div>" : statePanel("empty", summary.consent ? "Chưa có sự kiện thật nào được ghi." : "Bật Analytics nếu bạn muốn lưu thống kê tối thiểu.")) +
-      "</section></div>" + worldRailMarkup(entry, { status: summary.consent ? "Consent đang bật" : "Consent đang tắt", itemCount: summary.localItems, scope: "Chỉ trên thiết bị" }) + "</div></section>";
+      "<div class=\"hgl1-settings-actions\"><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"clear-analytics-events\" " + (state.events.length ? "" : "disabled") + ">Xóa nhật ký đã lưu</button></div></section></div>" + worldRailMarkup(entry, { status: summary.consent ? "Consent đang bật" : "Consent đang tắt", itemCount: summary.localItems, scope: "Chỉ trên thiết bị" }) + "</div></section>";
   }
 
-  function settingsMarkup(state) {
+  function backupPreviewMarkup(pending) {
+    if (!pending || !pending.summary) return "";
+    return "<div class=\"hgl1-backup-backdrop\" data-hgl1-backup-backdrop><section class=\"hgl1-backup-preview\" data-hgl1-backup-preview role=\"alertdialog\" aria-modal=\"true\" aria-labelledby=\"hgl1-backup-preview-title\" aria-describedby=\"hgl1-backup-preview-description\" tabindex=\"-1\"><span class=\"hgl1-kicker\">Xem trước an toàn</span><h2 id=\"hgl1-backup-preview-title\">Chưa thay đổi dữ liệu hiện tại</h2><p id=\"hgl1-backup-preview-description\">Tệp hợp lệ chứa " + pending.summary.items + " tài liệu và " + pending.summary.events + " sự kiện được consent.</p><fieldset><legend>Cách nhập</legend><label><input type=\"radio\" name=\"hgl1-backup-mode\" value=\"merge\" checked/> Hợp nhất với dữ liệu hiện tại</label><label><input type=\"radio\" name=\"hgl1-backup-mode\" value=\"replace\"/> Thay thế toàn bộ dữ liệu lớp 1</label></fieldset><div class=\"hgl1-settings-actions\"><button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"confirm-backup-import\">Xác nhận nhập</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"cancel-backup-import\">Hủy</button></div></section></div>";
+  }
+
+  function settingsMarkup(state, ui) {
     const entry = findRoute("/galaxy/settings");
-    const settings = state.settings;
+    const settings = sanitizeSettings(ui && ui.settingsDraft ? ui.settingsDraft : state.settings);
+    const dirty = JSON.stringify(settings) !== JSON.stringify(state.settings);
     return "<section class=\"hgl1-page hgl1-page--settings\">" + worldHeroMarkup(entry, "") +
       "<div class=\"hgl1-world-layout\"><div class=\"hgl1-world-main\">" +
-      "<div class=\"hgl1-settings-grid\"><section class=\"hgl1-settings-card\"><span class=\"hgl1-kicker\">Giao diện</span><h2>Trải nghiệm hiển thị</h2><label>Chủ đề<select data-hgl1-setting=\"theme\"><option value=\"cosmic\" " + (settings.theme === "cosmic" ? "selected" : "") + ">Cosmic</option><option value=\"midnight\" " + (settings.theme === "midnight" ? "selected" : "") + ">Midnight</option></select></label><label>Mức hiệu ứng<select data-hgl1-setting=\"effects\"><option value=\"quiet\" " + (settings.effects === "quiet" ? "selected" : "") + ">Tĩnh</option><option value=\"balanced\" " + (settings.effects === "balanced" ? "selected" : "") + ">Cân bằng</option><option value=\"rich\" " + (settings.effects === "rich" ? "selected" : "") + ">Nổi bật</option></select></label><label>Độ tương phản<select data-hgl1-setting=\"contrast\"><option value=\"standard\" " + (settings.contrast === "standard" ? "selected" : "") + ">Tiêu chuẩn</option><option value=\"high\" " + (settings.contrast === "high" ? "selected" : "") + ">Cao</option></select></label><label>Giảm chuyển động<select data-hgl1-setting=\"reducedMotion\"><option value=\"system\" " + (settings.reducedMotion === "system" ? "selected" : "") + ">Theo hệ thống</option><option value=\"on\" " + (settings.reducedMotion === "on" ? "selected" : "") + ">Luôn bật</option><option value=\"off\" " + (settings.reducedMotion === "off" ? "selected" : "") + ">Luôn tắt</option></select></label></section>" +
-      "<section class=\"hgl1-settings-card\"><span class=\"hgl1-kicker\">Dữ liệu</span><h2>Sao lưu & khôi phục</h2><p>Bản sao lưu chỉ gồm cài đặt, tài liệu người dùng và sự kiện đã được consent. Không bao gồm bản mẫu.</p><div class=\"hgl1-settings-actions\"><button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"export-backup\">" + icon("download") + " Xuất JSON</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"trigger-backup-import\">" + icon("upload") + " Nhập JSON</button><input class=\"hgl1-sr-only\" type=\"file\" accept=\"application/json,.json\" data-hgl1-backup-file/></div><dl><div><dt>Tài liệu người dùng</dt><dd>" + state.items.length + "</dd></div><div><dt>Sự kiện consent</dt><dd>" + (settings.analyticsConsent ? state.events.length : 0) + "</dd></div><div><dt>Kho lưu trữ</dt><dd>" + escapeHtml(STORAGE_KEY) + "</dd></div></dl></section>" +
-      "<section class=\"hgl1-settings-card hgl1-settings-card--wide\"><span class=\"hgl1-kicker\">Analytics</span><h2>Consent rõ ràng</h2><div class=\"hgl1-setting-row\"><div><p>Cho phép lưu sự kiện điều hướng và thao tác tối thiểu trên thiết bị.</p><small>Nội dung tài liệu không được đưa vào sự kiện.</small></div><label class=\"hgl1-switch\"><input type=\"checkbox\" data-hgl1-setting=\"analyticsConsent\" " + (settings.analyticsConsent ? "checked" : "") + "/><span aria-hidden=\"true\"></span><b>" + (settings.analyticsConsent ? "Đã bật" : "Đang tắt") + "</b></label></div></section></div></div>" +
+      "<form class=\"hgl1-settings-form\" data-hgl1-settings-form><div class=\"hgl1-settings-grid\"><fieldset class=\"hgl1-settings-card\"><legend>Trải nghiệm hiển thị</legend><span class=\"hgl1-kicker\">Giao diện</span><label>Chủ đề<select data-hgl1-setting=\"theme\"><option value=\"cosmic\" " + (settings.theme === "cosmic" ? "selected" : "") + ">Cosmic</option><option value=\"midnight\" " + (settings.theme === "midnight" ? "selected" : "") + ">Midnight</option></select></label><label>Mức hiệu ứng<select data-hgl1-setting=\"effects\"><option value=\"quiet\" " + (settings.effects === "quiet" ? "selected" : "") + ">Tĩnh</option><option value=\"balanced\" " + (settings.effects === "balanced" ? "selected" : "") + ">Cân bằng</option><option value=\"rich\" " + (settings.effects === "rich" ? "selected" : "") + ">Nổi bật</option></select></label><label>Độ tương phản<select data-hgl1-setting=\"contrast\"><option value=\"standard\" " + (settings.contrast === "standard" ? "selected" : "") + ">Tiêu chuẩn</option><option value=\"high\" " + (settings.contrast === "high" ? "selected" : "") + ">Cao</option></select></label><label>Giảm chuyển động<select data-hgl1-setting=\"reducedMotion\"><option value=\"system\" " + (settings.reducedMotion === "system" ? "selected" : "") + ">Theo hệ thống</option><option value=\"on\" " + (settings.reducedMotion === "on" ? "selected" : "") + ">Luôn bật</option><option value=\"off\" " + (settings.reducedMotion === "off" ? "selected" : "") + ">Luôn tắt</option></select></label><label>Tỉ lệ UI<select data-hgl1-setting=\"uiScale\"><option value=\"small\" " + (settings.uiScale === "small" ? "selected" : "") + ">Nhỏ</option><option value=\"medium\" " + (settings.uiScale === "medium" ? "selected" : "") + ">Mặc định</option><option value=\"large\" " + (settings.uiScale === "large" ? "selected" : "") + ">Lớn</option></select></label><label>Màu hỗ trợ<select data-hgl1-setting=\"colorVision\"><option value=\"standard\" " + (settings.colorVision === "standard" ? "selected" : "") + ">Tiêu chuẩn</option><option value=\"deuteranopia\" " + (settings.colorVision === "deuteranopia" ? "selected" : "") + ">Deuteranopia</option><option value=\"protanopia\" " + (settings.colorVision === "protanopia" ? "selected" : "") + ">Protanopia</option><option value=\"tritanopia\" " + (settings.colorVision === "tritanopia" ? "selected" : "") + ">Tritanopia</option></select></label></fieldset>" +
+      "<section class=\"hgl1-settings-card\"><span class=\"hgl1-kicker\">Dữ liệu</span><h2>Sao lưu & khôi phục</h2><p>Bản sao lưu chỉ gồm cài đặt, tài liệu người dùng và sự kiện đang được consent. Không bao gồm bản mẫu.</p><div class=\"hgl1-settings-actions\"><button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"export-backup\">" + icon("download") + " Xuất JSON</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"trigger-backup-import\">" + icon("upload") + " Nhập JSON</button><input class=\"hgl1-sr-only\" type=\"file\" tabindex=\"-1\" aria-label=\"Chọn tệp sao lưu HH Galaxy\" accept=\"application/json,.json\" data-hgl1-backup-file/></div><dl><div><dt>Tài liệu người dùng</dt><dd>" + state.items.length + "</dd></div><div><dt>Sự kiện consent</dt><dd>" + (settings.analyticsConsent ? state.events.length : 0) + "</dd></div><div><dt>Kho lưu trữ</dt><dd>" + escapeHtml(STORAGE_KEY) + "</dd></div></dl></section>" +
+      "<section class=\"hgl1-settings-card hgl1-settings-card--wide\"><span class=\"hgl1-kicker\">Analytics</span><h2>Consent rõ ràng</h2><div class=\"hgl1-setting-row\"><div><p>Cho phép lưu sự kiện điều hướng và thao tác tối thiểu trên thiết bị.</p><small>Nội dung tài liệu không được đưa vào sự kiện.</small></div><label class=\"hgl1-switch\"><input type=\"checkbox\" aria-label=\"Cho phép Analytics cục bộ\" data-hgl1-setting=\"analyticsConsent\" " + (settings.analyticsConsent ? "checked" : "") + "/><span aria-hidden=\"true\"></span><b aria-hidden=\"true\">" + (settings.analyticsConsent ? "Đã bật" : "Đang tắt") + "</b></label></div></section></div><div class=\"hgl1-settings-commit\"><output data-hgl1-settings-status role=\"status\">" + (dirty ? "Có thay đổi chưa lưu." : "Cấu hình đã đồng bộ với bản lưu.") + "</output><div class=\"hgl1-settings-actions\"><button class=\"hgl1-button hgl1-button--primary\" type=\"submit\" data-hgl1-action=\"save-settings\" " + (dirty ? "" : "disabled") + ">Lưu thay đổi</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"cancel-settings\" " + (dirty ? "" : "disabled") + ">Hủy thay đổi</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"restore-settings-defaults\">Khôi phục mặc định</button></div></div></form>" + backupPreviewMarkup(ui && ui.pendingBackup) + "</div>" +
       worldRailMarkup(entry, { status: "Thiết lập cục bộ", itemCount: state.items.length, scope: STORAGE_KEY }) + "</div></section>";
   }
 
@@ -995,8 +1194,8 @@
     if (entry.route === "/galaxy/creator") return creatorMarkup(state);
     if (entry.route === "/galaxy/learning") return learningMarkup(state);
     if (entry.route === "/galaxy/tools") return toolsMarkup(state);
-    if (entry.route === "/galaxy/analytics") return analyticsMarkup(state);
-    if (entry.route === "/galaxy/settings") return settingsMarkup(state);
+    if (entry.route === "/galaxy/analytics") return analyticsMarkup(state, ui);
+    if (entry.route === "/galaxy/settings") return settingsMarkup(state, ui);
     return moduleMarkup(entry, state);
   }
 
@@ -1009,9 +1208,10 @@
     const initial = escapeHtml(displayName.charAt(0).toLocaleUpperCase("vi") || "H");
     const networkLabel = online === false ? "Ngoại tuyến" : online === true ? "Mạng trình duyệt khả dụng" : "Chưa kiểm tra mạng";
     const storageStatus = ui.storageStatus === "unsupported" ? "Lưu trữ không khả dụng" : ui.storageStatus === "error" ? "Lỗi lưu trữ" : "Dữ liệu trên thiết bị";
-    return "<div class=\"hh-galaxy-app\" data-hh-layer=\"galaxy\" data-route=\"" + entry.route + "\" data-theme=\"" + state.settings.theme + "\" data-effects=\"" + state.settings.effects + "\" data-contrast=\"" + state.settings.contrast + "\" data-reduced-motion=\"" + state.settings.reducedMotion + "\">" +
+    const activeSettings = sanitizeSettings(ui.settingsDraft || state.settings);
+    return "<div class=\"hh-galaxy-app\" data-hh-layer=\"galaxy\" data-route=\"" + entry.route + "\" data-theme=\"" + activeSettings.theme + "\" data-effects=\"" + activeSettings.effects + "\" data-contrast=\"" + activeSettings.contrast + "\" data-reduced-motion=\"" + activeSettings.reducedMotion + "\" data-ui-scale=\"" + activeSettings.uiScale + "\" data-color-vision=\"" + activeSettings.colorVision + "\">" +
       "<a class=\"hgl1-skip-link\" href=\"#hgl1-main\">Bỏ qua điều hướng</a><div class=\"hgl1-cosmos\" aria-hidden=\"true\"><i></i><i></i><i></i></div>" +
-      "<aside class=\"hgl1-sidebar\" id=\"hgl1-sidebar\" aria-label=\"Điều hướng HH Galaxy\"><div class=\"hgl1-sidebar__head\"><div class=\"hgl1-product-mark\"><span>" + icon("home") + "</span><div><b>HH GALAXY MAP</b><small>Lớp 1 · Không gian độc lập</small></div></div><button class=\"hgl1-icon-button hgl1-sidebar__close\" type=\"button\" data-hgl1-action=\"close-drawer\" aria-label=\"Đóng menu\">" + icon("close") + "</button><div class=\"hgl1-brand\"><span>HH</span><div><b>HOANG8.COM</b><small>Galaxy Workspace</small></div></div>" + searchBoxMarkup(false) + "</div>" +
+      "<aside class=\"hgl1-sidebar\" id=\"hgl1-sidebar\" data-hgl1-drawer role=\"dialog\" aria-modal=\"true\" aria-hidden=\"true\" aria-label=\"Điều hướng HH Galaxy\"><div class=\"hgl1-sidebar__head\"><div class=\"hgl1-product-mark\"><span>" + icon("home") + "</span><div><b>HH GALAXY MAP</b><small>Lớp 1 · Không gian độc lập</small></div></div><button class=\"hgl1-icon-button hgl1-sidebar__close\" type=\"button\" data-hgl1-action=\"close-drawer\" aria-label=\"Đóng menu\">" + icon("close") + "</button><div class=\"hgl1-brand\"><span>HH</span><div><b>HOANG8.COM</b><small>Galaxy Workspace</small></div></div>" + searchBoxMarkup(false) + "</div>" +
       "<nav class=\"hgl1-nav\">" + navMarkup(entry.route, false) + "</nav><div class=\"hgl1-sidebar__footer\"><a class=\"hgl1-customize\" href=\"#/galaxy/settings\" data-hgl1-route=\"/galaxy/settings\"><span>" + icon("settings") + "</span><div><b>Tùy chỉnh Galaxy</b><small>Màu sắc, chuyển động và quyền riêng tư</small></div>" + icon("arrow") + "</a><div class=\"hgl1-profile\"><span class=\"hgl1-avatar\">" + initial + "</span><div><b>" + escapeHtml(displayName) + "</b><small>" + storageStatus + "</small></div></div></div></aside>" +
       "<button class=\"hgl1-backdrop\" type=\"button\" data-hgl1-action=\"close-drawer\" aria-label=\"Đóng menu\" tabindex=\"-1\"></button>" +
       "<div class=\"hgl1-shell\"><header class=\"hgl1-topbar\"><button class=\"hgl1-icon-button hgl1-menu-button\" type=\"button\" data-hgl1-action=\"open-drawer\" aria-controls=\"hgl1-sidebar\" aria-expanded=\"false\" aria-label=\"Mở menu\">" + icon("menu") + "</button><div class=\"hgl1-breadcrumb\"><span>HH Galaxy</span><b>/</b><strong>" + escapeHtml(entry.label) + "</strong></div>" + searchBoxMarkup(true) + "<div class=\"hgl1-topbar__status\" title=\"" + networkLabel + "\"><span class=\"" + (online === false ? "is-offline" : "") + "\"></span><b>" + escapeHtml(networkLabel) + "</b></div><button class=\"hgl1-icon-button\" type=\"button\" data-hgl1-action=\"show-empty-notifications\" aria-label=\"Thông báo: chưa có dữ liệu\">" + icon("bell") + "</button><button class=\"hgl1-icon-button\" type=\"button\" data-hgl1-action=\"show-help\" aria-label=\"Trợ giúp\">" + icon("help") + "</button><span class=\"hgl1-avatar hgl1-avatar--small\" aria-label=\"" + escapeHtml(displayName) + "\">" + initial + "</span></header>" +
@@ -1059,6 +1259,8 @@
     cleanups.forEach(function runCleanup(cleanup) {
       try { cleanup(); } catch (_) { /* Detached extension hosts are harmless. */ }
     });
+    runtime.delegateHost = null;
+    runtime.delegateRoute = null;
   }
 
   function registerDelegateCleanup(value) {
@@ -1067,10 +1269,42 @@
     else if (value && typeof value.unmount === "function") runtime.delegateCleanups.push(function unmountController() { value.unmount(); });
   }
 
+  function cleanupRouteRuntime() {
+    if (!runtime) return;
+    const probe = runtime.aiProbe;
+    runtime.aiProbe = null;
+    if (probe && probe.controller && typeof probe.controller.abort === "function") {
+      try { probe.controller.abort(); } catch (_) { /* The request already settled. */ }
+    }
+    const request = runtime.aiRequest;
+    runtime.aiRequest = null;
+    if (request && request.controller && typeof request.controller.abort === "function") {
+      try { request.controller.abort(); } catch (_) { /* The request already settled. */ }
+    }
+    const socket = runtime.communitySocket;
+    runtime.communitySocket = null;
+    if (socket) {
+      try {
+        if (typeof socket.removeAllListeners === "function") socket.removeAllListeners();
+        if (typeof socket.close === "function") socket.close();
+        else if (typeof socket.disconnect === "function") socket.disconnect();
+      } catch (_) { /* The realtime transport already closed. */ }
+    }
+    runtime.aiProviderStatus = null;
+    runtime.communityRealtimeState = null;
+  }
+
   function mountRouteDelegate() {
     if (!runtime) return;
-    cleanupDelegate();
     const app = runtime.host.querySelector(".hh-galaxy-app");
+    const delegateSelector = runtime.route === "/home"
+      ? "[data-hh-galaxy-home-host]"
+      : runtime.route === "/galaxy/creator" ? "[data-hh-galaxy-creator-host]" : "";
+    const delegateHost = delegateSelector && app && app.querySelector(delegateSelector);
+    if (runtime.delegateRoute === runtime.route && runtime.delegateHost === delegateHost) return;
+    cleanupDelegate();
+    runtime.delegateRoute = runtime.route;
+    runtime.delegateHost = delegateHost || null;
     const context = {
       route: runtime.route,
       storage: runtime.storage,
@@ -1078,7 +1312,7 @@
       embedded: true
     };
     if (runtime.route === "/home") {
-      const homeHost = app && app.querySelector("[data-hh-galaxy-home-host]");
+      const homeHost = delegateHost;
       if (!homeHost) return;
       let claimed = false;
       if (typeof runtime.options.mountHome === "function") {
@@ -1108,7 +1342,7 @@
       return;
     }
     if (runtime.route === "/galaxy/creator") {
-      const creatorHost = app && app.querySelector("[data-hh-galaxy-creator-host]");
+      const creatorHost = delegateHost;
       if (!creatorHost) return;
       let creatorClaimed = false;
       if (typeof runtime.options.mountCreator === "function") {
@@ -1131,10 +1365,76 @@
 
   function applyPreferences(app, settings) {
     if (!app) return;
-    app.dataset.theme = settings.theme;
-    app.dataset.effects = settings.effects;
-    app.dataset.contrast = settings.contrast;
-    app.dataset.reducedMotion = settings.reducedMotion;
+    const safe = sanitizeSettings(settings);
+    app.dataset.theme = safe.theme;
+    app.dataset.effects = safe.effects;
+    app.dataset.contrast = safe.contrast;
+    app.dataset.reducedMotion = safe.reducedMotion;
+    app.dataset.uiScale = safe.uiScale;
+    app.dataset.colorVision = safe.colorVision;
+  }
+
+  function syncElementAttributes(current, next) {
+    Array.prototype.slice.call(current.attributes || []).forEach(function removeOldAttribute(attribute) {
+      if (!next.hasAttribute(attribute.name)) current.removeAttribute(attribute.name);
+    });
+    Array.prototype.slice.call(next.attributes || []).forEach(function copyNewAttribute(attribute) {
+      if (current.getAttribute(attribute.name) !== attribute.value) current.setAttribute(attribute.name, attribute.value);
+    });
+  }
+
+  // Rebuild the route around an active media/game island without ever removing
+  // that island from the connected DOM. In particular, detaching an iframe can
+  // destroy its browsing context even when the same node is appended again.
+  function renderPreservingIsland(markup, selector) {
+    if (!runtime || !runtime.app || !globalScope.document || !selector) return false;
+    const currentRoot = runtime.app;
+    const currentIsland = currentRoot.querySelector(selector);
+    if (!currentIsland || !currentIsland.isConnected) return false;
+    const template = globalScope.document.createElement("template");
+    template.innerHTML = String(markup || "").trim();
+    const nextRoot = template.content && template.content.querySelector(".hh-galaxy-app");
+    const nextIsland = nextRoot && nextRoot.querySelector(selector);
+    if (!nextRoot || !nextIsland) return false;
+
+    function chain(root, leaf) {
+      const result = [];
+      let node = leaf;
+      while (node) {
+        result.push(node);
+        if (node === root) break;
+        node = node.parentElement;
+      }
+      return result[result.length - 1] === root ? result.reverse() : [];
+    }
+
+    const currentChain = chain(currentRoot, currentIsland);
+    const nextChain = chain(nextRoot, nextIsland);
+    if (!currentChain.length || currentChain.length !== nextChain.length) return false;
+    for (let index = 0; index < currentChain.length; index += 1) {
+      if (currentChain[index].nodeName !== nextChain[index].nodeName) return false;
+    }
+
+    for (let index = 0; index < currentChain.length; index += 1) {
+      const currentNode = currentChain[index];
+      const nextNode = nextChain[index];
+      syncElementAttributes(currentNode, nextNode);
+      if (index === currentChain.length - 1) break;
+      const currentBranch = currentChain[index + 1];
+      const nextBranch = nextChain[index + 1];
+      Array.prototype.slice.call(currentNode.childNodes).forEach(function removeSibling(child) {
+        if (child !== currentBranch) child.remove();
+      });
+      let passedBranch = false;
+      Array.prototype.slice.call(nextNode.childNodes).forEach(function rebuildSibling(child) {
+        if (child === nextBranch) { passedBranch = true; return; }
+        const clone = child.cloneNode(true);
+        if (passedBranch) currentNode.appendChild(clone);
+        else currentNode.insertBefore(clone, currentBranch);
+      });
+    }
+    runtime.app = currentRoot;
+    return true;
   }
 
   function render() {
@@ -1142,17 +1442,46 @@
     const inspection = inspectLocalState(runtime.storage);
     runtime.localState = inspection.data;
     runtime.storageStatus = inspection.status;
+    if (runtime.route === "/galaxy/settings" && !runtime.settingsDraft) {
+      runtime.settingsDraft = sanitizeSettings(runtime.localState.settings);
+    }
     const online = typeof globalScope.navigator === "object" && typeof globalScope.navigator.onLine === "boolean" ? globalScope.navigator.onLine : null;
-    runtime.host.innerHTML = viewMarkup(runtime.route, runtime.localState, {
+    const markup = viewMarkup(runtime.route, runtime.localState, {
       online: online,
       userName: runtime.options.user && (runtime.options.user.displayName || runtime.options.user.name),
       storageStatus: runtime.storageStatus,
       status: runtime.viewStatus,
-      message: runtime.viewMessage
+      message: runtime.viewMessage,
+      settingsDraft: runtime.route === "/galaxy/settings" ? runtime.settingsDraft : null,
+      pendingBackup: runtime.pendingBackup,
+      analyticsRange: runtime.analyticsRange
     });
-    runtime.app = runtime.host.querySelector(".hh-galaxy-app");
-    applyPreferences(runtime.app, runtime.localState.settings);
+    let islandSelector = "";
+    if (runtime.mediaSession && runtime.mediaSession.route === runtime.route) islandSelector = "[data-hgl1-stable-media-host]";
+    else if (runtime.gameSession && runtime.route === "/galaxy/games") islandSelector = "[data-hgl1-game-canvas]";
+    else if (runtime.route === "/home") islandSelector = "[data-hh-galaxy-home-host]";
+    else if (runtime.route === "/galaxy/creator") islandSelector = "[data-hh-galaxy-creator-host]";
+    const preserved = islandSelector && renderPreservingIsland(markup, islandSelector);
+    if (!preserved) {
+      runtime.host.innerHTML = markup;
+      runtime.app = runtime.host.querySelector(".hh-galaxy-app");
+    }
+    applyPreferences(runtime.app, runtime.route === "/galaxy/settings" && runtime.settingsDraft ? runtime.settingsDraft : runtime.localState.settings);
+    updateDrawerMode();
+    if (runtime.mediaSession && runtime.mediaSession.route === runtime.route) {
+      const mediaStatus = runtime.app.querySelector("[data-hgl1-media-status]");
+      if (mediaStatus) mediaStatus.textContent = runtime.mediaSession.kind === "youtube"
+        ? "Nguồn: YouTube Privacy-Enhanced Mode · player không tự phát và không bị polling."
+        : "Đang mở " + String(runtime.mediaSession.fileName || "media đã chọn") + " · không tự phát.";
+    }
+    if (runtime.gameSession && runtime.route === "/galaxy/games") {
+      const gameStatus = runtime.app.querySelector("[data-hgl1-game-status]");
+      const gameButton = runtime.app.querySelector("[data-hgl1-action=\"toggle-game\"]");
+      if (gameStatus) gameStatus.textContent = "Điểm phiên hiện tại: " + runtime.gameSession.score;
+      if (gameButton) gameButton.textContent = "Tạm dừng";
+    }
     mountRouteDelegate();
+    mountRouteRuntime();
     runtime.reason = inspection.status === "ready" ? "ready" : inspection.error;
     return true;
   }
@@ -1170,17 +1499,57 @@
     }, 3600) : 0;
   }
 
-  function setDrawer(open) {
+  function setDrawer(open, returnFocus) {
     if (!runtime || !runtime.app) return;
-    runtime.app.dataset.drawerOpen = String(Boolean(open));
+    const nextOpen = Boolean(open);
+    runtime.app.dataset.drawerOpen = String(nextOpen);
     const toggle = runtime.app.querySelector("[data-hgl1-action=\"open-drawer\"]");
-    if (toggle) toggle.setAttribute("aria-expanded", String(Boolean(open)));
+    const sidebar = runtime.app.querySelector("#hgl1-sidebar");
+    if (toggle) toggle.setAttribute("aria-expanded", String(nextOpen));
+    if (sidebar) {
+      const modal = runtime.drawerModal !== false;
+      sidebar.setAttribute("aria-hidden", String(modal && !nextOpen));
+      sidebar.inert = modal && !nextOpen;
+    }
+    if (nextOpen) {
+      runtime.drawerReturnFocus = globalScope.document && globalScope.document.activeElement;
+      const first = sidebar && sidebar.querySelector("button:not([disabled]), a[href], input:not([disabled])");
+      first && first.focus();
+    } else if (returnFocus !== false) {
+      const target = runtime.drawerReturnFocus;
+      runtime.drawerReturnFocus = null;
+      if (target && target.isConnected && typeof target.focus === "function") target.focus();
+    }
+  }
+
+  function updateDrawerMode() {
+    if (!runtime || !runtime.app) return;
+    let modal = true;
+    try { modal = !globalScope.matchMedia || globalScope.matchMedia("(max-width: 1279px)").matches; } catch (_) { modal = true; }
+    runtime.drawerModal = modal;
+    const sidebar = runtime.app.querySelector("[data-hgl1-drawer]");
+    if (!sidebar) return;
+    if (modal) {
+      sidebar.setAttribute("role", "dialog");
+      sidebar.setAttribute("aria-modal", "true");
+      const open = runtime.app.dataset.drawerOpen === "true";
+      sidebar.setAttribute("aria-hidden", String(!open));
+      sidebar.inert = !open;
+    } else {
+      runtime.app.dataset.drawerOpen = "false";
+      sidebar.setAttribute("role", "navigation");
+      sidebar.removeAttribute("aria-modal");
+      sidebar.setAttribute("aria-hidden", "false");
+      sidebar.inert = false;
+      const toggle = runtime.app.querySelector("[data-hgl1-action=\"open-drawer\"]");
+      if (toggle) toggle.setAttribute("aria-expanded", "false");
+    }
   }
 
   function navigate(route) {
     const match = findRoute(route);
     if (!match || !runtime) return false;
-    setDrawer(false);
+    setDrawer(false, false);
     if (typeof runtime.options.navigate === "function") {
       runtime.options.navigate(match.route, { source: "galaxy-layer-one", layer: "galaxy" });
     } else {
@@ -1270,20 +1639,27 @@
   function exportAnalytics(format) {
     if (!runtime) return false;
     const state = collectLocalState(runtime.storage);
-    const summary = summarizeAnalytics(state);
+    const range = ["today", "7d", "30d", "all"].includes(runtime.analyticsRange) ? runtime.analyticsRange : "all";
+    const now = Date.now();
+    const summary = summarizeAnalytics(state, range, now);
     if (!summary.consent) return false;
+    const start = analyticsRangeStart(range, now);
+    const events = state.events.filter(function inExportRange(event) {
+      const at = Date.parse(event.at);
+      return Number.isFinite(at) && at >= start;
+    });
     let body = "";
     let type = "";
     let name = "";
     if (format === "csv") {
-      const rows = [["type", "route", "at"]].concat(state.events.map(function eventCells(event) { return [event.type, event.route, event.at]; }));
+      const rows = [["type", "route", "at"]].concat(events.map(function eventCells(event) { return [event.type, event.route, event.at]; }));
       body = rows.map(function csvRow(row) {
         return row.map(function csvCell(cell) { return "\"" + String(cell).replace(/"/g, "\"\"") + "\""; }).join(",");
       }).join("\r\n");
       type = "text/csv;charset=utf-8";
       name = "hh-galaxy-analytics.csv";
     } else {
-      body = JSON.stringify({ schema: "hh-galaxy-analytics", version: VERSION, events: state.events }, null, 2);
+      body = JSON.stringify({ schema: "hh-galaxy-analytics", version: VERSION, range: range, events: events }, null, 2);
       type = "application/json;charset=utf-8";
       name = "hh-galaxy-analytics.json";
     }
@@ -1302,32 +1678,48 @@
       meta: { fileName: file.name, fileType: file.type, fileSize: file.size, learningCategory: match.route === "/galaxy/learning" ? "resource" : "" }
     });
     if (item) {
+      const mediaOpened = openLocalMedia(file, match.route);
       render();
-      showToast("Đã lưu metadata tệp trên thiết bị.", "success");
+      showToast(mediaOpened ? "Đã mở media và lưu metadata trên thiết bị." : "Đã lưu metadata tệp trên thiết bị.", "success");
     } else {
       showToast("Không thể lưu metadata tệp.", "error");
     }
+    input.value = "";
   }
 
   async function importBackupFile(input) {
     if (!runtime || !input || !input.files || !input.files[0]) return;
     const file = input.files[0];
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > BACKUP_MAX_BYTES) {
       showToast("Tệp sao lưu vượt quá giới hạn 2 MB.", "error");
       return;
     }
     try {
       const text = await file.text();
-      const result = importBackup(text, runtime.storage);
+      const result = inspectBackup(text);
       if (!result.ok) {
         showToast("Tệp sao lưu không hợp lệ: " + result.error, "error");
         return;
       }
+      runtime.pendingBackup = { candidate: result.candidate, summary: result.summary, fileName: String(file.name || "backup.json").slice(0, 180) };
       render();
-      showToast("Đã khôi phục " + result.imported + " tài liệu người dùng.", "success");
+      const confirm = runtime.app && runtime.app.querySelector("[data-hgl1-action=\"confirm-backup-import\"]");
+      confirm && confirm.focus();
+      showToast("Đã đọc tệp. Hãy xem trước và xác nhận cách nhập.", "info");
     } catch (_) {
       showToast("Không thể đọc tệp sao lưu.", "error");
     }
+    input.value = "";
+  }
+
+  function closePendingBackup(message) {
+    if (!runtime || !runtime.pendingBackup) return false;
+    runtime.pendingBackup = null;
+    render();
+    const target = runtime.app && runtime.app.querySelector("[data-hgl1-action=\"trigger-backup-import\"]");
+    if (target && typeof target.focus === "function") target.focus();
+    if (message) showToast(message, "info");
+    return true;
   }
 
   async function checkMicrophone() {
@@ -1346,6 +1738,569 @@
       const denied = error && (error.name === "NotAllowedError" || error.name === "PermissionDeniedError");
       showToast(denied ? "Bạn chưa cấp quyền microphone." : "Không thể kiểm tra microphone trên thiết bị này.", "error");
     }
+  }
+
+  function updateNetworkStatus() {
+    if (!runtime || !runtime.app) return;
+    const online = typeof globalScope.navigator === "object" && typeof globalScope.navigator.onLine === "boolean" ? globalScope.navigator.onLine : null;
+    const label = online === false ? "Ngoại tuyến" : online === true ? "Mạng trình duyệt khả dụng" : "Chưa kiểm tra mạng";
+    const status = runtime.app.querySelector(".hgl1-topbar__status");
+    if (!status) return;
+    status.title = label;
+    const dot = status.querySelector("span");
+    const text = status.querySelector("b");
+    if (dot) dot.classList.toggle("is-offline", online === false);
+    if (text) text.textContent = label;
+  }
+
+  function handleVisibilityChange() {
+    if (!runtime || !globalScope.document || globalScope.document.hidden !== true) return;
+    if (runtime.mediaSession && runtime.mediaSession.element && typeof runtime.mediaSession.element.pause === "function") {
+      try { runtime.mediaSession.element.pause(); } catch (_) { /* Browser owns the media state. */ }
+    }
+    stopGame();
+  }
+
+  function aiStatus(state, message, owner) {
+    const active = owner || runtime;
+    if (!active) return;
+    active.aiProviderStatus = { state: state, message: String(message || "") };
+    if (active !== runtime || active.route !== "/galaxy/ai" || !active.app) return;
+    const status = active.app.querySelector("[data-hgl1-ai-status]");
+    const send = active.app.querySelector("[data-hgl1-ai-send]");
+    if (status) {
+      status.dataset.state = state;
+      status.textContent = message;
+    }
+    if (send) send.disabled = state !== "ready";
+    const stripText = active.app.querySelector("[data-hgl1-module-status-text]");
+    const stripDot = active.app.querySelector("[data-hgl1-module-status] .hgl1-status-dot");
+    if (stripText) stripText.textContent = message;
+    if (stripDot) {
+      stripDot.className = "hgl1-status-dot hgl1-status-dot--" + (state === "ready" ? "local" : "warning");
+    }
+  }
+
+  async function probeAiProvider(force) {
+    if (!runtime || runtime.route !== "/galaxy/ai") return false;
+    const active = runtime;
+    if (!force && active.aiProbe && active.aiProbe.promise) return active.aiProbe.promise;
+    if (!force && active.aiProviderStatus && active.aiProviderStatus.state !== "checking") {
+      aiStatus(active.aiProviderStatus.state, active.aiProviderStatus.message, active);
+      return active.aiProviderStatus.state === "ready";
+    }
+    if (typeof globalScope.fetch !== "function") {
+      aiStatus("unconfigured", "Trình duyệt không hỗ trợ kiểm tra gateway AI.", active);
+      return false;
+    }
+    if (force && active.aiProbe && active.aiProbe.controller) {
+      try { active.aiProbe.controller.abort(); } catch (_) { /* Superseded below. */ }
+    }
+    const controller = typeof globalScope.AbortController === "function" ? new globalScope.AbortController() : null;
+    const probe = { controller: controller, promise: null };
+    active.aiProbe = probe;
+    aiStatus("checking", "Đang kiểm tra gateway AI trên máy chủ…", active);
+    probe.promise = (async function runAiProbe() {
+      try {
+        const response = await globalScope.fetch("/api/ai", {
+          method: "GET",
+          credentials: "same-origin",
+          headers: { Accept: "application/json" },
+          signal: controller ? controller.signal : undefined
+        });
+        const payload = await response.json().catch(function emptyPayload() { return {}; });
+        if (runtime !== active || active.route !== "/galaxy/ai" || active.aiProbe !== probe) return false;
+        const providers = Array.isArray(payload.providers) ? payload.providers : [];
+        const gemini = providers.find(function geminiProvider(entry) { return entry && entry.provider === "gemini"; });
+        if (response.ok && gemini && gemini.configured === true) {
+          aiStatus("ready", "Gemini đã được cấu hình trên máy chủ. Nội dung chỉ gửi khi bạn bấm Gửi.", active);
+          return true;
+        }
+        aiStatus("unconfigured", response.ok ? "Gateway phản hồi nhưng Gemini chưa được cấu hình." : "Gateway AI chưa sẵn sàng (HTTP " + response.status + ").", active);
+        return false;
+      } catch (error) {
+        if (error && error.name === "AbortError") return false;
+        if (runtime === active && active.route === "/galaxy/ai" && active.aiProbe === probe) {
+          aiStatus("offline", "Không thể kết nối gateway AI. Bạn vẫn có thể lưu bản nháp cục bộ.", active);
+        }
+        return false;
+      } finally {
+        if (active.aiProbe === probe) active.aiProbe = null;
+      }
+    })();
+    return probe.promise;
+  }
+
+  async function submitAiPrompt(form) {
+    if (!runtime || runtime.route !== "/galaxy/ai") return;
+    const active = runtime;
+    if (active.aiRequest) {
+      showToast("Một yêu cầu AI đang được xử lý.", "info");
+      return;
+    }
+    const input = form.querySelector("[data-hgl1-ai-draft]");
+    const output = runtime.app.querySelector("[data-hgl1-ai-response]");
+    const send = form.querySelector("[data-hgl1-ai-send]");
+    const prompt = String(input && input.value || "").trim().slice(0, 4000);
+    if (!prompt) {
+      input && input.focus();
+      showToast("Hãy nhập nội dung trước khi gửi.", "error");
+      return;
+    }
+    if (typeof globalScope.fetch !== "function") {
+      showToast("Trình duyệt không hỗ trợ kết nối AI.", "error");
+      return;
+    }
+    if (send) send.disabled = true;
+    if (output) {
+      output.textContent = "Đang chờ phản hồi thật từ provider…";
+      output.dataset.tone = "info";
+    }
+    const controller = typeof globalScope.AbortController === "function" ? new globalScope.AbortController() : null;
+    const request = { controller: controller };
+    active.aiRequest = request;
+    try {
+      const response = await globalScope.fetch("/api/ai", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ toolId: "ai-chat", action: "send", input: { prompt: prompt } }),
+        signal: controller ? controller.signal : undefined
+      });
+      const payload = await response.json().catch(function emptyAiPayload() { return {}; });
+      if (runtime !== active || active.route !== "/galaxy/ai" || active.aiRequest !== request) return;
+      if (!response.ok || !payload.result || !payload.result.text) {
+        const message = String(payload.error || (response.status === 401 ? "Bạn cần đăng nhập để gửi yêu cầu AI." : "Provider AI chưa thể xử lý yêu cầu.")).slice(0, 500);
+        if (output) { output.textContent = message; output.dataset.tone = "error"; }
+        showToast(message, "error");
+        return;
+      }
+      const answer = String(payload.result.text).slice(0, 12000);
+      if (output) { output.textContent = answer; output.dataset.tone = "success"; }
+      const title = prompt.split(/\r?\n/)[0].slice(0, 120) || "Hội thoại AI";
+      const saved = createLocalItem("/galaxy/ai", title, runtime.storage, {
+        kind: "ai-conversation",
+        description: "Bạn: " + prompt + "\n\nAI: " + answer,
+        meta: { provider: String(payload.result.provider || "server").slice(0, 80) }
+      });
+      if (saved && runtime.app) {
+        const list = runtime.app.querySelector("[data-hgl1-item-list]");
+        if (list && typeof list.insertAdjacentHTML === "function") list.insertAdjacentHTML("beforeend", itemMarkup(saved));
+      }
+      showToast(saved ? "Đã nhận phản hồi và lưu lịch sử cục bộ." : "Đã nhận phản hồi nhưng không thể lưu lịch sử.", saved ? "success" : "info");
+    } catch (error) {
+      if (error && error.name === "AbortError") return;
+      if (runtime !== active || active.route !== "/galaxy/ai" || active.aiRequest !== request) return;
+      if (output) { output.textContent = "Kết nối AI bị gián đoạn. Nội dung chưa được gửi lại tự động."; output.dataset.tone = "error"; }
+      showToast("Kết nối AI bị gián đoạn.", "error");
+    } finally {
+      if (active.aiRequest === request) active.aiRequest = null;
+      if (runtime === active && active.route === "/galaxy/ai" && send && send.isConnected) send.disabled = false;
+    }
+  }
+
+  function saveAiDraft() {
+    if (!runtime || !runtime.app) return;
+    const input = runtime.app.querySelector("[data-hgl1-ai-draft]");
+    const prompt = String(input && input.value || "").trim().slice(0, 4000);
+    const item = prompt ? createLocalItem("/galaxy/ai", prompt.split(/\r?\n/)[0].slice(0, 120), runtime.storage, {
+      kind: "ai-prompt-draft",
+      description: prompt
+    }) : null;
+    if (item && runtime.app) {
+      const list = runtime.app.querySelector("[data-hgl1-item-list]");
+      if (list && typeof list.insertAdjacentHTML === "function") list.insertAdjacentHTML("beforeend", itemMarkup(item));
+    }
+    showToast(item ? "Đã lưu bản nháp AI trên thiết bị." : "Hãy nhập nội dung hợp lệ.", item ? "success" : "error");
+  }
+
+  function parseYouTubeId(value) {
+    const raw = String(value || "").trim();
+    if (!raw || raw.length > 500) return "";
+    try {
+      const UrlCtor = globalScope.URL;
+      if (typeof UrlCtor !== "function") return "";
+      const parsed = new UrlCtor(raw);
+      const host = parsed.hostname.toLocaleLowerCase("en-US").replace(/^www\./, "");
+      let id = "";
+      if (host === "youtu.be") id = parsed.pathname.split("/").filter(Boolean)[0] || "";
+      else if (["youtube.com", "m.youtube.com", "music.youtube.com"].includes(host)) {
+        if (parsed.pathname === "/watch") id = parsed.searchParams.get("v") || "";
+        else {
+          const parts = parsed.pathname.split("/").filter(Boolean);
+          if (["embed", "shorts", "live"].includes(parts[0])) id = parts[1] || "";
+        }
+      }
+      return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : "";
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function cleanupMediaSession() {
+    if (!runtime || !runtime.mediaSession) return;
+    const session = runtime.mediaSession;
+    runtime.mediaSession = null;
+    try {
+      if (session.element && typeof session.element.pause === "function") session.element.pause();
+      if (session.element && session.kind === "youtube") session.element.src = "about:blank";
+      if (session.element && session.kind !== "youtube") {
+        session.element.removeAttribute("src");
+        if (typeof session.element.load === "function") session.element.load();
+      }
+      if (session.element && session.element.remove) session.element.remove();
+      if (session.url && globalScope.URL && typeof globalScope.URL.revokeObjectURL === "function") globalScope.URL.revokeObjectURL(session.url);
+    } catch (_) { /* A detached media element is already stopped. */ }
+  }
+
+  function installMediaElement(element, session) {
+    if (!runtime || !runtime.app) return false;
+    cleanupMediaSession();
+    const host = runtime.app.querySelector("[data-hgl1-stable-media-host]");
+    if (!host) return false;
+    host.innerHTML = "";
+    host.appendChild(element);
+    runtime.mediaSession = Object.assign({ element: element, route: runtime.route, url: "", kind: "local" }, session || {});
+    return true;
+  }
+
+  function openLocalMedia(file, route) {
+    if (!runtime || !globalScope.document || !globalScope.URL || typeof globalScope.URL.createObjectURL !== "function") return false;
+    const isAudio = route === "/galaxy/music" && String(file.type || "").startsWith("audio/");
+    const isVideo = route === "/galaxy/video" && String(file.type || "").startsWith("video/");
+    if (!isAudio && !isVideo) return false;
+    const url = globalScope.URL.createObjectURL(file);
+    const element = globalScope.document.createElement(isAudio ? "audio" : "video");
+    element.controls = true;
+    element.autoplay = false;
+    element.preload = "metadata";
+    element.src = url;
+    if (isVideo) element.playsInline = true;
+    element.setAttribute("aria-label", (isVideo ? "Video" : "Âm thanh") + " " + String(file.name || "đã chọn").slice(0, 180));
+    const installed = installMediaElement(element, { route: route, url: url, kind: isAudio ? "audio" : "video", fileName: file.name });
+    if (!installed) {
+      globalScope.URL.revokeObjectURL(url);
+      return false;
+    }
+    const status = runtime.app.querySelector("[data-hgl1-media-status]");
+    if (status) status.textContent = "Đã mở " + file.name + " · chưa tự phát.";
+    return true;
+  }
+
+  function openYouTubeVideo(value) {
+    if (!runtime || runtime.route !== "/galaxy/video" || !globalScope.document) return false;
+    const id = parseYouTubeId(value);
+    if (!id) return false;
+    const frame = globalScope.document.createElement("iframe");
+    frame.title = "YouTube video do người dùng chọn";
+    frame.src = "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=0&playsinline=1&rel=0";
+    frame.loading = "eager";
+    frame.allow = "accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen";
+    frame.allowFullscreen = true;
+    frame.referrerPolicy = "strict-origin-when-cross-origin";
+    const installed = installMediaElement(frame, { route: "/galaxy/video", kind: "youtube", fileName: "YouTube " + id });
+    if (installed) {
+      const status = runtime.app.querySelector("[data-hgl1-media-status]");
+      if (status) status.textContent = "Nguồn: YouTube Privacy-Enhanced Mode · player không tự phát và không bị polling.";
+    }
+    return installed;
+  }
+
+  function drawGameIdle() {
+    if (!runtime || !runtime.app) return;
+    const canvas = runtime.app.querySelector("[data-hgl1-game-canvas]");
+    const context = canvas && canvas.getContext && canvas.getContext("2d");
+    if (!context) return;
+    context.fillStyle = "#050818";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#7cecff";
+    context.font = "bold 30px system-ui";
+    context.textAlign = "center";
+    context.fillText("ORBIT COLLECTOR", canvas.width / 2, canvas.height / 2 - 8);
+    context.fillStyle = "#cbd8ff";
+    context.font = "18px system-ui";
+    context.fillText("Bấm Bắt đầu rồi focus canvas", canvas.width / 2, canvas.height / 2 + 30);
+  }
+
+  function stopGame() {
+    if (!runtime || !runtime.gameSession) return;
+    const session = runtime.gameSession;
+    runtime.gameSession = null;
+    if (session.raf && globalScope.cancelAnimationFrame) globalScope.cancelAnimationFrame(session.raf);
+    if (session.canvas) {
+      session.canvas.removeEventListener("keydown", session.keydown);
+      session.canvas.removeEventListener("keyup", session.keyup);
+      session.canvas.removeEventListener("blur", session.blur);
+    }
+    if (session.removeBlur) session.removeBlur();
+    if (runtime.app && runtime.route === "/galaxy/games") {
+      const button = runtime.app.querySelector("[data-hgl1-action=\"toggle-game\"]");
+      const status = runtime.app.querySelector("[data-hgl1-game-status]");
+      if (button) button.textContent = "Bắt đầu lại";
+      if (status) status.textContent = "Đã tạm dừng · điểm phiên vừa rồi: " + session.score;
+    }
+  }
+
+  function toggleGame() {
+    if (!runtime || runtime.route !== "/galaxy/games") return;
+    if (runtime.gameSession) {
+      stopGame();
+      showToast("Đã tạm dừng game cục bộ.", "info");
+      return;
+    }
+    const canvas = runtime.app.querySelector("[data-hgl1-game-canvas]");
+    const context = canvas && canvas.getContext && canvas.getContext("2d");
+    if (!context || typeof globalScope.requestAnimationFrame !== "function") {
+      showToast("Canvas game không khả dụng trên trình duyệt này.", "error");
+      return;
+    }
+    const session = { canvas: canvas, context: context, keys: new Set(), x: 480, y: 270, score: 0, started: globalScope.performance && globalScope.performance.now ? globalScope.performance.now() : Date.now(), last: 0, target: { x: 180, y: 140 }, raf: 0 };
+    session.keydown = function gameKeydown(event) {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d", "W", "A", "S", "D"].includes(event.key)) {
+        event.preventDefault();
+        event.stopPropagation();
+        session.keys.add(event.key.toLocaleLowerCase());
+      }
+    };
+    session.keyup = function gameKeyup(event) { session.keys.delete(event.key.toLocaleLowerCase()); };
+    session.blur = function gameBlur() { session.keys.clear(); };
+    canvas.addEventListener("keydown", session.keydown);
+    canvas.addEventListener("keyup", session.keyup);
+    canvas.addEventListener("blur", session.blur);
+    if (globalScope.addEventListener) {
+      globalScope.addEventListener("blur", session.blur);
+      session.removeBlur = function removeGameBlur() { globalScope.removeEventListener("blur", session.blur); };
+    }
+    function frame(now) {
+      if (!runtime || runtime.gameSession !== session) return;
+      const delta = Math.min(0.05, Math.max(0, (now - (session.last || now)) / 1000));
+      session.last = now;
+      let dx = (session.keys.has("d") || session.keys.has("arrowright") ? 1 : 0) - (session.keys.has("a") || session.keys.has("arrowleft") ? 1 : 0);
+      let dy = (session.keys.has("s") || session.keys.has("arrowdown") ? 1 : 0) - (session.keys.has("w") || session.keys.has("arrowup") ? 1 : 0);
+      try {
+        const pad = globalScope.navigator && globalScope.navigator.getGamepads && globalScope.navigator.getGamepads()[0];
+        if (pad) { dx += Math.abs(pad.axes[0] || 0) > 0.18 ? pad.axes[0] : 0; dy += Math.abs(pad.axes[1] || 0) > 0.18 ? pad.axes[1] : 0; }
+      } catch (_) { /* Gamepad is optional. */ }
+      const inputMagnitude = Math.hypot(dx, dy);
+      if (inputMagnitude > 1) { dx /= inputMagnitude; dy /= inputMagnitude; }
+      session.x = Math.max(18, Math.min(canvas.width - 18, session.x + dx * 280 * delta));
+      session.y = Math.max(18, Math.min(canvas.height - 18, session.y + dy * 280 * delta));
+      if (Math.hypot(session.x - session.target.x, session.y - session.target.y) < 30) {
+        session.score += 1;
+        session.target.x = 50 + Math.random() * (canvas.width - 100);
+        session.target.y = 50 + Math.random() * (canvas.height - 100);
+        const status = runtime && runtime.app && runtime.app.querySelector("[data-hgl1-game-status]");
+        if (status) status.textContent = "Điểm phiên hiện tại: " + session.score;
+      }
+      context.fillStyle = "#050818"; context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = "#ffd76a"; context.beginPath(); context.arc(session.target.x, session.target.y, 10, 0, Math.PI * 2); context.fill();
+      context.fillStyle = "#79ecff"; context.beginPath(); context.arc(session.x, session.y, 18, 0, Math.PI * 2); context.fill();
+      context.fillStyle = "#fff"; context.font = "20px system-ui"; context.textAlign = "left"; context.fillText("Điểm thật: " + session.score, 20, 32);
+      session.raf = globalScope.requestAnimationFrame(frame);
+    }
+    runtime.gameSession = session;
+    const button = runtime.app.querySelector("[data-hgl1-action=\"toggle-game\"]");
+    const status = runtime.app.querySelector("[data-hgl1-game-status]");
+    if (button) button.textContent = "Tạm dừng";
+    if (status) status.textContent = "Đang chạy · điểm phiên hiện tại: 0";
+    canvas.focus();
+    session.raf = globalScope.requestAnimationFrame(frame);
+  }
+
+  function setCommunityRealtimeState(state, text, owner) {
+    const active = owner || runtime;
+    if (!active) return;
+    active.communityRealtimeState = { state: state, text: String(text || "") };
+    if (active !== runtime || active.route !== "/galaxy/community" || !active.app) return;
+    const status = active.app.querySelector("[data-hgl1-community-realtime]");
+    const stripText = active.app.querySelector("[data-hgl1-module-status-text]");
+    if (status) { status.dataset.state = state; status.textContent = text; }
+    if (stripText) stripText.textContent = text;
+  }
+
+  function resolveCommunitySocketTarget(value, allowedOrigins) {
+    const raw = String(value || "").trim();
+    if (!raw || typeof globalScope.URL !== "function") return null;
+    try {
+      const currentOrigin = String(globalScope.location && globalScope.location.origin || "");
+      const target = new globalScope.URL(raw, currentOrigin || undefined);
+      if (!/^https?:$/.test(target.protocol)) return null;
+      const allowed = new Set((Array.isArray(allowedOrigins) ? allowedOrigins : []).map(function normalizeAllowedOrigin(entry) {
+        try { return new globalScope.URL(String(entry || ""), currentOrigin || undefined).origin; }
+        catch (_) { return ""; }
+      }).filter(Boolean));
+      const sameOrigin = Boolean(currentOrigin) && target.origin === currentOrigin;
+      if (!sameOrigin && !allowed.has(target.origin)) return null;
+      return Object.freeze({ href: target.href, origin: target.origin, sameOrigin: sameOrigin });
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function mountCommunityRealtime() {
+    if (!runtime || runtime.route !== "/galaxy/community") return;
+    const active = runtime;
+    if (active.communityRealtimeState) {
+      setCommunityRealtimeState(active.communityRealtimeState.state, active.communityRealtimeState.text, active);
+    }
+    if (active.communitySocket) return;
+    const socketUrl = String(runtime.options.communitySocketUrl || "").trim();
+    if (!socketUrl || typeof globalScope.io !== "function") {
+      setCommunityRealtimeState("unconfigured", "Realtime chưa cấu hình · bản nháp vẫn lưu cục bộ", active);
+      return;
+    }
+    const socketTarget = resolveCommunitySocketTarget(socketUrl, runtime.options.communitySocketAllowedOrigins);
+    if (!socketTarget) {
+      setCommunityRealtimeState("error", "Realtime URL bị từ chối · chỉ chấp nhận cùng origin hoặc allowlist rõ ràng", active);
+      return;
+    }
+    let socket;
+    try {
+      socket = globalScope.io(socketTarget.href, {
+        transports: ["websocket", "polling"],
+        autoConnect: true,
+        // Never attach browser credentials to a cross-origin transport.
+        withCredentials: socketTarget.sameOrigin
+      });
+      active.communitySocket = socket;
+      setCommunityRealtimeState("connecting", "Đang kết nối realtime…", active);
+      socket.on("connect", function connected() { setCommunityRealtimeState("ready", "Realtime đã kết nối", active); });
+      socket.on("disconnect", function disconnected() { setCommunityRealtimeState("offline", "Realtime đã ngắt kết nối", active); });
+      socket.on("connect_error", function socketError() { setCommunityRealtimeState("error", "Realtime không thể kết nối", active); });
+    } catch (_) {
+      active.communitySocket = null;
+      setCommunityRealtimeState("error", "Realtime không thể khởi tạo", active);
+    }
+  }
+
+  function mountRouteRuntime() {
+    if (!runtime || !runtime.app) return;
+    if (runtime.route === "/galaxy/ai") {
+      const handoff = consumeAiHandoff();
+      const input = runtime.app.querySelector("[data-hgl1-ai-draft]");
+      if (handoff && input) {
+        input.value = handoff.prompt;
+        input.focus();
+        showToast("Đã chuyển nội dung từ Trang chủ. Chưa gửi tới provider.", "info");
+      }
+      if (runtime.aiProviderStatus) aiStatus(runtime.aiProviderStatus.state, runtime.aiProviderStatus.message, runtime);
+      else probeAiProvider();
+    } else if (runtime.route === "/galaxy/community") {
+      mountCommunityRealtime();
+    } else if (runtime.route === "/galaxy/games" && !runtime.gameSession) {
+      drawGameIdle();
+    }
+  }
+
+  function updateSettingsDraftUi() {
+    if (!runtime || !runtime.app || runtime.route !== "/galaxy/settings") return;
+    const saved = collectLocalState(runtime.storage).settings;
+    const draft = sanitizeSettings(runtime.settingsDraft || saved);
+    runtime.settingsDraft = draft;
+    const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+    const status = runtime.app.querySelector("[data-hgl1-settings-status]");
+    if (status) status.textContent = dirty ? "Có thay đổi chưa lưu." : "Cấu hình đã đồng bộ với bản lưu.";
+    runtime.app.querySelectorAll("[data-hgl1-action=\"save-settings\"], [data-hgl1-action=\"cancel-settings\"]").forEach(function toggleCommit(button) { button.disabled = !dirty; });
+    applyPreferences(runtime.app, draft);
+  }
+
+  function setSettingsControls(settings) {
+    if (!runtime || !runtime.app) return;
+    const safe = sanitizeSettings(settings);
+    runtime.settingsDraft = safe;
+    runtime.app.querySelectorAll("[data-hgl1-setting]").forEach(function syncSetting(control) {
+      const key = control.dataset.hgl1Setting;
+      if (!Object.hasOwn(safe, key)) return;
+      if (control.type === "checkbox") control.checked = Boolean(safe[key]);
+      else control.value = safe[key];
+    });
+    updateSettingsDraftUi();
+  }
+
+  function saveSettingsDraft() {
+    if (!runtime || runtime.route !== "/galaxy/settings") return false;
+    const state = collectLocalState(runtime.storage);
+    state.settings = sanitizeSettings(runtime.settingsDraft || state.settings);
+    if (!writeLocalState(state, runtime.storage)) {
+      showToast("Không thể lưu cài đặt.", "error");
+      return false;
+    }
+    runtime.settingsDraft = sanitizeSettings(state.settings);
+    runtime.localState = state;
+    updateSettingsDraftUi();
+    showToast("Đã lưu cài đặt Galaxy.", "success");
+    return true;
+  }
+
+  function clearAnalyticsEvents() {
+    if (!runtime) return false;
+    const state = collectLocalState(runtime.storage);
+    if (!state.events.length) return true;
+    const confirmed = typeof globalScope.confirm === "function" ? globalScope.confirm("Xóa toàn bộ nhật ký Analytics cục bộ? Thao tác này không thể hoàn tác.") : false;
+    if (!confirmed) return false;
+    state.events = [];
+    const ok = writeLocalState(state, runtime.storage);
+    if (ok) render();
+    showToast(ok ? "Đã xóa nhật ký Analytics cục bộ." : "Không thể xóa nhật ký.", ok ? "success" : "error");
+    return ok;
+  }
+
+  function confirmPendingBackup() {
+    if (!runtime || !runtime.pendingBackup || !runtime.app) return false;
+    const selected = runtime.app.querySelector("input[name=\"hgl1-backup-mode\"]:checked");
+    const mode = selected && selected.value === "replace" ? "replace" : "merge";
+    if (mode === "replace") {
+      const confirmed = typeof globalScope.confirm === "function" ? globalScope.confirm("Thay thế toàn bộ dữ liệu HH Galaxy lớp 1 bằng bản sao lưu này?") : false;
+      if (!confirmed) return false;
+    }
+    const result = applyBackup(runtime.pendingBackup.candidate, runtime.storage, mode);
+    if (!result.ok) {
+      showToast("Không thể nhập bản sao lưu: " + result.error, "error");
+      return false;
+    }
+    runtime.pendingBackup = null;
+    runtime.settingsDraft = null;
+    render();
+    const returnTarget = runtime.app && runtime.app.querySelector("[data-hgl1-action=\"trigger-backup-import\"]");
+    if (returnTarget && typeof returnTarget.focus === "function") returnTarget.focus();
+    showToast("Đã " + (mode === "merge" ? "hợp nhất" : "thay thế") + " " + result.imported + " tài liệu.", "success");
+    return true;
+  }
+
+  function inspectDevCode() {
+    if (!runtime || !runtime.app) return;
+    const form = runtime.app.querySelector("[data-hgl1-dev-form]");
+    const output = runtime.app.querySelector("[data-hgl1-dev-output]");
+    if (!form || !output) return;
+    const code = String(form.elements.code && form.elements.code.value || "");
+    const language = String(form.elements.language && form.elements.language.value || "text");
+    if (!code.trim()) { output.textContent = "Chưa có mã để kiểm tra."; output.dataset.tone = "error"; return; }
+    if (code.length > MAX_TEXT_LENGTH) { output.textContent = "Mã vượt giới hạn " + MAX_TEXT_LENGTH + " ký tự."; output.dataset.tone = "error"; return; }
+    if (language === "json") {
+      try { JSON.parse(code); }
+      catch (_) { output.textContent = "JSON không hợp lệ. Không có mã nào được thực thi."; output.dataset.tone = "error"; return; }
+    }
+    const lines = code.split(/\r?\n/).length;
+    output.textContent = "Kiểm tra tĩnh hoàn tất: " + lines + " dòng, " + code.length + " ký tự, loại " + language + ". Không thực thi mã.";
+    output.dataset.tone = "success";
+  }
+
+  function openCapability(control) {
+    if (!runtime || !runtime.app) return;
+    const index = Number(control.dataset.capabilityIndex);
+    const route = runtime.route;
+    if (route === "/galaxy/ai" && index === 0) runtime.app.querySelector("[data-hgl1-ai-draft]")?.focus();
+    else if (route === "/galaxy/ai" && index === 2) runtime.app.querySelector("[data-hgl1-module-file]")?.click();
+    else if (route === "/galaxy/music" && index === 0) runtime.app.querySelector("[data-hgl1-module-file]")?.click();
+    else if (route === "/galaxy/music" && index === 1) checkMicrophone();
+    else if (route === "/galaxy/video" && index === 0) runtime.app.querySelector("[data-hgl1-module-file]")?.click();
+    else if (route === "/galaxy/video" && index === 1) runtime.app.querySelector("[data-hgl1-create-form] input")?.focus();
+    else if (route === "/galaxy/games" && index === 0) runtime.app.querySelector("[data-hgl1-create-form] input")?.focus();
+    else if (route === "/galaxy/games" && index === 2) navigate("/galaxy/settings");
+    else if (route === "/galaxy/dev" && index === 0) runtime.app.querySelector("[data-hgl1-dev-form] input")?.focus();
+    else if (route === "/galaxy/dev" && index === 1) navigate("/galaxy/tools");
+    else if (route === "/galaxy/community" && index === 0) runtime.app.querySelector("[data-hgl1-community-form] input")?.focus();
+    else showToast("Chức năng này chưa có adapter được cấu hình.", "info");
   }
 
   function handleClick(event) {
@@ -1367,6 +2322,22 @@
     const action = control.dataset.hgl1Action;
     if (action === "open-drawer") setDrawer(true);
     else if (action === "close-drawer") setDrawer(false);
+    else if (action === "open-capability") openCapability(control);
+    else if (action === "probe-ai-provider") probeAiProvider(true);
+    else if (action === "save-ai-draft") saveAiDraft();
+    else if (action === "clear-ai-draft") {
+      const input = runtime.app.querySelector("[data-hgl1-ai-draft]");
+      const output = runtime.app.querySelector("[data-hgl1-ai-response]");
+      if (input) { input.value = ""; input.focus(); }
+      if (output) { output.textContent = "Hội thoại mới. Chưa gửi yêu cầu."; output.dataset.tone = "info"; }
+    } else if (action === "toggle-game") toggleGame();
+    else if (action === "inspect-dev-code") inspectDevCode();
+    else if (action === "save-settings") saveSettingsDraft();
+    else if (action === "cancel-settings") setSettingsControls(collectLocalState(runtime.storage).settings);
+    else if (action === "restore-settings-defaults") setSettingsControls(defaultSettings());
+    else if (action === "confirm-backup-import") confirmPendingBackup();
+    else if (action === "cancel-backup-import") closePendingBackup("Đã hủy nhập bản sao lưu; dữ liệu không thay đổi.");
+    else if (action === "clear-analytics-events") clearAnalyticsEvents();
     else if (action === "open-platform-via-core") {
       const destinationCard = control.closest("[data-platform-route]");
       const destination = LEARNING_DESTINATIONS.find(function findLearningDestination(entry) {
@@ -1377,8 +2348,9 @@
     } else if (action === "filter-learning") {
       const library = control.closest(".hgl1-learning-library");
       const filters = library ? library.querySelectorAll("[data-hgl1-action=\"filter-learning\"]") : [];
+      const selectedFilter = control.dataset.learningFilter || "all";
       Array.prototype.forEach.call(filters, function resetLearningFilter(button) {
-        const selected = button === control;
+        const selected = button.dataset.learningFilter === selectedFilter;
         button.classList.toggle("is-active", selected);
         button.setAttribute("aria-pressed", String(selected));
       });
@@ -1459,6 +2431,52 @@
   }
 
   function handleSubmit(event) {
+    const settingsForm = event.target.closest("[data-hgl1-settings-form]");
+    if (settingsForm && runtime) {
+      event.preventDefault();
+      saveSettingsDraft();
+      return;
+    }
+    const aiForm = event.target.closest("[data-hgl1-ai-form]");
+    if (aiForm && runtime) {
+      event.preventDefault();
+      submitAiPrompt(aiForm);
+      return;
+    }
+    const youtubeForm = event.target.closest("[data-hgl1-youtube-form]");
+    if (youtubeForm && runtime) {
+      event.preventDefault();
+      const field = youtubeForm.querySelector("input[name=\"url\"]");
+      const opened = openYouTubeVideo(field && field.value);
+      showToast(opened ? "Đã mở YouTube trong player ổn định." : "Liên kết YouTube không hợp lệ hoặc không được phép.", opened ? "success" : "error");
+      return;
+    }
+    const devForm = event.target.closest("[data-hgl1-dev-form]");
+    if (devForm && runtime) {
+      event.preventDefault();
+      const title = String(devForm.elements.title && devForm.elements.title.value || "").trim().slice(0, 160);
+      const code = String(devForm.elements.code && devForm.elements.code.value || "").slice(0, MAX_TEXT_LENGTH);
+      const language = String(devForm.elements.language && devForm.elements.language.value || "text").slice(0, 40);
+      if (containsLikelySecret(title + "\n" + code)) {
+        showToast("Phát hiện nội dung giống secret hoặc thông tin đăng nhập. Snippet chưa được lưu.", "error");
+        return;
+      }
+      const item = title && code.trim() ? createLocalItem("/galaxy/dev", title, runtime.storage, { kind: "code-snippet-" + language, description: code }) : null;
+      if (item) { devForm.reset(); render(); }
+      showToast(item ? "Đã lưu snippet cục bộ; mã không được thực thi." : "Nhập tên và mã hợp lệ.", item ? "success" : "error");
+      return;
+    }
+    const communityForm = event.target.closest("[data-hgl1-community-form]");
+    if (communityForm && runtime) {
+      event.preventDefault();
+      const title = String(communityForm.elements.title && communityForm.elements.title.value || "").trim().slice(0, 160);
+      const body = String(communityForm.elements.body && communityForm.elements.body.value || "").trim().slice(0, 8000);
+      const privacy = ["private", "group", "public"].includes(communityForm.elements.privacy && communityForm.elements.privacy.value) ? communityForm.elements.privacy.value : "private";
+      const item = title && body ? createLocalItem("/galaxy/community", title, runtime.storage, { kind: "community-draft", description: body, meta: { privacy: privacy } }) : null;
+      if (item) { communityForm.reset(); render(); }
+      showToast(item ? "Đã lưu bản nháp cục bộ; chưa đăng ra mạng." : "Nhập tiêu đề và nội dung hợp lệ.", item ? "success" : "error");
+      return;
+    }
     const noteForm = event.target.closest("[data-hgl1-learning-note-form]");
     if (noteForm && runtime) {
       event.preventDefault();
@@ -1533,18 +2551,30 @@
       importBackupFile(target);
       return;
     }
-    if (!target.matches("[data-hgl1-setting]")) return;
-    const state = collectLocalState(runtime.storage);
-    const key = target.dataset.hgl1Setting;
-    if (!Object.hasOwn(defaultSettings(), key)) return;
-    state.settings[key] = target.type === "checkbox" ? target.checked : target.value;
-    state.settings = sanitizeSettings(state.settings);
-    if (!writeLocalState(state, runtime.storage)) {
-      showToast("Không thể lưu cài đặt.", "error");
+    if (target.matches("[data-hgl1-analytics-range]")) {
+      runtime.analyticsRange = ["today", "7d", "30d", "all"].includes(target.value) ? target.value : "30d";
+      render();
+      const nextRange = runtime.app && runtime.app.querySelector("[data-hgl1-analytics-range]");
+      nextRange && nextRange.focus();
       return;
     }
+    if (!target.matches("[data-hgl1-setting]")) return;
+    const key = target.dataset.hgl1Setting;
+    if (!Object.hasOwn(defaultSettings(), key)) return;
+    const value = target.type === "checkbox" ? target.checked : target.value;
+    if (runtime.route === "/galaxy/settings") {
+      runtime.settingsDraft = sanitizeSettings(Object.assign({}, runtime.settingsDraft || runtime.localState.settings, { [key]: value }));
+      updateSettingsDraftUi();
+      return;
+    }
+    const state = collectLocalState(runtime.storage);
+    state.settings[key] = value;
+    state.settings = sanitizeSettings(state.settings);
+    if (!writeLocalState(state, runtime.storage)) { showToast("Không thể lưu cài đặt.", "error"); return; }
     render();
-    showToast("Đã lưu cài đặt Galaxy.", "success");
+    const restored = runtime.app && runtime.app.querySelector("[data-hgl1-setting=\"" + key + "\"]");
+    restored && restored.focus();
+    showToast(key === "analyticsConsent" ? "Đã cập nhật consent Analytics cục bộ." : "Đã lưu cài đặt Galaxy.", "success");
   }
 
   function closeSearches() {
@@ -1557,6 +2587,43 @@
 
   function handleKeydown(event) {
     if (!runtime || !runtime.app) return;
+    const backupDialog = runtime.pendingBackup && runtime.app.querySelector("[data-hgl1-backup-preview]");
+    if (backupDialog) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closePendingBackup("Đã hủy nhập bản sao lưu; dữ liệu không thay đổi.");
+        return;
+      }
+      if (event.key === "Tab") {
+        const focusables = Array.prototype.filter.call(backupDialog.querySelectorAll("button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])"), function visible(control) {
+          return !control.hidden && control.getAttribute("aria-hidden") !== "true";
+        });
+        if (focusables.length) {
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          const active = globalScope.document && globalScope.document.activeElement;
+          if (event.shiftKey && (active === first || !backupDialog.contains(active))) { event.preventDefault(); last.focus(); return; }
+          if (!event.shiftKey && (active === last || !backupDialog.contains(active))) { event.preventDefault(); first.focus(); return; }
+        }
+      }
+      if (!backupDialog.contains(event.target)) {
+        event.preventDefault();
+        return;
+      }
+    }
+    const drawer = runtime.app.querySelector("[data-hgl1-drawer]");
+    if (event.key === "Tab" && runtime.app.dataset.drawerOpen === "true" && drawer) {
+      const focusables = Array.prototype.filter.call(drawer.querySelectorAll("a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])") , function visible(control) {
+        return !control.hidden && control.getAttribute("aria-hidden") !== "true";
+      });
+      if (focusables.length) {
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = globalScope.document && globalScope.document.activeElement;
+        if (event.shiftKey && (active === first || !drawer.contains(active))) { event.preventDefault(); last.focus(); return; }
+        if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); return; }
+      }
+    }
     if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === "k") {
       event.preventDefault();
       const input = runtime.app.querySelector(".hgl1-topbar [data-hgl1-global-search]") || runtime.app.querySelector("[data-hgl1-global-search]");
@@ -1582,6 +2649,14 @@
     if (!match) return null;
     if (!runtime) return match;
     const changed = runtime.route !== match.route;
+    if (changed) {
+      cleanupDelegate();
+      cleanupRouteRuntime();
+      cleanupMediaSession();
+      stopGame();
+      runtime.settingsDraft = null;
+      runtime.pendingBackup = null;
+    }
     runtime.route = match.route;
     runtime.viewStatus = null;
     runtime.viewMessage = "";
@@ -1594,7 +2669,10 @@
   function unmount() {
     if (!runtime) return false;
     const active = runtime;
+    cleanupMediaSession();
+    stopGame();
     cleanupDelegate();
+    cleanupRouteRuntime();
     active.cleanups.splice(0).reverse().forEach(function runCleanup(cleanup) {
       try { cleanup(); } catch (_) { /* Detached browser targets are harmless. */ }
     });
@@ -1646,7 +2724,19 @@
       hostAttributeValue: host.getAttribute("data-hh-galaxy-layer-one-host"),
       cleanups: [],
       delegateCleanups: [],
-      toastTimer: 0
+      toastTimer: 0,
+      settingsDraft: null,
+      pendingBackup: null,
+      analyticsRange: "30d",
+      mediaSession: null,
+      gameSession: null,
+      aiProbe: null,
+      aiRequest: null,
+      aiProviderStatus: null,
+      communitySocket: null,
+      communityRealtimeState: null,
+      drawerReturnFocus: null,
+      drawerModal: true
     };
     host.setAttribute("data-hh-galaxy-layer-one-host", "v" + VERSION);
     listen(host, "click", handleClick);
@@ -1658,8 +2748,10 @@
       const next = findRoute(currentRoute());
       if (next) syncRoute(next.route);
     });
-    listen(globalScope, "online", render);
-    listen(globalScope, "offline", render);
+    listen(globalScope, "online", updateNetworkStatus);
+    listen(globalScope, "offline", updateNetworkStatus);
+    listen(globalScope, "resize", updateDrawerMode);
+    listen(globalScope.document, "visibilitychange", handleVisibilityChange);
     render();
     recordEvent("route-view", requested.route, runtime.storage);
     emit("mounted", { version: VERSION, route: requested.route, layer: "galaxy" });
@@ -1698,7 +2790,11 @@
     copyTemplate: copyTemplate,
     deleteLocalItem: deleteLocalItem,
     serializeBackup: serializeBackup,
+    inspectBackup: inspectBackup,
     importBackup: importBackup,
+    consumeAiHandoff: consumeAiHandoff,
+    containsLikelySecret: containsLikelySecret,
+    resolveCommunitySocketTarget: resolveCommunitySocketTarget,
     summarizeAnalytics: summarizeAnalytics,
     viewMarkup: viewMarkup,
     mount: mount,

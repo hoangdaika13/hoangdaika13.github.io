@@ -2416,6 +2416,385 @@
   }
 }
 
+/* ========================================================================== */
+/* Layer One readability, touch and viewport hardening                        */
+/*                                                                            */
+/* Keep the approved Cosmic Portal identity while ensuring that functional    */
+/* copy, controls and long Vietnamese labels remain usable at 200% zoom and   */
+/* on short 320px-wide phones.                                                 */
+/* ========================================================================== */
+
+.hh-galaxy-app :is(
+  .hgl1-shell,
+  .hgl1-main,
+  .hgl1-page,
+  .hgl1-page-head,
+  .hgl1-page-head > *,
+  .hgl1-library,
+  .hgl1-feature,
+  .hgl1-document,
+  .hgl1-document__body,
+  .hgl1-settings-card,
+  .hgl1-tool,
+  .hgl1-consent,
+  .hgl1-table-card
+) {
+  max-inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.hh-galaxy-app :is(h1, h2, h3, p, label, small, dt, dd, th, td, output) {
+  overflow-wrap: anywhere;
+}
+
+/* Reading copy is never rendered as micro text. Compact labels and metadata
+   stay visually secondary, but remain within a readable 12–14px band. */
+.hh-galaxy-app :is(
+  .hgl1-page-head p,
+  .hgl1-home-intro p,
+  .hgl1-settings-card p,
+  .hgl1-consent p
+) {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.hh-galaxy-app :is(
+  .hgl1-feature p,
+  .hgl1-document p,
+  .hgl1-state p,
+  .hgl1-delegated-placeholder p,
+  .hgl1-side-panel__empty p,
+  .hgl1-bridge p,
+  .hgl1-setting-row small,
+  .hgl1-tool__output
+) {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.hh-galaxy-app :is(
+  .hgl1-product-mark small,
+  .hgl1-brand small,
+  .hgl1-profile small,
+  .hgl1-customize small,
+  .hgl1-breadcrumb,
+  .hgl1-topbar__status b,
+  .hgl1-eyebrow,
+  .hgl1-kicker,
+  .hgl1-feature__state,
+  .hgl1-document__meta,
+  .hgl1-document__footer time,
+  .hgl1-pipeline__step b,
+  .hgl1-pipeline__step div span,
+  .hgl1-pipeline__progress,
+  .hgl1-pipeline__progress b,
+  .hgl1-metric-grid small,
+  .hgl1-settings-card dt,
+  .hgl1-settings-card dd
+) {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.hh-galaxy-app :is(
+  .hgl1-product-mark b,
+  .hgl1-brand b,
+  .hgl1-profile b,
+  .hgl1-customize b,
+  .hgl1-nav__label,
+  .hgl1-breadcrumb strong,
+  .hgl1-search__results button b,
+  .hgl1-alert,
+  .hgl1-status-strip,
+  .hgl1-status-strip b,
+  .hgl1-create-form > label,
+  .hgl1-tool > label,
+  .hgl1-settings-card > label,
+  .hgl1-switch b,
+  .hgl1-metric-grid span,
+  table
+) {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.hh-galaxy-app .hgl1-search__results button small,
+.hh-galaxy-app th {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.hh-galaxy-app :is(.hgl1-feature h3, .hgl1-document h3, .hgl1-state h2) {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.hh-galaxy-app .hgl1-badge {
+  min-height: 24px;
+  padding-inline: 8px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+/* Form text stays at 16px to avoid focus zoom on iOS. Buttons retain the
+   denser 14px control typography used by the approved visual system. */
+.hh-galaxy-app :is(input, textarea, select) {
+  font-size: 16px;
+}
+
+.hh-galaxy-app .hgl1-tool textarea {
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.hh-galaxy-app .hgl1-button {
+  min-height: 44px;
+  min-block-size: 44px;
+  max-width: 100%;
+  padding-block: 9px;
+  font-size: 14px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.hh-galaxy-app .hgl1-icon-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.hh-galaxy-app .hgl1-icon-button--danger {
+  width: 44px;
+  height: 44px;
+}
+
+.hh-galaxy-app :is(
+  .hgl1-nav__link,
+  .hgl1-search,
+  .hgl1-filter,
+  .hgl1-search__results button,
+  .hgl1-create-form input,
+  .hgl1-settings-card select
+) {
+  min-height: 44px;
+  min-block-size: 44px;
+}
+
+.hh-galaxy-app :is(.hgl1-search input, .hgl1-search--topbar input, .hgl1-filter input) {
+  height: 44px;
+  min-height: 44px;
+}
+
+.hh-galaxy-app .hgl1-filter input {
+  font-size: 16px;
+}
+
+.hh-galaxy-app .hgl1-switch {
+  min-height: 44px;
+  min-block-size: 44px;
+  padding-block: 9px;
+}
+
+.hh-galaxy-app .hgl1-topbar {
+  grid-template-columns: minmax(180px, 0.8fr) minmax(280px, 510px) minmax(150px, 0.6fr) repeat(3, 44px);
+}
+
+.hh-galaxy-app :is(
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--hgl1-cyan) 82%, white);
+  outline-offset: 3px;
+}
+
+.hh-galaxy-app :is(.hgl1-table-wrap, .hgl1-pipeline) {
+  max-width: 100%;
+  overscroll-behavior-inline: contain;
+}
+
+@media (max-width: 1279px) {
+  .hh-galaxy-app .hgl1-topbar {
+    grid-template-columns: minmax(150px, 0.8fr) minmax(250px, 1.4fr) repeat(3, 44px);
+  }
+}
+
+@media (max-width: 980px) {
+  .hh-galaxy-app .hgl1-topbar {
+    grid-template-columns: minmax(150px, 0.8fr) minmax(240px, 1.4fr) repeat(2, 44px);
+  }
+}
+
+@media (max-width: 767px) {
+  /* Let the content track grow with its children. Keeping it as a viewport
+     sized 1fr row allowed long pages to paint beneath the sticky bottom dock. */
+  .hh-galaxy-app .hgl1-shell {
+    grid-template-rows: var(--hgl1-topbar-h) auto var(--hgl1-mobile-nav-h);
+    align-content: start;
+  }
+
+  .hh-galaxy-app .hgl1-topbar {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    padding-inline: max(8px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-right));
+  }
+
+  .hh-galaxy-app .hgl1-main {
+    min-height: calc(100dvh - var(--hgl1-topbar-h) - var(--hgl1-mobile-nav-h));
+    padding-right: max(13px, env(safe-area-inset-right));
+    padding-bottom: max(28px, calc(env(safe-area-inset-bottom) + 20px));
+    padding-left: max(13px, env(safe-area-inset-left));
+  }
+
+  .hh-galaxy-app .hgl1-sidebar {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .hh-galaxy-app .hgl1-mobile-nav {
+    min-height: var(--hgl1-mobile-nav-h);
+    height: auto;
+  }
+
+  .hh-galaxy-app .hgl1-mobile-nav .hgl1-nav__link {
+    min-height: 56px;
+    padding-block: 4px;
+  }
+
+  .hh-galaxy-app .hgl1-mobile-nav .hgl1-nav__label {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .hh-galaxy-app :is(.hgl1-page-head, .hgl1-section-head, .hgl1-setting-row) > * {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .hh-galaxy-app .hgl1-toast {
+    right: max(12px, env(safe-area-inset-right));
+    left: max(12px, env(safe-area-inset-left));
+    width: auto;
+    max-width: none;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+}
+
+@media (max-width: 430px) {
+  .hh-galaxy-app .hgl1-settings-card dl div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .hh-galaxy-app .hgl1-settings-card dd {
+    max-width: 100%;
+  }
+
+  .hh-galaxy-app .hgl1-tool__output--code {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .hh-galaxy-app .hgl1-search__results {
+    max-width: calc(100vw - 24px);
+    min-width: 0;
+  }
+}
+
+.hh-galaxy-app[data-reduced-motion="on"] :is(
+  .hgl1-button,
+  .hgl1-icon-button,
+  .hgl1-nav__link,
+  .hgl1-document,
+  .hgl1-customize
+):is(:hover, :focus-visible) {
+  transform: none !important;
+}
+
+/* User-selected display preferences are real visual modes, not stored-only
+   values. Small keeps the accessibility floor; Large increases reading copy,
+   controls and whitespace without scaling raster portal art. */
+.hh-galaxy-app[data-ui-scale="small"] .hgl1-main {
+  padding: clamp(15px, 1.7vw, 27px);
+}
+
+.hh-galaxy-app[data-ui-scale="small"] :is(
+  .hgl1-library,
+  .hgl1-settings-card,
+  .hgl1-tool,
+  .hgl1-consent,
+  .hgl1-table-card
+) {
+  --hgl1-radius: 14px;
+}
+
+.hh-galaxy-app[data-ui-scale="large"] :is(
+  .hgl1-page-head p,
+  .hgl1-home-intro p,
+  .hgl1-settings-card p,
+  .hgl1-consent p
+) {
+  font-size: 18px;
+}
+
+.hh-galaxy-app[data-ui-scale="large"] :is(
+  .hgl1-button,
+  .hgl1-nav__label,
+  .hgl1-create-form > label,
+  .hgl1-tool > label,
+  .hgl1-settings-card > label,
+  input,
+  textarea,
+  select
+) {
+  font-size: 16px;
+}
+
+.hh-galaxy-app[data-ui-scale="large"] :is(
+  .hgl1-library,
+  .hgl1-settings-card,
+  .hgl1-tool,
+  .hgl1-consent,
+  .hgl1-table-card
+) {
+  padding: clamp(20px, 2.2vw, 30px);
+}
+
+/* Okabe–Ito inspired token substitutions preserve contrast when a user asks
+   for color-vision support. Structural labels never rely on these hues alone. */
+.hh-galaxy-app[data-color-vision="deuteranopia"] {
+  --hgl1-green: #56b4e9;
+  --hgl1-rose: #f0e442;
+  --hgl1-pink: #cc79a7;
+  --hgl1-amber: #e69f00;
+}
+
+.hh-galaxy-app[data-color-vision="protanopia"] {
+  --hgl1-green: #009e73;
+  --hgl1-rose: #f0e442;
+  --hgl1-pink: #56b4e9;
+  --hgl1-amber: #e69f00;
+}
+
+.hh-galaxy-app[data-color-vision="tritanopia"] {
+  --hgl1-cyan: #009e73;
+  --hgl1-blue: #0072b2;
+  --hgl1-yellow: #e69f00;
+  --hgl1-amber: #d55e00;
+  --hgl1-pink: #cc79a7;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hh-galaxy-app *,
   .hh-galaxy-app *::before,
@@ -2424,6 +2803,20 @@
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+
+  .hh-galaxy-app :is(
+    .hgl1-button,
+    .hgl1-icon-button,
+    .hgl1-nav__link,
+    .hgl1-document,
+    .hgl1-customize
+  ):is(:hover, :focus-visible) {
+    transform: none !important;
+  }
+
+  .hh-galaxy-app :is(.hgl1-pipeline, .hgl1-mobile-nav) {
+    scroll-snap-type: none;
   }
 }
 
@@ -2447,6 +2840,36 @@
   .hh-galaxy-app .hgl1-feature__signal {
     background: ButtonText;
     border: 1px solid Canvas;
+  }
+
+  .hh-galaxy-app :is(
+    .hgl1-button,
+    .hgl1-icon-button,
+    .hgl1-nav__link,
+    .hgl1-search,
+    .hgl1-filter,
+    input,
+    select,
+    textarea,
+    .hgl1-switch span
+  ) {
+    color: ButtonText;
+    background: ButtonFace;
+    border-color: ButtonText;
+    box-shadow: none;
+    forced-color-adjust: auto;
+  }
+
+  .hh-galaxy-app :is(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    [tabindex]:not([tabindex="-1"])
+  ):focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 3px;
   }
 }
 

@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
@@ -8,6 +9,10 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const layerOneSource = read("galaxy-layer-one.js");
 const worldStylesPath = path.join(root, "galaxy-layer-one-worlds.css");
 const worldStyles = fs.existsSync(worldStylesPath) ? fs.readFileSync(worldStylesPath, "utf8") : "";
+const indexSource = read("index.html");
+const loaderSource = read("performance-loader.js");
+const serviceWorkerSource = read("sw.js");
+const portalAssetManifest = JSON.parse(read("assets/galaxy/function-portals/asset-manifest.v1.json"));
 const layerOne = require("../galaxy-layer-one.js");
 
 const DESTINATIONS = Object.freeze([
@@ -38,6 +43,20 @@ const LEARNING_PLATFORM_DESTINATIONS = Object.freeze([
   ["english", "/english", /Anh|English/i],
   ["chinese", "/chinese", /Trung|Chinese/i],
   ["dharma", "/phat-phap", /Phật|Buddh/i]
+]);
+
+const FINAL_PORTAL_ASSETS = Object.freeze([
+  ["ai", "/galaxy/ai", "assets/galaxy/function-portals/ai-universe-v1.png"],
+  ["music", "/galaxy/music", "assets/galaxy/function-portals/music-planet-v1.png"],
+  ["video", "/galaxy/video", "assets/galaxy/function-portals/video-planet-v1.png"],
+  ["creator", "/galaxy/creator", "assets/galaxy/function-portals/creator-studio-v1.png"],
+  ["games", "/galaxy/games", "assets/galaxy/function-portals/games-world-v1.png"],
+  ["dev", "/galaxy/dev", "assets/galaxy/function-portals/dev-planet-v2.png"],
+  ["learning", "/galaxy/learning", "assets/galaxy/function-portals/learning-star-v1.png"],
+  ["community", "/galaxy/community", "assets/galaxy/function-portals/community-v1.png"],
+  ["tools", "/galaxy/tools", "assets/galaxy/function-portals/tools-galaxy-v1.png"],
+  ["analytics", "/galaxy/analytics", "assets/galaxy/function-portals/analytics-v1.png"],
+  ["settings", "/galaxy/settings", "assets/galaxy/function-portals/settings-v2.png"]
 ]);
 
 function classCount(markup, token) {
@@ -239,6 +258,73 @@ test("Tools, Analytics and Settings each receive a distinct visual hero", () => 
   assert.equal(copies.size, VISUAL_UTILITY_DESTINATIONS.length);
 });
 
+test("the eleven function worlds render one verified local hero image each", () => {
+  assert.equal(portalAssetManifest.schema, "hh-galaxy-function-portals");
+  assert.equal(portalAssetManifest.version, 1);
+  assert.deepEqual(Object.keys(portalAssetManifest.assets), FINAL_PORTAL_ASSETS.map(([id]) => id));
+
+  for (const [id, route, expectedPath] of FINAL_PORTAL_ASSETS) {
+    const asset = portalAssetManifest.assets[id];
+    assert.equal(asset.path, expectedPath, `${id} manifest selection drifted`);
+    assert.equal(asset.mimeType, "image/png");
+    assert.equal(asset.width, 1672);
+    assert.equal(asset.height, 941);
+    assert.match(asset.sha256, /^[a-f0-9]{64}$/);
+
+    const absolutePath = path.join(root, ...expectedPath.split("/"));
+    assert.equal(fs.existsSync(absolutePath), true, `${expectedPath} is missing`);
+    const bytes = fs.readFileSync(absolutePath);
+    assert.equal(bytes.subarray(1, 4).toString("ascii"), "PNG", `${id} is not a PNG`);
+    assert.equal(bytes.readUInt32BE(16), asset.width, `${id} width drifted`);
+    assert.equal(bytes.readUInt32BE(20), asset.height, `${id} height drifted`);
+    assert.equal(bytes.length, asset.bytes, `${id} byte size drifted`);
+    assert.equal(crypto.createHash("sha256").update(bytes).digest("hex"), asset.sha256, `${id} checksum drifted`);
+
+    const markup = layerOne.viewMarkup(route, {});
+    assert.equal(classCount(markup, "hgl1-world-hero__media"), 1, `${id} must render one picture`);
+    assert.equal(classCount(markup, `hgl1-world-hero__media--${id}`), 1, `${id} picture modifier is missing`);
+    assert.equal(classCount(markup, "hgl1-world-hero__image"), 1, `${id} must render one image`);
+    const picture = markup.match(/<picture\b[^>]*class="[^"]*\bhgl1-world-hero__media\b[^"]*"[^>]*>/i)?.[0] || "";
+    const image = markup.match(/<img\b[^>]*class="hgl1-world-hero__image"[^>]*>/i)?.[0] || "";
+    assert.match(picture, /aria-hidden="true"/i, `${id} decorative art must stay silent`);
+    assert.ok(image.includes(`src="${expectedPath}"`), `${id} markup uses the wrong asset`);
+    assert.match(image, /\bwidth="1672"/i);
+    assert.match(image, /\bheight="941"/i);
+    assert.match(image, /\balt=""/i);
+    assert.match(image, /\bloading="eager"/i);
+    assert.match(image, /\bdecoding="async"/i);
+    assert.match(image, /\bfetchpriority="high"/i);
+    assert.doesNotMatch(image, /https?:\/\//i);
+  }
+
+  const home = layerOne.viewMarkup("/home", {});
+  assert.doesNotMatch(home, /assets\/galaxy\/function-portals\//i, "Home must not preload portal art");
+  assert.equal(classCount(home, "hgl1-world-hero__image"), 0);
+  assert.equal(fs.existsSync(path.join(root, "assets", "galaxy", "function-portals", "dev-planet-v1.png")), true);
+  assert.equal(fs.existsSync(path.join(root, "assets", "galaxy", "function-portals", "settings-v1.png")), true);
+});
+
+test("portal art is release-versioned and remains runtime-cached instead of install-preloaded", () => {
+  assert.match(indexSource, /<script\b[^>]*src="performance-loader\.js\?v=622"/i);
+  assert.doesNotMatch(indexSource, /<link\b[^>]*rel="preload"[^>]*function-portals/i);
+  assert.match(loaderSource, /galaxy-layer-one-worlds\.css\?v=13/);
+  assert.match(loaderSource, /galaxy-layer-one\.js\?v=11/);
+  assert.match(serviceWorkerSource, /const CACHE = "hh-identity-portal-v970"/);
+  assert.match(serviceWorkerSource, /\.\/performance-loader\.js\?v=622/);
+  assert.match(serviceWorkerSource, /\.\/galaxy-layer-one-worlds\.css\?v=13/);
+  assert.match(serviceWorkerSource, /\.\/galaxy-layer-one\.js\?v=11/);
+
+  const runtimeBlock = serviceWorkerSource.match(/const RUNTIME_ASSETS = \[([\s\S]*?)\n\];/)?.[1] || "";
+  const coreBlock = serviceWorkerSource.match(/const CORE = \[([\s\S]*?)\n\];/)?.[1] || "";
+  assert.ok(runtimeBlock, "service worker runtime catalog is missing");
+  assert.ok(coreBlock, "service worker install core is missing");
+  for (const [, , assetPath] of FINAL_PORTAL_ASSETS) {
+    assert.ok(runtimeBlock.includes(`./${assetPath}`), `${assetPath} is missing from runtime cache catalog`);
+  }
+  assert.doesNotMatch(coreBlock, /function-portals/i, "portal PNGs must not enter the install-time core");
+  assert.match(serviceWorkerSource, /const INSTALL_ASSETS = \[\.\.\.new Set\(\[\.\.\.CORE, \.\.\.EONWILD_OFFLINE_ASSETS\]\)\]/);
+});
+
 test("world stylesheet is shell-scoped and declares all twelve route tones", () => {
   assert.equal(fs.existsSync(worldStylesPath), true, "galaxy-layer-one-worlds.css must ship with the world markup");
   assert.match(worldStyles, /\.hh-galaxy-app\s+\.hgl1-world-hero/);
@@ -290,12 +376,31 @@ test("Learning Star styles are scoped, keyboard-visible, semantic and phone resp
   assert.deepEqual(unscopedHgl1RulePreludes(worldStyles).filter((prelude) => prelude.includes(".hgl1-learning")), []);
 });
 
-test("world markup and CSS contain no remote embeds, Core gateway calls or fabricated KPI claims", () => {
+test("world markup and CSS contain no unapproved remote embeds, Core gateway calls or fabricated KPI claims", () => {
   const markup = DESTINATIONS.map(([, route]) => layerOne.viewMarkup(route, {})).join("\n");
   const shippedWorldCode = `${layerOneSource}\n${worldStyles}`;
+  const remoteUrlLiterals = [...layerOneSource.matchAll(/https?:\/\/[^\s"'\\<>]+/gi)].map((match) => match[0]);
+  const parserSource = layerOneSource.match(/function parseYouTubeId\(value\)\s*\{[\s\S]*?\n  \}/)?.[0] || "";
+  const playerSource = layerOneSource.match(/function openYouTubeVideo\(value\)\s*\{[\s\S]*?\n  \}/)?.[0] || "";
 
   assert.doesNotMatch(markup, /<iframe\b|<(?:img|script|link)\b[^>]*(?:src|href)\s*=\s*["']https?:/i);
-  assert.doesNotMatch(layerOneSource, /<iframe\b|https?:\/\//i);
+  assert.doesNotMatch(layerOneSource, /<iframe\b/i, "an iframe must never ship inside initial markup");
+  assert.deepEqual(remoteUrlLiterals, [
+    "https://www.youtube.com/watch?v=…",
+    "https://www.youtube-nocookie.com/embed/"
+  ], "only the inert YouTube input example and fixed privacy-enhanced embed origin are allowed");
+  assert.equal((layerOneSource.match(/createElement\("iframe"\)/g) || []).length, 1);
+
+  assert.notEqual(parserSource, "", "parseYouTubeId must remain an explicit allowlist parser");
+  assert.match(parserSource, /host\s*===\s*"youtu\.be"/);
+  assert.match(parserSource, /\["youtube\.com",\s*"m\.youtube\.com",\s*"music\.youtube\.com"\]\.includes\(host\)/);
+  assert.ok(parserSource.includes('return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : "";'), "YouTube IDs must remain exactly 11 safe characters");
+
+  assert.notEqual(playerSource, "", "the dynamic player installer must remain inspectable");
+  assert.match(playerSource, /const id\s*=\s*parseYouTubeId\(value\)/);
+  assert.match(playerSource, /frame\.src\s*=\s*"https:\/\/www\.youtube-nocookie\.com\/embed\/"\s*\+\s*id\s*\+\s*"\?autoplay=0&playsinline=1&rel=0"/);
+  assert.doesNotMatch(playerSource, /frame\.src\s*=\s*[^;]*(?:value|raw|parsed)/, "raw user input must never be interpolated into iframe.src");
+  assert.match(playerSource, /referrerPolicy\s*=\s*"strict-origin-when-cross-origin"/i);
   assert.doesNotMatch(worldStyles, /url\(\s*["']?https?:/i);
   assert.doesNotMatch(layerOneSource, /\bHHCoreGateway\b|data-gha-entry\b/);
   assert.doesNotMatch(shippedWorldCode, /\b(?:1\.2M|12\.5K|45\.6K|3,?450|73%|93%|99\.9%)\b/i);

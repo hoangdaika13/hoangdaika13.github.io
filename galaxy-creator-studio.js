@@ -12,6 +12,13 @@
 
   var VERSION = "1.0.0";
   var ROUTE = "/galaxy/creator";
+  var IMPORT_LIMITS = Object.freeze({
+    maxBytes: 2 * 1024 * 1024,
+    maxProjects: 500,
+    maxSchedule: 1000,
+    maxRecords: 1200,
+    mimeTypes: Object.freeze(["application/json", "text/json"])
+  });
   var mounted = new Set();
   var instances = new WeakMap();
 
@@ -96,6 +103,54 @@
     return Number.isFinite(left.getTime()) && left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate();
   }
 
+  function importFailure(message, code) {
+    var error = new Error(message);
+    error.code = code || "INVALID_IMPORT";
+    return error;
+  }
+
+  function validateImportFile(file) {
+    if (!file || typeof file !== "object") throw importFailure("Chưa chọn tệp JSON để nhập.", "IMPORT_FILE_REQUIRED");
+    var size = Number(file.size);
+    var type = String(file.type || "").trim().toLowerCase();
+    var name = String(file.name || "").trim();
+    if (!Number.isFinite(size) || size <= 0) throw importFailure("Tệp JSON trống hoặc không đọc được kích thước.", "IMPORT_EMPTY_FILE");
+    if (size > IMPORT_LIMITS.maxBytes) throw importFailure("Tệp JSON vượt quá giới hạn 2 MiB.", "IMPORT_TOO_LARGE");
+    if (IMPORT_LIMITS.mimeTypes.indexOf(type) === -1) throw importFailure("Chỉ chấp nhận tệp có MIME application/json hoặc text/json.", "IMPORT_INVALID_MIME");
+    if (!/\.json$/i.test(name)) throw importFailure("Tên tệp nhập phải có phần mở rộng .json.", "IMPORT_INVALID_EXTENSION");
+    if (typeof file.text !== "function") throw importFailure("Trình duyệt không hỗ trợ đọc tệp an toàn.", "IMPORT_UNREADABLE_FILE");
+    return true;
+  }
+
+  function parseImportPayload(text) {
+    if (typeof text !== "string" || !text.trim()) throw importFailure("Tệp JSON không có nội dung.", "IMPORT_EMPTY_FILE");
+    if (text.length > IMPORT_LIMITS.maxBytes) throw importFailure("Nội dung JSON vượt quá giới hạn 2 MiB.", "IMPORT_TOO_LARGE");
+    var payload;
+    try { payload = JSON.parse(text); }
+    catch (error) { throw importFailure("Tệp không chứa JSON hợp lệ.", "IMPORT_INVALID_JSON"); }
+    if (!payload || Array.isArray(payload) || typeof payload !== "object" || payload.schema !== Data.SCHEMA || payload.schemaVersion !== 1) {
+      throw importFailure("Tệp không đúng định dạng HH Galaxy Creator Studio.", "INVALID_IMPORT");
+    }
+    if (!Array.isArray(payload.projects) || !Array.isArray(payload.schedule)) {
+      throw importFailure("Tệp nhập phải có danh sách projects và schedule hợp lệ.", "IMPORT_INVALID_COLLECTIONS");
+    }
+    if (payload.projects.length > IMPORT_LIMITS.maxProjects) throw importFailure("Tệp có quá 500 dự án.", "IMPORT_TOO_MANY_PROJECTS");
+    if (payload.schedule.length > IMPORT_LIMITS.maxSchedule) throw importFailure("Tệp có quá 1.000 lịch công việc.", "IMPORT_TOO_MANY_SCHEDULE");
+    if (payload.projects.length + payload.schedule.length > IMPORT_LIMITS.maxRecords) throw importFailure("Tệp có quá 1.200 bản ghi Creator.", "IMPORT_TOO_MANY_RECORDS");
+    return payload;
+  }
+
+  function durableStorage(runtime) {
+    return Boolean(runtime && runtime.store && runtime.store.storageKind && runtime.store.storageKind() !== "memory-fallback");
+  }
+
+  function storageLabel(runtime, editable) {
+    if (!editable) return { state: "saved", label: "Chỉ đọc" };
+    return durableStorage(runtime)
+      ? { state: "saved", label: "Đã lưu cục bộ" }
+      : { state: "volatile", label: "Chỉ lưu trong phiên này" };
+  }
+
   function stepById(id) {
     return Data.PIPELINE_STEPS.find(function (step) { return step.id === id; }) || Data.PIPELINE_STEPS[0];
   }
@@ -139,12 +194,21 @@
 
   function scheduleMarkup(runtime, snapshot) {
     var nowValue = runtime.now();
-    var userToday = snapshot.schedule.filter(function (item) { return !item.isDemo && item.at && sameDay(item.at, nowValue); }).sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); });
+    var dayStart = new Date(nowValue);
+    dayStart.setHours(0, 0, 0, 0);
+    var userUpcoming = snapshot.schedule.filter(function (item) {
+      if (item.isDemo || !item.at) return false;
+      var itemDate = new Date(item.at);
+      return Number.isFinite(itemDate.getTime()) && itemDate.getTime() >= dayStart.getTime();
+    }).sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); });
     var samples = snapshot.schedule.filter(function (item) { return item.isDemo; }).slice(0, 4);
-    var items = userToday.length ? userToday : samples;
-    return '<section class="gcs-side-card gcs-schedule" aria-labelledby="gcs-schedule-title"><header><div><span class="gcs-eyebrow">KẾ HOẠCH</span><h2 id="gcs-schedule-title">' + (userToday.length ? 'Lịch trình hôm nay' : 'Lịch mẫu') + '</h2></div><button type="button" data-gcs-action="schedule">' + icon("plus") + '<span>Thêm</span></button></header>' + (items.length ? '<ol>' + items.map(function (item) {
+    var items = userUpcoming.length ? userUpcoming : samples;
+    return '<section class="gcs-side-card gcs-schedule" aria-labelledby="gcs-schedule-title"><header><div><span class="gcs-eyebrow">KẾ HOẠCH</span><h2 id="gcs-schedule-title">' + (userUpcoming.length ? 'Hôm nay &amp; sắp tới' : 'Lịch mẫu') + '</h2></div><button type="button" data-gcs-action="schedule">' + icon("plus") + '<span>Thêm</span></button></header>' + (items.length ? '<ol>' + items.map(function (item) {
       var definition = stepById(item.stepId);
-      var time = item.at ? new Date(item.at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : (item.time || "--:--");
+      var itemDate = item.at ? new Date(item.at) : null;
+      var time = itemDate && Number.isFinite(itemDate.getTime())
+        ? (sameDay(item.at, nowValue) ? itemDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : itemDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }) + " · " + itemDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }))
+        : (item.time || "--:--");
       return '<li data-tone="' + definition.tone + '"><time datetime="' + escapeHtml(item.at || item.time || "") + '">' + escapeHtml(time) + '</time><i aria-hidden="true"></i><div><strong>' + escapeHtml(item.title) + '</strong><span>' + escapeHtml(item.note || definition.title) + '</span>' + (item.isDemo ? '<small class="gcs-demo-badge">Dữ liệu mẫu</small>' : '') + '</div><span class="gcs-schedule-icon">' + icon(definition.icon) + '</span></li>';
     }).join("") + '</ol>' : '<div class="gcs-empty-mini"><span>' + icon("calendar") + '</span><strong>Chưa có lịch hôm nay</strong><p>Thêm một mốc công việc để lịch phản ánh dữ liệu của bạn.</p></div>') + '</section>';
   }
@@ -157,7 +221,7 @@
       { label: "Đã hoàn thành", value: stats.completedProjects, icon: "trophy", tone: "green", note: "Đủ 9 bước" },
       { label: "Bước hoàn tất", value: stats.completedSteps, icon: "check", tone: "gold", note: "Từ dự án của bạn" }
     ];
-    return '<section class="gcs-side-card gcs-stats" aria-labelledby="gcs-stats-title"><header><div><span class="gcs-eyebrow">DỮ LIỆU THẬT</span><h2 id="gcs-stats-title">Thống kê nhanh</h2></div><span class="gcs-local-label">Local-first</span></header><div class="gcs-stats-grid">' + definitions.map(function (item) {
+    return '<section class="gcs-side-card gcs-stats" aria-labelledby="gcs-stats-title"><header><div><span class="gcs-eyebrow">DỮ LIỆU THẬT</span><h2 id="gcs-stats-title">Thống kê nhanh</h2></div><span class="gcs-local-label" data-storage="' + (durableStorage(runtime) ? "durable" : "volatile") + '">' + (durableStorage(runtime) ? "Local-first" : "Bộ nhớ phiên") + '</span></header><div class="gcs-stats-grid">' + definitions.map(function (item) {
       return '<article data-tone="' + item.tone + '"><span>' + icon(item.icon) + '</span><div><small>' + escapeHtml(item.label) + '</small><strong>' + item.value + '</strong><em>' + escapeHtml(item.note) + '</em></div></article>';
     }).join("") + '</div><p class="gcs-stats-note">Không hiển thị lượt xem, doanh thu hoặc người đăng ký khi chưa có nguồn dữ liệu thật.</p></section>';
   }
@@ -186,7 +250,8 @@
     var definition = stepById(runtime.selectedStepId);
     var step = project.steps[definition.id];
     var editable = !project.isDemo && project.editable !== false;
-    return '<section class="gcs-editor" aria-labelledby="gcs-editor-title"><header class="gcs-editor__header"><button class="gcs-back" type="button" data-gcs-action="dashboard">' + icon("back") + '<span>Quay lại tổng quan</span></button><div><span class="gcs-eyebrow">DỰ ÁN ĐANG MỞ</span><h2 id="gcs-editor-title">' + escapeHtml(project.title) + '</h2></div><div class="gcs-editor__actions">' + badge(project) + '<span class="gcs-save-state" data-gcs-save-state data-state="saved">' + icon("save") + '<span>' + (editable ? "Đã lưu cục bộ" : "Chỉ đọc") + '</span></span>' + (project.isDemo ? '<button class="gcs-button gcs-button--primary" type="button" data-gcs-action="clone" data-project-id="' + escapeHtml(project.id) + '">' + icon("copy") + 'Tạo bản sao để sửa</button>' : '<button class="gcs-button gcs-button--danger" type="button" data-gcs-action="delete" aria-label="Xóa dự án" data-project-id="' + escapeHtml(project.id) + '">' + icon("trash") + '<span>Xóa dự án</span></button>') + '</div></header>' + (project.isDemo ? '<div class="gcs-readonly-note" role="note">' + icon("eye") + '<div><strong>Đây là bản mẫu chỉ đọc</strong><span>Tạo bản sao để chỉnh sửa nội dung, trạng thái và checklist. Bản mẫu không được tính vào thống kê.</span></div></div>' : '') + '<div class="gcs-project-settings"><label><span>Tên dự án</span><input data-gcs-project-field="title" maxlength="180" value="' + escapeHtml(project.title) + '"' + (!editable ? ' readonly' : '') + '></label><label><span>Mô tả</span><input data-gcs-project-field="description" maxlength="1000" value="' + escapeHtml(project.description) + '"' + (!editable ? ' readonly' : '') + '></label></div><div class="gcs-workspace"><section class="gcs-workspace__canvas" data-tone="' + definition.tone + '" aria-labelledby="gcs-workspace-title"><header><span class="gcs-workspace__icon">' + icon(definition.icon) + '</span><div><span>BƯỚC ' + definition.number + ' / 9</span><h2 id="gcs-workspace-title">' + escapeHtml(definition.label + " · " + definition.title) + '</h2><p>' + escapeHtml(definition.placeholder) + '</p></div>' + statusPill(step.status) + '</header><div class="gcs-workspace__fields"><label><span>Nội dung chính</span><textarea data-gcs-step-field="content" rows="10" maxlength="30000" placeholder="' + escapeHtml(definition.placeholder) + '"' + (!editable ? ' readonly' : '') + '>' + escapeHtml(step.content) + '</textarea></label><label><span>Ghi chú cho bước này</span><textarea data-gcs-step-field="notes" rows="4" maxlength="10000" placeholder="Quyết định, phản hồi hoặc điều cần kiểm tra..."' + (!editable ? ' readonly' : '') + '>' + escapeHtml(step.notes) + '</textarea></label></div></section><aside class="gcs-workspace__aside"><section class="gcs-status-card"><header><h3>Trạng thái bước</h3><span>Cập nhật tiến độ thật</span></header><div role="radiogroup" aria-label="Trạng thái ' + escapeHtml(definition.title) + '">' + Data.STEP_STATUSES.map(function (status) {
+    var saveState = storageLabel(runtime, editable);
+    return '<section class="gcs-editor" aria-labelledby="gcs-editor-title"><header class="gcs-editor__header"><button class="gcs-back" type="button" data-gcs-action="dashboard">' + icon("back") + '<span>Quay lại tổng quan</span></button><div><span class="gcs-eyebrow">DỰ ÁN ĐANG MỞ</span><h2 id="gcs-editor-title">' + escapeHtml(project.title) + '</h2></div><div class="gcs-editor__actions">' + badge(project) + '<span class="gcs-save-state" data-gcs-save-state data-state="' + saveState.state + '">' + icon("save") + '<span>' + saveState.label + '</span></span>' + (project.isDemo ? '<button class="gcs-button gcs-button--primary" type="button" data-gcs-action="clone" data-project-id="' + escapeHtml(project.id) + '">' + icon("copy") + 'Tạo bản sao để sửa</button>' : '<button class="gcs-button gcs-button--danger" type="button" data-gcs-action="delete" aria-label="Xóa dự án" data-project-id="' + escapeHtml(project.id) + '">' + icon("trash") + '<span>Xóa dự án</span></button>') + '</div></header>' + (project.isDemo ? '<div class="gcs-readonly-note" role="note">' + icon("eye") + '<div><strong>Đây là bản mẫu chỉ đọc</strong><span>Tạo bản sao để chỉnh sửa nội dung, trạng thái và checklist. Bản mẫu không được tính vào thống kê.</span></div></div>' : '') + '<div class="gcs-project-settings"><label><span>Tên dự án</span><input data-gcs-project-field="title" maxlength="180" value="' + escapeHtml(project.title) + '"' + (!editable ? ' readonly' : '') + '></label><label><span>Mô tả</span><input data-gcs-project-field="description" maxlength="1000" value="' + escapeHtml(project.description) + '"' + (!editable ? ' readonly' : '') + '></label></div><div class="gcs-workspace"><section class="gcs-workspace__canvas" data-tone="' + definition.tone + '" aria-labelledby="gcs-workspace-title"><header><span class="gcs-workspace__icon">' + icon(definition.icon) + '</span><div><span>BƯỚC ' + definition.number + ' / 9</span><h2 id="gcs-workspace-title">' + escapeHtml(definition.label + " · " + definition.title) + '</h2><p>' + escapeHtml(definition.placeholder) + '</p></div>' + statusPill(step.status) + '</header><div class="gcs-workspace__fields"><label><span>Nội dung chính</span><textarea data-gcs-step-field="content" rows="10" maxlength="30000" placeholder="' + escapeHtml(definition.placeholder) + '"' + (!editable ? ' readonly' : '') + '>' + escapeHtml(step.content) + '</textarea></label><label><span>Ghi chú cho bước này</span><textarea data-gcs-step-field="notes" rows="4" maxlength="10000" placeholder="Quyết định, phản hồi hoặc điều cần kiểm tra..."' + (!editable ? ' readonly' : '') + '>' + escapeHtml(step.notes) + '</textarea></label></div></section><aside class="gcs-workspace__aside"><section class="gcs-status-card"><header><h3>Trạng thái bước</h3><span>Cập nhật tiến độ thật</span></header><div role="radiogroup" aria-label="Trạng thái ' + escapeHtml(definition.title) + '">' + Data.STEP_STATUSES.map(function (status) {
       return '<label data-status="' + status.id + '"><input type="radio" name="stepStatus" data-gcs-step-status value="' + status.id + '"' + (step.status === status.id ? ' checked' : '') + (!editable ? ' disabled' : '') + '><span><i></i><strong>' + escapeHtml(status.label) + '</strong><small>' + Math.round(status.weight * 100) + '% trọng số bước</small></span></label>';
     }).join("") + '</div></section>' + checklistMarkup(project, step) + '<section class="gcs-metadata"><h3>Thông tin phiên bản</h3><dl><div><dt>Cập nhật bước</dt><dd>' + escapeHtml(formatDate(step.updatedAt)) + '</dd></div><div><dt>Cập nhật dự án</dt><dd>' + escapeHtml(formatDate(project.updatedAt)) + '</dd></div><div><dt>Nguồn</dt><dd>' + escapeHtml(project.source) + '</dd></div>' + (project.templateVersion ? '<div><dt>Phiên bản mẫu</dt><dd>' + escapeHtml(project.templateVersion) + '</dd></div>' : '') + '</dl></section></aside></div></section>';
   }
@@ -194,7 +259,7 @@
   function modalMarkup(runtime) {
     if (!runtime.modal) return "";
     if (runtime.modal === "create") {
-      return '<div class="gcs-modal" data-gcs-modal role="presentation"><section role="dialog" aria-modal="true" aria-labelledby="gcs-modal-title"><button class="gcs-modal__close" type="button" data-gcs-action="close-modal" aria-label="Đóng">' + icon("close") + '</button><span class="gcs-modal__icon">' + icon("sparkles") + '</span><h2 id="gcs-modal-title">Tạo dự án Creator mới</h2><p>Đây là dự án riêng của lớp 1 và được lưu cục bộ trên thiết bị này.</p><form data-gcs-create-form><label><span>Tên dự án</span><input name="title" maxlength="180" required autofocus placeholder="Ví dụ: Hành trình qua Dải Ngân Hà"></label><label><span>Loại nội dung</span><select name="category"><option>Nội dung</option><option>AI Visual</option><option>Video</option><option>Âm nhạc</option><option>Podcast</option><option>Giáo dục</option></select></label><label><span>Mô tả ngắn</span><textarea name="description" maxlength="1000" rows="3" placeholder="Mục tiêu và kết quả mong muốn..."></textarea></label><div><button class="gcs-button gcs-button--quiet" type="button" data-gcs-action="close-modal">Hủy</button><button class="gcs-button gcs-button--primary" type="submit">' + icon("plus") + 'Tạo dự án</button></div></form></section></div>';
+      return '<div class="gcs-modal" data-gcs-modal role="presentation"><section role="dialog" aria-modal="true" aria-labelledby="gcs-modal-title"><button class="gcs-modal__close" type="button" data-gcs-action="close-modal" aria-label="Đóng">' + icon("close") + '</button><span class="gcs-modal__icon">' + icon("sparkles") + '</span><h2 id="gcs-modal-title">Tạo dự án Creator mới</h2><p>Đây là dự án riêng của lớp 1 và ' + (durableStorage(runtime) ? 'được lưu cục bộ trên thiết bị này.' : 'hiện chỉ được giữ trong phiên vì bộ nhớ bền vững không khả dụng.') + '</p><form data-gcs-create-form><label><span>Tên dự án</span><input name="title" maxlength="180" required autofocus placeholder="Ví dụ: Hành trình qua Dải Ngân Hà"></label><label><span>Loại nội dung</span><select name="category"><option>Nội dung</option><option>AI Visual</option><option>Video</option><option>Âm nhạc</option><option>Podcast</option><option>Giáo dục</option></select></label><label><span>Mô tả ngắn</span><textarea name="description" maxlength="1000" rows="3" placeholder="Mục tiêu và kết quả mong muốn..."></textarea></label><div><button class="gcs-button gcs-button--quiet" type="button" data-gcs-action="close-modal">Hủy</button><button class="gcs-button gcs-button--primary" type="submit">' + icon("plus") + 'Tạo dự án</button></div></form></section></div>';
     }
     if (runtime.modal === "schedule") {
       var min = new Date(runtime.now()).toISOString().slice(0, 16);
@@ -205,7 +270,7 @@
 
   function toastMarkup(runtime) {
     if (!runtime.toast) return '<div class="gcs-toast" data-gcs-toast role="status" aria-live="polite" hidden></div>';
-    return '<div class="gcs-toast" data-gcs-toast data-kind="' + escapeHtml(runtime.toast.kind || "info") + '" role="status" aria-live="polite">' + icon(runtime.toast.kind === "error" ? "alert" : "check") + '<span>' + escapeHtml(runtime.toast.message) + '</span></div>';
+    return '<div class="gcs-toast" data-gcs-toast data-kind="' + escapeHtml(runtime.toast.kind || "info") + '" role="status" aria-live="polite">' + icon(runtime.toast.kind === "error" || runtime.toast.kind === "warning" ? "alert" : "check") + '<span>' + escapeHtml(runtime.toast.message) + '</span></div>';
   }
 
   function renderMarkup(runtime) {
@@ -248,7 +313,7 @@
     if (node) {
       node.hidden = false;
       node.dataset.kind = runtime.toast.kind;
-      node.innerHTML = icon(kind === "error" ? "alert" : "check") + '<span>' + escapeHtml(runtime.toast.message) + '</span>';
+      node.innerHTML = icon(kind === "error" || kind === "warning" ? "alert" : "check") + '<span>' + escapeHtml(runtime.toast.message) + '</span>';
     }
     if (runtime.toastTimer) globalScope.clearTimeout(runtime.toastTimer);
     runtime.toastTimer = globalScope.setTimeout ? globalScope.setTimeout(function () {
@@ -266,6 +331,16 @@
     if (labelNode) labelNode.textContent = label;
   }
 
+  function notifyMutation(runtime, successMessage, volatileMessage) {
+    if (durableStorage(runtime)) {
+      if (successMessage) setToast(runtime, successMessage, "success");
+      return true;
+    }
+    setSaveState(runtime, "volatile", "Chỉ lưu trong phiên này");
+    setToast(runtime, volatileMessage || "Thay đổi chỉ được giữ trong phiên này. Hãy xuất JSON trước khi rời trang.", "warning");
+    return false;
+  }
+
   function flushAutosave(runtime) {
     if (runtime.autosaveTimer) globalScope.clearTimeout(runtime.autosaveTimer);
     runtime.autosaveTimer = 0;
@@ -277,6 +352,12 @@
       if (!project || project.isDemo) return false;
       if (Object.keys(pending.project).length) runtime.store.updateProject(pending.projectId, pending.project);
       Object.keys(pending.steps).forEach(function (stepId) { runtime.store.updateStep(pending.projectId, stepId, pending.steps[stepId]); });
+      if (!durableStorage(runtime)) {
+        setSaveState(runtime, "volatile", "Chỉ lưu trong phiên này");
+        setToast(runtime, "Đã cập nhật trong phiên hiện tại nhưng không thể lưu bền vững. Hãy xuất JSON trước khi rời trang.", "warning");
+        emit(runtime, "autosave-volatile", { projectId: pending.projectId, storageKind: runtime.store.storageKind() });
+        return false;
+      }
       setSaveState(runtime, "saved", "Đã lưu cục bộ");
       emit(runtime, "autosaved", { projectId: pending.projectId });
       return true;
@@ -307,15 +388,37 @@
     return field ? String(field.value || "") : "";
   }
 
-  function openModal(runtime, name) {
+  function focusReturnDescriptor(runtime, opener, fallbackAction) {
+    var action = opener && opener.getAttribute && opener.getAttribute("data-gcs-action") || fallbackAction;
+    if (!action || !/^[a-z-]+$/.test(action) || !runtime.root.querySelectorAll) return null;
+    var selector = '[data-gcs-action="' + action + '"]';
+    var candidates = Array.prototype.slice.call(runtime.root.querySelectorAll(selector));
+    var index = candidates.indexOf(opener);
+    return { selector: selector, index: index >= 0 ? index : 0 };
+  }
+
+  function restoreModalFocus(runtime, descriptor) {
+    if (!descriptor || !runtime.root.querySelectorAll) return false;
+    var candidates = Array.prototype.slice.call(runtime.root.querySelectorAll(descriptor.selector));
+    var target = candidates[descriptor.index] || candidates[0];
+    if (!target || typeof target.focus !== "function") return false;
+    target.focus();
+    return true;
+  }
+
+  function openModal(runtime, name, opener) {
     flushAutosave(runtime);
+    runtime.modalReturnFocus = focusReturnDescriptor(runtime, opener, name === "schedule" ? "schedule" : "create");
     runtime.modal = name;
     render(runtime, "[data-gcs-modal] input[autofocus]");
   }
 
   function closeModal(runtime) {
+    var returnFocus = runtime.modalReturnFocus;
     runtime.modal = null;
-    render(runtime, '[data-gcs-action="create"]');
+    runtime.modalReturnFocus = null;
+    render(runtime);
+    restoreModalFocus(runtime, returnFocus);
   }
 
   function chooseFirstIncomplete(project) {
@@ -331,6 +434,7 @@
     runtime.selectedStepId = stepId && project.steps[stepId] ? stepId : chooseFirstIncomplete(project);
     runtime.view = "editor";
     runtime.modal = null;
+    runtime.modalReturnFocus = null;
     render(runtime, "#gcs-main");
     emit(runtime, "project-opened", { projectId: project.id, isDemo: project.isDemo });
   }
@@ -362,8 +466,8 @@
   function handleAction(runtime, button) {
     var action = button.getAttribute("data-gcs-action");
     var projectId = button.getAttribute("data-project-id");
-    if (action === "create") return openModal(runtime, "create");
-    if (action === "schedule") return openModal(runtime, "schedule");
+    if (action === "create") return openModal(runtime, "create", button);
+    if (action === "schedule") return openModal(runtime, "schedule", button);
     if (action === "close-modal") return closeModal(runtime);
     if (action === "dashboard") { flushAutosave(runtime); runtime.view = "dashboard"; render(runtime, "#gcs-main"); return; }
     if (action === "open") return openProject(runtime, projectId);
@@ -371,7 +475,7 @@
       try {
         var cloned = runtime.store.cloneProject(projectId);
         openProject(runtime, cloned.id);
-        setToast(runtime, "Đã tạo bản sao có thể chỉnh sửa.", "success");
+        notifyMutation(runtime, "Đã tạo bản sao có thể chỉnh sửa.", "Bản sao chỉ được giữ trong phiên này. Hãy xuất JSON trước khi rời trang.");
         emit(runtime, "project-cloned", { projectId: cloned.id, clonedFrom: projectId });
       } catch (error) { setToast(runtime, error.message, "error"); }
       return;
@@ -380,12 +484,12 @@
       flushAutosave(runtime);
       var allow = typeof runtime.options.confirm === "function" ? runtime.options.confirm("Xóa dự án này?") : (typeof globalScope.confirm === "function" ? globalScope.confirm("Xóa dự án này? Thao tác không thể hoàn tác.") : false);
       if (!allow) return;
-      try { runtime.store.removeProject(projectId); runtime.activeProjectId = null; runtime.view = "dashboard"; render(runtime, "#gcs-main"); setToast(runtime, "Đã xóa dự án và lịch liên quan.", "success"); emit(runtime, "project-deleted", { projectId: projectId }); }
+      try { runtime.store.removeProject(projectId); runtime.activeProjectId = null; runtime.view = "dashboard"; render(runtime, "#gcs-main"); notifyMutation(runtime, "Đã xóa dự án và lịch liên quan.", "Dự án chỉ bị xóa trong phiên hiện tại; thay đổi không thể lưu bền vững."); emit(runtime, "project-deleted", { projectId: projectId }); }
       catch (error) { setToast(runtime, error.message, "error"); }
       return;
     }
-    if (action === "hide-demo") { runtime.store.hideDemo(projectId); if (runtime.activeProjectId === projectId) runtime.activeProjectId = null; render(runtime); setToast(runtime, "Đã ẩn bản mẫu. Bạn có thể khôi phục sau.", "success"); return; }
-    if (action === "restore-demos") { runtime.store.restoreDemos(); render(runtime); setToast(runtime, "Đã khôi phục các bản mẫu.", "success"); return; }
+    if (action === "hide-demo") { runtime.store.hideDemo(projectId); if (runtime.activeProjectId === projectId) runtime.activeProjectId = null; render(runtime); notifyMutation(runtime, "Đã ẩn bản mẫu. Bạn có thể khôi phục sau.", "Bản mẫu chỉ được ẩn trong phiên hiện tại."); return; }
+    if (action === "restore-demos") { runtime.store.restoreDemos(); render(runtime); notifyMutation(runtime, "Đã khôi phục các bản mẫu.", "Bản mẫu chỉ được khôi phục trong phiên hiện tại."); return; }
     if (action === "export") { flushAutosave(runtime); return downloadExport(runtime); }
     if (action === "import") { flushAutosave(runtime); var input = runtime.root.querySelector && runtime.root.querySelector("[data-gcs-import]"); if (input && typeof input.click === "function") input.click(); return; }
     if (action === "tool") {
@@ -469,12 +573,28 @@
     if (target.matches && target.matches("[data-gcs-import]")) {
       var file = target.files && target.files[0];
       if (!file) return;
-      Promise.resolve(typeof file.text === "function" ? file.text() : "").then(function (text) {
-        var result = runtime.store.importJSON(text, { mode: "merge" });
+      try { validateImportFile(file); }
+      catch (error) {
+        target.value = "";
+        setToast(runtime, error.message || "Tệp nhập không an toàn.", "error");
+        emit(runtime, "import-rejected", { code: error.code || "INVALID_IMPORT" });
+        return;
+      }
+      Promise.resolve(file.text()).then(function (text) {
+        if (!runtime.mounted) return;
+        var payload = parseImportPayload(text);
+        var result = runtime.store.importJSON(payload, { mode: "merge" });
+        target.value = "";
         runtime.view = "dashboard";
         render(runtime);
-        setToast(runtime, "Đã nhập " + result.projects + " dự án và " + result.schedule + " lịch.", "success");
-      }).catch(function (error) { setToast(runtime, error.message || "Không thể đọc tệp JSON.", "error"); });
+        notifyMutation(runtime, "Đã nhập " + result.projects + " dự án và " + result.schedule + " lịch.", "Đã nhập " + result.projects + " dự án và " + result.schedule + " lịch vào phiên hiện tại, nhưng không thể lưu bền vững. Hãy xuất JSON trước khi rời trang.");
+        emit(runtime, "data-imported", { projects: result.projects, schedule: result.schedule, storageKind: runtime.store.storageKind() });
+      }).catch(function (error) {
+        if (!runtime.mounted) return;
+        target.value = "";
+        setToast(runtime, error.message || "Không thể đọc tệp JSON.", "error");
+        emit(runtime, "import-rejected", { code: error.code || "INVALID_IMPORT" });
+      });
     }
   }
 
@@ -486,8 +606,9 @@
       try {
         var project = runtime.store.createProject({ title: formValue(form, "title"), category: formValue(form, "category"), description: formValue(form, "description") });
         runtime.modal = null;
+        runtime.modalReturnFocus = null;
         openProject(runtime, project.id, "idea");
-        setToast(runtime, "Đã tạo dự án và bật tự động lưu.", "success");
+        notifyMutation(runtime, "Đã tạo dự án và bật tự động lưu.", "Đã tạo dự án trong phiên hiện tại, nhưng không thể lưu bền vững. Hãy xuất JSON trước khi rời trang.");
       } catch (error) { setToast(runtime, error.message, "error"); }
       return;
     }
@@ -496,9 +617,10 @@
       try {
         runtime.store.addSchedule({ title: formValue(form, "title"), at: formValue(form, "at"), stepId: formValue(form, "stepId"), note: formValue(form, "note"), projectId: runtime.activeProjectId });
         runtime.modal = null;
+        runtime.modalReturnFocus = null;
         runtime.view = "dashboard";
         render(runtime);
-        setToast(runtime, "Đã thêm lịch công việc.", "success");
+        notifyMutation(runtime, "Đã thêm lịch công việc.", "Lịch mới chỉ được giữ trong phiên này. Hãy xuất JSON trước khi rời trang.");
       } catch (error) { setToast(runtime, error.message, "error"); }
       return;
     }
@@ -517,8 +639,13 @@
   function handleKeydown(runtime, event) {
     var target = event.target || event.srcElement;
     var typing = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable);
-    if ((event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === "s") { event.preventDefault && event.preventDefault(); flushAutosave(runtime); setToast(runtime, "Đã lưu thay đổi cục bộ.", "success"); }
-    if ((event.ctrlKey || event.metaKey) && event.shiftKey && String(event.key).toLowerCase() === "n") { event.preventDefault && event.preventDefault(); openModal(runtime, "create"); }
+    if ((event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === "s") {
+      event.preventDefault && event.preventDefault();
+      var saved = flushAutosave(runtime);
+      if (durableStorage(runtime)) setToast(runtime, saved ? "Đã lưu thay đổi cục bộ." : "Không có thay đổi mới cần lưu.", "success");
+      else setToast(runtime, "Không thể lưu bền vững; dữ liệu hiện chỉ còn trong phiên này.", "warning");
+    }
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && String(event.key).toLowerCase() === "n") { event.preventDefault && event.preventDefault(); openModal(runtime, "create", null); }
     if ((event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === "k") { event.preventDefault && event.preventDefault(); var search = runtime.root.querySelector && runtime.root.querySelector("[data-gcs-search]"); if (search && search.focus) search.focus(); }
     if (runtime.modal && event.key === "Tab" && runtime.root.querySelectorAll) {
       var focusable = Array.prototype.slice.call(runtime.root.querySelectorAll('[data-gcs-modal] button:not([disabled]), [data-gcs-modal] input:not([disabled]), [data-gcs-modal] select:not([disabled]), [data-gcs-modal] textarea:not([disabled]), [data-gcs-modal] [tabindex]:not([tabindex="-1"])'));
@@ -562,6 +689,7 @@
       activeProjectId: initialProject && initialProject.id || null,
       selectedStepId: initialProject ? chooseFirstIncomplete(initialProject) : "idea",
       modal: null,
+      modalReturnFocus: null,
       toast: null,
       toastTimer: 0,
       autosaveTimer: 0,
@@ -582,6 +710,7 @@
     addListener(runtime, root, "keydown", function (event) { handleKeydown(runtime, event); });
     var doc = root.ownerDocument || globalScope.document;
     addListener(runtime, doc, "visibilitychange", function () { if (doc && doc.hidden) flushAutosave(runtime); });
+    if (!durableStorage(runtime)) setToast(runtime, "Bộ nhớ bền vững không khả dụng. Thay đổi chỉ tồn tại trong phiên này; hãy xuất JSON để sao lưu.", "warning");
     emit(runtime, "mounted", { storageKind: store.storageKind(), projectCount: snapshot.projects.filter(function (item) { return !item.isDemo; }).length });
     return Object.freeze({
       route: ROUTE,
@@ -640,8 +769,11 @@
   var api = Object.freeze({
     VERSION: VERSION,
     ROUTE: ROUTE,
+    IMPORT_LIMITS: IMPORT_LIMITS,
     normalizeRoute: normalizeRoute,
     canHandle: canHandle,
+    validateImportFile: validateImportFile,
+    parseImportPayload: parseImportPayload,
     renderMarkup: renderMarkup,
     mount: mount,
     unmount: unmount,
