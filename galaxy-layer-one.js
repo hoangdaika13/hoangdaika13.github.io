@@ -1957,6 +1957,84 @@
     });
   }
 
+  function collectPersistentChrome(currentRoot, nextRoot) {
+    if (!currentRoot || !nextRoot) return null;
+    const selectors = {
+      cosmos: ".hgl1-cosmos",
+      sidebar: ".hgl1-sidebar",
+      nav: ".hgl1-sidebar .hgl1-nav",
+      backdrop: ".hgl1-backdrop",
+      shell: ".hgl1-shell",
+      topbar: ".hgl1-topbar",
+      main: ".hgl1-main",
+      mobileNav: ".hgl1-mobile-nav"
+    };
+    const nodes = { currentRoot: currentRoot, nextRoot: nextRoot };
+    const names = Object.keys(selectors);
+    for (let index = 0; index < names.length; index += 1) {
+      const name = names[index];
+      nodes["current" + name.charAt(0).toLocaleUpperCase("en-US") + name.slice(1)] = currentRoot.querySelector(selectors[name]);
+      nodes["next" + name.charAt(0).toLocaleUpperCase("en-US") + name.slice(1)] = nextRoot.querySelector(selectors[name]);
+      if (!nodes["current" + name.charAt(0).toLocaleUpperCase("en-US") + name.slice(1)] || !nodes["next" + name.charAt(0).toLocaleUpperCase("en-US") + name.slice(1)]) return null;
+    }
+
+    nodes.currentRouteLinks = Array.prototype.slice.call(currentRoot.querySelectorAll(".hgl1-nav__link[data-hgl1-route]"));
+    nodes.nextRouteLinks = Array.prototype.slice.call(nextRoot.querySelectorAll(".hgl1-nav__link[data-hgl1-route]"));
+    if (nodes.currentRouteLinks.length !== nodes.nextRouteLinks.length) return null;
+    for (let linkIndex = 0; linkIndex < nodes.currentRouteLinks.length; linkIndex += 1) {
+      if (nodes.currentRouteLinks[linkIndex].getAttribute("data-hgl1-route") !== nodes.nextRouteLinks[linkIndex].getAttribute("data-hgl1-route")) return null;
+    }
+    return nodes;
+  }
+
+  function syncPersistentChrome(nodes) {
+    if (!nodes) return false;
+    [
+      [nodes.currentRoot, nodes.nextRoot],
+      [nodes.currentCosmos, nodes.nextCosmos],
+      [nodes.currentSidebar, nodes.nextSidebar],
+      [nodes.currentNav, nodes.nextNav],
+      [nodes.currentBackdrop, nodes.nextBackdrop],
+      [nodes.currentShell, nodes.nextShell],
+      [nodes.currentTopbar, nodes.nextTopbar],
+      [nodes.currentMobileNav, nodes.nextMobileNav]
+    ].forEach(function syncChromeAttributes(pair) {
+      syncElementAttributes(pair[0], pair[1]);
+    });
+    nodes.currentRouteLinks.forEach(function syncRouteLink(link, index) {
+      syncElementAttributes(link, nodes.nextRouteLinks[index]);
+    });
+
+    const dynamicTextSelectors = [
+      ".hgl1-breadcrumb strong",
+      ".hgl1-topbar__status b",
+      ".hgl1-topbar > .hgl1-avatar--small",
+      ".hgl1-profile .hgl1-avatar",
+      ".hgl1-profile b",
+      ".hgl1-profile small"
+    ];
+    for (let index = 0; index < dynamicTextSelectors.length; index += 1) {
+      const selector = dynamicTextSelectors[index];
+      const current = nodes.currentRoot.querySelector(selector);
+      const next = nodes.nextRoot.querySelector(selector);
+      if (!current || !next) return false;
+      syncElementAttributes(current, next);
+      if (current.textContent !== next.textContent) current.textContent = next.textContent;
+    }
+    const currentNetwork = nodes.currentRoot.querySelector(".hgl1-topbar__status");
+    const nextNetwork = nodes.nextRoot.querySelector(".hgl1-topbar__status");
+    const currentNetworkDot = currentNetwork && currentNetwork.querySelector("span");
+    const nextNetworkDot = nextNetwork && nextNetwork.querySelector("span");
+    if (!currentNetwork || !nextNetwork || !currentNetworkDot || !nextNetworkDot) return false;
+    syncElementAttributes(currentNetwork, nextNetwork);
+    syncElementAttributes(currentNetworkDot, nextNetworkDot);
+
+    const currentCommandTone = nodes.currentRoot.querySelector("[data-hgl1-command-palette] header .hgl1-nav__icon");
+    const nextCommandTone = nodes.nextRoot.querySelector("[data-hgl1-command-palette] header .hgl1-nav__icon");
+    if (currentCommandTone && nextCommandTone) syncElementAttributes(currentCommandTone, nextCommandTone);
+    return true;
+  }
+
   // Rebuild the route around an active media/game island without ever removing
   // that island from the connected DOM. In particular, detaching an iframe can
   // destroy its browsing context even when the same node is appended again.
@@ -1971,6 +2049,11 @@
     const nextIsland = nextRoot && nextRoot.querySelector(selector);
     if (!nextRoot || !nextIsland) return false;
 
+    const chrome = collectPersistentChrome(currentRoot, nextRoot);
+    if (!chrome) return false;
+    const currentMain = chrome.currentMain;
+    const nextMain = chrome.nextMain;
+
     function chain(root, leaf) {
       const result = [];
       let node = leaf;
@@ -1982,12 +2065,13 @@
       return result[result.length - 1] === root ? result.reverse() : [];
     }
 
-    const currentChain = chain(currentRoot, currentIsland);
-    const nextChain = chain(nextRoot, nextIsland);
+    const currentChain = chain(currentMain, currentIsland);
+    const nextChain = chain(nextMain, nextIsland);
     if (!currentChain.length || currentChain.length !== nextChain.length) return false;
     for (let index = 0; index < currentChain.length; index += 1) {
       if (currentChain[index].nodeName !== nextChain[index].nodeName) return false;
     }
+    if (!syncPersistentChrome(chrome)) return false;
 
     for (let index = 0; index < currentChain.length; index += 1) {
       const currentNode = currentChain[index];
@@ -2007,6 +2091,24 @@
         else currentNode.insertBefore(clone, currentBranch);
       });
     }
+    runtime.app = currentRoot;
+    return true;
+  }
+
+  // Route changes replace only the outlet. The app root, both navigation bars,
+  // sidebar and cosmic background keep their DOM identity, so their animations,
+  // focus state and scroll position continue without a visible flash.
+  function renderPreservingChrome(markup) {
+    if (!runtime || !runtime.app || !globalScope.document) return false;
+    const currentRoot = runtime.app;
+    if (currentRoot.isConnected === false) return false;
+    const template = globalScope.document.createElement("template");
+    template.innerHTML = String(markup || "").trim();
+    const nextRoot = template.content && template.content.querySelector(".hh-galaxy-app");
+    const chrome = collectPersistentChrome(currentRoot, nextRoot);
+    if (!chrome || !chrome.currentMain.parentNode) return false;
+    if (!syncPersistentChrome(chrome)) return false;
+    chrome.currentMain.parentNode.replaceChild(chrome.nextMain, chrome.currentMain);
     runtime.app = currentRoot;
     return true;
   }
@@ -2136,7 +2238,11 @@
     else if (runtime.devPreviewFrame && runtime.route === "/galaxy/dev") islandSelector = "[data-hgl1-dev-preview-host]";
     else if (runtime.route === "/home") islandSelector = "[data-hh-galaxy-home-host]";
     else if (runtime.route === "/galaxy/creator") islandSelector = "[data-hh-galaxy-creator-host]";
-    const preserved = islandSelector && renderPreservingIsland(markup, islandSelector);
+    const preserveChangedRouteChrome = runtime.preserveChromeNextRender === true;
+    runtime.preserveChromeNextRender = false;
+    let preserved = preserveChangedRouteChrome && renderPreservingChrome(markup);
+    if (!preserved && islandSelector) preserved = renderPreservingIsland(markup, islandSelector);
+    if (!preserved && runtime.app) preserved = renderPreservingChrome(markup);
     if (!preserved) {
       runtime.host.innerHTML = markup;
       runtime.app = runtime.host.querySelector(".hh-galaxy-app");
@@ -2222,12 +2328,14 @@
     const match = findRoute(route);
     if (!match || !runtime) return false;
     setDrawer(false, false);
+    closeSearches();
+    const active = runtime;
     if (typeof runtime.options.navigate === "function") {
       runtime.options.navigate(match.route, { source: "galaxy-layer-one", layer: "galaxy" });
     } else {
       try { globalScope.location.hash = "#" + match.route; } catch (_) { /* syncRoute below remains usable. */ }
     }
-    syncRoute(match.route);
+    if (runtime === active && runtime.route !== match.route) syncRoute(match.route);
     return true;
   }
 
@@ -4833,7 +4941,11 @@
     if (!match) return null;
     if (!runtime) return match;
     const changed = runtime.route !== match.route;
+    if (!changed) return match;
     if (changed) {
+      closeCommandPalette(false);
+      closeSearches();
+      setDrawer(false, false);
       cleanupDelegate();
       cleanupRouteRuntime();
       cleanupMediaSession();
@@ -4841,6 +4953,7 @@
       runtime.settingsDraft = null;
       runtime.pendingBackup = null;
     }
+    runtime.preserveChromeNextRender = Boolean(runtime.app && runtime.app.isConnected !== false);
     runtime.route = match.route;
     runtime.viewStatus = null;
     runtime.viewMessage = "";
@@ -4886,8 +4999,11 @@
     const requested = findRoute(options.route || currentRoute());
     if (!requested) return false;
     if (runtime && runtime.host === host) {
+      const routeChanged = runtime.route !== requested.route;
       runtime.options = Object.assign({}, runtime.options, options);
-      return Boolean(syncRoute(requested.route));
+      const synchronized = Boolean(syncRoute(requested.route));
+      if (synchronized && !routeChanged) render();
+      return synchronized;
     }
     if (runtime) unmount();
 
@@ -4950,7 +5066,8 @@
       drawerModal: true,
       commandPaletteOpen: false,
       commandIndex: 0,
-      commandReturnFocus: null
+      commandReturnFocus: null,
+      preserveChromeNextRender: false
     };
     host.setAttribute("data-hh-galaxy-layer-one-host", "v" + VERSION);
     listen(host, "click", handleClick);

@@ -269,6 +269,45 @@ test("CSS is isolated, responsive and accessibility-aware", () => {
   assert.doesNotMatch(styles, /(^|\n)\s*(body|html|:root|\*)\s*[{,]/);
 });
 
+test("persistent sidebar adds bounded cosmic motion without moving its layout", () => {
+  for (const animation of [
+    "hgl1-sidebar-star-drift",
+    "hgl1-sidebar-edge-scan",
+    "hgl1-sidebar-product-twinkle",
+    "hgl1-sidebar-brand-star",
+    "hgl1-sidebar-brand-orbit",
+    "hgl1-sidebar-active-shimmer",
+    "hgl1-sidebar-active-twinkle",
+    "hgl1-sidebar-icon-signal",
+    "hgl1-sidebar-planet-halo",
+    "hgl1-sidebar-arrow-signal"
+  ]) {
+    assert.match(styles, new RegExp("@keyframes\\s+" + animation + "\\s*\\{"), "missing " + animation);
+  }
+
+  assert.match(styles, /\.hh-galaxy-app \.hgl1-nav\s*\{[\s\S]*?overflow-y:\s*auto;[\s\S]*?overscroll-behavior:\s*contain;[\s\S]*?scrollbar-gutter:\s*stable;/);
+  assert.match(styles, /\.hh-galaxy-app \.hgl1-nav__link\[aria-current="page"\]::before\s*\{[^}]*animation:\s*hgl1-sidebar-active-shimmer/s);
+  assert.match(styles, /\.hh-galaxy-app \.hgl1-nav__link\[aria-current="page"\] \.hgl1-nav__icon \.hgl1-icon\s*\{[^}]*animation:\s*hgl1-sidebar-icon-signal/s);
+  assert.match(styles, /\.hh-galaxy-app\[data-effects="quiet"\][\s\S]*?hgl1-sidebar-active-shimmer|\.hh-galaxy-app\[data-effects="quiet"\][\s\S]*?\.hgl1-nav__link::before/);
+  assert.match(styles, /data-device-tier="low"/);
+  assert.match(styles, /data-gha-device-tier="low"/);
+  assert.match(styles, /@media \(update:\s*slow\), \(prefers-reduced-data:\s*reduce\)/);
+  assert.match(styles, /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.hgl1-sidebar::before[\s\S]*?animation:\s*none !important;/);
+  assert.match(styles, /\.hgl1-nav__link::before\s*\{[\s\S]*?will-change:\s*auto;/);
+  assert.match(styles, /\.hgl1-nav__link\[aria-current="page"\]::before\s*\{[^}]*will-change:\s*transform,\s*opacity;/s);
+
+  const motionBlocks = [...styles.matchAll(/@keyframes\s+(hgl1-sidebar-[\w-]+)\s*\{([\s\S]*?)\n\}/g)];
+  assert.ok(motionBlocks.length >= 10, "sidebar motion suite must remain complete");
+  for (const [, name, declarations] of motionBlocks) {
+    assert.doesNotMatch(
+      declarations,
+      /(?:^|[;{]\s*)(?:width|height|inset|top|right|bottom|left|margin|padding)\s*:/m,
+      name + " must not animate layout geometry"
+    );
+  }
+  assert.doesNotMatch(styles, /\.hh-galaxy-app \.hgl1-nav__link\s*\{[^}]*\banimation\s*:/s, "inactive rows must not animate");
+});
+
 test("source contains no Core gateway call-site, remote frame or fake metric claims", () => {
   assert.doesNotMatch(source, /HHCoreGateway|\.enter\s*\(|data-gha-entry|href="https?:|window\.open|<iframe/i);
   assert.doesNotMatch(source, /1\.2M|73%|99\.9%|12\.5K|doanh thu|online users/i);

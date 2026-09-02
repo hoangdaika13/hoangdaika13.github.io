@@ -478,6 +478,51 @@ test("active media and game islands stay connected across same-route renders", (
   assert.doesNotMatch(source, /(?:timeupdate|progress|volumechange)[\s\S]{0,300}\brender\s*\(/i);
 });
 
+test("Layer One route changes preserve the connected shell and replace only the main outlet", () => {
+  const collectorSection = functionSection(source, "collectPersistentChrome", "syncPersistentChrome");
+  for (const selector of [
+    ".hgl1-cosmos",
+    ".hgl1-sidebar",
+    ".hgl1-sidebar .hgl1-nav",
+    ".hgl1-main",
+    ".hgl1-mobile-nav"
+  ]) {
+    assert.ok(collectorSection.includes(JSON.stringify(selector)), `persistent chrome must require ${selector}`);
+  }
+  assert.match(collectorSection, /currentRouteLinks[\s\S]{0,260}nextRouteLinks/);
+  assert.match(collectorSection, /data-hgl1-route[\s\S]{0,360}data-hgl1-route/, "route links must be paired before any in-place update");
+
+  const syncChromeSection = functionSection(source, "syncPersistentChrome", "renderPreservingIsland");
+  assert.match(syncChromeSection, /currentRouteLinks\.forEach[\s\S]{0,180}syncElementAttributes/, "desktop and mobile links must update aria-current without replacing their nav nodes");
+  assert.match(syncChromeSection, /\.hgl1-breadcrumb strong/, "the persistent topbar must receive the current route label");
+  assert.match(syncChromeSection, /\.hgl1-topbar__status/, "the persistent topbar must receive current connectivity state");
+
+  const preserveSection = functionSection(source, "renderPreservingChrome", "analyticsEngine");
+  assert.match(preserveSection, /collectPersistentChrome\s*\(\s*currentRoot\s*,\s*nextRoot\s*\)/);
+  assert.match(preserveSection, /syncPersistentChrome\s*\(\s*chrome\s*\)/);
+  assert.match(preserveSection, /currentMain\.parentNode\.replaceChild\s*\(\s*chrome\.nextMain\s*,\s*chrome\.currentMain\s*\)/, "only the route outlet may be replaced");
+  assert.doesNotMatch(preserveSection, /runtime\.host\.innerHTML|currentRoot\.innerHTML|currentSidebar\.innerHTML|currentNav\.innerHTML|currentMobileNav\.innerHTML/, "persistent shell nodes must never be rebuilt with innerHTML");
+
+  const islandSection = functionSection(source, "renderPreservingIsland", "renderPreservingChrome");
+  assert.match(islandSection, /chain\s*\(\s*currentMain\s*,\s*currentIsland\s*\)/, "media/game reconciliation must begin inside main, not at the app root");
+  assert.match(islandSection, /syncPersistentChrome\s*\(\s*chrome\s*\)/, "same-route island renders must preserve the shell too");
+
+  const renderSection = functionSection(source, "render", "showToast");
+  const readFlag = renderSection.indexOf("runtime.preserveChromeNextRender === true");
+  const consumeFlag = renderSection.indexOf("runtime.preserveChromeNextRender = false");
+  const preserveCall = renderSection.indexOf("renderPreservingChrome(markup)");
+  assert.ok(readFlag >= 0 && consumeFlag > readFlag && preserveCall > consumeFlag, "the route-change preservation flag must be consumed before reconciliation");
+  assert.equal((renderSection.match(/runtime\.preserveChromeNextRender\s*=\s*false/g) || []).length, 1, "each render must consume the preservation request exactly once");
+
+  const syncRouteSection = functionSection(source, "syncRoute", "unmount");
+  assert.match(syncRouteSection, /if\s*\(\s*!changed\s*\)\s*return\s+match/, "duplicate hash/router notifications must not trigger another render");
+  assert.match(syncRouteSection, /preserveChromeNextRender\s*=\s*Boolean\s*\([\s\S]{0,100}runtime\.app/, "route changes must request one persistent-shell render");
+  assert.equal((syncRouteSection.match(/\brender\s*\(\s*\)/g) || []).length, 1, "a changed route must render exactly once");
+
+  const navigateSection = functionSection(source, "navigate", "searchResultsMarkup");
+  assert.match(navigateSection, /const active = runtime[\s\S]{0,420}runtime === active\s*&&\s*runtime\.route !== match\.route[\s\S]{0,80}syncRoute/, "an embedded router that already synchronized the route must not cause a second render");
+});
+
 test("AI provider probing is single-flight, cached and stale-result safe", () => {
   const probeSection = functionSection(source, "probeAiProvider", "submitAiPrompt");
   assert.match(probeSection, /!force\s*&&\s*active\.aiProbe\s*&&\s*active\.aiProbe\.promise[\s\S]{0,100}return\s+active\.aiProbe\.promise/, "ordinary renders must reuse an in-flight provider probe");

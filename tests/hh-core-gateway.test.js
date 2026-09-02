@@ -155,6 +155,21 @@ test("explicit leave locks browser back and forward Core routes again", () => {
   assert.equal(gateway.resolveRoute("/galaxy/settings", { storage }).allowed, true);
 });
 
+test("an explicit HH Core click keeps a page-scoped grant when sessionStorage is unavailable", () => {
+  const blockedStorage = {
+    getItem() { throw new Error("storage blocked"); },
+    setItem() { throw new Error("storage blocked"); },
+    removeItem() { throw new Error("storage blocked"); }
+  };
+  assert.equal(gateway.resolveRoute("/create", { storage: blockedStorage }).allowed, false);
+  assert.equal(gateway.enter({ source: "sidebar", storage: blockedStorage }), false);
+  assert.equal(gateway.enter({ source: "hh-core", storage: blockedStorage }), true);
+  assert.equal(gateway.hasAccess(blockedStorage), true);
+  assert.equal(gateway.resolveRoute("/create", { storage: blockedStorage }).allowed, true);
+  assert.equal(gateway.leave({ source: "explicit-exit", storage: blockedStorage }), true);
+  assert.equal(gateway.hasAccess(blockedStorage), false);
+});
+
 test("router resolves the layer boundary before asking the asset loader", () => {
   const router = read("script.js");
   const loader = read("performance-loader.js");
@@ -166,6 +181,9 @@ test("router resolves the layer boundary before asking the asset loader", () => 
   assert.match(router, /history\.replaceState[\s\S]*?#\$\{gateway\.gatewayRoute\}/);
   assert.match(router, /data-hh-core-exit/);
   assert.match(router, /HHCoreGateway\?\.leave\?\.\(\{ source: "logout" \}\)/);
+  assert.match(router, /const grantCoreAccessFromGateway =/);
+  assert.match(router, /source !== gateway\.entrySource[\s\S]{0,180}currentRoute !== gateway\.gatewayRoute[\s\S]{0,180}destination !== gateway\.platformEntryRoute/);
+  assert.match(router, /gateway\.enter\(\{ source: gateway\.entrySource \}\)[\s\S]{0,120}gateway\.hasAccess\(\) === true/);
   assert.match(home, /data-gha-entry="hh-core"[^>]*data-gha-route="\$\{CORE_ENTRY_ROUTE\}"/);
   assert.match(home, /enterCore\(runtime[\s\S]*?runtime\.options\.enterCore[\s\S]*?navigate\(runtime, destination\)/);
   assert.match(loader, /const allowed = gateway\?\.resolveRoute[\s\S]{0,240}?if \(allowed\) ensureForRoute/, "locked Platform routes must not prefetch before Core access");

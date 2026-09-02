@@ -230,6 +230,7 @@
   position: sticky;
   z-index: 40;
   top: 0;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   width: var(--hgl1-sidebar-w);
@@ -237,27 +238,60 @@
   min-height: 0;
   padding: 12px 10px 14px;
   background:
+    radial-gradient(circle at 17% 13%, rgba(255, 255, 255, 0.52) 0 0.7px, transparent 1.3px),
+    radial-gradient(circle at 73% 29%, rgba(34, 211, 238, 0.44) 0 0.8px, transparent 1.4px),
+    radial-gradient(circle at 38% 68%, rgba(226, 75, 255, 0.36) 0 0.7px, transparent 1.35px),
     linear-gradient(180deg, rgba(4, 7, 28, 0.97), rgba(4, 8, 29, 0.93)),
     radial-gradient(circle at 50% 5%, rgba(139, 92, 246, 0.13), transparent 24%);
+  background-position: 0 0, 19px 31px, 47px 13px, 0 0, 0 0;
+  background-size: 97px 109px, 131px 127px, 173px 157px, auto, auto;
   border-right: 1px solid var(--hgl1-line);
   box-shadow: 20px 0 60px rgba(0, 0, 0, 0.18);
   overflow: hidden;
 }
 
+.hh-galaxy-app .hgl1-sidebar::before {
+  position: absolute;
+  z-index: 0;
+  content: "";
+  inset: -18% -28%;
+  background:
+    radial-gradient(circle at 16% 21%, rgba(255, 255, 255, 0.9) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 61% 37%, rgba(34, 211, 238, 0.82) 0 0.9px, transparent 1.5px),
+    radial-gradient(circle at 83% 72%, rgba(226, 75, 255, 0.72) 0 0.85px, transparent 1.45px),
+    radial-gradient(circle at 34% 86%, rgba(196, 181, 253, 0.68) 0 0.8px, transparent 1.4px);
+  opacity: 0.22;
+  pointer-events: none;
+  transform: translate3d(-10px, -8px, 0);
+  will-change: transform, opacity;
+  animation: hgl1-sidebar-star-drift 34s linear infinite;
+}
+
 .hh-galaxy-app .hgl1-sidebar::after {
   position: absolute;
+  z-index: 1;
   content: "";
   inset: 0 0 auto auto;
   width: 1px;
-  height: 36%;
+  height: 28%;
   background: linear-gradient(transparent, rgba(226, 75, 255, 0.65), transparent);
-  opacity: 0.36;
+  opacity: 0;
   pointer-events: none;
+  transform: translate3d(0, -115%, 0);
+  will-change: transform, opacity;
+  animation: hgl1-sidebar-edge-scan 7.8s ease-in-out infinite;
 }
 
 .hh-galaxy-app .hgl1-sidebar__head {
   position: relative;
+  z-index: 4;
   flex: 0 0 auto;
+}
+
+.hh-galaxy-app .hgl1-nav,
+.hh-galaxy-app .hgl1-sidebar__footer {
+  position: relative;
+  z-index: 2;
 }
 
 .hh-galaxy-app .hgl1-product-mark {
@@ -274,6 +308,8 @@
 }
 
 .hh-galaxy-app .hgl1-product-mark > span {
+  position: relative;
+  isolation: isolate;
   display: grid;
   place-items: center;
   width: 32px;
@@ -282,6 +318,20 @@
   border: 1px solid rgba(34, 211, 238, 0.24);
   border-radius: 50%;
   background: rgba(34, 211, 238, 0.05);
+}
+
+.hh-galaxy-app .hgl1-product-mark > span::before {
+  position: absolute;
+  z-index: -1;
+  content: "";
+  inset: -5px;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.32), transparent 68%);
+  border-radius: 50%;
+  opacity: 0.38;
+  pointer-events: none;
+  transform: scale(0.78);
+  will-change: transform, opacity;
+  animation: hgl1-sidebar-product-twinkle 4.8s ease-in-out infinite;
 }
 
 .hh-galaxy-app .hgl1-product-mark b,
@@ -312,6 +362,7 @@
 
 .hh-galaxy-app .hgl1-brand > span {
   position: relative;
+  isolation: isolate;
   display: grid;
   place-items: center;
   width: 45px;
@@ -329,12 +380,36 @@
   letter-spacing: -0.08em;
 }
 
+.hh-galaxy-app .hgl1-brand > span::before {
+  position: absolute;
+  z-index: 2;
+  content: "";
+  top: 5px;
+  right: 6px;
+  width: 3px;
+  height: 3px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.68), 0 0 12px 4px rgba(34, 211, 238, 0.38);
+  opacity: 0.62;
+  pointer-events: none;
+  transform: scale(0.72);
+  will-change: transform, opacity;
+  animation: hgl1-sidebar-brand-star 3.7s ease-in-out infinite;
+}
+
 .hh-galaxy-app .hgl1-brand > span::after {
   position: absolute;
   content: "";
   inset: -6px;
-  border: 1px solid rgba(139, 92, 246, 0.25);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-top-color: rgba(34, 211, 238, 0.58);
+  border-right-color: rgba(226, 75, 255, 0.44);
   border-radius: 50%;
+  pointer-events: none;
+  transform: rotate(0deg);
+  will-change: transform;
+  animation: hgl1-sidebar-brand-orbit 14s linear infinite;
 }
 
 .hh-galaxy-app .hgl1-brand b {
@@ -476,12 +551,15 @@
   margin: 9px -2px 10px;
   padding: 0 2px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(139, 92, 246, 0.28) transparent;
 }
 
 .hh-galaxy-app .hgl1-nav__link {
   position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: 31px minmax(0, 1fr) 16px;
   align-items: center;
@@ -492,7 +570,46 @@
   color: var(--hgl1-muted);
   border: 1px solid transparent;
   border-radius: 9px;
+  overflow: hidden;
+  overflow: clip;
+  backface-visibility: hidden;
   transition: color 160ms ease, background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.hh-galaxy-app .hgl1-nav__link > * {
+  position: relative;
+  z-index: 2;
+}
+
+.hh-galaxy-app .hgl1-nav__link::before {
+  position: absolute;
+  z-index: 1;
+  content: "";
+  inset: -22% auto -22% -54%;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), rgba(34, 211, 238, 0.11), transparent);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0) skewX(-16deg);
+  transition: opacity 180ms ease, transform 520ms ease;
+  will-change: auto;
+}
+
+.hh-galaxy-app .hgl1-nav__link::after {
+  position: absolute;
+  z-index: 2;
+  content: "";
+  top: 8px;
+  right: 8px;
+  width: 2px;
+  height: 2px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 7px 2px rgba(196, 181, 253, 0.64);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.7);
+  will-change: auto;
 }
 
 .hh-galaxy-app .hgl1-nav__link:hover {
@@ -501,11 +618,28 @@
   transform: translateX(2px);
 }
 
+.hh-galaxy-app .hgl1-nav__link:hover::before,
+.hh-galaxy-app .hgl1-nav__link:focus-visible::before {
+  opacity: 0.72;
+  transform: translate3d(410%, 0, 0) skewX(-16deg);
+  will-change: transform, opacity;
+}
+
 .hh-galaxy-app .hgl1-nav__link[aria-current="page"] {
   color: #f8f5ff;
   background: linear-gradient(100deg, rgba(77, 45, 156, 0.62), rgba(49, 46, 129, 0.42));
   border-color: rgba(139, 92, 246, 0.62);
   box-shadow: inset 3px 0 0 color-mix(in srgb, currentColor 70%, white), 0 0 20px rgba(91, 33, 182, 0.16);
+}
+
+.hh-galaxy-app .hgl1-nav__link[aria-current="page"]::before {
+  animation: hgl1-sidebar-active-shimmer 5.8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.hh-galaxy-app .hgl1-nav__link[aria-current="page"]::after {
+  animation: hgl1-sidebar-active-twinkle 3.2s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 .hh-galaxy-app .hgl1-nav__icon {
@@ -538,6 +672,17 @@
   height: 18px;
 }
 
+.hh-galaxy-app .hgl1-nav__link[aria-current="page"] .hgl1-nav__icon .hgl1-icon {
+  transform-origin: center;
+  will-change: transform, opacity;
+  animation: hgl1-sidebar-icon-signal 3.9s ease-in-out infinite;
+}
+
+.hh-galaxy-app .hgl1-nav__link[aria-current="page"] .hgl1-nav__planet-glow {
+  will-change: transform, opacity;
+  animation: hgl1-sidebar-planet-halo 4.2s ease-in-out infinite;
+}
+
 .hh-galaxy-app .hgl1-nav__label {
   overflow: hidden;
   font-size: 11px;
@@ -559,6 +704,65 @@
 .hh-galaxy-app .hgl1-nav__link[aria-current="page"] .hgl1-nav__arrow,
 .hh-galaxy-app .hgl1-nav__link:hover .hgl1-nav__arrow {
   opacity: 1;
+}
+
+.hh-galaxy-app .hgl1-nav__link[aria-current="page"] .hgl1-nav__arrow {
+  will-change: transform, opacity;
+  animation: hgl1-sidebar-arrow-signal 2.9s ease-in-out infinite;
+}
+
+/* Persistent sidebar motion is compositor-only. Geometry never changes, so
+   route synchronization cannot create a sidebar jump or move a hit target. */
+@keyframes hgl1-sidebar-star-drift {
+  0% { opacity: 0.18; transform: translate3d(-10px, -8px, 0); }
+  50% { opacity: 0.28; transform: translate3d(8px, 11px, 0); }
+  100% { opacity: 0.18; transform: translate3d(26px, 30px, 0); }
+}
+
+@keyframes hgl1-sidebar-edge-scan {
+  0%, 18% { opacity: 0; transform: translate3d(0, -115%, 0); }
+  32%, 66% { opacity: 0.46; }
+  82%, 100% { opacity: 0; transform: translate3d(0, 360%, 0); }
+}
+
+@keyframes hgl1-sidebar-product-twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.78); }
+  47% { opacity: 0.74; transform: scale(1.08); }
+}
+
+@keyframes hgl1-sidebar-brand-star {
+  0%, 100% { opacity: 0.48; transform: scale(0.72); }
+  42% { opacity: 1; transform: scale(1.3); }
+}
+
+@keyframes hgl1-sidebar-brand-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes hgl1-sidebar-active-shimmer {
+  0%, 48% { opacity: 0; transform: translate3d(0, 0, 0) skewX(-16deg); }
+  60% { opacity: 0.82; }
+  76%, 100% { opacity: 0; transform: translate3d(410%, 0, 0) skewX(-16deg); }
+}
+
+@keyframes hgl1-sidebar-active-twinkle {
+  0%, 100% { opacity: 0.16; transform: scale(0.7); }
+  44% { opacity: 0.92; transform: scale(1.34); }
+}
+
+@keyframes hgl1-sidebar-icon-signal {
+  0%, 100% { opacity: 0.92; transform: translate3d(0, 0, 0) scale(1); }
+  48% { opacity: 1; transform: translate3d(0, -1px, 0) scale(1.08); }
+}
+
+@keyframes hgl1-sidebar-planet-halo {
+  0%, 100% { opacity: 0.64; transform: scale(0.86); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+@keyframes hgl1-sidebar-arrow-signal {
+  0%, 100% { opacity: 0.58; transform: translate3d(-2px, 0, 0); }
+  50% { opacity: 1; transform: translate3d(1px, 0, 0); }
 }
 
 .hh-galaxy-app .hgl1-sidebar__footer {
@@ -1933,12 +2137,68 @@
 }
 
 .hh-galaxy-app[data-effects="quiet"] .hgl1-cosmos::before,
-.hh-galaxy-app[data-effects="quiet"] .hgl1-orbit::before {
-  animation: none;
+.hh-galaxy-app[data-effects="quiet"] .hgl1-orbit::before,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-sidebar::before,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-sidebar::after,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-product-mark > span::before,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-brand > span::before,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-brand > span::after,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-nav__link::before,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-nav__link::after,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-nav__icon .hgl1-icon,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-nav__planet-glow,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-nav__arrow {
+  animation: none !important;
+  will-change: auto;
 }
 
 .hh-galaxy-app[data-effects="rich"] .hgl1-cosmos {
   opacity: 0.95;
+}
+
+.hh-galaxy-app[data-effects="rich"] .hgl1-sidebar::before {
+  opacity: 0.34;
+  animation-duration: 25s;
+}
+
+.hh-galaxy-app[data-effects="rich"] .hgl1-sidebar::after {
+  animation-duration: 5.8s;
+}
+
+.hh-galaxy-app[data-effects="rich"] .hgl1-nav__link[aria-current="page"]::before {
+  animation-duration: 4.2s;
+}
+
+/* These optional attributes are understood by the global adaptive-quality
+   layer. They are safe no-ops on hosts that do not publish a device tier. */
+.hh-galaxy-app:is([data-device-tier="low"], [data-performance-tier="low"]) .hgl1-sidebar::before,
+.hh-galaxy-app:is([data-device-tier="low"], [data-performance-tier="low"]) .hgl1-sidebar::after,
+.hh-galaxy-app:is([data-device-tier="low"], [data-performance-tier="low"]) .hgl1-product-mark > span::before,
+.hh-galaxy-app:is([data-device-tier="low"], [data-performance-tier="low"]) .hgl1-brand > span::before,
+.hh-galaxy-app:is([data-device-tier="low"], [data-performance-tier="low"]) .hgl1-brand > span::after,
+.hh-galaxy-app:is([data-device-tier="low"], [data-performance-tier="low"]) .hgl1-nav__link::before,
+.hh-galaxy-app:is([data-device-tier="low"], [data-performance-tier="low"]) .hgl1-nav__link::after,
+.hh-galaxy-app:is([data-device-tier="low"], [data-performance-tier="low"]) .hgl1-nav__icon .hgl1-icon,
+.hh-galaxy-app:is([data-device-tier="low"], [data-performance-tier="low"]) .hgl1-nav__planet-glow,
+.hh-galaxy-app:is([data-device-tier="low"], [data-performance-tier="low"]) .hgl1-nav__arrow {
+  animation: none !important;
+  will-change: auto;
+}
+
+/* Home can determine its quality after the persistent shell is mounted. The
+   parent-aware gate immediately quiets the sidebar without changing markup. */
+.hh-galaxy-app:has([data-gha-device-tier="low"]) .hgl1-sidebar::before,
+.hh-galaxy-app:has([data-gha-device-tier="low"]) .hgl1-sidebar::after,
+.hh-galaxy-app:has([data-gha-device-tier="low"]) .hgl1-product-mark > span::before,
+.hh-galaxy-app:has([data-gha-device-tier="low"]) .hgl1-brand > span::before,
+.hh-galaxy-app:has([data-gha-device-tier="low"]) .hgl1-brand > span::after,
+.hh-galaxy-app:has([data-gha-device-tier="low"]) .hgl1-nav__link::before,
+.hh-galaxy-app:has([data-gha-device-tier="low"]) .hgl1-nav__link::after,
+.hh-galaxy-app:has([data-gha-device-tier="low"]) .hgl1-nav__icon .hgl1-icon,
+.hh-galaxy-app:has([data-gha-device-tier="low"]) .hgl1-nav__planet-glow,
+.hh-galaxy-app:has([data-gha-device-tier="low"]) .hgl1-nav__arrow {
+  animation: none !important;
+  will-change: auto;
 }
 
 .hh-galaxy-app[data-reduced-motion="on"] *,
@@ -1948,6 +2208,36 @@
   animation-duration: 0.001ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
+}
+
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-sidebar::before,
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-sidebar::after,
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-product-mark > span::before,
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-brand > span::before,
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-brand > span::after,
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-nav__link::before,
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-nav__link::after,
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-nav__icon .hgl1-icon,
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-nav__planet-glow,
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-nav__arrow {
+  animation: none !important;
+  will-change: auto;
+}
+
+@media (update: slow), (prefers-reduced-data: reduce) {
+  .hh-galaxy-app .hgl1-sidebar::before,
+  .hh-galaxy-app .hgl1-sidebar::after,
+  .hh-galaxy-app .hgl1-product-mark > span::before,
+  .hh-galaxy-app .hgl1-brand > span::before,
+  .hh-galaxy-app .hgl1-brand > span::after,
+  .hh-galaxy-app .hgl1-nav__link::before,
+  .hh-galaxy-app .hgl1-nav__link::after,
+  .hh-galaxy-app .hgl1-nav__icon .hgl1-icon,
+  .hh-galaxy-app .hgl1-nav__planet-glow,
+  .hh-galaxy-app .hgl1-nav__arrow {
+    animation: none !important;
+    will-change: auto;
+  }
 }
 
 @media (max-width: 1279px) {
@@ -2818,6 +3108,20 @@
   .hh-galaxy-app :is(.hgl1-pipeline, .hgl1-mobile-nav) {
     scroll-snap-type: none;
   }
+
+  .hh-galaxy-app .hgl1-sidebar::before,
+  .hh-galaxy-app .hgl1-sidebar::after,
+  .hh-galaxy-app .hgl1-product-mark > span::before,
+  .hh-galaxy-app .hgl1-brand > span::before,
+  .hh-galaxy-app .hgl1-brand > span::after,
+  .hh-galaxy-app .hgl1-nav__link::before,
+  .hh-galaxy-app .hgl1-nav__link::after,
+  .hh-galaxy-app .hgl1-nav__icon .hgl1-icon,
+  .hh-galaxy-app .hgl1-nav__planet-glow,
+  .hh-galaxy-app .hgl1-nav__arrow {
+    animation: none !important;
+    will-change: auto;
+  }
 }
 
 @media (forced-colors: active) {
@@ -2840,6 +3144,17 @@
   .hh-galaxy-app .hgl1-feature__signal {
     background: ButtonText;
     border: 1px solid Canvas;
+  }
+
+  .hh-galaxy-app .hgl1-sidebar::before,
+  .hh-galaxy-app .hgl1-sidebar::after,
+  .hh-galaxy-app .hgl1-product-mark > span::before,
+  .hh-galaxy-app .hgl1-brand > span::before,
+  .hh-galaxy-app .hgl1-brand > span::after,
+  .hh-galaxy-app .hgl1-nav__link::before,
+  .hh-galaxy-app .hgl1-nav__link::after,
+  .hh-galaxy-app .hgl1-nav__planet-glow {
+    display: none;
   }
 
   .hh-galaxy-app :is(

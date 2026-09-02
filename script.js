@@ -6758,6 +6758,24 @@ function initAppShell() {
     if (route === "/home" && gateway?.hasAccess?.()) return gateway.platformEntryRoute || "/create";
     return input;
   };
+  const grantCoreAccessFromGateway = (request = {}) => {
+    const gateway = window.HHCoreGateway;
+    if (!gateway?.enter || !gateway?.hasAccess || !gateway?.normalizeRoute) return false;
+    const source = String(request.source || "");
+    const currentRouteValue = gateway.normalizeRoute(location.hash.replace(/^#/, "") || gateway.gatewayRoute);
+    // Match routeFromHash(): the legacy header anchor and OAuth completion
+    // aliases both render the Gateway and therefore must authorize its one
+    // explicit HH CORE control exactly like #/home.
+    const currentRoute = currentRouteValue === "/top" || currentRouteValue === "/account"
+      ? gateway.gatewayRoute
+      : currentRouteValue;
+    const destination = gateway.normalizeRoute(request.route || gateway.platformEntryRoute);
+    if (source !== gateway.entrySource
+      || currentRoute !== gateway.gatewayRoute
+      || destination !== gateway.platformEntryRoute) return false;
+    const entered = gateway.enter({ source: gateway.entrySource });
+    return entered === true && gateway.hasAccess() === true;
+  };
   const routeFromHash = () => {
     const hash = location.hash.replace(/^#/, "") || "/home";
     const rawRoute = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
@@ -7065,6 +7083,48 @@ function initAppShell() {
     const liveIsland = workspace?.querySelector?.("iframe[src], video, audio, canvas") || null;
     return Boolean(liveIsland?.isConnected && !liveIsland.closest?.(".app-route-loader, .app-simple-view, .app-runtime-error"));
   };
+  const syncLiveGalaxyLayerOneRoute = (route) => {
+    const routePath = routePathOnly(route);
+    const previousPath = routePathOnly(renderedRoute || activeRoute);
+    const gateway = window.HHCoreGateway;
+    if (!routePath || routePath === "/home"
+      || gateway?.isGalaxyRoute?.(routePath) !== true
+      || gateway?.isGalaxyRoute?.(previousPath) !== true) return false;
+    const layerHost = connectedWorkspaceHost("[data-hh-galaxy-layer-one-host]");
+    const layerOne = window.HHGalaxyLayerOne;
+    const state = layerOne?.getState?.();
+    if (!layerHost || state?.mounted !== true || gateway.isGalaxyRoute(state.route) !== true) return false;
+
+    const entry = layerOne.routeManifest?.find?.((item) => item.route === routePath);
+    if (!entry) return false;
+    if (routePathOnly(state.route) !== routePath && !layerOne.syncRoute?.(routePath)) return false;
+
+    // The Layer One runtime owns its shell and route-specific cleanup. Keep
+    // the connected host intact and only synchronize the outer application
+    // chrome, history state and accessibility announcement.
+    activeRoute = routePath;
+    rememberSidebarRoute(routePath);
+    shell.dataset.activeSection = "home";
+    document.body.classList.remove("app-single-module");
+    renderNavigation();
+    updateMobileNavigation();
+    updatePageHeader(entry.title || entry.label || "HH Galaxy", entry.description || "Workspace độc lập thuộc lớp HH Galaxy.", routePath);
+    finalizeRouteRender(routePath);
+    return true;
+  };
+  const canKeepGalaxyLayerOneVisible = (route) => {
+    const routePath = routePathOnly(route);
+    const previousPath = routePathOnly(renderedRoute || activeRoute);
+    if (!routePath.startsWith("/galaxy/") || !previousPath.startsWith("/galaxy/")) return false;
+    const layerHost = connectedWorkspaceHost("[data-hh-galaxy-layer-one-host]");
+    const layerOne = window.HHGalaxyLayerOne;
+    const state = layerOne?.getState?.();
+    const entry = layerOne?.routeManifest?.find?.((item) => item.route === routePath);
+    const liveRoute = routePathOnly(state?.route);
+    if (!layerHost || !entry || state?.mounted !== true || (liveRoute !== previousPath && liveRoute !== routePath)) return false;
+    const loader = window.HHAssetLoader;
+    return !loader?.isRouteReady || loader.isRouteReady(routePath) === true;
+  };
   const renderRoute = () => {
     if (!isUnlocked()) return;
     const hash = location.hash.replace(/^#/, "") || "/home";
@@ -7089,6 +7149,7 @@ function initAppShell() {
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
     }
     if (hasLiveSameRouteWorkspace(route)) return;
+    if (syncLiveGalaxyLayerOneRoute(route)) return;
     cleanupGalaxyEngineTakeover();
     window.HHGalaxyLayerOne?.unmount?.();
     window.HHGalaxyCreatorStudio?.unmount?.();
@@ -7250,7 +7311,7 @@ function initAppShell() {
       const mounted = window.HHGalaxyHomeAI?.mount?.(galaxyHost, {
         route,
         navigate: (nextRoute) => { location.hash = `#${platformSafeRoute(nextRoute)}`; },
-        enterCore: () => window.HHCoreGateway?.enter?.({ source: "hh-core" }) === true,
+        enterCore: (request = {}) => grantCoreAccessFromGateway(request),
         baseMount: (host, options = {}) => window.HHChatAI?.mount?.(host, {
           currentUser: readCurrentAuthUser(),
           apiBase: String(window.HH_REALTIME_URL || location.origin),
@@ -8004,6 +8065,17 @@ function initAppShell() {
     }
     const touchesHomeSurface = nextRoute === "/home" || renderedRoute === "/home";
     const canTransition = Boolean(document.startViewTransition) && Boolean(renderedRoute) && nextRoute !== renderedRoute && !touchesHomeSurface && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (canKeepGalaxyLayerOneVisible(nextRoute)) {
+      // Layer One owns a persistent sidebar/cosmos shell. Do not cover it with
+      // the full-screen inter-workspace loader or snapshot it into a view
+      // transition; update only its main outlet and keep motion uninterrupted.
+      document.body.classList.add("app-route-changing");
+      routeProgress?.setAttribute("aria-hidden", "false");
+      if (routeAnnouncer) routeAnnouncer.textContent = `Đang mở ${nextRoute.split("/").filter(Boolean).at(-1) || "workspace"}`;
+      renderRouteSafely();
+      if (!pendingAssetRoute) requestAnimationFrame(() => requestAnimationFrame(endRouteFeedback));
+      return;
+    }
     beginRouteFeedback(nextRoute);
     routeTransition?.skipTransition?.();
     afterCosmicLoaderPaint(nextRoute, () => {

@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v974";
+const CACHE = "hh-identity-portal-v975";
+// HH CORE verified entry and persistent Galaxy Layer One shell release: hh-identity-portal-v975.
 // HH Galaxy continuity and content-integrity release: hh-identity-portal-v973.
 // HH Galaxy transactional backup and adaptive AI attachment release: hh-identity-portal-v972.
 // Function portal release: eleven verified local hero images are catalogued as
@@ -282,10 +283,10 @@ const RUNTIME_ASSETS = [
   "./galaxy-design-system.css?v=1",
   "./galaxy-shell.css?v=9",
   "./galaxy-shell.js?v=7",
-  "./hh-core-gateway.js?v=2",
+  "./hh-core-gateway.js?v=3",
   "./galaxy-home-ai.css?v=22",
   "./galaxy-home-ai.js?v=14",
-  "./galaxy-layer-one.css?v=5",
+  "./galaxy-layer-one.css?v=6",
   "./galaxy-layer-one-worlds.css?v=15",
   "./galaxy-layer-one-storage.js?v=2",
   "./galaxy-layer-one-media.js?v=1",
@@ -294,7 +295,7 @@ const RUNTIME_ASSETS = [
   "./galaxy-layer-one-tools.js?v=1",
   "./vendor/qrcode.js?v=1",
   "./galaxy-layer-one-backup.js?v=2",
-  "./galaxy-layer-one.js?v=15",
+  "./galaxy-layer-one.js?v=16",
   "./assets/galaxy/learning-portals-atlas-v1.png",
   // Runtime-cached on first route use; deliberately excluded from CORE.
   "./assets/galaxy/function-portals/ai-universe-v1.png",
@@ -622,10 +623,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=626",
+  "./performance-loader.js?v=627",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=264"
+  "./script.js?v=265"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

@@ -12,6 +12,12 @@
   const GATEWAY_ROUTE = "/home";
   const PLATFORM_ENTRY_ROUTE = "/create";
   const ENTRY_SOURCE = "hh-core";
+  // sessionStorage can be unavailable in privacy-restricted embeds and some
+  // browser restore states. Keep a page-lifetime fallback bound to the exact
+  // storage object that failed so an explicit HH CORE click can still open
+  // Layer Two without turning the grant into a persistent/global bypass.
+  let volatileRecord = null;
+  let volatileStorage = null;
   const GALAXY_MANIFEST = Object.freeze([
     "/home",
     "/galaxy/ai",
@@ -105,19 +111,22 @@
 
   function readRecord(candidate) {
     const target = storage(candidate);
-    if (!target) return null;
-    try {
-      const value = JSON.parse(target.getItem(STORAGE_KEY) || "null");
-      if (value?.version !== VERSION || value?.access !== true || value?.source !== ENTRY_SOURCE) return null;
-      return Object.freeze({
-        version: VERSION,
-        access: true,
-        source: ENTRY_SOURCE,
-        enteredAt: Number(value.enteredAt) || 0
-      });
-    } catch {
-      return null;
+    if (target) {
+      try {
+        const value = JSON.parse(target.getItem(STORAGE_KEY) || "null");
+        if (value?.version === VERSION && value?.access === true && value?.source === ENTRY_SOURCE) {
+          return Object.freeze({
+            version: VERSION,
+            access: true,
+            source: ENTRY_SOURCE,
+            enteredAt: Number(value.enteredAt) || 0
+          });
+        }
+      } catch {
+        // Fall through to the page-lifetime grant created by enter().
+      }
     }
+    return volatileRecord && volatileStorage === target ? volatileRecord : null;
   }
 
   function hasAccess(candidate) {
@@ -139,19 +148,26 @@
     const source = String(options.source || "");
     if (source !== ENTRY_SOURCE) return false;
     const target = storage(options.storage);
-    if (!target) return false;
-    try {
-      target.setItem(STORAGE_KEY, JSON.stringify({
-        version: VERSION,
-        access: true,
-        source: ENTRY_SOURCE,
-        enteredAt: Date.now()
-      }));
-      emit(true, source);
-      return true;
-    } catch {
-      return false;
+    const record = Object.freeze({
+      version: VERSION,
+      access: true,
+      source: ENTRY_SOURCE,
+      enteredAt: Date.now()
+    });
+    let persisted = false;
+    if (target) {
+      try {
+        target.setItem(STORAGE_KEY, JSON.stringify(record));
+        const stored = JSON.parse(target.getItem(STORAGE_KEY) || "null");
+        persisted = stored?.version === VERSION && stored?.access === true && stored?.source === ENTRY_SOURCE;
+      } catch {
+        persisted = false;
+      }
     }
+    volatileRecord = persisted ? null : record;
+    volatileStorage = persisted ? null : target;
+    emit(true, source);
+    return true;
   }
 
   function leave(options = {}) {
@@ -164,6 +180,11 @@
       } catch {
         cleared = false;
       }
+    }
+    if (volatileRecord && volatileStorage === target) {
+      volatileRecord = null;
+      volatileStorage = null;
+      cleared = true;
     }
     emit(false, options.source || "leave");
     return cleared;

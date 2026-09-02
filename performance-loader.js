@@ -27,7 +27,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=2", "galaxy-shell.js?v=7"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=3", "galaxy-shell.js?v=7"]
     },
     "auth-effects": {
       /*
@@ -67,11 +67,11 @@
       scripts: ["galaxy-home-ai.js?v=14"]
     },
     "galaxy-layer-one": {
-      styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=5", "galaxy-layer-one-worlds.css?v=15"],
+      styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=6", "galaxy-layer-one-worlds.css?v=15"],
       // Load the canonical data API and every side-effect-free engine before
       // the owning shell. The route is mounted only after this sequence has
       // completed, so all local-first capabilities are available on first use.
-      scripts: ["galaxy-layer-one-data.js?v=4", "galaxy-creator-studio.js?v=5", "galaxy-layer-one-storage.js?v=2", "galaxy-layer-one-media.js?v=1", "galaxy-layer-one-learning.js?v=1", "galaxy-layer-one-analytics.js?v=1", "galaxy-layer-one-tools.js?v=1", "galaxy-layer-one-backup.js?v=2", "vendor/qrcode.js?v=1", "galaxy-layer-one.js?v=15"]
+      scripts: ["galaxy-layer-one-data.js?v=4", "galaxy-creator-studio.js?v=5", "galaxy-layer-one-storage.js?v=2", "galaxy-layer-one-media.js?v=1", "galaxy-layer-one-learning.js?v=1", "galaxy-layer-one-analytics.js?v=1", "galaxy-layer-one-tools.js?v=1", "galaxy-layer-one-backup.js?v=2", "vendor/qrcode.js?v=1", "galaxy-layer-one.js?v=16"]
     },
     "galaxy-domain-views": {
       styles: ["galaxy-domain-views.css?v=13"],

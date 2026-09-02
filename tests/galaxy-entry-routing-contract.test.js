@@ -46,12 +46,25 @@ test("HH Core is the only HH Platform entry rendered on the Galaxy Gateway", () 
     read("galaxy-layer-one-data.js")
   ].join("\n");
   assert.equal(
-    (entryRuntime.match(/HHCoreGateway\?\.enter\?\.\(/g) || []).length,
+    (entryRuntime.match(/(?:HHCoreGateway\?\.enter\?\.\(|gateway\.enter\(\{ source: gateway\.entrySource \}\))/g) || []).length,
     1,
-    "only the existing Home HH Core callback may call HHCoreGateway.enter"
+    "only the verified Home HH Core transaction may call the gateway entry"
   );
-  assert.match(router, /enterCore:\s*\(\)\s*=>\s*window\.HHCoreGateway\?\.enter\?\.\(\{\s*source:\s*"hh-core"\s*\}\)\s*===\s*true/);
+  assert.match(router, /enterCore:\s*\(request\s*=\s*\{\}\)\s*=>\s*grantCoreAccessFromGateway\(request\)/);
+  assert.match(router, /const grantCoreAccessFromGateway =[\s\S]*?gateway\.enter\(\{ source: gateway\.entrySource \}\)[\s\S]*?gateway\.hasAccess\(\) === true/);
   assert.doesNotMatch(read("galaxy-layer-one.js"), /HHCoreGateway|\.enter\s*\(/);
+});
+
+test("legacy Gateway anchors authorize the same verified HH Core transaction as Home", () => {
+  const helperStart = router.indexOf("const grantCoreAccessFromGateway =");
+  const helperEnd = router.indexOf("const routeFromHash =", helperStart);
+  assert.ok(helperStart >= 0 && helperEnd > helperStart);
+  const helper = router.slice(helperStart, helperEnd);
+  assert.match(helper, /currentRouteValue\s*=\s*gateway\.normalizeRoute/);
+  assert.match(helper, /currentRouteValue === "\/top"\s*\|\|\s*currentRouteValue === "\/account"/);
+  assert.match(helper, /\?\s*gateway\.gatewayRoute\s*:\s*currentRouteValue/);
+  assert.match(helper, /currentRoute !== gateway\.gatewayRoute/);
+  assert.match(router, /const rawRoute = hash === "top" \|\| hash === "account" \? "\/home"/);
 });
 
 test("Galaxy Layer One owns the exact twelve access-free destinations", () => {
@@ -201,6 +214,53 @@ test("same-route ready refresh preserves live media and Galaxy workspaces before
   const readyListeners = router.slice(router.indexOf('window.addEventListener("hh:modules-ready"'));
   assert.match(readyListeners, /hh:modules-ready[\s\S]{0,160}renderRouteSafely\(\)/);
   assert.match(readyListeners, /hh:youtube-creator-ready", renderRouteSafely/);
+});
+
+test("Layer One route changes synchronize the connected host before outer teardown", () => {
+  const helperStart = router.indexOf("const syncLiveGalaxyLayerOneRoute =");
+  const renderStart = router.indexOf("const renderRoute =", helperStart);
+  const renderEnd = router.indexOf("const runtimeIssueKey", renderStart);
+  assert.ok(helperStart >= 0 && renderStart > helperStart && renderEnd > renderStart);
+
+  const helper = router.slice(helperStart, renderStart);
+  assert.match(helper, /connectedWorkspaceHost\("\[data-hh-galaxy-layer-one-host\]"\)/);
+  assert.match(helper, /HHGalaxyLayerOne/);
+  assert.match(helper, /state\?\.mounted !== true/);
+  assert.match(helper, /layerOne\.syncRoute\?\.\(routePath\)/);
+  assert.match(helper, /finalizeRouteRender\(routePath\)/);
+  assert.doesNotMatch(helper, /workspace\.innerHTML|\.unmount\?\.\(/);
+
+  const renderSection = router.slice(renderStart, renderEnd);
+  const fastPath = renderSection.indexOf("if (syncLiveGalaxyLayerOneRoute(route)) return;");
+  const teardown = renderSection.indexOf("window.HHGalaxyLayerOne?.unmount?.();");
+  const replaceHost = renderSection.indexOf("workspace.innerHTML = '<div data-hh-galaxy-layer-one-host></div>';");
+  assert.ok(fastPath >= 0, "Layer One fast path must be present");
+  assert.ok(teardown > fastPath, "fast path must run before Layer One unmount");
+  assert.ok(replaceHost > fastPath, "fast path must run before replacing the host node");
+});
+
+test("connected Layer One module changes stay visible without a full-screen route loader", () => {
+  const helperStart = router.indexOf("const canKeepGalaxyLayerOneVisible =");
+  const renderStart = router.indexOf("const renderRouteWithTransition =");
+  const renderEnd = router.indexOf("const searchItems =", renderStart);
+  assert.ok(helperStart >= 0 && renderStart > helperStart && renderEnd > renderStart);
+
+  const helper = router.slice(helperStart, router.indexOf("const renderRoute =", helperStart));
+  assert.match(helper, /routePath\.startsWith\("\/galaxy\/"\)/);
+  assert.match(helper, /previousPath\.startsWith\("\/galaxy\/"\)/);
+  assert.match(helper, /connectedWorkspaceHost\("\[data-hh-galaxy-layer-one-host\]"\)/);
+  assert.match(helper, /state\?\.mounted !== true/);
+  assert.match(helper, /liveRoute !== previousPath && liveRoute !== routePath/);
+  assert.match(helper, /isRouteReady\(routePath\) === true/);
+
+  const transition = router.slice(renderStart, renderEnd);
+  const inlineStart = transition.indexOf("if (canKeepGalaxyLayerOneVisible(nextRoute))");
+  const fullLoaderStart = transition.indexOf("beginRouteFeedback(nextRoute)");
+  assert.ok(inlineStart >= 0 && fullLoaderStart > inlineStart, "persistent Layer One path must run before the full-screen loader");
+  const inlineSection = transition.slice(inlineStart, fullLoaderStart);
+  assert.match(inlineSection, /renderRouteSafely\(\)/);
+  assert.match(inlineSection, /routeProgress\?\.setAttribute\("aria-hidden", "false"\)/);
+  assert.doesNotMatch(inlineSection, /showCosmicRouteLoader|beginRouteFeedback|startViewTransition/);
 });
 
 test("layer-one search never exposes a Core destination", () => {
