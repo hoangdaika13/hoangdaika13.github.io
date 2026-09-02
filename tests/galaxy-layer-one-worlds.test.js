@@ -305,14 +305,17 @@ test("the eleven function worlds render one verified local hero image each", () 
 });
 
 test("portal art is release-versioned and remains runtime-cached instead of install-preloaded", () => {
-  assert.match(indexSource, /<script\b[^>]*src="performance-loader\.js\?v=622"/i);
+  const loaderVersion = indexSource.match(/<script\b[^>]*src="performance-loader\.js\?v=(\d+)"/i)?.[1];
+  const layerVersion = loaderSource.match(/"galaxy-layer-one\.js\?v=(\d+)"/)?.[1];
+  const worldsVersion = loaderSource.match(/"galaxy-layer-one-worlds\.css\?v=(\d+)"/)?.[1];
+  assert.ok(loaderVersion, "index must load a versioned performance loader");
+  assert.ok(layerVersion, "the Layer One group must load a versioned shell");
+  assert.ok(worldsVersion, "the Layer One group must load a versioned world stylesheet");
   assert.doesNotMatch(indexSource, /<link\b[^>]*rel="preload"[^>]*function-portals/i);
-  assert.match(loaderSource, /galaxy-layer-one-worlds\.css\?v=13/);
-  assert.match(loaderSource, /galaxy-layer-one\.js\?v=11/);
-  assert.match(serviceWorkerSource, /const CACHE = "hh-identity-portal-v970"/);
-  assert.match(serviceWorkerSource, /\.\/performance-loader\.js\?v=622/);
-  assert.match(serviceWorkerSource, /\.\/galaxy-layer-one-worlds\.css\?v=13/);
-  assert.match(serviceWorkerSource, /\.\/galaxy-layer-one\.js\?v=11/);
+  assert.match(serviceWorkerSource, /const CACHE = "hh-identity-portal-v\d+"/);
+  assert.match(serviceWorkerSource, new RegExp("\\.\\/performance-loader\\.js\\?v=" + loaderVersion));
+  assert.match(serviceWorkerSource, new RegExp("\\.\\/galaxy-layer-one-worlds\\.css\\?v=" + worldsVersion));
+  assert.match(serviceWorkerSource, new RegExp("\\.\\/galaxy-layer-one\\.js\\?v=" + layerVersion));
 
   const runtimeBlock = serviceWorkerSource.match(/const RUNTIME_ASSETS = \[([\s\S]*?)\n\];/)?.[1] || "";
   const coreBlock = serviceWorkerSource.match(/const CORE = \[([\s\S]*?)\n\];/)?.[1] || "";

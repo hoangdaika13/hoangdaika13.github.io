@@ -141,11 +141,18 @@
   }
 
   function durableStorage(runtime) {
-    return Boolean(runtime && runtime.store && runtime.store.storageKind && runtime.store.storageKind() !== "memory-fallback");
+    if (!runtime || !runtime.store || typeof runtime.store.storageKind !== "function") return false;
+    var kind = runtime.store.storageKind();
+    return kind === "indexedDB" || kind === "adapter" || kind === "localStorage";
+  }
+
+  function pendingStorage(runtime) {
+    return Boolean(runtime && runtime.store && typeof runtime.store.storageKind === "function" && runtime.store.storageKind() === "indexedDB-pending");
   }
 
   function storageLabel(runtime, editable) {
     if (!editable) return { state: "saved", label: "Chỉ đọc" };
+    if (pendingStorage(runtime)) return { state: "saving", label: "Đang chuẩn bị bộ nhớ…" };
     return durableStorage(runtime)
       ? { state: "saved", label: "Đã lưu cục bộ" }
       : { state: "volatile", label: "Chỉ lưu trong phiên này" };
@@ -221,7 +228,7 @@
       { label: "Đã hoàn thành", value: stats.completedProjects, icon: "trophy", tone: "green", note: "Đủ 9 bước" },
       { label: "Bước hoàn tất", value: stats.completedSteps, icon: "check", tone: "gold", note: "Từ dự án của bạn" }
     ];
-    return '<section class="gcs-side-card gcs-stats" aria-labelledby="gcs-stats-title"><header><div><span class="gcs-eyebrow">DỮ LIỆU THẬT</span><h2 id="gcs-stats-title">Thống kê nhanh</h2></div><span class="gcs-local-label" data-storage="' + (durableStorage(runtime) ? "durable" : "volatile") + '">' + (durableStorage(runtime) ? "Local-first" : "Bộ nhớ phiên") + '</span></header><div class="gcs-stats-grid">' + definitions.map(function (item) {
+    return '<section class="gcs-side-card gcs-stats" aria-labelledby="gcs-stats-title"><header><div><span class="gcs-eyebrow">DỮ LIỆU THẬT</span><h2 id="gcs-stats-title">Thống kê nhanh</h2></div><span class="gcs-local-label" data-storage="' + (durableStorage(runtime) ? "durable" : (pendingStorage(runtime) ? "pending" : "volatile")) + '">' + (durableStorage(runtime) ? "IndexedDB" : (pendingStorage(runtime) ? "Đang kết nối" : "Bộ nhớ phiên")) + '</span></header><div class="gcs-stats-grid">' + definitions.map(function (item) {
       return '<article data-tone="' + item.tone + '"><span>' + icon(item.icon) + '</span><div><small>' + escapeHtml(item.label) + '</small><strong>' + item.value + '</strong><em>' + escapeHtml(item.note) + '</em></div></article>';
     }).join("") + '</div><p class="gcs-stats-note">Không hiển thị lượt xem, doanh thu hoặc người đăng ký khi chưa có nguồn dữ liệu thật.</p></section>';
   }
@@ -259,7 +266,7 @@
   function modalMarkup(runtime) {
     if (!runtime.modal) return "";
     if (runtime.modal === "create") {
-      return '<div class="gcs-modal" data-gcs-modal role="presentation"><section role="dialog" aria-modal="true" aria-labelledby="gcs-modal-title"><button class="gcs-modal__close" type="button" data-gcs-action="close-modal" aria-label="Đóng">' + icon("close") + '</button><span class="gcs-modal__icon">' + icon("sparkles") + '</span><h2 id="gcs-modal-title">Tạo dự án Creator mới</h2><p>Đây là dự án riêng của lớp 1 và ' + (durableStorage(runtime) ? 'được lưu cục bộ trên thiết bị này.' : 'hiện chỉ được giữ trong phiên vì bộ nhớ bền vững không khả dụng.') + '</p><form data-gcs-create-form><label><span>Tên dự án</span><input name="title" maxlength="180" required autofocus placeholder="Ví dụ: Hành trình qua Dải Ngân Hà"></label><label><span>Loại nội dung</span><select name="category"><option>Nội dung</option><option>AI Visual</option><option>Video</option><option>Âm nhạc</option><option>Podcast</option><option>Giáo dục</option></select></label><label><span>Mô tả ngắn</span><textarea name="description" maxlength="1000" rows="3" placeholder="Mục tiêu và kết quả mong muốn..."></textarea></label><div><button class="gcs-button gcs-button--quiet" type="button" data-gcs-action="close-modal">Hủy</button><button class="gcs-button gcs-button--primary" type="submit">' + icon("plus") + 'Tạo dự án</button></div></form></section></div>';
+      return '<div class="gcs-modal" data-gcs-modal role="presentation"><section role="dialog" aria-modal="true" aria-labelledby="gcs-modal-title"><button class="gcs-modal__close" type="button" data-gcs-action="close-modal" aria-label="Đóng">' + icon("close") + '</button><span class="gcs-modal__icon">' + icon("sparkles") + '</span><h2 id="gcs-modal-title">Tạo dự án Creator mới</h2><p>Đây là dự án riêng của lớp 1 và ' + (durableStorage(runtime) ? 'được lưu cục bộ trong IndexedDB trên thiết bị này.' : (pendingStorage(runtime) ? 'sẽ được lưu sau khi IndexedDB khởi tạo xong.' : 'hiện chỉ được giữ trong phiên vì bộ nhớ bền vững không khả dụng.')) + '</p><form data-gcs-create-form><label><span>Tên dự án</span><input name="title" maxlength="180" required autofocus placeholder="Ví dụ: Hành trình qua Dải Ngân Hà"></label><label><span>Loại nội dung</span><select name="category"><option>Nội dung</option><option>AI Visual</option><option>Video</option><option>Âm nhạc</option><option>Podcast</option><option>Giáo dục</option></select></label><label><span>Mô tả ngắn</span><textarea name="description" maxlength="1000" rows="3" placeholder="Mục tiêu và kết quả mong muốn..."></textarea></label><div><button class="gcs-button gcs-button--quiet" type="button" data-gcs-action="close-modal">Hủy</button><button class="gcs-button gcs-button--primary" type="submit">' + icon("plus") + 'Tạo dự án</button></div></form></section></div>';
     }
     if (runtime.modal === "schedule") {
       var min = new Date(runtime.now()).toISOString().slice(0, 16);
@@ -336,6 +343,22 @@
       if (successMessage) setToast(runtime, successMessage, "success");
       return true;
     }
+    if (pendingStorage(runtime)) {
+      setSaveState(runtime, "saving", "Đang ghi vào IndexedDB…");
+      if (runtime.store && typeof runtime.store.flush === "function") {
+        Promise.resolve(runtime.store.flush()).then(function () {
+          if (!runtime.mounted) return;
+          if (durableStorage(runtime)) {
+            setSaveState(runtime, "saved", "Đã lưu cục bộ");
+            if (successMessage) setToast(runtime, successMessage, "success");
+          } else {
+            setSaveState(runtime, "volatile", "Chỉ lưu trong phiên này");
+            setToast(runtime, volatileMessage || "Không thể mở bộ nhớ bền vững. Hãy xuất JSON để sao lưu.", "warning");
+          }
+        });
+      }
+      return true;
+    }
     setSaveState(runtime, "volatile", "Chỉ lưu trong phiên này");
     setToast(runtime, volatileMessage || "Thay đổi chỉ được giữ trong phiên này. Hãy xuất JSON trước khi rời trang.", "warning");
     return false;
@@ -352,6 +375,22 @@
       if (!project || project.isDemo) return false;
       if (Object.keys(pending.project).length) runtime.store.updateProject(pending.projectId, pending.project);
       Object.keys(pending.steps).forEach(function (stepId) { runtime.store.updateStep(pending.projectId, stepId, pending.steps[stepId]); });
+      if (pendingStorage(runtime)) {
+        setSaveState(runtime, "saving", "Đang ghi vào IndexedDB…");
+        if (runtime.store && typeof runtime.store.flush === "function") {
+          Promise.resolve(runtime.store.flush()).then(function () {
+            if (!runtime.mounted) return;
+            if (durableStorage(runtime)) {
+              setSaveState(runtime, "saved", "Đã lưu cục bộ");
+              emit(runtime, "autosaved", { projectId: pending.projectId });
+            } else {
+              setSaveState(runtime, "volatile", "Chỉ lưu trong phiên này");
+              setToast(runtime, "IndexedDB không khả dụng; thay đổi hiện chỉ còn trong phiên này.", "warning");
+            }
+          });
+        }
+        return true;
+      }
       if (!durableStorage(runtime)) {
         setSaveState(runtime, "volatile", "Chỉ lưu trong phiên này");
         setToast(runtime, "Đã cập nhật trong phiên hiện tại nhưng không thể lưu bền vững. Hãy xuất JSON trước khi rời trang.", "warning");
@@ -710,7 +749,26 @@
     addListener(runtime, root, "keydown", function (event) { handleKeydown(runtime, event); });
     var doc = root.ownerDocument || globalScope.document;
     addListener(runtime, doc, "visibilitychange", function () { if (doc && doc.hidden) flushAutosave(runtime); });
-    if (!durableStorage(runtime)) setToast(runtime, "Bộ nhớ bền vững không khả dụng. Thay đổi chỉ tồn tại trong phiên này; hãy xuất JSON để sao lưu.", "warning");
+    if (store.storageKind() === "memory-fallback") setToast(runtime, "Bộ nhớ bền vững không khả dụng. Thay đổi chỉ tồn tại trong phiên này; hãy xuất JSON để sao lưu.", "warning");
+    if (typeof store.subscribe === "function") {
+      runtime.cleanup.push(store.subscribe(function (_snapshot, meta) {
+        if (!runtime.mounted || !meta || meta.action !== "storage-fallback") return;
+        setSaveState(runtime, "volatile", "Chỉ lưu trong phiên này");
+        setToast(runtime, "IndexedDB không khả dụng. Dữ liệu vẫn dùng được trong phiên này; hãy xuất JSON để sao lưu.", "warning");
+        emit(runtime, "storage-fallback", { storageKind: store.storageKind() });
+      }));
+    }
+    if (store.storageKind() === "indexedDB-pending" && typeof store.ready === "function") {
+      Promise.resolve(store.ready()).then(function (status) {
+        if (!runtime.mounted) return;
+        flushAutosave(runtime);
+        render(runtime);
+        if (store.storageKind() === "memory-fallback") {
+          setToast(runtime, "Không thể mở IndexedDB. Creator Studio đang dùng bộ nhớ phiên; hãy xuất JSON để sao lưu.", "warning");
+        }
+        emit(runtime, "hydrated", { storageKind: store.storageKind(), migrated: Boolean(status && status.migratedAt) });
+      });
+    }
     emit(runtime, "mounted", { storageKind: store.storageKind(), projectCount: snapshot.projects.filter(function (item) { return !item.isDemo; }).length });
     return Object.freeze({
       route: ROUTE,

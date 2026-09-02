@@ -63,12 +63,15 @@
       ]
     },
     "galaxy-home-ai": {
-      styles: ["galaxy-home-ai.css?v=19"],
-      scripts: ["galaxy-home-ai.js?v=12"]
+      styles: ["galaxy-home-ai.css?v=22"],
+      scripts: ["galaxy-home-ai.js?v=14"]
     },
     "galaxy-layer-one": {
-      styles: ["galaxy-creator-studio.css?v=11", "galaxy-layer-one.css?v=4", "galaxy-layer-one-worlds.css?v=13"],
-      scripts: ["galaxy-layer-one-data.js?v=2", "galaxy-creator-studio.js?v=4", "galaxy-layer-one.js?v=11"]
+      styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=5", "galaxy-layer-one-worlds.css?v=15"],
+      // Load the canonical data API and every side-effect-free engine before
+      // the owning shell. The route is mounted only after this sequence has
+      // completed, so all local-first capabilities are available on first use.
+      scripts: ["galaxy-layer-one-data.js?v=4", "galaxy-creator-studio.js?v=5", "galaxy-layer-one-storage.js?v=2", "galaxy-layer-one-media.js?v=1", "galaxy-layer-one-learning.js?v=1", "galaxy-layer-one-analytics.js?v=1", "galaxy-layer-one-tools.js?v=1", "galaxy-layer-one-backup.js?v=2", "vendor/qrcode.js?v=1", "galaxy-layer-one.js?v=15"]
     },
     "galaxy-domain-views": {
       styles: ["galaxy-domain-views.css?v=13"],

@@ -168,6 +168,41 @@ test("Galaxy routes load and mount only the Layer One adapter", () => {
   assert.doesNotMatch(layerBranch, /HHGalaxyPlanetHubs|planetHub/);
 });
 
+test("same-route ready refresh preserves live media and Galaxy workspaces before teardown", () => {
+  const helperStart = router.indexOf("const routePathOnly =");
+  const renderStart = router.indexOf("const renderRoute =", helperStart);
+  const renderEnd = router.indexOf("const runtimeIssueKey", renderStart);
+  assert.ok(helperStart >= 0 && renderStart > helperStart && renderEnd > renderStart, "same-route preservation helper must wrap the router lifecycle");
+
+  const helper = router.slice(helperStart, renderStart);
+  assert.match(helper, /routePath\s*!==\s*routePathOnly\(renderedRoute\)/);
+  assert.match(helper, /routePath\s*!==\s*routePathOnly\(activeRoute\)/);
+  assert.match(helper, /host\?\.isConnected/);
+  assert.match(helper, /data-hh-galaxy-layer-one-host/);
+  assert.match(helper, /HHGalaxyLayerOne\?\.getState\?\.\(\)/);
+  assert.match(helper, /data-galaxy-home-ai-host/);
+  assert.match(helper, /HHGalaxyHomeAI\?\.getState\?\.\(\)/);
+  assert.match(helper, /data-youtube-hub-host/);
+  assert.match(helper, /HHYouTubeHub\?\.isMounted\?\.\(youtubeHost\)/);
+  assert.match(helper, /data-yh-player-frame/);
+  assert.match(helper, /data-google-hub/);
+  assert.match(helper, /ycg-shell\[data-ycg-active\]/);
+  assert.match(helper, /iframe\[src\], video, audio, canvas/);
+
+  const renderSection = router.slice(renderStart, renderEnd);
+  const preserveGuard = renderSection.indexOf("if (hasLiveSameRouteWorkspace(route)) return;");
+  const layerTeardown = renderSection.indexOf("window.HHGalaxyLayerOne?.unmount?.();");
+  const homeTeardown = renderSection.indexOf("window.HHGalaxyHomeAI?.unmount?.();");
+  assert.ok(preserveGuard >= 0, "renderRoute must short-circuit an already live same-route workspace");
+  assert.ok(layerTeardown > preserveGuard, "Layer One teardown must remain available after the route-identity guard");
+  assert.ok(homeTeardown > preserveGuard, "Galaxy Home teardown must remain available after the route-identity guard");
+  assert.match(renderSection, /if \(route !== "\/youtube"\) window\.HHYouTubeHub\?\.unmount\?\.\(\);/);
+
+  const readyListeners = router.slice(router.indexOf('window.addEventListener("hh:modules-ready"'));
+  assert.match(readyListeners, /hh:modules-ready[\s\S]{0,160}renderRouteSafely\(\)/);
+  assert.match(readyListeners, /hh:youtube-creator-ready", renderRouteSafely/);
+});
+
 test("layer-one search never exposes a Core destination", () => {
   for (const query of ["HH CORE", "/create", "chat ai", "music", "settings", "analytics"]) {
     const results = layerOne.searchRoutes(query, 12);

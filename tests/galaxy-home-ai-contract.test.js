@@ -21,7 +21,7 @@ function memoryStorage(seed = {}) {
 
 test("exposes the HHGalaxyHomeAI mount contract", () => {
   assert.equal(global.HHGalaxyHomeAI, api);
-  assert.equal(api.VERSION, "1.1.0");
+  assert.equal(api.VERSION, "1.3.0");
   for (const method of ["mount", "unmount", "getState", "canHandle", "normalizeRoute", "collectLocalData", "mergeData", "viewMarkup"]) {
     assert.equal(typeof api[method], "function", `${method} should be exported`);
   }
@@ -183,6 +183,22 @@ test("visual layer is code-native, responsive and motion-safe", () => {
   assert.match(galaxyAssetReadme, /7BE8CF59220BC280B1B5C11A425BE507BAEB00E34A003FFD2E6DF575C35FB5F8/);
   assert.match(galaxyAssetReadme, /DC8370BA9C8F0E8C56E6B699145BE072986E8C7519687B8E74F290B8AD40924F/);
   assert.match(galaxyAssetReadme, /30565B439C6F2841E2EC7B6967C7930B1B9869CDD2B4A8F86AAC22EDF264F6BE/);
+});
+
+test("Home and HH AI primary mobile actions keep 44px touch targets", () => {
+  const start = styles.indexOf("Mobile touch-target contract: start");
+  const end = styles.indexOf("Mobile touch-target contract: end");
+  assert.ok(start >= 0 && end > start, "mobile touch-target contract should remain scoped and discoverable");
+  const mobileTouchTargets = styles.slice(start, end);
+
+  assert.match(mobileTouchTargets, /\.gha-home-notification\s*\{[^}]*width:\s*44px;[^}]*min-width:\s*44px;[^}]*min-height:\s*44px;/s);
+  assert.match(mobileTouchTargets, /\.gha-home-prompt\s*>\s*button,[\s\S]*?\.gha-copilot-prompt[\s\S]*?>\s*button\s*\{[^}]*width:\s*44px;[^}]*min-width:\s*44px;[^}]*min-height:\s*44px;/);
+  assert.match(mobileTouchTargets, /\.gha-home-timeline header button\s*\{[^}]*min-width:\s*44px;[^}]*min-height:\s*44px;/s);
+
+  const markup = api.viewMarkup("/home", api.collectLocalData(memoryStorage(), {}));
+  assert.match(markup, /class="gha-home-notification"[^>]*aria-label="[^"]+"/);
+  assert.match(markup, /class="gha-home-prompt"[\s\S]*?<button type="submit" aria-label="Gửi câu hỏi tới HH AI"/);
+  assert.match(markup, /class="gha-home-timeline"[\s\S]*?<button type="button"[^>]*>Mở gần nhất/);
 });
 
 test("lifecycle uses abortable listeners and clears timers", () => {

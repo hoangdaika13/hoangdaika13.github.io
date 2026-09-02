@@ -181,6 +181,315 @@ test("blocked or exhausted localStorage degrades to an in-memory namespace", () 
   assert.equal(store.storageKind(), "memory-fallback");
 });
 
+test("legacy Creator data migrates copy-only into IndexedDB and leaves only a small manifest for new writes", async () => {
+  const storage = data.memoryStorage();
+  const legacy = data.createStore({ storage, now });
+  const project = legacy.createProject({ id: "legacy-project", title: "Dự án legacy" });
+  legacy.updateStep(project.id, "script", { content: "Nội dung legacy cần được giữ nguyên" });
+  const legacyBeforeMigration = storage.getItem(data.STORAGE_KEY);
+  const database = data.memoryDatabase();
+
+  const migrated = data.createStore({ storage, database, now });
+  assert.equal(migrated.storageKind(), "indexedDB-pending");
+  const status = await migrated.ready();
+  await migrated.flush();
+
+  assert.equal(status.kind, "indexedDB");
+  assert.equal(migrated.getProject(project.id).steps.script.content, "Nội dung legacy cần được giữ nguyên");
+  assert.equal(storage.getItem(data.STORAGE_KEY), legacyBeforeMigration, "migration must not delete or rewrite the recoverable legacy payload");
+  const manifestText = storage.getItem(data.MANIFEST_KEY);
+  const manifest = JSON.parse(manifestText);
+  assert.equal(manifest.backend, "indexedDB");
+  assert.equal(manifest.schemaVersion, 2);
+  assert.doesNotMatch(manifestText, /Nội dung legacy|steps|projects/);
+  assert.equal(database.inspect().state.projects.filter((entry) => entry.id === project.id).length, 1);
+
+  const reopened = data.createStore({ storage, database, now });
+  await reopened.ready();
+  assert.equal(reopened.getSnapshot().projects.filter((entry) => entry.id === project.id).length, 1, "an idempotent migration must not duplicate records");
+});
+
+test("an edit made while IndexedDB is hydrating wins over the stale persisted project", async () => {
+  const storage = data.memoryStorage();
+  const legacy = data.createStore({ storage, now });
+  const project = legacy.createProject({ id: "race-project", title: "Race", steps: { script: { content: "bản cũ" } } });
+  const staleState = legacy.getSnapshot();
+  let resolveRead;
+  const writes = [];
+  const database = {
+    open() { return Promise.resolve(); },
+    read() { return new Promise((resolve) => { resolveRead = resolve; }); },
+    write(payload) { writes.push(payload); return Promise.resolve(); },
+    close() {}
+  };
+  const store = data.createStore({ storage, database, now });
+  store.updateStep(project.id, "script", { content: "bản sửa trong lúc hydrate" });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  resolveRead({ exists: true, state: staleState, history: [] });
+  await store.ready();
+  await store.flush();
+
+  assert.equal(store.getProject(project.id).steps.script.content, "bản sửa trong lúc hydrate");
+  assert.equal(writes.at(-1).state.projects.find((entry) => entry.id === project.id).steps.script.content, "bản sửa trong lúc hydrate");
+});
+
+test("IndexedDB open or write failures are disclosed as memory fallback without losing the live mirror", async () => {
+  const openFailure = data.createStore({
+    storage: data.memoryStorage(),
+    database: { open() { return Promise.reject(new Error("blocked")); }, read() { return Promise.resolve(null); }, write() { return Promise.resolve(); }, close() {} },
+    now
+  });
+  const project = openFailure.createProject({ title: "Vẫn còn trong phiên" });
+  const status = await openFailure.ready();
+  assert.equal(status.kind, "memory-fallback");
+  assert.equal(openFailure.storageKind(), "memory-fallback");
+  assert.equal(openFailure.getProject(project.id).title, "Vẫn còn trong phiên");
+
+  const writeFailure = data.createStore({ storage: data.memoryStorage(), database: data.memoryDatabase(null, { writeError: new Error("quota") }), now });
+  await writeFailure.ready();
+  assert.equal(writeFailure.storageKind(), "memory-fallback");
+});
+
+test("a fresh store reloads complete project payloads from IndexedDB", async () => {
+  const database = data.memoryDatabase();
+  const first = data.createStore({ storage: data.memoryStorage(), database, now });
+  await first.ready();
+  const project = first.createProject({ id: "indexed-project", title: "Lưu trong IndexedDB" });
+  first.updateStep(project.id, "video", { status: "review", content: "Shot list đầy đủ", notes: "Kiểm tra phụ đề" });
+  await first.flush();
+
+  const reopened = data.createStore({ storage: data.memoryStorage(), database, now });
+  await reopened.ready();
+  const restored = reopened.getProject(project.id);
+  assert.equal(restored.steps.video.status, "review");
+  assert.equal(restored.steps.video.content, "Shot list đầy đủ");
+  assert.equal(restored.steps.video.notes, "Kiểm tra phụ đề");
+});
+
+test("bounded version history can restore a prior project snapshot", () => {
+  const store = makeStore();
+  const project = store.createProject({ title: "Phiên bản 0" });
+  for (let index = 1; index <= data.MAX_HISTORY_PER_PROJECT + 3; index += 1) {
+    store.updateProject(project.id, { title: `Phiên bản ${index}` });
+  }
+  const history = store.listHistory(project.id);
+  assert.equal(history.length, data.MAX_HISTORY_PER_PROJECT);
+  const target = history.find((entry) => entry.project.title === "Phiên bản 5");
+  assert.ok(target);
+  const restored = store.restoreVersion(project.id, target.id);
+  assert.equal(restored.title, "Phiên bản 5");
+  assert.equal(store.getProject(project.id).title, "Phiên bản 5");
+  assert.ok(store.listHistory(project.id).length <= data.MAX_HISTORY_PER_PROJECT);
+});
+
+test("public async backup hooks hydrate first and require an explicit merge or replace mode", async () => {
+  const source = data.createStore({ storage: data.memoryStorage(), database: data.memoryDatabase(), now });
+  await source.ready();
+  const project = source.createProject({ id: "backup-project", title: "Backup đa kho" });
+  source.updateStep(project.id, "idea", { content: "Dữ liệu đã sanitize" });
+  const backup = await source.exportAsync();
+  assert.ok(Buffer.byteLength(backup, "utf8") <= data.BACKUP_LIMITS.maxBytes);
+
+  const destination = data.createStore({ storage: data.memoryStorage(), database: data.memoryDatabase(), now });
+  const result = await destination.importAsync(backup, { mode: "replace" });
+  assert.equal(result.mode, "replace");
+  assert.equal(result.storageKind, "indexedDB");
+  assert.equal(destination.getProject(project.id).steps.idea.content, "Dữ liệu đã sanitize");
+  await assert.rejects(destination.importAsync(backup, { mode: "overwrite" }), { code: "INVALID_IMPORT_MODE" });
+});
+
+test("validated snapshot replacement preserves provenance and timestamps while retaining the local demo visibility state", async () => {
+  const database = data.memoryDatabase();
+  const store = data.createStore({ storage: data.memoryStorage(), database, now });
+  await store.ready();
+  store.hideDemo("demo-piano-rain");
+  await store.flush();
+
+  const payload = {
+    schema: data.SCHEMA,
+    schemaVersion: 1,
+    appVersion: data.VERSION,
+    projects: [{
+      id: "creator-snapshot-project",
+      title: "Dự án từ snapshot",
+      description: "Giữ nguyên provenance",
+      category: "Video",
+      accent: "cyan",
+      isDemo: false,
+      source: "user-clone",
+      templateVersion: null,
+      editable: false,
+      clonedFrom: "origin-project",
+      tags: ["snapshot"],
+      dueAt: "2026-10-10T08:00:00.000Z",
+      createdAt: "2024-01-02T03:04:05.000Z",
+      updatedAt: "2025-02-03T04:05:06.000Z",
+      steps: Object.fromEntries(data.PIPELINE_STEPS.map((step) => [step.id, {
+        id: step.id,
+        status: step.id === "idea" ? "completed" : "not-started",
+        content: step.id === "idea" ? "Nội dung gốc" : "",
+        notes: "",
+        checklist: [],
+        updatedAt: "2025-02-03T04:05:06.000Z"
+      }]))
+    }, {
+      id: "foreign-demo",
+      title: "Không được nhập",
+      isDemo: true,
+      source: "local-template"
+    }],
+    schedule: [{
+      id: "creator-snapshot-schedule",
+      title: "Lịch nguyên trạng",
+      note: "Không đổi timestamp",
+      at: "2026-10-10T08:00:00.000Z",
+      time: "15:04",
+      stepId: "idea",
+      projectId: "creator-snapshot-project",
+      done: false,
+      isDemo: false,
+      source: "user-clone",
+      editable: false,
+      createdAt: "2024-01-02T03:04:05.000Z",
+      updatedAt: "2025-02-03T04:05:06.000Z"
+    }, {
+      id: "foreign-demo-schedule",
+      title: "Lịch mẫu từ file",
+      projectId: "foreign-demo",
+      isDemo: true,
+      source: "local-template"
+    }]
+  };
+
+  const beforeActivity = store.getSnapshot().activity.length;
+  const result = await store.replaceValidatedSnapshotAsync(payload, { audit: false });
+  assert.deepEqual(result, {
+    projects: 1,
+    schedule: 1,
+    audit: false,
+    auditReason: null,
+    storageKind: "indexedDB"
+  });
+  const restored = store.getProject("creator-snapshot-project");
+  assert.equal(restored.source, "user-clone");
+  assert.equal(restored.editable, false);
+  assert.equal(restored.createdAt, "2024-01-02T03:04:05.000Z");
+  assert.equal(restored.updatedAt, "2025-02-03T04:05:06.000Z");
+  assert.equal(restored.steps.idea.updatedAt, "2025-02-03T04:05:06.000Z");
+  const restoredSchedule = store.getSnapshot().schedule.find((item) => item.id === "creator-snapshot-schedule");
+  assert.equal(restoredSchedule.source, "user-clone");
+  assert.equal(restoredSchedule.editable, false);
+  assert.equal(restoredSchedule.createdAt, "2024-01-02T03:04:05.000Z");
+  assert.equal(restoredSchedule.updatedAt, "2025-02-03T04:05:06.000Z");
+  assert.equal(store.getProject("foreign-demo"), null, "a demo from the file must never enter the live store");
+  assert.equal(store.getProject("demo-piano-rain"), null, "a locally hidden demo must stay hidden");
+  assert.equal(store.getProject("demo-ai-space-journey").source, "local-template", "visible local demos are retained from the device, not the file");
+  assert.equal(store.getSnapshot().activity.length, beforeActivity, "audit=false must not append an audit activity");
+  assert.deepEqual(database.inspect().state.projects.find((item) => item.id === restored.id), restored, "the API resolves only after IndexedDB receives the exact user project");
+});
+
+test("validated Creator snapshot supports drift-free rollback and fails closed before mutating state", async () => {
+  const store = data.createStore({ storage: data.memoryStorage(), database: data.memoryDatabase(), now });
+  await store.ready();
+  const project = store.createProject({
+    id: "rollback-project",
+    title: "Trước giao dịch",
+    source: "user-clone",
+    editable: true,
+    createdAt: "2023-01-01T00:00:00.000Z",
+    updatedAt: "2023-02-01T00:00:00.000Z"
+  });
+  store.addSchedule({
+    id: "ignored-by-create",
+    title: "Lịch trước giao dịch",
+    projectId: project.id,
+    source: "user",
+    editable: true,
+    createdAt: "2023-01-01T00:00:00.000Z",
+    updatedAt: "2023-02-01T00:00:00.000Z"
+  });
+  await store.flush();
+  const rollback = JSON.parse(await store.exportAsync());
+  const baselineProjects = rollback.projects;
+  const baselineSchedule = rollback.schedule;
+  const replacement = JSON.parse(JSON.stringify(rollback));
+  replacement.projects[0].title = "Sau giao dịch";
+  replacement.projects[0].source = "external-reviewed";
+  replacement.projects[0].editable = false;
+  replacement.projects[0].updatedAt = "2026-01-01T00:00:00.000Z";
+
+  await store.replaceValidatedSnapshotAsync(replacement, { audit: false });
+  assert.equal(store.getProject(project.id).source, "external-reviewed");
+  await store.replaceValidatedSnapshotAsync(rollback, { audit: false });
+  const afterRollback = JSON.parse(await store.exportAsync());
+  assert.deepEqual(afterRollback.projects, baselineProjects, "rollback must not rewrite source, timestamps, editable flags or step payloads");
+  assert.deepEqual(afterRollback.schedule, baselineSchedule, "rollback must restore the user schedule without drift");
+
+  const beforeInvalid = JSON.parse(await store.exportAsync());
+  await assert.rejects(store.replaceValidatedSnapshotAsync(rollback), { code: "SNAPSHOT_AUDIT_REQUIRED" });
+  const duplicate = JSON.parse(JSON.stringify(rollback));
+  duplicate.projects.push(JSON.parse(JSON.stringify(duplicate.projects[0])));
+  await assert.rejects(store.replaceValidatedSnapshotAsync(duplicate, { audit: false }), { code: "SNAPSHOT_DUPLICATE_ID" });
+  const invalidVersion = { ...rollback, schemaVersion: 99 };
+  await assert.rejects(store.replaceValidatedSnapshotAsync(invalidVersion, { audit: false }), { code: "SNAPSHOT_VERSION_UNSUPPORTED" });
+  const invalidTimestamp = JSON.parse(JSON.stringify(rollback));
+  invalidTimestamp.projects[0].updatedAt = "không-phải-ngày";
+  await assert.rejects(store.replaceValidatedSnapshotAsync(invalidTimestamp, { audit: false }), { code: "SNAPSHOT_PROJECT_UPDATED_AT_INVALID" });
+  const afterInvalid = JSON.parse(await store.exportAsync());
+  assert.deepEqual(afterInvalid.projects, beforeInvalid.projects, "failed validation must leave projects untouched");
+  assert.deepEqual(afterInvalid.schedule, beforeInvalid.schedule, "failed validation must leave schedule untouched");
+});
+
+test("validated snapshot persistence failure restores the prior live mirror and rejects", async () => {
+  let rejectWrites = false;
+  const database = {
+    record: null,
+    open() { return Promise.resolve(); },
+    read() { return Promise.resolve(this.record ? JSON.parse(JSON.stringify(this.record)) : { exists: false, state: null, history: [] }); },
+    write(payload) {
+      if (rejectWrites) return Promise.reject(new Error("quota"));
+      this.record = JSON.parse(JSON.stringify(payload));
+      return Promise.resolve();
+    },
+    close() {}
+  };
+  const store = data.createStore({ storage: data.memoryStorage(), database, now });
+  await store.ready();
+  const project = store.createProject({ id: "persisted-before-failure", title: "Không được mất" });
+  await store.flush();
+  const before = JSON.parse(await store.exportAsync());
+  const replacement = JSON.parse(JSON.stringify(before));
+  replacement.projects[0].title = "Không được commit";
+  rejectWrites = true;
+
+  await assert.rejects(store.replaceValidatedSnapshotAsync(replacement, { audit: false }), { code: "SNAPSHOT_PERSIST_FAILED" });
+  assert.equal(store.getProject(project.id).title, "Không được mất");
+  assert.equal(store.storageKind(), "memory-fallback", "the persistence failure must be disclosed instead of reported as a durable success");
+  const after = JSON.parse(await store.exportAsync());
+  assert.deepEqual(after.projects, before.projects);
+  assert.deepEqual(after.schedule, before.schedule);
+});
+
+test("Creator store close is idempotent and releases its database connection after snapshot writes flush", async () => {
+  let closeCalls = 0;
+  const writes = [];
+  const database = {
+    open() { return Promise.resolve(); },
+    read() { return Promise.resolve({ exists: false, state: null, history: [] }); },
+    write(payload) { writes.push(JSON.parse(JSON.stringify(payload))); return Promise.resolve(); },
+    close() { closeCalls += 1; }
+  };
+  const store = data.createStore({ storage: data.memoryStorage(), database, now });
+  await store.ready();
+  const payload = { schema: data.SCHEMA, schemaVersion: 1, appVersion: data.VERSION, projects: [], schedule: [] };
+  await store.replaceValidatedSnapshotAsync(payload, { audit: true, auditReason: "transaction-restore" });
+  await Promise.all([store.close(), store.close()]);
+  assert.equal(closeCalls, 1, "one store lifecycle must close its database driver exactly once");
+  assert.equal(writes.at(-1).state.activity[0].action, "validated-snapshot-replaced");
+  assert.equal(writes.at(-1).state.activity[0].entityId, "transaction-restore");
+  assert.equal(writes.at(-1).state.projects.filter((item) => !item.isDemo).length, 0);
+});
+
 test("analytics and schedule counters exclude all sample records", () => {
   const store = makeStore();
   assert.deepEqual(store.getStats(FIXED_NOW), {
@@ -295,6 +604,27 @@ test("an import that finishes after unmount cannot mutate the Creator store", as
   }));
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(store.getProject("late-project"), null);
+});
+
+test("Creator hydration that finishes after unmount cannot repaint the old host", async () => {
+  let resolveRead;
+  const database = {
+    open() { return Promise.resolve(); },
+    read() { return new Promise((resolve) => { resolveRead = resolve; }); },
+    write() { return Promise.resolve(); },
+    close() {}
+  };
+  const store = data.createStore({ storage: data.memoryStorage(), database, now });
+  const harness = fakeHost();
+  const controller = studio.mount(harness.host, { route: "/galaxy/creator", store, now });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  controller.unmount();
+  assert.equal(harness.host.innerHTML, "");
+  resolveRead({ exists: true, state: data.normalizeState({ projects: [{ id: "late-hydration", title: "Không được repaint" }] }, FIXED_NOW.toISOString()), history: [] });
+  await store.ready();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(harness.host.innerHTML, "");
+  assert.equal(studio.getState(harness.host), null);
 });
 
 test("future user schedule entries are shown instead of falling back to samples", () => {
@@ -433,11 +763,11 @@ test("source contract is local-first, motion-safe, and contains no fake showcase
 });
 
 test("read-only shell integration loads once, mounts the dedicated slot, and cleans both lifecycles", () => {
-  assert.match(
-    loaderSource,
-    /"galaxy-layer-one"\s*:\s*\{[\s\S]*?scripts:\s*\["galaxy-layer-one-data\.js\?v=\d+",\s*"galaxy-creator-studio\.js\?v=\d+",\s*"galaxy-layer-one\.js\?v=\d+"\]/,
-    "the data API must exist before Creator Studio and its owning layer-one shell"
-  );
+  const layerGroup = loaderSource.match(/"galaxy-layer-one"\s*:\s*\{[\s\S]*?scripts:\s*\[([^\]]+)\]/)?.[1] || "";
+  const dataIndex = layerGroup.indexOf("galaxy-layer-one-data.js");
+  const creatorIndex = layerGroup.indexOf("galaxy-creator-studio.js");
+  const shellIndex = layerGroup.indexOf("galaxy-layer-one.js");
+  assert.ok(dataIndex >= 0 && creatorIndex > dataIndex && shellIndex > creatorIndex, "the data API and Creator Studio must exist before their owning layer-one shell");
   assert.match(loaderSource, /\/galaxy\/creator["',\s\]]+[\s\S]{0,220}return \["galaxy-layer-one"\]/);
   assert.equal((layerOneSource.match(/data-hh-galaxy-creator-host/g) || []).length, 3, "one slot declaration, one delegate lookup and one persistent-island selector are expected");
   assert.match(layerOneSource, /runtime\.route\s*===\s*["']\/galaxy\/creator["'][\s\S]{0,120}islandSelector\s*=\s*["']\[data-hh-galaxy-creator-host\]["']/, "same-route renders must preserve the mounted Creator workspace");

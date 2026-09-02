@@ -9,6 +9,14 @@
   var VERSION = "1.0.0";
   var SCHEMA = "hh-galaxy.creator-studio.export";
   var STORAGE_KEY = "hh-galaxy.creator-studio.v1";
+  var MANIFEST_KEY = STORAGE_KEY + ".manifest";
+  var DATABASE_NAME = "hh-galaxy.creator-studio";
+  var DATABASE_VERSION = 1;
+  var MAX_HISTORY_PER_PROJECT = 12;
+  var MAX_HISTORY_SNAPSHOT_BYTES = 512 * 1024;
+  var MAX_BACKUP_BYTES = 16 * 1024 * 1024;
+  var MAX_BACKUP_PROJECTS = 500;
+  var MAX_BACKUP_SCHEDULE = 2000;
   var MAX_ACTIVITY = 100;
   var idSequence = 0;
 
@@ -263,6 +271,170 @@
     return { storage: memoryStorage(), kind: "memory-fallback" };
   }
 
+  function memoryDatabase(seed, options) {
+    options = options || {};
+    var record = seed ? clone(seed) : null;
+    var closed = false;
+    return {
+      open: function () {
+        if (options.openError) return Promise.reject(options.openError);
+        return Promise.resolve();
+      },
+      read: function () {
+        if (closed) return Promise.reject(new Error("Creator database is closed."));
+        if (options.readError) return Promise.reject(options.readError);
+        if (!record) return Promise.resolve({ exists: false, state: null, history: [] });
+        var value = clone(record);
+        if (value && value.state && value.exists == null) value.exists = true;
+        return Promise.resolve(value);
+      },
+      write: function (value) {
+        if (closed) return Promise.reject(new Error("Creator database is closed."));
+        if (options.writeError) return Promise.reject(options.writeError);
+        record = clone(value);
+        return Promise.resolve();
+      },
+      close: function () { closed = true; },
+      inspect: function () { return record ? clone(record) : null; }
+    };
+  }
+
+  function requestResult(request) {
+    return new Promise(function (resolve, reject) {
+      request.onsuccess = function () { resolve(request.result); };
+      request.onerror = function () { reject(request.error || new Error("IndexedDB request failed.")); };
+    });
+  }
+
+  function readAll(store) {
+    if (typeof store.getAll === "function") return requestResult(store.getAll());
+    return new Promise(function (resolve, reject) {
+      var values = [];
+      var request = store.openCursor();
+      request.onerror = function () { reject(request.error || new Error("IndexedDB cursor failed.")); };
+      request.onsuccess = function () {
+        var cursor = request.result;
+        if (!cursor) { resolve(values); return; }
+        values.push(cursor.value);
+        cursor.continue();
+      };
+    });
+  }
+
+  function transactionDone(transaction) {
+    return new Promise(function (resolve, reject) {
+      transaction.oncomplete = function () { resolve(); };
+      transaction.onerror = function () { reject(transaction.error || new Error("IndexedDB transaction failed.")); };
+      transaction.onabort = function () { reject(transaction.error || new Error("IndexedDB transaction was aborted.")); };
+    });
+  }
+
+  function createIndexedDbDriver(factory, databaseName) {
+    var database = null;
+    var openPromise = null;
+
+    function open() {
+      if (database) return Promise.resolve(database);
+      if (openPromise) return openPromise;
+      openPromise = new Promise(function (resolve, reject) {
+        var settled = false;
+        var request;
+        try { request = factory.open(databaseName || DATABASE_NAME, DATABASE_VERSION); }
+        catch (error) { reject(error); return; }
+        request.onupgradeneeded = function () {
+          var db = request.result;
+          if (!db.objectStoreNames.contains("projects")) db.createObjectStore("projects", { keyPath: "id" });
+          if (!db.objectStoreNames.contains("schedule")) db.createObjectStore("schedule", { keyPath: "id" });
+          if (!db.objectStoreNames.contains("meta")) db.createObjectStore("meta", { keyPath: "key" });
+          if (!db.objectStoreNames.contains("history")) db.createObjectStore("history", { keyPath: "id" });
+        };
+        request.onsuccess = function () {
+          if (settled) { try { request.result.close(); } catch (error) { /* Best effort. */ } return; }
+          settled = true;
+          database = request.result;
+          database.onversionchange = function () { try { database.close(); } catch (error) { /* Best effort. */ } database = null; openPromise = null; };
+          resolve(database);
+        };
+        request.onerror = function () {
+          if (settled) return;
+          settled = true;
+          reject(request.error || new Error("Không thể mở IndexedDB."));
+        };
+        request.onblocked = function () {
+          if (settled) return;
+          settled = true;
+          var blocked = new Error("IndexedDB đang bị một phiên khác chặn.");
+          blocked.code = "INDEXEDDB_BLOCKED";
+          reject(blocked);
+        };
+      });
+      return openPromise;
+    }
+
+    function read() {
+      return open().then(function (db) {
+        var transaction = db.transaction(["projects", "schedule", "meta", "history"], "readonly");
+        var projectsPromise = readAll(transaction.objectStore("projects"));
+        var schedulePromise = readAll(transaction.objectStore("schedule"));
+        var metaPromise = requestResult(transaction.objectStore("meta").get("state"));
+        var historyPromise = readAll(transaction.objectStore("history"));
+        return Promise.all([projectsPromise, schedulePromise, metaPromise, historyPromise, transactionDone(transaction)]).then(function (values) {
+          var projects = values[0];
+          var schedule = values[1];
+          var meta = values[2] || null;
+          var exists = Boolean(meta || projects.length || schedule.length);
+          return {
+            exists: exists,
+            state: exists ? {
+              schemaVersion: meta && meta.schemaVersion || 1,
+              projects: projects,
+              schedule: schedule,
+              activity: meta && Array.isArray(meta.activity) ? meta.activity : [],
+              hiddenDemoIds: meta && Array.isArray(meta.hiddenDemoIds) ? meta.hiddenDemoIds : [],
+              updatedAt: meta && meta.updatedAt
+            } : null,
+            history: values[3]
+          };
+        });
+      });
+    }
+
+    function write(value) {
+      return open().then(function (db) {
+        var payload = asObject(value);
+        var state = asObject(payload.state);
+        var transaction = db.transaction(["projects", "schedule", "meta", "history"], "readwrite");
+        var projectsStore = transaction.objectStore("projects");
+        var scheduleStore = transaction.objectStore("schedule");
+        var historyStore = transaction.objectStore("history");
+        projectsStore.clear();
+        scheduleStore.clear();
+        historyStore.clear();
+        (Array.isArray(state.projects) ? state.projects : []).forEach(function (project) { projectsStore.put(clone(project)); });
+        (Array.isArray(state.schedule) ? state.schedule : []).forEach(function (item) { scheduleStore.put(clone(item)); });
+        (Array.isArray(payload.history) ? payload.history : []).forEach(function (entry) { historyStore.put(clone(entry)); });
+        transaction.objectStore("meta").put({
+          key: "state",
+          schemaVersion: state.schemaVersion || 1,
+          revision: Number(payload.revision) || 0,
+          activity: clone(Array.isArray(state.activity) ? state.activity : []),
+          hiddenDemoIds: clone(Array.isArray(state.hiddenDemoIds) ? state.hiddenDemoIds : []),
+          updatedAt: state.updatedAt || new Date().toISOString(),
+          migratedAt: payload.migratedAt || null
+        });
+        return transactionDone(transaction);
+      });
+    }
+
+    function close() {
+      if (database) { try { database.close(); } catch (error) { /* Best effort. */ } }
+      database = null;
+      openPromise = null;
+    }
+
+    return { open: open, read: read, write: write, close: close };
+  }
+
   function initialState(nowIso) {
     return {
       schemaVersion: 1,
@@ -322,6 +494,19 @@
     try { return JSON.parse(value); } catch (error) { return null; }
   }
 
+  function utf8ByteLength(value) {
+    var text = String(value == null ? "" : value);
+    var bytes = 0;
+    for (var index = 0; index < text.length; index += 1) {
+      var code = text.charCodeAt(index);
+      if (code < 0x80) bytes += 1;
+      else if (code < 0x800) bytes += 2;
+      else if (code >= 0xD800 && code <= 0xDBFF && index + 1 < text.length && text.charCodeAt(index + 1) >= 0xDC00 && text.charCodeAt(index + 1) <= 0xDFFF) { bytes += 4; index += 1; }
+      else bytes += 3;
+    }
+    return bytes;
+  }
+
   function sameDay(first, second) {
     var left = new Date(first);
     var right = new Date(second);
@@ -347,14 +532,47 @@
     };
   }
 
+  function creatorSnapshotError(code, message) {
+    var error = new Error(message);
+    error.code = code;
+    return error;
+  }
+
+  function isSnapshotDemoRecord(value) {
+    var source = asObject(value);
+    var provenance = String(source.source || "").trim().toLowerCase();
+    return source.isDemo === true || source.isSample === true || provenance === "sample" || provenance === "demo" || provenance === "local-template";
+  }
+
+  function validateSnapshotId(value, collection, seen) {
+    var raw = String(value == null ? "" : value);
+    var id = cleanText(raw, 160);
+    if (!id) throw creatorSnapshotError("SNAPSHOT_ID_REQUIRED", "Bản ghi Creator trong " + collection + " thiếu ID.");
+    if (raw.trim() !== id || raw.trim().length > 160) throw creatorSnapshotError("SNAPSHOT_ID_INVALID", "ID bản ghi Creator trong " + collection + " không hợp lệ.");
+    if (seen.has(id)) throw creatorSnapshotError("SNAPSHOT_DUPLICATE_ID", "ID bản ghi Creator bị trùng trong " + collection + ".");
+    seen.add(id);
+    return id;
+  }
+
   function createStore(options) {
     options = options || {};
     var resolved = resolveStorage(options.storage);
     var storage = resolved.storage;
-    var storageKind = resolved.kind;
+    var metadataStorage = storage;
     var now = typeof options.now === "function" ? options.now : function () { return new Date(); };
     var subscribers = new Set();
     var lastError = null;
+    var revision = 0;
+    var migratedAt = null;
+    var hydrated = false;
+    var databaseReady = false;
+    var pendingDatabasePayload = null;
+    var databaseWritePromise = null;
+    var dirtyProjectIds = new Set();
+    var dirtyScheduleIds = new Set();
+    var hiddenDemoIdsDirty = false;
+    var fullStateDirty = false;
+    var closePromise = null;
 
     function currentIso() {
       var value = now();
@@ -362,30 +580,160 @@
       return Number.isFinite(date.getTime()) ? date.toISOString() : new Date().toISOString();
     }
 
-    var state;
-    try {
-      var stored = safeParse(storage.getItem(STORAGE_KEY));
-      state = stored ? normalizeState(stored, currentIso()) : initialState(currentIso());
-    } catch (error) {
-      lastError = error;
-      storage = memoryStorage();
+    var legacyStored = null;
+    try { legacyStored = safeParse(storage.getItem(STORAGE_KEY)); }
+    catch (error) { lastError = error; }
+    var existingManifest = null;
+    try { existingManifest = safeParse(storage.getItem(MANIFEST_KEY)); }
+    catch (error) { if (!lastError) lastError = error; }
+    var state = legacyStored ? normalizeState(legacyStored, currentIso()) : initialState(currentIso());
+    var history = Array.isArray(legacyStored && legacyStored.history) ? clone(legacyStored.history) : [];
+
+    var database = options.database || null;
+    var indexedDbFactory = options.indexedDB === false ? null : (options.indexedDB || globalScope.indexedDB || null);
+    if (!database && indexedDbFactory && typeof indexedDbFactory.open === "function") {
+      database = createIndexedDbDriver(indexedDbFactory, options.databaseName || DATABASE_NAME);
+    }
+    var usesDatabase = Boolean(database && typeof database.open === "function" && typeof database.read === "function" && typeof database.write === "function");
+    var compatibilityStorage = !usesDatabase && resolved.kind === "adapter";
+    var storageKind = usesDatabase ? "indexedDB-pending" : (compatibilityStorage ? "adapter" : "memory-fallback");
+
+    function normalizeHistory(value) {
+      var source = Array.isArray(value) ? value : [];
+      var result = [];
+      var counts = Object.create(null);
+      source.forEach(function (entry) {
+        var item = asObject(entry);
+        var projectValue = asObject(item.project);
+        var projectId = cleanText(item.projectId || projectValue.id, 160);
+        if (!projectId || projectValue.isDemo === true || (counts[projectId] || 0) >= MAX_HISTORY_PER_PROJECT) return;
+        var project = normalizeProject(projectValue, { nowIso: currentIso() });
+        if (JSON.stringify(project).length > MAX_HISTORY_SNAPSHOT_BYTES) return;
+        result.push({
+          id: cleanText(item.id, 180) || uid("history", Date.parse(currentIso())),
+          projectId: projectId,
+          reason: cleanText(item.reason, 120) || "project-updated",
+          at: isoDate(item.at, currentIso()),
+          project: project
+        });
+        counts[projectId] = (counts[projectId] || 0) + 1;
+      });
+      return result;
+    }
+    history = normalizeHistory(history);
+
+    function notify(action, detail) {
+      var snapshot = clone(state);
+      subscribers.forEach(function (listener) {
+        try { listener(snapshot, { action: action, detail: clone(detail), storageKind: storageKind, revision: revision }); }
+        catch (error) { /* Subscriber failures are isolated. */ }
+      });
+      return snapshot;
+    }
+
+    function backendStatus() {
+      return {
+        kind: storageKind,
+        phase: storageKind === "indexedDB-pending" ? "hydrating" : (storageKind === "indexedDB" ? "ready" : "fallback"),
+        hydrated: hydrated,
+        revision: revision,
+        migratedAt: migratedAt,
+        lastError: lastError ? String(lastError.message || lastError) : null
+      };
+    }
+
+    function manifestValue() {
+      return {
+        schemaVersion: 2,
+        backend: storageKind,
+        revision: revision,
+        updatedAt: state.updatedAt,
+        migratedAt: migratedAt,
+        projectCount: state.projects.filter(function (project) { return !project.isDemo; }).length,
+        scheduleCount: state.schedule.filter(function (item) { return !item.isDemo; }).length
+      };
+    }
+
+    function writeManifest() {
+      if (compatibilityStorage && !usesDatabase) return;
+      try { metadataStorage.setItem(MANIFEST_KEY, JSON.stringify(manifestValue())); }
+      catch (error) { lastError = error; }
+    }
+
+    function databasePayload() {
+      return {
+        state: clone(state),
+        history: clone(history),
+        revision: revision,
+        migratedAt: migratedAt
+      };
+    }
+
+    function switchToMemoryFallback(error) {
+      if (error) lastError = error;
+      databaseReady = false;
+      pendingDatabasePayload = null;
       storageKind = "memory-fallback";
-      state = initialState(currentIso());
+      compatibilityStorage = true;
+      storage = memoryStorage({ [STORAGE_KEY]: JSON.stringify(Object.assign({}, state, { history: history })) });
+      try { if (database && typeof database.close === "function") database.close(); } catch (closeError) { /* Best effort. */ }
+      writeManifest();
+      notify("storage-fallback", { error: lastError ? String(lastError.message || lastError) : "IndexedDB unavailable" });
+    }
+
+    function drainDatabaseWrites() {
+      if (!databaseReady || storageKind !== "indexedDB") return Promise.resolve();
+      if (databaseWritePromise) {
+        return databaseWritePromise.then(function () { return drainDatabaseWrites(); });
+      }
+      if (!pendingDatabasePayload) return Promise.resolve();
+      var payload = pendingDatabasePayload;
+      pendingDatabasePayload = null;
+      databaseWritePromise = Promise.resolve().then(function () { return database.write(payload); }).catch(function (error) {
+        switchToMemoryFallback(error);
+      }).then(function () {
+        databaseWritePromise = null;
+      });
+      return databaseWritePromise.then(function () { return drainDatabaseWrites(); });
+    }
+
+    function scheduleDatabaseWrite() {
+      if (!usesDatabase || storageKind === "memory-fallback") return;
+      pendingDatabasePayload = databasePayload();
+      if (databaseReady && storageKind === "indexedDB") drainDatabaseWrites();
+    }
+
+    function markDirty(action, detail) {
+      var info = asObject(detail);
+      if (info.projectId) dirtyProjectIds.add(String(info.projectId));
+      (Array.isArray(info.projectIds) ? info.projectIds : []).forEach(function (id) { dirtyProjectIds.add(String(id)); });
+      if (info.scheduleId) dirtyScheduleIds.add(String(info.scheduleId));
+      (Array.isArray(info.scheduleIds) ? info.scheduleIds : []).forEach(function (id) { dirtyScheduleIds.add(String(id)); });
+      if (action === "demo-hidden" || action === "demos-restored") hiddenDemoIdsDirty = true;
+      if (action === "data-imported" && info.mode === "replace") fullStateDirty = true;
     }
 
     function persist(action, detail) {
       state.updatedAt = currentIso();
-      try { storage.setItem(STORAGE_KEY, JSON.stringify(state)); lastError = null; }
-      catch (error) {
-        lastError = error;
-        storage = memoryStorage({ [STORAGE_KEY]: JSON.stringify(state) });
-        storageKind = "memory-fallback";
+      if (action !== "store-ready") {
+        revision += 1;
+        if (!hydrated) markDirty(action, detail);
       }
-      var snapshot = clone(state);
-      subscribers.forEach(function (listener) {
-        try { listener(snapshot, { action: action, detail: clone(detail), storageKind: storageKind }); } catch (error) { /* Subscriber failures are isolated. */ }
-      });
-      return snapshot;
+      if (compatibilityStorage) {
+        try {
+          storage.setItem(STORAGE_KEY, JSON.stringify(Object.assign({}, state, { history: history })));
+          if (storageKind !== "memory-fallback") lastError = null;
+        } catch (error) {
+          lastError = error;
+          storage = memoryStorage({ [STORAGE_KEY]: JSON.stringify(Object.assign({}, state, { history: history })) });
+          storageKind = "memory-fallback";
+          compatibilityStorage = true;
+        }
+      } else {
+        writeManifest();
+        scheduleDatabaseWrite();
+      }
+      return notify(action, detail);
     }
 
     function record(action, entityId) {
@@ -412,6 +760,27 @@
       return project;
     }
 
+    function captureHistory(project, reason) {
+      if (!project || project.isDemo || project.editable === false) return null;
+      var snapshot = clone(project);
+      if (JSON.stringify(snapshot).length > MAX_HISTORY_SNAPSHOT_BYTES) return null;
+      var entry = {
+        id: uid("history", Date.parse(currentIso())),
+        projectId: project.id,
+        reason: cleanText(reason, 120) || "project-updated",
+        at: currentIso(),
+        project: snapshot
+      };
+      history.unshift(entry);
+      var seen = 0;
+      history = history.filter(function (item) {
+        if (item.projectId !== project.id) return true;
+        seen += 1;
+        return seen <= MAX_HISTORY_PER_PROJECT;
+      });
+      return entry;
+    }
+
     function createProject(input) {
       var nowIso = currentIso();
       var source = Object.assign({}, asObject(input), {
@@ -430,10 +799,11 @@
       return clone(project);
     }
 
-    function updateProject(id, patch) {
+    function updateProjectInternal(id, patch, historyReason) {
       var project = requireEditable(id);
       var nowIso = currentIso();
       var input = asObject(patch);
+      captureHistory(project, historyReason || "project-updated");
       var merged = Object.assign({}, project, input, {
         id: project.id,
         isDemo: false,
@@ -450,6 +820,10 @@
       return clone(normalized);
     }
 
+    function updateProject(id, patch) {
+      return updateProjectInternal(id, patch, "project-updated");
+    }
+
     function updateStep(projectId, stepId, patch) {
       var project = requireEditable(projectId);
       if (STEP_IDS.indexOf(stepId) === -1) {
@@ -460,15 +834,17 @@
       var nextStep = Object.assign({}, project.steps[stepId], asObject(patch), { id: stepId, updatedAt: currentIso() });
       var nextSteps = {};
       nextSteps[stepId] = nextStep;
-      return updateProject(projectId, { steps: nextSteps });
+      return updateProjectInternal(projectId, { steps: nextSteps }, "step-updated:" + stepId);
     }
 
     function removeProject(id) {
       var project = requireEditable(id);
+      captureHistory(project, "project-deleted");
+      var removedScheduleIds = state.schedule.filter(function (item) { return item.projectId === id && !item.isDemo; }).map(function (item) { return item.id; });
       state.projects.splice(state.projects.indexOf(project), 1);
       state.schedule = state.schedule.filter(function (item) { return item.projectId !== id || item.isDemo; });
       record("project-deleted", id);
-      persist("project-deleted", { projectId: id });
+      persist("project-deleted", { projectId: id, scheduleIds: removedScheduleIds });
       return true;
     }
 
@@ -500,7 +876,7 @@
       [id].concat(relatedScheduleIds).forEach(function (demoId) {
         if (state.hiddenDemoIds.indexOf(demoId) === -1) state.hiddenDemoIds.push(demoId);
       });
-      persist("demo-hidden", { demoId: id });
+      persist("demo-hidden", { projectId: project ? id : null, scheduleIds: relatedScheduleIds, demoId: id });
       return true;
     }
 
@@ -512,7 +888,7 @@
       SAMPLE_SCHEDULE.forEach(function (sample) {
         if (!state.schedule.some(function (item) { return item.id === sample.id; })) state.schedule.push(clone(sample));
       });
-      persist("demos-restored", {});
+      persist("demos-restored", { projectIds: SAMPLE_PROJECTS.map(function (item) { return item.id; }), scheduleIds: SAMPLE_SCHEDULE.map(function (item) { return item.id; }) });
       return clone(state);
     }
 
@@ -563,11 +939,31 @@
 
     function importJSON(value, importOptions) {
       importOptions = importOptions || {};
+      if (importOptions.mode && importOptions.mode !== "merge" && importOptions.mode !== "replace") {
+        var invalidMode = new Error("Chế độ nhập phải là merge hoặc replace.");
+        invalidMode.code = "INVALID_IMPORT_MODE";
+        throw invalidMode;
+      }
+      if (typeof value === "string" && utf8ByteLength(value) > MAX_BACKUP_BYTES) {
+        var tooLarge = new Error("Bản sao Creator vượt quá giới hạn 16 MiB.");
+        tooLarge.code = "IMPORT_TOO_LARGE";
+        throw tooLarge;
+      }
       var payload = typeof value === "string" ? safeParse(value) : clone(value);
       if (!payload || payload.schema !== SCHEMA || payload.schemaVersion !== 1) {
         var invalid = new Error("Tệp không đúng định dạng HH Galaxy Creator Studio.");
         invalid.code = "INVALID_IMPORT";
         throw invalid;
+      }
+      if (!Array.isArray(payload.projects) || !Array.isArray(payload.schedule)) {
+        var invalidCollections = new Error("Bản sao Creator phải có danh sách projects và schedule.");
+        invalidCollections.code = "INVALID_IMPORT_COLLECTIONS";
+        throw invalidCollections;
+      }
+      if (payload.projects.length > MAX_BACKUP_PROJECTS || payload.schedule.length > MAX_BACKUP_SCHEDULE) {
+        var tooMany = new Error("Bản sao Creator vượt giới hạn bản ghi cho phép.");
+        tooMany.code = "IMPORT_TOO_MANY_RECORDS";
+        throw tooMany;
       }
       var nowIso = currentIso();
       var importedProjects = (Array.isArray(payload.projects) ? payload.projects : []).filter(function (project) { return asObject(project).isDemo !== true; }).map(function (project) {
@@ -583,21 +979,369 @@
       importedProjects.forEach(function (project) {
         if (SAMPLE_PROJECTS.some(function (sample) { return sample.id === project.id; })) project.id = uid("import-project", Date.parse(nowIso));
         var index = state.projects.findIndex(function (existing) { return existing.id === project.id && !existing.isDemo; });
-        if (index >= 0) state.projects[index] = project; else state.projects.unshift(project);
+        if (index >= 0) { captureHistory(state.projects[index], "project-imported"); state.projects[index] = project; }
+        else state.projects.unshift(project);
       });
       importedSchedule.forEach(function (item) {
         var index = state.schedule.findIndex(function (existing) { return existing.id === item.id && !existing.isDemo; });
         if (index >= 0) state.schedule[index] = item; else state.schedule.push(item);
       });
       record("data-imported", null);
-      persist("data-imported", { projectCount: importedProjects.length, scheduleCount: importedSchedule.length });
+      persist("data-imported", {
+        mode: importOptions.mode === "replace" ? "replace" : "merge",
+        projectIds: importedProjects.map(function (item) { return item.id; }),
+        scheduleIds: importedSchedule.map(function (item) { return item.id; }),
+        projectCount: importedProjects.length,
+        scheduleCount: importedSchedule.length
+      });
       return { projects: importedProjects.length, schedule: importedSchedule.length };
+    }
+
+    function exportAsync(exportOptions) {
+      return readyPromise.then(function () { return flush(); }).then(function () {
+        var json = exportJSON(exportOptions);
+        if (utf8ByteLength(json) > MAX_BACKUP_BYTES) {
+          var tooLarge = new Error("Bản sao Creator vượt quá giới hạn 16 MiB; hãy xuất từng nhóm dự án.");
+          tooLarge.code = "EXPORT_TOO_LARGE";
+          throw tooLarge;
+        }
+        return json;
+      });
+    }
+
+    function importAsync(value, importOptions) {
+      var mode = asObject(importOptions).mode || "merge";
+      if (mode !== "merge" && mode !== "replace") {
+        var invalidMode = new Error("Chế độ khôi phục phải là merge hoặc replace.");
+        invalidMode.code = "INVALID_IMPORT_MODE";
+        return Promise.reject(invalidMode);
+      }
+      return readyPromise.then(function () {
+        var result = importJSON(value, { mode: mode });
+        return flush().then(function (status) {
+          return { projects: result.projects, schedule: result.schedule, mode: mode, storageKind: status.kind };
+        });
+      });
+    }
+
+    function parseValidatedSnapshot(value) {
+      function requireCanonicalTimestamp(timestamp, code, label) {
+        if (typeof timestamp !== "string" || isoDate(timestamp, null) !== timestamp) {
+          throw creatorSnapshotError(code, label + " phải là timestamp ISO hợp lệ và đã chuẩn hóa.");
+        }
+      }
+
+      function requirePreservedFields(source, normalized, prefix) {
+        if (typeof source.source !== "string" || cleanText(source.source, 80) !== source.source || normalized.source !== source.source) {
+          throw creatorSnapshotError(prefix + "_SOURCE_INVALID", "Nguồn dữ liệu trong snapshot Creator không hợp lệ.");
+        }
+        if (typeof source.editable !== "boolean" || normalized.editable !== source.editable) {
+          throw creatorSnapshotError(prefix + "_EDITABLE_INVALID", "Trạng thái editable trong snapshot Creator không hợp lệ.");
+        }
+        requireCanonicalTimestamp(source.createdAt, prefix + "_CREATED_AT_INVALID", "createdAt");
+        requireCanonicalTimestamp(source.updatedAt, prefix + "_UPDATED_AT_INVALID", "updatedAt");
+      }
+
+      var serialized;
+      if (typeof value === "string") {
+        serialized = value;
+        if (utf8ByteLength(serialized) > MAX_BACKUP_BYTES) {
+          throw creatorSnapshotError("SNAPSHOT_TOO_LARGE", "Snapshot Creator vượt quá giới hạn 16 MiB.");
+        }
+      } else {
+        try { serialized = JSON.stringify(value); }
+        catch (error) { throw creatorSnapshotError("SNAPSHOT_NOT_SERIALIZABLE", "Snapshot Creator không thể tuần tự hóa an toàn."); }
+        if (!serialized || utf8ByteLength(serialized) > MAX_BACKUP_BYTES) {
+          throw creatorSnapshotError("SNAPSHOT_TOO_LARGE", "Snapshot Creator vượt quá giới hạn 16 MiB.");
+        }
+      }
+      var payload;
+      try { payload = typeof value === "string" ? JSON.parse(value) : JSON.parse(serialized); }
+      catch (error) { throw creatorSnapshotError("SNAPSHOT_JSON_INVALID", "Snapshot Creator không phải JSON hợp lệ."); }
+      if (!payload || typeof payload !== "object" || Array.isArray(payload) || payload.schema !== SCHEMA) {
+        throw creatorSnapshotError("SNAPSHOT_SCHEMA_INVALID", "Snapshot không đúng schema Creator Studio.");
+      }
+      if (payload.schemaVersion !== 1) {
+        throw creatorSnapshotError("SNAPSHOT_VERSION_UNSUPPORTED", "Phiên bản snapshot Creator chưa được hỗ trợ.");
+      }
+      if (!Array.isArray(payload.projects) || !Array.isArray(payload.schedule)) {
+        throw creatorSnapshotError("SNAPSHOT_COLLECTIONS_INVALID", "Snapshot Creator phải có danh sách projects và schedule.");
+      }
+      if (payload.projects.length > MAX_BACKUP_PROJECTS || payload.schedule.length > MAX_BACKUP_SCHEDULE) {
+        throw creatorSnapshotError("SNAPSHOT_RECORD_LIMIT", "Snapshot Creator vượt giới hạn bản ghi cho phép.");
+      }
+
+      var excludedProjectIds = new Set();
+      payload.projects.forEach(function (project) {
+        var source = asObject(project);
+        if (isSnapshotDemoRecord(source) || SAMPLE_PROJECTS.some(function (sample) { return String(source.id || "") === sample.id; })) {
+          if (source.id != null) excludedProjectIds.add(String(source.id));
+        }
+      });
+      var projectIds = new Set();
+      var scheduleIds = new Set();
+      var nowIso = currentIso();
+      var projects = payload.projects.filter(function (project) {
+        var source = asObject(project);
+        return !isSnapshotDemoRecord(source) && !SAMPLE_PROJECTS.some(function (sample) { return String(source.id || "") === sample.id; });
+      }).map(function (project) {
+        if (!project || typeof project !== "object" || Array.isArray(project)) {
+          throw creatorSnapshotError("SNAPSHOT_PROJECT_INVALID", "Mỗi project trong snapshot Creator phải là một đối tượng.");
+        }
+        var source = clone(project);
+        source.id = validateSnapshotId(source.id, "projects", projectIds);
+        source.isDemo = false;
+        var normalized = normalizeProject(source, { nowIso: nowIso });
+        requirePreservedFields(source, normalized, "SNAPSHOT_PROJECT");
+        if (source.dueAt != null) requireCanonicalTimestamp(source.dueAt, "SNAPSHOT_PROJECT_DUE_AT_INVALID", "dueAt");
+        if (!source.steps || typeof source.steps !== "object" || Array.isArray(source.steps)) {
+          throw creatorSnapshotError("SNAPSHOT_PROJECT_STEPS_INVALID", "Project trong snapshot Creator thiếu pipeline hợp lệ.");
+        }
+        PIPELINE_STEPS.forEach(function (step) {
+          var stepValue = asObject(source.steps[step.id]);
+          requireCanonicalTimestamp(stepValue.updatedAt, "SNAPSHOT_STEP_UPDATED_AT_INVALID", "steps." + step.id + ".updatedAt");
+        });
+        return normalized;
+      });
+      var schedule = payload.schedule.filter(function (item) {
+        var source = asObject(item);
+        return !isSnapshotDemoRecord(source)
+          && !SAMPLE_SCHEDULE.some(function (sample) { return String(source.id || "") === sample.id; })
+          && !excludedProjectIds.has(String(source.projectId || ""));
+      }).map(function (item) {
+        if (!item || typeof item !== "object" || Array.isArray(item)) {
+          throw creatorSnapshotError("SNAPSHOT_SCHEDULE_INVALID", "Mỗi mục lịch trong snapshot Creator phải là một đối tượng.");
+        }
+        var source = clone(item);
+        source.id = validateSnapshotId(source.id, "schedule", scheduleIds);
+        source.isDemo = false;
+        var normalized = normalizeScheduleItem(source, nowIso);
+        requirePreservedFields(source, normalized, "SNAPSHOT_SCHEDULE");
+        if (source.at != null) requireCanonicalTimestamp(source.at, "SNAPSHOT_SCHEDULE_AT_INVALID", "schedule.at");
+        return normalized;
+      });
+      return { projects: projects, schedule: schedule };
+    }
+
+    function replaceValidatedSnapshotAsync(value, replaceOptions) {
+      var restoreOptions = asObject(replaceOptions);
+      if (!Object.prototype.hasOwnProperty.call(restoreOptions, "audit") || typeof restoreOptions.audit !== "boolean") {
+        return Promise.reject(creatorSnapshotError("SNAPSHOT_AUDIT_REQUIRED", "Phải chọn rõ audit=true hoặc audit=false khi thay snapshot Creator."));
+      }
+      return readyPromise.then(function () { return flush(); }).then(function () {
+        var incoming = parseValidatedSnapshot(value);
+        var previousState = clone(state);
+        var previousHistory = clone(history);
+        var previousRevision = revision;
+        var previousLastError = lastError;
+        var previousStorageKind = storageKind;
+        var visibleDemoProjects = state.projects.filter(function (project) { return project.isDemo === true; }).map(clone);
+        var visibleDemoSchedule = state.schedule.filter(function (item) { return item.isDemo === true; }).map(clone);
+        var auditReason = cleanText(restoreOptions.auditReason, 120) || "validated-snapshot-replace";
+
+        state.projects = incoming.projects.map(clone).concat(visibleDemoProjects);
+        state.schedule = visibleDemoSchedule.concat(incoming.schedule.map(clone));
+        state.hiddenDemoIds = clone(previousState.hiddenDemoIds);
+        state.activity = clone(previousState.activity);
+        state.updatedAt = currentIso();
+        if (restoreOptions.audit) record("validated-snapshot-replaced", auditReason);
+        revision += 1;
+
+        function restoreLiveMirror(error) {
+          state = previousState;
+          history = previousHistory;
+          revision = previousRevision;
+          lastError = error || previousLastError;
+          pendingDatabasePayload = null;
+          if (compatibilityStorage) {
+            try { storage.setItem(STORAGE_KEY, JSON.stringify(Object.assign({}, state, { history: history }))); }
+            catch (storageError) { if (!error) error = storageError; }
+          }
+          writeManifest();
+          throw error;
+        }
+
+        if (compatibilityStorage) {
+          try {
+            storage.setItem(STORAGE_KEY, JSON.stringify(Object.assign({}, state, { history: history })));
+            if (storageKind !== "memory-fallback") lastError = null;
+          } catch (error) {
+            return restoreLiveMirror(creatorSnapshotError("SNAPSHOT_PERSIST_FAILED", "Không thể lưu snapshot Creator đã xác thực."));
+          }
+          writeManifest();
+          notify("validated-snapshot-replaced", { audit: restoreOptions.audit, auditReason: restoreOptions.audit ? auditReason : null, projectCount: incoming.projects.length, scheduleCount: incoming.schedule.length });
+          return {
+            projects: incoming.projects.length,
+            schedule: incoming.schedule.length,
+            audit: restoreOptions.audit,
+            auditReason: restoreOptions.audit ? auditReason : null,
+            storageKind: storageKind
+          };
+        }
+
+        writeManifest();
+        pendingDatabasePayload = databasePayload();
+        return drainDatabaseWrites().then(function () {
+          if (previousStorageKind === "indexedDB" && storageKind !== "indexedDB") {
+            throw creatorSnapshotError("SNAPSHOT_PERSIST_FAILED", "IndexedDB không thể lưu snapshot Creator đã xác thực.");
+          }
+          notify("validated-snapshot-replaced", { audit: restoreOptions.audit, auditReason: restoreOptions.audit ? auditReason : null, projectCount: incoming.projects.length, scheduleCount: incoming.schedule.length });
+          return {
+            projects: incoming.projects.length,
+            schedule: incoming.schedule.length,
+            audit: restoreOptions.audit,
+            auditReason: restoreOptions.audit ? auditReason : null,
+            storageKind: storageKind
+          };
+        }).catch(function (error) {
+          return restoreLiveMirror(error && error.code ? error : creatorSnapshotError("SNAPSHOT_PERSIST_FAILED", "Không thể lưu snapshot Creator đã xác thực."));
+        });
+      });
+    }
+
+    function listHistory(projectId) {
+      return history.filter(function (entry) { return !projectId || entry.projectId === projectId; }).map(clone);
+    }
+
+    function restoreVersion(projectId, versionId) {
+      var entry = history.find(function (item) { return item.projectId === projectId && item.id === versionId; });
+      if (!entry) {
+        var missing = new Error("Không tìm thấy phiên bản cần khôi phục.");
+        missing.code = "VERSION_NOT_FOUND";
+        throw missing;
+      }
+      var current = findProject(projectId);
+      if (current) requireEditable(projectId);
+      if (current) captureHistory(current, "before-version-restore");
+      var restored = normalizeProject(Object.assign({}, clone(entry.project), {
+        id: projectId,
+        isDemo: false,
+        editable: true,
+        updatedAt: currentIso()
+      }), { nowIso: currentIso() });
+      if (current) state.projects[state.projects.indexOf(current)] = restored;
+      else state.projects.unshift(restored);
+      record("version-restored", projectId);
+      persist("version-restored", { projectId: projectId, versionId: versionId });
+      return clone(restored);
     }
 
     function subscribe(listener) {
       if (typeof listener !== "function") return function () {};
       subscribers.add(listener);
       return function () { subscribers.delete(listener); };
+    }
+
+    function mergeActivities(primary, secondary) {
+      var result = [];
+      var ids = new Set();
+      (Array.isArray(primary) ? primary : []).concat(Array.isArray(secondary) ? secondary : []).forEach(function (item) {
+        if (!item || typeof item !== "object") return;
+        var id = cleanText(item.id, 180) || [item.action, item.entityId, item.at].join(":");
+        if (ids.has(id)) return;
+        ids.add(id);
+        result.push(clone(item));
+      });
+      return result.sort(function (left, right) { return String(right.at || "").localeCompare(String(left.at || "")); }).slice(0, MAX_ACTIVITY);
+    }
+
+    function copyMissing(baseValue, legacyValue) {
+      var base = normalizeState(baseValue || initialState(currentIso()), currentIso());
+      if (!legacyValue) return base;
+      var legacy = normalizeState(legacyValue, currentIso());
+      legacy.projects.forEach(function (project) {
+        if (!base.projects.some(function (item) { return item.id === project.id; })) base.projects.push(clone(project));
+      });
+      legacy.schedule.forEach(function (item) {
+        if (!base.schedule.some(function (entry) { return entry.id === item.id; })) base.schedule.push(clone(item));
+      });
+      base.hiddenDemoIds = Array.from(new Set(base.hiddenDemoIds.concat(legacy.hiddenDemoIds)));
+      base.activity = mergeActivities(base.activity, legacy.activity);
+      base.projects = base.projects.filter(function (project) { return base.hiddenDemoIds.indexOf(project.id) === -1; });
+      base.schedule = base.schedule.filter(function (item) { return base.hiddenDemoIds.indexOf(item.id) === -1 && base.hiddenDemoIds.indexOf(item.projectId) === -1; });
+      return base;
+    }
+
+    function overlayDirty(base, current) {
+      if (fullStateDirty) return normalizeState(current, currentIso());
+      dirtyProjectIds.forEach(function (id) {
+        base.projects = base.projects.filter(function (item) { return item.id !== id; });
+        var local = current.projects.find(function (item) { return item.id === id; });
+        if (local) base.projects.unshift(clone(local));
+      });
+      dirtyScheduleIds.forEach(function (id) {
+        base.schedule = base.schedule.filter(function (item) { return item.id !== id; });
+        var local = current.schedule.find(function (item) { return item.id === id; });
+        if (local) base.schedule.push(clone(local));
+      });
+      if (hiddenDemoIdsDirty) {
+        base.hiddenDemoIds = clone(current.hiddenDemoIds);
+        base.projects = base.projects.filter(function (project) { return base.hiddenDemoIds.indexOf(project.id) === -1; });
+        base.schedule = base.schedule.filter(function (item) { return base.hiddenDemoIds.indexOf(item.id) === -1 && base.hiddenDemoIds.indexOf(item.projectId) === -1; });
+      }
+      base.activity = mergeActivities(current.activity, base.activity);
+      base.updatedAt = current.updatedAt;
+      return normalizeState(base, currentIso());
+    }
+
+    function mergeHistory(primary, secondary) {
+      var seen = new Set();
+      return normalizeHistory((Array.isArray(primary) ? primary : []).concat(Array.isArray(secondary) ? secondary : []).filter(function (entry) {
+        var id = cleanText(asObject(entry).id, 180);
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      }).sort(function (left, right) { return String(asObject(right).at || "").localeCompare(String(asObject(left).at || "")); }));
+    }
+
+    var readyPromise;
+    if (usesDatabase) {
+      readyPromise = Promise.resolve().then(function () { return database.open(); }).then(function () { return database.read(); }).then(function (result) {
+        var databaseState = result && result.exists && result.state ? result.state : null;
+        var base = databaseState ? copyMissing(databaseState, legacyStored) : normalizeState(legacyStored || state, currentIso());
+        var localBeforeHydration = clone(state);
+        state = overlayDirty(base, localBeforeHydration);
+        history = mergeHistory(result && result.history, history);
+        migratedAt = legacyStored ? (asObject(existingManifest).migratedAt || currentIso()) : null;
+        hydrated = true;
+        databaseReady = true;
+        storageKind = "indexedDB";
+        dirtyProjectIds.clear();
+        dirtyScheduleIds.clear();
+        hiddenDemoIdsDirty = false;
+        fullStateDirty = false;
+        writeManifest();
+        pendingDatabasePayload = databasePayload();
+        return drainDatabaseWrites().then(function () {
+          lastError = null;
+          notify("hydrated", { migrated: Boolean(legacyStored), storageKind: storageKind });
+          return backendStatus();
+        });
+      }).catch(function (error) {
+        hydrated = true;
+        switchToMemoryFallback(error);
+        return backendStatus();
+      });
+    } else {
+      hydrated = true;
+      readyPromise = Promise.resolve(backendStatus());
+    }
+
+    function flush() {
+      return readyPromise.then(function () { return drainDatabaseWrites(); }).then(function () { return backendStatus(); });
+    }
+
+    function close() {
+      if (closePromise) return closePromise;
+      subscribers.clear();
+      closePromise = Promise.resolve(readyPromise).catch(function () { return null; }).then(function () {
+        return drainDatabaseWrites().catch(function () { return null; });
+      }).then(function () {
+        if (database && typeof database.close === "function") database.close();
+        databaseReady = false;
+        return true;
+      });
+      return closePromise;
     }
 
     function getSnapshot() { return clone(state); }
@@ -608,8 +1352,13 @@
 
     return Object.freeze({
       storageKey: STORAGE_KEY,
+      manifestKey: MANIFEST_KEY,
       storageKind: function () { return storageKind; },
+      backendStatus: backendStatus,
       lastError: function () { return lastError; },
+      ready: function () { return readyPromise; },
+      flush: flush,
+      close: close,
       getSnapshot: getSnapshot,
       getProject: getProject,
       getStats: getStats,
@@ -625,6 +1374,11 @@
       removeSchedule: removeSchedule,
       exportJSON: exportJSON,
       importJSON: importJSON,
+      exportAsync: exportAsync,
+      importAsync: importAsync,
+      replaceValidatedSnapshotAsync: replaceValidatedSnapshotAsync,
+      listHistory: listHistory,
+      restoreVersion: restoreVersion,
       subscribe: subscribe
     });
   }
@@ -633,11 +1387,18 @@
     VERSION: VERSION,
     SCHEMA: SCHEMA,
     STORAGE_KEY: STORAGE_KEY,
+    MANIFEST_KEY: MANIFEST_KEY,
+    DATABASE_NAME: DATABASE_NAME,
+    DATABASE_VERSION: DATABASE_VERSION,
+    MAX_HISTORY_PER_PROJECT: MAX_HISTORY_PER_PROJECT,
+    BACKUP_LIMITS: Object.freeze({ maxBytes: MAX_BACKUP_BYTES, maxProjects: MAX_BACKUP_PROJECTS, maxSchedule: MAX_BACKUP_SCHEDULE }),
     PIPELINE_STEPS: PIPELINE_STEPS,
     STEP_STATUSES: STEP_STATUSES,
     SAMPLE_PROJECTS: SAMPLE_PROJECTS,
     SAMPLE_SCHEDULE: SAMPLE_SCHEDULE,
     memoryStorage: memoryStorage,
+    memoryDatabase: memoryDatabase,
+    createIndexedDbDriver: createIndexedDbDriver,
     normalizeProject: normalizeProject,
     normalizeState: normalizeState,
     progressOf: progressOf,

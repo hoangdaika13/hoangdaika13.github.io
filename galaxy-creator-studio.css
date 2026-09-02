@@ -627,3 +627,91 @@
   .gcs-side-card,
   .gcs-editor { border-width: 2px; }
 }
+
+/* -------------------------------------------------------------------------
+   User-content wrapping
+
+   Project names, notes and checklist items are editable data. Preserve every
+   character by allowing their cards to grow while keeping schedule/modal
+   containers as the existing internal scroll boundaries.
+   ---------------------------------------------------------------------- */
+.gcs-panel-heading h2,
+.gcs-project-body h3,
+.gcs-tools-grid strong,
+.gcs-schedule li strong,
+.gcs-schedule li div > span,
+.gcs-stats-grid small,
+.gcs-editor__header h2,
+.gcs-checklist li em {
+  max-width: 100%;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.gcs-panel-heading h2 {
+  min-width: 0;
+}
+
+.gcs-project-meta,
+.gcs-project-body footer,
+.gcs-project-body footer > span,
+.gcs-card-actions {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.gcs-project-meta > span,
+.gcs-project-body footer > span {
+  min-width: 0;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.gcs-project-body > p {
+  display: block;
+  min-height: 0;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: unset;
+}
+
+.gcs-card-actions button {
+  min-width: 0;
+  justify-content: center;
+  overflow-wrap: anywhere;
+  text-align: center;
+  white-space: normal;
+}
+
+.gcs-schedule li,
+.gcs-schedule li div,
+.gcs-stats-grid article div,
+.gcs-checklist li label {
+  min-width: 0;
+}
+
+.gcs-schedule li {
+  grid-template-columns: 38px 10px minmax(0, 1fr) auto;
+}
+
+.gcs-checklist li {
+  align-items: flex-start;
+}
+
+.gcs-checklist li label {
+  align-items: flex-start;
+  padding-block: 10px;
+}
+
+.gcs-status-pill {
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}

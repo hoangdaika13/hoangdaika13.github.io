@@ -1,4 +1,6 @@
-const CACHE = "hh-identity-portal-v970";
+const CACHE = "hh-identity-portal-v974";
+// HH Galaxy continuity and content-integrity release: hh-identity-portal-v973.
+// HH Galaxy transactional backup and adaptive AI attachment release: hh-identity-portal-v972.
 // Function portal release: eleven verified local hero images are catalogued as
 // runtime assets and cached only after their active route requests them.
 // Compatibility markers for previous functional portal releases: hh-identity-portal-v969 hh-identity-portal-v968.
@@ -281,11 +283,18 @@ const RUNTIME_ASSETS = [
   "./galaxy-shell.css?v=9",
   "./galaxy-shell.js?v=7",
   "./hh-core-gateway.js?v=2",
-  "./galaxy-home-ai.css?v=19",
-  "./galaxy-home-ai.js?v=12",
-  "./galaxy-layer-one.css?v=4",
-  "./galaxy-layer-one-worlds.css?v=13",
-  "./galaxy-layer-one.js?v=11",
+  "./galaxy-home-ai.css?v=22",
+  "./galaxy-home-ai.js?v=14",
+  "./galaxy-layer-one.css?v=5",
+  "./galaxy-layer-one-worlds.css?v=15",
+  "./galaxy-layer-one-storage.js?v=2",
+  "./galaxy-layer-one-media.js?v=1",
+  "./galaxy-layer-one-learning.js?v=1",
+  "./galaxy-layer-one-analytics.js?v=1",
+  "./galaxy-layer-one-tools.js?v=1",
+  "./vendor/qrcode.js?v=1",
+  "./galaxy-layer-one-backup.js?v=2",
+  "./galaxy-layer-one.js?v=15",
   "./assets/galaxy/learning-portals-atlas-v1.png",
   // Runtime-cached on first route use; deliberately excluded from CORE.
   "./assets/galaxy/function-portals/ai-universe-v1.png",
@@ -299,9 +308,9 @@ const RUNTIME_ASSETS = [
   "./assets/galaxy/function-portals/tools-galaxy-v1.png",
   "./assets/galaxy/function-portals/analytics-v1.png",
   "./assets/galaxy/function-portals/settings-v2.png",
-  "./galaxy-layer-one-data.js?v=2",
-  "./galaxy-creator-studio.css?v=11",
-  "./galaxy-creator-studio.js?v=4",
+  "./galaxy-layer-one-data.js?v=4",
+  "./galaxy-creator-studio.css?v=12",
+  "./galaxy-creator-studio.js?v=5",
   "./assets/galaxy/hh-galaxy-map-bg-v1.png?v=1",
   "./assets/galaxy/hh-luminous-planet-v1.webp?v=1",
   "./assets/galaxy/hh-stellar-core-v1.webp?v=1",
@@ -613,10 +622,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=622",
+  "./performance-loader.js?v=626",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=263"
+  "./script.js?v=264"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

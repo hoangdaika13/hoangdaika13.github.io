@@ -7,11 +7,12 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function (globalScope) {
   "use strict";
 
-  const VERSION = "1.1.0";
+  const VERSION = "1.3.0";
   const HOME_PREF_KEY = "hh.galaxy.home.preferences.v1";
   const FOCUS_KEY = "hh.galaxy.dashboard.focus.v1";
   const TASK_KEY = "hh.command-center.todos.v2";
   const NOTE_KEY = "hh.dashboard.sticky-notes.v1";
+  const LAYER_ONE_STORAGE_KEY = "hh.galaxy.layer-one.v1";
   const NOTIFICATION_KEY = "hh-notification-center";
   const PROJECT_KEYS = Object.freeze(["hh.creative-os.v1", "hh-project-center"]);
   const GALAXY_DATA_KEYS = Object.freeze({
@@ -23,6 +24,24 @@
     notifications: "hh.galaxy.notifications.v1"
   });
   const CORE_ENTRY_ROUTE = "/create";
+  const AI_ATTACHMENT_CONFIG = Object.freeze({
+    databaseName: "hh-galaxy-ai-attachments-v1",
+    storeName: "text-attachments",
+    databaseVersion: 1,
+    maxFiles: 3,
+    maxFileBytes: 128 * 1024,
+    maxTotalBytes: 256 * 1024,
+    maxTextCharacters: 100000,
+    maxContextCharacters: 2200,
+    maxStoredRecords: 12,
+    maxStoredCharacters: 500000,
+    accept: ".txt,.md,.json,text/plain,text/markdown,application/json"
+  });
+  const AI_ATTACHMENT_TYPES = Object.freeze({
+    ".txt": Object.freeze(["", "text/plain"]),
+    ".md": Object.freeze(["", "text/plain", "text/markdown", "text/x-markdown"]),
+    ".json": Object.freeze(["", "text/plain", "text/json", "application/json"])
+  });
   const ROUTES = Object.freeze(["/home", "/home/dashboard", "/create/ai-center", "/chat-ai"]);
   const PLANETS = Object.freeze([
     { id: "music", label: "Music Planet", note: "Nhạc và âm thanh", route: "/galaxy/music", tone: "cyan", x: 27.96, y: 13.47, size: 82 },
@@ -59,6 +78,8 @@
   ]);
 
   let activeRuntime = null;
+  let attachmentSequence = 0;
+  const memoryAttachmentStore = new Map();
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
@@ -66,6 +87,236 @@
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
   const asArray = (value) => Array.isArray(value) ? value : [];
   const isObject = (value) => Boolean(value && typeof value === "object" && !Array.isArray(value));
+
+  function attachmentExtension(value) {
+    const match = String(value || "").trim().toLocaleLowerCase("en-US").match(/\.[a-z0-9]+$/);
+    return match ? match[0] : "";
+  }
+
+  function safeAttachmentName(value) {
+    const name = String(value || "tài-liệu.txt").split(/[\\/]/).pop().replace(/[\u0000-\u001f\u007f]/g, "").trim();
+    return (name || "tài-liệu.txt").slice(0, 160);
+  }
+
+  function validateAttachmentMetadata(file, selected = []) {
+    if (!file || typeof file !== "object") return { valid: false, reason: "Tệp không hợp lệ." };
+    const name = safeAttachmentName(file.name);
+    const extension = attachmentExtension(name);
+    const mimeType = String(file.type || "").trim().toLocaleLowerCase("en-US").split(";")[0];
+    const size = Number(file.size);
+    if (!AI_ATTACHMENT_TYPES[extension]) return { valid: false, reason: "Chỉ chấp nhận tệp .txt, .md hoặc .json." };
+    if (!AI_ATTACHMENT_TYPES[extension].includes(mimeType)) return { valid: false, reason: `Content-Type của ${name} không phù hợp.` };
+    if (!Number.isFinite(size) || size < 0 || size > AI_ATTACHMENT_CONFIG.maxFileBytes) {
+      return { valid: false, reason: `${name} vượt quá giới hạn 128 KB.` };
+    }
+    const current = asArray(selected);
+    if (current.length >= AI_ATTACHMENT_CONFIG.maxFiles) return { valid: false, reason: "Chỉ được chọn tối đa 3 tệp." };
+    const totalBytes = current.reduce((sum, item) => sum + (Number(item?.size ?? item?.file?.size) || 0), 0) + size;
+    if (totalBytes > AI_ATTACHMENT_CONFIG.maxTotalBytes) return { valid: false, reason: "Tổng dung lượng tệp vượt quá 256 KB." };
+    return { valid: true, value: Object.freeze({ name, extension, mimeType: mimeType || AI_ATTACHMENT_TYPES[extension].find(Boolean) || "text/plain", size }) };
+  }
+
+  function containsPotentialSecret(value) {
+    const text = String(value || "");
+    if (/-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?(?:PRIVATE KEY|SECRET KEY)-----/i.test(text)) return true;
+    if (/\b(?:sk-(?:proj-)?[a-z0-9_-]{20,}|github_pat_[a-z0-9_]{20,}|gh[opusr]_[a-z0-9]{30,}|AKIA[0-9A-Z]{16})\b/i.test(text)) return true;
+    const assignment = /\b(api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|password|passwd)\b\s*["']?\s*[:=]\s*["']?([^\s,"'\]}]{8,})/gi;
+    let match;
+    while ((match = assignment.exec(text))) {
+      if (!/^(?:example|sample|placeholder|replace[_-]?me|your[_-]?(?:key|token|secret)|dummy|test)$/i.test(match[2])) return true;
+    }
+    return false;
+  }
+
+  function sanitizeAttachmentText(value, metadata = {}) {
+    const raw = String(value ?? "").replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+    const controls = raw.match(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g) || [];
+    if (raw.includes("\u0000") || (raw.length > 0 && controls.length / raw.length > 0.01)) {
+      return { valid: false, reason: `${safeAttachmentName(metadata.name)} có nội dung nhị phân hoặc ký tự điều khiển.` };
+    }
+    if (raw.length > AI_ATTACHMENT_CONFIG.maxTextCharacters) {
+      return { valid: false, reason: `${safeAttachmentName(metadata.name)} có quá nhiều ký tự để xử lý an toàn.` };
+    }
+    const text = raw.trim();
+    if (!text) return { valid: false, reason: `${safeAttachmentName(metadata.name)} không có nội dung văn bản.` };
+    if (metadata.extension === ".json") {
+      try { JSON.parse(text); } catch { return { valid: false, reason: `${safeAttachmentName(metadata.name)} không phải JSON hợp lệ.` }; }
+    }
+    if (containsPotentialSecret(text)) return { valid: false, reason: `${safeAttachmentName(metadata.name)} có dấu hiệu chứa secret hoặc thông tin xác thực.` };
+    return { valid: true, text };
+  }
+
+  function makeAttachmentId() {
+    try {
+      const generated = globalScope.crypto?.randomUUID?.();
+      if (generated) return `ai-text-${generated}`;
+    } catch { /* A deterministic fallback is sufficient for local record keys. */ }
+    attachmentSequence += 1;
+    return `ai-text-${Date.now()}-${attachmentSequence}`;
+  }
+
+  async function readSelectedAttachments(files, options = {}) {
+    const selected = asArray(Array.from(files || []));
+    const records = [];
+    let validated = [];
+    for (const file of selected) {
+      if (options.signal?.aborted) throw Object.assign(new Error("Đã hủy đọc tệp."), { code: "ATTACHMENT_ABORTED" });
+      const validation = validateAttachmentMetadata(file, validated);
+      if (!validation.valid) throw Object.assign(new Error(validation.reason), { code: "ATTACHMENT_METADATA_INVALID" });
+      validated = validated.concat(validation.value);
+      if (typeof file.text !== "function") throw Object.assign(new Error(`${validation.value.name} không hỗ trợ đọc văn bản an toàn.`), { code: "ATTACHMENT_TEXT_UNAVAILABLE" });
+      const sanitization = sanitizeAttachmentText(await file.text(), validation.value);
+      if (!sanitization.valid) throw Object.assign(new Error(sanitization.reason), { code: "ATTACHMENT_CONTENT_INVALID" });
+      if (options.signal?.aborted) throw Object.assign(new Error("Đã hủy đọc tệp."), { code: "ATTACHMENT_ABORTED" });
+      records.push(Object.freeze({
+        id: makeAttachmentId(),
+        name: validation.value.name,
+        extension: validation.value.extension,
+        mimeType: validation.value.mimeType,
+        size: validation.value.size,
+        text: sanitization.text,
+        createdAt: new Date().toISOString()
+      }));
+    }
+    return records;
+  }
+
+  function composeAIHandoffPrompt(prompt, records, maxCharacters = 4000) {
+    const question = String(prompt || "").trim().slice(0, 1600);
+    if (!question || !asArray(records).length) return question;
+    const budget = Math.max(0, Math.min(
+      AI_ATTACHMENT_CONFIG.maxContextCharacters,
+      Math.min(Number(maxCharacters) || 4000, 4000) - question.length - 3
+    ));
+    if (budget < 80) return question;
+    let context = "Tài liệu người dùng đã chủ động đính kèm:\n";
+    for (const record of records) {
+      const heading = `\n--- ${safeAttachmentName(record?.name)} ---\n`;
+      if (context.length + heading.length >= budget) break;
+      const remaining = budget - context.length - heading.length;
+      const text = String(record?.text || "");
+      if (!text) continue;
+      context += heading + text.slice(0, remaining);
+      if (text.length > remaining && context.length + 24 <= budget) context += "\n[Đã rút gọn nội dung]";
+      if (context.length >= budget) break;
+    }
+    return `${question}\n\n${context.slice(0, budget)}`.slice(0, 4000);
+  }
+
+  function storeAiHandoff(storage, payload) {
+    if (!storage || typeof storage.setItem !== "function" || !isObject(payload)) return false;
+    try {
+      const serialized = JSON.stringify(payload);
+      if (!serialized || serialized.length > 12000) return false;
+      storage.setItem("hh.galaxy.ai.handoff.v1", serialized);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function pruneMemoryAttachments() {
+    const records = [...memoryAttachmentStore.values()].sort((left, right) => String(left.createdAt).localeCompare(String(right.createdAt)));
+    let characters = records.reduce((sum, record) => sum + String(record.text || "").length, 0);
+    while (records.length > AI_ATTACHMENT_CONFIG.maxStoredRecords || characters > AI_ATTACHMENT_CONFIG.maxStoredCharacters) {
+      const removed = records.shift();
+      if (!removed) break;
+      memoryAttachmentStore.delete(removed.id);
+      characters -= String(removed.text || "").length;
+    }
+  }
+
+  function openAttachmentDatabase(scope = globalScope) {
+    return new Promise((resolve, reject) => {
+      if (!scope.indexedDB?.open) return reject(Object.assign(new Error("IndexedDB không khả dụng."), { code: "INDEXEDDB_UNAVAILABLE" }));
+      let request;
+      try { request = scope.indexedDB.open(AI_ATTACHMENT_CONFIG.databaseName, AI_ATTACHMENT_CONFIG.databaseVersion); }
+      catch (error) { reject(error); return; }
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains(AI_ATTACHMENT_CONFIG.storeName)) database.createObjectStore(AI_ATTACHMENT_CONFIG.storeName, { keyPath: "id" });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("Không thể mở IndexedDB."));
+      request.onblocked = () => reject(Object.assign(new Error("IndexedDB đang bị khóa bởi phiên khác."), { code: "INDEXEDDB_BLOCKED" }));
+    });
+  }
+
+  async function persistAttachmentRecords(records, scope = globalScope) {
+    const safeRecords = asArray(records).map((record) => {
+      if (!isObject(record) || typeof record.text !== "string") return null;
+      const name = safeAttachmentName(record.name);
+      const extension = attachmentExtension(name);
+      const sanitization = sanitizeAttachmentText(record.text, { name, extension });
+      if (!sanitization.valid || !AI_ATTACHMENT_TYPES[extension]) return null;
+      const mimeType = AI_ATTACHMENT_TYPES[extension].includes(String(record.mimeType || "").toLocaleLowerCase("en-US"))
+        ? String(record.mimeType || "").toLocaleLowerCase("en-US")
+        : AI_ATTACHMENT_TYPES[extension].find(Boolean) || "text/plain";
+      return {
+        id: String(record.id || makeAttachmentId()).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 120) || makeAttachmentId(),
+        name,
+        extension,
+        mimeType,
+        size: clamp(record.size, 0, AI_ATTACHMENT_CONFIG.maxFileBytes),
+        text: sanitization.text,
+        createdAt: Number.isFinite(Date.parse(String(record.createdAt || ""))) ? new Date(record.createdAt).toISOString() : new Date().toISOString()
+      };
+    }).filter(Boolean);
+    if (!safeRecords.length) return { mode: "none", saved: 0 };
+    let database;
+    try {
+      database = await openAttachmentDatabase(scope);
+      await new Promise((resolve, reject) => {
+        const transaction = database.transaction(AI_ATTACHMENT_CONFIG.storeName, "readwrite");
+        const store = transaction.objectStore(AI_ATTACHMENT_CONFIG.storeName);
+        safeRecords.forEach((record) => store.put({ ...record }));
+        const request = store.getAll();
+        request.onsuccess = () => {
+          const all = asArray(request.result).sort((left, right) => String(left.createdAt).localeCompare(String(right.createdAt)));
+          let characters = all.reduce((sum, record) => sum + String(record.text || "").length, 0);
+          while (all.length > AI_ATTACHMENT_CONFIG.maxStoredRecords || characters > AI_ATTACHMENT_CONFIG.maxStoredCharacters) {
+            const removed = all.shift();
+            if (!removed) break;
+            store.delete(removed.id);
+            characters -= String(removed.text || "").length;
+          }
+        };
+        request.onerror = () => { try { transaction.abort(); } catch { /* Transaction may already have failed. */ } };
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error || request.error || new Error("Không thể lưu tệp vào IndexedDB."));
+        transaction.onabort = () => reject(transaction.error || request.error || new Error("Đã hủy lưu tệp vào IndexedDB."));
+      });
+      return { mode: "indexeddb", saved: safeRecords.length };
+    } catch (error) {
+      safeRecords.forEach((record) => memoryAttachmentStore.set(record.id, { ...record }));
+      pruneMemoryAttachments();
+      return { mode: "memory", saved: safeRecords.length, reason: String(error?.code || error?.message || "INDEXEDDB_FAILED") };
+    } finally {
+      try { database?.close?.(); } catch { /* Closing is best-effort. */ }
+    }
+  }
+
+  function resolveAdaptiveExperience(storage, scope = globalScope, overrides = {}) {
+    const stored = readRecord(storage, LAYER_ONE_STORAGE_KEY).value?.settings || {};
+    const requestedEffects = ["quiet", "balanced", "rich"].includes(overrides.effects) ? overrides.effects
+      : ["quiet", "balanced", "rich"].includes(stored.effects) ? stored.effects : "balanced";
+    const reducedSetting = ["system", "on", "off"].includes(overrides.reducedMotion) ? overrides.reducedMotion
+      : ["system", "on", "off"].includes(stored.reducedMotion) ? stored.reducedMotion : "system";
+    const navigator = scope.navigator || {};
+    const memory = Number(navigator.deviceMemory);
+    const cores = Number(navigator.hardwareConcurrency);
+    const saveData = navigator.connection?.saveData === true;
+    const low = saveData || (Number.isFinite(memory) && memory > 0 && memory <= 4) || (Number.isFinite(cores) && cores > 0 && cores <= 4);
+    const high = !low && Number.isFinite(memory) && memory >= 8 && Number.isFinite(cores) && cores >= 8;
+    const deviceTier = low ? "low" : high ? "high" : "mid";
+    let systemReduced = false;
+    try { systemReduced = Boolean(scope.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches); } catch { /* Treat an unavailable media query as no preference. */ }
+    const reduced = reducedSetting === "on" || (reducedSetting === "system" && systemReduced);
+    let motion = requestedEffects;
+    if (reduced || requestedEffects === "quiet") motion = "quiet";
+    else if (deviceTier === "low") motion = requestedEffects === "rich" ? "balanced" : "quiet";
+    return Object.freeze({ requestedEffects, reducedSetting, reduced, systemReduced, deviceTier, motion });
+  }
 
   function formatDate(value, withTime = false) {
     const date = new Date(value);
@@ -141,6 +392,87 @@
     if (!isObject(note)) return null;
     const text = String(note.text || note.content || "").trim().slice(0, 4000);
     return text ? { id: String(note.id || `note-${index}`), text, pinned: Boolean(note.pinned), updatedAt: note.updatedAt || null } : null;
+  }
+
+  function normalizeLayerOneItem(item, index) {
+    if (!isObject(item) || item.isDemo === true || item.isSample === true) return null;
+    const metaSource = isObject(item.meta) ? item.meta : {};
+    if (metaSource.isDemo === true || metaSource.isSample === true || item.source === "local-template" || item.source === "sample") return null;
+    const route = normalizeRoute(item.route || "");
+    if (!HOME_NAV_ITEMS.some((entry) => entry.route === route) || ["/home", "/galaxy/analytics", "/galaxy/settings"].includes(route)) return null;
+    const title = String(item.title || item.name || "").trim().slice(0, 160);
+    if (!title) return null;
+    const createdAt = Number.isFinite(Date.parse(String(item.createdAt || ""))) ? new Date(item.createdAt).toISOString() : null;
+    const updatedAt = Number.isFinite(Date.parse(String(item.updatedAt || ""))) ? new Date(item.updatedAt).toISOString() : createdAt;
+    const dueDate = /^\d{4}-\d{2}-\d{2}$/.test(String(metaSource.dueDate || "")) ? String(metaSource.dueDate) : "";
+    return {
+      id: String(item.id || `layer-one-item-${index}`).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 96) || `layer-one-item-${index}`,
+      route,
+      title,
+      kind: String(item.kind || "document").trim().slice(0, 60) || "document",
+      description: String(item.description || "").trim().slice(0, 1000),
+      createdAt,
+      updatedAt,
+      meta: {
+        completed: metaSource.completed === true,
+        dueDate,
+        learningCategory: ["note", "plan", "resource"].includes(metaSource.learningCategory) ? metaSource.learningCategory : ""
+      }
+    };
+  }
+
+  function layerOneRouteLabel(route) {
+    return HOME_NAV_ITEMS.find((item) => item.route === route)?.label || "HH Galaxy";
+  }
+
+  function inspectLayerOneSnapshot(storage) {
+    const record = readRecord(storage, LAYER_ONE_STORAGE_KEY);
+    if (record.invalid) return { status: "error", items: [], documents: [], tasks: [], projects: [], notes: [], activity: [], analyticsConsent: false };
+    if (!record.found) return { status: "empty", items: [], documents: [], tasks: [], projects: [], notes: [], activity: [], analyticsConsent: false };
+    if (!isObject(record.value) || (record.value.version != null && Number(record.value.version) !== 1) || !Array.isArray(record.value.items)) {
+      return { status: "error", items: [], documents: [], tasks: [], projects: [], notes: [], activity: [], analyticsConsent: false };
+    }
+    const items = record.value.items.slice(-120).map(normalizeLayerOneItem).filter(Boolean).sort((left, right) => {
+      return (Date.parse(right.updatedAt || right.createdAt || "") || 0) - (Date.parse(left.updatedAt || left.createdAt || "") || 0);
+    });
+    const tasks = items.filter((item) => item.meta.learningCategory === "plan" || /(?:^|[-_])(plan|task|checklist)(?:$|[-_])/i.test(item.kind)).map((item) => ({
+      id: item.id,
+      title: item.title,
+      completed: item.meta.completed,
+      category: "Kế hoạch Layer 1",
+      deadline: item.meta.dueDate,
+      route: item.route,
+      updatedAt: item.updatedAt
+    }));
+    const projects = items.filter((item) => /(?:^|[-_])project(?:$|[-_])/i.test(item.kind)).map((item) => ({
+      id: item.id,
+      name: item.title,
+      progress: null,
+      updatedAt: item.updatedAt,
+      route: item.route
+    }));
+    const notes = items.filter((item) => item.meta.learningCategory === "note" || /(?:^|[-_])note(?:$|[-_])/i.test(item.kind)).map((item) => ({
+      id: item.id,
+      text: item.description || item.title,
+      pinned: false,
+      updatedAt: item.updatedAt,
+      route: item.route
+    }));
+    const analyticsConsent = record.value.settings?.analyticsConsent === true;
+    const activityLabels = {
+      "route-view": "Đã mở khu vực",
+      "item-create": "Đã tạo tài liệu",
+      "item-delete": "Đã xóa tài liệu",
+      "data-export": "Đã xuất dữ liệu",
+      "data-import": "Đã nhập dữ liệu",
+      "permission-check": "Đã kiểm tra quyền"
+    };
+    const activity = analyticsConsent ? asArray(record.value.events).slice(-300).filter(isObject).map((event) => {
+      const route = normalizeRoute(event.route || "");
+      const at = Number.isFinite(Date.parse(String(event.at || ""))) ? new Date(event.at).toISOString() : null;
+      return { action: activityLabels[event.type] || "Hoạt động Layer 1", title: layerOneRouteLabel(route), route, at };
+    }).filter((event) => event.at).sort((left, right) => Date.parse(right.at) - Date.parse(left.at)).slice(0, 20) : [];
+    return { status: "ready", items, documents: items.slice(0, 12), tasks, projects, notes, activity, analyticsConsent };
   }
 
   function firstProjectCollection(storage) {
@@ -234,6 +566,7 @@
 
   function collectGalaxyLocalData(storage = globalScope.localStorage, scope = globalScope) {
     const platform = collectLocalData(storage, scope);
+    const layerOne = inspectLayerOneSnapshot(storage);
     const projectsRecord = readRecord(storage, GALAXY_DATA_KEYS.projects);
     const tasksRecord = readRecord(storage, GALAXY_DATA_KEYS.tasks);
     const notesRecord = readRecord(storage, GALAXY_DATA_KEYS.notes);
@@ -246,31 +579,46 @@
     const notificationItems = Array.isArray(notificationRecord.value)
       ? notificationRecord.value
       : asArray(notificationRecord.value?.inbox);
+    const hasCanonicalSnapshot = layerOne.status !== "empty";
+    const projects = hasCanonicalSnapshot ? layerOne.projects : projectItems.filter(isObject).map(normalizeProject).filter(Boolean);
+    const tasks = hasCanonicalSnapshot ? layerOne.tasks : asArray(tasksRecord.value).map(normalizeTask).filter(Boolean);
+    const notes = hasCanonicalSnapshot ? layerOne.notes : asArray(notesRecord.value).map(normalizeNote).filter(Boolean);
+    const activity = hasCanonicalSnapshot ? layerOne.activity : asArray(activityRecord.value).filter((item) => typeof item === "string" || isObject(item)).slice(0, 20);
     return {
       ...platform,
-      projects: projectItems.filter(isObject),
-      tasks: asArray(tasksRecord.value).map(normalizeTask).filter(Boolean),
-      notes: asArray(notesRecord.value).map(normalizeNote).filter(Boolean),
+      projects,
+      tasks,
+      notes,
+      recentDocuments: layerOne.documents,
       favorites: asArray(favoritesRecord.value).filter((item) => typeof item === "string").slice(0, 100),
-      activity: asArray(activityRecord.value).filter((item) => typeof item === "string" || isObject(item)).slice(0, 20),
+      activity,
       notifications: {
         unreadCount: clamp(notificationItems.filter((item) => isObject(item) && !item.read).length, 0, 999),
         totalCount: clamp(notificationItems.length, 0, 999),
         found: notificationRecord.found
       },
       modules: HOME_NAV_ITEMS.map((item) => ({ ...item })),
+      capability: {
+        ...platform.capability,
+        layerOneStorage: layerOne.status,
+        aiProvider: "configuration-required",
+        analytics: layerOne.analyticsConsent ? "ready" : "disabled"
+      },
       evidence: {
         account: platform.evidence.account,
-        projects: projectsRecord.found,
-        tasks: tasksRecord.found,
-        notes: notesRecord.found,
+        projects: hasCanonicalSnapshot ? layerOne.status === "ready" : projectsRecord.found,
+        tasks: hasCanonicalSnapshot ? layerOne.status === "ready" : tasksRecord.found,
+        notes: hasCanonicalSnapshot ? layerOne.status === "ready" : notesRecord.found,
+        recentDocuments: layerOne.status === "ready",
+        layerOne: layerOne.status === "ready",
         favorites: favoritesRecord.found,
-        activity: activityRecord.found,
+        activity: hasCanonicalSnapshot ? layerOne.analyticsConsent : activityRecord.found,
         weather: false,
         notifications: notificationRecord.found,
         modules: true
       },
-      source: "local"
+      layerOne: { status: layerOne.status, itemCount: layerOne.items.length, analyticsConsent: layerOne.analyticsConsent },
+      source: layerOne.status === "ready" ? "layer-one-local" : layerOne.status === "error" ? "layer-one-error" : "local"
     };
   }
 
@@ -345,6 +693,7 @@
       compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
       fullscreen: '<path d="M8 3H3v5m13-5h5v5M8 21H3v-5m13 5h5v-5"/>',
       send: '<path d="m3 11 18-8-8 18-2-8zM11 13l4-4"/>',
+      clip: '<path d="m20.5 11.5-8.8 8.8a5 5 0 0 1-7.1-7.1l9.2-9.2a3.5 3.5 0 0 1 5 5l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/>',
       chevron: '<path d="m9 18 6-6-6-6"/>',
       diamond: '<path d="m12 2 9 8-9 12L3 10zM3 10h18M8 2l-2 8 6 12 6-12-2-8"/>',
       folder: '<path d="M3 6h7l2 2h9v11H3z"/>',
@@ -363,6 +712,8 @@
   }
 
   function sourceLabel(data) {
+    if (data.source === "layer-one-local") return "Snapshot Layer 1 trên thiết bị";
+    if (data.source === "layer-one-error") return "Snapshot Layer 1 không đọc được";
     if (data.source === "local") return "Dữ liệu trên thiết bị";
     if (data.source === "loading") return "Đang đồng bộ nguồn được cấp";
     return "Dữ liệu từ nguồn đã kết nối";
@@ -469,36 +820,53 @@
   }
 
   function homeTimelineMarkup(data) {
-    const items = data.evidence.activity ? asArray(data.activity).slice(0, 2) : [];
-    const content = items.length ? `<ol>${items.map((item) => {
-      const label = typeof item === "string" ? item : String(item.action || item.title || item.label || "Hoạt động đã lưu");
-      const time = typeof item === "string" ? "" : formatDate(item.at || item.createdAt || item.updatedAt, true);
-      return `<li><span aria-hidden="true">${iconMarkup("activity")}</span><div><strong>${escapeHtml(label.slice(0, 180))}</strong><small>${time ? escapeHtml(time) : "Đã lưu trên thiết bị"}</small></div></li>`;
-    }).join("")}</ol>` : `<div class="gha-home-timeline__empty" data-state="empty"><span>${iconMarkup("activity")}</span><p>Chưa có hoạt động đã lưu.</p></div>`;
-    return `<aside class="gha-home-timeline" aria-labelledby="gha-timeline-title"><header><h2 id="gha-timeline-title">Galaxy Timeline</h2><button type="button" data-gha-route="/galaxy/analytics">Xem tất cả ${iconMarkup("chevron")}</button></header>${content}</aside>`;
+    const pendingTasks = asArray(data.tasks).filter((task) => !task.completed);
+    const documents = asArray(data.recentDocuments);
+    const rows = [];
+    if (pendingTasks[0]) {
+      const task = pendingTasks[0];
+      rows.push({ icon: "task", title: task.title, detail: task.deadline ? `Kế hoạch · hạn ${formatDate(task.deadline)}` : "Kế hoạch đang thực hiện", route: task.route || "/galaxy/learning", id: task.id });
+    }
+    for (const document of documents) {
+      if (rows.length >= 2) break;
+      if (rows.some((row) => row.id === document.id)) continue;
+      rows.push({ icon: "folder", title: document.title, detail: `${layerOneRouteLabel(document.route)}${document.updatedAt ? ` · ${formatDate(document.updatedAt, true)}` : ""}`, route: document.route, id: document.id });
+    }
+    const content = rows.length ? `<ol>${rows.map((item) => `<li><span aria-hidden="true">${iconMarkup(item.icon)}</span><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.detail)}</small></div></li>`).join("")}</ol>` : `<div class="gha-home-timeline__empty" data-state="empty"><span>${iconMarkup("activity")}</span><p>Chưa có kế hoạch hoặc tài liệu người dùng.</p></div>`;
+    const destination = rows[0]?.route || "/galaxy/creator";
+    return `<aside class="gha-home-timeline" aria-labelledby="gha-timeline-title"><header><h2 id="gha-timeline-title">Command Center</h2><button type="button" data-gha-route="${escapeHtml(destination)}">Mở gần nhất ${iconMarkup("chevron")}</button></header>${content}</aside>`;
   }
 
   function homeDockMarkup(data) {
-    const projectsAvailable = Boolean(data.evidence.projects);
+    const documentsAvailable = Boolean(data.evidence.recentDocuments);
     const tasksAvailable = Boolean(data.evidence.tasks);
     const taskCount = asArray(data.tasks).length;
-    const completedTasks = asArray(data.tasks).filter((task) => task.completed).length;
+    const pendingTasks = asArray(data.tasks).filter((task) => !task.completed).length;
+    const documents = asArray(data.recentDocuments);
+    const layerOneState = String(data.capability?.layerOneStorage || "empty");
+    const layerOneLabel = layerOneState === "ready" ? "Sẵn sàng" : layerOneState === "error" ? "Lỗi dữ liệu" : "Chưa khởi tạo";
+    const providerState = String(data.capability?.aiProvider || "configuration-required");
+    const providerLabel = providerState === "ready" ? "Đã xác minh" : providerState === "loading" ? "Đang kiểm tra" : providerState === "error" ? "Có lỗi" : "Chưa cấu hình";
     return `<footer class="gha-home-dock" aria-label="Trạng thái và dữ liệu Galaxy">
       <section class="gha-home-status" aria-labelledby="gha-status-title">
         <header><span class="gha-live-dot" aria-hidden="true"></span><div><h2 id="gha-status-title">Galaxy Status</h2><strong data-gha-network>Đang kiểm tra</strong></div></header>
-        <p data-gha-network-copy>Kết nối trình duyệt</p>
+        <ul class="gha-home-capabilities" aria-label="Khả năng đang xác minh">
+          <li><span>Kho Layer 1</span><b data-state="${escapeHtml(layerOneState)}">${escapeHtml(layerOneLabel)}</b></li>
+          <li><span>AI backend</span><b data-state="${escapeHtml(providerState)}">${escapeHtml(providerLabel)}</b></li>
+        </ul>
+        <p class="gha-sr-only" data-gha-network-copy>Kết nối trình duyệt</p>
         <small>${escapeHtml(sourceLabel(data))}</small>
       </section>
       <section class="gha-home-stats" aria-label="Số liệu thật của tài khoản">
-        ${homeMetricMarkup("user", "Thành viên", "1", "Tài khoản đang hoạt động", Boolean(data.evidence.account), "/galaxy/settings")}
-        ${homeMetricMarkup("folder", "Dự án", String(asArray(data.projects).length), "Trong HH Galaxy", projectsAvailable, "/galaxy/creator")}
+        ${homeMetricMarkup("user", "Tài khoản", "1", "Hồ sơ hiện tại", Boolean(data.evidence.account), "/galaxy/settings")}
+        ${homeMetricMarkup("folder", "Tài liệu", String(documents.length), "Do người dùng tạo", documentsAvailable, documents[0]?.route || "/galaxy/creator")}
         <button class="gha-home-stat gha-home-stat--storage" type="button" data-gha-route="/galaxy/settings" data-state="loading">
           <span class="gha-home-stat__icon" aria-hidden="true">${iconMarkup("resource")}</span>
           <span><small>Tài nguyên</small><strong data-gha-storage-value>—</strong><em data-gha-storage-detail>Đang đọc Storage API…</em><i data-gha-storage-state data-state="loading">Đang đo</i><b data-gha-storage-bar style="--usage:0%"></b></span>
         </button>
-        <button class="gha-home-stat" type="button" data-gha-route="/galaxy/analytics" data-state="${tasksAvailable ? "ready" : "empty"}">
-          <span class="gha-home-stat__icon" aria-hidden="true">${iconMarkup("activity")}</span>
-          <span><small>Hoạt động</small><strong>${tasksAvailable ? escapeHtml(`${completedTasks}/${taskCount}`) : "—"}</strong><em>${tasksAvailable ? "Công việc hoàn thành" : "Chưa có dữ liệu"}</em></span>
+        <button class="gha-home-stat" type="button" data-gha-route="/galaxy/learning" data-state="${tasksAvailable ? "ready" : "empty"}">
+          <span class="gha-home-stat__icon" aria-hidden="true">${iconMarkup("task")}</span>
+          <span><small>Kế hoạch</small><strong>${tasksAvailable ? escapeHtml(`${pendingTasks}/${taskCount}`) : "—"}</strong><em>${tasksAvailable ? "Đang làm / tổng" : "Chưa có dữ liệu"}</em></span>
         </button>
       </section>
       ${homeTimelineMarkup(data)}
@@ -659,7 +1027,12 @@
               <div class="gha-copilot-orbit-stage"><button class="gha-ai-core gha-copilot-orb" type="button" data-gha-route="/chat-ai" aria-label="Mở HH AI Copilot"><span aria-hidden="true"><i></i><i></i></span><strong>HH</strong><small>AI COPILOT</small></button></div>
               <div class="gha-copilot__intro"><h2>Tôi có thể giúp gì cho bạn?</h2><p>Trợ lý AI toàn năng của HH — hỗ trợ hỏi đáp, lập kế hoạch và mở đúng công cụ bạn cần.</p></div>
               <div class="gha-ai-destinations gha-copilot-actions" role="navigation" aria-label="Công cụ AI">${AI_DESTINATIONS.map((destination) => `<button type="button" data-gha-route="${destination.route}" data-gha-searchable><span aria-hidden="true">${iconMarkup(destination.icon)}</span><strong>${escapeHtml(destination.label)}</strong><small>${escapeHtml(destination.description)}</small></button>`).join("")}</div>
-              <form class="gha-copilot-prompt" data-gha-ai-form autocomplete="off"><label class="gha-sr-only" for="gha-copilot-prompt-input">Nhập yêu cầu cho HH AI Copilot</label><input id="gha-copilot-prompt-input" data-gha-ai-input type="text" maxlength="1600" placeholder="Nhập yêu cầu của bạn..." aria-describedby="gha-copilot-prompt-hint"><small id="gha-copilot-prompt-hint">Nội dung được chuyển tới engine Chat AI hiện có.</small><button type="submit" aria-label="Gửi yêu cầu tới HH AI Copilot">${iconMarkup("send")}</button></form>
+              <form class="gha-copilot-prompt" data-gha-ai-form autocomplete="off">
+                <div class="gha-copilot-prompt__entry"><label class="gha-sr-only" for="gha-copilot-prompt-input">Nhập yêu cầu cho HH AI Copilot</label><input id="gha-copilot-prompt-input" data-gha-ai-input type="text" maxlength="1600" placeholder="Nhập yêu cầu của bạn..." aria-describedby="gha-copilot-prompt-hint gha-ai-attachment-status"><button type="submit" data-gha-ai-submit aria-label="Gửi yêu cầu và tài liệu đã chọn tới HH AI Copilot">${iconMarkup("send")}</button></div>
+                <div class="gha-ai-attachment-toolbar"><label class="gha-ai-attachment-button">${iconMarkup("clip")}<span>Đính kèm văn bản</span><input class="gha-sr-only" data-gha-ai-attachment-input type="file" accept="${AI_ATTACHMENT_CONFIG.accept}" multiple></label><small id="gha-copilot-prompt-hint">TXT, Markdown hoặc JSON · tối đa 3 tệp · 128 KB/tệp</small></div>
+                <div class="gha-ai-attachment-list" data-gha-ai-attachment-list aria-label="Tệp đang chờ gửi" hidden></div>
+                <p class="gha-ai-attachment-status" id="gha-ai-attachment-status" data-gha-ai-attachment-status data-state="idle" role="status" aria-live="polite">Nội dung tệp chỉ được đọc khi bạn bấm Gửi.</p>
+              </form>
               <div class="gha-copilot-chips" aria-label="Gợi ý nhanh"><span>Gợi ý nhanh</span><button type="button" data-gha-route="/work/projects-tasks">Lập kế hoạch từ dự án</button><button type="button" data-gha-route="/create/prompt-studio">Thiết kế prompt</button><button type="button" data-gha-route="/galaxy/tools">Tìm công cụ phù hợp</button></div>
             </section>
             <aside class="gha-copilot__rail">
@@ -904,7 +1277,100 @@
     });
   }
 
-  function submitHomePrompt(runtime, form) {
+  function moduleSkeletonMarkup(route) {
+    const kind = route === "/home" ? "home" : route === "/home/dashboard" ? "dashboard" : "ai";
+    const label = kind === "home" ? "Đang tải Command Center" : kind === "dashboard" ? "Đang tải Dashboard" : "Đang tải AI Universe";
+    const blocks = kind === "home" ? 7 : kind === "dashboard" ? 8 : 6;
+    return `<section class="gha-module-skeleton gha-module-skeleton--${kind}" data-gha-module-skeleton aria-label="${label}" aria-busy="true"><span class="gha-sr-only">${label}</span><div class="gha-module-skeleton__hero"><i></i><i></i><i></i></div><div class="gha-module-skeleton__grid">${Array.from({ length: blocks }, (_, index) => `<article style="--skeleton-index:${index}"><i></i><b></b><span></span><span></span></article>`).join("")}</div></section>`;
+  }
+
+  function installModuleSkeleton(runtime) {
+    if (runtime.state.dataState !== "loading" || runtime.route === "/chat-ai" || runtime.route.startsWith("/chat-ai/")) return;
+    const stage = runtime.host.querySelector?.(".gha-stage");
+    if (!stage || stage.querySelector?.("[data-gha-module-skeleton]")) return;
+    stage.setAttribute?.("aria-busy", "true");
+    stage.insertAdjacentHTML?.("afterbegin", moduleSkeletonMarkup(runtime.route));
+  }
+
+  function applyAdaptiveExperience(runtime) {
+    const adaptive = resolveAdaptiveExperience(runtime.storage, globalScope, {
+      effects: runtime.options.effects,
+      reducedMotion: runtime.options.reducedMotion
+    });
+    runtime.adaptive = adaptive;
+    runtime.host.dataset.ghaDeviceTier = adaptive.deviceTier;
+    runtime.host.dataset.ghaMotion = adaptive.motion;
+    runtime.host.dataset.ghaRequestedEffects = adaptive.requestedEffects;
+    runtime.host.dataset.ghaReducedMotion = String(adaptive.reduced);
+    runtime.host.querySelectorAll?.("[data-gha-root]").forEach((node) => {
+      node.dataset.ghaMotion = adaptive.motion;
+      node.dataset.ghaDeviceTier = adaptive.deviceTier;
+    });
+  }
+
+  function setAttachmentStatus(runtime, message, state = "idle") {
+    const node = runtime.host.querySelector?.("[data-gha-ai-attachment-status]");
+    if (node) {
+      node.textContent = String(message || "");
+      node.dataset.state = state;
+    }
+    runtime.state.attachmentStatus = state;
+  }
+
+  function renderPendingAttachments(runtime) {
+    const container = runtime.host.querySelector?.("[data-gha-ai-attachment-list]");
+    if (!container) return;
+    const document = container.ownerDocument || globalScope.document;
+    container.replaceChildren?.();
+    const pending = asArray(runtime.pendingAttachments);
+    pending.forEach((attachment) => {
+      const chip = document?.createElement?.("span");
+      const name = document?.createElement?.("b");
+      const size = document?.createElement?.("small");
+      const remove = document?.createElement?.("button");
+      if (!chip || !name || !size || !remove) return;
+      chip.className = "gha-ai-attachment-chip";
+      name.textContent = attachment.name;
+      size.textContent = `${Math.max(1, Math.ceil(attachment.size / 1024))} KB`;
+      remove.type = "button";
+      remove.dataset.ghaAttachmentRemove = attachment.id;
+      remove.setAttribute("aria-label", `Bỏ tệp ${attachment.name}`);
+      remove.textContent = "×";
+      chip.append(name, size, remove);
+      container.append(chip);
+    });
+    container.hidden = pending.length === 0;
+    if (pending.length) setAttachmentStatus(runtime, `${pending.length} tệp đã chọn. Nội dung chỉ được đọc khi bạn bấm Gửi.`, "ready");
+    else setAttachmentStatus(runtime, "Nội dung tệp chỉ được đọc khi bạn bấm Gửi.", "idle");
+  }
+
+  function selectAttachments(runtime, fileList) {
+    const pending = asArray(runtime.pendingAttachments).slice();
+    const messages = [];
+    Array.from(fileList || []).forEach((file) => {
+      const validation = validateAttachmentMetadata(file, pending);
+      if (!validation.valid) { messages.push(validation.reason); return; }
+      if (pending.some((item) => item.name === validation.value.name && item.size === validation.value.size)) {
+        messages.push(`${validation.value.name} đã được chọn.`);
+        return;
+      }
+      pending.push({ id: makeAttachmentId(), file, ...validation.value });
+    });
+    runtime.pendingAttachments = pending;
+    renderPendingAttachments(runtime);
+    if (messages.length) setAttachmentStatus(runtime, messages.join(" "), "error");
+    runtime.state.lastAction = pending.length ? "ai-attachments-selected" : "ai-attachments-empty";
+    return messages.length === 0;
+  }
+
+  function removePendingAttachment(runtime, id) {
+    const before = asArray(runtime.pendingAttachments).length;
+    runtime.pendingAttachments = asArray(runtime.pendingAttachments).filter((item) => item.id !== String(id || ""));
+    renderPendingAttachments(runtime);
+    runtime.state.lastAction = before === runtime.pendingAttachments.length ? "ai-attachment-not-found" : "ai-attachment-removed";
+  }
+
+  async function submitHomePrompt(runtime, form) {
     const input = form?.querySelector?.("[data-gha-ai-input]");
     const prompt = String(input?.value || "").trim().slice(0, 1600);
     if (!prompt) {
@@ -912,14 +1378,55 @@
       input?.setAttribute?.("aria-invalid", "true");
       return false;
     }
+    if (runtime.aiHandoffPending) return false;
     input.removeAttribute?.("aria-invalid");
-    const payload = { prompt, at: Date.now(), source: "galaxy-home", layer: "galaxy" };
+    const submit = form?.querySelector?.("[data-gha-ai-submit], button[type='submit']");
+    const selectedFiles = asArray(runtime.pendingAttachments).map((item) => item.file).filter(Boolean);
+    runtime.aiHandoffPending = true;
+    if (submit) { submit.disabled = true; submit.setAttribute?.("aria-busy", "true"); }
+    let records = [];
+    let persistence = { mode: "none", saved: 0 };
     try {
-      globalScope.sessionStorage?.setItem?.("hh.galaxy.ai.handoff.v1", JSON.stringify(payload));
-      runtime.state.lastAction = "galaxy-ai-handoff";
-    } catch {
-      runtime.state.lastAction = "galaxy-ai-handoff-storage-error";
+      if (selectedFiles.length) {
+        setAttachmentStatus(runtime, "Đang đọc và kiểm tra tệp văn bản…", "loading");
+        records = await readSelectedAttachments(selectedFiles, { signal: runtime.controller.signal });
+        persistence = await persistAttachmentRecords(records, globalScope);
+        runtime.state.attachmentStorage = persistence.mode;
+        runtime.state.error = null;
+        setAttachmentStatus(runtime, persistence.mode === "indexeddb"
+          ? "Đã kiểm tra và lưu văn bản an toàn trong IndexedDB."
+          : "IndexedDB không khả dụng; văn bản chỉ được giữ tạm trong phiên này.", persistence.mode === "indexeddb" ? "ready" : "fallback");
+      }
+    } catch (error) {
+      if (error?.code !== "ATTACHMENT_ABORTED") setAttachmentStatus(runtime, String(error?.message || "Không thể đọc tệp đính kèm."), "error");
+      runtime.state.lastAction = "ai-attachment-rejected";
+      runtime.state.error = String(error?.code || error?.message || "ATTACHMENT_FAILED");
+      return false;
+    } finally {
+      runtime.aiHandoffPending = false;
+      if (submit) { submit.disabled = false; submit.removeAttribute?.("aria-busy"); }
     }
+    if (runtime.controller.signal.aborted) return false;
+    const composedPrompt = composeAIHandoffPrompt(prompt, records);
+    const payload = {
+      prompt: composedPrompt,
+      at: Date.now(),
+      source: "galaxy-home",
+      layer: "galaxy",
+      attachments: records.map((record) => ({ id: record.id, name: record.name, mimeType: record.mimeType, size: record.size })),
+      attachmentStorage: persistence.mode
+    };
+    let handoffStored = false;
+    try { handoffStored = storeAiHandoff(globalScope.sessionStorage, payload); }
+    catch { handoffStored = false; }
+    if (!handoffStored) {
+      runtime.state.lastAction = "galaxy-ai-handoff-storage-error";
+      runtime.state.error = "AI_HANDOFF_STORAGE_UNAVAILABLE";
+      setAttachmentStatus(runtime, "Không thể chuyển yêu cầu an toàn sang AI Universe. Nội dung vẫn được giữ trên màn hình này.", "error");
+      return false;
+    }
+    runtime.state.lastAction = "galaxy-ai-handoff";
+    runtime.pendingAttachments = [];
     navigate(runtime, "/galaxy/ai");
     return true;
   }
@@ -970,6 +1477,12 @@
   }
 
   function handleClick(runtime, event) {
+    const attachmentRemove = event.target.closest?.("[data-gha-attachment-remove]");
+    if (attachmentRemove) {
+      event.preventDefault?.();
+      removePendingAttachment(runtime, attachmentRemove.dataset.ghaAttachmentRemove);
+      return;
+    }
     const routeButton = event.target.closest?.("[data-gha-route]");
     if (routeButton) {
       event.preventDefault();
@@ -1009,6 +1522,11 @@
   }
 
   function handleChange(runtime, event) {
+    if (event.target.matches?.("[data-gha-ai-attachment-input]")) {
+      selectAttachments(runtime, event.target.files);
+      try { event.target.value = ""; } catch { /* Some test doubles expose a read-only value. */ }
+      return;
+    }
     if (event.target.matches?.("[data-gha-task]")) toggleTask(runtime, event.target.dataset.ghaTask, Boolean(event.target.checked));
   }
 
@@ -1051,11 +1569,11 @@
     planets[(current + delta + planets.length) % planets.length]?.focus();
   }
 
-  function handleSubmit(runtime, event) {
+  async function handleSubmit(runtime, event) {
     const form = event.target.closest?.("[data-gha-ai-form]");
     if (!form) return;
     event.preventDefault();
-    submitHomePrompt(runtime, form);
+    return submitHomePrompt(runtime, form);
   }
 
   /* The host is also observed by the outer Galaxy shell. Attach a small,
@@ -1094,7 +1612,7 @@
       form.addEventListener?.("submit", (event) => {
         event.preventDefault?.();
         event.stopPropagation?.();
-        handleSubmit(runtime, event);
+        void handleSubmit(runtime, event);
       }, { signal });
     });
   }
@@ -1108,6 +1626,18 @@
     runtime.host.addEventListener("submit", (event) => handleSubmit(runtime, event), { signal });
     globalScope.addEventListener?.("online", () => updateNetwork(runtime), { signal });
     globalScope.addEventListener?.("offline", () => updateNetwork(runtime), { signal });
+    globalScope.addEventListener?.("storage", (event) => {
+      if (event?.key && event.key !== LAYER_ONE_STORAGE_KEY) return;
+      applyAdaptiveExperience(runtime);
+      if (runtime.route === "/home") {
+        runtime.data = mergeData(collectGalaxyLocalData(runtime.storage, globalScope), runtime.options.data);
+        refreshView(runtime);
+      }
+    }, { signal });
+    try {
+      const motionQuery = globalScope.matchMedia?.("(prefers-reduced-motion: reduce)");
+      if (motionQuery?.addEventListener) motionQuery.addEventListener("change", () => applyAdaptiveExperience(runtime), { signal });
+    } catch { /* Older browsers keep the mount-time preference. */ }
     globalScope.document?.addEventListener?.("fullscreenchange", () => updateFullscreenState(runtime), { signal });
     globalScope.document?.addEventListener?.("visibilitychange", () => {
       runtime.state.paused = Boolean(globalScope.document.hidden);
@@ -1120,7 +1650,11 @@
     runtime.host.innerHTML = viewMarkup(runtime.route, runtime.data);
     runtime.host.dataset.ghaHomeAiHost = "";
     runtime.host.dataset.ghaRoute = runtime.route;
+    runtime.host.dataset.ghaDataState = runtime.state.dataState;
     bindHomeControls(runtime);
+    installModuleSkeleton(runtime);
+    applyAdaptiveExperience(runtime);
+    renderPendingAttachments(runtime);
     applyMapZoom(runtime);
     updateNetwork(runtime);
     updateClock(runtime);
@@ -1136,7 +1670,8 @@
     try {
       const provided = await loader({ route: runtime.route, signal: runtime.controller.signal, local: runtime.data });
       if (runtime !== activeRuntime || runtime.controller.signal.aborted) return;
-      runtime.data = mergeData(collectLocalData(runtime.storage, globalScope), provided);
+      const local = runtime.route === "/home" ? collectGalaxyLocalData(runtime.storage, globalScope) : collectLocalData(runtime.storage, globalScope);
+      runtime.data = mergeData(local, provided);
       runtime.options.data = provided;
       runtime.state.dataState = "ready";
       if (runtime.route === "/chat-ai" || runtime.route.startsWith("/chat-ai/")) return;
@@ -1145,6 +1680,7 @@
       if (runtime.controller.signal.aborted) return;
       runtime.state.dataState = "error";
       runtime.state.error = String(error?.message || "DATA_PROVIDER_FAILED");
+      if (runtime.route !== "/chat-ai" && !runtime.route.startsWith("/chat-ai/")) refreshView(runtime);
     }
   }
 
@@ -1165,9 +1701,12 @@
       focus: readFocus(storage),
       controller: new AbortController(),
       baseController: null,
+      pendingAttachments: [],
+      aiHandoffPending: false,
+      adaptive: null,
       clockTimer: 0,
       focusTimer: 0,
-      state: { mounted: true, route, view: route === "/home" ? "home" : route === "/home/dashboard" ? "dashboard" : route === "/create/ai-center" ? "ai" : "chat", paused: Boolean(globalScope.document?.hidden), online: null, baseMounted: false, capability: "ready", dataState: options.loadData || options.dataProvider ? "loading" : "ready", storage: null, error: null, lastAction: null }
+      state: { mounted: true, route, view: route === "/home" ? "home" : route === "/home/dashboard" ? "dashboard" : route === "/create/ai-center" ? "ai" : "chat", paused: Boolean(globalScope.document?.hidden), online: null, baseMounted: false, capability: "ready", dataState: options.loadData || options.dataProvider ? "loading" : "ready", storage: null, attachmentStorage: null, attachmentStatus: "idle", error: null, lastAction: null }
     };
     activeRuntime = runtime;
     refreshView(runtime);
@@ -1192,6 +1731,12 @@
     }
     runtime.host.removeAttribute?.("data-gha-home-ai-host");
     runtime.host.removeAttribute?.("data-gha-route");
+    runtime.host.removeAttribute?.("data-gha-data-state");
+    runtime.host.removeAttribute?.("data-gha-device-tier");
+    runtime.host.removeAttribute?.("data-gha-motion");
+    runtime.host.removeAttribute?.("data-gha-requested-effects");
+    runtime.host.removeAttribute?.("data-gha-reduced-motion");
+    runtime.pendingAttachments = [];
     runtime.state.mounted = false;
     if (activeRuntime === runtime) activeRuntime = null;
     return true;
@@ -1210,6 +1755,10 @@
       paused: state.paused,
       online: state.online,
       storageSupported: state.storage?.supported ?? null,
+      attachmentStorage: state.attachmentStorage,
+      attachmentStatus: state.attachmentStatus,
+      deviceTier: activeRuntime.adaptive?.deviceTier || null,
+      motion: activeRuntime.adaptive?.motion || null,
       lastAction: state.lastAction,
       error: state.error
     };
@@ -1226,12 +1775,23 @@
     FOCUS_KEY,
     TASK_KEY,
     NOTE_KEY,
+    LAYER_ONE_STORAGE_KEY,
     CORE_ENTRY_ROUTE,
+    AI_ATTACHMENT_CONFIG,
     normalizeRoute,
     canHandle,
     collectLocalData,
     collectGalaxyLocalData,
     mergeData,
+    validateAttachmentMetadata,
+    containsPotentialSecret,
+    sanitizeAttachmentText,
+    readSelectedAttachments,
+    composeAIHandoffPrompt,
+    storeAiHandoff,
+    persistAttachmentRecords,
+    resolveAdaptiveExperience,
+    moduleSkeletonMarkup,
     viewMarkup,
     mount,
     unmount,

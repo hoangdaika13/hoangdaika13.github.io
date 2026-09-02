@@ -2897,3 +2897,75 @@
     padding: 0;
   }
 }
+
+/* -------------------------------------------------------------------------
+   Content integrity
+
+   Titles and descriptions in these surfaces can come from user-created data.
+   Let the cards grow vertically instead of silently truncating that content.
+   The route-qualified selectors also outrank the compact visual defaults in
+   galaxy-layer-one-worlds.css without changing its intentional scroll areas.
+   ---------------------------------------------------------------------- */
+.hh-galaxy-app .hgl1-document__meta,
+.hh-galaxy-app .hgl1-document__footer {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.hh-galaxy-app .hgl1-document__meta > *,
+.hh-galaxy-app .hgl1-document__footer > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.hh-galaxy-app .hgl1-document h3 {
+  min-width: 0;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.hh-galaxy-app .hgl1-document p {
+  display: block;
+  min-height: 0;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: unset;
+}
+
+.hh-galaxy-app .hgl1-document__footer time {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.hh-galaxy-app .hgl1-profile b {
+  max-width: 100%;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.hh-galaxy-app[data-route] .hgl1-world-rail__recent button,
+.hh-galaxy-app[data-route] .hgl1-command-result {
+  align-items: start;
+}
+
+.hh-galaxy-app[data-route] .hgl1-world-rail__recent button b,
+.hh-galaxy-app[data-route] .hgl1-world-rail__recent button small,
+.hh-galaxy-app[data-route] .hgl1-command-result b,
+.hh-galaxy-app[data-route] .hgl1-command-result small {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-schedule li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}

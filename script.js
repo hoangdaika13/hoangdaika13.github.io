@@ -6997,6 +6997,74 @@ function initAppShell() {
       window.HHSurfaceBoot?.release?.(route === "/home" ? "home" : "app", { route });
     }
   };
+  const routePathOnly = (value) => String(value || "").split("?")[0];
+  const connectedWorkspaceHost = (selector) => {
+    const host = workspace?.querySelector?.(selector) || null;
+    if (!host?.isConnected) return null;
+    if (typeof workspace?.contains === "function" && !workspace.contains(host)) return null;
+    return host;
+  };
+  const hasLiveSameRouteWorkspace = (route) => {
+    const routePath = routePathOnly(route);
+    if (!routePath || routePath !== routePathOnly(renderedRoute) || routePath !== routePathOnly(activeRoute)) return false;
+
+    const layerOneHost = connectedWorkspaceHost("[data-hh-galaxy-layer-one-host]");
+    if (layerOneHost?.querySelector?.(".hh-galaxy-app")) {
+      const state = window.HHGalaxyLayerOne?.getState?.();
+      if (state?.mounted === true && routePathOnly(state.route) === routePath) return true;
+    }
+
+    const galaxyHomeHost = connectedWorkspaceHost("[data-galaxy-home-ai-host], [data-gha-home-ai-host]");
+    if (galaxyHomeHost?.querySelector?.("[data-gha-root]")) {
+      const state = window.HHGalaxyHomeAI?.getState?.();
+      if (state?.mounted === true && routePathOnly(state.route) === routePath) return true;
+    }
+
+    const galaxyDomainHost = connectedWorkspaceHost("[data-galaxy-domain-host]");
+    if (galaxyDomainHost) {
+      const planetState = galaxyDomainHost.querySelector?.("[data-ghph-root]")
+        ? window.HHGalaxyPlanetHubs?.getState?.()
+        : null;
+      if (planetState?.mounted === true && routePathOnly(planetState.route) === routePath) return true;
+
+      const communityState = galaxyDomainHost.querySelector?.("[data-gcs-root]")
+        ? window.HHGalaxyCommunityShowcase?.getState?.(galaxyDomainHost)
+        : null;
+      if (communityState?.mounted === true && routePathOnly(communityState.route) === routePath) return true;
+
+      const desktopState = galaxyDomainHost.querySelector?.("[data-gwd-root]")
+        ? window.HHGalaxyWebDesktop?.getState?.(galaxyDomainHost)
+        : null;
+      if (desktopState?.mounted === true && routePathOnly(desktopState.route) === routePath) return true;
+
+      const domainState = galaxyDomainHost.querySelector?.("[data-gdv-root]")
+        ? window.HHGalaxyDomainViews?.getState?.(galaxyDomainHost)
+        : null;
+      if (domainState && routePathOnly(domainState.route) === routePath) return true;
+    }
+
+    if (routePath === "/youtube") {
+      const youtubeHost = connectedWorkspaceHost("[data-youtube-hub-host]");
+      const youtubeRoot = youtubeHost?.querySelector?.("[data-youtube-hub]");
+      if (youtubeRoot && (window.HHYouTubeHub?.isMounted?.(youtubeHost) === true || youtubeHost.querySelector?.("[data-yh-player-frame]"))) return true;
+    }
+
+    if (routePath === "/google") {
+      const googleHost = connectedWorkspaceHost("[data-google-hub-host]");
+      if (googleHost?.querySelector?.("[data-google-hub]")) return true;
+    }
+
+    if (routePath === "/davinci-resolve/youtube" || routePath === "/davinci-resolve/youtube-batch") {
+      const creatorHost = connectedWorkspaceHost("[data-davinci-resolve-host]");
+      if (creatorHost?.querySelector?.(".ycg-shell[data-ycg-active]")) return true;
+    }
+
+    // A connected media/canvas island is already an active browser runtime.
+    // Preserve it from unrelated ready events; loaders and error placeholders
+    // contain no such live island and can still retry normally.
+    const liveIsland = workspace?.querySelector?.("iframe[src], video, audio, canvas") || null;
+    return Boolean(liveIsland?.isConnected && !liveIsland.closest?.(".app-route-loader, .app-simple-view, .app-runtime-error"));
+  };
   const renderRoute = () => {
     if (!isUnlocked()) return;
     const hash = location.hash.replace(/^#/, "") || "/home";
@@ -7020,6 +7088,7 @@ function initAppShell() {
       route = "/analytics";
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
     }
+    if (hasLiveSameRouteWorkspace(route)) return;
     cleanupGalaxyEngineTakeover();
     window.HHGalaxyLayerOne?.unmount?.();
     window.HHGalaxyCreatorStudio?.unmount?.();

@@ -2983,9 +2983,44 @@
 
   [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-status > small {
     display: block;
-    margin-top: 11px;
+    margin-top: 6px;
     color: #c4cede;
     font-size: 9px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-capabilities {
+    display: grid;
+    gap: 4px;
+    margin: 9px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-capabilities li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+    color: #8290aa;
+    font-size: 9px;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-capabilities b {
+    overflow: hidden;
+    color: #c5d0e4;
+    font-size: 9px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-capabilities b[data-state="ready"] {
+    color: #43df9c;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-capabilities b:is([data-state="error"], [data-state="configuration-required"]) {
+    color: #ffbe76;
   }
 
   [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-stats {
@@ -5453,5 +5488,408 @@
     .gha-topbar,
     .gha-sidebar,
     .gha-map__controls { backdrop-filter: none; }
+  }
+
+  /* ---------------------------------------------------------------------
+     AI text attachments
+
+     Selection is deliberately compact: the browser keeps the File handles in
+     memory and the client reads them only after an explicit submit.  The
+     chips wrap rather than expanding the immersive workspace horizontally.
+     --------------------------------------------------------------------- */
+  .gha-copilot-prompt {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    align-items: stretch;
+    gap: 6px;
+    min-height: 86px;
+    padding: 7px 9px;
+  }
+
+  .gha-copilot-prompt__entry {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+  }
+
+  .gha-copilot-prompt .gha-copilot-prompt__entry > input {
+    grid-area: auto;
+    width: 100%;
+    min-height: 40px;
+    padding-inline: 6px;
+  }
+
+  .gha-copilot-prompt .gha-copilot-prompt__entry > button {
+    grid-area: auto;
+    width: 42px;
+    min-height: 42px;
+    padding: 0;
+  }
+
+  .gha-copilot-prompt .gha-copilot-prompt__entry > button:disabled {
+    cursor: wait;
+    opacity: .58;
+  }
+
+  .gha-ai-attachment-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px 12px;
+    min-width: 0;
+    padding: 2px 4px 0;
+  }
+
+  .gha-ai-attachment-button {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid rgb(126 151 220 / 28%);
+    border-radius: 8px;
+    color: #c8d4ed;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgb(18 31 63 / 72%);
+    cursor: pointer;
+  }
+
+  .gha-ai-attachment-button:hover { border-color: rgb(113 205 255 / 55%); color: #fff; }
+  .gha-ai-attachment-button:focus-within { outline: 3px solid rgb(56 189 248 / 82%); outline-offset: 2px; }
+  .gha-ai-attachment-button svg { width: 16px; height: 16px; }
+
+  .gha-ai-attachment-toolbar > small {
+    min-width: 0;
+    overflow: hidden;
+    color: #7f8da8;
+    font-size: 10px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gha-ai-attachment-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+    padding: 2px 4px;
+  }
+
+  .gha-ai-attachment-chip {
+    display: inline-grid;
+    grid-template-columns: minmax(0, 1fr) auto 28px;
+    align-items: center;
+    gap: 6px;
+    max-width: min(100%, 280px);
+    min-height: 31px;
+    padding: 2px 2px 2px 9px;
+    border: 1px solid rgb(96 198 255 / 31%);
+    border-radius: 999px;
+    color: #dbeafe;
+    background: rgb(13 35 66 / 88%);
+  }
+
+  .gha-ai-attachment-chip b {
+    overflow: hidden;
+    font-size: 10px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gha-ai-attachment-chip small { color: #8fa7c7; font-size: 9px; white-space: nowrap; }
+
+  .gha-copilot-prompt .gha-ai-attachment-chip > button {
+    grid-area: auto;
+    display: grid;
+    place-items: center;
+    width: 27px !important;
+    min-height: 27px;
+    padding: 0;
+    border-radius: 50%;
+    color: #c9d5e9;
+    font-size: 17px;
+    line-height: 1;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .gha-copilot-prompt .gha-ai-attachment-chip > button:hover { color: #fff; background: rgb(251 113 133 / 21%); }
+
+  .gha-ai-attachment-status {
+    min-width: 0;
+    margin: 0;
+    padding: 0 5px 2px;
+    color: #8293ae;
+    font-size: 10px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .gha-ai-attachment-status[data-state="ready"] { color: #80e9be; }
+  .gha-ai-attachment-status[data-state="loading"] { color: #9edcff; }
+  .gha-ai-attachment-status[data-state="fallback"] { color: #f8cf75; }
+  .gha-ai-attachment-status[data-state="error"] { color: #fda4af; }
+
+  [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-prompt {
+    flex: 0 0 auto;
+    min-height: 92px;
+  }
+
+  [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-prompt .gha-copilot-prompt__entry > button {
+    width: 44px;
+  }
+
+  /* Route-local skeletons cover only the module stage. They do not hide the
+     global shell, navigation or browser scroll position. */
+  .gha-module-skeleton {
+    position: absolute;
+    z-index: 40;
+    inset: 12px;
+    display: grid;
+    align-content: start;
+    gap: 16px;
+    min-width: 0;
+    min-height: min(620px, calc(100% - 24px));
+    padding: clamp(16px, 3vw, 32px);
+    overflow: hidden;
+    border: 1px solid rgb(126 151 220 / 18%);
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgb(3 10 27 / 97%), rgb(7 16 36 / 98%));
+    box-shadow: 0 24px 70px rgb(0 0 0 / 34%);
+    pointer-events: none;
+  }
+
+  .gha-module-skeleton__hero,
+  .gha-module-skeleton__grid article {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgb(130 151 207 / 13%);
+    background: rgb(20 34 61 / 61%);
+  }
+
+  .gha-module-skeleton__hero {
+    display: grid;
+    align-content: center;
+    gap: 12px;
+    min-height: 148px;
+    padding: 24px;
+    border-radius: 16px;
+  }
+
+  .gha-module-skeleton__hero i,
+  .gha-module-skeleton__hero::after,
+  .gha-module-skeleton__grid article :is(i, b, span) {
+    display: block;
+    border-radius: 999px;
+    background: rgb(105 129 177 / 22%);
+  }
+
+  .gha-module-skeleton__hero i:nth-child(1) { width: 24%; height: 13px; }
+  .gha-module-skeleton__hero i:nth-child(2) { width: min(520px, 72%); height: 29px; }
+  .gha-module-skeleton__hero i:nth-child(3) { width: min(680px, 88%); height: 12px; }
+
+  .gha-module-skeleton__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 13px;
+  }
+
+  .gha-module-skeleton__grid article {
+    display: grid;
+    align-content: center;
+    gap: 11px;
+    min-height: 154px;
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .gha-module-skeleton__grid article i { width: 38px; height: 38px; border-radius: 11px; }
+  .gha-module-skeleton__grid article b { width: 68%; height: 14px; }
+  .gha-module-skeleton__grid article span { width: 92%; height: 9px; }
+  .gha-module-skeleton__grid article span:last-child { width: 57%; }
+
+  .gha-module-skeleton--home .gha-module-skeleton__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .gha-module-skeleton--dashboard .gha-module-skeleton__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .gha-module-skeleton--ai .gha-module-skeleton__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .gha-module-skeleton__hero::before,
+  .gha-module-skeleton__grid article::before {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background: linear-gradient(105deg, transparent 24%, rgb(152 186 255 / 12%) 43%, rgb(210 172 255 / 16%) 50%, transparent 68%);
+    transform: translateX(-110%);
+    animation: gha-skeleton-shimmer 1.45s ease-in-out infinite;
+    animation-delay: calc(var(--skeleton-index, 0) * 55ms);
+  }
+
+  @keyframes gha-skeleton-shimmer {
+    to { transform: translateX(110%); }
+  }
+
+  /* Device adaptation is a ceiling over the user's requested effects. Quiet
+     and reduced modes remain authoritative, while a low capability device
+     receives fewer blur/compositing layers without degrading typography. */
+  [data-gha-home-ai-host][data-gha-device-tier="low"] :is(.gha-topbar, .gha-sidebar, .gha-widget, .gha-copilot__hero, .gha-copilot__rail > section),
+  [data-gha-home-ai-host][data-gha-motion="quiet"] :is(.gha-topbar, .gha-sidebar, .gha-widget, .gha-copilot__hero, .gha-copilot__rail > section) {
+    backdrop-filter: none;
+  }
+
+  [data-gha-home-ai-host][data-gha-device-tier="low"] :is(.gha-map__nebula, .gha-ai-world__nebula, .gha-chat__aurora) { opacity: .16; }
+
+  [data-gha-home-ai-host][data-gha-motion="quiet"] .gha-app *,
+  [data-gha-home-ai-host][data-gha-motion="quiet"] .gha-app *::before,
+  [data-gha-home-ai-host][data-gha-motion="quiet"] .gha-app *::after,
+  [data-gha-home-ai-host][data-gha-reduced-motion="true"] .gha-app *,
+  [data-gha-home-ai-host][data-gha-reduced-motion="true"] .gha-app *::before,
+  [data-gha-home-ai-host][data-gha-reduced-motion="true"] .gha-app *::after,
+  [data-gha-home-ai-host][data-gha-paused="true"] .gha-app *,
+  [data-gha-home-ai-host][data-gha-paused="true"] .gha-app *::before,
+  [data-gha-home-ai-host][data-gha-paused="true"] .gha-app *::after,
+  [data-effects="quiet"] [data-gha-home-ai-host] .gha-app *,
+  [data-effects="quiet"] [data-gha-home-ai-host] .gha-app *::before,
+  [data-effects="quiet"] [data-gha-home-ai-host] .gha-app *::after,
+  [data-reduced-motion="on"] [data-gha-home-ai-host] .gha-app *,
+  [data-reduced-motion="on"] [data-gha-home-ai-host] .gha-app *::before,
+  [data-reduced-motion="on"] [data-gha-home-ai-host] .gha-app *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+
+  [data-gha-home-ai-host][data-gha-motion="quiet"] .gha-module-skeleton__hero::before,
+  [data-gha-home-ai-host][data-gha-motion="quiet"] .gha-module-skeleton__grid article::before,
+  [data-gha-home-ai-host][data-gha-reduced-motion="true"] .gha-module-skeleton__hero::before,
+  [data-gha-home-ai-host][data-gha-reduced-motion="true"] .gha-module-skeleton__grid article::before {
+    content: none;
+  }
+
+  @media (max-width: 900px) {
+    .gha-module-skeleton__grid,
+    .gha-module-skeleton--home .gha-module-skeleton__grid,
+    .gha-module-skeleton--dashboard .gha-module-skeleton__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 680px) {
+    .gha-ai-attachment-toolbar { align-items: flex-start; flex-direction: column; }
+    .gha-ai-attachment-toolbar > small { overflow: visible; white-space: normal; }
+    .gha-ai-attachment-button { width: 100%; justify-content: center; min-height: 44px; }
+    .gha-ai-attachment-chip { max-width: 100%; width: 100%; min-height: 38px; }
+    .gha-module-skeleton { inset: 8px; padding: 14px; }
+    .gha-module-skeleton__hero { min-height: 120px; }
+    .gha-module-skeleton__grid,
+    .gha-module-skeleton--home .gha-module-skeleton__grid,
+    .gha-module-skeleton--dashboard .gha-module-skeleton__grid,
+    .gha-module-skeleton--ai .gha-module-skeleton__grid { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* User and capability labels must remain readable at narrow widths.  These
+     late rules intentionally override the reference-layout ellipsis rules
+     without changing the surrounding composition. */
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-topbar__title :is(strong, small),
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-profile :is(strong, small),
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-capabilities b {
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  @media (max-width: 767px) {
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-app:not(.gha-chat),
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-app.gha-ai {
+      height: 100svh;
+      min-height: 100svh;
+    }
+
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-stage {
+      padding-bottom: max(18px, env(safe-area-inset-bottom));
+      scroll-padding-bottom: max(18px, env(safe-area-inset-bottom));
+    }
+
+    /* Mobile touch-target contract: start. Keep the approved compact artwork,
+       but never make its primary actions harder to reach than 44 x 44 CSS px. */
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-notification {
+      width: 44px;
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-prompt {
+      grid-template-columns: 20px minmax(0, 1fr) 44px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-prompt > button,
+    [data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot-prompt .gha-copilot-prompt__entry > button {
+      width: 44px;
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    [data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline header button {
+      min-width: 44px;
+      min-height: 44px;
+      padding-inline: 4px;
+      justify-content: flex-end;
+    }
+    /* Mobile touch-target contract: end. */
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Dynamic text integrity
+
+   This block intentionally sits outside the named layer so account names,
+   gateway copy and live status labels cannot be clipped by compact defaults.
+   ---------------------------------------------------------------------- */
+[data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-topbar__title,
+[data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-topbar__title > span,
+[data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-user {
+  min-width: 0;
+}
+
+[data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-topbar__title :is(strong, small),
+[data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-user > span,
+[data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-timeline li :is(strong, small),
+[data-galaxy-shell][data-galaxy-route="/home"] .gha-home .gha-home-player__copy :is(strong, small),
+[data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-task-list strong,
+[data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-project-list strong,
+[data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-dashboard .gha-widget--activity li :is(strong, small),
+[data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-widget--notes footer small,
+[data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-ai-attachment-toolbar > small,
+[data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-ai-attachment-chip b {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+[data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-topbar__account {
+  min-width: 0;
+}
+
+[data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-topbar__account > span:last-child,
+[data-galaxy-shell][data-galaxy-immersive="true"] [data-gha-home-ai-host] .gha-copilot__head > div:last-child > i {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+@media (max-width: 900px) {
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home.gha-app {
+    grid-template: minmax(64px, auto) minmax(0, 1fr) 70px / minmax(0, 1fr) !important;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-home-topbar,
+  [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-topbar {
+    min-height: 64px;
+    height: auto;
   }
 }

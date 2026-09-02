@@ -867,6 +867,11 @@
   top: 18px;
   display: grid;
   gap: 12px;
+  max-height: calc(100dvh - 36px);
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .hh-galaxy-app .hgl1-world-rail > * {
@@ -1108,6 +1113,10 @@
   .hh-galaxy-app .hgl1-world-rail {
     position: static;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
+    scrollbar-gutter: auto;
   }
 
   .hh-galaxy-app .hgl1-world-rail > :only-child {
@@ -1372,6 +1381,341 @@
   }
 }
 
+/* Functional workspace controls remain visually distinct from the decorative
+   portal art while sharing the same tokenized world palette. */
+.hh-galaxy-app .hgl1-workspace-toolbar,
+.hh-galaxy-app .hgl1-media-settings,
+.hh-galaxy-app .hgl1-dev-fields,
+.hh-galaxy-app .hgl1-game-layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+}
+
+.hh-galaxy-app .hgl1-workspace-toolbar {
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.hh-galaxy-app .hgl1-workspace-toolbar label,
+.hh-galaxy-app .hgl1-media-settings label,
+.hh-galaxy-app .hgl1-game-controls label,
+.hh-galaxy-app .hgl1-dev-fields label {
+  display: grid;
+  gap: 6px;
+  min-width: 150px;
+  color: #bdc8e0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.hh-galaxy-app .hgl1-workspace-toolbar select,
+.hh-galaxy-app .hgl1-media-settings select,
+.hh-galaxy-app .hgl1-media-settings input,
+.hh-galaxy-app .hgl1-game-controls input,
+.hh-galaxy-app .hgl1-dev-fields input,
+.hh-galaxy-app .hgl1-dev-fields select {
+  min-height: 42px;
+}
+
+.hh-galaxy-app .hgl1-privacy-note {
+  margin: 12px 0 0;
+  color: #93a2c4;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.hh-galaxy-app .hgl1-media-settings {
+  justify-content: end;
+}
+
+.hh-galaxy-app .hgl1-media-settings label {
+  min-width: 130px;
+}
+
+.hh-galaxy-app .hgl1-media-console {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+  padding: clamp(16px, 2vw, 24px);
+  background: linear-gradient(135deg, rgb(17 28 67 / 0.72), rgb(5 10 31 / 0.88));
+  border: 1px solid rgb(var(--hgl1-world-a-rgb) / 0.2);
+  border-radius: 18px;
+}
+
+.hh-galaxy-app .hgl1-media-console__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.hh-galaxy-app .hgl1-media-console h3,
+.hh-galaxy-app .hgl1-dev-preview h3,
+.hh-galaxy-app .hgl1-game-controls h3 {
+  margin: 0;
+  color: #f5f7ff;
+  font-size: clamp(17px, 1.7vw, 22px);
+}
+
+.hh-galaxy-app .hgl1-media-console canvas {
+  width: 100%;
+  height: auto;
+  min-height: 90px;
+  display: block;
+  background: #050817;
+  border: 1px solid rgb(117 226 255 / 0.16);
+  border-radius: 12px;
+}
+
+.hh-galaxy-app .hgl1-media-console output,
+.hh-galaxy-app .hgl1-game-controls p {
+  color: #a9b7d3;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.hh-galaxy-app .hgl1-media-console form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.hh-galaxy-app .hgl1-media-console form label {
+  display: grid;
+  gap: 5px;
+  color: #b9c6df;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.hh-galaxy-app .hgl1-media-console form input {
+  min-height: 42px;
+}
+
+.hh-galaxy-app .hgl1-media-console ol,
+.hh-galaxy-app .hgl1-timestamp-list {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hh-galaxy-app .hgl1-media-console ol li {
+  min-height: 40px;
+  display: block;
+  color: #dfe7fb;
+  background: rgb(255 255 255 / 0.045);
+  border: 1px solid transparent;
+  border-radius: 9px;
+}
+
+.hh-galaxy-app .hgl1-media-console ol li:only-child:not([data-state]) {
+  padding: 10px;
+  color: #9ba9c6;
+}
+
+.hh-galaxy-app .hgl1-media-console ol li[data-state="active"] {
+  background: rgb(var(--hgl1-world-a-rgb) / 0.12);
+  border-color: rgb(var(--hgl1-world-a-rgb) / 0.42);
+}
+
+.hh-galaxy-app .hgl1-media-console ol li button {
+  width: 100%;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+  cursor: pointer;
+}
+
+.hh-galaxy-app .hgl1-media-console ol li button:hover,
+.hh-galaxy-app .hgl1-media-console ol li button:focus-visible {
+  background: rgb(255 255 255 / 0.055);
+  outline: 2px solid rgb(var(--hgl1-world-a-rgb) / 0.58);
+  outline-offset: 2px;
+}
+
+.hh-galaxy-app .hgl1-media-console ol li button > span:first-child {
+  color: var(--hgl1-world-b);
+  font-variant-numeric: tabular-nums;
+}
+
+.hh-galaxy-app .hgl1-media-console ol li button > span:nth-child(2) {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.hh-galaxy-app .hgl1-media-console ol li button > span:last-child {
+  color: var(--hgl1-world-b);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.hh-galaxy-app .hgl1-media-console ol li small {
+  color: #9ba9c6;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.hh-galaxy-app .hgl1-timestamp-list li button {
+  width: 100%;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  color: #e8efff;
+  text-align: left;
+  background: rgb(255 255 255 / 0.045);
+  border: 1px solid transparent;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.hh-galaxy-app .hgl1-timestamp-list li button:hover,
+.hh-galaxy-app .hgl1-timestamp-list li button:focus-visible {
+  border-color: rgb(var(--hgl1-world-a-rgb) / 0.55);
+  outline: none;
+}
+
+.hh-galaxy-app .hgl1-timestamp-list time {
+  color: var(--hgl1-world-b);
+  font-variant-numeric: tabular-nums;
+}
+
+.hh-galaxy-app .hgl1-timestamp-list__empty {
+  color: #93a2c4;
+  font-size: 13px;
+}
+
+.hh-galaxy-app .hgl1-dev-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.hh-galaxy-app .hgl1-dev-fields {
+  align-items: stretch;
+}
+
+.hh-galaxy-app .hgl1-dev-fields label {
+  flex: 1 1 180px;
+}
+
+.hh-galaxy-app .hgl1-dev-preview {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  background: rgb(3 8 26 / 0.72);
+  border: 1px solid rgb(145 164 235 / 0.2);
+  border-radius: 14px;
+}
+
+.hh-galaxy-app .hgl1-dev-preview > header {
+  display: grid;
+  gap: 4px;
+}
+
+.hh-galaxy-app .hgl1-dev-preview-host,
+.hh-galaxy-app [data-hgl1-dev-preview-host] {
+  min-height: 220px;
+  overflow: hidden;
+  background: #f7f8fc;
+  border-radius: 10px;
+}
+
+.hh-galaxy-app [data-hgl1-dev-preview-host] > p {
+  margin: 16px;
+  color: #2d3550;
+  font-size: 13px;
+}
+
+.hh-galaxy-app [data-hgl1-dev-preview-host] iframe {
+  width: 100%;
+  height: 260px;
+  display: block;
+  border: 0;
+}
+
+.hh-galaxy-app .hgl1-game-layout {
+  align-items: start;
+}
+
+.hh-galaxy-app .hgl1-game-layout > div:first-child {
+  flex: 1 1 560px;
+  min-width: 0;
+}
+
+.hh-galaxy-app .hgl1-game-controls {
+  flex: 0 1 280px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: rgb(5 12 35 / 0.76);
+  border: 1px solid rgb(var(--hgl1-world-a-rgb) / 0.2);
+  border-radius: 14px;
+}
+
+.hh-galaxy-app .hgl1-game-controls > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.hh-galaxy-app .hgl1-game-controls label {
+  min-width: 0;
+}
+
+.hh-galaxy-app .hgl1-game-controls input[type="range"] {
+  width: 100%;
+}
+
+.hh-galaxy-app .hgl1-game-controls label:has(input[type="range"]) {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .hh-galaxy-app .hgl1-dev-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .hh-galaxy-app .hgl1-game-controls {
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .hh-galaxy-app .hgl1-media-settings {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .hh-galaxy-app .hgl1-media-settings label {
+    flex: 1 1 120px;
+  }
+
+  .hh-galaxy-app .hgl1-timestamp-list li button {
+    grid-template-columns: 78px minmax(0, 1fr);
+  }
+}
+
 @media (forced-colors: active) {
   .hh-galaxy-app .hgl1-page-head.hgl1-world-hero,
   .hh-galaxy-app .hgl1-feature.hgl1-portal-card,
@@ -1399,6 +1743,736 @@
   .hh-galaxy-app .hgl1-world-orb__satellite,
   .hh-galaxy-app .hgl1-nav__planet-glow {
     display: none;
+  }
+}
+
+/* Layer One utility results: keep generated content readable, bounded and
+   visually consistent with the active planet without leaking styles outside
+   the shell. */
+.hh-galaxy-app .hgl1-tool--wide {
+  grid-column: 1 / -1;
+}
+
+.hh-galaxy-app .hgl1-tool__output {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.hh-galaxy-app .hgl1-tool__output--code,
+.hh-galaxy-app .hgl1-tool__output--hash {
+  min-height: 3.25rem;
+  padding: 12px 14px;
+  overflow: auto;
+  border: 1px solid rgb(var(--hgl1-world-a-rgb) / 0.2);
+  border-radius: 12px;
+  background: rgb(2 7 25 / 0.62);
+  color: #dce8ff;
+  font: 500 0.9rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.hh-galaxy-app .hgl1-tool__output[data-tone="error"] {
+  border-color: rgb(248 113 113 / 0.55);
+  color: #fecaca;
+}
+
+.hh-galaxy-app .hgl1-tool__output--markdown {
+  min-height: 7rem;
+  padding: 14px 16px;
+  overflow: auto;
+  border: 1px solid rgb(var(--hgl1-world-a-rgb) / 0.2);
+  border-radius: 14px;
+  background: rgb(4 10 34 / 0.58);
+  color: #eef4ff;
+}
+
+.hh-galaxy-app .hgl1-tool__output--markdown :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0.2em 0 0.55em;
+  color: #fff;
+  line-height: 1.25;
+}
+
+.hh-galaxy-app .hgl1-tool__output--markdown p {
+  margin: 0 0 0.8em;
+}
+
+.hh-galaxy-app .hgl1-tool__output--markdown :is(ul, ol) {
+  margin: 0.25em 0 0.85em 1.35em;
+  padding: 0;
+}
+
+.hh-galaxy-app .hgl1-tool__output--markdown blockquote {
+  margin: 0.5em 0;
+  padding: 0.45em 0.8em;
+  border-left: 3px solid var(--hgl1-world-b);
+  background: rgb(var(--hgl1-world-a-rgb) / 0.1);
+}
+
+.hh-galaxy-app .hgl1-tool__output--markdown code {
+  padding: 0.1em 0.35em;
+  border-radius: 5px;
+  background: rgb(0 0 0 / 0.3);
+  color: #ffe7a3;
+  font: 0.92em ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.hh-galaxy-app .hgl1-tool__output--markdown a {
+  color: #9edcff;
+  text-decoration-thickness: 0.12em;
+}
+
+.hh-galaxy-app .hgl1-tool__output--qr {
+  display: grid;
+  place-items: center;
+  min-height: 10rem;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid rgb(var(--hgl1-world-a-rgb) / 0.2);
+  border-radius: 14px;
+  background: #f8fbff;
+}
+
+.hh-galaxy-app .hgl1-tool__output--qr svg {
+  display: block;
+  width: min(100%, 220px);
+  height: auto;
+  max-height: 220px;
+}
+
+.hh-galaxy-app .hgl1-vitals-card {
+  margin-top: 18px;
+  padding: clamp(15px, 2vw, 22px);
+  border: 1px solid rgb(var(--hgl1-world-a-rgb) / 0.2);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgb(23 31 74 / 0.62), rgb(5 11 34 / 0.8));
+}
+
+.hh-galaxy-app .hgl1-vitals-card .hgl1-section-head > small {
+  max-width: 30ch;
+  color: #b8c8e8;
+  line-height: 1.45;
+}
+
+.hh-galaxy-app .hgl1-vitals-card__method {
+  max-width: 78ch;
+  margin: 10px 0 0;
+  color: #aebddc;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.hh-galaxy-app .hgl1-vitals-grid {
+  margin-top: 14px;
+}
+
+.hh-galaxy-app .hgl1-vitals-grid article[data-state="empty"] strong {
+  color: #aabbd8;
+  font-size: 1.05rem;
+}
+
+@media (max-width: 680px) {
+  .hh-galaxy-app .hgl1-tool--wide {
+    grid-column: auto;
+  }
+
+  .hh-galaxy-app .hgl1-vitals-card .hgl1-section-head {
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 430px) {
+  /* Oversized star-field pseudo elements are decorative. Keeping them inside
+     the phone hero prevents scroll-height overflow from being clipped while
+     the real text, controls and portal image remain fully visible. */
+  .hh-galaxy-app .hgl1-page-head.hgl1-world-hero::before,
+  .hh-galaxy-app .hgl1-page-head.hgl1-world-hero::after {
+    display: none;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-world-hero--learning .hgl1-world-hero__visual {
+    overflow: hidden;
+  }
+}
+
+/* Learning Star local engine: decks, cards, spaced review and deterministic quiz. */
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-engine {
+  position: relative;
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  padding: clamp(18px, 2.4vw, 28px);
+  overflow: clip;
+  border: 1px solid rgb(244 201 93 / 0.24);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 88% 4%, rgb(244 201 93 / 0.12), transparent 34%),
+    linear-gradient(145deg, rgb(34 24 65 / 0.94), rgb(11 18 43 / 0.97));
+  box-shadow: 0 22px 56px rgb(3 7 24 / 0.3);
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-engine__actions,
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-engine form .hgl1-workspace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-metrics > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgb(203 213 225 / 0.13);
+  border-radius: 16px;
+  background: rgb(11 18 43 / 0.62);
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-metrics span,
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-deck p,
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-card-list small {
+  color: #b8c5df;
+  font-size: 0.82rem;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-metrics b {
+  overflow-wrap: anywhere;
+  color: #fff5cd;
+  font-size: clamp(1.08rem, 1.5vw, 1.35rem);
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] :is(.hgl1-learning-studio, .hgl1-learning-practice) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  min-width: 0;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] :is(.hgl1-learning-studio, .hgl1-learning-practice) > section,
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-deck-editor {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgb(203 213 225 / 0.13);
+  border-radius: 18px;
+  background: rgb(7 13 34 / 0.56);
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-engine form {
+  display: grid;
+  gap: 11px;
+  min-width: 0;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-engine form > label,
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-quiz-setup > label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #dce6f8;
+  font-weight: 650;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-engine :is(input, textarea, select) {
+  width: 100%;
+  max-width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  color: #f8fbff;
+  border: 1px solid rgb(203 213 225 / 0.2);
+  border-radius: 12px;
+  background: rgb(3 8 28 / 0.76);
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-engine textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-decks,
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-card-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  max-height: 440px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-deck,
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-card-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid rgb(203 213 225 / 0.12);
+  border-radius: 14px;
+  background: rgb(30 41 79 / 0.45);
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-deck.is-selected {
+  border-color: rgb(244 201 93 / 0.62);
+  box-shadow: inset 3px 0 0 #f4c95d;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-deck :is(h3, p),
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-card-list :is(b, p, small) {
+  max-width: 100%;
+  margin: 3px 0;
+  overflow-wrap: anywhere;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-card-list article > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-review-card {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 250px;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid rgb(244 201 93 / 0.34);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgb(69 46 104 / 0.56), rgb(14 24 56 / 0.86));
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-review-card h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #fff;
+  font-size: clamp(1.2rem, 2.2vw, 1.72rem);
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-review-card__answer {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgb(244 201 93 / 0.12);
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-review-card__answer p {
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
+  color: #fff9e6;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-quiz-setup {
+  grid-template-columns: minmax(130px, 1fr) minmax(90px, 0.55fr) minmax(160px, 1.3fr) auto;
+  align-items: end;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-quiz {
+  max-height: 640px;
+  padding-right: 4px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-quiz fieldset {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid rgb(203 213 225 / 0.14);
+  border-radius: 14px;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-quiz legend {
+  max-width: 100%;
+  padding: 0 6px;
+  overflow-wrap: anywhere;
+  color: #f5f8ff;
+  font-weight: 750;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-quiz__choices {
+  display: grid;
+  gap: 7px;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-quiz__choices label {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgb(30 41 79 / 0.44);
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-quiz__choices input {
+  width: 20px;
+  min-height: 20px;
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-quiz-result {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px;
+  color: #dff9e8;
+  border: 1px solid rgb(74 222 128 / 0.28);
+  border-radius: 14px;
+  background: rgb(22 101 52 / 0.2);
+}
+
+.hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-engine__empty {
+  padding: 18px;
+  color: #c9d4e8;
+  border: 1px dashed rgb(203 213 225 / 0.2);
+  border-radius: 14px;
+  background: rgb(11 18 43 / 0.36);
+}
+
+@media (max-width: 1180px) {
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] :is(.hgl1-learning-studio, .hgl1-learning-practice) {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-engine {
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-quiz-setup,
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-deck,
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-card-list article {
+    grid-template-columns: 1fr;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-engine__actions > .hgl1-button,
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-deck > .hgl1-button {
+    width: 100%;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-card-list article > div:last-child {
+    justify-content: stretch;
+  }
+
+  .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-card-list article > div:last-child .hgl1-button {
+    flex: 1 1 120px;
+  }
+}
+
+@media (forced-colors: active) {
+  .hh-galaxy-app[data-route="/galaxy/learning"] :is(
+    .hgl1-learning-engine,
+    .hgl1-learning-studio > section,
+    .hgl1-learning-practice > section,
+    .hgl1-learning-deck-editor,
+    .hgl1-learning-review-card,
+    .hgl1-learning-quiz fieldset
+  ) {
+    color: CanvasText;
+    background: Canvas;
+    border: 1px solid CanvasText;
+    box-shadow: none;
+  }
+}
+
+/* Layer One productivity pass: compact first viewport, contextual rail and
+   an in-shell command palette. Every selector stays inside the Galaxy shell. */
+.hh-galaxy-app .hgl1-page-head.hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) {
+  min-height: clamp(320px, 31vw, 430px);
+  padding: clamp(20px, 2.4vw, 36px);
+}
+
+.hh-galaxy-app .hgl1-world-hero:not(.hgl1-world-hero--learning):has(.hgl1-world-hero__media) .hgl1-world-hero__visual {
+  min-height: clamp(230px, 24vw, 330px);
+}
+
+.hh-galaxy-app .hgl1-world-rail__actions > div {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.hh-galaxy-app .hgl1-world-rail__actions button,
+.hh-galaxy-app .hgl1-world-rail__recent button {
+  width: 100%;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  color: #eaf0ff;
+  text-align: left;
+  background: linear-gradient(135deg, rgb(var(--hgl1-world-a-rgb) / 0.12), rgb(8 14 39 / 0.72));
+  border: 1px solid rgb(var(--hgl1-world-a-rgb) / 0.22);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.hh-galaxy-app .hgl1-world-rail__actions button:hover,
+.hh-galaxy-app .hgl1-world-rail__actions button:focus-visible,
+.hh-galaxy-app .hgl1-world-rail__recent button:hover,
+.hh-galaxy-app .hgl1-world-rail__recent button:focus-visible {
+  border-color: rgb(var(--hgl1-world-a-rgb) / 0.72);
+  box-shadow: 0 0 0 3px rgb(var(--hgl1-world-a-rgb) / 0.12);
+  outline: none;
+}
+
+.hh-galaxy-app .hgl1-world-rail__actions button > span,
+.hh-galaxy-app .hgl1-world-rail__recent button > span {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: var(--hgl1-world-b);
+  background: rgb(var(--hgl1-world-a-rgb) / 0.12);
+  border-radius: 10px;
+}
+
+.hh-galaxy-app .hgl1-world-rail__actions button > span .hgl1-icon,
+.hh-galaxy-app .hgl1-world-rail__recent button > span .hgl1-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.hh-galaxy-app .hgl1-world-rail__actions button > .hgl1-icon {
+  width: 16px;
+  height: 16px;
+  color: #9fabca;
+}
+
+.hh-galaxy-app .hgl1-world-rail__recent ol {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hh-galaxy-app .hgl1-world-rail__recent button {
+  grid-template-columns: 32px minmax(0, 1fr);
+}
+
+.hh-galaxy-app .hgl1-world-rail__recent button b,
+.hh-galaxy-app .hgl1-world-rail__recent button small {
+  grid-column: 2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.hh-galaxy-app .hgl1-world-rail__recent button small {
+  color: #9daac8;
+  font-size: 12px;
+}
+
+.hh-galaxy-app .hgl1-command-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 420;
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  padding: max(72px, 10dvh) 18px 24px;
+  background: rgb(1 4 16 / 0.74);
+  backdrop-filter: blur(14px) saturate(1.15);
+}
+
+.hh-galaxy-app .hgl1-command-backdrop[hidden] {
+  display: none !important;
+}
+
+.hh-galaxy-app .hgl1-command-palette {
+  width: min(760px, 100%);
+  max-height: min(720px, 78dvh);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  color: #eff3ff;
+  background:
+    radial-gradient(circle at 18% 0, rgb(var(--hgl1-world-a-rgb, 131 103 255) / 0.18), transparent 40%),
+    linear-gradient(145deg, rgb(13 19 47 / 0.98), rgb(4 8 25 / 0.99));
+  border: 1px solid rgb(162 183 255 / 0.28);
+  border-radius: 22px;
+  box-shadow: 0 34px 110px rgb(0 0 0 / 0.58), 0 0 70px rgb(112 82 255 / 0.18), inset 0 1px rgb(255 255 255 / 0.08);
+}
+
+.hh-galaxy-app .hgl1-command-palette > header {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.09);
+}
+
+.hh-galaxy-app .hgl1-command-palette > header label {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.hh-galaxy-app .hgl1-command-palette > header label > span {
+  color: #aab6d2;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hh-galaxy-app .hgl1-command-palette input {
+  width: 100%;
+  min-width: 0;
+  padding: 3px 0;
+  color: #fff;
+  font: 700 clamp(17px, 2vw, 22px)/1.35 inherit;
+  background: transparent;
+  border: 0;
+  outline: 0;
+}
+
+.hh-galaxy-app .hgl1-command-palette kbd {
+  min-width: 30px;
+  padding: 4px 7px;
+  color: #cbd4ea;
+  font: 700 11px/1.2 inherit;
+  text-align: center;
+  background: rgb(255 255 255 / 0.07);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 7px;
+  box-shadow: inset 0 -1px rgb(0 0 0 / 0.28);
+}
+
+.hh-galaxy-app .hgl1-command-results {
+  min-height: 140px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 9px;
+}
+
+.hh-galaxy-app .hgl1-command-result {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto 18px;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 10px;
+  color: #eaf0ff;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  cursor: pointer;
+}
+
+.hh-galaxy-app .hgl1-command-result:is(:hover, :focus-visible, .is-active) {
+  background: linear-gradient(90deg, rgb(113 89 255 / 0.2), rgb(46 205 255 / 0.08));
+  border-color: rgb(149 170 255 / 0.25);
+  outline: none;
+}
+
+.hh-galaxy-app .hgl1-command-result > span:nth-child(2) {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.hh-galaxy-app .hgl1-command-result b,
+.hh-galaxy-app .hgl1-command-result small {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.hh-galaxy-app .hgl1-command-result small,
+.hh-galaxy-app .hgl1-command-result em {
+  color: #a7b3cf;
+  font-size: 12px;
+  font-style: normal;
+}
+
+.hh-galaxy-app .hgl1-command-result > .hgl1-icon {
+  width: 16px;
+  height: 16px;
+  color: #92a1c2;
+}
+
+.hh-galaxy-app .hgl1-command-empty {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  padding: 30px;
+  color: #aeb9d3;
+  text-align: center;
+}
+
+.hh-galaxy-app .hgl1-command-palette > footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding: 10px 16px;
+  color: #919db9;
+  font-size: 12px;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.hh-galaxy-app .hgl1-command-palette > footer span:last-child {
+  margin-left: auto;
+}
+
+@media (max-width: 767px) {
+  .hh-galaxy-app .hgl1-command-backdrop {
+    align-items: end;
+    padding: 12px 10px calc(var(--hgl1-mobile-nav-h) + env(safe-area-inset-bottom) + 10px);
+  }
+
+  .hh-galaxy-app .hgl1-command-palette {
+    max-height: min(72dvh, 620px);
+    border-radius: 20px;
+  }
+
+  .hh-galaxy-app .hgl1-command-result {
+    grid-template-columns: 40px minmax(0, 1fr) 16px;
+  }
+
+  .hh-galaxy-app .hgl1-command-result em,
+  .hh-galaxy-app .hgl1-command-palette > footer span:last-child {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hh-galaxy-app .hgl1-command-backdrop,
+  .hh-galaxy-app .hgl1-command-palette,
+  .hh-galaxy-app .hgl1-command-result,
+  .hh-galaxy-app .hgl1-world-rail__actions button,
+  .hh-galaxy-app .hgl1-world-rail__recent button {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -3833,8 +4907,10 @@
 .hh-galaxy-app .hgl1-backup-preview {
   position: relative;
   z-index: 1;
-  width: min(620px, calc(100vw - 32px));
+  width: min(620px, 100%);
+  max-width: 100%;
   max-height: calc(100dvh - 32px);
+  box-sizing: border-box;
   padding: clamp(20px, 3vw, 32px);
   overflow-y: auto;
   color: #f3f6ff;
@@ -4110,7 +5186,7 @@
   }
 
   .hh-galaxy-app .hgl1-backup-preview {
-    width: calc(100vw - 24px);
+    width: 100%;
     max-height: calc(100dvh - 24px);
     padding: 20px;
     border-radius: 15px;
@@ -4176,6 +5252,34 @@
   .hh-galaxy-app[data-route="/galaxy/learning"] .hgl1-learning-today > .hgl1-section-head > span:last-child {
     position: static;
     white-space: normal;
+  }
+}
+
+/* Route-level loading and error panels must remain fully visible even when a
+   workspace has not mounted its normal two-column composition yet. */
+.hh-galaxy-app .hgl1-page > .hgl1-state {
+  width: 100%;
+  max-width: 100%;
+  min-height: clamp(220px, 42dvh, 440px);
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.hh-galaxy-app .hgl1-page > .hgl1-state .hgl1-skeleton {
+  max-width: 100%;
+}
+
+@media (max-width: 430px) {
+  .hh-galaxy-app .hgl1-backup-backdrop {
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-left: max(12px, env(safe-area-inset-left));
+  }
+
+  .hh-galaxy-app .hgl1-page > .hgl1-state {
+    min-height: min(360px, 52dvh);
+    padding-inline: 16px;
   }
 }
 
