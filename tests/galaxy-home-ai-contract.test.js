@@ -229,6 +229,45 @@ test("mount and unmount keep a stable public runtime snapshot", () => {
   assert.equal(api.getState().mounted, false);
 });
 
+test("Layer One embedded Home publishes a chrome-free responsive outlet contract", () => {
+  const data = api.collectLocalData(memoryStorage(), {});
+  const standalone = api.viewMarkup("/home", data);
+  const embedded = api.viewMarkup("/home", data, { embedded: true });
+  const countClass = (markup, className) =>
+    [...markup.matchAll(/\bclass="([^"]*)"/g)]
+      .filter((match) => match[1].split(/\s+/).includes(className)).length;
+  assert.match(standalone, /class="[^"]*gha-home-sidebar/);
+  assert.match(standalone, /class="[^"]*gha-home-topbar/);
+  assert.match(embedded, /data-gha-embedded-view="true"/);
+  assert.equal(countClass(embedded, "gha-stage"), 1);
+  assert.equal(countClass(embedded, "gha-map"), 1);
+  assert.equal(countClass(embedded, "gha-sidebar"), 0);
+  assert.equal(countClass(embedded, "gha-topbar"), 0);
+  assert.equal(countClass(embedded, "gha-home-user"), 0);
+  assert.equal(countClass(embedded, "gha-home-profile"), 0);
+  assert.equal((embedded.match(/data-gha-entry="hh-core"/g) || []).length, 1);
+  assert.match(source, /runtime\.options\.embedded === true[\s\S]{0,120}dataset\.ghaEmbedded = "true"/);
+  assert.match(source, /viewMarkup\(runtime\.route, runtime\.data, \{[\s\S]{0,100}embedded: runtime\.options\.embedded === true/);
+  assert.match(source, /removeAttribute\?\.\("data-gha-embedded"\)/);
+  assert.match(styles, /\[data-gha-home-ai-host\]\[data-gha-embedded="true"\][\s\S]{0,520}\.gha-home\.gha-app[\s\S]{0,280}grid-template:\s*minmax\(0,\s*1fr\)\s*\/\s*minmax\(0,\s*1fr\)\s*!important/);
+  assert.match(styles, /data-gha-embedded="true"\][\s\S]{0,900}>\s*:is\(\.gha-topbar, \.gha-sidebar\)[\s\S]{0,80}display:\s*none\s*!important/);
+  assert.match(styles, /data-gha-embedded="true"\][\s\S]{0,1300}:is\(\.gha-map, \.gha-ai-world\)[\s\S]{0,90}min-width:\s*0/);
+  const layerStyles = fs.readFileSync(path.join(root, "galaxy-layer-one.css"), "utf8");
+  assert.match(layerStyles, /\.hgl1-delegated-host--home\[data-gha-home-ai-host\]/);
+  const connectedHostRule = layerStyles.slice(layerStyles.indexOf(".hgl1-delegated-host--home[data-gha-home-ai-host]"), layerStyles.indexOf("}", layerStyles.indexOf(".hgl1-delegated-host--home[data-gha-home-ai-host]")) + 1);
+  assert.doesNotMatch(connectedHostRule, /min-height:\s*0/);
+
+  const standaloneGrid = '[data-galaxy-shell][data-galaxy-route="/home"] .gha-home.gha-app';
+  const embeddedGrid = '[data-gha-home-ai-host][data-gha-embedded="true"] .gha-home.gha-app';
+  const embeddedGridStart = styles.lastIndexOf(embeddedGrid);
+  assert.ok(
+    embeddedGridStart > styles.lastIndexOf(standaloneGrid),
+    "the embedded one-column grid guard must follow every standalone Home grid override"
+  );
+  const embeddedGridRule = styles.slice(embeddedGridStart, styles.indexOf("}", embeddedGridStart) + 1);
+  assert.match(embeddedGridRule, /grid-template:\s*minmax\(0,\s*1fr\)\s*\/\s*minmax\(0,\s*1fr\)\s*!important/);
+});
+
 test("chat adapter mounts and cleans the explicitly supplied Chat AI engine", async () => {
   const engine = { hidden: false };
   const engineState = { dataset: {}, textContent: "" };

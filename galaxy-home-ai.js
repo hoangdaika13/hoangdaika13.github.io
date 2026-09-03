@@ -873,10 +873,11 @@
     </footer>`;
   }
 
-  function homeMarkup(data) {
-    return `<section class="gha-app gha-home" data-gha-root data-gha-view="home">
-      ${homeSidebarMarkup(data)}
-      ${homeTopbarMarkup(data)}
+  function homeMarkup(data, options = {}) {
+    const embedded = options.embedded === true;
+    return `<section class="gha-app gha-home${embedded ? " gha-home--embedded" : ""}" data-gha-root data-gha-view="home"${embedded ? ' data-gha-embedded-view="true"' : ""}>
+      ${embedded ? "" : homeSidebarMarkup(data)}
+      ${embedded ? "" : homeTopbarMarkup(data)}
       <main class="gha-stage">
         <section class="gha-map" data-gha-map aria-labelledby="gha-home-title">
           <h1 id="gha-home-title" class="gha-sr-only">HH Galaxy Map 3D</h1>
@@ -1053,8 +1054,8 @@
     </section>`;
   }
 
-  function viewMarkup(route, data) {
-    if (route === "/home") return homeMarkup(data);
+  function viewMarkup(route, data, options = {}) {
+    if (route === "/home") return homeMarkup(data, options);
     if (route === "/home/dashboard") return dashboardMarkup(data);
     if (route === "/create/ai-center") return aiMarkup(data);
     return chatMarkup();
@@ -1647,10 +1648,14 @@
   }
 
   function refreshView(runtime) {
-    runtime.host.innerHTML = viewMarkup(runtime.route, runtime.data);
+    runtime.host.innerHTML = viewMarkup(runtime.route, runtime.data, {
+      embedded: runtime.options.embedded === true
+    });
     runtime.host.dataset.ghaHomeAiHost = "";
     runtime.host.dataset.ghaRoute = runtime.route;
     runtime.host.dataset.ghaDataState = runtime.state.dataState;
+    if (runtime.options.embedded === true) runtime.host.dataset.ghaEmbedded = "true";
+    else runtime.host.removeAttribute?.("data-gha-embedded");
     bindHomeControls(runtime);
     installModuleSkeleton(runtime);
     applyAdaptiveExperience(runtime);
@@ -1732,6 +1737,7 @@
     runtime.host.removeAttribute?.("data-gha-home-ai-host");
     runtime.host.removeAttribute?.("data-gha-route");
     runtime.host.removeAttribute?.("data-gha-data-state");
+    runtime.host.removeAttribute?.("data-gha-embedded");
     runtime.host.removeAttribute?.("data-gha-device-tier");
     runtime.host.removeAttribute?.("data-gha-motion");
     runtime.host.removeAttribute?.("data-gha-requested-effects");

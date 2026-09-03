@@ -1937,15 +1937,48 @@
     }
   }
 
+  function resolveAdaptiveTiers(scopeInput) {
+    const scope = scopeInput && typeof scopeInput === "object" ? scopeInput : {};
+    const browser = scope.navigator && typeof scope.navigator === "object" ? scope.navigator : {};
+    const memory = Number(browser.deviceMemory);
+    const cores = Number(browser.hardwareConcurrency);
+    const connection = browser.connection && typeof browser.connection === "object" ? browser.connection : {};
+    const effectiveType = String(connection.effectiveType || "").toLocaleLowerCase("en-US");
+    const constrainedConnection = connection.saveData === true || effectiveType === "slow-2g" || effectiveType === "2g";
+    let slowUpdate = false;
+    let reducedData = false;
+    try {
+      slowUpdate = Boolean(scope.matchMedia && scope.matchMedia("(update: slow)").matches);
+      reducedData = Boolean(scope.matchMedia && scope.matchMedia("(prefers-reduced-data: reduce)").matches);
+    } catch (_) {
+      slowUpdate = false;
+      reducedData = false;
+    }
+    const lowDevice = (Number.isFinite(memory) && memory > 0 && memory <= 4)
+      || (Number.isFinite(cores) && cores > 0 && cores <= 4);
+    const highDevice = Number.isFinite(memory) && memory >= 8
+      && Number.isFinite(cores) && cores >= 8;
+    const deviceTier = lowDevice ? "low" : highDevice ? "high" : "mid";
+    const performanceTier = constrainedConnection || slowUpdate || reducedData || deviceTier === "low"
+      ? "low"
+      : deviceTier === "high" ? "high" : "mid";
+    return Object.freeze({ deviceTier: deviceTier, performanceTier: performanceTier });
+  }
+
   function applyPreferences(app, settings) {
     if (!app) return;
     const safe = sanitizeSettings(settings);
+    const adaptive = runtime && runtime.adaptiveTiers
+      ? runtime.adaptiveTiers
+      : resolveAdaptiveTiers(globalScope);
     app.dataset.theme = safe.theme;
     app.dataset.effects = safe.effects;
     app.dataset.contrast = safe.contrast;
     app.dataset.reducedMotion = safe.reducedMotion;
     app.dataset.uiScale = safe.uiScale;
     app.dataset.colorVision = safe.colorVision;
+    app.dataset.deviceTier = adaptive.deviceTier;
+    app.dataset.performanceTier = adaptive.performanceTier;
   }
 
   function syncElementAttributes(current, next) {
@@ -2324,9 +2357,28 @@
     }
   }
 
-  function navigate(route) {
+  function focusPendingRouteMain() {
+    if (!runtime || runtime.pendingRouteFocus !== true || !runtime.app) return false;
+    const main = runtime.app.querySelector("#hgl1-main");
+    if (!main || typeof main.focus !== "function") return false;
+    runtime.pendingRouteFocus = false;
+    try { main.focus({ preventScroll: true }); }
+    catch (_) { main.focus(); }
+    return true;
+  }
+
+  function navigate(route, navigationOptions) {
     const match = findRoute(route);
     if (!match || !runtime) return false;
+    const options = navigationOptions && typeof navigationOptions === "object" ? navigationOptions : {};
+    const drawer = runtime.app && runtime.app.querySelector("[data-hgl1-drawer]");
+    const source = options.sourceElement;
+    const activeElement = globalScope.document && globalScope.document.activeElement;
+    const sourceInsideDrawer = Boolean(drawer && source && typeof source.closest === "function" && source.closest("[data-hgl1-drawer]") === drawer);
+    const focusInsideDrawer = Boolean(drawer && activeElement && typeof drawer.contains === "function" && drawer.contains(activeElement));
+    if (runtime.drawerModal !== false && runtime.app.dataset.drawerOpen === "true" && (sourceInsideDrawer || focusInsideDrawer)) {
+      runtime.pendingRouteFocus = true;
+    }
     setDrawer(false, false);
     closeSearches();
     const active = runtime;
@@ -2336,6 +2388,7 @@
       try { globalScope.location.hash = "#" + match.route; } catch (_) { /* syncRoute below remains usable. */ }
     }
     if (runtime === active && runtime.route !== match.route) syncRoute(match.route);
+    if (runtime === active) focusPendingRouteMain();
     return true;
   }
 
@@ -4286,13 +4339,13 @@
     const routeLink = event.target.closest("[data-hgl1-route]");
     if (routeLink) {
       event.preventDefault();
-      navigate(routeLink.dataset.hgl1Route);
+      navigate(routeLink.dataset.hgl1Route, { sourceElement: routeLink });
       return;
     }
     const searchRoute = event.target.closest("[data-hgl1-search-route]");
     if (searchRoute) {
       event.preventDefault();
-      navigate(searchRoute.dataset.hgl1SearchRoute);
+      navigate(searchRoute.dataset.hgl1SearchRoute, { sourceElement: searchRoute });
       return;
     }
     const control = event.target.closest("[data-hgl1-action]");
@@ -4931,7 +4984,7 @@
       const first = event.target.closest("[data-hgl1-search-shell]").querySelector("[data-hgl1-search-route]");
       if (first) {
         event.preventDefault();
-        navigate(first.dataset.hgl1SearchRoute);
+        navigate(first.dataset.hgl1SearchRoute, { sourceElement: event.target });
       }
     }
   }
@@ -5019,6 +5072,7 @@
       route: requested.route,
       options: options,
       storage: resolveStorage(options.storage),
+      adaptiveTiers: resolveAdaptiveTiers(globalScope),
       localState: emptyState(),
       storageStatus: "ready",
       reason: "mounting",
@@ -5064,6 +5118,7 @@
       learningQuizResult: null,
       drawerReturnFocus: null,
       drawerModal: true,
+      pendingRouteFocus: false,
       commandPaletteOpen: false,
       commandIndex: 0,
       commandReturnFocus: null,
@@ -5082,6 +5137,13 @@
     listen(globalScope, "online", updateNetworkStatus);
     listen(globalScope, "offline", updateNetworkStatus);
     listen(globalScope, "resize", updateDrawerMode);
+    listen(globalScope.navigator && globalScope.navigator.connection, "change", function refreshAdaptiveTiers() {
+      if (!runtime) return;
+      runtime.adaptiveTiers = resolveAdaptiveTiers(globalScope);
+      applyPreferences(runtime.app, runtime.route === "/galaxy/settings" && runtime.settingsDraft
+        ? runtime.settingsDraft
+        : runtime.localState.settings);
+    });
     listen(globalScope.document, "visibilitychange", handleVisibilityChange);
     initializeContentStorage(runtime);
     render();
@@ -5112,6 +5174,7 @@
     routes: routes,
     routeManifest: routeManifest,
     templates: templates,
+    resolveAdaptiveTiers: resolveAdaptiveTiers,
     normalizeRoute: normalizeRoute,
     canHandle: canHandle,
     searchRoutes: searchRoutes,

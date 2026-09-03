@@ -16,6 +16,40 @@
     display: none !important;
   }
 
+  /* Layer One already owns the persistent Galaxy navigation and top bar.
+     Embedded Home contributes only its interactive map so the two product
+     shells never stack, squeeze account text or create nested scroll areas. */
+  [data-gha-home-ai-host][data-gha-embedded="true"] {
+    display: block;
+    width: 100%;
+  }
+
+  [data-gha-home-ai-host][data-gha-embedded="true"] .gha-home.gha-app {
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr) !important;
+    width: 100%;
+    height: auto !important;
+    min-height: inherit;
+    overflow: visible !important;
+    background: transparent;
+  }
+
+  [data-gha-home-ai-host][data-gha-embedded="true"] .gha-app:not(.gha-chat)::before,
+  [data-gha-home-ai-host][data-gha-embedded="true"] .gha-app:not(.gha-chat) > :is(.gha-topbar, .gha-sidebar) {
+    display: none !important;
+  }
+
+  [data-gha-home-ai-host][data-gha-embedded="true"] .gha-app:not(.gha-chat) > .gha-stage {
+    grid-area: 1 / 1 !important;
+    width: 100%;
+    min-height: inherit;
+    overflow: visible !important;
+  }
+
+  [data-gha-home-ai-host][data-gha-embedded="true"] :is(.gha-map, .gha-ai-world) {
+    width: 100%;
+    min-width: 0;
+  }
+
   /* HHGalaxyShell already owns persistent chrome. These views become pure
      route outlets when mounted inside it, preventing duplicated bars/rails. */
   [data-galaxy-shell] :is([data-galaxy-outlet][data-gha-home-ai-host], [data-galaxy-outlet] [data-gha-home-ai-host]) .gha-app:not(.gha-chat) {
@@ -5891,5 +5925,39 @@
   [data-galaxy-shell][data-galaxy-route="/home"] .gha-home > .gha-topbar {
     min-height: 64px;
     height: auto;
+  }
+}
+
+@layer hh-galaxy-home-ai {
+  /* Persistent Layer One owns the outer sidebar, top bar and contextual rail.
+     Keep this final cascade guard after the standalone Home reference rules so
+     their two-column chrome cannot reserve a hidden 288px track in the embedded
+     map. It deliberately reopens the named layer: layered !important rules have
+     priority over unlayered !important rules, so staying in the owner layer is
+     required for the override to be deterministic. */
+  [data-galaxy-shell][data-galaxy-route="/home"]
+    [data-gha-home-ai-host][data-gha-embedded="true"] .gha-home.gha-app {
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr) !important;
+    width: 100%;
+    height: auto !important;
+    min-height: inherit;
+    overflow: visible !important;
+    background: transparent;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"]
+    [data-gha-home-ai-host][data-gha-embedded="true"] .gha-home > .gha-stage {
+    grid-area: 1 / 1 !important;
+    width: 100% !important;
+    max-width: none;
+    min-height: inherit;
+    overflow: visible !important;
+  }
+
+  [data-galaxy-shell][data-galaxy-route="/home"]
+    [data-gha-home-ai-host][data-gha-embedded="true"] .gha-home .gha-map {
+    width: 100% !important;
+    max-width: none;
+    min-width: 0;
   }
 }

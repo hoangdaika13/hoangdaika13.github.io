@@ -184,13 +184,15 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
   const html = read("index.html");
+  const executableHtml = html.replace(/<!--[\s\S]*?-->/g, "");
+  const loaderVersion = executableHtml.match(/<script\b[^>]*src="performance-loader\.js\?v=(\d+)"/i)?.[1];
   const galaxy = read("auth-h-galaxy.js");
   assert.match(client, /id: "chat-ai"[\s\S]*?route: "\/chat-ai"/);
   assert.match(client, /window\.HHChatAI\?\.mount/);
   assert.match(client, /title: "Chat AI"[\s\S]*?smart router/);
   assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=20[\s\S]*?chat-ai-hub\.js\?v=18/);
-  assert.match(html, /<script src="performance-loader\.js\?v=627"/);
-  assert.match(worker, /\.\/performance-loader\.js\?v=627/);
+  assert.ok(loaderVersion, "the executable document must expose the current performance loader version");
+  assert.match(worker, new RegExp(`\\.\\/performance-loader\\.js\\?v=${loaderVersion}(?:"|\\b)`));
   assert.match(loader, /value\.startsWith\("\/chat-ai"\)/);
   assert.match(worker, /chat-ai-hub\.css\?v=20/);
   assert.match(worker, /chat-ai-hub\.js\?v=18/);

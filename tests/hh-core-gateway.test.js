@@ -16,6 +16,30 @@ function memoryStorage() {
   };
 }
 
+function captureGatewayEvents(run) {
+  const previousCustomEvent = global.CustomEvent;
+  const previousDispatchEvent = global.dispatchEvent;
+  const events = [];
+  global.CustomEvent = class TestCustomEvent {
+    constructor(type, options = {}) {
+      this.type = type;
+      this.detail = options.detail;
+    }
+  };
+  global.dispatchEvent = (event) => {
+    events.push(event);
+    return true;
+  };
+  try {
+    return { result: run(), events };
+  } finally {
+    if (previousCustomEvent === undefined) delete global.CustomEvent;
+    else global.CustomEvent = previousCustomEvent;
+    if (previousDispatchEvent === undefined) delete global.dispatchEvent;
+    else global.dispatchEvent = previousDispatchEvent;
+  }
+}
+
 test("HH Core Gateway exposes a frozen session-scoped boundary", () => {
   assert.equal(global.HHCoreGateway, gateway);
   assert.equal(gateway.version, 1);
@@ -153,6 +177,42 @@ test("explicit leave locks browser back and forward Core routes again", () => {
   });
   assert.equal(gateway.resolveRoute("/home", { storage }).allowed, true);
   assert.equal(gateway.resolveRoute("/galaxy/settings", { storage }).allowed, true);
+});
+
+test("leave does not report or emit a successful exit when storage removal is a no-op", () => {
+  const records = new Map();
+  const storage = {
+    getItem(key) { return records.get(key) ?? null; },
+    setItem(key, value) { records.set(key, String(value)); },
+    removeItem() { /* Deliberately accepted without deleting the grant. */ }
+  };
+
+  const observed = captureGatewayEvents(() => {
+    assert.equal(gateway.enter({ source: "hh-core", storage }), true);
+    assert.equal(gateway.leave({ source: "explicit-exit", storage }), false);
+    return gateway.hasAccess(storage);
+  });
+
+  assert.equal(observed.result, true);
+  assert.deepEqual(observed.events.map((event) => event.detail.access), [true]);
+});
+
+test("leave does not report or emit a successful exit when removal throws and the grant remains readable", () => {
+  const records = new Map();
+  const storage = {
+    getItem(key) { return records.get(key) ?? null; },
+    setItem(key, value) { records.set(key, String(value)); },
+    removeItem() { throw new Error("remove blocked"); }
+  };
+
+  const observed = captureGatewayEvents(() => {
+    assert.equal(gateway.enter({ source: "hh-core", storage }), true);
+    assert.equal(gateway.leave({ source: "explicit-exit", storage }), false);
+    return gateway.hasAccess(storage);
+  });
+
+  assert.equal(observed.result, true);
+  assert.deepEqual(observed.events.map((event) => event.detail.access), [true]);
 });
 
 test("an explicit HH Core click keeps a page-scoped grant when sessionStorage is unavailable", () => {

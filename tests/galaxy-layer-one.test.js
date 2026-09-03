@@ -28,7 +28,7 @@ test("layer-one shell exposes a frozen lifecycle and local-first API", () => {
     "normalizeRoute", "canHandle", "searchRoutes", "collectLocalState",
     "inspectLocalState", "writeLocalState", "createLocalItem", "copyTemplate",
     "deleteLocalItem", "serializeBackup", "importBackup", "summarizeAnalytics",
-    "viewMarkup", "mount", "unmount", "syncRoute", "getState"
+    "resolveAdaptiveTiers", "viewMarkup", "mount", "unmount", "syncRoute", "getState"
   ]) {
     assert.equal(typeof layerOne[method], "function", "missing " + method);
   }
@@ -269,6 +269,33 @@ test("CSS is isolated, responsive and accessibility-aware", () => {
   assert.doesNotMatch(styles, /(^|\n)\s*(body|html|:root|\*)\s*[{,]/);
 });
 
+test("adaptive motion tiers are derived from runtime device and connection signals", () => {
+  const low = layerOne.resolveAdaptiveTiers({
+    navigator: { deviceMemory: 4, hardwareConcurrency: 4, connection: { effectiveType: "4g", saveData: false } },
+    matchMedia: () => ({ matches: false })
+  });
+  assert.deepEqual(low, { deviceTier: "low", performanceTier: "low" });
+  assert.ok(Object.isFrozen(low));
+
+  const high = layerOne.resolveAdaptiveTiers({
+    navigator: { deviceMemory: 16, hardwareConcurrency: 12, connection: { effectiveType: "4g", saveData: false } },
+    matchMedia: () => ({ matches: false })
+  });
+  assert.deepEqual(high, { deviceTier: "high", performanceTier: "high" });
+
+  const constrained = layerOne.resolveAdaptiveTiers({
+    navigator: { deviceMemory: 16, hardwareConcurrency: 12, connection: { effectiveType: "4g", saveData: true } },
+    matchMedia: () => ({ matches: false })
+  });
+  assert.deepEqual(constrained, { deviceTier: "high", performanceTier: "low" });
+  assert.deepEqual(layerOne.resolveAdaptiveTiers({}), { deviceTier: "mid", performanceTier: "mid" });
+
+  assert.match(source, /adaptiveTiers:\s*resolveAdaptiveTiers\(globalScope\)/);
+  assert.match(source, /app\.dataset\.deviceTier\s*=\s*adaptive\.deviceTier/);
+  assert.match(source, /app\.dataset\.performanceTier\s*=\s*adaptive\.performanceTier/);
+  assert.match(source, /navigator\s*&&\s*globalScope\.navigator\.connection[\s\S]{0,160}"change"[\s\S]{0,240}resolveAdaptiveTiers\(globalScope\)/);
+});
+
 test("persistent sidebar adds bounded cosmic motion without moving its layout", () => {
   for (const animation of [
     "hgl1-sidebar-star-drift",
@@ -306,6 +333,32 @@ test("persistent sidebar adds bounded cosmic motion without moving its layout", 
     );
   }
   assert.doesNotMatch(styles, /\.hh-galaxy-app \.hgl1-nav__link\s*\{[^}]*\banimation\s*:/s, "inactive rows must not animate");
+
+  const hiddenDrawerMotion = styles.slice(
+    styles.indexOf('.hh-galaxy-app .hgl1-sidebar[aria-hidden="true"]::before'),
+    styles.indexOf("\n  }", styles.indexOf('.hh-galaxy-app .hgl1-sidebar[aria-hidden="true"]::before')) + 4
+  );
+  assert.match(hiddenDrawerMotion, /animation-play-state:\s*paused !important/);
+  assert.match(hiddenDrawerMotion, /will-change:\s*auto/);
+  assert.doesNotMatch(hiddenDrawerMotion, /hgl1-mobile-nav/, "the visible mobile dock must retain its active-route motion");
+});
+
+test("mobile drawer route activation moves focus out of the inert navigation", () => {
+  assert.match(source, /function focusPendingRouteMain\(\)[\s\S]{0,260}querySelector\("#hgl1-main"\)[\s\S]{0,220}main\.focus/);
+  assert.match(source, /sourceInsideDrawer[\s\S]{0,360}runtime\.pendingRouteFocus\s*=\s*true/);
+  assert.match(source, /navigate\(routeLink\.dataset\.hgl1Route,\s*\{\s*sourceElement:\s*routeLink\s*\}\)/);
+  assert.match(source, /navigate\(searchRoute\.dataset\.hgl1SearchRoute,\s*\{\s*sourceElement:\s*searchRoute\s*\}\)/);
+  assert.match(source, /setDrawer\(false, false\)[\s\S]{0,520}focusPendingRouteMain\(\)/);
+});
+
+test("forced-colors keeps the active Layer One route visually distinct", () => {
+  const forcedStart = styles.indexOf("@media (forced-colors: active)");
+  const forcedEnd = styles.indexOf("@media print", forcedStart);
+  const forced = styles.slice(forcedStart, forcedEnd);
+  const genericControlRule = forced.indexOf(".hgl1-switch span");
+  const activeRule = forced.lastIndexOf('.hgl1-nav__link[aria-current="page"]');
+  assert.ok(genericControlRule >= 0 && activeRule > genericControlRule, "active route override must follow the generic forced-colors control rule");
+  assert.match(forced.slice(activeRule), /color:\s*HighlightText;[\s\S]{0,100}background:\s*Highlight;[\s\S]{0,100}border-color:\s*Highlight;/);
 });
 
 test("source contains no Core gateway call-site, remote frame or fake metric claims", () => {

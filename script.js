@@ -6798,6 +6798,15 @@ function initAppShell() {
       return platformEntry;
     }
     const resolution = gateway.resolveRoute(route);
+    // An unlocked Core session must never fall back to a first-layer screen
+    // while retaining its grant. Unknown or malformed destinations stay in
+    // Layer Two and recover at its canonical entry point.
+    if (resolution.layer === "unknown" && gateway.hasAccess()) {
+      const platformEntry = gateway.platformEntryRoute || "/create";
+      syncCoreLayer("platform");
+      history.replaceState({}, document.title, `${location.pathname}${location.search}#${platformEntry}`);
+      return platformEntry;
+    }
     if (resolution.route === gateway.gatewayRoute) {
       syncCoreLayer("gateway");
       if (resolution.redirected || route !== gateway.gatewayRoute) {
@@ -7087,7 +7096,7 @@ function initAppShell() {
     const routePath = routePathOnly(route);
     const previousPath = routePathOnly(renderedRoute || activeRoute);
     const gateway = window.HHCoreGateway;
-    if (!routePath || routePath === "/home"
+    if (!routePath
       || gateway?.isGalaxyRoute?.(routePath) !== true
       || gateway?.isGalaxyRoute?.(previousPath) !== true) return false;
     const layerHost = connectedWorkspaceHost("[data-hh-galaxy-layer-one-host]");
@@ -7115,7 +7124,8 @@ function initAppShell() {
   const canKeepGalaxyLayerOneVisible = (route) => {
     const routePath = routePathOnly(route);
     const previousPath = routePathOnly(renderedRoute || activeRoute);
-    if (!routePath.startsWith("/galaxy/") || !previousPath.startsWith("/galaxy/")) return false;
+    const gateway = window.HHCoreGateway;
+    if (gateway?.isGalaxyRoute?.(routePath) !== true || gateway?.isGalaxyRoute?.(previousPath) !== true) return false;
     const layerHost = connectedWorkspaceHost("[data-hh-galaxy-layer-one-host]");
     const layerOne = window.HHGalaxyLayerOne;
     const state = layerOne?.getState?.();
@@ -7330,6 +7340,23 @@ function initAppShell() {
         route,
         user: readCurrentAuthUser(),
         navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
+        mountHome: (homeHost, context = {}) => {
+          const mountedHome = window.HHGalaxyHomeAI?.mount?.(homeHost, {
+            route: context.route || "/home",
+            storage: context.storage,
+            embedded: true,
+            navigate: (nextRoute) => { location.hash = `#${platformSafeRoute(nextRoute)}`; },
+            enterCore: (request = {}) => grantCoreAccessFromGateway(request),
+            baseMount: (host, options = {}) => window.HHChatAI?.mount?.(host, {
+              currentUser: readCurrentAuthUser(),
+              apiBase: String(window.HH_REALTIME_URL || location.origin),
+              newSession: Boolean(options.newSession)
+            }),
+            baseUnmount: () => window.HHChatAI?.unmount?.()
+          });
+          if (!mountedHome) return false;
+          return () => window.HHGalaxyHomeAI?.unmount?.(homeHost);
+        },
         mountCreator: (creatorHost, context = {}) => {
           const result = window.HHGalaxyCreatorStudio?.mount?.(creatorHost, {
             route: context.route || "/galaxy/creator",
@@ -8377,8 +8404,14 @@ function initAppShell() {
     }
     if (event.target.closest("[data-hh-core-exit]")) {
       event.preventDefault();
-      window.HHCoreGateway?.leave?.({ source: "explicit-exit" });
-      location.hash = `#${window.HHCoreGateway?.gatewayRoute || "/home"}`;
+      const gateway = window.HHCoreGateway;
+      const leftCore = gateway?.leave?.({ source: "explicit-exit" });
+      if (leftCore === true && gateway?.hasAccess?.() !== true) {
+        location.hash = `#${gateway?.gatewayRoute || "/home"}`;
+      } else {
+        setSidebarStatus("Chưa thể đóng HH CORE vì trình duyệt chưa xóa được quyền của phiên này.");
+        if (routeAnnouncer) routeAnnouncer.textContent = "Chưa thể đóng HH CORE. Vui lòng kiểm tra quyền lưu trữ của trình duyệt.";
+      }
       return;
     }
     if (event.target.closest("[data-shell-back]")) {

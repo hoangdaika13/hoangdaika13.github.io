@@ -1576,9 +1576,9 @@
   box-shadow: none;
 }
 
+.hh-galaxy-app .hgl1-delegated-host--home[data-gha-home-ai-host],
 .hh-galaxy-app .hgl1-delegated-host--home:has(> [data-gha-home-ai-host]),
 .hh-galaxy-app .hgl1-delegated-host--home:has(> .gha-root) {
-  min-height: 0;
   overflow: visible;
   background: transparent;
   border: 0;
@@ -2676,6 +2676,23 @@
     right: 12px;
     bottom: calc(var(--hgl1-mobile-nav-h) + 10px);
   }
+
+  /* The off-canvas drawer remains mounted so its scroll position and DOM
+     identity survive route changes. Pause only its invisible motion layers;
+     the separate bottom dock keeps its active-route signal. */
+  .hh-galaxy-app .hgl1-sidebar[aria-hidden="true"]::before,
+  .hh-galaxy-app .hgl1-sidebar[aria-hidden="true"]::after,
+  .hh-galaxy-app .hgl1-sidebar[aria-hidden="true"] .hgl1-product-mark > span::before,
+  .hh-galaxy-app .hgl1-sidebar[aria-hidden="true"] .hgl1-brand > span::before,
+  .hh-galaxy-app .hgl1-sidebar[aria-hidden="true"] .hgl1-brand > span::after,
+  .hh-galaxy-app .hgl1-sidebar[aria-hidden="true"] .hgl1-nav__link::before,
+  .hh-galaxy-app .hgl1-sidebar[aria-hidden="true"] .hgl1-nav__link::after,
+  .hh-galaxy-app .hgl1-sidebar[aria-hidden="true"] .hgl1-nav__icon .hgl1-icon,
+  .hh-galaxy-app .hgl1-sidebar[aria-hidden="true"] .hgl1-nav__planet-glow,
+  .hh-galaxy-app .hgl1-sidebar[aria-hidden="true"] .hgl1-nav__arrow {
+    animation-play-state: paused !important;
+    will-change: auto;
+  }
 }
 
 @media (max-width: 430px) {
@@ -3173,6 +3190,16 @@
     border-color: ButtonText;
     box-shadow: none;
     forced-color-adjust: auto;
+  }
+
+  /* Keep the current destination visible when gradients and shadows are
+     discarded by Windows High Contrast / forced-colors mode. */
+  .hh-galaxy-app .hgl1-nav__link[aria-current="page"] {
+    color: HighlightText;
+    background: Highlight;
+    border-color: Highlight;
+    outline: 2px solid Highlight;
+    outline-offset: -3px;
   }
 
   .hh-galaxy-app :is(

@@ -172,22 +172,31 @@
 
   function leave(options = {}) {
     const target = storage(options.storage);
-    let cleared = false;
+    let storageRemovalCompleted = false;
+    let volatileCleared = false;
     if (target) {
       try {
         target.removeItem(STORAGE_KEY);
-        cleared = true;
+        storageRemovalCompleted = true;
       } catch {
-        cleared = false;
+        storageRemovalCompleted = false;
       }
     }
     if (volatileRecord && volatileStorage === target) {
       volatileRecord = null;
       volatileStorage = null;
-      cleared = true;
+      volatileCleared = true;
     }
+
+    // Storage shims, restricted embeds and browser restore layers can accept a
+    // removeItem() call without actually deleting the record.  Do not announce
+    // a successful exit while that readable grant can still reopen Layer Two.
+    if (hasAccess(target)) return false;
+
+    const cleared = storageRemovalCompleted || volatileCleared;
+    if (!cleared) return false;
     emit(false, options.source || "leave");
-    return cleared;
+    return true;
   }
 
   function resolveRoute(input, options = {}) {

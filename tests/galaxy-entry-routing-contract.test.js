@@ -178,7 +178,21 @@ test("Galaxy routes load and mount only the Layer One adapter", () => {
     router.indexOf("} else if (isGalaxyDomainRoute)")
   );
   assert.match(layerBranch, /HHGalaxyLayerOne/);
+  assert.match(layerBranch, /mountHome:\s*\(homeHost, context = \{\}\)\s*=>/);
+  assert.match(layerBranch, /HHGalaxyHomeAI\?\.mount\?\.\(homeHost/);
+  assert.match(layerBranch, /enterCore:\s*\(request = \{\}\)\s*=>\s*grantCoreAccessFromGateway\(request\)/);
+  assert.match(layerBranch, /return \(\) => window\.HHGalaxyHomeAI\?\.unmount\?\.\(homeHost\)/);
   assert.doesNotMatch(layerBranch, /HHGalaxyPlanetHubs|planetHub/);
+});
+
+test("unknown destinations keep an active Core session inside Layer Two", () => {
+  const start = router.indexOf("const routeFromHash =");
+  const end = router.indexOf("let cosmicLoaderRoute", start);
+  const routeResolver = router.slice(start, end);
+  assert.match(routeResolver, /resolution\.layer === "unknown" && gateway\.hasAccess\(\)/);
+  assert.match(routeResolver, /syncCoreLayer\("platform"\)/);
+  assert.match(routeResolver, /gateway\.platformEntryRoute \|\| "\/create"/);
+  assert.match(routeResolver, /history\.replaceState\([\s\S]*?#\$\{platformEntry\}/);
 });
 
 test("same-route ready refresh preserves live media and Galaxy workspaces before teardown", () => {
@@ -224,6 +238,9 @@ test("Layer One route changes synchronize the connected host before outer teardo
 
   const helper = router.slice(helperStart, renderStart);
   assert.match(helper, /connectedWorkspaceHost\("\[data-hh-galaxy-layer-one-host\]"\)/);
+  assert.match(helper, /gateway\?\.isGalaxyRoute\?\.\(routePath\) !== true/);
+  assert.match(helper, /gateway\?\.isGalaxyRoute\?\.\(previousPath\) !== true/);
+  assert.doesNotMatch(helper, /routePath === "\/home"/);
   assert.match(helper, /HHGalaxyLayerOne/);
   assert.match(helper, /state\?\.mounted !== true/);
   assert.match(helper, /layerOne\.syncRoute\?\.\(routePath\)/);
@@ -246,8 +263,9 @@ test("connected Layer One module changes stay visible without a full-screen rout
   assert.ok(helperStart >= 0 && renderStart > helperStart && renderEnd > renderStart);
 
   const helper = router.slice(helperStart, router.indexOf("const renderRoute =", helperStart));
-  assert.match(helper, /routePath\.startsWith\("\/galaxy\/"\)/);
-  assert.match(helper, /previousPath\.startsWith\("\/galaxy\/"\)/);
+  assert.match(helper, /gateway\?\.isGalaxyRoute\?\.\(routePath\) !== true/);
+  assert.match(helper, /gateway\?\.isGalaxyRoute\?\.\(previousPath\) !== true/);
+  assert.doesNotMatch(helper, /routePath\.startsWith\("\/galaxy\/"\)|previousPath\.startsWith\("\/galaxy\/"\)/);
   assert.match(helper, /connectedWorkspaceHost\("\[data-hh-galaxy-layer-one-host\]"\)/);
   assert.match(helper, /state\?\.mounted !== true/);
   assert.match(helper, /liveRoute !== previousPath && liveRoute !== routePath/);
