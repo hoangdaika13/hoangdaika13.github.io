@@ -39,8 +39,25 @@ test("eight large workspace roots mount a descriptive capability catalog", () =>
   assert.match(styles, /grid-template-columns:\s*repeat\(3/);
   assert.match(styles, /@media\s*\(max-width:\s*700px\)/);
   assert.match(styles, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
-  assert.match(html, /workspace-feature-explorer\.css\?v=2/);
-  assert.match(worker, /workspace-feature-explorer\.css\?v=2/);
+  assert.match(html, /workspace-feature-explorer\.css\?v=4/);
+  assert.match(worker, /workspace-feature-explorer\.css\?v=4/);
+});
+
+test("Layer Two create hub adds a truthful Creative Cosmic Command Center", () => {
+  const source = read("script.js");
+  const styles = read("workspace-feature-explorer.css");
+
+  assert.match(source, /const creativeCommandCenterMarkup/);
+  assert.match(source, /group\?\.id === "create" \? creativeCommandCenterMarkup\(entries\) : ""/);
+  assert.match(source, /navigator\.onLine/);
+  assert.match(source, /Object\.keys\(localStorage\)\.filter\(\(key\) => key\.startsWith\("hh\."\)\)/);
+  assert.match(source, /hh\.app-shell\.recent/);
+  assert.match(source, /Chưa có hoạt động gần đây/);
+  assert.match(source, /AI\/provider kiểm tra trong từng workspace/);
+  assert.doesNotMatch(source, /creativeCommandCenterMarkup[\s\S]{0,3200}(?:fake|mock|online users|người dùng trực tuyến)/i);
+  assert.match(styles, /\.app-core-command/);
+  assert.match(styles, /@media\(max-width:760px\)[\s\S]*?\.app-core-command__grid\{grid-template-columns:1fr\}/);
+  assert.match(styles, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?\.app-core-command \*/);
 });
 
 test("authentication and Home enforce one paint owner at a time", () => {

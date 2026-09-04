@@ -12,8 +12,8 @@ test("Text on Image Studio is routed from the main Tool group", () => {
 
   assert.match(app, /id: "image-text"[\s\S]*?route: "\/davinci-resolve\/image-text"/);
   assert.match(app, /resolveView === "image-text"[\s\S]*?HHImageTextStudio\?\.mount/);
-  assert.match(loader, /image-text-studio\.css\?v=12/);
-  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=12/);
+  assert.match(loader, /image-text-studio\.css\?v=13/);
+  assert.match(loader, /vendor\/jszip\.min\.js\?v=3\.10\.1[\s\S]*?image-text-studio\.js\?v=13/);
 });
 
 test("studio supports per-image AI text, optional color correction and secure providers", () => {
@@ -101,4 +101,47 @@ test("studio remains a one-screen workspace with internal scrolling", () => {
   assert.match(css, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css, /\.its-library\{[\s\S]*?grid-template-columns:minmax\(0,1fr\)/);
   assert.match(css, /\.its-library>\*\{min-width:0;max-width:100%\}/);
+});
+
+test("studio renders preview and export through one fixed design-coordinate pipeline", () => {
+  const client = read("image-text-studio.js");
+
+  assert.match(client, /const DESIGN_WIDTH = 1280/);
+  assert.match(client, /const DESIGN_HEIGHT = 720/);
+  assert.match(client, /<canvas width="1280" height="720" data-preview-canvas/);
+  assert.match(client, /drawComposite\(bufferContext, width, height, item, \{ preview: true \}\)/);
+  assert.match(client, /drawComposite\(context, preset\.width, preset\.height, item, \{ preview: false \}\)/);
+  assert.match(client, /await document\.fonts\?\.ready/);
+  assert.match(client, /if \(global\.document\.hidden\) return/);
+  assert.match(client, /lastPreviewBuffer = buffer/);
+});
+
+test("studio persists validated schema-v2 projects without trusting imported objects", () => {
+  const client = read("image-text-studio.js");
+
+  assert.match(client, /PROJECT_SCHEMA_VERSION = 2/);
+  assert.match(client, /indexedDB\.open\(PROJECT_DB, 1\)/);
+  assert.match(client, /transaction\(PROJECT_STORE, "readwrite"\)/);
+  assert.match(client, /function restoreAutosave\(token\)/);
+  assert.match(client, /isPlainRecord/);
+  assert.match(client, /key !== "__proto__"/);
+  assert.match(client, /new Set\(layerOrder\)\.size === 3/);
+  assert.match(client, /variants[\s\S]*?sanitizeTemplate/);
+});
+
+test("studio exposes real layer, variant, mobile-sheet and cleanup controls", () => {
+  const client = read("image-text-studio.js");
+  const css = read("image-text-studio.css");
+
+  for (const action of ["layer-visible", "layer-lock", "layer-up", "layer-down", "duplicate-layer", "create-variants", "zoom-fit", "zoom-100", "toggle-grid"]) {
+    assert.match(client, new RegExp(`data-action="${action}"`));
+  }
+  assert.match(client, /Tách nền<\/b><small>Chưa cấu hình/);
+  assert.match(client, /eventController\?\.abort\?\.\(\)/);
+  assert.match(client, /cancelAnimationFrame\(previewFrame\)/);
+  assert.match(client, /db\?\.close\?\.\(\)/);
+  assert.match(client, /permissionDialog[\s\S]*?event\.key === "Tab"/);
+  assert.match(css, /@media\(max-width:760px\)[\s\S]*?\.its-mobile-tools\{display:grid/);
+  assert.match(css, /\.its-app\.show-inspector-sheet \.its-inspector/);
+  assert.match(css, /min-height:44px/);
 });

@@ -1,4 +1,6 @@
-const CACHE = "hh-identity-portal-v976";
+const CACHE = "hh-identity-portal-v978";
+// Creative Command Center and Text on Image Studio v2 release: hh-identity-portal-v978.
+// Previous compatibility cache: hh-identity-portal-v977.
 // Persistent twelve-route Galaxy shell, adaptive motion and fail-closed HH CORE release: hh-identity-portal-v976.
 // HH CORE verified entry and persistent Galaxy Layer One shell release: hh-identity-portal-v975.
 // Compatibility marker for the immediately preceding Galaxy continuity release: hh-identity-portal-v974.
@@ -62,7 +64,7 @@ const RUNTIME_ASSETS = [
   "./",
   "./index.html",
   "./app-shell.css?v=66",
-  "./workspace-feature-explorer.css?v=2",
+  "./workspace-feature-explorer.css?v=4",
   "./app-theme-system.css?v=9",
   "./dashboard-aurora.css?v=4",
   "./home-galaxy-command.css?v=13",
@@ -115,7 +117,7 @@ const RUNTIME_ASSETS = [
   "./h-cosmic-web-studio.css?v=2",
   "./video-editor-auto.css?v=1",
   "./youtube-creator-galaxy.css?v=22",
-  "./image-text-studio.css?v=12",
+  "./image-text-studio.css?v=13",
   "./facebook-page-command-center.css?v=4",
   "./tiktok-creator-galaxy.css?v=2",
   "./ai-video-remake-studio.css?v=3",
@@ -188,7 +190,7 @@ const RUNTIME_ASSETS = [
   "./music-autopilot-core.js?v=2",
   "./music-autopilot.js?v=2",
   "./youtube-creator-galaxy.js?v=27",
-  "./image-text-studio.js?v=12",
+  "./image-text-studio.js?v=13",
   "./facebook-page-command-center.js?v=4",
   "./services/tiktokCreatorCore.js?v=2",
   "./services/tiktokCreatorConnections.js?v=2",
@@ -625,10 +627,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=629",
+  "./performance-loader.js?v=630",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=266"
+  "./script.js?v=267"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

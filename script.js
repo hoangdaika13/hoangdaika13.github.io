@@ -6615,6 +6615,33 @@ function initAppShell() {
     return item.category || "Chức năng chuyên biệt";
   };
   const featureDescriptionFor = (group, item) => item.description || featureDescriptionFallbacks[`${group?.id}:${item.id}`] || `Mở ${item.title || item.label || item.id} để thực hiện tác vụ này trong một workspace chuyên biệt, có hướng dẫn và trạng thái riêng.`;
+  const creativeCommandCenterMarkup = (entries = []) => {
+    let recentIds = [];
+    let localRecords = 0;
+    try {
+      recentIds = JSON.parse(localStorage.getItem("hh.app-shell.recent") || "[]");
+      localRecords = Object.keys(localStorage).filter((key) => key.startsWith("hh.")).length;
+    } catch {}
+    const recentEntries = recentIds.map((id) => entries.find((entry) => entry.id === id) || (() => {
+      const module = moduleById(id);
+      return module ? { id: module.id, title: module.title, route: routeForModule(module.id), icon: "HH" } : null;
+    })()).filter(Boolean).slice(0, 3);
+    const quickActions = [
+      ["✦", "AI Center", "/create/ai-center", "Chat, prompt và phân tích"],
+      ["TX", "Thumbnail Studio", "/davinci-resolve/image-text", "Thiết kế và xuất 1280×720"],
+      ["MD", "Media & Design", "/media-design", "Ảnh, video và asset"],
+      ["♪", "Music Galaxy", "/music-ai", "Sản xuất âm thanh"]
+    ];
+    return `<section class="app-core-command" aria-labelledby="app-core-command-title">
+      <header><div><p class="section-kicker"><i></i>CREATIVE COSMIC COMMAND CENTER</p><h3 id="app-core-command-title">Tiếp tục sáng tạo trong HH Platform</h3><p>Mỗi công cụ mở đúng workspace riêng; dữ liệu Layer 1 và Layer 2 luôn được tách biệt.</p></div><span class="app-core-command__network is-${navigator.onLine ? "online" : "offline"}"><i></i>${navigator.onLine ? "Trình duyệt online" : "Đang ngoại tuyến"}</span></header>
+      <div class="app-core-command__grid">
+        <section><div class="app-core-command__section-head"><span>Thao tác nhanh</span><b>4 workspace</b></div><div class="app-core-command__quick">${quickActions.map(([icon, title, route, note]) => `<button type="button" data-app-route="${route}"><i>${icon}</i><span><strong>${title}</strong><small>${note}</small></span><b>→</b></button>`).join("")}</div></section>
+        <section><div class="app-core-command__section-head"><span>Gần đây trên thiết bị</span><b>${recentEntries.length || "—"}</b></div><div class="app-core-command__recent">${recentEntries.length ? recentEntries.map((entry) => `<button type="button" data-app-route="${safeText(entry.route)}"><i>${safeText(entry.icon || "◇")}</i><span><strong>${safeText(entry.title)}</strong><small>Dữ liệu hoạt động cục bộ</small></span><b>Tiếp tục →</b></button>`).join("") : '<div class="app-core-command__empty"><i>◌</i><span><strong>Chưa có hoạt động gần đây</strong><small>Mở một workspace để danh sách này bắt đầu ghi nhận.</small></span></div>'}</div></section>
+        <aside><div><span>Trạng thái thật</span><strong>${localRecords}</strong><small>nhóm dữ liệu HH trên thiết bị</small></div><ul><li><i class="is-ready"></i>Route Layer 2 đã mở qua HH CORE</li><li><i class="${navigator.onLine ? "is-ready" : ""}"></i>${navigator.onLine ? "Có kết nối mạng" : "Không có kết nối mạng"}</li><li><i></i>AI/provider kiểm tra trong từng workspace</li></ul><button type="button" data-app-route="/settings">Mở cài đặt & dữ liệu →</button></aside>
+      </div>
+    </section>`;
+  };
+
   const mountModuleHub = (group = null, options = {}) => {
     const moduleIds = [...(group?.items || (group ? [] : moduleList().map((item) => item.id))), ...(group?.legacyItems || [])];
     const moduleEntries = moduleIds
@@ -6641,7 +6668,7 @@ function initAppShell() {
     const label = group?.label || "Tất cả công cụ";
     const metadata = featureHubMetadata[group?.id] || {};
     const categories = [...new Set(entries.map((item) => item.category))];
-    workspace.innerHTML = `<section class="app-module-hub app-module-hub--cosmic" data-module-hub data-feature-hub="${safeText(group?.id || "all")}" style="--hub-secondary:${safeText(metadata.secondary || group?.accent || "#9b72ff")}">
+    workspace.innerHTML = `${group?.id === "create" ? creativeCommandCenterMarkup(entries) : ""}<section class="app-module-hub app-module-hub--cosmic" data-module-hub data-feature-hub="${safeText(group?.id || "all")}" style="--hub-secondary:${safeText(metadata.secondary || group?.accent || "#9b72ff")}">
       <div class="app-module-hub__space" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
       <header><div><p class="section-kicker"><i></i>${safeText(metadata.eyebrow || (group ? "KHÔNG GIAN CHỨC NĂNG" : "HH APP LIBRARY"))}</p><h2>${safeText(metadata.title || `Chọn một việc trong ${label}`)}</h2><p>${safeText(metadata.description || "Mỗi lựa chọn mở thành một trang riêng, lưu trạng thái và luôn có đường quay lại. Bạn không cần cuộn qua các module không liên quan.")}</p></div><span><b>${entries.length}</b><small>CHỨC NĂNG</small><em>${categories.length} nhóm nhiệm vụ</em></span></header>
       <ol class="app-module-hub__guide" aria-label="Cách bắt đầu"><li><b>1</b><span><strong>Chọn nhóm</strong><small>Lọc theo việc cần làm</small></span></li><li><b>2</b><span><strong>Đọc tóm tắt</strong><small>Biết công cụ dùng để làm gì</small></span></li><li><b>3</b><span><strong>Mở workspace</strong><small>Thao tác trong màn hình riêng</small></span></li><li><b>4</b><span><strong>Lưu kết quả</strong><small>Giữ project và lịch sử</small></span></li></ol>

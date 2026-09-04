@@ -2,6 +2,11 @@
   "use strict";
 
   const STORAGE_KEY = "hh-image-text-studio-v1";
+  const PROJECT_DB = "hh-image-text-studio-projects";
+  const PROJECT_STORE = "autosaves";
+  const PROJECT_SCHEMA_VERSION = 2;
+  const DESIGN_WIDTH = 1280;
+  const DESIGN_HEIGHT = 720;
   const MAX_HISTORY = 40;
   const PAGE_SIZE = 60;
   const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp", "image/avif"]);
@@ -19,6 +24,8 @@
     fast: { label: "YouTube nhanh · 1280×720", width: 1280, height: 720 },
     hd: { label: "YouTube Full HD · 1920×1080", width: 1920, height: 1080 },
     ultra: { label: "YouTube 4K · 3840×2160", width: 3840, height: 2160 },
+    banner: { label: "YouTube banner · 2560×1440", width: 2560, height: 1440 },
+    shorts: { label: "Shorts cover · 1080×1920", width: 1080, height: 1920 },
     square: { label: "Vuông · 1080×1080", width: 1080, height: 1080 },
     vertical: { label: "Dọc · 1080×1920", width: 1080, height: 1920 }
   });
@@ -37,10 +44,19 @@
     y: 0.5,
     maxWidth: 0.74,
     align: "center",
+    lineHeight: 1.16,
+    letterSpacing: 0,
+    rotation: 0,
     italic: false,
     uppercase: false,
     autoContrast: true,
-    background: false
+    background: false,
+    visible: true,
+    locked: false,
+    glow: 0,
+    gradient: false,
+    gradientStart: "#ffffff",
+    gradientEnd: "#7de9ff"
   });
 
   const DEFAULT_IMAGE_STYLE = Object.freeze({
@@ -49,7 +65,15 @@
     tintOpacity: 0,
     brightness: 1,
     contrast: 1,
-    saturation: 1
+    saturation: 1,
+    temperature: 0,
+    blur: 0,
+    vignette: 0,
+    fit: "cover",
+    scale: 1,
+    rotation: 0,
+    flipX: false,
+    flipY: false
   });
 
   const DEFAULT_TEMPLATE = Object.freeze({
@@ -123,6 +147,12 @@
   let keyHandler = null;
   let dragState = null;
   let beforeEditSnapshot = null;
+  let eventController = null;
+  let autosaveTimer = 0;
+  let autosaveDbPromise = null;
+  let lastPreviewBuffer = null;
+  let activeDialogTrigger = null;
+  let lifecycleToken = 0;
   const loadedFontFamilies = new Set(["Inter"]);
   const localFonts = [];
   const hitBoxes = new Map();
@@ -148,7 +178,12 @@
     aiSubtitle: false,
     aiRename: true,
     aiColor: false,
-    structuredNames: true
+    structuredNames: true,
+    zoom: "fit",
+    grid: false,
+    guides: true,
+    miniPreview: true,
+    activeTool: "select"
   });
 
   const state = {
@@ -160,6 +195,11 @@
     query: "",
     sort: "asc",
     activeSlot: "title",
+    layerOrder: ["title", "subtitle", "footer"],
+    layerClipboard: null,
+    variants: [],
+    variantBase: null,
+    activeVariant: "original",
     template: clone(DEFAULT_TEMPLATE),
     settings: initialSettings(),
     exporting: false,
@@ -174,7 +214,7 @@
   const activeItem = () => state.items.find((item) => item.id === state.activeId) || null;
   const itemIndex = (item) => state.items.indexOf(item);
   const outputPreset = () => OUTPUT_PRESETS[state.settings.output] || OUTPUT_PRESETS.fast;
-  const layerFor = (item, slot) => ({ ...state.template[slot], ...(item?.overrides?.[slot] || {}) });
+  const layerFor = (item, slot) => ({ ...DEFAULT_LAYER, ...(state.template[slot] || {}), ...(item?.overrides?.[slot] || {}) });
   const imageStyleFor = (item) => ({ ...DEFAULT_IMAGE_STYLE, ...(state.template.image || {}), ...(item?.overrides?.image || {}) });
   const editableLayer = (item, slot) => {
     if (state.settings.editMode === "all" || !item) return state.template[slot];
@@ -186,16 +226,100 @@
     return (item.overrides.image ||= {});
   };
 
+  const isPlainRecord = (value) => Boolean(value && typeof value === "object" && !Array.isArray(value) && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null));
+  const safeRecord = (value, allowed) => {
+    if (!isPlainRecord(value)) return {};
+    const output = {};
+    allowed.forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(value, key) && key !== "__proto__" && key !== "constructor" && key !== "prototype") output[key] = value[key];
+    });
+    return output;
+  };
+
+  function openAutosaveDb() {
+    if (!global.indexedDB) return Promise.resolve(null);
+    if (autosaveDbPromise) return autosaveDbPromise;
+    autosaveDbPromise = new Promise((resolve) => {
+      const request = global.indexedDB.open(PROJECT_DB, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(PROJECT_STORE)) db.createObjectStore(PROJECT_STORE);
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+      request.onblocked = () => resolve(null);
+    });
+    return autosaveDbPromise;
+  }
+
+  async function saveAutosave() {
+    const db = await openAutosaveDb();
+    if (!db) return false;
+    return new Promise((resolve) => {
+      try {
+        const transaction = db.transaction(PROJECT_STORE, "readwrite");
+        transaction.objectStore(PROJECT_STORE).put(projectData(), "current");
+        transaction.oncomplete = () => resolve(true);
+        transaction.onerror = () => resolve(false);
+        transaction.onabort = () => resolve(false);
+      } catch {
+        resolve(false);
+      }
+    });
+  }
+
+  async function restoreAutosave(token) {
+    const db = await openAutosaveDb();
+    if (!db || token !== lifecycleToken || !root) return false;
+    const data = await new Promise((resolve) => {
+      try {
+        const request = db.transaction(PROJECT_STORE, "readonly").objectStore(PROJECT_STORE).get("current");
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => resolve(null);
+      } catch {
+        resolve(null);
+      }
+    });
+    if (!data || token !== lifecycleToken || !root || state.history.length || state.items.length) return false;
+    try {
+      const validated = validateProjectData(data);
+      state.template = validated.template;
+      state.settings = { ...validated.settings, editMode: "all" };
+      state.layerOrder = validated.layerOrder;
+      state.variants = validated.variants;
+      state.variantBase = validated.variantBase;
+      state.pendingProject = validated;
+      renderAll({ keepPage: true });
+      applyZoom();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function scheduleAutosave() {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = global.setTimeout(() => { autosaveTimer = 0; saveAutosave(); }, 480);
+  }
+
   function persistSettings() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ template: state.template, settings: state.settings }));
     } catch {}
+    scheduleAutosave();
   }
 
   function restoreSettings() {
+    state.template = clone(DEFAULT_TEMPLATE);
+    state.settings = initialSettings();
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      if (saved?.template) state.template = { ...clone(DEFAULT_TEMPLATE), ...saved.template };
+      if (saved?.template) state.template = {
+        image: { ...DEFAULT_IMAGE_STYLE, ...(saved.template.image || {}) },
+        title: { ...DEFAULT_TEMPLATE.title, ...(saved.template.title || {}) },
+        subtitle: { ...DEFAULT_TEMPLATE.subtitle, ...(saved.template.subtitle || {}) },
+        footer: { ...DEFAULT_TEMPLATE.footer, ...(saved.template.footer || {}) }
+      };
       if (saved?.settings) state.settings = { ...initialSettings(), ...saved.settings, editMode: "all" };
     } catch {}
   }
@@ -232,11 +356,12 @@
     state.ai.providerStatusLoading = true;
     if (root) renderInspector();
     try {
-      const response = await fetch("/api/modules/image-text/actions", { credentials: "include", cache: "no-store", headers: { Accept: "application/json" } });
+      const response = await fetch("/api/modules/image-text/actions", { credentials: "include", cache: "no-store", headers: { Accept: "application/json" }, signal: eventController?.signal });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error || `AI status HTTP ${response.status}`);
       state.ai.providerStatus = { providers: payload.providers || {}, configured: Boolean(payload.configured) };
     } catch (error) {
+      if (error?.name === "AbortError") return;
       state.ai.providerStatus = null;
       if (!quiet) notify("Không đọc được trạng thái AI. Tool vẫn có thể tạo title dự phòng.", "info");
     } finally {
@@ -249,6 +374,8 @@
     return JSON.stringify({
       template: state.template,
       settings: state.settings,
+      layerOrder: state.layerOrder,
+      variants: state.variants,
       overrides: state.items.map((item) => [item.name, item.overrides, item.focusX, item.focusY, item.outputBaseName || "", item.youtubeTitle || ""])
     });
   }
@@ -258,6 +385,8 @@
       const data = JSON.parse(serialized);
       state.template = data.template || clone(DEFAULT_TEMPLATE);
       state.settings = { ...initialSettings(), ...(data.settings || {}) };
+      state.layerOrder = Array.isArray(data.layerOrder) ? data.layerOrder : ["title", "subtitle", "footer"];
+      state.variants = Array.isArray(data.variants) ? data.variants : [];
       const overrideMap = new Map(data.overrides || []);
       state.items.forEach((item) => {
         const row = overrideMap.get(item.name);
@@ -351,6 +480,16 @@
         </div>
       </header>
       <div class="its-workspace">
+        <nav class="its-toolrail" aria-label="Công cụ thiết kế thumbnail">
+          ${[
+            ["select", "↖", "Chọn"], ["text", "T", "Text"], ["image", "▧", "Ảnh"],
+            ["shape", "◇", "Hình khối"], ["background", "◐", "Nền"], ["icon", "☆", "Icon"],
+            ["effects", "✦", "Hiệu ứng"], ["template", "▦", "Template"], ["upload", "↑", "Upload"]
+          ].map(([id, icon, label], index) => {
+            const unavailable = id === "shape" || id === "icon";
+            return `<button type="button" data-action="tool-panel" data-tool="${id}"${index === 0 ? ' class="is-active" aria-current="true"' : ""}${unavailable ? ' aria-disabled="true" title="Chưa cấu hình engine tài nguyên"' : ""}><b aria-hidden="true">${icon}</b><span>${label}${unavailable ? '<small>Chưa cấu hình</small>' : ""}</span></button>`;
+          }).join("")}
+        </nav>
         <aside class="its-library">
           <div class="its-panel-head"><div><strong>Kho ảnh</strong><small data-library-summary>Chưa có ảnh</small></div><button type="button" data-action="add-images">＋ Ảnh</button></div>
           <label class="its-dropzone" data-dropzone tabindex="0"><span>＋</span><strong>Thả ảnh hoặc thư mục vào đây</strong><small>JPG · PNG · WebP · AVIF · tối ưu cho 1.000+ ảnh</small></label>
@@ -380,12 +519,20 @@
             <div class="its-preset-row" data-preset-row>
               ${Object.entries(PRESETS).map(([id, preset], index) => `<button type="button" data-action="preset" data-preset="${id}"${index === 0 ? ' class="is-active"' : ""}>${escapeHtml(preset.label)}</button>`).join("")}
             </div>
-            <label class="its-safe-toggle"><input type="checkbox" data-setting="safeZone"${state.settings.safeZone ? " checked" : ""}><span>Vùng an toàn</span></label>
+            <div class="its-view-controls" aria-label="Điều khiển canvas">
+              <button type="button" data-action="zoom-out" aria-label="Thu nhỏ canvas">−</button>
+              <button type="button" data-action="zoom-fit">Fit</button>
+              <button type="button" data-action="zoom-100">100%</button>
+              <button type="button" data-action="zoom-in" aria-label="Phóng to canvas">＋</button>
+              <button type="button" data-action="toggle-grid" aria-pressed="${state.settings.grid}">Lưới</button>
+              <label class="its-safe-toggle"><input type="checkbox" data-setting="safeZone"${state.settings.safeZone ? " checked" : ""}><span>Safe area</span></label>
+            </div>
           </div>
           <div class="its-canvas-wrap" data-canvas-wrap>
             <div class="its-empty-stage" data-empty-stage><span>TX</span><strong>Thumbnail đẹp trong vài giây</strong><small>Chọn thư mục ảnh → nhập chữ → áp dụng toàn bộ → xuất.</small><button type="button" data-action="add-folder">Chọn thư mục ảnh</button></div>
             <canvas width="1280" height="720" data-preview-canvas aria-label="Preview thumbnail"></canvas>
             <div class="its-rendering" data-rendering hidden><i></i><span>Đang dựng preview…</span></div>
+            <div class="its-canvas-status" aria-live="polite"><span data-zoom-label>Fit</span><i></i><span>${DESIGN_WIDTH} × ${DESIGN_HEIGHT}</span></div>
           </div>
           <div class="its-image-nav">
             <button type="button" data-action="prev-image">←</button>
@@ -395,11 +542,20 @@
         </main>
         <aside class="its-inspector" data-inspector></aside>
       </div>
+      <nav class="its-mobile-tools" aria-label="Công cụ thiết kế trên di động">
+        <button type="button" data-action="tool-panel" data-tool="upload"><b>＋</b><span>Ảnh</span></button>
+        <button type="button" data-action="tool-panel" data-tool="text"><b>T</b><span>Chữ</span></button>
+        <button type="button" data-action="tool-panel" data-tool="effects"><b>✦</b><span>Hiệu ứng</span></button>
+        <button type="button" data-action="tool-panel" data-tool="template"><b>▦</b><span>Mẫu</span></button>
+        <button type="button" data-action="close-panels"><b>◎</b><span>Canvas</span></button>
+      </nav>
       <footer class="its-exportbar">
         <div class="its-export-settings">
           <label><span>Kích thước</span><select data-setting="output">${Object.entries(OUTPUT_PRESETS).map(([key, preset]) => `<option value="${key}"${key === state.settings.output ? " selected" : ""}>${preset.label}</option>`).join("")}</select></label>
           <label><span>Định dạng</span><select data-setting="format"><option value="image/jpeg"${state.settings.format === "image/jpeg" ? " selected" : ""}>JPG</option><option value="image/png"${state.settings.format === "image/png" ? " selected" : ""}>PNG</option><option value="image/webp"${state.settings.format === "image/webp" ? " selected" : ""}>WebP</option></select></label>
+          <label><span>Chất lượng</span><select data-setting="quality">${[0.72, 0.82, 0.9, 0.96].map((quality) => `<option value="${quality}"${Number(state.settings.quality) === quality ? " selected" : ""}>${Math.round(quality * 100)}%</option>`).join("")}</select></label>
           <label><span>Giới hạn</span><select data-setting="maxMB"><option value="1.9"${Number(state.settings.maxMB) === 1.9 ? " selected" : ""}>≤ 2 MB</option><option value="5"${Number(state.settings.maxMB) === 5 ? " selected" : ""}>≤ 5 MB</option><option value="48"${Number(state.settings.maxMB) === 48 ? " selected" : ""}>≤ 50 MB</option></select></label>
+          <output class="its-size-estimate" data-export-estimate>Ước tính sau khi có ảnh</output>
         </div>
         <div class="its-export-progress" data-export-progress hidden><div><i data-progress-bar></i></div><span data-progress-label>0 / 0</span><button type="button" data-action="cancel-export">Hủy</button></div>
         <div class="its-export-actions">
@@ -409,6 +565,7 @@
         </div>
       </footer>
       <div class="its-toast-tray" data-toast-tray></div>
+      <button type="button" class="its-sheet-backdrop" data-action="close-panels" aria-label="Đóng bảng công cụ" hidden></button>
       <div class="its-dialog-backdrop" data-folder-dialog hidden><section role="dialog" aria-modal="true" aria-labelledby="its-folder-title"><span>▣</span><div><h3 id="its-folder-title">Cho phép ghi vào thư mục?</h3><p>Đây là chế độ nâng cao. Sau khi tiếp tục, Chrome bắt buộc hiện hộp thoại quyền của trình duyệt. Bạn có thể dùng <b>Tải toàn bộ ZIP</b> để không thấy hộp thoại đó.</p><footer><button type="button" data-action="folder-dialog-close">Dùng ZIP</button><button type="button" class="is-primary" data-action="export-folder-confirm">Tiếp tục chọn thư mục</button></footer></div></section></div>`;
     host.replaceChildren(root);
     previewCanvas = root.querySelector("[data-preview-canvas]");
@@ -417,6 +574,52 @@
     const folderButton = root.querySelector('[data-action="export-folder"]');
     if (zipButton) { zipButton.textContent = "Tải toàn bộ ZIP"; zipButton.classList.add("is-primary"); }
     if (folderButton) { folderButton.textContent = "Ghi thư mục (nâng cao)"; folderButton.classList.remove("is-primary"); folderButton.title = "Chrome sẽ yêu cầu quyền ghi file bằng hộp thoại hệ thống"; }
+    root.dataset.activeTool = state.settings.activeTool || "select";
+    applyZoom();
+  }
+
+  const LAYER_LABELS = Object.freeze({ title: "Tiêu đề", subtitle: "Phụ đề", footer: "Chân ảnh" });
+
+  function activeLayerOrder() {
+    const valid = state.layerOrder.filter((slot) => Object.prototype.hasOwnProperty.call(LAYER_LABELS, slot));
+    return valid.length === 3 ? valid : ["title", "subtitle", "footer"];
+  }
+
+  function analysisFor(item) {
+    if (!item) return { score: 0, tone: "empty", messages: ["Thêm ảnh để bắt đầu phân tích cục bộ."] };
+    const messages = [];
+    let penalty = 0;
+    activeLayerOrder().forEach((slot) => {
+      const layer = layerFor(item, slot);
+      const text = resolveText(layer.text, item).trim();
+      if (!text || layer.visible === false) return;
+      const words = text.split(/\s+/).filter(Boolean).length;
+      if (slot === "title" && words > 8) { penalty += 18; messages.push("Tiêu đề có nhiều hơn 8 từ; nên rút gọn để đọc rõ ở kích thước nhỏ."); }
+      if (layer.x < 0.07 || layer.x > 0.93 || layer.y < 0.08 || layer.y > 0.92) { penalty += 16; messages.push(`${LAYER_LABELS[slot]} đang quá sát mép thumbnail.`); }
+      if (Number(layer.size) < 2 && slot !== "footer") { penalty += 12; messages.push(`${LAYER_LABELS[slot]} có thể quá nhỏ trên danh sách video.`); }
+      if (!layer.autoContrast && String(layer.color).toLowerCase() === String(layer.stroke).toLowerCase()) { penalty += 20; messages.push(`${LAYER_LABELS[slot]} có màu chữ và viền giống nhau, độ tách nền thấp.`); }
+    });
+    if (!messages.length) messages.push("Bố cục nằm trong safe area và lượng chữ phù hợp cho thumbnail.");
+    const score = clamp(100 - penalty, 0, 100);
+    return { score, tone: score >= 82 ? "good" : score >= 62 ? "warn" : "bad", messages: [...new Set(messages)].slice(0, 4) };
+  }
+
+  function analysisMarkup(item) {
+    const analysis = analysisFor(item);
+    return `<section class="its-analysis is-${analysis.tone}" data-analysis-panel><header><div><b>Kiểm tra khả năng đọc</b><small>Phân tích cục bộ · không gửi ảnh</small></div><strong>${analysis.score || "—"}<i>${analysis.score ? "/100" : ""}</i></strong></header><ul>${analysis.messages.map((message) => `<li>${escapeHtml(message)}</li>`).join("")}</ul><div class="its-mini-preview"><canvas width="320" height="180" data-mini-preview aria-label="Preview thumbnail ở kích thước nhỏ"></canvas><span>Mô phỏng danh sách YouTube</span></div></section>`;
+  }
+
+  function layerListMarkup(item) {
+    return `<section class="its-layer-panel"><header><b>Layers</b><span>${activeLayerOrder().length} lớp chữ</span></header><div>${[...activeLayerOrder()].reverse().map((slot) => {
+      const layer = layerFor(item, slot);
+      const active = slot === state.activeSlot;
+      return `<article class="${active ? "is-active" : ""}"><button type="button" data-action="slot" data-slot="${slot}"><i>${slot === "title" ? "T" : slot === "subtitle" ? "S" : "F"}</i><span><strong>${LAYER_LABELS[slot]}</strong><small>${escapeHtml(resolveText(layer.text, item) || "Trống")}</small></span></button><button type="button" data-action="layer-visible" data-slot="${slot}" aria-label="${layer.visible === false ? "Hiện" : "Ẩn"} ${LAYER_LABELS[slot]}" aria-pressed="${layer.visible !== false}">${layer.visible === false ? "○" : "◉"}</button><button type="button" data-action="layer-lock" data-slot="${slot}" aria-label="${layer.locked ? "Mở khóa" : "Khóa"} ${LAYER_LABELS[slot]}" aria-pressed="${Boolean(layer.locked)}">${layer.locked ? "▣" : "□"}</button></article>`;
+    }).join("")}</div><footer><button type="button" data-action="layer-down">↓ Xuống</button><button type="button" data-action="layer-up">↑ Lên</button><button type="button" data-action="duplicate-layer">⧉ Nhân bản</button></footer></section>`;
+  }
+
+  function variantsMarkup() {
+    const hasVariants = state.variants.length > 0;
+    return `<section class="its-variants"><header><div><b>Biến thể A/B/C</b><small>Không ghi đè thiết kế gốc</small></div><button type="button" data-action="create-variants">${hasVariants ? "Tạo lại" : "Tạo 3 bản"}</button></header>${hasVariants ? `<div>${state.variants.map((variant) => `<button type="button" data-action="select-variant" data-variant="${variant.id}" class="${state.activeVariant === variant.id ? "is-active" : ""}"><b>${variant.id}</b><span>${escapeHtml(variant.label)}</span></button>`).join("")}</div><button type="button" data-action="select-variant" data-variant="original" class="its-original-variant${state.activeVariant === "original" ? " is-active" : ""}">Khôi phục bản gốc</button>` : '<p>Tạo ba phương án vị trí và màu chữ để so sánh nhanh.</p>'}</section>`;
   }
 
   function renderInspector() {
@@ -432,6 +635,7 @@
         <button type="button" data-action="edit-mode" data-mode="all"${settings.editMode === "all" ? ' class="is-active"' : ""}>Toàn bộ ảnh</button>
         <button type="button" data-action="edit-mode" data-mode="current"${settings.editMode === "current" ? ' class="is-active"' : ""}${item ? "" : " disabled"}>Ảnh này</button>
       </div>
+      ${layerListMarkup(item)}
       <section class="its-ai-panel">
         <div class="its-ai-head"><div><b>✦ YouTube Trend Title AI</b><small>Title video + chữ thumbnail riêng từng ảnh</small></div><span>${state.ai.running ? `${state.ai.done}/${state.ai.total}` : (state.ai.trendLabel || "Sẵn sàng")}</span></div>
         <label class="its-trend-topic"><span>Chủ đề / từ khóa kênh</span><input type="text" data-setting="youtubeTopic" value="${escapeHtml(settings.youtubeTopic)}" placeholder="soft piano, slow living…"></label>
@@ -473,16 +677,27 @@
         <summary>Chỉnh nâng cao</summary>
         <div class="its-advanced-body">
           <div class="its-image-color"><div><b>Màu & ánh sáng ảnh</b><label><input type="checkbox" data-image-prop="enabled"${imageStyle.enabled ? " checked" : ""}> Bật chỉnh ảnh</label></div>
+            <p class="its-engine-status"><i></i><span><b>Tách nền</b><small>Chưa cấu hình · ảnh không rời thiết bị</small></span></p>
+            <div class="its-field-grid"><label class="its-field"><span>Khung ảnh</span><select data-image-prop="fit"><option value="cover"${imageStyle.fit === "cover" ? " selected" : ""}>Cover</option><option value="contain"${imageStyle.fit === "contain" ? " selected" : ""}>Contain</option></select></label><label class="its-field"><span>Phóng ảnh</span><input type="number" min="0.5" max="3" step="0.05" value="${imageStyle.scale}" data-image-prop="scale"></label></div>
             <label class="its-range"><span>Độ sáng <b>${Math.round(imageStyle.brightness * 100)}%</b></span><input type="range" min="0.5" max="1.5" step="0.01" value="${imageStyle.brightness}" data-image-prop="brightness"></label>
             <label class="its-range"><span>Tương phản <b>${Math.round(imageStyle.contrast * 100)}%</b></span><input type="range" min="0.5" max="1.6" step="0.01" value="${imageStyle.contrast}" data-image-prop="contrast"></label>
             <label class="its-range"><span>Bão hòa <b>${Math.round(imageStyle.saturation * 100)}%</b></span><input type="range" min="0" max="1.8" step="0.01" value="${imageStyle.saturation}" data-image-prop="saturation"></label>
+            <label class="its-range"><span>Nhiệt độ màu <b>${Math.round(imageStyle.temperature)}</b></span><input type="range" min="-100" max="100" step="1" value="${imageStyle.temperature}" data-image-prop="temperature"></label>
+            <label class="its-range"><span>Làm mờ <b>${Number(imageStyle.blur).toFixed(1)}px</b></span><input type="range" min="0" max="16" step="0.5" value="${imageStyle.blur}" data-image-prop="blur"></label>
+            <label class="its-range"><span>Vignette <b>${Math.round(imageStyle.vignette * 100)}%</b></span><input type="range" min="0" max="1" step="0.01" value="${imageStyle.vignette}" data-image-prop="vignette"></label>
+            <div class="its-checks"><label><input type="checkbox" data-image-prop="flipX"${imageStyle.flipX ? " checked" : ""}>Lật ngang</label><label><input type="checkbox" data-image-prop="flipY"${imageStyle.flipY ? " checked" : ""}>Lật dọc</label></div>
             <div class="its-tint-row"><label><input type="color" value="${imageStyle.tint}" data-image-prop="tint"> Màu phủ</label><label class="its-range"><span>Cường độ <b>${Math.round(imageStyle.tintOpacity * 100)}%</b></span><input type="range" min="0" max="0.65" step="0.01" value="${imageStyle.tintOpacity}" data-image-prop="tintOpacity"></label></div>
           </div>
           <label class="its-range"><span>Độ rộng dòng <b data-value-for="maxWidth">${Math.round(layer.maxWidth * 100)}%</b></span><input type="range" min="0.2" max="0.94" step="0.01" value="${layer.maxWidth}" data-layer-prop="maxWidth"></label>
+          <label class="its-range"><span>Giãn dòng <b data-value-for="lineHeight">${Number(layer.lineHeight).toFixed(2)}</b></span><input type="range" min="0.85" max="1.8" step="0.01" value="${layer.lineHeight}" data-layer-prop="lineHeight"></label>
+          <label class="its-range"><span>Giãn chữ <b data-value-for="letterSpacing">${Number(layer.letterSpacing).toFixed(1)}%</b></span><input type="range" min="-0.08" max="0.3" step="0.01" value="${layer.letterSpacing}" data-layer-prop="letterSpacing"></label>
+          <label class="its-range"><span>Xoay chữ <b data-value-for="rotation">${Math.round(layer.rotation)}°</b></span><input type="range" min="-30" max="30" step="1" value="${layer.rotation}" data-layer-prop="rotation"></label>
           <label class="its-range"><span>Độ dày viền <b data-value-for="strokeWidth">${layer.strokeWidth.toFixed(2)}%</b></span><input type="range" min="0" max="0.5" step="0.01" value="${layer.strokeWidth}" data-layer-prop="strokeWidth"></label>
           <label class="its-range"><span>Bóng chữ <b data-value-for="shadow">${Math.round(layer.shadow * 100)}%</b></span><input type="range" min="0" max="1" step="0.01" value="${layer.shadow}" data-layer-prop="shadow"></label>
+          <label class="its-range"><span>Hào quang <b data-value-for="glow">${Math.round(layer.glow * 100)}%</b></span><input type="range" min="0" max="1" step="0.01" value="${layer.glow}" data-layer-prop="glow"></label>
           <label class="its-range"><span>Độ trong <b data-value-for="opacity">${Math.round(layer.opacity * 100)}%</b></span><input type="range" min="0.1" max="1" step="0.01" value="${layer.opacity}" data-layer-prop="opacity"></label>
-          <div class="its-checks"><label><input type="checkbox" data-layer-prop="autoContrast"${layer.autoContrast ? " checked" : ""}>Tự tương phản</label><label><input type="checkbox" data-layer-prop="background"${layer.background ? " checked" : ""}>Nền mờ sau chữ</label></div>
+          <div class="its-checks"><label><input type="checkbox" data-layer-prop="autoContrast"${layer.autoContrast ? " checked" : ""}>Tự tương phản</label><label><input type="checkbox" data-layer-prop="background"${layer.background ? " checked" : ""}>Nền mờ sau chữ</label><label><input type="checkbox" data-layer-prop="gradient"${layer.gradient ? " checked" : ""}>Gradient chữ</label></div>
+          <div class="its-gradient-row"><label><input type="color" value="${layer.gradientStart}" data-layer-prop="gradientStart"><span>Màu đầu</span></label><label><input type="color" value="${layer.gradientEnd}" data-layer-prop="gradientEnd"><span>Màu cuối</span></label></div>
           <label class="its-range"><span>Lớp tối toàn ảnh <b data-value-setting="overlay">${Math.round(settings.overlay * 100)}%</b></span><input type="range" min="0" max="0.6" step="0.01" value="${settings.overlay}" data-setting="overlay"></label>
           <label class="its-field"><span>Hậu tố tên file</span><input type="text" value="${escapeHtml(settings.suffix)}" data-setting="suffix"></label>
         </div>
@@ -490,6 +705,8 @@
       <div class="its-inspector-actions">
         ${settings.editMode === "current" ? '<button type="button" data-action="copy-current-to-all">Áp dụng kiểu này cho tất cả</button><button type="button" data-action="reset-current">Bỏ chỉnh riêng</button>' : '<button type="button" data-action="filename-title">Lấy tên file làm tiêu đề</button>'}
       </div>
+      ${analysisMarkup(item)}
+      ${variantsMarkup()}
       <div class="its-shortcuts"><span>← → đổi ảnh</span><span>Kéo chữ trực tiếp</span><span>Ctrl+Z hoàn tác</span></div>`;
     const weight = inspector.querySelector('[data-layer-prop="weight"]');
     if (weight) weight.value = String(layer.weight);
@@ -608,6 +825,28 @@
     ctx.drawImage(image, sx, sy, sourceWidth, sourceHeight, 0, 0, width, height);
   }
 
+  function drawImageLayer(ctx, image, width, height, item, style) {
+    const imageWidth = Number(image.naturalWidth || image.width);
+    const imageHeight = Number(image.naturalHeight || image.height);
+    if (!imageWidth || !imageHeight) throw new Error("Ảnh chưa giải mã xong");
+    const fit = style.fit === "contain" ? "contain" : "cover";
+    const baseScale = fit === "contain" ? Math.min(width / imageWidth, height / imageHeight) : Math.max(width / imageWidth, height / imageHeight);
+    const scale = baseScale * clamp(style.scale, 0.5, 3);
+    const drawWidth = imageWidth * scale;
+    const drawHeight = imageHeight * scale;
+    const focusX = clamp(item.focusX, 0, 1);
+    const focusY = clamp(item.focusY, 0, 1);
+    const offsetX = (width - drawWidth) * focusX;
+    const offsetY = (height - drawHeight) * focusY;
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate(clamp(style.rotation, -180, 180) * Math.PI / 180);
+    ctx.scale(style.flipX ? -1 : 1, style.flipY ? -1 : 1);
+    ctx.translate(-width / 2, -height / 2);
+    ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+    ctx.restore();
+  }
+
   function sampleBrightness(ctx, x, y, width, height) {
     try {
       const radius = Math.max(4, Math.round(Math.min(width, height) * 0.018));
@@ -642,7 +881,7 @@
 
   function drawTextLayer(ctx, width, height, item, slot, layer, collectHit = false) {
     let text = resolveText(layer.text, item);
-    if (!text) {
+    if (!text || layer.visible === false) {
       if (collectHit) hitBoxes.delete(slot);
       return;
     }
@@ -652,11 +891,12 @@
     ctx.save();
     ctx.globalAlpha = clamp(layer.opacity, 0.05, 1);
     ctx.font = `${layer.italic ? "italic " : ""}${Number(layer.weight) || 600} ${size}px "${family}", sans-serif`;
+    if ("letterSpacing" in ctx) ctx.letterSpacing = `${size * clamp(layer.letterSpacing, -0.08, 0.3)}px`;
     ctx.textAlign = layer.align || "center";
     ctx.textBaseline = "middle";
     const maxWidth = width * clamp(layer.maxWidth, 0.16, 0.98);
     const lines = wrapLines(ctx, text, maxWidth);
-    const lineHeight = size * 1.16;
+    const lineHeight = size * clamp(layer.lineHeight, 0.85, 1.8);
     const totalHeight = Math.max(lineHeight, lines.length * lineHeight);
     const x = width * clamp(layer.x, 0.02, 0.98);
     const y = height * clamp(layer.y, 0.04, 0.96);
@@ -665,27 +905,47 @@
     const fill = layer.autoContrast ? (brightness > 172 ? "#111716" : "#ffffff") : layer.color;
     const stroke = layer.autoContrast ? (brightness > 172 ? "rgba(255,255,255,.78)" : "rgba(8,14,18,.82)") : layer.stroke;
     const boxLeft = layer.align === "left" ? x : layer.align === "right" ? x - widest : x - widest / 2;
+    const localLeft = layer.align === "left" ? 0 : layer.align === "right" ? -widest : -widest / 2;
+    ctx.translate(x, y);
+    ctx.rotate(clamp(layer.rotation, -30, 30) * Math.PI / 180);
     if (layer.background) {
       const padX = size * 0.45;
       const padY = size * 0.24;
       ctx.fillStyle = brightness > 172 ? "rgba(255,255,255,.62)" : "rgba(4,9,13,.5)";
       ctx.beginPath();
-      ctx.roundRect(boxLeft - padX, y - totalHeight / 2 - padY, widest + padX * 2, totalHeight + padY * 2, size * 0.18);
+      ctx.roundRect(localLeft - padX, -totalHeight / 2 - padY, widest + padX * 2, totalHeight + padY * 2, size * 0.18);
       ctx.fill();
     }
-    ctx.shadowColor = `rgba(0,0,0,${clamp(layer.shadow, 0, 1) * 0.72})`;
-    ctx.shadowBlur = size * clamp(layer.shadow, 0, 1) * 0.28;
+    ctx.shadowColor = Number(layer.glow) > 0 ? (layer.gradientEnd || layer.color || "#ffffff") : `rgba(0,0,0,${clamp(layer.shadow, 0, 1) * 0.72})`;
+    ctx.shadowBlur = size * Math.max(clamp(layer.shadow, 0, 1) * 0.28, clamp(layer.glow, 0, 1) * 0.48);
     ctx.shadowOffsetY = size * clamp(layer.shadow, 0, 1) * 0.08;
-    ctx.fillStyle = fill;
+    if (layer.gradient && !layer.autoContrast) {
+      const gradient = ctx.createLinearGradient(localLeft, 0, localLeft + widest, 0);
+      gradient.addColorStop(0, layer.gradientStart || layer.color || "#ffffff");
+      gradient.addColorStop(1, layer.gradientEnd || layer.color || "#7de9ff");
+      ctx.fillStyle = gradient;
+    } else ctx.fillStyle = fill;
     ctx.strokeStyle = stroke;
     ctx.lineJoin = "round";
     ctx.lineWidth = width * clamp(layer.strokeWidth, 0, 1) / 100;
     lines.forEach((line, index) => {
-      const lineY = y - totalHeight / 2 + lineHeight * (index + 0.5);
-      if (ctx.lineWidth > 0) ctx.strokeText(line, x, lineY, maxWidth);
-      ctx.fillText(line, x, lineY, maxWidth);
+      const lineY = -totalHeight / 2 + lineHeight * (index + 0.5);
+      if (ctx.lineWidth > 0) ctx.strokeText(line, 0, lineY, maxWidth);
+      ctx.fillText(line, 0, lineY, maxWidth);
     });
-    if (collectHit) hitBoxes.set(slot, { left: boxLeft - size * 0.4, top: y - totalHeight / 2 - size * 0.3, right: boxLeft + widest + size * 0.4, bottom: y + totalHeight / 2 + size * 0.3 });
+    if (collectHit) {
+      const angle = clamp(layer.rotation, -30, 30) * Math.PI / 180;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const boxWidth = widest + size * 0.8;
+      const boxHeight = totalHeight + size * 0.6;
+      const localCenterX = localLeft + widest / 2;
+      const centerX = x + localCenterX * cos;
+      const centerY = y + localCenterX * sin;
+      const halfWidth = Math.abs(cos) * boxWidth / 2 + Math.abs(sin) * boxHeight / 2;
+      const halfHeight = Math.abs(sin) * boxWidth / 2 + Math.abs(cos) * boxHeight / 2;
+      hitBoxes.set(slot, { left: centerX - halfWidth, top: centerY - halfHeight, right: centerX + halfWidth, bottom: centerY + halfHeight });
+    }
     ctx.restore();
   }
 
@@ -721,8 +981,13 @@
     ctx.fillStyle = "#071019";
     ctx.fillRect(0, 0, width, height);
     const imageStyle = imageStyleFor(item);
-    if (imageStyle.enabled) ctx.filter = `brightness(${clamp(imageStyle.brightness, 0.5, 1.5)}) contrast(${clamp(imageStyle.contrast, 0.5, 1.6)}) saturate(${clamp(imageStyle.saturation, 0, 1.8)})`;
-    drawCover(ctx, image, width, height, item.focusX, item.focusY);
+    if (imageStyle.enabled) {
+      const warmth = clamp(imageStyle.temperature, -100, 100);
+      const sepia = Math.max(0, warmth) * 0.0018;
+      const hue = warmth * -0.06;
+      ctx.filter = `brightness(${clamp(imageStyle.brightness, 0.5, 1.5)}) contrast(${clamp(imageStyle.contrast, 0.5, 1.6)}) saturate(${clamp(imageStyle.saturation, 0, 1.8)}) sepia(${sepia}) hue-rotate(${hue}deg) blur(${clamp(imageStyle.blur, 0, 16)}px)`;
+    }
+    drawImageLayer(ctx, image, width, height, item, imageStyle);
     ctx.filter = "none";
     if (imageStyle.enabled && imageStyle.tintOpacity > 0) {
       ctx.save();
@@ -732,6 +997,13 @@
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
     }
+    if (imageStyle.enabled && imageStyle.vignette > 0) {
+      const vignette = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.18, width / 2, height / 2, Math.max(width, height) * 0.72);
+      vignette.addColorStop(0, "rgba(0,0,0,0)");
+      vignette.addColorStop(1, `rgba(0,0,0,${clamp(imageStyle.vignette, 0, 1) * 0.78})`);
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, width, height);
+    }
     if (state.settings.overlay > 0) {
       const gradient = ctx.createLinearGradient(0, 0, 0, height);
       gradient.addColorStop(0, `rgba(3,8,12,${state.settings.overlay * 0.35})`);
@@ -740,20 +1012,68 @@
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
     }
-    for (const slot of ["title", "subtitle", "footer"]) {
-      const layer = layerFor(item, slot);
-      await ensureFont(layer.font, layer.weight);
+    const layers = activeLayerOrder().map((slot) => [slot, layerFor(item, slot)]);
+    await Promise.all(layers.map(([, layer]) => ensureFont(layer.font, layer.weight)));
+    try { await document.fonts?.ready; } catch {}
+    for (const [slot, layer] of layers) {
       drawTextLayer(ctx, width, height, item, slot, layer, preview);
     }
-    if (preview && state.settings.safeZone) {
+    if (preview && (state.settings.safeZone || state.settings.grid || state.settings.guides)) {
       ctx.save();
-      ctx.strokeStyle = "rgba(102,238,255,.58)";
       ctx.lineWidth = Math.max(1, width * 0.0012);
-      ctx.setLineDash([width * 0.008, width * 0.006]);
-      ctx.strokeRect(width * 0.05, height * 0.05, width * 0.9, height * 0.9);
+      if (state.settings.grid) {
+        ctx.strokeStyle = "rgba(255,255,255,.18)";
+        ctx.setLineDash([]);
+        for (let column = 1; column < 12; column += 1) { ctx.beginPath(); ctx.moveTo(width * column / 12, 0); ctx.lineTo(width * column / 12, height); ctx.stroke(); }
+        for (let row = 1; row < 8; row += 1) { ctx.beginPath(); ctx.moveTo(0, height * row / 8); ctx.lineTo(width, height * row / 8); ctx.stroke(); }
+      }
+      if (state.settings.guides) {
+        ctx.strokeStyle = "rgba(255,211,106,.38)";
+        ctx.setLineDash([width * 0.004, width * 0.006]);
+        ctx.beginPath(); ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height); ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2); ctx.stroke();
+      }
+      if (state.settings.safeZone) {
+        ctx.strokeStyle = "rgba(102,238,255,.68)";
+        ctx.setLineDash([width * 0.008, width * 0.006]);
+        ctx.strokeRect(width * 0.05, height * 0.05, width * 0.9, height * 0.9);
+      }
       ctx.restore();
     }
     ctx.restore();
+  }
+
+  function applyZoom() {
+    if (!root) return;
+    const raw = state.settings.zoom;
+    const scale = raw === "fit" ? 1 : clamp(raw, 0.35, 2.5);
+    root.style.setProperty("--its-canvas-zoom", String(scale));
+    root.classList.toggle("is-canvas-zoomed", raw !== "fit" && scale !== 1);
+    const label = root.querySelector("[data-zoom-label]");
+    if (label) label.textContent = raw === "fit" ? "Fit" : `${Math.round(scale * 100)}%`;
+  }
+
+  function refreshAnalysisPanel(item) {
+    const panel = root?.querySelector("[data-analysis-panel]");
+    if (panel) panel.outerHTML = analysisMarkup(item);
+    const mini = root?.querySelector("[data-mini-preview]");
+    if (mini && lastPreviewBuffer && state.settings.miniPreview) {
+      const miniContext = mini.getContext("2d", { alpha: false });
+      miniContext.clearRect(0, 0, mini.width, mini.height);
+      miniContext.drawImage(lastPreviewBuffer, 0, 0, mini.width, mini.height);
+    }
+  }
+
+  function updateExportEstimate() {
+    const output = root?.querySelector("[data-export-estimate]");
+    if (!output || !lastPreviewBuffer) return;
+    const token = renderToken;
+    const preset = outputPreset();
+    canvasToBlob(lastPreviewBuffer, state.settings.format, clamp(state.settings.quality, 0.45, 1)).then((blob) => {
+      if (!root || token !== renderToken) return;
+      const ratio = preset.width * preset.height / Math.max(1, lastPreviewBuffer.width * lastPreviewBuffer.height);
+      const estimate = blob.size * Math.max(1, ratio * 0.72);
+      output.textContent = `Ước tính ${estimate >= 1048576 ? `${(estimate / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(estimate / 1024))} KB`}`;
+    }).catch(() => { output.textContent = "Chưa thể ước tính"; });
   }
 
   function schedulePreview() {
@@ -761,11 +1081,12 @@
     const item = activeItem();
     updateStageMeta();
     if (!item) return;
+    if (global.document.hidden) return;
     cancelAnimationFrame(previewFrame);
     previewFrame = requestAnimationFrame(() => {
     const token = ++renderToken;
     const preset = outputPreset();
-    const width = Math.min(1280, preset.width);
+    const width = Math.min(DESIGN_WIDTH, preset.width);
     const height = Math.round(width * preset.height / preset.width);
     const buffer = document.createElement("canvas");
     buffer.width = width;
@@ -778,6 +1099,9 @@
         if (previewCanvas.width !== width) previewCanvas.width = width;
         if (previewCanvas.height !== height) previewCanvas.height = height;
         previewContext.drawImage(buffer, 0, 0);
+        lastPreviewBuffer = buffer;
+        refreshAnalysisPanel(item);
+        updateExportEstimate();
         root.querySelector("[data-rendering]").hidden = true;
         updateStageMeta();
       })
@@ -827,8 +1151,16 @@
   function applyPendingProject() {
     const data = state.pendingProject;
     if (!data) return;
-    if (data.template) state.template = { ...clone(DEFAULT_TEMPLATE), ...data.template };
+    if (data.template) state.template = {
+      image: { ...DEFAULT_IMAGE_STYLE, ...(data.template.image || {}) },
+      title: { ...DEFAULT_TEMPLATE.title, ...(data.template.title || {}) },
+      subtitle: { ...DEFAULT_TEMPLATE.subtitle, ...(data.template.subtitle || {}) },
+      footer: { ...DEFAULT_TEMPLATE.footer, ...(data.template.footer || {}) }
+    };
     if (data.settings) state.settings = { ...initialSettings(), ...data.settings };
+    if (Array.isArray(data.layerOrder)) state.layerOrder = data.layerOrder;
+    if (Array.isArray(data.variants)) state.variants = data.variants;
+    state.variantBase = data.variantBase || null;
     const map = new Map((data.images || []).map((entry) => [entry.name, entry]));
     state.items.forEach((item) => {
       const saved = map.get(item.name) || map.get(item.name.split(/[\\/]/).pop());
@@ -889,18 +1221,105 @@
     persistSettings();
   }
 
+  function moveActiveLayer(direction) {
+    const order = activeLayerOrder();
+    const index = order.indexOf(state.activeSlot);
+    const next = clamp(index + direction, 0, order.length - 1);
+    if (next === index) return;
+    pushHistory();
+    [order[index], order[next]] = [order[next], order[index]];
+    state.layerOrder = order;
+    renderInspector();
+    schedulePreview();
+    persistSettings();
+  }
+
+  function duplicateActiveLayer() {
+    const source = layerFor(activeItem(), state.activeSlot);
+    const targetSlot = ["title", "subtitle", "footer"].find((slot) => slot !== state.activeSlot && !resolveText(layerFor(activeItem(), slot).text, activeItem()).trim())
+      || (state.activeSlot === "title" ? "subtitle" : "footer");
+    pushHistory();
+    state.template[targetSlot] = { ...source, x: clamp(source.x + 0.03, 0.02, 0.98), y: clamp(source.y + 0.08, 0.04, 0.96), text: source.text || LAYER_LABELS[state.activeSlot] };
+    state.activeSlot = targetSlot;
+    renderInspector();
+    schedulePreview();
+    persistSettings();
+    notify(`Đã nhân bản sang ${LAYER_LABELS[targetSlot]}.`, "success");
+  }
+
+  function createVariants() {
+    const base = clone(state.template);
+    state.variantBase = base;
+    state.variants = [
+      { id: "A", label: "Trái điện ảnh", template: { ...clone(base), title: { ...base.title, x: 0.08, y: 0.32, align: "left", gradient: false }, subtitle: { ...base.subtitle, x: 0.08, y: 0.46, align: "left" } } },
+      { id: "B", label: "Giữa nổi bật", template: { ...clone(base), title: { ...base.title, x: 0.5, y: 0.48, align: "center", uppercase: true, glow: 0.28 }, subtitle: { ...base.subtitle, x: 0.5, y: 0.61, align: "center" } } },
+      { id: "C", label: "Gradient hiện đại", template: { ...clone(base), title: { ...base.title, x: 0.9, y: 0.68, align: "right", gradient: true, gradientStart: "#ffffff", gradientEnd: "#65e9ef" }, subtitle: { ...base.subtitle, x: 0.9, y: 0.79, align: "right" } } }
+    ];
+    state.activeVariant = "original";
+    renderInspector();
+    persistSettings();
+    notify("Đã tạo ba biến thể A/B/C từ thiết kế hiện tại.", "success");
+  }
+
+  function selectVariant(id) {
+    pushHistory();
+    if (id === "original" && state.variantBase) state.template = clone(state.variantBase);
+    else {
+      const variant = state.variants.find((entry) => entry.id === id);
+      if (!variant) return;
+      state.template = clone(variant.template);
+    }
+    state.activeVariant = id;
+    renderInspector();
+    schedulePreview();
+    persistSettings();
+  }
+
+  function setToolPanel(tool) {
+    if (["shape", "icon"].includes(tool)) return notify("Engine tài nguyên này chưa được cấu hình; không có dữ liệu giả được chèn vào dự án.", "info");
+    state.settings.activeTool = tool;
+    root.dataset.activeTool = tool;
+    root.querySelectorAll("[data-action=tool-panel]").forEach((button) => {
+      const active = button.dataset.tool === tool;
+      button.classList.toggle("is-active", active);
+      if (active) button.setAttribute("aria-current", "true"); else button.removeAttribute("aria-current");
+    });
+    root.classList.remove("show-library-sheet", "show-inspector-sheet");
+    if (["image", "upload"].includes(tool)) root.classList.add("show-library-sheet");
+    else if (["text", "effects", "background"].includes(tool)) root.classList.add("show-inspector-sheet");
+    else if (tool === "template") root.querySelector("[data-preset-row]")?.scrollIntoView?.({ block: "nearest", inline: "start" });
+    const backdrop = root.querySelector(".its-sheet-backdrop");
+    if (backdrop) backdrop.hidden = !root.matches(".show-library-sheet,.show-inspector-sheet");
+    if (tool === "upload") root.querySelector("[data-file-input]")?.click();
+  }
+
+  function closeToolPanels() {
+    root?.classList.remove("show-library-sheet", "show-inspector-sheet");
+    const backdrop = root?.querySelector(".its-sheet-backdrop");
+    if (backdrop) backdrop.hidden = true;
+  }
+
+  function setZoom(value) {
+    state.settings.zoom = value === "fit" ? "fit" : clamp(value, 0.35, 2.5);
+    applyZoom();
+    persistSettings();
+  }
+
   function setLayerProperty(property, rawValue, element) {
     const item = activeItem();
     const target = editableLayer(item, state.activeSlot);
     let value = rawValue;
-    if (["size", "weight", "maxWidth", "strokeWidth", "shadow", "opacity", "x", "y"].includes(property)) value = Number(rawValue);
-    if (["autoContrast", "background", "italic", "uppercase"].includes(property)) value = Boolean(rawValue);
+    if (["size", "weight", "maxWidth", "strokeWidth", "shadow", "opacity", "x", "y", "lineHeight", "letterSpacing", "rotation", "glow"].includes(property)) value = Number(rawValue);
+    if (["autoContrast", "background", "italic", "uppercase", "gradient", "visible", "locked"].includes(property)) value = Boolean(rawValue);
     target[property] = value;
     if (property === "font") ensureFont(value, layerFor(item, state.activeSlot).weight).then(schedulePreview);
     const label = root.querySelector(`[data-value-for="${property}"]`);
     if (label) {
       if (property === "size" || property === "strokeWidth") label.textContent = `${Number(value).toFixed(property === "size" ? 1 : 2)}%`;
-      else if (property === "maxWidth" || property === "shadow" || property === "opacity") label.textContent = `${Math.round(Number(value) * 100)}%`;
+      else if (property === "maxWidth" || property === "shadow" || property === "opacity" || property === "glow") label.textContent = `${Math.round(Number(value) * 100)}%`;
+      else if (property === "lineHeight") label.textContent = Number(value).toFixed(2);
+      else if (property === "letterSpacing") label.textContent = `${Number(value).toFixed(2)}em`;
+      else if (property === "rotation") label.textContent = `${Math.round(Number(value))}°`;
     }
     if (element?.matches("textarea") && state.settings.editMode === "current") item.overrides[state.activeSlot] ||= {};
     const outputPreview = root.querySelector(".its-output-name-preview");
@@ -911,7 +1330,9 @@
 
   function setImageStyleProperty(property, rawValue) {
     const target = editableImageStyle(activeItem());
-    target[property] = property === "enabled" ? Boolean(rawValue) : (property === "tint" ? rawValue : Number(rawValue));
+    target[property] = ["enabled", "flipX", "flipY"].includes(property)
+      ? Boolean(rawValue)
+      : ["tint", "fit"].includes(property) ? rawValue : Number(rawValue);
     schedulePreview();
     persistSettings();
   }
@@ -932,8 +1353,8 @@
     state.settings[property] = value;
     const label = root.querySelector(`[data-value-setting="${property}"]`);
     if (label && property === "overlay") label.textContent = `${Math.round(Number(value) * 100)}%`;
-    if (property === "output") schedulePreview();
-    else if (property === "overlay" || property === "safeZone") schedulePreview();
+    if (["output", "overlay", "safeZone"].includes(property)) schedulePreview();
+    else if (["format", "quality", "maxMB"].includes(property)) updateExportEstimate();
     persistSettings();
   }
 
@@ -956,12 +1377,56 @@
   function projectData() {
     return {
       format: "hh-image-text-project",
-      version: 1,
+      version: PROJECT_SCHEMA_VERSION,
       savedAt: new Date().toISOString(),
       template: state.template,
       settings: state.settings,
+      layerOrder: activeLayerOrder(),
+      variants: state.variants,
+      variantBase: state.variantBase,
       images: state.items.map((item) => ({ name: item.name, youtubeTitle: item.youtubeTitle || "", outputBaseName: item.outputBaseName || "", overrides: item.overrides, focusX: item.focusX, focusY: item.focusY }))
     };
+  }
+
+  function validateProjectData(data) {
+    if (!isPlainRecord(data) || data.format !== "hh-image-text-project") throw new Error("Không đúng định dạng project");
+    if (![1, PROJECT_SCHEMA_VERSION].includes(Number(data.version || 1))) throw new Error("Phiên bản project chưa được hỗ trợ");
+    if (data.images != null && (!Array.isArray(data.images) || data.images.length > 5000)) throw new Error("Danh sách ảnh trong project không hợp lệ");
+    const layerKeys = Object.keys(DEFAULT_LAYER);
+    const imageKeys = Object.keys(DEFAULT_IMAGE_STYLE);
+    const settingKeys = Object.keys(initialSettings());
+    const template = isPlainRecord(data.template) ? {
+      image: { ...DEFAULT_IMAGE_STYLE, ...safeRecord(data.template.image, imageKeys) },
+      title: { ...DEFAULT_TEMPLATE.title, ...safeRecord(data.template.title, layerKeys) },
+      subtitle: { ...DEFAULT_TEMPLATE.subtitle, ...safeRecord(data.template.subtitle, layerKeys) },
+      footer: { ...DEFAULT_TEMPLATE.footer, ...safeRecord(data.template.footer, layerKeys) }
+    } : clone(DEFAULT_TEMPLATE);
+    const settings = { ...initialSettings(), ...safeRecord(data.settings, settingKeys) };
+    const images = (data.images || []).map((entry) => {
+      if (!isPlainRecord(entry) || typeof entry.name !== "string" || entry.name.length > 500) throw new Error("Metadata ảnh trong project không hợp lệ");
+      const overrides = {};
+      if (isPlainRecord(entry.overrides)) {
+        ["title", "subtitle", "footer"].forEach((slot) => { if (entry.overrides[slot]) overrides[slot] = safeRecord(entry.overrides[slot], layerKeys); });
+        if (entry.overrides.image) overrides.image = safeRecord(entry.overrides.image, imageKeys);
+      }
+      return { name: entry.name, youtubeTitle: String(entry.youtubeTitle || "").slice(0, 100), outputBaseName: String(entry.outputBaseName || "").slice(0, 180), overrides, focusX: clamp(entry.focusX ?? 0.5, 0, 1), focusY: clamp(entry.focusY ?? 0.5, 0, 1) };
+    });
+    const layerOrder = Array.isArray(data.layerOrder) ? data.layerOrder.filter((slot) => Object.prototype.hasOwnProperty.call(LAYER_LABELS, slot)) : ["title", "subtitle", "footer"];
+    const validatedOrder = layerOrder.length === 3 && new Set(layerOrder).size === 3 ? layerOrder : ["title", "subtitle", "footer"];
+    const sanitizeTemplate = (candidate) => isPlainRecord(candidate) ? {
+      image: { ...DEFAULT_IMAGE_STYLE, ...safeRecord(candidate.image, imageKeys) },
+      title: { ...DEFAULT_TEMPLATE.title, ...safeRecord(candidate.title, layerKeys) },
+      subtitle: { ...DEFAULT_TEMPLATE.subtitle, ...safeRecord(candidate.subtitle, layerKeys) },
+      footer: { ...DEFAULT_TEMPLATE.footer, ...safeRecord(candidate.footer, layerKeys) }
+    } : null;
+    const variants = Array.isArray(data.variants) ? data.variants.slice(0, 3).map((variant, index) => {
+      if (!isPlainRecord(variant)) return null;
+      const variantTemplate = sanitizeTemplate(variant.template);
+      if (!variantTemplate) return null;
+      return { id: String(variant.id || String.fromCharCode(65 + index)).slice(0, 4), label: String(variant.label || `Biến thể ${index + 1}`).slice(0, 80), template: variantTemplate };
+    }).filter(Boolean) : [];
+    const variantBase = sanitizeTemplate(data.variantBase);
+    return { format: "hh-image-text-project", version: PROJECT_SCHEMA_VERSION, template, settings, images, layerOrder: validatedOrder, variants, variantBase };
   }
 
   function exportProject() {
@@ -972,9 +1437,11 @@
   async function importProject(file) {
     try {
       const data = JSON.parse(await file.text());
-      if (data.format !== "hh-image-text-project") throw new Error("Không đúng định dạng project");
+      const validated = validateProjectData(data);
       pushHistory();
-      state.pendingProject = data;
+      state.pendingProject = validated;
+      state.layerOrder = validated.layerOrder;
+      state.variants = validated.variants;
       applyPendingProject();
       renderAll({ keepPage: true });
       notify("Đã nạp cấu hình project.", "success");
@@ -1073,7 +1540,16 @@
 
   function showFolderPermissionDialog(show = true) {
     const dialog = root?.querySelector("[data-folder-dialog]");
-    if (dialog) dialog.hidden = !show;
+    if (!dialog) return;
+    if (show) {
+      activeDialogTrigger = global.document.activeElement instanceof HTMLElement ? global.document.activeElement : null;
+      dialog.hidden = false;
+      requestAnimationFrame(() => dialog.querySelector("button")?.focus());
+      return;
+    }
+    dialog.hidden = true;
+    if (activeDialogTrigger?.isConnected) activeDialogTrigger.focus();
+    activeDialogTrigger = null;
   }
 
   async function exportFolder() {
@@ -1170,7 +1646,7 @@
       safe: "moderate"
     });
     try {
-      const response = await fetch(`/api/search/youtube?${params}`, { credentials: "include", cache: "no-store", headers: { Accept: "application/json" } });
+      const response = await fetch(`/api/search/youtube?${params}`, { credentials: "include", cache: "no-store", headers: { Accept: "application/json" }, signal: eventController?.signal });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error || `YouTube Trends HTTP ${response.status}`);
       const items = Array.isArray(payload.items) ? payload.items.slice(0, 12) : [];
@@ -1213,6 +1689,7 @@
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
+          signal: eventController?.signal,
           body: JSON.stringify({
             actionType: "image-text-youtube-batch",
             input: [`Chủ đề: ${state.settings.youtubeTopic}`, `Khoảng xu hướng: ${state.settings.trendPeriod === "week" ? "7 ngày" : "30 ngày"}`, `Ngôn ngữ title: ${state.settings.titleLanguage}`, `Phong cách chữ: ${state.settings.aiPrompt}`].join("\n"),
@@ -1260,6 +1737,7 @@
       const usedFallback = Boolean(state.ai.fallbackNotice);
       notify(state.ai.cancel ? `Đã dừng sau ${state.ai.done}/${state.ai.total} ảnh.` : usedFallback ? `Đã tạo title cho ${state.ai.done.toLocaleString("vi-VN")} ảnh bằng chế độ dự phòng. Bạn vẫn có thể xuất ZIP ngay.` : `Đã tạo Title YouTube và chữ thumbnail riêng cho ${state.ai.done.toLocaleString("vi-VN")} ảnh.`, state.ai.cancel || usedFallback ? "info" : "success");
     } catch (error) {
+      if (error?.name === "AbortError") return;
       notify(error.message || "Không thể tạo chữ bằng AI.", "error");
     } finally {
       state.ai.running = false;
@@ -1277,6 +1755,7 @@
       const y = (event.clientY - rect.top) * previewCanvas.height / rect.height;
       const slot = [...hitBoxes.entries()].reverse().find(([, box]) => x >= box.left && x <= box.right && y >= box.top && y <= box.bottom)?.[0];
       if (!slot) return;
+      if (layerFor(activeItem(), slot).locked) return notify(`${LAYER_LABELS[slot]} đang bị khóa.`, "info");
       pushHistory();
       state.activeSlot = slot;
       dragState = { pointerId: event.pointerId, slot };
@@ -1286,8 +1765,11 @@
     previewCanvas.addEventListener("pointermove", (event) => {
       if (!dragState || dragState.pointerId !== event.pointerId) return;
       const rect = previewCanvas.getBoundingClientRect();
-      const x = clamp((event.clientX - rect.left) / rect.width, 0.02, 0.98);
-      const y = clamp((event.clientY - rect.top) / rect.height, 0.04, 0.96);
+      let x = clamp((event.clientX - rect.left) / rect.width, 0.02, 0.98);
+      let y = clamp((event.clientY - rect.top) / rect.height, 0.04, 0.96);
+      if (state.settings.grid) { x = Math.round(x * 24) / 24; y = Math.round(y * 16) / 16; }
+      if (Math.abs(x - 0.5) < 0.012) x = 0.5;
+      if (Math.abs(y - 0.5) < 0.012) y = 0.5;
       const layer = editableLayer(activeItem(), dragState.slot);
       layer.x = x;
       layer.y = y;
@@ -1304,6 +1786,9 @@
   }
 
   function bindEvents() {
+    eventController?.abort?.();
+    eventController = new AbortController();
+    const signal = eventController.signal;
     const fileInput = root.querySelector("[data-file-input]");
     const folderInput = root.querySelector("[data-folder-input]");
     const fontInput = root.querySelector("[data-font-input]");
@@ -1396,6 +1881,25 @@
       else if (name === "invert-selection") setSelection("invert");
       else if (name === "preset") applyPreset(action.dataset.preset);
       else if (name === "slot") { state.activeSlot = action.dataset.slot; renderInspector(); }
+      else if (name === "tool-panel") setToolPanel(action.dataset.tool);
+      else if (name === "close-panels") closeToolPanels();
+      else if (name === "zoom-fit") setZoom("fit");
+      else if (name === "zoom-100") setZoom(1);
+      else if (name === "zoom-in") setZoom(state.settings.zoom === "fit" ? 1.15 : Number(state.settings.zoom) + 0.15);
+      else if (name === "zoom-out") setZoom(state.settings.zoom === "fit" ? 0.85 : Number(state.settings.zoom) - 0.15);
+      else if (name === "toggle-grid") { state.settings.grid = !state.settings.grid; action.setAttribute("aria-pressed", String(state.settings.grid)); schedulePreview(); persistSettings(); }
+      else if (name === "layer-visible" || name === "layer-lock") {
+        pushHistory();
+        const slot = action.dataset.slot;
+        const targetLayer = editableLayer(activeItem(), slot);
+        const property = name === "layer-visible" ? "visible" : "locked";
+        targetLayer[property] = !(layerFor(activeItem(), slot)[property] ?? (property === "visible"));
+        renderInspector(); schedulePreview(); persistSettings();
+      }
+      else if (name === "layer-up" || name === "layer-down") moveActiveLayer(name === "layer-up" ? 1 : -1);
+      else if (name === "duplicate-layer") duplicateActiveLayer();
+      else if (name === "create-variants") createVariants();
+      else if (name === "select-variant") selectVariant(action.dataset.variant);
       else if (name === "edit-mode") { state.settings.editMode = action.dataset.mode; renderInspector(); schedulePreview(); }
       else if (name === "toggle-layer") {
         pushHistory();
@@ -1437,30 +1941,74 @@
     bindCanvas();
 
     keyHandler = (event) => {
-      if (!root?.isConnected || event.target.matches("input,textarea,select,[contenteditable]")) return;
+      if (!root?.isConnected) return;
+      const permissionDialog = root.querySelector("[data-folder-dialog]");
+      if (permissionDialog && !permissionDialog.hidden) {
+        if (event.key === "Escape") { event.preventDefault(); showFolderPermissionDialog(false); return; }
+        if (event.key === "Tab") {
+          const focusable = Array.from(permissionDialog.querySelectorAll("button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])"));
+          if (!focusable.length) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && global.document.activeElement === first) { event.preventDefault(); last.focus(); }
+          else if (!event.shiftKey && global.document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+        return;
+      }
+      if (event.target.matches("input,textarea,select,[contenteditable]")) return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") { event.preventDefault(); event.shiftKey ? redo() : undo(); }
       else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); exportProject(); }
+      else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") { event.preventDefault(); state.layerClipboard = clone(layerFor(activeItem(), state.activeSlot)); notify(`Đã sao chép ${LAYER_LABELS[state.activeSlot]}.`, "success"); }
+      else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v" && state.layerClipboard) { event.preventDefault(); pushHistory(); Object.assign(editableLayer(activeItem(), state.activeSlot), clone(state.layerClipboard)); renderInspector(); schedulePreview(); persistSettings(); }
+      else if ((event.key === "Delete" || event.key === "Backspace") && !layerFor(activeItem(), state.activeSlot).locked) { event.preventDefault(); pushHistory(); editableLayer(activeItem(), state.activeSlot).text = ""; renderInspector(); schedulePreview(); persistSettings(); }
       else if (event.key === "ArrowLeft") navigateImage(-1);
       else if (event.key === "ArrowRight") navigateImage(1);
+      else if (event.key === "Escape") closeToolPanels();
     };
     global.addEventListener("keydown", keyHandler);
+    global.document.addEventListener("paste", (event) => {
+      if (!root?.isConnected || event.target.matches("input,textarea,[contenteditable]")) return;
+      const files = Array.from(event.clipboardData?.files || []).filter((file) => IMAGE_TYPES.has(file.type));
+      if (files.length) { event.preventDefault(); addFiles(files); }
+    }, { signal });
+    global.document.addEventListener("visibilitychange", () => {
+      if (global.document.hidden) cancelAnimationFrame(previewFrame);
+      else schedulePreview();
+    }, { signal });
   }
 
   function mount(target) {
     if (!target) return;
     unmount();
     host = target;
+    const token = lifecycleToken;
     restoreSettings();
     buildShell();
     bindEvents();
     renderAll({ keepPage: true });
+    restoreAutosave(token);
     refreshAiProviderStatus({ quiet: true });
     global.dispatchEvent(new CustomEvent("hh:image-text-ready"));
   }
 
   function unmount() {
+    lifecycleToken += 1;
+    eventController?.abort?.();
+    eventController = null;
     if (keyHandler) global.removeEventListener("keydown", keyHandler);
     keyHandler = null;
+    clearTimeout(autosaveTimer);
+    autosaveTimer = 0;
+    clearTimeout(previewTimer);
+    previewTimer = 0;
+    cancelAnimationFrame(previewFrame);
+    previewFrame = 0;
+    const closingDb = autosaveDbPromise;
+    autosaveDbPromise = null;
+    Promise.resolve(closingDb).then((db) => db?.close?.()).catch(() => {});
+    state.ai.cancel = true;
+    state.exporting = false;
+    state.cancelExport = true;
     state.items.forEach((item) => {
       if (item.url) URL.revokeObjectURL(item.url);
       if (item.renderUrl) URL.revokeObjectURL(item.renderUrl);
@@ -1470,9 +2018,20 @@
     state.activeId = "";
     state.history = [];
     state.future = [];
+    state.pendingProject = null;
+    state.layerOrder = ["title", "subtitle", "footer"];
+    state.layerClipboard = null;
+    state.variants = [];
+    state.variantBase = null;
+    state.activeVariant = "original";
+    state.activeSlot = "title";
     imageCache.forEach((entry) => Promise.resolve(entry?.promise).then((image) => { if (image) image.src = ""; }).catch(() => {}));
     imageCache.clear();
     hitBoxes.clear();
+    lastPreviewBuffer = null;
+    activeDialogTrigger = null;
+    beforeEditSnapshot = null;
+    dragState = null;
     renderToken += 1;
     if (host) host.replaceChildren();
     host = null;
