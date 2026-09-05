@@ -10,7 +10,7 @@
   const VERSION = 1;
   const STORAGE_KEY = "hh.core-gateway.v1";
   const GATEWAY_ROUTE = "/home";
-  const PLATFORM_ENTRY_ROUTE = "/create";
+  const PLATFORM_ENTRY_ROUTE = "/platform";
   const ENTRY_SOURCE = "hh-core";
   // sessionStorage can be unavailable in privacy-restricted embeds and some
   // browser restore states. Keep a page-lifetime fallback bound to the exact
@@ -33,6 +33,7 @@
     "/galaxy/settings"
   ]);
   const CORE_ROUTE_PREFIXES = Object.freeze([
+    "/platform",
     "/home/dashboard",
     "/create",
     "/social-media-tools",

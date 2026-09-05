@@ -23,7 +23,7 @@
     activity: "hh.galaxy.activity.v1",
     notifications: "hh.galaxy.notifications.v1"
   });
-  const CORE_ENTRY_ROUTE = "/create";
+  const CORE_ENTRY_ROUTE = "/platform";
   const AI_ATTACHMENT_CONFIG = Object.freeze({
     databaseName: "hh-galaxy-ai-attachments-v1",
     storeName: "text-attachments",

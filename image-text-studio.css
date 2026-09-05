@@ -101,3 +101,126 @@ body.app-image-text-route .app-workspace:has(.its-app){height:calc(100dvh - 122p
   .its-exportbar{z-index:61;min-height:54px;padding:5px 6px}.its-export-settings label:not(:first-child),.its-size-estimate{display:none}.its-export-settings select{height:40px;max-width:145px;font-size:9px}.its-export-actions button{min-height:44px}.its-export-actions button:not(.is-primary){display:none}.its-export-actions .is-primary{min-width:72px}.its-toast-tray{position:fixed;right:9px;bottom:136px;left:9px}.its-toast{min-width:0;width:100%;max-width:none}.its-analysis li,.its-variants p{font-size:11px}.its-layer-panel article>button strong{font-size:12px}.its-layer-panel article>button small{font-size:9px}.its-field>span,.its-range>span{font-size:12px}.its-field textarea{font-size:16px}.its-ai-panel textarea,.its-trend-topic input{font-size:13px}.its-mode-switch button,.its-slot-tabs button{min-height:44px;font-size:12px}
 }
 @media(forced-colors:active){.its-toolrail button.is-active,.its-layer-panel article.is-active,.its-variants button.is-active{outline:2px solid Highlight}.its-app .is-primary{forced-color-adjust:none}}
+
+/* v3 — readable editing first, explicit paint modes and compact library. */
+.its-app.its-app { --its-muted:#adbfce; --its-line:rgba(168,201,225,.24); font-size:14px; line-height:1.5; grid-template-rows:66px minmax(0,1fr) 76px; }
+.its-app.its-app :is(strong,b,span,small,p,h3,button) { text-shadow:none; }
+.its-app .its-workspace { grid-template-columns:54px minmax(170px,210px) minmax(0,1fr) minmax(330px,370px); gap:10px; padding:10px; background:linear-gradient(130deg,#0a1420,#111628); }
+.its-app .its-inspector { padding:16px; background:linear-gradient(150deg,#152032,#101927); }
+.its-app .its-sheet-close { display:none; }
+.its-app .its-library-close { display:none; }
+.its-app .its-library { padding:12px; background:#101b2a; }
+.its-app .its-stage { background:radial-gradient(ellipse at 50% 45%,#23384d55,transparent 65%),#0b1420; }
+.its-app .its-brand { min-width:200px; }
+.its-app .its-brand strong { font-size:17px; letter-spacing:-.02em; }
+.its-app .its-brand small { font-size:11px; }
+.its-app .its-top-actions button { min-height:42px; font-size:12px; }
+.its-app .its-panel-head strong { font-size:17px; }
+.its-app .its-panel-head small { font-size:11px; white-space:normal; }
+.its-app .its-panel-head button { min-height:38px; font-size:12px; }
+.its-app .its-mode-switch button,.its-app .its-slot-tabs button { min-height:40px; font-size:12px; }
+.its-app .its-slot-tabs { margin-top:13px; margin-bottom:14px; }
+.its-scope-hint { margin:7px 0 12px; font-size:11px; line-height:1.6; color:var(--its-muted); }
+.its-app .its-field>span,.its-app .its-range>span { font-size:12px; color:#d3e0ed; }
+.its-app .its-field>span small { font-size:9px; }
+.its-app .its-range b { font-size:12px; }
+.its-app .its-range input { min-height:24px; }
+.its-app .its-field textarea { min-height:86px; max-height:200px; font:500 17px/1.6 "Be Vietnam Pro",system-ui,sans-serif; padding:12px; }
+.its-app .its-field select,.its-app .its-field input[type=text],.its-app .its-field input[type=number] { min-height:42px; font-size:13px; }
+.its-color-panel { border:1px solid #466178; border-radius:14px; padding:13px; margin:15px 0 12px; background:linear-gradient(135deg,#193043,#182139); box-shadow:inset 0 1px #ffffff0c; }
+.its-color-panel>header { display:flex; align-items:center; justify-content:space-between; gap:9px; margin-bottom:13px; }
+.its-color-panel>header strong { font-size:15px; }
+.its-color-panel>header select { min-height:38px; max-width:175px; padding:5px 8px; border:1px solid #597087; border-radius:8px; color:#eff8ff; background:#102131; font-size:12px; }
+.its-color-fields { display:grid; grid-template-columns:56px minmax(0,1fr) 58px; align-items:start; gap:10px; }
+.its-color-fields label { display:grid; gap:6px; min-width:0; }
+.its-color-fields label>span { font-size:11px; color:#c7d9e7; }
+.its-app .its-color-picker input { width:100%; height:42px; border:1px solid #8494a6; padding:3px; border-radius:8px; background:#0b1724; cursor:pointer; }
+.its-app .its-color-hex input { width:100%; min-width:0; height:42px; border:1px solid #65748b; border-radius:8px; color:#eef6ff; background:#0e1a29; font:500 14px/1.4 ui-monospace,Consolas,monospace; padding:8px; }
+.its-app .its-color-hex input:invalid { border-color:#ff91a7; }
+.its-color-swatches { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:6px; margin-top:12px; }
+.its-app .its-color-swatches button { position:relative; min-width:0; height:34px; padding:4px; border:1px solid #7a8da4; border-radius:8px; background:#101d2c; cursor:pointer; }
+.its-color-swatches button::before { content:""; display:block; width:100%; height:100%; border-radius:4px; background:var(--its-swatch); }
+.its-app .its-color-swatches button[aria-pressed=true] { outline:2px solid #9feefa; outline-offset:2px; }
+.its-color-hint { margin:12px 0 0; font-size:11px; line-height:1.55; color:#bed1e1; }
+.its-app .its-color-panel .its-gradient-row { margin:12px 0 0; }
+.its-app .its-gradient-row label { font-size:12px; grid-template-columns:44px 1fr; }
+.its-app .its-gradient-row input { width:44px; height:38px; }
+.its-app .its-gradient-row[hidden] { display:none; }
+.its-app .its-text-toggles { grid-template-columns:1fr 1fr; }
+.its-app .its-text-toggles button { display:flex; gap:10px; align-items:center; justify-content:center; min-height:40px; font-size:12px; }
+.its-ai-disclosure,.its-layers-disclosure { border:1px solid var(--its-line); border-radius:11px; margin:12px 0; background:#101c2c; }
+.its-ai-disclosure>summary,.its-layers-disclosure>summary { min-height:48px; padding:12px; color:#d5e5f0; font-size:13px; cursor:pointer; }
+.its-ai-disclosure>summary small,.its-layers-disclosure>summary small { display:block; color:var(--its-muted); font-size:10px; }
+.its-app .its-ai-panel { margin:0; border:0; border-top:1px solid var(--its-line); border-radius:0 0 11px 11px; padding:12px; }
+.its-app .its-layer-panel { margin:0; border:0; }
+.its-app .its-layer-panel>footer { position:static; display:grid; margin:0; padding:8px 0 0; min-height:0; height:auto; background:none; border:0; box-shadow:none; }
+.its-app .its-layer-panel>footer button { min-height:40px; font-size:11px; }
+.its-app .its-layer-panel article { grid-template-columns:minmax(0,1fr) 38px 38px; }
+.its-app .its-layer-panel article>button { min-height:42px; }
+.its-app .its-layer-panel article>button strong { font-size:12px; }
+.its-app .its-layer-panel article>button small { font-size:10px; }
+.its-app .its-advanced summary { min-height:44px; font-size:13px; padding:12px; }
+.its-app .its-advanced-body { padding:12px; }
+.its-app .its-checks { flex-wrap:wrap; font-size:12px; }
+.its-app .its-inspector-actions button { min-height:42px; font-size:12px; }
+.its-app .its-position-grid { width:164px; }
+.its-app .its-position-grid button { height:34px; font-size:15px; }
+.its-app .its-toolrail button { min-height:54px; }
+.its-app .its-toolrail button span { font-size:9px; }
+.its-app .its-toolrail button small { font-size:8px; }
+.its-app .its-library-tools label { height:40px; }
+.its-app .its-library-tools input { font-size:12px; }
+.its-app .its-dropzone { grid-template-columns:24px 1fr; }
+.its-app .its-dropzone strong { font-size:12px; }
+.its-app .its-dropzone small { font-size:10px; }
+.its-app .its-library-empty { inset:200px 10px 55px; }
+.its-app .its-library-empty small { font-size:12px; }
+.its-app .its-thumb-grid { grid-auto-rows:100px; }
+.its-app .its-thumb strong { font-size:11px; }
+.its-app .its-thumb small { font-size:10px; }
+.its-app .its-pager span { font-size:12px; }
+.its-app .its-preset-row button { min-height:36px; font-size:11px; }
+.its-app .its-view-controls>button { min-height:36px; font-size:11px; }
+.its-app .its-safe-toggle { font-size:11px; }
+.its-app .its-image-nav strong { font-size:12px; }
+.its-app .its-image-nav small { font-size:10px; }
+.its-app .its-canvas-status { font-size:10px; }
+.its-app .its-export-settings span { font-size:10px; }
+.its-app .its-export-settings select { min-height:40px; font-size:12px; max-width:185px; }
+.its-app .its-export-actions button { min-height:42px; font-size:12px; }
+.its-app .its-export-more>[data-action=toggle-export-more] { min-height:42px; font-size:12px; }
+.its-app .its-exportbar { padding:9px 12px; gap:12px; }
+.its-app .its-ai-head b { font-size:13px; }.its-app .its-ai-head small,.its-app .its-ai-head>span { font-size:10px; }
+.its-app .its-ai-panel textarea,.its-app .its-trend-topic input,.its-app .its-youtube-title-field textarea { font-size:13px; min-height:44px; }
+.its-app .its-ai-row select,.its-app .its-ai-row button,.its-app .its-trend-controls select { min-height:40px; font-size:12px; }
+.its-app .its-ai-options,.its-app .its-trend-topic span,.its-app .its-trend-controls span,.its-app .its-youtube-title-field span { font-size:11px; }
+.its-app .its-ai-status small { font-size:11px; }.its-app .its-ai-status button { min-height:36px; font-size:11px; }
+.its-app .its-analysis li,.its-app .its-variants p { font-size:12px; }.its-app .its-analysis header small,.its-app .its-variants header small { font-size:10px; }
+.its-app .its-variants header button,.its-app .its-variants>div button,.its-app .its-original-variant { min-height:38px; font-size:11px; }
+.its-app .its-shortcuts span { font-size:10px; }
+@container (max-width:1050px) {
+  .its-app.show-library-sheet .its-library-close { display:block; min-width:38px; font-size:20px; }
+  .its-app .its-workspace { grid-template-columns:46px minmax(0,1fr) minmax(310px,350px); gap:8px; padding:8px; }
+  .its-app .its-library { display:none; }
+  .its-app.show-library-sheet .its-library { display:grid; position:absolute; z-index:20; top:8px; bottom:8px; left:62px; width:270px; box-shadow:0 15px 50px #000a; }
+  .its-app .its-workspace { position:relative; }
+  .its-app .its-top-actions button:not(.is-primary):not(:first-child):not(:nth-child(2)) { display:none; }
+  .its-app .its-project-stats { display:none; }
+}
+@media(max-width:760px) {
+  .its-app.its-app { grid-template-rows:58px minmax(0,1fr) 60px 56px; }
+  .its-app .its-inspector-head { position:sticky; top:-16px; z-index:3; margin:-16px -16px 12px; padding:12px; background:#152032; border-bottom:1px solid var(--its-line); }
+  .its-app .its-sheet-close { display:block; min-width:44px; min-height:44px; font-size:24px; }
+  .its-app .its-workspace { display:block; padding:4px; }
+  .its-app .its-toolrail { display:none; }
+  .its-app .its-brand { min-width:0; }.its-app .its-brand strong { font-size:14px; }
+  .its-app .its-inspector { display:none; padding:16px; }
+  .its-app.show-inspector-sheet .its-inspector { display:block; }
+  .its-app.show-library-sheet .its-library { display:grid; position:fixed; z-index:63; top:104px; bottom:128px; left:8px; right:8px; width:auto; }
+  .its-app .its-exportbar { padding:5px; gap:5px; }.its-app .its-export-settings select { max-width:135px; font-size:11px; }
+  .its-app .its-slot-tabs button,.its-app .its-mode-switch button { min-height:44px; font-size:13px; }
+  .its-app .its-color-fields { grid-template-columns:56px minmax(0,1fr) 58px; }
+  .its-app .its-color-swatches button { height:40px; }
+  .its-app .its-field select,.its-app .its-color-hex input,.its-app .its-ai-panel textarea { font-size:16px; }
+  .its-app .its-preset-row button { font-size:11px; }
+}

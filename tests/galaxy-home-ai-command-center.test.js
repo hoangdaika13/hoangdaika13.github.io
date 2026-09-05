@@ -59,7 +59,7 @@ test("Home Command Center reads canonical Layer 1 documents and plans without co
   assert.match(markup, /AI backend[\s\S]*?Chưa cấu hình/);
   assert.doesNotMatch(markup, /Bản mẫu không được tính/);
   assert.equal((markup.match(/data-gha-entry="hh-core"/g) || []).length, 1);
-  assert.equal((markup.match(/data-gha-route="\/create"/g) || []).length, 1);
+  assert.equal((markup.match(/data-gha-route="\/platform"/g) || []).length, 1);
 });
 
 test("an initialized but empty Layer 1 snapshot renders honest zero values", () => {

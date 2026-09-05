@@ -6197,7 +6197,7 @@ function initAppShell() {
         <label><span aria-hidden="true">${sidebarIconMarkup("search")}</span><input type="search" data-sidebar-search placeholder="Tìm chức năng…" autocomplete="off" aria-label="Tìm chức năng trong sidebar"><kbd>Ctrl K</kbd></label>
         <div><small data-sidebar-search-status aria-live="polite">${validSections.reduce((total, section) => total + section.items.length, 0)} chức năng</small>${hiddenRoutes.length ? `<button type="button" data-sidebar-restore-hidden>Khôi phục ${hiddenRoutes.length} mục ẩn</button>` : ""}</div>
       </section>
-      <button class="app-sidebar__home ${route === "/create" ? "is-active" : ""}" type="button" data-app-route="/create" title="Trang chủ HH Platform" ${route === "/create" ? "aria-current=page" : ""}><span aria-hidden="true">${sidebarIconMarkup("home")}</span><b>Trang chủ</b><i aria-hidden="true">→</i></button></div>
+      <button class="app-sidebar__home ${route === "/platform" ? "is-active" : ""}" type="button" data-app-route="/platform" title="Trang chủ HH Platform" ${route === "/platform" ? "aria-current=page" : ""}><span aria-hidden="true">${sidebarIconMarkup("home")}</span><b>Trang chủ</b><i aria-hidden="true">→</i></button></div>
       <div class="app-sidebar__scroll-region" data-sidebar-scroll-region>${pinnedMarkup}<div class="app-sidebar__categories" data-sidebar-categories>${sectionsMarkup}</div><section class="app-sidebar__search-empty" data-sidebar-search-empty hidden><span>⌕</span><strong>Chưa tìm thấy chức năng</strong><p>Thử tên ngắn hơn hoặc tìm trên toàn hệ thống.</p><button type="button" data-command-open>Mở Ctrl K</button></section></div>`;
     document.querySelectorAll(".app-sidebar__footer [data-app-route]").forEach((button) => {
       const target = button.dataset.appRoute;
@@ -6684,6 +6684,47 @@ function initAppShell() {
       workspace.querySelector("[data-app-hub-search]")?.focus({ preventScroll: true });
     });
   };
+  // Adapter owns no new state: use the existing account-scoped sidebar stores
+  // and registry so Home, command search and navigation stay in agreement.
+  const platformHomeChildren = (group) => {
+    const entries = [
+      ...(group.pages || []),
+      ...(group.id === "music-ai" ? musicAIAllPageItems : []),
+      ...(group.id === "dev" ? developerAllToolItems.map((item) => ({ ...item, route: `/dev-tools/${item.id}` })) : []),
+      ...(group.studioItems || []).map((item) => ({ ...item, route: `${group.route}/${item.id}` })),
+      ...[...(group.items || []), ...(group.legacyItems || [])].map((id) => {
+        const item = moduleById(id);
+        return item ? { title: item.title, description: item.description, route: routeForModule(id) } : null;
+      }).filter(Boolean)
+    ];
+    return entries.filter((item) => item.route !== group.route && !item.route.startsWith("/galaxy/") && item.route !== "/home");
+  };
+  const mountPlatformHome = () => {
+    workspace.innerHTML = '<div data-platform-home-host></div>';
+    let storage = null;
+    try { storage = window.localStorage; } catch { /* Homepage remains usable without durable storage. */ }
+    const mounted = window.HHPlatformHome?.mount?.(workspace.firstElementChild, {
+      sections: navigationSections, groups, children: platformHomeChildren,
+      aliases: sidebarSearchAliases, admin: isCurrentUserAdmin(), isAdmin: isCurrentUserAdmin,
+      user: readCurrentAuthUser(), storage,
+      navigate: (route) => { location.hash = `#${platformSafeRoute(route)}`; },
+      getFavorites: readSidebarFavorites, getPins: readSidebarPins, getRecent: readSidebarRecent,
+      toggleFavorite: (route) => {
+        if (!navigationItemForRoute(route)) return false;
+        const routes = readSidebarFavorites();
+        saveSidebarFavorites(routes.includes(route) ? routes.filter((entry) => entry !== route) : [...routes, route]);
+        renderNavigation(); return true;
+      },
+      togglePin: (route) => {
+        if (!navigationItemForRoute(route)) return false;
+        const routes = readSidebarPins();
+        if (!routes.includes(route) && routes.length >= 5) return false;
+        saveSidebarPins(routes.includes(route) ? routes.filter((entry) => entry !== route) : [...routes, route]);
+        renderNavigation(); return true;
+      }
+    });
+    if (!mounted) mountSimpleView("Trang chủ HH Platform", "Chưa tải được danh mục. Dữ liệu trong các workspace vẫn được giữ nguyên.", '<button type="button" data-shell-retry-route>Thử lại</button>');
+  };
   const mountSimpleView = (title, description, content) => {
     workspace.innerHTML = `<section class="app-simple-view"><div class="app-simple-view__intro"><p class="section-kicker">HH Platform</p><h2>${title}</h2><p>${description}</p></div>${content}</section>`;
   };
@@ -6750,10 +6791,11 @@ function initAppShell() {
     Object.assign(crumbLabels, { play: "HH Play", arcade: "Arcade Galaxy", party: "Party Room", watch: "Watch Party", story: "Story Universe", escape: "Escape Room", rhythm: "Rhythm Arena", pet: "HH Virtual Pet", chill: "Chill Rooms", quiz: "Quiz Arena", game: "Game · EonWild", world: "Thế giới sống", species: "Eon Codex", ecosystem: "Lưới sinh thái", timeline: "Eon Atlas", expeditions: "Thám hiểm", lineage: "Dòng gene", observer: "Observer & Replay", network: "Multiplayer Readiness" });
     if (route === "/universe/timeline" || route.startsWith("/universe/timeline/")) crumbLabels.timeline = "Dòng thời gian Vũ trụ";
     crumbLabels["social-media-tools"] = "Công cụ truyền thông xã hội";
+    crumbLabels.platform = "Trang chủ";
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
     let crumbRoute = "";
-    breadcrumb.innerHTML = route === "/home" ? `<button type="button" aria-current="page">Galaxy Gateway</button>` : [`<button type="button" data-app-route="/create">HH Platform</button>`, ...crumbs.map((crumb, index) => {
+    breadcrumb.innerHTML = route === "/home" ? `<button type="button" aria-current="page">Galaxy Gateway</button>` : [`<button type="button" data-app-route="/platform">HH Platform</button>`, ...crumbs.map((crumb, index) => {
       crumbRoute += `/${crumb}`;
       const isCurrent = index === crumbs.length - 1;
       const label = isCurrent && module?.title ? module.title : routeTools.find((item) => item.id === crumb)?.title || crumbLabels[crumb] || crumb;
@@ -6782,7 +6824,7 @@ function initAppShell() {
     if (!value) return input;
     const route = value.split("?")[0];
     const gateway = window.HHCoreGateway;
-    if (route === "/home" && gateway?.hasAccess?.()) return gateway.platformEntryRoute || "/create";
+    if (route === "/home" && gateway?.hasAccess?.()) return gateway.platformEntryRoute || "/platform";
     return input;
   };
   const grantCoreAccessFromGateway = (request = {}) => {
@@ -6819,7 +6861,7 @@ function initAppShell() {
     // `#/home` must remain inside the second layer. Only the explicit Core
     // exit/logout/auth-clear flows remove access before navigating Home.
     if (route === gateway.gatewayRoute && gateway.hasAccess()) {
-      const platformEntry = gateway.platformEntryRoute || "/create";
+      const platformEntry = gateway.platformEntryRoute || "/platform";
       syncCoreLayer("platform");
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${platformEntry}`);
       return platformEntry;
@@ -6829,7 +6871,7 @@ function initAppShell() {
     // while retaining its grant. Unknown or malformed destinations stay in
     // Layer Two and recover at its canonical entry point.
     if (resolution.layer === "unknown" && gateway.hasAccess()) {
-      const platformEntry = gateway.platformEntryRoute || "/create";
+      const platformEntry = gateway.platformEntryRoute || "/platform";
       syncCoreLayer("platform");
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${platformEntry}`);
       return platformEntry;
@@ -7188,6 +7230,7 @@ function initAppShell() {
     if (hasLiveSameRouteWorkspace(route)) return;
     if (syncLiveGalaxyLayerOneRoute(route)) return;
     cleanupGalaxyEngineTakeover();
+    window.HHPlatformHome?.unmount?.();
     window.HHGalaxyLayerOne?.unmount?.();
     window.HHGalaxyCreatorStudio?.unmount?.();
     window.HHGalaxyHomeAI?.unmount?.();
@@ -7215,6 +7258,7 @@ function initAppShell() {
     }
     activeRoute = route;
     rememberSidebarRoute(route);
+    document.body.classList.toggle("app-platform-home-route", route.split("?")[0] === "/platform");
     const activeGroup = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
     const activeNavigationSection = navigationSectionForRoute(route);
     shell.style.setProperty("--route-accent", activeNavigationSection?.accent || activeGroup?.accent || "#56eaff");
@@ -7334,7 +7378,10 @@ function initAppShell() {
       || routePath === "/communication/community"
       || routePath === "/music/ambient"
       || routePath === "/system/desktop");
-    if (isGalaxyHomeRoute) {
+    if (routePath === "/platform") {
+      updatePageHeader("Trang chủ HH Platform", "Vũ trụ công cụ số của bạn — sáng tạo, học tập, làm việc và kết nối.", route);
+      mountPlatformHome();
+    } else if (isGalaxyHomeRoute) {
       const galaxyHomeMeta = route === "/home"
         ? ["HH Galaxy Map", "Bản đồ trực quan dẫn tới toàn bộ chức năng thật trong HH Platform."]
         : route === "/home/dashboard"
@@ -8033,6 +8080,7 @@ function initAppShell() {
   let pendingAssetRoute = "";
   const routeAssetRetries = new Map();
   const renderRouteLoading = (route) => {
+    window.HHPlatformHome?.unmount?.();
     activeRoute = route;
     window.HHSurfaceBoot?.hold?.({
       route,
@@ -8152,7 +8200,11 @@ function initAppShell() {
   };
   const searchItems = () => {
     const modules = moduleList().filter((item) => item.id !== "admin-panel" || isCurrentUserAdmin()).map((item) => ({ type: "Công cụ", title: item.title, description: item.description, route: routeForModule(item.id), key: `${item.title} ${item.description} ${(item.features || []).join(" ")}` }));
-    const commandCenter = window.HHCommandCenter?.searchItems?.() || [];
+    const commandCenter = [
+      { type: "HH Platform", title: "Trang chủ HH Platform", description: "Sáu nhóm chức năng, yêu thích, gần đây và lộ trình bắt đầu.", route: "/platform", key: "trang chủ lớp 2 platform homepage dashboard" },
+      ...visibleNavigationSections().flatMap((section) => section.items.map((item) => ({ type: section.label, title: item.label, description: sidebarSearchAliases[item.id] || item.label, route: item.route, key: `${item.label} ${sidebarSearchAliases[item.id] || ""}` }))),
+      ...(window.HHCommandCenter?.searchItems?.() || [])
+    ];
     const projectCommands = [
       { type: "Project", title: "Project · Tổng quan", description: "Mở bảng điều hành và sức khỏe dự án.", action: "project-view:overview", key: "project center tổng quan health dashboard" },
       { type: "Project", title: "Project · Danh sách", description: "Quản lý nhiệm vụ theo bảng dữ liệu, lọc và ưu tiên.", action: "project-view:list", key: "project center list danh sách task filter priority" },
@@ -8442,7 +8494,7 @@ function initAppShell() {
       return;
     }
     if (event.target.closest("[data-shell-back]")) {
-      if (window.HHCoreGateway?.hasAccess?.()) location.hash = `#${window.HHCoreGateway.platformEntryRoute || "/create"}`;
+      if (window.HHCoreGateway?.hasAccess?.()) location.hash = `#${window.HHCoreGateway.platformEntryRoute || "/platform"}`;
       else if (history.length > 1) history.back();
       else location.hash = "#/home";
       return;
@@ -8560,7 +8612,7 @@ function initAppShell() {
       if (galaxyLayerActive) focusGalaxySearch();
       else openPalette();
     }
-    if (!typing && event.altKey && event.key.toLowerCase() === "h") { event.preventDefault(); location.hash = `#${galaxyLayerActive ? "/home" : (window.HHCoreGateway?.platformEntryRoute || "/create")}`; }
+    if (!typing && event.altKey && event.key.toLowerCase() === "h") { event.preventDefault(); location.hash = `#${galaxyLayerActive ? "/home" : (window.HHCoreGateway?.platformEntryRoute || "/platform")}`; }
     if (!typing && event.altKey && event.key.toLowerCase() === "m") { event.preventDefault(); location.hash = galaxyLayerActive ? "#/galaxy/music" : "#/music-ai/project"; }
     if (event.key === "Escape") { closePalette(); closeOverlays(); closeSidebarContextMenu(); }
     if (palette?.open && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) {

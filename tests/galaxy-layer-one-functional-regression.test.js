@@ -91,7 +91,7 @@ function analyticsForRange(state, range, now) {
 test("HH CORE remains the only Layer One control authorized to enter Layer Two", () => {
   const home = galaxyHome.viewMarkup("/home", galaxyHome.collectLocalData(memoryStorage(), {}));
   assert.equal((home.match(/data-gha-entry=["']hh-core["']/g) || []).length, 1);
-  assert.match(home, /<button\b[^>]*data-gha-entry=["']hh-core["'][^>]*data-gha-route=["']\/create["']/i);
+  assert.match(home, /<button\b[^>]*data-gha-entry=["']hh-core["'][^>]*data-gha-route=["']\/platform["']/i);
 
   const clickSection = functionSection(homeSource, "handleClick", "handleSubmit");
   assert.match(clickSection, /dataset\.ghaEntry\s*===\s*["']hh-core["']\)\s*enterCore\(/);

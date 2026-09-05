@@ -22,6 +22,7 @@
    */
   const routeManifest = deepFreeze([
     { id: "home-galaxy", planet: "home", title: "Home Galaxy", route: "/home", aliases: ["/"], assetGroup: "home", layout: "atlas", capabilities: ["navigation", "search"], adminOnly: false },
+    { id: "platform-home", planet: "home", title: "Trang chủ HH Platform", route: "/platform", aliases: [], assetGroup: "platform-home", layout: "dashboard", capabilities: ["navigation", "search", "local-preferences"], adminOnly: false },
     { id: "personal-dashboard", planet: "home", title: "Dashboard cá nhân", route: "/home/dashboard", aliases: [], assetGroup: "galaxy-home-ai", layout: "dashboard", capabilities: ["widgets", "local-preferences"], adminOnly: false },
     { id: "favorites", planet: "home", title: "Yêu thích", route: "/favorites", aliases: [], assetGroup: "core", layout: "standard", capabilities: ["local-preferences"], adminOnly: false },
     { id: "recent", planet: "home", title: "Gần đây", route: "/recent", aliases: [], assetGroup: "core", layout: "standard", capabilities: ["local-history"], adminOnly: false },
@@ -275,7 +276,14 @@
   });
 
   function syncRoute(input) {
-    const route = normalizeRoute(input);
+    const requested = normalizeRoute(input);
+    // Hash listeners can run before the application router replaces a locked
+    // deep link. Never apply Platform layout to the still-mounted Gateway.
+    const gateway = global.HHCoreGateway;
+    const resolution = gateway?.resolveRoute?.(requested);
+    const route = resolution?.redirected
+      ? (gateway.hasAccess?.() ? gateway.platformEntryRoute : gateway.gatewayRoute)
+      : requested;
     const match = findRoute(route);
     state.route = route;
     state.manifestId = match.id;

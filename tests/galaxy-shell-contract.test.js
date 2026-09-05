@@ -35,6 +35,7 @@ test("Galaxy Shell exposes a frozen, versioned lifecycle API", () => {
   assert.equal(api.syncRoute("/music-ai/mix").id, "music-ai");
   assert.equal(api.syncRoute("/cosmic-observatory/solar-system").id, "universe");
   assert.equal(api.syncRoute("/home/dashboard").id, "personal-dashboard");
+  assert.equal(api.syncRoute("/platform").id, "platform-home");
   assert.equal(api.syncRoute("/create/ai-center").id, "ai-universe");
   assert.equal(api.syncRoute("/create/workflow").id, "creator-studio");
   assert.equal(api.syncRoute("/communication/community").id, "community-showcase");
@@ -69,6 +70,17 @@ test("route manifest has stable semantic fields and no provider readiness claims
     assert.ok(ids.has(id), `missing Galaxy destination ${id}`);
   }
   assert.doesNotMatch(client, /12\.5K|99\.9% uptime|đã kết nối|online users/i);
+});
+
+test("locked deep links cannot hide the live Gateway behind Platform layout", () => {
+  const window = { HHCoreGateway: {
+    gatewayRoute: "/home", platformEntryRoute: "/platform",
+    resolveRoute: (route) => ({ redirected: route === "/platform", route: "/home" }),
+    hasAccess: () => false
+  } };
+  vm.runInNewContext(client, { window, globalThis: window, URL });
+  assert.equal(window.HHGalaxyShell.syncRoute("/platform").id, "home-galaxy");
+  assert.equal(window.HHGalaxyShell.getState().route, "/home");
 });
 
 test("Platform shell does not claim Layer One routes or legacy aliases", () => {
@@ -121,7 +133,7 @@ test("runtime rollback cleans adapters and immediately rerenders the current rou
 });
 
 test("Galaxy Shell joins the existing brand loader without increasing first-paint requests", () => {
-  assert.match(loader, /brand:[\s\S]*?hh-core-gateway\.js\?v=\d+[\s\S]*?galaxy-shell\.js\?v=7/);
+  assert.match(loader, /brand:[\s\S]*?hh-core-gateway\.js\?v=\d+[\s\S]*?galaxy-shell\.js\?v=9/);
   assert.match(router, /HHAssetLoader\?\.ensureGroup\?\.\("brand"\)/);
   assert.match(router, /brandReady\.then\(initAppShell, initAppShell\)/);
   assert.doesNotMatch(html, /<script\b[^>]*src=["'][^"']*(?:hh-core-gateway|galaxy-shell)\.js/);

@@ -387,7 +387,7 @@
       state.settings = { ...initialSettings(), ...(data.settings || {}) };
       state.layerOrder = Array.isArray(data.layerOrder) ? data.layerOrder : ["title", "subtitle", "footer"];
       state.variants = Array.isArray(data.variants) ? data.variants : [];
-      const overrideMap = new Map(data.overrides || []);
+      const overrideMap = new Map((data.overrides || []).map(([name, ...values]) => [name, values]));
       state.items.forEach((item) => {
         const row = overrideMap.get(item.name);
         if (!row) return;
@@ -491,7 +491,7 @@
           }).join("")}
         </nav>
         <aside class="its-library">
-          <div class="its-panel-head"><div><strong>Kho ảnh</strong><small data-library-summary>Chưa có ảnh</small></div><button type="button" data-action="add-images">＋ Ảnh</button></div>
+          <div class="its-panel-head"><div><strong>Kho ảnh</strong><small data-library-summary>Chưa có ảnh</small></div><button type="button" data-action="add-images">＋ Ảnh</button><button class="its-library-close" type="button" data-action="close-panels" aria-label="Đóng kho ảnh">×</button></div>
           <label class="its-dropzone" data-dropzone tabindex="0"><span>＋</span><strong>Thả ảnh hoặc thư mục vào đây</strong><small>JPG · PNG · WebP · AVIF · tối ưu cho 1.000+ ảnh</small></label>
           <div class="its-library-tools">
             <label><span>⌕</span><input type="search" placeholder="Tìm tên ảnh..." data-search></label>
@@ -630,31 +630,12 @@
     const imageStyle = imageStyleFor(item);
     const settings = state.settings;
     inspector.innerHTML = `
-      <div class="its-panel-head its-inspector-head"><div><strong>Chỉnh chữ nhanh</strong><small>${settings.editMode === "all" ? "Đang áp dụng cho toàn bộ ảnh" : "Chỉ ảnh đang xem"}</small></div><button type="button" data-action="add-font">＋ Font</button></div>
+      <div class="its-panel-head its-inspector-head"><div><strong>Chỉnh chữ nhanh</strong><small>${settings.editMode === "all" ? "Đang áp dụng cho toàn bộ ảnh" : "Chỉ ảnh đang xem"}</small></div><button type="button" data-action="add-font">＋ Font</button><button class="its-sheet-close" type="button" data-action="close-panels" aria-label="Đóng bảng chỉnh chữ">×</button></div>
       <div class="its-mode-switch" role="group" aria-label="Phạm vi chỉnh sửa">
         <button type="button" data-action="edit-mode" data-mode="all"${settings.editMode === "all" ? ' class="is-active"' : ""}>Toàn bộ ảnh</button>
         <button type="button" data-action="edit-mode" data-mode="current"${settings.editMode === "current" ? ' class="is-active"' : ""}${item ? "" : " disabled"}>Ảnh này</button>
       </div>
-      ${layerListMarkup(item)}
-      <section class="its-ai-panel">
-        <div class="its-ai-head"><div><b>✦ YouTube Trend Title AI</b><small>Title video + chữ thumbnail riêng từng ảnh</small></div><span>${state.ai.running ? `${state.ai.done}/${state.ai.total}` : (state.ai.trendLabel || "Sẵn sàng")}</span></div>
-        <label class="its-trend-topic"><span>Chủ đề / từ khóa kênh</span><input type="text" data-setting="youtubeTopic" value="${escapeHtml(settings.youtubeTopic)}" placeholder="soft piano, slow living…"></label>
-        <div class="its-trend-controls">
-          <label><span>Xu hướng</span><select data-setting="trendPeriod"><option value="week">7 ngày gần đây</option><option value="month">30 ngày gần đây</option></select></label>
-          <label><span>Thị trường</span><select data-setting="trendRegion"><option value="US">Quốc tế · US</option><option value="VN">Việt Nam</option><option value="GB">Anh</option><option value="JP">Nhật Bản</option><option value="KR">Hàn Quốc</option></select></label>
-          <label><span>Ngôn ngữ title</span><select data-setting="titleLanguage"><option value="en">English</option><option value="vi">Tiếng Việt</option><option value="ja">日本語</option><option value="ko">한국어</option></select></label>
-        </div>
-        <textarea rows="2" data-setting="aiPrompt" placeholder="Ví dụ: chữ tiếng Anh 2–4 từ, phong cách đồng quê…">${escapeHtml(settings.aiPrompt)}</textarea>
-        <div class="its-ai-row">
-          <select data-setting="aiProvider"><option value="auto">AI tự chọn</option><option value="openai">OpenAI</option><option value="gemini">Gemini</option></select>
-          <select data-setting="aiScope"><option value="current">Ảnh này</option><option value="selected">Ảnh đã chọn</option><option value="page">Trang hiện tại</option><option value="all">Toàn bộ ảnh</option></select>
-          <button type="button" class="is-primary" data-action="ai-generate" ${state.ai.running ? "disabled" : ""}>${state.ai.running ? "Đang tạo…" : "✦ Tạo title + chữ"}</button>
-        </div>
-        <div class="its-ai-options"><label><input type="checkbox" data-setting="aiSubtitle"${settings.aiSubtitle ? " checked" : ""}> Phụ đề</label><label><input type="checkbox" data-setting="structuredNames"${settings.structuredNames ? " checked" : ""}> Tên file 3 phần</label><label><input type="checkbox" data-setting="aiColor"${settings.aiColor ? " checked" : ""}> Màu chữ AI</label>${state.ai.running ? '<button type="button" data-action="ai-cancel">Dừng</button>' : ""}</div>
-        <div class="its-ai-status"><small>${escapeHtml(aiProviderSummary())}</small><button type="button" data-action="ai-refresh-status"${state.ai.providerStatusLoading ? " disabled" : ""}>Kiểm tra</button></div>
-        <label class="its-youtube-title-field"><span>Title YouTube · ảnh đang xem</span><textarea rows="2" data-item-prop="youtubeTitle" placeholder="AI sẽ tạo title video tại đây…"${item ? "" : " disabled"}>${escapeHtml(item?.youtubeTitle || "")}</textarea></label>
-        ${item ? `<code class="its-output-name-preview" title="Tên file khi xuất ZIP">${escapeHtml(outputName(item))}</code>` : ""}
-      </section>
+      <p class="its-scope-hint">${settings.editMode === "all" ? "Mọi chỉnh sửa bên dưới áp dụng cho tất cả ảnh. Nội dung riêng khác vẫn được giữ." : "Chỉnh riêng ảnh này; các ảnh khác không thay đổi."}</p>
       <div class="its-slot-tabs" role="tablist">
         ${[["title", "Tiêu đề"], ["subtitle", "Phụ đề"], ["footer", "Chân ảnh"]].map(([id, label]) => `<button type="button" role="tab" data-action="slot" data-slot="${id}"${state.activeSlot === id ? ' class="is-active" aria-selected="true"' : ""}>${label}</button>`).join("")}
       </div>
@@ -664,12 +645,22 @@
         <label class="its-field its-weight-field"><span>Độ đậm</span><select data-layer-prop="weight"><option value="400">Regular</option><option value="500">Medium</option><option value="600">Semi Bold</option><option value="700">Bold</option><option value="800">Extra Bold</option></select></label>
       </div>
       <label class="its-range"><span>Cỡ chữ <b data-value-for="size">${layer.size.toFixed(1)}%</b></span><input type="range" min="0.6" max="12" step="0.1" value="${layer.size}" data-layer-prop="size"></label>
-      <div class="its-quick-style">
-        <label title="Màu chữ"><input type="color" value="${layer.color}" data-layer-prop="color"><span>Màu chữ</span></label>
-        <label title="Viền chữ"><input type="color" value="${layer.stroke}" data-layer-prop="stroke"><span>Màu viền</span></label>
-        <button type="button" data-action="toggle-layer" data-prop="italic" class="${layer.italic ? "is-active" : ""}"><i>I</i> Nghiêng</button>
-        <button type="button" data-action="toggle-layer" data-prop="uppercase" class="${layer.uppercase ? "is-active" : ""}">AA Viết hoa</button>
+      <section class="its-color-panel" aria-label="Màu và kiểu chữ">
+        <header><strong>Màu chữ</strong><select aria-label="Chế độ màu chữ" data-layer-prop="colorMode"><option value="solid">Màu cố định</option><option value="auto">Tự tương phản</option><option value="gradient">Gradient 2 màu</option></select></header>
+        <div class="its-color-fields">
+          <label class="its-color-picker"><span>Màu chữ</span><input aria-label="Chọn màu chữ" type="color" value="${layer.color}" data-layer-prop="color"></label>
+          <label class="its-color-hex"><span>Mã HEX</span><input aria-label="Mã HEX màu chữ" type="text" value="${layer.color}" data-layer-prop="color" pattern="#[0-9a-fA-F]{6}" maxlength="7" placeholder="#ffffff" spellcheck="false"></label>
+          <label class="its-color-picker"><span>Màu viền</span><input aria-label="Chọn màu viền chữ" type="color" value="${layer.stroke}" data-layer-prop="stroke"></label>
+        </div>
+        <div class="its-color-swatches" role="group" aria-label="Bảng màu chữ nhanh">${["#ffffff", "#111716", "#ff5378", "#ffd36a", "#65e9ef", "#a994ff", "#69edb5", "#ff984a"].map((hex) => `<button type="button" data-action="color-swatch" data-color-swatch="${hex}" aria-label="Màu chữ ${hex}" aria-pressed="false" style="--its-swatch:${hex}"></button>`).join("")}</div>
+        <p class="its-color-hint" data-color-mode-hint aria-live="polite"></p>
+        <div class="its-gradient-row" data-color-gradient hidden><label><input aria-label="Màu gradient đầu" type="color" value="${layer.gradientStart}" data-layer-prop="gradientStart"><span>Màu đầu</span></label><label><input aria-label="Màu gradient cuối" type="color" value="${layer.gradientEnd}" data-layer-prop="gradientEnd"><span>Màu cuối</span></label></div>
+      </section>
+      <div class="its-quick-style its-text-toggles">
+        <button type="button" data-action="toggle-layer" data-prop="italic" aria-pressed="${!!layer.italic}" class="${layer.italic ? "is-active" : ""}"><i>I</i> Nghiêng</button>
+        <button type="button" data-action="toggle-layer" data-prop="uppercase" aria-pressed="${!!layer.uppercase}" class="${layer.uppercase ? "is-active" : ""}">AA Viết hoa</button>
       </div>
+      <details class="its-layers-disclosure"><summary>Sắp xếp & khóa lớp chữ <small>3 lớp</small></summary>${layerListMarkup(item)}</details>
       <div class="its-position-grid" aria-label="Vị trí chữ">
         ${[[0.12, 0.16, "↖"], [0.5, 0.16, "↑"], [0.88, 0.16, "↗"], [0.12, 0.5, "←"], [0.5, 0.5, "•"], [0.88, 0.5, "→"], [0.12, 0.84, "↙"], [0.5, 0.84, "↓"], [0.88, 0.84, "↘"]].map(([x, y, icon]) => `<button type="button" data-action="position" data-x="${x}" data-y="${y}">${icon}</button>`).join("")}
       </div>
@@ -696,8 +687,7 @@
           <label class="its-range"><span>Bóng chữ <b data-value-for="shadow">${Math.round(layer.shadow * 100)}%</b></span><input type="range" min="0" max="1" step="0.01" value="${layer.shadow}" data-layer-prop="shadow"></label>
           <label class="its-range"><span>Hào quang <b data-value-for="glow">${Math.round(layer.glow * 100)}%</b></span><input type="range" min="0" max="1" step="0.01" value="${layer.glow}" data-layer-prop="glow"></label>
           <label class="its-range"><span>Độ trong <b data-value-for="opacity">${Math.round(layer.opacity * 100)}%</b></span><input type="range" min="0.1" max="1" step="0.01" value="${layer.opacity}" data-layer-prop="opacity"></label>
-          <div class="its-checks"><label><input type="checkbox" data-layer-prop="autoContrast"${layer.autoContrast ? " checked" : ""}>Tự tương phản</label><label><input type="checkbox" data-layer-prop="background"${layer.background ? " checked" : ""}>Nền mờ sau chữ</label><label><input type="checkbox" data-layer-prop="gradient"${layer.gradient ? " checked" : ""}>Gradient chữ</label></div>
-          <div class="its-gradient-row"><label><input type="color" value="${layer.gradientStart}" data-layer-prop="gradientStart"><span>Màu đầu</span></label><label><input type="color" value="${layer.gradientEnd}" data-layer-prop="gradientEnd"><span>Màu cuối</span></label></div>
+          <div class="its-checks"><label><input type="checkbox" data-layer-prop="background"${layer.background ? " checked" : ""}>Nền mờ sau chữ</label></div>
           <label class="its-range"><span>Lớp tối toàn ảnh <b data-value-setting="overlay">${Math.round(settings.overlay * 100)}%</b></span><input type="range" min="0" max="0.6" step="0.01" value="${settings.overlay}" data-setting="overlay"></label>
           <label class="its-field"><span>Hậu tố tên file</span><input type="text" value="${escapeHtml(settings.suffix)}" data-setting="suffix"></label>
         </div>
@@ -705,6 +695,25 @@
       <div class="its-inspector-actions">
         ${settings.editMode === "current" ? '<button type="button" data-action="copy-current-to-all">Áp dụng kiểu này cho tất cả</button><button type="button" data-action="reset-current">Bỏ chỉnh riêng</button>' : '<button type="button" data-action="filename-title">Lấy tên file làm tiêu đề</button>'}
       </div>
+      <details class="its-ai-disclosure"><summary>✦ Trợ lý AI <small>Title YouTube & chữ từng ảnh</small></summary><section class="its-ai-panel">
+        <div class="its-ai-head"><div><b>✦ YouTube Trend Title AI</b><small>Title video + chữ thumbnail riêng từng ảnh</small></div><span>${state.ai.running ? `${state.ai.done}/${state.ai.total}` : (state.ai.trendLabel || "Theo provider")}</span></div>
+        <label class="its-trend-topic"><span>Chủ đề / từ khóa kênh</span><input type="text" data-setting="youtubeTopic" value="${escapeHtml(settings.youtubeTopic)}" placeholder="soft piano, slow living…"></label>
+        <div class="its-trend-controls">
+          <label><span>Xu hướng</span><select data-setting="trendPeriod"><option value="week">7 ngày gần đây</option><option value="month">30 ngày gần đây</option></select></label>
+          <label><span>Thị trường</span><select data-setting="trendRegion"><option value="US">Quốc tế · US</option><option value="VN">Việt Nam</option><option value="GB">Anh</option><option value="JP">Nhật Bản</option><option value="KR">Hàn Quốc</option></select></label>
+          <label><span>Ngôn ngữ title</span><select data-setting="titleLanguage"><option value="en">English</option><option value="vi">Tiếng Việt</option><option value="ja">日本語</option><option value="ko">한국어</option></select></label>
+        </div>
+        <textarea rows="2" data-setting="aiPrompt" placeholder="Ví dụ: chữ tiếng Anh 2–4 từ, phong cách đồng quê…">${escapeHtml(settings.aiPrompt)}</textarea>
+        <div class="its-ai-row">
+          <select data-setting="aiProvider"><option value="auto">AI tự chọn</option><option value="openai">OpenAI</option><option value="gemini">Gemini</option></select>
+          <select data-setting="aiScope"><option value="current">Ảnh này</option><option value="selected">Ảnh đã chọn</option><option value="page">Trang hiện tại</option><option value="all">Toàn bộ ảnh</option></select>
+          <button type="button" class="is-primary" data-action="ai-generate" ${state.ai.running ? "disabled" : ""}>${state.ai.running ? "Đang tạo…" : "✦ Tạo title + chữ"}</button>
+        </div>
+        <div class="its-ai-options"><label><input type="checkbox" data-setting="aiSubtitle"${settings.aiSubtitle ? " checked" : ""}> Phụ đề</label><label><input type="checkbox" data-setting="structuredNames"${settings.structuredNames ? " checked" : ""}> Tên file 3 phần</label><label><input type="checkbox" data-setting="aiColor"${settings.aiColor ? " checked" : ""}> Màu chữ AI</label>${state.ai.running ? '<button type="button" data-action="ai-cancel">Dừng</button>' : ""}</div>
+        <div class="its-ai-status"><small>${escapeHtml(aiProviderSummary())}</small><button type="button" data-action="ai-refresh-status"${state.ai.providerStatusLoading ? " disabled" : ""}>Kiểm tra</button></div>
+        <label class="its-youtube-title-field"><span>Title YouTube · ảnh đang xem</span><textarea rows="2" data-item-prop="youtubeTitle" placeholder="AI sẽ tạo title video tại đây…"${item ? "" : " disabled"}>${escapeHtml(item?.youtubeTitle || "")}</textarea></label>
+        ${item ? `<code class="its-output-name-preview" title="Tên file khi xuất ZIP">${escapeHtml(outputName(item))}</code>` : ""}
+      </section></details>
       ${analysisMarkup(item)}
       ${variantsMarkup()}
       <div class="its-shortcuts"><span>← → đổi ảnh</span><span>Kéo chữ trực tiếp</span><span>Ctrl+Z hoàn tác</span></div>`;
@@ -720,6 +729,7 @@
     if (trendPeriod) trendPeriod.value = settings.trendPeriod;
     if (trendRegion) trendRegion.value = settings.trendRegion;
     if (titleLanguage) titleLanguage.value = settings.titleLanguage;
+    syncColorControls();
   }
 
   function renderLibrary() {
@@ -1307,11 +1317,11 @@
 
   function setLayerProperty(property, rawValue, element) {
     const item = activeItem();
-    const target = editableLayer(item, state.activeSlot);
-    let value = rawValue;
-    if (["size", "weight", "maxWidth", "strokeWidth", "shadow", "opacity", "x", "y", "lineHeight", "letterSpacing", "rotation", "glow"].includes(property)) value = Number(rawValue);
-    if (["autoContrast", "background", "italic", "uppercase", "gradient", "visible", "locked"].includes(property)) value = Boolean(rawValue);
-    target[property] = value;
+    const patch = layerEditPatch(property, rawValue);
+    if (!patch) return;
+    applyLayerEdit(state, item, state.activeSlot, patch);
+    const value = patch[property];
+    syncColorControls(element);
     if (property === "font") ensureFont(value, layerFor(item, state.activeSlot).weight).then(schedulePreview);
     const label = root.querySelector(`[data-value-for="${property}"]`);
     if (label) {
@@ -1321,11 +1331,67 @@
       else if (property === "letterSpacing") label.textContent = `${Number(value).toFixed(2)}em`;
       else if (property === "rotation") label.textContent = `${Math.round(Number(value))}°`;
     }
-    if (element?.matches("textarea") && state.settings.editMode === "current") item.overrides[state.activeSlot] ||= {};
     const outputPreview = root.querySelector(".its-output-name-preview");
     if (outputPreview && item) outputPreview.textContent = outputName(item);
     schedulePreview();
     persistSettings();
+  }
+
+  // A deliberate color edit selects its own paint mode. Legacy projects keep
+  // their existing flags until the user changes a color or explicitly a mode.
+  function layerEditPatch(property, rawValue) {
+    if (property === "colorMode") {
+      if (!["solid", "auto", "gradient"].includes(rawValue)) return null;
+      return { autoContrast: rawValue === "auto", gradient: rawValue === "gradient" };
+    }
+    if (!Object.prototype.hasOwnProperty.call(DEFAULT_LAYER, property)) return null;
+    let value = rawValue;
+    if (["size", "weight", "maxWidth", "strokeWidth", "shadow", "opacity", "x", "y", "lineHeight", "letterSpacing", "rotation", "glow"].includes(property)) value = Number(rawValue);
+    if (["autoContrast", "background", "italic", "uppercase", "gradient", "visible", "locked"].includes(property)) value = Boolean(rawValue);
+    if (typeof value === "number" && !Number.isFinite(value)) return null;
+    if (["color", "stroke", "gradientStart", "gradientEnd"].includes(property)) {
+      if (!validHex(value)) return null;
+      value = value.toLowerCase();
+    }
+    const patch = { [property]: value };
+    if (property === "color") Object.assign(patch, { autoContrast: false, gradient: false });
+    if (property === "stroke") patch.autoContrast = false;
+    if (property === "gradientStart" || property === "gradientEnd") Object.assign(patch, { autoContrast: false, gradient: true });
+    if (property === "gradient" && value) patch.autoContrast = false;
+    if (property === "autoContrast" && value) patch.gradient = false;
+    return patch;
+  }
+
+  function applyLayerEdit(model, item, slot, patch) {
+    if (!model.template[slot] || !patch) return;
+    if (model.settings.editMode === "all" || !item) {
+      Object.assign(model.template[slot], patch);
+      // Clear only the properties just edited. Per-image AI titles, geometry
+      // and other overrides survive a global color change.
+      model.items.forEach((image) => {
+        const overrides = image.overrides?.[slot];
+        if (overrides) Object.keys(patch).forEach((key) => { delete overrides[key]; });
+      });
+    } else {
+      item.overrides ||= {};
+      Object.assign(item.overrides[slot] ||= {}, patch);
+    }
+  }
+
+  function syncColorControls(source) {
+    if (!root) return;
+    const layer = layerFor(activeItem(), state.activeSlot);
+    const mode = layer.autoContrast ? "auto" : layer.gradient ? "gradient" : "solid";
+    root.querySelectorAll('[data-layer-prop="colorMode"]').forEach((node) => { node.value = mode; });
+    root.querySelectorAll('[data-layer-prop="autoContrast"],[data-layer-prop="gradient"]').forEach((node) => { node.checked = !!layer[node.dataset.layerProp]; });
+    root.querySelectorAll('[data-layer-prop="color"],[data-layer-prop="stroke"],[data-layer-prop="gradientStart"],[data-layer-prop="gradientEnd"]').forEach((node) => {
+      if (node !== source) node.value = layer[node.dataset.layerProp];
+    });
+    root.querySelectorAll("[data-color-swatch]").forEach((button) => button.setAttribute("aria-pressed", String(mode === "solid" && button.dataset.colorSwatch === String(layer.color).toLowerCase())));
+    const hint = root.querySelector("[data-color-mode-hint]");
+    if (hint) hint.textContent = mode === "auto" ? "Tự chọn trắng/đen theo ảnh. Chọn một màu bên dưới để chuyển sang màu cố định." : mode === "gradient" ? "Đang pha hai màu. Chọn màu chữ cố định để tắt gradient." : `Dùng đúng màu ${layer.color.toUpperCase()} trên preview và ảnh xuất; không tự đổi theo nền.`;
+    const gradients = root.querySelector("[data-color-gradient]");
+    if (gradients) gradients.hidden = mode !== "gradient";
   }
 
   function setImageStyleProperty(property, rawValue) {
@@ -1870,6 +1936,7 @@
       else if (name === "export-project") exportProject();
       else if (name === "undo") undo();
       else if (name === "redo") redo();
+      else if (name === "color-swatch") { pushHistory(); setLayerProperty("color", action.dataset.colorSwatch); }
       else if (name === "sort") { state.sort = state.sort === "asc" ? "desc" : "asc"; renderLibrary(); }
       else if (name === "prev-page" || name === "next-page") { state.page += name === "prev-page" ? -1 : 1; renderLibrary(); }
       else if (name === "prev-image" || name === "next-image") navigateImage(name === "prev-image" ? -1 : 1);
@@ -1917,8 +1984,12 @@
       }
       else if (name === "copy-current-to-all") {
         const item = activeItem(); if (!item) return;
-        pushHistory(); state.template[state.activeSlot] = layerFor(item, state.activeSlot); delete item.overrides[state.activeSlot]; state.settings.editMode = "all";
-        renderInspector(); schedulePreview(); notify("Đã áp dụng kiểu chữ này cho toàn bộ ảnh.", "success");
+        pushHistory();
+        const style = layerFor(item, state.activeSlot);
+        delete style.text;
+        state.settings.editMode = "all";
+        applyLayerEdit(state, item, state.activeSlot, style);
+        renderInspector(); schedulePreview(); persistSettings(); notify("Đã áp dụng kiểu chữ cho toàn bộ ảnh, giữ nguyên nội dung riêng.", "success");
       }
       else if (name === "reset-current") {
         const item = activeItem(); if (!item) return;
@@ -2040,5 +2111,5 @@
     previewContext = null;
   }
 
-  global.HHImageTextStudio = Object.freeze({ mount, unmount, version: "1.0.0" });
+    global.HHImageTextStudio = Object.freeze({ mount, unmount, version: "1.1.0" });
 })(window);

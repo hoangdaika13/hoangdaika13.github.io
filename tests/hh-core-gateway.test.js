@@ -45,7 +45,7 @@ test("HH Core Gateway exposes a frozen session-scoped boundary", () => {
   assert.equal(gateway.version, 1);
   assert.equal(gateway.storageKey, "hh.core-gateway.v1");
   assert.equal(gateway.gatewayRoute, "/home");
-  assert.equal(gateway.platformEntryRoute, "/create");
+  assert.equal(gateway.platformEntryRoute, "/platform");
   assert.equal(gateway.entrySource, "hh-core");
   for (const method of ["normalizeRoute", "isGalaxyRoute", "isCoreRoute", "hasAccess", "enter", "leave", "resolveRoute"]) {
     assert.equal(typeof gateway[method], "function", method);
@@ -100,7 +100,7 @@ test("the Galaxy manifest is an exact, access-free layer-one allowlist", () => {
 
 test("direct Core deep-links stay locked until HH Core grants this tab", () => {
   const storage = memoryStorage();
-  const coreRoutes = ["#/create", "/home/dashboard", "/chat-ai", "/work/projects-tasks", "/settings", "/settings/account/profile"];
+  const coreRoutes = ["/platform", "#/create", "/home/dashboard", "/chat-ai", "/work/projects-tasks", "/settings", "/settings/account/profile"];
   for (const route of coreRoutes) {
     const result = gateway.resolveRoute(route, { storage });
     assert.equal(result.allowed, false, route);

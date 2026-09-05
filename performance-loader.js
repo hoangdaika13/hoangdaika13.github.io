@@ -27,7 +27,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=4", "galaxy-shell.js?v=7"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=5", "galaxy-shell.js?v=9"]
     },
     "auth-effects": {
       /*
@@ -62,9 +62,13 @@
         "home-command-search.js?v=4", "home-widget-project-pulse.js?v=2", "home-health-focus.js?v=2", "home-capability-atlas.js?v=3", "home-live-widgets.js?v=8"
       ]
     },
+    "platform-home": {
+      styles: ["platform-home.css?v=2"],
+      scripts: ["platform-home.js?v=2"]
+    },
     "galaxy-home-ai": {
       styles: ["galaxy-home-ai.css?v=23"],
-      scripts: ["galaxy-home-ai.js?v=15"]
+      scripts: ["galaxy-home-ai.js?v=16"]
     },
     "galaxy-layer-one": {
       styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=7", "galaxy-layer-one-worlds.css?v=15"],
@@ -132,13 +136,13 @@
       styles: [
         "video-editor-studio.css?v=4", "video-editor-resolve.css?v=10",
         "editor-workflow-pro.css?v=2", "davinci-resolve-hub.css?v=4", "video-editor-auto.css?v=1", "h-cosmic-web-studio.css?v=2",
-        "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=22", "image-text-studio.css?v=13", "facebook-page-command-center.css?v=4", "tiktok-creator-galaxy.css?v=2"
+        "video-batch-factory.css?v=4", "youtube-publisher.css?v=4", "youtube-creator-galaxy.css?v=22", "image-text-studio.css?v=15", "facebook-page-command-center.css?v=4", "tiktok-creator-galaxy.css?v=2"
       ],
       scripts: [
         "media-design-studio.js?v=2", "video-editor-studio.js?v=5", "video-batch-factory.js?v=3",
         "video-editor-resolve.js?v=12", "editor-workflow-pro.js?v=2",
         "davinci-resolve-hub.js?v=5", "video-editor-auto.js?v=1", "h-cosmic-web-studio.js?v=3",
-        "youtube-publisher.js?v=9", "youtube-creator-galaxy.js?v=27", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=13", "facebook-page-command-center.js?v=4", "services/tiktokCreatorCore.js?v=2", "services/tiktokCreatorConnections.js?v=2", "services/tiktokCreatorPublishing.js?v=2", "services/tiktokCreatorAnalytics.js?v=2", "tiktok-creator-galaxy.js?v=2"
+        "youtube-publisher.js?v=9", "youtube-creator-galaxy.js?v=27", "vendor/jszip.min.js?v=3.10.1", "image-text-studio.js?v=15", "facebook-page-command-center.js?v=4", "services/tiktokCreatorCore.js?v=2", "services/tiktokCreatorConnections.js?v=2", "services/tiktokCreatorPublishing.js?v=2", "services/tiktokCreatorAnalytics.js?v=2", "tiktok-creator-galaxy.js?v=2"
       ]
     },
     "ai-video-remake": {
@@ -356,6 +360,7 @@
 
   function featureGroupsForRoute(route) {
     const value = normalizeRoute(route);
+    if (value === "/platform") return ["platform-home"];
     // /home is now the mandatory first-layer Galaxy Gateway. A persisted
     // legacy shell flag may not replace the only control that can enter Core.
     if (value === "/home") return ["galaxy-home-ai"];

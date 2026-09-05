@@ -30,8 +30,8 @@ function memoryStorage() {
 test("HH Core is the only HH Platform entry rendered on the Galaxy Gateway", () => {
   const markup = home.viewMarkup("/home", home.collectLocalData(memoryStorage(), {}));
   assert.equal((markup.match(/data-gha-entry="hh-core"/g) || []).length, 1);
-  assert.match(markup, /class="gha-core"[^>]*data-gha-entry="hh-core"[^>]*data-gha-route="\/create"/);
-  assert.equal(home.CORE_ENTRY_ROUTE, "/create");
+  assert.match(markup, /class="gha-core"[^>]*data-gha-entry="hh-core"[^>]*data-gha-route="\/platform"/);
+  assert.equal(home.CORE_ENTRY_ROUTE, "/platform");
   assert.equal(home.PLANETS.length, 9);
   home.PLANETS.forEach((planet) => {
     assert.match(planet.route, /^\/galaxy\/[a-z-]+$/);
@@ -191,7 +191,7 @@ test("unknown destinations keep an active Core session inside Layer Two", () => 
   const routeResolver = router.slice(start, end);
   assert.match(routeResolver, /resolution\.layer === "unknown" && gateway\.hasAccess\(\)/);
   assert.match(routeResolver, /syncCoreLayer\("platform"\)/);
-  assert.match(routeResolver, /gateway\.platformEntryRoute \|\| "\/create"/);
+  assert.match(routeResolver, /gateway\.platformEntryRoute \|\| "\/platform"/);
   assert.match(routeResolver, /history\.replaceState\([\s\S]*?#\$\{platformEntry\}/);
 });
 
