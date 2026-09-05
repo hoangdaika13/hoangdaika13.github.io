@@ -71,7 +71,7 @@
       scripts: ["home-cosmos-motion.js?v=1", "galaxy-home-ai.js?v=17"]
     },
     "galaxy-layer-one": {
-      styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=7", "galaxy-layer-one-worlds.css?v=15", "galaxy-stable-chrome.css?v=3"],
+      styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=7", "galaxy-layer-one-worlds.css?v=15", "galaxy-stable-chrome.css?v=3", "galaxy-premium-workspaces.css?v=2"],
       // Load the canonical data API and every side-effect-free engine before
       // the owning shell. The route is mounted only after this sequence has
       // completed, so all local-first capabilities are available on first use.
