@@ -1,0 +1,94 @@
+/* Cinematic homepage presentation. Scoped to live Home owners, never studios. */
+[data-hh-cosmos-home] { --hch-tilt-x:0deg; --hch-tilt-y:0deg; }
+.hch-scene { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none !important; isolation:isolate; border-radius:inherit; contain:layout paint; --hch-center-x:50%; --hch-center-y:45%; }
+.hch-scene * { pointer-events:none !important; }
+.hch-nebula { position:absolute; width:76%; height:85%; border-radius:50%; opacity:.44; mix-blend-mode:screen; transform:translate3d(var(--hch-pan-x,0px),var(--hch-pan-y,0px),0); animation:hch-nebula-tide 26s ease-in-out infinite alternate; }
+.hch-nebula-a { left:30%; top:-18%; background:radial-gradient(ellipse at 48% 50%,#c041ff55 0%,#3c38fa33 27%,#683aca11 50%,transparent 72%); }
+.hch-nebula-b { left:-22%; top:12%; background:radial-gradient(ellipse,#08eada38,#367bfa22 30%,transparent 67%); animation-delay:-13s; animation-duration:32s; }
+.hch-nebula-c { right:-18%; bottom:-40%; background:radial-gradient(ellipse,#ff4d9e55,#fd8b4722 37%,transparent 69%); animation-duration:38s; animation-delay:-8s; }
+.hch-stars { position:absolute; inset:-8%; background-repeat:repeat; mix-blend-mode:screen; will-change:transform; }
+.hch-stars-near { background-image:radial-gradient(circle,#cfeaff 1px,transparent 1.8px),radial-gradient(circle,#f1aaff 1px,transparent 1.8px); background-size:151px 193px,257px 173px; background-position:29px 10px,110px 80px; opacity:.5; animation:hch-stellar-drift 55s linear infinite alternate; }
+.hch-stars-far { background-image:radial-gradient(circle,#7fa8e7 1px,transparent 1.3px); background-size:73px 97px; opacity:.26; animation:hch-stellar-drift 85s linear infinite alternate-reverse; }
+.hch-scene .hch-canvas { position:absolute; inset:0; width:100%; height:100%; max-width:none; max-height:none; display:block; opacity:.85; mix-blend-mode:screen; }
+.hch-scene .hch-canvas[hidden] { display:none; }
+.hch-ribbons { position:absolute; left:var(--hch-center-x); top:var(--hch-center-y); width:min(62vw,690px); aspect-ratio:1; transform:translate(-50%,-50%); perspective:900px; transform-style:preserve-3d; }
+.hch-ribbons i { position:absolute; inset:8%; display:block; border:1px solid #64d4ff88; border-radius:50%; transform-style:preserve-3d; box-shadow:0 0 16px #56dfff33,inset 0 0 12px #56dfff11; animation:hch-ring-gyroscope 34s linear infinite; }
+.hch-ribbons i::before { content:""; position:absolute; width:9px; height:9px; left:50%; top:-4px; background:#a0ffff; border-radius:50%; box-shadow:0 0 10px #8ff,0 0 25px #2de1ff,0 0 42px #2879ff; }
+.hch-ribbons i:nth-child(2) { inset:0; border-color:#ed72ee66; box-shadow:0 0 18px #ca41ff22; animation-name:hch-ring-cross; animation-duration:42s; animation-delay:-15s; }
+.hch-ribbons i:nth-child(2)::before { background:#ffc4f2; box-shadow:0 0 15px #ff4df3,0 0 30px #c84bff; }
+.hch-ribbons i:nth-child(3) { inset:20%; border-color:#ffb46a77; animation-name:hch-ring-inner; animation-duration:26s; animation-delay:-5s; }
+.hch-ribbons i:nth-child(3)::before { background:#fff0b3; box-shadow:0 0 15px #ffc45d,0 0 30px #ff6f33; }
+.hch-comet { position:absolute; top:5%; left:-30%; width:190px; height:2px; opacity:0; border-radius:50%; background:linear-gradient(90deg,transparent,#c5b5ff 80%,#fff); transform:rotate(24deg); animation:hch-comet-flight 19s linear infinite; }
+.hch-comet::after { content:""; position:absolute; right:0; width:4px; height:4px; border-radius:50%; background:white; box-shadow:0 0 10px #abeaff; }
+.hch-comet-b { top:42%; animation-duration:27s; animation-delay:-11s; background:linear-gradient(90deg,transparent,#ffb2ec 80%,#fff); }
+[data-hh-cosmos-home] .hch-motion-control { position:absolute; z-index:9; right:18px; top:18px; display:flex; align-items:center; gap:8px; min-height:36px; padding:7px 11px; color:#d9e5ff; background:#0c132bd9; border:1px solid #818ac060; border-radius:30px; font:500 10px/1.4 "Be Vietnam Pro",system-ui,sans-serif; cursor:pointer; box-shadow:0 0 25px #9d70ed12; }
+[data-hh-cosmos-home] .hch-motion-control i { display:block; width:6px; height:6px; border-radius:50%; background:#79f6d9; box-shadow:0 0 8px #64f5d6; }
+[data-hh-cosmos-home] .hch-motion-control b { font-size:13px; font-weight:500; }
+[data-hh-cosmos-home] .hch-motion-control[aria-pressed=true] i { background:#dcc0ff; box-shadow:none; }
+[data-hh-cosmos-home] .hch-motion-control:focus-visible { outline:3px solid #99eaff; outline-offset:4px; }
+[data-hh-cosmos-home] .hch-motion-control:disabled { opacity:.8; cursor:default; }
+
+/* Galaxy Layer One: preserve all spatial positions and interaction targets. */
+.gha-home[data-hh-cosmos-home] .gha-system { isolation:isolate; perspective:1400px; }
+.gha-home[data-hh-cosmos-home] .hch-scene { z-index:1; }
+.gha-home[data-hh-cosmos-home] .hch-ribbons { width:min(58vw,730px); }
+.gha-home[data-hh-cosmos-home] .hch-nebula { opacity:.65; }
+.gha-home[data-hh-cosmos-home] .hch-canvas { opacity:.7; }
+.gha-home[data-hh-cosmos-home] .gha-planet > span { transform:perspective(600px) rotateX(var(--hch-tilt-x)) rotateY(var(--hch-tilt-y)); transition:transform .18s linear; }
+.gha-home[data-hh-cosmos-home] .gha-planet > span::before { animation:hch-surface-turn 44s linear infinite; animation-delay:var(--delay,0s); }
+.gha-home[data-hh-cosmos-home] .gha-core::before { animation:hch-surface-turn 48s linear infinite; }
+.gha-home[data-hh-cosmos-home] .gha-planet > span::after { animation:hch-planet-corona 7s ease-in-out infinite alternate; animation-delay:var(--delay,0s); }
+.gha-home[data-hh-cosmos-home] :is(.gha-home-status,.gha-home-stat,.gha-home-timeline) { border-color:#a181c34d; background:linear-gradient(145deg,#151c35ed,#091326ed); box-shadow:inset 0 1px #d7b4ff16,0 8px 28px #01030b50; }
+.gha-home[data-hh-cosmos-home] .gha-home-stat__icon { animation:hch-glyph-float 8s ease-in-out infinite; }
+.gha-home[data-hh-cosmos-home] .gha-home-stat:nth-child(2) .gha-home-stat__icon { animation-delay:-2s; }
+.gha-home[data-hh-cosmos-home] .gha-home-stat:nth-child(3) .gha-home-stat__icon { animation-delay:-4s; }
+.gha-home[data-hh-cosmos-home] .gha-home-stat:nth-child(4) .gha-home-stat__icon { animation-delay:-6s; }
+.gha-home[data-hh-cosmos-home] .gha-home-topbar__title strong { color:#e3c5ff; }
+.gha-home[data-hh-cosmos-home] .gha-home-prompt { box-shadow:0 0 32px #ba5af122,inset 0 1px #cab3ff22; }
+
+/* Layer Two: iridescent command deck and a holographic core. */
+.php[data-hh-cosmos-home] .php-hero { background:radial-gradient(ellipse at 82% 40%,#3f1e6270,transparent 60%),radial-gradient(ellipse at 0 15%,#133e5040,transparent 60%),#090c20; }
+.php[data-hh-cosmos-home] .php-cosmos { transform-style:preserve-3d; perspective:1000px; }
+.php[data-hh-cosmos-home] .php-core { background:radial-gradient(circle at 29% 19%,#baeaffaa,transparent 15%),radial-gradient(circle at 38% 32%,#5563b0,#272254 46%,#10142c 73%); border-color:#d3b3ff; box-shadow:inset -12px -16px 28px #07091a99,inset 9px 10px 28px #a4e5ff33,0 0 28px #9673ff55,0 0 90px #c535ee44,0 0 160px #4479ff1a; }
+.php[data-hh-cosmos-home] .php-core::before { content:""; position:absolute; inset:5%; border-radius:50%; pointer-events:none; background:conic-gradient(from 0deg,transparent,#aeffff33,transparent 28%,#f0a0ff22,transparent 65%,#ffb89733,transparent); animation:hch-surface-turn 18s linear infinite; }
+.php[data-hh-cosmos-home] .php-core > * { position:relative; z-index:2; }
+.php[data-hh-cosmos-home] .php-core::after { inset:-13px; border:1px solid #c3acff99; border-top:2px solid #c5f8ff; border-bottom:2px solid #ee94ff; box-shadow:0 0 20px #9b52fa44; animation:php-core-spin 12s linear infinite; }
+.php[data-hh-cosmos-home] .php-orbit { opacity:.5; }
+.php[data-hh-cosmos-home] .php-planet { background:linear-gradient(130deg,#111e35f5,#201735f5); border-color:color-mix(in srgb,var(--php-accent) 50%,transparent); box-shadow:0 12px 26px #0006,inset 0 1px color-mix(in srgb,var(--php-accent) 25%,transparent),0 0 22px color-mix(in srgb,var(--php-accent) 11%,transparent); animation:hch-portal-float 9s ease-in-out infinite; animation-delay:var(--php-delay); }
+.php[data-hh-cosmos-home] .php-planet > i { border-radius:50%; background:radial-gradient(circle at 30% 20%,#ffffff44,transparent 35%),color-mix(in srgb,var(--php-accent) 16%,#12152a); box-shadow:inset -5px -5px 9px #0005,0 0 18px color-mix(in srgb,var(--php-accent) 24%,transparent); transform:perspective(500px) rotateX(var(--hch-tilt-x)) rotateY(var(--hch-tilt-y)); }
+.php[data-hh-cosmos-home] .php-hero-copy { text-shadow:none; }
+.php[data-hh-cosmos-home] .php-hero-overline { color:#bfafd7; }
+.php[data-hh-cosmos-home] .php-heading h2 { text-wrap:balance; }
+.php[data-hh-cosmos-home] :is(.php-card,.php-panel,.php-recipes button) { background:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--php-accent,#b394ff) 15%,transparent),transparent 60%),linear-gradient(140deg,#19213b,#111429 74%); border-color:#8272b450; box-shadow:inset 0 1px #dac0ff17,0 7px 20px #0002; }
+.php[data-hh-cosmos-home] .php-card::before { left:8%; right:8%; background:linear-gradient(90deg,transparent,var(--php-accent),#ecc3ff,var(--php-accent),transparent); animation:hch-card-energy 9s ease-in-out infinite; }
+.php[data-hh-cosmos-home] .php-card:nth-child(3n+2)::before { animation-delay:-3s; }
+.php[data-hh-cosmos-home] .php-card:nth-child(3n)::before { animation-delay:-6s; }
+.php[data-hh-cosmos-home] :is(.php-icon,.php-quick i,.php-greeting-star) { animation:hch-glyph-float 7s ease-in-out infinite; transform-style:preserve-3d; }
+.php[data-hh-cosmos-home] .php-card:nth-child(2n) .php-icon { animation-delay:-3.5s; }
+.php[data-hh-cosmos-home] .php-status-strip { border-top:1px solid #99d9ff33; background:linear-gradient(90deg,#121c31,#221a36,#122331); }
+.php[data-hh-cosmos-home] .php-footer { background:radial-gradient(ellipse at 15% 100%,#5a31822b,transparent 50%),#0d1325; }
+
+@keyframes hch-nebula-tide { 0% { transform:translate3d(-4%,-3%,0) rotate(-8deg) scale(1); } 100% { transform:translate3d(5%,4%,0) rotate(9deg) scale(1.15); } }
+@keyframes hch-stellar-drift { from { transform:translate3d(-1%,-1%,0) rotate(-2deg); } to { transform:translate3d(3%,2%,0) rotate(3deg); } }
+@keyframes hch-ring-gyroscope { from { transform:rotateX(66deg) rotateY(-12deg) rotateZ(0deg); } to { transform:rotateX(66deg) rotateY(-12deg) rotateZ(360deg); } }
+@keyframes hch-ring-cross { from { transform:rotateX(53deg) rotateY(37deg) rotateZ(360deg); } to { transform:rotateX(53deg) rotateY(37deg) rotateZ(0deg); } }
+@keyframes hch-ring-inner { from { transform:rotateX(74deg) rotateY(-29deg) rotateZ(0deg); } to { transform:rotateX(74deg) rotateY(-29deg) rotateZ(360deg); } }
+@keyframes hch-comet-flight { 0%,72% { opacity:0; transform:translate3d(-15vw,-5vh,0) rotate(24deg); } 75% { opacity:.75; } 88%,100% { opacity:0; transform:translate3d(120vw,42vh,0) rotate(24deg); } }
+@keyframes hch-surface-turn { to { rotate:360deg; } }
+@keyframes hch-planet-corona { from { opacity:.48; scale:.98; } to { opacity:.83; scale:1.035; } }
+@keyframes hch-portal-float { 0%,100% { translate:0 0; } 50% { translate:0 -7px; } }
+@keyframes hch-glyph-float { 0%,100% { transform:perspective(500px) translateY(0) rotateY(-9deg); } 50% { transform:perspective(500px) translateY(-3px) rotateY(10deg); } }
+@keyframes hch-card-energy { 0%,100% { opacity:.48; transform:scaleX(.7); } 50% { opacity:.95; transform:scaleX(1); } }
+
+/* Controls, focus and readable text are never animated out of reach. */
+[data-hh-cosmos-home] :is(.php-planet,.gha-planet):is(:hover,:focus-visible) { animation-play-state:paused !important; }
+[data-hh-cosmos-home] [data-hch-inview="false"], [data-hh-cosmos-home] [data-hch-inview="false"] *, [data-hh-cosmos-home] [data-hch-inview="false"]::before { animation-play-state:paused !important; }
+[data-hh-cosmos-home] [data-hch-stage-paused="true"] *, [data-hh-cosmos-home] [data-hch-stage-paused="true"] *::before, [data-hh-cosmos-home] [data-hch-stage-paused="true"] *::after { animation-play-state:paused !important; }
+[data-hh-cosmos-home][data-hch-paused="true"] *, [data-hh-cosmos-home][data-hch-paused="true"] *::before, [data-hh-cosmos-home][data-hch-paused="true"] *::after { animation-play-state:paused !important; }
+[data-hh-cosmos-home][data-hch-motion="static"] *, [data-hh-cosmos-home][data-hch-motion="static"] *::before, [data-hh-cosmos-home][data-hch-motion="static"] *::after { animation:none !important; transition:none !important; }
+[data-hh-cosmos-home][data-hch-motion="static"] .hch-comet { display:none; }
+@media(max-width:900px) { .hch-ribbons { width:min(90vw,470px); } .gha-home[data-hh-cosmos-home] .hch-ribbons { width:390px; } [data-hh-cosmos-home] .hch-motion-control { min-height:44px; top:10px; right:10px; } .hch-comet-b { display:none; } }
+@container(max-width:600px) { .php[data-hh-cosmos-home] .php-planet { animation:none; transform:none; } .php[data-hh-cosmos-home] .php-planet > i { animation:hch-glyph-float 9s ease-in-out infinite; } .php[data-hh-cosmos-home] .php-hero { padding-top:75px; } .php[data-hh-cosmos-home] .hch-ribbons { width:250px; } }
+@media(prefers-reduced-motion:reduce) { [data-hh-cosmos-home] *,[data-hh-cosmos-home] *::before,[data-hh-cosmos-home] *::after { animation:none !important; transition:none !important; } .hch-comet { display:none; } }
+@media(forced-colors:active) { .hch-scene { display:none; } [data-hh-cosmos-home] .hch-motion-control { color:ButtonText; border-color:ButtonText; background:Canvas; } }
+body:is([data-app-theme="light"],[data-app-theme="basic-light"],[data-app-theme="warm"]) .php[data-hh-cosmos-home] :is(.php-card,.php-panel,.php-recipes button,.php-status-strip,.php-footer) { background:linear-gradient(130deg,#fff,#f2efff); border-color:#b3bdd4; }

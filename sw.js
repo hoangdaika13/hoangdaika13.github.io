@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v979";
+const CACHE = "hh-identity-portal-v980";
+// Previous homepage release: hh-identity-portal-v979.
 // Creative Command Center and Text on Image Studio v2 release: hh-identity-portal-v978.
 // Previous compatibility cache: hh-identity-portal-v977.
 // Persistent twelve-route Galaxy shell, adaptive motion and fail-closed HH CORE release: hh-identity-portal-v976.
@@ -61,8 +62,10 @@ const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
 // HH School v1 replaces the former Learning OS bundle; legacy caches are removed during activation.
 // HH English compatibility: app-shell.css?v=64 script.js?v=179 script.js?v=232 sidebar-navigation-pro.css?v=29 motion-comfort.css?v=1 auth-experience.js?v=9 english-learning.css?v=17 english-learning.js?v=22 english-learning.js?v=24 english-learning.js?v=28 english-learning-os.js?v=7 english-learning-os.css?v=3 english-galaxy.css?v=1 english-galaxy.js?v=2 english-learning-galaxy.css?v=6 english-learning-galaxy.js?v=5 english-vocabulary.css?v=1 english-vocabulary.js?v=2 english-for-everyone.css?v=1 english-for-everyone.js?v=2; current language cockpit loads the versioned Learning OS bundle below.
 const RUNTIME_ASSETS = [
+  "./home-cosmos-motion.css?v=1",
+  "./home-cosmos-motion.js?v=1",
   "./platform-home.css?v=2",
-  "./platform-home.js?v=2",
+  "./platform-home.js?v=3",
   "./",
   "./index.html",
   "./app-shell.css?v=66",
@@ -291,7 +294,7 @@ const RUNTIME_ASSETS = [
   "./galaxy-shell.js?v=9",
   "./hh-core-gateway.js?v=5",
   "./galaxy-home-ai.css?v=23",
-  "./galaxy-home-ai.js?v=16",
+  "./galaxy-home-ai.js?v=17",
   "./galaxy-layer-one.css?v=7",
   "./galaxy-layer-one-worlds.css?v=15",
   "./galaxy-layer-one-storage.js?v=2",
@@ -629,7 +632,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=632",
+  "./performance-loader.js?v=633",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=269"

@@ -63,12 +63,12 @@
       ]
     },
     "platform-home": {
-      styles: ["platform-home.css?v=2"],
-      scripts: ["platform-home.js?v=2"]
+      styles: ["platform-home.css?v=2", "home-cosmos-motion.css?v=1"],
+      scripts: ["home-cosmos-motion.js?v=1", "platform-home.js?v=3"]
     },
     "galaxy-home-ai": {
-      styles: ["galaxy-home-ai.css?v=23"],
-      scripts: ["galaxy-home-ai.js?v=16"]
+      styles: ["galaxy-home-ai.css?v=23", "home-cosmos-motion.css?v=1"],
+      scripts: ["home-cosmos-motion.js?v=1", "galaxy-home-ai.js?v=17"]
     },
     "galaxy-layer-one": {
       styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=7", "galaxy-layer-one-worlds.css?v=15"],

@@ -208,6 +208,7 @@
     const on = (target, type, handler, config) => { target?.addEventListener?.(type, handler, config); runtime.cleanup.push(() => target?.removeEventListener?.(type, handler, config)); };
     const notify = (text) => { const node = root.querySelector("[data-php-toast]"); node.hidden = false; node.textContent = text; };
     const reduced = global.matchMedia?.("(prefers-reduced-motion: reduce)");
+    let cosmos = null;
     const settings = () => {
       try { return JSON.parse(options.storage?.getItem("hh.settings-studio.v1") || "null")?.settings || {}; } catch { return {}; }
     };
@@ -217,6 +218,7 @@
       root.dataset.motion = reduced?.matches || prefs.accessibility?.reducedMotion || prefs.motion?.level === "static" || global.document.body.classList.contains("app-reduce-motion") || weak ? "static" : "balanced";
       root.dataset.contrast = prefs.accessibility?.highContrast || global.document.body.dataset.appContrast === "high" ? "high" : "standard";
       root.dataset.paused = String(global.document.hidden);
+      cosmos?.sync?.();
     };
     const jump = (id) => {
       const node = root.querySelector(`#${id}`), scroller = root.closest(".app-main");
@@ -302,6 +304,8 @@
     on(global.document, "visibilitychange", motion); on(reduced, "change", motion);
     on(global, "hashchange", () => { if ((global.location.hash || "").split("?")[0] !== `#${ROUTE}`) unmount(); });
     motion(); personal(); status();
+    cosmos = global.HHHomeCosmosMotion?.mount?.(root, { stage: root.querySelector(".php-hero"), variant: "platform", center: ".php-core", mode: () => root.dataset.motion });
+    runtime.cleanup.push(() => cosmos?.destroy?.());
     root.querySelector("#php-title").focus({ preventScroll: true });
     return true;
   }

@@ -1307,6 +1307,7 @@
       node.dataset.ghaMotion = adaptive.motion;
       node.dataset.ghaDeviceTier = adaptive.deviceTier;
     });
+    runtime.cosmos?.sync?.();
   }
 
   function setAttachmentStatus(runtime, message, state = "idle") {
@@ -1648,6 +1649,8 @@
   }
 
   function refreshView(runtime) {
+    runtime.cosmos?.destroy?.();
+    runtime.cosmos = null;
     runtime.host.innerHTML = viewMarkup(runtime.route, runtime.data, {
       embedded: runtime.options.embedded === true
     });
@@ -1659,6 +1662,11 @@
     bindHomeControls(runtime);
     installModuleSkeleton(runtime);
     applyAdaptiveExperience(runtime);
+    if (runtime.route === "/home") {
+      const home = runtime.host.querySelector?.(".gha-home");
+      const stage = home?.querySelector?.(".gha-system");
+      if (home && stage) runtime.cosmos = globalScope.HHHomeCosmosMotion?.mount?.(home, { stage, controls: home.querySelector(".gha-map"), variant: "galaxy", center: ".gha-core", mode: () => runtime.adaptive?.motion });
+    }
     renderPendingAttachments(runtime);
     applyMapZoom(runtime);
     updateNetwork(runtime);
@@ -1727,6 +1735,7 @@
     const runtime = activeRuntime;
     if (!runtime || (host && host !== runtime.host)) return false;
     runtime.controller.abort();
+    runtime.cosmos?.destroy?.();
     if (runtime.clockTimer) globalScope.clearInterval?.(runtime.clockTimer);
     if (runtime.focusTimer) globalScope.clearInterval?.(runtime.focusTimer);
     runtime.baseController?.unmount?.();

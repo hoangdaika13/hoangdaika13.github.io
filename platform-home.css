@@ -1,4 +1,4 @@
-/* HH Platform home — Layer Two only. No canvas, external media or render loop. */
+/* HH Platform home — Layer Two content. Decorative 3D lives in home-cosmos-motion. */
 body.app-platform-home-route .app-page-header,
 body.app-platform-home-route .app-context-bar { display: none !important; }
 body.app-platform-home-route #appWorkspace { display: block; min-width: 0; }
