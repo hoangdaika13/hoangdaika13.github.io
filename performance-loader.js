@@ -63,19 +63,19 @@
       ]
     },
     "platform-home": {
-      styles: ["platform-home.css?v=2", "home-cosmos-motion.css?v=1"],
-      scripts: ["home-cosmos-motion.js?v=1", "platform-home.js?v=3"]
+      styles: ["platform-home.css?v=4", "home-cosmos-motion.css?v=2"],
+      scripts: ["home-cosmos-motion.js?v=1", "platform-home.js?v=5"]
     },
     "galaxy-home-ai": {
-      styles: ["galaxy-home-ai.css?v=23", "home-cosmos-motion.css?v=1"],
+      styles: ["galaxy-home-ai.css?v=23", "home-cosmos-motion.css?v=2"],
       scripts: ["home-cosmos-motion.js?v=1", "galaxy-home-ai.js?v=17"]
     },
     "galaxy-layer-one": {
-      styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=7", "galaxy-layer-one-worlds.css?v=15"],
+      styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=7", "galaxy-layer-one-worlds.css?v=15", "galaxy-stable-chrome.css?v=3"],
       // Load the canonical data API and every side-effect-free engine before
       // the owning shell. The route is mounted only after this sequence has
       // completed, so all local-first capabilities are available on first use.
-      scripts: ["galaxy-layer-one-data.js?v=4", "galaxy-creator-studio.js?v=5", "galaxy-layer-one-storage.js?v=2", "galaxy-layer-one-media.js?v=1", "galaxy-layer-one-learning.js?v=1", "galaxy-layer-one-analytics.js?v=1", "galaxy-layer-one-tools.js?v=1", "galaxy-layer-one-backup.js?v=2", "vendor/qrcode.js?v=1", "galaxy-layer-one.js?v=17"]
+      scripts: ["galaxy-layer-one-data.js?v=4", "galaxy-creator-studio.js?v=5", "galaxy-layer-one-storage.js?v=2", "galaxy-layer-one-media.js?v=1", "galaxy-layer-one-learning.js?v=1", "galaxy-layer-one-analytics.js?v=1", "galaxy-layer-one-tools.js?v=1", "galaxy-layer-one-backup.js?v=2", "vendor/qrcode.js?v=1", "galaxy-layer-one.js?v=18"]
     },
     "galaxy-domain-views": {
       styles: ["galaxy-domain-views.css?v=13"],
@@ -363,7 +363,7 @@
     if (value === "/platform") return ["platform-home"];
     // /home is now the mandatory first-layer Galaxy Gateway. A persisted
     // legacy shell flag may not replace the only control that can enter Core.
-    if (value === "/home") return ["galaxy-home-ai"];
+    if (value === "/home") return ["galaxy-layer-one", "galaxy-home-ai"];
     if (value === "/home/dashboard") return ["galaxy-home-ai"];
     if (value === "/create/ai-center") return ["creative", "platform", "galaxy-home-ai"];
     // Galaxy adapters are presentation shells around the existing feature

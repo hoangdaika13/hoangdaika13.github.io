@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v980";
+const CACHE = "hh-identity-portal-v981";
+// Previous cinematic homepage release: hh-identity-portal-v980.
 // Previous homepage release: hh-identity-portal-v979.
 // Creative Command Center and Text on Image Studio v2 release: hh-identity-portal-v978.
 // Previous compatibility cache: hh-identity-portal-v977.
@@ -62,10 +63,11 @@ const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
 // HH School v1 replaces the former Learning OS bundle; legacy caches are removed during activation.
 // HH English compatibility: app-shell.css?v=64 script.js?v=179 script.js?v=232 sidebar-navigation-pro.css?v=29 motion-comfort.css?v=1 auth-experience.js?v=9 english-learning.css?v=17 english-learning.js?v=22 english-learning.js?v=24 english-learning.js?v=28 english-learning-os.js?v=7 english-learning-os.css?v=3 english-galaxy.css?v=1 english-galaxy.js?v=2 english-learning-galaxy.css?v=6 english-learning-galaxy.js?v=5 english-vocabulary.css?v=1 english-vocabulary.js?v=2 english-for-everyone.css?v=1 english-for-everyone.js?v=2; current language cockpit loads the versioned Learning OS bundle below.
 const RUNTIME_ASSETS = [
-  "./home-cosmos-motion.css?v=1",
+  "./galaxy-stable-chrome.css?v=3",
+  "./home-cosmos-motion.css?v=2",
   "./home-cosmos-motion.js?v=1",
-  "./platform-home.css?v=2",
-  "./platform-home.js?v=3",
+  "./platform-home.css?v=4",
+  "./platform-home.js?v=5",
   "./",
   "./index.html",
   "./app-shell.css?v=66",
@@ -304,7 +306,7 @@ const RUNTIME_ASSETS = [
   "./galaxy-layer-one-tools.js?v=1",
   "./vendor/qrcode.js?v=1",
   "./galaxy-layer-one-backup.js?v=2",
-  "./galaxy-layer-one.js?v=17",
+  "./galaxy-layer-one.js?v=18",
   "./assets/galaxy/learning-portals-atlas-v1.png",
   // Runtime-cached on first route use; deliberately excluded from CORE.
   "./assets/galaxy/function-portals/ai-universe-v1.png",
@@ -632,10 +634,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=633",
+  "./performance-loader.js?v=637",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=269"
+  "./script.js?v=270"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

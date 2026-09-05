@@ -2,17 +2,22 @@
 body.app-platform-home-route .app-page-header,
 body.app-platform-home-route .app-context-bar { display: none !important; }
 body.app-platform-home-route #appWorkspace { display: block; min-width: 0; }
-body.app-platform-home-route .app-main { overflow-y: auto !important; }
+/* The homepage owns its inner scrollbar; do not leave a second outer scroll lane. */
+body.app-platform-home-route .app-main { overflow:hidden !important; }
 .php {
   --php-bg: #080e20; --php-panel: #111a30; --php-text: #f3f6ff;
   --php-muted: #b0bed5; --php-line: #334260; --php-accent: #71e8f3;
   position: relative; isolation: isolate; min-width: 0; color: var(--php-text);
-  background: var(--php-bg); border-radius: 24px; overflow: clip;
+  background: var(--php-bg); border-radius: 24px;
+  height:var(--php-viewport-height,calc(100dvh - 160px)); min-height:0;
+  overflow-x:clip; overflow-y:auto; overscroll-behavior-y:contain;
+  scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:#9f7df3 #11172b;
   font-family: "Be Vietnam Pro", system-ui, sans-serif; font-size: 14px; line-height: 1.65;
   container-type: inline-size;
 }
 .php *, .php *::before, .php *::after { box-sizing: border-box; }
 .php [hidden] { display: none !important; }
+.php:fullscreen { height:100dvh; width:100vw; border-radius:0; overflow-y:auto !important; }
 .php h1, .php h2, .php h3, .php p { margin: 0; }
 .php h1, .php h2, .php h3 { color: var(--php-text); }
 .php.php :is(h1, h2, h3, p, em, span, strong, small, b, a, button) { text-shadow: none; }

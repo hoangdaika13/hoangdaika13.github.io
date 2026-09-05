@@ -107,7 +107,7 @@ test("presentation never reads user stores or changes routes and ships with both
   assert.match(source, /IntersectionObserver/); assert.match(source, /1_800_000/);
   assert.match(css, /pointer-events:none !important/); assert.match(css, /prefers-reduced-motion:reduce/); assert.match(css, /forced-colors:active/);
   assert.match(css, /data-hch-paused="true"/); assert.match(css, /rotateX\(66deg\)/);
-  assert.ok(loader.includes('"home-cosmos-motion.css?v=1"')); assert.ok(read("sw.js").includes('"./home-cosmos-motion.js?v=1"'));
+  assert.ok(loader.includes('"home-cosmos-motion.css?v=2"')); assert.ok(read("sw.js").includes('"./home-cosmos-motion.js?v=1"'));
   assert.match(read("platform-home.js"), /cosmos\?\.destroy/);
   assert.match(read("galaxy-home-ai.js"), /runtime\.cosmos\?\.destroy/);
 });

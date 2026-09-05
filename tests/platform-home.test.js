@@ -133,7 +133,7 @@ test("brand, sidebar, command search and mobile home target the new route withou
 test("home is lazy-loaded, cache-aligned, scoped and has lifecycle/accessibility guards", () => {
   const loader = read("performance-loader.js"), worker = read("sw.js");
   assert.match(loader, /if \(value === "\/platform"\) return \["platform-home"\]/);
-  for (const asset of ["platform-home.css?v=2", "platform-home.js?v=3"]) { assert.ok(loader.includes(asset)); assert.ok(worker.includes(asset)); }
+  for (const asset of ["platform-home.css?v=4", "platform-home.js?v=5"]) { assert.ok(loader.includes(asset)); assert.ok(worker.includes(asset)); }
   const css = read("platform-home.css");
   for (const token of ["@container (max-width: 600px)", "prefers-reduced-motion", "forced-colors", ":focus-visible", "data-paused", "data-motion", "data-contrast"]) assert.ok(css.includes(token));
   const source = read("platform-home.js");

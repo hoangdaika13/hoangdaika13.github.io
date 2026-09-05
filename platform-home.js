@@ -221,7 +221,7 @@
       cosmos?.sync?.();
     };
     const jump = (id) => {
-      const node = root.querySelector(`#${id}`), scroller = root.closest(".app-main");
+      const node = root.querySelector(`#${id}`), scroller = root;
       if (!node) return;
       const behavior = root.dataset.motion === "static" ? "auto" : "smooth";
       if (scroller) scroller.scrollTo({ top: scroller.scrollTop + node.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 24, behavior });
@@ -303,6 +303,34 @@
     on(global, "storage", (event) => { if (event.key?.startsWith("hh.sidebar.") || event.key === "hh.creative-os.v1") personal(); if (event.key === "hh.settings-studio.v1") motion(); });
     on(global.document, "visibilitychange", motion); on(reduced, "change", motion);
     on(global, "hashchange", () => { if ((global.location.hash || "").split("?")[0] !== `#${ROUTE}`) unmount(); });
+    // Own the scrolling viewport instead of inheriting overflow locks from a
+    // prior canvas/editor, the outer dashboard, or a fullscreen ancestor.
+    const sizeViewport = () => {
+      if (current !== runtime || !root.isConnected) return;
+      const fullscreen = global.document.fullscreenElement;
+      const box = host.getBoundingClientRect();
+      const dock = global.document.querySelector(".app-mobile-nav");
+      const dockBox = dock?.getBoundingClientRect();
+      const dockVisible = dockBox && dockBox.height > 0 && dockBox.top < global.innerHeight && global.getComputedStyle(dock).display !== "none";
+      const bottom = fullscreen?.contains(root) ? fullscreen.getBoundingClientRect().bottom : dockVisible ? dockBox.top : global.innerHeight;
+      const height = Math.max(240, Math.floor(bottom - Math.max(0, box.top) - 12));
+      const value = `${height}px`;
+      if (root.style.getPropertyValue("--php-viewport-height") !== value) root.style.setProperty("--php-viewport-height", value);
+    };
+    on(global, "resize", sizeViewport, {passive:true});
+    on(global.document, "fullscreenchange", sizeViewport);
+    on(global, "hh:route-rendered", sizeViewport);
+    let viewportFrame = 0;
+    const scheduleViewport = () => {
+      if (viewportFrame || current !== runtime) return;
+      viewportFrame = global.requestAnimationFrame(() => { viewportFrame = 0; sizeViewport(); });
+    };
+    // ResizeObserver may observe the parent's response to our own height.
+    // Write in the next frame to avoid a synchronous observer/layout loop.
+    const viewportObserver = global.ResizeObserver ? new global.ResizeObserver(scheduleViewport) : null;
+    viewportObserver?.observe(host.parentElement || host);
+    runtime.cleanup.push(() => { viewportObserver?.disconnect(); if (viewportFrame) global.cancelAnimationFrame(viewportFrame); });
+    sizeViewport();
     motion(); personal(); status();
     cosmos = global.HHHomeCosmosMotion?.mount?.(root, { stage: root.querySelector(".php-hero"), variant: "platform", center: ".php-core", mode: () => root.dataset.motion });
     runtime.cleanup.push(() => cosmos?.destroy?.());

@@ -18,6 +18,10 @@
 .hch-ribbons i:nth-child(2)::before { background:#ffc4f2; box-shadow:0 0 15px #ff4df3,0 0 30px #c84bff; }
 .hch-ribbons i:nth-child(3) { inset:20%; border-color:#ffb46a77; animation-name:hch-ring-inner; animation-duration:26s; animation-delay:-5s; }
 .hch-ribbons i:nth-child(3)::before { background:#fff0b3; box-shadow:0 0 15px #ffc45d,0 0 30px #ff6f33; }
+.hch-ribbons i::after { content:""; position:absolute; right:8%; bottom:22%; width:4px; height:4px; border-radius:50%; background:#fbd3ff; box-shadow:0 0 12px #eb85ff,0 0 25px #766dff; }
+.hch-scene::before,.hch-scene::after { content:""; position:absolute; left:var(--hch-center-x); top:var(--hch-center-y); width:160px; height:160px; border-radius:50%; border:1px solid #b496ff44; pointer-events:none; transform:translate(-50%,-50%); animation:hch-energy-wave 12s ease-out infinite; }
+.hch-scene::after { border-color:#6fe8ff33; animation-delay:-6s; }
+@keyframes hch-energy-wave { 0% { transform:translate(-50%,-50%) scale(.85); opacity:0; } 18% { opacity:.45; } 100% { transform:translate(-50%,-50%) scale(3.8); opacity:0; } }
 .hch-comet { position:absolute; top:5%; left:-30%; width:190px; height:2px; opacity:0; border-radius:50%; background:linear-gradient(90deg,transparent,#c5b5ff 80%,#fff); transform:rotate(24deg); animation:hch-comet-flight 19s linear infinite; }
 .hch-comet::after { content:""; position:absolute; right:0; width:4px; height:4px; border-radius:50%; background:white; box-shadow:0 0 10px #abeaff; }
 .hch-comet-b { top:42%; animation-duration:27s; animation-delay:-11s; background:linear-gradient(90deg,transparent,#ffb2ec 80%,#fff); }

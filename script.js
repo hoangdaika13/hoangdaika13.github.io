@@ -7369,9 +7369,8 @@ function initAppShell() {
     document.body.classList.toggle("app-single-module", !isCreativeOSRoute(route) && Boolean(module));
     const galaxyViewsEnabled = Boolean(window.HHGalaxyShell?.isEnabled?.());
     const isGalaxyLayerOneRoute = galaxyViewsEnabled
-      && routePath !== "/home"
       && window.HHCoreGateway?.isGalaxyRoute?.(routePath) === true;
-    const isGalaxyHomeRoute = galaxyViewsEnabled && (routePath === "/home" || routePath === "/home/dashboard" || routePath === "/create/ai-center" || routePath === "/chat-ai" || routePath.startsWith("/chat-ai/"));
+    const isGalaxyHomeRoute = galaxyViewsEnabled && !isGalaxyLayerOneRoute && (routePath === "/home/dashboard" || routePath === "/create/ai-center" || routePath === "/chat-ai" || routePath.startsWith("/chat-ai/"));
     const isGalaxyDomainRoute = galaxyViewsEnabled && (routePath === "/create/workflow"
       || routePath === "/work/automation-lab"
       || routePath === "/work/projects-tasks"

@@ -104,8 +104,8 @@ test("shell markup owns the first-layer chrome and does not duplicate the Core e
   assert.match(markup, /Tìm kiếm chức năng lớp 1/);
   assert.match(markup, /Ngoại tuyến/);
   assert.match(markup, /&lt;Người dùng&gt;/);
-  assert.equal((markup.match(/<nav class="hgl1-nav">/g) || []).length, 1);
-  const sidebarNav = markup.match(/<nav class="hgl1-nav">([\s\S]+?)<\/nav>/)[1];
+  assert.equal((markup.match(/<nav class="hgl1-nav"[^>]*>/g) || []).length, 1);
+  const sidebarNav = markup.match(/<nav class="hgl1-nav"[^>]*>([\s\S]+?)<\/nav>/)[1];
   assert.equal((sidebarNav.match(/data-hgl1-route=/g) || []).length, 12);
   assert.equal((markup.match(/data-hgl1-route="\/(?:home|galaxy\/[^"]+)"/g) || []).length, 18);
   assert.doesNotMatch(markup, /HH CORE|data-gha-entry="hh-core"|\/create\b|HHCoreGateway/i);
