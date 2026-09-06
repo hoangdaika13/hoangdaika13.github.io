@@ -79,20 +79,23 @@
   ]);
 
   function normalizeRoute(input) {
-    let value = String(input || GATEWAY_ROUTE).trim();
+    let value = String(input || PLATFORM_ENTRY_ROUTE).trim();
     if (/^https?:\/\//i.test(value)) {
       try {
         const parsed = new URL(value);
         value = parsed.hash ? parsed.hash.slice(1) : parsed.pathname;
       } catch {
-        value = GATEWAY_ROUTE;
+        value = PLATFORM_ENTRY_ROUTE;
       }
     }
     if (value.startsWith("#")) value = value.slice(1);
-    value = value.split("?")[0].split("#")[0] || GATEWAY_ROUTE;
+    value = value.split("?")[0].split("#")[0] || PLATFORM_ENTRY_ROUTE;
     value = value.startsWith("/") ? value : `/${value}`;
     value = value.replace(/\/{2,}/g, "/");
-    return value.length > 1 ? value.replace(/\/+$/, "") : value;
+    value = value.length > 1 ? value.replace(/\/+$/, "") : value;
+    if (["/", "/top", "/account"].includes(value)) return PLATFORM_ENTRY_ROUTE;
+    if (value === "/galaxy") return GATEWAY_ROUTE;
+    return value;
   }
 
   function storage(candidate) {
@@ -204,14 +207,16 @@
     const requested = normalizeRoute(input);
     const galaxy = isGalaxyRoute(requested);
     const core = !galaxy && isCoreRoute(requested);
-    const access = core && hasAccess(options.storage);
-    const allowed = galaxy || access;
+    // Navigation is no longer a second session gate. Actual authentication
+    // and role checks remain in the app shell and server endpoints.
+    // Keep enter/leave for old cached clients and clearing legacy records.
+    const allowed = galaxy || core;
     return Object.freeze({
       requested,
-      route: allowed ? requested : GATEWAY_ROUTE,
+      route: allowed ? requested : PLATFORM_ENTRY_ROUTE,
       allowed,
       redirected: !allowed,
-      layer: galaxy ? "galaxy" : core ? "platform" : "unknown"
+      layer: allowed ? "platform" : "unknown"
     });
   }
 

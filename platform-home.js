@@ -10,6 +10,7 @@
   // Descriptions explain scope, not service readiness. Routes, names, counts
   // and children come exclusively from the application's navigation registry.
   const DESCRIPTIONS = Object.freeze({
+    "hh-galaxy": "Bản đồ 3D cùng AI, âm nhạc, video, Creator Studio, trò chơi, lập trình và học tập. Mở Galaxy ngay trong HH Platform.",
     "chat-ai": "Hội thoại nhiều lượt, nghiên cứu có nguồn, phân tích ảnh/PDF, viết và hỗ trợ lập trình.",
     create: "Biến ý tưởng thành nội dung: brief, kịch bản, prompt, media, cộng tác và xuất bản.",
     draw: "Vẽ bằng ánh sáng, đối xứng, phản chiếu và chuyển động. Tạo tác phẩm ngay trong trình duyệt.",
@@ -57,7 +58,7 @@
   const list = (value) => Array.isArray(value) ? value : [];
   const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
   const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toLowerCase().trim();
-  const safeRoute = (value) => /^\/(?!\/)[a-z0-9/-]+$/.test(String(value)) && !/^\/(home|galaxy)(\/|$)/.test(value);
+  const safeRoute = (value) => /^\/(?!\/)[a-z0-9/-]+$/.test(String(value));
   const color = (value) => /^#[a-f\d]{6}$/i.test(value || "") ? value : "#71e8f3";
 
   function buildCatalog(sections, groups, options = {}) {
@@ -145,11 +146,11 @@
         <p class="php-hero-description">Sáng tạo điều khác biệt. Học thêm mỗi ngày.<br>Làm việc, kết nối và khám phá — trong một không gian.</p>
         <div class="php-hero-actions"><button class="php-primary" type="button" data-php-jump="php-catalog">Khám phá ${items.length} chức năng <span aria-hidden="true">↗</span></button>${link("/chat-ai", "Hỏi HH AI ✦", "php-secondary")}</div>
         <button class="php-resume" type="button" data-php-jump="php-command">Tiếp tục công việc gần đây <span aria-hidden="true">↓</span></button>
-        <div class="php-hero-facts"><span><b>${catalog.length}</b> không gian kết nối</span><span><b>${items.length}</b> chức năng trong registry</span><span><b>01</b> cổng HH CORE</span></div></div>
+        <div class="php-hero-facts"><span><b>${catalog.length}</b> không gian kết nối</span><span><b>${items.length}</b> chức năng trong registry</span><span><b>01</b> trang chủ thống nhất</span></div></div>
         <div class="php-cosmos" role="group" aria-label="Bản đồ sáu nhóm chức năng Lớp 2">
           <div class="php-orbit php-orbit-one" aria-hidden="true"></div><div class="php-orbit php-orbit-two" aria-hidden="true"></div><div class="php-orbit php-orbit-three" aria-hidden="true"></div>
           <button class="php-core" type="button" data-php-jump="php-catalog" aria-label="HH CORE — khám phá toàn bộ chức năng"><span>HH</span><strong>CORE</strong><small>YOUR DIGITAL UNIVERSE</small></button>
-          ${catalog.map((group, index) => `<button class="php-planet php-planet-${index}" type="button" data-php-group-jump="${escape(group.id)}" style="--php-accent:${group.accent};--php-delay:-${index * 1.3}s" title="${escape(group.items.map((item) => item.label).join(" · "))}"><i aria-hidden="true">${escape(group.icon)}</i><span>${escape(group.label)}<small>${group.items.length} chức năng <b aria-hidden="true">↗</b></small></span></button>`).join("")}
+          ${catalog.filter((group) => group.id !== "galaxy-workspace").map((group, index) => `<button class="php-planet php-planet-${index}" type="button" data-php-group-jump="${escape(group.id)}" style="--php-accent:${group.accent};--php-delay:-${index * 1.3}s" title="${escape(group.items.map((item) => item.label).join(" · "))}"><i aria-hidden="true">${escape(group.icon)}</i><span>${escape(group.label)}<small>${group.items.length} chức năng <b aria-hidden="true">↗</b></small></span></button>`).join("")}
           <span class="php-cosmos-caption">CHỌN MỘT KHÔNG GIAN ĐỂ KHỞI HÀNH</span>
         </div>
       </section>
@@ -176,11 +177,11 @@
 
       <section class="php-section php-privacy" id="php-privacy" tabindex="-1"><div><span class="php-eyebrow">BUILT AROUND YOUR CONTROL</span><h2>Không gian của bạn.<br><em>Dữ liệu của bạn.</em></h2><p>Trang chủ chỉ đọc metadata cần thiết trên thiết bị. Không gọi AI, không xin microphone/camera và không gửi nội dung ra ngoài.</p>${link("/settings", "Quản lý dữ liệu & quyền riêng tư ↗", "php-secondary")}</div><div class="php-trust-grid">
         <article><i>01</i><h3>Local-first</h3><p>Yêu thích, ghim và gần đây dùng kho sidebar theo tài khoản. Dự án vẫn nằm trong workspace sở hữu nó.</p></article>
-        <article><i>02</i><h3>Hai lớp độc lập</h3><p>Không đọc kho Galaxy Lớp 1. HH CORE giữ ranh giới truy cập và nút Về Galaxy đóng quyền của phiên.</p></article>
+        <article><i>02</i><h3>Một không gian thống nhất</h3><p>HH Platform là trang chủ chính. HH Galaxy và mọi công cụ mở trong cùng khung điều hướng; dữ liệu của từng workspace vẫn được giữ riêng.</p></article>
         <article><i>03</i><h3>Kết nối có chủ đích</h3><p>AI, realtime, upload và đồng bộ cần backend/provider. Trạng thái được kiểm tra trong từng workspace khi bạn sử dụng.</p></article>
         <article><i>04</i><h3>Không số liệu giả</h3><p>Không ghi analytics mới tại đây. Không tính bản mẫu thành dự án; không suy đoán người online, doanh thu hay tiến độ.</p></article>
       </div></section>
-      <footer class="php-footer"><div><strong>HH<span>PLATFORM</span></strong><small>Vũ trụ công cụ số của bạn · ${escape(data.release || "Lớp 2")}</small></div><nav aria-label="Liên kết cuối trang">${link("/system", "Hệ thống")}${link("/settings", "Quyền riêng tư")}${link("/copyright", "Bản quyền")}${link("/support", "Trợ giúp & ủng hộ")}<button type="button" data-hh-core-exit>← Về HH Galaxy</button></nav></footer>
+      <footer class="php-footer"><div><strong>HH<span>PLATFORM</span></strong><small>Vũ trụ công cụ số của bạn · ${escape(data.release || "Lớp 2")}</small></div><nav aria-label="Liên kết cuối trang">${link("/system", "Hệ thống")}${link("/settings", "Quyền riêng tư")}${link("/copyright", "Bản quyền")}${link("/support", "Trợ giúp & ủng hộ")}${link("/galaxy", "HH Galaxy")}</nav></footer>
       <p class="php-toast" data-php-toast role="status" aria-live="polite" hidden></p>
     </div>`;
   }

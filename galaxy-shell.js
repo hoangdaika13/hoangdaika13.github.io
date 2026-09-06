@@ -277,13 +277,10 @@
 
   function syncRoute(input) {
     const requested = normalizeRoute(input);
-    // Hash listeners can run before the application router replaces a locked
-    // deep link. Never apply Platform layout to the still-mounted Gateway.
+    // Galaxy is a module of the single Platform shell, including old links.
     const gateway = global.HHCoreGateway;
     const resolution = gateway?.resolveRoute?.(requested);
-    const route = resolution?.redirected
-      ? (gateway.hasAccess?.() ? gateway.platformEntryRoute : gateway.gatewayRoute)
-      : requested;
+    const route = resolution?.route || requested;
     const match = findRoute(route);
     state.route = route;
     state.manifestId = match.id;

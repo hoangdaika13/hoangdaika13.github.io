@@ -81,7 +81,7 @@ test("the Galaxy manifest is an exact, access-free layer-one allowlist", () => {
       route,
       allowed: true,
       redirected: false,
-      layer: "galaxy"
+      layer: "platform"
     });
     assert.ok(Object.isFrozen(result), route);
   }
@@ -91,21 +91,21 @@ test("the Galaxy manifest is an exact, access-free layer-one allowlist", () => {
     route: "/galaxy/creator",
     allowed: true,
     redirected: false,
-    layer: "galaxy"
+    layer: "platform"
   });
   assert.equal(gateway.isGalaxyRoute("#/galaxy/ai/"), true);
-  assert.equal(gateway.isGalaxyRoute("/galaxy"), false);
+  assert.equal(gateway.isGalaxyRoute("/galaxy"), true);
   assert.equal(gateway.isGalaxyRoute("/galaxy/ai/session"), false);
 });
 
-test("direct Core deep-links stay locked until HH Core grants this tab", () => {
+test("direct Platform links do not depend on the retired Core grant", () => {
   const storage = memoryStorage();
   const coreRoutes = ["/platform", "#/create", "/home/dashboard", "/chat-ai", "/work/projects-tasks", "/settings", "/settings/account/profile"];
   for (const route of coreRoutes) {
     const result = gateway.resolveRoute(route, { storage });
-    assert.equal(result.allowed, false, route);
-    assert.equal(result.redirected, true, route);
-    assert.equal(result.route, "/home", route);
+    assert.equal(result.allowed, true, route);
+    assert.equal(result.redirected, false, route);
+    assert.equal(result.route, gateway.normalizeRoute(route), route);
     assert.equal(result.layer, "platform", route);
   }
 
@@ -131,7 +131,7 @@ test("unknown routes never inherit Core access", () => {
   for (const route of ["/unknown", "/galaxy/ai/session", "/create-typo", "/settings-old"]) {
     assert.deepEqual(gateway.resolveRoute(route, { storage }), {
       requested: route,
-      route: "/home",
+      route: "/platform",
       allowed: false,
       redirected: true,
       layer: "unknown"
@@ -142,7 +142,7 @@ test("unknown routes never inherit Core access", () => {
     const result = gateway.resolveRoute(route, { storage });
     assert.equal(result.allowed, false, route);
     assert.equal(result.layer, "unknown", route);
-    assert.equal(result.route, "/home", route);
+    assert.equal(result.route, "/platform", route);
   }
 });
 
@@ -163,16 +163,16 @@ test("the Galaxy and Core manifests are disjoint", () => {
   }
 });
 
-test("explicit leave locks browser back and forward Core routes again", () => {
+test("clearing a legacy grant does not lock Platform navigation", () => {
   const storage = memoryStorage();
   assert.equal(gateway.enter({ source: "hh-core", storage }), true);
   assert.equal(gateway.leave({ source: "explicit-exit", storage }), true);
   assert.equal(gateway.hasAccess(storage), false);
   assert.deepEqual(gateway.resolveRoute("/create", { storage }), {
     requested: "/create",
-    route: "/home",
-    allowed: false,
-    redirected: true,
+    route: "/create",
+    allowed: true,
+    redirected: false,
     layer: "platform"
   });
   assert.equal(gateway.resolveRoute("/home", { storage }).allowed, true);
@@ -221,7 +221,7 @@ test("an explicit HH Core click keeps a page-scoped grant when sessionStorage is
     setItem() { throw new Error("storage blocked"); },
     removeItem() { throw new Error("storage blocked"); }
   };
-  assert.equal(gateway.resolveRoute("/create", { storage: blockedStorage }).allowed, false);
+  assert.equal(gateway.resolveRoute("/create", { storage: blockedStorage }).allowed, true);
   assert.equal(gateway.enter({ source: "sidebar", storage: blockedStorage }), false);
   assert.equal(gateway.enter({ source: "hh-core", storage: blockedStorage }), true);
   assert.equal(gateway.hasAccess(blockedStorage), true);
@@ -230,21 +230,15 @@ test("an explicit HH Core click keeps a page-scoped grant when sessionStorage is
   assert.equal(gateway.hasAccess(blockedStorage), false);
 });
 
-test("router resolves the layer boundary before asking the asset loader", () => {
+test("router resolves navigation before loading, while actual authentication stays enforced", () => {
   const router = read("script.js");
-  const loader = read("performance-loader.js");
-  const home = read("galaxy-home-ai.js");
-
   const safeRender = router.slice(router.indexOf("const renderRouteSafely"), router.indexOf("const isExpectedRuntimeCancellation"));
   assert.match(safeRender, /const requestedRoute = routeFromHash\(\);[\s\S]*?const loader = window\.HHAssetLoader/);
-  assert.match(router, /gateway\.resolveRoute\(route\)/);
-  assert.match(router, /history\.replaceState[\s\S]*?#\$\{gateway\.gatewayRoute\}/);
-  assert.match(router, /data-hh-core-exit/);
+  assert.match(router, /const renderRoute = \(\) => \{\s*if \(!isUnlocked\(\)\) return;/);
+  assert.match(router, /&& !isCurrentUserAdmin\(\)/);
   assert.match(router, /HHCoreGateway\?\.leave\?\.\(\{ source: "logout" \}\)/);
-  assert.match(router, /const grantCoreAccessFromGateway =/);
-  assert.match(router, /source !== gateway\.entrySource[\s\S]{0,180}currentRoute !== gateway\.gatewayRoute[\s\S]{0,180}destination !== gateway\.platformEntryRoute/);
-  assert.match(router, /gateway\.enter\(\{ source: gateway\.entrySource \}\)[\s\S]{0,120}gateway\.hasAccess\(\) === true/);
-  assert.match(home, /data-gha-entry="hh-core"[^>]*data-gha-route="\$\{CORE_ENTRY_ROUTE\}"/);
-  assert.match(home, /enterCore\(runtime[\s\S]*?runtime\.options\.enterCore[\s\S]*?navigate\(runtime, destination\)/);
-  assert.match(loader, /const allowed = gateway\?\.resolveRoute[\s\S]{0,240}?if \(allowed\) ensureForRoute/, "locked Platform routes must not prefetch before Core access");
+  assert.doesNotMatch(router, /gateway\.enter\(/);
+  const html = read("index.html").replace(/<!--[\s\S]*?-->/g, "");
+  assert.match(html, /id="appShell" data-hh-layer="platform"[^>]*hidden/);
+  assert.doesNotMatch(html, /data-hh-core-exit/);
 });

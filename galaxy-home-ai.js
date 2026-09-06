@@ -884,10 +884,10 @@
           <div class="gha-system" data-gha-system>
             <div class="gha-map__stars" aria-hidden="true"></div><div class="gha-map__nebula" aria-hidden="true"></div>
             <div class="gha-orbits" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-            <button class="gha-core" type="button" data-gha-entry="hh-core" data-gha-route="${CORE_ENTRY_ROUTE}" style="--x:44.51%;--y:39.4%;--size:148px" aria-label="Mở HH Core và vào HH Platform"><span aria-hidden="true">HH</span><strong>HH CORE</strong><small>Cổng vào HH Platform</small></button>
+            <button class="gha-core" type="button" data-gha-entry="hh-core" data-gha-route="${CORE_ENTRY_ROUTE}" style="--x:44.51%;--y:39.4%;--size:148px" aria-label="Về trang chủ HH Platform"><span aria-hidden="true">HH</span><strong>HH CORE</strong><small>Trang chủ HH Platform</small></button>
             <div class="gha-planets" role="navigation" aria-label="Bản đồ các chức năng">${PLANETS.map((planet, index) => `<button class="gha-planet gha-planet--${planet.tone}" type="button" data-gha-route="${escapeHtml(planet.route)}" data-gha-planet="${escapeHtml(planet.id)}" data-gha-searchable style="--x:${planet.x}%;--y:${planet.y}%;--size:${planet.size}px;--delay:${index * -1.8}s" aria-label="Mở ${escapeHtml(planet.label)} — ${escapeHtml(planet.note)}">${planetIconMarkup(planet.id)}<strong>${escapeHtml(planet.label)}</strong><small>${escapeHtml(planet.note)}</small></button>`).join("")}</div>
-            <form class="gha-home-prompt" data-gha-ai-form autocomplete="off"><label class="gha-sr-only" for="gha-home-prompt-input">Hỏi HH AI</label><span aria-hidden="true">⌕</span><input id="gha-home-prompt-input" data-gha-ai-input type="text" maxlength="1600" placeholder="Nhập câu hỏi hoặc gõ / để mở nhanh..." aria-describedby="gha-home-prompt-hint"><small id="gha-home-prompt-hint" class="gha-sr-only">HH Core là cổng duy nhất để mở các chức năng HH Platform.</small><button type="submit" aria-label="Gửi câu hỏi tới HH AI">${iconMarkup("send")}</button></form>
-            <p class="gha-home-gateway-notice" data-gha-gateway-notice role="status" aria-live="polite">HH Core là cổng duy nhất để mở lớp chức năng HH Platform.</p>
+            <form class="gha-home-prompt" data-gha-ai-form autocomplete="off"><label class="gha-sr-only" for="gha-home-prompt-input">Hỏi HH AI</label><span aria-hidden="true">⌕</span><input id="gha-home-prompt-input" data-gha-ai-input type="text" maxlength="1600" placeholder="Nhập câu hỏi hoặc gõ / để mở nhanh..." aria-describedby="gha-home-prompt-hint"><small id="gha-home-prompt-hint" class="gha-sr-only">Nhập câu hỏi để mở HH AI trong HH Platform.</small><button type="submit" aria-label="Gửi câu hỏi tới HH AI">${iconMarkup("send")}</button></form>
+            <p class="gha-home-gateway-notice" data-gha-gateway-notice role="status" aria-live="polite">HH Galaxy nằm trong HH Platform. Chọn một hành tinh để mở công cụ.</p>
             <div class="gha-map__controls" aria-label="Điều khiển bản đồ">
               <button type="button" data-gha-action="reset-view" aria-label="Đặt lại hướng nhìn">${iconMarkup("compass")}</button>
               <div><button type="button" data-gha-action="zoom-in" aria-label="Phóng to bản đồ">＋</button><output data-gha-zoom aria-live="polite">100%</output><button type="button" data-gha-action="zoom-out" aria-label="Thu nhỏ bản đồ">−</button></div>
@@ -1077,7 +1077,7 @@
   function notifyGateway(runtime, message, state = "notice") {
     const notice = runtime.host.querySelector?.("[data-gha-gateway-notice]");
     if (!notice) return;
-    notice.textContent = String(message || "HH Core là cổng duy nhất để mở lớp chức năng HH Platform.");
+    notice.textContent = String(message || "HH Galaxy nằm trong HH Platform. Chọn một hành tinh để mở công cụ.");
     notice.dataset.state = state;
     notice.classList?.remove?.("is-pulsing");
     void notice.offsetWidth;
@@ -1490,9 +1490,9 @@
       event.preventDefault();
       if (runtime.route === "/home") {
         if (routeButton.dataset.ghaEntry === "hh-core") enterCore(runtime, routeButton.dataset.ghaRoute || CORE_ENTRY_ROUTE);
-        else if (globalScope.HHCoreGateway?.isGalaxyRoute?.(routeButton.dataset.ghaRoute)
+        else if (globalScope.HHCoreGateway?.resolveRoute?.(routeButton.dataset.ghaRoute)?.allowed
           || HOME_NAV_ITEMS.some((item) => item.route === routeButton.dataset.ghaRoute)) navigate(runtime, routeButton.dataset.ghaRoute);
-        else notifyGateway(runtime, "Điểm đến này thuộc HH Core Platform. Chỉ nút HH CORE được phép mở lớp 2.", "blocked");
+        else notifyGateway(runtime, "Điểm đến không thuộc danh mục của HH Platform.", "blocked");
         return;
       }
       navigate(runtime, routeButton.dataset.ghaRoute);

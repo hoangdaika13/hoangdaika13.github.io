@@ -27,7 +27,7 @@ function memoryStorage() {
   return { getItem() { return null; }, setItem() {}, removeItem() {} };
 }
 
-test("HH Core is the only HH Platform entry rendered on the Galaxy Gateway", () => {
+test("HH Core returns to Platform from the embedded Galaxy map", () => {
   const markup = home.viewMarkup("/home", home.collectLocalData(memoryStorage(), {}));
   assert.equal((markup.match(/data-gha-entry="hh-core"/g) || []).length, 1);
   assert.match(markup, /class="gha-core"[^>]*data-gha-entry="hh-core"[^>]*data-gha-route="\/platform"/);
@@ -47,24 +47,20 @@ test("HH Core is the only HH Platform entry rendered on the Galaxy Gateway", () 
   ].join("\n");
   assert.equal(
     (entryRuntime.match(/(?:HHCoreGateway\?\.enter\?\.\(|gateway\.enter\(\{ source: gateway\.entrySource \}\))/g) || []).length,
-    1,
-    "only the verified Home HH Core transaction may call the gateway entry"
+    0,
+    "module navigation must not create a second access grant"
   );
   assert.match(router, /enterCore:\s*\(request\s*=\s*\{\}\)\s*=>\s*grantCoreAccessFromGateway\(request\)/);
-  assert.match(router, /const grantCoreAccessFromGateway =[\s\S]*?gateway\.enter\(\{ source: gateway\.entrySource \}\)[\s\S]*?gateway\.hasAccess\(\) === true/);
   assert.doesNotMatch(read("galaxy-layer-one.js"), /HHCoreGateway|\.enter\s*\(/);
 });
 
-test("legacy Gateway anchors authorize the same verified HH Core transaction as Home", () => {
-  const helperStart = router.indexOf("const grantCoreAccessFromGateway =");
-  const helperEnd = router.indexOf("const routeFromHash =", helperStart);
-  assert.ok(helperStart >= 0 && helperEnd > helperStart);
-  const helper = router.slice(helperStart, helperEnd);
-  assert.match(helper, /currentRouteValue\s*=\s*gateway\.normalizeRoute/);
-  assert.match(helper, /currentRouteValue === "\/top"\s*\|\|\s*currentRouteValue === "\/account"/);
-  assert.match(helper, /\?\s*gateway\.gatewayRoute\s*:\s*currentRouteValue/);
-  assert.match(helper, /currentRoute !== gateway\.gatewayRoute/);
-  assert.match(router, /const rawRoute = hash === "top" \|\| hash === "account" \? "\/home"/);
+test("legacy auth anchors recover at the Platform home", () => {
+  for (const alias of ["/", "/top", "/account"]) assert.equal(gateway.resolveRoute(alias).route, "/platform");
+  const helper = router.slice(router.indexOf("const grantCoreAccessFromGateway ="), router.indexOf("const routeFromHash ="));
+  assert.match(helper, /isUnlocked\(\)/);
+  assert.match(helper, /request\.source === "hh-core"/);
+  assert.match(helper, /=== "\/platform"/);
+  assert.doesNotMatch(helper, /\.enter\(/);
 });
 
 test("Galaxy Layer One owns the exact twelve access-free destinations", () => {
@@ -72,7 +68,7 @@ test("Galaxy Layer One owns the exact twelve access-free destinations", () => {
   assert.deepEqual([...gateway.galaxyManifest], layerOneRoutes);
   layerOneRoutes.forEach((route) => {
     assert.equal(layerOne.canHandle(route), true, route);
-    assert.equal(gateway.resolveRoute(route, { storage: memoryStorage() }).layer, "galaxy", route);
+    assert.equal(gateway.resolveRoute(route, { storage: memoryStorage() }).layer, "platform", route);
   });
   assert.equal(layerOne.canHandle("/home/dashboard"), false);
   assert.equal(layerOne.canHandle("/music-ai"), false);
@@ -185,14 +181,14 @@ test("Galaxy routes load and mount only the Layer One adapter", () => {
   assert.doesNotMatch(layerBranch, /HHGalaxyPlanetHubs|planetHub/);
 });
 
-test("unknown destinations keep an active Core session inside Layer Two", () => {
+test("unknown destinations recover inside Platform without a Core session", () => {
+  for (const route of ["/unknown", "/galaxy/invalid", "/create-typo"]) {
+    assert.equal(gateway.resolveRoute(route, {storage: memoryStorage()}).route, "/platform");
+  }
   const start = router.indexOf("const routeFromHash =");
-  const end = router.indexOf("let cosmicLoaderRoute", start);
-  const routeResolver = router.slice(start, end);
-  assert.match(routeResolver, /resolution\.layer === "unknown" && gateway\.hasAccess\(\)/);
-  assert.match(routeResolver, /syncCoreLayer\("platform"\)/);
-  assert.match(routeResolver, /gateway\.platformEntryRoute \|\| "\/platform"/);
-  assert.match(routeResolver, /history\.replaceState\([\s\S]*?#\$\{platformEntry\}/);
+  const routeResolver = router.slice(start, router.indexOf("let cosmicLoaderRoute", start));
+  assert.match(routeResolver, /syncCoreLayer\(\)/);
+  assert.doesNotMatch(routeResolver, /hasAccess/);
 });
 
 test("same-route ready refresh preserves live media and Galaxy workspaces before teardown", () => {

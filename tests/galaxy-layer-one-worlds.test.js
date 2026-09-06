@@ -175,7 +175,7 @@ test("Learning Star presents one semantic five-stage journey", () => {
   assert.doesNotMatch(markup, /<main\b[\s\S]*<main\b/i);
 });
 
-test("Learning Star describes four real platform destinations but fails closed through Home", () => {
+test("Learning Star exposes four real destinations inside the shared Platform shell", () => {
   const markup = layerOne.viewMarkup("/galaxy/learning", {});
   assert.equal(classCount(markup, "hgl1-learning-destinations"), 1);
   assert.equal(classCount(markup, "hgl1-learning-destination"), LEARNING_PLATFORM_DESTINATIONS.length);
@@ -188,7 +188,7 @@ test("Learning Star describes four real platform destinations but fails closed t
     assert.ok(cardMatch, `missing declared platform destination ${route}`);
     assert.match(textContent(cardMatch[1]), label, `missing useful label for ${route}`);
     assert.match(cardMatch[1], /<button\b[^>]*data-hgl1-action="open-platform-via-core"/i);
-    assert.match(cardMatch[1], /HH CORE/i);
+    assert.match(cardMatch[1], /Mở không gian học/i);
     assert.doesNotMatch(cardMatch[1], new RegExp(`(?:href|data-hgl1-route)="?#?${escapedRoute}`));
     assert.equal(layerOne.canHandle(route), false, `${route} must remain outside Layer One`);
   }

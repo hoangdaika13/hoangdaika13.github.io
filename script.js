@@ -751,7 +751,7 @@ function initRealtimeAuth() {
       connectSocket();
       formNode.reset();
       gateStatus?.classList.add("is-success");
-      location.hash = "#/home";
+      location.hash = "#/platform";
     } catch (error) {
       setStatus(error.message);
       gateStatus?.classList.add("is-error");
@@ -777,7 +777,7 @@ function initRealtimeAuth() {
       connectSocket();
       formNode.reset();
       gateStatus?.classList.add("is-success");
-      location.hash = "#/home";
+      location.hash = "#/platform";
     } catch (error) {
       setStatus(error.message);
       gateStatus?.classList.add("is-error");
@@ -5258,13 +5258,13 @@ function initAppShell() {
   // persisted feature flag as an explicit rollback switch: an existing false
   // preference is respected, while first-time clients enter the new shell.
   if (window.HHGalaxyShell) {
-    const initialGalaxyRoute = (location.hash.replace(/^#/, "") || "/home").split("?")[0];
+    const initialGalaxyRoute = (location.hash.replace(/^#/, "") || "/platform").split("?")[0];
     let hasGalaxyPreference = false;
     try { hasGalaxyPreference = localStorage.getItem(window.HHGalaxyShell.flagKey) !== null; } catch {}
-    // The approved two-layer architecture requires the Gateway renderer even
+    // The single Platform architecture keeps the Galaxy renderer available even
     // for clients that saved the retired shell rollback flag as `false`.
-    // Without this override there is no valid HH Core control that can grant
-    // access to the Platform layer.
+    // Without this override the embedded Galaxy module cannot render all its
+    // existing workspaces.
     if (window.HHCoreGateway) window.HHGalaxyShell.setEnabled(true, { root: shell, route: initialGalaxyRoute });
     else if (hasGalaxyPreference) window.HHGalaxyShell.mount(shell, { route: initialGalaxyRoute });
     else window.HHGalaxyShell.setEnabled(true, { root: shell, route: initialGalaxyRoute });
@@ -5517,7 +5517,8 @@ function initAppShell() {
     { id: "tiktok", icon: "TT", title: "TikTok Creator Galaxy", route: "/davinci-resolve/tiktok", description: "18 workspace TikTok compliant: nghiên cứu, sáng tạo video, SEO, analytics, lịch nội bộ, Content Posting, Shop, Ads và API Console." }
   ];
   const groups = [
-    { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/home", items: ["command-center"] },
+    { id: "home", label: "Trang chủ", icon: "⌂", accent: "#62e9f2", route: "/platform", items: ["command-center"] },
+    { id: "hh-galaxy", label: "HH Galaxy", icon: "✧", accent: "#bd83ff", route: "/galaxy", items: [], description: "Bản đồ Galaxy cùng AI, âm nhạc, video, sáng tạo, trò chơi, lập trình và học tập — trong HH Platform." },
     { id: "social-media-tools", label: "Công cụ truyền thông xã hội", icon: "SM", accent: "#63ead8", route: "/social-media-tools", items: [] },
     { id: "create", label: "Sáng tạo", icon: "✦", accent: "#ff5dc8", route: "/create", items: [], studioItems: creativeStudioItems },
     { id: "draw", label: "Vẽ", icon: "✎", accent: "#55eaff", route: "/draw", items: [] },
@@ -5787,6 +5788,7 @@ function initAppShell() {
     { id: "support", label: "Ủng hộ nhà phát triển", icon: "♥", accent: "#ff6fae", route: "/support", items: [] }
   ];
   const navigationSections = [
+    { id: "galaxy-workspace", label: "HH Galaxy", icon: "✧", accent: "#bd83ff", accentSecondary: "#56deeb", groupIds: ["hh-galaxy"] },
     {
       id: "ai-creative",
       label: "AI & Sáng tạo",
@@ -5920,7 +5922,9 @@ function initAppShell() {
   const sidebarIconMarkup = (id) => `<svg class="app-sidebar__svg-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">${sidebarIconPaths[sidebarIconNames[id] || "sparkles"]}</svg>`;
   const normalizeSidebarSearch = (value = "") => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
   const navigationGroupById = (id) => groups.find((group) => group.id === id);
-  const navigationItemMatchesRoute = (item, route) => Boolean(item && (route === item.route || route.startsWith(`${item.route}/`)));
+  const navigationItemMatchesRoute = (item, route) => Boolean(item && (item.id === "hh-galaxy"
+    ? window.HHCoreGateway?.isGalaxyRoute?.(route) === true
+    : route === item.route || route.startsWith(`${item.route}/`)));
   const visibleNavigationSections = () => navigationSections.map((section) => ({
     ...section,
     items: section.groupIds.map(navigationGroupById).filter((item) => item && (!item.adminOnly || isCurrentUserAdmin()))
@@ -6697,7 +6701,7 @@ function initAppShell() {
         return item ? { title: item.title, description: item.description, route: routeForModule(id) } : null;
       }).filter(Boolean)
     ];
-    return entries.filter((item) => item.route !== group.route && !item.route.startsWith("/galaxy/") && item.route !== "/home");
+    return entries.filter((item) => item.route !== group.route);
   };
   const mountPlatformHome = () => {
     workspace.innerHTML = '<div data-platform-home-host></div>';
@@ -6795,7 +6799,7 @@ function initAppShell() {
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
     let crumbRoute = "";
-    breadcrumb.innerHTML = route === "/home" ? `<button type="button" aria-current="page">Galaxy Gateway</button>` : [`<button type="button" data-app-route="/platform">HH Platform</button>`, ...crumbs.map((crumb, index) => {
+    breadcrumb.innerHTML = route === "/home" ? `<button type="button" data-app-route="/platform">HH Platform</button><span aria-hidden="true">›</span><button type="button" aria-current="page">HH Galaxy</button>` : [`<button type="button" data-app-route="/platform">HH Platform</button>`, ...crumbs.map((crumb, index) => {
       crumbRoute += `/${crumb}`;
       const isCurrent = index === crumbs.length - 1;
       const label = isCurrent && module?.title ? module.title : routeTools.find((item) => item.id === crumb)?.title || crumbLabels[crumb] || crumb;
@@ -6811,8 +6815,8 @@ function initAppShell() {
       if (contextLabel) contextLabel.textContent = title;
     }
   };
-  const syncCoreLayer = (layer) => {
-    const value = layer === "platform" ? "platform" : "gateway";
+  const syncCoreLayer = () => {
+    const value = "platform";
     shell.dataset.hhLayer = value;
     shell.dataset.hhProduct = value === "platform" ? "core" : "galaxy";
     document.body.dataset.hhLayer = value;
@@ -6824,67 +6828,33 @@ function initAppShell() {
     if (!value) return input;
     const route = value.split("?")[0];
     const gateway = window.HHCoreGateway;
-    if (route === "/home" && gateway?.hasAccess?.()) return gateway.platformEntryRoute || "/platform";
+    if (route === "/galaxy") return gateway?.gatewayRoute || "/home";
+    // Legacy tools use /home for the application Home action. The explicit
+    // /galaxy registry entry above opens the embedded module instead.
+    if (route === "/home") return gateway?.platformEntryRoute || "/platform";
     return input;
   };
   const grantCoreAccessFromGateway = (request = {}) => {
-    const gateway = window.HHCoreGateway;
-    if (!gateway?.enter || !gateway?.hasAccess || !gateway?.normalizeRoute) return false;
-    const source = String(request.source || "");
-    const currentRouteValue = gateway.normalizeRoute(location.hash.replace(/^#/, "") || gateway.gatewayRoute);
-    // Match routeFromHash(): the legacy header anchor and OAuth completion
-    // aliases both render the Gateway and therefore must authorize its one
-    // explicit HH CORE control exactly like #/home.
-    const currentRoute = currentRouteValue === "/top" || currentRouteValue === "/account"
-      ? gateway.gatewayRoute
-      : currentRouteValue;
-    const destination = gateway.normalizeRoute(request.route || gateway.platformEntryRoute);
-    if (source !== gateway.entrySource
-      || currentRoute !== gateway.gatewayRoute
-      || destination !== gateway.platformEntryRoute) return false;
-    const entered = gateway.enter({ source: gateway.entrySource });
-    return entered === true && gateway.hasAccess() === true;
+    return isUnlocked() && request.source === "hh-core" && (request.route || "/platform") === "/platform";
   };
   const routeFromHash = () => {
-    const hash = location.hash.replace(/^#/, "") || "/home";
-    const rawRoute = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
-    const route = rawRoute === "/entertainment" || rawRoute.startsWith("/entertainment/") || rawRoute === "/character-3d" || rawRoute.startsWith("/character-3d/") ? "/home" : rawRoute;
+    const hash = location.hash.replace(/^#/, "") || "/platform";
+    const rawRoute = hash === "top" || hash === "account" ? "/platform" : (hash.startsWith("/") ? hash : `/${hash}`);
+    const route = rawRoute === "/entertainment" || rawRoute.startsWith("/entertainment/") || rawRoute === "/character-3d" || rawRoute.startsWith("/character-3d/") ? "/platform" : rawRoute;
     const gateway = window.HHCoreGateway;
+    syncCoreLayer();
     if (!gateway?.resolveRoute) {
-      syncCoreLayer("gateway");
-      const bootstrapGalaxyRoutes = new Set(["/home", "/galaxy/ai", "/galaxy/music", "/galaxy/video", "/galaxy/creator", "/galaxy/games", "/galaxy/dev", "/galaxy/learning", "/galaxy/community", "/galaxy/tools", "/galaxy/analytics", "/galaxy/settings"]);
-      if (bootstrapGalaxyRoutes.has(route)) return route;
-      history.replaceState({}, document.title, `${location.pathname}${location.search}#/home`);
-      return "/home";
-    }
-    // Once HH Core has opened the Platform, legacy modules that still assign
-    // `#/home` must remain inside the second layer. Only the explicit Core
-    // exit/logout/auth-clear flows remove access before navigating Home.
-    if (route === gateway.gatewayRoute && gateway.hasAccess()) {
-      const platformEntry = gateway.platformEntryRoute || "/platform";
-      syncCoreLayer("platform");
-      history.replaceState({}, document.title, `${location.pathname}${location.search}#${platformEntry}`);
-      return platformEntry;
+      history.replaceState({}, document.title, `${location.pathname}${location.search}#/platform`);
+      return "/platform";
     }
     const resolution = gateway.resolveRoute(route);
-    // An unlocked Core session must never fall back to a first-layer screen
-    // while retaining its grant. Unknown or malformed destinations stay in
-    // Layer Two and recover at its canonical entry point.
-    if (resolution.layer === "unknown" && gateway.hasAccess()) {
-      const platformEntry = gateway.platformEntryRoute || "/platform";
-      syncCoreLayer("platform");
-      history.replaceState({}, document.title, `${location.pathname}${location.search}#${platformEntry}`);
-      return platformEntry;
+    // Preserve valid deep-link queries, but canonicalize aliases and unknowns.
+    const suffix = !resolution.redirected && hash.includes("?") ? `?${hash.split("?").slice(1).join("?")}` : "";
+    const destination = `${resolution.route}${suffix}`;
+    if (location.hash !== `#${destination}`) {
+      history.replaceState({}, document.title, `${location.pathname}${location.search}#${destination}`);
     }
-    if (resolution.route === gateway.gatewayRoute) {
-      syncCoreLayer("gateway");
-      if (resolution.redirected || route !== gateway.gatewayRoute) {
-        history.replaceState({}, document.title, `${location.pathname}${location.search}#${gateway.gatewayRoute}`);
-      }
-      return gateway.gatewayRoute;
-    }
-    syncCoreLayer(resolution.layer);
-    return resolution.route;
+    return destination;
   };
   let cosmicLoaderRoute = "";
   let cosmicLoaderHideTimer = 0;
@@ -7206,8 +7176,7 @@ function initAppShell() {
   };
   const renderRoute = () => {
     if (!isUnlocked()) return;
-    const hash = location.hash.replace(/^#/, "") || "/home";
-    let route = hash === "top" || hash === "account" ? "/home" : (hash.startsWith("/") ? hash : `/${hash}`);
+    let route = routeFromHash();
     if (route === "/cosmic-observatory" || route.startsWith("/cosmic-observatory/")) {
       route = `/universe${route.slice("/cosmic-observatory".length)}`;
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
@@ -7411,6 +7380,7 @@ function initAppShell() {
       const layerHost = workspace.firstElementChild;
       const mounted = window.HHGalaxyLayerOne?.mount?.(layerHost, {
         route,
+        embedded: true,
         user: readCurrentAuthUser(),
         navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
         mountHome: (homeHost, context = {}) => {
@@ -7418,7 +7388,7 @@ function initAppShell() {
             route: context.route || "/home",
             storage: context.storage,
             embedded: true,
-            navigate: (nextRoute) => { location.hash = `#${platformSafeRoute(nextRoute)}`; },
+            navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
             enterCore: (request = {}) => grantCoreAccessFromGateway(request),
             baseMount: (host, options = {}) => window.HHChatAI?.mount?.(host, {
               currentUser: readCurrentAuthUser(),
@@ -8232,7 +8202,7 @@ function initAppShell() {
     ];
     modules.unshift(
       ...[
-        ["HH Galaxy", "Galaxy Map", "Bản đồ trực quan của toàn bộ chức năng thật trong HH Platform.", "/home", "galaxy map home hành tinh"],
+        ["HH Galaxy", "Galaxy Map", "Bản đồ trực quan của toàn bộ chức năng thật trong HH Platform.", "/galaxy", "galaxy map home hành tinh lớp 1"],
         ["HH Galaxy", "Dashboard cá nhân", "Task, project, ghi chú, focus và dung lượng từ dữ liệu thiết bị.", "/home/dashboard", "dashboard widget cá nhân"],
         ["HH Galaxy", "AI Universe", "Điểm vào Chat AI, Prompt Studio, Image AI và Script Generator.", "/create/ai-center", "ai universe copilot"],
         ["HH Galaxy", "Creator Pipeline", "Quy trình Idea đến Publish, mỗi bước mở engine chuyên trách.", "/create/workflow", "creator pipeline workflow"],
@@ -8482,20 +8452,11 @@ function initAppShell() {
     }
     if (event.target.closest("[data-hh-core-exit]")) {
       event.preventDefault();
-      const gateway = window.HHCoreGateway;
-      const leftCore = gateway?.leave?.({ source: "explicit-exit" });
-      if (leftCore === true && gateway?.hasAccess?.() !== true) {
-        location.hash = `#${gateway?.gatewayRoute || "/home"}`;
-      } else {
-        setSidebarStatus("Chưa thể đóng HH CORE vì trình duyệt chưa xóa được quyền của phiên này.");
-        if (routeAnnouncer) routeAnnouncer.textContent = "Chưa thể đóng HH CORE. Vui lòng kiểm tra quyền lưu trữ của trình duyệt.";
-      }
+      location.hash = "#/home";
       return;
     }
     if (event.target.closest("[data-shell-back]")) {
-      if (window.HHCoreGateway?.hasAccess?.()) location.hash = `#${window.HHCoreGateway.platformEntryRoute || "/platform"}`;
-      else if (history.length > 1) history.back();
-      else location.hash = "#/home";
+      location.hash = "#/platform";
       return;
     }
     if (event.target.closest("[data-shell-retry-route]")) {
@@ -8611,7 +8572,7 @@ function initAppShell() {
       if (galaxyLayerActive) focusGalaxySearch();
       else openPalette();
     }
-    if (!typing && event.altKey && event.key.toLowerCase() === "h") { event.preventDefault(); location.hash = `#${galaxyLayerActive ? "/home" : (window.HHCoreGateway?.platformEntryRoute || "/platform")}`; }
+    if (!typing && event.altKey && event.key.toLowerCase() === "h") { event.preventDefault(); location.hash = "#/platform"; }
     if (!typing && event.altKey && event.key.toLowerCase() === "m") { event.preventDefault(); location.hash = galaxyLayerActive ? "#/galaxy/music" : "#/music-ai/project"; }
     if (event.key === "Escape") { closePalette(); closeOverlays(); closeSidebarContextMenu(); }
     if (palette?.open && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) {

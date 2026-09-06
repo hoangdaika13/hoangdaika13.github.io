@@ -27,7 +27,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=5", "galaxy-shell.js?v=9"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=6", "galaxy-shell.js?v=10"]
     },
     "auth-effects": {
       /*
@@ -64,18 +64,18 @@
     },
     "platform-home": {
       styles: ["platform-home.css?v=4", "home-cosmos-motion.css?v=2"],
-      scripts: ["home-cosmos-motion.js?v=1", "platform-home.js?v=5"]
+      scripts: ["home-cosmos-motion.js?v=1", "platform-home.js?v=6"]
     },
     "galaxy-home-ai": {
       styles: ["galaxy-home-ai.css?v=23", "home-cosmos-motion.css?v=2"],
-      scripts: ["home-cosmos-motion.js?v=1", "galaxy-home-ai.js?v=17"]
+      scripts: ["home-cosmos-motion.js?v=1", "galaxy-home-ai.js?v=18"]
     },
     "galaxy-layer-one": {
-      styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=7", "galaxy-layer-one-worlds.css?v=15", "galaxy-stable-chrome.css?v=3", "galaxy-premium-workspaces.css?v=2", "galaxy-workbench.css?v=4"],
+      styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=7", "galaxy-layer-one-worlds.css?v=15", "galaxy-stable-chrome.css?v=4", "galaxy-premium-workspaces.css?v=2", "galaxy-workbench.css?v=4"],
       // Load the canonical data API and every side-effect-free engine before
       // the owning shell. The route is mounted only after this sequence has
       // completed, so all local-first capabilities are available on first use.
-      scripts: ["galaxy-layer-one-data.js?v=4", "galaxy-creator-studio.js?v=8", "galaxy-layer-one-storage.js?v=2", "galaxy-layer-one-media.js?v=1", "galaxy-layer-one-learning.js?v=1", "galaxy-layer-one-analytics.js?v=1", "galaxy-layer-one-tools.js?v=3", "galaxy-layer-one-backup.js?v=2", "vendor/qrcode.js?v=1", "vendor/dompurify-3.4.14.min.js?v=1", "vendor/jszip.min.js?v=3.10.1", "galaxy-workbench-core.js?v=3", "galaxy-video-renderer.js?v=2", "galaxy-community-client.js?v=1", "galaxy-workbench.js?v=4", "galaxy-creator-production.js?v=2", "galaxy-layer-one.js?v=22"]
+      scripts: ["galaxy-layer-one-data.js?v=4", "galaxy-creator-studio.js?v=8", "galaxy-layer-one-storage.js?v=2", "galaxy-layer-one-media.js?v=1", "galaxy-layer-one-learning.js?v=1", "galaxy-layer-one-analytics.js?v=1", "galaxy-layer-one-tools.js?v=3", "galaxy-layer-one-backup.js?v=2", "vendor/qrcode.js?v=1", "vendor/dompurify-3.4.14.min.js?v=1", "vendor/jszip.min.js?v=3.10.1", "galaxy-workbench-core.js?v=3", "galaxy-video-renderer.js?v=2", "galaxy-community-client.js?v=1", "galaxy-workbench.js?v=4", "galaxy-creator-production.js?v=2", "galaxy-layer-one.js?v=23"]
     },
     "galaxy-domain-views": {
       styles: ["galaxy-domain-views.css?v=13"],
@@ -326,9 +326,9 @@
   const SCRIPT_TIMEOUT_MS = 20000;
 
   function normalizeRoute(route) {
-    let value = String(route || global.location.hash.replace(/^#/, "") || "/home").trim();
+    let value = String(route || global.location.hash.replace(/^#/, "") || "/platform").trim();
     if (value.startsWith("#")) value = value.slice(1);
-    value = value.split("?")[0].split(";")[0] || "/home";
+    value = value.split("?")[0].split(";")[0] || "/platform";
     value = value.startsWith("/") ? value : `/${value}`;
     return value.length > 1 ? value.replace(/\/+$/, "") : value;
   }
@@ -361,8 +361,8 @@
   function featureGroupsForRoute(route) {
     const value = normalizeRoute(route);
     if (value === "/platform") return ["platform-home"];
-    // /home is now the mandatory first-layer Galaxy Gateway. A persisted
-    // legacy shell flag may not replace the only control that can enter Core.
+    // /home is the embedded Galaxy module. A persisted
+    // legacy shell flag must not remove its existing workspace renderer.
     if (value === "/home") return ["galaxy-layer-one", "galaxy-home-ai"];
     if (value === "/home/dashboard") return ["galaxy-home-ai"];
     if (value === "/create/ai-center") return ["creative", "platform", "galaxy-home-ai"];

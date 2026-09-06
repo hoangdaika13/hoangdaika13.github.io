@@ -41,11 +41,11 @@
     error: { progress: "100%", message: "Không thể mở workspace.", detail: "Bạn có thể thử lại mà không mất dữ liệu" }
   });
   const currentRoute = () => {
-    const value = location.hash.replace(/^#/, "").split("?")[0] || "/home";
+    const value = location.hash.replace(/^#/, "").split("?")[0] || "/platform";
     return value.startsWith("/") ? value : `/${value}`;
   };
   const routeVisual = (route = currentRoute()) => {
-    const value = String(route || "/home").split("?")[0];
+    const value = String(route || "/platform").split("?")[0];
     return BOOT_ROUTES.find((item) => value === item.prefix || value.startsWith(`${item.prefix}/`)) || BOOT_ROUTES.at(-1);
   };
   const readBootStorage = (key) => {
@@ -678,7 +678,7 @@
       const streak = recordLoginStreak();
       gate.classList.add("auth-success");
       setStatus(`${message} · Chuỗi hoạt động ${streak} ngày`, "success");
-      const pendingRoute = sessionStorage.getItem("hh.auth.pending-route") || "#/home";
+      const pendingRoute = sessionStorage.getItem("hh.auth.pending-route") || "#/platform";
       sessionStorage.removeItem("hh.auth.pending-route");
       finishSessionCheck();
       if (location.hash !== pendingRoute) history.replaceState({}, document.title, `${location.pathname}${location.search}${pendingRoute}`);
@@ -973,7 +973,7 @@
       const payload = params.get("qrLogin");
       if (!payload || !user || user.guest) return;
       const [qrId, code] = payload.split(".");
-      history.replaceState({}, document.title, `${location.pathname}${location.hash || "#/home"}`);
+      history.replaceState({}, document.title, `${location.pathname}${location.hash || "#/platform"}`);
       try {
         setStatus("Đang xác nhận đăng nhập cho thiết bị khác...");
         await api(AUTH_ENDPOINTS.qrApprove, { method: "POST", body: JSON.stringify({ qrId, code }) });
@@ -986,7 +986,7 @@
       const code = current.searchParams.get("authCode");
       if (!code) return false;
       current.searchParams.delete("authCode");
-      history.replaceState({}, document.title, `${current.pathname}${current.search}${current.hash || "#/home"}`);
+      history.replaceState({}, document.title, `${current.pathname}${current.search}${current.hash || "#/platform"}`);
       try {
         setStatus("Đang hoàn tất đăng nhập Google...");
         const result = await api("/api/auth/exchange", { method: "POST", body: JSON.stringify({ code }) });
@@ -1080,14 +1080,14 @@
       user = guestUser;
       setStatus("Đã mở workspace local. Tính năng đồng bộ cần tài khoản.", "info");
       finishSessionCheck();
-      if (location.hash !== "#/home") history.replaceState({}, document.title, `${location.pathname}${location.search}#/home`);
+      if (location.hash !== "#/platform") history.replaceState({}, document.title, `${location.pathname}${location.search}#/platform`);
       setGateState();
     });
     gate.querySelectorAll("[data-oauth-provider]").forEach((button) => button.addEventListener("click", () => {
       authEpoch += 1;
       finishSessionCheck();
       if (!realtimeUrl || !oauthProviders.google) return setOAuthError("Google OAuth chưa được cấu hình trên máy chủ.");
-      sessionStorage.setItem("hh-auth-return-to", location.hash || "#/home");
+      sessionStorage.setItem("hh-auth-return-to", location.hash || "#/platform");
       location.assign(`${realtimeUrl}/api/auth/google?returnTo=${encodeURIComponent(location.origin)}`);
     }));
     let logoutPending = false;

@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v983";
+const CACHE = "hh-identity-portal-v984";
+// Previous release: hh-identity-portal-v983.
 // Previous Atelier release: hh-identity-portal-v982.
 // Previous stable homepage release: hh-identity-portal-v981.
 // Previous cinematic homepage release: hh-identity-portal-v980.
@@ -74,11 +75,11 @@ const RUNTIME_ASSETS = [
   "./galaxy-workbench.js?v=4",
   "./galaxy-workbench.css?v=4",
   "./galaxy-premium-workspaces.css?v=2",
-  "./galaxy-stable-chrome.css?v=3",
+  "./galaxy-stable-chrome.css?v=4",
   "./home-cosmos-motion.css?v=2",
   "./home-cosmos-motion.js?v=1",
   "./platform-home.css?v=4",
-  "./platform-home.js?v=5",
+  "./platform-home.js?v=6",
   "./",
   "./index.html",
   "./app-shell.css?v=66",
@@ -304,10 +305,10 @@ const RUNTIME_ASSETS = [
   "./brand-galaxy-logo.js?v=2",
   "./galaxy-design-system.css?v=1",
   "./galaxy-shell.css?v=9",
-  "./galaxy-shell.js?v=9",
-  "./hh-core-gateway.js?v=5",
+  "./galaxy-shell.js?v=10",
+  "./hh-core-gateway.js?v=6",
   "./galaxy-home-ai.css?v=23",
-  "./galaxy-home-ai.js?v=17",
+  "./galaxy-home-ai.js?v=18",
   "./galaxy-layer-one.css?v=7",
   "./galaxy-layer-one-worlds.css?v=15",
   "./galaxy-layer-one-storage.js?v=2",
@@ -317,7 +318,7 @@ const RUNTIME_ASSETS = [
   "./galaxy-layer-one-tools.js?v=3",
   "./vendor/qrcode.js?v=1",
   "./galaxy-layer-one-backup.js?v=2",
-  "./galaxy-layer-one.js?v=22",
+  "./galaxy-layer-one.js?v=23",
   "./assets/galaxy/learning-portals-atlas-v1.png",
   // Runtime-cached on first route use; deliberately excluded from CORE.
   "./assets/galaxy/function-portals/ai-universe-v1.png",
@@ -362,7 +363,7 @@ const RUNTIME_ASSETS = [
   "./assets/brand/hh-galaxy-star-share.png?v=1",
   "./manifest.webmanifest?v=3",
   "./realtime-core.js?v=1",
-  "./auth-platform.js?v=19",
+  "./auth-platform.js?v=20",
   "./auth-experience.js?v=9",
   "./auth-neon-gateway.js?v=29",
   "./auth-h-galaxy.js?v=14",
@@ -645,10 +646,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=643",
+  "./performance-loader.js?v=644",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=270"
+  "./script.js?v=271"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

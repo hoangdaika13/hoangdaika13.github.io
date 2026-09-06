@@ -1639,7 +1639,7 @@
       return "<article class=\"hgl1-learning-portal hgl1-learning-destination hgl1-learning-portal--" + destination.id + " hgl1-learning-destination--" + destination.id + dharmaAlias + "\" data-platform-route=\"" + destination.route + "\" data-capability=\"unconfigured\">" +
         "<div class=\"hgl1-learning-portal__art hgl1-learning-destination__art\" aria-hidden=\"true\"><span class=\"hgl1-learning-portal__landmark\">" + escapeHtml(destination.glyph) + "</span><i></i><i></i><i></i></div>" +
         "<div class=\"hgl1-learning-portal__body hgl1-learning-destination__body\"><span>HH Platform · " + escapeHtml(destination.route) + "</span><h2>" + escapeHtml(destination.title) + "</h2><p>" + escapeHtml(destination.description) + "</p>" +
-        "<button class=\"hgl1-button hgl1-button--ghost hgl1-learning-portal__action hgl1-learning-destination__action\" type=\"button\" data-hgl1-action=\"open-platform-via-core\">Vào học qua HH CORE " + icon("arrow") + "</button></div></article>";
+        "<button class=\"hgl1-button hgl1-button--ghost hgl1-learning-portal__action hgl1-learning-destination__action\" type=\"button\" data-hgl1-action=\"open-platform-via-core\">Mở không gian học " + icon("arrow") + "</button></div></article>";
     }).join("");
     const todayMarkup = todayPlans.length ? "<div class=\"hgl1-learning-today__list\">" + todayPlans.map(function todayPlanMarkup(item) {
       const completed = item.meta && item.meta.completed === true;
@@ -1649,7 +1649,7 @@
       return "<li class=\"" + (item.meta.completed ? "is-complete" : "") + "\"><time datetime=\"" + escapeHtml(item.meta.dueDate) + "\">" + escapeHtml(formatLearningDate(item.meta.dueDate)) + "</time><span>" + escapeHtml(item.title) + "</span></li>";
     }).join("") + "</ul>" : "<p class=\"hgl1-learning-plan__empty\">Chưa có kế hoạch học tập nào được lưu.</p>";
     const heroActions = "<button class=\"hgl1-button hgl1-button--primary\" type=\"button\" data-hgl1-action=\"focus-learning-note\">" + icon("plus") + " Ghi chú nhanh</button><button class=\"hgl1-button hgl1-button--ghost\" type=\"button\" data-hgl1-action=\"trigger-file\" data-route=\"/galaxy/learning\">" + icon("upload") + " Nhập tài liệu</button><input class=\"hgl1-sr-only\" type=\"file\" tabindex=\"-1\" aria-label=\"Chọn tài liệu cho Learning Star\" data-hgl1-module-file data-route=\"/galaxy/learning\" accept=\".txt,.md,.json,text/plain,application/json\"/>";
-    const coreGate = "<button class=\"hgl1-learning-core-gate\" type=\"button\" data-hgl1-action=\"open-platform-via-core\" aria-label=\"Mở cổng HH CORE tại bản đồ Galaxy\"><span aria-hidden=\"true\">HH</span><b>HH CORE</b><small>Cổng vào HH Platform</small>" + icon("arrow") + "</button>";
+    const coreGate = "<button class=\"hgl1-learning-core-gate\" type=\"button\" data-hgl1-action=\"open-platform-via-core\" aria-label=\"Mở trang chủ HH Platform\"><span aria-hidden=\"true\">HH</span><b>HH CORE</b><small>Trang chủ HH Platform</small>" + icon("arrow") + "</button>";
     const libraryShortcuts = "<div class=\"hgl1-learning-library__shortcuts\" aria-label=\"Thao tác nhanh trong thư viện\">" +
       "<button type=\"button\" data-hgl1-action=\"focus-learning-note\">" + icon("learning") + "<span>Ghi chú</span></button>" +
       "<button type=\"button\" data-hgl1-action=\"focus-learning-plan\">" + icon("bell") + "<span>Kế hoạch</span></button>" +
@@ -1803,9 +1803,9 @@
     const networkLabel = online === false ? "Ngoại tuyến" : online === true ? "Mạng trình duyệt khả dụng" : "Chưa kiểm tra mạng";
     const storageStatus = ui.storageStatus === "unsupported" ? "Lưu trữ không khả dụng" : ui.storageStatus === "error" ? "Lỗi lưu trữ" : "Dữ liệu trên thiết bị";
     const activeSettings = sanitizeSettings(ui.settingsDraft || state.settings);
-    return "<div class=\"hh-galaxy-app\" data-hh-layer=\"galaxy\" data-route=\"" + entry.route + "\" data-theme=\"" + activeSettings.theme + "\" data-effects=\"" + activeSettings.effects + "\" data-contrast=\"" + activeSettings.contrast + "\" data-reduced-motion=\"" + activeSettings.reducedMotion + "\" data-ui-scale=\"" + activeSettings.uiScale + "\" data-color-vision=\"" + activeSettings.colorVision + "\">" +
+    return "<div class=\"hh-galaxy-app\" data-hh-module=\"galaxy\" data-route=\"" + entry.route + "\" data-theme=\"" + activeSettings.theme + "\" data-effects=\"" + activeSettings.effects + "\" data-contrast=\"" + activeSettings.contrast + "\" data-reduced-motion=\"" + activeSettings.reducedMotion + "\" data-ui-scale=\"" + activeSettings.uiScale + "\" data-color-vision=\"" + activeSettings.colorVision + "\">" +
       "<a class=\"hgl1-skip-link\" href=\"#hgl1-main\">Bỏ qua điều hướng</a><div class=\"hgl1-cosmos\" aria-hidden=\"true\"><i></i><i></i><i></i></div>" +
-      "<aside class=\"hgl1-sidebar\" id=\"hgl1-sidebar\" data-hgl1-drawer role=\"dialog\" aria-modal=\"true\" aria-hidden=\"true\" aria-label=\"Điều hướng HH Galaxy\"><div class=\"hgl1-sidebar__head\"><div class=\"hgl1-product-mark\"><span>" + icon("home") + "</span><div><b>HH GALAXY MAP</b><small>Lớp 1 · Không gian độc lập</small></div></div><button class=\"hgl1-icon-button hgl1-sidebar__close\" type=\"button\" data-hgl1-action=\"close-drawer\" aria-label=\"Đóng menu\">" + icon("close") + "</button><div class=\"hgl1-brand\"><span>HH</span><div><b>HOANG8.COM</b><small>Galaxy Workspace</small></div></div>" + searchBoxMarkup(false) + "</div>" +
+      "<aside class=\"hgl1-sidebar\" id=\"hgl1-sidebar\" data-hgl1-drawer role=\"dialog\" aria-modal=\"true\" aria-hidden=\"true\" aria-label=\"Điều hướng HH Galaxy\"><div class=\"hgl1-sidebar__head\"><div class=\"hgl1-product-mark\"><span>" + icon("home") + "</span><div><b>HH GALAXY MAP</b><small>Module trong HH Platform</small></div></div><button class=\"hgl1-icon-button hgl1-sidebar__close\" type=\"button\" data-hgl1-action=\"close-drawer\" aria-label=\"Đóng menu\">" + icon("close") + "</button><div class=\"hgl1-brand\"><span>HH</span><div><b>HOANG8.COM</b><small>Galaxy Workspace</small></div></div>" + searchBoxMarkup(false) + "</div>" +
       "<nav class=\"hgl1-nav\" aria-label=\"Các không gian HH Galaxy\">" + navMarkup(entry.route, false) + "</nav><div class=\"hgl1-sidebar__footer\"><a class=\"hgl1-customize\" href=\"#/galaxy/settings\" data-hgl1-route=\"/galaxy/settings\"><span>" + icon("settings") + "</span><div><b>Tùy chỉnh Galaxy</b><small>Màu sắc, chuyển động và bố cục theo cách của bạn.</small><em>Mở cài đặt →</em></div>" + icon("arrow") + "</a><div class=\"hgl1-profile\"><span class=\"hgl1-avatar\">" + initial + "</span><div><b>" + escapeHtml(displayName) + "</b><small>" + storageStatus + "</small></div></div></div></aside>" +
       "<button class=\"hgl1-backdrop\" type=\"button\" data-hgl1-action=\"close-drawer\" aria-label=\"Đóng menu\" tabindex=\"-1\"></button>" +
       "<div class=\"hgl1-shell\"><header class=\"hgl1-topbar\"><div class=\"hgl1-fixed-brand\"><span>" + icon("home") + "</span><div><b>HH GALAXY MAP 3D <em>BETA</em></b><small>Khám phá vũ trụ số · Kết nối không giới hạn</small></div></div><button class=\"hgl1-icon-button hgl1-menu-button\" type=\"button\" data-hgl1-action=\"open-drawer\" aria-controls=\"hgl1-sidebar\" aria-expanded=\"false\" aria-label=\"Mở menu\">" + icon("menu") + "</button><div class=\"hgl1-breadcrumb\"><span>HH Galaxy</span><b>/</b><strong>" + escapeHtml(entry.label) + "</strong></div>" + searchBoxMarkup(true) + "<div class=\"hgl1-topbar__status\" title=\"" + networkLabel + "\"><span class=\"" + (online === false ? "is-offline" : "") + "\"></span><b>" + escapeHtml(networkLabel) + "</b></div><button class=\"hgl1-icon-button\" type=\"button\" data-hgl1-action=\"show-empty-notifications\" aria-label=\"Thông báo: chưa có dữ liệu\">" + icon("bell") + "</button><button class=\"hgl1-icon-button\" type=\"button\" data-hgl1-action=\"show-help\" aria-label=\"Trợ giúp\">" + icon("help") + "</button><span class=\"hgl1-avatar hgl1-avatar--small\" aria-label=\"" + escapeHtml(displayName) + "\">" + initial + "</span></header>" +
@@ -2456,6 +2456,8 @@
     if (!runtime || !runtime.app) return;
     let modal = true;
     try { modal = !globalScope.matchMedia || globalScope.matchMedia("(max-width: 1279px)").matches; } catch (_) { modal = true; }
+    // Embedded Galaxy uses an always-visible module tab strip, not a second drawer.
+    if (runtime.options?.embedded === true) modal = false;
     runtime.drawerModal = modal;
     const sidebar = runtime.app.querySelector("[data-hgl1-drawer]");
     if (!sidebar) return;
@@ -4565,8 +4567,8 @@
       const destination = LEARNING_DESTINATIONS.find(function findLearningDestination(entry) {
         return destinationCard && entry.route === destinationCard.dataset.platformRoute;
       });
-      navigate("/home");
-      showToast(destination ? destination.title + " thuộc HH Platform. Hãy chọn HH CORE trên bản đồ để mở đúng cổng." : "Hãy chọn HH CORE trên bản đồ để vào HH Platform.", "info");
+      if (runtime.options?.embedded === true && globalScope.location) globalScope.location.hash = "#" + (destination?.route || "/platform");
+      else navigate("/home");
     } else if (action === "filter-learning") {
       const library = control.closest(".hgl1-learning-library");
       const filters = library ? library.querySelectorAll("[data-hgl1-action=\"filter-learning\"]") : [];

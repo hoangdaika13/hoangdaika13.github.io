@@ -90,14 +90,14 @@ test("search indexes only first-layer manifest entries", () => {
   assert.equal(layerOne.searchRoutes("").length, 0);
 });
 
-test("shell markup owns the first-layer chrome and does not duplicate the Core entry", () => {
+test("Galaxy module preserves its navigation nodes without declaring a second layer", () => {
   const markup = layerOne.viewMarkup("/galaxy/ai", layerOne.collectLocalState(memoryStorage()), {
     online: false,
     userName: "<Người dùng>",
     storageStatus: "ready"
   });
   assert.match(markup, /^<div class="hh-galaxy-app"/);
-  assert.match(markup, /data-hh-layer="galaxy"/);
+  assert.match(markup, /data-hh-module="galaxy"/);
   assert.match(markup, /class="hgl1-sidebar"/);
   assert.match(markup, /class="hgl1-topbar"/);
   assert.match(markup, /class="hgl1-mobile-nav"/);

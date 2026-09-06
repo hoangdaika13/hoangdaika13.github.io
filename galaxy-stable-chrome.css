@@ -96,3 +96,54 @@
 @media(prefers-reduced-motion:reduce) { [data-hh-galaxy-layer-one-host] .hgl1-topbar::before,[data-hh-galaxy-layer-one-host] .hgl1-nav__link svg { animation:none !important; } }
 [data-hh-galaxy-layer-one-host] .hh-galaxy-app:is([data-effects=static],[data-reduced-motion=always]) .hgl1-topbar::before,
 [data-hh-galaxy-layer-one-host] .hh-galaxy-app:is([data-effects=static],[data-reduced-motion=always]) .hgl1-nav__link svg { animation:none !important; }
+
+/* HH Galaxy is now a workspace inside the persistent Platform frame.
+   Reuse its connected navigation nodes as module tabs, never a second shell. */
+[data-galaxy-shell][data-hh-layer="platform"] .app-main:has([data-hh-galaxy-layer-one-host]) {
+  display:flex; flex-direction:column; min-height:0; overflow:hidden; padding:0 !important;
+}
+[data-galaxy-shell][data-hh-layer="platform"] .app-main:has([data-hh-galaxy-layer-one-host]) > :is(.app-page-header,.app-context-bar,.app-breadcrumb) { display:none !important; }
+[data-galaxy-shell][data-hh-layer="platform"] .app-workspace:has([data-hh-galaxy-layer-one-host]) {
+  flex:1; min-height:0; height:100%; padding:0; margin:0; width:100%; max-width:none;
+}
+[data-galaxy-shell][data-hh-layer="platform"] [data-hh-galaxy-layer-one-host] { height:100%; min-height:0; min-width:0; }
+[data-galaxy-shell][data-hh-layer="platform"] [data-hh-galaxy-layer-one-host] .hh-galaxy-app {
+  height:100%; min-height:0; width:100%; grid-template-columns:minmax(0,1fr);
+  grid-template-rows:auto minmax(0,1fr); --hgl1-sidebar-w:0px;
+}
+[data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app :is(.hgl1-topbar,.hgl1-sidebar__head,.hgl1-sidebar__footer,.hgl1-mobile-nav,.hgl1-backdrop) { display:none !important; }
+[data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-sidebar {
+  grid-column:1; grid-row:1; position:relative; inset:auto; width:100%; height:auto;
+  min-height:0; max-height:35dvh; padding:12px 16px; transform:none; visibility:visible;
+  opacity:1; pointer-events:auto; border-right:0; border-bottom:1px solid #a579e54d;
+  background:linear-gradient(110deg,#151733,#11182c 60%,#122938); box-shadow:0 5px 24px #0003;
+}
+[data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-nav {
+  display:flex; flex-wrap:wrap; gap:7px; margin:0; padding:0; overflow:visible;
+}
+[data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-nav__link {
+  display:flex; gap:8px; flex:0 0 auto; width:auto; min-height:42px; height:auto;
+  margin:0; padding:9px 12px; border:1px solid #8b91ba33; border-radius:12px; background:#080e2299;
+}
+[data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-nav__label { font-size:14px; color:#d5dbf0; }
+[data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-nav__arrow { display:none; }
+[data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-nav__link[aria-current=page] { border-color:#ce8dff; background:linear-gradient(110deg,#673d9966,#214d7666); }
+[data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-nav__link:focus-visible { outline:2px solid #83f5ec; outline-offset:2px; }
+[data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-main {
+  grid-column:1; grid-row:2; min-height:0; height:100%; padding:24px; overflow-y:auto;
+  overflow-x:hidden; overscroll-behavior-y:contain;
+}
+@layer hh-galaxy-home-ai {
+  [data-galaxy-shell][data-hh-layer="platform"][data-galaxy-route="/home"] [data-hh-galaxy-layer-one-host] [data-gha-home-ai-host][data-gha-embedded=true] .gha-home.gha-app {
+    height:100% !important; min-height:620px !important;
+  }
+}
+@media(max-width:767px) {
+  [data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-sidebar { padding:10px; max-height:30dvh; }
+  [data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-nav { flex-wrap:nowrap; overflow-x:auto; padding:3px; scrollbar-width:thin; }
+  [data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-main { padding:14px 12px 76px; }
+  [data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app[data-route="/home"] .hgl1-main { padding:0 0 76px; }
+  @layer hh-galaxy-home-ai {
+    [data-galaxy-shell][data-hh-layer="platform"][data-galaxy-route="/home"] [data-hh-galaxy-layer-one-host] [data-gha-home-ai-host][data-gha-embedded=true] .gha-home.gha-app { height:1280px !important; min-height:1280px !important; }
+  }
+}

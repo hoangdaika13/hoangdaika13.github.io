@@ -38,5 +38,5 @@ test("reference chrome does not move links and releases motion for accessibility
   assert.match(css,/grid-template-rows:76px minmax\(0,1fr\)/);
   assert.match(css,/hgl1-nav__link[^}]+transform:none/);
   assert.match(css,/prefers-reduced-motion:reduce/);
-  assert.match(read("sw.js"),/galaxy-stable-chrome.css\?v=3/);
+  assert.match(read("sw.js"),/galaxy-stable-chrome.css\?v=4/);
 });
