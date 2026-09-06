@@ -1,0 +1,49 @@
+/* Cosmic Studio: visual and interaction layer for the embedded Galaxy module. */
+[data-hh-galaxy-layer-one-host] .gcs-toolbar {
+  position:relative; z-index:4; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  padding:14px 20px 12px; border-bottom:1px solid rgb(156 129 255 / 20%);
+  background:linear-gradient(110deg,rgb(13 21 50 / .98),rgb(19 25 58 / .94) 52%,rgb(11 37 50 / .96));
+  box-shadow:0 8px 24px rgb(0 0 0 / 22%); backdrop-filter:blur(16px);
+}
+[data-hh-galaxy-layer-one-host] .gcs-heading { display:flex; align-items:center; gap:12px; min-width:0; flex:1 1 280px; }
+[data-hh-galaxy-layer-one-host] .gcs-mark { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; color:#fff; font-size:22px; background:linear-gradient(145deg,#bc83ff,#57e7e1); box-shadow:0 0 24px rgb(166 116 255 / 48%); }
+[data-hh-galaxy-layer-one-host] .gcs-eyebrow { display:block; color:#9da7c9; font-size:10px; font-weight:700; letter-spacing:.16em; }
+[data-hh-galaxy-layer-one-host] .gcs-heading h1 { margin:2px 0 0; color:#f2f3ff; font-size:21px; line-height:1.2; letter-spacing:-.03em; white-space:nowrap; }
+[data-hh-galaxy-layer-one-host] .gcs-controls { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex:0 1 auto; flex-wrap:wrap; }
+[data-hh-galaxy-layer-one-host] .gcs-controls button,
+[data-hh-galaxy-layer-one-host] .gcs-controls a { display:inline-flex; align-items:center; gap:7px; min-height:36px; padding:8px 12px; border:1px solid #7e89be55; border-radius:10px; color:#e1e5fb; background:#0b1430cc; text-decoration:none; cursor:pointer; }
+[data-hh-galaxy-layer-one-host] .gcs-controls button:hover,
+[data-hh-galaxy-layer-one-host] .gcs-controls a:hover { border-color:#9eece5; background:#263266; }
+[data-hh-galaxy-layer-one-host] .gcs-controls button:focus-visible,
+[data-hh-galaxy-layer-one-host] .gcs-controls a:focus-visible,
+[data-hh-galaxy-layer-one-host] .gcs-directory a:focus-visible,
+[data-hh-galaxy-layer-one-host] .gcs-directory button:focus-visible { outline:2px solid #8ceee7; outline-offset:2px; }
+[data-hh-galaxy-layer-one-host] .gcs-controls kbd { color:#aeb9d7; font-size:11px; }
+[data-hh-galaxy-layer-one-host] .gcs-view-switch { display:flex; gap:4px; padding:3px; border:1px solid #7e89be55; border-radius:12px; background:#070d22; }
+[data-hh-galaxy-layer-one-host] .gcs-view-switch button { min-height:30px; border:0; padding:5px 9px; background:transparent; }
+[data-hh-galaxy-layer-one-host] .gcs-view-switch button[aria-pressed=true] { color:#071523; background:linear-gradient(100deg,#75e7dd,#9e9aff); }
+[data-hh-galaxy-layer-one-host] .gcs-save-status { flex:1 0 100%; width:100%; margin:0; color:#9faecb; font-size:12px; }
+[data-hh-galaxy-layer-one-host] .gcs-directory { position:relative; z-index:3; padding:28px clamp(18px,4vw,50px) 50px; color:#edf1ff; background:radial-gradient(ellipse at 75% 0%,rgb(116 81 195 / 17%),transparent 44%),#070d21; }
+[data-hh-galaxy-layer-one-host] .gcs-directory[hidden] { display:none; }
+[data-hh-galaxy-layer-one-host] .gcs-directory header h2 { margin:0; font-size:clamp(22px,3vw,32px); letter-spacing:-.04em; }
+[data-hh-galaxy-layer-one-host] .gcs-directory header p { margin:6px 0 16px; color:#aab6d1; }
+[data-hh-galaxy-layer-one-host] .gcs-recent { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 18px; }
+[data-hh-galaxy-layer-one-host] .gcs-recent a { display:inline-flex; padding:8px 11px; border:1px solid #8994cb44; border-radius:10px; color:#d9dfff; background:#111b39; text-decoration:none; }
+[data-hh-galaxy-layer-one-host] .gcs-directory-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:14px; }
+[data-hh-galaxy-layer-one-host] .gcs-directory-grid article { min-height:202px; padding:17px; border:1px solid color-mix(in srgb,var(--gcs-accent) 38%,#5d668b); border-radius:18px; background:linear-gradient(145deg,rgb(23 31 65 / .96),rgb(10 17 39 / .96)); box-shadow:inset 0 1px rgb(255 255 255 / 7%),0 14px 30px rgb(0 0 0 / 18%); }
+[data-hh-galaxy-layer-one-host] .gcs-card-icon { display:grid; place-items:center; width:38px; height:38px; margin-bottom:10px; border-radius:12px; color:var(--gcs-accent); font-size:21px; background:color-mix(in srgb,var(--gcs-accent) 17%,#101936); }
+[data-hh-galaxy-layer-one-host] .gcs-directory-grid h3 { margin:0; color:#f5f5ff; font-size:18px; }
+[data-hh-galaxy-layer-one-host] .gcs-directory-grid p { min-height:58px; margin:7px 0 13px; color:#aeb9d4; font-size:13px; line-height:1.55; }
+[data-hh-galaxy-layer-one-host] .gcs-directory-grid footer { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+[data-hh-galaxy-layer-one-host] .gcs-directory-grid footer a { color:var(--gcs-accent); font-weight:700; text-decoration:none; }
+[data-hh-galaxy-layer-one-host] .gcs-directory-grid footer button { width:34px; height:32px; border:1px solid #8792c455; border-radius:9px; color:#e8eaff; background:#0a1129; cursor:pointer; }
+[data-hh-galaxy-layer-one-host] .hh-galaxy-app[data-gcs-view=list] .hgl1-main { overflow-y:auto; }
+@media(max-width:767px) {
+  [data-hh-galaxy-layer-one-host] .gcs-toolbar { align-items:flex-start; padding:12px; flex-wrap:wrap; }
+  [data-hh-galaxy-layer-one-host] .gcs-controls { width:100%; justify-content:flex-start; }
+  [data-hh-galaxy-layer-one-host] .gcs-heading h1 { font-size:18px; white-space:normal; }
+  [data-hh-galaxy-layer-one-host] .gcs-directory { padding:20px 13px 40px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  [data-hh-galaxy-layer-one-host] .gcs-mark { animation:none; }
+}

@@ -129,6 +129,7 @@
 [data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-nav__arrow { display:none; }
 [data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-nav__link[aria-current=page] { border-color:#ce8dff; background:linear-gradient(110deg,#673d9966,#214d7666); }
 [data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-nav__link:focus-visible { outline:2px solid #83f5ec; outline-offset:2px; }
+[data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-nav__label { display:block !important; visibility:visible !important; }
 [data-galaxy-shell][data-hh-layer="platform"] .hh-galaxy-app .hgl1-main {
   grid-column:1; grid-row:2; min-height:0; height:100%; padding:24px; overflow-y:auto;
   overflow-x:hidden; overscroll-behavior-y:contain;

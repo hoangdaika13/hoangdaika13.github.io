@@ -2320,6 +2320,16 @@
     mountRouteDelegate();
     mountRouteRuntime();
     mountWorkbench();
+    if (runtime.cosmicStudio?.destroy) runtime.cosmicStudio.destroy();
+    const cosmicStorage = globalScope.HHGalaxyCosmicStudio?.accountStorage?.(
+      runtime.storage,
+      runtime.options.user
+    ) || runtime.storage;
+    runtime.cosmicStudio = globalScope.HHGalaxyCosmicStudio?.mount?.(runtime.app, {
+      route: runtime.route,
+      storage: cosmicStorage,
+      user: runtime.options.user
+    }) || null;
     runtime.reason = inspection.status === "ready" ? "ready" : inspection.error;
     return true;
   }
@@ -4524,7 +4534,8 @@
     const control = event.target.closest("[data-hgl1-action]");
     if (!control) return;
     const action = control.dataset.hgl1Action;
-    if (action === "open-drawer") setDrawer(true);
+    if (action === "open-command") openCommandPalette();
+    else if (action === "open-drawer") setDrawer(true);
     else if (action === "close-drawer") setDrawer(false);
     else if (action === "open-capability") openCapability(control);
     else if (action === "probe-ai-provider") probeAiProvider(true);
@@ -5198,6 +5209,8 @@
     stopGame();
     releaseAnalyticsCollector(active, true);
     cleanupDelegate();
+    active.cosmicStudio?.destroy?.();
+    active.cosmicStudio = null;
     active.workbench?.destroy?.();
     cleanupRouteRuntime();
     if (active.contentStorage && typeof active.contentStorage.close === "function") {
@@ -5298,7 +5311,8 @@
       commandPaletteOpen: false,
       commandIndex: 0,
       commandReturnFocus: null,
-      preserveChromeNextRender: false
+      preserveChromeNextRender: false,
+      cosmicStudio: null
     };
     host.setAttribute("data-hh-galaxy-layer-one-host", "v" + VERSION);
     listen(host, "click", handleClick);

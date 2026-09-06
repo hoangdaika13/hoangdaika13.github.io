@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v984";
+const CACHE = "hh-identity-portal-v985";
+// Previous release: hh-identity-portal-v984.
 // Previous release: hh-identity-portal-v983.
 // Previous Atelier release: hh-identity-portal-v982.
 // Previous stable homepage release: hh-identity-portal-v981.
@@ -308,8 +309,10 @@ const RUNTIME_ASSETS = [
   "./galaxy-shell.js?v=10",
   "./hh-core-gateway.js?v=6",
   "./galaxy-home-ai.css?v=23",
+  "./galaxy-home-ai.css?v=24",
   "./galaxy-home-ai.js?v=18",
   "./galaxy-layer-one.css?v=7",
+  "./galaxy-cosmic-studio.css?v=1",
   "./galaxy-layer-one-worlds.css?v=15",
   "./galaxy-layer-one-storage.js?v=2",
   "./galaxy-layer-one-media.js?v=1",
@@ -319,6 +322,7 @@ const RUNTIME_ASSETS = [
   "./vendor/qrcode.js?v=1",
   "./galaxy-layer-one-backup.js?v=2",
   "./galaxy-layer-one.js?v=23",
+  "./galaxy-cosmic-studio.js?v=3",
   "./assets/galaxy/learning-portals-atlas-v1.png",
   // Runtime-cached on first route use; deliberately excluded from CORE.
   "./assets/galaxy/function-portals/ai-universe-v1.png",
@@ -646,7 +650,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=644",
+  "./performance-loader.js?v=647",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=271"

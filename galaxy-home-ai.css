@@ -1289,19 +1289,19 @@
      Keeping these rules route-scoped lets Dashboard, Chat AI and every other
      workspace continue to use the persistent Galaxy shell unchanged.
      ------------------------------------------------------------------ */
-  [data-galaxy-shell][data-galaxy-route="/home"] {
+  [data-galaxy-shell][data-galaxy-route="/home"]:not([data-hh-layer="platform"]) {
     --header-h: 0px;
     --sidebar-w: 0px;
     --sidebar-width: 0px;
   }
 
-  [data-galaxy-shell][data-galaxy-route="/home"] > .app-header,
-  [data-galaxy-shell][data-galaxy-route="/home"] > .app-shell__body > .app-sidebar,
-  [data-galaxy-shell][data-galaxy-route="/home"] > .app-shell__body > .app-sidebar-backdrop {
+  [data-galaxy-shell][data-galaxy-route="/home"]:not([data-hh-layer="platform"]) > .app-header,
+  [data-galaxy-shell][data-galaxy-route="/home"]:not([data-hh-layer="platform"]) > .app-shell__body > .app-sidebar,
+  [data-galaxy-shell][data-galaxy-route="/home"]:not([data-hh-layer="platform"]) > .app-shell__body > .app-sidebar-backdrop {
     display: none !important;
   }
 
-  [data-galaxy-shell][data-galaxy-route="/home"] > .app-shell__body {
+  [data-galaxy-shell][data-galaxy-route="/home"]:not([data-hh-layer="platform"]) > .app-shell__body {
     display: grid;
     grid-template-columns: minmax(0, 1fr) !important;
     width: 100%;
@@ -5959,5 +5959,58 @@
     width: 100% !important;
     max-width: none;
     min-width: 0;
+  }
+}
+
+/* Layer Two keeps the Platform chrome visible while Galaxy is mounted inside
+   the outlet. This final ID-scoped guard is intentionally last: legacy
+   immersive selectors above must never collapse the shared shell on /home. */
+#appShell[data-hh-layer="platform"][data-galaxy-shell] > .app-header {
+  display: grid !important;
+  min-height: var(--header-height, var(--header-h, 64px)) !important;
+}
+
+#appShell[data-hh-layer="platform"][data-galaxy-shell] > .app-shell__body {
+  display: grid !important;
+  grid-template-columns: var(--sidebar-width, var(--sidebar-w, 248px)) minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  height: calc(100dvh - var(--header-height, var(--header-h, 64px))) !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+#appShell[data-hh-layer="platform"][data-galaxy-shell] > .app-shell__body > .app-sidebar {
+  display: flex !important;
+  position: relative !important;
+  inset: auto !important;
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+#appShell[data-hh-layer="platform"][data-galaxy-shell] > .app-shell__body > .app-sidebar-backdrop {
+  display: none !important;
+}
+
+#appShell[data-hh-layer="platform"][data-galaxy-shell] > .app-shell__body > .app-main {
+  display: flex !important;
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  width: auto !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+@media (max-width: 767px) {
+  #appShell[data-hh-layer="platform"][data-galaxy-shell] > .app-shell__body {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #appShell[data-hh-layer="platform"][data-galaxy-shell] > .app-shell__body > .app-main {
+    grid-column: 1 !important;
   }
 }

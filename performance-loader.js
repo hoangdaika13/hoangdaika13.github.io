@@ -67,15 +67,15 @@
       scripts: ["home-cosmos-motion.js?v=1", "platform-home.js?v=6"]
     },
     "galaxy-home-ai": {
-      styles: ["galaxy-home-ai.css?v=23", "home-cosmos-motion.css?v=2"],
+      styles: ["galaxy-home-ai.css?v=24", "home-cosmos-motion.css?v=2"],
       scripts: ["home-cosmos-motion.js?v=1", "galaxy-home-ai.js?v=18"]
     },
     "galaxy-layer-one": {
-      styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=7", "galaxy-layer-one-worlds.css?v=15", "galaxy-stable-chrome.css?v=4", "galaxy-premium-workspaces.css?v=2", "galaxy-workbench.css?v=4"],
+      styles: ["galaxy-creator-studio.css?v=12", "galaxy-layer-one.css?v=7", "galaxy-layer-one-worlds.css?v=15", "galaxy-stable-chrome.css?v=4", "galaxy-premium-workspaces.css?v=2", "galaxy-workbench.css?v=4", "galaxy-cosmic-studio.css?v=1"],
       // Load the canonical data API and every side-effect-free engine before
       // the owning shell. The route is mounted only after this sequence has
       // completed, so all local-first capabilities are available on first use.
-      scripts: ["galaxy-layer-one-data.js?v=4", "galaxy-creator-studio.js?v=8", "galaxy-layer-one-storage.js?v=2", "galaxy-layer-one-media.js?v=1", "galaxy-layer-one-learning.js?v=1", "galaxy-layer-one-analytics.js?v=1", "galaxy-layer-one-tools.js?v=3", "galaxy-layer-one-backup.js?v=2", "vendor/qrcode.js?v=1", "vendor/dompurify-3.4.14.min.js?v=1", "vendor/jszip.min.js?v=3.10.1", "galaxy-workbench-core.js?v=3", "galaxy-video-renderer.js?v=2", "galaxy-community-client.js?v=1", "galaxy-workbench.js?v=4", "galaxy-creator-production.js?v=2", "galaxy-layer-one.js?v=23"]
+      scripts: ["galaxy-layer-one-data.js?v=4", "galaxy-creator-studio.js?v=8", "galaxy-layer-one-storage.js?v=2", "galaxy-layer-one-media.js?v=1", "galaxy-layer-one-learning.js?v=1", "galaxy-layer-one-analytics.js?v=1", "galaxy-layer-one-tools.js?v=3", "galaxy-layer-one-backup.js?v=2", "vendor/qrcode.js?v=1", "vendor/dompurify-3.4.14.min.js?v=1", "vendor/jszip.min.js?v=3.10.1", "galaxy-workbench-core.js?v=3", "galaxy-video-renderer.js?v=2", "galaxy-community-client.js?v=1", "galaxy-workbench.js?v=4", "galaxy-creator-production.js?v=2", "galaxy-cosmic-studio.js?v=3", "galaxy-layer-one.js?v=23"]
     },
     "galaxy-domain-views": {
       styles: ["galaxy-domain-views.css?v=13"],
