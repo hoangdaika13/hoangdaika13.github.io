@@ -44,5 +44,5 @@ test("new assets are available to the offline catalog", () => {
   assert.match(worker, /galaxy-cosmic-studio\.css\?v=1/);
   assert.match(worker, /galaxy-cosmic-studio\.js\?v=3/);
   assert.match(worker, /galaxy-home-ai\.css\?v=24/);
-  assert.match(worker, /performance-loader\.js\?v=647/);
+  assert.match(worker, /performance-loader\.js\?v=649/);
 });

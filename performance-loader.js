@@ -63,7 +63,7 @@
       ]
     },
     "platform-home": {
-      styles: ["platform-home.css?v=4", "home-cosmos-motion.css?v=2"],
+      styles: ["platform-home.css?v=6", "home-cosmos-motion.css?v=2"],
       scripts: ["home-cosmos-motion.js?v=1", "platform-home.js?v=6"]
     },
     "galaxy-home-ai": {

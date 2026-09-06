@@ -1,4 +1,6 @@
-const CACHE = "hh-identity-portal-v985";
+const CACHE = "hh-identity-portal-v987";
+// Previous release: hh-identity-portal-v986.
+// Previous release: hh-identity-portal-v985.
 // Previous release: hh-identity-portal-v984.
 // Previous release: hh-identity-portal-v983.
 // Previous Atelier release: hh-identity-portal-v982.
@@ -79,7 +81,7 @@ const RUNTIME_ASSETS = [
   "./galaxy-stable-chrome.css?v=4",
   "./home-cosmos-motion.css?v=2",
   "./home-cosmos-motion.js?v=1",
-  "./platform-home.css?v=4",
+  "./platform-home.css?v=6",
   "./platform-home.js?v=6",
   "./",
   "./index.html",
@@ -650,7 +652,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=647",
+  "./performance-loader.js?v=649",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=271"
