@@ -2,3 +2,4 @@
 # contents across Windows, CI and production checkouts.
 /vendor/babylon-9.22.1.js text eol=lf
 /vendor/BABYLON-LICENSE.md text eol=lf
+/vendor/dompurify-3.4.14.min.js text eol=lf

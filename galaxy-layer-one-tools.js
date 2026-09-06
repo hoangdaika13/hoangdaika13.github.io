@@ -112,24 +112,27 @@
     let row = [];
     let cell = "";
     let quoted = false;
+    let quoteClosed = false;
     for (let index = 0; index <= text.length; index += 1) {
       const character = index < text.length ? text[index] : "\n";
       if (quoted) {
         if (character === "\"") {
           if (text[index + 1] === "\"") { cell += "\""; index += 1; }
-          else quoted = false;
+          else { quoted = false; quoteClosed = true; }
         } else cell += character;
+      } else if (quoteClosed && character !== delimiter && character !== "\n" && character !== "\r") {
+        if (!/[ \t]/.test(character)) throw toolsError("CSV_AFTER_QUOTE", "CSV có ký tự sau dấu nháy đóng.");
       } else if (character === "\"" && !cell) quoted = true;
       else if (character === delimiter) {
         if (cell.length > LIMITS.maxCellLength) throw toolsError("CELL_TOO_LARGE", "Một ô CSV vượt quá giới hạn.");
-        row.push(cell); cell = "";
+        row.push(cell); cell = ""; quoteClosed = false;
         if (row.length > LIMITS.maxColumns) throw toolsError("TOO_MANY_COLUMNS", "CSV có quá nhiều cột.");
       } else if (character === "\n" || character === "\r") {
         if (character === "\r" && text[index + 1] === "\n") index += 1;
         if (cell.length > LIMITS.maxCellLength) throw toolsError("CELL_TOO_LARGE", "Một ô CSV vượt quá giới hạn.");
-        row.push(cell); cell = "";
+        row.push(cell); cell = ""; quoteClosed = false;
         if (row.length > LIMITS.maxColumns) throw toolsError("TOO_MANY_COLUMNS", "CSV có quá nhiều cột.");
-        if (row.some(function nonEmpty(entry) { return entry !== ""; })) rows.push(row);
+        if (row.length > 1 || row.some(function nonEmpty(entry) { return entry !== ""; })) rows.push(row);
         row = [];
         if (rows.length > LIMITS.maxRows) throw toolsError("TOO_MANY_ROWS", "CSV có quá nhiều dòng.");
       } else cell += character;
@@ -147,6 +150,7 @@
     });
     if (new Set(headers).size !== headers.length) throw toolsError("CSV_DUPLICATE_HEADER", "CSV có tên cột bị trùng.");
     return rows.slice(1).map(function objectRow(row) {
+      if (row.length !== headers.length) throw toolsError("CSV_ROW_WIDTH", "Số ô trong dòng không khớp hàng tiêu đề.");
       const record = Object.create(null);
       headers.forEach(function assignCell(header, index) { record[header] = row[index] == null ? "" : row[index]; });
       return record;
@@ -198,7 +202,13 @@
     const qrFactory = factory || globalScope.qrcode;
     if (typeof qrFactory !== "function") throw toolsError("QR_ENGINE_UNAVAILABLE", "Bộ tạo QR cục bộ chưa được tải.");
     const qr = qrFactory(0, "M");
-    qr.addData(text, "Byte");
+    // qrcode-generator defaults to single-byte truncation. Scope UTF-8 to
+    // synchronous addData and restore the shared vendor immediately.
+    const previousEncoder = qrFactory.stringToBytes;
+    try {
+      if (qrFactory.stringToBytesFuncs?.["UTF-8"]) qrFactory.stringToBytes = qrFactory.stringToBytesFuncs["UTF-8"];
+      qr.addData(text, "Byte");
+    } finally { if (previousEncoder) qrFactory.stringToBytes = previousEncoder; }
     qr.make();
     const svg = qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true });
     if (!/^<svg\b/i.test(svg) || /<script\b|\bon\w+\s*=|javascript:/i.test(svg)) throw toolsError("QR_OUTPUT_UNSAFE", "Không thể xác minh đầu ra QR.");

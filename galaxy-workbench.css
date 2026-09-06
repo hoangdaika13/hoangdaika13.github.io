@@ -1,0 +1,46 @@
+.hh-galaxy-app .gwb-extension { min-width:0; }
+.hh-galaxy-app .gwb-panel { margin-top:20px; padding:20px; border:1px solid color-mix(in srgb,var(--atelier-accent,#ac99ed) 45%,transparent); border-radius:16px; background:radial-gradient(ellipse at 100% 0,#8e73eb13,transparent 65%),#0e1830; }
+.hh-galaxy-app .gwb-panel h3 { margin:7px 0 14px; font-size:20px; color:#edefff; }
+.hh-galaxy-app .gwb-panel>p { font-size:12px; line-height:1.8; color:#bdcce3; margin-bottom:15px; }
+.hh-galaxy-app .gwb-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; }
+.hh-galaxy-app .gwb-panel label { display:grid; gap:7px; min-width:0; margin-bottom:12px; }
+.hh-galaxy-app .gwb-panel label:has(input[type=checkbox]) { display:flex; align-items:center; gap:9px; }
+.hh-galaxy-app .gwb-panel input[type=checkbox] { width:19px; height:19px; min-height:19px; min-width:19px; flex:0 0 19px; margin:0; padding:0; }
+.hh-galaxy-app .gwb-panel :is(input:not([type=checkbox]),select,textarea) { width:100%; min-width:0; }
+.hh-galaxy-app :is(.gwb-actions,.gwb-item-actions,.gwb-tool-actions) { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+.hh-galaxy-app .gwb-item-actions .hgl1-button { min-height:38px; padding:7px 10px; font-size:11px; }
+.hh-galaxy-app .gwb-tool-actions .hgl1-button { min-height:40px; padding:7px 9px; font-size:11px; }
+.hh-galaxy-app .gwb-result { display:block; overflow:auto; max-height:400px; padding:14px; white-space:pre-wrap; overflow-wrap:anywhere; border:1px solid #506385; border-radius:10px; background:#080f21; color:#e1eaf9; font-size:13px; }
+.hh-galaxy-app .gwb-status { display:block; margin-top:14px; color:#9dddc9; font-size:12px; line-height:1.7; }
+.hh-galaxy-app .gwb-status[data-error=true] { color:#ffb0bf; }
+.hh-galaxy-app .gwb-diff-add { background:#14634944; color:#a9f2d4; }.hh-galaxy-app .gwb-diff-remove { background:#782b4544; color:#ffbecd; }
+.hh-galaxy-app .gwb-track-list { display:grid; gap:6px; max-height:240px; overflow:auto; }
+.hh-galaxy-app .gwb-track-row { display:grid; grid-template-columns:minmax(0,1fr) 38px 38px; align-items:center; gap:5px; }.hh-galaxy-app .gwb-track-row[hidden] { display:none; }
+.hh-galaxy-app .gwb-track-row button { min-height:38px; border:1px solid #556a86; background:#1b2a43; color:#deefff; border-radius:8px; }
+.hh-galaxy-app .gwb-video-timeline { display:grid; gap:9px; padding:0; list-style:none; }
+.hh-galaxy-app .gwb-video-timeline li { display:grid; grid-template-columns:30px minmax(0,1fr) 38px 38px; gap:8px; align-items:center; padding:10px; border:1px solid #987062; background:linear-gradient(100deg,#453246,#1a2a41); border-radius:9px; }
+.hh-galaxy-app .gwb-video-timeline button { min-height:38px; border:1px solid #aa8598; border-radius:7px; background:#28354f; color:#f3e5f5; }
+.hh-galaxy-app .gwb-track-list label { margin:0; padding:8px; border:1px solid #4c5e7c; border-radius:8px; background:#14213a; }
+.hh-galaxy-app .gwb-panel audio { width:100%; margin-top:15px; }
+.hh-galaxy-app .gwb-wave-scroll { max-width:100%; overflow-x:auto; overflow-y:hidden; scrollbar-width:thin; border-radius:10px; }
+.hh-galaxy-app .gwb-panel video { width:100%; max-height:400px; margin-top:15px; }
+.hh-galaxy-app .gwb-panel [data-gcp-canvas] { display:block; width:100%; height:auto; border-radius:12px; border:1px solid #71648c; margin:14px 0; }
+.hh-galaxy-app .gwb-panel :is([data-gcp-export],[data-gcp-text]) { min-height:44px; border:1px solid #c69cdd; border-radius:10px; padding:10px 16px; background:#473463; color:#f4eaff; }
+.hh-galaxy-app .gwb-panel progress { width:100%; accent-color:#b69bff; }
+.hh-galaxy-app .gwb-code-preview { margin-top:20px; padding:16px; border:1px solid #526781; border-radius:12px; background:#081122; }
+.hh-galaxy-app .gwb-code-preview pre { overflow:auto; max-height:450px; font:13px/1.8 ui-monospace,Consolas,monospace; }
+.hh-galaxy-app .gwb-code-line { display:flex; white-space:pre; }.hh-galaxy-app .gwb-code-line i { flex:0 0 45px; color:#91a0b9; user-select:none; font-style:normal; }
+.hh-galaxy-app .gwb-token-string { color:#a6e2bb; }.hh-galaxy-app .gwb-token-number { color:#f7c891; }.hh-galaxy-app .gwb-token-keyword { color:#c6a8fa; }.hh-galaxy-app .gwb-token-comment { color:#91a0b9; }
+.hh-galaxy-app .gwb-example-note { display:block; font-size:11px; color:#e9ca95; }.hh-galaxy-app .gwb-example-note[hidden] { display:none; }
+.hh-galaxy-app .gwb-favorite-filter { display:flex; align-items:center; gap:8px; color:#d9c7ff; font-size:12px; }.hh-galaxy-app .gwb-favorite-filter input { width:18px; height:18px; min-height:18px; min-width:18px; }
+.hh-galaxy-app .gwb-dialog { width:min(700px,calc(100vw - 30px)); max-height:85dvh; overflow:auto; border:1px solid #b29cf2; border-radius:18px; padding:24px; background:#111a30; color:#eef3ff; }
+.hh-galaxy-app .gwb-dialog::backdrop { background:#010617bb; backdrop-filter:blur(6px); }
+.hh-galaxy-app .gwb-dialog label { display:grid; gap:7px; margin:14px 0; }.hh-galaxy-app .gwb-dialog :is(input,textarea) { width:100%; background:#070e20; color:#f1f4ff; border:1px solid #667897; padding:12px; border-radius:9px; font:inherit; }
+.hh-galaxy-app .gwb-dialog button { min-height:44px; border:1px solid #9280c2; border-radius:9px; padding:9px 15px; background:#34315a; color:#f3efff; }
+.hh-galaxy-app .gwb-dialog output { color:#ffc0ce; }
+.hh-galaxy-app .gwb-remote-post { margin-top:15px; padding:17px; border:1px solid #52677f; border-radius:12px; background:#112237; }
+.hh-galaxy-app .gwb-remote-post header { display:grid; gap:5px; }.hh-galaxy-app .gwb-remote-post p { white-space:pre-wrap; overflow-wrap:anywhere; color:#d3dfed; }
+.hh-galaxy-app .gwb-panel [data-gr-action],.hh-galaxy-app .gwb-panel [data-gr-comment] button { min-height:44px; padding:9px 13px; border:1px solid #688e9e; border-radius:9px; background:#20394c; color:#e7f6ff; }
+.hh-galaxy-app [data-gwb-mistakes] article { border-top:1px solid #556084; padding:15px 0; }.hh-galaxy-app [data-gwb-mistakes] p { white-space:pre-wrap; }
+@media(max-width:767px){.hh-galaxy-app .gwb-panel{padding:14px}.hh-galaxy-app .gwb-dialog :is(input,textarea){font-size:16px}.hh-galaxy-app .gwb-tool-actions .hgl1-button{min-height:44px}}
+@media(forced-colors:active){.hh-galaxy-app :is(.gwb-panel,.gwb-result,.gwb-dialog){border-color:CanvasText}}

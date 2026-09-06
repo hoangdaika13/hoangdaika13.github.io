@@ -389,6 +389,7 @@ async function notifyPostSubscribers(db, post, actor, type, message) {
 }
 
 module.exports = async function handler(req, res) {
+  if (req.query?.galaxy === "1") return require("../utils/galaxy-community-api")(req, res);
   if (String(req.query?.adminRoute || "") === "1") return communityAdminHandler(req, res);
   return withApi(req, res, async ({ db, body }) => {
     const posts = db.collection("communityPosts");

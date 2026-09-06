@@ -191,7 +191,7 @@
 
   function headerMarkup(runtime, project) {
     var inactive = runtime.modal ? ' inert aria-hidden="true"' : '';
-    return '<header class="gcs-topbar"' + inactive + '><div class="gcs-title-lockup"><span class="gcs-title-icon">' + icon("sparkles") + '</span><div><p>HH GALAXY · LỚP 1</p><h2>Creator Pipeline <span>— Quy trình sáng tạo nội dung</span></h2></div></div><label class="gcs-search"><span>' + icon("search") + '</span><input type="search" data-gcs-search placeholder="Tìm dự án của bạn..." autocomplete="off"><kbd>⌘K</kbd></label><div class="gcs-top-actions"><button class="gcs-button gcs-button--quiet" type="button" data-gcs-action="import" aria-label="Nhập JSON">' + icon("upload") + '<span>Nhập JSON</span></button><button class="gcs-button gcs-button--quiet" type="button" data-gcs-action="export" aria-label="Xuất JSON">' + icon("download") + '<span>Xuất JSON</span></button><button class="gcs-button gcs-button--primary" type="button" data-gcs-action="create">' + icon("plus") + '<span>Tạo dự án mới</span></button><input type="file" accept="application/json,.json" data-gcs-import hidden></div></header><section class="gcs-pipeline-panel" aria-labelledby="gcs-pipeline-title"' + inactive + '><div class="gcs-panel-heading"><div><span class="gcs-eyebrow">PIPELINE 9 BƯỚC</span><h2 id="gcs-pipeline-title">' + escapeHtml(project ? project.title : "Chưa có dự án") + '</h2></div>' + (project ? badge(project) : '') + '</div>' + (project ? pipelineMarkup(project, runtime.selectedStepId) : '<div class="gcs-inline-empty">Tạo dự án để bắt đầu quy trình.</div>') + (project ? '<div class="gcs-overall"><span>Tiến độ tổng thể dự án</span>' + progressMarkup(project, false) + '<span class="gcs-current-step">Bước đang chọn: <strong>' + escapeHtml(stepById(runtime.selectedStepId).number + '. ' + stepById(runtime.selectedStepId).label) + '</strong></span></div>' : '') + '</section>';
+    return '<header class="gcs-topbar"' + inactive + '><div class="gcs-title-lockup"><span class="gcs-title-icon">' + icon("sparkles") + '</span><div><p>HH GALAXY · LỚP 1</p><h2>Creator Pipeline <span>— Quy trình sáng tạo nội dung</span></h2></div></div><label class="gcs-search"><span>' + icon("search") + '</span><input type="search" data-gcs-search placeholder="Tìm dự án của bạn..." autocomplete="off"><kbd>⌘K</kbd></label><div class="gcs-top-actions"><button class="gcs-button gcs-button--quiet" type="button" data-gcs-action="production-package">Xuất gói sản xuất ZIP</button><button class="gcs-button gcs-button--quiet" type="button" data-gcs-action="handoff-step">Chuyển nội dung sang bước khác</button><button class="gcs-button gcs-button--quiet" type="button" data-gcs-action="import" aria-label="Nhập JSON">' + icon("upload") + '<span>Nhập JSON</span></button><button class="gcs-button gcs-button--quiet" type="button" data-gcs-action="export" aria-label="Xuất JSON">' + icon("download") + '<span>Xuất JSON</span></button><button class="gcs-button gcs-button--primary" type="button" data-gcs-action="create">' + icon("plus") + '<span>Tạo dự án mới</span></button><input type="file" accept="application/json,.json" data-gcs-import hidden></div></header><section class="gcs-pipeline-panel" aria-labelledby="gcs-pipeline-title"' + inactive + '><div class="gcs-panel-heading"><div><span class="gcs-eyebrow">PIPELINE 9 BƯỚC</span><h2 id="gcs-pipeline-title">' + escapeHtml(project ? project.title : "Chưa có dự án") + '</h2></div>' + (project ? badge(project) : '') + '</div>' + (project ? pipelineMarkup(project, runtime.selectedStepId) : '<div class="gcs-inline-empty">Tạo dự án để bắt đầu quy trình.</div>') + (project ? '<div class="gcs-overall"><span>Tiến độ tổng thể dự án</span>' + progressMarkup(project, false) + '<span class="gcs-current-step">Bước đang chọn: <strong>' + escapeHtml(stepById(runtime.selectedStepId).number + '. ' + stepById(runtime.selectedStepId).label) + '</strong></span></div>' : '') + '</section>';
   }
 
   function projectCardMarkup(project, nowValue) {
@@ -293,7 +293,9 @@
 
   function render(runtime, focusSelector) {
     if (!runtime.mounted) return;
+    runtime.production?.destroy?.(); runtime.production = null;
     runtime.root.innerHTML = renderMarkup(runtime);
+    if (runtime.view === "editor" && !runtime.modal) runtime.production = globalScope.HHGalaxyCreatorProduction?.mount?.(runtime.root, { project: runtime.store.getProject(runtime.activeProjectId), step: runtime.selectedStepId });
     if (runtime.root.dataset) {
       runtime.root.dataset.gcsMounted = "true";
       runtime.root.dataset.gcsRoute = ROUTE;
@@ -502,9 +504,53 @@
     setToast(runtime, "Đã xuất dữ liệu dự án của bạn. Bản mẫu không được đưa vào tệp.", "success");
   }
 
+  async function downloadProductionPackage(runtime) {
+    try {
+      flushAutosave(runtime);
+      if (runtime.store.flush) await runtime.store.flush();
+      if (!runtime.mounted) return;
+      var project = runtime.store.getProject(runtime.activeProjectId);
+      var core = globalScope.HHGalaxyWorkbenchCore;
+      if (!core || typeof globalScope.JSZip !== "function") throw new Error("Engine ZIP chưa được tải.");
+      var files = core.productionPackage(project), zip = new globalScope.JSZip();
+      Object.keys(files).forEach(function (name) { zip.file(name, files[name]); });
+      var blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+      if (!runtime.mounted) return;
+      var url = globalScope.URL.createObjectURL(blob), link = globalScope.document.createElement("a");
+      link.href = url; link.download = "hh-galaxy-production-" + String(project.id).replace(/[^a-z0-9_-]/gi,"-") + ".zip"; link.click();
+      globalScope.setTimeout(function () { globalScope.URL.revokeObjectURL(url); }, 5000);
+      setToast(runtime, "Đã xuất project + 9 bước + manifest; không bao gồm media nhị phân và chưa đăng ra mạng.", "success");
+    } catch (error) { if (runtime.mounted) setToast(runtime, error.message || "Không xuất được gói sản xuất.", "error"); }
+  }
+
   function handleAction(runtime, button) {
+    // The production package is prepared only by an explicit user action.
     var action = button.getAttribute("data-gcs-action");
     var projectId = button.getAttribute("data-project-id");
+    if (action === "handoff-step") {
+      flushAutosave(runtime);
+      var project = runtime.store.getProject(runtime.activeProjectId);
+      if (!project || project.isDemo) return setToast(runtime, "Chọn dự án của bạn để chuyển nội dung.", "error");
+      var sourceStep = project.steps[runtime.selectedStepId];
+      var dialog = globalScope.document.createElement("dialog"); dialog.className = "gwb-dialog";
+      dialog.innerHTML = '<form method="dialog"><h3>Chuyển nội dung trong dự án Lớp 1</h3><p>Nối nội dung bước hiện tại vào bước đích. Không xóa nội dung cũ, không đánh dấu hoàn thành và không gửi dữ liệu ra ngoài.</p><label>Bước đích<select name="target">' + Data.PIPELINE_STEPS.filter(function(step){return step.id !== runtime.selectedStepId;}).map(function(step){return '<option value="'+step.id+'">'+escapeHtml(step.title)+'</option>';}).join('') + '</select></label><div class="gwb-actions"><button value="cancel">Hủy</button><button value="apply">Xác nhận chuyển</button></div><output role="status"></output></form>';
+      runtime.root.appendChild(dialog);
+      dialog.addEventListener("close", function(){ dialog.remove(); button.focus(); }, {once:true});
+      runtime.cleanup.push(function(){dialog.remove();});
+      dialog.addEventListener("submit", function(event){
+        if(event.submitter?.value!=="apply") return; event.preventDefault();
+        try {
+          var target = event.target.elements.target.value, current = runtime.store.getProject(project.id);
+          if(!current || !current.steps[target] || target===runtime.selectedStepId) throw new Error("Bước đích không hợp lệ.");
+          var content = current.steps[target].content + "\n\n[Chuyển từ " + runtime.selectedStepId + "]\n" + sourceStep.content;
+          if(content.length>30000) throw new Error("Nội dung gộp vượt giới hạn 30.000 ký tự.");
+          runtime.store.updateStep(project.id,target,{content:content}); dialog.close();
+          setToast(runtime,"Đã nối nội dung vào bước đích; trạng thái hoàn thành không đổi.","success");
+        } catch(error) {dialog.querySelector("output").textContent=error.message;}
+      });
+      dialog.showModal(); return;
+    }
+    if (action === "production-package") { void downloadProductionPackage(runtime); return; }
     if (action === "create") return openModal(runtime, "create", button);
     if (action === "schedule") return openModal(runtime, "schedule", button);
     if (action === "close-modal") return closeModal(runtime);
@@ -785,6 +831,7 @@
     if (!runtime) return false;
     flushAutosave(runtime);
     runtime.mounted = false;
+    runtime.production?.destroy?.();
     if (runtime.controller) runtime.controller.abort();
     runtime.cleanup.splice(0).reverse().forEach(function (cleanup) { try { cleanup(); } catch (error) { /* Best effort cleanup. */ } });
     if (runtime.autosaveTimer) globalScope.clearTimeout(runtime.autosaveTimer);

@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v982";
+const CACHE = "hh-identity-portal-v983";
+// Previous Atelier release: hh-identity-portal-v982.
 // Previous stable homepage release: hh-identity-portal-v981.
 // Previous cinematic homepage release: hh-identity-portal-v980.
 // Previous homepage release: hh-identity-portal-v979.
@@ -64,6 +65,14 @@ const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
 // HH School v1 replaces the former Learning OS bundle; legacy caches are removed during activation.
 // HH English compatibility: app-shell.css?v=64 script.js?v=179 script.js?v=232 sidebar-navigation-pro.css?v=29 motion-comfort.css?v=1 auth-experience.js?v=9 english-learning.css?v=17 english-learning.js?v=22 english-learning.js?v=24 english-learning.js?v=28 english-learning-os.js?v=7 english-learning-os.css?v=3 english-galaxy.css?v=1 english-galaxy.js?v=2 english-learning-galaxy.css?v=6 english-learning-galaxy.js?v=5 english-vocabulary.css?v=1 english-vocabulary.js?v=2 english-for-everyone.css?v=1 english-for-everyone.js?v=2; current language cockpit loads the versioned Learning OS bundle below.
 const RUNTIME_ASSETS = [
+  "./galaxy-creator-production.js?v=2",
+  "./galaxy-community-client.js?v=1",
+  "./vendor/dompurify-3.4.14.min.js?v=1",
+  "./galaxy-workbench-core.js?v=3",
+  "./galaxy-workbench-worker.js?v=3",
+  "./galaxy-video-renderer.js?v=2",
+  "./galaxy-workbench.js?v=4",
+  "./galaxy-workbench.css?v=4",
   "./galaxy-premium-workspaces.css?v=2",
   "./galaxy-stable-chrome.css?v=3",
   "./home-cosmos-motion.css?v=2",
@@ -305,10 +314,10 @@ const RUNTIME_ASSETS = [
   "./galaxy-layer-one-media.js?v=1",
   "./galaxy-layer-one-learning.js?v=1",
   "./galaxy-layer-one-analytics.js?v=1",
-  "./galaxy-layer-one-tools.js?v=1",
+  "./galaxy-layer-one-tools.js?v=3",
   "./vendor/qrcode.js?v=1",
   "./galaxy-layer-one-backup.js?v=2",
-  "./galaxy-layer-one.js?v=18",
+  "./galaxy-layer-one.js?v=22",
   "./assets/galaxy/learning-portals-atlas-v1.png",
   // Runtime-cached on first route use; deliberately excluded from CORE.
   "./assets/galaxy/function-portals/ai-universe-v1.png",
@@ -324,7 +333,7 @@ const RUNTIME_ASSETS = [
   "./assets/galaxy/function-portals/settings-v2.png",
   "./galaxy-layer-one-data.js?v=4",
   "./galaxy-creator-studio.css?v=12",
-  "./galaxy-creator-studio.js?v=5",
+  "./galaxy-creator-studio.js?v=8",
   "./assets/galaxy/hh-galaxy-map-bg-v1.png?v=1",
   "./assets/galaxy/hh-luminous-planet-v1.webp?v=1",
   "./assets/galaxy/hh-stellar-core-v1.webp?v=1",
@@ -636,7 +645,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=639",
+  "./performance-loader.js?v=643",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
   "./script.js?v=270"

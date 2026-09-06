@@ -118,7 +118,7 @@
       features: Object.freeze([
         Object.freeze(["Thư viện âm thanh", "Nhập metadata tệp âm thanh từ thiết bị.", "available"]),
         Object.freeze(["Quyền microphone", "Chỉ được hỏi khi bạn chủ động kiểm tra.", "permission"]),
-        Object.freeze(["Biên tập nhiều track", "Cần editor âm thanh chuyên dụng được gắn vào module.", "unconfigured"])
+        Object.freeze(["Biên tập nhiều track", "Mix 2–8 track cục bộ, cắt/fade/gain và xuất WAV PCM.", "available"])
       ])
     }),
     "/galaxy/video": Object.freeze({
@@ -127,7 +127,7 @@
       features: Object.freeze([
         Object.freeze(["Media library", "Nhập metadata video, ảnh và caption.", "available"]),
         Object.freeze(["Thumbnail & caption", "Theo dõi đầu việc trong dự án cục bộ.", "available"]),
-        Object.freeze(["Timeline editor", "Cần editor video chuyên dụng được gắn vào module.", "unconfigured"])
+        Object.freeze(["Timeline editor", "Cắt, sắp xếp và ghép tối đa 4 clip; chèn chữ và xuất WebM cục bộ.", "available"])
       ])
     }),
     "/galaxy/games": Object.freeze({
@@ -605,7 +605,7 @@
   function sanitizeGameState(value) {
     const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
     const target = source.target && typeof source.target === "object" && !Array.isArray(source.target) ? source.target : {};
-    return {
+    const result = {
       score: Math.floor(boundedMetaNumber(source.score, 0, 1000000000, 0)),
       x: boundedMetaNumber(source.x, 18, 942, 480),
       y: boundedMetaNumber(source.y, 18, 522, 270),
@@ -614,6 +614,9 @@
         y: boundedMetaNumber(target.y, 50, 490, 140)
       }
     };
+    if (Object.hasOwn(source, "remaining")) result.remaining = boundedMetaNumber(source.remaining, 0, 120, 60);
+    if (Object.hasOwn(source, "difficulty")) result.difficulty = ["easy", "normal", "hard"].includes(source.difficulty) ? source.difficulty : "normal";
+    return result;
   }
 
   function sanitizeItemMeta(value, route, kind) {
@@ -633,6 +636,10 @@
       provider: String(source.provider || "").slice(0, 80),
       completed: source.completed === true
     };
+    if (Object.hasOwn(source, "folder")) meta.folder = String(source.folder || "").trim().slice(0, 80);
+    if (Array.isArray(source.tags)) meta.tags = [...new Set(source.tags.map(tag => String(tag).trim().slice(0, 40)).filter(Boolean))].slice(0, 20);
+    if (Object.hasOwn(source, "favorite")) meta.favorite = source.favorite === true;
+    if (Object.hasOwn(source, "playlistRank")) meta.playlistRank = Math.floor(boundedMetaNumber(source.playlistRank, 0, 1000, 0));
     if (route === "/galaxy/games" && kind === "game-save") {
       meta.gameState = sanitizeGameState(source.gameState);
       meta.controls = sanitizeGameControls(source.controls);
@@ -820,6 +827,22 @@
     if (!writeLocalState(result.data, candidate)) return false;
     recordEvent("item-delete", existing.route, candidate);
     return true;
+  }
+
+  function updateLocalItem(id, patch, candidate) {
+    const state = collectLocalState(candidate);
+    const index = state.items.findIndex(item => item.id === id);
+    if (index < 0 || !patch || typeof patch !== "object") return null;
+    if (patch.description !== undefined && String(patch.description).length > MAX_ITEM_DESCRIPTION) return null;
+    if (patch.title !== undefined && (!String(patch.title).trim() || String(patch.title).trim().length > 160)) return null;
+    const previous = state.items[index];
+    if (patch.expectedUpdatedAt && patch.expectedUpdatedAt !== previous.updatedAt) return null;
+    const next = sanitizeItem({ ...previous, title: patch.title === undefined ? previous.title : patch.title,
+      description: patch.description === undefined ? previous.description : patch.description,
+      meta: patch.meta === undefined ? previous.meta : patch.meta, updatedAt: new Date().toISOString() });
+    if (!next || containsLikelySecret(next.title + "\n" + next.description)) return null;
+    state.items[index] = next;
+    return writeLocalState(state, candidate) ? next : null;
   }
 
   function toggleLearningItem(id, candidate) {
@@ -1397,7 +1420,7 @@
 
   function itemMarkup(item) {
     const entry = findRoute(item.route);
-    return "<article class=\"hgl1-document\" data-hgl1-item data-item-id=\"" + escapeHtml(item.id) + "\" data-filter-text=\"" + escapeHtml(normalizedSearchText(item.title + " " + item.description)) + "\">" +
+    return "<article class=\"hgl1-document\" data-hgl1-item data-item-id=\"" + escapeHtml(item.id) + "\" data-filter-text=\"" + escapeHtml(normalizedSearchText(item.title + " " + item.description + " " + (item.meta.folder || "") + " " + (item.meta.tags || []).join(" "))) + "\">" +
       "<div class=\"hgl1-document__visual hgl1-document__visual--" + escapeHtml(entry ? entry.tone : "slate") + "\" aria-hidden=\"true\">" + icon(entry ? entry.icon : "database") + "<span></span></div>" +
       "<div class=\"hgl1-document__body\"><div class=\"hgl1-document__meta\"><span class=\"hgl1-badge hgl1-badge--local\">Cục bộ</span><span>" + escapeHtml(item.kind) + "</span></div>" +
       "<h3>" + escapeHtml(item.title) + "</h3><p>" + (item.description ? escapeHtml(item.description) : "Tài liệu người dùng, không có số liệu minh họa.") + "</p>" +
@@ -1850,6 +1873,7 @@
     }
     const request = runtime.aiRequest;
     runtime.aiRequest = null;
+    if (request?.timeout) globalScope.clearTimeout?.(request.timeout);
     if (request && request.controller && typeof request.controller.abort === "function") {
       try { request.controller.abort(); } catch (_) { /* The request already settled. */ }
     }
@@ -2236,6 +2260,8 @@
 
   function render() {
     if (!runtime) return false;
+    runtime.workbench?.destroy?.();
+    runtime.workbench = null;
     const inspection = inspectLocalState(runtime.storage);
     runtime.localState = inspection.data;
     runtime.storageStatus = inspection.status;
@@ -2293,8 +2319,101 @@
     }
     mountRouteDelegate();
     mountRouteRuntime();
+    mountWorkbench();
     runtime.reason = inspection.status === "ready" ? "ready" : inspection.error;
     return true;
+  }
+
+  function mountWorkbench() {
+    if (!runtime || !runtime.app || !globalScope.HHGalaxyWorkbench) return;
+    const owner = runtime;
+    const workbenchRoute = owner.route;
+    const workbenchToken = {};
+    owner.workbenchToken = workbenchToken;
+    const stillActive = () => runtime === owner && owner.route === workbenchRoute && owner.workbenchToken === workbenchToken;
+    owner.workbench?.destroy?.();
+    owner.workbench = globalScope.HHGalaxyWorkbench.mount(owner.app, {
+      route: owner.route, isActive: stillActive,
+      items: () => collectLocalState(owner.storage).items.filter(item => item.route === owner.route),
+      updateItem: (id, patch) => stillActive() ? updateLocalItem(id, patch, owner.storage) : null,
+      refresh: () => { if (runtime === owner) render(); }, notify: showToast,
+      session: () => owner.mediaSession, playlist: () => owner.mediaPlaylist || [], drawWaveform,
+      restorePlaylist: async () => {
+        const stored = collectLocalState(owner.storage).items.filter(item => item.route === "/galaxy/music" && item.meta.mediaKind === "audio").sort((a,b) => (a.meta.playlistRank ?? 1000) - (b.meta.playlistRank ?? 1000));
+        const playlist = [];
+        for (const item of stored) {
+          const record = await owner.contentStorage?.get(item.route, item.id);
+          if (!stillActive()) return [];
+          if (record?.value instanceof globalScope.Blob) playlist.push({id:item.id,name:item.meta.fileName,type:item.meta.fileType,size:record.value.size,file:new File([record.value],item.meta.fileName,{type:item.meta.fileType})});
+        }
+        owner.mediaPlaylist = playlist; updateMediaPlaylist(); return playlist;
+      },
+      reorderPlaylist: (index, direction) => {
+        if (!stillActive()) throw new Error("Workspace đã thay đổi.");
+        const list = owner.mediaPlaylist || [], next = index + direction;
+        if (index < 0 || index >= list.length || next < 0 || next >= list.length) return list;
+        const ordered = list.slice(); [ordered[index], ordered[next]] = [ordered[next], ordered[index]];
+        const state = collectLocalState(owner.storage);
+        ordered.forEach((track, rank) => { const record = state.items.find(item => item.id === track.id); if (record) record.meta.playlistRank = rank; });
+        if (!writeLocalState(state, owner.storage)) throw new Error("Không lưu được thứ tự playlist; thứ tự cũ được giữ.");
+        owner.mediaPlaylist = ordered; updateMediaPlaylist(); return ordered;
+      },
+      videos: () => owner.videoPlaylist || [],
+      reorderVideos: (index, direction) => {
+        if (!stillActive()) return [];
+        const list = owner.videoPlaylist || [], next = index + direction;
+        if (index >= 0 && index < list.length && next >= 0 && next < list.length) [list[index], list[next]] = [list[next], list[index]];
+        return list;
+      },
+      saveVideoProject: project => {
+        if (!stillActive()) return null;
+        const text = JSON.stringify({schema:"hh-galaxy.video-project",version:1,...project,sources:(owner.videoPlaylist || []).map(item=>item.id)});
+        if (text.length > MAX_ITEM_DESCRIPTION) return null;
+        return createLocalItem("/galaxy/video", project.title || "Video project", owner.storage, {kind:"video-edit-project",description:text});
+      },
+      loadVideoProject: async id => {
+        const records = collectLocalState(owner.storage).items;
+        const item = records.find(item=>item.id===id&&item.route==="/galaxy/video"&&item.kind==="video-edit-project");
+        if (!item) throw new Error("Không tìm thấy project.");
+        const project = JSON.parse(item.description);
+        if (project.schema!=="hh-galaxy.video-project"||project.version!==1||!Array.isArray(project.sources)||project.sources.length>20) throw new Error("Project video không hợp lệ.");
+        const restored=[];
+        for (const sourceId of project.sources) {
+          const source=records.find(row=>row.id===sourceId&&row.route==="/galaxy/video"&&row.meta.mediaKind==="video");
+          if (!source) throw new Error("Thiếu metadata nguồn; hãy nhập lại video gốc.");
+          const data=await owner.contentStorage?.get(source.route,source.id);
+          if (!stillActive()) return null;
+          if (!(data?.value instanceof globalScope.Blob)) throw new Error("Tệp nguồn không còn trong kho; hãy nhập lại video gốc.");
+          restored.push({id:source.id,name:source.meta.fileName,file:new File([data.value],source.meta.fileName,{type:source.meta.fileType})});
+        }
+        owner.videoPlaylist=restored;
+        if (restored[0]) openLocalMedia(restored[0].file,"/galaxy/video");
+        return project;
+      },
+      applySubtitles: attachSubtitleFile, learningState: () => owner.learningState,
+      conversation: () => owner.aiHistory || "",
+      restartGame: () => { stopGame(); owner.pendingGameRestore = null; owner.lastGameSnapshot = null; toggleGame(); },
+      continueConversation: async item => { const record = await owner.contentStorage?.get(item.route, item.id); if (!stillActive()) return; owner.aiHistory = record?.value?.type === "ai-transcript" ? record.value.text : item.description; const field = owner.app.querySelector("[data-hgl1-ai-draft]"); if (field) { field.value = ""; field.focus(); } const output = owner.app.querySelector("[data-hgl1-ai-response]"); if (output) output.textContent = owner.aiHistory; },
+      isQuizActive: () => !!owner.learningQuiz && !owner.learningQuizResult,
+      readContent: async item => { const record = await owner.contentStorage?.get(item.route, item.id); if (!record) throw new Error("Nội dung tệp không còn trong kho; hãy nhập lại."); return record.value; },
+      openFile: async item => {
+        const record = await owner.contentStorage?.get(item.route, item.id);
+        if (!stillActive()) return;
+        if (!record) throw new Error("Nội dung tệp không còn trong kho; hãy nhập lại.");
+        if (record.value instanceof globalScope.Blob && ["audio", "video"].includes(item.meta.mediaKind)) {
+          const file = new File([record.value], item.meta.fileName, { type: item.meta.fileType });
+          if (!openLocalMedia(file, item.route, { playlistItemId: item.id })) throw new Error("Không thể mở media đã lưu.");
+          mountWorkbench();
+        } else {
+          const value = typeof record.value === "string" ? record.value : record.value instanceof globalScope.Blob ? await record.value.text() : JSON.stringify(record.value, null, 2);
+          if (!stillActive()) return;
+          const editor = owner.app.querySelector(owner.route === "/galaxy/dev" ? "#hgl1-dev-code" : owner.route === "/galaxy/ai" ? "[data-hgl1-ai-draft]" : "[data-hgl1-community-form] textarea");
+          if (!editor) throw new Error("Tệp đã lưu; workspace này chưa có editor cho loại tệp đó.");
+          if (value.length > editor.maxLength && editor.maxLength > 0) throw new Error("Nội dung vượt giới hạn editor.");
+          editor.value = value; editor.focus();
+        }
+      }
+    });
   }
 
   function showToast(message, tone) {
@@ -2835,6 +2954,7 @@
           openedMedia = openLocalMedia(file, match.route, { playlistItemId: descriptor.kind === "audio" ? committed.id : "" });
         }
         if (descriptor.kind === "audio") active.mediaPlaylist.push({ id: committed.id, file: file, name: file.name, type: file.type || "audio", size: file.size });
+        if (descriptor.kind === "video") { active.videoPlaylist ||= []; active.videoPlaylist.push({ id: committed.id, file, name: file.name }); }
       } catch (error) {
         errors.push(String(error && error.message || "Tệp không hợp lệ.").slice(0, 180));
       }
@@ -3036,6 +3156,9 @@
       return;
     }
     active.aiLastPrompt = prompt;
+    const history = String(active.aiHistory || "");
+    const combinedPrompt = history ? "Hội thoại trước (ngữ cảnh do người dùng cung cấp):\n" + history + "\n\nYêu cầu mới:\n" + prompt : prompt;
+    if (combinedPrompt.length > 16000) { showToast("Hội thoại vượt giới hạn 16.000 ký tự. Hãy xuất lịch sử và bắt đầu hội thoại mới.", "error"); return; }
     if (typeof globalScope.fetch !== "function") {
       showToast("Trình duyệt không hỗ trợ kết nối AI.", "error");
       return;
@@ -3050,14 +3173,15 @@
       output.dataset.tone = "info";
     }
     const controller = typeof globalScope.AbortController === "function" ? new globalScope.AbortController() : null;
-    const request = { controller: controller };
+    const request = { controller: controller, timedOut: false };
+    request.timeout = globalScope.setTimeout?.(() => { request.timedOut = true; controller?.abort(); }, 60000);
     active.aiRequest = request;
     try {
       const response = await globalScope.fetch("/api/ai", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ toolId: "ai-chat", action: "send", input: { prompt: prompt } }),
+        body: JSON.stringify({ toolId: "ai-chat", action: "send", input: { prompt: combinedPrompt } }),
         signal: controller ? controller.signal : undefined
       });
       const payload = await response.json().catch(function emptyAiPayload() { return {}; });
@@ -3069,24 +3193,36 @@
         return;
       }
       const answer = String(payload.result.text).slice(0, 12000);
+      active.aiHistory = (history ? history + "\n\n" : "") + "Bạn: " + prompt + "\n\nAI: " + answer;
       if (output) { output.textContent = answer; output.dataset.tone = "success"; }
+      if (output) output.setAttribute("aria-label", "Phản hồi từ " + String(payload.result.provider || "provider") + " · " + String(payload.result.model || "model do máy chủ chọn"));
       const title = prompt.split(/\r?\n/)[0].slice(0, 120) || "Hội thoại AI";
       const saved = createLocalItem("/galaxy/ai", title, runtime.storage, {
         kind: "ai-conversation",
-        description: "Bạn: " + prompt + "\n\nAI: " + answer,
+        description: active.aiHistory.length <= MAX_ITEM_DESCRIPTION ? active.aiHistory : "Bạn: " + prompt + "\n\nAI: " + answer,
         meta: { provider: String(payload.result.provider || "server").slice(0, 80) }
       });
+      let completeHistorySaved = Boolean(saved) && active.aiHistory.length <= MAX_ITEM_DESCRIPTION;
+      if (saved && active.contentStorage) {
+        try { await active.contentStorage.put("/galaxy/ai", saved.id, { type: "ai-transcript", text: active.aiHistory, provider: payload.result.provider || "server", model: payload.result.model || "" }, { contentType: "application/json" }); completeHistorySaved = true; }
+        catch (_) { if (runtime === active) showToast("Đã lưu lượt cuối; chưa lưu được context đầy đủ. Hãy xuất hội thoại trước khi rời trang.", "error"); }
+      }
+      if (runtime !== active || active.route !== "/galaxy/ai") return;
       if (saved && runtime.app) {
         const list = runtime.app.querySelector("[data-hgl1-item-list]");
         if (list && typeof list.insertAdjacentHTML === "function") list.insertAdjacentHTML("beforeend", itemMarkup(saved));
       }
-      showToast(saved ? "Đã nhận phản hồi và lưu lịch sử cục bộ." : "Đã nhận phản hồi nhưng không thể lưu lịch sử.", saved ? "success" : "info");
+      showToast(completeHistorySaved ? "Đã nhận phản hồi và lưu lịch sử cục bộ." : saved ? "Đã lưu lượt cuối; hãy xuất context đầy đủ trước khi rời trang." : "Đã nhận phản hồi nhưng không thể lưu lịch sử.", completeHistorySaved ? "success" : "info");
     } catch (error) {
-      if (error && error.name === "AbortError") return;
+      if (error && error.name === "AbortError") {
+        if (request.timedOut && runtime === active && output?.isConnected) { output.textContent = "AI quá thời gian 60 giây. Bạn có thể thử lại; không tự gửi lại."; output.dataset.tone = "error"; }
+        return;
+      }
       if (runtime !== active || active.route !== "/galaxy/ai" || active.aiRequest !== request) return;
       if (output) { output.textContent = "Kết nối AI bị gián đoạn. Nội dung chưa được gửi lại tự động."; output.dataset.tone = "error"; }
       showToast("Kết nối AI bị gián đoạn.", "error");
     } finally {
+      if (request.timeout) globalScope.clearTimeout?.(request.timeout);
       if (active.aiRequest === request) active.aiRequest = null;
       if (runtime === active && active.route === "/galaxy/ai") {
         if (send && send.isConnected) send.disabled = active.aiProviderStatus && active.aiProviderStatus.state !== "ready";
@@ -3298,7 +3434,7 @@
     element.playbackRate = Math.max(0.5, Math.min(2, Number(preferences.rate) || 1));
     if (isVideo) element.playsInline = true;
     element.setAttribute("aria-label", (isVideo ? "Video" : "Âm thanh") + " " + String(file.name || "đã chọn").slice(0, 180));
-    const installed = installMediaElement(element, { route: route, url: url, lease: lease, kind: isAudio ? "audio" : "video", fileName: file.name, playlistItemId: String(options && options.playlistItemId || ""), cleanups: [] });
+    const installed = installMediaElement(element, { route: route, url: url, lease: lease, kind: isAudio ? "audio" : "video", file: file, fileName: file.name, playlistItemId: String(options && options.playlistItemId || ""), cleanups: [] });
     if (!installed) {
       if (lease) lease.release();
       else globalScope.URL.revokeObjectURL(url);
@@ -3331,6 +3467,7 @@
       return false;
     }
     updateMediaPlaylist();
+    mountWorkbench();
     const element = runtime.mediaSession && runtime.mediaSession.element;
     if (element && typeof element.play === "function") {
       try {
@@ -3399,6 +3536,8 @@
     }
     try {
       const parsed = mediaApi.parseSubtitles(await file.text());
+      if (!runtime || runtime.mediaSession !== session || runtime.route !== "/galaxy/video") return false;
+      if (session.subtitleTrack) { session.subtitleTrack.mode = "disabled"; }
       const track = video.addTextTrack("subtitles", String(file.name || "Phụ đề").slice(0, 120), "vi");
       track.mode = "showing";
       const Cue = globalScope.VTTCue || globalScope.TextTrackCue;
@@ -3478,12 +3617,15 @@
       recorder.addEventListener("dataavailable", function collectRecording(event) { if (event.data && event.data.size) recording.chunks.push(event.data); });
       recorder.addEventListener("stop", function finishRecording() {
         if (!recording.keepResult || runtime !== owner || owner.route !== "/galaxy/music" || !recording.chunks.length) return;
-        const blob = new globalScope.Blob(recording.chunks, { type: recorder.mimeType || "audio/webm" });
-        try { Object.defineProperty(blob, "name", { configurable: true, value: "ghi-am-" + Date.now() + ".webm" }); } catch (_) {}
+        const recordingType = (recorder.mimeType || "audio/webm").split(";")[0];
+        const recordingExtension = /mp4|aac/.test(recordingType) ? "m4a" : /ogg/.test(recordingType) ? "ogg" : "webm";
+        const blob = new globalScope.Blob(recording.chunks, { type: recordingType });
+        try { Object.defineProperty(blob, "name", { configurable: true, value: "ghi-am-" + Date.now() + "." + recordingExtension }); } catch (_) {}
         const playlistItem = { id: createId(), file: blob, name: blob.name || "Bản thu microphone.webm", type: blob.type, size: blob.size };
         owner.mediaPlaylist.push(playlistItem);
         openLocalMedia(blob, "/galaxy/music", { playlistItemId: playlistItem.id });
         updateMediaPlaylist();
+        mountWorkbench();
         const status = owner.app && owner.app.querySelector("[data-hgl1-recording-status]");
         if (status) status.textContent = "Đã tạo bản thu cục bộ " + Math.max(1, Math.round(blob.size / 1024)) + " KB; chưa tải lên mạng.";
       }, { once: true });
@@ -3520,6 +3662,8 @@
     const source = session || runtime.lastGameSnapshot;
     if (!source) return null;
     return {
+      remaining: source.remaining === undefined ? 60 : source.remaining,
+      difficulty: source.difficulty || "normal",
       score: Math.max(0, Math.floor(Number(source.score) || 0)),
       x: Math.max(18, Math.min(942, Number(source.x) || 480)),
       y: Math.max(18, Math.min(522, Number(source.y) || 270)),
@@ -3603,6 +3747,7 @@
   function resumeGameSession(reason) {
     if (!runtime || !runtime.gameSession || !runtime.gameSession.paused) return false;
     const session = runtime.gameSession;
+    if (session.outcome) return false;
     if (reason && session.pauseReason !== reason) return false;
     if (globalScope.document && globalScope.document.hidden === true) return false;
     if (typeof session.frame !== "function" || typeof globalScope.requestAnimationFrame !== "function") return false;
@@ -3620,7 +3765,7 @@
     runtime.gameSession = null;
     session.paused = true;
     session.pauseReason = "destroyed";
-    runtime.lastGameSnapshot = { score: session.score, x: session.x, y: session.y, target: { x: session.target.x, y: session.target.y } };
+    runtime.lastGameSnapshot = { score: session.score, x: session.x, y: session.y, remaining: session.remaining, difficulty: session.difficulty, target: { x: session.target.x, y: session.target.y } };
     if (session.raf && globalScope.cancelAnimationFrame) globalScope.cancelAnimationFrame(session.raf);
     if (session.canvas) {
       session.canvas.removeEventListener("keydown", session.keydown);
@@ -3628,6 +3773,7 @@
       session.canvas.removeEventListener("blur", session.blur);
     }
     if (session.removeBlur) session.removeBlur();
+    session.pointerCleanup?.();
     if (runtime.app && runtime.route === "/galaxy/games") {
       const button = runtime.app.querySelector("[data-hgl1-action=\"toggle-game\"]");
       const status = runtime.app.querySelector("[data-hgl1-game-status]");
@@ -3655,6 +3801,15 @@
     const controls = sanitizeGameControls(runtime.gameControls || loadGameControls(runtime.storage));
     runtime.gameControls = controls;
     const session = { canvas: canvas, context: context, keys: new Set(), x: Number(restored && restored.x) || 480, y: Number(restored && restored.y) || 270, score: Math.max(0, Math.floor(Number(restored && restored.score) || 0)), started: globalScope.performance && globalScope.performance.now ? globalScope.performance.now() : Date.now(), last: 0, target: { x: Number(restored && restored.target && restored.target.x) || 180, y: Number(restored && restored.target && restored.target.y) || 140 }, raf: 0, controls: controls, paused: false, pauseReason: "", frame: null };
+    session.difficulty = restored?.difficulty || runtime.app.querySelector("[data-gwb-game-difficulty]")?.value || "normal";
+    session.remaining = restored?.remaining === undefined ? ({easy:90,normal:60,hard:40}[session.difficulty] || 60) : restored.remaining;
+    session.goal = {easy:5,normal:10,hard:15}[session.difficulty] || 10;
+    const pointer = event => { const box = canvas.getBoundingClientRect(); session.pointer = {x:(event.clientX-box.left)/box.width*canvas.width,y:(event.clientY-box.top)/box.height*canvas.height}; };
+    const pointerUp = () => { session.pointer = null; };
+    const pointerDown = event => { canvas.focus(); canvas.setPointerCapture?.(event.pointerId); pointer(event); };
+    const pointerMove = event => { if (event.buttons || event.pointerType === "touch") pointer(event); };
+    canvas.addEventListener("pointerdown", pointerDown); canvas.addEventListener("pointermove", pointerMove); canvas.addEventListener("pointerup", pointerUp); canvas.addEventListener("pointercancel", pointerUp);
+    session.pointerCleanup = () => { canvas.removeEventListener("pointerdown", pointerDown); canvas.removeEventListener("pointermove", pointerMove); canvas.removeEventListener("pointerup", pointerUp); canvas.removeEventListener("pointercancel", pointerUp); };
     session.keydown = function gameKeydown(event) {
       const key = String(event.key || "").toLocaleLowerCase("en-US");
       if (["arrowup", "arrowdown", "arrowleft", "arrowright", controls.up, controls.down, controls.left, controls.right].includes(key)) {
@@ -3678,8 +3833,10 @@
       if (session.paused) return;
       const delta = Math.min(0.05, Math.max(0, (now - (session.last || now)) / 1000));
       session.last = now;
+      session.remaining = Math.max(0, session.remaining - delta);
       let dx = (session.keys.has(controls.right) || session.keys.has("arrowright") ? 1 : 0) - (session.keys.has(controls.left) || session.keys.has("arrowleft") ? 1 : 0);
       let dy = (session.keys.has(controls.down) || session.keys.has("arrowdown") ? 1 : 0) - (session.keys.has(controls.up) || session.keys.has("arrowup") ? 1 : 0);
+      if (session.pointer) { dx = (session.pointer.x - session.x) / 30; dy = (session.pointer.y - session.y) / 30; }
       try {
         const pad = globalScope.navigator && globalScope.navigator.getGamepads && globalScope.navigator.getGamepads()[0];
         if (pad) { dx += Math.abs(pad.axes[0] || 0) > controls.deadZone ? pad.axes[0] : 0; dy += Math.abs(pad.axes[1] || 0) > controls.deadZone ? pad.axes[1] : 0; }
@@ -3699,6 +3856,16 @@
       context.fillStyle = "#ffd76a"; context.beginPath(); context.arc(session.target.x, session.target.y, 10, 0, Math.PI * 2); context.fill();
       context.fillStyle = "#79ecff"; context.beginPath(); context.arc(session.x, session.y, 18, 0, Math.PI * 2); context.fill();
       context.fillStyle = "#fff"; context.font = "20px system-ui"; context.textAlign = "left"; context.fillText("Điểm thật: " + session.score, 20, 32);
+      context.fillText("Còn " + Math.ceil(session.remaining) + "s · Mục tiêu " + session.goal, 20, 60);
+      if (session.remaining <= 0 || session.score >= session.goal) {
+        session.outcome = session.score >= session.goal ? "win" : "timeout";
+        session.paused = true; session.pauseReason = "finished";
+        const message = session.outcome === "win" ? "Hoàn thành mục tiêu!" : "Hết giờ. Hãy thử lại!";
+        context.fillStyle = "rgba(4,8,25,.8)"; context.fillRect(190,180,580,150); context.fillStyle = "#fff"; context.textAlign = "center"; context.fillText(message,480,250);
+        const status = runtime.app.querySelector("[data-hgl1-game-status]"); if (status) status.textContent = message + " Điểm: " + session.score;
+        const button = runtime.app.querySelector("[data-hgl1-action=toggle-game]"); if (button) button.textContent = "Đã kết thúc";
+        return;
+      }
       session.raf = globalScope.requestAnimationFrame(frame);
     }
     session.frame = frame;
@@ -4037,8 +4204,10 @@
     else if (route === "/galaxy/ai" && index === 2) runtime.app.querySelector("[data-hgl1-module-file]")?.click();
     else if (route === "/galaxy/music" && index === 0) runtime.app.querySelector("[data-hgl1-module-file]")?.click();
     else if (route === "/galaxy/music" && index === 1) checkMicrophone();
+    else if (route === "/galaxy/music" && index === 2) { const target = runtime.app.querySelector("[data-gwb=audio-mix]"); target?.scrollIntoView({ block: "center" }); target?.focus(); }
     else if (route === "/galaxy/video" && index === 0) runtime.app.querySelector("[data-hgl1-module-file]")?.click();
     else if (route === "/galaxy/video" && index === 1) runtime.app.querySelector("[data-hgl1-create-form] input")?.focus();
+    else if (route === "/galaxy/video" && index === 2) { const target=runtime.app.querySelector("[data-gwb=video-render]"); target?.scrollIntoView({block:"center"}); target?.focus(); }
     else if (route === "/galaxy/games" && index === 0) runtime.app.querySelector("[data-hgl1-create-form] input")?.focus();
     else if (route === "/galaxy/games" && index === 1) {
       const canvas = runtime.app.querySelector("[data-hgl1-game-canvas]");
@@ -4294,7 +4463,8 @@
     if (!engine) return toolFailure(output, new Error("Bộ công cụ cục bộ chưa được tải."));
     try {
       if (action === "preview-markdown") {
-        const safeHtml = engine.markdownToSafeHtml(input ? input.value : "");
+        const generated = engine.markdownToSafeHtml(input ? input.value : "");
+        const safeHtml = globalScope.DOMPurify ? globalScope.DOMPurify.sanitize(generated, { USE_PROFILES: { html: true } }) : generated;
         output.innerHTML = safeHtml || "<p>Markdown trống.</p>";
         output.dataset.tone = "success";
       } else if (action === "csv-to-json") {
@@ -4304,9 +4474,10 @@
         const records = JSON.parse(input ? input.value : "");
         setToolResult(output, engine.objectsToCsv(records), "success");
       } else if (action === "sha256-text") {
+        const revision = output.dataset.gwbRevision || "0";
         setToolResult(output, "Đang tạo SHA-256…", "info");
         const digest = await engine.sha256Hex(input ? input.value : "", globalScope.crypto);
-        if (runtime !== active || !output.isConnected) return false;
+        if (runtime !== active || !output.isConnected || (output.dataset.gwbRevision || "0") !== revision) return false;
         setToolResult(output, digest, "success");
       } else if (action === "generate-qr") {
         const safeSvg = engine.createQrSvg(input ? input.value : "", globalScope.qrcode);
@@ -4359,6 +4530,7 @@
     else if (action === "stop-ai-request") abortAiRequest();
     else if (action === "retry-ai-request") retryAiRequest();
     else if (action === "clear-ai-draft") {
+      runtime.aiHistory = "";
       const input = runtime.app.querySelector("[data-hgl1-ai-draft]");
       const output = runtime.app.querySelector("[data-hgl1-ai-response]");
       if (input) { input.value = ""; input.focus(); }
@@ -4512,7 +4684,7 @@
       const text = input ? input.value : "";
       const words = text.trim() ? text.trim().split(/\s+/u).length : 0;
       const lines = text ? text.split(/\r?\n/).length : 0;
-      if (output) output.textContent = "Ký tự: " + text.length + " · Từ: " + words + " · Dòng: " + lines;
+      if (output) { output.textContent = "Ký tự: " + text.length + " · Từ: " + words + " · Dòng: " + lines; output.dataset.tone = "success"; }
     } else if (action === "format-json") {
       const input = runtime.app.querySelector("[data-hgl1-json-tool]");
       const output = runtime.app.querySelector("[data-hgl1-json-output]");
@@ -4522,9 +4694,9 @@
           output.textContent = JSON.stringify(parsed, null, 2);
           output.dataset.tone = "success";
         }
-      } catch (_) {
+      } catch (error) {
         if (output) {
-          output.textContent = "JSON không hợp lệ. Hãy kiểm tra dấu ngoặc và dấu phẩy.";
+          output.textContent = "JSON không hợp lệ: " + String(error.message || "Hãy kiểm tra dấu ngoặc và dấu phẩy.").slice(0, 300);
           output.dataset.tone = "error";
         }
       }
@@ -4633,6 +4805,7 @@
       const title = String(devForm.elements.title && devForm.elements.title.value || "").trim().slice(0, 160);
       const code = String(devForm.elements.code && devForm.elements.code.value || "").slice(0, MAX_TEXT_LENGTH);
       const language = String(devForm.elements.language && devForm.elements.language.value || "text").slice(0, 40);
+      if (code.length > MAX_ITEM_DESCRIPTION) { showToast("Snippet vượt giới hạn lưu 16.000 ký tự. Hãy dùng Tải mã nguồn để giữ toàn bộ nội dung.", "error"); return; }
       if (containsLikelySecret(title + "\n" + code)) {
         showToast("Phát hiện nội dung giống secret hoặc thông tin đăng nhập. Snippet chưa được lưu.", "error");
         return;
@@ -5023,6 +5196,7 @@
     stopGame();
     releaseAnalyticsCollector(active, true);
     cleanupDelegate();
+    active.workbench?.destroy?.();
     cleanupRouteRuntime();
     if (active.contentStorage && typeof active.contentStorage.close === "function") {
       try { void active.contentStorage.close(); } catch (_) {}
@@ -5182,6 +5356,7 @@
     inspectLocalState: inspectLocalState,
     writeLocalState: writeLocalState,
     createLocalItem: createLocalItem,
+    updateLocalItem: updateLocalItem,
     copyTemplate: copyTemplate,
     deleteLocalItem: deleteLocalItem,
     serializeBackup: serializeBackup,
