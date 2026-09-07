@@ -49,3 +49,14 @@ The shared prompt set requested wide, photorealistic, people-free focus environm
 The landscape expansion used one distinct prompt per environment: rooftop sunrise, rainy greenhouse, alpine lake dawn, old university reading hall, Nordic cabin morning, Vietnamese rice-terrace veranda, original autumn garden room and moonlit mountain observatory.
 
 The pet expansion used six additional prompts: rainy attic with a sleeping orange cat, meadow sunroom with a resting retriever, rainy fireside library with a gray cat, spring garden veranda with a small sleeping dog, Vietnamese riverside blue-hour room with a tabby and a misty lakeside cabin with a sleeping puppy. Prompts required anatomically believable animals, natural fur and posture, no animal clothing, no people and no distracting action. Generated PNG sources remain unchanged in the Codex generated-image store; the browser consumes only the optimized project WebP copies and thumbnails in this directory.
+
+## Study music
+
+The Focus Room ships two local piano recordings by **Kimiko Ishizaka**, both released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). The original Ogg Vorbis files were downloaded from Wikimedia Commons on 2026-09-07 and transcoded once to VBR MP3 for broader browser support. The website serves only these local MP3 derivatives and never hotlinks Commons during playback.
+
+| Local file | Work and performer | Source page | License | SHA-256 |
+| --- | --- | --- | --- | --- |
+| `music/bach-prelude-bwv848-kimiko-ishizaka.mp3` | J.S. Bach, Prelude No. 3 in C-sharp major, BWV 848 · Kimiko Ishizaka | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier,_Book_1_-_05_Prelude_No._3_in_C-sharp_major,_BWV_848.ogg) | CC0 1.0 | `301B3779AD01853F51493F30B79B0F404AB85E6D4B9728F24AFF43BE56F960EC` |
+| `music/bach-canon-alla-ottava-kimiko-ishizaka.mp3` | J.S. Bach, Canon Alla Ottava, BWV 1080 · Kimiko Ishizaka | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Kimiko_Ishizaka_-_J.S._Bach,_The_Art_of_Fugue,_BWV_1080_-_17_Canon_Alla_Ottava.ogg) | CC0 1.0 | `5C24D4B98E02B19CB171ED58F3EC6E2739E415939686B8218970ADD4117BE791` |
+
+The third music choice, “Lo-fi HH dịu”, is generated at runtime with the Web Audio API from original chord scheduling, oscillators and a very quiet synthetic vinyl-noise bed. It has no downloaded composition or sample.

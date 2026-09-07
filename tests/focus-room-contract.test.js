@@ -20,6 +20,10 @@ function createHarness() {
   let audioCloses = 0;
   let nodeStarts = 0;
   let nodeStops = 0;
+  let mediaCreates = 0;
+  let mediaPlays = 0;
+  let mediaPauses = 0;
+  let mediaLoads = 0;
   const storage = new Map();
   const intervals = new Map();
   const timeouts = new Map();
@@ -69,6 +73,27 @@ function createHarness() {
     close() { audioCloses += 1; return Promise.resolve(); }
   }
 
+  class FakeAudio {
+    constructor() {
+      mediaCreates += 1;
+      this.currentTime = 0;
+      this.duration = 75.44;
+      this.volume = 1;
+      this.loop = false;
+      this.listeners = new Map();
+    }
+    addEventListener(type, listener) { add(this.listeners, type, listener); }
+    removeEventListener(type, listener) { remove(this.listeners, type, listener); }
+    removeAttribute(name) { if (name === "src") this.src = ""; }
+    play() {
+      mediaPlays += 1;
+      [...(this.listeners.get("playing") || [])].forEach((listener) => listener());
+      return Promise.resolve();
+    }
+    pause() { mediaPauses += 1; }
+    load() { mediaLoads += 1; }
+  }
+
   class FakeDate extends Date {
     constructor(...args) { super(...(args.length ? args : [now])); }
     static now() { return now; }
@@ -86,6 +111,7 @@ function createHarness() {
 
   const windowNode = listenerTarget(windowListeners, {
     AudioContext: FakeAudioContext,
+    Audio: FakeAudio,
     CustomEvent: FakeCustomEvent,
     Date: FakeDate,
     document: documentNode,
@@ -192,6 +218,10 @@ function createHarness() {
       get audioCloses() { return audioCloses; },
       get nodeStarts() { return nodeStarts; },
       get nodeStops() { return nodeStops; },
+      get mediaCreates() { return mediaCreates; },
+      get mediaPlays() { return mediaPlays; },
+      get mediaPauses() { return mediaPauses; },
+      get mediaLoads() { return mediaLoads; },
       get intervalCount() { return intervals.size; },
       get listenerCount() {
         return [...documentListeners.values(), ...windowListeners.values()].reduce((sum, listeners) => sum + listeners.size, 0);
@@ -208,10 +238,10 @@ test("Focus Room upgrades the canonical HH Platform learning workspace", () => {
   assert.match(router, /Phòng học tập trung/);
   assert.match(router, /26 scene nguyên bản/);
   assert.match(router, /Trong Học tập &amp; Ngôn ngữ/);
-  assert.match(loader, /"focus-study-room":\s*\{[\s\S]*focus-room\.css\?v=5[\s\S]*focus-room\.js\?v=5/);
+  assert.match(loader, /"focus-study-room":\s*\{[\s\S]*focus-room\.css\?v=6[\s\S]*focus-room\.js\?v=6/);
   assert.match(loader, /value === "\/focus-room"/);
-  assert.match(worker, /\.\/focus-room\.css\?v=5/);
-  assert.match(worker, /\.\/focus-room\.js\?v=5/);
+  assert.match(worker, /\.\/focus-room\.css\?v=6/);
+  assert.match(worker, /\.\/focus-room\.js\?v=6/);
   assert.doesNotMatch(source, /HH CORE|gateway|location\.href\s*=/i);
 });
 
@@ -220,6 +250,7 @@ test("scene library ships twenty-six local full images and thumbnails with prove
   assert.equal(api.route, "/focus-room");
   assert.equal(api.scenes.length, 26);
   assert.equal(api.channels.length, 16);
+  assert.equal(api.musicTracks.length, 3);
   assert.equal(api.canHandle("/focus-room"), true);
   assert.equal(api.canHandle("/learn"), false);
   for (const scene of api.scenes) {
@@ -236,6 +267,12 @@ test("scene library ships twenty-six local full images and thumbnails with prove
   assert.match(documentation, /ayoisaiah\/focus[\s\S]*MIT/);
   assert.match(read("assets/focus-room/README.md"), /SHA-256/);
   assert.match(read("assets/focus-room/README.md"), /rainy greenhouse[\s\S]*moonlit mountain observatory/i);
+  for (const track of api.musicTracks.filter((item) => item.kind === "file")) {
+    assert.equal(fs.existsSync(path.join(rootDir, track.src)), true, `missing ${track.src}`);
+    assert.ok(fs.statSync(path.join(rootDir, track.src)).size > 1_000_000, `empty ${track.src}`);
+    assert.equal(track.license, "CC0 1.0");
+  }
+  assert.match(read("assets/focus-room/README.md"), /Kimiko Ishizaka[\s\S]*CC0 1\.0[\s\S]*SHA-256/);
 });
 
 test("state is account scoped and favorites persist independently", () => {
@@ -292,6 +329,59 @@ test("audio starts only on direct action and releases every node on unmount", as
   harness.api.unmount(entry.root);
   assert.equal(harness.metrics.audioCloses, 1);
   assert.equal(harness.metrics.nodeStops, runningNodes);
+  assert.equal(harness.metrics.mediaEvents.at(-1).detail.active, false);
+});
+
+test("study music never autoplays, persists controls and pauses while hidden", async () => {
+  const harness = createHarness();
+  const entry = harness.createRoot();
+  const controller = harness.api.mount(entry.root, { currentUser: { id: "music-user" } });
+  assert.equal(harness.metrics.mediaCreates, 0);
+  assert.equal(harness.metrics.mediaPlays, 0);
+  harness.click(entry, "music-select", { id: "bach-prelude-bwv848" });
+  assert.equal(controller.getState().audio.music.selected, "bach-prelude-bwv848");
+  assert.equal(harness.metrics.mediaCreates, 0, "selecting a track must not autoplay");
+  harness.click(entry, "music-toggle");
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(harness.metrics.mediaCreates, 1);
+  assert.equal(harness.metrics.mediaPlays, 1);
+  assert.equal(harness.metrics.mediaEvents.at(-1).detail.active, true);
+  harness.input(entry, "[data-hfr-music-volume]", "42");
+  assert.equal(controller.getState().audio.music.volume, 0.42);
+  harness.click(entry, "music-loop");
+  assert.equal(controller.getState().audio.music.loop, false);
+  harness.visibility(true);
+  assert.equal(harness.metrics.mediaPauses, 1);
+  assert.equal(harness.metrics.mediaEvents.at(-1).detail.active, false);
+  harness.visibility(false);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(harness.metrics.mediaPlays, 2);
+  controller.unmount();
+  assert.ok(harness.metrics.mediaPauses >= 2);
+  assert.equal(harness.metrics.mediaLoads, 1, "unmount must release the media source");
+  assert.equal(harness.metrics.mediaEvents.at(-1).detail.active, false);
+});
+
+test("procedural lo-fi starts on click and releases scheduler plus AudioContext", async () => {
+  const harness = createHarness();
+  const entry = harness.createRoot();
+  const controller = harness.api.mount(entry.root, { currentUser: { id: "lofi-user" } });
+  assert.equal(harness.metrics.audioContexts, 0);
+  harness.click(entry, "music-toggle");
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(harness.metrics.audioContexts, 1);
+  assert.ok(harness.metrics.nodeStarts >= 5, "lo-fi chord and vinyl bed should be scheduled lazily");
+  assert.equal(harness.metrics.intervalCount, 1, "only the lo-fi scheduler should be active");
+  harness.visibility(true);
+  assert.equal(harness.metrics.intervalCount, 0, "hidden tabs must stop the lo-fi scheduler");
+  harness.visibility(false);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(harness.metrics.intervalCount, 1, "visible playback may restart one scheduler");
+  harness.click(entry, "music-toggle");
+  assert.equal(harness.metrics.intervalCount, 0, "manual pause must stop the scheduler");
+  controller.unmount();
+  assert.equal(harness.metrics.audioCloses, 1);
+  assert.equal(harness.metrics.intervalCount, 0);
   assert.equal(harness.metrics.mediaEvents.at(-1).detail.active, false);
 });
 
@@ -370,6 +460,14 @@ test("responsive, motion and truthful capability contracts are explicit", () => 
   assert.match(styles, /hfr-condensation/);
   assert.match(styles, /hfr-leaf-drift/);
   assert.match(styles, /hfr-pet-breathe/);
+  assert.match(source, /import\(THREE_MODULE\)/);
+  assert.match(source, /new THREE\.WebGLRenderer/);
+  assert.match(source, /1000 \/ 30/);
+  assert.match(source, /teardownPetDepth/);
+  assert.match(styles, /\.hfr-pet-depth[\s\S]*pointer-events:\s*none/);
+  assert.match(source, /hh-lofi-calm/);
+  assert.match(source, /Kimiko Ishizaka/);
+  assert.match(source, /suspendMusicForVisibility/);
   assert.match(source, /data-hfr-task-edit-form/);
 });
 

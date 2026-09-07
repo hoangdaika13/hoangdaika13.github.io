@@ -16,6 +16,18 @@ The existing QR vendor and JSZip retain their embedded notices and licenses.
 This document covers additions in this work, not a complete license inventory
 of the historical repository.
 
+## HH Focus Room CC0 piano recordings
+
+- Performer: Kimiko Ishizaka.
+- Works: J.S. Bach, Prelude No. 3 in C-sharp major, BWV 848; Canon Alla Ottava, BWV 1080.
+- Source and individual hashes: `assets/focus-room/README.md`.
+- License: CC0 1.0 Universal. The local files are browser-compatible MP3 transcodes of the Commons originals.
+- Purpose: optional, interaction-gated study music inside `/focus-room`; neither file is hotlinked or autoplayed.
+
+The existing repository copy of Three.js remains under the MIT license in
+`vendor/THREE-LICENSE.txt`. Focus Room reuses that copy for its optional pet
+depth effect and adds no new graphics dependency.
+
 ## Evaluated, not bundled in this work
 
 WaveSurfer was considered for waveform interaction, but does not itself supply

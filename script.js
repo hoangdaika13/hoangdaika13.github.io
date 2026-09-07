@@ -5743,7 +5743,7 @@ function initAppShell() {
       route: "/focus-room",
       items: [],
       pages: [
-        { id: "workspace", title: "Bàn học tập trung", route: "/focus-room", description: "Timer chính xác, việc học, ghi chú, âm thanh tạo cục bộ và thống kê từ các phiên đã hoàn thành." }
+        { id: "workspace", title: "Bàn học tập trung", route: "/focus-room", description: "Timer chính xác, việc học, ghi chú, 16 âm môi trường, lo-fi cục bộ, piano CC0 và thống kê từ phiên thật." }
       ]
     },
     { id: "english", label: "HH English", icon: "E", accent: "#60e9f2", route: "/english", items: [] },
@@ -5875,7 +5875,7 @@ function initAppShell() {
     insights: "phân tích analytics báo cáo dữ liệu",
     copyright: "bản quyền giấy phép license attribution",
     learn: "học tập trường học bài luyện kiến thức",
-    "focus-room": "phòng học tập trung focus pomodoro đồng hồ nhiệm vụ todo ghi chú âm thanh mưa nhiễu nâu quán cà phê deep work lifeat",
+    "focus-room": "phòng học tập trung focus pomodoro đồng hồ nhiệm vụ todo ghi chú âm thanh mưa nhiễu nâu quán cà phê deep work lofi piano thú cưng chó mèo chiều sâu 3d lifeat",
     english: "tiếng anh english ngoại ngữ",
     japanese: "tiếng nhật japanese jlpt kanji",
     chinese: "tiếng trung chinese hsk hanzi pinyin",
@@ -7605,7 +7605,7 @@ function initAppShell() {
       });
       else mountSimpleView("Nhạc", "Đang tải thư viện nhạc có giấy phép mở...", "");
     } else if (route === "/focus-room") {
-      updatePageHeader("Phòng học tập trung", "Không gian học nhập vai với 26 scene nguyên bản, hiệu ứng môi trường dịu, Web Audio cục bộ, Pomodoro, công việc, ghi chú và lịch sử thật.", route);
+      updatePageHeader("Phòng học tập trung", "Không gian học nhập vai với 26 scene nguyên bản, chiều sâu thú cưng tùy chọn, 16 âm môi trường, lo-fi cục bộ, piano CC0, Pomodoro và dữ liệu học thật.", route);
       pageActions.innerHTML = '<button type="button" data-focus-room-panel="scenes">Đổi không gian</button><button type="button" data-focus-room-panel="tasks">Công việc</button><button class="app-primary-action" type="button" data-focus-room-zen>Zen mode</button>';
       workspace.innerHTML = '<div data-hh-focus-room-host></div>';
       const focusRoomHost = workspace.firstElementChild;

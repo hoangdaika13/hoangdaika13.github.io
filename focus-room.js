@@ -9,8 +9,35 @@
   const DB_NAME = "hh-focus-room-media-v1";
   const DB_STORE = "scenes";
   const FALLBACK_IMAGE = "assets/focus-room/rainy-window.webp";
+  const THREE_MODULE = "./vendor/three.module.min.js";
   const instances = new WeakMap();
   const mountedRoots = new Set();
+
+  const MUSIC_TRACKS = Object.freeze([
+    Object.freeze({
+      id: "hh-lofi-calm", title: "Lo-fi HH dịu", artist: "Tạo cục bộ trên thiết bị", kind: "procedural",
+      description: "Hòa âm 68 BPM, piano điện mềm và nhiễu đĩa rất nhẹ; không tải tệp ngoài.", license: "Âm thanh tổng hợp cục bộ", duration: 0
+    }),
+    Object.freeze({
+      id: "bach-prelude-bwv848", title: "Prelude No. 3 · BWV 848", artist: "Kimiko Ishizaka", kind: "file",
+      description: "Piano cổ điển sáng, nhịp đều cho một phiên học ngắn.", license: "CC0 1.0", duration: 75.44,
+      src: "assets/focus-room/music/bach-prelude-bwv848-kimiko-ishizaka.mp3"
+    }),
+    Object.freeze({
+      id: "bach-canon-bwv1080", title: "Canon Alla Ottava · BWV 1080", artist: "Kimiko Ishizaka", kind: "file",
+      description: "Piano đối âm tĩnh, dài hơn cho đọc và ghi chú.", license: "CC0 1.0", duration: 138.72,
+      src: "assets/focus-room/music/bach-canon-alla-ottava-kimiko-ishizaka.mp3"
+    })
+  ]);
+
+  const PET_DEPTH_PROFILES = Object.freeze({
+    "pet-rain": Object.freeze({ x: 0.17, y: 0.75, radiusX: 0.15, radiusY: 0.12, imageX: 0.21, pace: 0.74 }),
+    "pet-sunroom": Object.freeze({ x: 0.31, y: 0.64, radiusX: 0.18, radiusY: 0.14, imageX: 0.34, pace: 0.66 }),
+    "pet-fire": Object.freeze({ x: 0.21, y: 0.55, radiusX: 0.16, radiusY: 0.13, imageX: 0.23, pace: 0.7 }),
+    "pet-garden": Object.freeze({ x: 0.82, y: 0.72, radiusX: 0.14, radiusY: 0.12, imageX: 0.79, pace: 0.68 }),
+    "pet-river": Object.freeze({ x: 0.77, y: 0.61, radiusX: 0.15, radiusY: 0.13, imageX: 0.75, pace: 0.72 }),
+    "pet-lake": Object.freeze({ x: 0.15, y: 0.62, radiusX: 0.15, radiusY: 0.14, imageX: 0.19, pace: 0.64 })
+  });
 
   const CHANNELS = Object.freeze([
     { id: "rain", label: "Mưa nhẹ", icon: "☂", default: 0.48, type: "rain", filter: "highpass", frequency: 920, q: 0.2, trim: 0.34, drift: 0.035, depth: 0.045, pan: -0.08 },
@@ -166,7 +193,10 @@
     return {
       version: VERSION,
       scenes: { selected: "rainy-window", favorites: [], pinned: [], recent: ["rainy-window"], custom: [] },
-      audio: { master: 0.5, mix: defaultMix(), presets: [] },
+      audio: {
+        master: 0.5, mix: defaultMix(), presets: [],
+        music: { selected: "hh-lofi-calm", volume: 0.28, loop: true }
+      },
       timer: {
         phase: "focus", focusMinutes: 25, breakMinutes: 5, longBreakMinutes: 15,
         cycle: 1, cycles: 4, running: false, endsAt: 0, remaining: 1500,
@@ -320,6 +350,11 @@
       audio: {
         master: clamp(audio.master, 0, 1, base.audio.master),
         mix: normalizedMix,
+        music: {
+          selected: MUSIC_TRACKS.some((track) => track.id === audio.music?.selected) ? audio.music.selected : base.audio.music.selected,
+          volume: clamp(audio.music?.volume, 0, 1, base.audio.music.volume),
+          loop: audio.music?.loop !== false
+        },
         presets: Array.isArray(audio.presets) ? audio.presets.slice(0, 12).map((preset) => ({
           id: cleanText(preset?.id, 100) || id("mix"),
           name: cleanText(preset?.name, 60) || "Preset",
@@ -478,14 +513,43 @@
     </article>`;
   }
 
+  function currentMusicTrack(instance) {
+    return MUSIC_TRACKS.find((track) => track.id === instance.state.audio.music.selected) || MUSIC_TRACKS[0];
+  }
+
+  function musicIsPlaying(instance) {
+    return Boolean(instance.music?.playing && !instance.music.suspendedByVisibility);
+  }
+
+  function formatPlaybackTime(seconds) {
+    const safe = Math.max(0, Math.floor(Number(seconds) || 0));
+    return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
+  }
+
   function soundPanel(instance) {
     const audioActive = Boolean(instance.audio);
+    const music = currentMusicTrack(instance);
+    const musicPlaying = musicIsPlaying(instance);
+    const position = instance.music?.trackId === music.id ? Number(instance.music.position || 0) : 0;
+    const duration = instance.music?.trackId === music.id ? Number(instance.music.duration || music.duration || 0) : Number(music.duration || 0);
     return `<div class="hfr-panel-heading"><div><span>AMBIENT MIXER</span><h2>Âm thanh môi trường</h2></div><button type="button" data-hfr-action="close-panel" aria-label="Đóng bảng">×</button></div>
       <div class="hfr-audio-master">
         <button class="hfr-primary" type="button" data-hfr-action="audio-toggle" aria-pressed="${audioActive}">${audioActive ? "Tắt âm thanh" : "Bật âm thanh"}</button>
         <label><span>Âm lượng tổng <output data-hfr-master-output>${Math.round(instance.state.audio.master * 100)}%</output></span><input type="range" min="0" max="100" value="${Math.round(instance.state.audio.master * 100)}" data-hfr-master></label>
         <small data-hfr-audio-status>${instance.audioStatus}</small>
       </div>
+      <section class="hfr-music-player" aria-label="Nhạc học">
+        <div class="hfr-music-heading"><div><span>NHẠC HỌC CỤC BỘ</span><strong>${escapeHtml(music.title)}</strong><small>${escapeHtml(music.artist)} · ${escapeHtml(music.license)}</small></div><button class="hfr-music-play" type="button" data-hfr-action="music-toggle" aria-pressed="${musicPlaying}">${musicPlaying ? "Ⅱ Tạm dừng" : "▶ Phát nhạc"}</button></div>
+        <p>${escapeHtml(music.description)}</p>
+        <div class="hfr-music-timeline">
+          <span data-hfr-music-position>${music.kind === "procedural" ? "68 BPM" : formatPlaybackTime(position)}</span>
+          <input type="range" min="0" max="${Math.max(1, Math.round(duration))}" step="1" value="${Math.min(Math.max(0, Math.round(position)), Math.max(1, Math.round(duration)))}" data-hfr-music-seek aria-label="Vị trí phát" ${music.kind === "procedural" ? "disabled" : ""}>
+          <span data-hfr-music-duration>${music.kind === "procedural" ? "Lặp mềm" : formatPlaybackTime(duration)}</span>
+        </div>
+        <div class="hfr-music-controls"><label><span>Âm lượng nhạc <output data-hfr-music-volume-output>${Math.round(instance.state.audio.music.volume * 100)}%</output></span><input type="range" min="0" max="100" value="${Math.round(instance.state.audio.music.volume * 100)}" data-hfr-music-volume></label><button type="button" data-hfr-action="music-loop" aria-pressed="${instance.state.audio.music.loop}">↻ Lặp ${instance.state.audio.music.loop ? "bật" : "tắt"}</button></div>
+        <small class="hfr-music-status" data-hfr-music-status>${escapeHtml(instance.musicStatus)}</small>
+        <div class="hfr-music-library">${MUSIC_TRACKS.map((track) => `<button type="button" data-hfr-action="music-select" data-id="${track.id}" aria-pressed="${track.id === music.id}"><i>${track.kind === "procedural" ? "◌" : "♩"}</i><span><strong>${escapeHtml(track.title)}</strong><small>${escapeHtml(track.artist)} · ${escapeHtml(track.license)}</small></span></button>`).join("")}</div>
+      </section>
       <div class="hfr-mix-presets">${Object.entries(MIX_PRESETS).map(([id, preset]) => `<button type="button" data-hfr-action="mix-preset" data-id="${id}">${escapeHtml(preset.label)}</button>`).join("")}</div>
       <div class="hfr-channel-grid">${CHANNELS.map((channel) => {
         const value = instance.state.audio.mix[channel.id];
@@ -493,7 +557,7 @@
       }).join("")}</div>
       <form class="hfr-inline-form" data-hfr-mix-save><label><span>Tên preset</span><input name="name" maxlength="60" required placeholder="Ví dụ: Học đêm"></label><button type="submit">Lưu bản phối</button></form>
       <div class="hfr-saved-presets">${instance.state.audio.presets.length ? instance.state.audio.presets.map((preset) => `<span><button type="button" data-hfr-action="load-user-mix" data-id="${escapeHtml(preset.id)}">${escapeHtml(preset.name)}</button><button type="button" data-hfr-action="delete-user-mix" data-id="${escapeHtml(preset.id)}" aria-label="Xóa preset">×</button></span>`).join("") : `<small>Chưa có bản phối riêng.</small>`}</div>
-      <p class="hfr-disclosure">Âm thanh được tạo cục bộ bằng Web Audio, có biến thiên tự nhiên và giới hạn đỉnh an toàn. Chỉ phát sau khi bạn bấm bật; nên bắt đầu ở âm lượng nhỏ.</p>`;
+      <p class="hfr-disclosure">Môi trường và lo-fi được tạo cục bộ bằng Web Audio. Hai bản piano CC0 được lưu ngay trong website, không hotlink. Không âm thanh nào tự phát; nên bắt đầu ở âm lượng nhỏ.</p>`;
   }
 
   function timerPanel(instance) {
@@ -583,6 +647,7 @@
   }
 
   function render(instance) {
+    teardownPetDepth(instance);
     const selected = currentScene(instance);
     const timer = instance.state.timer;
     const primaryTask = instance.state.tasks.find((task) => task.id === instance.state.primaryTaskId);
@@ -595,6 +660,7 @@
     instance.root.innerHTML = `<section class="hfr-app${instance.ui.zen ? " is-zen" : ""}" data-hfr-root data-quality="${quality}" data-motion="${activeMotion ? "on" : "off"}" data-layout-mode="${instance.state.layout.locked ? "locked" : "editing"}">
       <section class="hfr-stage" data-hfr-effect="${escapeHtml(selected.effect)}" style="--hfr-accent:${selected.category === "nature" ? "#72f3bd" : selected.category === "cafe" || selected.category === "cozy" ? "#ffb46b" : selected.category === "pets" ? "#ffb8c9" : selected.category === "future" ? "#7ee7ff" : "#c69cff"};--hfr-scene-image:url(&quot;${escapeHtml(imageUrl(instance, selected))}&quot;)">
         <div class="hfr-backdrop" aria-hidden="true" style="--hfr-placeholder:url(&quot;${escapeHtml(imageUrl(instance, selected, true))}&quot;)"><img src="${escapeHtml(imageUrl(instance, selected))}" alt="" decoding="async" fetchpriority="high" data-hfr-current-image data-hfr-fallback><span class="hfr-backdrop-shade"></span></div>
+        <canvas class="hfr-pet-depth" data-hfr-pet-depth aria-hidden="true" hidden></canvas>
         <div class="hfr-effects" aria-hidden="true"><i class="hfr-fx hfr-fx--far"></i><i class="hfr-fx hfr-fx--mid"></i><i class="hfr-fx hfr-fx--near"></i><i class="hfr-fx hfr-fx--glow"></i></div>
         <header class="hfr-topbar">
           <div class="hfr-scene-title" data-hfr-layout-item="title"><button class="hfr-drag-handle" type="button" data-hfr-drag-handle="title" aria-label="Kéo tên cảnh để sắp xếp" title="Kéo để di chuyển · phím mũi tên để tinh chỉnh">⠿</button><span>IMMERSIVE FOCUS SANCTUARY</span><strong>${escapeHtml(selected.title)}</strong><small>${escapeHtml(selected.description)}</small><div class="hfr-current-meta"><em>${escapeHtml(selected.soundStatus || "Ảnh cá nhân")}</em><em>${escapeHtml(selected.performance || "Theo thiết bị")}</em></div></div>
@@ -633,6 +699,7 @@
     syncAudioDom(instance);
     setupLayout(instance);
     setupParallax(instance);
+    setupPetDepth(instance, selected);
     preloadNextScene(instance);
   }
 
@@ -1008,7 +1075,7 @@
         if (!instance.audio || instance.audio.context !== context) return;
         instance.audioStatus = "Đang phát · tạo cục bộ";
         syncAudioDom(instance);
-        emitPlayback(true);
+        updatePlaybackSignal(instance);
         announce(instance, "Đã bật âm thanh môi trường.");
       }).catch((error) => {
         if (instance.audio?.context !== context) return;
@@ -1029,19 +1096,21 @@
   }
 
   function applyAudioGains(instance) {
-    if (!instance.audio) return;
-    const now = instance.audio.context.currentTime;
-    const energy = CHANNELS.reduce((sum, channel) => {
-      const level = instance.state.audio.mix[channel.id] * channel.trim;
-      return sum + level * level;
-    }, 0);
-    const normalization = energy > 0.3025 ? 0.55 / Math.sqrt(energy) : 1;
-    instance.audio.master.gain.setTargetAtTime(instance.state.audio.master * 0.86, now, 0.16);
-    CHANNELS.forEach((channel) => {
-      const target = instance.state.audio.mix[channel.id] * channel.trim * normalization * phaseGain(instance);
-      const voice = target > 0.0008 ? createAudioVoice(instance.audio, channel) : instance.audio.sources[channel.id];
-      voice?.gain?.gain?.setTargetAtTime(target, now, target ? 0.24 : 0.38);
-    });
+    if (instance.audio) {
+      const now = instance.audio.context.currentTime;
+      const energy = CHANNELS.reduce((sum, channel) => {
+        const level = instance.state.audio.mix[channel.id] * channel.trim;
+        return sum + level * level;
+      }, 0);
+      const normalization = energy > 0.3025 ? 0.55 / Math.sqrt(energy) : 1;
+      instance.audio.master.gain.setTargetAtTime(instance.state.audio.master * 0.86, now, 0.16);
+      CHANNELS.forEach((channel) => {
+        const target = instance.state.audio.mix[channel.id] * channel.trim * normalization * phaseGain(instance);
+        const voice = target > 0.0008 ? createAudioVoice(instance.audio, channel) : instance.audio.sources[channel.id];
+        voice?.gain?.gain?.setTargetAtTime(target, now, target ? 0.24 : 0.38);
+      });
+    }
+    applyMusicGain(instance);
   }
 
   function stopAudio(instance) {
@@ -1060,12 +1129,19 @@
     try { audio.master.disconnect(); } catch {}
     try { audio.context.close(); } catch {}
     instance.audioStatus = "Âm thanh đang tắt";
-    emitPlayback(false);
+    updatePlaybackSignal(instance);
     syncAudioDom(instance);
   }
 
   function emitPlayback(active) {
     try { global.dispatchEvent(new global.CustomEvent("hh:media-playback", { detail: { active, source: "hh-focus-room" } })); } catch {}
+  }
+
+  function updatePlaybackSignal(instance) {
+    const active = Boolean(instance.audio && !global.document?.hidden) || musicIsPlaying(instance);
+    if (instance.mediaActive === active) return;
+    instance.mediaActive = active;
+    emitPlayback(active);
   }
 
   function syncAudioDom(instance) {
@@ -1076,6 +1152,292 @@
       button.setAttribute("aria-pressed", String(Boolean(instance.audio)));
     }
     if (status) status.textContent = instance.audioStatus;
+  }
+
+  function setAudioParam(parameter, value, time, rampTime = 0) {
+    if (!parameter) return;
+    try {
+      if (rampTime > 0 && parameter.setTargetAtTime) parameter.setTargetAtTime(value, time, rampTime);
+      else if (parameter.setValueAtTime) parameter.setValueAtTime(value, time);
+      else parameter.value = value;
+    } catch { parameter.value = value; }
+  }
+
+  function applyMusicGain(instance) {
+    const runtime = instance.music;
+    if (!runtime) return;
+    const target = Math.min(1, instance.state.audio.master * instance.state.audio.music.volume * phaseGain(instance));
+    if (runtime.kind === "file" && runtime.element) runtime.element.volume = target;
+    if (runtime.kind === "procedural" && runtime.output?.gain) {
+      setAudioParam(runtime.output.gain, target * 0.72, runtime.context.currentTime, 0.18);
+    }
+  }
+
+  function syncMusicDom(instance) {
+    const selected = currentMusicTrack(instance);
+    const runtime = instance.music?.trackId === selected.id ? instance.music : null;
+    const playing = musicIsPlaying(instance);
+    const button = instance.root.querySelector('[data-hfr-action="music-toggle"]');
+    const status = instance.root.querySelector("[data-hfr-music-status]");
+    const seek = instance.root.querySelector("[data-hfr-music-seek]");
+    const position = instance.root.querySelector("[data-hfr-music-position]");
+    const duration = instance.root.querySelector("[data-hfr-music-duration]");
+    if (button) {
+      button.textContent = playing ? "Ⅱ Tạm dừng" : "▶ Phát nhạc";
+      button.setAttribute("aria-pressed", String(playing));
+    }
+    if (status) status.textContent = instance.musicStatus;
+    if (selected.kind === "file") {
+      const current = Math.max(0, Number(runtime?.element?.currentTime ?? runtime?.position ?? 0));
+      const total = Math.max(0, Number(runtime?.element?.duration || runtime?.duration || selected.duration || 0));
+      if (seek) {
+        seek.max = String(Math.max(1, Math.round(total)));
+        seek.value = String(Math.min(Math.round(current), Math.max(1, Math.round(total))));
+      }
+      if (position) position.textContent = formatPlaybackTime(current);
+      if (duration) duration.textContent = formatPlaybackTime(total);
+    }
+  }
+
+  function scheduleLofiChord(runtime) {
+    const progressions = [
+      [48, 52, 55, 59], [45, 48, 52, 55], [41, 45, 48, 52], [43, 47, 50, 57]
+    ];
+    const notes = progressions[runtime.chordIndex % progressions.length];
+    const start = runtime.nextChord;
+    const duration = runtime.chordDuration * 0.94;
+    notes.forEach((midi, noteIndex) => {
+      const oscillator = runtime.context.createOscillator();
+      const voiceGain = runtime.context.createGain();
+      const pan = runtime.context.createStereoPanner?.() || null;
+      oscillator.type = noteIndex % 2 ? "sine" : "triangle";
+      const detune = Math.sin((runtime.chordIndex + 1) * (noteIndex + 2) * 0.71) * 2.2;
+      setAudioParam(oscillator.frequency, 440 * Math.pow(2, (midi - 69) / 12), start);
+      if (oscillator.detune) setAudioParam(oscillator.detune, detune, start);
+      setAudioParam(voiceGain.gain, 0.0001, start);
+      voiceGain.gain?.linearRampToValueAtTime?.(0.032 / Math.max(1, notes.length * 0.72), start + 0.16 + noteIndex * 0.018);
+      voiceGain.gain?.setTargetAtTime?.(0.0001, start + duration * 0.58, duration * 0.19);
+      if (pan?.pan) setAudioParam(pan.pan, (noteIndex - 1.5) * 0.12, start);
+      oscillator.connect(voiceGain);
+      if (pan) { voiceGain.connect(pan); pan.connect(runtime.filter); }
+      else voiceGain.connect(runtime.filter);
+      const nodes = [oscillator, voiceGain, pan].filter(Boolean);
+      nodes.forEach((node) => runtime.nodes.add(node));
+      oscillator.onended = () => {
+        nodes.forEach((node) => { runtime.nodes.delete(node); try { node.disconnect?.(); } catch {} });
+      };
+      oscillator.start(start + noteIndex * 0.024);
+      oscillator.stop(start + duration + 0.7);
+    });
+    runtime.chordIndex += 1;
+    runtime.nextChord += runtime.chordDuration;
+  }
+
+  function pumpLofi(runtime) {
+    if (!runtime.playing || runtime.suspendedByVisibility || runtime.disposed) return;
+    const horizon = runtime.context.currentTime + 1.25;
+    while (runtime.nextChord < horizon) scheduleLofiChord(runtime);
+  }
+
+  function startLofiScheduler(runtime) {
+    if (!runtime || runtime.kind !== "procedural" || runtime.scheduler || runtime.disposed) return;
+    runtime.nextChord = Math.max(runtime.nextChord, runtime.context.currentTime + 0.05);
+    pumpLofi(runtime);
+    runtime.scheduler = global.setInterval(() => pumpLofi(runtime), 380);
+  }
+
+  function stopLofiScheduler(runtime) {
+    if (!runtime?.scheduler) return;
+    global.clearInterval(runtime.scheduler);
+    runtime.scheduler = 0;
+  }
+
+  function createVinylBed(runtime) {
+    const sampleRate = Math.max(8000, Number(runtime.context.sampleRate) || 44100);
+    const buffer = runtime.context.createBuffer(1, sampleRate * 4, sampleRate);
+    const samples = buffer.getChannelData(0);
+    let dust = 0;
+    for (let index = 0; index < samples.length; index += 1) {
+      const white = Math.random() * 2 - 1;
+      if (Math.random() < 2.1 / sampleRate) dust = 0.12 + Math.random() * 0.22;
+      dust *= 0.965;
+      samples[index] = white * 0.008 + dust * white;
+    }
+    const source = runtime.context.createBufferSource();
+    const filter = runtime.context.createBiquadFilter();
+    const gain = runtime.context.createGain();
+    source.buffer = buffer;
+    source.loop = true;
+    filter.type = "bandpass";
+    setAudioParam(filter.frequency, 2450, runtime.context.currentTime);
+    if (filter.Q) setAudioParam(filter.Q, 0.42, runtime.context.currentTime);
+    setAudioParam(gain.gain, 0.055, runtime.context.currentTime);
+    source.connect(filter); filter.connect(gain); gain.connect(runtime.filter);
+    source.start(runtime.context.currentTime);
+    runtime.bed = { source, filter, gain };
+  }
+
+  function startProceduralMusic(instance, track) {
+    const AudioContextCtor = global.AudioContext || global.webkitAudioContext;
+    if (!AudioContextCtor) throw new Error("Trình duyệt không hỗ trợ Web Audio.");
+    const context = new AudioContextCtor();
+    const output = context.createGain();
+    const filter = context.createBiquadFilter();
+    const compressor = context.createDynamicsCompressor?.() || null;
+    filter.type = "lowpass";
+    setAudioParam(filter.frequency, 3150, context.currentTime);
+    if (filter.Q) setAudioParam(filter.Q, 0.34, context.currentTime);
+    if (compressor) {
+      compressor.threshold.value = -24; compressor.knee.value = 20; compressor.ratio.value = 3.5;
+      compressor.attack.value = 0.045; compressor.release.value = 0.5;
+      filter.connect(compressor); compressor.connect(output);
+    } else filter.connect(output);
+    output.connect(context.destination);
+    const chordDuration = (60 / 68) * 4;
+    const runtime = {
+      kind: "procedural", trackId: track.id, context, output, filter, compressor, nodes: new Set(), bed: null,
+      chordIndex: 0, chordDuration, nextChord: context.currentTime + 0.06, playing: true,
+      suspendedByVisibility: false, disposed: false, scheduler: 0, position: 0, duration: 0
+    };
+    instance.music = runtime;
+    createVinylBed(runtime);
+    startLofiScheduler(runtime);
+    applyMusicGain(instance);
+    return Promise.resolve(context.resume?.());
+  }
+
+  function addMusicListener(runtime, type, listener) {
+    runtime.element.addEventListener(type, listener);
+    runtime.listeners.push([type, listener]);
+  }
+
+  function startFileMusic(instance, track) {
+    if (typeof global.Audio !== "function") throw new Error("Trình duyệt không hỗ trợ phát nhạc cục bộ.");
+    const element = new global.Audio();
+    const runtime = {
+      kind: "file", trackId: track.id, element, listeners: [], playing: true, suspendedByVisibility: false,
+      disposed: false, position: 0, duration: track.duration || 0
+    };
+    instance.music = runtime;
+    element.preload = "metadata";
+    element.src = track.src;
+    element.loop = instance.state.audio.music.loop;
+    addMusicListener(runtime, "loadedmetadata", () => {
+      runtime.duration = Number(element.duration) || track.duration || 0;
+      instance.musicStatus = "Sẵn sàng · tệp cục bộ";
+      syncMusicDom(instance);
+    });
+    addMusicListener(runtime, "timeupdate", () => {
+      runtime.position = Number(element.currentTime) || 0;
+      syncMusicDom(instance);
+    });
+    addMusicListener(runtime, "waiting", () => { instance.musicStatus = "Đang nạp nhạc cục bộ…"; syncMusicDom(instance); });
+    addMusicListener(runtime, "playing", () => { instance.musicStatus = "Đang phát · tệp cục bộ CC0"; syncMusicDom(instance); });
+    addMusicListener(runtime, "ended", () => {
+      runtime.playing = false; runtime.position = 0;
+      instance.musicStatus = "Đã phát xong";
+      updatePlaybackSignal(instance); syncMusicDom(instance);
+    });
+    addMusicListener(runtime, "error", () => {
+      runtime.playing = false;
+      instance.musicStatus = "Không thể đọc tệp nhạc cục bộ.";
+      updatePlaybackSignal(instance); syncMusicDom(instance);
+    });
+    applyMusicGain(instance);
+    return Promise.resolve(element.play());
+  }
+
+  function destroyMusic(instance) {
+    const runtime = instance.music;
+    if (!runtime) return;
+    instance.music = null;
+    runtime.disposed = true;
+    if (runtime.kind === "file") {
+      try { runtime.element.pause(); } catch {}
+      runtime.listeners?.forEach(([type, listener]) => runtime.element.removeEventListener(type, listener));
+      try { runtime.element.removeAttribute("src"); runtime.element.load?.(); } catch {}
+    } else {
+      stopLofiScheduler(runtime);
+      try { runtime.bed?.source?.stop(); } catch {}
+      runtime.nodes?.forEach((node) => { try { node.stop?.(); } catch {} try { node.disconnect?.(); } catch {} });
+      [runtime.bed?.source, runtime.bed?.filter, runtime.bed?.gain, runtime.filter, runtime.compressor, runtime.output].forEach((node) => { try { node?.disconnect?.(); } catch {} });
+      try { runtime.context.close?.(); } catch {}
+    }
+    updatePlaybackSignal(instance);
+  }
+
+  function startMusic(instance) {
+    const track = currentMusicTrack(instance);
+    if (instance.music && instance.music.trackId !== track.id) destroyMusic(instance);
+    if (instance.music?.trackId === track.id) {
+      instance.music.playing = true;
+      instance.music.suspendedByVisibility = false;
+      startLofiScheduler(instance.music);
+      const resume = instance.music.kind === "file" ? instance.music.element.play() : instance.music.context.resume?.();
+      instance.musicStatus = `Đang phát · ${track.kind === "file" ? "tệp cục bộ" : "lo-fi tạo cục bộ"}`;
+      Promise.resolve(resume).then(() => { applyMusicGain(instance); updatePlaybackSignal(instance); syncMusicDom(instance); })
+        .catch((error) => { instance.music.playing = false; instance.musicStatus = `Không thể phát: ${cleanText(error?.message, 100)}`; updatePlaybackSignal(instance); syncMusicDom(instance); });
+      return;
+    }
+    instance.musicStatus = "Đang khởi động sau thao tác của bạn…";
+    syncMusicDom(instance);
+    try {
+      const start = track.kind === "file" ? startFileMusic(instance, track) : startProceduralMusic(instance, track);
+      Promise.resolve(start).then(() => {
+        if (!instance.music || instance.music.trackId !== track.id) return;
+        instance.musicStatus = `Đang phát · ${track.kind === "file" ? "tệp cục bộ CC0" : "lo-fi tạo cục bộ"}`;
+        applyMusicGain(instance); updatePlaybackSignal(instance); syncMusicDom(instance);
+        announce(instance, `Đang phát ${track.title}.`);
+      }).catch((error) => {
+        destroyMusic(instance);
+        instance.musicStatus = `Không thể phát: ${cleanText(error?.message, 100)}`;
+        syncMusicDom(instance);
+      });
+    } catch (error) {
+      destroyMusic(instance);
+      instance.musicStatus = `Không thể phát: ${cleanText(error?.message, 100)}`;
+      syncMusicDom(instance);
+    }
+  }
+
+  function pauseMusic(instance) {
+    const runtime = instance.music;
+    if (!runtime?.playing) return;
+    runtime.playing = false;
+    runtime.position = Number(runtime.element?.currentTime || runtime.position || 0);
+    stopLofiScheduler(runtime);
+    try { runtime.kind === "file" ? runtime.element.pause() : runtime.context.suspend?.(); } catch {}
+    instance.musicStatus = "Đã tạm dừng · bấm phát để tiếp tục";
+    updatePlaybackSignal(instance);
+    syncMusicDom(instance);
+  }
+
+  function toggleMusic(instance) {
+    if (instance.music?.trackId === currentMusicTrack(instance).id && instance.music.playing) pauseMusic(instance);
+    else startMusic(instance);
+  }
+
+  function suspendMusicForVisibility(instance, hidden) {
+    const runtime = instance.music;
+    if (!runtime || !runtime.playing) return;
+    runtime.suspendedByVisibility = hidden;
+    if (hidden) {
+      stopLofiScheduler(runtime);
+      try { runtime.kind === "file" ? runtime.element.pause() : runtime.context.suspend?.(); } catch {}
+      instance.musicStatus = "Tạm dừng khi tab đang ẩn";
+      updatePlaybackSignal(instance); syncMusicDom(instance);
+      return;
+    }
+    startLofiScheduler(runtime);
+    const resume = runtime.kind === "file" ? runtime.element.play() : runtime.context.resume?.();
+    Promise.resolve(resume).then(() => {
+      instance.musicStatus = `Đang phát · ${runtime.kind === "file" ? "tệp cục bộ CC0" : "lo-fi tạo cục bộ"}`;
+      updatePlaybackSignal(instance); syncMusicDom(instance);
+    }).catch(() => {
+      runtime.playing = false;
+      instance.musicStatus = "Đã tạm dừng · bấm phát để tiếp tục";
+      updatePlaybackSignal(instance); syncMusicDom(instance);
+    });
   }
 
   function applyMix(instance, mix, message) {
@@ -1128,6 +1490,157 @@
       stage.removeEventListener("pointermove", move);
       if (frame) global.cancelAnimationFrame(frame);
     };
+  }
+
+  function teardownPetDepth(instance) {
+    instance.petDepthGeneration = (instance.petDepthGeneration || 0) + 1;
+    const runtime = instance.petDepth;
+    instance.petDepth = null;
+    if (!runtime) return;
+    global.cancelAnimationFrame?.(runtime.frame);
+    runtime.observer?.disconnect?.();
+    runtime.stage?.removeEventListener?.("pointermove", runtime.pointerMove);
+    runtime.stage?.removeEventListener?.("pointerleave", runtime.pointerLeave);
+    runtime.canvas?.removeEventListener?.("webglcontextlost", runtime.contextLost);
+    try { runtime.geometry?.dispose?.(); } catch {}
+    try { runtime.material?.dispose?.(); } catch {}
+    try { runtime.texture?.dispose?.(); } catch {}
+    try { runtime.renderer?.dispose?.(); } catch {}
+    if (runtime.canvas) runtime.canvas.hidden = true;
+    const app = instance.root.querySelector?.("[data-hfr-root]");
+    if (app) delete app.dataset.petDepth;
+  }
+
+  async function setupPetDepth(instance, selected) {
+    const profile = PET_DEPTH_PROFILES[selected.effect];
+    const app = instance.root.querySelector?.("[data-hfr-root]");
+    const stage = instance.root.querySelector?.(".hfr-stage");
+    const canvas = instance.root.querySelector?.("[data-hfr-pet-depth]");
+    const image = instance.root.querySelector?.("[data-hfr-current-image]");
+    if (!profile || !app || !stage || !canvas || !image || global.document?.hidden) return;
+    if (effectiveQuality(instance) !== "high" || !motionEnabled(instance) || instance.state.settings.dataSaver) return;
+    if (typeof canvas.getContext !== "function" || typeof global.requestAnimationFrame !== "function") return;
+    const generation = instance.petDepthGeneration;
+    try {
+      if (!image.complete || !image.naturalWidth) {
+        await new Promise((resolve, reject) => {
+          const loaded = () => { cleanup(); resolve(); };
+          const failed = () => { cleanup(); reject(new Error("pet image unavailable")); };
+          const cleanup = () => { image.removeEventListener("load", loaded); image.removeEventListener("error", failed); };
+          image.addEventListener("load", loaded, { once: true });
+          image.addEventListener("error", failed, { once: true });
+        });
+      }
+      if (generation !== instance.petDepthGeneration || !canvas.isConnected) return;
+      const THREE = await import(THREE_MODULE);
+      if (generation !== instance.petDepthGeneration || !canvas.isConnected) return;
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "low-power" });
+      renderer.setPixelRatio(Math.min(1.5, Math.max(1, Number(global.devicePixelRatio) || 1)));
+      renderer.setClearColor(0x000000, 0);
+      if ("outputColorSpace" in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
+      const texture = new THREE.Texture(image);
+      texture.needsUpdate = true;
+      if ("colorSpace" in texture && THREE.SRGBColorSpace) texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      const uniforms = {
+        uTexture: { value: texture }, uTime: { value: 0 }, uPointer: { value: new THREE.Vector2(0, 0) },
+        uResolution: { value: new THREE.Vector2(1, 1) }, uImageSize: { value: new THREE.Vector2(image.naturalWidth || 1, image.naturalHeight || 1) },
+        uPet: { value: new THREE.Vector2(profile.x, 1 - profile.y) }, uRadius: { value: new THREE.Vector2(profile.radiusX, profile.radiusY) },
+        uImagePosition: { value: new THREE.Vector2(profile.imageX, 0.5) }, uPace: { value: profile.pace }
+      };
+      const material = new THREE.ShaderMaterial({
+        uniforms, transparent: true, depthTest: false, depthWrite: false,
+        vertexShader: `
+          uniform float uTime; uniform vec2 uPointer; uniform vec2 uPet; uniform vec2 uRadius; uniform float uPace;
+          varying vec2 vUv; varying float vPetMask;
+          void main() {
+            vUv = uv;
+            vec2 delta = (uv - uPet) / uRadius;
+            vPetMask = 1.0 - smoothstep(0.55, 1.12, length(delta));
+            float breath = sin(uTime * uPace * 2.0) * 0.5 + sin(uTime * uPace * 0.73) * 0.22;
+            vec3 transformed = position;
+            transformed.z += vPetMask * (0.032 + breath * 0.009);
+            transformed.x += vPetMask * (uPointer.x * 0.018 + breath * 0.0018);
+            transformed.y += vPetMask * (uPointer.y * 0.012 + breath * 0.0024);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+          }`,
+        fragmentShader: `
+          uniform sampler2D uTexture; uniform vec2 uResolution; uniform vec2 uImageSize; uniform vec2 uImagePosition;
+          varying vec2 vUv; varying float vPetMask;
+          vec2 coverUv(vec2 uv) {
+            float viewAspect = uResolution.x / max(1.0, uResolution.y);
+            float imageAspect = uImageSize.x / max(1.0, uImageSize.y);
+            vec2 visible = vec2(1.0);
+            if (imageAspect > viewAspect) visible.x = viewAspect / imageAspect;
+            else visible.y = imageAspect / viewAspect;
+            return (vec2(1.0) - visible) * uImagePosition + uv * visible;
+          }
+          void main() {
+            vec4 color = texture2D(uTexture, coverUv(vUv));
+            float feather = smoothstep(0.0, 0.34, vPetMask);
+            color.rgb *= 1.018;
+            gl_FragColor = vec4(color.rgb, color.a * feather * 0.96);
+          }`
+      });
+      const geometry = new THREE.PlaneGeometry(2, 2, 40, 28);
+      const mesh = new THREE.Mesh(geometry, material);
+      const scene3d = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 10);
+      camera.position.z = 3;
+      scene3d.add(mesh);
+      const runtime = {
+        renderer, texture, material, geometry, mesh, camera, scene3d, stage, canvas, observer: null, frame: 0,
+        pointerMove: null, pointerLeave: null, contextLost: null, targetX: 0, targetY: 0, pointerX: 0, pointerY: 0, lastRender: 0,
+        startedAt: global.performance?.now?.() || Date.now()
+      };
+      instance.petDepth = runtime;
+      const resize = () => {
+        const rect = stage.getBoundingClientRect();
+        const width = Math.max(1, Math.round(rect.width));
+        const height = Math.max(1, Math.round(rect.height));
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        const planeHeight = 2 * Math.tan((camera.fov * Math.PI / 180) / 2) * camera.position.z;
+        mesh.scale.set((planeHeight * camera.aspect) / 2, planeHeight / 2, 1);
+        uniforms.uResolution.value.set(width, height);
+      };
+      runtime.pointerMove = (event) => {
+        const rect = stage.getBoundingClientRect();
+        runtime.targetX = clamp((event.clientX - rect.left) / Math.max(1, rect.width) - 0.5, -0.5, 0.5, 0);
+        runtime.targetY = clamp(0.5 - (event.clientY - rect.top) / Math.max(1, rect.height), -0.5, 0.5, 0);
+      };
+      runtime.pointerLeave = () => { runtime.targetX = 0; runtime.targetY = 0; };
+      runtime.contextLost = (event) => { event.preventDefault?.(); teardownPetDepth(instance); };
+      stage.addEventListener("pointermove", runtime.pointerMove, { passive: true });
+      stage.addEventListener("pointerleave", runtime.pointerLeave, { passive: true });
+      canvas.addEventListener("webglcontextlost", runtime.contextLost);
+      if (global.ResizeObserver) {
+        runtime.observer = new global.ResizeObserver(resize);
+        runtime.observer.observe(stage);
+      }
+      resize();
+      canvas.hidden = false;
+      app.dataset.petDepth = "ready";
+      const loop = (time) => {
+        if (instance.petDepth !== runtime || global.document?.hidden || !motionEnabled(instance) || effectiveQuality(instance) !== "high") return;
+        runtime.frame = global.requestAnimationFrame(loop);
+        if (time - runtime.lastRender < 1000 / 30) return;
+        runtime.lastRender = time;
+        runtime.pointerX += (runtime.targetX - runtime.pointerX) * 0.055;
+        runtime.pointerY += (runtime.targetY - runtime.pointerY) * 0.055;
+        uniforms.uPointer.value.set(runtime.pointerX, runtime.pointerY);
+        uniforms.uTime.value = Math.max(0, (time - runtime.startedAt) / 1000);
+        renderer.render(scene3d, camera);
+      };
+      runtime.frame = global.requestAnimationFrame(loop);
+    } catch {
+      if (generation === instance.petDepthGeneration) {
+        canvas.hidden = true;
+        if (app) app.dataset.petDepth = "fallback";
+      }
+    }
   }
 
   function layoutItem(instance, name) {
@@ -1462,6 +1975,24 @@
       return;
     }
     if (action === "audio-toggle") { startAudio(instance); return; }
+    if (action === "music-toggle") { toggleMusic(instance); return; }
+    if (action === "music-select") {
+      const track = MUSIC_TRACKS.find((item) => item.id === targetId);
+      if (!track || track.id === instance.state.audio.music.selected) return;
+      destroyMusic(instance);
+      instance.state.audio.music.selected = track.id;
+      instance.musicStatus = "Đã chọn · nhạc chỉ phát khi bạn bấm nút phát";
+      writeState(instance); render(instance);
+      announce(instance, `Đã chọn ${track.title}.`);
+      return;
+    }
+    if (action === "music-loop") {
+      instance.state.audio.music.loop = !instance.state.audio.music.loop;
+      if (instance.music?.element) instance.music.element.loop = instance.state.audio.music.loop;
+      writeState(instance); render(instance);
+      announce(instance, instance.state.audio.music.loop ? "Đã bật lặp nhạc." : "Đã tắt lặp nhạc.");
+      return;
+    }
     if (action === "mix-preset") {
       const preset = MIX_PRESETS[targetId];
       if (preset) applyMix(instance, preset.mix, `Đã áp dụng ${preset.label}.`);
@@ -1560,6 +2091,20 @@
       const output = instance.root.querySelector("[data-hfr-master-output]");
       if (output) output.textContent = `${Math.round(instance.state.audio.master * 100)}%`;
       writeState(instance); applyAudioGains(instance); return;
+    }
+    if (event.target.matches("[data-hfr-music-volume]")) {
+      instance.state.audio.music.volume = clamp(event.target.value, 0, 100, 28) / 100;
+      const output = instance.root.querySelector("[data-hfr-music-volume-output]");
+      if (output) output.textContent = `${Math.round(instance.state.audio.music.volume * 100)}%`;
+      writeState(instance); applyMusicGain(instance); return;
+    }
+    if (event.target.matches("[data-hfr-music-seek]")) {
+      const runtime = instance.music;
+      if (runtime?.kind !== "file" || !runtime.element) return;
+      const maximum = Number(runtime.element.duration || runtime.duration || 0);
+      const position = clamp(event.target.value, 0, Math.max(0, maximum), 0);
+      try { runtime.element.currentTime = position; runtime.position = position; } catch {}
+      syncMusicDom(instance); return;
     }
     if (event.target.matches("[data-hfr-channel]")) {
       const channelId = event.target.dataset.hfrChannel;
@@ -1665,12 +2210,17 @@
       stopTimerLoop(instance);
       instance.pointerCleanup?.();
       instance.pointerCleanup = null;
+      teardownPetDepth(instance);
       instance.audio?.context?.suspend?.().catch?.(() => {});
+      suspendMusicForVisibility(instance, true);
+      updatePlaybackSignal(instance);
     } else {
       reconcileTimer(instance);
       ensureTimerLoop(instance);
       setupParallax(instance);
-      instance.audio?.context?.resume?.().catch?.(() => {});
+      setupPetDepth(instance, currentScene(instance));
+      instance.audio?.context?.resume?.().then?.(() => updatePlaybackSignal(instance)).catch?.(() => {});
+      suspendMusicForVisibility(instance, false);
     }
   }
 
@@ -1701,6 +2251,8 @@
       root, options, owner, storageKey, isGuest: options.currentUser?.guest === true || owner === "guest", state: readState(storageKey, options),
       ui: { panel: "", search: "", category: "all", favoritesOnly: false, sceneView: "grid", zen: false, editTaskId: "" },
       cleanup: [], objectUrls: new Map(), audio: null, audioStatus: "Âm thanh đang tắt",
+      music: null, musicStatus: "Nhạc đang tắt · không tự phát", mediaActive: false,
+      petDepth: null, petDepthGeneration: 0,
       timerInterval: 0, pointerCleanup: null, layoutObserver: null, layoutFrame: 0, layoutDrag: null,
       toastTimer: 0, noteTimer: 0, notePending: false, searchTimer: 0, mediaStatus: ""
     };
@@ -1746,6 +2298,8 @@
     if (!instance) return;
     stopTimerLoop(instance);
     stopAudio(instance);
+    destroyMusic(instance);
+    teardownPetDepth(instance);
     finishLayoutDrag(instance);
     instance.pointerCleanup?.();
     instance.layoutObserver?.disconnect?.();
@@ -1772,6 +2326,7 @@
     route: ROUTE,
     scenes: SCENES,
     channels: CHANNELS,
+    musicTracks: MUSIC_TRACKS,
     canHandle: (route) => String(route || "").split("?")[0] === ROUTE,
     mount,
     unmount,

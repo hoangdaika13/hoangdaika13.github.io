@@ -1,7 +1,7 @@
-const CACHE = "hh-identity-portal-v995";
+const CACHE = "hh-identity-portal-v996";
 // Immersive Focus Room upgrades the existing Platform workspace with original local scenes,
 // procedural Web Audio, migrated account data, wall-clock Pomodoro and responsive Zen mode.
-// Previous release: hh-identity-portal-v994.
+// Previous release: hh-identity-portal-v995.
 // Previous release: hh-identity-portal-v990.
 // Shared layout stability release: keep Platform children in a vertical flow after Galaxy assets load.
 // Previous release: hh-identity-portal-v989.
@@ -368,8 +368,10 @@ const RUNTIME_ASSETS = [
   "./galaxy-planet-hubs.css?v=1",
   "./galaxy-planet-hubs.js?v=2",
   "./assets/galaxy/hh-ambient-room-rainy-v1.png?v=1",
-  "./focus-room.css?v=5",
-  "./focus-room.js?v=5",
+  "./focus-room.css?v=6",
+  "./focus-room.js?v=6",
+  "./assets/focus-room/music/bach-prelude-bwv848-kimiko-ishizaka.mp3",
+  "./assets/focus-room/music/bach-canon-alla-ottava-kimiko-ishizaka.mp3",
   "./assets/focus-room/rainy-window.webp",
   "./assets/focus-room/library-night.webp",
   "./assets/focus-room/snow-cabin.webp",
@@ -693,10 +695,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=656",
+  "./performance-loader.js?v=657",
   "./auth-platform.js?v=20",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=274"
+  "./script.js?v=275"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime
