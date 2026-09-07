@@ -1,4 +1,6 @@
-const CACHE = "hh-identity-portal-v987";
+const CACHE = "hh-identity-portal-v988";
+// Focus Study Room release: account-scoped timer, study plan, procedural opt-in ambience and real local session statistics.
+// Previous release: hh-identity-portal-v987.
 // Previous release: hh-identity-portal-v986.
 // Previous release: hh-identity-portal-v985.
 // Previous release: hh-identity-portal-v984.
@@ -82,7 +84,9 @@ const RUNTIME_ASSETS = [
   "./home-cosmos-motion.css?v=2",
   "./home-cosmos-motion.js?v=1",
   "./platform-home.css?v=6",
-  "./platform-home.js?v=6",
+  "./platform-home.js?v=7",
+  "./focus-study-room.css?v=2",
+  "./focus-study-room.js?v=1",
   "./",
   "./index.html",
   "./app-shell.css?v=66",
@@ -309,7 +313,7 @@ const RUNTIME_ASSETS = [
   "./galaxy-design-system.css?v=1",
   "./galaxy-shell.css?v=9",
   "./galaxy-shell.js?v=10",
-  "./hh-core-gateway.js?v=6",
+  "./hh-core-gateway.js?v=7",
   "./galaxy-home-ai.css?v=23",
   "./galaxy-home-ai.css?v=24",
   "./galaxy-home-ai.js?v=18",
@@ -652,10 +656,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=649",
+  "./performance-loader.js?v=650",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=271"
+  "./script.js?v=272"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

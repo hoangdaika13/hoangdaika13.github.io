@@ -36,6 +36,7 @@
     insights: "Đọc báo cáo, hiệu suất, Web Vitals và tín hiệu vận hành từ nguồn dữ liệu thực tế.",
     copyright: "Quản lý nguồn, quyền sử dụng, giấy phép, ghi công và quy trình tiếp nhận khiếu nại.",
     learn: "Lộ trình, môn học, luyện tập, kiểm tra và thư viện với tiến độ của chính bạn.",
+    "focus-room": "Timer tập trung, việc học, ghi chú, âm thanh tạo cục bộ và thống kê từ những phiên bạn thực sự hoàn thành.",
     english: "Học theo CEFR: từ vựng, phát âm, nghe, nói, đọc, viết và tiếng Anh chuyên ngành.",
     japanese: "Vietnamese Core, Can-do, JLPT/JF, Kanji, Smart Reader, hội thoại và ôn tập SRS.",
     chinese: "Luyện Pinyin, thanh điệu, Hán tự, từ vựng, ngữ pháp và đọc hiểu theo lộ trình.",
@@ -49,7 +50,7 @@
   const RECIPES = Object.freeze([
     ["content", "Sáng tạo nội dung", "Từ ý tưởng đến bản phát hành", ["create", "media-design", "davinci-resolve", "copyright"]],
     ["video", "Làm video", "Chuẩn bị · dựng · hoàn thiện", ["create", "comic-motion", "davinci-resolve", "youtube-main"]],
-    ["language", "Học ngoại ngữ", "Chọn ngôn ngữ, giữ nhịp mỗi ngày", ["learn", "english", "japanese", "chinese"]],
+    ["language", "Học ngoại ngữ", "Chọn ngôn ngữ, giữ nhịp mỗi ngày", ["focus-room", "learn", "english", "japanese", "chinese"]],
     ["work", "Quản lý công việc", "Tổ chức việc, kết nối đội nhóm", ["work", "communication", "dev", "insights"]],
     ["code", "Lập trình", "Ý tưởng, mã nguồn và quan sát", ["dev", "chat-ai", "work", "insights"]],
     ["play", "Giải trí", "Một khoảng nghỉ cho riêng bạn", ["play-center", "eonwild-game", "music-library", "cosmic-observatory"]],
@@ -95,6 +96,7 @@
   function capability(item, online) {
     if (item.adminOnly) return { label: "Admin", detail: item.locked ? "Cần quyền Admin đã xác minh." : "Quyền Admin được xác minh bởi phiên hiện tại." };
     if (item.id === "draw") return { label: "Cục bộ", detail: "Canvas chạy trong trình duyệt; khả năng xuất phụ thuộc thiết bị." };
+    if (item.id === "focus-room") return { label: "Cục bộ", detail: "Timer, task, ghi chú, âm thanh và thống kê được xử lý trên thiết bị theo tài khoản hiện tại." };
     if (PROVIDER_IDS.has(item.id)) return { label: "Cần xác minh provider", detail: "Kiểm tra cấu hình trong workspace; trang chủ không gọi AI hoặc gửi nội dung." };
     if (NETWORK_IDS.has(item.id)) return { label: online ? "Cần kết nối dịch vụ" : "Cần kết nối mạng", detail: "Trạng thái mạng không chứng minh backend/OAuth sẵn sàng. Kết nối khi bạn chủ động mở công cụ." };
     return { label: "Theo từng công cụ", detail: "Có thao tác trên thiết bị; AI, realtime và đồng bộ cần provider/backend tương ứng." };

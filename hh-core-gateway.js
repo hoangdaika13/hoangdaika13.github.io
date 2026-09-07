@@ -64,6 +64,7 @@
     "/analytics",
     "/admin",
     "/learn",
+    "/focus-room",
     "/english",
     "/japanese",
     "/chinese",

@@ -5735,6 +5735,17 @@ function initAppShell() {
         { id: "progress", title: "Tiến độ", route: "/learn/progress" }
       ]
     },
+    {
+      id: "focus-room",
+      label: "Phòng học tập trung",
+      icon: "◎",
+      accent: "#7de9f2",
+      route: "/focus-room",
+      items: [],
+      pages: [
+        { id: "workspace", title: "Bàn học tập trung", route: "/focus-room", description: "Timer chính xác, việc học, ghi chú, âm thanh tạo cục bộ và thống kê từ các phiên đã hoàn thành." }
+      ]
+    },
     { id: "english", label: "HH English", icon: "E", accent: "#60e9f2", route: "/english", items: [] },
     { id: "japanese", label: "HH Japanese", icon: "日", accent: "#e75158", route: "/japanese", items: [] },
     { id: "chinese", label: "HH Chinese", icon: "中", accent: "#ffcf68", route: "/chinese", items: [] },
@@ -5827,7 +5838,7 @@ function initAppShell() {
       icon: "◫",
       accent: "#ffd66b",
       accentSecondary: "#a87cff",
-      groupIds: ["learn", "english", "japanese", "chinese", "phat-phap"]
+      groupIds: ["learn", "focus-room", "english", "japanese", "chinese", "phat-phap"]
     },
     {
       id: "system-admin",
@@ -5864,6 +5875,7 @@ function initAppShell() {
     insights: "phân tích analytics báo cáo dữ liệu",
     copyright: "bản quyền giấy phép license attribution",
     learn: "học tập trường học bài luyện kiến thức",
+    "focus-room": "phòng học tập trung focus pomodoro đồng hồ nhiệm vụ todo ghi chú âm thanh mưa nhiễu nâu quán cà phê deep work lifeat",
     english: "tiếng anh english ngoại ngữ",
     japanese: "tiếng nhật japanese jlpt kanji",
     chinese: "tiếng trung chinese hsk hanzi pinyin",
@@ -5910,13 +5922,14 @@ function initAppShell() {
     english: '<rect x="3" y="4" width="18" height="16" rx="5"/><text class="sidebar-icon-label" x="12" y="15">EN</text>',
     japanese: '<rect x="3" y="4" width="18" height="16" rx="5"/><text class="sidebar-icon-label sidebar-icon-label--cjk" x="12" y="15">日</text>',
     chinese: '<rect x="3" y="4" width="18" height="16" rx="5"/><text class="sidebar-icon-label sidebar-icon-label--cjk" x="12" y="15">中</text>',
-    dharma: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.7"/><path d="M12 3v6m0 6v6M3 12h6m6 0h6M5.6 5.6l4.2 4.2m4.4 4.4 4.2 4.2m0-12.8-4.2 4.2m-4.4 4.4-4.2 4.2"/>'
+    dharma: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.7"/><path d="M12 3v6m0 6v6M3 12h6m6 0h6M5.6 5.6l4.2 4.2m4.4 4.4 4.2 4.2m0-12.8-4.2 4.2m-4.4 4.4-4.2 4.2"/>',
+    timer: '<circle cx="12" cy="13" r="8.5"/><path d="M9 2h6M12 5v2m0 6 3.5-2.5M18.5 6.5l1.5-1.5"/><circle class="sidebar-icon-fill" cx="12" cy="13" r="1.3"/>'
   });
   const sidebarIconNames = Object.freeze({
     home: "home", search: "search", "ai-creative": "sparkles", "web-community": "orbit", entertainment: "play", "work-tech": "cpu", learning: "book", "system-admin": "shield",
     "chat-ai": "bot", create: "wand", draw: "brush", "music-ai": "music", "comic-motion": "panels", "media-design": "image", "graphic-design": "pen",
     google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "cosmic-observatory": "orbit", "play-center": "gamepad", "eonwild-game": "paw", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", fortune: "moon",
-    work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
+    work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", "focus-room": "timer", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
     admin: "crown", system: "settings", support: "heart"
   });
   const sidebarIconMarkup = (id) => `<svg class="app-sidebar__svg-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">${sidebarIconPaths[sidebarIconNames[id] || "sparkles"]}</svg>`;
@@ -6795,6 +6808,7 @@ function initAppShell() {
     Object.assign(crumbLabels, { play: "HH Play", arcade: "Arcade Galaxy", party: "Party Room", watch: "Watch Party", story: "Story Universe", escape: "Escape Room", rhythm: "Rhythm Arena", pet: "HH Virtual Pet", chill: "Chill Rooms", quiz: "Quiz Arena", game: "Game · EonWild", world: "Thế giới sống", species: "Eon Codex", ecosystem: "Lưới sinh thái", timeline: "Eon Atlas", expeditions: "Thám hiểm", lineage: "Dòng gene", observer: "Observer & Replay", network: "Multiplayer Readiness" });
     if (route === "/universe/timeline" || route.startsWith("/universe/timeline/")) crumbLabels.timeline = "Dòng thời gian Vũ trụ";
     crumbLabels["social-media-tools"] = "Công cụ truyền thông xã hội";
+    crumbLabels["focus-room"] = "Phòng học tập trung";
     crumbLabels.platform = "Trang chủ";
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
@@ -7247,6 +7261,7 @@ function initAppShell() {
     document.body.classList.toggle("app-graphic-design-tool-route", route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
     document.body.classList.toggle("app-learning-route", route === "/learn" || route.startsWith("/learn/"));
+    document.body.classList.toggle("app-focus-study-route", route === "/focus-room");
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
     document.body.classList.toggle("app-japanese-route", route === "/japanese" || route.startsWith("/japanese/"));
     document.body.classList.toggle("app-chinese-route", route === "/chinese" || route.startsWith("/chinese/"));
@@ -7292,6 +7307,7 @@ function initAppShell() {
     if (route !== "/english" && !route.startsWith("/english/")) window.HHEnglish?.unmount?.();
     if (route !== "/japanese" && !route.startsWith("/japanese/")) window.HHJapanese?.unmount?.();
     if (route !== "/chinese" && !route.startsWith("/chinese/")) window.HHChinese?.unmount?.();
+    if (route !== "/focus-room") window.HHFocusStudyRoom?.unmount?.();
     if (route !== "/phat-phap" && !route.startsWith("/phat-phap/")) window.HHPhatPhap?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
     if (route !== "/play" && !route.startsWith("/play/")) window.HHPlay?.unmount?.();
@@ -7576,6 +7592,16 @@ function initAppShell() {
         route
       });
       else mountSimpleView("Nhạc", "Đang tải thư viện nhạc có giấy phép mở...", "");
+    } else if (route === "/focus-room") {
+      updatePageHeader("Phòng học tập trung", "Timer chính xác, việc học, ghi chú, âm thanh tạo cục bộ và tiến độ thật trong một bàn học thống nhất.", route);
+      pageActions.innerHTML = '<button type="button" data-app-route="/learn">Mở HH School</button><button type="button" data-app-route="/english">Học ngôn ngữ</button><button class="app-primary-action" type="button" data-focus-global-start>Bắt đầu tập trung</button>';
+      workspace.innerHTML = '<div data-focus-study-room-host></div>';
+      const focusRoomHost = workspace.firstElementChild;
+      if (window.HHFocusStudyRoom?.mount) {
+        window.HHFocusStudyRoom.mount(focusRoomHost, { currentUser: readCurrentAuthUser() });
+        pageActions.querySelector("[data-focus-global-start]")?.addEventListener("click", () => focusRoomHost.querySelector("[data-focus-start]")?.click());
+      } else mountSimpleView("Phòng học tập trung", "Đang chuẩn bị timer và bàn học cục bộ…", "");
+      remember("focus-room");
     } else if (route === "/learn" || (route.startsWith("/learn/") && window.HHSchool?.supports?.(parts[1]))) {
       const learningRouteView = route === "/learn" ? "today" : parts[1];
       const learningMeta = window.HHSchool?.views?.[window.HHSchool?.normalizeView?.(learningRouteView) || learningRouteView];

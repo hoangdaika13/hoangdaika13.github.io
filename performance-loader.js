@@ -27,7 +27,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=6", "galaxy-shell.js?v=10"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=7", "galaxy-shell.js?v=10"]
     },
     "auth-effects": {
       /*
@@ -64,7 +64,7 @@
     },
     "platform-home": {
       styles: ["platform-home.css?v=6", "home-cosmos-motion.css?v=2"],
-      scripts: ["home-cosmos-motion.js?v=1", "platform-home.js?v=6"]
+      scripts: ["home-cosmos-motion.js?v=1", "platform-home.js?v=7"]
     },
     "galaxy-home-ai": {
       styles: ["galaxy-home-ai.css?v=24", "home-cosmos-motion.css?v=2"],
@@ -248,6 +248,10 @@
         "hh-school-sync.js?v=4", "hh-school.js?v=5"
       ]
     },
+    "focus-study-room": {
+      styles: ["focus-study-room.css?v=2"],
+      scripts: ["focus-study-room.js?v=1"]
+    },
     // Compatibility asset markers: english-learning-os.css?v=3 · english-learning-os.js?v=7 · english-learning.js?v=28 · english-vocabulary.css?v=1 · english-vocabulary.js?v=2
     english: {
       styles: ["language-learning-cockpit.css?v=2", "english-learning.css?v=18", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=6", "english-vocabulary.css?v=2", "english-for-everyone.css?v=1", "english-skill-graph.css?v=1", "english-learning-os.css?v=4"],
@@ -394,6 +398,7 @@
     if (value === "/cinema" || value.startsWith("/cinema/")) return ["cinema"];
     if (value === "/music" || value.startsWith("/music/")) return ["open-music"];
     if (value === "/copyright" || value.startsWith("/copyright/")) return ["open-media-governance"];
+    if (value === "/focus-room") return ["focus-study-room"];
     if (value.startsWith("/learn")) return ["learning"];
     if (value.startsWith("/english")) return ["english"];
     if (value.startsWith("/japanese")) return ["japanese"];
