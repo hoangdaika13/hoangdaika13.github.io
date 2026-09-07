@@ -1,11 +1,11 @@
 # HH Focus Room scene assets
 
-These 26 scene backgrounds were prepared for the canonical `/focus-room` workspace. They are project-local assets: the browser never hotlinks a commercial focus product or an external image host.
+These 27 project-local scene backgrounds power 226 presets in the canonical `/focus-room` workspace. The original library contains 26 scenes; Atlas 200 combines 20 owned backgrounds with ten documented lighting and atmosphere treatments. The browser never hotlinks a commercial focus product or an external image host.
 
 ## Rights and provenance
 
 - `rainy-window.webp` is an optimized derivative of the existing original `assets/galaxy/hh-ambient-room-rainy-v1.png`, created for HH Platform with OpenAI ImageGen on 2026-08-29.
-- The original 11 additional images, eight landscape expansion scenes and six calm pet-companion scenes were generated specifically for HH Platform with the built-in OpenAI ImageGen workflow on 2026-09-07.
+- The original 11 additional images, eight landscape expansion scenes, six calm pet-companion scenes and `garden-sanctuary-rain.webp` were generated specifically for HH Platform with the built-in OpenAI ImageGen workflow on 2026-09-07.
 - LifeAt was used only as product-experience research. No LifeAt screenshot, source code, brand element, video, sound or image is included.
 - Every background contains no interface, logo, watermark or recognizable copyrighted character. Titles, timers and controls remain live HTML.
 - Full scenes are optimized WebP files up to 1672×942. `thumbs/` contains a separate 560 px delivery thumbnail for every scene.
@@ -16,6 +16,7 @@ These 26 scene backgrounds were prepared for the canonical `/focus-room` workspa
 | File | Scene | SHA-256 |
 | --- | --- | --- |
 | `rainy-window.webp` | Rainy window study room | `92E3192A70755CCD5EA71CDE3D847AD8612038BD9CBB4B66BE579D64EBC51B49` |
+| `garden-sanctuary-rain.webp` | Rainy garden-house sanctuary used by Atlas 200 | `941BD60794DCD475878DAA9EC893A83381FCA56060BA8073C2F6B84BBD1F979B` |
 | `library-night.webp` | Warm night library | `B3EBBB352BEB3795611786EB869401E6EEE1A7C48BB3E54F2A121CF672994F83` |
 | `snow-cabin.webp` | Snow mountain cabin | `BCBC0E4E2E306397FDD665A678890B0394107B601B0EFF59C15E56A6305861C5` |
 | `japanese-kissaten.webp` | Japanese kissaten | `90743CE1AAFB0EFF53A2D961C170A39556AC74F5416E8C922F8A552CAC04350B` |
@@ -42,6 +43,14 @@ These 26 scene backgrounds were prepared for the canonical `/focus-room` workspa
 | `cat-riverside-blue-hour.webp` | Tabby cat in a Vietnamese riverside room | `3531A5CD707E8CF814DE185DAA7CB9F2E15E782AD272EEE3B968F8BCF5C1332D` |
 | `puppy-lakeside-cabin.webp` | Sleeping puppy at a misty lakeside cabin | `5B56549C8E98E1919FCC2AE878974DDADD2EB426B396465E35DD8B5556C6A602` |
 
+The optimized thumbnail `thumbs/garden-sanctuary-rain.webp` has SHA-256 `3189950CED15F8B1536E07D8B127A7D58FF5E73FC8DC3885BF61B28F4BD2455D`. Existing thumbnail hashes remain reproducible from the checked-in files and are verified by the Focus Room contract test.
+
+## Atlas 200 presets
+
+Atlas 200 adds exactly 200 selectable environments without pretending they are 200 independent photographs. It combines 20 locally hosted backgrounds with ten original presentation states: dawn, morning mist, clear daylight, golden hour, sunset, blue hour, quiet night, soft rain, starlight and a pet-companion state. Each preset has a stable ID, crop, color grade, environmental effect, recommended sound mix and optional 3D pet. Only the first 24 matching cards are rendered initially; the user loads the next page explicitly.
+
+The presentation states are implemented with local CSS and existing Focus Room effects. No third-party scene image, remote URL or paid media is loaded at runtime.
+
 ## Generation brief
 
 The shared prompt set requested wide, photorealistic, people-free focus environments with believable materials, natural imperfections, layered depth, calm light and a stable desk area for live controls. Every prompt explicitly excluded text, logos, watermarks, copied interfaces, named-artist imitation and copyrighted characters.
@@ -49,6 +58,24 @@ The shared prompt set requested wide, photorealistic, people-free focus environm
 The landscape expansion used one distinct prompt per environment: rooftop sunrise, rainy greenhouse, alpine lake dawn, old university reading hall, Nordic cabin morning, Vietnamese rice-terrace veranda, original autumn garden room and moonlit mountain observatory.
 
 The pet expansion used six additional prompts: rainy attic with a sleeping orange cat, meadow sunroom with a resting retriever, rainy fireside library with a gray cat, spring garden veranda with a small sleeping dog, Vietnamese riverside blue-hour room with a tabby and a misty lakeside cabin with a sleeping puppy. Prompts required anatomically believable animals, natural fur and posture, no animal clothing, no people and no distracting action. Generated PNG sources remain unchanged in the Codex generated-image store; the browser consumes only the optimized project WebP copies and thumbnails in this directory.
+
+## Animated pet models
+
+The optional 3D companions are downloaded, self-hosted GLB files. They are lazy-loaded only after a cat or dog companion is active at Balanced or High quality. The canvas is decorative, capped at 24/30 FPS and DPR 1/1.5, pauses while hidden, and is fully disposed when the workspace rerenders or closes.
+
+| Local file | Creator and source | License | Animation used | SHA-256 |
+| --- | --- | --- | --- | --- |
+| `pets/corgi-gobkit.glb` | [Gobkit free assets](https://github.com/Ariescar/gobkit-free-assets/blob/main/animal/Corgi.glb) | [CC0 1.0](https://github.com/Ariescar/gobkit-free-assets/blob/main/LICENSE) | Baked idle, resting hold and walk frame ranges at 24 FPS | `EA3CA21FF81411416A86921865759B8D0875278C8AEAB0DBD13C556B5B4B5B55` |
+| `pets/cat-j-toastie.glb` | [Cat by J-Toastie on Poly Pizza](https://poly.pizza/m/DJ9rpAhrh3) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) | Embedded `Cat.001|IdleCat` plus an original bounded procedural walk gait | `8F77E8A1F97583925ACA7A419AC1517888A9F60F1F111D116A4D57787787B698` |
+
+Embedded textures were mechanically externalized so browsers load them as normal same-origin PNG files instead of temporary blob URLs. This preserves the original artwork and animation data while avoiding CSP/browser blob-image edge cases. The reproducible transform is `scripts/externalize-focus-pet-textures.js`.
+
+| Texture | SHA-256 |
+| --- | --- |
+| `pets/corgi-gobkit-texture.png` | `5C9930ABA1B78F18551C2DF4D9C250D0A7D72EAFA6CA72D0D856AEC62124ED04` |
+| `pets/cat-j-toastie-texture.png` | `3F2CDBEEAC122C0222B1FF72BF52450AF49CD4D6CC98F3441FB7E254290AD308` |
+
+Required attribution for the cat is also visible in the scene panel and duplicated in `pets/THIRD_PARTY_NOTICES.md`. Model files were not visually rebranded or redistributed as original HH artwork.
 
 ## Study music
 

@@ -10,8 +10,9 @@
 
 ## Real capabilities
 
-- Twenty-six project-local full scenes and twenty-six delivery thumbnails, including eight photorealistic landscape environments and six calm cat/dog companion spaces.
+- A 226-scene library: the original 26 project-local scenes plus exactly 200 Atlas presets built from 20 owned backgrounds and ten lighting/atmosphere states. Atlas 200 is presented truthfully as presets, not 200 independent photographs.
 - Scene search, category filters, favorites, pins, recent scenes and grid/list views.
+- Paginated scene discovery renders 24 matching cards at a time, preserving search, category and account-scoped favorites while keeping the large catalog responsive.
 - User image upload to account-namespaced IndexedDB with type and 10 MB size validation.
 - Sixteen procedural Web Audio channels rebuilt as longer, differently timed sound beds with scene-specific filtering, gentle gain drift, restrained stereo placement and sparse natural transients.
 - The rain, distant thunder, wind, fire, café, keyboard, paper, birds, ocean and stream profiles are synthesized separately instead of sharing one generic short noise loop. A dynamics compressor, per-channel trim and energy normalization prevent harsh peaks when several channels are mixed.
@@ -35,7 +36,7 @@
 - Account-scoped free layout on sufficiently large workspaces: the scene title, clock and tool dock can be moved with pointer drag or keyboard arrows, locked, reset and restored after reload.
 - Zoom-safe measured reflow: browser zoom, Platform sidebar resizing and narrow devices automatically suspend free positioning and use a single-flow compact layout without deleting the user's saved coordinates.
 - Hidden tabs stop decorative work and timer polling. The timer is reconciled from wall time when visibility returns.
-- High quality pet scenes can add one bounded Three.js depth-portrait layer with damped pointer response and 30 FPS/DPR caps. Balanced, eco, data saver, reduced motion, hidden tabs and WebGL failure all use the existing lightweight CSS fallback.
+- Cat and Corgi companions use two self-hosted, licensed GLB models with real skeleton animation. Automatic behavior alternates a bounded walk, long rest and idle; users can force Rest or Walk. Balanced mode caps at 24 FPS/DPR 1, High at 30 FPS/DPR 1.5, and eco/data saver/reduced motion/hidden tabs/WebGL failure use the lightweight fallback with no active render loop.
 
 ## Data
 
@@ -63,14 +64,17 @@ Research was performed on 2026-09-07:
 4. [mrdoob/three.js](https://github.com/mrdoob/three.js) — MIT-licensed WebGL library already bundled by the repository. The existing local module is reused only for the optional pet depth layer; no new render dependency was added.
 5. [flavioow/threejs-depth-portrait](https://github.com/flavioow/threejs-depth-portrait) — MIT-licensed depth-portrait reference. Only the general technique of a subdivided image plane, shader displacement and damped pointer movement informed the original HH implementation; its source, models and media were not copied.
 6. [goldfire/howler.js](https://github.com/goldfire/howler.js) and [Tone.js](https://github.com/Tonejs/Tone.js) — MIT-licensed audio references reviewed for interaction-gated playback, fades, clock-based scheduling and cleanup. They are not bundled because the existing Web Audio/native-media implementation already covers the requirement.
+7. [Gobkit Free 3D Assets](https://github.com/Ariescar/gobkit-free-assets) — CC0 1.0 Corgi GLB and its official 24 FPS frame-range integration guidance. The model is self-hosted and its documented ranges are scrubbed without a new dependency.
+8. [Cat by J-Toastie](https://poly.pizza/m/DJ9rpAhrh3) — CC BY 3.0 rigged cat GLB. The required creator attribution appears in the scene UI, asset manifest and third-party notice.
+9. [M3-org/pets](https://github.com/M3-org/pets) — MIT-licensed behavior specification reviewed for the general idle/move/stay vocabulary and tight asset limits. No code or model from the project is bundled.
 
-All new scene images are original project assets generated for HH Platform. Their hashes, prompt boundary and generation provenance are recorded in `assets/focus-room/README.md`. Ambient and lo-fi beds are synthesized locally. The only shipped third-party media is the two Kimiko Ishizaka piano performances released under CC0 1.0 and documented with source URLs and hashes in that asset manifest.
+All new scene images are original project assets generated for HH Platform. Their hashes, prompt boundary and generation provenance are recorded in `assets/focus-room/README.md`. Ambient and lo-fi beds are synthesized locally. Shipped third-party media consists of two Kimiko Ishizaka CC0 piano performances, the Gobkit CC0 Corgi and the J-Toastie CC BY 3.0 cat; source URLs, licenses, attribution and hashes are documented in the asset manifest and `assets/focus-room/pets/THIRD_PARTY_NOTICES.md`.
 
-## Environment expansion
+## Atlas 200 and pet expansion
 
-The built-in library now adds: rooftop sunrise, rainy greenhouse, alpine lake dawn, old university reading hall, Nordic cabin morning, Vietnamese rice-terrace veranda, original autumn garden room and moonlit observatory. Each full scene has a project-local thumbnail and a matching low-cost CSS environment profile.
+The built-in library now contains the original rooftop sunrise, rainy greenhouse, alpine lake dawn, old university reading hall, Nordic cabin morning, Vietnamese rice-terrace veranda, original autumn garden room and moonlit observatory additions. Atlas 200 then combines 20 local backgrounds—including the new rainy garden sanctuary—with dawn, mist, clear day, golden hour, sunset, blue hour, quiet night, soft rain, starlight and pet-companion states. Every combination has its own stable ID, title, grade, crop, effect, sound suggestion and optional pet assignment.
 
-The pet collection adds six opt-in scenes: rainy attic cat, retriever sunroom, fireside library cat, spring veranda dog, Vietnamese riverside cat and lakeside cabin puppy. At high quality, a feathered shader isolates the animal region of the same scene image and applies subtle breathing depth plus damped pointer response. This is a pseudo-3D depth portrait, not an animated 3D animal model; no skeleton, locomotion or capability is fabricated. The prior CSS breathing mask remains the fallback. Eco, balanced, data saver, paused-motion, hidden-tab and system reduced-motion states remove WebGL work completely.
+The pet collection keeps six opt-in photographic scenes and adds selectable 3D cat/Corgi companions to every environment. The Corgi uses its supplied baked track for idle, a resting hold and walk. The cat uses its supplied idle clip plus a bounded procedural leg gait for walking. Automatic behavior spends most of its 44-second cycle resting, with a short walk and idle transition; explicit Rest and Walk modes are also persisted per account. Eco, data saver, paused motion, hidden tabs and system reduced motion remove WebGL work completely. The previous depth portrait remains available only as the fallback for legacy photographic pet scenes when no 3D companion is selected.
 
 New environment profiles cover dawn light and valley haze, glass condensation, lake mist and water movement, library dust/light shafts, cup steam, field breeze, drifting autumn leaves, soft moonlight, quiet rain, garden petals and warm fire. They remain decorative (`pointer-events: none`), pause with the existing motion/visibility controls, and are removed at eco quality except for the static grade.
 
@@ -81,6 +85,8 @@ Two additional local channels provide a very quiet synthesized cat purr and slee
 - Open `/focus-room` from the Học tập & Ngôn ngữ group or command palette.
 - Verify the global HH Platform shell remains mounted across scene/panel changes and Back/Forward.
 - Verify every built-in scene and thumbnail returns HTTP 200.
+- Verify the exported catalog contains 226 unique IDs and exactly 200 `Atlas 200` presets, then page through all results in 24-card increments.
+- Select Cat and Corgi in Balanced and High quality; verify Auto, Rest and Walk, then hide/show the tab, pause motion, enable data saver and leave the route to confirm the GLB renderer stops and disposes.
 - Start audio only from a click, adjust every channel and close the workspace; confirm `hh:media-playback` becomes false.
 - Select each music track, play/pause, seek the file tracks, change music/master volume and loop, hide/show the tab, then close the workspace. Confirm there is no autoplay and every media/audio runtime is released.
 - Start, pause, resume, skip and reset the timer; reload while running and verify remaining time derives from `endsAt`.

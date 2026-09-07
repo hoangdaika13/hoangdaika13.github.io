@@ -260,19 +260,24 @@ test("Focus Room upgrades the canonical HH Platform learning workspace", () => {
   assert.match(router, /window\.HHFocusRoom\?\.mount/);
   assert.match(router, /window\.HHFocusRoom\?\.unmount/);
   assert.match(router, /Phòng học tập trung/);
-  assert.match(router, /26 scene nguyên bản/);
+  assert.match(router, /226 không gian \(26 cảnh gốc \+ Atlas 200\)/);
   assert.match(router, /Trong Học tập &amp; Ngôn ngữ/);
-  assert.match(loader, /"focus-study-room":\s*\{[\s\S]*focus-room\.css\?v=10[\s\S]*focus-room\.js\?v=10/);
+  assert.match(loader, /"focus-study-room":\s*\{[\s\S]*focus-room\.css\?v=12[\s\S]*focus-room\.js\?v=12/);
   assert.match(loader, /value === "\/focus-room"/);
-  assert.match(worker, /\.\/focus-room\.css\?v=10/);
-  assert.match(worker, /\.\/focus-room\.js\?v=10/);
+  assert.match(worker, /\.\/focus-room\.css\?v=12/);
+  assert.match(worker, /\.\/focus-room\.js\?v=12/);
   assert.doesNotMatch(source, /HH CORE|gateway|location\.href\s*=/i);
 });
 
-test("scene library ships twenty-six local full images and thumbnails with provenance", () => {
+test("scene library ships 226 local presets, including exactly 200 truthful Atlas environments", () => {
   const api = require("../focus-room.js");
   assert.equal(api.route, "/focus-room");
-  assert.equal(api.scenes.length, 26);
+  assert.equal(api.scenes.length, 226);
+  assert.equal(new Set(api.scenes.map((scene) => scene.id)).size, 226);
+  const atlas = api.scenes.filter((scene) => scene.collection === "Atlas 200");
+  assert.equal(atlas.length, 200);
+  assert.equal(new Set(atlas.map((scene) => scene.image)).size, 20);
+  assert.equal(atlas.filter((scene) => scene.pet === "cat" || scene.pet === "dog").length, 20);
   assert.equal(api.channels.length, 16);
   assert.equal(api.musicTracks.length, 3);
   assert.equal(api.canHandle("/focus-room"), true);
@@ -291,12 +296,63 @@ test("scene library ships twenty-six local full images and thumbnails with prove
   assert.match(documentation, /ayoisaiah\/focus[\s\S]*MIT/);
   assert.match(read("assets/focus-room/README.md"), /SHA-256/);
   assert.match(read("assets/focus-room/README.md"), /rainy greenhouse[\s\S]*moonlit mountain observatory/i);
+  assert.match(read("assets/focus-room/README.md"), /Atlas 200[\s\S]*200 independent photographs/);
   for (const track of api.musicTracks.filter((item) => item.kind === "file")) {
     assert.equal(fs.existsSync(path.join(rootDir, track.src)), true, `missing ${track.src}`);
     assert.ok(fs.statSync(path.join(rootDir, track.src)).size > 1_000_000, `empty ${track.src}`);
     assert.equal(track.license, "CC0 1.0");
   }
   assert.match(read("assets/focus-room/README.md"), /Kimiko Ishizaka[\s\S]*CC0 1\.0[\s\S]*SHA-256/);
+  const petModels = [
+    ["assets/focus-room/pets/corgi-gobkit.glb", "EA3CA21FF81411416A86921865759B8D0875278C8AEAB0DBD13C556B5B4B5B55"],
+    ["assets/focus-room/pets/cat-j-toastie.glb", "8F77E8A1F97583925ACA7A419AC1517888A9F60F1F111D116A4D57787787B698"],
+    ["assets/focus-room/pets/corgi-gobkit-texture.png", "5C9930ABA1B78F18551C2DF4D9C250D0A7D72EAFA6CA72D0D856AEC62124ED04"],
+    ["assets/focus-room/pets/cat-j-toastie-texture.png", "3F2CDBEEAC122C0222B1FF72BF52450AF49CD4D6CC98F3441FB7E254290AD308"]
+  ];
+  const crypto = require("node:crypto");
+  for (const [asset, expectedHash] of petModels) {
+    const bytes = fs.readFileSync(path.join(rootDir, asset));
+    assert.ok(bytes.length > (asset.endsWith(".glb") ? 50_000 : 10_000), `empty ${asset}`);
+    assert.equal(crypto.createHash("sha256").update(bytes).digest("hex").toUpperCase(), expectedHash);
+    if (asset.endsWith(".glb")) {
+      let cursor = 12;
+      let gltf;
+      while (cursor < bytes.length) {
+        const length = bytes.readUInt32LE(cursor);
+        const type = bytes.readUInt32LE(cursor + 4);
+        if (type === 0x4e4f534a) gltf = JSON.parse(bytes.subarray(cursor + 8, cursor + 8 + length).toString("utf8").trim());
+        cursor += 8 + length;
+      }
+      assert.match(gltf.images[0].uri, /-texture\.png$/);
+      assert.equal(gltf.images[0].bufferView, undefined, "runtime texture must not require a blob URL");
+    }
+  }
+  const notices = read("assets/focus-room/pets/THIRD_PARTY_NOTICES.md");
+  assert.match(notices, /J-Toastie[\s\S]*CC BY 3\.0/);
+  assert.match(notices, /Gobkit[\s\S]*CC0 1\.0/);
+});
+
+test("large scene catalog paginates and 3D companion preferences persist per account", () => {
+  const harness = createHarness();
+  const first = harness.createRoot();
+  const controller = harness.api.mount(first.root, { currentUser: { id: "pet-atlas-user" } });
+  controller.openPanel("scenes");
+  assert.equal((first.root.innerHTML.match(/class="hfr-scene-card/g) || []).length, 24);
+  assert.match(first.root.innerHTML, /Xem thêm 24 cảnh · còn 202/);
+  harness.click(first, "scene-more");
+  assert.equal((first.root.innerHTML.match(/class="hfr-scene-card/g) || []).length, 48);
+
+  harness.click(first, "pet-companion", { value: "cat" });
+  harness.click(first, "pet-mode", { value: "walk" });
+  assert.equal(controller.getState().settings.companion, "cat");
+  assert.equal(controller.getState().settings.petMode, "walk");
+  controller.unmount();
+
+  const restoredRoot = harness.createRoot();
+  const restored = harness.api.mount(restoredRoot.root, { currentUser: { id: "pet-atlas-user" } });
+  assert.equal(restored.getState().settings.companion, "cat");
+  assert.equal(restored.getState().settings.petMode, "walk");
+  assert.match(restoredRoot.root.innerHTML, /Mèo xám 3D/);
 });
 
 test("state is account scoped and favorites persist independently", () => {
@@ -587,10 +643,22 @@ test("responsive, motion and truthful capability contracts are explicit", () => 
   assert.match(styles, /hfr-leaf-drift/);
   assert.match(styles, /hfr-pet-breathe/);
   assert.match(source, /import\(THREE_MODULE\)/);
+  assert.match(source, /import\(GLTF_LOADER_MODULE\)/);
+  assert.match(source, /import\(SKELETON_UTILS_MODULE\)/);
+  assert.match(source, /assets\/focus-room\/pets\/cat-j-toastie\.glb/);
+  assert.match(source, /assets\/focus-room\/pets\/corgi-gobkit\.glb/);
+  assert.doesNotMatch(source, /src:\s*"https?:\/\//);
   assert.match(source, /new THREE\.WebGLRenderer/);
   assert.match(source, /1000 \/ 30/);
+  assert.match(source, /targetFps = quality === "high" \? 30 : 24/);
+  assert.match(source, /Math\.min\(1\.5/);
+  assert.match(source, /DOG_CLIP/);
+  assert.match(source, /petBehaviorMode/);
   assert.match(source, /teardownPetDepth/);
   assert.match(styles, /\.hfr-pet-depth[\s\S]*pointer-events:\s*none/);
+  assert.match(styles, /\.hfr-backdrop img[\s\S]*?filter:\s*var\(--hfr-scene-grade/);
+  assert.match(styles, /\.hfr-companion-controls/);
+  assert.match(styles, /\.hfr-load-more/);
   assert.match(source, /hh-lofi-calm/);
   assert.match(source, /Kimiko Ishizaka/);
   assert.match(source, /suspendMusicForVisibility/);

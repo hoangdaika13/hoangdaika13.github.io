@@ -12,6 +12,8 @@
   const DB_STORE = "scenes";
   const FALLBACK_IMAGE = "assets/focus-room/rainy-window.webp";
   const THREE_MODULE = "./vendor/three.module.min.js";
+  const GLTF_LOADER_MODULE = "./vendor/addons/loaders/GLTFLoader.js";
+  const SKELETON_UTILS_MODULE = "./vendor/addons/utils/SkeletonUtils.js";
   const instances = new WeakMap();
   const mountedRoots = new Set();
 
@@ -41,6 +43,24 @@
     "pet-lake": Object.freeze({ x: 0.15, y: 0.62, radiusX: 0.15, radiusY: 0.14, imageX: 0.19, pace: 0.64 })
   });
 
+  const PET_MODEL_PROFILES = Object.freeze({
+    cat: Object.freeze({
+      label: "Mèo xám", src: "assets/focus-room/pets/cat-j-toastie.glb?v=1", desiredHeight: 1.12,
+      idleClip: "Cat.001|IdleCat", restingX: 1.2, facing: 0, credit: "J-Toastie · CC BY 3.0"
+    }),
+    dog: Object.freeze({
+      label: "Cún Corgi", src: "assets/focus-room/pets/corgi-gobkit.glb?v=1", desiredHeight: 1.04,
+      idleClip: "clip", restingX: -1.18, facing: 0, credit: "Gobkit · CC0 1.0"
+    })
+  });
+
+  const DOG_CLIP = Object.freeze({
+    fps: 24,
+    idle: Object.freeze({ from: 0, to: 29 }),
+    rest: Object.freeze({ from: 60, to: 89 }),
+    walk: Object.freeze({ from: 90, to: 119 })
+  });
+
   const CHANNELS = Object.freeze([
     { id: "rain", label: "Mưa nhẹ", icon: "☂", default: 0.48, type: "rain", filter: "highpass", frequency: 920, q: 0.2, trim: 0.34, drift: 0.035, depth: 0.045, pan: -0.08 },
     { id: "heavy-rain", label: "Mưa rào", icon: "☔", default: 0, type: "heavy-rain", filter: "bandpass", frequency: 760, q: 0.35, trim: 0.28, drift: 0.047, depth: 0.055, pan: 0.08 },
@@ -58,6 +78,42 @@
     { id: "pink", label: "Pink noise dịu", icon: "P", default: 0, type: "pink", filter: "lowpass", frequency: 1700, q: 0.2, trim: 0.21, drift: 0.02, depth: 0.024, pan: 0 },
     { id: "purr", label: "Mèo gừ êm", icon: "🐈", default: 0.055, type: "purr", filter: "lowpass", frequency: 310, q: 0.4, trim: 0.19, drift: 0.12, depth: 0.025, pan: -0.14 },
     { id: "pet-breath", label: "Thú cưng ngủ", icon: "🐾", default: 0.045, type: "pet-breath", filter: "lowpass", frequency: 520, q: 0.25, trim: 0.13, drift: 0.09, depth: 0.02, pan: 0.12 }
+  ]);
+
+  const SCENE_EXPANSION_BASES = Object.freeze([
+    Object.freeze({ id: "garden-sanctuary", title: "Nhà vườn tĩnh lặng", category: "nature", image: "assets/focus-room/garden-sanctuary-rain.webp", effect: "greenhouse", sounds: ["rain", "stream", "birds"] }),
+    Object.freeze({ id: "rainy-greenhouse", title: "Nhà kính cây xanh", category: "nature", image: "assets/focus-room/rainy-greenhouse.webp", effect: "greenhouse", sounds: ["rain", "stream"] }),
+    Object.freeze({ id: "alpine-lake", title: "Hồ núi thanh sạch", category: "nature", image: "assets/focus-room/alpine-lake-dawn.webp", effect: "lake-mist", sounds: ["wind", "stream", "birds"] }),
+    Object.freeze({ id: "reading-hall", title: "Đại sảnh học thuật", category: "cozy", image: "assets/focus-room/university-reading-hall.webp", effect: "light-shafts", sounds: ["pages", "brown"] }),
+    Object.freeze({ id: "nordic-cabin", title: "Cabin Bắc Âu", category: "cozy", image: "assets/focus-room/nordic-cabin-morning.webp", effect: "cabin-morning", sounds: ["wind", "birds", "brown"] }),
+    Object.freeze({ id: "rice-veranda", title: "Hiên ruộng bậc thang", category: "nature", image: "assets/focus-room/rice-terrace-veranda.webp", effect: "terrace-breeze", sounds: ["birds", "wind", "stream"] }),
+    Object.freeze({ id: "autumn-room", title: "Phòng vườn mùa thu", category: "nature", image: "assets/focus-room/autumn-garden-room.webp", effect: "autumn-leaves", sounds: ["birds", "wind"] }),
+    Object.freeze({ id: "observatory", title: "Đài quan sát", category: "night", image: "assets/focus-room/moonlit-observatory.webp", effect: "moonlight", sounds: ["wind", "brown", "pink"] }),
+    Object.freeze({ id: "kissaten", title: "Kissaten Nhật Bản", category: "cafe", image: "assets/focus-room/japanese-kissaten.webp", effect: "cafe-rain", sounds: ["rain", "cafe", "pages"] }),
+    Object.freeze({ id: "hanoi-cafe", title: "Cà phê Hà Nội", category: "cafe", image: "assets/focus-room/hanoi-rain-cafe.webp", effect: "cafe-rain", sounds: ["rain", "cafe"] }),
+    Object.freeze({ id: "ocean-desk", title: "Bàn học hướng biển", category: "nature", image: "assets/focus-room/ocean-sunset.webp", effect: "ocean", sounds: ["ocean", "wind"] }),
+    Object.freeze({ id: "forest-house", title: "Nhà học trong rừng", category: "nature", image: "assets/focus-room/forest-morning.webp", effect: "forest", sounds: ["birds", "stream", "wind"] }),
+    Object.freeze({ id: "fireside", title: "Nhà đá bên lửa", category: "cozy", image: "assets/focus-room/fireside-cottage.webp", effect: "embers", sounds: ["fire", "wind"] }),
+    Object.freeze({ id: "neon-city", title: "Thành phố neon", category: "future", image: "assets/focus-room/cyber-city.webp", effect: "neon-rain", sounds: ["rain", "brown"] }),
+    Object.freeze({ id: "orbital", title: "Trạm học quỹ đạo", category: "future", image: "assets/focus-room/orbital-desk.webp", effect: "stars", sounds: ["brown", "pink"] }),
+    Object.freeze({ id: "minimal", title: "Studio tối giản", category: "quiet", image: "assets/focus-room/minimal-dark.webp", effect: "dust", sounds: ["brown", "keyboard"] }),
+    Object.freeze({ id: "rooftop", title: "Sân thượng thành phố", category: "nature", image: "assets/focus-room/rooftop-sunrise.webp", effect: "sunrise", sounds: ["birds", "wind"] }),
+    Object.freeze({ id: "snow-cabin", title: "Cabin trên tuyết", category: "cozy", image: "assets/focus-room/snow-cabin.webp", effect: "snow", sounds: ["wind", "fire"] }),
+    Object.freeze({ id: "library", title: "Thư viện gỗ", category: "night", image: "assets/focus-room/library-night.webp", effect: "rain", sounds: ["rain", "fire", "pages"] }),
+    Object.freeze({ id: "twilight-garden", title: "Vườn chạng vạng", category: "illustrated", image: "assets/focus-room/twilight-garden.webp", effect: "fireflies", sounds: ["birds", "stream"] })
+  ]);
+
+  const SCENE_EXPANSION_MOODS = Object.freeze([
+    Object.freeze({ id: "dawn", suffix: "lúc bình minh", time: "Bình minh", effect: "sunrise", grade: "brightness(1.04) saturate(.9) sepia(.08)", accent: "#ffd08a", detail: "Ánh sáng đầu ngày trong trẻo và rất nhẹ." }),
+    Object.freeze({ id: "mist", suffix: "trong sương sớm", time: "Ban mai", effect: "lake-mist", grade: "brightness(.96) saturate(.74) contrast(.94) hue-rotate(-5deg)", accent: "#b6e7dd", detail: "Sương mỏng tạo chiều sâu yên tĩnh." }),
+    Object.freeze({ id: "clear", suffix: "buổi trưa trong", time: "Ban ngày", effect: "light-shafts", grade: "brightness(1.08) saturate(.94) contrast(1.02)", accent: "#d8f3ff", detail: "Ánh sáng rõ, dịu mắt cho phiên đọc dài." }),
+    Object.freeze({ id: "golden", suffix: "trong nắng vàng", time: "Chiều vàng", effect: "cabin-morning", grade: "brightness(1.02) saturate(1.08) sepia(.18) contrast(1.02)", accent: "#ffc477", detail: "Nắng vàng ấm phủ lên vật liệu tự nhiên." }),
+    Object.freeze({ id: "sunset", suffix: "lúc hoàng hôn", time: "Hoàng hôn", effect: "autumn-leaves", grade: "brightness(.9) saturate(1.18) sepia(.16) hue-rotate(-8deg)", accent: "#ff9d8f", detail: "Sắc cam hồng chậm rãi khép lại ngày dài." }),
+    Object.freeze({ id: "blue-hour", suffix: "giờ xanh", time: "Chạng vạng", effect: "moonlight", grade: "brightness(.76) saturate(.82) hue-rotate(12deg) contrast(1.08)", accent: "#8fcaff", detail: "Giờ xanh mát, cân bằng và ít xao nhãng." }),
+    Object.freeze({ id: "quiet-night", suffix: "đêm yên", time: "Đêm", effect: "dust", grade: "brightness(.58) saturate(.7) contrast(1.16) hue-rotate(8deg)", accent: "#bba8ff", detail: "Đèn tối vừa đủ cho một phiên tập trung sâu." }),
+    Object.freeze({ id: "soft-rain", suffix: "dưới mưa nhẹ", time: "Ngày mưa", effect: "rain", grade: "brightness(.75) saturate(.72) contrast(1.04) hue-rotate(5deg)", accent: "#8edfff", detail: "Mưa mảnh, phản chiếu mềm và nhịp nền đều." }),
+    Object.freeze({ id: "starlight", suffix: "dưới trời sao", time: "Đêm sao", effect: "stars", grade: "brightness(.56) saturate(.92) contrast(1.18) hue-rotate(18deg)", accent: "#9caeff", detail: "Điểm sao xa và ánh sáng lạnh rất dịu." }),
+    Object.freeze({ id: "pet-companion", suffix: "cùng bạn nhỏ", time: "Thú cưng", effect: "", grade: "brightness(.94) saturate(.9) contrast(1.03)", accent: "#ffb9cc", detail: "Một bạn nhỏ 3D thay phiên nằm nghỉ và đi dạo.", pet: true })
   ]);
 
   const SCENES = Object.freeze([
@@ -86,7 +142,8 @@
     scene("cat-fireplace-library", "Thư viện lò sưởi cùng mèo", "Đêm", "Mèo xám nằm bên cửa sổ mưa, lửa ấm và căn phòng đọc thật tĩnh.", "pets", "pet-fire", "assets/focus-room/cat-fireplace-library.webp", ["rain", "fire", "purr"]),
     scene("dog-spring-veranda", "Hiên vườn xuân cùng cún", "Buổi sáng", "Cún nhỏ ngủ bên bàn học, nắng xuyên vườn và cánh hoa trôi chậm.", "pets", "pet-garden", "assets/focus-room/dog-spring-veranda.webp", ["birds", "wind", "pet-breath"]),
     scene("cat-riverside-blue-hour", "Nhà bên sông cùng mèo", "Chạng vạng", "Mèo mướp cuộn mình bên cửa, mưa bụi và ánh sông xanh dịu.", "pets", "pet-river", "assets/focus-room/cat-riverside-blue-hour.webp", ["rain", "stream", "purr"]),
-    scene("puppy-lakeside-cabin", "Cabin hồ cùng cún nhỏ", "Bình minh", "Cún con ngủ trong ổ len, hồ sương và rừng thông đón nắng đầu ngày.", "pets", "pet-lake", "assets/focus-room/puppy-lakeside-cabin.webp", ["wind", "stream", "pet-breath"])
+    scene("puppy-lakeside-cabin", "Cabin hồ cùng cún nhỏ", "Bình minh", "Cún con ngủ trong ổ len, hồ sương và rừng thông đón nắng đầu ngày.", "pets", "pet-lake", "assets/focus-room/puppy-lakeside-cabin.webp", ["wind", "stream", "pet-breath"]),
+    ...buildExpandedScenes()
   ]);
 
   const MIX_PRESETS = Object.freeze({
@@ -122,14 +179,46 @@
     })
   ]);
 
-  function scene(id, title, time, description, category, effect, image, soundIds) {
+  function scene(id, title, time, description, category, effect, image, soundIds, visual = {}) {
     const mix = {};
     soundIds.forEach((soundId) => {
       const channel = CHANNELS.find((item) => item.id === soundId);
       mix[soundId] = channel ? channel.default : 0.1;
     });
     const performance = ["rain", "cafe-rain", "neon-rain", "snow", "greenhouse", "autumn-leaves", "pet-rain", "pet-fire", "pet-river"].includes(effect) ? "Cao" : ["ocean", "embers", "forest", "fireflies", "stars", "sunrise", "lake-mist", "light-shafts", "cabin-morning", "terrace-breeze", "moonlight", "pet-sunroom", "pet-garden", "pet-lake"].includes(effect) ? "Cân bằng" : "Tiết kiệm";
-    return Object.freeze({ id, title, time, description, category, effect, image, thumb: image.replace("/focus-room/", "/focus-room/thumbs/"), mix, performance, soundStatus: soundIds.length ? `${soundIds.length} kênh gợi ý` : "Cảnh yên tĩnh" });
+    return Object.freeze({
+      id, title, time, description, category, effect, image,
+      thumb: image.replace("/focus-room/", "/focus-room/thumbs/"), mix, performance,
+      soundStatus: soundIds.length ? `${soundIds.length} kênh gợi ý` : "Cảnh yên tĩnh",
+      grade: cleanVisualToken(visual.grade, 140), position: cleanVisualToken(visual.position, 40),
+      accent: cleanVisualToken(visual.accent, 24), pet: ["cat", "dog"].includes(visual.pet) ? visual.pet : "",
+      collection: cleanVisualToken(visual.collection, 40)
+    });
+  }
+
+  function cleanVisualToken(value, maximum) {
+    return String(value || "").replace(/[<>"'`;{}]/g, "").trim().slice(0, maximum);
+  }
+
+  function buildExpandedScenes() {
+    return SCENE_EXPANSION_BASES.flatMap((base, baseIndex) => SCENE_EXPANSION_MOODS.map((mood, moodIndex) => {
+      const pet = mood.pet ? (baseIndex % 2 ? "cat" : "dog") : "";
+      const sounds = pet
+        ? [...new Set([...base.sounds, pet === "cat" ? "purr" : "pet-breath"])]
+        : base.sounds;
+      const position = `${44 + ((baseIndex * 7 + moodIndex * 3) % 13)}% center`;
+      return scene(
+        `atlas-${base.id}-${mood.id}`,
+        `${base.title} ${mood.suffix}`,
+        mood.time,
+        `${mood.detail} Phối âm được gợi ý theo không gian và có thể chỉnh riêng.`,
+        pet ? "pets" : base.category,
+        mood.effect || base.effect,
+        base.image,
+        sounds,
+        { grade: mood.grade, position, accent: mood.accent, pet, collection: "Atlas 200" }
+      );
+    }));
   }
 
   function escapeHtml(value) {
@@ -233,7 +322,8 @@
       settings: {
         quality: "balanced", motion: !reduceMotion, reducedMotion: reduceMotion,
         dataSaver: false, autoStartBreak: false, autoStartFocus: false,
-        sceneOnBreak: false, restScene: "ocean-sunset", notifications: false
+        sceneOnBreak: false, restScene: "ocean-sunset", notifications: false,
+        companion: "scene", petMode: "auto"
       },
       updatedAt: Date.now()
     };
@@ -440,7 +530,9 @@
         autoStartFocus: settings.autoStartFocus === true,
         sceneOnBreak: settings.sceneOnBreak === true,
         restScene: SCENES.some((item) => item.id === settings.restScene) ? settings.restScene : base.settings.restScene,
-        notifications: settings.notifications === true && global.Notification?.permission === "granted"
+        notifications: settings.notifications === true && global.Notification?.permission === "granted",
+        companion: ["scene", "none", "cat", "dog"].includes(settings.companion) ? settings.companion : base.settings.companion,
+        petMode: ["auto", "rest", "walk"].includes(settings.petMode) ? settings.petMode : base.settings.petMode
       },
       updatedAt: clamp(source.updatedAt, 0, Number.MAX_SAFE_INTEGER, Date.now())
     };
@@ -492,6 +584,13 @@
 
   function currentScene(instance) {
     return allScenes(instance).find((item) => item.id === instance.state.scenes.selected) || SCENES[0];
+  }
+
+  function currentPetKind(instance, selected = currentScene(instance)) {
+    const preference = instance.state.settings.companion;
+    if (preference === "none") return "";
+    if (["cat", "dog"].includes(preference)) return preference;
+    return ["cat", "dog"].includes(selected?.pet) ? selected.pet : "";
   }
 
   function imageUrl(instance, targetScene, thumbnail = false) {
@@ -612,20 +711,35 @@
 
   function scenePanel(instance) {
     const scenes = filteredScenes(instance);
+    const limit = Math.max(24, Math.min(scenes.length || 24, Number(instance.ui.sceneLimit) || 24));
+    const visibleScenes = scenes.slice(0, limit);
+    const selected = currentScene(instance);
+    const petKind = currentPetKind(instance, selected);
     const categories = [
       ["all", "Tất cả"], ["recent", "Gần đây"], ["night", "Đêm"], ["nature", "Thiên nhiên"], ["cafe", "Cà phê"],
       ["cozy", "Ấm áp"], ["pets", "Thú cưng"], ["future", "Tương lai"], ["quiet", "Tối giản"], ["illustrated", "Minh họa"], ["custom", "Cá nhân"]
     ];
-    return `<div class="hfr-panel-heading"><div><span>SCENE LIBRARY</span><h2>Không gian học tập</h2></div><button type="button" data-hfr-action="close-panel" aria-label="Đóng bảng">×</button></div>
+    return `<div class="hfr-panel-heading"><div><span>SCENE LIBRARY · ${scenes.length}/${SCENES.length}</span><h2>Không gian học tập</h2></div><button type="button" data-hfr-action="close-panel" aria-label="Đóng bảng">×</button></div>
       <div class="hfr-scene-tools">
         <label class="hfr-search"><span>⌕</span><input type="search" data-hfr-scene-search value="${escapeHtml(instance.ui.search)}" placeholder="Tìm không gian…" aria-label="Tìm không gian"></label>
         <button type="button" data-hfr-action="favorites-only" aria-pressed="${instance.ui.favoritesOnly}">♡ Yêu thích</button>
         <button type="button" data-hfr-action="scene-view" aria-label="Đổi kiểu hiển thị">${instance.ui.sceneView === "grid" ? "☷" : "▦"}</button>
       </div>
       <div class="hfr-chip-row" role="group" aria-label="Lọc chủ đề">${categories.map(([id, label]) => `<button type="button" data-hfr-action="scene-category" data-value="${id}" aria-pressed="${instance.ui.category === id}">${label}</button>`).join("")}</div>
+      <section class="hfr-companion-controls" aria-label="Bạn đồng hành 3D">
+        <div><span>BẠN ĐỒNG HÀNH 3D</span><strong>${petKind ? PET_MODEL_PROFILES[petKind].label : "Theo từng không gian"}</strong><small>Cân bằng/Cao · model tải khi cần · tự dừng khi tab ẩn</small></div>
+        <div class="hfr-companion-row" role="group" aria-label="Chọn thú cưng">
+          ${[["scene", "Theo cảnh"], ["cat", "Mèo"], ["dog", "Cún"], ["none", "Tắt"]].map(([id, label]) => `<button type="button" data-hfr-action="pet-companion" data-value="${id}" aria-pressed="${instance.state.settings.companion === id}">${label}</button>`).join("")}
+        </div>
+        <div class="hfr-companion-row" role="group" aria-label="Chọn hành vi thú cưng">
+          ${[["auto", "Tự nhiên"], ["rest", "Nằm nghỉ"], ["walk", "Đi dạo"]].map(([id, label]) => `<button type="button" data-hfr-action="pet-mode" data-value="${id}" aria-pressed="${instance.state.settings.petMode === id}" ${petKind ? "" : "disabled"}>${label}</button>`).join("")}
+        </div>
+        <p>Mèo: J-Toastie · CC BY 3.0 · Poly Pizza. Cún: Gobkit · CC0 1.0 · GitHub.</p>
+      </section>
       <div class="hfr-scene-grid hfr-scene-grid--${instance.ui.sceneView}">
-        ${scenes.length ? scenes.map((item) => sceneCard(instance, item)).join("") : `<div class="hfr-empty"><span>⌕</span><strong>Không tìm thấy không gian</strong><p>Thử từ khóa hoặc bộ lọc khác.</p></div>`}
+        ${visibleScenes.length ? visibleScenes.map((item) => sceneCard(instance, item)).join("") : `<div class="hfr-empty"><span>⌕</span><strong>Không tìm thấy không gian</strong><p>Thử từ khóa hoặc bộ lọc khác.</p></div>`}
       </div>
+      ${visibleScenes.length < scenes.length ? `<button class="hfr-load-more" type="button" data-hfr-action="scene-more">Xem thêm ${Math.min(24, scenes.length - visibleScenes.length)} cảnh · còn ${scenes.length - visibleScenes.length}</button>` : ""}
       <form class="hfr-upload" data-hfr-upload-form>
         <div><strong>Không gian của bạn</strong><small>Ảnh JPG, PNG hoặc WebP · tối đa 10 MB · lưu theo tài khoản trên thiết bị.</small></div>
         <label><input type="file" name="scene" accept="image/jpeg,image/png,image/webp" required><span>+ Tải ảnh lên</span></label>
@@ -638,8 +752,8 @@
     const pinned = instance.state.scenes.pinned.includes(item.id);
     return `<article class="hfr-scene-card${selected ? " is-selected" : ""}">
       <button class="hfr-scene-preview" type="button" data-hfr-action="select-scene" data-id="${escapeHtml(item.id)}" aria-pressed="${selected}">
-        <img src="${escapeHtml(imageUrl(instance, item, true))}" alt="" loading="lazy" decoding="async" data-hfr-fallback>
-        <span>${escapeHtml(item.time)}</span><i>${selected ? "Đang dùng" : "Mở cảnh"}</i>
+        <img src="${escapeHtml(imageUrl(instance, item, true))}" alt="" loading="lazy" decoding="async" data-hfr-fallback style="filter:${escapeHtml(item.grade || "none")};object-position:${escapeHtml(item.position || "center")}">
+        <span>${escapeHtml(item.time)}</span><i>${selected ? "Đang dùng" : item.collection || "Mở cảnh"}</i>
       </button>
       <div><span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.description)}</small><span class="hfr-scene-meta"><em>${escapeHtml(item.soundStatus || "Ảnh cá nhân")}</em><em>${escapeHtml(item.performance || "Theo thiết bị")}</em></span></span>
         <span class="hfr-card-actions">
@@ -812,6 +926,8 @@
         ${settingToggle("motion", "Chuyển động môi trường", "Parallax và hiệu ứng cảnh.", settings.motion)}
         ${settingToggle("reducedMotion", "Giảm chuyển động", "Ưu tiên giao diện tĩnh, dễ tập trung.", settings.reducedMotion)}
         ${settingToggle("dataSaver", "Tiết kiệm dữ liệu", "Dùng thumbnail thay ảnh lớn.", settings.dataSaver)}
+        <label><span>Bạn đồng hành 3D<small>Model tải theo nhu cầu ở mức Cân bằng hoặc Cao.</small></span><select name="companion"><option value="scene" ${settings.companion === "scene" ? "selected" : ""}>Theo từng cảnh</option><option value="cat" ${settings.companion === "cat" ? "selected" : ""}>Mèo xám</option><option value="dog" ${settings.companion === "dog" ? "selected" : ""}>Cún Corgi</option><option value="none" ${settings.companion === "none" ? "selected" : ""}>Tắt</option></select></label>
+        <label><span>Hành vi thú cưng<small>Tự nhiên sẽ xen kẽ nằm nghỉ và đi dạo.</small></span><select name="petMode"><option value="auto" ${settings.petMode === "auto" ? "selected" : ""}>Tự nhiên</option><option value="rest" ${settings.petMode === "rest" ? "selected" : ""}>Nằm nghỉ</option><option value="walk" ${settings.petMode === "walk" ? "selected" : ""}>Đi dạo</option></select></label>
         ${settingToggle("autoStartBreak", "Tự bắt đầu giờ nghỉ", "Bắt đầu sau khi hoàn thành phiên.", settings.autoStartBreak)}
         ${settingToggle("autoStartFocus", "Tự bắt đầu vòng tiếp", "Bắt đầu sau khi hết giờ nghỉ.", settings.autoStartFocus)}
         ${settingToggle("sceneOnBreak", "Đổi cảnh khi nghỉ", "Khôi phục cảnh học khi quay lại.", settings.sceneOnBreak)}
@@ -848,17 +964,19 @@
     const quality = effectiveQuality(instance);
     const activeMotion = motionEnabled(instance);
     const summary = focusSummary(instance);
+    const petKind = currentPetKind(instance, selected);
+    const accent = selected.accent || (selected.category === "nature" ? "#72f3bd" : selected.category === "cafe" || selected.category === "cozy" ? "#ffb46b" : selected.category === "pets" ? "#ffb8c9" : selected.category === "future" ? "#7ee7ff" : "#c69cff");
     const tabs = [
       ["plan", "◎", "Kế hoạch"], ["scenes", "▧", "Không gian"], ["sound", "♫", "Âm thanh"], ["timer", "◷", "Hẹn giờ"],
       ["tasks", "✓", "Công việc"], ["notes", "✎", "Ghi chú"], ["history", "⌁", "Lịch sử"], ["shared", "◎", "Phòng chung"], ["settings", "⚙", "Cài đặt"]
     ];
-    instance.root.innerHTML = `<section class="hfr-app${instance.ui.zen ? " is-zen" : ""}${instance.ui.panel ? " has-panel" : ""}" data-hfr-root data-quality="${quality}" data-motion="${activeMotion ? "on" : "off"}" data-layout-mode="${instance.state.layout.locked ? "locked" : "editing"}">
-      <section class="hfr-stage" data-hfr-effect="${escapeHtml(selected.effect)}" style="--hfr-accent:${selected.category === "nature" ? "#72f3bd" : selected.category === "cafe" || selected.category === "cozy" ? "#ffb46b" : selected.category === "pets" ? "#ffb8c9" : selected.category === "future" ? "#7ee7ff" : "#c69cff"};--hfr-scene-image:url(&quot;${escapeHtml(imageUrl(instance, selected))}&quot;)">
+    instance.root.innerHTML = `<section class="hfr-app${instance.ui.zen ? " is-zen" : ""}${instance.ui.panel ? " has-panel" : ""}" data-hfr-root data-quality="${quality}" data-motion="${activeMotion ? "on" : "off"}" data-layout-mode="${instance.state.layout.locked ? "locked" : "editing"}" data-pet-companion="${petKind || "off"}">
+      <section class="hfr-stage" data-hfr-effect="${escapeHtml(selected.effect)}" style="--hfr-accent:${escapeHtml(accent)};--hfr-scene-grade:${escapeHtml(selected.grade || "saturate(1.04) contrast(1.03)")};--hfr-scene-position:${escapeHtml(selected.position || "center")};--hfr-scene-image:url(&quot;${escapeHtml(imageUrl(instance, selected))}&quot;)">
         <div class="hfr-backdrop" aria-hidden="true" style="--hfr-placeholder:url(&quot;${escapeHtml(imageUrl(instance, selected, true))}&quot;)"><img src="${escapeHtml(imageUrl(instance, selected))}" alt="" decoding="async" fetchpriority="high" data-hfr-current-image data-hfr-fallback><span class="hfr-backdrop-shade"></span></div>
         <canvas class="hfr-pet-depth" data-hfr-pet-depth aria-hidden="true" hidden></canvas>
         <div class="hfr-effects" aria-hidden="true"><i class="hfr-fx hfr-fx--far"></i><i class="hfr-fx hfr-fx--mid"></i><i class="hfr-fx hfr-fx--near"></i><i class="hfr-fx hfr-fx--glow"></i></div>
         <header class="hfr-topbar">
-          <div class="hfr-scene-title" data-hfr-layout-item="title"><button class="hfr-drag-handle" type="button" data-hfr-drag-handle="title" aria-label="Kéo tên cảnh để sắp xếp" title="Kéo để di chuyển · phím mũi tên để tinh chỉnh">⠿</button><span>IMMERSIVE FOCUS SANCTUARY</span><strong>${escapeHtml(selected.title)}</strong><small>${escapeHtml(selected.description)}</small><div class="hfr-current-meta"><em>${escapeHtml(selected.soundStatus || "Ảnh cá nhân")}</em><em>${escapeHtml(selected.performance || "Theo thiết bị")}</em></div></div>
+          <div class="hfr-scene-title" data-hfr-layout-item="title"><button class="hfr-drag-handle" type="button" data-hfr-drag-handle="title" aria-label="Kéo tên cảnh để sắp xếp" title="Kéo để di chuyển · phím mũi tên để tinh chỉnh">⠿</button><span>IMMERSIVE FOCUS SANCTUARY</span><strong>${escapeHtml(selected.title)}</strong><small>${escapeHtml(selected.description)}</small><div class="hfr-current-meta"><em>${escapeHtml(selected.soundStatus || "Ảnh cá nhân")}</em><em>${escapeHtml(selected.collection || selected.performance || "Theo thiết bị")}</em>${petKind ? `<em>${escapeHtml(PET_MODEL_PROFILES[petKind].label)} 3D</em>` : ""}</div></div>
           <div class="hfr-top-actions">
             <span class="hfr-local-status">● Lưu cục bộ · ${instance.isGuest ? "Khách" : "Tài khoản hiện tại"}</span>
             <button class="hfr-layout-toggle" type="button" data-hfr-action="layout-edit" aria-pressed="${!instance.state.layout.locked}" title="${instance.state.layout.locked ? "Mở chế độ kéo thả bố cục" : "Khóa vị trí các mục"}">${instance.state.layout.locked ? "⌖ Sắp xếp" : "🔒 Khóa"}</button>
@@ -2258,6 +2376,10 @@
     runtime.stage?.removeEventListener?.("pointermove", runtime.pointerMove);
     runtime.stage?.removeEventListener?.("pointerleave", runtime.pointerLeave);
     runtime.canvas?.removeEventListener?.("webglcontextlost", runtime.contextLost);
+    try { runtime.mixer?.stopAllAction?.(); } catch {}
+    runtime.ownedTextures?.forEach((texture) => { try { texture?.dispose?.(); } catch {} });
+    runtime.ownedMaterials?.forEach((material) => { try { material?.dispose?.(); } catch {} });
+    runtime.ownedGeometries?.forEach((geometry) => { try { geometry?.dispose?.(); } catch {} });
     try { runtime.geometry?.dispose?.(); } catch {}
     try { runtime.material?.dispose?.(); } catch {}
     try { runtime.texture?.dispose?.(); } catch {}
@@ -2267,7 +2389,211 @@
     if (app) delete app.dataset.petDepth;
   }
 
+  function petBehaviorMode(instance, elapsedSeconds) {
+    const requested = instance.state.settings.petMode;
+    if (requested === "rest" || requested === "walk") return requested;
+    const cycle = elapsedSeconds % 44;
+    if (cycle < 10) return "walk";
+    if (cycle < 36) return "rest";
+    return "idle";
+  }
+
+  function dampValue(current, target, speed, delta) {
+    return current + (target - current) * (1 - Math.exp(-Math.max(0, speed) * Math.max(0, delta)));
+  }
+
+  async function loadGltfModel(loader, source) {
+    const response = await global.fetch(source, { credentials: "same-origin" });
+    if (!response.ok) throw new Error(`GLB ${response.status}`);
+    const bytes = await response.arrayBuffer();
+    return new Promise((resolve, reject) => loader.parse(bytes, source.slice(0, source.lastIndexOf("/") + 1), resolve, reject));
+  }
+
+  async function setupPetModel(instance, selected, kind) {
+    const profile = PET_MODEL_PROFILES[kind];
+    const app = instance.root.querySelector?.("[data-hfr-root]");
+    const stage = instance.root.querySelector?.(".hfr-stage");
+    const canvas = instance.root.querySelector?.("[data-hfr-pet-depth]");
+    const quality = effectiveQuality(instance);
+    if (!profile || !app || !stage || !canvas || global.document?.hidden) return;
+    if (quality === "eco" || !motionEnabled(instance) || instance.state.settings.dataSaver) return;
+    if (typeof canvas.getContext !== "function" || typeof global.requestAnimationFrame !== "function") return;
+    const generation = instance.petDepthGeneration;
+    try {
+      const [THREE, loaderModule, skeletonUtils] = await Promise.all([
+        import(THREE_MODULE), import(GLTF_LOADER_MODULE), import(SKELETON_UTILS_MODULE)
+      ]);
+      if (generation !== instance.petDepthGeneration || !canvas.isConnected) return;
+      const loader = new loaderModule.GLTFLoader();
+      const gltf = await loadGltfModel(loader, profile.src);
+      if (generation !== instance.petDepthGeneration || !canvas.isConnected) return;
+      const model = skeletonUtils.clone(gltf.scene);
+      const ownedGeometries = new Set();
+      const ownedMaterials = new Set();
+      const ownedTextures = new Set();
+      model.traverse((object) => {
+        if (!object?.isMesh) return;
+        object.frustumCulled = false;
+        if (object.geometry) ownedGeometries.add(object.geometry);
+        const materials = Array.isArray(object.material) ? object.material : [object.material];
+        materials.filter(Boolean).forEach((material) => {
+          ownedMaterials.add(material);
+          ["map", "normalMap", "roughnessMap", "metalnessMap", "emissiveMap"].forEach((key) => {
+            if (material[key]) ownedTextures.add(material[key]);
+          });
+          if ("roughness" in material) material.roughness = Math.max(.72, Number(material.roughness) || 0);
+          if ("metalness" in material) material.metalness = Math.min(.04, Number(material.metalness) || 0);
+        });
+      });
+      const initialBox = new THREE.Box3().setFromObject(model);
+      const size = initialBox.getSize(new THREE.Vector3());
+      const center = initialBox.getCenter(new THREE.Vector3());
+      const scale = profile.desiredHeight / Math.max(.01, size.y);
+      model.scale.setScalar(scale);
+      model.position.set(-center.x * scale, -initialBox.min.y * scale, -center.z * scale);
+
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: quality === "high", powerPreference: "low-power" });
+      renderer.setPixelRatio(quality === "high" ? Math.min(1.5, Math.max(1, Number(global.devicePixelRatio) || 1)) : 1);
+      renderer.setClearColor(0x000000, 0);
+      if ("outputColorSpace" in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
+      if (THREE.ACESFilmicToneMapping) renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.08;
+
+      const scene3d = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(32, 1, .1, 20);
+      camera.position.set(0, .15, 5);
+      camera.lookAt(0, -.2, 0);
+      scene3d.add(new THREE.HemisphereLight(0xfff5df, 0x26364c, 2.35));
+      const keyLight = new THREE.DirectionalLight(0xffd4aa, 2.6);
+      keyLight.position.set(-3, 5, 4);
+      scene3d.add(keyLight);
+      const rimLight = new THREE.DirectionalLight(0x9bdcff, 1.35);
+      rimLight.position.set(4, 2, -2);
+      scene3d.add(rimLight);
+
+      const anchor = new THREE.Group();
+      const pose = new THREE.Group();
+      pose.add(model);
+      anchor.add(pose);
+      const shadowGeometry = new THREE.CircleGeometry(.68, 40);
+      const shadowMaterial = new THREE.MeshBasicMaterial({ color: 0x020509, transparent: true, opacity: .28, depthWrite: false });
+      const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
+      shadow.rotation.x = -Math.PI / 2;
+      shadow.position.y = .012;
+      anchor.add(shadow);
+      ownedGeometries.add(shadowGeometry);
+      ownedMaterials.add(shadowMaterial);
+      scene3d.add(anchor);
+
+      const mixer = new THREE.AnimationMixer(model);
+      const clip = gltf.animations.find((item) => item.name === profile.idleClip) || gltf.animations[0];
+      const action = clip ? mixer.clipAction(clip) : null;
+      action?.play?.();
+      const catLegNames = ["L_BLeg_Upper", "L_BLeg_Lower", "L_Leg_Upper", "L_Leg_Lower", "R_BLeg_Upper", "R_BLeg_Lower", "R_Leg_Upper", "R_Leg_Lower"];
+      const catLegs = kind === "cat" ? catLegNames.map((name) => model.getObjectByName(name)).filter(Boolean) : [];
+      const baseLegRotations = new Map(catLegs.map((bone) => [bone, bone.quaternion.clone()]));
+      const runtime = {
+        renderer, mixer, action, clip, model, pose, anchor, shadow, camera, scene3d, stage, canvas,
+        observer: null, frame: 0, contextLost: null, ownedGeometries, ownedMaterials, ownedTextures,
+        currentX: profile.restingX, restingX: profile.restingX, travelHalf: 1.72, viewScale: 1,
+        restBlend: 1, yaw: profile.facing, lastRender: 0,
+        startedAt: global.performance?.now?.() || Date.now(), catLegs, baseLegRotations, kind
+      };
+      instance.petDepth = runtime;
+      const resize = () => {
+        const rect = stage.getBoundingClientRect();
+        const width = Math.max(1, Math.round(rect.width));
+        const height = Math.max(1, Math.round(rect.height));
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        const verticalHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov * .5)) * camera.position.z;
+        const horizontalHalf = verticalHalf * camera.aspect;
+        runtime.viewScale = clamp(camera.aspect * 1.5, .48, 1, 1);
+        runtime.travelHalf = Math.max(.12, horizontalHalf - .48 * runtime.viewScale);
+        const direction = Math.sign(profile.restingX) || -1;
+        runtime.restingX = direction * Math.min(Math.abs(profile.restingX), runtime.travelHalf * .7);
+        runtime.currentX = clamp(runtime.currentX, -runtime.travelHalf, runtime.travelHalf, runtime.restingX);
+        anchor.scale.setScalar(runtime.viewScale);
+      };
+      runtime.contextLost = (event) => { event.preventDefault?.(); teardownPetDepth(instance); };
+      canvas.addEventListener("webglcontextlost", runtime.contextLost);
+      if (global.ResizeObserver) {
+        runtime.observer = new global.ResizeObserver(resize);
+        runtime.observer.observe(stage);
+      }
+      resize();
+      canvas.hidden = false;
+      app.dataset.petDepth = "model";
+      const targetFps = quality === "high" ? 30 : 24;
+      const loop = (time) => {
+        if (instance.petDepth !== runtime || global.document?.hidden || !motionEnabled(instance) || effectiveQuality(instance) === "eco") return;
+        runtime.frame = global.requestAnimationFrame(loop);
+        if (time - runtime.lastRender < 1000 / targetFps) return;
+        const delta = Math.min(.08, Math.max(.001, (time - (runtime.lastRender || time - 16)) / 1000));
+        runtime.lastRender = time;
+        const elapsed = Math.max(0, (time - runtime.startedAt) / 1000);
+        const mode = petBehaviorMode(instance, elapsed);
+        const walkPhase = (elapsed * .115) % 1;
+        const movingRight = walkPhase < .5;
+        const travel = movingRight ? walkPhase * 2 : (1 - walkPhase) * 2;
+        const targetX = mode === "walk" ? -runtime.travelHalf + travel * runtime.travelHalf * 2 : runtime.restingX;
+        runtime.currentX = dampValue(runtime.currentX, targetX, mode === "walk" ? 4.8 : 2.2, delta);
+        runtime.restBlend = dampValue(runtime.restBlend, mode === "rest" ? 1 : 0, 2.4, delta);
+        const targetYaw = mode === "walk" ? (movingRight ? -Math.PI / 2 : Math.PI / 2) : profile.facing;
+        runtime.yaw = dampValue(runtime.yaw, targetYaw, 5.5, delta);
+        anchor.position.set(runtime.currentX, -1.14 - runtime.restBlend * .08 + Math.sin(elapsed * 2.1) * .006, 0);
+        anchor.rotation.y = runtime.yaw;
+        pose.scale.set(1, 1 - runtime.restBlend * (kind === "dog" ? .28 : .2), 1.04 + runtime.restBlend * .08);
+        pose.rotation.z = kind === "cat" ? runtime.restBlend * -.07 : runtime.restBlend * .035;
+        shadow.scale.set(1 + runtime.restBlend * .2, 1 + runtime.restBlend * .2, 1);
+        shadow.material.opacity = .2 + runtime.restBlend * .1;
+
+        if (kind === "dog" && clip) {
+          const clipEnd = Math.max(.1, clip.duration);
+          const segment = mode === "walk" ? DOG_CLIP.walk : mode === "rest" ? DOG_CLIP.rest : DOG_CLIP.idle;
+          const segmentStart = segment.from / DOG_CLIP.fps;
+          const segmentDuration = Math.max(1 / DOG_CLIP.fps, (segment.to - segment.from) / DOG_CLIP.fps);
+          const sample = mode === "walk"
+            ? segmentStart + ((elapsed * .92) % segmentDuration)
+            : mode === "rest"
+              ? segment.to / DOG_CLIP.fps
+              : segmentStart + ((elapsed * .52) % segmentDuration);
+          action.paused = false;
+          mixer.setTime(Math.max(0, Math.min(clipEnd - .001, sample)));
+        } else {
+          mixer.update(delta);
+          runtime.catLegs.forEach((bone) => {
+            const baseRotation = runtime.baseLegRotations.get(bone);
+            if (baseRotation) bone.quaternion.copy(baseRotation);
+          });
+          if (mode === "walk") {
+            const gait = elapsed * 7.2;
+            runtime.catLegs.forEach((bone, index) => {
+              const side = [0, 3, 5, 6].includes(index) ? 0 : Math.PI;
+              bone.rotation.x += Math.sin(gait + side) * (index % 2 ? .28 : .42);
+            });
+            pose.position.y = Math.abs(Math.sin(gait)) * .018;
+          } else pose.position.y = Math.sin(elapsed * 1.55) * .007;
+        }
+        renderer.render(scene3d, camera);
+      };
+      runtime.frame = global.requestAnimationFrame(loop);
+    } catch {
+      if (generation === instance.petDepthGeneration) {
+        canvas.hidden = true;
+        if (app) app.dataset.petDepth = "fallback";
+      }
+    }
+  }
+
   async function setupPetDepth(instance, selected) {
+    const kind = currentPetKind(instance, selected);
+    if (kind) return setupPetModel(instance, selected, kind);
+    return setupPetDepthPortrait(instance, selected);
+  }
+
+  async function setupPetDepthPortrait(instance, selected) {
     const profile = PET_DEPTH_PROFILES[selected.effect];
     const app = instance.root.querySelector?.("[data-hfr-root]");
     const stage = instance.root.querySelector?.(".hfr-stage");
@@ -2754,9 +3080,26 @@
       instance.state.planning.distractions = instance.state.planning.distractions.filter((entry) => entry.id !== targetId);
       writeState(instance); render(instance); return;
     }
-    if (action === "favorites-only") { instance.ui.favoritesOnly = !instance.ui.favoritesOnly; render(instance); return; }
+    if (action === "favorites-only") { instance.ui.favoritesOnly = !instance.ui.favoritesOnly; instance.ui.sceneLimit = 24; render(instance); return; }
     if (action === "scene-view") { instance.ui.sceneView = instance.ui.sceneView === "grid" ? "list" : "grid"; render(instance); return; }
-    if (action === "scene-category") { instance.ui.category = target.dataset.value || "all"; render(instance); return; }
+    if (action === "scene-category") { instance.ui.category = target.dataset.value || "all"; instance.ui.sceneLimit = 24; render(instance); return; }
+    if (action === "scene-more") { instance.ui.sceneLimit = Math.min(SCENES.length + instance.state.scenes.custom.length, instance.ui.sceneLimit + 24); render(instance); return; }
+    if (action === "pet-companion") {
+      const preference = cleanText(target.dataset.value, 12);
+      if (!["scene", "none", "cat", "dog"].includes(preference)) return;
+      instance.state.settings.companion = preference;
+      writeState(instance); render(instance);
+      announce(instance, preference === "none" ? "Đã tắt bạn đồng hành 3D." : "Đã cập nhật bạn đồng hành 3D.");
+      return;
+    }
+    if (action === "pet-mode") {
+      const mode = cleanText(target.dataset.value, 12);
+      if (!["auto", "rest", "walk"].includes(mode)) return;
+      instance.state.settings.petMode = mode;
+      writeState(instance); render(instance);
+      announce(instance, mode === "auto" ? "Bạn nhỏ sẽ tự nhiên đi dạo rồi nằm nghỉ." : mode === "rest" ? "Bạn nhỏ đang nằm nghỉ." : "Bạn nhỏ đang đi dạo nhẹ nhàng.");
+      return;
+    }
     if (action === "select-scene") { applyScene(instance, targetId); return; }
     if (action === "favorite-scene") {
       instance.state.scenes.favorites = toggleListValue(instance.state.scenes.favorites, targetId);
@@ -2890,6 +3233,7 @@
   function handleInput(instance, event) {
     if (event.target.matches("[data-hfr-scene-search]")) {
       instance.ui.search = cleanText(event.target.value, 100);
+      instance.ui.sceneLimit = 24;
       global.clearTimeout(instance.searchTimer);
       instance.searchTimer = global.setTimeout(() => {
         render(instance);
@@ -3028,6 +3372,8 @@
       const data = new FormData(form);
       const settings = instance.state.settings;
       settings.quality = ["eco", "balanced", "high"].includes(data.get("quality")) ? data.get("quality") : "balanced";
+      settings.companion = ["scene", "none", "cat", "dog"].includes(data.get("companion")) ? data.get("companion") : "scene";
+      settings.petMode = ["auto", "rest", "walk"].includes(data.get("petMode")) ? data.get("petMode") : "auto";
       ["motion", "reducedMotion", "dataSaver", "autoStartBreak", "autoStartFocus", "sceneOnBreak"].forEach((name) => { settings[name] = data.get(name) === "on"; });
       settings.restScene = SCENES.some((item) => item.id === data.get("restScene")) ? data.get("restScene") : "ocean-sunset";
       writeState(instance); render(instance); announce(instance, "Đã lưu cài đặt.");
@@ -3102,7 +3448,7 @@
     const storageKey = `${STATE_PREFIX}${owner}`;
     const instance = {
       root, options, owner, storageKey, isGuest: options.currentUser?.guest === true || owner === "guest", state: readState(storageKey, options),
-      ui: { panel: "", search: "", category: "all", favoritesOnly: false, sceneView: "grid", zen: false, editTaskId: "" },
+      ui: { panel: "", search: "", category: "all", favoritesOnly: false, sceneView: "grid", sceneLimit: 24, zen: false, editTaskId: "" },
       sharedRoom: {
         status: "idle", message: "", code: "", name: "", selfId: "", role: "", members: [], revision: 0,
         syncScene: true, syncTimer: true, syncAudio: false, lastState: null, personalSnapshot: null,

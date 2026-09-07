@@ -152,7 +152,7 @@ body.app-focus-study-route .app-main {
   object-fit: cover;
   object-position: var(--hfr-scene-position, center);
   transform: scale(1.045) translate3d(calc(var(--hfr-x) * -13px), calc(var(--hfr-y) * -10px), 0);
-  filter: saturate(1.04) contrast(1.03);
+  filter: var(--hfr-scene-grade, saturate(1.04) contrast(1.03));
   transition: opacity 420ms ease, filter 300ms ease;
   animation: hfr-scene-enter 480ms ease-out both, hfr-camera-breathe 18s ease-in-out infinite alternate;
 }
@@ -474,7 +474,7 @@ body.app-focus-study-route .app-main {
   mask-image: radial-gradient(ellipse 14% 11% at var(--hfr-pet-x) var(--hfr-pet-y), #000 22%, rgb(0 0 0 / 72%) 48%, transparent 78%);
   transform: scale(1.045);
   transform-origin: var(--hfr-pet-x) var(--hfr-pet-y);
-  filter: saturate(1.04) contrast(1.03);
+  filter: var(--hfr-scene-grade, saturate(1.04) contrast(1.03));
   animation: hfr-pet-breathe 4.8s ease-in-out infinite;
 }
 
@@ -982,6 +982,73 @@ body.app-focus-study-route .app-main {
   background: color-mix(in srgb, var(--hfr-accent) 18%, rgb(9 18 30 / 90%));
 }
 
+.hfr-companion-controls {
+  display: grid;
+  gap: 9px;
+  margin: 2px 0 12px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--hfr-accent) 38%, var(--hfr-line));
+  border-radius: 15px;
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--hfr-accent) 16%, transparent), transparent 45%),
+    rgb(5 13 23 / 76%);
+  box-shadow: inset 0 1px rgb(255 255 255 / 7%);
+}
+
+.hfr-companion-controls > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.hfr-companion-controls > div:first-child > span {
+  color: color-mix(in srgb, var(--hfr-accent) 74%, white 18%);
+  font-size: .59rem;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.hfr-companion-controls > div:first-child > strong {
+  font-size: .88rem;
+}
+
+.hfr-companion-controls small,
+.hfr-companion-controls > p {
+  margin: 0;
+  color: var(--hfr-muted);
+  font-size: .64rem;
+  line-height: 1.5;
+}
+
+.hfr-companion-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.hfr-companion-row + .hfr-companion-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+[data-hfr-root] .hfr-companion-row button {
+  min-width: 0;
+  min-height: 38px;
+  padding: 5px 8px;
+  color: var(--hfr-muted);
+  font-size: .68rem;
+}
+
+[data-hfr-root] .hfr-companion-row button[aria-pressed="true"] {
+  color: #fff;
+  border-color: color-mix(in srgb, var(--hfr-accent) 65%, white 10%);
+  background: color-mix(in srgb, var(--hfr-accent) 20%, rgb(7 16 28 / 92%));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--hfr-accent) 13%, transparent);
+}
+
+[data-hfr-root] .hfr-companion-row button:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+
 .hfr-scene-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1101,6 +1168,20 @@ body.app-focus-study-route .app-main {
 .hfr-scene-grid--list .hfr-scene-preview {
   height: 100%;
   min-height: 92px;
+}
+
+[data-hfr-root] .hfr-load-more {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 10px;
+  color: #fff;
+  border-color: color-mix(in srgb, var(--hfr-accent) 48%, var(--hfr-line));
+  background: color-mix(in srgb, var(--hfr-accent) 12%, rgb(5 14 25 / 88%));
+}
+
+[data-hfr-root] .hfr-load-more:hover {
+  border-color: color-mix(in srgb, var(--hfr-accent) 78%, white 8%);
+  background: color-mix(in srgb, var(--hfr-accent) 20%, rgb(5 14 25 / 90%));
 }
 
 .hfr-upload {
@@ -2968,6 +3049,29 @@ body.app-focus-study-route .app-main {
     padding-left: 9px;
   }
 
+  .hfr-app[data-pet-companion="dog"] .hfr-focus-center {
+    justify-items: end;
+    padding-right: 9px;
+    padding-left: clamp(70px, 24vw, 88px);
+  }
+
+  .hfr-app[data-pet-companion="cat"] .hfr-focus-center {
+    justify-items: start;
+    padding-right: clamp(70px, 24vw, 88px);
+    padding-left: 9px;
+  }
+
+  .hfr-app[data-pet-companion="cat"] .hfr-clock-card,
+  .hfr-app[data-pet-companion="dog"] .hfr-clock-card {
+    width: 100%;
+    padding-inline: 12px;
+  }
+
+  .hfr-app[data-pet-companion="cat"] .hfr-clock,
+  .hfr-app[data-pet-companion="dog"] .hfr-clock {
+    font-size: clamp(3.1rem, 16vw, 4.4rem);
+  }
+
   .hfr-stage[data-hfr-effect^="pet-"] .hfr-clock-card {
     padding-inline: 14px;
   }
@@ -2998,6 +3102,16 @@ body.app-focus-study-route .app-main {
 
   .hfr-scene-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hfr-companion-row,
+  .hfr-companion-row + .hfr-companion-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-hfr-root] .hfr-companion-row button {
+    min-height: 44px;
+    font-size: .74rem;
   }
 
   .hfr-scene-preview {

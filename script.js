@@ -7605,7 +7605,7 @@ function initAppShell() {
       });
       else mountSimpleView("Nhạc", "Đang tải thư viện nhạc có giấy phép mở...", "");
     } else if (route === "/focus-room") {
-      updatePageHeader("Phòng học tập trung", "Trung tâm Deep Focus với mục tiêu ngày, nghi thức một chạm, nhật ký xao nhãng, 26 scene nguyên bản, 16 âm môi trường, Pomodoro và dữ liệu học thật.", route);
+      updatePageHeader("Phòng học tập trung", "Trung tâm Deep Focus với 226 không gian (26 cảnh gốc + Atlas 200), bạn đồng hành 3D, 16 âm môi trường, Pomodoro và dữ liệu học thật.", route);
       pageActions.innerHTML = '<button type="button" data-focus-room-panel="plan">Kế hoạch</button><button type="button" data-focus-room-panel="scenes">Đổi không gian</button><button class="app-primary-action" type="button" data-focus-room-zen>Zen mode</button>';
       workspace.innerHTML = '<div data-hh-focus-room-host></div>';
       const focusRoomHost = workspace.firstElementChild;
