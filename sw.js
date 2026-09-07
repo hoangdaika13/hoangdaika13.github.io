@@ -1,4 +1,7 @@
-const CACHE = "hh-identity-portal-v990";
+const CACHE = "hh-identity-portal-v991";
+// Immersive Focus Room upgrades the existing Platform workspace with original local scenes,
+// procedural Web Audio, migrated account data, wall-clock Pomodoro and responsive Zen mode.
+// Previous release: hh-identity-portal-v990.
 // Shared layout stability release: keep Platform children in a vertical flow after Galaxy assets load.
 // Previous release: hh-identity-portal-v989.
 // Shared layout lifecycle release: route-specific viewport locks are released before another workspace loads.
@@ -364,6 +367,32 @@ const RUNTIME_ASSETS = [
   "./galaxy-planet-hubs.css?v=1",
   "./galaxy-planet-hubs.js?v=2",
   "./assets/galaxy/hh-ambient-room-rainy-v1.png?v=1",
+  "./focus-room.css?v=1",
+  "./focus-room.js?v=1",
+  "./assets/focus-room/rainy-window.webp",
+  "./assets/focus-room/library-night.webp",
+  "./assets/focus-room/snow-cabin.webp",
+  "./assets/focus-room/japanese-kissaten.webp",
+  "./assets/focus-room/hanoi-rain-cafe.webp",
+  "./assets/focus-room/ocean-sunset.webp",
+  "./assets/focus-room/fireside-cottage.webp",
+  "./assets/focus-room/forest-morning.webp",
+  "./assets/focus-room/cyber-city.webp",
+  "./assets/focus-room/orbital-desk.webp",
+  "./assets/focus-room/minimal-dark.webp",
+  "./assets/focus-room/twilight-garden.webp",
+  "./assets/focus-room/thumbs/rainy-window.webp",
+  "./assets/focus-room/thumbs/library-night.webp",
+  "./assets/focus-room/thumbs/snow-cabin.webp",
+  "./assets/focus-room/thumbs/japanese-kissaten.webp",
+  "./assets/focus-room/thumbs/hanoi-rain-cafe.webp",
+  "./assets/focus-room/thumbs/ocean-sunset.webp",
+  "./assets/focus-room/thumbs/fireside-cottage.webp",
+  "./assets/focus-room/thumbs/forest-morning.webp",
+  "./assets/focus-room/thumbs/cyber-city.webp",
+  "./assets/focus-room/thumbs/orbital-desk.webp",
+  "./assets/focus-room/thumbs/minimal-dark.webp",
+  "./assets/focus-room/thumbs/twilight-garden.webp",
   "./galaxy-favicon-controller.js?v=2",
   "./assets/brand/hh-galaxy-star-static.svg?v=2",
   "./assets/brand/hh-galaxy-star.svg?v=1",
@@ -663,10 +692,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=653",
-  "./auth-platform.js?v=19",
+  "./performance-loader.js?v=654",
+  "./auth-platform.js?v=20",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=273"
+  "./script.js?v=274"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

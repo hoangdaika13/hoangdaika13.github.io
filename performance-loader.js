@@ -249,8 +249,8 @@
       ]
     },
     "focus-study-room": {
-      styles: ["focus-study-room.css?v=2"],
-      scripts: ["focus-study-room.js?v=1"]
+      styles: ["focus-room.css?v=1"],
+      scripts: ["focus-room.js?v=1"]
     },
     // Compatibility asset markers: english-learning-os.css?v=3 · english-learning-os.js?v=7 · english-learning.js?v=28 · english-vocabulary.css?v=1 · english-vocabulary.js?v=2
     english: {
