@@ -6,7 +6,7 @@
 - Owner: the **Học tập & Ngôn ngữ** section inside the existing HH Platform shell.
 - The workspace does not replace or remount the global header, sidebar or breadcrumb.
 - `/music/ambient` remains available as a compatibility workspace. A first-run Focus Room profile can read its old scene, mix and timer preferences without rewriting the legacy key.
-- Shared rooms are intentionally marked **Chưa cấu hình**. The repository has no verified Focus Room-specific synchronization service, so no room, member or online count is fabricated.
+- Shared rooms use the authenticated `focus-room` service in the repository's persistent Socket.IO server. Rooms are private by unlisted code, memory-only and capped at sixteen verified sockets; no room, member or online count is fabricated.
 
 ## Real capabilities
 
@@ -22,6 +22,15 @@
 - 25/5, 45/15, 50/10 and 90/20 cycles plus bounded custom durations.
 - Wall-clock timer based on `endsAt`, cross-tab storage reconciliation and an idempotent completion lock.
 - Account-scoped tasks with inline editing/reordering, primary task, navigation-safe autosaved notes, completed-session history, real goal completion ratio and JSON import/export.
+- A real Deep Focus command center with a daily minute goal, per-session intention, actual seven-day chart and streak derived only from completed local sessions.
+- Three built-in one-tap rituals and up to twelve account-scoped custom rituals. A ritual captures the current scene, complete ambient mix, master/music settings and Pomodoro cycle, but deliberately never autoplays audio.
+- An account-scoped distraction log records the real timestamp, current session and selected task without pausing the timer. Completed history snapshots the session intention and matching distraction count.
+- Completed focus sessions can be exported as UTF-8 CSV in addition to the versioned JSON backup.
+- Opt-in Screen Wake Lock keeps the display awake where supported, releases when the tab is hidden or workspace closes, and truthfully reports unsupported/denied states.
+- A real shared-room panel can create a private room, join by code or invitation link, copy invitations, show server-confirmed members, transfer host control after a host leaves, recover after a connection interruption and explicitly leave.
+- Only the host can publish scene, Pomodoro and ambient-mix state. Each participant can independently disable scene, timer or audio-mix synchronization; audio never starts because of a remote event.
+- Private tasks, notes, goals, history, custom files and account identifiers are excluded from realtime payloads. The personal scene, timer and ambient mix are snapshotted before joining and restored on leave, while private edits made during the room remain saved.
+- Keyboard access includes Alt+Space for the timer, Alt+1–9 for tool panels, Alt+Z for Zen and Escape to close the active panel; form fields are never intercepted.
 - Zen/fullscreen layout, explicit motion pause, three quality levels, data saver and reduced-motion support.
 - Account-scoped free layout on sufficiently large workspaces: the scene title, clock and tool dock can be moved with pointer drag or keyboard arrows, locked, reset and restored after reload.
 - Zoom-safe measured reflow: browser zoom, Platform sidebar resizing and narrow devices automatically suspend free positioning and use a single-flow compact layout without deleting the user's saved coordinates.
@@ -34,11 +43,15 @@
 | --- | --- |
 | Settings, timer, mixes, tasks, note, history, scene metadata | `hh.focus-room.v2.<account-fingerprint>` in localStorage |
 | Selected music, music volume and loop preference | Nested in the same account-scoped `audio.music` record; playback state is deliberately not persisted |
+| Daily goal, session intention, saved rituals and distraction log | Nested in the account-scoped `planning` record under the same versioned key |
 | Custom image bytes | `hh-focus-room-media-v1/scenes` in IndexedDB, keyed by account fingerprint and scene ID |
 | Multi-tab completion lock | `hh.focus-room.v2.lock.<account-fingerprint>.<session-id>` |
 | Legacy read-only sources | `hh.focus.study-room.v1:<owner>` and `hh.galaxy.domain-views.v1` |
+| Shared room state | Memory-only on the Socket.IO host; allowlisted scene ID, bounded Pomodoro state, bounded ambient levels and server-confirmed member identities only |
 
 The account fingerprint is a one-way FNV-style browser hash of the available account identifier. Raw email addresses are not placed in storage keys. Guest data uses its own `guest` namespace.
+
+Shared rooms require a signed-in account and the production `HH_SOCKET_URL`. The Node server and frontend authentication API must use the same `JWT_SECRET`, `MONGODB_URI` and `MONGODB_DB`. Room discovery is disabled. A room disappears when its last socket leaves or when the realtime service restarts; this is reported as a real limitation rather than hidden behind simulated persistence.
 
 ## Research and licensing
 
@@ -71,6 +84,13 @@ Two additional local channels provide a very quiet synthesized cat purr and slee
 - Start audio only from a click, adjust every channel and close the workspace; confirm `hh:media-playback` becomes false.
 - Select each music track, play/pause, seek the file tracks, change music/master volume and loop, hide/show the tab, then close the workspace. Confirm there is no autoplay and every media/audio runtime is released.
 - Start, pause, resume, skip and reset the timer; reload while running and verify remaining time derives from `endsAt`.
+- Set a daily goal and intention, apply every built-in ritual, save/load/delete a custom ritual, reload and verify it restores without autoplay.
+- Log each distraction type during a running focus session, finish a short test session and verify its intention/distraction count in history and CSV export.
+- Enable Screen Wake Lock on a supported browser, hide/show the tab, then leave the route; verify the lock is reacquired only while visible and released on exit.
+- Verify Alt+Space, Alt+1–9, Alt+Z and Escape while ensuring shortcuts do not fire inside inputs, textareas or selects.
+- With two signed-in browser profiles, create a shared room in the first, join by code in the second and verify the member list is sourced from Socket.IO. Change scene and start/pause/skip/reset Pomodoro as host; verify the second profile follows only while its local sync toggles are enabled.
+- Enable ambient-mix sync in the second profile and verify levels follow without starting audio. Disable it and verify the local mix returns. Confirm tasks, notes, goals, history and custom images never appear in Socket.IO payloads.
+- Disconnect/reconnect one profile, leave the host profile to verify host transfer, then leave the room. Confirm each profile restores its personal scene/timer/mix and retains private changes.
 - Create, reorder, complete, select and delete a task. Enter a note, leave the route and verify both restore for the same account only.
 - Complete a short custom test cycle and verify the history is added exactly once across multiple tabs.
 - Upload a JPG/PNG/WebP scene, reload, then delete it and verify its IndexedDB record is removed.

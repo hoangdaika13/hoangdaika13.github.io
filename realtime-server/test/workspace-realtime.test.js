@@ -93,6 +93,58 @@ test("workspace realtime authenticates, bounds room events and protects team res
   const bounded = await emitAck(peer, "workspace:room:event", { service: "music-jam", type: "param:update", data: { jam: { bpm: 999, density: -30, instrument: "invalid" } } });
   assert.deepEqual(bounded.data.jam, { density: 0, bpm: 200 });
 
+  const focusCreated = await emitAck(host, "workspace:room:create", {
+    service: "focus-room",
+    name: "Cùng học buổi tối",
+    state: {
+      sceneId: "library-night",
+      timer: { phase: "focus", focusMinutes: 50, breakMinutes: 10, cycles: 4, cycle: 1, duration: 3000, remaining: 2940, running: true },
+      audio: { master: 0.42, mix: { rain: 0.3, brown: 0.2, unknown: 1 } },
+      tasks: [{ title: "Không được truyền" }],
+      note: "Dữ liệu riêng"
+    }
+  });
+  assert.equal(focusCreated.ok, true);
+  assert.deepEqual(Object.keys(focusCreated.room.state).sort(), ["audio", "sceneId", "timer", "updatedAt"]);
+  assert.equal(focusCreated.room.state.sceneId, "library-night");
+  assert.equal(focusCreated.room.state.timer.focusMinutes, 50);
+  assert.equal(focusCreated.room.state.audio.mix.unknown, undefined);
+  assert.equal(focusCreated.room.state.note, undefined);
+  assert.equal(focusCreated.room.state.tasks, undefined);
+
+  const focusJoined = await emitAck(peer, "workspace:room:join", { service: "focus-room", code: focusCreated.room.code });
+  assert.equal(focusJoined.ok, true);
+  const deniedFocusScene = await emitAck(peer, "workspace:room:event", { service: "focus-room", type: "scene:set", data: { sceneId: "ocean-sunset" } });
+  assert.equal(deniedFocusScene.code, "HOST_REQUIRED");
+  const deniedFocusState = await emitAck(peer, "workspace:room:state", { service: "focus-room", state: { sceneId: "ocean-sunset" } });
+  assert.equal(deniedFocusState.code, "HOST_REQUIRED");
+
+  const focusStatePromise = waitFor(peer, "workspace:room:state", (payload) => payload.service === "focus-room" && payload.state.sceneId === "ocean-sunset");
+  const focusStateAck = await emitAck(host, "workspace:room:state", {
+    service: "focus-room",
+    state: {
+      sceneId: "OCEAN-SUNSET",
+      timer: { phase: "break", focusMinutes: 45, breakMinutes: 15, cycles: 3, cycle: 2, duration: 900, remaining: 600, running: false },
+      audio: { master: 3, mix: { ocean: -1, pink: 0.15 } },
+      history: [{ duration: 999 }]
+    }
+  });
+  assert.equal(focusStateAck.ok, true);
+  const focusState = await focusStatePromise;
+  assert.equal(focusState.state.sceneId, "ocean-sunset");
+  assert.equal(focusState.state.timer.phase, "break");
+  assert.equal(focusState.state.timer.remaining, 600);
+  assert.equal(focusState.state.audio.master, 1);
+  assert.equal(focusState.state.audio.mix.ocean, 0);
+  assert.equal(focusState.state.history, undefined);
+
+  const transferPromise = waitFor(peer, "workspace:room:presence", (payload) => payload.service === "focus-room" && payload.members.some((member) => member.role === "host"));
+  await emitAck(host, "workspace:room:leave", { service: "focus-room" });
+  const transferred = await transferPromise;
+  assert.equal(transferred.members.find((member) => member.role === "host")?.id, focusJoined.self.id);
+  const transferredHostUpdate = await emitAck(peer, "workspace:room:state", { service: "focus-room", state: focusState.state });
+  assert.equal(transferredHostUpdate.ok, true);
+
   assert.equal((await emitAck(host, "workspace:resource:join", { service: "team-board", resourceId: "board-1" })).ok, true);
   assert.equal((await emitAck(peer, "workspace:resource:join", { service: "team-board", resourceId: "board-1" })).ok, true);
   const invalidationPromise = waitFor(peer, "workspace:resource:event", (payload) => payload.resourceId === "board-1");
@@ -102,4 +154,5 @@ test("workspace realtime authenticates, bounds room events and protects team res
   const deniedResource = await emitAck(peer, "workspace:resource:join", { service: "team-board", resourceId: "private-board" });
   assert.equal(deniedResource.code, "ACCESS_DENIED");
   assert.equal(registry.capabilities.roomDiscovery, "disabled");
+  assert.ok(registry.capabilities.services.includes("focus-room"));
 });

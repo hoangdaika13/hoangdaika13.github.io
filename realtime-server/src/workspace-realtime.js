@@ -17,6 +17,11 @@ const SERVICE_RULES = Object.freeze({
     events: new Set(["param:update", "transport:set", "note:trigger"]),
     hostOnly: new Set(["transport:set"])
   }),
+  "focus-room": Object.freeze({
+    maxMembers: 16,
+    events: new Set(["scene:set", "timer:set", "audio:set"]),
+    hostOnly: new Set(["scene:set", "timer:set", "audio:set"])
+  }),
   "creative-review": Object.freeze({
     maxMembers: 24,
     events: new Set(["chat", "cursor", "lock", "unlock", "change", "decision", "review"]),
@@ -56,6 +61,77 @@ const publicIdentity = (socket, role = "member") => ({
   avatar: clean(socket.user?.avatar, 500),
   role
 });
+
+const FOCUS_SCENE_ID = /^[a-z0-9][a-z0-9-]{0,79}$/;
+const FOCUS_AUDIO_CHANNELS = new Set([
+  "rain", "heavy-rain", "thunder", "wind", "fire", "cafe", "keyboard", "pages",
+  "birds", "ocean", "stream", "white", "brown", "pink", "purr", "pet-breath"
+]);
+const boundedInteger = (value, fallback, minimum, maximum) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(Math.max(minimum, Math.min(maximum, number))) : fallback;
+};
+const boundedLevel = (value, fallback = 0) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.min(1, number)) : fallback;
+};
+
+function normalizeFocusTimer(value = {}, previous = {}) {
+  const source = value && typeof value === "object" ? value : {};
+  const current = previous && typeof previous === "object" ? previous : {};
+  const phase = ["focus", "break", "long-break"].includes(source.phase)
+    ? source.phase
+    : (["focus", "break", "long-break"].includes(current.phase) ? current.phase : "focus");
+  const focusMinutes = boundedInteger(source.focusMinutes, boundedInteger(current.focusMinutes, 25, 1, 180), 1, 180);
+  const breakMinutes = boundedInteger(source.breakMinutes, boundedInteger(current.breakMinutes, 5, 1, 60), 1, 60);
+  const longBreakMinutes = boundedInteger(source.longBreakMinutes, boundedInteger(current.longBreakMinutes, 15, 1, 90), 1, 90);
+  const cycles = boundedInteger(source.cycles, boundedInteger(current.cycles, 4, 1, 20), 1, 20);
+  const cycle = boundedInteger(source.cycle, boundedInteger(current.cycle, 1, 1, cycles), 1, cycles);
+  const defaultDuration = (phase === "focus" ? focusMinutes : phase === "long-break" ? longBreakMinutes : breakMinutes) * 60;
+  const duration = boundedInteger(source.duration, boundedInteger(current.duration, defaultDuration, 1, 10_800), 1, 10_800);
+  const remaining = boundedInteger(source.remaining, boundedInteger(current.remaining, duration, 0, duration), 0, duration);
+  const running = source.running === true && remaining > 0;
+  const now = Date.now();
+  const elapsed = Math.max(0, duration - remaining);
+  return {
+    phase,
+    focusMinutes,
+    breakMinutes,
+    longBreakMinutes,
+    cycles,
+    cycle,
+    running,
+    duration,
+    remaining,
+    endsAt: running ? now + remaining * 1000 : 0,
+    startedAt: running ? now - elapsed * 1000 : 0
+  };
+}
+
+function normalizeFocusAudio(value = {}, previous = {}) {
+  const source = value && typeof value === "object" ? value : {};
+  const current = previous && typeof previous === "object" ? previous : {};
+  const incomingMix = source.mix && typeof source.mix === "object" ? source.mix : {};
+  const currentMix = current.mix && typeof current.mix === "object" ? current.mix : {};
+  const mix = {};
+  FOCUS_AUDIO_CHANNELS.forEach((channel) => {
+    mix[channel] = boundedLevel(incomingMix[channel], boundedLevel(currentMix[channel], 0));
+  });
+  return { master: boundedLevel(source.master, boundedLevel(current.master, 0.5)), mix };
+}
+
+function normalizeFocusState(value = {}, previous = {}) {
+  const source = value && typeof value === "object" ? value : {};
+  const current = previous && typeof previous === "object" ? previous : {};
+  const requestedScene = clean(source.sceneId, 80).toLowerCase();
+  const currentScene = clean(current.sceneId, 80).toLowerCase();
+  return {
+    sceneId: FOCUS_SCENE_ID.test(requestedScene) ? requestedScene : (FOCUS_SCENE_ID.test(currentScene) ? currentScene : "rainy-window"),
+    timer: normalizeFocusTimer(source.timer, current.timer),
+    audio: normalizeFocusAudio(source.audio, current.audio),
+    updatedAt: new Date().toISOString()
+  };
+}
 
 function registerWorkspaceRealtime({ io, verifyResourceAccess, maxRooms = 500 } = {}) {
   if (!io || typeof io.on !== "function") throw new Error("Workspace realtime requires a Socket.IO server.");
@@ -158,6 +234,11 @@ function registerWorkspaceRealtime({ io, verifyResourceAccess, maxRooms = 500 } 
       if (type === "param:update") room.state.jam = { ...(room.state.jam || {}), ...(data.jam || {}) };
       if (type === "transport:set") room.state.transport = { playing: data.playing === true, startedAt: Number(data.startedAt) || Date.now(), step: Math.max(0, Math.min(1_000_000, Number(data.step) || 0)) };
     }
+    if (room.service === "focus-room") {
+      if (type === "scene:set") room.state = normalizeFocusState({ ...room.state, sceneId: data.sceneId }, room.state);
+      if (type === "timer:set") room.state = normalizeFocusState({ ...room.state, timer: data.timer }, room.state);
+      if (type === "audio:set") room.state = normalizeFocusState({ ...room.state, audio: data.audio }, room.state);
+    }
   };
 
   const normalizeWorkspaceEvent = (service, type, data, member) => {
@@ -180,6 +261,14 @@ function registerWorkspaceRealtime({ io, verifyResourceAccess, maxRooms = 500 } 
       }
       if (type === "transport:set") return { playing: data.playing === true, startedAt: Date.now(), step: Math.max(0, Math.min(1_000_000, Number(data.step) || 0)) };
       if (type === "note:trigger") return { step: Math.max(0, Math.min(1_000_000, Number(data.step) || 0)) };
+    }
+    if (service === "focus-room") {
+      if (type === "scene:set") {
+        const sceneId = clean(data.sceneId, 80).toLowerCase();
+        return { sceneId: FOCUS_SCENE_ID.test(sceneId) ? sceneId : "rainy-window" };
+      }
+      if (type === "timer:set") return { timer: normalizeFocusTimer(data.timer) };
+      if (type === "audio:set") return { audio: normalizeFocusAudio(data.audio) };
     }
     return data;
   };
@@ -215,6 +304,7 @@ function registerWorkspaceRealtime({ io, verifyResourceAccess, maxRooms = 500 } 
       let state;
       try { state = cloneBounded(payload.state, MAX_STATE_BYTES, "STATE"); }
       catch (error) { return ack(callback, { ok: false, error: error.message, code: error.code }); }
+      if (service === "focus-room") state = normalizeFocusState(state);
       const room = {
         id: randomUUID(), code, service, name: clean(payload.name || "Phòng HH", 100) || "Phòng HH",
         hostSocketId: socket.id, members: new Map(), state, revision: 0,
@@ -246,8 +336,10 @@ function registerWorkspaceRealtime({ io, verifyResourceAccess, maxRooms = 500 } 
       const member = room?.members.get(socket.id);
       if (!room || !member) return ack(callback, { ok: false, error: "Bạn chưa ở trong phòng.", code: "NOT_IN_ROOM" });
       if (member.role !== "host") return ack(callback, { ok: false, error: "Chỉ chủ phòng được thay đổi trạng thái chung.", code: "HOST_REQUIRED" });
-      try { room.state = cloneBounded(payload.state, MAX_STATE_BYTES, "STATE"); }
+      let nextState;
+      try { nextState = cloneBounded(payload.state, MAX_STATE_BYTES, "STATE"); }
       catch (error) { return ack(callback, { ok: false, error: error.message, code: error.code }); }
+      room.state = service === "focus-room" ? normalizeFocusState(nextState, room.state) : nextState;
       room.revision += 1; room.updatedAt = new Date().toISOString();
       io.to(socketRoom(service, code)).emit("workspace:room:state", { service, code, state: room.state, revision: room.revision, updatedAt: room.updatedAt });
       ack(callback, { ok: true, revision: room.revision });

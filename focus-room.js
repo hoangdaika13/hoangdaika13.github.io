@@ -3,6 +3,8 @@
 
   const VERSION = 2;
   const ROUTE = "/focus-room";
+  const REALTIME_SERVICE = "focus-room";
+  const ROOM_CODE = /^[A-Z0-9]{6,12}$/;
   const STATE_PREFIX = "hh.focus-room.v2.";
   const LEGACY_KEY = "hh.galaxy.domain-views.v1";
   const LEGACY_STUDY_PREFIX = "hh.focus.study-room.v1";
@@ -103,6 +105,21 @@
     { id: "steady", label: "Ổn định", focus: 45, rest: 15, longRest: 20 },
     { id: "flow", label: "Flow", focus: 50, rest: 10, longRest: 20 },
     { id: "deep", label: "Deep Work", focus: 90, rest: 20, longRest: 30 }
+  ]);
+
+  const FOCUS_RITUALS = Object.freeze([
+    Object.freeze({
+      id: "rain-deep", name: "Mưa sâu 50 phút", description: "Mưa dịu, lo-fi và một chu kỳ Flow.",
+      sceneId: "rainy-window", mixPreset: "rainy-night", musicId: "hh-lofi-calm", focus: 50, rest: 10, longRest: 20, cycles: 4
+    }),
+    Object.freeze({
+      id: "library-reading", name: "Đọc sâu trong thư viện", description: "Giấy, nền nâu ấm và piano CC0.",
+      sceneId: "university-reading-hall", mixPreset: "warm-library", musicId: "bach-canon-bwv1080", focus: 45, rest: 15, longRest: 20, cycles: 4
+    }),
+    Object.freeze({
+      id: "green-morning", name: "Khởi động buổi sáng", description: "Rừng, chim xa và phiên 25 phút nhẹ.",
+      sceneId: "forest-morning", mixPreset: "green-morning", musicId: "hh-lofi-calm", focus: 25, rest: 5, longRest: 15, cycles: 4
+    })
   ]);
 
   function scene(id, title, time, description, category, effect, image, soundIds) {
@@ -206,6 +223,12 @@
       primaryTaskId: "",
       note: "",
       history: [],
+      planning: {
+        dailyGoalMinutes: 120,
+        intention: "",
+        rituals: [],
+        distractions: []
+      },
       layout: defaultLayout(),
       settings: {
         quality: "balanced", motion: !reduceMotion, reducedMotion: reduceMotion,
@@ -297,6 +320,7 @@
     const timer = source.timer && typeof source.timer === "object" ? source.timer : {};
     const settings = source.settings && typeof source.settings === "object" ? source.settings : {};
     const layout = source.layout && typeof source.layout === "object" ? source.layout : {};
+    const planning = source.planning && typeof source.planning === "object" ? source.planning : {};
     const custom = Array.isArray(scenes.custom) ? scenes.custom.slice(0, 24).map((item) => ({
       id: cleanText(item?.id, 80),
       title: cleanText(item?.title, 80) || "Không gian cá nhân",
@@ -336,8 +360,37 @@
       durationSeconds: Math.round(clamp(entry?.durationSeconds, 1, 180 * 60, 1)),
       taskId: cleanText(entry?.taskId, 100),
       taskTitle: cleanText(entry?.taskTitle, 180),
-      sceneId: cleanText(entry?.sceneId, 80)
+      sceneId: cleanText(entry?.sceneId, 80),
+      intention: cleanText(entry?.intention, 240),
+      distractionCount: Math.round(clamp(entry?.distractionCount, 0, 1000, 0))
     })).filter((entry) => entry.startedAt && entry.endedAt) : [];
+    const rituals = Array.isArray(planning.rituals) ? planning.rituals.slice(0, 12).map((ritual) => ({
+      id: cleanText(ritual?.id, 100) || id("ritual"),
+      name: cleanText(ritual?.name, 60) || "Bộ tập trung",
+      sceneId: validSceneIds.has(ritual?.sceneId) ? ritual.sceneId : base.scenes.selected,
+      master: clamp(ritual?.master, 0, 1, base.audio.master),
+      mix: Object.fromEntries(CHANNELS.map((channel) => [channel.id, clamp(ritual?.mix?.[channel.id], 0, 1, 0)])),
+      music: {
+        selected: MUSIC_TRACKS.some((track) => track.id === ritual?.music?.selected) ? ritual.music.selected : base.audio.music.selected,
+        volume: clamp(ritual?.music?.volume, 0, 1, base.audio.music.volume),
+        loop: ritual?.music?.loop !== false
+      },
+      timer: {
+        focusMinutes: clamp(ritual?.timer?.focusMinutes, 1, 180, 25),
+        breakMinutes: clamp(ritual?.timer?.breakMinutes, 1, 60, 5),
+        longBreakMinutes: clamp(ritual?.timer?.longBreakMinutes, 1, 90, 15),
+        cycles: Math.round(clamp(ritual?.timer?.cycles, 1, 20, 4))
+      },
+      createdAt: clamp(ritual?.createdAt, 0, Number.MAX_SAFE_INTEGER, Date.now())
+    })) : [];
+    const distractions = Array.isArray(planning.distractions) ? planning.distractions.slice(-500).map((entry) => ({
+      id: cleanText(entry?.id, 100) || id("distraction"),
+      label: cleanText(entry?.label, 60) || "Xao nhãng",
+      note: cleanText(entry?.note, 180),
+      createdAt: clamp(entry?.createdAt, 1, Number.MAX_SAFE_INTEGER, Date.now()),
+      sessionId: cleanText(entry?.sessionId, 100),
+      taskId: taskIds.has(entry?.taskId) ? entry.taskId : ""
+    })) : [];
     return {
       version: VERSION,
       scenes: {
@@ -366,6 +419,12 @@
       primaryTaskId: taskIds.has(source.primaryTaskId) ? source.primaryTaskId : "",
       note: String(source.note || "").slice(0, 10000),
       history,
+      planning: {
+        dailyGoalMinutes: Math.round(clamp(planning.dailyGoalMinutes, 15, 720, base.planning.dailyGoalMinutes)),
+        intention: cleanText(planning.intention, 240),
+        rituals,
+        distractions
+      },
       layout: {
         locked: layout.locked !== false,
         clock: normalizeLayoutPoint(layout.clock),
@@ -395,7 +454,19 @@
   function writeState(instance) {
     instance.state.version = VERSION;
     instance.state.updatedAt = Date.now();
-    try { global.localStorage?.setItem(instance.storageKey, JSON.stringify(instance.state)); }
+    let persisted = instance.state;
+    const personal = instance.sharedRoom?.personalSnapshot;
+    if (instance.sharedRoom?.code && personal) {
+      if (!instance.sharedRoom.syncScene) personal.sceneId = instance.state.scenes.selected;
+      if (!instance.sharedRoom.syncTimer) personal.timer = JSON.parse(JSON.stringify(instance.state.timer));
+      if (!instance.sharedRoom.syncAudio) personal.audio = { master: instance.state.audio.master, mix: { ...instance.state.audio.mix } };
+      persisted = JSON.parse(JSON.stringify(instance.state));
+      persisted.scenes.selected = personal.sceneId;
+      persisted.timer = { ...personal.timer };
+      persisted.audio.master = personal.audio.master;
+      persisted.audio.mix = { ...personal.audio.mix };
+    }
+    try { global.localStorage?.setItem(instance.storageKey, JSON.stringify(persisted)); }
     catch (error) { announce(instance, "Không thể lưu dữ liệu trên thiết bị.", "error"); }
   }
 
@@ -453,7 +524,74 @@
   }
 
   function panelLabel(panel) {
-    return ({ scenes: "Không gian", sound: "Âm thanh", timer: "Hẹn giờ", tasks: "Công việc", notes: "Ghi chú", history: "Lịch sử", settings: "Cài đặt" })[panel] || "";
+    return ({ plan: "Kế hoạch", scenes: "Không gian", sound: "Âm thanh", timer: "Hẹn giờ", tasks: "Công việc", notes: "Ghi chú", history: "Lịch sử", shared: "Phòng học chung", settings: "Cài đặt" })[panel] || "";
+  }
+
+  function focusSummary(instance) {
+    const now = new Date();
+    const days = Array.from({ length: 7 }, (_, reverseIndex) => {
+      const date = new Date(now);
+      date.setHours(12, 0, 0, 0);
+      date.setDate(date.getDate() - (6 - reverseIndex));
+      return { key: localDay(date.getTime()), label: date.toLocaleDateString("vi-VN", { weekday: "short" }), seconds: 0, sessions: 0 };
+    });
+    const byDay = new Map(days.map((day) => [day.key, day]));
+    instance.state.history.forEach((entry) => {
+      const day = byDay.get(localDay(entry.endedAt));
+      if (!day) return;
+      day.seconds += entry.durationSeconds;
+      day.sessions += 1;
+    });
+    const todayKey = localDay();
+    const today = byDay.get(todayKey) || { seconds: 0, sessions: 0 };
+    const goalSeconds = instance.state.planning.dailyGoalMinutes * 60;
+    const completedDays = new Set(instance.state.history.map((entry) => localDay(entry.endedAt)));
+    const cursor = new Date(now);
+    cursor.setHours(12, 0, 0, 0);
+    if (!completedDays.has(localDay(cursor.getTime()))) cursor.setDate(cursor.getDate() - 1);
+    let streak = 0;
+    while (completedDays.has(localDay(cursor.getTime())) && streak < 400) {
+      streak += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    const todayDistractions = instance.state.planning.distractions.filter((entry) => localDay(entry.createdAt) === todayKey);
+    return {
+      days,
+      todaySeconds: today.seconds,
+      todaySessions: today.sessions,
+      todayDistractions,
+      goalProgress: Math.min(1, today.seconds / Math.max(60, goalSeconds)),
+      remainingSeconds: Math.max(0, goalSeconds - today.seconds),
+      streak
+    };
+  }
+
+  function planPanel(instance) {
+    const summary = focusSummary(instance);
+    const timer = instance.state.timer;
+    const recentDistractions = [...summary.todayDistractions].reverse().slice(0, 8);
+    return `<div class="hfr-panel-heading"><div><span>DEEP FOCUS COMMAND</span><h2>Kế hoạch tập trung</h2></div><button type="button" data-hfr-action="close-panel" aria-label="Đóng bảng">×</button></div>
+      <section class="hfr-plan-hero">
+        <div class="hfr-goal-ring" style="--hfr-goal:${summary.goalProgress}" aria-label="Đã hoàn thành ${Math.round(summary.goalProgress * 100)} phần trăm mục tiêu"><strong>${Math.round(summary.goalProgress * 100)}%</strong><span>mục tiêu ngày</span></div>
+        <div><span>Hôm nay</span><strong>${formatMinutes(summary.todaySeconds)} · ${summary.todaySessions} phiên</strong><small>${summary.remainingSeconds ? `Còn ${formatMinutes(summary.remainingSeconds)} để đạt mục tiêu` : "Đã đạt mục tiêu hôm nay"} · chuỗi ${summary.streak} ngày</small></div>
+      </section>
+      <form class="hfr-plan-form" data-hfr-plan-form>
+        <label><span>Mục tiêu mỗi ngày</span><span><input name="dailyGoal" type="number" min="15" max="720" step="5" value="${instance.state.planning.dailyGoalMinutes}" required><small>phút</small></span></label>
+        <label><span>Ý định cho phiên hiện tại</span><textarea name="intention" maxlength="240" placeholder="Ví dụ: Hoàn thành phần mở đầu, không kiểm tra điện thoại…">${escapeHtml(instance.state.planning.intention)}</textarea></label>
+        <div><button type="submit">Lưu kế hoạch</button><button class="hfr-primary" type="button" data-hfr-action="plan-timer-toggle">${timer.running ? "Tạm dừng phiên" : timer.remaining < timer.duration ? "Tiếp tục phiên" : "Bắt đầu phiên"}</button></div>
+      </form>
+      <section class="hfr-ritual-section">
+        <div class="hfr-section-title"><div><strong>Nghi thức một chạm</strong><small>Đổi cảnh, âm thanh, nhạc và chu kỳ; không tự phát âm thanh.</small></div></div>
+        <div class="hfr-ritual-grid">${FOCUS_RITUALS.map((ritual) => `<button type="button" data-hfr-action="apply-built-in-ritual" data-id="${ritual.id}"><i>◈</i><span><strong>${escapeHtml(ritual.name)}</strong><small>${escapeHtml(ritual.description)}</small></span></button>`).join("")}</div>
+        <form class="hfr-inline-form" data-hfr-ritual-save><label><span>Lưu cấu hình hiện tại</span><input name="name" maxlength="60" required placeholder="Ví dụ: Ôn ngoại ngữ"></label><button type="submit">Lưu bộ</button></form>
+        <div class="hfr-saved-rituals">${instance.state.planning.rituals.length ? instance.state.planning.rituals.map((ritual) => `<article><button type="button" data-hfr-action="apply-user-ritual" data-id="${escapeHtml(ritual.id)}"><strong>${escapeHtml(ritual.name)}</strong><small>${ritual.timer.focusMinutes}/${ritual.timer.breakMinutes} phút · ${escapeHtml(allScenes(instance).find((sceneItem) => sceneItem.id === ritual.sceneId)?.title || "Cảnh mặc định")}</small></button><button type="button" data-hfr-action="delete-user-ritual" data-id="${escapeHtml(ritual.id)}" aria-label="Xóa bộ tập trung">×</button></article>`).join("") : `<small>Chưa có bộ tập trung cá nhân.</small>`}</div>
+      </section>
+      <section class="hfr-distraction-section">
+        <div class="hfr-section-title"><div><strong>Ghi nhận xao nhãng</strong><small>Chạm một lần để ghi thời điểm thật, không dừng đồng hồ.</small></div><em>${summary.todayDistractions.length} hôm nay</em></div>
+        <div class="hfr-distraction-quick">${["Điện thoại", "Thông báo", "Ý nghĩ chen ngang", "Tiếng ồn"].map((label) => `<button type="button" data-hfr-action="log-distraction" data-value="${escapeHtml(label)}">+ ${escapeHtml(label)}</button>`).join("")}</div>
+        <form class="hfr-inline-form" data-hfr-distraction-form><label><span>Ghi nhanh nguyên nhân khác</span><input name="note" maxlength="180" required placeholder="Điều gì vừa làm bạn mất tập trung?"></label><button type="submit">Ghi lại</button></form>
+        <div class="hfr-distraction-log">${recentDistractions.length ? recentDistractions.map((entry) => `<article><span><strong>${escapeHtml(entry.label)}</strong><small>${new Date(entry.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}${entry.note ? ` · ${escapeHtml(entry.note)}` : ""}</small></span><button type="button" data-hfr-action="delete-distraction" data-id="${escapeHtml(entry.id)}" aria-label="Xóa ghi nhận">×</button></article>`).join("") : `<small>Chưa ghi nhận xao nhãng hôm nay.</small>`}</div>
+      </section>`;
   }
 
   function filteredScenes(instance) {
@@ -576,11 +714,13 @@
 
   function tasksPanel(instance) {
     const tasks = instance.state.tasks;
+    const completedByTask = new Map();
+    instance.state.history.forEach((entry) => { if (entry.taskId) completedByTask.set(entry.taskId, (completedByTask.get(entry.taskId) || 0) + 1); });
     return `<div class="hfr-panel-heading"><div><span>SESSION TASKS</span><h2>Việc cần làm</h2></div><button type="button" data-hfr-action="close-panel" aria-label="Đóng bảng">×</button></div>
       <form class="hfr-task-form" data-hfr-task-form><label><span>Nhiệm vụ mới</span><input name="title" maxlength="180" required placeholder="Bạn muốn hoàn thành việc gì?"></label><label><span>Mục tiêu</span><input name="target" type="number" min="1" max="20" value="1" required><small>phiên</small></label><button type="submit">Thêm</button></form>
       <div class="hfr-task-list">${tasks.length ? tasks.map((task, index) => instance.ui.editTaskId === task.id ? `<article class="hfr-task-edit-card"><form data-hfr-task-edit-form data-id="${escapeHtml(task.id)}"><label><span>Tên nhiệm vụ</span><input name="title" maxlength="180" value="${escapeHtml(task.title)}" required></label><label><span>Mục tiêu phiên</span><input name="target" type="number" min="1" max="20" value="${task.target}" required></label><div><button class="hfr-primary" type="submit">Lưu</button><button type="button" data-hfr-action="cancel-edit-task">Hủy</button></div></form></article>` : `<article class="${task.done ? "is-done" : ""}">
         <button type="button" data-hfr-action="toggle-task" data-id="${escapeHtml(task.id)}" aria-pressed="${task.done}" aria-label="${task.done ? "Mở lại" : "Hoàn thành"}">${task.done ? "✓" : ""}</button>
-        <button class="hfr-task-main" type="button" data-hfr-action="primary-task" data-id="${escapeHtml(task.id)}" aria-pressed="${instance.state.primaryTaskId === task.id}"><strong>${escapeHtml(task.title)}</strong><small>Mục tiêu ${task.target} phiên${instance.state.primaryTaskId === task.id ? " · đang tập trung" : ""}</small></button>
+        <button class="hfr-task-main" type="button" data-hfr-action="primary-task" data-id="${escapeHtml(task.id)}" aria-pressed="${instance.state.primaryTaskId === task.id}"><strong>${escapeHtml(task.title)}</strong><small>Đã hoàn thành ${completedByTask.get(task.id) || 0}/${task.target} phiên${instance.state.primaryTaskId === task.id ? " · đang tập trung" : ""}</small><i style="--hfr-task-progress:${Math.min(1, (completedByTask.get(task.id) || 0) / Math.max(1, task.target))}"></i></button>
         <span><button type="button" data-hfr-action="edit-task" data-id="${escapeHtml(task.id)}" aria-label="Sửa nhiệm vụ">✎</button><button type="button" data-hfr-action="move-task" data-id="${escapeHtml(task.id)}" data-direction="-1" ${index === 0 ? "disabled" : ""} aria-label="Đưa lên">↑</button><button type="button" data-hfr-action="move-task" data-id="${escapeHtml(task.id)}" data-direction="1" ${index === tasks.length - 1 ? "disabled" : ""} aria-label="Đưa xuống">↓</button><button type="button" data-hfr-action="delete-task" data-id="${escapeHtml(task.id)}" aria-label="Xóa">×</button></span>
       </article>`).join("") : `<div class="hfr-empty"><span>✓</span><strong>Chưa có nhiệm vụ</strong><p>Thêm một việc cụ thể rồi chọn làm nhiệm vụ chính cho phiên.</p></div>`}</div>`;
   }
@@ -591,24 +731,76 @@
   }
 
   function historyPanel(instance) {
-    const today = localDay();
-    const todayEntries = instance.state.history.filter((entry) => localDay(entry.endedAt) === today);
+    const summary = focusSummary(instance);
     const sevenDaysAgo = Date.now() - 7 * 86400000;
     const weekEntries = instance.state.history.filter((entry) => entry.endedAt >= sevenDaysAgo);
-    const todaySeconds = todayEntries.reduce((sum, entry) => sum + entry.durationSeconds, 0);
     const weekSeconds = weekEntries.reduce((sum, entry) => sum + entry.durationSeconds, 0);
+    const maxDaySeconds = Math.max(1, ...summary.days.map((day) => day.seconds));
     const taskProgress = new Map();
     instance.state.history.forEach((entry) => { if (entry.taskId) taskProgress.set(entry.taskId, (taskProgress.get(entry.taskId) || 0) + 1); });
     const targetTotal = instance.state.tasks.reduce((sum, task) => sum + task.target, 0);
     const reachedTotal = instance.state.tasks.reduce((sum, task) => sum + Math.min(task.target, taskProgress.get(task.id) || 0), 0);
     const targetRate = targetTotal ? Math.round(reachedTotal / targetTotal * 100) : 0;
     return `<div class="hfr-panel-heading"><div><span>TRUE HISTORY</span><h2>Lịch sử tập trung</h2></div><button type="button" data-hfr-action="close-panel" aria-label="Đóng bảng">×</button></div>
-      <div class="hfr-stats"><article><strong>${todayEntries.length}</strong><span>phiên hôm nay</span></article><article><strong>${formatMinutes(todaySeconds)}</strong><span>hôm nay</span></article><article><strong>${formatMinutes(weekSeconds)}</strong><span>7 ngày gần nhất</span></article><article><strong>${targetRate}%</strong><span>mục tiêu nhiệm vụ</span></article></div>
+      <div class="hfr-stats"><article><strong>${summary.todaySessions}</strong><span>phiên hôm nay</span></article><article><strong>${formatMinutes(summary.todaySeconds)}</strong><span>hôm nay</span></article><article><strong>${formatMinutes(weekSeconds)}</strong><span>7 ngày gần nhất</span></article><article><strong>${targetRate}%</strong><span>mục tiêu nhiệm vụ</span></article></div>
+      <section class="hfr-week-chart" aria-label="Thời gian tập trung bảy ngày gần nhất">${summary.days.map((day) => `<div><span title="${formatMinutes(day.seconds)}" style="--hfr-day:${day.seconds / maxDaySeconds}"><i></i></span><small>${escapeHtml(day.label)}</small></div>`).join("")}</section>
       <div class="hfr-history-list">${instance.state.history.length ? [...instance.state.history].reverse().slice(0, 30).map((entry) => {
         const sceneItem = allScenes(instance).find((item) => item.id === entry.sceneId);
-        return `<article><time datetime="${new Date(entry.endedAt).toISOString()}">${new Date(entry.endedAt).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })}</time><strong>${escapeHtml(entry.taskTitle || "Phiên tập trung")}</strong><small>${formatMinutes(entry.durationSeconds)} · ${escapeHtml(sceneItem?.title || "Không gian đã xóa")}</small></article>`;
+        return `<article><time datetime="${new Date(entry.endedAt).toISOString()}">${new Date(entry.endedAt).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })}</time><strong>${escapeHtml(entry.taskTitle || entry.intention || "Phiên tập trung")}</strong><small>${formatMinutes(entry.durationSeconds)} · ${escapeHtml(sceneItem?.title || "Không gian đã xóa")}${entry.distractionCount ? ` · ${entry.distractionCount} lần xao nhãng` : ""}</small></article>`;
       }).join("") : `<div class="hfr-empty"><span>◷</span><strong>Chưa có phiên hoàn thành</strong><p>Số liệu chỉ xuất hiện sau khi đồng hồ tập trung chạy hết.</p></div>`}</div>
-      <button class="hfr-secondary" type="button" data-hfr-action="export-data">Xuất dữ liệu JSON</button>`;
+      <div class="hfr-history-export"><button type="button" data-hfr-action="export-history-csv">Xuất lịch sử CSV</button><button type="button" data-hfr-action="export-data">Sao lưu JSON</button></div>`;
+  }
+
+  function sharedRoomStatusLabel(instance) {
+    const room = instance.sharedRoom;
+    if (instance.isGuest) return "Cần đăng nhập";
+    if (!global.HHRealtime) return "Realtime chưa sẵn sàng";
+    return ({
+      unconfigured: "Chưa cấu hình máy chủ",
+      idle: "Sẵn sàng tạo hoặc tham gia",
+      connecting: "Đang kết nối…",
+      connected: "Đã đồng bộ realtime",
+      reconnecting: "Đang kết nối lại…",
+      error: "Không thể kết nối"
+    })[room.status] || "Sẵn sàng";
+  }
+
+  function sharedRoomPanel(instance) {
+    const room = instance.sharedRoom;
+    const status = sharedRoomStatusLabel(instance);
+    const signedOut = instance.isGuest;
+    const unavailable = !global.HHRealtime || room.status === "unconfigured";
+    if (!room.code) {
+      return `<div class="hfr-panel-heading"><div><span>REALTIME STUDY ROOM</span><h2>Phòng học chung</h2></div><button type="button" data-hfr-action="close-panel" aria-label="Đóng bảng">×</button></div>
+        <section class="hfr-shared-hero" data-state="${escapeHtml(room.status)}"><i>◎</i><div><strong>${escapeHtml(status)}</strong><p>${signedOut ? "Đăng nhập để danh tính và quyền chủ phòng được xác minh an toàn." : unavailable ? "Máy chủ Socket.IO chưa khả dụng. Phòng cá nhân vẫn hoạt động bình thường." : "Tạo phòng riêng hoặc nhập mã do người học cùng gửi. Phòng không được công khai trong danh sách."}</p></div></section>
+        ${room.message ? `<p class="hfr-shared-message" data-state="${escapeHtml(room.status)}">${escapeHtml(room.message)}</p>` : ""}
+        <form class="hfr-shared-form" data-hfr-shared-create>
+          <div><span>TẠO PHÒNG RIÊNG</span><strong>Bạn điều khiển cảnh và Pomodoro</strong></div>
+          <label><span>Tên phòng</span><input name="name" maxlength="80" value="Cùng học tập trung" autocomplete="off" required></label>
+          <button class="hfr-primary" type="submit" ${signedOut || unavailable || room.status === "connecting" ? "disabled" : ""}>Tạo phòng</button>
+        </form>
+        <form class="hfr-shared-form" data-hfr-shared-join>
+          <div><span>THAM GIA BẰNG MÃ</span><strong>Mã gồm 6–12 ký tự</strong></div>
+          <label><span>Mã phòng</span><input name="code" maxlength="12" pattern="[A-Za-z0-9]{6,12}" value="${escapeHtml(room.inviteCode || "")}" autocapitalize="characters" autocomplete="off" spellcheck="false" required></label>
+          <button type="submit" ${signedOut || unavailable || room.status === "connecting" ? "disabled" : ""}>Vào phòng</button>
+        </form>
+        <section class="hfr-shared-privacy"><strong>Chỉ đồng bộ phần cần thiết</strong><p>Cảnh, trạng thái Pomodoro và phối âm được phép chia sẻ. Công việc, ghi chú, lịch sử, mục tiêu và tệp cá nhân không rời thiết bị.</p></section>`;
+    }
+
+    const members = room.members.length ? room.members : [];
+    const role = room.role === "host" ? "Chủ phòng" : "Thành viên";
+    return `<div class="hfr-panel-heading"><div><span>REALTIME STUDY ROOM</span><h2>${escapeHtml(room.name || "Phòng học chung")}</h2></div><button type="button" data-hfr-action="close-panel" aria-label="Đóng bảng">×</button></div>
+      <section class="hfr-shared-hero" data-state="${escapeHtml(room.status)}"><i>${room.status === "connected" ? "●" : "◌"}</i><div><strong>${escapeHtml(status)}</strong><p>${escapeHtml(role)} · ${members.length} thành viên được máy chủ xác nhận</p></div></section>
+      ${room.message ? `<p class="hfr-shared-message" data-state="${escapeHtml(room.status)}">${escapeHtml(room.message)}</p>` : ""}
+      <section class="hfr-room-code"><div><span>MÃ PHÒNG</span><strong>${escapeHtml(room.code)}</strong></div><button type="button" data-hfr-action="copy-room-code">Sao chép mã</button><button type="button" data-hfr-action="copy-room-link">Sao chép liên kết</button></section>
+      <section class="hfr-shared-sync"><span>ĐỒNG BỘ TRÊN THIẾT BỊ NÀY</span>
+        <label><span><strong>Không gian</strong><small>Đi theo cảnh do chủ phòng chọn.</small></span><input type="checkbox" data-hfr-shared-pref="scene" ${room.syncScene ? "checked" : ""} ${room.role === "host" ? "disabled title=\"Chủ phòng là nguồn đồng bộ\"" : ""}></label>
+        <label><span><strong>Pomodoro</strong><small>Đi theo chạy, dừng và chuyển vòng.</small></span><input type="checkbox" data-hfr-shared-pref="timer" ${room.syncTimer ? "checked" : ""} ${room.role === "host" ? "disabled title=\"Chủ phòng là nguồn đồng bộ\"" : ""}></label>
+        <label><span><strong>Phối âm môi trường</strong><small>Chỉ nhận mức âm lượng; không bao giờ tự phát.</small></span><input type="checkbox" data-hfr-shared-pref="audio" ${room.syncAudio ? "checked" : ""} ${room.role === "host" ? "disabled title=\"Chủ phòng là nguồn đồng bộ\"" : ""}></label>
+      </section>
+      <section class="hfr-room-members"><div><span>THÀNH VIÊN THẬT</span><small>${members.length}/16</small></div>${members.length ? members.map((member) => `<article${member.id === room.selfId ? " data-self=\"true\"" : ""}><i>${member.role === "host" ? "★" : "●"}</i><span><strong>${escapeHtml(member.name || "Thành viên HH")}</strong><small>${member.role === "host" ? "Chủ phòng" : "Thành viên"}${member.id === room.selfId ? " · Bạn" : ""}</small></span></article>`).join("") : `<p>Đang chờ máy chủ xác nhận danh sách…</p>`}</section>
+      <section class="hfr-shared-privacy"><strong>${room.role === "host" ? "Bạn đang điều khiển phòng" : "Chủ phòng điều khiển nội dung chung"}</strong><p>${room.role === "host" ? "Thay đổi cảnh, hẹn giờ hoặc phối âm sẽ được gửi tới thành viên đã bật đồng bộ." : "Điều khiển cục bộ sẽ trở lại nguyên trạng sau khi bạn rời phòng."}</p></section>
+      <button class="hfr-shared-leave" type="button" data-hfr-action="leave-shared-room">Rời phòng và trở lại phiên cá nhân</button>`;
   }
 
   function settingsPanel(instance) {
@@ -631,7 +823,9 @@
         <div><button type="button" class="hfr-layout-edit-action" data-hfr-action="layout-edit" aria-pressed="${!instance.state.layout.locked}">${instance.state.layout.locked ? "Sắp xếp" : "Khóa bố cục"}</button><button type="button" data-hfr-action="layout-reset">Đặt lại vị trí</button></div>
       </section>
       <section class="hfr-notification-card"><div><strong>Thông báo kết thúc phiên</strong><small>${notificationState}</small></div><button type="button" data-hfr-action="enable-notifications" ${!global.Notification || global.Notification.permission === "denied" ? "disabled" : ""}>Bật thông báo</button></section>
-      <section class="hfr-shared-room"><span>PHÒNG HỌC CHUNG</span><strong>Chưa cấu hình</strong><p>Repository chưa có dịch vụ đồng bộ scene và Pomodoro dành riêng cho Focus Room. Không có thành viên hoặc phòng trực tuyến giả.</p></section>
+      <section class="hfr-notification-card"><div><strong>Giữ màn hình sáng</strong><small data-hfr-wake-lock-status>${escapeHtml(instance.wakeLockStatus)}</small></div><button type="button" data-hfr-action="wake-lock-toggle" aria-pressed="${Boolean(instance.wakeLockWanted)}" ${global.navigator?.wakeLock?.request ? "" : "disabled"}>${instance.wakeLockWanted ? "Tắt" : "Bật"}</button></section>
+      <section class="hfr-shortcuts"><strong>Phím tắt trong phòng</strong><div><kbd>Alt</kbd><kbd>Space</kbd><span>Bắt đầu / tạm dừng</span><kbd>Alt</kbd><kbd>1–9</kbd><span>Mở bảng công cụ</span><kbd>Alt</kbd><kbd>Z</kbd><span>Bật / tắt Zen</span><kbd>Esc</kbd><span></span><span>Đóng bảng đang mở</span></div></section>
+      <section class="hfr-shared-room"><span>PHÒNG HỌC CHUNG</span><strong>${escapeHtml(sharedRoomStatusLabel(instance))}</strong><p>Đồng bộ scene và Pomodoro bằng Socket.IO; dữ liệu học cá nhân không được gửi đi.</p><button type="button" data-hfr-action="panel" data-panel="shared">Mở phòng học chung</button></section>
       <section class="hfr-data-tools"><button type="button" data-hfr-action="export-data">Xuất JSON</button><label><input type="file" accept="application/json" data-hfr-import><span>Nhập JSON</span></label></section>`;
   }
 
@@ -642,7 +836,7 @@
   function panelMarkup(instance) {
     const panel = instance.ui.panel;
     if (!panel) return "";
-    const content = ({ scenes: scenePanel, sound: soundPanel, timer: timerPanel, tasks: tasksPanel, notes: notesPanel, history: historyPanel, settings: settingsPanel })[panel];
+    const content = ({ plan: planPanel, scenes: scenePanel, sound: soundPanel, timer: timerPanel, tasks: tasksPanel, notes: notesPanel, history: historyPanel, shared: sharedRoomPanel, settings: settingsPanel })[panel];
     return content ? content(instance) : "";
   }
 
@@ -653,11 +847,12 @@
     const primaryTask = instance.state.tasks.find((task) => task.id === instance.state.primaryTaskId);
     const quality = effectiveQuality(instance);
     const activeMotion = motionEnabled(instance);
+    const summary = focusSummary(instance);
     const tabs = [
-      ["scenes", "▧", "Không gian"], ["sound", "♫", "Âm thanh"], ["timer", "◷", "Hẹn giờ"],
-      ["tasks", "✓", "Công việc"], ["notes", "✎", "Ghi chú"], ["history", "⌁", "Lịch sử"], ["settings", "⚙", "Cài đặt"]
+      ["plan", "◎", "Kế hoạch"], ["scenes", "▧", "Không gian"], ["sound", "♫", "Âm thanh"], ["timer", "◷", "Hẹn giờ"],
+      ["tasks", "✓", "Công việc"], ["notes", "✎", "Ghi chú"], ["history", "⌁", "Lịch sử"], ["shared", "◎", "Phòng chung"], ["settings", "⚙", "Cài đặt"]
     ];
-    instance.root.innerHTML = `<section class="hfr-app${instance.ui.zen ? " is-zen" : ""}" data-hfr-root data-quality="${quality}" data-motion="${activeMotion ? "on" : "off"}" data-layout-mode="${instance.state.layout.locked ? "locked" : "editing"}">
+    instance.root.innerHTML = `<section class="hfr-app${instance.ui.zen ? " is-zen" : ""}${instance.ui.panel ? " has-panel" : ""}" data-hfr-root data-quality="${quality}" data-motion="${activeMotion ? "on" : "off"}" data-layout-mode="${instance.state.layout.locked ? "locked" : "editing"}">
       <section class="hfr-stage" data-hfr-effect="${escapeHtml(selected.effect)}" style="--hfr-accent:${selected.category === "nature" ? "#72f3bd" : selected.category === "cafe" || selected.category === "cozy" ? "#ffb46b" : selected.category === "pets" ? "#ffb8c9" : selected.category === "future" ? "#7ee7ff" : "#c69cff"};--hfr-scene-image:url(&quot;${escapeHtml(imageUrl(instance, selected))}&quot;)">
         <div class="hfr-backdrop" aria-hidden="true" style="--hfr-placeholder:url(&quot;${escapeHtml(imageUrl(instance, selected, true))}&quot;)"><img src="${escapeHtml(imageUrl(instance, selected))}" alt="" decoding="async" fetchpriority="high" data-hfr-current-image data-hfr-fallback><span class="hfr-backdrop-shade"></span></div>
         <canvas class="hfr-pet-depth" data-hfr-pet-depth aria-hidden="true" hidden></canvas>
@@ -679,6 +874,8 @@
             <strong class="hfr-clock" data-hfr-clock role="timer" aria-live="off">${formatTimer(timer.remaining)}</strong>
             <small data-hfr-cycle>Vòng ${timer.cycle}/${timer.cycles}</small>
             <p data-hfr-primary-task>${primaryTask ? escapeHtml(primaryTask.title) : "Chọn một nhiệm vụ để bắt đầu"}</p>
+            ${instance.state.planning.intention ? `<blockquote>${escapeHtml(instance.state.planning.intention)}</blockquote>` : ""}
+            <div class="hfr-focus-signals"><span>${formatMinutes(summary.todaySeconds)} / ${instance.state.planning.dailyGoalMinutes} phút hôm nay</span><span>${summary.todayDistractions.length} lần xao nhãng</span></div>
             <div class="hfr-clock-progress"><i data-hfr-progress style="--hfr-progress:${Math.max(0, Math.min(1, timer.remaining / timer.duration))}"></i></div>
             <div class="hfr-clock-actions">
               <button class="hfr-primary" type="button" data-hfr-action="timer-toggle">${timer.running ? "Tạm dừng" : timer.remaining < timer.duration ? "Tiếp tục" : "Bắt đầu"}</button>
@@ -697,6 +894,7 @@
     instance.root.dataset.hfrMounted = "true";
     syncTimerDom(instance);
     syncAudioDom(instance);
+    syncWakeLockDom(instance);
     setupLayout(instance);
     setupParallax(instance);
     setupPetDepth(instance, selected);
@@ -713,6 +911,357 @@
     toast.hidden = false;
     global.clearTimeout(instance.toastTimer);
     instance.toastTimer = global.setTimeout(() => { if (toast.isConnected) toast.hidden = true; }, 2600);
+  }
+
+  function sharedMembers(value) {
+    return (Array.isArray(value) ? value : []).slice(0, 16).map((member) => ({
+      id: cleanText(member?.id, 100),
+      name: cleanText(member?.name, 80) || "Thành viên HH",
+      avatar: cleanText(member?.avatar, 500),
+      role: member?.role === "host" ? "host" : "member"
+    })).filter((member) => member.id);
+  }
+
+  function sharedFollowerControls(instance, preference, message = "Chủ phòng đang điều khiển mục này.") {
+    const room = instance.sharedRoom;
+    const property = `sync${preference[0].toUpperCase()}${preference.slice(1)}`;
+    if (!room?.code || room.role === "host" || room[property] !== true) return false;
+    announce(instance, `${message} Bạn có thể tắt đồng bộ trên thiết bị này để dùng riêng.`, "error");
+    return true;
+  }
+
+  function capturePersonalSession(instance) {
+    return {
+      sceneId: instance.state.scenes.selected,
+      timer: JSON.parse(JSON.stringify(instance.state.timer)),
+      audio: { master: instance.state.audio.master, mix: { ...instance.state.audio.mix } }
+    };
+  }
+
+  function sharedSnapshot(instance) {
+    const timer = instance.state.timer;
+    const selected = SCENES.some((sceneItem) => sceneItem.id === instance.state.scenes.selected)
+      ? instance.state.scenes.selected
+      : (instance.sharedRoom?.lastState?.sceneId || SCENES[0].id);
+    const remaining = timer.running ? Math.max(0, Math.ceil((timer.endsAt - Date.now()) / 1000)) : timer.remaining;
+    return {
+      sceneId: selected,
+      timer: {
+        phase: timer.phase,
+        focusMinutes: timer.focusMinutes,
+        breakMinutes: timer.breakMinutes,
+        longBreakMinutes: timer.longBreakMinutes,
+        cycle: timer.cycle,
+        cycles: timer.cycles,
+        running: timer.running,
+        duration: timer.duration,
+        remaining
+      },
+      audio: {
+        master: instance.state.audio.master,
+        mix: Object.fromEntries(CHANNELS.map((channel) => [channel.id, instance.state.audio.mix[channel.id]]))
+      }
+    };
+  }
+
+  function refreshSharedPanel(instance) {
+    if (instance.ui.panel !== "shared") return;
+    const panel = instance.root.querySelector?.(".hfr-panel");
+    if (panel) panel.innerHTML = sharedRoomPanel(instance);
+  }
+
+  function normalizeSharedTimer(value = {}) {
+    const phase = ["focus", "break", "long-break"].includes(value.phase) ? value.phase : "focus";
+    const focusMinutes = clamp(value.focusMinutes, 1, 180, 25);
+    const breakMinutes = clamp(value.breakMinutes, 1, 60, 5);
+    const longBreakMinutes = clamp(value.longBreakMinutes, 1, 90, 15);
+    const cycles = Math.round(clamp(value.cycles, 1, 20, 4));
+    const duration = Math.round(clamp(value.duration, 1, 180 * 60, (phase === "focus" ? focusMinutes : phase === "long-break" ? longBreakMinutes : breakMinutes) * 60));
+    const endsAt = clamp(value.endsAt, 0, Number.MAX_SAFE_INTEGER, 0);
+    const running = value.running === true && endsAt > Date.now();
+    const remaining = running ? Math.max(0, Math.min(duration, Math.ceil((endsAt - Date.now()) / 1000))) : Math.round(clamp(value.remaining, 0, duration, duration));
+    return {
+      phase, focusMinutes, breakMinutes, longBreakMinutes,
+      cycle: Math.round(clamp(value.cycle, 1, cycles, 1)), cycles,
+      running, duration, remaining,
+      endsAt: running ? endsAt : 0,
+      startedAt: clamp(value.startedAt, 0, Number.MAX_SAFE_INTEGER, 0),
+      sessionId: running ? `shared-${cleanText(endsAt, 32)}` : "",
+      previousScene: ""
+    };
+  }
+
+  function applySharedState(instance, state, revision = 0) {
+    const room = instance.sharedRoom;
+    if (!room?.code || !state || typeof state !== "object") return;
+    room.lastState = JSON.parse(JSON.stringify(state));
+    room.revision = Math.max(room.revision, Number(revision) || 0);
+    room.applying = true;
+    if (room.syncScene && SCENES.some((sceneItem) => sceneItem.id === state.sceneId)) {
+      instance.state.scenes.selected = state.sceneId;
+      instance.state.scenes.recent = [state.sceneId, ...instance.state.scenes.recent.filter((sceneId) => sceneId !== state.sceneId)].slice(0, 12);
+    }
+    if (room.syncTimer && state.timer && typeof state.timer === "object") {
+      stopTimerLoop(instance);
+      instance.state.timer = normalizeSharedTimer(state.timer);
+      ensureTimerLoop(instance);
+    }
+    if (room.syncAudio && state.audio && typeof state.audio === "object") {
+      instance.state.audio.master = clamp(state.audio.master, 0, 1, instance.state.audio.master);
+      CHANNELS.forEach((channel) => {
+        instance.state.audio.mix[channel.id] = clamp(state.audio.mix?.[channel.id], 0, 1, instance.state.audio.mix[channel.id]);
+      });
+      applyAudioGains(instance);
+    }
+    room.applying = false;
+    writeState(instance);
+    render(instance);
+  }
+
+  function scheduleSharedSync(instance) {
+    const room = instance.sharedRoom;
+    if (!room?.code || room.role !== "host" || room.status !== "connected" || room.applying) return;
+    global.clearTimeout(room.broadcastTimer);
+    room.broadcastTimer = global.setTimeout(() => {
+      room.broadcastTimer = 0;
+      global.HHRealtime?.emit?.("workspace:room:state", { service: REALTIME_SERVICE, state: sharedSnapshot(instance) }, { timeout: 5000 }).then((response) => {
+        room.revision = Math.max(room.revision, Number(response?.revision) || 0);
+        room.status = "connected";
+        room.message = "Thay đổi đã được máy chủ xác nhận.";
+        refreshSharedPanel(instance);
+      }).catch((error) => {
+        room.status = global.HHRealtime?.socket?.()?.connected ? "error" : "reconnecting";
+        room.message = cleanText(error?.message || "Không thể đồng bộ thay đổi.", 180);
+        refreshSharedPanel(instance);
+      });
+    }, 100);
+  }
+
+  function waitForSharedConnection(socket) {
+    if (socket?.connected) return Promise.resolve(socket);
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (error) => {
+        if (settled) return;
+        settled = true;
+        global.clearTimeout(timer);
+        socket?.off?.("connect", connected);
+        socket?.off?.("connect_error", failed);
+        if (error) reject(error); else resolve(socket);
+      };
+      const connected = () => finish();
+      const failed = (error) => finish(error || new Error("Không thể kết nối máy chủ realtime."));
+      const timer = global.setTimeout(() => finish(new Error("Máy chủ realtime không phản hồi đúng hạn.")), 12_000);
+      socket?.once?.("connect", connected);
+      socket?.once?.("connect_error", failed);
+    });
+  }
+
+  async function ensureSharedRealtime(instance) {
+    if (instance.isGuest) throw Object.assign(new Error("Hãy đăng nhập để tạo hoặc tham gia phòng học chung."), { code: "AUTH_REQUIRED" });
+    const realtime = global.HHRealtime;
+    if (!realtime) throw new Error("Lõi realtime chưa được tải trên trang này.");
+    if (realtime.status?.().state === "unconfigured" && global.HH_SOCKET_URL) {
+      realtime.configure?.({
+        url: global.HH_SOCKET_URL,
+        auth: () => ({ token: global.HHAuthSession?.token?.() || "", page: global.location?.pathname || "" })
+      });
+    }
+    const socket = await realtime.connect?.();
+    if (!socket) throw new Error("Máy chủ realtime chưa được cấu hình hoặc đang ngoại tuyến.");
+    return waitForSharedConnection(socket);
+  }
+
+  function enterSharedRoom(instance, response, options = {}) {
+    const roomData = response?.room;
+    const code = cleanText(roomData?.code, 12).toUpperCase();
+    if (!ROOM_CODE.test(code)) throw new Error("Máy chủ trả về mã phòng không hợp lệ.");
+    const room = instance.sharedRoom;
+    room.personalSnapshot ||= capturePersonalSession(instance);
+    room.code = code;
+    room.name = cleanText(roomData?.name, 80) || "Phòng học chung";
+    room.selfId = cleanText(response?.self?.id || room.selfId, 100);
+    room.members = sharedMembers(roomData?.members);
+    room.role = response?.self?.role === "host" ? "host" : "member";
+    if (room.role === "host") {
+      room.syncScene = true;
+      room.syncTimer = true;
+      room.syncAudio = true;
+    }
+    room.status = "connected";
+    room.message = options.reconnecting ? "Đã kết nối lại và nhận trạng thái mới nhất." : "Máy chủ đã xác nhận bạn ở trong phòng.";
+    applySharedState(instance, roomData?.state || {}, roomData?.revision);
+    return room;
+  }
+
+  async function createSharedRoom(instance, name) {
+    const room = instance.sharedRoom;
+    room.status = "connecting";
+    room.message = "Đang tạo phòng riêng…";
+    refreshSharedPanel(instance);
+    try {
+      await ensureSharedRealtime(instance);
+      const response = await global.HHRealtime.emit("workspace:room:create", {
+        service: REALTIME_SERVICE,
+        name: cleanText(name, 80) || "Cùng học tập trung",
+        state: sharedSnapshot(instance)
+      }, { timeout: 8000 });
+      enterSharedRoom(instance, response);
+      announce(instance, `Đã tạo phòng ${instance.sharedRoom.code}.`);
+    } catch (error) {
+      room.status = error?.code === "AUTH_REQUIRED" ? "error" : (global.HHRealtime?.status?.().state === "unconfigured" ? "unconfigured" : "error");
+      room.message = cleanText(error?.message || "Không thể tạo phòng.", 180);
+      refreshSharedPanel(instance);
+      announce(instance, room.message, "error");
+    }
+  }
+
+  async function joinSharedRoom(instance, code, options = {}) {
+    const normalized = cleanText(code, 12).toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (!ROOM_CODE.test(normalized)) throw new Error("Mã phòng phải gồm 6–12 chữ cái hoặc chữ số.");
+    const room = instance.sharedRoom;
+    room.status = options.reconnecting ? "reconnecting" : "connecting";
+    room.message = options.reconnecting ? "Đang vào lại phòng…" : "Đang xác minh mã phòng…";
+    refreshSharedPanel(instance);
+    try {
+      await ensureSharedRealtime(instance);
+      const response = await global.HHRealtime.emit("workspace:room:join", { service: REALTIME_SERVICE, code: normalized }, { timeout: 8000 });
+      enterSharedRoom(instance, response, options);
+      if (!options.silent) announce(instance, `Đã vào phòng ${normalized}.`);
+    } catch (error) {
+      room.status = "error";
+      room.message = cleanText(error?.message || "Không thể tham gia phòng.", 180);
+      if (options.reconnecting && room.personalSnapshot) restorePersonalSession(instance, { message: room.message, status: "error" });
+      else refreshSharedPanel(instance);
+      if (!options.silent) announce(instance, room.message, "error");
+      throw error;
+    }
+  }
+
+  function restorePersonalSession(instance, options = {}) {
+    const room = instance.sharedRoom;
+    const personal = room.personalSnapshot;
+    global.clearTimeout(room.broadcastTimer);
+    room.broadcastTimer = 0;
+    if (personal) {
+      stopTimerLoop(instance);
+      if (allScenes(instance).some((sceneItem) => sceneItem.id === personal.sceneId)) instance.state.scenes.selected = personal.sceneId;
+      instance.state.timer = JSON.parse(JSON.stringify(personal.timer));
+      instance.state.audio.master = personal.audio.master;
+      instance.state.audio.mix = { ...personal.audio.mix };
+      applyAudioGains(instance);
+      ensureTimerLoop(instance);
+    }
+    Object.assign(room, {
+      code: "", name: "", selfId: "", role: "", members: [], revision: 0, lastState: null,
+      personalSnapshot: null, status: options.status || "idle", message: options.message || "Đã rời phòng; phiên cá nhân được khôi phục nguyên trạng."
+    });
+    writeState(instance);
+    if (options.render !== false) render(instance);
+  }
+
+  async function leaveSharedRoom(instance, options = {}) {
+    const hadRoom = Boolean(instance.sharedRoom?.code);
+    if (hadRoom && options.emit !== false) {
+      try { await global.HHRealtime?.emit?.("workspace:room:leave", { service: REALTIME_SERVICE }, { timeout: 3000 }); }
+      catch (_) { /* local exit must still complete while offline */ }
+    }
+    restorePersonalSession(instance, { render: options.render, message: options.message });
+    if (hadRoom && !options.silent) announce(instance, "Đã rời phòng và khôi phục phiên cá nhân.");
+  }
+
+  function applySharedPreference(instance, preference, enabled) {
+    const room = instance.sharedRoom;
+    const personal = room.personalSnapshot;
+    if (!room.code || room.role === "host" || !["scene", "timer", "audio"].includes(preference)) return;
+    const property = `sync${preference[0].toUpperCase()}${preference.slice(1)}`;
+    room[property] = enabled;
+    if (enabled) return applySharedState(instance, room.lastState || {}, room.revision);
+    room.applying = true;
+    if (preference === "scene" && personal && allScenes(instance).some((sceneItem) => sceneItem.id === personal.sceneId)) instance.state.scenes.selected = personal.sceneId;
+    if (preference === "timer" && personal) {
+      stopTimerLoop(instance);
+      instance.state.timer = JSON.parse(JSON.stringify(personal.timer));
+      ensureTimerLoop(instance);
+    }
+    if (preference === "audio" && personal) {
+      instance.state.audio.master = personal.audio.master;
+      instance.state.audio.mix = { ...personal.audio.mix };
+      applyAudioGains(instance);
+    }
+    room.applying = false;
+    writeState(instance);
+    render(instance);
+    announce(instance, `Đã tắt đồng bộ ${preference === "scene" ? "không gian" : preference === "timer" ? "Pomodoro" : "phối âm"} trên thiết bị này.`);
+  }
+
+  async function copySharedText(instance, value, successMessage) {
+    const text = String(value || "");
+    if (!text) return;
+    try {
+      if (global.navigator?.clipboard?.writeText) await global.navigator.clipboard.writeText(text);
+      else {
+        const input = global.document?.createElement?.("textarea");
+        if (!input) throw new Error("Clipboard unavailable");
+        input.value = text;
+        input.setAttribute("readonly", "");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        global.document.body?.appendChild?.(input);
+        input.select();
+        if (!global.document.execCommand?.("copy")) throw new Error("Copy rejected");
+        input.remove();
+      }
+      announce(instance, successMessage);
+    } catch { announce(instance, "Trình duyệt không cho phép sao chép tự động.", "error"); }
+  }
+
+  function setupSharedRealtime(instance) {
+    const room = instance.sharedRoom;
+    const realtimeState = global.HHRealtime?.status?.().state;
+    room.status = instance.isGuest ? "error" : !global.HHRealtime || realtimeState === "unconfigured" ? "unconfigured" : realtimeState === "connected" || global.HHRealtime?.socket?.()?.connected ? "idle" : "idle";
+    if (global.HHRealtime?.subscribe) {
+      const scope = `focus-room-${instance.owner}`;
+      instance.cleanup.push(global.HHRealtime.subscribe(scope, "workspace:room:presence", (payload = {}) => {
+        if (payload.service !== REALTIME_SERVICE || !room.code || String(payload.code || "").toUpperCase() !== room.code) return;
+        room.members = sharedMembers(payload.members);
+        const self = room.members.find((member) => member.id === room.selfId);
+        if (self) room.role = self.role;
+        if (room.role === "host") room.syncScene = room.syncTimer = room.syncAudio = true;
+        room.revision = Math.max(room.revision, Number(payload.revision) || 0);
+        room.status = "connected";
+        room.message = room.role === "host" ? "Bạn đang giữ quyền chủ phòng." : "Danh sách thành viên vừa được cập nhật.";
+        refreshSharedPanel(instance);
+      }));
+      instance.cleanup.push(global.HHRealtime.subscribe(scope, "workspace:room:state", (payload = {}) => {
+        if (payload.service !== REALTIME_SERVICE || !room.code || String(payload.code || "").toUpperCase() !== room.code) return;
+        if (Number(payload.revision) < room.revision) return;
+        room.status = "connected";
+        room.message = "Đã nhận trạng thái mới nhất từ chủ phòng.";
+        applySharedState(instance, payload.state, payload.revision);
+      }));
+      instance.cleanup.push(() => global.HHRealtime?.unsubscribeScope?.(scope));
+    }
+    addListener(instance, global, "hh:realtime-ready", () => {
+      if (!room.code) { room.status = "idle"; room.message = "Máy chủ realtime đã sẵn sàng."; return refreshSharedPanel(instance); }
+      void joinSharedRoom(instance, room.code, { reconnecting: true, silent: true }).catch(() => {});
+    });
+    addListener(instance, global, "hh:realtime-offline", () => {
+      room.status = room.code ? "reconnecting" : "error";
+      room.message = "Mất kết nối tạm thời; dữ liệu cá nhân vẫn an toàn trên thiết bị.";
+      refreshSharedPanel(instance);
+    });
+    const Parameters = global.URLSearchParams;
+    const invite = typeof Parameters === "function" && global.location?.hash
+      ? new Parameters(String(global.location.hash).split("?")[1] || "").get("room")
+      : "";
+    const code = cleanText(invite, 12).toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (ROOM_CODE.test(code)) {
+      room.inviteCode = code;
+      instance.ui.panel = "shared";
+      render(instance);
+      if (!instance.isGuest) global.setTimeout(() => { void joinSharedRoom(instance, code, { silent: true }).catch(() => {}); }, 0);
+    }
   }
 
   function syncTimerDom(instance) {
@@ -762,6 +1311,101 @@
     try { new global.Notification("HH Focus Room", { body: message, tag: "hh-focus-room-timer" }); } catch {}
   }
 
+  function syncWakeLockDom(instance) {
+    const button = instance.root.querySelector('[data-hfr-action="wake-lock-toggle"]');
+    const status = instance.root.querySelector("[data-hfr-wake-lock-status]");
+    if (button) {
+      button.textContent = instance.wakeLockWanted ? "Tắt" : "Bật";
+      button.setAttribute("aria-pressed", String(Boolean(instance.wakeLockWanted)));
+    }
+    if (status) status.textContent = instance.wakeLockStatus;
+  }
+
+  async function requestWakeLock(instance) {
+    if (!global.navigator?.wakeLock?.request) {
+      instance.wakeLockWanted = false;
+      instance.wakeLockStatus = "Trình duyệt không hỗ trợ Screen Wake Lock";
+      syncWakeLockDom(instance);
+      return;
+    }
+    instance.wakeLockWanted = true;
+    if (global.document?.hidden) {
+      instance.wakeLockStatus = "Sẽ bật khi tab hiển thị";
+      syncWakeLockDom(instance);
+      return;
+    }
+    if (instance.wakeLock) return syncWakeLockDom(instance);
+    instance.wakeLockStatus = "Đang yêu cầu…";
+    syncWakeLockDom(instance);
+    try {
+      const sentinel = await global.navigator.wakeLock.request("screen");
+      if (instances.get(instance.root) !== instance || !instance.wakeLockWanted) {
+        try { await sentinel.release(); } catch {}
+        return;
+      }
+      instance.wakeLock = sentinel;
+      instance.wakeLockStatus = "Đang giữ màn hình sáng trong phiên này";
+      sentinel.addEventListener?.("release", () => {
+        if (instance.wakeLock !== sentinel) return;
+        instance.wakeLock = null;
+        instance.wakeLockStatus = instance.wakeLockWanted ? "Đã tạm nhả khi tab ẩn" : "Đã tắt";
+        syncWakeLockDom(instance);
+      });
+      syncWakeLockDom(instance);
+      announce(instance, "Đã bật giữ màn hình sáng.");
+    } catch (error) {
+      instance.wakeLock = null;
+      instance.wakeLockWanted = false;
+      instance.wakeLockStatus = `Không thể bật: ${cleanText(error?.message, 100)}`;
+      syncWakeLockDom(instance);
+      announce(instance, instance.wakeLockStatus, "error");
+    }
+  }
+
+  function releaseWakeLock(instance, keepWanted = false) {
+    const sentinel = instance.wakeLock;
+    instance.wakeLock = null;
+    instance.wakeLockWanted = keepWanted && instance.wakeLockWanted;
+    instance.wakeLockStatus = instance.wakeLockWanted ? "Đã tạm nhả khi tab ẩn" : "Đã tắt";
+    try { sentinel?.release?.(); } catch {}
+    syncWakeLockDom(instance);
+    if (!keepWanted && sentinel) announce(instance, "Đã tắt giữ màn hình sáng.");
+  }
+
+  function handleShortcut(instance, event) {
+    if (event.defaultPrevented || event.isComposing) return;
+    const element = event.target;
+    if (element?.matches?.("input, textarea, select, [contenteditable='true']")) return;
+    if (event.key === "Escape" && instance.ui.panel) {
+      event.preventDefault();
+      instance.ui.panel = "";
+      render(instance);
+      return;
+    }
+    if (!event.altKey || event.ctrlKey || event.metaKey) return;
+    const key = String(event.key || "").toLowerCase();
+    const panels = { "1": "plan", "2": "scenes", "3": "sound", "4": "timer", "5": "tasks", "6": "notes", "7": "history", "8": "shared", "9": "settings" };
+    if (panels[key]) {
+      event.preventDefault();
+      instance.ui.panel = instance.ui.panel === panels[key] ? "" : panels[key];
+      render(instance);
+      return;
+    }
+    if (key === " " || event.code === "Space") {
+      event.preventDefault();
+      toggleTimer(instance);
+      render(instance);
+      return;
+    }
+    if (key === "z") {
+      event.preventDefault();
+      finishLayoutDrag(instance);
+      instance.ui.zen = !instance.ui.zen;
+      instance.ui.panel = "";
+      render(instance);
+    }
+  }
+
   function applyPhaseScene(instance, enteringBreak) {
     if (!instance.state.settings.sceneOnBreak) return;
     if (enteringBreak) {
@@ -775,6 +1419,14 @@
   }
 
   function completePhase(instance) {
+    if (sharedFollowerControls(instance, "timer", "Đồng hồ chung đã về 00:00; đang chờ chủ phòng chuyển vòng.")) {
+      instance.state.timer.running = false;
+      instance.state.timer.endsAt = 0;
+      instance.state.timer.remaining = 0;
+      stopTimerLoop(instance);
+      syncTimerDom(instance);
+      return;
+    }
     const timer = instance.state.timer;
     const completedPhase = timer.phase;
     timer.running = false;
@@ -791,7 +1443,9 @@
           durationSeconds: timer.duration,
           taskId: task?.id || "",
           taskTitle: task?.title || "",
-          sceneId: instance.state.scenes.selected
+          sceneId: instance.state.scenes.selected,
+          intention: instance.state.planning.intention,
+          distractionCount: instance.state.planning.distractions.filter((entry) => entry.sessionId === timer.sessionId).length
         });
         instance.state.history = instance.state.history.slice(-400);
       }
@@ -825,6 +1479,7 @@
     writeState(instance);
     render(instance);
     announce(instance, completedPhase === "focus" ? "Đã hoàn thành một phiên tập trung." : "Giờ nghỉ đã kết thúc.");
+    scheduleSharedSync(instance);
   }
 
   function reconcileTimer(instance) {
@@ -847,6 +1502,7 @@
   }
 
   function toggleTimer(instance) {
+    if (sharedFollowerControls(instance, "timer")) return;
     const timer = instance.state.timer;
     if (timer.running) {
       timer.remaining = Math.max(0, Math.ceil((timer.endsAt - Date.now()) / 1000));
@@ -867,9 +1523,11 @@
     writeState(instance);
     syncTimerDom(instance);
     announce(instance, timer.running ? `${phaseLabel(timer.phase)} đã bắt đầu.` : "Đã tạm dừng đồng hồ.");
+    scheduleSharedSync(instance);
   }
 
   function advancePhase(instance, skipped = false) {
+    if (sharedFollowerControls(instance, "timer")) return;
     const timer = instance.state.timer;
     stopTimerLoop(instance);
     timer.running = false;
@@ -890,9 +1548,11 @@
     writeState(instance);
     render(instance);
     announce(instance, skipped ? `Đã chuyển sang ${phaseLabel(timer.phase).toLocaleLowerCase("vi")}.` : "Đã đặt lại chu kỳ.");
+    scheduleSharedSync(instance);
   }
 
   function resetTimer(instance) {
+    if (sharedFollowerControls(instance, "timer")) return;
     const timer = instance.state.timer;
     stopTimerLoop(instance);
     timer.running = false;
@@ -904,6 +1564,7 @@
     writeState(instance);
     syncTimerDom(instance);
     announce(instance, "Đã đặt lại đồng hồ.");
+    scheduleSharedSync(instance);
   }
 
   function createNoiseBuffer(context, type) {
@@ -1441,14 +2102,108 @@
   }
 
   function applyMix(instance, mix, message) {
+    if (sharedFollowerControls(instance, "audio", "Chủ phòng đang điều khiển phối âm chung.")) return;
     CHANNELS.forEach((channel) => { instance.state.audio.mix[channel.id] = clamp(mix?.[channel.id], 0, 1, 0); });
     writeState(instance);
     applyAudioGains(instance);
     render(instance);
     announce(instance, message);
+    scheduleSharedSync(instance);
+  }
+
+  function currentRitual(instance, name) {
+    return {
+      id: id("ritual"),
+      name: cleanText(name, 60) || "Bộ tập trung",
+      sceneId: instance.state.scenes.selected,
+      master: instance.state.audio.master,
+      mix: { ...instance.state.audio.mix },
+      music: { ...instance.state.audio.music },
+      timer: {
+        focusMinutes: instance.state.timer.focusMinutes,
+        breakMinutes: instance.state.timer.breakMinutes,
+        longBreakMinutes: instance.state.timer.longBreakMinutes,
+        cycles: instance.state.timer.cycles
+      },
+      createdAt: Date.now()
+    };
+  }
+
+  function builtInRitual(ritual) {
+    return ritual ? {
+      name: ritual.name,
+      sceneId: ritual.sceneId,
+      master: 0.5,
+      mix: MIX_PRESETS[ritual.mixPreset]?.mix || {},
+      music: { selected: ritual.musicId, volume: 0.26, loop: true },
+      timer: {
+        focusMinutes: ritual.focus,
+        breakMinutes: ritual.rest,
+        longBreakMinutes: ritual.longRest,
+        cycles: ritual.cycles
+      }
+    } : null;
+  }
+
+  function applyRitual(instance, ritual) {
+    if (!ritual) return;
+    if (sharedFollowerControls(instance, "scene") || sharedFollowerControls(instance, "timer") || sharedFollowerControls(instance, "audio")) return;
+    if (instance.state.timer.running) {
+      announce(instance, "Hãy tạm dừng phiên đang chạy trước khi đổi nghi thức.", "error");
+      return;
+    }
+    const targetScene = allScenes(instance).find((item) => item.id === ritual.sceneId) || SCENES[0];
+    const musicChanged = instance.state.audio.music.selected !== ritual.music.selected;
+    if (musicChanged) destroyMusic(instance);
+    instance.state.scenes.selected = targetScene.id;
+    instance.state.scenes.recent = [targetScene.id, ...instance.state.scenes.recent.filter((sceneId) => sceneId !== targetScene.id)].slice(0, 12);
+    instance.state.audio.master = clamp(ritual.master, 0, 1, 0.5);
+    CHANNELS.forEach((channel) => { instance.state.audio.mix[channel.id] = clamp(ritual.mix?.[channel.id], 0, 1, 0); });
+    instance.state.audio.music = {
+      selected: MUSIC_TRACKS.some((track) => track.id === ritual.music?.selected) ? ritual.music.selected : MUSIC_TRACKS[0].id,
+      volume: clamp(ritual.music?.volume, 0, 1, 0.26),
+      loop: ritual.music?.loop !== false
+    };
+    Object.assign(instance.state.timer, {
+      phase: "focus",
+      focusMinutes: clamp(ritual.timer?.focusMinutes, 1, 180, 25),
+      breakMinutes: clamp(ritual.timer?.breakMinutes, 1, 60, 5),
+      longBreakMinutes: clamp(ritual.timer?.longBreakMinutes, 1, 90, 15),
+      cycles: Math.round(clamp(ritual.timer?.cycles, 1, 20, 4)),
+      cycle: 1,
+      running: false,
+      endsAt: 0,
+      startedAt: 0,
+      sessionId: "",
+      previousScene: ""
+    });
+    instance.state.timer.duration = timerDuration(instance.state.timer);
+    instance.state.timer.remaining = instance.state.timer.duration;
+    applyAudioGains(instance);
+    writeState(instance);
+    render(instance);
+    announce(instance, `Đã chuẩn bị ${ritual.name}; âm thanh chưa tự phát.`);
+    scheduleSharedSync(instance);
+  }
+
+  function logDistraction(instance, label, note = "") {
+    const timer = instance.state.timer;
+    instance.state.planning.distractions.push({
+      id: id("distraction"),
+      label: cleanText(label, 60) || "Xao nhãng",
+      note: cleanText(note, 180),
+      createdAt: Date.now(),
+      sessionId: timer.phase === "focus" ? timer.sessionId : "",
+      taskId: instance.state.primaryTaskId
+    });
+    instance.state.planning.distractions = instance.state.planning.distractions.slice(-500);
+    writeState(instance);
+    render(instance);
+    announce(instance, "Đã ghi nhận; đồng hồ vẫn tiếp tục chạy.");
   }
 
   function applyScene(instance, sceneId) {
+    if (sharedFollowerControls(instance, "scene", "Chủ phòng đang điều khiển không gian chung.")) return;
     const target = allScenes(instance).find((item) => item.id === sceneId);
     if (!target) return;
     instance.state.scenes.selected = target.id;
@@ -1460,6 +2215,7 @@
     writeState(instance);
     render(instance);
     announce(instance, `Đã mở ${target.title}.`);
+    scheduleSharedSync(instance);
   }
 
   function toggleListValue(list, value, maximum = 48) {
@@ -1904,6 +2660,36 @@
     announce(instance, "Đã xuất dữ liệu Focus Room.");
   }
 
+  function csvCell(value) {
+    const text = String(value == null ? "" : value);
+    return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
+
+  function downloadHistoryCsv(instance) {
+    const header = ["Bắt đầu", "Kết thúc", "Phút", "Nhiệm vụ", "Ý định", "Không gian", "Số lần xao nhãng"];
+    const rows = instance.state.history.map((entry) => {
+      const sceneItem = allScenes(instance).find((item) => item.id === entry.sceneId);
+      return [
+        new Date(entry.startedAt).toISOString(),
+        new Date(entry.endedAt).toISOString(),
+        Math.round(entry.durationSeconds / 60),
+        entry.taskTitle,
+        entry.intention,
+        sceneItem?.title || "Không gian đã xóa",
+        entry.distractionCount
+      ];
+    });
+    const content = `\ufeff${[header, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = global.document.createElement("a");
+    link.href = url;
+    link.download = `hh-focus-history-${localDay()}.csv`;
+    link.click();
+    global.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    announce(instance, `Đã xuất ${rows.length} phiên sang CSV.`);
+  }
+
   async function importJson(instance, file) {
     if (!file || file.size > 2 * 1024 * 1024) throw new Error("Tệp JSON phải nhỏ hơn 2 MB.");
     const parsed = JSON.parse(await file.text());
@@ -1948,6 +2734,26 @@
       return;
     }
     if (action === "close-panel") { instance.ui.panel = ""; render(instance); return; }
+    if (action === "copy-room-code") { copySharedText(instance, instance.sharedRoom.code, "Đã sao chép mã phòng."); return; }
+    if (action === "copy-room-link") {
+      const location = global.location || {};
+      const link = `${location.origin || ""}${location.pathname || "/"}#/focus-room?room=${encodeURIComponent(instance.sharedRoom.code)}`;
+      copySharedText(instance, link, "Đã sao chép liên kết mời.");
+      return;
+    }
+    if (action === "leave-shared-room") { void leaveSharedRoom(instance); return; }
+    if (action === "plan-timer-toggle") { toggleTimer(instance); render(instance); return; }
+    if (action === "apply-built-in-ritual") { applyRitual(instance, builtInRitual(FOCUS_RITUALS.find((ritual) => ritual.id === targetId))); return; }
+    if (action === "apply-user-ritual") { applyRitual(instance, instance.state.planning.rituals.find((ritual) => ritual.id === targetId)); return; }
+    if (action === "delete-user-ritual") {
+      instance.state.planning.rituals = instance.state.planning.rituals.filter((ritual) => ritual.id !== targetId);
+      writeState(instance); render(instance); announce(instance, "Đã xóa bộ tập trung."); return;
+    }
+    if (action === "log-distraction") { logDistraction(instance, target.dataset.value); return; }
+    if (action === "delete-distraction") {
+      instance.state.planning.distractions = instance.state.planning.distractions.filter((entry) => entry.id !== targetId);
+      writeState(instance); render(instance); return;
+    }
     if (action === "favorites-only") { instance.ui.favoritesOnly = !instance.ui.favoritesOnly; render(instance); return; }
     if (action === "scene-view") { instance.ui.sceneView = instance.ui.sceneView === "grid" ? "list" : "grid"; render(instance); return; }
     if (action === "scene-category") { instance.ui.category = target.dataset.value || "all"; render(instance); return; }
@@ -2008,10 +2814,11 @@
       writeState(instance); render(instance); return;
     }
     if (action === "timer-preset") {
+      if (sharedFollowerControls(instance, "timer")) return;
       const preset = TIMER_PRESETS.find((item) => item.id === targetId);
       if (!preset) return;
       Object.assign(instance.state.timer, { focusMinutes: preset.focus, breakMinutes: preset.rest, longBreakMinutes: preset.longRest, phase: "focus", cycle: 1, running: false, endsAt: 0, startedAt: 0, sessionId: "", duration: preset.focus * 60, remaining: preset.focus * 60 });
-      stopTimerLoop(instance); writeState(instance); render(instance); announce(instance, `Đã chọn ${preset.label}.`); return;
+      stopTimerLoop(instance); writeState(instance); render(instance); announce(instance, `Đã chọn ${preset.label}.`); scheduleSharedSync(instance); return;
     }
     if (action === "timer-toggle") { toggleTimer(instance); return; }
     if (action === "timer-skip") { advancePhase(instance, true); return; }
@@ -2071,6 +2878,12 @@
       });
       return;
     }
+    if (action === "wake-lock-toggle") {
+      if (instance.wakeLockWanted) releaseWakeLock(instance);
+      else requestWakeLock(instance);
+      return;
+    }
+    if (action === "export-history-csv") { downloadHistoryCsv(instance); return; }
     if (action === "export-data") { downloadJson(instance); }
   }
 
@@ -2087,10 +2900,11 @@
       return;
     }
     if (event.target.matches("[data-hfr-master]")) {
+      if (sharedFollowerControls(instance, "audio", "Chủ phòng đang điều khiển phối âm chung.")) { render(instance); return; }
       instance.state.audio.master = clamp(event.target.value, 0, 100, 50) / 100;
       const output = instance.root.querySelector("[data-hfr-master-output]");
       if (output) output.textContent = `${Math.round(instance.state.audio.master * 100)}%`;
-      writeState(instance); applyAudioGains(instance); return;
+      writeState(instance); applyAudioGains(instance); scheduleSharedSync(instance); return;
     }
     if (event.target.matches("[data-hfr-music-volume]")) {
       instance.state.audio.music.volume = clamp(event.target.value, 0, 100, 28) / 100;
@@ -2107,12 +2921,13 @@
       syncMusicDom(instance); return;
     }
     if (event.target.matches("[data-hfr-channel]")) {
+      if (sharedFollowerControls(instance, "audio", "Chủ phòng đang điều khiển phối âm chung.")) { render(instance); return; }
       const channelId = event.target.dataset.hfrChannel;
       if (!Object.hasOwn(instance.state.audio.mix, channelId)) return;
       instance.state.audio.mix[channelId] = clamp(event.target.value, 0, 100, 0) / 100;
       const output = instance.root.querySelector(`[data-hfr-channel-output="${channelId}"]`);
       if (output) output.textContent = `${Math.round(instance.state.audio.mix[channelId] * 100)}%`;
-      writeState(instance); applyAudioGains(instance); return;
+      writeState(instance); applyAudioGains(instance); scheduleSharedSync(instance); return;
     }
     if (event.target.matches("[data-hfr-note]")) {
       instance.state.note = String(event.target.value || "").slice(0, 10000);
@@ -2130,10 +2945,41 @@
 
   function handleSubmit(instance, event) {
     const form = event.target;
+    if (form.matches("[data-hfr-shared-create]")) {
+      event.preventDefault();
+      void createSharedRoom(instance, new FormData(form).get("name"));
+      return;
+    }
+    if (form.matches("[data-hfr-shared-join]")) {
+      event.preventDefault();
+      void joinSharedRoom(instance, new FormData(form).get("code")).catch(() => {});
+      return;
+    }
     if (form.matches("[data-hfr-upload-form]")) {
       event.preventDefault();
       handleUpload(instance, form).catch((error) => announce(instance, cleanText(error?.message, 160), "error"));
       return;
+    }
+    if (form.matches("[data-hfr-plan-form]")) {
+      event.preventDefault();
+      const data = new FormData(form);
+      instance.state.planning.dailyGoalMinutes = Math.round(clamp(data.get("dailyGoal"), 15, 720, 120));
+      instance.state.planning.intention = cleanText(data.get("intention"), 240);
+      writeState(instance); render(instance); announce(instance, "Đã lưu mục tiêu và ý định phiên học."); return;
+    }
+    if (form.matches("[data-hfr-ritual-save]")) {
+      event.preventDefault();
+      const name = cleanText(new FormData(form).get("name"), 60);
+      if (!name) return announce(instance, "Hãy đặt tên cho bộ tập trung.", "error");
+      instance.state.planning.rituals.unshift(currentRitual(instance, name));
+      instance.state.planning.rituals = instance.state.planning.rituals.slice(0, 12);
+      writeState(instance); render(instance); announce(instance, "Đã lưu toàn bộ cấu hình hiện tại."); return;
+    }
+    if (form.matches("[data-hfr-distraction-form]")) {
+      event.preventDefault();
+      const note = cleanText(new FormData(form).get("note"), 180);
+      if (!note) return announce(instance, "Hãy nhập nguyên nhân xao nhãng.", "error");
+      logDistraction(instance, "Ghi chú", note); return;
     }
     if (form.matches("[data-hfr-task-form]")) {
       event.preventDefault();
@@ -2166,6 +3012,7 @@
     }
     if (form.matches("[data-hfr-timer-form]")) {
       event.preventDefault();
+      if (sharedFollowerControls(instance, "timer")) return;
       const data = new FormData(form);
       const timer = instance.state.timer;
       timer.focusMinutes = clamp(data.get("focus"), 1, 180, 25);
@@ -2174,7 +3021,7 @@
       timer.cycles = Math.round(clamp(data.get("cycles"), 1, 20, 4));
       timer.phase = "focus"; timer.cycle = 1; timer.running = false; timer.endsAt = 0; timer.startedAt = 0; timer.sessionId = "";
       timer.duration = timer.focusMinutes * 60; timer.remaining = timer.duration;
-      stopTimerLoop(instance); writeState(instance); render(instance); announce(instance, "Đã áp dụng chu kỳ tùy chỉnh."); return;
+      stopTimerLoop(instance); writeState(instance); render(instance); announce(instance, "Đã áp dụng chu kỳ tùy chỉnh."); scheduleSharedSync(instance); return;
     }
     if (form.matches("[data-hfr-settings-form]")) {
       event.preventDefault();
@@ -2188,6 +3035,10 @@
   }
 
   function handleChange(instance, event) {
+    if (event.target.matches("[data-hfr-shared-pref]")) {
+      applySharedPreference(instance, cleanText(event.target.dataset.hfrSharedPref, 20), event.target.checked === true);
+      return;
+    }
     if (event.target.matches("[data-hfr-import]")) {
       const file = event.target.files?.[0];
       importJson(instance, file).catch((error) => announce(instance, cleanText(error?.message, 160), "error"));
@@ -2213,6 +3064,7 @@
       teardownPetDepth(instance);
       instance.audio?.context?.suspend?.().catch?.(() => {});
       suspendMusicForVisibility(instance, true);
+      releaseWakeLock(instance, true);
       updatePlaybackSignal(instance);
     } else {
       reconcileTimer(instance);
@@ -2221,6 +3073,7 @@
       setupPetDepth(instance, currentScene(instance));
       instance.audio?.context?.resume?.().then?.(() => updatePlaybackSignal(instance)).catch?.(() => {});
       suspendMusicForVisibility(instance, false);
+      if (instance.wakeLockWanted) requestWakeLock(instance);
     }
   }
 
@@ -2250,9 +3103,16 @@
     const instance = {
       root, options, owner, storageKey, isGuest: options.currentUser?.guest === true || owner === "guest", state: readState(storageKey, options),
       ui: { panel: "", search: "", category: "all", favoritesOnly: false, sceneView: "grid", zen: false, editTaskId: "" },
+      sharedRoom: {
+        status: "idle", message: "", code: "", name: "", selfId: "", role: "", members: [], revision: 0,
+        syncScene: true, syncTimer: true, syncAudio: false, lastState: null, personalSnapshot: null,
+        applying: false, broadcastTimer: 0, inviteCode: ""
+      },
       cleanup: [], objectUrls: new Map(), audio: null, audioStatus: "Âm thanh đang tắt",
       music: null, musicStatus: "Nhạc đang tắt · không tự phát", mediaActive: false,
       petDepth: null, petDepthGeneration: 0,
+      wakeLock: null, wakeLockWanted: false,
+      wakeLockStatus: global.navigator?.wakeLock?.request ? "Đang tắt" : "Trình duyệt không hỗ trợ Screen Wake Lock",
       timerInterval: 0, pointerCleanup: null, layoutObserver: null, layoutFrame: 0, layoutDrag: null,
       toastTimer: 0, noteTimer: 0, notePending: false, searchTimer: 0, mediaStatus: ""
     };
@@ -2270,6 +3130,7 @@
     addListener(instance, root, "pointerup", (event) => finishLayoutDrag(instance, event));
     addListener(instance, root, "pointercancel", (event) => finishLayoutDrag(instance, event));
     addListener(instance, root, "keydown", (event) => handleLayoutKeydown(instance, event));
+    addListener(instance, global.document, "keydown", (event) => handleShortcut(instance, event));
     addListener(instance, root, "error", (event) => handleImageError(instance, event), true);
     addListener(instance, global.document, "visibilitychange", () => handleVisibility(instance));
     addListener(instance, global, "storage", (event) => handleStorage(instance, event));
@@ -2279,11 +3140,16 @@
       const app = instance.root.querySelector("[data-hfr-root]");
       if (app) app.dataset.fullscreen = global.document.fullscreenElement ? "true" : "false";
     });
+    setupSharedRealtime(instance);
     if (!safeRead(storageKey, null)) writeState(instance);
     hydrateCustomImages(instance);
     return {
       route: ROUTE,
       getState: () => JSON.parse(JSON.stringify(instance.state)),
+      getSharedRoom: () => JSON.parse(JSON.stringify({ ...instance.sharedRoom, personalSnapshot: instance.sharedRoom.personalSnapshot ? "captured" : null })),
+      createSharedRoom: (name) => createSharedRoom(instance, name),
+      joinSharedRoom: (code) => joinSharedRoom(instance, code),
+      leaveSharedRoom: () => leaveSharedRoom(instance),
       openPanel: (panel) => { instance.ui.panel = panelLabel(panel) ? panel : ""; render(instance); },
       unmount: () => unmount(root)
     };
@@ -2296,8 +3162,11 @@
     }
     const instance = instances.get(root);
     if (!instance) return;
+    if (instance.sharedRoom?.code) global.HHRealtime?.emit?.("workspace:room:leave", { service: REALTIME_SERVICE }, { timeout: 2000 }).catch(() => {});
+    global.clearTimeout(instance.sharedRoom?.broadcastTimer);
     stopTimerLoop(instance);
     stopAudio(instance);
+    releaseWakeLock(instance);
     destroyMusic(instance);
     teardownPetDepth(instance);
     finishLayoutDrag(instance);

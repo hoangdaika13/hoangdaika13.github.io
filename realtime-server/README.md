@@ -6,6 +6,7 @@ Backend rieng cho:
 - Messenger HH realtime: phong rieng, nhom, hien dien, dang nhap va dong bo thay doi.
 - WebRTC signaling cho goi thoai, goi video, goi nhom va chia se man hinh.
 - HH Play authenticated rooms: presence, host-only state, bounded events va Watch Party sync.
+- HH Focus Room authenticated rooms: ma phong rieng, presence that, host-only scene/Pomodoro/ambient sync va khoi phuc phien ca nhan khi roi phong.
 - Dang ky/dang nhap bang email + password.
 - Dang nhap Google OAuth khi co Client ID/Secret.
 - Luu user/session/event vao MongoDB.
@@ -27,6 +28,7 @@ Quan trong:
 - `TURN_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL`: TURN production de cuoc goi hoat dong qua NAT/firewall.
 - `MAX_CALL_PARTICIPANTS`: gioi han cuoc goi nhom, mac dinh 8.
 - `MAX_PLAY_ROOMS`, `MAX_PLAY_MEMBERS`: gioi han phong HH Play (memory-only, fail-closed neu chua co adapter persistence).
+- `MAX_WORKSPACE_ROOMS`: tong gioi han cac phong workspace memory-only, bao gom HH Focus Room.
 
 ## Chay local
 
@@ -47,6 +49,8 @@ window.HH_SOCKET_URL = "https://your-persistent-node-server.example.com";
 
 `HH_SOCKET_URL` phai la may chu Node chay lien tuc (Render, Railway hoac VPS), khong phai Vercel Functions. Neu de trong, Messenger van dong bo bang REST polling de khong mat tin nhan.
 May chu Socket va Vercel API phai dung cung `JWT_SECRET`, `MONGODB_URI` va `MONGODB_DB` de xac minh dung tai khoan va quyen vao phong.
+
+HH Focus Room dung service `focus-room` tren giao thuc `workspace:room:*`. Phong khong duoc liet ke cong khai, gioi han 16 socket, chi chu phong duoc cap nhat scene/Pomodoro/ambient mix, va chi giu trong bo nho den khi thanh vien cuoi cung roi phong hoac may chu khoi dong lai. Task, note, history, goal va tep ca nhan khong nam trong payload duoc chap nhan.
 
 Cuoc goi dung WebRTC ngang hang va signaling Socket.io. HTTPS/WSS cung cap ma hoa khi truyen. Module ma hoa dau cuoi rieng chua duoc trien khai, vi vay giao dien khong duoc tuyen bo E2EE.
 

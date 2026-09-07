@@ -13,7 +13,7 @@ const loader = read("performance-loader.js");
 const worker = read("sw.js");
 const documentation = read("docs/HH_FOCUS_ROOM.md");
 
-function createHarness() {
+function createHarness(options = {}) {
   let now = 1_800_000_000_000;
   let nextTimer = 1;
   let audioContexts = 0;
@@ -24,6 +24,8 @@ function createHarness() {
   let mediaPlays = 0;
   let mediaPauses = 0;
   let mediaLoads = 0;
+  let wakeLockRequests = 0;
+  let wakeLockReleases = 0;
   const storage = new Map();
   const intervals = new Map();
   const timeouts = new Map();
@@ -116,7 +118,21 @@ function createHarness() {
     Date: FakeDate,
     document: documentNode,
     localStorage,
-    navigator: { deviceMemory: 8, hardwareConcurrency: 8 },
+    navigator: {
+      deviceMemory: 8,
+      hardwareConcurrency: 8,
+      wakeLock: {
+        async request(type) {
+          assert.equal(type, "screen");
+          wakeLockRequests += 1;
+          const listeners = new Set();
+          return {
+            addEventListener(event, listener) { if (event === "release") listeners.add(listener); },
+            async release() { wakeLockReleases += 1; listeners.forEach((listener) => listener()); }
+          };
+        }
+      }
+    },
     matchMedia: () => ({ matches: false }),
     requestAnimationFrame(callback) { callback(); return 1; },
     cancelAnimationFrame() {},
@@ -124,7 +140,8 @@ function createHarness() {
     clearInterval(timer) { intervals.delete(timer); },
     setTimeout(callback) { const timer = nextTimer++; timeouts.set(timer, callback); return timer; },
     clearTimeout(timer) { timeouts.delete(timer); },
-    dispatchEvent(event) { mediaEvents.push(event); return true; }
+    dispatchEvent(event) { mediaEvents.push(event); return true; },
+    ...(options.window || {})
   });
 
   class FakeImage {
@@ -209,6 +226,11 @@ function createHarness() {
       now += milliseconds;
       [...intervals.values()].forEach((callback) => callback());
     },
+    flushTimeouts() {
+      const pending = [...timeouts.entries()];
+      timeouts.clear();
+      pending.forEach(([, callback]) => callback());
+    },
     visibility(hidden) {
       documentNode.hidden = hidden;
       dispatch(documentListeners, "visibilitychange", {});
@@ -222,6 +244,8 @@ function createHarness() {
       get mediaPlays() { return mediaPlays; },
       get mediaPauses() { return mediaPauses; },
       get mediaLoads() { return mediaLoads; },
+      get wakeLockRequests() { return wakeLockRequests; },
+      get wakeLockReleases() { return wakeLockReleases; },
       get intervalCount() { return intervals.size; },
       get listenerCount() {
         return [...documentListeners.values(), ...windowListeners.values()].reduce((sum, listeners) => sum + listeners.size, 0);
@@ -238,10 +262,10 @@ test("Focus Room upgrades the canonical HH Platform learning workspace", () => {
   assert.match(router, /Phòng học tập trung/);
   assert.match(router, /26 scene nguyên bản/);
   assert.match(router, /Trong Học tập &amp; Ngôn ngữ/);
-  assert.match(loader, /"focus-study-room":\s*\{[\s\S]*focus-room\.css\?v=6[\s\S]*focus-room\.js\?v=6/);
+  assert.match(loader, /"focus-study-room":\s*\{[\s\S]*focus-room\.css\?v=10[\s\S]*focus-room\.js\?v=10/);
   assert.match(loader, /value === "\/focus-room"/);
-  assert.match(worker, /\.\/focus-room\.css\?v=6/);
-  assert.match(worker, /\.\/focus-room\.js\?v=6/);
+  assert.match(worker, /\.\/focus-room\.css\?v=10/);
+  assert.match(worker, /\.\/focus-room\.js\?v=10/);
   assert.doesNotMatch(source, /HH CORE|gateway|location\.href\s*=/i);
 });
 
@@ -410,6 +434,49 @@ test("wall-clock timer pauses polling when hidden and notes flush during navigat
   assert.equal(restored.getState().timer.running, true);
 });
 
+test("focus planning rituals and distraction log are real account-scoped state", () => {
+  const harness = createHarness();
+  const entry = harness.createRoot();
+  const controller = harness.api.mount(entry.root, { currentUser: { id: "planning-user" } });
+  harness.click(entry, "apply-built-in-ritual", { id: "library-reading" });
+  let state = controller.getState();
+  assert.equal(state.scenes.selected, "university-reading-hall");
+  assert.equal(state.timer.focusMinutes, 45);
+  assert.equal(state.timer.breakMinutes, 15);
+  assert.equal(state.audio.music.selected, "bach-canon-bwv1080");
+  assert.ok(state.audio.mix.pages > 0);
+  assert.equal(harness.metrics.mediaCreates, 0, "applying a ritual must not autoplay media");
+
+  harness.click(entry, "log-distraction", { value: "Điện thoại" });
+  state = controller.getState();
+  assert.equal(state.planning.distractions.length, 1);
+  assert.equal(state.planning.distractions[0].label, "Điện thoại");
+  controller.unmount();
+
+  const restoredRoot = harness.createRoot();
+  const restored = harness.api.mount(restoredRoot.root, { currentUser: { id: "planning-user" } });
+  assert.equal(restored.getState().planning.distractions[0].label, "Điện thoại");
+  assert.match(restoredRoot.root.innerHTML, /Kế hoạch/);
+  assert.match(restoredRoot.root.innerHTML, /1 lần xao nhãng/);
+});
+
+test("screen wake lock is opt-in and follows visibility lifecycle", async () => {
+  const harness = createHarness();
+  const entry = harness.createRoot();
+  const controller = harness.api.mount(entry.root, { currentUser: { id: "wake-user" } });
+  assert.equal(harness.metrics.wakeLockRequests, 0);
+  harness.click(entry, "wake-lock-toggle");
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(harness.metrics.wakeLockRequests, 1);
+  harness.visibility(true);
+  assert.equal(harness.metrics.wakeLockReleases, 1);
+  harness.visibility(false);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(harness.metrics.wakeLockRequests, 2);
+  controller.unmount();
+  assert.equal(harness.metrics.wakeLockReleases, 2);
+});
+
 test("two tabs record one completed focus session without overwriting history", () => {
   const harness = createHarness();
   const seedRoot = harness.createRoot();
@@ -434,6 +501,61 @@ test("two tabs record one completed focus session without overwriting history", 
   assert.equal(stored.history[0].id, "same-session");
 });
 
+test("shared room sends only allowlisted state and restores the personal session on leave", async () => {
+  const outbound = [];
+  const socket = { connected: true, once() {}, off() {} };
+  const realtime = {
+    status: () => ({ state: "connected" }),
+    socket: () => socket,
+    connect: async () => socket,
+    subscribe: () => () => {},
+    unsubscribeScope() {},
+    async emit(event, payload) {
+      outbound.push({ event, payload });
+      if (event === "workspace:room:create") {
+        return {
+          ok: true,
+          room: {
+            code: "ABC234",
+            name: payload.name,
+            revision: 0,
+            state: payload.state,
+            members: [{ id: "member-host", name: "Người học", role: "host" }]
+          },
+          self: { id: "member-host", name: "Người học", role: "host" }
+        };
+      }
+      return { ok: true, revision: 1 };
+    }
+  };
+  const harness = createHarness({ window: { HHRealtime: realtime } });
+  const entry = harness.createRoot();
+  const controller = harness.api.mount(entry.root, { currentUser: { id: "room-user" } });
+  harness.input(entry, "[data-hfr-note]", "Ghi chú riêng không được gửi");
+  harness.flushTimeouts();
+  await controller.createSharedRoom("Cùng ôn thi");
+
+  assert.equal(controller.getSharedRoom().code, "ABC234");
+  const createPayload = outbound.find((item) => item.event === "workspace:room:create").payload;
+  assert.deepEqual(Object.keys(createPayload.state).sort(), ["audio", "sceneId", "timer"]);
+  assert.equal(createPayload.state.note, undefined);
+  assert.equal(createPayload.state.tasks, undefined);
+
+  harness.click(entry, "select-scene", { id: "ocean-sunset" });
+  harness.flushTimeouts();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(controller.getState().scenes.selected, "ocean-sunset");
+  const synchronized = outbound.find((item) => item.event === "workspace:room:state");
+  assert.equal(synchronized.payload.state.sceneId, "ocean-sunset");
+  assert.equal(synchronized.payload.state.note, undefined);
+
+  await controller.leaveSharedRoom();
+  assert.equal(controller.getSharedRoom().code, "");
+  assert.equal(controller.getState().scenes.selected, "rainy-window");
+  assert.equal(controller.getState().note, "Ghi chú riêng không được gửi");
+  assert.ok(outbound.some((item) => item.event === "workspace:room:leave"));
+});
+
 test("responsive, motion and truthful capability contracts are explicit", () => {
   assert.match(styles, /@media \(max-width: 430px\)/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
@@ -442,8 +564,12 @@ test("responsive, motion and truthful capability contracts are explicit", () => 
   assert.match(styles, /\.hfr-panel[\s\S]*overflow:\s*auto/);
   assert.match(source, /document\?\.hidden/);
   assert.match(source, /context\?\.suspend|context\.suspend/);
-  assert.match(source, /Chưa cấu hình/);
-  assert.match(source, /không có thành viên hoặc phòng trực tuyến giả/i);
+  assert.match(source, /REALTIME_SERVICE = "focus-room"/);
+  assert.match(source, /workspace:room:create/);
+  assert.match(source, /workspace:room:join/);
+  assert.match(source, /workspace:room:state/);
+  assert.match(source, /Công việc, ghi chú, lịch sử, mục tiêu và tệp cá nhân không rời thiết bị/);
+  assert.match(source, /không bao giờ tự phát/i);
   assert.match(source, /heavy-rain/);
   assert.match(source, /lật sách/i);
   assert.match(source, /cafe-rain/);
@@ -469,6 +595,15 @@ test("responsive, motion and truthful capability contracts are explicit", () => 
   assert.match(source, /Kimiko Ishizaka/);
   assert.match(source, /suspendMusicForVisibility/);
   assert.match(source, /data-hfr-task-edit-form/);
+  assert.match(source, /DEEP FOCUS COMMAND/);
+  assert.match(source, /data-hfr-ritual-save/);
+  assert.match(source, /data-hfr-distraction-form/);
+  assert.match(source, /downloadHistoryCsv/);
+  assert.match(source, /navigator\?\.wakeLock\?\.request/);
+  assert.match(source, /Alt[\s\S]*Space/);
+  assert.match(styles, /\.hfr-week-chart/);
+  assert.match(styles, /\.hfr-app\.has-panel:not\(\[data-layout-mode="editing"\]\)[\s\S]*margin-right/);
+  assert.match(styles, /@media \(max-width: 760px\)[\s\S]*\.hfr-app\.has-panel:not\(\[data-layout-mode="editing"\]\) \.hfr-clock-card[\s\S]*margin-right:\s*0/);
 });
 
 test("custom layout is persisted, bounded, keyboard accessible and zoom safe", () => {
