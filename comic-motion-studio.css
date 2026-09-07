@@ -25,4 +25,84 @@
 .cms-batch-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.cms-batch-stats>span{display:grid;gap:2px;padding:8px;border:1px solid var(--cms-line);border-radius:8px;background:#111319}.cms-batch-stats small{color:var(--cms-muted);font-size:9px}.cms-batch-stats b{font-size:13px}.cms-batch-toolbar{display:flex;align-items:center;gap:6px;overflow-x:auto}.cms-batch-toolbar button{flex:0 0 auto;min-height:32px;padding:5px 8px;font-size:10px}.cms-batch-toolbar>span{margin-left:auto;color:var(--cms-muted);white-space:nowrap;font-size:9px}.cms-batch-jobs{display:grid;align-content:start;gap:7px;min-height:0;overflow:auto;overscroll-behavior:contain;padding-right:2px}.cms-batch-job{display:grid;gap:7px;padding:9px;border:1px solid var(--cms-line);border-left:3px solid #566071;border-radius:9px;background:#111319}.cms-batch-job.is-completed{border-left-color:#43c886}.cms-batch-job.is-failed,.cms-batch-job.is-blocked-rights{border-left-color:#ff6d79}.cms-batch-job.is-rendering,.cms-batch-job.is-retrying{border-left-color:var(--cms-accent)}.cms-batch-job-head{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:8px}.cms-batch-job-head>span{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;color:var(--cms-accent);background:#272018;font-size:10px;font-weight:800}.cms-batch-job-head>div{display:grid;min-width:0}.cms-batch-job-head strong,.cms-batch-job-head small{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.cms-batch-job-head strong{font-size:11px}.cms-batch-job-head small{color:var(--cms-muted);font-size:9px}.cms-batch-job-head>b{color:#d6d9e2;font-size:9px}.cms-batch-job progress{width:100%;height:8px;accent-color:var(--cms-accent)}.cms-batch-job>p{margin:0;color:var(--cms-muted);font-size:9px;line-height:1.4}.cms-batch-job-actions{display:flex;gap:5px;overflow-x:auto}.cms-batch-job-actions button{flex:0 0 auto;min-height:29px;padding:4px 7px;font-size:9px}.cms-app[data-cms-focus=batch] .cms-module-shell{min-width:460px}.cms-app[data-cms-focus=batch] .cms-timeline{display:none}.cms-app[data-cms-focus=batch]{grid-template-rows:auto minmax(0,1fr) auto}.cms-app[data-cms-focus=batch] .cms-workspace-v2{grid-template-columns:minmax(430px,540px) minmax(0,1fr)!important}
 @media(max-width:1100px){.cms-app[data-cms-focus=batch] .cms-workspace-v2{grid-template-columns:minmax(360px,460px) minmax(0,1fr)!important}.cms-app[data-cms-focus=batch] .cms-module-shell{min-width:0}}
 @media(max-width:850px){.cms-batch-pane{overflow:visible}.cms-batch-jobs{max-height:none;overflow:visible}.cms-app[data-cms-focus=batch] .cms-workspace-v2{display:flex!important}.cms-app[data-cms-focus=batch] .cms-preview{display:none!important}.cms-app[data-cms-focus=batch] .cms-module-shell{min-height:0}.cms-batch-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Shared-shell responsive hardening: the studio must never use the min-content
+   width of its dense desktop toolbar as the application's grid track. Timeline
+   and section tabs keep their own bounded horizontal scrolling. */
+@media (max-width: 850px) {
+  .cms-app {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .cms-app > *,
+  .cms-topbar > *,
+  .cms-workspace-v2 > *,
+  .cms-module-pane > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .cms-topbar,
+  .cms-brand,
+  .cms-section-nav,
+  .cms-top-actions,
+  .cms-workspace-v2,
+  .cms-module-shell,
+  .cms-preview,
+  .cms-timeline,
+  .cms-status {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .cms-section-nav {
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+  }
+
+  .cms-top-actions {
+    flex-wrap: wrap;
+  }
+
+  .cms-top-actions > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .cms-topbar {
+    padding-inline: 12px;
+  }
+
+  .cms-brand {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .cms-top-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .cms-top-actions > *,
+  .cms-top-actions label,
+  .cms-top-actions :is(button, select) {
+    width: 100%;
+  }
+
+  .cms-pane-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .cms-source-actions,
+  .cms-batch-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 @media(max-width:520px){.cms-batch-health,.cms-batch-handoff{grid-template-columns:1fr}.cms-batch-handoff img{display:none}.cms-batch-health button,.cms-batch-handoff button{width:100%}.cms-batch-job-head{grid-template-columns:30px minmax(0,1fr)}.cms-batch-job-head>b{grid-column:2}.cms-batch-toolbar>span{display:none}}

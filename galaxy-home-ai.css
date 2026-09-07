@@ -5995,6 +5995,8 @@
 
 #appShell[data-hh-layer="platform"][data-galaxy-shell] > .app-shell__body > .app-main {
   display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
   grid-column: 2 !important;
   grid-row: 1 !important;
   width: auto !important;

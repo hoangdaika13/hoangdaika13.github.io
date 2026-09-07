@@ -107,10 +107,10 @@ test("router, lazy loader and responsive workspace are integrated", () => {
   assert.match(worker, /focus-study-room\.css\?v=2/);
   assert.match(worker, /focus-study-room\.js\?v=1/);
   assert.match(gateway, /"\/focus-room"/);
-  assert.match(index, /performance-loader\.js\?v=650/);
-  assert.match(index, /script\.js\?v=272/);
-  assert.match(worker, /performance-loader\.js\?v=650/);
-  assert.match(worker, /script\.js\?v=272/);
+  assert.match(index, /performance-loader\.js\?v=653/);
+  assert.match(index, /script\.js\?v=273/);
+  assert.match(worker, /performance-loader\.js\?v=653/);
+  assert.match(worker, /script\.js\?v=273/);
   assert.match(css, /@media \(max-width: 390px\)/);
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.doesNotMatch(source, /Notification\.requestPermission|navigator\.mediaDevices|getUserMedia/);

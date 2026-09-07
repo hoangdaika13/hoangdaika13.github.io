@@ -1271,11 +1271,27 @@ html.hh-page-hidden #hhBootSurface *,html.hh-page-hidden #hhBootSurface *::befor
     }
     .app-main { grid-row: 1; width: 100%; min-width: 0; height: 100%; }
     body:not(.app-sidebar-collapsed) .app-main { filter: none; }
-    .app-breadcrumb { min-height: 36px; padding-inline: var(--space-4); }
+    .app-breadcrumb { min-height: 40px; padding-inline: var(--space-4); }
+    .app-breadcrumb button { min-height: 36px; }
     .app-page-header { align-items: flex-start; gap: var(--space-3); padding: var(--space-3) var(--space-4) var(--space-4); }
     .app-page-header h1 { font-size: 24px; }
-    .app-page-header__actions { width: 100%; }
-    .app-page-header__actions button { flex: 1; }
+    .app-page-header__actions {
+      width: 100%;
+      max-width: 100%;
+      padding-bottom: 3px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-inline: contain;
+      scroll-snap-type: inline proximity;
+      scrollbar-width: thin;
+    }
+    .app-page-header__actions > :is(button, a) {
+      flex: 0 0 auto;
+      max-width: min(82vw, 320px);
+      min-height: 40px;
+      white-space: normal;
+      scroll-snap-align: start;
+    }
     .app-workspace { padding: var(--space-4) var(--space-4) 96px; }
     .dashboard-welcome { min-height: 0; padding: var(--space-5); }
     .dashboard-clock { min-width: 0; }

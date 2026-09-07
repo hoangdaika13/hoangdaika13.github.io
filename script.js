@@ -7078,6 +7078,15 @@ function initAppShell() {
     }
   };
   const routePathOnly = (value) => String(value || "").split("?")[0];
+  const releaseSupportLayout = (route) => {
+    if (routePathOnly(route) === "/support") return;
+    // Support owns a one-screen shell and deliberately locks the shared
+    // scroll containers. Release that ownership before a target route starts
+    // loading, otherwise every following workspace inherits Support's hidden
+    // breadcrumb, mobile dock and overflow rules until the page is reloaded.
+    window.HHSupportPage?.unmount?.();
+    document.body.classList.remove("app-support-route");
+  };
   const connectedWorkspaceHost = (selector) => {
     const host = workspace?.querySelector?.(selector) || null;
     if (!host?.isConnected) return null;
@@ -7210,6 +7219,7 @@ function initAppShell() {
       route = "/analytics";
       history.replaceState({}, document.title, `${location.pathname}${location.search}#${route}`);
     }
+    releaseSupportLayout(route);
     if (hasLiveSameRouteWorkspace(route)) return;
     if (syncLiveGalaxyLayerOneRoute(route)) return;
     cleanupGalaxyEngineTakeover();
@@ -8075,6 +8085,7 @@ function initAppShell() {
   let pendingAssetRoute = "";
   const routeAssetRetries = new Map();
   const renderRouteLoading = (route) => {
+    releaseSupportLayout(route);
     window.HHPlatformHome?.unmount?.();
     activeRoute = route;
     window.HHSurfaceBoot?.hold?.({

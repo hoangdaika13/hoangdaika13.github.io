@@ -17,5 +17,5 @@ test("Platform home asset versions stay aligned across loader and service worker
   const worker = read("sw.js");
   assert.match(loader, /platform-home\.css\?v=6/);
   assert.match(worker, /\.\/platform-home\.css\?v=6/);
-  assert.match(worker, /\.\/performance-loader\.js\?v=649/);
+  assert.match(worker, /\.\/performance-loader\.js\?v=653/);
 });

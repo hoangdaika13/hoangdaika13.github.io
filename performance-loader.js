@@ -67,7 +67,7 @@
       scripts: ["home-cosmos-motion.js?v=1", "platform-home.js?v=7"]
     },
     "galaxy-home-ai": {
-      styles: ["galaxy-home-ai.css?v=24", "home-cosmos-motion.css?v=2"],
+      styles: ["galaxy-home-ai.css?v=25", "home-cosmos-motion.css?v=2"],
       scripts: ["home-cosmos-motion.js?v=1", "galaxy-home-ai.js?v=18"]
     },
     "galaxy-layer-one": {
@@ -155,7 +155,7 @@
     },
     "comic-motion": {
       // Compatibility: comic-motion-studio.css?v=3 comic-motion-studio.css?v=4 comic-motion-studio.css?v=5 comic-motion-studio.js?v=6 comic-motion-studio.js?v=7 comic-motion-studio.js?v=8 comic-motion-studio.js?v=9
-      styles: ["comic-motion-studio.css?v=7"],
+      styles: ["comic-motion-studio.css?v=8"],
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/tesseract.min.js?v=6.0.1", "services/comicLibraryBridge.js?v=1", "comic-motion-studio.js?v=11"]
     },
     "comic-reader": {
@@ -284,7 +284,7 @@
       scripts: ["hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3", "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=2", "hh-eonwild-desktop-controller.js?v=2", "hh-eonwild-collision-system.js?v=1", "hh-eonwild-world-atlas.js?v=2", "hh-eonwild-simulation-v2.js?v=4", "hh-eonwild-3d-core.js?v=7", "hh-eonwild-landscape-core.js?v=1", "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=4", "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=19", "hh-eonwild-game.js?v=28"]
     },
     fortune: {
-      styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=26"],
+      styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=27"],
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "vendor/iztro-2.6.0.min.js?v=2.6.0", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=4", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-moon-3d.js?v=1", "fortune-extended-tools.js?v=2", "fortune-hub.js?v=28"]
     },
     draw: {

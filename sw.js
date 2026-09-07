@@ -1,4 +1,8 @@
-const CACHE = "hh-identity-portal-v988";
+const CACHE = "hh-identity-portal-v990";
+// Shared layout stability release: keep Platform children in a vertical flow after Galaxy assets load.
+// Previous release: hh-identity-portal-v989.
+// Shared layout lifecycle release: route-specific viewport locks are released before another workspace loads.
+// Previous release: hh-identity-portal-v988.
 // Focus Study Room release: account-scoped timer, study plan, procedural opt-in ambience and real local session statistics.
 // Previous release: hh-identity-portal-v987.
 // Previous release: hh-identity-portal-v986.
@@ -89,7 +93,7 @@ const RUNTIME_ASSETS = [
   "./focus-study-room.js?v=1",
   "./",
   "./index.html",
-  "./app-shell.css?v=66",
+  "./app-shell.css?v=67",
   "./workspace-feature-explorer.css?v=4",
   "./app-theme-system.css?v=9",
   "./dashboard-aurora.css?v=4",
@@ -134,6 +138,8 @@ const RUNTIME_ASSETS = [
   "./video-editor-studio.css?v=4",
   "./video-batch-factory.css?v=4",
   "./comic-motion-studio.css?v=7",
+  "./comic-motion-studio.css?v=8",
+  "./fortune-hub-v5.css?v=27",
   "./comic-reader-hub.css?v=15",
   "./cinema-hub.css?v=5",
   "./open-music-hub.css?v=5",
@@ -316,6 +322,7 @@ const RUNTIME_ASSETS = [
   "./hh-core-gateway.js?v=7",
   "./galaxy-home-ai.css?v=23",
   "./galaxy-home-ai.css?v=24",
+  "./galaxy-home-ai.css?v=25",
   "./galaxy-home-ai.js?v=18",
   "./galaxy-layer-one.css?v=7",
   "./galaxy-cosmic-studio.css?v=1",
@@ -641,9 +648,9 @@ const RUNTIME_ASSETS = [
 ];
 const CORE = [
   "./index.html",
-  "./app-shell.css?v=66",
+  "./app-shell.css?v=67",
   "./app-theme-system.css?v=9",
-  "./sidebar-navigation-pro.css?v=29",
+  "./sidebar-navigation-pro.css?v=30",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=9",
   "./auth-zoom-resilience.css?v=3",
@@ -656,10 +663,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=650",
+  "./performance-loader.js?v=653",
   "./auth-platform.js?v=19",
   "./auth-neon-gateway.js?v=29",
-  "./script.js?v=272"
+  "./script.js?v=273"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

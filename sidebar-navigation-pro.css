@@ -269,9 +269,9 @@ body.app-sidebar-collapsed .app-sidebar__footer>.app-sidebar__item>b{display:non
   .app-sidebar::before{display:none}
   .app-sidebar__primary{padding:0!important;overflow:hidden!important}
   .app-sidebar__fixed-head{padding:7px 10px 8px}
-  .app-sidebar__mobile-title{display:flex;min-height:28px;align-items:center;justify-content:space-between;padding-left:calc(50% - 26px);color:#94a8ba;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;touch-action:none}
+  .app-sidebar__mobile-title{display:flex;min-height:44px;align-items:center;justify-content:space-between;padding-left:calc(50% - 26px);color:#94a8ba;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;touch-action:none}
   .app-sidebar__mobile-title::before{width:48px;height:4px;border-radius:999px;background:linear-gradient(90deg,#54e8ff,#aa7bff);content:"";box-shadow:0 0 13px rgba(90,226,255,.42)}
-  .app-sidebar__mobile-title>span{position:absolute;left:14px}.app-sidebar__mobile-title>button{display:grid;width:30px;height:30px;place-items:center;border:0;border-radius:9px;background:rgba(255,255,255,.05);color:#a9bdca;font-size:20px}
+  .app-sidebar__mobile-title>span{position:absolute;left:14px}.app-sidebar__mobile-title>button{display:grid;width:44px;height:44px;place-items:center;border:0;border-radius:11px;background:rgba(255,255,255,.05);color:#a9bdca;font-size:20px;touch-action:manipulation}
   .app-sidebar__scroll-region{padding:7px 13px calc(20px + env(safe-area-inset-bottom)) 10px}
   .app-sidebar__section-toggle{min-height:56px}.app-sidebar__tool-row{min-height:48px}.app-sidebar__subitem{min-height:48px!important}
   .app-sidebar__flyout{display:none!important}

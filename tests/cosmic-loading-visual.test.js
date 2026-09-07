@@ -9,7 +9,7 @@ const read = (name) => fs.readFileSync(path.join(root, name), "utf8");
 test("boot surface keeps the animated Galaxy logo single and readable", () => {
   const html = read("index.html");
 
-  assert.match(html, /app-shell\.css\?v=66/);
+  assert.match(html, /app-shell\.css\?v=67/);
   assert.match(html, /\.hh-boot-mark:not\(\.hh-galaxy-logo-host\)>img/);
   assert.match(html, /\.hh-boot-mark\.hh-galaxy-logo-host>\.hh-galaxy-logo-fallback\{display:none!important\}/);
   assert.match(html, /hhCriticalNebula/);
@@ -46,8 +46,8 @@ test("versioned loader styles are published to first paint and offline cache", (
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
 
-  assert.match(html, /href="app-shell\.css\?v=66"/);
-  assert.match(html, /Compatibility: app-shell\.css\?v=64 app-shell\.css\?v=65/);
+  assert.match(html, /href="app-shell\.css\?v=67"/);
+  assert.match(html, /Compatibility: app-shell\.css\?v=64 app-shell\.css\?v=65 app-shell\.css\?v=66/);
   assert.match(loader, /index\.html\/app-shell\.css\?v=66/);
-  assert.equal((worker.match(/\.\/app-shell\.css\?v=66/g) || []).length, 2);
+  assert.equal((worker.match(/\.\/app-shell\.css\?v=67/g) || []).length, 2);
 });

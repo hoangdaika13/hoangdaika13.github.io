@@ -10,7 +10,7 @@ test("Cosmic Studio is registered as a lazy Galaxy module", () => {
   const loader = read("performance-loader.js");
   assert.match(loader, /galaxy-cosmic-studio\.css\?v=1/);
   assert.match(loader, /galaxy-cosmic-studio\.js\?v=3/);
-  assert.match(loader, /galaxy-home-ai\.css\?v=24/);
+  assert.match(loader, /galaxy-home-ai\.css\?v=25/);
 });
 
 test("Cosmic Studio exposes every Layer One workspace and local-first controls", () => {
@@ -43,6 +43,6 @@ test("new assets are available to the offline catalog", () => {
   const worker = read("sw.js");
   assert.match(worker, /galaxy-cosmic-studio\.css\?v=1/);
   assert.match(worker, /galaxy-cosmic-studio\.js\?v=3/);
-  assert.match(worker, /galaxy-home-ai\.css\?v=24/);
-  assert.match(worker, /performance-loader\.js\?v=649/);
+  assert.match(worker, /galaxy-home-ai\.css\?v=25/);
+  assert.match(worker, /performance-loader\.js\?v=653/);
 });
