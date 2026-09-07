@@ -13,20 +13,22 @@
   const mountedRoots = new Set();
 
   const CHANNELS = Object.freeze([
-    { id: "rain", label: "Mưa nhẹ", icon: "☂", default: 0.52, type: "white", filter: "highpass", frequency: 1100 },
-    { id: "heavy-rain", label: "Mưa lớn", icon: "☔", default: 0, type: "heavy-rain", filter: "bandpass", frequency: 820 },
-    { id: "thunder", label: "Sấm xa", icon: "⌁", default: 0.1, type: "thunder", filter: "lowpass", frequency: 150 },
-    { id: "wind", label: "Gió", icon: "≋", default: 0.16, type: "brown", filter: "lowpass", frequency: 620 },
-    { id: "fire", label: "Lò sưởi", icon: "♨", default: 0.2, type: "fire", filter: "bandpass", frequency: 1700 },
-    { id: "cafe", label: "Quán cà phê", icon: "☕", default: 0.12, type: "cafe", filter: "lowpass", frequency: 980 },
-    { id: "keyboard", label: "Bàn phím", icon: "⌨", default: 0.08, type: "keyboard", filter: "highpass", frequency: 2300 },
-    { id: "pages", label: "Lật sách", icon: "▤", default: 0, type: "pages", filter: "bandpass", frequency: 1450 },
-    { id: "birds", label: "Chim rừng", icon: "♧", default: 0.1, type: "birds", filter: "bandpass", frequency: 3000 },
-    { id: "ocean", label: "Sóng biển", icon: "≈", default: 0.2, type: "ocean", filter: "lowpass", frequency: 420 },
-    { id: "stream", label: "Suối", icon: "⌇", default: 0.16, type: "stream", filter: "bandpass", frequency: 1350 },
-    { id: "white", label: "White noise", icon: "W", default: 0, type: "white", filter: "allpass", frequency: 1000 },
-    { id: "brown", label: "Brown noise", icon: "B", default: 0.08, type: "brown", filter: "lowpass", frequency: 520 },
-    { id: "pink", label: "Pink noise", icon: "P", default: 0, type: "pink", filter: "lowpass", frequency: 1250 }
+    { id: "rain", label: "Mưa nhẹ", icon: "☂", default: 0.48, type: "rain", filter: "highpass", frequency: 920, q: 0.2, trim: 0.34, drift: 0.035, depth: 0.045, pan: -0.08 },
+    { id: "heavy-rain", label: "Mưa rào", icon: "☔", default: 0, type: "heavy-rain", filter: "bandpass", frequency: 760, q: 0.35, trim: 0.28, drift: 0.047, depth: 0.055, pan: 0.08 },
+    { id: "thunder", label: "Sấm rất xa", icon: "⌁", default: 0.07, type: "thunder", filter: "lowpass", frequency: 185, q: 0.55, trim: 0.23, drift: 0.021, depth: 0.035, pan: -0.16 },
+    { id: "wind", label: "Gió qua tán lá", icon: "≋", default: 0.14, type: "wind", filter: "lowpass", frequency: 680, q: 0.25, trim: 0.27, drift: 0.028, depth: 0.065, pan: 0.14 },
+    { id: "fire", label: "Lửa tí tách", icon: "♨", default: 0.16, type: "fire", filter: "bandpass", frequency: 1380, q: 0.45, trim: 0.24, drift: 0.061, depth: 0.035, pan: 0.18 },
+    { id: "cafe", label: "Quán cà phê xa", icon: "☕", default: 0.1, type: "cafe", filter: "lowpass", frequency: 1050, q: 0.3, trim: 0.22, drift: 0.026, depth: 0.045, pan: -0.12 },
+    { id: "keyboard", label: "Bàn phím êm", icon: "⌨", default: 0.06, type: "keyboard", filter: "highpass", frequency: 1550, q: 0.2, trim: 0.18, drift: 0.073, depth: 0.025, pan: 0.1 },
+    { id: "pages", label: "Giấy và lật sách", icon: "▤", default: 0, type: "pages", filter: "bandpass", frequency: 1180, q: 0.35, trim: 0.2, drift: 0.039, depth: 0.035, pan: -0.18 },
+    { id: "birds", label: "Chim sớm ngoài xa", icon: "♧", default: 0.08, type: "birds", filter: "bandpass", frequency: 2550, q: 0.55, trim: 0.13, drift: 0.019, depth: 0.045, pan: 0.2 },
+    { id: "ocean", label: "Sóng biển dịu", icon: "≈", default: 0.18, type: "ocean", filter: "lowpass", frequency: 560, q: 0.25, trim: 0.34, drift: 0.031, depth: 0.075, pan: -0.08 },
+    { id: "stream", label: "Suối đá nhỏ", icon: "⌇", default: 0.14, type: "stream", filter: "bandpass", frequency: 1280, q: 0.3, trim: 0.27, drift: 0.043, depth: 0.055, pan: 0.12 },
+    { id: "white", label: "White noise mềm", icon: "W", default: 0, type: "white", filter: "lowpass", frequency: 5200, q: 0.1, trim: 0.16, drift: 0.017, depth: 0.018, pan: 0 },
+    { id: "brown", label: "Brown noise ấm", icon: "B", default: 0.06, type: "brown", filter: "lowpass", frequency: 640, q: 0.2, trim: 0.32, drift: 0.023, depth: 0.028, pan: 0 },
+    { id: "pink", label: "Pink noise dịu", icon: "P", default: 0, type: "pink", filter: "lowpass", frequency: 1700, q: 0.2, trim: 0.21, drift: 0.02, depth: 0.024, pan: 0 },
+    { id: "purr", label: "Mèo gừ êm", icon: "🐈", default: 0.055, type: "purr", filter: "lowpass", frequency: 310, q: 0.4, trim: 0.19, drift: 0.12, depth: 0.025, pan: -0.14 },
+    { id: "pet-breath", label: "Thú cưng ngủ", icon: "🐾", default: 0.045, type: "pet-breath", filter: "lowpass", frequency: 520, q: 0.25, trim: 0.13, drift: 0.09, depth: 0.02, pan: 0.12 }
   ]);
 
   const SCENES = Object.freeze([
@@ -41,15 +43,32 @@
     scene("cyber-city", "Thành phố neon", "Tương lai", "Không gian tập trung nhìn thành phố mưa neon.", "future", "neon-rain", "assets/focus-room/cyber-city.webp", ["rain", "brown"]),
     scene("orbital-desk", "Bàn học quỹ đạo", "Tương lai", "Trạm quan sát yên tĩnh phía trên Trái Đất.", "future", "stars", "assets/focus-room/orbital-desk.webp", ["brown", "pink"]),
     scene("minimal-dark", "Phòng tối tối giản", "Tối giản", "Bàn học ít nhiễu với một vùng sáng ấm.", "quiet", "dust", "assets/focus-room/minimal-dark.webp", ["brown", "keyboard"]),
-    scene("twilight-garden", "Phòng anime chạng vạng", "Minh họa", "Góc học anime nguyên bản, không nhân vật bản quyền, nhìn ra vườn đom đóm.", "illustrated", "fireflies", "assets/focus-room/twilight-garden.webp", ["birds", "stream"])
+    scene("twilight-garden", "Phòng anime chạng vạng", "Minh họa", "Góc học anime nguyên bản, không nhân vật bản quyền, nhìn ra vườn đom đóm.", "illustrated", "fireflies", "assets/focus-room/twilight-garden.webp", ["birds", "stream"]),
+    scene("rooftop-sunrise", "Sân thượng bình minh", "Bình minh", "Bàn gỗ trên sân thượng yên tĩnh khi thành phố vừa thức giấc.", "nature", "sunrise", "assets/focus-room/rooftop-sunrise.webp", ["birds", "wind"]),
+    scene("rainy-greenhouse", "Nhà kính ngày mưa", "Ngày mưa", "Góc học giữa cây xanh, kính đọng nước và mưa rơi rất nhẹ.", "nature", "greenhouse", "assets/focus-room/rainy-greenhouse.webp", ["rain", "stream"]),
+    scene("alpine-lake-dawn", "Hồ núi ban mai", "Bình minh", "Mặt hồ phẳng, sương sớm và ánh nắng đầu ngày trên núi.", "nature", "lake-mist", "assets/focus-room/alpine-lake-dawn.webp", ["wind", "stream", "birds"]),
+    scene("university-reading-hall", "Đại sảnh đọc sách", "Học thuật", "Thư viện cổ sau giờ đóng cửa, đèn bàn ấm và bụi sáng lơ lửng.", "cozy", "light-shafts", "assets/focus-room/university-reading-hall.webp", ["pages", "brown"]),
+    scene("nordic-cabin-morning", "Cabin Bắc Âu buổi sớm", "Buổi sáng", "Góc gỗ tối giản nhìn rừng thông, vịnh sương và tách trà ấm.", "cozy", "cabin-morning", "assets/focus-room/nordic-cabin-morning.webp", ["wind", "birds", "brown"]),
+    scene("rice-terrace-veranda", "Hiên ruộng bậc thang", "Bình minh", "Hiên tre nhìn thung lũng xanh, nắng sớm và làn gió đồng dịu.", "nature", "terrace-breeze", "assets/focus-room/rice-terrace-veranda.webp", ["birds", "wind", "stream"]),
+    scene("autumn-garden-room", "Phòng vườn mùa thu", "Chiều thu", "Phòng gỗ mở ra khu vườn lá đỏ, nắng chiều ấm và tĩnh.", "nature", "autumn-leaves", "assets/focus-room/autumn-garden-room.webp", ["birds", "wind", "stream"]),
+    scene("moonlit-observatory", "Đài quan sát trăng", "Đêm", "Bàn học dưới mái vòm, ánh trăng lạnh và bầu trời sao yên tĩnh.", "night", "moonlight", "assets/focus-room/moonlit-observatory.webp", ["wind", "brown", "pink"]),
+    scene("cat-rainy-attic", "Gác mái mưa cùng mèo", "Ngày mưa", "Mèo lông cam ngủ cạnh bàn gỗ, mưa mềm trên ô cửa và đèn vàng ấm.", "pets", "pet-rain", "assets/focus-room/cat-rainy-attic.webp", ["rain", "purr", "fire"]),
+    scene("dog-sunroom", "Phòng nắng cùng cún", "Buổi sáng", "Cún retriever nghỉ trên thảm, rèm vải lay nhẹ và đồng cỏ ngập nắng.", "pets", "pet-sunroom", "assets/focus-room/dog-sunroom.webp", ["birds", "wind", "pet-breath"]),
+    scene("cat-fireplace-library", "Thư viện lò sưởi cùng mèo", "Đêm", "Mèo xám nằm bên cửa sổ mưa, lửa ấm và căn phòng đọc thật tĩnh.", "pets", "pet-fire", "assets/focus-room/cat-fireplace-library.webp", ["rain", "fire", "purr"]),
+    scene("dog-spring-veranda", "Hiên vườn xuân cùng cún", "Buổi sáng", "Cún nhỏ ngủ bên bàn học, nắng xuyên vườn và cánh hoa trôi chậm.", "pets", "pet-garden", "assets/focus-room/dog-spring-veranda.webp", ["birds", "wind", "pet-breath"]),
+    scene("cat-riverside-blue-hour", "Nhà bên sông cùng mèo", "Chạng vạng", "Mèo mướp cuộn mình bên cửa, mưa bụi và ánh sông xanh dịu.", "pets", "pet-river", "assets/focus-room/cat-riverside-blue-hour.webp", ["rain", "stream", "purr"]),
+    scene("puppy-lakeside-cabin", "Cabin hồ cùng cún nhỏ", "Bình minh", "Cún con ngủ trong ổ len, hồ sương và rừng thông đón nắng đầu ngày.", "pets", "pet-lake", "assets/focus-room/puppy-lakeside-cabin.webp", ["wind", "stream", "pet-breath"])
   ]);
 
   const MIX_PRESETS = Object.freeze({
-    "deep-work": { label: "Deep Work", mix: { brown: 0.26, pink: 0.08, keyboard: 0.04 } },
-    "rainy-night": { label: "Mưa đêm", mix: { rain: 0.62, thunder: 0.08, wind: 0.12, fire: 0.15 } },
-    "quiet-cafe": { label: "Cà phê yên", mix: { cafe: 0.3, rain: 0.18, keyboard: 0.07 } },
-    "green-morning": { label: "Rừng sớm", mix: { birds: 0.17, stream: 0.28, wind: 0.08 } },
-    "ocean-flow": { label: "Sóng dịu", mix: { ocean: 0.38, wind: 0.1, pink: 0.05 } }
+    "deep-work": { label: "Tập trung sâu", mix: { brown: 0.24, pink: 0.07, keyboard: 0.035 } },
+    "rainy-night": { label: "Mưa đêm êm", mix: { rain: 0.5, thunder: 0.045, wind: 0.08, fire: 0.11 } },
+    "quiet-cafe": { label: "Cà phê xa", mix: { cafe: 0.22, rain: 0.14, keyboard: 0.04 } },
+    "green-morning": { label: "Rừng ban mai", mix: { birds: 0.1, stream: 0.23, wind: 0.065 } },
+    "ocean-flow": { label: "Sóng thở chậm", mix: { ocean: 0.31, wind: 0.065, pink: 0.04 } },
+    "glasshouse": { label: "Nhà kính mưa", mix: { rain: 0.42, stream: 0.11, wind: 0.035 } },
+    "warm-library": { label: "Thư viện ấm", mix: { pages: 0.08, fire: 0.08, brown: 0.12 } },
+    "soft-silence": { label: "Tĩnh lặng mềm", mix: { brown: 0.12, pink: 0.045 } }
   });
 
   const TIMER_PRESETS = Object.freeze([
@@ -65,7 +84,7 @@
       const channel = CHANNELS.find((item) => item.id === soundId);
       mix[soundId] = channel ? channel.default : 0.1;
     });
-    const performance = ["rain", "cafe-rain", "neon-rain", "snow"].includes(effect) ? "Cao" : ["ocean", "embers", "forest", "fireflies", "stars"].includes(effect) ? "Cân bằng" : "Tiết kiệm";
+    const performance = ["rain", "cafe-rain", "neon-rain", "snow", "greenhouse", "autumn-leaves", "pet-rain", "pet-fire", "pet-river"].includes(effect) ? "Cao" : ["ocean", "embers", "forest", "fireflies", "stars", "sunrise", "lake-mist", "light-shafts", "cabin-morning", "terrace-breeze", "moonlight", "pet-sunroom", "pet-garden", "pet-lake"].includes(effect) ? "Cân bằng" : "Tiết kiệm";
     return Object.freeze({ id, title, time, description, category, effect, image, thumb: image.replace("/focus-room/", "/focus-room/thumbs/"), mix, performance, soundStatus: soundIds.length ? `${soundIds.length} kênh gợi ý` : "Cảnh yên tĩnh" });
   }
 
@@ -122,7 +141,24 @@
   }
 
   function defaultMix() {
-    return Object.fromEntries(CHANNELS.map((channel) => [channel.id, channel.id === "rain" ? 0.48 : channel.default]));
+    const mix = Object.fromEntries(CHANNELS.map((channel) => [channel.id, 0]));
+    mix.rain = 0.46;
+    mix.fire = 0.1;
+    return mix;
+  }
+
+  function defaultLayout() {
+    return {
+      locked: true,
+      clock: { x: 0, y: 0 },
+      title: { x: 0, y: 0 },
+      dock: { x: 0, y: 0 }
+    };
+  }
+
+  function normalizeLayoutPoint(value) {
+    const point = value && typeof value === "object" ? value : {};
+    return { x: clamp(point.x, -1, 1, 0), y: clamp(point.y, -1, 1, 0) };
   }
 
   function createDefaultState() {
@@ -140,6 +176,7 @@
       primaryTaskId: "",
       note: "",
       history: [],
+      layout: defaultLayout(),
       settings: {
         quality: "balanced", motion: !reduceMotion, reducedMotion: reduceMotion,
         dataSaver: false, autoStartBreak: false, autoStartFocus: false,
@@ -229,6 +266,7 @@
     const audio = source.audio && typeof source.audio === "object" ? source.audio : {};
     const timer = source.timer && typeof source.timer === "object" ? source.timer : {};
     const settings = source.settings && typeof source.settings === "object" ? source.settings : {};
+    const layout = source.layout && typeof source.layout === "object" ? source.layout : {};
     const custom = Array.isArray(scenes.custom) ? scenes.custom.slice(0, 24).map((item) => ({
       id: cleanText(item?.id, 80),
       title: cleanText(item?.title, 80) || "Không gian cá nhân",
@@ -293,6 +331,12 @@
       primaryTaskId: taskIds.has(source.primaryTaskId) ? source.primaryTaskId : "",
       note: String(source.note || "").slice(0, 10000),
       history,
+      layout: {
+        locked: layout.locked !== false,
+        clock: normalizeLayoutPoint(layout.clock),
+        title: normalizeLayoutPoint(layout.title),
+        dock: normalizeLayoutPoint(layout.dock)
+      },
       settings: {
         quality: ["eco", "balanced", "high"].includes(settings.quality) ? settings.quality : base.settings.quality,
         motion: settings.motion !== false,
@@ -397,7 +441,7 @@
     const scenes = filteredScenes(instance);
     const categories = [
       ["all", "Tất cả"], ["recent", "Gần đây"], ["night", "Đêm"], ["nature", "Thiên nhiên"], ["cafe", "Cà phê"],
-      ["cozy", "Ấm áp"], ["future", "Tương lai"], ["quiet", "Tối giản"], ["illustrated", "Minh họa"], ["custom", "Cá nhân"]
+      ["cozy", "Ấm áp"], ["pets", "Thú cưng"], ["future", "Tương lai"], ["quiet", "Tối giản"], ["illustrated", "Minh họa"], ["custom", "Cá nhân"]
     ];
     return `<div class="hfr-panel-heading"><div><span>SCENE LIBRARY</span><h2>Không gian học tập</h2></div><button type="button" data-hfr-action="close-panel" aria-label="Đóng bảng">×</button></div>
       <div class="hfr-scene-tools">
@@ -449,7 +493,7 @@
       }).join("")}</div>
       <form class="hfr-inline-form" data-hfr-mix-save><label><span>Tên preset</span><input name="name" maxlength="60" required placeholder="Ví dụ: Học đêm"></label><button type="submit">Lưu bản phối</button></form>
       <div class="hfr-saved-presets">${instance.state.audio.presets.length ? instance.state.audio.presets.map((preset) => `<span><button type="button" data-hfr-action="load-user-mix" data-id="${escapeHtml(preset.id)}">${escapeHtml(preset.name)}</button><button type="button" data-hfr-action="delete-user-mix" data-id="${escapeHtml(preset.id)}" aria-label="Xóa preset">×</button></span>`).join("") : `<small>Chưa có bản phối riêng.</small>`}</div>
-      <p class="hfr-disclosure">Âm thanh được tạo cục bộ bằng Web Audio và chỉ chạy sau khi bạn bấm bật.</p>`;
+      <p class="hfr-disclosure">Âm thanh được tạo cục bộ bằng Web Audio, có biến thiên tự nhiên và giới hạn đỉnh an toàn. Chỉ phát sau khi bạn bấm bật; nên bắt đầu ở âm lượng nhỏ.</p>`;
   }
 
   function timerPanel(instance) {
@@ -518,6 +562,10 @@
         <label><span>Cảnh nghỉ<small>Chỉ dùng khi bật đổi cảnh.</small></span><select name="restScene">${SCENES.map((item) => `<option value="${item.id}" ${settings.restScene === item.id ? "selected" : ""}>${escapeHtml(item.title)}</option>`).join("")}</select></label>
         <button type="submit">Lưu cài đặt</button>
       </form>
+      <section class="hfr-layout-settings">
+        <div><strong>Bố cục tùy chỉnh</strong><small>Kéo đồng hồ, tên cảnh và thanh công cụ trên màn hình rộng. Khi phóng to hoặc dùng điện thoại, phòng tự trở về bố cục an toàn.</small></div>
+        <div><button type="button" class="hfr-layout-edit-action" data-hfr-action="layout-edit" aria-pressed="${!instance.state.layout.locked}">${instance.state.layout.locked ? "Sắp xếp" : "Khóa bố cục"}</button><button type="button" data-hfr-action="layout-reset">Đặt lại vị trí</button></div>
+      </section>
       <section class="hfr-notification-card"><div><strong>Thông báo kết thúc phiên</strong><small>${notificationState}</small></div><button type="button" data-hfr-action="enable-notifications" ${!global.Notification || global.Notification.permission === "denied" ? "disabled" : ""}>Bật thông báo</button></section>
       <section class="hfr-shared-room"><span>PHÒNG HỌC CHUNG</span><strong>Chưa cấu hình</strong><p>Repository chưa có dịch vụ đồng bộ scene và Pomodoro dành riêng cho Focus Room. Không có thành viên hoặc phòng trực tuyến giả.</p></section>
       <section class="hfr-data-tools"><button type="button" data-hfr-action="export-data">Xuất JSON</button><label><input type="file" accept="application/json" data-hfr-import><span>Nhập JSON</span></label></section>`;
@@ -544,20 +592,23 @@
       ["scenes", "▧", "Không gian"], ["sound", "♫", "Âm thanh"], ["timer", "◷", "Hẹn giờ"],
       ["tasks", "✓", "Công việc"], ["notes", "✎", "Ghi chú"], ["history", "⌁", "Lịch sử"], ["settings", "⚙", "Cài đặt"]
     ];
-    instance.root.innerHTML = `<section class="hfr-app${instance.ui.zen ? " is-zen" : ""}" data-hfr-root data-quality="${quality}" data-motion="${activeMotion ? "on" : "off"}">
-      <section class="hfr-stage" data-hfr-effect="${escapeHtml(selected.effect)}" style="--hfr-accent:${selected.category === "nature" ? "#72f3bd" : selected.category === "cafe" || selected.category === "cozy" ? "#ffb46b" : selected.category === "future" ? "#7ee7ff" : "#c69cff"}">
+    instance.root.innerHTML = `<section class="hfr-app${instance.ui.zen ? " is-zen" : ""}" data-hfr-root data-quality="${quality}" data-motion="${activeMotion ? "on" : "off"}" data-layout-mode="${instance.state.layout.locked ? "locked" : "editing"}">
+      <section class="hfr-stage" data-hfr-effect="${escapeHtml(selected.effect)}" style="--hfr-accent:${selected.category === "nature" ? "#72f3bd" : selected.category === "cafe" || selected.category === "cozy" ? "#ffb46b" : selected.category === "pets" ? "#ffb8c9" : selected.category === "future" ? "#7ee7ff" : "#c69cff"};--hfr-scene-image:url(&quot;${escapeHtml(imageUrl(instance, selected))}&quot;)">
         <div class="hfr-backdrop" aria-hidden="true" style="--hfr-placeholder:url(&quot;${escapeHtml(imageUrl(instance, selected, true))}&quot;)"><img src="${escapeHtml(imageUrl(instance, selected))}" alt="" decoding="async" fetchpriority="high" data-hfr-current-image data-hfr-fallback><span class="hfr-backdrop-shade"></span></div>
         <div class="hfr-effects" aria-hidden="true"><i class="hfr-fx hfr-fx--far"></i><i class="hfr-fx hfr-fx--mid"></i><i class="hfr-fx hfr-fx--near"></i><i class="hfr-fx hfr-fx--glow"></i></div>
         <header class="hfr-topbar">
-          <div class="hfr-scene-title"><span>IMMERSIVE FOCUS SANCTUARY</span><strong>${escapeHtml(selected.title)}</strong><small>${escapeHtml(selected.description)}</small><div class="hfr-current-meta"><em>${escapeHtml(selected.soundStatus || "Ảnh cá nhân")}</em><em>${escapeHtml(selected.performance || "Theo thiết bị")}</em></div></div>
+          <div class="hfr-scene-title" data-hfr-layout-item="title"><button class="hfr-drag-handle" type="button" data-hfr-drag-handle="title" aria-label="Kéo tên cảnh để sắp xếp" title="Kéo để di chuyển · phím mũi tên để tinh chỉnh">⠿</button><span>IMMERSIVE FOCUS SANCTUARY</span><strong>${escapeHtml(selected.title)}</strong><small>${escapeHtml(selected.description)}</small><div class="hfr-current-meta"><em>${escapeHtml(selected.soundStatus || "Ảnh cá nhân")}</em><em>${escapeHtml(selected.performance || "Theo thiết bị")}</em></div></div>
           <div class="hfr-top-actions">
             <span class="hfr-local-status">● Lưu cục bộ · ${instance.isGuest ? "Khách" : "Tài khoản hiện tại"}</span>
+            <button class="hfr-layout-toggle" type="button" data-hfr-action="layout-edit" aria-pressed="${!instance.state.layout.locked}" title="${instance.state.layout.locked ? "Mở chế độ kéo thả bố cục" : "Khóa vị trí các mục"}">${instance.state.layout.locked ? "⌖ Sắp xếp" : "🔒 Khóa"}</button>
+            ${instance.state.layout.locked ? "" : `<button class="hfr-layout-reset" type="button" data-hfr-action="layout-reset" title="Đặt lại vị trí mặc định">↺ Đặt lại</button>`}
             <button type="button" data-hfr-action="motion-toggle" aria-pressed="${activeMotion}" title="Tạm dừng hoặc bật chuyển động">${activeMotion ? "Ⅱ Chuyển động" : "▶ Chuyển động"}</button>
             <button type="button" data-hfr-action="fullscreen" title="Toàn màn hình">⛶</button>
           </div>
         </header>
         <main class="hfr-focus-center">
-          <section class="hfr-clock-card" aria-labelledby="hfr-clock-title">
+          <section class="hfr-clock-card" data-hfr-layout-item="clock" aria-labelledby="hfr-clock-title">
+            <button class="hfr-drag-handle" type="button" data-hfr-drag-handle="clock" aria-label="Kéo đồng hồ để sắp xếp" title="Kéo để di chuyển · phím mũi tên để tinh chỉnh">⠿</button>
             <span id="hfr-clock-title">${phaseLabel(timer.phase)}</span>
             <strong class="hfr-clock" data-hfr-clock role="timer" aria-live="off">${formatTimer(timer.remaining)}</strong>
             <small data-hfr-cycle>Vòng ${timer.cycle}/${timer.cycles}</small>
@@ -571,7 +622,7 @@
           </section>
         </main>
         <aside class="hfr-panel${instance.ui.panel ? " is-open" : ""}" aria-label="${escapeHtml(panelLabel(instance.ui.panel))}" ${instance.ui.panel ? "" : "hidden"}>${panelMarkup(instance)}</aside>
-        <nav class="hfr-dock" aria-label="Công cụ phòng học">${tabs.map(([id, icon, label]) => `<button type="button" data-hfr-action="panel" data-panel="${id}" aria-pressed="${instance.ui.panel === id}"><i>${icon}</i><span>${label}</span></button>`).join("")}<button class="hfr-zen-button" type="button" data-hfr-action="zen" aria-pressed="${instance.ui.zen}"><i>◉</i><span>${instance.ui.zen ? "Thoát Zen" : "Zen"}</span></button></nav>
+        <nav class="hfr-dock" data-hfr-layout-item="dock" aria-label="Công cụ phòng học"><button class="hfr-drag-handle hfr-drag-handle--dock" type="button" data-hfr-drag-handle="dock" aria-label="Kéo thanh công cụ để sắp xếp" title="Kéo để di chuyển · phím mũi tên để tinh chỉnh">⠿</button>${tabs.map(([id, icon, label]) => `<button type="button" data-hfr-action="panel" data-panel="${id}" aria-pressed="${instance.ui.panel === id}"><i>${icon}</i><span>${label}</span></button>`).join("")}<button class="hfr-zen-button" type="button" data-hfr-action="zen" aria-pressed="${instance.ui.zen}"><i>◉</i><span>${instance.ui.zen ? "Thoát Zen" : "Zen"}</span></button></nav>
         <button class="hfr-zen-exit" type="button" data-hfr-action="zen">${instance.ui.zen ? "Thoát Zen" : ""}</button>
       </section>
       <div class="hfr-live" data-hfr-live role="status" aria-live="polite"></div>
@@ -580,6 +631,7 @@
     instance.root.dataset.hfrMounted = "true";
     syncTimerDom(instance);
     syncAudioDom(instance);
+    setupLayout(instance);
     setupParallax(instance);
     preloadNextScene(instance);
   }
@@ -788,32 +840,137 @@
   }
 
   function createNoiseBuffer(context, type) {
-    const length = Math.max(1, Math.floor(context.sampleRate * 3));
-    const buffer = context.createBuffer(1, length, context.sampleRate);
-    const channel = buffer.getChannelData(0);
+    const sampleRate = Math.max(1, Number(context.sampleRate) || 44100);
+    const duration = ({ thunder: 17.3, birds: 15.7, pages: 14.9, keyboard: 13.1, ocean: 12.7, purr: 16.1, "pet-breath": 18.7 })[type] || 11.3;
+    const length = Math.max(1, Math.floor(sampleRate * duration));
+    const buffer = context.createBuffer(1, length, sampleRate);
+    const samples = buffer.getChannelData(0);
     let brown = 0;
-    let b0 = 0; let b1 = 0; let b2 = 0; let b3 = 0; let b4 = 0; let b5 = 0; let b6 = 0;
+    let pink0 = 0; let pink1 = 0; let pink2 = 0; let pink3 = 0; let pink4 = 0; let pink5 = 0; let pink6 = 0;
+    let transient = 0;
+    let slowDrift = 0;
+    const decay = (seconds) => Math.exp(-1 / Math.max(1, sampleRate * seconds));
+    const eventChance = (eventsPerSecond) => Math.min(0.08, eventsPerSecond / sampleRate);
     for (let index = 0; index < length; index += 1) {
+      const time = index / sampleRate;
       const white = Math.random() * 2 - 1;
-      if (type === "brown" || type === "ocean" || type === "thunder") {
-        brown = (brown + 0.02 * white) / 1.02;
-        channel[index] = brown * (type === "thunder" && Math.random() > 0.999 ? 8 : 3.4);
+      brown = (brown + 0.018 * white) / 1.018;
+      slowDrift = slowDrift * 0.9997 + white * 0.0003;
+      pink0 = 0.99886 * pink0 + white * 0.0555179;
+      pink1 = 0.99332 * pink1 + white * 0.0750759;
+      pink2 = 0.969 * pink2 + white * 0.153852;
+      pink3 = 0.8665 * pink3 + white * 0.3104856;
+      pink4 = 0.55 * pink4 + white * 0.5329522;
+      pink5 = -0.7616 * pink5 - white * 0.016898;
+      const pink = (pink0 + pink1 + pink2 + pink3 + pink4 + pink5 + pink6 + white * 0.5362) * 0.09;
+      pink6 = white * 0.115926;
+      let value = 0;
+
+      if (type === "rain") {
+        if (Math.random() < eventChance(7.5)) transient = Math.max(transient, 0.18 + Math.random() * 0.4);
+        transient *= decay(0.018);
+        const curtain = 0.16 + 0.035 * Math.sin(time * 0.71) + slowDrift * 0.18;
+        value = white * curtain + pink * 0.075 + transient * white;
       } else if (type === "heavy-rain") {
-        channel[index] = white * 0.58 + (Math.random() > 0.992 ? white * 0.7 : 0);
-      } else if (type === "pink") {
-        b0 = 0.99886 * b0 + white * 0.0555179; b1 = 0.99332 * b1 + white * 0.0750759;
-        b2 = 0.969 * b2 + white * 0.153852; b3 = 0.8665 * b3 + white * 0.3104856;
-        b4 = 0.55 * b4 + white * 0.5329522; b5 = -0.7616 * b5 - white * 0.016898;
-        channel[index] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.09;
-        b6 = white * 0.115926;
-      } else if (type === "fire" || type === "keyboard" || type === "pages" || type === "birds") {
-        const chance = type === "birds" ? 0.998 : type === "pages" ? 0.997 : type === "keyboard" ? 0.993 : 0.988;
-        channel[index] = Math.random() > chance ? white * 0.9 : white * 0.035;
-      } else if (type === "cafe") channel[index] = white * 0.12 + Math.sin(index / 43) * 0.02;
-      else if (type === "stream") channel[index] = white * (0.2 + Math.sin(index / 331) * 0.08);
-      else channel[index] = white * 0.38;
+        if (Math.random() < eventChance(12)) transient = Math.max(transient, 0.28 + Math.random() * 0.58);
+        transient *= decay(0.028);
+        const downpour = 0.25 + 0.055 * Math.sin(time * 0.59) + 0.035 * Math.sin(time * 1.37);
+        value = white * downpour + pink * 0.14 + transient * white;
+      } else if (type === "thunder") {
+        const roll = [duration * 0.29, duration * 0.71].reduce((sum, center, rollIndex) => {
+          const since = time - center;
+          if (since < 0 || since > 4.8) return sum;
+          return sum + Math.exp(-since * (0.72 + rollIndex * 0.17)) * (0.55 + 0.24 * Math.sin(since * 15) + 0.12 * Math.sin(since * 31));
+        }, 0);
+        value = brown * roll * 3.1 + pink * roll * 0.08 + brown * 0.018;
+      } else if (type === "wind") {
+        const gust = 0.16 + 0.095 * (0.5 + 0.5 * Math.sin(time * 0.43 + Math.sin(time * 0.17))) + Math.abs(slowDrift) * 0.32;
+        value = brown * 2.35 * gust + pink * gust * 0.1;
+      } else if (type === "fire") {
+        if (Math.random() < eventChance(5.2)) transient = Math.max(transient, 0.22 + Math.random() * 0.7);
+        transient *= decay(0.012 + Math.random() * 0.006);
+        value = brown * 0.13 + pink * 0.028 + transient * (white * 0.75 + 0.18);
+      } else if (type === "cafe") {
+        const roomTone = 0.55 + 0.16 * Math.sin(time * 0.31) + 0.08 * Math.sin(time * 0.83);
+        const distantVoices = Math.sin(time * 81 + Math.sin(time * 2.1)) * 0.018 + Math.sin(time * 127 + Math.sin(time * 1.3)) * 0.012;
+        value = pink * 0.16 * roomTone + brown * 0.18 + distantVoices;
+      } else if (type === "keyboard") {
+        const cluster = Math.max(0, Math.sin(time * 0.91) + Math.sin(time * 0.37 + 1.4) - 0.42);
+        if (cluster > 0 && Math.random() < eventChance(5.7 * Math.min(1, cluster))) transient = 0.35 + Math.random() * 0.5;
+        transient *= decay(0.009);
+        value = transient * (0.52 + white * 0.42) + white * 0.004;
+      } else if (type === "pages") {
+        const phase = time % 6.7;
+        const rustle = phase > 3.8 && phase < 4.35 ? Math.sin((phase - 3.8) / 0.55 * Math.PI) : 0;
+        value = pink * rustle * (0.32 + 0.2 * Math.sin(time * 43)) + white * rustle * 0.1 + white * 0.003;
+      } else if (type === "birds") {
+        const cycle = time % 7.9;
+        const first = cycle > 1.1 && cycle < 1.42 ? Math.sin((cycle - 1.1) / 0.32 * Math.PI) : 0;
+        const second = cycle > 4.8 && cycle < 5.28 ? Math.sin((cycle - 4.8) / 0.48 * Math.PI) : 0;
+        const chirp = first * Math.sin(time * (2050 + 620 * cycle)) + second * Math.sin(time * (1680 + 410 * cycle));
+        value = chirp * 0.22 + pink * 0.006;
+      } else if (type === "ocean") {
+        const swell = Math.pow(0.5 + 0.5 * Math.sin(time * 0.47 + 0.35 * Math.sin(time * 0.19)), 1.7);
+        value = brown * (0.45 + swell * 1.9) + pink * swell * 0.12 + white * swell * 0.035;
+      } else if (type === "stream") {
+        if (Math.random() < eventChance(2.4)) transient = Math.max(transient, 0.08 + Math.random() * 0.18);
+        transient *= decay(0.035);
+        const flow = 0.18 + 0.045 * Math.sin(time * 0.91) + Math.abs(slowDrift) * 0.2;
+        value = white * flow + pink * 0.14 + transient * white;
+      } else if (type === "purr") {
+        const breath = 0.62 + 0.22 * Math.sin(time * 1.37 + 0.25 * Math.sin(time * 0.19));
+        const pulse = Math.sin(time * 25.4 * Math.PI * 2) * 0.085 + Math.sin(time * 50.8 * Math.PI * 2) * 0.025;
+        value = pulse * breath + brown * 0.12 * breath + pink * 0.012;
+      } else if (type === "pet-breath") {
+        const inhale = Math.pow(Math.max(0, Math.sin(time * 0.72 * Math.PI)), 2.2);
+        const chest = 0.13 + inhale * 0.24;
+        value = brown * chest + pink * inhale * 0.035 + white * inhale * 0.008;
+      } else if (type === "brown") value = brown * 3.2;
+      else if (type === "pink") value = pink * 0.72;
+      else value = white * 0.26;
+
+      samples[index] = Math.max(-1, Math.min(1, value));
     }
     return buffer;
+  }
+
+  function createAudioVoice(audio, channel) {
+    if (audio.sources[channel.id]) return audio.sources[channel.id];
+    const { context } = audio;
+    const source = context.createBufferSource();
+    const filter = context.createBiquadFilter();
+    const motion = context.createGain();
+    const gain = context.createGain();
+    const panner = context.createStereoPanner?.() || null;
+    const lfo = context.createOscillator?.() || null;
+    const lfoGain = lfo ? context.createGain() : null;
+    source.buffer = createNoiseBuffer(context, channel.type);
+    source.loop = true;
+    filter.type = channel.filter;
+    filter.frequency.value = channel.frequency;
+    if (filter.Q) filter.Q.value = channel.q;
+    motion.gain.value = 0.9;
+    gain.gain.value = 0;
+    if (panner?.pan) panner.pan.value = channel.pan;
+    source.connect(filter);
+    if (panner) {
+      filter.connect(panner);
+      panner.connect(motion);
+    } else filter.connect(motion);
+    motion.connect(gain);
+    gain.connect(audio.input);
+    if (lfo && lfoGain) {
+      lfo.frequency.value = channel.drift;
+      lfoGain.gain.value = channel.depth;
+      lfo.connect(lfoGain);
+      lfoGain.connect(motion.gain);
+      lfo.start(Math.max(0, context.currentTime));
+    }
+    const offset = source.buffer?.duration ? Math.random() * source.buffer.duration * 0.82 : 0;
+    source.start(Math.max(0, context.currentTime), offset);
+    const voice = { source, filter, motion, gain, panner, lfo, lfoGain };
+    audio.sources[channel.id] = voice;
+    return voice;
   }
 
   function startAudio(instance) {
@@ -830,26 +987,23 @@
     const sources = {};
     try {
       context = new AudioContextCtor();
+      const input = context.createGain();
       const master = context.createGain();
+      const compressor = context.createDynamicsCompressor?.() || null;
+      input.gain.value = 1;
       master.gain.value = 0;
+      if (compressor) {
+        compressor.threshold.value = -22;
+        compressor.knee.value = 18;
+        compressor.ratio.value = 5;
+        compressor.attack.value = 0.035;
+        compressor.release.value = 0.42;
+        input.connect(compressor);
+        compressor.connect(master);
+      } else input.connect(master);
       master.connect(context.destination);
-      CHANNELS.forEach((channel) => {
-        const source = context.createBufferSource();
-        const filter = context.createBiquadFilter();
-        const gain = context.createGain();
-        source.buffer = createNoiseBuffer(context, channel.type);
-        source.loop = true;
-        filter.type = channel.filter;
-        filter.frequency.value = channel.frequency;
-        gain.gain.value = instance.state.audio.mix[channel.id] * phaseGain(instance);
-        source.connect(filter);
-        filter.connect(gain);
-        gain.connect(master);
-        source.start();
-        sources[channel.id] = { source, filter, gain };
-      });
-      instance.audio = { context, master, sources };
-      master.gain.setTargetAtTime(instance.state.audio.master, context.currentTime, 0.12);
+      instance.audio = { context, input, compressor, master, sources };
+      applyAudioGains(instance);
       Promise.resolve(context.resume()).then(() => {
         if (!instance.audio || instance.audio.context !== context) return;
         instance.audioStatus = "Đang phát · tạo cục bộ";
@@ -877,10 +1031,16 @@
   function applyAudioGains(instance) {
     if (!instance.audio) return;
     const now = instance.audio.context.currentTime;
-    instance.audio.master.gain.setTargetAtTime(instance.state.audio.master, now, 0.08);
+    const energy = CHANNELS.reduce((sum, channel) => {
+      const level = instance.state.audio.mix[channel.id] * channel.trim;
+      return sum + level * level;
+    }, 0);
+    const normalization = energy > 0.3025 ? 0.55 / Math.sqrt(energy) : 1;
+    instance.audio.master.gain.setTargetAtTime(instance.state.audio.master * 0.86, now, 0.16);
     CHANNELS.forEach((channel) => {
-      const target = instance.state.audio.mix[channel.id] * phaseGain(instance);
-      instance.audio.sources[channel.id]?.gain?.gain?.setTargetAtTime(target, now, 0.12);
+      const target = instance.state.audio.mix[channel.id] * channel.trim * normalization * phaseGain(instance);
+      const voice = target > 0.0008 ? createAudioVoice(instance.audio, channel) : instance.audio.sources[channel.id];
+      voice?.gain?.gain?.setTargetAtTime(target, now, target ? 0.24 : 0.38);
     });
   }
 
@@ -890,10 +1050,13 @@
     instance.audio = null;
     Object.values(audio.sources).forEach((entry) => {
       try { entry.source.stop(); } catch {}
-      try { entry.source.disconnect(); } catch {}
-      try { entry.filter.disconnect(); } catch {}
-      try { entry.gain.disconnect(); } catch {}
+      try { entry.lfo?.stop(); } catch {}
+      [entry.source, entry.filter, entry.panner, entry.motion, entry.gain, entry.lfo, entry.lfoGain].forEach((node) => {
+        try { node?.disconnect?.(); } catch {}
+      });
     });
+    try { audio.input.disconnect(); } catch {}
+    try { audio.compressor?.disconnect?.(); } catch {}
     try { audio.master.disconnect(); } catch {}
     try { audio.context.close(); } catch {}
     instance.audioStatus = "Âm thanh đang tắt";
@@ -965,6 +1128,168 @@
       stage.removeEventListener("pointermove", move);
       if (frame) global.cancelAnimationFrame(frame);
     };
+  }
+
+  function layoutItem(instance, name) {
+    if (!["title", "clock", "dock"].includes(name)) return null;
+    return instance.root.querySelector?.(`[data-hfr-layout-item="${name}"]`) || null;
+  }
+
+  function canUseFreeLayout(instance) {
+    const stage = instance.root.querySelector?.(".hfr-stage");
+    if (!stage?.getBoundingClientRect) return false;
+    const rect = stage.getBoundingClientRect();
+    return rect.width >= 840 && rect.height >= 620 && !instance.ui.zen;
+  }
+
+  function scheduleLayout(instance) {
+    if (instance.layoutDrag) finishLayoutDrag(instance);
+    global.cancelAnimationFrame?.(instance.layoutFrame);
+    instance.layoutFrame = global.requestAnimationFrame?.(() => {
+      instance.layoutFrame = 0;
+      applyLayout(instance);
+    }) || 0;
+  }
+
+  function layoutMeasurement(stage, item) {
+    if (!stage?.getBoundingClientRect || !item?.getBoundingClientRect) return null;
+    item.style.removeProperty("transform");
+    const stageRect = stage.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    const margin = 12;
+    return {
+      minX: stageRect.left + margin - itemRect.left,
+      maxX: stageRect.right - margin - itemRect.right,
+      minY: stageRect.top + margin - itemRect.top,
+      maxY: stageRect.bottom - margin - itemRect.bottom
+    };
+  }
+
+  function pixelFromLayoutPoint(point, bounds) {
+    return {
+      x: point.x >= 0 ? point.x * Math.max(0, bounds.maxX) : -point.x * Math.min(0, bounds.minX),
+      y: point.y >= 0 ? point.y * Math.max(0, bounds.maxY) : -point.y * Math.min(0, bounds.minY)
+    };
+  }
+
+  function layoutPointFromPixel(x, y, bounds) {
+    const ratio = (value, minimum, maximum) => value >= 0
+      ? (maximum > 0 ? value / maximum : 0)
+      : (minimum < 0 ? value / -minimum : 0);
+    return {
+      x: clamp(ratio(x, bounds.minX, bounds.maxX), -1, 1, 0),
+      y: clamp(ratio(y, bounds.minY, bounds.maxY), -1, 1, 0)
+    };
+  }
+
+  function applyLayout(instance) {
+    const app = instance.root.querySelector?.("[data-hfr-root]");
+    const stage = instance.root.querySelector?.(".hfr-stage");
+    if (!app || !stage) return;
+    const supported = canUseFreeLayout(instance);
+    app.dataset.layoutMode = supported ? (instance.state.layout.locked ? "locked" : "editing") : "compact";
+    ["title", "clock", "dock"].forEach((name) => {
+      const item = layoutItem(instance, name);
+      if (!item) return;
+      item.style.removeProperty("transform");
+      if (!supported) return;
+      const bounds = layoutMeasurement(stage, item);
+      if (!bounds) return;
+      const point = pixelFromLayoutPoint(instance.state.layout[name], bounds);
+      item.style.transform = `translate3d(${point.x.toFixed(2)}px, ${point.y.toFixed(2)}px, 0)`;
+    });
+  }
+
+  function setupLayout(instance) {
+    instance.layoutObserver?.disconnect?.();
+    instance.layoutObserver = null;
+    applyLayout(instance);
+    const stage = instance.root.querySelector?.(".hfr-stage");
+    if (!stage || !global.ResizeObserver) return;
+    const observer = new global.ResizeObserver(() => {
+      if (instance.layoutDrag) return;
+      scheduleLayout(instance);
+    });
+    observer.observe(stage);
+    instance.layoutObserver = observer;
+  }
+
+  function handleLayoutPointerDown(instance, event) {
+    const handle = event.target.closest?.("[data-hfr-drag-handle]");
+    if (!handle || event.button > 0 || instance.state.layout.locked || !canUseFreeLayout(instance)) return;
+    const name = cleanText(handle.dataset.hfrDragHandle, 20);
+    const stage = instance.root.querySelector?.(".hfr-stage");
+    const item = layoutItem(instance, name);
+    const bounds = layoutMeasurement(stage, item);
+    if (!stage || !item || !bounds) return;
+    const start = pixelFromLayoutPoint(instance.state.layout[name], bounds);
+    item.style.transform = `translate3d(${start.x.toFixed(2)}px, ${start.y.toFixed(2)}px, 0)`;
+    instance.layoutDrag = {
+      name, handle, item, stage, bounds, start,
+      pointerId: event.pointerId,
+      clientX: event.clientX,
+      clientY: event.clientY
+    };
+    stage.dataset.layoutDragging = name;
+    handle.setPointerCapture?.(event.pointerId);
+    event.preventDefault?.();
+  }
+
+  function handleLayoutPointerMove(instance, event) {
+    const drag = instance.layoutDrag;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const x = clamp(drag.start.x + event.clientX - drag.clientX, drag.bounds.minX, drag.bounds.maxX, drag.start.x);
+    const y = clamp(drag.start.y + event.clientY - drag.clientY, drag.bounds.minY, drag.bounds.maxY, drag.start.y);
+    drag.item.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+    instance.state.layout[drag.name] = layoutPointFromPixel(x, y, drag.bounds);
+    event.preventDefault?.();
+  }
+
+  function finishLayoutDrag(instance, event) {
+    const drag = instance.layoutDrag;
+    if (!drag || (event?.pointerId != null && event.pointerId !== drag.pointerId)) return;
+    drag.handle.releasePointerCapture?.(drag.pointerId);
+    delete drag.stage.dataset.layoutDragging;
+    instance.layoutDrag = null;
+    writeState(instance);
+    applyLayout(instance);
+    announce(instance, `Đã lưu vị trí ${drag.name === "clock" ? "đồng hồ" : drag.name === "title" ? "tên cảnh" : "thanh công cụ"}.`);
+  }
+
+  function handleLayoutKeydown(instance, event) {
+    const handle = event.target.closest?.("[data-hfr-drag-handle]");
+    if (!handle || instance.state.layout.locked || !canUseFreeLayout(instance)) return;
+    const name = cleanText(handle.dataset.hfrDragHandle, 20);
+    if (!Object.hasOwn(instance.state.layout, name)) return;
+    const step = event.shiftKey ? 0.12 : 0.035;
+    const point = instance.state.layout[name];
+    const deltas = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+    if (event.key === "Home") {
+      instance.state.layout[name] = { x: 0, y: 0 };
+    } else if (deltas[event.key]) {
+      instance.state.layout[name] = {
+        x: clamp(point.x + deltas[event.key][0], -1, 1, 0),
+        y: clamp(point.y + deltas[event.key][1], -1, 1, 0)
+      };
+    } else if (event.key === "Escape") {
+      instance.state.layout.locked = true;
+      writeState(instance);
+      render(instance);
+      announce(instance, "Đã khóa bố cục.");
+      event.preventDefault?.();
+      return;
+    } else return;
+    writeState(instance);
+    applyLayout(instance);
+    event.preventDefault?.();
+  }
+
+  function resetLayout(instance) {
+    const locked = instance.state.layout.locked;
+    instance.state.layout = { ...defaultLayout(), locked };
+    writeState(instance);
+    render(instance);
+    announce(instance, "Đã đưa các mục về vị trí mặc định.");
   }
 
   function preloadNextScene(instance) {
@@ -1177,6 +1502,19 @@
       if (instance.state.primaryTaskId === targetId) instance.state.primaryTaskId = "";
       writeState(instance); render(instance); return;
     }
+    if (action === "layout-edit") {
+      if (instance.state.layout.locked && !canUseFreeLayout(instance)) {
+        announce(instance, "Kéo thả khả dụng khi cửa sổ đủ rộng; ở mức phóng to hiện tại phòng đang dùng bố cục an toàn.", "error");
+        return;
+      }
+      finishLayoutDrag(instance);
+      instance.state.layout.locked = !instance.state.layout.locked;
+      writeState(instance);
+      render(instance);
+      announce(instance, instance.state.layout.locked ? "Đã khóa bố cục." : "Có thể kéo các tay nắm để sắp xếp phòng.");
+      return;
+    }
+    if (action === "layout-reset") { finishLayoutDrag(instance); resetLayout(instance); return; }
     if (action === "motion-toggle") {
       if (global.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
         instance.state.settings.motion = false;
@@ -1186,7 +1524,7 @@
       instance.state.settings.motion = !instance.state.settings.motion;
       writeState(instance); render(instance); announce(instance, instance.state.settings.motion ? "Đã bật chuyển động." : "Đã tạm dừng chuyển động."); return;
     }
-    if (action === "zen") { instance.ui.zen = !instance.ui.zen; instance.ui.panel = ""; render(instance); return; }
+    if (action === "zen") { finishLayoutDrag(instance); instance.ui.zen = !instance.ui.zen; instance.ui.panel = ""; render(instance); return; }
     if (action === "fullscreen") {
       const stage = instance.root.querySelector(".hfr-stage");
       if (global.document.fullscreenElement) global.document.exitFullscreen?.();
@@ -1363,7 +1701,8 @@
       root, options, owner, storageKey, isGuest: options.currentUser?.guest === true || owner === "guest", state: readState(storageKey, options),
       ui: { panel: "", search: "", category: "all", favoritesOnly: false, sceneView: "grid", zen: false, editTaskId: "" },
       cleanup: [], objectUrls: new Map(), audio: null, audioStatus: "Âm thanh đang tắt",
-      timerInterval: 0, pointerCleanup: null, toastTimer: 0, noteTimer: 0, notePending: false, searchTimer: 0, mediaStatus: ""
+      timerInterval: 0, pointerCleanup: null, layoutObserver: null, layoutFrame: 0, layoutDrag: null,
+      toastTimer: 0, noteTimer: 0, notePending: false, searchTimer: 0, mediaStatus: ""
     };
     instances.set(root, instance);
     mountedRoots.add(root);
@@ -1374,9 +1713,16 @@
     addListener(instance, root, "input", (event) => handleInput(instance, event));
     addListener(instance, root, "submit", (event) => handleSubmit(instance, event));
     addListener(instance, root, "change", (event) => handleChange(instance, event));
+    addListener(instance, root, "pointerdown", (event) => handleLayoutPointerDown(instance, event));
+    addListener(instance, root, "pointermove", (event) => handleLayoutPointerMove(instance, event));
+    addListener(instance, root, "pointerup", (event) => finishLayoutDrag(instance, event));
+    addListener(instance, root, "pointercancel", (event) => finishLayoutDrag(instance, event));
+    addListener(instance, root, "keydown", (event) => handleLayoutKeydown(instance, event));
     addListener(instance, root, "error", (event) => handleImageError(instance, event), true);
     addListener(instance, global.document, "visibilitychange", () => handleVisibility(instance));
     addListener(instance, global, "storage", (event) => handleStorage(instance, event));
+    addListener(instance, global, "resize", () => scheduleLayout(instance));
+    addListener(instance, global.visualViewport, "resize", () => scheduleLayout(instance));
     addListener(instance, global.document, "fullscreenchange", () => {
       const app = instance.root.querySelector("[data-hfr-root]");
       if (app) app.dataset.fullscreen = global.document.fullscreenElement ? "true" : "false";
@@ -1400,7 +1746,10 @@
     if (!instance) return;
     stopTimerLoop(instance);
     stopAudio(instance);
+    finishLayoutDrag(instance);
     instance.pointerCleanup?.();
+    instance.layoutObserver?.disconnect?.();
+    global.cancelAnimationFrame?.(instance.layoutFrame);
     global.clearTimeout(instance.toastTimer);
     if (instance.notePending) writeState(instance);
     global.clearTimeout(instance.noteTimer);

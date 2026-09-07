@@ -134,7 +134,7 @@ body.app-focus-study-route .app-main {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: var(--hfr-scene-position, center);
   transform: scale(1.045) translate3d(calc(var(--hfr-x) * -13px), calc(var(--hfr-y) * -10px), 0);
   filter: saturate(1.04) contrast(1.03);
   transition: opacity 420ms ease, filter 300ms ease;
@@ -291,6 +291,239 @@ body.app-focus-study-route .app-main {
   background: radial-gradient(ellipse at 50% 58%, rgb(49 167 255 / 24%), transparent 44%);
 }
 
+.hfr-stage[data-hfr-effect="sunrise"] .hfr-fx--far,
+.hfr-stage[data-hfr-effect="terrace-breeze"] .hfr-fx--far {
+  opacity: .26;
+  background:
+    radial-gradient(circle at 53% 16%, rgb(255 226 167 / 30%), transparent 20%),
+    linear-gradient(112deg, transparent 32%, rgb(255 232 189 / 13%) 49%, transparent 65%);
+  mix-blend-mode: screen;
+  filter: blur(8px);
+  animation: hfr-dawn-light 18s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="sunrise"] .hfr-fx--mid,
+.hfr-stage[data-hfr-effect="terrace-breeze"] .hfr-fx--mid,
+.hfr-stage[data-hfr-effect="cabin-morning"] .hfr-fx--mid {
+  inset: 42% -12% -14%;
+  opacity: .2;
+  background: linear-gradient(180deg, transparent, rgb(226 242 241 / 19%) 45%, transparent 82%);
+  filter: blur(16px);
+  animation: hfr-valley-haze 22s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="greenhouse"] .hfr-fx--far {
+  opacity: .34;
+  background-image:
+    radial-gradient(ellipse, rgb(225 246 255 / 48%) 0 1px, transparent 2px),
+    radial-gradient(ellipse, rgb(214 241 250 / 34%) 0 1.5px, transparent 2.7px);
+  background-position: 0 0, 41px 63px;
+  background-size: 71px 83px, 127px 151px;
+  filter: blur(.35px);
+  animation: hfr-condensation 14s linear infinite;
+}
+
+.hfr-stage[data-hfr-effect="greenhouse"] .hfr-fx--mid {
+  inset: 32% -12% -18%;
+  opacity: .25;
+  background: linear-gradient(180deg, transparent, rgb(225 244 238 / 20%) 48%, transparent 83%);
+  filter: blur(18px);
+  animation: hfr-mist 18s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="greenhouse"] .hfr-fx--near {
+  opacity: .13;
+  background-image: repeating-linear-gradient(93deg, transparent 0 58px, rgb(232 249 255 / 40%) 59px, transparent 60px 118px);
+  background-size: 380px 420px;
+  filter: blur(1.5px);
+  animation: hfr-rain 2.8s linear infinite;
+}
+
+.hfr-stage[data-hfr-effect="lake-mist"] .hfr-fx--mid {
+  inset: 42% -18% -15%;
+  opacity: .31;
+  background:
+    radial-gradient(ellipse at 22% 61%, rgb(224 244 251 / 24%), transparent 34%),
+    radial-gradient(ellipse at 72% 55%, rgb(224 244 251 / 19%), transparent 38%);
+  filter: blur(18px);
+  animation: hfr-lake-mist 26s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="lake-mist"] .hfr-fx--near {
+  inset: 57% -8% -18%;
+  opacity: .12;
+  background: repeating-radial-gradient(ellipse at 50% 100%, transparent 0 23px, rgb(224 247 255 / 30%) 25px 26px, transparent 29px 52px);
+  animation: hfr-water-breathe 11s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="light-shafts"] .hfr-fx--far {
+  opacity: .38;
+  background-image:
+    radial-gradient(circle, rgb(255 236 194 / 58%) 0 .8px, transparent 1.8px),
+    radial-gradient(circle, rgb(255 248 224 / 36%) 0 1.2px, transparent 2.2px);
+  background-position: 0 0, 43px 79px;
+  background-size: 101px 109px, 163px 181px;
+  animation: hfr-motes 20s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="light-shafts"] .hfr-fx--mid {
+  inset: -20% 10% -20% -15%;
+  opacity: .2;
+  background: repeating-linear-gradient(111deg, transparent 0 13%, rgb(255 233 191 / 18%) 18%, transparent 25% 38%);
+  filter: blur(11px);
+  transform-origin: 22% 0;
+  animation: hfr-library-light 19s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="cabin-morning"] .hfr-fx--near {
+  inset: 25% 5% -20% 42%;
+  opacity: .2;
+  background:
+    radial-gradient(ellipse at 52% 75%, rgb(255 250 234 / 20%) 0 3%, transparent 21%),
+    radial-gradient(ellipse at 61% 54%, rgb(255 250 234 / 15%) 0 2%, transparent 18%);
+  filter: blur(10px);
+  animation: hfr-steam 11s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="terrace-breeze"] .hfr-fx--near {
+  opacity: .26;
+  background-image:
+    radial-gradient(ellipse, rgb(239 255 190 / 50%) 0 1px, transparent 2px),
+    radial-gradient(ellipse, rgb(255 237 170 / 36%) 0 1px, transparent 2px);
+  background-position: 0 0, 67px 91px;
+  background-size: 137px 151px, 211px 233px;
+  filter: blur(.8px);
+  animation: hfr-field-breeze 21s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="autumn-leaves"] .hfr-fx--far,
+.hfr-stage[data-hfr-effect="autumn-leaves"] .hfr-fx--near {
+  opacity: .34;
+  background-image:
+    radial-gradient(ellipse at 55% 55%, rgb(211 84 39 / 74%) 0 1.5px, transparent 3px),
+    radial-gradient(ellipse at 45% 45%, rgb(247 161 55 / 62%) 0 2px, transparent 3.6px);
+  background-position: 0 0, 73px 109px;
+  background-size: 149px 173px, 223px 251px;
+  filter: blur(.35px);
+  animation: hfr-leaf-drift 24s ease-in-out infinite;
+}
+
+.hfr-stage[data-hfr-effect="autumn-leaves"] .hfr-fx--near {
+  opacity: .2;
+  filter: blur(1.3px);
+  transform: scale(1.13);
+  animation-duration: 16s;
+  animation-direction: reverse;
+}
+
+.hfr-stage[data-hfr-effect="moonlight"] .hfr-fx--far {
+  opacity: .42;
+  background-image:
+    radial-gradient(circle, rgb(255 255 255 / 82%) 0 .7px, transparent 1.4px),
+    radial-gradient(circle, rgb(171 214 255 / 63%) 0 1px, transparent 1.8px);
+  background-position: 0 0, 53px 31px;
+  background-size: 97px 97px, 157px 157px;
+  animation: hfr-stars 11s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="moonlight"] .hfr-fx--glow {
+  opacity: .32;
+  background:
+    radial-gradient(circle at 27% 17%, rgb(201 225 255 / 23%), transparent 21%),
+    linear-gradient(118deg, transparent 28%, rgb(167 208 255 / 8%) 47%, transparent 64%);
+  mix-blend-mode: screen;
+}
+
+.hfr-stage[data-hfr-effect^="pet-"] {
+  --hfr-pet-x: 20%;
+  --hfr-pet-y: 65%;
+}
+
+.hfr-stage[data-hfr-effect="pet-rain"] { --hfr-pet-x: 17%; --hfr-pet-y: 75%; --hfr-scene-position: 21% center; }
+.hfr-stage[data-hfr-effect="pet-sunroom"] { --hfr-pet-x: 31%; --hfr-pet-y: 64%; --hfr-scene-position: 34% center; }
+.hfr-stage[data-hfr-effect="pet-fire"] { --hfr-pet-x: 21%; --hfr-pet-y: 55%; --hfr-scene-position: 23% center; }
+.hfr-stage[data-hfr-effect="pet-garden"] { --hfr-pet-x: 82%; --hfr-pet-y: 72%; --hfr-scene-position: 79% center; }
+.hfr-stage[data-hfr-effect="pet-river"] { --hfr-pet-x: 77%; --hfr-pet-y: 61%; --hfr-scene-position: 75% center; }
+.hfr-stage[data-hfr-effect="pet-lake"] { --hfr-pet-x: 15%; --hfr-pet-y: 62%; --hfr-scene-position: 19% center; }
+
+.hfr-stage[data-hfr-effect^="pet-"] .hfr-fx--glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--hfr-scene-image);
+  background-position: var(--hfr-scene-position, center);
+  background-size: cover;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(ellipse 14% 11% at var(--hfr-pet-x) var(--hfr-pet-y), #000 22%, rgb(0 0 0 / 72%) 48%, transparent 78%);
+  mask-image: radial-gradient(ellipse 14% 11% at var(--hfr-pet-x) var(--hfr-pet-y), #000 22%, rgb(0 0 0 / 72%) 48%, transparent 78%);
+  transform: scale(1.045);
+  transform-origin: var(--hfr-pet-x) var(--hfr-pet-y);
+  filter: saturate(1.04) contrast(1.03);
+  animation: hfr-pet-breathe 4.8s ease-in-out infinite;
+}
+
+.hfr-stage[data-hfr-effect="pet-rain"] .hfr-fx--far,
+.hfr-stage[data-hfr-effect="pet-fire"] .hfr-fx--far,
+.hfr-stage[data-hfr-effect="pet-river"] .hfr-fx--far {
+  opacity: .22;
+  background-image: repeating-linear-gradient(101deg, transparent 0 31px, rgb(207 233 250 / 28%) 32px, transparent 33px 68px);
+  background-size: 250px 290px;
+  filter: blur(.8px);
+  animation: hfr-rain 1.9s linear infinite;
+}
+
+.hfr-stage[data-hfr-effect="pet-rain"] .hfr-fx--mid,
+.hfr-stage[data-hfr-effect="pet-river"] .hfr-fx--mid,
+.hfr-stage[data-hfr-effect="pet-lake"] .hfr-fx--mid {
+  inset: 41% -15% -17%;
+  opacity: .2;
+  background: radial-gradient(ellipse at 52% 58%, rgb(222 240 247 / 23%), transparent 57%);
+  filter: blur(17px);
+  animation: hfr-lake-mist 24s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="pet-fire"] .hfr-fx--near {
+  opacity: .25;
+  background-image:
+    radial-gradient(circle, rgb(255 174 76 / 78%) 0 1px, transparent 2.5px),
+    radial-gradient(circle, rgb(255 105 48 / 55%) 0 1.4px, transparent 3px);
+  background-position: 0 0, 63px 97px;
+  background-size: 151px 151px, 227px 227px;
+  animation: hfr-embers 19s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="pet-sunroom"] .hfr-fx--far,
+.hfr-stage[data-hfr-effect="pet-garden"] .hfr-fx--far {
+  opacity: .28;
+  background:
+    radial-gradient(circle at 55% 12%, rgb(255 237 191 / 30%), transparent 21%),
+    linear-gradient(112deg, transparent 31%, rgb(255 239 201 / 15%) 48%, transparent 66%);
+  mix-blend-mode: screen;
+  filter: blur(8px);
+  animation: hfr-dawn-light 19s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="pet-sunroom"] .hfr-fx--mid,
+.hfr-stage[data-hfr-effect="pet-garden"] .hfr-fx--mid {
+  opacity: .28;
+  background-image:
+    radial-gradient(circle, rgb(255 244 208 / 55%) 0 .8px, transparent 1.8px),
+    radial-gradient(circle, rgb(230 255 208 / 38%) 0 1px, transparent 2px);
+  background-position: 0 0, 61px 83px;
+  background-size: 121px 137px, 193px 211px;
+  animation: hfr-motes 18s ease-in-out infinite alternate;
+}
+
+.hfr-stage[data-hfr-effect="pet-garden"] .hfr-fx--near {
+  opacity: .22;
+  background-image:
+    radial-gradient(ellipse, rgb(255 204 218 / 68%) 0 1.4px, transparent 3px),
+    radial-gradient(ellipse, rgb(255 239 245 / 48%) 0 1px, transparent 2.5px);
+  background-position: 0 0, 73px 119px;
+  background-size: 173px 191px, 251px 273px;
+  animation: hfr-leaf-drift 26s ease-in-out infinite;
+}
+
 .hfr-topbar {
   z-index: 4;
   display: flex;
@@ -301,6 +534,7 @@ body.app-focus-study-route .app-main {
 }
 
 .hfr-scene-title {
+  position: relative;
   display: grid;
   max-width: min(620px, 62%);
   padding: 12px 15px;
@@ -388,6 +622,7 @@ body.app-focus-study-route .app-main {
 }
 
 .hfr-clock-card {
+  position: relative;
   display: grid;
   justify-items: center;
   width: min(520px, 100%);
@@ -475,6 +710,7 @@ body.app-focus-study-route .app-main {
 
 .hfr-dock {
   z-index: 5;
+  position: relative;
   align-self: end;
   display: flex;
   justify-content: center;
@@ -490,6 +726,85 @@ body.app-focus-study-route .app-main {
   box-shadow: 0 20px 50px rgb(0 0 0 / 35%);
   scrollbar-width: thin;
   backdrop-filter: blur(20px) saturate(1.15);
+}
+
+.hfr-drag-handle {
+  z-index: 3;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: none;
+  place-items: center;
+  min-width: 34px !important;
+  width: 34px;
+  min-height: 34px !important;
+  height: 34px;
+  padding: 0 !important;
+  border-color: color-mix(in srgb, var(--hfr-accent) 62%, white 10%) !important;
+  border-radius: 10px !important;
+  background: rgb(4 12 22 / 92%) !important;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+  color: #fff;
+  cursor: grab !important;
+  font-size: 1.05rem;
+  line-height: 1;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.hfr-drag-handle:hover,
+.hfr-drag-handle:active {
+  transform: none !important;
+}
+
+.hfr-drag-handle--dock {
+  top: 50%;
+  right: auto;
+  left: 8px;
+  transform: translateY(-50%) !important;
+}
+
+.hfr-drag-handle--dock:hover,
+.hfr-drag-handle--dock:active {
+  transform: translateY(-50%) !important;
+}
+
+.hfr-app[data-layout-mode="editing"] .hfr-drag-handle {
+  display: grid;
+}
+
+.hfr-app[data-layout-mode="editing"] .hfr-scene-title,
+.hfr-app[data-layout-mode="editing"] .hfr-clock-card,
+.hfr-app[data-layout-mode="editing"] .hfr-dock {
+  outline: 1px dashed color-mix(in srgb, var(--hfr-accent) 72%, white 8%);
+  outline-offset: 4px;
+}
+
+.hfr-app[data-layout-mode="editing"] .hfr-scene-title,
+.hfr-app[data-layout-mode="editing"] .hfr-clock-card {
+  padding-top: max(42px, clamp(23px, 3vw, 38px));
+}
+
+.hfr-app[data-layout-mode="editing"] .hfr-dock {
+  padding-left: 49px;
+}
+
+.hfr-stage[data-layout-dragging] {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.hfr-stage[data-layout-dragging] .hfr-drag-handle {
+  cursor: grabbing !important;
+}
+
+.hfr-stage[data-layout-dragging="title"] [data-hfr-layout-item="title"],
+.hfr-stage[data-layout-dragging="clock"] [data-hfr-layout-item="clock"],
+.hfr-stage[data-layout-dragging="dock"] [data-hfr-layout-item="dock"] {
+  outline: 3px solid color-mix(in srgb, var(--hfr-accent) 78%, white 14%);
+  box-shadow: 0 24px 72px rgb(0 0 0 / 48%), 0 0 36px color-mix(in srgb, var(--hfr-accent) 28%, transparent);
 }
 
 .hfr-dock button {
@@ -1254,6 +1569,43 @@ body.app-focus-study-route .app-main {
   margin-top: 3px;
 }
 
+.hfr-layout-settings {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 13px;
+  border: 1px solid color-mix(in srgb, var(--hfr-accent) 32%, var(--hfr-line));
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--hfr-accent) 7%, rgb(255 255 255 / 3%));
+}
+
+.hfr-layout-settings > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.hfr-layout-settings small {
+  color: var(--hfr-muted);
+  font-size: .67rem;
+}
+
+.hfr-layout-settings > div:last-child {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hfr-layout-settings button {
+  min-width: 0;
+  padding-inline: 10px;
+}
+
+.hfr-layout-edit-action[aria-pressed="true"],
+.hfr-layout-toggle[aria-pressed="true"] {
+  border-color: var(--hfr-accent);
+  background: color-mix(in srgb, var(--hfr-accent) 20%, rgb(8 17 29 / 92%));
+}
+
 .hfr-notification-card,
 .hfr-shared-room,
 .hfr-data-tools {
@@ -1397,6 +1749,12 @@ body.app-focus-study-route .app-main {
   display: none;
 }
 
+[data-hfr-root][data-quality="eco"] .hfr-stage[data-hfr-effect^="pet-"] .hfr-fx--glow::before,
+[data-hfr-root][data-motion="off"] .hfr-stage[data-hfr-effect^="pet-"] .hfr-fx--glow::before,
+[data-hfr-root][data-visibility="hidden"] .hfr-stage[data-hfr-effect^="pet-"] .hfr-fx--glow::before {
+  display: none;
+}
+
 [data-hfr-root][data-quality="eco"] .hfr-backdrop img,
 [data-hfr-root][data-motion="off"] .hfr-backdrop img {
   transform: none;
@@ -1469,9 +1827,153 @@ body.app-focus-study-route .app-main {
   to { opacity: .37; filter: saturate(1.2); }
 }
 
+@keyframes hfr-dawn-light {
+  from { opacity: .17; transform: translate3d(-1.5%, .5%, 0) scale(.98); }
+  to { opacity: .34; transform: translate3d(1.5%, -1%, 0) scale(1.025); }
+}
+
+@keyframes hfr-valley-haze {
+  from { opacity: .11; transform: translate3d(-4%, 1%, 0) scaleX(.96); }
+  to { opacity: .25; transform: translate3d(5%, -1%, 0) scaleX(1.05); }
+}
+
+@keyframes hfr-condensation {
+  from { background-position: 0 -60px, 41px -88px; }
+  to { background-position: -5px 155px, 45px 234px; }
+}
+
+@keyframes hfr-lake-mist {
+  from { opacity: .17; transform: translate3d(-7%, 1%, 0) scaleX(.93); }
+  to { opacity: .34; transform: translate3d(7%, -1%, 0) scaleX(1.08); }
+}
+
+@keyframes hfr-water-breathe {
+  from { transform: translate3d(-1.5%, 1%, 0) scaleY(.95); }
+  to { transform: translate3d(1.5%, -1%, 0) scaleY(1.04); }
+}
+
+@keyframes hfr-library-light {
+  from { opacity: .11; transform: rotate(-1.2deg) translate3d(-1%, 0, 0); }
+  to { opacity: .26; transform: rotate(1deg) translate3d(2%, 0, 0); }
+}
+
+@keyframes hfr-field-breeze {
+  0% { transform: translate3d(-4%, 2%, 0) rotate(-.6deg); opacity: .14; }
+  48% { transform: translate3d(2%, -2%, 0) rotate(.4deg); opacity: .3; }
+  100% { transform: translate3d(5%, -4%, 0) rotate(-.2deg); opacity: .18; }
+}
+
+@keyframes hfr-leaf-drift {
+  0% { transform: translate3d(-5%, -6%, 0) rotate(-2deg); opacity: .11; }
+  45% { transform: translate3d(1%, 2%, 0) rotate(3deg); opacity: .37; }
+  100% { transform: translate3d(6%, 9%, 0) rotate(-1deg); opacity: .17; }
+}
+
+@keyframes hfr-pet-breathe {
+  0%, 100% { transform: scale(1.045); filter: saturate(1.04) contrast(1.03); }
+  52% { transform: scale(1.049); filter: saturate(1.045) contrast(1.032) brightness(1.006); }
+}
+
 @keyframes hfr-panel-in {
   from { opacity: 0; transform: translateX(18px) scale(.99); }
   to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes hfr-sheet-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* JS switches to this measured layout when browser zoom or the Platform sidebar
+   leaves less room than the viewport media query can see. Saved free-layout
+   coordinates remain untouched and are restored when the stage is wide again. */
+.hfr-app[data-layout-mode="compact"] [data-hfr-layout-item] {
+  transform: none !important;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-drag-handle {
+  display: none !important;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-stage {
+  display: grid;
+  grid-template-rows: auto minmax(480px, 62dvh) auto auto;
+  min-height: 690px;
+  overflow: hidden;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-topbar {
+  grid-row: 1;
+  align-items: stretch;
+  padding: 12px;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-scene-title {
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-top-actions {
+  align-content: flex-start;
+  flex: 0 0 auto;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-top-actions button {
+  min-width: 44px;
+  padding-inline: 10px;
+  font-size: 0;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-top-actions button::first-letter {
+  font-size: 1rem;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-layout-toggle,
+.hfr-app[data-layout-mode="compact"] .hfr-layout-reset {
+  display: none;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-focus-center {
+  grid-row: 2;
+  padding: 24px 13px 40px;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-clock-card {
+  width: min(440px, 100%);
+  margin-right: 0;
+  padding: 24px 16px;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-clock {
+  font-size: clamp(4.2rem, 19vw, 6rem);
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-panel {
+  position: relative;
+  inset: auto;
+  grid-row: 3;
+  width: calc(100% - 16px);
+  max-height: none;
+  margin: -10px 8px 8px;
+  border-radius: 19px;
+  animation-name: hfr-sheet-in;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-dock {
+  grid-row: 4;
+  justify-content: flex-start;
+  width: calc(100% - 16px);
+  max-width: none;
+  margin: 0 8px 8px;
+  padding-left: 7px;
+  scroll-snap-type: x proximity;
+}
+
+.hfr-app[data-layout-mode="compact"] .hfr-dock button {
+  min-width: 68px;
+  min-height: 60px;
+  scroll-snap-align: start;
 }
 
 @media (max-width: 1100px) {
@@ -1623,13 +2125,26 @@ body.app-focus-study-route .app-main {
     bottom: 15px;
   }
 
-  @keyframes hfr-sheet-in {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
 }
 
 @media (max-width: 430px) {
+  body.app-focus-study-route .app-page-header__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    overflow: visible;
+  }
+
+  body.app-focus-study-route .app-page-header__actions > * {
+    min-width: 0;
+    width: 100%;
+    white-space: normal;
+  }
+
+  body.app-focus-study-route .app-page-header__actions > :last-child {
+    grid-column: 1 / -1;
+  }
+
   .hfr-topbar {
     gap: 7px;
   }
@@ -1652,6 +2167,26 @@ body.app-focus-study-route .app-main {
 
   .hfr-focus-center {
     min-height: 430px;
+  }
+
+  .hfr-stage:is([data-hfr-effect="pet-rain"], [data-hfr-effect="pet-sunroom"], [data-hfr-effect="pet-fire"], [data-hfr-effect="pet-lake"]) .hfr-focus-center {
+    justify-items: end;
+    padding-right: 9px;
+    padding-left: clamp(78px, 23vw, 92px);
+  }
+
+  .hfr-stage:is([data-hfr-effect="pet-garden"], [data-hfr-effect="pet-river"]) .hfr-focus-center {
+    justify-items: start;
+    padding-right: clamp(78px, 23vw, 92px);
+    padding-left: 9px;
+  }
+
+  .hfr-stage[data-hfr-effect^="pet-"] .hfr-clock-card {
+    padding-inline: 14px;
+  }
+
+  .hfr-stage[data-hfr-effect^="pet-"] .hfr-clock {
+    font-size: clamp(3.1rem, 16vw, 4.4rem);
   }
 
   .hfr-clock-card {
@@ -1763,6 +2298,10 @@ body.app-focus-study-route .app-main {
   .hfr-backdrop img,
   .hfr-fx {
     transform: none !important;
+  }
+
+  .hfr-stage[data-hfr-effect^="pet-"] .hfr-fx--glow::before {
+    display: none;
   }
 }
 

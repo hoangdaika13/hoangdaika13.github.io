@@ -7605,7 +7605,7 @@ function initAppShell() {
       });
       else mountSimpleView("Nhạc", "Đang tải thư viện nhạc có giấy phép mở...", "");
     } else if (route === "/focus-room") {
-      updatePageHeader("Phòng học tập trung", "Không gian học nhập vai với 12 scene nguyên bản, Web Audio cục bộ, Pomodoro, công việc, ghi chú và lịch sử thật.", route);
+      updatePageHeader("Phòng học tập trung", "Không gian học nhập vai với 26 scene nguyên bản, hiệu ứng môi trường dịu, Web Audio cục bộ, Pomodoro, công việc, ghi chú và lịch sử thật.", route);
       pageActions.innerHTML = '<button type="button" data-focus-room-panel="scenes">Đổi không gian</button><button type="button" data-focus-room-panel="tasks">Công việc</button><button class="app-primary-action" type="button" data-focus-room-zen>Zen mode</button>';
       workspace.innerHTML = '<div data-hh-focus-room-host></div>';
       const focusRoomHost = workspace.firstElementChild;

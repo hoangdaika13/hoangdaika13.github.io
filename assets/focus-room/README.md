@@ -1,14 +1,14 @@
 # HH Focus Room scene assets
 
-These 12 scene backgrounds were prepared for the `/learn/focus-room` workspace. They are project-local assets: the browser never hotlinks a commercial focus product or an external image host.
+These 26 scene backgrounds were prepared for the canonical `/focus-room` workspace. They are project-local assets: the browser never hotlinks a commercial focus product or an external image host.
 
 ## Rights and provenance
 
 - `rainy-window.webp` is an optimized derivative of the existing original `assets/galaxy/hh-ambient-room-rainy-v1.png`, created for HH Platform with OpenAI ImageGen on 2026-08-29.
-- The other 11 images were generated specifically for HH Platform with the built-in OpenAI ImageGen workflow on 2026-09-07.
+- The original 11 additional images, eight landscape expansion scenes and six calm pet-companion scenes were generated specifically for HH Platform with the built-in OpenAI ImageGen workflow on 2026-09-07.
 - LifeAt was used only as product-experience research. No LifeAt screenshot, source code, brand element, video, sound or image is included.
 - Every background contains no interface, logo, watermark or recognizable copyrighted character. Titles, timers and controls remain live HTML.
-- Full scenes are WebP files capped at 1600×900. `thumbs/` contains a separate delivery thumbnail for every scene.
+- Full scenes are optimized WebP files up to 1672×942. `thumbs/` contains a separate 560 px delivery thumbnail for every scene.
 - These assets are governed by the repository's own distribution policy and the applicable OpenAI generated-content terms. No third-party stock-media license is required.
 
 ## Asset manifest
@@ -27,7 +27,25 @@ These 12 scene backgrounds were prepared for the `/learn/focus-room` workspace. 
 | `orbital-desk.webp` | Original orbital observation desk | `89D454C2D1C15C85517CA277336D1CDCB60748D5ADF58BBAFEE9EDA5C49A3F66` |
 | `minimal-dark.webp` | Minimal dark focus room | `91850E28AD3C7E94F00054938FAC6A474FACDEF9A486016FC687BC31BCADA2C4` |
 | `twilight-garden.webp` | Original anime-inspired twilight study garden, no characters | `924F9B53389BEB7378D3611725C08FDF93BA1E7F4B50ACA3C462F715A0B2484F` |
+| `rooftop-sunrise.webp` | Quiet Southeast Asian rooftop at sunrise | `90F6D90EA9279B83B58E8FD89E5964F1878064AC7960A3856D6E8D87D60C7C5B` |
+| `rainy-greenhouse.webp` | Rainy glass greenhouse study corner | `584C285B9F7670940DB74086E60542B32C6640395923547241866A1E7E7F7401` |
+| `alpine-lake-dawn.webp` | Alpine lake desk at dawn | `B29AAB0286654E45D4717EA91380FDDB537F6B526FAF645BA5AE51B2C4A631A8` |
+| `university-reading-hall.webp` | Old university reading hall | `16835D0F272DD236B000A50CC3FA17ED778F59EF0F8DBBB57617A46BBF46E80D` |
+| `nordic-cabin-morning.webp` | Nordic cabin morning study nook | `F619FF1B3E331EBC82A83DD20149126187ACF8DC67A88E5FF233CF9D9D45C6F5` |
+| `rice-terrace-veranda.webp` | Vietnamese rice-terrace veranda | `70D60DD8D54670435CA3075CBFD8A816E4BDAA0D671CDBFCFA407A002331CA2A` |
+| `autumn-garden-room.webp` | Original autumn timber garden room | `2C65E15F1803CDF5F97765A2EE5F61341B470547B628011CB6D4D129833E2290` |
+| `moonlit-observatory.webp` | Moonlit mountain observatory desk | `59AA398A4ABFA9450B4D4335DB7862C37728F63FDF0C1E8400B04B11388AFDB3` |
+| `cat-rainy-attic.webp` | Sleeping orange cat in a rainy attic | `6DD3507A9AF007E26CAA0C1AA9E3CD17D356B0BFC2DF0D7C9D2A8F7141BF3E0D` |
+| `dog-sunroom.webp` | Resting retriever in a morning sunroom | `7F9B6E24E40BC064E5F2B9CF6EEADDB424758831D4ACA0E8CEBEE17D84152121` |
+| `cat-fireplace-library.webp` | Gray cat in a rainy fireside library | `D52AD92A566C0ED64142787E4CC582523002E71E69299C2FB565AFED8CC986D2` |
+| `dog-spring-veranda.webp` | Small sleeping dog on a spring veranda | `A3F30AA7C3234D21575BCCDE6FCD832C5D98D13CCBF98541D1B73E311C2CBD7E` |
+| `cat-riverside-blue-hour.webp` | Tabby cat in a Vietnamese riverside room | `3531A5CD707E8CF814DE185DAA7CB9F2E15E782AD272EEE3B968F8BCF5C1332D` |
+| `puppy-lakeside-cabin.webp` | Sleeping puppy at a misty lakeside cabin | `5B56549C8E98E1919FCC2AE878974DDADD2EB426B396465E35DD8B5556C6A602` |
 
 ## Generation brief
 
-The prompt set requested wide, people-free focus environments with believable materials, lighting and perspective, plus clean negative space for live timer controls. Each prompt explicitly excluded text, logos, watermarks, copied interfaces, named-artist imitation and copyrighted characters. The 11 final built-in ImageGen source files remain in the Codex generated-image store; the browser consumes only the optimized project copies in this directory.
+The shared prompt set requested wide, photorealistic, people-free focus environments with believable materials, natural imperfections, layered depth, calm light and a stable desk area for live controls. Every prompt explicitly excluded text, logos, watermarks, copied interfaces, named-artist imitation and copyrighted characters.
+
+The landscape expansion used one distinct prompt per environment: rooftop sunrise, rainy greenhouse, alpine lake dawn, old university reading hall, Nordic cabin morning, Vietnamese rice-terrace veranda, original autumn garden room and moonlit mountain observatory.
+
+The pet expansion used six additional prompts: rainy attic with a sleeping orange cat, meadow sunroom with a resting retriever, rainy fireside library with a gray cat, spring garden veranda with a small sleeping dog, Vietnamese riverside blue-hour room with a tabby and a misty lakeside cabin with a sleeping puppy. Prompts required anatomically believable animals, natural fur and posture, no animal clothing, no people and no distracting action. Generated PNG sources remain unchanged in the Codex generated-image store; the browser consumes only the optimized project WebP copies and thumbnails in this directory.
