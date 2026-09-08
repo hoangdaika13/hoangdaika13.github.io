@@ -46,20 +46,54 @@
 
   const PET_MODEL_PROFILES = Object.freeze({
     cat: Object.freeze({
-      label: "Mèo mướp Bicolor", src: "assets/focus-room/pets/bicolor-cat.glb?v=2", desiredHeight: 1.08,
+      species: "cat", icon: "🐈", label: "Mèo cam trắng", src: "assets/focus-room/pets/bicolor-cat.glb?v=2", desiredHeight: 1.08,
       clips: Object.freeze({ idle: Object.freeze(["Animation"]), rest: Object.freeze(["Animation"]) }),
       restingX: 1.2, facing: 0, credit: "kenchoo · CC BY 4.0"
     }),
+    "cat-silver": Object.freeze({
+      species: "cat", icon: "🐈‍⬛", label: "Mèo bạc", src: "assets/focus-room/pets/bicolor-cat.glb?v=2", desiredHeight: 1.08,
+      clips: Object.freeze({ idle: Object.freeze(["Animation"]), rest: Object.freeze(["Animation"]) }),
+      restingX: 1.2, facing: 0, coatFilter: "grayscale(.9) sepia(.08) hue-rotate(175deg) saturate(.55) brightness(1.05)", coatTint: "#d7e3eb", credit: "kenchoo · CC BY 4.0"
+    }),
+    "cat-cream": Object.freeze({
+      species: "cat", icon: "🐱", label: "Mèo kem", src: "assets/focus-room/pets/bicolor-cat.glb?v=2", desiredHeight: 1.08,
+      clips: Object.freeze({ idle: Object.freeze(["Animation"]), rest: Object.freeze(["Animation"]) }),
+      restingX: 1.2, facing: 0, coatFilter: "sepia(.35) saturate(.65) brightness(1.18)", coatTint: "#ffe1b5", credit: "kenchoo · CC BY 4.0"
+    }),
+    "cat-midnight": Object.freeze({
+      species: "cat", icon: "🐈‍⬛", label: "Mèo đêm", src: "assets/focus-room/pets/bicolor-cat.glb?v=2", desiredHeight: 1.08,
+      clips: Object.freeze({ idle: Object.freeze(["Animation"]), rest: Object.freeze(["Animation"]) }),
+      restingX: 1.2, facing: 0, coatFilter: "grayscale(.82) brightness(.45) contrast(1.25)", coatTint: "#53657a", credit: "kenchoo · CC BY 4.0"
+    }),
     dog: Object.freeze({
-      label: "Cún Shiba", src: "assets/focus-room/pets/quander-shiba.glb?v=2", desiredHeight: 1.08,
+      species: "dog", icon: "🐕", label: "Shiba vàng", src: "assets/focus-room/pets/quander-shiba.glb?v=2", desiredHeight: 1.08,
       clips: Object.freeze({
         idle: Object.freeze(["0|standing_0", "standing"]),
         rest: Object.freeze(["0|play_dead_0", "play_dead"]),
-        sit: Object.freeze(["0|sitting_0", "sitting"])
+        sit: Object.freeze(["0|sitting_0", "sitting"]),
+        playShake: Object.freeze(["0|shake_0", "shake"]),
+        playRoll: Object.freeze(["0|rollover_0", "rollover"])
       }),
       restingX: -1.18, facing: 0, credit: "quander · CC BY 4.0"
+    }),
+    "dog-cream": Object.freeze({
+      species: "dog", icon: "🐕", label: "Shiba kem", src: "assets/focus-room/pets/quander-shiba.glb?v=2", desiredHeight: 1.08,
+      clips: Object.freeze({ idle: Object.freeze(["0|standing_0", "standing"]), rest: Object.freeze(["0|play_dead_0", "play_dead"]), sit: Object.freeze(["0|sitting_0", "sitting"]), playShake: Object.freeze(["0|shake_0", "shake"]), playRoll: Object.freeze(["0|rollover_0", "rollover"]) }),
+      restingX: -1.18, facing: 0, coatFilter: "saturate(.45) brightness(1.23) contrast(.9)", coatTint: "#ffe5bf", credit: "quander · CC BY 4.0"
+    }),
+    "dog-red": Object.freeze({
+      species: "dog", icon: "🐕", label: "Shiba đỏ", src: "assets/focus-room/pets/quander-shiba.glb?v=2", desiredHeight: 1.08,
+      clips: Object.freeze({ idle: Object.freeze(["0|standing_0", "standing"]), rest: Object.freeze(["0|play_dead_0", "play_dead"]), sit: Object.freeze(["0|sitting_0", "sitting"]), playShake: Object.freeze(["0|shake_0", "shake"]), playRoll: Object.freeze(["0|rollover_0", "rollover"]) }),
+      restingX: -1.18, facing: 0, coatFilter: "saturate(1.35) sepia(.18) hue-rotate(-8deg) contrast(1.05)", coatTint: "#da7950", credit: "quander · CC BY 4.0"
+    }),
+    "dog-sesame": Object.freeze({
+      species: "dog", icon: "🐕‍🦺", label: "Shiba mè", src: "assets/focus-room/pets/quander-shiba.glb?v=2", desiredHeight: 1.08,
+      clips: Object.freeze({ idle: Object.freeze(["0|standing_0", "standing"]), rest: Object.freeze(["0|play_dead_0", "play_dead"]), sit: Object.freeze(["0|sitting_0", "sitting"]), playShake: Object.freeze(["0|shake_0", "shake"]), playRoll: Object.freeze(["0|rollover_0", "rollover"]) }),
+      restingX: -1.18, facing: 0, coatFilter: "grayscale(.55) sepia(.22) saturate(.7) brightness(.78) contrast(1.18)", coatTint: "#806c5c", credit: "quander · CC BY 4.0"
     })
   });
+
+  const PET_PROFILE_IDS = Object.freeze(Object.keys(PET_MODEL_PROFILES));
 
   const CHANNELS = Object.freeze([
     { id: "rain", label: "Mưa nhẹ", icon: "☂", default: 0.48, type: "rain", filter: "highpass", frequency: 920, q: 0.2, trim: 0.34, drift: 0.035, depth: 0.045, pan: -0.08 },
@@ -312,6 +346,7 @@
       primaryTaskId: "",
       note: "",
       history: [],
+      pet: { interactions: 0, lastPlayedAt: 0 },
       planning: {
         dailyGoalMinutes: 120,
         intention: "",
@@ -411,6 +446,7 @@
     const settings = source.settings && typeof source.settings === "object" ? source.settings : {};
     const layout = source.layout && typeof source.layout === "object" ? source.layout : {};
     const planning = source.planning && typeof source.planning === "object" ? source.planning : {};
+    const pet = source.pet && typeof source.pet === "object" ? source.pet : {};
     const custom = Array.isArray(scenes.custom) ? scenes.custom.slice(0, 24).map((item) => ({
       id: cleanText(item?.id, 80),
       title: cleanText(item?.title, 80) || "Không gian cá nhân",
@@ -509,6 +545,10 @@
       primaryTaskId: taskIds.has(source.primaryTaskId) ? source.primaryTaskId : "",
       note: String(source.note || "").slice(0, 10000),
       history,
+      pet: {
+        interactions: Math.round(clamp(pet.interactions, 0, Number.MAX_SAFE_INTEGER, 0)),
+        lastPlayedAt: clamp(pet.lastPlayedAt, 0, Number.MAX_SAFE_INTEGER, 0)
+      },
       planning: {
         dailyGoalMinutes: Math.round(clamp(planning.dailyGoalMinutes, 15, 720, base.planning.dailyGoalMinutes)),
         intention: cleanText(planning.intention, 240),
@@ -531,7 +571,7 @@
         sceneOnBreak: settings.sceneOnBreak === true,
         restScene: SCENES.some((item) => item.id === settings.restScene) ? settings.restScene : base.settings.restScene,
         notifications: settings.notifications === true && global.Notification?.permission === "granted",
-        companion: ["scene", "none", "cat", "dog"].includes(settings.companion) ? settings.companion : base.settings.companion,
+        companion: ["scene", "none", ...PET_PROFILE_IDS].includes(settings.companion) ? settings.companion : base.settings.companion,
         petMode: ["auto", "rest", "walk"].includes(settings.petMode) ? settings.petMode : base.settings.petMode
       },
       updatedAt: clamp(source.updatedAt, 0, Number.MAX_SAFE_INTEGER, Date.now())
@@ -586,11 +626,11 @@
     return allScenes(instance).find((item) => item.id === instance.state.scenes.selected) || SCENES[0];
   }
 
-  function currentPetKind(instance, selected = currentScene(instance)) {
+  function currentPetProfileId(instance, selected = currentScene(instance)) {
     const preference = instance.state.settings.companion;
     if (preference === "none") return "";
-    if (["cat", "dog"].includes(preference)) return preference;
-    return ["cat", "dog"].includes(selected?.pet) ? selected.pet : "";
+    if (PET_MODEL_PROFILES[preference]) return preference;
+    return PET_MODEL_PROFILES[selected?.pet] ? selected.pet : "";
   }
 
   function imageUrl(instance, targetScene, thumbnail = false) {
@@ -714,7 +754,8 @@
     const limit = Math.max(24, Math.min(scenes.length || 24, Number(instance.ui.sceneLimit) || 24));
     const visibleScenes = scenes.slice(0, limit);
     const selected = currentScene(instance);
-    const petKind = currentPetKind(instance, selected);
+    const petProfileId = currentPetProfileId(instance, selected);
+    const petProfile = PET_MODEL_PROFILES[petProfileId];
     const categories = [
       ["all", "Tất cả"], ["recent", "Gần đây"], ["night", "Đêm"], ["nature", "Thiên nhiên"], ["cafe", "Cà phê"],
       ["cozy", "Ấm áp"], ["pets", "Thú cưng"], ["future", "Tương lai"], ["quiet", "Tối giản"], ["illustrated", "Minh họa"], ["custom", "Cá nhân"]
@@ -727,14 +768,21 @@
       </div>
       <div class="hfr-chip-row" role="group" aria-label="Lọc chủ đề">${categories.map(([id, label]) => `<button type="button" data-hfr-action="scene-category" data-value="${id}" aria-pressed="${instance.ui.category === id}">${label}</button>`).join("")}</div>
       <section class="hfr-companion-controls" aria-label="Bạn đồng hành 3D">
-        <div><span>BẠN ĐỒNG HÀNH 3D</span><strong>${petKind ? PET_MODEL_PROFILES[petKind].label : "Theo từng không gian"}</strong><small>Cân bằng/Cao · model tải khi cần · tự dừng khi tab ẩn</small></div>
-        <div class="hfr-companion-row" role="group" aria-label="Chọn thú cưng">
-          ${[["scene", "Theo cảnh"], ["cat", "Mèo"], ["dog", "Cún"], ["none", "Tắt"]].map(([id, label]) => `<button type="button" data-hfr-action="pet-companion" data-value="${id}" aria-pressed="${instance.state.settings.companion === id}">${label}</button>`).join("")}
+        <div><span>BẠN ĐỒNG HÀNH 3D</span><strong>${petProfile ? `${petProfile.icon} ${petProfile.label}` : "Theo từng không gian"}</strong><small>Cân bằng/Cao · chạm trực tiếp vào bạn nhỏ để chơi · tự dừng khi tab ẩn</small></div>
+        <div class="hfr-companion-general" role="group" aria-label="Chế độ bạn đồng hành">
+          ${[["scene", "Theo cảnh"], ["none", "Tắt"]].map(([id, label]) => `<button type="button" data-hfr-action="pet-companion" data-value="${id}" aria-pressed="${instance.state.settings.companion === id}">${label}</button>`).join("")}
+        </div>
+        <div class="hfr-pet-picker" role="group" aria-label="Chọn màu lông chó hoặc mèo">
+          ${PET_PROFILE_IDS.map((profileId) => {
+            const profile = PET_MODEL_PROFILES[profileId];
+            return `<button type="button" data-hfr-action="pet-companion" data-value="${profileId}" aria-pressed="${instance.state.settings.companion === profileId}"><i>${profile.icon}</i><span>${escapeHtml(profile.label)}</span></button>`;
+          }).join("")}
         </div>
         <div class="hfr-companion-row" role="group" aria-label="Chọn hành vi thú cưng">
-          ${[["auto", "Tự nhiên"], ["rest", "Nghỉ yên"], ["walk", "Đi dạo"]].map(([id, label]) => `<button type="button" data-hfr-action="pet-mode" data-value="${id}" aria-pressed="${instance.state.settings.petMode === id}" ${petKind ? "" : "disabled"}>${label}</button>`).join("")}
+          ${[["auto", "Tự nhiên"], ["rest", "Nghỉ yên"], ["walk", "Đi dạo"]].map(([id, label]) => `<button type="button" data-hfr-action="pet-mode" data-value="${id}" aria-pressed="${instance.state.settings.petMode === id}" ${petProfile ? "" : "disabled"}>${label}</button>`).join("")}
         </div>
-        <p>Mèo Bicolor: kenchoo · CC BY 4.0. Cún Shiba: quander · CC BY 4.0. Model và texture được tự host.</p>
+        <div class="hfr-pet-affection"><span>♡ Đã chơi cùng</span><strong data-hfr-pet-count>${instance.state.pet.interactions} lần</strong></div>
+        <p>Tám màu lông dùng chung hai rig PBR chất lượng cao, không phải tám giống riêng. Mèo Bicolor: kenchoo · CC BY 4.0. Shiba: quander · CC BY 4.0.</p>
       </section>
       <div class="hfr-scene-grid hfr-scene-grid--${instance.ui.sceneView}">
         ${visibleScenes.length ? visibleScenes.map((item) => sceneCard(instance, item)).join("") : `<div class="hfr-empty"><span>⌕</span><strong>Không tìm thấy không gian</strong><p>Thử từ khóa hoặc bộ lọc khác.</p></div>`}
@@ -926,7 +974,7 @@
         ${settingToggle("motion", "Chuyển động môi trường", "Parallax và hiệu ứng cảnh.", settings.motion)}
         ${settingToggle("reducedMotion", "Giảm chuyển động", "Ưu tiên giao diện tĩnh, dễ tập trung.", settings.reducedMotion)}
         ${settingToggle("dataSaver", "Tiết kiệm dữ liệu", "Dùng thumbnail thay ảnh lớn.", settings.dataSaver)}
-        <label><span>Bạn đồng hành 3D<small>Model tải theo nhu cầu ở mức Cân bằng hoặc Cao.</small></span><select name="companion"><option value="scene" ${settings.companion === "scene" ? "selected" : ""}>Theo từng cảnh</option><option value="cat" ${settings.companion === "cat" ? "selected" : ""}>Mèo mướp Bicolor</option><option value="dog" ${settings.companion === "dog" ? "selected" : ""}>Cún Shiba</option><option value="none" ${settings.companion === "none" ? "selected" : ""}>Tắt</option></select></label>
+        <label><span>Bạn đồng hành 3D<small>Chọn màu lông; model tải theo nhu cầu ở mức Cân bằng hoặc Cao.</small></span><select name="companion"><option value="scene" ${settings.companion === "scene" ? "selected" : ""}>Theo từng cảnh</option>${PET_PROFILE_IDS.map((profileId) => `<option value="${profileId}" ${settings.companion === profileId ? "selected" : ""}>${escapeHtml(PET_MODEL_PROFILES[profileId].label)}</option>`).join("")}<option value="none" ${settings.companion === "none" ? "selected" : ""}>Tắt</option></select></label>
         <label><span>Hành vi thú cưng<small>Tự nhiên sẽ xen kẽ nghỉ yên và đi dạo.</small></span><select name="petMode"><option value="auto" ${settings.petMode === "auto" ? "selected" : ""}>Tự nhiên</option><option value="rest" ${settings.petMode === "rest" ? "selected" : ""}>Nghỉ yên</option><option value="walk" ${settings.petMode === "walk" ? "selected" : ""}>Đi dạo</option></select></label>
         ${settingToggle("autoStartBreak", "Tự bắt đầu giờ nghỉ", "Bắt đầu sau khi hoàn thành phiên.", settings.autoStartBreak)}
         ${settingToggle("autoStartFocus", "Tự bắt đầu vòng tiếp", "Bắt đầu sau khi hết giờ nghỉ.", settings.autoStartFocus)}
@@ -964,19 +1012,22 @@
     const quality = effectiveQuality(instance);
     const activeMotion = motionEnabled(instance);
     const summary = focusSummary(instance);
-    const petKind = currentPetKind(instance, selected);
+    const petProfileId = currentPetProfileId(instance, selected);
+    const petProfile = PET_MODEL_PROFILES[petProfileId];
+    const petKind = petProfile?.species || "";
     const accent = selected.accent || (selected.category === "nature" ? "#72f3bd" : selected.category === "cafe" || selected.category === "cozy" ? "#ffb46b" : selected.category === "pets" ? "#ffb8c9" : selected.category === "future" ? "#7ee7ff" : "#c69cff");
     const tabs = [
       ["plan", "◎", "Kế hoạch"], ["scenes", "▧", "Không gian"], ["sound", "♫", "Âm thanh"], ["timer", "◷", "Hẹn giờ"],
       ["tasks", "✓", "Công việc"], ["notes", "✎", "Ghi chú"], ["history", "⌁", "Lịch sử"], ["shared", "◎", "Phòng chung"], ["settings", "⚙", "Cài đặt"]
     ];
-    instance.root.innerHTML = `<section class="hfr-app${instance.ui.zen ? " is-zen" : ""}${instance.ui.panel ? " has-panel" : ""}" data-hfr-root data-quality="${quality}" data-motion="${activeMotion ? "on" : "off"}" data-layout-mode="${instance.state.layout.locked ? "locked" : "editing"}" data-pet-companion="${petKind || "off"}">
+    instance.root.innerHTML = `<section class="hfr-app${instance.ui.zen ? " is-zen" : ""}${instance.ui.panel ? " has-panel" : ""}" data-hfr-root data-quality="${quality}" data-motion="${activeMotion ? "on" : "off"}" data-layout-mode="${instance.state.layout.locked ? "locked" : "editing"}" data-pet-companion="${petKind || "off"}" data-pet-profile="${escapeHtml(petProfileId || "off")}">
       <section class="hfr-stage" data-hfr-effect="${escapeHtml(selected.effect)}" style="--hfr-accent:${escapeHtml(accent)};--hfr-scene-grade:${escapeHtml(selected.grade || "saturate(1.04) contrast(1.03)")};--hfr-scene-position:${escapeHtml(selected.position || "center")};--hfr-scene-image:url(&quot;${escapeHtml(imageUrl(instance, selected))}&quot;)">
         <div class="hfr-backdrop" aria-hidden="true" style="--hfr-placeholder:url(&quot;${escapeHtml(imageUrl(instance, selected, true))}&quot;)"><img src="${escapeHtml(imageUrl(instance, selected))}" alt="" decoding="async" fetchpriority="high" data-hfr-current-image data-hfr-fallback><span class="hfr-backdrop-shade"></span></div>
         <canvas class="hfr-pet-depth" data-hfr-pet-depth aria-hidden="true" hidden></canvas>
+        ${petProfile ? `<button class="hfr-pet-play" type="button" data-hfr-action="pet-play" data-hfr-pet-play aria-label="Chơi cùng ${escapeHtml(petProfile.label)}" title="Chạm để chơi cùng" hidden><span class="hfr-pet-play__hint"><i>${petProfile.icon}</i><strong>Chơi cùng</strong></span><span class="hfr-pet-play__hearts" aria-hidden="true"><i>♥</i><i>✦</i><i>♥</i><i>✧</i></span></button>` : ""}
         <div class="hfr-effects" aria-hidden="true"><i class="hfr-fx hfr-fx--far"></i><i class="hfr-fx hfr-fx--mid"></i><i class="hfr-fx hfr-fx--near"></i><i class="hfr-fx hfr-fx--glow"></i></div>
         <header class="hfr-topbar">
-          <div class="hfr-scene-title" data-hfr-layout-item="title"><button class="hfr-drag-handle" type="button" data-hfr-drag-handle="title" aria-label="Kéo tên cảnh để sắp xếp" title="Kéo để di chuyển · phím mũi tên để tinh chỉnh">⠿</button><span>IMMERSIVE FOCUS SANCTUARY</span><strong>${escapeHtml(selected.title)}</strong><small>${escapeHtml(selected.description)}</small><div class="hfr-current-meta"><em>${escapeHtml(selected.soundStatus || "Ảnh cá nhân")}</em><em>${escapeHtml(selected.collection || selected.performance || "Theo thiết bị")}</em>${petKind ? `<em>${escapeHtml(PET_MODEL_PROFILES[petKind].label)} 3D</em>` : ""}</div></div>
+          <div class="hfr-scene-title" data-hfr-layout-item="title"><button class="hfr-drag-handle" type="button" data-hfr-drag-handle="title" aria-label="Kéo tên cảnh để sắp xếp" title="Kéo để di chuyển · phím mũi tên để tinh chỉnh">⠿</button><span>IMMERSIVE FOCUS SANCTUARY</span><strong>${escapeHtml(selected.title)}</strong><small>${escapeHtml(selected.description)}</small><div class="hfr-current-meta"><em>${escapeHtml(selected.soundStatus || "Ảnh cá nhân")}</em><em>${escapeHtml(selected.collection || selected.performance || "Theo thiết bị")}</em>${petProfile ? `<em>${escapeHtml(petProfile.label)} 3D</em>` : ""}</div></div>
           <div class="hfr-top-actions">
             <span class="hfr-local-status">● Lưu cục bộ · ${instance.isGuest ? "Khách" : "Tài khoản hiện tại"}</span>
             <button class="hfr-layout-toggle" type="button" data-hfr-action="layout-edit" aria-pressed="${!instance.state.layout.locked}" title="${instance.state.layout.locked ? "Mở chế độ kéo thả bố cục" : "Khóa vị trí các mục"}">${instance.state.layout.locked ? "⌖ Sắp xếp" : "🔒 Khóa"}</button>
@@ -2376,6 +2427,11 @@
     runtime.stage?.removeEventListener?.("pointermove", runtime.pointerMove);
     runtime.stage?.removeEventListener?.("pointerleave", runtime.pointerLeave);
     runtime.canvas?.removeEventListener?.("webglcontextlost", runtime.contextLost);
+    if (runtime.hitbox) {
+      runtime.hitbox.hidden = true;
+      runtime.hitbox.classList?.remove?.("is-playing");
+      delete runtime.hitbox.dataset.ready;
+    }
     try { runtime.mixer?.stopAllAction?.(); } catch {}
     runtime.ownedTextures?.forEach((texture) => { try { texture?.dispose?.(); } catch {} });
     runtime.ownedMaterials?.forEach((material) => { try { material?.dispose?.(); } catch {} });
@@ -2389,7 +2445,8 @@
     if (app) delete app.dataset.petDepth;
   }
 
-  function petBehaviorMode(instance, elapsedSeconds) {
+  function petBehaviorMode(instance, elapsedSeconds, runtime, now) {
+    if (runtime?.interactionEndsAt > now) return "play";
     const requested = instance.state.settings.petMode;
     if (requested === "rest" || requested === "walk") return requested;
     const cycle = elapsedSeconds % 44;
@@ -2413,6 +2470,63 @@
     return available.find((clip) => wanted.includes(String(clip.name).toLowerCase()))
       || available.find((clip) => wanted.some((name) => String(clip.name).toLowerCase().includes(name)))
       || null;
+  }
+
+  function filteredPetTexture(texture, filter, THREE) {
+    if (!texture?.image || !filter || !THREE?.CanvasTexture) return null;
+    const image = texture.image;
+    const width = Number(image.naturalWidth || image.videoWidth || image.width) || 0;
+    const height = Number(image.naturalHeight || image.videoHeight || image.height) || 0;
+    if (!width || !height) return null;
+    const canvas = global.document?.createElement?.("canvas");
+    const context = canvas?.getContext?.("2d", { alpha: true });
+    if (!context) return null;
+    canvas.width = width;
+    canvas.height = height;
+    try {
+      context.filter = filter;
+      context.drawImage(image, 0, 0, width, height);
+    } catch {
+      return null;
+    }
+    const variant = new THREE.CanvasTexture(canvas);
+    ["wrapS", "wrapT", "magFilter", "minFilter", "mapping", "channel", "flipY", "premultiplyAlpha", "unpackAlignment", "colorSpace"].forEach((key) => {
+      if (key in texture) variant[key] = texture[key];
+    });
+    ["offset", "repeat", "center"].forEach((key) => {
+      if (texture[key] && variant[key]?.copy) variant[key].copy(texture[key]);
+    });
+    variant.rotation = texture.rotation || 0;
+    variant.matrixAutoUpdate = texture.matrixAutoUpdate;
+    if (texture.matrix && variant.matrix?.copy) variant.matrix.copy(texture.matrix);
+    variant.name = `${texture.name || "pet-coat"}-hh-variant`;
+    variant.needsUpdate = true;
+    return variant;
+  }
+
+  function stylePetMaterial(material, profile, THREE, ownedMaterials, ownedTextures, variants) {
+    if (!material) return material;
+    if (variants.has(material)) return variants.get(material);
+    ownedMaterials.add(material);
+    ["map", "normalMap", "roughnessMap", "metalnessMap", "emissiveMap"].forEach((key) => {
+      if (material[key]) ownedTextures.add(material[key]);
+    });
+    if (!profile.coatFilter) {
+      variants.set(material, material);
+      return material;
+    }
+    const styled = material.clone?.() || material;
+    ownedMaterials.add(styled);
+    const coat = filteredPetTexture(material.map, profile.coatFilter, THREE);
+    if (coat) {
+      styled.map = coat;
+      ownedTextures.add(coat);
+    } else if (profile.coatTint && styled.color?.multiply) {
+      styled.color.multiply(new THREE.Color(profile.coatTint));
+    }
+    styled.needsUpdate = true;
+    variants.set(material, styled);
+    return styled;
   }
 
   function collectPetRig(model, kind) {
@@ -2470,16 +2584,18 @@
   }
 
   function transitionPetAction(runtime, mode, THREE) {
-    const targetKey = runtime.kind === "dog" && mode === "rest" ? "rest" : "idle";
+    const targetKey = runtime.kind === "dog" && mode === "play"
+      ? runtime.interactionActionKey
+      : runtime.kind === "dog" && mode === "rest" ? "rest" : "idle";
     const next = runtime.actions[targetKey] || runtime.actions.idle;
     if (!next) return;
-    const timeScale = mode === "walk" ? .82 : mode === "rest" ? (runtime.kind === "dog" ? .56 : .42) : .68;
+    const timeScale = mode === "play" ? .92 : mode === "walk" ? .82 : mode === "rest" ? (runtime.kind === "dog" ? .56 : .42) : .68;
     next.timeScale = timeScale;
     if (runtime.actionKey === targetKey) return;
-    const fadeDuration = runtime.actionKey === "rest" ? 1.2 : .68;
+    const fadeDuration = mode === "play" ? .34 : runtime.actionKey?.startsWith?.("play") ? .82 : runtime.actionKey === "rest" ? 1.2 : .68;
     runtime.currentAction?.fadeOut?.(fadeDuration);
     next.enabled = true;
-    next.clampWhenFinished = targetKey === "rest" && runtime.kind === "dog";
+    next.clampWhenFinished = runtime.kind === "dog" && (targetKey === "rest" || targetKey?.startsWith?.("play"));
     next.setLoop?.(next.clampWhenFinished ? THREE.LoopOnce : THREE.LoopRepeat, next.clampWhenFinished ? 1 : Infinity);
     next.reset?.().fadeIn?.(fadeDuration).play?.();
     runtime.currentAction = next;
@@ -2512,6 +2628,74 @@
     runtime.pose.rotation.z = Math.sin(gait * .5) * .012 * strength;
   }
 
+  function applyPetInteraction(runtime, now) {
+    if (!runtime.interactionStartedAt || now >= runtime.interactionEndsAt) {
+      if (runtime.interactionActive) {
+        runtime.interactionActive = false;
+        runtime.hitbox?.classList?.remove?.("is-playing");
+      }
+      return;
+    }
+    runtime.interactionActive = true;
+    const duration = Math.max(1, runtime.interactionEndsAt - runtime.interactionStartedAt);
+    const progress = clamp((now - runtime.interactionStartedAt) / duration, 0, 1, 0);
+    const envelope = Math.sin(progress * Math.PI);
+    if (runtime.kind === "cat") {
+      if (runtime.rig.head) {
+        runtime.rig.head.rotation.z += Math.sin(progress * Math.PI * 2.4) * .13 * envelope + .11 * envelope;
+        runtime.rig.head.rotation.x -= Math.sin(progress * Math.PI) * .08;
+      }
+      runtime.rig.spine.forEach((joint, index) => {
+        joint.rotation.y += Math.sin(progress * Math.PI * 2 - index * .38) * .035 * envelope;
+      });
+      runtime.rig.tail.forEach((joint, index) => {
+        joint.rotation.y += Math.sin(progress * Math.PI * 5 - index * .48) * (.08 + index * .012) * envelope;
+      });
+      runtime.pose.position.y += Math.sin(progress * Math.PI) * .045;
+      runtime.pose.position.z += Math.sin(progress * Math.PI) * .04;
+      runtime.pose.rotation.z += Math.sin(progress * Math.PI * 2) * .025 * envelope;
+    }
+  }
+
+  function positionPetHitbox(runtime, THREE) {
+    if (!runtime.hitbox?.isConnected) return;
+    const point = new THREE.Vector3(0, .58, 0);
+    runtime.anchor.localToWorld(point);
+    point.project(runtime.camera);
+    const rect = runtime.stage.getBoundingClientRect();
+    const left = clamp((point.x * .5 + .5) * rect.width, 52, Math.max(52, rect.width - 52), rect.width / 2);
+    const top = clamp((-point.y * .5 + .5) * rect.height, 70, Math.max(70, rect.height - 70), rect.height * .65);
+    runtime.hitbox.style.left = `${left}px`;
+    runtime.hitbox.style.top = `${top}px`;
+  }
+
+  function playWithPet(instance) {
+    const runtime = instance.petDepth;
+    if (!runtime?.hitbox || runtime.hitbox.hidden || global.document?.hidden || !motionEnabled(instance)) {
+      announce(instance, "Bạn đồng hành chỉ tương tác khi model 3D đã tải và chuyển động đang bật.", "error");
+      return;
+    }
+    const now = global.performance?.now?.() || Date.now();
+    if (runtime.interactionStartedAt && now - runtime.interactionStartedAt < 650) return;
+    runtime.interactionIndex = (runtime.interactionIndex + 1) % 2;
+    const dogActions = ["playShake", "playRoll"].filter((key) => runtime.actions[key]);
+    runtime.interactionActionKey = runtime.kind === "dog" ? dogActions[runtime.interactionIndex % Math.max(1, dogActions.length)] || "idle" : "idle";
+    const clipDuration = runtime.clips[runtime.interactionActionKey]?.duration || 0;
+    const duration = runtime.kind === "dog" ? clamp((clipDuration / .92) * 1000 + 420, 1800, 5200, 2600) : 2400;
+    runtime.interactionStartedAt = now;
+    runtime.interactionEndsAt = now + duration;
+    runtime.interactionActive = true;
+    runtime.hitbox.classList?.remove?.("is-playing");
+    void runtime.hitbox.offsetWidth;
+    runtime.hitbox.classList?.add?.("is-playing");
+    instance.state.pet.interactions += 1;
+    instance.state.pet.lastPlayedAt = Date.now();
+    writeState(instance);
+    const counter = instance.root.querySelector?.("[data-hfr-pet-count]");
+    if (counter) counter.textContent = `${instance.state.pet.interactions} lần`;
+    announce(instance, runtime.kind === "cat" ? "Bạn mèo dụi đầu và ve vẩy đuôi thật nhẹ." : runtime.interactionActionKey === "playRoll" ? "Shiba vui vẻ lăn mình chơi cùng bạn." : "Shiba đưa chân chào bạn.");
+  }
+
   async function loadGltfModel(loader, source) {
     const response = await global.fetch(source, { credentials: "same-origin" });
     if (!response.ok) throw new Error(`GLB ${response.status}`);
@@ -2519,11 +2703,13 @@
     return new Promise((resolve, reject) => loader.parse(bytes, source.slice(0, source.lastIndexOf("/") + 1), resolve, reject));
   }
 
-  async function setupPetModel(instance, selected, kind) {
-    const profile = PET_MODEL_PROFILES[kind];
+  async function setupPetModel(instance, selected, profileId) {
+    const profile = PET_MODEL_PROFILES[profileId];
+    const kind = profile?.species;
     const app = instance.root.querySelector?.("[data-hfr-root]");
     const stage = instance.root.querySelector?.(".hfr-stage");
     const canvas = instance.root.querySelector?.("[data-hfr-pet-depth]");
+    const hitbox = instance.root.querySelector?.("[data-hfr-pet-play]");
     const quality = effectiveQuality(instance);
     if (!profile || !app || !stage || !canvas || global.document?.hidden) return;
     if (quality === "eco" || !motionEnabled(instance) || instance.state.settings.dataSaver) return;
@@ -2543,19 +2729,21 @@
       const ownedGeometries = new Set();
       const ownedMaterials = new Set();
       const ownedTextures = new Set();
+      const materialVariants = new Map();
       model.traverse((object) => {
         if (!object?.isMesh) return;
         object.frustumCulled = false;
         if (object.geometry) ownedGeometries.add(object.geometry);
         const materials = Array.isArray(object.material) ? object.material : [object.material];
-        materials.filter(Boolean).forEach((material) => {
-          ownedMaterials.add(material);
-          ["map", "normalMap", "roughnessMap", "metalnessMap", "emissiveMap"].forEach((key) => {
-            if (material[key]) ownedTextures.add(material[key]);
-          });
+        const styledMaterials = materials.filter(Boolean).map((material) => {
+          const styled = stylePetMaterial(material, profile, THREE, ownedMaterials, ownedTextures, materialVariants);
+          return styled;
+        });
+        styledMaterials.forEach((material) => {
           if ("roughness" in material) material.roughness = Math.max(.72, Number(material.roughness) || 0);
           if ("metalness" in material) material.metalness = Math.min(.04, Number(material.metalness) || 0);
         });
+        object.material = Array.isArray(object.material) ? styledMaterials : styledMaterials[0];
       });
       const initialBox = new THREE.Box3().setFromObject(model);
       const size = initialBox.getSize(new THREE.Vector3());
@@ -2609,7 +2797,9 @@
       const clips = {
         idle: findPetClip(gltf.animations, profile.clips?.idle) || gltf.animations[0] || null,
         rest: findPetClip(gltf.animations, profile.clips?.rest),
-        sit: findPetClip(gltf.animations, profile.clips?.sit)
+        sit: findPetClip(gltf.animations, profile.clips?.sit),
+        playShake: findPetClip(gltf.animations, profile.clips?.playShake),
+        playRoll: findPetClip(gltf.animations, profile.clips?.playRoll)
       };
       const actions = {};
       Object.entries(clips).forEach(([key, clip]) => {
@@ -2625,11 +2815,12 @@
       const rig = collectPetRig(model, kind);
       mixer.update(0);
       const runtime = {
-        renderer, mixer, actions, clips, currentAction, actionKey: currentAction ? "idle" : "", model, pose, anchor, shadow, camera, scene3d, stage, canvas,
+        renderer, mixer, actions, clips, currentAction, actionKey: currentAction ? "idle" : "", model, pose, anchor, shadow, camera, scene3d, stage, canvas, hitbox,
         observer: null, frame: 0, contextLost: null, ownedGeometries, ownedMaterials, ownedTextures,
         currentX: profile.restingX, restingX: profile.restingX, travelHalf: 1.72, viewScale: 1,
-        restBlend: 0, walkBlend: 0, yaw: profile.facing, lastRender: 0,
-        startedAt: global.performance?.now?.() || Date.now(), rig, baseRigQuaternions: new Map(), kind
+        laneHalf: 1.72, compactLane: false, restBlend: 0, walkBlend: 0, yaw: profile.facing, lastRender: 0,
+        startedAt: global.performance?.now?.() || Date.now(), rig, baseRigQuaternions: new Map(), kind, profileId,
+        interactionStartedAt: 0, interactionEndsAt: 0, interactionActionKey: "idle", interactionIndex: instance.state.pet.interactions % 2, interactionActive: false
       };
       capturePetRigBase(runtime);
       instance.petDepth = runtime;
@@ -2646,8 +2837,13 @@
         runtime.travelHalf = Math.max(.12, horizontalHalf - .48 * runtime.viewScale);
         const direction = Math.sign(profile.restingX) || -1;
         runtime.restingX = direction * Math.min(Math.abs(profile.restingX), runtime.travelHalf * .7);
-        runtime.currentX = clamp(runtime.currentX, -runtime.travelHalf, runtime.travelHalf, runtime.restingX);
+        runtime.compactLane = width < 620;
+        runtime.laneHalf = runtime.compactLane ? Math.max(.035, runtime.travelHalf * .16) : runtime.travelHalf;
+        runtime.currentX = runtime.compactLane
+          ? clamp(runtime.currentX, runtime.restingX - runtime.laneHalf, runtime.restingX + runtime.laneHalf, runtime.restingX)
+          : clamp(runtime.currentX, -runtime.travelHalf, runtime.travelHalf, runtime.restingX);
         anchor.scale.setScalar(runtime.viewScale);
+        positionPetHitbox(runtime, THREE);
       };
       runtime.contextLost = (event) => { event.preventDefault?.(); teardownPetDepth(instance); };
       canvas.addEventListener("webglcontextlost", runtime.contextLost);
@@ -2657,6 +2853,10 @@
       }
       resize();
       canvas.hidden = false;
+      if (hitbox) {
+        hitbox.hidden = false;
+        hitbox.dataset.ready = "true";
+      }
       app.dataset.petDepth = "model";
       const targetFps = quality === "high" ? 30 : 24;
       const loop = (time) => {
@@ -2666,11 +2866,15 @@
         const delta = Math.min(.08, Math.max(.001, (time - (runtime.lastRender || time - 16)) / 1000));
         runtime.lastRender = time;
         const elapsed = Math.max(0, (time - runtime.startedAt) / 1000);
-        const mode = petBehaviorMode(instance, elapsed);
+        const mode = petBehaviorMode(instance, elapsed, runtime, time);
         const walkPhase = (elapsed / (kind === "cat" ? 17 : 19)) % 1;
         const movingRight = walkPhase < .5;
         const travel = .5 - Math.cos(walkPhase * Math.PI * 2) * .5;
-        const targetX = mode === "walk" ? -runtime.travelHalf + travel * runtime.travelHalf * 2 : runtime.restingX;
+        const targetX = mode === "walk"
+          ? runtime.compactLane
+            ? runtime.restingX - runtime.laneHalf + travel * runtime.laneHalf * 2
+            : -runtime.travelHalf + travel * runtime.travelHalf * 2
+          : runtime.restingX;
         runtime.currentX = dampValue(runtime.currentX, targetX, mode === "walk" ? 7.2 : 2.2, delta);
         runtime.restBlend = dampValue(runtime.restBlend, mode === "rest" ? 1 : 0, 2.4, delta);
         runtime.walkBlend = dampValue(runtime.walkBlend, mode === "walk" ? 1 : 0, 3.2, delta);
@@ -2689,7 +2893,9 @@
         capturePetRigBase(runtime);
         const endpointEase = Math.min(1, Math.abs(Math.sin(walkPhase * Math.PI * 2)) * 2.4);
         applyPetGait(runtime, elapsed, runtime.walkBlend * endpointEase);
+        applyPetInteraction(runtime, time);
         if (mode !== "walk" && kind === "cat") pose.position.y += Math.sin(elapsed * 1.35) * .0035;
+        positionPetHitbox(runtime, THREE);
         renderer.render(scene3d, camera);
       };
       runtime.frame = global.requestAnimationFrame(loop);
@@ -2702,8 +2908,8 @@
   }
 
   async function setupPetDepth(instance, selected) {
-    const kind = currentPetKind(instance, selected);
-    if (kind) return setupPetModel(instance, selected, kind);
+    const profileId = currentPetProfileId(instance, selected);
+    if (profileId) return setupPetModel(instance, selected, profileId);
     return setupPetDepthPortrait(instance, selected);
   }
 
@@ -3198,9 +3404,10 @@
     if (action === "scene-view") { instance.ui.sceneView = instance.ui.sceneView === "grid" ? "list" : "grid"; render(instance); return; }
     if (action === "scene-category") { instance.ui.category = target.dataset.value || "all"; instance.ui.sceneLimit = 24; render(instance); return; }
     if (action === "scene-more") { instance.ui.sceneLimit = Math.min(SCENES.length + instance.state.scenes.custom.length, instance.ui.sceneLimit + 24); render(instance); return; }
+    if (action === "pet-play") { playWithPet(instance); return; }
     if (action === "pet-companion") {
-      const preference = cleanText(target.dataset.value, 12);
-      if (!["scene", "none", "cat", "dog"].includes(preference)) return;
+      const preference = cleanText(target.dataset.value, 24);
+      if (!["scene", "none", ...PET_PROFILE_IDS].includes(preference)) return;
       instance.state.settings.companion = preference;
       writeState(instance); render(instance);
       announce(instance, preference === "none" ? "Đã tắt bạn đồng hành 3D." : "Đã cập nhật bạn đồng hành 3D.");
@@ -3486,7 +3693,7 @@
       const data = new FormData(form);
       const settings = instance.state.settings;
       settings.quality = ["eco", "balanced", "high"].includes(data.get("quality")) ? data.get("quality") : "balanced";
-      settings.companion = ["scene", "none", "cat", "dog"].includes(data.get("companion")) ? data.get("companion") : "scene";
+      settings.companion = ["scene", "none", ...PET_PROFILE_IDS].includes(data.get("companion")) ? data.get("companion") : "scene";
       settings.petMode = ["auto", "rest", "walk"].includes(data.get("petMode")) ? data.get("petMode") : "auto";
       ["motion", "reducedMotion", "dataSaver", "autoStartBreak", "autoStartFocus", "sceneOnBreak"].forEach((name) => { settings[name] = data.get(name) === "on"; });
       settings.restScene = SCENES.some((item) => item.id === data.get("restScene")) ? data.get("restScene") : "ocean-sunset";
@@ -3656,6 +3863,7 @@
     scenes: SCENES,
     channels: CHANNELS,
     musicTracks: MUSIC_TRACKS,
+    petProfiles: PET_MODEL_PROFILES,
     canHandle: (route) => String(route || "").split("?")[0] === ROUTE,
     mount,
     unmount,

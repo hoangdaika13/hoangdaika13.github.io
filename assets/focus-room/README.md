@@ -78,7 +78,7 @@ Embedded textures were mechanically externalized so browsers load them as normal
 | `pets/quander-shiba-texture.webp` | `71A1B81C7FAE9586FF82D715549FF8076FF3EEB4DC2821AF840716CA318B7F73` |
 | `pets/quander-shiba-texture-2.webp` | `055D0C38E9A6BA5C08DCC2353BF744E2BAE04F84B92CC3923E6A2CAE4C50B16A` |
 
-Required attribution for both models is also visible in the scene panel and duplicated in `pets/THIRD_PARTY_NOTICES.md`. Model files were not visually rebranded or redistributed as original HH artwork. The renderer no longer squashes or stretches the mesh to fake a resting pose: real skeletal clips crossfade over 0.68–1.2 seconds, while the gentle walk layer bends the four legs and adds small spine, head, tail and ground-contact motion.
+Required attribution for both models is also visible in the scene panel and duplicated in `pets/THIRD_PARTY_NOTICES.md`. Model files were not visually rebranded or redistributed as original HH artwork. Four cat coat choices and four Shiba coat choices are produced at runtime from each licensed diffuse texture with Canvas 2D filters; normal and roughness maps remain intact, no derivative binary asset is added, and the UI states that these are coat variants sharing two rigs rather than separate breeds. The renderer no longer squashes or stretches the mesh to fake a resting pose: real skeletal clips crossfade over 0.34–1.2 seconds, while the gentle walk layer bends the four legs and adds small spine, head, tail and ground-contact motion. Direct play uses the Shiba source model's `shake`/`rollover` clips and a small reversible head/spine/tail offset on the cat rig.
 
 ## Study music
 

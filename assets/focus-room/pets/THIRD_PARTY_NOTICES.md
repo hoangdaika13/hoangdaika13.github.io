@@ -37,3 +37,5 @@ The HH Focus Room uses the supplied `standing`, `sitting` and `play_dead` skelet
 ## Behavior reference
 
 The optional automatic `walk → rest → idle` state cycle was informed by the general `idle`, `move` and `stay` behavior vocabulary documented by [M3-org/pets](https://github.com/M3-org/pets), licensed MIT. No M3 runtime code or model is bundled.
+
+HH Focus Room also exposes four coat presentations from each credited rig. They are runtime color treatments of the existing diffuse texture—not additional breeds or third-party models—and retain the original normal/roughness detail and attribution. Direct interaction uses the Shiba model's included `shake` and `rollover` clips; the cat response applies only small temporary offsets to the credited skeleton. No additional redistributed animal asset is introduced.
