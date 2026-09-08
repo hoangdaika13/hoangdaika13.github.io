@@ -14,6 +14,7 @@
   const THREE_MODULE = "./vendor/three.module.min.js";
   const GLTF_LOADER_MODULE = "./vendor/addons/loaders/GLTFLoader.js";
   const SKELETON_UTILS_MODULE = "./vendor/addons/utils/SkeletonUtils.js";
+  const MESHOPT_DECODER_MODULE = "./vendor/addons/libs/meshopt_decoder.module.js";
   const instances = new WeakMap();
   const mountedRoots = new Set();
 
@@ -45,20 +46,19 @@
 
   const PET_MODEL_PROFILES = Object.freeze({
     cat: Object.freeze({
-      label: "Mèo xám", src: "assets/focus-room/pets/cat-j-toastie.glb?v=1", desiredHeight: 1.12,
-      idleClip: "Cat.001|IdleCat", restingX: 1.2, facing: 0, credit: "J-Toastie · CC BY 3.0"
+      label: "Mèo mướp Bicolor", src: "assets/focus-room/pets/bicolor-cat.glb?v=2", desiredHeight: 1.08,
+      clips: Object.freeze({ idle: Object.freeze(["Animation"]), rest: Object.freeze(["Animation"]) }),
+      restingX: 1.2, facing: 0, credit: "kenchoo · CC BY 4.0"
     }),
     dog: Object.freeze({
-      label: "Cún Corgi", src: "assets/focus-room/pets/corgi-gobkit.glb?v=1", desiredHeight: 1.04,
-      idleClip: "clip", restingX: -1.18, facing: 0, credit: "Gobkit · CC0 1.0"
+      label: "Cún Shiba", src: "assets/focus-room/pets/quander-shiba.glb?v=2", desiredHeight: 1.08,
+      clips: Object.freeze({
+        idle: Object.freeze(["0|standing_0", "standing"]),
+        rest: Object.freeze(["0|play_dead_0", "play_dead"]),
+        sit: Object.freeze(["0|sitting_0", "sitting"])
+      }),
+      restingX: -1.18, facing: 0, credit: "quander · CC BY 4.0"
     })
-  });
-
-  const DOG_CLIP = Object.freeze({
-    fps: 24,
-    idle: Object.freeze({ from: 0, to: 29 }),
-    rest: Object.freeze({ from: 60, to: 89 }),
-    walk: Object.freeze({ from: 90, to: 119 })
   });
 
   const CHANNELS = Object.freeze([
@@ -113,7 +113,7 @@
     Object.freeze({ id: "quiet-night", suffix: "đêm yên", time: "Đêm", effect: "dust", grade: "brightness(.58) saturate(.7) contrast(1.16) hue-rotate(8deg)", accent: "#bba8ff", detail: "Đèn tối vừa đủ cho một phiên tập trung sâu." }),
     Object.freeze({ id: "soft-rain", suffix: "dưới mưa nhẹ", time: "Ngày mưa", effect: "rain", grade: "brightness(.75) saturate(.72) contrast(1.04) hue-rotate(5deg)", accent: "#8edfff", detail: "Mưa mảnh, phản chiếu mềm và nhịp nền đều." }),
     Object.freeze({ id: "starlight", suffix: "dưới trời sao", time: "Đêm sao", effect: "stars", grade: "brightness(.56) saturate(.92) contrast(1.18) hue-rotate(18deg)", accent: "#9caeff", detail: "Điểm sao xa và ánh sáng lạnh rất dịu." }),
-    Object.freeze({ id: "pet-companion", suffix: "cùng bạn nhỏ", time: "Thú cưng", effect: "", grade: "brightness(.94) saturate(.9) contrast(1.03)", accent: "#ffb9cc", detail: "Một bạn nhỏ 3D thay phiên nằm nghỉ và đi dạo.", pet: true })
+    Object.freeze({ id: "pet-companion", suffix: "cùng bạn nhỏ", time: "Thú cưng", effect: "", grade: "brightness(.94) saturate(.9) contrast(1.03)", accent: "#ffb9cc", detail: "Một bạn nhỏ 3D thay phiên nghỉ yên và đi dạo tự nhiên.", pet: true })
   ]);
 
   const SCENES = Object.freeze([
@@ -732,9 +732,9 @@
           ${[["scene", "Theo cảnh"], ["cat", "Mèo"], ["dog", "Cún"], ["none", "Tắt"]].map(([id, label]) => `<button type="button" data-hfr-action="pet-companion" data-value="${id}" aria-pressed="${instance.state.settings.companion === id}">${label}</button>`).join("")}
         </div>
         <div class="hfr-companion-row" role="group" aria-label="Chọn hành vi thú cưng">
-          ${[["auto", "Tự nhiên"], ["rest", "Nằm nghỉ"], ["walk", "Đi dạo"]].map(([id, label]) => `<button type="button" data-hfr-action="pet-mode" data-value="${id}" aria-pressed="${instance.state.settings.petMode === id}" ${petKind ? "" : "disabled"}>${label}</button>`).join("")}
+          ${[["auto", "Tự nhiên"], ["rest", "Nghỉ yên"], ["walk", "Đi dạo"]].map(([id, label]) => `<button type="button" data-hfr-action="pet-mode" data-value="${id}" aria-pressed="${instance.state.settings.petMode === id}" ${petKind ? "" : "disabled"}>${label}</button>`).join("")}
         </div>
-        <p>Mèo: J-Toastie · CC BY 3.0 · Poly Pizza. Cún: Gobkit · CC0 1.0 · GitHub.</p>
+        <p>Mèo Bicolor: kenchoo · CC BY 4.0. Cún Shiba: quander · CC BY 4.0. Model và texture được tự host.</p>
       </section>
       <div class="hfr-scene-grid hfr-scene-grid--${instance.ui.sceneView}">
         ${visibleScenes.length ? visibleScenes.map((item) => sceneCard(instance, item)).join("") : `<div class="hfr-empty"><span>⌕</span><strong>Không tìm thấy không gian</strong><p>Thử từ khóa hoặc bộ lọc khác.</p></div>`}
@@ -926,8 +926,8 @@
         ${settingToggle("motion", "Chuyển động môi trường", "Parallax và hiệu ứng cảnh.", settings.motion)}
         ${settingToggle("reducedMotion", "Giảm chuyển động", "Ưu tiên giao diện tĩnh, dễ tập trung.", settings.reducedMotion)}
         ${settingToggle("dataSaver", "Tiết kiệm dữ liệu", "Dùng thumbnail thay ảnh lớn.", settings.dataSaver)}
-        <label><span>Bạn đồng hành 3D<small>Model tải theo nhu cầu ở mức Cân bằng hoặc Cao.</small></span><select name="companion"><option value="scene" ${settings.companion === "scene" ? "selected" : ""}>Theo từng cảnh</option><option value="cat" ${settings.companion === "cat" ? "selected" : ""}>Mèo xám</option><option value="dog" ${settings.companion === "dog" ? "selected" : ""}>Cún Corgi</option><option value="none" ${settings.companion === "none" ? "selected" : ""}>Tắt</option></select></label>
-        <label><span>Hành vi thú cưng<small>Tự nhiên sẽ xen kẽ nằm nghỉ và đi dạo.</small></span><select name="petMode"><option value="auto" ${settings.petMode === "auto" ? "selected" : ""}>Tự nhiên</option><option value="rest" ${settings.petMode === "rest" ? "selected" : ""}>Nằm nghỉ</option><option value="walk" ${settings.petMode === "walk" ? "selected" : ""}>Đi dạo</option></select></label>
+        <label><span>Bạn đồng hành 3D<small>Model tải theo nhu cầu ở mức Cân bằng hoặc Cao.</small></span><select name="companion"><option value="scene" ${settings.companion === "scene" ? "selected" : ""}>Theo từng cảnh</option><option value="cat" ${settings.companion === "cat" ? "selected" : ""}>Mèo mướp Bicolor</option><option value="dog" ${settings.companion === "dog" ? "selected" : ""}>Cún Shiba</option><option value="none" ${settings.companion === "none" ? "selected" : ""}>Tắt</option></select></label>
+        <label><span>Hành vi thú cưng<small>Tự nhiên sẽ xen kẽ nghỉ yên và đi dạo.</small></span><select name="petMode"><option value="auto" ${settings.petMode === "auto" ? "selected" : ""}>Tự nhiên</option><option value="rest" ${settings.petMode === "rest" ? "selected" : ""}>Nghỉ yên</option><option value="walk" ${settings.petMode === "walk" ? "selected" : ""}>Đi dạo</option></select></label>
         ${settingToggle("autoStartBreak", "Tự bắt đầu giờ nghỉ", "Bắt đầu sau khi hoàn thành phiên.", settings.autoStartBreak)}
         ${settingToggle("autoStartFocus", "Tự bắt đầu vòng tiếp", "Bắt đầu sau khi hết giờ nghỉ.", settings.autoStartFocus)}
         ${settingToggle("sceneOnBreak", "Đổi cảnh khi nghỉ", "Khôi phục cảnh học khi quay lại.", settings.sceneOnBreak)}
@@ -2402,6 +2402,116 @@
     return current + (target - current) * (1 - Math.exp(-Math.max(0, speed) * Math.max(0, delta)));
   }
 
+  function dampAngle(current, target, speed, delta) {
+    const turn = Math.atan2(Math.sin(target - current), Math.cos(target - current));
+    return current + turn * (1 - Math.exp(-Math.max(0, speed) * Math.max(0, delta)));
+  }
+
+  function findPetClip(animations, names) {
+    const available = Array.isArray(animations) ? animations : [];
+    const wanted = (names || []).map((name) => String(name).toLowerCase());
+    return available.find((clip) => wanted.includes(String(clip.name).toLowerCase()))
+      || available.find((clip) => wanted.some((name) => String(clip.name).toLowerCase().includes(name)))
+      || null;
+  }
+
+  function collectPetRig(model, kind) {
+    const bone = (...names) => names.map((name) => model.getObjectByName(name)).find(Boolean) || null;
+    if (kind === "dog") {
+      return {
+        upper: [
+          [bone("L_shoulder_jnt.105_0101"), 0], [bone("R_hip_jnt.14_012"), 0],
+          [bone("R_shoulder_jnt.115_0111"), Math.PI], [bone("L_hip_jnt.24_022"), Math.PI]
+        ],
+        lower: [
+          [bone("L_elbow_jnt.106_0102"), 0], [bone("R_knee_jnt.15_013"), 0],
+          [bone("R_elbow_jnt.116_0112"), Math.PI], [bone("L_knee_jnt.25_023"), Math.PI]
+        ],
+        spine: [bone("spine_1_jnt.35_033"), bone("spine_2_jnt.36_034"), bone("chest_jnt.37_035")].filter(Boolean),
+        head: bone("head_jnt.40_038"),
+        tail: [1, 2, 3, 4, 5, 6, 7].map((index) => bone(`${index === 1 ? "tail_1_jnt.7_05" : index === 2 ? "tail_2_jnt.8_06" : index === 3 ? "tail_3_jnt.9_07" : index === 4 ? "tail_4_jnt.10_08" : index === 5 ? "tail_5_jnt.11_09" : index === 6 ? "tail_6_jnt.12_010" : "tail_7_jnt.13_011"}`)).filter(Boolean)
+      };
+    }
+    return {
+      upper: [
+        [bone("Wolf_l_FrontLeg_HipSHJnt_4"), 0], [bone("Wolf_r_HindLeg_HipSHJnt_33"), 0],
+        [bone("Wolf_r_FrontLeg_HipSHJnt_10"), Math.PI], [bone("Wolf_l_HindLeg_HipSHJnt_27"), Math.PI]
+      ],
+      lower: [
+        [bone("Wolf_l_FrontLeg_KneeSHJnt_3"), 0], [bone("Wolf_r_HindLeg_Knee1SHJnt_32"), 0],
+        [bone("Wolf_r_FrontLeg_KneeSHJnt_9"), Math.PI], [bone("Wolf_l_HindLeg_Knee1SHJnt_26"), Math.PI]
+      ],
+      spine: ["Wolf_Spine_01SHJnt_21", "Wolf_Spine_02SHJnt_20", "Wolf_Spine_03SHJnt_19", "Wolf_Spine_04SHJnt_18"]
+        .map((name) => bone(name)).filter(Boolean),
+      head: bone("Wolf_Neck_TopSHJnt_14"),
+      tail: ["Wolf_Tail_01_02SHJnt_37", "Wolf_Tail_01_03SHJnt_36", "Wolf_Tail_01_04SHJnt_35", "Wolf_Tail_01_05SHJnt_34"]
+        .map((name) => bone(name)).filter(Boolean)
+    };
+  }
+
+  function petRigJoints(rig) {
+    return [...new Set([
+      ...(rig?.upper || []).map(([joint]) => joint),
+      ...(rig?.lower || []).map(([joint]) => joint),
+      ...(rig?.spine || []), rig?.head, ...(rig?.tail || [])
+    ].filter(Boolean))];
+  }
+
+  function restorePetRigBase(runtime) {
+    runtime.baseRigQuaternions?.forEach((quaternion, joint) => joint.quaternion.copy(quaternion));
+  }
+
+  function capturePetRigBase(runtime) {
+    petRigJoints(runtime.rig).forEach((joint) => {
+      const saved = runtime.baseRigQuaternions.get(joint);
+      if (saved) saved.copy(joint.quaternion);
+      else runtime.baseRigQuaternions.set(joint, joint.quaternion.clone());
+    });
+  }
+
+  function transitionPetAction(runtime, mode, THREE) {
+    const targetKey = runtime.kind === "dog" && mode === "rest" ? "rest" : "idle";
+    const next = runtime.actions[targetKey] || runtime.actions.idle;
+    if (!next) return;
+    const timeScale = mode === "walk" ? .82 : mode === "rest" ? (runtime.kind === "dog" ? .56 : .42) : .68;
+    next.timeScale = timeScale;
+    if (runtime.actionKey === targetKey) return;
+    const fadeDuration = runtime.actionKey === "rest" ? 1.2 : .68;
+    runtime.currentAction?.fadeOut?.(fadeDuration);
+    next.enabled = true;
+    next.clampWhenFinished = targetKey === "rest" && runtime.kind === "dog";
+    next.setLoop?.(next.clampWhenFinished ? THREE.LoopOnce : THREE.LoopRepeat, next.clampWhenFinished ? 1 : Infinity);
+    next.reset?.().fadeIn?.(fadeDuration).play?.();
+    runtime.currentAction = next;
+    runtime.actionKey = targetKey;
+  }
+
+  function applyPetGait(runtime, elapsed, strength) {
+    const gait = elapsed * (runtime.kind === "cat" ? 5.35 : 4.85);
+    const rig = runtime.rig;
+    const upperSwing = runtime.kind === "cat" ? .33 : .28;
+    const lowerSwing = runtime.kind === "cat" ? .3 : .24;
+    rig.upper.forEach(([joint, phase]) => {
+      if (joint) joint.rotation.x += Math.sin(gait + phase) * upperSwing * strength;
+    });
+    rig.lower.forEach(([joint, phase]) => {
+      if (joint) joint.rotation.x += Math.max(0, Math.sin(gait + phase + .42)) * lowerSwing * strength;
+    });
+    rig.spine.forEach((joint, index) => {
+      joint.rotation.z += Math.sin(gait * .5 + index * .42) * .014 * strength;
+      joint.rotation.y += Math.sin(gait + index * .3) * .008 * strength;
+    });
+    if (rig.head) {
+      rig.head.rotation.z -= Math.sin(gait * .5) * .018 * strength;
+      rig.head.rotation.x += Math.sin(gait * 2) * .006 * strength;
+    }
+    rig.tail.forEach((joint, index) => {
+      joint.rotation.y += Math.sin(gait * .5 - index * .32) * (.035 + index * .006) * strength;
+    });
+    runtime.pose.position.y = Math.abs(Math.sin(gait)) * .014 * strength;
+    runtime.pose.rotation.z = Math.sin(gait * .5) * .012 * strength;
+  }
+
   async function loadGltfModel(loader, source) {
     const response = await global.fetch(source, { credentials: "same-origin" });
     if (!response.ok) throw new Error(`GLB ${response.status}`);
@@ -2420,11 +2530,13 @@
     if (typeof canvas.getContext !== "function" || typeof global.requestAnimationFrame !== "function") return;
     const generation = instance.petDepthGeneration;
     try {
-      const [THREE, loaderModule, skeletonUtils] = await Promise.all([
-        import(THREE_MODULE), import(GLTF_LOADER_MODULE), import(SKELETON_UTILS_MODULE)
+      const [THREE, loaderModule, skeletonUtils, meshoptModule] = await Promise.all([
+        import(THREE_MODULE), import(GLTF_LOADER_MODULE), import(SKELETON_UTILS_MODULE), import(MESHOPT_DECODER_MODULE)
       ]);
       if (generation !== instance.petDepthGeneration || !canvas.isConnected) return;
-      const loader = new loaderModule.GLTFLoader();
+      if (meshoptModule.MeshoptDecoder?.ready) await meshoptModule.MeshoptDecoder.ready;
+      if (generation !== instance.petDepthGeneration || !canvas.isConnected) return;
+      const loader = new loaderModule.GLTFLoader().setMeshoptDecoder(meshoptModule.MeshoptDecoder);
       const gltf = await loadGltfModel(loader, profile.src);
       if (generation !== instance.petDepthGeneration || !canvas.isConnected) return;
       const model = skeletonUtils.clone(gltf.scene);
@@ -2458,6 +2570,11 @@
       if ("outputColorSpace" in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
       if (THREE.ACESFilmicToneMapping) renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.08;
+      const anisotropy = Math.min(4, renderer.capabilities?.getMaxAnisotropy?.() || 1);
+      ownedTextures.forEach((texture) => {
+        if ("anisotropy" in texture) texture.anisotropy = anisotropy;
+        texture.needsUpdate = true;
+      });
 
       const scene3d = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(32, 1, .1, 20);
@@ -2470,6 +2587,9 @@
       const rimLight = new THREE.DirectionalLight(0x9bdcff, 1.35);
       rimLight.position.set(4, 2, -2);
       scene3d.add(rimLight);
+      const fillLight = new THREE.DirectionalLight(0xffe6d0, .72);
+      fillLight.position.set(1, .5, 5);
+      scene3d.add(fillLight);
 
       const anchor = new THREE.Group();
       const pose = new THREE.Group();
@@ -2486,19 +2606,32 @@
       scene3d.add(anchor);
 
       const mixer = new THREE.AnimationMixer(model);
-      const clip = gltf.animations.find((item) => item.name === profile.idleClip) || gltf.animations[0];
-      const action = clip ? mixer.clipAction(clip) : null;
-      action?.play?.();
-      const catLegNames = ["L_BLeg_Upper", "L_BLeg_Lower", "L_Leg_Upper", "L_Leg_Lower", "R_BLeg_Upper", "R_BLeg_Lower", "R_Leg_Upper", "R_Leg_Lower"];
-      const catLegs = kind === "cat" ? catLegNames.map((name) => model.getObjectByName(name)).filter(Boolean) : [];
-      const baseLegRotations = new Map(catLegs.map((bone) => [bone, bone.quaternion.clone()]));
+      const clips = {
+        idle: findPetClip(gltf.animations, profile.clips?.idle) || gltf.animations[0] || null,
+        rest: findPetClip(gltf.animations, profile.clips?.rest),
+        sit: findPetClip(gltf.animations, profile.clips?.sit)
+      };
+      const actions = {};
+      Object.entries(clips).forEach(([key, clip]) => {
+        if (clip) actions[key] = mixer.clipAction(clip);
+      });
+      const currentAction = actions.idle || actions.rest || null;
+      if (currentAction) {
+        currentAction.enabled = true;
+        currentAction.setLoop?.(THREE.LoopRepeat, Infinity);
+        currentAction.timeScale = .68;
+        currentAction.play?.();
+      }
+      const rig = collectPetRig(model, kind);
+      mixer.update(0);
       const runtime = {
-        renderer, mixer, action, clip, model, pose, anchor, shadow, camera, scene3d, stage, canvas,
+        renderer, mixer, actions, clips, currentAction, actionKey: currentAction ? "idle" : "", model, pose, anchor, shadow, camera, scene3d, stage, canvas,
         observer: null, frame: 0, contextLost: null, ownedGeometries, ownedMaterials, ownedTextures,
         currentX: profile.restingX, restingX: profile.restingX, travelHalf: 1.72, viewScale: 1,
-        restBlend: 1, yaw: profile.facing, lastRender: 0,
-        startedAt: global.performance?.now?.() || Date.now(), catLegs, baseLegRotations, kind
+        restBlend: 0, walkBlend: 0, yaw: profile.facing, lastRender: 0,
+        startedAt: global.performance?.now?.() || Date.now(), rig, baseRigQuaternions: new Map(), kind
       };
+      capturePetRigBase(runtime);
       instance.petDepth = runtime;
       const resize = () => {
         const rect = stage.getBoundingClientRect();
@@ -2534,48 +2667,29 @@
         runtime.lastRender = time;
         const elapsed = Math.max(0, (time - runtime.startedAt) / 1000);
         const mode = petBehaviorMode(instance, elapsed);
-        const walkPhase = (elapsed * .115) % 1;
+        const walkPhase = (elapsed / (kind === "cat" ? 17 : 19)) % 1;
         const movingRight = walkPhase < .5;
-        const travel = movingRight ? walkPhase * 2 : (1 - walkPhase) * 2;
+        const travel = .5 - Math.cos(walkPhase * Math.PI * 2) * .5;
         const targetX = mode === "walk" ? -runtime.travelHalf + travel * runtime.travelHalf * 2 : runtime.restingX;
-        runtime.currentX = dampValue(runtime.currentX, targetX, mode === "walk" ? 4.8 : 2.2, delta);
+        runtime.currentX = dampValue(runtime.currentX, targetX, mode === "walk" ? 7.2 : 2.2, delta);
         runtime.restBlend = dampValue(runtime.restBlend, mode === "rest" ? 1 : 0, 2.4, delta);
+        runtime.walkBlend = dampValue(runtime.walkBlend, mode === "walk" ? 1 : 0, 3.2, delta);
         const targetYaw = mode === "walk" ? (movingRight ? -Math.PI / 2 : Math.PI / 2) : profile.facing;
-        runtime.yaw = dampValue(runtime.yaw, targetYaw, 5.5, delta);
-        anchor.position.set(runtime.currentX, -1.14 - runtime.restBlend * .08 + Math.sin(elapsed * 2.1) * .006, 0);
+        runtime.yaw = dampAngle(runtime.yaw, targetYaw, 4.6, delta);
+        anchor.position.set(runtime.currentX, -1.14, 0);
         anchor.rotation.y = runtime.yaw;
-        pose.scale.set(1, 1 - runtime.restBlend * (kind === "dog" ? .28 : .2), 1.04 + runtime.restBlend * .08);
-        pose.rotation.z = kind === "cat" ? runtime.restBlend * -.07 : runtime.restBlend * .035;
+        pose.scale.setScalar(1);
+        pose.position.set(0, 0, 0);
+        pose.rotation.set(0, 0, 0);
         shadow.scale.set(1 + runtime.restBlend * .2, 1 + runtime.restBlend * .2, 1);
         shadow.material.opacity = .2 + runtime.restBlend * .1;
-
-        if (kind === "dog" && clip) {
-          const clipEnd = Math.max(.1, clip.duration);
-          const segment = mode === "walk" ? DOG_CLIP.walk : mode === "rest" ? DOG_CLIP.rest : DOG_CLIP.idle;
-          const segmentStart = segment.from / DOG_CLIP.fps;
-          const segmentDuration = Math.max(1 / DOG_CLIP.fps, (segment.to - segment.from) / DOG_CLIP.fps);
-          const sample = mode === "walk"
-            ? segmentStart + ((elapsed * .92) % segmentDuration)
-            : mode === "rest"
-              ? segment.to / DOG_CLIP.fps
-              : segmentStart + ((elapsed * .52) % segmentDuration);
-          action.paused = false;
-          mixer.setTime(Math.max(0, Math.min(clipEnd - .001, sample)));
-        } else {
-          mixer.update(delta);
-          runtime.catLegs.forEach((bone) => {
-            const baseRotation = runtime.baseLegRotations.get(bone);
-            if (baseRotation) bone.quaternion.copy(baseRotation);
-          });
-          if (mode === "walk") {
-            const gait = elapsed * 7.2;
-            runtime.catLegs.forEach((bone, index) => {
-              const side = [0, 3, 5, 6].includes(index) ? 0 : Math.PI;
-              bone.rotation.x += Math.sin(gait + side) * (index % 2 ? .28 : .42);
-            });
-            pose.position.y = Math.abs(Math.sin(gait)) * .018;
-          } else pose.position.y = Math.sin(elapsed * 1.55) * .007;
-        }
+        restorePetRigBase(runtime);
+        transitionPetAction(runtime, mode, THREE);
+        mixer.update(delta);
+        capturePetRigBase(runtime);
+        const endpointEase = Math.min(1, Math.abs(Math.sin(walkPhase * Math.PI * 2)) * 2.4);
+        applyPetGait(runtime, elapsed, runtime.walkBlend * endpointEase);
+        if (mode !== "walk" && kind === "cat") pose.position.y += Math.sin(elapsed * 1.35) * .0035;
         renderer.render(scene3d, camera);
       };
       runtime.frame = global.requestAnimationFrame(loop);

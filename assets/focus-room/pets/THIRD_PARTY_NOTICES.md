@@ -2,36 +2,37 @@
 
 The Focus Room serves these files from the repository. It does not hotlink the creators' hosts.
 
-## Cat by J-Toastie
+## Bicolor Cat by kenchoo
 
-- Local file: `cat-j-toastie.glb`
-- Work: **Cat**, a rigged and animated low-poly model
-- Creator: **J-Toastie**
-- Source: https://poly.pizza/m/DJ9rpAhrh3
-- License: Creative Commons Attribution 3.0 Unported (CC BY 3.0)
-- License text: https://creativecommons.org/licenses/by/3.0/legalcode
+- Local file: `bicolor-cat.glb`
+- Work: **Bicolor Cat**, a textured, rigged and animated domestic cat
+- Creator: **kenchoo**; based on the attributed Fripouille cat by Guillaume Bolis as stated on the source page
+- Canonical source: https://sketchfab.com/3d-models/bicolor-cat-e623a618ca344a8393d7ba4d63ec23cf
+- GitHub distribution reviewed: https://github.com/code4fukui/vr-cats/blob/main/bicolor_cat.glb
+- License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+- License text: https://creativecommons.org/licenses/by/4.0/legalcode
 - Downloaded: 2026-09-07
-- Upstream downloaded GLB SHA-256: `2ED030946F552F2B46433294391628A37583AE74A496D3164C003E1F95B24E4E`
-- Local transformed GLB SHA-256: `8F77E8A1F97583925ACA7A419AC1517888A9F60F1F111D116A4D57787787B698`
-- Externalized original texture: `cat-j-toastie-texture.png`, SHA-256 `3F2CDBEEAC122C0222B1FF72BF52450AF49CD4D6CC98F3441FB7E254290AD308`
+- Upstream downloaded GLB SHA-256: `4B395BA943D647F4C490C982A70FA2175EF91569615773DA7EF3429E427ED21A`
+- Local transformed GLB SHA-256: `631DF22885E06E48185BF73B0711413F90DEB34AC71B2AB1DE99C3CD27C25131`
+- Externalized original textures: `bicolor-cat-texture.png` (`376D72A0C89CE257874DDB4369E4CD32EB1134466C36316FF735E73D594802DA`), `bicolor-cat-texture-2.png` (`F7A8DA7B92814E69F0DDDE9DC95E421FDE59CAEC56B91E6649813E3960CBE888`) and `bicolor-cat-texture-3.jpg` (`38B6602BF0BD48E185BBC666087DFAAD4179F5A651E0F3FF76194760D101CB5F`)
 
-The HH Focus Room uses the embedded idle animation and applies its own bounded leg gait, positioning, lighting and renderer lifecycle. Attribution is shown in the application's scene panel and this notice. No ownership of the original model is claimed.
+The HH Focus Room uses the embedded 8.71-second skeletal animation, its PBR diffuse/normal/roughness material and a small bounded quadruped gait overlay while walking. Attribution is shown in the application's scene panel and this notice. No ownership of the original model is claimed.
 
-## Corgi by Gobkit
+## Animated Dog, Shiba Inu by quander
 
-- Local file: `corgi-gobkit.glb`
-- Work: **Corgi** from Gobkit Free 3D Assets
-- Provider: **Gobkit / Alsomind Tech Co., Ltd.**
-- Source: https://github.com/Ariescar/gobkit-free-assets/blob/main/animal/Corgi.glb
-- License: CC0 1.0 Universal
-- License text: https://github.com/Ariescar/gobkit-free-assets/blob/main/LICENSE
-- Integration reference: https://github.com/Ariescar/gobkit-free-assets/blob/main/INTEGRATION.md
+- Local file: `quander-shiba.glb`
+- Work: **Animated Dog, Shiba Inu**, a textured, rigged dog with facial and body bones
+- Creator: **quander**
+- Canonical source: https://sketchfab.com/3d-models/animated-dog-shiba-inu-9abfce885a834399b2c3ccaed51cd474
+- GitHub distribution reviewed: https://github.com/hmgovt/bitcoinweighin/tree/main/static/models/references/shiba_inu
+- License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+- License text: https://creativecommons.org/licenses/by/4.0/legalcode
 - Downloaded: 2026-09-07
-- Upstream downloaded GLB SHA-256: `95CD2C4D53D70EE9DD2E1329DCB6DE7D4A725301D504A4F2F00ECB34DC1A0851`
-- Local transformed GLB SHA-256: `EA3CA21FF81411416A86921865759B8D0875278C8AEAB0DBD13C556B5B4B5B55`
-- Externalized original texture: `corgi-gobkit-texture.png`, SHA-256 `5C9930ABA1B78F18551C2DF4D9C250D0A7D72EAFA6CA72D0D856AEC62124ED04`
+- Upstream downloaded GLB SHA-256: `81F227F600A5FB9E908602B5967A368C1509C569BC6B2C7220B182D2203B6118`
+- Local transformed GLB SHA-256: `02979B1497D192CB9F47620D97D543FDFD10B161E18BFF5B8C92A04731066F03`
+- Externalized original textures: `quander-shiba-texture.webp` (`71A1B81C7FAE9586FF82D715549FF8076FF3EEB4DC2821AF840716CA318B7F73`) and `quander-shiba-texture-2.webp` (`055D0C38E9A6BA5C08DCC2353BF744E2BAE04F84B92CC3923E6A2CAE4C50B16A`)
 
-The HH Focus Room scrubs the bundled 24 FPS animation according to Gobkit's documented idle and walk ranges and uses a resting hold from the supplied track. Credit is not required by CC0, but is recorded for provenance.
+The HH Focus Room uses the supplied `standing`, `sitting` and `play_dead` skeletal clips for natural standing, expression and lying poses. Walking keeps the supplied standing motion alive and adds a bounded four-leg, spine, head and tail gait; all state changes crossfade instead of scaling or distorting the animal mesh.
 
 ## Behavior reference
 

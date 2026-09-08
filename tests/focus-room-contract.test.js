@@ -262,10 +262,10 @@ test("Focus Room upgrades the canonical HH Platform learning workspace", () => {
   assert.match(router, /Phòng học tập trung/);
   assert.match(router, /226 không gian \(26 cảnh gốc \+ Atlas 200\)/);
   assert.match(router, /Trong Học tập &amp; Ngôn ngữ/);
-  assert.match(loader, /"focus-study-room":\s*\{[\s\S]*focus-room\.css\?v=12[\s\S]*focus-room\.js\?v=12/);
+  assert.match(loader, /"focus-study-room":\s*\{[\s\S]*focus-room\.css\?v=12[\s\S]*focus-room\.js\?v=13/);
   assert.match(loader, /value === "\/focus-room"/);
   assert.match(worker, /\.\/focus-room\.css\?v=12/);
-  assert.match(worker, /\.\/focus-room\.js\?v=12/);
+  assert.match(worker, /\.\/focus-room\.js\?v=13/);
   assert.doesNotMatch(source, /HH CORE|gateway|location\.href\s*=/i);
 });
 
@@ -304,15 +304,18 @@ test("scene library ships 226 local presets, including exactly 200 truthful Atla
   }
   assert.match(read("assets/focus-room/README.md"), /Kimiko Ishizaka[\s\S]*CC0 1\.0[\s\S]*SHA-256/);
   const petModels = [
-    ["assets/focus-room/pets/corgi-gobkit.glb", "EA3CA21FF81411416A86921865759B8D0875278C8AEAB0DBD13C556B5B4B5B55"],
-    ["assets/focus-room/pets/cat-j-toastie.glb", "8F77E8A1F97583925ACA7A419AC1517888A9F60F1F111D116A4D57787787B698"],
-    ["assets/focus-room/pets/corgi-gobkit-texture.png", "5C9930ABA1B78F18551C2DF4D9C250D0A7D72EAFA6CA72D0D856AEC62124ED04"],
-    ["assets/focus-room/pets/cat-j-toastie-texture.png", "3F2CDBEEAC122C0222B1FF72BF52450AF49CD4D6CC98F3441FB7E254290AD308"]
+    ["assets/focus-room/pets/bicolor-cat.glb", "631DF22885E06E48185BF73B0711413F90DEB34AC71B2AB1DE99C3CD27C25131"],
+    ["assets/focus-room/pets/quander-shiba.glb", "02979B1497D192CB9F47620D97D543FDFD10B161E18BFF5B8C92A04731066F03"],
+    ["assets/focus-room/pets/bicolor-cat-texture.png", "376D72A0C89CE257874DDB4369E4CD32EB1134466C36316FF735E73D594802DA"],
+    ["assets/focus-room/pets/bicolor-cat-texture-2.png", "F7A8DA7B92814E69F0DDDE9DC95E421FDE59CAEC56B91E6649813E3960CBE888"],
+    ["assets/focus-room/pets/bicolor-cat-texture-3.jpg", "38B6602BF0BD48E185BBC666087DFAAD4179F5A651E0F3FF76194760D101CB5F"],
+    ["assets/focus-room/pets/quander-shiba-texture.webp", "71A1B81C7FAE9586FF82D715549FF8076FF3EEB4DC2821AF840716CA318B7F73"],
+    ["assets/focus-room/pets/quander-shiba-texture-2.webp", "055D0C38E9A6BA5C08DCC2353BF744E2BAE04F84B92CC3923E6A2CAE4C50B16A"]
   ];
   const crypto = require("node:crypto");
   for (const [asset, expectedHash] of petModels) {
     const bytes = fs.readFileSync(path.join(rootDir, asset));
-    assert.ok(bytes.length > (asset.endsWith(".glb") ? 50_000 : 10_000), `empty ${asset}`);
+    assert.ok(bytes.length > (asset.endsWith(".glb") ? 500_000 : 32), `empty ${asset}`);
     assert.equal(crypto.createHash("sha256").update(bytes).digest("hex").toUpperCase(), expectedHash);
     if (asset.endsWith(".glb")) {
       let cursor = 12;
@@ -323,13 +326,16 @@ test("scene library ships 226 local presets, including exactly 200 truthful Atla
         if (type === 0x4e4f534a) gltf = JSON.parse(bytes.subarray(cursor + 8, cursor + 8 + length).toString("utf8").trim());
         cursor += 8 + length;
       }
-      assert.match(gltf.images[0].uri, /-texture\.png$/);
-      assert.equal(gltf.images[0].bufferView, undefined, "runtime texture must not require a blob URL");
+      assert.ok(gltf.animations?.length, "pet models must contain real skeletal clips");
+      for (const image of gltf.images || []) {
+        assert.match(image.uri, /-texture(?:-\d+)?\.(?:png|jpe?g|webp)$/);
+        assert.equal(image.bufferView, undefined, "runtime texture must not require a blob URL");
+      }
     }
   }
   const notices = read("assets/focus-room/pets/THIRD_PARTY_NOTICES.md");
-  assert.match(notices, /J-Toastie[\s\S]*CC BY 3\.0/);
-  assert.match(notices, /Gobkit[\s\S]*CC0 1\.0/);
+  assert.match(notices, /Bicolor Cat[\s\S]*kenchoo[\s\S]*CC BY 4\.0/);
+  assert.match(notices, /Shiba Inu[\s\S]*quander[\s\S]*CC BY 4\.0/);
 });
 
 test("large scene catalog paginates and 3D companion preferences persist per account", () => {
@@ -352,7 +358,7 @@ test("large scene catalog paginates and 3D companion preferences persist per acc
   const restored = harness.api.mount(restoredRoot.root, { currentUser: { id: "pet-atlas-user" } });
   assert.equal(restored.getState().settings.companion, "cat");
   assert.equal(restored.getState().settings.petMode, "walk");
-  assert.match(restoredRoot.root.innerHTML, /Mèo xám 3D/);
+  assert.match(restoredRoot.root.innerHTML, /Mèo mướp Bicolor 3D/);
 });
 
 test("state is account scoped and favorites persist independently", () => {
@@ -645,14 +651,19 @@ test("responsive, motion and truthful capability contracts are explicit", () => 
   assert.match(source, /import\(THREE_MODULE\)/);
   assert.match(source, /import\(GLTF_LOADER_MODULE\)/);
   assert.match(source, /import\(SKELETON_UTILS_MODULE\)/);
-  assert.match(source, /assets\/focus-room\/pets\/cat-j-toastie\.glb/);
-  assert.match(source, /assets\/focus-room\/pets\/corgi-gobkit\.glb/);
+  assert.match(source, /import\(MESHOPT_DECODER_MODULE\)/);
+  assert.match(source, /assets\/focus-room\/pets\/bicolor-cat\.glb/);
+  assert.match(source, /assets\/focus-room\/pets\/quander-shiba\.glb/);
   assert.doesNotMatch(source, /src:\s*"https?:\/\//);
   assert.match(source, /new THREE\.WebGLRenderer/);
   assert.match(source, /1000 \/ 30/);
   assert.match(source, /targetFps = quality === "high" \? 30 : 24/);
   assert.match(source, /Math\.min\(1\.5/);
-  assert.match(source, /DOG_CLIP/);
+  assert.match(source, /transitionPetAction/);
+  assert.match(source, /fadeIn\?\.\(fadeDuration\)/);
+  assert.match(source, /applyPetGait/);
+  assert.match(source, /restorePetRigBase\(runtime\)[\s\S]*mixer\.update\(delta\)[\s\S]*capturePetRigBase\(runtime\)[\s\S]*applyPetGait/);
+  assert.doesNotMatch(source, /pose\.scale\.set\(1,/);
   assert.match(source, /petBehaviorMode/);
   assert.match(source, /teardownPetDepth/);
   assert.match(styles, /\.hfr-pet-depth[\s\S]*pointer-events:\s*none/);

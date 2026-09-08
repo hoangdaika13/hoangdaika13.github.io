@@ -12,6 +12,13 @@ function padded(buffer, fill) {
   return padding ? Buffer.concat([buffer, Buffer.alloc(padding, fill)]) : buffer;
 }
 
+function imageExtension(mimeType) {
+  if (mimeType === "image/jpeg") return ".jpg";
+  if (mimeType === "image/webp") return ".webp";
+  if (mimeType === "image/ktx2") return ".ktx2";
+  return ".png";
+}
+
 function externalizeTexture(file) {
   const bytes = fs.readFileSync(file);
   if (bytes.readUInt32LE(0) !== GLB_MAGIC || bytes.readUInt32LE(4) !== 2) throw new Error(`Unsupported GLB: ${file}`);
@@ -27,20 +34,27 @@ function externalizeTexture(file) {
     cursor += 8 + length;
   }
   if (!document || !binary) throw new Error(`Missing GLB chunks: ${file}`);
-  const image = document.images?.[0];
-  if (!image) throw new Error(`Missing embedded image: ${file}`);
+  const images = document.images || [];
+  if (!images.length) throw new Error(`Missing embedded image: ${file}`);
   let changed = false;
-  const extension = image.mimeType === "image/jpeg" ? ".jpg" : ".png";
-  const textureName = image.uri || `${path.basename(file, path.extname(file))}-texture${extension}`;
-  const texturePath = path.resolve(path.dirname(file), textureName);
-  if (!image.uri) {
+  const texturePaths = [];
+  images.forEach((image, index) => {
+    if (image.uri) {
+      texturePaths.push(path.resolve(path.dirname(file), image.uri));
+      return;
+    }
+    const extension = imageExtension(image.mimeType);
+    const suffix = index ? `-${index + 1}` : "";
+    const textureName = `${path.basename(file, path.extname(file))}-texture${suffix}${extension}`;
+    const texturePath = path.resolve(path.dirname(file), textureName);
     const view = document.bufferViews?.[image.bufferView];
     if (!view || Number(view.buffer || 0) !== 0) throw new Error(`Unsupported image buffer: ${file}`);
     const start = Number(view.byteOffset || 0);
     fs.writeFileSync(texturePath, binary.subarray(start, start + Number(view.byteLength || 0)));
-    document.images[0] = { ...(image.name ? { name: image.name } : {}), uri: textureName };
+    document.images[index] = { ...(image.name ? { name: image.name } : {}), uri: textureName };
+    texturePaths.push(texturePath);
     changed = true;
-  }
+  });
 
   const armatureIndex = document.nodes?.findIndex((node) => node.name === "Cat.001") ?? -1;
   const catSkin = document.skins?.[0];
@@ -48,7 +62,7 @@ function externalizeTexture(file) {
     catSkin.skeleton = armatureIndex;
     changed = true;
   }
-  if (!changed) return { file, texture: texturePath, skipped: true };
+  if (!changed) return { file, textures: texturePaths, skipped: true };
 
   const json = padded(Buffer.from(JSON.stringify(document)), 0x20);
   const bin = padded(binary, 0x00);
@@ -64,9 +78,10 @@ function externalizeTexture(file) {
   output.writeUInt32LE(BIN_CHUNK, binHeader + 4);
   bin.copy(output, binHeader + 8);
   fs.writeFileSync(file, output);
-  return { file, texture: texturePath, skipped: false };
+  return { file, textures: texturePaths, skipped: false };
 }
 
 const root = path.resolve(__dirname, "..");
-const targets = ["cat-j-toastie.glb", "corgi-gobkit.glb"].map((name) => path.join(root, "assets", "focus-room", "pets", name));
+const targets = ["cat-j-toastie.glb", "corgi-gobkit.glb", "bicolor-cat.glb", "quander-shiba.glb"]
+  .map((name) => path.join(root, "assets", "focus-room", "pets", name));
 for (const target of targets) console.log(JSON.stringify(externalizeTexture(target)));

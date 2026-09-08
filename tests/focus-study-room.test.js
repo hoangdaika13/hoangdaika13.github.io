@@ -102,10 +102,10 @@ test("router, lazy loader and responsive workspace are integrated", () => {
   assert.match(router, /id: "focus-room"[\s\S]*?route: "\/focus-room"/);
   assert.match(router, /groupIds: \["learn", "focus-room", "english"/);
   assert.match(router, /HHFocusRoom\?\.mount/);
-  assert.match(loader, /"focus-study-room": \{[\s\S]*?focus-room\.css\?v=12[\s\S]*?focus-room\.js\?v=12/);
+  assert.match(loader, /"focus-study-room": \{[\s\S]*?focus-room\.css\?v=12[\s\S]*?focus-room\.js\?v=13/);
   assert.match(loader, /value === "\/focus-room"/);
   assert.match(worker, /focus-room\.css\?v=12/);
-  assert.match(worker, /focus-room\.js\?v=12/);
+  assert.match(worker, /focus-room\.js\?v=13/);
   assert.match(gateway, /"\/focus-room"/);
   assert.match(index, /performance-loader\.js\?v=663/);
   assert.match(index, /script\.js\?v=277/);

@@ -65,17 +65,20 @@ The optional 3D companions are downloaded, self-hosted GLB files. They are lazy-
 
 | Local file | Creator and source | License | Animation used | SHA-256 |
 | --- | --- | --- | --- | --- |
-| `pets/corgi-gobkit.glb` | [Gobkit free assets](https://github.com/Ariescar/gobkit-free-assets/blob/main/animal/Corgi.glb) | [CC0 1.0](https://github.com/Ariescar/gobkit-free-assets/blob/main/LICENSE) | Baked idle, resting hold and walk frame ranges at 24 FPS | `EA3CA21FF81411416A86921865759B8D0875278C8AEAB0DBD13C556B5B4B5B55` |
-| `pets/cat-j-toastie.glb` | [Cat by J-Toastie on Poly Pizza](https://poly.pizza/m/DJ9rpAhrh3) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) | Embedded `Cat.001|IdleCat` plus an original bounded procedural walk gait | `8F77E8A1F97583925ACA7A419AC1517888A9F60F1F111D116A4D57787787B698` |
+| `pets/bicolor-cat.glb` | [Bicolor Cat by kenchoo](https://sketchfab.com/3d-models/bicolor-cat-e623a618ca344a8393d7ba4d63ec23cf) via [vr-cats](https://github.com/code4fukui/vr-cats) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Supplied full-body idle/expression clip plus a bounded four-leg walk overlay | `631DF22885E06E48185BF73B0711413F90DEB34AC71B2AB1DE99C3CD27C25131` |
+| `pets/quander-shiba.glb` | [Animated Dog, Shiba Inu by quander](https://sketchfab.com/3d-models/animated-dog-shiba-inu-9abfce885a834399b2c3ccaed51cd474) via [bitcoinweighin](https://github.com/hmgovt/bitcoinweighin) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Supplied standing and play-dead/lying skeletal clips plus a bounded quadruped walk overlay | `02979B1497D192CB9F47620D97D543FDFD10B161E18BFF5B8C92A04731066F03` |
 
-Embedded textures were mechanically externalized so browsers load them as normal same-origin PNG files instead of temporary blob URLs. This preserves the original artwork and animation data while avoiding CSP/browser blob-image edge cases. The reproducible transform is `scripts/externalize-focus-pet-textures.js`.
+Embedded textures were mechanically externalized so browsers load them as normal same-origin PNG, JPEG or WebP files instead of temporary blob URLs. This preserves the original artwork and animation data while avoiding CSP/browser blob-image edge cases. The reproducible transform is `scripts/externalize-focus-pet-textures.js`.
 
 | Texture | SHA-256 |
 | --- | --- |
-| `pets/corgi-gobkit-texture.png` | `5C9930ABA1B78F18551C2DF4D9C250D0A7D72EAFA6CA72D0D856AEC62124ED04` |
-| `pets/cat-j-toastie-texture.png` | `3F2CDBEEAC122C0222B1FF72BF52450AF49CD4D6CC98F3441FB7E254290AD308` |
+| `pets/bicolor-cat-texture.png` | `376D72A0C89CE257874DDB4369E4CD32EB1134466C36316FF735E73D594802DA` |
+| `pets/bicolor-cat-texture-2.png` | `F7A8DA7B92814E69F0DDDE9DC95E421FDE59CAEC56B91E6649813E3960CBE888` |
+| `pets/bicolor-cat-texture-3.jpg` | `38B6602BF0BD48E185BBC666087DFAAD4179F5A651E0F3FF76194760D101CB5F` |
+| `pets/quander-shiba-texture.webp` | `71A1B81C7FAE9586FF82D715549FF8076FF3EEB4DC2821AF840716CA318B7F73` |
+| `pets/quander-shiba-texture-2.webp` | `055D0C38E9A6BA5C08DCC2353BF744E2BAE04F84B92CC3923E6A2CAE4C50B16A` |
 
-Required attribution for the cat is also visible in the scene panel and duplicated in `pets/THIRD_PARTY_NOTICES.md`. Model files were not visually rebranded or redistributed as original HH artwork.
+Required attribution for both models is also visible in the scene panel and duplicated in `pets/THIRD_PARTY_NOTICES.md`. Model files were not visually rebranded or redistributed as original HH artwork. The renderer no longer squashes or stretches the mesh to fake a resting pose: real skeletal clips crossfade over 0.68–1.2 seconds, while the gentle walk layer bends the four legs and adds small spine, head, tail and ground-contact motion.
 
 ## Study music
 
