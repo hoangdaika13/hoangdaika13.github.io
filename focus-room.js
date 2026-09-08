@@ -11,10 +11,6 @@
   const DB_NAME = "hh-focus-room-media-v1";
   const DB_STORE = "scenes";
   const FALLBACK_IMAGE = "assets/focus-room/rainy-window.webp";
-  const THREE_MODULE = "./vendor/three.module.min.js";
-  const GLTF_LOADER_MODULE = "./vendor/addons/loaders/GLTFLoader.js";
-  const SKELETON_UTILS_MODULE = "./vendor/addons/utils/SkeletonUtils.js";
-  const MESHOPT_DECODER_MODULE = "./vendor/addons/libs/meshopt_decoder.module.js";
   const instances = new WeakMap();
   const mountedRoots = new Set();
 
@@ -35,77 +31,6 @@
     })
   ]);
 
-  const PET_DEPTH_PROFILES = Object.freeze({
-    "pet-rain": Object.freeze({ x: 0.17, y: 0.75, radiusX: 0.15, radiusY: 0.12, imageX: 0.21, pace: 0.74 }),
-    "pet-sunroom": Object.freeze({ x: 0.31, y: 0.64, radiusX: 0.18, radiusY: 0.14, imageX: 0.34, pace: 0.66 }),
-    "pet-fire": Object.freeze({ x: 0.21, y: 0.55, radiusX: 0.16, radiusY: 0.13, imageX: 0.23, pace: 0.7 }),
-    "pet-garden": Object.freeze({ x: 0.82, y: 0.72, radiusX: 0.14, radiusY: 0.12, imageX: 0.79, pace: 0.68 }),
-    "pet-river": Object.freeze({ x: 0.77, y: 0.61, radiusX: 0.15, radiusY: 0.13, imageX: 0.75, pace: 0.72 }),
-    "pet-lake": Object.freeze({ x: 0.15, y: 0.62, radiusX: 0.15, radiusY: 0.14, imageX: 0.19, pace: 0.64 })
-  });
-
-  const PET_LIGHT_PROFILES = Object.freeze({
-    rain: Object.freeze({ sky: 0xc8e2ec, ground: 0x26302f, hemi: 2.05, key: 0xffd2a3, keyPower: 2.35, rim: 0xa8dfff, rimPower: 1.45, exposure: 1.02, shadow: 0.31, breeze: 0.58 }),
-    forest: Object.freeze({ sky: 0xe1f3df, ground: 0x293728, hemi: 2.45, key: 0xffe3ae, keyPower: 2.15, rim: 0xb8f2cf, rimPower: 1.08, exposure: 1.06, shadow: 0.26, breeze: 0.92 }),
-    moonlight: Object.freeze({ sky: 0xa8cbf4, ground: 0x171d28, hemi: 1.72, key: 0xffbd82, keyPower: 2.45, rim: 0x87b9ff, rimPower: 1.92, exposure: 0.96, shadow: 0.34, breeze: 0.34 }),
-    ocean: Object.freeze({ sky: 0xffd8b8, ground: 0x51372e, hemi: 2.28, key: 0xffb67e, keyPower: 2.72, rim: 0xffe3bd, rimPower: 1.02, exposure: 1.08, shadow: 0.25, breeze: 1.08 })
-  });
-  const DEFAULT_PET_LIGHT_PROFILE = Object.freeze({
-    sky: 0xfff5df, ground: 0x26364c, hemi: 2.35, key: 0xffd4aa, keyPower: 2.6,
-    rim: 0x9bdcff, rimPower: 1.35, exposure: 1.08, shadow: 0.28, breeze: 0.5
-  });
-
-  const PET_MODEL_PROFILES = Object.freeze({
-    cat: Object.freeze({
-      species: "cat", icon: "🐈", label: "Mèo cam trắng", src: "assets/focus-room/pets/bicolor-cat.glb?v=2", desiredHeight: 1.08,
-      clips: Object.freeze({ idle: Object.freeze(["Animation"]), rest: Object.freeze(["Animation"]) }),
-      restingX: 1.2, facing: 0, credit: "kenchoo · CC BY 4.0"
-    }),
-    "cat-silver": Object.freeze({
-      species: "cat", icon: "🐈‍⬛", label: "Mèo bạc", src: "assets/focus-room/pets/bicolor-cat.glb?v=2", desiredHeight: 1.08,
-      clips: Object.freeze({ idle: Object.freeze(["Animation"]), rest: Object.freeze(["Animation"]) }),
-      restingX: 1.2, facing: 0, coatFilter: "grayscale(.9) sepia(.08) hue-rotate(175deg) saturate(.55) brightness(1.05)", coatTint: "#d7e3eb", credit: "kenchoo · CC BY 4.0"
-    }),
-    "cat-cream": Object.freeze({
-      species: "cat", icon: "🐱", label: "Mèo kem", src: "assets/focus-room/pets/bicolor-cat.glb?v=2", desiredHeight: 1.08,
-      clips: Object.freeze({ idle: Object.freeze(["Animation"]), rest: Object.freeze(["Animation"]) }),
-      restingX: 1.2, facing: 0, coatFilter: "sepia(.35) saturate(.65) brightness(1.18)", coatTint: "#ffe1b5", credit: "kenchoo · CC BY 4.0"
-    }),
-    "cat-midnight": Object.freeze({
-      species: "cat", icon: "🐈‍⬛", label: "Mèo đêm", src: "assets/focus-room/pets/bicolor-cat.glb?v=2", desiredHeight: 1.08,
-      clips: Object.freeze({ idle: Object.freeze(["Animation"]), rest: Object.freeze(["Animation"]) }),
-      restingX: 1.2, facing: 0, coatFilter: "grayscale(.82) brightness(.45) contrast(1.25)", coatTint: "#53657a", credit: "kenchoo · CC BY 4.0"
-    }),
-    dog: Object.freeze({
-      species: "dog", icon: "🐕", label: "Shiba vàng", src: "assets/focus-room/pets/quander-shiba.glb?v=2", desiredHeight: 1.08,
-      clips: Object.freeze({
-        idle: Object.freeze(["0|standing_0", "standing"]),
-        rest: Object.freeze(["0|play_dead_0", "play_dead"]),
-        sit: Object.freeze(["0|sitting_0", "sitting"]),
-        playShake: Object.freeze(["0|shake_0", "shake"]),
-        playRoll: Object.freeze(["0|rollover_0", "rollover"])
-      }),
-      restingX: -1.18, facing: 0, credit: "quander · CC BY 4.0"
-    }),
-    "dog-cream": Object.freeze({
-      species: "dog", icon: "🐕", label: "Shiba kem", src: "assets/focus-room/pets/quander-shiba.glb?v=2", desiredHeight: 1.08,
-      clips: Object.freeze({ idle: Object.freeze(["0|standing_0", "standing"]), rest: Object.freeze(["0|play_dead_0", "play_dead"]), sit: Object.freeze(["0|sitting_0", "sitting"]), playShake: Object.freeze(["0|shake_0", "shake"]), playRoll: Object.freeze(["0|rollover_0", "rollover"]) }),
-      restingX: -1.18, facing: 0, coatFilter: "saturate(.45) brightness(1.23) contrast(.9)", coatTint: "#ffe5bf", credit: "quander · CC BY 4.0"
-    }),
-    "dog-red": Object.freeze({
-      species: "dog", icon: "🐕", label: "Shiba đỏ", src: "assets/focus-room/pets/quander-shiba.glb?v=2", desiredHeight: 1.08,
-      clips: Object.freeze({ idle: Object.freeze(["0|standing_0", "standing"]), rest: Object.freeze(["0|play_dead_0", "play_dead"]), sit: Object.freeze(["0|sitting_0", "sitting"]), playShake: Object.freeze(["0|shake_0", "shake"]), playRoll: Object.freeze(["0|rollover_0", "rollover"]) }),
-      restingX: -1.18, facing: 0, coatFilter: "saturate(1.35) sepia(.18) hue-rotate(-8deg) contrast(1.05)", coatTint: "#da7950", credit: "quander · CC BY 4.0"
-    }),
-    "dog-sesame": Object.freeze({
-      species: "dog", icon: "🐕‍🦺", label: "Shiba mè", src: "assets/focus-room/pets/quander-shiba.glb?v=2", desiredHeight: 1.08,
-      clips: Object.freeze({ idle: Object.freeze(["0|standing_0", "standing"]), rest: Object.freeze(["0|play_dead_0", "play_dead"]), sit: Object.freeze(["0|sitting_0", "sitting"]), playShake: Object.freeze(["0|shake_0", "shake"]), playRoll: Object.freeze(["0|rollover_0", "rollover"]) }),
-      restingX: -1.18, facing: 0, coatFilter: "grayscale(.55) sepia(.22) saturate(.7) brightness(.78) contrast(1.18)", coatTint: "#806c5c", credit: "quander · CC BY 4.0"
-    })
-  });
-
-  const PET_PROFILE_IDS = Object.freeze(Object.keys(PET_MODEL_PROFILES));
-
   const CHANNELS = Object.freeze([
     { id: "rain", label: "Mưa nhẹ", icon: "☂", default: 0.48, type: "rain", filter: "highpass", frequency: 920, q: 0.2, trim: 0.34, drift: 0.035, depth: 0.045, pan: -0.08 },
     { id: "heavy-rain", label: "Mưa rào", icon: "☔", default: 0, type: "heavy-rain", filter: "bandpass", frequency: 760, q: 0.35, trim: 0.28, drift: 0.047, depth: 0.055, pan: 0.08 },
@@ -120,9 +45,7 @@
     { id: "stream", label: "Suối đá nhỏ", icon: "⌇", default: 0.14, type: "stream", filter: "bandpass", frequency: 1280, q: 0.3, trim: 0.27, drift: 0.043, depth: 0.055, pan: 0.12 },
     { id: "white", label: "White noise mềm", icon: "W", default: 0, type: "white", filter: "lowpass", frequency: 5200, q: 0.1, trim: 0.16, drift: 0.017, depth: 0.018, pan: 0 },
     { id: "brown", label: "Brown noise ấm", icon: "B", default: 0.06, type: "brown", filter: "lowpass", frequency: 640, q: 0.2, trim: 0.32, drift: 0.023, depth: 0.028, pan: 0 },
-    { id: "pink", label: "Pink noise dịu", icon: "P", default: 0, type: "pink", filter: "lowpass", frequency: 1700, q: 0.2, trim: 0.21, drift: 0.02, depth: 0.024, pan: 0 },
-    { id: "purr", label: "Mèo gừ êm", icon: "🐈", default: 0.055, type: "purr", filter: "lowpass", frequency: 310, q: 0.4, trim: 0.19, drift: 0.12, depth: 0.025, pan: -0.14 },
-    { id: "pet-breath", label: "Thú cưng ngủ", icon: "🐾", default: 0.045, type: "pet-breath", filter: "lowpass", frequency: 520, q: 0.25, trim: 0.13, drift: 0.09, depth: 0.02, pan: 0.12 }
+    { id: "pink", label: "Pink noise dịu", icon: "P", default: 0, type: "pink", filter: "lowpass", frequency: 1700, q: 0.2, trim: 0.21, drift: 0.02, depth: 0.024, pan: 0 }
   ]);
 
   const SCENE_EXPANSION_BASES = Object.freeze([
@@ -158,7 +81,7 @@
     Object.freeze({ id: "quiet-night", suffix: "đêm yên", time: "Đêm", effect: "dust", grade: "brightness(.58) saturate(.7) contrast(1.16) hue-rotate(8deg)", accent: "#bba8ff", detail: "Đèn tối vừa đủ cho một phiên tập trung sâu." }),
     Object.freeze({ id: "soft-rain", suffix: "dưới mưa nhẹ", time: "Ngày mưa", effect: "rain", grade: "brightness(.75) saturate(.72) contrast(1.04) hue-rotate(5deg)", accent: "#8edfff", detail: "Mưa mảnh, phản chiếu mềm và nhịp nền đều." }),
     Object.freeze({ id: "starlight", suffix: "dưới trời sao", time: "Đêm sao", effect: "stars", grade: "brightness(.56) saturate(.92) contrast(1.18) hue-rotate(18deg)", accent: "#9caeff", detail: "Điểm sao xa và ánh sáng lạnh rất dịu." }),
-    Object.freeze({ id: "pet-companion", suffix: "cùng bạn nhỏ", time: "Thú cưng", effect: "", grade: "brightness(.94) saturate(.9) contrast(1.03)", accent: "#ffb9cc", detail: "Một bạn nhỏ 3D thay phiên nghỉ yên và đi dạo tự nhiên.", pet: true })
+    Object.freeze({ id: "pet-companion", suffix: "trong ánh đèn dịu", time: "Tĩnh lặng", effect: "dust", grade: "brightness(.94) saturate(.9) contrast(1.03)", accent: "#ffd0a6", detail: "Ánh đèn dịu và bụi sáng chuyển động rất nhẹ." })
   ]);
 
   const SCENES = Object.freeze([
@@ -182,16 +105,10 @@
     scene("rice-terrace-veranda", "Hiên ruộng bậc thang", "Bình minh", "Hiên tre nhìn thung lũng xanh, nắng sớm và làn gió đồng dịu.", "nature", "terrace-breeze", "assets/focus-room/rice-terrace-veranda.webp", ["birds", "wind", "stream"]),
     scene("autumn-garden-room", "Phòng vườn mùa thu", "Chiều thu", "Phòng gỗ mở ra khu vườn lá đỏ, nắng chiều ấm và tĩnh.", "nature", "autumn-leaves", "assets/focus-room/autumn-garden-room.webp", ["birds", "wind", "stream"]),
     scene("moonlit-observatory", "Đài quan sát trăng", "Đêm", "Bàn học dưới mái vòm, ánh trăng lạnh và bầu trời sao yên tĩnh.", "night", "moonlight", "assets/focus-room/moonlit-observatory.webp", ["wind", "brown", "pink"]),
-    scene("cat-rainy-attic", "Gác mái mưa cùng mèo", "Ngày mưa", "Mèo lông cam ngủ cạnh bàn gỗ, mưa mềm trên ô cửa và đèn vàng ấm.", "pets", "pet-rain", "assets/focus-room/cat-rainy-attic.webp", ["rain", "purr", "fire"]),
-    scene("dog-sunroom", "Phòng nắng cùng cún", "Buổi sáng", "Cún retriever nghỉ trên thảm, rèm vải lay nhẹ và đồng cỏ ngập nắng.", "pets", "pet-sunroom", "assets/focus-room/dog-sunroom.webp", ["birds", "wind", "pet-breath"]),
-    scene("cat-fireplace-library", "Thư viện lò sưởi cùng mèo", "Đêm", "Mèo xám nằm bên cửa sổ mưa, lửa ấm và căn phòng đọc thật tĩnh.", "pets", "pet-fire", "assets/focus-room/cat-fireplace-library.webp", ["rain", "fire", "purr"]),
-    scene("dog-spring-veranda", "Hiên vườn xuân cùng cún", "Buổi sáng", "Cún nhỏ ngủ bên bàn học, nắng xuyên vườn và cánh hoa trôi chậm.", "pets", "pet-garden", "assets/focus-room/dog-spring-veranda.webp", ["birds", "wind", "pet-breath"]),
-    scene("cat-riverside-blue-hour", "Nhà bên sông cùng mèo", "Chạng vạng", "Mèo mướp cuộn mình bên cửa, mưa bụi và ánh sông xanh dịu.", "pets", "pet-river", "assets/focus-room/cat-riverside-blue-hour.webp", ["rain", "stream", "purr"]),
-    scene("puppy-lakeside-cabin", "Cabin hồ cùng cún nhỏ", "Bình minh", "Cún con ngủ trong ổ len, hồ sương và rừng thông đón nắng đầu ngày.", "pets", "pet-lake", "assets/focus-room/puppy-lakeside-cabin.webp", ["wind", "stream", "pet-breath"]),
-    scene("pet-rain-conservatory", "Nhà kính mưa cho mèo", "Ngày mưa", "Nhà kính đọc sách có thảm sisal, trụ cào và lối sàn rộng cho mèo 3D dạo bước.", "pets", "rain", "assets/focus-room/pet-rain-conservatory.webp", ["rain", "purr", "pages"], { pet: "cat", grade: "brightness(.91) saturate(.92) contrast(1.06)", accent: "#9de5d0", collection: "Pet Sanctuary 3D" }),
-    scene("pet-garden-pavilion", "Hiên vườn dành cho cún", "Sáng dịu", "Hiên gỗ mở ra vườn rêu, sàn đá rộng và ổ nằm yên cho cún 3D nghỉ hoặc đi dạo.", "pets", "forest", "assets/focus-room/pet-garden-pavilion.webp", ["birds", "stream", "pet-breath"], { pet: "dog", grade: "brightness(.96) saturate(.88) contrast(1.04)", accent: "#bce5a7", collection: "Pet Sanctuary 3D" }),
-    scene("pet-moonlit-library", "Thư viện trăng cùng mèo", "Đêm", "Thư viện mưa đêm có lò sưởi, thảm mềm và hành lang sàn thoáng cho mèo 3D.", "pets", "moonlight", "assets/focus-room/pet-moonlit-library.webp", ["rain", "fire", "purr"], { pet: "cat", grade: "brightness(.81) saturate(.91) contrast(1.12)", accent: "#9fc8ff", collection: "Pet Sanctuary 3D" }),
-    scene("pet-coastal-studio", "Studio biển cùng cún", "Hoàng hôn", "Studio ven biển với thảm sợi tự nhiên, ổ nằm và khoảng sàn rộng cho cún 3D chuyển động.", "pets", "ocean", "assets/focus-room/pet-coastal-studio.webp", ["ocean", "wind", "pet-breath"], { pet: "dog", grade: "brightness(1.01) saturate(.95) contrast(1.03)", accent: "#ffc39e", collection: "Pet Sanctuary 3D" }),
+    scene("pet-rain-conservatory", "Nhà kính đọc sách", "Ngày mưa", "Nhà kính yên tĩnh với cây xanh, thảm sợi tự nhiên và lối sàn rộng.", "nature", "rain", "assets/focus-room/pet-rain-conservatory.webp", ["rain", "pages"], { grade: "brightness(.91) saturate(.92) contrast(1.06)", accent: "#9de5d0", collection: "Calm Sanctuary" }),
+    scene("pet-garden-pavilion", "Hiên vườn rêu", "Sáng dịu", "Hiên gỗ mở ra vườn rêu và khoảng sàn đá đón ánh sáng ban mai.", "nature", "forest", "assets/focus-room/pet-garden-pavilion.webp", ["birds", "stream"], { grade: "brightness(.96) saturate(.88) contrast(1.04)", accent: "#bce5a7", collection: "Calm Sanctuary" }),
+    scene("pet-moonlit-library", "Thư viện trăng", "Đêm", "Thư viện mưa đêm với lò sưởi, thảm mềm và hành lang đọc sách tĩnh lặng.", "night", "moonlight", "assets/focus-room/pet-moonlit-library.webp", ["rain", "fire"], { grade: "brightness(.81) saturate(.91) contrast(1.12)", accent: "#9fc8ff", collection: "Calm Sanctuary" }),
+    scene("pet-coastal-studio", "Studio biển hoàng hôn", "Hoàng hôn", "Studio ven biển với thảm sợi tự nhiên và ánh chiều dịu trên sàn gỗ.", "nature", "ocean", "assets/focus-room/pet-coastal-studio.webp", ["ocean", "wind"], { grade: "brightness(1.01) saturate(.95) contrast(1.03)", accent: "#ffc39e", collection: "Calm Sanctuary" }),
     ...buildExpandedScenes()
   ]);
 
@@ -234,13 +151,13 @@
       const channel = CHANNELS.find((item) => item.id === soundId);
       mix[soundId] = channel ? channel.default : 0.1;
     });
-    const performance = ["rain", "cafe-rain", "neon-rain", "snow", "greenhouse", "autumn-leaves", "pet-rain", "pet-fire", "pet-river"].includes(effect) ? "Cao" : ["ocean", "embers", "forest", "fireflies", "stars", "sunrise", "lake-mist", "light-shafts", "cabin-morning", "terrace-breeze", "moonlight", "pet-sunroom", "pet-garden", "pet-lake"].includes(effect) ? "Cân bằng" : "Tiết kiệm";
+    const performance = ["rain", "cafe-rain", "neon-rain", "snow", "greenhouse", "autumn-leaves"].includes(effect) ? "Cao" : ["ocean", "embers", "forest", "fireflies", "stars", "sunrise", "lake-mist", "light-shafts", "cabin-morning", "terrace-breeze", "moonlight"].includes(effect) ? "Cân bằng" : "Tiết kiệm";
     return Object.freeze({
       id, title, time, description, category, effect, image,
       thumb: image.replace("/focus-room/", "/focus-room/thumbs/"), mix, performance,
       soundStatus: soundIds.length ? `${soundIds.length} kênh gợi ý` : "Cảnh yên tĩnh",
       grade: cleanVisualToken(visual.grade, 140), position: cleanVisualToken(visual.position, 40),
-      accent: cleanVisualToken(visual.accent, 24), pet: ["cat", "dog"].includes(visual.pet) ? visual.pet : "",
+      accent: cleanVisualToken(visual.accent, 24),
       collection: cleanVisualToken(visual.collection, 40)
     });
   }
@@ -251,21 +168,17 @@
 
   function buildExpandedScenes() {
     return SCENE_EXPANSION_BASES.flatMap((base, baseIndex) => SCENE_EXPANSION_MOODS.map((mood, moodIndex) => {
-      const pet = mood.pet ? (baseIndex % 2 ? "cat" : "dog") : "";
-      const sounds = pet
-        ? [...new Set([...base.sounds, pet === "cat" ? "purr" : "pet-breath"])]
-        : base.sounds;
       const position = `${44 + ((baseIndex * 7 + moodIndex * 3) % 13)}% center`;
       return scene(
         `atlas-${base.id}-${mood.id}`,
         `${base.title} ${mood.suffix}`,
         mood.time,
         `${mood.detail} Phối âm được gợi ý theo không gian và có thể chỉnh riêng.`,
-        pet ? "pets" : base.category,
+        base.category,
         mood.effect || base.effect,
         base.image,
-        sounds,
-        { grade: mood.grade, position, accent: mood.accent, pet, collection: "Atlas 200" }
+        base.sounds,
+        { grade: mood.grade, position, accent: mood.accent, collection: "Atlas 200" }
       );
     }));
   }
@@ -361,7 +274,6 @@
       primaryTaskId: "",
       note: "",
       history: [],
-      pet: { interactions: 0, lastPlayedAt: 0 },
       planning: {
         dailyGoalMinutes: 120,
         intention: "",
@@ -372,8 +284,7 @@
       settings: {
         quality: "balanced", motion: !reduceMotion, reducedMotion: reduceMotion,
         dataSaver: false, autoStartBreak: false, autoStartFocus: false,
-        sceneOnBreak: false, restScene: "ocean-sunset", notifications: false,
-        companion: "scene", petMode: "auto"
+        sceneOnBreak: false, restScene: "ocean-sunset", notifications: false
       },
       updatedAt: Date.now()
     };
@@ -461,7 +372,6 @@
     const settings = source.settings && typeof source.settings === "object" ? source.settings : {};
     const layout = source.layout && typeof source.layout === "object" ? source.layout : {};
     const planning = source.planning && typeof source.planning === "object" ? source.planning : {};
-    const pet = source.pet && typeof source.pet === "object" ? source.pet : {};
     const custom = Array.isArray(scenes.custom) ? scenes.custom.slice(0, 24).map((item) => ({
       id: cleanText(item?.id, 80),
       title: cleanText(item?.title, 80) || "Không gian cá nhân",
@@ -560,10 +470,6 @@
       primaryTaskId: taskIds.has(source.primaryTaskId) ? source.primaryTaskId : "",
       note: String(source.note || "").slice(0, 10000),
       history,
-      pet: {
-        interactions: Math.round(clamp(pet.interactions, 0, Number.MAX_SAFE_INTEGER, 0)),
-        lastPlayedAt: clamp(pet.lastPlayedAt, 0, Number.MAX_SAFE_INTEGER, 0)
-      },
       planning: {
         dailyGoalMinutes: Math.round(clamp(planning.dailyGoalMinutes, 15, 720, base.planning.dailyGoalMinutes)),
         intention: cleanText(planning.intention, 240),
@@ -586,8 +492,6 @@
         sceneOnBreak: settings.sceneOnBreak === true,
         restScene: SCENES.some((item) => item.id === settings.restScene) ? settings.restScene : base.settings.restScene,
         notifications: settings.notifications === true && global.Notification?.permission === "granted",
-        companion: ["scene", "none", ...PET_PROFILE_IDS].includes(settings.companion) ? settings.companion : base.settings.companion,
-        petMode: ["auto", "rest", "walk"].includes(settings.petMode) ? settings.petMode : base.settings.petMode
       },
       updatedAt: clamp(source.updatedAt, 0, Number.MAX_SAFE_INTEGER, Date.now())
     };
@@ -639,13 +543,6 @@
 
   function currentScene(instance) {
     return allScenes(instance).find((item) => item.id === instance.state.scenes.selected) || SCENES[0];
-  }
-
-  function currentPetProfileId(instance, selected = currentScene(instance)) {
-    const preference = instance.state.settings.companion;
-    if (preference === "none") return "";
-    if (PET_MODEL_PROFILES[preference]) return preference;
-    return PET_MODEL_PROFILES[selected?.pet] ? selected.pet : "";
   }
 
   function imageUrl(instance, targetScene, thumbnail = false) {
@@ -768,12 +665,9 @@
     const scenes = filteredScenes(instance);
     const limit = Math.max(24, Math.min(scenes.length || 24, Number(instance.ui.sceneLimit) || 24));
     const visibleScenes = scenes.slice(0, limit);
-    const selected = currentScene(instance);
-    const petProfileId = currentPetProfileId(instance, selected);
-    const petProfile = PET_MODEL_PROFILES[petProfileId];
     const categories = [
       ["all", "Tất cả"], ["recent", "Gần đây"], ["night", "Đêm"], ["nature", "Thiên nhiên"], ["cafe", "Cà phê"],
-      ["cozy", "Ấm áp"], ["pets", "Thú cưng"], ["future", "Tương lai"], ["quiet", "Tối giản"], ["illustrated", "Minh họa"], ["custom", "Cá nhân"]
+      ["cozy", "Ấm áp"], ["future", "Tương lai"], ["quiet", "Tối giản"], ["illustrated", "Minh họa"], ["custom", "Cá nhân"]
     ];
     return `<div class="hfr-panel-heading"><div><span>SCENE LIBRARY · ${scenes.length}/${SCENES.length}</span><h2>Không gian học tập</h2></div><button type="button" data-hfr-action="close-panel" aria-label="Đóng bảng">×</button></div>
       <div class="hfr-scene-tools">
@@ -782,23 +676,6 @@
         <button type="button" data-hfr-action="scene-view" aria-label="Đổi kiểu hiển thị">${instance.ui.sceneView === "grid" ? "☷" : "▦"}</button>
       </div>
       <div class="hfr-chip-row" role="group" aria-label="Lọc chủ đề">${categories.map(([id, label]) => `<button type="button" data-hfr-action="scene-category" data-value="${id}" aria-pressed="${instance.ui.category === id}">${label}</button>`).join("")}</div>
-      <section class="hfr-companion-controls" aria-label="Bạn đồng hành 3D">
-        <div><span>BẠN ĐỒNG HÀNH 3D</span><strong>${petProfile ? `${petProfile.icon} ${petProfile.label}` : "Theo từng không gian"}</strong><small>Cân bằng/Cao · chạm trực tiếp vào bạn nhỏ để chơi · tự dừng khi tab ẩn</small></div>
-        <div class="hfr-companion-general" role="group" aria-label="Chế độ bạn đồng hành">
-          ${[["scene", "Theo cảnh"], ["none", "Tắt"]].map(([id, label]) => `<button type="button" data-hfr-action="pet-companion" data-value="${id}" aria-pressed="${instance.state.settings.companion === id}">${label}</button>`).join("")}
-        </div>
-        <div class="hfr-pet-picker" role="group" aria-label="Chọn màu lông chó hoặc mèo">
-          ${PET_PROFILE_IDS.map((profileId) => {
-            const profile = PET_MODEL_PROFILES[profileId];
-            return `<button type="button" data-hfr-action="pet-companion" data-value="${profileId}" aria-pressed="${instance.state.settings.companion === profileId}"><i>${profile.icon}</i><span>${escapeHtml(profile.label)}</span></button>`;
-          }).join("")}
-        </div>
-        <div class="hfr-companion-row" role="group" aria-label="Chọn hành vi thú cưng">
-          ${[["auto", "Tự nhiên"], ["rest", "Nghỉ yên"], ["walk", "Đi dạo"]].map(([id, label]) => `<button type="button" data-hfr-action="pet-mode" data-value="${id}" aria-pressed="${instance.state.settings.petMode === id}" ${petProfile ? "" : "disabled"}>${label}</button>`).join("")}
-        </div>
-        <div class="hfr-pet-affection"><span>♡ Đã chơi cùng</span><strong data-hfr-pet-count>${instance.state.pet.interactions} lần</strong></div>
-        <p>Tám màu lông dùng chung hai rig PBR chất lượng cao, không phải tám giống riêng. Mèo Bicolor: kenchoo · CC BY 4.0. Shiba: quander · CC BY 4.0.</p>
-      </section>
       <div class="hfr-scene-grid hfr-scene-grid--${instance.ui.sceneView}">
         ${visibleScenes.length ? visibleScenes.map((item) => sceneCard(instance, item)).join("") : `<div class="hfr-empty"><span>⌕</span><strong>Không tìm thấy không gian</strong><p>Thử từ khóa hoặc bộ lọc khác.</p></div>`}
       </div>
@@ -989,8 +866,6 @@
         ${settingToggle("motion", "Chuyển động môi trường", "Parallax và hiệu ứng cảnh.", settings.motion)}
         ${settingToggle("reducedMotion", "Giảm chuyển động", "Ưu tiên giao diện tĩnh, dễ tập trung.", settings.reducedMotion)}
         ${settingToggle("dataSaver", "Tiết kiệm dữ liệu", "Dùng thumbnail thay ảnh lớn.", settings.dataSaver)}
-        <label><span>Bạn đồng hành 3D<small>Chọn màu lông; model tải theo nhu cầu ở mức Cân bằng hoặc Cao.</small></span><select name="companion"><option value="scene" ${settings.companion === "scene" ? "selected" : ""}>Theo từng cảnh</option>${PET_PROFILE_IDS.map((profileId) => `<option value="${profileId}" ${settings.companion === profileId ? "selected" : ""}>${escapeHtml(PET_MODEL_PROFILES[profileId].label)}</option>`).join("")}<option value="none" ${settings.companion === "none" ? "selected" : ""}>Tắt</option></select></label>
-        <label><span>Hành vi thú cưng<small>Tự nhiên sẽ xen kẽ nghỉ yên và đi dạo.</small></span><select name="petMode"><option value="auto" ${settings.petMode === "auto" ? "selected" : ""}>Tự nhiên</option><option value="rest" ${settings.petMode === "rest" ? "selected" : ""}>Nghỉ yên</option><option value="walk" ${settings.petMode === "walk" ? "selected" : ""}>Đi dạo</option></select></label>
         ${settingToggle("autoStartBreak", "Tự bắt đầu giờ nghỉ", "Bắt đầu sau khi hoàn thành phiên.", settings.autoStartBreak)}
         ${settingToggle("autoStartFocus", "Tự bắt đầu vòng tiếp", "Bắt đầu sau khi hết giờ nghỉ.", settings.autoStartFocus)}
         ${settingToggle("sceneOnBreak", "Đổi cảnh khi nghỉ", "Khôi phục cảnh học khi quay lại.", settings.sceneOnBreak)}
@@ -1020,29 +895,23 @@
   }
 
   function render(instance) {
-    teardownPetDepth(instance);
     const selected = currentScene(instance);
     const timer = instance.state.timer;
     const primaryTask = instance.state.tasks.find((task) => task.id === instance.state.primaryTaskId);
     const quality = effectiveQuality(instance);
     const activeMotion = motionEnabled(instance);
     const summary = focusSummary(instance);
-    const petProfileId = currentPetProfileId(instance, selected);
-    const petProfile = PET_MODEL_PROFILES[petProfileId];
-    const petKind = petProfile?.species || "";
-    const accent = selected.accent || (selected.category === "nature" ? "#72f3bd" : selected.category === "cafe" || selected.category === "cozy" ? "#ffb46b" : selected.category === "pets" ? "#ffb8c9" : selected.category === "future" ? "#7ee7ff" : "#c69cff");
+    const accent = selected.accent || (selected.category === "nature" ? "#72f3bd" : selected.category === "cafe" || selected.category === "cozy" ? "#ffb46b" : selected.category === "future" ? "#7ee7ff" : "#c69cff");
     const tabs = [
       ["plan", "◎", "Kế hoạch"], ["scenes", "▧", "Không gian"], ["sound", "♫", "Âm thanh"], ["timer", "◷", "Hẹn giờ"],
       ["tasks", "✓", "Công việc"], ["notes", "✎", "Ghi chú"], ["history", "⌁", "Lịch sử"], ["shared", "◎", "Phòng chung"], ["settings", "⚙", "Cài đặt"]
     ];
-    instance.root.innerHTML = `<section class="hfr-app${instance.ui.zen ? " is-zen" : ""}${instance.ui.panel ? " has-panel" : ""}" data-hfr-root data-quality="${quality}" data-motion="${activeMotion ? "on" : "off"}" data-layout-mode="${instance.state.layout.locked ? "locked" : "editing"}" data-pet-companion="${petKind || "off"}" data-pet-profile="${escapeHtml(petProfileId || "off")}">
+    instance.root.innerHTML = `<section class="hfr-app${instance.ui.zen ? " is-zen" : ""}${instance.ui.panel ? " has-panel" : ""}" data-hfr-root data-quality="${quality}" data-motion="${activeMotion ? "on" : "off"}" data-layout-mode="${instance.state.layout.locked ? "locked" : "editing"}">
       <section class="hfr-stage" data-hfr-effect="${escapeHtml(selected.effect)}" style="--hfr-accent:${escapeHtml(accent)};--hfr-scene-grade:${escapeHtml(selected.grade || "saturate(1.04) contrast(1.03)")};--hfr-scene-position:${escapeHtml(selected.position || "center")};--hfr-scene-image:url(&quot;${escapeHtml(imageUrl(instance, selected))}&quot;)">
         <div class="hfr-backdrop" aria-hidden="true" style="--hfr-placeholder:url(&quot;${escapeHtml(imageUrl(instance, selected, true))}&quot;)"><img src="${escapeHtml(imageUrl(instance, selected))}" alt="" decoding="async" fetchpriority="high" data-hfr-current-image data-hfr-fallback><span class="hfr-backdrop-shade"></span></div>
-        <canvas class="hfr-pet-depth" data-hfr-pet-depth aria-hidden="true" hidden></canvas>
-        ${petProfile ? `<button class="hfr-pet-play" type="button" data-hfr-action="pet-play" data-hfr-pet-play aria-label="Chơi cùng ${escapeHtml(petProfile.label)}" title="Chạm để chơi cùng" hidden><span class="hfr-pet-play__hint"><i>${petProfile.icon}</i><strong>Chơi cùng</strong></span><span class="hfr-pet-play__hearts" aria-hidden="true"><i>♥</i><i>✦</i><i>♥</i><i>✧</i></span></button>` : ""}
         <div class="hfr-effects" aria-hidden="true"><i class="hfr-fx hfr-fx--far"></i><i class="hfr-fx hfr-fx--mid"></i><i class="hfr-fx hfr-fx--near"></i><i class="hfr-fx hfr-fx--glow"></i></div>
         <header class="hfr-topbar">
-          <div class="hfr-scene-title" data-hfr-layout-item="title"><button class="hfr-drag-handle" type="button" data-hfr-drag-handle="title" aria-label="Kéo tên cảnh để sắp xếp" title="Kéo để di chuyển · phím mũi tên để tinh chỉnh">⠿</button><span>IMMERSIVE FOCUS SANCTUARY</span><strong>${escapeHtml(selected.title)}</strong><small>${escapeHtml(selected.description)}</small><div class="hfr-current-meta"><em>${escapeHtml(selected.soundStatus || "Ảnh cá nhân")}</em><em>${escapeHtml(selected.collection || selected.performance || "Theo thiết bị")}</em>${petProfile ? `<em>${escapeHtml(petProfile.label)} 3D</em>` : ""}</div></div>
+          <div class="hfr-scene-title" data-hfr-layout-item="title"><button class="hfr-drag-handle" type="button" data-hfr-drag-handle="title" aria-label="Kéo tên cảnh để sắp xếp" title="Kéo để di chuyển · phím mũi tên để tinh chỉnh">⠿</button><span>IMMERSIVE FOCUS SANCTUARY</span><strong>${escapeHtml(selected.title)}</strong><small>${escapeHtml(selected.description)}</small><div class="hfr-current-meta"><em>${escapeHtml(selected.soundStatus || "Ảnh cá nhân")}</em><em>${escapeHtml(selected.collection || selected.performance || "Theo thiết bị")}</em></div></div>
           <div class="hfr-top-actions">
             <span class="hfr-local-status">● Lưu cục bộ · ${instance.isGuest ? "Khách" : "Tài khoản hiện tại"}</span>
             <button class="hfr-layout-toggle" type="button" data-hfr-action="layout-edit" aria-pressed="${!instance.state.layout.locked}" title="${instance.state.layout.locked ? "Mở chế độ kéo thả bố cục" : "Khóa vị trí các mục"}">${instance.state.layout.locked ? "⌖ Sắp xếp" : "🔒 Khóa"}</button>
@@ -1081,7 +950,6 @@
     syncWakeLockDom(instance);
     setupLayout(instance);
     setupParallax(instance);
-    setupPetDepth(instance, selected);
     preloadNextScene(instance);
   }
 
@@ -1753,7 +1621,7 @@
 
   function createNoiseBuffer(context, type) {
     const sampleRate = Math.max(1, Number(context.sampleRate) || 44100);
-    const duration = ({ thunder: 17.3, birds: 15.7, pages: 14.9, keyboard: 13.1, ocean: 12.7, purr: 16.1, "pet-breath": 18.7 })[type] || 11.3;
+    const duration = ({ thunder: 17.3, birds: 15.7, pages: 14.9, keyboard: 13.1, ocean: 12.7 })[type] || 11.3;
     const length = Math.max(1, Math.floor(sampleRate * duration));
     const buffer = context.createBuffer(1, length, sampleRate);
     const samples = buffer.getChannelData(0);
@@ -1829,14 +1697,6 @@
         transient *= decay(0.035);
         const flow = 0.18 + 0.045 * Math.sin(time * 0.91) + Math.abs(slowDrift) * 0.2;
         value = white * flow + pink * 0.14 + transient * white;
-      } else if (type === "purr") {
-        const breath = 0.62 + 0.22 * Math.sin(time * 1.37 + 0.25 * Math.sin(time * 0.19));
-        const pulse = Math.sin(time * 25.4 * Math.PI * 2) * 0.085 + Math.sin(time * 50.8 * Math.PI * 2) * 0.025;
-        value = pulse * breath + brown * 0.12 * breath + pink * 0.012;
-      } else if (type === "pet-breath") {
-        const inhale = Math.pow(Math.max(0, Math.sin(time * 0.72 * Math.PI)), 2.2);
-        const chest = 0.13 + inhale * 0.24;
-        value = brown * chest + pink * inhale * 0.035 + white * inhale * 0.008;
       } else if (type === "brown") value = brown * 3.2;
       else if (type === "pink") value = pink * 0.72;
       else value = white * 0.26;
@@ -2432,708 +2292,6 @@
     };
   }
 
-  function teardownPetDepth(instance) {
-    instance.petDepthGeneration = (instance.petDepthGeneration || 0) + 1;
-    const runtime = instance.petDepth;
-    instance.petDepth = null;
-    if (!runtime) return;
-    global.cancelAnimationFrame?.(runtime.frame);
-    runtime.observer?.disconnect?.();
-    runtime.stage?.removeEventListener?.("pointermove", runtime.pointerMove);
-    runtime.stage?.removeEventListener?.("pointerleave", runtime.pointerLeave);
-    runtime.canvas?.removeEventListener?.("webglcontextlost", runtime.contextLost);
-    if (runtime.hitbox) {
-      runtime.hitbox.hidden = true;
-      runtime.hitbox.classList?.remove?.("is-playing");
-      delete runtime.hitbox.dataset.ready;
-    }
-    try { runtime.mixer?.stopAllAction?.(); } catch {}
-    runtime.ownedTextures?.forEach((texture) => { try { texture?.dispose?.(); } catch {} });
-    runtime.ownedMaterials?.forEach((material) => { try { material?.dispose?.(); } catch {} });
-    runtime.ownedGeometries?.forEach((geometry) => { try { geometry?.dispose?.(); } catch {} });
-    try { runtime.geometry?.dispose?.(); } catch {}
-    try { runtime.material?.dispose?.(); } catch {}
-    try { runtime.texture?.dispose?.(); } catch {}
-    try { runtime.renderer?.dispose?.(); } catch {}
-    if (runtime.canvas) runtime.canvas.hidden = true;
-    const app = instance.root.querySelector?.("[data-hfr-root]");
-    if (app) delete app.dataset.petDepth;
-  }
-
-  function petBehaviorMode(instance, elapsedSeconds, runtime, now) {
-    if (runtime?.interactionEndsAt > now) return "play";
-    const requested = instance.state.settings.petMode;
-    if (requested === "rest" || requested === "walk") return requested;
-    const cycle = elapsedSeconds % 44;
-    if (cycle < 10) return "walk";
-    if (cycle < 36) return "rest";
-    return "idle";
-  }
-
-  function dampValue(current, target, speed, delta) {
-    return current + (target - current) * (1 - Math.exp(-Math.max(0, speed) * Math.max(0, delta)));
-  }
-
-  function dampAngle(current, target, speed, delta) {
-    const turn = Math.atan2(Math.sin(target - current), Math.cos(target - current));
-    return current + turn * (1 - Math.exp(-Math.max(0, speed) * Math.max(0, delta)));
-  }
-
-  function findPetClip(animations, names) {
-    const available = Array.isArray(animations) ? animations : [];
-    const wanted = (names || []).map((name) => String(name).toLowerCase());
-    return available.find((clip) => wanted.includes(String(clip.name).toLowerCase()))
-      || available.find((clip) => wanted.some((name) => String(clip.name).toLowerCase().includes(name)))
-      || null;
-  }
-
-  function filteredPetTexture(texture, filter, THREE) {
-    if (!texture?.image || !filter || !THREE?.CanvasTexture) return null;
-    const image = texture.image;
-    const width = Number(image.naturalWidth || image.videoWidth || image.width) || 0;
-    const height = Number(image.naturalHeight || image.videoHeight || image.height) || 0;
-    if (!width || !height) return null;
-    const canvas = global.document?.createElement?.("canvas");
-    const context = canvas?.getContext?.("2d", { alpha: true });
-    if (!context) return null;
-    canvas.width = width;
-    canvas.height = height;
-    try {
-      context.filter = filter;
-      context.drawImage(image, 0, 0, width, height);
-    } catch {
-      return null;
-    }
-    const variant = new THREE.CanvasTexture(canvas);
-    ["wrapS", "wrapT", "magFilter", "minFilter", "mapping", "channel", "flipY", "premultiplyAlpha", "unpackAlignment", "colorSpace"].forEach((key) => {
-      if (key in texture) variant[key] = texture[key];
-    });
-    ["offset", "repeat", "center"].forEach((key) => {
-      if (texture[key] && variant[key]?.copy) variant[key].copy(texture[key]);
-    });
-    variant.rotation = texture.rotation || 0;
-    variant.matrixAutoUpdate = texture.matrixAutoUpdate;
-    if (texture.matrix && variant.matrix?.copy) variant.matrix.copy(texture.matrix);
-    variant.name = `${texture.name || "pet-coat"}-hh-variant`;
-    variant.needsUpdate = true;
-    return variant;
-  }
-
-  function stylePetMaterial(material, profile, THREE, ownedMaterials, ownedTextures, variants) {
-    if (!material) return material;
-    if (variants.has(material)) return variants.get(material);
-    ownedMaterials.add(material);
-    ["map", "normalMap", "roughnessMap", "metalnessMap", "emissiveMap"].forEach((key) => {
-      if (material[key]) ownedTextures.add(material[key]);
-    });
-    if (!profile.coatFilter) {
-      variants.set(material, material);
-      return material;
-    }
-    const styled = material.clone?.() || material;
-    ownedMaterials.add(styled);
-    const coat = filteredPetTexture(material.map, profile.coatFilter, THREE);
-    if (coat) {
-      styled.map = coat;
-      ownedTextures.add(coat);
-    } else if (profile.coatTint && styled.color?.multiply) {
-      styled.color.multiply(new THREE.Color(profile.coatTint));
-    }
-    styled.needsUpdate = true;
-    variants.set(material, styled);
-    return styled;
-  }
-
-  function enablePetFurSway(material, kind, breeze) {
-    if (!material || (!material.isMeshStandardMaterial && !material.isMeshPhysicalMaterial)) return null;
-    material.userData = material.userData || {};
-    if (material.userData.hhFurUniforms) return material.userData.hhFurUniforms;
-    const uniforms = {
-      uHHFurTime: { value: 0 },
-      uHHFurStrength: { value: (kind === "cat" ? .0019 : .00155) * clamp(breeze, .2, 1.2, .5) }
-    };
-    const previousCompile = material.onBeforeCompile;
-    const previousCacheKey = material.customProgramCacheKey?.bind(material);
-    material.onBeforeCompile = function applyHHFurShader(shader, renderer) {
-      previousCompile?.call(this, shader, renderer);
-      shader.uniforms.uHHFurTime = uniforms.uHHFurTime;
-      shader.uniforms.uHHFurStrength = uniforms.uHHFurStrength;
-      shader.vertexShader = shader.vertexShader.replace(
-        "#include <begin_vertex>",
-        `#include <begin_vertex>
-        float hhFurWave = sin(position.y * 21.0 + position.x * 9.0 + uHHFurTime * 1.55)
-          + sin(position.y * 37.0 - position.z * 13.0 - uHHFurTime * 0.82) * 0.42;
-        transformed += objectNormal * hhFurWave * uHHFurStrength;`
-      ).replace(
-        "#include <common>",
-        `#include <common>
-        uniform float uHHFurTime;
-        uniform float uHHFurStrength;`
-      );
-    };
-    material.customProgramCacheKey = () => `${previousCacheKey?.() || "pet"}|hh-soft-fur-v1-${kind}`;
-    material.userData.hhFurUniforms = uniforms;
-    material.needsUpdate = true;
-    return uniforms;
-  }
-
-  function collectPetRig(model, kind) {
-    const bone = (...names) => names.map((name) => model.getObjectByName(name)).find(Boolean) || null;
-    if (kind === "dog") {
-      return {
-        upper: [
-          [bone("L_shoulder_jnt.105_0101"), 0], [bone("R_hip_jnt.14_012"), 0],
-          [bone("R_shoulder_jnt.115_0111"), Math.PI], [bone("L_hip_jnt.24_022"), Math.PI]
-        ],
-        lower: [
-          [bone("L_elbow_jnt.106_0102"), 0], [bone("R_knee_jnt.15_013"), 0],
-          [bone("R_elbow_jnt.116_0112"), Math.PI], [bone("L_knee_jnt.25_023"), Math.PI]
-        ],
-        paws: [
-          [bone("L_wrist_jnt.107_0103"), 0], [bone("R_ankle_jnt.16_014"), 0],
-          [bone("R_wrist_jnt.117_0113"), Math.PI], [bone("L_ankle_jnt.26_024"), Math.PI]
-        ],
-        spine: [bone("spine_1_jnt.35_033"), bone("spine_2_jnt.36_034"), bone("chest_jnt.37_035")].filter(Boolean),
-        neck: [bone("neck_base_jnt.38_036"), bone("neck_mid_jnt.39_037")].filter(Boolean),
-        head: bone("head_jnt.40_038"),
-        tail: [1, 2, 3, 4, 5, 6, 7].map((index) => bone(`${index === 1 ? "tail_1_jnt.7_05" : index === 2 ? "tail_2_jnt.8_06" : index === 3 ? "tail_3_jnt.9_07" : index === 4 ? "tail_4_jnt.10_08" : index === 5 ? "tail_5_jnt.11_09" : index === 6 ? "tail_6_jnt.12_010" : "tail_7_jnt.13_011"}`)).filter(Boolean)
-      };
-    }
-    return {
-      upper: [
-        [bone("Wolf_l_FrontLeg_HipSHJnt_4"), 0], [bone("Wolf_r_HindLeg_HipSHJnt_33"), Math.PI * .5],
-        [bone("Wolf_r_FrontLeg_HipSHJnt_10"), Math.PI], [bone("Wolf_l_HindLeg_HipSHJnt_27"), Math.PI * 1.5]
-      ],
-      lower: [
-        [bone("Wolf_l_FrontLeg_KneeSHJnt_3"), 0], [bone("Wolf_r_HindLeg_Knee1SHJnt_32"), Math.PI * .5],
-        [bone("Wolf_r_FrontLeg_KneeSHJnt_9"), Math.PI], [bone("Wolf_l_HindLeg_Knee1SHJnt_26"), Math.PI * 1.5]
-      ],
-      paws: [
-        [bone("Wolf_l_FrontLeg_AnkleSHJnt_2"), 0], [bone("Wolf_r_HindLeg_AnkleSHJnt_30"), Math.PI * .5],
-        [bone("Wolf_r_FrontLeg_AnkleSHJnt_8"), Math.PI], [bone("Wolf_l_HindLeg_AnkleSHJnt_24"), Math.PI * 1.5]
-      ],
-      spine: ["Wolf_Spine_01SHJnt_21", "Wolf_Spine_02SHJnt_20", "Wolf_Spine_03SHJnt_19", "Wolf_Spine_04SHJnt_18"]
-        .map((name) => bone(name)).filter(Boolean),
-      neck: [bone("Wolf_Neck_01SHJnt_16"), bone("Wolf_Neck_02SHJnt_15")].filter(Boolean),
-      head: bone("Wolf_Neck_TopSHJnt_14"),
-      tail: ["Wolf_Tail_01_02SHJnt_37", "Wolf_Tail_01_03SHJnt_36", "Wolf_Tail_01_04SHJnt_35", "Wolf_Tail_01_05SHJnt_34"]
-        .map((name) => bone(name)).filter(Boolean)
-    };
-  }
-
-  function petRigJoints(rig) {
-    return [...new Set([
-      ...(rig?.upper || []).map(([joint]) => joint),
-      ...(rig?.lower || []).map(([joint]) => joint),
-      ...(rig?.paws || []).map(([joint]) => joint),
-      ...(rig?.spine || []), ...(rig?.neck || []), rig?.head, ...(rig?.tail || [])
-    ].filter(Boolean))];
-  }
-
-  function restorePetRigBase(runtime) {
-    runtime.baseRigQuaternions?.forEach((quaternion, joint) => joint.quaternion.copy(quaternion));
-  }
-
-  function capturePetRigBase(runtime) {
-    petRigJoints(runtime.rig).forEach((joint) => {
-      const saved = runtime.baseRigQuaternions.get(joint);
-      if (saved) saved.copy(joint.quaternion);
-      else runtime.baseRigQuaternions.set(joint, joint.quaternion.clone());
-    });
-  }
-
-  function transitionPetAction(runtime, mode, THREE) {
-    const targetKey = runtime.kind === "dog" && mode === "play"
-      ? runtime.interactionActionKey
-      : runtime.kind === "dog" && mode === "rest" ? "rest" : "idle";
-    const next = runtime.actions[targetKey] || runtime.actions.idle;
-    if (!next) return;
-    const timeScale = mode === "play" ? .92 : mode === "walk" ? .82 : mode === "rest" ? (runtime.kind === "dog" ? .56 : .42) : .68;
-    next.timeScale = timeScale;
-    if (runtime.actionKey === targetKey) return;
-    const fadeDuration = mode === "play" ? .34 : runtime.actionKey?.startsWith?.("play") ? .82 : runtime.actionKey === "rest" ? 1.2 : .68;
-    runtime.currentAction?.fadeOut?.(fadeDuration);
-    next.enabled = true;
-    next.clampWhenFinished = runtime.kind === "dog" && (targetKey === "rest" || targetKey?.startsWith?.("play"));
-    next.setLoop?.(next.clampWhenFinished ? THREE.LoopOnce : THREE.LoopRepeat, next.clampWhenFinished ? 1 : Infinity);
-    next.reset?.().fadeIn?.(fadeDuration).play?.();
-    runtime.currentAction = next;
-    runtime.actionKey = targetKey;
-  }
-
-  function applyPetGait(runtime, elapsed, strength) {
-    const gait = elapsed * (runtime.kind === "cat" ? 4.9 : 4.45);
-    const rig = runtime.rig;
-    const upperSwing = runtime.kind === "cat" ? .31 : .265;
-    const lowerSwing = runtime.kind === "cat" ? .28 : .225;
-    rig.upper.forEach(([joint, phase]) => {
-      if (joint) joint.rotation.x += Math.sin(gait + phase) * upperSwing * strength;
-    });
-    rig.lower.forEach(([joint, phase]) => {
-      if (joint) joint.rotation.x += Math.max(0, Math.sin(gait + phase + .5)) * lowerSwing * strength;
-    });
-    rig.paws.forEach(([joint, phase]) => {
-      if (joint) joint.rotation.x -= Math.sin(gait + phase + .28) * .12 * strength;
-    });
-    rig.spine.forEach((joint, index) => {
-      const weightShift = Math.sin(gait * .5 + index * .34);
-      joint.rotation.z += weightShift * (runtime.kind === "cat" ? .018 : .014) * strength;
-      joint.rotation.y += Math.sin(gait + index * .3) * (runtime.kind === "cat" ? .011 : .008) * strength;
-    });
-    rig.neck.forEach((joint, index) => {
-      joint.rotation.z -= Math.sin(gait * .5 + index * .22) * .012 * strength;
-    });
-    if (rig.head) {
-      rig.head.rotation.z -= Math.sin(gait * .5) * .022 * strength;
-      rig.head.rotation.x += Math.sin(gait * 2) * .007 * strength;
-      rig.head.rotation.y += Math.sin(gait * .25) * .01 * strength;
-    }
-    rig.tail.forEach((joint, index) => {
-      joint.rotation.y += Math.sin(gait * .48 - index * .32) * (.04 + index * .007) * strength;
-      joint.rotation.z += Math.sin(gait * .24 - index * .21) * .008 * strength;
-    });
-    runtime.pose.position.x = Math.sin(gait * .5) * .006 * strength;
-    runtime.pose.position.y = Math.abs(Math.sin(gait)) * (runtime.kind === "cat" ? .012 : .014) * strength;
-    runtime.pose.rotation.x = Math.sin(gait) * .005 * strength;
-    runtime.pose.rotation.z = Math.sin(gait * .5) * (runtime.kind === "cat" ? .014 : .011) * strength;
-  }
-
-  function applyPetInteraction(runtime, now) {
-    if (!runtime.interactionStartedAt || now >= runtime.interactionEndsAt) {
-      if (runtime.interactionActive) {
-        runtime.interactionActive = false;
-        runtime.hitbox?.classList?.remove?.("is-playing");
-      }
-      return;
-    }
-    runtime.interactionActive = true;
-    const duration = Math.max(1, runtime.interactionEndsAt - runtime.interactionStartedAt);
-    const progress = clamp((now - runtime.interactionStartedAt) / duration, 0, 1, 0);
-    const envelope = Math.sin(progress * Math.PI);
-    if (runtime.kind === "cat") {
-      if (runtime.rig.head) {
-        runtime.rig.head.rotation.z += Math.sin(progress * Math.PI * 2.4) * .13 * envelope + .11 * envelope;
-        runtime.rig.head.rotation.x -= Math.sin(progress * Math.PI) * .08;
-      }
-      runtime.rig.spine.forEach((joint, index) => {
-        joint.rotation.y += Math.sin(progress * Math.PI * 2 - index * .38) * .035 * envelope;
-      });
-      runtime.rig.tail.forEach((joint, index) => {
-        joint.rotation.y += Math.sin(progress * Math.PI * 5 - index * .48) * (.08 + index * .012) * envelope;
-      });
-      runtime.pose.position.y += Math.sin(progress * Math.PI) * .045;
-      runtime.pose.position.z += Math.sin(progress * Math.PI) * .04;
-      runtime.pose.rotation.z += Math.sin(progress * Math.PI * 2) * .025 * envelope;
-    }
-  }
-
-  function positionPetHitbox(runtime, THREE) {
-    if (!runtime.hitbox?.isConnected) return;
-    const point = new THREE.Vector3(0, .58, 0);
-    runtime.anchor.localToWorld(point);
-    point.project(runtime.camera);
-    const rect = runtime.stage.getBoundingClientRect();
-    const left = clamp((point.x * .5 + .5) * rect.width, 52, Math.max(52, rect.width - 52), rect.width / 2);
-    const top = clamp((-point.y * .5 + .5) * rect.height, 70, Math.max(70, rect.height - 70), rect.height * .65);
-    runtime.hitbox.style.left = `${left}px`;
-    runtime.hitbox.style.top = `${top}px`;
-  }
-
-  function playWithPet(instance) {
-    const runtime = instance.petDepth;
-    if (!runtime?.hitbox || runtime.hitbox.hidden || global.document?.hidden || !motionEnabled(instance)) {
-      announce(instance, "Bạn đồng hành chỉ tương tác khi model 3D đã tải và chuyển động đang bật.", "error");
-      return;
-    }
-    const now = global.performance?.now?.() || Date.now();
-    if (runtime.interactionStartedAt && now - runtime.interactionStartedAt < 650) return;
-    runtime.interactionIndex = (runtime.interactionIndex + 1) % 2;
-    const dogActions = ["playShake", "playRoll"].filter((key) => runtime.actions[key]);
-    runtime.interactionActionKey = runtime.kind === "dog" ? dogActions[runtime.interactionIndex % Math.max(1, dogActions.length)] || "idle" : "idle";
-    const clipDuration = runtime.clips[runtime.interactionActionKey]?.duration || 0;
-    const duration = runtime.kind === "dog" ? clamp((clipDuration / .92) * 1000 + 420, 1800, 5200, 2600) : 2400;
-    runtime.interactionStartedAt = now;
-    runtime.interactionEndsAt = now + duration;
-    runtime.interactionActive = true;
-    runtime.hitbox.classList?.remove?.("is-playing");
-    void runtime.hitbox.offsetWidth;
-    runtime.hitbox.classList?.add?.("is-playing");
-    instance.state.pet.interactions += 1;
-    instance.state.pet.lastPlayedAt = Date.now();
-    writeState(instance);
-    const counter = instance.root.querySelector?.("[data-hfr-pet-count]");
-    if (counter) counter.textContent = `${instance.state.pet.interactions} lần`;
-    announce(instance, runtime.kind === "cat" ? "Bạn mèo dụi đầu và ve vẩy đuôi thật nhẹ." : runtime.interactionActionKey === "playRoll" ? "Shiba vui vẻ lăn mình chơi cùng bạn." : "Shiba đưa chân chào bạn.");
-  }
-
-  async function loadGltfModel(loader, source) {
-    const response = await global.fetch(source, { credentials: "same-origin" });
-    if (!response.ok) throw new Error(`GLB ${response.status}`);
-    const bytes = await response.arrayBuffer();
-    return new Promise((resolve, reject) => loader.parse(bytes, source.slice(0, source.lastIndexOf("/") + 1), resolve, reject));
-  }
-
-  async function setupPetModel(instance, selected, profileId) {
-    const profile = PET_MODEL_PROFILES[profileId];
-    const kind = profile?.species;
-    const app = instance.root.querySelector?.("[data-hfr-root]");
-    const stage = instance.root.querySelector?.(".hfr-stage");
-    const canvas = instance.root.querySelector?.("[data-hfr-pet-depth]");
-    const hitbox = instance.root.querySelector?.("[data-hfr-pet-play]");
-    const quality = effectiveQuality(instance);
-    if (!profile || !app || !stage || !canvas || global.document?.hidden) return;
-    if (quality === "eco" || !motionEnabled(instance) || instance.state.settings.dataSaver) return;
-    if (typeof canvas.getContext !== "function" || typeof global.requestAnimationFrame !== "function") return;
-    const generation = instance.petDepthGeneration;
-    try {
-      const [THREE, loaderModule, skeletonUtils, meshoptModule] = await Promise.all([
-        import(THREE_MODULE), import(GLTF_LOADER_MODULE), import(SKELETON_UTILS_MODULE), import(MESHOPT_DECODER_MODULE)
-      ]);
-      if (generation !== instance.petDepthGeneration || !canvas.isConnected) return;
-      if (meshoptModule.MeshoptDecoder?.ready) await meshoptModule.MeshoptDecoder.ready;
-      if (generation !== instance.petDepthGeneration || !canvas.isConnected) return;
-      const loader = new loaderModule.GLTFLoader().setMeshoptDecoder(meshoptModule.MeshoptDecoder);
-      const gltf = await loadGltfModel(loader, profile.src);
-      if (generation !== instance.petDepthGeneration || !canvas.isConnected) return;
-      const model = skeletonUtils.clone(gltf.scene);
-      const ownedGeometries = new Set();
-      const ownedMaterials = new Set();
-      const ownedTextures = new Set();
-      const materialVariants = new Map();
-      const furUniforms = new Set();
-      const petLight = PET_LIGHT_PROFILES[selected.effect] || DEFAULT_PET_LIGHT_PROFILE;
-      model.traverse((object) => {
-        if (!object?.isMesh) return;
-        object.frustumCulled = false;
-        if (object.geometry) ownedGeometries.add(object.geometry);
-        const materials = Array.isArray(object.material) ? object.material : [object.material];
-        const styledMaterials = materials.filter(Boolean).map((material) => {
-          const styled = stylePetMaterial(material, profile, THREE, ownedMaterials, ownedTextures, materialVariants);
-          return styled;
-        });
-        styledMaterials.forEach((material) => {
-          if ("roughness" in material) material.roughness = Math.max(.72, Number(material.roughness) || 0);
-          if ("metalness" in material) material.metalness = Math.min(.04, Number(material.metalness) || 0);
-          const fur = enablePetFurSway(material, kind, petLight.breeze);
-          if (fur) furUniforms.add(fur);
-        });
-        object.material = Array.isArray(object.material) ? styledMaterials : styledMaterials[0];
-      });
-      const initialBox = new THREE.Box3().setFromObject(model);
-      const size = initialBox.getSize(new THREE.Vector3());
-      const center = initialBox.getCenter(new THREE.Vector3());
-      const scale = profile.desiredHeight / Math.max(.01, size.y);
-      model.scale.setScalar(scale);
-      model.position.set(-center.x * scale, -initialBox.min.y * scale, -center.z * scale);
-
-      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: quality === "high", powerPreference: "low-power" });
-      renderer.setPixelRatio(quality === "high" ? Math.min(1.5, Math.max(1, Number(global.devicePixelRatio) || 1)) : 1);
-      renderer.setClearColor(0x000000, 0);
-      if ("outputColorSpace" in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
-      if (THREE.ACESFilmicToneMapping) renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = petLight.exposure;
-      const anisotropy = Math.min(4, renderer.capabilities?.getMaxAnisotropy?.() || 1);
-      ownedTextures.forEach((texture) => {
-        if ("anisotropy" in texture) texture.anisotropy = anisotropy;
-        texture.needsUpdate = true;
-      });
-
-      const scene3d = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(32, 1, .1, 20);
-      camera.position.set(0, .15, 5);
-      camera.lookAt(0, -.2, 0);
-      scene3d.add(new THREE.HemisphereLight(petLight.sky, petLight.ground, petLight.hemi));
-      const keyLight = new THREE.DirectionalLight(petLight.key, petLight.keyPower);
-      keyLight.position.set(-3, 5, 4);
-      scene3d.add(keyLight);
-      const rimLight = new THREE.DirectionalLight(petLight.rim, petLight.rimPower);
-      rimLight.position.set(4, 2, -2);
-      scene3d.add(rimLight);
-      const fillLight = new THREE.DirectionalLight(0xffe6d0, .72);
-      fillLight.position.set(1, .5, 5);
-      scene3d.add(fillLight);
-
-      const anchor = new THREE.Group();
-      const pose = new THREE.Group();
-      pose.add(model);
-      anchor.add(pose);
-      const shadowGeometry = new THREE.CircleGeometry(.68, 40);
-      const shadowMaterial = new THREE.MeshBasicMaterial({ color: 0x020509, transparent: true, opacity: petLight.shadow, depthWrite: false });
-      const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
-      shadow.rotation.x = -Math.PI / 2;
-      shadow.position.y = .012;
-      anchor.add(shadow);
-      ownedGeometries.add(shadowGeometry);
-      ownedMaterials.add(shadowMaterial);
-      scene3d.add(anchor);
-
-      const mixer = new THREE.AnimationMixer(model);
-      const clips = {
-        idle: findPetClip(gltf.animations, profile.clips?.idle) || gltf.animations[0] || null,
-        rest: findPetClip(gltf.animations, profile.clips?.rest),
-        sit: findPetClip(gltf.animations, profile.clips?.sit),
-        playShake: findPetClip(gltf.animations, profile.clips?.playShake),
-        playRoll: findPetClip(gltf.animations, profile.clips?.playRoll)
-      };
-      const actions = {};
-      Object.entries(clips).forEach(([key, clip]) => {
-        if (clip) actions[key] = mixer.clipAction(clip);
-      });
-      const currentAction = actions.idle || actions.rest || null;
-      if (currentAction) {
-        currentAction.enabled = true;
-        currentAction.setLoop?.(THREE.LoopRepeat, Infinity);
-        currentAction.timeScale = .68;
-        currentAction.play?.();
-      }
-      const rig = collectPetRig(model, kind);
-      mixer.update(0);
-      const runtime = {
-        renderer, mixer, actions, clips, currentAction, actionKey: currentAction ? "idle" : "", model, pose, anchor, shadow, camera, scene3d, stage, canvas, hitbox,
-        observer: null, frame: 0, contextLost: null, ownedGeometries, ownedMaterials, ownedTextures, furUniforms,
-        currentX: profile.restingX, currentZ: 0, restingX: profile.restingX, travelHalf: 1.72, depthHalf: .42, viewScale: 1,
-        laneHalf: 1.72, compactLane: false, restBlend: 0, walkBlend: 0, walkTheta: 0, lastMode: "", yaw: profile.facing, lastRender: 0,
-        startedAt: global.performance?.now?.() || Date.now(), rig, baseRigQuaternions: new Map(), kind, profileId,
-        baseShadowOpacity: petLight.shadow, interactionStartedAt: 0, interactionEndsAt: 0,
-        interactionActionKey: "idle", interactionIndex: instance.state.pet.interactions % 2, interactionActive: false
-      };
-      capturePetRigBase(runtime);
-      instance.petDepth = runtime;
-      const resize = () => {
-        const rect = stage.getBoundingClientRect();
-        const width = Math.max(1, Math.round(rect.width));
-        const height = Math.max(1, Math.round(rect.height));
-        renderer.setSize(width, height, false);
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-        const verticalHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov * .5)) * camera.position.z;
-        const horizontalHalf = verticalHalf * camera.aspect;
-        runtime.viewScale = clamp(camera.aspect * 1.5, .48, 1, 1);
-        runtime.travelHalf = Math.max(.12, horizontalHalf - .48 * runtime.viewScale);
-        const direction = Math.sign(profile.restingX) || -1;
-        const edgeLane = clamp(runtime.travelHalf * .8, .12, Math.max(.12, runtime.travelHalf - .14), runtime.travelHalf * .7);
-        runtime.restingX = direction * Math.max(Math.min(Math.abs(profile.restingX), runtime.travelHalf * .84), edgeLane);
-        runtime.compactLane = width < 620;
-        const sideClearance = Math.max(.12, runtime.travelHalf - Math.abs(runtime.restingX));
-        runtime.laneHalf = runtime.compactLane
-          ? Math.max(.035, Math.min(runtime.travelHalf * .16, sideClearance * .46))
-          : Math.max(.12, Math.min(runtime.travelHalf * .12, sideClearance * .4));
-        runtime.depthHalf = runtime.compactLane ? .09 : clamp(verticalHalf * .34, .3, .52, .42);
-        runtime.currentX = runtime.compactLane
-          ? clamp(runtime.currentX, runtime.restingX - runtime.laneHalf, runtime.restingX + runtime.laneHalf, runtime.restingX)
-          : clamp(runtime.currentX, -runtime.travelHalf, runtime.travelHalf, runtime.restingX);
-        runtime.currentZ = clamp(runtime.currentZ, -runtime.depthHalf, runtime.depthHalf, 0);
-        anchor.scale.setScalar(runtime.viewScale);
-        positionPetHitbox(runtime, THREE);
-      };
-      runtime.contextLost = (event) => { event.preventDefault?.(); teardownPetDepth(instance); };
-      canvas.addEventListener("webglcontextlost", runtime.contextLost);
-      if (global.ResizeObserver) {
-        runtime.observer = new global.ResizeObserver(resize);
-        runtime.observer.observe(stage);
-      }
-      resize();
-      canvas.hidden = false;
-      if (hitbox) {
-        hitbox.hidden = false;
-        hitbox.dataset.ready = "true";
-      }
-      app.dataset.petDepth = "model";
-      const targetFps = quality === "high" ? 60 : 30;
-      const loop = (time) => {
-        if (instance.petDepth !== runtime || global.document?.hidden || !motionEnabled(instance) || effectiveQuality(instance) === "eco") return;
-        runtime.frame = global.requestAnimationFrame(loop);
-        if (time - runtime.lastRender < 1000 / targetFps) return;
-        const delta = Math.min(.08, Math.max(.001, (time - (runtime.lastRender || time - 16)) / 1000));
-        runtime.lastRender = time;
-        const elapsed = Math.max(0, (time - runtime.startedAt) / 1000);
-        const mode = petBehaviorMode(instance, elapsed, runtime, time);
-        const pathCenterX = runtime.restingX;
-        const pathHalf = runtime.laneHalf;
-        if (mode === "walk" && runtime.lastMode !== "walk") {
-          const nearestCos = clamp((pathCenterX - runtime.currentX) / Math.max(.001, pathHalf), -1, 1, 0);
-          runtime.walkTheta = Math.acos(nearestCos);
-          if (runtime.currentZ < 0) runtime.walkTheta = Math.PI * 2 - runtime.walkTheta;
-        }
-        if (mode === "walk") runtime.walkTheta = (runtime.walkTheta + delta * Math.PI * 2 / (kind === "cat" ? 17 : 19)) % (Math.PI * 2);
-        const targetX = mode === "walk" ? pathCenterX - Math.cos(runtime.walkTheta) * pathHalf : runtime.restingX;
-        const targetZ = mode === "walk" ? Math.sin(runtime.walkTheta) * runtime.depthHalf : 0;
-        const directionX = mode === "walk" ? Math.sin(runtime.walkTheta) * pathHalf : targetX - runtime.currentX;
-        const directionZ = mode === "walk" ? Math.cos(runtime.walkTheta) * runtime.depthHalf : targetZ - runtime.currentZ;
-        const returning = mode !== "walk" && Math.hypot(directionX, directionZ) > .035;
-        const locomoting = mode === "walk" || returning;
-        runtime.currentX = dampValue(runtime.currentX, targetX, locomoting ? 5.8 : 2.2, delta);
-        runtime.currentZ = dampValue(runtime.currentZ, targetZ, locomoting ? 4.8 : 2.2, delta);
-        runtime.restBlend = dampValue(runtime.restBlend, mode === "rest" && !returning ? 1 : 0, 2.4, delta);
-        runtime.walkBlend = dampValue(runtime.walkBlend, locomoting ? 1 : 0, 3.2, delta);
-        const targetYaw = locomoting && Math.hypot(directionX, directionZ) > .001 ? Math.atan2(-directionX, directionZ) : profile.facing;
-        runtime.yaw = dampAngle(runtime.yaw, targetYaw, 4.25, delta);
-        runtime.lastMode = mode;
-        anchor.position.set(runtime.currentX, -1.14 - runtime.currentZ * .1, runtime.currentZ);
-        anchor.rotation.y = runtime.yaw;
-        pose.scale.setScalar(1);
-        pose.position.set(0, 0, 0);
-        pose.rotation.set(0, 0, 0);
-        shadow.scale.set(1 + runtime.restBlend * .2, 1 + runtime.restBlend * .2, 1);
-        shadow.material.opacity = clamp(runtime.baseShadowOpacity + runtime.restBlend * .08, .18, .42, runtime.baseShadowOpacity);
-        restorePetRigBase(runtime);
-        transitionPetAction(runtime, locomoting ? "walk" : mode, THREE);
-        mixer.update(delta);
-        capturePetRigBase(runtime);
-        applyPetGait(runtime, elapsed, runtime.walkBlend);
-        applyPetInteraction(runtime, time);
-        if (mode !== "walk" && kind === "cat") pose.position.y += Math.sin(elapsed * 1.35) * .0035;
-        runtime.furUniforms.forEach((uniform) => { uniform.uHHFurTime.value = elapsed; });
-        positionPetHitbox(runtime, THREE);
-        renderer.render(scene3d, camera);
-      };
-      runtime.frame = global.requestAnimationFrame(loop);
-    } catch {
-      if (generation === instance.petDepthGeneration) {
-        canvas.hidden = true;
-        if (app) app.dataset.petDepth = "fallback";
-      }
-    }
-  }
-
-  async function setupPetDepth(instance, selected) {
-    const profileId = currentPetProfileId(instance, selected);
-    if (profileId) return setupPetModel(instance, selected, profileId);
-    return setupPetDepthPortrait(instance, selected);
-  }
-
-  async function setupPetDepthPortrait(instance, selected) {
-    const profile = PET_DEPTH_PROFILES[selected.effect];
-    const app = instance.root.querySelector?.("[data-hfr-root]");
-    const stage = instance.root.querySelector?.(".hfr-stage");
-    const canvas = instance.root.querySelector?.("[data-hfr-pet-depth]");
-    const image = instance.root.querySelector?.("[data-hfr-current-image]");
-    if (!profile || !app || !stage || !canvas || !image || global.document?.hidden) return;
-    if (effectiveQuality(instance) !== "high" || !motionEnabled(instance) || instance.state.settings.dataSaver) return;
-    if (typeof canvas.getContext !== "function" || typeof global.requestAnimationFrame !== "function") return;
-    const generation = instance.petDepthGeneration;
-    try {
-      if (!image.complete || !image.naturalWidth) {
-        await new Promise((resolve, reject) => {
-          const loaded = () => { cleanup(); resolve(); };
-          const failed = () => { cleanup(); reject(new Error("pet image unavailable")); };
-          const cleanup = () => { image.removeEventListener("load", loaded); image.removeEventListener("error", failed); };
-          image.addEventListener("load", loaded, { once: true });
-          image.addEventListener("error", failed, { once: true });
-        });
-      }
-      if (generation !== instance.petDepthGeneration || !canvas.isConnected) return;
-      const THREE = await import(THREE_MODULE);
-      if (generation !== instance.petDepthGeneration || !canvas.isConnected) return;
-      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "low-power" });
-      renderer.setPixelRatio(Math.min(1.5, Math.max(1, Number(global.devicePixelRatio) || 1)));
-      renderer.setClearColor(0x000000, 0);
-      if ("outputColorSpace" in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
-      const texture = new THREE.Texture(image);
-      texture.needsUpdate = true;
-      if ("colorSpace" in texture && THREE.SRGBColorSpace) texture.colorSpace = THREE.SRGBColorSpace;
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      const uniforms = {
-        uTexture: { value: texture }, uTime: { value: 0 }, uPointer: { value: new THREE.Vector2(0, 0) },
-        uResolution: { value: new THREE.Vector2(1, 1) }, uImageSize: { value: new THREE.Vector2(image.naturalWidth || 1, image.naturalHeight || 1) },
-        uPet: { value: new THREE.Vector2(profile.x, 1 - profile.y) }, uRadius: { value: new THREE.Vector2(profile.radiusX, profile.radiusY) },
-        uImagePosition: { value: new THREE.Vector2(profile.imageX, 0.5) }, uPace: { value: profile.pace }
-      };
-      const material = new THREE.ShaderMaterial({
-        uniforms, transparent: true, depthTest: false, depthWrite: false,
-        vertexShader: `
-          uniform float uTime; uniform vec2 uPointer; uniform vec2 uPet; uniform vec2 uRadius; uniform float uPace;
-          varying vec2 vUv; varying float vPetMask;
-          void main() {
-            vUv = uv;
-            vec2 delta = (uv - uPet) / uRadius;
-            vPetMask = 1.0 - smoothstep(0.55, 1.12, length(delta));
-            float breath = sin(uTime * uPace * 2.0) * 0.5 + sin(uTime * uPace * 0.73) * 0.22;
-            vec3 transformed = position;
-            transformed.z += vPetMask * (0.032 + breath * 0.009);
-            transformed.x += vPetMask * (uPointer.x * 0.018 + breath * 0.0018);
-            transformed.y += vPetMask * (uPointer.y * 0.012 + breath * 0.0024);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
-          }`,
-        fragmentShader: `
-          uniform sampler2D uTexture; uniform vec2 uResolution; uniform vec2 uImageSize; uniform vec2 uImagePosition;
-          varying vec2 vUv; varying float vPetMask;
-          vec2 coverUv(vec2 uv) {
-            float viewAspect = uResolution.x / max(1.0, uResolution.y);
-            float imageAspect = uImageSize.x / max(1.0, uImageSize.y);
-            vec2 visible = vec2(1.0);
-            if (imageAspect > viewAspect) visible.x = viewAspect / imageAspect;
-            else visible.y = imageAspect / viewAspect;
-            return (vec2(1.0) - visible) * uImagePosition + uv * visible;
-          }
-          void main() {
-            vec4 color = texture2D(uTexture, coverUv(vUv));
-            float feather = smoothstep(0.0, 0.34, vPetMask);
-            color.rgb *= 1.018;
-            gl_FragColor = vec4(color.rgb, color.a * feather * 0.96);
-          }`
-      });
-      const geometry = new THREE.PlaneGeometry(2, 2, 40, 28);
-      const mesh = new THREE.Mesh(geometry, material);
-      const scene3d = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 10);
-      camera.position.z = 3;
-      scene3d.add(mesh);
-      const runtime = {
-        renderer, texture, material, geometry, mesh, camera, scene3d, stage, canvas, observer: null, frame: 0,
-        pointerMove: null, pointerLeave: null, contextLost: null, targetX: 0, targetY: 0, pointerX: 0, pointerY: 0, lastRender: 0,
-        startedAt: global.performance?.now?.() || Date.now()
-      };
-      instance.petDepth = runtime;
-      const resize = () => {
-        const rect = stage.getBoundingClientRect();
-        const width = Math.max(1, Math.round(rect.width));
-        const height = Math.max(1, Math.round(rect.height));
-        renderer.setSize(width, height, false);
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-        const planeHeight = 2 * Math.tan((camera.fov * Math.PI / 180) / 2) * camera.position.z;
-        mesh.scale.set((planeHeight * camera.aspect) / 2, planeHeight / 2, 1);
-        uniforms.uResolution.value.set(width, height);
-      };
-      runtime.pointerMove = (event) => {
-        const rect = stage.getBoundingClientRect();
-        runtime.targetX = clamp((event.clientX - rect.left) / Math.max(1, rect.width) - 0.5, -0.5, 0.5, 0);
-        runtime.targetY = clamp(0.5 - (event.clientY - rect.top) / Math.max(1, rect.height), -0.5, 0.5, 0);
-      };
-      runtime.pointerLeave = () => { runtime.targetX = 0; runtime.targetY = 0; };
-      runtime.contextLost = (event) => { event.preventDefault?.(); teardownPetDepth(instance); };
-      stage.addEventListener("pointermove", runtime.pointerMove, { passive: true });
-      stage.addEventListener("pointerleave", runtime.pointerLeave, { passive: true });
-      canvas.addEventListener("webglcontextlost", runtime.contextLost);
-      if (global.ResizeObserver) {
-        runtime.observer = new global.ResizeObserver(resize);
-        runtime.observer.observe(stage);
-      }
-      resize();
-      canvas.hidden = false;
-      app.dataset.petDepth = "ready";
-      const loop = (time) => {
-        if (instance.petDepth !== runtime || global.document?.hidden || !motionEnabled(instance) || effectiveQuality(instance) !== "high") return;
-        runtime.frame = global.requestAnimationFrame(loop);
-        if (time - runtime.lastRender < 1000 / 30) return;
-        runtime.lastRender = time;
-        runtime.pointerX += (runtime.targetX - runtime.pointerX) * 0.055;
-        runtime.pointerY += (runtime.targetY - runtime.pointerY) * 0.055;
-        uniforms.uPointer.value.set(runtime.pointerX, runtime.pointerY);
-        uniforms.uTime.value = Math.max(0, (time - runtime.startedAt) / 1000);
-        renderer.render(scene3d, camera);
-      };
-      runtime.frame = global.requestAnimationFrame(loop);
-    } catch {
-      if (generation === instance.petDepthGeneration) {
-        canvas.hidden = true;
-        if (app) app.dataset.petDepth = "fallback";
-      }
-    }
-  }
-
   function layoutItem(instance, name) {
     if (!["title", "clock", "dock"].includes(name)) return null;
     return instance.root.querySelector?.(`[data-hfr-layout-item="${name}"]`) || null;
@@ -3493,23 +2651,6 @@
     if (action === "scene-view") { instance.ui.sceneView = instance.ui.sceneView === "grid" ? "list" : "grid"; render(instance); return; }
     if (action === "scene-category") { instance.ui.category = target.dataset.value || "all"; instance.ui.sceneLimit = 24; render(instance); return; }
     if (action === "scene-more") { instance.ui.sceneLimit = Math.min(SCENES.length + instance.state.scenes.custom.length, instance.ui.sceneLimit + 24); render(instance); return; }
-    if (action === "pet-play") { playWithPet(instance); return; }
-    if (action === "pet-companion") {
-      const preference = cleanText(target.dataset.value, 24);
-      if (!["scene", "none", ...PET_PROFILE_IDS].includes(preference)) return;
-      instance.state.settings.companion = preference;
-      writeState(instance); render(instance);
-      announce(instance, preference === "none" ? "Đã tắt bạn đồng hành 3D." : "Đã cập nhật bạn đồng hành 3D.");
-      return;
-    }
-    if (action === "pet-mode") {
-      const mode = cleanText(target.dataset.value, 12);
-      if (!["auto", "rest", "walk"].includes(mode)) return;
-      instance.state.settings.petMode = mode;
-      writeState(instance); render(instance);
-      announce(instance, mode === "auto" ? "Bạn nhỏ sẽ tự nhiên đi dạo rồi nằm nghỉ." : mode === "rest" ? "Bạn nhỏ đang nằm nghỉ." : "Bạn nhỏ đang đi dạo nhẹ nhàng.");
-      return;
-    }
     if (action === "select-scene") { applyScene(instance, targetId); return; }
     if (action === "favorite-scene") {
       instance.state.scenes.favorites = toggleListValue(instance.state.scenes.favorites, targetId);
@@ -3782,8 +2923,6 @@
       const data = new FormData(form);
       const settings = instance.state.settings;
       settings.quality = ["eco", "balanced", "high"].includes(data.get("quality")) ? data.get("quality") : "balanced";
-      settings.companion = ["scene", "none", ...PET_PROFILE_IDS].includes(data.get("companion")) ? data.get("companion") : "scene";
-      settings.petMode = ["auto", "rest", "walk"].includes(data.get("petMode")) ? data.get("petMode") : "auto";
       ["motion", "reducedMotion", "dataSaver", "autoStartBreak", "autoStartFocus", "sceneOnBreak"].forEach((name) => { settings[name] = data.get(name) === "on"; });
       settings.restScene = SCENES.some((item) => item.id === data.get("restScene")) ? data.get("restScene") : "ocean-sunset";
       writeState(instance); render(instance); announce(instance, "Đã lưu cài đặt.");
@@ -3817,7 +2956,6 @@
       stopTimerLoop(instance);
       instance.pointerCleanup?.();
       instance.pointerCleanup = null;
-      teardownPetDepth(instance);
       instance.audio?.context?.suspend?.().catch?.(() => {});
       suspendMusicForVisibility(instance, true);
       releaseWakeLock(instance, true);
@@ -3826,7 +2964,6 @@
       reconcileTimer(instance);
       ensureTimerLoop(instance);
       setupParallax(instance);
-      setupPetDepth(instance, currentScene(instance));
       instance.audio?.context?.resume?.().then?.(() => updatePlaybackSignal(instance)).catch?.(() => {});
       suspendMusicForVisibility(instance, false);
       if (instance.wakeLockWanted) requestWakeLock(instance);
@@ -3866,7 +3003,6 @@
       },
       cleanup: [], objectUrls: new Map(), audio: null, audioStatus: "Âm thanh đang tắt",
       music: null, musicStatus: "Nhạc đang tắt · không tự phát", mediaActive: false,
-      petDepth: null, petDepthGeneration: 0,
       wakeLock: null, wakeLockWanted: false,
       wakeLockStatus: global.navigator?.wakeLock?.request ? "Đang tắt" : "Trình duyệt không hỗ trợ Screen Wake Lock",
       timerInterval: 0, pointerCleanup: null, layoutObserver: null, layoutFrame: 0, layoutDrag: null,
@@ -3924,7 +3060,6 @@
     stopAudio(instance);
     releaseWakeLock(instance);
     destroyMusic(instance);
-    teardownPetDepth(instance);
     finishLayoutDrag(instance);
     instance.pointerCleanup?.();
     instance.layoutObserver?.disconnect?.();
@@ -3952,7 +3087,6 @@
     scenes: SCENES,
     channels: CHANNELS,
     musicTracks: MUSIC_TRACKS,
-    petProfiles: PET_MODEL_PROFILES,
     canHandle: (route) => String(route || "").split("?")[0] === ROUTE,
     mount,
     unmount,

@@ -260,35 +260,30 @@ test("Focus Room upgrades the canonical HH Platform learning workspace", () => {
   assert.match(router, /window\.HHFocusRoom\?\.mount/);
   assert.match(router, /window\.HHFocusRoom\?\.unmount/);
   assert.match(router, /Phòng học tập trung/);
-  assert.match(router, /230 không gian \(30 cảnh gốc \+ Atlas 200\)/);
+  assert.match(router, /224 không gian \(24 cảnh gốc \+ Atlas 200\)/);
   assert.match(router, /Trong Học tập &amp; Ngôn ngữ/);
-  assert.match(loader, /"focus-study-room":\s*\{[\s\S]*focus-room\.css\?v=13[\s\S]*focus-room\.js\?v=19/);
+  assert.match(loader, /"focus-study-room":\s*\{[\s\S]*focus-room\.css\?v=14[\s\S]*focus-room\.js\?v=20/);
   assert.match(loader, /value === "\/focus-room"/);
-  assert.match(worker, /\.\/focus-room\.css\?v=13/);
-  assert.match(worker, /\.\/focus-room\.js\?v=19/);
+  assert.match(worker, /\.\/focus-room\.css\?v=14/);
+  assert.match(worker, /\.\/focus-room\.js\?v=20/);
   assert.doesNotMatch(source, /HH CORE|gateway|location\.href\s*=/i);
 });
 
-test("scene library ships 230 local presets, including four pet-ready sanctuaries and exactly 200 truthful Atlas environments", () => {
+test("scene library ships 224 animal-free presets, including exactly 200 truthful Atlas environments", () => {
   const api = require("../focus-room.js");
   assert.equal(api.route, "/focus-room");
-  assert.equal(api.scenes.length, 230);
-  assert.equal(new Set(api.scenes.map((scene) => scene.id)).size, 230);
+  assert.equal(api.scenes.length, 224);
+  assert.equal(new Set(api.scenes.map((scene) => scene.id)).size, 224);
   const atlas = api.scenes.filter((scene) => scene.collection === "Atlas 200");
   assert.equal(atlas.length, 200);
   assert.equal(new Set(atlas.map((scene) => scene.image)).size, 20);
-  assert.equal(atlas.filter((scene) => scene.pet === "cat" || scene.pet === "dog").length, 20);
-  const sanctuaries = api.scenes.filter((scene) => scene.collection === "Pet Sanctuary 3D");
+  assert.equal(api.scenes.filter((scene) => "pet" in scene).length, 0);
+  const sanctuaries = api.scenes.filter((scene) => scene.collection === "Calm Sanctuary");
   assert.equal(sanctuaries.length, 4);
-  assert.equal(sanctuaries.filter((scene) => scene.pet === "cat").length, 2);
-  assert.equal(sanctuaries.filter((scene) => scene.pet === "dog").length, 2);
-  assert.equal(api.channels.length, 16);
+  assert.equal(api.channels.length, 14);
+  assert.equal(api.channels.some((channel) => ["purr", "pet-breath"].includes(channel.id)), false);
   assert.equal(api.musicTracks.length, 3);
-  assert.equal(Object.keys(api.petProfiles).length, 8);
-  assert.equal(Object.values(api.petProfiles).filter((profile) => profile.species === "cat").length, 4);
-  assert.equal(Object.values(api.petProfiles).filter((profile) => profile.species === "dog").length, 4);
-  assert.equal(api.petProfiles.cat.label, "Mèo cam trắng");
-  assert.equal(api.petProfiles.dog.label, "Shiba vàng");
+  assert.equal(api.petProfiles, undefined);
   assert.equal(api.canHandle("/focus-room"), true);
   assert.equal(api.canHandle("/learn"), false);
   for (const scene of api.scenes) {
@@ -312,72 +307,19 @@ test("scene library ships 230 local presets, including four pet-ready sanctuarie
     assert.equal(track.license, "CC0 1.0");
   }
   assert.match(read("assets/focus-room/README.md"), /Kimiko Ishizaka[\s\S]*CC0 1\.0[\s\S]*SHA-256/);
-  const petModels = [
-    ["assets/focus-room/pets/bicolor-cat.glb", "631DF22885E06E48185BF73B0711413F90DEB34AC71B2AB1DE99C3CD27C25131"],
-    ["assets/focus-room/pets/quander-shiba.glb", "02979B1497D192CB9F47620D97D543FDFD10B161E18BFF5B8C92A04731066F03"],
-    ["assets/focus-room/pets/bicolor-cat-texture.png", "376D72A0C89CE257874DDB4369E4CD32EB1134466C36316FF735E73D594802DA"],
-    ["assets/focus-room/pets/bicolor-cat-texture-2.png", "F7A8DA7B92814E69F0DDDE9DC95E421FDE59CAEC56B91E6649813E3960CBE888"],
-    ["assets/focus-room/pets/bicolor-cat-texture-3.jpg", "38B6602BF0BD48E185BBC666087DFAAD4179F5A651E0F3FF76194760D101CB5F"],
-    ["assets/focus-room/pets/quander-shiba-texture.webp", "71A1B81C7FAE9586FF82D715549FF8076FF3EEB4DC2821AF840716CA318B7F73"],
-    ["assets/focus-room/pets/quander-shiba-texture-2.webp", "055D0C38E9A6BA5C08DCC2353BF744E2BAE04F84B92CC3923E6A2CAE4C50B16A"]
-  ];
-  const crypto = require("node:crypto");
-  for (const [asset, expectedHash] of petModels) {
-    const bytes = fs.readFileSync(path.join(rootDir, asset));
-    assert.ok(bytes.length > (asset.endsWith(".glb") ? 500_000 : 32), `empty ${asset}`);
-    assert.equal(crypto.createHash("sha256").update(bytes).digest("hex").toUpperCase(), expectedHash);
-    if (asset.endsWith(".glb")) {
-      let cursor = 12;
-      let gltf;
-      while (cursor < bytes.length) {
-        const length = bytes.readUInt32LE(cursor);
-        const type = bytes.readUInt32LE(cursor + 4);
-        if (type === 0x4e4f534a) gltf = JSON.parse(bytes.subarray(cursor + 8, cursor + 8 + length).toString("utf8").trim());
-        cursor += 8 + length;
-      }
-      assert.ok(gltf.animations?.length, "pet models must contain real skeletal clips");
-      if (asset.includes("quander-shiba.glb")) {
-        const clipNames = gltf.animations.map((clip) => clip.name);
-        assert.ok(clipNames.includes("0|shake_0"), "Shiba play must use its real shake clip");
-        assert.ok(clipNames.includes("0|rollover_0"), "Shiba play must use its real rollover clip");
-      }
-      for (const image of gltf.images || []) {
-        assert.match(image.uri, /-texture(?:-\d+)?\.(?:png|jpe?g|webp)$/);
-        assert.equal(image.bufferView, undefined, "runtime texture must not require a blob URL");
-      }
-    }
-  }
-  const notices = read("assets/focus-room/pets/THIRD_PARTY_NOTICES.md");
-  assert.match(notices, /Bicolor Cat[\s\S]*kenchoo[\s\S]*CC BY 4\.0/);
-  assert.match(notices, /Shiba Inu[\s\S]*quander[\s\S]*CC BY 4\.0/);
 });
 
-test("large scene catalog paginates and all pet coat preferences remain account scoped", () => {
+test("large animal-free scene catalog paginates", () => {
   const harness = createHarness();
   const first = harness.createRoot();
-  const controller = harness.api.mount(first.root, { currentUser: { id: "pet-atlas-user" } });
+  const controller = harness.api.mount(first.root, { currentUser: { id: "atlas-user" } });
   controller.openPanel("scenes");
   assert.equal((first.root.innerHTML.match(/class="hfr-scene-card/g) || []).length, 24);
-  assert.match(first.root.innerHTML, /Xem thêm 24 cảnh · còn 206/);
+  assert.match(first.root.innerHTML, /Xem thêm 24 cảnh · còn 200/);
   harness.click(first, "scene-more");
   assert.equal((first.root.innerHTML.match(/class="hfr-scene-card/g) || []).length, 48);
-
-  harness.click(first, "pet-companion", { value: "cat-silver" });
-  harness.click(first, "pet-mode", { value: "walk" });
-  assert.equal(controller.getState().settings.companion, "cat-silver");
-  assert.deepEqual(JSON.parse(JSON.stringify(controller.getState().pet)), { interactions: 0, lastPlayedAt: 0 });
-  assert.equal(controller.getState().settings.petMode, "walk");
+  assert.doesNotMatch(first.root.innerHTML, /data-hfr-pet|Bạn đồng hành|Thú cưng|Chơi cùng/i);
   controller.unmount();
-
-  const restoredRoot = harness.createRoot();
-  const restored = harness.api.mount(restoredRoot.root, { currentUser: { id: "pet-atlas-user" } });
-  assert.equal(restored.getState().settings.companion, "cat-silver");
-  assert.equal(restored.getState().settings.petMode, "walk");
-  assert.match(restoredRoot.root.innerHTML, /Mèo bạc 3D/);
-  harness.click(restoredRoot, "pet-companion", { value: "cat" });
-  assert.equal(restored.getState().settings.companion, "cat", "legacy cat identifier stays valid");
-  harness.click(restoredRoot, "pet-companion", { value: "dog" });
-  assert.equal(restored.getState().settings.companion, "dog", "legacy dog identifier stays valid");
 });
 
 test("state is account scoped and favorites persist independently", () => {
@@ -657,64 +599,16 @@ test("responsive, motion and truthful capability contracts are explicit", () => 
   assert.match(source, /Phòng anime chạng vạng/);
   assert.match(source, /Nhà kính ngày mưa/);
   assert.match(source, /Hiên ruộng bậc thang/);
-  assert.match(source, /Gác mái mưa cùng mèo/);
-  assert.match(source, /Cabin hồ cùng cún nhỏ/);
-  assert.match(source, /Mèo gừ êm/);
-  assert.match(source, /Thú cưng ngủ/);
+  assert.doesNotMatch(source, /Gác mái mưa cùng mèo|Cabin hồ cùng cún nhỏ|Mèo gừ êm|Thú cưng ngủ/);
   assert.match(source, /createDynamicsCompressor/);
   assert.match(source, /createAudioVoice/);
   assert.match(source, /normalization/);
   assert.match(styles, /hfr-condensation/);
   assert.match(styles, /hfr-leaf-drift/);
-  assert.match(styles, /hfr-pet-breathe/);
-  assert.match(source, /import\(THREE_MODULE\)/);
-  assert.match(source, /import\(GLTF_LOADER_MODULE\)/);
-  assert.match(source, /import\(SKELETON_UTILS_MODULE\)/);
-  assert.match(source, /import\(MESHOPT_DECODER_MODULE\)/);
-  assert.match(source, /assets\/focus-room\/pets\/bicolor-cat\.glb/);
-  assert.match(source, /assets\/focus-room\/pets\/quander-shiba\.glb/);
   assert.doesNotMatch(source, /src:\s*"https?:\/\//);
-  assert.match(source, /new THREE\.WebGLRenderer/);
-  assert.match(source, /1000 \/ 30/);
-  assert.match(source, /targetFps = quality === "high" \? 60 : 30/);
-  assert.match(source, /Math\.min\(1\.5/);
-  assert.match(source, /transitionPetAction/);
-  assert.match(source, /fadeIn\?\.\(fadeDuration\)/);
-  assert.match(source, /applyPetGait/);
-  assert.match(source, /restorePetRigBase\(runtime\)[\s\S]*mixer\.update\(delta\)[\s\S]*capturePetRigBase\(runtime\)[\s\S]*applyPetGait/);
-  assert.doesNotMatch(source, /pose\.scale\.set\(1,/);
-  assert.match(source, /petBehaviorMode/);
-  assert.match(source, /data-hfr-action="pet-play"/);
-  assert.match(source, /playShake:[\s\S]*shake/);
-  assert.match(source, /playRoll:[\s\S]*rollover/);
-  assert.match(source, /filteredPetTexture/);
-  assert.match(source, /const PET_LIGHT_PROFILES/);
-  assert.match(source, /PET_LIGHT_PROFILES\[selected\.effect\]/);
-  assert.match(source, /function enablePetFurSway/);
-  assert.match(source, /hh-soft-fur-v1/);
-  assert.match(source, /uHHFurTime\.value = elapsed/);
-  assert.match(source, /rig\.paws\.forEach/);
-  assert.match(source, /rig\.neck\.forEach/);
-  assert.match(source, /new THREE\.CanvasTexture/);
-  assert.match(source, /instance\.state\.pet\.interactions \+= 1/);
-  assert.match(source, /lastPlayedAt = Date\.now\(\)/);
-  assert.match(source, /compactLane = width < 620/);
-  assert.match(source, /runtime\.restingX - runtime\.laneHalf/);
-  assert.match(source, /const pathCenterX = runtime\.restingX/);
-  assert.match(source, /const edgeLane = clamp\(runtime\.travelHalf \* \.8/);
-  assert.match(source, /sideClearance \* \.4/);
-  assert.match(source, /runtime\.currentZ/);
-  assert.match(source, /Math\.atan2\(-directionX, directionZ\)/);
-  assert.match(source, /anchor\.position\.set\(runtime\.currentX, -1\.14 - runtime\.currentZ \* \.1, runtime\.currentZ\)/);
-  assert.doesNotMatch(source, /const endpointEase/);
-  assert.match(source, /teardownPetDepth/);
-  assert.match(styles, /\.hfr-pet-depth[\s\S]*pointer-events:\s*none/);
-  assert.match(styles, /\.hfr-pet-play\s*\{[\s\S]*?z-index:\s*1/);
   assert.match(styles, /\.hfr-focus-center\s*\{[\s\S]*?z-index:\s*2/);
-  assert.match(styles, /\.hfr-pet-play:focus-visible/);
-  assert.match(styles, /\.hfr-pet-play__hearts[\s\S]*pointer-events:\s*none/);
   assert.match(styles, /\.hfr-backdrop img[\s\S]*?filter:\s*var\(--hfr-scene-grade/);
-  assert.match(styles, /\.hfr-companion-controls/);
+  assert.doesNotMatch(source, /data-hfr-pet|petProfiles|PET_MODEL_PROFILES|purr|pet-breath/);
   assert.match(styles, /\.hfr-load-more/);
   assert.match(source, /hh-lofi-calm/);
   assert.match(source, /Kimiko Ishizaka/);

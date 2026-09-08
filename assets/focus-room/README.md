@@ -1,12 +1,12 @@
 # HH Focus Room scene assets
 
-These 31 project-local scene backgrounds power 230 presets in the canonical `/focus-room` workspace. The original library contains 30 scenes; Atlas 200 combines 20 owned backgrounds with ten documented lighting and atmosphere treatments. The browser never hotlinks a commercial focus product or an external image host.
+This directory contains 31 project-local background files, of which 24 power the active local scene library alongside 200 Atlas presets in the canonical `/focus-room` workspace. Six animal-containing backgrounds and the old 3D companion media are retained only as unused historical assets for provenance; the browser no longer requests or displays them. Atlas 200 combines 20 owned backgrounds with ten documented lighting and atmosphere treatments.
 
 ## Rights and provenance
 
 - `rainy-window.webp` is an optimized derivative of the existing original `assets/galaxy/hh-ambient-room-rainy-v1.png`, created for HH Platform with OpenAI ImageGen on 2026-08-29.
 - The original 11 additional images, eight landscape expansion scenes, six calm pet-companion scenes and `garden-sanctuary-rain.webp` were generated specifically for HH Platform with the built-in OpenAI ImageGen workflow on 2026-09-07.
-- Four additional pet-ready sanctuary renders were generated with the same project workflow on 2026-09-08. They deliberately contain no animal, leaving a clear floor lane for the live cat or dog model and avoiding duplicate pets.
+- Four additional animal-free sanctuary renders were generated with the same project workflow on 2026-09-08 and are now ordinary `Calm Sanctuary` study environments.
 - LifeAt was used only as product-experience research. No LifeAt screenshot, source code, brand element, video, sound or image is included.
 - Every background contains no interface, logo, watermark or recognizable copyrighted character. Titles, timers and controls remain live HTML.
 - Full scenes are optimized WebP files up to 1672×942. `thumbs/` contains a separate 560 px delivery thumbnail for every scene.
@@ -52,7 +52,7 @@ The optimized thumbnail `thumbs/garden-sanctuary-rain.webp` has SHA-256 `3189950
 
 ## Atlas 200 presets
 
-Atlas 200 adds exactly 200 selectable environments without pretending they are 200 independent photographs. It combines 20 locally hosted backgrounds with ten original presentation states: dawn, morning mist, clear daylight, golden hour, sunset, blue hour, quiet night, soft rain, starlight and a pet-companion state. Each preset has a stable ID, crop, color grade, environmental effect, recommended sound mix and optional 3D pet. Only the first 24 matching cards are rendered initially; the user loads the next page explicitly.
+Atlas 200 adds exactly 200 selectable environments without pretending they are 200 independent photographs. It combines 20 locally hosted backgrounds with ten original presentation states: dawn, morning mist, clear daylight, golden hour, sunset, blue hour, quiet night, soft rain, starlight and soft ambient light. The last state retains its legacy internal identifier solely to keep saved scene IDs compatible. Each preset has a stable ID, crop, color grade, environmental effect and recommended sound mix. Only the first 24 matching cards are rendered initially; the user loads the next page explicitly.
 
 The presentation states are implemented with local CSS and existing Focus Room effects. No third-party scene image, remote URL or paid media is loaded at runtime.
 
@@ -66,9 +66,9 @@ The pet expansion used six additional prompts: rainy attic with a sleeping orang
 
 The 2026-09-08 sanctuary set used four distinct prompts: a rainy cat-friendly reading conservatory, a dog-friendly timber garden pavilion, a moonlit mixed-pet library loft and a coastal pet-friendly sunset studio. Each prompt requested a wide photorealistic 3D environment render, believable PBR-style wood/glass/stone/textile materials, soft natural lighting, pet furniture, a calm central timer zone and unobstructed lower floor lanes. Every prompt excluded animals, people, text, logos and watermarks so the live licensed 3D companion remains the only pet shown. These are generated environment renders, not documentary photographs.
 
-## Animated pet models
+## Historical inactive animal assets
 
-The optional 3D companions are downloaded, self-hosted GLB files. They are lazy-loaded only after a cat or dog companion is active at Balanced or High quality. The canvas is decorative, capped at 30/60 FPS and DPR 1/1.5, pauses while hidden, and is fully disposed when the workspace rerenders or closes.
+The following licensed files were used by an earlier version and remain solely to preserve provenance and attribution. Release v1007 removed every code path that loads them; they are not part of the Focus Room UI or runtime.
 
 | Local file | Creator and source | License | Animation used | SHA-256 |
 | --- | --- | --- | --- | --- |
@@ -85,7 +85,7 @@ Embedded textures were mechanically externalized so browsers load them as normal
 | `pets/quander-shiba-texture.webp` | `71A1B81C7FAE9586FF82D715549FF8076FF3EEB4DC2821AF840716CA318B7F73` |
 | `pets/quander-shiba-texture-2.webp` | `055D0C38E9A6BA5C08DCC2353BF744E2BAE04F84B92CC3923E6A2CAE4C50B16A` |
 
-Required attribution for both models is also visible in the scene panel and duplicated in `pets/THIRD_PARTY_NOTICES.md`. Model files were not visually rebranded or redistributed as original HH artwork. Four cat coat choices and four Shiba coat choices are produced at runtime from each licensed diffuse texture with Canvas 2D filters; normal and roughness maps remain intact, no derivative binary asset is added, and the UI states that these are coat variants sharing two rigs rather than separate breeds. The renderer no longer squashes or stretches the mesh to fake a resting pose: real skeletal clips crossfade over 0.34–1.2 seconds, while the gentle walk layer bends the legs and paws, transfers weight through the spine, stabilizes neck/head movement and adds species-specific tail follow-through. Cat walking uses a four-beat sequence instead of a rigid diagonal trot. Compatible PBR coat surfaces also receive a tiny vertex-normal ripple whose strength follows the scene's breeze profile; this remains a subtle surface cue rather than a claim of strand-level fur simulation. Direct play uses the Shiba source model's `shake`/`rollover` clips and a small reversible head/spine/tail offset on the cat rig.
+Required historical attribution for both models remains in `pets/THIRD_PARTY_NOTICES.md`. Model and texture files were not visually rebranded or redistributed as original HH artwork. They are inactive and no longer have any scene-panel controls, Canvas/WebGL renderer, interaction handler or network request in Focus Room.
 
 ## Study music
 

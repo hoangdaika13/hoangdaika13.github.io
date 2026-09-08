@@ -5875,7 +5875,7 @@ function initAppShell() {
     insights: "phân tích analytics báo cáo dữ liệu",
     copyright: "bản quyền giấy phép license attribution",
     learn: "học tập trường học bài luyện kiến thức",
-    "focus-room": "phòng học tập trung focus pomodoro đồng hồ nhiệm vụ todo kế hoạch mục tiêu nghi thức nhật ký xao nhãng csv wake lock phím tắt ghi chú âm thanh mưa nhiễu nâu quán cà phê deep work lofi piano thú cưng chó mèo chiều sâu 3d lifeat",
+    "focus-room": "phòng học tập trung focus pomodoro đồng hồ nhiệm vụ todo kế hoạch mục tiêu nghi thức nhật ký xao nhãng csv wake lock phím tắt ghi chú âm thanh mưa nhiễu nâu quán cà phê deep work lofi piano không gian thư giãn lifeat",
     english: "tiếng anh english ngoại ngữ",
     japanese: "tiếng nhật japanese jlpt kanji",
     chinese: "tiếng trung chinese hsk hanzi pinyin",
@@ -7605,7 +7605,7 @@ function initAppShell() {
       });
       else mountSimpleView("Nhạc", "Đang tải thư viện nhạc có giấy phép mở...", "");
     } else if (route === "/focus-room") {
-      updatePageHeader("Phòng học tập trung", "Trung tâm Deep Focus với 230 không gian (30 cảnh gốc + Atlas 200), bạn đồng hành 3D, 16 âm môi trường, Pomodoro và dữ liệu học thật.", route);
+      updatePageHeader("Phòng học tập trung", "Trung tâm Deep Focus với 224 không gian (24 cảnh gốc + Atlas 200), 14 âm môi trường, Pomodoro và dữ liệu học thật.", route);
       pageActions.innerHTML = '<button type="button" data-focus-room-panel="plan">Kế hoạch</button><button type="button" data-focus-room-panel="scenes">Đổi không gian</button><button class="app-primary-action" type="button" data-focus-room-zen>Zen mode</button>';
       workspace.innerHTML = '<div data-hh-focus-room-host></div>';
       const focusRoomHost = workspace.firstElementChild;
