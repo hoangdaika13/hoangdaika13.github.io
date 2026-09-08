@@ -754,14 +754,26 @@
         createAsteroidBelt(THREE, root, 188, mode() === "cinematic" ? 560 : 240, 0xb5c8d8, 1),
         createAsteroidBelt(THREE, root, 337, mode() === "cinematic" ? 720 : 300, 0x806f78, 2)
       ];
-      const ringWorlds = new Set(["social", "creative", "music", "graphic", "cinema", "analytics"]);
+      const bodyModels = Object.freeze({
+        mercury: "terrestrial",
+        venus: "desert",
+        earth: "ocean",
+        mars: "desert",
+        jupiter: "gas",
+        saturn: "gas",
+        uranus: "ice",
+        neptune: "storm"
+      });
+      const bodyScales = Object.freeze({ mercury: .78, venus: .96, earth: 1, mars: .84, jupiter: 1.48, saturn: 1.32, uranus: 1.08, neptune: 1.16 });
       const planets = planetButtons.map((button, index) => {
         const key = button.dataset.hhGalaxyKey;
-        const model = button.dataset.hhModel || "terrestrial";
+        const body = button.dataset.hhBody || "earth";
+        const model = bodyModels[body] || button.dataset.hhModel || "terrestrial";
         const weight = Math.max(.8, Math.min(1.8, Number(button.dataset.hhWeight) || 1));
         const popularity = Math.min(1, Math.log2(2 + (usage[key] || 0)) / 4);
         const radius = 79 + index * 10.55;
-        const size = 8.2 + (weight - .8) * 10.5 + popularity * 3;
+        const size = (8.2 + (weight - .8) * 10.5 + popularity * 3) * (bodyScales[body] || 1);
+        const spinRate = Math.max(.035, Math.min(.24, Number(button.dataset.hhSpin) || (.08 + index % 5 * .015)));
         const hitSize = Math.max(48, Math.min(76, 36 + weight * 20));
         button.style.setProperty("--planet-hit-size", `${hitSize.toFixed(1)}px`);
         button.style.setProperty("--planet-hit-half", `${(hitSize / 2).toFixed(2)}px`);
@@ -800,7 +812,7 @@
         halo.position.z = -size * .55;
         group.add(halo);
         let planetaryRing = null;
-        if (ringWorlds.has(key)) {
+        if (body === "saturn") {
           planetaryRing = new THREE.Mesh(
             new THREE.RingGeometry(size * 1.28, size * 2.05, mode() === "cinematic" ? 112 : 64, 4),
             new THREE.MeshBasicMaterial({ map: ringTexture, color: accents[index], transparent: true, opacity: .48, side: THREE.DoubleSide, depthWrite: false, alphaTest: .018 })
@@ -854,7 +866,7 @@
           root.add(sprite);
           return { index: energyIndex, sprite, angle: index * .73 + energyIndex * Math.PI, speed: .12 + index % 3 * .018, position: new THREE.Vector3() };
         });
-        return { button, key, model, weight, accent: accents[index], group, mesh, clouds, moonPivots, planetaryRing, material, baseEmissiveColor, baseEmissiveIntensity, atmosphere, halo, orbit, orbitMaterial, baseOrbitOpacity, radius, eccentricity, tilt, size, orbitAngle: index * 2.399963 + (index % 3) * .31, speed: .035 / Math.sqrt(radius / 82), popularity, energy, position: new THREE.Vector3(), scaleVector: new THREE.Vector3(1, 1, 1) };
+        return { button, key, body, model, weight, spinRate, accent: accents[index], group, mesh, clouds, moonPivots, planetaryRing, material, baseEmissiveColor, baseEmissiveIntensity, atmosphere, halo, orbit, orbitMaterial, baseOrbitOpacity, radius, eccentricity, tilt, size, orbitAngle: index * 2.399963 + (index % 3) * .31, speed: .035 / Math.sqrt(radius / 82), popularity, energy, position: new THREE.Vector3(), scaleVector: new THREE.Vector3(1, 1, 1) };
       });
 
       sceneState = {
@@ -935,8 +947,8 @@
       orbitPosition(state.THREE, planet, angle, planet.position);
       planet.group.position.copy(planet.position);
       const depth = Math.max(-1, Math.min(1, planet.position.z / Math.max(1, planet.radius * .35)));
-      planet.mesh.rotation.y += delta * (.08 + index % 5 * .015);
-      if (planet.clouds) planet.clouds.rotation.y += delta * (.105 + index % 3 * .012);
+      planet.mesh.rotation.y += delta * planet.spinRate;
+      if (planet.clouds) planet.clouds.rotation.y += delta * planet.spinRate * 1.22;
       planet.moonPivots.forEach((pivot, moonIndex) => { pivot.rotation.y += delta * (.32 + moonIndex * .08); });
       if (planet.planetaryRing) planet.planetaryRing.rotation.z += delta * .012;
       planet.group.children.forEach((child) => {

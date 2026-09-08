@@ -10,6 +10,8 @@ test("interactive H galaxy exposes exactly twenty-five unique product planets", 
   const html = read("index.html");
   const planets = [...html.matchAll(/data-hh-planet="(\d+)"/g)].map((match) => match[1]);
   const keys = [...html.matchAll(/data-hh-galaxy-key="([^"]+)"/g)].map((match) => match[1]);
+  const bodies = [...html.matchAll(/data-hh-body="([^"]+)"/g)].map((match) => match[1]);
+  const spins = [...html.matchAll(/data-hh-spin="([^"]+)"/g)].map((match) => match[1]);
 
   assert.equal(planets.length, 25);
   assert.equal(new Set(planets).size, 25);
@@ -17,14 +19,19 @@ test("interactive H galaxy exposes exactly twenty-five unique product planets", 
   assert.equal(new Set(keys).size, 25);
   assert.equal((html.match(/data-hh-weight=/g) || []).length, 25);
   assert.equal((html.match(/data-hh-model=/g) || []).length, 25);
+  assert.equal((html.match(/data-hh-body=/g) || []).length, 25);
+  assert.equal((html.match(/data-hh-spin=/g) || []).length, 25);
+  assert.equal(new Set(bodies).size, 8);
+  assert.equal(new Set(spins).size, 25);
+  assert.doesNotMatch(html, /class="hh-galaxy-planet"[^>]*>\s*<span|class="hh-galaxy-planet"[^>]*>\s*<em/);
   assert.match(html, /auth-h-channel-mark/);
   assert.match(html, /Bước vào thiên hà\./);
   assert.match(html, /Đánh thức mọi ý tưởng\./);
   assert.match(html, /<div class="hh-galaxy-sun"[^>]*><span><\/span>/);
   assert.doesNotMatch(html, /<div class="hh-galaxy-sun"[^>]*><span>H<\/span>/);
   assert.match(html, /id="hhGalaxyInspector" role="tabpanel"/);
-  assert.match(html, /auth-h-galaxy\.css\?v=12/);
-  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=14/);
+  assert.match(html, /auth-h-galaxy\.css\?v=13/);
+  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=15/);
   assert.match(html, /data-hh-galaxy-detail/);
   assert.doesNotMatch(html, /auth-feature-showcase|auth-benefits/);
   assert.doesNotMatch(html, /data-hh-galaxy-key="meme"/);
@@ -53,6 +60,7 @@ test("galaxy interactions support hover, touch, focus and keyboard navigation", 
   assert.match(script, /hhPlanetTheme/);
   assert.match(script, /data-hh-galaxy-detail/);
   assert.doesNotMatch(script, /localStorage|sessionStorage|password|token/i);
+  assert.doesNotMatch(script, /item\.title\s*=/);
 });
 
 test("galaxy visuals retain motion comfort and responsive fallbacks", () => {
@@ -67,6 +75,10 @@ test("galaxy visuals retain motion comfort and responsive fallbacks", () => {
   assert.doesNotMatch(css, /\.hh-galaxy-planet[\s\S]{0,1800}rotateX\(-61deg\)/);
   assert.match(css, /animation:\s*hh-galaxy-planet-surface/);
   assert.match(css, /--planet-texture/);
+  assert.match(css, /--planet-spin/);
+  assert.match(css, /--planet-orbit-speed/);
+  assert.match(css, /data-hh-body="saturn"/);
+  assert.match(css, /\.hh-galaxy-planet > span,[\s\S]{0,120}display: none !important/);
   assert.match(css, /var\(--galaxy-accent\)/);
   assert.match(css, /\.hh-galaxy-detail/);
   assert.match(css, /--comet-y:\s*-\d+vw/);

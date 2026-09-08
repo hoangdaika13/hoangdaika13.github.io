@@ -357,7 +357,6 @@
       const itemData = categories[item.dataset.hhGalaxyKey];
       if (itemData) {
         item.setAttribute("aria-label", `${itemData.title}: ${itemData.description}`);
-        item.title = `${itemData.title} · ${itemData.count}`;
       }
     });
 
