@@ -225,9 +225,9 @@ test("Galaxy Star replaces every global identity surface without changing user i
   const css = read("brand-galaxy-logo.css");
   const runtime = read("brand-galaxy-logo.js");
 
-  assert.ok((html.match(/data-hh-galaxy-logo/g) || []).length >= 6);
+  assert.ok((html.match(/data-hh-galaxy-logo/g) || []).length >= 5);
   assert.match(html, /hh-boot-mark[^>]+data-hh-galaxy-logo/);
-  assert.match(html, /auth-h-channel-mark[^>]+data-hh-galaxy-logo/);
+  assert.match(html, /auth-card-heading[\s\S]{0,220}data-hh-galaxy-logo/);
   assert.match(html, /app-brand-logo[^>]+data-hh-galaxy-logo/);
   assert.match(html, /appCosmicLoaderIcon/);
   assert.match(logo, /<polygon points=/);

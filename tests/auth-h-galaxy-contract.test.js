@@ -24,9 +24,8 @@ test("interactive H galaxy exposes exactly twenty-five unique product planets", 
   assert.equal(new Set(bodies).size, 8);
   assert.equal(new Set(spins).size, 25);
   assert.doesNotMatch(html, /class="hh-galaxy-planet"[^>]*>\s*<span|class="hh-galaxy-planet"[^>]*>\s*<em/);
-  assert.match(html, /auth-h-channel-mark/);
-  assert.match(html, /Bước vào thiên hà\./);
-  assert.match(html, /Đánh thức mọi ý tưởng\./);
+  assert.doesNotMatch(html, /auth-gate-brand|auth-h-channel-mark/);
+  assert.doesNotMatch(html, /Bước vào thiên hà\.|Đánh thức mọi ý tưởng\.|H Creative Universe/);
   assert.match(html, /<div class="hh-galaxy-sun"[^>]*><span><\/span>/);
   assert.doesNotMatch(html, /<div class="hh-galaxy-sun"[^>]*><span>H<\/span>/);
   assert.match(html, /id="hhGalaxyInspector" role="tabpanel"/);

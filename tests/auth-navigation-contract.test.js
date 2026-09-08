@@ -56,7 +56,7 @@ test("authentication uses calm motion with pausable automatic previews", () => {
   assert.match(html, /data-hh-galaxy/);
   assert.match(html, /data-hh-galaxy-key="creative"/);
   assert.match(html, /hh-galaxy-inspector/);
-  assert.match(html, /auth-tool-stream/);
+  assert.doesNotMatch(html, /auth-tool-stream|auth-product-preview|auth-gate-brand/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css, /auth-card-arrive/);
   assert.match(css, /auth-preview-float-heavy/);
