@@ -44,6 +44,17 @@
     "pet-lake": Object.freeze({ x: 0.15, y: 0.62, radiusX: 0.15, radiusY: 0.14, imageX: 0.19, pace: 0.64 })
   });
 
+  const PET_LIGHT_PROFILES = Object.freeze({
+    rain: Object.freeze({ sky: 0xc8e2ec, ground: 0x26302f, hemi: 2.05, key: 0xffd2a3, keyPower: 2.35, rim: 0xa8dfff, rimPower: 1.45, exposure: 1.02, shadow: 0.31, breeze: 0.58 }),
+    forest: Object.freeze({ sky: 0xe1f3df, ground: 0x293728, hemi: 2.45, key: 0xffe3ae, keyPower: 2.15, rim: 0xb8f2cf, rimPower: 1.08, exposure: 1.06, shadow: 0.26, breeze: 0.92 }),
+    moonlight: Object.freeze({ sky: 0xa8cbf4, ground: 0x171d28, hemi: 1.72, key: 0xffbd82, keyPower: 2.45, rim: 0x87b9ff, rimPower: 1.92, exposure: 0.96, shadow: 0.34, breeze: 0.34 }),
+    ocean: Object.freeze({ sky: 0xffd8b8, ground: 0x51372e, hemi: 2.28, key: 0xffb67e, keyPower: 2.72, rim: 0xffe3bd, rimPower: 1.02, exposure: 1.08, shadow: 0.25, breeze: 1.08 })
+  });
+  const DEFAULT_PET_LIGHT_PROFILE = Object.freeze({
+    sky: 0xfff5df, ground: 0x26364c, hemi: 2.35, key: 0xffd4aa, keyPower: 2.6,
+    rim: 0x9bdcff, rimPower: 1.35, exposure: 1.08, shadow: 0.28, breeze: 0.5
+  });
+
   const PET_MODEL_PROFILES = Object.freeze({
     cat: Object.freeze({
       species: "cat", icon: "🐈", label: "Mèo cam trắng", src: "assets/focus-room/pets/bicolor-cat.glb?v=2", desiredHeight: 1.08,
@@ -177,6 +188,10 @@
     scene("dog-spring-veranda", "Hiên vườn xuân cùng cún", "Buổi sáng", "Cún nhỏ ngủ bên bàn học, nắng xuyên vườn và cánh hoa trôi chậm.", "pets", "pet-garden", "assets/focus-room/dog-spring-veranda.webp", ["birds", "wind", "pet-breath"]),
     scene("cat-riverside-blue-hour", "Nhà bên sông cùng mèo", "Chạng vạng", "Mèo mướp cuộn mình bên cửa, mưa bụi và ánh sông xanh dịu.", "pets", "pet-river", "assets/focus-room/cat-riverside-blue-hour.webp", ["rain", "stream", "purr"]),
     scene("puppy-lakeside-cabin", "Cabin hồ cùng cún nhỏ", "Bình minh", "Cún con ngủ trong ổ len, hồ sương và rừng thông đón nắng đầu ngày.", "pets", "pet-lake", "assets/focus-room/puppy-lakeside-cabin.webp", ["wind", "stream", "pet-breath"]),
+    scene("pet-rain-conservatory", "Nhà kính mưa cho mèo", "Ngày mưa", "Nhà kính đọc sách có thảm sisal, trụ cào và lối sàn rộng cho mèo 3D dạo bước.", "pets", "rain", "assets/focus-room/pet-rain-conservatory.webp", ["rain", "purr", "pages"], { pet: "cat", grade: "brightness(.91) saturate(.92) contrast(1.06)", accent: "#9de5d0", collection: "Pet Sanctuary 3D" }),
+    scene("pet-garden-pavilion", "Hiên vườn dành cho cún", "Sáng dịu", "Hiên gỗ mở ra vườn rêu, sàn đá rộng và ổ nằm yên cho cún 3D nghỉ hoặc đi dạo.", "pets", "forest", "assets/focus-room/pet-garden-pavilion.webp", ["birds", "stream", "pet-breath"], { pet: "dog", grade: "brightness(.96) saturate(.88) contrast(1.04)", accent: "#bce5a7", collection: "Pet Sanctuary 3D" }),
+    scene("pet-moonlit-library", "Thư viện trăng cùng mèo", "Đêm", "Thư viện mưa đêm có lò sưởi, thảm mềm và hành lang sàn thoáng cho mèo 3D.", "pets", "moonlight", "assets/focus-room/pet-moonlit-library.webp", ["rain", "fire", "purr"], { pet: "cat", grade: "brightness(.81) saturate(.91) contrast(1.12)", accent: "#9fc8ff", collection: "Pet Sanctuary 3D" }),
+    scene("pet-coastal-studio", "Studio biển cùng cún", "Hoàng hôn", "Studio ven biển với thảm sợi tự nhiên, ổ nằm và khoảng sàn rộng cho cún 3D chuyển động.", "pets", "ocean", "assets/focus-room/pet-coastal-studio.webp", ["ocean", "wind", "pet-breath"], { pet: "dog", grade: "brightness(1.01) saturate(.95) contrast(1.03)", accent: "#ffc39e", collection: "Pet Sanctuary 3D" }),
     ...buildExpandedScenes()
   ]);
 
@@ -2529,6 +2544,39 @@
     return styled;
   }
 
+  function enablePetFurSway(material, kind, breeze) {
+    if (!material || (!material.isMeshStandardMaterial && !material.isMeshPhysicalMaterial)) return null;
+    material.userData = material.userData || {};
+    if (material.userData.hhFurUniforms) return material.userData.hhFurUniforms;
+    const uniforms = {
+      uHHFurTime: { value: 0 },
+      uHHFurStrength: { value: (kind === "cat" ? .0019 : .00155) * clamp(breeze, .2, 1.2, .5) }
+    };
+    const previousCompile = material.onBeforeCompile;
+    const previousCacheKey = material.customProgramCacheKey?.bind(material);
+    material.onBeforeCompile = function applyHHFurShader(shader, renderer) {
+      previousCompile?.call(this, shader, renderer);
+      shader.uniforms.uHHFurTime = uniforms.uHHFurTime;
+      shader.uniforms.uHHFurStrength = uniforms.uHHFurStrength;
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+        float hhFurWave = sin(position.y * 21.0 + position.x * 9.0 + uHHFurTime * 1.55)
+          + sin(position.y * 37.0 - position.z * 13.0 - uHHFurTime * 0.82) * 0.42;
+        transformed += objectNormal * hhFurWave * uHHFurStrength;`
+      ).replace(
+        "#include <common>",
+        `#include <common>
+        uniform float uHHFurTime;
+        uniform float uHHFurStrength;`
+      );
+    };
+    material.customProgramCacheKey = () => `${previousCacheKey?.() || "pet"}|hh-soft-fur-v1-${kind}`;
+    material.userData.hhFurUniforms = uniforms;
+    material.needsUpdate = true;
+    return uniforms;
+  }
+
   function collectPetRig(model, kind) {
     const bone = (...names) => names.map((name) => model.getObjectByName(name)).find(Boolean) || null;
     if (kind === "dog") {
@@ -2541,22 +2589,32 @@
           [bone("L_elbow_jnt.106_0102"), 0], [bone("R_knee_jnt.15_013"), 0],
           [bone("R_elbow_jnt.116_0112"), Math.PI], [bone("L_knee_jnt.25_023"), Math.PI]
         ],
+        paws: [
+          [bone("L_wrist_jnt.107_0103"), 0], [bone("R_ankle_jnt.16_014"), 0],
+          [bone("R_wrist_jnt.117_0113"), Math.PI], [bone("L_ankle_jnt.26_024"), Math.PI]
+        ],
         spine: [bone("spine_1_jnt.35_033"), bone("spine_2_jnt.36_034"), bone("chest_jnt.37_035")].filter(Boolean),
+        neck: [bone("neck_base_jnt.38_036"), bone("neck_mid_jnt.39_037")].filter(Boolean),
         head: bone("head_jnt.40_038"),
         tail: [1, 2, 3, 4, 5, 6, 7].map((index) => bone(`${index === 1 ? "tail_1_jnt.7_05" : index === 2 ? "tail_2_jnt.8_06" : index === 3 ? "tail_3_jnt.9_07" : index === 4 ? "tail_4_jnt.10_08" : index === 5 ? "tail_5_jnt.11_09" : index === 6 ? "tail_6_jnt.12_010" : "tail_7_jnt.13_011"}`)).filter(Boolean)
       };
     }
     return {
       upper: [
-        [bone("Wolf_l_FrontLeg_HipSHJnt_4"), 0], [bone("Wolf_r_HindLeg_HipSHJnt_33"), 0],
-        [bone("Wolf_r_FrontLeg_HipSHJnt_10"), Math.PI], [bone("Wolf_l_HindLeg_HipSHJnt_27"), Math.PI]
+        [bone("Wolf_l_FrontLeg_HipSHJnt_4"), 0], [bone("Wolf_r_HindLeg_HipSHJnt_33"), Math.PI * .5],
+        [bone("Wolf_r_FrontLeg_HipSHJnt_10"), Math.PI], [bone("Wolf_l_HindLeg_HipSHJnt_27"), Math.PI * 1.5]
       ],
       lower: [
-        [bone("Wolf_l_FrontLeg_KneeSHJnt_3"), 0], [bone("Wolf_r_HindLeg_Knee1SHJnt_32"), 0],
-        [bone("Wolf_r_FrontLeg_KneeSHJnt_9"), Math.PI], [bone("Wolf_l_HindLeg_Knee1SHJnt_26"), Math.PI]
+        [bone("Wolf_l_FrontLeg_KneeSHJnt_3"), 0], [bone("Wolf_r_HindLeg_Knee1SHJnt_32"), Math.PI * .5],
+        [bone("Wolf_r_FrontLeg_KneeSHJnt_9"), Math.PI], [bone("Wolf_l_HindLeg_Knee1SHJnt_26"), Math.PI * 1.5]
+      ],
+      paws: [
+        [bone("Wolf_l_FrontLeg_AnkleSHJnt_2"), 0], [bone("Wolf_r_HindLeg_AnkleSHJnt_30"), Math.PI * .5],
+        [bone("Wolf_r_FrontLeg_AnkleSHJnt_8"), Math.PI], [bone("Wolf_l_HindLeg_AnkleSHJnt_24"), Math.PI * 1.5]
       ],
       spine: ["Wolf_Spine_01SHJnt_21", "Wolf_Spine_02SHJnt_20", "Wolf_Spine_03SHJnt_19", "Wolf_Spine_04SHJnt_18"]
         .map((name) => bone(name)).filter(Boolean),
+      neck: [bone("Wolf_Neck_01SHJnt_16"), bone("Wolf_Neck_02SHJnt_15")].filter(Boolean),
       head: bone("Wolf_Neck_TopSHJnt_14"),
       tail: ["Wolf_Tail_01_02SHJnt_37", "Wolf_Tail_01_03SHJnt_36", "Wolf_Tail_01_04SHJnt_35", "Wolf_Tail_01_05SHJnt_34"]
         .map((name) => bone(name)).filter(Boolean)
@@ -2567,7 +2625,8 @@
     return [...new Set([
       ...(rig?.upper || []).map(([joint]) => joint),
       ...(rig?.lower || []).map(([joint]) => joint),
-      ...(rig?.spine || []), rig?.head, ...(rig?.tail || [])
+      ...(rig?.paws || []).map(([joint]) => joint),
+      ...(rig?.spine || []), ...(rig?.neck || []), rig?.head, ...(rig?.tail || [])
     ].filter(Boolean))];
   }
 
@@ -2603,29 +2662,40 @@
   }
 
   function applyPetGait(runtime, elapsed, strength) {
-    const gait = elapsed * (runtime.kind === "cat" ? 5.35 : 4.85);
+    const gait = elapsed * (runtime.kind === "cat" ? 4.9 : 4.45);
     const rig = runtime.rig;
-    const upperSwing = runtime.kind === "cat" ? .33 : .28;
-    const lowerSwing = runtime.kind === "cat" ? .3 : .24;
+    const upperSwing = runtime.kind === "cat" ? .31 : .265;
+    const lowerSwing = runtime.kind === "cat" ? .28 : .225;
     rig.upper.forEach(([joint, phase]) => {
       if (joint) joint.rotation.x += Math.sin(gait + phase) * upperSwing * strength;
     });
     rig.lower.forEach(([joint, phase]) => {
-      if (joint) joint.rotation.x += Math.max(0, Math.sin(gait + phase + .42)) * lowerSwing * strength;
+      if (joint) joint.rotation.x += Math.max(0, Math.sin(gait + phase + .5)) * lowerSwing * strength;
+    });
+    rig.paws.forEach(([joint, phase]) => {
+      if (joint) joint.rotation.x -= Math.sin(gait + phase + .28) * .12 * strength;
     });
     rig.spine.forEach((joint, index) => {
-      joint.rotation.z += Math.sin(gait * .5 + index * .42) * .014 * strength;
-      joint.rotation.y += Math.sin(gait + index * .3) * .008 * strength;
+      const weightShift = Math.sin(gait * .5 + index * .34);
+      joint.rotation.z += weightShift * (runtime.kind === "cat" ? .018 : .014) * strength;
+      joint.rotation.y += Math.sin(gait + index * .3) * (runtime.kind === "cat" ? .011 : .008) * strength;
+    });
+    rig.neck.forEach((joint, index) => {
+      joint.rotation.z -= Math.sin(gait * .5 + index * .22) * .012 * strength;
     });
     if (rig.head) {
-      rig.head.rotation.z -= Math.sin(gait * .5) * .018 * strength;
-      rig.head.rotation.x += Math.sin(gait * 2) * .006 * strength;
+      rig.head.rotation.z -= Math.sin(gait * .5) * .022 * strength;
+      rig.head.rotation.x += Math.sin(gait * 2) * .007 * strength;
+      rig.head.rotation.y += Math.sin(gait * .25) * .01 * strength;
     }
     rig.tail.forEach((joint, index) => {
-      joint.rotation.y += Math.sin(gait * .5 - index * .32) * (.035 + index * .006) * strength;
+      joint.rotation.y += Math.sin(gait * .48 - index * .32) * (.04 + index * .007) * strength;
+      joint.rotation.z += Math.sin(gait * .24 - index * .21) * .008 * strength;
     });
-    runtime.pose.position.y = Math.abs(Math.sin(gait)) * .014 * strength;
-    runtime.pose.rotation.z = Math.sin(gait * .5) * .012 * strength;
+    runtime.pose.position.x = Math.sin(gait * .5) * .006 * strength;
+    runtime.pose.position.y = Math.abs(Math.sin(gait)) * (runtime.kind === "cat" ? .012 : .014) * strength;
+    runtime.pose.rotation.x = Math.sin(gait) * .005 * strength;
+    runtime.pose.rotation.z = Math.sin(gait * .5) * (runtime.kind === "cat" ? .014 : .011) * strength;
   }
 
   function applyPetInteraction(runtime, now) {
@@ -2730,6 +2800,8 @@
       const ownedMaterials = new Set();
       const ownedTextures = new Set();
       const materialVariants = new Map();
+      const furUniforms = new Set();
+      const petLight = PET_LIGHT_PROFILES[selected.effect] || DEFAULT_PET_LIGHT_PROFILE;
       model.traverse((object) => {
         if (!object?.isMesh) return;
         object.frustumCulled = false;
@@ -2742,6 +2814,8 @@
         styledMaterials.forEach((material) => {
           if ("roughness" in material) material.roughness = Math.max(.72, Number(material.roughness) || 0);
           if ("metalness" in material) material.metalness = Math.min(.04, Number(material.metalness) || 0);
+          const fur = enablePetFurSway(material, kind, petLight.breeze);
+          if (fur) furUniforms.add(fur);
         });
         object.material = Array.isArray(object.material) ? styledMaterials : styledMaterials[0];
       });
@@ -2757,7 +2831,7 @@
       renderer.setClearColor(0x000000, 0);
       if ("outputColorSpace" in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
       if (THREE.ACESFilmicToneMapping) renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.08;
+      renderer.toneMappingExposure = petLight.exposure;
       const anisotropy = Math.min(4, renderer.capabilities?.getMaxAnisotropy?.() || 1);
       ownedTextures.forEach((texture) => {
         if ("anisotropy" in texture) texture.anisotropy = anisotropy;
@@ -2768,11 +2842,11 @@
       const camera = new THREE.PerspectiveCamera(32, 1, .1, 20);
       camera.position.set(0, .15, 5);
       camera.lookAt(0, -.2, 0);
-      scene3d.add(new THREE.HemisphereLight(0xfff5df, 0x26364c, 2.35));
-      const keyLight = new THREE.DirectionalLight(0xffd4aa, 2.6);
+      scene3d.add(new THREE.HemisphereLight(petLight.sky, petLight.ground, petLight.hemi));
+      const keyLight = new THREE.DirectionalLight(petLight.key, petLight.keyPower);
       keyLight.position.set(-3, 5, 4);
       scene3d.add(keyLight);
-      const rimLight = new THREE.DirectionalLight(0x9bdcff, 1.35);
+      const rimLight = new THREE.DirectionalLight(petLight.rim, petLight.rimPower);
       rimLight.position.set(4, 2, -2);
       scene3d.add(rimLight);
       const fillLight = new THREE.DirectionalLight(0xffe6d0, .72);
@@ -2784,7 +2858,7 @@
       pose.add(model);
       anchor.add(pose);
       const shadowGeometry = new THREE.CircleGeometry(.68, 40);
-      const shadowMaterial = new THREE.MeshBasicMaterial({ color: 0x020509, transparent: true, opacity: .28, depthWrite: false });
+      const shadowMaterial = new THREE.MeshBasicMaterial({ color: 0x020509, transparent: true, opacity: petLight.shadow, depthWrite: false });
       const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
       shadow.rotation.x = -Math.PI / 2;
       shadow.position.y = .012;
@@ -2816,11 +2890,12 @@
       mixer.update(0);
       const runtime = {
         renderer, mixer, actions, clips, currentAction, actionKey: currentAction ? "idle" : "", model, pose, anchor, shadow, camera, scene3d, stage, canvas, hitbox,
-        observer: null, frame: 0, contextLost: null, ownedGeometries, ownedMaterials, ownedTextures,
-        currentX: profile.restingX, restingX: profile.restingX, travelHalf: 1.72, viewScale: 1,
-        laneHalf: 1.72, compactLane: false, restBlend: 0, walkBlend: 0, yaw: profile.facing, lastRender: 0,
+        observer: null, frame: 0, contextLost: null, ownedGeometries, ownedMaterials, ownedTextures, furUniforms,
+        currentX: profile.restingX, currentZ: 0, restingX: profile.restingX, travelHalf: 1.72, depthHalf: .42, viewScale: 1,
+        laneHalf: 1.72, compactLane: false, restBlend: 0, walkBlend: 0, walkTheta: 0, lastMode: "", yaw: profile.facing, lastRender: 0,
         startedAt: global.performance?.now?.() || Date.now(), rig, baseRigQuaternions: new Map(), kind, profileId,
-        interactionStartedAt: 0, interactionEndsAt: 0, interactionActionKey: "idle", interactionIndex: instance.state.pet.interactions % 2, interactionActive: false
+        baseShadowOpacity: petLight.shadow, interactionStartedAt: 0, interactionEndsAt: 0,
+        interactionActionKey: "idle", interactionIndex: instance.state.pet.interactions % 2, interactionActive: false
       };
       capturePetRigBase(runtime);
       instance.petDepth = runtime;
@@ -2836,12 +2911,18 @@
         runtime.viewScale = clamp(camera.aspect * 1.5, .48, 1, 1);
         runtime.travelHalf = Math.max(.12, horizontalHalf - .48 * runtime.viewScale);
         const direction = Math.sign(profile.restingX) || -1;
-        runtime.restingX = direction * Math.min(Math.abs(profile.restingX), runtime.travelHalf * .7);
+        const edgeLane = clamp(runtime.travelHalf * .8, .12, Math.max(.12, runtime.travelHalf - .14), runtime.travelHalf * .7);
+        runtime.restingX = direction * Math.max(Math.min(Math.abs(profile.restingX), runtime.travelHalf * .84), edgeLane);
         runtime.compactLane = width < 620;
-        runtime.laneHalf = runtime.compactLane ? Math.max(.035, runtime.travelHalf * .16) : runtime.travelHalf;
+        const sideClearance = Math.max(.12, runtime.travelHalf - Math.abs(runtime.restingX));
+        runtime.laneHalf = runtime.compactLane
+          ? Math.max(.035, Math.min(runtime.travelHalf * .16, sideClearance * .46))
+          : Math.max(.12, Math.min(runtime.travelHalf * .12, sideClearance * .4));
+        runtime.depthHalf = runtime.compactLane ? .09 : clamp(verticalHalf * .34, .3, .52, .42);
         runtime.currentX = runtime.compactLane
           ? clamp(runtime.currentX, runtime.restingX - runtime.laneHalf, runtime.restingX + runtime.laneHalf, runtime.restingX)
           : clamp(runtime.currentX, -runtime.travelHalf, runtime.travelHalf, runtime.restingX);
+        runtime.currentZ = clamp(runtime.currentZ, -runtime.depthHalf, runtime.depthHalf, 0);
         anchor.scale.setScalar(runtime.viewScale);
         positionPetHitbox(runtime, THREE);
       };
@@ -2858,7 +2939,7 @@
         hitbox.dataset.ready = "true";
       }
       app.dataset.petDepth = "model";
-      const targetFps = quality === "high" ? 30 : 24;
+      const targetFps = quality === "high" ? 60 : 30;
       const loop = (time) => {
         if (instance.petDepth !== runtime || global.document?.hidden || !motionEnabled(instance) || effectiveQuality(instance) === "eco") return;
         runtime.frame = global.requestAnimationFrame(loop);
@@ -2867,34 +2948,42 @@
         runtime.lastRender = time;
         const elapsed = Math.max(0, (time - runtime.startedAt) / 1000);
         const mode = petBehaviorMode(instance, elapsed, runtime, time);
-        const walkPhase = (elapsed / (kind === "cat" ? 17 : 19)) % 1;
-        const movingRight = walkPhase < .5;
-        const travel = .5 - Math.cos(walkPhase * Math.PI * 2) * .5;
-        const targetX = mode === "walk"
-          ? runtime.compactLane
-            ? runtime.restingX - runtime.laneHalf + travel * runtime.laneHalf * 2
-            : -runtime.travelHalf + travel * runtime.travelHalf * 2
-          : runtime.restingX;
-        runtime.currentX = dampValue(runtime.currentX, targetX, mode === "walk" ? 7.2 : 2.2, delta);
-        runtime.restBlend = dampValue(runtime.restBlend, mode === "rest" ? 1 : 0, 2.4, delta);
-        runtime.walkBlend = dampValue(runtime.walkBlend, mode === "walk" ? 1 : 0, 3.2, delta);
-        const targetYaw = mode === "walk" ? (movingRight ? -Math.PI / 2 : Math.PI / 2) : profile.facing;
-        runtime.yaw = dampAngle(runtime.yaw, targetYaw, 4.6, delta);
-        anchor.position.set(runtime.currentX, -1.14, 0);
+        const pathCenterX = runtime.restingX;
+        const pathHalf = runtime.laneHalf;
+        if (mode === "walk" && runtime.lastMode !== "walk") {
+          const nearestCos = clamp((pathCenterX - runtime.currentX) / Math.max(.001, pathHalf), -1, 1, 0);
+          runtime.walkTheta = Math.acos(nearestCos);
+          if (runtime.currentZ < 0) runtime.walkTheta = Math.PI * 2 - runtime.walkTheta;
+        }
+        if (mode === "walk") runtime.walkTheta = (runtime.walkTheta + delta * Math.PI * 2 / (kind === "cat" ? 17 : 19)) % (Math.PI * 2);
+        const targetX = mode === "walk" ? pathCenterX - Math.cos(runtime.walkTheta) * pathHalf : runtime.restingX;
+        const targetZ = mode === "walk" ? Math.sin(runtime.walkTheta) * runtime.depthHalf : 0;
+        const directionX = mode === "walk" ? Math.sin(runtime.walkTheta) * pathHalf : targetX - runtime.currentX;
+        const directionZ = mode === "walk" ? Math.cos(runtime.walkTheta) * runtime.depthHalf : targetZ - runtime.currentZ;
+        const returning = mode !== "walk" && Math.hypot(directionX, directionZ) > .035;
+        const locomoting = mode === "walk" || returning;
+        runtime.currentX = dampValue(runtime.currentX, targetX, locomoting ? 5.8 : 2.2, delta);
+        runtime.currentZ = dampValue(runtime.currentZ, targetZ, locomoting ? 4.8 : 2.2, delta);
+        runtime.restBlend = dampValue(runtime.restBlend, mode === "rest" && !returning ? 1 : 0, 2.4, delta);
+        runtime.walkBlend = dampValue(runtime.walkBlend, locomoting ? 1 : 0, 3.2, delta);
+        const targetYaw = locomoting && Math.hypot(directionX, directionZ) > .001 ? Math.atan2(-directionX, directionZ) : profile.facing;
+        runtime.yaw = dampAngle(runtime.yaw, targetYaw, 4.25, delta);
+        runtime.lastMode = mode;
+        anchor.position.set(runtime.currentX, -1.14 - runtime.currentZ * .1, runtime.currentZ);
         anchor.rotation.y = runtime.yaw;
         pose.scale.setScalar(1);
         pose.position.set(0, 0, 0);
         pose.rotation.set(0, 0, 0);
         shadow.scale.set(1 + runtime.restBlend * .2, 1 + runtime.restBlend * .2, 1);
-        shadow.material.opacity = .2 + runtime.restBlend * .1;
+        shadow.material.opacity = clamp(runtime.baseShadowOpacity + runtime.restBlend * .08, .18, .42, runtime.baseShadowOpacity);
         restorePetRigBase(runtime);
-        transitionPetAction(runtime, mode, THREE);
+        transitionPetAction(runtime, locomoting ? "walk" : mode, THREE);
         mixer.update(delta);
         capturePetRigBase(runtime);
-        const endpointEase = Math.min(1, Math.abs(Math.sin(walkPhase * Math.PI * 2)) * 2.4);
-        applyPetGait(runtime, elapsed, runtime.walkBlend * endpointEase);
+        applyPetGait(runtime, elapsed, runtime.walkBlend);
         applyPetInteraction(runtime, time);
         if (mode !== "walk" && kind === "cat") pose.position.y += Math.sin(elapsed * 1.35) * .0035;
+        runtime.furUniforms.forEach((uniform) => { uniform.uHHFurTime.value = elapsed; });
         positionPetHitbox(runtime, THREE);
         renderer.render(scene3d, camera);
       };

@@ -260,24 +260,28 @@ test("Focus Room upgrades the canonical HH Platform learning workspace", () => {
   assert.match(router, /window\.HHFocusRoom\?\.mount/);
   assert.match(router, /window\.HHFocusRoom\?\.unmount/);
   assert.match(router, /Phòng học tập trung/);
-  assert.match(router, /226 không gian \(26 cảnh gốc \+ Atlas 200\)/);
+  assert.match(router, /230 không gian \(30 cảnh gốc \+ Atlas 200\)/);
   assert.match(router, /Trong Học tập &amp; Ngôn ngữ/);
-  assert.match(loader, /"focus-study-room":\s*\{[\s\S]*focus-room\.css\?v=13[\s\S]*focus-room\.js\?v=14/);
+  assert.match(loader, /"focus-study-room":\s*\{[\s\S]*focus-room\.css\?v=13[\s\S]*focus-room\.js\?v=19/);
   assert.match(loader, /value === "\/focus-room"/);
   assert.match(worker, /\.\/focus-room\.css\?v=13/);
-  assert.match(worker, /\.\/focus-room\.js\?v=14/);
+  assert.match(worker, /\.\/focus-room\.js\?v=19/);
   assert.doesNotMatch(source, /HH CORE|gateway|location\.href\s*=/i);
 });
 
-test("scene library ships 226 local presets, including exactly 200 truthful Atlas environments", () => {
+test("scene library ships 230 local presets, including four pet-ready sanctuaries and exactly 200 truthful Atlas environments", () => {
   const api = require("../focus-room.js");
   assert.equal(api.route, "/focus-room");
-  assert.equal(api.scenes.length, 226);
-  assert.equal(new Set(api.scenes.map((scene) => scene.id)).size, 226);
+  assert.equal(api.scenes.length, 230);
+  assert.equal(new Set(api.scenes.map((scene) => scene.id)).size, 230);
   const atlas = api.scenes.filter((scene) => scene.collection === "Atlas 200");
   assert.equal(atlas.length, 200);
   assert.equal(new Set(atlas.map((scene) => scene.image)).size, 20);
   assert.equal(atlas.filter((scene) => scene.pet === "cat" || scene.pet === "dog").length, 20);
+  const sanctuaries = api.scenes.filter((scene) => scene.collection === "Pet Sanctuary 3D");
+  assert.equal(sanctuaries.length, 4);
+  assert.equal(sanctuaries.filter((scene) => scene.pet === "cat").length, 2);
+  assert.equal(sanctuaries.filter((scene) => scene.pet === "dog").length, 2);
   assert.equal(api.channels.length, 16);
   assert.equal(api.musicTracks.length, 3);
   assert.equal(Object.keys(api.petProfiles).length, 8);
@@ -354,7 +358,7 @@ test("large scene catalog paginates and all pet coat preferences remain account 
   const controller = harness.api.mount(first.root, { currentUser: { id: "pet-atlas-user" } });
   controller.openPanel("scenes");
   assert.equal((first.root.innerHTML.match(/class="hfr-scene-card/g) || []).length, 24);
-  assert.match(first.root.innerHTML, /Xem thêm 24 cảnh · còn 202/);
+  assert.match(first.root.innerHTML, /Xem thêm 24 cảnh · còn 206/);
   harness.click(first, "scene-more");
   assert.equal((first.root.innerHTML.match(/class="hfr-scene-card/g) || []).length, 48);
 
@@ -672,7 +676,7 @@ test("responsive, motion and truthful capability contracts are explicit", () => 
   assert.doesNotMatch(source, /src:\s*"https?:\/\//);
   assert.match(source, /new THREE\.WebGLRenderer/);
   assert.match(source, /1000 \/ 30/);
-  assert.match(source, /targetFps = quality === "high" \? 30 : 24/);
+  assert.match(source, /targetFps = quality === "high" \? 60 : 30/);
   assert.match(source, /Math\.min\(1\.5/);
   assert.match(source, /transitionPetAction/);
   assert.match(source, /fadeIn\?\.\(fadeDuration\)/);
@@ -684,11 +688,25 @@ test("responsive, motion and truthful capability contracts are explicit", () => 
   assert.match(source, /playShake:[\s\S]*shake/);
   assert.match(source, /playRoll:[\s\S]*rollover/);
   assert.match(source, /filteredPetTexture/);
+  assert.match(source, /const PET_LIGHT_PROFILES/);
+  assert.match(source, /PET_LIGHT_PROFILES\[selected\.effect\]/);
+  assert.match(source, /function enablePetFurSway/);
+  assert.match(source, /hh-soft-fur-v1/);
+  assert.match(source, /uHHFurTime\.value = elapsed/);
+  assert.match(source, /rig\.paws\.forEach/);
+  assert.match(source, /rig\.neck\.forEach/);
   assert.match(source, /new THREE\.CanvasTexture/);
   assert.match(source, /instance\.state\.pet\.interactions \+= 1/);
   assert.match(source, /lastPlayedAt = Date\.now\(\)/);
   assert.match(source, /compactLane = width < 620/);
   assert.match(source, /runtime\.restingX - runtime\.laneHalf/);
+  assert.match(source, /const pathCenterX = runtime\.restingX/);
+  assert.match(source, /const edgeLane = clamp\(runtime\.travelHalf \* \.8/);
+  assert.match(source, /sideClearance \* \.4/);
+  assert.match(source, /runtime\.currentZ/);
+  assert.match(source, /Math\.atan2\(-directionX, directionZ\)/);
+  assert.match(source, /anchor\.position\.set\(runtime\.currentX, -1\.14 - runtime\.currentZ \* \.1, runtime\.currentZ\)/);
+  assert.doesNotMatch(source, /const endpointEase/);
   assert.match(source, /teardownPetDepth/);
   assert.match(styles, /\.hfr-pet-depth[\s\S]*pointer-events:\s*none/);
   assert.match(styles, /\.hfr-pet-play\s*\{[\s\S]*?z-index:\s*1/);

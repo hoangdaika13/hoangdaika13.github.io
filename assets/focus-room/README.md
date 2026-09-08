@@ -1,11 +1,12 @@
 # HH Focus Room scene assets
 
-These 27 project-local scene backgrounds power 226 presets in the canonical `/focus-room` workspace. The original library contains 26 scenes; Atlas 200 combines 20 owned backgrounds with ten documented lighting and atmosphere treatments. The browser never hotlinks a commercial focus product or an external image host.
+These 31 project-local scene backgrounds power 230 presets in the canonical `/focus-room` workspace. The original library contains 30 scenes; Atlas 200 combines 20 owned backgrounds with ten documented lighting and atmosphere treatments. The browser never hotlinks a commercial focus product or an external image host.
 
 ## Rights and provenance
 
 - `rainy-window.webp` is an optimized derivative of the existing original `assets/galaxy/hh-ambient-room-rainy-v1.png`, created for HH Platform with OpenAI ImageGen on 2026-08-29.
 - The original 11 additional images, eight landscape expansion scenes, six calm pet-companion scenes and `garden-sanctuary-rain.webp` were generated specifically for HH Platform with the built-in OpenAI ImageGen workflow on 2026-09-07.
+- Four additional pet-ready sanctuary renders were generated with the same project workflow on 2026-09-08. They deliberately contain no animal, leaving a clear floor lane for the live cat or dog model and avoiding duplicate pets.
 - LifeAt was used only as product-experience research. No LifeAt screenshot, source code, brand element, video, sound or image is included.
 - Every background contains no interface, logo, watermark or recognizable copyrighted character. Titles, timers and controls remain live HTML.
 - Full scenes are optimized WebP files up to 1672×942. `thumbs/` contains a separate 560 px delivery thumbnail for every scene.
@@ -42,8 +43,12 @@ These 27 project-local scene backgrounds power 226 presets in the canonical `/fo
 | `dog-spring-veranda.webp` | Small sleeping dog on a spring veranda | `A3F30AA7C3234D21575BCCDE6FCD832C5D98D13CCBF98541D1B73E311C2CBD7E` |
 | `cat-riverside-blue-hour.webp` | Tabby cat in a Vietnamese riverside room | `3531A5CD707E8CF814DE185DAA7CB9F2E15E782AD272EEE3B968F8BCF5C1332D` |
 | `puppy-lakeside-cabin.webp` | Sleeping puppy at a misty lakeside cabin | `5B56549C8E98E1919FCC2AE878974DDADD2EB426B396465E35DD8B5556C6A602` |
+| `pet-rain-conservatory.webp` | Pet-ready rainy reading conservatory | `0C82C2C160CD5E6B41A1D2E56F06A30ABCB3B8B2B524B13E73865AB2969C430F` |
+| `pet-garden-pavilion.webp` | Dog-ready timber garden pavilion | `9F3183AD8C808B7AB4F4DF4C1351BBC091A3C5EA73CB912A6779322E03966470` |
+| `pet-moonlit-library.webp` | Cat-ready moonlit fireside library | `FCD74ED14664D5099404D6ED3401D88DE19B98662B0C0EA9805C9041E15A15D3` |
+| `pet-coastal-studio.webp` | Dog-ready coastal sunset studio | `86B64652CB144D6FB1DCF54F2E4506AFA6AD99989F7295AE0FBD7F99E58A5FA3` |
 
-The optimized thumbnail `thumbs/garden-sanctuary-rain.webp` has SHA-256 `3189950CED15F8B1536E07D8B127A7D58FF5E73FC8DC3885BF61B28F4BD2455D`. Existing thumbnail hashes remain reproducible from the checked-in files and are verified by the Focus Room contract test.
+The optimized thumbnail `thumbs/garden-sanctuary-rain.webp` has SHA-256 `3189950CED15F8B1536E07D8B127A7D58FF5E73FC8DC3885BF61B28F4BD2455D`. The four new thumbnail hashes are `DF275AD15A1FCE6BD513CFFB6981529D888B1E38DCEDA7A6182BF98C2C539CDD`, `67483B9B5DB868CEAC3F932623052F0E0BEA1A3B455CD89019989180B9F699A4`, `4EF94476ADA96749DB3D42DA8DC6791AC953E48ECA28EBE0F798329FD52336FD` and `59D0BC2EEDB569DA9C88539A1B7F6B51F0AD24C540A733848E3B3B92465AC2A4` in manifest order. Existing thumbnail hashes remain reproducible from the checked-in files and are verified by the Focus Room contract test.
 
 ## Atlas 200 presets
 
@@ -59,9 +64,11 @@ The landscape expansion used one distinct prompt per environment: rooftop sunris
 
 The pet expansion used six additional prompts: rainy attic with a sleeping orange cat, meadow sunroom with a resting retriever, rainy fireside library with a gray cat, spring garden veranda with a small sleeping dog, Vietnamese riverside blue-hour room with a tabby and a misty lakeside cabin with a sleeping puppy. Prompts required anatomically believable animals, natural fur and posture, no animal clothing, no people and no distracting action. Generated PNG sources remain unchanged in the Codex generated-image store; the browser consumes only the optimized project WebP copies and thumbnails in this directory.
 
+The 2026-09-08 sanctuary set used four distinct prompts: a rainy cat-friendly reading conservatory, a dog-friendly timber garden pavilion, a moonlit mixed-pet library loft and a coastal pet-friendly sunset studio. Each prompt requested a wide photorealistic 3D environment render, believable PBR-style wood/glass/stone/textile materials, soft natural lighting, pet furniture, a calm central timer zone and unobstructed lower floor lanes. Every prompt excluded animals, people, text, logos and watermarks so the live licensed 3D companion remains the only pet shown. These are generated environment renders, not documentary photographs.
+
 ## Animated pet models
 
-The optional 3D companions are downloaded, self-hosted GLB files. They are lazy-loaded only after a cat or dog companion is active at Balanced or High quality. The canvas is decorative, capped at 24/30 FPS and DPR 1/1.5, pauses while hidden, and is fully disposed when the workspace rerenders or closes.
+The optional 3D companions are downloaded, self-hosted GLB files. They are lazy-loaded only after a cat or dog companion is active at Balanced or High quality. The canvas is decorative, capped at 30/60 FPS and DPR 1/1.5, pauses while hidden, and is fully disposed when the workspace rerenders or closes.
 
 | Local file | Creator and source | License | Animation used | SHA-256 |
 | --- | --- | --- | --- | --- |
@@ -78,7 +85,7 @@ Embedded textures were mechanically externalized so browsers load them as normal
 | `pets/quander-shiba-texture.webp` | `71A1B81C7FAE9586FF82D715549FF8076FF3EEB4DC2821AF840716CA318B7F73` |
 | `pets/quander-shiba-texture-2.webp` | `055D0C38E9A6BA5C08DCC2353BF744E2BAE04F84B92CC3923E6A2CAE4C50B16A` |
 
-Required attribution for both models is also visible in the scene panel and duplicated in `pets/THIRD_PARTY_NOTICES.md`. Model files were not visually rebranded or redistributed as original HH artwork. Four cat coat choices and four Shiba coat choices are produced at runtime from each licensed diffuse texture with Canvas 2D filters; normal and roughness maps remain intact, no derivative binary asset is added, and the UI states that these are coat variants sharing two rigs rather than separate breeds. The renderer no longer squashes or stretches the mesh to fake a resting pose: real skeletal clips crossfade over 0.34–1.2 seconds, while the gentle walk layer bends the four legs and adds small spine, head, tail and ground-contact motion. Direct play uses the Shiba source model's `shake`/`rollover` clips and a small reversible head/spine/tail offset on the cat rig.
+Required attribution for both models is also visible in the scene panel and duplicated in `pets/THIRD_PARTY_NOTICES.md`. Model files were not visually rebranded or redistributed as original HH artwork. Four cat coat choices and four Shiba coat choices are produced at runtime from each licensed diffuse texture with Canvas 2D filters; normal and roughness maps remain intact, no derivative binary asset is added, and the UI states that these are coat variants sharing two rigs rather than separate breeds. The renderer no longer squashes or stretches the mesh to fake a resting pose: real skeletal clips crossfade over 0.34–1.2 seconds, while the gentle walk layer bends the legs and paws, transfers weight through the spine, stabilizes neck/head movement and adds species-specific tail follow-through. Cat walking uses a four-beat sequence instead of a rigid diagonal trot. Compatible PBR coat surfaces also receive a tiny vertex-normal ripple whose strength follows the scene's breeze profile; this remains a subtle surface cue rather than a claim of strand-level fur simulation. Direct play uses the Shiba source model's `shake`/`rollover` clips and a small reversible head/spine/tail offset on the cat rig.
 
 ## Study music
 
