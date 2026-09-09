@@ -80,7 +80,7 @@
     return texture;
   };
 
-  const makePlanetSurface = (THREE, index, model, primary, secondary) => {
+  const makePlanetSurface = (THREE, index, body, model, primary, secondary) => {
     const size = mode() === "cinematic" ? 384 : 256;
     const makeCanvas = () => {
       const canvas = document.createElement("canvas");
@@ -113,6 +113,36 @@
         ellipse(context, random() * size, random() * size, 3 + random() * size * .08, 2 + random() * size * .035, random() > .48 ? fillLight : fillDark, alpha * (.35 + random() * .65), random() * Math.PI);
       }
     };
+    const paintCrater = (x, y, radius, strength = 1) => {
+      const surfaceGradient = color.createRadialGradient(x - radius * .28, y - radius * .3, radius * .08, x, y, radius);
+      surfaceGradient.addColorStop(0, `rgba(255,246,228,${.3 * strength})`);
+      surfaceGradient.addColorStop(.22, `rgba(232,210,190,${.14 * strength})`);
+      surfaceGradient.addColorStop(.48, `rgba(34,27,31,${.66 * strength})`);
+      surfaceGradient.addColorStop(.72, `rgba(12,10,14,${.22 * strength})`);
+      surfaceGradient.addColorStop(1, "rgba(255,255,255,0)");
+      ellipse(color, x, y, radius, radius * (.62 + random() * .18), surfaceGradient, 1, random() * .32 - .16);
+      const relief = bump.createRadialGradient(x - radius * .18, y - radius * .2, radius * .04, x, y, radius);
+      relief.addColorStop(0, "#ececec"); relief.addColorStop(.3, "#464646"); relief.addColorStop(.58, "#272727"); relief.addColorStop(.76, "#d6d6d6"); relief.addColorStop(1, "#777");
+      ellipse(bump, x, y, radius, radius * .72, relief, .9, random() * .3 - .15);
+    };
+    const paintAtmosphericBands = (context, palette, alpha = .7, step = 14) => {
+      for (let y = -step; y < size + step; y += step) {
+        const height = step * (.62 + random() * .72);
+        const band = context.createLinearGradient(0, y, size, y + height);
+        const first = palette[(Math.floor(y / step) + palette.length * 2) % palette.length];
+        const second = palette[(Math.floor(y / step) + 1 + palette.length * 2) % palette.length];
+        band.addColorStop(0, first); band.addColorStop(.42, second); band.addColorStop(.72, first); band.addColorStop(1, second);
+        context.save();
+        context.globalAlpha = alpha * (.72 + random() * .28);
+        context.fillStyle = band;
+        context.beginPath();
+        context.moveTo(0, y);
+        context.bezierCurveTo(size * .22, y - step * .28, size * .64, y + step * .34, size, y - step * .08);
+        context.lineTo(size, y + height);
+        context.bezierCurveTo(size * .72, y + height + step * .28, size * .3, y + height - step * .3, 0, y + height + step * .08);
+        context.closePath(); context.fill(); context.restore();
+      }
+    };
     const base = color.createLinearGradient(0, 0, size, size);
     base.addColorStop(0, primary);
     base.addColorStop(.5, secondary);
@@ -126,7 +156,81 @@
     emissive.fillStyle = "#000";
     emissive.fillRect(0, 0, size, size);
 
-    if (model === "gas" || model === "storm") {
+    if (body === "mercury") {
+      const rock = color.createLinearGradient(0, 0, size, size);
+      rock.addColorStop(0, "#c4b7a8"); rock.addColorStop(.38, "#817873"); rock.addColorStop(.72, "#514c51"); rock.addColorStop(1, "#27252a");
+      color.fillStyle = rock; color.fillRect(0, 0, size, size);
+      noisyEllipses(color, 150, "#d8c9b8", "#29262a", .25);
+      for (let i = 0; i < 92; i += 1) paintCrater(random() * size, random() * size, size * (.008 + random() * .04), .55 + random() * .45);
+      noisyEllipses(bump, 135, "#d9d9d9", "#353535", .48);
+    } else if (body === "venus") {
+      const hotSurface = color.createLinearGradient(0, 0, 0, size);
+      hotSurface.addColorStop(0, "#d88b45"); hotSurface.addColorStop(.48, "#9b4f32"); hotSurface.addColorStop(1, "#4f2927");
+      color.fillStyle = hotSurface; color.fillRect(0, 0, size, size);
+      noisyEllipses(color, 130, "#efb66d", "#5c2925", .2);
+      const cloudBase = clouds.createLinearGradient(0, 0, size, size);
+      cloudBase.addColorStop(0, "rgba(255,244,196,.92)"); cloudBase.addColorStop(.5, "rgba(226,164,86,.76)"); cloudBase.addColorStop(1, "rgba(123,65,44,.84)");
+      clouds.fillStyle = cloudBase; clouds.fillRect(0, 0, size, size);
+      paintAtmosphericBands(clouds, ["rgba(255,246,203,.72)", "rgba(219,151,79,.42)", "rgba(255,218,150,.58)"], .78, 17);
+      noisyEllipses(clouds, 105, "#fff1c5", "#8a4939", .18);
+      paintAtmosphericBands(bump, ["#969696", "#6c6c6c", "#b8b8b8"], .35, 18);
+    } else if (body === "earth") {
+      const ocean = color.createLinearGradient(0, 0, 0, size);
+      ocean.addColorStop(0, "#0b2e61"); ocean.addColorStop(.26, "#1266a8"); ocean.addColorStop(.6, "#0c4f91"); ocean.addColorStop(1, "#071f48");
+      color.fillStyle = ocean; color.fillRect(0, 0, size, size);
+      const landPalette = ["#376f42", "#5d8a4b", "#9c8a54", "#315b3e"];
+      for (let continent = 0; continent < 17; continent += 1) {
+        const x = random() * size;
+        const y = size * (.12 + random() * .76);
+        const radius = size * (.025 + random() * .07);
+        const land = landPalette[Math.floor(random() * landPalette.length)];
+        for (let lobe = 0; lobe < 5; lobe += 1) {
+          const lobeX = x + (random() - .5) * radius * 2.5;
+          const lobeY = y + (random() - .5) * radius * 1.55;
+          ellipse(color, lobeX, lobeY, radius * (.62 + random()), radius * (.38 + random() * .5), land, .82, random() * Math.PI);
+          ellipse(bump, lobeX, lobeY, radius * .88, radius * .54, "#c6c6c6", .7, random() * Math.PI);
+        }
+      }
+      const iceNorth = color.createLinearGradient(0, 0, 0, size * .09);
+      iceNorth.addColorStop(0, "rgba(245,252,255,.94)"); iceNorth.addColorStop(1, "rgba(203,235,249,0)");
+      color.fillStyle = iceNorth; color.fillRect(0, 0, size, size * .1);
+      color.save(); color.translate(0, size); color.scale(1, -1); color.fillStyle = iceNorth; color.fillRect(0, 0, size, size * .11); color.restore();
+      for (let i = 0; i < 58; i += 1) ellipse(clouds, random() * size, size * (.06 + random() * .88), size * (.014 + random() * .052), size * (.004 + random() * .014), "#fff", .16 + random() * .48, random() * .36 - .18);
+    } else if (body === "mars") {
+      const dust = color.createLinearGradient(0, 0, size, size);
+      dust.addColorStop(0, "#d98658"); dust.addColorStop(.45, "#a94936"); dust.addColorStop(.8, "#74302d"); dust.addColorStop(1, "#3b2024");
+      color.fillStyle = dust; color.fillRect(0, 0, size, size);
+      noisyEllipses(color, 130, "#efae72", "#542229", .21);
+      for (let i = 0; i < 48; i += 1) paintCrater(random() * size, random() * size, size * (.007 + random() * .028), .45 + random() * .38);
+      color.strokeStyle = "rgba(73,24,25,.58)"; color.lineWidth = size * .014; color.beginPath(); color.moveTo(size * .08, size * .58); color.bezierCurveTo(size * .28, size * .45, size * .61, size * .72, size * .94, size * .5); color.stroke();
+      bump.strokeStyle = "#343434"; bump.lineWidth = size * .018; bump.beginPath(); bump.moveTo(size * .08, size * .58); bump.bezierCurveTo(size * .28, size * .45, size * .61, size * .72, size * .94, size * .5); bump.stroke();
+      color.fillStyle = "rgba(246,238,222,.88)"; color.fillRect(0, 0, size, size * .035); color.fillRect(0, size * .965, size, size * .035);
+    } else if (body === "jupiter" || body === "saturn") {
+      const isJupiter = body === "jupiter";
+      color.fillStyle = isJupiter ? "#c8946c" : "#d9bf8e"; color.fillRect(0, 0, size, size);
+      const palette = isJupiter
+        ? ["#ead8b8", "#a96f54", "#d7a778", "#74504a", "#f0d9b0", "#bd7d5f"]
+        : ["#ead8aa", "#b99368", "#d6ba86", "#8f6d55", "#f1dfa9"];
+      paintAtmosphericBands(color, palette, .94, isJupiter ? 13 : 10);
+      paintAtmosphericBands(bump, ["#a4a4a4", "#696969", "#bcbcbc", "#7d7d7d"], .42, isJupiter ? 13 : 10);
+      if (isJupiter) {
+        ellipse(color, size * .68, size * .63, size * .12, size * .052, "#a8473d", .92, -.08);
+        ellipse(color, size * .68, size * .63, size * .085, size * .03, "#d4795d", .85, -.08);
+        ellipse(color, size * .68, size * .63, size * .044, size * .014, "#f1b08b", .7, -.08);
+        ellipse(bump, size * .68, size * .63, size * .12, size * .052, "#d3d3d3", .75, -.08);
+      }
+    } else if (body === "uranus" || body === "neptune") {
+      const isNeptune = body === "neptune";
+      const methane = color.createLinearGradient(0, 0, 0, size);
+      methane.addColorStop(0, isNeptune ? "#357fd4" : "#a4e6df"); methane.addColorStop(.52, isNeptune ? "#2451ad" : "#66bdc4"); methane.addColorStop(1, isNeptune ? "#132968" : "#367e98");
+      color.fillStyle = methane; color.fillRect(0, 0, size, size);
+      paintAtmosphericBands(color, isNeptune ? ["#3d86dc", "#1b429f", "#67a7ec"] : ["#a8e6df", "#62b8c0", "#8ed4d4"], isNeptune ? .48 : .28, isNeptune ? 18 : 24);
+      paintAtmosphericBands(bump, ["#858585", "#777", "#999"], .18, 21);
+      if (isNeptune) {
+        ellipse(color, size * .62, size * .57, size * .083, size * .043, "#101d56", .72, -.12);
+        for (let i = 0; i < 14; i += 1) ellipse(color, random() * size, size * (.18 + random() * .64), size * (.018 + random() * .04), size * (.004 + random() * .009), "#bde8ff", .16 + random() * .32, random() * .18 - .09);
+      }
+    } else if (model === "gas" || model === "storm") {
       for (let y = 0; y < size; y += 9 + index % 4) {
         const band = color.createLinearGradient(0, y, size, y + 7);
         band.addColorStop(0, y % 3 ? primary : secondary);
@@ -275,17 +379,19 @@
 
     if (!["gas", "storm", "metal", "crystal"].includes(model)) noisyEllipses(color, 52, "#fff", "#000", .1);
     noisyEllipses(roughness, 72, "#eee", "#777", .32);
-    const hasClouds = ["ocean", "forest", "terrestrial"].includes(model);
+    const hasClouds = ["earth", "venus"].includes(body) || (!body && ["ocean", "forest", "terrestrial"].includes(model));
     const hasEmission = ["lava", "volcanic"].includes(model);
+    const bodyRoughness = { mercury: .94, venus: .72, earth: .64, mars: .9, jupiter: .68, saturn: .74, uranus: .62, neptune: .6 };
+    const bodyBumpScale = { mercury: .82, venus: .14, earth: .46, mars: .7, jupiter: .12, saturn: .08, uranus: .035, neptune: .06 };
     return {
       map: canvasTexture(THREE, colorCanvas, true),
       bumpMap: canvasTexture(THREE, bumpCanvas),
       roughnessMap: canvasTexture(THREE, roughnessCanvas),
       cloudMap: hasClouds ? canvasTexture(THREE, cloudCanvas, true) : null,
       emissiveMap: hasEmission ? canvasTexture(THREE, emissiveCanvas, true) : null,
-      roughness: model === "metal" ? .28 : model === "crystal" ? .34 : model === "ice" ? .46 : .72,
+      roughness: bodyRoughness[body] ?? (model === "metal" ? .28 : model === "crystal" ? .34 : model === "ice" ? .46 : .72),
       metalness: model === "metal" ? .78 : model === "crystal" ? .22 : .015,
-      bumpScale: model === "gas" || model === "storm" ? .12 : model === "metal" ? .34 : .62
+      bumpScale: bodyBumpScale[body] ?? (model === "gas" || model === "storm" ? .12 : model === "metal" ? .34 : .62)
     };
   };
 
@@ -294,10 +400,15 @@
     canvas.width = canvas.height = 512;
     const context = canvas.getContext("2d");
     context.translate(256, 256);
-    for (let radius = 128; radius < 252; radius += 3) {
-      const alpha = .05 + ((radius * 17) % 31) / 100;
-      context.strokeStyle = `rgba(235,226,205,${alpha})`;
-      context.lineWidth = radius % 11 === 0 ? 2.2 : 1;
+    const ringPalette = [[236, 218, 178], [199, 176, 137], [244, 232, 202], [165, 143, 118]];
+    for (let radius = 154; radius < 252; radius += 1.35) {
+      const cassiniDivision = radius > 209 && radius < 219;
+      const enckeGap = radius > 241 && radius < 244;
+      const color = ringPalette[Math.floor(radius / 9) % ringPalette.length];
+      const grain = ((radius * 37) % 23) / 100;
+      const alpha = cassiniDivision ? .012 : enckeGap ? .04 : .15 + grain;
+      context.strokeStyle = `rgba(${color[0]},${color[1]},${color[2]},${alpha})`;
+      context.lineWidth = radius % 13 < 1.5 ? 2.4 : 1.5;
       context.beginPath(); context.arc(0, 0, radius, 0, ORBIT_TAU); context.stroke();
     }
     return canvasTexture(THREE, canvas, true);
@@ -765,10 +876,23 @@
         neptune: "storm"
       });
       const bodyScales = Object.freeze({ mercury: .78, venus: .96, earth: 1, mars: .84, jupiter: 1.48, saturn: 1.32, uranus: 1.08, neptune: 1.16 });
+      const bodyAxialTilts = Object.freeze({ mercury: .0006, venus: 3.096, earth: .409, mars: .44, jupiter: .054, saturn: .466, uranus: 1.706, neptune: .494 });
+      const bodyRotationDirections = Object.freeze({ mercury: 1, venus: -1, earth: 1, mars: 1, jupiter: 1, saturn: 1, uranus: -1, neptune: 1 });
+      const atmosphereProfiles = Object.freeze({
+        mercury: { color: "#b8afa6", scale: 1.018, base: .025, selected: .11 },
+        venus: { color: "#ffd19a", scale: 1.072, base: .24, selected: .45 },
+        earth: { color: "#63cfff", scale: 1.058, base: .2, selected: .42 },
+        mars: { color: "#d98a6e", scale: 1.028, base: .055, selected: .17 },
+        jupiter: { color: "#e8c397", scale: 1.038, base: .085, selected: .23 },
+        saturn: { color: "#e6d19f", scale: 1.036, base: .072, selected: .21 },
+        uranus: { color: "#95e7e5", scale: 1.05, base: .14, selected: .31 },
+        neptune: { color: "#4f91ff", scale: 1.055, base: .16, selected: .35 }
+      });
       const planets = planetButtons.map((button, index) => {
         const key = button.dataset.hhGalaxyKey;
         const body = button.dataset.hhBody || "earth";
         const model = bodyModels[body] || button.dataset.hhModel || "terrestrial";
+        const atmosphereProfile = atmosphereProfiles[body] || atmosphereProfiles.earth;
         const weight = Math.max(.8, Math.min(1.8, Number(button.dataset.hhWeight) || 1));
         const popularity = Math.min(1, Math.log2(2 + (usage[key] || 0)) / 4);
         const radius = 79 + index * 10.55;
@@ -778,7 +902,7 @@
         button.style.setProperty("--planet-hit-size", `${hitSize.toFixed(1)}px`);
         button.style.setProperty("--planet-hit-half", `${(hitSize / 2).toFixed(2)}px`);
         const group = new THREE.Group();
-        const surface = makePlanetSurface(THREE, index, model, accents[index], secondary[index]);
+        const surface = makePlanetSurface(THREE, index, body, model, accents[index], secondary[index]);
         const baseEmissiveColor = ["lava", "volcanic"].includes(model) ? accents[index] : "#050910";
         const baseEmissiveIntensity = ["lava", "volcanic"].includes(model) ? .76 : .11;
         const material = new THREE.MeshStandardMaterial({
@@ -794,7 +918,7 @@
         });
         const sphereGeometry = new THREE.SphereGeometry(size, mode() === "cinematic" ? 40 : 24, mode() === "cinematic" ? 28 : 16);
         const mesh = new THREE.Mesh(sphereGeometry, material);
-        mesh.rotation.z = (index % 7 - 3) * .055;
+        mesh.rotation.z = bodyAxialTilts[body] ?? (index % 7 - 3) * .055;
         group.add(mesh);
         const clouds = surface.cloudMap ? new THREE.Mesh(
           sphereGeometry,
@@ -805,9 +929,10 @@
           clouds.rotation.z = -.06 + index % 4 * .03;
           group.add(clouds);
         }
-        const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(size * 1.095, 28, 20), createAtmosphereMaterial(THREE, accents[index]));
+        const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(size * atmosphereProfile.scale, 28, 20), createAtmosphereMaterial(THREE, atmosphereProfile.color));
+        atmosphere.material.uniforms.uIntensity.value = atmosphereProfile.base;
         group.add(atmosphere);
-        const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: planetGlowTexture, color: accents[index], transparent: true, opacity: .52, depthWrite: false, blending: THREE.AdditiveBlending }));
+        const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: planetGlowTexture, color: atmosphereProfile.color, transparent: true, opacity: .52, depthWrite: false, blending: THREE.AdditiveBlending }));
         halo.scale.set(size * 4.45, size * 4.45, 1);
         halo.position.z = -size * .55;
         group.add(halo);
@@ -815,7 +940,7 @@
         if (body === "saturn") {
           planetaryRing = new THREE.Mesh(
             new THREE.RingGeometry(size * 1.28, size * 2.05, mode() === "cinematic" ? 112 : 64, 4),
-            new THREE.MeshBasicMaterial({ map: ringTexture, color: accents[index], transparent: true, opacity: .48, side: THREE.DoubleSide, depthWrite: false, alphaTest: .018 })
+            new THREE.MeshBasicMaterial({ map: ringTexture, color: 0xffead0, transparent: true, opacity: .56, side: THREE.DoubleSide, depthWrite: false, alphaTest: .01 })
           );
           planetaryRing.rotation.set(1.08 + index % 3 * .11, .14 + index % 2 * .09, index * .13);
           group.add(planetaryRing);
@@ -866,7 +991,7 @@
           root.add(sprite);
           return { index: energyIndex, sprite, angle: index * .73 + energyIndex * Math.PI, speed: .12 + index % 3 * .018, position: new THREE.Vector3() };
         });
-        return { button, key, body, model, weight, spinRate, accent: accents[index], group, mesh, clouds, moonPivots, planetaryRing, material, baseEmissiveColor, baseEmissiveIntensity, atmosphere, halo, orbit, orbitMaterial, baseOrbitOpacity, radius, eccentricity, tilt, size, orbitAngle: index * 2.399963 + (index % 3) * .31, speed: .035 / Math.sqrt(radius / 82), popularity, energy, position: new THREE.Vector3(), scaleVector: new THREE.Vector3(1, 1, 1) };
+        return { button, key, body, model, weight, spinRate, rotationDirection: bodyRotationDirections[body] || 1, accent: accents[index], group, mesh, clouds, moonPivots, planetaryRing, material, baseEmissiveColor, baseEmissiveIntensity, atmosphere, atmosphereProfile, halo, orbit, orbitMaterial, baseOrbitOpacity, radius, eccentricity, tilt, size, orbitAngle: index * 2.399963 + (index % 3) * .31, speed: .035 / Math.sqrt(radius / 82), popularity, energy, position: new THREE.Vector3(), scaleVector: new THREE.Vector3(1, 1, 1) };
       });
 
       sceneState = {
@@ -947,8 +1072,8 @@
       orbitPosition(state.THREE, planet, angle, planet.position);
       planet.group.position.copy(planet.position);
       const depth = Math.max(-1, Math.min(1, planet.position.z / Math.max(1, planet.radius * .35)));
-      planet.mesh.rotation.y += delta * planet.spinRate;
-      if (planet.clouds) planet.clouds.rotation.y += delta * planet.spinRate * 1.22;
+      planet.mesh.rotation.y += delta * planet.spinRate * planet.rotationDirection;
+      if (planet.clouds) planet.clouds.rotation.y += delta * planet.spinRate * planet.rotationDirection * 1.22;
       planet.moonPivots.forEach((pivot, moonIndex) => { pivot.rotation.y += delta * (.32 + moonIndex * .08); });
       if (planet.planetaryRing) planet.planetaryRing.rotation.z += delta * .012;
       planet.group.children.forEach((child) => {
@@ -964,7 +1089,9 @@
       planet.group.scale.lerp(planet.scaleVector, Math.min(1, delta * 8));
       planet.material.emissive.set(selected ? planet.accent : planet.baseEmissiveColor);
       planet.material.emissiveIntensity = selected ? Math.max(.38, planet.baseEmissiveIntensity + .2) : planet.baseEmissiveIntensity;
-      planet.atmosphere.material.uniforms.uIntensity.value = selected ? .62 : .2 + (depth + 1) * .045;
+      planet.atmosphere.material.uniforms.uIntensity.value = selected
+        ? planet.atmosphereProfile.selected
+        : planet.atmosphereProfile.base + (depth + 1) * .018;
       planet.halo.material.opacity = selected ? .66 : .18 + (depth + 1) * .07;
       if (planet.clouds) planet.clouds.material.opacity = selected ? .78 : .48 + (depth + 1) * .06;
       if (planet.planetaryRing) planet.planetaryRing.material.opacity = selected ? .72 : .38 + (depth + 1) * .035;

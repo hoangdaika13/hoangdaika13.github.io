@@ -424,9 +424,9 @@ const RUNTIME_ASSETS = [
   "./realtime-core.js?v=1",
   "./auth-platform.js?v=20",
   "./auth-experience.js?v=9",
-  "./auth-neon-gateway.js?v=30",
+  "./auth-neon-gateway.js?v=31",
   "./auth-h-galaxy.js?v=15",
-  "./auth-living-galaxy-3d.js?v=17",
+  "./auth-living-galaxy-3d.js?v=18",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
   "./auth-identity-constellation.js?v=2",
@@ -707,7 +707,7 @@ const CORE = [
   "./platform-module-bridge.js?v=2",
   "./performance-loader.js?v=667",
   "./auth-platform.js?v=20",
-  "./auth-neon-gateway.js?v=30",
+  "./auth-neon-gateway.js?v=31",
   "./script.js?v=277"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
