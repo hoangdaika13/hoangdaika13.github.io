@@ -18,10 +18,12 @@ test("particles are deterministic, finite and different for each independent lay
 test("motion respects quiet/static, system reduction and bounded weak-device budgets", () => {
   for (const mode of ["quiet", "static", "off"]) assert.equal(api.quality({mode}).static, true);
   assert.equal(api.quality({mode: "rich", reduced: true}).static, true);
-  assert.equal(api.quality({mode: "rich", saveData: true}).count, 500);
+  assert.equal(api.quality({mode: "rich", saveData: true}).count, 0);
+  assert.equal(api.quality({mode: "rich", saveData: true}).tier, "static");
   assert.equal(api.quality({memory: 4}).dpr, 1);
   assert.equal(api.quality({cores: 2}).fps, 24);
-  assert.equal(api.quality({mode: "rich", memory: 8, cores: 8}).count, 2600);
+  assert.equal(api.quality({mode: "rich", memory: 8, cores: 8}).count, 3000);
+  assert.equal(api.quality({mode: "rich", memory: 8, cores: 8}).dpr, 1.5);
 });
 
 function fixture({ webgl = true, reduced = false } = {}) {
@@ -107,7 +109,7 @@ test("presentation never reads user stores or changes routes and ships with both
   assert.match(source, /IntersectionObserver/); assert.match(source, /1_800_000/);
   assert.match(css, /pointer-events:none !important/); assert.match(css, /prefers-reduced-motion:reduce/); assert.match(css, /forced-colors:active/);
   assert.match(css, /data-hch-paused="true"/); assert.match(css, /rotateX\(66deg\)/);
-  assert.ok(loader.includes('"home-cosmos-motion.css?v=2"')); assert.ok(read("sw.js").includes('"./home-cosmos-motion.js?v=1"'));
+  for (const asset of ["home-cosmos-motion.css?v=4", "home-cosmos-motion.js?v=2"]) { assert.ok(loader.includes(asset)); assert.ok(read("sw.js").includes(`"./${asset}"`)); }
   assert.match(read("platform-home.js"), /cosmos\?\.destroy/);
   assert.match(read("galaxy-home-ai.js"), /runtime\.cosmos\?\.destroy/);
 });

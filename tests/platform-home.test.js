@@ -70,6 +70,8 @@ test("search supports Vietnamese diacritics, multiword descriptions, aliases and
   assert.equal(home.filterCatalog(groups, "sample child").length, 34);
   assert.equal(home.filterCatalog(groups, "", "learning").length, 6);
   assert.equal(home.filterCatalog(groups, "", "all", true, ["/draw"]).length, 1);
+  assert.deepEqual(home.filterCatalog(groups, "", "all", false, [], "provider").map((item) => item.id).sort(), ["chat-ai", "comic-motion", "fortune", "music-ai"]);
+  assert.equal(home.filterCatalog(groups, "", "all", false, [], "admin").every((item) => item.locked), true);
   assert.equal(home.filterCatalog(groups, "nothing matches this").length, 0);
 });
 
@@ -133,7 +135,7 @@ test("brand, sidebar, command search and mobile home target the new route withou
 test("home is lazy-loaded, cache-aligned, scoped and has lifecycle/accessibility guards", () => {
   const loader = read("performance-loader.js"), worker = read("sw.js");
   assert.match(loader, /if \(value === "\/platform"\) return \["platform-home"\]/);
-  for (const asset of ["platform-home.css?v=6", "platform-home.js?v=7"]) { assert.ok(loader.includes(asset)); assert.ok(worker.includes(asset)); }
+  for (const asset of ["platform-home.css?v=8", "platform-home.js?v=8"]) { assert.ok(loader.includes(asset)); assert.ok(worker.includes(asset)); }
   const css = read("platform-home.css");
   for (const token of ["@container (max-width: 600px)", "prefers-reduced-motion", "forced-colors", ":focus-visible", "data-paused", "data-motion", "data-contrast"]) assert.ok(css.includes(token));
   const source = read("platform-home.js");
@@ -141,5 +143,8 @@ test("home is lazy-loaded, cache-aligned, scoped and has lifecycle/accessibility
   assert.match(source, /visibilitychange/);
   assert.match(source, /data-php-results role="status" aria-live="polite"/);
   assert.match(source, /isAdmin\?\.\(\) !== true/);
+  assert.match(source, /data-php-capability/);
+  assert.match(source, /saveViewState/);
+  assert.match(router, /hh\.platform\.home\.view\.v1:/);
   assert.doesNotMatch(source, /hh\.galaxy\.layer-one\.v1/);
 });

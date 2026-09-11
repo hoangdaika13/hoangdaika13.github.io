@@ -5975,6 +5975,19 @@ function initAppShell() {
   };
   const readSidebarFavorites = () => readStoredArray(sidebarStorageKey("favorites.v1")).filter((route) => navigationItemForRoute(route));
   const saveSidebarFavorites = (routes) => localStorage.setItem(sidebarStorageKey("favorites.v1"), JSON.stringify([...new Set(routes)].filter((route) => navigationItemForRoute(route))));
+  const platformHomeViewKey = () => `hh.platform.home.view.v1:${sidebarAccountScope()}`;
+  const readPlatformHomeView = () => {
+    try {
+      const value = JSON.parse(localStorage.getItem(platformHomeViewKey()) || "null");
+      return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    } catch { return {}; }
+  };
+  const savePlatformHomeView = (value = {}) => {
+    const query = typeof value.query === "string" ? value.query.slice(0, 120) : "";
+    const section = typeof value.section === "string" ? value.section.slice(0, 80) : "all";
+    const capability = typeof value.capability === "string" ? value.capability.slice(0, 24) : "all";
+    localStorage.setItem(platformHomeViewKey(), JSON.stringify({ version: 1, query, section, capability, favoritesOnly: value.favoritesOnly === true, motionPaused: value.motionPaused === true }));
+  };
   const readHiddenSidebarRoutes = () => readStoredArray(sidebarStorageKey("hidden.v1")).filter((route) => navigationItemForRoute(route));
   const saveHiddenSidebarRoutes = (routes) => localStorage.setItem(sidebarStorageKey("hidden.v1"), JSON.stringify([...new Set(routes)].filter((route) => navigationItemForRoute(route))));
   const readSidebarItemOrder = () => {
@@ -6726,6 +6739,7 @@ function initAppShell() {
       user: readCurrentAuthUser(), storage,
       navigate: (route) => { location.hash = `#${platformSafeRoute(route)}`; },
       getFavorites: readSidebarFavorites, getPins: readSidebarPins, getRecent: readSidebarRecent,
+      getViewState: readPlatformHomeView, saveViewState: savePlatformHomeView,
       toggleFavorite: (route) => {
         if (!navigationItemForRoute(route)) return false;
         const routes = readSidebarFavorites();

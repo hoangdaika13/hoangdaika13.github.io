@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1007";
+const CACHE = "hh-identity-portal-v1008";
+// Previous release: hh-identity-portal-v1007.
 // Previous release: hh-identity-portal-v1006.
 // Previous release: hh-identity-portal-v1005.
 // Previous release: hh-identity-portal-v1004.
@@ -99,10 +100,10 @@ const RUNTIME_ASSETS = [
   "./galaxy-workbench.css?v=4",
   "./galaxy-premium-workspaces.css?v=2",
   "./galaxy-stable-chrome.css?v=4",
-  "./home-cosmos-motion.css?v=2",
-  "./home-cosmos-motion.js?v=1",
-  "./platform-home.css?v=6",
-  "./platform-home.js?v=7",
+  "./home-cosmos-motion.css?v=4",
+  "./home-cosmos-motion.js?v=2",
+  "./platform-home.css?v=8",
+  "./platform-home.js?v=8",
   "./focus-study-room.css?v=2",
   "./focus-study-room.js?v=1",
   "./",
@@ -705,10 +706,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=667",
+  "./performance-loader.js?v=669",
   "./auth-platform.js?v=20",
   "./auth-neon-gateway.js?v=32",
-  "./script.js?v=277"
+  "./script.js?v=278"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

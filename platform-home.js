@@ -85,11 +85,18 @@
     })).filter((section) => section.items.length);
   }
 
-  function filterCatalog(catalog, query = "", section = "all", favoritesOnly = false, favorites = []) {
+  function capabilityKind(item) {
+    if (item?.locked) return "admin";
+    if (PROVIDER_IDS.has(item?.id)) return "provider";
+    if (NETWORK_IDS.has(item?.id)) return "network";
+    return "local";
+  }
+
+  function filterCatalog(catalog, query = "", section = "all", favoritesOnly = false, favorites = [], capabilityFilter = "all") {
     const words = normalize(query).split(/\s+/).filter(Boolean);
     return catalog.flatMap((group) => group.items).filter((item) => {
       const text = normalize([item.label, item.description, item.group, item.keywords, ...item.children.map((child) => `${child.title} ${child.description || ""}`)].join(" "));
-      return (section === "all" || item.section === section) && (!favoritesOnly || favorites.includes(item.route)) && words.every((word) => text.includes(word));
+      return (section === "all" || item.section === section) && (!favoritesOnly || favorites.includes(item.route)) && (capabilityFilter === "all" || capabilityKind(item) === capabilityFilter) && words.every((word) => text.includes(word));
     });
   }
 
@@ -140,19 +147,21 @@
   function markup(catalog, data = {}) {
     const items = catalog.flatMap((group) => group.items);
     const quick = ["create", "chat-ai", "work", "learn"].map((id) => items.find((item) => item.id === id)).filter(Boolean);
+    const resume = data.resume && safeRoute(data.resume.route) ? data.resume : null;
+    const capabilityFilters = [["all", "Mọi khả năng", items.length], ["local", "Cục bộ / trình duyệt", items.filter((item) => capabilityKind(item) === "local").length], ["network", "Cần dịch vụ", items.filter((item) => capabilityKind(item) === "network").length], ["provider", "Cần provider", items.filter((item) => capabilityKind(item) === "provider").length], ["admin", "Quyền Admin", items.filter((item) => capabilityKind(item) === "admin").length]];
     return `<div class="php" data-platform-home>
       <a class="php-skip" href="#php-catalog" data-php-jump="php-catalog">Đến danh mục chức năng</a>
       <section class="php-hero" aria-labelledby="php-title">
         <div class="php-stardust" aria-hidden="true"></div><div class="php-hero-copy"><span class="php-eyebrow"><i></i> HH PLATFORM · LỚP 2</span>
-        <p class="php-hero-overline">MỘT ĐIỂM ĐẾN. VÔ HẠN KHẢ NĂNG.</p><h1 id="php-title" tabindex="-1">Vũ trụ công cụ số<br><em>của bạn.</em></h1>
-        <p class="php-hero-description">Sáng tạo điều khác biệt. Học thêm mỗi ngày.<br>Làm việc, kết nối và khám phá — trong một không gian.</p>
+        <p class="php-hero-overline">CINEMATIC LIVING COSMOS</p><h1 id="php-title" tabindex="-1">Vũ trụ công cụ số<br><em>của bạn.</em></h1>
+        <p class="php-hero-description">Một trạm chỉ huy thống nhất để sáng tạo, học tập, làm việc và kết nối — mọi điểm đến đều là workspace thật.</p>
         <div class="php-hero-actions"><button class="php-primary" type="button" data-php-jump="php-catalog">Khám phá ${items.length} chức năng <span aria-hidden="true">↗</span></button>${link("/chat-ai", "Hỏi HH AI ✦", "php-secondary")}</div>
-        <button class="php-resume" type="button" data-php-jump="php-command">Tiếp tục công việc gần đây <span aria-hidden="true">↓</span></button>
+        <button class="php-resume" type="button" data-php-resume ${resume ? `data-php-route="${escape(resume.route)}"` : 'data-php-jump="php-command"'}>${resume ? `Tiếp tục ${escape(resume.label)}` : "Mở Command Center"} <span aria-hidden="true">${resume ? "↗" : "↓"}</span></button>
         <div class="php-hero-facts"><span><b>${catalog.length}</b> không gian kết nối</span><span><b>${items.length}</b> chức năng trong registry</span><span><b>01</b> trang chủ thống nhất</span></div></div>
         <div class="php-cosmos" role="group" aria-label="Bản đồ sáu nhóm chức năng Lớp 2">
           <div class="php-orbit php-orbit-one" aria-hidden="true"></div><div class="php-orbit php-orbit-two" aria-hidden="true"></div><div class="php-orbit php-orbit-three" aria-hidden="true"></div>
-          <button class="php-core" type="button" data-php-jump="php-catalog" aria-label="HH CORE — khám phá toàn bộ chức năng"><span>HH</span><strong>CORE</strong><small>YOUR DIGITAL UNIVERSE</small></button>
-          ${catalog.filter((group) => group.id !== "galaxy-workspace").map((group, index) => `<button class="php-planet php-planet-${index}" type="button" data-php-group-jump="${escape(group.id)}" style="--php-accent:${group.accent};--php-delay:-${index * 1.3}s" title="${escape(group.items.map((item) => item.label).join(" · "))}"><i aria-hidden="true">${escape(group.icon)}</i><span>${escape(group.label)}<small>${group.items.length} chức năng <b aria-hidden="true">↗</b></small></span></button>`).join("")}
+          <button class="php-core" type="button" data-php-jump="php-catalog" aria-label="Trung tâm HH Platform — khám phá toàn bộ chức năng"><span>HH</span><strong>PLATFORM</strong><small>LIVING COSMOS</small></button>
+          ${catalog.filter((group) => group.id !== "galaxy-workspace").map((group, index) => `<button class="php-planet php-planet-${index}" type="button" data-php-planet="${index}" data-php-group-jump="${escape(group.id)}" style="--php-accent:${group.accent};--php-delay:-${index * 1.3}s;--php-index:${index}" title="${escape(group.items.map((item) => item.label).join(" · "))}" aria-label="${escape(group.label)}: ${group.items.length} chức năng. Mở danh mục nhóm."><i aria-hidden="true"><span>${escape(group.icon)}</span></i><span>${escape(group.label)}<small>${group.items.length} chức năng <b aria-hidden="true">↗</b></small></span></button>`).join("")}
           <span class="php-cosmos-caption">CHỌN MỘT KHÔNG GIAN ĐỂ KHỞI HÀNH</span>
         </div>
       </section>
@@ -167,6 +176,7 @@
       <section id="php-catalog" class="php-section" tabindex="-1">${heading("02", "EXPLORE YOUR PLATFORM", "Mọi công cụ. Một vũ trụ.", "Khám phá theo nhu cầu — mỗi lựa chọn là một workspace riêng.")}
         <div class="php-catalog-toolbar"><label class="php-search"><span aria-hidden="true">⌕</span><input type="search" data-php-search aria-label="Tìm chức năng Lớp 2" placeholder="Tìm tên, mô tả hoặc công cụ con…" autocomplete="off"><kbd>/</kbd></label><button type="button" data-php-favorites-filter aria-pressed="false">♡ Yêu thích</button></div>
         <div class="php-filters" role="group" aria-label="Lọc nhóm chức năng"><button type="button" data-php-filter="all" aria-pressed="true">Tất cả <b>${items.length}</b></button>${catalog.map((group) => `<button type="button" data-php-filter="${escape(group.id)}" aria-pressed="false" style="--php-accent:${group.accent}"><i></i>${escape(group.label)} <b>${group.items.length}</b></button>`).join("")}</div>
+        <div class="php-capabilities" role="group" aria-label="Lọc theo khả năng và cấu hình">${capabilityFilters.map(([id, label, count]) => `<button type="button" data-php-capability="${id}" aria-pressed="${id === "all"}">${escape(label)} <b>${count}</b></button>`).join("")}</div>
         <div class="php-result-row"><p data-php-results role="status" aria-live="polite"></p><span>Danh mục tự đồng bộ từ registry · Admin có khóa quyền</span></div>
         <div class="php-cards">${items.map((item) => cardMarkup(item, data.online !== false, list(data.favorites), list(data.pins))).join("")}</div>
         <div class="php-empty" data-php-no-results hidden><span>⌕</span><h3>Chưa tìm thấy chức năng phù hợp</h3><p>Thử từ khóa ngắn hơn, tên công cụ con hoặc bỏ bộ lọc.</p><button type="button" data-php-reset>Hiện tất cả chức năng</button></div>
@@ -203,13 +213,27 @@
     const items = catalog.flatMap((section) => section.items);
     const allowed = new Set(items.filter((item) => !item.locked).flatMap((item) => [item.route, ...item.children.map((child) => child.route)]));
     ["/chat-ai", "/settings", "/system", "/copyright", "/support"].forEach((route) => allowed.add(route));
-    const state = { query: "", section: "all", favoritesOnly: false, favorites: list(options.getFavorites?.()), pins: list(options.getPins?.()) };
+    let savedView = {};
+    try { savedView = options.getViewState?.() || {}; } catch { /* A blocked preference store must not block Home. */ }
+    const validSections = new Set(["all", ...catalog.map((section) => section.id)]);
+    const validCapabilities = new Set(["all", "local", "network", "provider", "admin"]);
+    const state = {
+      query: typeof savedView.query === "string" ? savedView.query.slice(0, 120) : "",
+      section: validSections.has(savedView.section) ? savedView.section : "all",
+      favoritesOnly: savedView.favoritesOnly === true,
+      capability: validCapabilities.has(savedView.capability) ? savedView.capability : "all",
+      motionPaused: savedView.motionPaused === true,
+      favorites: list(options.getFavorites?.()), pins: list(options.getPins?.())
+    };
     const runtime = { host, cleanup: [] };
     current = runtime;
-    host.innerHTML = markup(catalog, { userName: options.user?.name || options.user?.nickname, online: global.navigator?.onLine, favorites: state.favorites, pins: state.pins, release: options.release });
+    const firstRecentRoute = list(options.getRecent?.()).find((route) => allowed.has(route));
+    const firstRecent = items.find((item) => item.route === firstRecentRoute && !item.locked) || null;
+    host.innerHTML = markup(catalog, { userName: options.user?.name || options.user?.nickname, online: global.navigator?.onLine, favorites: state.favorites, pins: state.pins, release: options.release, resume: firstRecent });
     const root = host.querySelector("[data-platform-home]");
     const on = (target, type, handler, config) => { target?.addEventListener?.(type, handler, config); runtime.cleanup.push(() => target?.removeEventListener?.(type, handler, config)); };
     const notify = (text) => { const node = root.querySelector("[data-php-toast]"); node.hidden = false; node.textContent = text; };
+    const saveView = () => { try { options.saveViewState?.({ query: state.query, section: state.section, favoritesOnly: state.favoritesOnly, capability: state.capability, motionPaused: state.motionPaused }); } catch { /* Ephemeral filters remain usable if storage is blocked. */ } };
     const reduced = global.matchMedia?.("(prefers-reduced-motion: reduce)");
     let cosmos = null;
     const settings = () => {
@@ -218,7 +242,8 @@
     const motion = () => {
       const prefs = settings();
       const weak = global.navigator?.connection?.saveData || (global.navigator?.deviceMemory && global.navigator.deviceMemory <= 4) || (global.navigator?.hardwareConcurrency && global.navigator.hardwareConcurrency <= 4);
-      root.dataset.motion = reduced?.matches || prefs.accessibility?.reducedMotion || prefs.motion?.level === "static" || global.document.body.classList.contains("app-reduce-motion") || weak ? "static" : "balanced";
+      const preferred = ["static", "balanced", "cinematic"].includes(prefs.motion?.level) ? prefs.motion.level : "balanced";
+      root.dataset.motion = reduced?.matches || prefs.accessibility?.reducedMotion || preferred === "static" || global.document.body.classList.contains("app-reduce-motion") || weak ? "static" : preferred === "cinematic" ? "rich" : "balanced";
       root.dataset.contrast = prefs.accessibility?.highContrast || global.document.body.dataset.appContrast === "high" ? "high" : "standard";
       root.dataset.paused = String(global.document.hidden);
       cosmos?.sync?.();
@@ -237,10 +262,11 @@
       options.navigate?.(route);
     };
     const updateFilter = () => {
-      const matches = filterCatalog(catalog, state.query, state.section, state.favoritesOnly, state.favorites);
+      const matches = filterCatalog(catalog, state.query, state.section, state.favoritesOnly, state.favorites, state.capability);
       const routes = new Set(matches.map((item) => item.route));
       root.querySelectorAll("[data-php-card]").forEach((node) => { node.hidden = !routes.has(node.dataset.phpCard); });
       root.querySelectorAll("[data-php-filter]").forEach((node) => node.setAttribute("aria-pressed", String(node.dataset.phpFilter === state.section)));
+      root.querySelectorAll("[data-php-capability]").forEach((node) => node.setAttribute("aria-pressed", String(node.dataset.phpCapability === state.capability)));
       root.querySelector("[data-php-favorites-filter]").setAttribute("aria-pressed", String(state.favoritesOnly));
       root.querySelector("[data-php-results]").textContent = `${matches.length} / ${items.length} chức năng${matches.some((item) => item.locked) ? " · Admin cần quyền riêng" : ""}`;
       root.querySelector("[data-php-no-results]").hidden = matches.length !== 0;
@@ -249,6 +275,9 @@
       state.favorites = list(options.getFavorites?.()); state.pins = list(options.getPins?.());
       const recent = list(options.getRecent?.()).map((route) => items.find((item) => item.route === route && !item.locked)).filter(Boolean).slice(0, 4);
       root.querySelector("[data-php-recent]").innerHTML = recent.length ? recent.map((item) => link(item.route, `<i aria-hidden="true">${escape(item.icon)}</i><span>${escape(item.label)}</span><b aria-hidden="true">↗</b>`, "php-recent-link")).join("") : '<div class="php-small-empty"><span>◌</span><strong>Hành trình bắt đầu từ đây</strong><p>Mở một workspace để tiếp tục nhanh ở lần sau.</p></div>';
+      const resume = root.querySelector("[data-php-resume]");
+      if (recent[0]) { resume.dataset.phpRoute = recent[0].route; delete resume.dataset.phpJump; resume.innerHTML = `Tiếp tục ${escape(recent[0].label)} <span aria-hidden="true">↗</span>`; }
+      else { delete resume.dataset.phpRoute; resume.dataset.phpJump = "php-command"; resume.innerHTML = 'Mở Command Center <span aria-hidden="true">↓</span>'; }
       const favorites = items.filter((item) => !item.locked && state.favorites.includes(item.route));
       const snapshot = readProjectSummaries(options.storage);
       root.querySelector("[data-php-personal]").innerHTML = `<div class="php-personal-favorites"><small>${favorites.length} chức năng yêu thích</small>${favorites.slice(0, 4).map((item) => link(item.route, escape(item.label))).join("") || '<p>Chạm ♡ trên một thẻ để lưu vào đây.</p>'}</div><div class="php-projects"><small>Dự án Creative OS · trên thiết bị</small>${snapshot.projects.map((project) => link("/create", escape(project.title), "php-project-link", 'title="Mở Sáng tạo để chọn dự án"')).join("") || `<p>${snapshot.status === "error" ? "Chưa đọc được metadata dự án. Dữ liệu gốc không bị thay đổi." : "Chưa có dự án đã lưu trong kho này."}</p>`}</div>`;
@@ -269,17 +298,18 @@
         badge.textContent = value.label; badge.title = value.detail;
       });
     };
-    on(root, "input", (event) => { if (event.target.matches("[data-php-search]")) { state.query = event.target.value; updateFilter(); } });
+    on(root, "input", (event) => { if (event.target.matches("[data-php-search]")) { state.query = event.target.value.slice(0, 120); updateFilter(); saveView(); } });
     on(root, "click", (event) => {
       const control = event.target.closest("button, a"); if (!control || !root.contains(control)) return;
       if (control.hasAttribute("data-php-route")) { event.preventDefault(); navigate(control.dataset.phpRoute); }
       else if (control.hasAttribute("data-php-jump")) { event.preventDefault(); jump(control.dataset.phpJump); }
       else if (control.hasAttribute("data-php-filter") || control.hasAttribute("data-php-group-jump")) {
         state.section = control.dataset.phpFilter || control.dataset.phpGroupJump;
-        if (control.hasAttribute("data-php-group-jump")) { state.query = ""; state.favoritesOnly = false; root.querySelector("[data-php-search]").value = ""; jump("php-catalog"); }
-        updateFilter();
-      } else if (control.hasAttribute("data-php-favorites-filter")) { state.favoritesOnly = !state.favoritesOnly; updateFilter(); }
-      else if (control.hasAttribute("data-php-reset")) { state.query = ""; state.section = "all"; state.favoritesOnly = false; root.querySelector("[data-php-search]").value = ""; updateFilter(); root.querySelector("[data-php-search]").focus(); }
+        if (control.hasAttribute("data-php-group-jump")) { state.query = ""; state.favoritesOnly = false; state.capability = "all"; root.querySelector("[data-php-search]").value = ""; jump("php-catalog"); }
+        updateFilter(); saveView();
+      } else if (control.hasAttribute("data-php-favorites-filter")) { state.favoritesOnly = !state.favoritesOnly; updateFilter(); saveView(); }
+      else if (control.hasAttribute("data-php-capability")) { state.capability = validCapabilities.has(control.dataset.phpCapability) ? control.dataset.phpCapability : "all"; updateFilter(); saveView(); }
+      else if (control.hasAttribute("data-php-reset")) { state.query = ""; state.section = "all"; state.favoritesOnly = false; state.capability = "all"; root.querySelector("[data-php-search]").value = ""; updateFilter(); saveView(); root.querySelector("[data-php-search]").focus(); }
       else if (control.hasAttribute("data-php-favorite") || control.hasAttribute("data-php-pin")) {
         const favorite = control.hasAttribute("data-php-favorite"), route = favorite ? control.dataset.phpFavorite : control.dataset.phpPin;
         if (!allowed.has(route)) return;
@@ -334,12 +364,13 @@
     viewportObserver?.observe(host.parentElement || host);
     runtime.cleanup.push(() => { viewportObserver?.disconnect(); if (viewportFrame) global.cancelAnimationFrame(viewportFrame); });
     sizeViewport();
+    root.querySelector("[data-php-search]").value = state.query;
     motion(); personal(); status();
-    cosmos = global.HHHomeCosmosMotion?.mount?.(root, { stage: root.querySelector(".php-hero"), variant: "platform", center: ".php-core", mode: () => root.dataset.motion });
+    cosmos = global.HHHomeCosmosMotion?.mount?.(root, { stage: root.querySelector(".php-hero"), variant: "platform", center: ".php-core", mode: () => root.dataset.motion, paused: () => state.motionPaused, onPause: (paused) => { state.motionPaused = paused; saveView(); } });
     runtime.cleanup.push(() => cosmos?.destroy?.());
     root.querySelector("#php-title").focus({ preventScroll: true });
     return true;
   }
 
-  return Object.freeze({ version: 1, route: ROUTE, buildCatalog, filterCatalog, capability, readProjectSummaries, markup, mount, unmount, recipes: RECIPES });
+  return Object.freeze({ version: 2, route: ROUTE, buildCatalog, filterCatalog, capabilityKind, capability, readProjectSummaries, markup, mount, unmount, recipes: RECIPES });
 });
