@@ -148,6 +148,7 @@
     const items = catalog.flatMap((group) => group.items);
     const quick = ["create", "chat-ai", "work", "learn"].map((id) => items.find((item) => item.id === id)).filter(Boolean);
     const resume = data.resume && safeRoute(data.resume.route) ? data.resume : null;
+    const portalGroups = catalog.filter((group) => group.id !== "galaxy-workspace");
     const capabilityFilters = [["all", "Mọi khả năng", items.length], ["local", "Cục bộ / trình duyệt", items.filter((item) => capabilityKind(item) === "local").length], ["network", "Cần dịch vụ", items.filter((item) => capabilityKind(item) === "network").length], ["provider", "Cần provider", items.filter((item) => capabilityKind(item) === "provider").length], ["admin", "Quyền Admin", items.filter((item) => capabilityKind(item) === "admin").length]];
     return `<div class="php" data-platform-home>
       <a class="php-skip" href="#php-catalog" data-php-jump="php-catalog">Đến danh mục chức năng</a>
@@ -160,12 +161,19 @@
         <div class="php-hero-facts"><span><b>${catalog.length}</b> không gian kết nối</span><span><b>${items.length}</b> chức năng trong registry</span><span><b>01</b> trang chủ thống nhất</span></div></div>
         <div class="php-cosmos" role="group" aria-label="Bản đồ sáu nhóm chức năng Lớp 2">
           <div class="php-orbit php-orbit-one" aria-hidden="true"></div><div class="php-orbit php-orbit-two" aria-hidden="true"></div><div class="php-orbit php-orbit-three" aria-hidden="true"></div>
-          <button class="php-core" type="button" data-php-jump="php-catalog" aria-label="Trung tâm HH Platform — khám phá toàn bộ chức năng"><span>HH</span><strong>PLATFORM</strong><small>LIVING COSMOS</small></button>
-          ${catalog.filter((group) => group.id !== "galaxy-workspace").map((group, index) => `<button class="php-planet php-planet-${index}" type="button" data-php-planet="${index}" data-php-group-jump="${escape(group.id)}" style="--php-accent:${group.accent};--php-delay:-${index * 1.3}s;--php-index:${index}" title="${escape(group.items.map((item) => item.label).join(" · "))}" aria-label="${escape(group.label)}: ${group.items.length} chức năng. Mở danh mục nhóm."><i aria-hidden="true"><span>${escape(group.icon)}</span></i><span>${escape(group.label)}<small>${group.items.length} chức năng <b aria-hidden="true">↗</b></small></span></button>`).join("")}
-          <span class="php-cosmos-caption">CHỌN MỘT KHÔNG GIAN ĐỂ KHỞI HÀNH</span>
+          <button class="php-core" type="button" data-php-core data-php-jump="php-catalog" aria-label="Trung tâm HH Platform — khám phá toàn bộ chức năng"><span data-php-core-icon>HH</span><strong data-php-core-label>PLATFORM</strong><small data-php-core-meta>LIVING COSMOS</small></button>
+          ${portalGroups.map((group, index) => `<button class="php-planet php-planet-${index}" type="button" data-php-planet="${index}" data-php-group-jump="${escape(group.id)}" style="--php-accent:${group.accent};--php-delay:-${index * 1.3}s;--php-index:${index}" title="${escape(group.items.map((item) => item.label).join(" · "))}" aria-label="${escape(group.label)}: ${group.items.length} chức năng. Mở danh mục nhóm."><i aria-hidden="true"><span>${escape(group.icon)}</span></i><span>${escape(group.label)}<small>${group.items.length} chức năng <b aria-hidden="true">↗</b></small></span></button>`).join("")}
+          <div class="php-cosmos-preview" data-php-cosmos-preview><strong data-php-preview-title>Toàn bộ HH Platform</strong><span data-php-preview-detail>${items.length} chức năng · ${catalog.length} không gian kết nối</span></div>
         </div>
       </section>
       <div class="php-status-strip" aria-label="Trạng thái thực tế"><span data-php-network></span><span data-php-storage></span><span>◇ Provider: kiểm tra trong workspace</span><button type="button" data-php-jump="php-privacy">Dữ liệu thuộc quyền kiểm soát của bạn ↗</button></div>
+      <nav class="php-orbital-nav" data-php-section-nav aria-label="Điều hướng nhanh Trang chủ">
+        <span class="php-orbital-progress" aria-hidden="true"><i data-php-scroll-progress></i></span>
+        <button type="button" data-php-jump="php-command" data-php-section-link="php-command" aria-current="location"><b>01</b><span>Chỉ huy</span></button>
+        <button type="button" data-php-jump="php-catalog" data-php-section-link="php-catalog"><b>02</b><span>Chức năng</span></button>
+        <button type="button" data-php-jump="php-paths" data-php-section-link="php-paths"><b>03</b><span>Lộ trình</span></button>
+        <button type="button" data-php-jump="php-privacy" data-php-section-link="php-privacy"><b>04</b><span>Dữ liệu</span></button>
+      </nav>
 
       <section id="php-command" class="php-section" tabindex="-1">${heading("01", "COMMAND CENTER", `Xin chào, ${escape(data.userName || "bạn")} <span class="php-greeting-star">✦</span>`, "Tiếp nối điều đang làm. Hoặc bắt đầu một ý tưởng mới.")}
         <div class="php-command-grid"><article class="php-panel php-launch"><span class="php-eyebrow">BẠN MUỐN BẮT ĐẦU TỪ ĐÂU?</span><div class="php-quick-grid">${quick.map((item) => link(item.route, `<i aria-hidden="true">${escape(item.icon)}</i><span>${escape(item.label)}</span><b aria-hidden="true">↗</b>`, "php-quick", `style="--php-accent:${item.accent}"`)).join("")}</div><button class="php-command-search" type="button" data-command-open><span>⌕ Tìm công cụ, dự án, hướng dẫn…</span><kbd>Ctrl / ⌘ K</kbd></button></article>
@@ -252,7 +260,8 @@
       const node = root.querySelector(`#${id}`), scroller = root;
       if (!node) return;
       const behavior = root.dataset.motion === "static" ? "auto" : "smooth";
-      if (scroller) scroller.scrollTo({ top: scroller.scrollTop + node.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 24, behavior });
+      const navHeight = root.querySelector("[data-php-section-nav]")?.offsetHeight || 0;
+      if (scroller) scroller.scrollTo({ top: scroller.scrollTop + node.getBoundingClientRect().top - scroller.getBoundingClientRect().top - navHeight - 16, behavior });
       else node.scrollIntoView({ behavior, block: "start" });
       node.focus({ preventScroll: true });
     };
@@ -298,6 +307,68 @@
         badge.textContent = value.label; badge.title = value.detail;
       });
     };
+    const cosmosNode = root.querySelector(".php-cosmos");
+    const portalGroups = catalog.filter((group) => group.id !== "galaxy-workspace");
+    const portalButtons = [...root.querySelectorAll("[data-php-planet]")];
+    const previewTitle = root.querySelector("[data-php-preview-title]");
+    const previewDetail = root.querySelector("[data-php-preview-detail]");
+    const coreIcon = root.querySelector("[data-php-core-icon]");
+    const coreLabel = root.querySelector("[data-php-core-label]");
+    const coreMeta = root.querySelector("[data-php-core-meta]");
+    const previewPlatform = () => {
+      portalButtons.forEach((button) => button.removeAttribute("data-preview-active"));
+      cosmosNode?.removeAttribute("data-php-previewing");
+      cosmosNode?.style.removeProperty("--php-core-accent");
+      if (coreIcon) coreIcon.textContent = "HH";
+      if (coreLabel) coreLabel.textContent = "PLATFORM";
+      if (coreMeta) coreMeta.textContent = "LIVING COSMOS";
+      if (previewTitle) previewTitle.textContent = "Toàn bộ HH Platform";
+      if (previewDetail) previewDetail.textContent = `${items.length} chức năng · ${catalog.length} không gian kết nối`;
+    };
+    const previewGroup = (button) => {
+      const group = portalGroups[Number(button?.dataset.phpPlanet)];
+      if (!group || !button) return previewPlatform();
+      portalButtons.forEach((node) => node.toggleAttribute("data-preview-active", node === button));
+      cosmosNode?.setAttribute("data-php-previewing", group.id);
+      cosmosNode?.style.setProperty("--php-core-accent", group.accent);
+      if (coreIcon) coreIcon.textContent = group.icon;
+      if (coreLabel) coreLabel.textContent = group.label;
+      if (coreMeta) coreMeta.textContent = `${group.items.length} CHỨC NĂNG`;
+      if (previewTitle) previewTitle.textContent = group.label;
+      if (previewDetail) previewDetail.textContent = group.items.slice(0, 3).map((item) => item.label).join(" · ");
+    };
+    on(cosmosNode, "pointerover", (event) => { const button = event.target.closest?.("[data-php-planet]"); if (button) previewGroup(button); });
+    on(cosmosNode, "pointerleave", () => { if (!cosmosNode?.contains(global.document.activeElement)) previewPlatform(); });
+    on(cosmosNode, "focusin", (event) => { const button = event.target.closest?.("[data-php-planet]"); if (button) previewGroup(button); else if (event.target.closest?.("[data-php-core]")) previewPlatform(); });
+    on(cosmosNode, "focusout", (event) => { if (!cosmosNode?.contains(event.relatedTarget)) previewPlatform(); });
+    on(cosmosNode, "keydown", (event) => {
+      const button = event.target.closest?.("[data-php-planet]");
+      if (!button || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const index = portalButtons.indexOf(button);
+      const next = event.key === "Home" ? 0 : event.key === "End" ? portalButtons.length - 1 : (index + (["ArrowRight", "ArrowDown"].includes(event.key) ? 1 : -1) + portalButtons.length) % portalButtons.length;
+      portalButtons[next]?.focus();
+    });
+
+    const navSections = [...root.querySelectorAll("[data-php-section-link]")].map((button) => ({ button, section: root.querySelector(`#${button.dataset.phpSectionLink}`) })).filter((entry) => entry.section);
+    let navFrame = 0;
+    const syncNavigator = () => {
+      navFrame = 0;
+      if (current !== runtime || !root.isConnected) return;
+      const max = Math.max(1, root.scrollHeight - root.clientHeight);
+      root.style.setProperty("--php-scroll-progress", `${Math.min(100, Math.max(0, root.scrollTop / max * 100)).toFixed(2)}%`);
+      const marker = root.getBoundingClientRect().top + Math.min(root.clientHeight * .32, 220);
+      let active = navSections[0];
+      navSections.forEach((entry) => { if (entry.section.getBoundingClientRect().top <= marker) active = entry; });
+      navSections.forEach((entry) => {
+        if (entry === active) entry.button.setAttribute("aria-current", "location");
+        else entry.button.removeAttribute("aria-current");
+      });
+    };
+    const scheduleNavigator = () => { if (!navFrame) navFrame = global.requestAnimationFrame(syncNavigator); };
+    on(root, "scroll", scheduleNavigator, { passive: true });
+    on(global, "resize", scheduleNavigator, { passive: true });
+    runtime.cleanup.push(() => { if (navFrame) global.cancelAnimationFrame(navFrame); });
     on(root, "input", (event) => { if (event.target.matches("[data-php-search]")) { state.query = event.target.value.slice(0, 120); updateFilter(); saveView(); } });
     on(root, "click", (event) => {
       const control = event.target.closest("button, a"); if (!control || !root.contains(control)) return;
@@ -365,7 +436,7 @@
     runtime.cleanup.push(() => { viewportObserver?.disconnect(); if (viewportFrame) global.cancelAnimationFrame(viewportFrame); });
     sizeViewport();
     root.querySelector("[data-php-search]").value = state.query;
-    motion(); personal(); status();
+    motion(); personal(); status(); previewPlatform(); scheduleNavigator();
     cosmos = global.HHHomeCosmosMotion?.mount?.(root, { stage: root.querySelector(".php-hero"), variant: "platform", center: ".php-core", mode: () => root.dataset.motion, paused: () => state.motionPaused, onPause: (paused) => { state.motionPaused = paused; saveView(); } });
     runtime.cleanup.push(() => cosmos?.destroy?.());
     root.querySelector("#php-title").focus({ preventScroll: true });

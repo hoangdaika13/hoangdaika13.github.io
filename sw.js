@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1008";
+const CACHE = "hh-identity-portal-v1009";
+// Previous release: hh-identity-portal-v1008.
 // Previous release: hh-identity-portal-v1007.
 // Previous release: hh-identity-portal-v1006.
 // Previous release: hh-identity-portal-v1005.
@@ -100,10 +101,10 @@ const RUNTIME_ASSETS = [
   "./galaxy-workbench.css?v=4",
   "./galaxy-premium-workspaces.css?v=2",
   "./galaxy-stable-chrome.css?v=4",
-  "./home-cosmos-motion.css?v=4",
-  "./home-cosmos-motion.js?v=2",
-  "./platform-home.css?v=8",
-  "./platform-home.js?v=8",
+  "./home-cosmos-motion.css?v=5",
+  "./home-cosmos-motion.js?v=3",
+  "./platform-home.css?v=9",
+  "./platform-home.js?v=10",
   "./focus-study-room.css?v=2",
   "./focus-study-room.js?v=1",
   "./",
@@ -706,7 +707,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=669",
+  "./performance-loader.js?v=671",
   "./auth-platform.js?v=20",
   "./auth-neon-gateway.js?v=32",
   "./script.js?v=278"

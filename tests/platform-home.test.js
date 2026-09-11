@@ -135,7 +135,7 @@ test("brand, sidebar, command search and mobile home target the new route withou
 test("home is lazy-loaded, cache-aligned, scoped and has lifecycle/accessibility guards", () => {
   const loader = read("performance-loader.js"), worker = read("sw.js");
   assert.match(loader, /if \(value === "\/platform"\) return \["platform-home"\]/);
-  for (const asset of ["platform-home.css?v=8", "platform-home.js?v=8"]) { assert.ok(loader.includes(asset)); assert.ok(worker.includes(asset)); }
+  for (const asset of ["platform-home.css?v=9", "platform-home.js?v=10"]) { assert.ok(loader.includes(asset)); assert.ok(worker.includes(asset)); }
   const css = read("platform-home.css");
   for (const token of ["@container (max-width: 600px)", "prefers-reduced-motion", "forced-colors", ":focus-visible", "data-paused", "data-motion", "data-contrast"]) assert.ok(css.includes(token));
   const source = read("platform-home.js");
@@ -145,6 +145,16 @@ test("home is lazy-loaded, cache-aligned, scoped and has lifecycle/accessibility
   assert.match(source, /isAdmin\?\.\(\) !== true/);
   assert.match(source, /data-php-capability/);
   assert.match(source, /saveViewState/);
+  assert.match(source, /data-php-section-nav/);
+  assert.match(source, /data-php-scroll-progress/);
+  assert.match(source, /aria-current="location"/);
+  assert.match(source, /data-php-preview-title/);
+  assert.match(source, /previewGroup/);
+  assert.match(source, /previewPlatform\(\); scheduleNavigator\(\);/);
+  assert.match(source, /ArrowLeft/);
+  assert.match(source, /ArrowRight/);
+  assert.match(source, /Home/);
+  assert.match(source, /End/);
   assert.match(router, /hh\.platform\.home\.view\.v1:/);
   assert.doesNotMatch(source, /hh\.galaxy\.layer-one\.v1/);
 });

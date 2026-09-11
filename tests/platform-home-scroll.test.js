@@ -15,7 +15,7 @@ test("Platform home preserves an outer scroll fallback without replacing the leg
 test("Platform home asset versions stay aligned across loader and service worker", () => {
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  assert.match(loader, /platform-home\.css\?v=8/);
-  assert.match(worker, /\.\/platform-home\.css\?v=8/);
-  assert.match(worker, /\.\/performance-loader\.js\?v=669/);
+  assert.match(loader, /platform-home\.css\?v=9/);
+  assert.match(worker, /\.\/platform-home\.css\?v=9/);
+  assert.match(worker, /\.\/performance-loader\.js\?v=671/);
 });

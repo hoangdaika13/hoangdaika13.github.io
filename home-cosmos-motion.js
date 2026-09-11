@@ -120,7 +120,7 @@
     const effects = doc.createElement("div");
     effects.className = "hch-scene";
     effects.setAttribute("aria-hidden", "true");
-    effects.innerHTML = '<div class="hch-vignette"></div><div class="hch-milkyway"></div><div class="hch-nebula hch-nebula-a"></div><div class="hch-nebula hch-nebula-b"></div><div class="hch-nebula hch-nebula-c"></div><div class="hch-nebula hch-nebula-d"></div><div class="hch-dark-dust"></div><div class="hch-stars hch-stars-near"></div><div class="hch-stars hch-stars-far"></div><div class="hch-light-rays"></div><div class="hch-ribbons"><i></i><i></i><i></i></div><div class="hch-foreground"></div><div class="hch-comet hch-comet-a"></div><div class="hch-comet hch-comet-b"></div>';
+    effects.innerHTML = '<div class="hch-vignette"></div><div class="hch-milkyway"></div><div class="hch-nebula hch-nebula-a"></div><div class="hch-nebula hch-nebula-b"></div><div class="hch-nebula hch-nebula-c"></div><div class="hch-nebula hch-nebula-d"></div><div class="hch-dark-dust"></div><div class="hch-aurora"></div><div class="hch-orbit-dust"></div><div class="hch-stars hch-stars-near"></div><div class="hch-stars hch-stars-far"></div><div class="hch-light-rays"></div><div class="hch-ribbons"><i></i><i></i><i></i></div><div class="hch-gravitational-lens"></div><div class="hch-foreground"></div><div class="hch-comet hch-comet-a"></div><div class="hch-comet hch-comet-b"></div>';
     const canvas = doc.createElement("canvas");
     canvas.className = "hch-canvas";
     canvas.setAttribute("aria-hidden", "true");
