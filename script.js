@@ -6729,6 +6729,75 @@ function initAppShell() {
     ];
     return entries.filter((item) => item.route !== group.route);
   };
+  /*
+   * Public, read-only navigation catalogue for the signed-out Feature Universe.
+   * It is derived from the same registry as the authenticated sidebar so the
+   * login scene never invents routes or leaks the Admin-only group.
+   */
+  const publishFeatureUniverseRegistry = () => {
+    const safeRoute = (value) => {
+      const route = String(value || "").trim().split("?")[0];
+      if (!route.startsWith("/") || route.startsWith("//") || route === "/admin" || route.startsWith("/admin/")) return "";
+      return route;
+    };
+    const frozenSections = navigationSections.map((section) => {
+      const sectionGroups = section.groupIds
+        .map((id) => groups.find((group) => group.id === id))
+        .filter((group) => group && !group.adminOnly && safeRoute(group.route));
+      const seenRoutes = new Set();
+      const entries = sectionGroups.flatMap((group) => {
+        const rootRoute = safeRoute(group.route);
+        const candidates = [
+          {
+            id: group.id,
+            title: group.label,
+            icon: group.icon,
+            description: group.description || `Mở không gian ${group.label} trong HH Platform.`,
+            route: rootRoute,
+            root: true
+          },
+          ...platformHomeChildren(group)
+        ];
+        return candidates.map((item, index) => {
+          const route = safeRoute(item.route);
+          if (!route || seenRoutes.has(route)) return null;
+          seenRoutes.add(route);
+          return Object.freeze({
+            id: String(item.id || `${group.id}-${index}`),
+            key: `${section.id}:${group.id}:${String(item.id || index)}`,
+            sectionId: section.id,
+            groupId: group.id,
+            title: String(item.title || group.label || "Chức năng HH"),
+            icon: String(item.icon || group.icon || "✦").slice(0, 4),
+            description: String(item.description || group.description || `Mở ${item.title || group.label} trong HH Platform.`),
+            route,
+            accent: String(item.color || item.accent || group.accent || section.accent || "#62e9f2"),
+            accent2: String(item.accentSecondary || section.accentSecondary || section.accent || "#8b72ff"),
+            root: Boolean(item.root),
+            access: "authenticated-or-guest"
+          });
+        }).filter(Boolean);
+      });
+      return Object.freeze({
+        id: section.id,
+        label: section.id === "system-admin" ? "Hệ thống & Hỗ trợ" : section.label,
+        icon: section.icon,
+        accent: section.accent,
+        accent2: section.accentSecondary || section.accent,
+        entries: Object.freeze(entries)
+      });
+    }).filter((section) => section.entries.length);
+    const registry = Object.freeze({
+      version: 1,
+      generatedFrom: "hh-platform-navigation",
+      sections: Object.freeze(frozenSections),
+      entries: Object.freeze(frozenSections.flatMap((section) => section.entries)),
+      count: frozenSections.reduce((total, section) => total + section.entries.length, 0)
+    });
+    window.HHFeatureUniverseRegistry = registry;
+    window.dispatchEvent(new CustomEvent("hh:feature-universe-registry", { detail: { count: registry.count } }));
+  };
+  publishFeatureUniverseRegistry();
   const mountPlatformHome = () => {
     workspace.innerHTML = '<div data-platform-home-host></div>';
     let storage = null;

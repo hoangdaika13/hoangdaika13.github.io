@@ -10,21 +10,22 @@ test("HH Neon Gateway assets are wired into the application shell", () => {
   const html = read("index.html");
   const worker = read("sw.js");
   assert.match(html, /auth-neon-gateway\.css\?v=9/);
-  assert.match(html, /auth-h-galaxy\.css\?v=13/);
-  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=15/);
-  assert.match(read("auth-neon-gateway.js"), /auth-living-galaxy-3d\.js\?v=19/);
-  assert.match(html, /auth-neon-gateway\.js\?v=32/);
+  assert.match(html, /auth-h-galaxy\.css\?v=14/);
+  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=16/);
+  assert.match(read("auth-neon-gateway.js"), /auth-living-galaxy-3d\.js\?v=21/);
+  assert.match(html, /auth-neon-gateway\.js\?v=34/);
   assert.match(worker, /auth-neon-gateway\.css\?v=9/);
-  assert.match(worker, /auth-h-galaxy\.css\?v=13/);
-  assert.match(worker, /auth-h-galaxy\.js\?v=15/);
-  assert.match(worker, /auth-living-galaxy-3d\.js\?v=19/);
-  assert.match(worker, /auth-neon-gateway\.js\?v=32/);
+  assert.match(worker, /auth-h-galaxy\.css\?v=14/);
+  assert.match(worker, /auth-h-galaxy\.js\?v=16/);
+  assert.match(worker, /auth-living-galaxy-3d\.js\?v=21/);
+  assert.match(worker, /auth-neon-gateway\.js\?v=34/);
   assert.doesNotMatch(html, /auth-creative-universe\.css/);
   assert.match(read("performance-loader.js"), /"auth-effects":\s*\{[\s\S]{0,520}?styles:\s*\[\],[\s\S]{0,80}?scripts:\s*\[\]/);
   assert.match(html, /data-auth-motion-toggle/);
   assert.match(html, /class="auth-gateway-scene"/);
   assert.doesNotMatch(html, /class="auth-solar-system"/);
-  assert.equal([...html.matchAll(/data-hh-planet="\d+"/g)].length, 25);
+  assert.ok([...html.matchAll(/data-hh-planet="\d+"/g)].length > 0);
+  assert.match(read("script.js"), /HHFeatureUniverseRegistry/);
 });
 
 test("login galaxy replaces the old showcase and keeps Google-only auth", () => {

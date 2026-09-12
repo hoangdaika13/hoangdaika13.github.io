@@ -40,8 +40,9 @@ test("Remote is a first-class lazy route across shell, galaxy and offline cache"
   assert.match(worker, /remote-hub\.css\?v=4/);
   assert.match(worker, /remote-hub\.js\?v=4/);
   assert.match(html, /data-hh-galaxy-key="remote"/);
-  assert.match(html, /25 LĨNH VỰC/);
-  assert.match(galaxy, /remote:\s*\{[\s\S]*?route: "#\/remote"/);
+  assert.match(html, /HH FEATURE UNIVERSE/);
+  assert.match(galaxy, /window\.HHFeatureUniverseRegistry/);
+  assert.match(script, /publishFeatureUniverseRegistry/);
 });
 
 test("Remote implementation uses real WebRTC primitives and explicit permission gates", () => {

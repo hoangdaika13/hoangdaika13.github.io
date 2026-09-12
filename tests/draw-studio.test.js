@@ -169,7 +169,8 @@ test("Draw is a first-class lazy route with a real interactive tool contract", (
   assert.match(worker, /draw-studio\.js\?v=13/);
   assert.match(worker, /draw-studio-worker\.js\?v=5/);
   assert.match(html, /data-hh-galaxy-key="draw"/);
-  assert.match(galaxy, /draw:\s*\{[\s\S]*?route: "#\/draw"/);
+  assert.match(galaxy, /window\.HHFeatureUniverseRegistry/);
+  assert.match(client, /publishFeatureUniverseRegistry/);
   for (const contract of ["data-draw-canvas", "data-draw-preset", "data-draw-setting=\"symmetry\"", "data-draw-setting=\"mirror\"", "data-draw-setting=\"spiral\"", "data-draw-setting=\"quality\"", "data-draw-layer-panel", "data-draw-tool=\"select\"", "data-draw-animation-export", "data-draw-export-svg", "data-draw-export-layers", "data-draw-undo", "data-draw-redo", "data-draw-save", "data-draw-export", "data-draw-project-export", "data-draw-project-import"]) assert.match(source, new RegExp(contract));
   for (const contract of ["data-draw-brush-search", "data-draw-favorite", "data-draw-generator", "data-draw-generator-remix", "data-draw-zen", "data-draw-engine"]) assert.match(source, new RegExp(contract));
   for (const contract of ["data-draw-layout-toggle", "data-draw-layout-reset", "data-draw-jump", "data-draw-inspector", "draw-toolrail", "draw-workspace-dock", "data-draw-panel-section=\"layers\"", "data-draw-panel-section=\"export\""]) assert.match(source, new RegExp(contract));

@@ -403,6 +403,23 @@
       gate.removeAttribute("aria-busy");
     };
 
+    const safePendingRoute = (value) => {
+      const raw = String(value || "").trim();
+      const hashRoute = raw.startsWith("#") ? raw : `#${raw}`;
+      const route = hashRoute.slice(1).split("?")[0];
+      if (!route.startsWith("/") || route.startsWith("//") || route === "/admin" || route.startsWith("/admin/")) return "#/platform";
+      const registryRoutes = window.HHFeatureUniverseRegistry?.entries?.map((item) => item.route) || [];
+      if (registryRoutes.length && !registryRoutes.includes(route) && route !== "/platform") return "#/platform";
+      return `#${route}`;
+    };
+
+    const consumePendingRoute = () => {
+      const requested = sessionStorage.getItem("hh.auth.pending-route") || sessionStorage.getItem("hh-auth-return-to") || "#/platform";
+      sessionStorage.removeItem("hh.auth.pending-route");
+      sessionStorage.removeItem("hh-auth-return-to");
+      return safePendingRoute(requested);
+    };
+
     gate.dataset.authSession = "background";
     gate.removeAttribute("aria-busy");
     setStatus("Cổng đăng nhập đã sẵn sàng · đang khôi phục phiên nền.", "info");
@@ -678,8 +695,7 @@
       const streak = recordLoginStreak();
       gate.classList.add("auth-success");
       setStatus(`${message} · Chuỗi hoạt động ${streak} ngày`, "success");
-      const pendingRoute = sessionStorage.getItem("hh.auth.pending-route") || "#/platform";
-      sessionStorage.removeItem("hh.auth.pending-route");
+      const pendingRoute = consumePendingRoute();
       finishSessionCheck();
       if (location.hash !== pendingRoute) history.replaceState({}, document.title, `${location.pathname}${location.search}${pendingRoute}`);
       setGateState();
@@ -1072,6 +1088,14 @@
       loginForm.querySelector('[name="email"]')?.focus();
       setStatus("Đăng nhập để tiếp tục dự án gần đây.");
     });
+    gate.addEventListener("hh:auth-destination", (event) => {
+      const route = safePendingRoute(event.detail?.route);
+      const title = String(event.detail?.title || "chức năng đã chọn");
+      sessionStorage.setItem("hh.auth.pending-route", route);
+      showPanel("login");
+      setStatus(`Đã chọn ${title}. Hãy đăng nhập hoặc tiếp tục với tư cách khách để mở.`, "info");
+      if (event.detail?.focusLogin) loginForm.querySelector('[name="email"]')?.focus({ preventScroll: true });
+    });
     gate.querySelector("[data-guest-login]")?.addEventListener("click", () => {
       authEpoch += 1;
       const guestUser = { id: `guest-${anonymousId}`, name: "Khách HH", email: "", roles: [], guest: true, interests: [] };
@@ -1080,14 +1104,15 @@
       user = guestUser;
       setStatus("Đã mở workspace local. Tính năng đồng bộ cần tài khoản.", "info");
       finishSessionCheck();
-      if (location.hash !== "#/platform") history.replaceState({}, document.title, `${location.pathname}${location.search}#/platform`);
+      const pendingRoute = consumePendingRoute();
+      if (location.hash !== pendingRoute) history.replaceState({}, document.title, `${location.pathname}${location.search}${pendingRoute}`);
       setGateState();
     });
     gate.querySelectorAll("[data-oauth-provider]").forEach((button) => button.addEventListener("click", () => {
       authEpoch += 1;
       finishSessionCheck();
       if (!realtimeUrl || !oauthProviders.google) return setOAuthError("Google OAuth chưa được cấu hình trên máy chủ.");
-      sessionStorage.setItem("hh-auth-return-to", location.hash || "#/platform");
+      sessionStorage.setItem("hh-auth-return-to", sessionStorage.getItem("hh.auth.pending-route") || location.hash || "#/platform");
       location.assign(`${realtimeUrl}/api/auth/google?returnTo=${encodeURIComponent(location.origin)}`);
     }));
     let logoutPending = false;

@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1009";
+const CACHE = "hh-identity-portal-v1010";
+// Previous release: hh-identity-portal-v1009.
 // Previous release: hh-identity-portal-v1008.
 // Previous release: hh-identity-portal-v1007.
 // Previous release: hh-identity-portal-v1006.
@@ -312,8 +313,8 @@ const RUNTIME_ASSETS = [
   "./extension-suite.css?v=1",
   "./auth-experience.css?v=6",
   "./auth-neon-gateway.css?v=9",
-  "./auth-h-galaxy.css?v=13",
-  "./auth-living-galaxy-3d.css?v=12",
+  "./auth-h-galaxy.css?v=14",
+  "./auth-living-galaxy-3d.css?v=15",
   "./auth-living-background.css?v=1",
   "./auth-spatial-aurora.css?v=1",
   "./auth-identity-constellation.css?v=1",
@@ -424,11 +425,11 @@ const RUNTIME_ASSETS = [
   "./assets/brand/hh-galaxy-star-share.png?v=1",
   "./manifest.webmanifest?v=3",
   "./realtime-core.js?v=1",
-  "./auth-platform.js?v=20",
+  "./auth-platform.js?v=21",
   "./auth-experience.js?v=9",
-  "./auth-neon-gateway.js?v=32",
-  "./auth-h-galaxy.js?v=15",
-  "./auth-living-galaxy-3d.js?v=19",
+  "./auth-neon-gateway.js?v=34",
+  "./auth-h-galaxy.js?v=16",
+  "./auth-living-galaxy-3d.js?v=21",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
   "./auth-identity-constellation.js?v=2",
@@ -707,10 +708,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=671",
-  "./auth-platform.js?v=20",
-  "./auth-neon-gateway.js?v=32",
-  "./script.js?v=278"
+  "./performance-loader.js?v=672",
+  "./auth-platform.js?v=21",
+  "./auth-neon-gateway.js?v=34",
+  "./script.js?v=279"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

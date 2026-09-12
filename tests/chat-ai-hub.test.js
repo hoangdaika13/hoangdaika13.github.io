@@ -197,8 +197,9 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   assert.match(worker, /chat-ai-hub\.css\?v=20/);
   assert.match(worker, /chat-ai-hub\.js\?v=18/);
   assert.match(html, /data-hh-galaxy-key="chatAI"/);
-  assert.match(html, /25 LĨNH VỰC/);
-  assert.match(galaxy, /chatAI:\s*\{[\s\S]*?route: "#\/chat-ai"/);
+  assert.match(html, /HH FEATURE UNIVERSE/);
+  assert.match(galaxy, /window\.HHFeatureUniverseRegistry/);
+  assert.match(client, /publishFeatureUniverseRegistry/);
 });
 
 test("Chat AI layout is responsive, accessible and motion-safe", () => {

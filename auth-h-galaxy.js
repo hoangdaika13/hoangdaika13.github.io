@@ -4,367 +4,315 @@
   const galaxy = document.querySelector("[data-hh-galaxy]");
   if (!galaxy) return;
 
-  const gate = galaxy.closest("#authGate");
-  const planets = [...galaxy.querySelectorAll("[data-hh-galaxy-key]")];
-  const inspector = galaxy.querySelector("#hhGalaxyInspector");
-  const featureNodes = [...galaxy.querySelectorAll("[data-hh-galaxy-features] li")];
 
-  const categories = Object.freeze({
-    home: {
-      icon: "⌂",
-      title: "Trang chủ",
-      kicker: "TRUNG TÂM ĐIỀU KHIỂN",
-      count: "1 MỤC",
-      route: "#/home",
-      accent: "#ffd76b",
-      accent2: "#ff6e8f",
-      description: "Tổng quan ngày, Command Center, thời tiết, thiết bị và các lối tắt quan trọng.",
-      detail: "Theo dõi nhịp làm việc, mở nhanh tác vụ đang ưu tiên và gom các tín hiệu quan trọng vào một màn hình.",
-      features: ["Dashboard", "Command Center", "Weather & AQI", "Sticky Notes", "Quick Actions"]
-    },
-    social: {
-      icon: "SM",
-      title: "Công cụ truyền thông xã hội",
-      kicker: "SOCIAL CREATOR GALAXY",
-      count: "85 TOOL",
-      route: "#/social-media-tools",
-      accent: "#63ead8",
-      accent2: "#4a8cff",
-      description: "Hệ sinh thái 85 công cụ nội dung, media, xuất bản, phân tích và quản lý đa nền tảng.",
-      detail: "Preview trực tiếp, Tool Contract riêng, media pipeline và API chính thức khi tài khoản đã cấp quyền.",
-      features: ["Live Preview", "Media Pipeline", "Publishing Hub", "Analytics", "Rights Manifest"]
-    },
-    system: {
-      icon: "⚙",
-      title: "Hệ thống",
-      kicker: "CẤU HÌNH NỀN TẢNG",
-      count: "7 MỤC",
-      route: "#/system",
-      accent: "#55f1ff",
-      accent2: "#72ffa8",
-      description: "Điều chỉnh giao diện, quyền riêng tư, PWA, widget, thông báo và trạng thái hệ thống.",
-      detail: "Cá nhân hóa trải nghiệm, kiểm tra sức khỏe ứng dụng và quản lý các quyền hoạt động trên từng thiết bị.",
-      features: ["Settings", "PWA Center", "Widget Engine", "Diagnostics", "Privacy"]
-    },
-    creative: {
-      icon: "✦",
-      title: "Sáng tạo",
-      kicker: "AI CREATIVE UNIVERSE",
-      count: "25 MỤC",
-      route: "#/create",
-      accent: "#ff68cf",
-      accent2: "#9d72ff",
-      description: "Biến ý tưởng thành nội dung bằng AI, prompt, chiến dịch và quy trình xuất bản tự động.",
-      detail: "Từ brief ban đầu đến nội dung hoàn chỉnh: lên ý tưởng, tạo tài sản, tổ chức phiên bản và chuẩn bị xuất bản.",
-      features: ["AI Center", "Creator Studio", "Prompt Lab", "Automation", "Campaign Flow"]
-    },
-    music: {
-      icon: "♫",
-      title: "Làm nhạc AI",
-      kicker: "MUSIC PRODUCTION",
-      count: "26 MỤC",
-      route: "#/music-ai",
-      accent: "#ffb35f",
-      accent2: "#ff4c75",
-      description: "Sáng tác, phối khí, dựng loop, mix & master và tạo visualizer cho bản nhạc.",
-      detail: "Phát triển bài hát theo từng lớp âm thanh, quản lý project và hoàn thiện bản phát hành trong cùng một studio.",
-      features: ["AI Composer", "DAW Workspace", "Mix & Master", "Visualizer", "Publishing"]
-    },
-    tools: {
-      icon: "H",
-      title: "Tool",
-      kicker: "CREATOR TOOL UNIVERSE",
-      count: "10 HỆ TOOL",
-      route: "#/davinci-resolve",
-      accent: "#6be8ff",
-      accent2: "#786cff",
-      description: "Bộ công cụ video, YouTube, Facebook, TikTok, thumbnail, phụ đề và tự động hóa sáng tạo.",
-      detail: "Kết nối các studio chuyên biệt với hàng đợi, media library và luồng xuất bản dùng được thật.",
-      features: ["Video Studio", "YouTube Galaxy", "Facebook Center", "TikTok Galaxy", "AI Video"]
-    },
-    comicMotion: {
-      icon: "CM",
-      title: "Comic Motion",
-      kicker: "COMIC MOTION STUDIO",
-      count: "STUDIO",
-      route: "#/comic-motion-studio",
-      accent: "#ffb15d",
-      accent2: "#ff6978",
-      description: "Biến khung truyện và hình ảnh thành cảnh chuyển động, camera và hiệu ứng điện ảnh.",
-      detail: "Tổ chức panel, timing, chuyển cảnh, phụ đề và xuất video từ một project không phá hủy.",
-      features: ["Panel Motion", "Camera", "FX", "Subtitle", "Video Export"]
-    },
-    comicReader: {
-      icon: "CR",
-      title: "Đọc truyện",
-      kicker: "HH COMICS READER",
-      count: "THƯ VIỆN",
-      route: "#/comic-reader",
-      accent: "#ff8f70",
-      accent2: "#ff4eaa",
-      description: "Kho truyện và sách có nguồn, tìm kiếm, theo dõi, lịch sử và nhiều chế độ đọc.",
-      detail: "Catalog, API được phép, thư viện cá nhân và reader responsive được quản lý trong một nơi.",
-      features: ["Catalog", "Reader", "Theo dõi", "Lịch sử", "Nguồn hợp lệ"]
-    },
-    media: {
-      icon: "◈",
-      title: "Media & Design",
-      kicker: "MEDIA PRODUCTION",
-      count: "22 MỤC",
-      route: "#/media-design",
-      accent: "#a8ff68",
-      accent2: "#4de9ff",
-      description: "Không gian sản xuất ảnh, video, thumbnail, nội dung đa phương tiện và xuất bản.",
-      detail: "Xử lý media theo quy trình có cấu trúc, xem trước nhiều định dạng và chuẩn hóa đầu ra cho từng nền tảng.",
-      features: ["Photo Editor", "Video Studio", "Thumbnail Lab", "Publishing", "Asset Library"]
-    },
-    graphic: {
-      icon: "✺",
-      title: "Thiết kế đồ họa",
-      kicker: "GRAPHIC DESIGN",
-      count: "25 MỤC",
-      route: "#/graphic-design",
-      accent: "#c49aff",
-      accent2: "#6d7cff",
-      description: "Thiết kế vector, typography, nhân vật, mockup, chuyển động và hệ thống component.",
-      detail: "Xây dựng thiết kế không phá hủy, tái sử dụng component và xuất nhiều phiên bản từ một nguồn sáng tạo.",
-      features: ["Vector Core", "Typography", "Mockup", "Motion Design", "Components"]
-    },
-    dev: {
-      icon: "⌘",
-      title: "DEV",
-      kicker: "DEVELOPER TOOLKIT",
-      count: "34 MỤC",
-      route: "#/dev-tools",
-      accent: "#66d7ff",
-      accent2: "#6f86ff",
-      description: "Bộ công cụ lập trình, API, Git, regex, cơ sở dữ liệu, bảo mật và chẩn đoán.",
-      detail: "Thiết kế, kiểm thử và chẩn đoán luồng kỹ thuật với các workspace chuyên biệt cho quá trình phát triển.",
-      features: ["API Studio", "Git Workspace", "Regex Database", "Security", "Diagnostics"]
-    },
-    work: {
-      icon: "□",
-      title: "Công việc",
-      kicker: "WORK OPERATIONS",
-      count: "9 MỤC",
-      route: "#/work",
-      accent: "#ff79d7",
-      accent2: "#b66dff",
-      description: "Quản lý dự án, task, tài liệu, cửa hàng số, tệp tải xuống và tiến độ nhóm.",
-      detail: "Lập kế hoạch, theo dõi tiến độ, lưu bằng chứng công việc và chuyển giao đầu ra trong một luồng thống nhất.",
-      features: ["Project Center", "Task Flow", "Digital Store", "Cloud Files", "Team Board"]
-    },
-    communication: {
-      icon: "◌",
-      title: "Giao tiếp",
-      kicker: "COMMUNICATION HUB",
-      count: "21 MỤC",
-      route: "#/communication",
-      accent: "#5ff5dc",
-      accent2: "#48bfff",
-      description: "Kết nối cộng đồng qua messenger, forum, phòng trực tiếp và trung tâm thông báo.",
-      detail: "Trao đổi theo phòng, theo dõi hội thoại quan trọng và cộng tác trực tiếp mà không rời khỏi HH Platform.",
-      features: ["Community", "Messenger", "Forum", "Live Room", "Notifications"]
-    },
-    cinema: {
-      icon: "▶",
-      title: "Phim",
-      kicker: "OPEN CINEMA",
-      count: "PHIM MỞ",
-      route: "#/cinema",
-      accent: "#7b8cff",
-      accent2: "#bc6cff",
-      description: "Thư viện phim công cộng và phim có giấy phép mở với hồ sơ quyền minh bạch.",
-      detail: "Mỗi phim đi cùng nguồn, giấy phép, ghi công, player và trạng thái kiểm duyệt trước khi xuất bản.",
-      features: ["Open Films", "Player", "Subtitle", "Attribution", "Rights Registry"]
-    },
-    musicLibrary: {
-      icon: "♪",
-      title: "Nhạc",
-      kicker: "OPEN MUSIC LIBRARY",
-      count: "NHẠC MỞ",
-      route: "#/music",
-      accent: "#54e6bd",
-      accent2: "#45a4ff",
-      description: "Nghe và tải nhạc Public Domain hoặc Creative Commons đã lưu nguồn và giấy phép.",
-      detail: "Playlist, Creator Mode và License Pack giúp tìm đúng bản nhạc phù hợp cho từng nội dung.",
-      features: ["Playlist", "Creator Mode", "License Pack", "Credits", "Global Music"]
-    },
-    copyright: {
-      icon: "©",
-      title: "Bản quyền",
-      kicker: "RIGHTS & COMPLIANCE",
-      count: "KIỂM DUYỆT",
-      route: "#/copyright",
-      accent: "#f7c86a",
-      accent2: "#ff8a62",
-      description: "Trung tâm kiểm tra quyền, hồ sơ nguồn, ghi công và tiếp nhận khiếu nại nội dung.",
-      detail: "Quản lý bằng chứng giấy phép, trạng thái duyệt và quy trình tạm gỡ an toàn cho từng asset.",
-      features: ["Rights Registry", "License Gate", "Attribution", "Takedown", "Evidence"]
-    },
-    analytics: {
-      icon: "↗",
-      title: "Phân tích",
-      kicker: "INSIGHTS & ANALYTICS",
-      count: "8 MỤC",
-      route: "#/analytics",
-      accent: "#69c8ff",
-      accent2: "#6575ff",
-      description: "Theo dõi hành trình, hiệu suất, Web Vitals, báo cáo và tín hiệu vận hành.",
-      detail: "Biến dữ liệu hoạt động thành tín hiệu dễ đọc để phát hiện xu hướng, điểm nghẽn và cơ hội cải thiện.",
-      features: ["Realtime Insights", "Web Vitals", "Reports", "Admin Panel", "Journey Map"]
-    },
-    learning: {
-      icon: "◫",
-      title: "Học tập",
-      kicker: "LEARNING PLATFORM",
-      count: "17 MỤC",
-      route: "#/learn",
-      accent: "#f19aff",
-      accent2: "#8d72ff",
-      description: "Xây dựng lộ trình học, lớp học, bài luyện tập, ôn tập và kho kiến thức.",
-      detail: "Học theo lộ trình rõ ràng, luyện tập theo bước và lưu tiến độ để tiếp tục đúng nơi bạn đã dừng.",
-      features: ["Learning Paths", "Classroom", "Review", "Knowledge Center", "Study Coach"]
-    },
-    english: {
-      icon: "E",
-      title: "HH English",
-      kicker: "ENGLISH AI COACH",
-      count: "A1 → C2",
-      route: "#/english",
-      accent: "#d8ff78",
-      accent2: "#55e58b",
-      description: "Học tiếng Anh theo CEFR, luyện phát âm, hội thoại nghề nghiệp và lộ trình cá nhân.",
-      detail: "Kết hợp bài học theo cấp độ, luyện giọng nói và ngữ cảnh nghề nghiệp để tạo kế hoạch học phù hợp.",
-      features: ["CEFR Courses", "Voice Coach", "Career English", "Placement", "Vocabulary"]
-    },
-    japanese: {
-      icon: "日",
-      title: "HH Japanese",
-      kicker: "JAPANESE OS V3",
-      count: "N5 → N1 · JF",
-      route: "#/japanese",
-      accent: "#ff6b8a",
-      accent2: "#9d6bff",
-      description: "Học tiếng Nhật theo Can-do với Vietnamese Core, JLPT/JF, Kanji Graph, Smart Reader và hội thoại.",
-      detail: "Tra cứu Nhật–Việt, học offline, luyện mora và shadowing, mô phỏng JLPT, theo dõi SRS và tiến độ giao tiếp trong một lộ trình.",
-      features: ["Vietnamese Core", "Kanji Graph", "Smart Reader", "JLPT Simulator", "Life in Japan"]
-    },
-    fortune: {
-      icon: "☾",
-      title: "Xem bói",
-      kicker: "REFLECTION & SYMBOLS",
-      count: "15 CÔNG CỤ",
-      route: "#/fortune",
-      accent: "#a983ff",
-      accent2: "#54dce5",
-      description: "Tarot 1–10 lá, 64 quẻ, bản đồ sao, thần số, lịch chiêm nghiệm và Gemini Reflection Copilot.",
-      detail: "Mỗi kết quả có giải thích nhiều tầng, công thức, seed và giới hạn rõ ràng; dữ liệu nhạy cảm mặc định chỉ nằm trong phiên.",
-      features: ["Tarot Studio", "Kinh Dịch 64 quẻ", "Bản đồ sao", "Lịch chiêm nghiệm", "Gemini Copilot"]
-    },
-    chatAI: {
-      icon: "AI",
-      title: "Chat AI",
-      kicker: "HH MULTIMODAL INTELLIGENCE",
-      count: "6 CHẾ ĐỘ",
-      route: "#/chat-ai",
-      accent: "#71e9ff",
-      accent2: "#866fff",
-      description: "HH Intelligence nhiều lượt, nghiên cứu có nguồn, phân tích ảnh/PDF, viết và lập trình.",
-      detail: "Khóa truy cập được giữ phía máy chủ; lịch sử tách theo tài khoản, có chế độ riêng tư, nhánh hội thoại, giọng nói và xuất dữ liệu.",
-      features: ["Smart Router", "Tìm kiếm web", "Ảnh & PDF", "Code", "Voice"]
-    },
-    draw: {
-      icon: "✎",
-      title: "Vẽ",
-      kicker: "INTERACTIVE LIGHT STUDIO",
-      count: "5 PHONG CÁCH",
-      route: "#/draw",
-      accent: "#55eaff",
-      accent2: "#bd65ff",
-      description: "Dệt ánh sáng bằng chuyển động, đối xứng quay, phản chiếu và xoáy hướng tâm ngay trên trình duyệt.",
-      detail: "Canvas local-first hỗ trợ cảm ứng, bảng màu hòa trộn, Mandala, Kaleidoscope, Aurora, hoàn tác và xuất ảnh độ phân giải cao.",
-      features: ["Silk Light", "Mandala", "Kaleidoscope", "Color Blend", "HD Export"]
-    },
-    remote: {
-      icon: "RM",
-      title: "Remote",
-      kicker: "QUANTUM DEVICE LINK",
-      count: "5 KHÔNG GIAN",
-      route: "#/remote",
-      accent: "#5df4ff",
-      accent2: "#a568ff",
-      description: "Chia sẻ màn hình thật giữa máy tính và điện thoại bằng WebRTC, mã phiên và PIN một lần.",
-      detail: "Chủ phiên chọn màn hình, duyệt từng thiết bị và có thể dùng chat, con trỏ, clipboard hoặc truyền tệp P2P; signaling không nhận nội dung màn hình.",
-      features: ["Screen Share", "Device Approval", "P2P Chat", "File Drop", "Manual WebRTC"]
-    },
-    support: {
-      icon: "♥",
-      title: "Ủng hộ HH",
-      kicker: "SUPPORT THE CREATOR",
-      count: "KẾT NỐI",
-      route: "#/support",
-      accent: "#ff8a6c",
-      accent2: "#ff5ca8",
-      description: "Ủng hộ nhà phát triển, gửi phản hồi, xem roadmap và kết nối trung tâm hỗ trợ.",
-      detail: "Đồng hành cùng quá trình phát triển HH, góp ý cho tính năng tiếp theo và nhận hỗ trợ khi cần.",
-      features: ["Ủng hộ", "Feedback", "Roadmap", "Support Center", "Creator Updates"]
+  const gate = galaxy.closest("#authGate");
+  const orbitField = galaxy.querySelector(".hh-galaxy-orbits");
+  const inspector = galaxy.querySelector("#hhGalaxyInspector");
+  const signature = galaxy.querySelector(".hh-galaxy-signature b");
+  const sunLabel = galaxy.querySelector(".hh-galaxy-sun small");
+  const PAGE_SIZE = 18;
+  const BODY_TYPES = ["mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune"];
+  const MODEL_TYPES = ["terrestrial", "desert", "ocean", "forest", "gas", "ice", "storm", "crystal", "metal", "volcanic"];
+  const ORBIT_NAMES = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven"];
+
+  const start = () => {
+    const registry = window.HHFeatureUniverseRegistry;
+    if (!orbitField || !inspector || !registry?.sections?.length || !registry?.entries?.length) {
+      galaxy.dataset.featureUniverse = "fallback";
+      return;
     }
+
+  const sections = registry.sections.filter((section) => section.id !== "admin" && section.entries?.length);
+  const allEntries = sections.flatMap((section) => section.entries.map((entry) => ({ ...entry, sectionLabel: section.label })));
+  const entriesByKey = new Map(allEntries.map((entry) => [entry.key, entry]));
+  let activeSectionId = "";
+  let query = "";
+  let page = 0;
+  let pinnedKey = "";
+  let visibleItems = [];
+  let listOpen = false;
+
+  const normalize = (value) => String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+  const hash = (value) => {
+    let output = 2166136261;
+    for (const character of String(value || "")) {
+      output ^= character.codePointAt(0);
+      output = Math.imul(output, 16777619);
+    }
+    return output >>> 0;
+  };
+
+  const sectionPlanets = () => sections.map((section, index) => ({
+    key: `system:${section.id}`,
+    id: section.id,
+    sectionId: section.id,
+    title: section.label,
+    icon: section.icon || "✦",
+    description: `${section.entries.length} chức năng thật trong ${section.label}.`,
+    detail: "Chọn hệ hành tinh này để khám phá từng workspace con từ registry điều hướng của HH Platform.",
+    accent: section.accent || "#62e9f2",
+    accent2: section.accent2 || "#8b72ff",
+    count: section.entries.length,
+    kind: "system",
+    index
+  }));
+
+  const searchable = (entry) => normalize(`${entry.title} ${entry.description} ${entry.sectionLabel} ${entry.route}`);
+  const filteredEntries = () => {
+    if (query) return allEntries.filter((entry) => searchable(entry).includes(query));
+    if (activeSectionId) return allEntries.filter((entry) => entry.sectionId === activeSectionId);
+    return sectionPlanets();
+  };
+
+  const appearance = (item, index) => {
+    const seed = hash(item.key || item.route || index);
+    const body = BODY_TYPES[seed % BODY_TYPES.length];
+    const model = MODEL_TYPES[(seed >>> 4) % MODEL_TYPES.length];
+    const weight = .84 + ((seed >>> 8) % 78) / 100;
+    const spin = .038 + ((seed >>> 15) % 188) / 1000;
+    const size = 23 + ((seed >>> 20) % 23);
+    const tilt = -27 + ((seed >>> 12) % 55);
+    return { body, model, weight, spin, size, tilt, accent: item.accent, accent2: item.accent2, planet: index + 101 };
+  };
+
+  const createButton = (className, label) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = className;
+    button.textContent = label;
+    return button;
+  };
+
+  const controls = document.createElement("section");
+  controls.className = "hh-feature-universe-controls";
+  controls.setAttribute("aria-label", "Điều hướng HH Feature Universe");
+  controls.innerHTML = `<div class="hh-feature-universe-bar"><button type="button" data-hh-universe-home aria-label="Về bản đồ các hệ chức năng">← <span>Các hệ</span></button><label><span>⌕</span><input type="search" data-hh-universe-search autocomplete="off" placeholder="Tìm chức năng…" aria-label="Tìm chức năng trong HH Platform"></label><button type="button" data-hh-universe-list aria-expanded="false">☷ <span>Danh sách</span></button></div><nav data-hh-universe-sections aria-label="Các hệ chức năng"></nav><div class="hh-feature-universe-page" data-hh-universe-page><button type="button" data-hh-universe-prev aria-label="Trang hành tinh trước">‹</button><span data-hh-universe-page-label></span><button type="button" data-hh-universe-next aria-label="Trang hành tinh sau">›</button></div><section class="hh-feature-universe-list" data-hh-universe-list-panel hidden aria-label="Danh sách chức năng"><header><div><small>HH FEATURE UNIVERSE</small><strong data-hh-universe-list-title>Toàn bộ chức năng</strong></div><button type="button" data-hh-universe-list-close aria-label="Đóng danh sách">×</button></header><div data-hh-universe-list-items></div></section><p class="sr-only" data-hh-universe-announcer aria-live="polite"></p>`;
+  galaxy.append(controls);
+
+  const sectionNav = controls.querySelector("[data-hh-universe-sections]");
+  const searchInput = controls.querySelector("[data-hh-universe-search]");
+  const listToggle = controls.querySelector("[data-hh-universe-list]");
+  const listPanel = controls.querySelector("[data-hh-universe-list-panel]");
+  const listItems = controls.querySelector("[data-hh-universe-list-items]");
+  const listTitle = controls.querySelector("[data-hh-universe-list-title]");
+  const pageControl = controls.querySelector("[data-hh-universe-page]");
+  const pageLabel = controls.querySelector("[data-hh-universe-page-label]");
+  const previousButton = controls.querySelector("[data-hh-universe-prev]");
+  const nextButton = controls.querySelector("[data-hh-universe-next]");
+  const homeButton = controls.querySelector("[data-hh-universe-home]");
+  const announcer = controls.querySelector("[data-hh-universe-announcer]");
+
+  sections.forEach((section) => {
+    const button = createButton("hh-feature-system-chip", section.label);
+    button.dataset.hhUniverseSection = section.id;
+    button.style.setProperty("--feature-accent", section.accent);
+    button.setAttribute("aria-pressed", "false");
+    sectionNav.append(button);
   });
 
-  let pinnedKey = planets[0]?.dataset.hhGalaxyKey || "home";
+  inspector.hidden = false;
+  inspector.setAttribute("aria-hidden", "false");
+  let openButton = inspector.querySelector("[data-hh-galaxy-open]");
+  if (!openButton) {
+    openButton = createButton("hh-galaxy-open", "Mở sau khi đăng nhập →");
+    openButton.dataset.hhGalaxyOpen = "";
+    inspector.append(openButton);
+  }
 
   const write = (selector, value) => {
     const node = galaxy.querySelector(selector);
     if (node) node.textContent = value;
   };
 
-  const selectPlanet = (key, { pin = false, focus = false } = {}) => {
-    const data = categories[key];
-    const planet = planets.find((item) => item.dataset.hhGalaxyKey === key);
-    if (!data || !planet) return false;
+  const currentSection = () => sections.find((section) => section.id === activeSectionId);
+
+  const renderList = () => {
+    listItems.replaceChildren();
+    const items = filteredEntries();
+    listTitle.textContent = query
+      ? `${items.length} kết quả tìm kiếm`
+      : activeSectionId
+        ? `${currentSection()?.label || "Hệ chức năng"} · ${items.length} mục`
+        : `${registry.count} chức năng trong ${sections.length} hệ`;
+    const fragment = document.createDocumentFragment();
+    const source = activeSectionId || query ? items : allEntries;
+    source.forEach((entry) => {
+      const button = createButton("hh-feature-list-item", "");
+      button.dataset.hhFeatureRoute = entry.route;
+      button.dataset.hhFeatureKey = entry.key;
+      button.style.setProperty("--feature-accent", entry.accent);
+      const planet = document.createElement("i");
+      planet.setAttribute("aria-hidden", "true");
+      const copy = document.createElement("span");
+      const group = document.createElement("small");
+      group.textContent = entry.sectionLabel;
+      const title = document.createElement("strong");
+      title.textContent = entry.title;
+      const description = document.createElement("em");
+      description.textContent = entry.description;
+      copy.append(group, title, description);
+      const arrow = document.createElement("b");
+      arrow.textContent = "→";
+      button.append(planet, copy, arrow);
+      fragment.append(button);
+    });
+    listItems.append(fragment);
+  };
+
+  const setListOpen = (open) => {
+    listOpen = Boolean(open);
+    listPanel.hidden = !listOpen;
+    listToggle.setAttribute("aria-expanded", String(listOpen));
+    galaxy.classList.toggle("is-feature-list-open", listOpen);
+    if (listOpen) {
+      renderList();
+      listPanel.querySelector("button")?.focus({ preventScroll: true });
+    }
+  };
+
+  const updateInspector = (item, index) => {
+    if (!item) return;
+    const isSystem = item.kind === "system";
+    const section = sections.find((candidate) => candidate.id === item.sectionId);
+    galaxy.style.setProperty("--galaxy-accent", item.accent);
+    galaxy.style.setProperty("--galaxy-accent-2", item.accent2);
+    gate?.style.setProperty("--auth-planet-accent", item.accent);
+    gate?.style.setProperty("--auth-planet-accent-2", item.accent2);
+    if (gate) gate.dataset.hhPlanetTheme = item.sectionId;
+    galaxy.dataset.activeCategory = item.key;
+    galaxy.dataset.activeSystem = item.sectionId;
+    write("[data-hh-galaxy-index]", `${isSystem ? "HỆ" : "HÀNH TINH"} ${String(index + 1).padStart(2, "0")} / ${String(visibleItems.length).padStart(2, "0")}`);
+    write("[data-hh-galaxy-icon]", item.icon || "✦");
+    write("[data-hh-galaxy-kicker]", isSystem ? "HỆ CHỨC NĂNG" : section?.label || "HH FEATURE UNIVERSE");
+    write("[data-hh-galaxy-title]", item.title);
+    write("[data-hh-galaxy-count]", `${item.count || 1} ${isSystem ? "CHỨC NĂNG" : "WORKSPACE"}`);
+    write("[data-hh-galaxy-description]", item.description);
+    write("[data-hh-galaxy-detail]", item.detail || "Đường dẫn này lấy trực tiếp từ registry HH Platform và chỉ mở sau khi phiên truy cập hợp lệ.");
+    write("[data-hh-galaxy-route]", isSystem ? `${item.count} hành tinh con` : `#${item.route}`);
+    const featureLabels = isSystem
+      ? section.entries.slice(0, 5).map((entry) => entry.title)
+      : [section?.label, "Route nội bộ đã xác thực", item.root ? "Trang tổng quan nhóm" : "Workspace con", "Hỗ trợ bàn phím", "Không lộ quyền Admin"];
+    [...galaxy.querySelectorAll("[data-hh-galaxy-features] li")].forEach((node, featureIndex) => {
+      node.textContent = featureLabels[featureIndex] || "";
+      node.hidden = !featureLabels[featureIndex];
+    });
+    openButton.textContent = isSystem ? "Khám phá hệ hành tinh →" : "Mở sau khi đăng nhập →";
+    openButton.dataset.hhGalaxyTarget = item.key;
+    announcer.textContent = `${item.title}. ${item.description}`;
+  };
+
+  const selectPlanet = (key, { pin = false, focus = false, commit = false } = {}) => {
+    const item = visibleItems.find((candidate) => candidate.key === key);
+    const buttons = [...galaxy.querySelectorAll(".hh-galaxy-planet[data-hh-galaxy-key]")];
+    const planet = buttons.find((candidate) => candidate.dataset.hhGalaxyKey === key);
+    if (!item || !planet) return false;
     if (pin) pinnedKey = key;
-
-    planets.forEach((item) => {
-      const active = item === planet;
-      item.classList.toggle("is-active", active);
-      item.setAttribute("aria-selected", String(active));
-      item.tabIndex = active ? 0 : -1;
-      item.closest(".hh-galaxy-orbit")?.classList.toggle("is-selected-orbit", active);
+    buttons.forEach((button) => {
+      const active = button === planet;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-selected", String(active));
+      button.tabIndex = active ? 0 : -1;
+      button.closest(".hh-galaxy-orbit")?.classList.toggle("is-selected-orbit", active);
     });
-
-    galaxy.dataset.activeCategory = key;
-    galaxy.style.setProperty("--galaxy-accent", data.accent);
-    galaxy.style.setProperty("--galaxy-accent-2", data.accent2);
-    gate?.style.setProperty("--auth-planet-accent", data.accent);
-    gate?.style.setProperty("--auth-planet-accent-2", data.accent2);
-    if (gate) gate.dataset.hhPlanetTheme = key;
-    inspector?.setAttribute("data-theme", key);
-    write("[data-hh-galaxy-index]", `HÀNH TINH ${String(planets.indexOf(planet) + 1).padStart(2, "0")} / ${String(planets.length).padStart(2, "0")}`);
-    write("[data-hh-galaxy-icon]", data.icon);
-    write("[data-hh-galaxy-kicker]", data.kicker);
-    write("[data-hh-galaxy-title]", data.title);
-    write("[data-hh-galaxy-count]", data.count);
-    write("[data-hh-galaxy-description]", data.description);
-    write("[data-hh-galaxy-detail]", data.detail);
-    write("[data-hh-galaxy-route]", data.route);
-    featureNodes.forEach((node, index) => {
-      node.textContent = data.features[index] || "";
-      node.hidden = !data.features[index];
-    });
-
-    planets.forEach((item) => {
-      const itemData = categories[item.dataset.hhGalaxyKey];
-      if (itemData) {
-        item.setAttribute("aria-label", `${itemData.title}: ${itemData.description}`);
-      }
-    });
-
+    updateInspector(item, Math.max(0, visibleItems.indexOf(item)));
     if (focus) planet.focus({ preventScroll: true });
     galaxy.dispatchEvent(new CustomEvent("hh:galaxy-category-change", {
-      detail: { key, route: data.route, title: data.title, accent: data.accent, accent2: data.accent2, pinned: pin }
+      detail: { key, route: item.route || "", title: item.title, accent: item.accent, accent2: item.accent2, pinned: pin }
     }));
+    if (commit) activateItem(item);
     return true;
+  };
+
+  const renderPlanets = () => {
+    const source = filteredEntries();
+    const totalPages = Math.max(1, Math.ceil(source.length / PAGE_SIZE));
+    page = Math.min(Math.max(0, page), totalPages - 1);
+    visibleItems = source.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+    orbitField.replaceChildren();
+    const fragment = document.createDocumentFragment();
+    visibleItems.forEach((item, index) => {
+      const orbitIndex = Math.min(ORBIT_NAMES.length - 1, Math.floor(index / 2));
+      let orbit = [...fragment.children].find((node) => node.classList.contains(`hh-galaxy-orbit--${ORBIT_NAMES[orbitIndex]}`));
+      if (!orbit) {
+        orbit = document.createElement("span");
+        orbit.className = `hh-galaxy-orbit hh-galaxy-orbit--${ORBIT_NAMES[orbitIndex]}`;
+        fragment.append(orbit);
+      }
+      const look = appearance(item, index + page * PAGE_SIZE);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "hh-galaxy-planet";
+      button.setAttribute("role", "tab");
+      button.setAttribute("aria-selected", "false");
+      button.setAttribute("aria-label", `${item.title}: ${item.description}`);
+      button.setAttribute("aria-controls", "hhGalaxyInspector");
+      button.tabIndex = -1;
+      button.dataset.hhGalaxyKey = item.key;
+      button.dataset.hhPlanet = String(look.planet);
+      button.dataset.hhBody = look.body;
+      button.dataset.hhModel = look.model;
+      button.dataset.hhSpin = look.spin.toFixed(3);
+      button.dataset.hhWeight = look.weight.toFixed(2);
+      button.style.setProperty("--planet-a", look.accent);
+      button.style.setProperty("--planet-b", look.accent2);
+      button.style.setProperty("--planet-size", `${look.size}px`);
+      button.style.setProperty("--planet-spin", `${Math.max(7, 1 / look.spin * 1.2).toFixed(1)}s`);
+      button.style.setProperty("--planet-tilt", `${look.tilt}deg`);
+      orbit.append(button);
+    });
+    orbitField.append(fragment);
+    pinnedKey = visibleItems[0]?.key || "";
+    homeButton.disabled = !activeSectionId && !query;
+    pageControl.hidden = totalPages <= 1;
+    previousButton.disabled = page <= 0;
+    nextButton.disabled = page >= totalPages - 1;
+    pageLabel.textContent = `Trang ${page + 1}/${totalPages} · ${source.length} hành tinh`;
+    sectionNav.querySelectorAll("[data-hh-universe-section]").forEach((button) => {
+      const active = button.dataset.hhUniverseSection === activeSectionId;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    if (signature) signature.textContent = `${registry.count} CHỨC NĂNG · ${sections.length} HỆ HÀNH TINH`;
+    if (sunLabel) sunLabel.textContent = activeSectionId ? currentSection()?.label || "HH FEATURE CORE" : "HH FEATURE CORE";
+    galaxy.dataset.featureUniverse = query ? "search" : activeSectionId ? "system" : "overview";
+    galaxy.setAttribute("aria-label", `HH Feature Universe có ${registry.count} chức năng trong ${sections.length} hệ`);
+    galaxy.dispatchEvent(new CustomEvent("hh:feature-universe-render", {
+      detail: { count: visibleItems.length, total: source.length, page: page + 1, pages: totalPages, sectionId: activeSectionId, query }
+    }));
+    if (pinnedKey) requestAnimationFrame(() => selectPlanet(pinnedKey, { pin: true }));
+    if (listOpen) renderList();
+  };
+
+  function activateItem(item) {
+    if (!item) return;
+    if (item.kind === "system") {
+      activeSectionId = item.sectionId;
+      query = "";
+      searchInput.value = "";
+      page = 0;
+      renderPlanets();
+      announcer.textContent = `Đã mở hệ ${item.title}.`;
+      return;
+    }
+    gate?.dispatchEvent(new CustomEvent("hh:auth-destination", {
+      detail: { route: `#${item.route}`, title: item.title, focusLogin: false }
+    }));
+  }
+
+  const showOverview = () => {
+    activeSectionId = "";
+    query = "";
+    page = 0;
+    searchInput.value = "";
+    renderPlanets();
+    announcer.textContent = "Đã trở về bản đồ các hệ chức năng.";
   };
 
   galaxy.addEventListener("pointerover", (event) => {
@@ -376,7 +324,7 @@
   galaxy.addEventListener("pointerout", (event) => {
     const planet = event.target.closest?.("[data-hh-galaxy-key]");
     if (!planet || planet.contains(event.relatedTarget)) return;
-    selectPlanet(pinnedKey);
+    if (pinnedKey) selectPlanet(pinnedKey);
   });
 
   galaxy.addEventListener("focusin", (event) => {
@@ -385,31 +333,81 @@
   });
 
   galaxy.addEventListener("focusout", (event) => {
-    if (!event.relatedTarget?.closest?.("[data-hh-galaxy]")) selectPlanet(pinnedKey);
+    if (!event.relatedTarget?.closest?.("[data-hh-galaxy]") && pinnedKey) selectPlanet(pinnedKey);
   });
 
   galaxy.addEventListener("click", (event) => {
     const planet = event.target.closest?.("[data-hh-galaxy-key]");
-    if (planet) selectPlanet(planet.dataset.hhGalaxyKey, { pin: true, focus: true });
+    if (planet) selectPlanet(planet.dataset.hhGalaxyKey, { pin: true, focus: true, commit: true });
+    const listItem = event.target.closest?.("[data-hh-feature-key]");
+    if (listItem) {
+      const item = entriesByKey.get(listItem.dataset.hhFeatureKey);
+      if (item) {
+        activateItem(item);
+        setListOpen(false);
+      }
+    }
   });
 
   galaxy.addEventListener("keydown", (event) => {
     const planet = event.target.closest?.("[data-hh-galaxy-key]");
+    if (event.key === "Escape") {
+      if (listOpen) setListOpen(false);
+      else if (activeSectionId || query) showOverview();
+      return;
+    }
     if (!planet || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
-    const current = Math.max(0, planets.indexOf(planet));
+    const buttons = [...galaxy.querySelectorAll(".hh-galaxy-planet[data-hh-galaxy-key]")];
+    const current = Math.max(0, buttons.indexOf(planet));
     let next = current;
-    if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = (current - 1 + planets.length) % planets.length;
-    if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (current + 1) % planets.length;
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = (current - 1 + buttons.length) % buttons.length;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (current + 1) % buttons.length;
     if (event.key === "Home") next = 0;
-    if (event.key === "End") next = planets.length - 1;
-    selectPlanet(planets[next].dataset.hhGalaxyKey, { pin: true, focus: true });
+    if (event.key === "End") next = buttons.length - 1;
+    selectPlanet(buttons[next].dataset.hhGalaxyKey, { pin: true, focus: true });
   });
 
-  selectPlanet(pinnedKey, { pin: true });
-  window.HHHGalaxy = Object.freeze({
-    categories,
-    select: (key) => selectPlanet(key, { pin: true }),
-    current: () => pinnedKey
+  sectionNav.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-hh-universe-section]");
+    if (!button) return;
+    activeSectionId = button.dataset.hhUniverseSection;
+    query = "";
+    page = 0;
+    searchInput.value = "";
+    renderPlanets();
   });
+  homeButton.addEventListener("click", showOverview);
+  listToggle.addEventListener("click", () => setListOpen(!listOpen));
+  controls.querySelector("[data-hh-universe-list-close]").addEventListener("click", () => setListOpen(false));
+  previousButton.addEventListener("click", () => { page -= 1; renderPlanets(); });
+  nextButton.addEventListener("click", () => { page += 1; renderPlanets(); });
+  openButton.addEventListener("click", () => activateItem(visibleItems.find((item) => item.key === openButton.dataset.hhGalaxyTarget)));
+  searchInput.addEventListener("input", () => {
+    query = normalize(searchInput.value);
+    if (query) activeSectionId = "";
+    page = 0;
+    renderPlanets();
+  });
+
+  renderPlanets();
+  galaxy.dataset.featureUniverseReady = "true";
+  window.HHHGalaxy = Object.freeze({
+    version: 7,
+    registry,
+    select: (key) => selectPlanet(key, { pin: true }),
+    current: () => pinnedKey,
+    section: () => activeSectionId,
+    overview: showOverview,
+    search: (value) => {
+      searchInput.value = String(value || "");
+      query = normalize(value);
+      if (query) activeSectionId = "";
+      page = 0;
+      renderPlanets();
+    }
+  });
+  };
+  if (window.HHFeatureUniverseRegistry) start();
+  else window.addEventListener("hh:feature-universe-registry", start, { once: true });
 })();

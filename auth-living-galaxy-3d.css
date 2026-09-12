@@ -272,6 +272,38 @@
   .hh-living-galaxy-status { display: none; }
 }
 
+@media (min-width: 761px) and (max-width: 1100px) {
+  html body.home-neon.auth-locked #authGate.hh-neon-gateway {
+    align-items: start !important;
+    padding: 302px 16px 20px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  html body.home-neon.auth-locked #authGate.hh-neon-gateway > .auth-gate-card {
+    align-self: start !important;
+    margin: 0 auto !important;
+  }
+  html body.home-neon.auth-locked #authGate.hh-neon-gateway > .hh-h-galaxy {
+    --galaxy-y: 58%;
+    position: fixed !important;
+    inset: 0 0 auto !important;
+    z-index: 12;
+    width: auto;
+    height: 286px;
+    overflow: hidden;
+    opacity: 1;
+    clip-path: none;
+    background: linear-gradient(180deg, rgba(4, 8, 20, .98), rgba(7, 13, 29, .9));
+    border-bottom: 1px solid rgba(122, 220, 255, .2);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, .45);
+    backdrop-filter: blur(16px);
+  }
+  html body.home-neon.auth-locked #authGate.hh-neon-gateway > .hh-h-galaxy.is-feature-list-open {
+    height: 100dvh;
+    overflow: visible;
+  }
+}
+
 @media (max-width: 760px) {
   html body.home-neon.auth-locked #authGate.hh-neon-gateway {
     align-items: start !important;
@@ -297,6 +329,10 @@
     border-bottom: 1px solid rgba(122,220,255,.2);
     box-shadow: 0 12px 34px rgba(0,0,0,.45);
     backdrop-filter: blur(16px);
+  }
+  html body.home-neon.auth-locked #authGate.hh-neon-gateway > .hh-h-galaxy.is-feature-list-open {
+    height: 100dvh;
+    overflow: visible;
   }
   .hh-living-galaxy-canvas,
   .hh-living-galaxy-depth,
@@ -360,4 +396,111 @@
   .hh-living-warp { display: none; }
   .hh-living-galaxy-depth::before,
   .hh-living-galaxy-depth::after { transform: none !important; transition: none; }
+}
+
+/* Cinematic optical depth without a second canvas or render loop. */
+.hh-living-cosmic-optics {
+  position: absolute;
+  inset: 0 41.5% 0 0;
+  z-index: 3;
+  overflow: hidden;
+  opacity: .72;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.hh-living-cosmic-optics::before {
+  position: absolute;
+  left: 11%;
+  top: 16%;
+  width: 94px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(115, 226, 255, .2);
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 0 38%, rgba(62, 188, 255, .12) 47%, rgba(189, 91, 255, .08) 55%, transparent 69%);
+  box-shadow: 0 0 42px rgba(73, 175, 255, .12), inset 0 0 24px rgba(230, 165, 255, .1);
+  content: "";
+  filter: blur(.4px);
+  animation: hh-cosmic-lens-drift 23s ease-in-out infinite alternate;
+}
+
+.hh-living-cosmic-optics::after {
+  position: absolute;
+  right: 7%;
+  top: 12%;
+  width: 2px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, .92), #71dfff 48%, transparent);
+  box-shadow: 0 0 10px #fff, 0 0 26px #61cfff, 0 0 54px rgba(170, 82, 255, .54);
+  content: "";
+  opacity: .52;
+  transform: rotate(27deg);
+  animation: hh-quasar-pulse 11s ease-in-out infinite;
+}
+
+.hh-living-cosmic-optics > i {
+  position: absolute;
+  width: 42%;
+  height: 16%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(66, 226, 255, .1), rgba(116, 65, 255, .06) 42%, transparent 72%);
+  filter: blur(21px);
+  opacity: .55;
+  animation: hh-optical-nebula 17s ease-in-out infinite alternate;
+}
+
+.hh-living-cosmic-optics > i:nth-child(1) { left: 3%; top: 63%; transform: rotate(-14deg); }
+.hh-living-cosmic-optics > i:nth-child(2) { right: 5%; top: 36%; animation-delay: -5s; animation-duration: 21s; transform: rotate(19deg); }
+.hh-living-cosmic-optics > i:nth-child(3) { left: 29%; top: 5%; animation-delay: -9s; animation-duration: 27s; transform: rotate(5deg); }
+
+@keyframes hh-cosmic-lens-drift {
+  0% { opacity: .34; transform: translate3d(-8px, 6px, 0) scale(.88) rotate(-6deg); }
+  50% { opacity: .76; }
+  100% { opacity: .42; transform: translate3d(34px, -12px, 0) scale(1.12) rotate(8deg); }
+}
+
+@keyframes hh-quasar-pulse {
+  0%, 82%, 100% { opacity: .18; transform: rotate(27deg) scaleY(.62); }
+  88% { opacity: .78; transform: rotate(27deg) scaleY(1.18); }
+  93% { opacity: .36; transform: rotate(27deg) scaleY(.86); }
+}
+
+@keyframes hh-optical-nebula {
+  from { opacity: .24; translate: -12px 6px; scale: .9; }
+  to { opacity: .64; translate: 20px -8px; scale: 1.14; }
+}
+
+@media (min-width: 1101px) {
+  .hh-h-galaxy .hh-living-galaxy-status {
+    left: auto;
+    right: calc(41.5% + 18px);
+    bottom: 18px;
+  }
+}
+
+#authGate[data-motion-level="soft"] .hh-living-cosmic-optics {
+  opacity: .42;
+}
+
+#authGate[data-motion-level="soft"] .hh-living-cosmic-optics > i,
+#authGate[data-motion-level="off"] .hh-living-cosmic-optics {
+  animation-play-state: paused;
+}
+
+#authGate[data-motion-level="off"] .hh-living-cosmic-optics {
+  opacity: .2;
+}
+
+@media (max-width: 1100px) {
+  .hh-living-cosmic-optics {
+    inset: 0;
+    opacity: .3;
+  }
+}
+
+@media (max-width: 760px), (prefers-reduced-motion: reduce) {
+  .hh-living-cosmic-optics {
+    display: none;
+  }
 }

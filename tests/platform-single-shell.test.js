@@ -78,10 +78,14 @@ test('legacy storage failure cannot lock navigation or grant an authenticated se
 
 test('email, guest and OAuth fallback choose Platform, preserving explicit resume requests', () => {
   const auth = read('auth-platform.js');
-  assert.match(auth, /sessionStorage.getItem\("hh.auth.pending-route"\) \|\| "#\/platform"/);
+  assert.match(auth, /const safePendingRoute =/);
+  assert.match(auth, /const consumePendingRoute =/);
+  assert.match(auth, /sessionStorage\.getItem\("hh\.auth\.pending-route"\)[\s\S]{0,100}sessionStorage\.getItem\("hh-auth-return-to"\)/);
+  assert.match(auth, /route === "\/admin" \|\| route\.startsWith\("\/admin\/"\)/);
   const guest = auth.slice(auth.indexOf('gate.querySelector("[data-guest-login]")'), auth.indexOf('let logoutPending'));
-  assert.match(guest, /location.hash !== "#\/platform"/);
-  assert.match(guest, /hh-auth-return-to", location.hash \|\| "#\/platform"/);
+  assert.match(guest, /const pendingRoute = consumePendingRoute\(\)/);
+  assert.match(guest, /location\.hash !== pendingRoute/);
+  assert.match(guest, /hh-auth-return-to", sessionStorage\.getItem\("hh\.auth\.pending-route"\) \|\| location\.hash \|\| "#\/platform"/);
   assert.doesNotMatch(guest, /#\/home/);
   const legacyLogin = router.slice(router.indexOf('const handleRegister'), router.indexOf('const handleLogin') + 1500);
   assert.doesNotMatch(legacyLogin, /location.hash = "#\/home"/);

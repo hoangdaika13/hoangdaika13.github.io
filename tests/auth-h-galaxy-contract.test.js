@@ -6,31 +6,25 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("interactive H galaxy exposes exactly twenty-five unique product planets", () => {
+test("interactive H galaxy keeps a static fallback and mounts the live Platform registry", () => {
   const html = read("index.html");
-  const planets = [...html.matchAll(/data-hh-planet="(\d+)"/g)].map((match) => match[1]);
-  const keys = [...html.matchAll(/data-hh-galaxy-key="([^"]+)"/g)].map((match) => match[1]);
-  const bodies = [...html.matchAll(/data-hh-body="([^"]+)"/g)].map((match) => match[1]);
-  const spins = [...html.matchAll(/data-hh-spin="([^"]+)"/g)].map((match) => match[1]);
+  const shell = read("script.js");
+  const runtime = read("auth-h-galaxy.js");
 
-  assert.equal(planets.length, 25);
-  assert.equal(new Set(planets).size, 25);
-  assert.equal(keys.length, 25);
-  assert.equal(new Set(keys).size, 25);
-  assert.equal((html.match(/data-hh-weight=/g) || []).length, 25);
-  assert.equal((html.match(/data-hh-model=/g) || []).length, 25);
-  assert.equal((html.match(/data-hh-body=/g) || []).length, 25);
-  assert.equal((html.match(/data-hh-spin=/g) || []).length, 25);
-  assert.equal(new Set(bodies).size, 8);
-  assert.equal(new Set(spins).size, 25);
+  assert.ok((html.match(/data-hh-planet=/g) || []).length > 0);
+  assert.match(shell, /HHFeatureUniverseRegistry/);
+  assert.match(shell, /generatedFrom:\s*"hh-platform-navigation"/);
+  assert.match(shell, /hh:feature-universe-registry/);
+  assert.match(runtime, /window\.HHFeatureUniverseRegistry/);
+  assert.match(runtime, /PAGE_SIZE\s*=\s*18/);
   assert.doesNotMatch(html, /class="hh-galaxy-planet"[^>]*>\s*<span|class="hh-galaxy-planet"[^>]*>\s*<em/);
   assert.doesNotMatch(html, /auth-gate-brand|auth-h-channel-mark/);
   assert.doesNotMatch(html, /Bước vào thiên hà\.|Đánh thức mọi ý tưởng\.|H Creative Universe/);
   assert.match(html, /<div class="hh-galaxy-sun"[^>]*><span><\/span>/);
   assert.doesNotMatch(html, /<div class="hh-galaxy-sun"[^>]*><span>H<\/span>/);
   assert.match(html, /id="hhGalaxyInspector" role="tabpanel"/);
-  assert.match(html, /auth-h-galaxy\.css\?v=13/);
-  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=15/);
+  assert.match(html, /auth-h-galaxy\.css\?v=14/);
+  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=16/);
   assert.match(html, /data-hh-galaxy-detail/);
   assert.doesNotMatch(html, /auth-feature-showcase|auth-benefits/);
   assert.doesNotMatch(html, /data-hh-galaxy-key="meme"/);
@@ -42,9 +36,13 @@ test("interactive H galaxy exposes exactly twenty-five unique product planets", 
 test("galaxy interactions support hover, touch, focus and keyboard navigation", () => {
   const script = read("auth-h-galaxy.js");
 
-  assert.equal([...script.matchAll(/^\s{4}[a-zA-Z]+:\s*\{/gm)].length, 25);
-  assert.equal([...script.matchAll(/^\s{6}accent:\s*"#[0-9a-f]{6}"/gmi)].length, 25);
-  assert.equal([...script.matchAll(/^\s{6}detail:\s*"/gm)].length, 25);
+  assert.match(script, /renderPlanets/);
+  assert.match(script, /data-hh-universe-search/);
+  assert.match(script, /data-hh-universe-list/);
+  assert.match(script, /data-hh-universe-prev/);
+  assert.match(script, /data-hh-universe-next/);
+  assert.match(script, /hh:feature-universe-render/);
+  assert.match(script, /hh:auth-destination/);
   assert.match(script, /pointerover/);
   assert.match(script, /pointerout/);
   assert.match(script, /focusin/);
@@ -53,7 +51,7 @@ test("galaxy interactions support hover, touch, focus and keyboard navigation", 
   assert.match(script, /keydown/);
   assert.match(script, /ArrowRight/);
   assert.match(script, /aria-selected/);
-  assert.match(script, /featureNodes\.forEach/);
+  assert.match(script, /querySelectorAll\("\.hh-galaxy-planet\[data-hh-galaxy-key\]"\)/);
   assert.match(script, /--galaxy-accent/);
   assert.match(script, /--auth-planet-accent/);
   assert.match(script, /hhPlanetTheme/);
@@ -85,6 +83,9 @@ test("galaxy visuals retain motion comfort and responsive fallbacks", () => {
   assert.match(css, /\.hh-galaxy-orbit\.is-selected-orbit/);
   assert.match(css, /animation-play-state:\s*paused/);
   assert.match(css, /@media \(max-width: 1100px\)/);
+  assert.match(css, /@media \(min-width: 761px\) and \(max-width: 1100px\)/);
+  assert.match(css, /\.hh-feature-universe-controls/);
+  assert.match(css, /\.hh-feature-universe-list/);
   assert.match(css, /@media \(max-width: 760px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 });
