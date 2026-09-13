@@ -62,6 +62,106 @@
     return "cinematic";
   };
 
+  const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+
+  const renderCameraFrame = () => {
+    if (!sceneState) return;
+    if (mode() === "static") render(performance.now());
+    else resume();
+  };
+
+  const syncCameraTelemetry = (view = sceneState?.cameraView) => {
+    if (!view) {
+      galaxy.removeAttribute("data-camera-yaw");
+      galaxy.removeAttribute("data-camera-pitch");
+      galaxy.removeAttribute("data-camera-zoom");
+      return;
+    }
+    galaxy.dataset.cameraYaw = view.targetYaw.toFixed(3);
+    galaxy.dataset.cameraPitch = view.targetPitch.toFixed(3);
+    galaxy.dataset.cameraZoom = view.targetZoom.toFixed(3);
+  };
+
+  const resetCameraView = () => {
+    if (!sceneState?.cameraView) return false;
+    Object.assign(sceneState.cameraView, {
+      targetYaw: 0,
+      targetPitch: 0,
+      targetZoom: 1,
+      focusKey: "",
+      focusStrength: 0
+    });
+    pointer = { x: 0, y: 0 };
+    galaxy.style.setProperty("--galaxy-parallax-x", "0px");
+    galaxy.style.setProperty("--galaxy-parallax-y", "0px");
+    syncCameraTelemetry();
+    renderCameraFrame();
+    return true;
+  };
+
+  const onCameraPointerDown = (event) => {
+    const interaction = sceneState?.cameraView;
+    if (!interaction || event.button !== 0 || mode() === "static") return;
+    interaction.dragging = true;
+    interaction.pointerId = event.pointerId;
+    interaction.startX = event.clientX;
+    interaction.startY = event.clientY;
+    interaction.startYaw = interaction.targetYaw;
+    interaction.startPitch = interaction.targetPitch;
+    interaction.focusKey = "";
+    interaction.focusStrength = 0;
+    sceneState.cameraSurface?.setPointerCapture?.(event.pointerId);
+    galaxy.dataset.cameraDragging = "true";
+    event.preventDefault();
+  };
+
+  const onCameraPointerMove = (event) => {
+    const interaction = sceneState?.cameraView;
+    if (!interaction?.dragging || interaction.pointerId !== event.pointerId) return;
+    interaction.targetYaw = clamp(interaction.startYaw + (event.clientX - interaction.startX) * .00125, -.42, .42);
+    interaction.targetPitch = clamp(interaction.startPitch + (event.clientY - interaction.startY) * .00105, -.2, .2);
+    syncCameraTelemetry(interaction);
+    renderCameraFrame();
+  };
+
+  const finishCameraDrag = (event) => {
+    const interaction = sceneState?.cameraView;
+    if (!interaction?.dragging || (event?.pointerId !== undefined && interaction.pointerId !== event.pointerId)) return;
+    interaction.dragging = false;
+    interaction.pointerId = null;
+    galaxy.removeAttribute("data-camera-dragging");
+  };
+
+  const onCameraWheel = (event) => {
+    const interaction = sceneState?.cameraView;
+    if (!interaction || mode() === "static") return;
+    interaction.targetZoom = clamp(interaction.targetZoom + Math.sign(event.deltaY) * .065, .78, 1.22);
+    syncCameraTelemetry(interaction);
+    event.preventDefault();
+    renderCameraFrame();
+  };
+
+  const bindCameraSurface = (surface) => {
+    surface.addEventListener("pointerdown", onCameraPointerDown);
+    surface.addEventListener("pointermove", onCameraPointerMove);
+    surface.addEventListener("pointerup", finishCameraDrag);
+    surface.addEventListener("pointercancel", finishCameraDrag);
+    surface.addEventListener("lostpointercapture", finishCameraDrag);
+    surface.addEventListener("wheel", onCameraWheel, { passive: false });
+    surface.addEventListener("dblclick", resetCameraView);
+  };
+
+  const unbindCameraSurface = (surface) => {
+    if (!surface) return;
+    surface.removeEventListener("pointerdown", onCameraPointerDown);
+    surface.removeEventListener("pointermove", onCameraPointerMove);
+    surface.removeEventListener("pointerup", finishCameraDrag);
+    surface.removeEventListener("pointercancel", finishCameraDrag);
+    surface.removeEventListener("lostpointercapture", finishCameraDrag);
+    surface.removeEventListener("wheel", onCameraWheel);
+    surface.removeEventListener("dblclick", resetCameraView);
+  };
+
   const makeRadialTexture = (THREE, stops, size = 256) => {
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = size;
@@ -666,6 +766,37 @@
     return corona;
   };
 
+  const createDistantBlackHole = (THREE, scene) => {
+    if (mode() !== "cinematic") return null;
+    const group = new THREE.Group();
+    group.position.set(-355, 150, -520);
+    group.rotation.set(.22, -.12, -.3);
+    const core = new THREE.Mesh(
+      new THREE.SphereGeometry(17, 32, 24),
+      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .98 })
+    );
+    group.add(core);
+    const colors = [0x68dfff, 0xae6cff, 0xff6ac8];
+    const rings = colors.map((color, index) => {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(24 + index * 7, 1.8 - index * .28, 10, 112),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .34 - index * .065, depthWrite: false, blending: THREE.AdditiveBlending })
+      );
+      ring.rotation.set(1.17 + index * .08, .12, index * .34);
+      group.add(ring);
+      return ring;
+    });
+    const lensTexture = makeRadialTexture(THREE, [[0,"rgba(0,0,0,.98)"],[.24,"rgba(0,0,0,.94)"],[.32,"rgba(122,220,255,.28)"],[.46,"rgba(174,91,255,.16)"],[.64,"rgba(255,92,194,.055)"],[1,"rgba(0,0,0,0)"]], 256);
+    const lens = new THREE.Sprite(new THREE.SpriteMaterial({ map: lensTexture, transparent: true, opacity: .7, depthWrite: false, blending: THREE.AdditiveBlending }));
+    lens.scale.set(142, 142, 1);
+    lens.position.z = -4;
+    group.add(lens);
+    group.userData.rings = rings;
+    group.userData.lens = lens;
+    scene.add(group);
+    return group;
+  };
+
   const createStars = (THREE, scene, count, radius, size, opacity, texture, seedOffset = 0) => {
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
@@ -904,6 +1035,10 @@
       const canvas = document.createElement("canvas");
       canvas.className = "hh-living-galaxy-canvas";
       canvas.setAttribute("aria-hidden", "true");
+      const cameraSurface = document.createElement("div");
+      cameraSurface.className = "hh-living-camera-surface";
+      cameraSurface.setAttribute("aria-hidden", "true");
+      cameraSurface.title = "Kéo để quan sát · cuộn để zoom · nhấp đúp để căn giữa";
       const depth = document.createElement("div");
       depth.className = "hh-living-galaxy-depth";
       depth.setAttribute("aria-hidden", "true");
@@ -913,11 +1048,12 @@
       optics.innerHTML = "<i></i><i></i><i></i>";
       const status = document.createElement("span");
       status.className = "hh-living-galaxy-status";
-      status.innerHTML = `<i></i><span>${mode() === "cinematic" ? "3D CINEMATIC" : "3D BALANCED"} · DỮ LIỆU THẬT</span>`;
+      const statusLabel = mode() === "cinematic" ? "3D CINEMATIC" : mode() === "balanced" ? "3D BALANCED" : "3D STATIC";
+      status.innerHTML = `<i></i><span>${statusLabel} · DỮ LIỆU THẬT</span>`;
       const meteorLayer = document.createElement("div");
       meteorLayer.className = "hh-living-meteor-layer";
       meteorLayer.setAttribute("aria-hidden", "true");
-      galaxy.prepend(depth, optics, canvas, meteorLayer, status);
+      galaxy.prepend(depth, optics, canvas, cameraSurface, meteorLayer, status);
 
       const hitLayer = document.createElement("div");
       hitLayer.className = "hh-living-galaxy-hitlayer";
@@ -1008,6 +1144,7 @@
         scene.add(sprite);
         return sprite;
       });
+      const blackHole = createDistantBlackHole(THREE, scene);
 
       const usage = routeUsage();
       const signals = realSignals();
@@ -1100,17 +1237,29 @@
             new THREE.MeshBasicMaterial({ map: ringTexture, color: 0xffead0, transparent: true, opacity: .56, side: THREE.DoubleSide, depthWrite: false, alphaTest: .01 })
           );
           planetaryRing.rotation.set(1.08 + index % 3 * .11, .14 + index % 2 * .09, index * .13);
+          const innerRing = new THREE.Mesh(
+            new THREE.RingGeometry(size * 1.12, size * 1.25, 96, 2),
+            new THREE.MeshBasicMaterial({ map: ringTexture, color: 0xd3e8ff, transparent: true, opacity: .3, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })
+          );
+          const outerRing = new THREE.Mesh(
+            new THREE.RingGeometry(size * 2.08, size * 2.28, 112, 2),
+            new THREE.MeshBasicMaterial({ map: ringTexture, color: 0xffbf92, transparent: true, opacity: .2, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })
+          );
+          planetaryRing.add(innerRing, outerRing);
           group.add(planetaryRing);
         }
         const moonPivots = [];
-        if (mode() === "cinematic" && (weight >= 1.4 || index % 8 === 0)) {
+        const moonCount = mode() === "cinematic" && (weight >= 1.4 || index % 8 === 0)
+          ? (["jupiter", "saturn", "uranus", "neptune"].includes(body) ? 2 : 1)
+          : 0;
+        for (let moonIndex = 0; moonIndex < moonCount; moonIndex += 1) {
           const moonPivot = new THREE.Group();
-          moonPivot.rotation.set(.38 + index % 3 * .16, .1, index * .62);
+          moonPivot.rotation.set(.38 + index % 3 * .16 + moonIndex * .14, .1, index * .62 + moonIndex * 1.8);
           const moon = new THREE.Mesh(
-            new THREE.SphereGeometry(size * (.17 + index % 2 * .04), 18, 12),
+            new THREE.SphereGeometry(size * (.13 + index % 2 * .035 + moonIndex * .025), 18, 12),
             new THREE.MeshStandardMaterial({ map: moonTexture, bumpMap: moonTexture, bumpScale: .18, color: 0xdde1e3, roughness: .93 })
           );
-          moon.position.x = size * (2.15 + index % 3 * .24);
+          moon.position.x = size * (2.15 + index % 3 * .24 + moonIndex * .58);
           moonPivot.add(moon);
           group.add(moonPivot);
           moonPivots.push(moonPivot);
@@ -1148,15 +1297,19 @@
           root.add(sprite);
           return { index: energyIndex, sprite, angle: index * .73 + energyIndex * Math.PI, speed: .12 + index % 3 * .018, position: new THREE.Vector3() };
         });
-        return { button, key, body, model, weight, spinRate, rotationDirection: bodyRotationDirections[body] || 1, accent: accents[index], group, mesh, clouds, moonPivots, planetaryRing, material, baseEmissiveColor, baseEmissiveIntensity, atmosphere, atmosphereProfile, halo, orbit, orbitMaterial, baseOrbitOpacity, radius, eccentricity, tilt, size, orbitAngle: index * 2.399963 + (index % 3) * .31, speed: .035 / Math.sqrt(radius / 82), popularity, energy, position: new THREE.Vector3(), scaleVector: new THREE.Vector3(1, 1, 1) };
+        return { button, key, body, model, weight, spinRate, rotationDirection: bodyRotationDirections[body] || 1, accent: accents[index], group, mesh, clouds, moonPivots, planetaryRing, material, baseEmissiveColor, baseEmissiveIntensity, atmosphere, atmosphereProfile, halo, orbit, orbitMaterial, baseOrbitOpacity, radius, eccentricity, tilt, size, orbitAngle: index * 2.399963 + (index % 3) * .31, speed: .035 / Math.sqrt(radius / 82), orbitRate: 1, popularity, energy, position: new THREE.Vector3(), scaleVector: new THREE.Vector3(1, 1, 1) };
       });
 
       sceneState = {
-        THREE, canvas, renderer, scene, camera, root, sun, chromosphere, sunShell, solarCorona, solarFlares, glow, starFar, starNear, milkyWay, nebulae, asteroidBelts, planets, status, meteorLayer, optics,
+        THREE, canvas, cameraSurface, renderer, scene, camera, root, sun, chromosphere, sunShell, solarCorona, solarFlares, glow, starFar, starNear, milkyWay, nebulae, blackHole, asteroidBelts, planets, status, meteorLayer, optics,
         meteorGlowTexture, meteorTailTexture, meteors: [], meteorSerial: 0, nextMeteorAt: 2.8, nextShowerAt: 24 + Math.random() * 10, showerQueue: [],
         warpBoostUntil: 0, errorPulseUntil: 0,
-        projectionVector: new THREE.Vector3(), last: performance.now(), elapsed: 0, frameBudget: 0
+        projectionVector: new THREE.Vector3(), cameraLookAt: new THREE.Vector3(), baseCameraZ: 665,
+        cameraView: { yaw: 0, pitch: 0, zoom: 1, targetYaw: 0, targetPitch: 0, targetZoom: 1, focusKey: galaxy.dataset.activeCategory || "", focusStrength: .08, dragging: false, pointerId: null },
+        renderMode: mode(), last: performance.now(), elapsed: 0, frameBudget: 0
       };
+      syncCameraTelemetry(sceneState.cameraView);
+      bindCameraSurface(cameraSurface);
       galaxy.dataset.livingGalaxy = mode();
       galaxy.dataset.meteorCount = "0";
 
@@ -1167,7 +1320,8 @@
         renderer.setPixelRatio(dpr);
         renderer.setSize(Math.max(1, rect.width), Math.max(1, rect.height), false);
         camera.aspect = Math.max(.4, rect.width / Math.max(1, rect.height));
-        camera.position.z = camera.aspect < .86 ? 785 : camera.aspect < 1.18 ? 725 : 665;
+        sceneState.baseCameraZ = camera.aspect < .86 ? 785 : camera.aspect < 1.18 ? 725 : 665;
+        camera.position.z = sceneState.baseCameraZ * sceneState.cameraView.zoom;
         camera.updateProjectionMatrix();
       };
       resizeObserver = new ResizeObserver(resize);
@@ -1204,11 +1358,27 @@
     const warpBoost = nowTime < state.warpBoostUntil ? 6.4 : 1;
     const errorPulse = nowTime < state.errorPulseUntil ? Math.sin(nowTime * .035) * .018 : 0;
     galaxy.dataset.orbitSpeed = currentMode === "static" ? "0.00" : "1.00";
-    const targetX = finePointer.matches ? pointer.x * 22 : 0;
-    const targetY = finePointer.matches ? pointer.y * 14 : 0;
-    state.camera.position.x += (targetX - state.camera.position.x) * Math.min(1, delta * 2.8);
-    state.camera.position.y += (20 - targetY - state.camera.position.y) * Math.min(1, delta * 2.8);
-    state.camera.lookAt(pointer.x * 5, pointer.y * -4, 0);
+    const view = state.cameraView;
+    view.yaw += (view.targetYaw - view.yaw) * Math.min(1, delta * 5.2);
+    view.pitch += (view.targetPitch - view.pitch) * Math.min(1, delta * 5.2);
+    view.zoom += (view.targetZoom - view.zoom) * Math.min(1, delta * 5.2);
+    const parallaxActive = gate.dataset.authParallax !== "off" && finePointer.matches && currentMode !== "static";
+    const parallaxX = parallaxActive ? pointer.x * 22 : 0;
+    const parallaxY = parallaxActive ? pointer.y * 14 : 0;
+    const cameraX = Math.sin(view.yaw) * 108 + parallaxX;
+    const cameraY = 20 - view.pitch * 118 - parallaxY;
+    const cameraZ = state.baseCameraZ * view.zoom;
+    state.camera.position.x += (cameraX - state.camera.position.x) * Math.min(1, delta * 4.2);
+    state.camera.position.y += (cameraY - state.camera.position.y) * Math.min(1, delta * 4.2);
+    state.camera.position.z += (cameraZ - state.camera.position.z) * Math.min(1, delta * 5.2);
+    const focusPlanet = state.planets.find((planet) => planet.key === view.focusKey);
+    const focusMix = focusPlanet ? view.focusStrength : 0;
+    state.cameraLookAt.set(
+      (focusPlanet?.position.x || 0) * focusMix + (parallaxActive ? pointer.x * 5 : 0),
+      (focusPlanet?.position.y || 0) * focusMix + (parallaxActive ? pointer.y * -4 : 0),
+      (focusPlanet?.position.z || 0) * focusMix * .35
+    );
+    state.camera.lookAt(state.cameraLookAt);
     state.root.rotation.z = Math.sin(elapsed * .08) * .016 + errorPulse;
     state.sun.rotation.y += delta * .11;
     state.sun.material.uniforms.uTime.value = elapsed;
@@ -1225,6 +1395,11 @@
     state.starFar.material.opacity = state.starFar.userData.baseOpacity * (.94 + Math.sin(elapsed * .73 + state.starFar.userData.phase) * .06);
     state.starNear.material.opacity = state.starNear.userData.baseOpacity * (.91 + Math.sin(elapsed * 1.07 + state.starNear.userData.phase) * .09);
     state.asteroidBelts.forEach((belt, index) => { belt.rotation.z += delta * (index ? -.006 : .009); });
+    if (state.blackHole) {
+      state.blackHole.userData.rings.forEach((ring, index) => { ring.rotation.z += delta * (.032 + index * .016) * (index % 2 ? -1 : 1); });
+      state.blackHole.userData.lens.material.opacity = .62 + Math.sin(elapsed * .31) * .08;
+      state.blackHole.rotation.z = -.3 + Math.sin(elapsed * .045) * .025;
+    }
     state.milkyWay.position.x = -120 + pointer.x * 10;
     state.milkyWay.position.y = 38 - pointer.y * 7;
     state.milkyWay.material.rotation = -.2 + Math.sin(elapsed * .018) * .012;
@@ -1240,7 +1415,10 @@
     const detailLimit = currentMode === "cinematic" ? 11 : 6;
     galaxy.dataset.orbitDetailCount = String(detailLimit);
     state.planets.forEach((planet, index) => {
-      if (currentMode !== "static") planet.orbitAngle = (planet.orbitAngle + delta * planet.speed * warpBoost) % ORBIT_TAU;
+      const selected = selectedKey === planet.key;
+      const targetOrbitRate = selected ? .28 : 1;
+      planet.orbitRate += (targetOrbitRate - planet.orbitRate) * Math.min(1, delta * 5.5);
+      if (currentMode !== "static") planet.orbitAngle = (planet.orbitAngle + delta * planet.speed * warpBoost * planet.orbitRate) % ORBIT_TAU;
       const angle = planet.orbitAngle;
       orbitPosition(state.THREE, planet, angle, planet.position);
       planet.group.position.copy(planet.position);
@@ -1256,7 +1434,6 @@
         child.scale.setScalar(signalPulse);
         child.material.opacity = .58 + Math.sin(elapsed * 3.2 + index) * .2;
       });
-      const selected = selectedKey === planet.key;
       const scale = selected ? 1.27 : 1;
       planet.scaleVector.setScalar(scale);
       planet.group.scale.lerp(planet.scaleVector, Math.min(1, delta * 8));
@@ -1305,7 +1482,7 @@
   };
 
   const onPointerMove = (event) => {
-    if (!finePointer.matches || mode() === "static") return;
+    if (!finePointer.matches || mode() === "static" || gate.dataset.authParallax === "off" || sceneState?.cameraView?.dragging) return;
     const width = Math.max(1, innerWidth * .585);
     pointer = { x: Math.max(-1, Math.min(1, event.clientX / width * 2 - 1)), y: Math.max(-1, Math.min(1, event.clientY / innerHeight * 2 - 1)) };
     galaxy.style.setProperty("--galaxy-parallax-x", `${pointer.x * 22}px`);
@@ -1323,8 +1500,24 @@
   };
 
   const onGalaxySelection = (event) => {
-    if (!event.detail?.pinned || !event.detail?.key) return;
-    meteorToPlanet(event.detail.key);
+    if (!event.detail?.key) return;
+    if (sceneState?.cameraView) {
+      sceneState.cameraView.focusKey = event.detail.key;
+      sceneState.cameraView.focusStrength = event.detail.pinned ? .16 : .075;
+      if (event.detail.pinned) sceneState.cameraView.targetZoom = Math.max(.86, sceneState.cameraView.targetZoom - .035);
+      renderCameraFrame();
+    }
+    if (event.detail.pinned) meteorToPlanet(event.detail.key);
+  };
+
+  const onCameraReset = () => resetCameraView();
+
+  const onParallaxChange = (event) => {
+    if (event.detail?.enabled === false) {
+      pointer = { x: 0, y: 0 };
+      ["--galaxy-parallax-x", "--galaxy-parallax-y", "--galaxy-far-x", "--galaxy-far-y", "--galaxy-near-x", "--galaxy-near-y"].forEach((property) => galaxy.style.setProperty(property, "0px"));
+    }
+    renderCameraFrame();
   };
 
   const showWarp = () => {
@@ -1384,12 +1577,15 @@
     rebuildFrame = 0;
     resizeObserver?.disconnect();
     resizeObserver = null;
+    unbindCameraSurface(sceneState?.cameraSurface);
+    finishCameraDrag();
     restoreInteractivePlanets();
     disposeScene(sceneState);
     sceneState = null;
     mounted = false;
+    syncCameraTelemetry(null);
     galaxy.classList.remove("is-webgl-ready");
-    galaxy.querySelectorAll(".hh-living-galaxy-canvas, .hh-living-galaxy-depth, .hh-living-cosmic-optics, .hh-living-meteor-layer, .hh-living-galaxy-status, .hh-living-galaxy-hitlayer").forEach((node) => node.remove());
+    galaxy.querySelectorAll(".hh-living-galaxy-canvas, .hh-living-camera-surface, .hh-living-galaxy-depth, .hh-living-cosmic-optics, .hh-living-meteor-layer, .hh-living-galaxy-status, .hh-living-galaxy-hitlayer").forEach((node) => node.remove());
   };
 
   const rebuild = () => {
@@ -1422,6 +1618,10 @@
 
   const syncMotionState = () => {
     const currentMode = mode();
+    if (sceneState && sceneState.renderMode !== currentMode) {
+      rebuild();
+      return;
+    }
     if (sceneState?.status) sceneState.status.querySelector("span").textContent = `${currentMode === "cinematic" ? "3D CINEMATIC" : currentMode === "balanced" ? "3D BALANCED" : "3D STATIC"} · DỮ LIỆU THẬT`;
     galaxy.dataset.livingGalaxy = currentMode;
     if (currentMode === "static") {
@@ -1459,7 +1659,9 @@
     authStateObserver?.disconnect();
     gate.removeEventListener("pointermove", onPointerMove);
     gate.removeEventListener("hh:auth-motion-change", onMotionChange);
+    gate.removeEventListener("hh:auth-parallax-change", onParallaxChange);
     galaxy.removeEventListener("hh:galaxy-category-change", onGalaxySelection);
+    galaxy.removeEventListener("hh:galaxy-camera-reset", onCameraReset);
     galaxy.removeEventListener("hh:feature-universe-render", rebuild);
     removeEventListener("storage", onStorageNotification);
     removeEventListener("hh:galaxy-notification", onGalaxyNotification);
@@ -1471,8 +1673,10 @@
 
   gate.addEventListener("pointermove", onPointerMove, { passive: true });
   galaxy.addEventListener("hh:galaxy-category-change", onGalaxySelection);
+  galaxy.addEventListener("hh:galaxy-camera-reset", onCameraReset);
   galaxy.addEventListener("hh:feature-universe-render", rebuild);
   gate.addEventListener("hh:auth-motion-change", onMotionChange);
+  gate.addEventListener("hh:auth-parallax-change", onParallaxChange);
   addEventListener("storage", onStorageNotification);
   addEventListener("hh:galaxy-notification", onGalaxyNotification);
   addEventListener("hh:auth-change", onAuthChange);
@@ -1497,7 +1701,21 @@
   reduceMotion.addEventListener?.("change", onReducedMotionChange);
   addEventListener("pagehide", destroy, { once: true });
 
-  window.HHLivingGalaxy3D = Object.freeze({ version: 5, mount: build, rebuild, mode, warp: showWarp, notify: (key) => meteorToPlanet(key || "communication", { notification: true }), destroy });
+  const cameraSnapshot = () => {
+    const view = sceneState?.cameraView;
+    if (!view) return null;
+    return Object.freeze({
+      yaw: view.yaw,
+      pitch: view.pitch,
+      zoom: view.zoom,
+      targetYaw: view.targetYaw,
+      targetPitch: view.targetPitch,
+      targetZoom: view.targetZoom,
+      focusKey: view.focusKey
+    });
+  };
+
+  window.HHLivingGalaxy3D = Object.freeze({ version: 6, mount: build, rebuild, mode, camera: cameraSnapshot, resetCamera: resetCameraView, warp: showWarp, notify: (key) => meteorToPlanet(key || "communication", { notification: true }), destroy });
   if (!mobile.matches) build();
   else galaxy.dataset.livingGalaxy = "mobile-carousel";
 })();

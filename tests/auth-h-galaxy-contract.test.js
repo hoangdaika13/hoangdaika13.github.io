@@ -23,8 +23,8 @@ test("interactive H galaxy keeps a static fallback and mounts the live Platform 
   assert.match(html, /<div class="hh-galaxy-sun"[^>]*><span><\/span>/);
   assert.doesNotMatch(html, /<div class="hh-galaxy-sun"[^>]*><span>H<\/span>/);
   assert.match(html, /id="hhGalaxyInspector" role="tabpanel"/);
-  assert.match(html, /auth-h-galaxy\.css\?v=14/);
-  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=16/);
+  assert.match(html, /auth-h-galaxy\.css\?v=15/);
+  assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=17/);
   assert.match(html, /data-hh-galaxy-detail/);
   assert.doesNotMatch(html, /auth-feature-showcase|auth-benefits/);
   assert.doesNotMatch(html, /data-hh-galaxy-key="meme"/);
@@ -56,7 +56,10 @@ test("galaxy interactions support hover, touch, focus and keyboard navigation", 
   assert.match(script, /--auth-planet-accent/);
   assert.match(script, /hhPlanetTheme/);
   assert.match(script, /data-hh-galaxy-detail/);
-  assert.doesNotMatch(script, /localStorage|sessionStorage|password|token/i);
+  assert.match(script, /localStorage\.getItem\(RECENT_KEY\)/);
+  assert.match(script, /sessionStorage\.getItem\("hh\.auth\.pending-route"\)/);
+  assert.doesNotMatch(script, /localStorage\.(?:setItem|removeItem)/);
+  assert.doesNotMatch(script, /password|accessToken|apiKey/i);
   assert.doesNotMatch(script, /item\.title\s*=/);
 });
 

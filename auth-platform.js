@@ -1096,6 +1096,11 @@
       setStatus(`Đã chọn ${title}. Hãy đăng nhập hoặc tiếp tục với tư cách khách để mở.`, "info");
       if (event.detail?.focusLogin) loginForm.querySelector('[name="email"]')?.focus({ preventScroll: true });
     });
+    gate.addEventListener("hh:auth-destination-clear", () => {
+      sessionStorage.removeItem("hh.auth.pending-route");
+      sessionStorage.removeItem("hh-auth-return-to");
+      setStatus("Đã bỏ chức năng chờ mở. Sau khi đăng nhập, bạn sẽ vào Trang chủ HH Platform.", "info");
+    });
     gate.querySelector("[data-guest-login]")?.addEventListener("click", () => {
       authEpoch += 1;
       const guestUser = { id: `guest-${anonymousId}`, name: "Khách HH", email: "", roles: [], guest: true, interests: [] };

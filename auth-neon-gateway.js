@@ -9,6 +9,7 @@
   if (!gate || !card) return;
 
   const MOTION_KEY = "hh.auth.motion.v1";
+  const PARALLAX_KEY = "hh.auth.parallax.v1";
   const motionLevels = ["high", "soft", "off"];
   const motionLabels = {
     high: "Điện ảnh",
@@ -71,6 +72,15 @@
     setMotionLevel(motionLevels[(motionLevels.indexOf(current) + 1) % motionLevels.length], true);
   };
 
+  const setParallax = (requested, persist = false) => {
+    const enabled = !reducedMotion.matches && requested !== false && requested !== "off" && requested !== "false";
+    gate.dataset.authParallax = enabled ? "on" : "off";
+    if (!enabled) resetPointer();
+    if (persist && !reducedMotion.matches) safeWrite(PARALLAX_KEY, enabled ? "on" : "off");
+    gate.dispatchEvent(new CustomEvent("hh:auth-parallax-change", { detail: { enabled } }));
+    return enabled;
+  };
+
   const setState = (state, lock = false) => {
     if (stateLock && state !== stateLock && state !== "error") return;
     if (card.dataset.authState !== state) card.dataset.authState = state;
@@ -120,7 +130,7 @@
 
   const paintPointer = () => {
     pointerFrame = 0;
-    if (!lastPointer || reducedMotion.matches || !finePointer.matches || gate.dataset.motionLevel === "off") return;
+    if (!lastPointer || reducedMotion.matches || !finePointer.matches || gate.dataset.motionLevel === "off" || gate.dataset.authParallax === "off") return;
     const xRatio = lastPointer.clientX / innerWidth;
     const yRatio = lastPointer.clientY / innerHeight;
     const x = (xRatio - .5) * 2;
@@ -181,10 +191,15 @@
   gate.classList.add("hh-neon-gateway");
   normalizeDecorativeLayers();
   setMotionLevel(safeRead(MOTION_KEY) || (modestDevice ? "soft" : "high"));
+  setParallax(safeRead(PARALLAX_KEY) !== "off");
   if (modestDevice && !safeRead(MOTION_KEY)) gate.dataset.motionAdaptive = "device";
   setState(card.dataset.authState || "idle");
 
   motionButton?.addEventListener("click", nextMotionLevel);
+  const onMotionRequest = (event) => setMotionLevel(event.detail?.level, true);
+  const onParallaxRequest = (event) => setParallax(event.detail?.enabled, true);
+  gate.addEventListener("hh:auth-motion-request", onMotionRequest);
+  gate.addEventListener("hh:auth-parallax-request", onParallaxRequest);
   gate.addEventListener("pointermove", queuePointer, { passive: true });
   gate.addEventListener("pointerleave", resetPointer, { passive: true });
 
@@ -214,9 +229,12 @@
     active?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   });
 
-  reducedMotion.addEventListener?.("change", () => setMotionLevel(safeRead(MOTION_KEY) || "high"));
-  finePointer.addEventListener?.("change", resetPointer);
-  document.addEventListener("visibilitychange", () => {
+  const onReducedMotionChange = () => {
+    setMotionLevel(safeRead(MOTION_KEY) || "high");
+    setParallax(safeRead(PARALLAX_KEY) !== "off");
+  };
+  const onFinePointerChange = () => resetPointer();
+  const onVisibilityChange = () => {
     document.documentElement.classList.toggle("hh-page-hidden", document.hidden);
     if (document.hidden) {
       cancelAnimationFrame(pointerFrame);
@@ -230,7 +248,10 @@
       fpsSamples = 0;
       fpsFrame = requestAnimationFrame(monitorFps);
     }
-  });
+  };
+  reducedMotion.addEventListener?.("change", onReducedMotionChange);
+  finePointer.addEventListener?.("change", onFinePointerChange);
+  document.addEventListener("visibilitychange", onVisibilityChange);
 
   const stateObserver = new MutationObserver(deriveState);
   stateObserver.observe(card, {
@@ -268,8 +289,14 @@
     fpsFrame = 0;
     stateObserver.disconnect();
     layerObserver.disconnect();
+    motionButton?.removeEventListener("click", nextMotionLevel);
     gate.removeEventListener("pointermove", queuePointer);
     gate.removeEventListener("pointerleave", resetPointer);
+    gate.removeEventListener("hh:auth-motion-request", onMotionRequest);
+    gate.removeEventListener("hh:auth-parallax-request", onParallaxRequest);
+    reducedMotion.removeEventListener?.("change", onReducedMotionChange);
+    finePointer.removeEventListener?.("change", onFinePointerChange);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
   };
 
   window.addEventListener("pagehide", cleanup, { once: true });
@@ -279,13 +306,13 @@
 
   if (gate.querySelector("[data-hh-galaxy]") && !window.HHHGalaxy) {
     const galaxyRuntime = document.createElement("script");
-    galaxyRuntime.src = "auth-h-galaxy.js?v=16";
+    galaxyRuntime.src = "auth-h-galaxy.js?v=17";
     galaxyRuntime.defer = true;
     galaxyRuntime.dataset.hhGalaxyRuntime = "true";
     galaxyRuntime.addEventListener("load", () => {
       if (window.HHLivingGalaxy3D) return window.HHLivingGalaxy3D.mount?.();
       const livingRuntime = document.createElement("script");
-      livingRuntime.src = "auth-living-galaxy-3d.js?v=21";
+      livingRuntime.src = "auth-living-galaxy-3d.js?v=22";
       livingRuntime.defer = true;
       livingRuntime.dataset.hhLivingGalaxyRuntime = "true";
       document.head.append(livingRuntime);
@@ -294,10 +321,12 @@
   }
 
   window.HHNeonGateway = Object.freeze({
-    version: "6.0.0",
+    version: "6.1.0",
     setMotionLevel,
+    setParallax,
     state: () => card.dataset.authState,
     motion: () => gate.dataset.motionLevel,
+    parallax: () => gate.dataset.authParallax === "on",
     destroy: cleanup
   });
 })();
