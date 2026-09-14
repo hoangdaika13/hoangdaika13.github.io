@@ -11,7 +11,6 @@
   const signature = galaxy.querySelector(".hh-galaxy-signature b");
   const sunLabel = galaxy.querySelector(".hh-galaxy-sun small");
   const PAGE_SIZE = 18;
-  const RECENT_KEY = "hh.app-shell.recent";
   const BODY_TYPES = ["mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune"];
   const MODEL_TYPES = ["terrestrial", "desert", "ocean", "forest", "gas", "ice", "storm", "crystal", "metal", "volcanic"];
   const ORBIT_NAMES = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven"];
@@ -32,7 +31,6 @@
   let pinnedKey = "";
   let visibleItems = [];
   let listOpen = false;
-  let recentOnly = false;
 
   const normalize = (value) => String(value || "")
     .normalize("NFD")
@@ -67,19 +65,8 @@
   }));
 
   const searchable = (entry) => normalize(`${entry.title} ${entry.description} ${entry.sectionLabel} ${entry.route}`);
-  const recentEntries = () => {
-    let ids = [];
-    try { ids = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { /* Recents are optional. */ }
-    if (!Array.isArray(ids)) return [];
-    const found = ids.map((value) => {
-      const id = String(value || "");
-      return allEntries.find((entry) => entry.id === id || entry.key === id || entry.route === id || entry.route === `/${id}`);
-    }).filter(Boolean);
-    return [...new Map(found.map((entry) => [entry.route, entry])).values()].slice(0, 8);
-  };
   const filteredEntries = () => {
     if (query) return allEntries.filter((entry) => searchable(entry).includes(query));
-    if (recentOnly) return recentEntries();
     if (activeSectionId) return allEntries.filter((entry) => entry.sectionId === activeSectionId);
     return sectionPlanets();
   };
@@ -106,7 +93,7 @@
   const controls = document.createElement("section");
   controls.className = "hh-feature-universe-controls";
   controls.setAttribute("aria-label", "Điều hướng HH Feature Universe");
-  controls.innerHTML = `<div class="hh-feature-universe-bar"><button type="button" data-hh-universe-home aria-label="Về bản đồ các hệ chức năng">← <span>Các hệ</span></button><label><span>⌕</span><input type="search" data-hh-universe-search autocomplete="off" placeholder="Tìm chức năng…" aria-label="Tìm chức năng trong HH Platform"></label><button type="button" data-hh-universe-list aria-expanded="false">☷ <span>Danh sách</span></button></div><nav data-hh-universe-sections aria-label="Các hệ chức năng"></nav><div class="hh-feature-universe-viewbar"><span>CHẤT LƯỢNG</span><div role="group" aria-label="Chất lượng hiển thị"><button type="button" data-hh-universe-quality="high">Điện ảnh</button><button type="button" data-hh-universe-quality="soft">Cân bằng</button><button type="button" data-hh-universe-quality="off">Tĩnh</button></div><button type="button" data-hh-universe-parallax aria-pressed="true">↔ Parallax</button><button type="button" data-hh-universe-camera-reset>◎ Căn giữa</button><button type="button" data-hh-universe-recent hidden>↻ Gần đây <b></b></button><small>Kéo nền · cuộn để zoom</small></div><div class="hh-feature-universe-page" data-hh-universe-page><button type="button" data-hh-universe-prev aria-label="Trang hành tinh trước">‹</button><span data-hh-universe-page-label></span><button type="button" data-hh-universe-next aria-label="Trang hành tinh sau">›</button></div><section class="hh-feature-universe-list" data-hh-universe-list-panel hidden aria-label="Danh sách chức năng"><header><div><small>HH FEATURE UNIVERSE</small><strong data-hh-universe-list-title>Toàn bộ chức năng</strong></div><button type="button" data-hh-universe-list-close aria-label="Đóng danh sách">×</button></header><div data-hh-universe-list-items></div></section><p class="sr-only" data-hh-universe-announcer aria-live="polite"></p>`;
+  controls.innerHTML = `<div class="hh-feature-universe-bar"><button type="button" data-hh-universe-home aria-label="Về bản đồ các hệ chức năng">← <span>Các hệ</span></button><label><span>⌕</span><input type="search" data-hh-universe-search autocomplete="off" placeholder="Tìm chức năng…" aria-label="Tìm chức năng trong HH Platform"></label><button type="button" data-hh-universe-list aria-expanded="false">☷ <span>Danh sách</span></button></div><nav data-hh-universe-sections aria-label="Các hệ chức năng"></nav><div class="hh-feature-universe-page" data-hh-universe-page><button type="button" data-hh-universe-prev aria-label="Trang hành tinh trước">‹</button><span data-hh-universe-page-label></span><button type="button" data-hh-universe-next aria-label="Trang hành tinh sau">›</button></div><section class="hh-feature-universe-list" data-hh-universe-list-panel hidden aria-label="Danh sách chức năng"><header><div><small>HH FEATURE UNIVERSE</small><strong data-hh-universe-list-title>Toàn bộ chức năng</strong></div><button type="button" data-hh-universe-list-close aria-label="Đóng danh sách">×</button></header><div data-hh-universe-list-items></div></section><p class="sr-only" data-hh-universe-announcer aria-live="polite"></p>`;
   galaxy.append(controls);
 
   const sectionNav = controls.querySelector("[data-hh-universe-sections]");
@@ -121,10 +108,6 @@
   const nextButton = controls.querySelector("[data-hh-universe-next]");
   const homeButton = controls.querySelector("[data-hh-universe-home]");
   const announcer = controls.querySelector("[data-hh-universe-announcer]");
-  const qualityButtons = [...controls.querySelectorAll("[data-hh-universe-quality]")];
-  const parallaxButton = controls.querySelector("[data-hh-universe-parallax]");
-  const cameraResetButton = controls.querySelector("[data-hh-universe-camera-reset]");
-  const recentButton = controls.querySelector("[data-hh-universe-recent]");
 
   sections.forEach((section) => {
     const button = createButton("hh-feature-system-chip", section.label);
@@ -133,57 +116,6 @@
     button.setAttribute("aria-pressed", "false");
     sectionNav.append(button);
   });
-
-  const recent = recentEntries();
-  if (recent.length) {
-    recentButton.hidden = false;
-    recentButton.querySelector("b").textContent = String(recent.length);
-  }
-
-  const authCard = gate?.querySelector("[data-auth-card]");
-  const destinationCard = document.createElement("section");
-  destinationCard.className = "hh-auth-destination";
-  destinationCard.dataset.hhAuthDestination = "";
-  destinationCard.hidden = true;
-  destinationCard.setAttribute("aria-live", "polite");
-  destinationCard.innerHTML = `<i data-hh-destination-planet aria-hidden="true"></i><span><small data-hh-destination-system>ĐIỂM ĐẾN ĐÃ CHỌN</small><strong data-hh-destination-title></strong><em data-hh-destination-route></em></span><button type="button" data-hh-destination-clear aria-label="Bỏ chức năng đã chọn">×</button>`;
-  authCard?.querySelector("#authGateStatus")?.before(destinationCard);
-
-  const showDestination = (entry) => {
-    if (!entry?.route) return;
-    const section = sections.find((candidate) => candidate.id === entry.sectionId);
-    destinationCard.hidden = false;
-    destinationCard.style.setProperty("--feature-accent", entry.accent || "#62e9f2");
-    destinationCard.querySelector("[data-hh-destination-system]").textContent = section?.label || "ĐIỂM ĐẾN ĐÃ CHỌN";
-    destinationCard.querySelector("[data-hh-destination-title]").textContent = entry.title;
-    destinationCard.querySelector("[data-hh-destination-route]").textContent = `#${entry.route}`;
-    destinationCard.dataset.hhDestinationRoute = entry.route;
-    authCard?.classList.add("has-hh-destination");
-  };
-
-  const clearDestination = () => {
-    destinationCard.hidden = true;
-    destinationCard.removeAttribute("data-hh-destination-route");
-    authCard?.classList.remove("has-hh-destination");
-    gate?.dispatchEvent(new CustomEvent("hh:auth-destination-clear"));
-  };
-
-  const syncQuality = (level = gate?.dataset.motionLevel || "high") => {
-    qualityButtons.forEach((button) => {
-      const active = button.dataset.hhUniverseQuality === level;
-      button.classList.toggle("is-active", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
-  };
-
-  const syncParallax = (enabled = gate?.dataset.authParallax !== "off") => {
-    parallaxButton.setAttribute("aria-pressed", String(Boolean(enabled)));
-    parallaxButton.classList.toggle("is-active", Boolean(enabled));
-    parallaxButton.textContent = enabled ? "↔ Parallax" : "— Parallax tắt";
-  };
-
-  syncQuality();
-  syncParallax();
 
   inspector.hidden = false;
   inspector.setAttribute("aria-hidden", "false");
@@ -206,8 +138,6 @@
     const items = filteredEntries();
     listTitle.textContent = query
       ? `${items.length} kết quả tìm kiếm`
-      : recentOnly
-        ? `${items.length} chức năng gần đây trên thiết bị`
       : activeSectionId
         ? `${currentSection()?.label || "Hệ chức năng"} · ${items.length} mục`
         : `${registry.count} chức năng trong ${sections.length} hệ`;
@@ -339,7 +269,7 @@
     });
     orbitField.append(fragment);
     pinnedKey = visibleItems[0]?.key || "";
-    homeButton.disabled = !activeSectionId && !query && !recentOnly;
+    homeButton.disabled = !activeSectionId && !query;
     pageControl.hidden = totalPages <= 1;
     previousButton.disabled = page <= 0;
     nextButton.disabled = page >= totalPages - 1;
@@ -349,11 +279,9 @@
       button.classList.toggle("is-active", active);
       button.setAttribute("aria-pressed", String(active));
     });
-    recentButton.classList.toggle("is-active", recentOnly);
-    recentButton.setAttribute("aria-pressed", String(recentOnly));
     if (signature) signature.textContent = `${registry.count} CHỨC NĂNG · ${sections.length} HỆ HÀNH TINH`;
     if (sunLabel) sunLabel.textContent = activeSectionId ? currentSection()?.label || "HH FEATURE CORE" : "HH FEATURE CORE";
-    galaxy.dataset.featureUniverse = query ? "search" : recentOnly ? "recent" : activeSectionId ? "system" : "overview";
+    galaxy.dataset.featureUniverse = query ? "search" : activeSectionId ? "system" : "overview";
     galaxy.setAttribute("aria-label", `HH Feature Universe có ${registry.count} chức năng trong ${sections.length} hệ`);
     galaxy.dispatchEvent(new CustomEvent("hh:feature-universe-render", {
       detail: { count: visibleItems.length, total: source.length, page: page + 1, pages: totalPages, sectionId: activeSectionId, query }
@@ -366,7 +294,6 @@
     if (!item) return;
     if (item.kind === "system") {
       activeSectionId = item.sectionId;
-      recentOnly = false;
       query = "";
       searchInput.value = "";
       page = 0;
@@ -377,12 +304,10 @@
     gate?.dispatchEvent(new CustomEvent("hh:auth-destination", {
       detail: { route: `#${item.route}`, title: item.title, focusLogin: false }
     }));
-    showDestination(item);
   }
 
   const showOverview = () => {
     activeSectionId = "";
-    recentOnly = false;
     query = "";
     page = 0;
     searchInput.value = "";
@@ -447,81 +372,37 @@
     const button = event.target.closest("[data-hh-universe-section]");
     if (!button) return;
     activeSectionId = button.dataset.hhUniverseSection;
-    recentOnly = false;
     query = "";
     page = 0;
     searchInput.value = "";
     renderPlanets();
   });
   homeButton.addEventListener("click", showOverview);
-  recentButton.addEventListener("click", () => {
-    if (!recentEntries().length) return;
-    recentOnly = true;
-    activeSectionId = "";
-    query = "";
-    page = 0;
-    searchInput.value = "";
-    renderPlanets();
-    announcer.textContent = "Đang hiển thị các chức năng gần đây được ghi nhận trên thiết bị này.";
-  });
   listToggle.addEventListener("click", () => setListOpen(!listOpen));
   controls.querySelector("[data-hh-universe-list-close]").addEventListener("click", () => setListOpen(false));
-  qualityButtons.forEach((button) => button.addEventListener("click", () => {
-    const level = button.dataset.hhUniverseQuality;
-    if (window.HHNeonGateway?.setMotionLevel) window.HHNeonGateway.setMotionLevel(level, true);
-    else gate?.dispatchEvent(new CustomEvent("hh:auth-motion-request", { detail: { level } }));
-  }));
-  parallaxButton.addEventListener("click", () => {
-    const enabled = gate?.dataset.authParallax === "off";
-    if (window.HHNeonGateway?.setParallax) window.HHNeonGateway.setParallax(enabled, true);
-    else gate?.dispatchEvent(new CustomEvent("hh:auth-parallax-request", { detail: { enabled } }));
-  });
-  cameraResetButton.addEventListener("click", () => {
-    galaxy.dispatchEvent(new CustomEvent("hh:galaxy-camera-reset"));
-    announcer.textContent = "Camera đã trở về vị trí trung tâm.";
-  });
-  destinationCard.querySelector("[data-hh-destination-clear]").addEventListener("click", () => {
-    clearDestination();
-    showOverview();
-    announcer.textContent = "Đã bỏ chức năng chờ mở và trở về bản đồ các hệ.";
-  });
-  gate?.addEventListener("hh:auth-motion-change", (event) => syncQuality(event.detail?.level));
-  gate?.addEventListener("hh:auth-parallax-change", (event) => syncParallax(event.detail?.enabled));
   previousButton.addEventListener("click", () => { page -= 1; renderPlanets(); });
   nextButton.addEventListener("click", () => { page += 1; renderPlanets(); });
   openButton.addEventListener("click", () => activateItem(visibleItems.find((item) => item.key === openButton.dataset.hhGalaxyTarget)));
   searchInput.addEventListener("input", () => {
     query = normalize(searchInput.value);
-    if (query) {
-      activeSectionId = "";
-      recentOnly = false;
-    }
+    if (query) activeSectionId = "";
     page = 0;
     renderPlanets();
   });
 
   renderPlanets();
-  try {
-    const pendingRoute = String(sessionStorage.getItem("hh.auth.pending-route") || "").replace(/^#/, "").split("?")[0];
-    const pendingEntry = allEntries.find((entry) => entry.route === pendingRoute);
-    if (pendingEntry) showDestination(pendingEntry);
-  } catch { /* The destination banner is optional when session storage is unavailable. */ }
   galaxy.dataset.featureUniverseReady = "true";
   window.HHHGalaxy = Object.freeze({
-    version: 8,
+    version: 7,
     registry,
     select: (key) => selectPlanet(key, { pin: true }),
     current: () => pinnedKey,
     section: () => activeSectionId,
     overview: showOverview,
-    resetCamera: () => galaxy.dispatchEvent(new CustomEvent("hh:galaxy-camera-reset")),
     search: (value) => {
       searchInput.value = String(value || "");
       query = normalize(value);
-      if (query) {
-        activeSectionId = "";
-        recentOnly = false;
-      }
+      if (query) activeSectionId = "";
       page = 0;
       renderPlanets();
     }

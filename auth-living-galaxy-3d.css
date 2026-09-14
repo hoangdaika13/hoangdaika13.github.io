@@ -19,25 +19,6 @@
   transition: filter .35s ease;
 }
 
-.hh-living-camera-surface {
-  position: absolute;
-  inset: 0 auto 0 0;
-  z-index: 13;
-  width: 58.5vw;
-  cursor: grab;
-  pointer-events: auto;
-  touch-action: none;
-}
-
-.hh-h-galaxy[data-camera-dragging="true"] .hh-living-camera-surface {
-  cursor: grabbing;
-}
-
-#authGate[data-motion-level="off"] .hh-living-camera-surface {
-  cursor: default;
-  touch-action: auto;
-}
-
 .hh-living-meteor-layer {
   position: absolute;
   inset: 0 auto 0 0;
@@ -285,7 +266,6 @@
 
 @media (max-width: 1100px) {
   .hh-living-galaxy-canvas,
-  .hh-living-camera-surface,
   .hh-living-galaxy-hitlayer,
   .hh-living-meteor-layer { width: 100vw; opacity: .42; }
   .hh-living-galaxy-depth { inset: 0; opacity: .54; }
@@ -355,7 +335,6 @@
     overflow: visible;
   }
   .hh-living-galaxy-canvas,
-  .hh-living-camera-surface,
   .hh-living-galaxy-depth,
   .hh-living-meteor-layer,
   .hh-galaxy-cloud,

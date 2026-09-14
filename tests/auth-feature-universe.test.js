@@ -31,7 +31,7 @@ test("feature planets remain bounded while search and list expose every registry
   assert.match(runtime, /renderPlanets/);
   assert.match(runtime, /renderList/);
   assert.match(runtime, /searchInput\.addEventListener\("input"/);
-  assert.match(runtime, /if \(query\) \{[\s\S]{0,160}?activeSectionId = "";[\s\S]{0,160}?recentOnly = false;/);
+  assert.match(runtime, /if \(query\) activeSectionId = ""/);
   assert.match(runtime, /sectionNav\.addEventListener\("click"/);
   assert.match(runtime, /nextButton\.addEventListener\("click"/);
   assert.match(runtime, /previousButton\.addEventListener\("click"/);
@@ -40,10 +40,7 @@ test("feature planets remain bounded while search and list expose every registry
   assert.match(runtime, /ArrowRight/);
   assert.match(runtime, /Home/);
   assert.match(runtime, /End/);
-  assert.match(runtime, /localStorage\.getItem\(RECENT_KEY\)/);
-  assert.match(runtime, /sessionStorage\.getItem\("hh\.auth\.pending-route"\)/);
-  assert.doesNotMatch(runtime, /localStorage\.(?:setItem|removeItem)/);
-  assert.doesNotMatch(runtime, /password|accessToken|apiKey/i);
+  assert.doesNotMatch(runtime, /localStorage|sessionStorage|password|token/i);
 });
 
 test("chosen routes are validated and resumed through login or guest access", () => {
@@ -83,57 +80,4 @@ test("living galaxy rebuilds one renderer when the dynamic planet page changes",
   assert.match(css, /\.hh-h-galaxy\.is-feature-list-open\s*\{[^}]*height:\s*100dvh;[^}]*overflow:\s*visible;/s);
   assert.match(css, /padding:\s*302px 16px 20px !important/);
   assert.match(css, /@media \(max-width:\s*760px\)/);
-});
-
-test("cinematic command controls use real preferences, routes and recent data", () => {
-  const runtime = read("auth-h-galaxy.js");
-  const gateway = read("auth-neon-gateway.js");
-  const auth = read("auth-platform.js");
-  const css = read("auth-h-galaxy.css");
-
-  assert.match(runtime, /const RECENT_KEY = "hh\.app-shell\.recent"/);
-  assert.match(runtime, /data-hh-universe-quality="high"/);
-  assert.match(runtime, /data-hh-universe-quality="soft"/);
-  assert.match(runtime, /data-hh-universe-quality="off"/);
-  assert.match(runtime, /data-hh-universe-parallax/);
-  assert.match(runtime, /data-hh-universe-camera-reset/);
-  assert.match(runtime, /data-hh-universe-recent/);
-  assert.match(runtime, /dataset\.hhAuthDestination/);
-  assert.match(runtime, /hh:auth-destination-clear/);
-  assert.match(runtime, /hh:galaxy-camera-reset/);
-  assert.match(gateway, /const PARALLAX_KEY = "hh\.auth\.parallax\.v1"/);
-  assert.match(gateway, /const setParallax =/);
-  assert.match(gateway, /hh:auth-parallax-change/);
-  assert.match(gateway, /removeEventListener\("hh:auth-parallax-request"/);
-  assert.match(auth, /hh:auth-destination-clear/);
-  assert.match(auth, /sessionStorage\.removeItem\("hh\.auth\.pending-route"\)/);
-  assert.match(css, /\.hh-feature-universe-viewbar/);
-  assert.match(css, /\.hh-auth-destination/);
-});
-
-test("cinematic camera is bounded, disposable and keeps one renderer", () => {
-  const runtime = read("auth-living-galaxy-3d.js");
-  const css = read("auth-living-galaxy-3d.css");
-
-  assert.equal((runtime.match(/new THREE\.WebGLRenderer/g) || []).length, 1);
-  assert.match(runtime, /className = "hh-living-camera-surface"/);
-  assert.match(runtime, /const onCameraPointerDown =/);
-  assert.match(runtime, /const onCameraWheel =/);
-  assert.match(runtime, /const syncCameraTelemetry =/);
-  assert.match(runtime, /galaxy\.dataset\.cameraYaw/);
-  assert.match(runtime, /galaxy\.dataset\.cameraZoom/);
-  assert.match(runtime, /targetYaw[^;]*,\s*-\.42,\s*\.42/);
-  assert.match(runtime, /targetZoom[^;]*,\s*\.78,\s*1\.22/);
-  assert.match(runtime, /const resetCameraView =/);
-  assert.match(runtime, /unbindCameraSurface\(sceneState\?\.cameraSurface\)/);
-  assert.match(runtime, /createDistantBlackHole/);
-  assert.match(runtime, /moonCount/);
-  assert.match(runtime, /targetOrbitRate = selected \? \.28 : 1/);
-  assert.match(runtime, /renderMode: mode\(\)/);
-  assert.match(runtime, /statusLabel = mode\(\) === "cinematic" \? "3D CINEMATIC" : mode\(\) === "balanced" \? "3D BALANCED" : "3D STATIC"/);
-  assert.match(runtime, /const cameraSnapshot = \(\) =>/);
-  assert.match(runtime, /camera: cameraSnapshot/);
-  assert.match(css, /\.hh-living-camera-surface/);
-  assert.match(css, /pointer-events:\s*auto/);
-  assert.match(css, /touch-action:\s*none/);
 });

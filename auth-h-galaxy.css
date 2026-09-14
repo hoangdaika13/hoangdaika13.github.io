@@ -1226,166 +1226,6 @@ html[data-motion-level="soft"] .hh-galaxy-planet:nth-of-type(2) {
   transform: none;
 }
 
-.hh-feature-universe-viewbar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 5px 7px;
-  border: 1px solid rgba(137, 222, 255, .16);
-  border-radius: 13px;
-  background: linear-gradient(135deg, rgba(5, 10, 24, .78), rgba(12, 10, 31, .68));
-  box-shadow: inset 0 1px rgba(255, 255, 255, .055), 0 12px 32px rgba(0, 0, 0, .2);
-  backdrop-filter: blur(15px) saturate(1.15);
-}
-
-.hh-feature-universe-viewbar > span {
-  flex: 0 0 auto;
-  padding-inline: 3px;
-  color: rgba(174, 219, 246, .64);
-  font: 900 7px/1 system-ui, sans-serif;
-  letter-spacing: .13em;
-}
-
-.hh-feature-universe-viewbar > div {
-  display: flex;
-  gap: 3px;
-  padding: 2px;
-  border-radius: 9px;
-  background: rgba(0, 0, 0, .24);
-}
-
-.hh-feature-universe-viewbar button {
-  min-height: 25px;
-  padding: 0 8px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: transparent;
-  color: rgba(214, 230, 247, .72);
-  cursor: pointer;
-  font: 800 8px/1 system-ui, sans-serif;
-  white-space: nowrap;
-}
-
-.hh-feature-universe-viewbar button:is(:hover, :focus-visible, .is-active) {
-  border-color: color-mix(in srgb, var(--galaxy-accent) 44%, rgba(255, 255, 255, .22));
-  background: color-mix(in srgb, var(--galaxy-accent) 13%, rgba(255, 255, 255, .04));
-  color: #fff;
-  box-shadow: 0 0 14px color-mix(in srgb, var(--galaxy-accent) 13%, transparent);
-}
-
-.hh-feature-universe-viewbar > small {
-  min-width: 0;
-  margin-left: auto;
-  overflow: hidden;
-  color: rgba(180, 204, 229, .55);
-  font: 650 7px/1 system-ui, sans-serif;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hh-feature-universe-viewbar [data-hh-universe-recent] b {
-  display: inline-grid;
-  place-items: center;
-  min-width: 15px;
-  height: 15px;
-  margin-left: 3px;
-  border-radius: 999px;
-  background: var(--galaxy-accent);
-  color: #03101a;
-  font-size: 7px;
-}
-
-.hh-auth-destination {
-  position: relative;
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) 32px;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  padding: 9px 10px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--feature-accent) 42%, rgba(255, 255, 255, .16));
-  border-radius: 13px;
-  background:
-    radial-gradient(circle at 0 50%, color-mix(in srgb, var(--feature-accent) 17%, transparent), transparent 38%),
-    linear-gradient(120deg, rgba(6, 14, 30, .9), rgba(13, 10, 29, .78));
-  box-shadow: inset 0 1px rgba(255, 255, 255, .07), 0 10px 26px rgba(0, 0, 0, .2);
-}
-
-.hh-auth-destination[hidden] {
-  display: none;
-}
-
-.hh-auth-destination > i {
-  width: 34px;
-  aspect-ratio: 1;
-  border: 1px solid rgba(255, 255, 255, .52);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 31% 25%, #fff 0 5%, transparent 11%),
-    radial-gradient(circle at 68% 72%, rgba(0, 0, 0, .56), transparent 48%),
-    linear-gradient(145deg, color-mix(in srgb, var(--feature-accent) 86%, white), #34216c);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--feature-accent) 48%, transparent), inset -6px -7px 9px rgba(0, 0, 0, .46);
-}
-
-.hh-auth-destination > span {
-  display: grid;
-  min-width: 0;
-  gap: 2px;
-}
-
-.hh-auth-destination small {
-  overflow: hidden;
-  color: color-mix(in srgb, var(--feature-accent) 74%, white);
-  font: 850 7px/1.1 system-ui, sans-serif;
-  letter-spacing: .08em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.hh-auth-destination strong {
-  overflow: hidden;
-  color: #fff;
-  font: 850 11px/1.2 system-ui, sans-serif;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hh-auth-destination em {
-  overflow: hidden;
-  color: rgba(190, 211, 233, .6);
-  font: 600 8px/1.15 ui-monospace, monospace;
-  font-style: normal;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hh-auth-destination > button {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  min-height: 30px;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, .16);
-  border-radius: 9px;
-  background: rgba(255, 255, 255, .045);
-  color: #dceaff;
-  cursor: pointer;
-  font-size: 17px;
-}
-
-.hh-auth-destination > button:is(:hover, :focus-visible) {
-  border-color: var(--feature-accent);
-  outline: 2px solid color-mix(in srgb, var(--feature-accent) 28%, transparent);
-  outline-offset: 2px;
-}
-
-#authGate .auth-gate-card.has-hh-destination {
-  box-shadow: 0 28px 90px rgba(0, 0, 0, .5), 0 0 46px color-mix(in srgb, var(--feature-accent, var(--auth-planet-accent)) 12%, transparent), inset 0 1px rgba(255, 255, 255, .1);
-}
-
 .hh-feature-universe-page {
   position: absolute;
   left: 50%;
@@ -1609,15 +1449,6 @@ html[data-motion-level="soft"] .hh-galaxy-planet:nth-of-type(2) {
     max-width: 100%;
   }
 
-  .hh-feature-universe-viewbar {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .hh-feature-universe-viewbar > small {
-    display: none;
-  }
-
   .hh-feature-universe-page {
     left: 16px;
     right: auto;
@@ -1676,19 +1507,8 @@ html[data-motion-level="soft"] .hh-galaxy-planet:nth-of-type(2) {
   }
 
   .hh-feature-universe-controls > nav,
-  .hh-feature-universe-viewbar,
   .hh-feature-universe-page {
     display: none;
-  }
-
-  .hh-auth-destination {
-    grid-template-columns: 34px minmax(0, 1fr) 30px;
-    gap: 8px;
-    padding: 8px;
-  }
-
-  .hh-auth-destination > i {
-    width: 30px;
   }
 
   .hh-galaxy-orbits {
