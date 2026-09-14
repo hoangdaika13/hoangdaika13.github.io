@@ -4,11 +4,10 @@
   const gate = document.querySelector("#authGate");
   const galaxy = gate?.querySelector("[data-hh-galaxy]");
   if (!gate || !galaxy) return;
-  const orbitField = galaxy.querySelector(".hh-galaxy-orbits");
 
   const THREE_URL = "./vendor/three.module.min.js";
   const ORBIT_TAU = Math.PI * 2;
-  let planetButtons = [...galaxy.querySelectorAll("[data-hh-galaxy-key]")];
+  const planetButtons = [...galaxy.querySelectorAll("[data-hh-galaxy-key]")];
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
   const mobile = matchMedia("(max-width: 760px)");
   const finePointer = matchMedia("(pointer: fine)");
@@ -24,8 +23,6 @@
   let authStateObserver = null;
   let lastAuthVisualState = "";
   let pointer = { x: 0, y: 0 };
-  let sceneRevision = 0;
-  let rebuildFrame = 0;
 
   const read = (key, fallback) => {
     try { return JSON.parse(localStorage.getItem(key) || "") ?? fallback; }
@@ -893,31 +890,25 @@
   };
 
   async function build() {
-    planetButtons = [...galaxy.querySelectorAll("[data-hh-galaxy-key]")];
-    if (destroyed || gate.hidden || mobile.matches || mounted || !planetButtons.length) return false;
-    const revision = sceneRevision;
+    if (destroyed || mobile.matches || mounted || !planetButtons.length) return false;
     mounted = true;
     galaxy.dataset.livingGalaxy = "loading";
     try {
       const THREE = await import(THREE_URL);
-      if (destroyed || mobile.matches || revision !== sceneRevision) return false;
+      if (destroyed || mobile.matches) return false;
       const canvas = document.createElement("canvas");
       canvas.className = "hh-living-galaxy-canvas";
       canvas.setAttribute("aria-hidden", "true");
       const depth = document.createElement("div");
       depth.className = "hh-living-galaxy-depth";
       depth.setAttribute("aria-hidden", "true");
-      const optics = document.createElement("div");
-      optics.className = "hh-living-cosmic-optics";
-      optics.setAttribute("aria-hidden", "true");
-      optics.innerHTML = "<i></i><i></i><i></i>";
       const status = document.createElement("span");
       status.className = "hh-living-galaxy-status";
       status.innerHTML = `<i></i><span>${mode() === "cinematic" ? "3D CINEMATIC" : "3D BALANCED"} · DỮ LIỆU THẬT</span>`;
       const meteorLayer = document.createElement("div");
       meteorLayer.className = "hh-living-meteor-layer";
       meteorLayer.setAttribute("aria-hidden", "true");
-      galaxy.prepend(depth, optics, canvas, meteorLayer, status);
+      galaxy.prepend(depth, canvas, meteorLayer, status);
 
       const hitLayer = document.createElement("div");
       hitLayer.className = "hh-living-galaxy-hitlayer";
@@ -1048,7 +1039,7 @@
       const planets = planetButtons.map((button, index) => {
         const key = button.dataset.hhGalaxyKey;
         const body = button.dataset.hhBody || "earth";
-        const model = button.dataset.hhModel || bodyModels[body] || "terrestrial";
+        const model = bodyModels[body] || button.dataset.hhModel || "terrestrial";
         const atmosphereProfile = atmosphereProfiles[body] || atmosphereProfiles.earth;
         const weight = Math.max(.8, Math.min(1.8, Number(button.dataset.hhWeight) || 1));
         const popularity = Math.min(1, Math.log2(2 + (usage[key] || 0)) / 4);
@@ -1152,7 +1143,7 @@
       });
 
       sceneState = {
-        THREE, canvas, renderer, scene, camera, root, sun, chromosphere, sunShell, solarCorona, solarFlares, glow, starFar, starNear, milkyWay, nebulae, asteroidBelts, planets, status, meteorLayer, optics,
+        THREE, canvas, renderer, scene, camera, root, sun, chromosphere, sunShell, solarCorona, solarFlares, glow, starFar, starNear, milkyWay, nebulae, asteroidBelts, planets, status, meteorLayer,
         meteorGlowTexture, meteorTailTexture, meteors: [], meteorSerial: 0, nextMeteorAt: 2.8, nextShowerAt: 24 + Math.random() * 10, showerQueue: [],
         warpBoostUntil: 0, errorPulseUntil: 0,
         projectionVector: new THREE.Vector3(), last: performance.now(), elapsed: 0, frameBudget: 0
@@ -1179,7 +1170,7 @@
       galaxy.classList.add("is-webgl-ready");
       return true;
     } catch (error) {
-      if (revision === sceneRevision) mounted = false;
+      mounted = false;
       galaxy.dataset.livingGalaxy = "css-fallback";
       console.warn("HH Living Galaxy chuyển sang chế độ CSS an toàn.", error);
       return false;
@@ -1188,11 +1179,6 @@
 
   function render(now) {
     if (!sceneState || destroyed) return;
-    if (gate.hidden) {
-      cancelAnimationFrame(frame);
-      frame = 0;
-      return;
-    }
     const state = sceneState;
     const currentMode = mode();
     const delta = Math.min(.05, Math.max(0, (now - state.last) / 1000));
@@ -1299,7 +1285,7 @@
   }
 
   const resume = () => {
-    if (!sceneState || frame || destroyed || document.hidden || gate.hidden) return;
+    if (!sceneState || frame || destroyed || document.hidden) return;
     sceneState.last = performance.now();
     frame = requestAnimationFrame(render);
   };
@@ -1361,53 +1347,17 @@
     state.renderer?.dispose?.();
   };
 
-  const restoreInteractivePlanets = () => {
-    const hitLayer = galaxy.querySelector(".hh-living-galaxy-hitlayer");
-    if (!hitLayer || !orbitField || orbitField.querySelector("[data-hh-galaxy-key]")) return;
-    const orbits = [...orbitField.querySelectorAll(".hh-galaxy-orbit")];
-    [...hitLayer.querySelectorAll("[data-hh-galaxy-key]")].forEach((button, index) => {
-      const orbit = orbits[Math.min(orbits.length - 1, Math.floor(index / 2))] || orbitField;
-      button.style.removeProperty("--planet-screen-x");
-      button.style.removeProperty("--planet-screen-y");
-      button.style.removeProperty("--planet-screen-scale");
-      button.style.removeProperty("--planet-depth-opacity");
-      button.style.removeProperty("z-index");
-      orbit.append(button);
-    });
-  };
-
-  const clearScene = () => {
-    sceneRevision += 1;
+  const destroy = () => {
+    destroyed = true;
     cancelAnimationFrame(frame);
-    cancelAnimationFrame(rebuildFrame);
-    frame = 0;
-    rebuildFrame = 0;
     resizeObserver?.disconnect();
-    resizeObserver = null;
-    restoreInteractivePlanets();
+    authStateObserver?.disconnect();
+    gate.removeEventListener("pointermove", onPointerMove);
+    galaxy.removeEventListener("hh:galaxy-category-change", onGalaxySelection);
+    removeEventListener("storage", onStorageNotification);
+    removeEventListener("hh:galaxy-notification", onGalaxyNotification);
     disposeScene(sceneState);
     sceneState = null;
-    mounted = false;
-    galaxy.classList.remove("is-webgl-ready");
-    galaxy.querySelectorAll(".hh-living-galaxy-canvas, .hh-living-galaxy-depth, .hh-living-cosmic-optics, .hh-living-meteor-layer, .hh-living-galaxy-status, .hh-living-galaxy-hitlayer").forEach((node) => node.remove());
-  };
-
-  const rebuild = () => {
-    if (destroyed) return;
-    clearScene();
-    if (gate.hidden) {
-      galaxy.dataset.livingGalaxy = "suspended";
-      return;
-    }
-    planetButtons = [...galaxy.querySelectorAll("[data-hh-galaxy-key]")];
-    if (mobile.matches) {
-      galaxy.dataset.livingGalaxy = "mobile-carousel";
-      return;
-    }
-    rebuildFrame = requestAnimationFrame(() => {
-      rebuildFrame = 0;
-      build();
-    });
   };
 
   const onStorageNotification = (event) => {
@@ -1420,69 +1370,24 @@
     meteorToPlanet(key, { notification: true });
   };
 
-  const syncMotionState = () => {
-    const currentMode = mode();
-    if (sceneState?.status) sceneState.status.querySelector("span").textContent = `${currentMode === "cinematic" ? "3D CINEMATIC" : currentMode === "balanced" ? "3D BALANCED" : "3D STATIC"} · DỮ LIỆU THẬT`;
-    galaxy.dataset.livingGalaxy = currentMode;
-    if (currentMode === "static") {
-      cancelAnimationFrame(frame);
-      frame = 0;
-      sceneState?.renderer?.render?.(sceneState.scene, sceneState.camera);
-    } else resume();
-  };
-
-  const onMotionChange = () => syncMotionState();
-  const onReducedMotionChange = () => syncMotionState();
-
-  const onAuthChange = (event) => {
-    if (event.detail?.user) {
-      showWarp();
-      clearScene();
-      galaxy.dataset.livingGalaxy = "suspended";
-      return;
-    }
-    rebuild();
-  };
-
-  const onVisibilityChange = () => {
-    if (document.hidden || gate.hidden) {
-      cancelAnimationFrame(frame);
-      frame = 0;
-    } else resume();
-  };
-
-  const onViewportChange = () => rebuild();
-
-  const destroy = () => {
-    destroyed = true;
-    clearScene();
-    authStateObserver?.disconnect();
-    gate.removeEventListener("pointermove", onPointerMove);
-    gate.removeEventListener("hh:auth-motion-change", onMotionChange);
-    galaxy.removeEventListener("hh:galaxy-category-change", onGalaxySelection);
-    galaxy.removeEventListener("hh:feature-universe-render", rebuild);
-    removeEventListener("storage", onStorageNotification);
-    removeEventListener("hh:galaxy-notification", onGalaxyNotification);
-    removeEventListener("hh:auth-change", onAuthChange);
-    document.removeEventListener("visibilitychange", onVisibilityChange);
-    mobile.removeEventListener?.("change", onViewportChange);
-    reduceMotion.removeEventListener?.("change", onReducedMotionChange);
-  };
-
   gate.addEventListener("pointermove", onPointerMove, { passive: true });
   galaxy.addEventListener("hh:galaxy-category-change", onGalaxySelection);
-  galaxy.addEventListener("hh:feature-universe-render", rebuild);
-  gate.addEventListener("hh:auth-motion-change", onMotionChange);
+  gate.addEventListener("hh:auth-motion-change", (event) => {
+    if (sceneState?.status) sceneState.status.querySelector("span").textContent = `${event.detail?.level === "high" ? "3D CINEMATIC" : event.detail?.level === "soft" ? "3D BALANCED" : "3D STATIC"} · DỮ LIỆU THẬT`;
+    galaxy.dataset.livingGalaxy = mode();
+    resume();
+  });
   addEventListener("storage", onStorageNotification);
   addEventListener("hh:galaxy-notification", onGalaxyNotification);
-  addEventListener("hh:auth-change", onAuthChange);
-  authStateObserver = new MutationObserver((records) => {
-    if (records.some((record) => record.attributeName === "hidden")) {
-      if (gate.hidden) {
-        clearScene();
-        galaxy.dataset.livingGalaxy = "suspended";
-      } else if (!sceneState && !mobile.matches && !destroyed) rebuild();
+  addEventListener("hh:auth-change", (event) => {
+    if (!event.detail?.user) return;
+    if (sceneState) {
+      sceneState.warpBoostUntil = performance.now() + 520;
+      resume();
     }
+    showWarp();
+  });
+  authStateObserver = new MutationObserver(() => {
     const nextState = gate.dataset.authGatewayState || "";
     if (nextState === lastAuthVisualState) return;
     lastAuthVisualState = nextState;
@@ -1491,13 +1396,14 @@
       resume();
     }
   });
-  authStateObserver.observe(gate, { attributes: true, attributeFilter: ["data-auth-gateway-state", "hidden"] });
-  document.addEventListener("visibilitychange", onVisibilityChange);
-  mobile.addEventListener?.("change", onViewportChange);
-  reduceMotion.addEventListener?.("change", onReducedMotionChange);
+  authStateObserver.observe(gate, { attributes: true, attributeFilter: ["data-auth-gateway-state"] });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) { cancelAnimationFrame(frame); frame = 0; }
+    else resume();
+  });
   addEventListener("pagehide", destroy, { once: true });
 
-  window.HHLivingGalaxy3D = Object.freeze({ version: 5, mount: build, rebuild, mode, warp: showWarp, notify: (key) => meteorToPlanet(key || "communication", { notification: true }), destroy });
+  window.HHLivingGalaxy3D = Object.freeze({ version: 4, mount: build, mode, warp: showWarp, notify: (key) => meteorToPlanet(key || "communication", { notification: true }), destroy });
   if (!mobile.matches) build();
   else galaxy.dataset.livingGalaxy = "mobile-carousel";
 })();
