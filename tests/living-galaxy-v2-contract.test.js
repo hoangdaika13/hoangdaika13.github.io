@@ -9,11 +9,25 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 test("login mounts a real WebGL living galaxy without replacing authentication", () => {
   const html = read("index.html");
   const gateway = read("auth-neon-gateway.js");
+  const auth = read("auth-platform.js");
   const runtime = read("auth-living-galaxy-3d.js");
   const css = read("auth-living-galaxy-3d.css");
 
-  assert.match(html, /auth-living-galaxy-3d\.css\?v=12/);
-  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=19/);
+  assert.match(html, /auth-living-galaxy-3d\.css\?v=13/);
+  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=20/);
+  assert.match(html, /data-living-galaxy="pending"[^>]*aria-busy="true"/);
+  assert.match(css, /data-living-galaxy="pending"[\s\S]{0,180}visibility:\s*hidden/);
+  assert.match(css, /data-living-galaxy="loading"/);
+  assert.match(css, /data-living-galaxy="css-fallback"[\s\S]{0,100}visibility:\s*visible/);
+  assert.ok(runtime.indexOf('galaxy.classList.add("is-webgl-ready")') < runtime.indexOf("publishVisualState(mode())"));
+  assert.match(runtime, /hh:auth-galaxy-ready/);
+  assert.match(auth, /isAuthGalaxyVisualReady/);
+  assert.match(auth, /releaseAuthSurfaceWhenReady/);
+  assert.match(auth, /gate\.addEventListener\("hh:auth-galaxy-ready"/);
+  assert.match(auth, /classList\.add\("hh-auth-surface-preparing"\)/);
+  assert.match(html, /hh-surface-pending\.hh-auth-surface-preparing>#authGate\{display:grid!important;visibility:visible!important/);
+  assert.match(auth, /Đang dựng ngân hà đăng nhập 3D/);
+  assert.match(gateway, /detail:\s*\{ mode: "css-fallback" \}/);
   assert.match(gateway, /high:\s*"Điện ảnh"/);
   assert.match(gateway, /soft:\s*"Cân bằng"/);
   assert.match(gateway, /off:\s*"Tĩnh"/);

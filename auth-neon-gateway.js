@@ -278,6 +278,16 @@
   });
 
   if (gate.querySelector("[data-hh-galaxy]") && !window.HHHGalaxy) {
+    const galaxySurface = gate.querySelector("[data-hh-galaxy]");
+    const showGalaxyFallback = () => {
+      if (!galaxySurface || galaxySurface.classList.contains("is-webgl-ready")) return;
+      galaxySurface.dataset.livingGalaxy = "css-fallback";
+      galaxySurface.removeAttribute("aria-busy");
+      galaxySurface.dispatchEvent(new CustomEvent("hh:auth-galaxy-ready", {
+        bubbles: true,
+        detail: { mode: "css-fallback" }
+      }));
+    };
     const galaxyRuntime = document.createElement("script");
     galaxyRuntime.src = "auth-h-galaxy.js?v=15";
     galaxyRuntime.defer = true;
@@ -285,11 +295,13 @@
     galaxyRuntime.addEventListener("load", () => {
       if (window.HHLivingGalaxy3D) return window.HHLivingGalaxy3D.mount?.();
       const livingRuntime = document.createElement("script");
-      livingRuntime.src = "auth-living-galaxy-3d.js?v=19";
+      livingRuntime.src = "auth-living-galaxy-3d.js?v=20";
       livingRuntime.defer = true;
       livingRuntime.dataset.hhLivingGalaxyRuntime = "true";
+      livingRuntime.addEventListener("error", showGalaxyFallback, { once: true });
       document.head.append(livingRuntime);
     }, { once: true });
+    galaxyRuntime.addEventListener("error", showGalaxyFallback, { once: true });
     document.head.append(galaxyRuntime);
   }
 

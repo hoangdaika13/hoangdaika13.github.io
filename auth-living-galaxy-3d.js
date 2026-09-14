@@ -24,6 +24,15 @@
   let lastAuthVisualState = "";
   let pointer = { x: 0, y: 0 };
 
+  const publishVisualState = (state) => {
+    galaxy.dataset.livingGalaxy = state;
+    galaxy.removeAttribute("aria-busy");
+    galaxy.dispatchEvent(new CustomEvent("hh:auth-galaxy-ready", {
+      bubbles: true,
+      detail: { mode: state }
+    }));
+  };
+
   const read = (key, fallback) => {
     try { return JSON.parse(localStorage.getItem(key) || "") ?? fallback; }
     catch { return fallback; }
@@ -893,9 +902,15 @@
     if (destroyed || mobile.matches || mounted || !planetButtons.length) return false;
     mounted = true;
     galaxy.dataset.livingGalaxy = "loading";
+    galaxy.setAttribute("aria-busy", "true");
     try {
       const THREE = await import(THREE_URL);
-      if (destroyed || mobile.matches) return false;
+      if (destroyed) return false;
+      if (mobile.matches) {
+        mounted = false;
+        publishVisualState("mobile-carousel");
+        return false;
+      }
       const canvas = document.createElement("canvas");
       canvas.className = "hh-living-galaxy-canvas";
       canvas.setAttribute("aria-hidden", "true");
@@ -1148,7 +1163,6 @@
         warpBoostUntil: 0, errorPulseUntil: 0,
         projectionVector: new THREE.Vector3(), last: performance.now(), elapsed: 0, frameBudget: 0
       };
-      galaxy.dataset.livingGalaxy = mode();
       galaxy.dataset.meteorCount = "0";
 
       const resize = () => {
@@ -1168,10 +1182,12 @@
       /* Publish the WebGL scene only after its first complete frame. This is
          an atomic surface swap, so the CSS fallback can never show through. */
       galaxy.classList.add("is-webgl-ready");
+      publishVisualState(mode());
       return true;
     } catch (error) {
       mounted = false;
-      galaxy.dataset.livingGalaxy = "css-fallback";
+      galaxy.classList.remove("is-webgl-ready");
+      publishVisualState("css-fallback");
       console.warn("HH Living Galaxy chuyển sang chế độ CSS an toàn.", error);
       return false;
     }
@@ -1403,7 +1419,7 @@
   });
   addEventListener("pagehide", destroy, { once: true });
 
-  window.HHLivingGalaxy3D = Object.freeze({ version: 4, mount: build, mode, warp: showWarp, notify: (key) => meteorToPlanet(key || "communication", { notification: true }), destroy });
+  window.HHLivingGalaxy3D = Object.freeze({ version: 5, mount: build, mode, warp: showWarp, notify: (key) => meteorToPlanet(key || "communication", { notification: true }), destroy });
   if (!mobile.matches) build();
-  else galaxy.dataset.livingGalaxy = "mobile-carousel";
+  else publishVisualState("mobile-carousel");
 })();

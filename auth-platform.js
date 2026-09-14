@@ -155,6 +155,7 @@
     }
     const mode = setBootMotion(preferredBootMotion(), false);
     document.body.classList.remove("hh-surface-pending", "auth-resolving");
+    document.body.classList.remove("hh-auth-surface-preparing");
     document.documentElement.dataset.hhSurface = surface;
     document.documentElement.dataset.hhSurfaceReady = surface;
     if (!wasVisible) {
@@ -368,6 +369,9 @@
     const note = document.querySelector("#realtimeNote");
     const consent = document.querySelector("#trackingConsent");
     if (!gate || !loginForm || !registerForm) return;
+    /* Keep the gate laid out behind the opaque boot surface. WebGL can then
+       render at its real viewport size without exposing any intermediate UI. */
+    document.body.classList.add("hh-auth-surface-preparing");
     gate.dataset.authView = "login";
 
     let user = null;
@@ -385,6 +389,30 @@
       anonymousId = randomId();
       localStorage.setItem(anonymousIdKey, anonymousId);
     }
+
+    const isAuthGalaxyVisualReady = () => {
+      const galaxy = gate.querySelector("[data-hh-galaxy]");
+      if (!galaxy || matchMedia("(max-width: 760px)").matches) return true;
+      return galaxy.classList.contains("is-webgl-ready")
+        || galaxy.dataset.livingGalaxy === "css-fallback";
+    };
+
+    const releaseAuthSurfaceWhenReady = () => {
+      bootReleaseAllowed = true;
+      if (isAuthGalaxyVisualReady()) return releaseSurfaceBoot("auth");
+      holdSurfaceBoot({
+        route: currentRoute(),
+        phase: "interface",
+        message: "Đang dựng ngân hà đăng nhập 3D…",
+        detail: "Giữ một lớp hiển thị · Không chồng cảnh cũ"
+      });
+      return false;
+    };
+
+    gate.addEventListener("hh:auth-galaxy-ready", () => {
+      if (user || gate.dataset.authSession === "background") return;
+      releaseAuthSurfaceWhenReady();
+    });
 
     const setStatus = (message, kind = "info") => {
       if (statusText) statusText.textContent = message;
@@ -665,8 +693,7 @@
         bootReleaseAllowed = false;
         holdSurfaceBoot({ route: currentRoute(), phase: "verify", message: "Đang khôi phục phiên an toàn…" });
       } else {
-        bootReleaseAllowed = true;
-        releaseSurfaceBoot("auth");
+        releaseAuthSurfaceWhenReady();
       }
     };
 

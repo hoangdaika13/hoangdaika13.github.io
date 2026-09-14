@@ -1,4 +1,21 @@
 /* HH Living Galaxy 3D — WebGL enhancement with a complete CSS/mobile fallback. */
+/* Desktop begins with the semantic CSS solar system in the DOM, but keeps it
+   visually unpublished while WebGL prepares. This prevents the old compact
+   orbit layout from flashing before the cinematic first frame on refresh. */
+@media (min-width: 761px) {
+  .hh-h-galaxy[data-living-galaxy="pending"],
+  .hh-h-galaxy[data-living-galaxy="loading"] {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  .hh-h-galaxy.is-webgl-ready,
+  .hh-h-galaxy[data-living-galaxy="css-fallback"] {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
 .hh-living-galaxy-canvas,
 .hh-living-galaxy-depth,
 .hh-living-meteor-layer,

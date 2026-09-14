@@ -35,6 +35,7 @@
     html,body{min-height:100%;background:#050713}
     body.hh-surface-pending{margin:0;overflow:hidden}
     body.hh-surface-pending>:not(#hhBootSurface):not(script):not(style){display:none!important;visibility:hidden!important;pointer-events:none!important}
+    body.hh-surface-pending.hh-auth-surface-preparing>#authGate{display:grid!important;visibility:visible!important;pointer-events:none!important}
     #hhBootSurface{--boot-primary:#55e6ff;--boot-secondary:#9c72ff;--boot-tertiary:#ff58c8;position:fixed;inset:0;z-index:2147483000;isolation:isolate;contain:strict;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 18% 16%,rgba(255,88,200,.2),transparent 30%),radial-gradient(circle at 82% 22%,rgba(156,114,255,.16),transparent 30%),radial-gradient(circle at 50% 72%,rgba(85,230,255,.16),transparent 38%),conic-gradient(from 210deg at 50% 50%,#050713,#100a28 24%,#031321 52%,#16091e 78%,#050713);color:#f7f9ff;font-family:"Be Vietnam Pro",system-ui,sans-serif}
     #hhBootSurface::before,#hhBootSurface::after{position:absolute;inset:-35%;z-index:-1;content:"";pointer-events:none}
     #hhBootSurface::before{background:conic-gradient(from 20deg at 50% 50%,transparent 0 18%,rgba(85,230,255,.1) 25%,transparent 34% 54%,rgba(255,88,200,.1) 62%,transparent 72%);filter:blur(22px);animation:hhCriticalNebula 12s linear infinite}
@@ -85,7 +86,7 @@
   <link rel="stylesheet" href="auth-login-repair.css?v=4">
   <link rel="stylesheet" href="auth-neon-gateway.css?v=9">
   <link rel="stylesheet" href="auth-h-galaxy.css?v=13">
-  <link rel="stylesheet" href="auth-living-galaxy-3d.css?v=12">
+  <link rel="stylesheet" href="auth-living-galaxy-3d.css?v=13">
   <link rel="stylesheet" href="workspace-feature-explorer.css?v=4">
   <link rel="stylesheet" href="brand-galaxy-logo.css?v=1">
   <link rel="stylesheet" href="galaxy-design-system.css?v=1">
@@ -97,6 +98,8 @@
   <!-- HH School runtime: hh-school.css?v=4 hh-school-curriculum.js?v=3 hh-school-core.js?v=4 hh-school-offline.js?v=4 hh-school-sync.js?v=4 hh-school.js?v=5 -->
   <!-- Compatibility index for older offline clients: communication-suite.css?v=1 communication-suite.js?v=1 communication-command-center.css?v=1 communication-command-center.js?v=1 communication-messenger-next.css?v=1 communication-messenger-next.js?v=1 communication-channels-forum.css?v=1 communication-channels-forum.js?v=1 communication-live-room.css?v=1 communication-live-room.js?v=1 communication-canvas-automation.css?v=1 communication-canvas-automation.js?v=1 communication-intelligence.css?v=1 communication-intelligence.js?v=1 -->
   <script src="platform-orchestrator.js?v=2" defer></script>
+  <!-- Release v1012 atomic Login Galaxy reveal: the opaque boot surface remains until WebGL publishes its complete first frame, while the legacy CSS fallback stays hidden during preparation; Auth Platform JS v21, Auth Gateway JS v33, Living Galaxy CSS v13/JS v20. -->
+  <!-- Release v1011 compatibility marker: the superseded login command portal was retired before this focused rendering repair. -->
   <!-- Release v1009 Orbital Navigator Home: sticky four-section progress navigation, keyboard-browsable category planets with live registry previews, and adaptive aurora/orbital-depth layers; performance-loader.js?v=671 script.js?v=278 Platform Home CSS v9/JS v10 Cosmos CSS v5/JS v3. -->
   <!-- Release v1008 Cinematic Living Cosmos Home: one adaptive WebGL star field, layered procedural nebulae, realistic category planets, persistent account-scoped filters/motion pause and larger accessible typography; performance-loader.js?v=669 script.js?v=278 Platform Home CSS v8/JS v8 Cosmos CSS v4/JS v2. -->
   <!-- Release v1007 Focus Room animal-free cleanup: pet scenes, controls, sounds and 3D runtime removed; 224 study environments and all productivity tools preserved; performance-loader.js?v=667 script.js?v=277 Focus Room CSS v14/JS v20. -->
@@ -243,7 +246,7 @@
       <span class="auth-gateway-grid"></span>
       <span class="auth-gateway-stars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
     </div>
-    <section class="hh-h-galaxy" data-hh-galaxy aria-label="Ngân hà 25 lĩnh vực của HH Platform">
+    <section class="hh-h-galaxy" data-hh-galaxy data-living-galaxy="pending" aria-busy="true" aria-label="Ngân hà 25 lĩnh vực của HH Platform">
       <span class="hh-galaxy-cloud hh-galaxy-cloud--one" aria-hidden="true"></span>
       <span class="hh-galaxy-cloud hh-galaxy-cloud--two" aria-hidden="true"></span>
       <span class="hh-galaxy-cloud hh-galaxy-cloud--three" aria-hidden="true"></span>
@@ -1221,7 +1224,7 @@
   </footer>
   <!-- Feature scripts are route-lazy and versioned in performance-loader.js; script.js remains the application router. -->
   <script src="realtime-core.js?v=1" defer></script>
-  <script src="auth-platform.js?v=20" defer></script>
+  <script src="auth-platform.js?v=21" defer></script>
 <script src="script.js?v=278" data-compat-src="script.js?v=277 script.js?v=276 script.js?v=275 script.js?v=274 script.js?v=273 script.js?v=272 script.js?v=271 script.js?v=268 script.js?v=266 script.js?v=265 script.js?v=264 script.js?v=263 script.js?v=262 script.js?v=261 script.js?v=260 script.js?v=259 script.js?v=258 script.js?v=257 script.js?v=256 script.js?v=255 script.js?v=254 script.js?v=253 script.js?v=252 script.js?v=251 script.js?v=250 script.js?v=249 script.js?v=248 script.js?v=247 script.js?v=245 script.js?v=244 script.js?v=243 script.js?v=242 script.js?v=241 script.js?v=240 script.js?v=239 script.js?v=238 script.js?v=237 script.js?v=236 script.js?v=235 script.js?v=234 script.js?v=233 script.js?v=232" defer></script>
 <!-- Compatibility router URL retained for older clients:
 <script src="script.js?v=229" data-compat-src="script.js?v=228 script.js?v=227 script.js?v=226 script.js?v=225 script.js?v=224 script.js?v=223 script.js?v=222 script.js?v=221 script.js?v=220 script.js?v=219 script.js?v=218 script.js?v=217 script.js?v=216 script.js?v=215 script.js?v=214 script.js?v=213 script.js?v=212 script.js?v=211 script.js?v=210 script.js?v=209 script.js?v=208 script.js?v=207 script.js?v=206 script.js?v=205 script.js?v=203 script.js?v=202 script.js?v=201 script.js?v=200 script.js?v=199 script.js?v=198 script.js?v=197 script.js?v=196 script.js?v=195 script.js?v=194 script.js?v=193 script.js?v=192 script.js?v=191 script.js?v=190 script.js?v=189 script.js?v=188 script.js?v=187 script.js?v=186 script.js?v=185 script.js?v=184 script.js?v=183 script.js?v=182 script.js?v=181 script.js?v=180 script.js?v=179 script.js?v=178 script.js?v=177 script.js?v=176" defer></script>
@@ -1229,7 +1232,7 @@
   <!-- Test/offline contract aliases only; these files are not loaded twice:
        performance-loader.js?v=53 auth-platform.js?v=12 script.js?v=144 -->
   <script src="auth-experience.js?v=9" defer></script>
-<script src="auth-neon-gateway.js?v=32" data-compat-src="auth-neon-gateway.js?v=31 auth-neon-gateway.js?v=30 auth-neon-gateway.js?v=29 auth-neon-gateway.js?v=28 auth-neon-gateway.js?v=27 auth-neon-gateway.js?v=26 auth-neon-gateway.js?v=25 auth-neon-gateway.js?v=24 auth-neon-gateway.js?v=23 auth-neon-gateway.js?v=22 auth-neon-gateway.js?v=21 auth-neon-gateway.js?v=20 auth-neon-gateway.js?v=19 auth-neon-gateway.js?v=18 auth-neon-gateway.js?v=17 auth-neon-gateway.js?v=16 auth-neon-gateway.js?v=15 auth-neon-gateway.js?v=14" defer></script>
+<script src="auth-neon-gateway.js?v=33" data-compat-src="auth-neon-gateway.js?v=32 auth-neon-gateway.js?v=31 auth-neon-gateway.js?v=30 auth-neon-gateway.js?v=29 auth-neon-gateway.js?v=28 auth-neon-gateway.js?v=27 auth-neon-gateway.js?v=26 auth-neon-gateway.js?v=25 auth-neon-gateway.js?v=24 auth-neon-gateway.js?v=23 auth-neon-gateway.js?v=22 auth-neon-gateway.js?v=21 auth-neon-gateway.js?v=20 auth-neon-gateway.js?v=19 auth-neon-gateway.js?v=18 auth-neon-gateway.js?v=17 auth-neon-gateway.js?v=16 auth-neon-gateway.js?v=15 auth-neon-gateway.js?v=14" defer></script>
   <!-- Deferred auth effects: auth-creative-universe.js?v=8 auth-living-background.js?v=1 auth-identity-constellation.js?v=2 auth-universe-memory.js?v=4 auth-logo-motion.js?v=1 auth-emotional-logo.js?v=1 auth-form-motion.js?v=3 auth-transition-runtime.js?v=2 auth-quantum-flow.js?v=2 auth-trust-director.js?v=2 auth-spatial-aurora.js?v=1 auth-cosmic-prism-background.js?v=3 auth-cosmic-prism-form.js?v=3 auth-cosmic-prism-interactions.js?v=3 -->
   <script src="auth-zoom-resilience.js?v=4" defer></script>
   <script src="privacy-consent-center.js?v=2" defer></script>
