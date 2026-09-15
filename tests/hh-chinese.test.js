@@ -510,20 +510,22 @@ test("Lesson completion requires and consumes evidence from a real exercise", ()
   }
 });
 
-test("HH Chinese v14 loads active assets and its heritage overrides win over legacy cosmic surfaces", () => {
+test("HH Chinese v15 loads active assets and its neon cosmic overrides win over legacy heritage surfaces", () => {
   const css = read("hh-chinese.css");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  assert.match(loader, /hh-chinese\.css\?v=14/);
+  assert.match(loader, /hh-chinese\.css\?v=15/);
   assert.match(loader, /hh-chinese-curriculum\.js\?v=1/);
-  assert.match(loader, /hh-chinese\.js\?v=14/);
-  assert.match(worker, /hh-chinese\.css\?v=14/);
+  assert.match(loader, /hh-chinese\.js\?v=15/);
+  assert.match(worker, /hh-chinese\.css\?v=15/);
   assert.match(worker, /hh-chinese-curriculum\.js\?v=1/);
-  assert.match(worker, /hh-chinese\.js\?v=14/);
-  assert.match(css, /--hhc-hsk:#e4b859;--hhc-hsk-rgb:228,184,89/);
+  assert.match(worker, /hh-chinese\.js\?v=15/);
+  assert.match(css, /--hhc-cyan:#5de7ff/);
+  assert.match(css, /--hhc-purple:#b86bff/);
+  assert.match(css, /--hhc-pink:#ff4fd8/);
   for (const selector of ["hhc-cockpit-topbar", "hhc-cockpit-sidebar", "hhc-cockpit-actionbar", "hhc-command-palette", "hhc-drawer", "hhc-mini-player", "hhc-toast", "hhc-progress-ring"]) {
-    assert.match(css, new RegExp(`hh-chinese\\.hhc-v11 \\.${selector}[^}]+!important`));
+    assert.match(css, new RegExp(`hh-chinese\\.hhc-v15[^}]+${selector}`));
   }
-  assert.match(css, /is-reader-mode \.hhc-workspace-scroll[^}]+#24130f[^}]+!important/);
-  assert.match(css, /is-exam-focus \.hhc-workspace[^}]+#2b1712[^}]+!important/);
+  assert.match(css, /hhc-v15-star-drift/);
+  assert.match(css, /hhc-v15 :is\(\*,::before,::after\)/);
 });

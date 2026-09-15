@@ -96,7 +96,7 @@ test("HH Chinese v14 assessment helpers stay transparent and accept authored var
   assert.ok(coveredScore > shortScore);
 });
 
-test("HH Chinese v14 ships functional Vietnamese labs and current cache assets", () => {
+test("HH Chinese v15 ships functional Vietnamese labs and the unified neon cosmic surface", () => {
   const source = read("hh-chinese.js");
   const css = read("hh-chinese.css");
   const loader = read("performance-loader.js");
@@ -106,15 +106,18 @@ test("HH Chinese v14 ships functional Vietnamese labs and current cache assets",
   for (const marker of ["VIETNAMESE EAR LAB", "CHINESE FOR VIETNAMESE", "Dịch hai chiều", "data-hhc-submit-contrast", "data-hhc-submit-vietnamese", "data-hhc-translation-direction", "persisted.lastSrsMutation"] ) {
     assert.match(source, new RegExp(marker));
   }
-  for (const marker of ["v14 curriculum expansion", "hhc-curriculum-coverage", "hhc-pronunciation-contrast", "hhc-vietnamese-module-tabs", "hhc-writing-checks", "focus-visible", "prefers-reduced-motion", "min-width:821px", "hhc-v14.is-progress-open > .hhc-cockpit-grid"]) {
+  for (const marker of ["v14 curriculum expansion", "v15 Cosmic Creative Studio", "hhc-curriculum-coverage", "hhc-pronunciation-contrast", "hhc-vietnamese-module-tabs", "hhc-writing-checks", "focus-visible", "prefers-reduced-motion", "min-width:821px", "hhc-v14.is-progress-open > .hhc-cockpit-grid", "hhc-v15", "--hhc-cyan:#5de7ff", "hhc-v15-star-drift"]) {
     assert.match(css, new RegExp(marker));
   }
+  assert.match(source, /hhc-v15/);
   assert.match(loader, /hh-chinese-curriculum\.js\?v=1/);
-  assert.match(loader, /hh-chinese\.css\?v=14/);
-  assert.match(worker, /hh-identity-portal-v1013/);
+  assert.match(loader, /hh-chinese\.css\?v=15/);
+  assert.match(worker, /hh-identity-portal-v1014/);
   assert.match(worker, /hh-chinese-curriculum\.js\?v=1/);
-  assert.match(index, /Release v1013 HH Chinese curriculum/);
-  assert.match(index, /performance-loader\.js\?v=672/);
+  assert.match(worker, /hh-chinese\.css\?v=15/);
+  assert.match(worker, /hh-chinese\.js\?v=15/);
+  assert.match(index, /Release v1014 HH Chinese Cosmic Creative Studio/);
+  assert.match(index, /performance-loader\.js\?v=673/);
   assert.match(notice, /hh-authored-needs-linguist-review/);
   assert.match(notice, /No external code, audio, images or third-party curriculum data were copied/);
 });

@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1013";
+const CACHE = "hh-identity-portal-v1014";
+// Previous release: hh-identity-portal-v1013.
 // Previous release: hh-identity-portal-v1012.
 // Previous release: hh-identity-portal-v1011.
 // Previous release: hh-identity-portal-v1009.
@@ -526,7 +527,7 @@ const RUNTIME_ASSETS = [
   "./japanese-learning.css?v=8",
   "./japanese-os-v3.css?v=4",
   "./japanese-os-v4.css?v=10",
-  "./hh-chinese.css?v=14",
+  "./hh-chinese.css?v=15",
   "./phat-phap.css?v=20",
   "./hh-play.css?v=8&build=4",
   "./hh-play-audio-worklet.js?build=2",
@@ -664,7 +665,7 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v3.js?v=2",
   "./japanese-os-v4.js?v=12",
   "./hh-chinese-curriculum.js?v=1",
-  "./hh-chinese.js?v=14",
+  "./hh-chinese.js?v=15",
   "./phat-phap.js?v=18",
   "./hh-play.js?v=7&build=4",
   "./hh-eonwild-cinematic-pack.js?v=1",
@@ -711,7 +712,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=672",
+  "./performance-loader.js?v=673",
   "./auth-platform.js?v=21",
   "./auth-neon-gateway.js?v=33",
   "./script.js?v=278"
