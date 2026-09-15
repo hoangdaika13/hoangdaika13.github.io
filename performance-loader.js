@@ -262,10 +262,10 @@
       styles: ["language-learning-cockpit.css?v=2", "japanese-learning.css?v=8", "japanese-os-v3.css?v=4", "japanese-os-v4.css?v=10"],
       scripts: ["language-learning-core.js?v=1", "language-learning-cockpit.js?v=2", "japanese-vocabulary-packs.js?v=1", "japanese-vocabulary-10k.js?v=1", "japanese-vietnamese-pack.js?v=1", "japanese-learning.js?v=8", "japanese-os-v3.js?v=2", "japanese-vocabulary-v4.js?v=2", "japanese-sentence-bank-v5.js?v=1", "japanese-kanjivg-v5.js?v=1", "japanese-os-v4.js?v=12"]
     },
-    // Previous cache keys retained for old clients: hh-chinese.css?v=1 · hh-chinese.js?v=1 · hh-chinese.css?v=11 · hh-chinese.js?v=11
+    // Previous cache keys retained for old clients: hh-chinese.css?v=1 · hh-chinese.js?v=1 · hh-chinese.css?v=11 · hh-chinese.js?v=11 · hh-chinese.css?v=13 · hh-chinese.js?v=13
     chinese: {
-      styles: ["language-learning-cockpit.css?v=2", "hh-chinese.css?v=13"],
-      scripts: ["language-learning-core.js?v=1", "language-learning-cockpit.js?v=2", "hh-chinese.js?v=13"]
+      styles: ["language-learning-cockpit.css?v=2", "hh-chinese.css?v=14"],
+      scripts: ["language-learning-core.js?v=1", "language-learning-cockpit.js?v=2", "hh-chinese-curriculum.js?v=1", "hh-chinese.js?v=14"]
     },
     dharma: {
       styles: ["phat-phap.css?v=20"],

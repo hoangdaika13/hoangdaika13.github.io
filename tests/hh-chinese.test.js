@@ -23,7 +23,7 @@ test("HH Chinese exposes a local-first HSK workspace with core skills", () => {
 test("HH Chinese v12 adds complete curriculum layers with honest capability gates", () => {
   const source = read("hh-chinese.js");
   const css = read("hh-chinese.css");
-  assert.equal(chinese.TONE_PAIR_DRILLS.length, 6);
+  assert.equal(chinese.TONE_PAIR_DRILLS.length, 10);
   assert.equal(chinese.RADICAL_GUIDES.length, 12);
   assert.equal(chinese.MEASURE_WORDS.length, 12);
   assert.equal(chinese.MEASURE_WORD_DRILLS.length, 4);
@@ -113,8 +113,8 @@ test("HH Chinese protects answer flow and labels browser capabilities honestly",
 });
 
 test("Vietnamese pathway starts at zero and reaches the HSK 9 destination honestly", () => {
-  assert.equal(chinese.CATALOG_WORDS.length, 58);
-  assert.equal(chinese.EXTENDED_WORDS.length, 18);
+  assert.equal(chinese.CATALOG_WORDS.length, 100);
+  assert.equal(chinese.EXTENDED_WORDS.length, 60);
   assert.equal(chinese.HSK_PATHWAY[0].id, "zero");
   assert.equal(chinese.HSK_PATHWAY.at(-1).level, 9);
   const beginner = chinese.normalizeState({ onboardingComplete: false, entryLevel: "zero", pathwayLevel: 0 });
@@ -123,7 +123,7 @@ test("Vietnamese pathway starts at zero and reaches the HSK 9 destination honest
   assert.equal(beginner.targetLevel, "9");
   assert.equal(advanced.level, "7-9");
   assert.equal(advanced.pathwayLevel, 9);
-  assert.equal(advanced.due.length, 58);
+  assert.equal(advanced.due.length, 100);
 });
 
 test("HH Chinese includes active-recall practice labs without leaking answers", () => {
@@ -510,14 +510,16 @@ test("Lesson completion requires and consumes evidence from a real exercise", ()
   }
 });
 
-test("HH Chinese v13 loads active assets and its heritage overrides win over legacy cosmic surfaces", () => {
+test("HH Chinese v14 loads active assets and its heritage overrides win over legacy cosmic surfaces", () => {
   const css = read("hh-chinese.css");
   const loader = read("performance-loader.js");
   const worker = read("sw.js");
-  assert.match(loader, /hh-chinese\.css\?v=13/);
-  assert.match(loader, /hh-chinese\.js\?v=13/);
-  assert.match(worker, /hh-chinese\.css\?v=13/);
-  assert.match(worker, /hh-chinese\.js\?v=13/);
+  assert.match(loader, /hh-chinese\.css\?v=14/);
+  assert.match(loader, /hh-chinese-curriculum\.js\?v=1/);
+  assert.match(loader, /hh-chinese\.js\?v=14/);
+  assert.match(worker, /hh-chinese\.css\?v=14/);
+  assert.match(worker, /hh-chinese-curriculum\.js\?v=1/);
+  assert.match(worker, /hh-chinese\.js\?v=14/);
   assert.match(css, /--hhc-hsk:#e4b859;--hhc-hsk-rgb:228,184,89/);
   for (const selector of ["hhc-cockpit-topbar", "hhc-cockpit-sidebar", "hhc-cockpit-actionbar", "hhc-command-palette", "hhc-drawer", "hhc-mini-player", "hhc-toast", "hhc-progress-ring"]) {
     assert.match(css, new RegExp(`hh-chinese\\.hhc-v11 \\.${selector}[^}]+!important`));

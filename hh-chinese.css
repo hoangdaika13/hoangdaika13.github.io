@@ -979,3 +979,247 @@
 .hh-chinese.hhc-v11 .hhc-cockpit-actionbar button[disabled]{border-color:rgba(215,198,167,.18)!important;background:rgba(255,244,215,.055)!important;color:#b8a98d!important;box-shadow:none!important}
 @keyframes hhc-heritage-seal{50%{opacity:.56;filter:brightness(1.1);transform:rotate(45deg) scale(1.035)}}
 @media(prefers-reduced-motion:reduce){.hh-chinese.hhc-v11 :is(*,::before,::after){animation:none!important;transition-duration:.001ms!important}}
+
+/* v14 curriculum expansion: Vietnamese learner labs, honest assessment and coverage. */
+.hhc-v14 { container-type: inline-size; }
+.hhc-v14 .hhc-curriculum-coverage,
+.hhc-v14 .hhc-pronunciation-contrast,
+.hhc-v14 .hhc-exam-honesty {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(228,184,89,.34) !important;
+  background:
+    radial-gradient(circle at 92% 5%,rgba(228,184,89,.13),transparent 32%),
+    linear-gradient(145deg,rgba(65,29,21,.96),rgba(29,16,13,.97)) !important;
+}
+.hhc-v14 .hhc-curriculum-coverage::before,
+.hhc-v14 .hhc-pronunciation-contrast::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg,transparent 28%,rgba(255,244,215,.035) 50%,transparent 72%);
+}
+.hhc-v14 .hhc-curriculum-coverage > header,
+.hhc-v14 .hhc-pronunciation-contrast > header {
+  position: relative;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+.hhc-v14 .hhc-curriculum-coverage > header small,
+.hhc-v14 .hhc-pronunciation-contrast > header small {
+  color: #e9bf63;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+.hhc-v14 .hhc-curriculum-coverage > header h2,
+.hhc-v14 .hhc-pronunciation-contrast > header h2 { margin: 5px 0 0; }
+.hhc-v14 .hhc-curriculum-coverage > header > span,
+.hhc-v14 .hhc-pronunciation-contrast > header > span {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid rgba(228,184,89,.3);
+  border-radius: 999px;
+  color: #f4d481;
+  background: rgba(228,184,89,.08);
+  font-size: 12px;
+  font-weight: 800;
+}
+.hhc-v14 .hhc-coverage-metrics {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+.hhc-v14 .hhc-coverage-metrics article {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-height: 126px;
+  padding: 15px;
+  border: 1px solid rgba(228,184,89,.18);
+  border-radius: 15px;
+  background: rgba(255,244,215,.035);
+}
+.hhc-v14 .hhc-coverage-metrics strong { color: #f1c86b; font-size: clamp(26px,3vw,38px); line-height: 1; }
+.hhc-v14 .hhc-coverage-metrics span { color: #fff4d7; font-size: 15px; font-weight: 800; }
+.hhc-v14 .hhc-coverage-metrics small { color: #cfc0a4; font-size: 12px; line-height: 1.5; }
+.hhc-v14 .hhc-curriculum-coverage > footer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 13px;
+  color: #d7c7a9;
+}
+.hhc-v14 .hhc-curriculum-coverage > footer button { min-height: 44px; }
+
+.hhc-v14 .hhc-contrast-samples {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 12px;
+  margin: 17px 0 12px;
+}
+.hhc-v14 .hhc-contrast-samples button {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 82px;
+  padding: 12px 14px !important;
+  text-align: left;
+}
+.hhc-v14 .hhc-contrast-samples button > small {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #361813;
+  background: #e4b859;
+  font-size: 14px;
+  font-weight: 900;
+}
+.hhc-v14 .hhc-contrast-samples button > strong { color: #fff4d7; font-size: 18px; }
+.hhc-v14 .hhc-contrast-samples button > span { color: #dfbc6e; font-size: 12px; }
+.hhc-v14 .hhc-contrast-tip {
+  position: relative;
+  margin: 0 0 13px;
+  padding: 12px 14px;
+  border-left: 3px solid #e4b859;
+  border-radius: 0 12px 12px 0;
+  color: #e7dbc3;
+  background: rgba(228,184,89,.07);
+}
+.hhc-v14 .hhc-contrast-question { position: relative; display: grid; gap: 11px; }
+.hhc-v14 .hhc-contrast-question > div { display: flex; flex-wrap: wrap; gap: 9px; }
+.hhc-v14 .hhc-contrast-question button { min-width: 120px; min-height: 46px; }
+.hhc-v14 .hhc-contrast-question button.is-selected { border-color: #e4b859; box-shadow: 0 0 0 2px rgba(228,184,89,.18); }
+.hhc-v14 .hhc-contrast-question button.is-correct { border-color: #74d5a6; color: #bdf4d7; background: rgba(45,136,90,.18); }
+.hhc-v14 .hhc-contrast-question button.is-wrong { border-color: #e57b70; color: #ffd1cb; background: rgba(157,59,49,.18); }
+.hhc-v14 .hhc-pronunciation-contrast > .is-primary { margin-top: 13px; min-height: 46px; }
+.hhc-v14 .hhc-pronunciation-contrast > footer { position: relative; margin-top: 14px; color: #c7b89d; font-size: 12px; line-height: 1.55; }
+
+.hhc-v14 .hhc-vietnamese-module-tabs,
+.hhc-v14 .hhc-translation-directions {
+  display: flex;
+  gap: 8px;
+  max-width: 100%;
+  padding: 2px 2px 9px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+.hhc-v14 .hhc-vietnamese-module-tabs button,
+.hhc-v14 .hhc-translation-directions button {
+  flex: 0 0 auto;
+  min-height: 46px;
+  scroll-snap-align: start;
+  white-space: nowrap;
+}
+.hhc-v14 .hhc-vietnamese-module-tabs button.is-active,
+.hhc-v14 .hhc-translation-directions button.is-active {
+  border-color: #e4b859;
+  color: #fff4d7;
+  background: linear-gradient(110deg,rgba(168,59,49,.3),rgba(228,184,89,.12));
+  box-shadow: inset 0 -2px #e4b859;
+}
+.hhc-v14 .hhc-vietnamese-lesson-grid {
+  display: grid;
+  grid-template-columns: minmax(0,1.1fr) minmax(280px,.9fr);
+  gap: 13px;
+  margin-top: 10px;
+}
+.hhc-v14 .hhc-vietnamese-lesson-grid > article { min-height: 100%; }
+.hhc-v14 .hhc-correct-wrong { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin: 14px 0; }
+.hhc-v14 .hhc-correct-wrong > div { display: grid; gap: 5px; padding: 13px; border-radius: 13px; }
+.hhc-v14 .hhc-correct-wrong > .is-wrong { border: 1px solid rgba(226,108,97,.34); background: rgba(157,59,49,.12); }
+.hhc-v14 .hhc-correct-wrong > .is-correct { border: 1px solid rgba(116,213,166,.32); background: rgba(45,136,90,.12); }
+.hhc-v14 .hhc-correct-wrong b { color: #d7c7aa; font-size: 11px; letter-spacing: .08em; }
+.hhc-v14 .hhc-correct-wrong strong { color: #fff4d7; font-size: 17px; }
+
+.hhc-v14 .hhc-writing-rubric,
+.hhc-v14 .hhc-writing-checks { display: grid; gap: 8px; margin: 12px 0; }
+.hhc-v14 .hhc-writing-rubric { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.hhc-v14 .hhc-writing-rubric > span { padding: 10px 12px; border: 1px solid rgba(228,184,89,.18); border-radius: 10px; color: #ded0b6; background: rgba(228,184,89,.05); }
+.hhc-v14 .hhc-writing-checks { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.hhc-v14 .hhc-writing-checks > span { display: grid; grid-template-columns: 28px 1fr; gap: 3px 9px; padding: 11px; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; }
+.hhc-v14 .hhc-writing-checks > span i { grid-row: 1 / span 2; display: grid; place-items: center; width: 27px; height: 27px; border-radius: 50%; font-style: normal; font-weight: 900; }
+.hhc-v14 .hhc-writing-checks > span small { color: #c6b79d; line-height: 1.4; }
+.hhc-v14 .hhc-writing-checks > span.is-pass { border-color: rgba(116,213,166,.28); background: rgba(45,136,90,.1); }
+.hhc-v14 .hhc-writing-checks > span.is-pass i { color: #173d2c; background: #8ae2b7; }
+.hhc-v14 .hhc-writing-checks > span.is-missing { border-color: rgba(228,184,89,.24); background: rgba(228,184,89,.06); }
+.hhc-v14 .hhc-writing-checks > span.is-missing i { color: #3b2710; background: #e4b859; }
+.hhc-v14 .hhc-conversation-variants { display: grid; gap: 6px; margin-top: 10px; }
+.hhc-v14 .hhc-conversation-variants p { margin: 0; padding: 8px 10px; border-left: 2px solid #e4b859; color: #e3d4b9; background: rgba(228,184,89,.055); }
+.hhc-v14 .hhc-exam-honesty { margin-bottom: 13px; padding: 13px 15px; color: #eadbc0; line-height: 1.55; }
+.hhc-v14 .hhc-exam-honesty strong { color: #f1c86b; }
+
+.hhc-v14 :where(button,a,input,select,textarea):focus-visible {
+  outline: 3px solid #f3ca6b !important;
+  outline-offset: 3px;
+}
+@media(max-width:900px){
+  .hhc-v14 .hhc-coverage-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .hhc-v14 .hhc-vietnamese-lesson-grid { grid-template-columns: 1fr; }
+}
+@media(max-width:640px){
+  .hhc-v14 .hhc-curriculum-coverage > header,
+  .hhc-v14 .hhc-pronunciation-contrast > header,
+  .hhc-v14 .hhc-curriculum-coverage > footer { align-items: stretch; flex-direction: column; }
+  .hhc-v14 .hhc-curriculum-coverage > header > span,
+  .hhc-v14 .hhc-pronunciation-contrast > header > span { width: fit-content; }
+  .hhc-v14 .hhc-coverage-metrics,
+  .hhc-v14 .hhc-contrast-samples,
+  .hhc-v14 .hhc-correct-wrong,
+  .hhc-v14 .hhc-writing-rubric,
+  .hhc-v14 .hhc-writing-checks { grid-template-columns: 1fr; }
+  .hhc-v14 .hhc-coverage-metrics article { min-height: 0; }
+  .hhc-v14 .hhc-contrast-samples button { grid-template-columns: auto minmax(0,1fr); }
+  .hhc-v14 .hhc-contrast-samples button > span { grid-column: 2; }
+  .hhc-v14 .hhc-contrast-question button { flex: 1 1 140px; }
+}
+@media(prefers-reduced-motion:reduce){
+  .hhc-v14 .hhc-vietnamese-module-tabs,
+  .hhc-v14 .hhc-translation-directions { scroll-behavior: auto; }
+}
+@container (max-width:1100px){
+  .hhc-v14.is-progress-open > .hhc-cockpit-grid { grid-template-columns:216px minmax(0,1fr); }
+  .hhc-v14 .hhc-progress-inspector {
+    position:absolute;
+    z-index:55;
+    inset:0 0 0 auto;
+    width:min(330px,92cqw);
+    min-width:0;
+    box-shadow:-24px 0 70px rgba(0,0,0,.42);
+  }
+}
+@container (max-width:720px){
+  .hhc-v14 > .hhc-cockpit-grid,
+  .hhc-v14.is-progress-open > .hhc-cockpit-grid { grid-template-columns:minmax(0,1fr); }
+  .hhc-v14 .hhc-cockpit-sidebar {
+    position:absolute;
+    z-index:58;
+    inset:auto 8px 70px;
+    max-height:72dvh !important;
+  }
+  .hhc-v14 .hhc-progress-inspector { inset:auto 7px 68px; width:auto; }
+  .hhc-v14 .hhc-workspace-scroll { padding-inline:11px; }
+}
+/* The host can be narrower than the browser viewport when Platform keeps its shell sidebar open. */
+@media (min-width:821px) and (max-width:1320px){
+  .hhc-v14.is-progress-open > .hhc-cockpit-grid { grid-template-columns:216px minmax(0,1fr); }
+  .hhc-v14 .hhc-progress-inspector {
+    position:absolute;
+    z-index:55;
+    inset:0 0 0 auto;
+    width:min(330px,92vw);
+    min-width:0;
+    box-shadow:-24px 0 70px rgba(0,0,0,.42);
+  }
+}
