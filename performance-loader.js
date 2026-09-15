@@ -20,7 +20,8 @@
     "auth-trust-director.css?v=1", "auth-trust-director.js?v=2",
     "auth-cosmic-prism-background.css?v=2", "auth-cosmic-prism-background.js?v=3",
     "auth-cosmic-prism-form.css?v=2", "auth-cosmic-prism-form.js?v=3",
-    "auth-cosmic-prism-interactions.css?v=3", "auth-cosmic-prism-interactions.js?v=3"
+    "auth-cosmic-prism-interactions.css?v=3", "auth-cosmic-prism-interactions.js?v=3",
+    "auth-solar-secret.css?v=3", "auth-solar-secret.js?v=3"
   ]);
 
   // Compatibility contracts: scripts: ["auth-creative-universe.js?v=5"] home-galaxy-command.js?v=8 home-galaxy-command.css?v=9

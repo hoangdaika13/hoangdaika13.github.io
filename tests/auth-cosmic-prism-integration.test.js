@@ -9,7 +9,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const modules = [
   ["auth-cosmic-prism-background", 2, 3],
   ["auth-cosmic-prism-form", 2, 3],
-  ["auth-cosmic-prism-interactions", 3, 3]
+  ["auth-cosmic-prism-interactions", 3, 3],
+  ["auth-solar-secret", 3, 3]
 ];
 
 test("Cosmic Prism is lazy-loaded with the authentication experience and cached", () => {

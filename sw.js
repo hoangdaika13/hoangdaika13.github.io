@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1014";
+const CACHE = "hh-identity-portal-v1015";
+// Previous release: hh-identity-portal-v1014.
 // Previous release: hh-identity-portal-v1013.
 // Previous release: hh-identity-portal-v1012.
 // Previous release: hh-identity-portal-v1011.
@@ -330,6 +331,7 @@ const RUNTIME_ASSETS = [
   "./auth-transition-runtime.css?v=2",
   "./auth-trust-director.css?v=1",
   "./auth-cosmic-prism-background.css?v=2",
+  "./auth-solar-secret.css?v=3",
   "./auth-cosmic-prism-form.css?v=2",
   "./auth-cosmic-prism-interactions.css?v=3",
   "./auth-zoom-resilience.css?v=3",
@@ -445,6 +447,7 @@ const RUNTIME_ASSETS = [
   "./auth-quantum-flow.js?v=2",
   "./auth-trust-director.js?v=2",
   "./auth-cosmic-prism-background.js?v=3",
+  "./auth-solar-secret.js?v=3",
   "./auth-cosmic-prism-form.js?v=3",
   "./auth-cosmic-prism-interactions.js?v=3",
   "./auth-zoom-resilience.js?v=4",
@@ -712,7 +715,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=673",
+  "./performance-loader.js?v=674",
   "./auth-platform.js?v=21",
   "./auth-neon-gateway.js?v=33",
   "./script.js?v=278"
