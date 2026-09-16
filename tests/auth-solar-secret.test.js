@@ -32,7 +32,9 @@ test("Solar Secret stays isolated to the login sun", () => {
   assert.match(script, /hh:auth-solar-secret/);
   assert.match(script, /window\.addEventListener\("hh:auth-change"/);
   assert.match(script, /pagehide|AbortController/);
-  assert.equal((script.match(/kind:\s*"/g) || []).length, 21, "the trail needs one idle state plus twenty playable stages");
+  const stages = script.match(/const STAGES = Object\.freeze\(\[([\s\S]*?)\]\.map\(Object\.freeze\)\);/);
+  assert.ok(stages);
+  assert.equal((stages[1].match(/kind:\s*"/g) || []).length, 21, "the trail needs one idle state plus twenty playable stages");
   assert.match(script, /STAGE_COUNT\s*=\s*20/);
   assert.match(script, /kind:\s*"puzzle"/);
   assert.match(script, /kind:\s*"choice"/);
@@ -56,8 +58,14 @@ test("Solar Secret stays isolated to the login sun", () => {
   assert.match(css, /hh-solar-secret__puzzle/);
   assert.match(css, /hh-solar-secret__journal/);
   assert.match(css, /hh-solar-red-alert/);
-  assert.match(html, /auth-solar-secret\.css\?v=5/);
-  assert.match(html, /auth-solar-secret\.js\?v=5/);
+  assert.match(script, /hh:solar-resonance-stage/);
+  assert.match(script, /hh:solar-resonance-preview/);
+  assert.match(script, /hh:solar-resonance-reset/);
+  assert.match(script, /captureGalaxyState|restoreGalaxyState/);
+  assert.match(script, /pointerover[\s\S]*previewBranch/);
+  assert.match(css, /hh-solar-resonance-fx/);
+  assert.match(html, /auth-solar-secret\.css\?v=8/);
+  assert.match(html, /auth-solar-secret\.js\?v=6/);
 });
 
 test("Solar Secret uses inline confirmation, local progress and opt-in procedural sound", () => {

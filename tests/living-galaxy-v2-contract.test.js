@@ -14,7 +14,7 @@ test("login mounts a real WebGL living galaxy without replacing authentication",
   const css = read("auth-living-galaxy-3d.css");
 
   assert.match(html, /auth-living-galaxy-3d\.css\?v=13/);
-  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=20/);
+  assert.match(gateway, /auth-living-galaxy-3d\.js\?v=21/);
   assert.match(html, /data-living-galaxy="pending"[^>]*aria-busy="true"/);
   assert.match(css, /data-living-galaxy="pending"[\s\S]{0,180}visibility:\s*hidden/);
   assert.match(css, /data-living-galaxy="loading"/);
@@ -83,9 +83,12 @@ test("login mounts a real WebGL living galaxy without replacing authentication",
   for (const color of ["#62e8ff", "#b36dff", "#ff65c8", "#ffd86b"]) assert.match(runtime, new RegExp(color, "i"));
   assert.match(runtime, /mode\(\) === "cinematic" \? 3 : 2/);
   assert.match(runtime, /nextShowerAt/);
-  assert.match(runtime, /orbitAngle = \(planet\.orbitAngle \+ delta \* planet\.speed \* warpBoost\) % ORBIT_TAU/);
+  assert.match(runtime, /orbitAngle = \(planet\.orbitAngle \+ delta \* planet\.speed \* warpBoost \* planet\.resonanceDirection \* planet\.resonancePace\) % ORBIT_TAU/);
   assert.match(runtime, /particle\.angle = \(particle\.angle \+ delta \* particle\.speed \* warpBoost\) % ORBIT_TAU/);
-  assert.match(runtime, /currentMode === "static" \? "0\.00" : "1\.00"/);
+  assert.match(runtime, /solarPace\.toFixed\(2\)/);
+  assert.match(runtime, /hh:solar-resonance-stage/);
+  assert.match(runtime, /hh:solar-resonance-preview/);
+  assert.match(runtime, /hh:solar-resonance-reset/);
   assert.doesNotMatch(runtime, /speedFactor|speedTarget|selectionHoldUntil|pointerInGalaxy|onGalaxyHover|onGalaxyLeave/);
   assert.match(runtime, /warpBoostUntil/);
   assert.match(runtime, /errorPulseUntil/);

@@ -23,6 +23,186 @@
   let authStateObserver = null;
   let lastAuthVisualState = "";
   let pointer = { x: 0, y: 0 };
+  const RESONANCE_KINDS = new Set(["idle", "aware", "shake", "escape", "eclipse", "red", "confirm", "ufo", "orbit", "glitch", "rainbow", "hold", "meteor", "hologram", "hover", "pulse", "symbols", "puzzle", "choice", "ending", "summary"]);
+  const RESONANCE_OUTCOMES = new Set(["portal", "orbit", "ufo", "sleep", "merge"]);
+  const RESONANCE_COLORS = Object.freeze({ gold: 0xffd56a, red: 0xff563d, cyan: 0x62eaff, violet: 0xa989ff, pink: 0xff4fb8, green: 0x8dffbb, blue: 0x6d8fff });
+  const resonance = {
+    active: false,
+    stage: 0,
+    kind: "idle",
+    preview: "",
+    outcome: "",
+    charging: false,
+    puzzleCorrect: 0,
+    startedAt: 0,
+    previewStartedAt: 0,
+    sequence: 0
+  };
+  const clamp01 = (value) => Math.max(0, Math.min(1, value));
+  const resonanceTarget = (planet, index, age, currentMode) => {
+    const distance = index / Math.max(1, planetButtons.length - 1);
+    const delay = distance * .72;
+    const wave = Math.exp(-Math.abs(Math.max(0, age - delay) * 1.45 - distance * .7) * 2.4);
+    const weightResponse = 1 / Math.max(.82, planet.weight);
+    const response = { intensity: 0, scale: 0, tiltX: 0, tiltY: 0, radialScale: 1, pace: 1, direction: 1, color: null, orbitGlow: 0, wave };
+    if (!resonance.active || resonance.stage <= 0) return response;
+    const phase = age * 2.1 - index * .31;
+    const pulse = .5 + Math.sin(phase) * .5;
+    switch (resonance.kind) {
+      case "aware":
+        if (index < 3) { response.intensity = .72 - index * .13; response.scale = .018; response.color = RESONANCE_COLORS.gold; }
+        response.orbitGlow = wave * .35;
+        break;
+      case "shake":
+        response.intensity = index < 11 ? .18 + pulse * .18 : .08;
+        response.tiltX = Math.sin(phase * 1.4) * .035 * weightResponse;
+        response.tiltY = Math.cos(phase) * .026 * weightResponse;
+        response.color = RESONANCE_COLORS.gold;
+        break;
+      case "escape":
+        response.intensity = index < 7 ? .3 + pulse * .18 : .05;
+        response.tiltY = index < 7 ? (index % 2 ? -.08 : .08) * weightResponse : 0;
+        response.color = RESONANCE_COLORS.pink;
+        break;
+      case "eclipse": {
+        const shadow = clamp01(1 - Math.abs(age * .62 - distance * 1.28) * 2.2);
+        response.intensity = shadow * .45;
+        response.scale = -.012 * shadow;
+        response.color = RESONANCE_COLORS.cyan;
+        response.orbitGlow = shadow * .26;
+        break;
+      }
+      case "red":
+        if (distance > .58) { response.intensity = .48 + pulse * .24; response.color = RESONANCE_COLORS.red; response.orbitGlow = .4; }
+        break;
+      case "confirm":
+        response.pace = .2;
+        response.intensity = .12 + (1 - distance) * .18;
+        response.tiltY = (index % 2 ? -1 : 1) * .025;
+        response.color = RESONANCE_COLORS.violet;
+        break;
+      case "ufo": {
+        const flyby = clamp01(1 - Math.abs((age * .42 % 1.7) - distance * 1.45));
+        response.intensity = flyby * .72;
+        response.tiltX = flyby * (index % 2 ? -.07 : .07) * weightResponse;
+        response.color = RESONANCE_COLORS.cyan;
+        response.orbitGlow = flyby * .25;
+        break;
+      }
+      case "orbit":
+        response.pace = .78;
+        response.direction = Math.floor(index / 3) % 2 ? -1 : 1;
+        response.intensity = .2 + pulse * .16;
+        response.color = index % 2 ? RESONANCE_COLORS.violet : RESONANCE_COLORS.cyan;
+        response.orbitGlow = .38;
+        break;
+      case "glitch":
+        response.intensity = pulse > .68 ? .42 : .12;
+        response.tiltY = pulse > .82 ? (index % 2 ? -.018 : .018) : 0;
+        response.color = index % 2 ? RESONANCE_COLORS.pink : RESONANCE_COLORS.cyan;
+        response.orbitGlow = pulse * .28;
+        break;
+      case "rainbow":
+        response.intensity = .5 + wave * .36;
+        response.scale = wave * .025;
+        response.color = [RESONANCE_COLORS.gold, RESONANCE_COLORS.cyan, RESONANCE_COLORS.pink][index % 3];
+        response.orbitGlow = .42;
+        break;
+      case "hold":
+        response.intensity = resonance.charging ? .38 + pulse * .42 : .13;
+        response.scale = resonance.charging ? .012 + pulse * .012 : 0;
+        response.color = RESONANCE_COLORS.gold;
+        response.orbitGlow = resonance.charging ? .36 : .08;
+        break;
+      case "meteor":
+        response.intensity = .18 + pulse * .48;
+        response.color = RESONANCE_COLORS.cyan;
+        response.orbitGlow = pulse * .18;
+        break;
+      case "hologram": {
+        const scan = clamp01(1 - Math.abs((age * .32 % 1.35) - distance * 1.2) * 4.4);
+        response.intensity = .1 + scan * .74;
+        response.color = RESONANCE_COLORS.cyan;
+        response.orbitGlow = scan * .48;
+        break;
+      }
+      case "hover":
+        response.intensity = index < 5 ? .26 + pulse * .34 : .07;
+        response.scale = index < 5 ? pulse * .014 : 0;
+        response.color = RESONANCE_COLORS.gold;
+        break;
+      case "pulse":
+        response.intensity = .14 + wave * .76;
+        response.scale = wave * .034 * weightResponse;
+        response.radialScale = 1 + wave * .012 * weightResponse;
+        response.color = RESONANCE_COLORS.gold;
+        response.orbitGlow = wave * .56;
+        break;
+      case "symbols":
+        response.intensity = .36 + pulse * .18;
+        response.color = [RESONANCE_COLORS.gold, RESONANCE_COLORS.cyan, RESONANCE_COLORS.pink][index % 3];
+        response.tiltY = (index % 3 - 1) * .025;
+        response.orbitGlow = .22;
+        break;
+      case "puzzle": {
+        const related = index % 3 < Math.max(1, resonance.puzzleCorrect);
+        response.intensity = related ? .58 + pulse * .2 : .13;
+        response.color = [RESONANCE_COLORS.pink, RESONANCE_COLORS.gold, RESONANCE_COLORS.cyan][index % 3];
+        response.orbitGlow = related ? .4 : .1;
+        break;
+      }
+      case "choice":
+      case "ending":
+      case "summary":
+        break;
+      default:
+        break;
+    }
+    const branch = resonance.preview || ((resonance.kind === "ending" || resonance.kind === "summary") ? resonance.outcome : "");
+    if (branch === "portal") {
+      response.intensity = Math.max(response.intensity, .38 + pulse * .28);
+      response.radialScale = .982 + Math.sin(phase * .52) * .014;
+      response.pace = .72 + distance * .2;
+      response.tiltY += (index % 2 ? -.045 : .045);
+      response.color = RESONANCE_COLORS.pink;
+      response.orbitGlow = Math.max(response.orbitGlow, .44);
+    } else if (branch === "orbit") {
+      response.intensity = Math.max(response.intensity, .35 + wave * .28);
+      response.pace = .82;
+      response.color = index % 2 ? RESONANCE_COLORS.violet : RESONANCE_COLORS.cyan;
+      response.orbitGlow = Math.max(response.orbitGlow, .48);
+    } else if (branch === "ufo") {
+      response.intensity = Math.max(response.intensity, .2 + pulse * .52);
+      response.tiltX += (index % 2 ? -.035 : .035) * pulse;
+      response.color = RESONANCE_COLORS.cyan;
+      response.orbitGlow = Math.max(response.orbitGlow, pulse * .4);
+    } else if (branch === "sleep") {
+      response.intensity = Math.max(response.intensity, .08 + pulse * .08);
+      response.pace = .25;
+      response.color = RESONANCE_COLORS.blue;
+      response.orbitGlow = Math.max(response.orbitGlow, .08);
+    } else if (branch === "merge") {
+      response.intensity = Math.max(response.intensity, .62 + pulse * .26);
+      response.scale = Math.max(response.scale, .015 + pulse * .018);
+      response.pace = .78;
+      response.radialScale = 1 + Math.sin(age * 1.1 - distance * 2.4) * .012;
+      response.color = [RESONANCE_COLORS.gold, RESONANCE_COLORS.cyan, RESONANCE_COLORS.pink][index % 3];
+      response.orbitGlow = Math.max(response.orbitGlow, .62);
+    }
+    if (resonance.kind === "summary") {
+      response.intensity *= .56;
+      response.scale *= .45;
+      response.tiltX *= .35;
+      response.tiltY *= .35;
+      response.radialScale = 1 + (response.radialScale - 1) * .35;
+    }
+    if (currentMode === "static") {
+      response.scale = 0; response.tiltX = 0; response.tiltY = 0; response.radialScale = 1; response.pace = 1; response.direction = 1;
+    } else if (currentMode === "balanced") {
+      response.scale *= .62; response.tiltX *= .55; response.tiltY *= .55; response.radialScale = 1 + (response.radialScale - 1) * .55;
+    }
+    return response;
+  };
 
   const publishVisualState = (state) => {
     galaxy.dataset.livingGalaxy = state;
@@ -901,6 +1081,14 @@
   async function build() {
     if (destroyed || mobile.matches || mounted || !planetButtons.length) return false;
     mounted = true;
+    if (Number(galaxy.dataset.solarResonanceStage) > 0) {
+      onSolarResonanceStage({ detail: {
+        stage: galaxy.dataset.solarResonanceStage,
+        kind: galaxy.dataset.solarResonanceKind,
+        outcome: galaxy.dataset.solarResonanceOutcome
+      } });
+      if (galaxy.dataset.solarResonancePreview) onSolarResonancePreview({ detail: { preview: galaxy.dataset.solarResonancePreview } });
+    }
     galaxy.dataset.livingGalaxy = "loading";
     galaxy.setAttribute("aria-busy", "true");
     try {
@@ -1154,7 +1342,7 @@
           root.add(sprite);
           return { index: energyIndex, sprite, angle: index * .73 + energyIndex * Math.PI, speed: .12 + index % 3 * .018, position: new THREE.Vector3() };
         });
-        return { button, key, body, model, weight, spinRate, rotationDirection: bodyRotationDirections[body] || 1, accent: accents[index], group, mesh, clouds, moonPivots, planetaryRing, material, baseEmissiveColor, baseEmissiveIntensity, atmosphere, atmosphereProfile, halo, orbit, orbitMaterial, baseOrbitOpacity, radius, eccentricity, tilt, size, orbitAngle: index * 2.399963 + (index % 3) * .31, speed: .035 / Math.sqrt(radius / 82), popularity, energy, position: new THREE.Vector3(), scaleVector: new THREE.Vector3(1, 1, 1) };
+        return { button, key, body, model, weight, spinRate, rotationDirection: bodyRotationDirections[body] || 1, accent: accents[index], group, mesh, clouds, moonPivots, planetaryRing, material, baseEmissiveColor, baseEmissiveIntensity, atmosphere, atmosphereProfile, halo, orbit, orbitMaterial, baseOrbitOpacity, radius, eccentricity, tilt, size, orbitAngle: index * 2.399963 + (index % 3) * .31, speed: .035 / Math.sqrt(radius / 82), popularity, energy, position: new THREE.Vector3(), scaleVector: new THREE.Vector3(1, 1, 1), resonanceDirection: 1, resonancePace: 1 };
       });
 
       sceneState = {
@@ -1205,23 +1393,34 @@
     const nowTime = performance.now();
     const warpBoost = nowTime < state.warpBoostUntil ? 6.4 : 1;
     const errorPulse = nowTime < state.errorPulseUntil ? Math.sin(nowTime * .035) * .018 : 0;
-    galaxy.dataset.orbitSpeed = currentMode === "static" ? "0.00" : "1.00";
+    const resonanceAge = Math.max(0, (nowTime - resonance.startedAt) / 1000);
+    const solarResonance = resonance.active && resonance.stage > 0 ? Math.min(1, .18 + resonance.stage / 25) : 0;
+    const branchTone = resonance.preview || ((resonance.kind === "ending" || resonance.kind === "summary") ? resonance.outcome : "");
+    const solarPace = resonance.kind === "confirm" ? .2 : branchTone === "sleep" ? .35 : 1;
+    galaxy.dataset.orbitSpeed = currentMode === "static" ? "0.00" : solarPace.toFixed(2);
     const targetX = finePointer.matches ? pointer.x * 22 : 0;
     const targetY = finePointer.matches ? pointer.y * 14 : 0;
     state.camera.position.x += (targetX - state.camera.position.x) * Math.min(1, delta * 2.8);
     state.camera.position.y += (20 - targetY - state.camera.position.y) * Math.min(1, delta * 2.8);
     state.camera.lookAt(pointer.x * 5, pointer.y * -4, 0);
     state.root.rotation.z = Math.sin(elapsed * .08) * .016 + errorPulse;
-    state.sun.rotation.y += delta * .11;
+    state.sun.rotation.y += delta * .11 * solarPace;
     state.sun.material.uniforms.uTime.value = elapsed;
-    state.chromosphere.scale.setScalar(1 + Math.sin(elapsed * 1.42) * .009);
-    state.sunShell.scale.setScalar(1 + Math.sin(elapsed * 1.07 + .8) * .012);
-    state.solarCorona.rotation.z = elapsed * .035;
-    state.solarCorona.material.opacity = .52 + Math.sin(elapsed * 1.85) * .085;
+    const solarPulse = currentMode === "static" ? 0 : Math.sin(elapsed * 1.42) * .009;
+    const mergeBoost = branchTone === "merge" ? .09 : 0;
+    const sleepDim = branchTone === "sleep" ? .54 : 1;
+    state.chromosphere.scale.setScalar(1 + solarPulse + solarResonance * .022 + mergeBoost);
+    state.sunShell.scale.setScalar(1 + (currentMode === "static" ? 0 : Math.sin(elapsed * 1.07 + .8) * .012) + solarResonance * .028 + mergeBoost * .7);
+    state.chromosphere.material.uniforms.uIntensity.value = (.72 + solarResonance * .32 + mergeBoost) * sleepDim;
+    state.sunShell.material.uniforms.uIntensity.value = (.42 + solarResonance * .24 + mergeBoost) * sleepDim;
+    state.solarCorona.rotation.z = elapsed * .035 * solarPace;
+    state.solarCorona.material.opacity = (.52 + (currentMode === "static" ? 0 : Math.sin(elapsed * 1.85) * .085) + solarResonance * .18 + mergeBoost) * sleepDim;
     state.solarFlares.rotation.y = elapsed * .022;
     state.solarFlares.rotation.z = -elapsed * .013;
     state.glow.material.rotation = elapsed * .018;
-    state.glow.scale.setScalar(286 + Math.sin(elapsed * 1.18) * 8);
+    state.glow.scale.setScalar(286 + (currentMode === "static" ? 0 : Math.sin(elapsed * 1.18) * 8) + solarResonance * 22 + mergeBoost * 95);
+    state.glow.material.opacity = Math.min(1, (1 + solarResonance * .08) * sleepDim);
+    state.renderer.toneMappingExposure = 1.08 + solarResonance * .05 + (branchTone === "merge" ? .1 : 0) - (branchTone === "sleep" ? .16 : 0);
     state.starFar.rotation.y = elapsed * .003;
     state.starNear.rotation.y = -elapsed * .008;
     state.starFar.material.opacity = state.starFar.userData.baseOpacity * (.94 + Math.sin(elapsed * .73 + state.starFar.userData.phase) * .06);
@@ -1235,22 +1434,29 @@
       nebula.position.x = nebula.userData.baseX + pointer.x * 24 * nebula.userData.parallax + drift;
       nebula.position.y = nebula.userData.baseY - pointer.y * 17 * nebula.userData.parallax + drift * .36;
       nebula.material.rotation = nebula.userData.baseRotation + Math.sin(elapsed * .02 + index) * .014;
-      nebula.material.opacity = nebula.userData.baseOpacity * (.94 + Math.sin(elapsed * .09 + index * 1.7) * .06);
+      const nebulaBranch = branchTone === "sleep" ? .72 : branchTone === "merge" || branchTone === "portal" ? 1.18 : 1;
+      nebula.material.opacity = nebula.userData.baseOpacity * (.94 + Math.sin(elapsed * .09 + index * 1.7) * .06) * nebulaBranch;
     });
     const canvasRect = state.canvas.getBoundingClientRect();
     const vector = state.projectionVector;
     const detailLimit = currentMode === "cinematic" ? 11 : 6;
     galaxy.dataset.orbitDetailCount = String(detailLimit);
     state.planets.forEach((planet, index) => {
-      if (currentMode !== "static") planet.orbitAngle = (planet.orbitAngle + delta * planet.speed * warpBoost) % ORBIT_TAU;
+      const response = resonanceTarget(planet, index, resonanceAge, currentMode);
+      const responseBlend = Math.min(1, delta * (resonance.kind === "orbit" ? 2.1 : 4.8));
+      planet.resonanceDirection += (response.direction - planet.resonanceDirection) * responseBlend;
+      planet.resonancePace += (response.pace - planet.resonancePace) * Math.min(1, delta * 3.8);
+      if (currentMode !== "static") planet.orbitAngle = (planet.orbitAngle + delta * planet.speed * warpBoost * planet.resonanceDirection * planet.resonancePace) % ORBIT_TAU;
       const angle = planet.orbitAngle;
       orbitPosition(state.THREE, planet, angle, planet.position);
-      planet.group.position.copy(planet.position);
+      planet.group.position.copy(planet.position).multiplyScalar(response.radialScale);
+      planet.group.rotation.x += (response.tiltX - planet.group.rotation.x) * Math.min(1, delta * 5.4);
+      planet.group.rotation.y += (response.tiltY - planet.group.rotation.y) * Math.min(1, delta * 5.4);
       const depth = Math.max(-1, Math.min(1, planet.position.z / Math.max(1, planet.radius * .35)));
       planet.mesh.rotation.y += delta * planet.spinRate * planet.rotationDirection;
       if (planet.clouds) planet.clouds.rotation.y += delta * planet.spinRate * planet.rotationDirection * 1.22;
-      planet.moonPivots.forEach((pivot, moonIndex) => { pivot.rotation.y += delta * (.32 + moonIndex * .08); });
-      if (planet.planetaryRing) planet.planetaryRing.rotation.z += delta * .012;
+      planet.moonPivots.forEach((pivot, moonIndex) => { pivot.rotation.y += delta * (.32 + moonIndex * .08) * planet.resonanceDirection * planet.resonancePace; });
+      if (planet.planetaryRing) planet.planetaryRing.rotation.z += delta * .012 * planet.resonanceDirection * planet.resonancePace;
       planet.group.children.forEach((child) => {
         if (!child.userData.signal) return;
         child.rotation.z += delta * .72;
@@ -1259,29 +1465,32 @@
         child.material.opacity = .58 + Math.sin(elapsed * 3.2 + index) * .2;
       });
       const selected = selectedKey === planet.key;
-      const scale = selected ? 1.27 : 1;
+      const scale = (selected ? 1.27 : 1) * (1 + response.scale);
       planet.scaleVector.setScalar(scale);
       planet.group.scale.lerp(planet.scaleVector, Math.min(1, delta * 8));
-      planet.material.emissive.set(selected ? planet.accent : planet.baseEmissiveColor);
-      planet.material.emissiveIntensity = selected ? Math.max(.38, planet.baseEmissiveIntensity + .2) : planet.baseEmissiveIntensity;
+      planet.material.emissive.set(selected ? planet.accent : response.color ?? planet.baseEmissiveColor);
+      planet.material.emissiveIntensity = selected
+        ? Math.max(.38, planet.baseEmissiveIntensity + .2 + response.intensity * .2)
+        : planet.baseEmissiveIntensity + response.intensity * .72;
       planet.atmosphere.material.uniforms.uIntensity.value = selected
-        ? planet.atmosphereProfile.selected
-        : planet.atmosphereProfile.base + (depth + 1) * .018;
-      planet.halo.material.opacity = selected ? .66 : .18 + (depth + 1) * .07;
-      if (planet.clouds) planet.clouds.material.opacity = selected ? .78 : .48 + (depth + 1) * .06;
-      if (planet.planetaryRing) planet.planetaryRing.material.opacity = selected ? .72 : .38 + (depth + 1) * .035;
+        ? planet.atmosphereProfile.selected + response.intensity * .14
+        : planet.atmosphereProfile.base + (depth + 1) * .018 + response.intensity * .28;
+      planet.halo.material.opacity = Math.min(1, (selected ? .66 : .18 + (depth + 1) * .07) + response.intensity * .42);
+      if (planet.clouds) planet.clouds.material.opacity = Math.min(.9, (selected ? .78 : .48 + (depth + 1) * .06) + response.intensity * .12);
+      if (planet.planetaryRing) planet.planetaryRing.material.opacity = Math.min(.9, (selected ? .72 : .38 + (depth + 1) * .035) + response.intensity * .22);
       const detailed = index < detailLimit || selected;
-      const orbitTarget = selected ? .46 : (detailed ? planet.baseOrbitOpacity * 1.8 : planet.baseOrbitOpacity * .65);
+      const orbitTarget = Math.min(.62, (selected ? .46 : (detailed ? planet.baseOrbitOpacity * 1.8 : planet.baseOrbitOpacity * .65)) + response.orbitGlow * .32);
       planet.orbitMaterial.uniforms.uOpacity.value += (orbitTarget - planet.orbitMaterial.uniforms.uOpacity.value) * Math.min(1, delta * 7);
-      planet.orbitMaterial.uniforms.uPulse.value = selected ? .28 + Math.sin(elapsed * 3.4) * .16 : (nowTime < state.errorPulseUntil ? .12 : 0);
+      planet.orbitMaterial.uniforms.uPulse.value = selected ? .28 + Math.sin(elapsed * 3.4) * .16 : Math.max(response.orbitGlow * .4, nowTime < state.errorPulseUntil ? .12 : 0);
       planet.energy.forEach((particle) => {
-        const energyActive = selected ? particle.index === 0 : (index < detailLimit && (currentMode === "cinematic" || particle.index === 0));
+        const resonanceEnergy = response.intensity > .28 && (currentMode === "cinematic" || particle.index === 0);
+        const energyActive = selected ? particle.index === 0 : resonanceEnergy || (index < detailLimit && (currentMode === "cinematic" || particle.index === 0));
         particle.sprite.visible = energyActive;
         if (!energyActive) return;
         if (currentMode !== "static") particle.angle = (particle.angle + delta * particle.speed * warpBoost) % ORBIT_TAU;
         orbitPosition(state.THREE, planet, particle.angle, particle.position);
         particle.sprite.position.copy(particle.position);
-        particle.sprite.material.opacity = selected ? 1 : .56 + Math.sin(elapsed * 2.2 + particle.angle) * .18;
+        particle.sprite.material.opacity = selected ? 1 : Math.min(1, .56 + Math.sin(elapsed * 2.2 + particle.angle) * .18 + response.intensity * .22);
       });
       planet.group.getWorldPosition(vector);
       vector.project(state.camera);
@@ -1329,6 +1538,48 @@
     meteorToPlanet(event.detail.key);
   };
 
+  const onSolarResonanceStage = (event) => {
+    const detail = event.detail || {};
+    const nextStage = Math.max(0, Math.min(20, Number(detail.stage) || 0));
+    const nextKind = RESONANCE_KINDS.has(detail.kind) ? detail.kind : "idle";
+    const stageChanged = nextStage !== resonance.stage || nextKind !== resonance.kind;
+    resonance.active = nextStage > 0;
+    resonance.stage = nextStage;
+    resonance.kind = nextKind;
+    resonance.outcome = RESONANCE_OUTCOMES.has(detail.outcome) ? detail.outcome : "";
+    resonance.charging = detail.charging === true;
+    resonance.puzzleCorrect = Math.max(0, Math.min(3, Number(detail.puzzleCorrect) || 0));
+    if (stageChanged) {
+      resonance.startedAt = performance.now();
+      resonance.sequence += 1;
+      if (nextKind === "meteor" && sceneState) {
+        const count = mode() === "cinematic" ? 7 : mode() === "balanced" ? 4 : 0;
+        sceneState.showerQueue = Array.from({ length: count }, (_, index) => sceneState.elapsed + index * .24);
+      }
+    }
+    resume();
+  };
+
+  const onSolarResonancePreview = (event) => {
+    const preview = RESONANCE_OUTCOMES.has(event.detail?.preview) ? event.detail.preview : "";
+    resonance.preview = preview;
+    resonance.previewStartedAt = performance.now();
+    resume();
+  };
+
+  const onSolarResonanceReset = () => {
+    resonance.active = false;
+    resonance.stage = 0;
+    resonance.kind = "idle";
+    resonance.preview = "";
+    resonance.outcome = "";
+    resonance.charging = false;
+    resonance.puzzleCorrect = 0;
+    resonance.startedAt = performance.now();
+    resonance.sequence += 1;
+    resume();
+  };
+
   const showWarp = () => {
     if (mode() === "static" || reduceMotion.matches) return;
     let warp = document.querySelector(".hh-living-warp");
@@ -1370,6 +1621,9 @@
     authStateObserver?.disconnect();
     gate.removeEventListener("pointermove", onPointerMove);
     galaxy.removeEventListener("hh:galaxy-category-change", onGalaxySelection);
+    galaxy.removeEventListener("hh:solar-resonance-stage", onSolarResonanceStage);
+    galaxy.removeEventListener("hh:solar-resonance-preview", onSolarResonancePreview);
+    galaxy.removeEventListener("hh:solar-resonance-reset", onSolarResonanceReset);
     removeEventListener("storage", onStorageNotification);
     removeEventListener("hh:galaxy-notification", onGalaxyNotification);
     disposeScene(sceneState);
@@ -1388,6 +1642,9 @@
 
   gate.addEventListener("pointermove", onPointerMove, { passive: true });
   galaxy.addEventListener("hh:galaxy-category-change", onGalaxySelection);
+  galaxy.addEventListener("hh:solar-resonance-stage", onSolarResonanceStage);
+  galaxy.addEventListener("hh:solar-resonance-preview", onSolarResonancePreview);
+  galaxy.addEventListener("hh:solar-resonance-reset", onSolarResonanceReset);
   gate.addEventListener("hh:auth-motion-change", (event) => {
     if (sceneState?.status) sceneState.status.querySelector("span").textContent = `${event.detail?.level === "high" ? "3D CINEMATIC" : event.detail?.level === "soft" ? "3D BALANCED" : "3D STATIC"} · DỮ LIỆU THẬT`;
     galaxy.dataset.livingGalaxy = mode();
@@ -1419,7 +1676,15 @@
   });
   addEventListener("pagehide", destroy, { once: true });
 
-  window.HHLivingGalaxy3D = Object.freeze({ version: 5, mount: build, mode, warp: showWarp, notify: (key) => meteorToPlanet(key || "communication", { notification: true }), destroy });
+  window.HHLivingGalaxy3D = Object.freeze({
+    version: 6,
+    mount: build,
+    mode,
+    warp: showWarp,
+    notify: (key) => meteorToPlanet(key || "communication", { notification: true }),
+    resonance: () => Object.freeze({ active: resonance.active, stage: resonance.stage, kind: resonance.kind, preview: resonance.preview, outcome: resonance.outcome }),
+    destroy
+  });
   if (!mobile.matches) build();
   else publishVisualState("mobile-carousel");
 })();

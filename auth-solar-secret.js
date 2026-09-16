@@ -8,6 +8,7 @@
   const controller = new AbortController();
   const { signal } = controller;
   const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)") || null;
+  const planetButtons = [...galaxy.querySelectorAll("[data-hh-galaxy-key]")];
   const STORAGE_KEY = "hh.solar-secret.progress.v3";
   const LEGACY_STORAGE_KEY = "hh.solar-secret.progress.v2";
   const STAGE_COUNT = 20;
@@ -120,6 +121,12 @@
         <section class="hh-solar-secret__journal" data-solar-journal hidden aria-label="Nhật ký Mặt trời"><div class="hh-solar-secret__journal-grid"><div><span>Stage cao nhất</span><strong data-journal-stage>0 / 20</strong></div><div><span>Kết thúc</span><strong data-journal-endings>0 / 5</strong></div><div><span>Chơi lại</span><strong data-journal-replays>0</strong></div></div><p data-journal-time>Chưa có khám phá nào được ghi.</p><div class="hh-solar-secret__badges" data-journal-badges></div><small data-journal-storage>Tiến trình chỉ được lưu cục bộ trên thiết bị này.</small></section>
         <div class="hh-solar-secret__actions"><button class="hh-solar-secret__reset" type="button" data-solar-reset>Bắt đầu lại</button><button class="hh-solar-secret__branch-again" type="button" data-solar-branch-again hidden>Thử nhánh khác</button><button class="hh-solar-secret__replay" type="button" data-solar-replay hidden>Chơi lại</button><button class="hh-solar-secret__close" type="button" data-solar-close>Đóng tín hiệu</button></div>
       </section>
+      <div class="hh-solar-resonance-fx" data-solar-resonance-fx aria-hidden="true">
+        <i class="hh-solar-resonance-fx__wave"></i><i class="hh-solar-resonance-fx__wave"></i><i class="hh-solar-resonance-fx__wave"></i>
+        <i class="hh-solar-resonance-fx__corona"></i><i class="hh-solar-resonance-fx__lens"></i><i class="hh-solar-resonance-fx__ribbon"></i>
+        <i class="hh-solar-resonance-fx__scan"></i><i class="hh-solar-resonance-fx__beam"></i><i class="hh-solar-resonance-fx__constellation"></i>
+        <i class="hh-solar-resonance-fx__mothership"></i><i class="hh-solar-resonance-fx__afterglow"></i>
+      </div>
       <div class="hh-solar-secret__ufo" data-solar-ufo aria-hidden="true"></div><div class="hh-solar-secret__meteor" data-solar-meteor aria-hidden="true"></div><div class="hh-solar-secret__spark" data-solar-spark aria-hidden="true"></div>`;
     return layer;
   };
@@ -180,6 +187,7 @@
   let holdConsumed = false;
   let timingTimer = 0;
   let focusTimer = 0;
+  const solveTimers = new Set();
   let lastAdvanceAt = 0;
   let audioContext = null;
   let masterGain = null;
@@ -190,8 +198,82 @@
   let puzzlePositions = { sun: 0, ufo: 1, portal: 2 };
   let puzzleSolved = false;
   let draggedToken = "";
+  let branchPreview = "";
+  let galaxySnapshot = null;
+
+  const RESONANCE_STYLE_PROPS = Object.freeze([
+    "--solar-resonance-index", "--solar-resonance-distance", "--solar-resonance-weight", "--solar-resonance-delay", "--solar-resonance-group"
+  ]);
+  const resonanceGroups = Object.freeze(["sun", "ufo", "portal"]);
 
   const dispatch = (name, detail = {}) => layer.dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
+  const emitResonance = (name, detail = {}) => galaxy.dispatchEvent(new CustomEvent(name, {
+    bubbles: true,
+    detail: { stage: stageIndex, kind: STAGES[stageIndex]?.kind || "idle", outcome, ...detail }
+  }));
+  const captureGalaxyState = () => {
+    if (galaxySnapshot) return;
+    galaxySnapshot = {
+      activeCategory: galaxy.dataset.activeCategory || "",
+      focusKey: document.activeElement?.closest?.("[data-hh-galaxy-key]")?.dataset.hhGalaxyKey || "",
+      motionLevel: gate.dataset.motionLevel || "",
+      livingGalaxy: galaxy.dataset.livingGalaxy || "",
+      paused: document.hidden,
+      attributes: {
+        stage: galaxy.getAttribute("data-solar-resonance-stage"),
+        kind: galaxy.getAttribute("data-solar-resonance-kind"),
+        preview: galaxy.getAttribute("data-solar-resonance-preview"),
+        outcome: galaxy.getAttribute("data-solar-resonance-outcome")
+      },
+      styles: planetButtons.map((button) => RESONANCE_STYLE_PROPS.map((property) => button.style.getPropertyValue(property)))
+    };
+    planetButtons.forEach((button, index) => {
+      button.style.setProperty("--solar-resonance-index", String(index));
+      button.style.setProperty("--solar-resonance-distance", (index / Math.max(1, planetButtons.length - 1)).toFixed(3));
+      button.style.setProperty("--solar-resonance-weight", String(Math.max(.8, Math.min(1.8, Number(button.dataset.hhWeight) || 1))));
+      button.style.setProperty("--solar-resonance-delay", `${index * 34}ms`);
+      button.style.setProperty("--solar-resonance-group", String(index % resonanceGroups.length));
+    });
+  };
+  const clearResonancePreview = () => {
+    if (!branchPreview && !galaxy.hasAttribute("data-solar-resonance-preview")) return;
+    branchPreview = "";
+    galaxy.removeAttribute("data-solar-resonance-preview");
+    emitResonance("hh:solar-resonance-preview", { preview: "" });
+  };
+  const restoreGalaxyState = () => {
+    clearResonancePreview();
+    emitResonance("hh:solar-resonance-reset", { reason: "restore" });
+    galaxy.classList.remove("is-solar-resonating", "is-solar-charging", "is-solar-puzzle-solving");
+    const savedAttributes = galaxySnapshot?.attributes || {};
+    [["data-solar-resonance-stage", savedAttributes.stage], ["data-solar-resonance-kind", savedAttributes.kind], ["data-solar-resonance-preview", savedAttributes.preview], ["data-solar-resonance-outcome", savedAttributes.outcome]].forEach(([name, value]) => {
+      if (value === null || value === undefined) galaxy.removeAttribute(name);
+      else galaxy.setAttribute(name, value);
+    });
+    planetButtons.forEach((button, index) => RESONANCE_STYLE_PROPS.forEach((property, propertyIndex) => {
+      const previous = galaxySnapshot?.styles?.[index]?.[propertyIndex] || "";
+      if (previous) button.style.setProperty(property, previous);
+      else button.style.removeProperty(property);
+    }));
+    galaxySnapshot = null;
+  };
+  const syncResonanceStage = (stage, source) => {
+    captureGalaxyState();
+    clearResonancePreview();
+    galaxy.classList.toggle("is-solar-resonating", stageIndex > 0);
+    galaxy.classList.remove("is-solar-charging", "is-solar-puzzle-solving");
+    galaxy.dataset.solarResonanceStage = String(stageIndex);
+    galaxy.dataset.solarResonanceKind = stage.kind;
+    if (outcome) galaxy.dataset.solarResonanceOutcome = outcome;
+    else galaxy.removeAttribute("data-solar-resonance-outcome");
+    emitResonance("hh:solar-resonance-stage", { source, complete, charging: false, puzzleCorrect: 0 });
+  };
+  const previewBranch = (branch) => {
+    if (stageIndex !== 18 || !ENDINGS[branch]) return;
+    branchPreview = branch;
+    galaxy.dataset.solarResonancePreview = branch;
+    emitResonance("hh:solar-resonance-preview", { preview: branch });
+  };
   const addUnique = (list, value) => { if (!list.includes(value)) list.push(value); };
   const unlockBadge = (id) => {
     if (!BADGES[id] || progressState.badges.includes(id)) return false;
@@ -304,10 +386,14 @@
     if (holdTimer) window.clearTimeout(holdTimer);
     if (timingTimer) window.clearTimeout(timingTimer);
     if (focusTimer) window.clearTimeout(focusTimer);
+    solveTimers.forEach((timer) => window.clearTimeout(timer));
+    solveTimers.clear();
     holdTimer = 0; timingTimer = 0; focusTimer = 0;
     trigger?.classList.remove("is-holding");
+    galaxy.classList.remove("is-solar-charging", "is-solar-puzzle-solving");
     layer.style.setProperty("--solar-hold-progress", "0");
   };
+  const puzzleCorrectCount = () => Object.keys(puzzleGoal).filter((id) => puzzlePositions[id] === puzzleGoal[id]).length;
   const isPuzzleComplete = () => Object.keys(puzzleGoal).every((id) => puzzlePositions[id] === puzzleGoal[id]);
   const renderPuzzle = () => {
     if (!orbits) return;
@@ -322,6 +408,9 @@
     if (puzzleNext) puzzleNext.disabled = !puzzleSolved;
     if (puzzleStatus) puzzleStatus.textContent = puzzleSolved ? "Quỹ đạo đã căn chỉnh chính xác. Cổng đã sẵn sàng." : "Gợi ý: Cổng ở gần, Mặt trời ở giữa, UFO ở xa.";
     puzzle?.classList.toggle("is-solved", puzzleSolved);
+    if (stageIndex === 17 && layer.classList.contains("is-open")) {
+      emitResonance("hh:solar-resonance-stage", { source: "puzzle", puzzleCorrect: puzzleCorrectCount(), puzzleSolved });
+    }
   };
   const movePuzzleToken = (id, destination) => {
     if (!Object.prototype.hasOwnProperty.call(puzzlePositions, id)) return;
@@ -398,6 +487,7 @@
     }
     recordStageBadges(stage);
     announce(stage);
+    syncResonanceStage(stage, source);
     playTone(stageIndex);
     if (stage.kind === "hologram") timingTimer = window.setTimeout(() => { if (stageIndex === 13 && layer.classList.contains("is-open")) layer.classList.add("is-signal-ready"); }, 760);
     const focusTarget = confirmOpen ? continueButton : stage.kind === "puzzle" ? find("[data-puzzle-token]") : stage.kind === "choice" ? choices?.querySelector("[data-solar-choice]:not(:disabled)") : complete ? replay : trigger;
@@ -407,12 +497,14 @@
 
   const openSecret = () => {
     if (layer.classList.contains("is-open")) return;
+    captureGalaxyState();
     layer.classList.add("is-open");
     sunHit?.setAttribute("aria-expanded", "true");
     outcome = ""; holdConsumed = false; lastAdvanceAt = 0; resetPuzzle(); setStage(0, "sun");
   };
   const closeSecret = ({ restoreFocus = true } = {}) => {
     clearTimers(); closeAudio(); holdConsumed = false;
+    restoreGalaxyState();
     layer.classList.remove("is-open", ...stageClasses, "is-complete", "is-hovering", "is-hold-complete", "is-signal-ready", "is-paused");
     redVeil.hidden = true;
     if (ufo) ufo.hidden = true;
@@ -423,7 +515,10 @@
     sunHit?.setAttribute("aria-expanded", "false");
     if (restoreFocus) sunHit?.focus({ preventScroll: true });
   };
-  const resetSecret = () => { outcome = ""; holdConsumed = false; lastAdvanceAt = 0; resetPuzzle(); setStage(0, "reset"); };
+  const resetSecret = () => {
+    emitResonance("hh:solar-resonance-reset", { reason: "reset" });
+    outcome = ""; holdConsumed = false; lastAdvanceAt = 0; resetPuzzle(); setStage(0, "reset");
+  };
   const replaySecret = () => { progressState.replayCount += 1; saveProgress(); resetSecret(); };
   const nextStage = (source = "trigger") => {
     if (complete) return;
@@ -440,6 +535,7 @@
   const chooseBranch = (branch) => {
     if (stageIndex !== 18 || !ENDINGS[branch]) return;
     if (branch === "merge" && !["portal", "orbit", "ufo", "sleep"].every((id) => progressState.endings.includes(id))) { if (hint) hint.textContent = "Hãy khám phá đủ bốn nhánh đầu để mở Hợp nhất tín hiệu."; return; }
+    clearResonancePreview();
     outcome = branch;
     setStage(19, `choice:${branch}`);
   };
@@ -448,8 +544,14 @@
     const holdMs = STAGES[stageIndex].holdMs || 900;
     holdConsumed = false;
     trigger?.classList.add("is-holding");
+    galaxy.classList.add("is-solar-charging");
+    emitResonance("hh:solar-resonance-stage", { source: "hold-start", charging: true, holdMs });
     layer.style.setProperty("--solar-hold-progress", "0");
-    holdTimer = window.setTimeout(() => { holdTimer = 0; holdConsumed = true; layer.classList.add("is-hold-complete"); unlockBadge("plasma"); saveProgress(); nextStage("hold"); }, holdMs);
+    holdTimer = window.setTimeout(() => {
+      holdTimer = 0; holdConsumed = true; layer.classList.add("is-hold-complete"); galaxy.classList.remove("is-solar-charging");
+      emitResonance("hh:solar-resonance-stage", { source: "hold-complete", charging: false, charged: true });
+      unlockBadge("plasma"); saveProgress(); nextStage("hold");
+    }, holdMs);
     if (!reducedMotion?.matches) {
       const startedAt = performance.now();
       const tick = (now) => { const ratio = Math.min(1, (now - startedAt) / holdMs); layer.style.setProperty("--solar-hold-progress", String(ratio)); if (ratio < 1 && holdTimer) window.requestAnimationFrame(tick); };
@@ -458,7 +560,9 @@
   };
   const stopHold = () => {
     if (!holdTimer) { if (holdConsumed) window.setTimeout(() => { holdConsumed = false; }, 0); return; }
-    window.clearTimeout(holdTimer); holdTimer = 0; trigger?.classList.remove("is-holding"); layer.style.setProperty("--solar-hold-progress", "0");
+    window.clearTimeout(holdTimer); holdTimer = 0; trigger?.classList.remove("is-holding"); galaxy.classList.remove("is-solar-charging");
+    emitResonance("hh:solar-resonance-stage", { source: "hold-cancel", charging: false });
+    layer.style.setProperty("--solar-hold-progress", "0");
   };
 
   sunHit?.addEventListener("click", openSecret, { signal });
@@ -477,6 +581,21 @@
   continueButton?.addEventListener("click", () => setStage(7, "confirm"), { signal });
   stopButton?.addEventListener("click", stopAtConfirm, { signal });
   choices?.addEventListener("click", (event) => { const button = event.target.closest("[data-solar-choice]"); if (button && !button.disabled) chooseBranch(button.dataset.solarChoice); }, { signal });
+  choices?.addEventListener("pointerover", (event) => {
+    const button = event.target.closest("[data-solar-choice]");
+    if (button && !button.disabled) previewBranch(button.dataset.solarChoice);
+  }, { signal });
+  choices?.addEventListener("pointerout", (event) => {
+    const button = event.target.closest("[data-solar-choice]");
+    if (button && !button.contains(event.relatedTarget)) clearResonancePreview();
+  }, { signal });
+  choices?.addEventListener("focusin", (event) => {
+    const button = event.target.closest("[data-solar-choice]");
+    if (button && !button.disabled) previewBranch(button.dataset.solarChoice);
+  }, { signal });
+  choices?.addEventListener("focusout", (event) => {
+    if (!choices.contains(event.relatedTarget)) clearResonancePreview();
+  }, { signal });
   orbits?.addEventListener("click", (event) => { const token = event.target.closest("[data-puzzle-token]"); if (token) movePuzzleToken(token.dataset.puzzleToken, puzzlePositions[token.dataset.puzzleToken] + 1); }, { signal });
   orbits?.addEventListener("keydown", (event) => {
     const token = event.target.closest("[data-puzzle-token]");
@@ -488,7 +607,24 @@
   orbits?.addEventListener("dragstart", (event) => { const token = event.target.closest("[data-puzzle-token]"); if (!token) return; draggedToken = token.dataset.puzzleToken; event.dataTransfer?.setData("text/plain", draggedToken); }, { signal });
   orbits?.addEventListener("dragover", (event) => { if (event.target.closest("[data-solar-orbit]")) event.preventDefault(); }, { signal });
   orbits?.addEventListener("drop", (event) => { const slot = event.target.closest("[data-solar-orbit]"); if (!slot) return; event.preventDefault(); const id = event.dataTransfer?.getData("text/plain") || draggedToken; movePuzzleToken(id, Number(slot.dataset.solarOrbit)); draggedToken = ""; }, { signal });
-  autoSolve?.addEventListener("click", () => { puzzlePositions = { ...puzzleGoal }; renderPuzzle(); puzzleNext?.focus({ preventScroll: true }); playTone(17); }, { signal });
+  autoSolve?.addEventListener("click", () => {
+    solveTimers.forEach((timer) => window.clearTimeout(timer)); solveTimers.clear();
+    galaxy.classList.add("is-solar-puzzle-solving");
+    if (reducedMotion?.matches) {
+      puzzlePositions = { ...puzzleGoal }; renderPuzzle(); galaxy.classList.remove("is-solar-puzzle-solving"); puzzleNext?.focus({ preventScroll: true }); playTone(17); return;
+    }
+    const steps = [
+      { delay: 120, value: { sun: 1, ufo: 0, portal: 2 } },
+      { delay: 330, value: { ...puzzleGoal } }
+    ];
+    steps.forEach(({ delay, value }, index) => {
+      const timer = window.setTimeout(() => {
+        solveTimers.delete(timer); puzzlePositions = value; renderPuzzle(); playTone(16 + index);
+        if (index === steps.length - 1) { galaxy.classList.remove("is-solar-puzzle-solving"); puzzleNext?.focus({ preventScroll: true }); }
+      }, delay);
+      solveTimers.add(timer);
+    });
+  }, { signal });
   puzzleNext?.addEventListener("click", () => { if (puzzleSolved) setStage(18, "puzzle"); }, { signal });
   reset?.addEventListener("click", resetSecret, { signal });
   replay?.addEventListener("click", replaySecret, { signal });
@@ -507,13 +643,13 @@
     if (document.hidden) { clearTimers(); stopAudioNodes(); audioContext?.suspend?.().catch(() => {}); }
   }, { signal });
   window.addEventListener("pagehide", () => {
-    clearTimers(); closeAudio(); controller.abort(); layer.remove(); redVeil.remove(); delete galaxy.dataset.hhSolarSecretMounted; delete window.HHSolarSecret;
+    clearTimers(); closeAudio(); restoreGalaxyState(); controller.abort(); layer.remove(); redVeil.remove(); delete galaxy.dataset.hhSolarSecretMounted; delete window.HHSolarSecret;
   }, { once: true, signal });
   reducedMotion?.addEventListener?.("change", () => { layer.dataset.motion = reducedMotion.matches ? "static" : "cinematic"; }, { signal });
 
   refreshJournal();
   window.HHSolarSecret = Object.freeze({
-    version: 3,
+    version: 4,
     open: openSecret,
     close: closeSecret,
     reset: resetSecret,

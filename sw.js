@@ -1,5 +1,5 @@
-const CACHE = "hh-identity-portal-v1017";
-// Previous release: hh-identity-portal-v1016.
+const CACHE = "hh-identity-portal-v1018";
+// Previous release: hh-identity-portal-v1017.
 // Previous release: hh-identity-portal-v1015.
 // Previous release: hh-identity-portal-v1014.
 // Previous release: hh-identity-portal-v1013.
@@ -333,7 +333,7 @@ const RUNTIME_ASSETS = [
   "./auth-transition-runtime.css?v=2",
   "./auth-trust-director.css?v=1",
   "./auth-cosmic-prism-background.css?v=2",
-  "./auth-solar-secret.css?v=5",
+  "./auth-solar-secret.css?v=8",
   "./auth-cosmic-prism-form.css?v=2",
   "./auth-cosmic-prism-interactions.css?v=3",
   "./auth-zoom-resilience.css?v=3",
@@ -434,9 +434,9 @@ const RUNTIME_ASSETS = [
   "./realtime-core.js?v=1",
   "./auth-platform.js?v=21",
   "./auth-experience.js?v=9",
-  "./auth-neon-gateway.js?v=33",
+  "./auth-neon-gateway.js?v=34",
   "./auth-h-galaxy.js?v=15",
-  "./auth-living-galaxy-3d.js?v=20",
+  "./auth-living-galaxy-3d.js?v=21",
   "./auth-living-background.js?v=1",
   "./auth-spatial-aurora.js?v=1",
   "./auth-identity-constellation.js?v=2",
@@ -449,7 +449,7 @@ const RUNTIME_ASSETS = [
   "./auth-quantum-flow.js?v=2",
   "./auth-trust-director.js?v=2",
   "./auth-cosmic-prism-background.js?v=3",
-  "./auth-solar-secret.js?v=5",
+  "./auth-solar-secret.js?v=6",
   "./auth-cosmic-prism-form.js?v=3",
   "./auth-cosmic-prism-interactions.js?v=3",
   "./auth-zoom-resilience.js?v=4",
@@ -717,9 +717,9 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=676",
+  "./performance-loader.js?v=677",
   "./auth-platform.js?v=21",
-  "./auth-neon-gateway.js?v=33",
+  "./auth-neon-gateway.js?v=34",
   "./script.js?v=278"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
