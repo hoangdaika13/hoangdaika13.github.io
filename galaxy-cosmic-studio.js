@@ -80,6 +80,12 @@
     const entry=ROUTES.find(item=>item.route===route);
     toolbar.innerHTML=`<div class="gcs-heading"><span class="gcs-mark" aria-hidden="true">✧</span><div><span class="gcs-eyebrow">HH GALAXY / COSMIC STUDIO</span><h1>${escape(entry?.title||'Không gian sáng tạo của bạn')}</h1></div></div><div class="gcs-controls">${route==='/home'?'<div class="gcs-view-switch" role="group" aria-label="Cách xem Galaxy"><button type="button" data-gcs-view="map">Bản đồ</button><button type="button" data-gcs-view="list">Danh sách</button></div>':`<button type="button" data-gcs-favorite aria-pressed="${prefs.favorites.includes(route)}">${prefs.favorites.includes(route)?'★ Đã yêu thích':'☆ Yêu thích'}</button>`}<button type="button" data-hgl1-action="open-command">Tìm công cụ <kbd>Ctrl K</kbd></button><a href="#/galaxy/settings" data-hgl1-route="/galaxy/settings" aria-label="Cài đặt Galaxy">⚙</a></div><p class="gcs-save-status" data-gcs-status role="status">Bản nháp giữ trong tab này. Tệp nguồn không tự tải lại; dữ liệu đã lưu vẫn ở thư viện.</p>`;
     owner.prepend(toolbar);
+    const universeHost = owner.querySelector('[data-hh-galaxy-home-host]:has([data-glu])');
+    if (universeHost) {
+      const command = toolbar.querySelector('[data-hgl1-action="open-command"]');
+      command?.removeAttribute('data-hgl1-action');
+      command?.setAttribute('data-command-open', '');
+    }
     const status=message=>{const output=toolbar.querySelector('[data-gcs-status]');if(output)output.textContent=message;};
     let draft;
     try {const raw=session?.getItem(draftKey);if(raw && raw.length<=650000)draft=JSON.parse(raw);} catch {}
@@ -99,13 +105,14 @@
       const featured=prefs.favorites.length?ROUTES.filter(item=>prefs.favorites.includes(item.route)):[];
       directory.innerHTML=`<header><h2>Chọn công việc, bắt đầu ngay.</h2><p>11 workspace · dữ liệu trên thiết bị; các dịch vụ trực tuyến cần cấu hình riêng.</p></header>${featured.length?`<nav class="gcs-recent" aria-label="Workspace yêu thích">${featured.map(item=>`<a href="#${item.route}" data-hgl1-route="${item.route}">★ ${escape(item.title)}</a>`).join('')}</nav>`:''}<nav class="gcs-recent" aria-label="Workspace gần đây">${prefs.recent.filter(r=>r!=='/home').map(r=>{const item=ROUTES.find(i=>i.route===r);return item?`<a href="#${r}" data-hgl1-route="${r}">↗ ${escape(item.title)}</a>`:'';}).join('')}</nav><div class="gcs-directory-grid">${ROUTES.map(item=>`<article style="--gcs-accent:${item.color}"><span class="gcs-card-icon" aria-hidden="true">${escape(item.icon)}</span><h3>${escape(item.title)}</h3><p>${escape(item.description)}</p><footer><a href="#${item.route}" data-hgl1-route="${item.route}">Mở workspace ↗</a><button type="button" data-gcs-star="${item.route}" aria-label="Yêu thích ${escape(item.title)}" aria-pressed="${prefs.favorites.includes(item.route)}">${prefs.favorites.includes(item.route)?'★':'☆'}</button></footer></article>`).join('')}</div>`;
     }
-    if(route==='/home'){
+    if(route==='/home' && !universeHost){
       directory=app.ownerDocument.createElement('section');directory.className='gcs-directory';directory.setAttribute('data-gcs-directory','');owner.append(directory);paintDirectory();
     }
     function setView(view){
       prefs.view=view;app.dataset.gcsView=view;
       toolbar.querySelectorAll('[data-gcs-view]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.gcsView===view)));
-      const map=owner.querySelector('.hgl1-page--home');if(map){map.hidden=view==='list';map.inert=view==='list';}
+      const map=owner.querySelector('.hgl1-page--home');if(map){map.hidden=!universeHost && view==='list';map.inert=!universeHost && view==='list';}
+      universeHost?.dispatchEvent(new CustomEvent('hh:galaxy:universe-view', { detail: { view } }));
       if(directory)directory.hidden=view!=='list';
       // Trigger the existing renderer's visibility observation; no extra canvas.
       if(view==='list')scope.dispatchEvent?.(new Event('resize'));

@@ -7089,7 +7089,7 @@ function initAppShell() {
     document.documentElement.dataset.hhRouteReady = route;
     window.HHGalaxyShell?.syncRoute?.(route);
     window.dispatchEvent(new CustomEvent("hh:route-rendered", { detail: { route } }));
-    if (route !== "/home" || document.querySelector('[data-gha-home-ai-host], [data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]')) {
+    if (route !== "/home" || document.querySelector('[data-glu], [data-gha-home-ai-host], [data-shell-view="home"].hgc-active #homeGalaxyCommandRoot [data-hgc-root]')) {
       window.HHSurfaceBoot?.release?.(route === "/home" ? "home" : "app", { route });
     }
   };
@@ -7424,6 +7424,23 @@ function initAppShell() {
         route,
         embedded: true,
         user: readCurrentAuthUser(),
+        universePersonal: {
+          getFavorites: readSidebarFavorites, getPins: readSidebarPins, getRecent: readSidebarRecent,
+          canPersonalize: (target) => Boolean(navigationItemForRoute(target)),
+          toggleFavorite: (target) => {
+            if (!navigationItemForRoute(target)) return false;
+            const favorites = readSidebarFavorites();
+            saveSidebarFavorites(favorites.includes(target) ? favorites.filter(item => item !== target) : [...favorites, target]);
+            renderNavigation(); return true;
+          },
+          togglePin: (target) => {
+            if (!navigationItemForRoute(target)) return false;
+            const pins = readSidebarPins();
+            if (!pins.includes(target) && pins.length >= 5) return false;
+            saveSidebarPins(pins.includes(target) ? pins.filter(item => item !== target) : [...pins, target]);
+            renderNavigation(); return true;
+          }
+        },
         navigate: (nextRoute) => { location.hash = `#${nextRoute}`; },
         mountHome: (homeHost, context = {}) => {
           const mountedHome = window.HHGalaxyHomeAI?.mount?.(homeHost, {

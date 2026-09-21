@@ -1912,6 +1912,18 @@
     if (runtime.route === "/home") {
       const homeHost = delegateHost;
       if (!homeHost) return;
+      // The atlas owns the sole map renderer. Do not also mount the legacy
+      // CSS map / HomeCosmos background behind it.
+      if (globalScope.HHGalaxyLivingUniverse?.mount) {
+        const universe = globalScope.HHGalaxyLivingUniverse.mount(homeHost, {
+          manifest: routeManifest,
+          tools: globalScope.HHGalaxyShell?.routeManifest || [],
+          storage: globalScope.HHGalaxyCosmicStudio?.accountStorage(runtime.storage, runtime.options.user) || runtime.storage,
+          personal: runtime.options.universePersonal,
+          navigate: runtime.options.navigate
+        });
+        if (universe) { registerDelegateCleanup(() => universe.destroy()); return; }
+      }
       let claimed = false;
       if (typeof runtime.options.mountHome === "function") {
         const delegatedHome = runtime.options.mountHome(homeHost, context);
