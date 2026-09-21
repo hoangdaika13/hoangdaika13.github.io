@@ -52,6 +52,15 @@
 .glu-directory>header { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:10px; }
 .glu-filters { display:flex; flex-wrap:wrap; gap:7px; }
 .glu-filters button { font-size:13px; }
+.glu-directory-tools { display:flex; align-items:end; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:4px 0 14px; }
+.glu-search { position:relative; display:flex; align-items:center; gap:10px; min-width:min(100%,360px); color:#b9c8e5; font-size:12px; font-weight:700; letter-spacing:.03em; }
+.glu-search span { position:absolute; left:13px; top:7px; color:#91a4c7; font-size:10px; letter-spacing:.08em; text-transform:uppercase; pointer-events:none; }
+.glu-search input { width:100%; min-height:50px; padding:22px 42px 7px 13px; border:1px solid #7787b455; border-radius:13px; color:#eef2ff; background:#0d1730; outline:0; }
+.glu-search input::placeholder { color:#8998b5; opacity:.78; }
+.glu-search input:focus { border-color:#8df3e2; box-shadow:0 0 0 3px #8df3e233; }
+.glu-search button { position:absolute; right:6px; top:7px; min-width:34px; min-height:34px; padding:3px 7px; border:0; color:#cbd8f2; background:transparent; font-size:22px; line-height:1; }
+.glu-search button:hover { color:#fff; background:#243258; }
+.glu-results { min-height:22px; color:#93a5c8; font-size:12px; }
 .glu-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,245px),1fr)); gap:10px; }
 .glu-card { min-width:0; border:1px solid #626f9740; border-radius:16px; background:#10182c; overflow:hidden; }
 .glu-card[data-selected=true] { border-color:var(--glu-accent); background:#1d2842; }
@@ -90,6 +99,7 @@
   .glu-scene-caption { top:14px; left:15px; }
   .glu-inspector { padding:17px; }.glu-actions>* { flex:1 1 auto; text-align:center; }
   .glu-filters { width:100%; }.glu-filters button { flex:1; padding:9px 7px; }
+  .glu-directory-tools { align-items:stretch; }.glu-search { min-width:100%; }.glu-results { width:100%; }
 }
 @media(prefers-reduced-motion:reduce) { .glu *, .glu *::before, .glu *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
 @media(forced-colors:active) {

@@ -54,7 +54,7 @@ test('renderer and UI implement one lifecycle-owned scene with accessible fallba
   const source = read('galaxy-living-universe.js');
   const renderer = read('galaxy-universe-renderer.mjs');
   const css = read('galaxy-living-universe.css');
-  assert.match(source, /import\('\.\/galaxy-universe-renderer\.mjs\?v=5'\)/);
+  assert.match(source, /import\('\.\/galaxy-universe-renderer\.mjs\?v=6'\)/);
   assert.match(source, /IntersectionObserver/);
   assert.match(source, /visibilitychange/);
   assert.match(source, /prefers-reduced-motion/);
@@ -62,6 +62,10 @@ test('renderer and UI implement one lifecycle-owned scene with accessible fallba
   assert.match(source, /hh:galaxy:universe-view/);
   assert.match(source, /data-glu-action="interact"[\s\S]*?addEventListener\('click'[\s\S]*?event\.stopPropagation\(\)[\s\S]*?interactive = !interactive/);
   assert.match(source, /onHover: route => \{ previewed = route; paintPreview\(\); \}/);
+  assert.match(source, /data-glu-search/);
+  assert.match(source, /matchesSearch/);
+  assert.match(source, /button\.dataset\.gluAction === 'clear-search'/);
+  assert.match(source, /data-glu-index/);
   assert.match(source, /event\.key === 'Enter'[\s\S]*?previewed/);
   assert.match(renderer, /new T\.WebGLRenderer/);
   assert.equal((renderer.match(/new T\.WebGLRenderer/g) || []).length, 1);
@@ -77,6 +81,8 @@ test('renderer and UI implement one lifecycle-owned scene with accessible fallba
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css, /@media\(forced-colors:active\)/);
   assert.match(css, /glu-nebula-drift/);
+  assert.match(css, /glu-directory-tools/);
+  assert.match(css, /glu-search/);
   assert.match(css, /overflow:hidden/);
   assert.doesNotMatch(css, /(^|\n)\s*(html|body|:root)\s*\{/);
 });

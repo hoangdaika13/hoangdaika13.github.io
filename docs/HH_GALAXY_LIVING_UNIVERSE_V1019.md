@@ -35,3 +35,10 @@ Kiểm thử trực tiếp ở viewport 375px xác nhận không tràn ngang, da
 - Hover trên hành tinh hoặc focus vào thẻ điểm đến cập nhật inspector thành trạng thái “Đang xem trước”; Enter từ vùng cảnh mở đúng route đang xem trước, không làm thay đổi selection cho đến khi người dùng chọn.
 - Thêm lớp tinh vân CSS có `pointer-events: none`, tự tắt theo reduced-motion/forced-colors và không tạo overflow.
 - Không dùng texture, mã nguồn hoặc dịch vụ bên ngoài; toàn bộ hình ảnh vẫn là procedural art trong repository và Three.js MIT hiện có.
+
+## Vòng hoàn thiện v1022
+
+- Bổ sung tìm kiếm cục bộ trong catalog Galaxy theo tên, mô tả và công cụ con; kết quả, trạng thái rỗng và nút xóa đều hiển thị rõ ràng, không gọi API.
+- Thêm điều hướng bàn phím bằng mũi tên, Home và End giữa các thẻ điểm đến; focus vẫn cập nhật inspector và Enter mở đúng workspace.
+- Làm rõ trạng thái hover/focus bằng scale chuyển động nhẹ và quầng sáng hành tinh; nền sao có shimmer rất chậm để tăng chiều sâu mà không tạo renderer hoặc RAF thứ hai.
+- CSS search và directory giữ responsive ở mobile, reduced-motion và forced-colors; không khóa cuộn, không thêm overlay và không chặn pointer-events của lớp trang trí.

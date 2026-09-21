@@ -45,7 +45,7 @@
     if (!catalog.length) return false;
     const storage = options.storage, personal = options.personal || {};
     let raw = {}; try { raw = JSON.parse(storage?.getItem(KEY) || '{}'); } catch {}
-    let state = normalizeState(raw || {}, catalog), renderer = null, destroyed = false, loading = false, view = 'map', filter = 'all', interactive = false, previewed = '';
+    let state = normalizeState(raw || {}, catalog), renderer = null, destroyed = false, loading = false, view = 'map', filter = 'all', searchTerm = '', interactive = false, previewed = '';
     let visible = true, saveTimer = 0, loadToken = 0;
     const controller = new AbortController(), signal = controller.signal;
     const motionQuery = scope.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -68,7 +68,7 @@
         </div>
         <div class="glu-scene-footer"><p id="glu-help">Cuộn trang bình thường. Bật Điều khiển 3D để kéo / pinch / zoom. Esc để thoát; phím mũi tên để xoay, +/− để zoom.</p><div><button type="button" data-glu-action="zoom-in" aria-label="Phóng to cảnh">＋</button><button type="button" data-glu-action="zoom-out" aria-label="Thu nhỏ cảnh">−</button><button type="button" data-glu-action="retry" hidden>Thử lại 3D</button></div></div>
       </div><aside class="glu-inspector" aria-label="Thông tin hành tinh"><div data-glu-preview></div></aside></div>
-      <section class="glu-directory" aria-label="Điểm đến Galaxy"><header><div><span class="glu-eyebrow" data-glu-location>TOÀN THIÊN HÀ</span><h3 data-glu-directory-title>Các hệ hành tinh</h3></div><div class="glu-filters" role="group" aria-label="Lọc điểm đến"><button type="button" data-glu-filter="all" aria-pressed="true">Tất cả</button><button type="button" data-glu-filter="favorites" aria-pressed="false">Yêu thích</button><button type="button" data-glu-filter="recent" aria-pressed="false">Gần đây</button></div></header><div class="glu-cards" data-glu-cards></div></section>
+      <section class="glu-directory" aria-label="Điểm đến Galaxy"><header><div><span class="glu-eyebrow" data-glu-location>TOÀN THIÊN HÀ</span><h3 data-glu-directory-title>Các hệ hành tinh</h3></div><div class="glu-filters" role="group" aria-label="Lọc điểm đến"><button type="button" data-glu-filter="all" aria-pressed="true">Tất cả</button><button type="button" data-glu-filter="favorites" aria-pressed="false">Yêu thích</button><button type="button" data-glu-filter="recent" aria-pressed="false">Gần đây</button></div></header><div class="glu-directory-tools"><label class="glu-search"><span>Tìm trong Galaxy</span><input type="search" data-glu-search placeholder="Tên hành tinh hoặc công cụ…" autocomplete="off" spellcheck="false"><button type="button" data-glu-action="clear-search" aria-label="Xóa tìm kiếm" hidden>×</button></label><span class="glu-results" data-glu-results role="status" aria-live="polite"></span></div><div class="glu-cards" data-glu-cards></div></section>
       <p class="glu-notice" data-glu-notice role="status">Góc nhìn lưu riêng trên thiết bị theo tài khoản. Không gửi dữ liệu ra ngoài.</p>
     </section>`;
     const root = host.querySelector('[data-glu]'), scene = root.querySelector('[data-glu-scene]');
@@ -80,6 +80,8 @@
     const motion = () => !state.paused && !motionQuery?.matches;
     const quality = () => effectiveQuality(state.quality, device);
     const isFavorite = item => item.route.startsWith('/galaxy/') ? prefs().favorites.includes(item.route) : (personal.getFavorites?.() || []).includes(item.route);
+    const searchable = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('vi-VN').trim();
+    const matchesSearch = item => { const query = searchable(searchTerm); if (!query) return true; return searchable([item.title, item.description, ...item.children.map(child => `${child.title} ${child.description}`)].join(' ')).includes(query); };
     function save() {
       scope.clearTimeout(saveTimer);
       if (renderer) state.camera = renderer.getCamera();
@@ -110,9 +112,12 @@
     }
     function paintCards() {
       const recent = [...prefs().recent, ...(personal.getRecent?.() || [])];
-      let items = entries().filter(item => filter === 'all' || (filter === 'favorites' ? isFavorite(item) : recent.includes(item.route)));
+      let items = entries().filter(item => (filter === 'all' || (filter === 'favorites' ? isFavorite(item) : recent.includes(item.route))) && matchesSearch(item));
       if (filter === 'recent') items.sort((a,b) => recent.indexOf(a.route) - recent.indexOf(b.route));
-      query('[data-glu-cards]').innerHTML = items.length ? items.map(item => `<article class="glu-card" style="--glu-accent:${item.color}" data-selected="${item.route === state.selected}"><button type="button" data-glu-select="${escape(item.route)}" aria-pressed="${item.route === state.selected}"><span class="glu-mini-planet" aria-hidden="true"></span><span><strong>${escape(item.title)}</strong><small>${item.children.length ? `${item.children.length} công cụ trong hệ` : 'Workspace hiện có'}</small></span><span aria-hidden="true">↗</span></button>${view === 'list' ? `<p>${escape(item.description)}</p><a href="#${escape(item.route)}" data-glu-open="${escape(item.route)}">Mở workspace →</a>${item.children.length ? `<button type="button" data-glu-system="${escape(item.id)}">Khám phá công cụ</button>` : ''}` : ''}</article>`).join('') : '<p class="glu-empty">Chưa có điểm đến trong bộ lọc này. Chọn Tất cả để tiếp tục khám phá.</p>';
+      query('[data-glu-cards]').innerHTML = items.length ? items.map((item, index) => `<article class="glu-card" style="--glu-accent:${item.color}" data-selected="${item.route === state.selected}"><button type="button" data-glu-select="${escape(item.route)}" data-glu-index="${index}" aria-pressed="${item.route === state.selected}"><span class="glu-mini-planet" aria-hidden="true"></span><span><strong>${escape(item.title)}</strong><small>${item.children.length ? `${item.children.length} công cụ trong hệ` : 'Workspace hiện có'}</small></span><span aria-hidden="true">↗</span></button>${view === 'list' ? `<p>${escape(item.description)}</p><a href="#${escape(item.route)}" data-glu-open="${escape(item.route)}">Mở workspace →</a>${item.children.length ? `<button type="button" data-glu-system="${escape(item.id)}">Khám phá công cụ</button>` : ''}` : ''}</article>`).join('') : '<p class="glu-empty">Chưa có điểm đến phù hợp. Thử từ khóa khác hoặc chọn Tất cả.</p>';
+      const search = query('[data-glu-search]'); if (search && search.value !== searchTerm) search.value = searchTerm;
+      const clear = query('[data-glu-action="clear-search"]'); if (clear) clear.hidden = !searchTerm;
+      query('[data-glu-results]').textContent = `${items.length} ${items.length === 1 ? 'điểm đến' : 'điểm đến'}${searchTerm ? ` · khớp “${searchTerm}”` : ''}`;
       root.querySelectorAll('[data-glu-filter]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.gluFilter === filter)));
     }
     function select(route, focus = false) {
@@ -126,7 +131,7 @@
     function setSystem(id) {
       if (id && !catalog.some(item => item.id === id && item.children.length)) return;
       if (!state.system && id) state.overviewCamera = renderer?.getCamera() || state.camera;
-      state.system = id; state.selected = ''; previewed = ''; filter = 'all';
+      state.system = id; state.selected = ''; previewed = ''; filter = 'all'; searchTerm = '';
       state.camera = id ? { yaw: 0.22, pitch: 0.78, distance: 52 } : { ...state.overviewCamera };
       updateWorld(); save();
       query('[data-glu-select]')?.focus({ preventScroll: true });
@@ -147,7 +152,7 @@
       query('[data-glu-action="retry"]').hidden = true;
       query('[data-glu-render-status]').textContent = 'Đang tải cảnh 3D trên thiết bị…';
       try {
-        const module = await import('./galaxy-universe-renderer.mjs?v=5');
+        const module = await import('./galaxy-universe-renderer.mjs?v=6');
         if (destroyed || token !== loadToken) return;
         renderer = module.mount(query('[data-glu-canvas]'), {
           onSelect: route => select(route), onHover: route => { previewed = route; paintPreview(); }, onCamera: scheduleSave,
@@ -178,6 +183,7 @@
       if (button.dataset.gluSelect) { select(button.dataset.gluSelect, true); return; }
       if (button.dataset.gluSystem) { setSystem(button.dataset.gluSystem); return; }
       if (button.dataset.gluFilter) { filter = button.dataset.gluFilter; paintCards(); return; }
+      if (button.dataset.gluAction === 'clear-search') { searchTerm = ''; paintCards(); query('[data-glu-search]')?.focus({ preventScroll: true }); return; }
       if (button.dataset.gluOpen) { save(); if (options.navigate) { event.preventDefault(); options.navigate(button.dataset.gluOpen); } return; }
       const route = button.dataset.gluStar || button.dataset.gluPin;
       if (route) {
@@ -203,18 +209,34 @@
     root.addEventListener('change', event => {
       if (event.target.matches('[data-glu-quality]')) { state.quality = event.target.value; sync(); save(); notify(quality() !== state.quality ? 'Thiết bị / tiết kiệm dữ liệu: tự giới hạn ở mức Tiết kiệm.' : 'Đã áp dụng mức đồ họa.'); }
     }, { signal });
+    root.addEventListener('input', event => {
+      if (!event.target.matches('[data-glu-search]')) return;
+      searchTerm = event.target.value.slice(0, 80);
+      paintCards();
+    }, { signal });
     root.addEventListener('focusin', event => {
       const route = event.target.closest('[data-glu-select]')?.dataset.gluSelect;
       if (route && entries().some(item => item.route === route)) { previewed = route; paintPreview(); }
     }, { signal });
     root.addEventListener('keydown', event => {
-      if (event.key === 'Escape') { interactive = false; sync(); query('[data-glu-action="interact"]').focus({ preventScroll: true }); }
+      if (event.key === 'Escape') {
+        if (event.target.matches('[data-glu-search]') && searchTerm) { searchTerm = ''; paintCards(); event.preventDefault(); return; }
+        interactive = false; sync(); query('[data-glu-action="interact"]').focus({ preventScroll: true });
+      }
       if ((event.key === 'Enter' || event.key === 'Return') && (event.target === scene || event.target.closest?.('[data-glu-scene]') === scene) && (previewed || state.selected)) {
         event.preventDefault(); const target = entries().find(item => item.route === (previewed || state.selected));
         if (target) options.navigate?.(target.route);
       }
       if (event.target === scene && interactive && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','=','Home'].includes(event.key)) {
         event.preventDefault(); renderer?.key(event.key); scheduleSave();
+      }
+      const card = event.target.closest?.('[data-glu-select]');
+      if (card && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key)) {
+        const cards = [...root.querySelectorAll('[data-glu-select]')]; const index = cards.indexOf(card); if (index < 0) return;
+        const columns = Math.max(1, Math.floor((query('[data-glu-cards]')?.getBoundingClientRect().width || 0) / 255));
+        const delta = event.key === 'Home' ? -index : event.key === 'End' ? cards.length - 1 - index : event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : event.key === 'ArrowUp' ? -columns : columns;
+        const next = cards[Math.min(cards.length - 1, Math.max(0, index + delta))];
+        if (next && next !== card) { event.preventDefault(); next.focus({ preventScroll: true }); }
       }
     }, { signal });
     doc.addEventListener('visibilitychange', sync, { signal });

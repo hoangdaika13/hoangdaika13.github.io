@@ -175,11 +175,16 @@ export function mount(host, options = {}) {
       nodes.forEach(node=>{
         if(motion&&node.entry.route!==hovered&&node.entry.route!==selected)node.angle+=delta*node.speed;
         node.group.position.set(Math.cos(node.angle)*node.orbit,Math.sin(node.index*1.7)*1.1,Math.sin(node.angle)*node.orbit);
+        const focusScale=node.entry.route===hovered?1.14:node.entry.route===selected?1.06:1;
+        const smoothScale=1-Math.exp(-delta*8);
+        node.group.scale.x+=(focusScale-node.group.scale.x)*smoothScale;node.group.scale.y+=(focusScale-node.group.scale.y)*smoothScale;node.group.scale.z+=(focusScale-node.group.scale.z)*smoothScale;
+        node.halo.visible=quality==='cinematic'&&(node.entry.route===selected||node.entry.route===hovered);
         if(motion)node.body.rotation.y+=delta*(.05+node.index*.007);
         if(motion&&node.ring)node.ring.rotation.z+=delta*(.018+node.index*.002);
         node.material.uniforms.time.value=elapsed;
         node.atmo.material.uniforms.time.value=elapsed;
       });
+      if(starfield&&motion){starfield.rotation.y=elapsed*.0018;starfield.rotation.x=Math.sin(elapsed*.018)*.012;starfield.material.opacity=.86+Math.sin(elapsed*.7)*.08;}
       if(sun){sun.material.uniforms.time.value=elapsed;sun.rotation.y=elapsed*.022;}
       if(corona)corona.material.rotation=elapsed*.025;
       sunFlares.forEach((flare,index)=>{flare.material.opacity=(quality==='economy'?.06:.11)+Math.sin(elapsed*(.16+index*.05)+index)*.035;flare.material.rotation=elapsed*(.018+index*.009);});
