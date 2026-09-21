@@ -1372,12 +1372,13 @@
     const constellationClass = options.constellationClass ? " " + options.constellationClass : "";
     const extra = options.extra || "";
     const heroImage = worldHeroImageMarkup(entry);
+    const workspaceScene = entry.route === "/home" ? "" : "<div class=\"hgl1-workspace-3d\" data-hgl1-workspace-3d data-route=\"" + escapeHtml(entry.route) + "\" data-state=\"loading\" aria-hidden=\"true\"></div>";
     return "<header class=\"hgl1-page-head hgl1-world-hero hgl1-world-hero--" + entry.id + heroClass + "\" aria-labelledby=\"hgl1-world-title-" + entry.id + "\">" +
       "<div class=\"hgl1-world-hero__body" + bodyClass + "\"><span class=\"hgl1-eyebrow\">" + escapeHtml(eyebrow) + "</span>" +
       "<span class=\"hgl1-world-hero__signal\"><i aria-hidden=\"true\"></i>" + escapeHtml(experience.signal) + "</span>" +
       "<h1 id=\"hgl1-world-title-" + entry.id + "\">" + escapeHtml(title) + "</h1><p>" + escapeHtml(description) + "</p>" +
       (actions ? "<div class=\"hgl1-page-head__actions\">" + actions + "</div>" : "") + "</div>" +
-      "<div class=\"hgl1-world-hero__visual" + visualClass + "\" aria-hidden=\"true\">" + heroImage + "<span class=\"hgl1-world-constellation hgl1-world-constellation--" + entry.id + constellationClass + "\"><i></i><i></i><i></i><i></i><i></i><i></i></span>" +
+      "<div class=\"hgl1-world-hero__visual" + visualClass + "\" aria-hidden=\"true\">" + workspaceScene + heroImage + "<span class=\"hgl1-world-constellation hgl1-world-constellation--" + entry.id + constellationClass + "\"><i></i><i></i><i></i><i></i><i></i><i></i></span>" +
       "<span class=\"hgl1-world-orb hgl1-world-orb--" + entry.id + orbClass + "\"><i class=\"hgl1-world-orb__ring\"></i><i class=\"hgl1-world-orb__core\"></i><i class=\"hgl1-world-orb__satellite\"></i><span class=\"hgl1-world-orb__glyph\">" + icon(entry.icon) + "</span></span>" +
       "<span class=\"hgl1-world-hero__caption\"><b>" + escapeHtml(experience.visualLabel) + "</b><small>" + escapeHtml(experience.visualHint) + "</small></span></div>" + extra + "</header>";
   }
@@ -1863,8 +1864,69 @@
     else if (value && typeof value.unmount === "function") runtime.delegateCleanups.push(function unmountController() { value.unmount(); });
   }
 
+  function cleanupWorkspaceScene(active) {
+    const owner = active || runtime;
+    if (!owner) return;
+    owner.workspaceSceneToken = Number(owner.workspaceSceneToken || 0) + 1;
+    if (owner.workspaceScene && typeof owner.workspaceScene.destroy === "function") {
+      try { owner.workspaceScene.destroy(); } catch (_) { /* WebGL context already released. */ }
+    }
+    owner.workspaceScene = null;
+  }
+
+  function workspaceSceneMotion(active) {
+    const owner = active || runtime;
+    if (!owner) return false;
+    const settings = sanitizeSettings(owner.route === "/galaxy/settings" && owner.settingsDraft
+      ? owner.settingsDraft
+      : owner.localState.settings);
+    let systemReduced = false;
+    try {
+      systemReduced = Boolean(globalScope.matchMedia && globalScope.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    } catch (_) { systemReduced = false; }
+    return settings.effects !== "quiet" && settings.reducedMotion !== "on" && !systemReduced;
+  }
+
+  async function mountWorkspaceScene() {
+    const owner = runtime;
+    if (!owner || owner.route === "/home" || !owner.app) return false;
+    cleanupWorkspaceScene(owner);
+    const token = owner.workspaceSceneToken;
+    const host = owner.app.querySelector("[data-hgl1-workspace-3d]");
+    if (!host || host.dataset.route !== owner.route) return false;
+    host.dataset.state = "loading";
+    try {
+      const module = await import("./galaxy-workspace-renderer.mjs?v=1");
+      if (runtime !== owner || owner.workspaceSceneToken !== token || !host.isConnected || host.dataset.route !== owner.route) return false;
+      const current = function isCurrent() {
+        return runtime === owner && owner.workspaceSceneToken === token && host.isConnected;
+      };
+      const controller = module.mount(host, {
+        route: owner.route,
+        quality: owner.adaptiveTiers?.performanceTier || "mid",
+        motion: workspaceSceneMotion(owner),
+        onReady: function workspaceSceneReady() { if (current()) host.dataset.state = "ready"; },
+        onError: function workspaceSceneError() { if (current()) host.dataset.state = "fallback"; }
+      });
+      if (!current()) {
+        controller?.destroy?.();
+        return false;
+      }
+      if (!controller) {
+        host.dataset.state = "fallback";
+        return false;
+      }
+      owner.workspaceScene = controller;
+      return true;
+    } catch (_) {
+      if (runtime === owner && owner.workspaceSceneToken === token && host.isConnected) host.dataset.state = "fallback";
+      return false;
+    }
+  }
+
   function cleanupRouteRuntime() {
     if (!runtime) return;
+    cleanupWorkspaceScene(runtime);
     if (runtime.route === "/galaxy/learning") resetLearningInteraction({ preserveDeck: true });
     const probe = runtime.aiProbe;
     runtime.aiProbe = null;
@@ -2272,6 +2334,7 @@
 
   function render() {
     if (!runtime) return false;
+    cleanupWorkspaceScene(runtime);
     runtime.workbench?.destroy?.();
     runtime.workbench = null;
     const inspection = inspectLocalState(runtime.storage);
@@ -2332,6 +2395,7 @@
     mountRouteDelegate();
     mountRouteRuntime();
     mountWorkbench();
+    void mountWorkspaceScene();
     if (runtime.cosmicStudio?.destroy) runtime.cosmicStudio.destroy();
     const cosmicStorage = globalScope.HHGalaxyCosmicStudio?.accountStorage?.(
       runtime.storage,
@@ -4011,6 +4075,7 @@
     if (status) status.textContent = dirty ? "Có thay đổi chưa lưu." : "Cấu hình đã đồng bộ với bản lưu.";
     runtime.app.querySelectorAll("[data-hgl1-action=\"save-settings\"], [data-hgl1-action=\"cancel-settings\"]").forEach(function toggleCommit(button) { button.disabled = !dirty; });
     applyPreferences(runtime.app, draft);
+    runtime.workspaceScene?.setOptions?.({ motion: workspaceSceneMotion(runtime) });
   }
 
   function setSettingsControls(settings) {
@@ -5324,7 +5389,9 @@
       commandIndex: 0,
       commandReturnFocus: null,
       preserveChromeNextRender: false,
-      cosmicStudio: null
+      cosmicStudio: null,
+      workspaceScene: null,
+      workspaceSceneToken: 0
     };
     host.setAttribute("data-hh-galaxy-layer-one-host", "v" + VERSION);
     listen(host, "click", handleClick);
@@ -5345,6 +5412,7 @@
       applyPreferences(runtime.app, runtime.route === "/galaxy/settings" && runtime.settingsDraft
         ? runtime.settingsDraft
         : runtime.localState.settings);
+      void mountWorkspaceScene();
     });
     listen(globalScope.document, "visibilitychange", handleVisibilityChange);
     initializeContentStorage(runtime);

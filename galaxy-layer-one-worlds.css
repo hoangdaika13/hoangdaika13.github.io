@@ -1746,6 +1746,103 @@
   }
 }
 
+/* ========================================================================== */
+/* Release v1023 — one real WebGL world for every functional Galaxy route     */
+/*                                                                            */
+/* The canvas is decorative and never owns input. The local portal artwork     */
+/* remains underneath as the immediate, low-power and context-loss fallback.   */
+/* ========================================================================== */
+
+.hh-galaxy-app .hgl1-workspace-3d {
+  isolation: isolate;
+  position: absolute;
+  z-index: 4;
+  inset: 2px;
+  overflow: hidden;
+  border: 1px solid rgb(var(--hgl1-world-c-rgb) / 0.34);
+  border-radius: clamp(15px, 1.45vw, 22px);
+  opacity: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 48%, rgb(var(--hgl1-world-a-rgb) / 0.18), transparent 36%),
+    radial-gradient(circle at 80% 14%, rgb(var(--hgl1-world-b-rgb) / 0.12), transparent 28%),
+    linear-gradient(145deg, rgb(3 7 25 / 0.42), rgb(2 5 18 / 0.78));
+  box-shadow:
+    inset 0 0 50px rgb(var(--hgl1-world-a-rgb) / 0.08),
+    0 0 42px rgb(var(--hgl1-world-b-rgb) / 0.12);
+  transform: translateZ(0);
+  transition: opacity 420ms ease;
+  contain: strict;
+}
+
+.hh-galaxy-app .hgl1-workspace-3d[data-state="ready"] {
+  opacity: 1;
+}
+
+.hh-galaxy-app .hgl1-workspace-3d[data-state="fallback"] {
+  display: none;
+}
+
+.hh-galaxy-app .hgl1-workspace-3d canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  pointer-events: none;
+  touch-action: auto;
+  filter: saturate(1.08) contrast(1.03);
+}
+
+.hh-galaxy-app .hgl1-workspace-3d[data-state="ready"] ~ .hgl1-world-hero__media {
+  opacity: 0.24;
+  filter: saturate(0.82) brightness(0.74);
+  transition: opacity 420ms ease, filter 420ms ease;
+}
+
+.hh-galaxy-app .hgl1-workspace-3d[data-state="ready"] ~ .hgl1-world-constellation,
+.hh-galaxy-app .hgl1-workspace-3d[data-state="ready"] ~ .hgl1-world-orb {
+  opacity: 0.12;
+}
+
+.hh-galaxy-app[data-performance-tier="high"] .hgl1-workspace-3d[data-state="ready"] {
+  box-shadow:
+    inset 0 0 74px rgb(var(--hgl1-world-a-rgb) / 0.11),
+    0 0 54px rgb(var(--hgl1-world-b-rgb) / 0.16);
+}
+
+.hh-galaxy-app[data-performance-tier="low"] .hgl1-workspace-3d canvas,
+.hh-galaxy-app[data-effects="quiet"] .hgl1-workspace-3d canvas {
+  filter: none;
+}
+
+@media (max-width: 767px) {
+  .hh-galaxy-app .hgl1-workspace-3d {
+    border-radius: 15px;
+  }
+
+  .hh-galaxy-app .hgl1-workspace-3d[data-state="ready"] ~ .hgl1-world-hero__media {
+    opacity: 0.18;
+  }
+}
+
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-workspace-3d,
+.hh-galaxy-app[data-reduced-motion="on"] .hgl1-workspace-3d ~ .hgl1-world-hero__media {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hh-galaxy-app .hgl1-workspace-3d,
+  .hh-galaxy-app .hgl1-workspace-3d ~ .hgl1-world-hero__media {
+    transition: none !important;
+  }
+}
+
+@media (forced-colors: active), print {
+  .hh-galaxy-app .hgl1-workspace-3d {
+    display: none !important;
+  }
+}
+
 /* Layer One utility results: keep generated content readable, bounded and
    visually consistent with the active planet without leaking styles outside
    the shell. */

@@ -2,7 +2,7 @@
 
 ## Phạm vi
 
-Thế giới 3D chỉ thay bản đồ `/home` của HH Galaxy trong khung HH Platform. Header, sidebar, breadcrumb, đăng nhập, Solar Secret, quyền Admin và các workspace hiện có không bị thay thế.
+Thế giới 3D thay bản đồ `/home` và bổ sung một cảnh WebGL nhận diện cho từng workspace HH Galaxy trong khung HH Platform. Các bảng công cụ vẫn là UI 2D ổn định để giữ khả năng đọc và thao tác. Header, sidebar, breadcrumb, đăng nhập, Solar Secret, quyền Admin và chức năng workspace hiện có không bị thay thế.
 
 Danh sách hệ lấy từ `HHGalaxyLayerOne.routeManifest`; các trạm/công cụ lấy từ `HHGalaxyShell.routeManifest`. Mục Admin bị loại khỏi bản đồ công khai. Không có hành tinh, số người dùng, tiến độ hay trạng thái nhà cung cấp được tạo giả.
 
@@ -42,3 +42,11 @@ Kiểm thử trực tiếp ở viewport 375px xác nhận không tràn ngang, da
 - Thêm điều hướng bàn phím bằng mũi tên, Home và End giữa các thẻ điểm đến; focus vẫn cập nhật inspector và Enter mở đúng workspace.
 - Làm rõ trạng thái hover/focus bằng scale chuyển động nhẹ và quầng sáng hành tinh; nền sao có shimmer rất chậm để tăng chiều sâu mà không tạo renderer hoặc RAF thứ hai.
 - CSS search và directory giữ responsive ở mobile, reduced-motion và forced-colors; không khóa cuộn, không thêm overlay và không chặn pointer-events của lớp trang trí.
+
+## Vòng hoàn thiện v1023
+
+- Mười một workspace chức năng ngoài `/home` có một thế giới WebGL thủ tục riêng: vật liệu hành tinh bằng shader, khí quyển Fresnel, vành đai, ba vệ tinh, đường quỹ đạo, sao nền và hai nguồn sáng theo màu nhận diện của route.
+- `/home` tiếp tục dùng Living Universe tương tác hiện có. Khi mở workspace, chỉ renderer của workspace hiện tại được tạo; đổi route hoặc unmount sẽ hủy animation frame, observer, geometry, material, texture và WebGL context cũ.
+- Chất lượng thấp/cân bằng/cao thay đổi DPR, mật độ sao và độ phân giải geometry theo thiết bị và chế độ tiết kiệm dữ liệu. Tab ẩn hoặc cảnh ngoài viewport không tiếp tục render; reduced-motion giữ một khung 3D tĩnh.
+- Ảnh cổng cục bộ hiện có luôn nằm dưới canvas để hiển thị ngay lúc tải và tự trở thành fallback nếu WebGL/context không khả dụng. Canvas chỉ mang tính trang trí, `pointer-events: none`, không che điều khiển hoặc thay đổi chức năng workspace.
+- Không tải thêm ảnh, texture, mã hoặc dịch vụ bên ngoài. Artwork mới là shader/geometry gốc của dự án và dùng bản Three.js MIT đã có trong repository.
