@@ -164,6 +164,13 @@
       paintCards(); sync(); if (view === 'map') void loadRenderer();
     }
     host.addEventListener('hh:galaxy:universe-view', event => setView(event.detail?.view), { signal });
+    // Give the mode switch a single event owner. Some shell/accessibility
+    // activation paths bubble through more than one delegated control layer.
+    query('[data-glu-action="interact"]').addEventListener('click', event => {
+      event.stopPropagation();
+      interactive = !interactive;
+      sync();
+    }, { signal });
     root.addEventListener('click', event => {
       const button = event.target.closest('button,a'); if (!button || !root.contains(button)) return;
       if (button.dataset.gluSelect) { select(button.dataset.gluSelect, true); return; }
@@ -185,7 +192,6 @@
       switch (button.dataset.gluAction) {
         case 'overview': state.overviewCamera = { yaw: 0.22, pitch: 0.78, distance: 60 }; setSystem(''); break;
         case 'back': setSystem(''); break;
-        case 'interact': interactive = !interactive; sync(); break;
         case 'pause': state.paused = !state.paused; sync(); save(); break;
         case 'zoom-in': renderer?.zoom(-6); save(); break;
         case 'zoom-out': renderer?.zoom(6); save(); break;

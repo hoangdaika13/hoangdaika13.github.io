@@ -305,7 +305,7 @@ test("the eleven function worlds render one verified local hero image each", () 
 });
 
 test("portal art is release-versioned and remains runtime-cached instead of install-preloaded", () => {
-  const loaderVersion = indexSource.match(/<script\b[^>]*src="performance-loader\.js\?v=(\d+)"/i)?.[1];
+  const loaderVersion = indexSource.match(/<script\b[^>]*\ssrc="performance-loader\.js\?v=(\d+)"/i)?.[1];
   const layerVersion = loaderSource.match(/"galaxy-layer-one\.js\?v=(\d+)"/)?.[1];
   const worldsVersion = loaderSource.match(/"galaxy-layer-one-worlds\.css\?v=(\d+)"/)?.[1];
   assert.ok(loaderVersion, "index must load a versioned performance loader");

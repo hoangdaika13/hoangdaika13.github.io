@@ -60,6 +60,7 @@ test('renderer and UI implement one lifecycle-owned scene with accessible fallba
   assert.match(source, /prefers-reduced-motion/);
   assert.match(source, /forced-colors/);
   assert.match(source, /hh:galaxy:universe-view/);
+  assert.match(source, /data-glu-action="interact"[\s\S]*?addEventListener\('click'[\s\S]*?event\.stopPropagation\(\)[\s\S]*?interactive = !interactive/);
   assert.match(renderer, /new T\.WebGLRenderer/);
   assert.equal((renderer.match(/new T\.WebGLRenderer/g) || []).length, 1);
   assert.match(renderer, /requestAnimationFrame/);

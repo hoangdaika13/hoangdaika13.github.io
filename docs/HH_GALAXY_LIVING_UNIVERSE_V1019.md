@@ -23,3 +23,7 @@ Chỉ có một `WebGLRenderer`, một canvas và một RAF thuộc vòng đời
 Toàn bộ mặt trời plasma, hành tinh, khí quyển, vành đai, quỹ đạo, sao, tinh vân và sao băng được dựng bằng shader/geometry thủ tục viết cho dự án; không có ảnh, texture hoặc mã tải từ website bên ngoài.
 
 Renderer dùng bản Three.js đã có trong repository. Three.js được phát hành theo giấy phép MIT; bản quyền và toàn văn giấy phép nằm tại `vendor/THREE-LICENSE.txt`.
+
+## Vòng hoàn thiện v1020
+
+Kiểm thử trực tiếp ở viewport 375px xác nhận không tràn ngang, danh sách thay thế hoạt động và renderer Cân bằng đạt khoảng 58,6 FPS trong phiên đo cục bộ. Nút **Điều khiển 3D** được tách thành một event owner duy nhất để chuột, cảm ứng và bàn phím không kích hoạt trùng qua các lớp điều khiển của shell.
