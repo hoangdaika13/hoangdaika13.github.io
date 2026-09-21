@@ -27,3 +27,11 @@ Renderer dùng bản Three.js đã có trong repository. Three.js được phát
 ## Vòng hoàn thiện v1020
 
 Kiểm thử trực tiếp ở viewport 375px xác nhận không tràn ngang, danh sách thay thế hoạt động và renderer Cân bằng đạt khoảng 58,6 FPS trong phiên đo cục bộ. Nút **Điều khiển 3D** được tách thành một event owner duy nhất để chuột, cảm ứng và bàn phím không kích hoạt trùng qua các lớp điều khiển của shell.
+
+## Vòng hoàn thiện v1021
+
+- Nâng cấp shader hành tinh theo hướng vật liệu điện ảnh: nhiễu macro/detail, roughness/specular khác nhau theo nhóm đá, khí gas, băng và kim loại; thêm Fresnel, wrap-light và khí quyển có nhịp sáng nhẹ.
+- Bổ sung quầng sáng chọn hành tinh, flare quanh lõi, bụi quỹ đạo chuyển động và vòng hành tinh quay chậm; tất cả vẫn dùng cùng renderer/lifecycle và tự giảm ở Economy.
+- Hover trên hành tinh hoặc focus vào thẻ điểm đến cập nhật inspector thành trạng thái “Đang xem trước”; Enter từ vùng cảnh mở đúng route đang xem trước, không làm thay đổi selection cho đến khi người dùng chọn.
+- Thêm lớp tinh vân CSS có `pointer-events: none`, tự tắt theo reduced-motion/forced-colors và không tạo overflow.
+- Không dùng texture, mã nguồn hoặc dịch vụ bên ngoài; toàn bộ hình ảnh vẫn là procedural art trong repository và Three.js MIT hiện có.

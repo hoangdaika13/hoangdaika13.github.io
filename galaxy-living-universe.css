@@ -19,9 +19,12 @@
 .glu-controls label { display:flex; align-items:center; gap:9px; color:#b8c7e3; margin:0 0 0 auto; font-size:13px; }
 .glu-controls select { padding:10px; max-width:100%; }
 .glu-workspace { display:grid; grid-template-columns:minmax(0,1fr) minmax(240px,285px); gap:16px; }
-.glu-space { border:1px solid #6372a142; border-radius:24px; overflow:hidden; min-width:0; background:#060a18; }
+.glu-space { position:relative; border:1px solid #6372a142; border-radius:24px; overflow:hidden; min-width:0; background:#060a18; box-shadow:0 24px 70px #02040d88, inset 0 1px 0 #ffffff12; }
 .glu-scene { position:relative; width:100%; height:clamp(360px,46vw,570px); min-width:0; isolation:isolate; }
-.glu-backdrop { position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse at 20% 25%,#41226240,transparent 57%),radial-gradient(ellipse at 85% 70%,#16576135,transparent 53%),linear-gradient(135deg,#060a17,#0c1128 58%,#070c1b); }
+.glu-backdrop { position:absolute; inset:0; pointer-events:none; overflow:hidden; background:radial-gradient(ellipse at 20% 25%,#41226255,transparent 57%),radial-gradient(ellipse at 85% 70%,#16576144,transparent 53%),linear-gradient(135deg,#060a17,#0c1128 58%,#070c1b); }
+.glu-backdrop::before, .glu-backdrop::after { content:""; position:absolute; pointer-events:none; border-radius:50%; filter:blur(24px); opacity:.42; mix-blend-mode:screen; }
+.glu-backdrop::before { width:48%; aspect-ratio:1; left:-12%; top:8%; background:radial-gradient(circle at 60% 45%,#b45dff66,transparent 66%); animation:glu-nebula-drift 18s ease-in-out infinite alternate; }
+.glu-backdrop::after { width:38%; aspect-ratio:1; right:-8%; bottom:-10%; background:radial-gradient(circle at 35% 35%,#42e0db55,transparent 68%); animation:glu-nebula-drift 24s ease-in-out -7s infinite alternate-reverse; }
 .glu-canvas { position:absolute; inset:0; }
 .glu-canvas canvas { display:block; width:100%; height:100%; touch-action:pan-y pinch-zoom; }
 .glu-scene-caption { position:absolute; top:20px; left:22px; right:20px; pointer-events:none; text-shadow:0 2px 10px #000; }
@@ -33,10 +36,11 @@
 .glu-scene-footer>div { display:flex; flex-wrap:wrap; gap:5px; flex:none; }
 .glu-scene-footer button { padding:8px 13px; }
 .glu[data-interactive=true] .glu-space { border-color:#8df3e2; box-shadow:0 0 0 1px #8df3e255; }
-.glu-inspector { padding:23px; border:1px solid #7972a849; border-radius:24px; background:radial-gradient(ellipse at 100% 0,#66429224,transparent 65%),linear-gradient(155deg,#141e35,#0e1427); min-width:0; }
+.glu-inspector { padding:23px; border:1px solid #7972a849; border-radius:24px; background:radial-gradient(ellipse at 100% 0,#66429224,transparent 65%),linear-gradient(155deg,#141e35,#0e1427); min-width:0; box-shadow:0 18px 55px #02040d44; }
 .glu-inspector p { font-size:14px; line-height:1.7; }
 .glu-inspector small { display:block; color:#a6b4d1; font-size:12px; margin-top:16px; }
-.glu-portrait { width:80px; height:80px; border-radius:50%; margin:25px 0; background:radial-gradient(circle at 30% 25%,#fff9,transparent 38%),repeating-linear-gradient(13deg,transparent 0 8px,#0002 10px 13px),radial-gradient(circle at 25% 25%,var(--glu-accent,#b997ff),#151832 82%); box-shadow:inset -13px -6px 18px #020613a6,0 0 36px color-mix(in srgb,var(--glu-accent,#b997ff) 20%,transparent); }
+.glu-portrait { width:80px; height:80px; border-radius:50%; margin:25px 0; background:radial-gradient(circle at 30% 25%,#fff9,transparent 38%),repeating-linear-gradient(13deg,transparent 0 8px,#0002 10px 13px),radial-gradient(circle at 25% 25%,var(--glu-accent,#b997ff),#151832 82%); box-shadow:inset -13px -6px 18px #020613a6,0 0 36px color-mix(in srgb,var(--glu-accent,#b997ff) 20%,transparent); transition:transform .35s ease, box-shadow .35s ease; }
+.glu-inspector:has(.glu-actions) .glu-portrait { transform:translateZ(0) scale(1.04); box-shadow:inset -13px -6px 18px #020613a6,0 0 48px color-mix(in srgb,var(--glu-accent,#b997ff) 34%,transparent); }
 .glu-portrait--sun { --glu-accent:#ffd79b; background:radial-gradient(circle at 30% 30%,#ffefd1,#ffbd53 48%,#d85634); box-shadow:0 0 45px #f5b96438; }
 .glu-actions { display:flex; flex-direction:column; gap:9px; }
 .glu .glu-primary { color:#091728; background:linear-gradient(100deg,#9becdc,#a7b8ff); border:0; font-weight:750; }
@@ -66,6 +70,7 @@
 .glu[data-view=list] .glu-portrait, .glu[data-view=list] .glu-legend { display:none; }
 .glu[data-view=list] .glu-actions { flex-direction:row; flex-wrap:wrap; }
 .glu[data-view=list] .glu-controls>button:is([data-glu-action=interact],[data-glu-action=zoom-in],[data-glu-action=zoom-out]) { display:none; }
+@keyframes glu-nebula-drift { from { transform:translate3d(-2%,1%,0) scale(.96); } to { transform:translate3d(8%,-5%,0) scale(1.08); } }
 [data-hh-galaxy-layer-one-host] .hgl1-page--home:has(.glu),
 [data-hh-galaxy-layer-one-host] .hgl1-page--home:has(.glu) :is(.hgl1-world-layout,.hgl1-world-main,.hgl1-delegated-host--home) { height:auto; min-height:0; }
 @media(max-width:1050px) {

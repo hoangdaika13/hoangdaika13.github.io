@@ -45,7 +45,7 @@
     if (!catalog.length) return false;
     const storage = options.storage, personal = options.personal || {};
     let raw = {}; try { raw = JSON.parse(storage?.getItem(KEY) || '{}'); } catch {}
-    let state = normalizeState(raw || {}, catalog), renderer = null, destroyed = false, loading = false, view = 'map', filter = 'all', interactive = false;
+    let state = normalizeState(raw || {}, catalog), renderer = null, destroyed = false, loading = false, view = 'map', filter = 'all', interactive = false, previewed = '';
     let visible = true, saveTimer = 0, loadToken = 0;
     const controller = new AbortController(), signal = controller.signal;
     const motionQuery = scope.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -103,9 +103,10 @@
     }
     function paintPreview() {
       const item = selected();
-      const target = item || currentSystem();
+      const hover = entries().find(entry => entry.route === previewed);
+      const target = hover || item || currentSystem();
       const canPin = target && personal.canPersonalize?.(target.route);
-      query('[data-glu-preview]').innerHTML = target ? `<span class="glu-eyebrow">${item ? 'ĐANG CHỌN' : 'HỆ HIỆN TẠI'}</span><div class="glu-portrait" style="--glu-accent:${target.color}" aria-hidden="true"></div><h3>${escape(target.title)}</h3><p>${escape(target.description)}</p><div class="glu-actions"><a class="glu-primary" href="#${escape(target.route)}" data-glu-open="${escape(target.route)}">Mở workspace ↗</a>${target.children.length ? `<button type="button" data-glu-system="${escape(target.id)}">Khám phá ${target.children.length} công cụ →</button>` : ''}<button type="button" data-glu-star="${escape(target.route)}" aria-pressed="${isFavorite(target)}" ${!target.route.startsWith('/galaxy/') && !canPin ? 'disabled title="Lưu mục cha bằng sidebar HH Platform"' : ''}>${isFavorite(target) ? '♥ Đã yêu thích' : '♡ Yêu thích'}</button>${canPin ? `<button type="button" data-glu-pin="${escape(target.route)}" aria-pressed="${(personal.getPins?.() || []).includes(target.route)}">${(personal.getPins?.() || []).includes(target.route) ? '★ Đã ghim' : '☆ Ghim sidebar'}</button>` : ''}</div><small>Công cụ mở trong khung HH Platform. Dịch vụ trực tuyến được kiểm tra tại workspace.</small>` : `<span class="glu-eyebrow">TRẠM ĐỊNH HƯỚNG</span><div class="glu-portrait glu-portrait--sun" aria-hidden="true"></div><h3>Ý tưởng bắt đầu từ đâu?</h3><p>Chạm vào một hành tinh hoặc chọn điểm đến bên dưới. Xem mô tả trước khi mở công cụ.</p><div class="glu-legend"><span><i></i> Hành tinh: vùng chức năng</span><span><i></i> Vệ tinh: công cụ trong hệ</span></div><p class="glu-small">Danh sách và bản đồ dùng cùng registry. Không có điểm đến giả.</p>`;
+      query('[data-glu-preview]').innerHTML = target ? `<span class="glu-eyebrow">${hover ? 'ĐANG XEM TRƯỚC' : item ? 'ĐANG CHỌN' : 'HỆ HIỆN TẠI'}</span><div class="glu-portrait" style="--glu-accent:${target.color}" aria-hidden="true"></div><h3>${escape(target.title)}</h3><p>${escape(target.description)}</p><div class="glu-actions"><a class="glu-primary" href="#${escape(target.route)}" data-glu-open="${escape(target.route)}">Mở workspace ↗</a>${target.children.length ? `<button type="button" data-glu-system="${escape(target.id)}">Khám phá ${target.children.length} công cụ →</button>` : ''}<button type="button" data-glu-star="${escape(target.route)}" aria-pressed="${isFavorite(target)}" ${!target.route.startsWith('/galaxy/') && !canPin ? 'disabled title="Lưu mục cha bằng sidebar HH Platform"' : ''}>${isFavorite(target) ? '♥ Đã yêu thích' : '♡ Yêu thích'}</button>${canPin ? `<button type="button" data-glu-pin="${escape(target.route)}" aria-pressed="${(personal.getPins?.() || []).includes(target.route)}">${(personal.getPins?.() || []).includes(target.route) ? '★ Đã ghim' : '☆ Ghim sidebar'}</button>` : ''}</div><small>Công cụ mở trong khung HH Platform. Dịch vụ trực tuyến được kiểm tra tại workspace.</small>` : `<span class="glu-eyebrow">TRẠM ĐỊNH HƯỚNG</span><div class="glu-portrait glu-portrait--sun" aria-hidden="true"></div><h3>Ý tưởng bắt đầu từ đâu?</h3><p>Chạm vào một hành tinh hoặc chọn điểm đến bên dưới. Xem mô tả trước khi mở công cụ.</p><div class="glu-legend"><span><i></i> Hành tinh: vùng chức năng</span><span><i></i> Vệ tinh: công cụ trong hệ</span></div><p class="glu-small">Danh sách và bản đồ dùng cùng registry. Không có điểm đến giả.</p>`;
     }
     function paintCards() {
       const recent = [...prefs().recent, ...(personal.getRecent?.() || [])];
@@ -117,6 +118,7 @@
     function select(route, focus = false) {
       if (!entries().some(item => item.route === route)) return;
       state.selected = route;
+      previewed = '';
       renderer?.select(route, motion());
       paintPreview(); paintCards(); scheduleSave();
       if (focus) query('[data-glu-open]')?.focus({ preventScroll: true });
@@ -124,7 +126,7 @@
     function setSystem(id) {
       if (id && !catalog.some(item => item.id === id && item.children.length)) return;
       if (!state.system && id) state.overviewCamera = renderer?.getCamera() || state.camera;
-      state.system = id; state.selected = ''; filter = 'all';
+      state.system = id; state.selected = ''; previewed = ''; filter = 'all';
       state.camera = id ? { yaw: 0.22, pitch: 0.78, distance: 52 } : { ...state.overviewCamera };
       updateWorld(); save();
       query('[data-glu-select]')?.focus({ preventScroll: true });
@@ -145,10 +147,10 @@
       query('[data-glu-action="retry"]').hidden = true;
       query('[data-glu-render-status]').textContent = 'Đang tải cảnh 3D trên thiết bị…';
       try {
-        const module = await import('./galaxy-universe-renderer.mjs?v=2');
+        const module = await import('./galaxy-universe-renderer.mjs?v=5');
         if (destroyed || token !== loadToken) return;
         renderer = module.mount(query('[data-glu-canvas]'), {
-          onSelect: route => select(route), onCamera: scheduleSave,
+          onSelect: route => select(route), onHover: route => { previewed = route; paintPreview(); }, onCamera: scheduleSave,
           onStatus: message => { if (!destroyed) query('[data-glu-render-status]').textContent = message; },
           onError: () => { if (!destroyed) { query('[data-glu-render-status]').textContent = 'Không có WebGL hoặc kết nối đồ họa đã mất. Danh sách bên dưới vẫn hoạt động.'; query('[data-glu-action="retry"]').hidden = false; } },
           quality: quality(), camera: state.camera
@@ -201,8 +203,16 @@
     root.addEventListener('change', event => {
       if (event.target.matches('[data-glu-quality]')) { state.quality = event.target.value; sync(); save(); notify(quality() !== state.quality ? 'Thiết bị / tiết kiệm dữ liệu: tự giới hạn ở mức Tiết kiệm.' : 'Đã áp dụng mức đồ họa.'); }
     }, { signal });
+    root.addEventListener('focusin', event => {
+      const route = event.target.closest('[data-glu-select]')?.dataset.gluSelect;
+      if (route && entries().some(item => item.route === route)) { previewed = route; paintPreview(); }
+    }, { signal });
     root.addEventListener('keydown', event => {
       if (event.key === 'Escape') { interactive = false; sync(); query('[data-glu-action="interact"]').focus({ preventScroll: true }); }
+      if ((event.key === 'Enter' || event.key === 'Return') && (event.target === scene || event.target.closest?.('[data-glu-scene]') === scene) && (previewed || state.selected)) {
+        event.preventDefault(); const target = entries().find(item => item.route === (previewed || state.selected));
+        if (target) options.navigate?.(target.route);
+      }
       if (event.target === scene && interactive && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','=','Home'].includes(event.key)) {
         event.preventDefault(); renderer?.key(event.key); scheduleSave();
       }
