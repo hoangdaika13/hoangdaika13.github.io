@@ -5554,3 +5554,77 @@
     forced-color-adjust: none;
   }
 }
+/* v1024: a single sticky 3D environment extends through the workspace.
+   Tools remain ordinary stable DOM; the scene never owns scrolling or input. */
+.hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d) {
+  position: relative;
+  isolation: isolate;
+  --hgl1-scene-height: min(78vh, 650px);
+}
+.hh-galaxy-app .hgl1-page > .hgl1-workspace-3d {
+  position: sticky;
+  inset: auto;
+  top: 0;
+  z-index: 0;
+  height: var(--hgl1-scene-height);
+  margin-bottom: calc(-1 * var(--hgl1-scene-height));
+  width: 100%;
+  border: 0;
+  border-radius: 24px;
+  box-shadow: none;
+  background: radial-gradient(ellipse at 72% 40%, rgb(var(--hgl1-world-a-rgb) / .09), transparent 62%), #060b19;
+  mask-image: linear-gradient(#000 80%, transparent);
+}
+.hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d) > :not(.hgl1-workspace-3d) {
+  position: relative;
+  z-index: 1;
+}
+.hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d[data-state="ready"]) .hgl1-world-hero {
+  background: transparent;
+  box-shadow: none;
+  border-color: rgb(var(--hgl1-world-b-rgb) / .18);
+  min-height: 380px;
+}
+.hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d[data-state="ready"]) .hgl1-world-hero::before,
+.hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d[data-state="ready"]) .hgl1-world-hero::after,
+.hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d[data-state="ready"]) .hgl1-world-hero__visual::before,
+.hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d[data-state="ready"]) .hgl1-world-hero__visual::after,
+.hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d[data-state="ready"]) .hgl1-world-hero__visual :is(.hgl1-world-hero__media,.hgl1-world-orb,.hgl1-world-constellation) {
+  display: none;
+}
+.hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d[data-state="ready"]) .hgl1-world-hero__visual {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  transform: none;
+}
+.hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d) .hgl1-world-hero__body {
+  background: rgb(8 13 31 / .91);
+  backdrop-filter: blur(12px);
+}
+.hh-galaxy-app .hgl1-scenery-controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin-top: 18px; padding-top: 14px; border-top: 1px solid #b7c5ed26;
+}
+.hh-galaxy-app .hgl1-scenery-controls label {
+  display: flex; align-items: center; gap: 8px; color: #d5dff2; font-size: 13px;
+}
+.hh-galaxy-app .hgl1-scenery-controls select {
+  min-height: 40px; max-width: 100%; padding: 7px; border: 1px solid #8999c35c;
+  border-radius: 10px; background: #111c31; color: #ecf4ff;
+}
+.hh-galaxy-app .hgl1-scenery-controls button { min-height: 40px; font-size: 13px; }
+.hh-galaxy-app .hgl1-scenery-controls [role="status"] { width:100%; color:#b6c8e3; font-size:12px; line-height:1.5; }
+.hh-galaxy-app .hgl1-scenery-controls :focus-visible { outline: 2px solid #a5f3e1; outline-offset: 4px; }
+.hh-galaxy-app[data-scenery-motion="false"] *,
+.hh-galaxy-app[data-scenery-motion="false"] *::before,
+.hh-galaxy-app[data-scenery-motion="false"] *::after { animation-play-state: paused !important; }
+@media (max-width: 767px) {
+  .hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d) { --hgl1-scene-height: 500px; }
+  .hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d[data-state="ready"]) .hgl1-world-hero__visual { min-height: 160px; height:160px; }
+  .hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d) .hgl1-world-hero__body { background: rgb(8 13 31 / .88); }
+}
+@media (forced-colors: active), print {
+  .hh-galaxy-app .hgl1-page > .hgl1-workspace-3d { display:none; }
+  .hh-galaxy-app .hgl1-page:has(> .hgl1-workspace-3d) .hgl1-world-hero__body { background:Canvas; color:CanvasText; }
+}

@@ -1377,7 +1377,8 @@
       "<div class=\"hgl1-world-hero__body" + bodyClass + "\"><span class=\"hgl1-eyebrow\">" + escapeHtml(eyebrow) + "</span>" +
       "<span class=\"hgl1-world-hero__signal\"><i aria-hidden=\"true\"></i>" + escapeHtml(experience.signal) + "</span>" +
       "<h1 id=\"hgl1-world-title-" + entry.id + "\">" + escapeHtml(title) + "</h1><p>" + escapeHtml(description) + "</p>" +
-      (actions ? "<div class=\"hgl1-page-head__actions\">" + actions + "</div>" : "") + "</div>" +
+      (actions ? "<div class=\"hgl1-page-head__actions\">" + actions + "</div>" : "") +
+      "<div class=\"hgl1-scenery-controls\" role=\"group\" aria-label=\"Đồ họa không gian\"><button type=\"button\" class=\"hgl1-button hgl1-button--ghost\" data-hgl1-action=\"pause-scenery\" aria-pressed=\"false\">Tạm dừng cảnh</button><label>Đồ họa <select data-hgl1-scenery-quality><option value=\"economy\">Tiết kiệm</option><option value=\"balanced\">Cân bằng</option><option value=\"cinematic\">Điện ảnh</option></select></label><span data-hgl1-scenery-status role=\"status\"></span></div></div>" +
       "<div class=\"hgl1-world-hero__visual" + visualClass + "\" aria-hidden=\"true\">" + workspaceScene + heroImage + "<span class=\"hgl1-world-constellation hgl1-world-constellation--" + entry.id + constellationClass + "\"><i></i><i></i><i></i><i></i><i></i><i></i></span>" +
       "<span class=\"hgl1-world-orb hgl1-world-orb--" + entry.id + orbClass + "\"><i class=\"hgl1-world-orb__ring\"></i><i class=\"hgl1-world-orb__core\"></i><i class=\"hgl1-world-orb__satellite\"></i><span class=\"hgl1-world-orb__glyph\">" + icon(entry.icon) + "</span></span>" +
       "<span class=\"hgl1-world-hero__caption\"><b>" + escapeHtml(experience.visualLabel) + "</b><small>" + escapeHtml(experience.visualHint) + "</small></span></div>" + extra + "</header>";
@@ -1872,6 +1873,39 @@
       try { owner.workspaceScene.destroy(); } catch (_) { /* WebGL context already released. */ }
     }
     owner.workspaceScene = null;
+    owner.workspaceSceneHost = null;
+  }
+
+  function sceneryPreferences(owner) {
+    const storage = globalScope.HHGalaxyCosmicStudio?.accountStorage?.(owner.storage, owner.options.user) || owner.storage;
+    let value = {};
+    try { value = JSON.parse(storage.getItem("hh.galaxy.universe.v1") || "{}"); } catch (_) { /* Defaults remain usable. */ }
+    if (!value || typeof value !== "object" || Array.isArray(value)) value = {};
+    return { storage, value, quality: ["economy", "balanced", "cinematic"].includes(value.quality) ? value.quality : "balanced", paused: value.paused === true };
+  }
+
+  function syncScenery(owner) {
+    if (!owner?.app) return;
+    const prefs = sceneryPreferences(owner);
+    const motion = workspaceSceneMotion(owner) && !prefs.paused;
+    const quality = owner.adaptiveTiers?.performanceTier === "low" ? "low" : ({ economy: "low", balanced: "mid", cinematic: "high" }[prefs.quality]);
+    owner.app.dataset.sceneryMotion = String(motion);
+    const pause = owner.app.querySelector('[data-hgl1-action="pause-scenery"]');
+    if (pause) { pause.setAttribute("aria-pressed", String(!motion)); pause.textContent = !workspaceSceneMotion(owner) ? "Đang giảm chuyển động" : prefs.paused ? "Tiếp tục cảnh" : "Tạm dừng cảnh"; pause.disabled = !workspaceSceneMotion(owner); }
+    const select = owner.app.querySelector("[data-hgl1-scenery-quality]");
+    if (select) select.value = prefs.quality;
+    const status = owner.app.querySelector("[data-hgl1-scenery-status]");
+    if (status && !status.textContent && owner.workspaceSceneHost?.dataset.state === "ready") status.textContent = "Không gian 3D · hình ảnh minh họa";
+    owner.workspaceScene?.setOptions?.({ motion, quality });
+    return { motion, quality };
+  }
+
+  function saveScenery(patch) {
+    if (!runtime) return;
+    const prefs = sceneryPreferences(runtime);
+    try { prefs.storage.setItem("hh.galaxy.universe.v1", JSON.stringify({ ...prefs.value, ...patch })); }
+    catch (_) { showToast("Chưa lưu được tùy chọn đồ họa trên thiết bị.", "error"); return; }
+    syncScenery(runtime);
   }
 
   function workspaceSceneMotion(active) {
@@ -1890,23 +1924,30 @@
   async function mountWorkspaceScene() {
     const owner = runtime;
     if (!owner || owner.route === "/home" || !owner.app) return false;
+    if (owner.workspaceScene && owner.workspaceSceneHost?.isConnected && owner.workspaceSceneHost.dataset.route === owner.route) { syncScenery(owner); return true; }
     cleanupWorkspaceScene(owner);
     const token = owner.workspaceSceneToken;
     const host = owner.app.querySelector("[data-hgl1-workspace-3d]");
     if (!host || host.dataset.route !== owner.route) return false;
+    host.closest(".hgl1-page")?.prepend(host);
+    owner.workspaceSceneHost = host;
     host.dataset.state = "loading";
+    const graphics = syncScenery(owner);
+    const status = function (message) { const node = owner.app?.querySelector("[data-hgl1-scenery-status]"); if (node) node.textContent = message; };
+    status("Đang tải không gian 3D…");
     try {
-      const module = await import("./galaxy-workspace-renderer.mjs?v=1");
+      const module = await import("./galaxy-workspace-renderer.mjs?v=2");
       if (runtime !== owner || owner.workspaceSceneToken !== token || !host.isConnected || host.dataset.route !== owner.route) return false;
       const current = function isCurrent() {
         return runtime === owner && owner.workspaceSceneToken === token && host.isConnected;
       };
       const controller = module.mount(host, {
         route: owner.route,
-        quality: owner.adaptiveTiers?.performanceTier || "mid",
-        motion: workspaceSceneMotion(owner),
-        onReady: function workspaceSceneReady() { if (current()) host.dataset.state = "ready"; },
-        onError: function workspaceSceneError() { if (current()) host.dataset.state = "fallback"; }
+        quality: graphics.quality,
+        motion: graphics.motion,
+        onReady: function workspaceSceneReady() { if (current()) { host.dataset.state = "ready"; status(graphics.quality === "low" && sceneryPreferences(owner).quality !== "economy" ? "3D Tiết kiệm theo cấu hình thiết bị · hình ảnh minh họa" : "Không gian 3D · hình ảnh minh họa"); } },
+        onStatus: status,
+        onError: function workspaceSceneError() { if (current()) { host.dataset.state = "fallback"; status("Đang dùng ảnh tĩnh. Công cụ vẫn hoạt động."); } }
       });
       if (!current()) {
         controller?.destroy?.();
@@ -1919,7 +1960,7 @@
       owner.workspaceScene = controller;
       return true;
     } catch (_) {
-      if (runtime === owner && owner.workspaceSceneToken === token && host.isConnected) host.dataset.state = "fallback";
+      if (runtime === owner && owner.workspaceSceneToken === token && host.isConnected) { host.dataset.state = "fallback"; status("Chưa tải được 3D. Đang dùng ảnh tĩnh; công cụ vẫn hoạt động."); }
       return false;
     }
   }
@@ -2334,7 +2375,8 @@
 
   function render() {
     if (!runtime) return false;
-    cleanupWorkspaceScene(runtime);
+    const preservedScene = runtime.workspaceScene && runtime.workspaceSceneHost?.dataset.route === runtime.route ? runtime.workspaceSceneHost : null;
+    if (!preservedScene) cleanupWorkspaceScene(runtime);
     runtime.workbench?.destroy?.();
     runtime.workbench = null;
     const inspection = inspectLocalState(runtime.storage);
@@ -2380,6 +2422,11 @@
     if (!preserved) {
       runtime.host.innerHTML = markup;
       runtime.app = runtime.host.querySelector(".hh-galaxy-app");
+    }
+    if (preservedScene) {
+      const placeholder = runtime.app.querySelector("[data-hgl1-workspace-3d]");
+      if (placeholder && placeholder !== preservedScene) placeholder.replaceWith(preservedScene);
+      preservedScene.closest(".hgl1-page")?.prepend(preservedScene);
     }
     applyPreferences(runtime.app, runtime.route === "/galaxy/settings" && runtime.settingsDraft ? runtime.settingsDraft : runtime.localState.settings);
     updateDrawerMode();
@@ -4075,7 +4122,7 @@
     if (status) status.textContent = dirty ? "Có thay đổi chưa lưu." : "Cấu hình đã đồng bộ với bản lưu.";
     runtime.app.querySelectorAll("[data-hgl1-action=\"save-settings\"], [data-hgl1-action=\"cancel-settings\"]").forEach(function toggleCommit(button) { button.disabled = !dirty; });
     applyPreferences(runtime.app, draft);
-    runtime.workspaceScene?.setOptions?.({ motion: workspaceSceneMotion(runtime) });
+    syncScenery(runtime);
   }
 
   function setSettingsControls(settings) {
@@ -4611,7 +4658,8 @@
     const control = event.target.closest("[data-hgl1-action]");
     if (!control) return;
     const action = control.dataset.hgl1Action;
-    if (action === "open-command") openCommandPalette();
+    if (action === "pause-scenery") saveScenery({ paused: !sceneryPreferences(runtime).paused });
+    else if (action === "open-command") openCommandPalette();
     else if (action === "open-drawer") setDrawer(true);
     else if (action === "close-drawer") setDrawer(false);
     else if (action === "open-capability") openCapability(control);
@@ -5079,6 +5127,7 @@
   function handleChange(event) {
     if (!runtime) return;
     const target = event.target;
+    if (target.matches("[data-hgl1-scenery-quality]")) { saveScenery({ quality: target.value }); return; }
     if (target.matches("[data-hgl1-media-volume], [data-hgl1-media-rate]")) {
       const session = runtime.mediaSession;
       if (!session || !session.element || session.kind === "youtube") {

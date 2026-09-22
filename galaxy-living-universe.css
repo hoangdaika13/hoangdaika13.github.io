@@ -80,6 +80,7 @@
 .glu[data-view=list] .glu-actions { flex-direction:row; flex-wrap:wrap; }
 .glu[data-view=list] .glu-controls>button:is([data-glu-action=interact],[data-glu-action=zoom-in],[data-glu-action=zoom-out]) { display:none; }
 @keyframes glu-nebula-drift { from { transform:translate3d(-2%,1%,0) scale(.96); } to { transform:translate3d(8%,-5%,0) scale(1.08); } }
+.glu[data-motion=false] *, .glu[data-motion=false] *::before, .glu[data-motion=false] *::after { animation-play-state:paused !important; }
 [data-hh-galaxy-layer-one-host] .hgl1-page--home:has(.glu),
 [data-hh-galaxy-layer-one-host] .hgl1-page--home:has(.glu) :is(.hgl1-world-layout,.hgl1-world-main,.hgl1-delegated-host--home) { height:auto; min-height:0; }
 @media(max-width:1050px) {

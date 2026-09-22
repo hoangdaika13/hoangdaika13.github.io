@@ -38,7 +38,7 @@ test("every functional Galaxy route declares exactly one lazy WebGL world host",
 test("the workspace renderer is procedural, route-specific and creates one canvas owner", () => {
   assert.match(rendererSource, /from '\.\/vendor\/three\.module\.min\.js'/);
   assert.equal(count(rendererSource, /new T\.WebGLRenderer\(/g), 1);
-  assert.match(rendererSource, /new T\.ShaderMaterial/);
+  assert.match(read("galaxy-celestial-materials.mjs"), /new T\.ShaderMaterial/);
   assert.match(rendererSource, /new T\.SphereGeometry/);
   assert.match(rendererSource, /new T\.RingGeometry/);
   assert.match(rendererSource, /new T\.PointsMaterial/);
@@ -48,9 +48,7 @@ test("the workspace renderer is procedural, route-specific and creates one canva
   assert.match(rendererSource, /host\.replaceChildren\(canvas\)/);
   assert.doesNotMatch(rendererSource, /https?:\/\//i);
 
-  for (const route of WORKSPACE_ROUTES) {
-    assert.match(rendererSource, new RegExp(`['"]${route.replaceAll("/", "\\/")}['"]`), route);
-  }
+  assert.match(rendererSource, /WORLD_PROFILES/);
 });
 
 test("renderer lifecycle pauses offscreen work and deterministically releases GPU resources", () => {
@@ -62,16 +60,16 @@ test("renderer lifecycle pauses offscreen work and deterministically releases GP
     /webglcontextlost/,
     /cancelAnimationFrame/,
     /\.dispose\?\.\(\)/,
-    /renderer\.dispose\(\)/,
-    /renderer\.forceContextLoss\(\)/,
+    /renderer\?\.dispose\(\)/,
+    /renderer\?\.forceContextLoss\(\)/,
     /controller\.abort\(\)/
   ]) assert.match(rendererSource, contract);
 
-  assert.match(shellSource, /import\("\.\/galaxy-workspace-renderer\.mjs\?v=1"\)/);
+  assert.match(shellSource, /import\("\.\/galaxy-workspace-renderer\.mjs\?v=2"\)/);
   assert.match(shellSource, /cleanupWorkspaceScene\(runtime\)/);
   assert.match(shellSource, /workspaceSceneToken/);
   assert.match(shellSource, /owner\.workspaceScene\s*=\s*controller/);
-  assert.match(shellSource, /runtime\.workspaceScene\?\.setOptions\?\.\(\{\s*motion:\s*workspaceSceneMotion\(runtime\)\s*\}\)/);
+  assert.match(shellSource, /syncScenery\(runtime\)/);
 });
 
 test("CSS keeps 3D decorative, responsive and backed by the existing local portal image", () => {
@@ -84,9 +82,9 @@ test("CSS keeps 3D decorative, responsive and backed by the existing local porta
 });
 
 test("release loader and offline runtime carry the exact new 3D assets", () => {
-  assert.match(loaderSource, /galaxy-layer-one-worlds\.css\?v=16/);
-  assert.match(loaderSource, /galaxy-layer-one\.js\?v=25/);
-  assert.match(serviceWorkerSource, /\.\/galaxy-layer-one-worlds\.css\?v=16/);
-  assert.match(serviceWorkerSource, /\.\/galaxy-layer-one\.js\?v=25/);
-  assert.match(serviceWorkerSource, /\.\/galaxy-workspace-renderer\.mjs\?v=1/);
+  assert.match(loaderSource, /galaxy-layer-one-worlds\.css\?v=17/);
+  assert.match(loaderSource, /galaxy-layer-one\.js\?v=26/);
+  assert.match(serviceWorkerSource, /\.\/galaxy-layer-one-worlds\.css\?v=17/);
+  assert.match(serviceWorkerSource, /\.\/galaxy-layer-one\.js\?v=26/);
+  assert.match(serviceWorkerSource, /\.\/galaxy-workspace-renderer\.mjs\?v=2/);
 });

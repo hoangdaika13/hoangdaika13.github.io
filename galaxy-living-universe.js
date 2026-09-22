@@ -93,6 +93,8 @@
     function sync() {
       root.dataset.view = view;
       root.dataset.interactive = String(interactive);
+      root.dataset.motion = String(active() && motion());
+      root.closest('.hh-galaxy-app')?.setAttribute('data-scenery-motion', String(active() && motion()));
       query('[data-glu-action="interact"]').setAttribute('aria-pressed', String(interactive));
       query('[data-glu-action="interact"]').textContent = interactive ? 'Thoát 3D · Esc' : 'Điều khiển 3D';
       query('[data-glu-action="pause"]').setAttribute('aria-pressed', String(!motion()));
@@ -152,7 +154,7 @@
       query('[data-glu-action="retry"]').hidden = true;
       query('[data-glu-render-status]').textContent = 'Đang tải cảnh 3D trên thiết bị…';
       try {
-        const module = await import('./galaxy-universe-renderer.mjs?v=6');
+        const module = await import('./galaxy-universe-renderer.mjs?v=7');
         if (destroyed || token !== loadToken) return;
         renderer = module.mount(query('[data-glu-canvas]'), {
           onSelect: route => select(route), onHover: route => { previewed = route; paintPreview(); }, onCamera: scheduleSave,
@@ -216,7 +218,7 @@
     }, { signal });
     root.addEventListener('focusin', event => {
       const route = event.target.closest('[data-glu-select]')?.dataset.gluSelect;
-      if (route && entries().some(item => item.route === route)) { previewed = route; paintPreview(); }
+      if (route && entries().some(item => item.route === route)) { previewed = route; renderer?.preview?.(route); paintPreview(); }
     }, { signal });
     root.addEventListener('keydown', event => {
       if (event.key === 'Escape') {

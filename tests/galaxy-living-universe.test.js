@@ -54,7 +54,7 @@ test('renderer and UI implement one lifecycle-owned scene with accessible fallba
   const source = read('galaxy-living-universe.js');
   const renderer = read('galaxy-universe-renderer.mjs');
   const css = read('galaxy-living-universe.css');
-  assert.match(source, /import\('\.\/galaxy-universe-renderer\.mjs\?v=6'\)/);
+  assert.match(source, /import\('\.\/galaxy-universe-renderer\.mjs\?v=7'\)/);
   assert.match(source, /IntersectionObserver/);
   assert.match(source, /visibilitychange/);
   assert.match(source, /prefers-reduced-motion/);
@@ -73,7 +73,7 @@ test('renderer and UI implement one lifecycle-owned scene with accessible fallba
   assert.match(renderer, /forceContextLoss/);
   assert.match(renderer, /webglcontextlost/);
   assert.match(renderer, /\.dispose\(\)/);
-  assert.match(renderer, /atmosphereFragment/);
+  assert.match(read('galaxy-celestial-materials.mjs'), /atmosphereFragment/);
   assert.match(renderer, /sunFlares/);
   assert.match(renderer, /dustBelts/);
   assert.match(renderer, /options\.onHover/);
