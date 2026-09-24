@@ -49,3 +49,11 @@ test('every landmark builds finite real geometry within a bounded object budget'
   for(const asset of assets)asset.dispose?.();
  }
 });
+test('repeated rocks and station modules use one instanced draw with distinct finite transforms',()=>{
+ for(const [id,count] of [['games',14],['settings',8]]){
+  const assets=new Set(),group=buildLandmark(WORLD_PROFILES[id],a=>{assets.add(a);return a;});
+  const meshes=group.children.filter(n=>n.isInstancedMesh);assert.equal(meshes.length,1);assert.equal(meshes[0].count,count);
+  const positions=new Set();for(let i=0;i<count;i++){const matrix=new T.Matrix4();meshes[0].getMatrixAt(i,matrix);assert.ok(matrix.elements.every(Number.isFinite));assert.ok(Math.abs(matrix.determinant())>.01);positions.add(matrix.elements.slice(12,15).join(','));}
+  assert.equal(positions.size,count);assets.forEach(a=>a.dispose());
+ }
+});

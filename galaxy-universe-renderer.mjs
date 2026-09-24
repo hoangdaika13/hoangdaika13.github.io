@@ -1,6 +1,7 @@
 // Original procedural artwork. One disposable WebGL renderer for the Galaxy map.
 import * as T from './vendor/three.module.min.js';
-import { vertex, noise, surfaceMaterial, atmosphereMaterial, cloudMaterial, ringMaterial, profileFor, damp, orbitPosition } from './galaxy-celestial-materials.mjs?v=2';
+import { vertex, noise, surfaceMaterial, atmosphereMaterial, cloudMaterial, ringMaterial, profileFor, damp, orbitPosition } from './galaxy-celestial-materials.mjs?v=3';
+import { createDeepSpace } from './galaxy-deep-space.mjs?v=1';
 
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const sunFragment = `${noise} uniform float time; varying vec3 vLocal; varying vec3 vNormal; varying vec3 vPosition;
@@ -30,12 +31,12 @@ export function mount(host, options = {}) {
   let nodes = [], meshes = [], worldAssets = new Set(), sharedAssets = new Set();
   let active = false, motion = true, interactive = false, destroyed = false, lost = false, quality = options.quality || 'balanced';
   let frameId = 0, last = 0, elapsed = 0, hovered = '', lastHover = '', selected = '', dirty = true;
-  let frames = 0, sampleMs = 0, slowSamples = 0, frameTotal = 0, autoEconomy = false;
-  let starfield, sun, corona, nebulae = [], meteor, sunFlares = [], dustBelts = [];
+  let frames = 0, sampleMs = 0, slowSamples = 0, frameTotal = 0, requestedQuality = quality;
+  let sky, sun, corona, meteor, sunFlares = [], dustBelts = [];
   const pointers = new Map(); let gesture = null, pinchDistance = 0;
   const controller = new AbortController(), signal = controller.signal;
   const register = (asset, shared = false) => { (shared ? sharedAssets : worldAssets).add(asset); return asset; };
-  const settings = () => ({ dpr: quality === 'cinematic' ? 1.65 : quality === 'balanced' ? 1.3 : 1, stars: quality === 'cinematic' ? 1800 : quality === 'balanced' ? 950 : 350 });
+  const settings = () => ({ dpr: quality === 'cinematic' ? 1.65 : quality === 'balanced' ? 1.3 : 1 });
   let seed = 8921;
   const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   function glowTexture() {
@@ -49,21 +50,7 @@ export function mount(host, options = {}) {
   const sphere = register(new T.SphereGeometry(1,40,28), true);
   const glow = glowTexture();
   function makeBackground() {
-    const positions = [], colors = [];
-    for (let i=0;i<1800;i++) {
-      const theta=random()*Math.PI*2, y=random()*2-1, radius=80+random()*45;
-      const x=Math.sqrt(1-y*y);
-      positions.push(Math.cos(theta)*x*radius,y*radius,Math.sin(theta)*x*radius);
-      const color=new T.Color().setHSL(.52+random()*.2,.18+random()*.28,.5+random()*.35);
-      colors.push(color.r,color.g,color.b);
-    }
-    const geo=register(new T.BufferGeometry(),true);
-    geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));geo.setAttribute('color',new T.Float32BufferAttribute(colors,3));
-    starfield=new T.Points(geo,register(new T.PointsMaterial({size:.24,map:glow,vertexColors:true,transparent:true,depthWrite:false,blending:T.AdditiveBlending}),true));scene.add(starfield);
-    for(let i=0;i<9;i++){
-      const mat=register(new T.SpriteMaterial({map:glow,color:i%2?'#543586':'#195b78',transparent:true,opacity:.25,depthWrite:false,blending:T.AdditiveBlending}),true);
-      const sprite=new T.Sprite(mat);sprite.position.set((i-4)*17,-12+(i%3)*8,-57-Math.sin(i)*12);sprite.scale.set(76,42,1);scene.add(sprite);nebulae.push(sprite);
-    }
+    sky=createDeepSpace(asset=>register(asset,true));scene.add(sky.group);
     const meteorGeo=register(new T.BufferGeometry().setFromPoints([new T.Vector3(0,0,0),new T.Vector3(-3,.8,0)]),true);
     meteor=new T.Line(meteorGeo,register(new T.LineBasicMaterial({color:'#bce9ff',transparent:true,opacity:0,depthWrite:false}),true));scene.add(meteor);
   }
@@ -76,7 +63,7 @@ export function mount(host, options = {}) {
     body.rotation.z=profile.tilt;
     const atmo=new T.Mesh(sphere,register(atmosphereMaterial(profile.accent)));
     atmo.scale.setScalar(radius*1.07);group.add(atmo);
-    const halo=new T.Sprite(register(new T.SpriteMaterial({map:glow,color:entry.color,transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending})));
+    const halo=new T.Sprite(register(new T.SpriteMaterial({map:glow,color:entry.color,transparent:true,opacity:.14,depthWrite:false,blending:T.AdditiveBlending})));
     halo.scale.set(radius*3.3,radius*3.3,1);halo.renderOrder=-1;group.add(halo);
     const clouds=profile.kind===0?new T.Mesh(sphere,register(cloudMaterial(index*7.13+1))):null;
     if(clouds){clouds.scale.setScalar(radius*1.025);clouds.rotation.z=profile.tilt;group.add(clouds);}
@@ -110,11 +97,12 @@ export function mount(host, options = {}) {
       flare.position.set((i-1)*2.2,(i%2-.5)*1.6,-.6);flare.scale.set(8+i*3,3+i*2,1);world.add(flare);sunFlares.push(flare);
     }
     entries.forEach((entry,index)=>nodes.push(makePlanet(entry,index,1.1+(index%4)*.23)));
-    const orbits=[...new Set(nodes.map(node=>node.orbit))];
+    sky.setPalette(system?.color||'#6253a1',system?profileFor(system.route).accent:'#438baf');
+    const orbits=[...new Set(nodes.map(node=>node.orbit))], orbitPoints=[];
     orbits.forEach(radius=>{
-      const points=Array.from({length:160},(_,i)=>{const angle=i/160*Math.PI*2;return new T.Vector3(Math.cos(angle)*radius,0,Math.sin(angle)*radius);});
-      const line=new T.LineLoop(register(new T.BufferGeometry().setFromPoints(points)),register(new T.LineBasicMaterial({color:system?.color||'#8886c5',transparent:true,opacity:.14})));world.add(line);
+      for(let i=0;i<160;i++){const a=i/160*Math.PI*2,b=(i+1)/160*Math.PI*2;orbitPoints.push(new T.Vector3(Math.cos(a)*radius,0,Math.sin(a)*radius),new T.Vector3(Math.cos(b)*radius,0,Math.sin(b)*radius));}
     });
+    world.add(new T.LineSegments(register(new T.BufferGeometry().setFromPoints(orbitPoints)),register(new T.LineBasicMaterial({color:system?.color||'#8886c5',transparent:true,opacity:.14}))));
     // Orbit dust is one draw call, not a canvas per object.
     const dust=[];for(let i=0;i<500;i++){const a=random()*Math.PI*2,r=6+random()*1.5;dust.push(Math.cos(a)*r,(random()-.5)*.9,Math.sin(a)*r);}
     const dg=register(new T.BufferGeometry());dg.setAttribute('position',new T.Float32BufferAttribute(dust,3));
@@ -125,11 +113,11 @@ export function mount(host, options = {}) {
     if(destroyed||lost)return;
     const box=host.getBoundingClientRect();if(!box.width||!box.height)return;
     renderer.setPixelRatio(Math.min(win.devicePixelRatio||1,settings().dpr));
+    sky.setPixelRatio(Math.min(win.devicePixelRatio||1,settings().dpr));
     renderer.setSize(box.width,box.height,false);camera.aspect=box.width/box.height;camera.updateProjectionMatrix();invalidate();
   }
   function applyQuality(){
-    starfield.geometry.setDrawRange(0,settings().stars);
-    nebulae.forEach((sprite,index)=>sprite.visible=quality!=='economy'||index<3);
+    sky.setQuality(quality);
     nodes.forEach(node=>{node.atmo.visible=quality!=='economy';if(node.clouds)node.clouds.visible=quality!=='economy';node.moon.visible=quality!=='economy';node.halo.visible=quality==='cinematic'&&node.entry.route===selected;});
     const dust=world.getObjectByName('dust');if(dust)dust.visible=quality!=='economy';resize();
   }
@@ -178,12 +166,11 @@ export function mount(host, options = {}) {
         node.material.uniforms.time.value=elapsed;
         node.atmo.material.uniforms.time.value=elapsed;
       });
-      if(starfield&&motion){starfield.rotation.y=elapsed*.0018;starfield.rotation.x=Math.sin(elapsed*.018)*.012;starfield.material.opacity=.86+Math.sin(elapsed*.7)*.08;}
+      sky.update(elapsed);
       if(sun){sun.material.uniforms.time.value=elapsed;sun.rotation.y=elapsed*.022;}
       if(corona)corona.material.rotation=elapsed*.025;
       sunFlares.forEach((flare,index)=>{flare.material.opacity=(quality==='economy'?.06:.11)+Math.sin(elapsed*(.16+index*.05)+index)*.035;flare.material.rotation=elapsed*(.018+index*.009);});
       dustBelts.forEach((belt,index)=>{if(motion)belt.rotation.y=elapsed*(.012+index*.003);});
-      nebulae.forEach((sprite,index)=>sprite.material.rotation=Math.sin(elapsed*.008+index)*.12);
       const streak=elapsed%29;meteor.visible=motion&&quality==='cinematic'&&streak>25&&streak<26.5;
       if(meteor.visible){meteor.position.set(30-(streak-25)*25,20-(streak-25)*5,-25);meteor.material.opacity=Math.sin((streak-25)/1.5*Math.PI)*.55;}
       updateCamera(delta);renderer.render(scene,camera);frameTotal++;dirty=false;
@@ -199,27 +186,28 @@ export function mount(host, options = {}) {
       if(sampleMs>=2500){
         const fps=frames*1000/sampleMs;canvas.dataset.fps=fps.toFixed(1);
         slowSamples=fps<25 ? slowSamples+1:0;
-        if(slowSamples>=2 && quality!=='economy'){autoEconomy=true;quality='economy';applyQuality();options.onStatus?.('Tự giảm xuống Tiết kiệm do khung hình chậm.');}
+        if(slowSamples>=2 && quality!=='economy'){quality='economy';applyQuality();options.onStatus?.('Tự giảm xuống Tiết kiệm do khung hình chậm.');}
         frames=0;sampleMs=0;
       }
     } else if(raw > 120) {
       frames=0;sampleMs=0;slowSamples=0;
     }
     canvas.dataset.quality=quality;
-    if(motion||lookAt.distanceToSquared(aim)>.00001)frameId=win.requestAnimationFrame(tick);
+    if(!frameId&&(motion||lookAt.distanceToSquared(aim)>.00001))frameId=win.requestAnimationFrame(tick);
   }
   function invalidate(){dirty=true;if(active&&!frameId&&!destroyed&&!lost)frameId=win.requestAnimationFrame(tick);}
-  function setOptions(next){
-    active=!!next.active;motion=!!next.motion;interactive=!!next.interactive;
-    if(next.quality!==quality&&!autoEconomy){quality=next.quality;applyQuality();}
+  function setOptions(next={}){
+    if('active'in next)active=!!next.active;if('motion'in next)motion=!!next.motion;if('interactive'in next)interactive=!!next.interactive;
+    if(next.quality&&next.quality!==requestedQuality){quality=next.quality;requestedQuality=quality;slowSamples=0;applyQuality();}
     canvas.style.touchAction=interactive?'none':'pan-y pinch-zoom';
     canvas.dataset.running=String(active&&motion);
     if(!interactive)cancelGesture();
     if(!active){if(frameId)win.cancelAnimationFrame(frameId);frameId=0;last=0;}else invalidate();
   }
   function zoom(amount){cameraState.distance=clamp((focusDistance||cameraState.distance)+amount,25,95);focusDistance=0;invalidate();options.onCamera?.();}
+  function resetCamera(){focusDistance=0;aim.set(0,0,0);setCamera({yaw:.22,pitch:.78,distance:60});options.onCamera?.();}
   function key(value){
-    if(value==='Home'){focusDistance=0;aim.set(0,0,0);setCamera({yaw:.22,pitch:.78,distance:60});}
+    if(value==='Home'){resetCamera();return;}
     else if(['+','=','-'].includes(value))zoom(value==='-'?4:-4);
     else {aim.copy(lookAt);cameraState.yaw=clamp(cameraState.yaw+(value==='ArrowLeft'?-.08:value==='ArrowRight'?.08:0),-Math.PI,Math.PI);cameraState.pitch=clamp(cameraState.pitch+(value==='ArrowUp'?.06:value==='ArrowDown'?-.06:0),.24,1.35);invalidate();}
     options.onCamera?.();
@@ -228,7 +216,7 @@ export function mount(host, options = {}) {
   function cancelGesture(){for(const id of pointers.keys()){try{canvas.releasePointerCapture(id);}catch{}}pointers.clear();gesture=null;pinchDistance=0;}
   canvas.addEventListener('pointerdown',event=>{
     if(event.button!==0)return;
-    if(interactive) canvas.parentElement?.focus({preventScroll:true});
+    if(interactive) (canvas.closest('[data-glu-scene]')||host).focus({preventScroll:true});
     if(interactive)canvas.setPointerCapture(event.pointerId);
     pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
     if(pointers.size===1)gesture={x:event.clientX,y:event.clientY,lastX:event.clientX,lastY:event.clientY,moved:false};
@@ -250,20 +238,21 @@ export function mount(host, options = {}) {
     }
   },{signal});
   canvas.addEventListener('pointerup',event=>{
-    const moved=gesture?.moved||Math.hypot(event.clientX-(gesture?.x||0),event.clientY-(gesture?.y||0))>6;
+    if(!pointers.has(event.pointerId)||!gesture)return;
+    const moved=gesture.moved||Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)>6;
     if(!moved){const route=hit(event);if(route)options.onSelect?.(route);}
     cancelGesture();options.onCamera?.();
   },{signal});
   canvas.addEventListener('pointercancel',cancelGesture,{signal});
-  canvas.addEventListener('pointerleave',()=>{hovered='';lastHover='';options.onHover?.('');if(!interactive)cancelGesture();},{signal});
+  canvas.addEventListener('pointerleave',()=>{hovered='';lastHover='';options.onHover?.('');invalidate();if(!interactive)cancelGesture();},{signal});
   canvas.addEventListener('wheel',event=>{if(!interactive)return;event.preventDefault();aim.copy(lookAt);zoom(clamp(event.deltaY,-100,100)*.04);},{signal,passive:false});
-  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();lost=true;if(frameId)win.cancelAnimationFrame(frameId);frameId=0;canvas.dataset.running='false';options.onError?.();},{signal});
+  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();lost=true;cancelGesture();if(frameId)win.cancelAnimationFrame(frameId);frameId=0;canvas.dataset.running='false';options.onError?.();},{signal});
   // Recreate explicitly via Retry after a context loss; never leave two contexts alive.
   canvas.addEventListener('webglcontextrestored',()=>options.onError?.(),{signal});
   const observer=new win.ResizeObserver(resize);observer.observe(host);
   options.onStatus?.('Cảnh 3D sẵn sàng · chọn hành tinh hoặc điểm đến bên dưới.');
   return {
-    setWorld,setCamera,select,preview,setOptions,zoom,key,getCamera:()=>({...cameraState}),
+    setWorld,setCamera,select,preview,setOptions,zoom,key,resetCamera,getCamera:()=>({...cameraState}),
     destroy(){
       if(destroyed)return;destroyed=true;controller.abort();cancelGesture();observer.disconnect();if(frameId)win.cancelAnimationFrame(frameId);frameId=0;
       clearWorld();sharedAssets.forEach(asset=>asset.dispose());sharedAssets.clear();scene.clear();renderer.dispose();renderer.forceContextLoss();canvas.remove();

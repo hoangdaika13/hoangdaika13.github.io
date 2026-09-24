@@ -56,6 +56,7 @@
       <header class="glu-intro"><div><span class="glu-eyebrow">A LIVING CREATIVE UNIVERSE</span><h2 id="glu-title">Một thiên hà. Vô vàn ý tưởng.</h2><p>Chọn một hành tinh để khám phá; chỉ mở công cụ khi bạn sẵn sàng.</p></div><span class="glu-count">${catalog.length} vùng chức năng<br><small>Từ registry hiện có</small></span></header>
       <div class="glu-controls" role="group" aria-label="Điều khiển thế giới Galaxy">
         <button type="button" data-glu-action="overview">◎ Toàn cảnh</button><button type="button" data-glu-action="back" disabled>← Hệ trước</button>
+        <button type="button" data-glu-action="reset-camera">↺ Đặt lại góc nhìn</button>
         <button type="button" data-glu-action="interact" aria-pressed="false">Điều khiển 3D</button>
         <button type="button" data-glu-action="pause" aria-pressed="false">Tạm dừng chuyển động</button>
         <label>Đồ họa <select data-glu-quality aria-label="Chất lượng đồ họa"><option value="economy">Tiết kiệm</option><option value="balanced">Cân bằng</option><option value="cinematic">Điện ảnh</option></select></label>
@@ -102,6 +103,7 @@
       query('[data-glu-action="pause"]').disabled = !!motionQuery?.matches;
       query('[data-glu-quality]').value = state.quality;
       query('[data-glu-action="back"]').disabled = !state.system;
+      query('[data-glu-action="reset-camera"]').disabled = !renderer || view !== 'map' || !query('[data-glu-action="retry"]').hidden;
       renderer?.setOptions({ active: active(), motion: motion(), interactive, quality: quality() });
       if (contrastQuery?.matches) query('[data-glu-render-status]').textContent = 'Chế độ tương phản cao · sử dụng các điểm đến bên dưới.';
     }
@@ -154,18 +156,19 @@
       query('[data-glu-action="retry"]').hidden = true;
       query('[data-glu-render-status]').textContent = 'Đang tải cảnh 3D trên thiết bị…';
       try {
-        const module = await import('./galaxy-universe-renderer.mjs?v=7');
+        const module = await import('./galaxy-universe-renderer.mjs?v=8');
         if (destroyed || token !== loadToken) return;
         renderer = module.mount(query('[data-glu-canvas]'), {
           onSelect: route => select(route), onHover: route => { previewed = route; paintPreview(); }, onCamera: scheduleSave,
           onStatus: message => { if (!destroyed) query('[data-glu-render-status]').textContent = message; },
-          onError: () => { if (!destroyed) { query('[data-glu-render-status]').textContent = 'Không có WebGL hoặc kết nối đồ họa đã mất. Danh sách bên dưới vẫn hoạt động.'; query('[data-glu-action="retry"]').hidden = false; } },
+          onError: () => { if (!destroyed) { query('[data-glu-render-status]').textContent = 'Không có WebGL hoặc kết nối đồ họa đã mất. Danh sách bên dưới vẫn hoạt động.'; query('[data-glu-action="retry"]').hidden = false; query('[data-glu-action="reset-camera"]').disabled = true; } },
           quality: quality(), camera: state.camera
         });
         updateWorld();
       } catch {
         query('[data-glu-render-status]').textContent = 'Chưa tải được 3D. Chọn điểm đến bên dưới hoặc thử lại.';
         query('[data-glu-action="retry"]').hidden = false;
+        query('[data-glu-action="reset-camera"]').disabled = true;
       } finally { loading = false; }
     }
     function setView(next) {
@@ -202,6 +205,7 @@
       switch (button.dataset.gluAction) {
         case 'overview': state.overviewCamera = { yaw: 0.22, pitch: 0.78, distance: 60 }; setSystem(''); break;
         case 'back': setSystem(''); break;
+        case 'reset-camera': renderer?.resetCamera(); save(); notify('Đã đặt lại góc nhìn; vẫn giữ hệ hành tinh và điểm đến đang chọn.'); break;
         case 'pause': state.paused = !state.paused; sync(); save(); break;
         case 'zoom-in': renderer?.zoom(-6); save(); break;
         case 'zoom-out': renderer?.zoom(6); save(); break;
@@ -219,6 +223,12 @@
     root.addEventListener('focusin', event => {
       const route = event.target.closest('[data-glu-select]')?.dataset.gluSelect;
       if (route && entries().some(item => item.route === route)) { previewed = route; renderer?.preview?.(route); paintPreview(); }
+      else if (previewed && !event.target.closest('[data-glu-preview]')) { previewed = ''; renderer?.preview?.(''); paintPreview(); }
+    }, { signal });
+    root.addEventListener('focusout', event => {
+      // Do not replace the inspector link while focus moves onto it for activation.
+      if (root.contains(event.relatedTarget)) return;
+      previewed = ''; renderer?.preview?.(''); paintPreview();
     }, { signal });
     root.addEventListener('keydown', event => {
       if (event.key === 'Escape') {

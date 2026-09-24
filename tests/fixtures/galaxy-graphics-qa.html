@@ -3,14 +3,16 @@
 <title>Galaxy graphics QA — local fixture</title>
 <style>body{margin:0;background:#060b19;color:#e9f1ff;font:16px system-ui}header{padding:12px;display:flex;gap:12px;flex-wrap:wrap}button,select{font:inherit;padding:10px}#scene{height:560px;max-width:1100px;position:relative;touch-action:pan-y}canvas{width:100%;height:100%;display:block}output{display:block;padding:10px}#fallback{display:none}#scene[data-state=fallback] #fallback{display:block;padding:60px}#scene[data-state=fallback] canvas{display:none}</style>
 <header><label>Cảnh <select id="route"><option value="map">Bản đồ</option><option value="ai">AI</option><option value="music">Music</option><option value="learning">Learning</option></select></label><label>Đồ họa <select id="quality"><option>balanced</option><option>economy</option><option>cinematic</option></select></label><button id="pause">Dừng / chạy</button><button id="active">Đóng / mở cảnh</button><button id="loss">Mất WebGL</button><button id="retry">Tạo lại</button><button id="destroy">Hủy cảnh</button></header>
-<div id="scene" tabindex="0"><p id="fallback">Ảnh tĩnh / danh sách vẫn dùng được.</p></div><output id="status" role="status">Chuẩn bị</output>
+<div id="scene" tabindex="0" role="group" aria-label="Cảnh kiểm thử 3D"></div><output id="status" role="status">Chuẩn bị</output>
 <script type="module">
-import {mount as map} from '../../galaxy-universe-renderer.mjs?v=7';
-import {mount as workspace} from '../../galaxy-workspace-renderer.mjs?v=2';
-import {WORLD_PROFILES} from '../../galaxy-celestial-materials.mjs?v=2';
+import {mount as map} from '../../galaxy-universe-renderer.mjs?v=8';
+import {mount as workspace} from '../../galaxy-workspace-renderer.mjs?v=3';
+import {WORLD_PROFILES} from '../../galaxy-celestial-materials.mjs?v=3';
 const host=document.querySelector('#scene'),status=document.querySelector('#status');
 let renderer,active=true,motion=!new URLSearchParams(location.search).has('still');
 const entries=Object.keys(WORLD_PROFILES).map(id=>({route:'/galaxy/'+id,title:id,color:WORLD_PROFILES[id].color}));
+const routeControl=document.querySelector('#route');
+for(const id of Object.keys(WORLD_PROFILES))if(![...routeControl.options].some(o=>o.value===id)){const option=document.createElement('option');option.value=id;option.textContent=id;routeControl.append(option);}
 function sync(){renderer?.setOptions({active,motion,interactive:true,quality:document.querySelector('#route').value==='map'?document.querySelector('#quality').value:({economy:'low',balanced:'mid',cinematic:'high'}[document.querySelector('#quality').value])});status.value=`active=${active}; motion=${motion}`;}
 function boot(){renderer?.destroy();host.dataset.state='loading';const route=document.querySelector('#route').value;const opts={route:'/galaxy/'+route,onSelect:r=>{renderer.select(r);status.value='selected='+r;},onError:()=>{host.dataset.state='fallback';status.value='WEBGL_CONTEXT_LOST';}};renderer=route==='map'?map(host,opts):workspace(host,opts);if(route==='map')renderer.setWorld(entries);host.dataset.state='ready';sync();}
 document.querySelector('#route').onchange=boot;document.querySelector('#quality').onchange=sync;

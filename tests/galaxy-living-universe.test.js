@@ -54,7 +54,7 @@ test('renderer and UI implement one lifecycle-owned scene with accessible fallba
   const source = read('galaxy-living-universe.js');
   const renderer = read('galaxy-universe-renderer.mjs');
   const css = read('galaxy-living-universe.css');
-  assert.match(source, /import\('\.\/galaxy-universe-renderer\.mjs\?v=7'\)/);
+  assert.match(source, /import\('\.\/galaxy-universe-renderer\.mjs\?v=8'\)/);
   assert.match(source, /IntersectionObserver/);
   assert.match(source, /visibilitychange/);
   assert.match(source, /prefers-reduced-motion/);
@@ -100,4 +100,12 @@ test('the renderer uses only local original procedural art and the existing MIT 
   assert.match(renderer, /\.\/vendor\/three\.module\.min\.js/);
   assert.doesNotMatch(renderer, /https?:\/\//);
   assert.match(read('vendor/THREE-LICENSE.txt'), /MIT License/);
+});
+test('camera reset is explicit and disabled without a usable map; focus keeps inspector actions intact', () => {
+  const source = read('galaxy-living-universe.js');
+  assert.match(source, /data-glu-action="reset-camera"/);
+  assert.match(source, /case 'reset-camera': renderer\?\.resetCamera\(\)/);
+  assert.match(source, /disabled = !renderer \|\| view !== 'map'/);
+  assert.match(source, /root\.contains\(event\.relatedTarget\)/);
+  assert.match(source, /!event\.target\.closest\('\[data-glu-preview\]'\)/);
 });

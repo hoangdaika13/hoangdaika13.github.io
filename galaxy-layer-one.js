@@ -1936,7 +1936,7 @@
     const status = function (message) { const node = owner.app?.querySelector("[data-hgl1-scenery-status]"); if (node) node.textContent = message; };
     status("Đang tải không gian 3D…");
     try {
-      const module = await import("./galaxy-workspace-renderer.mjs?v=2");
+      const module = await import("./galaxy-workspace-renderer.mjs?v=3");
       if (runtime !== owner || owner.workspaceSceneToken !== token || !host.isConnected || host.dataset.route !== owner.route) return false;
       const current = function isCurrent() {
         return runtime === owner && owner.workspaceSceneToken === token && host.isConnected;

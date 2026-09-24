@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as Three from '../vendor/three.module.min.js';
 import * as celestial from '../galaxy-celestial-materials.mjs';
+import {createDeepSpace} from '../galaxy-deep-space.mjs';
 
 // Execute the actual lifecycle with Three geometry/materials and a fake GPU boundary.
 // Browser fixture separately verifies shader compilation and real context loss.
@@ -21,7 +22,7 @@ function harness(){
  const canvas=new EventTarget();canvas.dataset={};canvas.style={};canvas.setAttribute=()=>{};canvas.remove=()=>{host.canvas=null;};
  const host={ownerDocument:doc,dataset:{},replaceChildren:c=>{host.canvas=c;},getBoundingClientRect:()=>({width:1000,height:600})};
  class GPU {constructor(){this.domElement=canvas;this.info={render:{calls:1},memory:{geometries:1}};}setPixelRatio(){}setSize(){}render(){rendered++;}dispose(){disposed++;}forceContextLoss(){lost++;}}
- const api=new Function('T',...Object.keys(celestial),source+'\nreturn {mount};')({...Three,WebGLRenderer:GPU},...Object.values(celestial));
+ const api=new Function('T','createDeepSpace',...Object.keys(celestial),source+'\nreturn {mount};')({...Three,WebGLRenderer:GPU},createDeepSpace,...Object.values(celestial));
  const controller=api.mount(host,{route:'/galaxy/ai',motion:true});
  const flush=()=>{const queued=[...callbacks.values()];callbacks.clear();queued.forEach(cb=>cb(16));};
  const media=(q,value)=>{const m=queries.get(q);m.matches=value;m.dispatchEvent(new Event('change'));};

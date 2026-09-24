@@ -10,7 +10,7 @@ test("Cosmic Studio is registered as a lazy Galaxy module", () => {
   const loader = read("performance-loader.js");
   assert.match(loader, /galaxy-cosmic-studio\.css\?v=1/);
   assert.match(loader, /galaxy-cosmic-studio\.js\?v=4/);
-  assert.match(loader, /galaxy-living-universe\.js\?v=7/);
+  assert.match(loader, /galaxy-living-universe\.js\?v=8/);
   assert.match(loader, /galaxy-living-universe\.css\?v=3/);
   assert.match(loader, /galaxy-home-ai\.css\?v=25/);
 });
@@ -45,9 +45,9 @@ test("new assets are available to the offline catalog", () => {
   const worker = read("sw.js");
   assert.match(worker, /galaxy-cosmic-studio\.css\?v=1/);
   assert.match(worker, /galaxy-cosmic-studio\.js\?v=4/);
-  assert.match(worker, /galaxy-living-universe\.js\?v=7/);
+  assert.match(worker, /galaxy-living-universe\.js\?v=8/);
   assert.match(worker, /galaxy-living-universe\.css\?v=3/);
-  assert.match(worker, /galaxy-universe-renderer\.mjs\?v=7/);
+  assert.match(worker, /galaxy-universe-renderer\.mjs\?v=8/);
   assert.match(worker, /galaxy-home-ai\.css\?v=25/);
-  assert.match(worker, /performance-loader\.js\?v=685/);
+  assert.match(worker, /performance-loader\.js\?v=686/);
 });

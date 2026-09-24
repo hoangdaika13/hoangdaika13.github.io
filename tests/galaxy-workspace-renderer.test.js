@@ -41,7 +41,8 @@ test("the workspace renderer is procedural, route-specific and creates one canva
   assert.match(read("galaxy-celestial-materials.mjs"), /new T\.ShaderMaterial/);
   assert.match(rendererSource, /new T\.SphereGeometry/);
   assert.match(rendererSource, /new T\.RingGeometry/);
-  assert.match(rendererSource, /new T\.PointsMaterial/);
+  assert.match(rendererSource, /createDeepSpace\(track/);
+  assert.match(read('galaxy-deep-space.mjs'), /new T\.Points/);
   assert.match(rendererSource, /new T\.PointLight/);
   assert.match(rendererSource, /new T\.HemisphereLight/);
   assert.match(rendererSource, /canvas\.dataset\.hgl1WorkspaceWebgl/);
@@ -65,7 +66,7 @@ test("renderer lifecycle pauses offscreen work and deterministically releases GP
     /controller\.abort\(\)/
   ]) assert.match(rendererSource, contract);
 
-  assert.match(shellSource, /import\("\.\/galaxy-workspace-renderer\.mjs\?v=2"\)/);
+  assert.match(shellSource, /import\("\.\/galaxy-workspace-renderer\.mjs\?v=3"\)/);
   assert.match(shellSource, /cleanupWorkspaceScene\(runtime\)/);
   assert.match(shellSource, /workspaceSceneToken/);
   assert.match(shellSource, /owner\.workspaceScene\s*=\s*controller/);
@@ -83,8 +84,8 @@ test("CSS keeps 3D decorative, responsive and backed by the existing local porta
 
 test("release loader and offline runtime carry the exact new 3D assets", () => {
   assert.match(loaderSource, /galaxy-layer-one-worlds\.css\?v=17/);
-  assert.match(loaderSource, /galaxy-layer-one\.js\?v=26/);
+  assert.match(loaderSource, /galaxy-layer-one\.js\?v=27/);
   assert.match(serviceWorkerSource, /\.\/galaxy-layer-one-worlds\.css\?v=17/);
-  assert.match(serviceWorkerSource, /\.\/galaxy-layer-one\.js\?v=26/);
-  assert.match(serviceWorkerSource, /\.\/galaxy-workspace-renderer\.mjs\?v=2/);
+  assert.match(serviceWorkerSource, /\.\/galaxy-layer-one\.js\?v=27/);
+  assert.match(serviceWorkerSource, /\.\/galaxy-workspace-renderer\.mjs\?v=3/);
 });

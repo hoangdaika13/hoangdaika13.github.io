@@ -33,22 +33,25 @@ uniform vec3 tint; uniform vec3 accent; uniform vec3 lightPosition;
 uniform float kind; uniform float seed; uniform float time; uniform float selected;
 varying vec3 vNormal; varying vec3 vPosition; varying vec3 vLocal; varying float vScale;
 void main(){
- vec3 p=normalize(vLocal);float macro=fbm(p*3.9+seed),detail=fbm(p*23.+seed*1.7);
+ vec3 p=normalize(vLocal);float footprint=length(fwidth(p));float fine=1.-smoothstep(.025,.11,footprint);
+ float macro=fbm(p*3.9+seed),detail=mix(.5,fbm(p*18.+seed*1.7),fine);
  vec3 col;float height=detail*.05,specular=.1,shininess=32.;
  if(kind<.5){
   float shore=smoothstep(.49,.535,macro+detail*.06),highland=smoothstep(.59,.75,macro);
   vec3 land=mix(tint*.55,vec3(.42,.38,.24),highland);
   col=mix(mix(vec3(.008,.038,.095),vec3(.035,.20,.27),smoothstep(.38,.54,macro)),land,shore);
   col=mix(col,vec3(.77,.86,.89),smoothstep(.84,.98,abs(p.y)+macro*.07));
-  height=shore*(macro*.025+detail*.007);specular=mix(.9,.07,shore);shininess=96.;
+  height=shore*(macro*.012+detail*.003);specular=mix(.38,.045,shore);shininess=48.;
  }else if(kind<1.5){
   float latitude=p.y*38.+fbm(p*6.+vec3(seed,time*.004,0.))*8.;
   vec2 vortex=vec2(p.x-.42,p.y+.21);float storm=exp(-dot(vortex,vortex)*65.)*step(.0,p.z);
-  float bands=.5+.5*sin(latitude+storm*sin(atan(vortex.y,vortex.x)*3.+length(vortex)*65.)*3.);
+  float wave=latitude+storm*sin(atan(vortex.y,vortex.x)*3.+length(vortex)*65.)*3.;
+  float bands=.5+.5*sin(wave)*(1.-smoothstep(.7,3.,fwidth(wave)));
   col=mix(tint*.36,mix(tint,vec3(.83,.73,.56),.44),smoothstep(.1,.9,bands));
   col=mix(col,tint*.22+vec3(.25,.13,.09),storm*.65);col*=.83+detail*.34;height=detail*.007;specular=.18;
  }else if(kind<2.5){
-  float cracks=1.-smoothstep(.0,.055,abs(sin(macro*42.+p.y*6.+detail*2.)));
+  float crackWave=macro*32.+p.y*6.+detail*2.;
+  float cracks=(1.-smoothstep(.0,max(.08,fwidth(crackWave)),abs(sin(crackWave))))*fine;
   col=mix(tint*.35,vec3(.75,.84,.87),macro);col=mix(col,accent*.26,cracks*.75);
   height=detail*.025-cracks*.022;specular=.48;shininess=72.;
  }else if(kind<3.5){
@@ -63,12 +66,12 @@ void main(){
   col=mix(tint*.1,tint*.46,detail);col+=accent*seam*.36;
   height=detail*.001+seam*.0002;specular=.45;shininess=80.;
  }
- height*=vScale;
+ height*=vScale*fine;
  vec3 normal=normalize(vNormal),viewDir=normalize(cameraPosition-vPosition),light=normalize(lightPosition-vPosition);
  // Screen derivatives perturb the normal without three extra fbm evaluations per pixel.
  vec3 qx=dFdx(vPosition),qy=dFdy(vPosition),sx=cross(qy,normal),sy=cross(normal,qx);
  float determinant=dot(qx,sx);vec3 gradient=sign(determinant)*(dFdx(height)*sx+dFdy(height)*sy);
- normal=normalize(abs(determinant)*normal-gradient*.24);
+ normal=normalize(max(abs(determinant),1.e-8)*normal-gradient*.045);
  float day=dot(normal,light),diffuse=max(day,0.);
  float fresnel=pow(1.-max(dot(normal,viewDir),0.),4.);
  float spec=pow(max(dot(reflect(-light,normal),viewDir),0.),shininess)*specular*smoothstep(0.,.2,day);

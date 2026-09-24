@@ -7,7 +7,7 @@ import subprocess
 import urllib.parse
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OVERRIDES = {"galaxy-universe-renderer.mjs", "galaxy-workspace-renderer.mjs"}
+OVERRIDES = {"galaxy-universe-renderer.mjs", "galaxy-workspace-renderer.mjs", "galaxy-celestial-materials.mjs"}
 
 
 class Baseline(http.server.SimpleHTTPRequestHandler):
