@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>QA · Phật Pháp Study</title>
+  <link rel="stylesheet" href="../../galaxy-shell.css?v=9">
+  <link rel="stylesheet" href="../../phat-phap.css?qa=1026-final">
+  <style>
+    html,body { margin:0; height:100%; font-family:system-ui,sans-serif; }
+    #appShell { height:100dvh; display:grid; grid-template-rows:48px minmax(0,1fr); }
+    .app-header { display:flex; align-items:center; gap:14px; padding:0 12px; background:#23180d; color:#ffebb4; }
+    .app-header button { min-height:36px; }
+    .app-shell__body { min-height:0; position:relative; }
+    #appMain,#appWorkspace,[data-phat-phap-host] { height:100%; min-height:0; }
+    #appMain { margin:0; padding:0; }
+    .app-sidebar { position:fixed; z-index:100; background:#23180d; color:white; }
+    @media(min-width:761px) { #appShell .app-sidebar { display:none !important; } }
+  </style>
+</head>
+<body class="app-shell-enabled app-dharma-route app-sidebar-collapsed">
+  <section id="appShell" class="app-shell" data-galaxy-shell data-hh-layer="platform">
+    <header class="app-header"><button type="button" id="menu">Menu thử</button><strong>QA · Phật Pháp · dữ liệu thử riêng</strong></header>
+    <div class="app-shell__body">
+      <nav class="app-sidebar" aria-label="Menu thử"><p>Menu thử đã mở</p></nav>
+      <main id="appMain" class="app-main"><div id="appWorkspace"><div data-phat-phap-host></div></div></main>
+    </div>
+  </section>
+  <script src="../../phat-phap-study-data.js?qa=1026-final"></script>
+  <script src="../../phat-phap-study-ui.js?qa=1026-final"></script>
+  <script src="../../phat-phap.js?qa=1026-final"></script>
+  <script>
+    const host = document.querySelector('[data-phat-phap-host]');
+    function render() {
+      const view = location.hash.replace(/^#\/phat-phap\/?/, '').split('?')[0] || 'teachings';
+      HHPhatPhap.mount(host, {view, currentUser:{id:'dharma-browser-qa'}});
+    }
+    document.querySelector('#menu').addEventListener('click', () => document.body.classList.toggle('app-sidebar-collapsed'));
+    addEventListener('hashchange', render);
+    addEventListener('pagehide', () => HHPhatPhap.unmount());
+    render();
+  </script>
+</body>
+</html>

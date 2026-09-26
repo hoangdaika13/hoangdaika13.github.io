@@ -269,8 +269,8 @@
       scripts: ["language-learning-core.js?v=1", "language-learning-cockpit.js?v=2", "hh-chinese-curriculum.js?v=1", "hh-chinese.js?v=15"]
     },
     dharma: {
-      styles: ["phat-phap.css?v=20"],
-      scripts: ["phat-phap.js?v=18"]
+      styles: ["phat-phap.css?v=22"],
+      scripts: ["phat-phap-study-data.js?v=1", "phat-phap-study-ui.js?v=2", "phat-phap.js?v=20"]
     },
     cosmic: {
       styles: ["cosmic-observatory.css?v=4", "cosmic-solar-system-3d.css?v=3"],

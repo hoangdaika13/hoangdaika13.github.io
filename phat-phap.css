@@ -1626,3 +1626,48 @@ body.app-dharma-route .app-mobile-nav { display: none !important; }
   .dharma-ritual-grid,.dharma-vietnam-grid,.dharma-profile-facts,.dharma-profile-columns { grid-template-columns:1fr; }
   .dharma-profile-control { align-items:flex-start; flex-direction:column; }
 }
+
+/* Study v9: a quiet, responsive reading surface inside the existing Dharma shell. */
+.dharma-meditation-mini[hidden] { display:none; }
+/* A translated closed Platform sheet must not enlarge this route's viewport. */
+@media(max-width:760px) {
+  body.app-dharma-route.app-sidebar-collapsed #appShell .app-sidebar { display:none !important; }
+}
+.dharma-study-paths,.dharma-study-cards,.dharma-study-rituals { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:16px; margin:18px 0; }
+.dharma-study-paths>article,.dharma-study-cards>article,.dharma-study-rituals>article,.dharma-study-guide { min-width:0; padding:22px; }
+.dharma-study-cards>article { display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
+.dharma-study-cards>article>button { margin-top:auto; }
+.dharma-study-cards h3,.dharma-study-paths h3,.dharma-study-rituals h3 { margin:6px 0; font-size:22px; line-height:1.4; color:#58341d; }
+.dharma-study-cards p,.dharma-study-paths p,.dharma-study-rituals p,.dharma-study-guide p { font-size:16px; line-height:1.75; color:#584937; }
+.dharma-study-filters { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px; margin:24px 0 12px; }
+.dharma-study-filters label { display:grid; gap:7px; flex:1 1 210px; min-width:0; font-weight:700; }
+.dharma-study-filters input,.dharma-study-filters select { box-sizing:border-box; width:100%; min-width:0; min-height:46px; border:1px solid #9c794d; border-radius:10px; background:#fffdf5; padding:10px; font:inherit; color:#402f20; }
+.dharma-study-actions { display:flex; flex-wrap:wrap; gap:10px; margin:16px 0; }
+.dharma-study-reader { max-width:1000px; padding:clamp(18px,3vw,36px); margin:12px auto; font-size:var(--dharma-reader-size,20px); line-height:1.85; color:#473829; overflow-wrap:anywhere; }
+.dharma-study-reader h2 { font-size:clamp(26px,3vw,36px); line-height:1.3; }
+.dharma-study-reader h3 { font-size:1.12em; margin-top:24px; }
+.dharma-study-reader li,.dharma-study-guide li { margin:10px 0; }
+.dharma-study-source { padding:18px; margin-top:24px; border-left:4px solid #a77a27; background:#f5eddc; font-size:15px; line-height:1.7; }
+.dharma-study-source a { text-decoration:underline; color:#704516; }
+.dharma-study-application { padding:4px 20px; border-left:4px solid #688265; background:#eff2e8; }
+.dharma-study-quiz { min-width:0; border:1px solid #a98754; border-radius:14px; padding:18px; margin:24px 0; }
+.dharma-study-quiz legend { font-weight:700; padding:0 6px; }
+.dharma-study-quiz button { margin:6px; }
+.dharma-study-map { display:grid; grid-template-columns:minmax(220px,1fr) minmax(0,1.2fr); gap:20px; align-items:start; }
+.dharma-study-map>article { padding:24px; min-width:0; font-size:18px; line-height:1.8; }
+.dharma-study-map nav section { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 22px; }
+.dharma-study-map nav h3 { width:100%; margin:0; color:#795628; }
+.dharma-study-rituals ol { padding-left:22px; }
+.dharma-study-rituals li { margin:12px 0; line-height:1.7; }
+.dharma-study-rituals label { display:flex; align-items:flex-start; gap:12px; min-height:44px; cursor:pointer; font-size:17px; }
+.dharma-study-rituals input { flex:none; width:22px; height:22px; margin-top:3px; accent-color:#795420; }
+.dharma-study-paths progress,.dharma-study-rituals progress { width:100%; height:8px; accent-color:#8b6528; }
+.dharma-study-guide { margin:0 0 18px; font-size:17px; line-height:1.8; }
+.dharma-study-paths summary,.dharma-study-guide summary { padding:12px 0; min-height:44px; cursor:pointer; font-weight:700; }
+.dharma-study-reader button,.dharma-study-cards button,.dharma-study-paths button,.dharma-study-map button,.dharma-study-rituals button,.dharma-study-filters button,.dharma-study-guide button { min-height:44px; max-width:100%; padding:10px 14px; border:1px solid #97713d; border-radius:10px; background:#fff8e7; color:#583814; font-size:16px; font-weight:700; line-height:1.5; text-align:left; overflow-wrap:anywhere; white-space:normal; cursor:pointer; }
+.dharma-study-reader button[aria-pressed=true],.dharma-study-map button[aria-pressed=true] { background:#705021; color:white; border-color:#705021; }
+.dharma-study-map button.is-related { border-style:dashed; box-shadow:inset 0 0 0 1px #a88849; }
+.dharma-workspace [class*="dharma-study-"] :is(button,input,select,textarea,summary,a):focus-visible { outline:3px solid #286a7b; outline-offset:3px; }
+.dharma-workspace [class*="dharma-study-"] button:hover { filter:brightness(.96); }
+@media(max-width:760px) { .dharma-study-map { grid-template-columns:minmax(0,1fr); } .dharma-study-reader { font-size:var(--dharma-reader-size,20px); } .dharma-study-actions { align-items:stretch; } .dharma-study-actions>button { flex:1 1 180px; } }
+@media(forced-colors:active) { .dharma-study-map button[aria-pressed=true],.dharma-study-reader button[aria-pressed=true] { outline:3px solid Highlight; } }

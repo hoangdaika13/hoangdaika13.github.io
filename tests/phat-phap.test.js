@@ -17,13 +17,13 @@ test("Phật Pháp is a first-class routed workspace", () => {
   assert.match(router, /window\.HHPhatPhap\?\.mount/);
   assert.match(router, /app-dharma-route/);
   assert.match(loader, /dharma:\s*\{/);
-  assert.match(loader, /phat-phap\.css\?v=20/);
-  assert.match(loader, /phat-phap\.js\?v=18/);
+  assert.match(loader, /phat-phap\.css\?v=22/);
+  assert.match(loader, /phat-phap\.js\?v=20/);
   assert.match(index, /performance-loader\.js\?v=494/);
   assert.match(index, /script\.js\?v=241/);
   assert.match(sw, /hh-identity-portal-v842/);
-  assert.match(sw, /phat-phap\.css\?v=20/);
-  assert.match(sw, /phat-phap\.js\?v=18/);
+  assert.match(sw, /phat-phap\.css\?v=22/);
+  assert.match(sw, /phat-phap\.js\?v=20/);
   assert.match(sw, /assets\/phat-phap\/duc-phat-hao-quang-v1\.webp/);
 });
 
@@ -169,7 +169,7 @@ test("all new Dharma subroutes are discoverable from the application router", ()
 
 test("Dharma v8 keeps source-based review without gamification", () => {
   const source = read("phat-phap.js");
-  assert.match(source, /VERSION\s*=\s*"8\.0\.0"/);
+  assert.match(source, /VERSION\s*=\s*"9\.0\.0"/);
   for (const contract of ["reviewCatalog", "reviewSchedule", "reviewHistory", "data-rate-study-review", "Cần xem lại ngày mai", "Tạm hiểu · sau 7 ngày"]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(source, /không tạo điểm số/i);
   assert.match(source, /không phải chứng nhận hay cấp bậc tâm linh/i);
@@ -183,7 +183,7 @@ test("Dharma v8 publishes a unique route registry, an expanded honest canon and 
     delete require.cache[require.resolve(path.join(root, "phat-phap.js"))];
     require(path.join(root, "phat-phap.js"));
     const api = globalThis.HHPhatPhap;
-    assert.equal(api.VERSION, "8.0.0");
+    assert.equal(api.VERSION, "9.0.0");
     assert.ok(api.scriptures.length >= 30);
     assert.equal(new Set(api.scriptures.map((item) => item.id)).size, api.scriptures.length);
     assert.equal(new Set(api.routes.map((item) => item.routeId)).size, api.routes.length);

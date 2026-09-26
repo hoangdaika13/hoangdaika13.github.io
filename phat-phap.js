@@ -1,7 +1,8 @@
 (function initHHPhatPhap(global) {
   "use strict";
 
-  const VERSION = "8.0.0";
+  const VERSION = "9.0.0";
+  const STUDY = global.HHDharmaStudyData;
   const STATE_PREFIX = "hh.phat-phap.study.v1";
   const JOURNAL_PREFIX = "hh.phat-phap.journal.v1";
   const JOURNAL_ITERATIONS = 180000;
@@ -92,7 +93,7 @@
     { id: "thoi-khoa", order: 10, title: "Xây thời khóa bền vững", duration: 11, tradition: "Ứng dụng", summary: "Một thời khóa vừa sức gồm học, thực hành, suy ngẫm và hành động thiện lành. Tính đều đặn quan trọng hơn số phút lớn hoặc chuỗi thành tích.", practice: "Chọn lịch 7, 21 hoặc 49 ngày và đặt khung giờ phù hợp thực tế.", sourceId: "ghpgvn" }
   ]);
 
-  const TEACHINGS = Object.freeze([
+  const CORE_TEACHINGS = Object.freeze([
     { id: "tu-dieu-de", title: "Tứ Diệu Đế", category: "Nền tảng", tradition: "Phật giáo sơ kỳ", intro: "Khung thực hành để nhận diện khổ và con đường chuyển hóa.", deep: "Quan sát trực tiếp trải nghiệm thay vì chỉ ghi nhớ khái niệm. Mỗi sự thật gắn với một việc cần làm: hiểu, buông, chứng nghiệm và tu tập.", application: "Dùng bốn câu hỏi: điều gì đang khó chịu, điều gì nuôi nó, trạng thái nào lành mạnh hơn, bước đúng đắn tiếp theo là gì?", sourceId: "suttacentral" },
     { id: "bat-chanh-dao", title: "Bát Chánh Đạo", category: "Nền tảng", tradition: "Phật giáo sơ kỳ", intro: "Tám phương diện của một đời sống có hiểu biết, đạo đức và định tĩnh.", deep: "Các yếu tố nâng đỡ nhau; không nên tách thiền khỏi lời nói, hành động và sinh kế.", application: "Mỗi tuần chọn một phương diện để quan sát nhưng vẫn giữ cái nhìn toàn thể.", sourceId: "suttacentral" },
     { id: "ngu-uan", title: "Ngũ uẩn", category: "Tuệ quán", tradition: "Phật giáo sơ kỳ", intro: "Sắc, thọ, tưởng, hành và thức là năm nhóm tiến trình tạo nên kinh nghiệm.", deep: "Thấy các tiến trình thay đổi giúp bớt đồng nhất cứng nhắc với cảm giác, ý nghĩ và vai trò.", application: "Khi cảm xúc mạnh xuất hiện, gọi tên cảm giác thân thể, cảm thọ, nhận diện, phản ứng và nhận biết.", sourceId: "suttacentral" },
@@ -103,6 +104,7 @@
     { id: "tinh-do", title: "Tịnh độ và tín–nguyện–hạnh", category: "Tịnh độ", tradition: "Phật giáo Đại thừa", intro: "Pháp môn nhấn mạnh niềm tin có hiểu biết, nguyện hướng thiện và thực hành niệm Phật.", deep: "Cách giải thích khác nhau theo tông phái; nền tảng vẫn là chuyển hóa thân, khẩu và ý trong đời sống.", application: "Kết hợp thời niệm Phật ngắn với một việc thiện và một lần nhìn lại lời nói trong ngày.", sourceId: "ghpgvn" }
   ]);
 
+  const TEACHINGS = Object.freeze([...CORE_TEACHINGS.map(item => ({...item, ...STUDY?.enrichment[item.id]})), ...(STUDY?.topics || [])]);
   const CORE_SCRIPTURES = Object.freeze([
     { id: "dhammacakkappavattana", code: "SN 56.11", canonicalTitle: "Dhammacakkappavattanasutta", title: "Kinh Chuyển Pháp Luân", collection: "Tương Ưng Bộ", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", translator: "Xem theo bản dịch đang chọn tại nguồn", license: "Theo từng bản dịch tại SuttaCentral", verifiedAt: "2026-08-23", type: "Kinh", topic: "Nền tảng", difficulty: "Nhập môn", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/sn56.11", verified: true, parallelIds: ["tu-dieu-de", "bat-chanh-dao"], summary: "Bài kinh trình bày Trung đạo, Tứ Diệu Đế và cách mỗi sự thật gắn với nhận biết, nhiệm vụ cùng sự hoàn tất. Đây là tóm lược nguyên bản của HH, không phải bản dịch kinh văn.", keywords: "tứ diệu đế trung đạo khổ" },
     { id: "metta", code: "Snp 1.8", canonicalTitle: "Karaṇīyamettasutta", title: "Kinh Từ Bi", collection: "Tiểu Bộ", tradition: "Phật giáo sơ kỳ", sourceLanguage: "Pāli", translator: "Xem theo bản dịch đang chọn tại nguồn", license: "Theo từng bản dịch tại SuttaCentral", verifiedAt: "2026-08-23", type: "Kinh", topic: "Từ bi", difficulty: "Nhập môn", sourceId: "suttacentral", sourceUrl: "https://suttacentral.net/snp1.8", verified: true, parallelIds: ["tu-vo-luong-tam"], summary: "Văn bản nuôi dưỡng tâm từ rộng lớn, đi cùng đời sống ngay thẳng, khiêm cung và biết đủ. Phần hiển thị là tóm lược học tập, không thay thế bản dịch được cấp phép.", keywords: "từ bi tâm từ metta" },
@@ -204,7 +206,7 @@
     { id: "seven", label: "Thất giác chi", icon: "七", summary: "Bảy yếu tố hỗ trợ tiến trình tỉnh thức.", links: ["eightfold"] }
   ]);
 
-  const CHANTS = Object.freeze([
+  const CORE_CHANTS = Object.freeze([
     { id: "refuge", tradition: "Căn bản", title: "Ba lần hướng về Tam Bảo", sourceLabel: "Bài thực tập HH · không phải bản kinh dịch", lines: [
       { text: "Con xin hướng về Phật, người chỉ đường tỉnh thức.", transliteration: "Buddhaṃ saraṇaṃ gacchāmi", meaning: "Nương tựa phẩm chất giác ngộ và con đường tỉnh thức." },
       { text: "Con xin hướng về Pháp, con đường hiểu và thương.", transliteration: "Dhammaṃ saraṇaṃ gacchāmi", meaning: "Nương tựa giáo pháp có thể học, thực hành và kiểm nghiệm." },
@@ -217,6 +219,7 @@
     ] }
   ]);
 
+  const CHANTS = Object.freeze([...CORE_CHANTS, ...(STUDY?.chants || [])]);
   const LEARNING_TIERS = Object.freeze([
     { id: "intro", label: "Nhập môn", icon: "初", lessonIds: ["duc-phat", "tam-bao", "tu-dieu-de", "bat-chanh-dao", "ngu-gioi"], description: "Hiểu nền tảng bằng tiếng Việt rõ ràng, không đòi hỏi kiến thức trước." },
     { id: "practice", label: "Thực hành", icon: "行", lessonIds: ["nhan-qua", "thien-hoi-tho", "niem-phat", "di-chua", "thoi-khoa"], description: "Đưa chánh niệm, giới và thời khóa vừa sức vào đời sống." },
@@ -538,6 +541,7 @@
   const NAV = Object.freeze(DHARMA_ROUTE_REGISTRY.map((route) => Object.freeze({ id: route.routeId, label: route.title, icon: route.icon, group: route.group })));
 
   const DEFAULT_STATE = Object.freeze({
+    studyLab: { completed: [], saved: [], answers: {}, ritualChecks: {} },
     completedLessons: [], bookmarks: [], lessonNotes: {}, practiceHistory: [], chantCount: 0,
     savedTalks: [], savedSources: [], studySchedule: { program: 7, minutes: 15, time: "20:00" },
     recentScripture: "", routineProgress: {}, printRequests: [], events: [],
@@ -568,6 +572,8 @@
   let encyclopediaCatalogOpen = false;
   let encyclopediaQuery = "";
   let selectedTeaching = "";
+  let teachingQuery = "";
+  let teachingFilter = "all";
   let selectedScripture = "";
   let selectedScriptureSegment = "";
   let scriptureHighlightColor = "gold";
@@ -626,6 +632,9 @@
   let timerRemaining = 300;
   let timerInitial = 300;
   let timerRunning = false;
+  let timerDeadline = 0;
+  let lastBellBucket = 0;
+  const bellContexts = new Set();
   let chantTimerId = 0;
   let chantLineIndex = -1;
   let chantStopAt = 0;
@@ -654,6 +663,7 @@
     try {
       const stored = JSON.parse(localStorage.getItem(storageKey()) || "null");
       const next = { ...structuredClone(DEFAULT_STATE), ...(stored && typeof stored === "object" ? stored : {}) };
+      if (STUDY) next.studyLab = STUDY.normalizeStudy(stored?.studyLab, TEACHINGS.map(item => item.id));
       next.visual = { ...DEFAULT_STATE.visual, ...(stored?.visual && typeof stored.visual === "object" ? stored.visual : {}) };
       next.meditation = { ...DEFAULT_STATE.meditation, ...(stored?.meditation && typeof stored.meditation === "object" ? stored.meditation : {}) };
       next.chant = { ...DEFAULT_STATE.chant, ...(stored?.chant && typeof stored.chant === "object" ? stored.chant : {}) };
@@ -686,8 +696,19 @@
   }
 
   function saveState() {
-    try { localStorage.setItem(storageKey(), JSON.stringify(state)); } catch {}
+    if (state?.meditation) state.meditation.timer = {duration: timerInitial, remaining: timerRemaining};
+    try { localStorage.setItem(storageKey(), JSON.stringify(state)); }
+    catch { toast("Chưa lưu được trên thiết bị. Kiểm tra dung lượng hoặc quyền lưu trữ trước khi rời trang.", "warning"); return false; }
     updateProgressPanel();
+    return true;
+  }
+
+  function commitStudy(next) {
+    const previous = state.studyLab;
+    state.studyLab = STUDY.normalizeStudy(next, TEACHINGS.map(item => item.id));
+    if (saveState()) return true;
+    state.studyLab = previous;
+    return false;
   }
 
   function setState(patch) {
@@ -874,9 +895,9 @@
     const scriptures = SCRIPTURES.map((item) => ({ kind: "Kinh điển", type: "scripture", id: item.id, title: item.title, detail: `${item.code} · ${item.collection}`, text: `${item.title} ${item.canonicalTitle} ${item.code} ${item.collection} ${item.summary} ${item.keywords}`, code: item.code, tradition: item.tradition, language: item.sourceLanguage, status: item.verified ? "Đã kiểm chứng metadata" : "Chờ kiểm chứng", action: "scripture", duration: 0 }));
     const terms = GLOSSARY.map((item) => ({ kind: "Thuật ngữ", type: "glossary", id: item.id, title: `${item.hanViet} · ${item.pali}`, detail: `${item.han} · ${item.sanskrit}`, text: `${item.hanViet} ${item.pali} ${item.sanskrit} ${item.han} ${item.vietnamese} ${item.note}`, tradition: "Đa truyền thống", language: "Pāli · Sanskrit · Hán · Việt", status: "HH giải thích", action: "glossary", duration: 0 }));
     const talks = TALKS.map((item) => ({ kind: "Pháp thoại", type: "talk", id: item.id, title: item.title, detail: `${item.provider} · ${item.type}`, text: `${item.title} ${item.provider} ${item.teacher} ${item.center} ${item.retreat} ${item.topic} ${item.note}`, tradition: item.tradition, language: item.language, status: item.rights, action: "talk", teacher: item.teacher, date: item.date, duration: item.duration }));
-    const practices = [
+    const practices = (STUDY ? STUDY.practices.map(item => ({id:item.id,title:item.label,text:item.steps.join(" "),duration:item.minutes})) : [
       { id: "breath", title: "Thiền hơi thở", text: "hơi thở ngồi yên niệm", duration: 5 }, { id: "body", title: "Quán thân", text: "thân điểm tiếp xúc", duration: 10 }, { id: "feeling", title: "Quán cảm thọ", text: "thọ dễ chịu khó chịu trung tính", duration: 10 }, { id: "kindness", title: "Thiền tâm từ", text: "từ bi nguyện lành", duration: 15 }, { id: "walking", title: "Thiền đi", text: "đi bộ chánh niệm", duration: 10 }, { id: "relaxation", title: "Thư giãn sâu", text: "nằm thư giãn thân nghỉ ngơi", duration: 30 }
-    ].map((item) => ({ kind: "Thực hành", type: "practice", ...item, detail: `${item.duration} phút · hướng dẫn cục bộ`, tradition: "Thực hành nền tảng", language: "Tiếng Việt", status: "Có kiểm tra an toàn", action: "practice" }));
+    ]).map((item) => ({ kind: "Thực hành", type: "practice", ...item, detail: `${item.duration} phút · hướng dẫn cục bộ`, tradition: "Thực hành nền tảng", language: "Tiếng Việt", status: "Có kiểm tra an toàn", action: "practice" }));
     const temples = TEMPLE_DIRECTORY.map((item) => ({ kind: "Phật sự Việt Nam", type: "temple", id: item.id, title: item.title, detail: `${item.province} · ${item.organization}`, text: `${item.title} ${item.province} ${item.tradition} ${item.access} ${item.note}`, tradition: item.tradition, language: "Tiếng Việt", status: item.verified ? "Nguồn chính thức" : "Chưa kiểm chứng", action: "temple", duration: 0 }));
     const personal = [
       ...Object.entries(state.encyclopediaNotes).filter(([, note]) => note).map(([id, note]) => ({ kind: "Ghi chú cá nhân", type: "note", id, title: encyclopediaChapterById(id).title, detail: "Chỉ trên thiết bị", text: note, tradition: "Cá nhân", language: "Tiếng Việt", status: "Riêng tư", action: "encyclopedia", duration: 0 })),
@@ -1041,11 +1062,13 @@
   function teachingsMarkup() {
     const selected = TEACHINGS.find((item) => item.id === selectedTeaching);
     if (selected) return teachingDetailMarkup(selected);
+    if (global.HHDharmaStudyUI) return global.HHDharmaStudyUI.catalog({teachings: TEACHINGS, state, query: teachingQuery, filter: teachingFilter});
     const categories = unique(TEACHINGS.map((item) => item.category));
     return `<section class="dharma-route-intro dharma-paper-card"><div><small>GIÁO LÝ CÓ BỐI CẢNH</small><h2>Học theo chủ đề, biết rõ truyền thống</h2><p>Mỗi nội dung phân biệt phần giải thích, đào sâu, ứng dụng và nguồn tham khảo. Không trộn lẫn các truyền thống thành một kết luận duy nhất.</p></div><span class="dharma-seal">法</span></section>${categories.map((category) => `<section class="dharma-teaching-group"><header><h3>${safe(category)}</h3><span>${TEACHINGS.filter((item) => item.category === category).length} chủ đề</span></header><div>${TEACHINGS.filter((item) => item.category === category).map((item) => `<button type="button" data-open-teaching="${item.id}"><i>☸</i><span><small>${safe(item.tradition)}</small><strong>${safe(item.title)}</strong><p>${safe(item.intro)}</p></span><b>Đọc →</b></button>`).join("")}</div></section>`).join("")}`;
   }
 
   function teachingDetailMarkup(item) {
+    if (global.HHDharmaStudyUI) return global.HHDharmaStudyUI.detail({item, teachings: TEACHINGS, state});
     const source = sourceById(item.sourceId);
     return `<button class="dharma-back" type="button" data-back-list="teachings">← Tất cả chủ đề</button><article class="dharma-teaching-detail dharma-paper-card"><header><div><small>${safe(item.category)} · ${safe(item.tradition)}</small><h2>${safe(item.title)}</h2></div>${sourceBadge(item.sourceId)}</header><nav role="tablist"><button type="button" data-teaching-tab="explain" aria-selected="true">Giải thích</button><button type="button" data-teaching-tab="deep">Đào sâu</button><button type="button" data-teaching-tab="apply">Ứng dụng</button><button type="button" data-teaching-tab="source">Nguồn</button><button type="button" data-teaching-tab="note">Ghi chú</button></nav><section data-teaching-panel="explain"><h3>Hiểu ngắn gọn</h3><p>${safe(item.intro)}</p></section><section data-teaching-panel="deep" hidden><h3>Đọc sâu hơn</h3><p>${safe(item.deep)}</p></section><section data-teaching-panel="apply" hidden><h3>Đưa vào đời sống</h3><p>${safe(item.application)}</p></section><section data-teaching-panel="source" hidden><h3>Nguồn tham khảo</h3><p>${safe(source.note)}</p><a href="${safe(source.url)}" target="_blank" rel="noopener noreferrer">Mở ${safe(source.organization)} ↗</a></section><section data-teaching-panel="note" hidden><label class="dharma-note"><span>Ghi chú cá nhân</span><textarea data-lesson-note="teaching:${item.id}" maxlength="2000" placeholder="Điều bạn muốn ghi nhớ…">${safe(state.lessonNotes[`teaching:${item.id}`] || "")}</textarea></label></section></article>`;
   }
@@ -1095,7 +1118,7 @@
 
   function practiceMarkup() {
     const recent = state.practiceHistory.slice(-5).reverse();
-    const practices = [
+    const practices = STUDY?.practices || [
       { id: "breath", label: "Hơi thở", icon: "息", guidance: "Biết rõ hơi thở tự nhiên, không kéo dài hay điều khiển." },
       { id: "body", label: "Quán thân", icon: "身", guidance: "Nhẹ nhàng nhận biết điểm tiếp xúc và cảm giác toàn thân." },
       { id: "feeling", label: "Cảm thọ", icon: "受", guidance: "Nhận biết dễ chịu, khó chịu hoặc trung tính mà không vội phản ứng." },
@@ -1110,7 +1133,7 @@
     const completedCourse = state.meditation.courseDays || [];
     const checkIns = [{ id: "steady", icon: "安", label: "Đủ ổn để bắt đầu", note: "Thực hành nhẹ và vẫn để ý giới hạn." }, { id: "uneasy", icon: "息", label: "Đang khó chịu nhẹ", note: "Chọn 5 phút, mở mắt nếu cần." }, { id: "overwhelmed", icon: "!", label: "Đang bất an mạnh", note: "Ưu tiên ổn định và hỗ trợ phù hợp." }];
     const lock = state.meditation.locked ? `<section class="dharma-focus-lock" role="dialog" aria-modal="true"><div class="dharma-focus-lock__breath"><i></i><strong data-timer-display>${formatTimer(timerRemaining)}</strong><small>${safe(current.label)} · Không gian tĩnh tâm đang khóa</small></div><p>Thả lỏng vai, biết rõ thân và giữ hơi thở tự nhiên.</p><div><button type="button" data-grounding> Dừng và ổn định lại</button><button type="button" data-meditation-unlock>Mở khóa thao tác</button></div></section>` : "";
-    return `${lock}<section class="dharma-meditation-course dharma-paper-card"><header><div><small>BẮT ĐẦU TẠI ĐÂY · 7 NGÀY</small><h2>Mỗi ngày một thực hành vừa sức</h2></div><span>${completedCourse.length}/7 ngày</span></header><div>${MEDITATION_COURSE.map((day) => `<button type="button" data-course-day="${day.day}" class="${completedCourse.includes(day.day) ? "is-complete" : ""}"><i>${completedCourse.includes(day.day) ? "✓" : day.day}</i><span><strong>${safe(day.title)}</strong><small>${day.minutes} phút · ${safe(practices.find((item) => item.id === day.type)?.label || day.type)}</small></span></button>`).join("")}</div></section><section class="dharma-practice-chooser">${practices.map((item) => `<button type="button" data-meditation-type="${item.id}" class="${current.id === item.id ? "is-active" : ""}"><i>${item.icon}</i><span><strong>${item.label}</strong><small>${item.guidance}</small></span></button>`).join("")}</section><section class="dharma-practice-playlists dharma-paper-card"><header><div><small>PLAYLIST THỰC HÀNH</small><h2>Chọn một nhịp cho thời điểm hiện tại</h2></div><button type="button" data-export-practice-pack>Xuất gói offline JSON</button></header><div>${[["morning","Sáng","Hơi thở · 10 phút"],["noon","Trưa","Thiền đi · 5 phút"],["evening","Tối","Thư giãn sâu · 30 phút"],["custom","Tự chọn","Giữ thiết lập hiện tại"]].map(([id,label,note]) => `<button type="button" data-meditation-playlist="${id}" class="${state.meditation.playlist === id ? "is-active" : ""}"><i>${id === "morning" ? "日" : id === "noon" ? "行" : id === "evening" ? "月" : "定"}</i><span><strong>${label}</strong><small>${note}</small></span></button>`).join("")}</div></section><section class="dharma-meditation-checkin dharma-paper-card"><header><div><small>KIỂM TRA AN TOÀN TRƯỚC BUỔI THIỀN</small><h2>Lúc này bạn cảm thấy thế nào?</h2></div><span>Không chẩn đoán</span></header><div>${checkIns.map((item) => `<button type="button" data-meditation-checkin="${item.id}" class="${state.meditation.checkIn === item.id ? "is-active" : ""}"><i>${item.icon}</i><span><strong>${item.label}</strong><small>${item.note}</small></span></button>`).join("")}</div>${state.meditation.checkIn === "overwhelmed" ? '<aside><strong>Hãy ổn định trước khi bắt đầu</strong><p>HH tạm không khởi chạy timer. Mở mắt, quan sát môi trường và tìm một người an toàn hoặc hỗ trợ chuyên môn khi cần.</p><button type="button" data-grounding>Mở hướng dẫn ổn định</button></aside>' : ""}</section><section class="dharma-practice-stage"><article class="dharma-meditation dharma-paper-card"><header><div><small>THIỀN ĐƯỜNG SỐ · ${safe(current.label.toUpperCase())}</small><h2>Ngồi yên, biết rõ, không ép buộc</h2></div><span class="dharma-bell" aria-hidden="true">♩</span></header><div class="dharma-timer"><i></i><strong data-timer-display>${formatTimer(timerRemaining)}</strong><small>${timerRunning ? "Đang thực hành" : state.meditation.checkIn === "overwhelmed" ? "Đang tạm dừng vì an toàn" : "Sẵn sàng"}</small></div><div class="dharma-presets">${[3,5,10,15,30,45].map((minutes) => `<button type="button" data-timer-preset="${minutes}" class="${timerInitial === minutes * 60 ? "is-active" : ""}">${minutes}′</button>`).join("")}</div>${state.meditation.presets.length ? `<div class="dharma-saved-presets">${state.meditation.presets.map((preset) => `<button type="button" data-use-meditation-preset="${preset.id}"><strong>${safe(preset.label)}</strong><small>${preset.minutes}′ · ${preset.bellInterval ? `chuông ${preset.bellInterval}′` : "không chuông"}</small></button>`).join("")}</div>` : ""}<div class="dharma-meditation-options"><label>Chuông giữa buổi<select data-bell-interval><option value="0" ${state.meditation.bellInterval === 0 ? "selected" : ""}>Không dùng</option>${[5,10,15].map((value) => `<option value="${value}" ${state.meditation.bellInterval === value ? "selected" : ""}>Mỗi ${value} phút</option>`).join("")}</select></label><label class="dharma-check"><input type="checkbox" data-meditation-silent ${state.meditation.silent ? "checked" : ""}><span>Im lặng hoàn toàn</span></label></div><div class="dharma-timer-actions"><button type="button" data-save-meditation-preset>Lưu preset</button><button type="button" data-timer-reset>Đặt lại</button><button type="button" data-meditation-lock ${timerRunning ? "" : "disabled"}>Khóa tĩnh tâm</button><button class="dharma-primary" type="button" data-timer-toggle ${state.meditation.checkIn === "overwhelmed" ? "disabled" : ""}>${timerRunning ? "Tạm dừng" : "Bắt đầu"}</button></div><button class="dharma-grounding" type="button" data-grounding>! Dừng khẩn cấp và ổn định lại</button><p>${safe(current.guidance)} Nếu thấy hoảng sợ, khó thở hoặc bất ổn, hãy dừng lại, mở mắt và tìm hỗ trợ phù hợp.</p></article><article class="dharma-chant dharma-paper-card"><header><div><small>NIỆM PHẬT</small><h2>Bộ đếm riêng tư</h2></div><span>念</span></header><p>Đếm để duy trì thời khóa, không quy đổi thành công đức và không xếp hạng.</p><div><button type="button" data-chant-minus aria-label="Giảm một">−</button><strong data-chant-count>${state.chantCount}</strong><button type="button" data-chant-plus aria-label="Tăng một">+</button></div><footer><button type="button" data-chant-add="10">+10</button><button type="button" data-chant-add="108">+108</button><button type="button" data-dharma-nav="chanting">Mở phòng tụng</button></footer></article></section>${timerRunning ? `<aside class="dharma-meditation-mini"><span>禪</span><div><strong>${safe(current.label)}</strong><small data-timer-display>${formatTimer(timerRemaining)} · ${safe(state.meditation.playlist)}</small></div><button type="button" data-timer-toggle>Tạm dừng</button><button type="button" data-grounding>Dừng</button></aside>` : ""}<section class="dharma-practice-stats"><article><small>7 NGÀY</small><strong>${weekMinutes} phút</strong><p>Theo dõi thói quen, không tạo chuỗi thành tích.</p></article><article><small>30 NGÀY</small><strong>${monthMinutes} phút</strong><p>Không so sánh với người học khác.</p></article><article><small>PHIÊN ĐÃ LƯU</small><strong>${state.practiceHistory.length}</strong><p>Dữ liệu riêng trên thiết bị.</p></article></section><section class="dharma-history dharma-paper-card"><header><div><small>LỊCH SỬ RIÊNG TƯ</small><h2>Các lần thực hành gần đây</h2></div><div><button type="button" data-dharma-nav="journal">Ghi cảm nhận</button><button type="button" data-clear-practice ${recent.length ? "" : "disabled"}>Xóa lịch sử</button></div></header><div>${recent.map((item) => `<p><i>禪</i><span><strong>${item.minutes} phút · ${safe(item.type || "Hơi thở")}</strong><small>${safe(formatDate(item.at))}</small></span><b>Đã hoàn thành</b></p>`).join("") || "<p class=\"dharma-empty-line\">Chưa có lần thực hành nào được lưu.</p>"}</div></section>`;
+    return `${global.HHDharmaStudyUI?.practice({state}) || ""}${lock}<section class="dharma-meditation-checkin dharma-paper-card"><header><div><small>KIỂM TRA AN TOÀN TRƯỚC BUỔI THIỀN</small><h2>Lúc này bạn cảm thấy thế nào?</h2></div><span>Không chẩn đoán</span></header><div>${checkIns.map((item) => `<button type="button" data-meditation-checkin="${item.id}" class="${state.meditation.checkIn === item.id ? "is-active" : ""}"><i>${item.icon}</i><span><strong>${item.label}</strong><small>${item.note}</small></span></button>`).join("")}</div>${state.meditation.checkIn === "overwhelmed" ? '<aside><strong>Hãy ổn định trước khi bắt đầu</strong><p>HH tạm không khởi chạy timer. Mở mắt, quan sát môi trường và tìm một người an toàn hoặc hỗ trợ chuyên môn khi cần.</p><button type="button" data-grounding>Mở hướng dẫn ổn định</button></aside>' : ""}</section><section class="dharma-practice-stage"><article class="dharma-meditation dharma-paper-card"><header><div><small>THIỀN ĐƯỜNG SỐ · ${safe(current.label.toUpperCase())}</small><h2>Ngồi yên, biết rõ, không ép buộc</h2></div><span class="dharma-bell" aria-hidden="true">♩</span></header><div class="dharma-timer"><i></i><strong data-timer-display>${formatTimer(timerRemaining)}</strong><small>${timerRunning ? "Đang thực hành" : state.meditation.checkIn === "overwhelmed" ? "Đang tạm dừng vì an toàn" : "Sẵn sàng"}</small></div><div class="dharma-presets">${[3,5,10,15,30,45].map((minutes) => `<button type="button" data-timer-preset="${minutes}" class="${timerInitial === minutes * 60 ? "is-active" : ""}">${minutes}′</button>`).join("")}</div>${state.meditation.presets.length ? `<div class="dharma-saved-presets">${state.meditation.presets.map((preset) => `<button type="button" data-use-meditation-preset="${preset.id}"><strong>${safe(preset.label)}</strong><small>${preset.minutes}′ · ${preset.bellInterval ? `chuông ${preset.bellInterval}′` : "không chuông"}</small></button>`).join("")}</div>` : ""}<div class="dharma-meditation-options"><label>Chuông giữa buổi<select data-bell-interval><option value="0" ${state.meditation.bellInterval === 0 ? "selected" : ""}>Không dùng</option>${[5,10,15].map((value) => `<option value="${value}" ${state.meditation.bellInterval === value ? "selected" : ""}>Mỗi ${value} phút</option>`).join("")}</select></label><label class="dharma-check"><input type="checkbox" data-meditation-silent ${state.meditation.silent ? "checked" : ""}><span>Im lặng hoàn toàn</span></label></div><div class="dharma-timer-actions"><button type="button" data-save-meditation-preset>Lưu preset</button><button type="button" data-timer-reset>Đặt lại</button><button type="button" data-meditation-lock ${timerRunning ? "" : "disabled"}>Khóa tĩnh tâm</button><button class="dharma-primary" type="button" data-timer-toggle ${state.meditation.checkIn === "overwhelmed" ? "disabled" : ""}>${timerRunning ? "Tạm dừng" : "Bắt đầu"}</button></div><button class="dharma-grounding" type="button" data-grounding>! Dừng khẩn cấp và ổn định lại</button><p>${safe(current.guidance)} Nếu thấy hoảng sợ, khó thở hoặc bất ổn, hãy dừng lại, mở mắt và tìm hỗ trợ phù hợp.</p></article><article class="dharma-chant dharma-paper-card"><header><div><small>NIỆM PHẬT</small><h2>Bộ đếm riêng tư</h2></div><span>念</span></header><p>Đếm để duy trì thời khóa, không quy đổi thành công đức và không xếp hạng.</p><div><button type="button" data-chant-minus aria-label="Giảm một">−</button><strong data-chant-count>${state.chantCount}</strong><button type="button" data-chant-plus aria-label="Tăng một">+</button></div><footer><button type="button" data-chant-add="10">+10</button><button type="button" data-chant-add="108">+108</button><button type="button" data-dharma-nav="chanting">Mở phòng tụng</button></footer></article></section><section class="dharma-meditation-course dharma-paper-card"><header><div><small>BẮT ĐẦU TẠI ĐÂY · 7 NGÀY</small><h2>Mỗi ngày một thực hành vừa sức</h2></div><span>${completedCourse.length}/7 ngày</span></header><div>${MEDITATION_COURSE.map((day) => `<button type="button" data-course-day="${day.day}" class="${completedCourse.includes(day.day) ? "is-complete" : ""}"><i>${completedCourse.includes(day.day) ? "✓" : day.day}</i><span><strong>${safe(day.title)}</strong><small>${day.minutes} phút · ${safe(practices.find((item) => item.id === day.type)?.label || day.type)}</small></span></button>`).join("")}</div></section><section class="dharma-practice-chooser">${practices.map((item) => `<button type="button" data-meditation-type="${item.id}" class="${current.id === item.id ? "is-active" : ""}"><i>${item.icon}</i><span><strong>${item.label}</strong><small>${item.guidance}</small></span></button>`).join("")}</section><section class="dharma-practice-playlists dharma-paper-card"><header><div><small>PLAYLIST THỰC HÀNH</small><h2>Chọn một nhịp cho thời điểm hiện tại</h2></div><button type="button" data-export-practice-pack>Xuất gói offline JSON</button></header><div>${[["morning","Sáng","Hơi thở · 10 phút"],["noon","Trưa","Thiền đi · 5 phút"],["evening","Tối","Thư giãn sâu · 30 phút"],["custom","Tự chọn","Giữ thiết lập hiện tại"]].map(([id,label,note]) => `<button type="button" data-meditation-playlist="${id}" class="${state.meditation.playlist === id ? "is-active" : ""}"><i>${id === "morning" ? "日" : id === "noon" ? "行" : id === "evening" ? "月" : "定"}</i><span><strong>${label}</strong><small>${note}</small></span></button>`).join("")}</div></section>${timerRunning ? `<aside class="dharma-meditation-mini"><span>禪</span><div><strong>${safe(current.label)}</strong><small data-timer-display>${formatTimer(timerRemaining)} · ${safe(state.meditation.playlist)}</small></div><button type="button" data-timer-toggle>Tạm dừng</button><button type="button" data-grounding>Dừng</button></aside>` : ""}<section class="dharma-practice-stats"><article><small>7 NGÀY</small><strong>${weekMinutes} phút</strong><p>Theo dõi thói quen, không tạo chuỗi thành tích.</p></article><article><small>30 NGÀY</small><strong>${monthMinutes} phút</strong><p>Không so sánh với người học khác.</p></article><article><small>PHIÊN ĐÃ LƯU</small><strong>${state.practiceHistory.length}</strong><p>Dữ liệu riêng trên thiết bị.</p></article></section><section class="dharma-history dharma-paper-card"><header><div><small>LỊCH SỬ RIÊNG TƯ</small><h2>Các lần thực hành gần đây</h2></div><div><button type="button" data-dharma-nav="journal">Ghi cảm nhận</button><button type="button" data-clear-practice ${recent.length ? "" : "disabled"}>Xóa lịch sử</button></div></header><div>${recent.map((item) => `<p><i>禪</i><span><strong>${item.minutes} phút · ${safe(item.type || "Hơi thở")}</strong><small>${safe(formatDate(item.at))}</small></span><b>Đã hoàn thành</b></p>`).join("") || "<p class=\"dharma-empty-line\">Chưa có lần thực hành nào được lưu.</p>"}</div></section>`;
   }
 
   function chantingMarkup() {
@@ -1199,6 +1222,7 @@
   }
 
   function mapMarkup() {
+    if (global.HHDharmaStudyUI) return global.HHDharmaStudyUI.map({teachings: TEACHINGS, selected: selectedMapNode});
     const selected = DHARMA_MAP.find((item) => item.id === selectedMapNode) || DHARMA_MAP[0];
     return `<section class="dharma-route-intro dharma-paper-card"><div><small>BẢN ĐỒ GIÁO PHÁP</small><h2>Thấy mối liên hệ, không học từng khái niệm rời rạc</h2><p>Chọn một nút để chỉ làm sáng nhánh liên quan. Đây là sơ đồ học tập HH, không phải cách phân loại duy nhất của mọi truyền thống.</p></div><span class="dharma-seal">圖</span></section><section class="dharma-map-stage" style="--map-index:${DHARMA_MAP.indexOf(selected)}"><div class="dharma-map-wheel">${DHARMA_MAP.map((item, index) => `<button type="button" data-map-node="${item.id}" class="${selected.id === item.id || selected.links.includes(item.id) ? "is-related" : ""} ${selected.id === item.id ? "is-active" : ""}" style="--node:${index}"><i>${item.icon}</i><span>${safe(item.label)}</span></button>`).join("")}<strong>法</strong></div><article class="dharma-paper-card"><small>NHÁNH ĐANG HỌC</small><h2>${safe(selected.label)}</h2><p>${safe(selected.summary)}</p><div>${selected.links.map((id) => { const item = DHARMA_MAP.find((entry) => entry.id === id); return item ? `<button type="button" data-map-node="${item.id}">${safe(item.label)} →</button>` : ""; }).join("")}</div><button class="dharma-primary" type="button" data-open-teaching="${selected.id === "four-truths" ? "tu-dieu-de" : selected.id === "eightfold" ? "bat-chanh-dao" : selected.id === "aggregates" ? "ngu-uan" : selected.id === "dependent" ? "duyen-khoi" : selected.id === "mindfulness" ? "chanh-niem" : "tu-vo-luong-tam"}">Mở bài giáo lý liên quan</button></article></section>`;
   }
@@ -1383,6 +1407,7 @@
   }
 
   function ritualsMarkup() {
+    if (global.HHDharmaStudyUI) return global.HHDharmaStudyUI.rituals({state, teachings: TEACHINGS});
     const guides = [
       { icon: "礼", title: "Vào chùa và lễ Phật", detail: "Trang phục lịch sự, nói nhỏ, tôn trọng nội quy và không quay chụp khi chưa được phép.", action: "temple", label: "Mở danh bạ chùa" },
       { icon: "誦", title: "Tụng đọc tại gia", detail: "Chọn thời lượng vừa sức, hiểu ý nghĩa và không dùng số lượt tụng để đo công đức hoặc so sánh.", action: "chanting", label: "Mở phòng tụng" },
@@ -1494,6 +1519,7 @@
       const workspace = root.querySelector(".dharma-workspace");
       if (workspace) workspace.scrollTop = 0;
     }
+    if (activeView === "practice") updateTimerDisplay();
   }
 
   function formatTimer(seconds) {
@@ -1503,12 +1529,16 @@
 
   function updateTimerDisplay() {
     if (!root) return;
-    const display = root.querySelector("[data-timer-display]");
-    if (display) display.textContent = formatTimer(timerRemaining);
-    const status = root.querySelector(".dharma-timer small");
-    if (status) status.textContent = timerRunning ? "Đang thực hành" : (timerRemaining === 0 ? "Đã hoàn thành" : "Sẵn sàng");
-    const button = root.querySelector("[data-timer-toggle]");
-    if (button) button.textContent = timerRunning ? "Tạm dừng" : "Bắt đầu";
+    root.querySelectorAll("[data-timer-display]").forEach(node => { node.textContent = formatTimer(timerRemaining); });
+    root.querySelectorAll(".dharma-timer small").forEach(node => { node.textContent = timerRunning ? "Đang thực hành" : (timerRemaining === 0 ? "Đã hoàn thành" : timerRemaining < timerInitial ? "Đang tạm dừng" : "Sẵn sàng"); });
+    root.querySelectorAll("[data-timer-toggle]").forEach(node => { node.textContent = timerRunning ? "Tạm dừng" : timerRemaining < timerInitial && timerRemaining > 0 ? "Tiếp tục" : "Bắt đầu"; });
+    const lockButton = root.querySelector("[data-meditation-lock]");
+    if (lockButton) lockButton.disabled = !timerRunning;
+    const mini = root.querySelector(".dharma-meditation-mini");
+    if (mini) mini.hidden = !timerRunning;
+    if (!state.meditation.locked) root.querySelector(".dharma-focus-lock")?.remove();
+    const primary = root.querySelector("[data-dharma-primary]");
+    if (primary && activeView === "practice" && state.meditation.checkIn !== "overwhelmed") primary.textContent = timerRunning ? "Tạm dừng →" : "Bắt đầu thiền →";
   }
 
   function playBell() {
@@ -1519,6 +1549,7 @@
       const AudioContextClass = global.AudioContext || global.webkitAudioContext;
       if (!AudioContextClass) return;
       const context = new AudioContextClass();
+      bellContexts.add(context);
       const oscillator = context.createOscillator();
       const gain = context.createGain();
       oscillator.type = "sine";
@@ -1530,15 +1561,18 @@
       oscillator.connect(gain).connect(context.destination);
       oscillator.start();
       oscillator.stop(context.currentTime + 1.85);
-      oscillator.addEventListener("ended", () => context.close());
+      oscillator.addEventListener("ended", () => { bellContexts.delete(context); if (context.state !== "closed") context.close().catch(() => {}); });
     } catch {}
   }
 
   function stopTimer() {
+    const wasRunning = timerRunning;
+    if (timerRunning) timerRemaining = Math.max(0, Math.ceil((timerDeadline - Date.now()) / 1000));
     global.clearInterval(timerId);
     timerId = 0;
     timerRunning = false;
     if (state?.meditation?.locked) { state.meditation = { ...state.meditation, locked: false }; saveState(); }
+    if (wasRunning && root) saveState();
     root?.querySelector("[data-dharma-hub]")?.classList.remove("is-practicing");
     updateTimerDisplay();
   }
@@ -1547,26 +1581,34 @@
     if (timerRunning) return stopTimer();
     if (state.meditation.checkIn === "overwhelmed") { groundingDialog(); toast("Timer đang tạm dừng để ưu tiên ổn định.", "warning"); return; }
     if (timerRemaining <= 0) timerRemaining = timerInitial;
+    timerDeadline = Date.now() + timerRemaining * 1000;
+    lastBellBucket = Math.floor((timerInitial - timerRemaining) / (Number(state.meditation.bellInterval || 0) * 60 || Infinity));
     timerRunning = true;
+    saveState();
+    if (activeView === "practice") {
+      renderView({ preserveScroll: true });
+      root?.querySelector(".dharma-timer-actions [data-timer-toggle]")?.focus({ preventScroll: true });
+    }
     if (!state.meditation.silent) playBell();
     root?.querySelector("[data-dharma-hub]")?.classList.add("is-practicing");
     updateTimerDisplay();
     timerId = global.setInterval(() => {
-      timerRemaining -= 1;
+      timerRemaining = Math.max(0, Math.ceil((timerDeadline - Date.now()) / 1000));
       updateTimerDisplay();
       const elapsed = timerInitial - timerRemaining;
       const intervalSeconds = Number(state.meditation.bellInterval || 0) * 60;
-      if (!state.meditation.silent && intervalSeconds > 0 && elapsed > 0 && timerRemaining > 0 && elapsed % intervalSeconds === 0) playBell();
+      const bellBucket = Math.floor(elapsed / (intervalSeconds || Infinity));
+      if (!state.meditation.silent && intervalSeconds > 0 && bellBucket > lastBellBucket && timerRemaining > 0) playBell();
+      lastBellBucket = bellBucket;
       if (timerRemaining > 0) return;
       stopTimer();
       if (!state.meditation.silent) playBell();
       const minutes = Math.max(1, Math.round(timerInitial / 60));
-      const practiceLabels = { breath: "Hơi thở", body: "Quán thân", feeling: "Cảm thọ", kindness: "Tâm từ", walking: "Thiền đi bộ", relaxation: "Thư giãn sâu" };
+      const practiceLabels = Object.fromEntries((STUDY?.practices || [{id:"breath",label:"Hơi thở"}]).map(item => [item.id, item.label]));
       state.practiceHistory = [...state.practiceHistory, { id: global.crypto?.randomUUID?.() || `${Date.now()}`, minutes, type: practiceLabels[state.meditation.type] || "Hơi thở", at: new Date().toISOString() }].slice(-100);
       if (state.meditation.activeCourseDay) state.meditation = { ...state.meditation, courseDays: unique([...state.meditation.courseDays, Number(state.meditation.activeCourseDay)]), activeCourseDay: 0, locked: false };
-      saveState();
-      toast(`Đã lưu ${minutes} phút thực hành.`, "success");
       renderView({ preserveScroll: true });
+      if (saveState()) toast(`Đã lưu ${minutes} phút thực hành.`, "success");
     }, 1000);
   }
 
@@ -2038,6 +2080,37 @@
   }
 
   function handleClick(event) {
+    const studyAction = event.target.closest("[data-study-save], [data-study-complete], [data-study-answer], [data-study-reset-ritual], [data-study-open-map], [data-study-clear-filter]");
+    if (studyAction && STUDY) {
+      if (studyAction.hasAttribute("data-study-clear-filter")) { teachingQuery = ""; teachingFilter = "all"; renderView({preserveScroll:true}); return; }
+      const id = studyAction.dataset.studySave || studyAction.dataset.studyComplete || studyAction.dataset.studyAnswer || studyAction.dataset.studyOpenMap;
+      const topic = TEACHINGS.find(item => item.id === id);
+      if (studyAction.dataset.studyOpenMap && topic) { selectedMapNode = id; navigate("map"); return; }
+      const next = structuredClone(state.studyLab);
+      if (studyAction.dataset.studyResetRitual) {
+        const ritual = STUDY.rituals.find(item => item.id === studyAction.dataset.studyResetRitual);
+        if (!ritual) return;
+        next.ritualChecks[ritual.id] = [];
+      } else {
+        if (!topic) return;
+        if (studyAction.dataset.studyAnswer) {
+          const answer = Number(studyAction.dataset.answerIndex);
+          if (!topic.quiz || !Number.isInteger(answer) || !topic.quiz.options[answer]) return;
+          next.answers[id] = answer;
+        } else {
+          const key = studyAction.dataset.studySave ? "saved" : "completed";
+          next[key] = next[key].includes(id) ? next[key].filter(value => value !== id) : [...next[key], id];
+        }
+      }
+      if (commitStudy(next)) {
+        const attribute = [...studyAction.attributes].find(attr => attr.name.startsWith("data-study-"));
+        renderView({preserveScroll:true});
+        const answerSelector = studyAction.dataset.answerIndex !== undefined ? `[data-answer-index="${studyAction.dataset.answerIndex}"]` : "";
+        root.querySelector(`[${attribute.name}="${attribute.value}"]${answerSelector}`)?.focus({preventScroll:true});
+        toast("Đã lưu tiến độ riêng trên thiết bị.");
+      }
+      return;
+    }
     const groupToggle = event.target.closest("[data-toggle-nav-group]");
     if (groupToggle) {
       openNavGroup = groupToggle.dataset.toggleNavGroup;
@@ -2329,7 +2402,7 @@
     if (event.target.closest("[data-reader-mode]")) return readerMode(SCRIPTURES.find((item) => item.id === selectedScripture));
     if (event.target.closest("[data-reader-close]")) { global.speechSynthesis?.cancel?.(); event.target.closest("[data-dharma-reader]")?.remove(); return; }
     const timerPreset = event.target.closest("[data-timer-preset]");
-    if (timerPreset) { stopTimer(); timerInitial = Number(timerPreset.dataset.timerPreset) * 60; timerRemaining = timerInitial; renderView({ preserveScroll: true }); return; }
+    if (timerPreset) { stopTimer(); timerInitial = Number(timerPreset.dataset.timerPreset) * 60; timerRemaining = timerInitial; state.meditation.activeCourseDay = 0; saveState(); renderView({ preserveScroll: true }); return; }
     const courseDay = event.target.closest("[data-course-day]");
     if (courseDay) {
       const course = MEDITATION_COURSE.find((item) => item.day === Number(courseDay.dataset.courseDay)); if (!course) return;
@@ -2345,12 +2418,12 @@
       stopTimer(); timerInitial = preset.minutes * 60; timerRemaining = timerInitial; state.meditation = { ...state.meditation, type: preset.type, bellInterval: preset.bellInterval, silent: preset.silent }; saveState(); renderView({ preserveScroll: true }); return;
     }
     if (event.target.closest("[data-timer-toggle]")) return toggleTimer();
-    if (event.target.closest("[data-timer-reset]")) { stopTimer(); timerRemaining = timerInitial; updateTimerDisplay(); return; }
+    if (event.target.closest("[data-timer-reset]")) { stopTimer(); timerRemaining = timerInitial; saveState(); updateTimerDisplay(); return; }
     if (event.target.closest("[data-meditation-lock]") && timerRunning) { state.meditation = { ...state.meditation, locked: true }; saveState(); renderView({ preserveScroll: true }); return; }
     if (event.target.closest("[data-meditation-unlock]")) { state.meditation = { ...state.meditation, locked: false }; saveState(); renderView({ preserveScroll: true }); return; }
     if (event.target.closest("[data-grounding]")) return groundingDialog();
     const meditationType = event.target.closest("[data-meditation-type]");
-    if (meditationType) { state.meditation = { ...state.meditation, type: meditationType.dataset.meditationType }; saveState(); renderView({ preserveScroll: true }); return; }
+    if (meditationType) { stopTimer(); timerRemaining = timerInitial; state.meditation = { ...state.meditation, type: meditationType.dataset.meditationType, activeCourseDay: 0 }; saveState(); renderView({ preserveScroll: true }); return; }
     const meditationCheckIn = event.target.closest("[data-meditation-checkin]");
     if (meditationCheckIn) { if (timerRunning) stopTimer(); state.meditation = { ...state.meditation, checkIn: meditationCheckIn.dataset.meditationCheckin }; saveState(); renderView({ preserveScroll: true }); return; }
     const chantAdd = event.target.closest("[data-chant-add]");
@@ -2427,7 +2500,7 @@
     const glossary = event.target.closest("[data-glossary]");
     if (glossary) { selectedGlossary = glossary.dataset.glossary; renderView({ preserveScroll: true }); return; }
     const mapNode = event.target.closest("[data-map-node]");
-    if (mapNode) { selectedMapNode = mapNode.dataset.mapNode; renderView({ preserveScroll: true }); return; }
+    if (mapNode) { selectedMapNode = mapNode.dataset.mapNode; renderView({ preserveScroll: true }); root.querySelector(`[data-map-node="${selectedMapNode}"]`)?.focus({preventScroll:true}); return; }
     if (event.target.closest("[data-clear-practice]")) { const old = state.practiceHistory; state.practiceHistory = []; saveState(); renderView({ preserveScroll: true }); toast("Đã xóa lịch sử thực hành.", "success", () => { state.practiceHistory = old; saveState(); renderView({ preserveScroll: true }); }); return; }
     if (event.target.closest("[data-export-journal]")) return exportJournalMarkdown();
     const saveTalk = event.target.closest("[data-save-talk]");
@@ -2509,6 +2582,18 @@
   }
 
   async function handleChange(event) {
+    if (event.target.matches("[data-study-ritual]")) {
+      const item = STUDY?.rituals.find(item => item.id === event.target.dataset.studyRitual);
+      const index = Number(event.target.dataset.stepIndex);
+      if (!item || !Number.isInteger(index) || !item.steps[index]) return;
+      const next = structuredClone(state.studyLab);
+      const checked = next.ritualChecks[item.id] || [];
+      next.ritualChecks[item.id] = event.target.checked ? unique([...checked, index]) : checked.filter(value => value !== index);
+      if (!commitStudy(next)) { event.target.checked = !event.target.checked; return; }
+      renderView({preserveScroll:true});
+      root.querySelector(`[data-study-ritual="${item.id}"][data-step-index="${index}"]`)?.focus({preventScroll:true});
+      return;
+    }
     if (event.target.matches("[data-research-type]")) { researchType = event.target.value; renderView({ preserveScroll: true }); }
     if (event.target.matches("[data-research-tradition]")) { researchTradition = event.target.value; renderView({ preserveScroll: true }); }
     if (event.target.matches("[data-research-language]")) { researchLanguage = event.target.value; renderView({ preserveScroll: true }); }
@@ -2553,7 +2638,7 @@
     const shareAlias = event.target.closest("[data-circle-share-alias]");
     if (shareAlias) { const id = shareAlias.dataset.circleShareAlias; state.circles = state.circles.map((item) => item.id === id ? { ...item, privacy: { ...item.privacy, shareAlias: shareAlias.checked } } : item); saveState(); }
     const note = event.target.closest("[data-lesson-note]");
-    if (note) { state.lessonNotes = { ...state.lessonNotes, [note.dataset.lessonNote]: note.value }; saveState(); toast("Đã lưu ghi chú trên thiết bị."); }
+    if (note) { state.lessonNotes = { ...state.lessonNotes, [note.dataset.lessonNote]: note.value }; if (saveState()) toast("Đã lưu ghi chú trên thiết bị."); }
     const scriptureNote = event.target.closest("[data-scripture-note]");
     if (scriptureNote) { state.scriptureNotes = { ...state.scriptureNotes, [scriptureNote.dataset.scriptureNote]: scriptureNote.value }; saveState(); toast("Đã lưu ghi chú học tập."); }
     const segmentNote = event.target.closest("[data-scripture-segment-note]");
@@ -2576,6 +2661,15 @@
   }
 
   async function handleSubmit(event) {
+    if (event.target.matches("[data-study-search-form]")) {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      teachingQuery = String(form.get("query") || "").slice(0, 120);
+      teachingFilter = String(form.get("filter") || "all");
+      renderView({preserveScroll:true});
+      root.querySelector('[data-study-search-form] input')?.focus({preventScroll:true});
+      return;
+    }
     const form = event.target;
     if (!form.closest("[data-dharma-hub]")) return;
     event.preventDefault();
@@ -2682,6 +2776,11 @@
 
   function handleKeydown(event) {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); root?.querySelector("[data-dharma-search]")?.focus(); }
+    if (event.key === "Escape" && state.meditation.locked) {
+      state.meditation.locked = false;
+      saveState(); renderView({ preserveScroll: true });
+      root?.querySelector("[data-meditation-lock]")?.focus({ preventScroll: true });
+    }
     if (event.key === "Escape") { root?.querySelector("[data-dharma-reader]")?.remove(); root?.querySelector("[data-dharma-dialog]")?.remove(); root?.querySelector("[data-dharma-search-results]")?.remove(); }
   }
 
@@ -2698,6 +2797,11 @@
     const roles = [currentUser.role, ...(Array.isArray(currentUser.roles) ? currentUser.roles : [])].map((value) => String(value || "").toLowerCase());
     canEditSources = Boolean(currentUser.isAdmin || roles.some((role) => ["admin", "owner", "editor", "dharma-editor"].includes(role)));
     state = readState();
+    const savedTimer = state.meditation.timer;
+    timerInitial = Number.isFinite(savedTimer?.duration) ? Math.max(60, Math.min(3600, Math.floor(savedTimer.duration))) : 300;
+    timerRemaining = Number.isFinite(savedTimer?.remaining) ? Math.max(0, Math.min(timerInitial, Math.floor(savedTimer.remaining))) : timerInitial;
+    state.meditation.locked = false;
+    teachingQuery = ""; teachingFilter = "all";
     const requestedView = String(options.view || "today").split("?")[0];
     activeView = NAV.some((item) => item.id === requestedView) ? requestedView : "today";
     const routeParams = new URLSearchParams((location.hash.split("?")[1] || "").split("#")[0]);
@@ -2724,6 +2828,7 @@
     renderView();
     listen(root, "click", handleClick);
     listen(root, "input", handleInput);
+    listen(global, "pagehide", () => { if (timerRunning) stopTimer(); });
     listen(root, "change", handleChange);
     listen(root, "submit", handleSubmit);
     if (global.HHRealtime?.subscribe) {
@@ -2749,7 +2854,10 @@
     return true;
   }
 
+
   function unmount() {
+    bellContexts.forEach(context => { if (context.state !== "closed") context.close().catch(() => {}); });
+    bellContexts.clear();
     if (state?.circles?.some((item) => item.id === activeCircle && item.sync === "socket.io")) global.HHRealtime?.emit?.("workspace:room:leave", { service: CIRCLE_REALTIME_SERVICE }, { timeout: 2000 }).catch(() => {});
     global.HHRealtime?.unsubscribeScope?.("phat-phap-circles");
     stopTimer();
