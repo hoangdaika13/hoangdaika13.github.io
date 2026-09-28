@@ -33,6 +33,7 @@ const {
   safeAdapterState
 } = require("./admin-control-plane");
 const { POLICY_CONSUMERS } = require("./control-policy");
+const { handleAccounts, requireAccess: requireAccountAccess } = require("./admin-recent-accounts");
 
 const USER_PROJECTION = Object.freeze({
   name: 1,
@@ -97,6 +98,13 @@ function ensureAdminIndexes(db) {
     adminIndexesPromise = Promise.all([
       db.collection("communityAdminAuditLogs").createIndex({ createdAt: -1 }),
       db.collection("communityAdminAuditLogs").createIndex({ adminId: 1, createdAt: -1 }),
+      db.collection("communityAdminAuditLogs").createIndex({ targetType: 1, targetId: 1, createdAt: -1 }),
+      db.collection("users").createIndex({ lastLoginAt: -1 }),
+      db.collection("authSessions").createIndex({ userId: 1, lastSeenAt: -1 }),
+      db.collection("loginEvents").createIndex({ userId: 1, createdAt: -1 }),
+      db.collection("adminAccountReviews").createIndex({ userId: 1 }, { unique: true }),
+      db.collection("adminAccountNotes").createIndex({ userId: 1, createdAt: -1 }),
+      db.collection("adminAccountNotes").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
       db.collection("communityFeatureFlags").createIndex({ key: 1 }, { unique: true }),
       db.collection("communitySystemConfig").createIndex({ key: 1 }, { unique: true }),
       db.collection("communityEmailTemplates").createIndex({ key: 1 }, { unique: true }),
@@ -668,7 +676,7 @@ function pageParams(query) {
 }
 
 async function assertTargetAllowed(admin, target) {
-  return assertTargetByPolicy(admin, target, ROLE_RANK);
+  return assertTargetByPolicy({ ...admin, systemRoles: rolesFor(admin) }, { ...target, systemRoles: rolesFor(target) }, ROLE_RANK);
 }
 
 module.exports = async function handler(req, res) {
@@ -688,6 +696,15 @@ module.exports = async function handler(req, res) {
     const indexesReady = ensureAdminIndexes(db);
     if (req.method !== "GET") await indexesReady;
     else indexesReady.catch((error) => console.error("Admin index initialization failed", error?.message || error));
+
+    if (["accounts-recent", "accounts-detail", "accounts-export", "accounts-manage"].includes(view)) {
+      res.setHeader("Cache-Control", "no-store");
+      try { return await handleAccounts(req, res, { db, admin, body, hydrateAdminAccess, assertTargetAllowed }); }
+      catch (error) {
+        if (req.method === "POST" && access.admin) await writeAdminAudit(db, req, admin, { action: "accounts:request-failed", outcome: "failed", decision: "not-completed", targetType: "user", targetId: idOf(body.userId) ? String(body.userId) : "", reason: "Yêu cầu quản trị không hoàn tất", after: { view, status: Number(error.statusCode || 500), requestedAction: clean(body.action, 60), result: "failed" } }).catch(() => {});
+        throw error;
+      }
+    }
 
     if (req.method === "GET" && view === "mission") {
       requirePermission(admin, "dashboard.view");
@@ -1714,14 +1731,21 @@ module.exports = async function handler(req, res) {
       requirePermission(admin, "sessions.revoke");
       const sessionId = clean(body.sessionId, 180);
       if (!sessionId) return res.status(400).json({ error: "Session ID không hợp lệ." });
+      const targetSession = await db.collection("authSessions").findOne({ sessionId }, { projection: { userId: 1 } });
+      const target = targetSession ? await db.collection("users").findOne({ _id: targetSession.userId }, { projection: USER_PROJECTION }) : null;
+      if (!target) return res.status(404).json({ error: "Không tìm thấy phiên hoặc tài khoản." });
+      await hydrateAdminAccess(db, target);
+      requireAccountAccess(admin, "sessions.revoke", { accountId: String(target._id) });
       const bearer = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
       if (bearer) {
         const currentSession = await db.collection("authSessions").findOne({ tokenHash: createHash("sha256").update(bearer).digest("hex"), sessionId, revokedAt: null }, { projection: { _id: 1 } });
         if (currentSession) return res.status(400).json({ error: "Không thể thu hồi chính phiên đang thực hiện thao tác này.", code: "CURRENT_SESSION_PROTECTED" });
       }
+      // An administrator may revoke their other sessions, never a peer's or superior's.
+      if (String(target._id) !== String(admin._id)) await assertTargetAllowed(admin, target);
       const now = new Date();
       const result = await db.collection("authSessions").updateOne({ sessionId, revokedAt: null }, { $set: { revokedAt: now, revokeReason: requiredReason(body), revokedBy: admin._id } });
-      await writeAdminAudit(db, req, admin, { action, targetType: "auth-session", targetId: sessionId, reason: clean(body.reason, 1000), before: null, after: { revoked: result.modifiedCount > 0 } });
+      await writeAdminAudit(db, req, admin, { action, targetType: "user", targetId: String(target._id), reason: clean(body.reason, 1000), before: null, after: { sessionId, revoked: result.modifiedCount > 0 } });
       return res.status(200).json({ ok: true, revoked: result.modifiedCount > 0 });
     }
 
@@ -2058,6 +2082,7 @@ module.exports = async function handler(req, res) {
       const targetId = idOf(body.userId);
       const target = targetId ? await db.collection("users").findOne({ _id: targetId }, { projection: { ...USER_PROJECTION, tokenVersion: 1 } }) : null;
       if (!target) return res.status(404).json({ error: "Không tìm thấy tài khoản." });
+      requireAccountAccess(admin, action === "user:roles" ? "users.roles" : action === "user:feature-access" ? "users.features" : action === "user:revoke-sessions" ? "sessions.revoke" : "users.moderate", { accountId: String(targetId) });
       await hydrateAdminAccess(db, target);
       await assertTargetAllowed(admin, target);
       const reason = requiredReason(body);
@@ -2124,7 +2149,10 @@ module.exports = async function handler(req, res) {
           }));
         }
       }
-      if (action === "user:revoke-sessions") await db.collection("sessions").updateMany({ userId: targetId, endedAt: null }, { $set: { endedAt: now, revokedAt: now, revokedBy: admin._id } });
+      if (action === "user:revoke-sessions") {
+        await db.collection("authSessions").updateMany({ userId: targetId, revokedAt: null }, { $set: { revokedAt: now, revokeReason: "admin-revoked", revokedBy: admin._id } });
+        await db.collection("sessions").updateMany({ userId: targetId, endedAt: null }, { $set: { endedAt: now, revokedAt: now, revokedBy: admin._id } });
+      }
       const afterDoc = await db.collection("users").findOne({ _id: targetId }, { projection: USER_PROJECTION });
       const after = presentUser(afterDoc);
       await writeAdminAudit(db, req, admin, { action, targetType: "user", targetId: String(targetId), reason, before, after });

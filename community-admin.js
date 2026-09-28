@@ -9,6 +9,11 @@
   let navTimer = 0;
   let activityTimer = 0;
   let userQuery = {};
+  let recentAccounts = null;
+  function accountConsole() {
+    if (!recentAccounts && window.HHAdminRecentAccounts) recentAccounts = window.HHAdminRecentAccounts.create({ api, shell, modal, has, panel: () => panelRef });
+    return recentAccounts;
+  }
   let contentQuery = { type: "post", status: "active" };
   let rightsQuery = { status: "all", page: 1 };
   let rightsEntries = [];
@@ -91,7 +96,7 @@
   let preferences = readPreferences();
 
   const esc = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
-  const dateText = (value) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("vi-VN"); };
+  const dateText = (value) => { const date = new Date(value); return !value || Number.isNaN(date.getTime()) ? "Chưa ghi nhận" : date.toLocaleString("vi-VN"); };
   const durationText = (seconds) => { const value = Math.max(0, Number(seconds || 0)); return value < 60 ? `${value}s` : value < 3600 ? `${Math.floor(value / 60)}m ${value % 60}s` : `${Math.floor(value / 3600)}h ${Math.floor(value % 3600 / 60)}m`; };
   const metaText = (meta) => {
     if (!meta) return "";
@@ -109,6 +114,9 @@
     if (!token) throw new Error("Bạn cần đăng nhập để mở Community Admin.");
     const query = new URLSearchParams({ view, ...(options.query || {}) });
     const controller = new AbortController();
+    const cancel = () => controller.abort();
+    options.signal?.addEventListener("abort", cancel, { once: true });
+    if (options.signal?.aborted) controller.abort();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     let response;
     try {
@@ -124,8 +132,10 @@
       throw error;
     } finally {
       clearTimeout(timeout);
+      options.signal?.removeEventListener("abort", cancel);
     }
     const data = await response.json().catch(() => ({}));
+    if (token !== (window.HHAuthSession?.token?.() || "")) throw new Error("Tài khoản đã thay đổi. Vui lòng mở lại Admin Panel.");
     if (data.privilege) privilege = { ...privilege, ...data.privilege };
     if (Array.isArray(data.customRoles)) customAdminRoles = data.customRoles;
     if (Array.isArray(data.permissionCatalog)) permissionCatalog = data.permissionCatalog;
@@ -183,6 +193,7 @@
           <label><span class="sr-only">Mật độ bảng Admin Galaxy</span><select data-admin-density-select aria-label="Mật độ bảng Admin Galaxy">${densityOptions}</select></label>
           <span class="hh-admin-role">${esc((access?.roles || []).join(" · "))}</span>
           <button type="button" data-admin-command aria-keyshortcuts="Control+K">⌘ Tìm nhanh</button>
+          ${has("users.view") ? '<button type="button" data-admin-view="users">◉ Tài khoản gần nhất</button>' : ""}
           ${has("reports.export") ? '<button type="button" data-admin-export>⇩ Xuất báo cáo</button>' : ""}
         </div>
       </header>
@@ -496,6 +507,7 @@
   }
 
   async function renderUsers(query = {}) {
+    if (accountConsole()) return accountConsole().render(query);
     userQuery = { ...userQuery, ...query };
     panelRef.innerHTML = shell(loading("Đang tải danh sách người dùng..."), "Quản lý người dùng");
     const data = await api("users", { query: userQuery });
@@ -505,6 +517,7 @@
   }
 
   async function openUser(userId) {
+    if (accountConsole()) return accountConsole().open(userId);
     const data = await api("user", { query: { id: userId } });
     const item = data.user;
     const moderation = (data.moderation || []).map((entry) => `<article><i></i><span><strong>${esc(entry.action)}</strong><small>${esc(entry.admin?.name || "Admin")} · ${dateText(entry.createdAt)}</small><p>${esc(entry.reason || "Không có ghi chú")}</p></span></article>`).join("") || "<p>Chưa có lịch sử kiểm duyệt.</p>";
@@ -517,6 +530,8 @@
   }
 
   async function userAction(userId, mode, currentVerified = false, currentFeatures = []) {
+    const profile = await api("accounts-detail", { query: { id: userId } });
+    if (!profile.canManage) { notice("Không thể quản trị tài khoản này theo cấp bậc quyền hiện tại.", "error"); return; }
     if (mode === "roles") await ensurePermissionCatalog();
     const labels = { status: "Cập nhật trạng thái", verify: "Xác minh tài khoản", revoke: "Thu hồi toàn bộ phiên", roles: "Phân quyền hệ thống", features: "Giới hạn quyền dùng tính năng" };
     const roleChoices = [
@@ -525,13 +540,18 @@
     ];
     const content = `${mode === "status" ? '<label><span>Trạng thái</span><select name="status"><option value="active">Hoạt động / mở khóa</option><option value="locked">Khóa</option><option value="suspended">Tạm đình chỉ</option><option value="banned">Cấm</option></select></label><label><span>Đình chỉ đến</span><input name="suspendedUntil" type="datetime-local"></label>' : ""}${mode === "verify" ? `<label><span>Trạng thái xác minh</span><select name="verified"><option value="true" ${currentVerified ? "" : "selected"}>Xác minh tài khoản</option><option value="false" ${currentVerified ? "selected" : ""}>Bỏ xác minh</option></select></label>` : ""}${mode === "roles" ? `<section class="hh-admin-role-picker">${roleChoices.map(([role, label]) => `<label><input name="roles" type="checkbox" value="${esc(role)}"><span>${esc(label)}</span></label>`).join("")}</section>` : ""}${mode === "features" ? `<label class="wide"><span>ID module cần giới hạn</span><textarea name="restrictedFeatures" maxlength="4000" placeholder="Ví dụ: ai-center, media-center, music-ai">${esc(currentFeatures.join("\n"))}</textarea><small>Mỗi dòng hoặc dấu phẩy là một ID module. Để trống để mở lại toàn bộ.</small></label>` : ""}<label class="wide"><span>Lý do bắt buộc</span><textarea name="reason" required minlength="5" maxlength="1000"></textarea></label>`;
     const dialog = modal(labels[mode], content, "Thực hiện");
+    dialog.querySelector("main").insertAdjacentHTML("afterbegin", `<section><strong>${esc(profile.user.name || profile.user.email)}</strong><p>${esc(profile.user.email)} · HH ID ${esc(userId)}</p><p>${mode === "revoke" ? "Mọi phiên của tài khoản này sẽ mất quyền truy cập." : "Thay đổi quyền/trạng thái sẽ tác động trực tiếp tới tài khoản này và được ghi audit."}</p></section>`);
+    if (mode === "roles") dialog.querySelectorAll('input[name="roles"]').forEach(input => { input.checked = profile.user.roles.includes(input.value); });
     dialog.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
+      const finish = beginFormSubmission(event.currentTarget);
+      if (!finish) return;
       const form = new FormData(event.currentTarget);
       const action = mode === "status" ? "user:status" : mode === "verify" ? "user:verify" : mode === "revoke" ? "user:revoke-sessions" : mode === "features" ? "user:feature-access" : "user:roles";
       const body = { action, userId, reason: form.get("reason"), status: form.get("status"), suspendedUntil: form.get("suspendedUntil"), verified: form.get("verified") === "true", roles: form.getAll("roles"), restrictedFeatures: String(form.get("restrictedFeatures") || "").split(/[\s,]+/).map((item) => item.trim()).filter(Boolean) };
-      try { await api("action", { method: "POST", body }); dialog.close(); dialog.remove(); notice("Thao tác quản trị đã hoàn tất và được ghi audit log."); await renderUsers(); }
+      try { await api("action", { method: "POST", body }); dialog.close(); dialog.remove(); notice("Thao tác quản trị đã hoàn tất và được ghi audit log."); await render("users"); }
       catch (error) { notice(error.message, "error"); }
+      finally { finish(); }
     });
   }
 
@@ -1091,6 +1111,7 @@
 
   async function render(view = activeView) {
     clearTimeout(activityTimer);
+    if (view !== "users") { recentAccounts?.dispose(); recentAccounts = null; }
     const previousPlanet = planetForView(activeView);
     activeView = view;
     if (panelRef && previousPlanet !== planetForView(view) && preferences.motion !== "static" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -1147,6 +1168,7 @@
     accessToken = window.HHAuthSession?.token?.() || "";
     activeView = "dashboard";
     await renderDashboard(data);
+    if (new URLSearchParams(location.search).get("hhAdminView") === "users" && has("users.view")) await render("users");
   }
 
   document.addEventListener("click", async (event) => {
@@ -1246,8 +1268,8 @@
 
   const observer = new MutationObserver(ensureNav);
   observer.observe(document.documentElement, { childList: true, subtree: true });
-  window.addEventListener("storage", (event) => { if (event.key === "hh-auth-user") { access = null; ensureNav(); } });
-  window.addEventListener("hh:auth-ready", () => { access = null; ensureNav(); });
+  window.addEventListener("storage", (event) => { if (event.key === "hh-auth-user") { recentAccounts?.dispose(); recentAccounts = null; access = null; ensureNav(); } });
+  window.addEventListener("hh:auth-ready", () => { recentAccounts?.dispose(); recentAccounts = null; access = null; ensureNav(); });
   ensureNav();
 
   window.HHCommunityAdmin = Object.freeze({

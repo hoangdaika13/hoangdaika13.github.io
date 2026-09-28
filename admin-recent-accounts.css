@@ -1,0 +1,55 @@
+/* Scoped identity console, no shell/body or unrelated workspace overrides. */
+.ar-console,.ar-dialog{color:var(--admin-text,#e9edff);font:400 1rem/1.55 system-ui,sans-serif;min-width:0;overflow-wrap:anywhere;color-scheme:dark}
+.ar-console *,.ar-dialog *{box-sizing:border-box;min-width:0}
+.ar-heading{display:flex;justify-content:space-between;align-items:start;gap:1rem;margin-bottom:1.25rem}
+.ar-heading h2,.ar-dialog h2{font-size:clamp(1.25rem,2vw,1.8rem);margin:.25rem 0}
+.ar-heading small{color:#83e9ff;letter-spacing:.12em}
+.ar-console p{margin:.5rem 0 1rem}
+.ar-console button,.ar-dialog button,.ar-console input,.ar-console select,.ar-dialog select,.ar-dialog textarea{font:inherit;max-width:100%;min-height:44px;border:1px solid #7283a8;border-radius:10px;color:inherit;background:#121c33;padding:.6rem .8rem}
+.ar-console button,.ar-dialog button{cursor:pointer;background:linear-gradient(135deg,#213662,#37264f);white-space:normal}
+.ar-console button:hover,.ar-dialog button:hover{border-color:#90f0ff;background:#2b4061}
+.ar-console button:disabled{opacity:.5;cursor:default}
+.ar-console :focus-visible,.ar-dialog :focus-visible{outline:3px solid #8fecff;outline-offset:3px}
+.ar-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin:1rem 0}
+.ar-metrics article{display:flex;flex-direction:column;border:1px solid #61739a;border-radius:16px;padding:1rem;background:linear-gradient(140deg,#123b50d9,#311c4ad9)}
+.ar-metrics strong{font-size:1.8rem;color:#b6fbff}
+.ar-filters{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem;background:#10192bf5;border:1px solid #5c769d;border-radius:16px;padding:1rem;box-shadow:0 6px 20px #0003}
+.ar-filters label,.ar-dialog label{display:flex;flex-direction:column;gap:.35rem;font-size:.95rem}
+.ar-filters input,.ar-filters select{width:100%}
+.ar-actions,.ar-more{grid-column:1/-1}
+.ar-actions{display:flex;flex-wrap:wrap;gap:.65rem;margin:.65rem 0}
+.ar-more>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;padding-top:1rem}
+.ar-console summary,.ar-dialog summary{cursor:pointer;min-height:44px;padding:.55rem;color:#a5e9ff;font-weight:650}
+.ar-selection,.ar-pagination{display:flex;align-items:center;flex-wrap:wrap;gap:.75rem;margin:1rem 0}
+.ar-selection{position:sticky;top:0;z-index:2;background:#111c30;border:1px solid #53688e;border-radius:12px;padding:.65rem}
+.ar-selection span,.ar-pagination span{flex:1}
+.ar-table{width:100%;border-collapse:separate;border-spacing:0;font-size:.95rem;table-layout:fixed}
+.ar-table th{text-align:left;background:#192a43;padding:.8rem}
+.ar-table td{padding:.8rem;border-bottom:1px solid #526480;vertical-align:top;background:#10192ca8;overflow-wrap:anywhere}
+.ar-table th:first-child{width:23%}.ar-table th:last-child{width:100px}
+.ar-table td>span,.ar-table td>time,.ar-table small,.ar-pick span>span,.ar-pick code{display:block}
+.ar-table small{font-size:.85rem;color:#c2cde1;margin:.35rem 0}
+.ar-pick{display:flex;gap:.65rem;align-items:start}.ar-pick input{flex:0 0 20px;min-height:24px;margin-top:.25rem}
+.ar-pick code{font-size:.78rem;margin-top:.4rem}
+.ar-state{color:#b8edff;font-weight:650}
+.ar-disclosure,.ar-empty{padding:.85rem;border:1px dashed #6a7c9f;border-radius:12px;color:#c6d6e9;background:#182339}
+[data-ar-status]{min-height:1.5em;color:#99f5d4}[data-ar-status][data-error=true],[data-ar-error]{color:#ffb5be}
+.ar-detail-dialog{width:min(900px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:90dvh;padding:0;overflow:hidden}
+.ar-detail-dialog>form{display:flex;flex-direction:column;max-height:calc(90dvh - 4px);margin:0}
+.ar-detail-dialog>form>main{display:block;min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain}
+.ar-detail-dialog>form>header,.ar-detail-dialog>form>footer{flex-shrink:0}
+.ar-detail-dialog>form>header strong{font-size:1rem}.ar-detail-dialog>form>header button,.ar-detail-dialog>form>footer button{min-width:44px;min-height:44px;font-size:1rem}
+.ar-dialog{width:100%;grid-column:1/-1}.ar-dialog details{border:1px solid #5e7396;border-radius:12px;margin:.8rem 0;padding:.3rem .7rem}
+.ar-entry{display:flex;flex-direction:column;gap:.35rem;border-top:1px solid #4d5c79;padding:.85rem 0}
+.ar-entry button{align-self:start}.ar-entry small{color:#c4d2e8}.ar-entry p{white-space:pre-wrap;margin:0}
+.ar-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;margin-top:1rem}
+.ar-field-grid label{flex-direction:row;align-items:center;min-height:44px}.ar-field-grid input{width:20px;height:20px}
+.ar-sr{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%)}
+@media(max-width:1100px){.ar-filters{grid-template-columns:repeat(2,minmax(0,1fr));position:static}.ar-table thead{display:none}.ar-table,.ar-table tbody,.ar-table tr,.ar-table td{display:block;width:100%}.ar-table tr{border:1px solid #61739a;border-radius:14px;overflow:hidden;margin:.8rem 0}.ar-table td{display:grid;grid-template-columns:140px minmax(0,1fr);gap:.35rem .8rem}.ar-table td:before{content:attr(data-label);font-weight:650;color:#94e4ff;grid-column:1;grid-row:1/8}.ar-table td>*{grid-column:2}.ar-table td:last-child{display:block}}
+@media(max-width:540px){.ar-heading{flex-direction:column}.ar-filters,.ar-more>div,.ar-field-grid{grid-template-columns:1fr}.ar-table td{display:block}.ar-table td:before{display:block;margin-bottom:.4rem}.ar-actions button{flex:1 1 135px}.ar-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.ar-detail-dialog{margin:auto auto 0;max-height:85dvh;border-radius:18px 18px 0 0}.ar-detail-dialog>form{max-height:calc(85dvh - 4px)}.ar-dialog{font-size:1rem}}
+@media(prefers-reduced-motion:reduce){.ar-console *,.ar-dialog *{scroll-behavior:auto;animation:none!important;transition:none!important}}
+[data-theme=light] .ar-console,[data-theme=light] .ar-dialog{color:#17263e;color-scheme:light}
+[data-theme=light] :is(.ar-filters,.ar-table td,.ar-table th,.ar-disclosure,.ar-empty,.ar-metrics article,.ar-selection){background:#edf3ff;color:#17263e}
+[data-theme=light] :is(.ar-console,.ar-dialog) :is(button,input,select,textarea){background:#f5f7ff;color:#17263e}
+[data-theme=light] :is(.ar-table small,.ar-heading small,.ar-metrics strong,.ar-state,.ar-entry small,.ar-console summary,.ar-dialog summary){color:#174b71}
+@media(forced-colors:active){.ar-console *,.ar-dialog *{box-shadow:none!important;background:Canvas!important;color:CanvasText!important;border-color:ButtonText!important}.ar-console :focus-visible,.ar-dialog :focus-visible{outline-color:Highlight}.ar-console button,.ar-dialog button{color:ButtonText!important}}
