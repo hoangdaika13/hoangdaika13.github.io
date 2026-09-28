@@ -1628,6 +1628,30 @@ body.app-dharma-route .app-mobile-nav { display: none !important; }
 }
 
 /* Study v9: a quiet, responsive reading surface inside the existing Dharma shell. */
+.dharma-learning-home { padding:clamp(18px,3vw,30px); margin-bottom:22px; }
+.dharma-learning-home h2 { font-size:clamp(24px,2.5vw,32px); line-height:1.4; }
+.dharma-learning-home h3 { font-size:21px; }
+.dharma-learning-home p,.dharma-learning-home small { line-height:1.7; }
+.dharma-learning-columns { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.dharma-learning-columns section { min-width:0; }
+.dharma-learning-columns button { display:block; width:100%; text-align:left; min-height:44px; padding:12px; margin:8px 0; border:1px solid #947140; background:#fff8e7; color:#51361e; border-radius:10px; font:inherit; white-space:normal; overflow-wrap:anywhere; cursor:pointer; }
+.dharma-learning-columns select { width:100%; min-height:44px; font:inherit; color:#51361e; background:#fff8e7; }
+.dharma-learning-home summary,.dharma-study-reader-tools summary { padding:12px 0; min-height:44px; font-weight:700; cursor:pointer; }
+.dharma-learning-home :is(button,select,summary):focus-visible { outline:3px solid #286a7b; outline-offset:3px; }
+.dharma-study-reader[data-study-reader-mode] { font-size:var(--study-size,20px); line-height:var(--study-line,1.9); max-width:780px; }
+.dharma-study-reader[data-study-reader-mode] > p,
+.dharma-study-reader[data-study-reader-mode] :is(.dharma-study-objective,.dharma-study-application,.dharma-study-quiz) p { font-size:var(--study-size,20px); line-height:var(--study-line,1.9); }
+.dharma-study-reader[data-study-reader-width=wide] { max-width:1100px; }
+.dharma-study-reader-tools { font-size:16px; border-bottom:1px solid #947140; }
+.dharma-study-reader[data-study-reader-mode=night] { background:#231e18; color:#f7ead6; border-color:#a68551; }
+.dharma-study-reader[data-study-reader-mode=night] :is(h2,h3,p,li,small,legend,label,span) { color:inherit; }
+.dharma-study-reader[data-study-reader-mode=night] :is(.dharma-study-source,.dharma-study-application) { background:#353024; color:#f7ead6; }
+.dharma-study-reader[data-study-reader-mode=night] a { color:#ffda93; }
+.dharma-study-reader[data-study-reader-mode=night] textarea { background:#151310; color:#f7ead6; }
+.dharma-workspace [data-chant-status] { padding:12px 16px; border:1px solid #a98754; border-radius:10px; color:#583814; background:#fff8e7; }
+.dharma-study-objective { padding:14px 0; border-bottom:1px solid #b39a72; }
+@media(max-width:760px) { .dharma-learning-columns { grid-template-columns:minmax(0,1fr); } .dharma-learning-home { padding:18px; } }
+@media(forced-colors:active) { .dharma-study-reader[data-study-reader-mode=night] { background:Canvas; color:CanvasText; } .dharma-learning-columns button { border:1px solid ButtonText; } }
 .dharma-meditation-mini[hidden] { display:none; }
 /* A translated closed Platform sheet must not enlarge this route's viewport. */
 @media(max-width:760px) {

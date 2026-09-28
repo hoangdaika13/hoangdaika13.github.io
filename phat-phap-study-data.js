@@ -70,8 +70,15 @@
     const list = input => [...new Set(Array.isArray(input) ? input.filter(id=>ids.includes(id)) : [])];
     const ritualChecks = {}, answers = {};
     for (const item of rituals) ritualChecks[item.id] = [...new Set((Array.isArray(value.ritualChecks?.[item.id]) ? value.ritualChecks[item.id] : []).filter(n=>Number.isInteger(n)&&n>=0&&n<item.steps.length))];
-    for (const topic of topics) if (Number.isInteger(value.answers?.[topic.id]) && value.answers[topic.id]>=0 && value.answers[topic.id]<topic.quiz.options.length) answers[topic.id]=value.answers[topic.id];
-    return {completed:list(value.completed),saved:list(value.saved),answers,ritualChecks};
+    for (const topic of [...topics,...(global.HHDharmaCurriculum?.topics || [])]) if (Number.isInteger(value.answers?.[topic.id]) && value.answers[topic.id]>=0 && value.answers[topic.id]<topic.quiz.options.length) answers[topic.id]=value.answers[topic.id];
+    const reader = value.reader || {};
+    const positions = {};
+    for (const id of ids) if (Number.isFinite(value.positions?.[id])) positions[id] = Math.max(0,Math.min(100000,value.positions[id]));
+    return {completed:list(value.completed),saved:list(value.saved),answers,ritualChecks,
+      recent:list(value.recent).slice(0,8),lastMap:ids.includes(value.lastMap)?value.lastMap:"tu-dieu-de",positions,
+      reader:{mode:reader.mode==="night"?"night":"paper",size:[18,20,24,28,32].includes(reader.size)?reader.size:20,line:[1.6,1.9,2.2].includes(reader.line)?reader.line:1.9,width:reader.width==="wide"?"wide":"comfortable"},
+      plan:{days:[7,14,30].includes(value.plan?.days)?value.plan.days:7,paused:Boolean(value.plan?.paused),skipped:list(value.plan?.skipped)},
+      filters:{query:String(value.filters?.query || "").slice(0,120),category:String(value.filters?.category || "all").slice(0,80),level:["intro","systematic","deep"].includes(value.filters?.level)?value.filters.level:"all"}};
   }
   function remaining(deadline, now) { return Math.max(0, Math.ceil((deadline-now)/1000)); }
   const api = {topics,enrichment,practices,rituals,chants,paths,normalizeStudy,remaining};

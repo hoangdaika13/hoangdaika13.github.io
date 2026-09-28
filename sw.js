@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1026";
+const CACHE = "hh-identity-portal-v1027";
+// Previous release: hh-identity-portal-v1026
 // Previous release: hh-identity-portal-v1025
 // Previous release: hh-identity-portal-v1024.
 // Previous release: hh-identity-portal-v1023.
@@ -539,7 +540,7 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v3.css?v=4",
   "./japanese-os-v4.css?v=10",
   "./hh-chinese.css?v=15",
-  "./phat-phap.css?v=22",
+  "./phat-phap.css?v=23",
   "./hh-play.css?v=8&build=4",
   "./hh-play-audio-worklet.js?build=2",
   "./assets/phat-phap/duc-phat-hao-quang-v1.webp",
@@ -677,9 +678,12 @@ const RUNTIME_ASSETS = [
   "./japanese-os-v4.js?v=12",
   "./hh-chinese-curriculum.js?v=1",
   "./hh-chinese.js?v=15",
-  "./phat-phap-study-data.js?v=1",
-  "./phat-phap-study-ui.js?v=2",
-  "./phat-phap.js?v=20",
+  "./phat-phap-curriculum.js?v=1",
+  "./phat-phap-study-data.js?v=2",
+  "./phat-phap-learning-tools.js?v=1",
+  "./phat-phap-study-ui.js?v=3",
+  "./phat-phap-practice-runtime.js?v=1",
+  "./phat-phap.js?v=21",
   "./hh-play.js?v=7&build=4",
   "./hh-eonwild-cinematic-pack.js?v=1",
   "./hh-eonwild-cinematic-pack-worker.js?v=1",
@@ -725,7 +729,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=688",
+  "./performance-loader.js?v=689",
   "./auth-platform.js?v=21",
   "./auth-neon-gateway.js?v=34",
   "./script.js?v=280"

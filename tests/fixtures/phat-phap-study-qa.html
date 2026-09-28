@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>QA · Phật Pháp Study</title>
   <link rel="stylesheet" href="../../galaxy-shell.css?v=9">
-  <link rel="stylesheet" href="../../phat-phap.css?qa=1026-final">
+  <link rel="stylesheet" href="../../phat-phap.css?v=23">
   <style>
     html,body { margin:0; height:100%; font-family:system-ui,sans-serif; }
     #appShell { height:100dvh; display:grid; grid-template-rows:48px minmax(0,1fr); }
-    .app-header { display:flex; align-items:center; gap:14px; padding:0 12px; background:#23180d; color:#ffebb4; }
-    .app-header button { min-height:36px; }
+    #appShell>.app-header { display:flex; align-items:center; flex-direction:row; gap:14px; padding:0 12px; background:#23180d; color:#ffebb4; overflow:hidden; }
+    #appShell>.app-header button { width:auto; min-height:36px; flex:none; }
     .app-shell__body { min-height:0; position:relative; }
     #appMain,#appWorkspace,[data-phat-phap-host] { height:100%; min-height:0; }
     #appMain { margin:0; padding:0; }
@@ -26,9 +26,12 @@
       <main id="appMain" class="app-main"><div id="appWorkspace"><div data-phat-phap-host></div></div></main>
     </div>
   </section>
-  <script src="../../phat-phap-study-data.js?qa=1026-final"></script>
-  <script src="../../phat-phap-study-ui.js?qa=1026-final"></script>
-  <script src="../../phat-phap.js?qa=1026-final"></script>
+  <script src="../../phat-phap-curriculum.js?v=1"></script>
+  <script src="../../phat-phap-study-data.js?v=2"></script>
+  <script src="../../phat-phap-learning-tools.js?v=1"></script>
+  <script src="../../phat-phap-study-ui.js?v=3"></script>
+  <script src="../../phat-phap-practice-runtime.js?v=1"></script>
+  <script src="../../phat-phap.js?v=21"></script>
   <script>
     const host = document.querySelector('[data-phat-phap-host]');
     function render() {
