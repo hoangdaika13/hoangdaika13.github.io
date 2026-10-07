@@ -78,9 +78,10 @@ test('legacy storage failure cannot lock navigation or grant an authenticated se
 
 test('email, guest and OAuth fallback choose Platform, preserving explicit resume requests', () => {
   const auth = read('auth-platform.js');
-  assert.match(auth, /sessionStorage.getItem\("hh.auth.pending-route"\) \|\| "#\/platform"/);
+  assert.match(auth, /sessionStorage.getItem\("hh.auth.pending-route"\) \|\| studyInviteRoute\(\) \|\| "#\/platform"/);
   const guest = auth.slice(auth.indexOf('gate.querySelector("[data-guest-login]")'), auth.indexOf('let logoutPending'));
-  assert.match(guest, /location.hash !== "#\/platform"/);
+  assert.match(guest, /guestDestination=studyInviteRoute\(\)\|\|"#\/platform"/);
+  assert.match(guest, /location.hash !== guestDestination/);
   assert.match(guest, /hh-auth-return-to", location.hash \|\| "#\/platform"/);
   assert.doesNotMatch(guest, /#\/home/);
   const legacyLogin = router.slice(router.indexOf('const handleRegister'), router.indexOf('const handleLogin') + 1500);

@@ -8,20 +8,27 @@ const {chromium}=require(process.env.HH_PLAYWRIGHT_PATH||"playwright");
 const root=path.resolve(__dirname,"..");
 let stage="startup";
 async function run(){
-  const credentials=JSON.parse((await fs.readFile(path.join(root,".study-local/credentials.json"),"utf8")).replace(/^\uFEFF/,""));
+  let credentials;
+  if(process.env.HH_STUDY_QA_CLOUD_PROJECT_ID){
+    const {spawnSync}=require("node:child_process"),auth=spawnSync(path.join(root,".study-local/livekit-cli-2.18.8/lk.exe"),["project","list","--json"],{encoding:"utf8",windowsHide:true});
+    if(auth.status!==0)throw Error("Private LiveKit project lookup failed");let projects;try{projects=JSON.parse(auth.stdout)}catch{throw Error("Invalid private CLI response")}
+    const selected=projects.filter(p=>p.ProjectId===process.env.HH_STUDY_QA_CLOUD_PROJECT_ID);if(selected.length!==1)throw Error("Expected exactly the explicitly selected QA Cloud project");
+    credentials={LIVEKIT_URL:selected[0].URL,LIVEKIT_API_KEY:selected[0].APIKey,LIVEKIT_API_SECRET:selected[0].APISecret};console.log("QA doubles with real LiveKit Cloud transport; no production HH identities.");
+  }else credentials=JSON.parse((await fs.readFile(path.join(root,".study-local/credentials.json"),"utf8")).replace(/^\uFEFF/,""));
   const config=configuration(credentials),client=new RoomServiceClient(config.httpUrl,config.key,config.secret,{requestTimeout:8}),db=new MemoryDb(),created=[];
   const users={host:{_id:"650000000000000000000001",name:"QA Host"},learner:{_id:"650000000000000000000002",name:"QA Learner"},visitor:{_id:"650000000000000000000003",name:"QA Visitor"}};
   const server=http.createServer(async(req,res)=>{
     const url=new URL(req.url,"http://localhost");
     if(url.pathname==="/api/study-together"){
       const response={status(n){res.statusCode=n;return this;},json(data){res.setHeader("Content-Type","application/json");res.end(JSON.stringify(data));if(data.room?.host&&!created.includes(data.room.id))created.push(data.room.id);return data;}};
-      if(url.searchParams.get("action")==="config")return response.status(200).json({configured:req.headers["x-qa-mode"]!=="unconfigured"});
+      if(url.searchParams.get("action")==="config")return response.status(200).json({configured:req.headers["x-qa-mode"]!=="unconfigured",authenticationRequired:false,hostAuthenticationRequired:true,guestInvites:true});
       const role=String(req.headers.authorization||"").replace("Bearer qa-","");
       let raw="";for await(const chunk of req)raw+=chunk;
-      try{return await handle({method:req.method,query:Object.fromEntries(url.searchParams)},response,{db,body:raw?JSON.parse(raw):{},user:users[role]||null,config,client,rateLimit:async()=>{}});}
+      try{return await handle({method:req.method,headers:req.headers,socket:req.socket,query:Object.fromEntries(url.searchParams)},response,{db,body:raw?JSON.parse(raw):{},user:users[role]||null,config,client,rateLimit:async()=>{}});}
       catch(e){return response.status(e.statusCode||500).json({error:e.statusCode?e.message:"QA server error"});}
     }
-    try{const allowed=["/tests/fixtures/study-together.html","/study-together.js","/study-together.css","/vendor/livekit-client-2.22.3.umd.js"];if(!allowed.includes(url.pathname)){res.writeHead(404);return res.end();}const file=path.resolve(root,"."+url.pathname);res.setHeader("Content-Type",{".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8"}[path.extname(file)]||"application/octet-stream");res.end(await fs.readFile(file));}catch{res.writeHead(404);res.end();}
+    if(url.pathname.startsWith("/api/")){res.setHeader("Content-Type","application/json");if(url.pathname==="/api/auth/providers")return res.end(JSON.stringify({google:false,email:false}));res.statusCode=401;return res.end(JSON.stringify({error:"QA ONLY: no production HH authentication",code:"AUTH_REQUIRED"}));}
+    try{const pathname=url.pathname==="/"?"/index.html":decodeURIComponent(url.pathname),file=path.resolve(root,"."+pathname),ext=path.extname(file);if(!file.startsWith(root+path.sep)||pathname.split("/").some(p=>p.startsWith(".")||p==="node_modules")||!/[.](html|js|css|json|png|jpg|jpeg|webp|svg|woff2?|ogg|mp3|wav|ico)$/.test(ext)){res.writeHead(404);return res.end();}res.setHeader("Content-Type",{".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".json":"application/json",".svg":"image/svg+xml"}[ext]||"application/octet-stream");res.end(await fs.readFile(file));}catch{res.writeHead(404);res.end();}
   });
   await new Promise(r=>server.listen(0,"127.0.0.1",r));
   const browser=await chromium.launch({headless:true,...(process.env.HH_BROWSER_EXECUTABLE?{executablePath:process.env.HH_BROWSER_EXECUTABLE}:{}),args:["--use-fake-device-for-media-stream","--use-fake-ui-for-media-stream","--enable-usermedia-screen-capturing","--auto-select-desktop-capture-source=Entire screen"]});
@@ -94,6 +101,7 @@ async function run(){
     await peer.locator('#large').click();assert.ok(await peer.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await peer.locator('#large').click();
     stage="close";
     const hostTracks=await host.evaluateHandle(()=>[...qaStudy.room.localParticipant.trackPublications.values()].map(p=>p.track?.mediaStreamTrack).filter(Boolean));
+    await host.waitForFunction(()=>!qaStudy.busy);
     await host.locator('[data-hst-action="confirm-close"]').click();await host.locator('[data-hst-close-dialog] [data-hst-action="close"]').click();await peer.waitForFunction(()=>qaStudy.room===null);assert.equal(await host.evaluate(()=>qaStudy.room),null);
     await host.evaluate(()=>clearInterval(qaScreenFrame));
     assert.equal(await hostTracks.evaluate(tracks=>tracks.every(t=>t.readyState==='ended')),true);
@@ -102,8 +110,36 @@ async function run(){
     await peer.locator('[data-hst-action="test-camera"]').click();await peer.waitForFunction(()=>qaStudy.preview!==null);
     const preview=await peer.evaluateHandle(()=>qaStudy.preview.getTracks());await peer.locator('#exit').click();assert.equal(await preview.evaluate(tracks=>tracks.every(t=>t.readyState==='ended')),true);assert.equal(await peer.evaluate(()=>qaStudy.alive),false);
     const visitor=await c1.newPage();await visitor.goto(base+'?as=visitor');assert.equal(await visitor.locator('[data-hst-notes]').inputValue(),'');
+    stage="guest invitation";
+    await host.waitForFunction(()=>!qaStudy.busy);await host.locator('[data-hst-create] button[type=submit]').click();await host.waitForFunction(()=>qaStudy.room?.state==='connected');
+    const guestCode=await host.evaluate(()=>qaStudy.code),guestRoom=await host.evaluate(()=>qaStudy.info.id);
+    await host.locator('[data-hst-invite-panel] summary').click();await host.addScriptTag({url:new URL(base).origin+'/vendor/jsqr.js'});
+    const inviteLink=await host.locator('[data-hst-invite-link]').inputValue();assert.ok(inviteLink.endsWith('#/learn/study-together?invite='+guestCode));
+    assert.equal(await host.evaluate(async()=>{const img=document.querySelector('[data-hst-invite-qr] img');await img.decode();const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);return jsQR(ctx.getImageData(0,0,canvas.width,canvas.height).data,canvas.width,canvas.height).data;}),inviteLink);
+    const c3=await browser.newContext({viewport:{width:375,height:950},permissions:['camera','microphone']}),guest=await c3.newPage();guest.on('pageerror',e=>errors.push(e.message));
+    await guest.goto(base+'?as=guest#/learn/study-together?invite='+guestCode);await guest.waitForFunction(()=>!document.querySelector('[data-hst-join] button[type=submit]').disabled);
+    assert.equal(await guest.locator('[data-hst-create] button[type=submit]').isDisabled(),true);assert.equal(await guest.locator('[data-hst-join] [name="code"]').inputValue(),guestCode);
+    await guest.locator('[name="displayName"]').fill('QA <Guest>');await guest.locator('[data-hst-join] button[type=submit]').click();await guest.locator('[data-hst-waiting]').waitFor({state:'visible'});
+    const guestId=await guest.evaluate(()=>qaStudy.guest.id);assert.match(guestId,/^g_[a-f0-9]{32}$/);assert.equal(await guest.evaluate(()=>localStorage.getItem('hh.studyTogether.guestSession.v1')),null);
+    await host.locator('[data-hst-pane="people"]').click();await host.waitForFunction(()=>!qaStudy.busy);await host.locator('[data-hst-action="refresh"]').click();await host.locator('[data-hst-admit="'+guestId+'"]').click();await guest.locator('[data-hst-action="check-admission"]').click();await guest.waitForFunction(()=>qaStudy.room?.state==='connected');
+    assert.equal(await guest.evaluate(()=>qaStudy.room.localParticipant.identity),guestId);assert.equal(await guest.evaluate(()=>qaStudy.info.host),false);
+    await guest.locator('[data-hst-pane="chat"]').click();await guest.locator('[data-hst-chat] [name="text"]').fill('Guest QA message');await guest.locator('[data-hst-chat] button').click();await host.locator('[data-hst-pane="chat"]').click();await host.locator('[data-hst-messages]').getByText('Guest QA message',{exact:true}).waitFor();
+    await guest.locator('[data-hst-pane="focus"]').click();await guest.locator('[data-hst-notes]').fill('Guest private note');await guest.reload();assert.equal(await guest.locator('[data-hst-notes]').inputValue(),'Guest private note');assert.equal(await guest.evaluate(()=>qaStudy.room),null);
+    await guest.locator('[data-hst-action="resume-guest"]').click();await guest.waitForFunction(()=>qaStudy.room?.state==='connected');
+    await guest.locator('#large').click();assert.ok(await guest.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await guest.locator('#large').click();
+    await host.locator('[data-hst-pane="people"]').click();await host.waitForFunction(()=>!qaStudy.busy);await host.locator('[data-hst-kick="'+guestId+'"]').click();await guest.waitForFunction(()=>qaStudy.room===null);
+    await guest.locator('[data-hst-action="resume-guest"]').click();await guest.locator('[data-hst-notice]').getByText('Bạn không có quyền xem phòng này.',{exact:true}).waitFor();
+    stage="full shell guest entry";
+    const shellContext=await browser.newContext({viewport:{width:1280,height:900},reducedMotion:'reduce'}),shell=await shellContext.newPage();
+    await shell.goto(new URL(base).origin+'/?api=local#/learn/study-together?invite='+guestCode);
+    await shell.locator('[data-guest-login]').click();await shell.locator('[data-hh-study-together-host] .hst').waitFor({timeout:30000});
+    assert.ok((await shell.url()).includes('invite='+guestCode));assert.equal(await shell.locator('.hst [data-hst-join] [name="code"]').inputValue(),guestCode);assert.equal(await shell.locator('.hst [data-hst-create] button[type=submit]').isDisabled(),true);assert.ok(await shell.locator('.app-sidebar').isVisible());
+    assert.ok(!(await shell.locator('.app-breadcrumb').innerText()).includes(guestCode));assert.ok((await shell.locator('.app-breadcrumb').innerText()).includes('Học cùng nhau'));
+    await shell.screenshot({path:path.join(captures,'full-shell-guest-invite.png')});await shellContext.close();
+    await host.waitForFunction(()=>!qaStudy.busy);await host.locator('[data-hst-action="confirm-close"]').click();await host.locator('[data-hst-close-dialog] [data-hst-action="close"]').click();await host.waitForFunction(()=>qaStudy.room===null);
+    await c3.close();
     await c1.close();await c2.close();assert.deepEqual(errors,[]);
-    console.log(JSON.stringify({responsive:[1440,768,375],textZoom:"200%",unconfiguredState:true,waitingRoom:true,twoRealLiveKitClients:true,cameraVideoReceived:true,microphoneAudioReceived:true,chatAndHand:true,sharedTimer:true,privateNotesReloadAndIsolation:true,syntheticScreenVideoReceived:true,simulatedShareCancellation:true,pushToTalk:true,hostCloseAndTracksStopped:true,previewUnmountCleanup:true,pageErrors:0,captures},null,2));
+    console.log(JSON.stringify({responsive:[1440,768,375],textZoom:"200%",unconfiguredState:true,waitingRoom:true,twoRealLiveKitClients:true,cameraVideoReceived:true,microphoneAudioReceived:true,chatAndHand:true,sharedTimer:true,privateNotesReloadAndIsolation:true,syntheticScreenVideoReceived:true,simulatedShareCancellation:true,pushToTalk:true,hostCloseAndTracksStopped:true,previewUnmountCleanup:true,guestInviteAndSignedSession:true,qrDecoded:true,guestAdmissionChatReloadRejoinAndKick:true,fullShellGuestDeepLink:true,pageErrors:0,captures},null,2));
   }finally{for(const room of created)await client.deleteRoom(room).catch(()=>{});await browser.close();await new Promise(r=>server.close(r));}
 }
 run().catch(e=>{console.error("Study Together browser QA failed at "+stage+": "+String(e.message||e.name).replace(/[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]+/g,"[redacted]").slice(0,1500));process.exitCode=1;});

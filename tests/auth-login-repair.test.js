@@ -38,8 +38,8 @@ test("auth requests time out cleanly instead of leaving the form busy forever", 
   assert.match(runtime, /controller\.abort\("auth-timeout"\)/);
   assert.match(runtime, /Máy chủ phản hồi quá lâu/);
   assert.match(runtime, /finally\s*\{[\s\S]*?clearTimeout\(timeoutId\)/);
-  assert.match(html, /auth-platform\.js\?v=21/);
-  assert.match(worker, /auth-platform\.js\?v=21/);
+  assert.match(html, /src="auth-platform\.js\?v=22"/);
+  assert.match(worker, /auth-platform\.js\?v=22/);
   assert.match(runtime, /hh:logout-request/);
   assert.match(runtime, /history\.replaceState\(\{\}, document\.title/);
 });

@@ -6824,6 +6824,7 @@ function initAppShell() {
     if (route === "/universe/timeline" || route.startsWith("/universe/timeline/")) crumbLabels.timeline = "Dòng thời gian Vũ trụ";
     crumbLabels["social-media-tools"] = "Công cụ truyền thông xã hội";
     crumbLabels["focus-room"] = "Phòng học tập trung";
+    crumbLabels["study-together"] = "Học cùng nhau";
     crumbLabels.platform = "Trang chủ";
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
@@ -7238,7 +7239,7 @@ function initAppShell() {
     }
     releaseSupportLayout(route);
     if (hasLiveSameRouteWorkspace(route)) return;
-    if (route === activeRoute && route === "/learn/study-together" && window.HHStudyTogether?.activeHost?.()?.isConnected && window.HHStudyTogether?.activeOwner?.() === readCurrentAuthUser()?.id) return;
+    if (route === activeRoute && routePathOnly(route) === "/learn/study-together" && window.HHStudyTogether?.activeHost?.()?.isConnected && window.HHStudyTogether?.activeOwner?.() === readCurrentAuthUser()?.id) return;
     if (syncLiveGalaxyLayerOneRoute(route)) return;
     cleanupGalaxyEngineTakeover();
     window.HHPlatformHome?.unmount?.();
@@ -7336,7 +7337,7 @@ function initAppShell() {
     if (route !== "/japanese" && !route.startsWith("/japanese/")) window.HHJapanese?.unmount?.();
     if (route !== "/chinese" && !route.startsWith("/chinese/")) window.HHChinese?.unmount?.();
     if (route !== "/focus-room") window.HHFocusRoom?.unmount?.();
-    if (route !== "/learn/study-together" && !route.startsWith("/learn/study-together/")) window.HHStudyTogether?.unmount?.();
+    if (routePathOnly(route) !== "/learn/study-together" && !routePathOnly(route).startsWith("/learn/study-together/")) window.HHStudyTogether?.unmount?.();
     if (route !== "/phat-phap" && !route.startsWith("/phat-phap/")) window.HHPhatPhap?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
     if (route !== "/play" && !route.startsWith("/play/")) window.HHPlay?.unmount?.();
@@ -7651,8 +7652,8 @@ function initAppShell() {
       pageActions.querySelectorAll("[data-focus-room-panel]").forEach((button) => button.addEventListener("click", () => focusRoomHost.querySelector(`[data-hfr-action="panel"][data-panel="${button.dataset.focusRoomPanel}"]`)?.click()));
       pageActions.querySelector("[data-focus-room-zen]")?.addEventListener("click", () => focusRoomHost.querySelector('[data-hfr-action="zen"]')?.click());
       remember("focus-room");
-    } else if (route === "/learn/study-together" || route.startsWith("/learn/study-together/")) {
-      updatePageHeader("Học cùng nhau", "Phòng học chung LiveKit: hội thoại, camera, chia sẻ màn hình và phiên tập trung.", route);
+    } else if (routePath === "/learn/study-together" || routePath.startsWith("/learn/study-together/")) {
+      updatePageHeader("Học cùng nhau", "Phòng học chung LiveKit: hội thoại, camera, chia sẻ màn hình và phiên tập trung.", routePath);
       pageActions.innerHTML = '<button type="button" data-app-route="/learn">Về Học tập</button><button type="button" data-app-route="/focus-room">Phòng tập trung cá nhân</button>';
       workspace.innerHTML = '<div data-hh-study-together-host></div>';
       if (window.HHStudyTogether?.mount) window.HHStudyTogether.mount(workspace.firstElementChild, { currentUser: readCurrentAuthUser(), apiBase: window.HH_API_BASE || location.origin });

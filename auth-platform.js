@@ -4,6 +4,13 @@
   const GUEST_KEY = "hh.auth.guest";
   const LAST_PROFILE_KEY = "hh.auth.last-profile";
   const STREAK_KEY = "hh.auth.login-streak";
+  // Only a valid, explicit Study Together invitation survives the guest/login entry.
+  const studyInviteRoute = () => {
+    const raw=location.hash.replace(/^#/,"");
+    if(raw.split("?")[0]!=="/learn/study-together")return "";
+    const code=new URLSearchParams(raw.split("?").slice(1).join("?")).get("invite")||"";
+    return /^[a-f0-9]{16}$/i.test(code)?"#/learn/study-together?invite="+code.toUpperCase():"";
+  };
   const AUTH_REQUEST_TIMEOUT = 9000;
   const SESSION_VISUAL_TIMEOUT = 4200;
   let memoryToken = "";
@@ -705,7 +712,7 @@
       const streak = recordLoginStreak();
       gate.classList.add("auth-success");
       setStatus(`${message} · Chuỗi hoạt động ${streak} ngày`, "success");
-      const pendingRoute = sessionStorage.getItem("hh.auth.pending-route") || "#/platform";
+      const pendingRoute = sessionStorage.getItem("hh.auth.pending-route") || studyInviteRoute() || "#/platform";
       sessionStorage.removeItem("hh.auth.pending-route");
       finishSessionCheck();
       if (location.hash !== pendingRoute) history.replaceState({}, document.title, `${location.pathname}${location.search}${pendingRoute}`);
@@ -1105,9 +1112,10 @@
       sessionStorage.setItem(GUEST_KEY, "1");
       sessionStorage.setItem("hh.auth.guest-user", JSON.stringify(guestUser));
       user = guestUser;
-      setStatus("Đã mở workspace local. Tính năng đồng bộ cần tài khoản.", "info");
+      const guestDestination=studyInviteRoute()||"#/platform";
+      setStatus(studyInviteRoute()?"Đã mở lời mời phòng học. Nhập tên khách để yêu cầu tham gia.":"Đã mở workspace local. Tính năng đồng bộ cần tài khoản.", "info");
       finishSessionCheck();
-      if (location.hash !== "#/platform") history.replaceState({}, document.title, `${location.pathname}${location.search}#/platform`);
+      if (location.hash !== guestDestination) history.replaceState({}, document.title, `${location.pathname}${location.search}${guestDestination}`);
       setGateState();
     });
     gate.querySelectorAll("[data-oauth-provider]").forEach((button) => button.addEventListener("click", () => {

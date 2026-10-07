@@ -1,5 +1,5 @@
-const CACHE = "hh-identity-portal-v1030";
-// Previous release: hh-identity-portal-v1029; ./performance-loader.js?v=691.
+const CACHE = "hh-identity-portal-v1031";
+// Previous release: hh-identity-portal-v1030; ./performance-loader.js?v=692.
 // Previous release: hh-identity-portal-v1027
 // Previous release: hh-identity-portal-v1026
 // Previous release: hh-identity-portal-v1025
@@ -441,7 +441,7 @@ const RUNTIME_ASSETS = [
   "./assets/brand/hh-galaxy-star-share.png?v=1",
   "./manifest.webmanifest?v=3",
   "./realtime-core.js?v=1",
-  "./auth-platform.js?v=21",
+  "./auth-platform.js?v=22",
   "./auth-experience.js?v=9",
   "./auth-neon-gateway.js?v=34",
   "./auth-h-galaxy.js?v=15",
@@ -656,8 +656,8 @@ const RUNTIME_ASSETS = [
   "./hh-school-search-worker.js?v=3",
   "./hh-school-code-worker.js?v=2",
   "./hh-school.js?v=6",
-  "./study-together.css?v=1",
-  "./study-together.js?v=1",
+  "./study-together.css?v=2",
+  "./study-together.js?v=2",
   "./vendor/livekit-client-2.22.3.umd.js?v=1",
   "./english-curriculum.js?v=1",
   "./language-learning-core.js?v=1",
@@ -736,10 +736,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=692",
-  "./auth-platform.js?v=21",
+  "./performance-loader.js?v=693",
+  "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=34",
-  "./script.js?v=281"
+  "./script.js?v=282"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime
