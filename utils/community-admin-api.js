@@ -99,6 +99,10 @@ function ensureAdminIndexes(db) {
       db.collection("communityAdminAuditLogs").createIndex({ createdAt: -1 }),
       db.collection("communityAdminAuditLogs").createIndex({ adminId: 1, createdAt: -1 }),
       db.collection("communityAdminAuditLogs").createIndex({ targetType: 1, targetId: 1, createdAt: -1 }),
+      db.collection("communityAdminAuditLogs").createIndex({ "after.userId": 1, createdAt: -1 }, { sparse: true }),
+      db.collection("communityAdminAuditLogs").createIndex({ "before.userId": 1, createdAt: -1 }, { sparse: true }),
+      db.collection("tickets").createIndex({ userId: 1, createdAt: -1 }),
+      db.collection("supportRequests").createIndex({ userId: 1, createdAt: -1 }),
       db.collection("users").createIndex({ lastLoginAt: -1 }),
       db.collection("authSessions").createIndex({ userId: 1, lastSeenAt: -1 }),
       db.collection("loginEvents").createIndex({ userId: 1, createdAt: -1 }),
@@ -697,7 +701,7 @@ module.exports = async function handler(req, res) {
     if (req.method !== "GET") await indexesReady;
     else indexesReady.catch((error) => console.error("Admin index initialization failed", error?.message || error));
 
-    if (["accounts-recent", "accounts-detail", "accounts-export", "accounts-manage"].includes(view)) {
+    if (["accounts-recent", "accounts-detail", "accounts-export", "accounts-profile-export", "accounts-manage"].includes(view)) {
       res.setHeader("Cache-Control", "no-store");
       try { return await handleAccounts(req, res, { db, admin, body, hydrateAdminAccess, assertTargetAllowed }); }
       catch (error) {

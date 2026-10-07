@@ -86,12 +86,12 @@ test("detail redaction and audit/activity permission boundaries", async () => {
   const response = { status() { return this; }, json(data) { this.data = data; return data; } };
   await handleAccounts({ method: "GET", query: { view: "accounts-detail", id: String(member._id) }, headers: {} }, response, { db, admin: { _id: new ObjectId(), systemRoles: ["custom:qa-reader"], adminCustomPermissions: ["users.view"] }, body: {}, hydrateAdminAccess: async () => {}, assertTargetAllowed: async () => {} });
   assert.equal(response.data.events[0].ip, "198.51.*.*");
-  assert.doesNotMatch(JSON.stringify(response.data), /never-return|tokenHash|password|userAgent/);
+  assert.doesNotMatch(JSON.stringify(response.data), /never-return|tokenHash|passwordHash|"password":|"userAgent":/);
   assert.equal(touched.includes("telemetryEvents"), false); assert.equal(touched.includes("communityAdminAuditLogs"), false); assert.equal(touched.includes("adminAccountNotes"), false);
 });
 test("new module is lazy-loaded before Admin and controls are escaped and scoped", () => {
   const read = f => fs.readFileSync(path.join(__dirname, "..", f), "utf8");
-  assert.match(read("performance-loader.js"), /scripts: \["admin-recent-accounts.js\?v=1", "community-admin.js\?v=16"\]/);
+  assert.match(read("performance-loader.js"), /scripts: \["admin-recent-accounts.js\?v=2", "community-admin.js\?v=17"\]/);
   const client = read("admin-recent-accounts.js");
   assert.match(client, /hh\.admin\.accounts\.filters\.v1/); assert.match(client, /pending.*new Set/);
   assert.doesNotMatch(client, /\b(?:alert|prompt|confirm)\s*\(/);
@@ -113,6 +113,7 @@ function mutationHarness() {
   vm.runInNewContext(fs.readFileSync(filename, "utf8"), sandbox, { filename });
   const db = { collection(name) { return {
     findOne: async () => name === "users" ? member : name === "authSessions" ? { _id: "current-session" } : null,
+    find: () => ({ sort() { return this; }, limit() { return this; }, toArray: async () => [] }),
     insertOne: async record => { writes.push({ name, record }); state.notes.push(record); return { insertedId: new ObjectId() }; },
     updateOne: async (filter, update) => { writes.push({ name, filter, update }); return { modifiedCount: 1 }; },
     updateMany: async (filter, update) => { writes.push({ name, filter, update }); return { modifiedCount: 2 }; },
@@ -141,6 +142,59 @@ test("note deletion is bound to target and author, and invalid reasons do not mu
   await h.call("accounts-manage", { userId: String(member._id), action: "note:delete", noteId: String(new ObjectId()), reason: "QA delete" });
   assert.equal(String(h.writes[0].filter.authorId), String(admin._id)); assert.equal(String(h.writes[0].filter.userId), String(member._id));
 });
+test("editing notes binds target and author, excludes content from audit and rejects labelled credentials", async () => {
+  const h = mutationHarness(), noteId = String(new ObjectId());
+  await h.call("accounts-manage", { userId: String(member._id), action: "note:edit", noteId, reason: "QA edit", text: "Updated plain text", systemRoles: ["owner"] });
+  assert.equal(String(h.writes[0].filter.authorId), String(admin._id));
+  assert.equal(String(h.writes[0].filter.userId), String(member._id));
+  assert.equal(h.writes[0].update.$set.text, "Updated plain text");
+  assert.equal(h.audit[0].after.text, undefined);
+  await assert.rejects(h.call("accounts-manage", { userId: String(member._id), action: "note:add", reason: "QA secret", text: "password: should-never-be-saved" }), { statusCode: 400 });
+  assert.equal(h.writes.length, 1);
+});
+test("review stores priority and schedule; invalid assignee or past schedule cannot mutate", async () => {
+  const h = mutationHarness(), reviewAt = new Date(Date.now() + 86400000).toISOString();
+  await h.call("accounts-manage", { userId: String(member._id), action: "review:set", review: true, priority: "high", reviewAt, reason: "QA review" });
+  assert.equal(h.writes[0].update.$set.priority, "high");
+  assert.equal(h.writes[0].update.$set.reviewAt, reviewAt);
+  for(const body of [{assigneeId: "not-an-id"}, {assigneeId: String(member._id)}, {reviewAt:"2000-01-01"}]) await assert.rejects(h.call("accounts-manage", {userId:String(member._id),action:"review:set",review:true,reason:"QA review",...body}), {statusCode:400});
+  assert.equal(h.writes.length, 1);
+});
+function detailHarness(target = member, collections = {}, actor = admin) {
+  const touched = [];
+  const db = {collection(name) { touched.push(name);return {findOne:async()=>name==="users"?target:null,find:()=>({sort(){return this;},limit(){return this;},toArray:async()=>collections[name]||[]})};}};
+  const call = async section => { const res={status(){return this;},json(data){return data;}};return handleAccounts({method:"GET",query:{view:"accounts-detail",id:String(target._id),section},headers:{}},res,{db,admin:actor,body:{},hydrateAdminAccess:async()=>{},assertTargetAllowed:async()=>{}}); };
+  return {call,touched};
+}
+test("profile tabs load only their requested read model and report unauthorized explicitly", async () => {
+  const h = detailHarness(member, {}, {...admin,systemRoles:["custom:qa-reader"],adminCustomPermissions:["users.view"]});
+  const data = await h.call("notes");
+  assert.equal(data.canNotes,false);assert.equal(data.reviewDetail,null);
+  assert.equal(h.touched.includes("adminAccountNotes"),false);
+  assert.equal(h.touched.includes("loginEvents"),false);assert.equal(h.touched.includes("authSessions"),false);
+  const audit = await h.call("audit");assert.equal(audit.canAudit,false);assert.equal(h.touched.includes("communityAdminAuditLogs"),false);
+  await assert.rejects(h.call("not-valid"),{statusCode:400});
+});
+test("current consent revocation suppresses previously stored workspace telemetry", async () => {
+  for(const value of [false,null]) {
+    const h=detailHarness({...member,consentPreferences:{analytics:value}},{telemetryEvents:[{_id:"qa",module:"focus-room",createdAt:now}]});
+    const data=await h.call("workspace");assert.equal(data.canActivity,false);assert.equal(data.activity.length,0);assert.equal(h.touched.includes("telemetryEvents"),false);
+  }
+  const h=detailHarness({...member,consent:true},{telemetryEvents:[{_id:"qa",module:"focus-room",createdAt:now,prompt:"never-return"}]});
+  const data=await h.call("workspace");assert.equal(data.canActivity,true);assert.equal(data.activity[0].module,"focus-room");assert.doesNotMatch(JSON.stringify(data),/never-return/);
+});
+test("scoped reader may inspect its account but cannot inspect another account or enumerate globally", async () => {
+  const role="custom:qa-scope",actor={...admin,systemRoles:[role],adminCustomPermissions:["users.view"],__adminRoleAssignments:[{roleId:role,status:"active",scope:{type:"account",accountIds:[String(member._id)]}}],__adminRoleDefinitions:[{roleId:role,permissions:["users.view"]}]};
+  assert.equal((await detailHarness(member,{},actor).call("privacy")).user.id,String(member._id));
+  await assert.rejects(detailHarness({...member,_id:new ObjectId()},{},actor).call("privacy"),{statusCode:403});
+  assert.throws(()=>requireAccess(actor,"users.view"),{statusCode:403});
+});
+test("role and support projections expose safe metadata and actual expired grant state", async () => {
+  const target={...member,systemRoles:["support"]};
+  const h=detailHarness(target,{communityAccessGrants:[{_id:new ObjectId(),permission:"users.view",status:"active",expiresAt:new Date(0),scope:{type:"account",accountIds:[String(member._id)]},secret:"never-return"}],tickets:[{_id:new ObjectId(),status:"open",priority:"high",message:"never-return",email:"never-return"}]},{...admin,systemRoles:["super_admin"]});
+  const access=await h.call("access");assert.ok(access.effectivePermissions.includes("users.view"));assert.equal(access.accessGrants[0].status,"expired");assert.doesNotMatch(JSON.stringify(access),/never-return/);
+  const support=await h.call("support");assert.equal(support.support[0].status,"open");assert.doesNotMatch(JSON.stringify(support),/never-return/);
+});
 test("own other-session revocation preserves current session and cannot target another account", async () => {
   const h = mutationHarness();
   await assert.rejects(h.call("accounts-manage", { userId: String(member._id), action: "sessions:revoke-others", reason: "QA logout" }), { statusCode: 403 });
@@ -154,4 +208,11 @@ test("export checks permission, allowlists fields, neutralizes formulas and audi
   const result = await h.call("accounts-export", { fields: ["name", "passwordHash", "token"], format: "csv", query: {} });
   assert.match(result.content, /'=formula/); assert.doesNotMatch(result.content, /passwordHash|token/);
   assert.equal(h.audit[0].action, "accounts:export"); assert.equal(h.audit[0].after.count, 1);
+});
+test("single-profile export enforces export permission and audits before returning bounded data", async () => {
+  const h=mutationHarness();
+  await assert.rejects(h.call("accounts-profile-export",{userId:String(member._id)},{...admin,systemRoles:["support"]}),{statusCode:403});
+  const data=await h.call("accounts-profile-export",{userId:String(member._id),fields:["passwordHash"]});
+  const result=JSON.parse(data.content);assert.equal(result.user.id,String(member._id));assert.equal(result.limits.events,100);
+  assert.equal(h.audit[0].action,"accounts:profile-export");assert.doesNotMatch(data.content,/"passwordHash":|"token":|"userAgent":/);
 });

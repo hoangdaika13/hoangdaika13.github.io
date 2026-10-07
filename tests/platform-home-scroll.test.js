@@ -17,5 +17,8 @@ test("Platform home asset versions stay aligned across loader and service worker
   const worker = read("sw.js");
   assert.match(loader, /platform-home\.css\?v=9/);
   assert.match(worker, /\.\/platform-home\.css\?v=9/);
-  assert.match(worker, /\.\/performance-loader\.js\?v=686/);
+  const executableHtml = read("index.html").replace(/<!--[\s\S]*?-->/g, "");
+  const loaderVersion = executableHtml.match(/src="performance-loader\.js\?v=(\d+)"/)?.[1];
+  assert.ok(loaderVersion);
+  assert.ok(worker.includes(`"./performance-loader.js?v=${loaderVersion}"`));
 });

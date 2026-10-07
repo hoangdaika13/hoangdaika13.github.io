@@ -3,12 +3,13 @@
 // Administrative read model: explicit projections only; never return auth tokens.
 const { ObjectId } = require("mongodb");
 const { createHash } = require("crypto");
-const { hasPermissionForResource, rolesFor, requirePermission, writeAdminAudit } = require("./community-admin");
+const { hasPermissionForResource, rolesFor, requirePermission, writeAdminAudit, accessFor } = require("./community-admin");
+const { normalizeScope } = require("./admin-control-plane");
 const { enforceRateLimit } = require("./platform");
 
-const USER_FIELDS = { name: 1, email: 1, avatar: 1, systemRoles: 1, adminCustomPermissions: 1, status: 1, provider: 1, lastProvider: 1, lastLoginAt: 1, createdAt: 1, sessionsRevokedAt: 1, suspendedUntil: 1, restrictedFeatures: 1, verifiedAt: 1, emailVerifiedAt: 1 };
-const SESSION_FIELDS = { sessionId: 1, userId: 1, type: 1, device: 1, createdAt: 1, lastSeenAt: 1, idleExpiresAt: 1, expiresAt: 1, revokedAt: 1, revokeReason: 1, remember: 1 };
-const EVENT_FIELDS = { type: 1, success: 1, reason: 1, browser: 1, platform: 1, kind: 1, region: 1, ip: 1, suspicious: 1, newDevice: 1, createdAt: 1 };
+const USER_FIELDS = { name: 1, email: 1, avatar: 1, systemRoles: 1, adminCustomPermissions: 1, status: 1, provider: 1, lastProvider: 1, lastLoginAt: 1, createdAt: 1, updatedAt: 1, sessionsRevokedAt: 1, suspendedUntil: 1, moderationReason: 1, restrictedFeatures: 1, verifiedAt: 1, emailVerifiedAt: 1, passwordChangedAt: 1, providerChangedAt: 1, consent: 1, consentPreferences: 1, consentUpdatedAt: 1 };
+const SESSION_FIELDS = { sessionId: 1, userId: 1, type: 1, device: 1, createdAt: 1, lastSeenAt: 1, idleExpiresAt: 1, expiresAt: 1, revokedAt: 1, revokedBy: 1, revokeReason: 1, remember: 1 };
+const EVENT_FIELDS = { type: 1, provider: 1, success: 1, reason: 1, browser: 1, platform: 1, kind: 1, region: 1, ip: 1, suspicious: 1, newDevice: 1, createdAt: 1 };
 const EXPORT_FIELDS = ["id", "name", "email", "roles", "status", "provider", "lastLoginAt", "lastActivityAt", "activeSessions", "failedLogins", "securitySignals", "workspace", "device", "browser", "platform", "region", "ip", "sessionState"];
 const text = (v, max = 120) => typeof v === "string" ? v.trim().slice(0, max) : "";
 const error = (message, statusCode = 400) => Object.assign(new Error(message), { statusCode });
@@ -18,7 +19,7 @@ const integer = (v, fallback, min, max) => Number.isFinite(Number(v)) && v !== "
 
 function allowed(admin, permission, resource = {}) { return hasPermissionForResource(admin, permission, resource); }
 function requireAccess(admin, permission, resource = {}) {
-  requirePermission(admin, permission);
+  if (!Object.keys(resource).length) requirePermission(admin, permission);
   if (!allowed(admin, permission, resource)) throw error("Bạn không có quyền quản trị trong phạm vi này.", 403);
 }
 function maskIp(v) {
@@ -37,7 +38,50 @@ function sessionState(s, user = {}, now = new Date()) {
 }
 function publicSession(s, user, currentId, now) {
   const d = s.device && typeof s.device === "object" ? s.device : {};
-  return { id: text(s.sessionId, 180), current: s.sessionId === currentId, state: sessionState(s, user, now), provider: text(s.type, 40), device: text(d.kind), browser: text(d.browser), platform: text(d.platform), region: text(d.region), ip: maskIp(d.ip), createdAt: iso(s.createdAt), lastSeenAt: iso(s.lastSeenAt), expiresAt: iso(s.expiresAt), idleExpiresAt: iso(s.idleExpiresAt), revokedAt: iso(s.revokedAt), reason: text(s.revokeReason) };
+  return { id: text(s.sessionId, 180), current: s.sessionId === currentId, state: sessionState(s, user, now), provider: text(s.type, 40), device: text(d.kind), browser: text(d.browser), platform: text(d.platform), region: text(d.region), ip: maskIp(d.ip), createdAt: iso(s.createdAt), lastSeenAt: iso(s.lastSeenAt), expiresAt: iso(s.expiresAt), idleExpiresAt: iso(s.idleExpiresAt), revokedAt: iso(s.revokedAt), revokedBy: String(s.revokedBy || ""), reason: text(s.revokeReason) };
+}
+const PROFILE_SECTIONS = ["overview", "security", "sessions", "workspace", "access", "support", "audit", "notes", "privacy"];
+function publicAccess(item = {}) {
+  return { id: String(item._id || ""), roleId: text(item.roleId), roleVersion: integer(item.roleVersion, 1, 1, 100000), permission: text(item.permission, 160), status: item.status === "active" && item.expiresAt && new Date(item.expiresAt) <= new Date() ? "expired" : text(item.status) || "active", scope: normalizeScope(item.scope), grantedBy: String(item.grantedBy || ""), reason: text(item.reason, 500), grantedAt: iso(item.grantedAt), expiresAt: iso(item.expiresAt), revokedAt: iso(item.revokedAt) };
+}
+function publicReview(item = {}) {
+  return { review: item.review === true, priority: ["low", "normal", "high", "urgent"].includes(item.priority) ? item.priority : "normal", assigneeId: String(item.assigneeId || ""), reason: text(item.reason, 500), reviewAt: iso(item.reviewAt), updatedAt: iso(item.updatedAt), adminId: String(item.adminId || "") };
+}
+async function profileData(db, admin, target, req, hydrateAdminAccess, assertTargetAllowed) {
+  const section = text(req.query.section);
+  if (section && !PROFILE_SECTIONS.includes(section)) throw error("Mục hồ sơ không hợp lệ.");
+  const wants = (...sections) => !section || sections.includes(section);
+  const resource = { accountId: String(target._id) };
+  const canRoles = allowed(admin, "users.roles", resource), canNotes = allowed(admin, "users.moderate", resource), canAudit = allowed(admin, "audit.view", resource), canSupport = allowed(admin, "reports.manage", resource);
+  const analyticsConsent = target.consentPreferences?.analytics ?? (typeof target.consent === "boolean" ? target.consent : null);
+  const canActivity = allowed(admin, "activity.view", resource) && analyticsConsent === true;
+  const read = (name, projection, limit, sort = { createdAt: -1 }, extra = {}) => db.collection(name).find({ userId: target._id, ...extra }, { projection, maxTimeMS: 5000 }).sort(sort).limit(limit).toArray();
+  const bearer = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  const [events, sessions, audit, activity, notes, review, assignments, grants, tickets, supportRequests, current, presence] = await Promise.all([
+    wants("overview", "security") ? read("loginEvents", EVENT_FIELDS, 100) : [],
+    wants("overview", "sessions") ? read("authSessions", SESSION_FIELDS, 100, { lastSeenAt: -1 }) : [],
+    wants("audit") && canAudit ? db.collection("communityAdminAuditLogs").find({ $or: [{ targetType: "user", targetId: String(target._id) }, { targetType: "role-assignment", "after.userId": String(target._id) }, { targetType: "role-assignment", "before.userId": String(target._id) }] }, { projection: { action: 1, reason: 1, admin: 1, createdAt: 1, outcome: 1 }, maxTimeMS: 5000 }).sort({ createdAt: -1 }).limit(50).toArray() : [],
+    wants("workspace") && canActivity ? read("telemetryEvents", { module: 1, type: 1, createdAt: 1 }, 100) : [],
+    wants("notes") && canNotes ? read("adminAccountNotes", { text: 1, authorId: 1, createdAt: 1, updatedAt: 1, expiresAt: 1 }, 50, { createdAt: -1 }, { $or: [{ expiresAt: { $exists: false } }, { expiresAt: { $gt: new Date() } }] }) : [],
+    wants("overview", "notes") && canNotes ? db.collection("adminAccountReviews").findOne({ userId: target._id }, { projection: { review: 1, priority: 1, assigneeId: 1, reason: 1, reviewAt: 1, adminId: 1, updatedAt: 1 } }) : null,
+    wants("access") && canRoles ? read("communityRoleAssignments", { roleId: 1, roleVersion: 1, status: 1, scope: 1, grantedBy: 1, reason: 1, grantedAt: 1, expiresAt: 1, revokedAt: 1 }, 100, { grantedAt: -1 }) : [],
+    wants("access") && canRoles ? read("communityAccessGrants", { permission: 1, status: 1, scope: 1, grantedBy: 1, reason: 1, grantedAt: 1, expiresAt: 1, revokedAt: 1 }, 100, { grantedAt: -1 }) : [],
+    wants("support") && canSupport ? read("tickets", { status: 1, priority: 1, createdAt: 1, updatedAt: 1 }, 30) : [],
+    wants("support") && canSupport ? read("supportRequests", { status: 1, createdAt: 1, updatedAt: 1 }, 30) : [],
+    wants("sessions") && bearer ? db.collection("authSessions").findOne({ tokenHash: createHash("sha256").update(bearer).digest("hex"), userId: admin._id }, { projection: { sessionId: 1 } }) : null,
+    wants("overview") && canActivity ? read("presence", { module: 1, lastSeenAt: 1 }, 1, { lastSeenAt: -1 }, { analyticsConsent: true }) : []
+  ]);
+  // Hydration preserves existing role policy; all permission evaluation stays on the server.
+  await hydrateAdminAccess(db, target);
+  let canManage = true;
+  try { await assertTargetAllowed(admin, target); } catch { canManage = false; }
+  const sessionRows = sessions.map(s => publicSession(s, target, current?.sessionId, new Date()));
+  const eventRows = events.map(e => ({ id: String(e._id), type: text(e.type), provider: text(e.provider || e.type), success: e.success !== false, reason: text(e.reason), browser: text(e.browser), platform: text(e.platform), device: text(e.kind), region: text(e.region), ip: maskIp(e.ip), suspicious: e.suspicious === true, newDevice: e.newDevice === true, createdAt: iso(e.createdAt) }));
+  const latest = sessions[0];
+  const activityTimes = [iso(latest?.lastSeenAt), iso(presence[0]?.lastSeenAt)].filter(Boolean).sort();
+  const facts = { ...target, latestSession: latest, provider: target.lastProvider || target.provider || latest?.type, activeSessions: sessionRows.filter(s => s.state === "active").length, failedLogins: eventRows.filter(e => !e.success).length, securitySignals: eventRows.filter(e => e.suspicious || e.newDevice).length, lastActivityAt: activityTimes.at(-1), workspace: presence[0]?.module, sessionState: sessionRows.some(s => s.state === "active") ? "active" : sessionRows[0]?.state || "unknown" };
+  const effectivePermissions = canRoles ? [...new Set([...accessFor(target).permissions, ...(target.__adminPermissionGrants || []).map(g => g.permission)])].filter(p => p === "*" || allowed(target, p)).slice(0, 500) : [];
+  return { ok: true, section: section || "all", generatedAt: new Date().toISOString(), user: { ...presentAccount(facts), roles: rolesFor(target), restrictedFeatures: target.restrictedFeatures || [], moderationReason: text(target.moderationReason, 500), suspendedUntil: iso(target.suspendedUntil), updatedAt: iso(target.updatedAt), passwordChangedAt: iso(target.passwordChangedAt), providerChangedAt: iso(target.providerChangedAt) }, canManage, canActivity, canRoles, canNotes, canAudit, canSupport, activityReason: !allowed(admin, "activity.view", resource) ? "Không có quyền xem hoạt động." : "Người dùng chưa cho phép hiển thị hoạt động chi tiết.", verified: Boolean(target.verifiedAt || target.emailVerifiedAt), review: review?.review === true, reviewDetail: canNotes ? publicReview(review || {}) : null, events: eventRows, sessions: sessionRows, roleAssignments: assignments.map(publicAccess), accessGrants: grants.map(publicAccess), effectivePermissions, audit: audit.map(e => ({ id: String(e._id), action: text(e.action), reason: text(e.reason, 1000), admin: text(e.admin?.name), outcome: text(e.outcome), createdAt: iso(e.createdAt) })), activity: activity.map(e => ({ id: String(e._id), module: text(e.module), type: text(e.type), createdAt: iso(e.createdAt) })), notes: notes.map(e => ({ id: String(e._id), text: text(e.text, 1000), authorId: String(e.authorId), createdAt: iso(e.createdAt), updatedAt: iso(e.updatedAt), expiresAt: iso(e.expiresAt) })), support: [...tickets.map(e => ({ ...e, source: "Helpdesk" })), ...supportRequests.map(e => ({ ...e, source: "Hỗ trợ" }))].map(e => ({ id: String(e._id), source: e.source, status: text(e.status), priority: text(e.priority), createdAt: iso(e.createdAt), updatedAt: iso(e.updatedAt) })), privacy: { analyticsConsent, personalizationConsent: target.consentPreferences?.personalization ?? null, updatedAt: iso(target.consentUpdatedAt), maskedNetwork: true, privateContentVisible: false }, limits: { events: 100, sessions: 100, notes: 50, audit: 50, support: 60 } };
 }
 function normalizeQuery(input = {}, now = new Date()) {
   const range = ["today", "7", "30", "custom", "all"].includes(input.range) ? input.range : "30";
@@ -129,8 +173,8 @@ function csvCell(value) {
 async function handleAccounts(req, res, { db, admin, body, hydrateAdminAccess, assertTargetAllowed }) {
   const view = text(req.query.view);
   if (req.method === "GET" && view === "accounts-recent") return res.status(200).json(await listAccounts(db, admin, req.query));
-  requireAccess(admin, "users.view");
   if (req.method === "POST" && view === "accounts-export") {
+    requireAccess(admin, "users.view");
     requireAccess(admin, "reports.export");
     await enforceRateLimit(db, `admin-accounts-export:${admin._id}`, 10, 600000);
     const fields = [...new Set((Array.isArray(body.fields) ? body.fields : EXPORT_FIELDS).filter(v => EXPORT_FIELDS.includes(v)))];
@@ -139,40 +183,28 @@ async function handleAccounts(req, res, { db, admin, body, hydrateAdminAccess, a
     const selected = Array.isArray(body.ids) ? body.ids.filter(v => typeof v === "string" && ObjectId.isValid(v)).slice(0, 50) : [];
     if (Array.isArray(body.ids) && body.ids.length && !selected.length) throw error("Danh sách tài khoản đã chọn không hợp lệ.");
     const rows = data.users.filter(row => !selected.length || selected.includes(row.id)).map(row => Object.fromEntries(fields.map(k => [k, row[k]])));
-    await writeAdminAudit(db, req, admin, { action: "accounts:export", targetType: "report", targetId: "recent-accounts", reason: "Xuất dữ liệu quản trị đã lọc", after: { count: rows.length, fields, format: body.format === "csv" ? "csv" : "json" } });
+    const filter = normalizeQuery(body.query || {});
+    await writeAdminAudit(db, req, admin, { action: "accounts:export", targetType: "report", targetId: "recent-accounts", reason: "Xuất dữ liệu quản trị đã lọc", after: { count: rows.length, fields, format: body.format === "csv" ? "csv" : "json", filter: { range: filter.range, from: iso(filter.from), to: iso(filter.to), status: filter.status, state: filter.state, role: filter.role, provider: filter.provider, workspace: filter.workspace, signal: filter.signal, activity: filter.activity, sort: filter.sort, searchApplied: Boolean(filter.q), selectedCount: selected.length } } });
     const content = body.format === "csv" ? "\uFEFF" + [fields.map(csvCell).join(","), ...rows.map(row => fields.map(k => csvCell(row[k])).join(","))].join("\r\n") : JSON.stringify({ generatedAt: data.generatedAt, accounts: rows }, null, 2);
     res.setHeader("Cache-Control", "no-store");
     return res.status(200).json({ ok: true, content, count: rows.length });
   }
-  const userId = text(req.method === "GET" ? req.query.id : body.userId, 24);
+  const userId = text(req.method === "GET" ? req.query.id : body.userId, 180);
   if (!ObjectId.isValid(userId)) throw error("HH ID không hợp lệ.");
+  requireAccess(admin, "users.view", { accountId: userId });
   const target = await db.collection("users").findOne({ _id: new ObjectId(userId) }, { projection: USER_FIELDS });
   if (!target) throw error("Không tìm thấy tài khoản.", 404);
-  if (req.method === "GET" && view === "accounts-detail") {
-    const canActivity = allowed(admin, "activity.view");
-    const canModerate = allowed(admin, "users.moderate");
-    const bearer = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
-    const [events, sessions, audit, activity, notes, review, current] = await Promise.all([
-      db.collection("loginEvents").find({ userId: target._id }, { projection: EVENT_FIELDS }).sort({ createdAt: -1 }).limit(100).toArray(),
-      db.collection("authSessions").find({ userId: target._id }, { projection: SESSION_FIELDS }).sort({ lastSeenAt: -1 }).limit(100).toArray(),
-      allowed(admin, "audit.view") ? db.collection("communityAdminAuditLogs").find({ targetType: "user", targetId: userId }, { projection: { action: 1, reason: 1, admin: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(50).toArray() : [],
-      // The ingestion endpoint persists events only after analytics consent;
-      // older records intentionally have no analyticsConsent field.
-      canActivity ? db.collection("telemetryEvents").find({ userId: target._id }, { projection: { module: 1, type: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(100).toArray() : [],
-      canModerate ? db.collection("adminAccountNotes").find({ userId: target._id }, { projection: { text: 1, authorId: 1, createdAt: 1 } }).sort({ createdAt: -1 }).limit(50).toArray() : [],
-      db.collection("adminAccountReviews").findOne({ userId: target._id }, { projection: { review: 1 } }),
-      bearer ? db.collection("authSessions").findOne({ tokenHash: createHash("sha256").update(bearer).digest("hex"), userId: admin._id }, { projection: { sessionId: 1 } }) : null
-    ]);
-    await hydrateAdminAccess(db, target);
-    let canManage = true;
-    try { await assertTargetAllowed(admin, target); } catch { canManage = false; }
-    return res.status(200).json({ ok: true, user: { ...presentAccount(target), roles: rolesFor(target), restrictedFeatures: target.restrictedFeatures || [] }, canManage, canActivity, review: review?.review === true,
-      verified: Boolean(target.verifiedAt || target.emailVerifiedAt), events: events.map(e => ({ id: String(e._id), type: text(e.type), success: e.success !== false, reason: text(e.reason), browser: text(e.browser), platform: text(e.platform), region: text(e.region), ip: maskIp(e.ip), suspicious: e.suspicious === true, newDevice: e.newDevice === true, createdAt: iso(e.createdAt) })),
-      sessions: sessions.map(s => publicSession(s, target, current?.sessionId, new Date())),
-      audit: audit.map(e => ({ id: String(e._id), action: text(e.action), reason: text(e.reason, 1000), admin: text(e.admin?.name), createdAt: iso(e.createdAt) })),
-      activity: activity.map(e => ({ id: String(e._id), module: text(e.module), type: text(e.type), createdAt: iso(e.createdAt) })),
-      notes: notes.map(e => ({ id: String(e._id), text: text(e.text, 1000), authorId: String(e.authorId), createdAt: iso(e.createdAt) })) });
+  if (req.method === "POST" && view === "accounts-profile-export") {
+    requireAccess(admin, "reports.export", { accountId: userId });
+    await enforceRateLimit(db, `admin-accounts-export:${admin._id}`, 10, 600000);
+    const data = await profileData(db, admin, target, { ...req, query: {} }, hydrateAdminAccess, assertTargetAllowed);
+    const { user, events, sessions, activity, roleAssignments, accessGrants, effectivePermissions, notes, reviewDetail, audit, support, privacy, generatedAt, limits } = data;
+    const records = events.length + sessions.length + activity.length + roleAssignments.length + accessGrants.length + notes.length + audit.length + support.length;
+    await writeAdminAudit(db, req, admin, { action: "accounts:profile-export", targetType: "user", targetId: userId, reason: "Xuất hồ sơ quản trị theo quyền hiện tại", after: { format: "json", records, limits } });
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).json({ ok: true, content: JSON.stringify({ generatedAt, user, events, sessions, activity, roleAssignments, accessGrants, effectivePermissions, notes, reviewDetail, audit, support, privacy, limits }, null, 2), count: records });
   }
+  if (req.method === "GET" && view === "accounts-detail") return res.status(200).json(await profileData(db, admin, target, req, hydrateAdminAccess, assertTargetAllowed));
   if (req.method === "POST" && view === "accounts-manage") {
     if (body.action === "sessions:revoke-others") {
       requireAccess(admin, "sessions.revoke", { accountId: userId });
@@ -200,15 +232,31 @@ async function handleAccounts(req, res, { db, admin, body, hydrateAdminAccess, a
     if (action === "note:add") {
       const value = text(body.text, 1000);
       if (!value) throw error("Ghi chú không được để trống.");
+      if (/(?:password|mật khẩu|otp|api.?key|token|secret)\s*[:=]/i.test(value)) throw error("Không ghi thông tin đăng nhập hoặc mã bí mật vào ghi chú.");
       const result = await db.collection("adminAccountNotes").insertOne({ userId: target._id, authorId: admin._id, text: value, createdAt: new Date(), expiresAt: new Date(Date.now() + 365 * 86400000) });
       after = { noteId: String(result.insertedId), added: true };
+    } else if (action === "note:edit") {
+      const noteId = text(body.noteId, 180), value = text(body.text, 1000);
+      if (!ObjectId.isValid(noteId) || !value) throw error("Ghi chú hoặc nội dung không hợp lệ.");
+      if (/(?:password|mật khẩu|otp|api.?key|token|secret)\s*[:=]/i.test(value)) throw error("Không ghi thông tin đăng nhập hoặc mã bí mật vào ghi chú.");
+      const result = await db.collection("adminAccountNotes").updateOne({ _id: new ObjectId(noteId), userId: target._id, authorId: admin._id, $or: [{ expiresAt: { $exists: false } }, { expiresAt: { $gt: new Date() } }] }, { $set: { text: value, updatedAt: new Date() } });
+      if (!result.matchedCount && !result.modifiedCount) throw error("Chỉ có thể sửa ghi chú của chính bạn nếu ghi chú vẫn tồn tại.", 403);
+      after = { noteId, updated: true };
     } else if (action === "note:delete") {
       if (!ObjectId.isValid(text(body.noteId, 24))) throw error("Ghi chú không hợp lệ.");
       const result = await db.collection("adminAccountNotes").deleteOne({ _id: new ObjectId(body.noteId), userId: target._id, authorId: admin._id });
       if (!result.deletedCount) throw error("Chỉ có thể xóa ghi chú do chính bạn tạo, nếu ghi chú vẫn tồn tại.", 403);
       after = { noteId: body.noteId, deleted: true };
     } else if (action === "review:set") {
-      after = { review: body.review === true };
+      const priority = ["low", "normal", "high", "urgent"].includes(body.priority) ? body.priority : "normal";
+      const assigneeId = text(body.assigneeId, 180), reviewAt = body.reviewAt ? iso(body.reviewAt) : null;
+      if (body.reviewAt && (!reviewAt || new Date(reviewAt) <= new Date())) throw error("Chọn thời điểm xem lại trong tương lai.");
+      if (assigneeId) {
+        if (!ObjectId.isValid(assigneeId)) throw error("HH ID người phụ trách không hợp lệ.");
+        const assignee = await db.collection("users").findOne({ _id: new ObjectId(assigneeId) }, { projection: { email: 1, systemRoles: 1, adminCustomPermissions: 1, status: 1 } });
+        if (!assignee || !rolesFor(assignee).length || ["locked", "suspended", "banned", "deleted"].includes(assignee.status)) throw error("Người phụ trách phải là tài khoản quản trị còn hoạt động.");
+      }
+      after = { review: body.review === true, priority, assigneeId, reviewAt, reason };
       await db.collection("adminAccountReviews").updateOne({ userId: target._id }, { $set: { ...after, updatedAt: new Date(), adminId: admin._id } }, { upsert: true });
     } else throw error("Thao tác không được hỗ trợ.");
     await writeAdminAudit(db, req, admin, { action: `accounts:${action}`, targetType: "user", targetId: userId, reason, after });

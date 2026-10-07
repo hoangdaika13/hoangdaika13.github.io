@@ -530,7 +530,7 @@
   }
 
   async function userAction(userId, mode, currentVerified = false, currentFeatures = []) {
-    const profile = await api("accounts-detail", { query: { id: userId } });
+    const profile = await api("accounts-detail", { query: { id: userId, section: "overview" } });
     if (!profile.canManage) { notice("Không thể quản trị tài khoản này theo cấp bậc quyền hiện tại.", "error"); return; }
     if (mode === "roles") await ensurePermissionCatalog();
     const labels = { status: "Cập nhật trạng thái", verify: "Xác minh tài khoản", revoke: "Thu hồi toàn bộ phiên", roles: "Phân quyền hệ thống", features: "Giới hạn quyền dùng tính năng" };
@@ -542,6 +542,10 @@
     const dialog = modal(labels[mode], content, "Thực hiện");
     dialog.querySelector("main").insertAdjacentHTML("afterbegin", `<section><strong>${esc(profile.user.name || profile.user.email)}</strong><p>${esc(profile.user.email)} · HH ID ${esc(userId)}</p><p>${mode === "revoke" ? "Mọi phiên của tài khoản này sẽ mất quyền truy cập." : "Thay đổi quyền/trạng thái sẽ tác động trực tiếp tới tài khoản này và được ghi audit."}</p></section>`);
     if (mode === "roles") dialog.querySelectorAll('input[name="roles"]').forEach(input => { input.checked = profile.user.roles.includes(input.value); });
+    if (mode === "status") {
+      dialog.querySelector('[name="status"]').value = profile.user.status;
+      if (profile.user.suspendedUntil) { const at = new Date(profile.user.suspendedUntil); dialog.querySelector('[name="suspendedUntil"]').value = new Date(at.getTime() - at.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }
+    }
     dialog.querySelector("form").addEventListener("submit", async (event) => {
       event.preventDefault();
       const finish = beginFormSubmission(event.currentTarget);

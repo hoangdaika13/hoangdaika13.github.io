@@ -313,8 +313,8 @@
       scripts: ["insights-pro.js?v=7"]
     },
     admin: {
-      styles: ["community-admin.css?v=12", "admin-recent-accounts.css?v=1"],
-      scripts: ["admin-recent-accounts.js?v=1", "community-admin.js?v=16"]
+      styles: ["community-admin.css?v=12", "admin-recent-accounts.css?v=2"],
+      scripts: ["admin-recent-accounts.js?v=2", "community-admin.js?v=17"]
     },
     support: {
       styles: ["support-platform.css?v=14"],

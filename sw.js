@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1028";
+const CACHE = "hh-identity-portal-v1029";
+// Previous release: hh-identity-portal-v1028; ./performance-loader.js?v=690.
 // Previous release: hh-identity-portal-v1027
 // Previous release: hh-identity-portal-v1026
 // Previous release: hh-identity-portal-v1025
@@ -553,9 +554,9 @@ const RUNTIME_ASSETS = [
   "./community-messenger-pro.css?v=1",
   "./community-calls.js?v=1",
   "./community-admin.css?v=12",
-  "./admin-recent-accounts.css?v=1",
-  "./admin-recent-accounts.js?v=1",
-  "./community-admin.js?v=16",
+  "./admin-recent-accounts.css?v=2",
+  "./admin-recent-accounts.js?v=2",
+  "./community-admin.js?v=17",
   "./insights-pro.css?v=3",
   "./privacy-consent-center.css?v=3",
   "./auth-login-repair.css?v=4",
@@ -732,7 +733,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=690",
+  "./performance-loader.js?v=691",
   "./auth-platform.js?v=21",
   "./auth-neon-gateway.js?v=34",
   "./script.js?v=280"
