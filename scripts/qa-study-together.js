@@ -35,13 +35,41 @@ async function run(){
   const base="http://127.0.0.1:"+server.address().port+"/tests/fixtures/study-together.html";
   const captures=await fs.mkdtemp(path.join(os.tmpdir(),"hh-study-together-qa-"));
   const errors=[];
+  async function checkShell(guestCode) {
+    stage="full shell guest entry";
+    const shellContext=await browser.newContext({viewport:{width:1280,height:900},reducedMotion:'reduce'}),shell=await shellContext.newPage();shell.on('pageerror',e=>errors.push(e.message));
+    try {
+      await shell.goto(new URL(base).origin+'/?api=local#/learn/study-together?invite='+guestCode,{waitUntil:'domcontentloaded'});
+      await shell.locator('[data-guest-login]').click();await shell.locator('[data-hh-study-together-host] .hst').waitFor({timeout:30000});
+      assert.ok((await shell.url()).includes('invite='+guestCode));assert.equal(await shell.locator('.hst [data-hst-join] [name="code"]').inputValue(),guestCode);assert.equal(await shell.locator('.hst [data-hst-create] button[type=submit]').isDisabled(),true);assert.ok(await shell.locator('.app-sidebar').isVisible());
+      assert.ok(!(await shell.locator('.app-breadcrumb').innerText()).includes(guestCode));assert.ok((await shell.locator('.app-breadcrumb').innerText()).includes('Học cùng nhau'));
+      const studyNav=shell.locator('.app-sidebar__submenu [data-app-route="/learn/study-together"]');assert.equal(await studyNav.count(),1);assert.equal(await studyNav.getAttribute('aria-current'),'page');assert.equal(await shell.locator('.app-sidebar__submenu [data-app-route="/learn"]').getAttribute('aria-current'),null);
+      if(await shell.locator('[data-sidebar-section-toggle="learning"]').getAttribute('aria-expanded')!=='true')await shell.locator('[data-sidebar-section-toggle="learning"]').click();await studyNav.waitFor({state:'visible'});
+      const shellHandle=await shell.locator('#appShell').elementHandle();await shell.locator('.app-sidebar__home').click();await shell.locator('[data-php-card="/learn/study-together"]').waitFor({timeout:30000});await shell.locator('[data-php-card="/learn/study-together"] [data-php-route="/learn/study-together"]').click();await shell.locator('.hst').waitFor();assert.equal(await shellHandle.evaluate(node=>node===document.querySelector('#appShell')),true);
+      stage="shell Back/Forward/reload";
+      await shell.goBack({waitUntil:'domcontentloaded'});await shell.locator('.php').waitFor();await shell.goForward({waitUntil:'domcontentloaded'});await shell.locator('.hst').waitFor();await shell.reload({waitUntil:'domcontentloaded'});await shell.locator('.hst').waitFor();assert.equal(await shell.locator('.app-sidebar__submenu [data-app-route="/learn/study-together"]').getAttribute('aria-current'),'page');
+      await shell.locator('.app-global-search').click();await shell.locator('#commandPaletteInput').fill('Học cùng nhau');await shell.locator('#commandPaletteResults [data-app-route="/learn/study-together"]').first().waitFor();await shell.keyboard.press('Escape');
+      stage="shell open HH School";
+      if(await shell.locator('[data-sidebar-section-toggle="learning"]').getAttribute('aria-expanded')!=='true')await shell.locator('[data-sidebar-section-toggle="learning"]').click();await shell.locator('.app-sidebar__submenu [data-app-route="/learn"]').click();await shell.locator('.hh-school').waitFor();
+      stage="shell return from HH School";
+      await shell.locator('.app-sidebar__submenu [data-app-route="/learn/study-together"]').click();await shell.locator('.hst').waitFor();assert.equal(await shell.locator('#appPageHeader').isVisible(),true);assert.equal(await shell.locator('#appBreadcrumb').isVisible(),true);assert.equal(await shell.evaluate(()=>document.body.classList.contains('app-learning-route')),false);
+      await shell.screenshot({path:path.join(captures,'full-shell-guest-invite.png'),timeout:5000});
+    } catch(e) {
+      console.log(JSON.stringify(await shell.evaluate(()=>({route:location.hash,bodyClasses:document.body.className,studyMounted:!!window.HHStudyTogether?.activeHost?.(),workspace:document.querySelector('#appWorkspace')?.innerText.slice(0,600)})),null,2));
+      await shell.screenshot({path:path.join(captures,'shell-failure.png'),timeout:5000}).catch(()=>{});
+      console.log('QA captures: '+captures);throw e;
+    } finally {await shellContext.close();}
+  }
   try{
+    if(process.env.HH_STUDY_QA_SHELL_ONLY==='1'){await checkShell('0123456789ABCDEF');assert.deepEqual(errors,[]);console.log(JSON.stringify({shellOnly:true,pageErrors:0,captures},null,2));return;}
     for(const width of[1440,768,375]){
       const ctx=await browser.newContext({viewport:{width,height:950},extraHTTPHeaders:{"X-QA-Mode":"unconfigured"},reducedMotion:"reduce"});
       const page=await ctx.newPage();page.on("pageerror",e=>errors.push(e.message));await page.goto(base);
       await page.waitForFunction(()=>document.querySelector("[data-hst-connection]").textContent==="Chưa cấu hình LiveKit");
       assert.equal(await page.locator("[data-hst-create] button[type=submit]").isDisabled(),true);
       assert.equal(await page.evaluate(()=>qaStudy.preview),null);
+      await page.locator('[data-hst-preset]').selectOption('quiet');assert.equal(await page.locator('[data-hst-create] [name="allowMicrophone"]').isChecked(),false);
+      await page.locator('[data-hst-create] [name="title"]').fill('QA saved setup');await page.reload();assert.equal(await page.locator('[data-hst-create] [name="title"]').inputValue(),'QA saved setup');assert.equal(await page.locator('[data-hst-create] [name="allowMicrophone"]').isChecked(),false);
       await page.locator("#large").click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
       await page.screenshot({path:path.join(captures,"lobby-"+width+"-200pct.png")});await ctx.close();
     }
@@ -50,6 +78,9 @@ async function run(){
     const host=await c1.newPage(),peer=await c2.newPage();for(const p of[host,peer])p.on("pageerror",e=>errors.push(e.message));
     await host.goto(base+"?as=host");await host.locator("[data-hst-create] button[type=submit]").waitFor({state:"visible"});
     await host.waitForFunction(()=>!document.querySelector("[data-hst-create] button[type=submit]").disabled);
+    await host.locator('[data-hst-preset]').selectOption('presentation');assert.equal(await host.locator('[data-hst-create] [name="allowScreenShare"]').isChecked(),false);assert.equal(await host.locator('[data-hst-create] [name="waitingRoom"]').isChecked(),true);
+    await host.locator('[data-hst-preset]').selectOption('group');
+    await host.locator('[data-hst-create] [name="title"]').fill('QA host room draft');
     await host.locator('[data-hst-create] [name="waitingRoom"]').check();
     await host.locator("[data-hst-create] button[type=submit]").click();
     stage="host connect";
@@ -59,6 +90,7 @@ async function run(){
     assert.equal(await host.evaluate(()=>qaStudy.room.localParticipant.isCameraEnabled),false);
     await peer.goto(base+"?as=learner");await peer.waitForFunction(()=>!document.querySelector("[data-hst-join] button[type=submit]").disabled);
     await peer.locator('[data-hst-join] [name="code"]').fill(code);await peer.locator("[data-hst-join] button[type=submit]").click();await peer.locator("[data-hst-waiting]").waitFor({state:"visible"});
+    await peer.locator('[data-hst-auto-admission]').uncheck();assert.equal(await peer.evaluate(()=>qaStudy.poll),0);
     stage="admission";
     await host.locator('[data-hst-action="refresh"]').click();await host.locator("[data-hst-admit]").click();await peer.locator('[data-hst-action="check-admission"]').click();
     stage="peer connect";
@@ -109,7 +141,7 @@ async function run(){
     await peer.reload();assert.equal(await peer.locator('[data-hst-notes]').inputValue(),'QA private note');assert.equal(await peer.evaluate(()=>qaStudy.room),null);
     await peer.locator('[data-hst-action="test-camera"]').click();await peer.waitForFunction(()=>qaStudy.preview!==null);
     const preview=await peer.evaluateHandle(()=>qaStudy.preview.getTracks());await peer.locator('#exit').click();assert.equal(await preview.evaluate(tracks=>tracks.every(t=>t.readyState==='ended')),true);assert.equal(await peer.evaluate(()=>qaStudy.alive),false);
-    const visitor=await c1.newPage();await visitor.goto(base+'?as=visitor');assert.equal(await visitor.locator('[data-hst-notes]').inputValue(),'');
+    const visitor=await c1.newPage();await visitor.goto(base+'?as=visitor');assert.equal(await visitor.locator('[data-hst-notes]').inputValue(),'');assert.equal(await visitor.locator('[data-hst-create] [name="title"]').inputValue(),'Phòng học của tôi');
     stage="guest invitation";
     await host.waitForFunction(()=>!qaStudy.busy);await host.locator('[data-hst-create] button[type=submit]').click();await host.waitForFunction(()=>qaStudy.room?.state==='connected');
     const guestCode=await host.evaluate(()=>qaStudy.code),guestRoom=await host.evaluate(()=>qaStudy.info.id);
@@ -119,9 +151,11 @@ async function run(){
     const c3=await browser.newContext({viewport:{width:375,height:950},permissions:['camera','microphone']}),guest=await c3.newPage();guest.on('pageerror',e=>errors.push(e.message));
     await guest.goto(base+'?as=guest#/learn/study-together?invite='+guestCode);await guest.waitForFunction(()=>!document.querySelector('[data-hst-join] button[type=submit]').disabled);
     assert.equal(await guest.locator('[data-hst-create] button[type=submit]').isDisabled(),true);assert.equal(await guest.locator('[data-hst-join] [name="code"]').inputValue(),guestCode);
-    await guest.locator('[name="displayName"]').fill('QA <Guest>');await guest.locator('[data-hst-join] button[type=submit]').click();await guest.locator('[data-hst-waiting]').waitFor({state:'visible'});
+    await guest.locator('[name="displayName"]').fill('QA <Guest>');await guest.locator('[data-hst-join] [name="code"]').fill(inviteLink);await guest.locator('[data-hst-join] button[type=submit]').click();await guest.locator('[data-hst-waiting]').waitFor({state:'visible'});
     const guestId=await guest.evaluate(()=>qaStudy.guest.id);assert.match(guestId,/^g_[a-f0-9]{32}$/);assert.equal(await guest.evaluate(()=>localStorage.getItem('hh.studyTogether.guestSession.v1')),null);
-    await host.locator('[data-hst-pane="people"]').click();await host.waitForFunction(()=>!qaStudy.busy);await host.locator('[data-hst-action="refresh"]').click();await host.locator('[data-hst-admit="'+guestId+'"]').click();await guest.locator('[data-hst-action="check-admission"]').click();await guest.waitForFunction(()=>qaStudy.room?.state==='connected');
+    assert.ok(await guest.evaluate(()=>qaStudy.poll>0));await guest.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});document.dispatchEvent(new Event('visibilitychange'));});assert.equal(await guest.evaluate(()=>qaStudy.poll),0);await guest.evaluate(()=>{delete document.hidden;document.dispatchEvent(new Event('visibilitychange'));});assert.ok(await guest.evaluate(()=>qaStudy.poll>0));
+    await host.locator('[data-hst-pane="people"]').click();await host.waitForFunction(()=>!qaStudy.busy);await host.locator('[data-hst-admit="'+guestId+'"]').waitFor({timeout:20000});await host.locator('[data-hst-admit="'+guestId+'"]').click();await guest.waitForFunction(()=>qaStudy.room?.state==='connected',null,{timeout:20000});
+    assert.equal(await guest.evaluate(()=>qaStudy.poll),0);assert.equal(await guest.evaluate(()=>qaStudy.room.localParticipant.isMicrophoneEnabled||qaStudy.room.localParticipant.isCameraEnabled),false);
     assert.equal(await guest.evaluate(()=>qaStudy.room.localParticipant.identity),guestId);assert.equal(await guest.evaluate(()=>qaStudy.info.host),false);
     await guest.locator('[data-hst-pane="chat"]').click();await guest.locator('[data-hst-chat] [name="text"]').fill('Guest QA message');await guest.locator('[data-hst-chat] button').click();await host.locator('[data-hst-pane="chat"]').click();await host.locator('[data-hst-messages]').getByText('Guest QA message',{exact:true}).waitFor();
     await guest.locator('[data-hst-pane="focus"]').click();await guest.locator('[data-hst-notes]').fill('Guest private note');await guest.reload();assert.equal(await guest.locator('[data-hst-notes]').inputValue(),'Guest private note');assert.equal(await guest.evaluate(()=>qaStudy.room),null);
@@ -129,17 +163,11 @@ async function run(){
     await guest.locator('#large').click();assert.ok(await guest.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await guest.locator('#large').click();
     await host.locator('[data-hst-pane="people"]').click();await host.waitForFunction(()=>!qaStudy.busy);await host.locator('[data-hst-kick="'+guestId+'"]').click();await guest.waitForFunction(()=>qaStudy.room===null);
     await guest.locator('[data-hst-action="resume-guest"]').click();await guest.locator('[data-hst-notice]').getByText('Bạn không có quyền xem phòng này.',{exact:true}).waitFor();
-    stage="full shell guest entry";
-    const shellContext=await browser.newContext({viewport:{width:1280,height:900},reducedMotion:'reduce'}),shell=await shellContext.newPage();
-    await shell.goto(new URL(base).origin+'/?api=local#/learn/study-together?invite='+guestCode);
-    await shell.locator('[data-guest-login]').click();await shell.locator('[data-hh-study-together-host] .hst').waitFor({timeout:30000});
-    assert.ok((await shell.url()).includes('invite='+guestCode));assert.equal(await shell.locator('.hst [data-hst-join] [name="code"]').inputValue(),guestCode);assert.equal(await shell.locator('.hst [data-hst-create] button[type=submit]').isDisabled(),true);assert.ok(await shell.locator('.app-sidebar').isVisible());
-    assert.ok(!(await shell.locator('.app-breadcrumb').innerText()).includes(guestCode));assert.ok((await shell.locator('.app-breadcrumb').innerText()).includes('Học cùng nhau'));
-    await shell.screenshot({path:path.join(captures,'full-shell-guest-invite.png')});await shellContext.close();
+    await checkShell(guestCode);
     await host.waitForFunction(()=>!qaStudy.busy);await host.locator('[data-hst-action="confirm-close"]').click();await host.locator('[data-hst-close-dialog] [data-hst-action="close"]').click();await host.waitForFunction(()=>qaStudy.room===null);
     await c3.close();
     await c1.close();await c2.close();assert.deepEqual(errors,[]);
-    console.log(JSON.stringify({responsive:[1440,768,375],textZoom:"200%",unconfiguredState:true,waitingRoom:true,twoRealLiveKitClients:true,cameraVideoReceived:true,microphoneAudioReceived:true,chatAndHand:true,sharedTimer:true,privateNotesReloadAndIsolation:true,syntheticScreenVideoReceived:true,simulatedShareCancellation:true,pushToTalk:true,hostCloseAndTracksStopped:true,previewUnmountCleanup:true,guestInviteAndSignedSession:true,qrDecoded:true,guestAdmissionChatReloadRejoinAndKick:true,fullShellGuestDeepLink:true,pageErrors:0,captures},null,2));
+    console.log(JSON.stringify({responsive:[1440,768,375],textZoom:"200%",unconfiguredState:true,waitingRoom:true,twoRealLiveKitClients:true,cameraVideoReceived:true,microphoneAudioReceived:true,chatAndHand:true,sharedTimer:true,privateNotesReloadAndIsolation:true,syntheticScreenVideoReceived:true,simulatedShareCancellation:true,pushToTalk:true,hostCloseAndTracksStopped:true,previewUnmountCleanup:true,guestInviteAndSignedSession:true,qrDecoded:true,guestAdmissionChatReloadRejoinAndKick:true,fullShellGuestDeepLink:true,dedicatedSidebarCatalogAndHistory:true,presetPoliciesAndAccountDraftReload:true,invitationLinkPaste:true,automaticQueueAndAdmission:true,visibilityAwarePolling:true,pageErrors:0,captures},null,2));
   }finally{for(const room of created)await client.deleteRoom(room).catch(()=>{});await browser.close();await new Promise(r=>server.close(r));}
 }
 run().catch(e=>{console.error("Study Together browser QA failed at "+stage+": "+String(e.message||e.name).replace(/[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]+/g,"[redacted]").slice(0,1500));process.exitCode=1;});

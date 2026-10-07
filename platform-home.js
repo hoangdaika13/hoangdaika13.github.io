@@ -37,6 +37,7 @@
     copyright: "Quản lý nguồn, quyền sử dụng, giấy phép, ghi công và quy trình tiếp nhận khiếu nại.",
     learn: "Lộ trình, môn học, luyện tập, kiểm tra và thư viện với tiến độ của chính bạn.",
     "focus-room": "Timer tập trung, việc học, ghi chú, âm thanh tạo cục bộ và thống kê từ những phiên bạn thực sự hoàn thành.",
+    "study-together": "Phòng học nhóm LiveKit với mic, camera, chia sẻ màn hình, chat, đồng hồ chung và lời mời bằng link hoặc QR cho khách.",
     english: "Học theo CEFR: từ vựng, phát âm, nghe, nói, đọc, viết và tiếng Anh chuyên ngành.",
     japanese: "Vietnamese Core, Can-do, JLPT/JF, Kanji, Smart Reader, hội thoại và ôn tập SRS.",
     chinese: "Luyện Pinyin, thanh điệu, Hán tự, từ vựng, ngữ pháp và đọc hiểu theo lộ trình.",
@@ -46,7 +47,7 @@
     support: "Gửi phản hồi, tìm trợ giúp, theo dõi định hướng và đóng góp cho nhà phát triển."
   });
   const PROVIDER_IDS = new Set(["chat-ai", "music-ai", "comic-motion", "fortune"]);
-  const NETWORK_IDS = new Set(["google", "youtube-main", "discord", "communication", "remote", "cinema", "music-library", "comic-reader", "support"]);
+  const NETWORK_IDS = new Set(["google", "youtube-main", "discord", "communication", "remote", "cinema", "music-library", "comic-reader", "support", "study-together"]);
   const RECIPES = Object.freeze([
     ["content", "Sáng tạo nội dung", "Từ ý tưởng đến bản phát hành", ["create", "media-design", "davinci-resolve", "copyright"]],
     ["video", "Làm video", "Chuẩn bị · dựng · hoàn thiện", ["create", "comic-motion", "davinci-resolve", "youtube-main"]],
@@ -104,6 +105,7 @@
     if (item.adminOnly) return { label: "Admin", detail: item.locked ? "Cần quyền Admin đã xác minh." : "Quyền Admin được xác minh bởi phiên hiện tại." };
     if (item.id === "draw") return { label: "Cục bộ", detail: "Canvas chạy trong trình duyệt; khả năng xuất phụ thuộc thiết bị." };
     if (item.id === "focus-room") return { label: "Cục bộ", detail: "Timer, task, ghi chú, âm thanh và thống kê được xử lý trên thiết bị theo tài khoản hiện tại." };
+    if (item.id === "study-together") return { label: "Phòng học trực tuyến", detail: "Workspace kiểm tra cấu hình LiveKit thật. Tạo phòng cần tài khoản HH; khách dùng lời mời khi chủ phòng cho phép." };
     if (PROVIDER_IDS.has(item.id)) return { label: "Cần xác minh provider", detail: "Kiểm tra cấu hình trong workspace; trang chủ không gọi AI hoặc gửi nội dung." };
     if (NETWORK_IDS.has(item.id)) return { label: online ? "Cần kết nối dịch vụ" : "Cần kết nối mạng", detail: "Trạng thái mạng không chứng minh backend/OAuth sẵn sàng. Kết nối khi bạn chủ động mở công cụ." };
     return { label: "Theo từng công cụ", detail: "Có thao tác trên thiết bị; AI, realtime và đồng bộ cần provider/backend tương ứng." };

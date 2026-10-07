@@ -4,6 +4,10 @@
 .hst h2,.hst h3,.hst h4{margin:.4em 0;font-weight:750}.hst h2{font-size:clamp(1.5rem,3vw,2.3rem)}.hst p{margin:.7rem 0}
 .hst-hero,.hst-room-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
 .hst-hero small{color:#a4eeff;letter-spacing:.13em}.hst-hero>span{padding:.7rem 1rem;border:1px solid #778dcc;border-radius:999px;background:#172846}
+.hst-hero{padding:.25rem 0 1rem;border-bottom:1px solid #7084b54d}.hst-hero>div{flex:1 1 24rem}.hst-hero p{max-width:64ch;color:#d3deef}
+.hst-capabilities{display:flex;gap:.5rem;flex-wrap:wrap;margin:1rem 0 .4rem}.hst-capabilities span{padding:.35rem .7rem;border:1px solid #5b8ab0;border-radius:999px;color:#c6f7fa;background:#0e2c40;font-size:.9em}
+.hst-step{display:block;color:#8fe9e1;letter-spacing:.08em;font-size:.8em;font-weight:700}.hst .hst-help{color:#c5d5ec;font-size:.9em;line-height:1.6}.hst-waiting{max-width:740px;margin:1rem auto;border-color:#82d9cf;background:radial-gradient(ellipse at top right,#427e7b33,transparent 65%),var(--hst-panel)}
+.hst[data-account=false] [data-hst-create]{order:1}.hst[data-account=false] .hst-lobby-grid>section{order:2}
 .hst-notice{padding:.5rem 0;min-height:1.8em;color:#b5f9d8}.hst-notice[data-error=true]{color:#ffb8c5}
 .hst-card{padding:clamp(.9rem,1.5vw,1.4rem);border:1px solid #607698;border-radius:16px;background:var(--hst-panel);box-shadow:0 10px 26px #0003}
 .hst-lobby-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;align-items:start}
@@ -42,4 +46,6 @@
 [data-theme=light] .hst :is(.hst-disclosure,.hst-hero small,.hst-timer,.hst-notice){color:#174d70}
 [data-theme=light] .hst .hst-notice[data-error=true]{color:#a01539}
 [data-theme=light] .hst :is(.hst-toolbar,.hst-hero>span){background:#dceafa}
+[data-theme=light] .hst :is(.hst-hero p,.hst-step,.hst-help){color:#255169}[data-theme=light] .hst-capabilities span{color:#16495b;background:#deeff6}
+[data-theme=light] .hst-join-card [data-hst-invite-hint]:not(:empty){color:#174d45;background:#e1f4ee}
 @media(forced-colors:active){.hst *{background:Canvas!important;color:CanvasText!important;border-color:ButtonText!important;box-shadow:none!important}.hst :focus-visible{outline-color:Highlight}.hst button[aria-pressed=true]{border:3px solid Highlight!important}}

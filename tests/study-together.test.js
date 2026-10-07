@@ -139,14 +139,42 @@ test("room closure during remote setup prevents token issuance",async()=>{
   h.client.createRoom=async()=>h.db.collection("studyTogetherRooms").updateOne({_id:r.room.id},{$set:{status:"closed"}});
   await assert.rejects(h.call("join",{code:r.code},learner),{statusCode:403,code:"ROOM_ACCESS_CHANGED"});
 });
-test("Study Together is a lazy child route in the existing shell and has versioned runtime assets",()=>{
+test("Study Together is a dedicated Learning & Languages entry with its compatible lazy route",()=>{
   const read=file=>fs.readFileSync(path.join(__dirname,"..",file),"utf8"),router=read("script.js"),loader=read("performance-loader.js"),worker=read("sw.js");
-  assert.match(router,/id: "study-together", title: "Học cùng nhau", route: "\/learn\/study-together"/);
+  assert.match(router,/id: "study-together", label: "Học cùng nhau",[^\n]*route: "\/learn\/study-together"/);
+  assert.match(router,/groupIds: \["learn", "focus-room", "study-together", "english"/);
+  assert.doesNotMatch(router,/id: "study-together", title: "Học cùng nhau"/);
+  assert.match(router,/classList\.toggle\("app-learning-route",[^\n]+activeGroup\?\.id !== "study-together"/);
   assert.match(router,/window\.HHStudyTogether\?\.unmount\?\.\(\)/);
   assert.ok(loader.indexOf('value === "/learn/study-together"')<loader.indexOf('value.startsWith("/learn")'));
-  for(const asset of["study-together.js?v=2","study-together.css?v=2","vendor/livekit-client-2.22.3.umd.js?v=1","vendor/qrcode.js?v=1"]){assert.ok(loader.includes(asset));assert.ok(worker.includes(asset));}
+  for(const asset of["study-together.js?v=3","study-together.css?v=3","vendor/livekit-client-2.22.3.umd.js?v=1","vendor/qrcode.js?v=1"]){assert.ok(loader.includes(asset));assert.ok(worker.includes(asset));}
   assert.match(read("vercel.json"),/"source": "\/api\/study-together"/);
   assert.match(read("api/modules/[moduleId]/actions.js"),/return handleStudyTogether\(req, res\)/);
   const client=read("study-together.js");assert.doesNotMatch(client,/LIVEKIT_API_KEY|LIVEKIT_API_SECRET/);assert.match(client,/hh\.studyTogether\.notes\.v1/);assert.match(client,/pub\.track\?\.stop\(\)/);
   assert.match(read("study-together.css"),/prefers-reduced-motion/);assert.match(read("study-together.css"),/forced-colors/);
+});
+
+test("invitation parser accepts codes and same-site links without navigating or trusting foreign links",()=>{
+  const vm=require('node:vm'),context={window:{},URL,URLSearchParams};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../study-together.js'),'utf8'),context);
+  const parse=context.window.HHStudyTogether.parseInvitation,code='0123456789ABCDEF',origin='http://127.0.0.1:8792';
+  for(const input of['0123-4567-89ab-cdef','0123 4567 89ab cdef',origin+'/#/learn/study-together?invite='+code,'https://hoang8.com/#/learn/study-together?invite='+code,'https://www.hoang8.com/#/learn/study-together?invite='+code,'#/learn/study-together?invite='+code])assert.equal(parse(input,origin),code);
+  for(const input of['invalid','https://evil.example/#/learn/study-together?invite='+code,'https://hoang8.com.evil.example/#/learn/study-together?invite='+code,'https://user:password@hoang8.com/#/learn/study-together?invite='+code,origin+'/#/admin?invite='+code,'javascript:alert(1)','a'.repeat(1201)])assert.equal(parse(input,origin),'');
+});
+
+test("dedicated study navigation wins over legacy learn parent, including invitation queries",()=>{
+  const vm=require('node:vm'),source=fs.readFileSync(path.join(__dirname,'../script.js'),'utf8').match(/  const navigationItemMatchesRoute = \(item, route\) => \{[\s\S]*?\n  \};/)[0];
+  const groups=[{id:'learn',route:'/learn'},{id:'study-together',route:'/learn/study-together'},{id:'english',route:'/english'}],context={groups,window:{}};
+  vm.runInNewContext(source+';match=navigationItemMatchesRoute;',context);
+  for(const route of['/learn/study-together','/learn/study-together?invite=0123456789ABCDEF','/learn/study-together/room']){assert.equal(context.match(groups[0],route),false);assert.equal(context.match(groups[1],route),true);}
+  assert.equal(context.match(groups[0],'/learn/today'),true);assert.equal(context.match(groups[0],'/learn'),true);assert.equal(context.match(groups[2],'/english/vocabulary'),true);
+});
+
+test("room presets fill actual policies and drafts stay account-scoped without invitation tokens",()=>{
+  const client=fs.readFileSync(path.join(__dirname,'../study-together.js'),'utf8');
+  const source=client.match(/  const roomPresets = Object.freeze\(\{[\s\S]*?\n  \}\);/)[0],vm=require('node:vm'),context={};vm.runInNewContext(source+';presets=roomPresets;',context);
+  assert.equal(context.presets.group.settings.allowMicrophone,true);assert.equal(context.presets.quiet.settings.allowMicrophone,false);assert.equal(context.presets.presentation.settings.allowScreenShare,false);assert.equal(context.presets.presentation.settings.waitingRoom,true);
+  for(const p of Object.values(context.presets)){assert.equal(p.settings.guestApproval,true);assert.equal(p.settings.allowGuests,true);}
+  const draft=client.match(/    function saveDraft\(\)\{[^\n]+/)[0];assert.match(draft,/if\(!account\)return/);assert.match(draft,/localStorage\.setItem\(draftKey/);assert.doesNotMatch(draft,/token|displayName|inviteCode/);assert.match(client,/hh\.studyTogether\.lobbyDraft\.v1\./);
+  assert.match(client,/function stopPolling\(\)\{clearTimeout\(s\.poll\)/);assert.match(client,/!document\.hidden/);assert.match(client,/epoch!==s\.pollEpoch/);assert.match(client,/setTimeout\(check,6000\)/);
 });

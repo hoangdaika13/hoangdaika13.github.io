@@ -100,17 +100,19 @@ test("router, lazy loader and responsive workspace are integrated", () => {
   const css = read("focus-room.css");
   const source = read("focus-room.js");
   assert.match(router, /id: "focus-room"[\s\S]*?route: "\/focus-room"/);
-  assert.match(router, /groupIds: \["learn", "focus-room", "english"/);
+  assert.match(router, /groupIds: \["learn", "focus-room", "study-together", "english"/);
   assert.match(router, /HHFocusRoom\?\.mount/);
   assert.match(loader, /"focus-study-room": \{[\s\S]*?focus-room\.css\?v=14[\s\S]*?focus-room\.js\?v=20/);
   assert.match(loader, /value === "\/focus-room"/);
   assert.match(worker, /focus-room\.css\?v=14/);
   assert.match(worker, /focus-room\.js\?v=20/);
   assert.match(gateway, /"\/focus-room"/);
-  assert.match(index, /performance-loader\.js\?v=667/);
-  assert.match(index, /script\.js\?v=277/);
-  assert.match(worker, /performance-loader\.js\?v=667/);
-  assert.match(worker, /script\.js\?v=277/);
+  for (const asset of ['performance-loader.js', 'script.js']) {
+    const executable=index.replace(/<!--[\s\S]*?-->/g,'');
+    const url=[...executable.matchAll(/<script src="([^"]+)"/g)].map(match=>match[1]).find(value=>value.startsWith(asset+'?v='));
+    assert.ok(url, asset+' must be executable');
+    assert.ok(worker.includes('"./'+url+'"'), asset+' must match the active cache, not an old release marker');
+  }
   assert.match(css, /@media \(max-width: 430px\)/);
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.doesNotMatch(source, /navigator\.mediaDevices|getUserMedia/);

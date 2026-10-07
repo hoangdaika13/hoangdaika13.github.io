@@ -5727,7 +5727,6 @@ function initAppShell() {
       items: [],
       pages: [
         { id: "today", title: "Hôm nay", route: "/learn/today" },
-        { id: "study-together", title: "Học cùng nhau", route: "/learn/study-together", description: "Phòng học LiveKit: mic, camera, chia sẻ màn hình, chat, giơ tay, duyệt thành viên và đồng hồ tập trung chung. Cần máy chủ được cấu hình." },
         { id: "paths", title: "Lộ trình lớp 1–12", route: "/learn/paths" },
         { id: "subjects", title: "Môn học", route: "/learn/subjects" },
         { id: "practice", title: "Luyện tập", route: "/learn/practice" },
@@ -5747,6 +5746,7 @@ function initAppShell() {
         { id: "workspace", title: "Bàn học tập trung", route: "/focus-room", description: "Kế hoạch ngày, nghi thức một chạm, Timer chính xác, việc học, nhật ký xao nhãng, 16 âm môi trường và thống kê từ phiên thật." }
       ]
     },
+    { id: "study-together", label: "Học cùng nhau", icon: "◉", accent: "#71e8e2", route: "/learn/study-together", items: [] },
     { id: "english", label: "HH English", icon: "E", accent: "#60e9f2", route: "/english", items: [] },
     { id: "japanese", label: "HH Japanese", icon: "日", accent: "#e75158", route: "/japanese", items: [] },
     { id: "chinese", label: "HH Chinese", icon: "中", accent: "#ffcf68", route: "/chinese", items: [] },
@@ -5839,7 +5839,7 @@ function initAppShell() {
       icon: "◫",
       accent: "#ffd66b",
       accentSecondary: "#a87cff",
-      groupIds: ["learn", "focus-room", "english", "japanese", "chinese", "phat-phap"]
+      groupIds: ["learn", "focus-room", "study-together", "english", "japanese", "chinese", "phat-phap"]
     },
     {
       id: "system-admin",
@@ -5877,6 +5877,7 @@ function initAppShell() {
     copyright: "bản quyền giấy phép license attribution",
     learn: "học tập trường học bài luyện kiến thức",
     "focus-room": "phòng học tập trung focus pomodoro đồng hồ nhiệm vụ todo kế hoạch mục tiêu nghi thức nhật ký xao nhãng csv wake lock phím tắt ghi chú âm thanh mưa nhiễu nâu quán cà phê deep work lofi piano không gian thư giãn lifeat",
+    "study-together": "học cùng nhau học nhóm phòng học chung livekit mic camera cam share màn hình chat meet zoom discord lời mời khách mã qr đồng hồ tập trung",
     english: "tiếng anh english ngoại ngữ",
     japanese: "tiếng nhật japanese jlpt kanji",
     chinese: "tiếng trung chinese hsk hanzi pinyin",
@@ -5930,15 +5931,20 @@ function initAppShell() {
     home: "home", search: "search", "ai-creative": "sparkles", "web-community": "orbit", entertainment: "play", "work-tech": "cpu", learning: "book", "system-admin": "shield",
     "chat-ai": "bot", create: "wand", draw: "brush", "music-ai": "music", "comic-motion": "panels", "media-design": "image", "graphic-design": "pen",
     google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "cosmic-observatory": "orbit", "play-center": "gamepad", "eonwild-game": "paw", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", fortune: "moon",
-    work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", "focus-room": "timer", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
+    work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", "focus-room": "timer", "study-together": "messages", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
     admin: "crown", system: "settings", support: "heart"
   });
   const sidebarIconMarkup = (id) => `<svg class="app-sidebar__svg-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">${sidebarIconPaths[sidebarIconNames[id] || "sparkles"]}</svg>`;
   const normalizeSidebarSearch = (value = "") => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
   const navigationGroupById = (id) => groups.find((group) => group.id === id);
-  const navigationItemMatchesRoute = (item, route) => Boolean(item && (item.id === "hh-galaxy"
-    ? window.HHCoreGateway?.isGalaxyRoute?.(route) === true
-    : route === item.route || route.startsWith(`${item.route}/`)));
+  const navigationItemMatchesRoute = (item, route) => {
+    const path = String(route || "").split("?")[0];
+    if (!item) return false;
+    if (item.id === "hh-galaxy") return window.HHCoreGateway?.isGalaxyRoute?.(route) === true;
+    const matches = (candidate) => path === candidate.route || path.startsWith(`${candidate.route}/`);
+    // A dedicated child workspace wins over its legacy parent, including invite links.
+    return matches(item) && !groups.some((other) => other.route.length > item.route.length && matches(other));
+  };
   const visibleNavigationSections = () => navigationSections.map((section) => ({
     ...section,
     items: section.groupIds.map(navigationGroupById).filter((item) => item && (!item.adminOnly || isCurrentUserAdmin()))
@@ -6837,14 +6843,14 @@ function initAppShell() {
     })].join("");
     pageActions.innerHTML = module ? `<button type="button" data-app-route="/tools">Tất cả công cụ</button><button class="app-primary-action" type="button" data-shell-favorite="${module.id}">☆ Yêu thích</button>` : "";
     if (contextBar) {
-      const group = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
+      const group = groups.find((item) => navigationItemMatchesRoute(item, route));
       const navigationSection = navigationSectionForRoute(route);
       pageHeader.querySelector(".app-page-header__eyebrow").textContent = navigationSection?.label || group?.label || "HH Platform";
       contextBar.hidden = route === "/home" || route === "/favorites" || route === "/recent";
       if (contextGroup) contextGroup.textContent = (navigationSection?.label || group?.label || "HH Platform").toUpperCase();
       if (contextLabel) contextLabel.textContent = title;
       const contextStatus = contextBar.querySelector(".app-context-bar__status");
-      if (contextStatus) contextStatus.innerHTML = route === "/focus-room" ? "<i></i> Trong Học tập &amp; Ngôn ngữ" : "<i></i> Màn hình độc lập";
+      if (contextStatus) contextStatus.innerHTML = route === "/focus-room" || route.split("?")[0] === "/learn/study-together" ? "<i></i> Trong Học tập &amp; Ngôn ngữ" : "<i></i> Màn hình độc lập";
     }
   };
   const syncCoreLayer = () => {
@@ -6908,6 +6914,7 @@ function initAppShell() {
     insights: "Đang tổng hợp dữ liệu và bảng phân tích...",
     admin: "Đang xác minh quyền và tải trung tâm quản trị...",
     learn: "Đang chuẩn bị lộ trình và dữ liệu học tập...",
+    "study-together": "Đang mở phòng học nhóm và kiểm tra cấu hình LiveKit...",
     english: "Đang nạp bài học và tiến độ HH English...",
     japanese: "Đang nạp Từ điển, Kanji, ngữ pháp và lộ trình JLPT...",
     chinese: "Đang mở HH Chinese, Pinyin Lab, Hán tự và lộ trình HSK...",
@@ -6924,7 +6931,7 @@ function initAppShell() {
   const describeRouteFeedback = (route) => {
     const normalized = String(route || "/home").split("?")[0];
     const parts = normalized.split("/").filter(Boolean);
-    const group = groups.find((item) => normalized === item.route || normalized.startsWith(`${item.route}/`)) || groups[0];
+    const group = groups.find((item) => navigationItemMatchesRoute(item, normalized)) || groups[0];
     const routePage = group?.id === "music-ai"
       ? musicAIAllPageItems.find((item) => item.route === normalized || item.routes?.includes(normalized))
       : (group?.pages || []).find((item) => item.route === normalized);
@@ -6936,7 +6943,7 @@ function initAppShell() {
       home: "home", create: "draw", draw: "draw", "music-ai": "music", "davinci-resolve": "media",
       "media-design": "media", "graphic-design": "media", dev: "dev", work: "data", insights: "data",
       communication: "network", google: "network", "youtube-main": "media", discord: "discord", remote: "network",
-      "chat-ai": "ai", learn: "learning", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
+      "chat-ai": "ai", learn: "learning", "study-together": "learning", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
       fortune: "fortune", "play-center": "play", "eonwild-game": "play", admin: "data", system: "data", support: "home"
     })[group?.id] || "home";
     const secondary = ({ home: "#ffd166", ai: "#ff58c8", draw: "#ff5dc8", music: "#63f2b3", media: "#ff5f9e", dev: "#63f2b3", data: "#ffd166", network: "#5b8cff", discord: "#ff62c7", learning: "#9c72ff", english: "#a673ff", japanese: "#ffca69", chinese: "#ff6f78", fortune: "#ff58c8", play: "#ff68c7", dharma: "#983b22" })[kind] || "#ff63c9";
@@ -7271,7 +7278,7 @@ function initAppShell() {
     activeRoute = route;
     rememberSidebarRoute(route);
     document.body.classList.toggle("app-platform-home-route", route.split("?")[0] === "/platform");
-    const activeGroup = groups.find((item) => route === item.route || route.startsWith(`${item.route}/`));
+    const activeGroup = groups.find((item) => navigationItemMatchesRoute(item, route));
     const activeNavigationSection = navigationSectionForRoute(route);
     shell.style.setProperty("--route-accent", activeNavigationSection?.accent || activeGroup?.accent || "#56eaff");
     shell.dataset.activeSection = activeNavigationSection?.id || activeGroup?.id || "home";
@@ -7289,7 +7296,8 @@ function initAppShell() {
     document.body.classList.toggle("app-graphic-design-route", route === "/graphic-design" || route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-graphic-design-tool-route", route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
-    document.body.classList.toggle("app-learning-route", route === "/learn" || route.startsWith("/learn/"));
+    document.body.classList.toggle("app-learning-route", (route === "/learn" || route.startsWith("/learn/")) && activeGroup?.id !== "study-together");
+    document.body.classList.toggle("app-study-together-route", activeGroup?.id === "study-together");
     document.body.classList.toggle("app-focus-study-route", route === "/focus-room");
     document.body.classList.toggle("app-english-route", route === "/english" || route.startsWith("/english/"));
     document.body.classList.toggle("app-japanese-route", route === "/japanese" || route.startsWith("/japanese/"));
@@ -7658,6 +7666,7 @@ function initAppShell() {
       workspace.innerHTML = '<div data-hh-study-together-host></div>';
       if (window.HHStudyTogether?.mount) window.HHStudyTogether.mount(workspace.firstElementChild, { currentUser: readCurrentAuthUser(), apiBase: window.HH_API_BASE || location.origin });
       else mountSimpleView("Học cùng nhau", "Không tải được module phòng học.", '<button type="button" data-shell-retry-route>Thử lại</button>');
+      remember("study-together");
       remember("learn");
     } else if (route === "/learn" || (route.startsWith("/learn/") && window.HHSchool?.supports?.(parts[1]))) {
       const learningRouteView = route === "/learn" ? "today" : parts[1];
