@@ -69,7 +69,7 @@
         <label class="hhs-search"><span class="sr-only">Tìm bài học</span><input type="search" data-school-search placeholder="Tìm môn, bài học, kỹ năng..." autocomplete="off"><kbd>Ctrl K</kbd></label>
         <div class="hhs-identity"><button type="button" data-school-grade-open><span>${escape(grade.stage)}</span><strong>${escape(grade.name)}</strong></button><button type="button" data-school-view="progress"><span>${escape(state.profile.name)}</span><strong>${escape(state.role)}</strong></button></div>
       </header>
-      <nav class="hhs-main-nav" aria-label="Điều hướng HH School">${PRIMARY.map((id) => `<button type="button" data-school-view="${id}" ${view === id ? 'aria-current="page"' : ""}>${escape(VIEWS[id].label)}</button>`).join("")}</nav>
+      <nav class="hhs-main-nav" aria-label="Điều hướng HH School">${PRIMARY.map((id) => `<button type="button" data-school-view="${id}" ${view === id ? 'aria-current="page"' : ""}>${escape(VIEWS[id].label)}</button>`).join("")}<button type="button" data-school-study-together>Học cùng nhau</button></nav>
       <div class="hhs-rolebar"><span><b>${state.profile.grade <= 2 ? "Học bằng hình ảnh và thao tác ngắn" : state.profile.grade <= 5 ? "Nhiệm vụ trực quan, dễ theo dõi" : state.profile.grade <= 9 ? "Kỹ năng, dự án và vận dụng" : "Chuyên đề, luyện thi và hướng nghiệp"}</b><small>${plan.review ? "Có nội dung đến hạn ôn" : "Lịch ôn đang ổn định"}</small></span>${resolveRoleViews(state).map((id) => `<button type="button" data-school-view="${id}" ${view === id ? 'aria-current="page"' : ""}>${VIEWS[id].label}</button>`).join("")}<button type="button" data-school-settings aria-label="Tùy chỉnh hiển thị">Aa</button><button type="button" data-school-sync title="Đồng bộ tiến độ">${state.syncStatus === "synced" ? "Đã đồng bộ" : "Đồng bộ"}</button></div>
       <main class="hhs-workspace" data-school-workspace aria-live="polite"></main>
       <div class="hhs-toast-stack" data-school-toasts aria-live="polite"></div>
@@ -268,6 +268,7 @@
     instance.click = async (event) => {
       const button = event.target.closest("button"); if (!button) return;
       if (button.dataset.schoolView) return routeTo(button.dataset.schoolView);
+      if (button.hasAttribute("data-school-study-together")) { root.location.hash = "#/learn/study-together"; return; }
       if (button.dataset.schoolGrade) {
         const grade = Number(button.dataset.schoolGrade);
         if (instance.store.get().profile.managed && instance.store.get().role === "student") return toast(instance, "Hồ sơ được quản lý không thể tự đổi lớp.", "warning");

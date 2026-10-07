@@ -17,6 +17,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/study-together",
+      "destination": "/api/modules/study-together/actions"
+    },
+    {
       "source": "/api/cosmic/:cosmicSource",
       "destination": "/api/platform/summary?cosmicSource=:cosmicSource"
     },
@@ -139,7 +143,7 @@
         { "key": "Origin-Agent-Cluster", "value": "?1" },
         { "key": "X-DNS-Prefetch-Control", "value": "off" },
         { "key": "Reporting-Endpoints", "value": "csp-endpoint=\"/api/security/csp-report\"" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://accounts.google.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://cdn.payos.vn https://challenges.cloudflare.com https://cse.google.com https://hoangdaika13-astra-realtime.onrender.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' http://localhost:8765 http://127.0.0.1:8765 https: wss:; frame-src 'self' https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://formsubmit.co https://accounts.google.com https://*.payos.vn; frame-ancestors 'none'; report-uri /api/security/csp-report; report-to csp-endpoint" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://accounts.google.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net https://cdn.payos.vn https://challenges.cloudflare.com https://cse.google.com https://hoangdaika13-astra-realtime.onrender.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' http://127.0.0.1:7880 http://localhost:7880 ws://127.0.0.1:7880 ws://localhost:7880 http://localhost:8765 http://127.0.0.1:8765 https: wss:; frame-src 'self' https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://formsubmit.co https://accounts.google.com https://*.payos.vn; frame-ancestors 'none'; report-uri /api/security/csp-report; report-to csp-endpoint" }
       ]
     },
     {

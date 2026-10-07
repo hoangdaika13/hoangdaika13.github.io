@@ -1,5 +1,5 @@
-const CACHE = "hh-identity-portal-v1029";
-// Previous release: hh-identity-portal-v1028; ./performance-loader.js?v=690.
+const CACHE = "hh-identity-portal-v1030";
+// Previous release: hh-identity-portal-v1029; ./performance-loader.js?v=691.
 // Previous release: hh-identity-portal-v1027
 // Previous release: hh-identity-portal-v1026
 // Previous release: hh-identity-portal-v1025
@@ -655,7 +655,10 @@ const RUNTIME_ASSETS = [
   "./hh-school-sync.js?v=4",
   "./hh-school-search-worker.js?v=3",
   "./hh-school-code-worker.js?v=2",
-  "./hh-school.js?v=5",
+  "./hh-school.js?v=6",
+  "./study-together.css?v=1",
+  "./study-together.js?v=1",
+  "./vendor/livekit-client-2.22.3.umd.js?v=1",
   "./english-curriculum.js?v=1",
   "./language-learning-core.js?v=1",
   "./language-learning-cockpit.js?v=2",
@@ -733,10 +736,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=691",
+  "./performance-loader.js?v=692",
   "./auth-platform.js?v=21",
   "./auth-neon-gateway.js?v=34",
-  "./script.js?v=280"
+  "./script.js?v=281"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

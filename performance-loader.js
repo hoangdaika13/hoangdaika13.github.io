@@ -246,12 +246,16 @@
       styles: ["hh-school.css?v=4"],
       scripts: [
         "hh-school-curriculum.js?v=3", "hh-school-core.js?v=4", "hh-school-offline.js?v=4",
-        "hh-school-sync.js?v=4", "hh-school.js?v=5"
+        "hh-school-sync.js?v=4", "hh-school.js?v=6"
       ]
     },
     "focus-study-room": {
       styles: ["focus-room.css?v=14"],
       scripts: ["focus-room.js?v=20"]
+    },
+    "study-together": {
+      styles: ["study-together.css?v=1"],
+      scripts: ["vendor/livekit-client-2.22.3.umd.js?v=1", "study-together.js?v=1"]
     },
     // Compatibility asset markers: english-learning-os.css?v=3 · english-learning-os.js?v=7 · english-learning.js?v=28 · english-vocabulary.css?v=1 · english-vocabulary.js?v=2
     english: {
@@ -400,6 +404,7 @@
     if (value === "/music" || value.startsWith("/music/")) return ["open-music"];
     if (value === "/copyright" || value.startsWith("/copyright/")) return ["open-media-governance"];
     if (value === "/focus-room") return ["focus-study-room"];
+    if (value === "/learn/study-together" || value.startsWith("/learn/study-together/")) return ["study-together"];
     if (value.startsWith("/learn")) return ["learning"];
     if (value.startsWith("/english")) return ["english"];
     if (value.startsWith("/japanese")) return ["japanese"];

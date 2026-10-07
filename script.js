@@ -5727,6 +5727,7 @@ function initAppShell() {
       items: [],
       pages: [
         { id: "today", title: "Hôm nay", route: "/learn/today" },
+        { id: "study-together", title: "Học cùng nhau", route: "/learn/study-together", description: "Phòng học LiveKit: mic, camera, chia sẻ màn hình, chat, giơ tay, duyệt thành viên và đồng hồ tập trung chung. Cần máy chủ được cấu hình." },
         { id: "paths", title: "Lộ trình lớp 1–12", route: "/learn/paths" },
         { id: "subjects", title: "Môn học", route: "/learn/subjects" },
         { id: "practice", title: "Luyện tập", route: "/learn/practice" },
@@ -7237,6 +7238,7 @@ function initAppShell() {
     }
     releaseSupportLayout(route);
     if (hasLiveSameRouteWorkspace(route)) return;
+    if (route === activeRoute && route === "/learn/study-together" && window.HHStudyTogether?.activeHost?.()?.isConnected && window.HHStudyTogether?.activeOwner?.() === readCurrentAuthUser()?.id) return;
     if (syncLiveGalaxyLayerOneRoute(route)) return;
     cleanupGalaxyEngineTakeover();
     window.HHPlatformHome?.unmount?.();
@@ -7334,6 +7336,7 @@ function initAppShell() {
     if (route !== "/japanese" && !route.startsWith("/japanese/")) window.HHJapanese?.unmount?.();
     if (route !== "/chinese" && !route.startsWith("/chinese/")) window.HHChinese?.unmount?.();
     if (route !== "/focus-room") window.HHFocusRoom?.unmount?.();
+    if (route !== "/learn/study-together" && !route.startsWith("/learn/study-together/")) window.HHStudyTogether?.unmount?.();
     if (route !== "/phat-phap" && !route.startsWith("/phat-phap/")) window.HHPhatPhap?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
     if (route !== "/play" && !route.startsWith("/play/")) window.HHPlay?.unmount?.();
@@ -7648,6 +7651,13 @@ function initAppShell() {
       pageActions.querySelectorAll("[data-focus-room-panel]").forEach((button) => button.addEventListener("click", () => focusRoomHost.querySelector(`[data-hfr-action="panel"][data-panel="${button.dataset.focusRoomPanel}"]`)?.click()));
       pageActions.querySelector("[data-focus-room-zen]")?.addEventListener("click", () => focusRoomHost.querySelector('[data-hfr-action="zen"]')?.click());
       remember("focus-room");
+    } else if (route === "/learn/study-together" || route.startsWith("/learn/study-together/")) {
+      updatePageHeader("Học cùng nhau", "Phòng học chung LiveKit: hội thoại, camera, chia sẻ màn hình và phiên tập trung.", route);
+      pageActions.innerHTML = '<button type="button" data-app-route="/learn">Về Học tập</button><button type="button" data-app-route="/focus-room">Phòng tập trung cá nhân</button>';
+      workspace.innerHTML = '<div data-hh-study-together-host></div>';
+      if (window.HHStudyTogether?.mount) window.HHStudyTogether.mount(workspace.firstElementChild, { currentUser: readCurrentAuthUser(), apiBase: window.HH_API_BASE || location.origin });
+      else mountSimpleView("Học cùng nhau", "Không tải được module phòng học.", '<button type="button" data-shell-retry-route>Thử lại</button>');
+      remember("learn");
     } else if (route === "/learn" || (route.startsWith("/learn/") && window.HHSchool?.supports?.(parts[1]))) {
       const learningRouteView = route === "/learn" ? "today" : parts[1];
       const learningMeta = window.HHSchool?.views?.[window.HHSchool?.normalizeView?.(learningRouteView) || learningRouteView];

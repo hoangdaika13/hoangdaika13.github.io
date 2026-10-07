@@ -15,7 +15,7 @@ test("HH School accepts only declared route views", () => {
 
 test("/learn lazy-loads only HH School and keeps language routes independent", () => {
   const loader = read("performance-loader.js"); const router = read("script.js"); const worker = read("sw.js");
-  for (const asset of ["hh-school.css?v=4", "hh-school-curriculum.js?v=3", "hh-school-core.js?v=4", "hh-school-offline.js?v=4", "hh-school-sync.js?v=4", "hh-school.js?v=5"]) {
+  for (const asset of ["hh-school.css?v=4", "hh-school-curriculum.js?v=3", "hh-school-core.js?v=4", "hh-school-offline.js?v=4", "hh-school-sync.js?v=4", "hh-school.js?v=6"]) {
     assert.match(loader, new RegExp(asset.replace(/[.?]/g, "\\$&")));
     assert.match(worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
   }

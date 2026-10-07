@@ -28,6 +28,7 @@ const { handleMangaDexSource } = require("../../../utils/mangadex-source");
 const { handleOTruyenSource } = require("../../../utils/otruyen-source");
 const { handleOpenBooksSource } = require("../../../utils/open-books-source");
 const handleEducation = require("../../../utils/education-handler");
+const handleStudyTogether = require("../../../utils/study-together");
 const handleSocialMedia = require("../../../utils/social-media-handler");
 
 const downloadHosts = [
@@ -1850,6 +1851,7 @@ async function runOpenAI(moduleId, actionType, input, meta = {}, safetyIdentifie
 module.exports = async function handler(req, res) {
   if (req.query.moduleId === "download-center") return downloadCenterAction(req, res);
   if (req.query.moduleId === "education") return handleEducation(req, res);
+  if (req.query.moduleId === "study-together") return handleStudyTogether(req, res);
   if (req.query.moduleId === "social-media-tools") return handleSocialMedia(req, res);
   if (req.query.moduleId === "music-ai" && (req.query.media === "veo" || musicMediaActions.has(clean(req.body?.actionType, 80)))) {
     return musicMediaAction(req, res);
