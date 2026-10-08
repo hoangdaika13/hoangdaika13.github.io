@@ -65,3 +65,5 @@ Không tải mã hoặc asset ngoài mới. Reuse:
 - LiveKit server QA Apache-2.0, qrcode-generator MIT như release trước.
 
 Assets: Study Together CSS/JS v7, class CSS/JS v1, call health v1, core/whiteboard v2, loader v698, router giữ v284, service-worker release 1036.
+
+Hotfix 1037: theo trang chỉ lấy reading state, không cập nhật revision của bản sửa thông tin/kế hoạch đang mở. Class JS v2, loader v699 và cache v1037 để tránh tải lại bản cũ từ service-worker.

@@ -255,7 +255,7 @@
     },
     "study-together": {
       styles: ["study-together.css?v=7","study-classroom.css?v=1"],
-      scripts: ["vendor/livekit-client-2.22.3.umd.js?v=1", "vendor/qrcode.js?v=1", "study-room-core.js?v=2","study-call-health.js?v=1","study-classroom.js?v=1", "study-together.js?v=7"]
+      scripts: ["vendor/livekit-client-2.22.3.umd.js?v=1", "vendor/qrcode.js?v=1", "study-room-core.js?v=2","study-call-health.js?v=1","study-classroom.js?v=2", "study-together.js?v=7"]
     },
     "study-whiteboard": {
       scripts: ["study-whiteboard.js?v=2"]

@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1036";
+const CACHE = "hh-identity-portal-v1037";
+// Previous release: hh-identity-portal-v1036; ./performance-loader.js?v=698.
 // Previous release: hh-identity-portal-v1035; ./performance-loader.js?v=697.
 // Previous release: hh-identity-portal-v1034; ./performance-loader.js?v=696; ./script.js?v=283.
 // Previous release: hh-identity-portal-v1033; ./performance-loader.js?v=695.
@@ -665,7 +666,7 @@ const RUNTIME_ASSETS = [
   "./study-classroom.css?v=1",
   "./study-together.js?v=7",
   "./study-call-health.js?v=1",
-  "./study-classroom.js?v=1",
+  "./study-classroom.js?v=2",
   "./study-room-core.js?v=2",
   "./study-whiteboard.js?v=2",
   "./vendor/livekit-client-2.22.3.umd.js?v=1",
@@ -746,7 +747,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=698",
+  "./performance-loader.js?v=699",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=284"
