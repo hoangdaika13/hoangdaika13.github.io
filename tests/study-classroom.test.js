@@ -67,4 +67,5 @@ test("role changes and class deletion report transport failures without faking S
 test("Classroom and health use local lazy PDF assets, no autodevice permissions or raw HTML from documents",()=>{
   const read=file=>fs.readFileSync(path.join(__dirname,"..",file),"utf8");
   assert.match(read("study-classroom.js"),/isEvalSupported:false/);assert.match(read("study-classroom.js"),/p\.textContent=note\.name/);assert.match(read("study-call-health.js"),/setPublishingQuality/);assert.match(read("study-call-health.js"),/stopMedia\(room\)/);assert.doesNotMatch(read("study-call-health.js"),/setMicrophoneEnabled\(true/);
+  const follow=read("study-classroom.js").split("\n").find(line=>line.includes("function follow()"));assert.doesNotMatch(follow,/current=data\.class/);
 });
