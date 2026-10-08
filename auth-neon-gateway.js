@@ -94,7 +94,8 @@
        * used to stall Chromium on desktop GPUs. Keep the state signal, but let
        * the shell perform the lightweight cross-fade.
        */
-      gate.classList.remove("is-gateway-opening");
+      // Avoid writing the observed class attribute again when it is already clear.
+      if (gate.classList.contains("is-gateway-opening")) gate.classList.remove("is-gateway-opening");
       return;
     }
     if (status?.classList.contains("is-error") || card.classList.contains("auth-error")) {

@@ -4,7 +4,7 @@ function matches(row, query) {
   return Object.entries(query).every(([key, expected]) => {
     if (key === "$or") return expected.some(q => matches(row, q));
     const value = key.split(".").reduce((v, k) => v?.[k], row);
-    if (expected && typeof expected === "object" && !(expected instanceof Date)) return Object.entries(expected).every(([op, v]) => op === "$gt" ? value > v : op === "$ne" ? value !== v : op === "$in" ? v.includes(value) : value === expected);
+    if (expected && typeof expected === "object" && !(expected instanceof Date)) return Object.entries(expected).every(([op, v]) => op === "$gt" ? value > v : op === "$ne" ? value !== v : op === "$in" ? v.includes(value) : op === "$exists" ? (value !== undefined) === v : value === expected);
     return value === expected;
   });
 }

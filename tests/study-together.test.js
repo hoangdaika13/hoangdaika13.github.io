@@ -60,6 +60,48 @@ test("timer is host-authoritative and broadcasts through LiveKit room metadata",
   const timer=await h.call("timer",{roomId:r.room.id,mode:"start",duration:1500});assert.equal(timer.room.timer.running,true);assert.ok(timer.room.timer.deadline>Date.now());
   assert.ok(h.calls.some(c=>c.action==="updateRoomMetadata"&&JSON.parse(c.args[1]).timer?.running));
 });
+
+test("shared agenda persists and broadcasts actual host edits; learners and invited guests are read-only",async()=>{
+  const h=setup(),r=await h.call('create',{title:'QA'});
+  assert.deepEqual(r.room.agenda,{revision:0,goal:'',items:[]});
+  const result=await h.call('agenda',{roomId:r.room.id,revision:0,goal:'Luyện nói tiếng Trung',items:['Ôn từ vựng','Luyện hội thoại']});
+  assert.equal(result.syncPending,false);assert.equal(result.room.agenda.revision,1);
+  await h.call('join',{code:r.code},learner);assert.deepEqual((await h.call('status',{roomId:r.room.id},learner,'GET')).room.agenda,result.room.agenda);
+  await assert.rejects(h.call('agenda',{roomId:r.room.id,revision:1,goal:'unauthorized',items:[]},learner),{statusCode:403});
+  const guest=await h.call('join',{code:r.code,displayName:'QA Guest'},null);
+  await assert.rejects(h.call('agenda',{roomId:r.room.id,revision:1,index:0,done:true},null,'POST',{authorization:'Bearer '+guest.guestSession.token}),{statusCode:403});
+  assert.ok(h.calls.some(call=>call.action==='updateRoomMetadata'&&JSON.parse(call.args[1]).agenda?.goal==='Luyện nói tiếng Trung'));
+  assert.deepEqual((await h.db.collection('studyTogetherRooms').findOne({_id:r.room.id})).agenda,result.room.agenda);
+});
+test("agenda revision protects stale edits; checkbox toggles survive reordering without granting clients revision control",async()=>{
+  const h=setup(),r=await h.call('create',{title:'QA'});await h.call('agenda',{roomId:r.room.id,revision:0,goal:'QA',items:['A','B']});
+  await h.call('agenda',{roomId:r.room.id,revision:1,index:0,done:true});
+  await assert.rejects(h.call('agenda',{roomId:r.room.id,revision:1,goal:'stale',items:['C']}),{statusCode:409,code:'AGENDA_CONFLICT'});
+  await assert.rejects(h.call('agenda',{roomId:r.room.id,revision:2,index:0,done:'false'}),{statusCode:400});
+  const next=await h.call('agenda',{roomId:r.room.id,revision:2,goal:'QA',items:['B','A','C']});
+  assert.deepEqual(next.room.agenda.items,[{text:'B',done:false},{text:'A',done:true},{text:'C',done:false}]);assert.equal(next.room.agenda.revision,3);
+});
+test("agenda updates use an atomic revision condition and cannot win over a concurrent host edit",async()=>{
+  const h=setup(),r=await h.call('create',{title:'QA'}),collection=h.db.collection.bind(h.db);let raced=false;
+  h.db.collection=name=>{const c=collection(name),update=c.updateOne;c.updateOne=async(q,data,options)=>{if(name==='studyTogetherRooms'&&q['agenda.revision']&&!raced){raced=true;await update({_id:r.room.id},{$set:{agenda:{revision:1,goal:'another host tab',items:[]}}});}return update(q,data,options);};return c;};
+  await assert.rejects(h.call('agenda',{roomId:r.room.id,revision:0,goal:'stale',items:[]}),{statusCode:409});assert.equal((await collection('studyTogetherRooms').findOne({_id:r.room.id})).agenda.goal,'another host tab');
+});
+test("agenda rejects excessive or malformed input and honestly reports saved-but-not-broadcast updates",async()=>{
+  const h=setup(),r=await h.call('create',{title:'QA'});
+  for(const body of[{goal:'x'.repeat(241),items:[]},{goal:'QA',items:Array.from({length:7},(_,i)=>String(i))},{goal:'QA',items:['x'.repeat(121)]},{goal:'QA',items:[' A ','A']},{goal:'QA',items:[{}]},{goal:'QA',items:['']}])await assert.rejects(h.call('agenda',{roomId:r.room.id,revision:0,...body}),{statusCode:400});
+  h.client.updateRoomMetadata=async()=>{throw Error('private diagnostic');};const saved=await h.call('agenda',{roomId:r.room.id,revision:0,goal:'Stored goal',items:[]});
+  assert.equal(saved.syncPending,true);assert.equal(saved.room.agenda.goal,'Stored goal');assert.equal(JSON.stringify(saved).includes('private diagnostic'),false);
+  h.client.updateRoomMetadata=async()=>({});assert.equal((await h.call('agenda',{roomId:r.room.id,revision:1,goal:'Stored goal',items:[]})).syncPending,false);
+});
+test("expired timers start a fresh selected duration and pause preserves zero instead of inventing time",async()=>{
+  const h=setup(),r=await h.call('create',{title:'QA'}),rooms=h.db.collection('studyTogetherRooms');
+  await rooms.updateOne({_id:r.room.id},{$set:{timer:{running:true,deadline:Date.now()-1000,remainingMs:0,duration:1500}}});
+  const paused=await h.call('timer',{roomId:r.room.id,mode:'pause',duration:1500});assert.equal(paused.room.timer.remainingMs,0);assert.equal(paused.room.timer.running,false);
+  const restarted=await h.call('timer',{roomId:r.room.id,mode:'start',duration:420});assert.equal(restarted.room.timer.remainingMs,420000);assert.equal(restarted.room.timer.duration,420);assert.ok(restarted.room.timer.deadline>Date.now()+419000);
+  await rooms.updateOne({_id:r.room.id},{$set:{timer:{running:false,remainingMs:180000,duration:420,deadline:null}}});
+  const resumed=await h.call('timer',{roomId:r.room.id,mode:'start',duration:5400});assert.equal(resumed.room.timer.remainingMs,180000);assert.equal(resumed.room.timer.duration,420);
+  const reset=await h.call('timer',{roomId:r.room.id,mode:'reset',duration:5400});assert.equal(reset.room.timer.remainingMs,5400000);assert.equal(reset.room.timer.duration,5400);
+});
 test("closing denies new tokens and can be retried after a transport failure",async()=>{
   const h=setup(),r=await h.call("create",{title:"QA"});h.client.deleteRoom=async()=>{throw Error("private-secret-that-must-not-escape");};
   await assert.rejects(h.call("close",{roomId:r.room.id}),e=>e.statusCode===503&&!e.message.includes("private-secret"));
@@ -147,7 +189,7 @@ test("Study Together is a dedicated Learning & Languages entry with its compatib
   assert.match(router,/classList\.toggle\("app-learning-route",[^\n]+activeGroup\?\.id !== "study-together"/);
   assert.match(router,/window\.HHStudyTogether\?\.unmount\?\.\(\)/);
   assert.ok(loader.indexOf('value === "/learn/study-together"')<loader.indexOf('value.startsWith("/learn")'));
-  for(const asset of["study-together.js?v=3","study-together.css?v=3","vendor/livekit-client-2.22.3.umd.js?v=1","vendor/qrcode.js?v=1"]){assert.ok(loader.includes(asset));assert.ok(worker.includes(asset));}
+  for(const asset of["study-together.js?v=5","study-together.css?v=5","vendor/livekit-client-2.22.3.umd.js?v=1","vendor/qrcode.js?v=1"]){assert.ok(loader.includes(asset));assert.ok(worker.includes(asset));}
   assert.match(read("vercel.json"),/"source": "\/api\/study-together"/);
   assert.match(read("api/modules/[moduleId]/actions.js"),/return handleStudyTogether\(req, res\)/);
   const client=read("study-together.js");assert.doesNotMatch(client,/LIVEKIT_API_KEY|LIVEKIT_API_SECRET/);assert.match(client,/hh\.studyTogether\.notes\.v1/);assert.match(client,/pub\.track\?\.stop\(\)/);
@@ -177,4 +219,17 @@ test("room presets fill actual policies and drafts stay account-scoped without i
   for(const p of Object.values(context.presets)){assert.equal(p.settings.guestApproval,true);assert.equal(p.settings.allowGuests,true);}
   const draft=client.match(/    function saveDraft\(\)\{[^\n]+/)[0];assert.match(draft,/if\(!account\)return/);assert.match(draft,/localStorage\.setItem\(draftKey/);assert.doesNotMatch(draft,/token|displayName|inviteCode/);assert.match(client,/hh\.studyTogether\.lobbyDraft\.v1\./);
   assert.match(client,/function stopPolling\(\)\{clearTimeout\(s\.poll\)/);assert.match(client,/!document\.hidden/);assert.match(client,/epoch!==s\.pollEpoch/);assert.match(client,/setTimeout\(check,6000\)/);
+});
+
+test("presentation selects one existing tile and recovers from departed pinned or speaking participants",()=>{
+  const vm=require('node:vm'),client=fs.readFileSync(path.join(__dirname,'../study-together.js'),'utf8'),context={};
+  const source=client.match(/  function chooseStageTile\(tiles, pinned, speakers = \[\], hostIdentity = ""\) \{[\s\S]*?\n  \}/)[0];vm.runInNewContext(source+';choose=chooseStageTile;',context);
+  const host={id:'host:camera',identity:'host',source:'camera',hasVideo:false},speaker={id:'speaker:camera',identity:'speaker',source:'camera',hasVideo:true},screen={id:'host:screen',identity:'host',source:'screen',hasVideo:true},tiles=[host,speaker,screen];
+  assert.equal(context.choose(tiles,'speaker:camera',['host'],'host'),speaker);
+  assert.equal(context.choose(tiles,'departed:camera',['speaker'],'host'),screen);
+  assert.equal(context.choose([host,speaker],'',['speaker'],'host'),speaker);
+  assert.equal(context.choose([host,speaker],'',['departed','host'],'host'),host);
+  assert.equal(context.choose([speaker],'',[],'host'),speaker);
+  assert.equal(context.choose([],'departed:screen',['speaker'],'host'),null);
+  assert.equal(context.choose([host,speaker,{...screen,hasVideo:false}],'',['speaker'],'host'),speaker);
 });

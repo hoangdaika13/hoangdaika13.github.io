@@ -254,8 +254,8 @@
       scripts: ["focus-room.js?v=20"]
     },
     "study-together": {
-      styles: ["study-together.css?v=3"],
-      scripts: ["vendor/livekit-client-2.22.3.umd.js?v=1", "vendor/qrcode.js?v=1", "study-together.js?v=3"]
+      styles: ["study-together.css?v=5"],
+      scripts: ["vendor/livekit-client-2.22.3.umd.js?v=1", "vendor/qrcode.js?v=1", "study-together.js?v=5"]
     },
     // Compatibility asset markers: english-learning-os.css?v=3 · english-learning-os.js?v=7 · english-learning.js?v=28 · english-vocabulary.css?v=1 · english-vocabulary.js?v=2
     english: {

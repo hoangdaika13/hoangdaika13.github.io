@@ -24,6 +24,11 @@ const safeSettings = (input = {}, previous = {}) => {
   previous = previous && typeof previous === "object" ? previous : {};
   return Object.fromEntries(["waitingRoom", "allowScreenShare", "allowMicrophone", "chatEnabled", "allowGuests", "guestApproval"].map(k => [k, typeof input[k] === "boolean" ? input[k] : previous[k] ?? (k !== "waitingRoom")]));
 };
+const safeAgenda = input => ({
+  revision: Number.isSafeInteger(input?.revision) && input.revision >= 0 ? input.revision : 0,
+  goal: clean(input?.goal, 240),
+  items: Array.isArray(input?.items) ? input.items.slice(0, 6).filter(item => clean(item?.text, 120)).map(item => ({ text: clean(item.text, 120), done: item.done === true })) : []
+});
 const init = new WeakMap();
 function configuration(env = process.env) {
   try {
@@ -46,13 +51,13 @@ async function indexes(db) {
   await init.get(db);
 }
 function publicRoom(room, user) {
-  return { id: room._id, title: room.title, capacity: room.capacity, settings: safeSettings(room.settings), timer: room.timer || null, host: !user._guest && room.ownerId === String(user._id), hostIdentity: "u_" + room.ownerId, expiresAt: room.expiresAt, status: room.status };
+  return { id: room._id, title: room.title, capacity: room.capacity, settings: safeSettings(room.settings), timer: room.timer || null, agenda: safeAgenda(room.agenda), host: !user._guest && room.ownerId === String(user._id), hostIdentity: "u_" + room.ownerId, expiresAt: room.expiresAt, status: room.status };
 }
 function permissions(room, isHost = false) {
   const s = safeSettings(room.settings);
   return { canPublish: true, canSubscribe: true, canPublishData: true, canUpdateOwnMetadata: false, canPublishSources: [TrackSource.CAMERA, ...(isHost || s.allowMicrophone ? [TrackSource.MICROPHONE] : []), ...(isHost || s.allowScreenShare ? [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO] : [])] };
 }
-const metadata = room => JSON.stringify({ kind: "hh-study-together", hostIdentity: "u_" + room.ownerId, settings: safeSettings(room.settings), timer: room.timer || null });
+const metadata = room => JSON.stringify({ kind: "hh-study-together", hostIdentity: "u_" + room.ownerId, settings: safeSettings(room.settings), timer: room.timer || null, agenda: safeAgenda(room.agenda) });
 async function remote(work) {
   try { return await work(); } catch { fail("Không kết nối được LiveKit. Kiểm tra máy chủ và thử lại.", 503, "LIVEKIT_UNAVAILABLE"); }
 }
@@ -176,11 +181,37 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
     await rooms.updateOne({ _id: room._id, status: "active" }, { $set: { settings: next.settings, updatedAt: new Date() } });
     return res.status(200).json({ ok: true, room: publicRoom(next, user) });
   }
+  if (action === "agenda") {
+    const previous = safeAgenda(room.agenda);
+    if (!Number.isSafeInteger(body.revision) || body.revision !== previous.revision) fail("Kế hoạch đã thay đổi. Làm mới trạng thái phòng trước khi sửa tiếp.", 409, "AGENDA_CONFLICT");
+    let next;
+    if (body.index !== undefined) {
+      if (!Number.isInteger(body.index) || !previous.items[body.index] || typeof body.done !== "boolean") fail("Công việc hoặc trạng thái hoàn thành không hợp lệ.");
+      next = { ...previous, items: previous.items.map((item, i) => i === body.index ? { ...item, done: body.done } : item) };
+    } else {
+      if (typeof body.goal !== "string" || body.goal.length > 240 || !Array.isArray(body.items) || body.items.length > 6 || body.items.some(text => typeof text !== "string" || !text.trim() || text.length > 120)) fail("Mục tiêu tối đa 240 ký tự; thêm tối đa 6 việc, mỗi việc tối đa 120 ký tự.");
+      const goal=body.goal.trim(),items=body.items.map(text=>text.trim());
+      if (new Set(items).size !== items.length) fail("Các công việc không được trùng nhau.");
+      next = { goal, items: items.map(text => ({ text, done: previous.items.find(item => item.text === text)?.done === true })) };
+    }
+    next.revision = previous.revision + 1;
+    const revisionFilter=room.agenda?.revision===undefined?{ $exists:false }:room.agenda.revision;
+    const result=await rooms.updateOne({ _id:room._id, ownerId:uid, status:"active", "agenda.revision":revisionFilter },{ $set:{ agenda:next, updatedAt:new Date() } });
+    if (!result.matchedCount) fail("Kế hoạch đã thay đổi hoặc phòng đã đóng. Làm mới trạng thái phòng.",409,"AGENDA_CONFLICT");
+    const latest=await rooms.findOne({ _id:room._id });
+    if (!latest || latest.status!=="active") fail("Phòng đã kết thúc.",404,"ROOM_NOT_FOUND");
+    let syncPending=false;
+    try { await client.updateRoomMetadata(room._id, metadata(latest)); } catch { syncPending=true; }
+    return res.status(200).json({ ok:true, room:publicRoom(latest,user), syncPending });
+  }
   if (action === "timer") {
     const mode = clean(body.mode, 12), duration = Math.max(60, Math.min(10800, Math.floor(Number(body.duration) || 1500)));
     if (!["start", "pause", "reset"].includes(mode)) fail("Thao tác đồng hồ không hợp lệ.");
-    const remaining = room.timer?.running ? Math.max(0, Number(room.timer.deadline) - Date.now()) : Number(room.timer?.remainingMs) || duration * 1000;
-    const timer = { running: mode === "start", duration, remainingMs: mode === "reset" ? duration * 1000 : remaining, deadline: mode === "start" ? Date.now() + remaining : null };
+    const rawRemaining = room.timer?.running ? Number(room.timer.deadline) - Date.now() : room.timer ? Number(room.timer.remainingMs) : duration * 1000;
+    const remaining = Number.isFinite(rawRemaining) ? Math.max(0, rawRemaining) : 0;
+    const restarting = mode === "reset" || mode === "start" && remaining === 0;
+    const remainingMs = restarting ? duration * 1000 : remaining;
+    const timer = { running: mode === "start", duration: restarting || !room.timer ? duration : room.timer.duration, remainingMs, deadline: mode === "start" ? Date.now() + remainingMs : null };
     const next = { ...room, timer };
     await remote(() => client.updateRoomMetadata(room._id, metadata(next)));
     await rooms.updateOne({ _id: room._id, status: "active" }, { $set: { timer, updatedAt: new Date() } });

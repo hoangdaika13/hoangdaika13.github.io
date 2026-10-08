@@ -13,12 +13,13 @@ test("HH Neon Gateway assets are wired into the application shell", () => {
   assert.match(html, /auth-h-galaxy\.css\?v=13/);
   assert.match(read("auth-neon-gateway.js"), /auth-h-galaxy\.js\?v=15/);
   assert.match(read("auth-neon-gateway.js"), /auth-living-galaxy-3d\.js\?v=21/);
-  assert.match(html, /auth-neon-gateway\.js\?v=34/);
+  const executableHtml=html.replace(/<!--[\s\S]*?-->/g, ""),gatewayAsset=executableHtml.match(/src="(auth-neon-gateway\.js\?v=\d+)"/)?.[1];
+  assert.ok(gatewayAsset,"the executable shell loads a versioned authentication gateway");
   assert.match(worker, /auth-neon-gateway\.css\?v=9/);
   assert.match(worker, /auth-h-galaxy\.css\?v=13/);
   assert.match(worker, /auth-h-galaxy\.js\?v=15/);
   assert.match(worker, /auth-living-galaxy-3d\.js\?v=21/);
-  assert.match(worker, /auth-neon-gateway\.js\?v=34/);
+  assert.ok(worker.includes('"./'+gatewayAsset+'"'),"the worker caches the actual gateway version used by the shell");
   assert.match(read("auth-neon-gateway.js"), /livingRuntime\.addEventListener\("error", showGalaxyFallback/);
   assert.doesNotMatch(html, /auth-creative-universe\.css/);
   assert.match(read("performance-loader.js"), /"auth-effects":\s*\{[\s\S]{0,520}?styles:\s*\[\],[\s\S]{0,80}?scripts:\s*\[\]/);
@@ -26,6 +27,19 @@ test("HH Neon Gateway assets are wired into the application shell", () => {
   assert.match(html, /class="auth-gateway-scene"/);
   assert.doesNotMatch(html, /class="auth-solar-system"/);
   assert.equal([...html.matchAll(/data-hh-planet="\d+"/g)].length, 25);
+});
+
+test("restored successful sessions stop producing observed class mutations",()=>{
+  const vm=require('node:vm'),source=read('auth-neon-gateway.js');
+  const state=source.match(/  const setState = \(state, lock = false\) => \{[\s\S]*?\n  \};/)[0],derive=source.match(/  const deriveState = \(\) => \{[\s\S]*?\n  \};/)[0];
+  for(const opening of [false,true]){
+    let pending=1,removals=0;const classes=new Set(opening?['is-gateway-opening']:[]);
+    const gate={dataset:{},classList:{contains:token=>classes.has(token),remove:token=>{classes.delete(token);removals++;pending++;}},querySelector:()=>({textContent:'Đang dùng chế độ khách',classList:{contains:token=>token==='is-success'}})};
+    const card={dataset:{authState:'idle'},classList:{contains:()=>false}},context={gate,card};
+    vm.runInNewContext('let stateLock="";'+state+derive+';sync=deriveState;',context);
+    let turns=0;while(pending&&turns<10){pending--;turns++;context.sync();}
+    assert.equal(pending,0,'the success observer must settle rather than starve rendering');assert.equal(removals,opening?1:0);assert.equal(gate.dataset.authGatewayState,'success');assert.equal(card.dataset.authState,'success');
+  }
 });
 
 test("login galaxy replaces the old showcase and keeps Google-only auth", () => {

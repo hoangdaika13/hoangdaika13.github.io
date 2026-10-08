@@ -8,6 +8,7 @@ const {chromium}=require(process.env.HH_PLAYWRIGHT_PATH||"playwright");
 const root=path.resolve(__dirname,"..");
 let stage="startup";
 async function run(){
+  const baseline=process.env.HH_STUDY_QA_BASELINE==='1'?Object.fromEntries(['study-together.js','study-together.css'].map(file=>[file,require('node:child_process').execFileSync('git',['show','HEAD:'+file],{cwd:root,encoding:'utf8',windowsHide:true})])):null;
   let credentials;
   if(process.env.HH_STUDY_QA_CLOUD_PROJECT_ID){
     const {spawnSync}=require("node:child_process"),auth=spawnSync(path.join(root,".study-local/livekit-cli-2.18.8/lk.exe"),["project","list","--json"],{encoding:"utf8",windowsHide:true});
@@ -28,13 +29,14 @@ async function run(){
       catch(e){return response.status(e.statusCode||500).json({error:e.statusCode?e.message:"QA server error"});}
     }
     if(url.pathname.startsWith("/api/")){res.setHeader("Content-Type","application/json");if(url.pathname==="/api/auth/providers")return res.end(JSON.stringify({google:false,email:false}));res.statusCode=401;return res.end(JSON.stringify({error:"QA ONLY: no production HH authentication",code:"AUTH_REQUIRED"}));}
-    try{const pathname=url.pathname==="/"?"/index.html":decodeURIComponent(url.pathname),file=path.resolve(root,"."+pathname),ext=path.extname(file);if(!file.startsWith(root+path.sep)||pathname.split("/").some(p=>p.startsWith(".")||p==="node_modules")||!/[.](html|js|css|json|png|jpg|jpeg|webp|svg|woff2?|ogg|mp3|wav|ico)$/.test(ext)){res.writeHead(404);return res.end();}res.setHeader("Content-Type",{".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".json":"application/json",".svg":"image/svg+xml"}[ext]||"application/octet-stream");res.end(await fs.readFile(file));}catch{res.writeHead(404);res.end();}
+    try{const pathname=url.pathname==="/"?"/index.html":decodeURIComponent(url.pathname),file=path.resolve(root,"."+pathname),ext=path.extname(file);if(!file.startsWith(root+path.sep)||pathname.split("/").some(p=>p.startsWith(".")||p==="node_modules")||!/[.](html|js|css|json|png|jpg|jpeg|webp|svg|woff2?|ogg|mp3|wav|ico)$/.test(ext)){res.writeHead(404);return res.end();}res.setHeader("Content-Type",{".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".json":"application/json",".svg":"image/svg+xml"}[ext]||"application/octet-stream");res.end(baseline?.[pathname.slice(1)]??await fs.readFile(file));}catch{res.writeHead(404);res.end();}
   });
   await new Promise(r=>server.listen(0,"127.0.0.1",r));
   const browser=await chromium.launch({headless:true,...(process.env.HH_BROWSER_EXECUTABLE?{executablePath:process.env.HH_BROWSER_EXECUTABLE}:{}),args:["--use-fake-device-for-media-stream","--use-fake-ui-for-media-stream","--enable-usermedia-screen-capturing","--auto-select-desktop-capture-source=Entire screen"]});
   const base="http://127.0.0.1:"+server.address().port+"/tests/fixtures/study-together.html";
   const captures=await fs.mkdtemp(path.join(os.tmpdir(),"hh-study-together-qa-"));
   const errors=[];
+  let reportedStage='';const progress=setInterval(()=>{if(stage!==reportedStage){reportedStage=stage;console.log('Study QA: '+stage);}},5000);progress.unref();
   async function checkShell(guestCode) {
     stage="full shell guest entry";
     const shellContext=await browser.newContext({viewport:{width:1280,height:900},reducedMotion:'reduce'}),shell=await shellContext.newPage();shell.on('pageerror',e=>errors.push(e.message));
@@ -46,8 +48,8 @@ async function run(){
       const studyNav=shell.locator('.app-sidebar__submenu [data-app-route="/learn/study-together"]');assert.equal(await studyNav.count(),1);assert.equal(await studyNav.getAttribute('aria-current'),'page');assert.equal(await shell.locator('.app-sidebar__submenu [data-app-route="/learn"]').getAttribute('aria-current'),null);
       if(await shell.locator('[data-sidebar-section-toggle="learning"]').getAttribute('aria-expanded')!=='true')await shell.locator('[data-sidebar-section-toggle="learning"]').click();await studyNav.waitFor({state:'visible'});
       const shellHandle=await shell.locator('#appShell').elementHandle();await shell.locator('.app-sidebar__home').click();await shell.locator('[data-php-card="/learn/study-together"]').waitFor({timeout:30000});await shell.locator('[data-php-card="/learn/study-together"] [data-php-route="/learn/study-together"]').click();await shell.locator('.hst').waitFor();assert.equal(await shellHandle.evaluate(node=>node===document.querySelector('#appShell')),true);
-      stage="shell Back/Forward/reload";
-      await shell.goBack({waitUntil:'domcontentloaded'});await shell.locator('.php').waitFor();await shell.goForward({waitUntil:'domcontentloaded'});await shell.locator('.hst').waitFor();await shell.reload({waitUntil:'domcontentloaded'});await shell.locator('.hst').waitFor();assert.equal(await shell.locator('.app-sidebar__submenu [data-app-route="/learn/study-together"]').getAttribute('aria-current'),'page');
+      stage="shell Back";
+      await shell.goBack({waitUntil:'domcontentloaded'});await shell.locator('.php').waitFor();stage="shell Forward";await shell.goForward({waitUntil:'domcontentloaded'});await shell.locator('.hst').waitFor();stage="shell reload";await shell.reload({waitUntil:'domcontentloaded'});await shell.locator('.hst').waitFor();assert.equal(await shell.locator('.app-sidebar__submenu [data-app-route="/learn/study-together"]').getAttribute('aria-current'),'page');
       await shell.locator('.app-global-search').click();await shell.locator('#commandPaletteInput').fill('Học cùng nhau');await shell.locator('#commandPaletteResults [data-app-route="/learn/study-together"]').first().waitFor();await shell.keyboard.press('Escape');
       stage="shell open HH School";
       if(await shell.locator('[data-sidebar-section-toggle="learning"]').getAttribute('aria-expanded')!=='true')await shell.locator('[data-sidebar-section-toggle="learning"]').click();await shell.locator('.app-sidebar__submenu [data-app-route="/learn"]').click();await shell.locator('.hh-school').waitFor();
@@ -55,7 +57,7 @@ async function run(){
       await shell.locator('.app-sidebar__submenu [data-app-route="/learn/study-together"]').click();await shell.locator('.hst').waitFor();assert.equal(await shell.locator('#appPageHeader').isVisible(),true);assert.equal(await shell.locator('#appBreadcrumb').isVisible(),true);assert.equal(await shell.evaluate(()=>document.body.classList.contains('app-learning-route')),false);
       await shell.screenshot({path:path.join(captures,'full-shell-guest-invite.png'),timeout:5000});
     } catch(e) {
-      console.log(JSON.stringify(await shell.evaluate(()=>({route:location.hash,bodyClasses:document.body.className,studyMounted:!!window.HHStudyTogether?.activeHost?.(),workspace:document.querySelector('#appWorkspace')?.innerText.slice(0,600)})),null,2));
+      console.log(JSON.stringify(await Promise.race([shell.evaluate(()=>({route:location.hash,bodyClasses:document.body.className,studyMounted:!!window.HHStudyTogether?.activeHost?.(),workspace:document.querySelector('#appWorkspace')?.innerText.slice(0,600)})).catch(()=>({diagnosticsUnavailable:true})),new Promise(resolve=>setTimeout(()=>resolve({diagnosticsTimedOut:true}),3000))]),null,2));
       await shell.screenshot({path:path.join(captures,'shell-failure.png'),timeout:5000}).catch(()=>{});
       console.log('QA captures: '+captures);throw e;
     } finally {await shellContext.close();}
@@ -98,6 +100,7 @@ async function run(){
     stage="camera/audio";
     await host.locator('[data-hst-action="camera"]').click();await host.waitForFunction(()=>document.querySelector('[data-hst-action="camera"]').getAttribute('aria-pressed')==='true');
     await host.locator('[data-hst-action="mic"]').click();await host.waitForFunction(()=>document.querySelector('[data-hst-action="mic"]').getAttribute('aria-pressed')==='true');
+    await peer.locator('.hst-tile:not(.is-local)[data-source="camera"]').scrollIntoViewIfNeeded();
     await peer.waitForFunction(()=>document.querySelector('.hst-tile:not(.is-local)[data-source="camera"] video')?.readyState>=2,null,{timeout:20000}).catch(async e=>{
       const diagnostic=await peer.evaluate(()=>({
         notice:document.querySelector('[data-hst-notice]').textContent,connection:qaStudy.room?.state,
@@ -110,18 +113,51 @@ async function run(){
     await peer.waitForFunction(()=>document.querySelector("[data-hst-audio] audio")?.srcObject?.getAudioTracks().length>0);
     stage="chat/hand";
     await host.locator('[data-hst-pane="chat"]').click();await host.locator('[data-hst-chat] [name="text"]').fill('QA <img src=x onerror="bad">');await host.locator("[data-hst-chat] button").click();
+    await peer.locator('[data-hst-unread]').getByText('1',{exact:true}).waitFor();assert.match(await peer.locator('[data-hst-pane="chat"]').getAttribute('aria-label'),/1 tin chưa đọc/);
     await peer.locator('[data-hst-pane="chat"]').click();await peer.locator("[data-hst-messages]").getByText('QA <img src=x onerror="bad">',{exact:true}).waitFor();assert.equal(await peer.locator("[data-hst-messages] img").count(),0);
+    assert.equal(await peer.locator('[data-hst-unread]').isHidden(),true);assert.ok(!Number.isNaN(Date.parse(await peer.locator('[data-hst-messages] time').first().getAttribute('datetime'))));
+    await host.evaluate(async()=>{for(let i=0;i<12;i++)await qaStudy.room.localParticipant.publishData(new TextEncoder().encode(JSON.stringify({type:'chat',text:'QA reading history '+i+' '+('nội dung học tập '.repeat(20))})),{reliable:true,topic:'hh.study'});});
+    await peer.waitForFunction(()=>qaStudy.messages.length===13);await peer.locator('[data-hst-messages]').evaluate(log=>log.scrollTop=0);await peer.waitForFunction(()=>document.querySelector('[data-hst-messages]').scrollTop===0);
+    await host.locator('[data-hst-chat] [name="text"]').fill('QA preserve reading position');await host.locator('[data-hst-chat] button').click();await peer.locator('[data-hst-chat-latest]').waitFor({state:'visible'});assert.equal(await peer.locator('[data-hst-messages]').evaluate(log=>log.scrollTop),0);await peer.locator('[data-hst-chat-latest]').click();assert.equal(await peer.locator('[data-hst-unread]').isHidden(),true);
+    stage="stable people and search";
+    await host.locator('[data-hst-pane="people"]').click();const mute=host.locator('[data-hst-mute="u_650000000000000000000002"]'),muteNode=await mute.elementHandle();await mute.focus();
     await peer.locator('[data-hst-action="hand"]').click();await host.waitForFunction(()=>qaStudy.hands.has("u_650000000000000000000002"));
+    assert.equal(await muteNode.evaluate(node=>node===document.activeElement&&node.isConnected),true);
+    await host.locator('[data-hst-people-search]').fill('chu phong');assert.equal(await host.locator('[data-hst-people] .hst-person:visible').count(),1);await host.locator('[data-hst-people-search]').fill('no-match-qa');assert.equal(await host.locator('[data-hst-people] .hst-person:visible').count(),0);await host.locator('[data-hst-people-search]').fill('');assert.equal(await host.locator('[data-hst-people] .hst-person:visible').count(),2);
+    stage="pin and local view preferences";
+    const localPin=peer.locator('.hst-tile.is-local[data-source="camera"] [data-hst-pin]');await localPin.focus();await peer.keyboard.press('Enter');assert.equal(await peer.locator('.hst-tile.is-focused').count(),1);assert.equal(await peer.locator('.hst-tile.is-local.is-pinned').count(),1);assert.equal(await host.evaluate(()=>qaStudy.pinned),'');
+    await peer.locator('[data-hst-pane="settings"]').click();await peer.locator('[data-hst-mirror]').uncheck();assert.equal(await peer.locator('.hst').getAttribute('data-mirror'),'false');
     stage="timer";
     await host.locator('[data-hst-pane="focus"]').click();await host.locator('[data-hst-timer-action="start"]').click();await peer.locator('[data-hst-pane="focus"]').click();await peer.waitForFunction(()=>qaStudy.info.timer?.running===true);
+    stage="shared goals and checklist";
+    await host.locator('.hst-agenda details summary').click();await host.locator('[data-hst-agenda] [name="goal"]').fill('QA <img src=x onerror="bad"> goal');await host.locator('[data-hst-agenda] [name="items"]').fill('Ôn từ vựng\nLuyện hội thoại');await host.locator('[data-hst-agenda] button[type="submit"]').click();
+    stage="agenda metadata received";
+    await peer.waitForFunction(()=>qaStudy.info.agenda?.revision===1).catch(async e=>{console.log(JSON.stringify(await host.evaluate(()=>({notice:document.querySelector('[data-hst-notice]').textContent,busy:qaStudy.busy,agenda:qaStudy.info.agenda,editorRevision:qaStudy.agendaEditorRevision})),null,2));throw e;});assert.equal(await peer.locator('[data-hst-goal]').innerText(),'QA <img src=x onerror="bad"> goal');assert.equal(await peer.locator('.hst-agenda img').count(),0);assert.equal(await peer.locator('[data-hst-task]').count(),2);assert.equal(await peer.locator('[data-hst-task="0"]').isDisabled(),true);
+    stage="agenda task checkbox";
+    const taskNode=await host.locator('[data-hst-task="0"]').elementHandle();await host.locator('[data-hst-task="0"]').click();await peer.waitForFunction(()=>qaStudy.info.agenda?.items[0].done===true);assert.equal(await peer.locator('[data-hst-task="0"]').isChecked(),true);assert.equal(await taskNode.evaluate(node=>node===document.activeElement&&node.isConnected),true);
+    stage="agenda concurrent draft";
+    await host.locator('[data-hst-agenda] [name="goal"]').fill('QA unsaved edit');
+    await host.evaluate(async()=>{const response=await fetch('/api/study-together',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer qa-host'},body:JSON.stringify({action:'agenda',roomId:qaStudy.info.id,revision:qaStudy.info.agenda.revision,goal:'QA other host tab',items:['Ôn từ vựng','Luyện hội thoại']})});if(!response.ok)throw Error('QA competing agenda edit failed');});
+    await host.waitForFunction(()=>qaStudy.info.agenda?.goal==='QA other host tab');assert.equal(await host.locator('[data-hst-agenda] [name="goal"]').inputValue(),'QA unsaved edit');await host.locator('[data-hst-agenda] button[type="submit"]').click();await host.locator('[data-hst-notice]').getByText('Kế hoạch đã thay đổi. Làm mới trạng thái phòng trước khi sửa tiếp.',{exact:true}).waitFor();await host.locator('[data-hst-action="refresh-agenda"]').click();await host.waitForFunction(()=>document.querySelector('[data-hst-agenda] [name="goal"]').value==='QA other host tab');
+    stage="custom timer and resume";
+    await host.locator('[data-hst-duration]').selectOption('custom');await host.locator('[data-hst-custom-duration]').fill('7');await host.locator('[data-hst-timer-action="reset"]').click();await peer.waitForFunction(()=>qaStudy.info.timer?.remainingMs===420000&&qaStudy.info.timer?.duration===420);await host.locator('[data-hst-timer-action="start"]').click();await peer.waitForFunction(()=>qaStudy.info.timer?.running===true);
+    await host.locator('[data-hst-timer-action="pause"]').click();await peer.waitForFunction(()=>qaStudy.info.timer?.running===false);const pausedMs=await peer.evaluate(()=>qaStudy.info.timer.remainingMs);await host.locator('[data-hst-timer-action="start"]').click();await peer.waitForFunction(()=>qaStudy.info.timer?.running===true);assert.equal(await peer.evaluate(()=>qaStudy.info.timer.remainingMs),pausedMs);
+    await peer.reload();await peer.waitForFunction(()=>!document.querySelector('[data-hst-join] button[type=submit]').disabled);await peer.locator('[data-hst-join] [name="code"]').fill(code);await peer.locator('[data-hst-join] button[type=submit]').click();await peer.waitForFunction(()=>qaStudy.room?.state==='connected');await peer.locator('[data-hst-pane="focus"]').click();assert.equal(await peer.locator('[data-hst-goal]').innerText(),'QA other host tab');assert.equal(await peer.locator('[data-hst-task="0"]').isChecked(),true);assert.equal(await peer.evaluate(()=>qaStudy.room.localParticipant.isMicrophoneEnabled||qaStudy.room.localParticipant.isCameraEnabled),false);
     await peer.locator("[data-hst-notes]").fill("QA private note");assert.equal(await peer.locator("[data-hst-note-state]").innerText(),"Đã lưu ghi chú riêng trên thiết bị.");assert.equal(await host.locator("[data-hst-notes]").inputValue(),"");
+    const downloadPromise=peer.waitForEvent('download');await peer.locator('[data-hst-action="export-notes"]').click();const notesDownload=await downloadPromise;assert.match(notesDownload.suggestedFilename(),/^HH-Study-ghi-chu-.*\.txt$/);assert.equal(await fs.readFile(await notesDownload.path(),'utf8'),'QA private note');
     stage="screen";
+    if(await peer.evaluate(()=>Boolean(qaStudy.pinned)))await peer.locator('.hst-tile.is-local[data-source="camera"] [data-hst-pin]').click();assert.equal(await peer.evaluate(()=>qaStudy.pinned),'');
     // A generated canvas proves the screen-share source is sent through the real SFU without selecting a personal desktop.
     await host.evaluate(async()=>{const canvas=document.createElement("canvas");canvas.width=320;canvas.height=180;const ctx=canvas.getContext("2d");let frame=0;const draw=()=>{ctx.fillStyle="#3158a5";ctx.fillRect(0,0,320,180);ctx.fillStyle="#fff";ctx.fillText("QA synthetic screen "+frame++,20,50);};draw();window.qaCanvas=canvas;window.qaScreenFrame=setInterval(draw,100);const track=canvas.captureStream(10).getVideoTracks()[0];window.qaScreenTrack=new LivekitClient.LocalVideoTrack(track);await qaStudy.room.localParticipant.publishTrack(qaScreenTrack,{source:LivekitClient.Track.Source.ScreenShare});});
     const screen=peer.locator('.hst-tile[data-source="screen"]');await screen.scrollIntoViewIfNeeded();
     await peer.waitForFunction(()=>document.querySelector('.hst-tile[data-source="screen"] video')?.readyState>=2,null,{timeout:20000});
+    assert.equal(await peer.locator('.hst-tile.is-focused').count(),1);assert.equal(await peer.locator('.hst-tile.is-focused').getAttribute('data-source'),'screen');
+    stage="screen removal fallback";
+    await host.evaluate(async()=>{await qaStudy.room.localParticipant.unpublishTrack(qaScreenTrack);qaScreenTrack.stop();});await peer.waitForFunction(()=>!document.querySelector('.hst-tile[data-source="screen"]')).catch(async e=>{console.log(JSON.stringify(await peer.evaluate(()=>({tiles:[...document.querySelectorAll('.hst-tile')].map(t=>({source:t.dataset.source,focused:t.classList.contains('is-focused')})),publications:[...qaStudy.room.remoteParticipants.values()].flatMap(p=>[...p.videoTrackPublications.values()].map(t=>({source:t.source,track:!!t.track,subscribed:t.isSubscribed})))}))));throw e;});assert.equal(await peer.locator('.hst-tile.is-focused').count(),1);assert.equal(await peer.locator('.hst-tile.is-focused').getAttribute('data-source'),'camera');
+    stage="screen republish";
+    await host.evaluate(async()=>{qaScreenTrack=new LivekitClient.LocalVideoTrack(qaCanvas.captureStream(10).getVideoTracks()[0]);await qaStudy.room.localParticipant.publishTrack(qaScreenTrack,{source:LivekitClient.Track.Source.ScreenShare});});await peer.locator('.hst-tile.is-focused[data-source="screen"]').scrollIntoViewIfNeeded();await peer.waitForFunction(()=>document.querySelector('.hst-tile.is-focused[data-source="screen"] video')?.readyState>=2);
     await peer.waitForFunction(()=>document.querySelector('[data-hst-timer]').textContent!=='Chưa bắt đầu');
-    assert.ok(await peer.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    const screenLayout=await peer.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('.hst *')].map(n=>({node:n.tagName,class:n.className,right:n.getBoundingClientRect().right,width:n.getBoundingClientRect().width})).filter(n=>n.right>innerWidth+1).slice(0,20)}));if(screenLayout.scrollWidth>screenLayout.width){console.log(JSON.stringify(screenLayout,null,2));await peer.screenshot({path:path.join(captures,'connected-overflow.png'),fullPage:true});}assert.ok(screenLayout.scrollWidth<=screenLayout.width);
     await host.screenshot({path:path.join(captures,"connected-host.png")});await peer.screenshot({path:path.join(captures,"connected-mobile.png")});
     stage="permissions/cancellation";
     await peer.evaluate(()=>{navigator.mediaDevices.getDisplayMedia=async()=>{throw new DOMException('QA user cancelled share','NotAllowedError');};});
@@ -139,6 +175,7 @@ async function run(){
     assert.equal(await hostTracks.evaluate(tracks=>tracks.every(t=>t.readyState==='ended')),true);
     stage="restore/cleanup";
     await peer.reload();assert.equal(await peer.locator('[data-hst-notes]').inputValue(),'QA private note');assert.equal(await peer.evaluate(()=>qaStudy.room),null);
+    assert.equal(await peer.locator('[data-hst-layout]').inputValue(),'speaker');assert.equal(await peer.locator('[data-hst-mirror]').isChecked(),false);assert.equal(await peer.evaluate(()=>qaStudy.pinned),'');assert.equal(await peer.locator('[data-hst-messages] article').count(),0);
     await peer.locator('[data-hst-action="test-camera"]').click();await peer.waitForFunction(()=>qaStudy.preview!==null);
     const preview=await peer.evaluateHandle(()=>qaStudy.preview.getTracks());await peer.locator('#exit').click();assert.equal(await preview.evaluate(tracks=>tracks.every(t=>t.readyState==='ended')),true);assert.equal(await peer.evaluate(()=>qaStudy.alive),false);
     const visitor=await c1.newPage();await visitor.goto(base+'?as=visitor');assert.equal(await visitor.locator('[data-hst-notes]').inputValue(),'');assert.equal(await visitor.locator('[data-hst-create] [name="title"]').inputValue(),'Phòng học của tôi');
@@ -167,7 +204,7 @@ async function run(){
     await host.waitForFunction(()=>!qaStudy.busy);await host.locator('[data-hst-action="confirm-close"]').click();await host.locator('[data-hst-close-dialog] [data-hst-action="close"]').click();await host.waitForFunction(()=>qaStudy.room===null);
     await c3.close();
     await c1.close();await c2.close();assert.deepEqual(errors,[]);
-    console.log(JSON.stringify({responsive:[1440,768,375],textZoom:"200%",unconfiguredState:true,waitingRoom:true,twoRealLiveKitClients:true,cameraVideoReceived:true,microphoneAudioReceived:true,chatAndHand:true,sharedTimer:true,privateNotesReloadAndIsolation:true,syntheticScreenVideoReceived:true,simulatedShareCancellation:true,pushToTalk:true,hostCloseAndTracksStopped:true,previewUnmountCleanup:true,guestInviteAndSignedSession:true,qrDecoded:true,guestAdmissionChatReloadRejoinAndKick:true,fullShellGuestDeepLink:true,dedicatedSidebarCatalogAndHistory:true,presetPoliciesAndAccountDraftReload:true,invitationLinkPaste:true,automaticQueueAndAdmission:true,visibilityAwarePolling:true,pageErrors:0,captures},null,2));
-  }finally{for(const room of created)await client.deleteRoom(room).catch(()=>{});await browser.close();await new Promise(r=>server.close(r));}
+    console.log(JSON.stringify({responsive:[1440,768,375],textZoom:"200%",unconfiguredState:true,waitingRoom:true,twoRealLiveKitClients:true,cameraVideoReceived:true,microphoneAudioReceived:true,chatAndHand:true,sharedTimer:true,privateNotesReloadAndIsolation:true,syntheticScreenVideoReceived:true,simulatedShareCancellation:true,pushToTalk:true,hostCloseAndTracksStopped:true,previewUnmountCleanup:true,guestInviteAndSignedSession:true,qrDecoded:true,guestAdmissionChatReloadRejoinAndKick:true,fullShellGuestDeepLink:true,dedicatedSidebarCatalogAndHistory:true,presetPoliciesAndAccountDraftReload:true,invitationLinkPaste:true,automaticQueueAndAdmission:true,visibilityAwarePolling:true,singlePresentationTileAndScreenFallback:true,keyboardLocalPin:true,stableMemberFocusAndSearch:true,unreadChatAndReadingPosition:true,localViewPreferencesReload:true,personalNoteDownload:true,sharedAgendaMetadataAndReload:true,agendaCheckboxAndMemberReadOnly:true,staleAgendaDraftConflict:true,customTimerPauseAndResume:true,pageErrors:0,captures},null,2));
+  }finally{clearInterval(progress);for(const room of created)await client.deleteRoom(room).catch(()=>{});await browser.close();await new Promise(r=>server.close(r));}
 }
 run().catch(e=>{console.error("Study Together browser QA failed at "+stage+": "+String(e.message||e.name).replace(/[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]+/g,"[redacted]").slice(0,1500));process.exitCode=1;});
