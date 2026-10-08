@@ -65,7 +65,7 @@
     },
     "platform-home": {
       styles: ["platform-home.css?v=9", "home-cosmos-motion.css?v=5"],
-      scripts: ["home-cosmos-motion.js?v=3", "platform-home.js?v=11"]
+      scripts: ["home-cosmos-motion.js?v=3", "platform-home.js?v=12"]
     },
     "galaxy-home-ai": {
       styles: ["galaxy-home-ai.css?v=25", "home-cosmos-motion.css?v=5"],
@@ -254,8 +254,11 @@
       scripts: ["focus-room.js?v=20"]
     },
     "study-together": {
-      styles: ["study-together.css?v=5"],
-      scripts: ["vendor/livekit-client-2.22.3.umd.js?v=1", "vendor/qrcode.js?v=1", "study-together.js?v=5"]
+      styles: ["study-together.css?v=6"],
+      scripts: ["vendor/livekit-client-2.22.3.umd.js?v=1", "vendor/qrcode.js?v=1", "study-room-core.js?v=1", "study-together.js?v=6"]
+    },
+    "study-whiteboard": {
+      scripts: ["study-whiteboard.js?v=1"]
     },
     // Compatibility asset markers: english-learning-os.css?v=3 · english-learning-os.js?v=7 · english-learning.js?v=28 · english-vocabulary.css?v=1 · english-vocabulary.js?v=2
     english: {

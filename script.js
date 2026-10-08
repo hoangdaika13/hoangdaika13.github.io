@@ -5877,7 +5877,7 @@ function initAppShell() {
     copyright: "bản quyền giấy phép license attribution",
     learn: "học tập trường học bài luyện kiến thức",
     "focus-room": "phòng học tập trung focus pomodoro đồng hồ nhiệm vụ todo kế hoạch mục tiêu nghi thức nhật ký xao nhãng csv wake lock phím tắt ghi chú âm thanh mưa nhiễu nâu quán cà phê deep work lofi piano không gian thư giãn lifeat",
-    "study-together": "học cùng nhau học nhóm phòng học chung livekit mic camera cam share màn hình chat meet zoom discord lời mời khách mã qr đồng hồ tập trung",
+    "study-together": "học cùng nhau học nhóm phòng học chung livekit mic camera cam share màn hình chat meet zoom discord lời mời khách mã qr đồng hồ tập trung bảng trắng whiteboard bình chọn poll phân công tổng kết nghỉ thảo luận",
     english: "tiếng anh english ngoại ngữ",
     japanese: "tiếng nhật japanese jlpt kanji",
     chinese: "tiếng trung chinese hsk hanzi pinyin",

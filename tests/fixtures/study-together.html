@@ -1,6 +1,6 @@
 <!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QA ONLY · Học cùng nhau</title><link rel="stylesheet" href="../../study-together.css"><style>body{margin:0;padding:12px;background:#080f20;color:#edf4ff;font-family:system-ui}#qa{padding:12px;border:1px solid #a68740;margin-bottom:12px}#qa button{min-height:44px}</style></head><body>
 <div id="qa">QA ONLY — tài khoản giả lập được ghi rõ, kiểm thử với LiveKit cục bộ, không dùng tài khoản production. <button id="exit" type="button">Đóng module QA</button> <button id="large" type="button">Chữ 200%</button></div><div id="host"></div>
-<script src="../../vendor/livekit-client-2.22.3.umd.js"></script><script src="../../vendor/qrcode.js"></script><script src="../../study-together.js"></script>
+<script src="../../vendor/livekit-client-2.22.3.umd.js"></script><script src="../../vendor/qrcode.js"></script><script src="../../study-room-core.js"></script><script src="../../study-whiteboard.js"></script><script src="../../study-together.js"></script>
 <script>
 const role=new URLSearchParams(location.search).get("as")||"host";
 const users={host:{id:"650000000000000000000001",name:"QA Host"},learner:{id:"650000000000000000000002",name:"QA Learner"},visitor:{id:"650000000000000000000003",name:"QA Visitor"},guest:{id:"qa-guest",name:"Khách QA",guest:true}};

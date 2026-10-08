@@ -37,7 +37,7 @@
     copyright: "Quản lý nguồn, quyền sử dụng, giấy phép, ghi công và quy trình tiếp nhận khiếu nại.",
     learn: "Lộ trình, môn học, luyện tập, kiểm tra và thư viện với tiến độ của chính bạn.",
     "focus-room": "Timer tập trung, việc học, ghi chú, âm thanh tạo cục bộ và thống kê từ những phiên bạn thực sự hoàn thành.",
-    "study-together": "Phòng học nhóm LiveKit với mic, camera, chia sẻ màn hình, chat, đồng hồ chung và lời mời bằng link hoặc QR cho khách.",
+    "study-together": "Phòng học nhóm LiveKit: mic, camera, chia sẻ màn hình, bảng trắng đồng bộ, bình chọn, phân công công việc, chat, timer và tổng kết phiên chung; mời khách bằng link/QR.",
     english: "Học theo CEFR: từ vựng, phát âm, nghe, nói, đọc, viết và tiếng Anh chuyên ngành.",
     japanese: "Vietnamese Core, Can-do, JLPT/JF, Kanji, Smart Reader, hội thoại và ôn tập SRS.",
     chinese: "Luyện Pinyin, thanh điệu, Hán tự, từ vựng, ngữ pháp và đọc hiểu theo lộ trình.",

@@ -22,7 +22,7 @@ class MemoryDb {
         let row = [...store.values()].find(r => matches(r, query));
         if(!row && !options.upsert)return {matchedCount:0,modifiedCount:0};
         if(!row){if(store.has(query._id))throw Object.assign(Error("duplicate"),{code:11000});row={_id:query._id};store.set(row._id,row);}
-        Object.assign(row,structuredClone(update.$set || {}));return {matchedCount:1,modifiedCount:1};
+        Object.assign(row,structuredClone(update.$set || {}));for(const[key,value]of Object.entries(update.$max||{}))if(row[key]===undefined||row[key]<value)row[key]=value;for(const[key,value]of Object.entries(update.$inc||{}))row[key]=(row[key]||0)+value;return {matchedCount:1,modifiedCount:1};
       },
       find(query, options = {}) {
         let rows = [...store.values()].filter(r => matches(r, query));

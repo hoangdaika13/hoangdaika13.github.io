@@ -3,6 +3,11 @@ const test = require("node:test"), assert = require("node:assert/strict"), jwt =
 const { MemoryDb } = require("./helpers/study-room-db");
 const fs = require("node:fs"), path = require("node:path");
 const { handle, configuration, guestSecret, readGuestSession } = require("../utils/study-together").__test;
+test("shared form values are captured before busy state disables controls",()=>{
+  const source=fs.readFileSync(path.join(__dirname,"../study-together.js"),"utf8"),submit=source.slice(source.indexOf("s.submit=event=>"),source.indexOf("s.change=event=>"));
+  assert.match(submit,/const d=new FormData\(form\);guard\(async/);
+  assert.match(source,/\[data-hst-action=rotate-invite\]/);assert.match(source,/\[data-hst-action=export-summary\]/);
+});
 const host = { _id:"650000000000000000000001", name:"QA Host" }, learner = { _id:"650000000000000000000002", name:"QA Learner" };
 const config = configuration({LIVEKIT_URL:"wss://qa.livekit.example",LIVEKIT_API_KEY:"qa-key",LIVEKIT_API_SECRET:"qa-only-not-a-real-key"});
 function setup() {
@@ -110,7 +115,7 @@ test("closing denies new tokens and can be retried after a transport failure",as
 });
 test("malformed settings are safely normalized without truthy privilege escalation",async()=>{
   const h=setup(),r=await h.call("create",{title:"QA",settings:null});
-  assert.deepEqual(r.room.settings,{waitingRoom:false,allowScreenShare:true,allowMicrophone:true,chatEnabled:true,allowGuests:true,guestApproval:true});
+  assert.deepEqual(r.room.settings,{waitingRoom:false,allowScreenShare:true,allowMicrophone:true,chatEnabled:true,allowGuests:true,guestApproval:true,allowWhiteboard:true});
   const changed=await h.call("settings",{roomId:r.room.id,settings:{allowMicrophone:false,allowScreenShare:"true"}});
   assert.equal(changed.room.settings.allowMicrophone,false);assert.equal(changed.room.settings.allowScreenShare,true);
 });
@@ -189,7 +194,7 @@ test("Study Together is a dedicated Learning & Languages entry with its compatib
   assert.match(router,/classList\.toggle\("app-learning-route",[^\n]+activeGroup\?\.id !== "study-together"/);
   assert.match(router,/window\.HHStudyTogether\?\.unmount\?\.\(\)/);
   assert.ok(loader.indexOf('value === "/learn/study-together"')<loader.indexOf('value.startsWith("/learn")'));
-  for(const asset of["study-together.js?v=5","study-together.css?v=5","vendor/livekit-client-2.22.3.umd.js?v=1","vendor/qrcode.js?v=1"]){assert.ok(loader.includes(asset));assert.ok(worker.includes(asset));}
+  for(const asset of["study-together.js?v=6","study-together.css?v=6","study-room-core.js?v=1","study-whiteboard.js?v=1","vendor/livekit-client-2.22.3.umd.js?v=1","vendor/qrcode.js?v=1"]){assert.ok(loader.includes(asset));assert.ok(worker.includes(asset));}
   assert.match(read("vercel.json"),/"source": "\/api\/study-together"/);
   assert.match(read("api/modules/[moduleId]/actions.js"),/return handleStudyTogether\(req, res\)/);
   const client=read("study-together.js");assert.doesNotMatch(client,/LIVEKIT_API_KEY|LIVEKIT_API_SECRET/);assert.match(client,/hh\.studyTogether\.notes\.v1/);assert.match(client,/pub\.track\?\.stop\(\)/);

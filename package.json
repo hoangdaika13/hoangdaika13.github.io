@@ -28,7 +28,7 @@
     "test:comic-library-bridge": "node --test tests/comic-library-bridge.test.js tests/comic-motion-handoff.test.js tests/comic-motion-batch.test.js tests/comic-motion-rights.test.js tests/comic-motion-rights-admin.test.js tests/comic-motion-worker-security.test.js tests/comic-motion-reader-integration.test.js",
     "test:music-galaxy": "node --test tests/music-galaxy-contract.test.js tests/music-production-suite-integration.test.js tests/music-ai-studio-contract.test.js",
     "test:learning": "node --test tests/hh-school-*.test.js",
-    "test:study-together": "node --test tests/study-together.test.js",
+    "test:study-together": "node --test tests/study-together.test.js tests/study-collaboration.test.js",
     "sync:livekit": "node scripts/sync-livekit-sdk.js",
     "migrate:hh-school": "node scripts/migrate-hh-school.js",
     "test:social-media-tools": "node --test tests/social-media-tools-*.test.js tests/social-media-preview-runtime.test.js tests/social-media-*-v6.test.js tests/social-media-*-v7.test.js",
