@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const { AccessToken, RoomServiceClient, TrackSource } = require("livekit-server-sdk");
 const { withApi, currentUser, enforceRateLimit, setCors } = require("./platform");
 const core = require("../study-room-core");
+const classroom = require("./study-classroom");
+const teaches=(room,user)=>room.classId?["owner","assistant"].includes(room._role??room.roles?.[identity(user)]):room.ownerId===String(user._id);
 const clean = (v, max = 120) => typeof v === "string" ? v.trim().slice(0, max) : "";
 const fail = (message, statusCode = 400, code = "STUDY_INVALID") => { throw Object.assign(new Error(message), { statusCode, code }); };
 const hash = v => createHash("sha256").update(v).digest("hex");
@@ -53,13 +55,13 @@ async function indexes(db) {
   await init.get(db);
 }
 function publicRoom(room, user) {
-  return { id: room._id, title: room.title, capacity: room.capacity, settings: safeSettings(room.settings), settingsRevision:room.settingsRevision||0, locked:room.locked===true, inviteActive:room.inviteActive!==false, controlRevision:room.controlRevision||0, timer: room.timer || null, agenda: safeAgenda(room.agenda), poll:core.publicPoll(room.poll,identity(user)), hands:room.handState?.items||[], handRevision:room.handState?.revision||0, boardRevision:room.boardRevision||0, host: !user._guest && room.ownerId === String(user._id), hostIdentity: "u_" + room.ownerId, expiresAt: room.expiresAt, status: room.status };
+  return { id: room._id, classId:room.classId||null,classExpiresAt:room.classExpiresAt||null,parentRoomId:room.parentRoomId||null,roles:room.roles||{},role:room._role??room.roles?.[identity(user)]??(room.ownerId===String(user._id)?"owner":"member"),title: room.title, capacity: room.capacity, settings: safeSettings(room.settings), settingsRevision:room.settingsRevision||0, locked:room.locked===true, inviteActive:room.inviteActive!==false, controlRevision:room.controlRevision||0, timer: room.timer || null, agenda: safeAgenda(room.agenda), poll:core.publicPoll(room.poll,identity(user)), hands:room.handState?.items||[], handRevision:room.handState?.revision||0, boardRevision:room.boardRevision||0, host: !user._guest && teaches(room,user), hostIdentity: "u_" + room.ownerId, expiresAt: room.expiresAt, status: room.status };
 }
-function permissions(room, isHost = false) {
+function permissions(room, isHost = false, isPresenter = false) {
   const s = safeSettings(room.settings);
-  return { canPublish: true, canSubscribe: true, canPublishData: true, canUpdateOwnMetadata: false, canPublishSources: [TrackSource.CAMERA, ...(isHost || s.allowMicrophone ? [TrackSource.MICROPHONE] : []), ...(isHost || s.allowScreenShare ? [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO] : [])] };
+  return { canPublish: true, canSubscribe: true, canPublishData: true, canUpdateOwnMetadata: false, canPublishSources: [TrackSource.CAMERA, ...(isHost || isPresenter || s.allowMicrophone ? [TrackSource.MICROPHONE] : []), ...(isHost || isPresenter || s.allowScreenShare ? [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO] : [])] };
 }
-const metadata = room => JSON.stringify({ kind: "hh-study-together", hostIdentity: "u_" + room.ownerId, settings: safeSettings(room.settings), settingsRevision:room.settingsRevision||0, locked:room.locked===true, inviteActive:room.inviteActive!==false, controlRevision:room.controlRevision||0, timer: room.timer || null, agenda: safeAgenda(room.agenda), poll:core.publicPoll(room.poll), hands:room.handState?.items||[], handRevision:room.handState?.revision||0, boardRevision:room.boardRevision||0 });
+const metadata = room => JSON.stringify({ kind: "hh-study-together", hostIdentity: "u_" + room.ownerId, classId:room.classId||null,roles:room.roles||{}, settings: safeSettings(room.settings), settingsRevision:room.settingsRevision||0, locked:room.locked===true, inviteActive:room.inviteActive!==false, controlRevision:room.controlRevision||0, timer: room.timer || null, agenda: safeAgenda(room.agenda), poll:core.publicPoll(room.poll), hands:room.handState?.items||[], handRevision:room.handState?.revision||0, boardRevision:room.boardRevision||0 });
 async function publishState(client, room) {
   try { await client.updateRoomMetadata(room._id, metadata(room)); return false; } catch { return true; }
 }
@@ -82,7 +84,7 @@ async function ensureRoom(client, room) {
 }
 async function joinToken(config, room, user) {
   const token = new AccessToken(config.key, config.secret, { identity: identity(user), name: clean(user.name || "Người học", 80), ttl: 90, metadata: JSON.stringify({ role: user._guest ? "guest" : room.ownerId === String(user._id) ? "host" : "learner" }) });
-  token.addGrant({ room: room._id, roomJoin: true, ...permissions(room, room.ownerId === String(user._id)) });
+  token.addGrant({ room: room._id, roomJoin: true, ...permissions(room,teaches(room,user),(room._role??room.roles?.[identity(user)])==="presenter") });
   return token.toJwt();
 }
 async function handle(req, res, { db, body = {}, user, config, client, rateLimit = enforceRateLimit }) {
@@ -103,29 +105,48 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
   if (req.method !== "GET" && req.method !== "POST") fail("Phương thức không được hỗ trợ.", 405);
   if(uid)await rateLimit(db, "study:" + uid + ":" + (req.method === "GET" ? "read" : action), req.method === "GET" || action==="board" ? 120 : 25, 60000);
   if(user?._guest&&!["join","status","leave","preview","board","vote","hand"].includes(action))fail("Khách chỉ được tham gia phòng đã mời, không được quản lý phòng.",403,"HOST_ONLY");
+  if(action.startsWith("class-")){
+    const payload=req.method==="GET"?req.query:body;
+    const result=await classroom.handle({action,body:payload,user,db,client,create:async options=>({_responded:true,response:await handle({...req,method:"POST"},res,{db,user,config,client,rateLimit,body:{action:"create",...options}})}),join:async roomId=>({_responded:true,response:await handle({...req,method:"POST"},res,{db,user,config,client,rateLimit,body:{action:"join",roomId}})}),publish:async()=>{},moderate:async(c,target,role)=>{
+      const rows=await rooms.find({classId:c._id,status:"active",expiresAt:{$gt:new Date()}}).limit(100).toArray(),roles=Object.fromEntries(c.members.map(m=>["u_"+m.userId,m.role]));
+      let syncPending=false;for(const room of rows){await rooms.updateOne({_id:room._id},{$set:{roles}});const missed=e=>{if(e.code!=="not_found")syncPending=true;};if(role==="blocked"){await members.updateOne({_id:room._id+":"+target},{$set:{state:"blocked"}});await client.removeParticipant(room._id,"u_"+target,{revokeTokenTs:BigInt(Math.floor(Date.now()/1000)+1)}).catch(missed);}else await client.updateParticipant(room._id,"u_"+target,{permission:permissions(room,["owner","assistant"].includes(role),role==="presenter")}).catch(missed);syncPending=await publishState(client,{...room,roles})||syncPending;}return syncPending;
+    }});
+    // Room create/join hooks already wrote their response.
+    return result?._responded?result.response:result?.ok?res.status(200).json(result):result;
+  }
   if (action === "rooms" && req.method === "GET") {
     const owned = await rooms.find({ ownerId: uid, status: "active", expiresAt: { $gt: new Date() } }, { maxTimeMS: 5000 }).sort({ createdAt: -1 }).limit(20).toArray();
     const memberships=await members.find({userId:uid,state:"admitted",expiresAt:{$gt:new Date()}},{maxTimeMS:5000}).sort({updatedAt:-1}).limit(20).toArray();
     const joined=await rooms.find({_id:{$in:memberships.map(m=>m.roomId)},status:"active",expiresAt:{$gt:new Date()}},{maxTimeMS:5000}).sort({updatedAt:-1}).limit(20).toArray();
-    return res.status(200).json({ ok: true, rooms: owned.map(r => publicRoom(r, user)),joinedRooms:joined.filter(r=>r.ownerId!==uid).map(r=>publicRoom(r,user)) });
+    const allowed=new Set(),cache=new Map();for(const row of [...owned,...joined]){if(row.classId){if(!cache.has(row.classId))try{cache.set(row.classId,await classroom.access(db,row.classId,user));}catch{cache.set(row.classId,null);}const c=cache.get(row.classId);if(!c)continue;row._role=classroom.role(c,user);}allowed.add(row._id);}
+    return res.status(200).json({ ok: true, rooms: owned.filter(r=>allowed.has(r._id)).map(r => publicRoom(r, user)),joinedRooms:joined.filter(r=>r.ownerId!==uid&&allowed.has(r._id)).map(r=>publicRoom(r,user)) });
   }
   if (action === "create" && req.method === "POST") {
+    const cls=body.classId?await classroom.access(db,body.classId,user):null;
+    if(cls&&!classroom.manager(classroom.role(cls,user)))fail("Chỉ chủ lớp/trợ giảng được mở phiên.",403);
+    if(cls&&await rooms.countDocuments({classId:cls._id,status:"active",expiresAt:{$gt:new Date()}})>=8)fail("Lớp đạt 8 phiên/nhóm đang mở. Đóng phiên cũ trước.",409);
+    if(body.parentRoomId&&await rooms.countDocuments({parentRoomId:body.parentRoomId,status:"active",expiresAt:{$gt:new Date()}})>=4)fail("Tối đa 4 nhóm nhỏ trong phiên.",409);
+    if(body.parentRoomId){const parent=await rooms.findOne({_id:clean(body.parentRoomId,100),status:"active",expiresAt:{$gt:new Date()}});if(!parent||parent.classId!==(cls?._id)||!teaches({...parent,_role:cls?classroom.role(cls,user):undefined},user))fail("Không có quyền tạo nhóm trong phòng này.",403);}
     const title = clean(body.title, 100);
     if (!title) fail("Nhập tên phòng học.");
     if (await rooms.countDocuments({ ownerId: uid, status: "active", expiresAt: { $gt: new Date() } }) >= 5) fail("Bạn đang có 5 phòng. Kết thúc phòng cũ trước khi tạo thêm.", 409);
     const code = randomBytes(8).toString("hex").toUpperCase(), now = new Date();
-    const room = { _id: "hh-study-" + randomUUID(), codeHash: hash(code), ownerId: uid, title, capacity: Math.max(2, Math.min(32, Math.floor(Number(body.capacity) || 12))), settings: safeSettings(body.settings), status: "active", createdAt: now, updatedAt: now, expiresAt: new Date(now.getTime() + 86400000) };
+    const room = { _id: "hh-study-" + randomUUID(), codeHash: hash(code), ownerId: uid, title, capacity: Math.max(2, Math.min(32, Math.floor(Number(body.capacity) || 12))), settings: safeSettings(body.settings), status: "active", createdAt: now, updatedAt: now, expiresAt: new Date(now.getTime() + 86400000),...(cls?{classId:cls._id,classExpiresAt:cls.expiresAt,roles:Object.fromEntries(cls.members.map(m=>["u_"+m.userId,m.role])),agenda:safeAgenda(cls.plan)}:{}),...(body.parentRoomId?{parentRoomId:body.parentRoomId}:{}) };
     await ensureRoom(client, room);
     try { await rooms.insertOne(room); } catch (e) { await client.deleteRoom(room._id).catch(() => {}); throw e; }
     await members.updateOne({ _id: room._id + ":" + uid }, { $set: { roomId: room._id, userId: uid, name: clean(user.name, 80), state: "admitted", updatedAt: now, expiresAt: room.expiresAt } }, { upsert: true });
+    if(cls)await db.collection("studyTogetherClassSessions").insertOne({_id:room._id,classId:cls._id,title,status:"active",startedAt:now,expiresAt:cls.expiresAt,...(body.parentRoomId?{parentRoomId:body.parentRoomId}:{})});
     return res.status(201).json({ ok: true, code, room: publicRoom(room, user), token: await joinToken(config, room, user), wsUrl: config.wsUrl });
   }
   const roomId = clean(req.method === "GET" ? req.query.roomId : body.roomId, 100);
   const code = clean(body.code, 32).replace(/[\s-]/g, "").toUpperCase();
   if(bootstrap&&!/^[A-F0-9]{16}$/.test(code))fail("Nhập mã mời 16 ký tự hợp lệ để tham gia.",400,"INVITE_REQUIRED");
   let room = await rooms.findOne(["join","preview"].includes(action) && code ? { codeHash: hash(code) } : { _id: roomId });
-  if (!room || (room.status !== "active" && !(action === "close" && room.ownerId === uid && room.status === "closed")) || new Date(room.expiresAt) <= new Date()) fail("Phòng không tồn tại, đã hết hạn hoặc đã kết thúc.", 404, "ROOM_NOT_FOUND");
+  if (!room || (room.status !== "active" && !(action === "close" && (room.ownerId === uid||room.classId) && room.status === "closed")) || new Date(room.expiresAt) <= new Date()) fail("Phòng không tồn tại, đã hết hạn hoặc đã kết thúc.", 404, "ROOM_NOT_FOUND");
   const policy=safeSettings(room.settings);
+  const cls=room.classId&&user&&!user._guest?await classroom.access(db,room.classId,user):null;
+  if(room.classId&&action!=="preview"&&!cls)fail("Đăng nhập và tham gia lớp trước khi vào phiên.",403,"CLASS_ACCESS");
+  if(cls)room._role=classroom.role(cls,user);
   if(action==="preview"&&req.method==="POST") {
     if(!/^[A-F0-9]{16}$/.test(code)||room.inviteActive===false)fail("Lời mời không hợp lệ.",404,"INVITE_INVALID");
     return res.status(200).json({ok:true,invitation:{title:room.title,capacity:room.capacity,settings:policy,locked:room.locked===true,expiresAt:room.expiresAt}});
@@ -139,7 +160,7 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
   }
   if(user._guest&&user._roomId!==room._id)fail("Phiên khách chỉ dùng được cho phòng đã mời.",403,"GUEST_ROOM_SCOPE");
   if(user._guest&&action==="join"&&!policy.allowGuests)fail("Chủ phòng đã tắt nhận khách.",403,"GUESTS_DISABLED");
-  const isHost = room.ownerId === uid, memberKey = room._id + ":" + uid;
+  const isHost = teaches(room,user), memberKey = room._id + ":" + uid;
   let member = await members.findOne({ _id: memberKey });
   if (action === "join" && req.method === "POST") {
     // A room ID is not an invitation. Returning hosts/admitted members may rejoin by ID.
@@ -157,6 +178,7 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
     const latest = await rooms.findOne({ _id: room._id, status: "active", expiresAt: { $gt: new Date() } });
     member = await members.findOne({ _id: memberKey, state: "admitted" });
     if (!latest || !member) fail("Quyền tham gia đã thay đổi. Kiểm tra lại phòng.", 403, "ROOM_ACCESS_CHANGED");
+    if(latest.classId){const currentClass=await classroom.access(db,latest.classId,user);latest._role=classroom.role(currentClass,user);}
     if(user._guest&&!safeSettings(latest.settings).allowGuests)fail("Chủ phòng đã tắt nhận khách.",403,"GUESTS_DISABLED");
     return res.status(200).json({ ok: true, room: publicRoom(latest, user), token: await joinToken(config, latest, user), wsUrl: config.wsUrl,...(issuedGuest?{guestSession:issuedGuest}:{}) });
   }
@@ -167,16 +189,35 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
     const waiting = isHost ? await members.find({ roomId: room._id, state: "waiting" }, { projection: { userId: 1, name: 1, guest:1, updatedAt: 1 }, maxTimeMS: 5000 }).sort({ updatedAt: 1 }).limit(50).toArray() : [];
     return res.status(200).json({ ok: true, room: publicRoom(room, user), waiting: false, requests: waiting.map(m => ({ userId: m.userId, name: m.name, guest:Boolean(m.guest), at: m.updatedAt })), participants: participants.map(p => ({ identity: p.identity, name: p.name, tracks: (p.tracks || []).map(t => ({ sid: t.sid, source: t.source, muted: t.muted })) })) });
   }
+  if(action==="groups"&&req.method==="GET"){const rootId=room.parentRoomId||room._id,rows=await rooms.find({parentRoomId:rootId,status:"active",expiresAt:{$gt:new Date()}}).limit(4).toArray(),parent=await rooms.findOne({_id:rootId,status:"active"});return res.status(200).json({ok:true,groups:[...(parent?[parent]:[]),...rows].map(r=>({id:r._id,title:r.title}))});}
+  if(action==="group-join"&&req.method==="POST"){
+    const rootId=room.parentRoomId||room._id,target=await rooms.findOne({_id:clean(body.targetId,100),status:"active",expiresAt:{$gt:new Date()}});
+    if(user._guest||member?.state!=="admitted"&&!isHost||!target||(target.parentRoomId||target._id)!==rootId)fail("Cần là thành viên HH đã duyệt của nhóm.",403);
+    const rootMember=await members.findOne({_id:rootId+":"+uid});if(rootMember?.state==="blocked")fail("Bạn đã bị chặn khỏi phiên chính.",403);
+    await members.updateOne({_id:target._id+":"+uid,state:{$ne:"blocked"}},{$set:{roomId:target._id,userId:uid,name:clean(user.name,80),state:"admitted",expiresAt:target.expiresAt,updatedAt:new Date()}},{upsert:true});
+    return handle({...req,method:"POST"},res,{db,user,config,client,rateLimit,body:{action:"join",roomId:target._id}});
+  }
+  if(action==="board-pages"){
+    if(!isHost&&member?.state!=="admitted")fail("Cần được duyệt trước khi xem trang.",403);
+    let pages=cls?.pages||room.pageState?.items||[{id:"main",title:"Trang 1"}];
+    if(req.method==="POST"){if(!isHost)fail("Chỉ người điều phối được thêm trang.",403);if(pages.length>=8||!clean(body.title,60))fail("Tối đa 8 trang; cần tên trang.");const item={id:"p_"+randomUUID().replaceAll("-",""),title:clean(body.title,60)};
+      if(cls){await classroom.handle({action:"class-page",body:{classId:cls._id,revision:cls.revision,title:item.title},user,db,client,publish:async()=>{}});pages=(await classroom.access(db,cls._id,user)).pages;}else{room=await mutateFeature(rooms,room._id,"pageState",state=>({revision:(state?.revision||0)+1,items:[...(state?.items||pages),item]}));pages=room.pageState.items;}
+    }
+    return res.status(200).json({ok:true,pages});
+  }
   if(["board","vote","hand"].includes(action)) {
     if(!isHost&&member?.state!=="admitted")fail("Cần được duyệt vào phòng trước khi dùng công cụ học nhóm.",403,"ADMISSION_REQUIRED");
     const actor=identity(user);
     if(action==="board") {
+      const pageId=clean(req.method==="GET"?req.query.pageId:body.pageId,64)||"main",pages=cls?.pages||room.pageState?.items||[{id:"main"}];
+      if(!pages.some(page=>page.id===pageId))fail("Trang bảng trắng không tồn tại.",404);
+      const boardId=cls?cls._id+":"+pageId:pageId==="main"?room._id:room._id+":"+pageId;
       const boards=db.collection("studyTogetherBoards"),empty={revision:0,objects:[],tombstones:[],batches:[]};
-      if(req.method==="GET"){const board=await boards.findOne({_id:room._id})||empty;return res.status(200).json({ok:true,board:{revision:board.revision,objects:board.objects,tombstones:board.tombstones}});}
+      if(req.method==="GET"){const board=await boards.findOne({_id:boardId})||empty;return res.status(200).json({ok:true,board:{revision:board.revision,objects:board.objects,tombstones:board.tombstones}});}
       if(req.method!=="POST")fail("Phương thức không được hỗ trợ.",405);
       if(!isHost&&!policy.allowWhiteboard)fail("Chủ phòng đã tắt quyền vẽ của thành viên.",403,"BOARD_DISABLED");
-      let board=await boards.findOne({_id:room._id});
-      if(!board){try{await boards.insertOne({_id:room._id,...empty,expiresAt:room.expiresAt});}catch(e){if(e.code!==11000)throw e;}board=await boards.findOne({_id:room._id});}
+      let board=await boards.findOne({_id:boardId});
+      if(!board){try{await boards.insertOne({_id:boardId,...empty,pageId,...(cls?{classId:cls._id}:{}),expiresAt:cls?.expiresAt||room.expiresAt});}catch(e){if(e.code!==11000)throw e;}board=await boards.findOne({_id:boardId});}
       let next;
       for(let attempt=0;attempt<4;attempt++) {
         const currentRoom=await rooms.findOne({_id:room._id,status:"active",expiresAt:{$gt:new Date()}});
@@ -184,12 +225,12 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
         if(!currentRoom||!isHost&&(!currentMember||!safeSettings(currentRoom.settings).allowWhiteboard))fail("Quyền vẽ hoặc trạng thái phòng đã thay đổi.",403,"BOARD_DISABLED");
         next=core.applyBoard(board,body.operations,actor,isHost,body.batchId);
         if(next.duplicate)break;
-        const result=await boards.updateOne({_id:room._id,revision:board.revision},{$set:{...next,updatedAt:new Date()}});
+        const result=await boards.updateOne({_id:boardId,revision:board.revision},{$set:{...next,updatedAt:new Date()}});
         if(result.matchedCount)break;
         if(attempt===3)fail("Bảng đang được cập nhật. Tải bản mới và thử lại.",409,"BOARD_CONFLICT");
-        board=await boards.findOne({_id:room._id});
+        board=await boards.findOne({_id:boardId});
       }
-      await rooms.updateOne({_id:room._id,status:"active"},{$max:{boardRevision:next.revision}});
+      await rooms.updateOne({_id:room._id,status:"active"},{$inc:{boardRevision:next.duplicate?0:1}});
       room=await rooms.findOne({_id:room._id});
       const syncPending=await publishState(client,room);
       return res.status(200).json({ok:true,board:{revision:next.revision,objects:next.objects,tombstones:next.tombstones},room:publicRoom(room,user),syncPending});
@@ -252,7 +293,7 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
     const settings=safeSettings(body.settings,room.settings),result=await rooms.updateOne({_id:room._id,status:"active",settingsRevision:room.settingsRevision===undefined?{$exists:false}:revision},{$set:{settings,settingsRevision:revision+1,updatedAt:new Date()}});
     if(!result.matchedCount)fail("Quyền phòng đã thay đổi hoặc phòng đã đóng. Lấy trạng thái mới trước khi áp dụng.",409,"SETTINGS_CONFLICT");
     let syncPending=false;
-    try{const participants=await client.listParticipants(room._id);for(const p of participants){const latest=await rooms.findOne({_id:room._id,status:"active"});if(!latest)fail("Phòng đã đóng.",404,"ROOM_NOT_FOUND");await client.updateParticipant(room._id,p.identity,{permission:permissions(latest,p.identity==="u_"+room.ownerId)});}}catch{syncPending=true;}
+    try{const participants=await client.listParticipants(room._id);for(const p of participants){const latest=await rooms.findOne({_id:room._id,status:"active"});if(!latest)fail("Phòng đã đóng.",404,"ROOM_NOT_FOUND");await client.updateParticipant(room._id,p.identity,{permission:permissions(latest,latest.classId?["owner","assistant"].includes(latest.roles?.[p.identity]):p.identity==="u_"+room.ownerId,latest.roles?.[p.identity]==="presenter")});}}catch{syncPending=true;}
     room=await rooms.findOne({_id:room._id});
     syncPending=await publishState(client,room)||syncPending;
     return res.status(200).json({ok:true,room:publicRoom(room,user),syncPending});
@@ -273,7 +314,7 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
     }
     next.revision = previous.revision + 1;
     const revisionFilter=room.agenda?.revision===undefined?{ $exists:false }:room.agenda.revision;
-    const result=await rooms.updateOne({ _id:room._id, ownerId:uid, status:"active", "agenda.revision":revisionFilter },{ $set:{ agenda:next, updatedAt:new Date() } });
+    const result=await rooms.updateOne({ _id:room._id,...(room.classId?{}:{ownerId:uid}), status:"active", "agenda.revision":revisionFilter },{ $set:{ agenda:next, updatedAt:new Date() } });
     if (!result.matchedCount) fail("Kế hoạch đã thay đổi hoặc phòng đã đóng. Làm mới trạng thái phòng.",409,"AGENDA_CONFLICT");
     const latest=await rooms.findOne({ _id:room._id });
     if (!latest || latest.status!=="active") fail("Phòng đã kết thúc.",404,"ROOM_NOT_FOUND");
@@ -290,7 +331,11 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
     return res.status(200).json({ok:true,room:publicRoom(room,user),syncPending:await publishState(client,room)});
   }
   if (action === "close") {
-    await rooms.updateOne({ _id: room._id, ownerId: uid, status: "active" }, { $set: { status: "closed", updatedAt: new Date() } });
+    const closedAt=room.closedAt||new Date();
+    await rooms.updateOne({ _id: room._id,...(room.classId?{}:{ownerId:uid}), status: "active" }, { $set: { status: "closed",closedAt, updatedAt: new Date() } });
+    await classroom.archive(db,{...await rooms.findOne({_id:room._id}),status:"closed"});
+    const children=await rooms.find({parentRoomId:room._id}).limit(4).toArray();
+    for(const child of children){await rooms.updateOne({_id:child._id},{$set:{status:"closed",closedAt}});await classroom.archive(db,{...child,status:"closed",closedAt});await remote(()=>client.deleteRoom(child._id).catch(e=>{if(e.code!=="not_found")throw e;}));}
     await remote(() => client.deleteRoom(room._id).catch(e => { if (e.code !== "not_found") throw e; }));
     return res.status(200).json({ ok: true });
   }

@@ -5,7 +5,7 @@ function matches(row, query) {
     if (key === "$or") return expected.some(q => matches(row, q));
     const value = key.split(".").reduce((v, k) => v?.[k], row);
     if (expected && typeof expected === "object" && !(expected instanceof Date)) return Object.entries(expected).every(([op, v]) => op === "$gt" ? value > v : op === "$ne" ? value !== v : op === "$in" ? v.includes(value) : op === "$exists" ? (value !== undefined) === v : value === expected);
-    return value === expected;
+    return Array.isArray(value)?value.includes(expected):value === expected;
   });
 }
 class MemoryDb {
@@ -18,6 +18,9 @@ class MemoryDb {
       countDocuments: async q => [...store.values()].filter(r => matches(r,q)).length,
       findOne: async q => structuredClone([...store.values()].find(r => matches(r,q)) || null),
       insertOne: async doc => { if(store.has(doc._id))throw Object.assign(Error("duplicate"),{code:11000});store.set(doc._id,structuredClone(doc));return {insertedId:doc._id}; },
+      deleteOne:async query=>{const row=[...store.values()].find(row=>matches(row,query));if(row)store.delete(row._id);return {deletedCount:row?1:0};},
+      deleteMany:async query=>{let count=0;for(const row of [...store.values()])if(matches(row,query)){store.delete(row._id);count++;}return {deletedCount:count};},
+      updateMany:async(query,update)=>{let count=0;for(const row of store.values())if(matches(row,query)){Object.assign(row,structuredClone(update.$set||{}));count++;}return {matchedCount:count};},
       updateOne: async (query, update, options = {}) => {
         let row = [...store.values()].find(r => matches(r, query));
         if(!row && !options.upsert)return {matchedCount:0,modifiedCount:0};
