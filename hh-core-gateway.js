@@ -69,6 +69,7 @@
     "/japanese",
     "/chinese",
     "/phat-phap",
+    "/patin",
     "/fortune",
     "/system",
     "/support",

@@ -48,6 +48,7 @@
     { id: "games-world", planet: "games", title: "Games World", route: "/play", aliases: [], assetGroup: "play", layout: "standard", capabilities: ["games", "local-save"], adminOnly: false },
     { id: "eonwild", planet: "games", title: "HH EonWild", route: "/game", aliases: [], assetGroup: "eonwild", layout: "atlas", capabilities: ["webgl", "simulation", "local-save"], adminOnly: false },
     { id: "comic-reader", planet: "games", title: "Đọc truyện", route: "/comic-reader", aliases: [], assetGroup: "comic-reader", layout: "three-column", capabilities: ["reader", "library"], adminOnly: false },
+    { id: "patin", planet: "games", title: "Patin", route: "/patin", aliases: [], assetGroup: "patin", layout: "standard", capabilities: ["knowledge", "search", "local-journal"], adminOnly: false },
 
     { id: "dev-planet", planet: "dev", title: "Dev Planet", route: "/dev-tools", aliases: [], assetGroup: "dev-tools", layout: "workbench", capabilities: ["code", "api", "diagnostics"], adminOnly: false },
     { id: "learning-star", planet: "learning", title: "Learning Star", route: "/learn", aliases: [], assetGroup: "learning", layout: "standard", capabilities: ["curriculum", "progress"], adminOnly: false },

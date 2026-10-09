@@ -5787,6 +5787,19 @@ function initAppShell() {
         { id: "data-control", title: "Tủ dữ liệu", route: "/phat-phap/data-control", icon: "庫" }
       ]
     },
+    { id: "patin", label: "Patin", icon: "🛼", accent: "#63ead5", route: "/patin", items: [], pages: [
+      { id: "home", title: "Trung tâm Patin", route: "/patin" },
+      { id: "skills", title: "Thư viện kỹ năng", route: "/patin/skills" },
+      { id: "disciplines", title: "Bộ môn Patin", route: "/patin/disciplines" },
+      { id: "speed", title: "Speed · Patin tốc độ", route: "/patin/speed" },
+      { id: "slide", title: "Slide · Patin trượt ngang", route: "/patin/slide" },
+      { id: "slalom", title: "Slalom · Patin luồn cọc", route: "/patin/slalom" },
+      { id: "studio", title: "Minh họa Patin", route: "/patin/studio" },
+      { id: "path", title: "Lộ trình Patin", route: "/patin/path" },
+      { id: "gear", title: "Giày & an toàn", route: "/patin/gear" },
+      { id: "journal", title: "Nhật ký tập Patin", route: "/patin/journal" },
+      { id: "resources", title: "Tra cứu Patin", route: "/patin/resources" }
+    ] },
     { id: "fortune", label: "Xem bói", icon: "☾", accent: "#a983ff", route: "/fortune", items: [] },
     {
       id: "system",
@@ -5823,7 +5836,7 @@ function initAppShell() {
       icon: "▶",
       accent: "#ff6f82",
       accentSecondary: "#ffc65c",
-      groupIds: ["cosmic-observatory", "play-center", "eonwild-game", "comic-reader", "cinema", "music-library", "fortune"]
+      groupIds: ["cosmic-observatory", "play-center", "eonwild-game", "comic-reader", "cinema", "music-library", "patin", "fortune"]
     },
     {
       id: "work-tech",
@@ -5869,6 +5882,7 @@ function initAppShell() {
     "play-center": "hh play game arcade trò chơi party room watch party truyện tương tác escape rhythm karaoke pet chill quiz giải trí nhiều người",
     "cosmic-observatory": "vũ trụ hh universe thiên văn nasa jpl hệ mặt trời hành tinh bầu trời sao đài quan sát dsn bề mặt dòng thời gian phòng học tiểu hành tinh ngoại hành tinh asteroid exoplanet solar system observatory",
     "eonwild-game": "game eonwild động vật muôn loài khủng long sinh tồn thế giới mở cổ sinh trung sinh tân sinh hiện đại không con người ecology survival",
+    patin: "patin trượt inline roller skating rollerblade quad giày bảo hộ phanh rẽ slalom freestyle fitness speed slide double push soul acid magic parallel ufo nelson crazy luồn cọc nhật ký tập",
     fortune: "xem bói tarot tử vi chiêm tinh kinh dịch",
     work: "công việc dự án task ghi chú lịch",
     "davinci-resolve": "tool công cụ video media batch youtube facebook tiktok",
@@ -5930,7 +5944,7 @@ function initAppShell() {
   const sidebarIconNames = Object.freeze({
     home: "home", search: "search", "ai-creative": "sparkles", "web-community": "orbit", entertainment: "play", "work-tech": "cpu", learning: "book", "system-admin": "shield",
     "chat-ai": "bot", create: "wand", draw: "brush", "music-ai": "music", "comic-motion": "panels", "media-design": "image", "graphic-design": "pen",
-    google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "cosmic-observatory": "orbit", "play-center": "gamepad", "eonwild-game": "paw", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", fortune: "moon",
+    google: "search", "youtube-main": "video", discord: "messages", communication: "send", remote: "monitor", "cosmic-observatory": "orbit", "play-center": "gamepad", "eonwild-game": "paw", "comic-reader": "reader", cinema: "clapper", "music-library": "headphones", patin: "orbit", fortune: "moon",
     work: "briefcase", "davinci-resolve": "sliders", dev: "code", insights: "chart", copyright: "copyright", learn: "graduation", "focus-room": "timer", "study-together": "messages", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
     admin: "crown", system: "settings", support: "heart"
   });
@@ -6832,8 +6846,9 @@ function initAppShell() {
     crumbLabels["focus-room"] = "Phòng học tập trung";
     crumbLabels["study-together"] = "Học cùng nhau";
     crumbLabels.platform = "Trang chủ";
+    if (crumbs[0] === "patin") Object.assign(crumbLabels, { patin: "Patin", skills: "Kỹ năng", disciplines: "Bộ môn", speed: "Speed", slide: "Slide", slalom: "Slalom", studio: "Minh họa", path: "Lộ trình", gear: "Giày & an toàn", journal: "Nhật ký tập", resources: "Tra cứu" });
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
-    const routeTools = crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
+    const routeTools = crumbs[0] === "patin" ? (groups.find((item) => item.id === "patin")?.pages || []) : crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
     let crumbRoute = "";
     breadcrumb.innerHTML = route === "/home" ? `<button type="button" data-app-route="/platform">HH Platform</button><span aria-hidden="true">›</span><button type="button" aria-current="page">HH Galaxy</button>` : [`<button type="button" data-app-route="/platform">HH Platform</button>`, ...crumbs.map((crumb, index) => {
       crumbRoute += `/${crumb}`;
@@ -6919,6 +6934,7 @@ function initAppShell() {
     japanese: "Đang nạp Từ điển, Kanji, ngữ pháp và lộ trình JLPT...",
     chinese: "Đang mở HH Chinese, Pinyin Lab, Hán tự và lộ trình HSK...",
     "phat-phap": "Đang mở trung tâm tu học, kiểm tra nguồn và khôi phục thời khóa riêng tư...",
+    patin: "Đang tải thư viện kỹ năng, thiết bị và nhật ký Patin...",
     fortune: "Đang mở không gian Tarot, cung hoàng đạo và nhật ký suy ngẫm...",
     "play-center": "Đang mở HH Play, khôi phục điểm số và chuẩn bị trải nghiệm giải trí cục bộ...",
     "eonwild-game": "Đang tái tạo Trái Đất Muôn Thời, lưới sinh thái và vòng đời động vật...",
@@ -6944,7 +6960,7 @@ function initAppShell() {
       "media-design": "media", "graphic-design": "media", dev: "dev", work: "data", insights: "data",
       communication: "network", google: "network", "youtube-main": "media", discord: "discord", remote: "network",
       "chat-ai": "ai", learn: "learning", "study-together": "learning", english: "english", japanese: "japanese", chinese: "chinese", "phat-phap": "dharma",
-      fortune: "fortune", "play-center": "play", "eonwild-game": "play", admin: "data", system: "data", support: "home"
+      patin: "play", fortune: "fortune", "play-center": "play", "eonwild-game": "play", admin: "data", system: "data", support: "home"
     })[group?.id] || "home";
     const secondary = ({ home: "#ffd166", ai: "#ff58c8", draw: "#ff5dc8", music: "#63f2b3", media: "#ff5f9e", dev: "#63f2b3", data: "#ffd166", network: "#5b8cff", discord: "#ff62c7", learning: "#9c72ff", english: "#a673ff", japanese: "#ffca69", chinese: "#ff6f78", fortune: "#ff58c8", play: "#ff68c7", dharma: "#983b22" })[kind] || "#ff63c9";
     return {
@@ -7347,6 +7363,7 @@ function initAppShell() {
     if (route !== "/focus-room") window.HHFocusRoom?.unmount?.();
     if (routePathOnly(route) !== "/learn/study-together" && !routePathOnly(route).startsWith("/learn/study-together/")) window.HHStudyTogether?.unmount?.();
     if (route !== "/phat-phap" && !route.startsWith("/phat-phap/")) window.HHPhatPhap?.unmount?.();
+    if (route !== "/patin" && !route.startsWith("/patin/")) window.HHPatin?.unmount?.();
     if (route !== "/fortune" && !route.startsWith("/fortune/")) window.HHFortuneHub?.unmount?.();
     if (route !== "/play" && !route.startsWith("/play/")) window.HHPlay?.unmount?.();
     if (route !== "/universe" && !route.startsWith("/universe/")) window.HHUniverse?.unmount?.();
@@ -7771,6 +7788,16 @@ function initAppShell() {
       });
       else mountSimpleView("HH EonWild", "Đang tái tạo thế giới động vật và lưới sinh thái...", "");
       remember("eonwild-game");
+    } else if (route === "/patin" || route.startsWith("/patin/")) {
+      const patinView = parts[1] || "home";
+      const patinPage = groups.find((item) => item.id === "patin")?.pages?.find((item) => item.id === patinView);
+      const patinSkill = patinView === "skills" ? window.HHPatinData?.skills?.find((item) => item.id === parts[2]) : null;
+      updatePageHeader(patinSkill?.title || patinPage?.title || "Patin", "Kiến thức, kỹ năng, thiết bị và nhật ký tập riêng trên thiết bị. Nội dung chữ không thay thế HLV.", route, patinSkill);
+      pageActions.innerHTML = '<button type="button" data-app-route="/patin/skills">Kỹ năng</button><button type="button" data-app-route="/patin/gear">Giày & an toàn</button><button type="button" data-app-route="/patin/journal">Nhật ký tập</button>';
+      workspace.innerHTML = '<div data-patin-host></div>';
+      if (window.HHPatin?.mount) window.HHPatin.mount(workspace.firstElementChild, { view: patinView, skillId: parts[2] || "", currentUser: readCurrentAuthUser() });
+      else mountSimpleView("Patin", "Đang tải thư viện kỹ năng Patin...", "");
+      remember("patin");
     } else if (route === "/fortune" || route.startsWith("/fortune/")) {
       updatePageHeader("Xem bói", "Tarot nguyên bản, cung hoàng đạo, con giáp, thần số học, Kinh Dịch và nhật ký riêng tư dành cho giải trí, tự chiêm nghiệm.", route);
       pageActions.innerHTML = `<button type="button" data-app-route="/fortune/tarot">Rút Tarot</button><button type="button" data-app-route="/fortune/journal">Nhật ký</button><button class="app-primary-action" type="button" data-app-route="/fortune/today">Hôm nay</button>`;
@@ -8342,6 +8369,7 @@ function initAppShell() {
         route: "/social-media-tools",
         key: "social media tools instagram facebook tiktok x threads whatsapp imessage youtube vimeo open graph utm caption thumbnail story mockup queue"
       },
+      ...(groups.find((item) => item.id === "patin")?.pages || []).filter((item) => item.route !== "/patin").map((item) => ({ type: "Giải trí", title: `Patin · ${item.title}`, description: "Kỹ năng, thiết bị, lộ trình và tự ghi nhận Patin cục bộ", route: item.route, key: `patin ${item.title} ${sidebarSearchAliases.patin}` })),
       {
         type: "Chiêm nghiệm",
         title: "Xem bói",

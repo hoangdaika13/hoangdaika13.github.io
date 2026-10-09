@@ -28,7 +28,7 @@
   const groups = Object.freeze({
     brand: {
       styles: [],
-      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=7", "galaxy-shell.js?v=10"]
+      scripts: ["brand-galaxy-logo.js?v=2", "galaxy-favicon-controller.js?v=2", "hh-core-gateway.js?v=8", "galaxy-shell.js?v=11"]
     },
     "auth-effects": {
       /*
@@ -65,7 +65,7 @@
     },
     "platform-home": {
       styles: ["platform-home.css?v=9", "home-cosmos-motion.css?v=5"],
-      scripts: ["home-cosmos-motion.js?v=3", "platform-home.js?v=12"]
+      scripts: ["home-cosmos-motion.js?v=3", "platform-home.js?v=14"]
     },
     "galaxy-home-ai": {
       styles: ["galaxy-home-ai.css?v=25", "home-cosmos-motion.css?v=5"],
@@ -295,6 +295,10 @@
       styles: ["hh-eonwild-game.css?v=22"],
       scripts: ["hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3", "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=2", "hh-eonwild-desktop-controller.js?v=2", "hh-eonwild-collision-system.js?v=1", "hh-eonwild-world-atlas.js?v=2", "hh-eonwild-simulation-v2.js?v=4", "hh-eonwild-3d-core.js?v=7", "hh-eonwild-landscape-core.js?v=1", "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=4", "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=19", "hh-eonwild-game.js?v=28"]
     },
+    patin: {
+      styles: ["patin.css?v=3"],
+      scripts: ["patin-disciplines.js?v=1", "patin-data.js?v=2", "patin-core.js?v=3", "patin-visuals.js?v=1", "patin.js?v=3"]
+    },
     fortune: {
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=27"],
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "vendor/iztro-2.6.0.min.js?v=2.6.0", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=4", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-moon-3d.js?v=1", "fortune-extended-tools.js?v=2", "fortune-hub.js?v=28"]
@@ -420,6 +424,7 @@
     if (value === "/universe" || value.startsWith("/universe/") || value === "/cosmic-observatory" || value.startsWith("/cosmic-observatory/")) return ["cosmic"];
     if (value.startsWith("/play")) return ["play"];
     if (value === "/game" || value.startsWith("/game/")) return ["game"];
+    if (value === "/patin" || value.startsWith("/patin/")) return ["patin"];
     if (value.startsWith("/fortune")) return ["fortune"];
     if (value.startsWith("/draw")) return ["draw"];
     if (value.startsWith("/remote")) return ["remote"];
