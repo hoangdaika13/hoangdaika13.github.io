@@ -50,18 +50,19 @@ async function indexes(db) {
     db.collection("studyTogetherMembers").createIndex({ roomId: 1, state: 1 }),
     db.collection("studyTogetherMembers").createIndex({ userId: 1, updatedAt: -1 }),
     db.collection("studyTogetherMembers").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-    db.collection("studyTogetherBoards").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+    db.collection("studyTogetherBoards").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+    db.collection('studyTogetherBoardSnapshots').createIndex({expiresAt:1},{expireAfterSeconds:0})
   ]).catch(e => { init.delete(db); throw e; }));
   await init.get(db);
 }
 function publicRoom(room, user) {
-  return { id: room._id, classId:room.classId||null,classExpiresAt:room.classExpiresAt||null,parentRoomId:room.parentRoomId||null,roles:room.roles||{},role:room._role??room.roles?.[identity(user)]??(room.ownerId===String(user._id)?"owner":"member"),title: room.title, capacity: room.capacity, settings: safeSettings(room.settings), settingsRevision:room.settingsRevision||0, locked:room.locked===true, inviteActive:room.inviteActive!==false, controlRevision:room.controlRevision||0, timer: room.timer || null, agenda: safeAgenda(room.agenda), poll:core.publicPoll(room.poll,identity(user)), hands:room.handState?.items||[], handRevision:room.handState?.revision||0, boardRevision:room.boardRevision||0, host: !user._guest && teaches(room,user), hostIdentity: "u_" + room.ownerId, expiresAt: room.expiresAt, status: room.status };
+  return { id: room._id, classId:room.classId||null,classExpiresAt:room.classExpiresAt||null,parentRoomId:room.parentRoomId||null,roles:room.roles||{},role:room._role??room.roles?.[identity(user)]??(room.ownerId===String(user._id)?"owner":"member"),title: room.title, capacity: room.capacity, settings: safeSettings(room.settings), settingsRevision:room.settingsRevision||0, locked:room.locked===true, inviteActive:room.inviteActive!==false, controlRevision:room.controlRevision||0, timer: room.timer || null, agenda: safeAgenda(room.agenda), poll:core.publicPoll(room.poll,identity(user)), hands:room.handState?.items||[], handRevision:room.handState?.revision||0,floor:room.floor||null,spotlight:room.spotlight||null,groupInfo:room.groupInfo||null, boardRevision:room.boardRevision||0, host: !user._guest && teaches(room,user), hostIdentity: "u_" + room.ownerId, expiresAt: room.expiresAt, status: room.status };
 }
 function permissions(room, isHost = false, isPresenter = false) {
   const s = safeSettings(room.settings);
   return { canPublish: true, canSubscribe: true, canPublishData: true, canUpdateOwnMetadata: false, canPublishSources: [TrackSource.CAMERA, ...(isHost || isPresenter || s.allowMicrophone ? [TrackSource.MICROPHONE] : []), ...(isHost || isPresenter || s.allowScreenShare ? [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO] : [])] };
 }
-const metadata = room => JSON.stringify({ kind: "hh-study-together", hostIdentity: "u_" + room.ownerId, classId:room.classId||null,roles:room.roles||{}, settings: safeSettings(room.settings), settingsRevision:room.settingsRevision||0, locked:room.locked===true, inviteActive:room.inviteActive!==false, controlRevision:room.controlRevision||0, timer: room.timer || null, agenda: safeAgenda(room.agenda), poll:core.publicPoll(room.poll), hands:room.handState?.items||[], handRevision:room.handState?.revision||0, boardRevision:room.boardRevision||0 });
+const metadata = room => JSON.stringify({ kind: "hh-study-together", hostIdentity: "u_" + room.ownerId, classId:room.classId||null,roles:room.roles||{}, settings: safeSettings(room.settings), settingsRevision:room.settingsRevision||0, locked:room.locked===true, inviteActive:room.inviteActive!==false, controlRevision:room.controlRevision||0, timer: room.timer || null, agenda: safeAgenda(room.agenda), poll:core.publicPoll(room.poll), hands:room.handState?.items||[], handRevision:room.handState?.revision||0,floor:room.floor||null,spotlight:room.spotlight||null,groupInfo:room.groupInfo||null, boardRevision:room.boardRevision||0 });
 async function publishState(client, room) {
   try { await client.updateRoomMetadata(room._id, metadata(room)); return false; } catch { return true; }
 }
@@ -105,6 +106,7 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
   if (req.method !== "GET" && req.method !== "POST") fail("Phương thức không được hỗ trợ.", 405);
   if(uid)await rateLimit(db, "study:" + uid + ":" + (req.method === "GET" ? "read" : action), req.method === "GET" || action==="board" ? 120 : 25, 60000);
   if(user?._guest&&!["join","status","leave","preview","board","vote","hand"].includes(action))fail("Khách chỉ được tham gia phòng đã mời, không được quản lý phòng.",403,"HOST_ONLY");
+  if(action.startsWith("campus-"))return res.status(200).json(await require("./study-campus").handle({action,body:req.method==="GET"?req.query:body,user,db,rateLimit}));
   if(action.startsWith("class-")){
     const payload=req.method==="GET"?req.query:body;
     const result=await classroom.handle({action,body:payload,user,db,client,create:async options=>({_responded:true,response:await handle({...req,method:"POST"},res,{db,user,config,client,rateLimit,body:{action:"create",...options}})}),join:async roomId=>({_responded:true,response:await handle({...req,method:"POST"},res,{db,user,config,client,rateLimit,body:{action:"join",roomId}})}),publish:async()=>{},moderate:async(c,target,role)=>{
@@ -189,7 +191,7 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
     const waiting = isHost ? await members.find({ roomId: room._id, state: "waiting" }, { projection: { userId: 1, name: 1, guest:1, updatedAt: 1 }, maxTimeMS: 5000 }).sort({ updatedAt: 1 }).limit(50).toArray() : [];
     return res.status(200).json({ ok: true, room: publicRoom(room, user), waiting: false, requests: waiting.map(m => ({ userId: m.userId, name: m.name, guest:Boolean(m.guest), at: m.updatedAt })), participants: participants.map(p => ({ identity: p.identity, name: p.name, tracks: (p.tracks || []).map(t => ({ sid: t.sid, source: t.source, muted: t.muted })) })) });
   }
-  if(action==="groups"&&req.method==="GET"){const rootId=room.parentRoomId||room._id,rows=await rooms.find({parentRoomId:rootId,status:"active",expiresAt:{$gt:new Date()}}).limit(4).toArray(),parent=await rooms.findOne({_id:rootId,status:"active"});return res.status(200).json({ok:true,groups:[...(parent?[parent]:[]),...rows].map(r=>({id:r._id,title:r.title}))});}
+  if(action==="groups"&&req.method==="GET"){const rootId=room.parentRoomId||room._id,rows=await rooms.find({parentRoomId:rootId,status:"active",expiresAt:{$gt:new Date()}}).limit(4).toArray(),parent=await rooms.findOne({_id:rootId,status:"active"});return res.status(200).json({ok:true,groups:[...(parent?[parent]:[]),...rows].map(r=>({id:r._id,title:r.title,info:r.groupInfo||null}))});}
   if(action==="group-join"&&req.method==="POST"){
     const rootId=room.parentRoomId||room._id,target=await rooms.findOne({_id:clean(body.targetId,100),status:"active",expiresAt:{$gt:new Date()}});
     if(user._guest||member?.state!=="admitted"&&!isHost||!target||(target.parentRoomId||target._id)!==rootId)fail("Cần là thành viên HH đã duyệt của nhóm.",403);
@@ -204,6 +206,21 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
       if(cls){await classroom.handle({action:"class-page",body:{classId:cls._id,revision:cls.revision,title:item.title},user,db,client,publish:async()=>{}});pages=(await classroom.access(db,cls._id,user)).pages;}else{room=await mutateFeature(rooms,room._id,"pageState",state=>({revision:(state?.revision||0)+1,items:[...(state?.items||pages),item]}));pages=room.pageState.items;}
     }
     return res.status(200).json({ok:true,pages});
+  }
+  if(action==="board-snapshot"){
+    if(!isHost&&member?.state!=="admitted")fail("Cần được duyệt vào phòng.",403);
+    const pageId=clean(req.method==="GET"?req.query.pageId:body.pageId,64)||"main",pages=cls?.pages||room.pageState?.items||[{id:"main"}];if(!pages.some(p=>p.id===pageId))fail("Trang không tồn tại.",404);
+    const boardId=cls?cls._id+":"+pageId:pageId==="main"?room._id:room._id+":"+pageId,boards=db.collection("studyTogetherBoards"),snapshots=db.collection("studyTogetherBoardSnapshots");
+    if(req.method==="GET"){const rows=await snapshots.find({boardId,expiresAt:{$gt:new Date()}}).sort({at:-1}).limit(3).toArray();return res.status(200).json({ok:true,snapshots:rows.map(({_id,title,at,revision})=>({id:_id,title,at,revision}))});}
+    if(req.method!=="POST"||!isHost)fail("Chỉ người điều phối được tạo/phục hồi snapshot.",403);
+    const board=await boards.findOne({_id:boardId});if(!board)fail("Chưa có bảng đã lưu.",404);
+    if(body.mode==="save"){const title=clean(body.title,80);if(!title)fail("Nhập tên snapshot.");if(await snapshots.countDocuments({boardId})>=3)fail("Tối đa 3 snapshot/trang. Xóa bản cũ trước.",409);let stored=false;for(let slot=0;slot<3;slot++){try{await snapshots.insertOne({_id:boardId+"@snapshot"+slot,boardId,...(cls?{classId:cls._id}:{roomId:room._id}),title,at:new Date(),revision:board.revision,objects:board.objects,expiresAt:cls?.expiresAt||room.expiresAt});stored=true;break;}catch(e){if(e.code!==11000)throw e;}}if(!stored)fail("Tối đa 3 snapshot/trang.",409);return res.status(200).json({ok:true});}
+    const snap=await snapshots.findOne({_id:body.snapshotId,boardId,expiresAt:{$gt:new Date()}});if(!snap)fail("Snapshot không tồn tại.",404);
+    if(body.mode==="delete"){await snapshots.deleteOne({_id:snap._id,boardId});return res.status(200).json({ok:true});}
+    if(body.mode!=="restore"||body.confirm!==true||body.revision!==board.revision)fail("Xác nhận phục hồi và tải bản mới nếu bảng đã đổi.",409,"BOARD_CONFLICT");
+    const objects=snap.objects.map(o=>core.boardObject(o,o.owner,(board.objects.find(x=>x.id===o.id)?.version||board.tombstones.find(x=>x.id===o.id)?.version||0)+1)),keep=new Set(objects.map(o=>o.id)),removed=board.objects.filter(o=>!keep.has(o.id)).map(o=>({id:o.id,owner:o.owner,version:o.version+1})),tombstones=[...board.tombstones.filter(o=>!keep.has(o.id)&&!removed.some(x=>x.id===o.id)),...removed].slice(-256),next={objects,tombstones,revision:board.revision+1,batches:[]};
+    const result=await boards.updateOne({_id:boardId,revision:body.revision},{$set:next});if(!result.matchedCount)fail("Bảng vừa thay đổi. Không phục hồi đè bản mới.",409,"BOARD_CONFLICT");
+    await rooms.updateOne({_id:room._id},{$inc:{boardRevision:1}});room=await rooms.findOne({_id:room._id});return res.status(200).json({ok:true,room:publicRoom(room,user),syncPending:await publishState(client,room)});
   }
   if(["board","vote","hand"].includes(action)) {
     if(!isHost&&member?.state!=="admitted")fail("Cần được duyệt vào phòng trước khi dùng công cụ học nhóm.",403,"ADMISSION_REQUIRED");
@@ -246,6 +263,21 @@ async function handle(req, res, { db, body = {}, user, config, client, rateLimit
   if (req.method !== "POST") fail("Phương thức không được hỗ trợ.", 405);
   if (action === "leave") return res.status(200).json({ ok: true });
   if (!isHost) fail("Chỉ chủ phòng được dùng thao tác này.", 403, "HOST_ONLY");
+  if(action==="spotlight"||action==="floor"){
+    const target=clean(body.identity,100),participants=await remote(()=>client.listParticipants(room._id));if(target&&!participants.some(p=>p.identity===target))fail("Người này không còn kết nối.",404);
+    if(action==="spotlight"){room=await mutateFeature(rooms,room._id,"spotlight",state=>({revision:(state?.revision||0)+1,identity:target||null}));}
+    else{if(!["speaking","handled","clear"].includes(body.mode)||body.mode!=="clear"&&!room.handState?.items.some(p=>p.identity===target))fail("Chọn người trong hàng đợi thật.");room=await mutateFeature(rooms,room._id,"floor",state=>({revision:(state?.revision||0)+1,identity:body.mode==="speaking"?target:null}));if(body.mode==="handled")room=await mutateFeature(rooms,room._id,"handState",state=>({revision:(state?.revision||0)+1,items:(state?.items||[]).filter(p=>p.identity!==target)}));}
+    return res.status(200).json({ok:true,room:publicRoom(room,user),syncPending:await publishState(client,room)});
+  }
+  if(action==="group-info"||action==="group-broadcast"){
+    const rootId=room.parentRoomId||room._id,rootRoom=await rooms.findOne({_id:rootId,status:"active",expiresAt:{$gt:new Date()}});if(!rootRoom)fail("Phiên chính đã đóng.",404);
+    const rows=await rooms.find({parentRoomId:rootId,status:"active",expiresAt:{$gt:new Date()}}).limit(4).toArray(),targets=action==="group-broadcast"?rows:rows.filter(r=>r._id===body.targetId);if(!targets.length)fail("Chưa có nhóm phù hợp.",404);
+    const topic=clean(body.topic,160),notice=clean(body.notice,500),leaderId=clean(body.leader,100),minutes=Number(body.minutes||0);
+    if(!Number.isInteger(minutes)||minutes<0||minutes>120)fail("Hẹn giờ nhóm 0–120 phút.");
+    if(leaderId&&!await members.findOne({_id:rootId+":"+leaderId.replace(/^u_/,""),state:"admitted"}))fail("Người phụ trách phải được duyệt trong phiên chính.");
+    if(body.assignIdentity){const target=targets[0],targetId=clean(body.assignIdentity,100);if(!/^u_[a-f0-9]{24}$/.test(targetId)||!await members.findOne({_id:rootId+":"+targetId.slice(2),state:"admitted"}))fail("Chỉ phân công thành viên HH đã duyệt.",403);target._assigned=targetId;}
+    let syncPending=false;for(const target of targets){const next=await mutateFeature(rooms,target._id,"groupInfo",previous=>({revision:(previous?.revision||0)+1,topic:action==="group-broadcast"?previous?.topic||"":topic,leader:action==="group-broadcast"?previous?.leader||"":leaderId,notice,deadline:minutes?Date.now()+minutes*60000:null,assignment:target._assigned||previous?.assignment||null,at:Date.now()}));syncPending=await publishState(client,next)||syncPending;}return res.status(200).json({ok:true,syncPending});
+  }
   if(action==="room-lock"||action==="revoke-invite") {
     if(action==="room-lock"&&typeof body.locked!=="boolean")fail("Trạng thái khóa phòng không hợp lệ.");
     await rooms.updateOne({_id:room._id,status:"active"},{$set:action==="room-lock"?{locked:body.locked,updatedAt:new Date()}:{codeHash:hash(randomBytes(32).toString("hex")),inviteActive:false,updatedAt:new Date()},$inc:{controlRevision:1}});

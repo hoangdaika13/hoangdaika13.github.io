@@ -91,7 +91,7 @@ async function handle({action,body,user,db,client,create,join,publish,moderate})
   if(action==="class-export"){
     const files=await docs.find({classId:c._id}).limit(20).toArray(),boards=await db.collection("studyTogetherBoards").find({classId:c._id}).limit(8).toArray(),history=await sessions.find({classId:c._id}).sort({startedAt:-1}).limit(100).toArray();
     // Binary data and notes are fetched per document by the client, avoiding serverless response limits.
-    return {ok:true,export:{schema:"hh.classroom.v1",includesFileData:false,class:present(c,user),documents:files.map(({_id,name,mimeType,size})=>({id:_id,name,mimeType,size})),boards:boards.map(({pageId,objects,revision})=>({pageId,objects,revision})),sessions:history.map(({title,startedAt,endedAt,agenda,timer,poll})=>({title,startedAt,endedAt,agenda,timer,poll}))}};
+    return {ok:true,export:{schema:"hh.classroom.v1",includesFileData:false,campus:await require("./study-campus").exportData(db,c,user),class:present(c,user),documents:files.map(({_id,name,mimeType,size})=>({id:_id,name,mimeType,size})),boards:boards.map(({pageId,objects,revision})=>({pageId,objects,revision})),sessions:history.map(({title,startedAt,endedAt,agenda,timer,poll})=>({title,startedAt,endedAt,agenda,timer,poll}))}};
   }
   if(action==="class-reading"){
     if(!manager(r)&&r!=="presenter")fail("Chỉ người điều phối/trình bày được dẫn trang đọc.",403);
@@ -130,11 +130,15 @@ async function handle({action,body,user,db,client,create,join,publish,moderate})
   }else if(action==="class-update"){
     const days=Number(body.retentionDays);if(![30,90,365].includes(days)||!clean(body.title,100))fail("Tên lớp và thời hạn không hợp lệ.");
     c=await update(db,c,{title:clean(body.title,100),description:clean(body.description,600),schedule:clean(body.schedule,120),retentionDays:days,expiresAt:new Date(Date.now()+days*86400000)},body.revision);
+    await require("./study-campus").cleanup(db,c);
+    await db.collection('studyTogetherBoardSnapshots').updateMany({classId:c._id},{$set:{expiresAt:c.expiresAt}});
     await docs.updateMany({classId:c._id},{$set:{expiresAt:c.expiresAt}});await sessions.updateMany({classId:c._id},{$set:{expiresAt:c.expiresAt}});await db.collection("studyTogetherBoards").updateMany({classId:c._id},{$set:{expiresAt:c.expiresAt}});await db.collection("studyTogetherRooms").updateMany({classId:c._id},{$set:{classExpiresAt:c.expiresAt}});
   }else if(action==="class-delete"){
     if(r!=="owner")fail("Chỉ chủ lớp được xóa lớp.",403);
     if(body.confirmTitle!==c.title)fail("Nhập đúng tên lớp để xác nhận xóa.");
     c=await update(db,c,{status:"deleted",expiresAt:new Date(),title:"",description:"",schedule:"",members:[],memberIds:[],documents:[],pages:[],plan:null,reading:null,codeHash:randomBytes(32).toString("hex")},body.revision);
+    await require("./study-campus").cleanup(db,c,true);
+    await db.collection('studyTogetherBoardSnapshots').deleteMany({classId:c._id});
     await docs.deleteMany({classId:c._id});await sessions.deleteMany({classId:c._id});await db.collection("studyTogetherBoards").deleteMany({classId:c._id});
     const rooms=await db.collection("studyTogetherRooms").find({classId:c._id,status:"active"}).limit(100).toArray();await db.collection("studyTogetherRooms").updateMany({classId:c._id},{$set:{status:"closed"}});
     let syncPending=false;for(const room of rooms)try{await client.deleteRoom(room._id);}catch{syncPending=true;}

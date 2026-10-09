@@ -194,7 +194,7 @@ test("Study Together is a dedicated Learning & Languages entry with its compatib
   assert.match(router,/classList\.toggle\("app-learning-route",[^\n]+activeGroup\?\.id !== "study-together"/);
   assert.match(router,/window\.HHStudyTogether\?\.unmount\?\.\(\)/);
   assert.ok(loader.indexOf('value === "/learn/study-together"')<loader.indexOf('value.startsWith("/learn")'));
-  for(const asset of["study-together.js?v=7","study-together.css?v=7","study-room-core.js?v=2","study-whiteboard.js?v=2","vendor/livekit-client-2.22.3.umd.js?v=1","vendor/qrcode.js?v=1"]){assert.ok(loader.includes(asset));assert.ok(worker.includes(asset));}
+  for(const asset of["study-together.js?v=8","study-together.css?v=7","study-room-core.js?v=3","study-whiteboard.js?v=3","vendor/livekit-client-2.22.3.umd.js?v=1","vendor/qrcode.js?v=1"]){assert.ok(loader.includes(asset));assert.ok(worker.includes(asset));}
   assert.match(read("vercel.json"),/"source": "\/api\/study-together"/);
   assert.match(read("api/modules/[moduleId]/actions.js"),/return handleStudyTogether\(req, res\)/);
   const client=read("study-together.js");assert.doesNotMatch(client,/LIVEKIT_API_KEY|LIVEKIT_API_SECRET/);assert.match(client,/hh\.studyTogether\.notes\.v1/);assert.match(client,/pub\.track\?\.stop\(\)/);

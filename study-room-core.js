@@ -13,12 +13,13 @@
     return Math.round(value * 10) / 10;
   };
   function boardObject(input, owner, version) {
-    if (!input || !validId(input.id) || !["stroke", "rect", "ellipse", "text","note"].includes(input.kind)) fail("Đối tượng bảng trắng không hợp lệ.");
+    if (!input || !validId(input.id) || !["stroke", "rect", "ellipse", "text","note","line","arrow"].includes(input.kind)) fail("Đối tượng bảng trắng không hợp lệ.");
     if (typeof input.color !== "string" || !/^#[a-f0-9]{6}$/i.test(input.color)) fail("Màu bảng trắng không hợp lệ.");
     const object = { id: input.id, owner, version, kind: input.kind, color: input.color, size: number(input.size, 1, 12), x: number(input.x, 0, WIDTH), y: number(input.y, 0, HEIGHT), w: number(input.w, 1, WIDTH), h: number(input.h, 1, HEIGHT) };
     if (object.x + object.w > WIDTH + 1 || object.y + object.h > HEIGHT + 1) fail("Đối tượng cần nằm trong vùng bảng trắng.");
-    if (input.kind === "stroke") {
+    if (input.kind === "stroke"||input.kind==="line"||input.kind==="arrow") {
       if (!Array.isArray(input.points) || input.points.length < 1 || input.points.length > 128) fail("Một nét vẽ cần từ 1 đến 128 điểm.");
+      if(input.kind!=='stroke'&&input.points.length!==2)fail('Đường nối/mũi tên cần đúng hai điểm.');
       object.points = input.points.map(point => {
         if (!Array.isArray(point) || point.length !== 2) fail("Điểm vẽ không hợp lệ.");
         return [Math.min(object.w,number(point[0], 0, object.w+0.1)), Math.min(object.h,number(point[1], 0, object.h+0.1))];
@@ -28,6 +29,7 @@
       if (typeof input.text !== "string" || !input.text.trim() || input.text.length > 240) fail("Chữ trên bảng tối đa 240 ký tự.");
       object.text = input.text;
     }
+    if(input.group!==undefined){if(!validId(input.group))fail('Nhóm đối tượng không hợp lệ.');object.group=input.group;}
     return object;
   }
   function applyBoard(board, operations, actor, host, batchId) {
