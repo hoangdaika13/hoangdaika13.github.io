@@ -3,6 +3,7 @@
 
   const root = typeof window !== "undefined" ? window : globalThis;
   const VERSION = "3.2.0";
+  const academy=root.HHEnglishAcademyCore||(typeof require==='function'?require('./english-academy-core.js'):null);
   const SCHEMA_VERSION = 3;
   const MAX_MISTAKES = 500;
   const esc = (value = "") => String(value).replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '\"': "&quot;" })[char]);
@@ -14,7 +15,7 @@
     ["dashboard", "☉", "Hôm nay"],
     ["pathways", "⌁", "Lộ trình"],
     ["practice-hub", "✦", "Luyện tập"],
-    ["explore", "⌕", "Khám phá"],
+    ["explore", "⌕", "Thư viện"],
     ["progress", "↗", "Tiến độ"]
   ]);
 
@@ -110,7 +111,9 @@
   const normalizeState = (state = {}) => {
     const fallback = defaults();
     const source = state.learningOS || {};
-    const legacy = Array.isArray(state.mistakeNotebook) ? state.mistakeNotebook : [];
+    const legacySource=Array.isArray(state.mistakeNotebook)?state.mistakeNotebook:[],legacyCounts={...(source.migration?.legacyCounts||{})},totals={};
+    for(const row of legacySource){const id=mistakeKey(row);totals[id]=(totals[id]||0)+Math.max(1,Number(row.occurrences)||1);}
+    const legacy=[];for(const[id,count]of Object.entries(totals)){const sig='m'+hashText(id).toString(16),delta=Math.max(0,count-(legacyCounts[sig]||0));if(delta){const row=legacySource.find(r=>mistakeKey(r)===id);legacy.push({...row,occurrences:delta});}legacyCounts[sig]=Math.max(count,legacyCounts[sig]||0);}
     const rows = [...(Array.isArray(source.mistakeRecords) ? source.mistakeRecords : []), ...legacy]
       .map(normalizeMistake);
     const deduped = [];
@@ -139,7 +142,7 @@
         at: Math.max(0, Number(source.transition?.at) || 0)
       },
       sync: { ...fallback.learningOS.sync, ...(source.sync || {}) },
-      migration: { ...fallback.learningOS.migration, ...(source.migration || {}), legacyImportedAt: source.migration?.legacyImportedAt || (legacy.length ? iso() : "") }
+      migration: { legacyCounts, ...fallback.learningOS.migration, ...(source.migration || {}), legacyImportedAt: source.migration?.legacyImportedAt || (legacy.length ? iso() : "") }
     };
     state.learnerProfileId = String(state.learnerProfileId || "default").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 72) || "default";
     return state;
@@ -207,9 +210,11 @@
 
   const syncLabel = (state) => {
     const sync = normalizeState(state).learningOS.sync;
+    if(state.learningOS.localSave?.status==='memory')return ['failed','Chỉ giữ trong phiên · chưa ghi thiết bị'];
+    if(sync.status==='conflict')return ['failed','Hai bản khác nhau · chờ lựa chọn'];
     if (sync.status === "syncing") return ["syncing", "Đang đồng bộ"];
     if (sync.status === "synced") return ["synced", "Đã đồng bộ"];
-    if (sync.status === "failed") return ["failed", "Đã lưu cục bộ · chờ thử lại"];
+    if (sync.status === "failed") return ["failed",state.learningOS.localSave?.status==="memory"?"Chỉ giữ trong phiên · cần xuất":"Bản thiết bị · chờ thử lại"];
     return ["local", "Đã lưu trên thiết bị"];
   };
 
@@ -290,6 +295,7 @@
     const line = lessonLine(lesson);
     const words = lessonVocabulary(lesson);
     const question = lessonQuestion(lesson, stepId === "challenge" ? 1 : 0);
+    if(['order','gap','challenge'].includes(stepId)&&root.HHEnglishAcademy?.exercise){const kind=stepId==='order'?'order':stepId==='gap'?'gap':'choice',t=academy.task(lesson,kind,stepId==='challenge'?1:0);if(t)return root.HHEnglishAcademy.exercise(t,checkpoint.drafts?.[stepId]||{},'data-hheo-recall data-type="'+(stepId==='order'?'grammar':stepId)+'"');}
     if (stepId === "context") return `<div class="hheo-step-copy"><small>CAN-DO</small><h3>${esc(lesson.canDo || lesson.title)}</h3><p>Bài này dùng ngữ cảnh và dữ liệu có sẵn trong chương trình ${esc(lesson.level || "English")}.</p><button class="primary" type="button" data-hheo-step-complete>Đã hiểu mục tiêu →</button></div>`;
     if (stepId === "listen") return `<div class="hheo-step-listen"><small>NGHE TOÀN CẢNH</small><blockquote>${esc(line)}</blockquote><div><button type="button" data-hhe-speak="${esc(line)}">▶ Nghe tự nhiên</button><button type="button" data-hhe-speak="${esc(line)}" data-hhe-speak-rate="0.68">◷ Nghe chậm</button></div><button class="primary" type="button" data-hheo-step-complete>Đã nghe ít nhất một lần →</button></div>`;
     if (stepId === "gist") return question ? `<form class="hheo-step-question" data-hheo-lesson-question data-question-index="0" data-type="listening"><small>CHỌN Ý PHÙ HỢP</small><h3>${esc(question.prompt)}</h3><fieldset>${(question.options || []).map((option) => `<label><input type="radio" name="answer" value="${esc(option)}"><span>${esc(option)}</span></label>`).join("")}</fieldset><button class="primary" type="submit">Kiểm tra ý chính</button><output></output></form>` : `<div class="hheo-step-copy"><h3>${esc(lesson.canDo)}</h3><button class="primary" type="button" data-hheo-step-complete>Đã nắm ý chính →</button></div>`;
@@ -298,10 +304,11 @@
     if (["gap", "challenge"].includes(stepId) && question) return `<form class="hheo-step-question" data-hheo-lesson-question data-question-index="${stepId === "challenge" ? 1 : 0}" data-type="${stepId === "gap" ? "grammar" : "challenge"}"><small>${stepId === "gap" ? "NHỚ LẠI" : "MINI CHALLENGE"}</small><h3>${esc(question.prompt)}</h3>${question.options?.length ? `<fieldset>${question.options.map((option) => `<label><input type="radio" name="answer" value="${esc(option)}"><span>${esc(option)}</span></label>`).join("")}</fieldset>` : `<label class="hheo-text-answer"><span>Câu trả lời</span><input name="answer" autocomplete="off"></label>`}<button class="primary" type="submit">Kiểm tra</button><output></output></form>`;
     if (stepId === "order") return `<form class="hheo-step-produce" data-hheo-recall data-type="grammar"><small>KHÔI PHỤC CÂU</small><h3>Gõ lại câu sau theo đúng trật tự</h3><p class="hheo-scramble">${esc(line.split(/\s+/).reverse().join(" · "))}</p><label><span>Câu hoàn chỉnh</span><input name="answer" autocomplete="off"></label><button class="primary" type="submit">Kiểm tra trật tự</button><output></output></form>`;
     if (stepId === "shadow") return `<div class="hheo-step-shadow"><small>SHADOWING THEO CỤM</small><h3>${esc(line)}</h3><div><button type="button" data-hhe-speak="${esc(line)}" data-hhe-speak-rate="0.72">▶ Nghe chậm</button><button type="button" data-hhe-speak="${esc(line)}">▶ Nghe tự nhiên</button><button type="button" data-hhe-recognize data-hhe-target="${esc(line)}">◉ Nói lại</button></div><output data-hhe-transcript>Micro chỉ được mở khi bạn bấm Nói lại và đã cho phép.</output><div data-hhe-pron-score hidden></div><button class="primary" type="button" data-hheo-step-complete>Đã tự nghe và nói lại →</button></div>`;
-    if (["recall", "create"].includes(stepId)) return `<form class="hheo-step-produce" data-hheo-production data-type="${stepId === "recall" ? "recall" : "writing"}"><small>${stepId === "recall" ? "NHỚ LẠI KHÔNG GỢI Ý" : "DÙNG CHỦ ĐỘNG"}</small><h3>${stepId === "recall" ? "Viết lại câu bạn vừa học" : "Tạo một câu mới cho chính bạn"}</h3><label><span>${stepId === "recall" ? "Câu bạn nhớ" : "Câu mới"}</span><textarea name="answer" rows="4" placeholder="Write one complete English sentence..."></textarea></label><button class="primary" type="submit">Lưu và tiếp tục</button><output></output></form>`;
+    if (["recall", "create"].includes(stepId)) return `<form class="hheo-step-produce" data-hheo-production data-type="${stepId === "recall" ? "recall" : "writing"}"><small>${stepId === "recall" ? "NHỚ LẠI KHÔNG GỢI Ý" : "DÙNG CHỦ ĐỘNG"}</small><h3>${stepId === "recall" ? "Viết lại câu bạn vừa học" : "Tạo một câu mới cho chính bạn"}</h3><label><span>${stepId === "recall" ? "Câu bạn nhớ" : "Câu mới"}</span><textarea name="answer" rows="4" placeholder="Write one complete English sentence..."></textarea></label>${stepId==="create"?'<label><input type="checkbox" name="selfConfirm">Tôi đã tự đọc lại câu; hệ thống không tự chấm chất lượng câu mở.</label>':""}<button class="primary" type="submit">${stepId==="create"?"Lưu câu và tự xác nhận":"Kiểm tra nhớ lại"}</button><output></output></form>`;
     if (stepId === "summary") {
       const completed = new Set(checkpoint.completedSteps || []).size;
-      return `<div class="hheo-step-summary"><span>✓</span><small>LESSON SUMMARY</small><h3>${completed}/${lessonSteps.length - 1} bước đã hoàn thành</h3><p>${esc(lesson.canDo || lesson.title)}</p><div><b>${words.length}</b><span>từ/cụm đã gặp</span><b>${progressPercent(checkpoint)}%</b><span>tiến độ bài</span></div><button class="primary" type="button" data-hheo-finish-lesson>Hoàn thành và lên lịch ôn →</button></div>`;
+      const verdict=academy.completion(checkpoint,lessonSteps.slice(0,-1).map(s=>s[0]));
+      return `<div class="hheo-step-summary"><span>✓</span><small>LESSON SUMMARY</small><h3>${completed}/${lessonSteps.length - 1} bước đã hoàn thành</h3><p>${esc(lesson.canDo || lesson.title)}</p><div><b>${words.length}</b><span>từ/cụm đã gặp</span><b>${progressPercent(checkpoint)}%</b><span>tiến độ bài</span></div>${!verdict.eligible?`<p>Còn bước cần luyện/xác nhận: ${esc(verdict.missing.join(", "))}.</p><button type="button" data-hheo-return-missing>Quay lại bước cần làm</button>`:""}<p>Bước nghe/nói tự xác nhận không là điểm phát âm. Hoàn thành bài không là chứng nhận CEFR.</p><button class="primary" type="button" data-hheo-finish-lesson ${verdict.eligible?"":"disabled"}>Hoàn thành và lên lịch ôn →</button><button type="button" data-hhe-view="dashboard">Giữ checkpoint và kết thúc phiên</button></div>`;
     }
     return `<div class="hheo-step-copy"><h3>${esc(lesson.title)}</h3><button class="primary" type="button" data-hheo-step-complete>Tiếp tục →</button></div>`;
   };
@@ -321,12 +328,12 @@
   const renderProgress = (state, context) => {
     const graph = root.HHEnglishSkillGraph?.buildSkillGraph?.(state, { allLessons: context.allLessons || [], levelOrder: context.levelOrder || [] });
     const vocabulary = vocabularyCounts(state);
-    const reviews = normalizeState(state).learningOS.reviewAttempts;
+    const reviews = normalizeState(state).learningOS.reviewAttempts.filter(a=>a.graded!==false&&typeof a.correct==="boolean");
     const correct = reviews.filter((item) => item.correct).length;
     const retention = reviews.length ? Math.round(correct / reviews.length * 100) : 0;
     const completed = Object.values(state.completed || {}).filter(Boolean).length;
     const minutes = Object.values(state.minutesByDay || {}).reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
-    return `<section class="hheo-progress"><header><div><small>LEARNING EVIDENCE</small><h2>Tiến bộ dựa trên hoạt động đã lưu</h2><p>Không cộng các kỹ năng không tương đương thành một điểm chứng chỉ.</p></div><button type="button" data-hheo-print>In / lưu PDF</button></header><div class="hheo-progress-kpis"><article><small>BÀI HOÀN THÀNH</small><strong>${completed}</strong><span>evidence đã lưu</span></article><article><small>THỜI GIAN HỌC</small><strong>${minutes}</strong><span>phút trên thiết bị</span></article><article><small>TỶ LỆ NHỚ LẠI</small><strong>${retention}%</strong><span>${reviews.length} lượt đánh giá</span></article><article><small>LỖI ĐANG GIẢM</small><strong>${openMistakes(state).length}</strong><span>mục đang cần sửa</span></article></div><section class="hheo-vocabulary-ladder"><header><div><small>ACTIVE VOCABULARY</small><h3>Từ nhận biết đến sử dụng chủ động</h3></div><button type="button" data-hhe-view="vocabulary">Mở từ của tôi</button></header><div><article><b>${vocabulary.recognition}</b><span>Nhận ra</span><small>Đã gặp và nhận diện</small></article><i>→</i><article><b>${vocabulary.recall}</b><span>Nhớ lại</span><small>Đã nhớ không gợi ý</small></article><i>→</i><article><b>${vocabulary.active}</b><span>Chủ động</span><small>Có sản xuất và nhớ lại trễ</small></article></div></section>${graph ? `<section class="hheo-skill-summary"><header><div><small>CEFR 2020 SKILL GRAPH</small><h3>Các năng lực độc lập</h3></div><button type="button" data-hhe-view="skill-graph">Xem Evidence Ledger →</button></header><div>${graph.components.slice(0, 12).map((item) => `<article><span>${esc(item.label)}</span><b>${item.score}%</b><i style="--p:${item.score}%"></i><small>${item.evidence} bằng chứng · tin cậy ${item.confidence}%</small></article>`).join("")}</div><p>${esc(graph.disclaimer)}</p></section>` : ""}</section>`;
+    return `<section class="hheo-progress"><header><div><small>LEARNING EVIDENCE</small><h2>Tiến bộ dựa trên hoạt động đã lưu</h2><p>Không cộng các kỹ năng không tương đương thành một điểm chứng chỉ.</p></div><button type="button" data-hheo-print>In / lưu PDF</button></header><div class="hheo-progress-kpis"><article><small>BÀI HOÀN THÀNH</small><strong>${completed}</strong><span>evidence đã lưu</span></article><article><small>THỜI LƯỢNG CŨ</small><strong>${minutes}</strong><span>phút dự kiến trong dữ liệu cũ</span></article><article><small>ĐÁP ÁN ĐÚNG</small><strong>${retention}%</strong><span>${reviews.length} lượt đối chiếu đáp án</span></article><article><small>LỖI ĐANG GIẢM</small><strong>${openMistakes(state).length}</strong><span>mục đang cần sửa</span></article></div><section class="hheo-vocabulary-ladder"><header><div><small>ACTIVE VOCABULARY</small><h3>Từ nhận biết đến sử dụng chủ động</h3></div><button type="button" data-hhe-view="vocabulary">Mở từ của tôi</button></header><div><article><b>${vocabulary.recognition}</b><span>Nhận ra</span><small>Đã gặp và nhận diện</small></article><i>→</i><article><b>${vocabulary.recall}</b><span>Nhớ lại</span><small>Đã nhớ không gợi ý</small></article><i>→</i><article><b>${vocabulary.active}</b><span>Chủ động</span><small>Có sản xuất và nhớ lại trễ</small></article></div></section>${graph ? `<section class="hheo-skill-summary"><header><div><small>CEFR 2020 SKILL GRAPH</small><h3>Các năng lực độc lập</h3></div><button type="button" data-hhe-view="skill-graph">Xem Evidence Ledger →</button></header><div>${graph.components.slice(0, 12).map((item) => `<article><span>${esc(item.label)}</span><b>${item.score}%</b><i style="--p:${item.score}%"></i><small>${item.evidence} bằng chứng · tin cậy ${item.confidence}%</small></article>`).join("")}</div><p>${esc(graph.disclaimer)}</p></section>` : ""}</section>`;
   };
 
   const renderView = (input, context = {}) => {
@@ -356,6 +363,8 @@
 
   const completeCurrentStep = (state, lessonId) => setCheckpointStep(state, lessonId, (checkpoint) => {
     const id = lessonSteps[checkpoint.step][0];
+    if(['gist','gap','order','challenge','recall','create'].includes(id))return;
+    checkpoint.evidence={...checkpoint.evidence,[id]:{kind:'self-report',at:iso()}};
     if (!checkpoint.completedSteps.includes(id)) checkpoint.completedSteps.push(id);
     checkpoint.skippedSteps = checkpoint.skippedSteps.filter((item) => item !== id);
     checkpoint.step = Math.min(lessonSteps.length - 1, checkpoint.step + 1);
@@ -395,14 +404,16 @@
     if (mode) { const state = normalizeState(runtime.readState()); state.learningOS.sessionMode = mode.dataset.hheoSessionMode; runtime.writeState(state); runtime.render(); runtime.toast(`Đã chọn phiên ${session(state).minutes} phút.`); return true; }
     if (path) { const state = normalizeState(runtime.readState()); state.learningOS.activePath = path.dataset.hheoSelectPath; runtime.writeState(state); runtime.render(); runtime.toast("Đã đổi lộ trình ưu tiên cho trang Hôm nay."); return true; }
     if (filter) { const state = normalizeState(runtime.readState()); state.learningOS.mistakeFilter = filter.dataset.hheoMistakeFilter; runtime.writeState(state); runtime.render(); return true; }
-    if (resolved) { const state = normalizeState(runtime.readState()); const id = resolved.dataset.hheoResolveMistake || resolved.dataset.hheoReopenMistake; const row = state.learningOS.mistakeRecords.find((item) => item.id === id); if (row) { row.status = resolved.dataset.hheoResolveMistake ? "resolved" : "open"; row.nextReviewAt = resolved.dataset.hheoResolveMistake ? iso(Date.now() + 7 * 86400000) : iso(); runtime.writeState(state); runtime.render(); runtime.toast(row.status === "resolved" ? "Đã lưu lỗi là đã sửa; HH sẽ kiểm tra lại sau." : "Đã đưa lỗi trở lại Error Clinic."); } return true; }
+    if (resolved) { const state = normalizeState(runtime.readState()); const id = resolved.dataset.hheoResolveMistake || resolved.dataset.hheoReopenMistake; const row = state.learningOS.mistakeRecords.find((item) => item.id === id); if (row) { row.resolvedBy="self-report";row.status = resolved.dataset.hheoResolveMistake ? "resolved" : "open"; row.nextReviewAt = resolved.dataset.hheoResolveMistake ? iso(Date.now() + 7 * 86400000) : iso(); runtime.writeState(state); runtime.render(); runtime.toast(row.status === "resolved" ? "Đã lưu lỗi là đã sửa; HH sẽ kiểm tra lại sau." : "Đã đưa lỗi trở lại Error Clinic."); } return true; }
     if (player && event.target.closest("[data-hheo-step-complete]")) { const state = normalizeState(runtime.readState()); const before = currentCheckpoint(state, player.dataset.hheoPlayer).step; completeCurrentStep(state, player.dataset.hheoPlayer); const after = currentCheckpoint(state, player.dataset.hheoPlayer).step; markTransition(state, "forward", lessonSteps[before]?.[0], lessonSteps[after]?.[0]); runtime.writeState(state); runtime.render({ focusView: true, preserveScroll: true }); return true; }
     if (player && event.target.closest("[data-hheo-step-prev]")) { const state = normalizeState(runtime.readState()); const before = currentCheckpoint(state, player.dataset.hheoPlayer).step; setCheckpointStep(state, player.dataset.hheoPlayer, (checkpoint) => { checkpoint.step -= 1; }); const after = currentCheckpoint(state, player.dataset.hheoPlayer).step; markTransition(state, "back", lessonSteps[before]?.[0], lessonSteps[after]?.[0]); runtime.writeState(state); runtime.render({ focusView: true, preserveScroll: true }); return true; }
     if (player && event.target.closest("[data-hheo-step-skip]")) { const state = normalizeState(runtime.readState()); const before = currentCheckpoint(state, player.dataset.hheoPlayer).step; setCheckpointStep(state, player.dataset.hheoPlayer, (checkpoint) => { const id = lessonSteps[checkpoint.step][0]; if (!checkpoint.skippedSteps.includes(id)) checkpoint.skippedSteps.push(id); checkpoint.step += 1; }); const after = currentCheckpoint(state, player.dataset.hheoPlayer).step; markTransition(state, "forward", lessonSteps[before]?.[0], lessonSteps[after]?.[0]); runtime.writeState(state); runtime.render({ focusView: true, preserveScroll: true }); runtime.toast("Đã bỏ qua và ghi nhận bước này, không giả là đã hoàn thành."); return true; }
+    if(player&&event.target.closest('[data-hheo-return-missing]')){const state=normalizeState(runtime.readState()),cp=currentCheckpoint(state,player.dataset.hheoPlayer),v=academy.completion(cp,lessonSteps.slice(0,-1).map(s=>s[0]));setCheckpointStep(state,player.dataset.hheoPlayer,row=>{row.step=Math.max(0,lessonSteps.findIndex(step=>v.missing.includes(step[0])));});runtime.writeState(state);runtime.render();return true;}
     if (player && event.target.closest("[data-hheo-finish-lesson]")) {
       const state = normalizeState(runtime.readState()); const lessonId = player.dataset.hheoPlayer; const lesson = runtime.context.getLesson?.(lessonId) || runtime.context.allLessons?.find((item) => item.id === lessonId);
+      const evidence=academy.completion(currentCheckpoint(state,lessonId),lessonSteps.slice(0,-1).map(s=>s[0]));if(!evidence.eligible){runtime.toast('Bài còn bước bỏ qua/chưa có câu trả lời được kiểm tra. Checkpoint vẫn được giữ.','error');return true;}
       setCheckpointStep(state, lessonId, (checkpoint) => { if (!checkpoint.completedSteps.includes("summary")) checkpoint.completedSteps.push("summary"); checkpoint.completedAt = iso(); });
-      if (!state.completed[lessonId]) { state.completed[lessonId] = true; state.xp = (Number(state.xp) || 0) + (Number(lesson?.xp) || 30); state.minutesByDay[runtime.todayKey()] = (Number(state.minutesByDay[runtime.todayKey()]) || 0) + (Number(lesson?.minutes) || session(state).minutes); runtime.updateStreak?.(state); }
+      if (!state.completed[lessonId]) { state.completed[lessonId] = true; state.xp = (Number(state.xp) || 0) + (Number(lesson?.xp) || 30);  runtime.updateStreak?.(state); }
       lessonVocabulary(lesson).forEach((word) => { const id = word[0]; state.reviewQueue[id] = state.reviewQueue[id] || { type: "word", dueAt: iso(Date.now() + 86400000), repetitions: 0, interval: 1, ease: 2.5 }; });
       addActivity(state, { kind: "lesson-completed", label: `Hoàn thành · ${lesson?.title || lessonId}`, view: "progress", lessonId }); runtime.writeState(state); state.activeView = "dashboard"; runtime.writeState(state); runtime.render(); runtime.toast("Đã hoàn thành bài, lưu bằng chứng và lên lịch ôn.", "success"); return true;
     }
@@ -423,22 +434,28 @@
     const checkpoint = currentCheckpoint(state, lessonId);
     const currentStepId = lessonSteps[clamp(checkpoint.step, 0, lessonSteps.length - 1)]?.[0] || "";
     const expectedQuestion = lessonQuestion(lesson, Number(question.dataset.questionIndex) || (currentStepId === "challenge" ? 1 : 0));
-    let correct = true; let score = 100; const expected = question.matches("[data-hheo-lesson-question]") ? String(expectedQuestion?.answer || "") : question.matches("[data-hheo-recall]") || question.dataset.type === "recall" ? lessonLine(lesson) : "";
-    if (question.matches("[data-hheo-lesson-question]")) correct = normalizeText(answer) === normalizeText(expected);
-    else if (question.matches("[data-hheo-recall]")) { const expectedWords = normalizeText(expected).split(" ").filter(Boolean); const actual = new Set(normalizeText(answer).split(" ").filter(Boolean)); score = expectedWords.length ? Math.round(expectedWords.filter((word) => actual.has(word)).length / expectedWords.length * 100) : 0; correct = score >= 70; }
-    else { correct = answer.split(/\s+/).length >= 3 && /[a-z]/i.test(answer); score = correct ? 100 : 0; }
+    let correct=false,score=0,graded=true,method="authored-answer-v1";
+    const stepTask=academy.task(lesson,currentStepId==="order"?"order":currentStepId==="recall"?"dictation":currentStepId==="gap"?"gap":"choice",currentStepId==="challenge"?1:0);
+    const expected=stepTask?.expected||String(expectedQuestion?.answer||"");
+    if(currentStepId==="create"){
+      graded=false;method="self-submitted";
+      if(!/[a-z]/i.test(answer)){if(output)output.textContent="Nhập câu bạn muốn luyện bằng tiếng Anh.";runtime.writeState(state);return true;}
+      if(new FormData(question).get("selfConfirm")!=="on"){if(output)output.textContent="Đã giữ bản gõ. Đọc lại và tự xác nhận trước khi tiếp tục; câu mở chưa được chấm.";runtime.writeState(state);return true;}
+      correct=true;score=null;
+    }else{const result=academy.evaluate(stepTask,answer);correct=result.correct;score=result.score;}
+    state.learningOS.reviewAttempts.unshift({id:"guided-"+Date.now(),lessonId,type:currentStepId,correct:graded?correct:null,score,graded,method,at:iso()});state.learningOS.reviewAttempts=state.learningOS.reviewAttempts.slice(0,1000);
     if (!correct) {
       recordMistake(state, { type: question.dataset.type || "lesson", prompt: question.querySelector("h3")?.textContent || "Bài tập trong bài học", answer, expected, explanation: question.dataset.type === "writing" ? "Hãy viết ít nhất một câu tiếng Anh hoàn chỉnh có ba từ trở lên." : "Đối chiếu đáp án và thử lại trong ngữ cảnh mới.", lessonId });
       if (output) { output.className = "wrong"; output.innerHTML = "<strong>Chưa đạt</strong><span>Đáp án vẫn được khóa. Hãy nghe hoặc đọc lại gợi ý rồi thử thêm một lần.</span>"; }
       runtime.writeState(state); return true;
     }
     const beforeStep = currentCheckpoint(state, lessonId).step;
-    setCheckpointStep(state, lessonId, (row) => { const id = lessonSteps[row.step][0]; row.answers[id] = { answer, score, at: iso() }; if (!row.completedSteps.includes(id)) row.completedSteps.push(id); row.step += 1; });
+    setCheckpointStep(state, lessonId, (row) => { const id = lessonSteps[row.step][0]; row.answers[id] = { answer, score, correct:graded?correct:null,graded,method,at:iso() };row.evidence={...row.evidence,[id]:{kind:graded?'assessed-answer':'self-report',at:iso()}};row.skippedSteps=row.skippedSteps.filter(s=>s!==id); if (!row.completedSteps.includes(id)) row.completedSteps.push(id); row.step += 1; });
     const afterStep = currentCheckpoint(state, lessonId).step;
     markTransition(state, "forward", lessonSteps[beforeStep]?.[0], lessonSteps[afterStep]?.[0]);
-    state.learningOS.reviewAttempts.unshift({ id: `attempt-${Date.now()}`, lessonId, type: question.dataset.type || "lesson", correct: true, score, at: iso() });
-    if (question.matches("[data-hheo-production]")) { const targetWord = lessonVocabulary(runtime.context.getLesson?.(lessonId) || {})[0]?.[0]; if (targetWord && state.wordMastery?.[targetWord]) { state.wordMastery[targetWord].productionSuccesses = (Number(state.wordMastery[targetWord].productionSuccesses) || 0) + 1; state.wordMastery[targetWord].updatedAt = iso(); } }
-    runtime.writeState(state); runtime.render({ focusView: true, preserveScroll: true }); runtime.toast("Đúng · checkpoint đã được lưu.", "success"); return true;
+    // The assessed/self-reported attempt is recorded above, including unsuccessful attempts.
+    // Open sentences are self-submitted, not automatically proof of active vocabulary.
+    runtime.writeState(state); runtime.render({ focusView: true, preserveScroll: true }); runtime.toast(graded?"Đúng · checkpoint đã được lưu.":"Đã lưu câu tự luyện, chưa tự chấm chất lượng câu.", "success"); return true;
   };
 
   const boundHosts = new WeakMap();
@@ -456,11 +473,13 @@
       root.document.addEventListener("click", handleDocumentClick, true);
       root.document.addEventListener("submit", handleDocumentSubmit, true);
     }
+    const state=runtime.readState(),lessonId=state.activeLesson,checkpoint=lessonId?currentCheckpoint(state,lessonId):null,stepId=lessonSteps[checkpoint?.step]?.[0],draft=checkpoint?.drafts?.[stepId];
+    if(draft)host.querySelectorAll('[data-hheo-lesson-question] [name],[data-hheo-recall] [name],[data-hheo-production] [name]').forEach(n=>{if(n.type==='radio')n.checked=n.value===draft[n.name];else if(n.type==='checkbox')n.checked=draft[n.name]==='on';else if(typeof draft[n.name]==='string')n.value=draft[n.name];});
     if (boundHosts.has(host)) return;
     const handlers = {
-      input: (event) => { if (event.target.matches("[data-hheo-tool-search]")) filterTools(host, event.target.value); },
-      click: (event) => dispatchClick(runtime, event),
-      submit: (event) => dispatchSubmit(runtime, event)
+      input: (event) => { if(event.target.matches('[data-hheo-tool-search]'))filterTools(host,event.target.value);const form=event.target.closest('[data-hheo-lesson-question],[data-hheo-recall],[data-hheo-production]');if(!form||!activeRuntime)return;const state=activeRuntime.readState(),id=form.closest('[data-hheo-player]').dataset.hheoPlayer,cp=currentCheckpoint(state,id),step=lessonSteps[cp.step][0];cp.drafts={...cp.drafts,[step]:Object.fromEntries(new FormData(form))};state.learningOS.lessonCheckpoints[id]=cp;activeRuntime.writeState(state); },
+      click: (event) => dispatchClick(activeRuntime, event),
+      submit: (event) => dispatchSubmit(activeRuntime, event)
     };
     boundHosts.set(host, handlers); activeHosts.add(host); host.dataset.hheoBound = VERSION;
     host.addEventListener("input", handlers.input);

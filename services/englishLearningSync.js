@@ -1,4 +1,6 @@
 const { clean, currentUser, enforceRateLimit, withApi } = require("../utils/platform");
+const {createHash}=require("node:crypto");
+const digest=state=>createHash("sha256").update(JSON.stringify(state)).digest("hex");
 
 const MAX_STATE_BYTES = 1_500_000;
 const PROFILE_ID = /^[a-zA-Z0-9_-]{1,72}$/;
@@ -6,13 +8,13 @@ const SENSITIVE_KEY = /(?:password|secret|token|authorization|cookie|credential|
 const ALLOWED_TOP_LEVEL = new Set([
   "version", "activeView", "activeLesson", "completed", "attempts", "savedWords", "reviewQueue", "xp", "streak", "dailyGoal", "studyDays", "minutesByDay",
   "placement", "placementRewarded", "selectedLevel", "selectedCareer", "careerSurvey", "careerSurveyRewarded", "favoriteCareers", "writingDraft", "writingDrafts",
-  "writingHistory", "practice", "practiceByLevel", "galaxyTopic", "galaxyLevel", "galaxyPackStatus", "galaxyMode", "galaxyCursor", "galaxySession", "wordMastery",
+  "writingHistory", "practice", "practiceByLevel", "galaxyTopic", "galaxyLevel", "galaxyPackStatus", "galaxyMode", "galaxyCursor", "galaxySession", "wordMastery", "reviewEvents",
   "mistakeNotebook", "modeStats", "vocabularyStudio", "onboarding", "learnerProfile", "careerProfile", "settings", "speakingScenario", "speakingAttempts",
   "speakingRoleplays", "universalProfile", "familyMode", "everyoneStudio", "galaxy", "learningOS", "learnerProfileId"
 ]);
 
 function profileIdOf(input) {
-  const value = clean(input || "default", 72);
+  const value = String(input || "default").trim();
   if (!PROFILE_ID.test(value)) {
     const error = new Error("Hồ sơ người học không hợp lệ.");
     error.statusCode = 400;
@@ -79,6 +81,8 @@ module.exports = async function handler(req, res) {
     const user = await currentUser(req);
     if (!user) return res.status(401).json({ error: "Bạn cần đăng nhập để đồng bộ HH English.", code: "AUTH_REQUIRED" });
     const ownerId = String(user._id);
+    if(Array.isArray(user.restrictedFeatures)&&user.restrictedFeatures.some(id=>["english","learn"].includes(id)))return res.status(403).json({error:"Tài khoản chưa được phép đồng bộ HH English.",code:"ENGLISH_RESTRICTED"});
+    if(req.headers["x-hh-learner-owner"]&&req.headers["x-hh-learner-owner"]!==ownerId)return res.status(403).json({error:"Tài khoản đã thay đổi. Mở lại hồ sơ học.",code:"LEARNING_OWNER_CHANGED"});
     const profileId = profileIdOf(req.method === "GET" || req.method === "DELETE" ? req.query?.learnerProfileId : body.learnerProfileId || body.state?.learnerProfileId);
     await enforceRateLimit(db, `english-learning:${ownerId}:${req.method}`, req.method === "GET" ? 120 : 45, 60 * 1000);
     const collection = await ensureIndexes(db);
@@ -91,28 +95,32 @@ module.exports = async function handler(req, res) {
 
     if (req.method === "PUT" && clean(req.query?.action, 30) === "sync") {
       const state = sanitizeLearningState({ ...(body.state || {}), learnerProfileId: profileId });
-      const clientRevision = Math.max(0, Number(body.revision) || 0);
+      const clientRevision = body.revision;
+      if(!Number.isSafeInteger(clientRevision)||clientRevision<0)return res.status(400).json({error:"Revision không hợp lệ.",code:"LEARNING_REVISION_INVALID"});
       const clientMutationId = clean(body.clientMutationId, 160);
       if (!clientMutationId) return res.status(400).json({ error: "Thiếu mã chống gửi trùng.", code: "IDEMPOTENCY_KEY_REQUIRED" });
       const current = await collection.findOne({ ownerId, learnerProfileId: profileId });
-      if (current?.clientMutationId === clientMutationId) return res.status(200).json({ ok: true, duplicate: true, revision: current.revision, updatedAt: current.updatedAt });
+      const mutationDigest=digest(state);
+      if(current?.clientMutationId===clientMutationId){if((current.mutationDigest||digest(current.state))!==mutationDigest)return res.status(409).json({error:"Mã gửi trùng đã dùng cho nội dung khác.",code:"LEARNING_MUTATION_REUSED",revision:current.revision});return res.status(200).json({ok:true,duplicate:true,revision:current.revision,updatedAt:current.updatedAt});}
       if (current && clientRevision !== Number(current.revision || 0)) {
         return res.status(409).json({ error: "Dữ liệu máy chủ đã thay đổi. HH giữ bản cục bộ và chờ bạn tải lại trước khi ghi đè.", code: "LEARNING_REVISION_CONFLICT", revision: Number(current.revision) || 0, updatedAt: current.updatedAt });
       }
+      if(!current&&clientRevision!==0)return res.status(409).json({error:"Bản máy chủ không còn tồn tại. Kiểm tra trước khi tạo lại.",code:"LEARNING_REVISION_CONFLICT",revision:0});
       const now = new Date(); const revision = clientRevision + 1;
-      const filter = current ? { ownerId, learnerProfileId: profileId, revision: clientRevision } : { ownerId, learnerProfileId: profileId };
+      const filter = current ? { ownerId, learnerProfileId: profileId, revision: clientRevision } : { ownerId, learnerProfileId: profileId,revision:{$exists:false} };
       const update = {
-        $set: { state, revision, clientMutationId, updatedAt: now },
+        $set: { state, revision, clientMutationId, mutationDigest, updatedAt: now },
         $setOnInsert: { ownerId, learnerProfileId: profileId, createdAt: now }
       };
-      const result = await collection.updateOne(filter, update, { upsert: !current });
+      let result;
+      try{result=await collection.updateOne(filter,update,{upsert:!current});}catch(e){if(e.code!==11000)throw e;const latest=await collection.findOne({ownerId,learnerProfileId:profileId});if(latest?.clientMutationId===clientMutationId&&latest.mutationDigest===mutationDigest)return res.status(200).json({ok:true,duplicate:true,revision:latest.revision,updatedAt:latest.updatedAt});return res.status(409).json({error:"Có bản mới được tạo đồng thời. Bản thiết bị vẫn giữ nguyên.",code:"LEARNING_REVISION_CONFLICT",revision:latest?.revision||0});}
       if (current && !result.matchedCount) return res.status(409).json({ error: "Có thay đổi đồng thời. Hãy đồng bộ lại.", code: "LEARNING_REVISION_CONFLICT" });
       await db.collection("englishLearningAudit").insertOne({ ownerId, learnerProfileId: profileId, action: "state.synced", revision, clientMutationId, createdAt: now });
       return res.status(200).json({ ok: true, revision, updatedAt: now.toISOString() });
     }
 
     if (req.method === "DELETE") {
-      const confirmation = clean(req.headers["x-hh-confirm-delete"], 40);
+      const confirmation = clean(req.headers["x-hh-confirm-delete"], 72);
       if (confirmation !== profileId) return res.status(400).json({ error: "Thiếu xác nhận xóa đúng hồ sơ.", code: "DELETE_CONFIRMATION_REQUIRED" });
       const result = await collection.deleteOne({ ownerId, learnerProfileId: profileId });
       await db.collection("englishLearningAudit").insertOne({ ownerId, learnerProfileId: profileId, action: "state.deleted", createdAt: new Date() });

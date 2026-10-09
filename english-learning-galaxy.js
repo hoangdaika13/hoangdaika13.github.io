@@ -285,6 +285,8 @@
       missedWords: Array.isArray(source.missedWords) ? source.missedWords.slice(0, 120) : [],
       offlineListening: Array.isArray(source.offlineListening) ? source.offlineListening : []
     };
+    merged.galaxy.readingSettings.fontScale=clamp(merged.galaxy.readingSettings.fontScale||1,.75,2);merged.galaxy.readingSettings.lineHeight=clamp(merged.galaxy.readingSettings.lineHeight||1.8,1.3,2.5);merged.galaxy.readingSettings.columnWidth=clamp(merged.galaxy.readingSettings.columnWidth||760,400,1200);
+    for(const key of ["focus","contrast","easyFont"])merged.galaxy.readingSettings[key]=merged.galaxy.readingSettings[key]===true;
     merged.galaxy.workspaceMode = ["basic", "advanced"].includes(merged.galaxy.workspaceMode) ? merged.galaxy.workspaceMode : "basic";
     merged.galaxy.listeningTool = ["listen", "dictation", "shadow", "pronunciation", "quiz"].includes(merged.galaxy.listeningTool) ? merged.galaxy.listeningTool : "listen";
     merged.galaxy.listeningPage = Math.max(0, Number(merged.galaxy.listeningPage) || 0);
@@ -482,7 +484,7 @@
     return `<section class="hheg-listen-player ${together ? "is-together" : ""}" data-hheg-listening-id="${item.id}">
       <header><div><small>${item.level} · ${esc(item.topic)} · ${together ? "LISTEN & READ TOGETHER" : "LISTENING GALAXY"}</small><h2>${esc(item.title)}</h2><p>${esc(item.description)}</p></div><div class="hheg-source"><i></i><span><strong>${item.audioUrl ? "Audio bài học" : "Giọng thiết bị"}</strong><small>${item.audioUrl ? "MP3/Opus" : voices.length ? `${voices.length} giọng tiếng Anh khả dụng` : "Thiết bị không có giọng tiếng Anh riêng"}</small></span></div></header>
       <div class="hheg-wave" data-hheg-wave aria-hidden="true">${Array.from({ length: 44 }, (_, index) => `<i style="--i:${index};--h:${24 + (index * 37 % 72)}%"></i>`).join("")}</div>
-      <div class="hheg-progress"><input type="range" min="0" max="${duration.toFixed(2)}" step=".1" value="${position.toFixed(2)}" data-hheg-seek aria-label="Vị trí bài nghe"><span data-hheg-time>${timeText(position)} / ${timeText(duration)}</span></div>
+      <div class="hheg-progress"><input type="range" min="0" max="${rows.length-1}" step="1" value="${activeIndex}" data-hheg-seek aria-label="Chọn câu nghe TTS, không phải giây audio"><span data-hheg-time>Câu ${activeIndex+1}/${rows.length} · TTS</span></div>
       <div class="hheg-player-controls">
         <button type="button" data-hheg-action="back">−5s</button>
         <button type="button" class="primary" data-hheg-action="play">${progress.position > 0 ? "▶ Tiếp tục" : "▶ Phát"}</button>
@@ -551,7 +553,7 @@
       <header class="hheg-onepage-head"><div><small>HH ENGLISH · LISTENING WORKSPACE</small><h2>${esc(item.title)}</h2><p>${item.level} · ${esc(item.topic)} · ${completed.length}/${rows.length} câu hoàn thành</p></div><div class="hheg-level-strip" aria-label="Chọn trình độ">${context.levelOrder.map((level) => `<button type="button" class="${state.galaxy.listeningLevel === level ? "active" : ""}" data-hheg-level-filter="${level}">${level}</button>`).join("")}<button type="button" class="${state.galaxy.listeningLevel === "all" ? "active" : ""}" data-hheg-level-filter="all">Tất cả</button></div><div class="hheg-mode-switch"><button type="button" class="${mode === "basic" ? "active" : ""}" data-hheg-action="mode-basic">Basic</button><button type="button" class="${mode === "advanced" ? "active" : ""}" data-hheg-action="mode-advanced">Advanced</button></div></header>
       <div class="hheg-onepage-grid"><aside class="hheg-onepage-sidebar">${listeningLessonDeck(state, item.id)}<button type="button" class="hheg-resume" data-hheg-select-listening="${item.id}"><span>▶</span><div><small>TIẾP TỤC GẦN NHẤT</small><strong>Câu ${activeIndex + 1} · ${esc(item.title)}</strong></div></button></aside>
       <main class="hheg-onepage-player"><nav class="hheg-sentence-steps" aria-label="Tiến trình câu">${rows.map((row) => { const isDone = completed.includes(row.index); const isLocked = row.index > unlocked; return `<button type="button" class="${row.index === activeIndex ? "active" : ""} ${isDone ? "done" : ""} ${isLocked ? "locked" : ""}" data-hheg-sentence="${row.index}" data-start="${row.start.toFixed(2)}" ${isLocked ? "disabled" : ""}><span>${isDone ? "✓" : isLocked ? "🔒" : row.index + 1}</span><small>Câu ${row.index + 1}</small></button>`; }).join("")}</nav>
-        <section class="hheg-current-sentence"><header><div><small>CÂU ${activeIndex + 1}/${rows.length}</small><h3>${esc(current.en)}</h3><p>${state.galaxy.subtitleMode === "none" ? "Bản dịch đang ẩn" : esc(current.vi)}</p></div><button class="hheg-play-main" type="button" data-hheg-action="play" aria-label="Nghe câu hiện tại">▶<span>Nghe câu</span></button></header><div class="hheg-mini-wave" data-hheg-wave>${Array.from({ length: 28 }, (_, index) => `<i style="--i:${index};--h:${25 + (index * 37 % 70)}%"></i>`).join("")}</div><div class="hheg-progress"><input type="range" min="${current.start.toFixed(2)}" max="${current.end.toFixed(2)}" step=".1" value="${Math.max(current.start, Math.min(current.end, Number(progress.position) || current.start)).toFixed(2)}" data-hheg-seek aria-label="Vị trí câu nghe"><span data-hheg-time>${timeText(Math.max(0, (progress.position || current.start) - current.start))} / ${timeText(current.duration)}</span></div><div class="hheg-compact-controls"><button type="button" data-hheg-action="back">−5s</button><button type="button" data-hheg-action="pause">Ⅱ</button><button type="button" data-hheg-action="restart">↺</button><button type="button" data-hheg-action="forward">+5s</button><button type="button" data-hheg-action="offline">${state.galaxy.offlineListening.includes(item.id) ? "✓ Offline" : "↓ Offline"}</button></div><div class="hheg-player-status ${adapter.speechOutput.supported ? "ok" : "error"}"><label><input type="checkbox" data-hhe-audio-consent ${state.settings.audioPlaybackConsent ? "checked" : ""}> Bật âm thanh</label><span data-hheg-player-status>${state.settings.audioPlaybackConsent ? "Sẵn sàng nghe bằng giọng trên thiết bị." : "Bấm Bật âm thanh một lần để bắt đầu."}</span></div>
+        <section class="hheg-current-sentence"><header><div><small>CÂU ${activeIndex + 1}/${rows.length}</small><h3>${esc(current.en)}</h3><p>${state.galaxy.subtitleMode === "none" ? "Bản dịch đang ẩn" : esc(current.vi)}</p></div><button class="hheg-play-main" type="button" data-hheg-action="play" aria-label="Nghe câu hiện tại">▶<span>Nghe câu</span></button></header><div class="hheg-mini-wave" data-hheg-wave>${Array.from({ length: 28 }, (_, index) => `<i style="--i:${index};--h:${25 + (index * 37 % 70)}%"></i>`).join("")}</div><div class="hheg-progress"><input type="range" min="0" max="${rows.length-1}" step="1" value="${activeIndex}" data-hheg-seek aria-label="Chọn câu TTS"><span data-hheg-time>Câu ${activeIndex+1}/${rows.length} · không có timestamp audio</span></div><div class="hheg-compact-controls"><button type="button" data-hheg-action="back">Câu trước</button><button type="button" data-hheg-action="pause">Ⅱ</button><button type="button" data-hheg-action="restart">↺</button><button type="button" data-hheg-action="forward">Câu sau</button><button type="button" data-hheg-action="offline">${state.galaxy.offlineListening.includes(item.id) ? "✓ Đánh dấu" : "↓ Đánh dấu"}</button></div><div class="hheg-player-status ${adapter.speechOutput.supported ? "ok" : "error"}"><label><input type="checkbox" data-hhe-audio-consent ${state.settings.audioPlaybackConsent ? "checked" : ""}> Bật âm thanh</label><span data-hheg-player-status>${state.settings.audioPlaybackConsent ? "Sẵn sàng nghe TTS; vạch sóng chỉ là trang trí." : "Bấm Bật âm thanh một lần để bắt đầu."}</span></div>
         <section class="hheg-advanced-controls"><label>Tốc độ<select data-hheg-rate>${[.5,.75,1,1.25].map((value) => `<option value="${value}" ${Math.abs(Number(state.settings.voiceRate) - value) < .01 ? "selected" : ""}>${value}×</option>`).join("")}</select></label><label>Phụ đề<select data-hheg-subtitle><option value="bi" ${state.galaxy.subtitleMode === "bi" ? "selected" : ""}>Anh–Việt</option><option value="en" ${state.galaxy.subtitleMode === "en" ? "selected" : ""}>English</option><option value="none" ${state.galaxy.subtitleMode === "none" ? "selected" : ""}>Ẩn</option></select></label><label>Lặp<select data-hheg-loop><option value="off">Tắt</option><option value="sentence" ${state.galaxy.loopMode === "sentence" ? "selected" : ""}>Câu hiện tại</option><option value="ab" ${state.galaxy.loopMode === "ab" ? "selected" : ""}>Đoạn A–B</option></select></label></section></section>
       </main>${listeningPracticePanel(state, item, current, progress, context)}</div>
       <footer class="hheg-onepage-dock"><button type="button" data-hheg-action="sentence-prev" ${activeIndex <= 0 ? "disabled" : ""}>← Câu trước</button><div><span><i style="--p:${Math.round(completed.length / rows.length * 100)}%"></i></span><strong>${completed.length}/${rows.length} câu · ${completed.includes(activeIndex) ? "Đã hoàn thành" : "Đang học"}</strong></div><small>✓ Đã tự lưu</small><button type="button" data-hheg-action="offline">${state.galaxy.offlineListening.includes(item.id) ? "✓ Đã tải offline" : "↓ Tải offline"}</button><button class="primary" type="button" data-hheg-action="sentence-next" ${nextLocked || activeIndex >= rows.length - 1 ? "disabled" : ""}>Câu tiếp theo →</button></footer>
@@ -613,7 +615,7 @@
     return `<section class="hheg-onepage hheg-reading-onepage" data-hheg-view="reading">
       <header class="hheg-onepage-head"><div><small>HH ENGLISH · READING WORKSPACE</small><h2>${esc(article.title)}</h2><p>${article.level} · ${esc(article.topic)} · ${completed.length}/${article.paragraphs.length} đoạn hoàn thành</p></div><div class="hheg-level-strip" aria-label="Chọn trình độ đọc">${context.levelOrder.map((level) => `<button type="button" class="${state.galaxy.readingLevel === level ? "active" : ""}" data-hheg-reading-level-filter="${level}">${level}</button>`).join("")}<button type="button" class="${state.galaxy.readingLevel === "all" ? "active" : ""}" data-hheg-reading-level-filter="all">Tất cả</button></div><button type="button" class="hheg-combine" data-hhe-view="listen-read">Nghe & đọc</button></header>
       <div class="hheg-onepage-grid"><aside class="hheg-onepage-sidebar">${readingLessonDeck(state, article.id)}<button type="button" class="hheg-resume" data-hheg-select-reading="${article.id}"><span>Aa</span><div><small>TIẾP TỤC GẦN NHẤT</small><strong>Đoạn ${activeIndex + 1} · ${esc(article.title)}</strong></div></button></aside>
-      <main class="hheg-onepage-player"><nav class="hheg-sentence-steps hheg-paragraph-steps" aria-label="Tiến trình đoạn đọc">${article.paragraphs.map((_, index) => { const done = completed.includes(index); const locked = index > unlocked; return `<button type="button" class="${index === activeIndex ? "active" : ""} ${done ? "done" : ""} ${locked ? "locked" : ""}" data-hheg-paragraph-step="${index}" ${locked ? "disabled" : ""}><span>${done ? "✓" : locked ? "🔒" : index + 1}</span><small>Đoạn ${index + 1}</small></button>`; }).join("")}</nav><section class="hheg-reading-stage hheg-reader ${settings.contrast ? "contrast" : ""} ${settings.easyFont ? "easy-font" : ""}" style="--reader-font:${settings.fontScale}rem;--reader-line:${settings.lineHeight}"><header><div><small>ĐOẠN ${activeIndex + 1}/${article.paragraphs.length} · ${paragraphWords} TỪ</small><h3>${esc(article.title)}</h3></div><div><strong data-hheg-reading-percent>${Math.round(completed.length / article.paragraphs.length * 100)}%</strong><small data-hheg-reading-time>${timeText(progress.activeSeconds)} · ${wpm ? `${wpm} WPM` : "Đang đo"}</small></div></header><article class="${progress.bookmarks.includes(activeIndex) ? "bookmarked" : ""}"><p>${wordMarkup(paragraph, activeIndex)}</p></article><footer><button type="button" data-hheg-read-paragraph="${activeIndex}">▶ Đọc đoạn</button><button type="button" data-hheg-bookmark="${activeIndex}">${progress.bookmarks.includes(activeIndex) ? "★ Đã đánh dấu" : "☆ Đánh dấu"}</button><button type="button" data-hheg-reading-tool="words">⌕ Tra từ</button></footer></section></main>${readingToolPanel(state, article, paragraph, activeIndex, progress)}</div>
+      <main class="hheg-onepage-player"><nav class="hheg-sentence-steps hheg-paragraph-steps" aria-label="Tiến trình đoạn đọc">${article.paragraphs.map((_, index) => { const done = completed.includes(index); const locked = index > unlocked; return `<button type="button" class="${index === activeIndex ? "active" : ""} ${done ? "done" : ""} ${locked ? "locked" : ""}" data-hheg-paragraph-step="${index}" ${locked ? "disabled" : ""}><span>${done ? "✓" : locked ? "🔒" : index + 1}</span><small>Đoạn ${index + 1}</small></button>`; }).join("")}</nav><section class="hheg-reading-stage hheg-reader ${settings.contrast ? "contrast" : ""} ${settings.easyFont ? "easy-font" : ""}" style="--reader-font:${settings.fontScale}rem;--reader-line:${settings.lineHeight}"><header><div><small>ĐOẠN ${activeIndex + 1}/${article.paragraphs.length} · ${paragraphWords} TỪ</small><h3>${esc(article.title)}</h3></div><div><strong data-hheg-reading-percent>${Math.round(completed.length / article.paragraphs.length * 100)}%</strong><small data-hheg-reading-time>${timeText(progress.activeSeconds)} · tab hiển thị · không đo tốc độ đọc</small></div></header><article class="${progress.bookmarks.includes(activeIndex) ? "bookmarked" : ""}"><p>${wordMarkup(paragraph, activeIndex)}</p></article><footer><button type="button" data-hheg-read-paragraph="${activeIndex}">▶ Đọc đoạn</button><button type="button" data-hheg-bookmark="${activeIndex}">${progress.bookmarks.includes(activeIndex) ? "★ Đã đánh dấu" : "☆ Đánh dấu"}</button><button type="button" data-hheg-reading-tool="words">⌕ Tra từ</button></footer></section></main>${readingToolPanel(state, article, paragraph, activeIndex, progress)}</div>
       <footer class="hheg-onepage-dock"><button type="button" data-hheg-action="paragraph-prev" ${activeIndex <= 0 ? "disabled" : ""}>← Đoạn trước</button><div><span><i style="--p:${Math.round(completed.length / article.paragraphs.length * 100)}%"></i></span><strong>${completed.length}/${article.paragraphs.length} đoạn · ${completed.includes(activeIndex) ? "Đã hoàn thành" : "Đang đọc"}</strong></div><small>✓ Đã tự lưu</small><button type="button" data-hheg-reading-tool="settings">Aa Hiển thị</button><button class="primary" type="button" data-hheg-action="paragraph-next" ${nextLocked || activeIndex >= article.paragraphs.length - 1 ? "disabled" : ""}>Đoạn tiếp theo →</button></footer>
     </section>`;
   };
@@ -668,9 +670,9 @@
     const duration = rows.at(-1)?.end || 0;
     const position = clamp(instance.player.position ?? progressForListening(state, item.id).position, 0, duration);
     const seek = instance.host.querySelector("[data-hheg-seek]");
-    if (seek) seek.value = position;
+    if (seek) seek.value = instance.player.sentenceIndex;
     const time = instance.host.querySelector("[data-hheg-time]");
-    if (time) time.textContent = `${timeText(position)} / ${timeText(duration)}`;
+    if(time)time.textContent=`Câu ${instance.player.sentenceIndex+1}/${rows.length} · TTS, không phải timestamp audio`;
     instance.host.querySelectorAll("[data-hheg-sentence]").forEach((node) => node.classList.toggle("active", Number(node.dataset.hhegSentence) === instance.player.sentenceIndex));
     const statusNode = instance.host.querySelector("[data-hheg-player-status]");
     if (statusNode && status) statusNode.textContent = status;
@@ -726,12 +728,8 @@
     stateWrite(instance, state);
     updatePlayerDom(instance, voice ? `Đang phát bằng ${voice.name}.` : "Đang dùng giọng mặc định của thiết bị.");
     clearInterval(instance.player.tick);
-    instance.player.tick = root.setInterval(() => {
-      if (!instance.player.playing || instance.player.paused || token !== instance.player.token) return;
-      const elapsed = (performance.now() - instance.player.startedAt) / 1000;
-      instance.player.position = Math.min(row.end, row.start + elapsed);
-      updatePlayerDom(instance);
-    }, 200);
+    // TTS has no reliable audio timestamps. Advance only at real utterance end events.
+    instance.player.tick = 0;
     utterance.onend = () => {
       if (token !== instance.player.token) return;
       clearInterval(instance.player.tick);
@@ -814,7 +812,7 @@
       if (display) {
         const words = article.paragraphs.join(" ").split(/\s+/).length;
         const wpm = progress.activeSeconds >= 10 ? Math.round(words / (progress.activeSeconds / 60)) : 0;
-        display.textContent = `${timeText(progress.activeSeconds)} · ${wpm ? `${wpm} WPM` : "Đang đo WPM"}`;
+        display.textContent = `${timeText(progress.activeSeconds)} · tab hiển thị, không đo tốc độ đọc`;
       }
       if (instance.readingDirty >= 15) { instance.readingDirty = 0; checkpoint = true; }
     }
@@ -828,11 +826,11 @@
         state.galaxy.focus.running = false;
         state.galaxy.focus.completedAt = new Date().toISOString();
         const minutes = state.galaxy.focus.plannedMinutes || 15;
-        state.minutesByDay[instance.runtime.todayKey()] = (state.minutesByDay[instance.runtime.todayKey()] || 0) + minutes;
-        instance.runtime.updateStreak(state);
-        state.xp += minutes * 2;
+        if(state.learningOS?.academy)state.learningOS.academy.timerSessions.push({seconds:minutes*60,at:new Date().toISOString(),kind:"clock-only"});
+        // Timer completion does not count towards a learning streak.
+        // Clock completion is not evidence of learning and awards no XP.
         addActivity(state, "focus", `Hoàn thành phiên học ${minutes} phút`, "dashboard");
-        state.galaxy.coachMessage = `Đã hoàn thành phiên học ${minutes} phút và lưu ${minutes * 2} XP.`;
+        state.galaxy.coachMessage = `Đồng hồ ${minutes} phút đã kết thúc; không cộng XP và không đo sự tập trung.`;
         stateWrite(instance, state, { render: true });
         instance.runtime.toast(`Hoàn thành phiên học ${minutes} phút.`, "success");
       } else if (instance.focusDirty >= 15) { instance.focusDirty = 0; checkpoint = true; }
@@ -1042,8 +1040,8 @@
       if (root.speechSynthesis?.paused) { root.speechSynthesis.resume(); instance.player.paused = false; updatePlayerDom(instance, "Đang tiếp tục."); }
       else { root.speechSynthesis?.pause?.(); instance.player.paused = true; updatePlayerDom(instance, "Đã tạm dừng."); persistListeningPosition(instance); }
     } else if (action === "restart") seekTo(instance, 0);
-    else if (action === "back") seekTo(instance, (instance.player.position ?? progressForListening(state, item.id).position) - 5);
-    else if (action === "forward") seekTo(instance, (instance.player.position ?? progressForListening(state, item.id).position) + 5);
+    else if(action==="back")seekTo(instance,rows[Math.max(0,instance.player.sentenceIndex-1)].start);
+    else if(action==="forward")seekTo(instance,rows[Math.min(rows.length-1,instance.player.sentenceIndex+1)].start);
     else if (action === "ab-a" || action === "ab-b") {
       const key = action === "ab-a" ? "abStart" : "abEnd";
       state.galaxy[key] = clamp(instance.player.position ?? progressForListening(state, item.id).position, 0, duration);
@@ -1107,8 +1105,8 @@
       const exists = state.galaxy.offlineListening.includes(item.id);
       state.galaxy.offlineListening = exists ? state.galaxy.offlineListening.filter((id) => id !== item.id) : [...state.galaxy.offlineListening, item.id];
       stateWrite(instance, state, { render: true });
-      if (!exists && root.caches) root.caches.open("hh-english-offline-v1").then((cache) => cache.addAll(["./english-learning-galaxy.js?v=4", "./english-learning-galaxy.css?v=6"])).catch(() => {});
-      instance.runtime.toast(exists ? "Đã bỏ đánh dấu ngoại tuyến." : "Đã lưu nội dung. Âm thanh sẽ dùng giọng cục bộ của thiết bị.");
+      // Only marks bundled text for later use; no promise that TTS is available offline.
+      instance.runtime.toast(exists ? "Đã bỏ đánh dấu." : "Đã đánh dấu nội dung. TTS ngoại tuyến còn phụ thuộc giọng đã cài trên thiết bị.");
     } else if (action === "shadow") {
       state.galaxy.shadowingTarget = rows[instance.player.sentenceIndex || 0]?.en || rows[0].en;
       state.activeView = "speaking";
@@ -1135,7 +1133,7 @@
       state.settings.voiceProfile = target.value;
       state.settings.voiceURI = "";
       stateWrite(instance, state, { render: true });
-    } else if (target.matches("[data-hheg-seek]")) seekTo(instance, Number(target.value), false);
+    } else if (target.matches("[data-hheg-seek]")) seekTo(instance, timedSentences(activeListening(instance,state),state.settings.voiceRate)[Number(target.value)]?.start||0, false);
     else if (target.matches("[data-hheg-listening-level]")) {
       instance.host.querySelectorAll("[data-hheg-select-listening]").forEach((node) => { node.hidden = target.value !== "all" && listeningById(node.dataset.hhegSelectListening).level !== target.value; });
     } else if (target.matches("[data-hheg-reading-level]")) {
@@ -1156,14 +1154,12 @@
       stateWrite(instance, state, { render: true });
     } else if (target.matches("[data-hheg-reading-notes]")) {
       clearTimeout(instance.noteTimer);
-      instance.noteTimer = root.setTimeout?.(() => {
-        const state = instance.runtime.readState();
-        const article = readingById(state.galaxy.selectedReadingId);
-        const progress = progressForReading(state, article.id);
-        progress.notes = target.value.slice(0, 4000);
-        state.galaxy.readingProgress[article.id] = progress;
-        stateWrite(instance, state);
-      }, 350);
+      const state = instance.runtime.readState();
+      const article = readingById(state.galaxy.selectedReadingId);
+      const progress = progressForReading(state, article.id);
+      progress.notes = target.value.slice(0, 4000);
+      state.galaxy.readingProgress[article.id] = progress;
+      stateWrite(instance, state);
     }
   };
 
@@ -1201,9 +1197,9 @@
       const timed = timedSentences(item, state.settings.voiceRate);
       const current = sentenceIndex >= 0 ? timed[sentenceIndex] : timed.find((row) => progress.position >= row.start && progress.position < row.end) || timed[0];
       const answer = current?.en || item.sentences?.[Math.max(0, sentenceIndex)]?.[0] || "";
-      const result = instance.runtime.compareTranscript(typed, answer);
+      const comparison=instance.runtime.compareTranscript(typed,answer),exact=(root.HHEnglishAcademyCore?.normalize||((v)=>clean(v,2000).toLowerCase().replace(/[.!?,;:]/g,"")))(typed)===(root.HHEnglishAcademyCore?.normalize||((v)=>clean(v,2000).toLowerCase().replace(/[.!?,;:]/g,"")))(answer);const result={...comparison,score:exact?100:0};
       const output = form.querySelector("[data-hheg-dictation-output]");
-      output.innerHTML = `<b>${result.score}%</b> ${result.missed.length ? `Từ chưa khớp: ${esc(result.missed.join(" · "))}` : "Bạn đã nghe đúng toàn bộ từ."}`;
+      output.innerHTML = `<b>${result.score}%</b> ${result.score===100?"Khớp câu mẫu.":result.missed.length ? `Từ chưa khớp: ${esc(result.missed.join(" · "))}` : "Các từ có thể đã nhận ra; cần đúng cả thứ tự câu."}`;
       progress.dictations.unshift({ attemptId: `dict-${Date.now()}`, target: answer, transcript: typed, score: result.score, missed: result.missed, createdAt: new Date().toISOString() });
       progress.dictations = progress.dictations.slice(0, 40);
       state.galaxy.listeningProgress[item.id] = progress;
@@ -1269,17 +1265,17 @@
         vocabulary: new Map(), readingDirty: 0, focusDirty: 0, scrollTimer: 0, noteTimer: 0
       };
       instances.set(runtime.host, instance);
-      runtime.host.addEventListener("click", (event) => handleClick(instance, event));
-      runtime.host.addEventListener("change", (event) => handleChange(instance, event));
-      runtime.host.addEventListener("input", (event) => handleInput(instance, event));
-      runtime.host.addEventListener("submit", (event) => handleSubmit(instance, event));
-      runtime.host.addEventListener("scroll", (event) => handleScroll(instance, event), true);
-      instance.timer = root.setInterval?.(() => readingTick(instance), 1000);
-      root.addEventListener?.("online", () => runtime.render());
-      root.addEventListener?.("offline", () => runtime.render());
-      root.addEventListener?.("hh:home-galaxy-preferences-applied", () => runtime.render());
+      instance.handlers={click:event=>handleClick(instance,event),change:event=>handleChange(instance,event),input:event=>handleInput(instance,event),submit:event=>handleSubmit(instance,event),scroll:event=>handleScroll(instance,event)};
+      for(const[type,fn]of Object.entries(instance.handlers))runtime.host.addEventListener(type,fn,type==="scroll");
+      instance.environment=()=>{if(root.document?.hidden){stopPlayer(instance,{silent:true});clearInterval(instance.timer);instance.timer=null;}else{if(instance.runtime.readState().activeView==="reading"&&!instance.timer)instance.timer=root.setInterval(()=>readingTick(instance),1000);}};
+      instance.refresh=()=>instance.runtime.render();
+      root.document?.addEventListener("visibilitychange",instance.environment);
+      for(const type of ["online","offline","hh:home-galaxy-preferences-applied"])root.addEventListener?.(type,instance.refresh);
+
     }
     instance.runtime = runtime;
+    if(!["listening","listen-read"].includes(runtime.readState().activeView))stopPlayer(instance,{silent:true});
+    if(runtime.readState().activeView!=="reading"){clearInterval(instance.timer);instance.timer=null;}else instance.environment();
     instance.vocabulary.clear();
     const sourceLessons = root.HHEnglish?.courses?.flatMap?.((unit) => unit.lessons || []) || [];
     sourceLessons.forEach((lesson) => (lesson.vocabulary || []).forEach((entry) => instance.vocabulary.set(String(entry[0]).toLowerCase(), entry)));
@@ -1310,6 +1306,9 @@
     clearInterval(instance.timer);
     clearTimeout(instance.scrollTimer);
     clearTimeout(instance.noteTimer);
+    for(const[type,fn]of Object.entries(instance.handlers||{}))host.removeEventListener(type,fn,type==="scroll");
+    root.document?.removeEventListener("visibilitychange",instance.environment);
+    for(const type of ["online","offline","hh:home-galaxy-preferences-applied"])root.removeEventListener?.(type,instance.refresh);
     instances.delete(host);
   };
 

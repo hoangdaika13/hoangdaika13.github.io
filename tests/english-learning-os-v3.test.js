@@ -113,7 +113,7 @@ test("asset loader, offline cache, scoped storage and responsive accessibility a
   const client = fs.readFileSync(path.join(root, "english-learning.js"), "utf8");
   const css = fs.readFileSync(path.join(root, "english-learning-os.css"), "utf8");
   for (const asset of ["english-learning-os.css?v=3", "english-learning-os.js?v=7", "english-learning.js?v=28"]) assert.match(loader + worker, new RegExp(asset.replace(/[.?]/g, "\\$&")));
-  for (const contract of ["STORAGE_PREFIX", "ownerId", "learnerProfileId", "scopedStorageKey", "credentials: \"include\"", "LEARNING_REVISION_CONFLICT"]) assert.match(client + fs.readFileSync(path.join(root, "services", "englishLearningSync.js"), "utf8"), new RegExp(contract));
+  for (const contract of ["STORAGE_PREFIX", "ownerId", "learnerProfileId", "scopedStorageKey", "credentials:\\s*\"include\"", "LEARNING_REVISION_CONFLICT"]) assert.match(client + fs.readFileSync(path.join(root, "english-academy-sync.js"), "utf8") + fs.readFileSync(path.join(root, "services", "englishLearningSync.js"), "utf8"), new RegExp(contract));
   assert.match(css, /@media\(max-width:680px\)/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css, /focus-visible/);

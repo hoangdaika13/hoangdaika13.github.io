@@ -110,7 +110,7 @@ function setCors(req, res) {
   }
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,PUT,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-HH-CSRF");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-HH-CSRF, X-HH-Learner-Owner, X-HH-Confirm-Delete");
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");

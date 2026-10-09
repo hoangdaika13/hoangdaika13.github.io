@@ -266,8 +266,8 @@
     },
     // Compatibility asset markers: english-learning-os.css?v=3 · english-learning-os.js?v=7 · english-learning.js?v=28 · english-vocabulary.css?v=1 · english-vocabulary.js?v=2
     english: {
-      styles: ["language-learning-cockpit.css?v=2", "english-learning.css?v=18", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=6", "english-vocabulary.css?v=2", "english-for-everyone.css?v=1", "english-skill-graph.css?v=1", "english-learning-os.css?v=4"],
-      scripts: ["language-learning-core.js?v=1", "language-learning-cockpit.js?v=2", "english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=2", "english-learning-galaxy.js?v=5", "english-for-everyone.js?v=2", "english-vocabulary.js?v=4", "english-skill-graph.js?v=1", "english-learning-os.js?v=9", "english-learning.js?v=30"]
+      styles: ["language-learning-cockpit.css?v=2", "english-learning.css?v=18", "english-galaxy.css?v=1", "english-voice-coach.css?v=4", "english-learning-galaxy.css?v=6", "english-vocabulary.css?v=2", "english-for-everyone.css?v=1", "english-skill-graph.css?v=1", "english-learning-os.css?v=4", "english-academy.css?v=1"],
+      scripts: ["language-learning-core.js?v=1", "language-learning-cockpit.js?v=2", "english-curriculum.js?v=1", "english-career-expansion.js?v=1", "english-career-curriculum.js?v=2", "english-galaxy.js?v=2", "english-learning-galaxy.js?v=6", "english-for-everyone.js?v=2", "english-vocabulary.js?v=4", "english-skill-graph.js?v=1", "english-academy-core.js?v=1", "english-academy-sync.js?v=1", "english-academy-media.js?v=1", "english-academy.js?v=1", "english-learning-os.js?v=10", "english-learning.js?v=31"]
     },
     // Compatibility: japanese-os-v4.js?v=7 and v8 remain valid for existing tabs.
     japanese: {

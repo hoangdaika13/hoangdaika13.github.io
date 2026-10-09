@@ -319,8 +319,9 @@ test("HH English stops microphone resources before replacing or unmounting the a
     "cancelActiveRecognition", "recorder.ondataavailable = null", "recordingHost.isConnected === false",
     "currentHost !== recordingHost", "disposeRecordingSession({ revokeUrl: true })"
   ]) assert.match(shell, new RegExp(contract.replace(/[.?{}()]/g, "\\$&")));
-  assert.match(shell, /if \(state\.activeView !== "speaking"\) revokeRecordingUrl\(\)/);
-  assert.match(shell, /if \(requestId !== recordingRequestId[\s\S]*?stopRecordingTracks\(stream\)/);
+  assert.doesNotMatch(shell, /if \(state\.activeView !== "speaking"\) revokeRecordingUrl\(\)/);
+  assert.match(shell, /recorder\.start\(1000\)/);
+  assert.match(shell, /if \(requestedScope!==scopedStorageKey\(\) \|\| requestId !== recordingRequestId[\s\S]*?stopRecordingTracks\(stream\)/);
 });
 
 test("CEFR 2020 Skill Graph separates domains and reports evidence without claiming certification", () => {
