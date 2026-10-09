@@ -1,5 +1,5 @@
-const CACHE = "hh-identity-portal-v1039";
-// Previous release: hh-identity-portal-v1038
+const CACHE = "hh-identity-portal-v1040";
+// Previous release: hh-identity-portal-v1039
 // Previous release: hh-identity-portal-v1035; ./performance-loader.js?v=697.
 // Previous release: hh-identity-portal-v1034; ./performance-loader.js?v=696; ./script.js?v=283.
 // Previous release: hh-identity-portal-v1033; ./performance-loader.js?v=695.
@@ -543,6 +543,7 @@ const RUNTIME_ASSETS = [
   "./english-galaxy.css?v=1",
   "./english-learning-galaxy.css?v=6",
   "./english-vocabulary.css?v=2",
+  "./english-vocabulary-practice.css?v=1",
   "./english-for-everyone.css?v=1",
   "./english-voice-coach.css?v=4",
   "./japanese-learning.css?v=8",
@@ -681,7 +682,9 @@ const RUNTIME_ASSETS = [
   "./english-career-curriculum.js?v=2",
   "./english-galaxy.js?v=2",
   "./english-learning-galaxy.js?v=6",
-  "./english-vocabulary.js?v=4",
+  "./english-vocabulary-expansion.js?v=1",
+  "./english-vocabulary.js?v=5",
+  "./english-vocabulary-practice.js?v=1",
   "./english-vocabulary-worker.js?v=1",
   "./english-for-everyone.js?v=2",
   "./assets/english-vocabulary/manifest.json",
@@ -689,7 +692,7 @@ const RUNTIME_ASSETS = [
   "./english-academy-core.js?v=1",
   "./english-academy-sync.js?v=1",
   "./english-academy-media.js?v=1",
-  "./english-academy.js?v=1",
+  "./english-academy.js?v=2",
   "./english-learning-os.js?v=10",
   "./english-learning.js?v=31",
   "./japanese-vocabulary-packs.js?v=1",
@@ -755,7 +758,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=701",
+  "./performance-loader.js?v=702",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=284"

@@ -3,6 +3,7 @@
 
   const root = typeof window !== "undefined" ? window : globalThis;
   const VERSION = "1.2.0";
+  const Expansion=root.HHEnglishVocabularyExpansion||(typeof require==="function"?require("./english-vocabulary-expansion.js"):null);
   const MANIFEST_URL = "assets/english-vocabulary/manifest.json";
   const WORKER_URL = "english-vocabulary-worker.js?v=1";
   const DB_NAME = "hhEnglishVocabularyV1";
@@ -62,7 +63,7 @@
     antonyms: Array.isArray(item.antonyms) ? item.antonyms.map((value) => boundedString(value, 80)).filter(Boolean).slice(0, 12) : [],
     ageBands: Array.isArray(item.ageBands) ? item.ageBands.map((value) => boundedString(value, 20)).filter(Boolean).slice(0, 6) : [],
     contentRating: boundedString(item.contentRating, 20) || "everyone", reviewStatus: boundedString(item.reviewStatus, 20) || (item.meaning ? "reviewed" : "unreviewed"),
-    reviewed: Boolean(item.meaning), verification: item.meaning ? "reviewed" : "term-index"
+    reviewed: Boolean(item.meaning)&&item.reviewStatus!=="draft", verification: item.reviewStatus==="draft"?"hh-draft":item.meaning ? "reviewed" : "term-index"
   });
   const termProgressKey = (term) => `term:${normalizeTerm(term)}`;
   const normalizeTermProgress = (row = {}) => {
@@ -99,7 +100,7 @@
     } : null;
     if (lesson) lesson.errors = Object.values(lesson.termStats).reduce((sum, item) => sum + item.errors, 0);
     state.vocabularyStudio = {
-      activeTab: ["explorer", "lesson", "labs", "personal"].includes(source.activeTab) ? source.activeTab : "explorer",
+      activeTab: ["explorer", "lesson", "labs", "personal", "sets", "practice"].includes(source.activeTab) ? source.activeTab : "explorer",
       selectedTerm: boundedString(source.selectedTerm, 80),
       filters: { level: "all", topic: "all", pos: "all", source: "all", frequency: "all", mastery: "all", dialect: "us", query: "", ...(source.filters || {}) },
       dailyGoal: clamp(source.dailyGoal || 10, 3, 30),
@@ -108,6 +109,7 @@
       lesson,
       notes: Object.fromEntries(Object.entries(source.notes || {}).slice(0, 500).map(([key, value]) => [boundedString(key, 80), boundedString(value, 2000)])),
       personalDictionary: Array.isArray(source.personalDictionary) ? source.personalDictionary.slice(0, 1000).map(reviewedEntry).filter((item) => item.term) : [],
+      extension:Expansion?.normalizeState(state)||source.extension||{},
       lastCoverage: source.lastCoverage && typeof source.lastCoverage === "object" ? source.lastCoverage : null,
       lastDeckAction: source.lastDeckAction && typeof source.lastDeckAction === "object" && Date.now() - Number(source.lastDeckAction.at || 0) < 300000 ? source.lastDeckAction : null
     };
@@ -150,7 +152,7 @@
     const selected = pool.slice(0, count);
     return {
       id: `vocab-${Date.now()}`, createdAt: new Date().toISOString(), completedAt: "", current: 0, step: 0, errors: 0, termStats: {},
-      words: selected.map((item) => ({ term: item.term, meaning: item.meaning, ipaUS: item.ipaUS, ipaUK: item.ipaUK, example: item.example, vnExample: item.vnExample, level: item.level, pos: item.pos, collocations: item.collocations }))
+      words: selected.map((item) => ({ term: item.term, meaning: item.meaning, ipaUS: item.ipaUS, ipaUK: item.ipaUK, example: item.example, vnExample: item.vnExample, level: item.level, pos: item.pos, collocations: item.collocations, source:item.source, reviewStatus:item.reviewStatus, verification:item.verification }))
     };
   };
   const buildDeckLesson = (words = [], state = {}, source = "adaptive", requested) => {
@@ -244,20 +246,21 @@
     return value;
   };
 
-  const reviewedCatalog = () => uniqueBy([
+  const reviewedCatalog = (state) => uniqueBy([
     ...(root.HHEnglishGalaxy?.catalog || []),
-    ...((root.HHEnglishVocabularyRuntimeState?.personalDictionary) || [])
+    ...(Expansion?.entries||[]),
+    ...((state?.vocabularyStudio?.personalDictionary) || [])
   ].map(reviewedEntry).filter((item) => item.term), (item) => normalizeTerm(item.term));
-  const reviewedMap = () => new Map(reviewedCatalog().map((item) => [normalizeTerm(item.term), item]));
+  const reviewedMap = (state) => new Map(reviewedCatalog(state).map((item) => [normalizeTerm(item.term), item]));
   const renderShell = (state = {}) => {
     const studio = normalizeStudio(state);
-    const reviewed = reviewedCatalog().filter((item) => item.reviewed).length;
+    const reviewed = reviewedCatalog(state).filter((item) => item.reviewed).length;
     const saved = Object.keys(state.savedWords || {}).length;
     const lessonSize = studio.dailyGoal;
     const policy = deckPolicy(state);
     return `<section class="hhev-studio" data-hhev-studio>
-      <header class="hhev-head"><div><small>HH ENGLISH · VOCABULARY OS</small><h2>Vocabulary Explorer</h2><p>30.000 mục từ có nguồn · nghĩa Việt và CEFR chỉ hiện khi đã được kiểm duyệt.</p></div><div><span><b>30K</b> term index</span><span><b>${reviewed}</b> đã kiểm duyệt</span><span><b>${saved}</b> trong deck</span><span><b>${policy.due}</b> đến hạn</span></div><button class="primary" type="button" data-hhev-start-lesson data-source="adaptive">Học ${lessonSize} từ →</button></header>
-      <nav class="hhev-tabs" aria-label="Khu từ vựng">${[["explorer", "⌕", "Tra cứu"], ["lesson", "▶", `Bài ${lessonSize} từ`], ["labs", "✦", "Luyện sâu"], ["personal", "◇", "Từ của tôi"]].map(([id, icon, label]) => `<button type="button" class="${studio.activeTab === id ? "active" : ""}" data-hhev-tab="${id}"><i>${icon}</i>${label}</button>`).join("")}</nav>
+      <header class="hhev-head"><div><small>HH ENGLISH · VOCABULARY OS</small><h2>Vocabulary Explorer</h2><p>30.000 mục từ có nguồn · nghĩa/CEFR của bộ biên soạn mới được ghi rõ là bản nháp, cấp gợi ý.</p></div><div><span><b>30K</b> term index</span><span><b>${reviewed}</b> đã kiểm duyệt</span><span><b>${saved}</b> trong deck</span><span><b>${policy.due}</b> đến hạn</span></div><button class="primary" type="button" data-hhev-start-lesson data-source="adaptive">Học ${lessonSize} từ →</button></header>
+      <nav class="hhev-tabs" aria-label="Khu từ vựng">${[["sets", "✦", "Bộ từ & cách học"], ["explorer", "⌕", "Tra cứu"], ["lesson", "▶", `Bài ${lessonSize} từ`], ["labs", "✦", "Luyện sâu"], ["personal", "◇", "Từ của tôi"]].map(([id, icon, label]) => `<button type="button" class="${studio.activeTab === id ? "active" : ""}" data-hhev-tab="${id}"><i>${icon}</i>${label}</button>`).join("")}</nav>
       <div class="hhev-body" data-hhev-body><div class="hhev-loading"><i></i><strong>Đang chuẩn bị kho từ...</strong><span>Chỉ nạp pack khi bạn cần.</span></div></div>
     </section>`;
   };
@@ -266,7 +269,7 @@
   const filterReviewed = (instance, state, filters) => {
     const query = normalizeTerm(filters.query);
     const ageMode = state.universalProfile?.ageMode || "adult";
-    const catalog = root.HHEnglishForEveryone?.contentForAge?.(reviewedCatalog(), ageMode) || reviewedCatalog();
+    const catalog = root.HHEnglishForEveryone?.contentForAge?.(reviewedCatalog(state), ageMode) || reviewedCatalog(state);
     return catalog.filter((item) => {
       const haystack = normalizeTerm(`${item.term} ${item.meaning} ${item.example} ${item.collocations.join(" ")}`);
       if (query && !haystack.includes(query)) return false;
@@ -274,6 +277,7 @@
       if (filters.topic !== "all" && item.topic !== filters.topic) return false;
       if (filters.pos !== "all" && item.pos !== filters.pos) return false;
       if (filters.source === "career" && item.source !== "career") return false;
+      if(filters.source==="reviewed"&&!item.reviewed)return false;
       if (filters.frequency !== "all" && item.frequency !== filters.frequency) return false;
       if (filters.mastery === "saved" && !state.savedWords?.[item.term]) return false;
       if (filters.mastery === "due" && !isDue(state, item.term)) return false;
@@ -306,6 +310,7 @@
     if (!lesson?.words?.length) return `<section class="hhev-lesson-empty"><span>${lessonSize}</span><h3>Chọn đúng nguồn cho phiên học</h3><p>HH không tự đưa toàn bộ chỉ mục vào SRS. Bạn có thể học thích nghi từ mục đã kiểm duyệt, chỉ học deck cá nhân hoặc ôn đúng thẻ đến hạn.</p><div class="hhev-lesson-sources"><button class="primary" type="button" data-hhev-start-lesson data-source="adaptive">Học thích nghi</button><button type="button" data-hhev-start-lesson data-source="deck" ${policy.saved ? "" : "disabled"}>Deck của tôi · ${policy.saved}</button><button type="button" data-hhev-start-lesson data-source="due" ${policy.due ? "" : "disabled"}>Đến hạn · ${policy.due}</button></div></section>`;
     if (lesson.completedAt) return `<section class="hhev-lesson-complete"><span>✓</span><h3>Đã hoàn thành ${lesson.words.length} từ</h3><p>${lesson.errors} lỗi đã được đưa vào dữ liệu ôn tập. Nguồn phiên: ${lesson.source === "due" ? "thẻ đến hạn" : lesson.source === "deck" ? "deck cá nhân" : "thích nghi"}.</p><div><button type="button" data-hhev-open-mode="mistakes">Ôn từ sai</button><button class="primary" type="button" data-hhev-start-lesson data-source="${esc(lesson.source || "adaptive")}">Bài mới →</button></div></section>`;
     const current = Math.min(lesson.words.length - 1, Number(lesson.current) || 0); const step = Math.min(lessonSteps.length - 1, Number(lesson.step) || 0); const word = lesson.words[current]; const stepId = lessonSteps[step][0];
+    const draftNotice=word.reviewStatus==="draft"?'<p class="hhev-honest">Nội dung gốc HH dạng bản nháp; cấp độ chỉ là gợi ý, chưa được rà soát học thuật.</p>':"";
     let task = "";
     if (stepId === "learn") task = `<article class="hhev-word-learn"><small>${esc(word.level || "Chưa phân loại")} · ${esc(word.pos || "word")}</small><h3>${esc(word.term)}</h3><p>${esc(word.ipaUS || word.ipaUK || "Chưa có IPA kiểm duyệt")}</p><strong>${esc(word.meaning)}</strong><blockquote>${esc(word.example || "Chưa có câu ví dụ kiểm duyệt.")}</blockquote><button class="primary" type="button" data-hhev-lesson-next>Đã hiểu · tiếp tục →</button></article>`;
     else if (stepId === "recognize") task = `<article class="hhev-word-question"><small>CHỌN NGHĨA ĐÚNG</small><h3>${esc(word.term)}</h3><div>${lessonChoices(word, lesson).map((choice) => `<button type="button" data-hhev-choice="${esc(choice)}">${esc(choice)}</button>`).join("")}</div><output data-hhev-feedback></output></article>`;
@@ -314,7 +319,7 @@
     else if (stepId === "collocation") task = `<article class="hhev-word-learn"><small>COLLOCATION</small><h3>${esc(word.term)}</h3>${word.collocations?.length ? `<div class="hhev-chips">${word.collocations.map((value) => `<span>${esc(value)}</span>`).join("")}</div>` : '<p class="hhev-honest">Chưa có collocation đã kiểm duyệt cho từ này. HH sẽ không tự ghép cụm thiếu nguồn.</p>'}<button class="primary" type="button" data-hhev-lesson-next>${word.collocations?.length ? "Đã học cụm từ" : "Bỏ qua có lý do"} →</button></article>`;
     else if (stepId === "pronunciation") task = `<article class="hhev-word-learn"><small>PHÁT ÂM</small><h3>${esc(word.term)}</h3><p>${esc(studio.filters.dialect === "uk" ? word.ipaUK || word.ipaUS : word.ipaUS || word.ipaUK)}</p><button type="button" data-hhev-speak="${esc(word.term)}">▶ Nghe mẫu</button><button class="primary" type="button" data-hhev-lesson-next>Đã nói theo →</button></article>`;
     else task = `<article class="hhev-word-learn"><small>KIỂM TRA CUỐI TỪ</small><h3>${esc(word.term)}</h3><strong>${esc(word.meaning)}</strong><p>Hoàn thành 6 bước. Từ này sẽ được cập nhật vào tiến độ nhận biết.</p><button class="primary" type="button" data-hhev-lesson-next>${current + 1 === lesson.words.length ? "Hoàn thành bài" : "Từ tiếp theo"} →</button></article>`;
-    return `<section class="hhev-lesson" data-word-index="${current}" data-step-index="${step}"><header><div><small>LESSON PLAYER · ${lesson.source === "due" ? "ÔN ĐẾN HẠN" : lesson.source === "deck" ? "DECK CÁ NHÂN" : "THÍCH NGHI"}</small><h3>Từ ${current + 1}/${lesson.words.length}</h3></div><strong>${Math.round((current * lessonSteps.length + step) / (lesson.words.length * lessonSteps.length) * 100)}%</strong><button type="button" data-hhev-start-lesson data-source="${esc(lesson.source || "adaptive")}">Đổi bài</button></header><nav>${lessonSteps.map(([id, label], index) => `<span class="${index === step ? "active" : index < step ? "done" : "locked"}"><b>${index < step ? "✓" : index + 1}</b>${esc(label)}</span>`).join("")}</nav><main><aside class="hhev-step-aura" aria-hidden="true"><i></i><i></i><span>Aa</span></aside>${task}</main><aside class="hhev-next-step"><small>TIẾP THEO</small><strong>${step + 1 < lessonSteps.length ? esc(lessonSteps[step + 1][1]) : current + 1 < lesson.words.length ? `Từ ${current + 2}/${lesson.words.length}` : "Tổng kết phiên"}</strong><span>${step + 1 < lessonSteps.length ? "Mở lớp tiếp theo sau khi hoàn thành thao tác hiện tại." : "Tiến độ được lưu cục bộ trước khi chuyển từ."}</span></aside><footer><span>${lesson.errors} lỗi trong bài</span><i style="--p:${Math.round((current * lessonSteps.length + step) / (lesson.words.length * lessonSteps.length) * 100)}%"></i><small>Tự lưu sau mỗi bước</small></footer></section>`;
+    return `<section class="hhev-lesson" data-word-index="${current}" data-step-index="${step}"><header><div><small>LESSON PLAYER · ${lesson.source === "due" ? "ÔN ĐẾN HẠN" : lesson.source === "deck" ? "DECK CÁ NHÂN" : "THÍCH NGHI"}</small><h3>Từ ${current + 1}/${lesson.words.length}</h3></div><strong>${Math.round((current * lessonSteps.length + step) / (lesson.words.length * lessonSteps.length) * 100)}%</strong><button type="button" data-hhev-start-lesson data-source="${esc(lesson.source || "adaptive")}">Đổi bài</button></header><nav>${lessonSteps.map(([id, label], index) => `<span class="${index === step ? "active" : index < step ? "done" : "locked"}"><b>${index < step ? "✓" : index + 1}</b>${esc(label)}</span>`).join("")}</nav><main><aside class="hhev-step-aura" aria-hidden="true"><i></i><i></i><span>Aa</span></aside>${draftNotice}${task}</main><aside class="hhev-next-step"><small>TIẾP THEO</small><strong>${step + 1 < lessonSteps.length ? esc(lessonSteps[step + 1][1]) : current + 1 < lesson.words.length ? `Từ ${current + 2}/${lesson.words.length}` : "Tổng kết phiên"}</strong><span>${step + 1 < lessonSteps.length ? "Mở lớp tiếp theo sau khi hoàn thành thao tác hiện tại." : "Tiến độ được lưu cục bộ trước khi chuyển từ."}</span></aside><footer><span>${lesson.errors} lỗi trong bài</span><i style="--p:${Math.round((current * lessonSteps.length + step) / (lesson.words.length * lessonSteps.length) * 100)}%"></i><small>Tự lưu sau mỗi bước</small></footer></section>`;
   };
   const renderLabs = (state) => `<section class="hhev-labs"><header><div><small>DEEP PRACTICE</small><h3>Học sâu bằng dữ liệu thật</h3><p>Mỗi phòng luyện dùng cùng SRS, sổ lỗi và từ đã lưu của bạn.</p></div><span>${(state.mistakeNotebook || []).length} lỗi đang chờ</span></header><div>${labModes.map(([mode, icon, title, detail]) => `<button type="button" data-hhev-open-mode="${mode}"><i>${icon}</i><span><strong>${esc(title)}</strong><small>${esc(detail)}</small></span><b>→</b></button>`).join("")}</div></section>`;
   const renderPersonal = (instance, state) => {
@@ -327,8 +332,8 @@
   const renderActive = (instance) => {
     const state = instance.runtime.readState(); const studio = normalizeStudio(state); root.HHEnglishVocabularyRuntimeState = studio;
     const body = instance.host.querySelector("[data-hhev-body]"); if (!body) return;
-    instance.host.querySelectorAll("[data-hhev-tab]").forEach((button) => button.classList.toggle("active", button.dataset.hhevTab === studio.activeTab));
-    body.innerHTML = studio.activeTab === "lesson" ? renderLesson(instance, state) : studio.activeTab === "labs" ? renderLabs(state) : studio.activeTab === "personal" ? renderPersonal(instance, state) : renderExplorer(instance, state);
+    instance.host.querySelectorAll("[data-hhev-tab]").forEach((button) => {const active=button.dataset.hhevTab===studio.activeTab||(button.dataset.hhevTab==="sets"&&studio.activeTab==="practice");button.classList.toggle("active",active);button.setAttribute("aria-current",active?"page":"false");});
+    body.innerHTML = studio.activeTab === "sets"?root.HHEnglishVocabularyPractice.library(state):studio.activeTab==="practice"?root.HHEnglishVocabularyPractice.challenge(state):studio.activeTab === "lesson" ? renderLesson(instance, state) : studio.activeTab === "labs" ? renderLabs(state) : studio.activeTab === "personal" ? renderPersonal(instance, state) : renderExplorer(instance, state);
     if (studio.activeTab === "explorer") searchAndPaint(instance).catch(() => paintError(instance, "Không thể đọc pack từ vựng."));
   };
   const paintError = (instance, message) => { const list = instance.host.querySelector("[data-hhev-result-list]"); if (list) list.innerHTML = `<div class="hhev-empty"><span>!</span><strong>${esc(message)}</strong><p>Hãy kiểm tra kết nối rồi thử lại.</p></div>`; };
@@ -369,10 +374,12 @@
     const packCount = instance.host.querySelector("[data-hhev-pack-count]");
     if (packCount) packCount.textContent = `${instance.manifest.packs.length} pack khả dụng`;
     const state = instance.runtime.readState(); const filters = readFilters(instance, state); const reviewed = filterReviewed(instance, state, filters);
+    const initialList=instance.host.querySelector("[data-hhev-result-list]"),initialScope=state.ownerId+":"+state.learnerProfileId;
     let extended = [];
     const restrictReviewed = filters.source === "reviewed" || filters.source === "career" || filters.level !== "all" || filters.topic !== "all" || filters.pos !== "all" || filters.frequency !== "all" || filters.mastery !== "all";
     if (!restrictReviewed && (filters.query || filters.source === "term-index")) extended = (await workerSearch(instance, filters.query, 180)).map((item) => ({ term: item.term, index: item.index, source: "esdb", reviewed: false, verification: "term-index" }));
     const rows = uniqueBy(filters.source === "term-index" ? extended : [...reviewed, ...extended], (item) => normalizeTerm(item.term)).slice(0, 120);
+    const latest=instance.runtime.readState();if(latest.ownerId+":"+latest.learnerProfileId!==initialScope||instance.host.querySelector("[data-hhev-result-list]")!==initialList)return;
     instance.results = rows;
     const list = instance.host.querySelector("[data-hhev-result-list]"); const count = instance.host.querySelector("[data-hhev-result-count]");
     if (count) count.textContent = `${rows.length} kết quả · ${instance.index.count.toLocaleString("vi-VN")} mục trong chỉ mục`;
@@ -388,15 +395,17 @@
     return reviewedEntry({ term: row[0], pos: row[1], source: "esdb", verification: "term-index" });
   };
   const paintDetail = async (instance, result) => {
-    const state = instance.runtime.readState(); const studio = normalizeStudio(state); const map = reviewedMap();
+    const state = instance.runtime.readState(); const studio = normalizeStudio(state); const map = reviewedMap(state);
+    const initialDetail=instance.host.querySelector("[data-hhev-detail]"),initialScope=state.ownerId+":"+state.learnerProfileId;
     const rawItem = map.get(normalizeTerm(result.term)) || await loadTermIndexEntry(instance, result.index, result.term);
     const item = root.HHEnglishForEveryone?.metadataForEntry?.(rawItem) || rawItem;
+    const latest=instance.runtime.readState();if(latest.ownerId+":"+latest.learnerProfileId!==initialScope||instance.host.querySelector("[data-hhev-detail]")!==initialDetail)return;
     studio.selectedTerm = item.term; instance.runtime.writeState(state);
     const detail = instance.host.querySelector("[data-hhev-detail]"); if (!detail) return;
     const saved = Boolean(state.savedWords?.[item.term]); const note = studio.notes[item.term] || ""; const policy = deckPolicy(state);
-    const canStudy = Boolean(item.meaning && item.reviewed);
+    const canStudy = Boolean(item.meaning && item.reviewStatus!=="draft");
     const undo = studio.lastDeckAction && studio.lastDeckAction.term === item.term ? `<button type="button" data-hhev-undo-deck="${esc(item.term)}">↶ Hoàn tác</button>` : "";
-    detail.innerHTML = `<header><div><small>${item.reviewed ? "REVIEWED ENTRY" : "TERM INDEX"}</small><h3>${esc(item.term)}</h3><p>${esc(item.pos)} · ${esc(item.level || "CEFR chưa phân loại")}</p></div><span class="${item.reviewed ? "reviewed" : "term"}">${item.reviewed ? "Đã kiểm duyệt" : "Chưa kiểm duyệt"}</span></header>
+    detail.innerHTML = `<header><div><small>${item.reviewStatus==="draft"?"HH ORIGINAL DRAFT":item.reviewed ? "REVIEWED ENTRY" : "TERM INDEX"}</small><h3>${esc(item.term)}</h3><p>${esc(item.pos)} · ${esc(item.level || "CEFR chưa phân loại")}</p></div><span class="${item.reviewed ? "reviewed" : "term"}">${item.reviewStatus==="draft"?"Bản nháp · học ở tab Bộ từ":item.reviewed ? "Đã kiểm duyệt" : "Chưa kiểm duyệt"}</span></header>
       <div class="hhev-pronounce"><button type="button" data-hhev-speak="${esc(item.term)}">▶</button><span><b>US ${esc(item.ipaUS || "—")}</b><b>UK ${esc(item.ipaUK || "—")}</b></span></div>
       <section><small>NGHĨA VIỆT</small>${item.meaning ? `<strong>${esc(item.meaning)}</strong>${item.senses.slice(1).map((sense) => `<p>${esc(sense)}</p>`).join("")}` : '<p class="hhev-honest">Chưa có nghĩa Việt được kiểm duyệt. HH không tự gán nghĩa cho mục này.</p>'}</section>
       <section><small>VÍ DỤ</small>${item.example ? `<blockquote>${esc(item.example)}</blockquote>${item.vnExample ? `<p>${esc(item.vnExample)}</p>` : ""}` : '<p class="hhev-honest">Chưa có câu ví dụ được kiểm duyệt.</p>'}</section>
@@ -464,13 +473,13 @@
     const tab = event.target.closest("[data-hhev-tab]");
     if (tab) { const state = instance.runtime.readState(); normalizeStudio(state).activeTab = tab.dataset.hhevTab; writeAndRefresh(instance, state); return; }
     const lessonButton = event.target.closest("[data-hhev-start-lesson]");
-    if (lessonButton) { const state = instance.runtime.readState(); const studio = normalizeStudio(state); const source = ["adaptive", "deck", "due"].includes(lessonButton.dataset.source) ? lessonButton.dataset.source : studio.lessonSource; studio.lessonSource = source; studio.lesson = buildDeckLesson(reviewedCatalog(), state, source, studio.dailyGoal); studio.activeTab = "lesson"; writeAndRefresh(instance, state); instance.runtime.toast(studio.lesson.words.length ? `Đã tạo bài ${studio.lesson.words.length} từ · ${source === "due" ? "đến hạn" : source === "deck" ? "deck cá nhân" : "thích nghi"}.` : source === "due" ? "Hiện không có thẻ đến hạn." : source === "deck" ? "Deck chưa có từ đã kiểm duyệt." : "Chưa đủ từ đã kiểm duyệt để tạo bài."); return; }
+    if (lessonButton) { const state = instance.runtime.readState(); const studio = normalizeStudio(state); const source = ["adaptive", "deck", "due"].includes(lessonButton.dataset.source) ? lessonButton.dataset.source : studio.lessonSource; studio.lessonSource = source; studio.lesson = buildDeckLesson(reviewedCatalog(state).filter(w=>w.reviewStatus!=="draft"||(source!=="adaptive"&&state.savedWords?.[w.term])), state, source, studio.dailyGoal); studio.activeTab = "lesson"; writeAndRefresh(instance, state); instance.runtime.toast(studio.lesson.words.length ? `Đã tạo bài ${studio.lesson.words.length} từ · ${source === "due" ? "đến hạn" : source === "deck" ? "deck cá nhân" : "thích nghi"}.` : source === "due" ? "Hiện không có thẻ đến hạn." : source === "deck" ? "Deck chưa có từ đã kiểm duyệt." : "Chưa đủ từ đã kiểm duyệt để tạo bài."); return; }
     const resultButton = event.target.closest("[data-hhev-result]");
     if (resultButton) { const state = instance.runtime.readState(); normalizeStudio(state).selectedTerm = resultButton.dataset.hhevResult; instance.runtime.writeState(state); instance.host.querySelectorAll("[data-hhev-result]").forEach((node) => node.classList.toggle("active", node === resultButton)); await paintDetail(instance, { term: resultButton.dataset.hhevResult, index: Number(resultButton.dataset.index) }); return; }
     const speak = event.target.closest("[data-hhev-speak]"); if (speak) { const state = instance.runtime.readState(); instance.runtime.speak(speak.dataset.hhevSpeak, state.settings); return; }
     const save = event.target.closest("[data-hhev-save]");
     if (save) {
-      const state = instance.runtime.readState(); const term = save.dataset.hhevSave; const map = reviewedMap(); const item = map.get(normalizeTerm(term)) || await loadTermIndexEntry(instance, Number(save.dataset.index), term);
+      const state = instance.runtime.readState(); const term = save.dataset.hhevSave; const map = reviewedMap(state); const item = map.get(normalizeTerm(term)) || await loadTermIndexEntry(instance, Number(save.dataset.index), term);
       const studio = normalizeStudio(state);
       if (state.savedWords[term]) { studio.lastDeckAction = { type: "remove", term, savedWord: state.savedWords[term], review: state.reviewQueue[term] || null, at: Date.now() }; delete state.savedWords[term]; delete state.reviewQueue[term]; }
       else {
@@ -506,14 +515,14 @@
       clearTimeout(instance.searchTimer); instance.searchTimer = root.setTimeout(() => { const state = instance.runtime.readState(); normalizeStudio(state).filters = readFilters(instance, state); instance.runtime.writeState(state); searchAndPaint(instance).catch(() => paintError(instance, "Không thể tìm trong kho từ.")); }, 120);
     }
     if (event.target.matches("[data-hhev-note]")) {
-      clearTimeout(instance.noteTimer); const term = event.target.dataset.hhevNote; const value = event.target.value; instance.noteTimer = root.setTimeout(() => { const state = instance.runtime.readState(); normalizeStudio(state).notes[term] = boundedString(value, 2000); instance.runtime.writeState(state); }, 300);
+      const term=event.target.dataset.hhevNote,state=instance.runtime.readState();normalizeStudio(state).notes[term]=boundedString(event.target.value,2000);instance.runtime.writeState(state);
     }
   };
   const handleChange = async (instance, event) => {
     if (event.target.matches("[data-hhev-daily-goal]")) { const state = instance.runtime.readState(); normalizeStudio(state).dailyGoal = clamp(event.target.value, 3, 30); writeAndRefresh(instance, state); instance.runtime.toast(`Đã đặt mục tiêu ${normalizeStudio(state).dailyGoal} từ mỗi ngày.`); return; }
     if (event.target.matches("[data-hhev-filter]")) { const state = instance.runtime.readState(); normalizeStudio(state).filters = readFilters(instance, state); instance.runtime.writeState(state); await searchAndPaint(instance); return; }
     if (!event.target.matches("[data-hhev-import]") || !event.target.files?.[0]) return;
-    const file = event.target.files[0]; const format = /json$/i.test(file.name) ? "json" : /(?:tsv|txt)$/i.test(file.name) ? "anki" : "csv"; const rows = parseImport(await file.text(), format); const state = instance.runtime.readState(); const studio = normalizeStudio(state); studio.personalDictionary = uniqueBy([...studio.personalDictionary, ...rows], (item) => normalizeTerm(item.term)).slice(0, 1000); writeAndRefresh(instance, state); instance.runtime.toast(`Đã nhập ${rows.length} mục từ cục bộ.`);
+    const file=event.target.files[0],captured=instance.runtime.readState(),owner=captured.ownerId+":"+captured.learnerProfileId;try{if(file.size>1500000)throw Error("Tệp từ vựng vượt giới hạn 1,5 MB.");const format=/json$/i.test(file.name)?"json":/(?:tsv|txt)$/i.test(file.name)?"anki":"csv",rows=parseImport(await file.text(),format),state=instance.runtime.readState();if(state.ownerId+":"+state.learnerProfileId!==owner)return;const studio=normalizeStudio(state);studio.personalDictionary=uniqueBy([...studio.personalDictionary,...rows],item=>normalizeTerm(item.term)).slice(0,1000);writeAndRefresh(instance,state);instance.runtime.toast(`Đã nhập ${rows.length} mục từ cục bộ.`);}catch(error){instance.runtime.toast("Không nhập được: "+error.message,"error");}
   };
   const mount = (runtime) => {
     if (!runtime?.host) return;
@@ -533,10 +542,12 @@
       runtime.host.addEventListener("change", instance.handlers.change);
     }
     instance.runtime = runtime;
+    root.HHEnglishVocabularyPractice?.bind?.(instance);
     if (runtime.readState().activeView === "galaxy") { ensureData(instance).catch(() => {}); renderActive(instance); }
   };
   const unmount = (host) => {
     const instance = instances.get(host); if (!instance) return;
+    root.HHEnglishVocabularyPractice?.unbind?.(host);
     host.removeEventListener("click", instance.handlers.click);
     host.removeEventListener("submit", instance.handlers.submit);
     host.removeEventListener("input", instance.handlers.input);
@@ -544,7 +555,7 @@
     clearTimeout(instance.searchTimer); clearTimeout(instance.noteTimer); instance.worker?.terminate?.(); instance.pending.clear(); instances.delete(host);
   };
 
-  const api = { VERSION, MANIFEST_URL, lessonSteps, labModes, normalizeTerm, normalizeStudio, localDayKey, deckPolicy, lessonPool, termProgressFor, recordTermAttempt, ratingForTerm, searchTerms, reviewedEntry, buildLesson, buildDeckLesson, coverageReport, parseImport, exportRows, renderShell, mount, unmount };
+  const api = { VERSION, refresh:renderActive, MANIFEST_URL, lessonSteps, labModes, normalizeTerm, normalizeStudio, localDayKey, deckPolicy, lessonPool, termProgressFor, recordTermAttempt, ratingForTerm, searchTerms, reviewedEntry, buildLesson, buildDeckLesson, coverageReport, parseImport, exportRows, renderShell, mount, unmount };
   root.HHEnglishVocabulary = Object.freeze(api);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
