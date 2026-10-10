@@ -65,7 +65,7 @@
     },
     "platform-home": {
       styles: ["platform-home.css?v=9", "home-cosmos-motion.css?v=5"],
-      scripts: ["home-cosmos-motion.js?v=3", "platform-home.js?v=17"]
+      scripts: ["home-cosmos-motion.js?v=3", "platform-home.js?v=18"]
     },
     "galaxy-home-ai": {
       styles: ["galaxy-home-ai.css?v=25", "home-cosmos-motion.css?v=5"],
@@ -296,9 +296,10 @@
       scripts: ["hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3", "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=2", "hh-eonwild-desktop-controller.js?v=2", "hh-eonwild-collision-system.js?v=1", "hh-eonwild-world-atlas.js?v=2", "hh-eonwild-simulation-v2.js?v=4", "hh-eonwild-3d-core.js?v=7", "hh-eonwild-landscape-core.js?v=1", "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=4", "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=19", "hh-eonwild-game.js?v=28"]
     },
     patin: {
-      styles: ["patin.css?v=5", "patin-arena.css?v=1", "patin-guide.css?v=1"],
-      scripts: ["patin-learning-data.js?v=1", "patin-disciplines.js?v=1", "patin-arena-data.js?v=1", "patin-video-expansion.js?v=1", "patin-data.js?v=5", "patin-arena-core.js?v=1", "patin-core.js?v=6", "patin-visuals.js?v=1", "patin-guide.js?v=1", "patin-video.js?v=2", "patin-arena.js?v=1", "patin-guide-ui.js?v=1", "patin.js?v=6"]
+      styles: ["patin.css?v=5", "patin-arena.css?v=1", "patin-guide.css?v=1", "patin-home.css?v=1"],
+      scripts: ["patin-learning-data.js?v=1", "patin-disciplines.js?v=1", "patin-arena-data.js?v=1", "patin-video-expansion.js?v=1", "patin-data.js?v=5", "patin-arena-core.js?v=1", "patin-core.js?v=6", "patin-visuals.js?v=1", "patin-guide.js?v=1", "patin-video.js?v=2", "patin-arena.js?v=2", "patin-guide-ui.js?v=1", "patin-home.js?v=1", "patin.js?v=7"]
     },
+    "patin-home-3d": { styles: [], scripts: ["patin-home-scene.js?v=1"] },
     fortune: {
       styles: ["fortune-hub.css?v=3", "fortune-hub-v3.css?v=2", "fortune-hub-v4.css?v=8", "fortune-hub-v5.css?v=27"],
       scripts: ["vendor/jszip.min.js?v=3.10.1", "vendor/pdf-lib.min.js?v=1.17.1", "vendor/astronomy-engine-2.1.19.min.js?v=1", "vendor/iztro-2.6.0.min.js?v=2.6.0", "fortune-iching-64.js?v=1", "fortune-accuracy-lab.js?v=1", "fortune-suite-v4.js?v=4", "fortune-astrology.js?v=1", "fortune-astrology-v4.js?v=2", "fortune-moon-3d.js?v=1", "fortune-extended-tools.js?v=2", "fortune-hub.js?v=28"]

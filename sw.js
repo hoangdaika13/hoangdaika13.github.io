@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1046";
+const CACHE = "hh-identity-portal-v1047";
+// Previous release: hh-identity-portal-v1046; ./performance-loader.js?v=708; ./script.js?v=289; ./platform-home.js?v=17; ./patin.js?v=6; ./patin-arena.js?v=1.
 // Previous release: hh-identity-portal-v1045; ./performance-loader.js?v=707; ./script.js?v=289; ./platform-home.js?v=16; ./patin.css?v=5; ./patin-data.js?v=4; ./patin-core.js?v=5; ./patin.js?v=5.
 // Previous release: hh-identity-portal-v1044; ./performance-loader.js?v=706; ./script.js?v=288; ./platform-home.js?v=15; ./patin.css?v=4; ./patin-data.js?v=3; ./patin-core.js?v=4; ./patin.js?v=4; ./patin-video.js?v=1.
 // Previous release: hh-identity-portal-v1043; ./performance-loader.js?v=705; ./script.js?v=287; ./platform-home.js?v=14; ./patin.css?v=3; ./patin-data.js?v=2; ./patin-core.js?v=3; ./patin.js?v=3.
@@ -121,19 +122,22 @@ const RUNTIME_ASSETS = [
   "./patin.css?v=5",
   "./patin-arena.css?v=1",
   "./patin-guide.css?v=1",
+  "./patin-home.css?v=1",
+  "./patin-home.js?v=1",
+  "./patin-home-scene.js?v=1",
   "./patin-video-expansion.js?v=1",
   "./patin-guide.js?v=1",
   "./patin-guide-ui.js?v=1",
   "./patin-arena-data.js?v=1",
   "./patin-arena-core.js?v=1",
-  "./patin-arena.js?v=1",
+  "./patin-arena.js?v=2",
   "./patin-data.js?v=5",
   "./patin-learning-data.js?v=1",
   "./patin-video.js?v=2",
   "./patin-disciplines.js?v=1",
   "./patin-visuals.js?v=1",
   "./patin-core.js?v=6",
-  "./patin.js?v=6",
+  "./patin.js?v=7",
   "./galaxy-creator-production.js?v=2",
   "./galaxy-community-client.js?v=1",
   "./vendor/dompurify-3.4.14.min.js?v=1",
@@ -147,7 +151,7 @@ const RUNTIME_ASSETS = [
   "./home-cosmos-motion.css?v=5",
   "./home-cosmos-motion.js?v=3",
   "./platform-home.css?v=9",
-  "./platform-home.js?v=17",
+  "./platform-home.js?v=18",
   "./focus-study-room.css?v=2",
   "./focus-study-room.js?v=1",
   "./",
@@ -780,7 +784,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=708",
+  "./performance-loader.js?v=709",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=289"
