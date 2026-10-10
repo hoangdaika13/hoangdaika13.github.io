@@ -5,7 +5,10 @@
   const copy=value=>JSON.parse(JSON.stringify(value));
   const bytes=value=>new TextEncoder().encode(value).byteLength;
   const libraryDefaults=()=>({query:'',category:'all',discipline:'all',level:'all',favorites:false,mode:'grid',status:'all',sort:'default',page:1});
-  const workshopDefaults=()=>({version:1,plan:null,journalDraft:null,library:libraryDefaults()});
+  const videoIds=new Set(data.videos.map(v=>v.id));
+  const videoDefaults=()=>({version:1,lastVideo:null,favorites:[],records:{}});
+  const recordDefault=()=>({note:'',reviewed:false,markers:[]});
+  const workshopDefaults=()=>({version:1,plan:null,journalDraft:null,library:libraryDefaults(),videos:videoDefaults()});
   const blank=()=>({version:VERSION,revision:0,updatedAt:null,favorites:[],progress:{},journal:[],lastSkill:null,workshop:workshopDefaults()});
   const fold=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
   const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -18,7 +21,17 @@
   function validatePlan(p){if(!object(p)||!text(p.title,160)||![10,20,30].includes(p.minutes)||!text(p.notes,1000)||(p.date!==''&&!date(p.date)))throw Error('Kế hoạch không hợp lệ.');return {title:p.title,minutes:p.minutes,date:p.date,skills:skillSelection(p.skills),notes:p.notes};}
   function validateEntry(e){if(!object(e)||!text(e.id,80)||!/^[a-zA-Z0-9-]+$/.test(e.id)||!date(e.date)||!Number.isInteger(e.minutes)||e.minutes<1||e.minutes>600||!text(e.note,2000)||!Array.isArray(e.skills)||e.skills.length>ids.size||e.skills.some(id=>!ids.has(id))||new Set(e.skills).size!==e.skills.length)throw Error('Nhật ký không hợp lệ (ngày, thời lượng hoặc kỹ năng).');return {id:e.id,date:e.date,minutes:e.minutes,note:e.note,skills:[...e.skills]};}
   function validateDraft(d){if(!object(d)||(d.date!==''&&!date(d.date))||!text(d.minutes,5)||!/^\d*$/.test(d.minutes)||!text(d.note,2000)||(d.editingId!==null&&(!text(d.editingId,80)||!/^[a-zA-Z0-9-]+$/.test(d.editingId))))throw Error('Bản nháp nhật ký không hợp lệ.');const snapshot=d.snapshot===null?null:validateEntry(d.snapshot);if((d.editingId===null)!==(snapshot===null)||snapshot&&snapshot.id!==d.editingId)throw Error('Bản gốc của buổi đang sửa không khớp.');return {date:d.date,minutes:d.minutes,note:d.note,skills:skillSelection(d.skills,ids.size),editingId:d.editingId,snapshot};}
-  function validateWorkshop(w){if(w===undefined)return workshopDefaults();if(!object(w)||w.version!==1)throw Error('Phiên bản công cụ Patin không hợp lệ.');const l=w.library;if(!object(l)||!text(l.query,120)||!['all',...data.categories.map(c=>c.id)].includes(l.category)||!['all',...data.levels.map(x=>x.id)].includes(l.level)||!['all',...data.disciplines.map(d=>d.id)].includes(l.discipline??'all')||typeof l.favorites!=='boolean'||!['grid','list'].includes(l.mode)||!['all','unread','read','tried'].includes(l.status)||!['default','title','level'].includes(l.sort)||!Number.isInteger(l.page)||l.page<1||l.page>100)throw Error('Bộ lọc thư viện không hợp lệ.');return {version:1,plan:w.plan===null?null:validatePlan(w.plan),journalDraft:w.journalDraft===null?null:validateDraft(w.journalDraft),library:{query:l.query,category:l.category,discipline:l.discipline??'all',level:l.level,favorites:l.favorites,mode:l.mode,status:l.status,sort:l.sort,page:l.page}};}
+  function validateVideos(v){
+    if(v===undefined)return videoDefaults();
+    if(!object(v)||v.version!==1||(v.lastVideo!==null&&!videoIds.has(v.lastVideo))||!Array.isArray(v.favorites)||v.favorites.length>videoIds.size||v.favorites.some(id=>!videoIds.has(id))||new Set(v.favorites).size!==v.favorites.length||!object(v.records)||Object.keys(v.records).length>videoIds.size)throw Error('Dữ liệu video không hợp lệ.');
+    const records={};
+    for(const [id,r]of Object.entries(v.records)){
+      if(!videoIds.has(id)||!object(r)||!text(r.note,2000)||typeof r.reviewed!=='boolean'||!Array.isArray(r.markers)||r.markers.length>12||r.markers.some(m=>!object(m)||!Number.isInteger(m.seconds)||m.seconds<0||m.seconds>86400||!text(m.note,160))||new Set(r.markers.map(m=>m.seconds)).size!==r.markers.length)throw Error('Ghi chú hoặc mốc video không hợp lệ.');
+      records[id]={note:r.note,reviewed:r.reviewed,markers:r.markers.map(m=>({seconds:m.seconds,note:m.note}))};
+    }
+    return {version:1,lastVideo:v.lastVideo,favorites:[...v.favorites],records};
+  }
+  function validateWorkshop(w){if(w===undefined)return workshopDefaults();if(!object(w)||w.version!==1)throw Error('Phiên bản công cụ Patin không hợp lệ.');const l=w.library;if(!object(l)||!text(l.query,120)||!['all',...data.categories.map(c=>c.id)].includes(l.category)||!['all',...data.levels.map(x=>x.id)].includes(l.level)||!['all',...data.disciplines.map(d=>d.id)].includes(l.discipline??'all')||typeof l.favorites!=='boolean'||!['grid','list'].includes(l.mode)||!['all','unread','read','tried'].includes(l.status)||!['default','title','level'].includes(l.sort)||!Number.isInteger(l.page)||l.page<1||l.page>100)throw Error('Bộ lọc thư viện không hợp lệ.');return {version:1,videos:validateVideos(w.videos),plan:w.plan===null?null:validatePlan(w.plan),journalDraft:w.journalDraft===null?null:validateDraft(w.journalDraft),library:{query:l.query,category:l.category,discipline:l.discipline??'all',level:l.level,favorites:l.favorites,mode:l.mode,status:l.status,sort:l.sort,page:l.page}};}
   function validate(input){
     if(!object(input)||input.version!==VERSION||!Number.isSafeInteger(input.revision)||input.revision<0||!Array.isArray(input.favorites)||input.favorites.length>ids.size||!object(input.progress)||Object.keys(input.progress).length>ids.size||!Array.isArray(input.journal)||input.journal.length>MAX_ENTRIES)throw Error('Định dạng hoặc phiên bản dữ liệu không hợp lệ.');
     if(input.favorites.some(id=>!ids.has(id))||new Set(input.favorites).size!==input.favorites.length)throw Error('Dấu trang không hợp lệ.');
@@ -74,6 +87,14 @@
   const setPlan=(state,p)=>{state.workshop.plan=p===null?null:validatePlan(p);};
   const setJournalDraft=(state,d)=>{state.workshop.journalDraft=d===null?null:validateDraft(d);};
   const setLibrary=(state,l)=>{state.workshop.library=validateWorkshop({...state.workshop,library:l}).library;};
+  function videoRecord(state,id){if(!videoIds.has(id))throw Error('Không tìm thấy video.');return state.workshop.videos.records[id]||(state.workshop.videos.records[id]=recordDefault());}
+  function setVideoNote(state,id,note,expected){const r=videoRecord(state,id);if(!text(note,2000))throw Error('Ghi chú tối đa 2000 ký tự.');if(r.note!==expected)throw Error('Ghi chú đã thay đổi ở tab khác. Bản đang nhập vẫn giữ; tải TXT trước rồi mở lại video để đối chiếu.');r.note=note;}
+  function toggleVideoFavorite(state,id){if(!videoIds.has(id))throw Error('Không tìm thấy video.');const a=state.workshop.videos.favorites,i=a.indexOf(id);if(i<0)a.push(id);else a.splice(i,1);}
+  function setVideoReviewed(state,id,value){if(typeof value!=='boolean')throw Error('Trạng thái không hợp lệ.');videoRecord(state,id).reviewed=value;}
+  function setLastVideo(state,id){if(!videoIds.has(id))throw Error('Không tìm thấy video.');state.workshop.videos.lastVideo=id;}
+  function setVideoMarker(state,id,seconds,note){const r=videoRecord(state,id);if(!Number.isInteger(seconds)||seconds<0||seconds>86400||!text(note,160))throw Error('Mốc thời gian không hợp lệ (0–86400 giây).');const i=r.markers.findIndex(m=>m.seconds===seconds);if(i<0){if(r.markers.length>=12)throw Error('Tối đa 12 mốc mỗi video.');r.markers.push({seconds,note});}else r.markers[i]={seconds,note};r.markers.sort((a,b)=>a.seconds-b.seconds);}
+  function removeVideoMarker(state,id,seconds){const r=videoRecord(state,id);r.markers=r.markers.filter(m=>m.seconds!==seconds);}
+
   function filterJournal(state,{query='',skill='all',from='',to='',sort='newest'}={}){const terms=fold(query).split(/\s+/).filter(Boolean);return state.journal.filter(j=>(skill==='all'||j.skills.includes(skill))&&(!from||j.date>=from)&&(!to||j.date<=to)&&terms.every(t=>fold(j.note+' '+j.skills.map(id=>data.skills.find(s=>s.id===id)?.title).join(' ')).includes(t))).sort((a,b)=>(sort==='oldest'?1:-1)*a.date.localeCompare(b.date));}
   function journalCsv(entries){const field=value=>{let s=String(value??'');if(/^[\s\uFEFF]*[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};return '\uFEFF'+[['Ngày','Phút tự nhập','Kỹ năng','Ghi chú'],...entries.map(j=>[j.date,j.minutes,j.skills.map(id=>data.skills.find(s=>s.id===id)?.title||id).join(' | '),j.note])].map(row=>row.map(field).join(',')).join('\r\n');}
   function planText(p){const saved=validatePlan(p);return ['HH Patin · Kế hoạch tham khảo',saved.title||'Kế hoạch riêng',saved.date?'Ngày dự kiến: '+saved.date:'Chưa đặt ngày',...plan(saved.minutes).map(x=>x.minutes+' phút · '+x.title),'Bài muốn trao đổi với HLV: '+saved.skills.map(id=>data.skills.find(s=>s.id===id).title).join(', '),saved.notes,'Thời lượng là dự kiến, không được cộng vào nhật ký. Không phải chỉ định thể lực hay chứng nhận kỹ năng.'].join('\n');}
@@ -81,5 +102,5 @@
   function plan(minutes=20){const duration=[10,20,30].includes(Number(minutes))?Number(minutes):20;return [{title:'Chuẩn bị & kiểm tra sân/giày',minutes:duration===10?2:4},{title:'Ôn tư thế và cách dừng đã được hướng dẫn',minutes:duration===10?5:duration===20?10:16},{title:'Bài HLV chọn ở tốc độ kiểm soát',minutes:duration===10?2:duration===20?4:7},{title:'Nghỉ, kiểm tra thiết bị & ghi nhận',minutes:duration===10?1:duration===20?2:3}];}
 
   const checkQuiz=answers=>data.quiz.map(q=>({id:q.id,answered:Number.isInteger(answers[q.id])&&answers[q.id]>=0&&answers[q.id]<q.options.length,correct:answers[q.id]===q.answer,explanation:q.explanation}));
-  return Object.freeze({VERSION,MAX_BYTES,MAX_ENTRIES,blank,fold,escape,scope,keyFor,validate,parse,createStore,readImport,filterSkills,toggleFavorite,setStatus,setNote,addEntry,removeEntry,updateEntry,setPlan,setJournalDraft,setLibrary,filterJournal,journalCsv,planText,summary,plan,checkQuiz});
+  return Object.freeze({VERSION,MAX_BYTES,MAX_ENTRIES,blank,fold,escape,scope,keyFor,validate,parse,createStore,readImport,filterSkills,toggleFavorite,setStatus,setNote,addEntry,removeEntry,updateEntry,setPlan,setJournalDraft,setLibrary,setVideoNote,toggleVideoFavorite,setVideoReviewed,setLastVideo,setVideoMarker,removeVideoMarker,filterJournal,journalCsv,planText,summary,plan,checkQuiz});
 });

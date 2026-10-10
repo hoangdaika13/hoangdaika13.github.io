@@ -23,3 +23,30 @@ html[data-theme=light] .pt-root{color-scheme:dark}
 @media(forced-colors:active){.pt-discipline-card h3 a{color:LinkText!important}.pt-discipline-card .pt-kicker,.pt-discipline-page>.pt-studio-head .pt-kicker{color:CanvasText!important}.pt-discipline-page .pt-path>.pt-card{border-left-color:CanvasText}.pt-coach-questions{background:Canvas;color:CanvasText}}
 @media(prefers-reduced-motion:reduce){.pt-root *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @media(forced-colors:active){.pt-root,.pt-card,.pt-hero,.pt-root button,.pt-nav a,.pt-chip,.pt-tag,.pt-notice,.pt-stats span{background:Canvas!important;color:CanvasText!important;border:1px solid CanvasText;box-shadow:none}.pt-root a,.pt-root h2 span{color:LinkText!important}.pt-nav a[aria-current=page],.pt-root :focus-visible{outline:2px solid Highlight}.pt-skate{display:none}.pt-storage,.pt-kicker,.pt-stats b,.pt-root p,.pt-root small{color:CanvasText!important}.pt-root input,.pt-root textarea,.pt-root select{forced-color-adjust:auto}.pt-root .pt-primary{background:ButtonFace!important;color:ButtonText!important}}
+/* Video learning: code-native covers, no remote thumbnails. */
+.pt-root .pt-video-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.8fr);gap:20px;align-items:start}
+.pt-root .pt-video-layout>*{min-width:0}
+.pt-root .pt-video-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.pt-root .pt-video-card{padding:16px;display:flex;flex-direction:column}
+.pt-root .pt-video-card h3{font-size:1.1rem;margin:8px 0}.pt-root .pt-video-card button{margin-top:auto}
+.pt-root .pt-video-art{min-height:88px;border-radius:14px;display:flex;align-items:center;justify-content:space-between;padding:18px;background:radial-gradient(circle at 25% 40%,#75ecd440,transparent 45%),linear-gradient(140deg,#18363e,#242046);color:#bfffee;overflow:hidden}
+.pt-root [data-topic=speed] .pt-video-art{background:linear-gradient(140deg,#124663,#1b2048);color:#9ee7ff}
+.pt-root [data-topic=slide] .pt-video-art{background:linear-gradient(140deg,#58343c,#292146);color:#ffc9a1}
+.pt-root [data-topic=slalom] .pt-video-art{background:linear-gradient(140deg,#423062,#1b2848);color:#e3c4ff}
+.pt-root .pt-video-art span{font-size:2rem}.pt-root .pt-video-art b{font-size:2.5rem;opacity:.45}
+.pt-root .pt-video-detail h3{font-size:clamp(1.35rem,2vw,1.8rem);line-height:1.3}
+.pt-root .pt-video-detail li{margin:10px 0}
+.pt-root .pt-player{min-height:220px;background:#060d1b;border:1px solid #62748e;border-radius:14px;display:grid;place-items:center;margin:18px 0}
+.pt-root .pt-player p{padding:20px}
+.pt-root .pt-player iframe{display:block;width:100%;height:auto;aspect-ratio:16/9;min-height:220px;border:0;border-radius:14px}
+.pt-root .pt-marker-form{display:grid;gap:12px;border-top:1px solid var(--pt-line);padding-top:16px;margin-top:20px}
+.pt-root .pt-markers{padding-left:20px}.pt-root .pt-markers button{font-size:.9rem;margin:6px}
+.pt-root .pt-local-video{margin-top:20px}.pt-root .pt-local-video video{width:100%;max-height:540px;background:#000;margin:12px 0}
+.pt-root .pt-local-controls{display:flex;align-items:end;flex-wrap:wrap;gap:10px}
+.pt-root .pt-local-controls .pt-field{margin:0;min-width:100px}
+.pt-root [data-pt-video-select][aria-pressed=true]{border-color:#74edda;background:#74edda20}
+.pt-root .pt-video-detail textarea{font-size:1rem}
+.pt-root [tabindex]:focus-visible{outline:3px solid #75efd8;outline-offset:4px}
+@media(max-width:1000px){.pt-root .pt-video-layout{grid-template-columns:1fr}.pt-root .pt-video-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.pt-root .pt-video-grid{grid-template-columns:1fr}.pt-root .pt-video-card{display:grid;grid-template-columns:1fr}.pt-root .pt-video-art{min-height:60px}.pt-root .pt-local-controls>*{flex:1 1 130px}.pt-root .pt-player iframe{min-height:200px}.pt-root .pt-video-layout{gap:12px}}
+@media(forced-colors:active){.pt-root .pt-video-art{background:Canvas;color:CanvasText;border:1px solid CanvasText}.pt-root [data-pt-video-select][aria-pressed=true]{border:3px solid Highlight}}

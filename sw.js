@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1043";
+const CACHE = "hh-identity-portal-v1044";
+// Previous release: hh-identity-portal-v1043; ./performance-loader.js?v=705; ./script.js?v=287; ./platform-home.js?v=14; ./patin.css?v=3; ./patin-data.js?v=2; ./patin-core.js?v=3; ./patin.js?v=3.
 // Previous release: hh-identity-portal-v1042; ./performance-loader.js?v=704; ./script.js?v=286; ./platform-home.js?v=13; ./patin.css?v=2; ./patin-data.js?v=1; ./patin-core.js?v=2; ./patin.js?v=2.
 // Previous release: hh-identity-portal-v1041; ./performance-loader.js?v=703; ./script.js?v=285; ./patin.css?v=1; ./patin-core.js?v=1; ./patin.js?v=1.
 // Previous release: hh-identity-portal-v1040; ./performance-loader.js?v=702; ./script.js?v=284; ./galaxy-shell.js?v=10; ./platform-home.js?v=12.
@@ -115,12 +116,14 @@ const EONWILD_CINEMATIC_CACHE = "hh-eonwild-cinematic-assets-v1";
 // HH School v1 replaces the former Learning OS bundle; legacy caches are removed during activation.
 // HH English compatibility: app-shell.css?v=64 script.js?v=179 script.js?v=232 sidebar-navigation-pro.css?v=29 motion-comfort.css?v=1 auth-experience.js?v=9 english-learning.css?v=17 english-learning.js?v=22 english-learning.js?v=24 english-learning.js?v=28 english-learning-os.js?v=7 english-learning-os.css?v=3 english-galaxy.css?v=1 english-galaxy.js?v=2 english-learning-galaxy.css?v=6 english-learning-galaxy.js?v=5 english-vocabulary.css?v=1 english-vocabulary.js?v=2 english-for-everyone.css?v=1 english-for-everyone.js?v=2; current language cockpit loads the versioned Learning OS bundle below.
 const RUNTIME_ASSETS = [
-  "./patin.css?v=3",
-  "./patin-data.js?v=2",
+  "./patin.css?v=4",
+  "./patin-data.js?v=3",
+  "./patin-learning-data.js?v=1",
+  "./patin-video.js?v=1",
   "./patin-disciplines.js?v=1",
   "./patin-visuals.js?v=1",
-  "./patin-core.js?v=3",
-  "./patin.js?v=3",
+  "./patin-core.js?v=4",
+  "./patin.js?v=4",
   "./galaxy-creator-production.js?v=2",
   "./galaxy-community-client.js?v=1",
   "./vendor/dompurify-3.4.14.min.js?v=1",
@@ -134,7 +137,7 @@ const RUNTIME_ASSETS = [
   "./home-cosmos-motion.css?v=5",
   "./home-cosmos-motion.js?v=3",
   "./platform-home.css?v=9",
-  "./platform-home.js?v=14",
+  "./platform-home.js?v=15",
   "./focus-study-room.css?v=2",
   "./focus-study-room.js?v=1",
   "./",
@@ -767,10 +770,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=705",
+  "./performance-loader.js?v=706",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
-  "./script.js?v=287"
+  "./script.js?v=288"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime
