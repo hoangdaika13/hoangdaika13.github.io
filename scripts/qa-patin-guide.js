@@ -25,7 +25,7 @@ async function main(){
   pass('saved method filters, verified-source subset, quick disciplines and manual selection agree on real data');
   for(const s of D.skills){
    await go('/patin/skills/'+s.id);assert.equal(await page.locator('.pt-detail h2').innerText(),s.title);
-   assert.equal(await page.locator('.ptg-read-steps>li').count(),5);assert.ok((await page.locator('.ptg-written').innerText()).includes(s.drill));
+   assert.equal(await page.locator('.ptg-read-steps>li').count(),require('../patin-academy').lesson(s.id).steps.length);assert.ok((await page.locator('.ptg-written').innerText()).includes(s.drill));
    await page.locator('[data-ptg-tab=visual]').click();const svg=page.locator('[data-ptg-artboard] svg');assert.equal(await svg.getAttribute('data-ptg-svg'),s.id);
    assert.ok((await svg.locator('title').textContent()).includes(s.title));assert.equal(await page.locator('[data-ptg-point]').count(),3);
    assert.equal(await svg.locator('g.ptg-point.is-active').count(),1);assert.ok(await svg.locator('path,circle,rect').count()>0);

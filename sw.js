@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1047";
+const CACHE = "hh-identity-portal-v1048";
+// Previous release: hh-identity-portal-v1047; ./performance-loader.js?v=709; ./patin.js?v=7; ./patin-core.js?v=6; ./patin-guide-ui.js?v=1.
 // Previous release: hh-identity-portal-v1046; ./performance-loader.js?v=708; ./script.js?v=289; ./platform-home.js?v=17; ./patin.js?v=6; ./patin-arena.js?v=1.
 // Previous release: hh-identity-portal-v1045; ./performance-loader.js?v=707; ./script.js?v=289; ./platform-home.js?v=16; ./patin.css?v=5; ./patin-data.js?v=4; ./patin-core.js?v=5; ./patin.js?v=5.
 // Previous release: hh-identity-portal-v1044; ./performance-loader.js?v=706; ./script.js?v=288; ./platform-home.js?v=15; ./patin.css?v=4; ./patin-data.js?v=3; ./patin-core.js?v=4; ./patin.js?v=4; ./patin-video.js?v=1.
@@ -127,7 +128,7 @@ const RUNTIME_ASSETS = [
   "./patin-home-scene.js?v=1",
   "./patin-video-expansion.js?v=1",
   "./patin-guide.js?v=1",
-  "./patin-guide-ui.js?v=1",
+  "./patin-guide-ui.js?v=2",
   "./patin-arena-data.js?v=1",
   "./patin-arena-core.js?v=1",
   "./patin-arena.js?v=2",
@@ -136,8 +137,10 @@ const RUNTIME_ASSETS = [
   "./patin-video.js?v=2",
   "./patin-disciplines.js?v=1",
   "./patin-visuals.js?v=1",
-  "./patin-core.js?v=6",
-  "./patin.js?v=7",
+  "./patin-academy.js?v=1",
+  "./patin-academy.css?v=1",
+  "./patin-core.js?v=7",
+  "./patin.js?v=8",
   "./galaxy-creator-production.js?v=2",
   "./galaxy-community-client.js?v=1",
   "./vendor/dompurify-3.4.14.min.js?v=1",
@@ -784,7 +787,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=709",
+  "./performance-loader.js?v=710",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=289"

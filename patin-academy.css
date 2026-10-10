@@ -1,0 +1,37 @@
+/* Overview/login untouched. Original asphalt/grid texture; no moving interaction targets. */
+.pt-root[data-pt-view=skills]{--pta-accent:#8cf8ea;background:radial-gradient(ellipse at 0 0,#22645c35,transparent 42%),radial-gradient(ellipse at 100% 20%,#76226b20,transparent 48%),var(--pt-bg)}
+.pt-root[data-pt-view=skills] .pta-academy-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,240px);gap:20px;align-items:center;border:1px solid #678bab;border-left:5px solid var(--pt-cyan);padding:22px;border-radius:20px;background:linear-gradient(125deg,#193943ce,#222b46d9),repeating-linear-gradient(0deg,transparent 0 19px,#ffffff05 20px)}
+.pt-root[data-pt-view=skills] .pta-academy-hero h2{margin:10px 0;font-size:clamp(1.65rem,3vw,2.8rem)}
+.pt-root[data-pt-view=skills] .pta-academy-emblem{display:grid;justify-items:center;border:1px solid var(--pt-line);border-radius:16px;padding:12px;background:linear-gradient(#a2f7e708 1px,transparent 1px),linear-gradient(90deg,#a2f7e708 1px,transparent 1px);background-size:24px 24px;pointer-events:none}
+.pt-root[data-pt-view=skills] .pta-academy-emblem svg{width:100%;max-height:135px}.pt-root[data-pt-view=skills] .pta-academy-emblem span{font-size:.76rem;font-weight:800;letter-spacing:.1em;color:var(--pt-cyan)}
+.pt-root[data-pt-view=skills] .ptg-library-toolbar button{border-top:2px solid var(--pt-violet)}
+.pt-root[data-pt-view=skills] [data-pt-quick-discipline=speed],.pt-root[data-pt-view=skills] [data-pta-group=speed]{--pta-accent:#87f4ff}
+.pt-root[data-pt-view=skills] [data-pt-quick-discipline=slide],.pt-root[data-pt-view=skills] [data-pta-group=slide]{--pta-accent:#ff9ddc}
+.pt-root[data-pt-view=skills] [data-pt-quick-discipline=slalom],.pt-root[data-pt-view=skills] [data-pta-group=slalom]{--pta-accent:#ccb5ff}
+.pt-root[data-pt-view=skills] [data-pt-quick-discipline=quad],.pt-root[data-pt-view=skills] [data-pta-group=quad]{--pta-accent:#ffe39d}
+.pt-root[data-pt-view=skills] .ptg-library-toolbar button{border-top-color:var(--pta-accent)}
+.pt-root[data-pt-view=skills] .pt-skill{border-top:3px solid var(--pta-accent);box-shadow:inset 0 1px #ffffff06,0 8px 24px #04091433}
+.pt-root[data-pt-view=skills] .pt-skill:focus-within{border-color:var(--pta-accent)}
+.pt-root[data-pt-view=skills] .pta-prerequisite{margin:0;font-size:.84rem}
+.pt-root[data-pt-view=skills] .pta-filter-shell{border:1px solid var(--pt-line);border-radius:16px;padding:12px 18px;background:var(--pt-card)}
+.pt-root[data-pt-view=skills] .pta-filter-shell .pt-filters{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 16px}
+.pt-root[data-pt-view=skills] .pta-learning-paths{display:grid;gap:12px;margin-top:18px}
+.pt-root[data-pt-view=skills] .pta-learning-paths .pt-card{padding:12px 20px;border-left:3px solid var(--pt-violet)}
+.pt-root[data-pt-view=skills] .pta-learning-paths ol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding-left:28px}
+.pt-root[data-pt-view=skills] .pta-learning-paths li{padding:4px;min-width:0}
+.pt-root[data-pt-view=skills] .ptg-tabs{grid-template-columns:repeat(5,minmax(0,1fr))}
+.pt-root[data-pt-view=skills] .pta-dossier{display:grid;gap:14px}.pt-root[data-pt-view=skills] .pta-dossier>p{margin:0}
+.pt-root[data-pt-view=skills] .pta-dossier-meta{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr) minmax(0,1fr);gap:10px}
+.pt-root[data-pt-view=skills] .pta-dossier-meta>span{padding:12px;border:1px solid var(--pt-line);border-radius:12px;background:#12293a;color:var(--pt-ink);font-size:.94rem}
+.pt-root[data-pt-view=skills] .ptg-read-steps{margin:0}.pt-root[data-pt-view=skills] .ptg-read-steps p{font-size:1.04rem;line-height:1.8}
+.pt-root[data-pt-view=skills] .pta-practice{padding:18px;border:1px solid var(--pt-line);border-radius:16px;background:linear-gradient(130deg,#305d6130,transparent),var(--pt-card)}
+.pt-root[data-pt-view=skills] .pta-reading{max-width:960px;margin-inline:auto;background:var(--pt-bg);box-shadow:none}
+.pt-root[data-pt-view=skills] .pta-reading .ptg-written{max-width:75ch;margin-inline:auto}.pt-root[data-pt-view=skills] .pta-reading .ptg-read-steps>li{border-left:3px solid var(--pt-cyan)}
+html[data-theme=light] .pt-root[data-pt-view=skills] .pta-academy-hero{background:linear-gradient(120deg,#e2f3f1,#e8e9fa)}
+html[data-theme=light] .pt-root[data-pt-view=skills] .pta-dossier-meta>span{background:#e8f1f9;color:#163248}
+html[data-theme=light] .pt-root[data-pt-view=skills] .pta-academy-emblem span{color:#175b62}
+@media(max-width:900px){.pt-root[data-pt-view=skills] .pta-filter-shell .pt-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.pt-root[data-pt-view=skills] .pta-dossier-meta{grid-template-columns:1fr}}
+@media(max-width:700px){.pt-root[data-pt-view=skills] .ptg-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.pt-root[data-pt-view=skills] .pta-academy-hero{grid-template-columns:1fr;padding:18px}.pt-root[data-pt-view=skills] .pta-academy-emblem{display:none}.pt-root[data-pt-view=skills] .pta-learning-paths ol{grid-template-columns:1fr}}
+@media(max-width:540px){.pt-root[data-pt-view=skills] .pta-filter-shell .pt-filters{grid-template-columns:1fr}.pt-root[data-pt-view=skills] .pta-filter-shell{padding:12px}.pt-root[data-pt-view=skills] .ptg-read-steps p{font-size:1rem}.pt-root[data-pt-view=skills] .pta-reading-controls{display:grid;grid-template-columns:1fr 1fr}.pt-root[data-pt-view=skills] .pt-detail{padding:12px}}
+@media(prefers-reduced-motion:reduce){.pt-root[data-pt-view=skills] .pta-academy *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media(forced-colors:active){.pt-root[data-pt-view=skills] :is(.pta-academy-hero,.pta-filter-shell,.pta-practice,.pta-dossier-meta>span,.pta-academy-emblem){background:Canvas;color:CanvasText;border-color:CanvasText}.pt-root[data-pt-view=skills] .pt-skill{border-top-color:CanvasText;box-shadow:none}.pt-root[data-pt-view=skills] .pta-academy-emblem span{color:CanvasText}}
