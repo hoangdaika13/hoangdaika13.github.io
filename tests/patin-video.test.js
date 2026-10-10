@@ -2,8 +2,8 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const D=require('../patin-data'),X=require('../patin-learning-data'),C=require('../patin-core'),read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 const memory=()=>{const m=new Map();return {getItem:k=>m.get(k)||null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k)};};
 const id=D.videos[0].id;
-test('24 original additions and 25 publisher videos have unique real skill/source references',()=>{
-  assert.equal(X.entries.length,24);assert.equal(D.skills.length,148);assert.equal(D.videos.length,25);assert.equal(new Set(D.videos.map(v=>v.id)).size,25);
+test('24 original additions and 37 publisher videos have unique real skill/source references',()=>{
+  assert.equal(X.entries.length,24);assert.equal(D.skills.length,148);assert.equal(D.videos.length,37);assert.equal(new Set(D.videos.map(v=>v.id)).size,37);
   for(const s of X.entries){assert.ok(s.goal&&s.drill&&s.check&&s.mistake);assert.equal(s.reviewedAt,null);assert.ok(s.sources.every(id=>D.sources.some(s=>s.id===id)));}
   for(const v of D.videos){assert.match(v.youtubeId,/^[a-zA-Z0-9_-]{11}$/);assert.equal(new URL(v.sourceUrl).protocol,'https:');assert.ok(v.skillIds.every(id=>D.skills.some(s=>s.id===id)));assert.equal(v.observations.length,3);assert.match(v.rights,/no redistribution license asserted/);assert.equal(v.checkedAt,'2026-10-10');}
   assert.deepEqual([...new Set(D.videos.map(v=>v.publisher))].sort(),['InMoveSkates','Rollerblade','SkateIA']);

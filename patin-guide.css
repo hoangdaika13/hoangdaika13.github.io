@@ -1,0 +1,31 @@
+/* Visual learning desk, scoped to Patin. No remote fonts, textures or animation loops. */
+.pt-root .ptg-library-intro{border-left:4px solid var(--pt-cyan);padding:14px 20px;background:linear-gradient(110deg,#22425b55,#32235130);border-radius:14px}
+.pt-root .ptg-library-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.pt-root .ptg-library-toolbar button{font-size:.9rem;border-radius:999px}
+.pt-root .ptg-card-art{margin:0;padding:6px;max-height:140px;border-radius:12px;border:1px solid var(--pt-line);background:radial-gradient(at 80% 20%,#574a7733,transparent),#0d1a2e;overflow:hidden}
+.pt-root .ptg-card-art svg{width:100%;height:125px;display:block;pointer-events:none}.pt-root .ptg-card-methods{display:flex;gap:6px;flex-wrap:wrap}.pt-root .ptg-card-methods span{font-size:.75rem;padding:3px 7px;border:1px solid var(--pt-line);border-radius:8px;color:var(--pt-muted)}
+.pt-root .ptg-reader{border:1px solid var(--pt-line);border-radius:18px;padding:clamp(12px,2vw,24px);background:linear-gradient(130deg,#4a547c15,transparent),var(--pt-bg);margin-block:22px}
+.pt-root .ptg-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-block:14px}.pt-root .ptg-tabs button[aria-selected=true]{border-color:var(--pt-cyan);background:#214342;color:var(--pt-cyan);box-shadow:inset 0 -3px var(--pt-cyan)}
+.pt-root [data-ptg-panel]{padding-top:14px;border-top:1px solid var(--pt-line);scroll-margin-top:16px}
+.pt-root .ptg-read-label{font-weight:800;color:var(--pt-violet);font-size:.78rem;letter-spacing:.04em}
+.pt-root .ptg-read-steps{padding:0;list-style:none;display:grid;gap:16px}.pt-root .ptg-read-steps>li{display:flex;gap:16px;padding:18px;border:1px solid var(--pt-line);border-radius:14px;background:var(--pt-card)}
+.pt-root .ptg-read-steps>li>span{width:38px;flex-shrink:0;font-weight:850;font-size:1.3rem;color:var(--pt-cyan)}.pt-root .ptg-read-steps h4{margin:0 0 8px}.pt-root .ptg-read-steps p{margin:0;max-width:78ch}
+.pt-root .ptg-coach{border-left:3px solid var(--pt-gold);padding:14px 18px;margin-bottom:16px}.pt-root .ptg-coach h4{margin:0}
+.pt-root .ptg-artboard{border:1px solid var(--pt-line);border-radius:14px;overflow:hidden;background:#0d1930;margin:14px 0;aspect-ratio:7/5;max-width:760px}
+.pt-root .ptg-artboard svg{display:block;width:100%;height:100%;pointer-events:none}
+.pt-root .ptg-route{fill:none;stroke:#83eadb;stroke-width:4;stroke-dasharray:8 6;stroke-linecap:round}
+.pt-root .ptg-zone{fill:#2c385280;stroke:#cab1ff;stroke-width:3}.pt-root .ptg-cone{fill:#f2c887;stroke:#fff0c3;stroke-width:2}
+.pt-root .ptg-point circle{fill:#20314a;stroke:#cab3ff;stroke-width:2}.pt-root .ptg-point text{fill:#fff;font:bold 15px system-ui}.pt-root .ptg-point.is-active circle{fill:#ffe1a0;stroke:#fff1c4}.pt-root .ptg-point.is-active text{fill:#102430}
+.pt-root .ptg-observe-controls,.pt-root .ptg-zoom-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.pt-root .ptg-zoom-controls output{font-size:.85rem;font-weight:700;padding:10px;min-width:70px}.pt-root .ptg-zoom-controls button{min-width:44px}
+.pt-root .ptg-video-card{padding:16px;border:1px solid var(--pt-line);border-radius:14px;background:var(--pt-card)}.pt-root .ptg-video-card h4{margin-bottom:6px}.pt-root .ptg-ranking{display:grid;grid-template-columns:1fr 1fr;gap:14px}.pt-root .ptg-ranking>.pt-notice{grid-column:1/-1}
+.pt-root .ptg-related{margin-top:16px}
+.pt-root .pt-grid[data-mode=list] .ptg-card-art{grid-column:1;grid-row:2/span 3}.pt-root .pt-grid[data-mode=list] .pt-skill .pt-kicker{grid-column:2;grid-row:2}.pt-root .pt-grid[data-mode=list] .pt-skill h3{grid-column:2;grid-row:3}.pt-root .pt-grid[data-mode=list] .pt-skill>p:not(.pt-kicker){grid-column:2;grid-row:4}.pt-root .pt-grid[data-mode=list] .ptg-card-methods{grid-column:1/-1}
+@media(max-width:700px){.pt-root .ptg-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.pt-root .ptg-ranking{grid-template-columns:1fr}.pt-root .ptg-read-steps>li{padding:14px;gap:10px}.pt-root .ptg-read-steps>li>span{width:28px}.pt-root .ptg-observe-controls{display:grid;grid-template-columns:1fr}.pt-root .ptg-artboard{max-height:none}.pt-root .ptg-library-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
+html[data-theme=light] .pt-root .ptg-reader{background:#f6f9ff}html[data-theme=light] .pt-root .ptg-tabs button[aria-selected=true]{color:#135852;background:#d9f0ea}html[data-theme=light] .pt-root .ptg-library-intro{background:#e4edf9}html[data-theme=light] .pt-root .ptg-library-toolbar button[aria-pressed=true]{background:#d9edf3;color:#154f62}
+@media(forced-colors:active){.pt-root :is(.ptg-reader,.ptg-read-steps>li,.ptg-coach,.ptg-library-intro,.ptg-card-art,.ptg-artboard,.ptg-video-card){background:Canvas;color:CanvasText;border-color:CanvasText}.pt-root :is(.ptg-zone,.ptg-cone,.ptg-point circle){fill:Canvas;stroke:CanvasText}.pt-root .ptg-route{stroke:CanvasText}.pt-root .ptg-point text{fill:CanvasText}.pt-root .ptg-point.is-active circle{fill:Highlight;stroke:Highlight}.pt-root .ptg-point.is-active text{fill:HighlightText}.pt-root .ptg-tabs button[aria-selected=true]{background:Highlight!important;color:HighlightText!important;box-shadow:none}.pt-root .ptg-read-steps>li>span{color:CanvasText}}
+.pt-root .ptg-visual-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr);gap:20px;align-items:start}
+.pt-root .ptg-visual-grid .ptg-artboard{margin:0;background-image:linear-gradient(#96b0df08 1px,transparent 1px),linear-gradient(90deg,#96b0df08 1px,transparent 1px);background-size:24px 24px}
+.pt-root .ptg-inspector{padding:16px;border:1px solid var(--pt-line);border-radius:14px;background:var(--pt-card)}
+.pt-root .ptg-inspector .ptg-observe-controls{display:grid;grid-template-columns:1fr}.pt-root .ptg-inspector .ptg-observe-controls button{justify-content:flex-start}
+.pt-root .ptg-inspector .pt-figure-explanation{min-height:0;margin-block:16px}.pt-root .ptg-inspector .ptg-zoom-controls{gap:6px}
+@media(max-width:900px){.pt-root .ptg-visual-grid{grid-template-columns:1fr}.pt-root .ptg-inspector{padding:12px}}
+@media(forced-colors:active){.pt-root .ptg-inspector{background:Canvas;color:CanvasText}.pt-root .ptg-visual-grid .ptg-artboard{background-image:none}}

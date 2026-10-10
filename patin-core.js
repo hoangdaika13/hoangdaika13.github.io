@@ -4,7 +4,7 @@
   const ids=new Set(data.skills.map(s=>s.id)),statuses=new Set(['read','tried']);
   const copy=value=>JSON.parse(JSON.stringify(value));
   const bytes=value=>new TextEncoder().encode(value).byteLength;
-  const libraryDefaults=()=>({query:'',category:'all',discipline:'all',level:'all',favorites:false,mode:'grid',status:'all',sort:'default',page:1});
+  const libraryDefaults=()=>({query:'',category:'all',discipline:'all',level:'all',favorites:false,mode:'grid',status:'all',sort:'default',page:1,method:'all'});
   const videoIds=new Set(data.videos.map(v=>v.id));
   const videoDefaults=()=>({version:1,lastVideo:null,favorites:[],records:{}});
   const recordDefault=()=>({note:'',reviewed:false,markers:[]});
@@ -31,7 +31,7 @@
     }
     return {version:1,lastVideo:v.lastVideo,favorites:[...v.favorites],records};
   }
-  function validateWorkshop(w){if(w===undefined)return workshopDefaults();if(!object(w)||w.version!==1)throw Error('Phiên bản công cụ Patin không hợp lệ.');const l=w.library;if(!object(l)||!text(l.query,120)||!['all',...data.categories.map(c=>c.id)].includes(l.category)||!['all',...data.levels.map(x=>x.id)].includes(l.level)||!['all',...data.disciplines.map(d=>d.id)].includes(l.discipline??'all')||typeof l.favorites!=='boolean'||!['grid','list'].includes(l.mode)||!['all','unread','read','tried'].includes(l.status)||!['default','title','level'].includes(l.sort)||!Number.isInteger(l.page)||l.page<1||l.page>100)throw Error('Bộ lọc thư viện không hợp lệ.');return {version:1,arena:arena.validate(w.arena),videos:validateVideos(w.videos),plan:w.plan===null?null:validatePlan(w.plan),journalDraft:w.journalDraft===null?null:validateDraft(w.journalDraft),library:{query:l.query,category:l.category,discipline:l.discipline??'all',level:l.level,favorites:l.favorites,mode:l.mode,status:l.status,sort:l.sort,page:l.page}};}
+  function validateWorkshop(w){if(w===undefined)return workshopDefaults();if(!object(w)||w.version!==1)throw Error('Phiên bản công cụ Patin không hợp lệ.');const l=w.library;if(!object(l)||!text(l.query,120)||!['all',...data.categories.map(c=>c.id)].includes(l.category)||!['all',...data.levels.map(x=>x.id)].includes(l.level)||!['all',...data.disciplines.map(d=>d.id)].includes(l.discipline??'all')||typeof l.favorites!=='boolean'||!['grid','list'].includes(l.mode)||!['all','unread','read','tried'].includes(l.status)||!['default','title','level'].includes(l.sort)||!Number.isInteger(l.page)||l.page<1||l.page>100||!['all','video','visual','written','verified'].includes(l.method??'all'))throw Error('Bộ lọc thư viện không hợp lệ.');return {version:1,arena:arena.validate(w.arena),videos:validateVideos(w.videos),plan:w.plan===null?null:validatePlan(w.plan),journalDraft:w.journalDraft===null?null:validateDraft(w.journalDraft),library:{query:l.query,category:l.category,discipline:l.discipline??'all',level:l.level,favorites:l.favorites,mode:l.mode,status:l.status,sort:l.sort,page:l.page,method:l.method??'all'}};}
   function validate(input){
     if(!object(input)||input.version!==VERSION||!Number.isSafeInteger(input.revision)||input.revision<0||!Array.isArray(input.favorites)||input.favorites.length>ids.size||!object(input.progress)||Object.keys(input.progress).length>ids.size||!Array.isArray(input.journal)||input.journal.length>MAX_ENTRIES)throw Error('Định dạng hoặc phiên bản dữ liệu không hợp lệ.');
     if(input.favorites.some(id=>!ids.has(id))||new Set(input.favorites).size!==input.favorites.length)throw Error('Dấu trang không hợp lệ.');
