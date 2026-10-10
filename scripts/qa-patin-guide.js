@@ -13,10 +13,10 @@ async function main(){
   const read=()=>page.evaluate(()=>HHPatinCore.createStore(JSON.parse(localStorage.getItem('hh.qa.patin.user')||'null'),localStorage).getState());
   await page.goto(origin+'/tests/fixtures/patin.html#/patin/skills');
   assert.equal(await page.locator('.ptg-card-art svg').count(),12);
-  assert.match(await page.locator('.ptg-library-intro').innerText(),/148.*37/);
+  assert.match(await page.locator('.ptg-library-intro').innerText(),/148.*75/);
   assert.equal(await page.evaluate(()=>{const ids=[...document.querySelectorAll('[id]')].map(n=>n.id);return new Set(ids).size===ids.length;}),true);
   pass('12 native SVG cards, accurate catalog/video counts and unique accessibility IDs without asset fetches');
-  await page.locator('[data-pt-library-method]').selectOption('video');assert.match(await page.locator('[data-pt-count]').innerText(),/^42 kỹ năng/);
+  await page.locator('[data-pt-library-method]').selectOption('video');assert.match(await page.locator('[data-pt-count]').innerText(),/^55 kỹ năng/);
   assert.equal((await read()).workshop.library.method,'video');await page.reload();assert.equal(await page.locator('[data-pt-library-method]').inputValue(),'video');
   await page.locator('[data-pt-library-method]').selectOption('verified');assert.match(await page.locator('[data-pt-count]').innerText(),/^16 kỹ năng/);
   await page.locator('[data-pt-quick-discipline=slide]').click();assert.match(await page.locator('[data-pt-count]').innerText(),/^8 kỹ năng/);

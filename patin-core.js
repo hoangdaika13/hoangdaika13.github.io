@@ -1,4 +1,4 @@
-(function(root,factory){const api=factory(typeof module==='object'&&module.exports?require('./patin-data.js'):root.HHPatinData,typeof module==='object'&&module.exports?require('./patin-arena-core.js'):root.HHPatinArenaCore,typeof module==='object'&&module.exports?require('./patin-academy.js'):root.HHPatinAcademy);if(typeof module==='object'&&module.exports)module.exports=api;else root.HHPatinCore=api;})(globalThis,function(data,arena,academy){
+(function(root,factory){const api=factory(typeof module==='object'&&module.exports?require('./patin-data.js'):root.HHPatinData,typeof module==='object'&&module.exports?require('./patin-arena-core.js'):root.HHPatinArenaCore,typeof module==='object'&&module.exports?require('./patin-academy.js'):root.HHPatinAcademy,typeof module==='object'&&module.exports?require('./patin-video-curriculum.js'):root.HHPatinVideoCurriculum);if(typeof module==='object'&&module.exports)module.exports=api;else root.HHPatinCore=api;})(globalThis,function(data,arena,academy,videoCurriculum){
   'use strict';
   const VERSION=1,MAX_BYTES=600000,MAX_ENTRIES=500;
   const ids=new Set(data.skills.map(s=>s.id)),statuses=new Set(['read','tried']);
@@ -6,7 +6,7 @@
   const bytes=value=>new TextEncoder().encode(value).byteLength;
   const libraryDefaults=()=>({query:'',category:'all',discipline:'all',level:'all',favorites:false,mode:'grid',status:'all',sort:'default',page:1,method:'all',shoe:'all',family:'all'});
   const videoIds=new Set(data.videos.map(v=>v.id));
-  const videoDefaults=()=>({version:1,lastVideo:null,favorites:[],records:{}});
+  const videoDefaults=()=>({version:1,lastVideo:null,favorites:[],records:{},library:videoCurriculum.defaults()});
   const recordDefault=()=>({note:'',reviewed:false,markers:[]});
   const workshopDefaults=()=>({version:1,plan:null,journalDraft:null,library:libraryDefaults(),videos:videoDefaults(),academy:academy.validateRecords(),arena:arena.defaults()});
   const blank=()=>({version:VERSION,revision:0,updatedAt:null,favorites:[],progress:{},journal:[],lastSkill:null,workshop:workshopDefaults()});
@@ -29,7 +29,7 @@
       if(!videoIds.has(id)||!object(r)||!text(r.note,2000)||typeof r.reviewed!=='boolean'||!Array.isArray(r.markers)||r.markers.length>12||r.markers.some(m=>!object(m)||!Number.isInteger(m.seconds)||m.seconds<0||m.seconds>86400||!text(m.note,160))||new Set(r.markers.map(m=>m.seconds)).size!==r.markers.length)throw Error('Ghi chú hoặc mốc video không hợp lệ.');
       records[id]={note:r.note,reviewed:r.reviewed,markers:r.markers.map(m=>({seconds:m.seconds,note:m.note}))};
     }
-    return {version:1,lastVideo:v.lastVideo,favorites:[...v.favorites],records};
+    return {version:1,lastVideo:v.lastVideo,favorites:[...v.favorites],records,library:videoCurriculum.validatePreferences(v.library,data.videos)};
   }
   function validateWorkshop(w){if(w===undefined)return workshopDefaults();if(!object(w)||w.version!==1)throw Error('Phiên bản công cụ Patin không hợp lệ.');const l=w.library;if(!object(l)||!text(l.query,120)||!['all',...data.categories.map(c=>c.id)].includes(l.category)||!['all',...data.levels.map(x=>x.id)].includes(l.level)||!['all',...academy.groups.map(d=>d.id)].includes(l.discipline??'all')||typeof l.favorites!=='boolean'||!['grid','list'].includes(l.mode)||!['all','unread','read','tried'].includes(l.status)||!['default','title','level'].includes(l.sort)||!Number.isInteger(l.page)||l.page<1||l.page>100||!['all','video','visual','written','verified'].includes(l.method??'all'))throw Error('Bộ lọc thư viện không hợp lệ.');academy.filter([],{shoe:l.shoe??'all',family:l.family??'all'});return {version:1,academy:academy.validateRecords(w.academy),arena:arena.validate(w.arena),videos:validateVideos(w.videos),plan:w.plan===null?null:validatePlan(w.plan),journalDraft:w.journalDraft===null?null:validateDraft(w.journalDraft),library:{query:l.query,category:l.category,discipline:l.discipline??'all',level:l.level,favorites:l.favorites,mode:l.mode,status:l.status,sort:l.sort,page:l.page,method:l.method??'all',shoe:l.shoe??'all',family:l.family??'all'}};}
   function validate(input){
@@ -87,6 +87,7 @@
   const setPlan=(state,p)=>{state.workshop.plan=p===null?null:validatePlan(p);};
   const setJournalDraft=(state,d)=>{state.workshop.journalDraft=d===null?null:validateDraft(d);};
   const setLibrary=(state,l)=>{state.workshop.library=validateWorkshop({...state.workshop,library:l}).library;};
+  function setVideoLibrary(state,input){state.workshop.videos.library=videoCurriculum.validatePreferences(input,data.videos);}
   function videoRecord(state,id){if(!videoIds.has(id))throw Error('Không tìm thấy video.');return state.workshop.videos.records[id]||(state.workshop.videos.records[id]=recordDefault());}
   function setVideoNote(state,id,note,expected){const r=videoRecord(state,id);if(!text(note,2000))throw Error('Ghi chú tối đa 2000 ký tự.');if(r.note!==expected)throw Error('Ghi chú đã thay đổi ở tab khác. Bản đang nhập vẫn giữ; tải TXT trước rồi mở lại video để đối chiếu.');r.note=note;}
   function toggleVideoFavorite(state,id){if(!videoIds.has(id))throw Error('Không tìm thấy video.');const a=state.workshop.videos.favorites,i=a.indexOf(id);if(i<0)a.push(id);else a.splice(i,1);}
@@ -102,5 +103,5 @@
   function plan(minutes=20){const duration=[10,20,30].includes(Number(minutes))?Number(minutes):20;return [{title:'Chuẩn bị & kiểm tra sân/giày',minutes:duration===10?2:4},{title:'Ôn tư thế và cách dừng đã được hướng dẫn',minutes:duration===10?5:duration===20?10:16},{title:'Bài HLV chọn ở tốc độ kiểm soát',minutes:duration===10?2:duration===20?4:7},{title:'Nghỉ, kiểm tra thiết bị & ghi nhận',minutes:duration===10?1:duration===20?2:3}];}
 
   const checkQuiz=answers=>data.quiz.map(q=>({id:q.id,answered:Number.isInteger(answers[q.id])&&answers[q.id]>=0&&answers[q.id]<q.options.length,correct:answers[q.id]===q.answer,explanation:q.explanation}));
-  return Object.freeze({VERSION,MAX_BYTES,MAX_ENTRIES,blank,fold,escape,scope,keyFor,validate,parse,createStore,readImport,filterSkills,toggleFavorite,setStatus,setNote,addEntry,removeEntry,updateEntry,setPlan,setJournalDraft,setLibrary,setVideoNote,toggleVideoFavorite,setVideoReviewed,setLastVideo,setVideoMarker,removeVideoMarker,arena,filterJournal,journalCsv,planText,summary,plan,checkQuiz});
+  return Object.freeze({VERSION,MAX_BYTES,MAX_ENTRIES,blank,fold,escape,scope,keyFor,validate,parse,createStore,readImport,filterSkills,toggleFavorite,setStatus,setNote,addEntry,removeEntry,updateEntry,setPlan,setJournalDraft,setLibrary,setVideoLibrary,setVideoNote,toggleVideoFavorite,setVideoReviewed,setLastVideo,setVideoMarker,removeVideoMarker,arena,filterJournal,journalCsv,planText,summary,plan,checkQuiz});
 });

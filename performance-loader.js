@@ -296,8 +296,8 @@
       scripts: ["hh-eonwild-cinematic-pack.js?v=1", "hh-eonwild-content-v2.js?v=3", "hh-eonwild-species-registry.js?v=1", "hh-eonwild-input-system.js?v=2", "hh-eonwild-desktop-controller.js?v=2", "hh-eonwild-collision-system.js?v=1", "hh-eonwild-world-atlas.js?v=2", "hh-eonwild-simulation-v2.js?v=4", "hh-eonwild-3d-core.js?v=7", "hh-eonwild-landscape-core.js?v=1", "hh-eonwild-vegetation-system.js?v=1", "hh-eonwild-environment-renderer.js?v=4", "hh-eonwild-water-weather-system.js?v=1", "hh-eonwild-renderer-3d.js?v=19", "hh-eonwild-game.js?v=28"]
     },
     patin: {
-      styles: ["patin.css?v=5", "patin-arena.css?v=1", "patin-guide.css?v=1", "patin-home.css?v=1", "patin-academy.css?v=1"],
-      scripts: ["patin-learning-data.js?v=1", "patin-disciplines.js?v=1", "patin-arena-data.js?v=1", "patin-video-expansion.js?v=1", "patin-data.js?v=5", "patin-arena-core.js?v=1", "patin-academy.js?v=1", "patin-core.js?v=7", "patin-visuals.js?v=1", "patin-guide.js?v=1", "patin-video.js?v=2", "patin-arena.js?v=2", "patin-guide-ui.js?v=2", "patin-home.js?v=1", "patin.js?v=8"]
+      styles: ["patin.css?v=5", "patin-arena.css?v=1", "patin-guide.css?v=1", "patin-home.css?v=1", "patin-academy.css?v=1", "patin-video-academy.css?v=1"],
+      scripts: ["patin-learning-data.js?v=1", "patin-disciplines.js?v=1", "patin-arena-data.js?v=1", "patin-video-expansion.js?v=1", "patin-video-curriculum.js?v=1", "patin-data.js?v=6", "patin-arena-core.js?v=1", "patin-academy.js?v=1", "patin-core.js?v=8", "patin-visuals.js?v=1", "patin-guide.js?v=1", "patin-video.js?v=3", "patin-arena.js?v=2", "patin-guide-ui.js?v=2", "patin-home.js?v=1", "patin.js?v=8"]
     },
     "patin-home-3d": { styles: [], scripts: ["patin-home-scene.js?v=1"] },
     fortune: {
