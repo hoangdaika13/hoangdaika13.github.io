@@ -5795,6 +5795,9 @@ function initAppShell() {
       { id: "slide", title: "Slide · Patin trượt ngang", route: "/patin/slide" },
       { id: "slalom", title: "Slalom · Patin luồn cọc", route: "/patin/slalom" },
       { id: "videos", title: "Video học Patin", route: "/patin/videos" },
+      { id: "map", title: "Bản đồ nền tảng Patin", route: "/patin/map" },
+      { id: "competition", title: "Tra cứu kỹ thuật thi đấu Patin", route: "/patin/competition" },
+      { id: "routine", title: "Tổ hợp & chuẩn bị Patin", route: "/patin/routine" },
       { id: "studio", title: "Minh họa Patin", route: "/patin/studio" },
       { id: "path", title: "Lộ trình Patin", route: "/patin/path" },
       { id: "gear", title: "Giày & an toàn", route: "/patin/gear" },
@@ -5883,7 +5886,7 @@ function initAppShell() {
     "play-center": "hh play game arcade trò chơi party room watch party truyện tương tác escape rhythm karaoke pet chill quiz giải trí nhiều người",
     "cosmic-observatory": "vũ trụ hh universe thiên văn nasa jpl hệ mặt trời hành tinh bầu trời sao đài quan sát dsn bề mặt dòng thời gian phòng học tiểu hành tinh ngoại hành tinh asteroid exoplanet solar system observatory",
     "eonwild-game": "game eonwild động vật muôn loài khủng long sinh tồn thế giới mở cổ sinh trung sinh tân sinh hiện đại không con người ecology survival",
-    patin: "patin trượt inline roller skating rollerblade quad giày bảo hộ phanh rẽ slalom freestyle fitness speed slide double push soul acid magic parallel ufo nelson crazy luồn cọc nhật ký tập video tua chậm lặp a b học trực quan",
+    patin: "patin trượt inline roller skating rollerblade quad giày bảo hộ phanh rẽ slalom freestyle fitness speed slide double push soul acid magic parallel ufo nelson crazy luồn cọc nhật ký tập video tua chậm lặp a b học trực quan performance arena thi đấu matrix classic battle bản đồ tổ hợp checklist",
     fortune: "xem bói tarot tử vi chiêm tinh kinh dịch",
     work: "công việc dự án task ghi chú lịch",
     "davinci-resolve": "tool công cụ video media batch youtube facebook tiktok",
@@ -6847,7 +6850,7 @@ function initAppShell() {
     crumbLabels["focus-room"] = "Phòng học tập trung";
     crumbLabels["study-together"] = "Học cùng nhau";
     crumbLabels.platform = "Trang chủ";
-    if (crumbs[0] === "patin") Object.assign(crumbLabels, { patin: "Patin", videos: "Học qua video", skills: "Kỹ năng", disciplines: "Bộ môn", speed: "Speed", slide: "Slide", slalom: "Slalom", studio: "Minh họa", path: "Lộ trình", gear: "Giày & an toàn", journal: "Nhật ký tập", resources: "Tra cứu" });
+    if (crumbs[0] === "patin") Object.assign(crumbLabels, { patin: "Patin", videos: "Học qua video", map: "Bản đồ nền tảng", competition: "Thi đấu", routine: "Tổ hợp & chuẩn bị", skills: "Kỹ năng", disciplines: "Bộ môn", speed: "Speed", slide: "Slide", slalom: "Slalom", studio: "Minh họa", path: "Lộ trình", gear: "Giày & an toàn", journal: "Nhật ký tập", resources: "Tra cứu" });
     const knownTools = [...creativeStudioItems, ...mediaStudioItems, ...developerToolItems, ...musicAIAllPageItems, ...workGalaxyPageItems, ...davinciResolvePages];
     const routeTools = crumbs[0] === "patin" ? (groups.find((item) => item.id === "patin")?.pages || []) : crumbs[0] === "create" ? creativeStudioItems : crumbs[0] === "music-ai" ? musicAIAllPageItems : crumbs[0] === "davinci-resolve" ? davinciResolvePages : crumbs[0] === "media-design" ? mediaStudioItems : crumbs[0] === "graphic-design" ? graphicDesignPages : crumbs[0] === "dev-tools" ? developerAllToolItems : crumbs[0] === "work" ? workGalaxyPageItems : knownTools;
     let crumbRoute = "";
@@ -8394,7 +8397,7 @@ function initAppShell() {
     const results = searchItems().filter((item) => {
       const haystack = `${item.title} ${item.description || ""} ${item.key || ""}`.toLowerCase();
       return tokens.every((token) => haystack.includes(token));
-    }).slice(0, 12);
+    }).sort((a, b) => normalized === "patin" ? Number(b.route === "/patin") - Number(a.route === "/patin") : 0).slice(0, 12);
     if (paletteCount) paletteCount.textContent = `${results.length} kết quả`;
     paletteResults.innerHTML = results.length ? results.map((item, index) => `<button type="button" role="option" aria-selected="${index === 0}" class="${index === 0 ? "is-selected" : ""}" ${item.action ? `data-command-action="${item.action}"` : `data-app-route="${item.route}"`}><span>${item.type}</span><div><strong>${item.title}</strong><small>${item.description}</small></div><b>↵</b></button>`).join("") : "<p>Không tìm thấy công cụ hoặc hướng dẫn phù hợp.</p>";
   };

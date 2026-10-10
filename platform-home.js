@@ -29,7 +29,7 @@
     "comic-reader": "Thư viện truyện và sách có nguồn; tìm kiếm, theo dõi, lịch sử và nhiều chế độ đọc.",
     cinema: "Khám phá phim Public Domain và Creative Commons với nguồn và điều kiện giấy phép.",
     "music-library": "Nghe nhạc mở, tạo playlist và tra cứu tác giả, nguồn cùng giấy phép sử dụng.",
-    patin: "130 bài kỹ năng & định hướng, 25 video có nguồn Speed/Slide/Slalom, giày/bảo hộ, lộ trình và nhật ký tập cục bộ. Nội dung chữ không thay thế HLV.",
+    patin: "148 bài kỹ năng & định hướng, bản đồ nền tảng, tra cứu thi đấu có nguồn và tổ hợp riêng, 25 video có nguồn Speed/Slide/Slalom, giày/bảo hộ, lộ trình và nhật ký tập cục bộ. Nội dung chữ không thay thế HLV.",
     fortune: "Tarot, 64 quẻ, bản đồ sao, thần số và nhật ký chiêm nghiệm; dành cho giải trí, suy ngẫm.",
     work: "Dự án, task, board, lịch, Gantt, roadmap, đội nhóm, tri thức và quy trình tự động.",
     "davinci-resolve": "Dựng video, tạo thumbnail, phụ đề, xử lý batch và công cụ YouTube, Facebook, TikTok.",
