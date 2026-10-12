@@ -1,6 +1,30 @@
-/* HH Intelligence Workspace v3.3
+/* HH Intelligence Workspace v3.4 — opt-in image/video creation.
    One viewport, one message scroller, responsive drawers and a motion-safe
    cosmic visual system. */
+.chat-ai-hub .chat-media-controls{margin:8px 0;padding:12px;border:1px solid rgba(137,150,255,.26);border-radius:14px;background:linear-gradient(135deg,rgba(94,72,187,.12),rgba(30,125,164,.1));max-height:240px;overflow:auto;scrollbar-width:thin}
+.chat-ai-hub .chat-media-controls p{margin:0 0 8px;color:#c8dcf9;font-size:12px;line-height:1.55;overflow-wrap:anywhere}
+.chat-ai-hub .chat-media-controls small{display:block;margin-top:7px;color:#aabbda;font-size:11px;line-height:1.5}
+.chat-ai-hub .chat-media-options{display:flex;flex-wrap:wrap;gap:8px}
+.chat-ai-hub .chat-media-options label{display:grid;flex:1 1 100px;gap:5px;min-width:0;color:#d8e9ff;font-size:12px}
+.chat-ai-hub .chat-media-options select{width:100%;min-height:38px;border:1px solid #445577;border-radius:9px;background:#111b30;color:#edf4ff;font:inherit;padding:7px}
+.chat-ai-hub .chat-media-review{margin-top:10px;padding-top:10px;border-top:1px solid #405278}
+.chat-ai-hub .chat-media-review>label{display:flex;gap:8px;align-items:start;margin:8px 0;color:#e2eafa;font-size:12px;line-height:1.5}
+.chat-ai-hub .chat-media-review input{flex:none;width:18px;height:18px;accent-color:#75d5ff}
+.chat-ai-hub .chat-media-review>div{display:flex;flex-wrap:wrap;gap:8px}
+.chat-ai-hub .chat-ai-message .chat-media-result footer{position:static!important;display:flex!important;flex-wrap:wrap;gap:8px;opacity:1!important;visibility:visible!important;pointer-events:auto!important}
+.chat-ai-hub .chat-ai-message .chat-media-result footer button{min-height:44px!important;padding:8px 12px!important;font-size:12px!important}
+.chat-ai-hub .chat-ai-message .chat-media-result footer button{color:#ecf6ff!important;border:1px solid #5976a5!important;border-radius:9px!important;background:linear-gradient(135deg,#152c49,#292146)!important}
+.chat-ai-hub [data-chat-ai-stop][hidden]{display:none!important}
+.chat-ai-hub .chat-media-review button,.chat-ai-hub .chat-media-result footer button{min-height:40px;border:1px solid #596ca0;border-radius:9px;padding:8px 12px;background:#162743;color:#eef4ff;font:inherit;font-size:12px;cursor:pointer}
+.chat-ai-hub .chat-media-review button:first-child{background:linear-gradient(125deg,#415fc4,#6c37ab);border-color:#a58cfa}
+.chat-ai-hub .chat-media-result{padding:13px;border:1px solid rgba(112,189,239,.35);border-radius:14px;background:linear-gradient(145deg,rgba(33,78,120,.16),rgba(118,59,152,.15))}
+.chat-ai-hub .chat-media-result>header{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;color:#b7edff;font-size:13px}
+.chat-ai-hub .chat-media-result img,.chat-ai-hub .chat-media-result video{display:block;width:100%;max-height:440px;object-fit:contain;border-radius:10px;background:#050a15;margin:12px 0}
+.chat-ai-hub .chat-media-result small{display:block;color:#b8c9df;font-size:11px;margin-top:8px}
+.chat-ai-hub .chat-media-error{color:#ffd39a;font-size:13px;line-height:1.5}
+.chat-ai-hub .chat-media-controls :focus-visible,.chat-ai-hub .chat-media-result :focus-visible{outline:2px solid #72e5ff;outline-offset:3px}
+@media(max-width:480px){.chat-ai-hub .chat-media-controls{padding:8px;max-height:180px}.chat-ai-hub .chat-media-options label{flex-basis:90px}.chat-ai-hub .chat-media-result{padding:8px}.chat-ai-hub .chat-media-review button,.chat-ai-hub .chat-media-result footer button{min-height:44px}}
+@media(forced-colors:active){.chat-ai-hub .chat-media-controls,.chat-ai-hub .chat-media-result{background:Canvas;border-color:CanvasText}.chat-ai-hub .chat-media-review button{background:ButtonFace;color:ButtonText;border-color:ButtonText}}
 body.app-chat-ai-route .app-breadcrumb,
 body.app-chat-ai-route .app-page-header,
 body.app-chat-ai-route .app-context-bar{display:none!important}

@@ -8,11 +8,11 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const chat = require(path.join(root, "chat-ai-hub.js"));
 
 test("HH Intelligence exposes processing modes and owner-isolated local state", () => {
-  assert.equal(chat.VERSION, "3.3.0");
+  assert.equal(chat.VERSION, "3.4.0");
   assert.deepEqual(chat.PROCESSING_MODES.map((item) => item.id), ["auto", "fast", "deep", "economy"]);
   assert.deepEqual(chat.MODELS.map((item) => item.id), ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"]);
-  assert.deepEqual(chat.MODES.map((item) => item.id), ["chat", "research", "code", "write", "study", "vision"]);
-  assert.deepEqual(chat.MODES.map((item) => item.action), ["chat", "research", "code", "write", "study", "vision"]);
+  assert.deepEqual(chat.MODES.map((item) => item.id), ["chat", "research", "code", "write", "study", "vision", "image", "video"]);
+  assert.deepEqual(chat.MODES.map((item) => item.action), ["chat", "research", "code", "write", "study", "vision", "image", "video"]);
   assert.notEqual(chat.storageKey("owner-a"), chat.storageKey("owner-b"));
   const state = chat.normalizeState({ model: "untrusted-model", sessions: [], thinkingLevel: "invalid" });
   assert.equal(state.processingMode, "auto");
@@ -190,12 +190,12 @@ test("Chat AI is a first-class lazy route, searchable and cached offline", () =>
   assert.match(client, /id: "chat-ai"[\s\S]*?route: "\/chat-ai"/);
   assert.match(client, /window\.HHChatAI\?\.mount/);
   assert.match(client, /title: "Chat AI"[\s\S]*?smart router/);
-  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=20[\s\S]*?chat-ai-hub\.js\?v=18/);
+  assert.match(loader, /"chat-ai":\s*\{[\s\S]*?chat-ai-hub\.css\?v=21[\s\S]*?chat-ai-media\.js\?v=1[\s\S]*?chat-ai-hub\.js\?v=19/);
   assert.ok(loaderVersion, "the executable document must expose the current performance loader version");
   assert.match(worker, new RegExp(`\\.\\/performance-loader\\.js\\?v=${loaderVersion}(?:"|\\b)`));
   assert.match(loader, /value\.startsWith\("\/chat-ai"\)/);
-  assert.match(worker, /chat-ai-hub\.css\?v=20/);
-  assert.match(worker, /chat-ai-hub\.js\?v=18/);
+  assert.match(worker, /chat-ai-hub\.css\?v=21/);
+  assert.match(worker, /chat-ai-hub\.js\?v=19/);
   assert.match(html, /data-hh-galaxy-key="chatAI"/);
   assert.match(html, /25 LĨNH VỰC/);
   assert.match(galaxy, /chatAI:\s*\{[\s\S]*?route: "#\/chat-ai"/);

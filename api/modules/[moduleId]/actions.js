@@ -30,6 +30,7 @@ const { handleOpenBooksSource } = require("../../../utils/open-books-source");
 const handleEducation = require("../../../utils/education-handler");
 const handleStudyTogether = require("../../../utils/study-together");
 const handleSocialMedia = require("../../../utils/social-media-handler");
+const { createHandler: createChatMediaHandler } = require("../../../utils/chat-ai-media");
 
 const downloadHosts = [
   "youtube.com", "youtu.be", "tiktok.com", "facebook.com", "fb.watch",
@@ -398,10 +399,10 @@ function providerError(message, status = 502, code = "MUSIC_PROVIDER_ERROR") {
   return error;
 }
 
-async function withGeminiMediaKey(task) {
+async function withGeminiMediaKey(task, options = {}) {
   const pool = geminiPool();
   if (!pool.keys.length) throw providerError("Gemini media chưa được cấu hình trên máy chủ.", 503, "GEMINI_NOT_CONFIGURED");
-  const candidates = pool.candidates();
+  const candidates = options.singleAttempt ? pool.candidates().slice(0, 1) : pool.candidates();
   let lastError = null;
   for (let index = 0; index < candidates.length; index += 1) {
     const key = candidates[index];
@@ -442,7 +443,7 @@ function musicReferenceImages(meta = {}) {
   }).filter(Boolean);
 }
 
-async function generateMusicImage(body) {
+async function generateMusicImage(body, options = {}) {
   const prompt = clean(body.input || body.prompt, 5000);
   if (!prompt) throw providerError("Hãy nhập concept trước khi tạo ảnh.", 400, "IMAGE_PROMPT_REQUIRED");
   const meta = body.meta || {};
@@ -471,7 +472,7 @@ async function generateMusicImage(body) {
     const image = interactionImage(data);
     if (!image?.data || image.data.length > 3_100_000) throw providerError("Ảnh trả về rỗng hoặc vượt giới hạn truyền tải.", 502, "IMAGE_OUTPUT_INVALID");
     return { ok: true, media: { kind: "image", data: image.data, mimeType: image.mimeType, model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image", interactionId: clean(data.id, 240) } };
-  });
+  }, options);
 }
 
 async function generateMusicTrack(body) {
@@ -1849,6 +1850,9 @@ async function runOpenAI(moduleId, actionType, input, meta = {}, safetyIdentifie
 }
 
 module.exports = async function handler(req, res) {
+  if (req.query.moduleId === "chat-ai" && req.query.mediaAction) {
+    return createChatMediaHandler({ generateImage: generateMusicImage, providerStatus: musicProviderStatus })(req, res);
+  }
   if (req.query.moduleId === "download-center") return downloadCenterAction(req, res);
   if (req.query.moduleId === "education") return handleEducation(req, res);
   if (req.query.moduleId === "study-together") return handleStudyTogether(req, res);

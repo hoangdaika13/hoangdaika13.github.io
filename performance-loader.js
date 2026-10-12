@@ -313,8 +313,8 @@
       scripts: ["remote-hub.js?v=4"]
     },
     "chat-ai": {
-      styles: ["chat-ai-hub.css?v=20"],
-      scripts: ["chat-ai-hub.js?v=18"]
+      styles: ["chat-ai-hub.css?v=21"],
+      scripts: ["chat-ai-media.js?v=1", "chat-ai-hub.js?v=19"]
     },
     settings: {
       styles: ["settings-studio.css?v=7"],

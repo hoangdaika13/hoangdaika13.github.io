@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1049";
+const CACHE = "hh-identity-portal-v1050";
+// Previous release: hh-identity-portal-v1049; ./performance-loader.js?v=711; ./chat-ai-hub.css?v=20; ./chat-ai-hub.js?v=18.
 // Previous release: hh-identity-portal-v1048; ./performance-loader.js?v=710; ./patin-data.js?v=5; ./patin-core.js?v=7; ./patin-video.js?v=2.
 // Previous release: hh-identity-portal-v1047; ./performance-loader.js?v=709; ./patin.js?v=7; ./patin-core.js?v=6; ./patin-guide-ui.js?v=1.
 // Previous release: hh-identity-portal-v1046; ./performance-loader.js?v=708; ./script.js?v=289; ./platform-home.js?v=17; ./patin.js?v=6; ./patin-arena.js?v=1.
@@ -231,7 +232,7 @@ const RUNTIME_ASSETS = [
   "./fortune-hub-v5.css?v=26",
   "./draw-studio.css?v=14",
   "./remote-hub.css?v=4",
-  "./chat-ai-hub.css?v=20",
+  "./chat-ai-hub.css?v=21",
   "./account-center.css?v=2",
   "./account-center.js?v=2",
   "./settings-studio.css?v=7",
@@ -680,7 +681,8 @@ const RUNTIME_ASSETS = [
   "./assets/fortune/lenormand/game-of-hope/spiel-der-hoffnung-36.webp",
   "./assets/fortune/moon/nasa-lro/lroc-color-2k.jpg",
   "./assets/fortune/moon/nasa-lro/lroc-height-1k.jpg",
-  "./chat-ai-hub.js?v=18",
+  "./chat-ai-media.js?v=1",
+  "./chat-ai-hub.js?v=19",
   "./media-design-page.js?v=23",
   "./tool-manifests.js?v=1",
   "./tool-runtime.js?v=1",
@@ -790,7 +792,7 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=711",
+  "./performance-loader.js?v=712",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
   "./script.js?v=289"
