@@ -18,18 +18,22 @@ test("Professional Toolkit uses dedicated dynamic routes and mounts the selected
   assert.match(lab, /HHPlatformTools/);
   assert.match(lab, /HHToolWorkspace/);
   assert.match(lab, /HHUtilityTools/);
+  assert.match(shell, /id: "all-tools", label: "All Tool"/);
+  assert.match(shell, /"dev", "all-tools", "insights"/);
+  assert.match(shell, /HHFeatureLab\?\.cleanup\?\.\(\)/);
 });
 
 test("platform loader includes runtime, manifests, dedicated suites and nested tool routes", () => {
   const loader = read("performance-loader.js");
   assert.match(read("index.html"), /performance-loader\.js\?v=\d+/);
   for (const asset of [
-    "tool-manifests.js?v=1",
-    "tool-runtime.js?v=1",
-    "feature-lab.js?v=6",
-    "platform-tools.js?v=1",
-    "tool-workspace-pro.js?v=1",
-    "utility-lab-tools.js?v=10"
+    "all-tool-state.js?v=1",
+    "tool-manifests.js?v=2",
+    "tool-runtime.js?v=2",
+    "feature-lab.js?v=7",
+    "platform-tools.js?v=2",
+    "tool-workspace-pro.js?v=2",
+    "utility-lab-tools.js?v=11"
   ]) assert.match(loader, new RegExp(asset.replace(/[.?+]/g, "\\$&")));
   assert.match(loader, /value\.startsWith\("\/tools"\)/);
 });
@@ -41,7 +45,7 @@ test("toolkit source is UTF-8 and service worker publishes the new assets", () =
   }
   const worker = read("sw.js");
   assert.match(worker, /hh-identity-portal-v\d+/);
-  assert.match(worker, /platform-tools\.css\?v=1/);
-  assert.match(worker, /tool-workspace-pro\.js\?v=1/);
-  assert.match(worker, /utility-lab-tools\.js\?v=10/);
+  assert.match(worker, /platform-tools\.css\?v=2/);
+  assert.match(worker, /tool-workspace-pro\.js\?v=2/);
+  assert.match(worker, /utility-lab-tools\.js\?v=11/);
 });

@@ -55,3 +55,25 @@ test("User-facing source is UTF-8 and contains no common mojibake sequences", ()
   assert.match(source, /Không thể hoàn thành thao tác/);
   assert.match(source, /Đã lưu cài đặt trên thiết bị/);
 });
+
+test("All Tools data and appearance stay independent from auth and other workspaces", () => {
+  assert.match(source, /HHAllToolState\?\.accountScope/);
+  assert.match(source, /indexedDB\.open\(`\$\{DB_NAME\}:\$\{encodeURIComponent\(owner\)\}`/);
+  assert.match(source, /hh\.all-tools\.appearance\.v1/);
+  assert.match(source, /hh:alltools-appearance-change/);
+  assert.doesNotMatch(source, /document\.documentElement\.(?:dataset|style)/);
+  assert.doesNotMatch(source, /hh:offline-retry/);
+  assert.match(source, /transaction\.oncomplete/);
+  assert.match(source, /Chỉ áp dụng bên trong All Tools/);
+});
+
+test("workspace cleanup and truthful utility states are explicit", () => {
+  assert.match(source, /state\.longTaskObserver\?\.disconnect/);
+  assert.match(source, /document\.hidden/);
+  assert.match(source, /pointer|data-pt-favorite-down/);
+  assert.match(source, /không có API\/tệp nào được tải/);
+  assert.match(source, /Không có nguồn realtime máy chủ/);
+  assert.match(css, /container-type:inline-size/);
+  assert.match(css, /@container\(max-width:700px\)/);
+  assert.match(css, /@media\(forced-colors:active\)/);
+});

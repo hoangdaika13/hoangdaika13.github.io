@@ -1,4 +1,5 @@
-const CACHE = "hh-identity-portal-v1050";
+const CACHE = "hh-identity-portal-v1051";
+// Previous release: hh-identity-portal-v1050; ./performance-loader.js?v=712; ./script.js?v=289; ./tool-manifests.js?v=1; ./tool-runtime.js?v=1; ./feature-lab.css?v=5; ./feature-lab.js?v=6; ./platform-tools.css?v=1; ./platform-tools.js?v=1; ./tool-workspace-pro.css?v=1; ./tool-workspace-pro.js?v=1; ./utility-lab-tools.css?v=9; ./utility-lab-tools.js?v=10.
 // Previous release: hh-identity-portal-v1049; ./performance-loader.js?v=711; ./chat-ai-hub.css?v=20; ./chat-ai-hub.js?v=18.
 // Previous release: hh-identity-portal-v1048; ./performance-loader.js?v=710; ./patin-data.js?v=5; ./patin-core.js?v=7; ./patin-video.js?v=2.
 // Previous release: hh-identity-portal-v1047; ./performance-loader.js?v=709; ./patin.js?v=7; ./patin-core.js?v=6; ./patin-guide-ui.js?v=1.
@@ -188,10 +189,10 @@ const RUNTIME_ASSETS = [
   "./dev-regex-database.css?v=1",
   "./dev-code-git.css?v=1",
   "./dev-diagnostics-ai.css?v=1",
-  "./feature-lab.css?v=5",
-  "./platform-tools.css?v=1",
-  "./tool-workspace-pro.css?v=1",
-  "./utility-lab-tools.css?v=9",
+  "./feature-lab.css?v=6",
+  "./platform-tools.css?v=2",
+  "./tool-workspace-pro.css?v=2",
+  "./utility-lab-tools.css?v=10",
   "./media-design-pro.css?v=1",
   "./media-design-page.css?v=22",
   "./media-cosmos.css?v=3",
@@ -684,12 +685,13 @@ const RUNTIME_ASSETS = [
   "./chat-ai-media.js?v=1",
   "./chat-ai-hub.js?v=19",
   "./media-design-page.js?v=23",
-  "./tool-manifests.js?v=1",
-  "./tool-runtime.js?v=1",
-  "./feature-lab.js?v=6",
-  "./platform-tools.js?v=1",
-  "./tool-workspace-pro.js?v=1",
-  "./utility-lab-tools.js?v=10",
+  "./all-tool-state.js?v=1",
+  "./tool-manifests.js?v=2",
+  "./tool-runtime.js?v=2",
+  "./feature-lab.js?v=7",
+  "./platform-tools.js?v=2",
+  "./tool-workspace-pro.js?v=2",
+  "./utility-lab-tools.js?v=11",
   "./feature-engines.js?v=2",
   "./hh-school-curriculum.js?v=3",
   "./hh-school-core.js?v=4",
@@ -792,10 +794,10 @@ const CORE = [
   "./config.js?v=10",
   "./platform-orchestrator.js?v=2",
   "./platform-module-bridge.js?v=2",
-  "./performance-loader.js?v=712",
+  "./performance-loader.js?v=713",
   "./auth-platform.js?v=22",
   "./auth-neon-gateway.js?v=35",
-  "./script.js?v=289"
+  "./script.js?v=290"
 ];
 // Canvas Lite and the simulation/data kernels are a bounded offline install.
 // Babylon/vendor and actual owner-supplied cinematic pack bytes remain runtime

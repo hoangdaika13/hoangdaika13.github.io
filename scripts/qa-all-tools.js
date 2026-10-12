@@ -1,0 +1,243 @@
+"use strict";
+// Real local UI/browser engines. Remote API calls are intercepted, never billed.
+const assert = require("node:assert/strict"), fs = require("node:fs"), path = require("node:path"), http = require("node:http");
+const { chromium } = require(process.env.HH_QA_PLAYWRIGHT || "playwright");
+const { execFileSync } = require("node:child_process");
+const repo = path.resolve(__dirname, ".."), output = path.join(repo, ".study-local/all-tools-qa"), results = [];
+const server = http.createServer((req, res) => {
+  const name = decodeURIComponent(new URL(req.url, "http://localhost").pathname), file = path.resolve(repo, "." + name);
+  if (!file.startsWith(repo + path.sep) || name.split("/").some(part => part.startsWith(".") || ["api", "utils", "node_modules"].includes(part))) return res.writeHead(403).end();
+  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return res.writeHead(404).end();
+  res.setHeader("Content-Type", ({ ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml" })[path.extname(file)] || "application/octet-stream");
+  const relative = name.slice(1);
+  if (process.env.HH_QA_STAGED_RELEASE === "1" && ["index.html", "sw.js", "auth-platform.js", "auth-neon-gateway.css"].includes(relative)) {
+    // Verify the selected release, not another unfinished authentication draft.
+    const ref = ["index.html", "sw.js"].includes(relative) ? `:${relative}` : `HEAD:${relative}`;
+    return res.end(execFileSync("git", ["show", ref], { cwd: repo }));
+  }
+  fs.createReadStream(file).pipe(res);
+});
+const pass = name => { results.push(name); console.log("PASS " + name); };
+async function main() {
+  fs.mkdirSync(output, { recursive: true }); await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true, executablePath: process.env.HH_QA_CHROMIUM });
+    const context = await browser.newContext({ serviceWorkers: "block", reducedMotion: "reduce", viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
+    const page = await context.newPage(), errors = [], external = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await context.route("**/*", route => {
+      const url = route.request().url();
+      if (url.startsWith(origin) && !url.includes("/api/")) return route.continue();
+      if (/^(data|blob):/.test(url)) return route.continue();
+      external.push(url);
+      return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "QA: dịch vụ chưa cấu hình", code: "QA_UNAVAILABLE" }) });
+    });
+    await page.goto(origin + "/tests/fixtures/all-tools.html#/tools/global-search");
+    await page.evaluate(() => qaTool.ready());
+    const catalog = await page.evaluate(() => HHFeatureLab.catalog().map(({ id, name }) => ({ id, name })));
+    assert.equal(catalog.length, 86); assert.equal(new Set(catalog.map(tool => tool.id)).size, 86);
+    const go = async id => {
+      await page.evaluate(async id => { HHFeatureLab.select(id, false); await HHFeatureLab.ready(); }, id);
+      await page.waitForTimeout(35);
+      assert.equal(await page.locator(".feature-tool-error").count(), 0, "Engine error: " + id);
+      assert.equal(await page.locator("[data-lab-route]").getAttribute("data-active-tool"), id, "Selected tool: " + id);
+      assert.equal(await page.locator("[data-lab-work] > .pt-workspace, [data-lab-work] > .ut-workspace, [data-lab-work] > [data-hh-tool]").count(), 1, "One independent studio: " + id);
+    };
+    for (const width of [1440, 768, 375]) {
+      await page.setViewportSize({ width, height: 1000 });
+      for (const tool of catalog) {
+        await go(tool.id);
+        const dimensions = await page.evaluate(() => ({ width: innerWidth, scroll: document.documentElement.scrollWidth, workspace: document.querySelector("[data-lab-work]").getBoundingClientRect().width }));
+        assert.ok(dimensions.scroll <= dimensions.width + 1, `Horizontal overflow ${width}px ${tool.id}: ${JSON.stringify(dimensions)}`);
+        assert.ok(dimensions.workspace > 250, `Workspace clipped ${width}px ${tool.id}`);
+      }
+      await go("kanban"); await page.screenshot({ path: path.join(output, `all-tools-${width}.png`), fullPage: true });
+      pass(`All 86 studios mount independently at ${width}px with no horizontal overflow or generic fallback`);
+    }
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await go("global-search");
+    if (await page.locator("[data-lab-toggle]").getAttribute("aria-expanded") === "false") await page.locator("[data-lab-toggle]").click();
+    await page.locator("[data-lab-favorite]").click(); await page.locator("[data-lab-pin]").click();
+    await page.locator("[data-lab-collection]").selectOption("favorites");
+    assert.equal(await page.locator("[data-lab-feature]:visible").count(), 1);
+    await page.locator("[data-lab-collection]").selectOption("all"); await page.locator("[data-lab-search]").fill("not-a-real-tool-xyz");
+    assert.equal(await page.locator("[data-lab-empty]").isVisible(), true);
+    await page.locator("[data-lab-search]").fill("");
+    const first = page.locator("[data-lab-feature]:visible").first(); await first.focus(); await page.keyboard.press("End");
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.labFeature), catalog.at(-1).id);
+    await page.reload(); await page.evaluate(() => qaTool.ready());
+    assert.equal(await page.locator("[data-lab-favorite]").getAttribute("aria-pressed"), "true");
+    assert.equal(await page.locator("[data-lab-pin]").getAttribute("aria-pressed"), "true");
+    pass("Catalog search/empty, favorite/pin persistence and arrow/Home/End keyboard navigation");
+    await page.evaluate(() => { const user = { id: "qa-owner-a" }; localStorage.setItem("hh-auth-user", JSON.stringify(user)); dispatchEvent(new CustomEvent("hh:auth-change", { detail: { user } })); });
+    await page.waitForTimeout(100);
+    assert.equal(await page.locator("[data-lab-favorite]").getAttribute("aria-pressed"), "false");
+    await page.locator("[data-lab-favorite]").click();
+    await page.evaluate(() => { const user = { id: "qa-owner-b" }; localStorage.setItem("hh-auth-user", JSON.stringify(user)); dispatchEvent(new CustomEvent("hh:auth-change", { detail: { user } })); });
+    await page.waitForTimeout(100);
+    assert.equal(await page.locator("[data-lab-favorite]").getAttribute("aria-pressed"), "false");
+    pass("Guest, owner A and owner B catalog data isolated on auth changes");
+    await go("json-formatter"); await page.locator('[name="source"]').fill('{"hello":[1,2]}');
+    await page.locator('[data-ut-action="format-json"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-ut-output]").textContent.includes('"hello": ['));
+    await go("calculator"); await page.locator('[name="expression"]').fill("-.5 + 2 * (3 + 4)");
+    await page.locator('[data-ut-action="calculate"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-ut-output]").textContent.includes("13.5"));
+    pass("JSON formatter and safe decimal/unary calculator run actual local engines");
+    await go("notes"); await page.locator('[name="title"]').fill("Ghi chú QA"); await page.locator('[name="meta"]').fill("Dòng một\nDòng hai");
+    await page.locator('[data-ut-action="record-add"]').click(); await page.locator("[data-ut-list]").getByText("Ghi chú QA", { exact: true }).waitFor();
+    await go("kanban"); await page.locator('[name="title"]').fill("Bài tập QA"); await page.locator('[name="column"]').selectOption("doing");
+    await page.locator('[data-ut-action="record-add"]').click(); await page.getByText("Bài tập QA", { exact: true }).waitFor();
+    await page.reload(); await page.evaluate(() => HHFeatureLab.ready()); await go("notes");
+    assert.equal(await page.locator("[data-ut-list]").getByText("Ghi chú QA", { exact: true }).count(), 1);
+    await go("kanban"); assert.equal(await page.getByText("Bài tập QA", { exact: true }).count(), 1);
+    pass("Notes and Kanban store and recover actual account-scoped records after reload");
+    await go("stopwatch"); await page.locator('[data-ut-action="timer-start"]').click(); await page.waitForTimeout(2100);
+    await page.locator('[data-ut-action="timer-pause"]').click(); const paused = await page.locator("[data-ut-timer]").innerText(); assert.notEqual(paused, "00:00");
+    await go("json-viewer"); await go("stopwatch"); assert.equal(await page.locator("[data-ut-timer]").innerText(), paused);
+    await page.locator('[data-ut-action="timer-start"]').click(); await page.waitForTimeout(1100); await page.locator('[data-ut-action="timer-pause"]').click();
+    assert.notEqual(await page.locator("[data-ut-timer]").innerText(), paused);
+    pass("Stopwatch pause/resume and leaving/reopening preserve real deadline state");
+    await go("workspace-tabs"); await page.locator('[data-tool-input="title"]').fill("Tài liệu QA"); await page.locator('[data-tool-input="document"]').fill("Bản nháp trước khi chuyển tool");
+    await go("json-viewer"); await go("workspace-tabs");
+    assert.equal(await page.locator('[data-tool-input="document"]').inputValue(), "Bản nháp trước khi chuyển tool");
+    await page.locator('[data-tool-action="new-tab"]').click(); await page.waitForTimeout(100); await page.locator('[data-tool-action="select-tab"]').first().click();
+    await page.waitForFunction(() => document.querySelector('[data-tool-input="document"]').value === "Bản nháp trước khi chuyển tool");
+    pass("Workspace Tabs flush unsaved content on tool/tab switch and restore from real IndexedDB");
+    await go("drag-drop-dashboard"); await page.locator('[data-tool-input="widget-kind"]').selectOption("counter"); await page.locator('[data-tool-action="add-widget"]').click();
+    await page.locator('[data-tool-action="counter-up"]').click(); await page.waitForTimeout(80);
+    await go("json-viewer"); await go("drag-drop-dashboard"); assert.match(await page.locator("[data-tool-dashboard]").innerText(), /1/);
+    await go("plugin-system"); await page.locator('[data-tool-input="manifest"]').fill(JSON.stringify({ id: "qa-sort", name: "Sắp xếp QA", version: "1.0.0", engine: "line-sort", permissions: [] }));
+    await page.locator('[data-tool-action="import-plugin"]').click(); await page.locator('[data-tool-action="toggle-plugin"]').click();
+    await page.locator('[data-tool-input="plugin-source"]').fill("z\na\nb"); await page.locator('[data-tool-action="run-plugin"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-tool-output]").textContent === "a\nb\nz");
+    pass("Real dashboard counter persists; reviewed text plugin installs/enables and sorts locally");
+    await go("file-explorer"); await page.locator("[data-tool-file]").setInputFiles({ name: "qa-notes.txt", mimeType: "text/plain", buffer: Buffer.from("Nội dung file riêng QA") });
+    await page.locator('[data-tool-action="preview-file"]').click(); await page.waitForFunction(() => document.querySelector("[data-tool-preview]").textContent.includes("Nội dung file riêng QA"));
+    await go("json-viewer"); await go("file-explorer"); assert.equal(await page.getByText("qa-notes.txt", { exact: true }).count(), 1);
+    pass("File Explorer stores actual file bytes and reopens local text preview");
+    await go("favorite-manager"); await page.locator('[name="title"]').fill("JSON của tôi"); await page.locator('[name="route"]').fill("/tools/json-formatter"); await page.locator('[data-pt-action="favorite-add"]').click();
+    await page.getByText("JSON của tôi", { exact: true }).waitFor();
+    await go("export-data"); await page.locator('[data-pt-action="export-preview"]').click(); await page.waitForFunction(() => document.querySelector("[data-pt-output]").textContent.includes("HH Platform Tools Export"));
+    const exportPayload = await page.locator("[data-pt-output]").innerText(); assert.match(exportPayload, /JSON của tôi/);
+    await go("import-data"); await page.locator('[name="importFile"]').setInputFiles({ name: "qa-tools.json", mimeType: "application/json", buffer: Buffer.from(exportPayload) });
+    await page.locator('[data-pt-action="import-validate"]').click(); await page.locator('[data-pt-action="import-commit"]:enabled').waitFor(); await page.locator('[data-pt-action="import-commit"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-pt-status]").textContent.includes("Đã nhập"));
+    pass("Platform favorites, actual scoped export, validate-preview and import transaction");
+    await go("ocr");
+    const imageData = await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = 900; canvas.height = 180; const ctx = canvas.getContext("2d"); ctx.fillStyle = "white"; ctx.fillRect(0, 0, 900, 180); ctx.fillStyle = "black"; ctx.font = "bold 48px Arial"; ctx.fillText("HH TOOLS STUDY 123", 35, 105); return canvas.toDataURL("image/png").split(",")[1]; });
+    await page.locator("[data-tool-ocr-file]").setInputFiles({ name: "qa-ocr.png", mimeType: "image/png", buffer: Buffer.from(imageData, "base64") });
+    await page.waitForFunction(() => document.querySelector("[data-tool-ocr-empty]").hidden); await page.locator('[data-tool-input="ocr-language"]').selectOption("en");
+    await page.locator('[data-tool-action="recognize-ocr"]').click(); await page.waitForFunction(() => document.querySelector('[data-tool-input="ocr-result"]').value.includes("STUDY"), { timeout: 45000 });
+    assert.match(await page.locator('[data-tool-input="ocr-result"]').inputValue(), /123/);
+    pass("Actual local Tesseract worker/WASM recognizes uploaded PNG text, not a mocked OCR result");
+    await go("qr-scanner"); const qr = await require("qrcode").toBuffer("https://hoang8.com/tools", { width: 350 });
+    await page.locator('[name="qr-file"]').setInputFiles({ name: "qa-qr.png", mimeType: "image/png", buffer: qr }); await page.locator('[data-ut-action="qr-scan"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-ut-output]").textContent.includes("https://hoang8.com/tools"));
+    pass("Actual QR image decoded locally using the bundled browser fallback");
+    const outsideAppearance = await page.evaluate(() => ({ style: document.documentElement.getAttribute("style"), mode: document.documentElement.dataset.colorMode }));
+    await go("dark-light-auto"); await page.locator('input[name="mode"][value="light"]').check(); await page.locator('[data-pt-action="appearance-apply"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-lab-route]").dataset.colorMode === "light");
+    await go("kanban"); assert.equal(await page.locator("[data-lab-route]").getAttribute("data-color-mode"), "light");
+    await page.reload(); await page.evaluate(() => HHFeatureLab.ready()); assert.equal(await page.locator("[data-lab-route]").getAttribute("data-color-mode"), "light");
+    assert.deepEqual(await page.evaluate(() => ({ style: document.documentElement.getAttribute("style"), mode: document.documentElement.dataset.colorMode })), outsideAppearance);
+    await go("dark-light-auto"); await page.locator('input[name="mode"][value="dark"]').check(); await page.locator('[data-pt-action="appearance-apply"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-lab-route]").dataset.colorMode === "dark");
+    pass("All Tool appearance persists across studio switch/reload and never changes the outer document theme");
+    assert.deepEqual(external, []);
+    await go("ai-chat-assistant"); await page.locator('[data-tool-input="message"]').fill("Yêu cầu QA không được tính phí");
+    await page.locator('[data-tool-action="send-ai"]').click(); assert.deepEqual(external, []);
+    await page.locator("[data-tool-paid-consent]").check(); await page.locator('[data-tool-action="send-ai"]').click();
+    await page.waitForFunction(() => document.querySelector("[data-tool-notice]").textContent.includes("QA:"));
+    assert.equal(await page.locator('[data-tool-input="message"]').inputValue(), "Yêu cầu QA không được tính phí");
+    assert.deepEqual(external, [origin + "/api/ai"]);
+    pass("AI consent prevents submission; one explicit backend-error double keeps prompt and never retries/creates fake output");
+    await page.evaluate(async () => {
+      const suite = HHPlatformTools, originalMount = suite.mountById, originalCleanup = suite.cleanup;
+      const host = document.getElementById("host");
+      let releaseOld, startedOld, cleanupCalls = 0;
+      const gate = new Promise(resolve => releaseOld = resolve), started = new Promise(resolve => startedOld = resolve);
+      suite.mountById = async (...args) => { const result = await originalMount(...args); if (args[1] === "global-search") { startedOld(); await gate; } return result; };
+      suite.cleanup = () => { cleanupCalls++; originalCleanup(); };
+      try {
+        HHFeatureLab.mount(host, { toolId: "global-search" }); await started;
+        const next = HHFeatureLab.mount(host, { toolId: "theme-switcher" }); await next.ready();
+        const before = cleanupCalls; releaseOld(); await new Promise(resolve => setTimeout(resolve, 30));
+        if (cleanupCalls !== before || document.querySelector("[data-platform-tool]")?.dataset.platformTool !== "theme-switcher") throw Error("Old cleanup canceled the new studio");
+        if (!document.querySelector('[data-pt-action="theme-apply"]')) throw Error("New studio lost its controls");
+        next.cleanup();
+      } finally { releaseOld?.(); suite.mountById = originalMount; suite.cleanup = originalCleanup; }
+      window.qaTool = HHFeatureLab.mount(host, { toolId: "global-search" }); await HHFeatureLab.ready();
+    });
+    pass("Delayed engine-return double proves stale mount cleanup cannot cancel the newer studio");
+    await page.evaluate(() => document.documentElement.style.zoom = "2");
+    for (const id of ["global-search", "kanban", "workspace-tabs", "json-formatter", "stopwatch"]) {
+      await go(id); assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "200% " + id);
+    }
+    await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+    await page.keyboard.press("Tab");
+    await page.locator("[data-lab-pin]").focus();
+    assert.notEqual(await page.locator("[data-lab-pin]").evaluate(node => getComputedStyle(node).outlineStyle), "none");
+    pass("200% zoom, reduced motion, forced colors and visible keyboard focus");
+    const otherTab = await context.newPage(); await otherTab.goto(origin + "/tests/fixtures/all-tools.html#/tools/global-search");
+    await otherTab.evaluate(() => localStorage.setItem("hh-auth-user", JSON.stringify({ id: "qa-owner-c" })));
+    await page.locator("[data-lab-reload]").waitFor();
+    assert.equal(await page.locator("[data-lab-route]").count(), 0);
+    await page.evaluate(() => HHFeatureLab.mount(document.getElementById("host"), { toolId: "notes" }));
+    assert.equal(await page.locator("[data-lab-reload]").count(), 1);
+    await otherTab.close(); await page.reload(); await page.evaluate(() => HHFeatureLab.ready());
+    assert.equal(await page.evaluate(() => HHAllToolState.accountScope()), "account:qa-owner-c");
+    pass("Actual cross-tab profile change stops work and blocks remount until session reload; does not reassign account data");
+    await page.evaluate(() => HHFeatureLab.cleanup()); assert.equal(await page.locator("[data-lab-route]").count(), 0);
+    assert.deepEqual(errors, []); assert.deepEqual(external, [origin + "/api/ai"]);
+    pass("No uncaught JavaScript errors or automatic remote calls; one opt-in API double only, teardown removes workspace");
+    await context.close();
+    const shellContext = await browser.newContext({ serviceWorkers: "block", reducedMotion: "reduce", viewport: { width: 1440, height: 1000 } });
+    await shellContext.route("**/api/**", route => route.fulfill({ status: route.request().url().includes("/providers") ? 200 : 401, contentType: "application/json", body: JSON.stringify({ google: false, facebook: false, email: false, error: "Local QA backend double" }) }));
+    const shell = await shellContext.newPage(), shellErrors = []; shell.on("pageerror", error => shellErrors.push(error.message));
+    await shell.goto(origin + "/index.html?api=local#/platform", { waitUntil: "domcontentloaded" });
+    await shell.locator("[data-guest-login]").click(); await shell.locator(".app-main .php").waitFor({ timeout: 45000 });
+    const privacy = shell.getByRole("button", { name: "Từ chối tùy chọn", exact: true }); if (await privacy.isVisible()) await privacy.click();
+    await shell.locator("[data-sidebar-search]").fill("All Tool"); await shell.locator('.app-sidebar [data-app-route="/tools"]').first().click();
+    await shell.locator('[data-platform-tool="global-search"]').waitFor({ timeout: 45000 });
+    await shell.locator("[data-sidebar-search]").fill("");
+    await shell.evaluate(() => location.hash = "#/tools/platform/global-search");
+    await shell.locator('[data-platform-tool="global-search"] [name="query"]').waitFor({ timeout: 45000 });
+    assert.equal(await shell.locator(".app-header").count(), 1); assert.equal(await shell.locator(".app-sidebar").count(), 1);
+    assert.equal(await shell.locator("[data-hh-planet]").count(), 25); assert.equal(await shell.locator(".feature-lab-open").isVisible(), false);
+    assert.equal(await shell.evaluate(() => HHFeatureLab.catalog().length), 86);
+    await shell.locator('[data-lab-feature="notes"]').click(); await shell.locator('[data-ut-tool="notes"] [name="title"]').waitFor();
+    await shell.locator('[name="title"]').fill("Ghi chú trong App Shell"); await shell.locator('[name="meta"]').fill("Dữ liệu khách All Tool riêng"); await shell.locator('[data-ut-action="record-add"]').click();
+    await shell.getByText("Ghi chú trong App Shell", { exact: true }).waitFor();
+    assert.match(shell.url(), /#\/tools\/notes$/);
+    await shell.locator('.feature-lab__head [data-app-route="/platform"]').click(); await shell.locator(".app-main .php").waitFor();
+    assert.equal(await shell.evaluate(() => HHFeatureLab.activeHost()), null);
+    await shell.goBack(); await shell.locator('[data-ut-tool="notes"]').waitFor(); assert.equal(await shell.getByText("Ghi chú trong App Shell", { exact: true }).count(), 1);
+    await shell.reload({ waitUntil: "domcontentloaded" }); await shell.locator('[data-ut-tool="notes"]').waitFor({ timeout: 45000 }); assert.equal(await shell.getByText("Ghi chú trong App Shell", { exact: true }).count(), 1);
+    await shell.goBack(); await shell.locator('[data-platform-tool="global-search"]').waitFor(); await shell.goForward(); await shell.locator('[data-ut-tool="notes"]').waitFor();
+    pass("Actual HH Platform shell: guest login, nested legacy tool route, catalog selection, notes, home, cleanup, reload and Back/Forward");
+    for (const width of [1440, 768, 375]) {
+      await shell.setViewportSize({ width, height: 1000 });
+      await shell.evaluate(() => location.hash = "#/tools/kanban"); await shell.locator('[data-ut-tool="kanban"]').waitFor();
+      assert.ok(await shell.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "App Shell overflow " + width);
+      await shell.locator('[data-ut-drop="done"]').scrollIntoViewIfNeeded(); assert.equal(await shell.locator('[data-ut-drop="done"]').isVisible(), true);
+      await shell.screenshot({ path: path.join(output, `all-tools-shell-${width}.png`), fullPage: false });
+    }
+    await shell.setViewportSize({ width: 1440, height: 1000 }); await shell.evaluate(() => document.documentElement.style.zoom = "2");
+    assert.ok(await shell.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "App Shell zoom 200%");
+    await shell.evaluate(() => document.documentElement.style.zoom = "1");
+    await shell.keyboard.press("Control+k"); await shell.locator("#commandPaletteInput").fill("QR Scanner");
+    await shell.locator('#commandPaletteResults [data-app-route="/tools/qr-scanner"]').click(); await shell.locator('[data-ut-tool="qr-scanner"]').waitFor();
+    assert.match(shell.url(), /#\/tools\/qr-scanner$/);
+    pass("Primary sidebar finds All Tool and global command palette opens an individual independent tool");
+    assert.deepEqual(shellErrors, []);
+    pass("Actual App Shell desktop/tablet/375px and 200% zoom, reachable bottom content, stable header/sidebar and no uncaught errors");
+    await shellContext.close();
+  } finally {
+    await browser?.close(); await new Promise(resolve => server.close(resolve));
+    fs.writeFileSync(path.join(output, "results.json"), JSON.stringify({ at: new Date().toISOString(), results }, null, 2));
+  }
+}
+main().catch(error => { console.error(error); process.exitCode = 1; });

@@ -45,7 +45,8 @@ test("does not persist API secrets in client code", () => {
   assert.doesNotMatch(source, /AIza[0-9A-Za-z_-]{20,}/);
   assert.doesNotMatch(source, /api[_-]?key\s*[:=]\s*["'][^"']+/i);
   assert.match(source, /\/api\/ai/);
-  assert.match(source, /\/api\/tools\/run/);
+  assert.match(source, /toolId: "ai-chat", action: "send", input: \{ prompt \}/);
+  assert.match(source, /HHAuthSession\?\.token/);
   assert.doesNotMatch(source, /localStorage|sessionStorage/);
 });
 
@@ -86,12 +87,86 @@ test("OCR, speech, Monaco and plugin systems provide real capability gates", () 
   assert.match(source, /speechSynthesis\.getVoices/);
   assert.match(source, /navigator\.mediaDevices\?\.getUserMedia/);
   assert.match(source, /new MediaRecorder\(stream\)/);
-  assert.match(source, /diarization: true, timestamps: true/);
+  assert.match(source, /Chép file chưa khả dụng/);
+  assert.match(source, /không có diarization\/timestamp chính xác/);
   assert.match(source, /formatSegments\(active\.transcriptSegments/);
   assert.match(source, /globalThis\.TextDetector/);
+  assert.match(source, /loadLocalOcr\(\)/);
+  assert.match(source, /tesseract\.createWorker\(languages, 1/);
+  assert.match(source, /\/vendor\/tessdata\//);
+  assert.match(source, /worker\.terminate\(\)/);
+  assert.match(source, /run\.canceled/);
   assert.match(source, /monaco\.editor\.create/);
   assert.match(source, /Không cho phép mã thực thi trong manifest/);
   assert.match(source, /plugin\.entry \|\| plugin\.script \|\| plugin\.code/);
+  assert.match(source, /PLUGIN_ENGINES/);
+  assert.doesNotMatch(source, /new Function|eval\(/);
+});
+
+test("all 16 workspaces have concrete differentiated controls and purpose", () => {
+  const layouts = api.manifests.map(manifest => api.renderMarkup(manifest.id));
+  assert.equal(new Set(layouts).size, 16);
+  for (const [index, html] of layouts.entries()) {
+    assert.match(html, new RegExp(`data-hh-tool="${api.manifests[index].id}"`));
+    assert.match(html, /ALL TOOLS · WORKSPACE RIÊNG/);
+    assert.match(html, /data-tool-(input|action|file)/);
+  }
+  assert.match(api.renderMarkup("speech-to-text"), /download-recording/);
+  assert.match(api.renderMarkup("plugin-system"), /line-sort/);
+  assert.match(api.renderMarkup("drag-drop-dashboard"), /widget-kind/);
+  assert.match(api.renderMarkup("ai-chat"), /data-tool-paid-consent/);
+  assert.equal(api.supports("platform-voice-search"), true);
+  assert.equal(api.supports("workspace-ai-prompt-library"), true);
+});
+
+test("vetted plugin engines work locally and reject executable/unknown manifests", () => {
+  assert.equal(api.runPlugin("text-uppercase", "xin chào"), "XIN CHÀO");
+  assert.equal(api.runPlugin("text-trim", "  hello  \n world "), "hello\nworld");
+  assert.equal(api.runPlugin("line-sort", "z\na\nb"), "a\nb\nz");
+  const safe = { id: "line-helper", name: "Line Helper", version: "1.0.0", engine: "line-sort", permissions: [] };
+  assert.equal(api.validatePlugin(safe).engine, "line-sort");
+  assert.throws(() => api.validatePlugin({ ...safe, code: "alert(1)" }), /mã thực thi/);
+  assert.throws(() => api.validatePlugin({ ...safe, engine: "toString" }), /chưa được duyệt/);
+  assert.throws(() => api.validatePlugin({ ...safe, permissions: ["microphone"] }), /permissions phải rỗng/);
+  assert.throws(() => api.runPlugin("__proto__", "a"), /chưa được duyệt/);
+});
+
+test("records and binary files are isolated by owner without adopting legacy unowned data", async () => {
+  await api.storage.put("records", { id: "same", content: "A" }, "account:A");
+  await api.storage.put("records", { id: "same", content: "B" }, "account:B");
+  assert.equal((await api.storage.get("records", "same", "account:A")).content, "A");
+  assert.equal((await api.storage.get("records", "same", "account:B")).content, "B");
+  assert.equal(await api.storage.get("records", "same", "guest"), null);
+  await api.storage.delete("records", "same", "account:B");
+  assert.equal((await api.storage.get("records", "same", "account:A")).content, "A");
+  await api.storage.put("files", { id: "binary", blob: new Blob(["hello"]), name: "hello.txt" }, "account:A");
+  assert.equal(await (await api.storage.get("files", "binary", "account:A")).blob.text(), "hello");
+  assert.deepEqual(await api.storage.list("files", () => true, "account:B"), []);
+  assert.match(source, /filter\(row => row\.owner === owner\)/);
+});
+
+test("AI gateway uses one request and does not fall back after a provider error", async () => {
+  const original = globalThis.fetch;
+  let calls = 0;
+  try {
+    globalThis.fetch = async (url, options) => { calls += 1; assert.equal(url, "/api/ai"); const body = JSON.parse(options.body); assert.equal(body.action, "send"); assert.equal(body.input.prompt, "hello"); return { ok: true, json: async () => ({ result: { text: "answer", provider: "gemini" } }) }; };
+    assert.equal((await api.requestAi({ toolId: "ai-chat", action: "send", input: { prompt: "hello" } })).text, "answer");
+    assert.equal(calls, 1);
+    calls = 0;
+    globalThis.fetch = async () => { calls += 1; return { ok: false, status: 503, json: async () => ({ error: "not configured" }) }; };
+    await assert.rejects(api.requestAi({ toolId: "ai-chat", action: "send", input: { prompt: "hello" } }), /not configured/);
+    assert.equal(calls, 1);
+  } finally { globalThis.fetch = original; }
+});
+
+test("lifecycle preserves documents, cancels resources and does not display fake widget counts", () => {
+  assert.match(source, /saveCurrentTab\(host\)/);
+  assert.match(source, /snapshot\.values\.code = editorValue\(host\)/);
+  assert.match(source, /active\.epoch \+= 1/);
+  assert.match(source, /active\.detach\?\.\(\)/);
+  assert.match(source, /active\.urls\.forEach\(url => URL\.revokeObjectURL\(url\)\)/);
+  assert.doesNotMatch(source, /3 việc ưu tiên|0 đang chạy|Sẵn sàng cấu hình/);
+  assert.doesNotMatch(source, /hh:prompt-use|hh:tool-search/);
 });
 
 test("interface is responsive, keyboard-visible and motion-safe", () => {

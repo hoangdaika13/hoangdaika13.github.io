@@ -107,36 +107,40 @@
     });
   }
 
-  function createLocalStorageAdapter(localStorageRef) {
-    const read = (name) => { try { return JSON.parse(localStorageRef.getItem(`${STORAGE_PREFIX}.${name}`) || "[]"); } catch { return []; } };
-    const write = (name, rows) => localStorageRef.setItem(`${STORAGE_PREFIX}.${name}`, JSON.stringify(rows.slice(0, 250)));
+  function createLocalStorageAdapter(localStorageRef, owner) {
+    const prefix = `${STORAGE_PREFIX}.${owner}`;
+    const read = (name) => { try { const rows = JSON.parse(localStorageRef.getItem(`${prefix}.${name}`) || "[]"); return Array.isArray(rows) ? rows : []; } catch { return []; } };
+    const write = (name, rows) => localStorageRef.setItem(`${prefix}.${name}`, JSON.stringify(rows.slice(0, 250)));
     return Object.freeze({
       kind: "localStorage",
       async put(name, value) { const row = clone(value); const rows = read(name).filter((item) => String(item.id) !== String(row.id)); write(name, [row, ...rows]); return clone(row); },
       async get(name, id) { return clone(read(name).find((item) => String(item.id) === String(id)) || null); },
       async list(name, options = {}) { return read(name).slice(0, options.limit || 100).map(clone); },
       async remove(name, id) { const rows = read(name); write(name, rows.filter((item) => String(item.id) !== String(id))); return rows.length !== read(name).length; },
-      async clear(name) { localStorageRef.removeItem(`${STORAGE_PREFIX}.${name}`); }
+      async clear(name) { localStorageRef.removeItem(`${prefix}.${name}`); }
     });
   }
 
-  function createIndexedDbAdapter(indexedDBRef) {
+  function createIndexedDbAdapter(indexedDBRef, owner) {
     const open = () => new Promise((resolve, reject) => {
-      const request = indexedDBRef.open("hh-tool-runtime", 1);
+      const request = indexedDBRef.open(`hh-tool-runtime:${owner}`, 1);
       request.onupgradeneeded = () => {
         for (const name of ["tasks", "history", "logs", "drafts"]) if (!request.result.objectStoreNames.contains(name)) request.result.createObjectStore(name, { keyPath: "id" });
       };
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error || new Error("IndexedDB unavailable"));
+      request.onblocked = () => reject(new Error("IndexedDB đang bị khóa bởi tab khác."));
     });
     const request = async (name, mode, operation) => {
       const db = await open();
       return new Promise((resolve, reject) => {
         const transaction = db.transaction(name, mode);
         const result = operation(transaction.objectStore(name));
-        result.onsuccess = () => resolve(clone(result.result));
+        let value;
+        result.onsuccess = () => { value = clone(result.result); };
         result.onerror = () => reject(result.error || new Error("IndexedDB request failed"));
-        transaction.oncomplete = () => db.close();
+        transaction.oncomplete = () => { db.close(); resolve(value); };
+        transaction.onabort = transaction.onerror = () => { db.close(); reject(transaction.error || new Error("IndexedDB transaction failed")); };
       });
     };
     return Object.freeze({
@@ -149,13 +153,14 @@
     });
   }
 
-  async function createStorage(environment = globalScope || {}) {
+  async function createStorage(environment = globalScope || {}, storageScope) {
+    const owner = String(storageScope || environment.HHAllToolState?.accountScope?.() || "guest");
     if (environment.indexedDB) {
-      try { const adapter = createIndexedDbAdapter(environment.indexedDB); await adapter.list("tasks", { limit: 1 }); return adapter; }
+      try { const adapter = createIndexedDbAdapter(environment.indexedDB, owner); await adapter.list("tasks", { limit: 1 }); return adapter; }
       catch { /* Fall through to bounded local storage. */ }
     }
     if (environment.localStorage) {
-      try { environment.localStorage.setItem(`${STORAGE_PREFIX}.probe`, "1"); environment.localStorage.removeItem(`${STORAGE_PREFIX}.probe`); return createLocalStorageAdapter(environment.localStorage); }
+      try { environment.localStorage.setItem(`${STORAGE_PREFIX}.${owner}.probe`, "1"); environment.localStorage.removeItem(`${STORAGE_PREFIX}.${owner}.probe`); return createLocalStorageAdapter(environment.localStorage, owner); }
       catch { /* Private mode can disable localStorage. */ }
     }
     return createMemoryStorage();
@@ -280,7 +285,7 @@
   }
 
   async function createRuntime(options = {}) {
-    const storage = options.storage || await createStorage(options.environment || globalScope || {});
+    const storage = options.storage || await createStorage(options.environment || globalScope || {}, options.storageScope);
     return new ToolRuntime({ ...options, storage });
   }
 

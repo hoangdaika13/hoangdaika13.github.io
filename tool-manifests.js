@@ -50,13 +50,22 @@
 
     manifest("workspace-tabs", "Workspace Tabs", "workspace-files", "browser", { capabilities: ["indexedDB"], actions: ["open", "pin", "close", "restore"] }),
     manifest("drag-drop-dashboard", "Drag Drop Dashboard", "workspace-files", "browser", { capabilities: ["indexedDB"], actions: ["move", "resize", "undo", "redo", "save"] }),
-    manifest("widget-marketplace", "Widget Marketplace", "workspace-files", "server", { actions: ["list", "install", "disable", "remove", "rate"], offline: false }),
-    manifest("plugin-system", "Plugin System", "workspace-files", "server", { actions: ["inspect", "install", "enable", "disable", "remove"], offline: false, tags: ["sandbox"] }),
+    manifest("widget-marketplace", "Widget Marketplace", "workspace-files", "browser", { actions: ["list", "install", "disable", "remove"], offline: true, description: "Widget cục bộ được duyệt: ghi chú, checklist, bộ đếm và đồng hồ." }),
+    manifest("plugin-system", "Plugin System", "workspace-files", "browser", { actions: ["inspect", "install", "enable", "disable", "remove"], offline: true, tags: ["reviewed-local-engines"], description: "Engine văn bản được duyệt, không thực thi JavaScript từ manifest." }),
     manifest("auto-save", "Auto Save", "workspace-files", "browser", { capabilities: ["indexedDB"], actions: ["save", "retry", "restore", "cancel"] }),
     manifest("version-history", "Version History", "workspace-files", "browser", { capabilities: ["indexedDB"], actions: ["compare", "label", "restore", "branch", "export"] }),
     manifest("file-explorer", "File Explorer", "workspace-files", "browser", { capabilities: ["indexedDB", "opfs"], actions: ["open", "upload", "rename", "search", "remove", "export"] }),
     manifest("monaco-editor", "Monaco Code Editor", "workspace-files", "browser", { capabilities: ["worker"], actions: ["open", "format", "diagnose", "compare", "save"] }),
-    manifest("ocr", "OCR", "workspace-files", "ai", { capabilities: ["fileReader"], actions: ["recognize", "cancel", "copy", "export"], inputs: fileInput("image/*,application/pdf"), offline: false })
+    manifest("ocr", "OCR", "workspace-files", "browser", { capabilities: ["fileReader", "worker"], actions: ["recognize", "cancel", "copy", "export"], inputs: fileInput("image/png,image/jpeg,image/webp"), offline: false, description: "Nhận dạng ảnh Việt/Anh cục bộ, tải engine và dữ liệu ngôn ngữ khi dùng." }),
+    ...Object.entries({
+      developer: ["Markdown Editor", "JSON Viewer", "API Tester", "Regex Playground", "Code Viewer", "Terminal Simulator", "Git Cheat Sheet", "GitHub Integration", "Console Log Viewer", "Error Monitor", "Dev Utilities", "Text Compare", "JSON Formatter", "UUID Generator", "Hash Generator", "Base64 Encoder", "Timestamp Converter"],
+      productivity: ["Productivity Dashboard", "Notes", "Todo", "Kanban", "Pomodoro", "Stopwatch", "Countdown", "Calendar", "Reminder", "Calculator", "Unit Converter", "Lorem Ipsum", "Password Toolkit", "Clipboard Manager", "Clipboard History", "Activity Timeline", "Recent Files", "Pinned Tools", "Bookmark", "Floating Quick Actions", "Focus Mode", "User Preferences Center"],
+      system: ["Multi-language", "Language Switcher", "Weather Widget", "Clock", "System Status", "Network Speed", "Memory Usage", "Storage Usage", "Analytics Dashboard", "Notification Center", "Smart Search", "Context Menu", "Floating Toolbar", "QR Scanner"]
+    }).flatMap(([group, names]) => names.map(name => manifest(name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), name, group, "browser", {
+      actions: ["run", "copy", "export"],
+      offline: !["API Tester", "GitHub Integration", "Weather Widget"].includes(name),
+      history: !["Password Toolkit", "Clipboard Manager", "Clipboard History"].includes(name)
+    })))
   ]);
 
   const api = Object.freeze({ TOOL_MANIFESTS, manifest });

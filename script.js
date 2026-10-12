@@ -5600,6 +5600,7 @@ function initAppShell() {
       ]
     },
     { id: "dev", label: "DEV", icon: "⌘", accent: "#61e7ff", route: "/dev-tools", items: [], studioItems: developerToolItems },
+    { id: "all-tools", label: "All Tool", icon: "◫", accent: "#a9a0ff", route: "/tools", items: [], description: "86 công cụ riêng: dữ liệu, AI, tài liệu, năng suất và khả năng trình duyệt; không dùng chung dữ liệu với workspace khác.", get pages() { return (window.HHFeatureLab?.catalog?.() || []).map(tool => ({ id: tool.id, title: tool.name, description: tool.description, group: tool.group, route: `/tools/${tool.id}` })); } },
     { id: "work", label: "Công việc", icon: "□", accent: "#baf46b", route: "/work", items: [], pages: workGalaxyPageItems, legacyItems: workLegacyModuleIds },
     {
       id: "communication",
@@ -5848,7 +5849,7 @@ function initAppShell() {
       icon: "⌘",
       accent: "#54e7ad",
       accentSecondary: "#4fddff",
-      groupIds: ["work", "davinci-resolve", "dev", "insights", "copyright"]
+      groupIds: ["work", "davinci-resolve", "dev", "all-tools", "insights", "copyright"]
     },
     {
       id: "learning",
@@ -5891,6 +5892,7 @@ function initAppShell() {
     work: "công việc dự án task ghi chú lịch",
     "davinci-resolve": "tool công cụ video media batch youtube facebook tiktok",
     dev: "lập trình code api git database developer",
+    "all-tools": "all tool all tools bộ công cụ độc lập json regex hash base64 uuid pomodoro kanban ghi chú ocr qr search settings browser workspace",
     insights: "phân tích analytics báo cáo dữ liệu",
     copyright: "bản quyền giấy phép license attribution",
     learn: "học tập trường học bài luyện kiến thức",
@@ -7266,6 +7268,7 @@ function initAppShell() {
     }
     releaseSupportLayout(route);
     if (hasLiveSameRouteWorkspace(route)) return;
+    window.HHFeatureLab?.cleanup?.();
     if (route === activeRoute && routePathOnly(route) === "/learn/study-together" && window.HHStudyTogether?.activeHost?.()?.isConnected && window.HHStudyTogether?.activeOwner?.() === readCurrentAuthUser()?.id) return;
     if (syncLiveGalaxyLayerOneRoute(route)) return;
     cleanupGalaxyEngineTakeover();
@@ -7316,6 +7319,7 @@ function initAppShell() {
     document.body.classList.toggle("app-graphic-design-route", route === "/graphic-design" || route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-graphic-design-tool-route", route.startsWith("/graphic-design/"));
     document.body.classList.toggle("app-dev-tools-route", route === "/dev-tools" || route.startsWith("/dev-tools/"));
+    document.body.classList.toggle("app-all-tools-route", route === "/tools" || route.startsWith("/tools/"));
     document.body.classList.toggle("app-learning-route", (route === "/learn" || route.startsWith("/learn/")) && activeGroup?.id !== "study-together");
     document.body.classList.toggle("app-study-together-route", activeGroup?.id === "study-together");
     document.body.classList.toggle("app-focus-study-route", route === "/focus-room");
@@ -8088,7 +8092,7 @@ function initAppShell() {
       else mountSimpleView("Trung tâm tài khoản", "Đang tải hồ sơ và dữ liệu bảo mật từ máy chủ...", "");
       remember("account-center");
     } else if (route === "/tools" || route.startsWith("/tools/")) {
-      const toolId = parts[1] || "global-search";
+      const toolId = (parts[1] === "platform" ? parts[2] : parts[1]) || "global-search";
       const toolMeta = window.HHFeatureLab?.getTool?.(toolId);
       updatePageHeader(toolMeta?.name || "HH Professional Toolkit", toolMeta?.description || "86 công cụ có engine, lịch sử, trạng thái và giao diện riêng theo đúng chức năng.", route);
       workspace.innerHTML = '<div data-feature-lab-route-host></div>';
@@ -8296,7 +8300,8 @@ function initAppShell() {
     const commandCenter = [
       { type: "HH Platform", title: "Trang chủ HH Platform", description: "Sáu nhóm chức năng, yêu thích, gần đây và lộ trình bắt đầu.", route: "/platform", key: "trang chủ lớp 2 platform homepage dashboard" },
       ...visibleNavigationSections().flatMap((section) => section.items.map((item) => ({ type: section.label, title: item.label, description: sidebarSearchAliases[item.id] || item.label, route: item.route, key: `${item.label} ${sidebarSearchAliases[item.id] || ""}` }))),
-      ...(window.HHCommandCenter?.searchItems?.() || [])
+      ...(window.HHCommandCenter?.searchItems?.() || []),
+      ...(window.HHFeatureLab?.catalog?.() || []).map(tool => ({ type: "All Tool", title: tool.name, description: tool.description, route: `/tools/${tool.id}`, key: `all tool ${tool.name} ${tool.group} ${tool.description}` }))
     ];
     const projectCommands = [
       { type: "Project", title: "Project · Tổng quan", description: "Mở bảng điều hành và sức khỏe dự án.", action: "project-view:overview", key: "project center tổng quan health dashboard" },
